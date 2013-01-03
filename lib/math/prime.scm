@@ -38,7 +38,7 @@
   (use gauche.uvector)
   (use gauche.generator)
   (use util.match)
-  (export *primes* reset-primes
+  (export primes *primes* reset-primes
           miller-rabin-prime? *miller-rabin-deterministic-bound*))
 (select-module math.prime)
 
@@ -104,6 +104,7 @@
                                  (< 0 (mod n j))))
                   n)))
 
+;; API
 (define (primes)
   (define start *first-segment-start*)
   (define gen (list->generator (force *small-primes*)))

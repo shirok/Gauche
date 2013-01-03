@@ -21,6 +21,7 @@
 * Filesystem utilities::        file.util
 * Mathematic constants::        math.const
 * Mersenne-Twister random number generator::  math.mt-random
+* Prime numbers::               math.prime
 * Windows support::             os.windows
 * RFC822 message parsing::      rfc.822
 * Base64 encoding/decoding::    rfc.base64
@@ -1785,8 +1786,8 @@ APIを説明をします。すなわち特定の@code{dbd}ドライバを@code{d
 @c COMMON
 
 @menu
-* DBI user API::
-* Writing drivers for DBI::
+* DBI user API::                
+* Writing drivers for DBI::     
 @end menu
 
 @node DBI user API, Writing drivers for DBI, Database independent access layer, Database independent access layer
@@ -2812,12 +2813,12 @@ The following code shows a typical usage of the database.
 @end example
 
 @menu
-* Opening and closing a dbm database::
-* Accessing a dbm database::
-* Iterating on a database::
-* Managing dbm database instance::
-* Dumping and restoring dbm database::
-* Writing a dbm implementation::
+* Opening and closing a dbm database::  
+* Accessing a dbm database::    
+* Iterating on a database::     
+* Managing dbm database instance::  
+* Dumping and restoring dbm database::  
+* Writing a dbm implementation::  
 @end menu
 
 @node Opening and closing a dbm database, Accessing a dbm database, Generic DBM interface, Generic DBM interface
@@ -3991,11 +3992,11 @@ Gaucheでは@emph{両方の}名前を提供することにしました。
 @c COMMON
 
 @menu
-* Directory utilities::
-* Pathname utilities::
-* File attribute utilities::
-* File operations::
-* Lock files::
+* Directory utilities::         
+* Pathname utilities::          
+* File attribute utilities::    
+* File operations::             
+* Lock files::                  
 @end menu
 
 @node Directory utilities, Pathname utilities, Filesystem utilities, Filesystem utilities
@@ -5352,7 +5353,7 @@ Napier's constant.
 @end defvr
 
 @c ----------------------------------------------------------------------
-@node Mersenne-Twister random number generator, Windows support, Mathematic constants, Library modules - Utilities
+@node Mersenne-Twister random number generator, Prime numbers, Mathematic constants, Library modules - Utilities
 @section @code{math.mt-random} - Mersenne Twister Random number generator
 @c NODE Mersenne Twister乱数発生器, @code{math.mt-random} - Mersenne Twister乱数発生器
 
@@ -5496,45 +5497,168 @@ faster than getting one by one.
 @c COMMON
 @end defun
 
-@c @c ----------------------------------------------------------------------
-@c @node Prime numbers
-@c @section @code{math.prime} - Prime numbers
-@c @c NODE 素数, @code{math.prime} - 素数
+@c ----------------------------------------------------------------------
+@node Prime numbers, Windows support, Mersenne-Twister random number generator, Library modules - Utilities
+@section @code{math.prime} - Prime numbers
+@c NODE 素数, @code{math.prime} - 素数
 
-@c @deftp {Module} math.prime
-@c @mdindex math.prime
-@c @c EN
-@c This module provides utilities related to prime numbers.
-@c @c JP
-@c このモジュールは、素数を扱うユーティリティ関数を提供します。
-@c @c COMMON
-@c @end deftp
+@deftp {Module} math.prime
+@mdindex math.prime
+@c EN
+This module provides utilities related to prime numbers.
+@c JP
+このモジュールは、素数を扱うユーティリティ関数を提供します。
+@c COMMON
+@end deftp
 
-@c @defvar *primes*
-@c @c EN
-@c An infinite lazy sequence of primes.
-@c @c JP
-@c 素数の無限遅延シーケンスです。
-@c @c COMMON
+@defvar *primes*
+@c EN
+An infinite lazy sequence of primes.
+@c JP
+素数の無限遅延シーケンスです。
+@c COMMON
 
-@c @example
-@c ;; show 10 prime numbers from 100-th one.
-@c (take (drop *primes* 100) 10)
-@c  @result{} (547 557 563 569 571 577 587 593 599 601)
-@c @end example
-@c @end defvar
+@example
+;; show 10 prime numbers from 100-th one.
+(take (drop *primes* 100) 10)
+ @result{} (547 557 563 569 571 577 587 593 599 601)
+@end example
+@end defvar
 
-@c @defun reset-primes
-@c @c EN
-@c Once you take very large number of 
+@defun reset-primes
+@c EN
+Once you take a very large prime out of @code{*primes*}, all primes
+before that has been calculated remains in memory, since the
+head of sequence is held in @code{*primes*}.  Sometimes you know
+you need no more prime numbers and you wish those calculated ones
+to be garbage-collected.  Calling @code{reset-primes} rebinds
+@code{*primes*} to unrealized lazy sequence, allowing the previously
+realized primes to be GCed.
+@c JP
+@code{*primes*}から大きな素数を取り出すと、それ以前の素数も全てメモリに
+残り続けます。@code{*primes*}変数がシーケンスの頭を抱えているからです。
+もう素数を必要としないことがわかっている場合、それらのメモリがガベージコレクト
+されることが望ましいかもしれません。@code{reset-primes}手続きは
+@code{*primes*}をまだ現実化されていない遅延シーケンスに再束縛し、
+次のGCで計算済みの素数シーケンスが回収されるようにします。
+@c COMMON
+@end defun
 
-@c @c JP
-@c @c COMMON
-@c @end defun
+@defun primes
+@c EN
+Returns a fresh lazy sequence of primes.  It is useful when
+you need certain primes in a short period of time---if you don't keep
+a reference to the head of the returned sequence, it will be garbage
+collected after you've done with the primes.
+(Note that calculation of a prime number needs the
+sequence of primes from the beginning, 
+so even if your code only keep a reference
+in the middle of the sequence, the entire sequence will be kept
+in the thunk within the lazy sequence---you have to release all
+references in order to make the sequence GCed.)
+
+On the other hand,
+each sequence returned by @code{primes} are realized individually,
+duplicating calculation.  
+
+The rule of thumb is---if you use primes repeatedly throughtout
+the program, just use @code{*primes*} and you'll save calculation.
+If you need primes one-shot, call @code{primes} and abandon it
+and you'll save space.
+@c JP
+新たな素数の遅延シーケンスを返します。
+その時だけ素数を使いたい、という時に便利です。返されたシーケンスへの
+参照が無くなれば、シーケンスはガベージコレクトされます。
+(ある素数の計算には素数のシーケンスが最初から必要なので、
+たとえシーケンスの頭ではなく途中への参照だけを持っていたとしても、
+遅延シーケンスの中のサンクにはシーケンスの頭への参照が保持されています。
+シーケンスがGCされるためには、いかなる部分への参照も残さないようにしなければなりません)。
+
+@code{primes}が返す各シーケンスは独立しているので、素数の計算もそれぞれで
+(重複して)行われることになります。
+
+単純なルールとして、プログラム中で何度も素数を使う必要があるのなら
+変数@code{*primes*}を利用するのが良いでしょう。各素数の計算は一度しか
+行われず、余分な計算を省くことができます。しかしその場だけ素数が欲しいなら、
+@code{primes}を呼んで、仕事が済んだらシーケンスを捨ててしまえば、
+不要なシーケンスがメモリに残りつづけることを心配しなくても済みます。
+@c COMMON
+@end defun
+
+@defun miller-rabin-prime? n :key num-tests random-integer
+@c EN
+Check if an exact integer @var{n} is a prime number, using
+probabilistic Miller-Rabin algorithm (@var{n} must be greater than 1).
+If this procedure returns @code{#f},
+@var{n} is a composite number.  If this procedure returns @code{#t},
+@var{n} is @emph{likely} a prime, but there's a small probability
+that it is a false positive.
+@c JP
+2以上の正確な整数@var{n}が素数かどうかを、確率的なMiller-Rabin法を使って判定します。
+この手続きが@code{#f}を返したなら、@var{n}は確実に合成数です。
+この手続きが@code{#t}を返した場合、@var{n}はおそらく素数ですが、
+疑陽性である確率もわずかにあります。
+@c COMMON
+
+@c EN
+Note that if @var{n} is smaller than a certain number
+(@code{*miller-rabin-deterministic-bound*}), the algorithm is
+deterministic; if it returns @code{#t}, @var{n} is certainly a prime.
+@c JP
+ただし、@code{n}がある数(@code{*miller-rabin-deterministic-bound*})
+より小さければ、アルゴリズムは決定的で、@code{#t}が返る@var{n}は確実に素数です。
+@c COMMON
+
+@c EN
+If @var{n} is greater than or equal to 
+@code{*miller-rabin-deterministic-bound*},
+we use a probabilistic test.  We choosing random base integer
+to perform Miller-Rabin test up to 20 times by default.
+You can change the number of tests by the keyword argument
+@var{num-tests}.  The error probability
+(to return @code{#t} for a composite number)
+is at most @code{(expt 4 (- num-tests))}.
+@c JP
+@var{n}が@code{*miller-rabin-deterministic-bound*}以上の場合は
+確率的テストを用います。デフォルトでは20回、ランダムにベース整数値を選んで
+Miller-Rabinテストを適用します。試行回数は@var{num-tests}キーワード引数で
+変更可能です。合成数に対して誤って@code{#t}を返してしまう確率は
+たかだか@code{(expt 4 (- num-tests))}です。
+@c COMMON
+
+@c EN
+For a probabilistic test, @code{miller-rabin-prime?} uses
+its own fixed random seed by default.  We chose fixed seed
+so that the behavior can be reproducible.  To change the random
+sequence, you can provide your own random integer generator
+to the @var{random-integer} keyword argument.   It must be
+a procedure that takes a positive integer @var{k} and returns
+a random integer from 0 to @var{k-1}, including.
+@c JP
+確率的テストでは、@var{miller-rabin-prime?}はデフォルトで
+この手続き固有の、固定したランダムシードを使います。固定値なのは再現性を確保するためです。
+異なる乱数系列を使いたければ、ランダムな整数生成手続きを
+@var{random-integer}キーワード引数に与えてください。
+手続きは正整数@var{k}を取り、0から@var{k-1}までのランダムな整数値を
+返すものでなければなりません。
+@c COMMON
+@end defun
+
+@defvar *miller-rabin-deterministic-bound*
+@c EN
+If the input to @var{miller-rabin-prime?} is smaller than this
+number (341550071728321 in the current implementation),
+the procedure is deterministicically distinguish primes and
+composites.
+@c JP
+これより小さな数に対しては、@var{miller-rabin-prime?}は決定的に振る舞い、
+確実に素数と合成数を判別します。現在の実装ではこの数は341550071728321です。
+@c COMMON
+@end defvar
 
 
 @c ----------------------------------------------------------------------
-@node Windows support, RFC822 message parsing, Mersenne-Twister random number generator, Library modules - Utilities
+@node Windows support, RFC822 message parsing, Prime numbers, Library modules - Utilities
 @section @code{os.windows} - Windows support
 @c NODE Windowsのサポート, @code{os.windows} - Windowsのサポート
 
@@ -5564,8 +5688,8 @@ is thrown.
 @end deftp
 
 @menu
-* Windows dialogs::
-* Windows console API::
+* Windows dialogs::             
+* Windows console API::         
 @end menu
 
 @node Windows dialogs, Windows console API, Windows support, Windows support
@@ -10865,10 +10989,10 @@ check out @code{ssax:xml->sxml} in @ref{SSAX Highest-level parsers - XML to SXML
 
 @c ----------------------------------------------------------------------
 @menu
-* SSAX data types::
-* SSAX low-level parsing code::
-* SSAX higher-level parsers and scanners::
-* SSAX Highest-level parsers - XML to SXML::
+* SSAX data types::             
+* SSAX low-level parsing code::  
+* SSAX higher-level parsers and scanners::  
+* SSAX Highest-level parsers - XML to SXML::  
 @end menu
 
 @node SSAX data types, SSAX low-level parsing code, Functional XML parser, Functional XML parser
@@ -12455,9 +12579,9 @@ W3CのXPathコア関数ライブラリのSXML版を実装する拡張ライブ�
 
 @c ----------------------------------------------------------------------
 @menu
-* SXPath basic converters and applicators::
-* SXPath query language::
-* SXPath extension::
+* SXPath basic converters and applicators::  
+* SXPath query language::       
+* SXPath extension::            
 @end menu
 
 @node SXPath basic converters and applicators, SXPath query language, SXML Query Language, SXML Query Language
@@ -13438,11 +13562,11 @@ source code.
 
 @c ----------------------------------------------------------------------
 @menu
-* SXML predicates::
-* SXML accessors::
-* SXML modifiers::
-* SXPath auxiliary utilities::
-* SXML to markup conversion::
+* SXML predicates::             
+* SXML accessors::              
+* SXML modifiers::              
+* SXPath auxiliary utilities::  
+* SXML to markup conversion::   
 @end menu
 
 @c ----------------------------------------------------------------------
@@ -14267,8 +14391,8 @@ sxml.toolsのsxml:sxml->xmlとsxml:sxml->htmlよりも強力です。
 
 @c ----------------------------------------------------------------------
 @menu
-* Simple SXML serializing::
-* Custom SXML serializing::
+* Simple SXML serializing::     
+* Custom SXML serializing::     
 @end menu
 
 @c ----------------------------------------------------------------------
@@ -16298,9 +16422,9 @@ fully, no matter what the running Gauche's native encoding is.
 @end deftp
 
 @menu
-* Unicode transfer encodings::
-* Unicode text segmentation::
-* Full string case conversion::
+* Unicode transfer encodings::  
+* Unicode text segmentation::   
+* Full string case conversion::  
 @end menu
 
 @node Unicode transfer encodings, Unicode text segmentation, Unicode utilities, Unicode utilities
@@ -19088,8 +19212,8 @@ If you see GC Warnings telling ``repeated allocation of large
 blocks'', you should definitely consider sparse tables.
 
 @menu
-* Sparse vectors::
-* Sparse tables::
+* Sparse vectors::              
+* Sparse tables::               
 @end menu
 
 @node Sparse vectors, Sparse tables, Sparse data containers, Sparse data containers
