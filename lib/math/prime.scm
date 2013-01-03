@@ -179,7 +179,7 @@
 (define (miller-rabin-prime? n :key (num-tests 20)
                              (random-integer default-miller-rabin-random-integer))
   (unless (and (exact-integer? n) (> n 1))
-    (error "exact positive integer greater than 1, but got:" n))
+    (error "exact positive integer greater than 1 is expected, but got:" n))
   (and (odd? n) ; filter out the trivial case
        (if (< n *miller-rabin-deterministic-bound*)
          (small-integer-prime? n)
