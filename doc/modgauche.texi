@@ -15311,8 +15311,9 @@ Some routines takes optional parameters: @code{@var{TAG}vector->list}
 takes optional start and end indices, and @code{@var{TAG}vector-ref}
 takes optional fallback value.
 @item
-Additional functions: copy procedures (@code{@var{TAG}vector-copy} and
-@code{@var{TAG}vector-copy!}), conversion procedures
+Additional functions: copy procedures (@code{@var{TAG}vector-copy},
+@code{@var{TAG}vector-copy!}) and
+@code{@var{TAG}vector-multi-copy!}), conversion procedures
 (@code{@var{TAG}vector->vector} and @code{vector->@var{TAG}vector}),
 and some arithmetic functions (@code{@var{TAG}vector-add}, etc.)
 @item
@@ -15337,7 +15338,8 @@ Gaucheの実装は、SRFI-4の仕様を次のように拡張しています。
 @code{@var{TAG}vector-ref}は省略可能なデフォルト値を取ります。
 @item
 追加の手続き： コピー(@code{@var{TAG}vector-copy},
-@code{@var{TAG}vector-copy!})、
+@code{@var{TAG}vector-copy!}),
+@code{@var{TAG}vector-multi-copy!})、
 変換 (@code{@var{TAG}vector->vector}, @code{vector->@var{TAG}vector})、
 及び各種算術演算(@code{@var{TAG}vector-add}等)。
 @item
@@ -15878,6 +15880,116 @@ in the future releases.
 いますが、これは廃止予定で、将来のリリースではサポートされなくなります。
 @c COMMON
 @end deftp
+
+@deftp {Function} @var{TAG}vector-multi-copy! @r{@var{target} @var{tstart} @var{tstride} @var{source} :optional @var{sstart} @var{ssize} @var{sstride} @var{count}}
+@findex s8vector-multi-copy!
+@findex u8vector-multi-copy!
+@findex s16vector-multi-copy!
+@findex u16vector-multi-copy!
+@findex s32vector-multi-copy!
+@findex u32vector-multi-copy!
+@findex s64vector-multi-copy!
+@findex u64vector-multi-copy!
+@findex f16vector-multi-copy!
+@findex f32vector-multi-copy!
+@findex f64vector-multi-copy!
+@c EN
+This procedure allows different parts of the source uvector @var{source} into
+various parts of the target uvector @var{target}, all at once.
+
+When @var{ssize} is omitted or zero, this procedure does the following:
+@c JP
+この手続きは、コピー元ベクタ@var{source}の異なる部分を
+コピー先ベクタ@var{target}の異なる部分へと一度にコピーするのに使えます。
+
+@var{ssize}が省略されるか0の場合、この手続きは次の動作をします。
+@c COMMON
+
+@example
+;; For each @var{i} from 0 to @var{count}:
+(TAGvector-copy! target (+ tstart (* i tstride))
+                 source sstart)
+@end example
+
+@c EN
+That is, it copies the content of @var{source} (offsetted by @var{sstart},
+which defaults to 0)
+into the @var{target} repeatedly, advancing index with @var{tstride}.
+If either the target index reaches the end or @var{count} copies
+are made, the procedure returns.  See the example:
+@c JP
+つまり、@var{source}ベクタの内容 (@var{sstart}が指定されてればそこから、
+指定が無ければ最初から)を@var{target}ベクタに、@var{tstride}づつインデックスを
+進めながらコピーします。コピー先のインデックスが@var{target}ベクタの範囲を
+越えるか、@var{count}が指定されていればその回数分だけコピーが済むかすれば
+手続きは終了します。次の例を見てください。
+@c COMMON
+
+@example
+(define t (make-u8vector 10 0))
+(u8vector-multi-copy! t 0 4 '#u8(1 2 3))
+
+t @result{} #u8(1 2 3 0 1 2 3 0 1 2)
+@end example
+
+@c EN
+If @var{ssize} is given and positive, the source is also splitted
+as follows:
+@c JP
+@var{ssize}に正の整数が与えられた場合は、コピー元ベクタも@var{ssize}ごとに
+分割されます。
+@c COMMON
+
+@example
+;; For each @var{i} from 0 to @var{count}:
+(TAGvector-copy! target (+ tstart (* i tstride))
+                 source (+ sstart (* i sstride))
+                        (+ sstart (* i sstride) ssize))
+@end example
+
+@c EN
+That is, each @var{ssize} slice from @var{source},
+ is copied into @var{target}, advaincing source index
+by @var{sstride} and the destination index by @var{dstride}.
+In this case, @var{sstride} defaults to @var{ssize} if omitted.
+@c JP
+つまり、コピー元インデックスを@var{sstride}づつ、コピー先を
+@var{dstride}づつ増やしながら、コピー元からそれぞれ@var{ssize}分のデータが切り出されて
+@var{target}にコピーされます。この場合、@var{sstride}は省略されると
+@var{ssize}と同じになります。
+@c COMMON
+
+@example
+(define t (make-u8vector 12 0))
+(u8vector-multi-copy! t 0 4 '#u8(1 2 3 4 5 6 7 8 9) 0 3)
+
+t @result{} #u8(1 2 3 0 4 5 6 0 7 8 9 0)
+@end example
+
+@c EN
+The operation ends when either @var{count} slices are copied,
+or destination index or source index reaches the end.
+@c JP
+操作は@var{count}個のデータ片がコピーされるか、コピー元あるいはコピー先の
+インデックスがそれぞれのベクタの終端に達したら終わります。
+@c COMMON
+
+@c EN
+Hint: If you want to copy a part of the source vector repeatedly
+(instead of to its end), you can specify 0 to @var{sstride}:
+@c JP
+ヒント: コピー元のベクタの中程だけ (最後までではなく) をコピーしたい場合は、
+@var{sstride}に0を与えればできます。
+@c COMMON
+
+@example
+(define t (make-u8vector 12 0))
+(u8vector-multi-copy! t 0 4 '#u8(1 2 3 4 5 6 7 8 9) 2 4 0)
+
+t @result{} #u8(3 4 5 6 3 4 5 6 3 4 5 6)
+@end example
+@end deftp
+
 
 @c EN
 Using collection and sequence framework, you can perform

@@ -107,6 +107,7 @@
 ;; kept for the existing code.
 (define-cproc ${t}vector-copy!
   (dst::<${t}vector> dstart :optional src (sstart::<int> 0) (send::<int> -1))
+  (SCM_UVECTOR_CHECK_MUTABLE dst)
   (cond
    [(SCM_INTEGERP dstart) ; new API
     (unless (SCM_${T}VECTORP src)
@@ -116,6 +117,40 @@
    [(SCM_${T}VECTORP dstart) ; old API
     (result (Scm_${T}VectorCopyX dst 0 (SCM_${T}VECTOR dstart) 0 -1))]
    [else (SCM_TYPE_ERROR dstart "integer") (result SCM_UNDEFINED)]))
+
+;; multi-copy! - copy src repeatedly to different parts of dst.
+(define-cproc ${t}vector-multi-copy!
+  (dst::<${t}vector> dstart::<fixnum> dstride::<fixnum>
+   src::<${t}vector> :optional (sstart::<fixnum> 0) (ssize::<fixnum> 0)
+                               (sstride::<fixnum> -1) (count::<fixnum> -1))
+  ::<void>
+  (SCM_UVECTOR_CHECK_MUTABLE dst)
+  (when (< sstride 0)
+    (if (<= ssize 0) (set! sstride 0) (set! sstride ssize)))
+  (when (<= ssize 0)
+    (set! ssize (- (SCM_UVECTOR_SIZE src) sstart)))
+  (let* ([di::long dstart] [si::long sstart]
+         [dlen::long (SCM_UVECTOR_SIZE dst)]
+         [slen::long (SCM_UVECTOR_SIZE src)]
+         [c::long 0] [k::long]
+         [cnt::long (?: (< count 0) LONG_MAX count)])
+    (if (== ssize 1)
+      ;; shortcut for optimization
+      (for [() (and (< c cnt) (< di dlen) (< si slen)) (inc! c)]
+           (set! (SCM_${T}VECTOR_ELEMENT dst di)
+                 (SCM_${T}VECTOR_ELEMENT src si))
+           (+= di dstride)
+           (+= si sstride))
+      ;; general case
+      (for [() (and (< c cnt) (< di dlen) (< si slen)) (inc! c)]
+           (let* ([nitems::long ssize])
+             (when (< dlen (+ di nitems)) (set! nitems (- dlen di)))
+             (when (< slen (+ si nitems)) (set! nitems (- slen si)))
+             (memmove (+ (SCM_${T}VECTOR_ELEMENTS dst) di)
+                      (+ (SCM_${T}VECTOR_ELEMENTS src) si)
+                      (* nitems (sizeof (.type ${etype})))))
+           (+= di dstride)
+           (+= si sstride)))))
 
 (define-cproc ${t}vector->list
   (v::<${t}vector> :optional (start::<fixnum> 0) (end::<fixnum> -1))

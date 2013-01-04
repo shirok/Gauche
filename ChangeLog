@@ -2,6 +2,7 @@
 
 	* lib/gauche/cgen/cise.scm (.type): Added (.type typename) to embed
 	  type names in some context; e.g. the argument of sizeof.
+	* ext/uvector/uvlib.stub.tmpl (TAGvector-multi-copy!): Added.
 
 2013-01-02  Shiro Kawai  <shiro@acm.org>
 
