@@ -804,6 +804,11 @@
 ;;
 ;;   cast.
 ;;
+;; [cise expr] .type TYPE
+;;
+;;   not a C expression, but useful to place a type name (e.g. an argument
+;;   of sizeof etc.)
+;;
 ;; [cise expr] ?: TEST-EXPR THEN-EXPR ELSE-EXPR
 ;;
 ;;   conditional.
@@ -946,6 +951,11 @@
        [(_ type expr)
         `("((",(cise-render-typed-var type "" env)")(",(render-rec expr eenv)"))")])
      env)))
+
+(define-cise-macro (.type form env)
+  (match form
+    [(_ typenames ...)
+     `(,(cise-render-typed-var typenames "" env))]))
 
 ;;------------------------------------------------------------
 ;; Convenience expression macros
