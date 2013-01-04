@@ -37,9 +37,11 @@
   (use srfi-42)
   (use gauche.uvector)
   (use gauche.generator)
+  (use util.sparse)
   (use util.match)
   (export primes *primes* reset-primes
-          miller-rabin-prime? *miller-rabin-deterministic-bound*))
+          miller-rabin-prime? *miller-rabin-deterministic-bound*
+          naive-factorize mc-factorize))
 (select-module math.prime)
 
 ;;;
@@ -122,7 +124,7 @@
 (define *primes* (primes))
 
 ;; API
-(define (reset-primes) (set! *primes* (primes)))
+(define (reset-primes) (set! *primes* (primes)) (undefined))
 
 ;;;
 ;;; Primarity test
@@ -163,9 +165,12 @@
 (define (deterministic-miller-rabin n witnesses)
   (every?-ec (: a witnesses) (miller-rabin-test a n)))
 
+;; If n is below *miller-rabin-deterministic-bound*, returns deterministic
+;; answer.  If n is over, always return #f.
 (define (small-integer-prime? n)
-  (let1 p (find (^p (< n (car p))) *deterministic-witnesses*)
-    (deterministic-miller-rabin n (cdr p))))
+  (or (= n 2) (= n 3)
+      (and-let* ([p (find (^p (< n (car p))) *deterministic-witnesses*)])
+        (deterministic-miller-rabin n (cdr p)))))
 
 (define *miller-rabin-random-source*
   (rlet1 s (make-random-source)
@@ -186,7 +191,127 @@
            (every?-ec (: k num-tests)
                       (miller-rabin-test (+ 1 (random-integer bound)) n))))))
 
-;; TODO
+;;;
+;;; Factorization
+;;;
+
+(define-constant *small-factorize-table-limit* 50000)
+
+(define-constant *small-factorize-table-index-limit*
+  (/ (- *small-factorize-table-limit* 1) 2))
+
+;; suitable for small n with memoization.  n is odd number.
+;; mem-vec[k] remembers factorization of k*2+1.
+;;
+(define naive-factorize-1
+  (let1 mem-vec (make-sparse-vector)
+    (define (->index n) (/ (- n 1) 2)) ; n must be odd
+    (define (memo! i val)
+      (when (< i *small-factorize-table-index-limit*)
+        (sparse-vector-set! mem-vec i val))
+      val)
+    (^[n divisor-limit]
+      (let try [(n n) (ps *primes*)]
+        ;; try to divide n with given primes.
+        (if (small-integer-prime? n)
+          `(,n)
+          (let1 i (->index n)
+            (or (and (< i *small-factorize-table-index-limit*)
+                     (sparse-vector-ref mem-vec i #f))
+                (let loop ([ps ps])
+                  (let* ([p (car ps)] [p^2 (* p p)])
+                    (cond [(> p divisor-limit) `(,n)] ; n can be composite, so no memo
+                          [(< n p^2) (memo! i `(,n))]
+                          [(= n p^2) (memo! i `(,p ,p))]
+                          [else
+                           (receive (q r) (quotient&remainder n p)
+                             (if (zero? r)
+                               (memo! i (cons p (try q ps)))
+                               (loop (cdr ps))))]))))))))))
+
+;; API
+(define (naive-factorize n :optional (divisor-limit +inf.0))
+  (cond [(<= n 3) `(,n)]
+        [(even? n) (cons 2 (naive-factorize (/ n 2) divisor-limit))]
+        [else (naive-factorize-1 n divisor-limit)]))
+
+;; Monte Carlo factorization
+;;  R. P. Brent, An improved Monte Carlo factorization algorithm, BIT 20 (1980), 176-184.
+;;  http://maths-people.anu.edu.au/~brent/pub/pub051.html
+
+;; Single trial of factorizing n using x0 as the initial seed.
+;; If this returns a number, it's a nontrivial divisor of n.
+;; If this returns #f, you need to retry with different x0.
+(define (mc-find-divisor-1 n x0)
+  (define (f x) (modulo (+ (* x x) 3) n))
+  (define (f^ r x) ; apply f on x for r times, e.g (f (f x)) for r=2
+    (let loop ([r r] [x x])
+      (if (= r 1) (f x) (loop (- r 1) (f x)))))
+  ;; the step value m: in the big-step loop, we only compute gcd for
+  ;; every m-th value of the series x_i.
+  (define m (ceiling->exact (log n)))
+  ;; 'big-step' loop
+  (define (big-step x y q r k)
+    (do ([i (min m (- r k)) (- i 1)]
+         [y y (f y)]
+         [q q (modulo (* q (abs (- x y))) n)])
+        [(= i 0) (values (gcd q n) q)]))
+  (define (big-stride x y q r)
+    (let1 y (f^ r y)
+      (let loop ([k 0])
+        (receive (G q) (big-step x y q r k)
+          (cond [(> G 1) (values G x y)]
+                [(>= k (- r m))
+                 (if (< r 1000) ;; if r gets rather big, give up and try different x0.
+                   (big-stride y y q (* r 2))
+                   (values #f #f #f))]
+                [else (loop (+ k m))])))))
+  (define (small-stride x y)
+    (let loop ([y (f y)])
+      (let1 G (gcd (abs (- x y)) n)
+        (if (> G 1) G (loop (f y))))))
+
+  ;; The main body
+  (receive (G x y) (big-stride x0 x0 1 1)
+    (and G
+         (if (< G n)
+           G
+           (let1 G (small-stride x y)
+             (and (< G n) G))))))  ; if (= G N), we failed.
+
+;; Try MC factorization up to num-tries pass.  If we find any
+;; divisor, returns (divisor . quotient).  Otherwise return #f.
+(define (mc-try-factorize n num-tries)
+  (let loop ([i 0] [x0 (random-integer n)])
+    (and (< i num-tries)
+         (or (and-let* ([d (mc-find-divisor-1 n x0)])
+               (cons d (quotient n d)))
+             (loop (+ i 1) (random-integer n))))))
+
+;; API
+(define (mc-factorize n :optional (num-tries +inf.0))
+  ;; Break up n.  We first exclude primes if possible.
+  ;; The worst case scenario is that n contains a factor
+  ;; greater than *miller-rabin-deterministic-bound*---in which case
+  ;; we'll take forever.   Once we have general deterministic
+  ;; primality test, however, we can significantly speed up such case.
+  (define (smash n)
+    (if (small-integer-prime? n)
+      `(,n)
+      (let1 d (mc-try-factorize n num-tries)
+        (if d
+          (append (smash (car d)) (smash (cdr d)))
+          `(,n 1))))) ;; indicating that n may be composite
+  
+  ;; We exclude trivial factors first.
+  (let* ([ps (naive-factorize n 1000)]
+         [n (last ps)]   ; n may be composite.
+         [nf (smash n)])
+    (if (null? (cdr nf))
+      ps  ; n is unbreakable, so the original factorization was fine.
+      (sort (append nf (drop-right ps 1))))))
+
+;; Wishlist
 ;;   deterministic prime?  (maybe using AKS primality test)
 ;;   totient (used in AKS algorithm)
-;;   integer factorization
+;;   more sophisticated integer factorization

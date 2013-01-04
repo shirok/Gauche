@@ -3,6 +3,11 @@
 	* lib/gauche/cgen/cise.scm (.type): Added (.type typename) to embed
 	  type names in some context; e.g. the argument of sizeof.
 	* ext/uvector/uvlib.stub.tmpl (TAGvector-multi-copy!): Added.
+	* lib/math/prime.scm: Fix reset-primes (do not return
+	  the value of *primes*; othewise running (reset-primes) on REPL
+	  would cause a trouble), small-integer-prime? (need to handle 2
+	  and 3 specifically.  Also make it return #f for large numbers).
+	  Added factorization procedures, naive-factorize and mc-factorize.
 
 2013-01-02  Shiro Kawai  <shiro@acm.org>
 

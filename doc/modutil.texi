@@ -5511,6 +5511,12 @@ This module provides utilities related to prime numbers.
 @c COMMON
 @end deftp
 
+@c EN
+@subheading Sequence of prime numbers
+@c JP
+@subheading 素数のシーケンス
+@c COMMON
+
 @defvar *primes*
 @c EN
 An infinite lazy sequence of primes.
@@ -5585,6 +5591,12 @@ and you'll save space.
 @c COMMON
 @end defun
 
+@c EN
+@subheading Testing primality
+@c JP
+@subheading 素数かどうかを調べる
+@c COMMON
+
 @defun miller-rabin-prime? n :key num-tests random-integer
 @c EN
 Check if an exact integer @var{n} is a prime number, using
@@ -5655,6 +5667,140 @@ composites.
 確実に素数と合成数を判別します。現在の実装ではこの数は341550071728321です。
 @c COMMON
 @end defvar
+
+@c EN
+@subheading Factorization
+@c JP
+@subheading 素因数分解
+@c COMMON
+
+@defun naive-factorize n :optional divisor-limit
+@c EN
+Factorize a positive integer @var{n} by trying to divide it with
+all primes up to @code{(sqrt n)}.  Returns a list of prime factors,
+smaller ones first.
+@c JP
+正整数@var{n}を、@code{(sqrt n)}までの素数で順に割ってみることで
+素因数分解します。戻り値は小さい順に並べられた素因数のリストです。
+@c COMMON
+
+@example
+(naive-factorize 142857)
+  @result{} (3 3 3 11 13 37)
+@end example
+
+@c EN
+Although this is pretty naive method, this works well as far as
+any of @var{n}'s factors are up to the order of around @code{1e7}.
+For example, the following example runs in about 0.4sec on 2.4GHz Core2
+machine.
+(The first time will take about 1.3sec to realize lazy prime sequences.)
+@c JP
+この方法は極めてナイーブなものですが、目安としてどの素因数も@code{1e7}程度以下であれば
+それなりに使えます。例えば次の例は2.4GHz Core2マシンで0.4秒で答えが返ります
+(ただし、初回の実行は遅延素数シーケンスの実現化があるので1.3秒ほどかかりますが)。
+@c COMMON
+
+@example
+(naive-factorize 3644357367494986671013))
+  @result{} (10670053 10670053 32010157)
+@end example
+
+@c EN
+Of course, if @var{n} includes any factors above that order,
+the performance becomes abysmal.   So it is better to use this
+procedure below 1e14 or so.
+@c JP
+もちろん@var{n}がより大きなオーダーの素因数を含んでいると、性能は急激に
+悪化します。安全に使うには@var{n}を1e14程度のオーダーに止めておくのが良いでしょう。
+@c COMMON
+
+@c EN
+Alternatively, you can give @var{divisor-limit} argument that specifies
+the upper bound of the prime number to be tried.  If it is given,
+@code{naive-factorize} leaves a factor @var{f} as is if it can't be
+divided by any primes less than or equal to @var{divisor-limit}.
+So, the last element of the returned list may be composite number.
+This is handy to exclude trivial factors befor applying more sophisticated
+factorizing algorithms.
+@c JP
+オプショナル引数@var{divisor-limit}を与えると、試行する素数の上限を指定
+できます。この引数がある場合、@code{naive-factorize}は因数@var{f}が
+@var{divisor-limit}以下の素数で割りきれなければ、そこで諦めて@var{f}を
+結果に含めます。この場合、結果の最後の要素は合成数であるかもしれないわけです。
+これは、より高度な素因数分解アルゴリズムを適用する前にありきたりの素因数を
+除外するのに便利です。
+@c COMMON
+
+@example
+(naive-factorize 825877877739 1000)
+  @result{} (3 43 6402154091)
+
+;; whereas
+(naive-factorize 825877877739)
+  @result{} (3 43 4591 1394501)
+@end example
+
+@c EN
+The procedure also memoizes the results on smaller @var{n} to make
+things faster.
+@c JP
+この手続きは高速化のために小さな@var{n}に対する結果はメモ化しています。
+@c COMMON
+@end defun
+
+@defun mc-factorize n :optional num-tries
+@c EN
+Factorize a positive integer @var{n} using the algorithm
+described in 
+R. P. Brent, An improved Monte Carlo factorization algorithm, BIT 20 (1980), 176-184. @url{http://maths-people.anu.edu.au/~brent/pub/pub051.html}.
+@c JP
+正整数@var{n}をモンテカルロ素因数分解法
+(R. P. Brent, An improved Monte Carlo factorization algorithm, BIT 20 (1980), 176-184. @url{http://maths-people.anu.edu.au/~brent/pub/pub051.html})により
+素因数分解します。
+@c COMMON
+
+@c EN
+This one is capable to handle much larger range than
+@code{naive-factorize}, somewhere around 1e20 or so.
+If @var{n} is large and prime, however, it will take forever.
+
+Since this method is probabilistic, the execution time may vary
+on the same @var{n}.  By default this procedure keeps tring
+to find any factor in @var{n}.  You can specify the number
+of trials by the optional argument @var{num-tries}, which ensures
+that the procedure returns within some time bound. 
+
+If @code{mc-factorize} couldn't find factors up to the
+specified trial limit, the result may contain composite numbers.
+To indicate that, @code{mc-factorize} appends @code{1} at the beginning
+of the result---if you see @code{1}, there may be one or more
+composite numbers in the list.
+@c JP
+この手続きは@code{naive-factorize}よりも大きな数に使えます
+(目安としては1e20程度まで)。ただし@var{n}が大きな素数だと永遠に時間がかかります。
+
+アルゴリズムは確率的なので、同じ@var{n}に対しても実行時間はばらつきます。
+デフォルトでは、@var{n}の因数が見つかるまでこの手続きはランダムな初期値を
+選んで試行しつづけます。手続きが特定の時間範囲内に返ってくることを保証
+したければ、省略可能引数@var{num-tries}に最大試行回数を指定してください。
+
+最大試行回数に達しても因数を見つけることができなかった場合、
+結果の因数リストには一つ以上の合成数が含まれる可能性があります。
+@code{mc-factorize}は結果の因数リストの頭に@code{1}をつけることで
+その可能性を示します。
+@c COMMON
+
+@example
+;; The leading 1 indicates we gave up on some factors
+(mc-factorize 364435736749498667101349358 100)
+  @result{} (1 2 3 3 11 13 141583425310605542774417)
+
+;; whereas
+(mc-factorize 364435736749498667101349358)
+  @result{} (2 3 3 11 13 4284266891 33047293483987)
+@end example
+@end defun
 
 
 @c ----------------------------------------------------------------------
