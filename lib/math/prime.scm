@@ -48,7 +48,7 @@
 
 ;; This section of code is based on the segment sieve prime number generator
 ;; written by @cddddr.  Optimized by SK.  As of 0.9.4_pre2, it can generate
-;; first 10^7 primes in 30sec on 2.4GHz Core2 machine.
+;; first 10^7 primes in 14sec on 2.4GHz Core2 machine.
 
 (define (take-first-term a0 d lower-bound)
   (if (<= lower-bound a0)
@@ -58,10 +58,11 @@
 (define (->even x) (if (even? x) x (+ x 1)))
 (define-inline (integer->index x) (ash x -1))
 
-(define-constant *segment-size* (->even #e1e5))
+(define-constant *segment-size* (->even #e5e4))
 (define-constant *first-segment-start*
   (->odd (ceiling->exact (expt *segment-size* 0.6))))
 (define-constant *sieve-vec-size* (/ *segment-size* 2))
+(define-constant *sieve-filler* '#u8(0))
 
 ;; sieve is a bytevector, representing a range of odd numbers.
 ;; given odd number N in the range [start, end] (where start and end
@@ -75,9 +76,7 @@
         (when (<= p root)
           (let1 i (- (take-first-term (integer->index (* p p)) p start-index)
                      start-index)
-            (do ([j i (+ j p)])
-                [(>= j *sieve-vec-size*)]
-              (u8vector-set! bytevec j 0)))
+            (u8vector-multi-copy! bytevec i p *sieve-filler*))
 	  (sieve! qs))))))
 
 (define (bytevec->generator bytevec start)
