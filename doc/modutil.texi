@@ -5597,6 +5597,43 @@ and you'll save space.
 @subheading 素数かどうかを調べる
 @c COMMON
 
+@defun small-prime? n
+@c EN
+For relatively small positive integers 
+(below @code{*small-prime-bound*}, to be specific), this procedure
+determines if the input is prime or not, quickly and determinisically.
+If @var{n} is on or above the bound, this procedure returns @code{#f}.
+
+This can be used to quickly filter out known primes; it never returns
+@code{#t} on composite numbers (while it may return @code{#f} on
+large prime numbers).
+Miller-Rabin test below can tell if the input is composite for sure,
+but it may return @code{#t} on some composite numbers.
+@c JP
+比較的小さな正整数 (@code{*small-prime-bound*}以下の正整数) に対して、
+それが素数であるかどうかを判定し、素数なら@code{#t}を返します。
+@var{n}がそれ以上である場合は常に@code{#f}を返します。
+
+この手続きは確実に素数であるとわかるものを素早く判別する時に便利です。
+@code{#t}が返れば確実に素数であるとわかるからです (入力が大きな素数の時に
+@code{#f}を返すことはありえますが)。
+これに対し、下に述べるMiller-Rabin法では、合成数は確実に判別できますが、
+素数であるかどうかは確実には言えません。
+@c COMMON
+@end defun
+
+@defvar *small-prime-bound*
+@c EN
+For all positive integers below this value
+(slightly above 3.4e14 in the current implementation),
+@code{small-prime?} can determines whether it is a prime or not.
+@c JP
+これより小さな数に対しては、@var{small-prime?}は決定的に
+素数かどうかを判別します。現在の実装ではこの数は3.4e14よりちょっと大きな数です。
+@c COMMON
+@end defvar
+
+
 @defun miller-rabin-prime? n :key num-tests random-integer
 @c EN
 Check if an exact integer @var{n} is a prime number, using
@@ -5614,16 +5651,16 @@ that it is a false positive.
 
 @c EN
 Note that if @var{n} is smaller than a certain number
-(@code{*miller-rabin-deterministic-bound*}), the algorithm is
+(@code{*small-prime-bound*}), the algorithm is
 deterministic; if it returns @code{#t}, @var{n} is certainly a prime.
 @c JP
-ただし、@code{n}がある数(@code{*miller-rabin-deterministic-bound*})
+ただし、@code{n}がある数(@code{*small-prime-bound*})
 より小さければ、アルゴリズムは決定的で、@code{#t}が返る@var{n}は確実に素数です。
 @c COMMON
 
 @c EN
 If @var{n} is greater than or equal to 
-@code{*miller-rabin-deterministic-bound*},
+@code{*small-prime-bound*},
 we use a probabilistic test.  We choosing random base integer
 to perform Miller-Rabin test up to 20 times by default.
 You can change the number of tests by the keyword argument
@@ -5631,7 +5668,7 @@ You can change the number of tests by the keyword argument
 (to return @code{#t} for a composite number)
 is at most @code{(expt 4 (- num-tests))}.
 @c JP
-@var{n}が@code{*miller-rabin-deterministic-bound*}以上の場合は
+@var{n}が@code{*small-prime-bound*}以上の場合は
 確率的テストを用います。デフォルトでは20回、ランダムにベース整数値を選んで
 Miller-Rabinテストを適用します。試行回数は@var{num-tests}キーワード引数で
 変更可能です。合成数に対して誤って@code{#t}を返してしまう確率は
@@ -5655,18 +5692,6 @@ a random integer from 0 to @var{k-1}, including.
 返すものでなければなりません。
 @c COMMON
 @end defun
-
-@defvar *miller-rabin-deterministic-bound*
-@c EN
-If the input to @var{miller-rabin-prime?} is smaller than this
-number (341550071728321 in the current implementation),
-the procedure is deterministicically distinguish primes and
-composites.
-@c JP
-これより小さな数に対しては、@var{miller-rabin-prime?}は決定的に振る舞い、
-確実に素数と合成数を判別します。現在の実装ではこの数は341550071728321です。
-@c COMMON
-@end defvar
 
 @c EN
 @subheading Factorization

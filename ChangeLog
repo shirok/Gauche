@@ -1,3 +1,7 @@
+2013-01-04  shiro  <shiro@acm.org>
+
+	* lib/math/prime.scm: Exposed small-prime?.
+
 2013-01-03  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/cise.scm (.type): Added (.type typename) to embed

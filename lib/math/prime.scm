@@ -40,7 +40,8 @@
   (use util.sparse)
   (use util.match)
   (export primes *primes* reset-primes
-          miller-rabin-prime? *miller-rabin-deterministic-bound*
+          small-prime? *small-prime-bound*
+          miller-rabin-prime?
           naive-factorize mc-factorize))
 (select-module math.prime)
 
@@ -159,18 +160,20 @@
     (3474749660383 2 3 5 7 11 13)
     (341550071728321 2 3 5 7 11 13 17)))
 
-(define *miller-rabin-deterministic-bound*
+(define *small-prime-bound*
   (car (last *deterministic-witnesses*)))
 
 (define (deterministic-miller-rabin n witnesses)
   (every?-ec (: a witnesses) (miller-rabin-test a n)))
 
-;; If n is below *miller-rabin-deterministic-bound*, returns deterministic
+;; If n is below *small-prime-bound*, returns deterministic
 ;; answer.  If n is over, always return #f.
-(define (small-integer-prime? n)
-  (or (= n 2) (= n 3)
-      (and-let* ([p (find (^p (< n (car p))) *deterministic-witnesses*)])
-        (deterministic-miller-rabin n (cdr p)))))
+(define (small-prime? n)
+  (if (<= n 100)
+    (boolean (memv n (take *primes* 25))) ; we have 25 primes below 100.
+    (and-let* ([ (odd? n) ]
+               [p (find (^p (< n (car p))) *deterministic-witnesses*)])
+      (deterministic-miller-rabin n (cdr p)))))
 
 (define *miller-rabin-random-source*
   (rlet1 s (make-random-source)
@@ -185,8 +188,8 @@
   (unless (and (exact-integer? n) (> n 1))
     (error "exact positive integer greater than 1 is expected, but got:" n))
   (and (odd? n) ; filter out the trivial case
-       (if (< n *miller-rabin-deterministic-bound*)
-         (small-integer-prime? n)
+       (if (< n *small-prime-bound*)
+         (small-prime? n)
          (let1 bound (- (integer-length n) 1)
            (every?-ec (: k num-tests)
                       (miller-rabin-test (+ 1 (random-integer bound)) n))))))
@@ -216,7 +219,7 @@
         (let1 i (->index n)
           (or (and (< i *small-factorize-table-index-limit*)
                    (sparse-vector-ref mem-vec i #f))
-              (and (small-integer-prime? n)
+              (and (small-prime? n)
                    (memo! i `(,n)))
               (let loop ([ps ps])
                 (let* ([p (car ps)] [p^2 (* p p)])
@@ -292,11 +295,11 @@
 (define (mc-factorize n :optional (num-tries +inf.0))
   ;; Break up n.  We first exclude primes if possible.
   ;; The worst case scenario is that n contains a factor
-  ;; greater than *miller-rabin-deterministic-bound*---in which case
+  ;; greater than *small-prime-bound*---in which case
   ;; we'll take forever.   Once we have general deterministic
   ;; primality test, however, we can significantly speed up such case.
   (define (smash n)
-    (if (small-integer-prime? n)
+    (if (small-prime? n)
       `(,n)
       (let1 d (mc-try-factorize n num-tries)
         (if d
