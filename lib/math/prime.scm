@@ -213,21 +213,21 @@
     (^[n divisor-limit]
       (let try [(n n) (ps *primes*)]
         ;; try to divide n with given primes.
-        (if (small-integer-prime? n)
-          `(,n)
-          (let1 i (->index n)
-            (or (and (< i *small-factorize-table-index-limit*)
-                     (sparse-vector-ref mem-vec i #f))
-                (let loop ([ps ps])
-                  (let* ([p (car ps)] [p^2 (* p p)])
-                    (cond [(> p divisor-limit) `(,n)] ; n can be composite, so no memo
-                          [(< n p^2) (memo! i `(,n))]
-                          [(= n p^2) (memo! i `(,p ,p))]
-                          [else
-                           (receive (q r) (quotient&remainder n p)
-                             (if (zero? r)
-                               (memo! i (cons p (try q ps)))
-                               (loop (cdr ps))))]))))))))))
+        (let1 i (->index n)
+          (or (and (< i *small-factorize-table-index-limit*)
+                   (sparse-vector-ref mem-vec i #f))
+              (and (small-integer-prime? n)
+                   (memo! i `(,n)))
+              (let loop ([ps ps])
+                (let* ([p (car ps)] [p^2 (* p p)])
+                  (cond [(> p divisor-limit) `(,n)] ; n can be composite, so no memo
+                        [(< n p^2) (memo! i `(,n))]
+                        [(= n p^2) (memo! i `(,p ,p))]
+                        [else
+                         (receive (q r) (quotient&remainder n p)
+                           (if (zero? r)
+                             (memo! i (cons p (try q ps)))
+                             (loop (cdr ps))))])))))))))
 
 ;; API
 (define (naive-factorize n :optional (divisor-limit +inf.0))
