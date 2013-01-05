@@ -164,7 +164,7 @@
   (^[string rx sub . more]
     (cond [(null? more) (func-1 rx string sub)]
           [else
-           (unless (zero? (modulo (length more) 2))
+           (unless (even? (length more))
              (errorf "~a: regexp and subsitution don't pair up" name))
            (let loop ([s (func-1 rx string sub)]
                       [args more])
