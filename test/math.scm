@@ -26,5 +26,15 @@
        (map (^p (cons (miller-rabin-prime? (cdr p)) (cdr p)))
             *prime-test-samples*))
 
+(let1 results
+    ;;(a n jacobi)
+    '((333  1    1)
+      (78   13   0)
+      (1001 9907 -1))
+  (test* "jacobi symbol" results
+         (map (^[r] `(,(car r) ,(cadr r) ,(jacobi (car r) (cadr r))))
+              results))
+  )
+
 (test-end)
 

@@ -42,7 +42,8 @@
   (export primes *primes* reset-primes
           small-prime? *small-prime-bound*
           miller-rabin-prime?
-          naive-factorize mc-factorize))
+          naive-factorize mc-factorize
+          jacobi))
 (select-module math.prime)
 
 ;;;
@@ -193,6 +194,28 @@
          (let1 bound (- (integer-length n) 1)
            (every?-ec (: k num-tests)
                       (miller-rabin-test (+ 1 (random-integer bound)) n))))))
+
+;; Jacobi symbol calculation, used in bpsw-prime?
+;;  http://en.wikipedia.org/wiki/Jacobi_symbol
+
+;; API
+(define (jacobi a n) ; n is odd
+  (define (J a n s)
+    (cond [(= n 1) (* s 1)]
+          [(= a 0) 0]
+          [(odd? a) 
+           (if (and (= (logand a 3) 3) (= (logand n 3) 3))
+             (J (modulo n a) a (- s))
+             (J (modulo n a) a s))]
+          [else
+           (if (memv (logand n 7) '(3 5))
+             (J (/ a 2) n (- s))
+             (J (/ a 2) n s))]))
+  (when (or (even? n) (< n 1))
+    (error "n must be positive odd number, but got" n))
+  (if (< a 0)
+    (J (- a) n (if (= (logand n 3) 1) 1 -1))
+    (J a n 1)))
 
 ;;;
 ;;; Factorization
