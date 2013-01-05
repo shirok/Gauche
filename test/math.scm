@@ -1,6 +1,8 @@
 ;; Testing math.* that depends on other extension modules.
 
 (use gauche.test)
+(use srfi-27)
+(use srfi-42)
 
 (test-start "math.* modules")
 
@@ -15,6 +17,17 @@
 (test* "selected prime numbers" *nth-primes*
        (map (^[i] (cons (car i) (list-ref *primes* (car i)))) *nth-primes*))
 
+(let ((source (make-random-source)))
+  (random-source-pseudo-randomize! source 10 20)
+  (let1 samples (list-ec (: n 20)
+                         ((random-source-make-integers source) (expt 10 10)))
+    (test* "naive-factorize" samples
+           (map (^[n] (let1 factors (naive-factorize n)
+                        (if (every small-prime? factors)
+                          (apply * factors)
+                          `(composites in ,factors))))
+                samples))))
+                                    
 ;; we need more systematic approach to test this
 (define *prime-test-samples*
   '((#f . 736775510329)
@@ -28,7 +41,9 @@
 
 (let1 results
     ;;(a n jacobi)
-    '((333  1    1)
+    '((0    1    1)
+      (0    3    0)
+      (333  1    1)
       (78   13   0)
       (1001 9907 -1))
   (test* "jacobi symbol" results

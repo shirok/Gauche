@@ -1884,6 +1884,27 @@ exact integer @var{n}.  Negative integer is assumed to be in
 @end example
 @end defun
 
+@defun twos-exponent n
+@c EN
+Returns maximum @var{k} such that @code{(expt 2 k)} is a factor of @var{n}.
+In other words, returns the number of consecutive zero bits from LSB
+of @var{n}.  If @var{n} is zero, zero is returned.
+@c JP
+@code{(expt 2 k)}が@var{n}の約数であるような最大の@var{k}を返します。
+言い換えれば、@var{n}のLSBから連続するゼロビットの数を返します。
+ただし@var{n}がゼロならゼロを返します。
+@c COMMON
+@end defun
+
+@defun power-of-two? n
+@c EN
+Returns @code{#t} if @var{n} is a power of two, otherwise returns @var{#f}.
+@c JP
+@var{n}が2の冪乗なら@code{#t}を、そうでなければ@code{#f}を返します。
+@c COMMON
+@end defun
+
+
 @node Endianness,  , Bitwise operations, Numbers
 @subsection Endianness
 @c NODE エンディアン

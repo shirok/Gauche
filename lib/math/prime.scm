@@ -139,7 +139,7 @@
 ;; returns #f if n is composite.
 (define (miller-rabin-test a n)
   (let* ([n-1 (- n 1)]
-         [s (- (integer-length (logxor n-1 (- n-1 1))) 1)]
+         [s (twos-exponent n-1)]
          [d (ash n-1 (- s))]
          [a^d (expt-mod a d n)])
     (or (= a^d 1)
@@ -208,9 +208,10 @@
              (J (modulo n a) a (- s))
              (J (modulo n a) a s))]
           [else
-           (if (memv (logand n 7) '(3 5))
-             (J (/ a 2) n (- s))
-             (J (/ a 2) n s))]))
+           (let1 k (- (twos-exponent a))
+             (if (memv (logand n 7) '(3 5))
+               (J (ash a k) n (- s))
+               (J (ash a k) n s)))]))
   (when (or (even? n) (< n 1))
     (error "n must be positive odd number, but got" n))
   (if (< a 0)
@@ -257,9 +258,20 @@
 
 ;; API
 (define (naive-factorize n :optional (divisor-limit +inf.0))
-  (cond [(<= n 3) `(,n)]
-        [(even? n) (cons 2 (naive-factorize (/ n 2) divisor-limit))]
-        [else (naive-factorize-1 n divisor-limit)]))
+  (if (<= n 3)
+    `(,n)
+    (let1 k (twos-exponent n)
+      (if (= k 0)
+        (naive-factorize-1 n divisor-limit)
+        ;; avoid simple recursion to naive-factorize for every factor of 2
+        ;; to save intermediate 
+        (let loop ([i 0] [r '()])
+          (if (= i k)
+            (let1 m (ash n (- k))
+              (reverse r (if (= m 1)
+                           '()
+                           (naive-factorize (ash n (- k)) divisor-limit))))
+            (loop (+ i 1) (cons 2 r))))))))
 
 ;; Monte Carlo factorization
 ;;  R. P. Brent, An improved Monte Carlo factorization algorithm, BIT 20 (1980), 176-184.
