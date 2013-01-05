@@ -264,7 +264,7 @@
       (if (= k 0)
         (naive-factorize-1 n divisor-limit)
         ;; avoid simple recursion to naive-factorize for every factor of 2
-        ;; to save intermediate 
+        ;; to save intermediate results generation (effective when n is bignum).
         (let loop ([i 0] [r '()])
           (if (= i k)
             (let1 m (ash n (- k))
