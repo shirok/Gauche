@@ -1,6 +1,8 @@
 2013-01-05  Shiro Kawai  <shiro@acm.org>
 
 	* lib/math/prime.scm: Added jacobi and bpsw-prime?.
+	  (mc-factorize): Improved using bpsw-prime? to bail out with
+	  large primes.
 
 	* src/libnum.scm (twos-exponent, power-of-two?): Added.  These are
 	  trivial to write in Scheme, but usually they are wanted in optimized

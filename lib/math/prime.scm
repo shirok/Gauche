@@ -401,17 +401,20 @@
 (define (mc-factorize n :optional (num-tries +inf.0))
   ;; Break up n.  We first exclude primes if possible.
   ;; The worst case scenario is that n contains a factor
-  ;; greater than *small-prime-bound*---in which case
-  ;; we'll take forever.   Once we have general deterministic
-  ;; primality test, however, we can significantly speed up such case.
+  ;; greater than 2^64---in which case we'll take forever.
   (define (smash n)
-    (if (small-prime? n)
+    (if (definite-prime? n)
       `(,n)
       (let1 d (mc-try-factorize n num-tries)
         (if d
           (append (smash (car d)) (smash (cdr d)))
           `(,n 1))))) ;; indicating that n may be composite
-  
+
+  (define (definite-prime? n)
+    (cond [(< n *small-prime-bound*) (small-prime? n)]
+          [(< n 18446744073709551616) (bpsw-prime? n)]; (expt 2 64)
+          [else #f]))
+                        
   ;; We exclude trivial factors first.
   (let* ([ps (naive-factorize n 1000)]
          [n (last ps)]   ; n may be composite.
