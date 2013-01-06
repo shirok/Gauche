@@ -1,5 +1,7 @@
 2013-01-05  Shiro Kawai  <shiro@acm.org>
 
+	* lib/math/prime.scm: Added jacobi and bpsw-prime?.
+
 	* src/libnum.scm (twos-exponent, power-of-two?): Added.  These are
 	  trivial to write in Scheme, but usually they are wanted in optimized
 	  code, and I've seen it enough to include a native, fast version.

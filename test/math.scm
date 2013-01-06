@@ -17,7 +17,7 @@
 (test* "selected prime numbers" *nth-primes*
        (map (^[i] (cons (car i) (list-ref *primes* (car i)))) *nth-primes*))
 
-(let ((source (make-random-source)))
+(let ([source (make-random-source)])
   (random-source-pseudo-randomize! source 10 20)
   (let1 samples (list-ec (: n 20)
                          ((random-source-make-integers source) (expt 10 10)))
@@ -39,10 +39,30 @@
        (map (^p (cons (miller-rabin-prime? (cdr p)) (cdr p)))
             *prime-test-samples*))
 
+(define *random-prime-test-count* 500)
+;(define *random-prime-test-count* 1000000) ;takes 5min on 2.4GHz Core2 machine
+
+(let ([source (make-random-source)])
+  (random-source-pseudo-randomize! source 11 20)
+  (let ([rand (random-source-make-integers source)]
+        [r `(,*random-prime-test-count* samples tested)])
+    (test* "bpsw test vs miller-rabin test" r
+           (let loop ([n 0])
+             (if (= n *random-prime-test-count*)
+               r
+               ;; Avoid testing even numbers (which is waste of time), plus
+               ;; this makes density of smaller numbers slighly higher.
+               (let* ([x (rand (expt 2 48))]
+                      [sample (ash x (- (twos-exponent x)))])
+                 (if (eq? (bpsw-prime? sample) (miller-rabin-prime? sample))
+                   (loop (+ n 1))
+                   `(disagreement at ,n with sample ,sample))))))))
+
 (let1 results
     ;;(a n jacobi)
     '((0    1    1)
       (0    3    0)
+      (4    5    1)
       (333  1    1)
       (78   13   0)
       (1001 9907 -1))

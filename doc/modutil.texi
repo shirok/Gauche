@@ -5693,6 +5693,31 @@ a random integer from 0 to @var{k-1}, including.
 @c COMMON
 @end defun
 
+@defun bpsw-prime? n
+@c EN
+Check if an exact integer @var{n} is a prime number, using
+Baillie-PSW primality test
+(@url{http://www.trnicely.net/misc/bpsw.html}).   It is deterministic,
+and returns the definitive answer below 2^64 (around 1.8e19).
+For larger integers this can return @code{#t} on a composite number,
+although such number hasn't been found yet.  This never returns @code{#f}
+on a prime number.
+
+This is slower than Miller-Rabin but fast enough for casual use,
+so it is handy when you want a definitive answer below the above range.
+@c JP
+@var{n}が素数かどうかをBaillie-PSW法を用いて判定します
+(@url{http://www.trnicely.net/misc/bpsw.html})。
+このアルゴリズムは決定的であり、2^64 (約1.8e19) 以下の入力に対しては
+正しい答えを返します。入力がそれ以上の場合、合成数に対して@code{#t}が返る可能性が
+あります (具体的な数はまだ見つかっていませんが)。素数に対して@code{#f}が返ることは
+決してありません。
+
+Miller-Rabin法より遅いですがカジュアルに使う分には十分に速いので、
+上記の入力範囲で確実な答えを得たい場合は便利でしょう。
+@c COMMON
+@end defun
+
 @c EN
 @subheading Factorization
 @c JP
@@ -5825,6 +5850,23 @@ composite numbers in the list.
 (mc-factorize 364435736749498667101349358)
   @result{} (2 3 3 11 13 4284266891 33047293483987)
 @end example
+@end defun
+
+
+@c EN
+@subheading Miscellaneous
+@c JP
+@subheading その他の関数
+@c COMMON
+
+@defun jacobi a n
+@c EN
+Calculates Jacobi symbol @code{(@var{a}/@var{n})}
+(@url{http://en.wikipedia.org/wiki/Jacobi_symbol}).
+@c JP
+Jacobi symbol @code{(@var{a}/@var{n})} を計算します
+(@url{http://en.wikipedia.org/wiki/Jacobi_symbol})。
+@c COMMON
 @end defun
 
 

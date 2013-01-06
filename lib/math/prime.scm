@@ -41,7 +41,7 @@
   (use util.match)
   (export primes *primes* reset-primes
           small-prime? *small-prime-bound*
-          miller-rabin-prime?
+          miller-rabin-prime? bpsw-prime?
           naive-factorize mc-factorize
           jacobi))
 (select-module math.prime)
@@ -197,6 +197,8 @@
 
 ;; Jacobi symbol calculation, used in bpsw-prime?
 ;;  http://en.wikipedia.org/wiki/Jacobi_symbol
+;; There exists better algorithms, but let's see how the straightforward
+;; one goes.
 
 ;; API
 (define (jacobi a n) ; n is odd
@@ -209,7 +211,7 @@
              (J (modulo n a) a s))]
           [else
            (let1 k (- (twos-exponent a))
-             (if (memv (logand n 7) '(3 5))
+             (if (and (memv (logand n 7) '(3 5)) (odd? k))
                (J (ash a k) n (- s))
                (J (ash a k) n s)))]))
   (when (or (even? n) (< n 1))
@@ -217,6 +219,75 @@
   (if (< a 0)
     (J (- a) n (if (= (logand n 3) 1) 1 -1))
     (J a n 1)))
+
+;; Baillie-PSW primality test
+;;  http://www.trnicely.net/misc/bpsw.html
+;; It is known that this correctly identifies primes/composites below 10^17,
+;; and it is very likely correct below 2^64 empirically.
+
+;; Find first element D in the sequence (-1)^n (2n+1) where n >= 2
+;; and JacobiSymbol(D,N) = -1.
+;; D is expected to be small if N is not a perfect square.
+(define (bpsw-find-D n)
+  (let loop ([d 5] [s 1])
+    (if (= (jacobi (* s d) n) -1)
+      (* s d)
+      (loop (+ d 2) (- s)))))
+
+;; Strong Lucas-Selfridge test
+(define (lucas-selfridge-test n P Q)
+
+  ;; calculate U_d, V_d and Q^d mod n.  (d is such that n = d * 2^s)
+  (define (calculate-UV n P Q D d)
+    (let1 dsize (integer-length d)
+      (let loop ([U 1] [V P] [U_2^m 1] [V_2^m P] [Q_m Q] [Q^d Q] [bit 1])
+        (if (= bit dsize)
+          (values U V Q^d)
+          (let ([U_2^m_1 (modulo (* U_2^m V_2^m) n)]
+                [V_2^m_1 (modulo (- (* V_2^m V_2^m) (* 2 Q_m)) n)]
+                [Q_m_1   (modulo (* Q_m Q_m) n)])
+            (if (not (logbit? bit d))
+              (loop U V U_2^m_1 V_2^m_1 Q_m_1 Q^d (+ bit 1))
+              (let ([U (half-modn (+ (* U_2^m_1 V) (* U V_2^m_1)))]
+                    [V (half-modn (+ (* V_2^m_1 V) (* D U U_2^m_1)))]
+                    [Q^d (modulo (* Q^d Q_m_1) n)])
+                (loop U V U_2^m_1 V_2^m_1 Q_m_1 Q^d (+ bit 1)))))))))
+
+  ;; divide by 2 modulo n; we know n is odd
+  (define (half-modn x)
+    (if (odd? x)
+      (modulo (ash (+ x n) -1) n)
+      (modulo (ash x -1) n)))
+  
+  (let* ([n+1 (+ n 1)]
+         [s   (twos-exponent n+1)]
+         [d   (ash n+1 (- s))]
+         [D   (bpsw-find-D n)]
+         [P   1]
+         [Q   (/ (- 1 D) 4)])
+    (receive (U V Q^d) (calculate-UV n P Q D d)
+      (or (zero? U)
+          (zero? V)
+          (let loop ([r 1] [V V] [Q^d Q^d])
+            (if (>= r s)
+              #f
+              (let1 V (modulo (- (* V V) (* 2 Q^d)) n)
+                (or (zero? V)
+                    (loop (+ r 1) V (modulo (* Q^d Q^d) n))))))))))
+
+;; API
+(define (bpsw-prime? n)
+  (cond [(< n 2) #f]
+        [(= n 2) #t]
+        [(even? n) #f]
+        [else
+         (let1 fs (naive-factorize n 1000)
+           (cond
+            [(not (null? (cdr fs))) #f] ; definitely composite
+            [(< n 1000000) #t] ; we know it's prime
+            [(not (miller-rabin-test 2 n)) #f]
+            [(zero? (values-ref (exact-integer-sqrt n) 1)) #f] ;perfect square
+            [else (lucas-selfridge-test n 1 (/ (- 1 (bpsw-find-D n)) 4))]))]))
 
 ;;;
 ;;; Factorization
