@@ -186,16 +186,21 @@
   (random-source-make-integers *miller-rabin-random-source*))
 
 ;; API
-(define (miller-rabin-prime? n :key (num-tests 20)
+(define (miller-rabin-prime? n :key (num-tests 7)
                              (random-integer default-miller-rabin-random-integer))
   (unless (and (exact-integer? n) (> n 1))
     (error "exact positive integer greater than 1 is expected, but got:" n))
   (and (odd? n) ; filter out the trivial case
        (if (< n *small-prime-bound*)
          (small-prime? n)
-         (let1 bound (- (integer-length n) 1)
-           (every?-ec (: k num-tests)
-                      (miller-rabin-test (+ 1 (random-integer bound)) n))))))
+         (let ([bound (- (integer-length n) 1)]
+               [tested '()]) ;; tested primes
+           (define (rand)
+             (let1 r (+ 1 (random-integer bound))
+               (if (memv r tested)
+                 (rand)
+                 (begin (push! tested r) r))))
+           (every?-ec (: k num-tests) (miller-rabin-test (rand) n))))))
 
 ;; Jacobi symbol calculation, used in bpsw-prime?
 ;;  http://en.wikipedia.org/wiki/Jacobi_symbol

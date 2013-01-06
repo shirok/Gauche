@@ -5662,14 +5662,14 @@ deterministic; if it returns @code{#t}, @var{n} is certainly a prime.
 If @var{n} is greater than or equal to 
 @code{*small-prime-bound*},
 we use a probabilistic test.  We choosing random base integer
-to perform Miller-Rabin test up to 20 times by default.
+to perform Miller-Rabin test up to 7 times by default.
 You can change the number of tests by the keyword argument
 @var{num-tests}.  The error probability
 (to return @code{#t} for a composite number)
 is at most @code{(expt 4 (- num-tests))}.
 @c JP
 @var{n}が@code{*small-prime-bound*}以上の場合は
-確率的テストを用います。デフォルトでは20回、ランダムにベース整数値を選んで
+確率的テストを用います。デフォルトでは7回、ランダムにベース整数値を選んで
 Miller-Rabinテストを適用します。試行回数は@var{num-tests}キーワード引数で
 変更可能です。合成数に対して誤って@code{#t}を返してしまう確率は
 たかだか@code{(expt 4 (- num-tests))}です。
