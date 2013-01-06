@@ -37,13 +37,15 @@
   (use srfi-42)
   (use gauche.uvector)
   (use gauche.generator)
+  (use gauche.sequence)
+  (use gauche.threads)
   (use util.sparse)
   (use util.match)
   (export primes *primes* reset-primes
           small-prime? *small-prime-bound*
           miller-rabin-prime? bpsw-prime?
           naive-factorize mc-factorize
-          jacobi))
+          jacobi totient))
 (select-module math.prime)
 
 ;;;
@@ -302,18 +304,18 @@
 ;; mem-vec[k] remembers factorization of k*2+1.
 ;;
 (define naive-factorize-1
-  (let1 mem-vec (make-sparse-vector)
+  (let1 mem-vec (atom (make-sparse-vector))
     (define (->index n) (/ (- n 1) 2)) ; n must be odd
     (define (memo! i val)
       (when (< i *small-factorize-table-index-limit*)
-        (sparse-vector-set! mem-vec i val))
+        (atomic mem-vec (cut sparse-vector-set! <> i val)))
       val)
     (^[n divisor-limit]
       (let try [(n n) (ps *primes*)]
         ;; try to divide n with given primes.
         (let1 i (->index n)
           (or (and (< i *small-factorize-table-index-limit*)
-                   (sparse-vector-ref mem-vec i #f))
+                   (atomic mem-vec (cut sparse-vector-ref <> i #f)))
               (and (small-prime? n)
                    (memo! i `(,n)))
               (let loop ([ps ps])
@@ -414,14 +416,28 @@
     (cond [(< n *small-prime-bound*) (small-prime? n)]
           [(< n 18446744073709551616) (bpsw-prime? n)]; (expt 2 64)
           [else #f]))
+
+  (define try-prime-limit 1000)
                         
   ;; We exclude trivial factors first.
-  (let* ([ps (naive-factorize n 1000)]
-         [n (last ps)]   ; n may be composite.
-         [nf (smash n)])
-    (if (null? (cdr nf))
-      ps  ; n is unbreakable, so the original factorization was fine.
-      (sort (append nf (drop-right ps 1))))))
+  (let* ([ps (naive-factorize n try-prime-limit)]
+         [n (last ps)])
+    (if (< n (* try-prime-limit try-prime-limit))
+      ps ;; we're completely done
+      (let1 nf (smash n) ; n may be composite, so try to break it more.
+        (if (null? (cdr nf))
+          ps  ; n is unbreakable, so the original factorization was fine.
+          (sort (append nf (drop-right ps 1))))))))
+
+;;;
+;;; Fun stuff
+;;;
+
+(define (totient n)
+  (if (<= n 2)
+    1
+    (fold (^[pk phi] (* phi (expt (car pk) (- (length pk) 1)) (- (car pk) 1)))
+          1 (group-sequence (mc-factorize n)))))
 
 ;; Wishlist
 ;;   deterministic prime?  (maybe using AKS primality test)

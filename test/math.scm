@@ -71,5 +71,13 @@
               results))
   )
 
+(let1 ps (take *primes* 100)
+  (test* "totient (small primes)" (map (cut - <> 1) ps)
+         (map totient ps))
+  (let1 p2s (slices ps 3)
+    (test* "totient (some primes)"
+           (map (^[ps] (apply * (map (cut - <> 1) ps))) p2s)
+           (map (^[ps] (totient (apply * ps))) p2s))))
+
 (test-end)
 

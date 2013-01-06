@@ -5869,6 +5869,20 @@ Jacobi symbol @code{(@var{a}/@var{n})} を計算します
 @c COMMON
 @end defun
 
+@defun totient n
+@c EN
+Returns Euler's totient function of nonnegative integer @var{n}.
+
+The current implementation relies on @code{mc-factorize} above,
+so it may take very long if @var{n} contains large prime factors.
+@c JP
+@var{n}に対するオイラーのトーシェント関数の値を返します。
+
+現在の実装は上の@code{mc-factorize}を使っており、
+@var{n}が大きな素因数を持っている場合は非常に長い時間がかかります。
+@c COMMON
+@end defun
+
 
 @c ----------------------------------------------------------------------
 @node Windows support, RFC822 message parsing, Prime numbers, Library modules - Utilities
