@@ -193,10 +193,10 @@
   (and (odd? n) ; filter out the trivial case
        (if (< n *small-prime-bound*)
          (small-prime? n)
-         (let ([bound (- (integer-length n) 1)]
+         (let ([bound (- (integer-length n) 2)]
                [tested '()]) ;; tested primes
            (define (rand)
-             (let1 r (+ 1 (random-integer bound))
+             (let1 r (+ 2 (random-integer bound))
                (if (memv r tested)
                  (rand)
                  (begin (push! tested r) r))))
