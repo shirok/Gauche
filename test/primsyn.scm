@@ -43,6 +43,9 @@
 
 (prim-test "case" #t (lambda ()  (case (+ 2 3) ((1 3 5 7 9) #t) ((0 2 4 6 8) #f))))
 (prim-test "case" #t (lambda () (undefined? (case 1 ((2 3) #t)))))
+(prim-test "case" #t (lambda () (case 1 (() #f) ((1) #t))))
+(prim-test "case" #t (lambda () (case 1 (() #f) (else #t))))
+(prim-test "case" #t (lambda () (undefined? (case 1 (() #t)))))
 (prim-test "case (srfi-87)" 0 (lambda () (case (+ 2 3) ((1 3 5) 0) (else => values))))
 (prim-test "case (srfi-87)" 6 (lambda () (case (+ 2 3) ((1 3 5) => (cut + 1 <>)) (else => values))))
 (prim-test "case (srfi-87)" 5 (lambda () (case (+ 2 3) ((2 4 6) 0) (else => values))))

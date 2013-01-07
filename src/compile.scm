@@ -2088,13 +2088,13 @@
       [((elts exprs ...) . rest)
        (let ([nelts (length elts)]
              [elts  (map unwrap-syntax elts)])
-         (unless (> nelts 0) (error "syntax-error: bad clause in case:" form))
          ($if (car cls)
-              (if (> nelts 1)
-                ($memv #f ($lref tmpvar) ($const elts))
-                (if (symbol? (car elts))
-                  ($eq? #f  ($lref tmpvar) ($const (car elts)))
-                  ($eqv? #f ($lref tmpvar) ($const (car elts)))))
+              (case nelts
+                [(0)  ($const-f)]
+                [(1)  (if (symbol? (car elts))
+                        ($eq? #f  ($lref tmpvar) ($const (car elts)))
+                        ($eqv? #f ($lref tmpvar) ($const (car elts))))]
+                [else ($memv #f ($lref tmpvar) ($const elts))])
               (match exprs
                 ;; (elts => proc) -- SRFI-87 case clause
                 [((? (cut global-eq? <> '=> cenv)) proc)
