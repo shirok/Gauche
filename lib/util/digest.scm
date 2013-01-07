@@ -43,7 +43,9 @@
 (select-module util.digest)
 
 (define-class <message-digest-algorithm-meta> (<class>)
-  ())
+  ;; Block size (in bytes) used in HMAC, determined by each algorithm.
+  ;; Older algorithms uses 64, while SHA-384/512 uses 128.
+  ((hmac-block-size :init-keyword :hmac-block-size :init-value 64)))
 
 (define-class <message-digest-algorithm> ()
   ()

@@ -17103,6 +17103,22 @@ A metaclass of message digest algorithm implementation.
 @c JP
 メッセージダイジェストアルゴリズムの実装のメタクラスです。
 @c COMMON
+
+@defivar {<message-digest-algorithm-meta>} hmac-block-size
+@c EN
+Specifies the block size (in bytes), which is specific to each algorithm.
+(This is a slot for each @emph{class} object that implements the algorithm,
+not for instance of such classes.  Only the author of such digest classes
+needs to care.  See @file{ext/digest/sha.scm} in the source tree
+for more details.)
+@c JP
+各アルゴリズムに固有のブロックサイズをバイト数で指定します。
+(これはアルゴリズムを実装する各クラスオブジェクトのスロットで、
+それらのクラスのインスタンスのスロットではありません。通常、新たなダイジェストアルゴリズム
+クラスを実装する人のみが気にすれば良いスロットです。具体例は
+ソースツリーの@file{ext/digest/sha.scm}を見てください。)
+@c COMMON
+@end defivar
 @end deftp
 
 @deftp {Class} <message-digest-algorithm>

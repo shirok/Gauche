@@ -1,5 +1,11 @@
 2013-01-06  Shiro Kawai  <shiro@acm.org>
 
+	* lib/util/digest.scm, lib/rfc/hmac.scm, ext/digest/sha.scm:
+	  Let digest algorithm metacless have the default block size
+	  to be used in HMAC.  HMAC needs to know it to do appropriate
+	  preprocessing of the key.  In old days block size is fixed
+	  to 64 bytes, but now sha384/512 insists 128 bytes.
+
 	* src/compile.scm (case): Fixed empty items in a case clause.
 	  Patch from leque.
 

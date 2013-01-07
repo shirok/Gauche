@@ -46,22 +46,23 @@
 
 (define-method initialize ((self <hmac>) initargs)
   (next-method)
-  (let-keywords initargs ((key #f)
-                          (hasher #f)
-                          (block-size 64))
+  (let-keywords initargs ([key #f]
+                          [hasher #f]
+                          [block-size #f])
     (unless (and key hasher)
       (error "key and hasher must be given"))
-    (when (> (string-size key) block-size)
-      (set! key (digest-string hasher key)))
-    (slot-set! self 'key
-	       (string-append key
-			      (make-byte-string (- block-size
-						   (string-size key))
-						#x0)))
-    (slot-set! self 'hasher (make hasher))
-    (let* ((v (string->u8vector (key-of self)))
-	   (ipad (u8vector->string (u8vector-xor v #x36))))
-      (digest-update! (hasher-of self) ipad))))
+    (let1 block-size (or block-size (slot-ref hasher 'hmac-block-size))
+      (when (> (string-size key) block-size)
+        (set! key (digest-string hasher key)))
+      (slot-set! self 'key
+                 (string-append key
+                                (make-byte-string (- block-size
+                                                     (string-size key))
+                                                  #x0)))
+      (slot-set! self 'hasher (make hasher))
+      (let* ([v (string->u8vector (key-of self))]
+             [ipad (u8vector->string (u8vector-xor v #x36))])
+        (digest-update! (hasher-of self) ipad)))))
 
 (define-method hmac-update! ((self <hmac>) data)
   (digest-update! (hasher-of self) data))

@@ -80,7 +80,7 @@
 ;;; Digest framework
 ;;;
 
-(define-macro (define-framework n)
+(define-macro (define-framework n block-size)
   (let ([meta   (string->symbol #`"<sha,|n|-meta>")]
         [cls    (string->symbol #`"<sha,|n|>")]
         [init   (string->symbol #`"%sha,|n|-init")]
@@ -91,7 +91,8 @@
        (define-class ,meta (<message-digest-algorithm-meta>) ())
        (define-class ,cls (<message-digest-algorithm>)
          (context)
-         :metaclass ,meta)
+         :metaclass ,meta
+         :hmac-block-size ,block-size)
        (define-method initialize ((self ,cls) initargs)
          (next-method)
          (let1 ctx (make <sha-context>)
@@ -104,11 +105,11 @@
        (define-method digest ((class ,meta))
          (,digest)))))
 
-(define-framework 1)
-(define-framework 224)
-(define-framework 256)
-(define-framework 384)
-(define-framework 512)
+(define-framework 1    64)
+(define-framework 224  64)
+(define-framework 256  64)
+(define-framework 384  128)
+(define-framework 512  128)
 
 ;;;
 ;;; Low-level bindings
