@@ -183,6 +183,7 @@ static void install_release_thunk(ScmVM *vm, ScmObj promise)
 static ScmObj force_cc(ScmObj result, void **data)
 {
     ScmPromise *p = (ScmPromise*)data[0];
+    ScmObj handlers = (ScmObj)data[1];
 
     /* Check if the original promise is forced by evaluating
        the delayed expr to detect recursive force situation */
@@ -205,6 +206,7 @@ static ScmObj force_cc(ScmObj result, void **data)
         p->content->owner = NULL;
         SCM_INTERNAL_MUTEX_UNLOCK(p->content->mutex);
     }
+    Scm_VM()->handlers = handlers;
     SCM_RETURN(Scm_Force(SCM_OBJ(p)));
 }
 
@@ -218,13 +220,14 @@ ScmObj Scm_Force(ScmObj obj)
         if (c->forced) SCM_RETURN(c->code);
         else {
             ScmVM *vm = Scm_VM();
-            void *data[1];
+            void *data[2];
             data[0] = obj;
+            data[1] = vm->handlers;
 
             if (c->owner == vm) {
                 /* we already have the lock and evaluating this promise. */
                 c->count++;
-                Scm_VMPushCC(force_cc, data, 1);
+                Scm_VMPushCC(force_cc, data, 2);
                 SCM_RETURN(Scm_VMApply0(c->code));
             } else {
                 /* TODO: check if the executing thread terminates
@@ -239,7 +242,7 @@ ScmObj Scm_Force(ScmObj obj)
                 install_release_thunk(vm, obj);
                 c->count++;
                 /* mutex is unlocked by force_cc. */
-                Scm_VMPushCC(force_cc, data, 1);
+                Scm_VMPushCC(force_cc, data, 2);
                 SCM_RETURN(Scm_VMApply0(c->code));
             }
         }
