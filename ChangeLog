@@ -1,5 +1,8 @@
 2013-01-09  Shiro Kawai  <shiro@acm.org>
 
+	* src/compile.scm (pass5/prepare-args): Fixed incorrect stack
+	  estimation that caused stack overrun.
+
 	* src/lazy.c (Scm_Force): Fixed leak that prevented tail-recursive
 	  lazy loop consumes unbounded memory (regression introduced
 	  between 0.9.2 and 0.9.3.)

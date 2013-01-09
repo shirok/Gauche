@@ -5101,7 +5101,7 @@
               (compiled-code-emit0! ccb BOX))
             (compiled-code-emit-PUSH! ccb)
             (if (null? (cdr args))
-              d
+              (imax depth d)
               (loop (cdr args) (and lvars (cdr lvars))
                     (imax depth (+ d cnt 1)) (+ cnt 1)))))))))
 
