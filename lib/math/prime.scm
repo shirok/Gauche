@@ -446,5 +446,4 @@
 
 ;; Wishlist
 ;;   deterministic prime?  (maybe using AKS primality test)
-;;   totient (used in AKS algorithm)
 ;;   more sophisticated integer factorization
