@@ -41,7 +41,7 @@ SCM_EXTERN ScmObj Scm_MakeBignumFromSI(long val);
 SCM_EXTERN ScmObj Scm_MakeBignumFromUI(u_long val);
 SCM_EXTERN ScmObj Scm_MakeBignumFromUIArray(int sign, u_long *values, int size);
 SCM_EXTERN ScmObj Scm_MakeBignumFromDouble(double val);
-SCM_EXTERN ScmObj Scm_BignumCopy(ScmBignum *b);
+SCM_EXTERN ScmObj Scm_BignumCopy(const ScmBignum *b);
 SCM_EXTERN ScmObj Scm_BignumToString(ScmBignum *b, int radix, int use_upper);
 
 SCM_EXTERN long   Scm_BignumToSI(ScmBignum *b, int clamp, int* oor);
@@ -69,6 +69,7 @@ SCM_EXTERN ScmObj Scm_BignumMul(ScmBignum *bx, ScmBignum *by);
 SCM_EXTERN ScmObj Scm_BignumMulSI(ScmBignum *bx, long y);
 SCM_EXTERN ScmObj Scm_BignumDivSI(ScmBignum *bx, long y, long *r);
 SCM_EXTERN ScmObj Scm_BignumDivRem(ScmBignum *bx, ScmBignum *by);
+SCM_EXTERN long   Scm_BignumRemSI(const ScmBignum *bx, long y);
 
 SCM_EXTERN ScmObj Scm_BignumLogAndSI(ScmBignum *bx, long y);
 SCM_EXTERN ScmObj Scm_BignumLogAnd(ScmBignum *bx, ScmBignum *by);

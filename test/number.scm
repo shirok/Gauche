@@ -1388,130 +1388,72 @@
                   319489))
 
 ;;------------------------------------------------------------------
-(test-section "remainder")
+(test-section "modulo and remainder")
 
-(define (r-result x exact?) (list x (- x) x (- x) exact?))
-(define (r-tester x y)
-  (list (remainder x y) (remainder (- x) y)
-        (remainder x (- y)) (remainder (- x) (- y))
-        (exact? (remainder x y))))
+;; invariance:
+;; suppose (modulo x y) = m
+;;         (remainder x y) = r
+;;         (quotient x y) = q
+;; then
+;;         (sign r) = (sign x)
+;;         (sign m) = (sign y)
+;;         (+ (* q y) r) = x
+;;         (+ (* q y) m) = x       if (sign (* x y)) >= 0,
+;;                         (+ x y) if (sign (* x y)) < 0
+;;         (exact? m) = (and (exact? x) (exact? y))
+;;         (exact? r) = (and (exact? x) (exact? y))
 
-;; small int
-(test* "fix rem fix -> fix" (r-result 1 #t)
-      (r-tester 13 4))
-(test* "fix rem fix -> fix" (r-result 1234 #t)
-      (r-tester 1234 87935))
-(test* "fix rem big[1] -> fix" (r-result 12345 #t)
-      (r-tester 12345 3735928559))
+(define (mr-tester msg x y)
+  (define (sign a) (cond [(< a 0) -1] [(= a 0) 0] [else 1]))
+  (define (mr-tester-1 x y)
+    ;; We don't use quotient&remainder, for we want to test remainder-only path.
+    (let1 adjust-exactness (if (and (exact? x) (exact? y)) exact inexact)
+      (test* (format "modulo and remainder (~a) ~s ~s" msg x y)
+             `(:rem (,(sign x)
+                     ,(adjust-exactness x)
+                     ,(and (exact? x) (exact? y)))
+               :mod (,(sign y)
+                     ,(adjust-exactness (if (>= (sign (* x y)) 0) x (+ x y)))
+                     ,(and (exact? x) (exact? y))))
+             (let ([q (quotient x y)]
+                   [m (modulo x y)]
+                   [r (remainder x y)]
+                   [e? (and (exact? x) (exact? y))])
+               `(:rem (,(sign r) ,(+ (* q y) r) ,(exact? r))
+                      :mod (,(sign m) ,(+ (* q y) m) ,(exact? m)))))))
+  (mr-tester-1 x y)
+  (mr-tester-1 (- x) y)
+  (mr-tester-1 x (- y))
+  (mr-tester-1 (- x) (- y)))
 
-;; these uses BignumDivSI -> bignum_sdiv
-(test* "big[1] rem fix -> fix" (r-result 0 #t)
-      (r-tester 727836879 41943))
-(test* "big[1] rem fix -> fix" (r-result 1113 #t)
-      (r-tester 3735928559 27353))
-(test* "big[2] rem fix -> fix" (r-result 15 #t)
-      (r-tester 12312849128756 23))
-(test* "big[2] rem fix -> fix" (r-result 0 #t)
-      (r-tester 12312849128756 1))
+(mr-tester "fix op fix -> fix" 13 4)
+(mr-tester "fix op fix -> fix" 1234 87935)
+(mr-tester "fix op big -> fix" 12345 3735928559) ;32bit
+(mr-tester "fix op big -> fix" 8478574387345 #x7fffffffffffffff) ;64bit
 
-;; these uses BignumDivSI -> bignum_gdiv
-(test* "big[1] rem fix -> fix" (r-result 0 #t)
-      (r-tester 3663846879 87353))
-(test* "big[2] rem fix -> fix" (r-result 725433 #t)
-      (r-tester 705986470884353 36984440))
-(test* "big[2] rem fix -> fix" (r-result 122789 #t)
-      (r-tester 12312849128741 132546))
-(test* "big[2] rem fix -> fix" (r-result 19735 #t)
-      (r-tester 425897458766735 164900))
+;; These go through Scm_BignumRemSI
+(mr-tester "big op fix -> fix" #x7f245637 41943) ;32bit
+(mr-tester "big op fix -> fix" #x7f787486ff73cacb 41943) ;64bit
+(mr-tester "big2 op big1 -> big1" #x9aa9bbcb #x50053343) ; 32bit
+(mr-tester "big2 op big1 -> big1" #x9aa9bbcb10013303 #x50053343cafebabe) ; 64bit
 
-;; these uses BignumDivRem
-(test* "big[1] rem big[1] -> fix" (r-result 115598656 #t)
-      (r-tester 4020957098 1952679221))
-(test* "big[1] rem big[1] -> fix" (r-result 1952679221 #t)
-      (r-tester 1952679221 4020957098))
-;; this tests loop in estimation phase
-(test* "big[3] rem big[2] -> big[1]" (r-result #xfffe0001 #t)
-      (r-tester #x10000000000000000 #x10000ffff))
-;; this tests "add back" code
-(test* "big[3] rem big[2] -> big[2]" (r-result #x7fffb114effe #t)
-      (r-tester #x7800000000000000 #x80008889ffff))
+;; These go through BignumDivRem
+(mr-tester "big op big -> big"
+           #x78ab76d8aa7787a78963556174babdccade44e54e543232ab
+           #xabcbdbdbcbdabefbebfbebbbababba)
 
-;; inexact remainder
-(test* "exact rem inexact -> inexact" (r-result 1.0 #f)
-      (r-tester 13 4.0))
-(test* "inexact rem exact -> inexact" (r-result 1.0 #f)
-      (r-tester 13.0 4))
-(test* "inexact rem inexact -> inexact" (r-result 1.0 #f)
-      (r-tester 13.0 4.0))
-(test* "exact rem inexact -> inexact" (r-result 1113.0 #f)
-      (r-tester 3735928559 27353.0))
-(test* "inexact rem exact -> inexact" (r-result 1113.0 #f)
-      (r-tester 3735928559.0 27353))
-(test* "inexact rem inexact -> inexact" (r-result 1113.0 #f)
-      (r-tester 3735928559.0 27353.0))
+;; this tests loop in estimation phase (32bit)
+(mr-tester "big[3] rem big[2] -> big[1]" #x10000000000000000 #x10000ffff)
+;; this tests "add back" code (32bit)
+(mr-tester "big[3] rem big[2] -> big[2]" #x7800000000000000 #x80008889ffff)
 
-;;------------------------------------------------------------------
-(test-section "modulo")
-
-(define (m-result a b exact?) (list a b (- b) (- a) exact?))
-(define (m-tester x y)
-  (list (modulo x y) (modulo (- x) y)
-        (modulo x (- y)) (modulo (- x) (- y))
-        (exact? (modulo x y))))
-
-;; small int
-(test* "fix mod fix -> fix" (m-result 1 3 #t)
-      (m-tester 13 4))
-(test* "fix mod fix -> fix" (m-result 1234 86701 #t)
-      (m-tester 1234 87935))
-(test* "fix mod big[1] -> fix/big" (m-result 12345 3735916214 #t)
-      (m-tester 12345 3735928559))
-
-;; these uses BignumDivSI -> bignum_sdiv
-(test* "big[1] mod fix -> fix" (m-result 0 0 #t)
-      (m-tester 727836879 41943))
-(test* "big[1] mod fix -> fix" (m-result 1113 26240 #t)
-      (m-tester 3735928559 27353))
-(test* "big[2] mod fix -> fix" (m-result 15 8 #t)
-      (m-tester 12312849128756 23))
-(test* "big[2] mod fix -> fix" (m-result 0 0 #t)
-      (m-tester 12312849128756 1))
-
-;; these uses BignumDivSI -> bignum_gdiv
-(test* "big[1] mod fix -> fix" (m-result 0 0 #t)
-      (m-tester 3663846879 87353))
-(test* "big[2] mod fix -> fix" (m-result 725433 36259007 #t)
-      (m-tester 705986470884353 36984440))
-(test* "big[2] mod fix -> fix" (m-result 122789 9757 #t)
-      (m-tester 12312849128741 132546))
-(test* "big[2] mod fix -> fix" (m-result 19735 145165 #t)
-      (m-tester 425897458766735 164900))
-
-;; these uses BignumDivRem
-(test* "big[1] mod big[1] -> fix" (m-result 115598656 1837080565 #t)
-      (m-tester 4020957098 1952679221))
-(test* "big[1] mod big[1] -> fix" (m-result 1952679221 2068277877 #t)
-      (m-tester 1952679221 4020957098))
-;; this tests loop in estimation phase
-(test* "big[3] mod big[2] -> big[1]" (m-result #xfffe0001 #x2fffe #t)
-      (m-tester #x10000000000000000 #x10000ffff))
-;; this tests "add back" code
-(test* "big[3] mod big[2] -> big[2]" (m-result #x7fffb114effe #xd7751001 #t)
-      (m-tester #x7800000000000000 #x80008889ffff))
-
-;; inexact modulo
-(test* "exact mod inexact -> inexact" (m-result 1.0 3.0 #f)
-      (m-tester 13 4.0))
-(test* "inexact mod exact -> inexact" (m-result 1.0 3.0 #f)
-      (m-tester 13.0 4))
-(test* "inexact mod inexact -> inexact" (m-result 1.0 3.0 #f)
-      (m-tester 13.0 4.0))
-(test* "exact mod inexact -> inexact" (m-result 1113.0 26240.0 #f)
-      (m-tester 3735928559 27353.0))
-(test* "inexact mod exact -> inexact" (m-result 1113.0 26240.0 #f)
-      (m-tester 3735928559.0 27353))
-(test* "inexact mod inexact -> inexact" (m-result 1113.0 26240.0 #f)
-      (m-tester 3735928559.0 27353.0))
+;; Inexact
+(mr-tester "exact rem inexact -> inexact" 13 4.0)
+(mr-tester "inexact rem exact -> inexact" 13.0 4)
+(mr-tester "inexact rem inexact -> inexact" 13.0 4.0)
+(mr-tester "exact rem inexact -> inexact" 3735928559 27353.0)
+(mr-tester "inexact rem exact -> inexact" 3735928559.0 27353)
+(mr-tester "inexact rem inexact -> inexact" 3735928559.0 27353.0)
 
 ;; test by mersenne prime? - code by 'hipster'
 

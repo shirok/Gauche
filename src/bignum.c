@@ -82,6 +82,7 @@ char *alloca ();
 #include "gauche.h"
 #include "gauche/arith.h"
 #include "gauche/bits.h"
+#include "gauche/bits_inline.h"
 #include "gauche/bignum.h"
 
 #undef min
@@ -209,7 +210,7 @@ ScmObj Scm_MakeBignumFromDouble(double val)
     }
 }
 
-ScmObj Scm_BignumCopy(ScmBignum *b)
+ScmObj Scm_BignumCopy(const ScmBignum *b)
 {
     u_int i;
     ScmBignum *c = make_bignum(b->size);
@@ -1063,6 +1064,46 @@ ScmObj Scm_BignumDivSI(ScmBignum *dividend, long divisor, long *remainder)
     return Scm_NormalizeBignum(q);
 }
 
+/* If we only need rem(bignum, fixnum), we don't need to copy bignum
+   to keep quotient. */
+long Scm_BignumRemSI(const ScmBignum *dividend, long divisor)
+{
+#if (SIZEOF_LONG == 4) && HAVE_UINT64_T
+    /* ILP32 with 64bit integer - easy one. */
+    uint64_t dd = (divisor < 0)? -divisor : divisor;
+    int sign = SCM_BIGNUM_SIGN(dividend);
+    int k = SCM_BIGNUM_SIZE(dividend) - 1;
+    uint64_t m = 0;
+    for (;k >= 0; k--) {
+        uint64_t x = (uint64_t)dividend->values[k] + (m << WORD_BITS);
+        m = x % dd;
+    }
+    return (long)m * sign;
+#else /* SIZEOF_LONG >= 4 || !HAVE_UINT64_T*/
+    /* Here we need double-machine-word `rem` machine-word. */
+    u_long dd = (divisor < 0)? -divisor : divisor;
+    int sign = SCM_BIGNUM_SIGN(dividend);
+    int k = SCM_BIGNUM_SIZE(dividend) - 1;
+    int shift = WORD_BITS - Scm__HighestBitNumber(dd) - 1;
+    u_long m = 0;
+    for (;k >= 0; k--) {
+        u_long x = dividend->values[k];
+        int total_shift = 0;
+        /* we calculate [m;x] modulo dd.  since always m < dd it's safe to
+           shift m first. */
+        while (total_shift < WORD_BITS) {
+            int s = ((total_shift + shift < WORD_BITS)?
+                     shift : WORD_BITS-total_shift);
+            m = (m << s) | (x >> (WORD_BITS - s));
+            x <<= s;
+            m %= dd;
+            total_shift += s;
+        }
+    }
+    return (long)m * sign;
+#endif
+}
+
 /* assuming dividend and divisor is normalized.  returns quotient and
    remainder */
 ScmObj Scm_BignumDivRem(ScmBignum *dividend, ScmBignum *divisor)
@@ -1277,7 +1318,7 @@ int Scm_DumpBignum(ScmBignum *b, ScmPort *out)
     Scm_Printf(out, "#<bignum ");
     if (b->sign < 0) SCM_PUTC('-', out);
     for (i=(int)b->size-1; i>=0; i--) {
-        Scm_Printf(out, "%08x ", b->values[i]);
+        Scm_Printf(out, "%08lx ", b->values[i]);
     }
     SCM_PUTC('>', out);
     return 0;

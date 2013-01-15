@@ -1,3 +1,11 @@
+2013-01-14  Shiro Kawai  <shiro@acm.org>
+
+	* src/bignum.c (Scm_BignumRemSI): Avoid unnecessary allocation of
+	  bignums when calculating modulo/remainder of a bignum by a fixnum.
+	  This makes (modulo <bignum> <fixnum>) about 3x faster, though
+	  the practical observable effects is much smaller unless the
+	  program specifically calls the specific combination.
+
 2013-01-09  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm (pass5/prepare-args): Fixed incorrect stack

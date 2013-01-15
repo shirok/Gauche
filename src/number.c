@@ -2407,8 +2407,7 @@ ScmObj Scm_Modulo(ScmObj x, ScmObj y, int remp)
     } else if (SCM_BIGNUMP(x)) {
         if (SCM_INTP(y)) {
             long iy = SCM_INT_VALUE(y);
-            long rem;
-            Scm_BignumDivSI(SCM_BIGNUM(x), iy, &rem);
+            long rem = Scm_BignumRemSI(SCM_BIGNUM(x), iy);
             if (!remp
                 && rem
                 && ((SCM_BIGNUM_SIGN(x) < 0 && iy > 0)
