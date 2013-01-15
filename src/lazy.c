@@ -167,6 +167,7 @@ static ScmObj release_promise(ScmObj *args, int nargs, void *data)
     ScmPromise *p = SCM_PROMISE(data);
     p->content->owner = NULL;
     SCM_INTERNAL_MUTEX_UNLOCK(p->content->mutex);
+    return SCM_UNDEFINED;
 }
 
 static void install_release_thunk(ScmVM *vm, ScmObj promise)

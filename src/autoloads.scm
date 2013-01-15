@@ -31,8 +31,7 @@
   (cgen-decl "#define LIBGAUCHE_BODY"
              "#include <gauche.h>")
   ;; init
-  (cgen-init "  ScmModule *scheme = Scm_SchemeModule();"
-             "  ScmModule *gauche = Scm_GaucheModule();"
+  (cgen-init "  ScmModule *gauche = Scm_GaucheModule();"
              "  ScmSymbol *sym, *import_from;"
              "  ScmObj al, path;")
 

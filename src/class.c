@@ -422,7 +422,6 @@ static void class_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 static ScmObj allocate(ScmNextMethod *nm, ScmObj *argv, int argc, void *d)
 {
     ScmClass *c = SCM_CLASS(argv[0]);
-    ScmObj z;
     if (c->allocate == NULL) {
         Scm_Error("built-in class can't be allocated via allocate-instance: %S",
                   SCM_OBJ(c));
@@ -2808,7 +2807,7 @@ static ScmForeignPointer *make_foreign_int(ScmClass *klass, void *ptr,
    We add *WithAttr only to keep ABI compatibility. */
 ScmObj Scm_MakeForeignPointer(ScmClass *klass, void *ptr)
 {
-    Scm_MakeForeignPointerWithAttr(klass, ptr, SCM_NIL);
+    return Scm_MakeForeignPointerWithAttr(klass, ptr, SCM_NIL);
 }
 
 ScmObj Scm_MakeForeignPointerWithAttr(ScmClass *klass, void *ptr, ScmObj attr)

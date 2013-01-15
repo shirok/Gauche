@@ -90,10 +90,10 @@ char *alloca ();
 #undef max
 #define max(x, y)   (((x) > (y))? (x) : (y))
 
-static ScmBignum *bignum_rshift(ScmBignum *br, ScmBignum *bx, int amount);
-static ScmBignum *bignum_lshift(ScmBignum *br, ScmBignum *bx, int amount);
-static int bignum_safe_size_for_add(ScmBignum *x, ScmBignum *y);
-static ScmBignum *bignum_add_int(ScmBignum *br, ScmBignum *bx, ScmBignum *by);
+static ScmBignum *bignum_rshift(ScmBignum *br, const ScmBignum *bx, int amount);
+static ScmBignum *bignum_lshift(ScmBignum *br, const ScmBignum *bx, int amount);
+static int bignum_safe_size_for_add(const ScmBignum *x, const ScmBignum *y);
+static ScmBignum *bignum_add_int(ScmBignum *br, const ScmBignum *bx, const ScmBignum *by);
 static ScmBignum *bignum_2scmpl(ScmBignum *br);
 
 /*---------------------------------------------------------------------
@@ -165,7 +165,7 @@ ScmObj Scm_MakeBignumFromUI(u_long val)
 
 /* If sign > 0 or sign < 0, values[] has absolute value.
    If sign == 0, values[] has 2's complement signed representation */
-ScmObj Scm_MakeBignumFromUIArray(int sign, u_long *values, int size)
+ScmObj Scm_MakeBignumFromUIArray(int sign, const u_long *values, int size)
 {
     ScmBignum *b = make_bignum(size);
     int i;
@@ -223,6 +223,7 @@ ScmObj Scm_BignumCopy(const ScmBignum *b)
  * Conversion
  */
 
+/* Modifies B and return it. */
 ScmObj Scm_NormalizeBignum(ScmBignum *b)
 {
     int size = b->size;
@@ -247,7 +248,7 @@ ScmObj Scm_NormalizeBignum(ScmBignum *b)
 }
 
 /* b must be normalized.  */
-long Scm_BignumToSI(ScmBignum *b, int clamp, int *oor)
+long Scm_BignumToSI(const ScmBignum *b, int clamp, int *oor)
 {
     if (clamp == SCM_CLAMP_NONE && oor != NULL) *oor = FALSE;
     if (b->sign >= 0) {
@@ -275,7 +276,7 @@ long Scm_BignumToSI(ScmBignum *b, int clamp, int *oor)
 }
 
 /* b must be normalized. */
-u_long Scm_BignumToUI(ScmBignum *b, int clamp, int *oor)
+u_long Scm_BignumToUI(const ScmBignum *b, int clamp, int *oor)
 {
     if (clamp == SCM_CLAMP_NONE && oor != NULL) *oor = FALSE;
     if (b->sign >= 0) {
@@ -300,7 +301,7 @@ u_long Scm_BignumToUI(ScmBignum *b, int clamp, int *oor)
 
 #if SIZEOF_LONG == 4
 /* we need special routines for int64 */
-ScmInt64 Scm_BignumToSI64(ScmBignum *b, int clamp, int *oor)
+ScmInt64 Scm_BignumToSI64(const ScmBignum *b, int clamp, int *oor)
 {
 #if SCM_EMULATE_INT64
     ScmInt64 r = {0, 0};
@@ -358,7 +359,7 @@ ScmInt64 Scm_BignumToSI64(ScmBignum *b, int clamp, int *oor)
     return r;
 }
 
-ScmUInt64 Scm_BignumToUI64(ScmBignum *b, int clamp, int *oor)
+ScmUInt64 Scm_BignumToUI64(const ScmBignum *b, int clamp, int *oor)
 {
 #if SCM_EMULATE_INT64
     ScmInt64 r = {0, 0};
@@ -411,7 +412,7 @@ extern double Scm__EncodeDouble(u_long, u_long, int, int);
    extract bits directly from the bignum values array.
    (We use ScmBits API by casting b->values to ScmBits*).
  */
-double Scm_BignumToDouble(ScmBignum *b)
+double Scm_BignumToDouble(const ScmBignum *b)
 {
     ScmBits *bits = (ScmBits*)b->values;
     ScmBits dst[2];
@@ -470,7 +471,7 @@ double Scm_BignumToDouble(ScmBignum *b)
 }
 
 /* return -b, normalized */
-ScmObj Scm_BignumNegate(ScmBignum *b)
+ScmObj Scm_BignumNegate(const ScmBignum *b)
 {
     ScmObj c = Scm_BignumCopy(b);
     SCM_BIGNUM_SIGN(c) = -SCM_BIGNUM_SIGN(c);
@@ -482,7 +483,7 @@ ScmObj Scm_BignumNegate(ScmBignum *b)
  */
 
 /* bx and by must be normalized */
-int Scm_BignumCmp(ScmBignum *bx, ScmBignum *by)
+int Scm_BignumCmp(const ScmBignum *bx, const ScmBignum *by)
 {
     int i;
 
@@ -499,7 +500,7 @@ int Scm_BignumCmp(ScmBignum *bx, ScmBignum *by)
 }
 
 /* compare absolute values.  assume bx and by are nomalized. */
-int Scm_BignumAbsCmp(ScmBignum *bx, ScmBignum *by)
+int Scm_BignumAbsCmp(const ScmBignum *bx, const ScmBignum *by)
 {
     int i;
 
@@ -519,7 +520,9 @@ int Scm_BignumAbsCmp(ScmBignum *bx, ScmBignum *by)
    Screen out the obvious case without actually calculating bx+off.
    Experimentary, the following set of conditions avoid 93% of cases from
    doing actual bignum addition. */
-int Scm_BignumCmp3U(ScmBignum *bx, ScmBignum *off, ScmBignum *by)
+int Scm_BignumCmp3U(const ScmBignum *bx,
+                    const ScmBignum *off,
+                    const ScmBignum *by)
 {
     u_int xsize = SCM_BIGNUM_SIZE(bx), ysize = SCM_BIGNUM_SIZE(by);
     u_int osize = SCM_BIGNUM_SIZE(off);
@@ -572,7 +575,7 @@ int Scm_BignumCmp3U(ScmBignum *bx, ScmBignum *off, ScmBignum *by)
 /*-----------------------------------------------------------------------
  * Add & subtract
  */
-static int bignum_safe_size_for_add(ScmBignum *x, ScmBignum *y)
+static int bignum_safe_size_for_add(const ScmBignum *x, const ScmBignum *y)
 {
     int xsize = SCM_BIGNUM_SIZE(x);
     int ysize = SCM_BIGNUM_SIZE(y);
@@ -600,7 +603,7 @@ static ScmBignum *bignum_2scmpl(ScmBignum *br)
     return br;
 }
 
-ScmObj Scm_BignumComplement(ScmBignum *bx)
+ScmObj Scm_BignumComplement(const ScmBignum *bx)
 {
     ScmBignum *r = SCM_BIGNUM(Scm_BignumCopy(bx));
     return SCM_OBJ(bignum_2scmpl(r));
@@ -608,7 +611,8 @@ ScmObj Scm_BignumComplement(ScmBignum *bx)
 
 /* br = abs(bx) + abs(by), assuming br has enough size. br and bx can be
    the same object. */
-static ScmBignum *bignum_add_int(ScmBignum *br, ScmBignum *bx, ScmBignum *by)
+static ScmBignum *bignum_add_int(ScmBignum *br,
+                                 const ScmBignum *bx, const ScmBignum *by)
 {
     int rsize = SCM_BIGNUM_SIZE(br);
     int xsize = SCM_BIGNUM_SIZE(bx);
@@ -640,7 +644,8 @@ static ScmBignum *bignum_add_int(ScmBignum *br, ScmBignum *bx, ScmBignum *by)
 
 /* br = abs(bx) - abs(by), assuming br has enough size.  br and bx can be
    the same object. */
-static ScmBignum *bignum_sub_int(ScmBignum *br, ScmBignum *bx, ScmBignum *by)
+static ScmBignum *bignum_sub_int(ScmBignum *br,
+                                 const ScmBignum *bx, const ScmBignum *by)
 {
     int rsize = SCM_BIGNUM_SIZE(br);
     int xsize = SCM_BIGNUM_SIZE(bx);
@@ -675,7 +680,7 @@ static ScmBignum *bignum_sub_int(ScmBignum *br, ScmBignum *bx, ScmBignum *by)
 }
 
 /* returns bx + by, not normalized */
-static ScmBignum *bignum_add(ScmBignum *bx, ScmBignum *by)
+static ScmBignum *bignum_add(const ScmBignum *bx, const ScmBignum *by)
 {
     int rsize = bignum_safe_size_for_add(bx, by);
     ScmBignum *br = make_bignum(rsize);
@@ -689,7 +694,7 @@ static ScmBignum *bignum_add(ScmBignum *bx, ScmBignum *by)
 }
 
 /* returns bx - by, not normalized */
-static ScmBignum *bignum_sub(ScmBignum *bx, ScmBignum *by)
+static ScmBignum *bignum_sub(const ScmBignum *bx, const ScmBignum *by)
 {
     int rsize = bignum_safe_size_for_add(bx, by);
     ScmBignum *br = make_bignum(rsize);
@@ -703,17 +708,13 @@ static ScmBignum *bignum_sub(ScmBignum *bx, ScmBignum *by)
 }
 
 /* returns bx + y, not nomalized */
-static ScmBignum *bignum_add_si(ScmBignum *bx, long y)
+static ScmBignum *bignum_add_si(const ScmBignum *bx, long y)
 {
     long c;
     u_int i, rsize = bx->size+1;
     u_long yabs = ((y < 0)? -y : y);
     int ysign = ((y < 0)? -1 : 1);
-    ScmBignum *br;
-
-    if (y == 0) return bx;
-
-    br = make_bignum(rsize);
+    ScmBignum *br = make_bignum(rsize);
     br->sign = bx->sign;
     if (SCM_BIGNUM_SIGN(bx) == ysign) {
         for (c=0, i=0; i<bx->size; i++) {
@@ -730,24 +731,26 @@ static ScmBignum *bignum_add_si(ScmBignum *bx, long y)
     return br;
 }
 
-ScmObj Scm_BignumAdd(ScmBignum *bx, ScmBignum *by)
+ScmObj Scm_BignumAdd(const ScmBignum *bx, const ScmBignum *by)
 {
     return Scm_NormalizeBignum(bignum_add(bx, by));
 }
 
-ScmObj Scm_BignumSub(ScmBignum *bx, ScmBignum *by)
+ScmObj Scm_BignumSub(const ScmBignum *bx, const ScmBignum *by)
 {
     return Scm_NormalizeBignum(bignum_sub(bx, by));
 }
 
-ScmObj Scm_BignumAddSI(ScmBignum *bx, long y)
+ScmObj Scm_BignumAddSI(const ScmBignum *bx, long y)
 {
-    return Scm_NormalizeBignum(bignum_add_si(bx, y));
+    if (y == 0) return SCM_OBJ(bx);
+    else return Scm_NormalizeBignum(bignum_add_si(bx, y));
 }
 
-ScmObj Scm_BignumSubSI(ScmBignum *bx, long y)
+ScmObj Scm_BignumSubSI(const ScmBignum *bx, long y)
 {
-    return Scm_NormalizeBignum(bignum_add_si(bx, -y));
+    if (y == 0) return SCM_OBJ(bx);
+    else return Scm_NormalizeBignum(bignum_add_si(bx, -y));
 }
 
 /*-----------------------------------------------------------------------
@@ -756,7 +759,7 @@ ScmObj Scm_BignumSubSI(ScmBignum *bx, long y)
 
 /* br = bx >> amount.  amount >= 0.  no normalization.  assumes br
    has enough size to hold the result.  br and bx can be the same object. */
-static ScmBignum *bignum_rshift(ScmBignum *br, ScmBignum *bx, int amount)
+static ScmBignum *bignum_rshift(ScmBignum *br, const ScmBignum *bx, int amount)
 {
     u_int nwords = amount / WORD_BITS;
     u_int nbits = amount % WORD_BITS;
@@ -785,7 +788,7 @@ static ScmBignum *bignum_rshift(ScmBignum *br, ScmBignum *bx, int amount)
 
 /* br = bx << amount, amount > 0.   no normalization.   assumes br
    has enough size.  br and bx can be the same object. */
-static ScmBignum *bignum_lshift(ScmBignum *br, ScmBignum *bx, int amount)
+static ScmBignum *bignum_lshift(ScmBignum *br, const ScmBignum *bx, int amount)
 {
     int nwords, nbits, i;
     u_long x;
@@ -821,7 +824,7 @@ static ScmBignum *bignum_lshift(ScmBignum *br, ScmBignum *bx, int amount)
  */
 
 /* br += bx * (y << off*WORD_BITS).   br must have enough size. */
-static ScmBignum *bignum_mul_word(ScmBignum *br, ScmBignum *bx,
+static ScmBignum *bignum_mul_word(ScmBignum *br, const ScmBignum *bx,
                                   u_long y, int off)
 {
     u_long hi, lo, x, r0, r1, c;
@@ -850,7 +853,7 @@ static ScmBignum *bignum_mul_word(ScmBignum *br, ScmBignum *bx,
 }
 
 /* returns bx * by.  not normalized */
-static ScmBignum *bignum_mul(ScmBignum *bx, ScmBignum *by)
+static ScmBignum *bignum_mul(const ScmBignum *bx, const ScmBignum *by)
 {
     u_int i;
     ScmBignum *br = make_bignum(bx->size + by->size);
@@ -861,18 +864,12 @@ static ScmBignum *bignum_mul(ScmBignum *bx, ScmBignum *by)
     return br;
 }
 
-static ScmBignum *bignum_mul_si(ScmBignum *bx, long y)
+/* return bx * y,  y != 0 and y != 1 */
+static ScmBignum *bignum_mul_si(const ScmBignum *bx, long y)
 {
     ScmBignum *br;
     u_long yabs;
 
-    if (y == 1) return bx;
-    if (y == 0) {
-        br = make_bignum(1);
-        br->sign = 1;
-        br->values[0] = 0;
-        return br;
-    }
     if (y == -1) {
         br = SCM_BIGNUM(Scm_BignumCopy(bx));
         br->sign = -br->sign;
@@ -887,16 +884,17 @@ static ScmBignum *bignum_mul_si(ScmBignum *bx, long y)
     return br;
 }
 
-ScmObj Scm_BignumMul(ScmBignum *bx, ScmBignum *by)
+ScmObj Scm_BignumMul(const ScmBignum *bx, const ScmBignum *by)
 {
     ScmBignum *br = bignum_mul(bx, by);
     return Scm_NormalizeBignum(br);
 }
 
-ScmObj Scm_BignumMulSI(ScmBignum *bx, long y)
+ScmObj Scm_BignumMulSI(const ScmBignum *bx, long y)
 {
-    ScmBignum *br = bignum_mul_si(bx, y);
-    return Scm_NormalizeBignum(br);
+    if (y == 1) return SCM_OBJ(bx);
+    else if (y == 0) return SCM_MAKE_INT(0);
+    else return Scm_NormalizeBignum(bignum_mul_si(bx, y));
 }
 
 /*-----------------------------------------------------------------------
@@ -919,7 +917,8 @@ static inline int div_normalization_factor(u_long w)
    Assumes digitsof(dividend) >= digitsof(divisor) > 1.
    Assumes enough digits are allocated to quotient.
    Remainder is returned (not normalized) */
-static ScmBignum *bignum_gdiv(ScmBignum *dividend, ScmBignum *divisor,
+static ScmBignum *bignum_gdiv(const ScmBignum *dividend,
+                              const ScmBignum *divisor,
                               ScmBignum *quotient)
 {
     ScmBignum *u, *v;
@@ -1040,7 +1039,7 @@ static u_long bignum_sdiv(ScmBignum *dividend, u_long divisor)
 }
 
 /* assuming dividend is normalized. */
-ScmObj Scm_BignumDivSI(ScmBignum *dividend, long divisor, long *remainder)
+ScmObj Scm_BignumDivSI(const ScmBignum *dividend, long divisor, long *remainder)
 {
     u_long dd = (divisor < 0)? -divisor : divisor;
     u_long rr;
@@ -1106,7 +1105,7 @@ long Scm_BignumRemSI(const ScmBignum *dividend, long divisor)
 
 /* assuming dividend and divisor is normalized.  returns quotient and
    remainder */
-ScmObj Scm_BignumDivRem(ScmBignum *dividend, ScmBignum *divisor)
+ScmObj Scm_BignumDivRem(const ScmBignum *dividend, const ScmBignum *divisor)
 {
     ScmBignum *q, *r;
 
@@ -1127,9 +1126,9 @@ ScmObj Scm_BignumDivRem(ScmBignum *dividend, ScmBignum *divisor)
  * Logical (bitwise) opertaions
  */
 
-ScmObj Scm_BignumAsh(ScmBignum *x, int cnt)
+ScmObj Scm_BignumAsh(const ScmBignum *x, int cnt)
 {
-    if (cnt == 0) return Scm_NormalizeBignum(x);
+    if (cnt == 0) return SCM_OBJ(x);
     if (cnt > 0) {
         int rsize = SCM_BIGNUM_SIZE(x) + (cnt+WORD_BITS-1)/WORD_BITS;
         ScmBignum *r = make_bignum(rsize);
@@ -1160,7 +1159,8 @@ ScmObj Scm_BignumAsh(ScmBignum *x, int cnt)
 /* internal routine for logand.  z = x & y.  assumes z has enough size.
  * assumes x and y are in 2's complement form (sign is ignored).
  */
-static ScmBignum *bignum_and(ScmBignum *z, ScmBignum *x, ScmBignum *y,
+static ScmBignum *bignum_and(ScmBignum *z,
+                             const ScmBignum *x, const ScmBignum *y,
                              int commsize, int xsize, int ysize)
 {
     int i;
@@ -1175,7 +1175,7 @@ static ScmBignum *bignum_and(ScmBignum *z, ScmBignum *x, ScmBignum *y,
     return z;
 }
 
-ScmObj Scm_BignumLogAnd(ScmBignum *x, ScmBignum *y)
+ScmObj Scm_BignumLogAnd(const ScmBignum *x, const ScmBignum *y)
 {
     int xsize = SCM_BIGNUM_SIZE(x), xsign = SCM_BIGNUM_SIGN(x);
     int ysize = SCM_BIGNUM_SIZE(y), ysign = SCM_BIGNUM_SIGN(y);
@@ -1211,7 +1211,8 @@ ScmObj Scm_BignumLogAnd(ScmBignum *x, ScmBignum *y)
 /* internal routine for logior.  z = x | y.  assumes z has enough size.
  * assumes x and y are in 2's complement form (sign is ignored).
  */
-static ScmBignum *bignum_ior(ScmBignum *z, ScmBignum *x, ScmBignum *y,
+static ScmBignum *bignum_ior(ScmBignum *z,
+                             const ScmBignum *x, const ScmBignum *y,
                              int commsize, int xsize, int ysize)
 {
     int i;
@@ -1226,7 +1227,7 @@ static ScmBignum *bignum_ior(ScmBignum *z, ScmBignum *x, ScmBignum *y,
     return z;
 }
 
-ScmObj Scm_BignumLogIor(ScmBignum *x, ScmBignum *y)
+ScmObj Scm_BignumLogIor(const ScmBignum *x, const ScmBignum *y)
 {
     int xsize = SCM_BIGNUM_SIZE(x), xsign = SCM_BIGNUM_SIGN(x);
     int ysize = SCM_BIGNUM_SIZE(y), ysign = SCM_BIGNUM_SIGN(y);
@@ -1263,7 +1264,7 @@ ScmObj Scm_BignumLogIor(ScmBignum *x, ScmBignum *y)
     }
 }
 
-ScmObj Scm_BignumLogXor(ScmBignum *x, ScmBignum *y)
+ScmObj Scm_BignumLogXor(const ScmBignum *x, const ScmBignum *y)
 {
     /* TODO: more efficient implementation */
     ScmObj xandy = Scm_BignumLogAnd(x, y);
@@ -1271,10 +1272,10 @@ ScmObj Scm_BignumLogXor(ScmBignum *x, ScmBignum *y)
     return Scm_LogAnd(xory, Scm_LogNot(xandy));
 }
 
-int Scm_BignumLogCount(ScmBignum *b)
+int Scm_BignumLogCount(const ScmBignum *b)
 {
     ScmBits *bits;
-    ScmBignum *z = (SCM_BIGNUM_SIGN(b)>0)? b : SCM_BIGNUM(Scm_BignumComplement(b));
+    const ScmBignum *z = (SCM_BIGNUM_SIGN(b)>0)? b : SCM_BIGNUM(Scm_BignumComplement(b));
     int size = SCM_BIGNUM_SIZE(z) * SCM_WORD_BITS;
 
     bits = (ScmBits*)z->values;
@@ -1290,7 +1291,7 @@ int Scm_BignumLogCount(ScmBignum *b)
  * Printing
  */
 
-ScmObj Scm_BignumToString(ScmBignum *b, int radix, int use_upper)
+ScmObj Scm_BignumToString(const ScmBignum *b, int radix, int use_upper)
 {
     static const char ltab[] = "0123456789abcdefghijklmnopqrstuvwxyz";
     static const char utab[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -1312,7 +1313,7 @@ ScmObj Scm_BignumToString(ScmBignum *b, int radix, int use_upper)
     return Scm_ListToString(Scm_ReverseX(h));
 }
 
-int Scm_DumpBignum(ScmBignum *b, ScmPort *out)
+int Scm_DumpBignum(const ScmBignum *b, ScmPort *out)
 {
     int i;
     Scm_Printf(out, "#<bignum ");

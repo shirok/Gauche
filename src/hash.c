@@ -444,6 +444,7 @@ static int string_cmp(const ScmHashCore *table, intptr_t k1, intptr_t k2)
  * Accessor function for multiword raw hashtable.
  * Key points to an array of N words.
  */
+#if 0                           /* not used yet */
 static u_long multiword_hash(const ScmHashCore *table, intptr_t key)
 {
     ScmWord keysize = (ScmWord)table->data;
@@ -456,6 +457,7 @@ static u_long multiword_hash(const ScmHashCore *table, intptr_t key)
     }
     return h;
 }
+#endif
 
 #if 0
 static Entry *multiword_access(ScmHashCore *table, intptr_t k, ScmDictOp op)

@@ -408,8 +408,6 @@ static void read_comment(ScmPort *port) /* leading semicolon is already read */
 
 static int skipws(ScmPort *port, ScmReadContext *ctx)
 {
-    ScmChar c0;
-
     for (;;) {
         int c = Scm_GetcUnsafe(port);
         if (c == EOF) return c;

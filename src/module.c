@@ -450,7 +450,6 @@ void Scm_HideBinding(ScmModule *module, ScmSymbol *symbol)
 int Scm_AliasBinding(ScmModule *target, ScmSymbol *targetName,
                      ScmModule *origin, ScmSymbol *originName)
 {
-    ScmObj v;
     ScmGloc *g = Scm_FindBinding(origin, originName, 0);
 
     if (g == NULL || !(g->exported)) return FALSE;

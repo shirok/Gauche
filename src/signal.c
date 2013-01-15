@@ -594,7 +594,7 @@ ScmObj Scm_SetSignalHandler(ScmObj sigs, ScmObj handler, ScmSysSigset *mask)
     struct sigaction act;
     struct sigdesc *desc;
     sigset_t sigset;
-    int badproc = FALSE, sigactionfailed = FALSE, passthrough = FALSE;
+    int badproc = FALSE, sigactionfailed = FALSE;
 
     if (SCM_INTP(sigs)) {
         int signum = SCM_INT_VALUE(sigs);

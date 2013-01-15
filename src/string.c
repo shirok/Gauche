@@ -1088,6 +1088,7 @@ static ScmObj string_scan(ScmString *ss1, const char *s2,
                            Scm_MakeString(s1+bi+siz2, siz1-bi-siz2,
                                           len1-ci-len2, incomplete));
     }
+    return SCM_UNDEFINED;       /* dummy */
 }
 
 ScmObj Scm_StringScan(ScmString *s1, ScmString *s2, int retmode)

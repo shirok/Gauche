@@ -298,7 +298,7 @@ void Scm_DetachVM(ScmVM *vm)
 {
 #ifdef GAUCHE_HAS_THREADS
     if (vm != NULL) {
-        SCM_INTERNAL_THREAD_SETSPECIFIC(Scm_VMKey(), NULL);
+        (void)SCM_INTERNAL_THREAD_SETSPECIFIC(Scm_VMKey(), NULL);
         vm_unregister(vm);
     }
 #endif /* GAUCHE_HAS_THREADS */
@@ -381,7 +381,7 @@ static void vm_register(ScmVM *vm)
     ScmDictEntry *e;
     SCM_INTERNAL_MUTEX_LOCK(vm_table_mutex);
     e = Scm_HashCoreSearch(&vm_table, (intptr_t)vm, SCM_DICT_CREATE);
-    SCM_DICT_SET_VALUE(e, SCM_TRUE);
+    (void)SCM_DICT_SET_VALUE(e, SCM_TRUE);
     SCM_INTERNAL_MUTEX_UNLOCK(vm_table_mutex);
 }
 

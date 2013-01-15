@@ -373,7 +373,6 @@ static ScmPort *make_walker_port(void)
 static void write_walk(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
     ScmHashTable *ht = SCM_HASH_TABLE(SCM_CDR(port->data));
-    ScmObj elt;
     ScmObj stack = SCM_NIL;
 
 #define REGISTER(obj)                                           \

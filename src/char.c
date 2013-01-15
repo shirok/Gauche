@@ -489,10 +489,9 @@ ScmObj Scm_CharSetComplement(ScmCharSet *cs)
     return SCM_OBJ(cs);
 }
 
-/* Make charset case-insensitive. */
+/* Make CS case-insensitive. */
 ScmObj Scm_CharSetCaseFold(ScmCharSet *cs)
 {
-    ScmCharSet *copy = SCM_CHAR_SET(Scm_CharSetCopy(cs));
     ScmChar c, uch, lch;
     ScmTreeIter iter;
     ScmDictEntry *e;

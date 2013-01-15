@@ -259,8 +259,6 @@ static int regexp_compare(ScmObj x, ScmObj y, int equalp)
     } else {
         /* we compare bytecode. */
         int i;
-        const u_char *px = rx->code, *py = ry->code;
-
         for (i=0; i<rx->numCodes; i++) {
             if (rx->code[i] != ry->code[i]) return 1;
         }

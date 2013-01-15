@@ -3260,7 +3260,6 @@ static void double_print(char *buf, int buflen, double val, int plus_sign,
         ScmObj f, r, s, mp, mm, q;
         int exp, sign, est, tc1, tc2, tc3, digs, point, round;
         int mp2 = FALSE, fixup = FALSE;
-        int digcnt = 0;         /* count digits below the decimal point */
 
         IEXPT10_INIT();
         if (val < 0) val = -val;
@@ -3771,7 +3770,6 @@ static ScmObj read_real(const char **strp, int *lenp,
 
     /* Read integral part */
     if (**strp != '.') {
-        const char *ostrp = *strp;
         intpart = read_uint(strp, lenp, ctx, SCM_FALSE);
         if ((*lenp) <= 0) {
             if (minusp) intpart = Scm_Negate(intpart);
