@@ -118,6 +118,16 @@
   (define-constant SYNTAX  1)
   (define-constant PATTERN 2))
 
+;; Max # of argument passed *literally*.  This is limited by
+;; VM stack size, for we need to expand args into stack.
+;; Note that if arguments are 'apply'ed, usually we don't have
+;; this limit since most of those args are not expanded but passed
+;; to the function as the rest parameter.
+;; The number is related to SCM_VM_STACK_SIZE but we can't directly
+;; link to it because of cross compilation.  In future maybe we can
+;; make it customizable by command line args or something.
+(define-constant MAX_LITERAL_ARG_COUNT 8192)
+
 ;; used by pass5/$DEFINE.
 ;; This should match the values in src/gauche/module.h.  We intentionally
 ;; avoid referring to the C value,
@@ -1391,6 +1401,8 @@
    [(has-tag? proc $LAMBDA)        ; immediate lambda
     (expand-inlined-procedure program proc (imap (cut pass1 <> cenv) args))]
    [(null? args) ($call program proc '())] ; fast path
+   [(> (length args) MAX_LITERAL_ARG_COUNT)
+    (errorf "Too many arguments in the call of `~,,,,40s...'" program)]
    [else (let1 cenv (cenv-sans-name cenv)
            ($call program proc (imap (cut pass1 <> cenv) args)))]))
 
@@ -1451,6 +1463,10 @@
           (unless (argcount-ok? (cdr program) (slot-ref proc 'required) opt?)
             (errorf "wrong number of arguments: ~a requires ~a, but got ~a"
                     (variable-name name) (slot-ref proc 'required) nargs))
+          ;; We might get away with this limit by transforming inline calls
+          ;; to apply or something.  Maybe in future.
+          (when (> nargs MAX_LITERAL_ARG_COUNT)
+            (errorf "Too many arguments in the call of `~,,,,40s...'" program))
           ($asm program (if opt? `(,inliner ,nargs) `(,inliner))
                 (imap (cut pass1 <> cenv) (cdr program))))]
        [(? vector?)                     ;inlinable lambda

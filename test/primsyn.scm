@@ -361,6 +361,23 @@
             (eval '(apply car foo '()) (find-module 'primsyn.test))))))
 
 ;;----------------------------------------------------------------
+(test-section "max literal arguments")
+
+;; Fix this after we have separate compile-error condition.
+(define (test-max-literal-args msg expr)
+  (prim-test (string-append "max literal arguments for " msg)
+             'caught 
+             (lambda ()
+               (with-error-handler (lambda (e) 'caught)
+                 (lambda () (eval expr (interaction-environment)))))))
+
+(test-max-literal-args "inliner" `(list ,@(make-list 10000 #f)))
+(test-max-literal-args "global proc" `(make ,@(make-list 10000 #f)))
+(test-max-literal-args "local proc"
+                       `(let ((foo (lambda x x)))
+                          (foo ,@(make-list 10000 #f))))
+
+;;----------------------------------------------------------------
 (test-section "local procedure optimization")
 
 ;; this caused an internal compiler error in 0.8.6.

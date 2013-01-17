@@ -1,3 +1,9 @@
+2013-01-16  shiro  <shiro@acm.org>
+
+	* src/compile.scm (pass1): Made the compiler reject too may literal
+	  arguments that wouldn't fit in VM stack, instead of SEGVing at
+	  runtime.
+
 2013-01-14  Shiro Kawai  <shiro@acm.org>
 
 	* src/bignum.c (Scm_BignumRemSI): Avoid unnecessary allocation of
