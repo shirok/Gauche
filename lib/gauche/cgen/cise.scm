@@ -98,15 +98,15 @@
 (define (ensure-stmt-ctx form env)
   (unless (stmt-ctx? env)
     (if (expr-ctx? env)
-      (error "cise: statment appears in an expression context:" form)
-      (error "cise: statment appears in a toplevel context:" form))))
+      (error "cise: statement appears in an expression context:" form)
+      (error "cise: statement appears in a toplevel context:" form))))
 
 (define (ensure-toplevel-ctx form env)
   (unless (toplevel-ctx? env)
     (error "cise: form can only appear in toplevel:" form)))
 (define (ensure-stmt-or-toplevel-ctx form env)
   (unless (or (toplevel-ctx? env) (stmt-ctx? env))
-    (error "cise: form can only appear in toplevel or statment context:" form)))
+    (error "cise: form can only appear in toplevel or statement context:" form)))
 (define (env-decl-add! env decl)
   (push! (~ env'decls) decl))
 
