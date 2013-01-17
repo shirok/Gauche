@@ -122,7 +122,7 @@ extern unsigned int __cdecl _controlfp(unsigned int, unsigned int);
 #define SCM_FP_ENSURE_DOUBLE_PRECISION_BEGIN()        \
     { fpu_control_t old_fpc_val__, new_fpc_val__;     \
       _FPU_GETCW(old_fpc_val__);                      \
-      new_fpc_val__ = (old_fpc_val__ & (~_FPU_EXTENDED | _FPU_DOUBLE)); \
+      new_fpc_val__ = ((old_fpc_val__ & ~_FPU_EXTENDED) | _FPU_DOUBLE); \
       _FPU_SETCW(new_fpc_val__);
 
 #define SCM_FP_ENSURE_DOUBLE_PRECISION_END() \
