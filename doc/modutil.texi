@@ -5799,7 +5799,7 @@ things faster.
 @c COMMON
 @end defun
 
-@defun mc-factorize n :optional num-tries
+@defun mc-factorize n :key num-tries
 @c EN
 Factorize a positive integer @var{n} using the algorithm
 described in 
@@ -5818,7 +5818,7 @@ If @var{n} is large and prime, however, it will take forever.
 Since this method is probabilistic, the execution time may vary
 on the same @var{n}.  By default this procedure keeps tring
 to find any factor in @var{n}.  You can specify the number
-of trials by the optional argument @var{num-tries}, which ensures
+of trials by the keyword argument @var{num-tries}, which ensures
 that the procedure returns within some time bound. 
 
 If @code{mc-factorize} couldn't find factors up to the
@@ -5833,7 +5833,7 @@ composite numbers in the list.
 アルゴリズムは確率的なので、同じ@var{n}に対しても実行時間はばらつきます。
 デフォルトでは、@var{n}の因数が見つかるまでこの手続きはランダムな初期値を
 選んで試行しつづけます。手続きが特定の時間範囲内に返ってくることを保証
-したければ、省略可能引数@var{num-tries}に最大試行回数を指定してください。
+したければ、キーワード引数@var{num-tries}に最大試行回数を指定してください。
 
 最大試行回数に達しても因数を見つけることができなかった場合、
 結果の因数リストには一つ以上の合成数が含まれる可能性があります。
@@ -5843,7 +5843,7 @@ composite numbers in the list.
 
 @example
 ;; The leading 1 indicates we gave up on some factors
-(mc-factorize 364435736749498667101349358 100)
+(mc-factorize 364435736749498667101349358 :num-tries 100)
   @result{} (1 2 3 3 11 13 141583425310605542774417)
 
 ;; whereas

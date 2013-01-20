@@ -405,7 +405,7 @@
              (loop (+ i 1) (random-integer n))))))
 
 ;; API
-(define (mc-factorize n :optional (num-tries +inf.0))
+(define (mc-factorize n :key (num-tries +inf.0))
   ;; Break up n.  We first exclude primes if possible.
   ;; The worst case scenario is that n contains a factor
   ;; greater than 2^64---in which case we'll take forever.
@@ -423,7 +423,7 @@
           [else #f]))
 
   (define try-prime-limit 1000)
-                        
+
   ;; We exclude trivial factors first.
   (let* ([ps (naive-factorize n try-prime-limit)]
          [n (last ps)])
