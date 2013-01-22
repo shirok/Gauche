@@ -1886,6 +1886,16 @@ exact integer @var{n}.  Negative integer is assumed to be in
 
 @defun twos-exponent n
 @c EN
+If @var{n} is a power of two, that is, @code{(expt 2 k)} and @code{k >= 0}, 
+then returns @code{k}.  Returns @code{#f} if @var{n} is not a power of two.
+@c JP
+@var{n}が2の冪乗@code{(expt 2 k)} (@code{k >= 0}) ならその冪 @code{k} を、
+そうでなければ@code{#f}を返します。
+@c COMMON
+@end defun
+
+@defun twos-exponent-factor n
+@c EN
 Returns maximum @var{k} such that @code{(expt 2 k)} is a factor of @var{n}.
 In other words, returns the number of consecutive zero bits from LSB
 of @var{n}.  If @var{n} is zero, zero is returned.
@@ -1894,16 +1904,18 @@ of @var{n}.  If @var{n} is zero, zero is returned.
 言い換えれば、@var{n}のLSBから連続するゼロビットの数を返します。
 ただし@var{n}がゼロならゼロを返します。
 @c COMMON
-@end defun
 
-@defun power-of-two? n
 @c EN
-Returns @code{#t} if @var{n} is a power of two, otherwise returns @var{#f}.
+This can be calculated by the following expression; this procedure
+is for speed to save creating intermediate numbers when @var{n} is bignum.
 @c JP
-@var{n}が2の冪乗なら@code{#t}を、そうでなければ@code{#f}を返します。
+これは次の式でも計算できますが、この手続きは@var{n}がbignumの場合にも
+中間結果を作らないので若干速いです。
 @c COMMON
+@example
+(- (integer-length (logxor n (- n 1))) 1)
+@end example
 @end defun
-
 
 @node Endianness,  , Bitwise operations, Numbers
 @subsection Endianness

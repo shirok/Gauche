@@ -269,6 +269,7 @@ SCM_EXTERN ScmObj Scm_Modulo(ScmObj arg1, ScmObj arg2, int remainder);
 SCM_EXTERN ScmObj Scm_Gcd(ScmObj x, ScmObj y);
 
 SCM_EXTERN ScmObj Scm_Expt(ScmObj x, ScmObj y);
+SCM_EXTERN long   Scm_TwosPower(ScmObj n);
 
 SCM_EXTERN int    Scm_NumEq(ScmObj x, ScmObj y);
 SCM_EXTERN int    Scm_NumLT(ScmObj x, ScmObj y);

@@ -591,7 +591,7 @@
 ;; Returns maximum s where (expt 2 s) is a factor of n.
 ;; This can be (- (integer-length (logxor n (- n 1))) 1), but we can save
 ;; creating intermediate numbers by providing this natively.
-(define-cproc twos-exponent (n) ::<int> :constant
+(define-cproc twos-exponent-factor (n) ::<int> :constant
   (cond [(SCM_EQ n (SCM_MAKE_INT 0)) (result 0)]
         [(SCM_INTP n)
          (let* ([z::ScmBits (cast ScmBits (cast long (SCM_INT_VALUE n)))])
@@ -602,7 +602,11 @@
            (result (Scm_BitsLowest1 z 0 (* k SCM_WORD_BITS))))]
         [else (SCM_TYPE_ERROR n "exact integer") (result 0)]))
 
-(define (power-of-two? n) (= (+ (twos-exponent n) 1) (integer-length n)))
+(define-cproc twos-exponent (n) :constant
+  (if (SCM_INTEGERP n) ; exact integer only
+    (let* ([i::long (Scm_TwosPower n)])
+      (result (?: (>= i 0) (Scm_MakeInteger i) SCM_FALSE)))
+    (begin (SCM_TYPE_ERROR n "exact integer") (result SCM_FALSE))))
 
 ;; As of 0.8.8 we started to support exact rational numbers.  Some existing
 ;; code may count on exact integer division to be coerced to flonum

@@ -1954,27 +1954,27 @@
 (test* "integer-length" 62 (integer-length (- (- (expt 2 61)) 1)))
 (test* "integer-length" 1025 (integer-length (expt 2 1024)))
 
-(let1 2s-exponent-tests `((0 0) (-1 0) (1 0) (2 1) (-2 1)
-                          (1048576 20) (-1048576 20)
-                          (,(expt 2 100) 100)
-                          (,(- (expt 2 100)) 100)
-                          (,(* 7 (expt 2 50)) 50))
-  (test* "twos-exponent" 2s-exponent-tests
-         (map (lambda [t] (list (car t) (twos-exponent (car t))))
-              2s-exponent-tests)))
+(let1 2s-exponent-factor-tests `((0 0) (-1 0) (1 0) (2 1) (-2 1)
+                                 (1048576 20) (-1048576 20)
+                                 (,(expt 2 100) 100)
+                                 (,(- (expt 2 100)) 100)
+                                 (,(* 7 (expt 2 50)) 50))
+  (test* "twos-exponent-factor" 2s-exponent-factor-tests
+         (map (lambda [t] (list (car t) (twos-exponent-factor (car t))))
+              2s-exponent-factor-tests)))
 
-(let1 power-of-two-tests `(0 1 -1 2 -2 4 8 65535 65536
-                             131072 ,(* 3 131072)
-                             ,(expt 2 80) ,(- (expt 2 80))
-                             ,(* 3 (expt 2 80)))
-  (define (dumb-test n)
+(let1 2s-exponent-tests `(0 1 -1 2 -2 4 8 65535 65536
+                          131072 ,(* 3 131072)
+                          ,(expt 2 80) ,(- (expt 2 80))
+                          ,(* 3 (expt 2 80)))
+  (define (dumb-test n k)
     (cond [(<= n 0) #f]
-          [(= n 1) #t]
+          [(= n 1) k]
           [(odd? n) #f]
-          [else (dumb-test (/ n 2))]))
-  (test* "power-of-two?"
-         (map (lambda [k] (cons k (dumb-test k))) power-of-two-tests)
-         (map (lambda [k] (cons k (power-of-two? k))) power-of-two-tests)))
+          [else (dumb-test (/ n 2) (+ k 1))]))
+  (test* "twos-exponent"
+         (map (lambda [k] (cons k (dumb-test k 0))) 2s-exponent-tests)
+         (map (lambda [k] (cons k (twos-exponent k))) 2s-exponent-tests)))
 
 ;;------------------------------------------------------------------
 (test-section "inexact arithmetics")

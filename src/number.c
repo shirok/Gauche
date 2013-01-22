@@ -35,6 +35,7 @@
 #include "gauche/bignum.h"
 #include "gauche/scmconst.h"
 #include "gauche/bits.h"
+#include "gauche/bits_inline.h"
 #include "gauche/builtin-syms.h"
 #include "gauche/arith.h"
 
@@ -2670,6 +2671,26 @@ static ScmObj scm_expt(ScmObj x, ScmObj y, int vmp)
     }
 }
 DEFINE_DUAL_API2(Scm_Expt, Scm_VMExpt, scm_expt)
+
+/* If num is exact 2^s (s >= 0), returns s.  Otherwise returns -1. */
+long Scm_TwosPower(ScmObj n)
+{
+    if (SCM_INTP(n)) {
+        long i = SCM_INT_VALUE(n);
+        if (i <= 0) return -1;
+        if ((i<<1) == ((i ^ (i-1)) + 1)) {
+            return Scm__HighestBitNumber(i);
+        }
+        /*FALTHROUGH*/
+    } else if (SCM_BIGNUMP(n) && SCM_BIGNUM_SIGN(n) > 0) {
+        ScmBits *b = (ScmBits*)SCM_BIGNUM(n)->values;
+        int l = SCM_BIGNUM_SIZE(n) * SCM_WORD_BITS;
+        int c = Scm_BitsLowest1(b, 0, l);
+        if (c == Scm_BitsHighest1(b, 0, l)) return c;
+        /*FALTHROUGH*/
+    }
+    return -1;
+}
 
 /*===============================================================
  * Comparison

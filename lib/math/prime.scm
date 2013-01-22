@@ -141,7 +141,7 @@
 ;; returns #f if n is composite.
 (define (miller-rabin-test a n)
   (let* ([n-1 (- n 1)]
-         [s (twos-exponent n-1)]
+         [s (twos-exponent-factor n-1)]
          [d (ash n-1 (- s))]
          [a^d (expt-mod a d n)])
     (or (= a^d 1)
@@ -217,7 +217,7 @@
              (J (modulo n a) a (- s))
              (J (modulo n a) a s))]
           [else
-           (let1 k (- (twos-exponent a))
+           (let1 k (- (twos-exponent-factor a))
              (if (and (memv (logand n 7) '(3 5)) (odd? k))
                (J (ash a k) n (- s))
                (J (ash a k) n s)))]))
@@ -267,7 +267,7 @@
       (modulo (ash x -1) n)))
   
   (let* ([n+1 (+ n 1)]
-         [s   (twos-exponent n+1)]
+         [s   (twos-exponent-factor n+1)]
          [d   (ash n+1 (- s))]
          [D   (bpsw-find-D n)]
          [P   1]
@@ -338,7 +338,7 @@
 (define (naive-factorize n :optional (divisor-limit +inf.0))
   (if (<= n 3)
     `(,n)
-    (let1 k (twos-exponent n)
+    (let1 k (twos-exponent-factor n)
       (if (= k 0)
         (naive-factorize-1 n divisor-limit)
         ;; avoid simple recursion to naive-factorize for every factor of 2

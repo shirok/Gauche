@@ -53,7 +53,7 @@
                ;; Avoid testing even numbers (which is waste of time), plus
                ;; this makes density of smaller numbers slighly higher.
                (let* ([x (rand (expt 2 48))]
-                      [sample (ash x (- (twos-exponent x)))])
+                      [sample (ash x (- (twos-exponent-factor x)))])
                  (if (eq? (bpsw-prime? sample) (miller-rabin-prime? sample))
                    (loop (+ n 1))
                    `(disagreement at ,n with sample ,sample))))))))
