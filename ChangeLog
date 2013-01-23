@@ -1,3 +1,10 @@
+2013-01-21  Shiro Kawai  <shiro@acm.org>
+
+	* src/libnum.scm (twos-exponent, twos-exponent-factor): Renamed
+	  power-of-two? to twos-exponent, for now we returns more meaningful
+	  result than just a booelan.  The previous twos-exponent is renamed
+	  to twos-exponent-factor.
+
 2013-01-16  shiro  <shiro@acm.org>
 
 	* src/compile.scm (pass1): Made the compiler reject too may literal
