@@ -1,3 +1,9 @@
+2013-01-23  Shiro Kawai  <shiro@acm.org>
+
+	* src/string.c (string_scan, string_scan_reverse): Use optimized
+	  scan for utf-8 multibyte-multibyte case and when the searched
+	  string is a single byte.  The effect is significant.
+
 2013-01-21  Shiro Kawai  <shiro@acm.org>
 
 	* src/libnum.scm (twos-exponent, twos-exponent-factor): Renamed

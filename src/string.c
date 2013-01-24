@@ -34,8 +34,8 @@
 #define LIBGAUCHE_BODY
 #include "gauche.h"
 
-#include <ctype.h>
 #include <string.h>
+#include <ctype.h>
 
 void Scm_DStringDump(FILE *out, ScmDString *dstr);
 
@@ -921,10 +921,55 @@ static int boyer_moore_reverse(const char *ss1, int siz1,
     return -1;
 }
 
-/* A primitive routine to search a substring s2 in s1.
-   Returns TRUE iff found.  Calculates both byte index and character index.
-   If both strings are single-byte and s1 is long, we use Boyer-Moore.
+/* Primitive routines to search a substring s2 within s1.
+   Returns NOT_FOUND if not fonud, FOUND_BOTH_INDEX if both byte index
+   (*bi) and character index (*ci) is calculted, FOUND_BYTE_INDEX
+   if only byte index is calculated.
+
+   When the encoding is utf-8 or none, we can scan a string as if it is just
+   a bytestring.   The only caveat is that, with utf-8, we need to caclulate
+   character index after we find the match.  It is still a total win, for
+   finding out non-matches using Boyer-Moore is a lot faster than naive way.
+
+   If the encoding is EUC-JP or SJIS, we can only use Boyer-Moore when we
+   know the strings have single-byte only.  Multibyte strings of those
+   encodings can have spurious matches when compared bytewise.
  */
+
+/* return value of string_scan */
+#define NOT_FOUND 0         /* string not found */
+#define FOUND_BOTH_INDEX 1  /* string found, and both indexes are calculated */
+#define FOUND_BYTE_INDEX 2  /* string found, and only byte index is calc'd */
+
+/* In utf-8 multibyte case, we only count byte index and let the caller
+   figure out the character index.  In other encodings we can always find
+   both index. */
+#if defined(GAUCHE_CHAR_ENCODING_UTF_8)
+#define FOUND_MAYBE_BOTH FOUND_BYTE_INDEX
+#else
+#define FOUND_MAYBE_BOTH FOUND_BOTH_INDEX
+#endif
+
+/* In euc-jp and sjis case, we use faster method only when (size == len). */
+#if defined(GAUCHE_CHAR_ENCODING_EUC_JP) || defined(GAUCHE_CHAR_ENCODING_SJIS)
+#define BYTEWISE_SEARCHABLE(siz, len)  ((siz) == (len))
+#define MULTIBYTE_NAIVE_SEARCH_NEEDED 1
+#else
+#define BYTEWISE_SEARCHABLE(siz, len)  TRUE
+#define MULTIBYTE_NAIVE_SEARCH_NEEDED 0
+#endif
+
+/* glibc has memrchr, but we need to provide fallback anyway and
+   we don't need it to be highly tuned, so we just roll our own. */
+static const void *my_memrchr(const void *s, int c, size_t n)
+{
+    const char *p = (const char*)s + n - 1;
+    for (;p >= (const char*)s; p--) {
+        if ((int)*p == c) return p;
+    }
+    return NULL;
+}
+
 static int string_search(const char *s1, int siz1, int len1,
                          const char *s2, int siz2, int len2,
                          int *bi /* out */,
@@ -934,41 +979,51 @@ static int string_search(const char *s1, int siz1, int len1,
 
     if (siz2 == 0) {
         *bi = *ci = 0;
-        return TRUE;
+        return FOUND_BOTH_INDEX;
     }
 
-    if (siz1 == len1) {
-        if (siz2 == len2) {
-            /* short cut for single-byte strings */
-            if (siz1 < siz2) return FALSE;
+    /* Single-byte case. */
+    if (BYTEWISE_SEARCHABLE(siz1, len1)) {
+        if (siz2 == 1) {
+            /* Single ASCII character search case.  This is a huge win. */
+            const char *z = memchr(s1, s2[0], siz1);
+            if (z) { *bi = *ci = z - s1; return FOUND_MAYBE_BOTH; }
+            else return NOT_FOUND;
+        }
+        if (BYTEWISE_SEARCHABLE(siz2, len2)) {
+            /* Shortcut for single-byte strings */
+            if (siz1 < siz2) return NOT_FOUND;
             if (siz1 < 256 || siz2 >= 256) {
                 /* brute-force search */
                 for (i=0; i<=siz1-siz2; i++) {
                     if (memcmp(s2, s1+i, siz2) == 0) break;
                 }
-                if (i == siz1-siz2+1) return FALSE;
+                if (i == siz1-siz2+1) return NOT_FOUND;
             } else {
                 i = boyer_moore(s1, siz1, s2, siz2);
-                if (i < 0) return FALSE;
+                if (i < 0) return NOT_FOUND;
             }
             *bi = *ci = i;
-            return TRUE;
-        } else {
-            return FALSE;       /* sbstring can't contain mbstring. */
+            return FOUND_MAYBE_BOTH;
         }
+        /* FALLTHROUGH */
     }
+
+#if MULTIBYTE_NAIVE_SEARCH_NEEDED
+    /* Multibyte case. */
     if (len1 >= len2) {
         const char *sp = s1;
         for (i=0; i<=len1-len2; i++) {
             if (memcmp(sp, s2, siz2) == 0) {
                 *bi = (int)(sp - s1);
                 *ci = i;
-                return TRUE;
+                return FOUND_BOTH_INDEX;
             }
             sp += SCM_CHAR_NFOLLOWS(*sp) + 1;
         }
     }
-    return FALSE;
+#endif /*MULTIBYTE_NAIVE_SEARCH_NEEDED*/
+    return NOT_FOUND;
 }
 
 static int string_search_reverse(const char *s1, int siz1, int len1,
@@ -981,29 +1036,39 @@ static int string_search_reverse(const char *s1, int siz1, int len1,
     if (siz2 == 0) {
         *bi = siz1;
         *ci = len1;
-        return TRUE;
+        return FOUND_BOTH_INDEX;
     }
 
-    if (siz1 == len1) {
-        if (siz2 == len2) {
+    /* Single-byte case. */
+    if (BYTEWISE_SEARCHABLE(siz1, len1)) {
+        if (siz2 == 1) {
+            /* Single ASCII character search case.  This is a huge win. */
+            const char *z = my_memrchr(s1, s2[0], siz1);
+            if (z) { *bi = *ci = z - s1; return FOUND_MAYBE_BOTH; }
+            else return NOT_FOUND;
+        }
+        if (BYTEWISE_SEARCHABLE(siz2, len2)) {
             /* short cut for single-byte strings */
-            if (siz1 < siz2) return FALSE;
+            if (siz1 < siz2) return NOT_FOUND;
             if (siz1 < 256 || siz2 >= 256) {
                 /* brute-force search */
                 for (i=siz1-siz2; i>=0; i--) {
                     if (memcmp(s2, s1+i, siz2) == 0) break;
                 }
-                if (i < 0) return FALSE;
+                if (i < 0) return NOT_FOUND;
             } else {
                 i = boyer_moore_reverse(s1, siz1, s2, siz2);
-                if (i < 0) return FALSE;
+                if (i < 0) return NOT_FOUND;
             }
             *bi = *ci = i;
-            return TRUE;
+            return FOUND_MAYBE_BOTH;
         } else {
-            return FALSE;       /* sbstring can't contain mbstring. */
+            return NOT_FOUND;   /* sbstring can't contain mbstring. */
         }
     }
+
+#if MULTIBYTE_NAIVE_SEARCH_NEEDED
+    /* Multibyte case. */
     if (len1 >= len2) {
         const char *sp = s1 + siz1, *p;
         for (i=0; i<len2; i++) {
@@ -1015,13 +1080,14 @@ static int string_search_reverse(const char *s1, int siz1, int len1,
             if (memcmp(sp, s2, siz2) == 0) {
                 *bi = (int)(sp - s1);
                 *ci = i;
-                return TRUE;
+                return FOUND_BOTH_INDEX;
             }
             SCM_CHAR_BACKWARD(sp, s1, p);
             sp = p;
         }
     }
-    return FALSE;
+#endif /*MULTIBYTE_NAIVE_SEARCH_NEEDED*/
+    return NOT_FOUND;
 }
 
 /* Scan s2 in s1, and calculates appropriate return value(s) according to       
@@ -1051,12 +1117,24 @@ static ScmObj string_scan(ScmString *ss1, const char *s2,
     const char *s1 = SCM_STRING_BODY_START(sb);
     int siz1 = SCM_STRING_BODY_SIZE(sb);
     int len1 = SCM_STRING_BODY_LENGTH(sb);
+    int retcode;
 
     if (retmode < 0 || retmode > SCM_STRING_SCAN_BOTH) {
         Scm_Error("return mode out fo range: %d", retmode);
     }
 
-    if (!searcher(s1, siz1, len1, s2, siz2, len2, &bi, &ci)) {
+    incomplete =
+        (SCM_STRING_BODY_INCOMPLETE_P(sb) || incomplete2)
+        ? SCM_STRING_INCOMPLETE : 0;
+
+    /* prefiltering - if both string is complete, and s1 is sbstring
+       and s2 is mbstring, we know there's no match.  */
+    retcode = 
+        (!incomplete && (siz1 == len1) && (siz2 != len2))
+        ? NOT_FOUND
+        : searcher(s1, siz1, len1, s2, siz2, len2, &bi, &ci);
+    
+    if (retcode == NOT_FOUND) {
         if (retmode <= SCM_STRING_SCAN_AFTER) {
             return SCM_FALSE;
         } else {
@@ -1064,9 +1142,9 @@ static ScmObj string_scan(ScmString *ss1, const char *s2,
         }
     }
 
-    incomplete =
-        (SCM_STRING_BODY_INCOMPLETE_P(sb) || incomplete2)?
-        SCM_STRING_INCOMPLETE : 0;
+    if (retcode == FOUND_BYTE_INDEX && !incomplete) {
+        ci = count_length(s1, bi);
+    }
     
     switch (retmode) {
     case SCM_STRING_SCAN_INDEX:
@@ -1128,6 +1206,13 @@ ScmObj Scm_StringScanCharRight(ScmString *s1, ScmChar ch, int retmode)
     return string_scan(s1, buf, SCM_CHAR_NBYTES(ch), 1, FALSE, retmode,
                        string_search_reverse);
 }
+
+#undef NOT_FOUND
+#undef FOUND_BOTH_INDEX
+#undef FOUND_BYTE_INDEX
+#undef FOUND_MAYBE_BOTH
+#undef BYTEWISE_SEARCHABLE
+#undef MULTIBYTE_NAIVE_SEARCH_NEEDED
 
 /*----------------------------------------------------------------
  * Miscellaneous functions
