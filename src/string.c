@@ -850,42 +850,6 @@ ScmObj Scm_MaybeSubstring(ScmString *x, ScmObj start, ScmObj end)
  * Search & parse
  */
 
-/* Split string by char.  Char itself is not included in the result. */
-/* TODO: fix semantics.  What should be returned for (string-split "" #\.)? */
-ScmObj Scm_StringSplitByChar(ScmString *str, ScmChar ch)
-{
-    const ScmStringBody *strb = SCM_STRING_BODY(str);
-    int size = SCM_STRING_BODY_SIZE(strb), sizecnt = 0;
-    int lencnt = 0;
-    const char *s = SCM_STRING_BODY_START(strb), *p = s, *e = s + size;
-    ScmObj head = SCM_NIL, tail = SCM_NIL;
-
-    if (SCM_STRING_BODY_INCOMPLETE_P(strb)) {
-        /* TODO: fix the policy of handling incomplete string */
-        Scm_Error("incomplete string not accepted: %S", str);
-    }
-
-    while (p < e) {
-        ScmChar cc;
-        int ncc;
-
-        SCM_CHAR_GET(p, cc);
-        ncc = SCM_CHAR_NBYTES(cc);
-        if (ch == cc) {
-            SCM_APPEND1(head, tail, Scm_MakeString(s, sizecnt, lencnt, 0));
-            sizecnt = lencnt = 0;
-            p += ncc;
-            s = p;
-        } else {
-            p += ncc;
-            sizecnt += ncc;
-            lencnt ++;
-        }
-    }
-    SCM_APPEND1(head, tail, Scm_MakeString(s, sizecnt, lencnt, 0));
-    return head;
-}
-
 /* Boyer-Moore string search.  assuming siz1 > siz2, siz2 < 256. */
 static int boyer_moore(const char *ss1, int siz1,
                        const char *ss2, int siz2)
@@ -1110,7 +1074,8 @@ static ScmObj string_scan(ScmString *ss1, const char *s2,
                           int siz2, int len2, int incomplete2,
                           int retmode,
                           int (*searcher)(const char*, int, int,
-                                          const char*, int, int, int*, int*))
+                                          const char*, int, int, int*, int*),
+                          ScmObj *secondval) /* out */
 {
     int bi, ci, incomplete;
     const ScmStringBody *sb = SCM_STRING_BODY(ss1);
@@ -1135,11 +1100,8 @@ static ScmObj string_scan(ScmString *ss1, const char *s2,
         : searcher(s1, siz1, len1, s2, siz2, len2, &bi, &ci);
     
     if (retcode == NOT_FOUND) {
-        if (retmode <= SCM_STRING_SCAN_AFTER) {
-            return SCM_FALSE;
-        } else {
-            return Scm_Values2(SCM_FALSE, SCM_FALSE);
-        }
+        if (retmode > SCM_STRING_SCAN_AFTER) *secondval = SCM_FALSE;
+        return SCM_FALSE;
     }
 
     if (retcode == FOUND_BYTE_INDEX && !incomplete) {
@@ -1155,56 +1117,68 @@ static ScmObj string_scan(ScmString *ss1, const char *s2,
         return Scm_MakeString(s1+bi+siz2, siz1-bi-siz2,
                               len1-ci-len2, incomplete);
     case SCM_STRING_SCAN_BEFORE2:
-        return Scm_Values2(Scm_MakeString(s1, bi, ci, incomplete),
-                           Scm_MakeString(s1+bi, siz1-bi, len1-ci, incomplete));
+        *secondval = Scm_MakeString(s1+bi, siz1-bi, len1-ci, incomplete);
+        return Scm_MakeString(s1, bi, ci, incomplete);
     case SCM_STRING_SCAN_AFTER2:
-        return Scm_Values2(Scm_MakeString(s1, bi+siz2, ci+len2, incomplete),
-                           Scm_MakeString(s1+bi+siz2, siz1-bi-siz2,
-                                          len1-ci-len2, incomplete));
+        *secondval = Scm_MakeString(s1+bi+siz2, siz1-bi-siz2,
+                                    len1-ci-len2, incomplete);
+        return Scm_MakeString(s1, bi+siz2, ci+len2, incomplete);
     case SCM_STRING_SCAN_BOTH:
-        return Scm_Values2(Scm_MakeString(s1, bi, ci, incomplete),
-                           Scm_MakeString(s1+bi+siz2, siz1-bi-siz2,
-                                          len1-ci-len2, incomplete));
+        *secondval = Scm_MakeString(s1+bi+siz2, siz1-bi-siz2,
+                                    len1-ci-len2, incomplete);
+        return Scm_MakeString(s1, bi, ci, incomplete);
     }
     return SCM_UNDEFINED;       /* dummy */
 }
 
 ScmObj Scm_StringScan(ScmString *s1, ScmString *s2, int retmode)
 {
+    ScmObj v1, v2;
     const ScmStringBody *s2b = SCM_STRING_BODY(s2);
-    return string_scan(s1,
-                       SCM_STRING_BODY_START(s2b),
-                       SCM_STRING_BODY_SIZE(s2b),
-                       SCM_STRING_BODY_LENGTH(s2b),
-                       SCM_STRING_BODY_INCOMPLETE_P(s2b),
-                       retmode, string_search);
+    v1 = string_scan(s1,
+                     SCM_STRING_BODY_START(s2b),
+                     SCM_STRING_BODY_SIZE(s2b),
+                     SCM_STRING_BODY_LENGTH(s2b),
+                     SCM_STRING_BODY_INCOMPLETE_P(s2b),
+                     retmode, string_search, &v2);
+    if (retmode <= SCM_STRING_SCAN_AFTER) return v1;
+    else return Scm_Values2(v1, v2);
 }
 
 ScmObj Scm_StringScanChar(ScmString *s1, ScmChar ch, int retmode)
 {
+    ScmObj v1, v2;
     char buf[SCM_CHAR_MAX_BYTES];
     SCM_CHAR_PUT(buf, ch);
-    return string_scan(s1, buf, SCM_CHAR_NBYTES(ch), 1, FALSE, retmode,
-                       string_search);
+    v1 = string_scan(s1, buf, SCM_CHAR_NBYTES(ch), 1, FALSE, retmode,
+                     string_search, &v2);
+    if (retmode <= SCM_STRING_SCAN_AFTER) return v1;
+    else return Scm_Values2(v1, v2);
 }
 
 ScmObj Scm_StringScanRight(ScmString *s1, ScmString *s2, int retmode)
 {
+    ScmObj v1, v2;
     const ScmStringBody *s2b = SCM_STRING_BODY(s2);
-    return string_scan(s1,
-                       SCM_STRING_BODY_START(s2b),
-                       SCM_STRING_BODY_SIZE(s2b),
-                       SCM_STRING_BODY_LENGTH(s2b),
-                       SCM_STRING_BODY_INCOMPLETE_P(s2b),
-                       retmode, string_search_reverse);
+    v1 = string_scan(s1,
+                     SCM_STRING_BODY_START(s2b),
+                     SCM_STRING_BODY_SIZE(s2b),
+                     SCM_STRING_BODY_LENGTH(s2b),
+                     SCM_STRING_BODY_INCOMPLETE_P(s2b),
+                     retmode, string_search_reverse, &v2);
+    if (retmode <= SCM_STRING_SCAN_AFTER) return v1;
+    else return Scm_Values2(v1, v2);
 }
 
 ScmObj Scm_StringScanCharRight(ScmString *s1, ScmChar ch, int retmode)
 {
+    ScmObj v1, v2;
     char buf[SCM_CHAR_MAX_BYTES];
     SCM_CHAR_PUT(buf, ch);
-    return string_scan(s1, buf, SCM_CHAR_NBYTES(ch), 1, FALSE, retmode,
-                       string_search_reverse);
+    v1 = string_scan(s1, buf, SCM_CHAR_NBYTES(ch), 1, FALSE, retmode,
+                     string_search_reverse, &v2);
+    if (retmode <= SCM_STRING_SCAN_AFTER) return v1;
+    else return Scm_Values2(v1, v2);
 }
 
 #undef NOT_FOUND
@@ -1213,6 +1187,46 @@ ScmObj Scm_StringScanCharRight(ScmString *s1, ScmChar ch, int retmode)
 #undef FOUND_MAYBE_BOTH
 #undef BYTEWISE_SEARCHABLE
 #undef MULTIBYTE_NAIVE_SEARCH_NEEDED
+
+/* Split string by char.  Char itself is not included in the result.
+   If LIMIT >= 0, up to that number of matches are considered (i.e.
+   up to LIMIT+1 strings are returned).   LIMIT < 0 makes the number
+   of matches unlimited.
+   TODO: If CH is a utf-8 multi-byte char, Boyer-Moore skip table is
+   calculated every time we call string_scan, which is a waste.  Some
+   mechanism to cache the skip table would be nice. 
+*/
+ScmObj Scm_StringSplitByCharWithLimit(ScmString *str, ScmChar ch, int limit)
+{
+    char buf[SCM_CHAR_MAX_BYTES];
+    int nb = SCM_CHAR_NBYTES(ch);
+    ScmObj head = SCM_NIL, tail = SCM_NIL, v1, v2;
+
+    if (limit == 0) return SCM_LIST1(SCM_OBJ(str)); /* trivial case */
+    
+    SCM_CHAR_PUT(buf, ch);
+
+    for (;;) {
+        v1 = string_scan(str, buf, nb, 1, FALSE, SCM_STRING_SCAN_BOTH,
+                         string_search, &v2);
+        if (SCM_FALSEP(v1)) {
+            SCM_APPEND1(head, tail, SCM_OBJ(str));
+            break;
+        } else {
+            SCM_APPEND1(head, tail, v1);
+            if (--limit == 0) { SCM_APPEND1(head, tail, v2); break; }
+        }
+        str = SCM_STRING(v2);
+    }
+    return head;
+}
+
+/* For ABI compatibility - On 1.0, let's make this have limit arg and
+   drop Scm_StringSplitByCharWithLimit.  */
+ScmObj Scm_StringSplitByChar(ScmString *str, ScmChar ch)
+{
+    return Scm_StringSplitByCharWithLimit(str, ch, -1);
+}
 
 /*----------------------------------------------------------------
  * Miscellaneous functions

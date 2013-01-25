@@ -421,7 +421,7 @@ static ScmObj break_env_paths(const char *envname)
         return SCM_NIL;
     } else {
 	return Scm_StringSplitByChar(SCM_STRING(SCM_MAKE_STR_COPYING(e)),
-				     delim);
+                                     delim);
     }
 }
 

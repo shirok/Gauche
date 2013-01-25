@@ -1,3 +1,9 @@
+2013-01-24  Shiro Kawai  <shiro@acm.org>
+
+	* src/string.c (Scm_StringSplitByCharWithLimit),
+	  lib/gauche/stringutil.scm (string-split): Supported optional limit
+	  argument, based on Bizenn's patch.
+
 2013-01-23  Shiro Kawai  <shiro@acm.org>
 
 	* src/string.c (string_scan, string_scan_reverse): Use optimized

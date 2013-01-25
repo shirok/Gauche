@@ -108,9 +108,10 @@
   (result (SCM_STRING_BODY_SIZE (SCM_STRING_BODY str))))
 
 (select-module gauche.internal)
-;; see lib/gauche/string for generic string-split
-(define-cproc %string-split-by-char (s::<string> ch::<char>)
-  Scm_StringSplitByChar)
+;; see lib/gauche/stringutil.scm for generic string-split
+(define-cproc %string-split-by-char (s::<string> ch::<char>
+                                     :optional (limit::<int> -1))
+  Scm_StringSplitByCharWithLimit)
 
 (define-cproc %maybe-substring (str::<string> :optional start end)
   Scm_MaybeSubstring)

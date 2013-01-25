@@ -5758,7 +5758,7 @@ after @var{item}.  If @var{item} is not found, returns
 @end table
 @end defun
 
-@defun string-split string splitter
+@defun string-split string splitter &optional limit
 @c EN
 Splits @var{string} by @var{splitter} and returns a list of strings.
 @var{splitter} can be a character, a character set, a string,
@@ -5799,6 +5799,23 @@ character in @var{string}, and the consecutive characters that caused
 ;; some boundary cases
 (string-split "abc" #\/) @result{} ("abc")
 (string-split ""    #\/) @result{} ("")
+@end example
+
+@c EN
+If @var{limit} is given and not @code{#f}, it must be a nonnegative
+integer and specifies the maximum number of match to the @var{splitter}.
+Once the limit is reached, the rest of string is included in the result
+as is.
+@c JP
+@var{limit}引数が与えられた場合、それは@code{#f}か非負整数でなければなりません。
+非負整数の場合は@var{splitter}がマッチするデリミタの最大数を指定します。
+デリミタがその数だけ見つかったら、残りの文字列は分割されずにそのまま結果に含められます。
+@c COMMON
+
+@example
+(string-split "a.b..c" "." 0)   @result{} ("a.b..c")
+(string-split "a.b..c" "." 1)   @result{} ("a" "b..c")
+(string-split "a.b..c" "." 2)   @result{} ("a" "b" ".c")
 @end example
 
 @c EN

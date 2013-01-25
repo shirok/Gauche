@@ -231,7 +231,12 @@ enum {
  * Searching
  */
 
+/* Note: On 1.0 release, let StringSplitByChar have limit arg.  For 0.9.x
+   series we use a separate Scm_StringSplitByCharWithLimit in order to keep
+   ABI compatibility. */
 SCM_EXTERN ScmObj  Scm_StringSplitByChar(ScmString *str, ScmChar ch);
+SCM_EXTERN ScmObj  Scm_StringSplitByCharWithLimit(ScmString *str, ScmChar ch,
+                                                  int limit);
 SCM_EXTERN ScmObj  Scm_StringScan(ScmString *s1, ScmString *s2, int retmode);
 SCM_EXTERN ScmObj  Scm_StringScanChar(ScmString *s1, ScmChar ch, int retmode);
 SCM_EXTERN ScmObj  Scm_StringScanRight(ScmString *s1, ScmString *s2, int retmode);
