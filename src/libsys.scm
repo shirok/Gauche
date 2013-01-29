@@ -370,13 +370,13 @@
 ;;---------------------------------------------------------------------
 ;; stdio.h
 
-(define-cproc sys-remove (filename::<const-cstring-safe>) ::<void>
+(define-cproc sys-remove (filename::<const-cstring>) ::<void>
   (let* ([r::int])
     (SCM_SYSCALL r (remove filename))
     (when (< r 0) (Scm_SysError "remove failed on %s" filename))))
 
-(define-cproc sys-rename (oldname::<const-cstring-safe>
-                          newname::<const-cstring-safe>)
+(define-cproc sys-rename (oldname::<const-cstring>
+                          newname::<const-cstring>)
   ::<void>
   (let* ([r::int])
     (.if "defined(GAUCHE_WINDOWS)"
@@ -423,7 +423,7 @@
 
 ;; Note: the return value of system() is not portable.
 ;; NB: on WinNT, system("") aborts, so we filter it.
-(define-cproc sys-system (command::<const-cstring-safe>) ::<int>
+(define-cproc sys-system (command::<const-cstring>) ::<int>
   (if (== (aref command 0) 0)
     (result 0)
     (SCM_SYSCALL SCM_RESULT (system command))))
@@ -456,11 +456,11 @@
 (define-cproc sys-environ () Scm_Environ)
 
 ;; NB:
-(define-cproc sys-setenv (name::<const-cstring-safe>
-                          value::<const-cstring-safe>
+(define-cproc sys-setenv (name::<const-cstring>
+                          value::<const-cstring>
                           :optional (overwrite::<boolean> #f))
   ::<void> Scm_SetEnv)
-(define-cproc sys-unsetenv (name::<const-cstring-safe>) ::<void> Scm_UnsetEnv)
+(define-cproc sys-unsetenv (name::<const-cstring>) ::<void> Scm_UnsetEnv)
 (define-cproc sys-clearenv () ::<void> Scm_ClearEnv)
 
 (inline-stub
@@ -628,7 +628,7 @@
    (define-cfn check-trailing-separator (path::(const char*))
      ::(const char*) :static (return path)))
 
- (define-cproc sys-stat (path::<const-cstring-safe>)
+ (define-cproc sys-stat (path::<const-cstring>)
    ::<sys-stat> (stat-common stat))
 
  ;; On Windows we don't have lstat.  Omitting sys-lstat from Windows is
@@ -637,14 +637,14 @@
  ;; on Windows path can never be a symlink, so we can just make sys-lstat
  ;; work the same as sys-stat.
  (when "!defined(GAUCHE_WINDOWS)"
-   (define-cproc sys-lstat (path::<const-cstring-safe>) ::<sys-stat>
+   (define-cproc sys-lstat (path::<const-cstring>) ::<sys-stat>
      (stat-common lstat)))
  (when "defined(GAUCHE_WINDOWS)"
-   (define-cproc sys-lstat (path::<const-cstring-safe>) ::<sys-stat>
+   (define-cproc sys-lstat (path::<const-cstring>) ::<sys-stat>
      (stat-common stat)))
 
  (when "!defined(GAUCHE_WINDOWS)"
-   (define-cproc sys-mkfifo (path::<const-cstring-safe> mode::<int>) ::<int>
+   (define-cproc sys-mkfifo (path::<const-cstring> mode::<int>) ::<int>
      (SCM_SYSCALL SCM_RESULT (mkfifo path mode))
      (when (< SCM_RESULT 0) (Scm_SysError "mkfifo failed on %s" path))))
 )
@@ -658,7 +658,7 @@
                 (when (< r 0) (Scm_SysError "fstat failed for %d" fd))
                 (result (SCM_OBJ s))])))
 
-(define-cproc file-exists? (path::<const-cstring-safe>) ::<boolean>
+(define-cproc file-exists? (path::<const-cstring>) ::<boolean>
   (let* ([r::int])
     (SCM_SYSCALL r (access path F_OK))
     (result (== r 0))))
@@ -676,15 +676,15 @@
                 (result (,checker (ref s st_mode))))
          (result FALSE)))])
 
- (define-cproc file-is-regular? (path::<const-cstring-safe>) ::<boolean>
+ (define-cproc file-is-regular? (path::<const-cstring>) ::<boolean>
    (file-check-common S_ISREG))
- (define-cproc file-is-directory? (path::<const-cstring-safe>) ::<boolean>
+ (define-cproc file-is-directory? (path::<const-cstring>) ::<boolean>
    (file-check-common S_ISDIR))
  )
 
 ;; utime.h
 (define-cproc sys-utime
-  (path::<const-cstring-safe> :optional (atime #f) (mtime #f)) ::<void>
+  (path::<const-cstring> :optional (atime #f) (mtime #f)) ::<void>
   (let* ([tim::(struct utimbuf)] [r::int])
     (cond [(and (SCM_FALSEP atime) (SCM_FALSEP mtime))
            (SCM_SYSCALL r (utime path NULL))]
@@ -814,7 +814,7 @@
  (define-enum F_OK)
  )
 
-(define-cproc sys-access (pathname::<const-cstring-safe> amode::<int>)
+(define-cproc sys-access (pathname::<const-cstring> amode::<int>)
   ::<boolean>
   (let* ([r::int])
     (when (Scm_IsSugid)
@@ -822,12 +822,12 @@
     (SCM_SYSCALL r (access pathname amode))
     (result (== r 0))))
 
-(define-cproc sys-chdir (pathname::<const-cstring-safe>) ::<void>
+(define-cproc sys-chdir (pathname::<const-cstring>) ::<void>
   (let* ([r::int])
     (SCM_SYSCALL r (chdir pathname))
     (when (< r 0) (Scm_SysError "chdir failed"))))
 
-(define-cproc sys-chmod (pathname::<const-cstring-safe> mode::<int>) ::<void>
+(define-cproc sys-chmod (pathname::<const-cstring> mode::<int>) ::<void>
   (let* ([r::int])
     (SCM_SYSCALL r (chmod pathname mode))
     (when (< r 0) (Scm_SysError "chmod failed"))))
@@ -842,7 +842,7 @@
  )
 
 ;; chown
-(define-cproc sys-chown (path::<const-cstring-safe> owner::<int> group::<int>)
+(define-cproc sys-chown (path::<const-cstring> owner::<int> group::<int>)
   ::<int>
   (.if "!defined(GAUCHE_WINDOWS)"
        (SCM_SYSCALL SCM_RESULT (chown path owner group))
@@ -852,7 +852,7 @@
 (inline-stub
  ;; lchown
  (when "defined HAVE_LCHOWN"
-   (define-cproc sys-lchown (path::<const-cstring-safe> owner::<int> group::<int>)
+   (define-cproc sys-lchown (path::<const-cstring> owner::<int> group::<int>)
      ::<int>
      (SCM_SYSCALL SCM_RESULT (lchown path owner group))
      (when (< SCM_RESULT 0) (Scm_SysError "lchown failed on %S" path)))
@@ -984,8 +984,8 @@
 
 (define-cproc sys-getlogin () ::<const-cstring>? getlogin)
 
-(define-cproc sys-link (existing::<const-cstring-safe>
-                        newpath::<const-cstring-safe>)
+(define-cproc sys-link (existing::<const-cstring>
+                        newpath::<const-cstring>)
   ::<void>
   (let* ([r::int])
     (SCM_SYSCALL r (link existing newpath))
@@ -1021,14 +1021,14 @@
     (SCM_SYSCALL r (close fd))
     (when (< r 0) (Scm_SysError "close failed on file descriptor %d" fd))))
 
-(define-cproc sys-mkdir (pathname::<const-cstring-safe> mode::<int>) ::<void>
+(define-cproc sys-mkdir (pathname::<const-cstring> mode::<int>) ::<void>
   (let* ([r::int])
     (.if "!defined(GAUCHE_WINDOWS)"
          (SCM_SYSCALL r (mkdir pathname mode))
          (SCM_SYSCALL r (mkdir pathname)))
     (when (< r 0) (Scm_SysError "mkdir failed on %s" pathname))))
 
-(define-cproc sys-rmdir (pathname::<const-cstring-safe>) ::<void>
+(define-cproc sys-rmdir (pathname::<const-cstring>) ::<void>
   (let* ([r::int])
     (SCM_SYSCALL r (rmdir pathname))
     (when (< r 0) (Scm_SysError "rmdir failed for %s" pathname))))
@@ -1076,7 +1076,7 @@
    ) ; defined(HAVE_NANOSLEEP)||defined(GAUCHE_WINDOWS)
  )
 
-(define-cproc sys-unlink (pathname::<const-cstring-safe>)
+(define-cproc sys-unlink (pathname::<const-cstring>)
   (let* ([r::int])
     (.if "defined(GAUCHE_WINDOWS)"
          ;; Windows doesn't allow unlinking a read-only file.  We don't check
@@ -1098,7 +1098,7 @@
   (let* ([fd::int (Scm_GetPortFd port_or_fd FALSE)])
     (result (?: (< fd 0) NULL (ttyname fd)))))
 
-(define-cproc sys-truncate (path::<const-cstring-safe> length::<integer>)
+(define-cproc sys-truncate (path::<const-cstring> length::<integer>)
   ::<void>
   (let* ([r::int])
     (SCM_SYSCALL r (truncate path (Scm_IntegerToOffset length)))
@@ -1151,8 +1151,8 @@
 
 (inline-stub
  (when "defined(HAVE_SYMLINK)"
-   (define-cproc sys-symlink (existing::<const-cstring-safe>
-                              newpath::<const-cstring-safe>)
+   (define-cproc sys-symlink (existing::<const-cstring>
+                              newpath::<const-cstring>)
      ::<void>
      (let* ([r::int])
        (SCM_SYSCALL r (symlink existing newpath))
@@ -1162,7 +1162,7 @@
    )
 
  (when "defined(HAVE_READLINK)"
-   (define-cproc sys-readlink (path::<const-cstring-safe>)
+   (define-cproc sys-readlink (path::<const-cstring>)
      (let* ([buf::(.array char [1024])] ; TODO: needs to be configured
             [n::int])
        (SCM_SYSCALL n (readlink path buf 1024))

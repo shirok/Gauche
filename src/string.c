@@ -257,19 +257,14 @@ static const char *get_string_from_body(const ScmStringBody *b)
     }
 }
 
-
 /* Extract string as C-string.  Returned string is immutable,
-   so we can directly return the body of the string. */
+   so we can directly return the body of the string.  We do not
+   allow string containing NUL to be passed to C world, for it
+   would be a security risk.
+   TODO: Let the string body have a flag so that we don't need
+   to scan the string every time.
+*/
 const char *Scm_GetStringConst(ScmString *str)
-{
-    return get_string_from_body(SCM_STRING_BODY(str));
-}
-
-
-/* Like Scm_GetStringConst, but do not allow string containing NUL
-   characters.  Should be used where passing such strings can be a
-   security hazard (e.g. filename) */
-const char *Scm_GetStringConstSafe(ScmString *str)
 {
     const ScmStringBody *b = SCM_STRING_BODY(str);
     if (memchr(SCM_STRING_BODY_START(b), 0, SCM_STRING_BODY_SIZE(b))) {
@@ -278,7 +273,6 @@ const char *Scm_GetStringConstSafe(ScmString *str)
     }
     return get_string_from_body(b);
 }
-
 
 /* Atomically extracts C-string, length, size, and incomplete flag.
    MT-safe. */

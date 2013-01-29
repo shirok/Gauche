@@ -1,3 +1,13 @@
+2013-01-28  shiro  <shiro@acm.org>
+
+	* src/string.c (Scm_GetStringConst),
+	  lib/gauche/cgen/type.scm (<const-cstring>): Instead of having
+	  a special 'safe' version that checks NUL character, we made the
+	  default GetStringConst safe.  It doesn't make much sense anyway
+	  to have two versions, for there's no way to use beyond NUL byte
+	  of a C string returned by Scm_GetStringConst---you need a string
+	  length separately, and Scm_GetStringContent is for that purpose.
+
 2013-01-24  Shiro Kawai  <shiro@acm.org>
 
 	* src/string.c (Scm_StringSplitByCharWithLimit),
