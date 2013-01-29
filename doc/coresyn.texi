@@ -2047,6 +2047,110 @@ for the @code{begin0} form is expanded as follows.
 
 @defspec do ((variable init [step]) @dots{}) (test expr @dots{}) body @dots{}
 [R5RS]
+@c EN
+@enumerate
+@item
+Evaluates @var{init} @dots{} and binds @var{variable} @dots{} to each result.
+The following steps are evaluated under the enviornment where
+@var{variables} are bound.
+@item
+Evaluate @var{test}.  If it yields true, evaluates
+@var{expr} @dots{} and returns the result(s) of last @var{expr}.
+@item
+Otherwise, evaluates @var{body} @dots{} for side effects.
+@item
+Then evaluates @var{step} @dots{} and binds each result
+to a fresh @var{variable} @dots{}, and repeat from the step 2.
+@end enumerate
+
+The following example loops 10 times while accumulating each
+value of @var{i} to @var{j} and returns it.
+@c JP
+@enumerate
+@item
+@var{init} @dots{}を評価し、@var{variable} @dots{}をそれぞれの結果へと
+束縛します。以降のステップは@var{variable} @dots{}が束縛された環境で評価されます。
+@item
+@var{test}を評価します。真の値が得られたら、
+@var{expr} @dots{}を順に評価し、最後の@var{expr}の結果を返り値とします。
+@item
+そうでなければ、@var{body} @dots{}を(副作用のために)評価します。
+@item
+それから@var{step} @dots{}を評価し、それぞれの結果へ
+新たな@var{variable} @dots{}を束縛し、ステップ2から繰り返します。
+@end enumerate
+
+次の例はループを10回繰り返し、その間@var{i}の値を@var{j}へと
+累積して最後に返すコードです。
+@c COMMON
+
+@example
+(do ((i 0 (+ i 1))
+     (j 0 (+ i j)))
+    ((= i 10) j)
+  (print j))
+@c EN
+ @result{} 45 ; @r{also prints intermediate values of j}
+@c JP
+ @result{} 45 ; @r{また、jの中間結果が途中で出力される}
+@c COMMON
+@end example
+
+@c EN
+If @var{step} is omitted, the previous value of @var{variable}
+is carried over.   When there's no @var{expr}, the non-false
+value returned by @var{test} becomes the value of the @code{do} expression.
+@c JP
+@var{step}が省略された場合は、@var{variable}の元の値がそのまま持ち越されます。
+@var{expr}が一つも無い場合は、@var{test}が真の値を返した時点でその値がそのまま
+@code{do}式の値となります。
+@c COMMON
+
+@c EN
+Since @code{do} syntax uses many parentheses, some prefer using
+square brackets as well as parentheses to visually distinguish
+the groupings.  A common way is to group each variable binding,
+and the test clause, by square brackets.
+@c JP
+@code{do}構文は括弧を多用するので、角括弧を併用してまとまりを視覚的に
+強調するのを好む人もいます。よくある書き方は、それぞれの変数の束縛と、
+テスト節全体に角括弧を使うという書き方です。
+@c COMMON
+
+@example
+(do ([i 0 (+ i 1)]
+     [j 0 (+ i j)])
+    [(= i 10) j]
+  (print j))
+@end example
+
+@c EN
+Note: Unlike Common Lisp (and ``for loops'' in many languages),
+@var{variable} is freshly bound for each iteration.
+The following example loops 5 times and creates a list of
+closures, each of which closes the variable @var{i}.
+When you call each closures, you can see that each of them
+closes different @var{i} at the time of the iteration they were
+created.
+@c JP
+註：Common Lisp (や、多くの言語の``forループ'') とは違って、
+繰り返しの度に新しい@var{variable}が束縛されます。
+次の例では5回ループして、それぞれ@var{i}を閉じ込むクロージャのリストを
+作っています。各クロージャを呼び出せば、それぞれが自身が作られた時の@var{i}を
+閉じ込んでいることがわかります。
+@c COMMON
+
+@example
+(define closures
+  (do ([i 0 (+ i 1)]
+       [c '() (cons (^[] i) c)])
+      [(= i 5) (reverse c)]
+    ))
+
+((car closures))  @result{} 0
+((cadr closures)) @result{} 1
+@end example
+
 @end defspec
 
 
@@ -2087,7 +2191,7 @@ Common Lispからの輸入です。それぞれ以下のように展開されま
 @var{Var} is an identifier and @var{guard} is a procedure
 that takes one argument.
 @c JP
-@var{Var} は識別子で@var{guard}は一つの引数をとる手続きです。
+@var{var}は識別子で@var{guard}は一つの引数をとる手続きです。
 @c COMMON
 
 @c EN
