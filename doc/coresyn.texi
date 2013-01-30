@@ -2172,11 +2172,11 @@ it with @var{init} @dots{}.
 
 @c EN
 This syntax itself isn't necessarily related to iteration.  However,
-the point of named let is that the above lambda expression is within the
+the whole point of named let is that the above lambda expression is within the
 scope of @var{name}---that is, you can call @var{name} recursively
 within @var{body}.  Hence this is used very often to write
 a loop by recursion (thus,
-often the procedures is named @var{loop}, as in the following example.)
+often the procedure is named @var{loop}, as in the following example.)
 @c JP
 この構文自体は繰り返しとは直接に関係ありませんが、
 名前付きletのポイントは、上のlambda式が@var{name}のスコープ内で作られることです。
@@ -2194,9 +2194,9 @@ often the procedures is named @var{loop}, as in the following example.)
 @end example
 
 @c EN
-Of course you don't need to loop in a named let; you can call @var{name}
+Of course you don't need to loop with a named let; you can call @var{name}
 in non-tail position, pass @var{name} to other higher-order procedure, etc.
-Named let exists since it captures the very common pattern of local recursive
+Named let exists since it captures a very common pattern of local recursive
 procedures.  
 Some Schemers even prefer named let to @code{do}, for the better
 flexibility.
