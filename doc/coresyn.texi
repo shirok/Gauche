@@ -2154,8 +2154,78 @@ created.
 @end defspec
 
 
-@defspec let name bindings body @dots{}
+@defspec let name ((var init) @dots{}) body @dots{}
 [R5RS]
+@c EN
+This variation of @code{let} is called ``named let''.  It creates
+the following procedure and binds it to @var{name}, then calls
+it with @var{init} @dots{}.
+@c JP
+「名前付きlet」と呼ばれる@code{let}式のバリエーションです。
+この構文は、次の手続きを作り、それを@var{name}に束縛して、
+@var{init} @dots{}を引数として呼び出します。
+@c COMMON
+
+@example
+(lambda (var @dots{}) body @dots{})
+@end example
+
+@c EN
+This syntax itself isn't necessarily related to iteration.  However,
+the point of named let is that the above lambda expression is within the
+scope of @var{name}---that is, you can call @var{name} recursively
+within @var{body}.  Hence this is used very often to write
+a loop by recursion (thus,
+often the procedures is named @var{loop}, as in the following example.)
+@c JP
+この構文自体は繰り返しとは直接に関係ありませんが、
+名前付きletのポイントは、上のlambda式が@var{name}のスコープ内で作られることです。
+すなわち、@var{body}から@var{name}を再帰的に呼ぶことができます。したがって
+この構文は再帰によるループを書くのに非常に良く使われます
+(そのため、次の例のように作られる手続きを@var{loop}と名付けることが良く行われます)。
+@c COMMON
+
+@example
+(let loop ([x 0] [y '()])
+  (if (= x 10)
+    y
+    (loop (+ x 1) (cons x y))))
+ @result{} (9 8 7 6 5 4 3 2 1 0)
+@end example
+
+@c EN
+Of course you don't need to loop in a named let; you can call @var{name}
+in non-tail position, pass @var{name} to other higher-order procedure, etc.
+Named let exists since it captures the very common pattern of local recursive
+procedures.  
+Some Schemers even prefer named let to @code{do}, for the better
+flexibility.
+@c JP
+もちろん名前付きletは必ずループに使わなければならないということはありません。
+@var{name}を非末尾再帰呼び出ししても良いですし、他の高階関数に渡しても構いません。
+名前付きletがあるのは、ローカルな再帰関数を定義する際の共通するパターンをうまく
+とらえているためです。@code{do}よりも名前付きletを好んで使うSchemerもいます。
+名前付きletの方が柔軟性が高いからです。
+@c COMMON
+
+@c EN
+The following rewrite rule precisely explains the named let semantics.
+The tricky use of @code{letrec} in the expansion is to make
+@var{proc} visible from @var{body} @dots{} but not from @var{init} @dots{}.
+@c JP
+以下の書き換え規則が、名前付きletのセマンティクスを正確に説明します。
+@code{letrec}の使い方がちょっとひねってあるのは、@var{body}は@var{proc}の
+スコープに含まれるけれど@var{init}はそうではない、ということを表現するためです。
+@c COMMON
+
+@example
+(let proc ((var init) @dots{}) body @dots{})
+ @equiv{}
+((letrec ((proc (lambda (var @dots{}) body @dots{})))
+   proc)
+ init @dots{})
+@end example
+
 @end defspec
 
 
