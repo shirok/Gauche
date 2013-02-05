@@ -101,6 +101,26 @@
             [strp (string? temp)])
        (rxmatch-case #t temp strp ?clause ...))]))
 
+;; Extract all matches (including entire match).  Allows match to be #f.
+(define (rxmatch-substrings match :optional (start 0) (end #f))
+  (if match
+    (do ([end (if (and end (>= end 0))
+                (min end (rxmatch-num-matches match))
+                (rxmatch-num-matches match))]
+         [k start (+ k 1)]
+         [r '() (cons (rxmatch-substring match k) r)])
+        [(>= k end) (reverse r)])
+    '()))
+(define (rxmatch-positions match :optional (start 0) (end #f))
+  (if match
+    (do ([end (if (and end (>= end 0))
+                (min end (rxmatch-num-matches match))
+                (rxmatch-num-matches match))]
+         [k start (+ k 1)]
+         [r '() (acons (rxmatch-start match k) (rxmatch-end match k) r)])
+        [(>= k end) (reverse r)])
+    '()))
+
 ;; NB: This should eventually be defined in regexp.c, and Scm_RegComp
 ;; should throw this on invalid AST tree.
 (define-condition-type <regexp-invalid-ast> <error> #f

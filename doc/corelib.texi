@@ -6410,6 +6410,12 @@ test counts true.
 @subsection Using regular expressions
 @c NODE 正規表現を使う
 
+@c EN
+@subsubheading Regexp object and rxmatch object
+@c JP
+@subsubheading Regexpオブジェクトとrxmatchオブジェクト
+@c COMMON
+
 @deftp {Builtin Class} <regexp>
 @clindex regexp
 @c EN
@@ -6492,6 +6498,47 @@ The returned string is immutable.
 @c COMMON
 @end defun
 
+@defun regexp-num-groups regexp
+@defunx regexp-named-groups regexp
+@c EN
+Queries the number of capturing groups, and an alist of named capturing
+groups, in the given @var{regexp}, respectively.
+
+The number of capturing groups corresponds to the number of matches
+returned by @code{rxmatch-num-matches}.  Note that the entire regexp
+forms a group, so the number is always positive.
+
+The alist returned from @code{regexp-named-groups} has the group name
+(symbol) in @code{car}, and its subgroup number in @code{cdr}.
+Note that the order of groups in the alist isn't fixed.
+@c JP
+正規表現@var{regexp}中の、捕捉グループ(サブマッチに使われるグループ)の総数、
+及び名前つき捕捉グループのalistをそれぞれ返します。
+
+捕捉グループの総数は、この正規表現でマッチした場合のマッチオブジェクトの
+@code{rxmatch-num-matches}と同じになります。正規表現全体もひとつのグループだと
+みなされるので、総数は常に1以上です。
+
+@code{regexp-named-groups}から返されるalistは
+@code{car}に名前(シンボル)、@code{cdr}にそのサブマッチ番号を持つペアを
+要素とします。alist内でのグループの順番は不定です。
+@c COMMON
+
+@example
+(regexp-num-groups #/abc(?<foo>def)(ghi(?<bar>jkl)(mno))/)
+  @result{} 5
+(regexp-named-groups #/abc(?<foo>def)(ghi(?<bar>jkl)(mno))/)
+  @result{} ((bar . 3) (foo . 1))
+@end example
+@end defun
+
+
+@c EN
+@subsubheading Trying a match
+@c JP
+@subsubheading マッチを試みる
+@c COMMON
+
 @defun rxmatch regexp string
 @c EN
 @var{Regexp} is a regular expression object.
@@ -6539,6 +6586,12 @@ generic mechanism used to implement this.
 @c COMMON
 @end deftp
 
+@c EN
+@subsubheading Accessing the match result
+@c JP
+@subsubheading マッチの結果を取り出す
+@c COMMON
+
 @defun rxmatch-start match :optional (i 0)
 @defunx rxmatch-end match :optional (i 0)
 @defunx rxmatch-substring match :optional (i 0)
@@ -6576,38 +6629,6 @@ and @code{match:substring}.
 @c COMMON
 @end defun
 
-@defun rxmatch-num-matches match
-@c EN
-Returns the number of matches in @var{match}.
-The number includes the "whole match", so it is always a positive
-integer for a @code{<regmatch>} object.  The number also includes
-the submatches that don't have value (see the examples below).
-
-For the convenience, @code{rxmatch-num-matches} returns 0
-if @var{match} is @code{#f}.
-@c JP
-@var{match}の持つマッチの数を返します。この数には
-「マッチ全体」も含まれるので、@code{<regmatch>}オブジェクトに対しては
-常に正の整数が返ることになります。また、値を持たないマッチもカウントされます
-(下の例を参照)。
-
-簡便のために、@var{match}に@code{#f}を渡すこともできます。
-その場合は0が返ります。
-@c COMMON
-
-@example
-(rxmatch-num-matches (rxmatch #/abc/ "abc"))
-  @result{} 1
-
-(rxmatch-num-matches (rxmatch #/(a(.))|(b(.))/ "ba"))
-  @result{} 5
-
-(rxmatch-num-matches #f)
-  @result{} 0
-@end example
-
-@end defun
-
 @defun rxmatch-after match :optional (i 0)
 @defunx rxmatch-before match :optional (i 0)
 @c EN
@@ -6631,6 +6652,52 @@ If optional argument is given, the @var{i}-th submatch is used
 (rxmatch-before match 2) @result{} "pi=3."
 @end example
 @end defun
+
+@defun rxmatch-substrings match :optional start end
+@defunx rxmatch-positions match :optional start end
+@c EN
+Retrieves multiple submatches (again, 0-th match is the entire match),
+in substrings and in a cons of start and end position, respectively.
+@c JP
+複数のサブマッチ (0番目のサブマッチはマッチ全体) を取り出す手続きです。
+それぞれ、部分文字列のリストと、開始位置と終了位置のコンスのリストが返されます。
+@c COMMON
+
+@example
+(rxmatch-substrings (#/(\d+):(\d+):(\d+)/ "12:34:56"))
+  @result{} ("12:34:56" "12" "34" "56")
+
+(rxmatch-positions (#/(\d+):(\d+):(\d+)/ "12:34:56"))
+  @result{} ((0 . 8) (0 . 2) (3 . 5) (6 . 8))
+@end example
+
+@c EN
+For the convenience, you can pass @code{#f} to @var{match}; those
+procedures returns @code{()} in that case.
+@c JP
+簡便のために、@var{match}に@code{#f}を渡すことも許されています。
+その場合、これらの手続きは@code{()}を返します。
+@c COMMON
+
+@c EN
+The optional @var{start} and @var{end} arguments specify the
+range of submatch index.  If omitted, @var{start} defaults to 0 and
+@var{end} defaults to @code{(rxmatch-num-matches match)}.
+For example, if you don't need the whole match, you can give @code{1}
+to @var{start} as follows:
+@c JP
+省略可能な@var{start}と@var{end}引数は取り出すサブマッチのインデックスの
+範囲を指定します。省略された場合、@var{start}は0、
+@var{end}は@code{(rxmatch-num-matches match)}の値が使われます。
+例えばマッチ全体が不要なら、@var{start}に@code{1}を渡せば良いのです。
+@c COMMON
+
+@example
+(rxmatch-substrings (#/(\d+):(\d+):(\d+)/ "12:34:56") 1)
+  @result{} ("12" "34" "56")
+@end example
+@end defun
+
 
 @defun rxmatch->string regexp string :optional selector @dots{}
 @c EN
@@ -6723,9 +6790,61 @@ generic mechanism used to implement this.
 
   (match 'after 'integer)   @result{} ".14..."
   (match 'before 'fraction) @result{} "pi=3."
-
 @end example
 @end deftp
+
+@defun rxmatch-num-matches match
+@defunx rxmatch-named-groups match
+@c EN
+Returns the number of matches, and an alist of named groups and whose
+indices, in @var{match}.
+This corresponds @code{regexp-num-groups} and @code{regexp-named-groups}
+on a regular expression that has been used to generate @var{match}.
+These procedures are useful to inspect @var{match} object without having
+the original regexp object.
+
+The number of matches includes the "whole match", so it is always a positive
+integer for a @code{<regmatch>} object.  The number also includes
+the submatches that don't have value (see the examples below).
+The reuslt of @code{rxmatch-named-matches} also includes all the
+named groups in the original regexp, not only the matched ones.
+
+For the convenience, @code{rxmatch-num-matches} returns 0
+and @code{rxmatch-named-groups} returns @code{()}
+if @var{match} is @code{#f}.
+@c JP
+それぞれ、@var{match}の持つマッチの数、
+および名前つきグループの名前とインデックスのalistを返します。
+これらは、@var{match}を返した正規表現オブジェクトに対する
+@code{regexp-num-groups}と@code{regexp-named-groups}手続きに対応します。
+元の正規表現オブジェクトなしに、@var{match}の中身を調べたい時に便利です。
+
+返されるマッチの数には「マッチ全体」も含まれます。
+つまり、@code{<regmatch>}オブジェクトに対しては常に正の整数が返ることになります。
+値を持たないマッチもカウントされます(下の例を参照)。
+@code{rxmatch-named-matches}が返すalistについても、元の正規表現の持つ
+名前つきグループの情報がマッチの有無によらず返されます。
+
+簡便のために、@var{match}に@code{#f}を渡すこともできます。
+その場合は0が返ります。
+@c COMMON
+
+@example
+(rxmatch-num-matches (rxmatch #/abc/ "abc")) @result{} 1
+(rxmatch-num-matches (rxmatch #/(a(.))|(b(.))/ "ba")) @result{} 5
+(rxmatch-num-matches #f) @result{} 0
+
+(rxmatch-named-groups
+ (rxmatch #/(?<h>\d\d):(?<m>\d\d)(:(?<s>\d\d))?/ "12:34"))
+ @result{} ((s . 4) (m . 2) (h . 1))
+@end example
+@end defun
+
+@c EN
+@subsubheading Convenience utilities
+@c JP
+@subsubheading 便利なユーティリティ
+@c COMMON
 
 @defun regexp-replace regexp string substitution
 @defunx regexp-replace-all regexp string substitution
@@ -6858,40 +6977,6 @@ Returns a string with the characters that are special to regexp escaped.
 @example
 (regexp-quote "[2002/10/12] touched foo.h and *.c")
  @result{} "\\[2002/10/12\\] touched foo\\.h and \\*\\.c"
-@end example
-@end defun
-
-@defun regexp-num-groups regexp
-@defunx regexp-named-groups regexp
-@c EN
-Queries the number of capturing groups, and an alist of named capturing
-groups, in the given @var{regexp}, respectively.
-
-The number of capturing groups corresponds to the number of matches
-returned by @code{rxmatch-num-matches}.  Note that the entire regexp
-forms a group, so the number is always positive.
-
-The alist returned from @code{regexp-named-groups} has the group name
-(symbol) in @code{car}, and its subgroup number in @code{cdr}.
-Note that the order of groups in the alist isn't fixed.
-@c JP
-正規表現@var{regexp}中の、捕捉グループ(サブマッチに使われるグループ)の総数、
-及び名前つき捕捉グループのalistをそれぞれ返します。
-
-捕捉グループの総数は、この正規表現でマッチした場合のマッチオブジェクトの
-@code{rxmatch-num-matches}と同じになります。正規表現全体もひとつのグループだと
-みなされるので、総数は常に1以上です。
-
-@code{regexp-named-groups}から返されるalistは
-@code{car}に名前(シンボル)、@code{cdr}にそのサブマッチ番号を持つペアを
-要素とします。alist内でのグループの順番は不定です。
-@c COMMON
-
-@example
-(regexp-num-groups #/abc(?<foo>def)(ghi(?<bar>jkl)(mno))/)
-  @result{} 5
-(regexp-named-groups #/abc(?<foo>def)(ghi(?<bar>jkl)(mno))/)
-  @result{} ((bar . 3) (foo . 1))
 @end example
 @end defun
 

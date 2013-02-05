@@ -1,3 +1,9 @@
+2013-02-05  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/regexp.scm (rxmatch-substrings, rxmatch-positions): Added.
+	* src/librx.scm (rxmatch-named-groups): Added for completeness.
+	* src/autoloads.scm, test/regexp.scm: Changed accordingly.
+
 2013-01-28  shiro  <shiro@acm.org>
 
 	* src/string.c (Scm_GetStringConst),

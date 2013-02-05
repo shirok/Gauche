@@ -113,7 +113,7 @@
 
 (autoload gauche.regexp
           (:macro rxmatch-let rxmatch-if rxmatch-cond rxmatch-case)
-          regexp-unparse)
+          regexp-unparse rxmatch-substrings rxmatch-positions)
 
 (autoload gauche.procedure
           compose .$ complement pa$ map$ for-each$ apply$

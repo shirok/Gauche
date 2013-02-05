@@ -91,7 +91,10 @@
   (if (SCM_FALSEP match)
     (result (SCM_MAKE_INT 0))
     (rxmatchop (SCM_MAKE_INT (-> (SCM_REGMATCH match) numMatches)))))
-
+(define-cproc rxmatch-named-groups (match)
+  (if (SCM_FALSEP match)
+    (result SCM_NIL)
+    (rxmatchop (-> (SCM_REGMATCH match) grpNames))))
 
 (select-module gauche.internal)
 (define-cproc %regexp-dump (rx::<regexp>) ::<void> Scm_RegDump)
