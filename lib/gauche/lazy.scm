@@ -39,7 +39,7 @@
 
 (define-module gauche.lazy
   (use gauche.generator)
-  (export x->lseq lunfold lmap lmap-accum lappend lfilter
+  (export x->lseq lunfold lmap lmap-accum lappend lconcatenate lfilter
           lfilter-map lstate-filter ltake ltake-while lrxmatch))
 (select-module gauche.lazy)
 
@@ -84,10 +84,23 @@
     [(arg) (x->lseq arg)]
     [args
      (generator->lseq
-      (rec (g)
+      (rec (gen)
         (cond [(null? args) (eof-object)]
-              [(null? (car args)) (pop! args) (g)]
+              [(null? (car args)) (pop! args) (gen)]
               [else (pop! (car args))])))]))
+
+(define (lconcatenate lseqs)
+  (define cur #f)
+  (if (null? lseqs)
+    '()
+    (generator->lseq
+     (rec (gen)
+       (cond [cur (let1 elt (cur)
+                    (if (eof-object? elt)
+                      (begin (set! cur #f) (gen))
+                      elt))]
+             [(null? lseqs) (eof-object)]
+             [else (set! cur (x->generator (pop! lseqs))) (gen)])))))
 
 ;; NB: Should we define all l* variations corresponds to g* variations?
 (define (lmap-accum fn seed seq . args)
@@ -105,7 +118,3 @@
 ;; ldrop-while is uncessary
 (define (lrxmatch rx seq)
   (generator->lseq (grxmatch rx seq)))
-
-
-
-

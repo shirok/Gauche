@@ -156,7 +156,7 @@
 ;; function dispatch for common objects.
 (define (%->gen x)
   (cond [(procedure? x) x]
-        [(is-a? x <pair>) (list->generator x)] ;avoid pair? not to force lazy pairs
+        [(is-a? x <pair>) (list->generator x)] ;prevent pair? from forcing lazy pairs
         [(vector? x) (vector->generator x)]
         [(string? x) (string->generator x)]
         [(is-a? x <collection>) (x->generator x)]

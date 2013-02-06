@@ -5309,6 +5309,14 @@ end, so it can't be calculated lazily.
 Returns a lazy sequence consists of elements in @var{seq} @dots{}.
 @end defun
 
+@defun lconcatenate seqs
+The @var{seqs} argument is a sequence of sequences.  Returns
+a lazy sequence that is a concatenation of all the sequences in @var{seqs}.
+
+This differs from @code{(apply lappend seqs)}, for @code{lconcatenate}
+can handle infinite lazy @var{seqs}.
+@end defun
+
 @defun lfilter proc seq
 Returns a lazy sequence that consists of non-false values calculated
 by applying @var{proc} on every elements in @var{seq}.

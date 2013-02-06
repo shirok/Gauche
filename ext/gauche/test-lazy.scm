@@ -53,5 +53,9 @@
        ;; this yields an error if lmap works eagerly.
        (list-ref (lmap (^x (quotient 1 x)) '(1 2 3 4 0)) 2))
 
+(test* "lazyness - lconcatenate" '(0 1 2 3 0 1 2 3 0 1)
+       (letrec ([c (lcons* '(0 1 2 3) '(0 1 2 3) c)])
+         (take (lconcatenate c) 10)))
+
 (test-end)
 

@@ -1,3 +1,7 @@
+2013-02-06  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/lazy.scm (lconcatenate): Added.
+
 2013-02-05  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/regexp.scm (rxmatch-substrings, rxmatch-positions): Added.
