@@ -6826,7 +6826,8 @@ if @var{match} is @code{#f}.
 名前つきグループの情報がマッチの有無によらず返されます。
 
 簡便のために、@var{match}に@code{#f}を渡すこともできます。
-その場合は0が返ります。
+その場合、@code{rxmatch-num-matches}は0を、
+@code{rxmatch-named-groups}は@code{()}を返します。
 @c COMMON
 
 @example
