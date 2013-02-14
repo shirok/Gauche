@@ -1,3 +1,22 @@
+2013-02-14  Shiro Kawai  <shiro@acm.org>
+
+	* src/number.c, src/gauche/number.h (Scm_PrintNumber): New API for more
+	  general handling of number to external representation conversion.
+	  (Scm_NumberToString): Rewritten to use Scm_PrintNumber internally.
+	  The last argument is changed from 'int use_upper' to
+	  'ScmNumberFormat*'.  It is an incompatible change, but we hope almost
+	  all calls of this function had specified 0 or FALSE in the last arg
+	  and expect it to work (if not, recompilation would take care of it.)
+	  (Scm_StringToNumber): The last arg is changed for 'int strict' to
+	  'u_long flags'.  Again, this is an incompatible change, but we no
+	  longer use this arg at this moment (the semantics of 'strict' wasn't
+	  well defined, and deemed unnecessary---for real strict check we need
+	  different semantics.)  Thus existing code should work.
+	  Note that existing cgen-generated code may contain a call with
+	  the third arg to be TRUE.
+	* src/libnum.scm, src/read.c, src/regexp.c, src/write.c,
+	  lib/gauche/cgen/literal.scm: Changed accordingly.
+
 2013-02-06  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/lazy.scm (lconcatenate): Added.

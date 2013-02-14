@@ -178,10 +178,13 @@
 (select-module scheme)
 (define-cproc number->string
   (obj :optional (radix::<fixnum> 10) (use-upper? #f)) :fast-flonum :constant
-  (result (Scm_NumberToString obj radix (not (SCM_FALSEP use_upperP)))))
+  (result (Scm_NumberToString obj radix
+                              (?: (SCM_FALSEP use_upperP)
+                                  0
+                                  SCM_NUMBER_FORMAT_USE_UPPER))))
 
 (define-cproc string->number (obj::<string> :optional (radix::<fixnum> 10))
-  (result (Scm_StringToNumber obj radix FALSE)))
+  (result (Scm_StringToNumber obj radix 0)))
 
 (select-module gauche)
 (define-cproc floor->exact (num) :fast-flonum :constant

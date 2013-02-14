@@ -584,8 +584,7 @@ static ScmObj rc1_read_integer(regcomp_ctx *ctx)
     if (ch != SCM_CHAR_INVALID) {
         Scm_UngetcUnsafe(ch, ctx->ipat);
     }
-    r = Scm_StringToNumber(SCM_STRING(Scm_DStringGet(&ds, 0)),
-                           10, FALSE);
+    r = Scm_StringToNumber(SCM_STRING(Scm_DStringGet(&ds, 0)), 10, 0);
     if (SCM_BIGNUMP(r)) {
         Scm_Error("number too big: %S", r);
     }

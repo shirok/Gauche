@@ -817,7 +817,7 @@ static void format_integer(ScmPort *out, ScmObj arg,
     if (nparams>1 && SCM_CHARP(params[1])) padchar = SCM_CHAR_VALUE(params[1]);
     if (nparams>2 && SCM_CHARP(params[2])) commachar = SCM_CHAR_VALUE(params[2]);
     if (nparams>3 && SCM_INTP(params[3])) commainterval = SCM_INT_VALUE(params[3]);
-    str = Scm_NumberToString(arg, radix, use_upper);
+    str = Scm_NumberToString(arg, radix, use_upper? SCM_NUMBER_FORMAT_USE_UPPER:0);
     if (alwayssign && SCM_STRING_BODY_START(SCM_STRING_BODY(str))[0] != '-') {
         str = Scm_StringAppend2(SCM_STRING(SCM_MAKE_STR("+")),
                                 SCM_STRING(str));
@@ -933,7 +933,7 @@ static void format_proc(ScmPort *out, ScmString *fmt, ScmObj args, int sharedp)
                 NEXT_ARG(arg, args);
                 if (numParams == 0 && !atflag && !colonflag) {
                     if (Scm_IntegerP(arg)) {
-                        format_write(Scm_NumberToString(arg, 2, FALSE), out,
+                        format_write(Scm_NumberToString(arg, 2, 0), out,
                                      &actx, FALSE);
                     } else {
                         format_write(arg, out, &actx, FALSE);
@@ -947,7 +947,7 @@ static void format_proc(ScmPort *out, ScmString *fmt, ScmObj args, int sharedp)
                 NEXT_ARG(arg, args);
                 if (numParams == 0 && !atflag && !colonflag) {
                     if (Scm_IntegerP(arg)) {
-                        format_write(Scm_NumberToString(arg, 8, FALSE), out,
+                        format_write(Scm_NumberToString(arg, 8, 0), out,
                                      &actx, FALSE);
                     } else {
                         format_write(arg, out, &actx, FALSE);
@@ -961,7 +961,8 @@ static void format_proc(ScmPort *out, ScmString *fmt, ScmObj args, int sharedp)
                 NEXT_ARG(arg, args);
                 if (numParams == 0 && !atflag && !colonflag) {
                     if (Scm_IntegerP(arg)) {
-                        format_write(Scm_NumberToString(arg, 16, ch == 'X'),
+                        int f = (ch == 'X')? SCM_NUMBER_FORMAT_USE_UPPER : 0;
+                        format_write(Scm_NumberToString(arg, 16, f),
                                      out, &actx, FALSE);
                     } else {
                         format_write(arg, out, &actx, FALSE);

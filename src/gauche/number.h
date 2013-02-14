@@ -304,10 +304,27 @@ SCM_EXTERN double Scm_Angle(ScmObj z);
 SCM_EXTERN double Scm_RealPart(ScmObj z);
 SCM_EXTERN double Scm_ImagPart(ScmObj z);
 
-SCM_EXTERN ScmObj Scm_NumberToString(ScmObj num, int radix, int use_upper);
-SCM_EXTERN ScmObj Scm_StringToNumber(ScmString *str, int radix, int strict);
+/* flags for ScmNumberFormat */
+enum ScmNumberFormatFlags {
+    SCM_NUMBER_FORMAT_USE_UPPER = (1L<<0), /* use ABCDEF.. for base > 10 */
+    SCM_NUMBER_FORMAT_SHOW_PLUS = (1L<<1)  /* show '+' in positive number */
+};
 
-SCM_EXTERN void   Scm_PrintDouble(ScmPort *port, double d, int flags);
+typedef struct ScmNumberFormatRec {
+    u_long flags;
+    int radix;
+    int precision;    /* # of digits after decimal point, -1 for unlimited */
+    int exp_lo;       /* use exp notation if exponent <= exp_lo */
+    int exp_hi;       /* use exp notation if exponent >= exp_hi */
+} ScmNumberFormat;
+
+SCM_EXTERN void   Scm_NumberFormatInit(ScmNumberFormat*);
+SCM_EXTERN void   Scm_PrintNumber(ScmPort *port, ScmObj n, ScmNumberFormat *f);
+SCM_EXTERN void   Scm_PrintDouble(ScmPort *port, double d, ScmNumberFormat *f);
+
+/* Higher-level convenience routines */
+SCM_EXTERN ScmObj Scm_NumberToString(ScmObj num, int radix, u_long flags);
+SCM_EXTERN ScmObj Scm_StringToNumber(ScmString *str, int radix, u_long flags);
 
 /* This is here, for we need to check double endianness on ARM. */
 SCM_EXTERN ScmObj Scm_NativeEndian(void);

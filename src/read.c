@@ -984,7 +984,7 @@ static ScmObj read_symbol(ScmPort *port, ScmChar initial, ScmReadContext *ctx)
 static ScmObj read_number(ScmPort *port, ScmChar initial, ScmReadContext *ctx)
 {
     ScmString *s = SCM_STRING(read_word(port, initial, ctx, FALSE));
-    ScmObj num = Scm_StringToNumber(s, 10, TRUE);
+    ScmObj num = Scm_StringToNumber(s, 10, 0);
     if (num == SCM_FALSE)
         Scm_ReadError(port, "bad numeric format: %S", s);
     return num;
@@ -993,7 +993,7 @@ static ScmObj read_number(ScmPort *port, ScmChar initial, ScmReadContext *ctx)
 static ScmObj read_symbol_or_number(ScmPort *port, ScmChar initial, ScmReadContext *ctx)
 {
     ScmString *s = SCM_STRING(read_word(port, initial, ctx, FALSE));
-    ScmObj num = Scm_StringToNumber(s, 10, TRUE);
+    ScmObj num = Scm_StringToNumber(s, 10, 0);
     if (num == SCM_FALSE)
         return Scm_Intern(s);
     else

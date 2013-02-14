@@ -553,7 +553,7 @@
                (print "  " cname " = Scm_MakeIntegerU("val"U);")]
               [else
                (print "  " cname " = Scm_StringToNumber(SCM_STRING("
-                      (cgen-cexpr (~ self'string-rep))"), 16, TRUE);")]))))
+                      (cgen-cexpr (~ self'string-rep))"), 16, 0);")]))))
   (static (self)
     (if (cgen-c-name self) #f #t))
   )

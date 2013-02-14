@@ -3253,7 +3253,7 @@ static inline int numcmp3(ScmObj x, ScmObj d, ScmObj y)
    number of digits to be printed after the decimal point; -1 means
    no limit.
    */
-static void double_print(char *buf, int buflen, double val, int plus_sign,
+static void print_double(char *buf, int buflen, double val, int plus_sign,
                          int precision, int exp_lo, int exp_hi)
 {
     /* Handle a few special cases first.
@@ -3428,70 +3428,103 @@ static void double_print(char *buf, int buflen, double val, int plus_sign,
 
 static void number_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
-    ScmObj s = Scm_NumberToString(obj, 10, FALSE);
-    SCM_PUTS(SCM_STRING(s), port);
+    Scm_PrintNumber(port, obj, NULL);
 }
 
 #define FLT_BUF 50
 
-ScmObj Scm_NumberToString(ScmObj obj, int radix, int use_upper)
+static void
+print_number(ScmPort *port, ScmObj obj, u_long flags, ScmNumberFormat *fmt)
 {
     ScmObj r = SCM_NIL;
+    int use_upper = flags & SCM_NUMBER_FORMAT_USE_UPPER;
+    int show_plus = flags & SCM_NUMBER_FORMAT_SHOW_PLUS;
+    int radix = fmt->radix;
     char buf[FLT_BUF];
 
     if (SCM_INTP(obj)) {
-        char *pbuf = buf;
         long value = SCM_INT_VALUE(obj);
+        int i;
+        if (value == 0) { SCM_PUTC('0', port); return; }
         if (value < 0) {
-            *pbuf++ = '-';
+            SCM_PUTC('-', port);
             value = -value;     /* this won't overflow */
         }
-        if (radix == 10) {
-            snprintf(pbuf, FLT_BUF-1, "%ld", value);
-        } else if (radix == 16) {
-            snprintf(pbuf, FLT_BUF-1, (use_upper? "%lX" : "%lx"), value);
-        } else if (radix == 8) {
-            snprintf(pbuf, FLT_BUF-1, "%lo", value);
-        } else {
-            /* sloppy way ... */
-            r = Scm_BignumToString(SCM_BIGNUM(Scm_MakeBignumFromSI(SCM_INT_VALUE(obj))),
-                                   radix, use_upper);
+        for (i = FLT_BUF-1; i >= 0 && value > 0; i--) {
+            int c = value % radix;
+            buf[i] = (c<10)?(c+'0'):(use_upper?(c-10+'A'):(c-10+'a'));
+            value /= radix;
         }
-        if (r == SCM_NIL) r = SCM_MAKE_STR_COPYING(buf);
+        Scm_Putz(buf+i+1, FLT_BUF-i-1, port);
     } else if (SCM_BIGNUMP(obj)) {
-        r = Scm_BignumToString(SCM_BIGNUM(obj), radix, use_upper);
+        SCM_PUTS(Scm_BignumToString(SCM_BIGNUM(obj), radix, use_upper), port);
     } else if (SCM_FLONUMP(obj)) {
-        double_print(buf, FLT_BUF, SCM_FLONUM_VALUE(obj), FALSE, -1, -3, 10);
-        r = SCM_MAKE_STR_COPYING(buf);
+        print_double(buf, FLT_BUF, SCM_FLONUM_VALUE(obj),
+                     show_plus, fmt->precision, fmt->exp_lo, fmt->exp_hi);
+        Scm_Putz(buf, -1, port);
     } else if (SCM_RATNUMP(obj)) {
-        ScmDString ds; ScmObj s;
-        Scm_DStringInit(&ds);
-        s = Scm_NumberToString(SCM_RATNUM_NUMER(obj), radix, use_upper);
-        Scm_DStringAdd(&ds, SCM_STRING(s));
-        Scm_DStringPutc(&ds, '/');
-        s = Scm_NumberToString(SCM_RATNUM_DENOM(obj), radix, use_upper);
-        Scm_DStringAdd(&ds, SCM_STRING(s));
-        return Scm_DStringGet(&ds, 0);
+        print_number(port, SCM_RATNUM_NUMER(obj), flags, fmt);
+        Scm_Putc('/', port);
+        print_number(port, SCM_RATNUM_DENOM(obj),
+                     flags & ~SCM_NUMBER_FORMAT_SHOW_PLUS, fmt);
     } else if (SCM_COMPNUMP(obj)) {
-        ScmObj p = Scm_MakeOutputStringPort(TRUE);
-        double_print(buf, FLT_BUF, SCM_COMPNUM_REAL(obj), FALSE, -1, -3, 10);
-        SCM_PUTZ(buf, -1, SCM_PORT(p));
-        double_print(buf, FLT_BUF, SCM_COMPNUM_IMAG(obj), TRUE, -1, -3, 10);
-        SCM_PUTZ(buf, -1, SCM_PORT(p));
-        SCM_PUTC('i', SCM_PORT(p));
-        r = Scm_GetOutputString(SCM_PORT(p), 0);
+        print_double(buf, FLT_BUF, SCM_COMPNUM_REAL(obj),
+                     show_plus, fmt->precision, fmt->exp_lo, fmt->exp_hi);
+        Scm_Putz(buf, -1, port);
+        print_double(buf, FLT_BUF, SCM_COMPNUM_IMAG(obj),
+                     TRUE, fmt->precision, fmt->exp_lo, fmt->exp_hi);
+        Scm_Putz(buf, -1, port);
+        Scm_Putc('i', port);
     } else {
         Scm_Error("number required: %S", obj);
     }
-    return r;
 }
 
-/* utility to expose Burger&Dybvig algorithm.  FLAGS is not used yet,
-   but reserved for future extension. */
-void Scm_PrintDouble(ScmPort *port, double d, int flags)
+/* API */
+void Scm_NumberFormatInit(ScmNumberFormat* fmt)
+{
+    fmt->flags = 0;
+    fmt->radix = 10;
+    fmt->precision = -1;
+    fmt->exp_lo = -3;
+    fmt->exp_hi = 10;
+}
+
+/* API */
+ScmObj Scm_NumberToString(ScmObj obj, int radix, u_long flags)
+{
+    ScmPort *p = SCM_PORT(Scm_MakeOutputStringPort(TRUE));
+    ScmNumberFormat fmt;
+    Scm_NumberFormatInit(&fmt);
+    fmt.flags = flags;
+    fmt.radix = radix;
+    Scm_PrintNumber(p, obj, &fmt);
+    return Scm_GetOutputString(p, 0);
+}
+
+/* API.  FMT can be NULL. */
+void Scm_PrintNumber(ScmPort *port, ScmObj n, ScmNumberFormat *fmt)
+{
+    ScmNumberFormat defaults;
+    if (fmt == NULL) {
+        Scm_NumberFormatInit(&defaults);
+        fmt = &defaults;
+    }
+    print_number(port, n, fmt->flags, fmt);
+}
+
+/* API.  FMT can be NULL.  Utility to expose Burger&Dybvig algorithm. */
+void Scm_PrintDouble(ScmPort *port, double d, ScmNumberFormat *fmt)
 {
     char buf[FLT_BUF];
-    double_print(buf, FLT_BUF, d, FALSE, -1, -3, 10);
+    ScmNumberFormat defaults;
+    if (fmt == NULL) {
+        Scm_NumberFormatInit(&defaults);
+        fmt = &defaults;
+    }
+    print_double(buf, FLT_BUF, d,
+                 fmt->flags & SCM_NUMBER_FORMAT_SHOW_PLUS,
+                 fmt->precision, fmt->exp_lo, fmt->exp_hi);
     Scm_Putz(buf, (int)strlen(buf), port);
 }
 
@@ -4057,8 +4090,10 @@ static ScmObj numread_error(const char *msg, struct numread_packet *context)
     return SCM_FALSE;
 }
 
-
-ScmObj Scm_StringToNumber(ScmString *str, int radix, int strict)
+/* FLAGS is not used now; kept for the backward compatibility and possible
+   future extension.  The signature used to be 'int strict' and may recieve
+   TRUE; if we ever use FLAGS before 1.0, mind the ABI compatibility. */
+ScmObj Scm_StringToNumber(ScmString *str, int radix, u_long flags)
 {
     u_int len, size;
     const char *p = Scm_GetStringContent(str, &size, &len, NULL);
@@ -4066,7 +4101,7 @@ ScmObj Scm_StringToNumber(ScmString *str, int radix, int strict)
         /* This can't be a proper number. */
         return SCM_FALSE;
     } else {
-        return read_number(p, size, radix, strict);
+        return read_number(p, size, radix, 0);
     }
 }
 
