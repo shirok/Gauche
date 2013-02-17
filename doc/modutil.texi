@@ -5708,7 +5708,7 @@ so it is handy when you want a definitive answer below the above range.
 @c JP
 @var{n}が素数かどうかをBaillie-PSW法を用いて判定します
 (@url{http://www.trnicely.net/misc/bpsw.html})。
-このアルゴリズムは決定的であり、2^64 (約1.8e19) 以下の入力に対しては
+このアルゴリズムは2^64 (約1.8e19) 以下の入力に対しては決定的であり、
 正しい答えを返します。入力がそれ以上の場合、合成数に対して@code{#t}が返る可能性が
 あります (具体的な数はまだ見つかっていませんが)。素数に対して@code{#f}が返ることは
 決してありません。
