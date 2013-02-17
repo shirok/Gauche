@@ -92,8 +92,6 @@
           port->string port->list port->string-list port->sexp-list
           copy-port port-position-prefix port-tell)
 
-(autoload "gauche/numerical" sinh cosh tanh asinh acosh atanh)
-
 (autoload "gauche/logical"
           logtest logbit? copy-bit bit-field copy-bit-field)
 

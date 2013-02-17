@@ -406,7 +406,6 @@
     ;; If k is representable with double, we use (%sqrt k) as the initial
     ;; estimate, for calculating double sqrt is fast.  If k is too large,
     ;; we use 2^floor((log2(k)+1)/2) as the initial value.
-    ;; TODO: integer-length can be a lot faster if we make it built-in.
     (let loop ([s (let1 ik (%sqrt k)
                     (if (finite? ik)
                       (floor->exact (%sqrt k))
