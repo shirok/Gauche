@@ -1,3 +1,8 @@
+2013-02-19  Shiro Kawai  <shiro@acm.org>
+
+	* lib/math/prime.scm (mc-find-divisor-1): Fixed a bug that made
+	  the algorithm loop unnecessarily long.
+
 2013-02-16  Shiro Kawai  <shiro@acm.org>
 
 	* src/autoloads.scm (sinh, cosh, tanh, asinh, acosh, atanh): No longer

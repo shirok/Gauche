@@ -365,35 +365,33 @@
       (if (= r 1) (f x) (loop (- r 1) (f x)))))
   ;; the step value m: in the big-step loop, we only compute gcd for
   ;; every m-th value of the series x_i.
-  (define m (ceiling->exact (log n)))
+  (define m (ceiling->exact (log n 2)))
   ;; 'big-step' loop
   (define (big-step x y q r k)
     (do ([i (min m (- r k)) (- i 1)]
          [y y (f y)]
          [q q (modulo (* q (abs (- x y))) n)])
-        [(= i 0) (values (gcd q n) q)]))
+        [(= i 0) (values (gcd q n) q y)]))
   (define (big-stride x y q r)
-    (let1 y (f^ r y)
-      (let loop ([k 0])
-        (receive (G q) (big-step x y q r k)
-          (cond [(> G 1) (values G x y)]
-                [(>= k (- r m))
-                 (if (< r 1000) ;; if r gets rather big, give up and try different x0.
-                   (big-stride y y q (* r 2))
-                   (values #f #f #f))]
-                [else (loop (+ k m))])))))
-  (define (small-stride x y)
-    (let loop ([y (f y)])
-      (let1 G (gcd (abs (- x y)) n)
-        (if (> G 1) G (loop (f y))))))
+    (let loop ([ys y] [k 0])
+      (receive (G q y) (big-step x ys q r k)
+        (cond [(or (>= k (- r m)) (> G 1)) (values G ys y q)]
+              [else (loop y (+ k m))]))))
+  (define (small-stride x ys)
+    (let loop ([ys (f ys)])
+      (let1 G (gcd (abs (- x ys)) n)
+        (if (> G 1) G (loop (f ys))))))
 
   ;; The main body
-  (receive (G x y) (big-stride x0 x0 1 1)
-    (and G
-         (if (< G n)
-           G
-           (let1 G (small-stride x y)
-             (and (< G n) G))))))  ; if (= G N), we failed.
+  (let loop ([y x0] [r 1] [q 1])
+    (let ([x y] [y (f^ r y)])
+      (receive (G ys y q) (big-stride x y q r)
+        (if (> G 1)
+          (if (< G n)
+            G
+            (let1 G (small-stride x ys)
+              (and (< G n) G)))           ; if (= G N), we failed.
+          (loop y (* r 2) q))))))
 
 ;; Try MC factorization up to num-tries pass.  If we find any
 ;; divisor, returns (divisor . quotient).  Otherwise return #f.
