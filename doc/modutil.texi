@@ -5799,7 +5799,7 @@ things faster.
 @c COMMON
 @end defun
 
-@defun mc-factorize n :key num-tries
+@defun mc-factorize n
 @c EN
 Factorize a positive integer @var{n} using the algorithm
 described in 
@@ -5813,43 +5813,28 @@ R. P. Brent, An improved Monte Carlo factorization algorithm, BIT 20 (1980), 176
 @c EN
 This one is capable to handle much larger range than
 @code{naive-factorize}, somewhere around 1e20 or so.
-If @var{n} is large and prime, however, it will take forever.
 
 Since this method is probabilistic, the execution time may vary
-on the same @var{n}.  By default this procedure keeps tring
-to find any factor in @var{n}.  You can specify the number
-of trials by the keyword argument @var{num-tries}, which ensures
-that the procedure returns within some time bound. 
+on the same @var{n}.  But it will always return the definitive
+results as far as every prime factor of @var{n} is smaller than 2^64.
 
-If @code{mc-factorize} couldn't find factors up to the
-specified trial limit, the result may contain composite numbers.
-To indicate that, @code{mc-factorize} appends @code{1} at the beginning
-of the result---if you see @code{1}, there may be one or more
-composite numbers in the list.
+At this moment, if @var{n} contains a prime factor greater than
+2^64, this routine would keep trying factorizing it forever.
+Practical applications should have some means to interrupt the
+functon and give it up after some time bounds.
+This will be addressed once we have deterministic primality test.
 @c JP
 この手続きは@code{naive-factorize}よりも大きな数に使えます
-(目安としては1e20程度まで)。ただし@var{n}が大きな素数だと永遠に時間がかかります。
+(目安としては1e20程度まで)。
 
-アルゴリズムは確率的なので、同じ@var{n}に対しても実行時間はばらつきます。
-デフォルトでは、@var{n}の因数が見つかるまでこの手続きはランダムな初期値を
-選んで試行しつづけます。手続きが特定の時間範囲内に返ってくることを保証
-したければ、キーワード引数@var{num-tries}に最大試行回数を指定してください。
+アルゴリズムは確率的なので、同じ@var{n}に対しても実行時間はばらつきますが、
+@var{n}の素因数が全て2^64より小さければば、かならず確定的な答えを返します。
 
-最大試行回数に達しても因数を見つけることができなかった場合、
-結果の因数リストには一つ以上の合成数が含まれる可能性があります。
-@code{mc-factorize}は結果の因数リストの頭に@code{1}をつけることで
-その可能性を示します。
+今のところ、@var{n}が2^64以上の素因数を含んでいる場合、この手続きは
+永遠にそれを分割しようとしてループしてしまいます。現実的なアプリケーションは
+何らかの方法で一定の時間でルーチンを中断して諦めるメカニズムが必要でしょう。
+全ての入力に大して確定的な素数判定が実装されれば、この欠陥も修正されます。
 @c COMMON
-
-@example
-;; The leading 1 indicates we gave up on some factors
-(mc-factorize 364435736749498667101349358 :num-tries 100)
-  @result{} (1 2 3 3 11 13 141583425310605542774417)
-
-;; whereas
-(mc-factorize 364435736749498667101349358)
-  @result{} (2 3 3 11 13 4284266891 33047293483987)
-@end example
 @end defun
 
 

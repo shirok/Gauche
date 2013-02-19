@@ -2,6 +2,13 @@
 
 	* lib/math/prime.scm (mc-find-divisor-1): Fixed a bug that made
 	  the algorithm loop unnecessarily long.
+	  (mc-factorize): Removed :num-tries arg, since now mc-find-divisor-1
+	  can take much longer for inputs that's hard to factorize, so limiting
+	  execution time by :num-tries doesn't have much use except preventing
+	  infinite loop in case the input has a large prime factor.
+	  Practical applications would need some timeout mechanism anyway so
+	  it wouldn't be a show-stopper.  We'll address the infinite loop issue
+	  by implementing deterministic primality test in future.
 
 2013-02-16  Shiro Kawai  <shiro@acm.org>
 

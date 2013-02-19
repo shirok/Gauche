@@ -393,27 +393,26 @@
               (and (< G n) G)))           ; if (= G N), we failed.
           (loop y (* r 2) q))))))
 
-;; Try MC factorization up to num-tries pass.  If we find any
-;; divisor, returns (divisor . quotient).  Otherwise return #f.
-(define (mc-try-factorize n num-tries)
-  (let loop ([i 0] [x0 (random-integer n)])
-    (and (< i num-tries)
-         (or (and-let* ([d (mc-find-divisor-1 n x0)])
-               (cons d (quotient n d)))
-             (loop (+ i 1) (random-integer n))))))
+;; Try MC factorization.  Returns (divisor . quotient).
+;; Note: This will loop forever if N is a prime.  The caller should
+;; exclude primes.  Unfortunately, we don't have a deterministic primality
+;; test > 2^64 yet.  
+(define (mc-try-factorize n)
+  (let loop ()
+    (if-let1 d (mc-find-divisor-1 n (random-integer n))
+      (cons d (quotient n d))
+      (loop))))
 
 ;; API
-(define (mc-factorize n :key (num-tries +inf.0))
+(define (mc-factorize n)
   ;; Break up n.  We first exclude primes if possible.
   ;; The worst case scenario is that n contains a factor
   ;; greater than 2^64---in which case we'll take forever.
   (define (smash n)
     (if (definite-prime? n)
       `(,n)
-      (let1 d (mc-try-factorize n num-tries)
-        (if d
-          (append (smash (car d)) (smash (cdr d)))
-          `(,n 1))))) ;; indicating that n may be composite
+      (let1 d (mc-try-factorize n)
+        (append (smash (car d)) (smash (cdr d))))))
 
   (define (definite-prime? n)
     (cond [(< n *small-prime-bound*) (small-prime? n)]
