@@ -3245,13 +3245,14 @@ static inline int numcmp3(ScmObj x, ScmObj d, ScmObj y)
 }
 
 /* The main routine to get string representation of double.
-   Convert VAL to a string and store to BUF.  True for PLUS_SIGN
-   forces adding '+' for nonnegative numbers.  EXP_LO and EXP_HI
-   control when to switch exponential representation.  We use
-   n.nnne+zz representation when zz can be smaller than or equal to EXP_LO,
-   or greater than or equal to EXP_HI.  Finally, PRECISION specifies the
-   number of digits to be printed after the decimal point; -1 means
-   no limit.
+   Convert VAL to a string and store to BUF, which must have at least FLT_BUF
+   bytes long.
+   True for PLUS_SIGN forces adding '+' for nonnegative numbers.
+   EXP_LO and EXP_HI control when to switch exponential representation.
+   We use n.nnne+zz representation when zz can be smaller than or equal
+   to EXP_LO, or greater than or equal to EXP_HI.
+   Finally, PRECISION specifies the number of digits to be printed after
+   the decimal point; -1 means no limit.
    */
 static void print_double(char *buf, int buflen, double val, int plus_sign,
                          int precision, int exp_lo, int exp_hi)
@@ -3259,8 +3260,9 @@ static void print_double(char *buf, int buflen, double val, int plus_sign,
     /* Handle a few special cases first.
        The notation of infinity is provisional; see how srfi-70 becomes. */
     if (val == 0.0) {
-        if (plus_sign) strcpy(buf, "+0.0");
-        else strcpy(buf, "0.0");
+        if (plus_sign) *buf++ = '+';
+        if (precision == 0) strcpy(buf, "0.");
+        else strcpy (buf, "0.0");
         return;
     } else if (SCM_IS_INF(val)) {
         if (val < 0.0) strcpy(buf, "-inf.0");
@@ -3344,16 +3346,18 @@ static void print_double(char *buf, int buflen, double val, int plus_sign,
         /* Scm_Printf(SCM_CURERR, "est=%d, r=%S, s=%S, mp=%S, mm=%S\n",
            est, r, s, mp, mm); */
 
-        /* determine position of decimal point.  we avoid exponential
+        /* Determine position of decimal point.  we avoid exponential
            notation if exponent is small, i.e. 0.9 and 30.0 instead of
            9.0e-1 and 3.0e1.  */
-        if (est < exp_hi && est > exp_lo) {
-            point = est; est = 1;
-        } else {
-            point = 1;
-        }
+        if (est < exp_hi && est > exp_lo) { point = est; est = 1; }
+        else { point = 1; }
 
-        /* print preceding zeros if necessary */
+        /* Now, we print XX.YYeZZ, where XX.YY is VAL*10^EST and
+           ZZ is EST.  If EST == 1 we omit exponent part.  POINT is
+           the number of digits in XX part; so POINT=1 for 1.23,
+           POINT=2 for 12.3 and so on.
+
+           If POINT <= 0, we need to emit preceding zeros. */
         if (point <= 0) {
             *buf++ = '0'; buflen--;
             *buf++ = '.', buflen--;
