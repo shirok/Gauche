@@ -167,6 +167,87 @@
               [else (loop (ash b -1) (modulo (* (modulo (* r r) m) n) m))])))
     (modulo (expt (inexact n) e) m))) ; inexact fallback
 
+;; Gamma functions.  If the system provides tgamma/lgamma, we use it.
+;; Otherwise we use an alternative implementation ported from John D Cook's
+;; public domain C++ code (http://www.johndcook.com/stand_alone_code.html)
+;; The test of this implementation is in test/number.scm, although it is
+;; excluded by default.
+(with-module gauche.internal
+  (define (%alt-gamma x)
+    (cond [(<= x 0.0)
+           (cond [(zero? x) +inf.0] ;; Gamma(+0)
+                 [(integer? x) +nan.0]
+                 [else (/ (%alt-gamma (+ x 1)) x)])] ; slow. just for the completeness.
+          [(< x 0.001)
+           ;; for small x, Gamma(x) = x + g*x^2 + O(x^3) where g is Euler's
+           ;; gamma constant.
+           (/ (* x (+ 1.0 (* 0.577215664901532860606512090 x))))]
+          [(< x 12)
+           ;; we map the input into [1,2] and use polynomial approximation
+           (let ([y (+ (fmod x 1.0) 1)]
+                 [P '#(-1.71618513886549492533811e+0
+                       +2.47656508055759199108314e+1
+                       -3.79804256470945635097577e+2
+                       +6.29331155312818442661052e+2
+                       +8.66966202790413211295064e+2
+                       -3.14512729688483675254357e+4
+                       -3.61444134186911729807069e+4
+                       +6.64561438202405440627855e+4)]
+                 [Q '#(-3.08402300119738975254353e+1
+                       +3.15350626979604161529144e+2
+                       -1.01515636749021914166146e+3
+                       -3.10777167157231109440444e+3
+                       +2.25381184209801510330112e+4
+                       +4.75584627752788110767815e+3
+                       -1.34659959864969306392456e+5
+                       -1.15132259675553483497211e+5)])
+             (do ([i 0 (+ i 1)]
+                  [z (- y 1)]
+                  [numer 0.0 (* (+ numer (vector-ref P i)) z)]
+                  [denom 1.0 (+ (* denom z) (vector-ref Q i))])
+                 [(= i 8)
+                  (let1 res (+ (/ numer denom) 1)
+                    ;; remap the result to the original range
+                    ;; using Gamma(z+1) = z*Gamma(z)
+                    (cond [(< x 1) (/ res x)]
+                          [(> x 2) (do ([i (- (floor x) 1) (- i 1)]
+                                        [y y (+ y 1)]
+                                        [res res (* y res)])
+                                       [(= i 0) res])]
+                          [else res]))]))]
+          [else (exp (%alt-lgamma x))]))
+
+  (define (%alt-lgamma x)
+    (cond [(<= x 0.0)
+           (if (or (zero? x) (integer? x))
+             +inf.0
+             (log (abs (%alt-gamma x))))] ; not accurate, just for completeness
+          [(< x 12.0) (log (abs (%alt-gamma x)))]
+          [else
+           (let ([C '#(0.08333333333333333
+                       -0.002777777777777778
+                       7.936507936507937e-4
+                       -5.952380952380953e-4
+                       8.417508417508417e-4
+                       -0.0019175269175269176                     
+                       0.00641025641025641
+                       -0.029550653594771242)]
+                 [z (/ (*. x x))])
+             (do ([i   7 (- i 1)]
+                  [sum 0 (+ (* sum z) (vector-ref C i))])
+                 [(< i 0)
+                  (+ (* (- x 0.5) (log x))
+                     (- 0.9189385332046728 x) ; 1/2*log(2*pi)
+                     (/ sum x))]))]))
+  )
+
+(define gamma
+  (global-variable-ref (find-module 'gauche.internal) '%gamma
+                       (with-module gauche.internal %alt-gamma)))
+(define lgamma
+  (global-variable-ref (find-module 'gauche.internal) '%lgamma
+                       (with-module gauche.internal %alt-lgamma)))
+
 ;;
 ;; Some R6RS stuff
 ;;

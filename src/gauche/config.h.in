@@ -131,6 +131,9 @@
 /* Define to 1 if you have the `lchown' function. */
 #undef HAVE_LCHOWN
 
+/* Define to 1 if you have the `lgamma' function. */
+#undef HAVE_LGAMMA
+
 /* Define to 1 if you have the `m' library (-lm). */
 #undef HAVE_LIBM
 
@@ -295,6 +298,9 @@
 
 /* Define to 1 if you have the <sys/types.h> header file. */
 #undef HAVE_SYS_TYPES_H
+
+/* Define to 1 if you have the `tgamma' function. */
+#undef HAVE_TGAMMA
 
 /* Define to 1 if you have the `trunc' function. */
 #undef HAVE_TRUNC

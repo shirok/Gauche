@@ -1,3 +1,16 @@
+2013-03-11  Shiro Kawai  <shiro@acm.org>
+
+	* configure.ac, lib/gauche/config.h.in: Added check for lgamma and
+	  tgamma.
+	* src/libnum.scm, lib/gauche/numerical.scm, src/autoloads.scm
+	  (gamma, lgamma): Added.  We use system's tgamma and lgamma
+	  if available, and alternative approximation if not.
+	* test/number.scm: Tests for alternative gamma function implementation;
+	  this is commented out by default, for it requires system's
+	  tgamma and lgamma.
+	* src/libsys.scm: Moved math.h functions (fmod, frexp, ldexp, log10)
+	  to libnum.scm.
+
 2013-02-19  Shiro Kawai  <shiro@acm.org>
 
 	* lib/math/prime.scm (mc-find-divisor-1): Fixed a bug that made

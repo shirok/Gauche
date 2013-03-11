@@ -73,7 +73,7 @@
 (autoload "gauche/numerical"
           exact-integer-sqrt
           continued-fraction real->rational
-          expt-mod
+          expt-mod gamma lgamma
           real-valued? rational-valued? integer-valued?
           div-and-mod div mod div0-and-mod0 div0 mod0
           nearly=?)

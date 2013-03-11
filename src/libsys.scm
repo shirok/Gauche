@@ -281,18 +281,7 @@
 ;;---------------------------------------------------------------------
 ;; math.h
 
-(define-cproc fmod (x::<real> y::<real>) ::<double> fmod)
-
-(define-cproc frexp (d::<real>) ::(<double> <int>)
-  (set! SCM_RESULT0 (frexp d (& SCM_RESULT1))))
-
-(define-cproc modf (x::<real>) ::(<double> <double>)
-  (set! SCM_RESULT0 (modf x (& SCM_RESULT1))))
-
-(define-cproc ldexp (x::<real> exp::<int>) ::<real> ldexp)
-
-(define-cproc log10 (x::<real>) ::<real> log10)
-
+;; fmod, frexp, modf, ldexp, log10 - in libnum.scm
 
 ;;---------------------------------------------------------------------
 ;; pwd.h - passwords

@@ -213,6 +213,29 @@
            (result v))]
         [else (SCM_TYPE_ERROR num "real number") (result SCM_UNDEFINED)]))
 
+(define-cproc fmod (x::<real> y::<real>) ::<double> fmod)
+
+(define-cproc frexp (d::<real>) ::(<double> <int>)
+  (set! SCM_RESULT0 (frexp d (& SCM_RESULT1))))
+
+(define-cproc modf (x::<real>) ::(<double> <double>)
+  (set! SCM_RESULT0 (modf x (& SCM_RESULT1))))
+
+(define-cproc ldexp (x::<real> exp::<int>) ::<real> ldexp)
+
+(define-cproc log10 (x::<real>) ::<real> log10)
+
+;; NB: Alternative implemenation of gamma and log-abs-gamma functions are
+;; provided in Scheme (lib/gauche/numeric.scm).
+(select-module gauche.internal)
+(inline-stub
+ (if "defined(HAVE_TGAMMA)"
+   (define-cproc %gamma (x::<real>) ::<real> :fast-flonum :constant
+     tgamma))
+ (if "defined(HAVE_LGAMMA)"
+   (define-cproc %lgamma (x::<real>) ::<real> :fast-flonum :constant
+     lgamma)))
+
 ;;
 ;; Arithmetics
 ;;

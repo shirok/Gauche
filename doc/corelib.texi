@@ -1317,6 +1317,21 @@ Calculates @code{(modulo (expt base exponent) mod)} efficiently.
 @end defun
 
 
+@defun gamma x
+@defunx lgamma x
+@c EN
+Gamma function and natural logarithmic of absolute value of Gamma function.
+
+NB: Mathematically these functions are defined in complex domain, but
+currently we only supports real number argument.
+@c JP
+ガンマ関数と、ガンマ関数の絶対値の自然対数です。
+
+註：数学的にはこれらの関数は複素領域で定義されますが、現在の実装は実数引数だけを
+サポートします。
+@c COMMON
+@end defun
+
 @c NB: These should be moved to a separate subsection once we got
 @c more fixnum-specific operation support.
 

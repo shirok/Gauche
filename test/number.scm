@@ -2086,6 +2086,26 @@
        (^[x y] (and (nearly=? 1e-6 (car x) (car y))
                     (nearly=? 1e-6 (cadr x) (cadr y)))))
 
+;; This is to check alternative gamma implementation assuming we can use
+;; system's tgamma and lgamma.
+'(let ()
+  (define (test-gamma name fn0 fn1)
+    (test* #`"alt-,name" #f
+           (any (^[x] (let* ([y0 (fn0 x)]
+                             [y1 (fn1 x)]
+                             [e  (/ (abs (- y0 y1)) y0)])
+                        (and (> e 1e-6)
+                             (format "Error too big (~s) at x=~s (~a=~s alt-~a=~s"
+                                     e x name y0 name y1))))
+                (map (cut expt 10 <>) (iota 150 -5 0.05)))))
+  (test-gamma "gamma"
+              (with-module gauche.internal %gamma)
+              (with-module gauche.internal %alt-gamma))
+  (test-gamma "lgamma"
+              (with-module gauche.internal %lgamma)
+              (with-module gauche.internal %alt-lgamma))
+  )
+
 ;;------------------------------------------------------------------
 (test-section "ffx optimization")
 
