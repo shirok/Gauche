@@ -372,7 +372,7 @@ plot 'tmp' using (bin($1,binwidth)):(1.0) smooth freq with boxes
 (define (permutation-of seq)
   (^[] (shuffle seq (cdr (%random-data-state)))))
 
-(define (combination-of seq)
+(define (combination-of len seq)
   (let1 indices (list->vector (iota len))
     (^[] (let1 ix (shuffle indices)
            (list-ec (: i len) (ref seq (vector-ref ix i)))))))
