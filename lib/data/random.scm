@@ -192,13 +192,13 @@ bin(x,width)=width*floor(x/width)
 plot 'tmp' using (bin($1,binwidth)):(1.0) smooth freq with boxes
 |#
 
-#|
 ;; The following definition of `normal' implements Ziggurat method in
 ;; Jurgen A Doornik, An Improved Ziggurat Method to Generate Normal Random
 ;; Samples, 2005.  http://www.doornik.com/research.html
-;; Supposedly it is faster than Box-Muller, but with Gauche implementation,
-;; Box-Muller is actually slightly (1-2%) faster.
-(define normal
+;; Supposedly it is faster than Box-Muller, but written in Gauche,
+;; Box-Muller is actually faster (about 12%).
+#|
+(define normal2
   (let ([blocks 128]        ; # of blocks
         [X1 3.442619855899] ; x coord of the start of the right tail
         [A 9.91256303526217e-3] ; area of each block
