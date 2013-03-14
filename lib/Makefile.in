@@ -32,7 +32,8 @@ CONFIG_GENERATED = Makefile slib.scm
 SUBDIRS  = gauche gauche/vm gauche/serializer gauche/interactive gauche/mop \
            gauche/package gauche/cgen gauche/experimental \
 	   srfi-14 srfi-29 \
-           binary control dbd dbm math util compat file rfc text www www/cgi
+           binary control data dbd dbm math util compat file rfc text \
+           www www/cgi
 
 SCMFILES = srfi-0.scm \
        srfi-4.scm srfi-5.scm srfi-7.scm srfi-9.scm srfi-11.scm \
