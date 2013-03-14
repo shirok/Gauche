@@ -149,14 +149,15 @@
     (guard (e [(<check-failure> e) (format-check-failure e)])
       (with-random-data-seed seed
         (^[]
-          (dotimes [n (+ skip-to amount)]
-            (let1 data (map (^g (g)) gens)
-              (when (>= n skip-to)
-                (parameterize ([%current-data data]
-                               [%current-count n])
-                  (apply proc data)))))
-          (format #t "Passes ~a check~a.\n" n (if (= n 1) "" "s"))
-          #t)))))
+          (let1 c (+ skip-to amount)
+            (dotimes [n c]
+              (let1 data (map (^g (g)) gens)
+                (when (>= n skip-to)
+                  (parameterize ([%current-data data]
+                                 [%current-count n])
+                    (apply proc data)))))
+            (format #t "Passes ~a check~a.\n" c (if (= c 1) "" "s"))
+            #t))))))
 
 (define (%ensure qexpr expected thunk :optional (cmp test-check))
   (define (throw-failure result)
