@@ -1,3 +1,8 @@
+2013-03-14  shiro  <shiro@acm.org>
+
+	* lib/gauche/test/generative.scm: Initial check in.  API is still
+	  fluid.
+
 2013-03-12  Shiro Kawai  <shiro@acm.org>
 
 	* data/random.scm: Added initial version.

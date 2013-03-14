@@ -101,8 +101,8 @@
 
 (define (test-error? obj) (is-a? obj <test-error>))
 
-(define (test-error . maybe-class)
-  (make <test-error> :class (and (pair? maybe-class) (car maybe-class))))
+(define (test-error :optional (class #f) (message #f))
+  (make <test-error> :class class :message message))
 
 ;; An object to represet any one of
 (define-class <test-one-of> ()
