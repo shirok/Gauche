@@ -44,13 +44,14 @@
   
   (export make-random-data-state current-random-data-seed with-random-data-seed
 
-          integer integer-between fixnum char boolean
-          int8 uint8 int16 uint16 int32 uint32 int64 uint64
-          real real-between normal exponential geometric poisson
+          integers$ integers-between$ fixnums chars$ booleans
+          int8s uint8s int16s uint16s int32s uint32s int64s uint64s
+          reals$ reals-between$ reals-normal$ reals-exponential$
+          integers-geometric$ integers-poisson$
 
           default-sizer
-          one-of pair-of tuple-of list-of vector-of string-of
-          permutation-of combination-of weighted-sample
+          samples-from pairs-of tuples-of lists-of vectors-of strings-of
+          permutations-of combinations-of weighted-samples-from
           ))
 (select-module data.random)
 
@@ -60,15 +61,18 @@
 ;; a portable way to save and restore the random state.
 ;; Srfi-27's random state isn't guaranteed to be printable.
 
+;; API
 (define (make-random-data-state seed)
   (cons seed (make <mersenne-twister> :seed seed)))
 
 (define %random-data-state
   (make-parameter (make-random-data-state 42)))
 
+;; API
 (define (current-random-data-seed)
   (car (%random-data-state)))
 
+;; API
 (define (with-random-data-seed seed thunk)
   (parameterize ([%random-data-state (make-random-data-state seed)])
     (thunk)))
@@ -82,46 +86,39 @@
 ;;; Primitive generators
 ;;;
 
-;; A naming idea: We could provide plural names for those primitive samplers
-;; (e.g. integers for integer, integers-between for integer-between),
-;; then we could write a generator of a list of three random integers as
-;; (list-of 3 fixnums), for example.  This is kind of cool... though
-;; I'm not sure if it's a good idea to double the number of exported names
-;; just for this kind of cosmetic readability.
-
 ;;
 ;; Uniform distribution
 ;;
 
 ;; API.  Generate integers uniformly in [start, start+size)
-(define (integer size :optional (start 0))
+(define (integers$ size :optional (start 0))
   (^[] (+ (%rand-int size) start)))
 
 ;; API.  Generate integers uniformly in [lb ub]
 ;; (We avoid 'integer-range', for 'range' API takes exclusive upper bound.)
-(define (integer-between lb ub)
+(define (integers-between$ lb ub)
   (let1 range (- ub lb -1)
     (^[] (+ (%rand-int range) lb))))
 
 ;; API.
-(define fixnum (integer-between (least-fixnum) (+ (greatest-fixnum) 1)))
-(define int8   (integer 256 -128))
-(define uint8  (integer 256))
-(define int16  (integer 65536 -32768))
-(define uint16 (integer 65536))
-(define int32  (integer (expt 2 32) (- (expt 2 31))))
-(define uint32 (integer (expt 2 32)))
-(define int64  (integer (expt 2 64) (- (expt 2 64))))
-(define uint64 (integer (expt 2 64)))
+(define fixnums (integers-between$ (least-fixnum) (+ (greatest-fixnum) 1)))
+(define int8s   (integers$ 256 -128))
+(define uint8s  (integers$ 256))
+(define int16s  (integers$ 65536 -32768))
+(define uint16s (integers$ 65536))
+(define int32s  (integers$ (expt 2 32) (- (expt 2 31))))
+(define uint32s (integers$ (expt 2 32)))
+(define int64s  (integers$ (expt 2 64) (- (expt 2 64))))
+(define uint64s (integers$ (expt 2 64)))
 
 ;; API.
-(define boolean (^[] (zero? (%rand-int 2))))
+(define booleans (^[] (zero? (%rand-int 2))))
 
 ;; API.
 ;; The default value of cset is debatable.  We play "safe" here, limiting
 ;; ascii alphabets and digits, which would satisfy typical use cases without
 ;; worrying character encodings too much.
-(define (char :optional (cset #[A-Za-z0-9]))
+(define (chars$ :optional (cset #[A-Za-z0-9]))
   ;; We map the integer within the total # of chars in CSET into
   ;; the delimited ranges of characters in CSET.  For example, if CSET
   ;; is splitted into a ranges ((48 . 57) (65 . 90) (97 . 122)),
@@ -158,10 +155,10 @@
 ;; value can only be produced on the FP values on the edge, and we should
 ;; regard it inappropriate rounding (for our purpose).  If we reject them,
 ;; it will skew the distribution.
-(define (real :optional (size 1.0) (start 0.0))
+(define (reals$ :optional (size 1.0) (start 0.0))
   (let1 ub (+ size start)
     (^[] (clamp (+ start (* size (%rand-real0))) start ub))))
-(define (real-between lb ub)
+(define (reals-between$ lb ub)
   (let1 range (+ lb ub)
     (^[] (clamp (- (* range (%rand-real0)) lb) lb ub))))
 
@@ -174,7 +171,12 @@
 
 ;; Normal distribution (continuous - generates real numbers)
 ;; Box-Muller algorithm
-(define (normal :optional (mean 0) (deviation 1))
+;; NB: We tested Ziggurat method, too (see git repo for the code),
+;; only to find out Box-Muller is faster about 12% - presumably
+;; the overhead of each ops is larger in Gauche than C/C++, and
+;; so the difference of cost of log or sin from the primitive
+;; addition/multiplication are negligible.
+(define (reals-normal$ :optional (mean 0) (deviation 1))
   (^[] (let ([r (%sqrt (* -2 (%log (%rand-real))))]
              [theta (* 2pi (%rand-real))])
          (+ mean (* deviation r (%sin theta))))))
@@ -183,7 +185,7 @@
 Simple test of gaussian sampling: Generate some data with this:
 
 (with-output-to-file "tmp"
-  (^[] (let1 g (normal 2 3) (dotimes [i 1000000] (print (g))))))
+  (^[] (let1 g (normal$ 2 3) (dotimes [i 1000000] (print (g))))))
 
 Then plot with gnuplot:
 
@@ -192,83 +194,13 @@ bin(x,width)=width*floor(x/width)
 plot 'tmp' using (bin($1,binwidth)):(1.0) smooth freq with boxes
 |#
 
-;; The following definition of `normal' implements Ziggurat method in
-;; Jurgen A Doornik, An Improved Ziggurat Method to Generate Normal Random
-;; Samples, 2005.  http://www.doornik.com/research.html
-;; Supposedly it is faster than Box-Muller, but written in Gauche,
-;; Box-Muller is actually faster (about 12%).
-#|
-(define normal2
-  (let ([blocks 128]        ; # of blocks
-        [X1 3.442619855899] ; x coord of the start of the right tail
-        [A 9.91256303526217e-3] ; area of each block
-        ;; Arrays Xs and Rs are initialized when gaussian is called first time.
-        [Xs #f] ; X coords of right edge of each block.  Xs[1] is same as X1.
-                ; X0 isn't corresponds to the box, but used for rejection.
-        [Rs #f] ; Precomputed ratio of adjacent Xs; Rs[i] = Xs[i+1]/Xs[i].
-                ; After the block selection, if an absolute value of a sample
-                ; value u <- U(0,1) falls below this, we know we can accept it.
-                ; for sure.
-        )
-
-    (define (fd a b) (exp (* -0.5 (- (* a a) (* b b)))))
-    (define (f x)    (exp (* -0.5 x x)))
-
-    ;; Initialization.  Only called once when Xs is #f, and sets up Xs and Rs.
-    (define (init)
-      (let ([xs (make-f64vector (+ blocks 1))]
-            [rs (make-f64vector blocks)])
-        (f64vector-set! xs 0 (/ A (f X1)))
-        (f64vector-set! xs blocks 0)
-        (do ([i 1 (+ i 1)]
-             [x X1 (sqrt (* -2 (log (+ (/ A x) (f x)))))])
-            [(= i blocks)]
-          (f64vector-set! xs i x))
-        (do-ec (: i blocks)
-               (f64vector-set! rs i (/ (f64vector-ref xs (+ i 1))
-                                       (f64vector-ref xs i))))
-        ;; MT-safe; the result is always the same, and we ensure Xs is
-        ;; set after Rs.
-        (set! Rs rs)
-        (set! Xs xs)))
-
-    ;; Tail case.  Called rarely, so we can spend some time.
-    (define (normal-tail)
-      (let ([x (/ (%log (%rand-real)) X1)]
-            [y (%log (%rand-real))])
-        (if (< (* y -2) (* x x))
-          (normal-tail)
-          (- X1 x))))
-
-    ;; Draw from normal distribution.
-    (define (sample)
-      (let ([u (- (* 2 (%rand-real)) 1)]  ; U(-1,1)
-            [i (%rand-int 128)])
-        (cond [(< (abs u) (f64vector-ref Rs i)) ; we can accept u
-               (* u (f64vector-ref Xs i))]
-              [(= i 0)                          ; bottom block
-               (if (< u 0) (normal-tail) (- (normal-tail)))]
-              [else                             ; check precisely
-               (let* ([x (* u (f64vector-ref Xs i))]
-                      [f0 (fd (f64vector-ref Xs i) x)]
-                      [f1 (fd (f64vector-ref Xs (+ i 1)) x)])
-                 (if (< (+ f1 (* (%rand-real) (- f0 f1))) 1.0)
-                   x                            ; accepted
-                   (sample)))])))
-
-    ;; Main body
-    (^[:optional (mean 0) (deviation 1)]
-      (unless Xs (init))
-      (^[] (+ (* (sample) deviation) mean)))))
-|#
-
 ;; Exponential distribution - continuous
-(define (exponential m)
+(define (reals-exponential$ m)
   (^[] (- (* m (log (%rand-real))))))
 
 ;; Draw from geometric distribution, with success probability p.
 ;; Mean is 1/p, variance is (1-p)/p^2
-(define (geometric p)
+(define (integers-geometric$ p)
   (let1 c (/ (log (- 1.0 p)))
     (^[] (ceiling->exact (* c (log (%rand-real)))))))
 
@@ -278,7 +210,7 @@ plot 'tmp' using (bin($1,binwidth)):(1.0) smooth freq with boxes
 ;; J. of the Royal Statistical Society Series C (Applied Statistics), 28(1),
 ;; pp29-35, 1979.  The code here is a port by John D Cook's C++ implementation
 ;; (http://www.johndcook.com/stand_alone_code.html )
-(define (poisson L)
+(define (integers-poisson$ L)
   (if (< L 36)
     (^[] (do ([exp-L (exp (- L))]
               [k 0 (+ k 1)]
@@ -305,7 +237,7 @@ plot 'tmp' using (bin($1,binwidth)):(1.0) smooth freq with boxes
 
 #|
 ;; This generates histograms of samples
-;; e.g.  (gen-hist 1000 (poisson 5) (poisson 10) (poisson 20) (poisson 50))
+;; e.g.  (gen-hist 1000 (poisson$ 5) (poisson$ 10) (poisson$ 20) (poisson$ 50))
 (define (gen-hist count . thunks)
   (let ([bins (map (^_ (make-hash-table 'eqv?)) thunks)]
         [maxkey 0])
@@ -327,13 +259,27 @@ plot 'tmp' using (bin($1,binwidth)):(1.0) smooth freq with boxes
 ;;; Generator combinators
 ;;;
 
-(define (one-of seq-of-gen)
+;; API
+(define (samples-from seq-of-gen)
   (let1 s (size-of seq-of-gen)
     (^[] ((~ seq-of-gen (%rand-int s))))))
 
-(define (pair-of car-gen cdr-gen) (^[] (cons (car-gen) (cdr-gen))))
+;; API
+;; weight&gens :: ((<real> . <generator>) ...)
+(define (weighted-samples-from weight&gens)
+  (let* ([tab (make-tree-map)]
+         [total (do [(w&g weight&gens (cdr w&g))
+                     (cumu 0 (+ cumu (caar w&g)))]
+                    [(null? w&g) cumu]
+                  (tree-map-put! tab cumu (cdar w&g)))])
+    (^[] (receive (_ gen) (tree-map-floor tab (* (%rand-real0) total))
+           (gen)))))
 
-(define (tuple-of . gens) (gmap (^g (g)) gens))
+;; API
+(define (pairs-of car-gen cdr-gen) (^[] (cons (car-gen) (cdr-gen))))
+
+;; API
+(define (tuples-of . gens) (gmap (^g (g)) gens))
 
 ;; We accept constant integer or generator
 (define-syntax %with-sizer
@@ -342,47 +288,43 @@ plot 'tmp' using (bin($1,binwidth)):(1.0) smooth freq with boxes
      (let1 sizer (if (integer? sizer) (^[] sizer) sizer)
        . body)]))
 
-(define default-sizer (make-parameter (poisson 4)))
-     
-(define list-of
+(define default-sizer (make-parameter (integers-poisson$ 4)))
+
+;; API
+(define lists-of
   (case-lambda
-    [(item-gen) (list-of (default-sizer) item-gen)]
+    [(item-gen) (lists-of (default-sizer) item-gen)]
     [(sizer item-gen)
      (%with-sizer sizer (^[] (list-tabulate (sizer) (^_ (item-gen)))))]))
 
-(define vector-of
+;; API
+(define vectors-of
   (case-lambda
-    [(item-gen) (vector-of (default-sizer) item-gen)]
+    [(item-gen) (vectors-of (default-sizer) item-gen)]
     [(sizer item-gen)
      (%with-sizer sizer
        (^[] (let1 len (sizer)
               (rlet1 vec (make-vector len)
                 (do-ec (: i len) (vector-set! vec i (item-gen)))))))]))
 
-(define string-of
+;; API
+(define strings-of
   (case-lambda
-    [()         (string-of (default-sizer) (char))]
-    [(item-gen) (string-of (default-sizer) item-gen)]
+    [()         (strings-of (default-sizer) (char))]
+    [(item-gen) (strings-of (default-sizer) item-gen)]
     [(sizer item-gen) 
      (%with-sizer sizer
        (^[] (let1 len (sizer)
               (with-output-to-string
                 (^[] (do-ec (: i len) (display (item-gen))))))))]))
 
-(define (permutation-of seq)
+;; API
+(define (permutations-of seq)
   (^[] (shuffle seq (cdr (%random-data-state)))))
 
-(define (combination-of len seq)
+;; API
+(define (combinations-of len seq)
   (let1 indices (list->vector (iota len))
     (^[] (let1 ix (shuffle indices)
            (list-ec (: i len) (ref seq (vector-ref ix i)))))))
 
-;; weight&gens :: ((<real> . <generator>) ...)
-(define (weighted-sample weight&gens)
-  (let* ([tab (make-tree-map)]
-         [total (do [(w&g weight&gens (cdr w&g))
-                     (cumu 0 (+ cumu (caar w&g)))]
-                    [(null? w&g) cumu]
-                  (tree-map-put! tab cumu (cdar w&g)))])
-    (^[] (receive (_ gen) (tree-map-floor tab (* (%rand-real0) total))
-           (gen)))))
