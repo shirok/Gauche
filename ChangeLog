@@ -2,6 +2,8 @@
 
 	* ext/binary/io.scm (write-ber-integer): Fixed a bug that ignores the
 	  port argument.  Patch from Nozomi Isozaki.
+	* src/libnum.scm (%exact-integer-sqrt): Fixed the range to be used
+	  FP sqrt.  If input is >= 2^52, the result of FP sqrt can be rounded.
 
 2013-03-14  shiro  <shiro@acm.org>
 

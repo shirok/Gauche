@@ -421,7 +421,7 @@
    [else (error "number required, but got" z)]))
 
 (define-in-module gauche.internal (%exact-integer-sqrt k) ; k >= 0
-  (if (< k 9007199254740992)            ;2^53
+  (if (< k 4503599627370496)            ;2^52
     ;; k can be converted to a double without loss.
     (let1 s (floor->exact (%sqrt k))
       (values s (- k (* s s))))
