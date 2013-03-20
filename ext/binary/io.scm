@@ -219,8 +219,8 @@
         [start (ash number -7)])
     (unless (zero? start)
       (let loop ([n start])
-        (cond [(< n 128) (write-u8 (logior n #b10000000))]
+        (cond [(< n 128) (write-u8 (logior n #b10000000) port)]
               [else (loop (ash n -7)) ;; write high bytes first
-                    (write-u8 (logior (logand n #b01111111) #b10000000))])))
-    (write-u8 final)))
+                    (write-u8 (logior (logand n #b01111111) #b10000000) port)])))
+    (write-u8 final port)))
 

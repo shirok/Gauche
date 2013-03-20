@@ -1,3 +1,8 @@
+2013-03-19  Shiro Kawai  <shiro@acm.org>
+
+	* ext/binary/io.scm (write-ber-integer): Fixed a bug that ignores the
+	  port argument.  Patch from Nozomi Isozaki.
+
 2013-03-14  shiro  <shiro@acm.org>
 
 	* lib/gauche/test/generative.scm: Initial check in.  API is still
