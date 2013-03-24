@@ -4565,6 +4565,16 @@ No multibyte character support (8-bit fixed-length character).
 マルチバイトキャラクタをサポートしない(8ビット固定長文字)。
 @c COMMON
 @end table
+
+@c EN
+To switch code at compile time according to the internal encoding,
+you can use feature identifiers @code{gauche.ces.*}--see
+@ref{Platform-dependent features}.
+@c JP
+コンパイル時に内部エンコーディングによってコードを切り替えたい場合は、
+機能識別子@code{gauche.ces.*}が使えます。
+@ref{Platform-dependent features}を見てください。
+@c COMMON
 @end defun
 
 @defun supported-character-encodings

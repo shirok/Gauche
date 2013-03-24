@@ -566,48 +566,68 @@ using index access at all.
 @c EN
 You can choose @emph{internal} encoding scheme at the time of compiling
 Gauche.   At runtime, a procedure @code{gauche-character-encoding}
-can be used to query the internal encoding.  Currently, the following
+can be used to query the internal encoding.  At compile time,
+you can use a feature identifier to check the internal encoding.
+(@xref{Platform-dependent features}.)
+Currently, the following
 internal encodings are supported.
 @c JP
 Gaucheのコンパイル時に、文字の@emph{内部エンコーディング}を選択することができます。
-実行時に手続き@code{gauche-character-encoding}によってどの内部エンコーディング
-でコンパイルされたかを知ることが出来ます。
+実行時に手続き@code{gauche-character-encoding}を使うか、
+コンパイル時に機能識別子(@ref{Platform-dependent features}参照)を使うことで、
+よってどの内部エンコーディングでコンパイルされたかを知ることが出来ます。
 今のところ、以下のエンコーディングがサポートされています。
 @c COMMON
 
 @table @code
+@item utf-8
+@c EN
+UTF-8 encoding of Unicode.  This is the default.
+The feature identifier @code{gauche.ces.utf8} indicates Gauche is compiled
+with this internal encoding.
+@c JP
+UnicodeのUTF-8エンコーディング。これがデフォルトです。
+Gaucheがこの内部エンコーディングでコンパイルされている場合は
+機能識別子@code{gauche.ces.utf8}が定義されます。
+@c COMMON
 @item euc-jp
 @c EN
 EUC-JP encoding of ASCII, JIS X 0201 kana, JIS X 0212 and JIS X 0213:2000
 Japanese character set.
+The feature identifier @code{gauche.ces.eucjp} indicates Gauche is compiled
+with this internal encoding.
 @c JP
 ASCII、JIS X 0201カナ、JIS X 0212及びJIS X 0213:2000文字集合のEUC-JP
-エンコーディング
+エンコーディング。
+Gaucheがこの内部エンコーディングでコンパイルされている場合は
+機能識別子@code{gauche.ces.eucjp}が定義されます。
 @c COMMON
 @item sjis
 @c EN
 Shift-JIS encoding of JIS X 0201 kana and JIS X 0213:2000
 Japanese character set.  For source-code compatibility, the character
 code between 0 and 0x7f is mapped to ASCII.
+The feature identifier @code{gauche.ces.sjis} indicates Gauche is compiled
+with this internal encoding.
 @c JP
 JIS X 0201カナ及びJIS X 0213:2000文字集合のShift-JISエンコーディング。
 ソースコードの互換性のため、文字コード0から0x7fの範囲はJIS X 0201 roman
 ではなくASCIIにマップされます。
-@c COMMON
-@item utf-8
-@c EN
-UTF-8 encoding of Unicode.
-@c JP
-UnicodeのUTF-8エンコーディング。
+Gaucheがこの内部エンコーディングでコンパイルされている場合は
+機能識別子@code{gauche.ces.sjis}が定義されます。
 @c COMMON
 @item none
 @c EN
 8-bit fixed-length character encoding, with the code between 0 and 0x7f
 matches ASCII.  It's up to the application to interpret the string
 with certain character encodings.
+The feature identifier @code{gauche.ces.none} indicates Gauche is compiled
+with this internal encoding.
 @c JP
 8ビット固定長の文字エンコーディング。文字コード0から0x7fの範囲はASCIIと
 みなします。文字列をどのエンコーディングとして解釈するかはアプリケーション次第です。
+Gaucheがこの内部エンコーディングでコンパイルされている場合は
+機能識別子@code{gauche.ces.none}が定義されます。
 @c COMMON
 @end table
 
