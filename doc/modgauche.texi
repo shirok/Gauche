@@ -5230,8 +5230,11 @@ to parse the info file.
 @section @code{gauche.lazy} - Lazy sequence utilities
 @c NODE 遅延シーケンスユーティリティ, @code{gauche.lazy} - 遅延シーケンスユーティリティ
 
+@deftp {Module} gauche.lazy
+@mdindex gauche.lazy
 This module provides utiltiy procedures that yields lazy sequences.
 For the details of lazy sequences, see @ref{Lazy sequences}.
+@end deftp
 
 Since lazy sequences are forced implicitly and indistinguishable
 from ordinary lists, we don't need a separate set of procedures
