@@ -48,6 +48,14 @@
             (lambda (c) (c 1 2 3)))
          (list x y)))
 
+;; continuation with zero values
+(test* "call/cc (zero value)" '()
+       (call-with-values
+           (lambda ()
+             (call-with-current-continuation
+              (lambda (c) (c))))
+         (lambda x x)))
+
 ;; continuation invoked while inline procedure is prepared.
 ;; a test to see call/cc won't mess up the VM stack.
 

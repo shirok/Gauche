@@ -2246,6 +2246,7 @@ static ScmObj throw_cont_body(ScmObj handlers,    /* after/before thunks
     if (nargs == 1) {
         return SCM_CAR(args);
     } else if (nargs < 1) {
+        vm->numVals = 0;
         return SCM_UNDEFINED;
     } else if (nargs >= SCM_VM_MAX_VALUES) {
         Scm_Error("too many values passed to the continuation");

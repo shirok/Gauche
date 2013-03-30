@@ -1,3 +1,8 @@
+2013-03-30  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c (throw_cont_body): Fixed bug that failed to set vm->numVals
+	  when the continuation gets 0 args.
+
 2013-03-19  Shiro Kawai  <shiro@acm.org>
 
 	* ext/binary/io.scm (write-ber-integer): Fixed a bug that ignores the
@@ -5,7 +10,7 @@
 	* src/libnum.scm (%exact-integer-sqrt): Fixed the range to be used
 	  FP sqrt.  If input is >= 2^52, the result of FP sqrt can be rounded.
 
-2013-03-14  shiro  <shiro@acm.org>
+2013-03-14  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/test/generative.scm: Initial check in.  API is still
 	  fluid.
