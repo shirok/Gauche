@@ -932,7 +932,7 @@ return #t if the template has variable length elements.
 
 @node Rational-less arithmetic, A common job descriptor for control modules, Packing Binary Data, Library modules - Utilities
 @section @code{compat.norational} - Rational-less arithmetic
-@c NODE @code{compat.norational} - 有理数のない算術演算
+@c NODE 有理数のない算術演算, @code{compat.norational} - 有理数のない算術演算
 
 @deftp {Module} compat.norational
 @mdindex compat.norational
@@ -1651,7 +1651,7 @@ bcryptアルゴリズムでは少なくとも16バイトの長さが必要です
 
 @node Database independent access layer, Generic DBM interface, Password hashing, Library modules - Utilities
 @section @code{dbi} - Database independent access layer
-@c NODE @code{dbi} - データベース非依存アクセス層
+@c NODE データベース非依存アクセス層, @code{dbi} - データベース非依存アクセス層
 
 @deftp {Module} dbi
 @mdindex dbi
@@ -15856,7 +15856,7 @@ as many characters available.
 @c ----------------------------------------------------------------------
 @node Showing progress on text terminals, SQL parsing and construction, Parsing input stream, Library modules - Utilities
 @section @code{text.progress} - Showing progress on text terminals
-@c NODE @code{text.progress} - テキスト端末上でプログレスを表示する
+@c NODE テキスト端末上でプログレスを表示する, @code{text.progress} - テキスト端末上でプログレスを表示する
 
 @deftp {Module} text.progress
 @mdindex text.progress
@@ -16162,7 +16162,7 @@ Here's a simple example, using customized numeric part:
 @c ----------------------------------------------------------------------
 @node SQL parsing and construction, Transliterate characters, Showing progress on text terminals, Library modules - Utilities
 @section @code{text.sql} - SQL parsing and construction
-@c NODE @code{text.sql} - SQLのパーズと構築
+@c NODE SQLのパーズと構築, @code{text.sql} - SQLのパーズと構築
 
 @deftp {Module} text.sql
 @mdindex text.sql
@@ -19018,7 +19018,7 @@ obj @result{} #<my-record 0x819d9b0>
 @c ----------------------------------------------------------------------
 @node Relation framework, Sparse data containers, SLIB-compatible record type, Library modules - Utilities
 @section @code{util.relation} - Relation framework
-@c NODE @code{util.relation} - リレーションフレームワーク
+@c NODE リレーションフレームワーク, @code{util.relation} - リレーションフレームワーク
 
 @deftp {Module} util.relation
 @mdindex util.relation
@@ -19364,7 +19364,7 @@ you can write like this:
 @c ----------------------------------------------------------------------
 @node Sparse data containers, Stream library, Relation framework, Library modules - Utilities
 @section @code{util.sparse} - Sparse data containers
-@c NODE @code{util.sparse} - 疎なデータコンテナ
+@c NODE 疎なデータコンテナ, @code{util.sparse} - 疎なデータコンテナ
 
 @deftp {Module} util.sparse
 @mdindex util.sparse
@@ -20251,7 +20251,7 @@ inserted between elements of @var{stream}.
 @c ----------------------------------------------------------------------
 @node Trie, Topological sort, Stream library, Library modules - Utilities
 @section @code{util.trie} - Trie
-@c NODE @code{util.trie} - Trie
+@c NODE Trie, @code{util.trie} - Trie
 
 @deftp {Module} util.trie
 @mdindex util.trie

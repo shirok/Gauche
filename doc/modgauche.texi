@@ -3363,7 +3363,7 @@ without any argument from the shell, to find out the valid options.
 @c ----------------------------------------------------------------------
 @node Dictionary framework, Low-level file operations, Configuration parameters, Library modules - Gauche extensions
 @section @code{gauche.dictionary} - Dictionary framework
-@c NODE @code{gauche.dictionary} - ディクショナリフレームワーク
+@c NODE ディクショナリフレームワーク, @code{gauche.dictionary} - ディクショナリフレームワーク
 
 @deftp {Module} gauche.dictionary
 @mdindex gauche.dictionary
