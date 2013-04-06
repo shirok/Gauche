@@ -145,7 +145,7 @@
     [#/File: [^,]+,  Node: ([^,]+)(,  Next: ([^,]+))?,  Prev: ([^,]+),  Up: ([^,]+)/
      (#f node #f next prev up)
      (rlet1 info-node (make <info-node>
-                       :node node :next next :prev prev :up up :file info
+                       :name node :next next :prev prev :up up :file info
                        :content (cdr part))
        (hash-table-put! (ref info 'node-table) node info-node))]
     [else #f]))
