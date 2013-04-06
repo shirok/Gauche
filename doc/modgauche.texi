@@ -2075,6 +2075,7 @@ the C world, and vice versa.   The maybe variation is only
 meaningful when the C type is a pointer type.
 
 @deftp {Class} <cgen-type>
+@clindex cgen-type
 An instance of this class represents a stub type.
 It can be looked up by name such as @code{<const-cstring>} by
 @code{cgen-type-from-name}.
@@ -3522,6 +3523,7 @@ in the increasing order of keys.
 @c NODE 汎用ディクショナリ
 
 @deftp {Class} <bimap>
+@clindex binmap
 Provides a bidirectional map (@emph{bimap}), a relation between two
 set of values, of which you can lookup both ways.
 
@@ -5424,6 +5426,7 @@ but the current version doesn't implement it.
 @subheading Listener API
 
 @deftp {Class} <listener>
+@clindex listener
 @c EN
 An object that maintains the state of a repl session.
 It has many external slots to customize its behavior.

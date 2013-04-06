@@ -1937,6 +1937,7 @@ is returned.  Otherwise, an error is signaled.
 @end defun
 
 @deftp {Class} <dbi-connection>
+@clindex dbi-connection
 @c EN
 The base class of a connection to a database system.
 Each driver defines a subclass of this to keep information about
@@ -1992,6 +1993,7 @@ Returns a list of module names of known drivers.
 @end defun
 
 @deftp {Class} <dbi-driver>
+@clindex dbi-driver
 @c EN
 The base class of a driver.  You usually don't need to see this
 as far as you're using the high-level @code{dbi} API.
@@ -2122,6 +2124,7 @@ always surround names by double quotes.
 @end deffn
 
 @deftp {Class} <dbi-query>
+@clindex dbi-query
 @c EN
 Holds information about prepared query, created by @code{dbi-prepare}.
 The following slots are defined.
@@ -6055,6 +6058,7 @@ Calls @code{AllocConsole} and @code{FreeConsole}, respectively.
 @end defun
 
 @deftp {Class} <win:console-screen-buffer-info>
+@clindex win:console-screen-buffer-info
 [Windows]
 
 @defivar {<win:console-screen-buffer-info>} size.x
@@ -6106,6 +6110,7 @@ Calls @code{AllocConsole} and @code{FreeConsole}, respectively.
 @subsubheading Console input/output
 
 @deftp {Class} <win:input-record>
+@clindex win:input-record
 [Windows]
 
 @defivar {<win:input-record>} event-type
@@ -10584,6 +10589,8 @@ would be a simple @code{<error>} condition.
 
 @deftp {Class} <deflating-port>
 @deftpx {Class} <inflating-port>
+@clindex deflating-port
+@clindex inflating-port
 @c EN
 Compression and decompression functions are provided
 via ports.  A @emph{deflating port} is an output port
@@ -18630,6 +18637,7 @@ util.rbtreeのAPIはハッシュテーブルのAPIに似せて作られており
 @end deftp
 
 @deftp {Class} <rbtree>
+@clindex rbtree
 @c EN
 A class for red black trees.  Inherits @code{<sequence>},
 so that you can apply sequence APIs on a red black tree.
@@ -19118,6 +19126,7 @@ common methods.
 @c COMMON
 
 @deftp {Class} <relation>
+@clindex relation
 @c EN
 An abstract base class of relations.
 @c JP
@@ -19356,9 +19365,11 @@ you can write like this:
 @c COMMON
 
 @deftp {Class} <simple-relation>
+@clindex simple-relation
 @end deftp
 
 @deftp {Class} <object-set-relation>
+@clindex object-set-relation
 @end deftp
 
 @c ----------------------------------------------------------------------
@@ -20323,6 +20334,7 @@ Trieは@code{<collection>}を継承しており、コレクションフレーム
 @end deftp
 
 @deftp {Class} <trie>
+@clindex trie
 @c EN
 A class for Trie.  No slots are intended for public.
 Use the following procedures to operate on tries.

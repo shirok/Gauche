@@ -19199,6 +19199,7 @@ to the POSIX-time (number of seconds since Epoch).
 @subsubheading SRFI time
 
 @deftp {Builtin Class} <time>
+@clindex time
 @c EN
 The @code{<time>} object also represents a point of time.
 @c JP
