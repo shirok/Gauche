@@ -3052,8 +3052,15 @@ ScmObj Scm_RoundToExact(ScmObj num, int mode)
  * Logical (bitwise) operations
  */
 
-ScmObj Scm_Ash(ScmObj x, int cnt)
+ScmObj Scm_Ash(ScmObj x, long cnt)
 {
+    /* TODO: This is an arbitrary limit, but we need *some* limit anyway
+       to prevent a silly mistake from consuming large amount of memory.
+       Eventually we need a consistent limit on how big a bignum can be. */
+    if (cnt >= 0x10000000) {
+        Scm_Error("ash: shift amount too big to handle: %ld", cnt);
+    }
+    
     if (SCM_INTP(x)) {
         long ix = SCM_INT_VALUE(x);
         if (cnt <= -(SIZEOF_LONG * 8)) {

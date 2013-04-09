@@ -6,6 +6,10 @@
 	  va_arg.
 	* lib/gauche/cgen/type.scm: <fixnum> needs to be mapped to C long,
 	  not int.  It's surprising that we've been missed this for long time.
+	* src/number.c (Scm_Ash): Changed the second arg to long from int,
+	  for this can be called via exact_expt and the second arg can be
+	  outside of the range of int.  To prevent a silly bug gobbles huge
+	  amount of memory, set a limit in the positive shift amount.
 
 2013-03-30  Shiro Kawai  <shiro@acm.org>
 
