@@ -1,3 +1,8 @@
+2013-04-09  Shiro Kawai  <shiro@acm.org>
+
+	* ext/dbm/gdbm.scm (gdbm-strerror): Avoid using 'errno' as a variable,
+	  for it may be a macro.
+
 2013-03-30  Shiro Kawai  <shiro@acm.org>
 
 	* src/vm.c (throw_cont_body): Fixed bug that failed to set vm->numVals

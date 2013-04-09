@@ -299,8 +299,8 @@
      (TO_DATUM dkey key)
      (result (gdbm_exists (-> gdbm dbf) dkey))))
 
- (define-cproc gdbm-strerror (errno::<fixnum>)
-   (result (SCM_MAKE_STR_IMMUTABLE (gdbm_strerror errno))))
+ (define-cproc gdbm-strerror (err_num::<fixnum>)
+   (result (SCM_MAKE_STR_IMMUTABLE (gdbm_strerror err_num))))
 
  (define-cproc gdbm-setopt (gdbm::<gdbm-file> option::<fixnum> val) ::<int>
    (let* ([ival::int])
