@@ -1310,7 +1310,7 @@ void Scm_Vprintf(ScmPort *out, const char *fmt, va_list ap, int sharedp)
     ScmObj h = SCM_NIL, t = SCM_NIL;
     const char *fmtp = fmt;
     ScmVM *vm;
-    int c;
+    int c, longp;
 
     if (!SCM_OPORTP(out)) {
         Scm_Error("output port required, but got %S", out);
@@ -1320,20 +1320,27 @@ void Scm_Vprintf(ScmPort *out, const char *fmt, va_list ap, int sharedp)
      */
     while ((c = *fmtp++) != 0) {
         if (c != '%') continue;
+        longp = FALSE;
         while ((c = *fmtp++) != 0) {
             switch (c) {
             case 'd':; case 'i':; case 'c':
-                {
+                if (longp) {
+                    signed long val = va_arg(ap, signed long);
+                    SCM_APPEND1(h, t, Scm_MakeInteger(val));
+                } else {
                     signed int val = va_arg(ap, signed int);
                     SCM_APPEND1(h, t, Scm_MakeInteger(val));
-                    break;
                 }
+                break;
             case 'o':; case 'u':; case 'x':; case 'X':
-                {
+                if (longp) {
                     unsigned long val = va_arg(ap, unsigned long);
                     SCM_APPEND1(h, t, Scm_MakeIntegerU(val));
-                    break;
+                } else {
+                    unsigned int val = va_arg(ap, unsigned int);
+                    SCM_APPEND1(h, t, Scm_MakeIntegerU(val));
                 }
+                break;
             case 'e':; case 'E':; case 'f':; case 'g':; case 'G':
                 {
                     double val = va_arg(ap, double);
@@ -1376,6 +1383,9 @@ void Scm_Vprintf(ScmPort *out, const char *fmt, va_list ap, int sharedp)
                     SCM_APPEND1(h, t, Scm_MakeInteger(c));
                     continue;
                 }
+            case 'l':
+                longp = TRUE;
+                continue;
             default:
                 continue;
             }

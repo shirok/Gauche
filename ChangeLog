@@ -2,6 +2,8 @@
 
 	* ext/dbm/gdbm.scm (gdbm-strerror): Avoid using 'errno' as a variable,
 	  for it may be a macro.
+	* src/write.c (Scm_Vprintf): Handle 'l' modifier properly when we use
+	  va_arg.
 
 2013-03-30  Shiro Kawai  <shiro@acm.org>
 
