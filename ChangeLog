@@ -4,6 +4,8 @@
 	  for it may be a macro.
 	* src/write.c (Scm_Vprintf): Handle 'l' modifier properly when we use
 	  va_arg.
+	* lib/gauche/cgen/type.scm: <fixnum> needs to be mapped to C long,
+	  not int.  It's surprising that we've been missed this for long time.
 
 2013-03-30  Shiro Kawai  <shiro@acm.org>
 

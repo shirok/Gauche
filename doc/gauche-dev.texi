@@ -1207,12 +1207,12 @@ Maximum and minimum integer values representable in fixnum.
 Returns @code{TRUE} iff @var{k} fits in fixnum.
 @end deftypefn
 
-@deftypefn {Macro} int SCM_INT_VALUE (ScmObj @var{fixnum})
+@deftypefn {Macro} long SCM_INT_VALUE (ScmObj @var{fixnum})
 Extracts (unboxes) an integer value from @var{fixnum}.  You have to check
 whether @var{fixnum} is a fixnum or not before applying this.
 @end deftypefn
 
-@deftypefn {Macro} ScmObj SCM_MAKE_INT (int @var{i})
+@deftypefn {Macro} ScmObj SCM_MAKE_INT (long @var{i})
 Boxes an integer value @var{i} to a fixnum.  You have to make
 sure @var{i} is in the range representable by fixnum.
 @end deftypefn

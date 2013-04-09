@@ -74,7 +74,7 @@
 ;;
 ;;   stub type    Scheme       C           Notes
 ;;  -----------------------------------------------------------------
-;;   <fixnum>     <integer>    int         Integers within fixnum range
+;;   <fixnum>     <integer>    long        Integers within fixnum range
 ;;   <integer>    <integer>    ScmObj      Any exact integers
 ;;   <real>       <real>       double
 ;;   <number>     <number>     ScmObj      Any numbers
@@ -183,7 +183,7 @@
 (for-each
  (cut apply make-cgen-type <>)
  '(;; Numeric types
-   (<fixnum>  "int" "small integer" "SCM_INTP" "SCM_INT_VALUE" "SCM_MAKE_INT")
+   (<fixnum>  "long" "small integer" "SCM_INTP" "SCM_INT_VALUE" "SCM_MAKE_INT")
    (<integer> "ScmObj" "exact integer" "SCM_INTEGERP" "")
    (<real>    "double" "real number" "SCM_REALP" "Scm_GetDouble" "Scm_VMReturnFlonum")
    (<number>  "ScmObj" "number" "SCM_NUMBERP" "")
