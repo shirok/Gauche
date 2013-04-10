@@ -35,9 +35,11 @@ ssax_OBJECTS = sxml--ssax.$(OBJEXT)
 sxml--ssax.$(SOEXT) : $(ssax_OBJECTS)
 	$(MODLINK) sxml--ssax.$(SOEXT) $(ssax_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
-sxml--ssax.c ssax.sci : sxml-ssax.scm.in src/SSAX.scm
-	$(SCMTRANS) $(srcdir)/sxml-ssax.scm.in
+sxml--ssax.c ssax.sci : sxml-ssax.scm
 	$(SCMCOMPILE) -e -i ssax.sci -o sxml--ssax sxml-ssax.scm
+
+sxml-ssax.scm : sxml-ssax.scm.in src/SSAX.scm
+	$(SCMTRANS) $(srcdir)/sxml-ssax.scm.in
 
 ### sxml-sxpath
 
@@ -46,9 +48,11 @@ sxpath_OBJECTS = sxml--sxpath.$(OBJEXT)
 sxml--sxpath.$(SOEXT) : $(sxpath_OBJECTS)
 	$(MODLINK) sxml--sxpath.$(SOEXT) $(sxpath_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
-sxml--sxpath.c sxpath.sci : sxml-sxpath.scm.in src/sxpath.scm src/sxpathlib.scm src/sxpath-ext.scm tools.sci
-	$(SCMTRANS) $(srcdir)/sxml-sxpath.scm.in
+sxml--sxpath.c sxpath.sci : sxml-sxpath.scm tools.sci
 	$(SCMCOMPILE) -e -i sxpath.sci -o sxml--sxpath sxml-sxpath.scm
+
+sxml-sxpath.scm : sxml-sxpath.scm.in src/sxpath.scm src/sxpathlib.scm src/sxpath-ext.scm
+	$(SCMTRANS) $(srcdir)/sxml-sxpath.scm.in
 
 ### sxml-tools
 
@@ -57,9 +61,11 @@ tools_OBJECTS = sxml--tools.$(OBJEXT)
 sxml--tools.$(SOEXT) : $(tools_OBJECTS)
 	$(MODLINK) sxml--tools.$(SOEXT) $(tools_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
-sxml--tools.c tools.sci : sxml-tools.scm.in src/sxml-tools.scm
-	$(SCMTRANS) $(srcdir)/sxml-tools.scm.in
+sxml--tools.c tools.sci : sxml-tools.scm
 	$(SCMCOMPILE) -e -i tools.sci -o sxml--tools sxml-tools.scm
+
+sxml-tools.scm : sxml-tools.scm.in src/sxml-tools.scm
+	$(SCMTRANS) $(srcdir)/sxml-tools.scm.in
 
 ### sxml-serializer
 
@@ -68,9 +74,11 @@ serializer_OBJECTS = sxml--serializer.$(OBJEXT)
 sxml--serializer.$(SOEXT) : $(serializer_OBJECTS)
 	$(MODLINK) sxml--serializer.$(SOEXT) $(serializer_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
-sxml--serializer.c serializer.sci : sxml-serializer.scm.in src/serializer.scm
-	$(SCMTRANS) $(srcdir)/sxml-serializer.scm.in
+sxml--serializer.c serializer.sci : sxml-serializer.scm
 	$(SCMCOMPILE) -e -i serializer.sci -o sxml--serializer sxml-serializer.scm
+
+sxml-serializer.scm : sxml-serializer.scm.in src/serializer.scm
+	$(SCMTRANS) $(srcdir)/sxml-serializer.scm.in
 
 ### miscellaneous
 tree-trans.scm : src/SXML-tree-trans.scm tree-trans.scm.in
