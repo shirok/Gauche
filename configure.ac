@@ -721,16 +721,17 @@ if test "$try_rpath" = "yes"; then
   cflags_save="$CFLAGS"
   CFLAGS="$CFLAGS -Wl,--rpath -Wl,/"
   AC_CACHE_CHECK([linker takes --rpath flag], ac_cv_linker_rpath_flag, [
-    AC_LINK_IFELSE([int main(void) {return 0;}],
+    AC_LINK_IFELSE([AC_LANG_SOURCE([int main(void) {return 0;}])],
                    ac_cv_linker_rpath_flag=yes,
-                   ac_cv_linker_rpath_flag=no)])
+                   ac_cv_linker_rpath_flag=no)
+    ])
   CFLAGS="$cflags_save"
   if test "$ac_cv_linker_rpath_flag" = "yes"; then
     RPATH_FLAG='-Wl,--rpath -Wl,'
   else
     # solaris' ld uses -R instead of --rpath
     CFLAGS="$CFLAGS -Wl,-R -Wl,/"
-    AC_LINK_IFELSE([int main(void) {return 0;}],
+    AC_LINK_IFELSE([AC_LANG_SOURCE([int main(void) {return 0;}])],
                    ac_cv_linker_rpath_flag=yes,
                    ac_cv_linker_rpath_flag=no)
     CFLAGS="$cflags_save"
@@ -751,9 +752,10 @@ dnl Check to see if the linker takes --soname flag
 cflags_save="$CFLAGS"
 CFLAGS="$CFLAGS -Wl,--soname,libgauche.so.0"
 AC_CACHE_CHECK([linker takes --soname flag], ac_cv_linker_soname_flag, [
-  AC_LINK_IFELSE([int main(void) {return 0;}],
-                   ac_cv_linker_soname_flag=yes,
-                   ac_cv_linker_soname_flag=no)])
+  AC_LINK_IFELSE([AC_LANG_SOURCE([int main(void) {return 0;}])],
+                 ac_cv_linker_soname_flag=yes,
+                 ac_cv_linker_soname_flag=no)
+  ])
 CFLAGS="$cflags_save"
 if test "$ac_cv_linker_soname_flag" = "yes"; then
   SONAME_FLAG="-Wl,--soname,$LIBGAUCHE.so.0.$GAUCHE_MICRO_VERSION"
