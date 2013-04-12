@@ -171,7 +171,7 @@ gosh_noconsole_OBJECTS = winmain.$(OBJEXT)
 gosh_LDADD   = -l@LINKGAUCHE@
 gosh_LDFLAGS = @SHLIB_MAIN_LDFLAGS@
 
-test_extra_SOURCES = test-extra.c libextra.scm
+test_extra_SOURCES = test-extra.c libextra.scm gauche/arch.h
 test_extra_OBJECTS = test-extra.$(OBJEXT) libextra.$(OBJEXT)
 test_extra_LDADD   = -l@LINKGAUCHE@
 test_extra_LDFLAGS = @SHLIB_MAIN_LDFLAGS@
