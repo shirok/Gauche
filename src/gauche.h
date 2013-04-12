@@ -42,6 +42,10 @@
 #include <gauche/config.h>
 #include <gauche/config_threads.h>
 
+#if     GAUCHE_API_0_95         /* A provisional API towards 1.0 */
+#define GAUCHE_API_0_9   0
+#endif  /*GAUCHE_API_0_95*/
+
 #ifndef GAUCHE_API_0_9
 #define GAUCHE_API_0_9   1      /* 0.9 API */
 #endif
@@ -299,6 +303,8 @@ SCM_EXTERN int Scm_EqualM(ScmObj x, ScmObj y, int mode);
 #define SCM_MAKE_INT(obj)    SCM_OBJ(((intptr_t)(obj) << 2) + 1)
 
 #define SCM_UINTP(obj)       (SCM_INTP(obj)&&((signed long int)SCM_WORD(obj)>=0))
+typedef long ScmSmallInt;    /* C integer type corresponds to Scheme fixnum
+                                See SCM_SMALL_* macros in gauche/number.h */
 
 /*
  * FLONUM
@@ -1097,7 +1103,7 @@ SCM_EXTERN ScmObj Scm_Cddr(ScmObj obj);
 
 SCM_EXTERN int    Scm_Length(ScmObj obj);
 SCM_EXTERN ScmObj Scm_CopyList(ScmObj list);
-SCM_EXTERN ScmObj Scm_MakeList(int len, ScmObj fill);
+SCM_EXTERN ScmObj Scm_MakeList(ScmSmallInt len, ScmObj fill);
 SCM_EXTERN ScmObj Scm_Append2X(ScmObj list, ScmObj obj);
 SCM_EXTERN ScmObj Scm_Append2(ScmObj list, ScmObj obj);
 SCM_EXTERN ScmObj Scm_Append(ScmObj args);
@@ -1105,8 +1111,8 @@ SCM_EXTERN ScmObj Scm_ReverseX(ScmObj list);
 SCM_EXTERN ScmObj Scm_Reverse(ScmObj list);
 SCM_EXTERN ScmObj Scm_Reverse2X(ScmObj list, ScmObj tail);
 SCM_EXTERN ScmObj Scm_Reverse2(ScmObj list, ScmObj tail);
-SCM_EXTERN ScmObj Scm_ListTail(ScmObj list, int i, ScmObj fallback);
-SCM_EXTERN ScmObj Scm_ListRef(ScmObj list, int i, ScmObj fallback);
+SCM_EXTERN ScmObj Scm_ListTail(ScmObj list, ScmSmallInt i, ScmObj fallback);
+SCM_EXTERN ScmObj Scm_ListRef(ScmObj list, ScmSmallInt i, ScmObj fallback);
 SCM_EXTERN ScmObj Scm_LastPair(ScmObj list);
 
 SCM_EXTERN ScmObj Scm_Memq(ScmObj obj, ScmObj list);

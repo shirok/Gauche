@@ -3052,7 +3052,7 @@ ScmObj Scm_RoundToExact(ScmObj num, int mode)
  * Logical (bitwise) operations
  */
 
-ScmObj Scm_Ash(ScmObj x, long cnt)
+ScmObj Scm_Ash(ScmObj x, ScmSmallInt cnt)
 {
     /* TODO: This is an arbitrary limit, but we need *some* limit anyway
        to prevent a silly mistake from consuming large amount of memory.

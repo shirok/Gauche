@@ -49,7 +49,7 @@
 
 static void weakvector_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
-    int i;
+    ScmSmallInt i;
     ScmWeakVector *v = SCM_WEAK_VECTOR(obj);
     ScmObj *ptrs = (ScmObj*)v->pointers;
     Scm_Printf(port, "#,(<weak-vector> %d", v->size);
@@ -63,7 +63,7 @@ static void weakvector_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 
 static void weakvector_finalize(ScmObj obj, void *data)
 {
-    int i;
+    ScmSmallInt i;
     ScmWeakVector *v = SCM_WEAK_VECTOR(obj);
     ScmObj *p = (ScmObj*)v->pointers;
     for (i=0; i<v->size; i++) {
@@ -78,9 +78,9 @@ SCM_DEFINE_BUILTIN_CLASS(Scm_WeakVectorClass, weakvector_print,
                          NULL, NULL, NULL,
                          SCM_CLASS_SEQUENCE_CPL);
 
-ScmObj Scm_MakeWeakVector(int size)
+ScmObj Scm_MakeWeakVector(ScmSmallInt size)
 {
-    int i;
+    ScmSmallInt i;
     ScmObj *p;
     ScmWeakVector *v = SCM_NEW(ScmWeakVector);
 
@@ -95,7 +95,7 @@ ScmObj Scm_MakeWeakVector(int size)
     return SCM_OBJ(v);
 }
 
-ScmObj Scm_WeakVectorRef(ScmWeakVector *v, int index, ScmObj fallback)
+ScmObj Scm_WeakVectorRef(ScmWeakVector *v, ScmSmallInt index, ScmObj fallback)
 {
     ScmObj *p;
     if (index < 0 || index >= v->size) {
@@ -114,7 +114,7 @@ ScmObj Scm_WeakVectorRef(ScmWeakVector *v, int index, ScmObj fallback)
     }
 }
 
-ScmObj Scm_WeakVectorSet(ScmWeakVector *v, int index, ScmObj value)
+ScmObj Scm_WeakVectorSet(ScmWeakVector *v, ScmSmallInt index, ScmObj value)
 {
     ScmObj *p;
     if (index < 0 || index >= v->size) {

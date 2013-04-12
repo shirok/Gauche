@@ -56,7 +56,7 @@ static void vector_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 SCM_DEFINE_BUILTIN_CLASS(Scm_VectorClass, vector_print, NULL, NULL, NULL,
                          SCM_CLASS_SEQUENCE_CPL);
 
-static ScmVector *make_vector(int size)
+static ScmVector *make_vector(ScmSmallInt size)
 {
     ScmVector *v = SCM_NEW2(ScmVector *,
                             sizeof(ScmVector) + sizeof(ScmObj)*(size-1));
@@ -65,9 +65,9 @@ static ScmVector *make_vector(int size)
     return v;
 }
 
-ScmObj Scm_MakeVector(int size, ScmObj fill)
+ScmObj Scm_MakeVector(ScmSmallInt size, ScmObj fill)
 {
-    int i;
+    ScmSmallInt i;
     ScmVector *v;
     if (size < 0) {
         Scm_Error("vector size must be a positive integer, but got %d", size);
@@ -78,14 +78,14 @@ ScmObj Scm_MakeVector(int size, ScmObj fill)
     return SCM_OBJ(v);
 }
 
-ScmObj Scm_ListToVector(ScmObj l, int start, int end)
+ScmObj Scm_ListToVector(ScmObj l, ScmSmallInt start, ScmSmallInt end)
 {
     ScmVector *v;
     ScmObj e;
-    int i;
+    ScmSmallInt i;
 
     if (end < 0) {
-        int size = Scm_Length(l);
+        ScmSmallInt size = Scm_Length(l);
         if (size < 0) Scm_Error("bad list: %S", l);
         SCM_CHECK_START_END(start, end, size);
         v = make_vector(size - start);
@@ -103,9 +103,9 @@ ScmObj Scm_ListToVector(ScmObj l, int start, int end)
     return SCM_OBJ(v);
 }
 
-ScmObj Scm_VectorToList(ScmVector *v, int start, int end)
+ScmObj Scm_VectorToList(ScmVector *v, ScmSmallInt start, ScmSmallInt end)
 {
-    int len = SCM_VECTOR_SIZE(v);
+    ScmWord len = SCM_VECTOR_SIZE(v);
     SCM_CHECK_START_END(start, end, len);
     return Scm_ArrayToList(SCM_VECTOR_ELEMENTS(v)+start,
                            end-start);
@@ -119,21 +119,22 @@ ScmObj Scm_VectorToList(ScmVector *v, int start, int end)
    check (for Scheme routines) should be done in the stub file, since
    Scheme version may receive bignum, which can't be passed to C API. */
 
-ScmObj Scm_VectorRef(ScmVector *vec, int i, ScmObj fallback)
+ScmObj Scm_VectorRef(ScmVector *vec, ScmSmallInt i, ScmObj fallback)
 {
     if (i < 0 || i >= vec->size) return fallback;
     return vec->elements[i];
 }
 
-ScmObj Scm_VectorSet(ScmVector *vec, int i, ScmObj obj)
+ScmObj Scm_VectorSet(ScmVector *vec, ScmSmallInt i, ScmObj obj)
 {
     if (i >= 0 && i < vec->size) vec->elements[i] = obj;
     return obj;
 }
 
-ScmObj Scm_VectorFill(ScmVector *vec, ScmObj fill, int start, int end)
+ScmObj Scm_VectorFill(ScmVector *vec, ScmObj fill,
+                      ScmSmallInt start, ScmSmallInt end)
 {
-    int i, len = SCM_VECTOR_SIZE(vec);
+    ScmSmallInt i, len = SCM_VECTOR_SIZE(vec);
     SCM_CHECK_START_END(start, end, len);
     for (i=start; i < end; i++) {
         SCM_VECTOR_ELEMENT(vec, i) = fill;
@@ -141,9 +142,10 @@ ScmObj Scm_VectorFill(ScmVector *vec, ScmObj fill, int start, int end)
     return SCM_OBJ(vec);
 }
 
-ScmObj Scm_VectorCopy(ScmVector *vec, int start, int end, ScmObj fill)
+ScmObj Scm_VectorCopy(ScmVector *vec,
+                      ScmSmallInt start, ScmSmallInt end, ScmObj fill)
 {
-    int i, len = SCM_VECTOR_SIZE(vec);
+    ScmSmallInt i, len = SCM_VECTOR_SIZE(vec);
     ScmVector *v = NULL;
     if (end < 0) end = len;
     if (end < start) {
@@ -258,7 +260,7 @@ int Scm_UVectorSizeInBytes(ScmUVector *uv)
 }
 
 /* Generic constructor */
-ScmObj Scm_MakeUVectorFull(ScmClass *klass, int size, void *init,
+ScmObj Scm_MakeUVectorFull(ScmClass *klass, ScmSmallInt size, void *init,
                            int immutable, void *owner)
 {
     ScmUVector *vec;
@@ -271,13 +273,17 @@ ScmObj Scm_MakeUVectorFull(ScmClass *klass, int size, void *init,
     } else {
         vec->elements = SCM_NEW_ATOMIC2(void*, size*eltsize);
     }
+#if GAUCHE_API_0_95
+    vec->size_flags = (size << 1)|(immutable?1:0);
+#else  /*!GAUCHE_API_0_95*/
     vec->size = size;
     vec->immutable = immutable;
+#endif /*!GAUCHE_API_0_95*/
     vec->owner = owner;
     return SCM_OBJ(vec);
 }
 
-ScmObj Scm_MakeUVector(ScmClass *klass, int size, void *init)
+ScmObj Scm_MakeUVector(ScmClass *klass, ScmSmallInt size, void *init)
 {
     return Scm_MakeUVectorFull(klass, size, init, FALSE, NULL);
 }
@@ -286,7 +292,7 @@ ScmObj Scm_MakeUVector(ScmClass *klass, int size, void *init)
    (As the 'VM' in the name suggests, the return value of this API
    should immediately be passed to VM.  See comments on FFX in gauche/number.h)
  */
-ScmObj Scm_VMUVectorRef(ScmUVector *v, int t, int k, ScmObj fallback)
+ScmObj Scm_VMUVectorRef(ScmUVector *v, int t, ScmSmallInt k, ScmObj fallback)
 {
     SCM_ASSERT(Scm_UVectorType(SCM_CLASS_OF(v)) == t);
     if (k < 0 || k >= SCM_UVECTOR_SIZE(v)) return fallback;
@@ -316,25 +322,27 @@ ScmObj Scm_VMUVectorRef(ScmUVector *v, int t, int k, ScmObj fallback)
  * Inidividual constructors for convenience
  */
 #define DEF_UVCTOR(tag, T) \
-ScmObj SCM_CPP_CAT3(Scm_Make,tag,Vector)(int size, T fill)              \
+ScmObj SCM_CPP_CAT3(Scm_Make,tag,Vector)(ScmSmallInt size, T fill)      \
 {                                                                       \
     ScmUVector *u =                                                     \
         (ScmUVector*)Scm_MakeUVector(SCM_CPP_CAT3(SCM_CLASS_,tag,VECTOR),\
                                      size, NULL);                       \
-    int i;                                                              \
+    ScmSmallInt i;                                                      \
     for (i=0; i<size; i++) {                                            \
         SCM_CPP_CAT3(SCM_,tag,VECTOR_ELEMENTS)(u)[i] = fill;            \
     }                                                                   \
     return SCM_OBJ(u);                                                  \
 }                                                                       \
-ScmObj SCM_CPP_CAT3(Scm_Make,tag,VectorFromArray)(int size, const T array[])\
+ScmObj SCM_CPP_CAT3(Scm_Make,tag,VectorFromArray)(ScmSmallInt size,     \
+                                                  const T array[])      \
 {                                                                       \
     T *z = SCM_NEW_ATOMIC_ARRAY(T, size);                               \
     memcpy(z, array, size*sizeof(T));                                   \
     return Scm_MakeUVector(SCM_CPP_CAT3(SCM_CLASS_,tag,VECTOR),         \
                            size, (void*)z);                             \
 }                                                                       \
-ScmObj SCM_CPP_CAT3(Scm_Make,tag,VectorFromArrayShared)(int size, T array[])\
+ScmObj SCM_CPP_CAT3(Scm_Make,tag,VectorFromArrayShared)(ScmSmallInt size,\
+                                                        T array[])      \
 {                                                                       \
     return Scm_MakeUVector(SCM_CPP_CAT3(SCM_CLASS_,tag,VECTOR),         \
                            size, (void*)array);                         \
@@ -426,7 +434,7 @@ DEF_PRINT(F64, f64, double, fpr)
 #define DEF_CMP(TAG, tag, T, eq)                                        \
 static int SCM_CPP_CAT3(compare_,tag,vector)(ScmObj x, ScmObj y, int equalp) \
 {                                                                       \
-    int len = SCM_CPP_CAT3(SCM_,TAG,VECTOR_SIZE)(x), i;                 \
+    ScmSmallInt len = SCM_CPP_CAT3(SCM_,TAG,VECTOR_SIZE)(x), i;         \
     T xx, yy;                                                           \
     if (SCM_CPP_CAT3(SCM_,TAG,VECTOR_SIZE)(y) != len) return -1;        \
     for (i=0; i<len; i++) {                                             \

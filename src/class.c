@@ -1268,7 +1268,7 @@ static ScmObj instance_class_redefinition(ScmObj obj, ScmClass *old)
 }
 
 /* most primitive internal accessor */
-static inline ScmObj scheme_slot_ref(ScmObj obj, int number)
+static inline ScmObj scheme_slot_ref(ScmObj obj, ScmSmallInt number)
 {
     ScmClass *k = Scm_ClassOf(obj);
     if (number < 0 || number >= k->numInstanceSlots)
@@ -1276,7 +1276,7 @@ static inline ScmObj scheme_slot_ref(ScmObj obj, int number)
     return SCM_INSTANCE_SLOTS(obj)[number];
 }
 
-static inline void scheme_slot_set(ScmObj obj, int number, ScmObj val)
+static inline void scheme_slot_set(ScmObj obj, ScmSmallInt number, ScmObj val)
 {
     ScmClass *k = Scm_ClassOf(obj);
     if (number < 0 || number >= k->numInstanceSlots)
@@ -1288,12 +1288,12 @@ static inline void scheme_slot_set(ScmObj obj, int number, ScmObj val)
    We shoudn't do class redefinition check here, since the slot number
    is calculated based on the old class, if the class is ever redefined.
 */
-ScmObj Scm_InstanceSlotRef(ScmObj obj, int number)
+ScmObj Scm_InstanceSlotRef(ScmObj obj, ScmSmallInt number)
 {
     return scheme_slot_ref(obj, number);
 }
 
-void Scm_InstanceSlotSet(ScmObj obj, int number, ScmObj val)
+void Scm_InstanceSlotSet(ScmObj obj, ScmSmallInt number, ScmObj val)
 {
     scheme_slot_set(obj, number, val);
 }

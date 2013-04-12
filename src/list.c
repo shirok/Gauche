@@ -258,7 +258,7 @@ ScmObj Scm_CopyList(ScmObj list)
  *    Note that <len> is C-integer.
  */
 
-ScmObj Scm_MakeList(int len, ScmObj fill)
+ScmObj Scm_MakeList(ScmSmallInt len, ScmObj fill)
 {
     ScmObj start = SCM_NIL, last = SCM_NIL;
     if (len < 0) {
@@ -390,9 +390,9 @@ ScmObj Scm_ReverseX(ScmObj list)
  *    Note that i is C-INTEGER.  If i is out of bound, signal error.
  */
 
-ScmObj Scm_ListTail(ScmObj list, int i, ScmObj fallback)
+ScmObj Scm_ListTail(ScmObj list, ScmSmallInt i, ScmObj fallback)
 {
-    int cnt = i;
+    ScmSmallInt cnt = i;
     if (i < 0) goto err;
     while (cnt-- > 0) {
         if (!SCM_PAIRP(list)) goto err;
@@ -400,13 +400,13 @@ ScmObj Scm_ListTail(ScmObj list, int i, ScmObj fallback)
     }
     return list;
   err:
-    if (SCM_UNBOUNDP(fallback)) Scm_Error("argument out of range: %d", i);
+    if (SCM_UNBOUNDP(fallback)) Scm_Error("argument out of range: %ld", i);
     return fallback;
 }
 
-ScmObj Scm_ListRef(ScmObj list, int i, ScmObj fallback)
+ScmObj Scm_ListRef(ScmObj list, ScmSmallInt i, ScmObj fallback)
 {
-    int k;
+    ScmSmallInt k;
     if (i < 0) goto err;
     for (k=0; k<i; k++) {
         if (!SCM_PAIRP(list)) goto err;
@@ -416,7 +416,7 @@ ScmObj Scm_ListRef(ScmObj list, int i, ScmObj fallback)
     return SCM_CAR(list);
   err:
     if (SCM_UNBOUNDP(fallback)) {
-        Scm_Error("argument out of range: %d", i);
+        Scm_Error("argument out of range: %ld", i);
     }
     return fallback;
 }

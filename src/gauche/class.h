@@ -139,8 +139,8 @@ SCM_EXTERN ScmObj Scm_VMSlotSetUsingAccessor(ScmObj obj,
 SCM_EXTERN ScmObj Scm_VMClassOf(ScmObj obj);
 SCM_EXTERN ScmObj Scm_VMIsA(ScmObj obj, ScmClass *klass);
 
-SCM_EXTERN ScmObj Scm_InstanceSlotRef(ScmObj obj, int number);
-SCM_EXTERN void   Scm_InstanceSlotSet(ScmObj obj, int number, ScmObj val);
+SCM_EXTERN ScmObj Scm_InstanceSlotRef(ScmObj obj, ScmSmallInt k);
+SCM_EXTERN void   Scm_InstanceSlotSet(ScmObj obj, ScmSmallInt k, ScmObj val);
 
 SCM_EXTERN void   Scm_StartClassRedefinition(ScmClass *klass);
 SCM_EXTERN void   Scm_CommitClassRedefinition(ScmClass *klass, ScmObj newk);

@@ -1,3 +1,20 @@
+2013-04-12  Shiro Kawai  <shiro@acm.org>
+
+	* src/*, lib/gauche/cgen/type.scm (ScmSmallInt): Bulk fix to avoid
+	  integer overflow in indexes that accepts <fixnum>.  We used to
+	  map <fixnum> to int, but that could cause overflow on 64bit
+	  architecture.  We changed the mapping to ScmSmallInt, and changed
+	  vector and string APIs to use it instead of int for indexes.
+	  (NB: We still have 2G limit on string size & length for ABI
+	  compatibility.  Check codes are inserted to detect out-of-range
+	  case.  See src/string.c for the details.)
+	  POSSIBLY INCOMPATIBLE CHANGE: We also enhanched
+	  Scm_GetInteger()-family API to cover 8-,16-,32-bit integers, and
+	  made it throws an error when the input is out-of-range.  The old
+	  Scm_GetInteger[U][64]() API clamped the out-of-range arg.  We think
+	  clamping is unsafe and shouldn't be the default behavior.  This
+	  can break code that relies on the clamping behavior.
+
 2013-04-09  Shiro Kawai  <shiro@acm.org>
 
 	* ext/dbm/gdbm.scm (gdbm-strerror): Avoid using 'errno' as a variable,

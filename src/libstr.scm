@@ -279,7 +279,7 @@
           [else (SCM_TYPE_ERROR handling ":omit, #f, or a character")])
     (result (Scm_StringIncompleteToComplete str h sub))))
 
-(define-cproc make-byte-string (size::<fixnum> :optional (byte::<fixnum> 0))
+(define-cproc make-byte-string (size::<int32> :optional (byte::<uint8> 0))
   (let* ([s::char*])
     (when (< size 0) (Scm_Error "size out of bound: %d" size))
     (set! s (SCM_NEW_ATOMIC2 (C: char*) size))

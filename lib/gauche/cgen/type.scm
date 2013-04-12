@@ -74,7 +74,7 @@
 ;;
 ;;   stub type    Scheme       C           Notes
 ;;  -----------------------------------------------------------------
-;;   <fixnum>     <integer>    long        Integers within fixnum range
+;;   <fixnum>     <integer>    ScmSmallInt Integers within fixnum range
 ;;   <integer>    <integer>    ScmObj      Any exact integers
 ;;   <real>       <real>       double
 ;;   <number>     <number>     ScmObj      Any numbers
@@ -183,22 +183,22 @@
 (for-each
  (cut apply make-cgen-type <>)
  '(;; Numeric types
-   (<fixnum>  "long" "small integer" "SCM_INTP" "SCM_INT_VALUE" "SCM_MAKE_INT")
+   (<fixnum>  "ScmSmallInt" "small integer" "SCM_INTP" "SCM_INT_VALUE" "SCM_MAKE_INT")
    (<integer> "ScmObj" "exact integer" "SCM_INTEGERP" "")
    (<real>    "double" "real number" "SCM_REALP" "Scm_GetDouble" "Scm_VMReturnFlonum")
    (<number>  "ScmObj" "number" "SCM_NUMBERP" "")
    (<int>     "int" "C integer" "SCM_INTEGERP" "Scm_GetInteger" "Scm_MakeInteger")
    (<long>    "long" "C long integer" "SCM_INTEGERP" "Scm_GetInteger" "Scm_MakeInteger")
    (<short>   "short" "C short integer" "SCM_INTP" "(short)SCM_INT_VALUE" "SCM_MAKE_INT")
-   (<int8>    "int" "C integer" "SCM_INTEGERP" "Scm_GetInteger" "Scm_MakeInteger")
-   (<int16>   "int" "C integer" "SCM_INTEGERP" "Scm_GetInteger" "Scm_MakeInteger")
-   (<int32>   "int" "C integer" "SCM_INTEGERP" "Scm_GetInteger" "Scm_MakeInteger")
+   (<int8>    "int" "8bit signed integer" "SCM_INTEGERP" "Scm_GetInteger8" "Scm_MakeInteger")
+   (<int16>   "int" "16bit signed integer" "SCM_INTEGERP" "Scm_GetInteger16" "Scm_MakeInteger")
+   (<int32>   "int" "32bit signed integer" "SCM_INTEGERP" "Scm_GetInteger32" "Scm_MakeInteger")
    (<uint>    "u_int" "C integer" "SCM_UINTEGERP" "Scm_GetIntegerU" "Scm_MakeIntegerFromUI")
    (<ulong>   "u_long" "C integer" "SCM_UINTEGERP" "Scm_GetIntegerU" "Scm_MakeIntegerFromUI")
    (<ushort>  "u_short" "C short integer" "SCM_INTEGERP" "(unsigned short)Scm_GetIntegerU" "Scm_MakeIntegerFromUI")
-   (<uint8>   "u_int" "C integer" "SCM_UINTP" "Scm_GetIntegerU" "Scm_MakeIntegerFromUI")
-   (<uint16>  "u_int" "C integer" "SCM_UINTP" "Scm_GetIntegerU" "Scm_MakeIntegerFromUI")
-   (<uint32>  "u_int" "C integer" "SCM_UINTEGERP" "Scm_GetIntegerU" "Scm_MakeIntegerFromUI")
+   (<uint8>   "u_int" "8bit unsigned integer" "SCM_UINTP" "Scm_GetIntegerU8" "Scm_MakeIntegerFromUI")
+   (<uint16>  "u_int" "16bit unsigned integer" "SCM_UINTP" "Scm_GetIntegerU16" "Scm_MakeIntegerFromUI")
+   (<uint32>  "u_int" "32bit unsigned integer" "SCM_UINTEGERP" "Scm_GetIntegerU32" "Scm_MakeIntegerFromUI")
    (<float>   "float" "real number" "SCM_REALP" "(float)Scm_GetDouble" "Scm_VMReturnFlonum")
    (<double>  "double" "real number" "SCM_REALP" "Scm_GetDouble" "Scm_VMReturnFlonum")
 

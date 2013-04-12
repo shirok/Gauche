@@ -62,13 +62,22 @@
  * ScmString is alive, even if its content is mutated and the initial
  * content isn't used.   Another reason to avoid string mutations.
  */
-
+/* NB: For the backward compatibility, the string size is 'int' - we can
+   have up to 2G long string.  Theoretically we can make it bigger; but
+   having such large string in flat array is a bad idea.  For the long term,
+   we should have a simple string that has the flat multibyte characters,
+   and a compound ones that has cord-like structure.  We'll defer having
+   >2G strings by then.
+*/
 typedef struct ScmStringBodyRec {
     unsigned int flags;
     unsigned int length;
     unsigned int size;
     const char *start;
 } ScmStringBody;
+
+#define SCM_STRING_MAX_SIZE    INT_MAX
+#define SCM_STRING_MAX_LENGTH  INT_MAX
 
 struct ScmStringRec {
     SCM_HEADER;
@@ -141,9 +150,10 @@ SCM_CLASS_DECL(Scm_StringClass);
  * Constructors
  */
 
-SCM_EXTERN ScmObj  Scm_MakeString(const char *str, int size, int len,
+SCM_EXTERN ScmObj  Scm_MakeString(const char *str,
+                                  ScmSmallInt size, ScmSmallInt len,
 				  int flags);
-SCM_EXTERN ScmObj  Scm_MakeFillString(int len, ScmChar fill);
+SCM_EXTERN ScmObj  Scm_MakeFillString(ScmSmallInt len, ScmChar fill);
 SCM_EXTERN ScmObj  Scm_CopyStringWithFlags(ScmString *str, int flags, int mask);
 
 #define SCM_MAKE_STR(cstr) \
@@ -202,9 +212,15 @@ SCM_EXTERN int     Scm_StringCiCmp(ScmString *x, ScmString *y);
  * Accessors and modifiers
  */
 
-SCM_EXTERN ScmChar Scm_StringRef(ScmString *str, int k, int range_error);
-SCM_EXTERN int     Scm_StringByteRef(ScmString *str, int k, int range_error);
-SCM_EXTERN ScmObj  Scm_Substring(ScmString *x, int start, int end,
+SCM_EXTERN ScmChar Scm_StringRef(ScmString *str,
+                                 ScmSmallInt k,
+                                 int range_error);
+SCM_EXTERN int     Scm_StringByteRef(ScmString *str,
+                                     ScmSmallInt k,
+                                     int range_error);
+SCM_EXTERN ScmObj  Scm_Substring(ScmString *x,
+                                 ScmSmallInt start,
+                                 ScmSmallInt end,
                                  int byterange);
 SCM_EXTERN ScmObj  Scm_StringReplaceBody(ScmString *x, const ScmStringBody *b);
 
@@ -213,8 +229,8 @@ SCM_EXTERN ScmObj  Scm_StringReplaceBody(ScmString *x, const ScmStringBody *b);
  */
 
 SCM_EXTERN ScmObj  Scm_StringAppend2(ScmString *x, ScmString *y);
-SCM_EXTERN ScmObj  Scm_StringAppendC(ScmString *x, const char *s, int size,
-				     int len);
+SCM_EXTERN ScmObj  Scm_StringAppendC(ScmString *x, const char *s,
+                                     ScmSmallInt size, ScmSmallInt len);
 SCM_EXTERN ScmObj  Scm_StringAppend(ScmObj strs);
 SCM_EXTERN ScmObj  Scm_StringJoin(ScmObj strs, ScmString *delim, int grammer);
 
@@ -258,8 +274,8 @@ enum {
 SCM_EXTERN int     Scm_MBLen(const char *str, const char *stop);
 
 /* INTERNAL */
-SCM_EXTERN const char *Scm_StringPosition(ScmString *str, int k); /*DEPRECATED*/
-SCM_EXTERN const char *Scm_StringBodyPosition(const ScmStringBody *str, int k);
+SCM_EXTERN const char *Scm_StringPosition(ScmString *str, ScmSmallInt k); /*DEPRECATED*/
+SCM_EXTERN const char *Scm_StringBodyPosition(const ScmStringBody *str, ScmSmallInt k);
 SCM_EXTERN ScmObj  Scm_MaybeSubstring(ScmString *x, ScmObj start, ScmObj end);
 
 /*
@@ -360,12 +376,13 @@ SCM_CLASS_DECL(Scm_StringPointerClass);
 #define SCM_STRING_POINTERP(obj)  SCM_XTYPEP(obj, SCM_CLASS_STRING_POINTER)
 #define SCM_STRING_POINTER(obj)   ((ScmStringPointer*)obj)
 
-SCM_EXTERN ScmObj Scm_MakeStringPointer(ScmString *src, int index,
-					int start, int end);
+SCM_EXTERN ScmObj Scm_MakeStringPointer(ScmString *src, ScmSmallInt index,
+					ScmSmallInt start, ScmSmallInt end);
 SCM_EXTERN ScmObj Scm_StringPointerRef(ScmStringPointer *sp);
 SCM_EXTERN ScmObj Scm_StringPointerNext(ScmStringPointer *sp);
 SCM_EXTERN ScmObj Scm_StringPointerPrev(ScmStringPointer *sp);
-SCM_EXTERN ScmObj Scm_StringPointerSet(ScmStringPointer *sp, int index);
+SCM_EXTERN ScmObj Scm_StringPointerSet(ScmStringPointer *sp,
+                                       ScmSmallInt index);
 SCM_EXTERN ScmObj Scm_StringPointerSubstring(ScmStringPointer *sp, int beforep);
 SCM_EXTERN ScmObj Scm_StringPointerCopy(ScmStringPointer *sp);
 SCM_EXTERN void   Scm_StringPointerDump(ScmStringPointer *sp);
