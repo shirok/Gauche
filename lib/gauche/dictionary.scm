@@ -154,7 +154,7 @@
   :get        tree-map-get
   :put!       tree-map-put!
   :delete!    tree-map-delete!
-  :clear!     tree-map-clear
+  :clear!     tree-map-clear!
   :exists?    tree-map-exists?
   :fold       tree-map-fold
   :fold-right tree-map-fold-right
