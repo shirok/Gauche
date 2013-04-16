@@ -3397,10 +3397,17 @@ implement the dictionary interface.  All the @code{<dbm>} classes
 provided by @code{dbm} module also implement it.
 
 To make your own class implement the dictionary interface, you have
-to provide at least @code{dict-get}, @code{dict-put!}, @code{dict-exists?},
-@code{dict-delete!} and @code{dict-fold}.   Other generic functions
-have default behavior built on top of these.  Of course your can
+to provide at least @code{dict-get}, @code{dict-put!},
+@code{dict-delete!} and @code{dict-fold}.
+(You can omit @code{dict-delete!} if the datatype doesn't allow
+deleting entries.)
+Other generic functions
+have default behavior built on top of these.  You can
 implement other methods as well, potentially to gain better performance.
+
+(Note: Dictionaries are also collections, so you can use collection
+methods as well; for example, to get the number of entries, just use
+@code{size-of}).
 
 @deffn {Generic function} dict-get (dict @code{<dictionary>}) key :optional default
 Returns the value corresponding to the @var{key}.
@@ -3425,6 +3432,10 @@ Returns @code{#t} if the dictionary has an entry with @var{key},
 @deffn {Generic function} dict-delete! (dict @code{<dictionary>}) key
 Removes an entry with @var{key} form the dictionary.
 If the dictionary doesn't have such an entry, this function is noop.
+@end deffn
+
+@deffn {Generic function} dict-clear! (dict @code{<dictionary>})
+Empties the dictionary.
 @end deffn
 
 @deffn {Generic function} dict-fold (dict @code{<dictionary>}) proc seed
@@ -3517,6 +3528,85 @@ in the increasing order of keys.
 んでいます。
 @c COMMON
 @end deffn
+
+@deffn {Generic function} dict-push! (dict @code{<dictionary>}) key value
+@c EN
+A shorthand way to say @code{(dict-put! dict key (cons value (dict-get dict key '())))}.  A concrete implementation may be more efficient
+(e.g. it may not search @var{key} twice.)
+@c JP
+@code{(dict-put! dict key (cons value (dict-get dict key '())))} と同じ動作をするメソッドです。具体的な実装によってはもっと効率が良いかもしれません
+(@var{key}を2度検索しなくても良い、など)。
+@c COMMON
+@end deffn
+
+@deffn {Generic function} dict-pop! (dict @code{<dictionary>}) key :optional fallback
+@c EN
+If @code{(dict-get dict key)} is a pair @var{p},
+the entry value is replaced with @code{(cdr p)} and the procedure
+returns @code{(car p)}.  If no entry for @var{key} is in the table,
+or the entry isn't a a pair, the table isn't modified, and
+@var{fallback} is returned if given, or an error is raised.
+@c JP
+@code{(dict-get dict key)}がペア@var{p}であれば、
+そのエントリの値が@var{(cdr p)}で置き換えられ、@var{(car p)}の値が
+戻り値となります。@var{key}に該当するエントリが無かったり、ペアで無かった場合は
+ディクショナリは変更されず、@var{fallback}があればそれが戻り値となり、
+無ければエラーが報告されます。
+@c COMMON
+@end deffn
+
+@deffn {Generic function} dict-update! (dict @code{<dictionary>}) key proc :optional fallback
+@c EN
+Works like the following code, except that the concrete implementation
+may be more efficient by looking up @var{key} only once.
+@c JP
+次のコードのような動作をしますが、具体的な実装は@var{key}を一度しかルックアップ
+しないなどより効率良くなっている場合があります。
+@c COMMON
+@example
+(rlet1 x (proc (dict-get dict key fallback))
+  (dict-put! dict key x))
+@end example
+@end deffn
+
+@defmac define-dict-interface dict-class method proc method2 proc2 @dots{}
+Many dictionary-like datatypes already has their own procedures
+that directly corresponds to the generic dictionary API, and adding
+dictionary interface tends to become a simple repetition of
+@code{define-method}s, like this:
+
+@example
+(define-method dict-put! ((dict <my-dict>) key value)
+  (my-dict-put! key value))
+@end example
+
+The @code{define-dict-interface} macro is a convenient way to
+define those methods in a batch.  Each @var{method} argument is
+a keyword that corresponds to @code{dict-@var{method}}, and @var{proc}
+is the name of the datatype-specific procedure.  Here's the definition
+of dict interface for @code{<tree-map>} and you'll get the idea.
+You don't need to provide every dictionary interface.
+
+@example
+(define-dict-interface <tree-map>
+  :get        tree-map-get
+  :put!       tree-map-put!
+  :delete!    tree-map-delete!
+  :clear!     tree-map-clear
+  :exists?    tree-map-exists?
+  :fold       tree-map-fold
+  :fold-right tree-map-fold-right
+  :for-each   tree-map-for-each
+  :map        tree-map-map
+  :keys       tree-map-keys
+  :values     tree-map-values
+  :pop!       tree-map-pop!
+  :push!      tree-map-push!
+  :update!    tree-map-update!
+  :->alist    tree-map->alist)
+@end example
+@end defmac
+
 
 @node Generic dictionaries,  , Generic functions for dictionaries, Dictionary framework
 @subsection Generic dictionaries

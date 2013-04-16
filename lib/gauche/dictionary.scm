@@ -38,117 +38,197 @@
           dict-fold dict-fold-right
           dict-for-each dict-map
           dict-keys dict-values
+          dict->alist dict-pop! dict-push! dict-update!
+          define-dict-interface
+
           <bimap> make-bimap bimap-put!
           bimap-left bimap-left-get bimap-left-exists? bimap-left-delete!
           bimap-right bimap-right-get bimap-right-exists? bimap-right-delete!
           ))
 (select-module gauche.dictionary)
 
-;;; Generic dictionary interface.
-;;; The minimal requirements for dictionary framework implementors:
-;;;
-;;;    dict-get dict key [default]
-;;;    dict-put! dict key value
-;;;    dict-exists? dict key
-;;;    dict-delete! dict key
+;; Generic dictionary interface.
+;; Required methods:
+;;
+;;    dict-get dict key [default]
+;;    dict-put! dict key value
+;;    dict-delete! dict key             ; for deletable dictionary
+;;
+;; Optional methods:
+;;
+;;    dict-fold dict proc seed
+;;    dict-fold-right dict proc seed    ; for ordered dictionary
+;;    dict-exists? dict key
+;;    dict-map dict proc
+;;    dict-for-each dict proc
+;;    dict-keys dict
+;;    dict-values dict
+;;    dict-pop! dict key [default]
+;;    dict-push! dict key value
+;;    dict-update! dict key proc [default]
+;;    dict->alist
 
+;; A convenient macro to define dictionary methods.
+
+(define-macro (define-dict-interface class . clauses)
+  (define (gen-def kind specific)
+    (let ([dict (gensym)]
+          [key (gensym)]
+          [val (gensym)]
+          [default (gensym)]
+          [proc (gensym)]
+          [seed (gensym)])
+      (case kind
+        [(:get)
+         `(define-method dict-get ((,dict ,class) ,key . ,default)
+            (if (null? ,default)
+              (,specific ,dict ,key)
+              (,specific ,dict ,key (car ,default))))]
+        [(:put!)
+         `(define-method dict-put! ((,dict ,class) ,key ,val)
+            (,specific ,dict ,key ,val))]
+        [(:exists?)
+         `(define-method dict-exists? ((,dict ,class) ,key)
+            (,specific ,dict ,key))]
+        [(:delete!)
+         `(define-method dict-delete! ((,dict ,class) ,key)
+            (,specific ,dict ,key))]
+        [(:clear!)
+         `(define-method dict-clear! ((,dict ,class))
+            (,specific ,dict))]
+        [(:fold)
+         `(define-method dict-fold ((,dict ,class) ,proc ,seed)
+            (,specific ,dict ,proc ,seed))]
+        [(:fold-right)
+         `(define-method dict-fold-right ((,dict ,class) ,proc ,seed)
+            (,specific ,dict ,proc ,seed))]
+        [(:map)
+         `(define-method dict-map ((,dict ,class) ,proc)
+            (,specific ,dict ,proc))]
+        [(:for-each)
+         `(define-method dict-for-each ((,dict ,class) ,proc)
+            (,specific ,dict ,proc))]
+        [(:keys)
+         `(define-method dict-keys ((,dict ,class))
+            (,specific ,dict))]
+        [(:values)
+         `(define-method dict-values ((,dict ,class))
+            (,specific ,dict))]
+        [(:push!)
+         `(define-method dict-push! ((,dict ,class) ,key ,val)
+            (,specific ,dict ,key ,val))]
+        [(:pop!)
+         `(define-method dict-pop! ((,dict ,class) ,key . ,default)
+            (apply ,specific ,dict ,key ,default))]
+        [(:update!)
+         `(define-method dict-update! ((,dict ,class) ,key . ,default)
+            (apply ,specific ,dict ,key ,default))]
+        [(:->alist)
+         `(define-method dict->alist ((,dict ,class))
+            (,specific ,dict))]
+        [else (error "invalid kind in define-dict-interface:" kind)])))
+  `(begin
+     ,@(map (^p (gen-def (car p) (cadr p))) (slices clauses 2))))
 
 ;;-----------------------------------------------
-;; Basic accessors
+;; Methods for hash-table, tree-map
 ;;
 
-;; NB: avoid using apply for performance
-(define-method dict-get ((dict <hash-table>) key . maybe-default)
-  (if (null? maybe-default)
-    (hash-table-get dict key)
-    (hash-table-get dict key (car maybe-default))))
-(define-method dict-get ((dict <tree-map>) key . maybe-default)
-  (if (null? maybe-default)
-    (tree-map-get dict key)
-    (tree-map-get dict key (car maybe-default))))
+(define-dict-interface <hash-table>
+  :get        hash-table-get
+  :put!       hash-table-put!
+  :delete!    hash-table-delete!
+  :clear!     hash-table-clear!
+  :exists?    hash-table-exists?
+  :fold       hash-table-fold
+  :for-each   hash-table-for-each
+  :map        hash-table-map
+  :keys       hash-table-keys
+  :values     hash-table-values
+  :pop!       hash-table-pop!
+  :push!      hash-table-push!
+  :update!    hash-table-update!
+  :->alist    hash-table->alist)
 
-(define-method dict-put! ((dict <hash-table>) key val)
-  (hash-table-put! dict key val))
-(define-method dict-put! ((dict <tree-map>) key val)
-  (tree-map-put! dict key val))
+(define-dict-interface <tree-map>
+  :get        tree-map-get
+  :put!       tree-map-put!
+  :delete!    tree-map-delete!
+  :clear!     tree-map-clear
+  :exists?    tree-map-exists?
+  :fold       tree-map-fold
+  :fold-right tree-map-fold-right
+  :for-each   tree-map-for-each
+  :map        tree-map-map
+  :keys       tree-map-keys
+  :values     tree-map-values
+  :pop!       tree-map-pop!
+  :push!      tree-map-push!
+  :update!    tree-map-update!
+  :->alist    tree-map->alist)
+
+;;-----------------------------------------------
+;; Fallback methods
+;;
+
+(define %unique (list #f))
+
+(define-method dict-exists? ((dict <dictionary>) key)
+  (not (eq? (dict-get dict key %unique) %unique)))
+
+(define-method dict-fold ((dict <dictionary>) proc seed)
+  ;; This depends on the fact that a dictionary is also a collection.
+  (fold dict (lambda (kv seed) (proc (car kv) (cdr kv) seed)) seed))
+
+(define-method dict-fold-right ((dict <ordered-dictionary>) proc seed)
+  (fold-right dict (^[kv seed] (proc (car kv) (cdr kv) seed)) seed))
+
+(define-method dict-map ((dict <dictionary>) proc)
+  (reverse (dict-fold dict (^[k v s] (cons (proc k v) s)) '())))
+
+(define-method dict-for-each ((dict <dictionary>) proc)
+  (dict-fold dict (^[k v s] (proc k v) #f) '()))
+
+(define-method dict-keys ((dict <dictionary>))
+  (dict-fold dict (^[k v s] (cons k s)) '()))
+
+(define-method dict-keys ((dict <ordered-dictionary>))
+  (reverse (dict-fold dict (^[k v s] (cons k s)) '())))
+
+(define-method dict-values ((dict <dictionary>))
+  (dict-fold dict (^[k v s] (cons v s)) '()))
+
+(define-method dict-values ((dict <ordered-dictionary>))
+  (reverse (dict-fold dict (^[k v r] (cons v r)) '())))
+
+(define-method dict-delete! ((dict <dictionary>) key) ;fallback
+  (error "You can't delete entry from a dictionary ~s" dict))
+
+(define-method dict-clear! ((dict <dictionary>))
+  (dolist [key (dict-keys dict)]
+    (dict-delete! dict key)))
+
+(define-method dict-pop! ((dict <dictionary>) key . maybe-default)
+  (let1 r (dict-get dict key %unique)
+    (cond [(eq? r %unique)
+           (if (pair? maybe-default)
+             (car maybe-default)
+             (errorf "dict-pop!: no value for key ~s in ~s" key dict))]
+          [(pair? r)
+           (dict-put! dict key (cdr r))
+           (car r)]
+          [else
+           (errorf "dict-pop!: value for key ~s is not a pair: ~s" key r)])))
+
+(define-method dict-push! ((dict <dictionary>) key value)
+  (dict-put! dict key (cons value (dict-get dict key '()))))
+
+(define-method dict-update! ((dict <dictionary>) key proc . maybe-default)
+  (let1 r (apply dict-get dict key maybe-default)
+    (dict-put! dict-get dict key (proc r))))
 
 (define-method (setter dict-get) (dict key val)
   (dict-put! dict key val))
-
-(define-method dict-delete! ((dict <hash-table>) key)
-  (hash-table-delete! dict key))
-(define-method dict-delete! ((dict <tree-map>) key)
-  (tree-map-delete! dict key))
-
-(define-method dict-exists? ((dict <hash-table>) key)
-  (hash-table-exists? dict key))
-(define-method dict-exists? ((dict <tree-map>) key)
-  (tree-map-exists? dict key))
-
-;;-----------------------------------------------
-;; dict-fold, dict-fold-right
-;;
-
-(define-method dict-fold ((dict <dictionary>) proc seed)
-  (fold dict (lambda (kv seed) (proc (car kv) (cdr kv) seed)) seed))
-
-(define-method dict-fold ((dict <hash-table>) proc seed)
-  (hash-table-fold dict proc seed))
-
-(define-method dict-fold ((dict <tree-map>) proc seed)
-  (tree-map-fold dict proc seed))
-
-
-(define-method dict-fold-right ((dict <ordered-dictionary>) proc seed)
-  (fold-right dict (lambda (kv seed) (proc (car kv) (cdr kv) seed)) seed))
-
-(define-method dict-fold-right ((dict <tree-map>) proc seed)
-  (tree-map-fold-right dict proc seed))
-
-;;-----------------------------------------------
-;; dict-for-each, dict-map
-;;
-
-(define-method dict-for-each ((dict <dictionary>) proc)
-  (dict-fold dict (lambda (k v _) (proc k v)) #f))
-
-(define-method dict-for-each ((dict <hash-table>) proc)
-  (hash-table-for-each dict proc))
-
-
-(define-method dict-map ((dict <dictionary>) proc)
-  (dict-fold dict (lambda (k v r) (cons (proc k v) r)) '()))
-
-(define-method dict-map ((dict <ordered-dictionary>) proc)
-  (dict-fold-right dict (lambda (k v r) (cons (proc k v) r)) '()))
-
-;;-----------------------------------------------
-;; dict-keys, dict-values
-;;
-
-(define-method dict-keys ((dict <dictionary>))
-  (dict-fold dict (lambda (k v r) (cons k r)) '()))
-
-(define-method dict-keys ((dict <ordered-dictionary>))
-  (dict-fold-right dict (lambda (k v r) (cons k r)) '()))
-
-(define-method dict-keys ((dict <hash-table>))
-  (hash-table-keys dict))
-
-(define-method dict-keys ((dict <tree-map>))
-  (tree-map-keys dict))
-
-(define-method dict-values ((dict <dictionary>))
-  (dict-fold dict (lambda (k v r) (cons v r)) '()))
-
-(define-method dict-values ((dict <ordered-dictionary>))
-  (dict-fold-right dict (lambda (k v r) (cons v r)) '()))
-
-(define-method dict-values ((dict <hash-table>))
-  (hash-table-values dict))
-
-(define-method dict-values ((dict <tree-map>))
-  (tree-map-values dict))
 
 ;;;
 ;;; Bidirectional map

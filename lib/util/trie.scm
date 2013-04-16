@@ -39,6 +39,7 @@
 (define-module util.trie
   (use srfi-1)
   (use gauche.sequence)
+  (use gauche.dictionary)
   (use util.list)
   (export <trie>
           make-trie trie trie-with-keys
@@ -53,6 +54,7 @@
           trie->list trie->hash-table
           trie-keys trie-values trie-fold trie-map trie-for-each
           call-with-iterator call-with-builder size-of lazy-size-of
+          alist->trie
           ))
 
 (select-module util.trie)
@@ -85,7 +87,7 @@
 (define-class <trie-meta> (<class>)
   ())
 
-(define-class <trie> (<collection>)
+(define-class <trie> (<dictionary>)
   ((root :init-form (%make-node))
    (size :init-value 0)
    (tab-make :init-keyword :tab-make
@@ -93,7 +95,7 @@
    (tab-get  :init-keyword :tab-get
              :init-value (cut hash-table-get <> <> #f))
    (tab-put! :init-keyword :tab-put!
-             :init-value (lambda (t k v)
+             :init-value (^[t k v]
                            (if v
                              (hash-table-put! t k v)
                              (hash-table-delete! t k))
@@ -118,11 +120,11 @@
 
 (define (trie params . keys&vals)
   (rlet1 t (apply make-trie params)
-    (for-each (lambda (p) (trie-put! t (car p) (cdr p))) keys&vals)))
+    (for-each (^p (trie-put! t (car p) (cdr p))) keys&vals)))
 
 (define (trie-with-keys params . seqs)
   (rlet1 t (apply make-trie params)
-    (for-each (lambda (seq) (trie-put! t seq seq)) seqs)))
+    (for-each (^[seq] (trie-put! t seq seq)) seqs)))
 
 (define (trie? x)
   (is-a? x <trie>))
@@ -147,7 +149,7 @@
 ;; would match.  We only need to make sure the class of the sequence match.
 (define (%node-find-terminal node seq)
   (let1 c (class-of seq)
-    (find (lambda (p) (eq? c (class-of (car p)))) (cdr node))))
+    (find (^p (eq? c (class-of (car p)))) (cdr node))))
 
 (define (%no-key seq)
   (error "Trie does not have an entry for a key:" seq))
@@ -169,53 +171,50 @@
   ;; In creation mode, we don't need to break during traversal, so
   ;; we save creation of continuation.
   (if create?
-    (fold (lambda (elt node) (descent node elt))
+    (fold (^[elt node] (descent node elt))
           (slot-ref trie 'root)
           seq)
     (let/cc break
-      (fold (lambda (elt node) (or (descent node elt) (break #f)))
+      (fold (^[elt node] (or (descent node elt) (break #f)))
             (slot-ref trie 'root)
             seq))))
 
 (define (trie-exists? trie seq) (boolean (%trie-get-node trie seq #f)))
 
 (define (trie-get trie seq . opt)
-  (or (and-let* ((node (%trie-get-node trie seq #f))
-                 (p    (%node-find-terminal node seq)))
+  (or (and-let* ([node (%trie-get-node trie seq #f)]
+                 [p    (%node-find-terminal node seq)])
         (cdr p))
       (get-optional opt (%no-key seq))))
 
 (define (trie-put! trie seq val)
-  (let* ((node (%trie-get-node trie seq #t))
-         (p (%node-find-terminal node seq)))
-    (cond
-     (p (set-cdr! p val))
-     (else
-      (push! (%node-terminals node) (cons seq val))
-      (inc! (slot-ref trie 'size)))))
+  (let* ([node (%trie-get-node trie seq #t)]
+         [p (%node-find-terminal node seq)])
+    (cond [p (set-cdr! p val)]
+          [else
+           (push! (%node-terminals node) (cons seq val))
+           (inc! (slot-ref trie 'size))]))
   (undefined))
 
 (define (trie-update! trie seq proc . opt)
-  (let* ((node (%trie-get-node trie seq #t))
-         (p    (%node-find-terminal node seq)))
-    (cond
-     (p (update! (cdr p) proc))
-     (else
-      (push! (%node-terminals node)
-             (cons seq (proc (get-optional opt (%no-key seq)))))
-      (inc! (slot-ref trie 'size))))
+  (let* ([node (%trie-get-node trie seq #t)]
+         [p    (%node-find-terminal node seq)])
+    (cond [p (update! (cdr p) proc)]
+          [else
+           (push! (%node-terminals node)
+                  (cons seq (proc (get-optional opt (%no-key seq)))))
+           (inc! (slot-ref trie 'size))])
     (undefined)))
 
 (define (trie-delete! trie seq)
   ;; TODO: prune a table if it becomes empty
-  (and-let* ((c (class-of seq))
-             (node (%trie-get-node trie seq #f)))
+  (and-let* ([c (class-of seq)]
+             [node (%trie-get-node trie seq #f)])
     (update! (cdr node)
-             (lambda (terminals)
-               (remove (lambda (p)
-                         (and (eq? (class-of (car p)) c)
-                              (dec! (slot-ref trie 'size))
-                              #t))
+             (^[terminals]
+               (remove (^p (and (eq? (class-of (car p)) c)
+                                (dec! (slot-ref trie 'size))
+                                #t))
                        terminals))))
   (undefined))
 
@@ -226,20 +225,20 @@
 ;; iterate keys under the given node, depth-first.
 (define (%trie-node-fold trie node proc seed)
   (define (fold-descendants seed)
-    (or (and-let* ((tab (%node-table node)))
+    (or (and-let* ([tab (%node-table node)])
           ((slot-ref trie 'tab-fold)
            tab
-           (lambda (elt node seed) (%trie-node-fold trie node proc seed))
+           (^[elt node seed] (%trie-node-fold trie node proc seed))
            seed))
         seed))
   (define (fold-siblings seed)
-    (fold (lambda (p seed) (proc (car p) (cdr p) seed))
+    (fold (^[p seed] (proc (car p) (cdr p) seed))
           seed
           (%node-terminals node)))
   (fold-siblings (fold-descendants seed)))
 
 (define (%trie-prefix-collect trie prefix collector)
-  (or (and-let* ((node (%trie-get-node trie prefix #f)))
+  (or (and-let* ([node (%trie-get-node trie prefix #f)])
         ;; NB: we don't need to reverse, since the order of entries
         ;; are unspecified anyway.
         (%trie-node-fold trie node collector '()))
@@ -249,22 +248,22 @@
   (%trie-prefix-collect trie prefix acons))
 
 (define (trie-common-prefix-keys trie prefix)
-  (%trie-prefix-collect trie prefix (lambda (k v s) (cons k s))))
+  (%trie-prefix-collect trie prefix (^[k v s] (cons k s))))
 
 (define (trie-common-prefix-values trie prefix)
-  (%trie-prefix-collect trie prefix (lambda (k v s) (cons v s))))
+  (%trie-prefix-collect trie prefix (^[k v s] (cons v s))))
 
 (define (trie-common-prefix-fold trie prefix proc seed)
   (%trie-node-fold trie (or (%trie-get-node trie prefix #f) '()) proc seed))
 
 (define (trie-common-prefix-map trie prefix proc)
   (trie-common-prefix-fold trie prefix
-                           (lambda (k v s) (cons (proc k v) s))
+                           (^[k v s] (cons (proc k v) s))
                            '()))
 
 (define (trie-common-prefix-for-each trie prefix proc)
   (trie-common-prefix-fold trie prefix
-                           (lambda (k v s) (proc k v))
+                           (^[k v s] (proc k v))
                            #f)
   (undefined))
 
@@ -299,22 +298,22 @@
   (define (next)
     (let/cc return
       (%trie-node-fold trie (slot-ref trie 'root)
-                       (lambda (key value seed)
+                       (^[key value seed]
                          (let/cc restart
                            (inc! count)
-                           (set! next (lambda () (restart #f)))
+                           (set! next (^[] (restart #f)))
                            (return (cons key value))))
                        #f)))
-  (proc (lambda () (= count (trie-num-entries trie)))
-        (lambda () (next))))
+  (proc (^[] (= count (trie-num-entries trie)))
+        (^[] (next))))
 
 (define-method call-with-builder ((class <trie-meta>) proc . opts)
   (let1 trie (apply make-trie (get-keyword :trie-options opts '()))
-    (proc (lambda (val)
+    (proc (^[val]
             (unless (pair? val)
               (error "pair required to build a trie, but got" val))
             (trie-put! trie (car val) (cdr val)))
-          (lambda () trie))))
+          (^[] trie))))
 
 (define-method size-of ((trie <trie>))
   (trie-num-entries trie))
@@ -331,7 +330,7 @@
 (define-method coerce-to ((class <vector-meta>) (trie <trie>))
   (rlet1 vec (make-vector (trie-num-entries trie))
     (trie-fold trie
-               (lambda (k v ind)
+               (^[k v ind]
                  (vector-set! vec ind (cons k v))
                  (+ ind 1))
                0)))
@@ -339,3 +338,22 @@
 (define-method coerce-to ((class <hash-table-meta>) (trie <trie>))
   (trie->hash-table trie 'equal?))
 
+(define (alist->trie alist . rest)
+  (apply trie rest alist) )
+
+;;;===========================================================
+;;; Dictionary framework
+;;;
+
+(define-dict-interface <trie>
+  :get      trie-get
+  :put!     trie-put!
+  :delete!  trie-delete!
+  :exists?  trie-exists?
+  :fold     trie-fold
+  :for-each trie-for-each
+  :map      trie-map
+  :keys     trie-keys
+  :values   trie-values
+  :update!  trie-update!
+  :->alist  trie->list)

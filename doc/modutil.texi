@@ -20342,6 +20342,14 @@ Use the following procedures to operate on tries.
 Trieクラス。パブリックなスロットはありません。trieを操作するには以下の
 手続きを使ってください。
 @c COMMON
+
+@c EN
+This class also implements the dictionary interface
+(@xref{Generic functions for dictionaries}).
+@c JP
+このクラスはまた、ディクショナリインタフェースを実装しています
+(@ref{Generic functions for dictionaries}参照)。
+@c COMMON
 @end deftp
 
 @defun make-trie :optional tab-make tab-get tab-put! tab-fold
