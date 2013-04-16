@@ -18225,10 +18225,10 @@ Creates and returns an empty simple queue.
 @c EN
 Creates and returns an empty mtqueue.  When an integer is given
 to the keyword argument @var{max-length}, it is used to
-initialize the @code{max-length} slot (Zero indicates unlimited length).
+initialize the @code{max-length} slot.
 @c JP
 空のmtqueueを作って返します。整数が@var{max-length}に与えられた場合は、
-それが@code{max-length}スロットの値となります (ゼロは無制限を意味します)。
+それが@code{max-length}スロットの値となります。
 @c COMMON
 @end defun
 
