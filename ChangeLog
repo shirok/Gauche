@@ -1,5 +1,9 @@
 2013-04-15  Shiro Kawai  <shiro@acm.org>
 
+	* lib/control/thread-pool.scm (terminate-all!): Fixed a timing hazard
+	  that could cause terminate-all! to throw a 'queue full' exception.
+	* test/control.scm: Adjusted pool termination test for robustness.
+
 	* lib/gauche/dictionary.scm: Revised.  Provided fallback methods
 	  for optional interface.  A new macro define-dict-interface is
 	  provided to define dictionary API concisely.

@@ -137,23 +137,32 @@
            ;; subtle arrangement: The timing of thread execution isn't
            ;; guaranteed, but we hope to run the following events in
            ;; sequence:
-           ;;  - add-job!  - this will block because queue is full
-           ;;  - terminate-all! - this causes the pending add-job! to raise
-           ;;                     an exception.  this call blocks.
-           ;;  - setting gate to #f - this causes the remaining thread to
-           ;;                     run, and the blocking terminate-all! to
-           ;;                     unblock.
-           (let ([t1 (make-thread (^[]
-                                    (sys-nanosleep #e1e8)
-                                    (terminate-all! pool
-                                                    :cancel-queued-jobs #t)
-                                    (set! gate 'finished)))]
-                 [t2 (make-thread (^[]
-                                    (sys-nanosleep #e2e8)
-                                    (set! gate #t)))])
+           ;;  - main: add-job!  - this will block because queue is full
+           ;;  - t1: enqueue/wait! triggers q1.
+           ;;  - t1: terminate-all! - this causes the pending add-job! to
+           ;;                raise an exception.  this call blocks.
+           ;;  - main: add-job! raises an exception, and triggers q2.
+           ;;  - t2: triggered by q1, this sets gate to #t, causing the
+           ;;                suspended jobs to resume.
+           ;;  - t1: terminate-all! returns once all the suspended jobs
+           ;;                are finished.  making sure q2 is already triggered,
+           ;;                we set gate to 'finished for the later check.
+           (let* ([q1 (make-mtqueue :max-length 0)]
+                  [q2 (make-mtqueue :max-length 0)]
+                  [t1 (make-thread (^[]
+                                     (enqueue/wait! q1 #t)
+                                     (terminate-all! pool
+                                                     :cancel-queued-jobs #t)
+                                     (dequeue/wait! q2)
+                                     (set! gate 'finished)))]
+                  [t2 (make-thread (^[]
+                                     (dequeue/wait! q1)
+                                     (sys-nanosleep #e2e8)
+                                     (set! gate #t)))])
              (thread-start! t1)
              (thread-start! t2)
-             (add-job! pool work)))
+             (unwind-protect (add-job! pool work)
+               (enqueue/wait! q2 #t))))
 
     (test* "shutdown - killing a job in the queue"
            'killed
