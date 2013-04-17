@@ -1,3 +1,12 @@
+2013-04-16  Shiro Kawai  <shiro@acm.org>
+
+	* src/regexp.c (regexp-compile): Fixed a bug that failed to handle
+	  named subgroups and unordered group counts in the input AST.
+	  The named subgroups are handled in parser, so the rxs created by
+	  regexp-compile from AST didn't have the info.  Now rc_setup_context
+	  is fixed to deal with named subgroups.  There was another bug
+	  in rc_setup_context that made group ordering not to work.
+
 2013-04-15  Shiro Kawai  <shiro@acm.org>
 
 	* lib/control/thread-pool.scm (terminate-all!): Fixed a timing hazard

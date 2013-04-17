@@ -2092,12 +2092,16 @@ static ScmObj rc_setup_context(regcomp_ctx *ctx, ScmObj ast)
     type = SCM_CAR(ast);
     if (SCM_INTP(type)) {
         int grpno = ctx->grpcount++;
-        ScmObj prevno = SCM_CAR(ast), body = SCM_CDDR(ast);
+        ScmObj prevno = type, name = SCM_CADR(ast), body = SCM_CDDR(ast);
         rest = rc_setup_context_seq(ctx, body);
+        if (SCM_SYMBOLP(name)) {
+            ctx->rx->grpNames = Scm_Acons(name, SCM_MAKE_INT(grpno),
+                                          ctx->rx->grpNames);
+        }
         if (SCM_INT_VALUE(prevno) == grpno && SCM_EQ(body, rest)) {
             return ast;
         } else {
-            return SCM_LIST3(SCM_MAKE_INT(grpno), SCM_FALSE, rest);
+            return Scm_Cons(SCM_MAKE_INT(grpno), Scm_Cons(name, rest));
         }
     }
     if (SCM_EQ(type, SCM_SYM_COMP)) {
@@ -2175,7 +2179,8 @@ static ScmObj rc_setup_context_seq(regcomp_ctx *ctx, ScmObj seq)
         if (SCM_EQ(sp2, sp)) break;
         SCM_APPEND1(head, tail, SCM_CAR(sp2));
     }
-    SCM_FOR_EACH(sp2, sp2) {
+    SCM_APPEND1(head, tail, obj);
+    SCM_FOR_EACH(sp2, SCM_CDR(sp2)) {
         SCM_APPEND1(head, tail, rc_setup_context(ctx, SCM_CAR(sp2)));
     }
     return head;
@@ -2223,7 +2228,7 @@ ScmObj Scm_RegCompFromAST(ScmObj ast)
     }
     ast = rc_setup_context(&cctx, ast);
     rc_setup_charsets(rx, &cctx);
-    rx->numGroups = cctx.grpcount+1;
+    rx->numGroups = cctx.grpcount;
 
     /* pass 3 */
     return rc3(&cctx, ast);

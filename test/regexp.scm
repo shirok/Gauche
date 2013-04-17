@@ -106,8 +106,15 @@
 (define-syntax test-regexp-compile
   (syntax-rules ()
     [(_ pat)
-     (test* #`"regexp-compile \",|pat|\"" #t
-            (regexp? (regexp-compile (regexp-parse pat))))]))
+     (test* #`"regexp-compile \",|pat|\""
+            (let1 orig (string->regexp pat)
+              (list (regexp->string orig)
+                    (regexp-num-groups orig)
+                    (regexp-named-groups orig)))
+            (let1 compiled (regexp-compile (regexp-parse pat))
+              (list (regexp->string compiled)
+                    (regexp-num-groups compiled)
+                    (regexp-named-groups compiled))))]))
 
 (test-regexp-compile "a")
 (test-regexp-compile "ab")
@@ -146,6 +153,14 @@
 (test-regexp-compile "()\\1")
 (test-regexp-compile "(?<name>)\\k<name>")
 (test-regexp-compile "(?<name>)(?<name>)\\k<name>")
+
+;; Renumbering groups
+(test* "regexp-compile group renumbering"
+       '(5 (0 #f (1 #f (2 #f #\a) (3 #f #\b)) (4 #f #\c)))
+       (let1 c (regexp-compile
+                '(0 #f (3 #f (100 #f #\a) (0 #f #\b)) (3 #f #\c)))
+         (list (regexp-num-groups c)
+               (regexp-ast c))))
 
 (define %regexp-laset (with-module gauche.internal %regexp-laset))
 (define-syntax test-regexp-laset
