@@ -16249,7 +16249,7 @@ If it encounters an untokenizable string, it raises an
 @c COMMON
 @end defun
 
-@deffn {Condition Type} <sql-parse-error>
+@deftp {Condition Type} <sql-parse-error>
 @c EN
 A condition to indicate an SQL parse error.  Inherits @code{<error>}.
 @c JP
@@ -16262,7 +16262,7 @@ Holds the source SQL string.
 元のSQL文字列を保持。
 @c COMMON
 @end defivar
-@end deffn
+@end deftp
 
 @c ----------------------------------------------------------------------
 @node Transliterate characters, Lazy text construction, SQL parsing and construction, Library modules - Utilities
