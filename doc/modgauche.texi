@@ -6048,12 +6048,12 @@ Current 4-digit year.
 @item ~P
 @c EN
 The program name.  The default value is the basename of
-@code{*program-name*} (@xref{Writing Scheme scripts}),
+@code{(car (command-line))} (@xref{Command-line arguments}),
 but you can change it by the @code{program-name}
 slot described below.
 @c JP
-プログラム名。初期値は@code{*program-name*}の値のbasenameが使われます
-(@ref{Writing Scheme scripts}参照)。
+プログラム名。初期値は@code{(car (command-line))}の値のbasenameが使われます
+(@ref{Command-line arguments}参照)。
 下に述べる@code{program-name}スロットの値を変えれば
 ここに現れる文字列を変えることができます。
 @c COMMON

@@ -399,7 +399,7 @@ int main(int argc, char **argv)
     int argind;
     ScmObj cp;
     const char *scriptfile = NULL;
-    ScmObj av = SCM_NIL;
+    ScmObj args = SCM_NIL;
     int exit_code = 0;
     ScmEvalPacket epak;
     ScmLoadPacket lpak;
@@ -431,7 +431,6 @@ int main(int argc, char **argv)
     if (optind < argc) {
         /* We have a script file specified. */
         ScmObj at = SCM_NIL;
-        int ac;
         struct stat statbuf;
 
         /* if the script name is given in relative pathname, see if
@@ -458,14 +457,10 @@ int main(int argc, char **argv)
         }
 
         /* sets up arguments. */
-        for (ac = optind; ac < argc; ac++) {
-            SCM_APPEND1(av, at, SCM_MAKE_STR_IMMUTABLE(argv[ac]));
-        }
+        args = Scm_InitCommandLine(argc - optind, (const char**)argv + optind);
     } else {
-        av = SCM_LIST1(SCM_MAKE_STR_IMMUTABLE(argv[0]));
+        args = Scm_InitCommandLine(1, (const char**)argv);
     }
-    SCM_DEFINE(Scm_UserModule(), "*argv*", SCM_CDR(av));
-    SCM_DEFINE(Scm_UserModule(), "*program-name*", SCM_CAR(av));
 
     /* process pre-commands */
     SCM_FOR_EACH(cp, Scm_Reverse(pre_cmds)) {
@@ -552,7 +547,7 @@ int main(int argc, char **argv)
         }
         if (SCM_PROCEDUREP(mainproc)) {
 #if 0 /* Temporarily turned off due to the bug that loses stack traces. */
-            int r = Scm_Apply(mainproc, SCM_LIST1(av), &epak);
+            int r = Scm_Apply(mainproc, SCM_LIST1(args), &epak);
             if (r > 0) {
                 ScmObj res = epak.results[0];
                 if (SCM_INTP(res)) exit_code = SCM_INT_VALUE(res);
@@ -562,7 +557,7 @@ int main(int argc, char **argv)
                 exit_code = 70;  /* EX_SOFTWARE, see SRFI-22. */
             }
 #else
-            ScmObj r = Scm_ApplyRec(mainproc, SCM_LIST1(av));
+            ScmObj r = Scm_ApplyRec1(mainproc, args);
             if (SCM_INTP(r)) {
                 exit_code = SCM_INT_VALUE(r);
             } else {

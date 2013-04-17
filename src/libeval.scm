@@ -387,6 +387,16 @@
 ;; '@' in the paths embedded in gauche.config.
 (define-cproc %gauche-runtime-directory () Scm__RuntimeDirectory)
 
+;; Command line - R7RS adds 'command-line' procedure.  We provide it as
+;; a predefined parameter.  Like exit-handler, we manually allocate a
+;; parametre slot to avoid importing gauche.parameter.
+(select-module gauche.internal)
+(define-in-module gauche command-line
+  (let1 index (%vm-make-parameter-slot)
+    (^ maybe-arg
+      (rlet1 old (%vm-parameter-ref index '())
+        (when (pair? maybe-arg)
+          (%vm-parameter-set! index #f (car maybe-arg)))))))
 ;;
 ;; External view of VM.
 ;;

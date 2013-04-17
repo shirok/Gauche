@@ -1,3 +1,12 @@
+2013-04-17  Shiro Kawai  <shiro@acm.org>
+
+	* src/libeval.scm (command-line): Added R7RS-ish command-line access
+	  procedure.  This is better than old *program-name*/*argv* variables.
+	* src/core.c (Scm_InitCommandLine): A convenience C API to initialize
+	  command-line, *program-name* and *argv* from C code.
+	* src/main.c: Changed to use Scm_InitCommandLine.
+	* lib/gauche/logger.scm: Changed accordingly.
+
 2013-04-16  Shiro Kawai  <shiro@acm.org>
 
 	* src/regexp.c (regexp-compile): Fixed a bug that failed to handle

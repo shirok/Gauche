@@ -4,32 +4,32 @@
 
 @c ----------------------------------------------------------------------
 @menu
-* Types and classes::
-* Equivalence::
-* Numbers::
-* Booleans::
-* Undefined values::
-* Pairs and Lists::
-* Symbols::
-* Keywords::
-* Identifiers::
-* Characters::
-* Character set::
-* Strings::
-* Regular expressions::
-* Vectors::
-* Hashtables::
-* Treemaps::
-* Weak pointers::
-* Procedures and continuations::
-* Lazy evaluation::
-* Exceptions::
-* Eval and repl::
-* Input and output::
-* Loading Programs::
-* Comparison and sorting::
-* System interface::
-* Development helper API::
+* Types and classes::           
+* Equivalence::                 
+* Numbers::                     
+* Booleans::                    
+* Undefined values::            
+* Pairs and Lists::             
+* Symbols::                     
+* Keywords::                    
+* Identifiers::                 
+* Characters::                  
+* Character set::               
+* Strings::                     
+* Regular expressions::         
+* Vectors::                     
+* Hashtables::                  
+* Treemaps::                    
+* Weak pointers::               
+* Procedures and continuations::  
+* Lazy evaluation::             
+* Exceptions::                  
+* Eval and repl::               
+* Input and output::            
+* Loading Programs::            
+* Comparison and sorting::      
+* System interface::            
+* Development helper API::      
 @end menu
 
 @node Types and classes, Equivalence, Core library, Core library
@@ -413,13 +413,13 @@ Gaucheは次のタイプの数値をサポートしています。
 @c COMMON
 
 @menu
-* Number classes::
-* Numerical predicates::
-* Numerical comparison::
-* Arithmetics::
-* Numerical conversions::
-* Bitwise operations::
-* Endianness::
+* Number classes::              
+* Numerical predicates::        
+* Numerical comparison::        
+* Arithmetics::                 
+* Numerical conversions::       
+* Bitwise operations::          
+* Endianness::                  
 @end menu
 
 @node Number classes, Numerical predicates, Numbers, Numbers
@@ -2194,13 +2194,13 @@ Gaucheのコアは全ての標準のリスト手続きと、多くのScheme実�
 @c COMMON
 
 @menu
-* Pair and null class::
-* List predicates::
-* List constructors::
-* List accessors and modifiers::
-* Walking over lists::
-* Other list procedures::
-* Association lists::
+* Pair and null class::         
+* List predicates::             
+* List constructors::           
+* List accessors and modifiers::  
+* Walking over lists::          
+* Other list procedures::       
+* Association lists::           
 @end menu
 
 @node Pair and null class, List predicates, Pairs and Lists, Pairs and Lists
@@ -4903,14 +4903,14 @@ SRFI-13については@ref{String library}を参照してください。
 @c COMMON
 
 @menu
-* String syntax::
-* String Predicates::
-* String Constructors::
-* String interpolation::
-* String Accessors & Modifiers::
-* String Comparison::
-* String utilities::
-* Incomplete strings::
+* String syntax::               
+* String Predicates::           
+* String Constructors::         
+* String interpolation::        
+* String Accessors & Modifiers::  
+* String Comparison::           
+* String utilities::            
+* Incomplete strings::          
 @end menu
 
 @node String syntax, String Predicates, Strings, Strings
@@ -5974,9 +5974,9 @@ Gaucheはまた、リテラル正規表現用の構文を備えています。
 @end example
 
 @menu
-* Regular expression syntax::
-* Using regular expressions::
-* Inspecting and assembling regular expressions::
+* Regular expression syntax::   
+* Using regular expressions::   
+* Inspecting and assembling regular expressions::  
 @end menu
 
 @node Regular expression syntax, Using regular expressions, Regular expressions, Regular expressions
@@ -8556,15 +8556,15 @@ accept @code{("abc" 2)} can be a valid application syntax.
 @xref{Applicable objects}, for the details.
 
 @menu
-* Procedure class and applicability::
-* Universal accessor::
-* Combinators::
-* Optional argument parsing::
-* Procedure arity::
-* Applicable objects::
-* Continuations::
-* Multiple values::
-* Folding generated values::
+* Procedure class and applicability::  
+* Universal accessor::          
+* Combinators::                 
+* Optional argument parsing::   
+* Procedure arity::             
+* Applicable objects::          
+* Continuations::               
+* Multiple values::             
+* Folding generated values::    
 @end menu
 
 @node Procedure class and applicability, Universal accessor, Procedures and continuations, Procedures and continuations
@@ -9956,8 +9956,8 @@ internally, its element isn't calculated until it is required.
 @c COMMON
 
 @menu
-* Delay force and lazy::
-* Lazy sequences::
+* Delay force and lazy::        
+* Lazy sequences::              
 @end menu
 
 
@@ -10754,10 +10754,10 @@ SRFI-35にならって@emph{コンディション(condition)}を使います。
 @c COMMON
 
 @menu
-* Exception handling overview::
-* Signaling exceptions::
-* Handling exceptions::
-* Conditions::
+* Exception handling overview::  
+* Signaling exceptions::        
+* Handling exceptions::         
+* Conditions::                  
 @end menu
 
 @node Exception handling overview, Signaling exceptions, Exceptions, Exceptions
@@ -12517,14 +12517,14 @@ and re-invoke them afterwards.
 @c NODE 入出力
 
 @menu
-* Ports::
-* Port and threads::
-* Common port operations::
-* File ports::
-* String ports::
-* Coding-aware ports::
-* Input::
-* Output::
+* Ports::                       
+* Port and threads::            
+* Common port operations::      
+* File ports::                  
+* String ports::                
+* Coding-aware ports::          
+* Input::                       
+* Output::                      
 @end menu
 
 @node Ports, Port and threads, Input and output, Input and output
@@ -13841,9 +13841,9 @@ an input port, and when omitted, the current input port is assumed.
 @c COMMON
 
 @menu
-* Reading data::
-* Read-time constructor::
-* Input utility functions::
+* Reading data::                
+* Read-time constructor::       
+* Input utility functions::     
 @end menu
 
 @node Reading data, Read-time constructor, Input, Input
@@ -14884,11 +14884,11 @@ absolute position of the arguments, starting from 0.
 @c NODE プログラムのロード
 
 @menu
-* Loading Scheme file::
-* Loading dynamic library::
-* Require and provide::
-* Autoload::
-* Operations on libraries::
+* Loading Scheme file::         
+* Loading dynamic library::     
+* Require and provide::         
+* Autoload::                    
+* Operations on libraries::     
 @end menu
 
 @node Loading Scheme file, Loading dynamic library, Loading Programs, Loading Programs
@@ -15942,20 +15942,21 @@ Cの標準ライブラリとGaucheの手続きとの対応が示してありま�
 @c COMMON
 
 @menu
-* Program termination::
-* Environment Inquiry::
-* Filesystems::
-* Unix groups and users::
-* Locale::
-* Signal::
-* System inquiry::
-* Time::
-* Process management::
-* I/O multiplexing::
-* Miscellaneous system calls::
+* Program termination::         
+* Command-line arguments::      
+* Environment Inquiry::         
+* Filesystems::                 
+* Unix groups and users::       
+* Locale::                      
+* Signal::                      
+* System inquiry::              
+* Time::                        
+* Process management::          
+* I/O multiplexing::            
+* Miscellaneous system calls::  
 @end menu
 
-@node Program termination, Environment Inquiry, System interface, System interface
+@node Program termination, Command-line arguments, System interface, System interface
 @subsection Program termination
 @c NODE プログラムの終了
 
@@ -16205,7 +16206,81 @@ POSIXのabort()を呼びます。通常、現在のプロセスは終了され�
 @c COMMON
 @end defun
 
-@node Environment Inquiry, Filesystems, Program termination, System interface
+@node Command-line arguments, Environment Inquiry, Program termination, System interface
+@subsection Command-line arguments
+@c NODE コマンドライン引数
+
+The recommended way to get command-line arguments passed to a
+Scheme script is the argument to the @code{main} procedure
+(@xref{Writing Scheme scripts}).  For the convenience,
+there are a few ways to access to the command-line arguments
+globally.
+
+Note that a Scheme code may not always be called with a command-line
+argument---for example, an application-embedded Scheme scriptlet may
+not have the concept of command-line at all.  That's why the @code{main}
+argument is preferred, since it is an explicit interface; if @code{main}
+is called, the caller is responsible to pass in something.
+
+That said, here are how to access the command-line arguments:
+
+@deffn {Parameter} command-line
+[R7RS+]
+When called without arguments, it returns a list of command-line arguments,
+including the program name in the first element, as a list of strings.
+
+When Gauche is used as an embedded language, it is application's discretion
+to set up this parameter.  If the application does nothing, this parameter
+will have an empty list.  When you use this parameter in the library
+you have to deal with that situation.
+
+When called with one argument, a list of string, it will become the
+new value of the parameter.  You can use @code{parameterize} to
+switch the value of @code{command-line} dynamically
+(@xref{Parameters}).  Note that R7RS only defines zero-argument
+@code{command-line}.
+@end deffn
+
+@defvar *program-name*
+@defvarx *argv*
+@c EN
+These variables are bound to the program name and the list of command-line
+arguments, respectively.  In Gauche scripts that are invoked by @code{gosh}
+command, @code{*program-name*} is usually the name of the script, as
+given to @code{gosh}.  When @code{gosh} is invoked interactively,
+@code{*program-name*} is @code{gosh} itself.
+
+These variables exist in @code{user} module.
+
+They are mainly kept for the backward compatibility.
+These names are compatible to STk, but other Scheme implementation uses
+different conventions.  The @code{command-line} parameter above is
+preferred.
+
+When Gauche is used as an embedded language, it's the host application's
+discretion to set up these variables.  Generally, you can't count on
+those variables to exist.  That's another reason you should avoid
+using them.
+@c JP
+これらの変数はそれぞれ、プログラム名および、コマンドライン引数のリストに束縛されます。
+@code{gosh}を使ってGaucheスクリプトを実行しているなら、@code{*program-name*}は
+(@code{gosh}に与えられたとおりの) スクリプト名になっています。@code{gosh}が
+インタラクティブREPLとして起動された場合は@code{*program-name*}は@code{gosh}自身です。
+
+これらの変数は@code{user}モジュールにあります。
+
+これは主として互換性のためだけに残されています。STkと互換な名前ですが、
+他のScheme実装へはポータブルではありません。上の@code{command-line}パラメータの
+方がお勧めです。
+
+Gaucheが埋め込み言語として使われている場合、これらの変数を設定するかどうかは
+ホストアプリケーションに任されます。一般には、これらの変数が必ず存在している
+とは限りません。これもまた、他の方法を使うべき理由です。
+@c COMMON
+@end defvar
+
+
+@node Environment Inquiry, Filesystems, Command-line arguments, System interface
 @subsection Environment Inquiry
 @c NODE 環境の問い合わせ
 
@@ -16359,11 +16434,11 @@ on top of the procedures described here.
 @c COMMON
 
 @menu
-* Directories::
-* Directory manipulation::
-* Pathnames::
-* File stats::
-* Other file operations::
+* Directories::                 
+* Directory manipulation::      
+* Pathnames::                   
+* File stats::                  
+* Other file operations::       
 @end menu
 
 @node Directories, Directory manipulation, Filesystems, Filesystems
@@ -17816,11 +17891,11 @@ Windowsネイティブ環境では、@code{sys-kill}の限定的なサポート�
 @c COMMON
 
 @menu
-* Signals and signal sets::
-* Sending signals::
-* Handling signals::
-* Masking and waiting signals::
-* Signals and threads::
+* Signals and signal sets::     
+* Sending signals::             
+* Handling signals::            
+* Masking and waiting signals::  
+* Signals and threads::         
 @end menu
 
 @node Signals and signal sets, Sending signals, Signal, Signal
@@ -20144,8 +20219,8 @@ Gauche には開発者がプログラムを解析するための基本的な組�
 @c COMMON
 
 @menu
-* Debugging aid::
-* Profiler API::
+* Debugging aid::               
+* Profiler API::                
 @end menu
 
 @node Debugging aid, Profiler API, Development helper API, Development helper API

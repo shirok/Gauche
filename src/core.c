@@ -615,6 +615,21 @@ ScmObj Scm__RuntimeDirectory(void)
 }
 
 /*=============================================================
+ * Command line arguments
+ */
+
+ScmObj Scm_InitCommandLine(int argc, const char *argv[])
+{
+    static ScmObj command_line_proc = SCM_UNDEFINED;
+    ScmObj args = Scm_CStringArrayToList(argv, argc, SCM_STRING_IMMUTABLE);
+    SCM_BIND_PROC(command_line_proc, "command-line", Scm_GaucheModule());
+    Scm_ApplyRec1(command_line_proc, args);
+    SCM_DEFINE(Scm_UserModule(), "*program-name*", SCM_CAR(args));
+    SCM_DEFINE(Scm_UserModule(), "*argv*", SCM_CDR(args));
+    return args;
+}
+
+/*=============================================================
  * 'Main'
  */
 
@@ -650,9 +665,7 @@ void Scm_SimpleMain(int argc, const char *argv[],
         Scm_Exit(1);
     }
 
-    args = Scm_CStringArrayToList(argv, argc, SCM_STRING_IMMUTABLE);
-    SCM_DEFINE(user, "*program-name*", SCM_CAR(args));
-    SCM_DEFINE(user, "*argv*", SCM_CDR(args));
+    args = Scm_InitCommandLine(argc, argv);
 
     if (script) {
         ScmObj s = SCM_MAKE_STR(script);
@@ -662,7 +675,7 @@ void Scm_SimpleMain(int argc, const char *argv[],
 
     mainproc = Scm_GlobalVariableRef(user, SCM_SYMBOL(SCM_INTERN("main")), 0);
     if (SCM_PROCEDUREP(mainproc)) {
-        ScmObj r = Scm_ApplyRec(mainproc, SCM_LIST1(args));
+        ScmObj r = Scm_ApplyRec1(mainproc, args);
         if (SCM_INTP(r)) Scm_Exit(SCM_INT_VALUE(r));
         else             Scm_Exit(70);
     } else {

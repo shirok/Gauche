@@ -52,7 +52,10 @@
 (define-class <log-drain> ()
   ((path   :init-keyword :path :initform #f)
    (program-name :init-keyword :program-name
-                 :initform  (sys-basename (with-module user *program-name*)))
+                 :initform (let1 argv (command-line)
+                             (if (pair? argv)
+                               (sys-basename (car argv))
+                               "")))
    (retry  :init-keyword :retry :initform 5)
    (prefix :init-keyword :prefix :initform "~T ~P[~$]: ")
    (lock-policy :init-keyword :lock-policy :initform 'tbd)

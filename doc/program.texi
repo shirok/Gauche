@@ -712,6 +712,7 @@ Schemeプログラムをロードします。もし@var{scheme-file}の最初の
 @c EN
 Typical Gauche script has the first
 line like these
+
 @example
 #!/usr/local/bin/gosh
   @r{or,}
@@ -720,6 +721,7 @@ line like these
 #!/bin/sh
 :; exec gosh -- $0 "$@@"
 @end example
+
 The second and third form uses a ``shell trampoline'' technique
 so that the script works as far as @code{gosh} is in the PATH.
 The third form is useful when you want to pass extra arguments
@@ -727,6 +729,7 @@ to @code{gosh}, for typically @code{#!}-magic of executable scripts
 has limitations for the number of arguments to pass the interpreter.
 @c JP
 典型的なGaucheスクリプトの最初の行は次のようなものです。
+
 @example
 #!/usr/local/bin/gosh
   @r{または,}
@@ -735,6 +738,7 @@ has limitations for the number of arguments to pass the interpreter.
 #!/bin/sh
 :; exec gosh -- $0 "$@@"
 @end example
+
 後の2つは「シェルトランポリン」テクニックを用いて、@code{gosh}がPATHにあるディレクトリの
 どこかにあれば起動できるようにしています。3番目の方法は、
 @code{gosh}にいくつかコマンドラインオプションを渡したい時に便利です。
@@ -809,49 +813,23 @@ alternate main procedure.
 テストだとかモジュールのサンプルアプリケーションを書いておくことができるでしょう。
 @c COMMON
 
-@defvar *argv*
 @c EN
-The program arguments passed to the Scheme script is bound to this
-variable.  If @code{gosh} is invoked in an interactive mode, this
-variable always contains @code{()}.
-
-STk uses this variable to pass the command line argument as well,
-but other Scheme implementations use different ways.  It is better
-to define @code{main} procedure and uses its argument to receive
-command line arguments, for it is expected to be more portable.
+Although the argument of the @code{main} procedure is the standard way
+to receive the command-line arguments, there are a couple of other
+ways to access to the info.  @xref{Command-line arguments}, for the
+details.
 @c JP
-Schemeスクリプト以降のコマンドライン引数のリストは、スクリプトのロードの前に
-この変数に束縛されます。@code{gosh}がインタラクティブモードで起動された場合は
-この変数は@code{()}となります。
-
-この変数はSTkと互換性がありますが、他のScheme実装は違った方法を使ってコマンドライン
-引数を得ます。ポータブルなスクリプトを書くには、@code{main}手続きを使う方法を
-お薦めします。
+コマンドライン引数を受け取る標準的な方法は、@code{main}関数の引数としてですが、
+他にもコマンドライン引数にアクセスする方法が提供されています。詳しくは
+@ref{Command-line arguments}を参照してください。
 @c COMMON
-@end defvar
-
-@defvar *program-name*
-@c EN
-This variable is bound to the script file name passed to @code{gosh}.
-If @code{gosh} is invoked in the interactive mode, this variable
-contains the pathname of @code{gosh} itself.
-
-STk uses the same variable to access the program/script name.
-Other Scheme implementations use different ways.
-@c JP
-この変数はスクリプトファイル名に束縛されます。インタラクティブモードでは
-この変数は@code{gosh}自身の名前を持っています。
-
-この変数はSTkと互換性がありますが、他の実装は違った方法を使います。
-@c COMMON
-@end defvar
 
 @c EN
 Now I show several simple examples below.
 First, this script works like @code{cat(1)}, without any command-line
 option processing and error handling.
 @c JP
-いくつか簡単な例を示します。最初の例はUnixの@code{cat(1)}コマンドを模するものです。
+ではいくつか簡単な例を示しましょう。最初の例はUnixの@code{cat(1)}コマンドを模するものです。
 エラー処理やコマンドラインオプションの処理は行っていません。
 @c COMMON
 
@@ -878,9 +856,9 @@ The following script is a simple grep command.
 @example
 #!/usr/bin/env gosh
 
-(define (usage)
+(define (usage program-name)
   (format (current-error-port)
-          "Usage: ~a regexp file ...\n" *program-name*)
+          "Usage: ~a regexp file ...\n" program-name)
   (exit 2))
 
 (define (grep rx port)
@@ -897,7 +875,7 @@ The following script is a simple grep command.
 
 (define (main args)
   (if (null? (cdr args))
-      (usage)
+      (usage (car args))
       (let ((rx (string->regexp (cadr args))))
         (if (null? (cddr args))
             (grep rx (current-input-port))
