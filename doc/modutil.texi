@@ -2744,14 +2744,19 @@ importing @code{dbm} module is enough.
 
 @c EN
 To create or open a database, you need a concrete implementation
-of the database.  Gauche currently has the following implementations.
+of the database.  With the default build-time configuration,
+the following implementations are included in Gauche.
+Bindings to various other dbm-like libraries are
+available as extension pacakges.
 Each module defines its own low-level accessing functions
 as well as the common interface.
 Note that your system may not have one or more of those DBM libraries;
 Gauche defines only what the system provides.
 @c JP
 データベースをオープンしたり作成したりするには、dbmインタフェースを実装した
-モジュールが必要になります。今のところGaucheでは以下の実装が使えます。
+モジュールが必要になります。デフォルトのビルド時コンフィグレーションでは、
+以下の実装がGaucheに含まれます。他の様々なdbmライブラリへのバインディングが
+拡張パッケージとして提供されています。
 それぞれのモジュールは、dbmインタフェース共通の手続きの他に、
 直接実装を操作できる低レベルの手続きも提供します。
 システムによっては以下のインタフェースの全てが実装されているわけではないことに
@@ -2815,6 +2820,16 @@ The following code shows a typical usage of the database.
 (dbm-close *db*)
 @end example
 
+@c EN
+The @code{<dbm>} abstract class implements collection 
+and dictionary framework.  (See @ref{Collection framework}
+and @ref{Dictionary framework}, respectively).
+@c JP
+@var{<dbm>}抽象クラスは、コレクションフレームワークと
+ディクショナリフレームワークを実装しています。
+(それぞれ@ref{Collection framework}と@ref{Dictionary framework}参照。)
+@c COMMON
+
 @menu
 * Opening and closing a dbm database::  
 * Accessing a dbm database::    
@@ -2831,7 +2846,9 @@ The following code shows a typical usage of the database.
 @deftp {Class} <dbm>
 @clindex dbm
 @c EN
-An abstract class for dbm-style database.  Defindes the common
+An abstract class for dbm-style database.    Inherits
+@code{<dictionary>} (@xref{Dictionary framework}).
+Defindes the common
 database operations.   This class has the following instance slots.
 They must be set before the database is actually opened by
 @code{dbm-open}.
@@ -2839,7 +2856,9 @@ They must be set before the database is actually opened by
 The concrete class may add more slots for finer control on the database,
 such as locking.
 @c JP
-DBM系のデータベースのための抽象クラスです。データベースへの共通のオペレーションを
+DBM系のデータベースのための抽象クラスです。
+@code{<dictionary>}クラスを継承します (@ref{Dictionary framework}参照)。
+データベースへの共通のオペレーションを
 定義します。以下のインスタンススロットを持ちます。これらのスロットの値は
 @code{dbm-open}によってデータベースがオープンされる前にセットされて
 いなければなりません。
