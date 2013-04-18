@@ -34,6 +34,7 @@
 (define-module dbm
   (use gauche.collection)
   (use gauche.dictionary)
+  (use gauche.generator)
   (export <dbm> <dbm-meta>
           dbm-open    dbm-close   dbm-closed? dbm-get
           dbm-put!    dbm-delete! dbm-exists?
@@ -157,40 +158,29 @@
 
 (define-method dbm-for-each ((dbm <dbm>) proc)
   (when (dbm-closed? dbm) (errorf "dbm-for-each: dbm already closed: ~s" dbm))
-  (dbm-fold dbm (lambda (key value r) (proc key value)) #f))
+  (dbm-fold dbm (^[key value r] (proc key value)) #f))
 
 (define-method dbm-map ((dbm <dbm>) proc)
   (when (dbm-closed? dbm) (errorf "dbm-map: dbm already closed: ~s" dbm))
   (reverse
-   (dbm-fold dbm (lambda (key value r) (cons (proc key value) r)) '())))
+   (dbm-fold dbm (^[key value r] (cons (proc key value) r)) '())))
 
+;;
 ;; Collection framework
-;;   This is a fallback, using "iterator inversion" technique to obtain
-;;   a generator from dbm-fold.  The subclass may directly implement
-;;   them if they have underlying generators.
-;; NB: this doesn't work due to the bug of call/cc handling.
-;(define-method call-with-iterator ((dbm <dbm>) proc . options)
-;  (define restart #f)
-;  (define buf #f)
-;  (define (fetch)
-;    (cond
-;     ((eq? restart 'end) #f) ;; already finished
-;     ((not restart)          ;; initial setup
-;      (let/cc return
-;        (dbm-fold dbm
-;                  (lambda (k v r)
-;                    (let/cc res
-;                      (set! restart res)
-;                      (return (cons k v))))
-;                  #f)
-;        (set! restart 'end)
-;        'end))
-;     (else (restart #f))))
-;  (set! buf (fetch))
-;  (proc (lambda () (eq? buf 'end))
-;        (lambda () (begin0 buf (set! buf (fetch))))))
+;;
+(define-method call-with-iterator ((dbm <dbm>) proc . options)
+  (let* ([g (generate
+             (^[yield] (dbm-fold dbm (^[k v r] (yield (cons k v))) #f)))]
+         [buf (g)])
+    (proc (^[] (eof-object? buf))
+          (^[] (begin0 buf (set! buf (g)))))))
 
+(define-method coerce-to ((target <list-meta>) (dbm <dbm>))
+  (dbm-map dbm cons))
+
+;;
 ;; Dictionary framework
+;;
 (define-dict-interface <dbm>
   :get       dbm-get
   :put!      dbm-put!

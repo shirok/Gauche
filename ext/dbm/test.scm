@@ -101,6 +101,10 @@
               *current-dbm*)
     #t))
 
+(define (test:collection-coerce dataset)
+  (lset= equal? (hash-table->alist dataset)
+         (coerce-to <list> *current-dbm*)))
+
 ;; does dictionary framework work?
 (define (test:dict-for-each dataset)
   (let/cc break
@@ -196,8 +200,10 @@
      (test* (tag "get-exceptional") #t (test:get-exceptional))
      ;; traverse
      (test* (tag "for-each") #t (test:for-each dataset))
-     ;(test (tag "collection-read") #t
-     ;      (lambda () (test:collection-read dataset)))
+     (test* (tag "collection-read") #t
+            (test:collection-read dataset))
+     (test* (tag "collection-coerce") #t
+            (test:collection-coerce dataset))
      (test* (tag "dict-for-each") #t (test:dict-for-each dataset))
      (test* (tag "dict-map") #t (test:dict-map dataset))
      (test* (tag "dict-keys") #t (test:dict-keys dataset))
