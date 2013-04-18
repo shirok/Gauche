@@ -225,7 +225,7 @@
 
 (define-method dict-update! ((dict <dictionary>) key proc . maybe-default)
   (let1 r (apply dict-get dict key maybe-default)
-    (dict-put! dict-get dict key (proc r))))
+    (dict-put! dict key (proc r))))
 
 (define-method (setter dict-get) (dict key val)
   (dict-put! dict key val))
