@@ -1,7 +1,7 @@
 ;;;
 ;;; binary.ftype - foreign types and foreign objects
 ;;;
-;;;   Copyright (c) 2011-2012  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2011-2013  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
