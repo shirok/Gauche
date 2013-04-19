@@ -10,23 +10,23 @@
 (test-section "srfi-0")
 
 (test* "cond-expand" 0
-       (cond-expand (srfi-0 0) (else 1)))
+       (cond-expand [srfi-0 0] [else 1]))
 (test* "cond-expand" 1
-       (cond-expand (hogehoge 0) (else 1)))
+       (cond-expand [hogehoge 0] [else 1]))
 (test* "cond-expand" 0
-       (cond-expand ((and srfi-0 srfi-1) 0) (else 1)))
+       (cond-expand [(and srfi-0 srfi-1) 0] [else 1]))
 (test* "cond-expand" #t
-       (cond-expand ((and srfi-2 srfi-1) (procedure? xcons)) (else #f)))
+       (cond-expand [(and srfi-2 srfi-1) (procedure? xcons)] [else #f]))
 (test* "cond-expand" 0
-       (cond-expand ((or hogehoge srfi-1) 0) (else 1)))
+       (cond-expand [(or hogehoge srfi-1) 0] [else 1]))
 (test* "cond-expand" 0
-       (cond-expand ((or srfi-1 hogehoge) 0) (else 1)))
+       (cond-expand [(or srfi-1 hogehoge) 0] [else 1]))
 (test* "cond-expand" 1
-       (cond-expand ((or (not srfi-1) hogehoge) 0) (else 1)))
+       (cond-expand [(or (not srfi-1) hogehoge) 0] [else 1]))
 (test* "cond-expand" 0
-       (cond-expand (gauche 0) (else 1)))
+       (cond-expand [gauche 0] [else 1]))
 (test* "cond-expand" 0
-       (cond-expand (scm -1) (gauche 0) (else 1)))
+       (cond-expand [scm -1] [gauche 0] [else 1]))
 
 ;;-----------------------------------------------------------------------
 (test-section "srfi-2")
@@ -34,20 +34,20 @@
 (test-module 'srfi-2)
 
 (define (srfi-2-look-up key alist)
-  (and-let* ((x (assq key alist))) (cdr x)))
+  (and-let* ([x (assq key alist)]) (cdr x)))
 (test* "and-let*" 3
        (srfi-2-look-up 'c '((a . 1) (b . 2) (c . 3))))
 (test* "and-let*" #f
        (srfi-2-look-up 'd '((a . 1) (b . 2) (c . 3))))
 (test* "and-let*" 3
-       (let ((x 3))
-         (and-let* (((positive? x))
-                    (y x))
+       (let ([x 3])
+         (and-let* ([(positive? x)]
+                    [y x])
            y)))
 (test* "and-let*" #f
-       (let ((x -3))
-         (and-let* (((positive? x))
-                    (y x))
+       (let ([x -3])
+         (and-let* ([(positive? x)]
+                    [y x])
            y)))
 
 ;;-----------------------------------------------------------------------
@@ -61,13 +61,13 @@
   (test-module 'srfi-5)
 
   (test* "let - standard" 3
-         (let ((x 1) (y 2))
+         (let ([x 1] [y 2])
            (let ()
              (+ x y))))
 
   (test* "let - standard" 1
-         (let ((x 1) (y 2))
-           (let ((y x) (x y))
+         (let ([x 1] [y 2])
+           (let ([y x] [x y])
              (- x y))))
 
   (test* "let - standard" 1
@@ -76,11 +76,11 @@
            (* x x)))
 
   (test* "let - standard, named" 55
-         (let loop ((x 1) (sum 0))
+         (let loop ([x 1] [sum 0])
            (if (> x 10) sum (loop (+ x 1) (+ sum x)))))
 
   (test* "let - signature style" 55
-         (let (loop (x 1) (sum 0))
+         (let (loop [x 1] [sum 0])
            (if (> x 10) sum (loop (+ x 1) (+ sum x)))))
 
   (test* "let - signature style" #t
@@ -88,10 +88,10 @@
            (procedure? loop)))
 
   (test* "let - rest binding" '(0 1 (2 3 4))
-         (let ((x 0) (y 1) . (z 2 3 4)) (list x y z)))
+         (let ([x 0] [y 1] . [z 2 3 4]) (list x y z)))
 
   (test* "let - rest binding, named" '((2 3 4) 0 (1))
-         (let loop ((x 0) (y 1) . (z 2 3 4))
+         (let loop ([x 0] [y 1] . [z 2 3 4])
            (if (list? x) (list x y z) (loop z x y))))
   )
 
@@ -109,11 +109,9 @@
 (sys-system "rm -rf test.o")
 (sys-system "mkdir test.o")
 (with-output-to-file "test.o/a.scm"
-  (lambda ()
-    (write '(define x 3))))
+  (^[] (write '(define x 3))))
 (with-output-to-file "test.o/b.scm"
-  (lambda ()
-    (write '(define (y) (+ x x)))))
+  (^[] (write '(define (y) (+ x x)))))
 
 (test* "program (empty)" 'ok
        (begin (eval '(program) (make-module #f))
@@ -129,7 +127,7 @@
                (requires srfi-1)
                (code (define foo (circular-list 1 2)))
                (requires srfi-2)
-               (code (and-let* ((x (circular-list? foo)))
+               (code (and-let* ([x (circular-list? foo)])
                        (take foo 3))))
              (make-module #f)))
 (test* "program (requires, no such feature)" (test-error)
@@ -155,28 +153,28 @@
 (test* "program (feature-cond)" 2
        (eval '(program
                (feature-cond
-                ((and srfi-1 srfi-2) (code (define x 1)))
-                (else (code (define x 2))))
+                [(and srfi-1 srfi-2) (code (define x 1))]
+                [else (code (define x 2))])
                (code (+ x x)))
              (make-module #f)))
 (test* "program (feature-cond)" 4
        (eval '(program
                (feature-cond
-                ((and srfi-1 no-such-feature) (code (define x 1)))
-                (else (code (define x 2))))
+                [(and srfi-1 no-such-feature) (code (define x 1))]
+                [else (code (define x 2))])
                (code (+ x x)))
              (make-module #f)))
 (test* "program (feature-cond)" 6
        (eval '(program
                (feature-cond
-                ((or srfi-1 no-such-feature) (code (define x 3)))
-                (else (code (define x 2))))
+                [(or srfi-1 no-such-feature) (code (define x 3))]
+                [else (code (define x 2))])
                (code (+ x x)))
              (make-module #f)))
 (test* "program (feature-cond w/o else)" (test-error)
        (eval '(program
                (feature-cond
-                ((not srfi-1) (code (define x 5)))))
+                [(not srfi-1) (code (define x 5))]))
              (make-module #f)))
 
 (sys-system "rm -rf test.o")
@@ -227,7 +225,7 @@
 (test* "char-set-hash" #t
        (<= 0 (char-set-hash char-set:graphic 100) 99))
 (test* "char-set-fold" #t
-       (= 4 (char-set-fold (lambda (c i) (+ i 1)) 0
+       (= 4 (char-set-fold (^[c i] (+ i 1)) 0
                            (char-set #\e #\i #\o #\u #\e #\e))))
 (test* "char-set-unfold" #t
        (char-set= (string->char-set "eiaou2468013579999")
@@ -248,13 +246,13 @@
                   (char-set-unfold! null? car cdr '(#\a #\e #\i #\o #\u)
                                     (string->char-set "0123456789"))))
 (test* "char-set-for-each" #t
-       (let ((cs (string->char-set "0123456789")))
-         (char-set-for-each (lambda (c) (set! cs (char-set-delete cs c)))
+       (let ([cs (string->char-set "0123456789")])
+         (char-set-for-each (^c (set! cs (char-set-delete cs c)))
                             (string->char-set "02468000"))
          (char-set= cs (string->char-set "97531"))))
 (test* "char-set-for-each" #t
-       (not (let ((cs (string->char-set "0123456789")))
-              (char-set-for-each (lambda (c) (set! cs (char-set-delete cs c)))
+       (not (let ([cs (string->char-set "0123456789")])
+              (char-set-for-each (^c (set! cs (char-set-delete cs c)))
                                  (string->char-set "02468"))
               (char-set= cs (string->char-set "7531")))))
 (test* "char-set-map" #t
@@ -424,8 +422,8 @@
        (char-set-any char-lower-case? (->char-set "ABCD")))
 (test* "char-set iterators" #t
        (char-set= (->char-set "ABCD")
-                  (let ((cs (->char-set "abcd")))
-                    (let lp ((cur (char-set-cursor cs)) (ans '()))
+                  (let ([cs (->char-set "abcd")])
+                    (let lp ([cur (char-set-cursor cs)] [ans '()])
                       (if (end-of-char-set? cur) (list->char-set ans)
                           (lp (char-set-cursor-next cs cur)
                               (cons (char-upcase (char-set-ref cs cur)) ans)))))))
@@ -496,17 +494,16 @@
                                  char-set:hex-digit)
                   (->char-set "abcdefABCDEF")))
 (test* "char-set-diff+intersection" #t
-       (call-with-values (lambda ()
-                           (char-set-diff+intersection char-set:hex-digit
-                                                       char-set:letter))
-         (lambda (d i)
+       (call-with-values (^[] (char-set-diff+intersection char-set:hex-digit
+                                                          char-set:letter))
+         (^[d i]
            (and (char-set= d (->char-set "0123456789"))
                 (char-set= i (->char-set "abcdefABCDEF"))))))
 (test* "char-set-diff+intersection!" #t
-       (call-with-values (lambda ()
+       (call-with-values (^[]
                            (char-set-diff+intersection! (char-set-copy char-set:hex-digit)
                                                         (char-set-copy char-set:letter)))
-         (lambda (d i)
+         (^[d i]
            (and (char-set= d (->char-set "0123456789"))
                 (char-set= i (->char-set "abcdefABCDEF"))))))
 
@@ -521,82 +518,82 @@
 
 (define x (cons 1 2))
 (test "(setter car)" '((3 3) . 2)
-      (lambda () (set! (car x) (list 3 3)) x))
+      (^[] (set! (car x) (list 3 3)) x))
 (test "(setter cdr)" '((3 3) 4 5)
-      (lambda () (set! (cdr x) (list 4 5)) x))
+      (^[] (set! (cdr x) (list 4 5)) x))
 (test "(setter caar)" '(((8 9) 3) 4 5)
-      (lambda () (set! (caar x) (list 8 9)) x))
+      (^[] (set! (caar x) (list 8 9)) x))
 (test "(setter cadr)" '(((8 9) 3) (7 6) 5)
-      (lambda () (set! (cadr x) (list 7 6)) x))
+      (^[] (set! (cadr x) (list 7 6)) x))
 (test "(setter cdar)" '(((8 9) 4 5) (7 6) 5)
-      (lambda () (set! (cdar x) (list 4 5)) x))
+      (^[] (set! (cdar x) (list 4 5)) x))
 (test "(setter cddr)" '(((8 9) 4 5) (7 6) 11 12)
-      (lambda () (set! (cddr x) (list 11 12)) x))
+      (^[] (set! (cddr x) (list 11 12)) x))
 (test "(setter caaar)" '((((13 14) 9) 4 5) (7 6) 11 12)
-      (lambda () (set! (caaar x) (list 13 14)) x))
+      (^[] (set! (caaar x) (list 13 14)) x))
 (test "(setter caadr)" '((((13 14) 9) 4 5) ((0 1) 6) 11 12)
-      (lambda () (set! (caadr x) (list 0 1)) x))
+      (^[] (set! (caadr x) (list 0 1)) x))
 (test "(setter cadar)" '((((13 14) 9) (2 3) 5) ((0 1) 6) 11 12)
-      (lambda () (set! (cadar x) (list 2 3)) x))
+      (^[] (set! (cadar x) (list 2 3)) x))
 (test "(setter caddr)" '((((13 14) 9) (2 3) 5) ((0 1) 6) (4 5) 12)
-      (lambda () (set! (caddr x) (list 4 5)) x))
+      (^[] (set! (caddr x) (list 4 5)) x))
 (test "(setter cdaar)" '((((13 14) 5 6) (2 3) 5) ((0 1) 6) (4 5) 12)
-      (lambda () (set! (cdaar x) (list 5 6)) x))
+      (^[] (set! (cdaar x) (list 5 6)) x))
 (test "(setter cdadr)" '((((13 14) 5 6) (2 3) 5) ((0 1) 7 8) (4 5) 12)
-      (lambda () (set! (cdadr x) (list 7 8)) x))
+      (^[] (set! (cdadr x) (list 7 8)) x))
 (test "(setter cddar)" '((((13 14) 5 6) (2 3) 9 10) ((0 1) 7 8) (4 5) 12)
-      (lambda () (set! (cddar x) (list 9 10)) x))
+      (^[] (set! (cddar x) (list 9 10)) x))
 (test "(setter cdddr)" '((((13 14) 5 6) (2 3) 9 10) ((0 1) 7 8) (4 5) -1 -2)
-      (lambda () (set! (cdddr x) (list -1 -2)) x))
+      (^[] (set! (cdddr x) (list -1 -2)) x))
 (test "(setter caaaar)" '(((((1 3) 14) 5 6) (2 3) 9 10) ((0 1) 7 8) (4 5) -1 -2)
-      (lambda () (set! (caaaar x) (list 1 3)) x))
+      (^[] (set! (caaaar x) (list 1 3)) x))
 (test "(setter caaadr)" '(((((1 3) 14) 5 6) (2 3) 9 10) (((2 3) 1) 7 8) (4 5) -1 -2)
-      (lambda () (set! (caaadr x) (list 2 3)) x))
+      (^[] (set! (caaadr x) (list 2 3)) x))
 (test "(setter caadar)" '(((((1 3) 14) 5 6) ((0 1) 3) 9 10) (((2 3) 1) 7 8) (4 5) -1 -2)
-      (lambda () (set! (caadar x) (list 0 1)) x))
+      (^[] (set! (caadar x) (list 0 1)) x))
 (test "(setter caaddr)" '(((((1 3) 14) 5 6) ((0 1) 3) 9 10) (((2 3) 1) 7 8) ((0 1) 5) -1 -2)
-      (lambda () (set! (caaddr x) (list 0 1)) x))
+      (^[] (set! (caaddr x) (list 0 1)) x))
 (test "(setter cadaar)" '(((((1 3) 14) (0 1) 6) ((0 1) 3) 9 10) (((2 3) 1) 7 8) ((0 1) 5) -1 -2)
-      (lambda () (set! (cadaar x) (list 0 1)) x))
+      (^[] (set! (cadaar x) (list 0 1)) x))
 (test "(setter cadadr)" '(((((1 3) 14) (0 1) 6) ((0 1) 3) 9 10) (((2 3) 1) (0 1) 8) ((0 1) 5) -1 -2)
-      (lambda () (set! (cadadr x) (list 0 1)) x))
+      (^[] (set! (cadadr x) (list 0 1)) x))
 (test "(setter caddar)" '(((((1 3) 14) (0 1) 6) ((0 1) 3) (0 1) 10) (((2 3) 1) (0 1) 8) ((0 1) 5) -1 -2)
-      (lambda () (set! (caddar x) (list 0 1)) x))
+      (^[] (set! (caddar x) (list 0 1)) x))
 (test "(setter cadddr)" '(((((1 3) 14) (0 1) 6) ((0 1) 3) (0 1) 10) (((2 3) 1) (0 1) 8) ((0 1) 5) (0 1) -2)
-      (lambda () (set! (cadddr x) (list 0 1)) x))
+      (^[] (set! (cadddr x) (list 0 1)) x))
 (test "(setter cdaaar)" '(((((1 3) 0 1) (0 1) 6) ((0 1) 3) (0 1) 10) (((2 3) 1) (0 1) 8) ((0 1) 5) (0 1) -2)
-      (lambda () (set! (cdaaar x) (list 0 1)) x))
+      (^[] (set! (cdaaar x) (list 0 1)) x))
 (test "(setter cdaadr)" '(((((1 3) 0 1) (0 1) 6) ((0 1) 3) (0 1) 10) (((2 3) 0 1) (0 1) 8) ((0 1) 5) (0 1) -2)
-      (lambda () (set! (cdaadr x) (list 0 1)) x))
+      (^[] (set! (cdaadr x) (list 0 1)) x))
 (test "(setter cdadar)" '(((((1 3) 0 1) (0 1) 6) ((0 1) 0 1) (0 1) 10) (((2 3) 0 1) (0 1) 8) ((0 1) 5) (0 1) -2)
-      (lambda () (set! (cdadar x) (list 0 1)) x))
+      (^[] (set! (cdadar x) (list 0 1)) x))
 (test "(setter cdaddr)" '(((((1 3) 0 1) (0 1) 6) ((0 1) 0 1) (0 1) 10) (((2 3) 0 1) (0 1) 8) ((0 1) 0 1) (0 1) -2)
-      (lambda () (set! (cdaddr x) (list 0 1)) x))
+      (^[] (set! (cdaddr x) (list 0 1)) x))
 (test "(setter cddaar)" '(((((1 3) 0 1) (0 1) 0 1) ((0 1) 0 1) (0 1) 10) (((2 3) 0 1) (0 1) 8) ((0 1) 0 1) (0 1) -2)
-      (lambda () (set! (cddaar x) (list 0 1)) x))
+      (^[] (set! (cddaar x) (list 0 1)) x))
 (test "(setter cddadr)" '(((((1 3) 0 1) (0 1) 0 1) ((0 1) 0 1) (0 1) 10) (((2 3) 0 1) (0 1) 0 1) ((0 1) 0 1) (0 1) -2)
-      (lambda () (set! (cddadr x) (list 0 1)) x))
+      (^[] (set! (cddadr x) (list 0 1)) x))
 (test "(setter cdddar)" '(((((1 3) 0 1) (0 1) 0 1) ((0 1) 0 1) (0 1) 0 1) (((2 3) 0 1) (0 1) 0 1) ((0 1) 0 1) (0 1) -2)
-      (lambda () (set! (cdddar x) (list 0 1)) x))
+      (^[] (set! (cdddar x) (list 0 1)) x))
 (test "(setter cddddr)" '(((((1 3) 0 1) (0 1) 0 1) ((0 1) 0 1) (0 1) 0 1) (((2 3) 0 1) (0 1) 0 1) ((0 1) 0 1) (0 1) 0 1)
-      (lambda () (set! (cddddr x) (list 0 1)) x))
+      (^[] (set! (cddddr x) (list 0 1)) x))
 
 (define x '#(1 2 3 4 5))
 (test "(setter vector-ref)" '#(1 2 3 #f 5)
-      (lambda () (set! (vector-ref x 3) #f) x))
+      (^[] (set! (vector-ref x 3) #f) x))
 
 (define x (string-copy "abcde"))
 (test "(setter string-ref)" "abcQe"
-      (lambda () (set! (string-ref x 3) #\Q) x))
+      (^[] (set! (string-ref x 3) #\Q) x))
 
 (define (set-kar! p v) (set-car! p v))
-(define kar (getter-with-setter (lambda (p) (car p)) set-kar!))
+(define kar (getter-with-setter (^p (car p)) set-kar!))
 
 (define x (cons 1 2))
-(test "(setter kar)" '(3 . 2) (lambda () (set! (kar x) 3) x))
+(test "(setter kar)" '(3 . 2) (^[] (set! (kar x) 3) x))
 
 ;; see if it works as the normal set!
-(test "set!" '#f (lambda () (set! x #f) x))
+(test "set!" '#f (^[] (set! x #f) x))
 
 ;;-----------------------------------------------------------------------
 (test-section "srfi-26")
@@ -617,9 +614,9 @@
 (test* "cut list 1 <> 3 <>" '(1 2 3 4) ((cut list 1 <> 3 <>) 2 4))
 (test* "cut list 1 <> 3 <...>" '(1 2 3 4 5 6) ((cut list 1 <> 3 <...>) 2 4 5 6))
 (test* "cut (eval order)" '(ok)
-       (let* ((x 'wrong) (y (cut list x))) (set! x 'ok) (y)))
+       (let* ([x 'wrong] [y (cut list x)]) (set! x 'ok) (y)))
 (test* "cut (eval order)" 2
-       (let ((a 0))
+       (let ([a 0])
          (map (cut + (begin (set! a (+ a 1)) a) <>)
               '(1 2))
          a))
@@ -636,9 +633,9 @@
 (test* "cute list 1 <> 3 <>" '(1 2 3 4) ((cute list 1 <> 3 <>) 2 4))
 (test* "cute list 1 <> 3 <...>" '(1 2 3 4 5 6) ((cute list 1 <> 3 <...>) 2 4 5 6))
 (test* "cute (eval order)" '(ok)
-       (let* ((x 'ok) (y (cute list x))) (set! x 'wrong) (y)))
+       (let* ([x 'ok] [y (cute list x)]) (set! x 'wrong) (y)))
 (test* "cute (eval order)" 1
-       (let ((a 0))
+       (let ([a 0])
          (map (cute + (begin (set! a (+ a 1)) a) <>)
               '(1 2))
          a))
@@ -660,8 +657,8 @@
                     (goodbye . "Goodbye, ~a.")))
            ((fr) . ((time . "~1@*~a, c'est ~a.")
                     (goodbye . "Au revoir, ~a."))))))
-    (for-each (lambda (translation)
-                (let ((bundle-name (cons 'hello-program (car translation))))
+    (for-each (^[translation]
+                (let ([bundle-name (cons 'hello-program (car translation))])
                   (if (not (load-bundle! bundle-name))
                     (begin
                       (declare-bundle! bundle-name (cdr translation))
@@ -669,12 +666,12 @@
               translations))
 
   (define localized-message
-    (lambda (message-name . args)
+    (^[message-name . args]
       (apply format (cons (localized-template 'hello-program
                                               message-name)
                           args))))
 
-  (let ((myname "Fred"))
+  (let ([myname "Fred"])
     (test* "localized-message (en)"
            '("Its 12:00, Fred."  "Goodbye, Fred.")
            (begin
@@ -696,14 +693,13 @@
 (test-section "srfi-30")
 
 (test "srfi-30" 1
-      (lambda () #|hohoho|# 1))
+      (^[] #|hohoho|# 1))
 
 (test "srfi-30" '(1)
-      (lambda ()
-        '(#|hohoho|# 1)))
+      (^[] '(#|hohoho|# 1)))
 
 (test "srfi-30, multiline" '(1)
-      (lambda ()
+      (^[]
         '(
           #|
           hohoho
@@ -711,7 +707,7 @@
           1)))
 
 (test "srfi-30, multiline" '(1)
-      (lambda ()
+      (^[]
         '(1
           #|
           hohoho
@@ -719,7 +715,7 @@
           )))
 
 (test "srfi-30, multiline" '()
-      (lambda ()
+      (^[]
         '(
           #|
           hohoho
@@ -727,19 +723,19 @@
           )))
 
 (test "srfi-30, nesting" '(1)
-      (lambda ()
+      (^[]
         '(#| nested #| nested |# nested |# 1)))
 
 (test "srfi-30, nesting" '(1)
-      (lambda ()
+      (^[]
         '(#| nested #| nested; |# nested |# 1)))
 
 (test "srfi-30, nesting" '(1)
-      (lambda ()
+      (^[]
         '(#|##|###|#|||#### ||#|||||#|#1)))
 
 (test "srfi-30, intertwined" '(1)
-      (lambda ()
+      (^[]
         '(;; #| this is a single-line comment
           1 #|
           ;; this is a multi-line comment #|
@@ -751,12 +747,12 @@
               )))
 
 (test "srfi-30, dot syntax" '(1 . 1)
-      (lambda ()
+      (^[]
         '(1 . #|foo bar|#1)))
 
 (test "srfi-30, quasiquote" '(1 #(2 3))
-      (lambda ()
-        (let ((x 1) (y 2))
+      (^[]
+        (let ([x 1] [y 2])
           `(#|foo|# ,x #|foo|# #(#|,|# ,y ,(+ #|x|# x y #|y|#) #|foo|#)))))
 
 ;;-----------------------------------------------------------------------
@@ -772,18 +768,16 @@
                    l
                    (g (- k 1) (* k l)))) n 1)))
 
-(test "srfi-31" 1 (lambda () (f 0)))
-(test "srfi-31" 3628800 (lambda () (f 10)))
+(test "srfi-31" 1 (^[] (f 0)))
+(test "srfi-31" 3628800 (^[] (f 10)))
 
 (test "srfi-31" "11111"
-      (lambda ()
-        (with-output-to-string
-          (lambda ()
-            (let loop ((i 0)
-                       (stream (rec s (cons 1 (delay s)))))
-              (when (< i 5)
-                (display (car stream))
-                (loop (+ i 1) (force (cdr stream)))))))))
+      (^[] (with-output-to-string
+             (^[] (let loop ([i 0]
+                             [stream (rec s (cons 1 (delay s)))])
+                    (when (< i 5)
+                      (display (car stream))
+                      (loop (+ i 1) (force (cdr stream)))))))))
 
 ;;-----------------------------------------------------------------------
 (test-section "srfi-37")
@@ -792,28 +786,28 @@
 
 (define options
   (list (option '(#\l "long-display") #f #f
-                (lambda (option name arg seed1 seed2)
+                (^[option name arg seed1 seed2]
                   (values (cons 'l seed1) seed2)))
         (option '(#\o "output-file") #t #f
-                (lambda (option name arg seed1 seed2)
+                (^[option name arg seed1 seed2]
                   (values (acons 'o arg seed1) seed2)))
         (option '(#\d "debug") #f #t
-                (lambda (option name arg seed1 seed2)
+                (^[option name arg seed1 seed2]
                   (values (acons 'd arg seed1) seed2)))
         (option '(#\b "batch") #f #f
-                (lambda (option name arg seed1 seed2)
+                (^[option name arg seed1 seed2]
                   (values (cons 'b seed1) seed2)))
         (option '(#\i "interactive") #f #f
-                (lambda (option name arg seed1 seed2)
+                (^[option name arg seed1 seed2]
                   (values (cons 'i seed1) seed2)))
         ))
 
 (define (test-options . args)
   (receive (opts operands)
       (args-fold args options
-                 (lambda (option name arg seed1 seed2) ;; unrecognized-proc
+                 (^[option name arg seed1 seed2] ;; unrecognized-proc
                    (values (acons '? name seed1) seed2))
-                 (lambda (arg seed1 seed2)      ;; operand-proc
+                 (^[arg seed1 seed2]      ;; operand-proc
                    (values seed1 (cons arg seed2)))
                  '() '())
     (list (reverse opts) (reverse operands))))
@@ -856,11 +850,11 @@
 ;; tests took from examples of srfi-42 reference implementation.
 
 (test* "do-ec" 1
-       (let ((x 0)) (do-ec (set! x (+ x 1))) x))
+       (let ([x 0]) (do-ec (set! x (+ x 1))) x))
 (test* "do-ec" 10
-       (let ((x 0)) (do-ec (:range i 10) (set! x (+ x 1))) x))
+       (let ([x 0]) (do-ec (:range i 10) (set! x (+ x 1))) x))
 (test* "do-ec" 45
-       (let ((x 0)) (do-ec (:range n 10) (:range k n) (set! x (+ x 1))) x))
+       (let ([x 0]) (do-ec (:range n 10) (:range k n) (set! x (+ x 1))) x))
 
 
 (test* "list-ec" '(1)
@@ -960,11 +954,11 @@
 (test* "every-ec" #f (every?-ec (:range i 2 4) (even? i)))
 
 (test* "fold-ec" 285
-       (let ((sum-sqr (lambda (x result) (+ result (* x x)))))
+       (let ([sum-sqr (^[x result] (+ result (* x x)))])
          (fold-ec 0 (:range i 10) i sum-sqr)))
 (test* "fold3-ec" 284
-       (let ((minus-1 (lambda (x) (- x 1)))
-             (sum-sqr (lambda (x result) (+ result (* x x)))))
+       (let ([minus-1 (^[x] (- x 1))]
+             [sum-sqr (^[x result] (+ result (* x x)))])
          (fold3-ec (error "wrong") (:range i 10) i minus-1 sum-sqr)))
 (test* "fold3-ec" 'infinity
        (fold3-ec 'infinity (:range i 0) i min min))
@@ -1044,10 +1038,9 @@
 (test* ":port" (list-ec (:range n 10) n)
        (begin
          (with-output-to-file "tmp1.o"
-           (lambda ()
-             (do-ec (:range n 10) (begin (write n) (newline)))))
+           (^[] (do-ec (:range n 10) (begin (write n) (newline)))))
          (call-with-input-file "tmp1.o"
-           (lambda (port) (list-ec (:port x port read) x)))))
+           (^[port] (list-ec (:port x port read) x)))))
 
 (test* ":generator" (list-ec (:range n 10) (cons (- 9 n) n))
        ;; we can't load gauche.generator yet
@@ -1098,29 +1091,25 @@
                         (>= i 5))
                 (list i j)))
 (test* ":while stopping loop" 5
-       (let ((n 0))
+       (rlet1 n 0
          (do-ec (:while (:range i 1 10) (begin (set! n (+ n 1)) (< i 5)))
-                (if #f #f))
-         n))
+                (if #f #f))))
 (test* ":until stopping loop" 5
-       (let ((n 0))
+       (rlet1 n 0
          (do-ec (:until (:range i 1 10) (begin (set! n (+ n 1)) (>= i 5)))
-                (if #f #f))
-         n))
+                (if #f #f))))
 (test* ":while stopping loop" 5
-       (let ((n 0))
+       (rlet1 n 0
          (do-ec (:while (:parallel (:range i 1 10)
                                    (:do () (begin (set! n (+ n 1)) #t) ()))
                         (< i 5))
-                (if #f #f))
-         n))
+                (if #f #f))))
 (test* ":until stopping loop" 5
-       (let ((n 0))
+       (rlet1 n 0
          (do-ec (:until (:parallel (:range i 1 10)
                                    (:do () (begin (set! n (+ n 1)) #t) ()))
                         (>= i 5))
-                (if #f #f))
-         n))
+                (if #f #f))))
 
 (test* ": list" '(a b)     (list-ec (: c '(a b)) c))
 (test* ": list" '(a b c d) (list-ec (: c '(a b) '(c d)) c))
@@ -1139,27 +1128,27 @@
 (test* ": range" '(1 4 7) (list-ec (: i 1 9 3) i))
 
 (test* ": real-range" '(0. 0.2 0.4 0.6 0.8) (list-ec (: i 0.0 1.0 0.2) i)
-       (lambda (x y)
-         (every (lambda (p q) (< (abs (- p q)) 1.0e-5)) x y)))
+       (^[x y]
+         (every (^[p q] (< (abs (- p q)) 1.0e-5)) x y)))
 (test* ": char" '(#\a #\b #\c) (list-ec (: c #\a #\c) c))
 
 (sys-system "rm -f tmp1.o")
 (test* ": port" (list-ec (:range n 10) n)
        (begin
          (with-output-to-file "tmp1.o"
-           (lambda ()
+           (^[]
              (do-ec (:range n 10) (begin (write n) (newline)))))
          (call-with-input-file "tmp1.o"
-           (lambda (port) (list-ec (: x port read) x)))))
+           (^[port] (list-ec (: x port read) x)))))
              
 (sys-system "rm -f tmp1.o")
 (test* ": port" (list-ec (:range n 10) n)
        (begin
          (with-output-to-file "tmp1.o"
-           (lambda ()
+           (^[]
              (do-ec (:range n 10) (begin (write n) (newline)))))
          (call-with-input-file "tmp1.o"
-           (lambda (port) (list-ec (: x port) x)))))       
+           (^[port] (list-ec (: x port) x)))))       
 
 (sys-system "rm -f tmp1.o")
 
@@ -1173,9 +1162,9 @@
        (list-ec (:range i (index j) 0 -3 -1) (list i j)) )
 (test* ":real-range index" '((0. 0) (0.2 1) (0.4 2) (0.6 3) (0.8 4))
        (list-ec (:real-range i (index j) 0 1 0.2) (list i j))
-       (lambda (x y)
-         (every (lambda (p q) (and (< (abs (- (car p) (car q))) 1e-5)
-                                   (= (cadr p) (cadr q))))
+       (^[x y]
+         (every (^[p q] (and (< (abs (- (car p) (car q))) 1e-5)
+                             (= (cadr p) (cadr q))))
                 x y)))
 (test* ":char-range index" '((#\a 0) (#\b 1) (#\c 2))
        (list-ec (:char-range c (index i) #\a #\c) (list c i)) )
@@ -1186,10 +1175,10 @@
        '((0 0) (1 1) (2 2) (3 3) (4 4) (5 5) (6 6) (7 7) (8 8) (9 9))
        (begin
          (with-output-to-file "tmp1.o"
-           (lambda ()
+           (^[]
              (do-ec (:range n 10) (begin (write n) (newline)))))
          (call-with-input-file "tmp1.o"
-           (lambda (port) (list-ec (: x (index i) port) (list x i))))))
+           (^[port] (list-ec (: x (index i) port) (list x i))))))
 (sys-system "rm -f tmp1.o")
 
 (test* "example 1" '(0 1 4 9 16)
@@ -1223,7 +1212,7 @@
 (use srfi-4)
 (let ()
   (define (eratosthenes n) ; primes in {2..n-1} for n >= 1
-    (let ((p? (make-u8vector n 1)))
+    (let ([p? (make-u8vector n 1)])
       (do-ec (:range k 2 n)
              (if (= (u8vector-ref p? k) 1))
              (:range i (* 2 k) n k)
@@ -1279,25 +1268,25 @@
 
 (let ()
   (define (read-line port) ; next line (incl. #\newline) of port
-    (let ((line
+    (let ([line
            (string-ec 
             (:until (:port c port read-char)
                     (char=? c #\newline) )
-            c )))
+            c )])
       (if (string=? line "")
         (read-char port) ; eof-object
         line )))
 
   (define (read-lines filename) ; list of all lines
     (call-with-input-file filename
-      (lambda (port)
+      (^[port]
         (list-ec (:port line port read-line) line) )))
 
   (sys-system "rm -f tmp1.o")
   (test* "read-lines" (list-ec (:char-range c #\0 #\9) (string c #\newline))
          (begin
            (with-output-to-file "tmp1.o"
-             (lambda ()
+             (^[]
                (do-ec (:range n 10) (begin (write n) (newline)))))
            (read-lines "tmp1.o")))
   )
