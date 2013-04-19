@@ -738,6 +738,10 @@
      (errorf "bad symbol argument to ~s: ~s: must be either 'before or 'after"
              self s)]))
 
+;; Char-set membership
+(define-method object-apply ((self <char-set>) (c <char>))
+  (char-set-contains? self c))
+
 ;; A trick to let a condition type behave its own predicate
 (define-method object-apply ((type <condition-meta>) obj)
   (condition-has-type? obj type))

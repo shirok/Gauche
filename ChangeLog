@@ -1,3 +1,7 @@
+2013-04-19  Shiro Kawai  <shiro@acm.org>
+
+	* src/libobj.scm (object-apply): Made char-set applicable.
+
 2013-04-18  Shiro Kawai  <shiro@acm.org>
 
 	* lib/dbm.scm (call-with-iterator, coerce-to): Added missing

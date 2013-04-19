@@ -4605,6 +4605,9 @@ The class implements the collection protocol (@xref{Collection framework}),
 so that the standard collection methods provided in the 
 @code{gauche.collection} module can be used.
 
+An instance of @code{<char-set>} is applicable to a character,
+and works as a membership predicate; see @code{char-set-contains?} below.
+
 Further operations, such as set algebra, is defined in SRFI-14
 module (@xref{Character-set library}).
 @c JP
@@ -4614,6 +4617,10 @@ Gaucheは文字集合オブジェクトのサポートと、
 
 コレクションプロトコル (@ref{Collection framework}参照) を実装しているので、
 @code{gauche.collection}で提供される標準のコレクションメソッドが使えます。
+
+@code{<char-set>}のインスタンスは文字に関数のように適用することができ、
+その文字が文字集合に属するかどうかを判定する述語として機能します。
+下記の@code{char-set-contains?}を参照してください。
 
 文字集合に関する他の操作、例えば集合演算などは、SRFI-14モジュール
 (@ref{Character-set library}参照) で提供されています。
@@ -4756,6 +4763,24 @@ Returns true if and only if a character set object
 @c COMMON
 @end example
 @end defun
+
+@deffn {Generic application} @var{char-set} @var{char}
+@c EN
+A char-set object can be applied to a character, and it
+works just like @code{(char-set-contains? char-set char)}.
+@c JP
+文字集合オブジェクトは文字に適用されると、
+@code{(char-set-contains? char-set char)} のように振る舞います。
+@c COMMON
+
+@example
+(#[a-z] #\a) @result{} #t
+(#[a-z] #\A) @result{} #f
+
+(use gauche.collection)
+(filter #[a-z] "CharSet") @result{} (#\h #\a #\r #\e #\t)
+@end example
+@end deffn
 
 @defun char-set char @dots{}
 [SRFI-14]
@@ -6597,7 +6622,7 @@ you may want to check @code{grxmatch} in @code{gauche.generator}
 @c COMMON
 @end defun
 
-@deftp {Generic application} @var{regexp} @var{string}
+@deffn {Generic application} @var{regexp} @var{string}
 @c EN
 A regular expression object can be applied directly to the string.
 This works the same as @code{(rxmatch @var{regexp} @var{string})},
@@ -6609,7 +6634,7 @@ generic mechanism used to implement this.
 表記が短くて済みます。この機能は@ref{Applicable objects} で述べているメカニズムを
 使って実装されています。
 @c COMMON
-@end deftp
+@end deffn
 
 @c EN
 @subsubheading Accessing the match result
@@ -6770,9 +6795,9 @@ gosh> (rxmatch->string #/(\w+)@@([\w.]+)/ "foo@@example.com" 'before 2)
 @end example
 @end defun
 
-@deftp {Generic application} @var{regmatch} :optional @var{index}
-@deftpx {Generic application} @var{regmatch} @code{'before} :optional @var{index}
-@deftpx {Generic application} @var{regmatch} @code{'after} :optional @var{index}
+@deffn {Generic application} @var{regmatch} :optional @var{index}
+@deffnx {Generic application} @var{regmatch} @code{'before} :optional @var{index}
+@deffnx {Generic application} @var{regmatch} @code{'after} :optional @var{index}
 @c EN
 A regmatch object can be applied directly to the integer index,
 or a symbol @code{before} or @code{after}.
@@ -6816,7 +6841,7 @@ generic mechanism used to implement this.
   (match 'after 'integer)   @result{} ".14..."
   (match 'before 'fraction) @result{} "pi=3."
 @end example
-@end deftp
+@end deffn
 
 @defun rxmatch-num-matches match
 @defunx rxmatch-named-groups match

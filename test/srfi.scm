@@ -510,6 +510,9 @@
            (and (char-set= d (->char-set "0123456789"))
                 (char-set= i (->char-set "abcdefABCDEF"))))))
 
+(test* "char-set object-apply" '(#t #f)
+       (list (#[a-z] #\a) (#[a-z] #\A)))
+
 ;;-----------------------------------------------------------------------
 ;; srfi-16 case-lambda : moved to procedure.scm (builtin)
 
