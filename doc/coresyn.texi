@@ -4,17 +4,18 @@
 
 @c ----------------------------------------------------------------------
 @menu
-* Lexical structure::
-* Literals::
-* Making Procedures::
-* Assignments::
-* Conditionals::
-* Binding constructs::
-* Sequencing::
-* Iteration::
-* Quasiquotation::
-* Definitions::
-* Modules::
+* Lexical structure::           
+* Literals::                    
+* Making Procedures::           
+* Assignments::                 
+* Conditionals::                
+* Binding constructs::          
+* Sequencing::                  
+* Iteration::                   
+* Quasiquotation::              
+* Definitions::                 
+* Inclusions::                  
+* Modules::                     
 @end menu
 
 @node Lexical structure, Literals, Core syntax, Core syntax
@@ -2689,7 +2690,7 @@ mutating such structures.
 @c COMMON
 
 @c ----------------------------------------------------------------------
-@node Definitions, Modules, Quasiquotation, Core syntax
+@node Definitions, Inclusions, Quasiquotation, Core syntax
 @section Definitions
 @c NODE 定義
 
@@ -2834,7 +2835,117 @@ the current module, you can use @code{global-variable-bound?}
 @c COMMON
 
 @c ----------------------------------------------------------------------
-@node Modules,  , Definitions, Core syntax
+@node Inclusions, Modules, Definitions, Core syntax
+@section Inclusions
+@c NODE インクルード
+
+@defspec include filename @dots{}
+@defspecx include-ci filename @dots{}
+[R7RS]
+Reads @var{filename} @dots{} at compile-time, and insert their
+contents as if the forms are placed in the includer's source file,
+surrounded by @code{begin}.  The @code{include} form reads files
+as is, while @code{include-ci} reads files in case-insensitive
+way, as if @code{#!fold-case} is specified in the beginning of the
+file (@xref{Case-sensitivity}).
+
+The coding magic comment in each file is honored while reading
+that file (@xref{Multibyte scripts}).
+
+If @var{filename} is a relative path, the file is first searched
+relative to the file @code{include} form appears.  If @code{include}
+form isn't appear in a file (e.g. from REPL, or invoked via
+@code{eval}), the file is searched relative to the process's current
+working directory.
+
+Example: Suppose a file @file{a.scm} contains the following code:
+
+@example
+(define x 0)
+(define y 1)
+@end example
+
+You can include this file into another source, like this:
+
+@example
+(define (foo)
+  (include "a.scm")
+  (list x y))
+@end example
+
+It works as if the source is written as follows:
+
+@example
+(define (foo)
+  (begin
+   (define x 0)
+   (define y 1))
+  (list x y))
+@end example
+@end defspec
+
+Gauche has other means to incorporate source code from
+another files.  Here's the comparison.
+
+@table @asis
+@item @code{require} (@code{use} and @code{extend} calls @code{require} internally)
+@itemize
+@item
+Works only in toplevel context, while @code{include} can be
+anywhere.
+@item
+Reads the file only once (second and later @code{require} on the
+same file becomes no-op), while @code{include} reads the file
+every place it appears.
+@item
+The file is searched from @code{*load-path*}.  The location
+of the file @code{require} form appears doesn't matter.
+(You can add directories relative to the requiring file
+using the @code{:relative} flag in @code{add-load-path}, though).
+@item
+Even if the current module is changed by @code{select-module}
+inside the required file, it is only effective while the
+required file is read.  On the other hand, @code{include}
+inserts any S-expressions in the included file to the
+place @code{include} appears, so the effect of @code{select-module}
+persists after @code{include} form (Note: Encoding magic comment
+and @code{#!fold-case}/@code{#!no-fold-case} are dealt with by
+the reader, so those effect is contained in the file even with
+@code{include}).
+@end itemize
+
+@item @code{load}
+@itemize
+@item
+Works only in toplevel context, while @code{include} can be
+anywhere.
+@item
+Works at runtime, while @code{include} works at compile-time.
+@item
+The file is searched from @code{*load-path*} by default,
+or the paths specified to the argument.
+@item
+As the case with @code{require}, change of the current module
+won't persist after @code{load}.
+@end itemize
+
+@end table
+
+Usually, @code{require} (or @code{use} and @code{extend}) are
+better way to incorporate sources in other files.  The @code{include}
+form is mainly for the tricks that can't be acheved with
+@code{require}.  For example, you have a third-party R5RS code
+and you want to wrap it with Gauche module system.  Using @code{include},
+you don't need to change the third party's code:
+
+@example
+(define-module third-party-module
+  (export proc ...)
+  (include "third-party-source.scm"))
+@end example
+
+@c ----------------------------------------------------------------------
+@node Modules,  , Inclusions, Core syntax
 @section Modules
 @c NODE モジュール
 
@@ -2849,13 +2960,13 @@ Gaucheで使われているモジュールの書法については@ref{Writing G
 @c COMMON
 
 @menu
-* Module semantics::
-* Modules and libraries::
-* Defining and selecting modules::
-* Using modules::
-* Module inheritance::
-* Module introspection::
-* Predefined modules::
+* Module semantics::            
+* Modules and libraries::       
+* Defining and selecting modules::  
+* Using modules::               
+* Module inheritance::          
+* Module introspection::        
+* Predefined modules::          
 @end menu
 
 @node Module semantics, Modules and libraries, Modules, Modules

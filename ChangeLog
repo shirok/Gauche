@@ -1,3 +1,9 @@
+2013-04-21  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.scm: Added include-ci support, and allows multiple
+	  files with include/include-ci, as R7RS.
+	* doc/coresyn.texi: Added docs for include and include-ci.
+
 2013-04-19  Shiro Kawai  <shiro@acm.org>
 
 	* src/libobj.scm (object-apply): Made char-set applicable.

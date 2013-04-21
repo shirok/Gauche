@@ -1545,7 +1545,7 @@
   (pass1/body-rec (map list exprs) '() cenv))
 
 ;; Walks exprs and gathers internal definitions into intdefs in the form
-;; of ((var init) ...).  We need to expand macros, 'begin's and 'include's
+;; of ((var init) ...).  We need to expand macros and 'begin's
 ;; that appears in the toplevel of exprs, for it may insert more internal
 ;; definitions.
 (define (pass1/body-rec exprs intdefs cenv)
@@ -1573,8 +1573,11 @@
              (pass1/body-rec (append (imap (cut cons <> src) args) rest)
                              intdefs cenv)]
             [(global-eq? head 'include cenv)
-             (pass1/body-rec (cons (pass1/expand-include args cenv) rest)
-                             intdefs cenv)]
+             (let1 sexpr&srcs (pass1/expand-include args cenv #f)
+               (pass1/body-rec (append sexpr&srcs rest) intdefs cenv))]
+            [(global-eq? head 'include-ci cenv)
+             (let1 sexpr&srcs (pass1/expand-include args cenv #t)
+               (pass1/body-rec (append sexpr&srcs rest) intdefs cenv))]
             [(identifier? head)
              (or (and-let* ([gloc (id->bound-gloc head)]
                             [gval (gloc-ref gloc)]
@@ -1705,6 +1708,7 @@
 (define lazy.   (global-id 'lazy))
 (define eager.  (global-id 'eager))
 (define values. (global-id 'values))
+(define begin.  (global-id 'begin))
 
 ;; Definitions ........................................
 
@@ -2729,29 +2733,33 @@
 ;; Include .............................................
 
 (define-pass1-syntax (include form cenv) :gauche
-  (match-let1 (form . src) (pass1/expand-include (cdr form) cenv)
-    (pass1 form (cenv-swap-source cenv src))))
+  ($seq (map (^p (pass1 (car p) (cenv-swap-source cenv (cdr p))))
+             (pass1/expand-include (cdr form) cenv #f))))
 
-;; Returns a pair of Sexpr and the filename.
-(define (pass1/expand-include args cenv)
-  (match args
-    [((? string? filename)) (pass1/do-include filename (cenv-source-path cenv))]
-    [(x) (error "include requires literal string, but got:" x)]
-    [_   (error "syntax-error: malformed include:" `(include ,@args))]))
+(define-pass1-syntax (include-ci form cenv) :gauche
+  ($seq (map (^p (pass1 (car p) (cenv-swap-source cenv (cdr p))))
+             (pass1/expand-include (cdr form) cenv #f))))
 
-(define (pass1/do-include filename includer-path)
-  (let1 iport (pass1/open-include-file filename includer-path)
-    (pass1/report-include iport #t)
-    (unwind-protect
-        (let loop ([r (read iport)] [forms '()])
-          (if (eof-object? r)
-            `((begin ,@(reverse forms)) . ,(port-name iport))
-            (loop (read iport) (cons r forms))))
-      (pass1/report-include iport #f)
-      (close-input-port iport))))
-
-;; If filename is relative, we try to resolve it with the source file
-;; if we can figure it out.
+;; Returns  ((Sexpr . Filename) ...)
+(define (pass1/expand-include args cenv case-fold?)
+  (define (do-include filename)
+    (unless (string? filename)
+      (error "include requires literal string, but got:" filename))
+    (let1 iport (pass1/open-include-file filename (cenv-source-path cenv))
+      (port-case-fold-set! iport case-fold?)
+      (pass1/report-include iport #t)
+      (unwind-protect
+          ;; This may be replaced using generator->list once we release 0.9.4.
+          (let loop ([r (read iport)] [forms '()])
+            (if (eof-object? r)
+              `((begin ,@(reverse forms)) . ,(port-name iport))
+              (loop (read iport) (cons r forms))))
+        (pass1/report-include iport #f)
+        (close-input-port iport))))
+  (map do-include args))
+  
+;; If filename is relative, we try to resolve it with the source file.
+;; whenever possible.
 (define (pass1/open-include-file path includer-path)
   ;; We can't use cond-expand, since a host that compiles this file
   ;; may not be the same as the host that runs this compiler.
