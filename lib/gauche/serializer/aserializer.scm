@@ -116,8 +116,8 @@
                (write-rec cinfo)
                (for-each (lambda (s)
                            (if (slot-bound? obj s)
-                               (write-rec (slot-ref obj s))
-                               (write-rec #f serializer))) ;;FIXME
+                             (write-rec (slot-ref obj s))
+                             (write-rec #f))) ;;FIXME
                          (cdr cinfo))))
             (else
              (error "unserializable object:" obj))))
