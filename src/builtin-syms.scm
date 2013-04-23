@@ -85,6 +85,7 @@
     (current-module            SCM_SYM_CURRENT_MODULE)
     (import                    SCM_SYM_IMPORT)
     (export                    SCM_SYM_EXPORT)
+    (rename                    SCM_SYM_RENAME)
     (define-macro              SCM_SYM_DEFINE_MACRO)
     (define-syntax             SCM_SYM_DEFINE_SYNTAX)
     (let-syntax                SCM_SYM_LET_SYNTAX)

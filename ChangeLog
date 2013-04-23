@@ -13,6 +13,9 @@
 	  The 'exported' list in ScmModule is dropped; if you want a
 	  list of exported symbols, call Scm_ModuleExports() to calculate
 	  the list.
+	  NB: Scm_ExportSymbols no longer returns a list of exported symbols.
+	* src/module.c (Scm_ExportSymbols): Allow export-time renaming,
+	  as specified in R[67]RS.
 
 2013-04-21  Shiro Kawai  <shiro@acm.org>
 

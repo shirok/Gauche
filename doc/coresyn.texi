@@ -3341,13 +3341,35 @@ Gaucheではモジュールはコンパイル時に静的に決定されます�
 @subsection Using modules
 @c NODE モジュールの使用
 
-@defspec export symbol @dots{}
+@defspec export spec @dots{}
 @c EN
-Makes bindings of @var{symbol}s in the current module available
+Makes bindings specified by each @var{spec} available
 to modules that imports the current module.
+
+Each @var{spec} can be either one of the following forms,
+where @var{name} and @var{exported-name} are symbols.
+
+@table @code
+@item @var{name}
+The binding with @var{name} is exported.
+@item (rename @var{name} @var{exported-name})
+The binding with @var{naem} is exported under an alias @var{exported-name}.
+@end table
+
+@var{spec}
 @c JP
-カレントモジュールの中で、シンボル@var{symbol}に対応する束縛をexportします。
+カレントモジュールから、@var{spec}で指定される束縛をexportします。
 exportされた束縛は、カレントモジュールをimportしたモジュール中で見えるようになります。
+
+各@var{spec}は次のどちらかの形式でなければなりません。@var{name}と@var{export-name}
+はシンボルです。
+
+@table @code
+@item @var{name}
+名前@var{name}を持つ束縛がexportされます。
+@item (rename @var{name} @var{exported-name})
+名前@var{name}を持つ束縛が、@var{exported-name}という別名でexportされます。
+@end table
 @c COMMON
 @end defspec
 

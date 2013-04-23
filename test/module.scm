@@ -269,6 +269,35 @@
         (eval '(begin (nn:n:reset-result) (nn:p 1) (nn:p 2) (g))
               (find-module 'Ob))))
 
+(define-module Oc
+  (export ichi (rename shi yon) go)
+  (define ichi 1)
+  (define shi 4)
+  (define go (+ ichi shi))
+  (define kyu (+ shi go))
+  (export (rename kyu ku)))
+(define-module Oc-1
+  (import Oc))
+
+(test "export-time renaming" '(1 4 5 9 #f #f)
+      (lambda ()
+        (let [(m (find-module 'Oc-1))]
+          (list (global-variable-ref m 'ichi #f)
+                (global-variable-ref m 'yon #f)
+                (global-variable-ref m 'go #f)
+                (global-variable-ref m 'ku #f)
+                (global-variable-ref m 'shi #f)
+                (global-variable-ref m 'kyu #f)))))
+
+(define-module Od
+  (import (Oc :rename ((ku kokono)) :prefix mm:)))
+
+(test "export-time renaming plus import renaming" '(#f 9)
+      (lambda ()
+        (let [(m (find-module 'Od))]
+          (list (global-variable-ref m 'mm:ku #f)
+                (global-variable-ref m 'mm:kokono #f)))))
+
 ;;------------------------------------------------------------------
 ;; select-module, and restoration in load().
 

@@ -541,47 +541,56 @@ ScmObj Scm_ImportModules(ScmModule *module, ScmObj list)
 /*
  * Export
  */
-ScmObj Scm_ExportSymbols(ScmModule *module, ScmObj list)
+/* <spec>  :: <name> | (rename <name> <exported-name>) */
+ScmObj Scm_ExportSymbols(ScmModule *module, ScmObj specs)
 {
-    ScmObj lp, syms, badsym = SCM_FALSE;
+    ScmObj lp, badsym = SCM_FALSE;
     int error = FALSE;
-    ScmSymbol *s;
+    ScmSymbol *name, *exported_name;
     ScmDictEntry *e;
     ScmGloc *g;
 
-    /* We used to do something like
-     *  (set! (module-exports module)
-     *        (delete-duplicates (union (module-exports module) list)))
-     * This was slow when we exported lots of symbols.  As of 0.8.6,
-     * each GLOC has exported flag, so we can check whether a binding
-     * is exported or not in O(1).   Module-exports list is kept
-     * for backward compatibility.
-     */
-    (void)SCM_INTERNAL_MUTEX_LOCK(modules.mutex);
-    SCM_FOR_EACH(lp, list) {
-        if (!SCM_SYMBOLP(SCM_CAR(lp))) {
-            error = TRUE;
-            badsym = SCM_CAR(lp);
-            break;
+    /* Check input first */
+    SCM_FOR_EACH(lp, specs) {
+        ScmObj spec = SCM_CAR(lp);
+        if (!(SCM_SYMBOLP(spec)
+              || (SCM_PAIRP(spec) && SCM_PAIRP(SCM_CDR(spec))
+                  && SCM_PAIRP(SCM_CDDR(spec))
+                  && SCM_NULLP(SCM_CDR(SCM_CDDR(spec)))
+                  && SCM_EQ(SCM_CAR(spec), SCM_SYM_RENAME)
+                  && SCM_SYMBOLP(SCM_CADR(spec))
+                  && SCM_SYMBOLP(SCM_CAR(SCM_CDDR(spec)))))) {
+            Scm_Error("Invalid export-spec; a symbol, or (rename <symbol> <symbol>) is expected, but got %S", spec);
         }
-        s = SCM_SYMBOL(SCM_CAR(lp));
+    }
+
+    (void)SCM_INTERNAL_MUTEX_LOCK(modules.mutex);
+    SCM_FOR_EACH(lp, specs) {
+        ScmObj spec = SCM_CAR(lp);
+        if (SCM_SYMBOLP(spec)) {
+            name = exported_name = SCM_SYMBOL(spec);
+        } else {
+            /* we already knew those are symbols */
+            name = SCM_SYMBOL(SCM_CADR(spec));
+            exported_name = SCM_SYMBOL(SCM_CAR(SCM_CDDR(spec)));
+        }
         e = Scm_HashCoreSearch(SCM_HASH_TABLE_CORE(module->external),
-                               (intptr_t)s, SCM_DICT_GET);
+                               (intptr_t)name, SCM_DICT_GET);
         /* if we have e, it's already exported. */
         if (e == NULL) {
             e = Scm_HashCoreSearch(SCM_HASH_TABLE_CORE(module->internal),
-                                   (intptr_t)s, SCM_DICT_CREATE);
+                                   (intptr_t)name, SCM_DICT_CREATE);
             if (!e->value) {
-                g = SCM_GLOC(Scm_MakeGloc(s, module));
+                g = SCM_GLOC(Scm_MakeGloc(name, module));
                 (void)SCM_DICT_SET_VALUE(e, SCM_OBJ(g));
             }
-            Scm_HashTableSet(module->external, SCM_OBJ(s),
+            Scm_HashTableSet(module->external, SCM_OBJ(exported_name),
                              SCM_DICT_VALUE(e), 0);
         }
     }
     (void)SCM_INTERNAL_MUTEX_UNLOCK(modules.mutex);
-    if (error) Scm_Error("symbol required, but got %S", badsym);
-    return syms;
+
+    return SCM_UNDEFINED;  /* we might want to return something more useful...*/
 }
 
 ScmObj Scm_ExportAll(ScmModule *module)
