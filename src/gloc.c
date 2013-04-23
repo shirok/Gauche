@@ -41,8 +41,7 @@
 static void gloc_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
     ScmGloc *g = SCM_GLOC(obj);
-    Scm_Printf(port, "#<gloc %S%s%S%s>", g->module->name,
-               (g->exported?"#":"##"),
+    Scm_Printf(port, "#<gloc %S#%S%s>", g->module->name,
                g->name,
                (Scm_GlocConstP(g)
                 ? " const"
@@ -58,7 +57,6 @@ ScmObj Scm_MakeGloc(ScmSymbol *sym, ScmModule *module)
     g->name = sym;
     g->module = module;
     g->value = SCM_UNBOUND;
-    g->exported = FALSE;
     g->hidden = FALSE;
     g->getter = NULL;
     g->setter = NULL;

@@ -47,13 +47,18 @@ struct ScmModuleRec {
     SCM_HEADER;
     ScmObj name;                /* symbol or #f */
     ScmObj imported;            /* list of imported modules. */
-    ScmObj exported;            /* list of exported symbols */
     int    exportAll;           /* TRUE if (export-all) */
     ScmObj parents;             /* direct parent modules */
     ScmObj mpl;                 /* module precedence list */
     ScmObj depended;            /* list of modules that are depended by this
                                    module for compilation */
-    ScmHashTable *table;        /* binding table */
+    ScmHashTable *internal;     /* Symbol -> GLoc, looked up from this module
+                                   itself and inherited ones */
+    ScmHashTable *external;     /* Symbol -> GLoc, looked up from the modules
+                                   that imports this module.  This table only
+                                   holds exported symbols (it may have
+                                   different name if export renaming is in
+                                   effect) */
     ScmObj origin;              /* if this module is an anonymous wrapper
                                    module, this holds a orginal module.
                                    this isn't used for resolving bindings,
@@ -79,7 +84,10 @@ SCM_EXTERN ScmObj Scm__MakeWrapperModule(ScmModule *origin, ScmObj prefix);
 enum {
     SCM_BINDING_STAY_IN_MODULE = (1L<<0), /*(F,R) do not search parent/imported*/
     SCM_BINDING_CONST = (1L<<1),          /*(M) constant binding */
-    SCM_BINDING_INLINABLE = (1L<<2)       /*(M) inlinable binding */
+    SCM_BINDING_INLINABLE = (1L<<2),      /*(M) inlinable binding */
+    SCM_BINDING_EXTERNAL = (1L<<3)        /*(F) only search externally visible
+                                            bindings, as if we're importing
+                                            the module. */
 };
 
 SCM_EXTERN ScmGloc *Scm_FindBinding(ScmModule *module, ScmSymbol *symbol,
@@ -111,6 +119,7 @@ SCM_EXTERN ScmObj Scm_ExportAll(ScmModule *module);
 SCM_EXTERN ScmModule *Scm_FindModule(ScmSymbol *name, int flags);
 SCM_EXTERN ScmObj Scm_AllModules(void);
 SCM_EXTERN void   Scm_SelectModule(ScmModule *mod);
+SCM_EXTERN ScmObj Scm_ModuleExports(ScmModule *mod);
 
 /* Flags for Scm_FindModule
    NB: Scm_FindModule's second arg has been changed since 0.8.6;

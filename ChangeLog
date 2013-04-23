@@ -1,3 +1,19 @@
+2013-04-23  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/module.h (ScmModule), src/gauche/gloc.h (ScmGloc),
+	  src/module.c, src/gloc.c: Changed the way exported bindings
+	  are handled.  Instead of having a flag in GLOC, we now have
+	  to hashtables in ScmModule, one for internal (all) bindings and
+	  another for exported bindings.  This allows us to implement
+	  export-time renaming easily.
+	  This changes the struct layout of ScmModule and ScmGloc, and
+	  IT MIGHT BREAK ABI COMPATIBILITY, although both of those structs
+	  are always allocated at runtime and accessed via API from
+	  outside of libgauche, I expect it won't affect much.
+	  The 'exported' list in ScmModule is dropped; if you want a
+	  list of exported symbols, call Scm_ModuleExports() to calculate
+	  the list.
+
 2013-04-21  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm: Added include-ci support, and allows multiple

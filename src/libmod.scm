@@ -44,8 +44,8 @@
 (define-cproc module-parents (mod::<module>) (result (-> mod parents)))
 (define-cproc module-precedence-list (mod::<module>) (result (-> mod mpl)))
 (define-cproc module-imports (mod::<module>) (result (-> mod imported)))
-(define-cproc module-exports (mod::<module>) (result (-> mod exported)))
-(define-cproc module-table (mod::<module>) (result (SCM_OBJ (-> mod table))))
+(define-cproc module-exports (mod::<module>) Scm_ModuleExports)
+(define-cproc module-table (mod::<module>) (result (SCM_OBJ (-> mod internal))))
 
 (define-cproc find-module (name::<symbol>) ::<module>?
   (result (Scm_FindModule name SCM_FIND_MODULE_QUIET)))

@@ -42,7 +42,6 @@ struct ScmGlocRec {
     ScmModule *module;
     ScmObj value;               /* The actual value.  Have to be accessed
                                    via SCM_GLOC_{GET|SET} macros. */
-    char exported;              /* TRUE if this binding is exported */
     char hidden;                /* TRUE if this is a "negative binding",
                                    see below. */
     ScmObj (*getter)(ScmGloc *);         /* see 'hooks' below */
