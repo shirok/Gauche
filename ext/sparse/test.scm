@@ -28,6 +28,9 @@
          (begin (%set! obj (key2) val3)
                 (%ref obj (key2))))
   (test* #`",name ref" val2 (%ref obj (key1)))
+  (test* #`",name generic setter" val1
+         (begin (set! (%ref obj (key1)) val1)
+                (%ref obj (key1))))
   )
 
 (define (const x) (^[] x))

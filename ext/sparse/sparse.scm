@@ -136,14 +136,15 @@
  (define-cproc sparse-table-num-entries (st::<sparse-table>) ::<ulong>
    (result (-> st numEntries)))
 
+ (define-cproc sparse-table-set! (st::<sparse-table> key value)
+   (result (SparseTableSet st key value 0)))
+
  (define-cproc sparse-table-ref (st::<sparse-table> key :optional fallback)
+   (setter sparse-table-set!)
    (let* ([r (SparseTableRef st key fallback)])
      (when (SCM_UNBOUNDP r)
        (Scm_Error "%S doesn't have an entry for key %S" (SCM_OBJ st) key))
      (result r)))
-
- (define-cproc sparse-table-set! (st::<sparse-table> key value)
-   (result (SparseTableSet st key value 0)))
 
  (define-cproc sparse-table-exists? (st::<sparse-table> key) ::<boolean>
    (let* ([r (SparseTableRef st key SCM_UNBOUND)])
@@ -217,8 +218,13 @@
  (define-cproc sparse-vector-num-entries (sv::<sparse-vector>) ::<ulong>
    (result (-> sv numEntries)))
 
+ (define-cproc sparse-vector-set!
+   (sv::<sparse-vector> index::<ulong> value) ::<void>
+   SparseVectorSet)
+
  (define-cproc sparse-vector-ref
    (sv::<sparse-vector> index::<ulong> :optional fallback)
+   (setter sparse-vector-set!)
    (let* ([r (SparseVectorRef sv index fallback)])
      (when (SCM_UNBOUNDP r)
        (Scm_Error "%S doesn't have an entry at index %lu" (SCM_OBJ sv) index))
@@ -228,10 +234,6 @@
    (sv::<sparse-vector> index::<ulong>) ::<boolean>
    (let* ([r (SparseVectorRef sv index SCM_UNBOUND)])
      (result (not (SCM_UNBOUNDP r)))))
-
- (define-cproc sparse-vector-set!
-   (sv::<sparse-vector> index::<ulong> value) ::<void>
-   SparseVectorSet)
 
  (define-cproc sparse-vector-delete! (sv::<sparse-vector> index::<ulong>)
    ::<boolean>

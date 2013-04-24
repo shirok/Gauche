@@ -19425,6 +19425,10 @@ a value to any index in the supported range.
 
 (sparse-vector-set! v 100000000 'b)
 (sparse-vector-ref v 100000000) @result{} b
+
+;; set! also work
+(set! (sparse-vector-ref v 100) 'c)
+(sparse-vector-ref v 100) @result{} c
 @end example
 
 If you try to access an element that hasn't been set,
@@ -19624,7 +19628,7 @@ increasing/decreasing index order, you have to get a list
 of keys by @code{sparse-vector-keys}, sort it, then use
 it to retrieve values.
 We may add an option in future to @code{make-sparse-vector} so that
-those walk operation
+those walk operation will be more convenient.
 
 @defun sparse-vector-fold sv proc seed
 For each entry in @var{sv}, calls @var{proc} as
