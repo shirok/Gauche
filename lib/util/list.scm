@@ -47,8 +47,8 @@
 (define rassq-ref   (with-module gauche rassq-ref))   ;liblist
 (define rassv-ref   (with-module gauche rassv-ref))   ;liblist
 (define assoc-set!  (with-module gauche assoc-set!))  ;liblist
-(define assq-set!   (with-module gauche assoc-set!))  ;liblist
-(define assv-set!   (with-module gauche assoc-set!))  ;liblist
+(define assq-set!   (with-module gauche assq-set!))   ;liblist
+(define assv-set!   (with-module gauche assv-set!))   ;liblist
 
 (define alist->hash-table (with-module gauche alist->hash-table)) ;libdict
 (define hash-table->alist (with-module gauche hash-table->alist)) ;libdict
