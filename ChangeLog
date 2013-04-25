@@ -1,3 +1,9 @@
+2013-04-25  Shiro Kawai  <shiro@acm.org>
+
+	* src/module.c (Scm_ExportSymbols): Fixed a bug that searched
+	  external table with internal name (patch from enami).
+	  Also added a check to see if 'export' overrides the previous exports.
+
 2013-04-24  Shiro Kawai  <shiro@acm.org>
 
 	* ext/sparse/sparse.scm: Added generalized setter to

@@ -545,6 +545,8 @@ ScmObj Scm_ImportModules(ScmModule *module, ScmObj list)
 ScmObj Scm_ExportSymbols(ScmModule *module, ScmObj specs)
 {
     ScmObj lp, badsym = SCM_FALSE;
+    ScmObj overwritten = SCM_NIL; /* list of (exported-name orig-internal-name
+                                     new-internal-name). */
     int error = FALSE;
     ScmSymbol *name, *exported_name;
     ScmDictEntry *e;
@@ -575,9 +577,30 @@ ScmObj Scm_ExportSymbols(ScmModule *module, ScmObj specs)
             exported_name = SCM_SYMBOL(SCM_CAR(SCM_CDDR(spec)));
         }
         e = Scm_HashCoreSearch(SCM_HASH_TABLE_CORE(module->external),
-                               (intptr_t)name, SCM_DICT_GET);
-        /* if we have e, it's already exported. */
+                               (intptr_t)exported_name, SCM_DICT_GET);
+        if (e) {
+            /* If we have e, it's already exported.  Check if
+               the previous export is for the same binding. */
+            SCM_ASSERT(SCM_DICT_VALUE(e) && SCM_GLOCP(SCM_DICT_VALUE(e)));
+            g = SCM_GLOC(SCM_DICT_VALUE(e));
+            if (!SCM_EQ(name, g->name)) {
+                Scm_Printf(SCM_CURERR, "name=%S g->name=%S\n", name, g->name);
+                /* exported_name got a different meaning. we record it to warn
+                   later, then 'unexport' the old one. */
+                overwritten = Scm_Cons(SCM_LIST3(SCM_OBJ(exported_name),
+                                                 SCM_OBJ(g->name),
+                                                 SCM_OBJ(name)),
+                                       overwritten);
+                Scm_HashCoreSearch(SCM_HASH_TABLE_CORE(module->external),
+                                   (intptr_t)exported_name, SCM_DICT_DELETE);
+                e = NULL;
+            }
+        }
+        /* we check again, for the symbol may be unexported above. */
         if (e == NULL) {
+            /* This symbol hasn't been exported.  Either it only has an
+               internal binding, or there's no binding at all.  In the latter
+               case, we create a new binding (without value). */
             e = Scm_HashCoreSearch(SCM_HASH_TABLE_CORE(module->internal),
                                    (intptr_t)name, SCM_DICT_CREATE);
             if (!e->value) {
@@ -589,6 +612,20 @@ ScmObj Scm_ExportSymbols(ScmModule *module, ScmObj specs)
         }
     }
     (void)SCM_INTERNAL_MUTEX_UNLOCK(modules.mutex);
+
+    /* Now, if this export changes the meaning of exported symbols, we
+       warn it.  We expect this only happens at the development time, when
+       one is fiddling exports incrementally, so we just use Scm_Warn -
+       a library ready to be used shouldn't cause this warning. */
+    if (!SCM_NULLP(overwritten)) {
+        ScmObj lp;
+        SCM_FOR_EACH(lp, overwritten) {
+            ScmObj p = SCM_CAR(lp);
+            Scm_Warn("Exporting %S from %S as %S overrides the previous export of %S",
+                     SCM_CAR(SCM_CDDR(p)), SCM_OBJ(module), SCM_CAR(p),
+                     SCM_CADR(p));
+        }
+    }
 
     return SCM_UNDEFINED;  /* we might want to return something more useful...*/
 }

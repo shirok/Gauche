@@ -298,6 +298,19 @@
           (list (global-variable-ref m 'mm:ku #f)
                 (global-variable-ref m 'mm:kokono #f)))))
 
+(define-module Oe
+  (export (rename a x) (rename x a))
+  (define a 'A)
+  (define x 'X))
+(define-module Oe-1
+  (import Oe))
+
+(test "export-time renaming with swapping" '(X A)
+      (lambda ()
+        (let [(m (find-module 'Oe-1))]
+          (list (global-variable-ref m 'a #f)
+                (global-variable-ref m 'x #f)))))
+
 ;;------------------------------------------------------------------
 ;; select-module, and restoration in load().
 
