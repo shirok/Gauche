@@ -584,7 +584,6 @@ ScmObj Scm_ExportSymbols(ScmModule *module, ScmObj specs)
             SCM_ASSERT(SCM_DICT_VALUE(e) && SCM_GLOCP(SCM_DICT_VALUE(e)));
             g = SCM_GLOC(SCM_DICT_VALUE(e));
             if (!SCM_EQ(name, g->name)) {
-                Scm_Printf(SCM_CURERR, "name=%S g->name=%S\n", name, g->name);
                 /* exported_name got a different meaning. we record it to warn
                    later, then 'unexport' the old one. */
                 overwritten = Scm_Cons(SCM_LIST3(SCM_OBJ(exported_name),
