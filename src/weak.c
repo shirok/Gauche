@@ -254,11 +254,9 @@ static u_long weak_key_hash(const ScmHashCore *hc, intptr_t key)
         /* There IS a small possibility that the real key has already been
            GCed.  We return an arbitrary value (0 here); the entry won't
            match anyway. */
-        fprintf(stderr, "gong!\n");
         return 0;
     } else {
         u_long k= wh->hashfn(hc, realkey);
-        Scm_Printf(SCM_CURERR, "%Hciuang %ul %S\n", k, realkey);
         return k;
     }
 }
@@ -271,7 +269,6 @@ static int weak_key_compare(const ScmHashCore *hc, intptr_t key,
     ScmWeakBox *box = (ScmWeakBox *)entrykey;
     intptr_t realkey = (intptr_t)Scm_WeakBoxRef(box);
     if (Scm_WeakBoxEmptyP(box)) {
-        fprintf(stderr, "gang!\n");
         return FALSE;
     } else {
         return wh->cmpfn(hc, key, realkey);
