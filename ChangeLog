@@ -1,3 +1,7 @@
+2013-04-27  shiro  <shiro@acm.org>
+
+	* src/liblist.scm (length<=?): Added.
+
 2013-04-25  Shiro Kawai  <shiro@acm.org>
 
 	* src/module.c (Scm_ExportSymbols): Fixed a bug that searched

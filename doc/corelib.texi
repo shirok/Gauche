@@ -2620,6 +2620,38 @@ it returns @code{#f}.
 @c COMMON
 @end defun
 
+@defun length<=? x k
+@c EN
+Returns @code{#t} iff @var{x} is a list whose lenght is less than
+or equal to @var{k}.  This procedure only follows the list up to the
+@var{k} items, so it doesn't realize elements of lazy sequence more than
+needed (@xref{Lazy sequences}, for the lazy sequences).
+
+Dotted lists and circular lists are allowed.  (A circular list is
+treated as if it has infinite length---that is this procedure always
+returns @code{#f} for such lists.)
+@c JP
+@var{x}が長さk以下のリストであれば@code{#t}を、そうでなければ@code{#f}を返します。
+この関数は@var{k}要素までしかリストを辿らないので、特に@var{x}が遅延シーケンス
+(@ref{Lazy sequences}参照)である場合に、必要以上にリストを実体化しなくて済みます。
+
+@var{x}はドットリストや循環リストでも構いません (循環リストは無限の長さを持つと
+みなします。したがって常に@code{#f}が返ります。)
+@c COMMON
+
+@example
+(length<=? '(a b) 2)  @result{} #t
+(length<=? '(a b) 1)  @result{} #f
+(length<=? '()    0)  @result{} #t
+
+;; dotted list cases
+(length<=? 'a       0)  @result{} #t
+(length<=? '(a . b) 0)  @result{} #f
+(length<=? '(a . b) 1)  @result{} #t
+@end example
+@end defun
+
+
 @defun take x i
 @defunx drop x i
 [SRFI-1]

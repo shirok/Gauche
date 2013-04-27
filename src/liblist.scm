@@ -116,6 +116,9 @@
   (let* ([len::long (Scm_Length list)])
     (when (< len 0) (Scm_Error "bad list: %S" list))
     (result len)))
+(define-cproc length<=? (list k::<fixnum>) ::<boolean> :constant
+  (result TRUE)
+  (dolist [_ list] (when (<= (post-- k) 0) (result FALSE) (break))))
 
 (define-cproc append (:rest lists) (inliner APPEND) Scm_Append)
 (define-cproc reverse (list::<list> :optional (tail ())) Scm_Reverse2)
