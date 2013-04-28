@@ -1,3 +1,10 @@
+2013-04-28  Shiro Kawai  <shiro@acm.org>
+
+	* src/liblist.scm (take-right*): When the list is long and k is
+	  small, try not to keep entire list on memory - would help when
+	  taking the last k elements of a lazy sequence.  Not an ideal
+	  solution, but would work for the time being.
+
 2013-04-27  shiro  <shiro@acm.org>
 
 	* src/liblist.scm (length<=?): Added.

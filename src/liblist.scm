@@ -539,12 +539,34 @@
           [else (loop (+ i 1) (cdr lis))])))
 
 (define (take-right* lis k :optional (fill? #f) (filler #f))
+  ;; In case if lis is a huge lazy list and k is relatively small,
+  ;; it'd be a waste to keep the whole list on memory by (length lis);
+  ;; e.g. suppose lis is a lazy list of lines of a huge log file.
+  ;; We heuristically determine the case.
+  (define limit 10000)
   (when (or (not (integer? k)) (negative? k))
     (error "index must be non-negative integer" k))
-  (let1 len (length lis)
-    (cond [(<= k len) (drop lis (- len k))]
-          [fill? (append! (make-list (- k len) filler) lis)]
-          [else lis])))
+  (cond [(length<=? lis k)
+         (if fill?
+           (append! (make-list (- k (length lis)) filler) lis)
+           lis)]
+        [(and (< k limit) (not (length<=? lis limit)))
+         ;; LIS is longer than LIMIT, and K is small.  We create a ring buffer.
+         ;; NB: We exclude the case when K is large, since we want to avoid
+         ;; having large flat vector.  Some sort of length-limited FIFO would
+         ;; do, but having such thing in core library is another question.
+         (let ([buf (make-vector k #f)]) 
+           (let loop ([lis lis] [i 0])
+             (if (null? lis)
+               (let loop ([r '()] [j (modulo (- i 1) k)])
+                 (if (= i j)
+                   (cons (vector-ref buf j) r)
+                   (loop (cons (vector-ref buf j) r) (modulo (- j 1) k))))
+               (begin (vector-set! buf i (car lis))
+                      (loop (cdr lis) (modulo (+ i 1) k))))))]         
+        [else
+         ;; Easy path.
+         (drop lis (- (length lis) k))]))
 
 (define (drop-right* lis k)
   (let1 len (length lis)
@@ -554,12 +576,12 @@
 (define (slices lis k . args)
   (unless (and (integer? k) (positive? k))
     (error "index must be positive integer" k))
-  (let loop ((lis lis)
-             (r '()))
+  (let loop ([lis lis]
+             [r '()])
     (if (null? lis)
-        (reverse! r)
-        (receive (h t) (apply split-at* lis k args)
-          (loop t (cons h r))))))
+      (reverse! r)
+      (receive (h t) (apply split-at* lis k args)
+        (loop t (cons h r))))))
 
 ;; intersperse - insert ITEM between elements in the list.
 ;; (the order of arguments is taken from Haskell's intersperse)

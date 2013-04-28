@@ -266,6 +266,11 @@
 (test* "take-right* (shorten)" '(a b c d)  (take-right* '(a b c d) 6))
 (test* "take-right* (fill)" '(z z a b c d) (take-right* '(a b c d) 6 #t 'z))
 
+(test* "take-right* (long)" '(a b c d e f)
+       (take-right* (fold (^[i r] (list* 'a 'b 'c 'd 'e 'f r))
+                          '() (iota 1668))
+                    6))
+
 (test* "drop-right* (normal)" '(a b c)  (drop-right* '(a b c d) 1))
 (test* "drop-right* (boundary)" '()     (drop-right* '(a b c d) 4))
 (test* "drop-right* (boundary)" '(a b c d) (drop-right* '(a b c d) 0))
