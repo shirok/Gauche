@@ -556,13 +556,15 @@
   ;; to know the length of list is greater than K beforehand.)
   ;; The naive implementation (drop lis (- (length lis) k)) would require
   ;; to realize entire list on memory, which we want to avoid.
-  ;; We overwrite LIS in each iteration instead of rebinding it -- it is
-  ;; to release reference to the head of list.
+  ;; We overwrite LIS and TAIL in each iteration instead of rebinding it,
+  ;; in order to release reference to the head of list.
   (receive (tail j) ((with-module gauche.internal %list-tail*) lis k)
     (if (= j 0)
-      (let loop ([p0 tail])
-        (if (pair? p0)
-          (begin (set! lis (cdr lis)) (loop (cdr p0)))
+      (let loop ()
+        (if (pair? tail)
+          (begin (set! lis (cdr lis))
+                 (set! tail (cdr tail))
+                 (loop))
           lis))
       (if fill?
         (append! (make-list j filler) lis)
