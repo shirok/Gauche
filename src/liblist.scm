@@ -538,35 +538,35 @@
           [(null? lis) '()]
           [else (loop (+ i 1) (cdr lis))])))
 
+(with-module gauche.internal
+  ;; A tolerant version of list-tail.  If LIS is shorter than K, returns
+  ;; (- k (length len)) as the second value.
+  (define (%list-tail* lis k)
+    (let loop ([lis lis] [k k])
+      (cond [(<= k 0) (values lis 0)]
+            [(null? lis) (values lis k)]
+            [else (loop (cdr lis) (- k 1))])))
+  )
+
 (define (take-right* lis k :optional (fill? #f) (filler #f))
-  ;; In case if lis is a huge lazy list and k is relatively small,
-  ;; it'd be a waste to keep the whole list on memory by (length lis);
-  ;; e.g. suppose lis is a lazy list of lines of a huge log file.
-  ;; We heuristically determine the case.
-  (define limit 10000)
-  (when (or (not (integer? k)) (negative? k))
-    (error "index must be non-negative integer" k))
-  (cond [(length<=? lis k)
-         (if fill?
-           (append! (make-list (- k (length lis)) filler) lis)
-           lis)]
-        [(and (< k limit) (not (length<=? lis limit)))
-         ;; LIS is longer than LIMIT, and K is small.  We create a ring buffer.
-         ;; NB: We exclude the case when K is large, since we want to avoid
-         ;; having large flat vector.  Some sort of length-limited FIFO would
-         ;; do, but having such thing in core library is another question.
-         (let ([buf (make-vector k #f)]) 
-           (let loop ([lis lis] [i 0])
-             (if (null? lis)
-               (let loop ([r '()] [j (modulo (- i 1) k)])
-                 (if (= i j)
-                   (cons (vector-ref buf j) r)
-                   (loop (cons (vector-ref buf j) r) (modulo (- j 1) k))))
-               (begin (vector-set! buf i (car lis))
-                      (loop (cdr lis) (modulo (+ i 1) k))))))]         
-        [else
-         ;; Easy path.
-         (drop lis (- (length lis) k))]))
+  (when (or (not (integer? k)) (negative? k) (inexact? k))
+    (error "index must be non-negative exact integer" k))
+  ;; NB: This procedure can be used to take the last K elements of
+  ;; a huge lazy list.  (Not so much in take-right, with which you need
+  ;; to know the length of list is greater than K beforehand.)
+  ;; The naive implementation (drop lis (- (length lis) k)) would require
+  ;; to realize entire list on memory, which we want to avoid.
+  ;; We overwrite LIS in each iteration instead of rebinding it -- it is
+  ;; to release reference to the head of list.
+  (receive (tail j) ((with-module gauche.internal %list-tail*) lis k)
+    (if (= j 0)
+      (let loop ([p0 tail])
+        (if (pair? p0)
+          (begin (set! lis (cdr lis)) (loop (cdr p0)))
+          lis))
+      (if fill?
+        (append! (make-list j filler) lis)
+        lis))))
 
 (define (drop-right* lis k)
   (let1 len (length lis)
