@@ -1,3 +1,9 @@
+2013-05-01  Shiro Kawai  <shiro@acm.org>
+
+	* src/libsys.scm: Feature identifiers gauche.sys.setenv,
+	  gauche.sys.unsetenv and gauche.sys.clearenv weren't defined
+	  properly.
+
 2013-04-28  Shiro Kawai  <shiro@acm.org>
 
 	* src/liblist.scm (take-right*): When the list is long and k is

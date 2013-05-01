@@ -455,11 +455,11 @@
 (inline-stub
  (initcode
   (.if "defined(HAVE_PUTENV) || defined(HAVE_SETENV)"
-       "Scm_AddFeature(\"gauche.sys.setenv\", NULL);")
+       (Scm_AddFeature "gauche.sys.setenv" NULL))
   (.if "defined HAVE_UNSETENV"
-       "Scm_AddFeature(\"gauche.sys.unsetenv\", NULL);")
+       (Scm_AddFeature "gauche.sys.unsetenv" NULL))
   (.if "defined HAVE_CLEARENV"
-       "Scm_AddFeature(\"gauche.sys.clearenv\", NULL);")))
+       (Scm_AddFeature "gauche.sys.clearenv" NULL))))
 
 (define (sys-environ->alist :optional (envlist (sys-environ)))
   (map (^[envstr] (receive (pre post) (string-scan envstr #\= 'both)
