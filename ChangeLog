@@ -1,8 +1,8 @@
 2013-05-01  Shiro Kawai  <shiro@acm.org>
 
 	* src/libsys.scm: Feature identifiers gauche.sys.setenv,
-	  gauche.sys.unsetenv and gauche.sys.clearenv weren't defined
-	  properly.
+	  gauche.sys.unsetenv, gauche.sys.clearenv, gauche.sys.sigwait,
+	  and gauche.sysgetloadavg weren't defined properly.
 
 2013-04-28  Shiro Kawai  <shiro@acm.org>
 

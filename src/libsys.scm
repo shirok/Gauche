@@ -349,7 +349,7 @@
 
 (inline-stub
  (initcode (.if "defined HAVE_SIGWAIT"
-                "Scm_AddFeature(\"gauche.sys.sigwait\", NULL);")))
+                (Scm_AddFeature "gauche.sys.sigwait" NULL))))
 
 (define (sys-sigset . signals)
   (if (null? signals)
@@ -512,7 +512,7 @@
 
 (inline-stub
  (initcode (.if "defined HAVE_GETLOADAVG"
-                "Scm_AddFeature(\"gauche.sys.getloadavg\", NULL);")))
+                (Scm_AddFeature "gauche.sys.getloadavg" NULL))))
 
 ;;---------------------------------------------------------------------
 ;; sys/resource.h
@@ -551,7 +551,7 @@
        (SCM_SYSCALL ret (setrlimit rsrc (& limit)))
        (when (< ret 0) (Scm_SysError "setrlimit failed"))))
 
-   (initcode "Scm_AddFeature(\"gauche.sys.getrlimit\", NULL);")
+   (initcode (Scm_AddFeature "gauche.sys.getrlimit" NULL))
 
    (define-constant RLIM_INFINITY (c "MAKERLIMIT(RLIM_INFINITY)"))
    (define-enum-conditionally RLIMIT_AS)
@@ -845,7 +845,7 @@
      ::<int>
      (SCM_SYSCALL SCM_RESULT (lchown path owner group))
      (when (< SCM_RESULT 0) (Scm_SysError "lchown failed on %S" path)))
-   (initcode "Scm_AddFeature(\"gauche.sys.lchown\", NULL);")
+   (initcode (Scm_AddFeature "gauche.sys.lchown" NULL))
    )
  )
 
@@ -934,7 +934,7 @@
      (define-cproc sys-getpgid (pid::<int>) ::<int>
        (SCM_SYSCALL SCM_RESULT (cast int (getpgid pid)))
        (when (< SCM_RESULT 0) (Scm_SysError "getpgid failed")))
-     (initcode "Scm_AddFeature(\"gauche.sys.getpgid\", NULL);")
+     (initcode (Scm_AddFeature "gauche.sys.getpgid" NULL))
      )
 
    (define-cproc sys-getpgrp () ::<int>
@@ -1061,7 +1061,7 @@
        (if (and (== (ref rem tv_sec) 0) (== (ref rem tv_nsec) 0))
          (result '#f)
          (result (Scm_MakeTime '#f (ref rem tv_sec) (ref rem tv_nsec))))))
-   (initcode "Scm_AddFeature(\"gauche.sys.nanosleep\", NULL);")
+   (initcode (Scm_AddFeature "gauche.sys.nanosleep" NULL))
    ) ; defined(HAVE_NANOSLEEP)||defined(GAUCHE_WINDOWS)
  )
 
@@ -1105,7 +1105,7 @@
  (when "defined(HAVE_CRYPT)"
    (define-cproc sys-crypt (key::<const-cstring> salt::<const-cstring>)
      ::<const-cstring> (result (cast (const char *) (crypt key salt))))
-   (initcode "Scm_AddFeature(\"gauche.sys.crypt\", NULL);")
+   (initcode (Scm_AddFeature "gauche.sys.crypt" NULL))
    )
  )
 
@@ -1147,7 +1147,7 @@
        (SCM_SYSCALL r (symlink existing newpath))
        (when (< r 0)
          (Scm_SysError "symlink from %s to %s failed" newpath existing))))
-   (initcode "Scm_AddFeature(\"gauche.sys.symlink\", NULL);")
+   (initcode (Scm_AddFeature "gauche.sys.symlink" NULL))
    )
 
  (when "defined(HAVE_READLINK)"
@@ -1158,7 +1158,7 @@
        (when (< n 0) (Scm_SysError "readlink failed on %s" path))
        (when (== n 1024) (Scm_Error "readlink result too long on %s" path))
        (result (Scm_MakeString buf n -1 SCM_STRING_COPYING))))
-   (initcode "Scm_AddFeature(\"gauche.sys.readlink\", NULL);")
+   (initcode (Scm_AddFeature "gauche.sys.readlink" NULL))
    )
  )
 
@@ -1222,7 +1222,7 @@
    (define-cproc sys-select! (rfds wfds efds :optional (timeout #f))
      Scm_SysSelectX)
 
-   (initcode "Scm_AddFeature(\"gauche.sys.select\", NULL);")
+   (initcode (Scm_AddFeature "gauche.sys.select" NULL))
    ) ;; when defined(HAVE_SELECT)
  )
 
