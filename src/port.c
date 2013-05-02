@@ -106,6 +106,8 @@ static void port_cleanup(ScmPort *port)
     default:
         break;
     }
+    (void)SCM_INTERNAL_FASTLOCK_DESTROY(port->lock);
+
     SCM_PORT_CLOSED_P(port) = TRUE;
     /* avoid unnecessary finalization */
     Scm_UnregisterFinalizer(SCM_OBJ(port));
@@ -145,14 +147,9 @@ static ScmPort *make_port(ScmClass *klass, int dir, int type)
     port->lockCount = 0;
     port->data = SCM_FALSE;
     port->line = 1;
-    switch (type) {
-    case SCM_PORT_FILE: /*FALLTHROUGH*/;
-    case SCM_PORT_PROC:
-        Scm_RegisterFinalizer(SCM_OBJ(port), port_finalize, NULL);
-        break;
-    default:
-        break;
-    }
+
+    Scm_RegisterFinalizer(SCM_OBJ(port), port_finalize, NULL);
+
     return port;
 }
 

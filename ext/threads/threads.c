@@ -385,6 +385,8 @@ ScmObj Scm_ThreadSleep(ScmObj timeout)
         intr = TRUE;
     }
     SCM_INTERNAL_MUTEX_UNLOCK(dummym);
+    SCM_INTERNAL_MUTEX_DESTROY(dummym);
+    SCM_INTERNAL_COND_DESTROY(dummyc);
     if (intr) Scm_SigCheck(Scm_VM());
 #else  /*!GAUCHE_HAS_THREADS*/
     Scm_Error("not implemented!\n");
