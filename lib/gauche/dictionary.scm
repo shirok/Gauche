@@ -178,10 +178,10 @@
 
 (define-method dict-fold ((dict <dictionary>) proc seed)
   ;; This depends on the fact that a dictionary is also a collection.
-  (fold dict (lambda (kv seed) (proc (car kv) (cdr kv) seed)) seed))
+  (fold (^[kv seed] (proc (car kv) (cdr kv) seed)) dict seed))
 
 (define-method dict-fold-right ((dict <ordered-dictionary>) proc seed)
-  (fold-right dict (^[kv seed] (proc (car kv) (cdr kv) seed)) seed))
+  (fold-right (^[kv seed] (proc (car kv) (cdr kv) seed)) dict seed))
 
 (define-method dict-map ((dict <dictionary>) proc)
   (reverse (dict-fold dict (^[k v s] (cons (proc k v) s)) '())))
