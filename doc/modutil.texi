@@ -2425,7 +2425,7 @@ The driver need to implement the following methods.
 ドライバは以下のメソッドを実装しなければなりません。
 @c COMMON
 
-@deffn {Method} dbi-make-connection (d <foo-driver>) (options <string>) (option-alist <list>) :key username password @dots{}
+@deffn {Method} dbi-make-connection (d <foo-driver>) (options <string>) (options-alist <list>) :key username password @dots{}
 @c EN
 This method is called from @code{dbi-connect}, and responsible to
 connect to the database and to create a connection object.
@@ -2440,12 +2440,12 @@ it cannot establish a connection.
 
 @c EN
 @var{Options} is the option part of the data source name (DSN) given to
-@code{dbi-connect}.  @var{Option-alist} is an assoc list of
+@code{dbi-connect}.  @var{options-alist} is an assoc list of
 the result of parsing @var{options}.  Both are provided so that
 the driver may interpret @var{options} string in nontrivial way.
 @c JP
 @var{options}は@code{dbi-connect}に与えられるデータソースネーム(DSN)の
-オプションパートです。@var{option-alist}は@var{options}を解析した結果
+オプションパートです。@var{options-alist}は@var{options}を解析した結果
 の連想リストです。両方ともに用意して、ドライバが自明ではない方法で
 @var{options}文字列を解釈できるようにします。
 @c COMMON
@@ -2455,13 +2455,13 @@ For example, given @code{"dbi:foo:myaddressbook;host=dbhost;port=8998"}
 as DSN, foo's @code{dbi-make-connection} will receive
 @code{"myaddressbook;host=dbhost;port=8998"} as @var{options},
 and @code{(("myaddressbook" . #t) ("host" . "dbhost") ("port" . "8998"))}
-as @var{optons-alist}.
+as @var{options-alist}.
 @c JP
 たとえば、DSNとして
 @code{"dbi:foo:myaddressbook;host=dbhost;port=8998"}が与えられたとする
 と、fooの@code{dbi-make-connection}は@var{options}として
 @code{"myaddressbook;host=dbhost;port=8998"}を受け取り、
-@var{optons-alist}として
+@var{options-alist}として
 @code{(("myaddressbook" . #t) ("host" . "dbhost") ("port" . "8998"))}
 を受け取ります。
 @c COMMON
