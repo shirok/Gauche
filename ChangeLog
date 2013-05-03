@@ -1,3 +1,18 @@
+2013-05-03  Shiro Kawai  <shiro@acm.org>
+
+	* src/load.c (Scm_Require): Make sure we set the current module
+	  to #<module gauche> when actually loading the file.  This was
+	  never explicitly stateted, but we always assumed so.  It doesn't
+	  make sense to use caller's current module, since the caller
+	  doesn't know if the file will actually be loaded or not, so
+	  there's no guarantee that the current module is in effect.
+	  This change might cause an incompatibility in the code that
+	  took advantage of the old require behavior, but I doubt such
+	  code exists.
+	  (Scm_ResolveAutoload): The exception of above 'require' spec
+	  is autoloading; we do need to load the file into a specific
+	  module.
+
 2013-05-01  Shiro Kawai  <shiro@acm.org>
 
 	* src/libsys.scm: Feature identifiers gauche.sys.setenv,

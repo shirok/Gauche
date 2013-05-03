@@ -810,6 +810,8 @@ ScmObj Scm_DynLoad(ScmString *filename, ScmObj initfn, u_long flags/*reserved*/)
    For now, I allow only a string. */
 /* Note that require and provide is recognized at compile time. */
 
+static int do_require(ScmObj, int, ScmModule *, ScmLoadPacket *);
+
 /* [Preventing Race Condition]
  *
  *   Besides the list of provided features (ldinfo.provided), the
@@ -860,10 +862,35 @@ ScmObj Scm_DynLoad(ScmString *filename, ScmObj initfn, u_long flags/*reserved*/)
  *   we know that the first matching entry is the current one.)
  */
 
+/* NB: It has never been explicit, but 'require' and 'extend' are expected to
+   work as if we load the module into #<module gauche>.  Those forms only loads
+   the file once, it doesn't make much sense to allow it to load into different
+   modules for each time, since you never know whether the file is loaded
+   at this time or it has already been loaded.  With the same reason, it doesn't
+   make much sense to use the current module.
+
+   Until 0.9.4 we didn't actually force 'require' to use #<module gauche>
+   as the base module.  Most of the time, 'require' is called in a module
+   that inherits gauche, so the problem didn't appear.  However, if one
+   requires a file from a module that doesn't inherit gauche, most likely
+   accidentally, he sees confusing errors---because "define-module" form
+   isn't be recognized!
+
+   As of 0.9.4 we fix the base module to #<module gauche> when require is
+   called.   Note that autoload needs a different requirements, so we have
+   a subroutine do_require that takes the desired base module.
+ */
 int Scm_Require(ScmObj feature, int flags, ScmLoadPacket *packet)
+{
+    return do_require(feature, flags, Scm_GaucheModule(), packet);
+}
+
+int do_require(ScmObj feature, int flags, ScmModule *base_mod,
+               ScmLoadPacket *packet)
 {
     ScmVM *vm = Scm_VM();
     ScmObj provided, providing, p, q;
+    ScmModule *prev_mod;
     int loop = FALSE, r;
     ScmLoadPacket xresult;
 
@@ -919,7 +946,12 @@ int Scm_Require(ScmObj feature, int flags, ScmLoadPacket *packet)
     }
 
     if (!SCM_FALSEP(provided)) return 0; /* no work to do */
+    /* Make sure to load the file into base_mod.   We don't need UNWIND_PROTECT
+       here, since errors are caught in Scm_Load. */
+    prev_mod = vm->module;
+    vm->module = base_mod;
     r = Scm_Load(Scm_GetStringConst(SCM_STRING(feature)), 0, &xresult);
+    vm->module = prev_mod;
     if (packet) packet->exception = xresult.exception;
 
     if (r < 0) {
@@ -1053,7 +1085,6 @@ void Scm_DefineAutoload(ScmModule *where,
 ScmObj Scm_ResolveAutoload(ScmAutoload *adata, int flags)
 {
     int circular = FALSE;
-    ScmModule *prev_module;
     ScmVM *vm = Scm_VM();
 
     /* shortcut in case if somebody else already did the job. */
@@ -1111,11 +1142,9 @@ ScmObj Scm_ResolveAutoload(ScmAutoload *adata, int flags)
                   adata->module, adata->name);
     }
 
-    prev_module = vm->module;
     SCM_UNWIND_PROTECT {
-        vm->module = adata->module;
-        Scm_Require(SCM_OBJ(adata->path), SCM_LOAD_PROPAGATE_ERROR, NULL);
-        vm->module = prev_module;
+        do_require(SCM_OBJ(adata->path), SCM_LOAD_PROPAGATE_ERROR,
+                   adata->module, NULL);
 
         if (adata->import_from) {
             /* autoloaded file defines import_from module.  we need to
@@ -1150,7 +1179,6 @@ ScmObj Scm_ResolveAutoload(ScmAutoload *adata, int flags)
         }
     } SCM_WHEN_ERROR {
         adata->locker = NULL;
-        vm->module = prev_module;
         SCM_INTERNAL_COND_BROADCAST(adata->cv);
         SCM_NEXT_HANDLER;
     } SCM_END_PROTECT;
