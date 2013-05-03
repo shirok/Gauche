@@ -1,5 +1,8 @@
 2013-05-03  Shiro Kawai  <shiro@acm.org>
 
+	* lib/r7rs.scm, lib/scheme/base.scm: Start adding R7RS compatibility
+	  stuff.
+
 	* src/load.c (Scm_Require): Make sure we set the current module
 	  to #<module gauche> when actually loading the file.  This was
 	  never explicitly stateted, but we always assumed so.  It doesn't
