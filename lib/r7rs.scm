@@ -49,11 +49,7 @@
                     'require (find-module 'gauche) '()))
   (define begin.   ((with-module gauche.internal make-identifier)
                     'begin (find-module 'gauche) '()))
-  (define with-module. ((with-module gauche.internal make-identifier)
-                        'with-module (find-module 'gauche) '()))
-  (define print. ((with-module gauche.internal make-identifier)
-                        'print (find-module 'gauche) '()))
-  
+
   (define-macro (r7rs-import . import-sets)
     `(,begin. ,@(append-map %transfer-import-spec import-sets)))
 
