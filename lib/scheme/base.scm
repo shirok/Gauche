@@ -160,9 +160,6 @@
 (define+ integer?  gauche)
 (define+ exact?    gauche)
 (define+ exact-integer? gauche)
-(define+ finite?   gauche)
-(define+ infinite? gauche)
-(define+ nan?      gauche)
 (define+ =         gauche)
 (define+ <         gauche)
 (define+ >         gauche)
@@ -205,16 +202,7 @@
 (define+ truncate  gauche)
 (define+ round     gauche)
 (define+ rationalize gauche)
-(define+ exp       gauche)
-(define+ log       gauche)
-(define+ sin       gauche)
-(define+ cos       gauche)
-(define+ tan       gauche)
-(define+ asin      gauche)
-(define+ acos      gauche)
-(define+ atan      gauche)
 (define (square z) (* z z))
-(define+ sqrt      gauche)
 (define+ exact-integer-sqrt gauche)
 (define+ expt      gauche)
 (define+ make-rectangular gauche)
@@ -400,7 +388,6 @@
 ; environment
 (define+ scheme-report-environment gauche)
 (define+ null-environment gauche)
-(define+ interaction-environment gauche)
 (define+ eval gauche)
 
 ;; 6.13 Input and output
@@ -434,7 +421,6 @@
 ;open-input-bytevector
 ;open-output-bytevector
 ;get-output-bytevector
-(define+ read gauche)
 (define+ read-char gauche)
 (define+ peek-char gauche)
 (define+ read-line gauche)
@@ -447,10 +433,6 @@
 (define u8-ready? byte-ready?)
 ;read-bytevector
 ;read-bytevector!
-(define write        write/ss) ;not exactly...
-(define write-shared write/ss)
-(define write-simple write)
-(define+ display gauche)
 (define+ newline gauche)
 (define+ write-char gauche)
 (define (write-string string :optional (port (current-output-port))
@@ -465,16 +447,6 @@
 (define flush-output-port flush)
 
 ;; 6.14 System interface
-(define (load file :optional (env (interaction-environment)))
-  ((with-module gauche load) file :environment env))
 (define+ file-exists? gauche)
 (define (delete-file f) (sys-unlink f))
-(define+ command-line gauche)
-(define+ exit gauche)
-(define (emergency-exit :optional (obj 0)) (sys-exit obj))
-(define (get-environment-variable name) (sys-getenv name))
-(define (get-environment-variables) (sys-environ->alist))
-(define (current-second) (sys-time))
-;current-jiffy
-;jiffies-per-second
 (define (features) (map car ((with-module gauche.internal cond-features))))
