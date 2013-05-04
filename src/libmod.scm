@@ -59,14 +59,39 @@
           [else (Scm_TypeError ":if-exists" ":error or #f" if_exists)])
     (result (Scm_MakeModule name error_if_exists))))
 
-(define-cproc module-name->path (name)
-  (let* ([s::ScmSymbol* NULL])
-    (cond [(SCM_SYMBOLP name) (set! s (SCM_SYMBOL name))]
-          [(SCM_IDENTIFIERP name) (set! s (-> (SCM_IDENTIFIER name) name))]
-          [else (SCM_TYPE_ERROR name "symbol or identifier")])
-    (result (Scm_ModuleNameToPath s))))
+;; foo.bar.baz <=> "foo/bar/baz"
+;;  - Two consecutive dots in module name becomes one dot in path
+;;    foo..bar.baz <=> "foo.bar/baz".   This is to support R7RS library
+;;    whose name is (foo.bar baz).
+;;  - Todo: Escape unsafe characters in name.
+(define (module-name->path name)
+  (define (path-comp p)
+    (rlet1 s (list->string (reverse p))
+      (cond [(equal? s "")
+             (error "Invalid module name (it can't end with #\\.):" name)]
+            [(or (equal? s ".") (equal? s ".."))
+             (error "Invalid module name (component can't be \".\" or \"..\"):"
+                    name)])))
+  (with-input-from-string
+   (cond [(symbol? name) (symbol->string name)]
+         [(identifier? name) (symbol->string (identifier-name name))]
+         [else (error "symbol or identifier expected, but got:" name)])
+   (^[] (let loop ([c (read-char)] [p '()] [ps '()])
+          (cond
+           [(eof-object? c)
+            (string-join (reverse (cons (path-comp p) ps)) "/")]
+           [(eqv? c #\.)
+            (let1 c2 (read-char)
+              (if (eqv? c2 #\.)
+                (loop (read-char) (cons c2 p) ps)
+                (loop c2 '() (cons (path-comp p) ps))))]
+           [else (loop (read-char) (cons c p) ps)])))))
 
-(define-cproc path->module-name (path::<string>) Scm_PathToModuleName)
+(define (path->module-name path)
+  (unless (string? path) (error "string required, but got:" path))
+  ($ string->symbol $ (cut string-join <> ".")
+     $ map (cut regexp-replace-all #/\./ <> "..")
+     $ string-split path "/"))
 
 (define-cproc %export-all (module::<module>) Scm_ExportAll)
 (define-cproc %extend-module (module::<module> supers::<list>)

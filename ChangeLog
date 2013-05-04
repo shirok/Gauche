@@ -1,5 +1,11 @@
 2013-05-03  Shiro Kawai  <shiro@acm.org>
 
+	* src/libmod.scm, src/module.c (module-name->path, path->module-name):
+	  Moved definition of these two from C to Scheme, and supports
+	  module name components to have dot in it.  It won't so much useful
+	  from Gauche, but R7RS library name may have (foo.bar baz) and
+	  we need to map it to Gauche's module name.
+
 	* lib/r7rs.scm, lib/scheme/base.scm: Start adding R7RS compatibility
 	  stuff.
 

@@ -755,42 +755,19 @@ void Scm_SelectModule(ScmModule *mod)
  */
 
 /* Convert module name and pathname (mod load-path) and vice versa.
-   The default conversion is pretty straightforward, e.g.
-   util.list <=> "util/list"  etc.  However, modules and files can
-   have many-to-many mapping, and I'd like to reserve the room
-   of future extensions.   Eventually there will be some special
-   mapping table so the programmer can register exceptional mappings. */
-
+   We moved the definition in Scheme.  These are just stubs to call them. */
 ScmObj Scm_ModuleNameToPath(ScmSymbol *name)
 {
-    const ScmStringBody *b = SCM_STRING_BODY(SCM_SYMBOL_NAME(name));
-    char *buf = SCM_NEW_ATOMIC2(char *, SCM_STRING_BODY_SIZE(b)+1);
-    char *p = buf, *e = buf + SCM_STRING_BODY_SIZE(b);
-    memcpy(buf, SCM_STRING_BODY_START(b), SCM_STRING_BODY_SIZE(b));
-    while (p < e) {
-        int n = SCM_CHAR_NFOLLOWS(*p);
-        if (*p == '.') *p++ = '/';
-        else p += n+1;
-    }
-    *e = '\0';
-    return Scm_MakeString(buf, SCM_STRING_BODY_SIZE(b),
-                          SCM_STRING_BODY_LENGTH(b), 0);
+    static ScmObj module_name_to_path_proc = SCM_UNDEFINED;
+    SCM_BIND_PROC(module_name_to_path_proc, "module-name->path", Scm_GaucheModule());
+    return Scm_ApplyRec1(module_name_to_path_proc, SCM_OBJ(name));
 }
 
 ScmObj Scm_PathToModuleName(ScmString *path)
 {
-    const ScmStringBody *b = SCM_STRING_BODY(path);
-    char *buf = SCM_NEW_ATOMIC2(char *, SCM_STRING_BODY_SIZE(b)+1);
-    char *p = buf, *e = buf + SCM_STRING_BODY_SIZE(b);
-    memcpy(buf, SCM_STRING_BODY_START(b), SCM_STRING_BODY_SIZE(b));
-    while (p < e) {
-        int n = SCM_CHAR_NFOLLOWS(*p);
-        if (*p == '/') *p++ = '.';
-        else if (*p == '.') Scm_Error("bad pathname for module path: %S", path);
-        else p += n+1;
-    }
-    *e = '\0';
-    return SCM_INTERN(buf);
+    static ScmObj path_to_module_name_proc = SCM_UNDEFINED;
+    SCM_BIND_PROC(path_to_module_name_proc, "path->module-name", Scm_GaucheModule());
+    return Scm_ApplyRec1(path_to_module_name_proc, SCM_OBJ(path));
 }
 
 /*----------------------------------------------------------------------
