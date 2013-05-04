@@ -66,7 +66,7 @@ ScmObj main_module = SCM_FALSE; /* The name of the module where we
 void usage(void)
 {
     fprintf(stderr,
-            "Usage: gosh [-biqV][-I<path>][-A<path>][-u<module>][-m<module>][-l<file>][-L<file>][-e<expr>][-E<expr>][-p<type>][-F<feature>][-f<flag>][--] [file]\n"
+            "Usage: gosh [-biqV][-I<path>][-A<path>][-u<module>][-m<module>][-l<file>][-L<file>][-e<expr>][-E<expr>][-p<type>][-F<feature>][-r<standard>][-f<flag>][--] [file]\n"
             "options:\n"
             "  -V       Prints version and exits.\n"
             "  -b       Batch mode.  Doesn't print prompts.  Supersedes -i.\n"
@@ -90,6 +90,10 @@ void usage(void)
             "  -p<type> Turns on the profiler.  Currently <type> can only be\n"
             "           'time'.\n"
             "  -F<feature> Makes <feature> available in cond-expand forms\n"
+            "  -r<standard>  Starts gosh with the default environment defined\n"
+            "           in RnRS, where n is determined by <standard>.  The following\n"
+            "           values are supported as <standard>.\n"
+            "      7               R7RS (R7RS-small)\n"
             "  -f<flag> Sets various flags\n"
             "      case-fold       uses case-insensitive reader (as in R5RS)\n"
             "      load-verbose    report while loading files\n"
@@ -211,7 +215,7 @@ void feature_options(const char *optarg)
 int parse_options(int argc, char *argv[])
 {
     int c;
-    while ((c = getopt(argc, argv, "+be:E:ip:ql:L:m:u:VF:f:I:A:-")) >= 0) {
+    while ((c = getopt(argc, argv, "+be:E:ip:ql:L:m:u:Vr:F:f:I:A:-")) >= 0) {
         switch (c) {
         case 'b': batch_mode = TRUE; break;
         case 'i': interactive_mode = TRUE; break;
@@ -223,6 +227,7 @@ int parse_options(int argc, char *argv[])
         case 'm':
             main_module = Scm_Intern(SCM_STRING(SCM_MAKE_STR_COPYING(optarg)));
             break;
+        case 'r': /*FALLTHROUGH*/;
         case 'u': /*FALLTHROUGH*/;
         case 'l': /*FALLTHROUGH*/;
         case 'L': /*FALLTHROUGH*/;
@@ -404,6 +409,7 @@ int main(int argc, char **argv)
     ScmEvalPacket epak;
     ScmLoadPacket lpak;
     int has_console;
+    int standard_given = FALSE;
 
     /* Initial setup. */
     has_console = init_console();
@@ -511,6 +517,21 @@ int main(int argc, char **argv)
                 error_exit(epak.exception);
             }
             break;
+        case 'r':
+            if (standard_given) {
+                Scm_Error("Multiple -r option is specified.");
+            } else {
+                const char *std = Scm_GetStringConst(SCM_STRING(v));
+                if (strcmp(std, "7") == 0) {
+                    if (Scm_EvalCString("(extend r7rs)",
+                                        SCM_OBJ(Scm_UserModule()),
+                                        &epak) < 0) {
+                        error_exit(epak.exception);
+                    }
+                } else {
+                    Scm_Error("Unsupported standard for -r option: %s", std);
+                }
+            }
         }
     }
 

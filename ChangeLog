@@ -1,5 +1,9 @@
 2013-05-04  Shiro Kawai  <shiro@acm.org>
 
+	* src/main.c (main): Experimentally support -r7 option to start up
+	  gosh with R7RS environment as default.  Currently this is mainly
+	  for the convenience of developing R7RS compatibility code.
+
 	* lib/gauche/numerical.scm (floor/ etc.): Added R7RS integer division
 	  operators.
 	  (square): ditto.
