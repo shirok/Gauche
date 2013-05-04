@@ -178,16 +178,12 @@
 (define+ /         gauche)
 (define+ abs       gauche)
 
-;; NB: div and mod accepts non-integer in y.  should we reject such cases?
-(define (floor/ x y)
-  (if (> y 0) (div-and-mod x y) (div0-and-mod0 x y)))
-(define (floor-quotient x y)
-  (if (> y 0) (div x y) (div0 x y)))
-(define floor-remainder modulo)
-
-(define truncate/  quotient&remainder)
-(define truncate-quotient  quotient)
-(define truncate-remainder remainder)
+(define+ floor/             gauche)
+(define+ floor-quotient     gauche)
+(define+ floor-remainder    gauche)
+(define+ truncate/          gauche)
+(define+ truncate-quotient  gauche)
+(define+ truncate-remainder gauche)
 
 (define+ quotient  gauche)
 (define+ modulo    gauche)
@@ -202,7 +198,7 @@
 (define+ truncate  gauche)
 (define+ round     gauche)
 (define+ rationalize gauche)
-(define (square z) (* z z))
+(define+ square    gauche)
 (define+ exact-integer-sqrt gauche)
 (define+ expt      gauche)
 (define+ make-rectangular gauche)

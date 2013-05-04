@@ -268,7 +268,7 @@
 ;; match with div/mod when divisor is positive.
 (define (%div&mod x y)
   (define (edom what)
-      (error "real number required for integer division, but got" what))
+    (error "real number required for integer division, but got" what))
   (cond [(= y 0) (error "zero divisor is not allowed in integer division")]
         [(and (integer? x) (integer? y)) (quotient&remainder x y)]
         [(and (exact? x) (exact? y))    ;at least one of arg is rational
@@ -309,6 +309,29 @@
 (define (mod x y)  (values-ref (div-and-mod x y) 1))
 (define (div0 x y) (values-ref (div0-and-mod0 x y) 0))
 (define (mod0 x y) (values-ref (div0-and-mod0 x y) 1))
+
+;; R7RS division operators
+(define (floor/ x y)
+  (receive (q r) (quotient&remainder x y)
+    (if (>= x 0)
+      (if (> y 0)
+        (values q r)
+        (values (- q 1) (+ r y)))
+      (if (> y 0)
+        (values (- q 1) (+ r y))
+        (values q r)))))
+(define (floor-quotient x y)
+  (let1 q (quotient x y)
+    (if (>= x 0)
+      (if (> y 0) q (- q 1))
+      (if (> y 0) (- q 1) q))))
+(define (floor-remainder x y)    (modulo x y))
+(define (truncate/ x y)          (quotient&remainder x y))
+(define (truncate-quotient x y)  (quotient x y))
+(define (truncate-remainder x y) (remainder x y))
+
+;; R7RS
+(define (square x) (* x x))
 
 ;; Nearly equal comparison
 ;;  (Unofficial yet; see how it works)

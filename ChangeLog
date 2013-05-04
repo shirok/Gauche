@@ -1,5 +1,10 @@
 2013-05-04  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/numerical.scm (floor/ etc.): Added R7RS integer division
+	  operators.
+	  (square): ditto.
+	* autoloads.scm: Changed accordingly.
+
 	* lib/r7rs.scm (define-library): Support R7RS define-library.
 	* autoloads.scm (define-library): Autoload define-library so that
 	  Gauche native code can use R7RS library seamlessly.
