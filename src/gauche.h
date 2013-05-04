@@ -1185,44 +1185,7 @@ typedef enum {
  * WRITE
  */
 
-struct ScmWriteContextRec {
-    short mode;                 /* print mode */
-    short flags;                /* internal */
-    int limit;                  /* internal */
-    int ncirc;                  /* internal */
-    ScmHashTable *table;        /* internal */
-    ScmObj obj;                 /* internal */
-};
-
-/* Print mode flags */
-enum {
-    SCM_WRITE_WRITE = 0,        /* write mode   */
-    SCM_WRITE_DISPLAY = 1,      /* display mode */
-    SCM_WRITE_SHARED = 2,       /* write/ss mode   */
-    SCM_WRITE_WALK = 3,         /* this is a special mode in write/ss */
-    SCM_WRITE_MODE_MASK = 0x3,
-
-    SCM_WRITE_CASE_FOLD = 4,    /* case-fold mode.  need to escape capital
-                                   letters. */
-    SCM_WRITE_CASE_NOFOLD = 8,  /* case-sensitive mode.  no need to escape
-                                   capital letters */
-    SCM_WRITE_CASE_MASK = 0x0c
-};
-
-#define SCM_WRITE_MODE(ctx)   ((ctx)->mode & SCM_WRITE_MODE_MASK)
-#define SCM_WRITE_CASE(ctx)   ((ctx)->mode & SCM_WRITE_CASE_MASK)
-
-SCM_EXTERN void Scm_Write(ScmObj obj, ScmObj port, int mode);
-SCM_EXTERN int Scm_WriteCircular(ScmObj obj, ScmObj port, int mode, int width);
-SCM_EXTERN int Scm_WriteLimited(ScmObj obj, ScmObj port, int mode, int width);
-SCM_EXTERN void Scm_Format(ScmPort *port, ScmString *fmt, ScmObj args, int ss);
-SCM_EXTERN void Scm_Printf(ScmPort *port, const char *fmt, ...);
-SCM_EXTERN void Scm_PrintfShared(ScmPort *port, const char *fmt, ...);
-SCM_EXTERN void Scm_Vprintf(ScmPort *port, const char *fmt, va_list args,
-                            int sharedp);
-SCM_EXTERN ScmObj Scm_Sprintf(const char *fmt, ...);
-SCM_EXTERN ScmObj Scm_SprintfShared(const char *fmt, ...);
-SCM_EXTERN ScmObj Scm_Vsprintf(const char *fmt, va_list args, int sharedp);
+#include <gauche/writer.h>
 
 /*---------------------------------------------------------
  * READ

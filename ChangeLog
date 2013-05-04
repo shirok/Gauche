@@ -1,5 +1,7 @@
 2013-05-04  Shiro Kawai  <shiro@acm.org>
 
+	* src/gauche/writer.h: Splitted writer related decls.
+
 	* src/main.c (main): Experimentally support -r7 option to start up
 	  gosh with R7RS environment as default.  Currently this is mainly
 	  for the convenience of developing R7RS compatibility code.
