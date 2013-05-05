@@ -646,7 +646,7 @@ ScmObj Scm_StringAppend(ScmObj strs)
 
     /* It is trickier than it appears, since the strings may be modified
        by another thread during we're dealing with it.  So in the first
-       pass to sum up the lenghts of strings, we extract the string bodies
+       pass to sum up the lengths of strings, we extract the string bodies
        and save it.  */
     numstrs = Scm_Length(strs);
     if (numstrs < 0) Scm_Error("improper list not allowed: %S", strs);

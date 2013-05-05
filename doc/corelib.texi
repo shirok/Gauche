@@ -2622,7 +2622,7 @@ it returns @code{#f}.
 
 @defun length<=? x k
 @c EN
-Returns @code{#t} iff @var{x} is a list whose lenght is less than
+Returns @code{#t} iff @var{x} is a list whose length is less than
 or equal to @var{k}.  This procedure only follows the list up to the
 @var{k} items, so it doesn't realize elements of lazy sequence more than
 needed (@xref{Lazy sequences}, for the lazy sequences).

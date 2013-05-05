@@ -540,7 +540,7 @@
 
 (with-module gauche.internal
   ;; A tolerant version of list-tail.  If LIS is shorter than K, returns
-  ;; (- k (length len)) as the second value.
+  ;; (- k (length lis)) as the second value.
   (define (%list-tail* lis k)
     (let loop ([lis lis] [k k])
       (cond [(<= k 0) (values lis 0)]
