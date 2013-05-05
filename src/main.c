@@ -531,6 +531,7 @@ int main(int argc, char **argv)
                 } else {
                     Scm_Error("Unsupported standard for -r option: %s", std);
                 }
+                standard_given = TRUE;
             }
         }
     }
