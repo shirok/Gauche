@@ -331,8 +331,8 @@
     (if-let1 z (find ($ not $ boolean? $) (list* a b args))
       (error "boolean value required, but got:" z))
     (if a
-      (and b (every identity rest))
-      (and (not b) (every not rest))))
+      (and b (every identity args))
+      (and (not b) (every not args))))
 
   ;; 6.4 Pairs and lists
   (define+ pair? gauche)
