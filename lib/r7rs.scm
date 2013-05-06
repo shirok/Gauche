@@ -50,7 +50,7 @@
 ;;  R7RS library name   Gauche module name      File pathname
 ;;
 ;;  (foo bar baz)       foo.bar.baz             foo/bar/baz
-;;  (foo b.r baz)       foo.b.r.baz             foo/b.r/baz
+;;  (foo b.r baz)       foo.b..r.baz            foo/b.r/baz
 ;;
 ;; TODO: R7RS library name can contain weird characters, and we need a rule
 ;; to map them.
