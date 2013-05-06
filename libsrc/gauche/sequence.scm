@@ -69,8 +69,7 @@
             [(< (* i 2) siz) (ref o i #f)]
             [else (ref o (- siz i 1) #t)]))))
 
-(define-method modifier ((obj <list>))
-  (^[o i v] (set-car! (list-tail o i) v)))
+(define-method modifier ((obj <list>)) list-set!)
 (define-method modifier ((obj <vector>)) vector-set!)
 (define-method modifier ((obj <weak-vector>)) weak-vector-set!)
 (define-method modifier ((obj <string>)) string-set!)

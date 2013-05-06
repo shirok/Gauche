@@ -1,5 +1,7 @@
 2013-05-05  Shiro Kawai  <shiro@acm.org>
 
+	* src/liblist.scm (list-set!): Make it built-in.
+
 	* libsrc/file/util.scm (delete-file, remove-file): Added for R7RS
 	  compatibility.
 	* lib/r7rs.scm (delete-file): Changed accordingly.

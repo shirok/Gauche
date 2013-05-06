@@ -2873,6 +2873,22 @@ it is returned for such case.  This is an extension of Gauche.
 @c COMMON
 @end defun
 
+@defun list-set! list k v
+[R7RS]
+@c EN
+Modifies the @var{k}-th element of a @var{list} by @var{v}.
+It is an error unless @var{k} is an exact integer between 0 and
+one minus the length of @var{k}.  If @var{list} is immutable,
+no error is signalled but the behavior is undefined.
+@c JP
+リスト@var{list}の@var{k}番目の要素を@var{v}へと変更します。
+@var{k}が0から(- リストの長さ 1)の範囲の正確な整数でない場合は
+エラーが報告されます。@var{list}が変更不可なリストであった場合、
+エラーは報告されませんが、その後の振る舞いは不定となります。
+@c COMMON
+@end defun
+
+
 @defun last-pair list
 [SRFI-1]
 @c EN

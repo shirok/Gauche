@@ -354,7 +354,7 @@
   (define+ reverse gauche)
   (define+ list-tail gauche)
   (define+ list-ref gauche)
-  (define (list-set! lis k v) (set-car! (list-tail lis k) v))
+  (define+ list-set! gauche)
   (define+ memq gauche)
   (define+ memv gauche)
   (define+ member gauche)

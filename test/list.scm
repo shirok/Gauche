@@ -6,6 +6,28 @@
 (test-start "builtin list operations")
 
 ;;--------------------------------------------------------------------------
+(test-section "ref,set!")
+
+(test* "list-ref" '(e d c b a)
+       (map (lambda (k) (list-ref '(a b c d e) k)) '(4 3 2 1 0)))
+(test* "list-set!" '(a (b) c (d) e)
+       (rlet1 lis (list 'a 'b 'c 'd 'e)
+         (for-each (lambda (k)
+                     (when (odd? k)
+                       (list-set! lis k (list (list-ref lis k)))))
+                   '(4 3 2 1 0))))
+(let ()
+  (define (ensure-error name proc)
+    (test* #`",name (negative)" (test-error) (proc -1))
+    (test* #`",name (too big)" (test-error) (proc 5))
+    (test* #`",name (nonexact)" (test-error) (proc 1.0))
+    (test* #`",name (noninteger)" (test-error) (proc 1/4)))
+
+  (ensure-error "list-ref" (^k (list-ref '(a b c d e) k)))
+  (ensure-error "list-set!" (^k (list-set! (list 'a 'b 'c 'd 'e) k 0)))
+  )
+
+;;--------------------------------------------------------------------------
 (test-section "iota")
 
 (test* "iota" '(0 1 2 3 4) (iota 5))

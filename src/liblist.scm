@@ -125,7 +125,16 @@
 
 (define-cproc list-tail (list k::<fixnum> :optional fallback) :constant
   Scm_ListTail)
+;;We need to define list-set! as cproc in order to use it in the setter clause
+;;of list-ref.  This limitation of cgen.stub should be removed in future.
+;;(define (list-set! lis k v) (set-car! (list-tail lis k) v))
+(define-cproc list-set! (lis k::<fixnum> v) ::<void>
+  (let* ([p (Scm_ListTail lis k SCM_FALSE)])
+    (if (SCM_PAIRP p)
+      (SCM_SET_CAR p v)
+      (Scm_Error "list-set!: index out of bound: %d" k))))
 (define-cproc list-ref (list k::<fixnum> :optional fallback) :constant
+  (setter list-set!)
   Scm_ListRef)
 
 (define-cproc memq (obj list::<list>) :constant (inliner MEMQ) Scm_Memq)
