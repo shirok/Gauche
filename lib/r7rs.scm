@@ -327,12 +327,7 @@
   ;; 6.3 Booleans
   (define+ not       gauche)
   (define+ boolean?  gauche)
-  (define (boolean=? a b . args)
-    (if-let1 z (find ($ not $ boolean? $) (list* a b args))
-      (error "boolean value required, but got:" z))
-    (if a
-      (and b (every identity args))
-      (and (not b) (every not args))))
+  (define+ boolean=? gauche)
 
   ;; 6.4 Pairs and lists
   (define+ pair? gauche)
@@ -364,19 +359,16 @@
   (define+ list-copy gauche)
 
   ;; 6.5 Symbols
-  (define+ symbol? gauche)
-  (define (symbol=? x y . rest)
-    (if-let1 z (find ($ not $ symbol? $) (list* a b args))
-      (error "symbol required, but got:" z))
-    (and (eq? x y) (every (cut eq? x <>) rest)))
+  (define+ symbol?        gauche)
+  (define+ symbol=?       gauche)
   (define+ symbol->string gauche)
   (define+ string->symbol gauche)
 
   ;; 6.6 Characters
-  (define+ char? gauche)
-  (define+ char=? gauche)
-  (define+ char<? gauche)
-  (define+ char>? gauche)
+  (define+ char?   gauche)
+  (define+ char=?  gauche)
+  (define+ char<?  gauche)
+  (define+ char>?  gauche)
   (define+ char<=? gauche)
   (define+ char<=? gauche)
 

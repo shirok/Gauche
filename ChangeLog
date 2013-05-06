@@ -1,5 +1,8 @@
 2013-05-05  Shiro Kawai  <shiro@acm.org>
 
+	* src/libsym.scm (symbol=?): Added for R7RS.
+	* src/libbool.scm (boolean=?): Added for R7RS.
+
 	* src/liblist.scm (list-set!): Make it built-in.
 
 	* libsrc/file/util.scm (delete-file, remove-file): Added for R7RS

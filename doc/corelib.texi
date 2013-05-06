@@ -2083,6 +2083,17 @@ otherwise.  Convenient to coerce a value to boolean.
 @c COMMON
 @end defun
 
+@defun boolean=? a b c @dots{}
+[R7RS]
+@c EN
+Every argument must be a boolean value.  Returns @code{#t} iff all
+values are the same, @code{#f} otherwise.
+@c JP
+全ての引数は論理値でなければなりません。全ての引数が等しい場合に
+@code{#t}が、そうでなければ@code{#f}が返ります。
+@c COMMON
+@end defun
+
 @c ----------------------------------------------------------------------
 @node Undefined values, Pairs and Lists, Booleans, Core library
 @section Undefined values
@@ -3851,6 +3862,16 @@ if @var{symbol} is not a symbol.
 @c COMMON
 @end defun
 
+@defun symbol=? a b c @dots{}
+[R7RS]
+@c EN
+Every argument must be a symbol.  Returns @code{#t} iff
+every pair of arguments are @code{eq?} to each other.
+@c JP
+全ての引数はシンボルでなければなりません。引数のどの二つの組み合わせを取っても
+それが@code{eq?}である時に限り、@code{#t}が返ります。
+@c COMMON
+@end defun
 
 @defun symbol->string symbol
 [R5RS]

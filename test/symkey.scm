@@ -20,6 +20,13 @@
 (test* "interned?" #t (symbol-interned? (string->symbol "foofoo")))
 (test* "interned?" #f (symbol-interned? (gensym "foofoo")))
 
+(test* "symbol=?" '(#t #t #f #f)
+       (list (symbol=? 'a 'a)
+             (symbol=? 'a 'a 'a)
+             (symbol=? 'a 'b)
+             (symbol=? 'a 'a 'b)))
+(test* "symbol=?" (test-error) (symbol=? 'a 'a "a"))
+
 (test* "symbol reader" 'foo (read-from-string "foo"))
 (test* "symbol reader" 'foo (read-from-string "foo bar"))
 (test* "symbol reader escaped" 'foo (read-from-string "|foo|"))

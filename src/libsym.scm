@@ -54,6 +54,13 @@
 (define-cproc symbol-sans-prefix (s::<symbol> p::<symbol>)
   Scm_SymbolSansPrefix)
 
+;; R7RS
+(define (symbol=? x y . rest)
+  (if-let1 z (find ($ not $ symbol? $) (list* x y rest))
+    (error "symbol required, but got:" z))
+  (and (eq? x y) (or (null? rest) (every (cut eq? x <>) rest))))
+
+
 ;;;
 ;;;  Keywords
 ;;;
