@@ -50,7 +50,9 @@ enum ScmReadContextFlags {
     SCM_READ_SOURCE_INFO = (1L<<0),  /* preserving souce file information */
     SCM_READ_LITERAL_IMMUTABLE = (1L<<1), /* literal should be read as immutable */
     SCM_READ_DISABLE_CTOR = (1L<<2), /* disable #,() */
-    SCM_READ_RECURSIVELY = (1L<<3)   /* used internally. */
+    SCM_READ_RECURSIVELY = (1L<<3),  /* used internally. */
+    SCM_READ_LEGACY = (1L<<4)        /* make the reader fully compatible
+                                        < 0.9.4  */
 };
 
 SCM_CLASS_DECL(Scm_ReadContextClass);

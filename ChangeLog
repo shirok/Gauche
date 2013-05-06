@@ -1,3 +1,23 @@
+2013-05-06  Shiro Kawai  <shiro@acm.org>
+
+	* src/read.c (read_sharp_word): Support #true and #false.  This
+	  also changes how the #-word is delimited: #t and #f used to delimit
+	  themselves (except #f8, #f16 and #f32), but now we read a word
+	  then match the token.  So, #f.1 used to be read as #f and 0.1,
+	  but now it raises an error saying "invalid #-token: #f.1".
+	  I don't think this causes a problem in existing code, but there
+	  may be a datafile that relies on the old behavor; we'll watch.
+	  Note that this isn't fully R7RS compatible yet.  The way R7RS
+	  delimits tokens is different (e.g. we read "#false#false" as two
+	  boolean falses, but iiuc, R7RS reader should read it as one token
+	  and raise an error of invalid token.)
+	  This also changes how the tokens with hash signs are read;
+	  ".#" used to be read as a symbol, but now it is an error.
+	  See the comment in 'Symbols and Numbers' section of the code.
+	  Again, I doubt it causes any problem in existing code; and I worry
+	  less about datafiles, since when such weird symbols are written,
+	  it is |-escaped, so it can read back with the current reader.
+
 2013-05-05  Shiro Kawai  <shiro@acm.org>
 
 	* src/libsym.scm (symbol=?): Added for R7RS.

@@ -53,7 +53,7 @@ static ScmObj read_string(ScmPort *port, int incompletep, ScmReadContext *ctx);
 static ScmObj read_quoted(ScmPort *port, ScmObj quoter, ScmReadContext *ctx);
 static ScmObj read_char(ScmPort *port, ScmReadContext *ctx);
 static ScmObj read_word(ScmPort *port, ScmChar initial, ScmReadContext *ctx,
-                        int temp_case_fold);
+                        int temp_case_fold, int include_hash_sign);
 static ScmObj read_symbol(ScmPort *port, ScmChar initial, ScmReadContext *ctx);
 static ScmObj read_number(ScmPort *port, ScmChar initial, ScmReadContext *ctx);
 static ScmObj read_symbol_or_number(ScmPort *port, ScmChar initial, ScmReadContext *ctx);
@@ -66,7 +66,7 @@ static ScmObj process_sharp_comma(ScmPort *port, ScmObj key, ScmObj args,
                                   ScmReadContext *ctx, int has_ref);
 static ScmObj read_shebang(ScmPort *port, ScmReadContext *ctx);
 static ScmObj read_reference(ScmPort *port, ScmChar ch, ScmReadContext *ctx);
-static ScmObj maybe_uvector(ScmPort *port, char c, ScmReadContext *ctx);
+static ScmObj read_sharp_word(ScmPort *port, char c, ScmReadContext *ctx);
 
 /* Special hook for SRFI-4 syntax */
 static ScmObj (*read_uvector_hook)(ScmPort *, const char*, ScmReadContext *) = NULL;
@@ -324,16 +324,12 @@ static void read_context_flush(ScmReadContext *ctx)
    special meanings.
     bit 0 : a valid constituent char of words
     bit 1 : candidate of case folding
-
-   NB: '#' is marked as a constituent char, in order to read a possible
-   number as a word in read_word.  The leading '#' is recognized by
-   read_internal and will not be passed to read_word.
 */
 static unsigned char ctypes[] = {
     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
  /*     !   "   #   $   %   &   '   (   )   *   +   ,   -   .   /  */
-    0,  1,  0,  1,  1,  1,  1,  0,  0,  0,  1,  1,  0,  1,  1,  1,
+    0,  1,  0,  0,  1,  1,  1,  0,  0,  0,  1,  1,  0,  1,  1,  1,
  /* 0   1   2   3   4   5   6   7   8   9   :   ;   <   =   >   ?  */
     1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  0,  1,  1,  1,  1,
  /* @   A   B   C   D   E   F   G   H   I   J   K   L   M   N   O  */
@@ -346,9 +342,10 @@ static unsigned char ctypes[] = {
     1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  0,  0,  0,  1,  0,
 };
 
-inline static int char_word_constituent(int c)
+inline static int char_word_constituent(int c, int include_hash_sign)
 {
-    return (c >= 128 || (c >= 0 && (ctypes[(unsigned char)c]&1)));
+    return (c >= 128 || (c >= 0 && (ctypes[(unsigned char)c]&1))
+            || (c == '#' && include_hash_sign));
 }
 
 inline static int char_word_case_fold(int c)
@@ -437,10 +434,10 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
             switch (c1) {
             case EOF:
                 Scm_ReadError(port, "premature #-sequence at EOF");
-            case 't':; case 'T': return SCM_TRUE;
-            case 'f':; case 'F': return maybe_uvector(port, 'f', ctx);
-            case 's':; case 'S': return maybe_uvector(port, 's', ctx);
-            case 'u':; case 'U': return maybe_uvector(port, 'u', ctx);
+            case 't':; case 'T': return read_sharp_word(port, 't', ctx);
+            case 'f':; case 'F': return read_sharp_word(port, 'f', ctx);
+            case 's':; case 'S': return read_sharp_word(port, 's', ctx);
+            case 'u':; case 'U': return read_sharp_word(port, 'u', ctx);
             case '(':
                 return read_vector(port, ')', ctx);
             case '\\':
@@ -513,7 +510,7 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
                     if (c2 == '|') {
                         return read_escaped_symbol(port, c2, FALSE);
                     } else {
-                        ScmObj name = read_word(port, c2, ctx, FALSE);
+                        ScmObj name = read_word(port, c2, ctx, FALSE, FALSE);
                         return Scm_MakeSymbol(SCM_STRING(name), FALSE);
                     }
                 }
@@ -571,7 +568,7 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
     case '.':;
         {
             int c1 = Scm_GetcUnsafe(port);
-            if (!char_word_constituent(c1)) {
+            if (!char_word_constituent(c1, FALSE)) {
                 Scm_ReadError(port, "dot in wrong context");
             }
             Scm_UngetcUnsafe(c1, port);
@@ -627,7 +624,7 @@ static ScmObj read_list_int(ScmPort *port, ScmChar closer,
                 goto baddot;
             } else if (c2 == EOF) {
                 goto eoferr;
-            } else if (!char_word_constituent(c2)) {
+            } else if (!char_word_constituent(c2, FALSE)) {
                 /* can be a dot pair at the end */
                 if (start == SCM_NIL) goto baddot;
                 Scm_UngetcUnsafe(c2, port);
@@ -903,7 +900,7 @@ static ScmObj read_char(ScmPort *port, ScmReadContext *ctx)
         return SCM_MAKE_CHAR(c);
     default:
         /* need to read word to see if it is a character name */
-        name = SCM_STRING(read_word(port, c, ctx, TRUE));
+        name = SCM_STRING(read_word(port, c, ctx, TRUE, FALSE));
         cname = Scm_GetStringContent(name, &namesize, &namelen, NULL);
         if (namelen == 1) {
             return SCM_MAKE_CHAR(c);
@@ -950,10 +947,11 @@ static ScmObj read_char(ScmPort *port, ScmReadContext *ctx)
 /* Reads a sequence of word-constituent characters from PORT, and returns
    ScmString.  INITIAL may be a readahead character, or SCM_CHAR_INVALID
    if there's none.  TEMP_CASE_FOLD turns on case-fold mode regardless of
-   the read context setting.
+   the read context setting.  INCLUDE_HASH_SIGN allows '#' to appear in
+   the word.
 */
 static ScmObj read_word(ScmPort *port, ScmChar initial, ScmReadContext *ctx,
-                        int temp_case_fold)
+                        int temp_case_fold, int include_hash_sign)
 {
     int c = 0;
     int case_fold = temp_case_fold || SCM_PORT_CASE_FOLD(port);
@@ -966,7 +964,7 @@ static ScmObj read_word(ScmPort *port, ScmChar initial, ScmReadContext *ctx,
 
     for (;;) {
         c = Scm_GetcUnsafe(port);
-        if (c == EOF || !char_word_constituent(c)) {
+        if (c == EOF || !char_word_constituent(c, include_hash_sign)) {
             Scm_UngetcUnsafe(c, port);
             return Scm_DStringGet(&ds, 0);
         }
@@ -975,15 +973,29 @@ static ScmObj read_word(ScmPort *port, ScmChar initial, ScmReadContext *ctx,
     }
 }
 
+/* Kaveat: We don't allow '#' in symbols, but we need to read '#'
+   for numbers.  To allow weird identifers like '1+', we need to read the
+   word as a number fist and convert it to a symbol when the read word
+   can't be interpreted as a number.  For the consistency, we read
+   with '#' and then check it in read_symbol, too. */
+static void check_valid_symbol(ScmString *s)
+{
+    ScmObj r = Scm_StringScanChar(s, SCM_CHAR('#'), SCM_STRING_SCAN_INDEX);
+    if (!SCM_FALSEP(r)) {
+        Scm_Error("invalid symbol name: %S", SCM_OBJ(s));
+    }
+}
+
 static ScmObj read_symbol(ScmPort *port, ScmChar initial, ScmReadContext *ctx)
 {
-    ScmString *s = SCM_STRING(read_word(port, initial, ctx, FALSE));
+    ScmString *s = SCM_STRING(read_word(port, initial, ctx, FALSE, TRUE));
+    check_valid_symbol(s);
     return Scm_Intern(s);
 }
 
 static ScmObj read_number(ScmPort *port, ScmChar initial, ScmReadContext *ctx)
 {
-    ScmString *s = SCM_STRING(read_word(port, initial, ctx, FALSE));
+    ScmString *s = SCM_STRING(read_word(port, initial, ctx, FALSE, TRUE));
     ScmObj num = Scm_StringToNumber(s, 10, 0);
     if (num == SCM_FALSE)
         Scm_ReadError(port, "bad numeric format: %S", s);
@@ -992,12 +1004,11 @@ static ScmObj read_number(ScmPort *port, ScmChar initial, ScmReadContext *ctx)
 
 static ScmObj read_symbol_or_number(ScmPort *port, ScmChar initial, ScmReadContext *ctx)
 {
-    ScmString *s = SCM_STRING(read_word(port, initial, ctx, FALSE));
+    ScmString *s = SCM_STRING(read_word(port, initial, ctx, FALSE, TRUE));
     ScmObj num = Scm_StringToNumber(s, 10, 0);
-    if (num == SCM_FALSE)
-        return Scm_Intern(s);
-    else
-        return num;
+    if (num != SCM_FALSE) return num;
+    check_valid_symbol(s);
+    return Scm_Intern(s);    
 }
 
 static ScmObj read_keyword(ScmPort *port, ScmReadContext *ctx)
@@ -1010,7 +1021,7 @@ static ScmObj read_keyword(ScmPort *port, ScmReadContext *ctx)
         return Scm_MakeKeyword(SCM_SYMBOL_NAME(name));
     } else {
         Scm_UngetcUnsafe(c2, port);
-        name = read_word(port, SCM_CHAR_INVALID, ctx, FALSE);
+        name = read_word(port, SCM_CHAR_INVALID, ctx, FALSE, FALSE);
         return Scm_MakeKeyword(SCM_STRING(name));
     }
 }
@@ -1284,16 +1295,19 @@ static ScmObj read_shebang(ScmPort *port, ScmReadContext *ctx)
 }
 
 /*----------------------------------------------------------------
- * Uvector
+ * #f, #t, #false, #true, and UVector literals
  */
 
-/* Uvector support is implemented by gauche.uvector.  When it
-   is loaded, it sets up the pointer read_uvector_hook. */
-
-static ScmObj maybe_uvector(ScmPort *port, char ch, ScmReadContext *ctx)
+/* Pre-0.9.4 reader.  #t and #f delimit themselves (except '8', '1' or '3'
+   follows '#f'.)  I doubt any code breaks if we change that, but there
+   may be a data files around that somehow relies on this behavior.  So
+   we keep this in 'legacy' reader mode.  */
+static ScmObj read_sharp_word_legacy(ScmPort *port, char ch, ScmReadContext *ctx)
 {
     ScmChar c1, c2 = SCM_CHAR_INVALID;
     char *tag = NULL;
+
+    if (ch == 't') return SCM_FALSE;
 
     c1 = Scm_GetcUnsafe(port);
     if (ch == 'f') {
@@ -1342,6 +1356,70 @@ static ScmObj maybe_uvector(ScmPort *port, char ch, ScmReadContext *ctx)
             Scm_ReadError(port, "couldn't load srfi-4 module");
     }
     return read_uvector_hook(port, tag, ctx);
+}
+
+/* A 'new' version, friendly to R7RS */
+static ScmObj read_sharp_word_1(ScmPort *port, char ch, ScmReadContext *ctx)
+{
+    ScmString *s = SCM_STRING(read_word(port, ch, ctx, TRUE, FALSE));
+    const char *w = Scm_GetStringConst(s);
+    const char *tag = NULL;
+
+    switch (ch) {
+    case 'f':
+        if (strcmp(w, "f16") == 0
+            || strcmp(w, "f32") == 0
+            || strcmp(w, "f64") == 0) {
+            tag = w;
+        } else if (w[1] == '\0' || strcmp(w, "false") == 0) {
+            return SCM_FALSE;
+        }
+        break;
+    case 's':
+        if (strcmp(w, "s8") == 0
+            || strcmp(w, "s16") == 0
+            || strcmp(w, "s32") == 0
+            || strcmp(w, "s64") == 0) {
+            tag = w;
+        }
+        break;
+    case 'u':
+        if (strcmp(w, "u8") == 0
+            || strcmp(w, "u16") == 0
+            || strcmp(w, "u32") == 0
+            || strcmp(w, "u64") == 0) {
+            tag = w;
+        }
+        break;
+    case 't':
+        if (w[1] == '\0' || strcmp(w, "true") == 0) {
+            return SCM_TRUE;
+        }
+    }
+    if (tag == NULL) {
+        Scm_ReadError(port, "invalid #-token: #%s", w);
+    }
+    /* Uvector support is implemented by gauche.uvector.  When it
+       is loaded, it sets up the pointer read_uvector_hook. */
+    if (read_uvector_hook == NULL) {
+        /* Require srfi-4 (gauche/uvector)
+           NB: we don't need mutex here, for the loading of srfi-4 is
+           serialized in Scm_Require. */
+        Scm_Require(SCM_MAKE_STR("gauche/uvector"),
+                    SCM_LOAD_PROPAGATE_ERROR, NULL);
+        if (read_uvector_hook == NULL)
+            Scm_ReadError(port, "couldn't load srfi-4 module");
+    }
+    return read_uvector_hook(port, tag, ctx);
+}
+
+static ScmObj read_sharp_word(ScmPort *port, char ch, ScmReadContext *ctx)
+{
+    if (ctx->flags & SCM_READ_LEGACY) {
+        return read_sharp_word_legacy(port, ch, ctx);
+    } else {
+        return read_sharp_word_1(port, ch, ctx);
+    }
 }
 
 void Scm__InstallReadUvectorHook(ScmObj (*f)(ScmPort*, const char*, ScmReadContext *))
