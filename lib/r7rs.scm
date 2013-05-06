@@ -622,6 +622,7 @@
 
 (define-module scheme.file
   (import r7rs.aux)
+  (require "file/util")
   (export call-with-input-file call-with-output-file
           delete-file file-exists?
           open-binary-input-file open-binary-output-file
@@ -636,7 +637,7 @@
   (define+ open-output-file gauche)
   (define open-binary-output-file open-output-file)
   (define+ file-exists? gauche)
-  (define (delete-file f) (sys-unlink f))
+  (define+ delete-file file.util)
   (provide "scheme/file"))
 
 (define-module scheme.inexact

@@ -1,3 +1,9 @@
+2013-05-05  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/file/util.scm (delete-file, remove-file): Added for R7RS
+	  compatibility.
+	* lib/r7rs.scm (delete-file): Changed accordingly.
+
 2013-05-04  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/writer.h: Splitted writer related decls.

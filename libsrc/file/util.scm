@@ -64,6 +64,7 @@
           file-ctime=? file-ctime<? file-ctime<=? file-ctime>? file-ctime>=?
           touch-file touch-files copy-file move-file
           ;copy-files move-files
+          remove-file delete-file
           remove-files delete-files
           null-device console-device
           file->string file->string-list file->list file->sexp-list
@@ -785,7 +786,15 @@
 ; (define copy-files (%multifile-cpmv copy-file))
 ; (define move-files (%multifile-cpmv move-file))
 
-;; remove files
+;; removing.
+;; Unlike sys-unlink, we throw an error if FILE doesn't exist,
+;; to align with R7RS.  (Technically we should throw a file-error
+;; object.  We'll fix that later.)
+(define (remove-file file)
+  (or (sys-unlink file)
+      (error "File does not exist:" file)))
+(define delete-file remove-file)
+
 (define (remove-files . paths)
   (dolist (p paths)
     (cond [(list? p) (apply remove-files p)] ; for the convenience

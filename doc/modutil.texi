@@ -5126,6 +5126,27 @@ it to @var{dst}, then removes @var{src}.
 @c @c COMMON
 @c @end defun
 
+@defun remove-file filename
+@defunx delete-file filename
+[R7RS]
+@c EN
+Removes the named file.  An error is signalled if @var{filename}
+does not exist, is a directory, or cannot be deleted with other
+reasons such as permissions.
+R7RS defines @code{delete-file}.
+
+Compare with @code{sys-unlink} (@xref{Directory manipulation}),
+which doesn't raise an error when the named file doesn't exist.
+@c JP
+指定された名前のファイルを消去します。ファイルが存在しなかったり、ディレクトリであったり、
+パーミッションがなく消去できなかった場合等にはエラーが報告されます。
+@code{delete-file}はR7RSで定義されています。
+
+@code{sys-unlink}と似ていますが、@code{sys-unlink}はファイルが無かった場合に
+エラーをあげず@code{#f}を返すことに注意。(@ref{Directory manipulation}参照。)
+@c COMMON
+@end defun
+
 @defun remove-files paths
 @defunx delete-files paths
 @c EN

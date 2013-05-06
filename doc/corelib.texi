@@ -16823,7 +16823,7 @@ is the same as explained above.
 じです。
 @c COMMON
 
-@c EN
+*@c EN
 For each pathname that matches @var{pattern}, @code{glob-fold}
 calls @var{proc} with the pathname and a seed value.  The initial
 seed value is @var{seed}, and the value @var{proc} returns becomes
@@ -16958,6 +16958,16 @@ An error is signaled otherwise.
 @var{pathname}はディレクトリであってはなりません。
 もし消去に成功したら@code{#t}が、@var{pathname}が存在しなければ@code{#f}が返されます。
 他の場合はエラーが通知されます。
+@c COMMON
+
+@c EN
+There are similar procedures, @code{delete-file}/@code{remove-file}
+in @code{file.util} module, while they raises an error when the
+named pathname doesn't exist (@xref{File operations}).
+@c JP
+@code{file.util}モジュールに似た手続き@code{delete-file}/@code{remove-file}が
+ありますが、そちらはファイルが存在しない場合にエラーを投げます
+(@ref{File operations}参照)。
 @c COMMON
 @end defun
 
