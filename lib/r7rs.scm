@@ -641,27 +641,29 @@
   (provide "scheme/file"))
 
 (define-module scheme.inexact
+  (import r7rs.aux)
   (export acos asin atan cos exp finite? infinite? log nan? sin sqrt tan)
-  (define acos      (with-module gauche acos))
-  (define asin      (with-module gauche asin))
-  (define atan      (with-module gauche atan))
-  (define cos       (with-module gauche cos))
-  (define exp       (with-module gauche exp))
-  (define finite?   (with-module gauche finite?))
-  (define infinite? (with-module gauche infinite?))
-  (define log       (with-module gauche log))
-  (define nan?      (with-module gauche nan?))
-  (define sin       (with-module gauche sin))
-  (define sqrt      (with-module gauche sqrt))
-  (define tan       (with-module gauche tan))
+  (define+ acos      gauche)
+  (define+ asin      gauche)
+  (define+ atan      gauche)
+  (define+ cos       gauche)
+  (define+ exp       gauche)
+  (define+ finite?   gauche)
+  (define+ infinite? gauche)
+  (define+ log       gauche)
+  (define+ nan?      gauche)
+  (define+ sin       gauche)
+  (define+ sqrt      gauche)
+  (define+ tan       gauche)
   (provide "scheme/inexact"))
 
 (define-module scheme.lazy
+  (import r7rs.aux)
   (export delay force delay-force promise? make-promise)
-  (define-syntax delay (with-module gauche delay))
+  (define-syntax+ delay gauche)
   (define-syntax delay-force (with-module gauche lazy))
-  (define force    (with-module gauche force))
-  (define promise? (with-module gauche promise?))
+  (define+ force    gauche)
+  (define+ promise? gauche)
   (define make-promise (undefined))     ;WRITEME
   (provide "scheme/lazy"))
 
@@ -672,24 +674,27 @@
   (provide "scheme/load"))
 
 (define-module scheme.process-context
+  (import r7rs.aux)
+  (use srfi-98)
   (export command-line emergency-exit exit
-          get-enviornment-variable get-environment-variables)
-  (define command-line (with-module gauche command-line))
-  (define exit (with-module gauche exit))
+          get-environment-variable get-environment-variables)
+  (define+ command-line gauche)
+  (define+ exit         gauche)
   (define (emergency-exit :optional (obj 0)) (sys-exit obj))
-  (define (get-environment-variable name) (sys-getenv name))
-  (define (get-environment-variables) (sys-environ->alist))
+  (define+ get-environment-variable  srfi-98)
+  (define+ get-environment-variables srfi-98)
   (provide "scheme/process-context"))
 
 (define-module scheme.read
+  (import r7rs.aux)
   (export read)
-  (define read (with-module gauche read))
+  (define+ read gauche)
   (provide "scheme/read"))
 
 (define-module scheme.repl
+  (import r7rs.aux)
   (export interaction-environment)
-  (define interaction-enviornment
-    (with-module gauche interaction-environment))
+  (define+ interaction-environment gauche)
   (provide "scheme/repl"))
 
 (define-module scheme.time
