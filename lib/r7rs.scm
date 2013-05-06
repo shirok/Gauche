@@ -88,6 +88,14 @@
 
   (define-macro (r7rs-import . import-sets)
     `(,begin. ,@(append-map %transfer-import-spec import-sets)))
+  (define-macro (require-if-module-doesnt-exist modname)
+    (if (find-module modname)
+      #f
+      `(,require. ,(module-name->path modname))))
+
+  (define require-if-module-doesnt-exist.
+    ((with-module gauche.internal make-identifier)
+     'require-if-module-doesnt-exist (current-module) '()))
 
   (define (%transfer-import-spec import-set)
     (define (rec import-set)
@@ -102,7 +110,7 @@
          `(,@(rec import-set) :rename ,mapping)]
         [else (list (library-name->module-name import-set))]))
     (let1 import-spec (rec import-set)
-      `((,require. ,(module-name->path (car import-spec)))
+      `((,require-if-module-doesnt-exist. ,(car import-spec))
         (,import. ,import-spec)))))
 
 ;; r7rs.library - R7RS define-library form
