@@ -12,7 +12,7 @@
       (let ((grid (make-vector n)))
         (do ((i 0 (+ i 1)))
             ((= i n) grid)
-          (let ((v (make-vector m #f)))
+          (let ((v (make-vector m #false)))
             (vector-set! grid i v)))))
     (define (rows grid)
       (vector-length grid))

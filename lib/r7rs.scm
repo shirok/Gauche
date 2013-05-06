@@ -110,15 +110,25 @@
   (import r7rs.library-name)
   (export define-library)
 
+  ;; A trick - must be replaced once we have explicit-renaming macro.
+  (define define-module. ((with-module gauche.internal make-identifier)
+                          'define-module (find-module 'gauche) '()))
+  (define with-module.   ((with-module gauche.internal make-identifier)
+                          'with-module (find-module 'gauche) '()))
+  (define define-syntax. ((with-module gauche.internal make-identifier)
+                          'define-syntax (find-module 'gauche) '()))
+  (define extend.        ((with-module gauche.internal make-identifier)
+                          'extend (find-module 'gauche) '()))
+  
   (define-macro (define-library name . decls)
-    `(define-module ,(library-name->module-name name)
-       (define-syntax export      (with-module gauche export))
-       (define-syntax begin       (with-module gauche begin))
-       (define-syntax include     (with-module gauche include))
-       (define-syntax include-ci  (with-module gauche include-ci))
-       (define-syntax cond-expand (with-module gauche cond-expand))
-       (define-syntax import      (with-module r7rs.import r7rs-import))
-       (extend)
+    `(,define-module. ,(library-name->module-name name)
+       (,define-syntax. export      (,with-module. gauche export))
+       (,define-syntax. begin       (,with-module. gauche begin))
+       (,define-syntax. include     (,with-module. gauche include))
+       (,define-syntax. include-ci  (,with-module. gauche include-ci))
+       (,define-syntax. cond-expand (,with-module. gauche cond-expand))
+       (,define-syntax. import      (,with-module. r7rs.import r7rs-import))
+       (,extend.)
        ,@(map transform-decl decls)))
 
   (define (transform-decl decl)
@@ -706,10 +716,10 @@
   (define r7rs-display  display)
   (provide "scheme/write"))
 
-
-
-
-
-
-
+;; A trick: 'define-library' in Gauche module is set to be autloaded.
+;; When this module is loaded directly (not via autload), however,
+;; we don't want to trigger autoload from gauche#define-library anymore,
+;; so we overwrite it.
+(with-module gauche
+  (define-syntax define-library (with-module r7rs define-library)))
 

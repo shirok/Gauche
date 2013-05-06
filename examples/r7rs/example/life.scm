@@ -21,9 +21,9 @@
          (count (+ i 1) (+ j 1))))
     (define (life-alive? grid i j)
       (case (life-count grid i j)
-        ((3) #t)
+        ((3) #true)
         ((2) (ref grid i j))
-        (else #f)))
+        (else #false)))
     (define (life-print grid)
       ;(display "\x1B;[1H\x1B;[J") ; clear vt100
       (display "\x1B[1H\x1B[J") ; clear vt100 ;; gauche compatibility for now
