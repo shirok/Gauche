@@ -43,8 +43,7 @@
 
 (define-macro (use module . options)
   `(begin
-     (with-module gauche
-       (require ,(module-name->path module)))
+     (require ,(module-name->path module))
      (import (,module ,@options))))
 
 ;; create built-in modules, so that (use srfi-6) won't complain, for example.
