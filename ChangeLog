@@ -1,3 +1,9 @@
+2013-05-10  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/interactive.scm: Imports R7RS-small standard libraries
+	  when gosh is invoked in interactive r7rs mode, so that they are
+	  available in REPL.
+
 2013-05-06  Shiro Kawai  <shiro@acm.org>
 
 	* src/read.c (read_sharp_word): Support #true and #false.  This
