@@ -408,6 +408,13 @@ ScmObj Scm_DecodeFlonum(double d, int *exp, int *sign)
     return f;
 }
 
+/* returns -1 or 1.  Scm_Sign cannot distinguish 0.0 and -0.0.  This one can.
+   signbit(3) is in C99. */
+int Scm_FlonumSign(double d)
+{
+    return signbit(d)? -1 : 1;
+}
+
 /* Half float support */
 
 double Scm_HalfToDouble(ScmHalfFloat v)
@@ -1411,7 +1418,8 @@ static ScmObj scm_abs(ScmObj obj, int vmp)
 DEFINE_DUAL_API1(Scm_Abs, Scm_VMAbs, scm_abs)
 
 /* Return -1, 0 or 1 when arg is minus, zero or plus, respectively.
-   used to implement zero?, positive? and negative? */
+   used to implement zero?, positive? and negative?
+   NB: This returns 0 for both positive and negative zeros. */
 int Scm_Sign(ScmObj obj)
 {
     long r = 0;
@@ -2214,23 +2222,27 @@ scm_div(ScmObj arg0, ScmObj arg1, int inexact, int compat, int vmp)
       Scm_Error("attempt to calculate a division by zero");
     }
   anormal:
+    /* real inexact division by zero */
     {
-        int s = Scm_Sign(arg0);
-        if (s == 0) return SCM_NAN;
-        if (s < 0)  return SCM_NEGATIVE_INFINITY;
-        else        return SCM_POSITIVE_INFINITY;
+        int s0 = Scm_Sign(arg0);
+        int s1 = SCM_FLONUMP(arg1)? Scm_FlonumSign(SCM_FLONUM_VALUE(arg1)) : 1;
+        if (s0 == 0)   return SCM_NAN;
+        if (s0*s1 < 0) return SCM_NEGATIVE_INFINITY;
+        else           return SCM_POSITIVE_INFINITY;
     }
   anormal_comp:
+    /* complex inexact division by zero */
     {
         double r0 = SCM_COMPNUM_REAL(arg0);
         double i0 = SCM_COMPNUM_IMAG(arg0);
+        int s1 = SCM_FLONUMP(arg1)? Scm_FlonumSign(SCM_FLONUM_VALUE(arg1)) : 1;
         double r =
-            (r0 > 0.0) ? SCM_DBL_POSITIVE_INFINITY
-            : (r0 < 0.0) ? SCM_DBL_NEGATIVE_INFINITY
+            (r0*s1 > 0.0) ? SCM_DBL_POSITIVE_INFINITY
+            : (r0*s1 < 0.0) ? SCM_DBL_NEGATIVE_INFINITY
             : SCM_DBL_NAN;
         double i =
-            (i0 > 0.0) ? SCM_DBL_POSITIVE_INFINITY
-            : (i0 < 0.0) ? SCM_DBL_NEGATIVE_INFINITY
+            (i0*s1 > 0.0) ? SCM_DBL_POSITIVE_INFINITY
+            : (i0*s1 < 0.0) ? SCM_DBL_NEGATIVE_INFINITY
             : SCM_DBL_NAN;
         return Scm_MakeComplex(r, i);
     }
@@ -3264,10 +3276,13 @@ static inline int numcmp3(ScmObj x, ScmObj d, ScmObj y)
 static void print_double(char *buf, int buflen, double val, int plus_sign,
                          int precision, int exp_lo, int exp_hi)
 {
-    /* Handle a few special cases first.
-       The notation of infinity is provisional; see how srfi-70 becomes. */
+    /* Handle a few special cases first. */
     if (val == 0.0) {
-        if (plus_sign) *buf++ = '+';
+        if (Scm_FlonumSign(val) > 0) {
+            if (plus_sign) *buf++ = '+';
+        } else {
+            *buf++ = '-';
+        }
         if (precision == 0) strcpy(buf, "0.");
         else strcpy (buf, "0.0");
         return;

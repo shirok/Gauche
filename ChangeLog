@@ -1,3 +1,15 @@
+2013-05-11  Shiro Kawai  <shiro@acm.org>
+
+	* src/number.c (Scm_FloatSign, print_double, scm_div): Basic support
+	  for negative inexact zero.  We actually have the representation of
+	  -0.0 internally, but didn't have printer honor it.  Most calculations
+	  just works because libc does the job.  However, we need to
+	  distinguish positive-zero imaginary part and negative-zero imaginary
+	  part, which requires some surgery since we implicitly coerce complex
+	  numbers with zero imaginary part to real numbers.
+	* src/libnum.scm (%log): Likewise.  (log 0.0) ==> -inf.0 but
+	  (log -0.0) ==> -inf.0+3.141592653589793i.
+
 2013-05-10  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/interactive.scm: Imports R7RS-small standard libraries
