@@ -97,6 +97,9 @@ ScmSocket *make_socket(Socket fd, int type)
     s->address = NULL;
     s->name = NULL;
     s->type = type;
+#if defined(GAUCHE_WINDOWS)
+    s->infd = s->outfd = -1;
+#endif /*GAUCHE_WINDOWS*/
     Scm_RegisterFinalizer(SCM_OBJ(s), socket_finalize, NULL);
     return s;
 }
@@ -149,6 +152,10 @@ ScmObj Scm_SocketClose(ScmSocket *s)
         Scm_ClosePort(s->outPort); /* ignore errors */
         s->outPort = NULL;
     }
+#if defined(GAUCHE_WINDOWS)
+    if (s->infd >= 0)  { close(s->infd);  s->infd = -1 ; }
+    if (s->outfd >= 0) { close(s->outfd); s->outfd = -1 ; }
+#endif /*GAUCHE_WINDOWS*/
     closeSocket(s->fd);
     s->fd = INVALID_SOCKET;
     s->status = SCM_SOCKET_STATUS_CLOSED;
@@ -174,7 +181,8 @@ ScmObj Scm_SocketInputPort(ScmSocket *sock, int buffering)
 #ifndef GAUCHE_WINDOWS
 	infd = sock->fd;
 #else  /*GAUCHE_WINDOWS*/
-	infd = _open_osfhandle(sock->fd, O_RDONLY);
+        /* infd will be closed when this socket is closed. */
+	sock->infd = infd = _open_osfhandle(sock->fd, O_RDONLY);
 #endif /*GAUCHE_WINDOWS*/
         if (infd == INVALID_SOCKET) sockport_err(sock, "input");
 
@@ -183,8 +191,7 @@ ScmObj Scm_SocketInputPort(ScmSocket *sock, int buffering)
            pointer to the socket. */
 	sockname = SCM_LIST2(SCM_MAKE_STR("socket input"), SCM_OBJ(sock));
         sock->inPort = SCM_PORT(Scm_MakePortWithFd(sockname, SCM_PORT_INPUT,
-						   infd, buffering,
-						   FALSE));
+                                                   infd, buffering, FALSE));
     }
     return SCM_OBJ(sock->inPort);
 }
@@ -201,7 +208,8 @@ ScmObj Scm_SocketOutputPort(ScmSocket *sock, int buffering)
 #ifndef GAUCHE_WINDOWS
 	outfd = sock->fd;
 #else  /*GAUCHE_WINDOWS*/
-	outfd = _open_osfhandle(sock->fd, 0);
+        /* outfd will be closed when this socket is closed. */
+	sock->outfd = outfd = _open_osfhandle(sock->fd, O_RDONLY);
 #endif /*GAUCHE_WINDOWS*/
         if (outfd == INVALID_SOCKET) sockport_err(sock, "output");
 

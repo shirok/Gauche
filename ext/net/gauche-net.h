@@ -202,6 +202,13 @@ typedef struct ScmSocketRec {
     ScmPort *inPort;
     ScmPort *outPort;
     ScmString *name;
+#if defined(GAUCHE_WINDOWS)
+    /* Save them so that we can close them when the socket is closed.
+       We can't let these closed by inPort/outPort cleanup routine, since
+       even after one port is closed, another port may be still in use. */
+    int infd;
+    int outfd;
+#endif /*GAUCHE_WINDOWS*/
 } ScmSocket;
 
 #define SOCKET_CLOSED(fd)  ((fd) == INVALID_SOCKET)

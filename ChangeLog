@@ -1,5 +1,9 @@
 2013-05-11  Shiro Kawai  <shiro@acm.org>
 
+	* ext/net/net.c: Plugged resource (fd) leak on Windows.  We need to
+	  close fds opened by _open_osfhandle, but the trick is that we only
+	  can do it at the time when the socket is closed.
+
 	* src/number.c (Scm_FloatSign, print_double, scm_div): Basic support
 	  for negative inexact zero.  We actually have the representation of
 	  -0.0 internally, but didn't have printer honor it.  Most calculations
