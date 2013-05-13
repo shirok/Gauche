@@ -724,8 +724,8 @@
   (define r7rs-display  display)
   (provide "scheme/write"))
 
-;; A trick: 'define-library' in Gauche module is set to be autloaded.
-;; When this module is loaded directly (not via autload), however,
+;; A trick: 'define-library' in Gauche module is set to be autoloaded.
+;; When this module is loaded directly (not via autoload), however,
 ;; we don't want to trigger autoload from gauche#define-library anymore,
 ;; so we overwrite it.
 (with-module gauche
