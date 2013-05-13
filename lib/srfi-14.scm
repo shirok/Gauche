@@ -51,7 +51,6 @@
 ;;    integer-range->char-set integer-range->char-set!
 
 (define-module srfi-14
-  (use gauche.lazy)
   (export char-set= char-set<= char-set-hash
           char-set-cursor char-set-ref char-set-cursor-next end-of-char-set?
           char-set-fold char-set-unfold char-set-unfold!
@@ -78,6 +77,9 @@
           char-set:empty char-set:full)
   )
 (select-module srfi-14)
+
+;; used in ->char-set
+(autoload gauche.lazy x->lseq)
 
 ;; some built-in support
 (define %char-set-equal? (with-module gauche.internal %char-set-equal?))
