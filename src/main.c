@@ -574,7 +574,7 @@ int main(int argc, char **argv)
     if (load_initfile) load_gauche_init();
 
     /* prepare *program-name* and *argv* */
-    if (optind < argc) {
+    if (argind < argc) {
         /* We have a script file specified. */
         ScmObj at = SCM_NIL;
         struct stat statbuf;
@@ -582,28 +582,28 @@ int main(int argc, char **argv)
         /* if the script name is given in relative pathname, see if
            it exists from the current directory.  if not, leave it
            to load() to search in the load paths */
-        if (argv[optind][0] == '\0') Scm_Error("bad script name");
-        if (argv[optind][0] == '/') {
-            scriptfile = argv[optind];
+        if (argv[argind][0] == '\0') Scm_Error("bad script name");
+        if (argv[argind][0] == '/') {
+            scriptfile = argv[argind];
 #if defined(__CYGWIN__) || defined(GAUCHE_WINDOWS)
-	} else if (isalpha(argv[optind][0]) && argv[optind][1] == ':') {
+	} else if (isalpha(argv[argind][0]) && argv[argind][1] == ':') {
 	    /* support of wicked legacy DOS drive letter */
-	    scriptfile = argv[optind];
+	    scriptfile = argv[argind];
 #endif /* __CYGWIN__ || GAUCHE_WINDOWS */
         } else {
-            if (stat(argv[optind], &statbuf) == 0) {
+            if (stat(argv[argind], &statbuf) == 0) {
                 ScmDString ds;
                 Scm_DStringInit(&ds);
                 Scm_DStringPutz(&ds, "./", -1);
-                Scm_DStringPutz(&ds, argv[optind], -1);
+                Scm_DStringPutz(&ds, argv[argind], -1);
                 scriptfile = Scm_DStringGetz(&ds);
             } else {
-                scriptfile = argv[optind];
+                scriptfile = argv[argind];
             }
         }
 
         /* sets up arguments. */
-        args = Scm_InitCommandLine(argc - optind, (const char**)argv + optind);
+        args = Scm_InitCommandLine(argc - argind, (const char**)argv + argind);
     } else {
         args = Scm_InitCommandLine(1, (const char**)argv);
     }
