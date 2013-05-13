@@ -209,7 +209,7 @@ ScmObj Scm_SocketOutputPort(ScmSocket *sock, int buffering)
 	outfd = sock->fd;
 #else  /*GAUCHE_WINDOWS*/
         /* outfd will be closed when this socket is closed. */
-	sock->outfd = outfd = _open_osfhandle(sock->fd, O_RDONLY);
+	sock->outfd = outfd = _open_osfhandle(sock->fd, 0);
 #endif /*GAUCHE_WINDOWS*/
         if (outfd == INVALID_SOCKET) sockport_err(sock, "output");
 
