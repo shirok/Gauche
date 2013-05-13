@@ -1298,7 +1298,7 @@ static ScmObj read_shebang(ScmPort *port, ScmReadContext *ctx)
  * #f, #t, #false, #true, and UVector literals
  */
 
-/* Pre-0.9.4 reader.  #t and #f delimit themselves (except '8', '1' or '3'
+/* Pre-0.9.4 reader.  #t and #f delimit themselves (except '1', '3' or '6'
    follows '#f'.)  I doubt any code breaks if we change that, but there
    may be a data files around that somehow relies on this behavior.  So
    we keep this in 'legacy' reader mode.  */
@@ -1307,7 +1307,7 @@ static ScmObj read_sharp_word_legacy(ScmPort *port, char ch, ScmReadContext *ctx
     ScmChar c1, c2 = SCM_CHAR_INVALID;
     char *tag = NULL;
 
-    if (ch == 't') return SCM_FALSE;
+    if (ch == 't') return SCM_TRUE;
 
     c1 = Scm_GetcUnsafe(port);
     if (ch == 'f') {
