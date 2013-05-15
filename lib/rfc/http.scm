@@ -411,10 +411,15 @@
                                :key receiver (sink #f) (flusher #f)
                                :allow-other-keys opts)
   (define recvr
-    (if (or sink flusher)
-      (http-oport-receiver (or sink (open-output-string))
-                           (or flusher (^(s h) (get-output-string s))))
-      receiver))
+    (cond [(and sink flusher)
+           (http-oport-receiver sink flusher)]
+          [(or sink flusher)
+           (errorf "You need to provide :sink and :flusher together to http-~a"
+                   (string-downcase (symbol->string method)))]
+          [receiver]
+          ;; fallback
+          [else (http-oport-receiver (open-output-string)
+                                     (^[s h] (get-output-string s)))]))
   (apply http-request method server request-uri
          :sender (cond [(not body) (http-null-sender)]
                        [(list? body) (http-multipart-sender body)]

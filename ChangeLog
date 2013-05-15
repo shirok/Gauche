@@ -1,3 +1,14 @@
+2013-05-15  Shiro Kawai  <shiro@acm.org>
+
+	* lib/rfc/http.scm (%http-request-adaptor): If the caller gives :sink
+	  or :flusher, we mandate both should be given.  Giving just either
+	  one should be rare case (and it's not likely to be working in the
+	  current version---suppose you pass a file port to sink but not
+	  giving flusher; then the current code raises an error, since the
+	  adaptor provides the default flusher that calls get-output-string
+	  on the sink.)  It is better to mandate both, so that we can catch
+	  caller's misspelling of :sink or :flusher.
+
 2013-05-11  Shiro Kawai  <shiro@acm.org>
 
 	* ext/net/net.c: Plugged resource (fd) leak on Windows.  We need to
