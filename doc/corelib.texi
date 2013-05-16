@@ -9993,6 +9993,8 @@ benefit of generators.
 A generator version of @code{for-each}.  Repeatedly applies @var{proc} on
 the values yielded by @var{gen}, @var{gen2} @dots{} until any one of
 the generators yields EOF.  The values returned from @var{proc} are discarded.
+
+This is a handy procedure to consume generated values with side effects.
 @end defun
 
 @defun generator-map proc gen gen2 @dots{}
@@ -10006,7 +10008,33 @@ are collected into a list and returned.
   (cut generator-map symbol->string read))
   @result{} ("a" "b" "c" "d" "e")
 @end example
+
+The same effects can be achieved by combining @code{generator->list}
+and @code{gmap} (@xref{Generator operations}).  This procedure
+is provided for the backward compatibility.
+
+@example
+(generator->list (gmap proc gen gen2 @dots{}))
+@end example
 @end defun
+
+@defun generator-find pred gen
+Returns the first item from the generator @var{gen} that satisfies
+the predicate @var{pred}.
+
+The following example returns the first line matching the regexp
+@code{#/XYZ/} from the file @file{foo.txt}.
+
+@example
+(with-input-from-file "foo.txt"
+  (cut generator-find #/XYZ/ read-line))
+@end example
+
+NB: If you want to pick all the lines matching the regexp,
+like the @code{grep} command, 
+you can use @code{gfilter} and @code{generator->list}.
+@end defun
+
 
 @c ------------------------------------------------------------
 @node Lazy evaluation, Exceptions, Procedures and continuations, Core library

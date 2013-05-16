@@ -542,6 +542,8 @@
   (gen-1arg-test "generator-for-each" "a b c d e" '(e d c b a)
                  (cut generator-for-each (^v (push! r v)) read)
                  (^_ r)))
+(gen-1arg-test "generator-find" "2 4 0 8 3 6 9" 3
+               (cut generator-find odd? read))
 
 (define (gen-2arg-test name input1 input2 expect proc :optional (wrap identity))
   (test* (format "~a, 2 args" name) expect

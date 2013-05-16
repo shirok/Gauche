@@ -127,7 +127,7 @@
           <arity-at-least> arity-at-least? arity-at-least-value disasm
           ~ ref*
           generator-fold generator-fold-right generator-for-each
-          generator-map
+          generator-map generator-find
           ;; for the backward compatibility
           port-fold port-fold-right port-for-each port-map)
 

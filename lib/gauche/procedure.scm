@@ -43,6 +43,7 @@
           case-lambda ~ ref* disasm
           generator-fold generator-fold-right
           generator-for-each generator-map
+          generator-find
           ;; for the backward compatibility
           port-fold port-fold-right port-for-each port-map
           ))
@@ -308,6 +309,12 @@
           (if (eof-object? items)
             (reverse r)
             (loop (cons (apply fn items) r))))))))
+
+(define (generator-find pred gen)
+  (let loop ([item (gen)])
+    (cond [(eof-object? item) #f]
+          [(pred item) item]
+          [else (loop (gen))])))
 
 ;; For the backward compatibility
 (define port-fold generator-fold)
