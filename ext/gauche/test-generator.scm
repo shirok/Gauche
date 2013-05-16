@@ -5,6 +5,7 @@
 (use gauche.test)
 (use gauche.sequence)
 (use srfi-1)
+(use srfi-13)
 (use srfi-60)
 (test-start "generators")
 
@@ -275,6 +276,32 @@
        (generator->list
         (gstate-filter (^[v s] (values (< s v) v)) 0
                        (list->generator '(1 2 3 2 1 0 1 2 3 2 1 0 1 2 3)))))
+
+(test* "gbuffer-filter"
+       '("ab" "cdef" "ghijk" "lm")
+       (generator->list
+        (gbuffer-filter (^[v s]
+                          (if-let1 m (#/\\$/ v)
+                            (values '() (cons (m 'before) s))
+                            (values `(,(string-concatenate-reverse (cons v s)))
+                                    '())))
+                        '()
+                        (list->generator '("ab" "cd\\" "ef" "gh\\"
+                                           "ij\\" "k" "lm\\"))
+                        (^[s] `(,(string-concatenate (reverse s)))))))
+
+(test* "gbuffer-filter"
+       '((3 1 4 1 5) (9 2 6) (5 3 5 8) (9 7) (9 3 2 3) (8))
+       (generator->list
+        (gbuffer-filter (^[v s]
+                          (let1 k (+ v (apply + s))
+                            (if (<= k 21)
+                              (values '() (cons v s))
+                              (values `(,(reverse s)) `(,v)))))
+                        '()
+                        (list->generator
+                         '(3 1 4 1 5 9 2 6 5 3 5 8 9 7 9 3 2 3 8))
+                        (^[s] `(,(reverse s))))))
 
 (test* "grxmatch (string)" '("ab" "cde" "fgh" "jkl")
        (map rxmatch-substring

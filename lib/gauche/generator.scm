@@ -47,7 +47,7 @@
 
           generator->list null-generator gcons* gappend gconcatenate gmerge
           circular-generator gunfold giota grange
-          gmap gmap-accum gfilter gfilter-map gstate-filter
+          gmap gmap-accum gfilter gfilter-map gstate-filter gbuffer-filter
           gtake gdrop gtake-while gdrop-while grxmatch gslices
           glet* glet1 do-generator
           ))
@@ -393,11 +393,31 @@
 ;; gstate-filter :: ((a,b) -> (Bool,b), b, Generator a) -> Generator a
 (define (gstate-filter proc seed gen)
   (let1 gen (%->gen gen)
-    (^[] (let loop ()
-           (glet1 v (gen)
-             (receive (flag seed1) (proc v seed)
-               (set! seed seed1)
-               (if flag v (loop))))))))
+    (rec (loop)
+      (glet1 v (gen)
+        (receive (flag seed1) (proc v seed)
+          (set! seed seed1)
+          (if flag v (loop)))))))
+
+;; gbuffer-filter :: ((a,b)->([c],b), b, Generator a, b->[c]) -> Generator c
+(define (gbuffer-filter proc seed gen :optional (tail-gen (^s '())))
+  (let ([gen (%->gen gen)]
+        [exhausted? #f]
+        [buffered '()]
+        [seed seed])
+    (rec (loop)
+      (cond [(pair? buffered) (pop! buffered)]
+            [exhausted? (eof-object)]
+            [else (let1 v (gen)
+                    (if (eof-object? v)
+                      (begin
+                        (set! buffered (tail-gen seed))
+                        (set! exhausted? #t)
+                        (loop))
+                      (receive (vals seed.) (proc v seed)
+                        (set! seed seed.)
+                        (set! buffered vals)
+                        (loop))))]))))
 
 ;; gtake :: (Generator a, Int) -> Generator a
 ;; gdrop :: (Generator a, Int) -> Generator a

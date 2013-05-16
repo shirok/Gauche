@@ -1,6 +1,7 @@
 2013-05-15  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/procedure.scm (generator-find): Added.
+	* lib/gauche/generator.scm (gbuffer-filter): Added.
 
 	* lib/rfc/http.scm (%http-request-adaptor): If the caller gives :sink
 	  or :flusher, we mandate both should be given.  Giving just either

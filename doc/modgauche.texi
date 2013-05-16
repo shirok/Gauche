@@ -4867,6 +4867,39 @@ and yields only values that are greater than their previous value.
 @end example
 @end defun
 
+@defun gbuffer-filter proc seed gen :optional tail-gen
+This procedure allows n-to-m mapping between elements in input and output---
+that is, you can take a look at serveral input elements to generate
+one or more output elements.
+
+The procedure @var{proc} receives the next input element and accumulated
+seed value.  It returns two values: A list of output values, and the next
+seed value.  If you need to look at more input to generate
+output, you can return an empty list as the first value.
+
+If the input reaches the end, @var{tail-gen} is called with the
+current seed value; it should return a list of last output values.
+If omitted, the output ends when the output of the last call to @var{proc}
+is exhausted (the last seed value is discarded).
+
+Suppose you have a text file.  Each line contains a command,
+but if the line ends with backslash, next line is treated as a
+continuation of the current line.  The following code creates
+a generator that returns @emph{logical} lines, that is,
+the lines after such line continuations are taken care of.
+
+@example
+(gbuffer-filter (^[v s]
+                  (if-let1 m (#/\\$/ v)
+                    (values '() (cons (m 'before) s))
+                    (values `(,(string-concatenate-reverse (cons v s)))
+                            '())))
+                '()
+                (file->line-generator "input-file.txt")
+                (^[s] `(,(string-concatenate (reverse s)))))
+@end example
+@end defun
+
 @defun gtake gen k :optional (fill? #f) (padding #f)
 @defunx gdrop gen k
 @c EN
