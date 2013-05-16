@@ -8,6 +8,7 @@ SCM_CATEGORY = dbm
 
 LIBFILES = @DBM_ARCHFILES@
 SCMFILES = @DBM_SCMFILES@
+OBJECTS  = @DBM_OBJECTS@
 
 GENERATED = Makefile dbmconf.h
 XCLEANFILES = dbm--gdbm.c gdbm.sci \

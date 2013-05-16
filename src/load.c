@@ -80,6 +80,13 @@ static struct {
     /* Dynamic linking */
     ScmObj dso_suffixes;
     dlobj *dso_list;              /* List of dynamically loaded objects. */
+    ScmObj dso_prelinked;         /* List of 'prelinked' DSOs, that is, they
+                                     are already linked but prented to be
+                                     DSOs.  dynamic-load won't do anything.
+                                     NB: We assume initfns of prelinked DSOs
+                                     are already called by the application,
+                                     but e may change this design in future.
+                                  */
     ScmInternalMutex dso_mutex;
 } ldinfo = { (ScmGloc*)&ldinfo, };  /* trick to put ldinfo in .data section */
 
@@ -771,17 +778,45 @@ static void call_initfn(dlobj *dlo, const char *name)
     ifn->initialized = TRUE;
 }
 
-/* Dynamically load the specified object by FILENAME.
-   FILENAME must not contain the system's suffix (.so, for example).
+/* Experimental: Register DSONAME as 'prelinked', that is, the application
+   already linked the functionality and initialized so that we don't need
+   to do anything when (dynamic-load DSONAME) is called.  DSONAME shoudn't
+   have system's suffix. */
+void Scm_RegisterPrelinked(ScmString *dsoname)
+{
+    (void)SCM_INTERNAL_MUTEX_LOCK(ldinfo.dso_mutex);
+    ldinfo.dso_prelinked = Scm_Cons(SCM_OBJ(dsoname), ldinfo.dso_prelinked);
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(ldinfo.dso_mutex);
+}
+
+static int is_prelinked(ScmString *dsoname)
+{
+    ScmObj z = SCM_FALSE;
+    (void)SCM_INTERNAL_MUTEX_LOCK(ldinfo.dso_mutex);
+    /* in general it is dangerous to invoke equal?-comparison during lock,
+       but in this case we know they're string comparison and won't raise
+       an error. */
+    z = Scm_Member(SCM_OBJ(dsoname), ldinfo.dso_prelinked, SCM_CMP_EQUAL);
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(ldinfo.dso_mutex);
+    return !SCM_FALSEP(z);
+}
+
+/* Dynamically load the specified object by DSONAME.
+   DSONAME must not contain the system's suffix (.so, for example).
    The same name of DSO can be only loaded once.
    A DSO may contain multiple initialization functions (initfns), in
    which case each initfn is called at most once.
 */
-ScmObj Scm_DynLoad(ScmString *filename, ScmObj initfn, u_long flags/*reserved*/)
+ScmObj Scm_DynLoad(ScmString *dsoname, ScmObj initfn, u_long flags/*reserved*/)
 {
-    const char *dsopath = find_dso_path(filename);
-    const char *initname = get_initfn_name(initfn, dsopath);
-    dlobj *dlo = find_dlobj(dsopath);
+    const char *dsopath, *initname;
+    dlobj *dlo;
+
+    if (is_prelinked(dsoname)) return SCM_TRUE;
+
+    dsopath = find_dso_path(dsoname);
+    initname = get_initfn_name(initfn, dsopath);
+    dlo = find_dlobj(dsopath);
 
     /* Load the dlobj if necessary. */
     lock_dlobj(dlo);
@@ -1274,6 +1309,7 @@ void Scm__InitLoad(void)
     ldinfo.dso_suffixes = SCM_LIST2(SCM_MAKE_STR(".la"),
                                     SCM_MAKE_STR("." SHLIB_SO_SUFFIX));
     ldinfo.dso_list = NULL;
+    ldinfo.dso_prelinked = SCM_NIL;
 
 #define PARAM_INIT(name, val) Scm_InitParameterLoc(vm, &ldinfo.name, val)
     PARAM_INIT(load_history, SCM_NIL);

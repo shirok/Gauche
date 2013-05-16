@@ -22,6 +22,7 @@ dnl by gdbm, the ndbm functions could be in libndbm, libdbm, or even libc.
 AC_CHECK_HEADERS(gdbm.h, [
   DBM_ARCHFILES=dbm--gdbm.$SHLIB_SO_SUFFIX
   DBM_SCMFILES=gdbm.sci
+  DBM_OBJECTS=' $(gdbm_OBJECTS)'
   AC_CHECK_LIB(gdbm, gdbm_open, [ GDBMLIB="-lgdbm" ])
 ])
 
@@ -64,6 +65,7 @@ AC_CHECK_HEADER(gdbm-ndbm.h, [
 if test "$NDBM_HEADER" != ""; then
   DBM_ARCHFILES="dbm--ndbm.$SHLIB_SO_SUFFIX $DBM_ARCHFILES"
   DBM_SCMFILES="ndbm.sci $DBM_SCMFILES"
+  DBM_OBJECTS=' $(ndbm_OBJECTS)'$DBM_OBJECTS
 fi
 
 ODBM_HEADER=""
@@ -101,10 +103,12 @@ AC_CHECK_HEADER(gdbm-dbm.h, [
 if test "$ODBM_HEADER" != ""; then
   DBM_ARCHFILES="dbm--odbm.$SHLIB_SO_SUFFIX $DBM_ARCHFILES"
   DBM_SCMFILES="odbm.sci $DBM_SCMFILES"
+  DBM_OBJECTS='$(odbm_OBJECTS)'$DBM_OBJECTS
 fi
 
 AC_SUBST(DBM_ARCHFILES)
 AC_SUBST(DBM_SCMFILES)
+AC_SUBST(DBM_OBJECTS)
 AC_SUBST(GDBMLIB)
 AC_SUBST(NDBMLIB)
 AC_SUBST(ODBMLIB)

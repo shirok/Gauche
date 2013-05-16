@@ -14,6 +14,8 @@ XCLEANFILES = rfc--md5.c rfc--sha.c *.sci
 
 all : $(LIBFILES)
 
+OBJECTS = $(md5_OBJECTS) $(sha_OBJECTS)
+
 md5_OBJECTS = rfc--md5.$(OBJEXT) md5c.$(OBJEXT)
 
 rfc--md5.$(SOEXT) : $(md5_OBJECTS)
@@ -33,5 +35,4 @@ sha.sci rfc--sha.c : sha.scm
 	$(PRECOMP) -e -P -o rfc--sha $(srcdir)/sha.scm
 
 install : install-std
-
 

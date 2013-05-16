@@ -12,6 +12,8 @@ SCMFILES = match.sci queue.sci
 GENERATED = Makefile
 XCLEANFILES =  *.c match.sci queue.sci
 
+OBJECTS = $(util_queue_OBJECTS) $(util_match_OBJECTS)
+
 util_queue_OBJECTS = util--queue.$(OBJEXT)
 util_match_OBJECTS = util--match.$(OBJEXT)
 

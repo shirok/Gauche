@@ -12,6 +12,10 @@ SCMFILES = gettext.sci tr.sci unicode.sci
 GENERATED = Makefile
 XCLEANFILES = *.c $(SCMFILES)
 
+OBJECTS = $(text-gettext_OBJECTS) \
+	  $(text-tr_OBJECTS) \
+	  $(text-unicode_OBJECTS)
+
 all : $(LIBFILES)
 
 install : install-std

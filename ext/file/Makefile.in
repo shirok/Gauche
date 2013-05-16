@@ -12,12 +12,12 @@ SCMFILES = util.sci
 GENERATED = Makefile
 XCLEANFILES = *.c util.sci
 
-file-util_OBJECTS = file--util.$(OBJEXT)
+OBJECTS = file--util.$(OBJEXT)
 
 all : $(LIBFILES)
 
-file--util.$(SOEXT) : $(file-util_OBJECTS)
-	$(MODLINK) file--util.$(SOEXT) $(file-util_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+file--util.$(SOEXT) : $(OBJECTS)
+	$(MODLINK) file--util.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
 file--util.c util.sci : $(top_srcdir)/libsrc/file/util.scm
 	$(PRECOMP) -e -P -o file--util $(top_srcdir)/libsrc/file/util.scm

@@ -125,3 +125,8 @@ link : all
 unlink :
 	-@$(GOSH) $(top_srcdir)/ext/xlink -u -g "$(SCM_CATEGORY)" \
 	  -b $(top_builddir) -s $(srcdir) $(LIBFILES) $(SCMFILES)
+
+list-objects:
+	@if test "X$(OBJECTS)" != X; then \
+	   for o in $(OBJECTS); do echo `pwd`/$$o; done;\
+	fi

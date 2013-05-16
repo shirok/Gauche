@@ -20,6 +20,11 @@ XCLEANFILES = *.c $(SCMFILES)
 
 all : $(LIBFILES)
 
+OBJECTS = $(gauche-collection_OBJECTS) \
+	  $(gauche-sequence_OBJECTS) \
+	  $(gauche-parameter_OBJECTS) \
+	  $(gauche-hook_OBJECTS)
+
 # gauche.collection
 gauche-collection_OBJECTS = gauche--collection.$(OBJEXT)
 

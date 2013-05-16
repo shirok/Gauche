@@ -16,13 +16,13 @@ XCLEANFILES =  uvlib.c uvlib.stub uvector.c uvutil.c \
 
 all : $(LIBFILES)
 
-uvector_OBJECTS = uvector.$(OBJEXT)      \
-                  uvinit.$(OBJEXT)       \
-                  uvlib.$(OBJEXT)        \
-                  uvutil.$(OBJEXT)
+OBJECTS = uvector.$(OBJEXT)      \
+          uvinit.$(OBJEXT)       \
+          uvlib.$(OBJEXT)        \
+          uvutil.$(OBJEXT)
 
-libgauche-uvector.$(SOEXT) : $(uvector_OBJECTS)
-	$(MODLINK) libgauche-uvector.$(SOEXT) $(uvector_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+libgauche-uvector.$(SOEXT) : $(OBJECTS)
+	$(MODLINK) libgauche-uvector.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
 gauche/uvector.h : uvector.h.tmpl uvgen.scm
 	if test ! -d gauche; then mkdir gauche; fi

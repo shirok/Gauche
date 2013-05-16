@@ -1,3 +1,10 @@
+2013-05-16  Shiro Kawai  <shiro@acm.org>
+
+	* src/load.c (Scm_RegisterPrelinked, Scm_DynLoad): Experimentally
+	  added support for statically linking extensions.
+	* src/Makefile.in, ext/*/Makefile.in, src/gen-staticinit.scm:
+	  Changes to support creating static linking version of libgauche.
+
 2013-05-15  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/procedure.scm (generator-find): Added.

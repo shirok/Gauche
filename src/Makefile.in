@@ -334,6 +334,17 @@ gauche-cesconv : gauche-cesconv.in
 	cat $(srcdir)/gauche-cesconv.in >> gauche-cesconv 
 	@chmod -w+x gauche-cesconv
 
+# static link -----------------------------------------
+# can be called after everything was built
+
+static : $(LIBGAUCHE).a
+
+$(LIBGAUCHE).a : all staticinit.$(OBJEXT)
+	ar cr $(LIBGAUCHE).a $(libgauche_OBJECTS) $(libgc_OBJECTS) staticinit.$(OBJEXT) `cd $(top_builddir)/ext; $(MAKE) -s list-objects`
+
+staticinit.c : all
+	./gosh$(EXEEXT) -ftest $(srcdir)/gen-staticinit.scm $(top_srcdir) $(top_builddir)
+
 # tests -----------------------------------------------
 TESTFILES  = `cat ../test/TESTS`
 TEST2FILES = `cat ../test/TESTS2`

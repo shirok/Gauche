@@ -18,6 +18,11 @@ SCMFILES = srfi-1.sci  \
 GENERATED = Makefile
 XCLEANFILES = *.c *.sci
 
+OBJECTS = $(srfi_1_OBJECTS) \
+	  $(srfi_13_OBJECTS) \
+	  $(srfi_19_OBJECTS) \
+	  $(srfi_43_OBJECTS)
+
 all : $(LIBFILES)
 
 install : install-std
