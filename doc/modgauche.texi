@@ -4537,11 +4537,11 @@ generate, and use @var{g} to update the seed value.
 
 @c EN
 @xref{Folding generated values}, for @code{generator-fold},
-@code{generator-fold-right}, @code{generator-for-each} and
-@code{generator-map}.
+@code{generator-fold-right}, @code{generator-for-each},
+@code{generator-map}, and @code{generator-find}.
 @c JP
 @code{generator-fold}、@code{generator-fold-right}、 @code{generator-for-each}、
-@code{generator-map}については、
+@code{generator-map}、@code{generator-find}については、
 @ref{Folding generated values}を参照してください。
 @c COMMON
 
