@@ -416,7 +416,7 @@ clean :
 	       $(GENERATED_SCRIPTS) gauche-config.c \
 	       $(LIBGAUCHE).$(SOEXT)* *.$(OBJEXT) *~ *.a *.t *.def *.exp *.exe \
 	       test.log test.dir so_locations gauche/*~ gauche/arch.h \
-	       gauche/config_threads.h gauche-config.in.c \
+	       gauche/config_threads.h gauche-config.in.c staticinit.c \
 	       gauche-install.in.c gauche-package.in.c gauche-cesconv.in.c \
 	       $(host)-gauche-config.c $(host)-gauche-config
 
