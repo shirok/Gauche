@@ -4892,11 +4892,10 @@ the lines after such line continuations are taken care of.
 (gbuffer-filter (^[v s]
                   (if-let1 m (#/\\$/ v)
                     (values '() (cons (m 'before) s))
-                    (values `(,(string-concatenate-reverse (cons v s)))
-                            '())))
+                    (values `(,(string-concatenate-reverse (cons v s))) '())))
                 '()
                 (file->line-generator "input-file.txt")
-                (^[s] `(,(string-concatenate (reverse s)))))
+                (^[s] `(,(string-concatenate-reverse s))))
 @end example
 @end defun
 
