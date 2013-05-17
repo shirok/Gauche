@@ -408,7 +408,7 @@
 ;; Adaptor to the new API.  Converts :sink and :flusher arguments,
 ;; which are superseded by :receiver arguments.
 (define (%http-request-adaptor method server request-uri body
-                               :key receiver (sink #f) (flusher #f)
+                               :key (receiver #f) (sink #f) (flusher #f)
                                :allow-other-keys opts)
   (define recvr
     (cond [(and sink flusher)
