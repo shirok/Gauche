@@ -81,11 +81,11 @@ static struct {
     ScmObj dso_suffixes;
     dlobj *dso_list;              /* List of dynamically loaded objects. */
     ScmObj dso_prelinked;         /* List of 'prelinked' DSOs, that is, they
-                                     are already linked but prented to be
+                                     are already linked but pretened to be
                                      DSOs.  dynamic-load won't do anything.
                                      NB: We assume initfns of prelinked DSOs
                                      are already called by the application,
-                                     but e may change this design in future.
+                                     but we may change this design in future.
                                   */
     ScmInternalMutex dso_mutex;
 } ldinfo = { (ScmGloc*)&ldinfo, };  /* trick to put ldinfo in .data section */

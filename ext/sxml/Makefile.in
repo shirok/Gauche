@@ -26,7 +26,7 @@ LIBFILES = sxml--ssax.$(SOEXT) sxml--sxpath.$(SOEXT) sxml--tools.$(SOEXT) \
 SCMFILES = adaptor.scm ssax.sci sxpath.sci tools.sci \
            tree-trans.scm to-html.scm serializer.sci
 
-OBJECTS = $(ssax_OBJECTS) $(sxpath_OBJECTS) $(toos_OBJECTS) \
+OBJECTS = $(ssax_OBJECTS) $(sxpath_OBJECTS) $(tools_OBJECTS) \
           $(serializer_OBJECTS)
 
 all : $(LIBFILES) $(GENERATED_TARGET)
