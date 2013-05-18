@@ -11482,7 +11482,8 @@ only modifies the field of the derived record.
 @subsection Pseudo record types
 
 A pseudo record type is a record type that does not create
-an instance.  Instead it treats an object of other collection
+an instance of its own type.
+Instead it treats an object of other collection
 types, such as a vector, as if it had named fields.  It's easier
 to understand by an example:
 
@@ -11491,7 +11492,7 @@ to understand by an example:
   (x) (y) (z))
 
 (make-vpoint 1 2 3)  @result{} #(1 2 3)
-(vpoint-x #(1 2 3))  @result{} 1
+(vpoint-x '#(1 2 3)) @result{} 1
 
 (rlet1 v (make-vpoint 1 2 3)
   (set! (vpoint-y v) -1))
@@ -11506,9 +11507,26 @@ the suitable instance class.
 @defun pseudo-rtd instance-class
 Returns a pseudo rtd suitable to use @var{instance-class} as
 a pseudo record.
+
+Currently, @code{<list>}, @code{<vector>}, and uniform vector
+classes (@code{<u8vector>} etc.) are supported as @var{instance-class}.
 @end defun
 
+The predicates of a pseudo record return @code{#t} if the given
+object can be interpreted as the pseudo record.  In the above
+example of @code{vpoint} record, the predicate @code{vpoint?}
+returns @code{#t} iff the given object is a vector with 3 or more
+elements:
 
+@example
+(vpoint? '#(0 0 0))   @result{} #t
+(vpoint? '#(0 0))     @result{} #f
+(vpoint? '(0 0 0))    @result{} #f
+(vpoint? '#(0 0 0 0)) @result{} #t
+@end example
+
+We allow more elements so that the pseudo record can be used
+to interpret the header part of the longer data.
 
 @c ----------------------------------------------------------------------
 @node Reloading modules, Simple dispatcher, Record types, Library modules - Gauche extensions

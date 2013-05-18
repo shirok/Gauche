@@ -33,6 +33,7 @@
 
 (define-module gauche.record
   (use gauche.sequence)
+  (use gauche.uvector)
   (use srfi-1)
   (use util.match)
 
@@ -71,32 +72,53 @@
 ;;     record definition.  It is less safe but more flexible, especially
 ;;     the caller is a foreign entity.
 
+;; some convenience utility
+(define (sym+ . args)
+  (string->symbol (apply string-append (map x->string args))))
+
+(define-macro (for-each-subst subs . forms)
+  (define (walk x sub)
+    (cond [(symbol? x)
+           (string->symbol ($ regexp-replace #/\?\?/ (symbol->string x) sub))]
+          [(pair? x) (cons (walk (car x) sub) (walk (cdr x) sub))]
+          [else x]))
+  `(begin
+     ,@(append-map (^[sub] (map (cute walk <> (symbol->string sub)) forms))
+                   subs)))
+
 ;;;
 ;;; Infrastructure
 ;;;
 
 (define-class <record-meta> (<class>)
-  ((field-specs :init-keyword :field-specs)))
+  ((field-specs :init-keyword :field-specs :init-value '#())))
 (define-class <record> () () :metaclass <record-meta>)
 
-(define-class <pseudo-record-meta> (<record-meta>) ())
+(define-class <pseudo-record-meta> (<record-meta>)
+  ((instance-class :init-keyword :instance-class)))
 (define-class <pseudo-record> () () :metaclass <pseudo-record-meta>)
 
-(define-class <vector-pseudo-record-meta> (<pseudo-record-meta>) ())
-(define-class <vector-pseudo-record> () () :metaclass <vector-pseudo-record-meta>)
-(define-class <list-pseudo-record-meta> (<pseudo-record-meta>) ())
-(define-class <list-pseudo-record> () () :metaclass <list-pseudo-record-meta>)
+(for-each-subst
+ (list vector u8vector s8vector u16vector s16vector u32vector s32vector
+       u64vector s64vector f16vector f32vector f64vector)
+ (define-class <??-pseudo-record-meta> (<pseudo-record-meta>) ())
+ (define-class <??-pseudo-record> () ()
+   :metaclass <??-pseudo-record-meta>)
+ ;; Ugly - we need CLOS-like :default-initargs.
+ (define-method initialize ((class <??-pseudo-record-meta>) initargs)
+   (next-method)
+   (slot-set! class 'instance-class <??>))
+ (define-method pseudo-rtd ((class <??-meta>))
+   <??-pseudo-record>)
+ (define-method pseudo-rtd ((class <??-pseudo-record-meta>))
+   <??-pseudo-record>)
+ )
 
-(define-method pseudo-rtd ((class <vector-meta>))
-  <vector-pseudo-record>)
-(define-method pseudo-rtd ((class <vector-pseudo-record-meta>))
-  <vector-pseudo-record>)
-(define-method pseudo-rtd ((class <list-meta>))
-  <list-pseudo-record>)
-(define-method pseudo-rtd ((class <list-pseudo-record-meta>))
-  <list-pseudo-record>)
 (define-method pseudo-rtd (other)
   (error "pseudo-rtd requires a class object <vector>, <list>, \
+          <u8vector>, <s8vector>, <u16vector>, <s16vector>, \
+          <u32vector>, <s32vector>, <u64vector>, <s64vector>, \
+          <f16vector>, <f32vector>, <f64vector>, \
           or other pseudo-rtd, but got" other))
 
 ;; We just collect ancestor's slots, ignoring duplicate slot names.
@@ -210,8 +232,9 @@
         [else (lambda (,@(cdr tmps) . ,(car tmps))
                 ,,rest-maker)])))
 
-(define-macro (define-ctor-generators default-name custom-name
-                make1 make* makev)
+ (define-macro (define-ctor-generators ctor-name-base make1 make* makev)
+  (define default-name (sym+ ctor-name-base '-default))
+  (define custom-name  (sym+ ctor-name-base '-custom))
   `(begin
      (define-ctor-generator ,default-name ,make1 ,make1 ,make*)
      (define-ctor-generator ,custom-name ,make1
@@ -232,15 +255,20 @@
               (vector-set! ,argv (vector-ref mapvec ,i) (car ,restvar)))
             ,,makev)))))
 
-(define-ctor-generators %record-ctor-default %record-ctor-custom
+(define-ctor-generators %record-ctor
   `((%make) ,rtd ,@vars)
   `(apply (%make) ,rtd ,@(cdr tmps) ,(car tmps))
   `((%makev) ,rtd ,argv))
 
-(define-ctor-generators %vector-ctor-default %vector-ctor-custom
-  `(vector ,@vars)
-  `(apply vector ,@(cdr tmps) ,(car tmps))
-  argv)
+(define (vector->vector x) x)
+
+(for-each-subst
+ (list vector u8vector s8vector u16vector s16vector u32vector s32vector
+       u64vector s64vector f16vector f32vector f64vector)
+ (define-ctor-generators %??-ctor
+   `(?? ,@vars)
+   `(apply ?? ,@(cdr tmps) ,(car tmps))
+   `(vector->?? ,argv)))
 
 ;; Returns a vector where V[k] = i means k-th argument of the constructor
 ;; initializes i-th field.
@@ -251,27 +279,14 @@
     (map-to <vector> (^f (cond [(assq f cat) => cdr] [else (bad f)]))
             fieldspecs)))
 
-(define-method rtd-constructor ((rtd <record-meta>) . rest)
-  (%check-rtd rtd)
-  (if (null? rest)
-    (%record-ctor-default rtd (length (slot-ref rtd'slots)))
-    (let1 all-names (rtd-all-field-names rtd)
-      (let ([mapvec  (%calculate-field-mapvec all-names (car rest))]
-            [nfields (vector-length all-names)])
-        (%record-ctor-custom rtd (vector-length (car rest)))))))
-
-(define-method rtd-constructor ((rtd <vector-pseudo-record-meta>) . rest)
-  (%check-rtd rtd)
-  (if (null? rest)
-    (%vector-ctor-default rtd (length (slot-ref rtd'slots)))
-    (let1 all-names (rtd-all-field-names rtd)
-      (let ([mapvec  (%calculate-field-mapvec all-names (car rest))]
-            [nfields (vector-length all-names)])
-        (%vector-ctor-custom rtd (vector-length (car rest)))))))
-
 (define-method rtd-predicate ((rtd <record-meta>)) (^o (is-a? o rtd)))
 (define-method rtd-predicate ((rtd <pseudo-record-meta>))
-  (errorf "pseudo record type ~s cannot have a predicate" rtd))
+  (let ([iclass (slot-ref rtd 'instance-class)]
+        [size   (vector-length (slot-ref rtd 'field-specs))])
+    ;; NB: We allow instance to be larger than expected, for it's useful
+    ;; to pretend the beginning part of the longer data as a struct
+    ;; (e.g. header of some binary data).
+    (^o (and (is-a? o iclass) (>= (size-of o) size)))))
 
 ;; returns (index immutable?)
 (define (%get-slot-index rtd field modify?)
@@ -281,33 +296,45 @@
                         (slot-definition-option s :immutable #f)))]
         [else (errorf "record ~s does not have a slot named ~s" rtd field)]))
 
-(define-method rtd-accessor ((rtd <record-meta>) field)
-  (receive (k immutable?) (%get-slot-index rtd field #f)
-    (if immutable?
-      (^o ((with-module gauche.object %record-ref) rtd o k))
-      (getter-with-setter
-       (^o ((with-module gauche.object %record-ref) rtd o k))
-       (^(o v) ((with-module gauche.object %record-set!) rtd o k v))))))
+(define-macro (define-rtd-methods rtd-meta ctor-name-base referencer* mutator*)
+  (define gen-default-ctor (sym+ ctor-name-base '-default))
+  (define gen-custom-ctor  (sym+ ctor-name-base '-custom))
+  `(begin
+     (define-method rtd-constructor ((rtd ,rtd-meta) . rest)
+       (%check-rtd rtd)
+       (if (null? rest)
+         (,gen-default-ctor rtd (length (slot-ref rtd'slots)))
+         (let1 all-names (rtd-all-field-names rtd)
+           (let ([mapvec  (%calculate-field-mapvec all-names (car rest))]
+                 [nfields (vector-length all-names)])
+             (,gen-custom-ctor rtd (vector-length (car rest)))))))
+     (define-method rtd-accessor ((rtd ,rtd-meta) field)
+       (receive (k immutable?) (%get-slot-index rtd field #f)
+         (if immutable?
+           (^o (,@referencer* o k))
+           (getter-with-setter
+            (^o (,@referencer* o k))
+            (^(o v) (,@mutator* o k v))))))
+     (define-method rtd-mutator ((rtd ,rtd-meta) field)
+       (receive (k immutable?) (%get-slot-index rtd field #t)
+         (when immutable?
+           (errorf "slot ~a of record ~s is immutable" field rtd))
+         (^(o v) (,@mutator* o k v))))
+     ))
+  
+(define-rtd-methods <record-meta>
+  %record-ctor
+  ((with-module gauche.object %record-ref) rtd)
+  ((with-module gauche.object %record-set!) rtd))
 
-(define-method rtd-accessor ((rtd <vector-pseudo-record-meta>) field)
-  (receive (k immutable?) (%get-slot-index rtd field #f)
-    (if immutable?
-      (^o (vector-ref o k))
-      (getter-with-setter
-       (^o (vector-ref o k))
-       (^(o v) (vector-set! o k v))))))
-
-(define-method rtd-mutator ((rtd <record-meta>) field)
-  (receive (k immutable?) (%get-slot-index rtd field #t)
-    (when immutable?
-      (errorf "slot ~a of record ~s is immutable" field rtd))
-    (^(o v) ((with-module gauche.object %record-set!) rtd o k v))))
-
-(define-method rtd-mutator ((rtd <vector-pseudo-record-meta>) field)
-  (receive (k immutable?) (%get-slot-index rtd field #t)
-    (when immutable?
-      (errorf "slot ~a of record ~s is immutable" field rtd))
-    (^(o v) (vector-set! o k v))))
+(for-each-subst
+ (list vector u8vector s8vector u16vector s16vector u32vector s32vector
+       u64vector s64vector f16vector f32vector f64vector)
+ (define-rtd-methods <??-pseudo-record-meta>
+   %??-ctor
+   (??-ref)
+   (??-set!))
+ )
 
 ;;;
 ;;; Syntactic layer
@@ -317,7 +344,6 @@
   (define (->id x) ((with-module gauche.internal make-identifier) x
                     (find-module 'gauche.record) '()))
   (define (id? x)  (or (symbol? x) (identifier? x)))
-  (define (sym x)  (string->symbol x))
   (define %make (->id 'make-rtd))
   (define %ctor (->id 'rtd-constructor))
   (define %pred (->id 'rtd-predicate))
@@ -338,7 +364,7 @@
   (define (build-ctor typename)
     (match ctor-spec
       [#f '()]
-      [#t `((define-inline ,(sym #`"make-,typename") (,%ctor ,typename)))]
+      [#t `((define-inline ,(sym+ 'make- typename) (,%ctor ,typename)))]
       [((? id? ctor-name) field ...)
        `((define-inline ,ctor-name (,%ctor ,typename ,(list->vector field))))]
       [(? id? ctor-name)
@@ -347,7 +373,7 @@
   (define (build-pred typename)
     (match pred-spec
       [#f '()]
-      [#t `((define-inline (,(sym #`",|typename|?") ,tmp)
+      [#t `((define-inline (,(sym+ typename '?) ,tmp)
               ((,%pred ,typename) ,tmp)))]
       [(? id? pred-name)
        `((define-inline (,pred-name ,tmp) ((,%pred ,typename) ,tmp)))]
@@ -355,15 +381,15 @@
   (define (build-accessors typename)
     (map (match-lambda
            [(f a . _) `(define-inline ,a (,%asor ,typename ',f))]
-           [(f)       `(define-inline ,(sym #`",|typename|-,f")
+           [(f)       `(define-inline ,(sym+ typename '- f)
                          (,%asor ,typename ',f))]
-           [f         `(define-inline ,(sym #`",|typename|-,f")
+           [f         `(define-inline ,(sym+ typename '- f)
                          (,%asor ,typename ',f))])
          field-specs))
   (define (build-mutators typename)
     (append-map (match-lambda
                   [(f a m) `((define-inline ,m (,%mtor ,typename ',f)))]
-                  [(f)     `((define-inline ,(sym #`",|typename|-,|f|-set!")
+                  [(f)     `((define-inline ,(sym+ typename '- f '-set!)
                                (,%mtor ,typename ',f)))]
                   [_ '()])
                 field-specs))
