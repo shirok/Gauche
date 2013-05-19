@@ -35,8 +35,8 @@
 ;; This is not intended to be just 'use'-d.  Instead, you say (extend r7rs)
 ;; and you'll enter the initial toplevel environment of R7RS, where
 ;; only r7rs-style 'import' and 'define-library' are available.
-;; With gosh, you can start -r7 option to enter the R7RS environment directly.
-
+;; If you start gosh with r7rs mode (-r7 option), not only the above bindings
+;; but also most of r7rs-small bindings are avaialable (see gauche.interactive).
 
 ;; r7rs.library-name - mapping R7RS library name to Gauche module name
 ;;

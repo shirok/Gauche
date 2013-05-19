@@ -1,3 +1,9 @@
+2013-05-18  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/interactive.scm: Let #<module gauche> export history
+	  variable, so that it can be imported to the r7rs REPL for the
+	  convenience.
+
 2013-05-17  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/record.scm: Support pseudo records for <list> and

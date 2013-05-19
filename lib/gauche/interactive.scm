@@ -1,5 +1,5 @@
 ;;;
-;;; interactive.scm - useful stuff in the interactive session
+;;; gauche.interactive - useful stuff in the interactive session
 ;;;
 ;;;   Copyright (c) 2000-2013  Shiro Kawai  <shiro@acm.org>
 ;;;
@@ -130,8 +130,13 @@
 ;;;
 
 ;; Evaluation history.
-;; We define history variables in gauche module so that they are visible
-;; from any modules that inherits gauche.
+;; Kludge: We want the history variables to be visible not only in
+;; #<module user> but in most other modules, so that the user can switch
+;; modules in REPL without losing access to the history.  So we "inject"
+;; those variables into #<module gauche>.  It is not generally recommended
+;; way, though.
+;; We also export those history variables, so the modules that does not
+;; inherit gauche can still use them by (import gauche :only (*1 ...)).
 (define-in-module gauche *1 #f)
 (define-in-module gauche *1+ '())
 (define-in-module gauche *2 #f)
@@ -139,6 +144,13 @@
 (define-in-module gauche *3 #f)
 (define-in-module gauche *3+ '())
 (define-in-module gauche *e #f)
+(define-in-module gauche (*history)
+  (display "*1: ") (repl-print *1) (newline)
+  (display "*2: ") (repl-print *2) (newline)
+  (display "*3: ") (repl-print *3) (newline)
+  (values))
+(with-module gauche
+  (export *1 *1+ *2 *2+ *3 *3+ *e *history))
 
 (define (%set-history-expr! r)
   (unless (null? r)
@@ -150,12 +162,6 @@
 
 ;; Will be extended for fancier printer
 (define (repl-print x) (write/ss x) (flush))
-
-(define-in-module gauche (*history)
-  (display "*1: ") (repl-print *1) (newline)
-  (display "*2: ") (repl-print *2) (newline)
-  (display "*3: ") (repl-print *3) (newline)
-  (values))
 
 (define *repl-name* "gosh")
 
@@ -199,17 +205,18 @@
 (autoload gauche.modutil describe-symbol-bindings)
 
 ;; Kludge - if gosh is invoked with R7RS mode, import r7rs-small libraries
-;; into use module.  There should be better way to detect whether we started
+;; into user module.  There should be better way to detect whether we started
 ;; with r7rs mode.
-;; TODO: make *1 etc. avaiable on R7RS REPL as well.
 (when (memq (find-module 'r7rs)
             (and-let* ([u (find-module 'user)])
               (module-precedence-list u)))
+  (set! *repl-name* "gosh-r7rs") ; for the convenience
   (eval '(import (scheme base) (scheme case-lambda) (scheme char)
                  (scheme complex) (scheme cxr) (scheme eval)
                  (scheme file) (scheme inexact) (scheme lazy)
                  (scheme load) (scheme process-context) (scheme read)
-                 (scheme repl) (scheme time) (scheme write))
+                 (scheme repl) (scheme time) (scheme write)
+                 (only (gauche) *1 *1+ *2 *2+ *3 *3+ *e *history))
         (find-module 'user)))
 
 ;; For convenience
