@@ -2668,7 +2668,7 @@
          (process-import:mapsym
           :only (unwrap-syntax ss) #f prefix
           (^[sym orig-sym] (unless (%alias-binding m orig-sym imported orig-sym)
-                             (errorf "during processing :once clause: \
+                             (errorf "during processing :only clause: \
                                       binding of ~a isn't exported from ~a"
                                      orig-sym imported))))
          (%extend-module m '())
