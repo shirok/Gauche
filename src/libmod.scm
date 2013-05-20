@@ -1,5 +1,5 @@
 ;;;
-;;; libmod.scm - modules and bindings
+;;; libmod.scm - modules, bindings, GLOCs
 ;;;
 ;;;   Copyright (c) 2000-2013  Shiro Kawai  <shiro@acm.org>
 ;;;
@@ -35,6 +35,10 @@
 
 (inline-stub
  (declcode (.include <gauche/vminsn.h>)))
+
+;;;
+;;; Modules API
+;;;
 
 (define-cproc module? (obj) ::<boolean> :constant SCM_MODULEP)
 
@@ -93,10 +97,6 @@
      $ map (cut regexp-replace-all #/\./ <> "..")
      $ string-split path "/"))
 
-(define-cproc %export-all (module::<module>) Scm_ExportAll)
-(define-cproc %extend-module (module::<module> supers::<list>)
-  Scm_ExtendModule)
-
 (inline-stub
  (define-cfn get-module-from-mod-or-name (id) ::ScmModule* :static
    (cond [(SCM_MODULEP id) (return (SCM_MODULE id))]
@@ -106,12 +106,12 @@
                (return NULL)]))
  )
 
+;; Global bindind access, public API
 (define-cproc global-variable-bound? (mod-or-name name::<symbol>) ::<boolean>
   (result
    (not (SCM_UNBOUNDP
          (Scm_GlobalVariableRef (get-module-from-mod-or-name mod-or-name)
                                 name 0)))))
-
 (define-cproc global-variable-ref (mod_or_name name::<symbol>
                                                :optional
                                                fallback
@@ -125,32 +125,14 @@
                  name module))
     (result r2)))
 
+(define-in-module gauche (symbol-bound? name . maybe-module) ; Deprecated
+  (global-variable-bound? (get-optional maybe-module #f) name))
+
+;; Module import/export internal APIs.  Not public.
 (select-module gauche.internal)
-(inline-stub
- (define-type <gloc> "ScmGloc*" "GLOC"
-   "SCM_GLOCP" "SCM_GLOC" "SCM_OBJ")
- )
-
-;; Returns GLOC object or #f
-(define-cproc find-binding (mod::<module> name::<symbol>
-                                          stay-in-module::<boolean>)
-  ::<gloc>?
-  (result (Scm_FindBinding mod name
-                           (?: stay_in_module SCM_BINDING_STAY_IN_MODULE 0))))
-
-;; This small piece of code encapsulates the common procedure in
-;; pass1/variable to find whether the variable reference is a constant
-;; or not.
-(define-cproc find-const-binding (id::<identifier>)
-  (let* ([g::ScmGloc* (Scm_FindBinding (-> id module) (-> id name) 0)])
-    (cond [(or (not g)
-               (not (SCM_GLOC_CONST_P g))
-               (SCM_VM_COMPILER_FLAG_IS_SET (Scm_VM)
-                                            SCM_COMPILE_NOINLINE_CONSTS))
-           (result SCM_FALSE)]
-          [else
-           (result (SCM_GLOC_GET g))])))
-
+(define-cproc %export-all (module::<module>) Scm_ExportAll)
+(define-cproc %extend-module (module::<module> supers::<list>)
+  Scm_ExtendModule)
 (define-cproc %insert-binding (mod::<module> name::<symbol> value
                                              :optional (flags '()))
   (let* ([z::int 0])
@@ -181,6 +163,37 @@
 (define-cproc %import-modules (mod::<module> mods) ;deprecated
   Scm_ImportModules)
 
+;;;
+;;; GLOCs
+;;;
+
+;; GLOCs are not for public use, so all APIs are internal.
+
+(inline-stub
+ (define-type <gloc> "ScmGloc*" "GLOC"
+   "SCM_GLOCP" "SCM_GLOC" "SCM_OBJ")
+ )
+
+;; Returns GLOC object or #f.
+(define-cproc find-binding (mod::<module> name::<symbol>
+                                          stay-in-module::<boolean>)
+  ::<gloc>?
+  (result (Scm_FindBinding mod name
+                           (?: stay_in_module SCM_BINDING_STAY_IN_MODULE 0))))
+
+;; This small piece of code encapsulates the common procedure in
+;; pass1/variable to find whether the variable reference is a constant
+;; or not.
+(define-cproc find-const-binding (id::<identifier>)
+  (let* ([g::ScmGloc* (Scm_FindBinding (-> id module) (-> id name) 0)])
+    (cond [(or (not g)
+               (not (SCM_GLOC_CONST_P g))
+               (SCM_VM_COMPILER_FLAG_IS_SET (Scm_VM)
+                                            SCM_COMPILE_NOINLINE_CONSTS))
+           (result SCM_FALSE)]
+          [else
+           (result (SCM_GLOC_GET g))])))
+
 (define-cproc gloc-bound? (gloc::<gloc>) ::<boolean>
   (result (not (SCM_UNBOUNDP (SCM_GLOC_GET gloc)))))
 (define-cproc gloc-ref (gloc::<gloc> :optional fallback)
@@ -194,9 +207,3 @@
 (define-cproc gloc-const? (gloc::<gloc>) ::<boolean> Scm_GlocConstP)
 (define-cproc gloc-inlinable? (gloc::<gloc>) ::<boolean> Scm_GlocInlinableP)
 
-;;;
-;;; symbol-bound? (deprecated)
-;;;
-
-(define-in-module gauche (symbol-bound? name . maybe-module)
-  (global-variable-bound? (get-optional maybe-module #f) name))
