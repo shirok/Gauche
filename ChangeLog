@@ -1,3 +1,7 @@
+2013-05-20  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/record.scm: Export <pseudo-record>.
+
 2013-05-18  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/interactive.scm: Let #<module gauche> export history

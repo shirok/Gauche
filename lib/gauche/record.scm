@@ -38,7 +38,7 @@
   (use util.match)
 
   (export <record-meta> <record>
-          <pseudo-record-meta> pseudo-rtd
+          <pseudo-record-meta> <pseudo-record> pseudo-rtd
           record? record-rtd rtd-name rtd-parent
           rtd-field-names rtd-all-field-names rtd-field-mutable?
           make-rtd rtd? rtd-constructor rtd-predicate rtd-accessor rtd-mutator
