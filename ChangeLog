@@ -1,3 +1,9 @@
+2013-05-21  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cgen/literal.scm (c-safe-string-literal): replace '?'
+	  in the string as well.  A cheap workaround to avoid putting trigraph
+	  in C string literal inadvertently.
+
 2013-05-20  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/record.scm: Export <pseudo-record>.
