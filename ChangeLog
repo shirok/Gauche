@@ -1,3 +1,9 @@
+2013-05-22  Shiro Kawai  <shiro@acm.org>
+
+	* src/libeval.scm (find-load-file): Experimentally allow to trigger
+	  load hooks by "" in the PATHs list.  Convenient to be used when
+	  Scheme sources are embedded in the executing binary.
+
 2013-05-21  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/literal.scm (c-safe-string-literal): replace '?'

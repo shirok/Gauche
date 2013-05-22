@@ -180,11 +180,13 @@
 ;;   The element in SUFFIXES is directly appended to the FILENAME;
 ;;   so usually it begins with dot.
 ;;
-;;   PATHs may contain a regular file.  In which case, procedures chained
-;;   to *load-path-hooks* are called in turn.  It receives three arguments;
-;;   the regular filename in PATHs, the (partial) filename given to the
-;;   find-load-file, and the list of suffixes.  The hook is mainly intended
-;;   to allow loading from archive files.   If the hook procedure "finds"
+;;   PATHs may contain a regular file, or an empty string "".
+;;   In which case, procedures chained to *load-path-hooks* are called
+;;   in turn.  It receives three arguments; the regular filename in PATHs
+;;   or "", the (partial) filename given to the find-load-file, and the
+;;   list of suffixes.  The hook is mainly intended to allow loading
+;;   from archive files or from special location (e.g. prelinked in the
+;;   executing binary).   If the hook procedure "finds"
 ;;   the searched file in the archive file, it should return a pair of
 ;;   the canonical filename (given filename plus suffix if applicable), and
 ;;   a thunk that opens and returns a port to read the file.  If the hook
@@ -219,7 +221,8 @@
       (if-let1 found (try-suffixes (string-append (car ps) "/" filename))
         (list found (cdr ps))
         (do-relative (cdr ps)))]
-     [(and allow-archive (file-is-regular? (car ps)))
+     [(and allow-archive
+           (or (equal? (car ps) "") (file-is-regular? (car ps))))
       (if-let1 r (any (^p (p (car ps) filename suffixes)) *load-path-hooks*)
         (list (car r) (cdr ps) (cdr r))
         (do-relative (cdr ps)))]
