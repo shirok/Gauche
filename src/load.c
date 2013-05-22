@@ -899,20 +899,20 @@ static int do_require(ScmObj, int, ScmModule *, ScmLoadPacket *);
 
 /* NB: It has never been explicit, but 'require' and 'extend' are expected to
    work as if we load the module into #<module gauche>.  Those forms only loads
-   the file once, it doesn't make much sense to allow it to load into different
-   modules for each time, since you never know whether the file is loaded
-   at this time or it has already been loaded.  With the same reason, it doesn't
-   make much sense to use the current module.
+   the file once, so it doesn't make much sense to allow it to load into
+   different modules for each time, since you never know whether the file
+   is loaded at this time or it has already been loaded.  With the same
+   reason, it doesn't make much sense to use the current module.
 
    Until 0.9.4 we didn't actually force 'require' to use #<module gauche>
    as the base module.  Most of the time, 'require' is called in a module
    that inherits gauche, so the problem didn't appear.  However, if one
    requires a file from a module that doesn't inherit gauche, most likely
    accidentally, he sees confusing errors---because "define-module" form
-   isn't be recognized!
+   isn't recognized!
 
    As of 0.9.4 we fix the base module to #<module gauche> when require is
-   called.   Note that autoload needs a different requirements, so we have
+   called.   Note that autoload needs different requirements, so we have
    a subroutine do_require that takes the desired base module.
  */
 int Scm_Require(ScmObj feature, int flags, ScmLoadPacket *packet)
