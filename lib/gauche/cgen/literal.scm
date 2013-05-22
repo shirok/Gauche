@@ -44,6 +44,7 @@
           cgen-literal-static?
           define-cgen-literal cgen-literal
           cgen-allocate-static-datum
+          c-safe-string-literal         ;useful to emit C string constant
           )
   )
 (select-module gauche.cgen.literal)
