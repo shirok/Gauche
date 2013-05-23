@@ -421,7 +421,7 @@ static ScmObj break_env_paths(const char *envname)
     char delim = ';';
 #endif /*GAUCHE_WINDOWS*/
 
-    if (e == NULL) {
+    if (e == NULL || strlen(e) == 0) {
 	return SCM_NIL;
     } else if (Scm_IsSugid()) {
         /* don't trust env when setugid'd */
