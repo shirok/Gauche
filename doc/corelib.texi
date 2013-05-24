@@ -1816,7 +1816,7 @@ If @var{bit} is false, resets @var{index}-th bit of an exact integer @var{n}.
 @c COMMON
 @end defun
 
-@defun copy-bit-field n start end from
+@defun copy-bit-field n from start end
 [SRFI-60]
 @c EN
 Returns an exact integer, each bit of which is the same as
@@ -1832,12 +1832,44 @@ integer @var{from}.
 @c COMMON
 
 @example
-(number->string (copy-bit-field #b10000000 1 5 -1) 2)
+(number->string (copy-bit-field #b10000000 -1 1 5) 2)
   @result{} "10011110"
 
-(number->string (copy-bit-field #b10000000 1 7 #b010101010) 2)
+(number->string (copy-bit-field #b10000000 #b010101010 1 7) 2)
   @result{} "11010100"
 @end example
+
+@c EN
+Note: The API of this procedure was originally taken from SLIB,
+and at that time,
+the argument order was @code{(copy-bit-field n start end from)}.
+During the discussion of SRFI-60 the argument order was changed
+for the consistency, and the new versions of SLIB followed it.
+We didn't realize the change until recently - before 0.9.4, 
+@emph{this procedure had the old argument order}.  Code that is using
+this procedure needs to be fixed.  If you need your code to work
+with both versions of Gauche, have the following definition
+in your code.
+@c JP
+註：この手続きのAPIはSLIBから採られましたが、採用当時の引数の順序は
+@code{(copy-bit-field n start end from)} でした。SRFI-60の
+議論中に、一貫性のために引数順が変更され、SLIBの新しいバージョンも
+それに追従しています。Gaucheではこの引数順の変更に最近まで気づいていなかったため、
+0.9.4以前のバージョンでは@code{copy-bit-field}が古い引数順で定義されています。
+この手続きを使っていたコードは0.9.4以降のGaucheで使う際に修正しなければなりません。
+もしどちらのバージョンのGaucheでも動かす必要がある場合は、
+回避策として@code{copy-bit-field}の定義を自前で持つのが良いでしょう。
+@c COMMON
+
+@example
+(define (copy-bit-field to from start end)
+  (if (< start end)
+    (let1 mask (- (ash 1 (- end start)) 1)
+      (logior (logand to (lognot (ash mask start)))
+              (ash (logand from mask) start)))
+    from))
+@end example
+
 @end defun
 
 @defun logcount n

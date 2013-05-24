@@ -1,3 +1,9 @@
+2013-05-24  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/logical.scm (copy-bit-field): Fixed the argument order
+	  to comply SRFI-60.  THIS IS AN INCOMPATIBLE CHANGE.  A note is
+	  added to the manual entry about it.
+
 2013-05-22  Shiro Kawai  <shiro@acm.org>
 
 	* src/libeval.scm (find-load-file): Experimentally allow to trigger

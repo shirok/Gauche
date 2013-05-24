@@ -1933,11 +1933,11 @@
       (bit-field #b1101101010 4 9))
 
 (test* "copy-bit-field" #b1101100000
-      (copy-bit-field #b1101101010 0 4 0))
+      (copy-bit-field #b1101101010 0 0 4))
 (test* "copy-bit-field" #b1101101111
-      (copy-bit-field #b1101101010 0 4 -1))
+      (copy-bit-field #b1101101010 -1 0 4))
 (test* "copy-bit-field" #b1111111111101010
-      (copy-bit-field #b1101101010 5 16 -1))
+      (copy-bit-field #b1101101010 -1 5 16))
 
 (test* "integer-length" 8 (integer-length #b10101010))
 (test* "integer-length" 4 (integer-length #b1111))

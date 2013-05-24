@@ -54,7 +54,7 @@
       (logand (ash n (- start)) mask))
     0))
 
-(define (copy-bit-field to start end from)
+(define (copy-bit-field to from start end)
   (check-arg integer? start)
   (check-arg integer? end)
   (if (< start end)

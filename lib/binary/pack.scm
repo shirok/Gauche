@@ -698,7 +698,7 @@
                    (lambda ()
                      (let* ((n1 (hex-char->number (read-byte)))
                             (n2 (hex-char->number (read-byte))))
-                       (write-byte (copy-bit-field n1 4 8 n2)))))
+                       (write-byte (copy-bit-field n1 n2 4 8)))))
                  v)
                (make-port-byte-iterator
                 (lambda (i) (format #t "~x~x" (logand i #b1111) (ash i -4))) count)
@@ -716,7 +716,7 @@
                    (lambda ()
                      (let* ((n1 (hex-char->number (read-byte)))
                             (n2 (hex-char->number (read-byte))))
-                       (write-byte (copy-bit-field n2 4 8 n1)))))
+                       (write-byte (copy-bit-field n2 n1 4 8)))))
                  v)
                (make-port-byte-iterator
                 (lambda (i) (format #t "~x~x" (ash i -4) (logand i #b1111))) count)
