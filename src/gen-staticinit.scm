@@ -26,21 +26,27 @@
                   read-line
                   (^[s] `(,(string-concatenate-reverse s)))))
 
-;; returns all SUBDIRS under ext/
-(define (ext-subdirs)
-  (if-let1 line (with-input-from-file (build-path *top-builddir* "ext/Makefile")
-                  (cut generator-find #/^SUBDIRS\b/ read-line/continuation))
-    (string-split (rxmatch->string #/^SUBDIRS\s*=\s*/ line 'after) #[\s+])
-    (error "Cannot find SUBDIRS definition in ext/Makefile")))
+;; This returns ("") if the definition is empty.  get-scheme-files counts on it.
+(define (mfvar-ref makefile var :optional default)
+  (if-let1 line (with-input-from-file (build-path *top-builddir* makefile)
+                  (cute generator-find (string->regexp #`"^,|var|\\b")
+                        read-line/continuation))
+    (string-split
+     (rxmatch->string (string->regexp #`"^,|var|\\s*=\\s*") line 'after)
+     #[\s+])
+    (if (undefined? default)
+      (errorf "Cannot find ~a definition in ~a" var makefile)
+      default)))
+
+;;
+;; Scan ext/* directories to gather extention initfns, and generate
+;; Scm_InitPrelinked() function.
+;;
 
 ;; returns a list of shared library file names in ext/SUBDIR
 (define (get-dso-names subdir)
-  (if-let1 line (with-input-from-file
-                    (build-path *top-builddir* "ext" subdir "Makefile")
-                  (cut generator-find #/^LIBFILES\b/ read-line/continuation))
-    ($ map path-sans-extension
-       $ string-split (rxmatch->string #/^LIBFILES\s*=\s*/ line 'after) #[\s+])
-    '()))
+  ($ map path-sans-extension
+     $ mfvar-ref (build-path "ext" subdir "Makefile") "LIBFILES" '()))
 
 ;; given shared library name, derive the init function name
 ;; (see the comment above about consideration of multiple initfns).
@@ -49,6 +55,79 @@
   (let1 n (string-tr dso-name "-+." "___")
     #`"Scm_Init_,n"))
 
+(define (generate-staticinit)
+  (do-ec [: subdir (mfvar-ref "ext/Makefile" "SUBDIRS")]
+         [: dso (get-dso-names subdir)]
+         (let ([initfn (initfn-name dso)]
+               [str    (cgen-literal dso)])
+           (cgen-decl #`"extern void ,initfn(void);")
+           (cgen-init #`"  Scm_RegisterPrelinked(SCM_STRING(,(cgen-cexpr str)));"
+                      #`"  ,initfn();"))))
+
+;;
+;; Gather *.scm and *.sci files
+;;
+
+;; ((<partial-path> . <path-to-look-for>) ...)
+(define (get-scheme-paths)
+  (append (map (^p (cons p (build-path "lib" p)))
+               (mfvar-ref "lib/Makefile" "SCMFILES"))
+          (append-ec [: subdir (mfvar-ref "ext/Makefile" "SUBDIRS")]
+                     [:let mf (build-path "ext"subdir"Makefile")]
+                     [:let cat (car (mfvar-ref mf "SCM_CATEGORY"))]
+                     (map (^s (cons (build-path cat s)
+                                    (build-path "ext" subdir s)))
+                          (mfvar-ref mf "SCMFILES")))))
+
+(define (get-scm-content path-to-look-for)
+  (if-let1 p (find-file-in-paths path-to-look-for
+                                 :paths (list *top-srcdir* *top-builddir*)
+                                 :pred file-is-readable?)
+    ;; NB: we can just do (file->string p), but the code below eliminates
+    ;; comments and unnecessary spaces.  Using read/write would break if
+    ;; the source code contains weird read-time constructor, though.  We
+    ;; know Gauche sources don't have one, but should be careful if we ever
+    ;; extend this functionality to cover other libraries.
+    (with-output-to-string (cute for-each write (file->sexp-list p)))
+    (errorf "couldn't find ~a" path-to-look-for)))
+
+(define *hook-source*
+  '(begin
+     (%add-load-path-hook!
+      (lambda (archive-file name suffixes)
+        (and-let* ([ (equal? archive-file "") ]
+                   [fn (any (^[sfx]
+                              (let1 n #`",|name|.,|sfx|"
+                                (and (hash-table-exists? *embedded-scm-table* n)
+                                     n)))
+                            suffixes)]
+                   [content (hash-table-get *embedded-scm-table* fn)])
+          (cons fn (cut open-input-string content)))))
+     (add-load-path "")))
+
+(define (embed-scm)
+  ;; Table of module path -> source
+  (cgen-decl "static ScmHashTable *scmtab;")
+  (cgen-init "scmtab = SCM_HASH_TABLE(Scm_MakeHashTableSimple(SCM_HASH_STRING, 0));")
+  (cgen-init "SCM_DEFINE(SCM_FIND_MODULE(\"gauche.internal\", 0),"
+             "           \"*embedded-scm-table*\","
+             "           SCM_OBJ(scmtab));")
+  ;; Hash table setup
+  (do-ec [: scmfile (get-scheme-paths)]
+         [:let name (cgen-literal (car scmfile))]
+         [:let lit  (cgen-literal (get-scm-content (cdr scmfile)))]
+         (cgen-init (format "Scm_HashTableSet(scmtab, ~a, ~a, 0);"
+                            (cgen-cexpr name)
+                            (cgen-cexpr lit))))
+  ;; Set up load hook
+  (cgen-decl "static const char *embedded_load_hook = "
+             (c-safe-string-literal (write-to-string *hook-source*))
+             ";")
+  (cgen-init "Scm_EvalCString(embedded_load_hook,"
+             "                SCM_OBJ(SCM_FIND_MODULE(\"gauche.internal\", 0)),"
+             "                NULL);")
+  )
+
 (define (main args)
   (cgen-current-unit (make <cgen-unit>
                        :name "staticinit"
@@ -56,14 +135,8 @@
                        :init-epilogue "}\n"))
   (cgen-decl #`"#include <gauche.h>")
   (cgen-decl "extern void Scm_RegisterPrelinked(ScmString*);")
-  (do-ec [: subdir (ext-subdirs)]
-         [: dso (get-dso-names subdir)]
-         (let ([initfn (initfn-name dso)]
-               [str    (cgen-literal dso)])
-           (cgen-decl #`"extern void ,initfn(void);")
-           (cgen-init #`"  Scm_RegisterPrelinked(SCM_STRING(,(cgen-cexpr str)));"
-                      #`"  ,initfn();")))
+  (generate-staticinit)
+  (embed-scm)
   (cgen-emit-c (cgen-current-unit))
   0)
-
 
