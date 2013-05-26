@@ -40,9 +40,7 @@
 
 (define-module file.util
   (use srfi-1)
-  (use srfi-11)
   (use srfi-13)
-  (use util.list)
   (use util.match)
   (use gauche.parameter)
   (export current-directory directory-list directory-list2 directory-fold

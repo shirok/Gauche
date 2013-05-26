@@ -444,6 +444,8 @@ Content-Length: 4349
 (test-section "rfc.mime")
 (use rfc.mime)
 (test-module 'rfc.mime)
+(use rfc.mime-port)
+(test-module 'rfc.mime-port)
 
 (test* "mime-parse-version" '((1 0) (1 0) (1 0) (1 0) #f)
        (map mime-parse-version

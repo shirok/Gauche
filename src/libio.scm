@@ -348,6 +348,18 @@
                 :optional (whence::<fixnum> (c "SCM_MAKE_INT(SEEK_SET)")))
   Scm_PortSeek)
 
+;; useful alias
+(define (port-tell p) (port-seek p 0 SEEK_CUR))
+
+;; useful for error messages
+(define (port-position-prefix port)
+  (if-let1 n (port-name port)
+    (let1 l (port-current-line port)
+      (if (positive? l)
+        (format #f "~s:line ~a: " n l)
+        (format #f "~s: " n))
+      "")))
+
 (define-cproc with-port-locking (port::<port> proc) Scm_VMWithPortLocking)
 
 ;;;

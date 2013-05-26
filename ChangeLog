@@ -1,3 +1,13 @@
+2013-05-25  Shiro Kawai  <shiro@acm.org>
+
+	* various files: Removed unnecessary "use"-dependencies, and put
+	  less-frequently used features into autoloads, in order to speed
+	  up initial startup, especially for www.cgi.
+	  libsrc/gauche/parameter.scm - autoload hook features
+	  lib/rfc/mime.scm - splitted parts that needs gauche.vport
+	  lib/gauche/portutil.scm, src/libio.scm - move port-tell and
+	  port-position-prefix from portutil to libio.
+
 2013-05-24  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/logical.scm (copy-bit-field): Fixed the argument order

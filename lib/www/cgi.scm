@@ -39,19 +39,15 @@
 
 (define-module www.cgi
   (use srfi-1)
-  (use srfi-2)
   (use srfi-13)
   (use rfc.uri)
-  (use rfc.cookie)
   (use rfc.mime)
   (use rfc.822)
   (use gauche.parameter)
   (use gauche.charconv)
-  (use gauche.vport)
   (use text.tree)
   (use text.html-lite)
   (use file.util)
-  (use util.list)
   (export cgi-metavariables
           cgi-get-metavariable
           cgi-output-character-encoding
@@ -67,6 +63,9 @@
           <cgi-request-method-error>)
   )
 (select-module www.cgi)
+
+(autoload rfc.cookie parse-cookie-string)
+(autoload gauche.vport open-input-limited-length-port)
 
 ;;----------------------------------------------------------------
 ;; A parameter cgi-metavariables can be used to supply metavariables,
@@ -182,23 +181,22 @@
                               (content-type #f)
                               (content-length #f)
                               (mime-input #f))
-  (let* ((input (cond (query-string)
-                      ((or mime-input content-type) 'mime)
-                      (else
-                       (cgi-get-query content-length))))
-         (cookies (cond ((and merge-cookies (get-meta "HTTP_COOKIE"))
-                         => parse-cookie-string)
-                        (else '()))))
+  (let* ([input (cond [ query-string ]
+                      [(or mime-input content-type) 'mime]
+                      [else (cgi-get-query content-length)])]
+         [cookies (if-let1 s (and merge-cookies (get-meta "HTTP_COOKIE"))
+                    (parse-cookie-string s)
+                    '())])
     (append
      (cond
-      ((eq? input 'mime)
+      [(eq? input 'mime)
        (get-mime-parts part-handlers
                        (or content-type (get-meta "CONTENT_TYPE"))
                        (or content-length (get-meta "CONTENT_LENGTH"))
-                       (or mime-input (current-input-port))))
-      ((string-null? input) '())
-      (else (split-query-string input)))
-     (map (lambda (cookie) (list (car cookie) (cadr cookie))) cookies))))
+                       (or mime-input (current-input-port)))]
+      [(string-null? input) '()]
+      [else (split-query-string input)])
+     (map (^[cookie] (list (car cookie) (cadr cookie))) cookies))))
 
 (define (split-query-string input)
   (fold-right (lambda (elt params)

@@ -44,7 +44,6 @@
   (use srfi-1)
   (use srfi-13)
   (use srfi-19)
-  (use util.trie)
   (export parse-cookie-string
           construct-cookie-string
           )

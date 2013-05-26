@@ -34,7 +34,6 @@
 ;; The API is upper-compatible to ChezScheme and Chicken's.
 
 (define-module gauche.parameter
-  (use gauche.hook)
   (export <parameter> make-parameter parameterize
           parameter-pre-observers
           parameter-post-observers
@@ -42,6 +41,8 @@
           parameter-observer-delete!)
   )
 (select-module gauche.parameter)
+
+(autoload gauche.hook make-hook add-hook! delete-hook! run-hook)
 
 (define-class <parameter> ()
   (;; all slots should be private

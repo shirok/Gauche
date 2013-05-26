@@ -81,9 +81,9 @@ SCMFILES = srfi-0.scm \
        util/rbtree.scm \
        compat/jfilter.scm compat/stk.scm compat/norational.scm \
        file/filter.scm \
-       rfc/822.scm rfc/mime.scm rfc/base64.scm rfc/uri.scm rfc/cookie.scm \
-       rfc/quoted-printable.scm rfc/http.scm rfc/hmac.scm rfc/ftp.scm \
-       rfc/icmp.scm rfc/ip.scm rfc/json.scm \
+       rfc/822.scm rfc/mime.scm rfc/mime-port.scm rfc/base64.scm rfc/uri.scm \
+       rfc/cookie.scm rfc/quoted-printable.scm rfc/http.scm rfc/hmac.scm \
+       rfc/ftp.scm rfc/icmp.scm rfc/ip.scm rfc/json.scm \
        text/csv.scm text/parse.scm text/tree.scm text/sql.scm \
        text/html-lite.scm text/info.scm text/diff.scm \
        text/progress.scm \

@@ -33,7 +33,7 @@
 
 (define-module gauche.portutil
   (export port->string port->list port->string-list port->sexp-list
-          copy-port port-position-prefix port-tell
+          copy-port
           ;; transient until 0.9.4 release:
           port-fold port-fold-right port-for-each port-map)
   )
@@ -128,19 +128,6 @@
                        (+ count data))))]
         [else (error "unit must be 'char, 'byte, or non-negative integer" unit)]
         ))
-
-;; useful for error messages
-(define (port-position-prefix port)
-  (let ([n (port-name port)]
-        [l (port-current-line port)])
-    (if n
-      (if (positive? l)
-        (format #f "~s:line ~a: " n l)
-        (format #f "~s: " n))
-      "")))
-
-;; useful alias
-(define (port-tell p) (port-seek p 0 SEEK_CUR))
 
 ;; in order to compile post-0.9.3 source with 0.9.3, we need these
 ;; to be in this module.  Remove them after 0.9.4 release.

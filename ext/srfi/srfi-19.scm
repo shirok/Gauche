@@ -29,7 +29,6 @@
   (use srfi-1)
   (use gauche.sequence)
   (use srfi-13)
-  (use util.list)
   (export time-tai time-utc time-monotonic time-thread
           time-process time-duration current-time time-resolution
           make-time time-type time-second time-nanosecond

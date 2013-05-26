@@ -93,7 +93,7 @@
 
 (autoload gauche.portutil
           port->string port->list port->string-list port->sexp-list
-          copy-port port-position-prefix port-tell)
+          copy-port)
 
 (autoload "gauche/logical"
           logtest logbit? copy-bit bit-field copy-bit-field)
