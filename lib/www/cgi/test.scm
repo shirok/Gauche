@@ -61,9 +61,9 @@
 
 (define cgi-test-environment-ref
   (getter-with-setter
-   (lambda (key . maybe-default)
+   (^[key . maybe-default]
      (apply hash-table-get *cgi-test-env* (x->string key) maybe-default))
-   (lambda (key value)
+   (^[key value]
      (hash-table-put! *cgi-test-env* (x->string key) (x->string value)))))
 
 ;; Runs CGI script under specified environments.
@@ -73,21 +73,21 @@
   (let1 envtab (make-hash-table 'string=?)
     (hash-table-for-each *cgi-test-env*
                          (cut hash-table-put! envtab <> <>))
-    (dolist (p environment)
+    (dolist [p environment]
       (hash-table-put! envtab (x->string (car p)) (x->string (cdr p))))
-    (let ((method (hash-table-get envtab "REQUEST_METHOD" "GET"))
-          (query  (and parameters (build-query-string parameters))))
+    (let ([method (hash-table-get envtab "REQUEST_METHOD" "GET")]
+          [query  (and parameters (build-query-string parameters))])
       (cond
-       ((and parameters (member method '("GET" "HEAD")))
-        (hash-table-put! envtab "QUERY_STRING" query))
-       ((and parameters (equal? method "POST"))
+       [(and parameters (member method '("GET" "HEAD")))
+        (hash-table-put! envtab "QUERY_STRING" query)]
+       [(and parameters (equal? method "POST"))
         ;; TODO: support multipart/form-data
         (hash-table-put! envtab "CONTENT_TYPE"
                          "application/x-www-form-urlencoded")
         (hash-table-put! envtab "CONTENT_LENGTH"
-                         (x->string (string-size query)))))
+                         (x->string (string-size query)))])
       (call-with-process-io `("env" ,@(build-env envtab) ,script)
-        (lambda (inp outp)
+        (^[inp outp]
           (when (and query (equal? method "POST"))
             (display query outp)
             (newline outp)
@@ -99,10 +99,9 @@
 ;; Convenience procedurs
 (define (run-cgi-script->header&body script reader . args)
   (apply call-with-cgi-script script
-         (lambda (p)
-           (let* ((header (rfc822-header->list p))
-                  (body   (reader p)))
-             (values header body)))
+         (^p (let* ([header (rfc822-header->list p)]
+                    [body   (reader p)])
+               (values header body)))
          args))
 
 (define (run-cgi-script->sxml script . args)
@@ -117,14 +116,13 @@
 ;; Utils
 
 (define (build-query-string param-alist)
-  (string-join (map (lambda (p)
-                      (string-join
-                       (map (lambda (x) (uri-encode-string (x->string x)))
-                            (list (car p) (cdr p)))
-                       "="))
+  (string-join (map (^p (string-join
+                         (map (^x (uri-encode-string (x->string x)))
+                              (list (car p) (cdr p)))
+                         "="))
                     param-alist)
                "&"))
 
 (define (build-env env-table)
-  (hash-table-map env-table (lambda (k v) #`",|k|=,|v|")))
+  (hash-table-map env-table (^[k v] #`",|k|=,|v|")))
 

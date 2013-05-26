@@ -75,8 +75,8 @@
 
 ;; Internal routine to get metavariable
 (define (get-meta name)
-  (or (and-let* ((mv (cgi-metavariables))
-                 (p  (assoc name mv)))
+  (or (and-let* ([mv (cgi-metavariables)]
+                 [p  (assoc name mv)])
         (cadr p))
       (sys-getenv name)))
 
@@ -126,9 +126,9 @@
 ;; without retrieving input.   cgi-parse-parameters handles the mime
 ;; message.
 (define (cgi-get-query content-length)
-  (let* ((type    (mime-parse-content-type (get-meta "CONTENT_TYPE")))
-         (typesig (and type (list (car type) (cadr type))))
-         (method  (get-meta "REQUEST_METHOD")))
+  (let* ([type    (mime-parse-content-type (get-meta "CONTENT_TYPE"))]
+         [typesig (and type (list (car type) (cadr type)))]
+         [method  (get-meta "REQUEST_METHOD")])
     (unless (or (not type)
                 (member typesig
                         '(("application" "x-www-form-urlencoded")
@@ -136,7 +136,7 @@
       (errorf <cgi-content-type-error>
               :content-type type
               "Unsupported CONTENT_TYPE: ~a" type))
-    (cond ((not method)  ;; interactive use.
+    (cond [(not method)  ;; interactive use.
            (if (sys-isatty (current-input-port))
              (begin
                (display "Enter parameters (name=value).  ^D to stop.\n")
@@ -151,23 +151,23 @@
                            (cons line params))))))
              (error <cgi-request-method-error>
                     :request-method #f
-                    "REQUEST_METHOD not defined")))
-          ((or (string-ci=? method "GET")
+                    "REQUEST_METHOD not defined"))]
+          [(or (string-ci=? method "GET")
                (string-ci=? method "HEAD"))
-           (or (get-meta "QUERY_STRING") ""))
-          ((string-ci=? method "POST")
+           (or (get-meta "QUERY_STRING") "")]
+          [(string-ci=? method "POST")
            (if (equal? typesig '("multipart" "form-data"))
              'mime
-             (or (and-let* ((lenp (or content-length
-                                      (get-meta "CONTENT_LENGTH")))
-                            (len  (x->integer lenp))
-                            ((<= 0 len)))
+             (or (and-let* ([lenp (or content-length
+                                      (get-meta "CONTENT_LENGTH"))]
+                            [len  (x->integer lenp)]
+                            [ (<= 0 len) ])
                    (string-incomplete->complete (read-block len)))
-                 (port->string (current-input-port)))))
-          (else
+                 (port->string (current-input-port))))]
+          [else
            (errorf <cgi-request-method-error>
                    :request-method method
-                   "Unknown REQUEST_METHOD: ~a" method))
+                   "Unknown REQUEST_METHOD: ~a" method)]
           )))
 
 ;;----------------------------------------------------------------
@@ -199,14 +199,14 @@
      (map (^[cookie] (list (car cookie) (cadr cookie))) cookies))))
 
 (define (split-query-string input)
-  (fold-right (lambda (elt params)
-                (let* ((ss (string-split elt #\=))
-                       (n  (uri-decode-string (car ss) :cgi-decode #t))
-                       (p  (assoc n params))
-                       (v  (if (null? (cdr ss))
+  (fold-right (^[elt params]
+                (let* ([ss (string-split elt #\=)]
+                       [n  (uri-decode-string (car ss) :cgi-decode #t)]
+                       [p  (assoc n params)]
+                       [v  (if (null? (cdr ss))
                              #t
                              (uri-decode-string (string-join (cdr ss) "=")
-                                                :cgi-decode #t))))
+                                                :cgi-decode #t))])
                   (if p
                     (begin (set! (cdr p) (cons v (cdr p))) params)
                     (cons (list n v) params))))
@@ -239,7 +239,7 @@
     (rfc822-header-ref (ref info 'headers) name))
 
   (define (make-file-handler prefix honor-origfile? mode)
-    (lambda (name filename part-info inp)
+    (^[name filename part-info inp]
       (receive (outp tmpfile) (sys-mkstemp prefix)
         (cgi-add-temporary-file tmpfile)
         (mime-retrieve-body part-info inp outp)
@@ -253,11 +253,11 @@
     (mime-body->string part-info inp))
 
   (define (ignore-handler name filename part-info inp)
-    (let loop ((ignore (read-line inp #t)))
+    (let loop ([ignore (read-line inp #t)])
       (if (eof-object? ignore) #f (loop (read-line inp #t)))))
 
   (define (get-action&opts part-name)
-    (let1 clause (find (lambda (entry)
+    (let1 clause (find (^[entry]
                          (or (eq? (car entry) #t)
                              (and (regexp? (car entry))
                                   (rxmatch (car entry) part-name))
@@ -297,7 +297,7 @@
     (read-char input)                   ; discard beginning DQUOTE
     (let1 r (open-output-string :private? #t)
       (define (finish) (get-output-string r))
-      (let loop ((c (read-char input)))
+      (let loop ([c (read-char input)])
         (cond [(eof-object? c) (finish)] ; tolerate missing closing DQUOTE
               [(char=? c #\")  (finish)] ; discard ending DQUOTE
               [(char=? c #\\)
@@ -376,13 +376,11 @@
     (when status   (push! r #`"Status: ,status\r\n"))
     (when ct       (push! r #`"Content-type: ,ct\r\n"))
     (when location (push! r #`"Location: ,location\r\n"))
-    (for-each (lambda (cookie)
-                (push! r #`"Set-cookie: ,cookie\r\n"))
-              cookies)
-    (for-each (lambda (p)
-                (when (pair? (cdr p))
-                  (push! r #`",(car p): ,(cadr p)\r\n")))
-              (slices rest 2))
+    (dolist [cookie cookies]
+      (push! r #`"Set-cookie: ,cookie\r\n"))
+    (dolist [p (slices rest 2)]
+      (when (pair? (cdr p))
+        (push! r #`",(car p): ,(cadr p)\r\n")))
     (push! r "\r\n")
     (reverse r)))
 
@@ -395,7 +393,7 @@
                   (merge-cookies #f)
                   (part-handlers '()))
   (set! (port-buffering (current-error-port)) :line)
-  (guard (e (else (output-proc (on-error e))))
+  (guard (e [else (output-proc (on-error e))])
     (let1 params (cgi-parse-parameters :merge-cookies merge-cookies
                                        :part-handlers part-handlers)
       (output-proc (proc params))))
