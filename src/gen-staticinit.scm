@@ -26,7 +26,7 @@
                   read-line
                   (^[s] `(,(string-concatenate-reverse s)))))
 
-;; This returns ("") if the definition is empty.  get-scheme-files counts on it.
+;; This returns ("") if the definition is empty.  get-scheme-paths counts on it.
 (define (mfvar-ref makefile var :optional default)
   (if-let1 line (with-input-from-file (build-path *top-builddir* makefile)
                   (cute generator-find (string->regexp #`"^,|var|\\b")
