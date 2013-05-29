@@ -71,48 +71,47 @@
   ))
 
 (define (base64-decode)
-  (let-syntax ((lookup (syntax-rules ()
-                         ((_ c)
-                          (let ((i (char->integer c)))
+  (let-syntax ([lookup (syntax-rules ()
+                         [(_ c)
+                          (let1 i (char->integer c)
                             (and (< 32 i 128)
-                                 (vector-ref *decode-table* (- i 32)))))))
+                                 (vector-ref *decode-table* (- i 32))))])]
                )
     (define (d0 c)
-      (cond ((eof-object? c))
-            ((eqv? c #\=))
-            ((lookup c) => (lambda (v) (d1 (read-char) v)))
-            (else (d0 (read-char)))))
+      (cond [(eof-object? c)]
+            [(eqv? c #\=)]
+            [(lookup c) => (^v (d1 (read-char) v))]
+            [else (d0 (read-char))]))
 
     (define (d1 c hi)
-      (cond ((eof-object? c))
-            ((eqv? c #\=))
-            ((lookup c) => (lambda (lo)
+      (cond [(eof-object? c)]
+            [(eqv? c #\=)]
+            [(lookup c) => (^[lo]
                              (write-byte (+ (* hi 4) (quotient lo 16)))
-                             (d2 (read-char) (modulo lo 16))))
-            (else (d1 (read-char) hi))))
+                             (d2 (read-char) (modulo lo 16)))]
+            [else (d1 (read-char) hi)]))
 
     (define (d2 c hi)
-      (cond ((eof-object? c))
-            ((eqv? c #\=))
-            ((lookup c) => (lambda (lo)
+      (cond [(eof-object? c)]
+            [(eqv? c #\=)]
+            [(lookup c) => (^[lo]
                              (write-byte (+ (* hi 16) (quotient lo 4)))
-                             (d3 (read-char) (modulo lo 4))))
-            (else (d2 (read-char) hi))))
+                             (d3 (read-char) (modulo lo 4)))]
+            [else (d2 (read-char) hi)]))
 
     (define (d3 c hi)
-      (cond ((eof-object? c))
-            ((eqv? c #\=))
-            ((lookup c) => (lambda (lo)
+      (cond [(eof-object? c)]
+            [(eqv? c #\=)]
+            [(lookup c) => (^[lo]
                              (write-byte (+ (* hi 64) lo))
-                             (d0 (read-char))))
-            (else (d3 (read-char) hi))))
+                             (d0 (read-char)))]
+            [else (d3 (read-char) hi)]))
 
     (d0 (read-char))))
 
 (define (base64-decode-string string)
   (with-output-to-string
-    (lambda ()
-      (with-input-from-string string base64-decode))))
+    (cut with-input-from-string string base64-decode)))
 
 
 (define (base64-encode :key (line-width 76))

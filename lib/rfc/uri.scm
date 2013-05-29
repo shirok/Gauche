@@ -70,21 +70,21 @@
 
 (define (uri-scheme&specific uri)
   (cond [(#/^([A-Za-z][A-Za-z0-9+.-]*):/ uri)
-         => (lambda (m) (values (string-downcase (m 1)) (m 'after)))]
+         => (^m (values (string-downcase (m 1)) (m 'after)))]
         [else (values #f uri)]))
 
 (define (uri-decompose-hierarchical specific)
   (cond
    [(and (string? specific)
          (#/^(?:\/\/([^\/?#]*))?([^?#]+)?(?:\?([^#]*))?(?:#(.*))?$/ specific))
-    => (lambda (m) (values (m 1) (m 2) (m 3) (m 4)))]
+    => (^m (values (m 1) (m 2) (m 3) (m 4)))]
    [else (values #f #f #f #f)]))
 
 (define (uri-decompose-authority authority)
   (cond
    [(and (string? authority)
          (#/^(?:(.*?)@)?([^:]*)(?::(\d*))?$/ authority))
-    => (lambda (m) (values (m 1) (m 2) (m 3)))]
+    => (^m (values (m 1) (m 2) (m 3)))]
    [else (values #f #f #f)]))
 
 ;; A common cliche (suggested by Kouhei Sutou)
@@ -116,7 +116,7 @@
                      (authority #f) (path  #f) (path* #f) (query #f)
                      (fragment #f) (specific #f))
   (with-output-to-string
-    (lambda ()
+    (^[]
       (when scheme (display scheme) (display ":"))
       (if specific
         (display specific)
@@ -201,7 +201,7 @@
   ;; RFC3986, Section 5.3
   (define (recompose scheme authority path query fragment)
     (with-output-to-string
-      (lambda ()
+      (^[]
         (when scheme    (display scheme) (display ":"))
         (when authority (display "//") (display authority))
         (display path)
@@ -229,18 +229,18 @@
 ;;  These procedures provides basic building components.
 
 (define (uri-decode :key (cgi-decode #f))
-  (let loop ((c (read-char)))
+  (let loop ([c (read-char)])
     (cond [(eof-object? c)]
           [(char=? c #\%)
            (let1 c1 (read-char)
              (cond
               [(eof-object? c1) (write-char c)] ;; just be permissive
               [(digit->integer c1 16)
-               => (lambda (i1)
+               => (^[i1]
                     (let1 c2 (read-char)
                       (cond [(eof-object? c2) (write-char c) (write-char c1)]
                             [(digit->integer c2 16)
-                             => (lambda (i2)
+                             => (^[i2]
                                   (write-byte (+ (* i1 16) i2))
                                   (loop (read-char)))]
                             [else (write-char c) (write-char c1) (loop c2)])))]
@@ -256,9 +256,9 @@
     (wrap-with-output-conversion out (gauche-character-encoding)
                                  :from-code encoding))
   (call-with-string-io string
-    (lambda (in out)
+    (^[in out]
       (with-ports in (wrap out) (current-error-port)
-        (lambda ()
+        (^[]
           (apply uri-decode args)
           (close-output-port (current-output-port)))))))
 
@@ -273,7 +273,7 @@
 ;; 'noescape' char-set is only valid in ASCII range.  All bytes
 ;; larger than #x80 are encoded unconditionally.
 (define (uri-encode :key ((:noescape echars) *rfc3986-unreserved-char-set*))
-  (let loop ((b (read-byte)))
+  (let loop ([b (read-byte)])
     (unless (eof-object? b)
       (if (and (< b #x80)
                (char-set-contains? echars (integer->char b)))
@@ -287,7 +287,7 @@
     (wrap-with-input-conversion in (gauche-character-encoding)
                                 :to-code encoding))
   (call-with-string-io string
-    (lambda (in out)
+    (^[in out]
       (with-ports (wrap in) out (current-error-port)
         (cut apply uri-encode args)))))
 

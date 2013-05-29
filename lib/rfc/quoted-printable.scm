@@ -45,8 +45,8 @@
 ;; If binary is #f, we encode CR and LF.  See RFC2045 for this consideration.
 (define (quoted-printable-encode :key (line-width 76) (binary #f))
   (let1 limit (if (and line-width (>= line-width 4)) (- line-width 3) #f)
-    (let loop ((c (read-byte))
-               (lcnt 0))
+    (let loop ([c (read-byte)]
+               [lcnt 0])
       (cond [(eof-object? c)]
             [(and limit (>= lcnt limit)) (display "=\r\n") (loop c 0)]
             [(and limit (>= lcnt limit) (or (= c #x20) (= c #x09)))
@@ -55,7 +55,7 @@
             [(and binary (or (= c #x0a) (= c #x0d)))
              (format #t "=0~X" c) (loop (read-byte) (+ lcnt 1))]
             [(= c #x0d)
-             (let ((c1 (read-byte)))
+             (let1 c1 (read-byte)
                (cond ((= c1 #x0a) (display "\r\n") (loop (read-byte) 0))
                      (else (display "\r\n") (loop c1 0))))]
             [(= c #x0a)
@@ -72,47 +72,43 @@
   (with-string-io string (cut apply quoted-printable-encode args)))
 
 (define (quoted-printable-decode)
-  (let loop ((c (read-char)))
-    (cond ((eof-object? c))
-          ((char=? c #\=)
-           (let ((c1 (read-char)))
+  (let loop ([c (read-char)])
+    (cond [(eof-object? c)]
+          [(char=? c #\=)
+           (let1 c1 (read-char)
              (cond
-              ((eof-object? c1)) ; illegal, but we recognize it as a soft newline
-              ((char=? c1 #\newline) (loop (read-char))) ; soft newline
-              ((char=? c1 #\return)      ; soft newline
-               (let ((c2 (read-char)))
-                 (if (char=? c2 #\newline) (loop (read-char)) (loop c2))))
-              ((memv c1 '(#\tab #\space)) ; possibly soft newline
-               (let loop2 ((c2 (read-char))
-                           (r (list c1 c)))
-                 (cond ((eof-object? c2))
-                       ((char=? c2 #\newline) (loop (read-char)))
-                       ((char=? c2 #\return)
-                        (let ((c3 (read-char)))
+              [(eof-object? c1)] ; illegal, but we recognize it as a soft newline
+              [(char=? c1 #\newline) (loop (read-char))] ; soft newline
+              [(char=? c1 #\return)      ; soft newline
+               (let1 c2 (read-char)
+                 (if (char=? c2 #\newline) (loop (read-char)) (loop c2)))]
+              [(memv c1 '(#\tab #\space)) ; possibly soft newline
+               (let loop2 ([c2 (read-char)]
+                           [r (list c1 c)])
+                 (cond [(eof-object? c2)]
+                       [(char=? c2 #\newline) (loop (read-char))]
+                       [(char=? c2 #\return)
+                        (let1 c3 (read-char)
                           (if (char=? c3 #\newline)
-                              (loop (read-char))
-                              (loop c3))))
-                       ((memv c2 '(#\tab #\space))
-                        (loop2 (read-char) (cons c2 r)))
-                       (else
+                            (loop (read-char))
+                            (loop c3)))]
+                       [(memv c2 '(#\tab #\space))
+                        (loop2 (read-char) (cons c2 r))]
+                       [else
                         (for-each write-char (reverse r))
-                        (loop c2)))))
-              ((digit->integer c1 16)
-               => (lambda (num1)
-                    (let ((c2 (read-char)))
-                      (cond ((eof-object? c2) (write-char c) (write-char c1))
-                            ((digit->integer c2 16)
-                             => (lambda (num2)
+                        (loop c2)]))]
+              [(digit->integer c1 16)
+               => (^[num1]
+                    (let1 c2 (read-char)
+                      (cond [(eof-object? c2) (write-char c) (write-char c1)]
+                            [(digit->integer c2 16)
+                             => (^[num2]
                                   (write-byte (+ (* num1 16) num2))
-                                  (loop (read-char))))
-                            (else
-                             (write-char c) (write-char c1) (loop c2))))))
-              (else
-               (write-char c) (loop c1)))))
-          (else
-           (write-char c) (loop (read-char))))
-    )
-  )
+                                  (loop (read-char)))]
+                            [else (write-char c) (write-char c1) (loop c2)])))]
+              [else (write-char c) (loop c1)]))]
+          [else (write-char c) (loop (read-char))])
+    ))
 
 (define (quoted-printable-decode-string string)
   (with-string-io string quoted-printable-decode))

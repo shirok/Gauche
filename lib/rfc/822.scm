@@ -99,8 +99,8 @@
       body  ;; this message is not RFC2822 compliant anyway
       (string-trim body)))
 
-  (let loop ((r '())
-             (line (reader iport)))
+  (let loop ([r '()]
+             [line (reader iport)])
     (cond
      [(eof-object? line) (reverse! r)]
      [(string-null? line) (reverse! r)]
@@ -113,8 +113,8 @@
                      (string-downcase name))
           (cond
            [name
-            (let loop2 ((nline (reader iport))
-                        (bodies (list (drop-leading-fws body))))
+            (let loop2 ([nline (reader iport)]
+                        [bodies (list (drop-leading-fws body))])
               (cond [(eof-object? nline)
                      ;; maybe premature end of the message
                      (if strict?
@@ -173,7 +173,7 @@
 (define (rfc822-quoted-string input)
   (let1 r (open-output-string :private? #t)
     (define (finish) (get-output-string r))
-    (let loop ((c (peek-next-char input)))
+    (let loop ([c (peek-next-char input)])
       (cond [(eof-object? c) (finish)];; tolerate missing closing DQUOTE
             [(char=? c #\") (read-char input) (finish)] ;; discard DQUOTE
             [(char=? c #\\)
@@ -189,15 +189,14 @@
 
 ;; Returns the next token or EOF
 (define (rfc822-next-token input . opts)
-  (let ((toktab (map (lambda (e)
-                       (cond
-                        ((char-set? e) (cons e (cut next-token-of e <>)))
-                        (else e)))
-                     (get-optional opts *rfc822-standard-tokenizers*)))
-        (c (rfc822-skip-cfws input)))
+  (let ([toktab (map (^e (if (char-set? e)
+                           (cons e (cut next-token-of e <>))
+                           e))
+                     (get-optional opts *rfc822-standard-tokenizers*))]
+        [c (rfc822-skip-cfws input)])
     (cond [(eof-object? c) c]
-          [(find (lambda (e) (char-set-contains? (car e) c)) toktab)
-           => (lambda (e) ((cdr e) input))]
+          [(find (^e (char-set-contains? (car e) c)) toktab)
+           => (^e ((cdr e) input))]
           [else (read-char input)])))
 
 ;; returns a list of tokens, for convenience
@@ -228,23 +227,21 @@
                      '("Jan" "Feb" "Mar" "Apr" "May" "Jun"
                        "Jul" "Aug" "Sep" "Oct" "Nov" "Dec"))))
   (define (year->number year) ;; see obs-year definition of RFC2822
-    (let ((y (string->number year)))
-      (and y
-           (cond [(< y 50)  (+ y 2000)]
-                 [(< y 100) (+ y 1900)]
-                 [else y]))))
+    (and-let* ([y (string->number year)])
+      (cond [(< y 50)  (+ y 2000)]
+            [(< y 100) (+ y 1900)]
+            [else y])))
   (define (tz->number tz)
     (cond [(equal? tz "-0000") #f]  ;;no effective TZ info; see 3.3 of RFC2822
           [(string->number tz)]
-          [(assoc tz '(("UT" . 0) ("GMT" . 0) ("EDT" . -400) ("EST" . -500)
-                       ("CDT" . -500) ("CST" . -600) ("MDT" . -600)
-                       ("MST" . -700) ("PDT" . -700) ("PST" . -800)))
-           => cdr]
+          [(assoc-ref '(("UT" . 0) ("GMT" . 0) ("EDT" . -400) ("EST" . -500)
+                        ("CDT" . -500) ("CST" . -600) ("MDT" . -600)
+                        ("MST" . -700) ("PDT" . -700) ("PST" . -800)) tz)]
           [else #f]))
 
   (rxmatch-case string
     (#/((Sun|Mon|Tue|Wed|Thu|Fri|Sat)\s*,)?\s*(\d+)\s*(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s*(\d\d(\d\d)?)\s+(\d\d)\s*:\s*(\d\d)(\s*:\s*(\d\d))?(\s+([+-]\d\d\d\d|[A-Z][A-Z][A-Z]?))?/
-       (#f #f dow dom mon yr #f hour min #f sec #f tz)
+       (#f bebe dow dom mon yr #f hour min #f sec #f tz)
        (values (year->number yr)
                (mon->number mon)
                (string->number dom)
@@ -269,12 +266,12 @@
 (define (date->rfc822-date date)
   (let1 tz (date-zone-offset date)
     (format "~a, ~2d ~a ~4d ~2,'0d:~2,'0d:~2,'0d ~a~2,'0d~2,'0d"
-            (ref '#("Sun" "Mon" "Tue" "Wed" "Thu" "Fri" "Sat")
-                 (date-week-day date))
+            (~ '#("Sun" "Mon" "Tue" "Wed" "Thu" "Fri" "Sat")
+               (date-week-day date))
             (date-day date)
-            (ref '#("" "Jan" "Feb" "Mar" "Apr" "May" "Jun"
-                    "Jul" "Aug" "Sep" "Oct" "Nov" "Dec")
-                 (date-month date))
+            (~ '#("" "Jan" "Feb" "Mar" "Apr" "May" "Jun"
+                  "Jul" "Aug" "Sep" "Oct" "Nov" "Dec")
+               (date-month date))
             (date-year date)
             (date-hour date) (date-minute date) (date-second date)
             (if (>= tz 0) "+" "-")
@@ -302,7 +299,7 @@
                               (check :error) ; #f, :ignore, :error or proc
                               (continue #f))
   (define (process headers)
-    (dolist (field headers)
+    (dolist [field headers]
       (display (car field) output)
       (display ": " output)
       (display (cadr field) output)
@@ -313,13 +310,13 @@
     (errorf "Illegal RFC2822 header field data (~a): ~a: ~,,,,80:a" reason name body))
   (if (memv check '(#f :ignore))
     (process headers)
-    (let loop ((hs headers)
-               (hs2 '()))
+    (let loop ([hs headers]
+               [hs2 '()])
       (match hs
         [() (process (reverse hs2))]
         [((name body) . rest)
          (cond [(rfc822-invalid-header-field (string-append name ": " body))
-                => (lambda (reason)
+                => (^[reason]
                      (if (eq? check :error)
                        (bad name body reason)
                        (receive (name2 body2) (check name body reason)
@@ -335,9 +332,7 @@
         [(string-index body #[^\x01-\x7f]) 'bad-character]
         [else
          (let1 lines (string-split body "\r\n ")
-           (cond [(any (lambda (s) (> (string-size s) 998)) lines)
-                  'line-too-long]
-                 [(any (lambda (s) (string-index s #[\x0d\x0a])) lines)
-                  'stray-crlf]
+           (cond [(any (^s (> (string-size s) 998)) lines) 'line-too-long]
+                 [(any (^s (string-index s #[\x0d\x0a])) lines) 'stray-crlf]
                  [else #f]))]))
 

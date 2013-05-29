@@ -67,50 +67,47 @@
     (if (= version 0) #\; #[,\;]))
 
   (define (read-attr input r)
-    (cond ((string-null? input) (reverse! r))
-          ((rxmatch attr-regexp input)
-           => (lambda (m)
-                (if (and-let* ((delimiter (rxmatch-substring m 2)))
-                      (string-prefix? "=" delimiter))
-                  (let ((attr (rxmatch-substring m 1))
-                        (rest (rxmatch-after m)))
-                    (if (string-prefix? "\"" rest)
-                      (read-token-quoted attr (string-drop rest 1) r)
-                      (read-token attr rest r)))
-                  (read-attr (rxmatch-after m)
-                             (acons (rxmatch-substring m 1) #f r)))))
-          (else
+    (cond [(string-null? input) (reverse! r)]
+          [(rxmatch attr-regexp input)
+           => (^m (if (and-let* ([delimiter (rxmatch-substring m 2)])
+                        (string-prefix? "=" delimiter))
+                    (let ([attr (rxmatch-substring m 1)]
+                          [rest (rxmatch-after m)])
+                      (if (string-prefix? "\"" rest)
+                        (read-token-quoted attr (string-drop rest 1) r)
+                        (read-token attr rest r)))
+                    (read-attr (rxmatch-after m)
+                               (acons (rxmatch-substring m 1) #f r))))]
+          [else
            ;; the input is broken; for now, we ignore the rest.
-           (reverse! r))))
+           (reverse! r)]))
   (define (read-token attr input r)
-    (cond ((string-index input attr-delim)
-           => (lambda (i)
-                (read-attr (string-drop input (+ i 1))
-                           (acons attr
-                                  (string-trim-right (string-take input i))
-                                  r))))
-          (else
-           (reverse! (acons attr (string-trim-right input) r)))))
+    (cond [(string-index input attr-delim)
+           => (^i (read-attr (string-drop input (+ i 1))
+                             (acons attr
+                                    (string-trim-right (string-take input i))
+                                    r)))]
+          [else
+           (reverse! (acons attr (string-trim-right input) r))]))
   (define (read-token-quoted attr input r)
-    (let loop ((input input)
-               (partial '()))
-      (cond ((string-index input #[\\\"])
-             => (lambda (i)
-                  (let ((c (string-ref input i)))
-                    (if (char=? c #\\)
-                      (if (< (string-length input) (+ i 1))
-                        (error-unterminated attr)
-                        (loop (string-drop input (+ i 2))
-                              (list* (string (string-ref input (+ i 1)))
-                                     (string-take input i)
-                                     partial)))
-                      (read-attr (string-drop input (+ i 1))
-                                 (acons attr
-                                        (string-concatenate-reverse
-                                         (cons (string-take input i)
-                                               partial))
-                                        r))))))
-            (else (error-unterminated attr)))))
+    (let loop ([input input]
+               [partial '()])
+      (cond ([string-index input #[\\\"]]
+             => (^i (let1 c (string-ref input i)
+                      (if (char=? c #\\)
+                        (if (< (string-length input) (+ i 1))
+                          (error-unterminated attr)
+                          (loop (string-drop input (+ i 2))
+                                (list* (string (string-ref input (+ i 1)))
+                                       (string-take input i)
+                                       partial)))
+                        (read-attr (string-drop input (+ i 1))
+                                   (acons attr
+                                          (string-concatenate-reverse
+                                           (cons (string-take input i)
+                                                 partial))
+                                          r))))))
+            [else (error-unterminated attr)])))
   (define (error-unterminated attr)
     (error "Unterminated quoted value given for attribute" attr))
 
@@ -126,31 +123,30 @@
 ;;    ...)
 
 (define (parse-cookie-string input . version)
-  (let ((ver (cond ((and (pair? version) (integer? (car version)))
-                    (car version))
-                   ((rxmatch #/^\s*$Version\s*=\s*(\d+)/ input)
-                    => (lambda (m)
-                         (string->number (rxmatch-substring m 1))))
-                   (else 0))))
-    (let loop ((av-pairs (parse-av-pairs input ver))
-               (r '())
-               (current '()))
-      (cond ((null? av-pairs)
+  (let1 ver (cond [(and (pair? version) (integer? (car version)))
+                   (car version)]
+                  [(rxmatch #/^\s*$Version\s*=\s*(\d+)/ input)
+                   => (^m (string->number (rxmatch-substring m 1)))]
+                  [else 0])
+    (let loop ([av-pairs (parse-av-pairs input ver)]
+               [r '()]
+               [current '()])
+      (cond [(null? av-pairs)
              (if (null? current)
                (reverse r)
-               (reverse (cons (reverse current) r))))
-            ((string-ci=? "$path" (caar av-pairs))
-             (loop (cdr av-pairs) r (list* (cdar av-pairs) :path current)))
-            ((string-ci=? "$domain" (caar av-pairs))
-             (loop (cdr av-pairs) r (list* (cdar av-pairs) :domain current)))
-            ((string-ci=? "$port" (caar av-pairs))
-             (loop (cdr av-pairs) r (list* (cdar av-pairs) :port current)))
-            (else
+               (reverse (cons (reverse current) r)))]
+            [(string-ci=? "$path" (caar av-pairs))
+             (loop (cdr av-pairs) r (list* (cdar av-pairs) :path current))]
+            [(string-ci=? "$domain" (caar av-pairs))
+             (loop (cdr av-pairs) r (list* (cdar av-pairs) :domain current))]
+            [(string-ci=? "$port" (caar av-pairs))
+             (loop (cdr av-pairs) r (list* (cdar av-pairs) :port current))]
+            [else
              (if (null? current)
                (loop (cdr av-pairs) r (list (cdar av-pairs) (caar av-pairs)))
                (loop (cdr av-pairs)
                      (cons (reverse current) r)
-                     (list (cdar av-pairs) (caar av-pairs)))))))
+                     (list (cdar av-pairs) (caar av-pairs))))]))
     ))
 
 ;; Construct a cookie string suitable for Set-Cookie or Set-Cookie2 header.
@@ -168,62 +164,62 @@
 ;; must send each of them by Set-cookie header.
 
 (define (construct-cookie-string specs . version)
-  (let ((ver (if (and (pair? version) (integer? (car version)))
-               (car version)
-               1)))
-    (map (lambda (spec) (construct-cookie-string-1 spec ver)) specs)))
+  (let1 ver (if (and (pair? version) (integer? (car version)))
+              (car version)
+              1)
+    (map (^[spec] (construct-cookie-string-1 spec ver)) specs)))
 
 (define (construct-cookie-string-1 spec ver)
   (when (< (length spec) 2)
     (error "bad cookie spec: at least <name> and <value> required" spec))
-  (let ((name (car spec))
-        (value (cadr spec)))
-    (let loop ((attr (cddr spec))
-               (r    (list (if value
+  (let ([name (car spec)]
+        [value (cadr spec)])
+    (let loop ([attr (cddr spec)]
+               [r    (list (if value
                              (string-append name "="
                                             (quote-if-needed value))
-                             name))))
+                             name))])
       (define (next s) (loop (cddr attr) (cons s r)))
       (define (ignore) (loop (cddr attr) r))
       (cond
-       ((null? attr) (string-join (reverse r) ";"))
-       ((null? (cdr attr))
-        (errorf "bad cookie spec: attribute ~s requires value" (car attr)))
-       ((eqv? :comment (car attr))
+       [(null? attr) (string-join (reverse r) ";")]
+       [(null? (cdr attr))
+        (errorf "bad cookie spec: attribute ~s requires value" (car attr))]
+       [(eqv? :comment (car attr))
         (if (> ver 0)
           (next (string-append "Comment=" (quote-if-needed (cadr attr))))
-          (ignore)))
-       ((eqv? :comment-url (car attr))
+          (ignore))]
+       [(eqv? :comment-url (car attr))
         (if (> ver 0)
           (next (string-append "CommentURL=" (quote-value (cadr attr))))
-          (ignore)))
-       ((eqv? :discard (car attr))
-        (if (and (> ver 0) (cadr attr)) (next "Discard") (ignore)))
-       ((eqv? :domain (car attr))
-        (next (string-append "Domain=" (cadr attr))))
-       ((eqv? :max-age (car attr))
+          (ignore))]
+       [(eqv? :discard (car attr))
+        (if (and (> ver 0) (cadr attr)) (next "Discard") (ignore))]
+       [(eqv? :domain (car attr))
+        (next (string-append "Domain=" (cadr attr)))]
+       [(eqv? :max-age (car attr))
         (if (> ver 0)
           (next (format #f "Max-Age=~a" (cadr attr)))
-          (ignore)))
-       ((eqv? :path (car attr))
-        (next (string-append "Path=" (quote-if-needed (cadr attr)))))
-       ((eqv? :port (car attr))
+          (ignore))]
+       [(eqv? :path (car attr))
+        (next (string-append "Path=" (quote-if-needed (cadr attr))))]
+       [(eqv? :port (car attr))
         (if (> ver 0)
           (next (string-append "Port=" (quote-value (cadr attr))))
-          (ignore)))
-       ((eqv? :secure (car attr))
-        (if (cadr attr) (next "Secure") (ignore)))
-       ((eqv? :http-only (car attr))
-        (if (cadr attr) (next "HttpOnly") (ignore)))
-       ((eqv? :version (car attr))
+          (ignore))]
+       [(eqv? :secure (car attr))
+        (if (cadr attr) (next "Secure") (ignore))]
+       [(eqv? :http-only (car attr))
+        (if (cadr attr) (next "HttpOnly") (ignore))]
+       [(eqv? :version (car attr))
         (if (> ver 0)
           (next (format #f "Version=~a" (cadr attr)))
-          (ignore)))
-       ((eqv? :expires (car attr))
+          (ignore))]
+       [(eqv? :expires (car attr))
         (if (> ver 0)
           (ignore)
-          (next (make-expires-attr (cadr attr)))))
-       (else (error "Unknown cookie attribute" (car attr))))
+          (next (make-expires-attr (cadr attr))))]
+       [else (error "Unknown cookie attribute" (car attr))])
       ))
   )
 
@@ -239,18 +235,18 @@
 (define (make-expires-attr time)
   (define (ensure-time-string time)
     (cond
-     ((number? time)
-      (sys-strftime "%a, %d-%b-%Y %H:%M:%S GMT" (sys-gmtime time)))
-     ((is-a? time <date>)
-      (date->string time "~a, ~d-~@b-~Y ~H:~M:~S GMT"))
-     ((is-a? time <time>)
+     [(number? time)
+      (sys-strftime "%a, %d-%b-%Y %H:%M:%S GMT" (sys-gmtime time))]
+     [(is-a? time <date>)
+      (date->string time "~a, ~d-~@b-~Y ~H:~M:~S GMT")]
+     [(is-a? time <time>)
       (case (time-type time)
-        ((time-utc) (ensure-time-string (time-utc->date time 0)))
-        ((time-tai) (ensure-time-string (time-tai->date time 0)))
-        ((time-monotonic) (ensure-time-string (time-monotonic->date time 0)))
-        (else (errorf "Don't know how to convert a time object ~s to string."
-                      time))))
-     (else time)))
+        [(time-utc) (ensure-time-string (time-utc->date time 0))]
+        [(time-tai) (ensure-time-string (time-tai->date time 0))]
+        [(time-monotonic) (ensure-time-string (time-monotonic->date time 0))]
+        [else (errorf "Don't know how to convert a time object ~s to string."
+                      time)])]
+     [else time]))
 
     (format #f "Expires=~a" (ensure-time-string time)))
 
