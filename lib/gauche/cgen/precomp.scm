@@ -157,12 +157,13 @@
    (apply %cgen-precompile src keys)))
 
 (define (do-it src ext-initializer sub-initializers)
-  (setup ext-initializer sub-initializers)
-  (with-input-from-file src
-    (cut emit-toplevel-executor
-         (reverse (port-fold compile-toplevel-form '() read))))
-  (finalize sub-initializers)
-  (cgen-emit-c (cgen-current-unit)))
+  (parameterize ([omitted-code '()])
+    (setup ext-initializer sub-initializers)
+    (with-input-from-file src
+      (cut emit-toplevel-executor
+           (reverse (port-fold compile-toplevel-form '() read))))
+    (finalize sub-initializers)
+    (cgen-emit-c (cgen-current-unit))))
 
 ;; Precompile multiple Scheme sources that are to be linked into
 ;; single DSO.  Need to check dependency.  The name of the first
@@ -277,7 +278,7 @@
 ;; (--keep-private-macro=name,name,...)
 ;; usually private macros (macros bound to a variable which isn't exported)
 ;; are discarded, but sometimes hygienic public macros expands to a call
-;; of private macros.  gencomp cannot detect such dependency yet, and
+;; of private macros.  precomp cannot detect such dependency yet, and
 ;; so they need to be explicitly listed for the time being.
 (define private-macros-to-keep (make-parameter '()))
 
@@ -397,12 +398,12 @@
 
 ;; NOTE:
 ;;   The code is compiled in the version of the compiler currently
-;;   running gencomp (host compiler).  It may differ from the version
+;;   running precomp (host compiler).  It may differ from the version
 ;;   of the compiler we're compiling (target compiler), and it becomes
 ;;   a problem if the two versions of compilers are using different
 ;;   mappings between mnemonics and codes.
 ;;
-;;   When gencomp generates the C literals for the compiled code, it
+;;   When precomp generates the C literals for the compiled code, it
 ;;   uses the following mapping scheme.
 ;;
 ;;    1. use vm-code->list to extract mnemonics from the code
@@ -453,6 +454,12 @@
 ;; work for the time being.
 (define-global-pred =include?         include)
 
+;; A parameter that holds the list of 'omitted' #<compiled-code> - for
+;; example, the cliche of (CLOSURE #<compiled-code> DEFINE #<identifier> RET)
+;; will be generated as Scm_Define() in the initialization, not as a code
+;; vector.  We need to suppress emitting code vector for those, since they
+;; can be reachable via parent link in the inner closure.
+(define omitted-code (make-parameter '()))
 
 ;; compile FORM, and conses the toplevel code (something to be
 ;; executed at toplevel).
@@ -512,28 +519,65 @@
          (compile-toplevel-form `(begin ,@(file->sexp-list source)) seed))]
       ;; Finally, ordinary expressions.
       [else
-       (let1 compiled-code (compile-in-current-tmodule form)
+       (let* ([compiled-code (compile-in-current-tmodule form)]
+              [toplevel-code (and (eq? (~ compiled-code 'name) '%toplevel)
+                                  (vm-code->list compiled-code))])
          ;; We exclude a compiled code with only CONSTU-RET, which appears
          ;; as the result of macro expansion sometimes.
-         (if (toplevel-constu-ret-code? compiled-code)
-           seed
-           (cons (cgen-literal compiled-code) seed)))]
+         (cond [(toplevel-constu-ret-code? toplevel-code) seed]
+               [(toplevel-definition-code? toplevel-code)
+                => (match-lambda
+                     ([inner-code id flags]
+                      (push! (omitted-code) compiled-code)
+                      (emit-toplevel-definition inner-code id flags)
+                      seed))]
+               [else (cons (cgen-literal compiled-code) seed)]))]
       )))
 
 ;; check to see the compiled code only contains CONSTU-RET insn.
-(define (toplevel-constu-ret-code? compiled-code)
-  (and (eq? (~ compiled-code'name) '%toplevel)
-       (= (~ compiled-code'size) 1)
-       (let1 code (vm-code->list compiled-code)
-         (null? (cdr code))
-         (eq? (caar code) 'CONSTU-RET))))
+(define (toplevel-constu-ret-code? toplevel-code)
+  (and (null? (cdr toplevel-code))
+       (eq? (caar toplevel-code) 'CONSTU-RET)))
+
+;; check to see if the compiled code has the cliche of toplevel
+;; definition (CLOSURE #<code> DEFINE #<id> RET).  If we find it, returns
+;; the internal closure code, identifier, and define flags.
+(define (toplevel-definition-code? toplevel-code)
+  (and (eq? (car (~ toplevel-code 0)) 'CLOSURE)
+       (eq? (car (~ toplevel-code 2)) 'DEFINE)
+       (eq? (car (~ toplevel-code 4)) 'RET)
+       (list (~ toplevel-code 1)           ; #<compiled-code> of CLOSURE
+             (~ toplevel-code 3)           ; identifier
+             (cadr (~ toplevel-code 2))))) ; define flags
+
+(define (emit-toplevel-definition inner-code id flags)
+  (let ([sym  (cgen-literal (~ id'name))]
+        ;; NB: Currently, the main tmodule has no name.  It's better to give
+        ;; it a proper name.  Then the following Scm_CurrentModule hack
+        ;; will be unnecessary.
+        [mod  (and-let* ([n (module-name (~ id'module))])
+                (find-tmodule n))]
+        [code (cgen-literal inner-code)])
+    (cgen-init (format "  Scm_MakeBinding(SCM_MODULE(~a) /* ~a */, \
+                                          SCM_SYMBOL(~a) /* ~a */, \
+                                          Scm_MakeClosure(~a, NULL),\
+                                          ~a);\n"
+                       (if mod (tmodule-cname mod) "Scm_CurrentModule()")
+                       (if mod (cgen-safe-comment (~ mod'name)) "")
+                       (cgen-cexpr sym)
+                       (cgen-safe-comment (~ id'name))
+                       (cgen-cexpr code)
+                       (case flags
+                         [(2) 'SCM_BINDING_CONST]
+                         [(4) 'SCM_BINDING_INLINABLE]
+                         [else 0])))))
 
 ;; given list of toplevel compiled codes, generate code in init
 ;; that calls them.  This is assumed to be the last procedure before
 ;; calling cgen-emit.
 (define (emit-toplevel-executor topcodes)
   (cgen-body "static ScmCompiledCode *toplevels[] = {")
-  (dolist (t topcodes)
+  (dolist [t topcodes]
     (cgen-body (format "  SCM_COMPILED_CODE(~a)," (cgen-cexpr t))))
   (cgen-body " NULL /*termination*/" "};")
 
@@ -658,7 +702,10 @@
                   "SCM_FALSE")
                 (cgen-cexpr arg-info))
         (format #t "            ~a, ~a)"
-                (cgen-cexpr (cgen-literal (~ value'parent)))
+                (let1 parent-code (~ value'parent)
+                  (if (memq parent-code (omitted-code))
+                    "SCM_FALSE"
+                    (cgen-cexpr (cgen-literal (~ value'parent)))))
                 (if inliner
                   (cgen-cexpr inliner)
                   "SCM_FALSE")))
