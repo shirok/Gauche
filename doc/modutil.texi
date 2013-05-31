@@ -14993,14 +14993,15 @@ and automatic conversions.
 
 @defun make-csv-reader separator :optional (quote-char #\")
 @c EN
-Returns a procedure with one argument, input port.
-When the procedure is called, it reads one record from the port,
+Returns a procedure with one optional argument, an input port.
+When the procedure is called, it reads one record from the port
+(or, if omitted, from the current input port)
 and returns a list of fields.
 If input reaches EOF, it returns EOF.
 @c JP
-入力ポートを唯一の引数として取る手続きを返します。
-手続きが呼ばれると、ポートからレコードを1つ読み込み、フィールドの
-リストを返します。入力ポートが EOF に達すると、EOF を返します。
+入力ポートを省略可能引数として取る手続きを返します。
+手続きが呼ばれると、ポート(省略された場合は現在の入力ポート)からレコードを1つ読み込み、
+フィールドのリストを返します。入力ポートが EOF に達すると、EOF を返します。
 @c COMMON
 @end defun
 

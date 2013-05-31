@@ -1,3 +1,11 @@
+2013-05-31  Shiro Kawai  <shiro@acm.org>
+
+	* lib/text/csv.scm (make-csv-reader): Rewrote in straightforward way.
+	  It turned out the naive "read one char at a time, accumulate into a
+	  list, and list->string to make a field" approach is 5x faster than
+	  the previous string-scanning code.  Also the port argument for
+	  the returned reader is now optional.
+
 2013-05-30  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/precomp.scm (compile-toplevel-form): Avoid emitting
