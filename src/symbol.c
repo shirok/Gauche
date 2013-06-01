@@ -134,7 +134,7 @@ ScmObj Scm_SymbolSansPrefix(ScmSymbol *s, ScmSymbol *p)
    bit 3: bad char for symbol, and should be written as \c
    bit 4: may be escaped when case fold mode
  */
-static char special[] = {
+static const char special[] = {
  /* NUL .... */
     7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
  /* .... */
