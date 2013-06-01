@@ -1,5 +1,8 @@
 2013-05-31  Shiro Kawai  <shiro@acm.org>
 
+	* Makefile.in, ext/Makefile.in: Exits abnormally if any of submake
+	  inside for loop fails.
+
 	* lib/text/csv.scm (make-csv-reader): Rewrote in straightforward way.
 	  It turned out the naive "read one char at a time, accumulate into a
 	  list, and list->string to make a field" approach is 5x faster than

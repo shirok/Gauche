@@ -30,15 +30,15 @@ TEMPLATES = template.Makefile.in template.configure.ac \
 	    template.test.scm template.DIST
 
 all:
-	for d in $(SUBDIRS); do (cd $$d; $(MAKE) default); done
+	for d in $(SUBDIRS); do (cd $$d; $(MAKE) default) || exit 1; done
 
 test : check
 
 check:
-	for d in $(SUBDIRS); do (cd $$d; $(MAKE) check); done
+	for d in $(SUBDIRS); do (cd $$d; $(MAKE) check) || exit 1; done
 
 install:
-	for d in $(SUBDIRS); do (cd $$d; $(MAKE) install); done
+	for d in $(SUBDIRS); do (cd $$d; $(MAKE) install) || exit 1; done
 	$(GAUCHE_INSTALL) -m 444 -S $(srcdir) $(TEMPLATES) $(DESTDIR)$(TEMPLATE_INST_DIR)
 
 uninstall:
