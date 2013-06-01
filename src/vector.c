@@ -246,8 +246,8 @@ const char *Scm_UVectorTypeName(int type) /* for error msgs etc. */
 /* Returns the size of element of the uvector of given class */
 int Scm_UVectorElementSize(ScmClass *klass)
 {
-    static int sizes[] = { 1, 1, 2, 2, 4, 4, 8, 8,
-                           2, sizeof(float), sizeof(double) };
+    static const int sizes[] = { 1, 1, 2, 2, 4, 4, 8, 8,
+                                 2, sizeof(float), sizeof(double) };
     int ind = (int)Scm_UVectorType(klass);
     if (ind >= 0) return sizes[ind];
     return -1;

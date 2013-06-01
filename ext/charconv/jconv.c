@@ -148,7 +148,7 @@ static size_t sjis2eucj(ScmConvInfo *cinfo, const char *inptr, size_t inroom,
                         char *outptr, size_t outroom, size_t *outchars)
 {
     unsigned char s1, s2;
-    static unsigned char cvt[] = { 0xa1, 0xa8, 0xa3, 0xa4, 0xa5, 0xac, 0xae, 0xad, 0xaf, 0xee };
+    static const unsigned char cvt[] = { 0xa1, 0xa8, 0xa3, 0xa4, 0xa5, 0xac, 0xae, 0xad, 0xaf, 0xee };
 
     s1 = inptr[0];
     if (s1 < 0x7f) {
@@ -335,7 +335,7 @@ static size_t eucj2sjis(ScmConvInfo *cinfo, const char *inptr, size_t inroom,
     if (e1 == 0x8f) {
         /* triple byte char */
         unsigned char s1, s2;
-        unsigned char cvt[] = { 0xf0, 0, 0xf1, 0xf1, 0xf2, 0, 0, 0xf0, 0, 0, 0, 0xf2, 0xf3, 0xf3, 0xf4 };
+        static const unsigned char cvt[] = { 0xf0, 0, 0xf1, 0xf1, 0xf2, 0, 0, 0xf0, 0, 0, 0, 0xf2, 0xf3, 0xf3, 0xf4 };
 
         INCHK(3);
         OUTCHK(2);
@@ -466,7 +466,7 @@ static inline size_t utf2euc_2(ScmConvInfo *cinfo, unsigned char u0,
                                char *outptr, size_t outroom, size_t *outchars)
 {
     unsigned char u1;
-    unsigned short *etab = NULL;
+    const unsigned short *etab = NULL;
 
     INCHK(2);
     u1 = (unsigned char)inptr[1];
@@ -511,8 +511,8 @@ static inline size_t utf2euc_3(ScmConvInfo *cinfo, unsigned char u0,
                                char *outptr, size_t outroom, size_t *outchars)
 {
     unsigned char u1, u2;
-    unsigned char *tab1 = NULL;
-    unsigned short (*tab2)[64] = NULL;
+    const unsigned char *tab1 = NULL;
+    const unsigned short (*tab2)[64] = NULL;
 
     INCHK(3);
     u1 = (unsigned char)inptr[1];
@@ -561,7 +561,7 @@ static inline size_t utf2euc_4(ScmConvInfo *cinfo, unsigned char u0,
                                char *outptr, size_t outroom, size_t *outchars)
 {
     unsigned char u1, u2, u3;
-    unsigned short *tab = NULL;
+    const unsigned short *tab = NULL;
 
     INCHK(4);
     if (u0 != 0xf0) {

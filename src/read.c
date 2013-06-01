@@ -325,7 +325,7 @@ static void read_context_flush(ScmReadContext *ctx)
     bit 0 : a valid constituent char of words
     bit 1 : candidate of case folding
 */
-static unsigned char ctypes[] = {
+static const unsigned char ctypes[] = {
     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
  /*     !   "   #   $   %   &   '   (   )   *   +   ,   -   .   /  */
