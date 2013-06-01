@@ -1,5 +1,8 @@
 2013-05-31  Shiro Kawai  <shiro@acm.org>
 
+	* ext/Makefile.in: Reordered SUBDIRS: uvector must be built before
+	  threads, since gauche.records used by threads now depends on uvector.
+
 	* Makefile.in, ext/Makefile.in: Exits abnormally if any of submake
 	  inside for loop fails.
 
