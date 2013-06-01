@@ -72,19 +72,14 @@
       (csv-reader separator quote-char))))
 
 (define (csv-reader sep quo)
-  (define (skip-ws ch)
-    (cond [(eqv? ch sep) ch]
-          [(eof-object? ch) ch]
-          [(char-whitespace? ch) (skip-ws (read-char))]
-          [else ch]))
-
-  (define (eor? ch) (or (eof-object? ch) (eqv? ch #\newline)))
+  (define (eor? ch) (or (eqv? ch #\newline) (eof-object? ch)))
 
   (define (start fields)
-    (let1 ch (skip-ws (read-char))
+    (let1 ch (read-char)
       (cond [(eor? ch) (reverse (cons "" fields))]
             [(eqv? ch sep) (start (cons "" fields))]
             [(eqv? ch quo) (quoted fields)]
+            [(char-whitespace? ch) (start fields)]
             [else (unquoted (list ch) fields)])))
 
   (define (unquoted chs fields)

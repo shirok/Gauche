@@ -30,6 +30,13 @@
        (call-with-input-string "   \"ab\nc\" ,  \"de \n\n \nf \"  ,  , \"\" , \"gh\"\"\n\"\"i\""
          (make-csv-reader #\,)))
 
+(test* "csv-reader" '(("" "") ("a" "") ("" "b"))
+       (let1 r (make-csv-reader #\,)
+         (call-with-input-string ",\na,  \n  ,b"
+           (^p (let* ([a (r p)] [b (r p)] [c (r p)] [d (r p)])
+                 (and (eof-object? d)
+                      (list a b c)))))))
+
 (test* "csv-reader" (test-error)
        (call-with-input-string " abc,  def , \"ghi\"\"\n\n"
          (make-csv-reader #\,)))
