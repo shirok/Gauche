@@ -1,3 +1,8 @@
+2013-06-01  Shiro Kawai  <shiro@acm.org>
+
+	* src/regexp.c (rc1_parse): Fixed a bug in backreference to the nested
+	  group case (see the added tests for the details).
+
 2013-05-31  Shiro Kawai  <shiro@acm.org>
 
 	* ext/Makefile.in: Reordered SUBDIRS: uvector must be built before

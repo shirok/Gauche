@@ -92,7 +92,7 @@
             "(a)(b)" "(a|b)c(d)" "(a(b(c|d)|e))f"
             "(?:abc)*" "(ab(?:cd)?e{3,4})" "(?i:ab(?-i:cd)ef)"
             ;; backref
-            "(a)bc\\1" "ab(?<foo>c)(d)\\k<foo>"
+            "(a)bc\\1" "ab(?<foo>c)(d)\\k<foo>" "((.)\\2)"
             ;; once, lookahead, lookbehind
             "(?>abc)" "(?=a*b*c)" "(?!a*b*c)" "(?<=a[bc])" "(?<!a[bc])"
             "(a)(?(1)b)" "(a)(?(1)b|c)" "(a)(?(1)|c)"
@@ -515,8 +515,11 @@
 (test-re #/(.+)\1/ "a123123j" '("123123" "123"))
 (test-re #/(.+)\1/i "AbCaBC" '("AbCaBC" "AbC"))
 (test-re #/(.+)\1/ "AbCAb1" '())
+(test-re #/((.)\2)/ "aa" '("aa" "aa" "a"))
 (test* "^\\1(.)$" (test-error) (string->regexp "^\\1(.)"))
 (test* "^(\\1)$" (test-error) (string->regexp "^(\\1)$"))
+(test* "(.)\\2" (test-error) (string->regexp "(.)\\2"))
+(test* "((.)\\1)" (test-error) (string->regexp "((.)\\1)"))
 
 ;;-------------------------------------------------------------------------
 (test-section "independent subexpression")

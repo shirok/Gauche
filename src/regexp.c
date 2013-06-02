@@ -710,9 +710,10 @@ static ScmObj rc1_fold_alts(regcomp_ctx *ctx, ScmObj alts)
     return Scm_Cons(SCM_SYM_ALT, r);
 }
 
-static ScmObj rc1_parse(regcomp_ctx *ctx, int bolp, int topp, int level);
+static ScmObj rc1_parse(regcomp_ctx *, int, ScmObj);
 
-static ScmObj rc1_lex_conditional_pattern(regcomp_ctx *ctx, int bolp, int level)
+static ScmObj rc1_lex_conditional_pattern(regcomp_ctx *ctx, int bolp,
+                                          ScmObj grps)
 {
     ScmChar ch;
     ScmObj type, item, r;
@@ -730,9 +731,9 @@ static ScmObj rc1_lex_conditional_pattern(regcomp_ctx *ctx, int bolp, int level)
     if (ch == '?') {
         ch = Scm_GetcUnsafe(ctx->ipat);
         if (ch == '=')
-            return Scm_Cons(SCM_SYM_ASSERT, rc1_parse(ctx, bolp, FALSE, level));
+            return Scm_Cons(SCM_SYM_ASSERT, rc1_parse(ctx, bolp, grps));
         if (ch == '!')
-            return Scm_Cons(SCM_SYM_NASSERT, rc1_parse(ctx, bolp, FALSE, level));
+            return Scm_Cons(SCM_SYM_NASSERT, rc1_parse(ctx, bolp, grps));
         if (ch == '<') {
             ch = Scm_GetcUnsafe(ctx->ipat);
             if (ch == '=') {
@@ -744,7 +745,7 @@ static ScmObj rc1_lex_conditional_pattern(regcomp_ctx *ctx, int bolp, int level)
                           ch, ctx->pattern);
                 type = SCM_SYM_NASSERT; /* dummy */
             }
-            item = rc1_parse(ctx, bolp, FALSE, level);
+            item = rc1_parse(ctx, bolp, grps);
             return SCM_LIST2(type, Scm_Cons(SCM_SYM_LOOKBEHIND, item));
         }
         /* fallthru */
@@ -757,28 +758,33 @@ static ScmObj rc1_lex_conditional_pattern(regcomp_ctx *ctx, int bolp, int level)
 }
 
 /* Parser */
-static ScmObj rc1_parse(regcomp_ctx *ctx, int bolp, int topp, int level)
+/* Groups represents the current nestings of parentheses, including both
+   capturing groups and non-capturing parens.  It works like a stack, where
+   the leftmost item is for the innermost open paren.  The value is a
+   group number for capturing groups, and #f for others. */
+static ScmObj rc1_parse(regcomp_ctx *ctx, int bolp, ScmObj groups)
 {
     ScmObj stack = SCM_NIL, alts = SCM_NIL;
     ScmObj token, item;
     int bolpsave = bolp;
 
+#define TOPP()     (SCM_NULLP(groups))
 #define PUSH(elt)  (stack = Scm_Cons((elt), stack))
 #define PUSH1(elt) (stack = Scm_Cons((elt), SCM_CDR(stack)))
 
     for (;;) {
         token = rc1_lex(ctx);
         if (SCM_EOFP(token)) {
-            if (!topp) {
+            if (!TOPP()) {
                 Scm_Error("unterminated grouping in regexp %S", ctx->pattern);
             }
             break;
         }
         if (SCM_EQ(token, SCM_SYM_CLOSE_PAREN)) {
-            if (topp) {
+            if (TOPP()) {
                 Scm_Error("extra close parenthesis in regexp %S", ctx->pattern);
             }
-            level--;
+            groups = SCM_CDR(groups);
             break;
         }
         if (SCM_EQ(token, SCM_SYM_BOL)) {
@@ -799,13 +805,13 @@ static ScmObj rc1_parse(regcomp_ctx *ctx, int bolp, int topp, int level)
         }
         if (SCM_EQ(token, SCM_SYM_OPEN_PAREN)) {
             int grpno = ++ctx->grpcount;
-            item = rc1_parse(ctx, bolp, FALSE, level+1);
+            item = rc1_parse(ctx, bolp, Scm_Cons(SCM_MAKE_INT(grpno), groups));
             PUSH(Scm_Cons(SCM_MAKE_INT(grpno), Scm_Cons(SCM_FALSE, item)));
             bolp = FALSE;
             continue;
         }
         if (SCM_EQ(token, SCM_SYM_SEQ)) {
-            item = rc1_parse(ctx, bolp, FALSE, level);
+            item = rc1_parse(ctx, bolp, Scm_Cons(SCM_FALSE, groups));
             PUSH(Scm_Cons(SCM_SYM_SEQ, item));
             bolp = FALSE;
             continue;
@@ -813,7 +819,7 @@ static ScmObj rc1_parse(regcomp_ctx *ctx, int bolp, int topp, int level)
         if (SCM_EQ(token, SCM_SYM_SEQ_UNCASE) || SCM_EQ(token, SCM_SYM_SEQ_CASE)) {
             int oldflag = ctx->casefoldp;
             ctx->casefoldp = SCM_EQ(token, SCM_SYM_SEQ_UNCASE);
-            item = rc1_parse(ctx, bolp, FALSE, level);
+            item = rc1_parse(ctx, bolp, Scm_Cons(SCM_FALSE, groups));
             PUSH(Scm_Cons(token, item));
             ctx->casefoldp = oldflag;
             bolp = FALSE;
@@ -821,21 +827,21 @@ static ScmObj rc1_parse(regcomp_ctx *ctx, int bolp, int topp, int level)
         }
         if (SCM_EQ(token, SCM_SYM_ONCE)) {
             /* (?>re) can have BOL/EOL.*/
-            item = rc1_parse(ctx, TRUE, FALSE, level);
+            item = rc1_parse(ctx, TRUE, Scm_Cons(SCM_FALSE, groups));
             PUSH(Scm_Cons(SCM_SYM_ONCE, item));
             bolp = FALSE;
             continue;
         }
         if (SCM_EQ(token, SCM_SYM_ASSERT) || SCM_EQ(token, SCM_SYM_NASSERT)) {
             /* (?=re) and (?!re) can have BOL/EOL.*/
-            item = rc1_parse(ctx, TRUE, FALSE, level);
+            item = rc1_parse(ctx, TRUE, Scm_Cons(SCM_FALSE, groups));
             PUSH(Scm_Cons(token, item));
             continue;
         }
         if (SCM_EQ(token, SCM_SYM_LOOKBEHIND) || SCM_EQ(token, SCM_SYM_NLOOKBEHIND)) {
             /* "(?<=a)" => (assert (lookbehind a))
                "(?<!a)" => (nassert (lookbehind a)) */
-            item = rc1_parse(ctx, TRUE, FALSE, level);
+            item = rc1_parse(ctx, TRUE, Scm_Cons(SCM_FALSE, groups));
             PUSH(SCM_LIST2(SCM_EQ(token, SCM_SYM_LOOKBEHIND)? SCM_SYM_ASSERT : SCM_SYM_NASSERT,
                            Scm_Cons(SCM_SYM_LOOKBEHIND, item)));
             continue;
@@ -893,8 +899,9 @@ static ScmObj rc1_parse(regcomp_ctx *ctx, int bolp, int topp, int level)
         }
         if (SCM_EQ(token, SCM_SYM_CPAT)) {
             ScmObj cond, ypat, npat;
-            cond = rc1_lex_conditional_pattern(ctx, bolp, level);
-            item = rc1_parse(ctx, bolp, FALSE, level);
+            ScmObj new_groups = Scm_Cons(SCM_FALSE, groups);
+            cond = rc1_lex_conditional_pattern(ctx, bolp, new_groups);
+            item = rc1_parse(ctx, bolp, new_groups);
             if (SCM_PAIRP(item) && SCM_PAIRP(SCM_CAR(item))
                 && SCM_EQ(SCM_CAAR(item), SCM_SYM_ALT)) {
                 ScmObj elt = SCM_CAR(item);
@@ -916,7 +923,7 @@ static ScmObj rc1_parse(regcomp_ctx *ctx, int bolp, int topp, int level)
             /* "(?P<name>x)" => (<integer> name . <ast>)) */
             int grpno = ++ctx->grpcount;
             ScmObj name = SCM_CDR(token);
-            item = rc1_parse(ctx, bolp, FALSE, level+1);
+            item = rc1_parse(ctx, bolp, Scm_Cons(SCM_MAKE_INT(grpno), groups));
             PUSH(Scm_Cons(SCM_MAKE_INT(grpno), Scm_Cons(name, item)));
             ctx->rx->grpNames = Scm_Acons(name, SCM_MAKE_INT(grpno), ctx->rx->grpNames);
             bolp = FALSE;
@@ -941,7 +948,11 @@ static ScmObj rc1_parse(regcomp_ctx *ctx, int bolp, int topp, int level)
             ScmObj ref = SCM_CDR(token);
             if (SCM_INTP(ref)) {
                 int grpno = SCM_INT_VALUE(ref);
-                if (ctx->grpcount - level < grpno) goto synerr;
+                if (ctx->grpcount < grpno
+                    || !SCM_FALSEP(Scm_Memv(SCM_MAKE_INT(grpno), groups))) {
+                    Scm_Error("Backreference \\%d refers to an unfinished group.",
+                              grpno);
+                }
                 PUSH(token);
                 bolp = FALSE;
                 continue;
@@ -953,6 +964,7 @@ static ScmObj rc1_parse(regcomp_ctx *ctx, int bolp, int topp, int level)
                 SCM_APPEND1(h, t, Scm_Cons(SCM_SYM_BACKREF, SCM_CDAR(ep)));
             }
             if (SCM_NULLP(h)) goto synerr;
+            
             PUSH(SCM_NULLP(SCM_CDR(h))? SCM_CAR(h) : Scm_Cons(SCM_SYM_ALT, h));
             bolp = FALSE;
             continue;
@@ -976,7 +988,7 @@ static ScmObj rc1_parse(regcomp_ctx *ctx, int bolp, int topp, int level)
 
 static ScmObj rc1(regcomp_ctx *ctx)
 {
-    ScmObj ast = rc1_parse(ctx, TRUE, TRUE, 0);
+    ScmObj ast = rc1_parse(ctx, TRUE, SCM_NIL);
     int ngrp;
     if (ctx->casefoldp) {
         ast = SCM_LIST3(SCM_MAKE_INT(0), SCM_FALSE,
