@@ -151,7 +151,7 @@
   )
 
 ;;
-;; The 'r7rs' module removes all bindings by empty (extend), except
+;; The 'r7rs' module removes all bindings by an empty (extend), except
 ;; 'import' and 'define-library'.
 ;;
 (define-module r7rs
