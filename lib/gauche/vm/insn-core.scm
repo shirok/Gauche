@@ -80,31 +80,26 @@
 ;; Returns an exact integer of encoded VM instruction code.
 ;; NB: This must match the macro definitions in src/gauche/code.h !!!
 (define (vm-build-insn insn)
+  (define (check insn info n)
+    (unless (= (~ info'num-params) n)
+      (errorf "VM instruction ~a expects ~a parameters, but got ~s"
+              (car insn) (~ info'num-params) insn)))
   (match insn
-    (((? symbol? opcode) . params)
+    [((? symbol? opcode) . params)
      (let1 info (vm-find-insn-info opcode)
        (match params
-         (()
-          (unless (= (ref info 'num-params) 0)
-            (errorf "VM instruction ~a takes no parameters, but got ~s"
-                    opcode insn))
-          (ref info 'code))
-         ((arg0)
-          (unless (= (ref info 'num-params) 1)
-            (errorf "VM instruction ~a takes one parameter, but got ~s"
-                    opcode insn))
+         [() (check insn info 0) (ref info 'code)]
+         [(arg0)
+          (check insn info 1)
           (logior (ash (logand arg0 #xfffff) 12)
-                  (ref info 'code)))
-         ((arg0 arg1)
-          (unless (= (ref info 'num-params) 2)
-            (errorf "VM instruction ~a takes two parameters, but got ~s"
-                    opcode insn))
+                  (~ info 'code))]
+         [(arg0 arg1)
+          (check insn info 2)
           (logior (ash (logand arg1 #x3ff) 22)
                   (ash (logand arg0 #x3ff) 12)
-                  (ref info 'code)))
-         (else (error "vm-build-insn: bad insn:" insn)))))
-    (else
-     (error "vm-build-insn: bad insn:" insn))))
+                  (~ info 'code))]
+         [else (error "vm-build-insn: bad insn:" insn)]))]
+    [else (error "vm-build-insn: bad insn:" insn)]))
 
 
 
