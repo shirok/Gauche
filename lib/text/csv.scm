@@ -35,7 +35,6 @@
   (use srfi-1)
   (use srfi-11)
   (use srfi-13)
-  (use gauche.regexp)
   (export <csv>
           make-csv-reader
           make-csv-writer)
@@ -76,7 +75,7 @@
 
   (define (start fields)
     (let1 ch (read-char)
-      (cond [(eor? ch) (reverse (cons "" fields))]
+      (cond [(eor? ch) (reverse! (cons "" fields))]
             [(eqv? ch sep) (start (cons "" fields))]
             [(eqv? ch quo) (quoted fields)]
             [(char-whitespace? ch) (start fields)]
@@ -84,13 +83,13 @@
 
   (define (unquoted chs fields)
     (let loop ([ch (read-char)] [last chs] [chs chs])
-      (cond [(eor? ch) (reverse (cons (finish last) fields))]
+      (cond [(eor? ch) (reverse! (cons (finish last) fields))]
             [(eqv? ch sep) (start (cons (finish last) fields))]
             [(char-whitespace? ch) (loop (read-char) last (cons ch chs))]
             [else (let1 chs (cons ch chs)
                     (loop (read-char) chs chs))])))
 
-  (define (finish rchrs) (list->string (reverse rchrs)))
+  (define (finish rchrs) (list->string (reverse! rchrs)))
 
   (define (quoted fields)
     (let loop ([ch (read-char)] [chs '()])
@@ -103,8 +102,8 @@
 
   (define (quoted-tail fields)
     (let loop ([ch (read-char)])
-      (cond [(eor? ch) (reverse fields)]
-            [(eq? ch sep) (start fields)]
+      (cond [(eor? ch) (reverse! fields)]
+            [(eqv? ch sep) (start fields)]
             [else (loop (read-char))])))
 
   (if (eof-object? (peek-char))
@@ -112,17 +111,17 @@
     (start '())))
 
 (define (make-csv-writer separator :optional (newline "\n") (quote-char #\"))
-  (let* ((quote-string (string quote-char))
-         (quote-escape (string-append quote-string quote-string))
-         (quote-rx (string->regexp (regexp-quote quote-string)))
-         (separator-chars (if (string? separator)
+  (let* ([quote-string (string quote-char)]
+         [quote-escape (string-append quote-string quote-string)]
+         [quote-rx (string->regexp (regexp-quote quote-string))]
+         [separator-chars (if (string? separator)
                             (string->list separator)
-                            (list separator)))
-         (special-chars
+                            (list separator))]
+         [special-chars
           (apply char-set quote-char #\space #\newline #\return
-                 separator-chars)))
+                 separator-chars)])
 
-    (lambda (port fields)
+    (^[port fields]
       (define (write-a-field field)
         (if (string-index field special-chars)
           (begin (display quote-char port)
@@ -132,9 +131,8 @@
 
       (unless (null? fields)
         (write-a-field (car fields))
-        (for-each (lambda (field)
-                    (display separator port)
-                    (write-a-field field))
-                  (cdr fields)))
+        (dolist [field (cdr fields)]
+          (display separator port)
+          (write-a-field field)))
       (display newline port))))
 
