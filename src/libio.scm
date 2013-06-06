@@ -391,7 +391,7 @@
 
 (select-module gauche)
 
-(define-cproc eof-object () (result SCM_EOF)) ;R6RS
+(define-cproc eof-object () :constant (result SCM_EOF)) ;R6RS
 
 (define-cproc byte-ready? (port::<input-port>) ::<boolean> Scm_ByteReady)
 

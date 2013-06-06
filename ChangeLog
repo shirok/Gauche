@@ -1,3 +1,8 @@
+2013-06-05  Shiro Kawai  <shiro@acm.org>
+
+	* src/libio.scm (eof-object): Mark it :constant, so that the calls
+	  would be inlined.
+
 2013-06-01  Shiro Kawai  <shiro@acm.org>
 
 	* src/regexp.c (rc1_parse): Fixed a bug in backreference to the nested
