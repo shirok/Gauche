@@ -673,7 +673,7 @@
 (define (pp-iform iform :optional (lines +inf.0))
   (let/cc return
     (define labels '()) ;; alist of label node and count
-    (define (indent count) (dotimes (i count) (write-char #\space)))
+    (define (indent count) (dotimes [i count] (write-char #\space)))
     (define (id->string id)
       (format "~a#~a" (module-name (slot-ref id'module)) (slot-ref id'name)))
     (define (lvar->string lvar)
@@ -4548,9 +4548,9 @@
             [(bottom-context? ctx)
              (compiled-code-emit1oi! ccb LOCAL-ENV-CLOSURES nlocals
                                      closures info)
-             (let* ((dinit (emit-letrec-inits others nlocals ccb
-                                              (cons lvars renv) 0))
-                    (dbody (pass5/rec body ccb (cons lvars renv) ctx)))
+             (let* ([dinit (emit-letrec-inits others nlocals ccb
+                                              (cons lvars renv) 0)]
+                    [dbody (pass5/rec body ccb (cons lvars renv) ctx)])
                (unless (tail-context? ctx)
                  (compiled-code-emit0! ccb POP-LOCAL-ENV))
                (+ ENV_HEADER_SIZE nlocals (imax dinit dbody)))]
@@ -4558,9 +4558,9 @@
              (compiled-code-emit1o! ccb PRE-CALL nlocals merge-label)
              (compiled-code-emit1oi! ccb LOCAL-ENV-CLOSURES nlocals
                                      closures info)
-             (let* ((dinit (emit-letrec-inits others nlocals ccb
-                                              (cons lvars renv) 0))
-                    (dbody (pass5/rec body ccb (cons lvars renv) 'tail)))
+             (let* ([dinit (emit-letrec-inits others nlocals ccb
+                                              (cons lvars renv) 0)]
+                    [dbody (pass5/rec body ccb (cons lvars renv) 'tail)])
                (compiled-code-emit-RET! ccb)
                (compiled-code-set-label! ccb merge-label)
                (+ CONT_FRAME_SIZE ENV_HEADER_SIZE nlocals
@@ -4628,8 +4628,8 @@
   0)
 
 (define (pass5/lambda iform ccb renv)
-  (let1 inliner (cond [($lambda-flag iform) vector? => values]
-                      [else #f])
+  (let1 inliner (let1 v ($lambda-flag iform)
+                  (and (vector? v) v))
     (pass5 ($lambda-body iform)
            (make-compiled-code-builder ($lambda-reqargs iform)
                                        ($lambda-optarg iform)
@@ -4919,15 +4919,13 @@
   ;; general case
   (case (length args)
     [(0) (pass5/emit-asm! ccb insn info) 0]
-    [(1)
-     (rlet1 d (pass5/rec (car args) ccb renv 'normal/top)
-       (pass5/emit-asm! ccb insn info))]
-    [(2)
-     (let1 d0 (pass5/rec (car args) ccb renv 'normal/top)
-       (compiled-code-emit-PUSH! ccb)
-       (let1 d1 (pass5/rec (cadr args) ccb renv 'normal/top)
-         (pass5/emit-asm! ccb insn info)
-         (imax d0 (+ d1 1))))]
+    [(1) (rlet1 d (pass5/rec (car args) ccb renv 'normal/top)
+           (pass5/emit-asm! ccb insn info))]
+    [(2) (let1 d0 (pass5/rec (car args) ccb renv 'normal/top)
+           (compiled-code-emit-PUSH! ccb)
+           (let1 d1 (pass5/rec (cadr args) ccb renv 'normal/top)
+             (pass5/emit-asm! ccb insn info)
+             (imax d0 (+ d1 1))))]
     [else
      (let loop ([args args] [depth 0] [cnt 0])
        (cond [(null? (cdr args))
@@ -4949,20 +4947,18 @@
 ;; Utility macros.  Assumes ccb, renv and ctx are visible.
 
 (define-macro (pass5/builtin-twoargs info code param arg0 arg1)
-  (let ((d0 (gensym))
-        (d1 (gensym)))
+  (let ([d0 (gensym)]
+        [d1 (gensym)])
     `(let1 ,d0 (pass5/rec ,arg0 ccb renv (normal-context ctx))
        (compiled-code-emit-PUSH! ccb)
        (let1 ,d1 (pass5/rec ,arg1 ccb renv 'normal/top)
          (compiled-code-emit1i! ccb ,code ,param ,info)
-         (imax ,d0 (+ ,d1 1))))
-    ))
+         (imax ,d0 (+ ,d1 1))))))
 
 (define-macro (pass5/builtin-onearg info code param arg0)
-  (let ((d (gensym)))
+  (let1 d (gensym)
     `(rlet1 ,d (pass5/rec ,arg0 ccb renv (normal-context ctx))
-       (compiled-code-emit1i! ccb ,code ,param ,info))
-    ))
+       (compiled-code-emit1i! ccb ,code ,param ,info))))
 
 (define-macro (pass5/builtin-nargs info code args)
   `(%pass5/builtin-nargs ccb ,info ,code ,args ccb renv))
