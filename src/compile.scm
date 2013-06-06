@@ -4416,10 +4416,23 @@
 ;;      - if insn is (BF)
 ;;        - then part is ($IT)  => use RT
 ;;        - else part is ($IT)  => use RF
+;;        - then part is jump back to labeled closure
+;;          => use BT, and use the destination of the label. (*)
 ;;      - otherwise, place RET after then clause
 ;;   - otherwise
 ;;      - else part is ($IT)  => we can omit a jump after then clause
 ;;      - otherwise, merge the control after this node.
+;;
+;;  (*) This converts the left asm output to the right one.  This type of
+;;      code appears as the result of the first pattern of $if optimization
+;;      in pass3.
+;;
+;;        L0:                   L0:
+;;            ...                   ...
+;;            BF L1                 BT L0
+;;            JUMP L0               xxx
+;;        L1: xxx                   ...
+;;            ...
 ;;
 ;; We have many variations of branch instrucitons, and the combination
 ;; of arguments reflects them.
@@ -4442,39 +4455,47 @@
   `(,BNEQC ,BNEQVC))
 
 (define (pass5/if-final iform test code arg0/opr depth info ccb renv ctx)
-  (let1 depth (if test
-                (imax (pass5/rec test ccb renv (normal-context ctx)) depth)
-                depth)
+  (let ([depth (if test
+                 (imax (pass5/rec test ccb renv (normal-context ctx)) depth)
+                 depth)]
+        [then-form ($if-then iform)]
+        [else-form ($if-else iform)])
     (cond
      [(tail-context? ctx)
-      (cond
-       [(and (eqv? code BF) ($it? ($if-then iform)))
-        (compiled-code-emit0i! ccb RT info)
-        (imax (pass5/rec ($if-else iform) ccb renv ctx) depth)]
-       [(and (eqv? code BF) ($it? ($if-else iform)))
-        (compiled-code-emit0i! ccb RF info)
-        (imax (pass5/rec ($if-then iform) ccb renv ctx) depth)]
-       [else
-        (let1 elselabel (compiled-code-new-label ccb)
-          (if (memv code .branch-insn-extra-operand.)
-            (compiled-code-emit0oi! ccb code (list arg0/opr elselabel) info)
-            (compiled-code-emit1oi! ccb code arg0/opr elselabel info))
-          (set! depth (imax (pass5/rec ($if-then iform) ccb renv ctx) depth))
-          (compiled-code-emit-RET! ccb)
-          (compiled-code-set-label! ccb elselabel)
-          (imax (pass5/rec ($if-else iform) ccb renv ctx) depth))])]
+      (or (and (eqv? code BF)
+               (cond
+                [($it? then-form)
+                 (compiled-code-emit0i! ccb RT info)
+                 (imax (pass5/rec else-form ccb renv ctx) depth)]
+                [($it? else-form)
+                 (compiled-code-emit0i! ccb RF info)
+                 (imax (pass5/rec then-form ccb renv ctx) depth)]
+                [(and (has-tag? then-form $LABEL)
+                      ($label-label then-form))
+                 => (^[label]
+                      (compiled-code-emit0o! ccb BT label)
+                      (imax (pass5/rec else-form ccb renv ctx) depth))]
+                [else #f]))
+          (let1 elselabel (compiled-code-new-label ccb)
+            (if (memv code .branch-insn-extra-operand.)
+              (compiled-code-emit0oi! ccb code (list arg0/opr elselabel) info)
+              (compiled-code-emit1oi! ccb code arg0/opr elselabel info))
+            (set! depth (imax (pass5/rec then-form ccb renv ctx) depth))
+            (compiled-code-emit-RET! ccb)
+            (compiled-code-set-label! ccb elselabel)
+            (imax (pass5/rec else-form ccb renv ctx) depth)))]
      [else
       (let ([elselabel  (compiled-code-new-label ccb)]
             [mergelabel (compiled-code-new-label ccb)])
         (if (memv code .branch-insn-extra-operand.)
           (compiled-code-emit0oi! ccb code (list arg0/opr elselabel) info)
           (compiled-code-emit1oi! ccb code arg0/opr elselabel info))
-        (set! depth (imax (pass5/rec ($if-then iform) ccb renv ctx) depth))
-        (unless ($it? ($if-else iform))
+        (set! depth (imax (pass5/rec then-form ccb renv ctx) depth))
+        (unless ($it? else-form)
           (compiled-code-emit0o! ccb JUMP mergelabel))
         (compiled-code-set-label! ccb elselabel)
-        (unless ($it? ($if-else iform))
-          (set! depth (imax (pass5/rec ($if-else iform) ccb renv ctx) depth)))
+        (unless ($it? else-form)
+          (set! depth (imax (pass5/rec else-form ccb renv ctx) depth)))
         (compiled-code-set-label! ccb mergelabel)
         depth)])))
 

@@ -1,5 +1,8 @@
 2013-06-05  Shiro Kawai  <shiro@acm.org>
 
+	* src/compile.scm (pass5/if-final): Micro-optimization to eliminate
+	  one JUMP instruction in certain cases.
+
 	* src/libio.scm (eof-object): Mark it :constant, so that the calls
 	  would be inlined.
 
