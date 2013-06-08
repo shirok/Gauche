@@ -91,6 +91,7 @@ extern void Scm__InitCollection(void);
 extern void Scm_Init_libalpha(void);
 extern void Scm_Init_libbool(void);
 extern void Scm_Init_libchar(void);
+extern void Scm_Init_libcode(void);
 extern void Scm_Init_libdict(void);
 extern void Scm_Init_libeval(void);
 extern void Scm_Init_libexc(void);
@@ -169,6 +170,7 @@ void Scm_Init(const char *signature)
     Scm_Init_libalpha();
     Scm_Init_libbool();
     Scm_Init_libchar();
+    Scm_Init_libcode();
     Scm_Init_libdict();
     Scm_Init_libeval();
     Scm_Init_libexc();

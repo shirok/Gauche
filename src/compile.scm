@@ -5747,84 +5747,6 @@
  )
 
 ;;============================================================
-;; Compiled code builder interface
-;;
-
-(inline-stub
- (define-cproc make-compiled-code-builder (reqargs::<uint16> optargs::<uint16>
-                                                             name parent intform)
-   Scm_MakeCompiledCodeBuilder)
-
- ;; CompiledCodeEmit is performance critical.  To reduce the overhead of
- ;;  argument passing, we prepare variations for specific code patterns.
- (define-cproc compiled-code-emit0!
-   (cc::<compiled-code> code::<int>) ::<void>
-   (Scm_CompiledCodeEmit cc code 0 0 '#f '#f))
-
- (define-cproc compiled-code-emit-PUSH!
-   (cc::<compiled-code>) ::<void>
-   (Scm_CompiledCodeEmit cc SCM_VM_PUSH 0 0 '#f '#f))
-
- (define-cproc compiled-code-emit-RET!
-   (cc::<compiled-code>) ::<void>
-   (Scm_CompiledCodeEmit cc SCM_VM_RET 0 0 '#f '#f))
-
- (define-cproc compiled-code-emit0o!
-   (cc::<compiled-code> code::<int> operand) ::<void>
-   (Scm_CompiledCodeEmit cc code 0 0 operand '#f))
-
- (define-cproc compiled-code-emit0i!
-   (cc::<compiled-code> code::<int> info) ::<void>
-   (Scm_CompiledCodeEmit cc code 0 0 '#f info))
-
- (define-cproc compiled-code-emit0oi!
-   (cc::<compiled-code> code::<int> operand info) ::<void>
-   (Scm_CompiledCodeEmit cc code 0 0 operand info))
-
- (define-cproc compiled-code-emit1!
-   (cc::<compiled-code> code::<int> arg0::<int>) ::<void>
-   (Scm_CompiledCodeEmit cc code arg0 0 '#f '#f))
-
- (define-cproc compiled-code-emit1o!
-   (cc::<compiled-code> code::<int> arg0::<int> operand) ::<void>
-   (Scm_CompiledCodeEmit cc code arg0 0 operand '#f))
-
- (define-cproc compiled-code-emit1i!
-   (cc::<compiled-code> code::<int> arg0::<int> info) ::<void>
-   (Scm_CompiledCodeEmit cc code arg0 0 '#f info))
-
- (define-cproc compiled-code-emit1oi!
-   (cc::<compiled-code> code::<int> arg0::<int> operand info) ::<void>
-   (Scm_CompiledCodeEmit cc code arg0 0 operand info))
-
- (define-cproc compiled-code-emit2!
-   (cc::<compiled-code> code::<int> arg0::<int> arg1::<int>) ::<void>
-   (Scm_CompiledCodeEmit cc code arg0 arg1 '#f '#f))
-
- (define-cproc compiled-code-emit2o!
-   (cc::<compiled-code> code::<int> arg0::<int> arg1::<int> operand) ::<void>
-   (Scm_CompiledCodeEmit cc code arg0 arg1 operand '#f))
-
- (define-cproc compiled-code-emit2i!
-   (cc::<compiled-code> code::<int> arg0::<int> arg1::<int> info) ::<void>
-   (Scm_CompiledCodeEmit cc code arg0 arg1 '#f info))
-
- (define-cproc compiled-code-emit2oi!
-   (cc::<compiled-code> code::<int> arg0::<int> arg1::<int> operand info)::<void>
-   (Scm_CompiledCodeEmit cc code arg0 arg1 operand info))
-
- (define-cproc compiled-code-new-label (cc::<compiled-code>)
-   Scm_CompiledCodeNewLabel)
-
- (define-cproc compiled-code-set-label! (cc::<compiled-code> label)
-   ::<void> Scm_CompiledCodeSetLabel)
-
- (define-cproc compiled-code-finish-builder (cc::<compiled-code>
-                                             maxstack::<int>)
-   ::<void> Scm_CompiledCodeFinishBuilder)
- )
-
-;;============================================================
 ;; VM introspection
 ;;
 
@@ -5832,17 +5754,6 @@
  ;; standard
  (define-constant ENV_HEADER_SIZE  (c "SCM_MAKE_INT(ENV_SIZE(0))"))
  (define-constant CONT_FRAME_SIZE (c "SCM_MAKE_INT(CONT_FRAME_SIZE)"))
-
- (define-cproc vm-dump-code (code::<compiled-code>) ::<void>
-   Scm_CompiledCodeDump)
- (define-cproc vm-code->list (code::<compiled-code>)
-   Scm_CompiledCodeToList)
- (define-cproc vm-insn-build (insn) ::<ulong>
-   (result (cast u_long (Scm_VMInsnBuild insn))))
- (define-cproc vm-insn-code->name (opcode::<uint>)
-   (result (SCM_INTERN (Scm_VMInsnName opcode))))
- (define-cproc vm-insn-name->code (insn-name) ::<int>
-   Scm_VMInsnNameToCode)
 
  ;; Eval situation flag (for eval-when constrcut)
  (define-cproc vm-eval-situation (:optional val) ::<int>
