@@ -1,5 +1,5 @@
 ;;;
-;;; Code building stuff
+;;; Interface to VM code generator (code.c)
 ;;;
 ;;;   Copyright (c) 2000-2013  Shiro Kawai  <shiro@acm.org>
 ;;;
@@ -33,8 +33,7 @@
 
 (declare) ;; a dummy form to suppress generation of "sci" file
 
-;; This module is an interface to the VM code generator (see code.c).
-;; This is for internal use, shared by the runtime compiler,
+;; This module is for internal use, shared by the runtime compiler,
 ;; AOT-compiler, and other module that needs to deal with Gauche VM
 ;; code generation.
 (define-module gauche.vm.code
@@ -52,7 +51,6 @@
           compiled-code-new-label compiled-code-set-label!
           compiled-code-finish-builder))
 (select-module gauche.vm.code)
-
 
 ;;============================================================
 ;; Compiled code builder interface
@@ -149,7 +147,5 @@
  ;; Kludge: Let gauche.internal import me.  It must be done before the
  ;; compiler runs. This should eventually be done in the gauche.internal side.
  (initcode
-  (Scm_ImportModule (Scm_GaucheInternalModule)
-                    (SCM_INTERN "gauche.vm.code")
-                    SCM_FALSE 0))
+  (Scm_ImportModule (Scm_GaucheInternalModule) 'gauche.vm.code SCM_FALSE 0))
  )
