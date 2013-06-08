@@ -490,7 +490,16 @@
        (when (list? (compile-module-exports))
          (compile-module-exports
           (lset-union eq? syms (compile-module-exports))))
-       (eval-in-current-tmodule `(export ,@syms)) seed]
+       (eval-in-current-tmodule `(export ,@syms))
+       (unless (ext-module-file)
+         ;; If generate .sci file, 'export' form will be in it (as a part of
+         ;; define-module form).  Otherwise we need to do export during
+         ;; initialization.
+         (let1 exp-specs (cgen-literal syms)
+           (cgen-init
+            (format "  (void)Scm_ExportSymbols(Scm_CurrentModule(), ~a);"
+                    (cgen-cexpr exp-specs)))))
+       seed]
       [((? =export-all?)) (compile-module-exports #t)]
       [((? =export-if-defined?) . _) (write-ext-module form) seed]
       [((? =provide?) arg) (write-ext-module form) seed]
