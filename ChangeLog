@@ -1,3 +1,8 @@
+2013-06-09  Shiro Kawai  <shiro@acm.org>
+
+	* ext/util/queue.scm (%mtqueue-overflow?): Bug fix from @tabe via
+	  pullreq.  It didn't return boolean value properly.
+
 2013-06-07  Shiro Kawai  <shiro@acm.org>
 
 	* src/libcode.scm, src/compile.scm: Splitted VM code generation API
