@@ -324,7 +324,7 @@
 
  ;; caller must hold lock
  (define-cproc %mtqueue-overflow? (q::<mtqueue> cnt::<int>) ::<boolean>
-   (SCM_MAKE_BOOL (mtq-overflows q cnt)))
+   (result (mtq-overflows q cnt)))
 
  ;; API
  (define-cproc mtqueue-room (q::<mtqueue>) ::<number>
