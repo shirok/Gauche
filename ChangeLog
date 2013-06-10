@@ -1,5 +1,7 @@
 2013-06-09  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/vm/insn-core.scm (vm-insn-size): Added.
+
 	* ext/util/queue.scm (%mtqueue-overflow?): Bug fix from @tabe via
 	  pullreq.  It didn't return boolean value properly.
 

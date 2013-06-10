@@ -41,9 +41,9 @@
 
 (define-module gauche.vm.insn-core
   (use util.match)
-  (export <vm-insn-info>
-          vm-find-insn-info
-          vm-build-insn))
+  (export <vm-insn-info> vm-find-insn-info vm-build-insn
+          ;; utilities
+          vm-insn-size))
 (select-module gauche.vm.insn-core)
 
 (define-class <vm-insn-info> ()
@@ -71,11 +71,22 @@
 (define-method write-object ((s <vm-insn-info>) out)
   (format out "#<insn ~a>" (ref s 'name)))
 
-;; opcode mnemonic -> <vm-insn-info>
+;; API. opcode mnemonic -> <vm-insn-info>
 (define (vm-find-insn-info mnemonic)
   (cond ((assq mnemonic (class-slot-ref <vm-insn-info> 'all-insns)) => cdr)
         (else (error "No such VM instruction:" mnemonic))))
 
+;; API.  Arg can be <vm-insn-info> or opcode symbol
+(define-method vm-insn-size ((info <vm-insn-info>))
+  (ecase (~ info'operand-type)
+    [(none) 1]
+    [(obj addr code codes) 2]
+    [(obj+addr) 3]))
+
+(define-method vm-insn-size ((mnemonic <symbol>))
+  (vm-insn-size (vm-find-insn-info mnemonic)))
+
+;; API
 ;; INSN is a list of opcode and parameters, e.g. (PUSH) or (LREF 3 2)
 ;; Returns an exact integer of encoded VM instruction code.
 ;; NB: This must match the macro definitions in src/gauche/code.h !!!
