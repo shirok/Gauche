@@ -44,7 +44,6 @@
   (use gauche.parameter)
   (use gauche.sequence)
   (use gauche.experimental.lamb)
-  (use gauche.experimental.app)
   (use file.util)
   (use util.match)
   (use util.list)
@@ -52,6 +51,10 @@
   (use text.tr)
   (export cgen-precompile cgen-precompile-multi))
 (select-module gauche.cgen.precomp)
+
+;; Do not load optimizer unless explicitly requested.  To compile
+;; 0.9.4 with 0.9.3 compiler, we can't depend on the optimizer module.
+(autoload gauche.cgen.optimizer optimize-compiled-code)
 
 ;;================================================================
 ;; Main Entry point
@@ -173,7 +176,8 @@
                                     ((:strip-prefix prefix) #f)
                                     ((:dso-name dso) #f)
                                     (predef-syms '())
-                                    (macros-to-keep '()))
+                                    (macros-to-keep '())
+                                    (extra-optimization #f))
   (match srcs
     [() #f]
     [(main . subs)
@@ -190,6 +194,7 @@
                             :predef-syms predef-syms
                             :strip-prefix prefix
                             :macros-to-keep macros-to-keep
+                            :extra-optimization extra-optimization
                             :ext-initializer (and (equal? src main)
                                                   ext-initializer)
                             :initializer-name #`"Scm_Init_,initname"))))]
@@ -205,7 +210,8 @@
                                (initializer-name #f)
                                (sub-initializers '())
                                (predef-syms '())
-                               (macros-to-keep '()))
+                               (macros-to-keep '())
+                               (extra-optimization #f))
   (let ([out.c   (or out.c (path-swap-extension (sys-basename src) "c"))]
         [out.sci (or out.sci
                      (and (check-first-form-is-define-module src)
@@ -220,7 +226,8 @@
                                        (basename-sans-extension out.c)))
                               initializer-name)]
                    [vm-eval-situation SCM_VM_COMPILING]
-                   [private-macros-to-keep macros-to-keep])
+                   [private-macros-to-keep macros-to-keep]
+                   [run-extra-optimization-passes extra-optimization])
       (select-tmodule 'gauche)
       (cond [out.sci
              (make-directory* (sys-dirname out.sci))
@@ -252,6 +259,7 @@
 (define (eval-in-current-tmodule expr)
   (eval expr (~ (current-tmodule)'module)))
 
+;; Expr -> CompiledCode
 (define (compile-in-current-tmodule expr)
   (compile expr (~ (current-tmodule)'module)))
 
@@ -281,6 +289,9 @@
 ;; of private macros.  precomp cannot detect such dependency yet, and
 ;; so they need to be explicitly listed for the time being.
 (define private-macros-to-keep (make-parameter '()))
+
+;; Experimental: Run extra optimization during AOT compilation.
+(define run-extra-optimization-passes (make-parameter #f))
 
 ;;================================================================
 ;; Bridge to the internal stuff
@@ -691,34 +702,37 @@
    (literals    :init-keyword :literals)
    )
   (make (value)
-    (let* ([cv  (vm-code->list value)]
+    (let* ([code (if (run-extra-optimization-passes)
+                   (optimize-compiled-code value)
+                   value)]
+           [cv  (vm-code->list code)]
            [lv  (extract-literals cv)]
-           [cvn (allocate-code-vector cv lv (~ value'full-name))]
-           [code-name (cgen-literal (~ value'name))]
-           [arg-info (cgen-literal (~ value'arg-info))]
-           [inliner (check-packed-inliner value)])
+           [cvn (allocate-code-vector cv lv (~ code'full-name))]
+           [code-name (cgen-literal (~ code'name))]
+           [arg-info (cgen-literal (~ code'arg-info))]
+           [inliner (check-packed-inliner code)])
       (define (init-thunk)
         (format #t "    SCM_COMPILED_CODE_CONST_INITIALIZER(  /* ~a */\n"
-                (cgen-safe-comment (~ value'name)))
+                (cgen-safe-comment (~ code'name)))
         (format #t "            (ScmWord*)(~a), ~a,\n"
                 cvn (length cv))
         (format #t "            ~a, ~a, ~a, ~a, SCM_NIL, ~a,\n"
-                (~ value'max-stack)
-                (~ value'required-args)
-                (~ value'optional-args)
+                (~ code'max-stack)
+                (~ code'required-args)
+                (~ code'optional-args)
                 (if (cgen-literal-static? code-name)
                   (cgen-cexpr code-name)
                   "SCM_FALSE")
                 (cgen-cexpr arg-info))
         (format #t "            ~a, ~a)"
-                (let1 parent-code (~ value'parent)
+                (let1 parent-code (~ code'parent)
                   (if (memq parent-code (omitted-code))
                     "SCM_FALSE"
-                    (cgen-cexpr (cgen-literal (~ value'parent)))))
+                    (cgen-cexpr (cgen-literal (~ code'parent)))))
                 (if inliner
                   (cgen-cexpr inliner)
                   "SCM_FALSE")))
-      (make <cgen-scheme-code> :value value
+      (make <cgen-scheme-code> :value code
             :c-name (cgen-allocate-static-datum 'runtime 'ScmCompiledCode
                                                 init-thunk)
             :code-vector-c-name cvn

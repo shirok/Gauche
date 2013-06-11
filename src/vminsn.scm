@@ -47,6 +47,7 @@
 ;;;                    addr : an address the next pc points.
 ;;;                    code : an ScmCompiledCode operand.
 ;;;                    codes: a list of ScmCompiledCodes.
+;;;                    obj+addr : an ScmObj, followed by an address
 ;;;
 ;;;   If this insn is a combined insn, <combination> gives a list of
 ;;;   insns that combines into this one.  It is used to generate a

@@ -88,6 +88,19 @@ static ScmCompiledCode *make_compiled_code(void)
     return cc;
 }
 
+/* Copy the source compiled-code into the destination.  This is used in
+   the external optimizer to 'edit' code vector---such routines can
+   create a new compiled-code, then copy it to the original so that
+   the identity of compiled-code is kept. */
+void Scm_CompiledCodeCopyX(ScmCompiledCode *dest,
+                           const ScmCompiledCode *src)
+{
+    SCM_ASSERT(dest->builder == NULL);
+    SCM_ASSERT(src->builder == NULL);
+    
+    memcpy(dest, src, sizeof(ScmCompiledCode));
+}
+
 /*----------------------------------------------------------------------
  * An API to execute statically compiled toplevel code.  *PROVISIONAL*
  */
@@ -254,7 +267,7 @@ void print_header(const char *prefix, ScmObj name, ScmCompiledCode *cc)
 }
 
 /* The compiler may have lifted an internal closure to a global procedure.
-   We can tel so if the opcode is GREF_x, and the operand is an identifier,
+   We can tell so if the opcode is GREF_x, and the operand is an identifier,
    whose name is an uninterned symbol and it is globally bound to a procedure.
 
    If we indeed have a lifted closure, we chain the closure's code and

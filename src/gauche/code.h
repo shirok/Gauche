@@ -105,6 +105,8 @@ SCM_CLASS_DECL(Scm_CompiledCodeClass);
       (reqargs), (optargs), (name), (info), (arginfo),   \
       (parent), (iform) }
 
+SCM_EXTERN void   Scm_CompiledCodeCopyX(ScmCompiledCode *dest,
+                                        const ScmCompiledCode *src);
 SCM_EXTERN void   Scm_CompiledCodeDump(ScmCompiledCode *cc);
 SCM_EXTERN ScmObj Scm_CompiledCodeToList(ScmCompiledCode *cc);
 SCM_EXTERN ScmObj Scm_CompiledCodeFullName(ScmCompiledCode *cc);

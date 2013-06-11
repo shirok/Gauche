@@ -1,3 +1,10 @@
+2013-06-10  Shiro Kawai  <shiro@acm.org>
+
+	* src/code.scm, src/libcode.scm (compiled-code-copy!): Added.
+	* lib/gauche/cgen/precomp.scm, lib/gauche/cgen/optimizer.scm:
+	  Experimentally added extra optimization at precompile time
+	  (it's off by default now).
+
 2013-06-09  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/vm/insn-core.scm (vm-insn-size): Added.

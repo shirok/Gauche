@@ -49,7 +49,8 @@
           compiled-code-emit2! compiled-code-emit2o!
           compiled-code-emit2i! compiled-code-emit2oi!
           compiled-code-new-label compiled-code-set-label!
-          compiled-code-finish-builder))
+          compiled-code-finish-builder
+          compiled-code-copy!))
 (select-module gauche.vm.code)
 
 ;;============================================================
@@ -143,6 +144,10 @@
  (define-cproc compiled-code-finish-builder (cc::<compiled-code>
                                              maxstack::<int>)
    ::<void> Scm_CompiledCodeFinishBuilder)
+
+ (define-cproc compiled-code-copy! (dest::<compiled-code>
+                                    src::<compiled-code>)
+   ::<void> Scm_CompiledCodeCopyX)
 
  ;; Kludge: Let gauche.internal import me.  It must be done before the
  ;; compiler runs. This should eventually be done in the gauche.internal side.
