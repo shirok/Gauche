@@ -716,6 +716,19 @@
 (define-method (setter ref) ((obj <string>) (index <integer>) val)
   (string-set! obj index val))
 
+;; Universal accessor
+(define ~
+  (getter-with-setter
+   (case-lambda
+     [(obj selector) (ref obj selector)]
+     [(obj selector . more) (apply ~ (ref obj selector) more)])
+   (case-lambda
+     [(obj selector val) ((setter ref) obj selector val)]
+     [(obj selector selector2 . rest)
+      (apply (setter ~) (ref obj selector) selector2 rest)])))
+
+(define ref* ~)                         ;for the backward compatibility
+
 ;;----------------------------------------------------------------
 ;; Generalized application hooks
 ;;  (should this be in separate file, e.g. apply.scm?)
@@ -793,6 +806,7 @@
                 slot-definition-setter slot-definition-accessor
                 class-slot-definition class-slot-accessor
                 x->string x->integer x->number ref |setter of ref|
+                ~ ref*
 
                 ;; These shouldn't be necessary to be injected into gauche
                 ;; module; unfortunately, the current define-method and

@@ -456,15 +456,6 @@
 (define-global-pred =lambda?          lambda)
 (define-global-pred =declare?         declare)
 
-;; KLUDGE: Include needs to refer to the path of including source file, which
-;; is taken from current-load-path in 0.9.2 and before.  If we were able to
-;; override that, we wouldn't need to intercept 'include'.  That should be the
-;; right thing, since 'include' doesn't need to appear in toplevel.
-;; For 0.9.3, however, we need to keep things compilable by 0.9.2 compiler
-;; whose behavior we can't change.  Hence this hack allows us to make 'include'
-;; work for the time being.
-(define-global-pred =include?         include)
-
 ;; A parameter that holds the list of 'omitted' #<compiled-code> - for
 ;; example, the cliche of (CLOSURE #<compiled-code> DEFINE #<identifier> RET)
 ;; will be generated as Scm_Define() in the initialization, not as a code
@@ -523,20 +514,6 @@
             (private-macros-to-keep (append (private-macros-to-keep) macros))]
            [other (error "Unknown declaration:" other)]))
        seed]
-      ;; TODO: Temporary kludge---remove in the future release.  See the
-      ;; above comment about 'include' kludge.
-      [((? =include?) path)
-       (let* ([spath (if (absolute-path? path)
-                       path
-                       (build-path ($ sys-dirname $ port-name
-                                      $ current-input-port)
-                                   path))]
-              [source (any (^[ext] (let1 p #`",|spath|,|ext|"
-                                     (and (file-is-readable? p) p)))
-                           (cons "" *load-suffixes*))])
-         (unless source
-           (errorf "Couldn't read included file ~s" path))
-         (compile-toplevel-form `(begin ,@(file->sexp-list source)) seed))]
       ;; Finally, ordinary expressions.
       [else
        (let* ([compiled-code (compile-in-current-tmodule form)]

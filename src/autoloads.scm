@@ -125,7 +125,6 @@
           ;;(:macro curry-lambda) (:macro define-curry)
           applicable? arity procedure-arity-includes?
           <arity-at-least> arity-at-least? arity-at-least-value disasm
-          ~ ref*
           generator-fold generator-fold-right generator-for-each
           generator-map generator-find
           ;; for the backward compatibility

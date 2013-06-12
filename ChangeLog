@@ -1,3 +1,10 @@
+2013-06-12  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.scm, src/libobj.scm, src/autoloads.scm,
+	  lib/gauche/procedure.scm, lib/gauche/experimental/app.scm,
+	  lib/gauche/cgen/precomp.scm: Flushed suspended changes and temporary
+	  kludges to build 0.9.3 gauche by pre-0.9.2 gauche.
+
 2013-06-10  Shiro Kawai  <shiro@acm.org>
 
 	* src/code.scm, src/libcode.scm (compiled-code-copy!): Added.

@@ -5601,13 +5601,7 @@
                [(and (SCM_PROCEDUREP gval)
                      (SCM_PROCEDURE_INLINER gval) ; inliner may be NULL
                      (not (SCM_FALSEP (SCM_PROCEDURE_INLINER gval)))
-                     ;; Remainder: Enable the following check after 0.9.1 release.
-                     ;; This check is required to suppress inadvertent
-                     ;; inlining of some special constructs such as case-lambda.
-                     ;; However, 0.9's runtime does not have 'inlinable' bindings,
-                     ;; thus enabling this prevents some built-in procedures
-                     ;; from being inlined.
-                     ;;(Scm_GlocInlinableP gloc)
+                     (Scm_GlocInlinableP gloc)
                      (not (SCM_VM_COMPILER_FLAG_IS_SET
                            (Scm_VM) SCM_COMPILE_NOINLINE_GLOBALS)))
                 (set! SCM_RESULT0 gval SCM_RESULT1 'inline)]

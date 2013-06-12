@@ -180,24 +180,6 @@
       (any check a)
       (check a))))
 
-;; ~, ref*  ----------------------------------------------------
-;;  (~ a b c d) => (ref (ref (ref a b) c) d)
-;;  TODO: This is here because case-lambda used to be here as well.
-;;  This should really belong to src/objlib.scm.  However, we can't
-;;  do that in 0.9.2, since src/objlib.scm needs to be complied with
-;;  0.9.1.  Move this after 0.9.2 release.
-(define ~
-  (getter-with-setter
-   (case-lambda
-     [(obj selector) (ref obj selector)]
-     [(obj selector . more) (apply ~ (ref obj selector) more)])
-   (case-lambda
-     [(obj selector val) ((setter ref) obj selector val)]
-     [(obj selector selector2 . rest)
-      (apply (setter ~) (ref obj selector) selector2 rest)])))
-
-(define ref* ~)                         ;for the backward compatibility
-
 ;; disassembler ------------------------------------------------
 ;; I'm not sure whether this should be here or not, but fot the time being...
 
