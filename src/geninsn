@@ -37,14 +37,10 @@
 ;;   ../lib/gauche/vm/insn.scm
 
 (use gauche.cgen)
-(use gauche.cgen.cise)
 (use gauche.parameter)
 (use gauche.sequence)
 (use gauche.vm.insn-core)
 (use gauche.mop.instance-pool)
-(use gauche.experimental.app)
-(use gauche.experimental.ref)
-(use gauche.experimental.lamb)
 (use srfi-13)
 (use text.tr)
 (use file.util)
@@ -223,18 +219,18 @@
   (assq-ref (~ state'transitions) insn-name))
 
 (define (state-set-insn! state insn-name stop-insn)
-  (or (and-let* ([arc (state-lookup state insn-name)])
-        (set! (~ arc'stop-insn) stop-insn))
-      (push! (~ state'transitions)
-             (cons insn-name
-                   (make <arc> :input insn-name :stop-insn stop-insn)))))
+  (if-let1 arc (state-lookup state insn-name)
+    (set! (~ arc'stop-insn) stop-insn)
+    (push! (~ state'transitions)
+           (cons insn-name
+                 (make <arc> :input insn-name :stop-insn stop-insn)))))
 
 (define (state-set-state! state insn-name next-state)
-  (or (and-let* ([arc (state-lookup state insn-name)])
-        (set! (~ arc'next-state) next-state))
-      (push! (~ state'transitions)
-             (cons insn-name
-                   (make <arc> :input insn-name :next-state next-state)))))
+  (if-let1 arc (state-lookup state insn-name)
+    (set! (~ arc'next-state) next-state)
+    (push! (~ state'transitions)
+           (cons insn-name
+                 (make <arc> :input insn-name :next-state next-state)))))
 
 ;; Add one insn to a state network.
 ;; If an insn is marked 'obsoleted', we add it to the root insn anyway but
@@ -316,7 +312,7 @@
   )
 
 (define (construct-state-table insns)
-  (let ([root (make-state '())])
+  (let1 root (make-state '())
     (for-each (cut add-insn-to-state! root <>) insns)
     (fixup-states! root)
     (emit-states (instance-pool->list <state>))))
