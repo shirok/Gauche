@@ -53,5 +53,9 @@ SCM_EXTENSION_ENTRY void Scm_Init_os__windows(void)
     Scm_Init_console(mod);
 }
 
-#endif /*defined(GAUCHE_WINDOWS)*/
+#else  /*!defined(GAUCHE_WINDOWS)*/
+SCM_EXTENSION_ENTRY void Scm_Init_os__windows(void)
+{
+}
+#endif /*!defined(GAUCHE_WINDOWS)*/
 
