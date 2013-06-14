@@ -451,6 +451,31 @@
           (apply kons (append! cars (list (rec cdrs))))
           knil)))))
 
+(define (count pred lis . more)
+  (if (null? more)
+    (let rec ([lis lis] [cnt 0])
+      (if (null-list? lis)
+        cnt
+        (rec (cdr lis) (if (pred (car lis)) (+ cnt 1) cnt))))
+    (let rec ([liss (cons lis more)] [cnt 0])
+      (receive (cars cdrs) ((with-module gauche.internal %zip-nary-args) liss)
+        (if cars
+          (rec cdrs (if (apply pred cars) (+ cnt 1) cnt))
+          cnt)))))
+
+(define (reduce f ridentity lis)
+  (if (null-list? lis)
+    ridentity
+    (fold f (car lis) (cdr lis))))
+
+(define (reduce-right f ridentity lis)
+  (if (null-list? lis)
+    ridentity
+    (let rec ([head (car lis)] [lis (cdr lis)])
+      (if (pair? lis)
+        (f head (rec (car lis) (cdr lis)))
+        head))))
+
 (define (map* fn tail-fn lis . more)
   (if (null? more)
     (let rec ([xs lis] [rs '()])
@@ -488,6 +513,17 @@
                      (values '() rest))]
           [(null? rest) (error "given list is too short:" lis)]
           [else (loop (- i 1) (cdr rest) rest)])))
+
+;; partition is here, for gauche.procedure has partition$ and we don't
+;; want it to depend on srfi-1.  partition! is left in srfi-1, for its
+;; optimized version is rather complicated.
+(define (partition pred lis)
+  (let rec ([lis lis] [xs '()] [ys '()])
+    (if (null-list? lis)
+      (values (reverse! xs) (reverse! ys))
+      (if (pred (car lis))
+        (rec (cdr lis) (cons (car lis) xs) ys)
+        (rec (cdr lis) xs (cons (car lis) ys))))))
 
 (define (take list k)
   (let loop ([lis list] [r '()] [j k])

@@ -122,19 +122,11 @@
 (test* "unzip5"
        '((1 a #\a "a") (2 b #\b "b") (3 c #\c "c") (4 d #\d "d") (5 e #\e "e"))
        (call-with-values (^[] (unzip5 unzip-data)) list))
-(test* "count" 3 (count even? '(3 1 4 1 5 9 2 6 5)))
-(test* "count" 3
-       (count < '(1 2 4 8) '(2 4 6 8 10 12 14 16)))
-(test* "count" 2
-       (count < '(3 1 4 1) (circular-list 1 10)))
 (test* "pair-fold" '(5 4 3 2 1)
        (pair-fold (^[p t] (set-cdr! p t) p) '()
                   (list 1 2 3 4 5)))
 (test* "pair-fold-right" '((a b c) (b c) (c))
        (pair-fold-right cons '() '(a b c)))
-(test* "reduce" 55 (reduce + 0 (iota 10 1)))
-(test* "reduce-right" '(1 2 3 4 5 6 7 8 9 . 10)
-       (reduce-right cons 0 (iota 10 1)))
 (test* "unfold" '(1 4 9 16 25 36 49 64 81 100)
        (unfold (^x (> x 10))
                (^x (* x x))
@@ -167,8 +159,6 @@
 (test* "pair-for-each" '((c) (b c) (a b c))
        (rlet1 r '()
          (pair-for-each (^l (set! r (cons l r))) '(a b c))))
-(test* "partition" '((one four five) (2 3 6))
-       (values->list (partition symbol? '(one 2 3 four five 6))))
 (test* "partition!" '((one four five) (2 3 6))
        (values->list (partition! symbol? (list 'one 2 3 'four 'five 6))))
 (test* "take-while" '(2 18)

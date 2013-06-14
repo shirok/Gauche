@@ -1,3 +1,10 @@
+2013-06-14  Shiro Kawai  <shiro@acm.org>
+
+	* src/liblist.scm, libsrc/srfi-1.scm (count, reduce, reduce-right,
+	  partition): Move from srfi-1.scm to liblist.scm, so that
+	  gauche.procedure won't depend on srfi-1.
+	* lib/gauche/procedure.scm: Removed dependency on srfi-1.
+
 2013-06-12  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm, src/libobj.scm, src/autoloads.scm,

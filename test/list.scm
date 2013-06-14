@@ -81,6 +81,14 @@
        (fold-left + 0 '(1 2 3) '(4 5 6)))
 (test* "fold-left" '(((z a A) b B) c C)
        (fold-left list 'z '(a b c) '(A B C)))
+(test* "count" 3 (count even? '(3 1 4 1 5 9 2 6 5)))
+(test* "count" 3
+       (count < '(1 2 4 8) '(2 4 6 8 10 12 14 16)))
+(test* "count" 2
+       (count < '(3 1 4 1) '#0=(1 10 . #0#)))
+(test* "reduce" 55 (reduce + 0 (iota 10 1)))
+(test* "reduce-right" '(1 2 3 4 5 6 7 8 9 . 10)
+       (reduce-right cons 0 (iota 10 1)))
 
 ;;--------------------------------------------------------------------------
 (test-section "filtering")
@@ -251,6 +259,8 @@
        (call-with-values
            (^[] (split-at! (list 'a 'b 'c 'd 'e 'f 'g 'h) 3))
          list))
+(test* "partition" '((one four five) (2 3 6))
+       (values->list (partition symbol? '(one 2 3 four five 6))))
 
 (test* "split-at* (normal)" '((a b c) (d))
        (receive r (split-at* '(a b c d) 3) r))

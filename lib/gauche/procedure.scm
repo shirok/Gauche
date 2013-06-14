@@ -32,7 +32,6 @@
 ;;;
 
 (define-module gauche.procedure
-  (use srfi-1)
   (export compose .$ complement pa$ map$ for-each$ apply$
           count$ fold$ fold-right$ reduce$ reduce-right$
           filter$ partition$ remove$ find$ find-tail$

@@ -25,10 +25,10 @@
           concatenate concatenate!
           append-reverse append-reverse!
           zip unzip1 unzip2 unzip3 unzip4 unzip5
-          count unfold pair-fold reduce unfold-right
-          pair-fold-right reduce-right append-map append-map!
+          unfold pair-fold unfold-right
+          pair-fold-right append-map append-map!
           map! pair-for-each map-in-order
-          partition partition!
+          partition!
           list-index
           take-while drop-while take-while! span break span! break!
           alist-cons
@@ -45,8 +45,9 @@
           delete delete! delete-duplicates delete-duplicates!
           assoc alist-copy alist-delete alist-delete!
           any every filter filter! remove remove! filter-map
-          fold fold-right find find-tail
-          split-at split-at! iota
+          fold fold-right count reduce reduce-right
+          find find-tail
+          split-at split-at! partition iota
           ))
 (select-module srfi-1)
 
@@ -227,22 +228,6 @@
 ;;; Folders of SRFI-1
 ;;;
 
-(define (count pred list1 . lists)
-  (if (pair? lists)
-
-    ;; N-ary case
-    (let lp ((list1 list1) (lists lists) (i 0))
-      (if (null-list? list1) i
-          (receive (as ds) (%cars+cdrs lists)
-            (if (null? as) i
-                (lp (cdr list1) ds
-                    (if (apply pred (car list1) as) (+ i 1) i))))))
-
-    ;; Fast path
-    (let lp ((lis list1) (i 0))
-      (if (null-list? lis) i
-          (lp (cdr lis) (if (pred (car lis)) (+ i 1) i))))))
-
 (define (unfold-right p f g seed . maybe-tail)
   (let lp ((seed seed) (ans (get-optional maybe-tail '())))
     (if (p seed)
@@ -266,7 +251,6 @@
       (if (p seed) '()
           (cons (f seed) (recur (g seed)))))))
 
-;; fold and fold-right are built-in
 (define (pair-fold-right f zero lis1 . lists)
   (if (pair? lists)
     (let recur ((lists (cons lis1 lists)))		; N-ary case
@@ -288,24 +272,6 @@
       (if (null-list? lis) ans
           (let ((tail (cdr lis)))		; Grab the cdr now,
             (lp tail (f lis ans)))))))	; in case F SET-CDR!s LIS.
-
-
-
-;;; REDUCE and REDUCE-RIGHT only use RIDENTITY in the empty-list case.
-;;; These cannot meaningfully be n-ary.
-
-(define (reduce f ridentity lis)
-  (if (null-list? lis)
-    ridentity
-    (fold f (car lis) (cdr lis))))
-
-(define (reduce-right f ridentity lis)
-  (if (null-list? lis)
-    ridentity
-    (let recur ((head (car lis)) (lis (cdr lis)))
-      (if (pair? lis)
-        (f head (recur (car lis) (cdr lis)))
-        head))))
 
 ;;;
 ;;; Mapper of SRFI-1
@@ -365,17 +331,6 @@
 ;;;
 ;;; Filters of SRFI-1
 ;;;
-
-;; Avoid non-tail recursion.
-(define (partition pred lis)
-  (let recur ((lis lis)
-              (in  '())
-              (out '()))
-    (if (null-list? lis)
-      (values (reverse! in) (reverse! out))
-      (if (pred (car lis))
-        (recur (cdr lis) (cons (car lis) in) out)
-        (recur (cdr lis) in (cons (car lis) out))))))
 
 (define (partition! pred lis)
   (check-arg procedure? pred)
