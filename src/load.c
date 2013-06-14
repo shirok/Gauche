@@ -589,6 +589,30 @@ struct dlobj_rec {
     ScmInternalCond  cv;
 };
 
+/* for debug */
+static void dump_dlobj(dlobj *dlo)
+{
+    dlobj_initfn *ifn;
+    printf("{\n  dlobj \"%s\"%s\n",
+           dlo->path, dlo->loaded? " (loaded)" : " (not loaded)");
+    printf("  initfns:\n");
+    for (ifn = dlo->initfns; ifn; ifn = ifn->next) {
+        printf("    name=\"%s\", fn=%p %s}\n",
+               ifn->name, ifn->fn,
+               ifn->initialized? "(initialized) ":"");
+    }
+    printf("}\n");
+}
+
+static void dump_dlobjs(void)
+{
+    dlobj *dlo = ldinfo.dso_list;
+    printf("Registerd dlobjs:\n");
+    for (; dlo; dlo = dlo->next) {
+        dump_dlobj(dlo);
+    }
+}
+
 /* NB: we rely on dlcompat library for dlopen instead of using dl_darwin.c
    for now; Boehm GC requires dlopen when compiled with pthread, so there's
    not much point to avoid dlopen here. */
@@ -778,18 +802,46 @@ static void call_initfn(dlobj *dlo, const char *name)
     ifn->initialized = TRUE;
 }
 
-/* Experimental: Register DSONAME as 'prelinked', that is, the application
-   already linked the functionality and initialized so that we don't need
-   to do anything when (dynamic-load DSONAME) is called.  DSONAME shoudn't
-   have system's suffix. */
-void Scm_RegisterPrelinked(ScmString *dsoname)
+/* Experimental: Prelink feature---we allow the extension module to be
+   statically linked, and (dynamic-load DSONAME) merely calls initfn.
+   The application needs to call Scm_RegisterPrelinked to tell the system
+   which DSO is statically linked.  We pretend that the named DSO is
+   already loaded from a pseudo pathname "@/DSONAME" (e.g. for
+   "gauche--collection", we use "@/gauche--collection".) */
+
+static const char *pseudo_pathname_for_prelinked(ScmString *dsoname)
 {
+    ScmDString ds;
+    Scm_DStringInit(&ds);
+    Scm_DStringPutz(&ds, "@/", 2);
+    Scm_DStringAdd(&ds, dsoname);
+    return Scm_DStringGetz(&ds);
+}
+
+/* Register DSONAME as prelinked.  DSONAME shoudn't have system's suffix.
+   INITFNS is an array of function pointers, NULL terminated.
+   INITFN_NAMES should have prefixed with '_', for call_initfn() searches
+   names with '_' first. */
+void Scm_RegisterPrelinked(ScmString *dsoname,
+                           const char *initfn_names[],
+                           ScmDynLoadInitFn initfns[])
+{
+    const char *path = pseudo_pathname_for_prelinked(dsoname);
+    dlobj *dlo = find_dlobj(path);
+    dlo->loaded = TRUE;
+    int i;
+
     (void)SCM_INTERNAL_MUTEX_LOCK(ldinfo.dso_mutex);
+    for (i=0; initfns[i] && initfn_names[i]; i++) {
+        dlobj_initfn *ifn = find_initfn(dlo, initfn_names[i]);
+        SCM_ASSERT(ifn->fn == NULL);
+        ifn->fn = initfns[i];
+    }
     ldinfo.dso_prelinked = Scm_Cons(SCM_OBJ(dsoname), ldinfo.dso_prelinked);
     (void)SCM_INTERNAL_MUTEX_UNLOCK(ldinfo.dso_mutex);
 }
 
-static int is_prelinked(ScmString *dsoname)
+static const char *find_prelinked(ScmString *dsoname)
 {
     ScmObj z = SCM_FALSE;
     (void)SCM_INTERNAL_MUTEX_LOCK(ldinfo.dso_mutex);
@@ -798,7 +850,7 @@ static int is_prelinked(ScmString *dsoname)
        an error. */
     z = Scm_Member(SCM_OBJ(dsoname), ldinfo.dso_prelinked, SCM_CMP_EQUAL);
     (void)SCM_INTERNAL_MUTEX_UNLOCK(ldinfo.dso_mutex);
-    return !SCM_FALSEP(z);
+    return SCM_FALSEP(z) ? NULL : pseudo_pathname_for_prelinked(dsoname);
 }
 
 /* Dynamically load the specified object by DSONAME.
@@ -812,12 +864,11 @@ ScmObj Scm_DynLoad(ScmString *dsoname, ScmObj initfn, u_long flags/*reserved*/)
     const char *dsopath, *initname;
     dlobj *dlo;
 
-    if (is_prelinked(dsoname)) return SCM_TRUE;
-
-    dsopath = find_dso_path(dsoname);
+    dsopath = find_prelinked(dsoname);
+    if (!dsopath) dsopath = find_dso_path(dsoname);
     initname = get_initfn_name(initfn, dsopath);
     dlo = find_dlobj(dsopath);
-
+    
     /* Load the dlobj if necessary. */
     lock_dlobj(dlo);
     if (!dlo->loaded) {

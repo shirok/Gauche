@@ -61,8 +61,13 @@
          (let ([initfn (initfn-name dso)]
                [str    (cgen-literal dso)])
            (cgen-decl #`"extern void ,initfn(void);")
-           (cgen-init #`"  Scm_RegisterPrelinked(SCM_STRING(,(cgen-cexpr str)));"
-                      #`"  ,initfn();"))))
+           (cgen-init
+            #`"  {"
+            #`"    const char *initfn_names[] = { ,(c-safe-string-literal (string-append \"_\" initfn)), NULL };"
+            #`"    void (*initfns[])(void) = { ,initfn, NULL };"
+            
+            #`"    Scm_RegisterPrelinked(SCM_STRING(,(cgen-cexpr str)), initfn_names, initfns);"
+            #`"   }"))))
 
 ;;
 ;; Gather *.scm and *.sci files
@@ -91,19 +96,22 @@
     (with-output-to-string (cute for-each write (file->sexp-list p)))
     (errorf "couldn't find ~a" path-to-look-for)))
 
+;; This code fragment is evaluated in Scm_InitPrelinked() to set up a load
+;; hook so that the standard libraries would be load from memory instead of
+;; files.  Be careful! This code shouldn't trigger any autoloads.
 (define *hook-source*
-  '(begin
-     (%add-load-path-hook!
-      (lambda (archive-file name suffixes)
-        (and-let* ([ (equal? archive-file "") ]
-                   [fn (any (^[sfx]
-                              (let1 n #`",|name|.,|sfx|"
-                                (and (hash-table-exists? *embedded-scm-table* n)
-                                     n)))
-                            suffixes)]
-                   [content (hash-table-get *embedded-scm-table* fn)])
-          (cons fn (cut open-input-string content)))))
-     (add-load-path "")))
+  '(%add-load-path-hook!
+    (lambda (archive-file name suffixes)
+      (and (equal? archive-file "")
+           (let ([fn (any (lambda (sfx)
+                            (let ([n (string-append name sfx)])
+                              (and (hash-table-exists? *embedded-scm-table* n)
+                                   n)))
+                          suffixes)])
+             (and fn
+                  (let ([content (hash-table-get *embedded-scm-table* fn)])
+                    (and content
+                         (cons fn (lambda (_) (open-input-string content)))))))))))
 
 (define (embed-scm)
   ;; Table of module path -> source
@@ -112,6 +120,18 @@
   (cgen-init "SCM_DEFINE(SCM_FIND_MODULE(\"gauche.internal\", 0),"
              "           \"*embedded-scm-table*\","
              "           SCM_OBJ(scmtab));")
+  ;; Set up load hook
+  (cgen-decl "static const char *embedded_load_hook = "
+             (c-safe-string-literal (write-to-string *hook-source*))
+             ";")
+  (cgen-init "Scm_AddLoadPath(\"\", FALSE);")
+  (cgen-init "Scm_EvalCStringRec(embedded_load_hook,"
+             "                SCM_OBJ(SCM_FIND_MODULE(\"gauche.internal\", 0))"
+             "                );")
+  (cgen-init "Scm_EvalCStringRec(\" (define-macro (use module . options) `(begin (require ,(module-name->path module)) (import (,module ,@options))))\","
+             "                 SCM_OBJ(Scm_GaucheModule()));")
+
+  
   ;; Hash table setup
   (do-ec [: scmfile (get-scheme-paths)]
          [:let name (cgen-literal (car scmfile))]
@@ -119,13 +139,6 @@
          (cgen-init (format "Scm_HashTableSet(scmtab, ~a, ~a, 0);"
                             (cgen-cexpr name)
                             (cgen-cexpr lit))))
-  ;; Set up load hook
-  (cgen-decl "static const char *embedded_load_hook = "
-             (c-safe-string-literal (write-to-string *hook-source*))
-             ";")
-  (cgen-init "Scm_EvalCString(embedded_load_hook,"
-             "                SCM_OBJ(SCM_FIND_MODULE(\"gauche.internal\", 0)),"
-             "                NULL);")
   )
 
 (define (main args)
@@ -134,9 +147,9 @@
                        :init-prologue "void Scm_InitPrelinked() {\n"
                        :init-epilogue "}\n"))
   (cgen-decl #`"#include <gauche.h>")
-  (cgen-decl "extern void Scm_RegisterPrelinked(ScmString*);")
-  (generate-staticinit)
+  (cgen-decl "extern void Scm_RegisterPrelinked(ScmString*, const char *ns[], void (*fns[])(void));")
   (embed-scm)
+  (generate-staticinit)
   (cgen-emit-c (cgen-current-unit))
   0)
 
