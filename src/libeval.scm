@@ -82,7 +82,7 @@
            [port (guard (e [else e]) (opener path))])
       (%record-load-start path)
       (if (not (input-port? port))
-        (and error-if-not-found (raise e))
+        (and error-if-not-found (raise port))
         (load-from-port (if ignore-coding
                           port
                           (open-coding-aware-port port))
