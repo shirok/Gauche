@@ -2761,24 +2761,19 @@
 ;; If filename is relative, we try to resolve it with the source file.
 ;; whenever possible.
 (define (pass1/open-include-file path includer-path)
-  ;; We can't use cond-expand, since a host that compiles this file
-  ;; may not be the same as the host that runs this compiler.
-  (define windows? (assq 'gauche.os.windows (cond-features)))
-  ;; NB: we can't depend on file.util.
-  (define (absolute-path? path)
-    (if windows? (#/^[\/\\]|^[A-Za-z]:/ path) (#/^\// path)))
-  (define (build-path path file)
-    (if windows? #`",|path|\\,file" #`",|path|/,file"))
-  (define (check path)
-    (any (^s (open-input-file #`",|path|,s" :if-does-not-exist #f :encoding #t))
-         (cons "" *load-suffixes*)))
-  (define (bad) (error "include file is not readable:" path))
-
-  (cond [(absolute-path? path) (or (check path) (bad))]
-        [(and includer-path
-              (check (build-path (sys-dirname includer-path) path)))]
-        [(check path)]
-        [else (bad)]))
+  (let1 search-paths (if includer-path
+                       (cons (sys-dirname includer-path) *load-path*)
+                       *load-path*)
+    ;; find-load-file returns either (<found-path> <rest-of-search-paths>)
+    ;; or (<pseudo-path> <rest-of-search-paths> <thunk-to-open-content>)
+    ;; see libeval.scm for the details.
+    (if-let1 path&rest (find-load-file path search-paths
+                                       (cons "" *load-suffixes*)
+                                       :allow-archive #t)
+      (if (pair? (cddr path&rest)) ; archive hook is in effect.
+        ((caddr path&rest))
+        (open-input-file (car path&rest) :encoding #t))
+      (error "include file is not readable:" path))))
 
 ;; Report including.
 (define (pass1/report-include iport open?)

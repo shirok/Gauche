@@ -1,5 +1,9 @@
 2013-06-15  Shiro Kawai  <shiro@acm.org>
 
+	* src/compile.scm (pass1/open-include-file): Searches also
+	  *load-path* for specified file.  We now use find-load-file,
+	  so the load-path-hook stuff can also work.
+
 	* src/liblist.scm, libsrc/srfi-1.scm (concatenate, concatenate!,
 	  append-reverse, append-reverse!, append-map, append-map!):
 	  Further migration of srfi-1 procedures into core.
