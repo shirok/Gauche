@@ -1,3 +1,10 @@
+2013-06-15  Shiro Kawai  <shiro@acm.org>
+
+	* src/liblist.scm, libsrc/srfi-1.scm (concatenate, concatenate!,
+	  append-reverse, append-reverse!, append-map, append-map!):
+	  Further migration of srfi-1 procedures into core.
+	* lib/gauche/parseopt.scm: Removed dependency on srfi-1.
+
 2013-06-14  Shiro Kawai  <shiro@acm.org>
 
 	* src/liblist.scm, libsrc/srfi-1.scm (count, reduce, reduce-right,

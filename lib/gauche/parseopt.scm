@@ -32,10 +32,6 @@
 ;;;
 
 (define-module gauche.parseopt
-  (use gauche.regexp)
-  (use srfi-1)
-  (use srfi-2)
-  (use srfi-13)
   (export make-option-parser parse-options let-args <parseopt-error>))
 (select-module gauche.parseopt)
 
@@ -121,9 +117,9 @@
                        (~ optspec 'name) arg)])
       (read-from-string arg)))
   (define (process-args)
-    (let loop ((spec (~ optspec 'args))
-               (args args)
-               (optargs '()))
+    (let loop ([spec (~ optspec 'args)]
+               [args args]
+               [optargs '()])
       (cond [(null? spec) (values (reverse! optargs) args)]
             [(null? args) (error <parseopt-error> :option-name (~ optspec'name)
                                  "running out the arguments for option"
@@ -167,9 +163,8 @@
 
 ;; Build
 (define (build-option-parser spec fallback)
-  (let1 speclist (append-map compose-entry spec)
-    (^[args . maybe-fallback]
-      (parse-cmdargs args speclist (get-optional maybe-fallback fallback)))))
+  (let1 speclist (apply append (map compose-entry spec))
+    (^[args :optional (fb fallback)] (parse-cmdargs args speclist fb))))
 
 ;;;
 ;;; The main body of the macros

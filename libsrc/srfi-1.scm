@@ -22,11 +22,9 @@
           first second third fourth fifth sixth seventh eighth
           ninth tenth car+cdr take-right drop-right
           take! drop-right!
-          concatenate concatenate!
-          append-reverse append-reverse!
           zip unzip1 unzip2 unzip3 unzip4 unzip5
           unfold pair-fold unfold-right
-          pair-fold-right append-map append-map!
+          pair-fold-right
           map! pair-for-each map-in-order
           partition!
           list-index
@@ -46,6 +44,9 @@
           assoc alist-copy alist-delete alist-delete!
           any every filter filter! remove remove! filter-map
           fold fold-right count reduce reduce-right
+          append-reverse append-reverse!
+          concatenate concatenate!
+          append-map append-map!
           find find-tail
           split-at split-at! partition iota
           ))
@@ -215,16 +216,6 @@
       (values '() '()))))
 
 ;;;
-;;; Concatenators of SRFI-1
-;;;
-
-(define (append-reverse list tail)  (reverse list tail))
-(define (append-reverse! list tail) (reverse! list tail))
-
-(define (concatenate  lists) (reduce-right append  '() lists))
-(define (concatenate! lists) (reduce-right append! '() lists))
-
-;;;
 ;;; Folders of SRFI-1
 ;;;
 
@@ -276,28 +267,6 @@
 ;;;
 ;;; Mapper of SRFI-1
 ;;;
-
-(define (append-map f lis1 . lists)
-  (really-append-map append-map  append  f lis1 lists))
-(define (append-map! f lis1 . lists)
-  (really-append-map append-map! append! f lis1 lists))
-
-(define (really-append-map who appender f lis1 lists)
-  (if (pair? lists)
-    (receive (cars cdrs) (%cars+cdrs (cons lis1 lists))
-      (if (null? cars) '()
-          (let recur ((cars cars) (cdrs cdrs))
-            (let ((vals (apply f cars)))
-              (receive (cars2 cdrs2) (%cars+cdrs cdrs)
-                (if (null? cars2) vals
-                    (appender vals (recur cars2 cdrs2))))))))
-
-    ;; Fast path
-    (if (null-list? lis1) '()
-        (let recur ((elt (car lis1)) (rest (cdr lis1)))
-          (let ((vals (f elt)))
-            (if (null-list? rest) vals
-                (appender vals (recur (car rest) (cdr rest)))))))))
 
 (define (pair-for-each proc lis1 . lists)
   (if (pair? lists)

@@ -476,6 +476,15 @@
         (f head (rec (car lis) (cdr lis)))
         head))))
 
+(define (append-reverse list tail)  (reverse list tail)) ;srfi-1 compat
+(define (append-reverse! list tail) (reverse! list tail));srfi-1 compat
+
+(define (concatenate  lists) (reduce-right append  '() lists))
+(define (concatenate! lists) (reduce-right append! '() lists))
+
+(define (append-map f lis . lists)  (concatenate  (apply map f lis lists)))
+(define (append-map! f lis . lists) (concatenate! (apply map f lis lists)))
+
 (define (map* fn tail-fn lis . more)
   (if (null? more)
     (let rec ([xs lis] [rs '()])
