@@ -341,32 +341,6 @@ The equality procedure must be consistent with @code{eq?}, i.e.
 
 @subsubheading List miscellaneous routines
 
-@defun concatenate list-of-lists
-@defunx concatenate! list-of-lists!
-@c EN
-[SRFI-1] Equivalent to @code{(apply append @var{list-of-lists})} and
-@code{(apply append! @var{list-of-lists})}, respectively.
-@c JP
-[SRFI-1] それぞれ、@code{(apply append @var{list-of-lists})} および
-@code{(apply append! @var{list-of-lists})} と同等です。
-@c COMMON
-@end defun
-
-@defun append-reverse rev-head tail
-@defunx append-reverse! rev-head tail
-[SRFI-1]
-@c EN
-@code{append-reverse} returns @code{(append (reverse rev-head) tail)}.
-@code{append-reverse!} is the linear-update variant.  These are equivalent
-to the two-argument @code{reverse} and
-@code{reverse!} (@xref{Other list procedures}).
-@c JP
-[SRFI-1] @code{append-reverse} は @code{(append (reverse rev-head) tail)} を
-返します。@code{append-reverse!} はその場で更新されるバージョンです。
-これらの手続きは2引数の@code{reverse}および@code{reverse!}と同等です
-(@ref{Other list procedures}参照)。
-@c COMMON
-@end defun
 
 @defun zip clist1 clist2 @dots{}
 [SRFI-1]
@@ -435,36 +409,6 @@ three elements of the lists, and so on.
 @end example
 @end defun
 
-@defun count pred clist1 clist2 @dots{}
-[SRFI-1]
-@c EN
-A procedure @var{pred} is applied to the @var{n}-th element
-of given lists, from @var{n} is zero to the length of the
-the shortest finite list in the given lists,
-and the count of times @var{pred} returned true is returned.
-@c JP
-@var{n} をゼロから与えられたリストのうち最も短いリストの
-長さまでとして、@var{pred} 手続きを与えられたリストの @var{n} 番目の要素に
-それぞれ適用します。
-@var{pred} が真を返した数が返ります。
-@c COMMON
-
-@example
-(count even? '(3 1 4 1 5 9 2 5 6)) @result{} 3
-(count < '(1 2 4 8) '(2 4 6 8 10 12 14 16)) @result{} 3
-@end example
-
-@c EN
-At least one of the argument lists must be finite:
-@c JP
-引数で与えられるリストの少くともひとつは有限でなければなりません。
-@c COMMON
-
-@example
-(count < '(3 1 4 1) (circular-list 1 10)) @result{} 2
-@end example
-@end defun
-
 @subsubheading List fold, unfold & map
 
 @defun pair-fold kons knil clist1 clist2 @dots{}
@@ -477,37 +421,6 @@ gets each @code{cdr} of the given @var{clist}s, instead of @code{car}.
 [SRFI-1]
 @code{fold} および @code{fold-right} と同様ですが、@var{kons} 手続き
 は与えられた @var{clist} の @code{car} ではなく、@code{cdr} をとります。
-@c COMMON
-@end defun
-
-@defun reduce f ridentity list
-@defunx reduce-right f ridentity list
-@c EN
-[SRFI-1]
-Variant of @code{fold} and @code{fold-right}.   @var{f} must be a
-binary operator, and @var{ridentity} is the value such that for
-any value @var{x} that is valid as @var{f}'s input,
-@c JP
-[SRFI-1]
-@code{fold} および @code{fold-right} の変形バージョンです。
-@var{f} は二項演算子でなければなりません。
-また、@var{ridentity} は @var{f} の入力として許される
-あらゆる値 @var{x} について以下を満していなければなりません。
-@c COMMON
-@example
- (f x ridentity) @equiv{} x
-@end example
-
-@c EN
-These functions effectively do the same thing as @code{fold} or
-@code{fold-right}, respectively, but omit the first
-application of @var{f} to @var{ridentity}, using the above nature.
-So @var{ridentity} is used only when @var{list} is empty.
-@c JP
-これらの関数は実質的に @code{fold} や @code{fold-right} と同じことを
-行いますが、@var{ridentity}には上記の性質があるため、
-@var{f}は@var{ridentity}には適用されません。
-@var{ridentity}が使われるのは@var{list}が空の場合だけです。
 @c COMMON
 @end defun
 
@@ -558,27 +471,6 @@ Defined by the following recursion.
         lis
         (lp (g seed) (cons (f seed) lis))))
 @end example
-@end defun
-
-@defun append-map f clist1 clist2 @dots{}
-@defunx append-map! f clist1 clist2 @dots{}
-@c EN
-[SRFI-1]
-Equivalent to
-@c JP
-[SRFI-1]
-以下と同等です。
-@c COMMON
-
-@example
-  (apply append (map @var{f} @var{clist1} @var{clist2} @dots{}))
-  (apply append! (map @var{f} @var{clist1} @var{clist2} @dots{}))
-@end example
-@c EN
-At least one of the list arguments must be finite.
-@c JP
-引数のリストのうち少くともひとつは有限でなければなりません。
-@c COMMON
 @end defun
 
 @defun map! f clist1 clist2 @dots{}
