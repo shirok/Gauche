@@ -59,9 +59,8 @@
 ;; ((<optspec> <help-string>) <handler>)
 (define (compose-entry a-spec)
   (let ([optspec (if (pair? (car a-spec)) (caar a-spec) (car a-spec))]
-        [helpstr (and-let* ([l (length+ (car a-spec))]
-                            [ (>= l 2 ) ])
-                   (cadar a-spec))]
+        [helpstr (and (not (length<=? (car a-spec) 1))
+                      (cadar a-spec))]
         [handler (cadr a-spec)])
     (unless (string? optspec)
       (error "option spec must be a string, but got" optspec))
@@ -163,7 +162,7 @@
 
 ;; Build
 (define (build-option-parser spec fallback)
-  (let1 speclist (apply append (map compose-entry spec))
+  (let1 speclist (append-map compose-entry spec)
     (^[args :optional (fb fallback)] (parse-cmdargs args speclist fb))))
 
 ;;;
