@@ -12,23 +12,25 @@
   (print "Usage: make-standalone [-o outfile][--srcdir dir][--builddir dir] file.scm [-llib ...]")
   (print "  -o outfile     Specify output file name.")
   (print "  --srcdir dir   Directory that contains Gauche source.  Default is '../..'.")
-  (print "  --builddir dir Directory that is used to build Gauche.  "
+  (print "  --builddir dir Directory that is used to build Gauche.  Default is the same as srcdir.")
   (print "  -llib          Specify extra libraries to link (no space after -l).")
   (exit 1))
 
 (define (main args)
   (let-args (cdr args) ([outfile "o=s" #f]
+                        [srcdir "srcdir=s" "../.."]
+                        [builddir "builddir=s" #f]
                         [else _ (usage)]
                         . files)
     (when (null? files) (usage))
     (unless (every (cut string-prefix? "-l" <>) (cdr files)) (usage))
-    
-    (compile-c-file (generate-c-file (car files))
+    (compile-c-file (generate-c-file (car files) srcdir)
                     (cdr files)
-                    (or outfile (path-sans-extension (car files)))))
+                    (or outfile (path-sans-extension (car files)))
+                    (or builddir srcdir)))
   0)
 
-(define (generate-c-file file)
+(define (generate-c-file file srcdir)
   (parameterize ([cgen-current-unit
                   (make <cgen-unit>
                     :name (path-sans-extension file)
@@ -38,6 +40,9 @@
     (cgen-decl "#include <gauche.h>")
     (cgen-decl (format "const char *main_script = ~a;"
                        (c-safe-string-literal (file->string file))))
+    (cgen-decl (format "const char *copying = ~a;"
+                       (c-safe-string-literal (file->string
+                                               (build-path srcdir "COPYING")))))
     (cgen-decl "extern void Scm_InitPrelinked(void);")
     (cgen-init "Scm_Init(GAUCHE_SIGNATURE);"
                "Scm_InitPrelinked();"
@@ -45,7 +50,7 @@
     (cgen-emit-c (cgen-current-unit)))
   (path-swap-extension file "c"))
 
-(define (compile-c-file c-file extra-libs outfile)
+(define (compile-c-file c-file extra-libs outfile builddir)
   ;; TODO: We wish we could use gauche.package.compile, but currently it is
   ;; specialized to compile extension modules.  Eventually we will modify
   ;; the module so that this function can be just a one-liner
@@ -53,8 +58,11 @@
         [cflags (gauche-config "--so-cflags")]
         [incdirs (gauche-config "-I")]
         [libdirs (gauche-config "-L")]
-        [libs    (gauche-config "-l")])
-    (let1 cmd #`",cc ,cflags ,incdirs ,libdirs -o ,outfile ,c-file ../../src/libgauche-0.9.a ,libs ,(string-join extra-libs \" \")"
+        [libs    ($ (cut string-join <> " ")
+                    $ append ($ remove (^s (equal? s "-lgauche-0.9"))
+                                $ string-tokenize (gauche-config "-l"))
+                             extra-libs)])
+    (let1 cmd #`",cc ,cflags ,incdirs ,libdirs -o ,outfile ,c-file ,|builddir|/src/libgauche-0.9.a ,libs"
       (print cmd)
       (sys-system cmd))))
 

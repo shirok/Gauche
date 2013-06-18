@@ -33,3 +33,25 @@ Run make-standalone script.  It will be something like this:
 
   ./make-standalone -o command yourscript.scm -lz
 
+  Note: At this moment, you need to add -l options manually
+  that are required by Gauche extensions.  If you include
+  ext/zlib, you need -lz.  If you include dbm, you're likely
+  to need to add -lgdbm -lgdbm_compat (actual options vary
+  depending on the platform.)
+
+The 'make-standalone' script needs to get files from Gauche's
+source directory and build directory.  If you don't run the
+script in-place, you need to tell the script those directories
+by --srcdir and --builddir options.
+
+The resulting binary doesn't depend on neither Gauche DSOs nor
+installed Gauche libraries.  You can copy just the binary onto
+the target platform.
+
+Note: It still depends on the system libraries (e.g. -lpthread)
+or the libraries you gave to make-standaline (e.g. -lz), and they
+are needed on the target platform.
+
+Since the result binary includes entire Gauche bundled libraries,
+it tends to be large (11MB on Linux/x86_64).
+
