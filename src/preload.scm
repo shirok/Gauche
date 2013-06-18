@@ -13,6 +13,7 @@
 (use gauche.sequence)
 (use gauche.hook)
 (use gauche.parameter)
+(use gauche.parseopt) ; until 0.9.4 release
 (use gauche.uvector)
 (use gauche.regexp)
 (use srfi-1)
