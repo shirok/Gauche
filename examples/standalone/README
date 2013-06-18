@@ -1,0 +1,35 @@
+This directory contains code to show how to build a statically-linked
+gauche binary, that can run stand-alone (that is, you don't need to
+install Gauche runtime separately---everything is in one executable).
+
+This is still an experimental feature.  The building process isn't
+streamlined: You need manual tweak depending on your configuration.
+Also there's no easy way yet to statically link external Gauche
+extensions such as Gauche-gl.  We'll gradually address these issues.
+
+
+[1. Prerequisites]
+
+You need to compile and install the Gauche from the source
+(at this moment, the build process uses features added after
+the last release 0.9.3.3, so you need to install development head
+version of gauche; this will change once we release 0.9.4.)
+
+[2. Build a static library]
+
+Clean the source tree and run configure with appropriate options,
+then build Gauche as usual.
+
+  Note: If you intend to distribute the compiled binary, be aware
+  that if you link gdbm, the binary is covered by GPL.
+  If you want to 
+
+Then, in $(TOP_SRCDIR)/src, run 'make static'.
+This builds libgauche-0.9.a.
+
+[3. Bundle your script source]
+
+Run make-standalone script.  It will be something like this:
+
+  ./make-standalone -o command yourscript.scm -lz
+
