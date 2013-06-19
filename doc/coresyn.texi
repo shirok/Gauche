@@ -2852,11 +2852,11 @@ file (@xref{Case-sensitivity}).
 The coding magic comment in each file is honored while reading
 that file (@xref{Multibyte scripts}).
 
-If @var{filename} is a relative path, the file is first searched
-relative to the file @code{include} form appears.  If @code{include}
-form isn't appear in a file (e.g. from REPL, or invoked via
-@code{eval}), the file is searched relative to the process's current
-working directory.
+If @var{filename} is absolute, the file is just searched.  If it
+begins with @file{./} or @file{../}, the file is searched relative
+to the process's current working directory.  Otherwise, the file
+is first searched relative to the file contaning the @code{include}
+form, then the directories in @code{*load-path*} are tried.
 
 Example: Suppose a file @file{a.scm} contains the following code:
 
