@@ -38,36 +38,6 @@
 ;; If you start gosh with r7rs mode (-r7 option), not only the above bindings
 ;; but also most of r7rs-small bindings are avaialable (see gauche.interactive).
 
-;; r7rs.library-name - mapping R7RS library name to Gauche module name
-;;
-;; We simply maps R7RS (foo bar baz) to Gauche's foo.bar.baz . The caveat
-;; is that R7RS library name component may include dots.  We map them in R7RS
-;; library names into consecutive dots in Gauche module name, which will be
-;; mapped to a single dot again in pathnames.
-;; (The latter translation is done by module-name->path and path->module-name
-;; in src/libmod.scm)
-;;
-;;  R7RS library name   Gauche module name      File pathname
-;;
-;;  (foo bar baz)       foo.bar.baz             foo/bar/baz
-;;  (foo b.r baz)       foo.b..r.baz            foo/b.r/baz
-;;
-;; TODO: R7RS library name can contain weird characters, and we need a rule
-;; to map them.
-(define-module r7rs.library-name
-  (export library-name->module-name)
-
-  (define (stringify x)
-    (cond [(keyword? x) (write-to-string x)]
-          [(symbol? x) (symbol->string x)]
-          [(and (integer? x) (exact? x) (>= x 0)) (number->string x)]
-          [else (error "Bad name component in library name:" x)]))
-  
-  (define (library-name->module-name libname)
-    ($ string->symbol $ (cut string-join <> ".")
-       $ map ($ (cut regexp-replace-all #/\./ <> "..") $ stringify $) libname))
-  )
-
 ;; r7rs.import - R7RS-style 'import'.
 ;;
 ;; We keep Gauche's traditional import as is, and introduce R7RS import
@@ -75,7 +45,6 @@
 (define-module r7rs.import
   (use util.match)
   (use srfi-1)
-  (import r7rs.library-name)
   (export (rename import r7rs-import))
 
   ;; A trick - must be replaced once we have explicit-renaming macro.
@@ -115,7 +84,6 @@
 
 ;; r7rs.library - R7RS define-library form
 (define-module r7rs.library
-  (import r7rs.library-name)
   (export define-library)
 
   ;; A trick - must be replaced once we have explicit-renaming macro.

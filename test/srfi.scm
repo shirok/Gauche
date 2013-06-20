@@ -27,6 +27,8 @@
        (cond-expand [gauche 0] [else 1]))
 (test* "cond-expand" 0
        (cond-expand [scm -1] [gauche 0] [else 1]))
+(test* "cond-expand (library)" 0
+       (cond-expand [(library (gauche time)) 0] [else 1]))
 
 ;;-----------------------------------------------------------------------
 (test-section "srfi-2")

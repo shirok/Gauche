@@ -174,7 +174,8 @@
                           tree-map->alist alist->tree-map)
 
 (autoload gauche.libutil  library-fold library-map library-for-each
-                          library-exists? library-has-module?)
+                          library-exists? library-has-module?
+                          library-name->module-name)
 
 (autoload gauche.sortutil sort sort! merge merge! sorted?
                           stable-sort stable-sort!

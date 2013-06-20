@@ -1,3 +1,9 @@
+2013-06-19  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi-0.scm (cond-expand): Support R7RS 'library' feature test.
+	* lib/r7rs.scm, lib/gauche/libutil.scm: Moded library-name->module-name
+	  from r7rs to gauche.libutil, for it is needed by srfi-0.
+
 2013-06-15  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm (pass1/open-include-file): Searches also

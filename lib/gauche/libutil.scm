@@ -35,7 +35,7 @@
   (use srfi-1)
   (use srfi-13)
   (export library-exists? library-fold library-map library-for-each
-          library-has-module?))
+          library-has-module? library-name->module-name))
 (select-module gauche.libutil)
 
 ;; library-fold - iterate over the modules or libraries whose name matches
@@ -194,3 +194,27 @@
                [else (write-char c) (loop (read-char))])))
          (display "$"))))))
 
+;; mapping R7RS library name to Gauche module name
+;;
+;; We simply maps R7RS (foo bar baz) to Gauche's foo.bar.baz . The caveat
+;; is that R7RS library name component may include dots.  We map them in R7RS
+;; library names into consecutive dots in Gauche module name, which will be
+;; mapped to a single dot again in pathnames.
+;; (The latter translation is done by module-name->path and path->module-name
+;; in src/libmod.scm)
+;;
+;;  R7RS library name   Gauche module name      File pathname
+;;
+;;  (foo bar baz)       foo.bar.baz             foo/bar/baz
+;;  (foo b.r baz)       foo.b..r.baz            foo/b.r/baz
+;;
+;; TODO: R7RS library name can contain weird characters, and we need a rule
+;; to map them.
+(define (library-name->module-name libname)
+  (define (stringify x)
+    (cond [(keyword? x) (write-to-string x)]
+          [(symbol? x) (symbol->string x)]
+          [(and (integer? x) (exact? x) (>= x 0)) (number->string x)]
+          [else (error "Bad name component in library name:" x)]))    
+  ($ string->symbol $ (cut string-join <> ".")
+     $ map ($ (cut regexp-replace-all #/\./ <> "..") $ stringify $) libname))

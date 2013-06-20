@@ -13,6 +13,10 @@
 ;;; for system management, and not supposed to be used freely
 ;;; by user programs.
 
+;; Note: If you modify this, try to avoid relying on other autoloaded
+;; modules as much as possible; cond-expand can be used extensively, and
+;; it's easy to introduce a circular dependency.
+
 (define-macro (cond-expand . clauses)
 
   ;; Check feature requirement.  Returns #f if requirement is not
@@ -21,17 +25,18 @@
   ;; by Gauche built-in features).
   (define (fulfill? req seed)
     (cond
-     ((identifier? req) (fulfill? (identifier->symbol req) seed))
-     ((symbol? req)
+     [(identifier? req) (fulfill? (identifier->symbol req) seed)]
+     [(symbol? req)
       (let ((p (assq req (cond-features))))
-        (and p (if (null? (cdr p)) seed (cons (cadr p) seed)))))
-     ((not (pair? req)) (error "Invalid cond-expand feature-id:" req))
-     (else
+        (and p (if (null? (cdr p)) seed (cons (cadr p) seed))))]
+     [(not (pair? req)) (error "Invalid cond-expand feature-id:" req)]
+     [else
       (case (unwrap-syntax (car req))
-        ((and) (fulfill-and (cdr req) seed))
-        ((or)  (fulfill-or  (cdr req) seed))
-        ((not) (fulfill-not (cadr req) seed))
-        (else (error "Invalid cond-expand feature expression:" req))))))
+        [(and) (fulfill-and (cdr req) seed)]
+        [(or)  (fulfill-or  (cdr req) seed)]
+        [(not) (fulfill-not (cadr req) seed)]
+        [(library) (fulfill-library (cdr req) seed)]
+        [else (error "Invalid cond-expand feature expression:" req)])]))
 
   (define (fulfill-and reqs seed)
     (if (null? reqs)
@@ -48,21 +53,28 @@
   (define (fulfill-not req seed)
     (if (fulfill? req '()) #f seed))
 
+  (define (fulfill-library rest seed)
+    (unless (null? (cdr rest))
+      (error "Invalid feature requirement:" `(library ,@rest)))
+    (let ((modname (library-name->module-name (car rest))))
+      (and (library-exists? modname)
+           (cons modname seed))))
+
   (define (rec cls)
-   (cond
-     ((null? cls) (error "Unfulfilled cond-expand:" cls))
-     ((not (pair? (car cls)))
-      (error "Bad clause in cond-expand:" (car cls)))
-     ((equal? (caar cls) 'else)
+    (cond
+     [(null? cls) (error "Unfulfilled cond-expand:" cls)]
+     [(not (pair? (car cls)))
+      (error "Bad clause in cond-expand:" (car cls))]
+     [(equal? (caar cls) 'else)
       (if (null? (cdr cls))
         `(begin . ,(cdar cls))
-        (error "Misplaced else clause in cond-expand:" (car cls))))
-     ((fulfill? (caar cls) '())
+        (error "Misplaced else clause in cond-expand:" (car cls)))]
+     [(fulfill? (caar cls) '())
       => (lambda (uses)
            `(begin ,@(map (lambda (mod) `(use ,mod)) uses)
-                   ,@(cdar cls))))
-     (else
-      (rec (cdr cls)))))
+                   ,@(cdar cls)))]
+     [else
+      (rec (cdr cls))]))
 
   (rec clauses))
 
