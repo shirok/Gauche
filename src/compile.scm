@@ -2980,11 +2980,21 @@
 ;;   this iform into a simple $seq.
 ;;
 ;;  -- Special case: If the lvars are immediately "consumed" as the
-;;     arguments to a function callss in the first expression of let,
-;;     we can eliminate lvars.  This case often occurs after macro
+;;     arguments to a function calls in the first expression of let,
+;;     and the rest of the argument of the first expression is side-effect
+;;     free, we can eliminate lvars.  This case often occurs after macro
 ;;     expansion.
 ;;       (let ([p (f a)] [q (g b)]) (h p q) (foo))
 ;;         => (begin (h (f a) (g b)) (foo))
+;;
+;;     NB: In the following pattern, we can't do the conversion unless p is
+;;     constant or unmodified $LREF, for (g b) might modify p.
+;;     
+;;       (let ([q (g b)]) (h p q) (foo))
+;;
+;;     NB: We don't need to consider the possibility that (g b) modifies h,
+;;     since h is evaluated after all the arguments are evaluated, even
+;;     in the form of (h p (g b)).
 ;;
 ;; - Closure optimization: when an lvar is bound to a $LAMBDA node, we
 ;;   may be able to optimize the calls to it.  It is done here since
@@ -3037,7 +3047,8 @@
              (and (= (lvar-ref-count lv) 1)
                   (= (lvar-set-count lv) 0)
                   (loop args (cons n ilrefs) subcall-node))
-             (loop args ilrefs subcall-node)))]
+             (and (= (lvar-set-count lv) 0)
+                  (loop args ilrefs subcall-node))))]
         [((? $call? n) . args) (if subcall-node
                                  #f
                                  (loop args ilrefs n))]

@@ -103,5 +103,18 @@
 (test* "make sure define-inline'd procs be optimized" '()
        (filter-insn foo 'LOCAL-ENV-CLOSURES))
 
+(test-section "eta reduction")
+
+;; This is actually to check when eta reductino isn't done
+;; when there's a hazard (side effects).  0.9.3.3 fails this.
+
+(define (hoop f a) (f a))
+(define (hoop2 x y) (list x y))
+
+(test* "eta conversion hazard" '(9 3)
+       (let ((a 1))
+         (let ((b (hoop (lambda (c) (set! a 9) (+ c 1)) 2)))
+           (hoop2 a b))))
+
 (test-end)
 

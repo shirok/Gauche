@@ -1,3 +1,8 @@
+2013-06-22  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.scm (pass2/intermediate-lref-removal): Fixed a bug
+	  that does incorrect transformation under existence of side-effects.
+
 2013-06-19  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi-0.scm (cond-expand): Support R7RS 'library' feature test.
