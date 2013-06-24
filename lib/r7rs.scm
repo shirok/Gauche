@@ -214,7 +214,7 @@
   (define-syntax+ or         gauche)
   (define-syntax+ when       gauche)
   (define-syntax+ unless     gauche)
-  (define-syntax+ cond-expand gauche) ;;TODO: support 'library' form
+  (define-syntax+ cond-expand gauche)
   (define-syntax+ let        gauche)
   (define-syntax+ let*       gauche)
   (define-syntax+ letrec     gauche)
@@ -455,7 +455,7 @@
   ;; 6.13 Input and output
   (define+ input-port? gauche)
   (define+ output-port? gauche)
-  (define (textual-port? p) (port? p))     ; gauche's port can handle both
+  (define (textual-port? p) (port? p))    ; gauche's port can handle both
   (define (binary-port? p) (port? p))     ; gauche's port can handle both
   (define+ port? gauche)
   (define (input-port-open? p) (and (input-port? p) (not (port-closed? p))))
@@ -472,9 +472,13 @@
   (define+ open-input-string gauche)
   (define+ open-output-string gauche)
   (define+ get-output-string gauche)
-  (define open-input-bytevector (undefined))  ;WRITEME
-  (define open-output-bytevector (undefined)) ;WRITEME
-  (define get-output-bytevector (undefined))  ;WRITEME
+  (define (open-input-bytevector bv)   ; temporary implementation
+    (check-arg u8vector? bv)
+    (open-input-string (u8vector->string bv)))
+  (define (open-output-bytevector)     ; temporary implementation
+    (open-output-string))
+  (define (get-output-bytevector port) ; temporary implementation
+    (string->u8vector (get-output-string port)))
   (define+ read-char gauche)
   (define+ peek-char gauche)
   (define+ read-line gauche)
@@ -485,8 +489,12 @@
   (define read-u8 read-byte)
   (define peek-u8 peek-byte)
   (define u8-ready? byte-ready?)
-  (define read-bytevector (undefined))  ;WRTIEME
-  (define read-bytevector! (undefined)) ;WRITEME
+  (define (read-bytevector k . args)  ; temporary implementation
+    (string->u8vector (apply read-block k args)))
+  (define (read-bytevector! bv :optional (port (current-input-port))
+                                         (start 0)
+                                         (end (u8vector-length bv)))
+    (read-block! bv port start end))
   (define+ newline gauche)
   (define+ write-char gauche)
   (define (write-string string :optional (port (current-output-port))
