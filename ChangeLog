@@ -1,3 +1,8 @@
+2013-06-25  Shiro Kawai  <shiro@acm.org>
+
+	* ext/dbm/dbm.ac: Added --with-dbm=DBM,... configure option, to
+	  exclude some dbm libraries that would be compiled by default.
+
 2013-06-22  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm (pass2/intermediate-lref-removal): Fixed a bug

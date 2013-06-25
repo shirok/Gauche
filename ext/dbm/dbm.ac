@@ -7,6 +7,34 @@ dnl
 
 AC_CONFIG_HEADER(ext/dbm/dbmconf.h)
 
+dnl with-dbm option
+dnl
+dnl   Example: --with-dbm=ndbm,odbm    # only compile ndbm and odbm
+dnl            --with-dbm=no           # do not compile dbm support
+dnl
+dnl   By default we autodetect available dbm libraries.  This option
+dnl   is to _exclude_ some or all libraries that would be compiled
+dnl   otherwise.
+
+DBMS=gdbm,ndbm,odbm
+AC_ARG_WITH(dbm,
+  AC_HELP_STRING([--with-dbm=DBM,...],
+                 [Select which dbm libraries to be compiled.  You can specify 
+any combinations of gdbm, ndbm and odbm, or just 'no' to disable external
+dbm libraries.  Example: --with-dbm=ndbm,odbm
+(to use only ndbm and odbm) or --wtih-dbm=no (to not compile any of them).
+Note that fsdbm is always available, for it is implemented in pure Scheme.
+By default the configure script scans the system to find out available dbm
+libraries, so you don't need to specify this option.   This options is to
+exclude some dbm libraries that would be compiled otherwise.]),
+  [
+    case $with_dbm in
+      no)  DBMS="" ;;
+      yes) ;; # Use the default
+      *)   DBMS="$with_dbm" ;;
+    esac
+  ])
+
 dnl Check for various dbm libraries availability
 dnl On some systems, legacy DBM and NDBM is emulated by more powerful
 dnl packages like BSD DB or GDBM.  We need to be careful to pick the
@@ -19,12 +47,19 @@ dnl macros, and manage the NDBM_HEADER variable on our own.
 dnl
 dnl The ndbm case is so complicated because, besides it may be emulated
 dnl by gdbm, the ndbm functions could be in libndbm, libdbm, or even libc.
+
+dnl gdbm
+if echo $DBMS | tr "," "\012" | grep gdbm; then
 AC_CHECK_HEADERS(gdbm.h, [
   DBM_ARCHFILES=dbm--gdbm.$SHLIB_SO_SUFFIX
   DBM_SCMFILES=gdbm.sci
   DBM_OBJECTS=' $(gdbm_OBJECTS)'
   AC_CHECK_LIB(gdbm, gdbm_open, [ GDBMLIB="-lgdbm" ])
 ])
+fi dnl end of (find "gdbm" DBMS)
+
+dnl ndbm
+if echo $DBMS | tr "," "\012" | grep ndbm; then
 
 NDBM_HEADER=""
 AC_CHECK_HEADER(ndbm.h, [
@@ -68,6 +103,12 @@ if test "$NDBM_HEADER" != ""; then
   DBM_OBJECTS=' $(ndbm_OBJECTS)'$DBM_OBJECTS
 fi
 
+fi dnl end of (find "ndbm" DBMS)
+
+dnl odbm
+
+if echo $DBMS | tr "," "\012" | grep odbm; then
+
 ODBM_HEADER=""
 AC_CHECK_HEADER(dbm.h, [
   ODBM_HEADER="dbm.h"
@@ -105,6 +146,8 @@ if test "$ODBM_HEADER" != ""; then
   DBM_SCMFILES="odbm.sci $DBM_SCMFILES"
   DBM_OBJECTS='$(odbm_OBJECTS)'$DBM_OBJECTS
 fi
+
+fi dnl end of (find "odbm" DBMS)
 
 AC_SUBST(DBM_ARCHFILES)
 AC_SUBST(DBM_SCMFILES)
