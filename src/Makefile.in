@@ -342,10 +342,10 @@ gauche-cesconv : gauche-cesconv.in
 static : $(LIBGAUCHE).a
 
 $(LIBGAUCHE).a : all staticinit.$(OBJEXT)
-	$AR cr $(LIBGAUCHE).a $(libgauche_OBJECTS) $(libgc_OBJECTS) staticinit.$(OBJEXT) `cd $(top_builddir)/ext; $(MAKE) -s list-objects`
+	$(AR) cr $(LIBGAUCHE).a $(libgauche_OBJECTS) $(libgc_OBJECTS) staticinit.$(OBJEXT) `cd $(top_builddir)/ext; $(MAKE) -s list-objects`
 
 staticinit.c : all
-	$(BUILD_GOSH) -ftest $(srcdir)/gen-staticinit.scm $(top_srcdir) $(top_builddir)
+	$(BUILD_GOSH) $(srcdir)/gen-staticinit.scm $(top_srcdir) $(top_builddir)
 
 # tests -----------------------------------------------
 TESTFILES  = `cat ../test/TESTS`
