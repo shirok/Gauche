@@ -80,9 +80,11 @@
           (append-ec [: subdir (mfvar-ref "ext/Makefile" "SUBDIRS")]
                      [:let mf (build-path "ext"subdir"Makefile")]
                      [:let cat (car (mfvar-ref mf "SCM_CATEGORY"))]
+                     [:let files (mfvar-ref mf "SCMFILES")]
+                     [if (not (equal? files '("")))]
                      (map (^s (cons (build-path cat s)
                                     (build-path "ext" subdir s)))
-                          (mfvar-ref mf "SCMFILES")))))
+                          files))))
 
 (define (get-scm-content path-to-look-for)
   (if-let1 p (find-file-in-paths path-to-look-for
