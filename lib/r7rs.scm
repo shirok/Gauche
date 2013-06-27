@@ -392,8 +392,12 @@
   (define+ vector-set! gauche)
   (define+ vector->list gauche)
   (define+ list->vector gauche)
-                                        ;vector->string
-                                        ;string->vector
+  (define (vector->string v)
+    (check-arg vector? v)
+    (coerce-to <string> v))
+  (define (string->vector s)
+    (check-arg string? s)
+    (coerce-to <vector> s))
   (define+ vector-copy gauche)
   (define+ vector-copy!  srfi-43)
   (define+ vector-append srfi-43)
@@ -425,7 +429,6 @@
   (define+ map gauche)
   (define+ string-map srfi-13)
   (define vector-map (undefined)) ;WRITEME: differs from srfi-43
-                                 
   (define+ for-each gauche)
   (define+ string-for-each srfi-13)
   (define vector-for-each (undefined)) ;WRITEME: differs from srfi-43
@@ -650,7 +653,7 @@
   (define-syntax delay-force (with-module gauche lazy))
   (define+ force    gauche)
   (define+ promise? gauche)
-  (define make-promise (undefined))     ;WRITEME
+  (define (make-promise obj) (if (promise? obj) obj (delay obj)))
   (provide "scheme/lazy"))
 
 (define-module scheme.load
