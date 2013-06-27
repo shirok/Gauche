@@ -147,6 +147,7 @@
   (use gauche.uvector)
   (use gauche.record)
   (use gauche.parameter)
+  (use text.unicode)
   (use srfi-11)
   (use srfi-13)
 
@@ -415,9 +416,8 @@
           [(null? bvs) dest]
         (u8vector-copy! dest k (car bvs)))))
 
-  ;; TODO: when native encoding is not utf8
-  (define utf8->string       u8vector->string)
-  (define string->utf8       string->u8vector)
+  (define+ utf8->string  text.unicode)
+  (define+ string->utf8  text.unicode)
 
   ;; 6.10 Control features
   (define+ procedure? gauche)

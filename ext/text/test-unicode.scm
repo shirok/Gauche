@@ -148,6 +148,20 @@
 
 (for-each test-utf-conv *te-samples*)
 
+;; utf8->string and string->utf8
+(when (memq (gauche-character-encoding) '(utf-8 sjis euc-jp))
+  (let1 data '(("abc" #u8(97 98 99))
+               ("λΛ"  #u8(206 187 206 155))
+               (#f    #u8(97 128 128)))
+    (define (conversion-tester str bvec)
+      (test* "utf8->string" (or str (test-error))
+             (utf8->string bvec))
+      (when str
+        (test* "string->utf8" bvec
+               (string->utf8 str))))
+
+    (for-each (^d (apply conversion-tester d)) data)))
+
 (test-section "word boundary")
 
 (define (test-word-breaker sentence expected)

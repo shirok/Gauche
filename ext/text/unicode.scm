@@ -39,6 +39,7 @@
   (use srfi-42)
   (export ucs4->utf8  utf8-length  utf8->ucs4
           ucs4->utf16 utf16-length utf16->ucs4
+          utf8->string string->utf8
 
           make-word-breaker
           make-word-reader
@@ -53,6 +54,8 @@
           )
   )
 (select-module text.unicode)
+
+(autoload gauche.charconv ces-convert)
 
 ;; This module implements some higher-level Unicode operations.
 ;; Most of them do not depend on the internal encodings---some
@@ -349,6 +352,30 @@
 
   (set! utf16->ucs4 %utf16->ucs4)
   )
+
+;; R7RS procedures
+
+;; This module may be precompiled by different platforms, so we dispatch
+;; at runtime.
+;; At this moment, we don't worry much about performance when the native
+;; encoding isn't utf8.
+(define (utf8->string bvec :optional (start 0) (end -1))
+  (check-arg u8vector? bvec)
+  (if (eq? (gauche-character-encoding) 'utf-8)
+    (rlet1 s (u8vector->string bvec start end)
+      (when (string-incomplete? s)
+        (error "invalid utf-8 sequence in u8vector:" bvec)))
+    (ces-convert (u8vector->string bvec start end) 'utf-8)))
+
+(define (string->utf8 str :optional (start 0) (end -1))
+  (check-arg string? str)
+  (if (eq? (gauche-character-encoding) 'utf-8)
+    (string->u8vector str start end)
+    (let ([start (or start 0)]
+          [end (if (and (number? end) (>= end 0)) end (string-length str))])
+      (string->u8vector (ces-convert (substring str start end)
+                                     (gauche-character-encoding)
+                                     'utf-8)))))
 
 ;;;
 ;;;
