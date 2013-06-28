@@ -428,10 +428,10 @@
   (define+ apply gauche)
   (define+ map gauche)
   (define+ string-map srfi-13)
-  (define vector-map (undefined)) ;WRITEME: differs from srfi-43
+  (define+ vector-map gauche)
   (define+ for-each gauche)
   (define+ string-for-each srfi-13)
-  (define vector-for-each (undefined)) ;WRITEME: differs from srfi-43
+  (define+ vector-for-each gauche)
   (define+ call-with-current-continuation gauche)
   (define+ call/cc gauche)
   (define+ values gauche)

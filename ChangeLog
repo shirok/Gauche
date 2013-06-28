@@ -1,3 +1,10 @@
+2013-06-28  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/vecutil.scm: Added.  Supports R7RS vector-map and
+	  vector-for-each.  Also includes vector-tabulate.
+	* src/autoloads.scm: Autoload gauche.vecutil.
+	* lib/r7rs.scm: Changed accordingly.
+
 2013-06-26  Shiro Kawai  <shiro@acm.org>
 
 	* ext/text/unicode.scm (utf8->string, string->utf8): Added these

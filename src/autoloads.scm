@@ -154,6 +154,11 @@
 
 (autoload gauche.stringutil string-split)
 
+(autoload gauche.vecutil
+          vector-tabulate vector-map vector-map! vector-for-each
+          vector-map-with-index vector-map-with-index!
+          vector-for-each-with-index)
+
 (autoload gauche.fileutil
           glob glob-fold sys-glob glob-component->regexp make-glob-fs-fold
           sys-stat->file-type sys-stat->mode sys-stat->ino

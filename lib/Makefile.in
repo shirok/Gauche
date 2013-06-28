@@ -44,7 +44,7 @@ SCMFILES = srfi-0.scm \
        slib.scm	 \
        gauche/test.scm gauche/test/generative.scm gauche/time.scm \
        gauche/redefutil.scm gauche/macroutil.scm gauche/stringutil.scm \
-       gauche/condutil.scm gauche/portutil.scm \
+       gauche/vecutil.scm gauche/condutil.scm gauche/portutil.scm \
        gauche/hashutil.scm gauche/treeutil.scm \
        gauche/modutil.scm gauche/libutil.scm gauche/sortutil.scm \
        gauche/fileutil.scm gauche/sysutil.scm \
