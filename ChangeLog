@@ -5,6 +5,9 @@
 	* src/autoloads.scm: Autoload gauche.vecutil.
 	* lib/r7rs.scm: Changed accordingly.
 
+	* ext/srfi/srfi-43.scm: Define vector-map etc. as an alias of
+	  vector-map-with-index etc.
+
 2013-06-26  Shiro Kawai  <shiro@acm.org>
 
 	* ext/text/unicode.scm (utf8->string, string->utf8): Added these

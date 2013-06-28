@@ -309,30 +309,6 @@
     (^[kons knil len vectors]
       (loop kons knil len vectors 0))))
 
-;;; (%VECTOR-MAP1! <f> <target> <length> <vector>)
-;;;     (F <index> <elt>) -> elt'
-(define %vector-map1!
-  (letrec ([loop (^[f target vec i]
-                   (if (zero? i)
-                     target
-                     (let1 j (- i 1)
-                       (vector-set! target j (f j (vector-ref vec j)))
-                       (loop f target vec j))))])
-    (^[f target vec len]
-      (loop f target vec len))))
-
-(define %vector-map2+!
-  (letrec ([loop (^[f target vectors i]
-                   (if (zero? i)
-                     target
-                     (let1 j (- i 1)
-                       (vector-set! target j
-                                    (apply f j (vectors-ref vectors j)))
-                       (loop f target vectors j))))])
-    (^[f target vectors len]
-      (loop f target vectors len))))
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;; ***** vector-lib ***** ;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;; --------------------
@@ -693,69 +669,15 @@
                                        vector-fold-right)
                      1)))))))
 
-;;; (VECTOR-MAP <f> <vector> ...) -> vector
-;;;     (F <elt> ...) -> value ; N vectors -> N args
-;;;   Constructs a new vector of the shortest length of the vector
-;;;   arguments.  Each element at index I of the new vector is mapped
-;;;   from the old vectors by (F I (vector-ref VECTOR I) ...).  The
-;;;   dynamic order of application of F is unspecified.
+;; Gauche has equivalent ones for these three
 (define (vector-map f vec . vectors)
-  (let ([f   (check-type procedure? f   vector-map)]
-        [vec (check-type vector?    vec vector-map)])
-    (if (null? vectors)
-      (let1 len (vector-length vec)
-        (%vector-map1! f (make-vector len) vec len))
-      (let1 len (%smallest-length vectors
-                                  (vector-length vec)
-                                  vector-map)
-        (%vector-map2+! f (make-vector len) (cons vec vectors) len)))))
+  (apply vector-map-with-index f vec vectors))
 
-;;; (VECTOR-MAP! <f> <vector> ...) -> unspecified
-;;;     (F <elt> ...) -> element' ; N vectors -> N args
-;;;   Similar to VECTOR-MAP, but rather than mapping the new elements
-;;;   into a new vector, the new mapped elements are destructively
-;;;   inserted into the first vector.  Again, the dynamic order of
-;;;   application of F is unspecified, so it is dangerous for F to
-;;;   manipulate the first VECTOR.
 (define (vector-map! f vec . vectors)
-  (let ([f   (check-type procedure? f   vector-map!)]
-        [vec (check-type vector?    vec vector-map!)])
-    (if (null? vectors)
-      (%vector-map1!  f vec vec (vector-length vec))
-      (%vector-map2+! f vec (cons vec vectors)
-                      (%smallest-length vectors
-                                        (vector-length vec)
-                                        vector-map!)))
-    (undefined)))
+  (apply vector-map-with-index! f vec vectors))
 
-;;; (VECTOR-FOR-EACH <f> <vector> ...) -> unspecified
-;;;     (F <elt> ...) ; N vectors -> N args
-;;;   Simple vector iterator: applies F to each index in the range [0,
-;;;   LENGTH), where LENGTH is the length of the smallest vector
-;;;   argument passed, and the respective element at that index.  In
-;;;   contrast with VECTOR-MAP, F is reliably applied to each
-;;;   subsequent elements, starting at index 0 from left to right, in
-;;;   the vectors.
-(define vector-for-each
-  (letrec ([for-each1
-            (^[f vec i len]
-              (when (< i len)
-                (f i (vector-ref vec i))
-                (for-each1 f vec (+ i 1) len)))]
-           [for-each2+
-            (^[f vecs i len]
-              (when (< i len)
-                (apply f i (vectors-ref vecs i))
-                (for-each2+ f vecs (+ i 1) len)))])
-    (^[f vec . vectors]
-      (let ([f   (check-type procedure? f   vector-for-each)]
-            [vec (check-type vector?    vec vector-for-each)])
-        (if (null? vectors)
-          (for-each1 f vec 0 (vector-length vec))
-          (for-each2+ f (cons vec vectors) 0
-                      (%smallest-length vectors
-                                        (vector-length vec)
-                                        vector-for-each)))))))
+(define (vector-for-each f vec . vectors)
+  (apply vector-for-each-with-index f vec vectors))
 
 ;;; (VECTOR-COUNT <predicate?> <vector> ...)
 ;;;       -> exact, nonnegative integer
