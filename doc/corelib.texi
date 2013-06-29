@@ -7733,6 +7733,23 @@ Creates a vector whose elements are @var{obj} @dots{}.
 @c COMMON
 @end defun
 
+@defun vector-tabulate len proc
+@c EN
+Creates a vector of length @var{len}, 
+initializing @var{i}-th
+element of which by @code{(@var{proc} @var{i})}
+for all @var{i} between @code{0} and @var{len}
+@c JP
+長さ@var{len}のベクタを作成し、@code{0}以上@var{len}未満の@var{i}について
+@var{i}番目の要素を@code{(@var{proc} @var{i})}の値で初期化します。
+@c COMMON
+
+@example
+(vector-tabulate 5 (^x (* x x)))
+  @result{} #(0 1 4 9 16)
+@end example
+@end defun
+
 @defun vector-length vector
 [R5RS]
 @c EN
@@ -7866,6 +7883,184 @@ the result vector.
 (vector-copy '#(1 2 3 4 5) 3 7 #f) @result{} #(4 5 #f #f)
 @end example
 @end defun
+
+@defun vector-map proc vec1 vec2 @dots{}
+[R7RS]
+@c EN
+Returns a new vector, @var{i}-th of which is calculated
+by applying @var{proc} on the list of each @var{i}-th element
+of @var{vec1} @var{vec2} @dots{}.
+The length of the result vector is the same as the shortest vector
+of the arguments.
+@c JP
+ベクタ@var{vec1} @var{vec2} @dots{}の各@var{i}番目の要素に@var{proc}を
+適用したものを@var{i}番目の要素とする新たなベクタを作って返します。
+結果のベクタの長さは、引数のベクタのうち最も短いものと同じになります。
+@c COMMON
+
+@example
+(vector-map + '#(1 2 3) '#(4 5 6 7))
+ @result{} #(5 7 9)
+@end example
+
+@c EN
+The actual order @var{proc} is called is undefined, and may change
+in the future versions, so @var{proc} shouldn't use side effects
+affected by the order.
+@c JP
+@var{proc}が呼ばれる順番は定義されておらず、将来のバージョンで変わるかもしれないので、
+@var{proc}では順序に影響されるような副作用を起こしてはいけません。
+@c COMMON
+
+@c EN
+Note: If you use @code{gauche.collection}, you can get the same
+function by @code{(map-to <vector> proc vec1 vec2 @dots{}}.
+@c JP
+註: @code{gauche.collection}をuseして
+@code{(map-to <vector> proc vec1 vec2 @dots{}} としても同じ機能は得られます。
+@c COMMON
+
+@c EN
+Note: SRFI-43 also provides @code{vector-map}, but the API is slightly
+different (@xref{Vector library}).
+SRFI-43's @code{vector-map} is equivalent to 
+@code{vector-map-with-index} below.
+@c JP
+註: SRFI-43も@code{vector-map}という手続きを提供していますが、
+APIが若干異なります(@ref{Vector library}参照)。
+SRFI-43の@code{vector-map}は下の@code{vector-map-with-index}と同じです。
+@c COMMON
+@end defun
+
+@defun vector-map-with-index proc vec1 vec2 @dots{}
+@c EN
+Like @code{vector-map}, but @var{proc} receives the current index
+as the first argument.
+@c JP
+@code{vector-map}と似ていますが、@var{proc}の第1引数に
+現在のインデックスが渡されます。
+@c COMMON
+
+@example
+(vector-map-with-index list '#(a b c d e) '#(A B C))
+ @result{} #((0 a A) (1 b B) (2 c C))
+@end example
+
+@c EN
+This is what SRFI-43 calls @code{vector-map}.
+@c JP
+これがSRFI-43で@code{vector-map}と呼ばれている手続きです。
+@c COMMON
+
+@c EN
+Note: If you use @code{gauche.collection}, you can get the same
+function by @code{(map-to-with-index <vector> proc vec1 vec2 @dots{}}.
+@c JP
+註: @code{gauche.collection}をuseして
+@code{(map-to-with-index <vector> proc vec1 vec2 @dots{}}
+としても同じ機能は得られます。
+@c COMMON
+@end defun
+
+@defun vector-map! proc vec1 vec2 @dots{}
+@c EN
+For each index @var{i}, calls @var{proc} with @var{i}-th index
+of @var{vec1} @var{vec2} @dots{}, and set the result back to
+@var{vec1}.  The value is calculated up to the minimum
+length of input vectors.
+@c JP
+各インデックス@var{i}について、ベクタ@var{vec1} @var{vec2} @dots{}の
+@var{i}番目の要素を引数として@var{proc}を呼び出した結果、@var{vec1}の
+@var{i}番目の要素にセットします。ベクタの長さが異なる場合は最も短いベクタ
+の範囲が計算されます。
+@c COMMON
+
+@example
+(rlet1 v (vector 1 2 3)
+  (vector-map! ($ + 1 $) v))
+  @result{} #(2 3 4)
+
+(rlet1 v (vector 1 2 3 4)
+  (vector-map! + v '#(10 20)))
+  @result{} #(11 22 3 4)
+@end example
+
+@c EN
+Note: SRFI-43 provides @code{vector-map!} with slightly different API
+(@xref{Vector library}).
+It is equivalent to @code{vector-map-with-index!} below.
+@c JP
+註: SRFI-43は@code{vector-map!}を提供していますが、APIが少し異なります
+(@ref{Vector library}参照)。
+SRFI-43の@code{vector-map!}は下に説明する@code{vector-map-with-index!}と同じです。
+@c COMMON
+@end defun
+
+@defun vector-map-with-index! proc vec1 vec2 @dots{}
+@c EN
+Like @code{vector-map!}, but @var{proc} receives the current
+index as the first argument.  This is equivalent to SRFI-43's
+@code{vector-map!} (@xref{Vector library}).
+@c JP
+@code{vector-map!}と似ていますが、@var{proc}の第1引数に
+現在のインデックスが渡されます。SRFI-43で@code{vector-map!}
+と定義されているものと同じ動作です (@ref{Vector library}参照)。
+@c COMMON
+
+@example
+(rlet1 v (vector 'a 'b 'c)
+  (vector-map-with-index! list v))
+  @result{} #((0 a) (1 b) (2 c))
+@end example
+
+@end defun
+
+@defun vector-for-each proc vec1 vec2 @dots{}
+[R7RS]
+@c EN
+For all @var{i} below the minimum length of input vectors,
+calls @var{proc} with @var{i}-th elements of @var{vec1} @var{vec2}
+@dots{}, in increasing order of @var{i}.
+@c JP
+0から渡されたベクタのうち一番短いものの最大のインデックスまでの@var{i}について、
+@var{vec1} @var{vec2} @dots{}のそれぞれ@var{i}番目の要素を引数に
+@var{proc}を呼び出します。
+@c COMMON
+
+@example
+(vector-for-each print '#(a b c))
+ @result{} @r{prints @code{a}, @code{b} and @code{c}}.
+@end example
+
+@c EN
+Note: SRFI-43 provides @code{vector-for-each} with slightly different
+API (@xref{Vector library}).  It is equivalent to 
+@code{vector-for-each-with-index} described below.
+@c JP
+註: SRFI-43も@code{vector-for-each}を提供していますが、APIが少し異なります
+(@ref{Vector library}参照)。
+SRFI-43の@code{vector-for-each}は
+下に説明する@code{vector-for-each-with-index}と同じです。
+@c COMMON
+@end defun
+
+@defun vector-for-each-with-index proc vec1 vec2 @dots{}
+@c EN
+Like @code{vector-for-each}, but @var{proc} receives the current index
+in the first argument.
+
+This is equivalent to SRFI-43's @code{vector-for-each}.
+@c JP
+@code{vector-for-each}と似ていますが、@var{proc}の第1引数に
+現在のインデックスが渡されます。
+
+この手続きはSRFI-43の@var{vector-for-each}と等価です。
+@c COMMON
+@end defun
+
+
+
+
 
 @c ----------------------------------------------------------------------
 @node Hashtables, Treemaps, Vectors, Core library
@@ -10173,7 +10368,7 @@ The following example returns the first line matching the regexp
   (cut generator-find #/XYZ/ read-line))
 @end example
 
-NB: If you want to pick all the lines matching the regexp,
+Note: If you want to pick all the lines matching the regexp,
 like the @code{grep} command, 
 you can use @code{gfilter} and @code{generator->list}.
 @end defun

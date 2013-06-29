@@ -4608,6 +4608,18 @@ store the result and returns @var{vec1}; hence @var{vec1} must be mutable.
  @result{} 3
 @end example
 
+Note: Gauche has builtin @code{vector-map}, @code{vector-map!} and
+@code{vector-for-each}, with slightly different API (no index is
+passed to @var{f}).  R7RS also defines @code{vector-map} and
+@code{vector-for-each} that doesn't pass index.  For new development,
+we recommend using R7RS/Gauche-native @code{vector-map} etc.
+If you want to use Gauche-native @code{vector-map} and @code{srfi-43}
+together, you can import @code{srfi-43} with 
+@code{:except (vector-map vector-map! vector-for-each)} option.
+Gauche provides builtin @code{vector-map-with-index} etc., which
+is the same as SRFI-43's @code{vector-map} etc.  @xref{Vectors},
+for the details.
+
 Note: The generic @code{map} and @code{for-each}
 in @code{gauche.collection} can be used
 on vectors, but the procedure is called without index, and the result
