@@ -688,9 +688,14 @@
 
 (define-module scheme.time
   (export current-jiffy jiffies-per-second current-second)
+  (define-values (%epoch-sec %epoch-usec)
+    (sys-gettimeofday))
   (define (current-second) (sys-time))
-  (define current-jiffy (undefined))    ;;WRITEME
-  (define jiffies-per-second (undefined)) ;;WRITEME
+  (define (current-jiffy)               ;temporary implementation
+    (receive (sec usec) (sys-gettimeofday)
+      (+ (* (- sec %epoch-sec) #e1e6)
+         (- usec %epoch-usec))))
+  (define jiffies-per-second #e1e6)
   (provide "scheme/time"))
 
 (define-module scheme.write
