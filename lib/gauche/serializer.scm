@@ -93,7 +93,7 @@
 (define (input-serializer? obj)
   (and (serializer? obj) (eq? (direction-of obj) :in)))
 (define (output-serializer? obj)
-  (and (serializer? obj) (eq? (direction-of self) :out)))
+  (and (serializer? obj) (eq? (direction-of obj) :out)))
 
 ;; Utility method
 
