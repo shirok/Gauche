@@ -10350,7 +10350,7 @@ The full syntax of @var{hostspec} is @code{protocol:user@@hostname:port},
 where @var{protocol:}, @var{user@@}, or @var{:port} part can be
 omitted.
 
-The @var{protocol} part specifies the protocol to commnucate
+The @var{protocol} part specifies the protocol to communicate
 with the remote host; currently only @code{ssh} is supported, and
 it is also the default when @var{protocol} is omitted.
 The @var{user} part specifies the login name of the remote host.
