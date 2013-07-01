@@ -182,9 +182,14 @@
 ;;      (slot-spec ...)
 ;;      property-clause ...
 ;;
-;;   define-cptr scheme-class-name [qualifiers] c-typename c-class-var
-;;      property-clause ...
-;;      *UNFINISHED*
+;;   define-cptr scheme-class-name [qualifier] c-typename c-class-var
+;;               c-pred c-boxer c-unboxer
+;;               [(flags flag ...)]
+;;               [(print print-proc)]
+;;               [(cleanup cleanup-proc)]
+;;
+;;       qualifier :: :private
+;;       flag :: :keep-identity | :mak-null
 ;;
 ;;   define-symbol scheme-name [c-name]
 ;;      Defines a Scheme symbol.  No Scheme binding is created.
@@ -327,6 +332,9 @@
 ;; define-type name c-type [desc c-predicate unboxer boxer]
 ;;
 ;;   Creates a new stub type for existing scheme type.
+;;   This form itself doesn't generate any C code, but predicate, boxer
+;;   and unboxer will be used by other stub forms to generate C code
+;;   based on stub types.
 
 (define-form-parser define-type args
   (unless (<= 2 (length args) 6)
@@ -1534,51 +1542,80 @@
 
 ;;===================================================================
 ;; Foreign pointers
-;;  NOT FINISHED YET.
+;;
 
-;; (define-class <c-ptr> (<stub>)
-;;   ((c-type     :init-keyword :c-type)
-;;    (qualifiers :init-keyword :qualifiers)))
+;; define-cptr scm-name [qualifier] c-type c-name c-pred c-boxer c-unboxer
+;;    [(flags flag ...)]
+;;    [(print print-proc)]
+;;    [(cleanup cleanup-proc)]
+;;
+;;  qualifier :: :private
+;;  flag :: :keep-identity | :map-nul
 
-;; (define-form-parser define-cptr (scm-name . args)
-;;   (check-arg symbol? scm-name)
-;;   (receive (quals rest) (span keyword? args)
-;;     (cond
-;;      [(lset-difference eqv? quals '(:keep-identity :map-null :private)) pair?
-;;       => (cut error <cgen-stub-error>
-;;               "unknown define-foreign-pointer qualifier(s)" <>)])
-;;     (match rest
-;;       [(c-type c-name)
-;;        (check-arg string? c-name)
-;;        (let1 fptr (make <c-ptr>
-;;                     :scheme-name scm-name :c-type c-type :c-name c-name
-;;                     :qualifiers quals)
-;;          (cgen-add! fptr))])))
+(define-class <c-ptr> (<stub>)
+  ((c-type       :init-keyword :c-type)
+   (private      :init-keyword :private)
+   (flags        :init-keyword :flags)
+   (print-proc   :init-keyword :print-proc)
+   (cleanup-proc :init-keyword :cleanup-proc)))
 
-;; (define-method cgen-emit-body ((self <c-ptr>))
-;;   (when (memv :private (~ self'qualifiers))
-;;     (let1 type (cgen-type-from-name (~ self'scheme-name))
-;;       (p "static ScmClass *" (~ self'c-name))
-;;       (p "#define "(~ type'unboxer)"(obj) "
-;;          "SCM_FOREIGN_POINTER_REF("(~ self'c-type)", obj")
-;;       (p "#define "(~ type'c-predicate)"(obj) "
-;;          "SCM_XTYPEP(obj, "(~ self'c-name)")")
-;;       (p "#define "(~ type'c-boxer)"(ptr) "
-;;          "Scm_MakeForeignPointer("(~ self'c-name)", ptr)")))
-;;   )
+(define-form-parser define-cptr (scm-name . args)
+  (check-arg symbol? scm-name)
+  (receive (quals args) (span keyword? args)
+    (let1 z (lset-difference eqv? quals '(:private))
+      (unless (null? z)
+        (errorf <cgen-stub-error>
+                "invalid qualifier(s) ~s in (define-cptr ~s ...)"
+                 z scm-name)))
+    (match args
+      [(c-type c-varname c-pred c-boxer c-unboxer . clauses)
+       (let ([flags (or (assq-ref clauses 'flags) '())]
+             [print-proc (assq-ref clauses 'print)]
+             [cleanup-proc (assq-ref clauses 'cleanup)])
+         (cond
+          [(lset-difference eqv? flags '(:keep-identity :map-null)) pair?
+           => (cut error <cgen-stub-error>
+                   "unknown define-cptr flag(s)" <>)])
+         (let1 fptr (make <c-ptr>
+                      :scheme-name scm-name :c-type c-type :c-name c-varname
+                      :private (memq :private quals)
+                      :flags flags
+                      :print-proc (and print-proc (car print-proc))
+                      :cleanup-proc (and cleanup-proc (car cleanup-proc)))
+           (make-cgen-type scm-name c-type
+                           (x->string scm-name) ; description
+                           (x->string c-pred)
+                           (x->string c-boxer)
+                           (x->string c-unboxer))
+           (cgen-add! fptr)))]
+      [_ (error <cgen-stub-error> "invalid define-cptr clause for" scm-name)])))
 
-;; (define-method cgen-emit-init ((self <c-ptr>))
-;;   (p "  "(~ self'c-name)" = Scm_MakeForeignPointerClass(mod,"
-;;      "\""(~ self'scheme-name)"\", NULL, NULL, "
-;;      (if (null? (~ self'flags))
-;;        "0"
-;;        (string-join `(,@(if (memq ':keep-identity (~ self'flags))
-;;                           '("SCM_FOREIGN_POINTER_KEEP_IDENTITY")
-;;                           '())
-;;                       ,@(if (memq ':map-null (~ self'flags))
-;;                           '("SCM_FOREIGN_POINTER_MAP_NULL")
-;;                           '()))
-;;                     "|"))))
+(define-method cgen-emit-body ((self <c-ptr>))
+  (when (~ self'private)
+    (let1 type (cgen-type-from-name (~ self'scheme-name))
+      (p "static ScmClass *" (~ self'c-name) ";")
+      (p "#define "(~ type'unboxer)"(obj) "
+         "SCM_FOREIGN_POINTER_REF("(~ self'c-type)", obj)")
+      (p "#define "(~ type'c-predicate)"(obj) "
+         "SCM_XTYPEP(obj, "(~ self'c-name)")")
+      (p "#define "(~ type'boxer)"(ptr) "
+         "Scm_MakeForeignPointer("(~ self'c-name)", ptr)")))
+  )
+
+(define-method cgen-emit-init ((self <c-ptr>))
+  (p "  "(~ self'c-name)" = Scm_MakeForeignPointerClass(Scm_CurrentModule(),"
+     "\""(~ self'scheme-name)"\", "
+     (or (~ self'print-proc) "NULL")", "
+     (or (~ self'cleanup-proc) "NULL")", "
+     (let1 flags (cond-list
+                  [(memq ':keep-identity (~ self'flags))
+                   "SCM_FOREIGN_POINTER_KEEP_IDENTITY"]
+                  [(memq ':map-null (~ self'flags))
+                   "SCM_FOREIGN_POINTER_MAP_NULL"])
+       (if (pair? flags)
+         (string-join flags "|")
+         "0"))
+     ");"))
 
 ;;===================================================================
 ;; Miscellaneous utilities

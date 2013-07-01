@@ -1,3 +1,8 @@
+2013-06-30  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cgen/stub.scm (define-cptr): Experimentally added
+	  stub form to declare a foreign pointer class using ScmForeignPointer.
+
 2013-06-28  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/vecutil.scm: Added.  Supports R7RS vector-map and
