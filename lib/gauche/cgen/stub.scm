@@ -1544,6 +1544,14 @@
 ;; Foreign pointers
 ;;
 
+;; DEFINE-CPTR generates glue code to use ScmForeignPointer easily.
+;; It is suitable when the C structure is mostly passed around using
+;; pointers; most typically, when the foreign library allocates the
+;; structure and returns the pointer to Scheme world.  It is possible
+;; to allocate the structure in Scheme side, but the gist is that
+;; foreign library treats it as a thing in heap, pointed by other
+;; structures etc.
+;;
 ;; define-cptr scm-name [qualifier] c-type c-name c-pred c-boxer c-unboxer
 ;;    [(flags flag ...)]
 ;;    [(print print-proc)]
