@@ -340,10 +340,19 @@
 
 (define-cproc %log (x) ::<number> :fast-flonum :constant
   (unless (SCM_REALP x) (SCM_TYPE_ERROR x "real number"))
-  (let* ([d::double (Scm_GetDouble x)])
+  (let* ([d::double (Scm_GetDouble x)]
+         [shift::double 0.0])
+    (when (or (== d SCM_DBL_POSITIVE_INFINITY)  ; isinf() may not be available
+              (== d SCM_DBL_NEGATIVE_INFINITY))
+      (SCM_ASSERT (SCM_BIGNUMP x))
+      (let* ([z::ScmBits* (cast ScmBits* (-> (SCM_BIGNUM x) values))]
+             [scale::long (Scm_BitsHighest1 z 0 (* (SCM_BIGNUM_SIZE x) SCM_WORD_BITS))])
+        (set! shift (* scale (log 2.0)))
+        (set! d (Scm_GetDouble
+                 (Scm_DivInexact x (Scm_Ash (SCM_MAKE_INT 1) scale))))))
     (if (< (Scm_FlonumSign d) 0)
-      (result (Scm_MakeComplex (log (- (Scm_GetDouble x))) M_PI))
-      (result (Scm_VMReturnFlonum (log (Scm_GetDouble x)))))))
+      (result (Scm_MakeComplex (+ (log (- d)) shift) M_PI))
+      (result (Scm_VMReturnFlonum (+ (log d) shift))))))
 
 (define-cproc %sin (x::<real>) ::<real> :fast-flonum :constant sin)
 (define-cproc %cos (x::<real>) ::<real> :fast-flonum :constant cos)

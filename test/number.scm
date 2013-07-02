@@ -2113,6 +2113,20 @@
               (with-module gauche.internal %alt-lgamma))
   )
 
+;; log on huge number - naive use of Scm_GetDouble overflows
+(let-syntax ([log-tester
+              (syntax-rules ()
+                [(_ input)
+                 (let1 factor (expt 2 (integer-length input))
+                   (test* (write-to-string '(log input))
+                          (+ (log factor) (log (/ input factor)))
+                          (log input)))])])
+  (log-tester (expt 2 2048))
+  (log-tester (- (expt 2 2048)))
+  (log-tester (+ (expt 3 2048) (expt 3 2047)))
+  (log-tester (- (expt 7 7715)))
+  )
+
 ;;------------------------------------------------------------------
 (test-section "ffx optimization")
 
