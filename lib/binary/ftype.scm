@@ -31,7 +31,26 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
-;; Experimental
+;; This module provides means to define and manipulate
+;; structured binary data.
+;;
+;; Foreign types and foreign objects
+;;
+;; A @emph{foreign type}, or @code{ftype}, refers to a way of representing
+;; external data used outside the Scheme world.  Ftypes are first-class
+;; objects in Gauche.  It can be used to extract or construct structured data
+;; from/in a plain bytevector (@code{u8vector}).
+;;
+;; A @emph{foreign object} , or @code{fobject}, is a Scheme object
+;; that packages a chunk of binary data (@emph{storage}) with ftype.
+;; It behaves like a Scheme record---it can have slots and you can
+;; get and set values.  
+;; However, it is possible to share storage among different Scheme objects.
+;; For example, you can read binary data (e.g. image file content)
+;; into an u8vector, then extract a part of it (e.g. image header)
+;; as an fobject.  When you do so, the extracted fobject shares its storage
+;; with the original u8vector; you can modify the header of the image
+;; content through the extracted fobject.
 
 (define-module binary.ftype
   (use gauche.uvector)
@@ -94,19 +113,19 @@
 (define-method write-object ((ftd ftype) port)
   (format port "#<ftype ~a>" (ftype-name ftd)))
 
-(define-record-type (ftype:struct ftype)
-  %make-ftype:struct #t
+(define-record-type (ftype:struct ftype) %make-ftype:struct #t
   slots                      ; an assoc list of name and ftype:slot
   )
 
-(define-record-type (ftype:array ftype)
-  %make-ftype:array #t
+(define-record-type (ftype:array ftype) %make-ftype:array #t
   (element-type ftype-element-type)     ; ftype
   (num-elements ftype-num-elements)     ; count
+  (element-alignment ftype-element-alignment) ; default to natural alignment
+                                              ; of element-type, can be
+                                              ; overridden.
   )
 
-(define-record-type (ftype:bitfield ftype)
-  %make-ftype:bitfield #t
+(define-record-type (ftype:bitfield ftype) %make-ftype:bitfield #t
   type                                  ; ftype
   bit-position                          ; start bit position
   bit-width                             ; width
