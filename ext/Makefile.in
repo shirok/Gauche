@@ -3,6 +3,8 @@ SUBDIRS= gauche util srfi uvector threads charconv binary net termios \
          fcntl file sxml syslog dbm mt-random bcrypt digest vport \
          text zlib sparse peg windows tls
 
+.PHONY: $(SUBDIRS)
+
 CONFIG_GENERATED = Makefile Makefile.ext
 
 SHELL       = @SHELL@
@@ -29,8 +31,18 @@ TEMPLATES = template.Makefile.in template.configure.ac \
 	    template.extensionlib.stub template.module.scm \
 	    template.test.scm template.DIST
 
-all:
-	for d in $(SUBDIRS); do (cd $$d; $(MAKE) default) || exit 1; done
+all: $(SUBDIRS)
+
+$(SUBDIRS):
+	(cd $@; $(MAKE) default)
+
+termios uvector sparse: util
+
+threads bcrypt sxml vport text mt-random digest windows: uvector
+
+tls: vport
+
+bcrypt: mt-random
 
 test : check
 
