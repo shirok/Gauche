@@ -1,7 +1,12 @@
+2013-07-03  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/common-macros.scm (dotimes, dolist): Support omission
+	  of 'variable'.
+
 2013-07-02  Shiro Kawai  <shiro@acm.org>
 
 	* src/libnum.scm (%log): Handle input even if it can't fit in
-	  IEEE double e.g. (log (expt 2 2048)) => 616.5094311198334 
+	  IEEE double e.g. (log (expt 2 2048)) => 616.5094311198334
 
 2013-06-30  Shiro Kawai  <shiro@acm.org>
 

@@ -2231,27 +2231,61 @@ The tricky use of @code{letrec} in the expansion is to make
 
 
 
-@defmac dotimes (variable limit [result]) body @dots{}
-@defmacx dolist (variable lexpr [result]) body @dots{}
+@defmac dotimes ([variable] expr [result]) body @dots{}
+@defmacx dolist ([variable] expr [result]) body @dots{}
 @c EN
-Imported from Common Lisp.  These are equivalent to the following forms,
-respectively.
+Imported from Common Lisp.  The full form are
+expanded as follows:
 @c JP
-Common Lispからの輸入です。それぞれ以下のように展開されます。
+Common Lispからの輸入です。完全なフォームは以下のように展開されます。
 @c COMMON
 @example
-(dotimes (variable limit result) body @dots{})
+(dotimes (variable expr result) body @dots{})
 ==>
-(do ((tlimit limit)
+(do ((limit expr)
      (variable 0 (+ variable 1)))
-    ((>= variable tlimit) result)
+    ((>= variable expr) result)
   body @dots{})
 
-(dolist (variable lexpr result) body @dots{})
+(dolist (variable expr result) body @dots{})
 ==>
 (begin
-  (for-each (lambda (variable) body @dots{}) lexpr)
+  (for-each (lambda (variable) body @dots{}) expr)
   (let ((variable '())) result))
+@end example
+
+@c EN
+(The reason we bind @var{variable} to @code{()} to evaluate @var{result}
+in @code{dolist} is the CL compatibility.)
+@c JP
+(@code{dolist}で@var{result}の評価時に@var{variable}を@code{()}に
+束縛しているのはCLとの互換性のためです。)
+@c COMMON
+
+@c EN
+You can omit @var{result}, or both @var{result} and @var{variable}.
+That is, if the first argument has two elements, they're @var{variable}
+and @var{expr}.  In which case, the result of these forms is
+undefined.
+
+If both @var{result} and @var{variable} are omitted, these forms
+just repeatedly executes @var{body} @dots{}
+number of times determined by @var{expr}.
+@c JP
+@var{result}、もしくは@var{result}と@var{variable}両方を省略することが
+できます。つまり、最初の引数が2要素であれば、それは@var{variable}と
+@var{expr}だということです。その場合、これらのフォームの結果は未定義です。
+
+もし@var{result}と@var{variable}の両方が省略されたら、
+@var{expr}で決定される回数だけ単に@var{body} @dots{}を繰り返し実行します。
+@c COMMON
+
+@example
+;; print "a" 10 times.
+(dotimes (10) (print "a")) 
+
+;; print "a" (length lst) times.
+(dolist (lst) (print "a"))
 @end example
 @end defmac
 

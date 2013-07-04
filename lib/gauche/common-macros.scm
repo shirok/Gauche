@@ -332,15 +332,24 @@
 (define-syntax dotimes
   (syntax-rules ()
     [(_ (var n res) . body)
-     (do ((limit n)
-          (var 0 (+ var 1)))
-         ((>= var limit) res)
+     (do ([limit n]
+          [var 0 (+ var 1)])
+         [(>= var limit) res]
        . body)]
     [(_ (var n) . body)
-     (do ((limit n)
-          (var 0 (+ var 1)))
-         ((>= var limit))
+     (do ([limit n]
+          [var 0 (+ var 1)])
+         [(>= var limit)]
        . body)]
+    [(_ (n) . body)
+     (let1 i n
+       (cond [(<= i 0)]
+             [(infinite? i)
+              (do () (#f) . body)] ;avoid unnecessary flonum calculation
+             [else
+              (do ([i i (- i 1)])
+                  [(<= i 0)]
+                . body)]))]
     [(_ . other)
      (syntax-error "malformed dotimes" (dotimes . other))]))
 
@@ -352,6 +361,8 @@
      ]
     [(_ (var lis) . body)
      (begin (for-each (lambda (var) . body) lis) '())]
+    [(_ (lis) . body)
+     (begin (for-each (lambda (_) . body) lis) '())]
     [(_ . other)
      (syntax-error "malformed dolist" (dolist . other))]))
 
