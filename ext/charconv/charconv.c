@@ -164,7 +164,7 @@ static int conv_input_filler(ScmPort *port, int mincnt)
         if (insize == 0) {
             outroom = SCM_PORT_BUFFER_ROOM(port);
             result = jconv_reset(info, outbuf, outroom);
-            if (result < 0) {
+            if (result == OUTPUT_NOT_ENOUGH) {
                 /* The port buffer doesn't have enough space to contain the
                    finishing sequence.  Its unusual, for the port buffer
                    must be almost empty at this time, and the finishing
