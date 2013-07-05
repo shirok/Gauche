@@ -301,7 +301,7 @@ void Scm_WriteBinaryF64(ScmObj sval, ScmPort *oport, ScmSymbol *endian)
  * Getters
  */
 
-static void extract(ScmUVector *uv, unsigned char *buf, int off, int eltsize)
+static void extract(ScmUVector *uv, char *buf, int off, int eltsize)
 {
     int size = Scm_UVectorSizeInBytes(uv);
     unsigned char *b = (unsigned char*)SCM_UVECTOR_ELEMENTS(uv) + off;
@@ -320,7 +320,7 @@ ScmObj Scm_GetBinaryU8(ScmUVector *uv, int off, ScmSymbol *endian)
 {
     unsigned char b;
     CHECK_ENDIAN(endian);
-    extract(uv, &b, off, 1);
+    extract(uv, (char *)&b, off, 1);
     return SCM_MAKE_INT(b);
 }
 
@@ -328,7 +328,7 @@ ScmObj Scm_GetBinaryS8(ScmUVector *uv, int off, ScmSymbol *endian)
 {
     unsigned char b; int r;
     CHECK_ENDIAN(endian);
-    extract(uv, &b, off, 1);
+    extract(uv, (char *)&b, off, 1);
     r = b;
     if (r >= 128) r -= 256;
     return SCM_MAKE_INT(r);
@@ -419,7 +419,7 @@ ScmObj Scm_GetBinaryF64(ScmUVector *uv, int off, ScmSymbol *endian)
  * Putters
  */
 
-static void inject(ScmUVector *uv, unsigned char *buf, int off, int eltsize)
+static void inject(ScmUVector *uv, char *buf, int off, int eltsize)
 {
     int size = Scm_UVectorSizeInBytes(uv);
     unsigned char *b = (unsigned char*)SCM_UVECTOR_ELEMENTS(uv) + off;
@@ -439,14 +439,14 @@ void Scm_PutBinaryU8(ScmUVector *uv, int off, ScmObj val, ScmSymbol *e)
 {
     u_char v = (u_char)Scm_GetIntegerU8Clamp(val, SCM_CLAMP_NONE, NULL);
     CHECK_ENDIAN(e);
-    inject(uv, &v, off, 1);
+    inject(uv, (char *)&v, off, 1);
 }
 
 void Scm_PutBinaryS8(ScmUVector *uv, int off, ScmObj val, ScmSymbol *e)
 {
     u_char v = (u_char)Scm_GetInteger8Clamp(val, SCM_CLAMP_NONE, NULL);
     CHECK_ENDIAN(e);
-    inject(uv, &v, off, 1);
+    inject(uv, (char *)&v, off, 1);
 }
 
 void Scm_PutBinaryU16(ScmUVector *uv, int off, ScmObj val, ScmSymbol *e)
