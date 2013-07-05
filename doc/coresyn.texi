@@ -1656,7 +1656,8 @@ value is returned.
 @defspec let ((var expr) @dots{}) body @dots{}
 @defspecx let* ((var expr) @dots{}) body @dots{}
 @defspecx letrec ((var expr) @dots{}) body @dots{}
-[R5RS]
+@defspecx letrec* ((var expr) @dots{}) body @dots{}
+[R5RS][R6RS][R7RS]
 @c EN
 Creates a local scope where @var{var} @dots{} are bound to the
 value of @var{expr} @dots{}, then evaluates @var{body} @dots{}.
@@ -1671,20 +1672,36 @@ the value(s) of this form.
 @c COMMON
 
 @c EN
-The three forms differ in terms of the scope @var{expr}s are evaluated.
+The four forms differ in terms of the scope and the order 
+@var{expr}s are evaluated.
 @code{Let} evaluates @var{expr}s before (outside of) @code{let} form.
-@code{Let*} evaluates @var{expr}s in the scope where @var{var}s before
-it are bound.   @code{Letrec} evaluates @var{expr}s in the environment
-where @var{var}s are already bound (to an undefined value, initially).
+The order of evaluation of @var{expr}s is undefined, and the compiler
+may reorder those @var{expr}s freely for optimization.
+@code{Let*} evaluates @var{expr}s, in the order they appears,
+and each @var{expr} is evaluated in the scope 
+where @var{var}s before it are bound.
+
+@code{Letrec} evaluates @var{expr}s, in an undefined order,
+in the environment where @var{var}s are already bound
+(to an undefined value, initially).
 @code{letrec} is necessary to define mutually recursive local procedures.
+Finally, @code{letrec*} uses the same scope rule as @code{letrec},
+and it evaluates @var{expr} in the order of appearance.
 @c JP
-これらの3つのフォームの違いは、@var{expr}が評価される時点のスコープにあります。
+これらの3つのフォームの違いは、@var{expr}が評価される時点のスコープと順序にあります。
 @code{let}は@var{expr}を@var{let}フォームに入る前の環境において評価します。
-@code{let*}は@var{expr}を順に、それ以前の@var{var}が束縛された環境において評価して
-ゆきます。@var{letrec}は全ての@var{var}が仮想的に不定の値に束縛された環境において
-各@var{expr}を評価します。@var{letrec}は相互再帰的なローカル関数を定義する場合に
-必要です。
+各@var{expr}の評価される順序は不定で、コンパイラは最適化のために自由に順序を
+変更することがあります。
+一方、@code{let*}は@var{expr}を現れた順に、
+それ以前の@var{var}が束縛された環境において評価してゆきます。
+
+@code{letrec}は全ての@var{var}が仮想的に不定の値に束縛された環境において
+各@var{expr}を(順不同で)評価します。
+@code{letrec}は相互再帰的なローカル関数を定義する場合に必要です。
+最後に、@code{letrec*}は@code{letrec}と同じスコープ規則を使い、
+さらに@var{expr}を現れる順に評価するものです。
 @c COMMON
+
 @example
 (define x 'top-x)
 
@@ -1699,6 +1716,49 @@ where @var{var}s are already bound (to an undefined value, initially).
          (list (lambda (a b) (cons a (cons b 0)))))
   (list 1 2))  @result{} 3
 @end example
+
+@c EN
+You need to use @code{letrec*} if evaluation of one @var{expr} requires
+the value of @var{var} that appeara before the @var{expr}.  In the following
+example, calculating the value of @var{a} and @var{b} requires the value
+of @var{cube}, so you need @code{letrec*}.   (Note the difference from
+the above example, where @emph{calculating} the value of @var{list}
+doesn't need to take the value of @var{cons} bound in the same @code{letrec}.
+The value of @var{cons} isn't required until @var{list} is actually applied.)
+@c JP
+ひとつの@var{expr}を評価するために、それまでに現れた@var{var}の値を参照する
+必要がある時は、@code{letrec*}を使わなければなりません。
+下の例では、@var{a}と@var{b}の値を計算するために@var{cube}の値を
+使っているので、@code{letrec*}にする必要があります。
+(上の例との違いに注意してください。上の例では、@var{list}の値を@emph{計算する}
+時には、同時に束縛されている@var{cons}の値は必要とされません。@var{cons}の値が
+必要になるのは@var{list}が実際に適用される時です。)
+@c COMMON
+
+@example
+(letrec* ((cube (lambda (x) (* x x x)))
+          (a (+ (cube 1) (cube 12)))
+          (b (+ (cube 9) (cube 10))))
+  (= a b)) @result{} #t
+@end example
+
+@c EN
+This example happens to work with @code{letrec} in the current Gauche, but
+it is not guaranteed to keep working in future.  You just should not
+rely on evaluation order when you use @code{letrec}.
+In retrospect, it would be a lot simpler if we only have @code{letrec*}.
+Unfortunately @code{letrec} preceded for long time in Scheme history
+and it's hard to remove that.  Besides, @code{letrec} does have more
+opportunities to optimize than @code{letrec*}.
+@c JP
+この例は現在のGaucheでは@code{letrec}を使ってもたまたま動作しますが、
+将来にわたって動作し続けることは保証されません。
+@code{letrec}を使うなら評価順に依存しないように、プログラマが気をつけないといけません。
+振り返ってみれば、@code{letrec*}だけが提供されてた方が単純だったでしょう。
+生憎、Schemeの歴史の中では@code{letrec}の方がずっと前からあったので、いまさら
+取り除くこともできないのです。また、@code{letrec*}に出来ない最適化が
+@code{letrec}だと可能になることもあります。
+@c COMMON
 @end defspec
 
 @defmac let1 var expr body @dots{}
