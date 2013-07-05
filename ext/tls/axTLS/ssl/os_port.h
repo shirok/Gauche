@@ -41,6 +41,7 @@
 extern "C" {
 #endif
 
+#include "os_int.h"
 #include <stdio.h>
 
 #if defined(WIN32)
@@ -116,33 +117,19 @@ extern "C" {
 #pragma comment(lib, "WS2_32.lib")
 #pragma comment(lib, "AdvAPI32.lib")
 
-#ifndef __MINGW32__
-typedef UINT8 uint8_t;
-typedef INT8 int8_t;
-typedef UINT16 uint16_t;
-typedef INT16 int16_t;
-typedef UINT32 uint32_t;
-typedef INT32 int32_t;
-typedef UINT64 uint64_t;
-typedef INT64 int64_t;
+typedef int socklen_t;
 
+EXP_FUNC void STDCALL gettimeofday(struct timeval* t,void* timezone);
+#if !defined(__MINGW32__)
 EXP_FUNC int STDCALL strcasecmp(const char *s1, const char *s2);
 EXP_FUNC int STDCALL getdomainname(char *buf, int buf_size);
-#else  /* __MINGW32__ */
-#include <inttypes.h>
-#include <malloc.h>
-#endif /* __MINGW32__ */
+#endif /*!defined(__MINGW32__)*/
 
-typedef int socklen_t;
-EXP_FUNC void STDCALL gettimeofday(struct timeval* t,void* timezone);
+#if defined(__MINGW32__)
+#include <malloc.h>
+#endif /*defined(__MINGW32__)*/
 
 #else   /* Not Win32 */
-
-#ifdef CONFIG_PLATFORM_SOLARIS
-#include <inttypes.h>
-#else
-#include <stdint.h>
-#endif /* Not Solaris */
 
 #include <unistd.h>
 #include <pwd.h>

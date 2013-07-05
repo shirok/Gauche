@@ -1,3 +1,7 @@
+2013-07-05  Shiro Kawai  <shiro@acm.org>
+
+	* ext/tls: Updated to axTLS 1.4.9
+
 2013-07-04  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm: Support letrec*.

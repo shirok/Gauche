@@ -1,5 +1,5 @@
-*** /home/shiro/src/axTLS/ssl/tls1.c	Thu May 24 22:54:46 2012
---- axTLS/ssl/tls1.c	Tue Apr 16 16:00:28 2013
+*** /home/shiro/src/axTLS/ssl/tls1.c	Sun Jan  6 10:17:37 2013
+--- axTLS/ssl/tls1.c	Fri Jul  5 13:38:36 2013
 ***************
 *** 2160,2166 ****
   EXP_FUNC SSL * STDCALL ssl_client_new(SSL_CTX *ssl_ctx, int client_fd, const
@@ -61,7 +61,7 @@
   }
   
 *** /home/shiro/src/axTLS/ssl/test/ssltest.c	Fri Jun 24 03:13:05 2011
---- axTLS/ssl/test/ssltest.c	Tue Apr 16 16:00:28 2013
+--- axTLS/ssl/test/ssltest.c	Fri Jul  5 11:43:29 2013
 ***************
 *** 758,776 ****
   static int client_socket_init(uint16_t port)
@@ -238,7 +238,7 @@
       ret = 0;        /* all ok */
       printf("**** ALL TESTS PASSED ****\n"); TTY_FLUSH();
 *** /home/shiro/src/axTLS/ssl/test/killopenssl.sh	Tue Dec 28 22:06:26 2010
---- axTLS/ssl/test/killopenssl.sh	Tue Apr 16 16:00:28 2013
+--- axTLS/ssl/test/killopenssl.sh	Fri Jul  5 11:43:29 2013
 ***************
 *** 1,2 ****
   #!/bin/sh
@@ -248,7 +248,7 @@
 ! awk '{print $1}' "../ssl/openssl.pid" | xargs kill -9
 ! rm -f ../ssl/openssl.pid
 *** /home/shiro/src/axTLS/ssl/test/killgnutls.sh	Fri May  6 14:12:41 2011
---- axTLS/ssl/test/killgnutls.sh	Tue Apr 16 16:00:28 2013
+--- axTLS/ssl/test/killgnutls.sh	Fri Jul  5 11:43:29 2013
 ***************
 *** 1,2 ****
   #!/bin/sh
@@ -256,11 +256,11 @@
 --- 1,2 ----
   #!/bin/sh
 ! #ps -ef|grep gnutls-serv | /usr/bin/awk '{print $2}' |xargs kill -9
-*** /home/shiro/src/axTLS/ssl/os_port.h	Fri Jan 14 13:13:14 2011
---- axTLS/ssl/os_port.h	Tue Apr 16 16:00:28 2013
+*** /home/shiro/src/axTLS/ssl/os_port.h	Fri Jun  8 00:43:25 2012
+--- axTLS/ssl/os_port.h	Fri Jul  5 13:38:36 2013
 ***************
-*** 58,63 ****
---- 58,65 ----
+*** 59,64 ****
+--- 59,66 ----
   
   #ifdef WIN32
   
@@ -270,47 +270,24 @@
   #if defined(_WIN32_WCE)
   #include <basetsd.h>
 ***************
-*** 114,119 ****
---- 116,122 ----
-  #pragma comment(lib, "WS2_32.lib")
-  #pragma comment(lib, "AdvAPI32.lib")
+*** 118,125 ****
+--- 120,133 ----
+  typedef int socklen_t;
   
-+ #ifndef __MINGW32__
-  typedef UINT8 uint8_t;
-  typedef INT8 int8_t;
-  typedef UINT16 uint16_t;
-***************
-*** 122,132 ****
-  typedef INT32 int32_t;
-  typedef UINT64 uint64_t;
-  typedef INT64 int64_t;
-- typedef int socklen_t;
-  
-- EXP_FUNC void STDCALL gettimeofday(struct timeval* t,void* timezone);
+  EXP_FUNC void STDCALL gettimeofday(struct timeval* t,void* timezone);
++ #if !defined(__MINGW32__)
   EXP_FUNC int STDCALL strcasecmp(const char *s1, const char *s2);
   EXP_FUNC int STDCALL getdomainname(char *buf, int buf_size);
-  
-  #else   /* Not Win32 */
-  
---- 125,140 ----
-  typedef INT32 int32_t;
-  typedef UINT64 uint64_t;
-  typedef INT64 int64_t;
-  
-  EXP_FUNC int STDCALL strcasecmp(const char *s1, const char *s2);
-  EXP_FUNC int STDCALL getdomainname(char *buf, int buf_size);
-+ #else  /* __MINGW32__ */
-+ #include <inttypes.h>
-+ #include <malloc.h>
-+ #endif /* __MINGW32__ */
++ #endif /*!defined(__MINGW32__)*/
 + 
-+ typedef int socklen_t;
-+ EXP_FUNC void STDCALL gettimeofday(struct timeval* t,void* timezone);
++ #if defined(__MINGW32__)
++ #include <malloc.h>
++ #endif /*defined(__MINGW32__)*/
   
   #else   /* Not Win32 */
   
 *** /home/shiro/src/axTLS/ssl/os_port.c	Sat Jan  1 21:49:03 2011
---- axTLS/ssl/os_port.c	Tue Apr 16 16:00:28 2013
+--- axTLS/ssl/os_port.c	Fri Jul  5 11:43:29 2013
 ***************
 *** 56,61 ****
 --- 56,62 ----
@@ -332,7 +309,7 @@
   
   #undef malloc
 *** /home/shiro/src/axTLS/ssl/loader.c	Sat Feb 11 01:34:56 2012
---- axTLS/ssl/loader.c	Tue Apr 16 16:00:28 2013
+--- axTLS/ssl/loader.c	Fri Jul  5 11:43:29 2013
 ***************
 *** 82,88 ****
   #ifdef CONFIG_SSL_HAS_PEM
@@ -384,8 +361,46 @@
               ret = SSL_ERROR_NOT_SUPPORTED;
               break;
       }
+*** /home/shiro/src/axTLS/crypto/os_int.h	Fri Jun  8 00:43:25 2012
+--- axTLS/crypto/os_int.h	Fri Jul  5 13:38:36 2013
+***************
+*** 41,47 ****
+  extern "C" {
+  #endif
+  
+! #if defined(WIN32)
+  typedef UINT8 uint8_t;
+  typedef INT8 int8_t;
+  typedef UINT16 uint16_t;
+--- 41,47 ----
+  extern "C" {
+  #endif
+  
+! #if defined(WIN32) && !defined(__MINGW32__)
+  typedef UINT8 uint8_t;
+  typedef INT8 int8_t;
+  typedef UINT16 uint16_t;
+*** /home/shiro/src/axTLS/crypto/crypto_misc.c	Sun Jul  1 01:10:26 2012
+--- axTLS/crypto/crypto_misc.c	Fri Jul  5 13:38:36 2013
+***************
+*** 48,54 ****
+  static HCRYPTPROV gCryptProv;
+  #endif
+  
+! #if (!defined(CONFIG_USE_DEV_URANDOM) && !defined(CONFIG_WIN32_USE_CRYPTO_LIB))
+  /* change to processor registers as appropriate */
+  #define ENTROPY_POOL_SIZE 32
+  #define ENTROPY_COUNTER1 ((((uint64_t)tv.tv_sec)<<32) | tv.tv_usec)
+--- 48,54 ----
+  static HCRYPTPROV gCryptProv;
+  #endif
+  
+! #if (!defined(CONFIG_USE_DEV_URANDOM) && !defined(CONFIG_WIN32_USE_CRYPTO_LIB)) || !defined(ENTROPY_POOL_SIZE) /* The last condition added to compile on MinGW */
+  /* change to processor registers as appropriate */
+  #define ENTROPY_POOL_SIZE 32
+  #define ENTROPY_COUNTER1 ((((uint64_t)tv.tv_sec)<<32) | tv.tv_usec)
 *** /home/shiro/src/axTLS/crypto/bigint_impl.h	Sat Jan  1 21:45:25 2011
---- axTLS/crypto/bigint_impl.h	Tue Apr 16 16:00:28 2013
+--- axTLS/crypto/bigint_impl.h	Fri Jul  5 11:43:29 2013
 ***************
 *** 61,67 ****
   typedef uint32_t long_comp;     /**< A double precision component. */
@@ -404,7 +419,7 @@
   #define COMP_MAX            0xFFFFFFFFFFFFFFFFui64
   #else
 *** /home/shiro/src/axTLS/config/config.h	Wed Dec 31 14:00:00 1969
---- axTLS/config/config.h	Fri Jul  5 11:32:49 2013
+--- axTLS/config/config.h	Fri Jul  5 11:45:01 2013
 ***************
 *** 0 ****
 --- 1,143 ----
