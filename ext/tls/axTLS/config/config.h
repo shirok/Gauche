@@ -107,8 +107,9 @@
 #undef CONFIG_INTEGER_16BIT
 #undef CONFIG_INTEGER_8BIT
 
-/* The following macros rename APIs in crypto/*.  This is to avoid build-time
-   problems when those names conflict with system-provided ones. */
+/* The following macros rename APIs defined in the files under crypto
+   directory. This is to avoid build-time problems when those names
+   conflict with system-provided ones. */
 #define AES_set_key       AES_set_key__axtls
 #define AES_cbc_encrypt   AES_cbc_encrypt__axtls
 #define AES_cbc_decrypt   AES_cbc_decrypt__axtls
