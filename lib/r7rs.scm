@@ -219,7 +219,7 @@
   (define-syntax+ let        gauche)
   (define-syntax+ let*       gauche)
   (define-syntax+ letrec     gauche)
-  (define letrec* (undefined))  ;;WRITEME
+  (define-syntax+ letrec*    gauche)
   (define-syntax+ let-values srfi-11)
   (define-syntax+ let*-values srfi-11)
   (define-syntax+ begin      gauche)
