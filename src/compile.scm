@@ -512,7 +512,7 @@
 ;;   by this node (let* is expanded to the nested $let in pass 1).
 (define-simple-struct $let $LET $let
   (src       ; original source for debugging
-   type      ; indicates scope: 'let for normal let, 'rec for letrec.
+   type      ; indicates scope: 'let for normal let, 'rec[*] for letrec[*], 
    lvars     ; list of lvars
    inits     ; list of IForms to initialize lvars
    body      ; IForm for the body
@@ -704,8 +704,9 @@
         (rec (+ ind 2) ($if-then iform)) (nl (+ ind 2))
         (rec (+ ind 2) ($if-else iform)) (display ")")]
        [($LET)
-        (let* ([hdr  (format "($let~a (" (case ($let-type iform)
-                                           ((let) "") ((rec) "rec")))]
+        (let* ([hdr  (format "($let~a ("
+                             (case ($let-type iform)
+                               [(let) ""] [(rec) "rec"] [(rec*) "rec*"]))]
                [xind (+ ind (string-length hdr))]
                [first #t])
           (display hdr)
@@ -994,8 +995,8 @@
              ($let ($*-src iform) ($let-type iform)
                    newlvs
                    (imap (cute iform-copy <> (case ($let-type iform)
-                                               ((let) lv-alist)
-                                               ((rec) newalist)))
+                                               [(let) lv-alist]
+                                               [(rec rec*) newalist]))
                          ($let-inits iform))
                    (iform-copy ($let-body iform) newalist)))]
    [($RECEIVE) (receive (newlvs newalist)
@@ -1604,7 +1605,7 @@
            [vars  (map car intdefs.)]
            [lvars (imap make-lvar+ vars)]
            [newenv (cenv-extend cenv (%map-cons vars lvars) LEXICAL)])
-      ($let #f 'rec lvars
+      ($let #f 'rec* lvars
             (imap2 (cut pass1/body-init <> <> newenv) lvars (map cdr intdefs.))
             (pass1/body-rest exprs newenv)))))
 
@@ -2501,21 +2502,19 @@
     [_ (error "syntax-error: malformed let*:" form)]))
 
 (define-pass1-syntax (letrec form cenv) :null
-  (pass1/letrec form cenv "letrec"))
+  (pass1/letrec form cenv "letrec" 'rec))
 
-;; letrec* isn't supported yet since $let optiomization can change the order
-;; of execution of init expressions.
-;;(define-pass1-syntax (letrec* form cenv) :gauche
-;;  (pass1/letrec form cenv "letrec*"))
+(define-pass1-syntax (letrec* form cenv) :gauche
+  (pass1/letrec form cenv "letrec*" 'rec*))
 
-(define (pass1/letrec form cenv name)
+(define (pass1/letrec form cenv name type)
   (match form
     [(_ () body ...)
      (pass1/body body cenv)]
     [(_ ((var expr) ...) body ...)
      (let* ([lvars (imap make-lvar+ var)]
             [newenv (cenv-extend cenv (%map-cons var lvars) LEXICAL)])
-       ($let form 'rec lvars
+       ($let form type lvars
              (map (^[lv init]
                     (rlet1 iexpr
                         (pass1 init (cenv-add-name newenv (lvar-name lv)))
@@ -3013,7 +3012,7 @@
 (define (pass2/shrink-let-frame iform lvars obody)
   (pass2/intermediate-lref-removal lvars obody)
   (receive (new-lvars new-inits removed-inits)
-      (pass2/remove-unused-lvars lvars)
+      (pass2/remove-unused-lvars lvars ($let-type iform))
     (cond [(null? new-lvars)
            (if (null? removed-inits)
              obody
@@ -3070,19 +3069,33 @@
                                      arg))
                            ($call-args node)))))
 
-(define (pass2/remove-unused-lvars lvars)
+;; Scan LVARS and returns three values:
+;;   - List of needed lvars
+;;   - List of init expressions, corresponding to the first return value.
+;;   - List of non-transparent init expressions for removed lvars---they
+;;     need to be executed at the top of the body of the binding construct.
+;;
+;; We have to be careful optimizing letrec* - we can't reorder init
+;; when it can have side effects.  However, we still have to remove lambda
+;; form that is no longer used---that means the lambda form is inlined
+;; elsewhere, and its body has been modified to suit the inlined environment,
+;; so we can no longer compile the $lambda node safely.
+(define (pass2/remove-unused-lvars lvars type)
   (let loop ([lvars lvars] [rl '()] [ri '()] [rr '()])
     (cond [(null? lvars)
            (values (reverse rl) (reverse ri) (reverse rr))]
           [(and (zero? (lvar-ref-count (car lvars)))
                 (zero? (lvar-set-count (car lvars))))
-           (loop (cdr lvars) rl ri
-                 (let1 init (lvar-initval (car lvars))
-                   (cond [($lref? init)
-                          (lvar-ref--! ($lref-lvar init))
-                          rr]
-                         [(transparent? init) rr]
-                         [else (cons init rr)])))]
+           (let1 init (lvar-initval (car lvars))
+             (if (and (eq? type 'rec*)
+                      (not (transparent? init)))
+               (loop (cdr lvars) (cons (car lvars) rl) (cons init ri) rr)
+               (loop (cdr lvars) rl ri
+                     (cond [($lref? init)
+                            (lvar-ref--! ($lref-lvar init))
+                            rr]
+                           [(transparent? init) rr]
+                           [else (cons init rr)]))))]
           [else
            (loop (cdr lvars)
                  (cons (car lvars) rl)
@@ -3987,7 +4000,7 @@
                     [fs (pass4/scan ($if-then iform) bs fs t? labels)])
                (pass4/scan ($if-else iform) bs fs t? labels))]
   [($LET)    (let* ([new-bs (append ($let-lvars iform) bs)]
-                    [bs (if (eq? ($let-type iform) 'rec) new-bs bs)]
+                    [bs (if (memv ($let-type iform) '(rec rec*)) new-bs bs)]
                     [fs (pass4/scan* ($let-inits iform) bs fs t? labels)])
                (pass4/scan ($let-body iform) new-bs fs #f labels))]
   [($RECEIVE)(let ([fs (pass4/scan ($receive-expr iform) bs fs t? labels)]
@@ -4547,7 +4560,7 @@
                (compiled-code-set-label! ccb merge-label)
                (imax dinit
                     (+ dbody CONT_FRAME_SIZE ENV_HEADER_SIZE nlocals))))])]
-        [(rec)
+        [(rec rec*)
          (receive (closures others)
              (partition-letrec-inits inits ccb (cons lvars renv) 0 '() '())
            (cond
