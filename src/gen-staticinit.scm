@@ -133,7 +133,6 @@
              "                );")
   (cgen-init "Scm_EvalCStringRec(\" (define-macro (use module . options) `(begin (require ,(module-name->path module)) (import (,module ,@options))))\","
              "                 SCM_OBJ(Scm_GaucheModule()));")
-
   
   ;; Hash table setup
   (do-ec [: scmfile (get-scheme-paths)]

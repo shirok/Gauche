@@ -185,7 +185,6 @@
   (test* "gauche-package compile" #t
          (let* ([p (run-process
                     `(../../gosh -q -I../../../src -I../../../lib
-                                 -lgauche-init.scm
                                  ../run compile
                                  --verbose test test.c testlib.stub)
                     :redirects '((>& 2 1) (> 1 out)) :directory "test.o/Test")]

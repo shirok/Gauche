@@ -289,29 +289,18 @@ void test_paths_setup(void)
        be searched first (hence it should come latter), since some
        extension modules are built from the file in src then linked
        from lib, and we want to test the one in lib. */
-    if (access("../src/gauche-init.scm", R_OK) == 0
+    if (access("../src/gauche/config.h", R_OK) == 0
         && access("../libsrc/srfi-1.scm", R_OK) == 0
         && access("../lib/srfi-0.scm", R_OK) == 0) {
         Scm_AddLoadPath("../src", FALSE);
         Scm_AddLoadPath("../libsrc", FALSE);
         Scm_AddLoadPath("../lib", FALSE);
-    } else if (access("../../src/gauche-init.scm", R_OK) == 0
+    } else if (access("../../src/gauche/config.h", R_OK) == 0
                && access("../../libsrc/srfi-1.scm", R_OK) == 0
                && access("../../lib/srfi-0.scm", R_OK) == 0) {
         Scm_AddLoadPath("../../src", FALSE);
         Scm_AddLoadPath("../../libsrc", FALSE);
         Scm_AddLoadPath("../../lib", FALSE);
-    }
-}
-
-/* Load gauche-init.scm */
-void load_gauche_init(void)
-{
-    ScmLoadPacket lpak;
-    if (Scm_Load("gauche-init.scm", 0, &lpak) < 0) {
-        Scm_Printf(SCM_CURERR, "gosh: WARNING: Error while loading initialization file: %A(%A).\n",
-                   Scm_ConditionMessage(lpak.exception),
-                   Scm_ConditionTypeName(lpak.exception));
     }
 }
 
@@ -570,9 +559,6 @@ int main(int argc, char **argv)
        loading init file.   This is to help development of Gauche
        itself; normal user should never need this. */
     if (test_mode) test_paths_setup();
-
-    /* load init file */
-    if (load_initfile) load_gauche_init();
 
     /* prepare *program-name* and *argv* */
     if (argind < argc) {

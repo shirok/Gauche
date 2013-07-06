@@ -253,7 +253,6 @@ libio.c    : libio.scm $(PRECOMP_DEPENDENCY)
 liblazy.c  : liblazy.scm $(PRECOMP_DEPENDENCY)
 liblist.c  : liblist.scm $(PRECOMP_DEPENDENCY)
 libmisc.c  : libmisc.scm $(PRECOMP_DEPENDENCY)
-libmod.c   : libmod.scm $(PRECOMP_DEPENDENCY)
 libnum.c   : libnum.scm $(PRECOMP_DEPENDENCY)
 libobj.c   : libobj.scm $(PRECOMP_DEPENDENCY)
 libomega.c : libomega.scm $(PRECOMP_DEPENDENCY)
@@ -264,6 +263,10 @@ libsym.c   : libsym.scm $(PRECOMP_DEPENDENCY)
 libsys.c   : libsys.scm $(PRECOMP_DEPENDENCY)
 libvec.c   : libvec.scm $(PRECOMP_DEPENDENCY)
 libextra.c : libextra.scm $(PRECOMP_DEPENDENCY)
+
+libmod.c   : libmod.scm $(PRECOMP_DEPENDENCY)
+	$(BUILD_GOSH) $(PRECOMP) --keep-private-macro=use libmod.scm
+
 
 # char_attr.c and ext/text/unicode_attr.h are automatically generated
 # by gen-unicode.scm, from Unicode character database.  They need to
@@ -463,7 +466,6 @@ install-core : install-relink
 	@case `$(GAUCHE_CONFIG) --arch` in *-cygwin*|*-mingw*) \
 	  $(INSTALL) $(INSTALL_LIBS) $(DESTDIR)$(BIN_INSTALL_DIR);;\
 	esac
-	$(INSTALL) -m 444 $(srcdir)/gauche-init.scm $(DESTDIR)$(SCM_INSTALL_DIR)
 	$(POSTINSTALL)
 
 uninstall :

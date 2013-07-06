@@ -44,7 +44,5 @@ for f in `(cd $top_srcdir; find lib \( -name '*.scm' -o -name 'dump' -o -name 'r
     $LN_S $top_srcdir/$f $f
   fi
 done
-rm -f src/gauche-init.scm
-$LN_S $top_srcdir/src/gauche-init.scm src/gauche-init.scm
 rm -f test
 $LN_S $top_srcdir/test test

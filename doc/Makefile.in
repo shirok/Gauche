@@ -10,8 +10,8 @@ MANPAGES = gosh.1 gauche-config.1 gauche-install.1 gauche-package.1 \
 EXTRACTED = gauche-refe.texi gauche-refj.texi \
 	    gauche-deve.texi gauche-devj.texi
 GENERATED = Makefile $(MANPAGES)
-@CROSS_COMPILING_no@GOSH = ../src/gosh -q -I../src -I../lib -lgauche-init
-@CROSS_COMPILING_yes@GOSH = gosh -q -lgauche-init
+@CROSS_COMPILING_no@GOSH = ../src/gosh -q -I../src -I../lib
+@CROSS_COMPILING_yes@GOSH = gosh -q
 INSTALL = @INSTALL@
 MKINSTDIR = $(top_srcdir)/mkinstalldirs
 MAKEINFO = @MAKEINFO@

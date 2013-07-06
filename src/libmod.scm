@@ -63,6 +63,12 @@
           [else (Scm_TypeError ":if-exists" ":error or #f" if_exists)])
     (result (Scm_MakeModule name error_if_exists))))
 
+;; (use x.y.z) ==> (requrie "x/y/z") (import x.y.z)
+(define-macro (use module . options)
+  `(begin
+     (require ,(module-name->path module))
+     (import (,module ,@options))))
+
 ;; foo.bar.baz <=> "foo/bar/baz"
 ;;  - Two consecutive dots in module name becomes one dot in path
 ;;    foo..bar.baz <=> "foo.bar/baz".   This is to support R7RS library
@@ -162,6 +168,19 @@
 
 (define-cproc %import-modules (mod::<module> mods) ;deprecated
   Scm_ImportModules)
+
+;; Some modules that used to be external are now built-in.  In order
+;; to make old code 'using' such modules keep working, we create empty modules.
+;; Revise this list before releasing 1.0 to see if each one is really needed.
+(inline-stub
+ (initcode
+  (Scm_FindModule (SCM_SYMBOL 'srfi-2) SCM_FIND_MODULE_CREATE)
+  (Scm_FindModule (SCM_SYMBOL 'srfi-6) SCM_FIND_MODULE_CREATE)
+  (Scm_FindModule (SCM_SYMBOL 'srfi-8) SCM_FIND_MODULE_CREATE)
+  (Scm_FindModule (SCM_SYMBOL 'srfi-10) SCM_FIND_MODULE_CREATE)
+  (Scm_FindModule (SCM_SYMBOL 'srfi-17) SCM_FIND_MODULE_CREATE)
+  (Scm_FindModule (SCM_SYMBOL 'gauche.vm.debugger) SCM_FIND_MODULE_CREATE)
+  ))
 
 ;;;
 ;;; GLOCs

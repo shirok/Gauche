@@ -1,5 +1,10 @@
 2013-07-06  Shiro Kawai  <shiro@acm.org>
 
+	* src/gauche-init.scm: Retire gauche-init.scm.  We can already
+	  precompile Scheme initialization routine, so we no longer need to
+	  keep it.  And it is inconvenient for embedding use.
+	  Various files are modified to remove reference to gauche-init.scm.
+
 	* src/genconfig.in, src/paths.c, src/Makefile.in: No longer generate
 	  gauche/arch.h; having architecture-dependent header file is just
 	  an annoyance.  Besides we don't really need to make the info in the

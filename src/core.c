@@ -653,14 +653,6 @@ void Scm_SimpleMain(int argc, const char *argv[],
     ScmLoadPacket lpak;
 
     SCM_ASSERT(argc > 0);
-    if (Scm_Load("gauche-init.scm", 0, &lpak)) {
-        Scm_Printf(SCM_CURERR, "%s: Couldn't load gauche-init.scm: %A(%A).\n",
-                   argv[0],
-                   Scm_ConditionMessage(lpak.exception),
-                   Scm_ConditionTypeName(lpak.exception));
-        Scm_Exit(1);
-    }
-
     args = Scm_InitCommandLine(argc, argv);
 
     if (script) {
