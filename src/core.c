@@ -536,11 +536,6 @@ init_cond_features()
     }
 }
 
-const char *Scm_HostArchitecture(void)
-{
-    return GAUCHE_ARCH;
-}
-
 #ifndef PATH_MAX
 #define PATH_MAX 4096
 #endif

@@ -379,7 +379,7 @@
 (select-module gauche)
 ;; Obtain info about gauche itself
 (define-cproc gauche-version () ::<const-cstring> (result GAUCHE_VERSION))
-(define-cproc gauche-architecture () ::<const-cstring> (result GAUCHE_ARCH))
+(define-cproc gauche-architecture () ::<const-cstring> Scm_HostArchitecture)
 (define-cproc gauche-library-directory () Scm_LibraryDirectory)
 (define-cproc gauche-architecture-directory () Scm_ArchitectureDirectory)
 (define-cproc gauche-site-library-directory () Scm_SiteLibraryDirectory)

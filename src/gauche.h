@@ -62,7 +62,6 @@
 #include <errno.h>
 #include <gauche/int64.h>
 #include <gauche/float.h>
-#include <gauche/arch.h>
 
 #ifdef TIME_WITH_SYS_TIME
 # include <sys/time.h>

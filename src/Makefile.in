@@ -130,7 +130,7 @@ INSTALL_HEADERS = gauche.h \
 	../gc/include/gc_pthread_redirects.h ../gc/include/gc_tiny_fl.h \
 	../gc/include/gc_typed.h ../gc/include/gc_version.h 
 INSTALL_SUBHEADERS = \
-	gauche/arch.h gauche/bignum.h gauche/bits.h gauche/bits_inline.h \
+	gauche/bignum.h gauche/bits.h gauche/bits_inline.h \
 	gauche/builtin-syms.h gauche/bytes_inline.h \
 	gauche/char_euc_jp.h gauche/char_none.h \
 	gauche/char_sjis.h gauche/char_utf_8.h gauche/charset.h \
@@ -172,7 +172,7 @@ gosh_noconsole_OBJECTS = winmain.$(OBJEXT)
 gosh_LDADD   = -l@LINKGAUCHE@
 gosh_LDFLAGS = @SHLIB_MAIN_LDFLAGS@
 
-test_extra_SOURCES = test-extra.c libextra.scm gauche/arch.h
+test_extra_SOURCES = test-extra.c libextra.scm
 test_extra_OBJECTS = test-extra.$(OBJEXT) libextra.$(OBJEXT)
 test_extra_LDADD   = -l@LINKGAUCHE@
 test_extra_LDFLAGS = @SHLIB_MAIN_LDFLAGS@
@@ -296,7 +296,7 @@ vm.$(OBJEXT) : vminsn.c vmstat.c vmcall.c
 
 load.$(OBJEXT) : dl_dlopen.c dl_dummy.c dl_win.c dl_darwin.c
 
-paths.$(OBJEXT) : getdir_win.c getdir_dummy.c getdir_darwin.c
+paths.$(OBJEXT) : getdir_win.c getdir_dummy.c getdir_darwin.c paths_arch.c
 
 $(LIBGAUCHE).$(SOEXT) : $(libgauche_OBJECTS) $(GCLIB)
 	$(LINK) $(libgauche_LDFLAGS) $(LIBGAUCHE).$(SOEXT) $(libgauche_OBJECTS) $(libgc_OBJECTS) $(LIBS)
@@ -315,7 +315,7 @@ gauche/config_threads.h : $(top_builddir)/gc/include/private/config.h
 	echo "/* Generated automatically from gc config header; do not edit. */" > gauche/config_threads.h
 	grep '^#define GC_[0-9A-Z_]*THREADS' $(top_builddir)/gc/include/private/config.h >> gauche/config_threads.h || :
 
-gauche-config.c gauche/arch.h ../lib/gauche/config.scm : genconfig
+gauche-config.c paths_arch.c ../lib/gauche/config.scm : genconfig
 	$(SHELL) ./genconfig
 
 gauche-install : gauche-install.in
@@ -417,7 +417,7 @@ clean :
 	       test-vmstack$(EXEEXT) test-arith$(EXEEXT) test-extra$(EXEEXT) \
 	       $(GENERATED_SCRIPTS) gauche-config.c \
 	       $(LIBGAUCHE).$(SOEXT)* *.$(OBJEXT) *~ *.a *.t *.def *.exp *.exe \
-	       test.log test.dir so_locations gauche/*~ gauche/arch.h \
+	       test.log test.dir so_locations gauche/*~ paths_arch.c \
 	       gauche/config_threads.h gauche-config.in.c staticinit.c \
 	       gauche-install.in.c gauche-package.in.c gauche-cesconv.in.c \
 	       $(host)-gauche-config.c $(host)-gauche-config

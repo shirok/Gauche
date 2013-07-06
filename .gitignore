@@ -135,5 +135,6 @@ src/libsym.c
 src/libsys.c
 src/libvec.c
 src/makeverslink
+src/paths_arch.c
 src/test-extra
 src/vminsn.c

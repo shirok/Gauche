@@ -121,7 +121,8 @@ void usage(void)
 void version(void)
 {
     printf("Gauche scheme shell, version %s [%s%s], %s\n",
-           GAUCHE_VERSION, SCM_CHAR_ENCODING_NAME, THREAD_OPT, GAUCHE_ARCH);
+           GAUCHE_VERSION, SCM_CHAR_ENCODING_NAME, THREAD_OPT,
+           Scm_HostArchitecture());
     exit(0);
 }
 

@@ -1,3 +1,13 @@
+2013-07-06  Shiro Kawai  <shiro@acm.org>
+
+	* src/genconfig.in, src/paths.c, src/Makefile.in: No longer generate
+	  gauche/arch.h; having architecture-dependent header file is just
+	  an annoyance.  Besides we don't really need to make the info in the
+	  header file since those info can be retrieved through API at
+	  runtime.  This change removes preprocessor symbols GAUCHE_ARCH,
+	  GAUCHE_LIB_DIR, GAUCHE_ARCH_DIR, GAUCHE_SITE_LIB_DIR and
+	  GAUCHE_SITE_ARCH_DIR.
+
 2013-07-05  Shiro Kawai  <shiro@acm.org>
 
 	* ext/tls: Updated to axTLS 1.4.9
