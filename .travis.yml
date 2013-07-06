@@ -1,0 +1,14 @@
+notifications:
+  recipients:
+    - kenhys@gmail.com
+language: c
+compiler:
+  - gcc
+  - clang
+branches:
+  only:
+    - master
+before_install:
+  - curl https://raw.github.com/shirok/Gauche/master/test/setup-travis.sh | sh
+before_script:
+  - ./DIST gen
