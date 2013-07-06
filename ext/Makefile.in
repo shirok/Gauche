@@ -44,6 +44,8 @@ tls: vport
 
 bcrypt: mt-random
 
+dbm : threads
+
 test : check
 
 check:
