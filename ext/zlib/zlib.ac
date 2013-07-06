@@ -71,6 +71,8 @@ if test "$ac_cv_use_zlib" = yes; then
   AC_SUBST(ZLIB_ARCHFILES)
   ZLIB_SCMFILES=zlib.scm
   AC_SUBST(ZLIB_SCMFILES)
+  ZLIB_OBJECTS="gauche-zlib.$OBJEXT zliblib.$OBJEXT"
+  AC_SUBST(ZLIB_OBJECTS)
 fi
 AC_SUBST(ZLIB_CPPFLAGS)
 AC_SUBST(ZLIB_LDFLAGS)

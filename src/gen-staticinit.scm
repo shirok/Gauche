@@ -58,6 +58,7 @@
 (define (generate-staticinit)
   (do-ec [: subdir (mfvar-ref "ext/Makefile" "SUBDIRS")]
          [: dso (get-dso-names subdir)]
+         [if (not (string-null? dso))]
          (let ([initfn (initfn-name dso)]
                [str    (cgen-literal dso)])
            (cgen-decl #`"extern void ,initfn(void);")
