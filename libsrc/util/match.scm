@@ -8,7 +8,6 @@
 
 (define-module util.match
   (use srfi-1)
-  (use srfi-2)
   (export match
           match-lambda
           match-lambda*
