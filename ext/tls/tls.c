@@ -130,7 +130,7 @@ static const uint8_t* get_message_body(ScmObj msg, u_int *size)
     return (const uint8_t*) SCM_UVECTOR_ELEMENTS(msg);
   }
   else if (SCM_STRINGP(msg))
-    return Scm_GetStringContent(SCM_STRING(msg), size, 0, 0);
+    return (const uint8_t*) Scm_GetStringContent(SCM_STRING(msg), size, 0, 0);
   else
   {
     Scm_TypeError("TLS message", "uniform vector or string", msg);
