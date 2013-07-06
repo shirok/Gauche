@@ -1,6 +1,6 @@
 notifications:
   recipients:
-    - kenhys@gmail.com
+    - gauche-travis@lists.sourceforge.net
 language: c
 compiler:
   - gcc
