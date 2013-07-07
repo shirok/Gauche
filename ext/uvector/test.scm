@@ -1495,9 +1495,9 @@
 
 ;; test for multibyte chars
 (cond-expand
- [gauche.ces.eucjp (include "./test-eucjp")]
- [gauche.ces.utf8  (include "./test-utf8")]
- [gauche.ces.sjis  (include "./test-sjis")]
+ [gauche.ces.eucjp (include "test-eucjp")]
+ [gauche.ces.utf8  (include "test-utf8")]
+ [gauche.ces.sjis  (include "test-sjis")]
  [else])
 
 ;;-------------------------------------------------------------------

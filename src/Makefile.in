@@ -265,7 +265,7 @@ libvec.c   : libvec.scm $(PRECOMP_DEPENDENCY)
 libextra.c : libextra.scm $(PRECOMP_DEPENDENCY)
 
 libmod.c   : libmod.scm $(PRECOMP_DEPENDENCY)
-	$(BUILD_GOSH) $(PRECOMP) --keep-private-macro=use libmod.scm
+	$(BUILD_GOSH) $(PRECOMP) --keep-private-macro=use $(srcdir)/libmod.scm
 
 
 # char_attr.c and ext/text/unicode_attr.h are automatically generated
