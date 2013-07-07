@@ -232,7 +232,7 @@
        (Scm_SysError "couldn't open ndbm file %S" name))
      (result (SCM_OBJ z))))
 
- (define-cproc ndbm-close (ndbm::<ndbm-file>)
+ (define-cproc ndbm-close (ndbm::<ndbm-file>) ::<void>
    (when (-> ndbm dbf)
      (dbm_close (-> ndbm dbf))
      (set! (-> ndbm dbf) NULL)))
