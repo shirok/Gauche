@@ -57,7 +57,8 @@ static ScmObj read_word(ScmPort *port, ScmChar initial, ScmReadContext *ctx,
 static ScmObj read_symbol(ScmPort *port, ScmChar initial, ScmReadContext *ctx);
 static ScmObj read_number(ScmPort *port, ScmChar initial, ScmReadContext *ctx);
 static ScmObj read_symbol_or_number(ScmPort *port, ScmChar initial, ScmReadContext *ctx);
-static ScmObj read_escaped_symbol(ScmPort *port, ScmChar delim, int interned);
+static ScmObj read_escaped_symbol(ScmPort *port, ScmChar delim, int interned,
+                                  ScmReadContext *ctx);
 static ScmObj read_keyword(ScmPort *port, ScmReadContext *ctx);
 static ScmObj read_regexp(ScmPort *port);
 static ScmObj read_charset(ScmPort *port);
@@ -508,7 +509,7 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
                 {
                     int c2 = Scm_GetcUnsafe(port);
                     if (c2 == '|') {
-                        return read_escaped_symbol(port, c2, FALSE);
+                        return read_escaped_symbol(port, c2, FALSE, ctx);
                     } else {
                         ScmObj name = read_word(port, c2, ctx, FALSE, FALSE);
                         return Scm_MakeSymbol(SCM_STRING(name), FALSE);
@@ -544,7 +545,7 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
             }
         }
     case '|':
-        return read_escaped_symbol(port, '|', TRUE);
+        return read_escaped_symbol(port, '|', TRUE, ctx);
     case '[':
         /* TODO: make it customizable */
         return read_list(port, ']', ctx);
@@ -901,6 +902,16 @@ static ScmObj read_char(ScmPort *port, ScmReadContext *ctx)
     default:
         /* need to read word to see if it is a character name */
         name = SCM_STRING(read_word(port, c, ctx, TRUE, FALSE));
+
+        if (ctx->flags & SCM_READ_STRICT_R7) {
+            ScmChar following = Scm_GetcUnsafe(port);
+            if (!Scm_IsDelimiter(following)) {
+                Scm_Error("Character literal isn't delimited: #\\%s%C ...",
+                          name, following);
+            }
+            Scm_UngetcUnsafe(following, port);
+        }
+        
         cname = Scm_GetStringContent(name, &namesize, &namelen, NULL);
         if (namelen == 1) {
             return SCM_MAKE_CHAR(c);
@@ -914,10 +925,16 @@ static ScmObj read_char(ScmPort *port, ScmReadContext *ctx)
         if (cname[0] == 'x' && isxdigit(cname[1])) {
             int code = Scm_ReadXdigitsFromString(cname+1, namesize-1, NULL);
             if (code < 0) goto unknown;
-            return SCM_MAKE_CHAR(code);
+            if (ctx->flags & SCM_READ_LEGACY) {
+                /* in legacy mode, #\xNN uses native charactor code */
+                return SCM_MAKE_CHAR(code);
+            } else {
+                return SCM_MAKE_CHAR(Scm_UcsToChar(code));
+            }
         }
         /* handle #\uxxxx or #\uxxxxxxxx*/
-        if ((cname[0] == 'u') && isxdigit(cname[1])) {
+        if ((cname[0] == 'u') && isxdigit(cname[1])
+            && !(ctx->flags & SCM_READ_STRICT_R7)) {
             int code;
             if (namesize >= 5 && namesize <= 9) {
                 code = Scm_ReadXdigitsFromString(cname+1, namesize-1, NULL);
@@ -1017,7 +1034,7 @@ static ScmObj read_keyword(ScmPort *port, ScmReadContext *ctx)
     ScmObj name;
 
     if (c2 == '|') {
-        name = read_escaped_symbol(port, c2, FALSE); /* read as uninterned */
+        name = read_escaped_symbol(port, c2, FALSE, ctx); /* read as uninterned */
         return Scm_MakeKeyword(SCM_SYMBOL_NAME(name));
     } else {
         Scm_UngetcUnsafe(c2, port);
@@ -1026,9 +1043,12 @@ static ScmObj read_keyword(ScmPort *port, ScmReadContext *ctx)
     }
 }
 
-static ScmObj read_escaped_symbol(ScmPort *port, ScmChar delim, int interned)
+static ScmObj read_escaped_symbol(ScmPort *port, ScmChar delim, int interned,
+                                  ScmReadContext *ctx)
 {
-    int c = 0;
+    int c, c2;
+    char buf[9];
+    int digs;
     ScmDString ds;
     Scm_DStringInit(&ds);
 
@@ -1042,10 +1062,38 @@ static ScmObj read_escaped_symbol(ScmPort *port, ScmChar delim, int interned)
         } else if (c == '\\') {
             /* CL-style single escape */
             c = Scm_GetcUnsafe(port);
-            /* TODO: we should recognize \xNN, since the symbol writer
-               prints a symbol name in that syntax. */
             if (c == EOF) goto err;
-            SCM_DSTRING_PUTC(&ds, c);
+            if (ctx->flags & SCM_READ_LEGACY) {
+                SCM_DSTRING_PUTC(&ds, c);
+            } else {
+                switch (c) {
+                case 'x':       /* R7RS-style hex escape. */
+                    c = Scm_ReadXdigitsFromPort(port, 8, buf, &digs);
+                    if (c != SCM_CHAR_INVALID) {
+                        c2 = Scm_GetcUnsafe(port);
+                        if (c2 != ';' || digs == 0) {
+                            Scm_ReadError(port, "unterminate hex escape in symbol literal: \\x%s ...", buf);
+                        }
+                        c = Scm_UcsToChar(c);
+                    }
+                    if (c == SCM_CHAR_INVALID) {
+                        Scm_ReadError(port, "invalid hex escape in symbol literal: \\x%s", buf);
+                    }
+                    SCM_DSTRING_PUTC(&ds, c);
+                    break;
+                case '\\': case '|': SCM_DSTRING_PUTC(&ds, c); break;
+                case 'a': SCM_DSTRING_PUTC(&ds, '\a'); break;
+                case 'b': SCM_DSTRING_PUTC(&ds, '\b'); break;
+                case 't': SCM_DSTRING_PUTC(&ds, '\t'); break;
+                case 'n': SCM_DSTRING_PUTC(&ds, '\n'); break;
+                case 'r': SCM_DSTRING_PUTC(&ds, '\r'); break;
+                default:
+                    if (ctx->flags & SCM_READ_STRICT_R7) {
+                    } else {
+                        SCM_DSTRING_PUTC(&ds, c);
+                    }
+                }
+            }
         } else {
             SCM_DSTRING_PUTC(&ds, c);
         }

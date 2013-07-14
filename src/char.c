@@ -123,6 +123,8 @@ void Scm__InstallCharconvHooks(ScmChar (*u2c)(int), int (*c2u)(ScmChar))
     char2ucs_hook = c2u;
 }
 
+/* NB: These two variables are no longer used, but kept here for the
+   ABI compatibility.  Remove them on 1.0 release. */
 ScmChar (*Scm_UcsToCharHook)(int ucs4) = NULL;
 int (*Scm_CharToUcsHook)(ScmChar ch) = NULL;
 
@@ -169,6 +171,74 @@ int Scm_CharToUcs(ScmChar ch)
 #else
     return (int)ch;             /* ISO8859-1 */
 #endif /*!GAUCHE_CHAR_ENCODING_UTF_8*/
+}
+
+/*=======================================================================
+ * Reader helper
+ */
+
+/* R7RS 7.1.1 <delimiter> */
+int Scm_IsDelimiter(ScmChar ch)
+{
+    return ((ch < 0x80 && strchr("()\";| \t\n\r", ch) != NULL)
+            || SCM_CHAR_EXTRA_WHITESPACE(ch));
+}
+
+/* Helper functions to read the escaped character code sequence, such as
+   \xXX, \uXXXX, or \UXXXXXXXX.
+   Scm_ReadXdigitsFromString reads from char* buffer (note that hex digits
+   consist of single-byte characters in any encoding, we don't need to
+   do the cumbersome multibyte handling).  Scm_ReadXdigitsFromPort reads
+   from the port.  Both should be called after the prefix 'x', 'u' or 'U'
+   char is read.  NDIGITS specifies either exact number of digits to be
+   expected or maximum number of digits. */
+
+/* If nextbuf == NULL, ndigits specifies exact # of digits.  Returns
+   SCM_CHAR_INVALID if there are less digits.  Otherwise, ndigis specifies
+   max # of digits, and the ptr to the next char is stored in nextbuf. */
+ScmChar Scm_ReadXdigitsFromString(const char *buf, int ndigits,
+                                  const char **nextbuf)
+{
+    int i, val = 0;
+    for (i=0; i<ndigits; i++) {
+        if (!isxdigit(buf[i])) {
+            if (nextbuf == NULL) return SCM_CHAR_INVALID;
+            else {
+                *nextbuf = buf;
+                return val;
+            }
+        }
+        val = val * 16 + Scm_DigitToInt(buf[i], 16);
+    }
+    return (ScmChar)val;
+}
+
+/* ndigits specifies exact # of digits.  read chars are stored in buf
+   so that they can be used in the error message.  Caller must provide
+   a sufficient space for buf. */
+ScmChar Scm_ReadXdigitsFromPort(ScmPort *port, int ndigits,
+                                char *buf, int *nread)
+{
+    int i, c, val = 0, dig;
+
+    for (i = 0; i < ndigits; i++) {
+        SCM_GETC(c, port);
+        if (c == EOF) break;
+        dig = Scm_DigitToInt(c, 16);
+        if (dig < 0) {
+            SCM_UNGETC(c, port);
+            break;
+        }
+        buf[i] = (char)c;       /* we know c is single byte char here. */
+        val = val * 16 + dig;
+    }
+    buf[i] = 0;
+    *nread = i;
+    //    if (i < ndigits) { /* error */
+    //        return SCM_CHAR_INVALID;
+    //    } else {
+        return (ScmChar)val;
+        //    }
 }
 
 /*=======================================================================
@@ -286,62 +356,6 @@ ScmObj Scm_CharSetCopy(ScmCharSet *src)
     Scm_BitsCopyX(dst->small, 0, src->small, 0, SCM_CHAR_SET_SMALL_CHARS);
     Scm_TreeCoreCopy(&dst->large, &src->large);
     return SCM_OBJ(dst);
-}
-
-/* Helper functions to read the escaped character code sequence, such as
-   \xXX, \uXXXX, or \UXXXXXXXX.
-   Scm_ReadXdigitsFromString reads from char* buffer (note that hex digits
-   consist of single-byte characters in any encoding, we don't need to
-   do the cumbersome multibyte handling).  Scm_ReadXdigitsFromPort reads
-   from the port.  Both should be called after the prefix 'x', 'u' or 'U'
-   char is read.  NDIGITS specifies either exact number of digits to be
-   expected or maximum number of digits. */
-
-/* If nextbuf == NULL, ndigits specifies exact # of digits.  Returns
-   SCM_CHAR_INVALID if there are less digits.  Otherwise, ndigis specifies
-   max # of digits, and the ptr to the next char is stored in nextbuf. */
-ScmChar Scm_ReadXdigitsFromString(const char *buf, int ndigits,
-                                  const char **nextbuf)
-{
-    int i, val = 0;
-    for (i=0; i<ndigits; i++) {
-        if (!isxdigit(buf[i])) {
-            if (nextbuf == NULL) return SCM_CHAR_INVALID;
-            else {
-                *nextbuf = buf;
-                return val;
-            }
-        }
-        val = val * 16 + Scm_DigitToInt(buf[i], 16);
-    }
-    return (ScmChar)val;
-}
-
-/* ndigits specifies exact # of digits.  read chars are stored in buf
-   so that they can be used in the error message.  Caller must provide
-   a sufficient space for buf. */
-ScmChar Scm_ReadXdigitsFromPort(ScmPort *port, int ndigits,
-                                char *buf, int *nread)
-{
-    int i, c, val = 0, dig;
-
-    for (i = 0; i < ndigits; i++) {
-        SCM_GETC(c, port);
-        if (c == EOF) break;
-        dig = Scm_DigitToInt(c, 16);
-        if (dig < 0) {
-            SCM_UNGETC(c, port);
-            break;
-        }
-        buf[i] = (char)c;       /* we know c is single byte char here. */
-        val = val * 16 + dig;
-    }
-    *nread = i;
-    if (i < ndigits) { /* error */
-        return SCM_CHAR_INVALID;
-    } else {
-        return (ScmChar)val;
-    }
 }
 
 /*-----------------------------------------------------------------

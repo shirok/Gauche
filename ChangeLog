@@ -1,3 +1,7 @@
+2013-07-14    <shiro@acm.org>
+
+	* src/read.c: Support R7RS-style inline hex escape in symbol literals.
+
 2013-07-06  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche-init.scm: Retire gauche-init.scm.  We can already
