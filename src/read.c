@@ -722,7 +722,7 @@ static ScmChar read_string_xdigits(ScmPort *port, int ndigs, int key,
     int nread;
     ScmChar r;
     SCM_ASSERT(ndigs <= 8);
-    r = Scm_ReadXdigitsFromPort(port, ndigs, buf, &nread);
+    r = Scm_ReadXdigitsFromPort(port, FALSE, ndigs, buf, &nread);
     if (r == SCM_CHAR_INVALID) {
         ScmDString ds;
         int c, i;
@@ -1068,18 +1068,11 @@ static ScmObj read_escaped_symbol(ScmPort *port, ScmChar delim, int interned,
             } else {
                 switch (c) {
                 case 'x':       /* R7RS-style hex escape. */
-                    c = Scm_ReadXdigitsFromPort(port, 8, buf, &digs);
-                    if (c != SCM_CHAR_INVALID) {
-                        c2 = Scm_GetcUnsafe(port);
-                        if (c2 != ';' || digs == 0) {
-                            Scm_ReadError(port, "unterminate hex escape in symbol literal: \\x%s ...", buf);
-                        }
-                        c = Scm_UcsToChar(c);
-                    }
+                    c = Scm_ReadXdigitsFromPort(port, TRUE, 8, buf, &digs);
                     if (c == SCM_CHAR_INVALID) {
                         Scm_ReadError(port, "invalid hex escape in symbol literal: \\x%s", buf);
                     }
-                    SCM_DSTRING_PUTC(&ds, c);
+                    SCM_DSTRING_PUTC(&ds, Scm_UcsToChar(c));
                     break;
                 case '\\': case '|': SCM_DSTRING_PUTC(&ds, c); break;
                 case 'a': SCM_DSTRING_PUTC(&ds, '\a'); break;

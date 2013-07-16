@@ -1,6 +1,10 @@
-2013-07-14    <shiro@acm.org>
+2013-07-14  Shiro Kawai  <shiro@acm.org>
 
 	* src/read.c: Support R7RS-style inline hex escape in symbol literals.
+	* src/char.c: Changed Scm_ReadXdigitsFromPort to recognize delimiter
+	  of inline-hex escape.  NB: Technically this changes ABI, but
+	  the function isn't intended for public use and I doubt it's
+	  used by extension packages.
 
 2013-07-06  Shiro Kawai  <shiro@acm.org>
 

@@ -213,10 +213,18 @@ ScmChar Scm_ReadXdigitsFromString(const char *buf, int ndigits,
     return (ScmChar)val;
 }
 
-/* ndigits specifies exact # of digits.  read chars are stored in buf
-   so that they can be used in the error message.  Caller must provide
-   a sufficient space for buf. */
-ScmChar Scm_ReadXdigitsFromPort(ScmPort *port, int ndigits,
+/* If DELIMITED is true, we expect the hexdigits sequence is terminated
+   by ';'.  NDIGITS specifies the max # of hexdigits to be read.
+   If DELIMITED is false, NDIGITS specifies the exact number of hexdigits.
+
+   Read hexdigits are stored in BUF so that they can be used in the error
+   message.  (If DELIMITED is true, the delimiter is read but not stored
+   in BUF).  Caller must provide a sufficient space for BUF.
+
+   The actual number of hexdigits read is stored in *NREAD.
+*/
+ScmChar Scm_ReadXdigitsFromPort(ScmPort *port, int delimited,
+                                int ndigits,
                                 char *buf, int *nread)
 {
     int i, c, val = 0, dig;
@@ -234,11 +242,15 @@ ScmChar Scm_ReadXdigitsFromPort(ScmPort *port, int ndigits,
     }
     buf[i] = 0;
     *nread = i;
-    //    if (i < ndigits) { /* error */
-    //        return SCM_CHAR_INVALID;
-    //    } else {
-        return (ScmChar)val;
-        //    }
+
+    if (i == 0) return SCM_CHAR_INVALID;
+    if (delimited) {
+        SCM_GETC(c, port);
+        if (c != ';') return SCM_CHAR_INVALID;
+    } else {
+        if (i != ndigits) return SCM_CHAR_INVALID;
+    }
+    return (ScmChar)val;
 }
 
 /*=======================================================================
@@ -606,7 +618,7 @@ static ScmChar read_charset_xdigits(ScmPort *port, int ndigs, int key)
     int nread;
     ScmChar r;
     SCM_ASSERT(ndigs <= 8);
-    r = Scm_ReadXdigitsFromPort(port, ndigs, buf, &nread);
+    r = Scm_ReadXdigitsFromPort(port, FALSE, ndigs, buf, &nread);
     if (r == SCM_CHAR_INVALID) {
         ScmDString ds;
         int c, i;

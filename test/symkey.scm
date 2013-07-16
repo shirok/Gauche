@@ -33,6 +33,10 @@
 (test* "symbol reader escaped" 'foo (read-from-string "|foo|bar"))
 (test* "symbol reader escaped" '|foo bar| (read-from-string "|foo bar|"))
 
+;; NB: guard these with reader mode (legacy mode should read it differently)
+(test* "symbol reader hex escaped" 'abc (read-from-string "|a\\x62;c|"))
+(test* "symbol reader hex escaped" 'abc (read-from-string "|a\\x0062;c|"))
+
 (test* "symbol writer" 'foo (read-from-string (write-to-string 'foo)))
 (test* "symbol writer" '|foo bar|
        (read-from-string (write-to-string (string->symbol "foo bar"))))

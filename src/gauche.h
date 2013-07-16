@@ -1146,8 +1146,8 @@ SCM_EXTERN ScmObj Scm_PairAttrSet(ScmPair *pair, ScmObj key, ScmObj value);
 SCM_EXTERN int     Scm_IsDelimiter(ScmChar ch);
 
 SCM_EXTERN ScmChar Scm_ReadXdigitsFromString(const char *, int, const char **);
-SCM_EXTERN ScmChar Scm_ReadXdigitsFromPort(ScmPort *port, int ndigits,
-                                           char *buf, int *nread);
+SCM_EXTERN ScmChar Scm_ReadXdigitsFromPort(ScmPort *port, int delimited,
+                                           int ndigits, char *buf, int *nread);
 
 /* Illegal character handling mode.  Used in some APIs that handles
    character conversion, such as input ports and string-incomplete->complete.

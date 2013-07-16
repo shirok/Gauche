@@ -488,7 +488,7 @@ static ScmChar rc1_lex_xdigits(ScmPort *port, int ndigs, int key)
     int nread;
     ScmChar r;
     SCM_ASSERT(ndigs <= 8);
-    r = Scm_ReadXdigitsFromPort(port, ndigs, buf, &nread);
+    r = Scm_ReadXdigitsFromPort(port, FALSE, ndigs, buf, &nread);
     if (r == SCM_CHAR_INVALID) {
         ScmDString ds;
         int c, i;
