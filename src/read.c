@@ -1070,7 +1070,7 @@ static ScmObj read_escaped_symbol(ScmPort *port, ScmChar delim, int interned,
                 case 'x':       /* R7RS-style hex escape. */
                     c = Scm_ReadXdigitsFromPort(port, TRUE, 8, buf, &digs);
                     if (c == SCM_CHAR_INVALID) {
-                        Scm_ReadError(port, "invalid hex escape in symbol literal: \\x%s", buf);
+                        Scm_ReadError(port, "invalid hex escape in a symbol literal: \\x%s", buf);
                     }
                     SCM_DSTRING_PUTC(&ds, Scm_UcsToChar(c));
                     break;
@@ -1082,6 +1082,7 @@ static ScmObj read_escaped_symbol(ScmPort *port, ScmChar delim, int interned,
                 case 'r': SCM_DSTRING_PUTC(&ds, '\r'); break;
                 default:
                     if (ctx->flags & SCM_READ_STRICT_R7) {
+                        Scm_ReadError(port, "invalid backslash-escape in a symbol literal: \\%A", SCM_MAKE_CHAR(c));
                     } else {
                         SCM_DSTRING_PUTC(&ds, c);
                     }
