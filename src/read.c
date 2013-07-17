@@ -718,7 +718,7 @@ static ScmObj read_quoted(ScmPort *port, ScmObj quoter, ScmReadContext *ctx)
 static ScmChar read_string_xdigits(ScmPort *port, int ndigs, int key,
                                    int incompletep)
 {
-    char buf[8];
+    char buf[9];
     int nread;
     ScmChar r;
     SCM_ASSERT(ndigs <= 8);
