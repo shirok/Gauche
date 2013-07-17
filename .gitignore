@@ -16,7 +16,22 @@ Makefile
 src/libgauche-*.so*
 src/gosh
 doc/*.1
+doc/*.info*.gz
 doc/gauche-ref*.texi
+
+# Unit test files
+*.log
+ext/sxml/ssax-test.scm
+ext/sxml/to-html-test.scm
+ext/sxml/tree-trans-test.scm
+gc/*test
+gc/initsecondarythread
+src/test-arith
+src/test-vmstack
+src/test.log
+test.out
+test.record
+test/rfc.scm
 
 # Precomp and etc.
 ext/Makefile.ext
@@ -74,6 +89,7 @@ ext/uvector/uvutil.c
 ext/vport/vportlib.c
 ext/windows/console.c
 ext/windows/windows.c
+ext/zlib/zliblib.c
 gc/.deps/
 gc/.libs/
 gc/bdw-gc.pc
@@ -97,6 +113,7 @@ lib/gauche/vport.scm
 lib/math/mt-random.scm
 lib/os/
 lib/rfc/sha1.scm
+lib/rfc/zlib.scm
 lib/slib.scm
 lib/sxml/
 src/autoloads.c
