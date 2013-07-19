@@ -276,6 +276,11 @@ Content-Length: 4349
 (test* "decode" "BAR0er9" (base64-decode-string "QkFSMGVyOQ=="))
 (test* "decode" "BAR0er9" (base64-decode-string "QkFS\r\nMGVyOQ\r\n=="))
 
+(test* "standard encode" "YTA+YTA/" (base64-encode-string "a0>a0?"))
+(test* "standard decode" "a0>a0?" (base64-decode-string "YTA+YTA/"))
+(test* "url-safe encode" "YTA-YTA_" (base64-encode-string "a0>a0?" :url-safe #t))
+(test* "url-safe decode" "a0>a0?" (base64-decode-string "YTA-YTA_" :url-safe #t))
+
 ;;--------------------------------------------------------------------
 (test-section "rfc.quoted-printable")
 (use rfc.quoted-printable)
