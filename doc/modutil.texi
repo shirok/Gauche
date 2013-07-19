@@ -7222,17 +7222,20 @@ value of @var{line-width} is 76, as specified in RFC2045.  You can give
 RFC2045に従い76となっています。@var{line-width}に@code{#f}または@code{0}
 を与えることで改行を抑制することができます。
 @c COMMON
-@item url-safe?
+
 @c EN
-If a true value is given, the input bytes will be encoded with an
+If a true value is given to @var{url-safe?},
+the input bytes will be encoded with an
 alternative encoding table, which substitutes @code{+} instead of
 @code{-} and @code{/} instead of @code{_}. The result will contain
-filename and url safe characters only. Default is false.
+filename and url safe characters only.  Default value of @var{url-safe?}
+is false.
 @c JP
-真の値を与えると、標準の Base64 と異なったエンコーディングテーブルを使って
+@var{url-safe?}に真の値を与えると、標準の Base64 と異なったエンコーディングテーブルを使って
 入力をエンコードします。このエンコーディングでは、@code{+}の代わりに
 @code{-}が、@code{/}の代わりに@code{_}が使われます。このエンコーディングは
-ファイル名やURLの一部として使うのに適しています。
+ファイル名やURLの一部として使うのに適しています。@var{url-safe?}の
+デフォルト値は偽です。
 @c COMMON
 @end defun
 
