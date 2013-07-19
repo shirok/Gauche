@@ -7202,7 +7202,7 @@ and RFC 4648 (@ref{rfc4648, [RFC4648], RFC4648})
 @c COMMON
 @end deftp
 
-@defun base64-encode :key line-width url-safe?
+@defun base64-encode :key line-width url-safe
 @c EN
 Reads byte stream from the current input port, encodes it in Base64
 format and writes the result character stream to the current output port.
@@ -7224,22 +7224,22 @@ RFC2045に従い76となっています。@var{line-width}に@code{#f}または@
 @c COMMON
 
 @c EN
-If a true value is given to @var{url-safe?},
+If a true value is given to @var{url-safe},
 the input bytes will be encoded with an
 alternative encoding table, which substitutes @code{+} instead of
 @code{-} and @code{/} instead of @code{_}. The result will contain
-filename and url safe characters only.  Default value of @var{url-safe?}
+filename and url safe characters only.  Default value of @var{url-safe}
 is false.
 @c JP
-@var{url-safe?}に真の値を与えると、標準の Base64 と異なったエンコーディングテーブルを使って
+@var{url-safe}に真の値を与えると、標準の Base64 と異なったエンコーディングテーブルを使って
 入力をエンコードします。このエンコーディングでは、@code{+}の代わりに
 @code{-}が、@code{/}の代わりに@code{_}が使われます。このエンコーディングは
-ファイル名やURLの一部として使うのに適しています。@var{url-safe?}の
+ファイル名やURLの一部として使うのに適しています。@var{url-safe}の
 デフォルト値は偽です。
 @c COMMON
 @end defun
 
-@defun base64-encode-string string :key line-width url-safe?
+@defun base64-encode-string string :key line-width url-safe
 @c EN
 Converts contents of @var{string} to Base64 encoded format.
 Input string can be either complete or incomplete string;
@@ -7251,7 +7251,7 @@ it is always interpreted as a byte sequence.
 @c COMMON
 @end defun
 
-@defun base64-decode :key url-safe?
+@defun base64-decode :key url-safe
 @c EN
 Reads character stream from the current input port, decodes it from Base64
 format and writes the result byte stream to the current output port.
@@ -7266,7 +7266,7 @@ Base64 でエンコードされた文字として適当でない文字は沈黙�
 @c COMMON
 @end defun
 
-@defun base64-decode-string string :key url-safe?
+@defun base64-decode-string string :key url-safe
 @c EN
 Decodes a Base64 encoded string @var{string} and returns
 the result as a string.
