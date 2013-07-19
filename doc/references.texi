@@ -86,11 +86,11 @@ US Secure Hash Algorithm 1 (SHA1). @*
 September 2001. @*
 @url{ftp://ftp.isi.edu/in-notes/rfc3174.txt}.
 
-@anchor{rfc3548}
-@item [RFC3548]
+@anchor{rfc4648}
+@item [RFC4648]
 S. Josefsson, Ed.: The Base16, Base32, and Base64 Data Encodings
-July 2003. @*
-@url{ftp://ftp.isi.edu/in-notes/rfc3548.txt}.
+October 2006. @*
+@url{ftp://ftp.isi.edu/in-notes/rfc4648.txt}.
 
 @anchor{srfi-0}
 @item [SRFI-0]
