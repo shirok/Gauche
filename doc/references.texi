@@ -47,50 +47,50 @@ F. Boussinot, Java Fair Threads, @*
 R. Rivest,
 The MD5 Message-Digest Algorithm. @*
 April 1992. @*
-@url{ftp://ftp.isi.edu/in-notes/rfc1321.txt}.
+@url{http://www.ietf.org/rfc/rfc1321.txt}.
 
 @anchor{rfc2045}
 @item [RFC2045]
 N. Freed, N. Borenstein: Multipurpose Internet Mail Extension
 (MIME) Part One: Format of Internet Message Bodies,
 November 1996. @*
-@url{ftp://ftp.isi.edu/in-notes/rfc2045.txt}.
+@url{http://www.ietf.org/rfc/rfc2045.txt}.
 
 @anchor{rfc2396}
 @item [RFC2396]
 T. Berners-Lee, R. Fielding, L. Masinter,
 Uniform Resource Identifiers (URI): Generic Syntax,
 August 1998. @*
-@url{ftp://ftp.isi.edu/in-notes/rfc2396.txt}.
+@url{http://www.ietf.org/rfc/rfc2396.txt}.
 
 @anchor{rfc2616}
 @item [RFC2616]
 R. Fielding et al, Hypertext Transfer Protocol -- HTTP/1.1, June 1999. @*
-@url{ftp://ftp.isi.edu/in-notes/rfc2616.txt}.
+@url{http://www.ietf.org/rfc/rfc2616.txt}.
 
 @anchor{rfc2822}
 @item [RFC2822]
 P. Resnick (ed.), Internet Message Format, April 2001. @*
-@url{ftp://ftp.isi.edu/in-notes/rfc2822.txt}.
+@url{http://www.ietf.org/rfc/rfc2822.txt}.
 
 @anchor{rfc2965}
 @item [RFC2965]
 D. Kristol, L. Montulli, HTTP State Management Mechanism,
 October 2000. @*
-@url{ftp://ftp.isi.edu/in-notes/rfc2965.txt}.
+@url{http://www.ietf.org/rfc/rfc2965.txt}.
 
 @anchor{rfc3174}
 @item [RFC3174]
 D. Eastlake, 3rd and P. Jones,
 US Secure Hash Algorithm 1 (SHA1). @*
 September 2001. @*
-@url{ftp://ftp.isi.edu/in-notes/rfc3174.txt}.
+@url{http://www.ietf.org/rfc/rfc3174.txt}.
 
 @anchor{rfc4648}
 @item [RFC4648]
 S. Josefsson, Ed.: The Base16, Base32, and Base64 Data Encodings
 October 2006. @*
-@url{ftp://ftp.isi.edu/in-notes/rfc4648.txt}.
+@url{http://www.ietf.org/rfc/rfc4648.txt}.
 
 @anchor{srfi-0}
 @item [SRFI-0]
