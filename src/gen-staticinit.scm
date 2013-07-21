@@ -16,6 +16,7 @@
 
 (define *top-srcdir*   (ref (command-line) 1 ".."))
 (define *top-builddir* (ref (command-line) 2 ".."))
+(define *black-list* (string-split (ref (command-line) 3 "") " "))
 
 (define read-line/continuation
   (gbuffer-filter (^[v s]
@@ -58,6 +59,7 @@
 (define (generate-staticinit)
   (do-ec [: subdir (mfvar-ref "ext/Makefile" "SUBDIRS")]
          [: dso (get-dso-names subdir)]
+         [if (not (any (pa$ string=? (regexp-replace-all "--" dso ".")) *black-list*))]
          [if (not (string-null? dso))]
          (let ([initfn (initfn-name dso)]
                [str    (cgen-literal dso)])
@@ -134,6 +136,7 @@
   
   ;; Hash table setup
   (do-ec [: scmfile (get-scheme-paths)]
+         [if (not (any (pa$ string=? (regexp-replace-all "/" (path-sans-extension (car scmfile))".")) *black-list*))]
          [:let name (cgen-literal (car scmfile))]
          [:let lit  (cgen-literal (get-scm-content (cdr scmfile)))]
          (cgen-init (format "Scm_HashTableSet(scmtab, ~a, ~a, 0);"
