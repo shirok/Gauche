@@ -1286,7 +1286,7 @@ struct ScmProcedureRec {
    after argument folding).
 
    This special treatment is to avoid unnecessary consing of argumets;
-   if we know the callee immeidately unfolds the rest argument, it's no 
+   if we know the callee immediately unfolds the rest argument, it's no 
    use to fold excessive arguments anyway.
  */
 
@@ -1307,7 +1307,7 @@ struct ScmProcedureRec {
    
    #f: No inliner associated to this procedure.  (For historical
       reasons, the code that access to this slot expects this slot can be
-      NULL and treats it as SCM_FALSE)
+      NULL and treats it as SCM_FALSE in that case)
 
    <integer>: Only appears in some built-in procedures, and specifies
       the VM instruction number.  This should be considered as a special
