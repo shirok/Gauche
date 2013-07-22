@@ -8,14 +8,34 @@
 ;; If we use that in modules under ext/*, we need to change this file.
 
 (use gauche.generator)
+(use gauche.parameter)
 (use file.util)
+(use util.match)
 (use gauche.cgen)
 (use text.tr)
 (use srfi-13)
 (use srfi-42)
 
-(define *top-srcdir*   (ref (command-line) 1 ".."))
-(define *top-builddir* (ref (command-line) 2 ".."))
+(define top-srcdir   (make-parameter ".."))
+(define top-builddir (make-parameter ".."))
+(define modules-to-exclude
+  (make-parameter
+   (if-let1 x (sys-getenv "LIBGAUCHE_STATIC_EXCLUDES")
+     (string-split x #[\s:,])
+     '())))
+
+(define (usage)
+  (exit 1
+   "Usage: gen-staticinit.scm $(top_srcdir) $(top_builddir)\n\
+    Create statically linked version of libgauche, with all Scheme libraries\n\
+    and extensions packaged in.  After building and installing Gauche as\n\
+    usual, invoke this script via 'make static' in src directory.\n\
+    If you want to exclude some libraries/extensions to keep the binary\n\
+    size down, set the environment variable LIBGAUCHE_STATIC_EXCLUDES\n\
+    with the module name delimited by comma, colon or space, e.g.:\n\
+    \n\
+    LIBGAUCHE_STATIC_EXCLUDES=rfc.tls,os.windows make static\n\
+    \n"))
 
 (define read-line/continuation
   (gbuffer-filter (^[v s]
@@ -28,7 +48,7 @@
 
 ;; This returns ("") if the definition is empty.  get-scheme-paths counts on it.
 (define (mfvar-ref makefile var :optional default)
-  (if-let1 line (with-input-from-file (build-path *top-builddir* makefile)
+  (if-let1 line (with-input-from-file (build-path (top-builddir) makefile)
                   (cute generator-find (string->regexp #`"^,|var|\\b")
                         read-line/continuation))
     (string-split
@@ -59,6 +79,11 @@
   (do-ec [: subdir (mfvar-ref "ext/Makefile" "SUBDIRS")]
          [: dso (get-dso-names subdir)]
          [if (not (string-null? dso))]
+         ;; NB: This relies on the current DSO naming scheme.
+         [:let module-name (regexp-replace-all "--" dso ".")]
+         [if (not (and (any (cut string=? module-name <>) (modules-to-exclude))
+                       (print "INFO: Skipping " dso)
+                       #t))]
          (let ([initfn (initfn-name dso)]
                [str    (cgen-literal dso)])
            (cgen-decl #`"extern void ,initfn(void);")
@@ -89,7 +114,7 @@
 
 (define (get-scm-content path-to-look-for)
   (if-let1 p (find-file-in-paths path-to-look-for
-                                 :paths (list *top-srcdir* *top-builddir*)
+                                 :paths (list (top-srcdir) (top-builddir))
                                  :pred file-is-readable?)
     ;; NB: we can just do (file->string p), but the code below eliminates
     ;; comments and unnecessary spaces.  Using read/write would break if
@@ -134,6 +159,12 @@
   
   ;; Hash table setup
   (do-ec [: scmfile (get-scheme-paths)]
+         [:let module-name ($ x->string $ path->module-name
+                              $ path-sans-extension $ car scmfile)]
+         [if (not (and (any (cut string=? module-name <>)
+                            (modules-to-exclude))
+                       (print "INFO: Skipping " (car scmfile))
+                       #t))]
          [:let name (cgen-literal (car scmfile))]
          [:let lit  (cgen-literal (get-scm-content (cdr scmfile)))]
          (cgen-init (format "Scm_HashTableSet(scmtab, ~a, ~a, 0);"
@@ -141,7 +172,7 @@
                             (cgen-cexpr lit))))
   )
 
-(define (main args)
+(define (do-everything)
   (cgen-current-unit (make <cgen-unit>
                        :name "staticinit"
                        :init-prologue "void Scm_InitPrelinked() {\n"
@@ -150,6 +181,14 @@
   (cgen-decl "extern void Scm_RegisterPrelinked(ScmString*, const char *ns[], void (*fns[])(void));")
   (embed-scm)
   (generate-staticinit)
-  (cgen-emit-c (cgen-current-unit))
-  0)
+  (cgen-emit-c (cgen-current-unit)))
+  
 
+(define (main args)
+  (match (cdr args)
+    [(%top-srcdir %top-builddir)
+     (parameterize ([top-srcdir   %top-srcdir]
+                    [top-builddir %top-builddir])
+       (do-everything))]
+    [_ (usage)])
+  0)
