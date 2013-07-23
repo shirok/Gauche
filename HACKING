@@ -125,6 +125,6 @@ so it's not a good place to describe overall intention or plan
 of series of changes.
 
 To keep ChangeLog in that role _and_ to be friendly to distributed
-development, I suggest that you don't update CommitLog unless you
+development, I suggest that you don't update ChangeLog unless you
 feel you really want to.  If I see your change is better mentioned
 in ChangeLog, I'll update it separately.
