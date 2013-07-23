@@ -105,3 +105,26 @@ not to introduce undesirable dependencies.
   extension modules, since it is called before all the extension
   modules are generated.
 
+
+[CHANGELOGS]
+
+We have ChangeLog file to record changes of new features, APIs, or
+internal changes large enough so that other developers need to be
+aware of.  Small changes like 'quick fix of the bug introduced
+in the last commit', or documentation additions, don't need to
+be recorded.
+
+In the age of distributed development, ChangeLog seems becoming
+obsolete, for it causes conflicts easily.  Yet I still see it worth,
+for it is one-stop place where somebody who tries to grasp what was
+changed since some point of time.  SCM's commit log doesn't replace
+that role---commit logs comes with every commit, however little it
+is, and those small trivial logs are just noise to those want to
+know changes that matter.  Also, commit logs are inherently per-commit,
+so it's not a good place to describe overall intention or plan
+of series of changes.
+
+To keep ChangeLog in that role _and_ to be friendly to distributed
+development, I suggest that you don't update CommitLog unless you
+feel you really want to.  If I see your change is better mentioned
+in ChangeLog, I'll update it separately.
