@@ -35,7 +35,7 @@ Kim Barrett, Bob Cassels, Paul Haahr,
 David A. Moon, Keith Playford, P. Tucker Withington,
 A Monotonic Superclass Linearization for Dylan,
 in @i{Proceedings of OOPSLA 96}, October 1996.@*
-@url{http://www.webcom.com/~haahr/dylan/linearization-oopsla96.html}.
+@url{http://dl.acm.org/citation.cfm?id=236343}.
 
 @anchor{fairthreads}
 @item [FairThreads]
@@ -217,7 +217,7 @@ The SSAX distribution is also available at sourceforge:@*
 M. Matsumoto and T. Nishimura, "Mersenne Twister: A 623-dimensionally
 equidistributed uniform pseudorandom number generator", ACM Trans. on
 Modeling and Computer Simulation Vol. 8, No. 1, Januray pp.3-30 1998.@*
-@url{http://www.math.keio.ac.jp/~matumoto/emt.html}
+@url{http://dl.acm.org/citation.cfm?id=272995}
 
 @anchor{oleg1}
 @item [OLEG1]
