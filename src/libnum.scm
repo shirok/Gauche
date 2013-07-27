@@ -358,6 +358,10 @@
 (define-cproc %cos (x::<real>) ::<real> :fast-flonum :constant cos)
 (define-cproc %tan (x::<real>) ::<real> :fast-flonum :constant tan)
 
+(define-cproc %sinpi (x::<real>) ::<real> :fast-flonum :constant Scm_SinPi)
+(define-cproc %cospi (x::<real>) ::<real> :fast-flonum :constant Scm_CosPi)
+(define-cproc %tanpi (x::<real>) ::<real> :fast-flonum :constant Scm_TanPi)
+
 (define-cproc %asin (x::<real>) ::<number> :fast-flonum :constant
   (cond [(> x 1.0)
          (result (Scm_MakeComplex (/ M_PI 2.0)

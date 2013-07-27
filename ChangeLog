@@ -1,3 +1,12 @@
+2013-07-26  Shiro Kawai  <shiro@acm.org>
+
+	* src/number.c (Scm_SinPi, Scm_CosPi, Scm_TanPi): EXPERIMENTAL:
+	  Added sinpi(x) = sin(x*pi) etc. to allow avoiding errors in
+	  certain cases.  From Scheme they're %sinpi etc.  Not yet documented.
+	  See if they're worth having.
+	* src/number.c (scm_expt): Use Scm_SinPi etc. so that
+	  (expt <negative-integer> n+1/2) can return pure imaginary number.
+
 2013-07-18  Shiro Kawai  <shiro@acm.org>
 
 	* lib/rfc/base64.scm (base64-decode, base64-encode): Support url-safe

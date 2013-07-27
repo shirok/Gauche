@@ -2591,8 +2591,8 @@ ScmObj Scm_Gcd(ScmObj x, ScmObj y)
     return x;
 }
 
-/*
- * Expt
+/*===============================================================
+ * Exponential and trigometric funcitons
  */
 
 /* Integer power of 10.  It is extensively used during string->number
@@ -2676,8 +2676,7 @@ static ScmObj scm_expt(ScmObj x, ScmObj y, int vmp)
            if x is a negative real number, arg(x) == pi
         */
         double mag = exp(dy * log(-dx));
-        double theta = dy * M_PI;
-        return Scm_MakeComplex(mag * cos(theta), mag * sin(theta));
+        return Scm_MakeComplex(mag * Scm_CosPi(dy), mag * Scm_SinPi(dy));
     } else {
         RETURN_FLONUM(pow(dx, dy));
     }
@@ -2702,6 +2701,48 @@ long Scm_TwosPower(ScmObj n)
         /*FALTHROUGH*/
     }
     return -1;
+}
+
+/* sinpi(x) = sin(x * pi)
+   cospi(x) = cos(x * pi)
+   tanpi(x) = tan(x * pi)
+
+   We first reduce input range to -1 <= x <= 1 by trig_pi_reduce_range.
+ */
+static double trig_pi_reduce_range(double x)
+{
+    double xx = fmod(x, 2.0);   /* -2.0 < x < 2.0 */
+    if (xx > 1.0)  return xx - 2.0;
+    if (xx < -1.0) return xx + 2.0;
+    if (xx == 0.0 && signbit(xx)) return -xx; /* we don't return -0.0 */
+    else return xx;
+}
+
+double Scm_SinPi(double x)
+{
+    double xx = trig_pi_reduce_range(x);
+    if (xx >= 0) {
+        if (xx > 0.5)  xx = 1 - xx;
+        if (xx > 0.25) return cos(M_PI*(0.5-xx));
+        else return sin(M_PI*xx);
+    } else {
+        if (xx < -0.5) xx = -1 - xx;
+        if (xx < -0.25) return -cos(M_PI*(-0.5-xx));
+        else return sin(M_PI*xx);
+    }
+}
+
+double Scm_CosPi(double x)
+{
+    double xx = fabs(trig_pi_reduce_range(x));
+    if (xx >= 0.75) return -cos(M_PI*(1-xx));
+    if (xx >  0.25) return sin(M_PI*(0.5-xx));
+    else            return cos(M_PI*xx);
+}
+
+double Scm_TanPi(double x)
+{
+    return Scm_SinPi(x)/Scm_CosPi(x);
 }
 
 /*===============================================================

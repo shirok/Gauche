@@ -284,6 +284,9 @@ SCM_EXTERN ScmObj Scm_Gcd(ScmObj x, ScmObj y);
 
 SCM_EXTERN ScmObj Scm_Expt(ScmObj x, ScmObj y);
 SCM_EXTERN long   Scm_TwosPower(ScmObj n);
+SCM_EXTERN double Scm_SinPi(double x);
+SCM_EXTERN double Scm_CosPi(double x);
+SCM_EXTERN double Scm_TanPi(double x);
 
 SCM_EXTERN int    Scm_NumEq(ScmObj x, ScmObj y);
 SCM_EXTERN int    Scm_NumLT(ScmObj x, ScmObj y);
