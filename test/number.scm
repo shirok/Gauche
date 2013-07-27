@@ -2128,6 +2128,26 @@
   )
 
 ;;------------------------------------------------------------------
+(test-section "sinpi, cospi, tanpi")
+
+(let ()
+  (define (check trig trig-pi)
+    (let loop ([x -4])
+      (if (> x 4)
+        #f
+        (let ([t0 (trig (* x 3.141592653589793))]
+              [t1 (trig-pi x)])
+          (if (or (and (> (abs t0) 1e15)
+                       (> (abs t1) 1e15))
+                  (< (abs (- t0 t1)) 1e-10))
+            (loop (+ x 1/16))
+            `(((,trig (* pi ,x)) ,t0)
+              ((,trig-pi ,x) ,t1)))))))
+  (test* "sin vs sinpi" #f (check %sin %sinpi))
+  (test* "cos vs cospi" #f (check %cos %cospi))
+  (test* "tan vs tanpi" #f (check %tan %tanpi)))
+
+;;------------------------------------------------------------------
 (test-section "ffx optimization")
 
 ;; This code is provided by naoya_t to reproduce the FFX bug
