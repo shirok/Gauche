@@ -2272,6 +2272,9 @@ static ScmObj throw_continuation(ScmObj *argframe, int nargs, void *data)
     ScmVM *vm = theVM;
     ScmObj handlers_to_call;
 
+    /* First, check to see if we need to rewind C stack.
+       NB: If we are invoking a partial continuation (ep->cstack == NULL),
+       we execute it on the current cstack. */
     if (ep->cstack && vm->cstack != ep->cstack) {
         ScmCStack *cs;
         for (cs = vm->cstack; cs; cs = cs->prev) {
@@ -2279,16 +2282,28 @@ static ScmObj throw_continuation(ScmObj *argframe, int nargs, void *data)
         }
 
         /* If the continuation captured below the current C stack, we rewind
-           to the captured stack first.  If not, the continuation is 'ghost'.
-           We execute the scheme portion of the continuation on the current
-           C stack (no rewinding), but we'll catch it if it tries to return
-           to the C world.   See user_eval_inner().  */
+           to the captured stack first. */
         if (cs != NULL) {
             vm->escapeReason = SCM_VM_ESCAPE_CONT;
             vm->escapeData[0] = ep;
             vm->escapeData[1] = args;
             siglongjmp(vm->cstack->jbuf, 1);
         }
+        /* If we're here, the continuation is 'ghost'---it was captured on
+           a C stack that no longer exists, or that was in another thread.
+           We'll execute the Scheme part of such a ghost continuation
+           on the current C stack.  User_eval_inner will catch if we
+           ever try to return to the stale C frame.
+
+           Note that current vm->cstack chain may point to a continuation
+           frame in vm stack, so we need to save the continuation chain
+           first, since vm->cstack may be popped when other continuation
+           is invoked during the execution of the target one.  (We may be
+           able to save some memory access by checking vm->cstack chain to see
+           if we really have such a frame, but just calling save_cont is
+           easier and always safe.)
+        */
+        save_cont(vm);
     }
 
     handlers_to_call = throw_cont_calculate_handlers(ep, vm);

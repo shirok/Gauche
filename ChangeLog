@@ -1,3 +1,10 @@
+2013-07-28  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c (throw_continuation): Fixed a bug that failed to save
+	  living continuations on stack when a ghost continuation is invoked,
+	  which caused the conitnuation frames to be clobbered.
+	  See the comment for the details.
+
 2013-07-26  Shiro Kawai  <shiro@acm.org>
 
 	* src/number.c (Scm_SinPi, Scm_CosPi, Scm_TanPi): EXPERIMENTAL:
