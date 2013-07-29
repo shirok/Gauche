@@ -1414,7 +1414,6 @@ static ScmObj user_eval_inner(ScmObj program, ScmWord *codevec)
     vm->escapeReason = SCM_VM_ESCAPE_NONE;
     if (sigsetjmp(cstack.jbuf, FALSE) == 0) {
         run_loop();             /* VM loop */
-        VAL0 = vm->val0;
         if (vm->cont == cstack.cont) {
             POP_CONT();
             PC = prev_pc;
@@ -1442,7 +1441,6 @@ static ScmObj user_eval_inner(ScmObj program, ScmWord *codevec)
             } else {
                 SCM_ASSERT(vm->cstack && vm->cstack->prev);
                 vm->cont = cstack.cont;
-                VAL0 = vm->val0;
                 POP_CONT();
                 vm->cstack = vm->cstack->prev;
                 siglongjmp(vm->cstack->jbuf, 1);
@@ -1464,7 +1462,6 @@ static ScmObj user_eval_inner(ScmObj program, ScmWord *codevec)
                    the extra continuation frame so that the VM stack
                    is consistent. */
                 vm->cont = cstack.cont;
-                VAL0 = vm->val0;
                 POP_CONT();
                 vm->cstack = vm->cstack->prev;
                 siglongjmp(vm->cstack->jbuf, 1);
