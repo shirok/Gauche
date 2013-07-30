@@ -327,7 +327,7 @@
 
 	* src/load.c (Scm_Require): Make sure we set the current module
 	  to #<module gauche> when actually loading the file.  This was
-	  never explicitly stateted, but we always assumed so.  It doesn't
+	  never explicitly stated, but we always assumed so.  It doesn't
 	  make sense to use caller's current module, since the caller
 	  doesn't know if the file will actually be loaded or not, so
 	  there's no guarantee that the current module is in effect.
