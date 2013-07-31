@@ -1,3 +1,14 @@
+2013-07-30  Shiro Kawai  <shiro@acm.org>
+
+	* src/main.c, lib/r7rs.scm: In R7RS toplevel mode, set the default
+	  environment to #<module r7rs.user> instead of #<module user>.
+	  Keeping #<module user> able to operate in Gauche mode is convenient
+	  to evaluate .gaucherc in #<module user> regardless of whether Gauche
+	  is invoked in -r7 or not.
+	  We also define a variable *r7rs-mode* in #<module user> if invoked
+	  with -r7, so that gauche.interactive can do extra set up if necessary.
+	* lib/gauche/interactive.scm: Modified accordingly.
+
 2013-07-28  Shiro Kawai  <shiro@acm.org>
 
 	* src/vm.c (throw_continuation): Fixed a bug that failed to save

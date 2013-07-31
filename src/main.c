@@ -62,6 +62,14 @@ ScmObj pre_cmds = SCM_NIL;      /* assoc list of commands that needs to be
 ScmObj main_module = SCM_FALSE; /* The name of the module where we
                                    look for 'main'.  If #f, 'user' module
                                    is used. */
+ScmModule *default_toplevel_module = NULL;
+                                /* The initial module for the script execution
+                                   and interactive REPL.  If NULL, the user
+                                   module is assumed.  In R7RS mode, it's
+                                   'r7rs.user' module.
+                                   Note that the .gaucherc script,
+                                   if there's one, is always evaluated in 'user'
+                                   module; see lib/gauche/interactive.scm */
 
 void usage(void)
 {
@@ -447,13 +455,16 @@ static void process_command_args(ScmObj cmd_args)
             if (standard_given) {
                 Scm_Error("Multiple -r option is specified.");
             } else {
+                /* R7RS mode.  Preload r7rs module, set the default toplevel
+                   to r7rs.user, and define *r7rs-mode* in user module
+                   so that gauche.interactive can do proper setup. */
                 const char *std = Scm_GetStringConst(SCM_STRING(v));
                 if (strcmp(std, "7") == 0) {
-                    if (Scm_EvalCString("(extend r7rs)",
-                                        SCM_OBJ(Scm_UserModule()),
-                                        &epak) < 0) {
-                        error_exit(epak.exception);
+                    if (Scm_Require(SCM_MAKE_STR("r7rs"), 0, &lpak) < 0) {
+                        error_exit(lpak.exception);
                     }
+                    SCM_DEFINE(Scm_UserModule(), "*r7rs-mode*", SCM_TRUE);
+                    default_toplevel_module = SCM_FIND_MODULE("r7rs.user", 0);
                     standard_given = TRUE;
                 } else {
                     Scm_Error("Unsupported standard for -r option: %s", std);
@@ -525,7 +536,7 @@ void enter_repl()
            this will invoke 'user-friendly' version of repl; otherwise,
            this calls the 'bare' version in libeval.scm. */
         Scm_EvalCString("(read-eval-print-loop)",
-                        SCM_OBJ(SCM_CURRENT_MODULE()), NULL);
+                        SCM_OBJ(Scm_CurrentModule()), NULL);
     }
 }
 
@@ -605,6 +616,10 @@ int main(int argc, char **argv)
         Scm_ProfilerStart();
     }
     Scm_AddCleanupHandler(cleanup_main, NULL);
+
+    if (default_toplevel_module != NULL) {
+        Scm_SelectModule(default_toplevel_module);
+    }
 
     /* Following is the main dish. */
     if (scriptfile != NULL) exit_code = execute_script(scriptfile, args);

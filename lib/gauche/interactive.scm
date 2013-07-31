@@ -204,23 +204,19 @@
 ;; See (describe <symbol>) above
 (autoload gauche.modutil describe-symbol-bindings)
 
-;; Kludge - if gosh is invoked with R7RS mode, import r7rs-small libraries
-;; into user module.  There should be better way to detect whether we started
-;; with r7rs mode.
-(when (memq (find-module 'r7rs)
-            (and-let* ([u (find-module 'user)])
-              (module-precedence-list u)))
-  (set! *repl-name* "gosh-r7rs") ; for the convenience
+;; Load user-specific default settings from ~/.gaucherc, if there's any.
+;; It is evaluated in the user module.
+(let ((dotfile (sys-normalize-pathname "~/.gaucherc" :expand #t)))
+  (when (sys-access dotfile F_OK)
+    (load dotfile :environment (find-module 'user))))
+
+;; If gosh is invoked with R7RS mode, import r7rs-small libraries
+;; into user module for the convenience.
+(when (global-variable-ref (find-module 'user) '*r7rs-mode* #f)
   (eval '(import (scheme base) (scheme case-lambda) (scheme char)
                  (scheme complex) (scheme cxr) (scheme eval)
                  (scheme file) (scheme inexact) (scheme lazy)
                  (scheme load) (scheme process-context) (scheme read)
                  (scheme repl) (scheme time) (scheme write)
                  (only (gauche) *1 *1+ *2 *2+ *3 *3+ *e *history))
-        (find-module 'user)))
-
-;; For convenience
-(let ((dotfile (sys-normalize-pathname "~/.gaucherc" :expand #t)))
-  (when (sys-access dotfile F_OK)
-    (load dotfile :environment (find-module 'user))))
-
+        (find-module 'r7rs.user)))

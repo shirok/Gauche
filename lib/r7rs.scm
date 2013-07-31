@@ -128,6 +128,13 @@
   (define-syntax define-library (with-module r7rs.library define-library))
   (extend))
 
+;;
+;; The 'r7rs.user' module is the default module when gosh is invoked in
+;; r7rs mode.
+;;
+(define-module r7rs.user
+  (extend r7rs))
+
 ;; R7RS-small standard libraries.  First I thought to make them have
 ;; separate file for each, but most of its content is just a rebinding&
 ;; reexporting, and most files are small except scheme/base.  For now
