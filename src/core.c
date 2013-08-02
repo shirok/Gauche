@@ -456,6 +456,7 @@ init_cond_features()
         const char *module;
     } init_features[] = {
         { "gauche", NULL },
+        { "gauche-" GAUCHE_VERSION , NULL },
 
         /* Platform */
 #if   defined(GAUCHE_WINDOWS)
@@ -463,6 +464,23 @@ init_cond_features()
         { "gauche-windows", NULL }, /* for backward compatibility */
 #elif defined(__CYGWIN__)  /* cygwin is different enough to deserve this */
         { "gauche.os.cygwin", NULL },
+#endif
+
+        /* R7RS Appendix B */
+        { "exact-closed", NULL },
+        { "ieee-float", NULL },
+        { "full-unicode", NULL },
+        { "ratios", NULL },
+#if   defined(GAUCHE_WINDOWS)
+        { "windows", NULL },
+#else
+        { "posix", NULL },
+#endif
+        /* TODO: OS Flags, CPU arch flags and C memory model flags */
+#if   defined(WORDS_BIGENDIAN)
+        { "big-endian", NULL },
+#else
+        { "little-endian", NULL }, /* NB: r7rs say nothing on mixed endian */
 #endif
 
         /* Threads */

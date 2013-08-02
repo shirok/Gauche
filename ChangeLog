@@ -1,3 +1,8 @@
+2013-08-01  Shiro Kawai  <shiro@acm.org>
+
+	* src/core.c: Defined some feature identifiers specified in R7RS
+	  Appendix B. (Not exhaustive yet).
+
 2013-07-30  Shiro Kawai  <shiro@acm.org>
 
 	* src/main.c, lib/r7rs.scm: In R7RS toplevel mode, set the default
