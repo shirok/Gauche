@@ -1,3 +1,7 @@
+2013-08-03  Shiro Kawwai  <shiro@acm.org>
+
+	* src/module.c, src/libmod.scm: Updated the list of builtin modules.
+
 2013-08-02  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi-106.scm: Added.  Since srfi-106 is still a draft, the API

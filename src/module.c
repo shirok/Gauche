@@ -885,6 +885,16 @@ ScmModule *Scm_CurrentModule(void)
 void Scm__InitModule(void)
 {
     ScmObj mpl = SCM_NIL;
+    /* List of builtin modules.  We create these so that 'use' or r7rs 'import'
+       won't try to search the file. */
+    static const char *builtin_modules[] = {
+        "srfi-2", "srfi-6", "srfi-8", "srfi-10", "srfi-16", "srfi-17",
+        "srfi-22", "srfi-23", "srfi-26", "srfi-28", "srfi-31", "srfi-34",
+        "srfi-35", "srfi-36", "srfi-38", "srfi-45", "srfi-55", "srfi-61",
+        "srfi-62", "srfi-87",
+        "gauche.vm.debugger",   /* for the backward compatibility */
+        NULL };
+    const char **modname;
 
     (void)SCM_INTERNAL_MUTEX_INIT(modules.mutex);
     modules.table = SCM_HASH_TABLE(Scm_MakeHashTableSimple(SCM_HASH_EQ, 64));
@@ -903,6 +913,11 @@ void Scm__InitModule(void)
     /* other modules */
     mpl = defaultMpl;
     INIT_MOD(internalModule, SCM_SYM_GAUCHE_INTERNAL, mpl);
+
+    /* create predefined moudles */
+    for (modname = builtin_modules; *modname; modname++) {
+        (void)SCM_FIND_MODULE(*modname, SCM_FIND_MODULE_CREATE);
+    }
 }
 
 void Scm__InitModulePost(void)

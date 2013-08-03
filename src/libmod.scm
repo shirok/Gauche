@@ -169,19 +169,6 @@
 (define-cproc %import-modules (mod::<module> mods) ;deprecated
   Scm_ImportModules)
 
-;; Some modules that used to be external are now built-in.  In order
-;; to make old code 'using' such modules keep working, we create empty modules.
-;; Revise this list before releasing 1.0 to see if each one is really needed.
-(inline-stub
- (initcode
-  (Scm_FindModule (SCM_SYMBOL 'srfi-2) SCM_FIND_MODULE_CREATE)
-  (Scm_FindModule (SCM_SYMBOL 'srfi-6) SCM_FIND_MODULE_CREATE)
-  (Scm_FindModule (SCM_SYMBOL 'srfi-8) SCM_FIND_MODULE_CREATE)
-  (Scm_FindModule (SCM_SYMBOL 'srfi-10) SCM_FIND_MODULE_CREATE)
-  (Scm_FindModule (SCM_SYMBOL 'srfi-17) SCM_FIND_MODULE_CREATE)
-  (Scm_FindModule (SCM_SYMBOL 'gauche.vm.debugger) SCM_FIND_MODULE_CREATE)
-  ))
-
 ;;;
 ;;; GLOCs
 ;;;
