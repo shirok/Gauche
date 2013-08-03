@@ -1,6 +1,8 @@
-2013-08-03  Shiro Kawwai  <shiro@acm.org>
+2013-08-03  Shiro Kawai  <shiro@acm.org>
 
 	* src/module.c, src/libmod.scm: Updated the list of builtin modules.
+	* ext/srfi/generate-srfi.scm: Autogenerate srfi/N.scm for supported
+	  srfi-N to make (import (srfi N)) work in r7rs mode.
 
 2013-08-02  Shiro Kawai  <shiro@acm.org>
 
