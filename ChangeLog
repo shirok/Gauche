@@ -1,3 +1,8 @@
+2013-08-02  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi-106.scm: Added.  Since srfi-106 is still a draft, the API
+	  may be changed according to its final version.
+
 2013-08-01  Shiro Kawai  <shiro@acm.org>
 
 	* src/core.c: Defined some feature identifiers specified in R7RS

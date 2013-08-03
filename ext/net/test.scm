@@ -570,4 +570,10 @@
        (test* "udp sendmsg w/o sendbuf" '(#t #t) (xtest #f)))))]
  [else #f])
 
+;;-----------------------------------------------------------------
+(test-section "srfi-106")
+
+(use srfi-106)
+(test-module 'srfi-106)
+
 (test-end)
