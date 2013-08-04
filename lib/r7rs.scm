@@ -612,7 +612,10 @@
 (define-module scheme.eval
   (import r7rs.aux)
   (export environment eval)
-  (define environment (undefined))      ;WRITEME
+  (define (environment . import-lists)
+    (rlet1 m (make-module #f)
+      (eval '(extend r7rs) m)
+      (eval `(import ,@import-lists) m)))
   (define+ eval gauche)
   (provide "scheme/eval"))
 
