@@ -99,30 +99,40 @@
 ;; Gather *.scm and *.sci files
 ;;
 
-;; ((<partial-path> . <path-to-look-for>) ...)
+;; ((<partial-path> . <path-to-the-file>) ...)
+;; <partial-path>     : "parser/peg.sci" etc.
+;; <path-to-the-file> : "../ext/peg/peg.sci" etc.
 (define (get-scheme-paths)
-  (append (map (^p (cons p (build-path "lib" p)))
-               (mfvar-ref "lib/Makefile" "SCMFILES"))
-          (append-ec [: subdir (mfvar-ref "ext/Makefile" "SUBDIRS")]
-                     [:let mf (build-path "ext"subdir"Makefile")]
-                     [:let cat (car (mfvar-ref mf "SCM_CATEGORY"))]
-                     [:let files (mfvar-ref mf "SCMFILES")]
-                     [if (not (equal? files '("")))]
-                     (map (^s (cons (build-path cat s)
-                                    (build-path "ext" subdir s)))
-                          files))))
+  (append-map
+   find-scm-source
+   (append (map (^p (cons p (build-path "lib" p)))
+                (mfvar-ref "lib/Makefile" "SCMFILES"))
+           (append-ec [: subdir (mfvar-ref "ext/Makefile" "SUBDIRS")]
+                      [:let mf (build-path "ext"subdir"Makefile")]
+                      [:let cat (car (mfvar-ref mf "SCM_CATEGORY"))]
+                      [:let files (mfvar-ref mf "SCMFILES")]
+                      [if (not (equal? files '("")))]
+                      (map (^s (cons (build-path cat s)
+                                     (build-path "ext" subdir s)))
+                           files)))))
 
-(define (get-scm-content path-to-look-for)
-  (if-let1 p (find-file-in-paths path-to-look-for
-                                 :paths (list (top-srcdir) (top-builddir))
-                                 :pred file-is-readable?)
-    ;; NB: we can just do (file->string p), but the code below eliminates
-    ;; comments and unnecessary spaces.  Using read/write would break if
-    ;; the source code contains weird read-time constructor, though.  We
-    ;; know Gauche sources don't have one, but should be careful if we ever
-    ;; extend this functionality to cover other libraries.
-    (with-output-to-string (cute for-each write (file->sexp-list p)))
-    (errorf "couldn't find ~a" path-to-look-for)))
+;; p : ((<partial-path> . <path-to-look-for>) ...)
+;; expand glob pattern in the basename part
+(define (find-scm-source p)
+  (map (^[file] (let1 dir (sys-dirname (car p))
+                  (if (equal? dir ".")
+                    (cons (sys-basename file) file)
+                    (cons (build-path dir (sys-basename file)) file))))
+       (glob (list (build-path (top-srcdir) (cdr p))
+                   (build-path (top-builddir) (cdr p))))))
+
+(define (get-scm-content path)
+  ;; NB: we can just do (file->string p), but the code below eliminates
+  ;; comments and unnecessary spaces.  Using read/write would break if
+  ;; the source code contains weird read-time constructor, though.  We
+  ;; know Gauche sources don't have one, but should be careful if we ever
+  ;; extend this functionality to cover other libraries.
+  (with-output-to-string (cute for-each write (file->sexp-list path))))
 
 ;; This code fragment is evaluated in Scm_InitPrelinked() to set up a load
 ;; hook so that the standard libraries would be load from memory instead of
