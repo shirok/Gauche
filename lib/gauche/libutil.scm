@@ -60,7 +60,7 @@
   ;; file - path components after prefix, e.g. gauche/mop
   ;; base - the last component of file, e.g. mop
   (define (search pats prefix file base seed)
-    (let* ([path (topath prefix file)])
+    (let1 path (topath prefix file)
       (cond [(and (not (null? (cdr pats)))
                   (match? (car pats) base)
                   (file-is-directory? path))
