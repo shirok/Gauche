@@ -1,3 +1,10 @@
+2013-08-05  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/libutil.scm (library-has-module?): Quick fix to recognize
+	  R7RS define-library form as well.  The 'library' clause of cond-expand
+	  relies on this procedure (via library-exists?) so it's critical to
+	  handle R7RS here.
+
 2013-08-03  Shiro Kawai  <shiro@acm.org>
 
 	* src/module.c, src/libmod.scm: Updated the list of builtin modules.

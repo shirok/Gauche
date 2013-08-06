@@ -155,9 +155,14 @@
   (let1 exp (guard (e [else #f])
               (with-input-from-file file read :if-does-not-exist #f))
     (and (pair? exp)
-         (eq? (car exp) 'define-module)
-         (pair? (cdr exp))
-         (eq? (cadr exp) name)
+         (or (and (eq? (car exp) 'define-module)
+                  (pair? (cdr exp))
+                  (eq? (cadr exp) name))
+             (and (eq? (car exp) 'define-library)
+                  (pair? (cdr exp))
+                  ;; This should be optimized---it's waste of time running
+                  ;; library-name->module-name for every library on the way.
+                  (eq? (library-name->module-name (cadr exp)) name)))
          file)))
 
 ;; Auxiliary procedures
