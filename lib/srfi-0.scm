@@ -64,8 +64,7 @@
     (unless (null? (cdr rest))
       (error "Invalid feature requirement:" `(library ,@rest)))
     (let ((modname (library-name->module-name (car rest))))
-      (and (library-exists? modname)
-           (cons modname seed))))
+      (and (library-exists? modname) seed)))
 
   (define (rec cls)
     (cond
