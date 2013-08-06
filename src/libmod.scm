@@ -65,9 +65,16 @@
 
 ;; (use x.y.z) ==> (requrie "x/y/z") (import x.y.z)
 (define-macro (use module . options)
-  `(begin
-     (require ,(module-name->path module))
-     (import (,module ,@options))))
+  ;; Kludge - remove these once we have low-level hygienic macro.
+  (define begin.   ((with-module gauche.internal make-identifier)
+                    'begin (find-module 'gauche) '()))
+  (define require. ((with-module gauche.internal make-identifier)
+                    'require (find-module 'gauche) '()))
+  (define import.  ((with-module gauche.internal make-identifier)
+                    'import (find-module 'gauche) '()))
+  `(,begin.
+     (,require. ,(module-name->path module))
+     (,import. (,module ,@options))))
 
 ;; foo.bar.baz <=> "foo/bar/baz"
 ;;  - Two consecutive dots in module name becomes one dot in path

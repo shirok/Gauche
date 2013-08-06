@@ -19,6 +19,13 @@
 
 (define-macro (cond-expand . clauses)
 
+  ;; Kludge - must be replaced once we have low-level hygienic macro.
+  (define use. ((with-module gauche.internal make-identifier)
+                'use (find-module 'gauche) '()))
+  (define begin. ((with-module gauche.internal make-identifier)
+                  'begin (find-module 'gauche) '()))
+  
+
   ;; Check feature requirement.  Returns #f if requirement is not
   ;; satisfied.  Returns a list of features to be use'd if requirement
   ;; is satisfied (it can be an emptylist, if the requirement is fulfilled
@@ -67,12 +74,12 @@
       (error "Bad clause in cond-expand:" (car cls))]
      [(equal? (caar cls) 'else)
       (if (null? (cdr cls))
-        `(begin . ,(cdar cls))
+        `(,begin. . ,(cdar cls))
         (error "Misplaced else clause in cond-expand:" (car cls)))]
      [(fulfill? (caar cls) '())
       => (lambda (uses)
-           `(begin ,@(map (lambda (mod) `(use ,mod)) uses)
-                   ,@(cdar cls)))]
+           `(,begin. ,@(map (lambda (mod) `(,use. ,mod)) uses)
+                     ,@(cdar cls)))]
      [else
       (rec (cdr cls))]))
 
