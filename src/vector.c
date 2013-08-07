@@ -321,18 +321,19 @@ ScmObj Scm_VMUVectorRef(ScmUVector *v, int t, ScmSmallInt k, ScmObj fallback)
 /*
  * Inidividual constructors for convenience
  */
-#define DEF_UVCTOR(tag, T) \
+#define DEF_UVCTOR_FILL(tag, T) \
 ScmObj SCM_CPP_CAT3(Scm_Make,tag,Vector)(ScmSmallInt size, T fill)      \
 {                                                                       \
     ScmUVector *u =                                                     \
         (ScmUVector*)Scm_MakeUVector(SCM_CPP_CAT3(SCM_CLASS_,tag,VECTOR),\
                                      size, NULL);                       \
     ScmSmallInt i;                                                      \
-    for (i=0; i<size; i++) {                                            \
-        SCM_CPP_CAT3(SCM_,tag,VECTOR_ELEMENTS)(u)[i] = fill;            \
-    }                                                                   \
+    T *elts = SCM_CPP_CAT3(SCM_,tag,VECTOR_ELEMENTS)(u);                \
+    for (i=0; i<size; i++) *elts++ = fill;                              \
     return SCM_OBJ(u);                                                  \
-}                                                                       \
+}
+
+#define DEF_UVCTOR_ARRAY(tag, T) \
 ScmObj SCM_CPP_CAT3(Scm_Make,tag,VectorFromArray)(ScmSmallInt size,     \
                                                   const T array[])      \
 {                                                                       \
@@ -348,17 +349,45 @@ ScmObj SCM_CPP_CAT3(Scm_Make,tag,VectorFromArrayShared)(ScmSmallInt size,\
                            size, (void*)array);                         \
 }
 
-DEF_UVCTOR(S8, signed char)
-DEF_UVCTOR(U8, unsigned char)
-DEF_UVCTOR(S16, short)
-DEF_UVCTOR(U16, u_short)
-DEF_UVCTOR(S32, ScmInt32)
-DEF_UVCTOR(U32, ScmUInt32)
-DEF_UVCTOR(S64, ScmInt64)
-DEF_UVCTOR(U64, ScmUInt64)
-DEF_UVCTOR(F16, ScmHalfFloat)
-DEF_UVCTOR(F32, float)
-DEF_UVCTOR(F64, double)
+/* NB: For u8vector and s8vector we can let memset() to fill the
+   contents, expecting it's optimized. */
+ScmObj Scm_MakeS8Vector(ScmSmallInt size, signed char fill)
+{
+    ScmUVector *u =
+        (ScmUVector*)Scm_MakeUVector(SCM_CLASS_S8VECTOR, size, NULL);
+    (void)memset(SCM_S8VECTOR_ELEMENTS(u), fill, size);
+    return SCM_OBJ(u);
+}
+
+ScmObj Scm_MakeU8Vector(ScmSmallInt size, unsigned char fill)
+{
+    ScmUVector *u =
+        (ScmUVector*)Scm_MakeUVector(SCM_CLASS_U8VECTOR, size, NULL);
+    (void)memset(SCM_U8VECTOR_ELEMENTS(u), fill, size);
+    return SCM_OBJ(u);
+}
+
+DEF_UVCTOR_FILL(S16, short)
+DEF_UVCTOR_FILL(U16, u_short)
+DEF_UVCTOR_FILL(S32, ScmInt32)
+DEF_UVCTOR_FILL(U32, ScmUInt32)
+DEF_UVCTOR_FILL(S64, ScmInt64)
+DEF_UVCTOR_FILL(U64, ScmUInt64)
+DEF_UVCTOR_FILL(F16, ScmHalfFloat)
+DEF_UVCTOR_FILL(F32, float)
+DEF_UVCTOR_FILL(F64, double)
+
+DEF_UVCTOR_ARRAY(S8, signed char)
+DEF_UVCTOR_ARRAY(U8, unsigned char)
+DEF_UVCTOR_ARRAY(S16, short)
+DEF_UVCTOR_ARRAY(U16, u_short)
+DEF_UVCTOR_ARRAY(S32, ScmInt32)
+DEF_UVCTOR_ARRAY(U32, ScmUInt32)
+DEF_UVCTOR_ARRAY(S64, ScmInt64)
+DEF_UVCTOR_ARRAY(U64, ScmUInt64)
+DEF_UVCTOR_ARRAY(F16, ScmHalfFloat)
+DEF_UVCTOR_ARRAY(F32, float)
+DEF_UVCTOR_ARRAY(F64, double)
 
 /*
  * Class-dependent functions
