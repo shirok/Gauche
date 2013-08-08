@@ -162,7 +162,7 @@
              rest)
       (cons (list (- to from -1) (integer->char from) (integer->char to))
             rest)))
-  (let loop ([in array]
+  (let loop ([in (sort-by array cadr)]
              [out '()]
              [index 0])
     (if (null? in)

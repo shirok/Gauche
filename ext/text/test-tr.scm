@@ -26,10 +26,15 @@
        (string-tr "Hello, World!" "A-Za-z" "a-z" :delete #t))
 (test* "complement" "Hello??World?"
        (string-tr "Hello, World!" "A-Za-z" "?*" :complement #t))
+(test* "complement" "Hello??World?"
+       (string-tr "Hello, World!" "a-zA-Z" "?*" :complement #t))
 (test* "complement" "H??????W?????"
        (string-tr "Hello, World!" "A-Z" "?*" :complement #t))
 (test* "complement & delete" "HelloWorld"
        (string-tr "Hello, World!" "A-Za-z" ""
+                  :complement #t :delete #t))
+(test* "complement & delete" "HelloWorld"
+       (string-tr "Hello, World!" "a-zA-Z" ""
                   :complement #t :delete #t))
 (test* "squeeze" "helo,   world!!!!"
        (string-tr "Hello,   World!!!!" "A-Za-z" "a-z" :squeeze #t))

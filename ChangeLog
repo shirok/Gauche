@@ -1,3 +1,9 @@
+2013-08-08  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/text/tr.scm (complement-char-array): Fixed a bug that
+	  made complement yield incorrect set when from-str isn't in
+	  increasing order of character codes.
+
 2013-08-05  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/libutil.scm (library-has-module?): Quick fix to recognize
