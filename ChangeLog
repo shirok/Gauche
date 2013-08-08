@@ -1,5 +1,8 @@
 2013-08-08  Shiro Kawai  <shiro@acm.org>
 
+	* lib/file/filter.scm (file-filter): Fixed a bug that the outputfile
+	  is not created when :temporary-file #t :leave-unchanged #t.
+
 	* libsrc/text/tr.scm (complement-char-array): Fixed a bug that
 	  made complement yield incorrect set when from-str isn't in
 	  increasing order of character codes.

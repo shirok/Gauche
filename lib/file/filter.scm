@@ -79,6 +79,7 @@
 
   (define (rename-ok? tfile ofile)
     (or (not leave-unchanged)
+        (not (file-is-readable? ofile))
         (and (file-is-readable? ofile)
              (file-is-readable? tfile)
              (not (file-equal? tfile ofile)))))
