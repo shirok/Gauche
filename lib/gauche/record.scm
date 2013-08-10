@@ -349,6 +349,7 @@
   (define %pred (->id 'rtd-predicate))
   (define %asor (->id 'rtd-accessor))
   (define %mtor (->id 'rtd-mutator))
+  (define %define-inline (->id 'define-inline))
   (define tmp   (gensym))
   (define (build-field-spec)
     (map-to <vector> (match-lambda
@@ -359,37 +360,37 @@
                        [x (error "invalid field spec:" x)])
             field-specs))
   (define (build-def typename parent)
-    `(define-inline ,typename
+    `(,%define-inline ,typename
        (,%make ',typename ,(build-field-spec) ,@(if parent `(,parent) '()))))
   (define (build-ctor typename)
     (match ctor-spec
       [#f '()]
-      [#t `((define-inline ,(sym+ 'make- typename) (,%ctor ,typename)))]
+      [#t `((,%define-inline ,(sym+ 'make- typename) (,%ctor ,typename)))]
       [((? id? ctor-name) field ...)
-       `((define-inline ,ctor-name (,%ctor ,typename ,(list->vector field))))]
+       `((,%define-inline ,ctor-name (,%ctor ,typename ,(list->vector field))))]
       [(? id? ctor-name)
-       `((define-inline ,ctor-name (,%ctor ,typename)))]
+       `((,%define-inline ,ctor-name (,%ctor ,typename)))]
       [x (error "invalid constructor spec" ctor-spec)]))
   (define (build-pred typename)
     (match pred-spec
       [#f '()]
-      [#t `((define-inline (,(sym+ typename '?) ,tmp)
+      [#t `((,%define-inline (,(sym+ typename '?) ,tmp)
               ((,%pred ,typename) ,tmp)))]
       [(? id? pred-name)
-       `((define-inline (,pred-name ,tmp) ((,%pred ,typename) ,tmp)))]
+       `((,%define-inline (,pred-name ,tmp) ((,%pred ,typename) ,tmp)))]
       [x (error "invalid predicate spec" pred-spec)]))
   (define (build-accessors typename)
     (map (match-lambda
-           [(f a . _) `(define-inline ,a (,%asor ,typename ',f))]
-           [(f)       `(define-inline ,(sym+ typename '- f)
+           [(f a . _) `(,%define-inline ,a (,%asor ,typename ',f))]
+           [(f)       `(,%define-inline ,(sym+ typename '- f)
                          (,%asor ,typename ',f))]
-           [f         `(define-inline ,(sym+ typename '- f)
+           [f         `(,%define-inline ,(sym+ typename '- f)
                          (,%asor ,typename ',f))])
          field-specs))
   (define (build-mutators typename)
     (append-map (match-lambda
-                  [(f a m) `((define-inline ,m (,%mtor ,typename ',f)))]
-                  [(f)     `((define-inline ,(sym+ typename '- f '-set!)
+                  [(f a m) `((,%define-inline ,m (,%mtor ,typename ',f)))]
+                  [(f)     `((,%define-inline ,(sym+ typename '- f '-set!)
                                (,%mtor ,typename ',f)))]
                   [_ '()])
                 field-specs))
