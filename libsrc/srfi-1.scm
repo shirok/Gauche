@@ -56,17 +56,6 @@
 
 (define-inline (not-pair? x) (not (pair? x)))
 
-(define-macro (re-export . syms)
-  `(begin ,@(map (^s `(define ,s (with-module gauche ,s))) syms)))
-
-(re-export null-list? cons* last member
-           take drop take-right drop-right take! drop-right!
-           delete delete! delete-duplicates delete-duplicates!
-           assoc alist-copy alist-delete alist-delete!
-           any every filter filter! remove remove! filter-map
-           fold fold-right find find-tail
-           split-at split-at! iota)
-
 ;;;
 ;;; List generators of SRFI-1
 ;;;

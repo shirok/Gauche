@@ -95,20 +95,6 @@
 (define %maybe-substring (with-module gauche.internal %maybe-substring))
 (define %hash-string (with-module gauche.internal %hash-string))
 (define %string-replace-body! (with-module gauche.internal %string-replace-body!))
-
-;; TODO: Fix re-exporting so that we don't need these.
-(define string? (with-module gauche string?))
-(define make-string (with-module gauche make-string))
-(define string->list (with-module gauche string->list))
-(define list->string (with-module gauche list->string))
-(define string-join (with-module gauche string-join))
-(define string-length (with-module gauche string-length))
-(define string-ref (with-module gauche string-ref))
-(define string-copy (with-module gauche string-copy))
-(define string-set! (with-module gauche string-set!))
-(define string-fill! (with-module gauche string-fill!))
-(define string-append (with-module gauche string-append))
-
 ;;;
 ;;; Predicates
 ;;;

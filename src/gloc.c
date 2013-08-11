@@ -45,7 +45,11 @@ static void gloc_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
                g->name,
                (Scm_GlocConstP(g)
                 ? " const"
-                : (Scm_GlocInlinableP(g) ? " inlinable" : "")));
+                : (Scm_GlocInlinableP(g)
+                   ? " inlinable"
+                   : (SCM_GLOC_PHANTOM_BINDING_P(g)
+                      ? " phantom"
+                      : ""))));
 }
 
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_GlocClass, gloc_print);

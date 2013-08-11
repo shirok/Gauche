@@ -32,29 +32,24 @@
 ;;; Bitwise operators
 ;;;
 
-(define logand (with-module gauche logand))
+;; logand, logior, logxor, lognot, logtest - defined in gauche
 (define bitwise-and logand)
-(define logior (with-module gauche logior))
 (define bitwise-ior logior)
-(define logxor (with-module gauche logxor))
 (define bitwise-xor logxor)
-(define lognot (with-module gauche lognot))
 (define bitwise-not lognot)
 
 (define (bitwise-if mask n0 n1)
   (logior (logand mask n0) (logand (lognot mask) n1)))
 (define bitwise-merge bitwise-if)
 
-(define logtest (with-module gauche logtest))
 (define any-bits-set? logtest)
 
 ;;;
 ;;; Integer properties
 ;;;
 
-(define logcount (with-module gauche logcount))
+;; logcount - defined in gauche
 (define bit-count logcount)
-(define integer-length (with-module gauche integer-length))
 
 (define (log2-binary-factors n)
   (- (integer-length (logand n (- n))) 1))
@@ -64,17 +59,14 @@
 ;;; Bit within word
 ;;;
 
-(define logbit? (with-module gauche logbit?))
+;; logbit?, copy-bit - defined in gauche
 (define bit-set? logbit?)
-(define copy-bit (with-module gauche copy-bit))
 
 ;;;
 ;;; Field of bits
 ;;;
 
-(define bit-field (with-module gauche bit-field))
-(define copy-bit-field (with-module gauche copy-bit-field))
-(define ash (with-module gauche ash))
+;; bit-field, copy-bit-field, ash - defined in gauche
 (define arithmetic-shift ash)
 
 (define (rotate-bit-field n count start end)

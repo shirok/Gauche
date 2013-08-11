@@ -244,43 +244,38 @@ static inline void module_add_visited(module_cache *c, ScmObj m)
     }
 }
 
-ScmGloc *Scm_FindBinding(ScmModule *module, ScmSymbol *symbol, int flags)
+/* The main logic of global binding search.  We factored this out since
+   we need recursive searching in case of phantom binding (see gloc.h
+   about phantom bindings).  The flags stay_in_module and external_only
+   corresponds to the flags passed to Scm_FindBinding.  The exclude_self
+   flag is only used in recursive search. */
+static ScmGloc *search_binding(ScmModule *module, ScmSymbol *symbol,
+                               int stay_in_module, int external_only,
+                               int exclude_self)
 {
     ScmModule *m = module;
     ScmObj v, p, mp;
-    ScmGloc *gloc = NULL;
-    int stay_in_module = flags&SCM_BINDING_STAY_IN_MODULE;
-    int external_only = flags&SCM_BINDING_EXTERNAL;
     module_cache searched;
 
+    /* First, search from the specified module.  In this phase, we just ignore
+       phantom bindings, for we'll search imported bindings later anyway. */
+    if (!exclude_self) {
+        v = Scm_HashTableRef(external_only? m->external:m->internal,
+                             SCM_OBJ(symbol), SCM_FALSE);
+        if (SCM_GLOCP(v) && !SCM_GLOC_PHANTOM_BINDING_P(SCM_GLOC(v))) {
+            return SCM_GLOC(v);
+        }
+        if (stay_in_module) return NULL;
+    }
+
     init_module_cache(&searched);
-    SCM_INTERNAL_MUTEX_SAFE_LOCK_BEGIN(modules.mutex);
-
-    /* first, search from the specified module.
-       NB: we directly check gloc->value instead of calling
-       SCM_GLOC_GET, since this check is merely to eliminate
-       the GLOC inserted by export. */
-    if (external_only) {
-        v = Scm_HashTableRef(m->external, SCM_OBJ(symbol), SCM_FALSE);
-    } else {
-        v = Scm_HashTableRef(m->internal, SCM_OBJ(symbol), SCM_FALSE);
-    }
-    if (SCM_GLOCP(v)) {
-        gloc = SCM_GLOC(v);
-        if (!SCM_GLOC_PHANTOM_BINDING_P(gloc)) goto out;
-    }
-    if (stay_in_module) goto out;
-
     /* Next, search from imported modules */
     SCM_FOR_EACH(p, module->imported) {
         ScmObj elt = SCM_CAR(p);
-        ScmModule *mod = NULL;
         ScmObj sym = SCM_OBJ(symbol);
 
         SCM_ASSERT(SCM_MODULEP(elt));
-        mod = SCM_MODULE(elt);
-
-        SCM_FOR_EACH(mp, mod->mpl) {
+        SCM_FOR_EACH(mp, SCM_MODULE(elt)->mpl) {
             ScmGloc *g;
 
             SCM_ASSERT(SCM_MODULEP(SCM_CAR(mp)));
@@ -290,22 +285,22 @@ ScmGloc *Scm_FindBinding(ScmModule *module, ScmSymbol *symbol, int flags)
             if (SCM_SYMBOLP(m->prefix)) {
                 sym = Scm_SymbolSansPrefix(SCM_SYMBOL(sym),
                                            SCM_SYMBOL(m->prefix));
-                if (!SCM_SYMBOLP(sym)) goto skip;
+                if (!SCM_SYMBOLP(sym)) break;
             }
 
             v = Scm_HashTableRef(m->external, SCM_OBJ(sym), SCM_FALSE);
-            /* see above comment about the check of gloc->value */
             if (SCM_GLOCP(v)) {
                 g = SCM_GLOC(v);
                 if (g->hidden) break;
-                if (!SCM_UNBOUNDP(g->value)) {
-                    gloc = g;
-                    goto out;
+                if (SCM_GLOC_PHANTOM_BINDING_P(g)) {
+                    g = search_binding(m, symbol, FALSE, FALSE, TRUE);
+                    if (g) return g;
+                } else {
+                    return g;
                 }
             }
             module_add_visited(&searched, SCM_OBJ(m));
         }
-    skip:;
     }
 
     /* Then, search from parent modules */
@@ -313,9 +308,10 @@ ScmGloc *Scm_FindBinding(ScmModule *module, ScmSymbol *symbol, int flags)
     SCM_FOR_EACH(mp, SCM_CDR(module->mpl)) {
         SCM_ASSERT(SCM_MODULEP(SCM_CAR(mp)));
         m = SCM_MODULE(SCM_CAR(mp));
+
         if (SCM_SYMBOLP(m->prefix)) {
             ScmObj sym = Scm_SymbolSansPrefix(symbol, SCM_SYMBOL(m->prefix));
-            if (!SCM_SYMBOLP(sym)) goto out;
+            if (!SCM_SYMBOLP(sym)) return NULL;
             symbol = SCM_SYMBOL(sym);
         }
         if (external_only) {
@@ -323,9 +319,21 @@ ScmGloc *Scm_FindBinding(ScmModule *module, ScmSymbol *symbol, int flags)
         } else {
             v = Scm_HashTableRef(m->internal, SCM_OBJ(symbol), SCM_FALSE);
         }
-        if (SCM_GLOCP(v)) { gloc = SCM_GLOC(v); goto out; }
+        if (SCM_GLOCP(v) && !SCM_GLOC_PHANTOM_BINDING_P(SCM_GLOC(v))) {
+            return SCM_GLOC(v);
+        }
     }
- out:
+    return NULL;
+}
+
+ScmGloc *Scm_FindBinding(ScmModule *module, ScmSymbol *symbol, int flags)
+{
+    int stay_in_module = flags&SCM_BINDING_STAY_IN_MODULE;
+    int external_only = flags&SCM_BINDING_EXTERNAL;
+    ScmGloc *gloc = NULL;
+
+    SCM_INTERNAL_MUTEX_SAFE_LOCK_BEGIN(modules.mutex);
+    gloc = search_binding(module, symbol, stay_in_module, external_only, FALSE);
     SCM_INTERNAL_MUTEX_SAFE_LOCK_END();
     return gloc;
 }

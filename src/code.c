@@ -259,7 +259,7 @@ void Scm_CompiledCodeDump(ScmCompiledCode *cc)
     } while (more);
 }
 
-void print_header(const char *prefix, ScmObj name, ScmCompiledCode *cc)
+static void print_header(const char *prefix, ScmObj name, ScmCompiledCode *cc)
 {
     Scm_Printf(SCM_CUROUT, "=== %s%A (name=%S, code=%p, size=%d, const=%d stack=%d):\n",
                prefix, name, cc->name, cc->code,
@@ -274,7 +274,7 @@ void print_header(const char *prefix, ScmObj name, ScmCompiledCode *cc)
    the identifier into the lifted list, returns the updated list.
    Otherwise, we return lifted list as is.
  */
-ScmObj check_lifted_closure(ScmWord *p, ScmObj lifted)
+static ScmObj check_lifted_closure(ScmWord *p, ScmObj lifted)
 {
     ScmIdentifier *id;
     ScmObj g;

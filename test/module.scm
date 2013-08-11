@@ -311,6 +311,16 @@
           (list (global-variable-ref m 'a #f)
                 (global-variable-ref m 'x #f)))))
 
+(define-module Of
+  (export foo)
+  (define foo 1))
+(define-module Of-1
+  (import Of)
+  (export foo))
+
+(test "transitive export" 1
+      (lambda () (global-variable-ref (find-module 'Of-1) 'foo #f)))
+
 ;;------------------------------------------------------------------
 ;; select-module, and restoration in load().
 

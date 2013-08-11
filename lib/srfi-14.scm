@@ -74,8 +74,12 @@
           char-set:graphic char-set:printing char-set:whitespace
           char-set:iso-control char-set:punctuation char-set:symbol
           char-set:hex-digit char-set:blank char-set:ascii
-          char-set:empty char-set:full)
-  )
+          char-set:empty char-set:full
+
+          ;; The followings are defined in core
+          char-set char-set? char-set-contains? char-set-copy
+          char-set-complement char-set-complement!
+          ))
 (select-module srfi-14)
 
 ;; used in ->char-set

@@ -1,3 +1,11 @@
+2013-08-10  Shiro Kawai  <shiro@acm.org>
+
+	* src/module.c (Scm_FindBinding): Support transitive export, i.e.
+	  allow exporting symbols that are imported or inherited, without
+	  explicitly defining it in the module.
+	* libsrc/srfi-1.scm, libsrc/srfi-13.scm, lib/srfi-14.scm, lib/srfi-60.scm
+	  Changed accordingly.
+
 2013-08-08  Shiro Kawai  <shiro@acm.org>
 
 	* lib/file/filter.scm (file-filter): Fixed a bug that the outputfile
