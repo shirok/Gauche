@@ -16198,6 +16198,31 @@ type of @var{source}.
 @end defun
 
 
+@deftp {Function} @var{TAG}vector-append vec @dots{}
+@findex s8vector-append
+@findex u8vector-append
+@findex s16vector-append
+@findex u16vector-append
+@findex s32vector-append
+@findex u32vector-append
+@findex s64vector-append
+@findex u64vector-append
+@findex f16vector-append
+@findex f32vector-append
+@findex f64vector-append
+@c EN
+All arguments must be @var{TAG}vectors.  Returns a fresh vector
+whose contents are concatenation of the given vectors.
+@c JP
+引数はすべて@var{TAG}vectorでなければなりません。
+引数ベクタの内容を全てつなぎ合わせた新たなベクタを返します。
+@c COMMON
+
+@example
+(u8vector-append '#u8(1 2 3) '#u8(4 5) '#u8() '#u8(6 7 8))
+  @result{} #u8(1 2 3 4 5 6 7 8)
+@end example
+@end deftp
 
 @node Uvector conversion operations, Uvector numeric operations, Uvector basic operations, Uniform vectors
 @subsection Uvector conversion operations

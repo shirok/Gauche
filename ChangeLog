@@ -1,3 +1,7 @@
+2013-08-11  Shiro Kawai  <shiro@acm.org>
+
+	* ext/uvector/uvutil.scm (u8vector-append etc): Added.
+
 2013-08-10  Shiro Kawai  <shiro@acm.org>
 
 	* src/module.c (Scm_FindBinding): Support transitive export, i.e.

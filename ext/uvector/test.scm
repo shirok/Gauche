@@ -421,6 +421,24 @@
 (uv-multicopy!-test "f32vector-multi-copy!" make-f32vector f32vector f32vector-multi-copy!)
 (uv-multicopy!-test "f64vector-multi-copy!" make-f64vector f64vector f64vector-multi-copy!)
 
+(define (uv-append-test msg ctor append)
+  (test* #`",msg base" (ctor) (append))
+  (test* #`",msg unit" (ctor 1 2 3 ) (append (ctor 1 2 3)))
+  (test* #`",msg" (ctor 1 2 3 4 5 6 7 8)
+         (append (ctor 1 2 3) (ctor) (ctor 4 5) (ctor 6 7 8))))
+
+(uv-append-test "s8vector-append" s8vector s8vector-append)
+(uv-append-test "u8vector-append" u8vector u8vector-append)
+(uv-append-test "s16vector-append" s16vector s16vector-append)
+(uv-append-test "u16vector-append" u16vector u16vector-append)
+(uv-append-test "s32vector-append" s32vector s32vector-append)
+(uv-append-test "u32vector-append" u32vector u32vector-append)
+(uv-append-test "s64vector-append" s64vector s64vector-append)
+(uv-append-test "u64vector-append" u64vector u64vector-append)
+(uv-append-test "f16vector-append" f16vector f16vector-append)
+(uv-append-test "f32vector-append" f32vector f32vector-append)
+(uv-append-test "f64vector-append" f64vector f64vector-append)
+
 ;;-------------------------------------------------------------------
 (test-section "swapping bytes")
 

@@ -62,6 +62,36 @@
 (set-reference-inliner f64vector-ref 10)
 
 ;;-------------------------------------------------------------
+;; Appending vectors
+;;
+
+(define-macro (define-appender tag)
+  (let ([app   (string->symbol #`",|tag|vector-append")]
+        [len   (string->symbol #`",|tag|vector-length")]
+        [make  (string->symbol #`"make-,|tag|vector")]
+        [copy! (string->symbol #`",|tag|vector-copy!")])
+    `(define (,app . vs)
+       (let* ([size (apply + (map ,len vs))]
+              [dest (,make size)])
+         (do ([vs vs (cdr vs)]
+              [k  0  (+ k (,len (car vs)))])
+             [(null? vs) dest]
+           (,copy! dest k (car vs)))))
+    ))
+
+(define-appender s8)
+(define-appender u8)
+(define-appender s16)
+(define-appender u16)
+(define-appender s32)
+(define-appender u32)
+(define-appender s64)
+(define-appender u64)
+(define-appender f16)
+(define-appender f32)
+(define-appender f64)
+
+;;-------------------------------------------------------------
 ;; Sequence protocol implementation
 ;;
 
