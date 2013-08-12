@@ -419,14 +419,7 @@
   (define bytevector-u8-set! u8vector-set!)
   (define bytevector-copy    u8vector-copy)
   (define bytevector-copy!   u8vector-copy!)
-  (define (bytevector-append . bvs)
-    (let* ([size (apply + (map u8vector-length bvs))]
-           [dest (make-u8vector size)])
-      (do ([bvs bvs (cdr bvs)]
-           [k   0   (+ k (u8vector-length (car bvs)))])
-          [(null? bvs) dest]
-        (u8vector-copy! dest k (car bvs)))))
-
+  (define bytevector-append  u8vector-append)
   (define+ utf8->string  text.unicode)
   (define+ string->utf8  text.unicode)
 
