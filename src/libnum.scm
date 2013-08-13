@@ -466,8 +466,8 @@
 (define-in-module scheme (cos z)
   (cond [(real? z) (%cos z)]
         [(number? z)
-         (let ((x (real-part z))
-               (y (imag-part z)))
+         (let ([x (real-part z)]
+               [y (imag-part z)])
            (make-rectangular (* (%cos x) (%cosh y))
                              (- (* (%sin x) (%sinh y)))))]
         [else (error "number required, but got" z)]))
@@ -475,8 +475,8 @@
 (define (cosh z)
   (cond [(real? z) (%cosh z)]
         [(number? z)
-         (let ((x (real-part z))
-               (y (imag-part z)))
+         (let ([x (real-part z)]
+               [y (imag-part z)])
            (make-rectangular (* (%cosh x) (%cos y))
                              (* (%sinh x) (%sin y))))]
         [else (error "number required, but got" z)]))
@@ -484,8 +484,8 @@
 (define-in-module scheme (sin z)
   (cond [(real? z) (%sin z)]
         [(number? z)
-         (let ((x (real-part z))
-               (y (imag-part z)))
+         (let ([x (real-part z)]
+               [y (imag-part z)])
            (make-rectangular (* (%sin x) (%cosh y))
                              (* (%cos x) (%sinh y))))]
         [else (error "number required, but got" z)]))
@@ -493,8 +493,8 @@
 (define (sinh z)
   (cond [(real? z) (%sinh z)]
         [(number? z)
-         (let ((x (real-part z))
-               (y (imag-part z)))
+         (let ([x (real-part z)]
+               [y (imag-part z)])
            (make-rectangular (* (%sinh x) (%cos y))
                              (* (%cosh x) (%sin y))))]
         [else (error "number required, but got" z)]))
@@ -502,7 +502,7 @@
 (define-in-module scheme (tan z)
   (cond [(real? z) (%tan z)]
         [(number? z)
-         (let ((iz (* +i z)))
+         (let1 iz (* +i z)
            (* -i
               (/ (- (exp iz) (exp (- iz)))
                  (+ (exp iz) (exp (- iz))))))]
