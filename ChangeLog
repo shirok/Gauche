@@ -1,3 +1,7 @@
+2013-08-13  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/configure.scm: Added.  Not completed yet.
+
 2013-08-11  Shiro Kawai  <shiro@acm.org>
 
 	* ext/uvector/uvutil.scm (u8vector-append etc): Added.
