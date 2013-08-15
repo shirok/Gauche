@@ -2622,8 +2622,8 @@ static void iexpt10_init(void)
 #define IEXPT10_INIT() \
     do { if (!iexpt10_initialized) iexpt10_init(); } while (0)
 
-/* short cut for exact numbers */
-static ScmObj exact_expt(ScmObj x, ScmObj y)
+/* expt(x, y) where x is exact and y is integer */
+ScmObj Scm_ExactIntegerExpt(ScmObj x, ScmObj y)
 {
     int sign = Scm_Sign(y);
     long iy;
@@ -2663,8 +2663,9 @@ static ScmObj exact_expt(ScmObj x, ScmObj y)
 static ScmObj scm_expt(ScmObj x, ScmObj y, int vmp)
 {
     double dx, dy;
-    if (SCM_EXACTP(x) && SCM_INTEGERP(y)) return exact_expt(x, y);
-    /* TODO: ratnum vs ratnum */
+    /* NB: The exact case is handled by expt in libnum.scm; we check this case
+       just for the backward compatibility. */
+    if (SCM_EXACTP(x) && SCM_INTEGERP(y)) return Scm_ExactIntegerExpt(x, y);
     if (!SCM_REALP(x)) Scm_Error("real number required, but got %S", x);
     if (!SCM_REALP(y)) Scm_Error("real number required, but got %S", y);
     dx = Scm_GetDouble(x);
@@ -4003,8 +4004,8 @@ static ScmObj read_real(const char **strp, int *lenp,
         /* Explicit exact number.  We can continue exact arithmetic
            (it may end up ratnum) */
         ScmObj e = Scm_Mul(fraction,
-                           exact_expt(SCM_MAKE_INT(10),
-                                      Scm_MakeInteger(exponent-fracdigs)));
+                           Scm_ExactIntegerExpt(SCM_MAKE_INT(10),
+                                                Scm_MakeInteger(exponent-fracdigs)));
         if (minusp) return Scm_Negate(e);
         else        return e;
     } else {

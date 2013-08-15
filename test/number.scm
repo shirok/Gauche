@@ -493,6 +493,22 @@
        (expt 2 1/2)
        (lambda (x y) (nearly=? 10e7 x y))) ;; NB: pa$ will be tested later
 
+(let ()
+  (define (exact-expt-tester x y)
+    (let1 x^y (expt x y)
+      (test* "exact expt (non-integral power)" x (expt x^y (/ y)))
+      (test* "exact expt (non-integral power)" (* x x) (expt x^y (/ 2 y)))
+      (test* "exact expt (non-integral power, inexact fallback)"
+             (expt (+ x^y 1.0) (/ y)) (expt (+ x^y 1) (/ y)))
+      ))
+
+  (exact-expt-tester 3 7)
+  (exact-expt-tester 5 3)
+  (exact-expt-tester 13 17)
+  (exact-expt-tester 101 103)
+  (exact-expt-tester 11/13 23)
+  )
+             
 ;; expt-mod
 (define (test-expt-mod base mod)
   ;; NB: we haven't tested iota.

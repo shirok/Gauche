@@ -454,7 +454,9 @@
               (loop (quotient (+ s2 k) (* 2 s))))))))))
 
 (define-in-module scheme (expt x y)
-  (cond [(real? x)
+  (cond [(and (exact? x) (exact? y))
+         ((with-module gauche.internal %exact-expt) x y)]
+        [(real? x)
          (cond [(real? y) (%expt x y)]
                [(number? y)
                 (* (%expt x (real-part y))
@@ -463,6 +465,63 @@
         [(number? x) (exp (* y (log x)))]
         [else (error "number required, but got" x)]))
 
+(select-module gauche.internal)
+(define-cproc %exact-integer-expt (x y) :constant Scm_ExactIntegerExpt)
+(define (%exact-expt x y) ;; x, y :: exact
+  (cond [(integer? y) (%exact-integer-expt x y)]
+        [(< y 0)   (/ (%exact-expt x (- y)))]
+        [(= y 1/2)
+         (receive (r q) (%exact-integer-sqrt x)
+           (if (= q 0) r (%sqrt x)))]
+        [(integer? x)
+         (let ([a (numerator y)]
+               [b (denominator y)])
+           ;; Calculate b-th root of x by Newton-Rhapson.  Since b > 2,
+           ;; it converges even faster than exact-integer-sqrt.
+           ;;
+           ;;   expt(x, 1/b) ==  expt(2, (log_2 x)/b)
+           ;;                =:= ash(1, round((log_2 x)/b))
+           ;;
+           ;; So we start from a initial value r_0 = ash(1, round((log_2 x)/b)),
+           ;; then refine it by
+           ;;
+           ;;   r_{N+1} = r_N - ceil( (r_N^b - x)/br_N^{b-1} )
+           ;;
+           ;; Since we're looking for an integer solution, we can give up
+           ;; when the following condition is met:
+           ;;
+           ;;     ( r_N+1 - r_N == 1 AND r_N^b < x < r_{N+1}^b )
+           ;;  OR ( r_N - r_N+1 == 1 AND r_{N+1}^b < x < r_N^b )
+           ;;
+           ;; In that case, we fall back to inexact calculation by %expt.
+           (let* ([r (ash 1 (round->exact (/ (log x 2) b)))]
+                  [s (%exact-integer-expt r b)])
+             (if (= s x)
+               (%exact-integer-expt r a)
+               (let loop ([r r] [s s])
+                 (let* ([deliv (* b (%exact-integer-expt r (- b 1)))]
+                        [err   (- s x)]
+                        [delta (if (> err 0)
+                                 (quotient (+ err deliv -1) deliv)
+                                 (quotient (- err deliv -1) deliv))]
+                        [r2 (- r delta)]
+                        [s2 (%exact-integer-expt r2 b)])
+                   (if (= s2 x)
+                     (%exact-integer-expt r2 a)
+                     (if (or (and (= delta 1)  (< s2 x s))
+                             (and (= delta -1) (< s x s2)))
+                       (%expt x y)
+                       (loop r2 s2))))))))]
+        [else
+         ;; x is rational
+         (or (and-let* ([xn (%exact-expt (numerator x) y)]
+                        [ (exact? xn) ]
+                        [xd (%exact-expt (denominator x) y)]
+                        [ (exact? xd) ])
+               (/ xn xd))
+             (%expt x y))]))
+
+(select-module gauche)
 (define-in-module scheme (cos z)
   (cond [(real? z) (%cos z)]
         [(number? z)
