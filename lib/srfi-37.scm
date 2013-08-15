@@ -28,8 +28,8 @@
 
 ;;; Modified by Shiro Kawai to adapt to Gauche
 ;;;  * Module stuff added.
-;;;  * The use of srfi-9 record in the original code is replaced for a class.
-;;;  * Replaced some expressions to utilize Gauche's native featuers.
+;;;  * Replaced a srfi-9 record type for a class.
+;;;  * Replaced some expressions to utilize Gauche's native features.
 
 (define-module srfi-37
   (use srfi-1)
@@ -55,88 +55,83 @@
 
 (define (args-fold args options unrecognized-option-proc operand-proc . seeds)
   (define (find-option name)
-    (find (lambda (option)
-            (find (cut equal? name <>) (option-names option)))
-          options))
+    (find (^[option] (find (cut equal? name <>) (option-names option))) options))
   (define (scan-short-options index shorts args seeds)
     (if (= index (string-length shorts))
-        (scan-args args seeds)
-        (let* ((name (string-ref shorts index))
-               (option (or (find-option name)
-                           (option (list name) #f #f
-                                   unrecognized-option-proc))))
-          (cond ((and (< (+ index 1) (string-length shorts))
-                      (or (option-required-arg? option)
-                          (option-optional-arg? option)))
-                 (receive seeds
-                     (apply (option-processor option) option name
-                            (substring shorts (+ index 1)
-                                       (string-length shorts))
-                            seeds)
-                   (scan-args args seeds)))
-                ((and (option-required-arg? option)
-                      (pair? args))
-                 (receive seeds
-                     (apply (option-processor option) option name
-                            (car args) seeds)
-                   (scan-args (cdr args) seeds)))
-                (else
-                 (receive seeds
-                     (apply (option-processor option) option name #f seeds)
-                   (scan-short-options (+ index 1) shorts args seeds)))
-                ))))
+      (scan-args args seeds)
+      (let* ([name (string-ref shorts index)]
+             [option (or (find-option name)
+                         (option (list name) #f #f
+                                 unrecognized-option-proc))])
+        (cond [(and (< (+ index 1) (string-length shorts))
+                    (or (option-required-arg? option)
+                        (option-optional-arg? option)))
+               (receive seeds
+                   (apply (option-processor option) option name
+                          (substring shorts (+ index 1)
+                                     (string-length shorts))
+                          seeds)
+                 (scan-args args seeds))]
+              [(and (option-required-arg? option)
+                    (pair? args))
+               (receive seeds
+                   (apply (option-processor option) option name
+                          (car args) seeds)
+                 (scan-args (cdr args) seeds))]
+              [else
+               (receive seeds
+                   (apply (option-processor option) option name #f seeds)
+                 (scan-short-options (+ index 1) shorts args seeds))]
+              ))))
   (define (scan-operands operands seeds)
     (if (null? operands)
-        (apply values seeds)
-        (receive seeds (apply operand-proc (car operands) seeds)
-          (scan-operands (cdr operands) seeds))))
+      (apply values seeds)
+      (receive seeds (apply operand-proc (car operands) seeds)
+        (scan-operands (cdr operands) seeds))))
   (define (scan-args args seeds)
     (if (null? args)
-        (apply values seeds)
-        (let ((arg (car args))
-              (args (cdr args)))
-          (cond
-           ((string=? "--" arg)
-            ;; End option scanning:
-            (scan-operands args seeds))
-           ((#/^--([^=]+)=(.*)$/ arg)
-            ;; Found long option with arg:
-            => (lambda (m)
-                 (let*-values (((name) (m 1))
-                               ((option-arg) (m 2))
-                               ((option)
+      (apply values seeds)
+      (let ([arg (car args)]
+            [args (cdr args)])
+        (cond
+         [(string=? "--" arg)
+          ;; End option scanning:
+          (scan-operands args seeds)]
+         [(#/^--([^=]+)=(.*)$/ arg)
+          ;; Found long option with arg:
+          => (^m (let*-values ([(name) (m 1)]
+                               [(option-arg) (m 2)]
+                               [(option)
                                 (or (find-option name)
                                     (option (list name) #t #f
-                                            unrecognized-option-proc)))
-                               (seeds
+                                            unrecognized-option-proc))]
+                               [seeds
                                 (apply (option-processor option) option name
-                                       option-arg seeds)))
-                   (scan-args args seeds))))
-           ((#/^--(.+)$/ arg)
-            ;; Found long option:
-            => (lambda (m)
-                 (let* ((name (m 1))
-                        (option (or (find-option name)
+                                       option-arg seeds)])
+                   (scan-args args seeds)))]
+         [(#/^--(.+)$/ arg)
+          ;; Found long option:
+          => (^m (let* ([name (m 1)]
+                        [option (or (find-option name)
                                     (option (list name) #f #f
-                                            unrecognized-option-proc))))
-                   (if (and (option-required-arg? option)
+                                            unrecognized-option-proc))])
+                   [if (and (option-required-arg? option)
                             (pair? args))
-                       (receive seeds
-                           (apply (option-processor option) option name
-                                  (car args) seeds)
-                         (scan-args (cdr args) seeds))
-                       (receive seeds
-                           (apply (option-processor option) option name
-                                  #f seeds)
-                         (scan-args args seeds))))))
-           ((#/^-(.+)$/ arg)
-            ;; Found short options
-            => (lambda (m)
-                 (scan-short-options 0 (m 1) args seeds)))
-           (else
-            (receive seeds (apply operand-proc arg seeds)
-              (scan-args args seeds)))
-           )
-          )))
+                     (receive seeds
+                         (apply (option-processor option) option name
+                                (car args) seeds)
+                       (scan-args (cdr args) seeds))
+                     (receive seeds
+                         (apply (option-processor option) option name
+                                #f seeds)
+                       (scan-args args seeds))]))]
+         [(#/^-(.+)$/ arg)
+          ;; Found short options
+          => (^m (scan-short-options 0 (m 1) args seeds))]
+         [else
+          (receive seeds (apply operand-proc arg seeds)
+            (scan-args args seeds))]
+         )
+        )))
   (scan-args args seeds))
 
