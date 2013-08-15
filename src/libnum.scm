@@ -469,15 +469,12 @@
 (define-cproc %exact-integer-expt (x y) :constant Scm_ExactIntegerExpt)
 (define (%exact-expt x y) ;; x, y :: exact
   (cond [(integer? y) (%exact-integer-expt x y)]
-        [(< y 0)   (/ (%exact-expt x (- y)))]
-        [(= y 1/2)
-         (receive (r q) (%exact-integer-sqrt x)
-           (if (= q 0) r (%sqrt x)))]
+        [(< x 0) (%expt x y)] ; we don't have exact compnum  
+        [(< y 0) (/ (%exact-expt x (- y)))]
         [(integer? x)
          (let ([a (numerator y)]
                [b (denominator y)])
-           ;; Calculate b-th root of x by Newton-Rhapson.  Since b > 2,
-           ;; it converges even faster than exact-integer-sqrt.
+           ;; Calculate b-th root of x by Newton-Rhapson.
            ;;
            ;;   expt(x, 1/b) ==  expt(2, (log_2 x)/b)
            ;;                =:= ash(1, round((log_2 x)/b))
