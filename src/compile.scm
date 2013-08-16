@@ -5497,11 +5497,12 @@
 ;; but for the time being, we mimic explicitly renaming macro.
 
 (define (%bind-inline-er-transformer module name xformer)
-  (%attach-inline-er-transformer (global-variable-ref module name) xformer)
+  (%attach-inline-er-transformer (global-variable-ref module name) xformer
+                                 (make-cenv module))
   (%mark-binding-inlinable! module name)
   name)
 
-(define (%attach-inline-er-transformer proc xformer)
+(define (%attach-inline-er-transformer proc xformer macro-def-cenv)
   ;; If PROC is defined by define-inline (thus have a packed IForm in
   ;; %procedure-inliner), we keep it and applies expand-inline-procedure
   ;; after the compiler macro finishes its job.
@@ -5517,7 +5518,7 @@
                 ;; CODE DOES NOT IMPLEMENT PROPER SEMANTICS.  They're just
                 ;; placeholders for experiment.
                 (xformer form
-                         (cut ensure-identifier <> cenv)
+                         (cut ensure-identifier <> macro-def-cenv)
                          (^[a b] ; this is just a placeholder!
                            (eq? (identifier->symbol a) (identifier->symbol b))))
               (cond [(eq? form r) ; no inline operation is triggered.
