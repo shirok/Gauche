@@ -33,23 +33,23 @@
 ;;;
 
 ;; logand, logior, logxor, lognot, logtest - defined in gauche
-(define bitwise-and logand)
-(define bitwise-ior logior)
-(define bitwise-xor logxor)
-(define bitwise-not lognot)
+(define-inline bitwise-and logand)
+(define-inline bitwise-ior logior)
+(define-inline bitwise-xor logxor)
+(define-inline bitwise-not lognot)
 
 (define (bitwise-if mask n0 n1)
   (logior (logand mask n0) (logand (lognot mask) n1)))
 (define bitwise-merge bitwise-if)
 
-(define any-bits-set? logtest)
+(define-inline any-bits-set? logtest)
 
 ;;;
 ;;; Integer properties
 ;;;
 
 ;; logcount - defined in gauche
-(define bit-count logcount)
+(define-inline bit-count logcount)
 
 (define (log2-binary-factors n)
   (- (integer-length (logand n (- n))) 1))
@@ -60,14 +60,14 @@
 ;;;
 
 ;; logbit?, copy-bit - defined in gauche
-(define bit-set? logbit?)
+(define-inline bit-set? logbit?)
 
 ;;;
 ;;; Field of bits
 ;;;
 
 ;; bit-field, copy-bit-field, ash - defined in gauche
-(define arithmetic-shift ash)
+(define-inline arithmetic-shift ash)
 
 (define (rotate-bit-field n count start end)
   (if (or (>= start end) (= count 0))

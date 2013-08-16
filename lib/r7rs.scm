@@ -146,7 +146,7 @@
 (define-module r7rs.aux
   (export define+ define-syntax+)
   (define-macro (define+ sym module)
-    `(define ,sym (with-module ,module ,sym)))
+    `(define-inline ,sym (with-module ,module ,sym)))
   (define-macro (define-syntax+ sym module)
     `(define-syntax ,sym (with-module ,module ,sym))))
 
@@ -411,15 +411,15 @@
   (define+ vector-fill! gauche)
 
   ;; 6.9 Bytevectors
-  (define bytevector         u8vector)
-  (define bytevector?        u8vector?)
-  (define make-bytevector    make-u8vector)
-  (define bytevector-length  u8vector-length)
-  (define bytevector-u8-ref  u8vector-ref)
-  (define bytevector-u8-set! u8vector-set!)
-  (define bytevector-copy    u8vector-copy)
-  (define bytevector-copy!   u8vector-copy!)
-  (define bytevector-append  u8vector-append)
+  (define-inline bytevector         u8vector)
+  (define-inline bytevector?        u8vector?)
+  (define-inline make-bytevector    make-u8vector)
+  (define-inline bytevector-length  u8vector-length)
+  (define-inline bytevector-u8-ref  u8vector-ref)
+  (define-inline bytevector-u8-set! u8vector-set!)
+  (define-inline bytevector-copy    u8vector-copy)
+  (define-inline bytevector-copy!   u8vector-copy!)
+  (define-inline bytevector-append  u8vector-append)
   (define+ utf8->string  text.unicode)
   (define+ string->utf8  text.unicode)
 

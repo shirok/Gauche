@@ -40,7 +40,7 @@
 ;; Experimental - compile-time inlining *-ref
 ;; The TYPE constant must be in sync with ScmUVectorType in gauche/vector.h
 
-(define %uvector-ref (with-module gauche.internal %uvector-ref))
+(define-inline %uvector-ref (with-module gauche.internal %uvector-ref))
 
 (define-macro (set-reference-inliner ref type)
   `(define-compiler-macro ,ref
