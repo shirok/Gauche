@@ -1644,150 +1644,95 @@
 ;;------------------------------------------------------------------
 (test-section "logical operations")
 
-(test* "ash (fixnum)" #x408000           ;fixnum
-      (ash #x81 15))
-(test* "ash (fixnum)" #x81
-      (ash #x408000 -15))
-(test* "ash (fixnum)" #x01
-      (ash #x408000 -22))
-(test* "ash (fixnum)" 0
-      (ash #x408000 -23))
-(test* "ash (fixnum)" 0
-      (ash #x408000 -24))
-(test* "ash (fixnum)" 0
-      (ash #x408000 -100))
-(test* "ash (fixnum)" #x81
-      (ash #x81 0))
-(test* "ash (neg. fixnum)" #x-408000  ;negative fixnum
-      (ash #x-81 15))
-(test* "ash (neg. fixnum)" #x-81      ;nagative fixnum
-      (ash #x-408000 -15))
-(test* "ash (fixnum)" -2
-      (ash #x-408000 -22))
-(test* "ash (fixnum)" -1
-      (ash #x-408000 -23))
-(test* "ash (fixnum)" -1
-      (ash #x-408000 -24))
-(test* "ash (fixnum)" -1
-      (ash #x-408000 -100))
-(test* "ash (fixnum)" #x-408000
-      (ash #x-408000 0))
+;; covers
+(define bitwise-tester-x 0)
+(define bitwise-tester-y 0)
 
-(test* "ash (fixnum->bignum)" #x81000000
-      (ash #x81 24))
-(test* "ash (fixnum->bignum)" #x4080000000
-      (ash #x81 31))
-(test* "ash (fixnum->bignum)" #x8100000000
-      (ash #x81 32))
-(test* "ash (fixnum->bignum)" #x8100000000000000
-      (ash #x81 56))
-(test* "ash (fixnum->bignum)" #x408000000000000000
-      (ash #x81 63))
-(test* "ash (fixnum->bignum)" #x810000000000000000
-      (ash #x81 64))
-(test* "ash (neg.fixnum->bignum)" #x-81000000
-      (ash #x-81 24))
-(test* "ash (neg.fixnum->bignum)" #x-4080000000
-      (ash #x-81 31))
-(test* "ash (neg.fixnum->bignum)" #x-8100000000
-      (ash #x-81 32))
-(test* "ash (neg.fixnum->bignum)" #x-8100000000000000
-      (ash #x-81 56))
-(test* "ash (neg.fixnum->bignum)" #x-408000000000000000
-      (ash #x-81 63))
-(test* "ash (neg.fixnum->bignum)" #x-810000000000000000
-      (ash #x-81 64))
+(define-macro (ash-tester msg expect x y)
+  `(begin
+     (set! bitwise-tester-x ,x)
+     (set! bitwise-tester-y ,y)
+     (test* ,(format "ash (~a) compile-time constant, inlined, generic1, generic2" msg)
+            (list ,expect ,expect ,expect ,expect)
+            (list (ash ,x ,y)
+                  (ash bitwise-tester-x ,y)
+                  (ash ,x bitwise-tester-y)
+                  (ash bitwise-tester-x bitwise-tester-y)))))
 
-(test* "ash (bignum->fixnum)" #x81
-      (ash  #x81000000 -24))
-(test* "ash (bignum->fixnum)" #x40
-      (ash  #x81000000 -25))
-(test* "ash (bignum->fixnum)" 1
-      (ash  #x81000000 -31))
-(test* "ash (bignum->fixnum)" 0
-      (ash  #x81000000 -32))
-(test* "ash (bignum->fixnum)" 0
-      (ash  #x81000000 -100))
-(test* "ash (bignum->fixnum)" #x81
-      (ash #x4080000000 -31))
-(test* "ash (bignum->fixnum)" #x81
-      (ash #x8100000000 -32))
-(test* "ash (bignum->fixnum)" #x40
-      (ash #x8100000000 -33))
-(test* "ash (bignum->fixnum)" 1
-      (ash #x8100000000 -39))
-(test* "ash (bignum->fixnum)" 0
-      (ash #x8100000000 -40))
-(test* "ash (bignum->fixnum)" 0
-      (ash #x8100000000 -100))
-(test* "ash (bignum->fixnum)" #x81
-      (ash #x8100000000000000 -56))
-(test* "ash (bignum->fixnum)" #x81
-      (ash #x408000000000000000 -63))
-(test* "ash (bignum->fixnum)" #x40
-      (ash #x408000000000000000 -64))
-(test* "ash (bignum->fixnum)" #x20
-      (ash #x408000000000000000 -65))
-(test* "ash (bignum->fixnum)" 1
-      (ash #x408000000000000000 -70))
-(test* "ash (bignum->fixnum)" 0
-      (ash #x408000000000000000 -71))
-(test* "ash (bignum->fixnum)" 0
-      (ash #x408000000000000000 -100))
+(ash-tester "fixnum" #x408000 #x81 15)
+(ash-tester "fixnum" #x81 #x408000 -15)
+(ash-tester "fixnum" #x01 #x408000 -22)
+(ash-tester "fixnum" 0 #x408000 -23)
+(ash-tester "fixnum" 0 #x408000 -24)
+(ash-tester "fixnum" 0 #x408000 -100)
+(ash-tester "fixnum" #x81 #x81 0)
+(ash-tester "neg. fixnum" #x-408000 #x-81 15)
+(ash-tester "neg. fixnum" #x-81 #x-408000 -15)
+(ash-tester "fixnum" -2 #x-408000 -22)
+(ash-tester "fixnum" -1 #x-408000 -23)
+(ash-tester "fixnum" -1 #x-408000 -24)
+(ash-tester "fixnum" -1 #x-408000 -100)
+(ash-tester "fixnum" #x-408000 #x-408000 0)
 
-(test* "ash (neg.bignum->fixnum)" #x-81
-      (ash #x-81000000 -24))
-(test* "ash (neg.bignum->fixnum)" #x-41
-      (ash #x-81000000 -25))
-(test* "ash (neg.bignum->fixnum)" #x-21
-      (ash #x-81000000 -26))
-(test* "ash (neg.bignum->fixnum)" -2
-      (ash #x-81000000 -31))
-(test* "ash (neg.bignum->fixnum)" -1
-      (ash #x-81000000 -32))
-(test* "ash (neg.bignum->fixnum)" -1
-      (ash #x-81000000 -33))
-(test* "ash (neg.bignum->fixnum)" -1
-      (ash #x-81000000 -100))
-(test* "ash (neg.bignum->fixnum)" #x-81
-      (ash #x-4080000000 -31))
-(test* "ash (neg.bignum->fixnum)" #x-41
-      (ash #x-4080000000 -32))
-(test* "ash (neg.bignum->fixnum)" #x-21
-      (ash #x-4080000000 -33))
-(test* "ash (neg.bignum->fixnum)" -2
-      (ash #x-4080000000 -38))
-(test* "ash (neg.bignum->fixnum)" -1
-      (ash #x-4080000000 -39))
-(test* "ash (neg.bignum->fixnum)" -1
-      (ash #x-4080000000 -100))
-(test* "ash (neg.bignum->fixnum)" #x-81
-      (ash #x-408000000000000000 -63))
-(test* "ash (neg.bignum->fixnum)" #x-41
-      (ash #x-408000000000000000 -64))
-(test* "ash (neg.bignum->fixnum)" #x-21
-      (ash #x-408000000000000000 -65))
-(test* "ash (neg.bignum->fixnum)" -2
-      (ash #x-408000000000000000 -70))
-(test* "ash (neg.bignum->fixnum)" -1
-      (ash #x-408000000000000000 -71))
-(test* "ash (neg.bignum->fixnum)" -1
-      (ash #x-408000000000000000 -72))
+(ash-tester "fixnum->bignum" #x81000000 #x81 24)
+(ash-tester "fixnum->bignum" #x4080000000 #x81 31)
+(ash-tester "fixnum->bignum" #x8100000000 #x81 32)
+(ash-tester "fixnum->bignum" #x8100000000000000 #x81 56)
+(ash-tester "fixnum->bignum" #x408000000000000000 #x81 63)
+(ash-tester "fixnum->bignum" #x810000000000000000 #x81 64)
+(ash-tester "neg.fixnum->bignum" #x-81000000 #x-81 24)
+(ash-tester "neg.fixnum->bignum" #x-4080000000 #x-81 31)
+(ash-tester "neg.fixnum->bignum" #x-8100000000 #x-81 32)
+(ash-tester "neg.fixnum->bignum" #x-8100000000000000 #x-81 56)
+(ash-tester "neg.fixnum->bignum" #x-408000000000000000 #x-81 63)
+(ash-tester "neg.fixnum->bignum" #x-810000000000000000 #x-81 64)
 
-(test* "ash (bignum->bignum)" #x12345678123456780
-      (ash #x1234567812345678 4))
-(test* "ash (bignum->bignum)" #x1234567812345678000000000000000
-      (ash #x1234567812345678 60))
-(test* "ash (bignum->bignum)" #x12345678123456780000000000000000
-      (ash #x1234567812345678 64))
-(test* "ash (bignum->bignum)" #x123456781234567
-      (ash #x1234567812345678 -4))
-(test* "ash (bignum->bignum)" #x12345678
-      (ash #x1234567812345678 -32))
-(test* "ash (neg.bignum->bignum)" #x-123456781234568
-      (ash #x-1234567812345678 -4))
-(test* "ash (bignum->bignum)" #x-12345679
-      (ash #x-1234567812345678 -32))
+(ash-tester "bignum->fixnum" #x81  #x81000000 -24)
+(ash-tester "bignum->fixnum" #x40  #x81000000 -25)
+(ash-tester "bignum->fixnum" 1  #x81000000 -31)
+(ash-tester "bignum->fixnum" 0  #x81000000 -32)
+(ash-tester "bignum->fixnum" 0  #x81000000 -100)
+(ash-tester "bignum->fixnum" #x81 #x4080000000 -31)
+(ash-tester "bignum->fixnum" #x81 #x8100000000 -32)
+(ash-tester "bignum->fixnum" #x40 #x8100000000 -33)
+(ash-tester "bignum->fixnum" 1 #x8100000000 -39)
+(ash-tester "bignum->fixnum" 0 #x8100000000 -40)
+(ash-tester "bignum->fixnum" 0 #x8100000000 -100)
+(ash-tester "bignum->fixnum" #x81 #x8100000000000000 -56)
+(ash-tester "bignum->fixnum" #x81 #x408000000000000000 -63)
+(ash-tester "bignum->fixnum" #x40 #x408000000000000000 -64)
+(ash-tester "bignum->fixnum" #x20 #x408000000000000000 -65)
+(ash-tester "bignum->fixnum" 1 #x408000000000000000 -70)
+(ash-tester "bignum->fixnum" 0 #x408000000000000000 -71)
+(ash-tester "bignum->fixnum" 0 #x408000000000000000 -100)
+
+(ash-tester "neg.bignum->fixnum" #x-81 #x-81000000 -24)
+(ash-tester "neg.bignum->fixnum" #x-41 #x-81000000 -25)
+(ash-tester "neg.bignum->fixnum" #x-21 #x-81000000 -26)
+(ash-tester "neg.bignum->fixnum" -2 #x-81000000 -31)
+(ash-tester "neg.bignum->fixnum" -1 #x-81000000 -32)
+(ash-tester "neg.bignum->fixnum" -1 #x-81000000 -33)
+(ash-tester "neg.bignum->fixnum" -1 #x-81000000 -100)
+(ash-tester "neg.bignum->fixnum" #x-81 #x-4080000000 -31)
+(ash-tester "neg.bignum->fixnum" #x-41 #x-4080000000 -32)
+(ash-tester "neg.bignum->fixnum" #x-21 #x-4080000000 -33)
+(ash-tester "neg.bignum->fixnum" -2 #x-4080000000 -38)
+(ash-tester "neg.bignum->fixnum" -1 #x-4080000000 -39)
+(ash-tester "neg.bignum->fixnum" -1 #x-4080000000 -100)
+(ash-tester "neg.bignum->fixnum" #x-81 #x-408000000000000000 -63)
+(ash-tester "neg.bignum->fixnum" #x-41 #x-408000000000000000 -64)
+(ash-tester "neg.bignum->fixnum" #x-21 #x-408000000000000000 -65)
+(ash-tester "neg.bignum->fixnum" -2 #x-408000000000000000 -70)
+(ash-tester "neg.bignum->fixnum" -1 #x-408000000000000000 -71)
+(ash-tester "neg.bignum->fixnum" -1 #x-408000000000000000 -72)
+
+(ash-tester "bignum->bignum" #x12345678123456780 #x1234567812345678 4)
+(ash-tester "bignum->bignum" #x1234567812345678000000000000000 #x1234567812345678 60)
+(ash-tester "bignum->bignum" #x12345678123456780000000000000000 #x1234567812345678 64)
+(ash-tester "bignum->bignum" #x123456781234567 #x1234567812345678 -4)
+(ash-tester "bignum->bignum" #x12345678 #x1234567812345678 -32)
+(ash-tester "neg.bignum->bignum" #x-123456781234568 #x-1234567812345678 -4)
+(ash-tester "bignum->bignum" #x-12345679 #x-1234567812345678 -32)
 
 (test* "lognot (fixnum)" -1 (lognot 0))
 (test* "lognot (fixnum)" 0 (lognot -1))
@@ -1798,105 +1743,69 @@
 (test* "lognot (bignum)" #x1000000000000000000
       (lognot #x-1000000000000000001))
 
-(test* "logand (+fix & 0)" 0
-      (logand #x123456 0))
-(test* "logand (+big & 0)" 0
-      (logand #x1234567812345678 0))
-(test* "logand (+fix & -1)" #x123456
-      (logand #x123456 -1))
-(test* "logand (+big & -1)" #x1234567812345678
-      (logand #x1234567812345678 -1))
-(test* "logand (+fix & +fix)" #x2244
-      (logand #xaa55 #x6666))
-(test* "logand (+fix & +big)" #x2244
-      (logand #xaa55 #x6666666666))
-(test* "logand (+big & +fix)" #x4422
-      (logand #xaa55aa55aa #x6666))
-(test* "logand (+big & +big)" #x2244224422
-      (logand #xaa55aa55aa #x6666666666))
-(test* "logand (+big & +big)" #x103454301aaccaa
-      (logand #x123456789abcdef #xfedcba987654321fedcba987654321fedcba))
-(test* "logand (+big & +big)" #x400000
-      (logand #xaa55ea55aa #x55aa55aa55))
-(test* "logand (+fix & -fix)" #x8810
-      (logand #xaa55 #x-6666))
-(test* "logand (+fix & -big)" #x8810
-      (logand #xaa55 #x-6666666666))
-(test* "logand (+big & -fix)" #xaa55aa118a
-      (logand #xaa55aa55aa #x-6666))
-(test* "logand (+big & -big)" #x881188118a
-      (logand #xaa55aa55aa #x-6666666666))
-(test* "logand (+big & -big)" #x20002488010146
-      (logand #x123456789abcdef #x-fedcba987654321fedcba987654321fedcba))
-(test* "logand (-fix & +fix)" #x4422
-      (logand #x-aa55 #x6666))
-(test* "logand (-fix & +big)" #x6666664422
-      (logand #x-aa55 #x6666666666))
-(test* "logand (-big & +fix)" #x2246
-      (logand #x-aa55aa55aa #x6666))
-(test* "logand (-big & +big)" #x4422442246
-      (logand #x-aa55aa55aa #x6666666666))
-(test* "logand (-big & +big)" #xfedcba987654321fedcba884200020541010
-      (logand #x-123456789abcdef #xfedcba987654321fedcba987654321fedcba))
-(test* "logand (-fix & -fix)" #x-ee76
-      (logand #x-aa55 #x-6666))
-(test* "logand (-fix & -big)" #x-666666ee76
-      (logand #x-aa55 #x-6666666666))
-(test* "logand (-big & -fix)" #x-aa55aa77ee
-      (logand #x-aa55aa55aa #x-6666))
-(test* "logand (-big & -big)" #x-ee77ee77ee
-      (logand #x-aa55aa55aa #x-6666666666))
-(test* "logand (-big & -big)" #x-fedcba987654321fedcba9a76567a9ffde00
-      (logand #x-123456789abcdef #x-fedcba987654321fedcba987654321fedcba))
+(define-macro (logop-tester op msg expect x y)
+  `(begin
+     (set! bitwise-tester-x ,x)
+     (set! bitwise-tester-y ,y)
+     (test* (format "~a (~a)" ',op ,msg)
+            (list ,expect ,expect ,expect ,expect ,expect ,expect)
+            (list (,op ,x ,y)
+                  (,op bitwise-tester-x ,y)
+                  (,op ,x bitwise-tester-y)
+                  (,op bitwise-tester-x bitwise-tester-y)
+                  (,op bitwise-tester-x ,y bitwise-tester-x)
+                  (,op ,x bitwise-tester-x ,y bitwise-tester-y)))))
 
-(test* "logior (+fix | 0)" #x123456
-      (logior #x123456 0))
-(test* "logior (+big | 0)" #x1234567812345678
-      (logior #x1234567812345678 0))
-(test* "logior (+fix | -1)" -1
-      (logior #x123456 -1))
-(test* "logior (+big | -1)" -1
-      (logior #x1234567812345678 -1))
-(test* "logior (+fix | +fix)" #xee77
-      (logior #xaa55 #x6666))
-(test* "logior (+fix | +big)" #x666666ee77
-      (logior #xaa55 #x6666666666))
-(test* "logior (+big | +fix)" #xaa55aa77ee
-      (logior #xaa55aa55aa #x6666))
-(test* "logior (+big | +big)" #xee77ee77ee
-      (logior #xaa55aa55aa #x6666666666))
-(test* "logior (+big | +big)" #xfedcba987654321fedcba9a76567a9ffddff
-      (logior #x123456789abcdef #xfedcba987654321fedcba987654321fedcba))
-(test* "logior (+fix | -fix)" #x-4421
-      (logior #xaa55 #x-6666))
-(test* "logior (+fix | -big)" #x-6666664421
-      (logior #xaa55 #x-6666666666))
-(test* "logior (+big | -fix)" #x-2246
-      (logior #xaa55aa55aa #x-6666))
-(test* "logior (+big | -big)" #x-4422442246
-      (logior #xaa55aa55aa #x-6666666666))
-(test* "logior (+big | -big)" #x-fedcba987654321fedcba884200020541011
-      (logior #x123456789abcdef #x-fedcba987654321fedcba987654321fedcba))
-(test* "logior (-fix | +fix)" #x-8811
-      (logior #x-aa55 #x6666))
-(test* "logior (-fix | +big)" #x-8811
-      (logior #x-aa55 #x6666666666))
-(test* "logior (-big | +fix)" #x-aa55aa118a
-      (logior #x-aa55aa55aa #x6666))
-(test* "logior (-big | +big)" #x-881188118a
-      (logior #x-aa55aa55aa #x6666666666))
-(test* "logior (-big | +big)" #x-20002488010145
-      (logior #x-123456789abcdef #xfedcba987654321fedcba987654321fedcba))
-(test* "logior (-fix | -fix)" #x-2245
-      (logior #x-aa55 #x-6666))
-(test* "logior (-fix | -big)" #x-2245
-      (logior #x-aa55 #x-6666666666))
-(test* "logior (-big | -fix)" #x-4422
-      (logior #x-aa55aa55aa #x-6666))
-(test* "logior (-big | -big)" #x-2244224422
-      (logior #x-aa55aa55aa #x-6666666666))
-(test* "logior (-big | -big)" #x-103454301aacca9
-      (logior #x-123456789abcdef #x-fedcba987654321fedcba987654321fedcba))
+(logop-tester logand "+fix & 0" 0 #x123456 0)
+(logop-tester logand "+big & 0" 0 #x1234567812345678 0)
+(logop-tester logand "+fix & -1" #x123456 #x123456 -1)
+(logop-tester logand "+big & -1" #x1234567812345678 #x1234567812345678 -1)
+(logop-tester logand "+fix & +fix" #x2244 #xaa55 #x6666)
+(logop-tester logand "+fix & +big" #x2244 #xaa55 #x6666666666)
+(logop-tester logand "+big & +fix" #x4422 #xaa55aa55aa #x6666)
+(logop-tester logand "+big & +big" #x2244224422 #xaa55aa55aa #x6666666666)
+(logop-tester logand "+big & +big" #x103454301aaccaa #x123456789abcdef #xfedcba987654321fedcba987654321fedcba)
+(logop-tester logand "+big & +big" #x400000 #xaa55ea55aa #x55aa55aa55)
+(logop-tester logand "+fix & -fix" #x8810 #xaa55 #x-6666)
+(logop-tester logand "+fix & -big" #x8810 #xaa55 #x-6666666666)
+(logop-tester logand "+big & -fix" #xaa55aa118a #xaa55aa55aa #x-6666)
+(logop-tester logand "+big & -big" #x881188118a #xaa55aa55aa #x-6666666666)
+(logop-tester logand "+big & -big" #x20002488010146 #x123456789abcdef #x-fedcba987654321fedcba987654321fedcba)
+(logop-tester logand "-fix & +fix" #x4422 #x-aa55 #x6666)
+(logop-tester logand "-fix & +big" #x6666664422 #x-aa55 #x6666666666)
+(logop-tester logand "-big & +fix" #x2246 #x-aa55aa55aa #x6666)
+(logop-tester logand "-big & +big" #x4422442246 #x-aa55aa55aa #x6666666666)
+(logop-tester logand "-big & +big" #xfedcba987654321fedcba884200020541010 #x-123456789abcdef #xfedcba987654321fedcba987654321fedcba)
+(logop-tester logand "-fix & -fix" #x-ee76 #x-aa55 #x-6666)
+(logop-tester logand "-fix & -big" #x-666666ee76 #x-aa55 #x-6666666666)
+(logop-tester logand "-big & -fix" #x-aa55aa77ee #x-aa55aa55aa #x-6666)
+(logop-tester logand "-big & -big" #x-ee77ee77ee #x-aa55aa55aa #x-6666666666)
+(logop-tester logand "-big & -big" #x-fedcba987654321fedcba9a76567a9ffde00 #x-123456789abcdef #x-fedcba987654321fedcba987654321fedcba)
+
+(logop-tester logior "+fix | 0" #x123456 #x123456 0)
+(logop-tester logior "+big | 0" #x1234567812345678 #x1234567812345678 0)
+(logop-tester logior "+fix | -1" -1 #x123456 -1)
+(logop-tester logior "+big | -1" -1 #x1234567812345678 -1)
+(logop-tester logior "+fix | +fix" #xee77 #xaa55 #x6666)
+(logop-tester logior "+fix | +big" #x666666ee77 #xaa55 #x6666666666)
+(logop-tester logior "+big | +fix" #xaa55aa77ee #xaa55aa55aa #x6666)
+(logop-tester logior "+big | +big" #xee77ee77ee #xaa55aa55aa #x6666666666)
+(logop-tester logior "+big | +big" #xfedcba987654321fedcba9a76567a9ffddff #x123456789abcdef #xfedcba987654321fedcba987654321fedcba)
+(logop-tester logior "+fix | -fix" #x-4421 #xaa55 #x-6666)
+(logop-tester logior "+fix | -big" #x-6666664421 #xaa55 #x-6666666666)
+(logop-tester logior "+big | -fix" #x-2246 #xaa55aa55aa #x-6666)
+(logop-tester logior "+big | -big" #x-4422442246 #xaa55aa55aa #x-6666666666)
+(logop-tester logior "+big | -big" #x-fedcba987654321fedcba884200020541011 #x123456789abcdef #x-fedcba987654321fedcba987654321fedcba)
+(logop-tester logior "-fix | +fix" #x-8811 #x-aa55 #x6666)
+(logop-tester logior "-fix | +big" #x-8811 #x-aa55 #x6666666666)
+(logop-tester logior "-big | +fix" #x-aa55aa118a #x-aa55aa55aa #x6666)
+(logop-tester logior "-big | +big" #x-881188118a #x-aa55aa55aa #x6666666666)
+(logop-tester logior "-big | +big" #x-20002488010145 #x-123456789abcdef #xfedcba987654321fedcba987654321fedcba)
+(logop-tester logior "-fix | -fix" #x-2245 #x-aa55 #x-6666)
+(logop-tester logior "-fix | -big" #x-2245 #x-aa55 #x-6666666666)
+(logop-tester logior "-big | -fix" #x-4422 #x-aa55aa55aa #x-6666)
+(logop-tester logior "-big | -big" #x-2244224422 #x-aa55aa55aa #x-6666666666)
+(logop-tester logior "-big | -big" #x-103454301aacca9 #x-123456789abcdef #x-fedcba987654321fedcba987654321fedcba)
 
 ;; regression test for incorrect check till 0.9.1
 (test* "lognot (error)" (test-error) (lognot 1/2))

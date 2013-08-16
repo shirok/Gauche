@@ -4915,6 +4915,8 @@
       (pass5/asm-nummul2 info (car args) (cadr args) ccb renv ctx)]
      [(NUMDIV2)
       (pass5/asm-numdiv2 info (car args) (cadr args) ccb renv ctx)]
+     [(LOGAND LOGIOR LOGXOR)
+      (pass5/asm-bitwise info (car insn) (car args) (cadr args) ccb renv ctx)]
      [(VEC-REF)
       (pass5/asm-vec-ref info (car args) (cadr args) ccb renv ctx)]
      [(VEC-SET)
@@ -4978,6 +4980,11 @@
   (let1 d (gensym)
     `(rlet1 ,d (pass5/rec ,arg0 ccb renv (normal-context ctx))
        (compiled-code-emit1i! ccb ,code ,param ,info))))
+
+(define-macro (pass5/builtin-onearg+operand info code param operand arg0)
+  (let1 d (gensym)
+    `(rlet1 ,d (pass5/rec ,arg0 ccb renv (normal-context ctx))
+       (compiled-code-emit1oi! ccb ,code ,param ,operand ,info))))
 
 (define-macro (pass5/builtin-nargs info code args)
   `(%pass5/builtin-nargs ccb ,info ,code ,args ccb renv))
@@ -5069,6 +5076,15 @@
 (define (pass5/asm-numdiv2 info x y ccb renv ctx)
   (pass5/builtin-twoargs info NUMDIV2 0 x y))
 
+;; if one of arg is constant, it's always x.  see builtin-inline-bitwise below.
+(define (pass5/asm-bitwise info insn x y ccb renv ctx)
+  (define lookup `((,LOGAND . ,LOGANDC)
+                   (,LOGIOR . ,LOGIORC)
+                   (,LOGXOR . ,LOGXORC)))
+  (if ($const? x)
+    (pass5/builtin-onearg+operand info (assv-ref lookup insn)
+                                  0 ($const-value x) y)
+    (pass5/builtin-twoargs info insn 0 x y)))
 
 (define (pass5/asm-vec-ref info vec k ccb renv ctx)
   (cond [(and ($const? k)
@@ -5378,6 +5394,56 @@
 (define-builtin-inliner <=  (gen-inliner-arg2 NUMLE2))
 (define-builtin-inliner >   (gen-inliner-arg2 NUMGT2))
 (define-builtin-inliner >=  (gen-inliner-arg2 NUMGE2))
+
+(define-builtin-inliner ash
+  (^[form cenv]
+    (match form
+      [(_ n cnt)
+       (receive (cnt-val cnt-tree) (check-numeric-constant cnt cenv)
+         (receive (n-val n-tree) (check-numeric-constant n cenv)
+           (cond [(and cnt-val n-val) ($const (ash n-val cnt-val))]
+                 [(and cnt-val (integer-fits-insn-arg? cnt-val))
+                  ($asm form `(,ASHI ,cnt-val) (list n-tree))]
+                 [else
+                  ($call form ($gref (ensure-identifier 'ash cenv))
+                         (list (or n-tree (pass1 n cenv))
+                               (or cnt-tree (pass1 cnt cenv))))])))]
+      [else (undefined)])))
+
+;; bitwise and, ior and xor.  we treat (op expr const) case specially.
+(define (builtin-inliner-bitwise opname op opcode unit)
+  ;; Classify the arguments to (integer) constants and non-constants.
+  ;; Integer constants are folded.  Returns cons of the folded constant
+  ;; (#f if no constant argument), and the list of iforms for the rest
+  ;; of arguments.
+  (define (classify-args args cenv)
+    (let loop ([args args] [constval #f] [iforms '()])
+      (if (null? args)
+        (cons constval iforms)
+        (receive (val tree) (check-numeric-constant (car args) cenv)
+          (if (and val (exact-integer? val))
+            (loop (cdr args) (if constval (op constval val) val) iforms)
+            (loop (cdr args) constval (cons (or tree ($const val)) iforms)))))))
+
+  (^[form cenv]
+    (match (classify-args (cdr form) cenv)
+      [(#f)         ($const unit)]
+      [(constval)   ($const constval)]
+      [(constval x) ($asm form `(,opcode) (list ($const constval) x))]
+      [(#f x y)     ($asm form `(,opcode) (list x y))]
+      ;; We fallback to ordinary procedure call in n-ary (n>2) case.
+      ;; We may unfold n-ary case to (op x (op y (op ...))) - need benchmark
+      ;; to see which is effective.
+      [(#f . args)  ($call form ($gref (ensure-identifier opname cenv)) args)]
+      [(constval . args) ($call form ($gref (ensure-identifier opname cenv))
+                                (cons ($const constval) args))])))
+
+(define-builtin-inliner logand
+  (builtin-inliner-bitwise 'logand logand LOGAND -1))
+(define-builtin-inliner logior
+  (builtin-inliner-bitwise 'logior logior LOGIOR 0))
+(define-builtin-inliner logxor
+  (builtin-inliner-bitwise 'logxor logxor LOGXOR 0))
 
 ;;--------------------------------------------------------
 ;; Inlining other operators

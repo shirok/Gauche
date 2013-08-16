@@ -1272,14 +1272,25 @@
 ;(define-insn NUMQUOT     0 none)        ; quotient
 ;(define-insn NUMMOD      0 none)        ; modulo
 ;(define-insn NUMREM      0 none)        ; remainder
-;(define-insn ASH         0 none)        ; ash
-;(define-insn LOGAND      0 none)        ; logand
-;(define-insn LOGIOR      0 none)        ; logior
-;(define-insn LOGXOR      0 none)        ; logxor
-;(define-insn LOGNOT      0 none)        ; lognot
-;(define-insn LOGANDI     1 none)        ; logand w/ immediate small int
-;(define-insn LOGIORI     1 none)        ; logior w/ immediate small int
-;(define-insn LOGXORI     1 none)        ; logxor w/ immediate small int
+
+(define-insn ASHI         1 none #f
+  (let* ([cnt::ScmSmallInt (SCM_VM_INSN_ARG code)])
+    ($w/argr arg ($result (Scm_Ash arg cnt)))))
+(define-insn LOGAND       0 none #f
+  ($w/argp x ($result (Scm_LogAnd x VAL0))))
+(define-insn LOGIOR       0 none #f
+  ($w/argp x ($result (Scm_LogIor x VAL0))))
+(define-insn LOGXOR       0 none #f
+  ($w/argp x ($result (Scm_LogXor x VAL0))))
+(define-insn LOGANDC      0 obj #f
+  (let* ([obj])
+    ($w/argr x (FETCH-OPERAND obj) INCR-PC ($result (Scm_LogAnd x obj)))))
+(define-insn LOGIORC      0 obj #f
+  (let* ([obj])
+    ($w/argr x (FETCH-OPERAND obj) INCR-PC ($result (Scm_LogIor x obj)))))
+(define-insn LOGXORC      0 obj #f
+  (let* ([obj])
+    ($w/argr x (FETCH-OPERAND obj) INCR-PC ($result (Scm_LogXor x obj)))))
 
 (define-insn READ-CHAR   1 none #f      ; read-char
   (let* ([nargs::int (SCM_VM_INSN_ARG code)] [ch::int 0] [port::ScmPort*])
