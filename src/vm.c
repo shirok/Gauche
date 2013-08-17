@@ -704,7 +704,22 @@ static void vm_unregister(ScmVM *vm)
     } while (0)
 
 /* We take advantage of GCC's `computed goto' feature
-   (see gcc.info, "Labels as Values"). */
+   (see gcc.info, "Labels as Values").
+   'NEXT' or 'NEXT_PUSHCHECK' is placed at the end of most
+   vm insn handlers to dispatch to the next instruction.
+   We don't simply jump to the beginning of the dispatch
+   table (hence the dispatching is handled by SWITCH macro),
+   since the former performs worse in branch prediction;
+   at least, if we have dispatches at the end of every handler,
+   we can hope the branch predictor detect frequently used
+   vm insn sequence.  'NEXT_PUSHCHECK' further reduces branch
+   predictor failure - quite a few insns that yield a value
+   in VAL0 is followed by PUSH instruction, so we detect it
+   specially.  We still use fused insns (e.g. LREF0-PUSH) when
+   the combination is very frequent - but for the less frequent
+   instructions, NEXT_PUSHCHECK proved effective without introducing
+   new fused vm insns.
+*/
 #ifdef __GNUC__
 #define SWITCH(val) goto *dispatch_table[val];
 #define CASE(insn)  SCM_CPP_CAT(LABEL_, insn) :
@@ -716,24 +731,23 @@ static void vm_unregister(ScmVM *vm)
         FETCH_INSN(code);                               \
         goto *dispatch_table[SCM_VM_INSN_CODE(code)];   \
     } while (0)
-#else /* !__GNUC__ */
-#define SWITCH(val) switch (val)
-#define CASE(insn)  case insn :
-#define DISPATCH    dispatch:
-#define NEXT        goto dispatch
-#endif
-
-/* NEXT1 is a shorthand form to set the number of values to 1.
-   The numVals should be set to 1 when (1) the instruction yields
-   a single value, and (2) it is at the tail position.  We don't
-   have information for each insn that it is at tail position or
-   not (yet), but we know that _PUSH insn won't come at the tail pos.
-*/
-#define NEXT1                                   \
-    do {                                        \
-        vm->numVals = 1;                        \
-        NEXT;                                   \
+#define NEXT_PUSHCHECK                                  \
+    do {                                                \
+        if (vm->attentionRequest) goto process_queue;   \
+        FETCH_INSN(code);                               \
+        if (code == SCM_VM_PUSH) {                      \
+            PUSH_ARG(VAL0);                             \
+            FETCH_INSN(code);                           \
+        }                                               \
+        goto *dispatch_table[SCM_VM_INSN_CODE(code)];   \
     } while (0)
+#else /* !__GNUC__ */
+#define SWITCH(val)    switch (val)
+#define CASE(insn)     case insn :
+#define DISPATCH       dispatch:
+#define NEXT           goto dispatch
+#define NEXT_PUSHCHECK goto dispatch
+#endif
 
 /* WNA - "Wrong Number of Arguments" handler.  The actual call is in vmcall.c.
    We handle the autocurrying magic here.

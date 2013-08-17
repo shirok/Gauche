@@ -66,22 +66,17 @@
 
 (define-cise-stmt $result
   [(_ expr) `(begin ,@(case (result-type)
-                       [(reg)  `((set! VAL0 ,expr) NEXT1)]
-                       [(push) `((PUSH-ARG ,expr) NEXT1)]
-                       [(call) `((set! VAL0 ,expr))] ; no NEXT1
+                       [(reg)  `((set! VAL0 ,expr)
+                                 (set! (-> vm numVals) 1)
+                                 NEXT_PUSHCHECK)]
+                       [(push) `((PUSH-ARG ,expr)
+                                 (set! (-> vm numVals) 1)
+                                 NEXT)]
+                       [(call) `((set! VAL0 ,expr))]
                        [(ret)  `((set! VAL0 ,expr)
                                  (set! (-> vm numVals) 1)
                                  (RETURN-OP)
                                  NEXT)]
-;                        [(w/push) `((if (SCM_VM_INSN_WITH_PUSH code)
-;                                      (PUSH-ARG ,expr)
-;                                      (set! VAL0 ,expr))
-;                                    NEXT1)]
-;                        [(w/ret)  `((set! VAL0 ,expr)
-;                                    (when (SCM_VM_INSN_WITH_RET code)
-;                                      (set! (-> vm numVals) 1)
-;                                      (RETURN-OP))
-;                                    NEXT1)]
                        ))])
 
 ;; variations of $result with type coercion
@@ -92,17 +87,21 @@
               `(let* ([,r :: long ,expr])
                  ($result (SCM_MAKE_INT ,r))))])
 (define-cise-stmt $result:n
-  [(_ expr) (let1 r (gensym "cise__")
-              `(let* ([,r :: long ,expr])
+  [(_ expr) (let ([r (gensym "cise__")]
+                  [v (gensym "cise__")])
+              `(let* ([,r :: long ,expr] [,v])
                  (if (SCM_SMALL_INT_FITS ,r)
-                   ($result (SCM_MAKE_INT ,r))
-                   ($result (Scm_MakeInteger ,r)))))])
+                   (set! ,v (SCM_MAKE_INT ,r))
+                   (set! ,v (Scm_MakeInteger ,r)))
+                 ($result ,v)))])
 (define-cise-stmt $result:u
-  [(_ expr) (let1 r (gensym "cise__")
-              `(let* ([,r :: u_long ,expr])
+  [(_ expr) (let ([r (gensym "cise__")]
+                  [v (gensym "cise__")])
+              `(let* ([,r :: u_long ,expr] [,v])
                  (if (SCM_SMALL_INT_FITS ,r)
-                   ($result (SCM_MAKE_INT ,r))
-                   ($result (Scm_MakeIntegerU ,r)))))])
+                   (set! ,v (SCM_MAKE_INT ,r))
+                   (set! ,v (Scm_MakeIntegerU ,r)))
+                 ($result ,v)))])
 (define-cise-stmt $result:f
   [(_ expr) (let1 r (gensym "cise__")
               `(let* ([,r :: double ,expr])
@@ -290,9 +289,8 @@
                                           [(0) 'ENV]
                                           [else `(-> ,(loop (- d 1)) up)]))
                                      ,offset)])
-        (if (SCM_BOXP ,v)
-          ($result (SCM_BOX_VALUE ,v))
-          ($result ,v))))])
+        (when (SCM_BOXP ,v) (set! ,v (SCM_BOX_VALUE ,v)))
+        ($result ,v)))])
 
 ;;
 ;; ($values)
@@ -669,7 +667,8 @@
              (SCM_APPEND1 rest tail (aref (-> vm vals) (- i 1))))
         (PUSH-ARG rest))
       (FINISH-ENV SCM_FALSE ENV)
-      NEXT1)])
+      (set! (-> vm numVals) 1) ; we already processed extra vals, so reset it
+      NEXT)])
 
 ;; RECEIVE(nargs,restarg) <cont-offset>
 ;;  Primitive operation for receive and call-with-values.
@@ -750,7 +749,8 @@
       (if (SCM_BOXP box)
         (SCM_BOX_SET box VAL0)
         (set! (ENV-DATA e off) VAL0)))
-    NEXT1))
+    (set! (-> vm numVals) 1)
+    NEXT))
 
 ;; GSET <location>
 ;;  LOCATION may be a symbol or gloc
@@ -787,7 +787,8 @@
         (set! (* PC) (SCM_WORD gloc)))]
      [else ($vm-err "GSET: can't be here")])
     INCR-PC
-    NEXT1))
+    (set! (-> vm numVals) 1)
+    NEXT))
 
 ;; LREF(depth,offset)
 ;;  Retrieve local value.
@@ -795,17 +796,14 @@
 (define-insn LREF        2 none #f
   (let* ([dep::int (SCM_VM_INSN_ARG0 code)]
          [off::int (SCM_VM_INSN_ARG1 code)]
-         [e::ScmEnvFrame* ENV])
+         [e::ScmEnvFrame* ENV]
+         [v])
     (for [() (> dep 0) (post-- dep)]
-         (VM-ASSERT (!= e NULL))
          (set! e (-> e up)))
-    (VM-ASSERT (!= e NULL))
-    (VM-ASSERT (> (-> e size) off))
     ;; TODO 0.9.2: Extra test to keep compatiblity
-    (let* ((v::ScmObj (ENV-DATA e off)))
-      (if (SCM_BOXP v)
-        ($result (SCM_BOX_VALUE v))
-        ($result v)))))
+    (set! v (ENV-DATA e off))
+    (when (SCM_BOXP v) (set! v (SCM_BOX_VALUE v)))
+    ($result v)))
 
 ;; Shortcut for the frequent depth/offset.
 ;; From statistics, we found that the following depth/offset combinations
@@ -990,7 +988,7 @@
     (POP-ARG VAL0)                      ; get proc
     (TAIL-CALL-INSTRUCTION)
     (set! VAL0 (Scm_VMApply VAL0 cp))
-    NEXT1))
+    NEXT))
 
 (define-insn TAIL-APPLY  1 none #f
   ;; Inlined apply.  Assumes the call is at the tail position.
