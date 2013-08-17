@@ -219,13 +219,14 @@
 ;;   Branch.  $branch* leaves the result in VAL0.
 ;;
 (define-cise-stmt $branch
-  [(_ expr) `(begin (if ,expr (FETCH-LOCATION PC) INCR-PC) NEXT)])
+  [(_ expr) `(begin (if ,expr (FETCH-LOCATION PC) INCR-PC) CHECK-INTR NEXT)])
 (define-cise-stmt $branch*
   [(_ expr)
    `(begin
       (if ,expr
         (begin (set! VAL0 SCM_FALSE) (FETCH-LOCATION PC))
         (begin (set! VAL0 SCM_TRUE) INCR-PC))
+      CHECK-INTR
       NEXT)])
 
 ;;
@@ -361,6 +362,7 @@
     (FETCH-LOCATION next)
     (PUSH-CONT next)
     INCR-PC
+    CHECK-INTR
     NEXT))
 
 ;; combined insn
@@ -398,13 +400,13 @@
 ;;  Jump to <addr>.
 ;;
 (define-insn JUMP      0 addr #f
-  (begin (FETCH-LOCATION PC) NEXT))
+  (begin (FETCH-LOCATION PC) CHECK-INTR NEXT))
 
 ;; RET
 ;;  Pop the continuation stack.
 ;;
 (define-insn RET       0 none #f
-  (begin (RETURN-OP) NEXT))
+  (begin (RETURN-OP) CHECK-INTR NEXT))
 
 ;; DEFINE(flag) <symbol>
 ;;  Defines global binding of SYMBOL in the current module.
@@ -531,6 +533,7 @@
       (FINISH-ENV SCM_FALSE tenv)
       (set! ENV tenv))
     (FETCH-LOCATION PC)
+    CHECK-INTR
     NEXT))
 
 ;; LOCAL-ENV-CALL(DEPTH)
@@ -556,6 +559,7 @@
     (set! (-> vm base) (SCM_COMPILED_CODE (-> (SCM_CLOSURE VAL0) code)))
     (set! PC (-> vm base code))
     (CHECK-STACK (-> vm base maxstack))
+    CHECK-INTR
     (SCM_PROF_COUNT_CALL vm (SCM_OBJ (-> vm base)))
     NEXT))
 

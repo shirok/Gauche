@@ -727,13 +727,11 @@ static void vm_unregister(ScmVM *vm)
 #define DISPATCH    /*empty*/
 #define NEXT                                            \
     do {                                                \
-        if (vm->attentionRequest) goto process_queue;   \
         FETCH_INSN(code);                               \
         goto *dispatch_table[SCM_VM_INSN_CODE(code)];   \
     } while (0)
 #define NEXT_PUSHCHECK                                  \
     do {                                                \
-        if (vm->attentionRequest) goto process_queue;   \
         FETCH_INSN(code);                               \
         if (code == SCM_VM_PUSH) {                      \
             PUSH_ARG(VAL0);                             \
@@ -748,6 +746,10 @@ static void vm_unregister(ScmVM *vm)
 #define NEXT           goto dispatch
 #define NEXT_PUSHCHECK goto dispatch
 #endif
+
+/* Check VM interrupt request. */
+#define CHECK_INTR \
+    do { if (vm->attentionRequest) goto process_queue; } while (0)
 
 /* WNA - "Wrong Number of Arguments" handler.  The actual call is in vmcall.c.
    We handle the autocurrying magic here.
