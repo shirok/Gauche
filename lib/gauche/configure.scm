@@ -85,10 +85,14 @@
    (url        :init-keyword :url :init-value #f)
    (string     :init-keyword :string)    ; package_string
    (tarname    :init-keyword :tarname)
-   (defs       :init-form (make-hash-table 'eq?)))
-  )
+   (defs       :init-form (make-hash-table 'eq?))
+   (features   :init-form (make-hash-table 'eq?)) ;enabled features by cmdarg
+   (packages   :init-form (make-hash-table 'eq?)) ;optional packages
+   ))
 
 (define current-package (make-parameter #f))
+
+(define run-quietly (make-parameter #f)) ;-silent or -quiet option turn this on
 
 ;; some internal utilities
 
@@ -154,6 +158,7 @@
      :string (format "~a ~a" package-name version)
      :tarname (cgen-safe-name-friendly (string-downcase package-name))))
   (initialize-default-definitions)
+  (parse-command-line-arguments)
   )
 
 (define (initialize-default-definitions)
@@ -196,6 +201,86 @@
   (cf-define 'subdirs "")
   )
 
+(define (parse-command-line-arguments)
+  (let1 rest
+      (parse-options (cdr (command-line))
+        (["bindir=s" (dir) (cf-define 'bindir dir)]
+         ["build=s" (build) (cf-define 'build-alias build)]
+         ["c|cache-file=s" (_)
+          (values)] ;; support for the compatibility.  we don't do anything.
+         ["C|config-cache=s" (_) (values)]
+         ["datadir=s" (dir) (cf-define 'datadir dir)]
+         ["datarootdir=s" (dir) (cf-define 'datarootdir dir)]
+         ["docdir=s" (dir) (cf-define 'docdir dir)]
+         ["dvidir=s" (dir) (cf-define 'dvidir dir)]
+         ["exec_prefix=s" (pre) (cf-define 'exec_prefix pre)]
+         ["help" () (usage)]
+         ["host=s" (host) (cf-define 'host-alias host)]
+         ["htmldir=s" (dir) (cf-define 'htmldir dir)]
+         ["includedir=s" (dir) (cf-define 'includedir dir)]
+         ["infodir=s" (dir) (cf-define 'infodir dir)]
+         ["libdir=s" (dir) (cf-define 'libdir dir)]
+         ["libexecdir=s" (dir) (cf-define 'libexecdir dir)]
+         ["localedir=s" (dir) (cf-define 'localedir dir)]
+         ["localstatedir=s" (dir) (cf-define 'localstatedir dir)]
+         ["mandir=s" (dir) (cf-define 'mandir dir)]
+         ;; -no-create
+         ;; -no-recursion
+         ;; -oldincludedir
+         ["prefix=s" (dir) (cf-define 'prefix dir)]
+         ["program-suffix=s" (arg) (cf-define 'program_suffix arg)]
+         ["program-transform-name=s" (arg)
+          (cf-define 'program_transform_name arg)]
+         ["pdfdir=s" (arg) (cf-define 'pdfdir arg)]
+         ["psdir=s" (arg) (cf-define 'psdir arg)]
+         ["q|quiet|silent" () (run-quietly #t)]
+         ["sbindir=s" (arg) (cf-define 'sbindir arg)]
+         ["sharedstatedir=s" (arg) (cf-define 'sharedstatedir arg)]
+         ["site=s" (arg) (cf-define 'site arg)]
+         ["srcdir=s" (arg) (cf-define 'srcdir arg)]
+         ["sysconfidr=s" (arg) (cf-define 'sysconfdir arg)]
+         ["target=s" (arg) (cf-define 'target_alias arg)]
+         ["v|verbose" () (run-quietly #f)]
+         ["V|version" () (exit 0 "gauche.configure ~a" (gauche-version))]
+         ;; -x-includes
+         ;; -x-libraries
+         [else (opt rest cont)
+               (rxmatch-case opt
+                 [#/^--?enable-([-\w]+)(?:=([-\w]+))$/ (_ feature arg)
+                               (set! (cf-feature-ref (string->symbol feature))
+                                     (or arg "yes"))
+                               (cont rest)]
+                 [#/^--?disable-([-\w]+)$/ (_ feature)
+                                (set! (cf-feature-ref (string->symbol feature)) "no")
+                                (cont rest)]
+                 [#/^--?with-([-\w]+)(?:=([-\w]+))$/ (_ package arg)
+                             (set! (cf-package-ref (string->symbol package))
+                                   (or arg "yes"))
+                             (cont rest)]
+                 [#/^--?without-([-\w]+)$/ (_ package)
+                                (set! (cf-package-ref (string->symbol package)) "no")
+                                (cont rest)]
+                 [else
+                  (print "Unrecognized option: " opt)
+                  (print "Type `./configure --help' for valid options.")
+                  (exit 1)]
+                 )]))
+    ;; process VAR=VAL
+    (dolist [arg rest]
+      (rxmatch-case arg
+        [#/^([-\w]+)=([-\w]*)$/ (_ var val)
+         (cf-define (string->symbol var) val)]
+        [else (print "Invalid argument: " arg)
+              (print "Type `./configure --help' for usage.")
+              (exit 1)]))
+    ))
+
+(define (usage)
+  (print "Usage: "(car (command-line))" args ...")
+  (print "  Generate Makefiles and other files suitable for your system.")
+  ;; WRITEME - option descriptions
+  (exit 1))
+
 ;; API
 ;; Like AC_DEFINE
 (define (cf-define symbol :optional (value 1))
@@ -214,6 +299,24 @@
 ;; API
 ;; Like cf-ref, but returns empty string if undefined.
 (define (cf$ symbol) (cf-ref symbol ""))
+
+;; API
+;; --enable-FEATURE=VAL
+;; --enable-FEATURE    == --enable-FEATURE=yes
+;; --disable-FEATURE   == --enable-FEATURE=no
+(define cf-feature-ref
+  (getter-with-setter
+   (^[name] (hash-table-get (ensure-package)'features name #f))
+   (^[name val] (hash-table-put! (ensure-package)'features name val))))
+
+;; API
+;; --with-PACKAGE=VAL
+;; --with-PACKAGE      == --with-PACKAGE=yes
+;; --without-PACKAGE   == --with-PACKAGE=no
+(define cf-package-ref
+  (getter-with-setter
+   (^[name] (hash-table-get (ensure-package)'packages name #f))
+   (^[name val] (hash-table-put! (ensure-package)'packages name val))))
 
 ;; API
 ;; Like AC_OUTPUT
