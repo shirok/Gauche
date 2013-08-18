@@ -187,6 +187,7 @@
         /* the subr may have substituted pc, so we need to check
            if we can pop the continuation immediately. */
         if (TAIL_POS()) RETURN_OP();
+        CHECK_INTR;
         NEXT;
     }
     if (proctype == SCM_PROC_CLOSURE) {
