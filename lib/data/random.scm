@@ -101,7 +101,7 @@
     (^[] (+ (%rand-int range) lb))))
 
 ;; API.
-(define fixnums (integers-between$ (least-fixnum) (+ (greatest-fixnum) 1)))
+(define fixnums (integers-between$ (least-fixnum) (greatest-fixnum)))
 (define int8s   (integers$ 256 -128))
 (define uint8s  (integers$ 256))
 (define int16s  (integers$ 65536 -32768))
