@@ -11,6 +11,7 @@
 * A common job descriptor for control modules::  control.job
 * Thread pools::                control.thread-pool
 * Password hashing::            crypt.bcrypt
+* Random data generators::      data.random
 * Database independent access layer::  dbi
 * Generic DBM interface::       dbm
 * File-system dbm::             dbm.fsdbm
@@ -1516,7 +1517,7 @@ better to give some time for the thread to finish the executing jobs.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Password hashing, Database independent access layer, Thread pools, Library modules - Utilities
+@node Password hashing, Random data generators, Thread pools, Library modules - Utilities
 @section @code{crypt.bcrypt} - Password hashing
 @c NODE パスワードハッシュ, @code{crypt.bcrypt} - パスワードハッシュ
 
@@ -1649,7 +1650,302 @@ bcryptアルゴリズムでは少なくとも16バイトの長さが必要です
 
 @c ----------------------------------------------------------------------
 
-@node Database independent access layer, Generic DBM interface, Password hashing, Library modules - Utilities
+@node Random data generators, Database independent access layer, Password hashing, Library modules - Utilities
+@section @code{data.random} - Random data generators
+@c NODE ランダムデータの生成, @code{data.random} - ランダムデータの生成
+
+@deftp {Module} data.random
+@mdindex data.random
+This module defines a set of generators and generator makers
+that yield random data of specific type and distribution.
+@end deftp
+
+A naming convention: Procedures that takes data and returns
+a generator is suffixed by @code{$} (e.g. @code{integer$}).
+Procedures that are generators themselves are not (e.g. @code{fixnums}).
+Procedures that are combinators, that is, the ones that take
+one or more generators and returns a generator, generally ends
+with a preposition (e.g. @code{list-of}).
+
+@subheading Global state
+
+All the generators in this module shares a global random state.
+The random seed is initialized by a fixed value when the module
+is loaded.  You can get and set the random seed by
+the following procedure.
+
+@defun random-data-seed
+@defunx {(setter random-data-seed)} seed-value
+Calling @code{random-data-seed} (without arguments)
+returns the random seed value used to initialize the current random state.
+
+It can be used with generic setter, to reinitialize the random state
+with @var{seed-value}.
+
+@example
+(random-data-seed)  @result{} @r{integer}
+
+; @r{reinitialize the random state with a new random seed.}
+(set! (random-data-seed) 1) 
+@end example
+
+Note: This procedure doesn't have parameter interface (alter the global
+value by giving the new value as an argument), since it doesn't work
+like a parameter.  You can get the random seed value, but you can't
+get the current random state itself---if you restore the
+random seed value again, the internal state is reset, instead
+of restoring the state at the time you called @code{random-data-seed}.
+
+If you want to use different random state temporarily, and ensure to
+restore original state afterwards, use @code{with-random-data-seed} below.
+@end defun
+
+@defun with-random-data-seed seed thunk
+Saves the current global random state, initializes the random state with
+@var{seed}, then executes @var{thunk}.  If @var{thunk} returns or
+the control exits out of @var{thunk}, the state at the time
+@code{with-random-data-seed} was called is restored.
+@end defun
+
+Since the default random seed value is fixed, you can get deterministic
+output when you call the random data generators below without altering
+the random seed explicitly.
+
+@subheading Generators of primitive data types
+
+Those generators generate uniformly distributed data.
+
+In the following examples, we use @code{generator->list} to show
+some concrete data from the generators.  It is provided
+in @code{gauche.generator} module.  @xref{Generators}, for more
+utilities work on generators.
+
+@defun integers$ size :optional (start 0)
+@defunx integers-between$ lower-bound upper-bound
+Create integer generators.  The first one, @code{integers$}, creates
+a generator that generats integers from start (inclusive) below
+start+size (exclusive) uniformly.  The second one, @code{integers-between$},
+creates a generator that generates integers between
+@var{lower-bound} and @var{upper-bound} (both inclusive) unformly.
+
+@example
+;; A dice roller
+(define dice (integers$ 6 1))
+
+;; Roll the dice 10 times
+(generator->list dice 10)
+ @result{} (6 6 2 4 2 5 5 1 2 2)
+@end example
+@end defun
+
+@defun fixnums
+@defunx int8s
+@defunx uint8s
+@defunx int16s
+@defunx uint16s
+@defunx int32s
+@defunx uint32s
+@defunx int64s
+@defunx uint64s
+Uniform integer generators.  Generate integers in fixnum range, and
+8/16/32/64bit signed and unsigned integers, respectively.
+
+@example
+(generator->list int8s 10)
+ @result{} (20 -101 50 -99 -111 -28 -19 -61 39 110)
+@end example
+@end defun
+
+@defun booleans
+Generates boolean values (@code{#f} and @code{#t}) in equal probability.
+
+@example
+(generator->list booleans 10)
+ @result{} (#f #f #t #f #f #t #f #f #f #f)
+@end example
+@end defun
+
+@defun chars$ :optional char-set
+Creates a generator that generates characters in @var{char-set} uniformly.
+The default @var{char-set} is @code{#[A-Za-z0-9]}.
+
+@example
+(define alphanumeric-chars (chars$))
+
+(generator->list alphanumeric-chars 10)
+ @result{} (#\f #\m #\3 #\S #\z #\m #\x #\S #\l #\y)
+@end example
+@end defun
+
+@defun reals$ :optional size start
+@defunx reals-between$ lower-bound upper-bound
+Create a generator that generates real numbers uniformly with given range.
+The first procedure, @code{reals$}, returns reals between start
+and start+size, inclusively.  The defualt of size is 1.0 and start is 0.0.
+The second procedure, @code{reals-between$}, returns reals between
+lower-bound and upper-bound, inclusively.
+
+@example
+(define uniform-100 (reals$ 100))
+
+(generator->list uniform-100 10)
+ @result{} (81.67965004942268 81.84927577572596 53.02443813660833)
+@end example
+@end defun
+
+@subheading Nonuniform distributions
+
+@defun reals-normal$ :optional mean deviation
+Creates a generator that yields real numbers from normal distribution
+with @var{mean} and @var{deviation}.  The default of @var{mean} is 0.0
+and @var{deviation} is 1.0.
+@end defun
+
+@defun reals-exponential$ mean
+Creates a generator that yields real numbers from exponential distribution
+with @var{mean}.
+@end defun
+
+@defun integers-geometric$ p
+Creates a generator that yields integers from geometric distribution
+with success probability @var{p}.  The mean is @code{1/p} and
+variance is @code{(1-p)/p^2}.
+@end defun
+
+@defun integers-poisson$ L
+Creates a generator that yields integers from poisson distribution with
+mean @var{L}, variance @var{L}.
+@end defun
+
+@subheading Aggregate data generators
+
+@defun samples-from generators
+Takes a finite sequence of generators
+(sequence in the sense of @code{gauche.sequence}),
+and returns a generator.  Every time the resulting generator is called,
+it picks one of the input generators in equal probability, then
+calls it to get a value.
+
+@example
+(define g (samples-from (list uint8s (chars$ #[a-z]))))
+
+(generator->list g 10)
+ @result{} (207 107 #\m #\f 199 #\o #\b 57 #\j #\e)
+@end example
+@end defun
+
+@defun weighted-samples-from weight&gens
+The argument is a list of pairs of a real number and a generator.
+The real number determines the weight, or the relative probability
+that the generator is chosen.  The sum of weight doesn't need to
+be 1.0.
+
+The following example chooses the uint8 generator four times frequently
+than the character generator.
+
+@example
+(define g (weighted-samples-from
+           `((4.0 . ,uint8s)
+             (1.0 . ,(chars$)))))
+
+(generator->list g 10)
+ @result{} (195 97 #\j #\W #\5 72 49 143 19 164)
+@end example
+@end defun
+
+@defun pairs-of car-gen cdr-gen
+Returns a generator that yields pairs, whose car is generated from @var{car-gen}
+and whose cdr is generated from @var{cdr-gen}.
+
+@example
+(define g (pairs-of int8s booleans))
+
+(generator->list g 10)
+ @result{} ((113 . #t) (101 . #f) (12 . #t) (68 . #f) (-55 . #f))
+@end example
+@end defun
+
+@defun tuples-of gen @dots{}
+Returns a generator that yields lists, whose i-th element is generated from the i-th argument.
+
+@example
+(define g (tuples-of int8s booleans (char$)))
+
+(generator->list g 3)
+ @result{} ((-43 #f #\8) (53 #f #\1) (-114 #f #\i))
+@end example
+@end defun
+
+@defun permutations-of seq
+Returns a generator that yields a random permutations of @code{seq}.
+
+@example
+(generator->list (permutations-of '(1 2 3)) 3)
+ @result{} ((1 2 3) (2 3 1) (3 2 1))
+
+(generator->list (permutations-of "abc") 3)
+ @result{} ("cba" "cba" "cab")
+@end example
+@end defun
+
+@defun combinations-of size seq
+Returns a generator that yields a sequence of @var{size} elements
+randomly picked from @var{seq}.
+
+@example
+(generator->list (combinations-of 2 '(a b c)) 5)
+ @result{} ((a c) (a b) (a c) (b a) (a c))
+
+(generator->list (combinations-of 2 '#(a b c)) 5)
+ @result{} (#(a c) #(b c) #(c b) #(b a) #(b c))
+@end example
+@end defun
+
+The following procedures takes optional @var{sizer} argument, which can
+be either a nonnegative integer or a generator of nonnegative integers.
+The value of the sizer determines the length of the result data.
+
+Unlike most of Gauche procedures, @var{sizer} argument comes first
+when not omitted.  We couldn't resist the temptation to
+write something like @code{(lists-of 3 booleans)}.
+
+If @var{sizer} is omitted, the default value is taken from
+the parameter @code{default-sizer}.  The default of @code{default-sizer}
+is @code{(integers-poisson$ 4)}.
+
+@defun lists-of item-gen
+@defunx lists-of sizer item-gen
+@defunx vectors-of item-gen
+@defunx vectors-of sizer item-gen
+@defunx strings-of item-gen
+@defunx strings-of sizer item-gen
+Creates a generator that generates lists, vectors or strings of values from @var{item-gen}, respectively.
+
+@example
+(generator->list (lists-of 3 uint8s) 4)
+ @result{} ((254 46 0) (77 158 46) (1 134 156) (74 5 110))
+
+;; using the default sizer
+(generator->list (lists-of uint8s) 4)
+ @result{} ((93 249) (131 97) (98 206 144 247 241) (126 156 31))
+
+;; using a generator for the sizer
+(generator->list (strings-of (integers$ 8) (chars$)) 5)
+ @result{} ("dTJYVhu" "F" "PXkC" "w" "")
+@end example
+@end defun
+
+@deffn {Parameter} default-sizer
+The sizer used by @code{lists-of}, @code{vectors-of} and @code{strings-of}
+when @var{sizer} argument is omitted.
+
+The value must be either an nonnegative integer, or a generator
+of nonnegative integers.
+@end deffn
+
+@c ----------------------------------------------------------------------
+
+@node Database independent access layer, Generic DBM interface, Random data generators, Library modules - Utilities
 @section @code{dbi} - Database independent access layer
 @c NODE データベース非依存アクセス層, @code{dbi} - データベース非依存アクセス層
 
