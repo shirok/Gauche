@@ -6675,6 +6675,13 @@ IPv6が使えるかどうかを調べるには、
 
 @end deftp
 
+@c EN
+Note: If you want to write a portable program using network,
+take a look at @code{srfi-106} (@xref{Basic socket interface}).
+@c JP
+ネットワークを使うポータブルなコードを書きたい場合は、
+@code{srfi-106}を見てください (@ref{Basic socket interface}参照)。
+@c COMMON
 
 @menu
 * Socket address::
@@ -7594,6 +7601,8 @@ Transmits the content of @var{msg} through @var{socket}.
 @var{msg} can be either a string or a uniform vector; if you send
 binary packets, uniform vectors are recommended.
 
+Returns the nubmer of octets that are actually sent.
+
 When @code{socket-send} is used, @var{socket} must already be connected.
 On the other hand, @code{socket-sendto} can be used for non-connected
 socket, and the destination address is specified by
@@ -7603,6 +7612,8 @@ a @code{<sockaddr>} instance @var{to-address}.
 @var{msg} の内容を @var{socket} を通じて送出します。
 @var{msg}は文字列もしくはユニフォームベクタでなければなりません。
 バイナリパケットを送る場合はユニフォームベクタの使用を推奨します。
+
+実際に送出されたオクテット数を返します。
 
 @code{socket-send} を使うときには、@var{socket} は既に接続されて
 いなければなりません。他方、@code{socket-sendto} は未接続の

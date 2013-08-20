@@ -33,6 +33,7 @@ of supported SRFIs.
 * Requiring extensions::        srfi-55
 * Integers as bits::            srfi-60
 * Accessing environment variables::  srfi-98
+* Basic socket interface::      srfi-106
 @end menu
 
 @node Feature conditional, List library, Library modules - SRFIs, Library modules - SRFIs
@@ -230,8 +231,8 @@ split-at split-at! iota
 @end deftp
 
 @menu
-* SRFI-1 List utilities::
-* SRFI-1 Set operations::
+* SRFI-1 List utilities::       
+* SRFI-1 Set operations::       
 @end menu
 
 @node SRFI-1 List utilities, SRFI-1 Set operations, List library, List library
@@ -1231,20 +1232,20 @@ Gaucheでは、一貫性のために``srfi-13''と名付けています。
 @end deftp
 
 @menu
-* SRFI-13 General conventions::
-* SRFI-13 String predicates::
-* SRFI-13 String Constructors::
-* SRFI-13 String Selection::
-* SRFI-13 String Comparison::
-* SRFI-13 String Prefixes & Suffixes::
-* SRFI-13 String searching::
-* SRFI-13 String case mapping::
-* SRFI-13 String reverse & append::
-* SRFI-13 String mapping::
-* SRFI-13 String rotation::
-* SRFI-13 other string operations::
-* SRFI-13 String filtering::
-* SRFI-13 Low-level string procedures::
+* SRFI-13 General conventions::  
+* SRFI-13 String predicates::   
+* SRFI-13 String Constructors::  
+* SRFI-13 String Selection::    
+* SRFI-13 String Comparison::   
+* SRFI-13 String Prefixes & Suffixes::  
+* SRFI-13 String searching::    
+* SRFI-13 String case mapping::  
+* SRFI-13 String reverse & append::  
+* SRFI-13 String mapping::      
+* SRFI-13 String rotation::     
+* SRFI-13 other string operations::  
+* SRFI-13 String filtering::    
+* SRFI-13 Low-level string procedures::  
 @end menu
 
 @node SRFI-13 General conventions, SRFI-13 String predicates, String library, String library
@@ -2011,12 +2012,12 @@ Gaucheでは@code{<char-set>}クラスは@code{<collection>}を継承し、
 @end deftp
 
 @menu
-* SRFI-14 Character-set constructors::
-* SRFI-14 Character-set comparison::
-* SRFI-14 Character-set iteration::
-* SRFI-14 Character-set query::
-* SRFI-14 Character-set algebra::
-* SRFI-14 Predefined character-set::
+* SRFI-14 Character-set constructors::  
+* SRFI-14 Character-set comparison::  
+* SRFI-14 Character-set iteration::  
+* SRFI-14 Character-set query::  
+* SRFI-14 Character-set algebra::  
+* SRFI-14 Predefined character-set::  
 @end menu
 
 @node SRFI-14 Character-set constructors, SRFI-14 Character-set comparison, Character-set library, Character-set library
@@ -2397,11 +2398,11 @@ Gaucheでは、timeオブジェクトは@code{<time>}クラスとして組み込
 @end deftp
 
 @menu
-* SRFI-19 Time types::
-* SRFI-19 Time queries::
-* SRFI-19 Time procedures::
-* SRFI-19 Date::
-* SRFI-19 Date reader and writer::
+* SRFI-19 Time types::          
+* SRFI-19 Time queries::        
+* SRFI-19 Time procedures::     
+* SRFI-19 Date::                
+* SRFI-19 Date reader and writer::  
 @end menu
 
 @node SRFI-19 Time types, SRFI-19 Time queries, Time data types and procedures, Time data types and procedures
@@ -4972,7 +4973,7 @@ each value as a binary digit.  If @var{n} is nonnegative integer,
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Accessing environment variables,  , Integers as bits, Library modules - SRFIs
+@node Accessing environment variables, Basic socket interface, Integers as bits, Library modules - SRFIs
 @section @code{srfi-98} - Accessing environemnt variables
 @c NODE 環境変数へのアクセス, @code{srfi-98} - 環境変数へのアクセス
 
@@ -5029,6 +5030,248 @@ the optional argument.
         @dots{})
 @end example
 @end defun
+
+@c ----------------------------------------------------------------------
+@node Basic socket interface,  , Accessing environment variables, Library modules - SRFIs
+@section @code{srfi-106} - Basic socket interface
+@c NODE 基本的なソケットインタフェース, @code{srfi-106} - 基本的なソケットインタフェース
+
+@deftp {Module} srfi-106
+@mdindex srfi-106
+A portable basic socket interface.
+
+Although comprehensive network API is provided by @code{gauche.net}
+(@xref{Networking}), it is Gauche-specific.  This srfi provides
+a small subset of socket operations, but it offers a portable way
+to create applications that needs simple networking.
+
+Note that some procedures have the same name as the ones in @code{gauche.net},
+but the interface may differ.
+
+A socket object created by this srfi's API is an instance
+of Gauche's @code{<socket>}, so it can be passed to the API
+in @code{gauche.net} and vice versa.
+@end deftp
+
+@subheading Socket object
+
+@defun make-client-socket node service :optional ai-family ai-socktype ai-flags ai-protocol
+[SRFI-106]
+Returns a socket to
+communicate with the node @var{node} and @var{service}.
+If the socket type is connection-oriented (that is, @var{ai-socktype} is
+@code{*sock-stream*}, which is the default),
+the returned socket is already connected.
+
+Both @var{node} and @var{service} must be strings.
+A service name solely consists of decimal digits is interpreted as
+a port number.
+
+The default value of optional arguments are as follows:
+@code{*af-net*} for @var{ai-family},
+@code{*sock-stream} for @var{ai-socktype},
+@code{(socket-merge-flags *ai-v4mapped* *ai-addrconfig*)} for
+@var{ai-flags}, and @code{*ipproto-ip*} for @var{ai-protocol}.
+See below for valid flag values.
+
+This API differs from @code{make-clinet-socket} in @code{gauche.net}.
+
+@example
+(make-client-socket "127.0.0.1" "80")
+ @result{} a <socket> connected to port 80 of localhost
+@end example
+@end defun
+
+@defun make-server-socket service :optional ai-family ai-socktype ai-protocol
+[SRFI-106]
+Creates and resturns a server socket that binds and listens at
+the port specified by
+@var{service}, which must be a string.  A service name solely consists
+of decimal digits is interpreted as a port number.
+
+The default value of optional arguments are as follows:
+@code{*af-net*} for @var{ai-family},
+@code{*sock-stream} for @var{ai-socktype},
+and @code{*ipproto-ip*} for @var{ai-protocol}.
+See below for valid flag values.
+
+This API differs from @code{make-server-socket} in @code{gauche.net}.
+@end defun
+
+@defun socket? obj
+[SRFI-106]
+Equivalent to @code{(is-a? obj <socket>)}.
+@end defun
+
+@subheading Communication
+
+@defun socket-accept socket
+@defunx socket-shutdown socket how
+@defunx socket-input-port socket
+@defunx socket-output-port socket
+@defunx socket-close socket
+[SRFI-106]
+Same as the procedures provided in @code{gauche.net}.  @xref{Networking}.
+@end defun
+
+@defun socket-send socket u8vector :optional flags
+[SRFI-106]
+Almost same as @code{socket-send} in @code{gauche.net}, except that
+this procedure only accepts a u8vector as the message.
+(The one in @code{gauche.net} can take a string as well.)
+
+Returns the number of octets that are actually sent.
+@end defun
+
+@defun socket-recv socket size :optional flags
+[SRFI-106]
+This is like @code{socket-recv} in @code{gauche.net}, except that
+this procedure returns the received data in u8vector,
+instead of a string.  If the peer has shut down the connection,
+this procedure returns an empty u8vector, @code{#u8()}.
+
+The @var{size} argument specifies the maximum size of the receiving
+data.  The returned vector may be shorter if that much data is received.
+@end defun
+
+@subheading Flags
+
+The srfi provides common names for constants of typical socket flags,
+as well as macros that map symbolic name(s) to the flags.
+
+@defun socket-merge-flags flag @dots{}
+[SRFI-106]
+Merge bitwise flags.  This is simply @code{logior} in Gauche.
+@end defun
+
+@defun socket-purge-flags base-flag flag @dots{}
+[SRFI-106]
+Drop the bitwise flags in @var{base-flag} that are set
+in @var{flag} @dots{}.
+@end defun
+
+@subsubheading Address family
+
+@multitable {aaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaaaaaaaa}
+@vindex *af-inet*
+@vindex *af-inet6*
+@vindex *af-unspec*
+@item @code{*af-inet*} @tab @code{AF_INET}
+@item @code{*af-inet6*} @tab @code{AF_INET6}
+@item @code{*af-unspec*} @tab @code{AF_UNSPEC}
+@end multitable
+
+@defmac address-family name
+@var{Name} can be either one of symbols
+@code{inet}, @code{inet6}, or @code{unspec}, and
+the macro expands into the value of @code{*af-inet*},
+@code{*af-inet6*} or @code{*af-unspec*}, respectively.
+
+If @var{name} is other object, an error is signaled.
+@end defmac
+
+
+@subsubheading Socket domain
+
+@multitable {aaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaaaaaaaa}
+@vindex *sock-stream*
+@vindex *sock-dgram*
+@item @code{*sock-stream*} @tab @code{SOCK_STREAM}
+@item @code{*sock-dgram*} @tab @code{SOCK_DGRAM}
+@end multitable
+
+@defmac socket-domain name
+@var{Name} can be either one of symbols
+@code{stream} or @code{datagram}, and the macro
+expands into the value of @code{*sock-stream*} and
+@code{*sock-dgram*}, respectively.
+
+If @var{name} is other object, an error is signaled.
+@end defmac
+
+
+@subsubheading Address info
+
+@multitable {aaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaaaaaaaa}
+@vindex *ai-canonname*
+@vindex *ai-numerichost*
+@vindex *ai-v4mapped*
+@vindex *ai-all*
+@vindex *ai-addrconfig*
+@item @code{*ai-canonname*} @tab @code{AI_CANONNAME}
+@item @code{*ai-numerichost*} @tab @code{AI_NUMERICHOST}
+@item @code{*ai-v4mapped*} @tab @code{AI_V4MAPPED}
+@item @code{*ai-all*} @tab @code{AI_ALL}
+@item @code{*ai-addrconfig*} @tab @code{AI_ADDRCONFIG}
+@end multitable
+
+@defmac address-info name @dots{}
+Maps combination of names @code{canoname}, @code{numerichost},
+@code{v4mapped}, @code{all} and @code{addrconfig}
+to the combination of corresponding flags.
+
+An error is signaled if other symbols are passed.
+(Note: @code{canoname} for @code{*ai-canonname*}).
+@end defmac
+
+@subsubheading Protocol
+
+@multitable {aaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaaaaaaaa}
+@vindex *ipproto-ip*
+@vindex *ipproto-tcp*
+@vindex *ipproto-udp*
+@item @code{*ipproto-ip*} @tab @code{IPPROTO_IP}
+@item @code{*ipproto-tcp*} @tab @code{IPPROTO_TCP}
+@item @code{*ipproto-udp*} @tab @code{IPPROTO_UDP}
+@end multitable
+
+@defmac ip-protocol name
+Maps one of names @code{ip}, @code{tcp}, and @code{udp}
+to the corresponding flag value.  An error is signaled
+if other symbol is passed.
+@end defmac
+
+
+@subsubheading Message type
+
+@multitable {aaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaaaaaaaa}
+@vindex *msg-none*
+@vindex *msg-peek*
+@vindex *msg-oob*
+@vindex *msg-waitall*
+@item @code{*msg-none*} @tab 0
+@item @code{*msg-peek*} @tab  @code{MSG_PEEK}
+@item @code{*msg-oob*} @tab   @code{MSG_OOB}
+@item @code{*msg-waitall*} @tab @code{MSG_WAITALL}
+@end multitable
+
+@defmac message-type name @dots{}
+Maps combination of names @code{none}, @code{peek},
+@code{oob} and @code{wait-all}
+to the combination of corresponding flags.
+
+An error is signaled if other symbols are passed.
+(Note: @code{wait-all} for @code{*msg-waitall*}).
+@end defmac
+
+
+@subsubheading Shutdown method
+
+@multitable {aaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaaaaaaaa}
+@vindex *shut-rd*
+@vindex *shut-wr*
+@vindex *shut-rdwr*
+@item @code{*shut-rd*} @tab @code{SHUT_RD}
+@item @code{*shut-wr*} @tab @code{SHUT_WR}
+@item @code{*shut-rdwr*} @tab @code{SHUT_RDWR}
+@end multitable
+
+@defmac shutdown-method name @dots{}
+Maps combination of names @code{read} and @code{write}
+to the combination of corresponding flags.
+
+An error is signaled if other symbols are passed.
+@end defmac
 
 
 @c Local variables:

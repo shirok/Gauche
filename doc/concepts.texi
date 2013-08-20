@@ -486,6 +486,14 @@ Supported by the module @code{gauche.record}.  @xref{Record types}.
 モジュール@code{gauche.record}でサポートされます。@ref{Record types}参照。
 @c COMMON
 
+@c EN
+@item SRFI-106, Basic socket interface
+Supported by the module @code{srfi-106}.  @xref{Basic socket interface}.
+@c JP
+@item SRFI-99, 基本的なソケットインタフェース
+モジュール@code{srfi-106}でサポートされます。@ref{Basic socket interface}参照。
+@c COMMON
+
 @end table
 
 @node Multibyte Strings, Multibyte scripts, Standard conformance, Concepts

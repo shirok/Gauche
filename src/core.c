@@ -545,6 +545,7 @@ init_cond_features()
         { "srfi-87", NULL },
         { "srfi-98", "srfi-98" },
         { "srfi-99", "gauche.record" },
+        { "srfi-106", "srfi-106" },
         { NULL, NULL }
     };
 

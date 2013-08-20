@@ -1,6 +1,6 @@
-;;
-;; srfi-106 - socket interface
-;;
+;;;
+;;; srfi-106 - socket interface
+;;;
 
 ;; NB: Test for srfi-106 is in ext/net.
 
@@ -13,7 +13,7 @@
           socket-accept socket-send socket-recv socket-shutdown socket-close
           *af-unspec* *af-inet* *af-inet6*
           *sock-stream* *sock-dgram*
-          *ai-canoname* *ai-numerichost*
+          *ai-canonname* *ai-numerichost*
           *ai-v4mapped* *ai-all* *ai-addrconfig*
           *ipproto-ip* *ipproto-tcp* *ipproto-udp*
           *msg-none* *msg-peek* *msg-oob* *msg-waitall*
@@ -40,10 +40,10 @@
 
 (define-macro (socket-domain name)
   (ecase (unwrap-syntax name)
-    [(stream) *sock-stream*]
-    [(dgram)  *sock-dgram*]))
+    [(stream)   *sock-stream*]
+    [(datagram) *sock-dgram*]))
 
-(define-constant *ai-canoname*    net:AI_CANONNAME)
+(define-constant *ai-canonname*   net:AI_CANONNAME)
 (define-constant *ai-numerichost* net:AI_NUMERICHOST)
 (define-constant *ai-v4mapped*    net:AI_V4MAPPED)
 (define-constant *ai-all*         net:AI_ALL)
@@ -52,7 +52,7 @@
 (define-macro (address-info . names)
   (define (lookup name)
     (ecase (unwrap-syntax name)
-      [(canoname)    *ai-canoname*]
+      [(canoname)    *ai-canonname*]
       [(numerichost) *ai-numerichost*]
       [(v4mapped)    *ai-v4mapped*]
       [(all)         *ai-all*]
@@ -95,7 +95,8 @@
   (apply logior (map lookup names)))
 
 (define (socket-merge-flags . flags) (apply logior flags))
-(define (socket-purge-flags . flags) (apply logxor flags))
+(define (socket-purge-flags base-flag . flags)
+  (logand base-flag (lognot (apply logior flags))))
 
 ;;
 ;; Constructors
