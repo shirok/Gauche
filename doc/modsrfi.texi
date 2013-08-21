@@ -5074,7 +5074,7 @@ The default value of optional arguments are as follows:
 @var{ai-flags}, and @code{*ipproto-ip*} for @var{ai-protocol}.
 See below for valid flag values.
 
-This API differs from @code{make-clinet-socket} in @code{gauche.net}.
+This API differs from @code{make-client-socket} in @code{gauche.net}.
 
 @example
 (make-client-socket "127.0.0.1" "80")
