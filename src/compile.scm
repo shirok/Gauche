@@ -4570,8 +4570,10 @@
 ;;     stack is: total env frame size + max of stack depth consumed by
 ;;     one of inits or the body.
 ;;
-
 (define (pass5/$LET iform ccb renv ctx)
+  (when (and (has-tag? ($let-body iform) $LET)
+             (eq? ($let-type iform) 'let))
+    (pass5/flatten-let*! iform))
   (let ([info ($*-src iform)]
         [lvars ($let-lvars iform)]
         [inits ($let-inits iform)]
@@ -4598,7 +4600,7 @@
                (compiled-code-emit-RET! ccb)
                (compiled-code-set-label! ccb merge-label)
                (imax dinit
-                    (+ dbody CONT_FRAME_SIZE ENV_HEADER_SIZE nlocals))))])]
+                     (+ dbody CONT_FRAME_SIZE ENV_HEADER_SIZE nlocals))))])]
         [(rec rec*)
          (receive (closures others)
              (partition-letrec-inits inits ccb (cons lvars renv) 0 '() '())
@@ -4627,6 +4629,36 @@
          (error "[internal error]: pass5/$LET got unknown let type:"
                 ($let-type iform))]
         ))))
+
+;; Nested let can be flattened if the initexpr of inner local vars
+;; does not depend on the values of the local vars of the current frame,
+;; and they don't possibly capture environments/continuations.
+;; $const and $lref to outer frames are certainly safe.
+;; $gref also won't capture frames, but we have to be careful if we ever
+;; provide a mechanism to restart from undefined variable error.
+(define (pass5/flatten-let*! iform)
+  (let loop ([lvars (reverse ($let-lvars iform))]
+             [inits (reverse ($let-inits iform))]
+             [node ($let-body iform)])
+    (let1 ins ($let-inits node)
+      (cond [(everyc safe-lvar-initval-for-flatten? ins lvars)
+             (let ([lvars (reverse ($let-lvars node) lvars)]
+                   [inits (reverse ins inits)])
+               (if (and (has-tag? ($let-body node) $LET)
+                        (eq? ($let-type node) 'let))
+                 (loop lvars inits ($let-body node))
+                 (begin ($let-lvars-set! iform (reverse! lvars))
+                        ($let-inits-set! iform (reverse! inits))
+                        ($let-body-set! iform ($let-body node)))))]
+            [(eq? node ($let-body iform))] ; we didn't do anything
+            [else ($let-lvars-set! iform (reverse! lvars))
+                  ($let-inits-set! iform (reverse! inits))
+                  ($let-body-set! iform node)]))))
+
+(define (safe-lvar-initval-for-flatten? init existing-lvars)
+  (and (or ($const? init)
+           (and ($lref? init)
+                (not (memq ($lref-lvar init) existing-lvars))))))
 
 (define (partition-letrec-inits inits ccb renv cnt closures others)
   (if (null? inits)
