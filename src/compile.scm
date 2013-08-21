@@ -543,6 +543,10 @@
    flag             ; Marks some special state of this node.
                     ;   'dissolved: indicates that this lambda has been
                     ;               inline expanded.
+                    ;   'used: indicates that this lambda has been already dealt
+                    ;          with, and need to be eliminated.  This one is
+                    ;          specifically used for communication between
+                    ;          pass2/$CALL and pass2/$LET.
                     ;   <packed-iform>  : inlinable lambda
    ;; The following slot(s) is/are used temporarily during pass2-5, and
    ;; need not be saved when packed.
@@ -2999,10 +3003,40 @@
 ;;   may be able to optimize the calls to it.  It is done here since
 ;;   we need to run pass2 for all the call sites of the lvar to analyze
 ;;   its usage.
+;;
+;; CAVEAT: When we go through pass2 on ($let-inits iform), it may inline expand
+;; lvars that appear later in the bindings, e.g.:
+;;
+;;   (letrec ((foo (lambda () (bar x)))
+;;            (bar (lambda (a) (baz a))))
+;;     ...)
+;;
+;; In this case, while we're at pass2[(lambda () (bar x))], pass2/$CALL
+;; inlines the call of bar to make it (lambda () (let ((a x)) (baz a))).
+;; The important thing is that the IForm of original (lambda (a) (baz a))
+;; is directly used to inline the call, so we shouldn't rescan it.
+;; pass2/$CALL marks the inlined lambda node as 'used, so that we can skip
+;; it here.
 
 (define (pass2/$LET iform penv tail?)
-  (let ([lvars ($let-lvars iform)]
-        [inits (imap (cut pass2/rec <> penv #f) ($let-inits iform))])
+  ;; Run pass2 on let-inits, returns new lvars and inits
+  (define (process-inits lvars inits)
+    (let loop ([lvars lvars] [inits inits]
+               [new-lvars '()] [new-inits '()])
+      (cond [(null? lvars) (values (reverse! new-lvars) (reverse! new-inits))]
+            [(let1 lv (car lvars)
+               (and (= (lvar-ref-count lv) 0)
+                    (= (lvar-set-count lv) 0)
+                    (has-tag? (car inits) $LAMBDA)
+                    (eq? ($lambda-flag (car inits)) 'used)))
+             ;; This lambda node has already been inlinded, so we can skip.
+             (loop (cdr lvars) (cdr inits) new-lvars new-inits)]
+            [else
+             (loop (cdr lvars) (cdr inits)
+                   (cons (car lvars) new-lvars)
+                   (cons (pass2/rec (car inits) penv #f) new-inits))])))
+
+  (receive (lvars inits) (process-inits ($let-lvars iform) ($let-inits iform))
     (ifor-each2 (^[lv in] (lvar-initval-set! lv in)) lvars inits)
     (let1 obody (pass2/rec ($let-body iform) penv tail?)
       ;; NB: We have to run optimize-closure after pass2 of body.
@@ -3364,7 +3398,12 @@
                ;; node is the lvar's single reference, so we know the inlined
                ;; procedure is never called recursively.  Thus we can safely
                ;; traverse the inlined body without going into infinite loop.
-               ($call-proc-set! iform result)
+               ;;
+               ;; We directly embed the iform (result), which is a lambda expr
+               ;; bound to PROC.  The lambda iform may not be scanned yet by
+               ;; pass2/$LET, though.  We mark the node 'used, so that
+               ;; pass2/$LET can skip processing it.
+               ($lambda-flag-set! result 'used)
                (pass2/rec (expand-inlined-procedure ($*-src iform) result args)
                           penv tail?)]
               [else
@@ -3397,10 +3436,10 @@
              [ (has-tag? initval $LAMBDA) ])
     (cond
      [(pass2/self-recursing? initval penv) (if tail? 'tail-rec 'rec)]
-     [(= (lvar-ref-count lvar) 1)
+     [(and (= (lvar-ref-count lvar) 1)
+           (= (lvar-set-count lvar) 0))
       ;; we can inline this lambda directly.
       (lvar-ref--! lvar)
-      (lvar-initval-set! lvar ($const-undef))
       initval]
      [else 'local])))
 
