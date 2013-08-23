@@ -325,7 +325,7 @@
 (define (match-status-code? pattern code clause)
   (cond [(string? pattern) (equal? pattern code)]
         [(regexp? pattern) (rxmatch pattern code)]
-        [else (error "invalid pattern in a clause of http-cond-receiver"
+        [else (error "Invalid pattern in a clause of http-cond-receiver:"
                      clause)]))
 
 ;;
@@ -499,7 +499,7 @@
   (define (query-1 n&v)
     (match n&v
       [(name value) #`",(esc name)=,(esc value)"]
-      [_ (error "invalid request-uri form: ~s" params)]))
+      [_ (error "Invalid request-uri form:" params)]))
   (define (query) (string-concatenate (intersperse "&" (map query-1 params))))
   (cond [(not path) (query)]
         [(null? params) path]
@@ -520,7 +520,7 @@
       [(name value) (translate-param `(,name :value ,value))]
       [(name . kvs)
        (unless (even? (length kvs))
-         (error "invalid parameter format to create multipart/form-data:" param))
+         (error "Invalid parameter format to create multipart/form-data:" param))
        (let-keywords kvs ([value ""]
                           [file  #f]
                           [content-type #f]
@@ -719,7 +719,7 @@
     (if-let1 enc (assoc "transfer-encoding" headers)
       (if (equal? (cadr enc) "chunked")
         (receive-body-chunked remote code headers total receiver)
-        (error <http-error> "unsupported transfer-encoding" (cadr enc)))
+        (error <http-error> "unsupported transfer-encoding:" (cadr enc)))
       (receive-body-once remote code headers total receiver))))
 
 (define (receive-body-once remote code headers total receiver)
