@@ -692,14 +692,14 @@ Content-Length: 4349
 (use rfc.uri)
 (test-module 'rfc.uri)
 
-(test* "encode" "abc%3c%20%3e%20%22%20%23%25%7b%7c%7d%5c%5e"
+(test* "encode" "abc%3C%20%3E%20%22%20%23%25%7B%7C%7D%5C%5E"
        (uri-encode-string "abc< > \" #%{|}\\^"))
-(test* "encode (noescape)" ".a%21%2ap"
+(test* "encode (noescape)" ".a%21%2Ap"
        (uri-encode-string ".a!*p" :noescape *rfc3986-unreserved-char-set*))
 (test* "decode" "abc< > \" #%?{|}\\^"
-       (uri-decode-string "abc%3c%20%3e%20%22%20%23%25%3f%7b%7c%7d%5c%5e"))
+       (uri-decode-string "abc%3c%20%3E%20%22%20%23%25%3f%7B%7C%7d%5c%5e"))
 (test* "decode" "abc<+>+\"+#%?{|}\\^"
-       (uri-decode-string "abc%3c+%3e+%22+%23%25%3f%7b%7c%7d%5c%5e"))
+       (uri-decode-string "abc%3C+%3e+%22+%23%25%3F%7b%7c%7D%5C%5E"))
 (test* "decode" "abc< > \" #%?{|}\\^"
        (uri-decode-string "abc%3c+%3e+%22+%23%25%3f%7b%7c%7d%5c%5e"
                           :cgi-decode #t))

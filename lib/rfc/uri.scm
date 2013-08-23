@@ -278,7 +278,7 @@
       (if (and (< b #x80)
                (char-set-contains? echars (integer->char b)))
         (write-byte b)
-        (format #t "%~2,'0x" b))
+        (format #t "%~2,'0X" b))
       (loop (read-byte)))))
 
 (define (uri-encode-string string :key (encoding (gauche-character-encoding))
