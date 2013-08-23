@@ -1,0 +1,79 @@
+;;;
+;;; statify - create all-in-one binary executable
+;;;
+
+;; EXPERIMENTAL
+
+(use gauche.parseopt)
+(use gauche.parameter)
+(use gauche.config)
+(use gauche.cgen)
+(use util.match)
+(use file.util)
+(use srfi-42)
+
+(define (usage)
+  (exit 0 "Usage: gosh statify [-L libpath] script.scm libdir/libfile.scm ..."))
+
+(define p print)
+
+(define libpath (make-parameter "."))
+
+(define (main args)
+  (let-args (cdr args) ([help "h|help" => (cut usage)]
+                        [lp "L=s" "."]
+                        . args)
+    (match args
+      [(ifile . libfiles)
+       (let ([ofile (path-sans-extension ifile)]
+             [cfile (parameterize ([libpath lp])
+                      (generate-cprog ifile libfiles))])
+         (compile cfile ofile)
+         (sys-unlink cfile))]
+      [_ (usage)])
+    0))
+
+(define (generate-cprog ifile libfiles)
+  (receive (out tmpfile) (sys-mkstemp "tmp")
+    (with-output-to-port out
+      (^[]
+        (p "#include <gauche.h>")
+        (p "static const char *script = ")
+        (p (c-safe-string-literal (file->string ifile)))
+        (p ";")
+
+        (p "static const char *libfile[] = {")
+        (do-ec (: libfile libfiles)
+               (p (c-safe-string-literal
+                   (file->string (build-path (libpath) libfile)))))
+        (p "};")
+        
+        (p "int main(int argc, const char **argv)")
+        (p "{")
+        (p "  Scm_Init(GAUCHE_SIGNATURE);")
+        (do-ec (: f (index i) libfiles)
+               (begin
+                 (p "  Scm_EvalCStringRec(libfile["i"], SCM_OBJ(Scm_GaucheModule()));")
+                 (p "  Scm_Provide(SCM_MAKE_STR("(c-safe-string-literal (path-sans-extension f))"));")))
+        (p "  Scm_SimpleMain(argc, argv, script, 0);") ; this won't return.
+        (p "  return 0;")  ; pretend to be a good citizen.
+        (p "}")
+        ))
+    (close-output-port out)
+    (rlet1 cfile #`",|tmpfile|.c" (sys-rename tmpfile cfile))))
+
+(define (compile cfile ofile)
+  (let* ([cc      (gauche-config "--cc")]
+         [cflags  (gauche-config "-I")]
+         [ldflags (gauche-config "-L")]
+         [libs    (regexp-replace* (gauche-config "-l") #/-lgauche-\d+\.\d+/ "")]
+         [cmd #`",cc ,cflags -o ,ofile ,ldflags ,cfile libgauche-0.9.a ,libs"]
+         )
+    (print cmd)
+    (sys-system cmd)))
+
+
+;; Local variables:
+;; mode: scheme
+;; end:
+
