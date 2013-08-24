@@ -4,16 +4,22 @@
 
 ;; EXPERIMENTAL
 
+;; At this moment, libraries required by extensions need to be passed
+;; explicitly, e.g.
+;;   gosh statify script.scm scriptlib/foo.scm -lgdbm -lgdbm_compat -lz
+;;
+
 (use gauche.parseopt)
 (use gauche.parameter)
 (use gauche.config)
 (use gauche.cgen)
 (use util.match)
 (use file.util)
+(use srfi-13)
 (use srfi-42)
 
 (define (usage)
-  (exit 0 "Usage: gosh statify [-L libpath] script.scm libdir/libfile.scm ..."))
+  (exit 0 "Usage: gosh statify [-L libpath] script.scm libdir/libfile.scm ... [-llib ...]"))
 
 (define p print)
 
@@ -21,15 +27,19 @@
 
 (define (main args)
   (let-args (cdr args) ([help "h|help" => (cut usage)]
+                        [keep-cfile "keep-cfile"] ;this is for debugging
                         [lp "L=s" "."]
                         . args)
     (match args
       [(ifile . libfiles)
-       (let ([ofile (path-sans-extension ifile)]
-             [cfile (parameterize ([libpath lp])
-                      (generate-cprog ifile libfiles))])
-         (compile cfile ofile)
-         (sys-unlink cfile))]
+       (receive (linklibs libscm)
+           (partition (cut string-prefix? "-l" <>) libfiles)
+         (let ([ofile (path-sans-extension ifile)]
+               [cfile (parameterize ([libpath lp])
+                        (generate-cprog ifile libscm))])
+           (compile cfile ofile linklibs)
+           (unless keep-cfile
+             (sys-unlink cfile))))]
       [_ (usage)])
     0))
 
@@ -38,22 +48,28 @@
     (with-output-to-port out
       (^[]
         (p "#include <gauche.h>")
+        (p "extern void Scm_InitPrelinked();")
         (p "static const char *script = ")
         (p (c-safe-string-literal (file->string ifile)))
         (p ";")
 
         (p "static const char *libfile[] = {")
-        (do-ec (: libfile libfiles)
-               (p (c-safe-string-literal
-                   (file->string (build-path (libpath) libfile)))))
+        (dolist [libfile libfiles]
+          (p (c-safe-string-literal
+              (file->string (build-path (libpath) libfile))))
+          (p ","))
         (p "};")
         
         (p "int main(int argc, const char **argv)")
         (p "{")
+        (p "  ScmObj s, p;")
         (p "  Scm_Init(GAUCHE_SIGNATURE);")
+        (p "  Scm_InitPrelinked();")
         (do-ec (: f (index i) libfiles)
                (begin
-                 (p "  Scm_EvalCStringRec(libfile["i"], SCM_OBJ(Scm_GaucheModule()));")
+                 (p "  s = SCM_MAKE_STR(libfile["i"]);")
+                 (p "  p = Scm_MakeInputStringPort(SCM_STRING(s), TRUE);")
+                 (p "  Scm_LoadFromPort(SCM_PORT(p), SCM_LOAD_PROPAGATE_ERROR, NULL);")
                  (p "  Scm_Provide(SCM_MAKE_STR("(c-safe-string-literal (path-sans-extension f))"));")))
         (p "  Scm_SimpleMain(argc, argv, script, 0);") ; this won't return.
         (p "  return 0;")  ; pretend to be a good citizen.
@@ -62,12 +78,13 @@
     (close-output-port out)
     (rlet1 cfile #`",|tmpfile|.c" (sys-rename tmpfile cfile))))
 
-(define (compile cfile ofile)
+(define (compile cfile ofile linklibs)
   (let* ([cc      (gauche-config "--cc")]
          [cflags  (gauche-config "-I")]
          [ldflags (gauche-config "-L")]
          [libs    (regexp-replace* (gauche-config "-l") #/-lgauche-\d+\.\d+/ "")]
-         [cmd #`",cc ,cflags -o ,ofile ,ldflags ,cfile libgauche-0.9.a ,libs"]
+         [links   (string-join linklibs " ")] ;; -lfoo ..
+         [cmd #`",cc ,cflags -o ,ofile ,ldflags ,cfile libgauche-0.9.a ,libs ,links"]
          )
     (print cmd)
     (sys-system cmd)))
