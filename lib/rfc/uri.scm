@@ -43,10 +43,14 @@
 ;; RFC2368 The mailto URL Scheme
 ;;  <ftp://ftp.isi.edu/in-notes/rfc2368.txt>
 
+;; Also supports 'data' uri scheme specified in RFC2397.
+
 (define-module rfc.uri
   (use srfi-13)
+  (use util.match)
   (use gauche.regexp)
   (use gauche.charconv)
+  (use gauche.uvector)
   (export uri-scheme&specific uri-decompose-hierarchical
           uri-decompose-authority uri-parse
           uri-merge uri-compose
@@ -54,6 +58,7 @@
           uri-encode uri-encode-string
           *rfc2396-unreserved-char-set*
           *rfc3986-unreserved-char-set*
+          uri-compose-data uri-decompose-data
           )
   )
 (select-module rfc.uri)
@@ -291,3 +296,91 @@
       (with-ports (wrap in) out (current-error-port)
         (cut apply uri-encode args)))))
 
+;;==============================================================
+;; Data uri scheme (rfc2397)
+;;
+
+(autoload rfc.base64
+          base64-encode base64-encode-string
+          base64-decode base64-decode-string)
+(autoload gauche.vport open-input-uvector)
+(autoload rfc.mime mime-parse-content-type)
+
+(define (uri-compose-data data :key
+                          (content-type
+                           (format "text/plain;charset=~a"
+                                   (cond-expand
+                                    [gauche.ces.utf8 'utf-8]
+                                    [gauche.ces.eucjp 'euc-jp]
+                                    [gauche.ces.sjis 'shift_jis]
+                                    [gauche.ces.none 'us-ascii])))
+                          (encoding #f))
+  (let1 encoding (or encoding
+                     (if (and (string? data) (not (string-incomplete? data)))
+                       'uri
+                       'base64))
+    (define (encode-by-uri)
+      (unless (and (string? data)
+                   (not (string-incomplete? data)))
+        (error "data must be a complete string for uri-encoding data scheme:"
+               data))
+      (uri-encode-string data))
+    (define (encode-by-base64)
+      (cond [(string? data) (base64-encode-string data)]
+            [(u8vector? data) (with-output-to-string
+                                (cut with-input-from-port
+                                     (open-input-uvector data)
+                                     base64-encode))]
+            [else
+             (error "data must be a string or u8vector for base64 data scheme:"
+                    data)]))
+    (define (compose-content-type ct)
+      ;; We allow (type subtype (param . value) ...) in content-type.
+      ;; We don't use mime-compose-parameters to encode the content-type,
+      ;; however, since it may use quoted-string for value.  See section 3
+      ;; of rfc2397 for the reason to avoid quited-string.
+      (if (pair? ct)
+        (format "~a/~a~a" (car ct) (cadr ct)
+                (string-join (map (^p (format "~a=~a"
+                                              (uri-encode-string (car p))
+                                              (uri-encode-string (cdr p))))
+                                  (cddr ct))
+                             ";" 'prefix))
+        ct))
+
+    (format "data:~a~a,~a" (compose-content-type content-type)
+            (if (eq? encoding 'uri) "" #`";,encoding")
+            (ecase encoding
+              [(uri) (encode-by-uri)]
+              [(base64) (encode-by-base64)]))))
+
+;; Returns parsed content-type and decoded data.
+;;
+;; Decoded data is a string if content-type is text/*, and
+;; u8vector otherwise.  In case of content-type being text/*, charset
+;; is recognized and ces is converted appropriately.
+;; NB: We may add keyword arg to specify the return type.
+;;
+;; For the convenience, you can pass either full uri (with "data:")
+;; or just a specific part (without "data:").  Result is undefined if you
+;; pass non-data uri.
+(define (uri-decompose-data uri)
+  (rxmatch-case uri
+    [#/^(?:data:)?(.*?)(\;base64)?,(.*)/ (_ ct enc data)
+     (match (mime-parse-content-type ct)
+       [(and (type subtype attrs ...) content-type)
+        ;; TODO: If we have efficient output-to-bytevector interface,
+        ;; we might revise this code so that we won't use intermediate string.
+        ;; (open-output-uvector can't be used yet since output is fixed-length)
+        (let* ([ces (assoc-ref attrs "charset")]
+               [encoded (if enc
+                          (let1 str (base64-decode-string data)
+                            (if ces
+                              (ces-convert str ces)
+                              str))
+                          (uri-decode-string data :encoding ces))])
+          (if (equal? type "text")
+            (values content-type encoded)
+            (values content-type (string->u8vector encoded))))]
+       [_ (error "invalid content-type in data uri:" ct)])]
+    [else (error "invalid data uri:" uri)]))

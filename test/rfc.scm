@@ -844,6 +844,21 @@ Content-Length: 4349
   (t "http://example.com"  "../foo" "http://example.com/foo")
   )
 
+;; data uri scheme.  NB: this uses gauche.vport internally (for now),
+;; so it depends on ext/vport.
+
+(let ([d0 "data:text/plain;charset=utf-8,%21%40%23%24%25%5E%26%2A%28%29_abc"]
+      [d1 "data:application/octed-stream;base64,IUAjJCVeJiooKV9hYmM="])
+  (test* "data uri decode->encode (text)" d0
+         (receive (ct data) (uri-decompose-data d0)
+           (cond-expand
+            [gauche.ces.utf8 (uri-compose-data data)]
+            [else (uri-compose-data data :content-type ct)])))
+  (test* "data uri decode->encode (binary)" d1
+         (receive (ct data) (uri-decompose-data d1)
+           (uri-compose-data data :content-type ct)))
+  )
+
 ;;--------------------------------------------------------------------
 (test-section "rfc.http")
 (use rfc.http)
