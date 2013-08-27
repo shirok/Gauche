@@ -187,7 +187,7 @@
          [cookies (if-let1 s (and merge-cookies (get-meta "HTTP_COOKIE"))
                     (parse-cookie-string s)
                     '())])
-    (append
+    (fold-params-by-name
      (cond
       [(eq? input 'mime)
        (get-mime-parts part-handlers
@@ -198,20 +198,21 @@
       [else (split-query-string input)])
      (map (^[cookie] (list (car cookie) (cadr cookie))) cookies))))
 
+(define (fold-params-by-name alist tail)
+  (fold-right (^[kv params]
+                (if-let1 p (assoc (car kv) params)
+                  (begin (push! (cdr p) (cdr kv)) params)
+                  (cons (list (car kv) (cdr kv)) params)))
+              tail alist))
+
 (define (split-query-string input)
-  (fold-right (^[elt params]
-                (let* ([ss (string-split elt #\=)]
-                       [n  (uri-decode-string (car ss) :cgi-decode #t)]
-                       [p  (assoc n params)]
-                       [v  (if (null? (cdr ss))
-                             #t
-                             (uri-decode-string (string-join (cdr ss) "=")
-                                                :cgi-decode #t))])
-                  (if p
-                    (begin (set! (cdr p) (cons v (cdr p))) params)
-                    (cons (list n v) params))))
-              '()
-              (string-split input #[&\;])))
+  (map (^[elt] (let1 ss (string-split elt #\=)
+                 (cons (uri-decode-string (car ss) :cgi-decode #t)
+                       (if (null? (cdr ss))
+                         #t
+                         (uri-decode-string (string-join (cdr ss) "=")
+                                            :cgi-decode #t)))))
+       (string-split input #[&\;])))
 
 ;; part-handlers: ((<name-list> <action> <options> ...) ...)
 ;;  <name-list> : list of field names (string, symbol, or regexp)
@@ -336,14 +337,14 @@
         (ignore-handler name filename part-info inp)
         #f]
        [(not filename)  ;; this is not a file uploading field.
-        (list name (string-handler name filename part-info inp))]
+        (cons name (string-handler name filename part-info inp))]
        [(string-null? filename) ;; file field is empty
-        (list name (ignore-handler name filename part-info inp))]
+        (cons name (ignore-handler name filename part-info inp))]
        [else
         (let* ([action&opts (get-action&opts name)]
                [handler (apply get-handler action&opts)]
                [result (handler name filename part-info inp)])
-          (list name result))])))
+          (cons name result))])))
 
   (let* ([inp (if (and clength (<= 0 (x->integer clength)))
                 (open-input-limited-length-port inp (x->integer clength))

@@ -1,5 +1,9 @@
 2013-08-26  Shiro Kawai  <shiro@acm.org>
 
+	* lib/www/cgi.scm (cgi-parse-parameters): Fixed a bug when multiple
+	  values with the same parameter name are passed via
+	  multipart/form-data.
+
 	* lib/rfc/uri.scm (uri-compose-data, uri-decompose-data): Added
 	  'data:' uri scheme support.
 
