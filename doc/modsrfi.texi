@@ -69,7 +69,7 @@ Gauche が @var{feature-requirement} をサポートしていれば、このマ�
 @var{command-or-definition} @dots{} を展開します。
 異るScheme の実装による機能の差異を吸収するのに使えると言えるでしょう。
 
-@var{feature-requiremnt} は以下のような構文でなければなりません。
+@var{feature-requirement} は以下のような構文でなければなりません。
 @c COMMON
 @example
 @var{feature-requirement}
