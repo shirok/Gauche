@@ -10501,13 +10501,22 @@ in an incomplete string.
 @deftp {Module} rfc.uri
 @mdindex rfc.uri
 @c EN
-Provides a set of functions to parse Uniform Resource Identifiers
-defined in RFC 2396 (@ref{rfc2396, [RFC2396], RFC2396}).
+Provides a set of procedures to parse and construct Uniform Resource Identifiers
+defined in RFC 2396 (@ref{rfc2396, [RFC2396], RFC2396}),
+as well as Data URI scheme defined in RFC2397.
 @c JP
 RFC 2396 (@ref{rfc2396, [RFC2396], RFC2396})で定義されている
-Uniform Resource Identifiers をパーズする関数を提供します。
+Uniform Resource Identifiers、
+またRFC 2397で定義されているData URI Schemeをパーズおよび構築する
+手続き群を提供します。
 @c COMMON
 @end deftp
+
+@c EN
+@subheading Parsing URI
+@c JP
+@subheading URIのパーズ
+@c COMMON
 
 @defun uri-parse uri
 @defunx uri-scheme&specific uri
@@ -10651,6 +10660,60 @@ It returns @var{userinfo}, @var{host} and @var{port}.
 @end example
 @end defun
 
+
+@defun uri-decompose-data uri
+@c EN
+Parse a Data URI string @var{uri}.  You can either pass the entire
+uri including @code{data:} scheme part, or just the specific part.
+If the passed uri is invalid as a data uri, an error is signalled.
+
+Returns two values: parsed content type and the decoded data.
+The data is a string if the content type is @code{text/*}, and
+a u8vector otherwise.
+
+The content-type is parsed by @code{mime-parse-content-type}
+(@xref{MIME message handling}).  The result format is a list as follows:
+@c JP
+Data URI文字列@var{uri}をパーズします。@code{data:}スキームは有っても無くても
+構いません。渡されたuriがdata uriとして無効な文字列であればエラーが投げられます。
+
+二つの値、パーズされたContent-Typeおよびデコードされたデータを返します。
+Content-Typeが@code{text/*}であればデコードされたデータは文字列で、
+そうでなければu8vectorで返されます。
+
+Content-Typeは@code{mime-parse-content-type}でパーズされます
+(@ref{MIME message handling}参照)。結果のデータ形式は次のようなリストです。
+@c COMMON
+
+@example
+@code{(@i{type} @i{subtype} (@i{attribute} . @i{value}) @dots{})}.
+@end example
+
+@c EN
+Here are a couple of examples:
+@c JP
+いくつか例を示します。
+@c COMMON
+
+@example
+(uri-decompose-data
+ "data:text/plain;charset=utf-8;base64,KGhlbGxvIHdvcmxkKQ==")
+  @result{} ("text" "plain" ("charset" . "utf-8")) @r{and} "(hello world)"
+
+(uri-decompose-data
+ "data:application/octet-stream;base64,AAECAw==")
+  @result{} ("application" "octet-stream") @r{and} #u8(0 1 2 3)
+@end example
+
+@end defun
+
+
+@c EN
+@subheading Constructing URI
+@c JP
+@subheading URIの構築
+@c COMMON
+
 @defun uri-compose :key scheme userinfo host port authority path path* query fragment specific
 @c EN
 Compose a URI from given components.
@@ -10749,6 +10812,63 @@ to the resulting uri, and so on.
 @end example
 @end defun
 
+@defun uri-compose-data data :key content-type encoding
+@c EN
+Creates a Data URI of the given @var{data}, with specified content-type
+and transfer encoding.  Returns a string.
+
+The @var{data} argument must be a string or a u8vector.
+
+The @var{content-type} argument can be @code{#f} (default),
+a string that represents a content type (e.g. @code{"text/plain;charset=utf-8"}),
+or a list form of parsed content type
+(e.g. @code{("application" "octet-stream")}.  If it is @code{#f},
+@code{text/plain} with the gauche's native character encoding is
+used when @var{data} is a complete string, and @code{application/octet-stream}
+is used otherwise.
+
+The @var{encoding} argument can be either @code{#f} (default),
+or a symbol @code{uri} or @code{base64}.  This is for transfer encoding,
+not character encoding.  If it is @code{#f}, URI encoding is used
+for text data and base64 encoding is used for binary data.
+@c JP
+与えられた@var{data}からData URIを構築して文字列で返します。
+
+@var{data}引数は文字列かu8vectorでなければなりません。
+
+@var{content-type}キーワード引数は、@code{#f} (デフォルト)、
+content typeを表現する文字列 (例: @code{"text/plain;charset=utf-8"})、
+もしくはパーズされたcontent type (例: @code{("application" "octet-stream")})です。
+@code{#f}である場合は、@var{data}が完全な文字列であれば
+@code{text/plain}にGaucheのネイティブ文字エンコーディングに基づく@code{charset}を
+つけたもの、@var{data}がそれ以外であれば@code{application/octet-stream}が
+使われます。
+
+@var{encoding}キーワード引数は@code{#f} (デフォルト)、
+もしくはシンボル@code{uri}または@code{base64}です。これは文字エンコーディングではなく
+トランスファーエンコーディングであることに注意。
+@code{#f}の場合は、テキストデータなら@code{uri}が、バイナリデータなら@code{base64}が
+使われます。
+@c COMMON
+
+@example
+(uri-compose-data "(hello world)")
+ @result{} "data:text/plain;charset=utf-8,%28hello%20world%29"
+
+(uri-compose-data "(hello world)" :encoding 'base64)
+ @result{} "data:text/plain;charset=utf-8;base64,KGhlbGxvIHdvcmxkKQ=="
+
+(uri-compose-data '#u8(0 1 2 3))
+ @result{} "data:application/octet-stream;base64,AAECAw=="
+@end example
+@end defun
+
+
+@c EN
+@subheading URI Encoding and decoding
+@c JP
+@subheading URIのエンコードとデコード
+@c COMMON
 
 @defun uri-decode :key :cgi-decode
 @defunx uri-decode-string string :key :cgi-decode :encoding

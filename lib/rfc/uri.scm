@@ -306,22 +306,21 @@
 (autoload gauche.vport open-input-uvector)
 (autoload rfc.mime mime-parse-content-type)
 
-(define (uri-compose-data data :key
-                          (content-type
-                           (format "text/plain;charset=~a"
-                                   (cond-expand
-                                    [gauche.ces.utf8 'utf-8]
-                                    [gauche.ces.eucjp 'euc-jp]
-                                    [gauche.ces.sjis 'shift_jis]
-                                    [gauche.ces.none 'us-ascii])))
-                          (encoding #f))
-  (let1 encoding (or encoding
-                     (if (and (string? data) (not (string-incomplete? data)))
-                       'uri
-                       'base64))
+(define (uri-compose-data data :key (content-type #f) (encoding #f))
+  (define data-is-string
+    (and (string? data) (not (string-incomplete? data))))
+  (let ([encoding (or encoding (if data-is-string 'uri 'base64))]
+        [content-type (or content-type
+                          (if data-is-string
+                            (format "text/plain;charset=~a"
+                                    (cond-expand
+                                     [gauche.ces.utf8 'utf-8]
+                                     [gauche.ces.eucjp 'euc-jp]
+                                     [gauche.ces.sjis 'shift_jis]
+                                     [gauche.ces.none 'us-ascii]))
+                            "application/octet-stream"))])
     (define (encode-by-uri)
-      (unless (and (string? data)
-                   (not (string-incomplete? data)))
+      (unless data-is-string
         (error "data must be a complete string for uri-encoding data scheme:"
                data))
       (uri-encode-string data))
