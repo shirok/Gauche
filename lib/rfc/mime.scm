@@ -80,7 +80,7 @@
              [s (string-concatenate
                  (map x->string (rfc822-field->tokens field)))]
              [m (#/^(\d+)\.(\d+)$/ s)])
-    (map (lambda (d) (x->integer (m d))) '(1 2))))
+    (map (^d (x->integer (m d))) '(1 2))))
 
 (define-constant *ct-token-chars*
   (char-set-difference #[\x21-\x7e] #[()<>@,\;:\\\"/\[\]?=]))
@@ -90,7 +90,7 @@
 (define (mime-parse-content-type field)
   (and field
        (call-with-input-string field
-         (lambda (input)
+         (^[input]
            (and-let* ([type (rfc822-next-token input `(,*ct-token-chars*))]
                       [ (string? type) ]
                       [ (eqv? #\/ (rfc822-next-token input '())) ]
@@ -105,7 +105,7 @@
 (define (mime-parse-content-disposition field)
   (and field
        (call-with-input-string field
-         (lambda (input)
+         (^[input]
            (and-let* ([token (rfc822-next-token input `(,*ct-token-chars*))]
                       [ (string? token) ])
              (cons (string-downcase token)
@@ -128,7 +128,7 @@
                                (#[\"] . ,rfc822-quoted-string)))]
                       [ (string? val) ])
              (cons attr val))
-           => (lambda (p) (loop (cons p r)))]
+           => (^p (loop (cons p r)))]
           [else (reverse! r)])))
 
 ;; Inverse of mime-parse-parameters.
@@ -146,7 +146,7 @@
       (unless (string-every *ct-token-chars* z)
         (error "invalid parameter value for rfc2822 header:" p))))
   (define (gen)
-    (fold (lambda (pv column)
+    (fold (^[pv column]
             (match pv
               [(p . v)
                (let* ([z #`",(valid-name p)=,(quote-value (x->string v))"]
@@ -187,10 +187,9 @@
 (define (mime-decode-word word)
   (cond [(string-incomplete? word) word] ;; safety net
         [(rxmatch *mime-encoded-header-rx* word)
-         => (lambda (m)
-              (if (equal? (m'after) "")
-                (%mime-decode-word word (m 1) (m 2) (m 3))
-                word))]
+         => (^m (if (equal? (m'after) "")
+                  (%mime-decode-word word (m 1) (m 2) (m 3))
+                  word))]
         [else word]))
 
 ;; Decode the entire header field body, possibly a mixture of
@@ -200,25 +199,22 @@
 ;; the parser.  The correct order is to parse first, then apply
 ;; mime-decode-word for each token.
 (define (mime-decode-text body)
-  (let loop ((s body))
+  (let loop ([s body])
     (receive (pre rest) (string-scan s "=?" 'before*)
       (cond [(not pre) s]
             [(rxmatch *mime-encoded-header-rx* rest)
-             => (lambda (m)
-                  (string-append pre
-                                 (%mime-decode-word (m 0) (m 1) (m 2) (m 3))
-                                 (loop (m'after))))]
+             => (^m (string-append pre
+                                   (%mime-decode-word (m 0) (m 1) (m 2) (m 3))
+                                   (loop (m'after))))]
             [else s]))))
 
 ;; Encode a single word.  This one always encode, even WORD contains
 ;; US-ASCII characters only.
 (define (mime-encode-word word :key (charset "utf-8") (transfer-encoding 'base64))
-  (let ((converted
-         (cond [(ces-upper-compatible? charset (gauche-character-encoding))
-                word]
-               [else
-                (ces-convert word (gauche-character-encoding) charset)]))
-        (enc (%canonical-encoding transfer-encoding)))
+  (let ([converted
+         (cond [(ces-upper-compatible? charset (gauche-character-encoding)) word]
+               [else (ces-convert word (gauche-character-encoding) charset)])]
+        [enc (%canonical-encoding transfer-encoding)])
     (format "=?~a?~a?~a?=" charset enc
             ((if (eq? enc 'B)
                base64-encode-string
@@ -235,11 +231,11 @@
                           (line-width 76)
                           (start-column 0)
                           (force #f))
-  (let ((enc (%canonical-encoding transfer-encoding))
-        (cslen (string-length (x->string charset)))
-        (pass-through? (and (not force)
+  (let ([enc (%canonical-encoding transfer-encoding)]
+        [cslen (string-length (x->string charset))]
+        [pass-through? (and (not force)
                             (ces-upper-compatible? charset 'ascii)
-                            (string-every #[\x00-\x7f] body))))
+                            (string-every #[\x00-\x7f] body))])
     ;; estimates the length of an encoded word.  it is not trivial since
     ;; we have to ces-convert each segment separately, and there's no
     ;; general way to estimate the size of ces-converted string.
@@ -261,7 +257,7 @@
             (if (<= (string-length ew) width)
               `(,ew)
               (encode str width (* adj (/. (string-length ew) width)))))
-          (let loop ((k (min (string-length str) (quotient width 2))))
+          (let loop ([k (min (string-length str) (quotient width 2))])
             (let1 estim (* adj (estimate-width str k))
               (if (<= estim width)
                 (let1 ew (encode-word (string-take str k))
@@ -364,8 +360,8 @@
                          '("message" "rfc822")
                          '("text" "plain" ("charset" . "us-ascii")))]
          [mime-port (make-mime-port boundary port)])
-    (let loop ((index 0)
-               (contents '()))
+    (let loop ([index 0]
+               [contents '()])
       (let* ([headers (rfc822-header->list mime-port)]
              [r (internal-parse mime-port headers handler
                                 packet index
@@ -386,9 +382,9 @@
     ))
 
 (define (message-parse port packet handler)
-  (let* ((headers (rfc822-header->list port))
-         (r (internal-parse port headers handler packet 0
-                            '("text" "plain" ("charset" . "us-ascii")))))
+  (let* ([headers (rfc822-header->list port)]
+         [r (internal-parse port headers handler packet 0
+                            '("text" "plain" ("charset" . "us-ascii")))])
     (set! (ref packet 'content) (list r)))
   packet)
 
@@ -399,8 +395,8 @@
 (define (mime-retrieve-body packet inp outp)
 
   (define (read-line/nl)
-    (let loop ((c (read-char inp))
-               (chars '()))
+    (let loop ([c (read-char inp)]
+               [chars '()])
       (cond [(eof-object? c)
              (if (null? chars) c  (list->string (reverse! chars)))]
             [(char=? c #\newline) (list->string (reverse! (cons c chars)))]
@@ -414,7 +410,7 @@
             [else (loop (read-char inp) (cons c chars))])))
 
   (define (read-text decoder)
-    (let loop ((line (read-line/nl)))
+    (let loop ([line (read-line/nl)])
       (unless (eof-object? line)
         (display (decoder line) outp)
         (loop (read-line/nl)))))
@@ -425,7 +421,7 @@
         (cut with-port-locking (current-input-port)
              (cut with-output-to-port out base64-decode))))
     (let1 buf (open-output-string :private? #t)
-      (let loop ((line (read-line inp)))
+      (let loop ([line (read-line inp)])
 	(unless (eof-object? line)
           (display line buf)
           (loop (read-line inp))))
@@ -433,18 +429,17 @@
     )
 
   (with-port-locking inp
-    (lambda ()
-      (let1 enc (ref packet 'transfer-encoding)
-        (cond
-         [(string-ci=? enc "base64") (read-base64)]
-         [(string-ci=? enc "quoted-printable")
-          (read-text quoted-printable-decode-string)]
-         [(member enc '("7bit" "8bit" "binary"))
-          (let loop ((b (read-byte inp)))
-            (unless (eof-object? b)
-              (write-byte b outp)
-              (loop (read-byte inp))))]
-         ))))
+    (^[] (let1 enc (ref packet 'transfer-encoding)
+           (cond
+            [(string-ci=? enc "base64") (read-base64)]
+            [(string-ci=? enc "quoted-printable")
+             (read-text quoted-printable-decode-string)]
+            [(member enc '("7bit" "8bit" "binary"))
+             (let loop ((b (read-byte inp)))
+               (unless (eof-object? b)
+                 (write-byte b outp)
+                 (loop (read-byte inp))))]
+            ))))
   )
 
 (define (mime-body->string packet inp)
@@ -454,7 +449,7 @@
 
 (define (mime-body->file packet inp filename)
   (call-with-output-file filename
-    (lambda (outp)
+    (^[outp]
       (with-port-locking outp
         (cut mime-retrieve-body packet inp outp))))
   filename)
@@ -534,7 +529,7 @@
       (push! (ref part'parameters) (cons "boundary" (mime-make-boundary)))))
   (let1 cte (mime-generate-part-header part port)
     (with-output-to-port port
-      (lambda ()
+      (^[]
         (cond
          [(ref part'source) =>
           (cut with-input-from-file <> (cut mime-generate-part-body part cte))]
