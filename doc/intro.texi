@@ -150,7 +150,7 @@ The practical language implementations are required to handle
 multibyte (wide) characters.
 Gauche supports multibyte strings natively, providing robust and
 consistent support than @i{ad hoc} library-level implementation.
-@xref{Multibyte Strings}, for details.
+@xref{Multibyte strings}, for details.
 @c JP
 文字列が1バイトキャラクタのみを扱っていれば良かった時代は過ぎ去りました。
 現代のプログラミングシステムは、様々なエンコーディングによるマルチバイト文字／文字列を
@@ -158,7 +158,7 @@ consistent support than @i{ad hoc} library-level implementation.
 Gaucheは内部的に文字列を全て、コンパイル時に選択したエンコーディングの
 マルチバイト文字列として扱います。後から付け足したライブラリレベルでの
 マルチバイト文字列のサポートよりも、一貫性がありロバストな文字列操作が可能になっています。
-詳しくは@ref{Multibyte Strings}を参照してください。
+詳しくは@ref{Multibyte strings}を参照してください。
 @c COMMON
 
 @c EN

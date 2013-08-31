@@ -12,7 +12,7 @@ Gaucheの動作を正確に理解する助けになると思います。
 
 @menu
 * Standard conformance::
-* Multibyte Strings::
+* Multibyte strings::
 * Multibyte scripts::
 * Case-sensitivity::
 * Integrated Object System::
@@ -20,7 +20,7 @@ Gaucheの動作を正確に理解する助けになると思います。
 * Compilation::
 @end menu
 
-@node Standard conformance, Multibyte Strings, Concepts, Concepts
+@node Standard conformance, Multibyte strings, Concepts, Concepts
 @section Standard conformance
 @c NODE 標準への準拠
 
@@ -496,8 +496,8 @@ Supported by the module @code{srfi-106}.  @xref{Basic socket interface}.
 
 @end table
 
-@node Multibyte Strings, Multibyte scripts, Standard conformance, Concepts
-@section Multibyte Strings
+@node Multibyte strings, Multibyte scripts, Standard conformance, Concepts
+@section Multibyte strings
 @c NODE マルチバイト文字列
 
 @c EN
@@ -655,7 +655,7 @@ explained in the next section.
 次の章で説明します。
 @c COMMON
 
-@node Multibyte scripts, Case-sensitivity, Multibyte Strings, Concepts
+@node Multibyte scripts, Case-sensitivity, Multibyte strings, Concepts
 @section Multibyte scripts
 @c NODE マルチバイトスクリプト
 

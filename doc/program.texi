@@ -1089,11 +1089,11 @@ GaucheがIPv6をサポートするようにコンパイルされている場合�
 @c EN
 Either one of these feature identifiers is defined, according to the
 compile-time option of Gauche's internal character encoding.
-@xref{Multibyte Strings}, for the details of the internal character encoding.
+@xref{Multibyte strings}, for the details of the internal character encoding.
 @c JP
 これらの機能識別子のうちのどれかひとつが、Gaucheの内部文字エンコーディングに応じて
 定義されます。内部エンコーディングについて詳しくは
-@ref{Multibyte Strings}を参照してください。
+@ref{Multibyte strings}を参照してください。
 @c COMMON
 @end table
 

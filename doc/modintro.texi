@@ -254,7 +254,7 @@ limited types of values.  This is also supported by @ref{Arrays}.
 @item
 @emph{String} - a sequence of characters.  See @ref{Strings}
 and @ref{String library}.  Gauche handles multibyte strings---
-see @ref{Multibyte Strings} for the defatils.
+see @ref{Multibyte strings} for the defatils.
 @item
 @emph{Character set} - a set of characters.  See @ref{Character set}
 and @ref{Character-set library}.
@@ -306,7 +306,7 @@ For generic RDBMS interface, see @ref{Database independent access layer}.
 @item
 @emph{文字列} - 文字のシーケンス。@ref{Strings}および
 @ref{String library}参照。Gaucheではマルチバイト文字列を扱えます。詳細
-については@ref{Multibyte Strings}を見てください。
+については@ref{Multibyte strings}を見てください。
 @item
 @emph{文字集合} - 文字の集合。@ref{Character set}および
 @ref{Character-set library}参照。
