@@ -93,10 +93,10 @@ Gaucheはまた、以下のSRFIをサポートしています。
 @table @asis
 @c EN
 @item SRFI-0, Feature-based conditional expansion construct.
-As an autoloaded macro.   @xref{Feature conditional}.
+Built-in.   @xref{Feature conditional}.
 @c JP
 @item SRFI-0, 機能ベースの条件展開
-オートロードされるマクロとしてサポートされます。@ref{Feature conditional}参照。
+組み込みです。@ref{Feature conditional}参照。
 @c COMMON
 
 @c EN
