@@ -15,6 +15,7 @@
 * Quasiquotation::              
 * Definitions::                 
 * Inclusions::                  
+* Feature conditional::         
 * Modules::                     
 @end menu
 
@@ -92,6 +93,59 @@ by @code{#\x@var{NN}} (Gauche internal code) or @code{#\u@var{NN}} (Unicode).
 Gauche内部コードを使う @code{#\x@var{NN}} と、
 Unicodeを使う @code{#\u@var{NN}}という表記があります。
 @ref{Characters}を参照して下さい。
+@c COMMON
+
+@c EN
+@item Square brackets
+Gauche adopts the R6RS syntax that regards @code{[]} the same
+as @code{()}.  Both kind of parentheses are equivalent,
+but the kind of corresponding open and close parentheses match.
+Some seasoned Lisper may frown on them, it
+helps visually distinguish different roles of parentheses.
+
+A general convention is to use @code{[]} for groupings other than
+function and macro application.  If such grouping nests, however, use @code{()}
+for outer groupings.  Examples:
+@c JP
+@item 角括弧
+Gaucheは、R6RSの@code{[]}を@code{()}と同様に扱う構文規則を採用しています。
+どちらの括弧も全く等価ですが、それぞれの開き括弧と閉じ括弧は対応していなければなりません。
+括弧を混ぜることに眉をひそめる熟練のLisperもいますが、
+括弧の種類を使い分けるのは、括弧の役割を視覚的に識別するのに役に立ちます。
+
+一般的な慣習は、関数とマクロ呼び出し以外のグルーピングには@code{[]}を使う、
+というものです。ただしそのようなグルーピングがネストする場合は、外側には@code{()}を
+使います。例:
+@c COMMON
+
+@example
+(cond [(test1 x) (y z)]
+      [(test2 x) (s t)]
+      [else (u v)])
+
+(let ([x (foo a b)]
+      [y (bar c d)])
+  (baz x y))
+@end example
+
+@c EN
+It is purely optional, so you don't need to use them if you don't like them.
+R7RS doesn't adopt this syntax and leaves @code{[]} for extensions,
+so it is safe to stick to @code{()} in portable R7RS programs.
+
+Scheme-specific modes of some editors (e.g. Quack on Emacs) allows
+you to type just @code{)} and inserts either @code{]} or @code{)}
+depending on which kind parenthesis it is closing.  We recommend
+using such modes if you use this convention.
+@c JP
+この記法は、必ず従わなければいけないというものではありません。
+R7RSではこの構文を採用せず、@code{[]}は言語拡張用に取ってあるので、
+ポータブルなR7RSプログラムを書く場合は@code{()}だけを使うのが良いでしょう。
+
+エディタのSchemeモードの中には、@code{)}をタイプするとそれがどちらの
+種類の括弧を閉じるかに応じて自動的に@code{]}か@code{)}を選んで挿入してくれる
+ものがあります (EmacsのQuackなど)。この記法を使うときは
+そういったモードを活用すると良いでしょう。
 @c COMMON
 
 @c EN
@@ -963,9 +1017,9 @@ The @code{$} notation can be chained.
 
 @c EN
 If @code{$*} appears in the argument list instead of @code{$},
-it fills the rest of the argument, instead of the last argument.
+it fills the rest of the arguments, instead of just the last argument.
 @c JP
-@code{$}のかわりに@code{$*}が現れた場合は、最後の引数のかわりに
+@code{$}のかわりに@code{$*}が現れた場合は、最後の引数ひとつだけでなく
 「残りの引数全部」を示します。
 @c COMMON
 
@@ -1034,7 +1088,7 @@ sparingly, like spices.
 
 @c EN
 As a corner case, if neither @code{$} nor @code{$*} appear in the
-argument list, it is just calls the function.
+argument list, it just calls the function.
 @c JP
 コーナーケースとして、引数リストに@code{$}も@code{$*}も現れなかった場合は、
 単なる関数呼び出しになります。
@@ -1719,7 +1773,7 @@ and it evaluates @var{expr} in the order of appearance.
 
 @c EN
 You need to use @code{letrec*} if evaluation of one @var{expr} requires
-the value of @var{var} that appeara before the @var{expr}.  In the following
+the value of @var{var} that appears before the @var{expr}.  In the following
 example, calculating the value of @var{a} and @var{b} requires the value
 of @var{cube}, so you need @code{letrec*}.   (Note the difference from
 the above example, where @emph{calculating} the value of @var{list}
@@ -2347,6 +2401,14 @@ number of times determined by @var{expr}.
 ;; print "a" (length lst) times.
 (dolist (lst) (print "a"))
 @end example
+
+@c EN
+See also @ref{Eager comprehensions}, which provides
+rich way to iterate.
+@c JP
+@ref{Eager comprehensions}も参照してください。
+より複雑な繰り返しを記述できます。
+@c COMMON
 @end defmac
 
 @defmac while expr body @dots{}
@@ -2929,7 +2991,7 @@ the current module, you can use @code{global-variable-bound?}
 @c COMMON
 
 @c ----------------------------------------------------------------------
-@node Inclusions, Modules, Definitions, Core syntax
+@node Inclusions, Feature conditional, Definitions, Core syntax
 @section Inclusions
 @c NODE インクルード
 
@@ -3039,7 +3101,257 @@ you don't need to change the third party's code:
 @end example
 
 @c ----------------------------------------------------------------------
-@node Modules,  , Inclusions, Core syntax
+@node Feature conditional, Modules, Inclusions, Core syntax
+@section Feature conditional
+@c NODE 機能条件式
+
+@c EN
+@subheading The @code{cond-expand} macro
+@c JP
+@subheading @code{cond-expand}マクロ
+@c COMMON
+
+@c EN
+Sometimes you need to have a different piece of code
+depending on available features provided by the
+implemantation and/or platform.  For example,
+you may want to switch behavior depending on whether
+networking is available, or to embed an
+implementaiton specific procedures in otherwise-portable code.
+@c JP
+しばしば、実装やプラットフォームがどういった機能を提供しているかに
+応じてコードを切り替えたいことがあります。例えば、ネットワークが使えるか
+どうかで振る舞いを変えるとか、ほぼポータブルなコードの一部だけに
+特定の実装に依存するコードを入れたいとかいう場合です。
+@c COMMON
+
+@c EN
+In C, you use preprocessor directives such as @code{#ifdef}.
+In Common Lisp, you use reader macro @code{#+} and @code{#-}.
+In Scheme, you have @code{cond-expand}:
+@c JP
+C言語なら、@code{#ifdef}のようなプリプロセッサディレクティブを、
+Common Lispなら、@code{#+}と@code{#-}のようなリーダマクロを使うところです。
+Schemeでは、こういう時には@code{cond-expand}を使います。
+@c COMMON
+
+@defmac cond-expand (feature-requirement command-or-definition @dots{}) @dots{}
+[SRFI-0][R7RS]
+@c EN
+This macro expands to @var{command-or-definition} @dots{} if
+@var{feature-requirement} is supported by the current platform.
+
+@var{feature-requirement} must be in the following syntax:
+@c JP
+プラットフォームが@var{feature-requirement}に示される機能をサポートしていれば、
+このマクロは@var{command-or-definition} @dots{} へと展開されます。
+
+@var{feature-requirement} は以下のような構文でなければなりません。
+@c COMMON
+@example
+@var{feature-requirement}
+  : @var{feature-identifier}
+  | (and @var{feature-requirement} @dots{})
+  | (or  @var{feature-requirement} @dots{})
+  | (not @var{feature-requirement})
+  | (library @var{library-name})
+@end example
+
+@c EN
+The macro tests each @var{feature-requirement} in order, and
+if one is satisfied, the macro itself expands to the
+corresponding @var{command-or-definition} @dots{}.
+@c JP
+このマクロは @var{feature-requirement} を順にテストし、そのひとつが
+満たされたら、対応する @var{command-or-definition} @dots{} に展開されます。
+@c COMMON
+
+@c EN
+The last clause may have @code{else} in the position of
+@var{feature-requirement}, to make the clause expanded
+if none of the previous feature requirement is fulfilled.
+@c JP
+最後の節の@var{feature-requirement}の部分にはシンボル@code{else}を
+置くこともできます。他の節の@var{feature-requirement}が満たされなかった場合に
+その節が展開されます。
+@c COMMON
+
+@c EN
+@var{feature-identifier} is a symbol that indicates a feature.
+If such a feature is supported in the current platform, it satisfies the
+@var{feature-requirement}.  You can do boolean combination
+of @var{feature-requirement}s to compose more complex conditions.
+@c JP
+@var{feature-identifier} は機能を示すシンボルです。その機能が現在のプラットフォームで
+サポートされているなら、それは、@var{feature-requirement} を満たします。
+より複雑な条件を構成するために、@var{feature-requirement} のブール代数による
+組み合わせを用いることが出来ます。
+@c COMMON
+
+@c EN
+The form @code{(library @var{library-name})} is added in R7RS,
+and it is fulfilled when the named library is available.  Since
+this is R7RS construct, you have to use R7RS-style library name---
+list of symbols/integers, e.g. @code{(gauche net)} instead of
+@code{gauche.net}.
+@c JP
+@code{(library @var{library-name})}という形式はR7RSで追加されたもので、
+指定されるライブラリが使える場合に条件が満たされます。
+これはR7RSの形式なので、ライブラリ名はリスト形式で指定します
+(@code{gauche.net}のかわりに@code{(gauche net)}等)。
+@c COMMON
+
+@c EN
+Here's a typical example: Suppose you want to have implementation-specific
+part for Gauche, Chicken Scheme and ChibiScheme.  Most modern Scheme
+impelementations defines a feature-identifier to identify itself.
+You can write the conditional part as follows:
+@c JP
+例えば、Gauche、Chicken Scheme、ChibiSchemeに依存するコードを
+入れたいとしましょう。現代の多くのScheme実装は、自分自身を示す
+feature-identifierを定義しているので、条件付きのコードは次のとおり書けます。
+@c COMMON
+
+@example
+(cond-expand
+ [gauche  (gauche-specific-code)]
+ [(or chicken chibi) (chicken-chibi-specific-code)]
+ [else    (fallback-code)]
+ )
+@end example
+
+@c EN
+It is important that the conditions of @code{cond-expand} is
+purely examined at the macro-expansion time, and
+unfulfilled clauses are discarded.
+Thus, for example, you can include macro calls or language extensions
+that may not be recognized on some implementations.  You can also
+conditionally define global bindings.
+@c JP
+@code{cond-expand}の条件はマクロ展開時に全て処理され、
+不採用だった節のコードは捨てられる、という事実は重要です。
+このおかげで、例えば実装によって認識されないマクロ呼び出しや言語拡張を
+@var{command-or-definition}に含めることができます。
+また、グローバルな束縛を条件によって定義したりしなかったりすることができます。
+@c COMMON
+
+@c EN
+Compare that to @code{cond}, which examines conditions at runtime.
+If you include unsupported macro call in one of the conditions, it
+may raise an error at macro expansion time, even if that clause
+will never be executed on the platform.  Also, it is not possible
+to conditionally define global bindings using @code{cond}.
+@c JP
+これを@code{cond}と比較してみましょう。@code{cond}は条件を実行時に調べます。
+もし条件節の中に、あるプラットフォームではサポートされないマクロ呼び出しを
+書いた場合、たとえその節が現実には決して実行されないものであるとしても、
+マクロ展開時にエラーになってしまうかもしれません。
+また、@code{cond}を使って条件的にグローバルな束縛を定義することはできません。
+@c COMMON
+
+@c EN
+There's a caveat, though.  Suppose you want to save the result of macro
+expansion, and run the expanded result later on other platforms.
+The result code is based on the features of the platform the macro
+expansion takes place, which may not agree with the features
+of the platform the code will run.  (This issue always arises
+in cross-compiling situation in general.)
+
+@c Gauche has @emph{ahead-of-time compilation} feature, which is only
+@c used internally now, but will eventually be made for public use.
+@c JP
+ただし、マクロ展開した結果をどうにかして保存しておいて、
+別のプラットフォームでそれを走らせる、ということをする場合は注意が必要です。
+条件選択はマクロ展開をするプラットフォームの機能に応じて行われ、
+それはコードを実行するプラットフォームの機能とは一致しないかもしれません
+(これはもちろん、クロスコンパイルで常に問題となることです。)
+@c COMMON
+
+@c EN
+See below for the list of feature identifiers defined in Gauche.
+@c JP
+Gaucheで使えるfeature identifier一覧は下を見てください。
+@c COMMON
+@end defmac
+
+@c EN
+@subheading Gauche-specific feature identifiers
+@c JP
+@subheading Gauche特有のfeature identifier
+@c COMMON
+
+@table @code
+@item gauche
+@itemx gauche-X.X.X
+Indicates you're running on Gauche.  @code{X.X.X} is the gauche's version
+(e.g. @code{gauche-0.9.4}), in case you want to have code
+for specific Gauche version.  (It might be
+
+@item gauche.os.windows
+@itemx gauche.os.cygwin
+Defined on Windows-native platform and Cygwin/Windows platform, respectively.
+If neither is defined you can assume it's a unix variant.
+(Cygwin is supposedly
+unix variant, but corners are different enough to deserve it's own
+feature identifier.)  
+
+@item gauche.ces.utf8
+@itemx gauche.ces.eucjp
+@itemx gauche.ces.sjis
+@itemx gauche.ces.none
+Either one of these is defined based on Gauche's native character
+encoding scheme.  @xref{Multibyte strings}, for the details.
+
+@item gauche.net.tls
+Defined if the runtime supports TLS in networking.
+
+@item gauche.net.ipv6
+Defined if the runtime supports IPv6.
+
+@item gauche.sys.threads
+@itemx gauche.sys.pthreads
+@itemx gauhce.sys.wthreads
+If the runtime supports multithreading, @code{gauche.sys.threads} is
+defined (@xref{Threads}).  Multithreading is based on either POSIX pthreads
+or Windows threads.  The former defines @code{gauche.sys.pthreads},
+and the latter defines @code{gauche.sys.wthreads}.
+
+@item gauche.sys.sigwait
+@itemx gauche.sys.setenv
+@itemx gauche.sys.unsetenv
+@itemx gauche.sys.clearenv
+@itemx gauche.sys.getloadavg
+@itemx gauche.sys.getrlimit
+@itemx gauche.sys.lchown
+@itemx gauche.sys.getpgid
+@itemx gauche.sys.nanosleep
+@itemx gauhce.sys.crypt
+@itemx gauche.sys.symlink
+@itemx gauche.sys.readlink
+@itemx gauche.sys.select
+@itemx gauche.sys.fcntl
+@itemx gauche.sys.syslog
+@itemx gauche.sys.setlogmask
+@itemx gauche.sys.openpty
+@itemx gauche.sys.forkpty
+Those are defined based on the availability of these system features
+of the platform.
+@end table
+
+
+@c EN
+@subheading R7RS feature identifiers
+@c JP
+@subheading R7RSで定義されたfeature identifiers
+@c COMMON
+
+@table @code
+@end table
+
+
+
+@c ----------------------------------------------------------------------
+@node Modules,  , Feature conditional, Core syntax
 @section Modules
 @c NODE モジュール
 
