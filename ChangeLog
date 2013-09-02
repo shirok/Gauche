@@ -1,3 +1,9 @@
+2013-09-01  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.scm (define-builtin-inliner-/, pass2/const-numop1)
+	  (pass2/const-numop2): Avoid constant-folding for exact div-by-zero
+	  case.  We should leave it to be handled at runtime.
+
 2013-08-26  Shiro Kawai  <shiro@acm.org>
 
 	* lib/www/cgi.scm (cgi-parse-parameters): Fixed a bug when multiple

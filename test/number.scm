@@ -1292,6 +1292,25 @@
          (and (nan? (real-part r))
               (= (imag-part r) +inf.0))))
 
+;; See if we don't fold exact divide-by-zero case.  If compile blindly
+;; fold constant division, the following causes compile-time error
+;; rather than runtime error.
+(let ()
+  (define (recip x) (or x (/ 0)))
+  (define (two x) (or x (/ 2 0)))
+  (define (three x) (or x (/ 2 4 0)))
+  (define (four x) (or x (/ 2 0 4 3)))
+
+  (define (tests exp arg)
+    (test* "div-by-zero constant folding 1" exp (recip arg))
+    (test* "div-by-zero constant folding 2" exp (two arg))
+    (test* "div-by-zero constant folding 3" exp (three arg))
+    (test* "div-by-zero constant folding 4" exp (four arg)))
+
+  (tests 10 10)
+  (tests (test-error) #f)
+  )
+
 (define (almost=? x y)
   (define (flonum=? x y)
     (let ((ax (abs x)) (ay (abs y)))

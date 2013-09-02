@@ -3519,12 +3519,16 @@
 
 (define (pass2/const-numop1 proc args)
   (let1 n ($const-value (car args))
-    (and (number? n) ($const (proc n)))))
+    (and (number? n)
+         (not (and (eq? proc /) (eqv? y 0))) ; don't fold zero-division case
+         ($const (proc n)))))
 
 (define (pass2/const-numop2 proc args)
   (let ([x ($const-value (car args))]
         [y ($const-value (cadr args))])
-    (and (number? x) (number? y) ($const (proc x y)))))
+    (and (number? x) (number? y)
+         (not (and (eq? proc /) (exact? x) (eqv? y 0))) ; ditto
+         ($const (proc x y)))))
 
 (define (pass2/const-vecref args)       ;args has always 2 elements
   (let ([v ($const-value (car args))]
@@ -5436,6 +5440,8 @@
 (define-builtin-inliner-* *  NUMMUL2  $const)
 (define-builtin-inliner-* *. NUMIMUL2 ensure-inexact-const)
 
+;; NB: If we detect exact division-by-zero case, we shouldn't fold
+;; the constant and let it be handled at runtime.  
 (define-macro (define-builtin-inliner-/ op insn const)
   `(define-builtin-inliner ,op
      (^[form cenv]
@@ -5445,13 +5451,21 @@
             (error "procedure requires at least one argument:" form)]
            [(x)
             (receive (num tree) (check-numeric-constant x cenv)
-              (if (number? num)
-                ($const (,op num))
-                ($call form ($gref (ensure-identifier ',op cenv)) `(,tree))))]
+              (if (and (number? num)
+                       ,(if (eq? insn 'NUMDIV2)
+                          `(not (eqv? num 0)) ;exact zero
+                          #t))
+                ($const (,op num)))
+                ($call form ($gref (ensure-identifier ',op cenv))
+                       `(,(or tree (,const num)))))]
            [(x y . more)
             (receive (xval xtree) (check-numeric-constant x cenv)
               (receive (yval ytree) (check-numeric-constant y cenv)
-                (if (and xval yval)
+                (if (and xval yval
+                         ,(if (eq? insn 'NUMDIV2)
+                            `(not (and (eqv? yval 0) ;exact zero
+                                       (exact? xval)))
+                            #t))
                   (if (null? more)
                     ($const (,op xval yval))
                     (inline (cons (,op xval yval) more)))
