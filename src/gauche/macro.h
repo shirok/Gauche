@@ -79,7 +79,8 @@ SCM_CLASS_DECL(Scm_SyntaxRulesClass);
 #define SCM_SYNTAX_RULES(obj)    ((ScmSyntaxRules*)(obj))
 #define SCM_SYNTAX_RULES_P(obj)  SCM_XTYPEP(obj, SCM_CLASS_SYNTAX_RULES)
 
-SCM_EXTERN ScmObj Scm_CompileSyntaxRules(ScmObj name, ScmObj lietrals,
+SCM_EXTERN ScmObj Scm_CompileSyntaxRules(ScmObj name, ScmObj ellipsis,
+                                         ScmObj lietrals,
                                          ScmObj rules, ScmObj mod, ScmObj env);
 
 /*

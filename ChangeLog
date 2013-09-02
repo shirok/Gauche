@@ -1,3 +1,9 @@
+2013-09-02  Shiro Kawai  <shiro@acm.org>
+
+	* src/macro.c (Scm_CompileSyntaxRules),
+	  src/compile.scm (pass1/syntax-rules): Support alternative ellipsis
+	  as in R7RS.
+
 2013-09-01  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm (define-builtin-inliner-/, pass2/const-numop1)

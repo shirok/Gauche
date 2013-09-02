@@ -184,6 +184,21 @@
 (test "qq1" '()  (lambda () (qq1 '())))
 (test "qq2" '#() (lambda () (qq2 '())))
 
+;; R7RS style alternative ellipsis
+(test-section "alternative ellipsis")
+
+(define-syntax alt-elli1
+  (syntax-rules ooo ()
+    [(_ ... ooo) '((... ...) ooo)]))
+
+(test "alt-elli1" '((a a) (b b) (c c)) (lambda () (alt-elli1 a b c)))
+
+(define-syntax alt-elli2
+  (syntax-rules ::: ()
+    [(_ ... :::) '((... ...) :::)]))
+
+(test "alt-elli2" '((a a) (b b) (c c)) (lambda () (alt-elli2 a b c)))
+
 ;;----------------------------------------------------------------------
 ;; cond, taken from R5RS section 7.3
 

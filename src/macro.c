@@ -274,6 +274,7 @@ typedef struct {
     ScmObj form;                /* form being compiled (for error msg) */
     ScmObj literals;            /* list of literal identifiers */
     ScmObj pvars;               /* list of (pvar . pvref) */
+    ScmObj ellipsis;            /* symbol for ellipsis */
     int pvcnt;                  /* counter of pattern variables */
     int maxlev;                 /* maximum level */
     ScmObj tvars;               /* list of identifies inserted in template */
@@ -342,8 +343,8 @@ static ScmObj id_memq(ScmObj name, ScmObj list)
     return SCM_FALSE;
 }
 
-#define ELLIPSIS_FOLLOWING(Pat) \
-    (SCM_PAIRP(SCM_CDR(Pat)) && SCM_CADR(Pat)==SCM_SYM_ELLIPSIS)
+#define ELLIPSIS_FOLLOWING(Pat, Ctx)                                    \
+    (SCM_PAIRP(SCM_CDR(Pat)) && SCM_CADR(Pat)==(Ctx)->ellipsis)
 
 #define BAD_ELLIPSIS(Ctx)                                               \
     Scm_Error("Bad ellipsis usage in macro definition of %S: %S",       \
@@ -383,7 +384,7 @@ static ScmObj compile_rule1(ScmObj form,
     if (SCM_PAIRP(form)) {
         ScmObj pp, h = SCM_NIL, t = SCM_NIL;
         SCM_FOR_EACH(pp, form) {
-            if (ELLIPSIS_FOLLOWING(pp)) {
+            if (ELLIPSIS_FOLLOWING(pp, ctx)) {
                 ScmSyntaxPattern *nspat;
                 if (patternp && !SCM_NULLP(SCM_CDDR(pp))) BAD_ELLIPSIS(ctx);
                 nspat = make_syntax_pattern(spat->level+1, TRUE);
@@ -434,7 +435,7 @@ static ScmObj compile_rule1(ScmObj form,
 #endif
     if (SCM_SYMBOLP(form)||SCM_IDENTIFIERP(form)) {
         ScmObj q;
-        if (form == SCM_SYM_ELLIPSIS) BAD_ELLIPSIS(ctx);
+        if (form == ctx->ellipsis) BAD_ELLIPSIS(ctx);
         if (!SCM_FALSEP(q = id_memq(form, ctx->literals))) return q;
 
         if (patternp) {
@@ -463,6 +464,7 @@ static ScmObj compile_rule1(ScmObj form,
 
 /* compile rules into ScmSyntaxRules structure */
 static ScmSyntaxRules *compile_rules(ScmObj name,
+                                     ScmObj ellipsis,
                                      ScmObj literals,
                                      ScmObj rules,
                                      ScmModule *mod,
@@ -478,6 +480,7 @@ static ScmSyntaxRules *compile_rules(ScmObj name,
     if (Scm_Length(literals) < 0) goto badform;
 
     ctx.name = name;
+    ctx.ellipsis = ellipsis;
     ctx.literals = preprocess_literals(literals, mod, env);
     ctx.mod = mod;
     ctx.env = env;
@@ -907,14 +910,15 @@ static ScmObj synrule_transform(ScmObj self, ScmObj form, ScmObj env,
 }
 
 /* NB: a stub for the new compiler (TEMPORARY) */
-ScmObj Scm_CompileSyntaxRules(ScmObj name, ScmObj literals, ScmObj rules,
+ScmObj Scm_CompileSyntaxRules(ScmObj name, ScmObj ellipsis,
+                              ScmObj literals, ScmObj rules,
                               ScmObj mod, ScmObj env)
 {
     ScmSyntaxRules *sr;
 
     if (SCM_IDENTIFIERP(name)) name = SCM_OBJ(SCM_IDENTIFIER(name)->name);
     if (!SCM_MODULEP(mod)) Scm_Error("module required, but got %S", mod);
-    sr = compile_rules(name, literals, rules, SCM_MODULE(mod), env);
+    sr = compile_rules(name, ellipsis, literals, rules, SCM_MODULE(mod), env);
     return Scm_MakeMacro(SCM_SYMBOL(name), synrule_transform, (void*)sr);
 }
 

@@ -188,6 +188,8 @@
 (define-constant SMALL_LAMBDA_SIZE 12)
 
 (define-inline (variable? arg) (or (symbol? arg) (identifier? arg)))
+(define-inline (variable-or-keyword? arg)
+  (or (symbol? arg) (keyword? arg) (identifier? arg)))
 
 ;;============================================================
 ;; Data structures
@@ -1987,7 +1989,19 @@
 (define-pass1-syntax (syntax-rules form cenv) :null
   (match form
     [(_ (literal ...) rule ...)
-     ($const (compile-syntax-rules (cenv-exp-name cenv) literal rule
+     ($const (compile-syntax-rules (cenv-exp-name cenv) '... literal rule
+                                   (cenv-module cenv)
+                                   (cenv-frames cenv)))]
+    [(_ (? variable-or-keyword? elli) (literal ...) rule ...)
+     ;; NB: Stripping identifier from elli may be broken in macro-defining-macro.
+     ;; Fix it once we have proper low-level macro system.
+     ;; NB: We allow keyword for ellipsis, so that something like ::: can be
+     ;; used.
+     ($const (compile-syntax-rules (cenv-exp-name cenv)
+                                   (if (identifier? elli)
+                                     (slot-ref elli 'name)
+                                     elli)
+                                   literal rule
                                    (cenv-module cenv)
                                    (cenv-frames cenv)))]
     [_ (error "syntax-error: malformed syntax-rules:" form)]))
