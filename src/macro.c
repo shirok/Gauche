@@ -274,7 +274,7 @@ typedef struct {
     ScmObj form;                /* form being compiled (for error msg) */
     ScmObj literals;            /* list of literal identifiers */
     ScmObj pvars;               /* list of (pvar . pvref) */
-    ScmObj ellipsis;            /* symbol for ellipsis */
+    ScmObj ellipsis;            /* symbol/idendifier/keyword for ellipsis */
     int pvcnt;                  /* counter of pattern variables */
     int maxlev;                 /* maximum level */
     ScmObj tvars;               /* list of identifies inserted in template */
@@ -343,8 +343,22 @@ static ScmObj id_memq(ScmObj name, ScmObj list)
     return SCM_FALSE;
 }
 
+/* Check if obj is ellipsis.  What we really need is free-identifier=?,
+   but we leave it for the new low-level macro subsystem.  This is a
+   hack to make it work in most of the time. */
+static int isEllipsis(PatternContext *ctx, ScmObj obj)
+{
+    if (SCM_FALSEP(ctx->ellipsis)) return FALSE;
+    if (SCM_IDENTIFIERP(obj)) {
+        if (!SCM_NULLP(SCM_IDENTIFIER(obj)->env)) return FALSE;
+        return SCM_EQ(ctx->ellipsis, SCM_OBJ(SCM_IDENTIFIER(obj)->name));
+    } else {
+        return SCM_EQ(ctx->ellipsis, obj);
+    }
+}
+
 #define ELLIPSIS_FOLLOWING(Pat, Ctx)                                    \
-    (SCM_PAIRP(SCM_CDR(Pat)) && SCM_CADR(Pat)==(Ctx)->ellipsis)
+    (SCM_PAIRP(SCM_CDR(Pat)) && isEllipsis(Ctx, SCM_CADR(Pat)))
 
 #define BAD_ELLIPSIS(Ctx)                                               \
     Scm_Error("Bad ellipsis usage in macro definition of %S: %S",       \
@@ -383,6 +397,17 @@ static ScmObj compile_rule1(ScmObj form,
 {
     if (SCM_PAIRP(form)) {
         ScmObj pp, h = SCM_NIL, t = SCM_NIL;
+
+        if (!patternp && SCM_PAIRP(SCM_CDR(form))
+            && isEllipsis(ctx, SCM_CAR(form))) {
+            /* (... <template>) */
+            ScmObj save_elli = ctx->ellipsis, r;
+            ctx->ellipsis = SCM_FALSE;
+            r = compile_rule1(SCM_CADR(form), spat, ctx, FALSE);
+            ctx->ellipsis = save_elli;
+            return r;
+        }
+        
         SCM_FOR_EACH(pp, form) {
             if (ELLIPSIS_FOLLOWING(pp, ctx)) {
                 ScmSyntaxPattern *nspat;
@@ -435,7 +460,7 @@ static ScmObj compile_rule1(ScmObj form,
 #endif
     if (SCM_SYMBOLP(form)||SCM_IDENTIFIERP(form)) {
         ScmObj q;
-        if (form == ctx->ellipsis) BAD_ELLIPSIS(ctx);
+        if (isEllipsis(ctx, form)) BAD_ELLIPSIS(ctx);
         if (!SCM_FALSEP(q = id_memq(form, ctx->literals))) return q;
 
         if (patternp) {
