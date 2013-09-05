@@ -154,6 +154,8 @@
     ;; or a single group, omit extra grouping
     (if (and (not (null? ns)) (null? (cdr ns))
              (or (char? (car ns))
+                 (eq? (car ns) 'any)
+                 (char-set? (car ns))
                  (and (pair? (car ns)) (integer? (caar ns)))))
       (unparse (car ns))
       (between "(?:" ns ")"))
