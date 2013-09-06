@@ -153,10 +153,18 @@
     ;; special optimization - if the content is a simple character,
     ;; or a single group, omit extra grouping
     (if (and (not (null? ns)) (null? (cdr ns))
-             (or (char? (car ns))
-                 (eq? (car ns) 'any)
-                 (char-set? (car ns))
-                 (and (pair? (car ns)) (integer? (caar ns)))))
+             (let1 item (car ns)
+               (or (char? item)
+                   (eq? item 'any)
+                   (char-set? item)
+                   (and (pair? item)
+                        (or (integer? (car item)) ;capturing group
+                            (memq (car item)
+                                  '(alt comp seq-uncase seq-case cpat once
+                                        assert nassert))
+                            (and (eq? (car item) 'seq)
+                                 (pair? (cdr item))
+                                 (null? (cddr item))))))))
       (unparse (car ns))
       (between "(?:" ns ")"))
     (disp (cond [(not N) (case M
