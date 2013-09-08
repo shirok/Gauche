@@ -234,35 +234,85 @@
                            (sender #f)
                            ((:request-encoding enc) (gauche-character-encoding))
                       :allow-other-keys opts)
-  (let1 conn (ensure-connection server auth-handler auth-user auth-password
-                                proxy secure extra-headers)
-    (let loop ([history '()]
-               [host host]
-               [method method]
-               [request-uri (ensure-request-uri request-uri enc)])
-      (receive (code headers body)
-          (request-response method conn host request-uri sender receiver
-                            `(:user-agent ,user-agent ,@(http-auth-headers conn) ,@opts) enc)
-        (or (and-let* ([ (not no-redirect) ]
-                       [ (string-prefix? "3" code) ]
-                       [h (case redirect-handler
-                            [(#t) (http-default-redirect-handler)]
-                            [(#f) #f]
-                            [else => identity])]
-                       [r (h method code headers body)]
-                       [method (car r)]
-                       [loc (cdr r)])
-              (receive (uri proto new-server path*)
-                  (canonical-uri conn loc (ref conn'server))
-                (when (or (member uri history)
-                          (> (length history) 20))
-                  (errorf <http-error> "redirection is looping via ~a" uri))
-                (loop (cons uri history)
-                      (ref (redirect conn proto new-server)'server)
-                      method
-                      path*)))
-            (values code headers body))))))
 
+  (define conn (ensure-connection server auth-handler auth-user auth-password
+                                  proxy secure extra-headers))
+  (define redirector (if no-redirect
+                       #f
+                       (case redirect-handler
+                         [(#t) (http-default-redirect-handler)]
+                         [(#f) #f]
+                         [else => identity])))
+  (define options `(:user-agent ,user-agent ,@(http-auth-headers conn) ,@opts))
+  (define no-body-replies '("204" "304"))
+
+  (define (get-body iport method code headers receiver)
+    (and (not (eq? method 'HEAD))
+         (not (member code no-body-replies))
+         (receive-body iport code headers receiver)))
+
+  ;; final touch of request headers
+  (define (req-headers host)
+    (cond-list [(~ conn'persistent) @ (if (~ conn'proxy)
+                                        '(:proxy-connection keep-alive)
+                                        '(:connection keep-alive))]
+               [#t @ `(:host ,host :user-agent ,user-agent
+                       ,@(http-auth-headers conn) ,@opts)]))
+
+  ;; If we decide to give up redirection, we read from already-retrieved
+  ;; body of 3xx reply.  This modifies reply headers if necessary.
+  (define (redirect-headers body rep-headers)
+    (if body
+      `(:content-length ,(string-size body)
+                        ,@(delete-keywords '(:content-length
+                                             :content-transfer-encoding)
+                                           rep-headers))
+      rep-headers))
+
+  ;; returns either one of:
+  ;;   (reply <code> <headers> <body>)
+  ;;   (redirect-to <method> <location>)
+  (define (request-response in out method uri host sender)
+    (send-request out method uri sender (req-headers host) enc)
+    (receive (code rep-headers) (receive-header in)
+      (if-let1 consider-redirect (and (string-prefix? "3" code) redirector)
+        ;; we retrieve body as string, not using caller-provided receiver
+        (let* ([body (get-body in method code rep-headers
+                               (http-string-receiver))]
+               [verdict (consider-redirect method code rep-headers body)])
+          (if verdict
+            `(redirect-to ,(car verdict) ,(cdr verdict))
+            (let1 hdrs (redirect-headers body rep-headers)
+              `(reply ,code ,hdrs
+                      ,(and body
+                            (receive-body (open-input-string body) code
+                                          hdrs receiver))))))
+        ;; no redirection
+        `(reply ,code ,rep-headers
+                ,(get-body in method code rep-headers receiver)))))
+
+  ;; main loop
+  (let loop ([history '()]
+             [host host]
+             [method method]
+             [request-uri (ensure-request-uri request-uri enc)])
+    (receive (host uri)
+        (consider-proxy conn (or host (~ conn'server)) request-uri)
+      (let1 result
+          (with-connection
+           conn
+           (^[i o] (request-response i o method uri host sender)))
+        (match result
+          [('reply code rep-headers body) (values code rep-headers body)]
+          [('redirect-to method location)
+           (receive (uri proto new-server path*)
+               (canonical-uri conn location (ref conn'server))
+             (when (or (member uri history)
+                       (> (length history) 20))
+               (errorf <http-error> "redirection is looping via ~a" uri))
+             (loop (cons uri history)
+                   (~ (redirect-connection! conn proto new-server)'server)
+                   method path*))])))))
 ;;
 ;; Pre-defined receivers
 ;;
@@ -469,7 +519,8 @@
     :proxy proxy
     :extra-headers extra-headers))
 
-(define (redirect conn proto new-server)
+;; This modifies CONN.
+(define (redirect-connection! conn proto new-server)
   (let1 orig-server (~ conn'server)
     (unless (and (string=? orig-server new-server)
                  (eq? (~ conn'secure) (equal? proto "https")))
@@ -624,26 +675,6 @@
     (unless (~ conn'persistent)
       (when (~ conn'secure) (shutdown-secure-agent conn))
       (shutdown-socket-connection conn))))
-
-(define (request-response method conn host request-uri
-                          sender receiver options enc)
-  (define no-body-replies '("204" "304"))
-  (receive (host uri) (consider-proxy conn (or host (~ conn'server)) request-uri)
-    (let1 req-headers (cond-list [(~ conn'persistent)
-                                  @ (if (~ conn'proxy)
-                                      '(:proxy-connection keep-alive)
-                                      '(:connection keep-alive))]
-                                 [#t @ `(:host ,host ,@options)])
-      (with-connection
-       conn
-       (^[in out]
-         (send-request out method uri sender req-headers enc)
-         (receive (code rep-headers) (receive-header in)
-           (values code
-                   rep-headers
-                   (and (not (eq? method 'HEAD))
-                        (not (member code no-body-replies))
-                        (receive-body in code rep-headers receiver)))))))))
 
 ;; canonicalize uri for the sake of redirection.
 ;; URI is a request-uri given to the API, or the redirect location specified

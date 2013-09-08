@@ -8834,8 +8834,8 @@ The default behavior is as follows:
 デフォルトの動作は以下の通りです。
 @c COMMON
 
-@table @code
-@item 300, 301, 305, 307
+@table @asis
+@item @code{300}, @code{301}, @code{305}, @code{307}
 @c EN
 Redirect to the url given to the @code{location} header only if
 the original request method is @code{GET} or @code{HEAD}.
@@ -8843,10 +8843,10 @@ the original request method is @code{GET} or @code{HEAD}.
 元のリクエストが@code{GET}か@code{HEAD}の場合に限り、同じリクエストを使って
 @code{location}ヘッダに与えられたURLにリダイレクトします。
 @c COMMON
-@item 302
+@item @code{302}
 @c EN
 Redirect to the url given to the @code{location} header.  If
-the origianl request method is @code{HEAD}, it is used again.
+the original request method is @code{HEAD}, it is used again.
 Otherwise, @code{GET} method is used.
 
 Strictly speaking, this is a violation of RFC2616.  However, as the note
@@ -8861,10 +8861,10 @@ in RFC2616 says, many user agent do this, so we follow the flock.
 多くのユーザエージェントがこの振る舞いをするので、それに合わせてあります。
 (将来は変えるかもしれません。)
 @c COMMON
-@item 303
+@item @code{303}
 @c EN
 Redirect to the url given to the @code{location} header.  If
-the origianl request method is @code{HEAD}, it is used again.
+the original request method is @code{HEAD}, it is used again.
 Otherwise, @code{GET} method is used.
 @c JP
 @code{location}ヘッダに与えられたURLにリダイレクトします。

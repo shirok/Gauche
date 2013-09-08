@@ -1,3 +1,9 @@
+2013-09-08  Shiro Kawai  <shiro@acm.org>
+
+	* lib/rfc/http.scm (http-request): Fixed broken behavior of redirect
+	  handling.  The body of 3xx request shouldn't be retrieved with
+	  caller-supplied receiver.
+
 2013-09-02  Shiro Kawai  <shiro@acm.org>
 
 	* src/macro.c (Scm_CompileSyntaxRules),
