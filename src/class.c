@@ -3263,7 +3263,6 @@ void Scm__InitClass(void)
     /* macro.c */
     CINIT(SCM_CLASS_SYNTAX,           "<syntax>");
     CINIT(SCM_CLASS_MACRO,            "<macro>");
-    CINIT(SCM_CLASS_SYNTAX_PATTERN,   "<syntax-pattern>");
     CINIT(SCM_CLASS_SYNTAX_RULES,     "<syntax-rules>");
 
     /* module.c */

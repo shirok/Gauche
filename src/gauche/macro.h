@@ -37,24 +37,6 @@
 SCM_DECL_BEGIN
 
 /*
- * SyntaxPattern object is an internal object used to expand r5rs macro.
- */
-
-typedef struct ScmSyntaxPatternRec {
-    SCM_HEADER;
-    ScmObj pattern;             /* subpattern */
-    ScmObj vars;                /* pattern variables in this subpattern */
-    short level;                /* level of this subpattern */
-    short repeat;               /* does this subpattern repeat? */
-} ScmSyntaxPattern;
-
-SCM_CLASS_DECL(Scm_SyntaxPatternClass);
-#define SCM_CLASS_SYNTAX_PATTERN  (&Scm_SyntaxPatternClass)
-
-#define SCM_SYNTAX_PATTERN(obj)   ((ScmSyntaxPattern*)(obj))
-#define SCM_SYNTAX_PATTERN_P(obj) SCM_XTYPEP(obj, SCM_CLASS_SYNTAX_PATTERN)
-
-/*
  * SyntaxRules keeps a compiled rules of macro transformation.
  */
 

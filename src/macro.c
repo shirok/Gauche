@@ -89,8 +89,31 @@ ScmObj Scm_MakeMacro(ScmSymbol *name, ScmTransformerProc transformer,
 
 /*===================================================================
  * SyntaxPattern object
- *   Internal object to construct pattern matcher
+ * Repesents a repeatable subpattern
+ * (e.g. x ...), as well as the placeholder of the repeated match
+ * in a template.
  */
+
+typedef struct ScmSyntaxPatternRec {
+    SCM_HEADER;
+    ScmObj pattern;             /* subpattern */
+    ScmObj vars;                /* pattern variables in this subpattern */
+    short level;                /* level of this subpattern */
+    short numFollowingItems;    /* only used in pattern (not template).
+                                   this specifies the # of items that follows
+                                   the repetition, excluding the last CDR.
+                                   
+                                   E.g. From (x ... y z), `x ...' part becomes
+                                   SyntaxPattern with numFollowingItems=2.
+                                   From (x ... . y), `x ...' part becomes
+                                   SyntaxPattern with numFollowingItems=0. */
+} ScmSyntaxPattern;
+
+SCM_CLASS_DECL(Scm_SyntaxPatternClass);
+#define SCM_CLASS_SYNTAX_PATTERN  (&Scm_SyntaxPatternClass)
+
+#define SCM_SYNTAX_PATTERN(obj)   ((ScmSyntaxPattern*)(obj))
+#define SCM_SYNTAX_PATTERN_P(obj) SCM_XTYPEP(obj, SCM_CLASS_SYNTAX_PATTERN)
 
 static void pattern_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
@@ -98,19 +121,19 @@ static void pattern_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
                SCM_SYNTAX_PATTERN(obj)->level,
                SCM_SYNTAX_PATTERN(obj)->vars,
                SCM_SYNTAX_PATTERN(obj)->pattern,
-               SCM_SYNTAX_PATTERN(obj)->repeat? " ..." : "");
+               SCM_SYNTAX_PATTERN(obj)->numFollowingItems? " ..." : "");
 }
 
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_SyntaxPatternClass, pattern_print);
 
-ScmSyntaxPattern *make_syntax_pattern(int level, int repeat)
+ScmSyntaxPattern *make_syntax_pattern(int level, int numFollowing)
 {
     ScmSyntaxPattern *p = SCM_NEW(ScmSyntaxPattern);
     SCM_SET_CLASS(p, SCM_CLASS_SYNTAX_PATTERN);
     p->pattern = SCM_NIL;
     p->vars = SCM_NIL;
     p->level = level;
-    p->repeat = repeat;
+    p->numFollowingItems = numFollowing;
     return p;
 }
 
@@ -411,8 +434,16 @@ static ScmObj compile_rule1(ScmObj form,
         SCM_FOR_EACH(pp, form) {
             if (ELLIPSIS_FOLLOWING(pp, ctx)) {
                 ScmSyntaxPattern *nspat;
-                if (patternp && !SCM_NULLP(SCM_CDDR(pp))) BAD_ELLIPSIS(ctx);
-                nspat = make_syntax_pattern(spat->level+1, TRUE);
+                int num_trailing = 0;
+                if (patternp) {
+                    /* Count trailing items to set ScmSyntaxPattern->repeat. */
+                    ScmObj trailing = SCM_CDDR(pp);
+                    while (SCM_PAIRP(trailing)) {
+                        num_trailing++;
+                        trailing = SCM_CDR(trailing);
+                    }
+                }
+                nspat = make_syntax_pattern(spat->level+1, num_trailing);
                 if (ctx->maxlev <= spat->level) ctx->maxlev++;
                 nspat->pattern = compile_rule1(SCM_CAR(pp), nspat, ctx,
                                                patternp);
@@ -487,7 +518,9 @@ static ScmObj compile_rule1(ScmObj form,
     return form;
 }
 
-/* compile rules into ScmSyntaxRules structure */
+/* compile rules into ScmSyntaxRules structure
+   NB: We use ScmSyntaxPattern for the toplevel node of pattern and template;
+   they are just a placeholders and they don't represent repetition. */
 static ScmSyntaxRules *compile_rules(ScmObj name,
                                      ScmObj ellipsis,
                                      ScmObj literals,
@@ -518,8 +551,8 @@ static ScmSyntaxRules *compile_rules(ScmObj name,
         ScmObj rule = SCM_CAR(rp);
         if (Scm_Length(rule) != 2) goto badform;
 
-        pat  = make_syntax_pattern(0, FALSE);
-        tmpl = make_syntax_pattern(0, FALSE);
+        pat  = make_syntax_pattern(0, 0);
+        tmpl = make_syntax_pattern(0, 0);
         ctx.pvars = SCM_NIL;
         ctx.tvars = SCM_NIL;
         ctx.pvcnt = 0;
@@ -720,17 +753,26 @@ static inline int match_identifier(ScmIdentifier *id, ScmObj obj, ScmObj env)
 }
 
 static inline int match_subpattern(ScmObj form, ScmSyntaxPattern *pat,
-                                   ScmObj env, MatchVar *mvec)
+                                   ScmObj rest, ScmObj env, MatchVar *mvec)
 {
+    /* TODO: If pat->numFollowingItems == 0, we don't need to calculate
+       length beforehand.  Some optimization opportunity. */
+    int limit;
+    ScmObj p;
+    for (p = form, limit = 0; SCM_PAIRP(p); p = SCM_CDR(p)) {
+        limit++;
+    }
+    limit -= pat->numFollowingItems;
+
     enter_subpattern(pat, mvec);
-    while (SCM_PAIRP(form)) {
+    while (limit > 0) {
         if (!match_synrule(SCM_CAR(form), pat->pattern, env, mvec))
             return FALSE;
         form = SCM_CDR(form);
+        limit--;
     }
-    if (!SCM_NULLP(form)) return FALSE;
     exit_subpattern(pat, mvec);
-    return TRUE;
+    return match_synrule(form, rest, env, mvec);
 }
 
 /* See if form matches pattern.  If match, add matched syntax variable
@@ -747,13 +789,15 @@ static int match_synrule(ScmObj form, ScmObj pattern, ScmObj env,
         return match_identifier(SCM_IDENTIFIER(pattern), form, env);
     }
     if (SCM_SYNTAX_PATTERN_P(pattern)) {
-        return match_subpattern(form, SCM_SYNTAX_PATTERN(pattern), env, mvec);
+        return match_subpattern(form, SCM_SYNTAX_PATTERN(pattern),
+                                SCM_NIL, env, mvec);
     }
     if (SCM_PAIRP(pattern)) {
         while (SCM_PAIRP(pattern)) {
             ScmObj elt = SCM_CAR(pattern);
             if (SCM_SYNTAX_PATTERN_P(elt)) {
                 return match_subpattern(form, SCM_SYNTAX_PATTERN(elt),
+                                        SCM_CDR(pattern),
                                         env, mvec);
             } else if (!SCM_PAIRP(form)) {
                 return FALSE;
@@ -789,7 +833,8 @@ static int match_synrule(ScmObj form, ScmObj pattern, ScmObj env,
             for (i=plen-1; i<flen; i++) {
                 SCM_APPEND1(h, t, SCM_VECTOR_ELEMENT(form, i));
             }
-            return match_subpattern(h, SCM_SYNTAX_PATTERN(pat), env, mvec);
+            return match_subpattern(h, SCM_SYNTAX_PATTERN(pat),
+                                    SCM_NIL, env, mvec);
         }
         return TRUE;
     }
@@ -1011,4 +1056,6 @@ ScmObj Scm_CallMacroExpander(ScmMacro *mac, ScmObj expr, ScmObj env)
 
 void Scm__InitMacro(void)
 {
+    Scm_InitStaticClass(&Scm_SyntaxPatternClass, "<syntax-pattern>",
+                        Scm_GaucheInternalModule(), NULL, 0);
 }
