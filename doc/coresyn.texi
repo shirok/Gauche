@@ -2022,14 +2022,14 @@ then @var{body} @dots{} are evaluated.
 See also @code{call-with-values} in @ref{Multiple values}
 which is the procedural equivalent of @code{receive}.
 You can use @code{define-values} (@xref{Definitions}) to
-bind multiple values to the toplevel variables simultaneously.
+bind multiple values to variables simultaneously.
 Also @code{let-values} and @code{let*-values}
 in SRFI-11 (@ref{Let-values}) provides
 @code{let}-like syntax with multiple values.
 @c JP
 なお、@ref{Multiple values}の@code{call-with-values}は
 @code{receive}と等価な手続き的インタフェースです。
-多値を複数のトップレベル変数に束縛するには、@code{define-values}
+多値を複数の変数に同時に束縛するには、@code{define-values}
 (@ref{Definitions}参照) が使えます。
 また、SRFI-11 (@ref{Let-values}) の@code{let-values}と
 @code{let*-values}は@code{let}のような形式で多値を扱うことができます。
@@ -2916,15 +2916,16 @@ parenthesis are not there.  Thus these two forms are equivalent.
 @end defspec
 
 @defmac define-values (var @dots{}) expr
+@defmacx define-values (var var1 @dots{} . var2) expr
+@defmacx define-values var expr
+[R7RS]
 @c EN
-@var{Expr} is evaluated, and it should return as many values as
-@var{var}s.  Then each value of the results are
-bound to each variable in @var{var} @dots{}.
-@xref{Let-values}.
+@var{Expr} is evaluated, and each value of the result
+is bound to each @var{var}s.  In the first form, it is an error
+unless @var{expr} yields the same number of values as @var{var}s.
 @c JP
-まず@var{expr}が評価されます。それは与えられた@var{var}と同数の値を
-返さなければなりません。続いて各値が@var{var}に順に束縛されます。
-@ref{Let-values}も参照してください。
+まず@var{expr}が評価され、続いて各値が@var{var}に順に束縛されます。
+最初の形式では、@var{expr}
 @c COMMON
 @example
 (define-values (lo hi) (min&max 3 -1 15 2))
@@ -2932,6 +2933,62 @@ bound to each variable in @var{var} @dots{}.
 lo @result{} -1
 hi @result{} 15
 @end example
+
+@c EN
+In the second form, @var{expr} may yield as many values as
+@var{var} @var{var1} @dots{} or more; the excess values are
+made into a list and bound to @var{var2}.
+@c JP
+二番目の形式では、@var{expr}は@var{var} @var{var1} @dots{}に対応する数か
+それ以上の値を生成しなければなりません。余った値はリストになって@var{var2}に
+束縛されます。
+@c COMMON
+
+@example
+(define-values (a b . c) (values 1 2 3 4))
+
+a @result{} 1
+b @result{} 2
+c @result{} (3 4)
+@end example
+
+@c EN
+In the last form, all the values yielded by @var{expr} are gathered
+to a list and bound to @var{var}.
+@c JP
+最後の形式では、@var{expr}の生成する全ての値がリストにまとめられ、@var{var}に
+束縛されます。
+@c COMMON
+
+@example
+(define-values qr (quotient&remainder 23 5))
+
+qr @result{} (4 3)
+@end example
+
+@c EN
+You can use @code{define-values} wherever @code{define} is allowed;
+that is, you can mix @code{define-values} in internal defines.
+@c JP
+@code{define-values}は@code{define}が許されるところならどこでも使えます。
+つまり、内部defineに@code{define-values}を混ぜて使えるということです。
+@c COMMON
+
+@example
+(define (foo . args)
+  (define-values (lo hi) (apply min&max args))
+  (define len (length args))
+  (list len lo hi))
+
+(foo 1 4 9 3 0 7)
+ @result{} (6 0 9)
+@end example
+
+@c EN
+@xref{Let-values}.
+@c JP
+@ref{Let-values}も参照してください。
+@c COMMON
 @end defmac
 
 @defspec define-constant variable expression
@@ -3373,6 +3430,7 @@ Gaucheで使われているモジュールの書法については@ref{Writing G
 * Module inheritance::          
 * Module introspection::        
 * Predefined modules::          
+* R7RS Libraries::              
 @end menu
 
 @node Module semantics, Modules and libraries, Modules, Modules
@@ -4380,7 +4438,7 @@ available from the program, see @ref{Operations on libraries}.
 調べたりする場合は、@ref{Operations on libraries}を参照して下さい。
 @c COMMON
 
-@node Predefined modules,  , Module introspection, Modules
+@node Predefined modules, R7RS Libraries, Module introspection, Modules
 @subsection Predefined modules
 @c NODE 組み込みモジュール
 
@@ -4445,6 +4503,18 @@ all the bindings of @code{gauche} module is imported.
 @code{gauche}モジュール内の全ての束縛がインポートされています。
 @c COMMON
 @end deftp
+
+@node R7RS Libraries,  , Predefined modules, Modules
+@subsection R7RS Libraries
+@c NODE R7RSライブラリ
+
+R7RS uses the term @emph{library} for toplevel namespaces.
+In Gauche, it's the same thing as modules.
+
+
+@defmac define-library library-name library-declaration @dots{}
+@end defmac
+
 
 @c Local variables:
 @c mode: texinfo

@@ -1,5 +1,9 @@
 2013-09-10  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/defvalues.scm (define-values): Support <formals> in
+	  the variable list position, as specified in r7rs.  Also make it
+	  possible to use define-values mixed in internal defines.
+
 	* src/macro.c (match_synrule): Supports trailing items after ellipsis,
 	  according to r7rs (e.g. (a b ... c) etc.)
 

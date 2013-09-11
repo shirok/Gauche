@@ -31,9 +31,6 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
-;; ChezScheme and MzScheme's define-values and set!-values.
-;; To be autoloaded
-
 (define-module gauche.defvalues
   (export define-values set!-values))
 (select-module gauche.defvalues)
@@ -41,40 +38,56 @@
 ;; define-values
 (define-syntax define-values
   (syntax-rules ()
-    ((_ (var  ...) expr)
-     (define-values-sub () (var ...) (var ...) expr))
-    ((_ . else)
-     (syntax-error "malformed define-values" (define-values . else)))
+    [(_ (var ...) expr)
+     (define-values-sub () (var ...) #f #f (var ...) expr)]
+    [(_ (var ... . rest) expr)
+     (define-values-sub () (var ...) tmp rest (var ...) expr)]
+    [(_ . else)
+     (syntax-error "malformed define-values" (define-values . else))]
     ))
 
+;; define-values-sub
+;;   list-of-temps
+;;   varlist-to-create-temps
+;;   rest-temp
+;;   rest-name
+;;   var-names
+;;   expr
 (define-syntax define-values-sub
   (syntax-rules ()
-    ((_ (tmp ...) () (var ...) expr)
-     (begin (define var (undefined)) ...
-            (receive (tmp ...) expr
-              (set! var tmp) ...
-              (undefined))))
-    ((_ (tmp ...) (v v2 ...) (var ...) expr)
-     (define-values-sub (tmp ... tmp1) (v2 ...) (var ...) expr))
+    [(_ (tmp ... lasttmp) () #f #f (name ... lastname) expr)
+     (begin (define name (undefined)) ...
+            (define lastname
+              (receive (tmp ... lasttmp) expr
+                (set! name tmp) ...
+                lasttmp)))]
+    [(_ (tmp ...) () rest-tmp rest-name (name ...) expr)
+     (begin (define name (undefined)) ...
+            (define rest-name
+              (receive (tmp ... . rest-tmp) expr
+                (set! name tmp) ...
+                rest-tmp)))]
+    [(_ (tmp ...) (v v2 ...) rest-tmp rest-name (name ...) expr)
+     (define-values-sub (tmp ... tmp1) (v2 ...) rest-tmp rest-name (name ...) expr)]
     ))
 
 ;; set!-values
 (define-syntax set!-values
   (syntax-rules ()
-    ((_ (var ...) expr)
-     (set!-values-sub () (var ...) (var ...) expr))
-    ((_ . else)
-     (syntax-error "malformed set!-values" (set!-values . else)))
+    [(_ (var ...) expr)
+     (set!-values-sub () (var ...) (var ...) expr)]
+    [(_ . else)
+     (syntax-error "malformed set!-values" (set!-values . else))]
     ))
 
 (define-syntax set!-values-sub
   (syntax-rules ()
-    ((_ (tmp ...) () (var ...) expr)
+    [(_ (tmp ...) () (var ...) expr)
      (receive (tmp ...) expr
        (set! var tmp) ...
-       (undefined)))
-    ((_ (tmp ...) (v v2 ...) (var ...) expr)
-     (set!-values-sub (tmp ... tmp1) (v2 ...) (var ...) expr))
+       (undefined))]
+    [(_ (tmp ...) (v v2 ...) (var ...) expr)
+     (set!-values-sub (tmp ... tmp1) (v2 ...) (var ...) expr)]
     ))
 
 
