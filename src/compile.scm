@@ -1374,21 +1374,21 @@
 (define (compile-finish cc) #f)
 
 ;; For testing
-(define (compile-p1 program)
-  (pp-iform (pass1 program (make-bottom-cenv))))
+(define (compile-p1 program :optional (env (vm-current-module)))
+  (pp-iform (pass1 program (make-bottom-cenv env))))
 
-(define (compile-p2 program)
-  (pp-iform (pass2 (pass1 program (make-bottom-cenv)))))
+(define (compile-p2 program :optional (env (vm-current-module)))
+  (pp-iform (pass2 (pass1 program (make-bottom-cenv env)))))
 
-(define (compile-p3 program :optional (show? #f))
-  (pp-iform (pass3 (pass2 (pass1 program (make-bottom-cenv))) show?)))
+(define (compile-p3 program :optional (show? #f) (env (vm-current-module)))
+  (pp-iform (pass3 (pass2 (pass1 program (make-bottom-cenv env))) show?)))
 
-(define (compile-p4 program)
-  (let1 cenv (make-bottom-cenv)
+(define (compile-p4 program :optional (env (vm-current-module)))
+  (let1 cenv (make-bottom-cenv env)
     (pp-iform (pass2-4 (pass1 program cenv) (cenv-module cenv)))))
 
-(define (compile-p5 program)
-  (let1 cenv (make-bottom-cenv)
+(define (compile-p5 program :optional (env (vm-current-module)))
+  (let1 cenv (make-bottom-cenv env)
     (vm-dump-code (pass5 (pass2-4 (pass1 program cenv) (cenv-module cenv))
                          (make-compiled-code-builder 0 0 '%toplevel #f #f)
                          '() 'tail))))
@@ -2769,7 +2769,7 @@
           ;; This may be replaced using generator->list once we release 0.9.4.
           (let loop ([r (read iport)] [forms '()])
             (if (eof-object? r)
-              `((begin ,@(reverse forms)) . ,(port-name iport))
+              `((,begin. ,@(reverse forms)) . ,(port-name iport))
               (loop (read iport) (cons r forms))))
         (pass1/report-include iport #f)
         (close-input-port iport))))
