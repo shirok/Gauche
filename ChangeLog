@@ -1,3 +1,8 @@
+2013-09-10  Shiro Kawai  <shiro@acm.org>
+
+	* src/macro.c (match_synrule): Supports trailing items after ellipsis,
+	  according to r7rs (e.g. (a b ... c) etc.)
+
 2013-09-08  Shiro Kawai  <shiro@acm.org>
 
 	* lib/rfc/http.scm (http-request): Fixed broken behavior of redirect

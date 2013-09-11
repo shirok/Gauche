@@ -59,6 +59,34 @@
 (test-macro "repeat" (a d g (c 8 b) (f 8 e) (i 8 h))
             (repeat 1 (a b c) (d e f) (g h i)))
 
+(define-syntax repeat2 (syntax-rules () ;r7rs
+                         ((_ 0 (?a ?b ... ?c))    (?a (?b ...) ?c))
+                         ((_ 1 (?a ?b ... ?c ?d)) (?a (?b ...) ?c ?d))
+                         ((_ 2 (?a ?b ... . ?c))  (?a (?b ...) ?c))
+                         ((_ 3 (?a ?b ... ?c ?d . ?e))  (?a (?b ...) ?c ?d ?e))
+                         ((_ ?x ?y) ho)))
+
+(test-macro "repeat2" (a (b c d e f) g)
+            (repeat2 0 (a b c d e f g)))
+(test-macro "repeat2" (a () b)
+            (repeat2 0 (a b)))
+(test-macro "repeat2" ho
+            (repeat2 0 (a)))
+(test-macro "repeat2" (a (b c d e) f g)
+            (repeat2 1 (a b c d e f g)))
+(test-macro "repeat2" (a () b c)
+            (repeat2 1 (a b c)))
+(test-macro "repeat2" ho
+            (repeat2 1 (a b)))
+(test-macro "repeat2" (a (b c d e f g) ())
+            (repeat2 2 (a b c d e f g)))
+(test-macro "repeat2" (a (b c d e) f g ())
+            (repeat2 3 (a b c d e f g)))
+(test-macro "repeat2" (a (b c d) e)
+            (repeat2 2 (a b c d . e)))
+(test-macro "repeat2" (a (b) c d e)
+            (repeat2 3 (a b c d . e)))
+
 (define-syntax nest1 (syntax-rules ()
                        ((_ (?a ...) ...)        ((?a ... z) ...))))
 
@@ -78,6 +106,27 @@
 (test-macro "nest3" ((((b c d e) (g h i)) (() (l m n) (p)) () ((r)))
                      ((a f) (j k o) () (q)))
             (nest3 ((a b c d e) (f g h i)) ((j) (k l m n) (o p)) () ((q r))))
+
+(define-syntax nest4 (syntax-rules () ; r7rs
+                       ((_ ((?a ?b ... ?c) ... ?d))
+                        ((?a ...) ((?b ...) ...) (?c ...) ?d))))
+
+(test-macro "nest4"((a d f)  
+                    ((b) () (g h i))
+                    (c e j)
+                    (k l m))
+            (nest4 ((a b c) (d e) (f g h i j) (k l m)))) 
+
+(define-syntax nest5 (syntax-rules () ; r7rs
+                       ((_ (?a (?b ... ?c ?d) ... . ?e))
+                        (?a ((?b ...) ...) (?c ...) (?d ...) ?e))))
+(test-macro "nest5" (z
+                     ((a) (d e) ())
+                     (b f h)
+                     (c g i)
+                     j)
+            (nest5 (z (a b c) (d e f g) (h i) . j)))
+
 
 (define-syntax mixlevel1 (syntax-rules ()
                            ((_ (?a ?b ...)) ((?a ?b) ...))))
@@ -101,25 +150,36 @@
             (mixlevel3 1 (2 3 4 5 6) (7 8 9 10)))
 
 ;; test that wrong usage of ellipsis is correctly identified
-(test "bad epplisis 1" (test-error)
+(test "bad ellipsis 1" (test-error)
       (lambda () 
         (eval '(define-syntax badellipsis
                  (syntax-rules () (t) (3 ...)))
               (interaction-environment))))
-(test "bad epplisis 2" (test-error)
+(test "bad ellipsis 2" (test-error)
       (lambda ()
         (eval '(define-syntax badellipsis
                  (syntax-rules () (t a) (a ...)))
               (interaction-environment))))
-(test "bad epplisis 3" (test-error)
+(test "bad ellipsis 3" (test-error)
       (lambda ()
         (eval '(define-syntax badellipsis
                  (syntax-rules () (t a b ...) (a ...)))
               (interaction-environment))))
-(test "bad epplisis 4" (test-error)
+(test "bad ellipsis 4" (test-error)
       (lambda ()
         (eval '(define-syntax badellipsis
                  (syntax-rules () (t a ...) ((a ...) ...)))
+              (interaction-environment))))
+
+(test "bad ellipsis 5" (test-error)
+      (lambda ()
+        (eval '(define-syntax badellipsis
+                 (syntax-rules () ((a ... b ...)) ((a ...) (b ...))))
+              (interaction-environment))))
+(test "bad ellipsis 6" (test-error)
+      (lambda ()
+        (eval '(define-syntax badellipsis
+                 (syntax-rules () ((... a b)) (... a b )))
               (interaction-environment))))
 
 (define-syntax hygiene (syntax-rules ()
@@ -141,6 +201,25 @@
 (test-macro "vect2" #(a c e b d f) (vect2 #(#(a b) #(c d) #(e f))))
 (test-macro "vect2"  (a c e b d f) (vect2 #((a b) (c d) (e f))))
 (test-macro "vect2"  (#(a c e) #(b d f)) (vect2 (#(a b) #(c d) #(e f))))
+
+(define-syntax vect3 (syntax-rules ()
+                       ((_ 0 #(?a ... ?b)) ((?a ...) ?b))
+                       ((_ 0 ?x) ho)
+                       ((_ 1 #(?a ?b ... ?c ?d ?e)) (?a (?b ...) ?c ?d ?e))
+                       ((_ 1 ?x) ho)))
+
+(test-macro "vect3" ((a b c d e) f)
+            (vect3 0 #(a b c d e f)))
+(test-macro "vect3" (() a)
+            (vect3 0 #(a)))
+(test-macro "vect3" ho
+            (vect3 0 #()))
+(test-macro "vect3" (a (b c) d e f)
+            (vect3 1 #(a b c d e f)))
+(test-macro "vect3" (a () b c d)
+            (vect3 1 #(a b c d)))
+(test-macro "vect3" ho
+            (vect3 1 #(a b c)))
 
 (define-syntax dot1 (syntax-rules ()
                       ((_ (?a . ?b)) (?a ?b))

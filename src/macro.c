@@ -420,10 +420,15 @@ static ScmObj compile_rule1(ScmObj form,
 {
     if (SCM_PAIRP(form)) {
         ScmObj pp, h = SCM_NIL, t = SCM_NIL;
+        int ellipsis_seen = FALSE;
 
-        if (!patternp && SCM_PAIRP(SCM_CDR(form))
-            && isEllipsis(ctx, SCM_CAR(form))) {
+        if (SCM_PAIRP(SCM_CDR(form)) && isEllipsis(ctx, SCM_CAR(form))) {
             /* (... <template>) */
+            if (patternp) {
+                Scm_Error("in definition of macro %S: "
+                          "<ellipsis> can't appear at the beginning of "
+                          "list/vector: %S", ctx->name, form);
+            }
             ScmObj save_elli = ctx->ellipsis, r;
             ctx->ellipsis = SCM_FALSE;
             r = compile_rule1(SCM_CADR(form), spat, ctx, FALSE);
@@ -435,6 +440,15 @@ static ScmObj compile_rule1(ScmObj form,
             if (ELLIPSIS_FOLLOWING(pp, ctx)) {
                 ScmSyntaxPattern *nspat;
                 int num_trailing = 0;
+
+                if (patternp && ellipsis_seen) {
+                    Scm_Error("in definition of macro %S: "
+                              "Ellipses are not allowed to appear "
+                              "within the same list/vector more than once "
+                              "in a pattern: %S", ctx->name, form);
+                    ellipsis_seen = TRUE;
+                }
+                
                 if (patternp) {
                     /* Count trailing items to set ScmSyntaxPattern->repeat. */
                     ScmObj trailing = SCM_CDDR(pp);
@@ -814,29 +828,35 @@ static int match_synrule(ScmObj form, ScmObj pattern, ScmObj env,
             return SCM_NULLP(form);
     }
     if (SCM_VECTORP(pattern)) {
-        int i, plen, flen, elli;
+        int i, plen, flen, has_elli = FALSE, elli;
         if (!SCM_VECTORP(form)) return FALSE;
         plen = SCM_VECTOR_SIZE(pattern);
-        flen = SCM_VECTOR_SIZE(form);
+        elli = flen = SCM_VECTOR_SIZE(form);
         if (plen == 0) return (flen == 0);
-        elli = SCM_SYNTAX_PATTERN_P(SCM_VECTOR_ELEMENT(pattern, plen-1));
-        if ((!elli && plen!=flen) || (elli && plen-1>flen)) return FALSE;
-        for (i=0; i < plen-elli; i++) {
+        for (i=0; i < plen; i++) {
+            if (SCM_SYNTAX_PATTERN_P(SCM_VECTOR_ELEMENT(pattern, i))) {
+                has_elli = TRUE;
+                elli = i;
+                break;
+            }
+        }
+        if ((!has_elli && plen!=flen) || (has_elli && plen-1>flen)) return FALSE;
+
+        for (i=0; i < elli; i++) {
             if (!match_synrule(SCM_VECTOR_ELEMENT(form, i),
                                SCM_VECTOR_ELEMENT(pattern, i),
                                env, mvec))
                 return FALSE;
         }
-        if (elli) {
-            ScmObj h = SCM_NIL, t = SCM_NIL;
-            ScmObj pat = SCM_VECTOR_ELEMENT(pattern, plen-1);
-            for (i=plen-1; i<flen; i++) {
-                SCM_APPEND1(h, t, SCM_VECTOR_ELEMENT(form, i));
-            }
-            return match_subpattern(h, SCM_SYNTAX_PATTERN(pat),
-                                    SCM_NIL, env, mvec);
+        if (elli < flen) {
+            ScmObj pat = SCM_VECTOR_ELEMENT(pattern, elli);
+            ScmObj prest = Scm_VectorToList(SCM_VECTOR(pattern), elli+1, plen);
+            ScmObj frest = Scm_VectorToList(SCM_VECTOR(form), elli, flen);
+            return match_subpattern(frest, SCM_SYNTAX_PATTERN(pat),
+                                    prest, env, mvec);
+        } else { 
+            return TRUE;
         }
-        return TRUE;
     }
 
     /* literal */
