@@ -5679,20 +5679,87 @@ Return value is undefined.
 @subsection String Comparison
 @c NODE 文字列の比較
 
-@defun string=? string1 string2
-@defunx string-ci=? string1 string2
-[R5RS]
+@defun string=? string1 string2 string3 @dots{}
+[R5RS][R7RS]
+@c EN
+Returns @code{#t} iff all arguments are strings with the same content.
+
+R5RS only defines 2-argument version; Gauche can take more than
+2 argument, as specified in R7RS.
+@c JP
+全ての引数が内容の等しい文字列であれば@code{#t}を返します。
+
+R5RSは2引数の場合しか定義していませんが、Gaucheでは3引数以上渡すこともでき、
+それはR7RSの定義と等価です。
+@c COMMON
 @end defun
 
-@defun string<? string1 string2
-@defunx string<=? string1 string2
-@defunx string>? string1 string2
-@defunx string>=? string1 string2
-@defunx string-ci<? string1 string2
-@defunx string-ci<=? string1 string2
-@defunx string-ci>? string1 string2
-@defunx string-ci>=? string1 string2
+@defun string<? string1 string2 string3 @dots{}
+@defunx string<=? string1 string2 string3 @dots{}
+@defunx string>? string1 string2 string3 @dots{}
+@defunx string>=? string1 string2 string3 @dots{}
+[R5RS][R7RS]
+@c EN
+Compares strings in codepoint order.  Returns @code{#t} iff
+all the arguments are ordered.
+
+R5RS only defines 2-argument version; Gauche can take more than
+2 argument, as specified in R7RS.
+@c JP
+文字列同士をコードポイントの順序で比較します。全ての引数が順序どおりであれば
+@code{#t}が、そうでなければ@code{#f}が返されます。
+
+R5RSは2引数の場合しか定義していませんが、Gaucheでは3引数以上渡すこともでき、
+それはR7RSの定義と等価です。
+@c COMMON
+@end defun
+
+@defun string-ci=? string1 string2 string3 @dots{}
+@defunx string-ci<? string1 string2 string3 @dots{}
+@defunx string-ci<=? string1 string2 string3 @dots{}
+@defunx string-ci>? string1 string2 string3 @dots{}
+@defunx string-ci>=? string1 string2 string3 @dots{}
 [R5RS]
+@c EN
+Case-insensitive string comparison.  R5RS defines 2-argument version.
+Gauche extends them to allow more than two arguments.
+@c JP
+大文字小文字を無視する文字列比較です。
+R5RSは2引数の場合しか定義していませんが、Gaucheでは3引数以上渡すこともできます。
+@c COMMON
+
+@c EN
+These procedures fold argument character-wise, according to
+Unicode-defined character-by-character case mapping.  See
+@code{char-foldcase} for the details (@ref{Characters}).
+Character-wise case folding doesn't handles the case like
+German eszett:
+@c JP
+これらの手続きは、引数に「文字ごとの大文字小文字変換」を適用します。
+(変換にはUnicodeの文字単位の大文字小文字マッピングテーブルを使います)。
+詳しくは@code{char-foldcase}の説明を見てください (@ref{Characters})。
+文字ごとの大文字小文字変換は、ドイツ語のエスツェットのような特別な場合を
+考慮しません。
+@c COMMON
+
+@example
+(string-ci=? "\u00df" "SS") @result{} #f
+@end example
+
+@c EN
+R7RS requires @code{string-ci}* procedures to use string case folding.
+Gauche provides R7RS-conformant case insensitive comparison procedures
+in @code{text.unicode} (@xref{Full string case conversion}).
+If you write in R7RS, importing
+@code{(scheme char)} library, you'll use @code{text.unicode}'s
+@code{string-ci}* procedures.
+@c JP
+R7RSでは、@code{string-ci}*手続きは文字列としての大文字小文字変換を要求しています。
+Gaucheは、R7RSに準拠した大文字小文字の違いを無視する比較手続きを
+@code{text.unicode}モジュールに用意しています(@ref{Full string case conversion}参照)。
+R7RSでプログラミングする際に@code{(scheme char)}をインポートした場合は、
+@code{text.unicode}モジュールの@code{string-ci=?}などが使われます。
+@c COMMON
 @end defun
 
 @node String utilities, Incomplete strings, String Comparison, Strings

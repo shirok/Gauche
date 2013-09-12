@@ -225,31 +225,52 @@
 
 (select-module scheme)
 (inline-stub
- (define-cise-expr strcmp  [(_ op) `(result (,op (Scm_StringCmp s1 s2) 0))])
- (define-cise-expr strcmpi [(_ op) `(result (,op (Scm_StringCiCmp s1 s2) 0))])
+ (define-cise-expr strcmp  [(_ op) `(,op (Scm_StringCmp s1 s2) 0)])
+ (define-cise-expr strcmpi [(_ op) `(,op (Scm_StringCiCmp s1 s2) 0)])
+
+ (define-cise-stmt strcmp-multiarg
+   [(_ cmp)
+    `(while TRUE
+       (if ,cmp
+         (cond [(SCM_NULLP ss) (result TRUE) break]
+               [(not (SCM_STRINGP (SCM_CAR ss)))
+                (SCM_TYPE_ERROR (SCM_CAR ss) "string")]
+               [else (set! s1 s2) (set! s2 (SCM_STRING (SCM_CAR ss)))
+                     (set! ss (SCM_CDR ss))])
+         (begin (result FALSE) break)))])
  )
 
-(define-cproc string=? (s1::<string> s2::<string>) ::<boolean> :constant
-  Scm_StringEqual)
-(define-cproc string<? (s1::<string> s2::<string>) ::<boolean> :constant
-  (strcmp <))
-(define-cproc string>? (s1::<string> s2::<string>) ::<boolean> :constant
-  (strcmp >))
-(define-cproc string<=? (s1::<string> s2::<string>)::<boolean> :constant
-  (strcmp <=))
-(define-cproc string>=? (s1::<string> s2::<string>)::<boolean> :constant
-  (strcmp >=))
+(define-cproc string=? (s1::<string> s2::<string> :rest ss)
+  ::<boolean> :constant
+  (strcmp-multiarg (Scm_StringEqual s1 s2)))
+(define-cproc string<? (s1::<string> s2::<string> :rest ss)
+  ::<boolean> :constant
+  (strcmp-multiarg (strcmp <)))
+(define-cproc string>? (s1::<string> s2::<string> :rest ss)
+  ::<boolean> :constant
+  (strcmp-multiarg (strcmp >)))
+(define-cproc string<=? (s1::<string> s2::<string> :rest ss)
+  ::<boolean> :constant
+  (strcmp-multiarg (strcmp <=)))
+(define-cproc string>=? (s1::<string> s2::<string> :rest ss)
+  ::<boolean> :constant
+  (strcmp-multiarg (strcmp >=)))
 
-(define-cproc string-ci=? (s1::<string> s2::<string>)::<boolean> :constant
-  (strcmpi ==))
-(define-cproc string-ci<? (s1::<string> s2::<string>)::<boolean> :constant
-  (strcmpi <))
-(define-cproc string-ci>? (s1::<string> s2::<string>)::<boolean> :constant
-  (strcmpi >))
-(define-cproc string-ci<=? (s1::<string> s2::<string>)::<boolean> :constant
-  (strcmpi <=))
-(define-cproc string-ci>=? (s1::<string> s2::<string>)::<boolean> :constant
-  (strcmpi >=))
+(define-cproc string-ci=? (s1::<string> s2::<string> :rest ss)
+  ::<boolean> :constant
+  (strcmp-multiarg (strcmpi ==)))
+(define-cproc string-ci<? (s1::<string> s2::<string> :rest ss)
+  ::<boolean> :constant
+  (strcmp-multiarg (strcmpi <)))
+(define-cproc string-ci>? (s1::<string> s2::<string> :rest ss)
+  ::<boolean> :constant
+  (strcmp-multiarg (strcmpi >)))
+(define-cproc string-ci<=? (s1::<string> s2::<string> :rest ss)
+  ::<boolean> :constant
+  (strcmp-multiarg (strcmpi <=)))
+(define-cproc string-ci>=? (s1::<string> s2::<string> :rest ss)
+  ::<boolean> :constant
+  (strcmp-multiarg (strcmpi >=)))
 
 ;;
 ;; Byte string

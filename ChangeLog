@@ -1,3 +1,11 @@
+2013-09-11  Shiro Kawai  <shiro@acm.org>
+
+	* src/libstr.scm (string=? etc): Support more than two arguments.
+	* ext/text/unicode.scm (string-ci=? etc): Provide R7RS compatible
+	  full-string case folded comparison.
+	* lib/r7rs.scm (string-ci=? etc): Use text.unicode version instead of
+	  built-in version.
+
 2013-09-10  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/defvalues.scm (define-values): Support <formals> in

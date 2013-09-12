@@ -399,12 +399,10 @@
   (define+ vector-set! gauche)
   (define+ vector->list gauche)
   (define+ list->vector gauche)
-  (define (vector->string v)
-    (check-arg vector? v)
-    (coerce-to <string> v))
-  (define (string->vector s)
-    (check-arg string? s)
-    (coerce-to <vector> s))
+  (define (vector->string v :optional (start 0) (end -1))
+    (list->string (vector->list v start end))) ; TODO: can be more efficient
+  (define (string->vector s :optional (start 0) (end -1))
+    (list->vector (string->list s start end))) ; TOOD: can be more efficient
   (define+ vector-copy gauche)
   (define+ vector-copy!  srfi-43)
   (define+ vector-append srfi-43)
@@ -550,11 +548,11 @@
   (define+ char-upcase gauche)
   (define+ char-downcase gauche)
   (define+ char-foldcase gauche)
-  (define+ string-ci=? gauche)
-  (define+ string-ci<? gauche)
-  (define+ string-ci>? gauche)
-  (define+ string-ci<=? gauche)
-  (define+ string-ci>=? gauche)
+  (define+ string-ci=?  text.unicode)   ; not gauche's.
+  (define+ string-ci<?  text.unicode)   ; not gauche's.
+  (define+ string-ci>?  text.unicode)   ; not gauche's.
+  (define+ string-ci<=? text.unicode)   ; not gauche's.
+  (define+ string-ci>=? text.unicode)   ; not gauche's.
   (define+ string-upcase text.unicode)   ; not srfi-13's.
   (define+ string-downcase text.unicode) ; not srfi-13's.
   (define+ string-foldcase text.unicode) ; not srfi-13's.

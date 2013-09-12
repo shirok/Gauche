@@ -51,6 +51,8 @@
           string-upcase string-downcase string-titlecase string-foldcase
           codepoints-upcase codepoints-downcase codepoints-titlecase
           codepoints-foldcase
+
+          string-ci=? string-ci<? string-ci<=? string-ci>? string-ci>=?
           )
   )
 (select-module text.unicode)
@@ -1054,3 +1056,25 @@
 (define (codepoints-downcase seq)  (codepoints-xcase seq %downcase))
 (define (codepoints-titlecase seq) (codepoints-xcase seq %titlecase))
 (define (codepoints-foldcase seq)  (codepoints-xcase seq %foldcase))
+
+;;
+;; R7RS-compatible case-insensitive string comparison
+;;
+
+;; NB: Builtin string=? etc. can take more than two args, so the simplest
+;; definition would be:
+;;  (define (string-ci=? . args) (apply string=? (map string-foldcase args)))
+;; We compare pairwise instead, so that we don't need to foldcase
+;; more than necessary when we find the condition doesn't meet.
+
+(define (string-ci-cmp =? s0 s1 more)
+  (let loop ([s0 (string-foldcase s0)] [s1 (string-foldcase s1)] [more more])
+    (if (null? more)
+      (=? s0 s1)
+      (and (=? s0 s1) (loop s1 (string-foldcase (car more)) (cdr more))))))
+
+(define (string-ci=? s0 s1 . more)  (string-ci-cmp string=? s0 s1 more))
+(define (string-ci<? s0 s1 . more)  (string-ci-cmp string<? s0 s1 more))
+(define (string-ci<=? s0 s1 . more) (string-ci-cmp string<=? s0 s1 more))
+(define (string-ci>? s0 s1 . more)  (string-ci-cmp string>? s0 s1 more))
+(define (string-ci>=? s0 s1 . more) (string-ci-cmp string>=? s0 s1 more))

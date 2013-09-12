@@ -17418,6 +17418,24 @@ codepoints instead.  Returns a sequence of the same type of the input.
 @end example
 @end defun
 
+@defun string-ci=? string1 string2 string3 @dots{}
+@defunx string-ci<? string1 string2 string3 @dots{}
+@defunx string-ci<=? string1 string2 string3 @dots{}
+@defunx string-ci>? string1 string2 string3 @dots{}
+@defunx string-ci>=? string1 string2 string3 @dots{}
+[R7RS]
+Case-insensitive string comparison, using full-string case conversion.
+
+Note that Gauche has builtin @code{string-ci=?} etc., which use
+character-wise case folding (@xref{String Comparison}).  These are
+different procedures.
+
+@example
+(string-ci=? "\u00df" "SS") @result{} #t
+@end example
+@end defun
+
+
 
 @c ----------------------------------------------------------------------
 @node Combination library, Message digester framework, Unicode utilities, Library modules - Utilities
