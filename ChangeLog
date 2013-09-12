@@ -1,3 +1,11 @@
+2013-09-12  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/numerical.scm (real->rational): Fixed a bug in refine/c
+	  that doesn't find simplest rational when two continued fraction has
+	  (x0 ... xn xn+1 ...) and (y0 ... yn), where xi = yi (0 <= i <= n-1)
+	  and |xn - yn| > 1.  Original code just picked the shorter series,
+	  but picking min(xn + 1, yn) makes the result simpler.
+
 2013-09-11  Shiro Kawai  <shiro@acm.org>
 
 	* src/libstr.scm (string=? etc): Support more than two arguments.

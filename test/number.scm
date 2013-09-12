@@ -627,6 +627,11 @@
 (test* "expt (ratnum with large denom and numer) with inexact conversion 9"
        +inf.0 (exact->inexact (/ (expt -10 329) (- (expt 10 20)))))
 
+;; this exhibits a bug fixed on 9/12/2013.
+(test* "real->rational" '(1/3 2/3)
+       (list (real->rational 3/10 1/10 1/10)
+             (real->rational 24/35 4/35 4/35)))
+
 (test* "rationalize (edge cases)" '(#t #t #t +inf.0 -inf.0 0.0)
        (list (nan? (rationalize +nan.0 0))
              (nan? (rationalize 0 +nan.0))

@@ -66,8 +66,10 @@
   (define (refine/c xn yn an)
     (cond [(null? (cdr xn)) `(,(if (null? (cdr yn))
                                  (min (car xn) (car yn))
-                                 (car xn)))]
-          [(null? (cdr yn)) `(,(car yn))]
+                                 (min (car xn) (+ 1 (car yn))))
+                              ,@an)]
+          [(null? (cdr yn)) `(,(min (car yn) (+ (car xn) 1))
+                              ,@an)]
           [(= (car xn) (car yn))
            (refine/c (cdr xn) (cdr yn) (cons (car xn) an))]
           [else (cons (+ 1 (min (car xn) (car yn))) an)]))
