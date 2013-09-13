@@ -425,10 +425,16 @@
   (define+ procedure? gauche)
   (define+ apply gauche)
   (define+ map gauche)
-  (define+ string-map srfi-13)
+  (define (string-map proc str . more-strs) ; TODO: can be more efficient
+    (if-let1 a (find (^s (not (string? s))) (cons str more-strs))
+      (error "non-string argument passed to string-map:" a)
+      (apply (with-module gauche.sequence map-to) <string> proc str more-strs)))
   (define+ vector-map gauche)
   (define+ for-each gauche)
-  (define+ string-for-each srfi-13)
+  (define (string-for-each proc str . more-strs) ; TODO: can be more efficient
+    (if-let1 a (find (^s (not (string? s))) (cons str more-strs))
+      (error "non-string argument passed to string-for-each:" a)
+      (apply (with-module gauche.sequence for-each) proc str more-strs)))
   (define+ vector-for-each gauche)
   (define+ call-with-current-continuation gauche)
   (define+ call/cc gauche)
@@ -691,12 +697,14 @@
   (export current-jiffy jiffies-per-second current-second)
   (define-values (%epoch-sec %epoch-usec)
     (sys-gettimeofday))
-  (define (current-second) (sys-time))
+  (define (current-second)
+    (receive (sec usec) (sys-gettimeofday)
+      (+ sec (/. usec 1e6))))
   (define (current-jiffy)               ;temporary implementation
     (receive (sec usec) (sys-gettimeofday)
       (+ (* (- sec %epoch-sec) #e1e6)
          (- usec %epoch-usec))))
-  (define jiffies-per-second #e1e6)
+  (define (jiffies-per-second) #e1e6)
   (provide "scheme/time"))
 
 (define-module scheme.write
