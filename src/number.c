@@ -3880,11 +3880,11 @@ static ScmObj read_real(const char **strp, int *lenp,
 
     /* Recognize specials */
     if (sign_seen && (*lenp) >= 5) {
-        if (strncmp(*strp, "inf.0", 5) == 0) {
+        if (strncasecmp(*strp, "inf.0", 5) == 0) {
             (*strp) += 5; (*lenp) -= 5;
             return minusp?SCM_NEGATIVE_INFINITY:SCM_POSITIVE_INFINITY;
         }
-        if (strncmp(*strp, "nan.0", 5) == 0) {
+        if (strncasecmp(*strp, "nan.0", 5) == 0) {
             (*strp) += 5; (*lenp) -= 5;
             return SCM_NAN;
         }
