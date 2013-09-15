@@ -4128,7 +4128,8 @@ static ScmObj read_number(const char *str, int len, int radix, int strict)
                                    (*str == '+' ? 1.0 : -1.0));
         } else {
             ScmObj imagpart = read_real(&str, &len, &ctx);
-            if (SCM_FALSEP(imagpart) || len != 1 || *str != 'i') {
+            if (SCM_FALSEP(imagpart) || len != 1
+                || (*str != 'i' && *str != 'I')) {
                 return SCM_FALSE;
             }
             CHK_EXACT_COMPLEX();
