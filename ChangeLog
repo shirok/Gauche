@@ -2,6 +2,7 @@
 
 	* lib/gauche/dictionary.scm (dict->alist): Provide fallback methods
 	  using dict-fold.
+	  (<stacked-map>): Added stacked map experimentally.
 
 2013-09-12  Shiro Kawai  <shiro@acm.org>
 

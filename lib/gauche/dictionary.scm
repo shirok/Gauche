@@ -44,6 +44,9 @@
           <bimap> make-bimap bimap-put!
           bimap-left bimap-left-get bimap-left-exists? bimap-left-delete!
           bimap-right bimap-right-get bimap-right-exists? bimap-right-delete!
+
+          <stacked-map> make-stacked-map
+          stacked-map-push! stacked-map-pop! stacked-map-depth
           ))
 (select-module gauche.dictionary)
 
@@ -311,3 +314,73 @@
 (define-method call-with-iterator ((coll <bimap>) proc . args)
   (apply call-with-iterator (bimap-left coll) proc args))
 
+;;;
+;;; Stacked map
+;;;
+
+;; Stacked map allows you to stack (layer) multiple maps and tread
+;; as if they are a single map.  The top map "shadows" the bottom maps.
+
+(define-class <stacked-map-meta> (<class>) ())
+
+;; Unique-dict-maker is a thunk that creates a new dictionary
+;; to be used to check key uniqueness.  When a stacked map is
+;; traversed (e.g. by dict-fold), a new unique-dict is created
+;; and keys are stored as the traversal progresses, and used to
+;; filter out already-seen keys.  You can give it #f to turn off
+;; unique-key check.
+
+(define-class <stacked-map> (<dictionary>)
+  ((stack     :init-keyword :stack :init-value '())
+   (unique-dict-maker :init-keyword :unique-dict-maker
+                      :init-value (cut make-hash-table 'eqv?)))
+  :metaclass <stacked-map-meta>)
+
+(define (make-stacked-map . maps)
+  (make <stacked-map> :stack maps))
+
+;; TODO: Fix ugly name.
+(define (make-stacked-map-with-unique-dict-maker thunk . maps)
+  (make <stacked-map> :stack maps :unique-dict-maker thunk))
+
+(define-method stacked-map-push! ((smap <stacked-map>) (dict <dictionary>))
+  (slot-push! smap 'stack dict))
+(define-method stacked-map-pop! ((smap <stacked-map>))
+  (slot-pop! smap 'stack))
+(define-method stacked-map-depth ((smap <stacked-map>))
+  (length (slot-ref smap 'stack)))
+
+(define-method dict-exists? ((smap <stacked-map>) key)
+  (any (cut dict-exists? <> key) (slot-ref smap 'stack)))
+
+(define-method dict-get ((smap <stacked-map>) key . maybe-default)
+  (let1 maybe-r (any (^m (let1 r (dict-get m key %unique)
+                           (and (not (eq? r %unique)) (list r))))
+                     (slot-ref smap 'stack))
+    (cond [maybe-r (car maybe-r)]
+          [(pair? maybe-default) (car maybe-default)]
+          [else (errorf "~s doesn't have an entry for key ~s" smap key)])))
+
+;; This puts entry to the topmost dict.
+(define-method dict-put! ((smap <stacked-map>) key val)
+  (let1 maps (slot-ref smap 'stack)
+    (if (null? maps)
+      (error "You can't add an entry to an empty stacked map:" smap)
+      (dict-put! (car maps) key val))))
+
+;; This deletes entry from *all* dicts.
+(define-method dict-delete! ((smap <stacked-map>) key)
+  (for-each (cut dict-delete! <> key) (slot-ref smap 'stack)))
+
+(define-method dict-fold ((smap <stacked-map>) proc seed)
+  (let1 udict (and-let* ([thunk (slot-ref smap 'unique-dict-maker)])
+                (thunk))
+    (if udict
+      (fold (^[m s]
+              (dict-fold m (^[k v s] (if (dict-exists? udict k)
+                                       s
+                                       (begin (dict-put! udict k #t)
+                                              (proc k v s))))
+                         s))
+            seed (slot-ref smap 'stack))
+      (fold (^[m s] (dict-fold m proc s)) seed (slot-ref smap 'stack)))))

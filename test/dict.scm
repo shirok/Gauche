@@ -60,5 +60,38 @@
          (cut lset= equal? <> <>))
   )
 
+(test-section "stacked map")
+
+(let* ([m0 (alist->hash-table '((a . 0) (b . 1) (c . 2)) 'eq?)]
+       [m1 (alist->hash-table '((a . 10) (d . 11)) 'eq?)]
+       [sm (make-stacked-map m1 m0)])
+  (test* "stacked map search" '(10 1 2 11 none)
+         (map (cut dict-get sm <> 'none) '(a b c d e)))
+  (test* "stacked map search" (test-error)
+         (dict-get sm 'e))
+  (test* "stacked map exists?" '(#t #t #f)
+         (map (cut dict-exists? sm <>) '(a c e)))
+  (test* "stacked-map put!" '(12 12 2)
+         (begin (dict-put! sm 'c 12)
+                (list (dict-get sm 'c)
+                      (dict-get m1 'c)
+                      (dict-get m0 'c))))
+  (test* "stacked-map fold" '((b . 1) (a . 10) (d . 11) (c . 12))
+         (sort-by (dict-fold sm acons '()) cdr))
+  (test* "stacked-map delete"'(#f #f #f)
+         (begin (dict-delete! sm 'c)
+                (list (dict-get sm 'c #f)
+                      (dict-get m1 'c #f)
+                      (dict-get m0 'c #f))))
+
+  (test* "stacked-map push!"
+         '((d . 11) (a . 100) (b . 101) (c . 102) (e . 103))
+         (begin (stacked-map-push! sm (alist->hash-table '((a . 100)
+                                                           (b . 101)
+                                                           (c . 102)
+                                                           (e . 103))))
+                (sort-by (dict->alist sm) cdr)))
+  )
+
 (test-end)
 
