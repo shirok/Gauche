@@ -1,3 +1,8 @@
+2013-09-16  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/dictionary.scm (dict->alist): Provide fallback methods
+	  using dict-fold.
+
 2013-09-12  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/numerical.scm (real->rational): Fixed a bug in refine/c

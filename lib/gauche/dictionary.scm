@@ -201,6 +201,12 @@
 (define-method dict-values ((dict <ordered-dictionary>))
   (reverse (dict-fold dict (^[k v r] (cons v r)) '())))
 
+(define-method dict->alist ((dict <dictionary>))
+  (dict-fold dict acons '()))
+
+(define-method dict->alist ((dict <ordered-dictionary>))
+  (reverse (dict-fold dict acons '())))
+
 (define-method dict-delete! ((dict <dictionary>) key) ;fallback
   (error "You can't delete entry from a dictionary ~s" dict))
 
