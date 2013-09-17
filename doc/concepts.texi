@@ -426,6 +426,16 @@ Built-in.
 @c COMMON
 
 @c EN
+@item SRFI-46, Basic Syntax-rules Extensions
+Built-in.
+@xref{Hygienic Macros}.
+@c JP
+@item SRFI-46, 基本的なsyntax-rulesの拡張
+組み込みです。
+@xref{Hygienic Macros}.
+@c COMMON
+
+@c EN
 @item SRFI-55, require-extension
 Supported as an autoloaded macro.
 @xref{Requiring extensions}.
