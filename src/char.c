@@ -92,7 +92,14 @@ int Scm_DigitToInt(ScmChar ch, int radix)
         if (ch < 'a') return -1;
         if (ch < 'a' + radix - 10) return (ch - 'a' + 10);
     }
-    return -1;
+    if (ch > 0x80) {
+        ScmChar ucschar = Scm_CharToUcs(ch);
+        int val = ucs_digit_value(ucschar);
+        if (val < 0 || val >= radix) return -1;
+        return val;
+    } else {
+        return -1;
+    }
 }
 
 ScmChar Scm_IntToDigit(int n, int radix)

@@ -24,8 +24,8 @@
 (use gauche.charconv)
 (use gauche.uvector)
 
-;; We generate three kind of lookup structures.  Each structure consists
-;; various types of tables in order to reduce the size.
+;; We generate four kind of lookup structures.  Each structure consists
+;; of various types of tables in order to reduce the size.
 ;;
 ;; * General categories and case bits
 ;;
@@ -69,26 +69,26 @@
 ;;    represents either a simple casemap entry, or an index to an
 ;;    extended casemap entry.
 ;;
-;;    bit16 == 0:
+;;    bit15 == 0:
 ;;      This is a simple entry.  uppercase and titlecase is the same,
 ;;      no special case mappings, and conversion between
 ;;      (upper,title) <-> lower is simply done by adding the given offset.
 ;;
-;;      If bit15 is 0, this letter is uppercase.  Converting to uppercase and
+;;      If bit14 is 0, this letter is uppercase.  Converting to uppercase and
 ;;                     titlecase is noop.  Converting to lowercase is to add
 ;;                    the offset.
-;;      If bit15 is 1, this letter is lowercase.  Converting to lowercase is
+;;      If bit14 is 1, this letter is lowercase.  Converting to lowercase is
 ;;                     noop.  Converting to uppercase and titlecase is to add
 ;;                     the offset.
-;;      bit14-bit0, singned integer offset [-8192, 8191]
+;;      bit13-bit0, singned integer offset [-8192, 8191]
 ;;
-;;    bit16 == 1:
+;;    bit15 == 1:
 ;;      This is an extended entry (except #xffff).
-;;      bit15-bit0 is an index to an extended entry table.
+;;      bit14-bit0 is an index to an extended entry table.
 ;;
 ;;    #xffff indicates empty entry.
 ;;
-;;    Characters requres case mapping tend to cluster, so we use two-staged
+;;    Characters that require case mapping tend to cluster, so we use two-staged
 ;;    table to lookup the 16-bit entry from the codepoint below U+10000.
 ;;
 ;;    The bit 15-8 is the index of this table:
@@ -102,6 +102,12 @@
 ;;       static unsiged char casemap_subtable[V][<lower 8 bit of codepoint>];
 ;;
 ;;    We only need to have 18 subtables.
+;;
+;; * Digit values
+;;
+;;    Characters with categrory Nd has associated numeric value 0..9.
+;;    A set of decimal numeric characters for 0..9 are always contiguous.
+;;    As of Unicode 6.2, we have 42 of such sets.
 ;;
 ;; * Break properties
 ;;
@@ -172,9 +178,9 @@
 ;;  combining-class
 ;;  bidi-class
 ;;  decomposition
-;;  numeric-value-1
-;;  numeric-value-2
-;;  numeric-value-3
+;;  numeric-value-1 (for decimal only)
+;;  numeric-value-2 (for decimal & digits)
+;;  numeric-value-3 (for decimal, digits & numeric)
 ;;  bidi-mirrored
 ;;  old-name
 ;;  notes
@@ -203,6 +209,7 @@
   (alphabetic)         ; #t if Alphabetic
   (uppercase)          ; #t if Uppercase
   (lowercase)          ; #t if Lowercase
+  (digit-value)        ; 0..9 for Nd chars, #f otherwise
   )
 
 (define-record-type break-entry %make-break-entry #f
@@ -210,8 +217,8 @@
   (word)               ; Word_Break category
   )
 
-(define (make-entry category case-info)
-  (%make-entry category case-info #f #f #f #f #f))
+(define (make-entry category case-info digit-value)
+  (%make-entry category case-info #f #f #f #f #f digit-value))
 
 (define (make-break-entry)
   (%make-break-entry 'Other 'Other))
@@ -321,7 +328,7 @@
 (define (xxx->entry db code get-extra-code ->ucs)
   (cond [(find (^l (eqv? code (get-extra-code l))) *jisx0213-extras*)
          => (^l (let1 cat (caddr l)
-                  (rlet1 e (make-entry cat '(#f #f #f))
+                  (rlet1 e (make-entry cat '(#f #f #f) #f)
                     (when (eq? cat 'Ll) (set! (entry-lowercase e) #t))
                     (when (eq? cat 'Lo) (set! (entry-alphabetic e) #t)))))]
         [else
@@ -382,13 +389,13 @@
   (define table  (unichar-db-table db))
   (define ranges (unichar-db-ranges db))
   (^[entry state]
-    (match-let ([(scode name scat _ _ _ _ _ _ _ _ _ sup slo sti) entry]
+    (match-let ([(scode name scat _ _ _ snum _ _ _ _ _ sup slo sti) entry]
                 [(prev-code prev-cat range?) state])
       (let* ([code (parse-code scode)]
              [range-start? (#/First>/ name)]
              [cat (string->symbol scat)]
              [case-info `(,(parse-code sup) ,(parse-code slo) ,(parse-code sti))]
-             [entry (make-entry cat case-info)])
+             [entry (make-entry cat case-info (string->number snum))])
         ;; register table entry
         (cond
          [(not prev-code)           ; initial loop
@@ -531,7 +538,8 @@
   (with-output-to-file "char_attr.c"
     (^() (preamble)
       (generate-category-tables db)
-      (generate-case-tables db)))
+      (generate-case-tables db)
+      (generate-digit-value-tables db)))
   (with-output-to-file "../ext/text/unicode_attr.h"
     (^() (preamble)
       (generate-break-tables db))))
@@ -758,6 +766,35 @@
         (bisect mid hi (+ indent 1))
         (format #t "~v,a}\n" (* 2 indent) " "))))
   (bisect 0 (size-of entries) 1))
+
+;; Digit-value tables.  Note that we'll have a shortcut for the first
+;; chunk [0x30, 0x39], so we only generate for the second chunk and after
+(define (generate-digit-value-tables db)
+  (let1 ranges ($ reverse
+                  $ fold (^[p s] (match s
+                                   [() `(,p (0 . #f))]
+                                   [((_ . last) . rest)  
+                                    (if (= (car p) last)
+                                      `(,p ,@s)
+                                      `(,p (,last . #f) ,@s))]))
+                  '()
+                  $ cdr $ (cut sort-by <> car) $ filter identity
+                  $ dict-map (unichar-db-table db)
+                             (^[code entry]
+                               (and (eq? (entry-category entry) 'Nd)
+                                    (zero? (entry-digit-value entry))
+                                    (cons code (+ code 10)))))
+
+    (print)
+    (print "static int ucs_digit_value(ScmChar code)")
+    (print "{")
+    (dolist [r ranges]
+      (format #t "  /* ~5,'0x- ~a */\n" (car r) (if (cdr r) "Nd" "* ")))
+    (generate-bisect (coerce-to <vector> ranges)
+                     (^e (if (cdr e)
+                           (format "return (code - 0x~x);" (car e))
+                           "return -1;")))
+    (print "}")))
 
 ;; Break property values
 (define (generate-break-tables db)

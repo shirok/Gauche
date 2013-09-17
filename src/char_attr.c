@@ -26261,3 +26261,394 @@ static unsigned char casemap_000[] = {
  255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
  255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,  16, 255, 255, 255,  17,
 };
+
+static int ucs_digit_value(ScmChar code)
+{
+  /* 00000- *  */
+  /* 00660- Nd */
+  /* 0066a- *  */
+  /* 006f0- Nd */
+  /* 006fa- *  */
+  /* 007c0- Nd */
+  /* 007ca- *  */
+  /* 00966- Nd */
+  /* 00970- *  */
+  /* 009e6- Nd */
+  /* 009f0- *  */
+  /* 00a66- Nd */
+  /* 00a70- *  */
+  /* 00ae6- Nd */
+  /* 00af0- *  */
+  /* 00b66- Nd */
+  /* 00b70- *  */
+  /* 00be6- Nd */
+  /* 00bf0- *  */
+  /* 00c66- Nd */
+  /* 00c70- *  */
+  /* 00ce6- Nd */
+  /* 00cf0- *  */
+  /* 00d66- Nd */
+  /* 00d70- *  */
+  /* 00e50- Nd */
+  /* 00e5a- *  */
+  /* 00ed0- Nd */
+  /* 00eda- *  */
+  /* 00f20- Nd */
+  /* 00f2a- *  */
+  /* 01040- Nd */
+  /* 0104a- *  */
+  /* 01090- Nd */
+  /* 0109a- *  */
+  /* 017e0- Nd */
+  /* 017ea- *  */
+  /* 01810- Nd */
+  /* 0181a- *  */
+  /* 01946- Nd */
+  /* 01950- *  */
+  /* 019d0- Nd */
+  /* 019da- *  */
+  /* 01a80- Nd */
+  /* 01a8a- *  */
+  /* 01a90- Nd */
+  /* 01a9a- *  */
+  /* 01b50- Nd */
+  /* 01b5a- *  */
+  /* 01bb0- Nd */
+  /* 01bba- *  */
+  /* 01c40- Nd */
+  /* 01c4a- *  */
+  /* 01c50- Nd */
+  /* 01c5a- *  */
+  /* 0a620- Nd */
+  /* 0a62a- *  */
+  /* 0a8d0- Nd */
+  /* 0a8da- *  */
+  /* 0a900- Nd */
+  /* 0a90a- *  */
+  /* 0a9d0- Nd */
+  /* 0a9da- *  */
+  /* 0aa50- Nd */
+  /* 0aa5a- *  */
+  /* 0abf0- Nd */
+  /* 0abfa- *  */
+  /* 0ff10- Nd */
+  /* 0ff1a- *  */
+  /* 104a0- Nd */
+  /* 104aa- *  */
+  /* 11066- Nd */
+  /* 11070- *  */
+  /* 1d7ce- Nd */
+  /* 1d7d8- Nd */
+  /* 1d7e2- Nd */
+  /* 1d7ec- Nd */
+  /* 1d7f6- Nd */
+  if (code < 0x1946) {
+    if (code < 0xc66) {
+      if (code < 0x9e6) {
+        if (code < 0x6fa) {
+          if (code < 0x66a) {
+            if (code < 0x660) {
+              return -1;
+            } else {
+              return (code - 0x660);
+            }
+          } else {
+            if (code < 0x6f0) {
+              return -1;
+            } else {
+              return (code - 0x6f0);
+            }
+          }
+        } else {
+          if (code < 0x7ca) {
+            if (code < 0x7c0) {
+              return -1;
+            } else {
+              return (code - 0x7c0);
+            }
+          } else {
+            if (code < 0x966) {
+              return -1;
+            } else {
+              if (code < 0x970) {
+                return (code - 0x966);
+              } else {
+                return -1;
+              }
+            }
+          }
+        }
+      } else {
+        if (code < 0xaf0) {
+          if (code < 0xa66) {
+            if (code < 0x9f0) {
+              return (code - 0x9e6);
+            } else {
+              return -1;
+            }
+          } else {
+            if (code < 0xa70) {
+              return (code - 0xa66);
+            } else {
+              if (code < 0xae6) {
+                return -1;
+              } else {
+                return (code - 0xae6);
+              }
+            }
+          }
+        } else {
+          if (code < 0xb70) {
+            if (code < 0xb66) {
+              return -1;
+            } else {
+              return (code - 0xb66);
+            }
+          } else {
+            if (code < 0xbe6) {
+              return -1;
+            } else {
+              if (code < 0xbf0) {
+                return (code - 0xbe6);
+              } else {
+                return -1;
+              }
+            }
+          }
+        }
+      }
+    } else {
+      if (code < 0xf20) {
+        if (code < 0xd70) {
+          if (code < 0xce6) {
+            if (code < 0xc70) {
+              return (code - 0xc66);
+            } else {
+              return -1;
+            }
+          } else {
+            if (code < 0xcf0) {
+              return (code - 0xce6);
+            } else {
+              if (code < 0xd66) {
+                return -1;
+              } else {
+                return (code - 0xd66);
+              }
+            }
+          }
+        } else {
+          if (code < 0xe5a) {
+            if (code < 0xe50) {
+              return -1;
+            } else {
+              return (code - 0xe50);
+            }
+          } else {
+            if (code < 0xed0) {
+              return -1;
+            } else {
+              if (code < 0xeda) {
+                return (code - 0xed0);
+              } else {
+                return -1;
+              }
+            }
+          }
+        }
+      } else {
+        if (code < 0x109a) {
+          if (code < 0x1040) {
+            if (code < 0xf2a) {
+              return (code - 0xf20);
+            } else {
+              return -1;
+            }
+          } else {
+            if (code < 0x104a) {
+              return (code - 0x1040);
+            } else {
+              if (code < 0x1090) {
+                return -1;
+              } else {
+                return (code - 0x1090);
+              }
+            }
+          }
+        } else {
+          if (code < 0x17ea) {
+            if (code < 0x17e0) {
+              return -1;
+            } else {
+              return (code - 0x17e0);
+            }
+          } else {
+            if (code < 0x1810) {
+              return -1;
+            } else {
+              if (code < 0x181a) {
+                return (code - 0x1810);
+              } else {
+                return -1;
+              }
+            }
+          }
+        }
+      }
+    }
+  } else {
+    if (code < 0xa8da) {
+      if (code < 0x1b5a) {
+        if (code < 0x1a80) {
+          if (code < 0x19d0) {
+            if (code < 0x1950) {
+              return (code - 0x1946);
+            } else {
+              return -1;
+            }
+          } else {
+            if (code < 0x19da) {
+              return (code - 0x19d0);
+            } else {
+              return -1;
+            }
+          }
+        } else {
+          if (code < 0x1a90) {
+            if (code < 0x1a8a) {
+              return (code - 0x1a80);
+            } else {
+              return -1;
+            }
+          } else {
+            if (code < 0x1a9a) {
+              return (code - 0x1a90);
+            } else {
+              if (code < 0x1b50) {
+                return -1;
+              } else {
+                return (code - 0x1b50);
+              }
+            }
+          }
+        }
+      } else {
+        if (code < 0x1c50) {
+          if (code < 0x1bba) {
+            if (code < 0x1bb0) {
+              return -1;
+            } else {
+              return (code - 0x1bb0);
+            }
+          } else {
+            if (code < 0x1c40) {
+              return -1;
+            } else {
+              if (code < 0x1c4a) {
+                return (code - 0x1c40);
+              } else {
+                return -1;
+              }
+            }
+          }
+        } else {
+          if (code < 0xa620) {
+            if (code < 0x1c5a) {
+              return (code - 0x1c50);
+            } else {
+              return -1;
+            }
+          } else {
+            if (code < 0xa62a) {
+              return (code - 0xa620);
+            } else {
+              if (code < 0xa8d0) {
+                return -1;
+              } else {
+                return (code - 0xa8d0);
+              }
+            }
+          }
+        }
+      }
+    } else {
+      if (code < 0xff1a) {
+        if (code < 0xaa50) {
+          if (code < 0xa90a) {
+            if (code < 0xa900) {
+              return -1;
+            } else {
+              return (code - 0xa900);
+            }
+          } else {
+            if (code < 0xa9d0) {
+              return -1;
+            } else {
+              if (code < 0xa9da) {
+                return (code - 0xa9d0);
+              } else {
+                return -1;
+              }
+            }
+          }
+        } else {
+          if (code < 0xabf0) {
+            if (code < 0xaa5a) {
+              return (code - 0xaa50);
+            } else {
+              return -1;
+            }
+          } else {
+            if (code < 0xabfa) {
+              return (code - 0xabf0);
+            } else {
+              if (code < 0xff10) {
+                return -1;
+              } else {
+                return (code - 0xff10);
+              }
+            }
+          }
+        }
+      } else {
+        if (code < 0x1d7ce) {
+          if (code < 0x104aa) {
+            if (code < 0x104a0) {
+              return -1;
+            } else {
+              return (code - 0x104a0);
+            }
+          } else {
+            if (code < 0x11066) {
+              return -1;
+            } else {
+              if (code < 0x11070) {
+                return (code - 0x11066);
+              } else {
+                return -1;
+              }
+            }
+          }
+        } else {
+          if (code < 0x1d7e2) {
+            if (code < 0x1d7d8) {
+              return (code - 0x1d7ce);
+            } else {
+              return (code - 0x1d7d8);
+            }
+          } else {
+            if (code < 0x1d7ec) {
+              return (code - 0x1d7e2);
+            } else {
+              if (code < 0x1d7f6) {
+                return (code - 0x1d7ec);
+              } else {
+                return (code - 0x1d7f6);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

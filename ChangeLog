@@ -1,3 +1,10 @@
+2013-09-17  Shiro Kawai  <shiro@acm.org>
+
+	* src/gen-unicode.scm: Added code generator for unicode numeric value
+	  attribute.
+	* src/char_attr.c: Regenerated.
+	* src/char.c (Scm_DigitToInt): Handles all Nd characters.
+
 2013-09-16  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/dictionary.scm (dict->alist): Provide fallback methods
