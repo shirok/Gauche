@@ -783,6 +783,8 @@ static ScmObj read_string(ScmPort *port, int incompletep,
             case 'r': ACCUMULATE('\r'); break;
             case 'f': ACCUMULATE('\f'); break;
             case 't': ACCUMULATE('\t'); break;
+            case 'a': ACCUMULATE(0x07); break; /* alarm */
+            case 'b': ACCUMULATE(0x08); break; /* backspace */
             case '\\': ACCUMULATE('\\'); break;
             case '0': ACCUMULATE(0); break;
             case 'x': {
@@ -867,6 +869,8 @@ static struct char_name {
 } char_names[] = {
 #define DEFCHAR(name, char) \
     { #name, sizeof(#name)-1, SCM_MAKE_CHAR(char) }
+    DEFCHAR(alarm,   0x07),
+    DEFCHAR(backspace, 0x08),
     DEFCHAR(space,   ' '),
     DEFCHAR(newline, '\n'),
     DEFCHAR(nl,      '\n'),
