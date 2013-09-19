@@ -1,5 +1,12 @@
 2013-09-18  Shiro Kawai  <shiro@acm.org>
 
+	* src/read.c (read_string), src/string.c (string_putc): Switched to
+	  R7RS compatible hex-escape syntax (\xNNN;).  Reading the legacy
+	  syntax (without ';' terminator) is supported by default, as far as
+	  the input can't be interpreted as R7RS syntax.
+	  For output, currently we only support R7RS style.  Might add
+	  compatibility mode if needed.
+
 	* src/string.c (Scm_DStringPeek): Added.  Useful to avoid allocation
 	  when we use dstr just as a temporary variable-sized buffer.
 

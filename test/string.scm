@@ -33,10 +33,6 @@
        (string->list "abcdefg" 0 1)) ;srfi-13 extension
 (test* "string->list" '() (string->list ""))
 
-;; this should be switched by native encoding.
-;(test* "string w/ char >= \\x80" (integer->char #xa1)
-;       (string-ref (string (integer->char #xa1)) 0))
-
 (test* "string-copy" '("abcde" #f)
        (let* ((x "abcde") (y (string-copy x)))
          (list y (eq? x y))))
@@ -46,6 +42,16 @@
 (test* "string-ref" #\b (string-ref "abc" 1))
 (define x (string-copy "abcde"))
 (test* "string-set!" "abZde" (begin (string-set! x 2 #\Z) x))
+
+(test* "string w/ char >= \\x80" (integer->char #xa1)
+       (string-ref (string (integer->char #xa1)) 0))
+
+(test* "string-reader hex-escape" '(1 2 3)
+       (let1 s "\x1;\x2;\x00003;"
+         (map (^i (char->integer (string-ref s i))) '(0 1 2))))
+(test* "string-reader hex-escape legacy support" '(1 2 0 48 48 51)
+       (let1 s "\x01\x02\x00003"
+         (map (^i (char->integer (string-ref s i))) '(0 1 2 3 4 5))))
 
 (test* "string-fill!" "ZZZZZZ"
        (string-fill! (string-copy "000000") #\Z))

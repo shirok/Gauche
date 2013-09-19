@@ -1354,7 +1354,7 @@ char **Scm_ListToCStringArray(ScmObj lis, int errp, void *(*alloc)(size_t))
  */
 static inline void string_putc(ScmChar ch, ScmPort *port, int bytemode)
 {
-    char buf[5];
+    char buf[6];
     switch (ch) {
     case '\\': SCM_PUTZ("\\\\", -1, port); break;
     case '"':  SCM_PUTZ("\\\"", -1, port); break;
@@ -1365,7 +1365,9 @@ static inline void string_putc(ScmChar ch, ScmPort *port, int bytemode)
     case '\0': SCM_PUTZ("\\0", -1, port); break;
     default:
         if (ch < ' ' || ch == 0x7f || (bytemode && ch >= 0x80)) {
-            snprintf(buf, 5, "\\x%02x", (unsigned char)ch);
+            /* TODO: Should we provide 'legacy-compatible writer mode,
+               which does not use ';' terminator? */
+            snprintf(buf, 6, "\\x%02x;", (unsigned char)ch);
             SCM_PUTZ(buf, -1, port);
         } else {
             SCM_PUTC(ch, port);

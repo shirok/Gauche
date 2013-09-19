@@ -211,12 +211,13 @@ ScmChar Scm_ReadXdigitsFromString(const char *buf, int ndigits,
         if (!isxdigit(buf[i])) {
             if (nextbuf == NULL) return SCM_CHAR_INVALID;
             else {
-                *nextbuf = buf;
+                *nextbuf = buf+i;
                 return val;
             }
         }
         val = val * 16 + Scm_DigitToInt(buf[i], 16);
     }
+    if (nextbuf != NULL) *nextbuf = buf+i;
     return (ScmChar)val;
 }
 

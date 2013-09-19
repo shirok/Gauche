@@ -715,16 +715,78 @@ static ScmObj read_quoted(ScmPort *port, ScmObj quoter, ScmReadContext *ctx)
  * String
  */
 
+/* Handling \xNN;, \uNNNN, \UNNNNNNNN escapes.
+   Some historical context:
+
+     Originally Gauche uses fixed-width numeric escapes. 
+       \xN{2}    - A raw byte code.
+       \uN{4}    - Unicode character in BMP.
+       \UN{8}    - Unicode character.
+     R7RS defines this:
+       \xN{1,};  - Unicode character.
+
+   Unfortunately two usage of \x are incompatible.  To ease transition,
+   we support the following criterion:
+
+   - If we read \x, read ahead as many hexdigits as possible.  If the
+     first non-hexdigit char is ';', we get R7RS syntax.  Otherwise,
+     if we have more than two hexdigits, take the first two for a
+     byte code, and use the rest as the part of string.
+
+   Theoretically we need to buffer unlimited number of hexdigits
+   for backtrack.  In practice we can reasonably expect the number of
+   contiguous hexdigits wouldn't be too big.  So we use a fixed-size
+   buffer first, and fall back to DString later.
+ */
 static ScmChar read_string_xdigits(ScmPort *port, int ndigs, int key,
-                                   int incompletep)
+                                   int incompletep, int strict_r7rs,
+                                   const char **nextbuf, int *nextbufsiz) 
 {
+    /* If ndigs > 0, hexdigits are stored in buf.  Otherwise, hexdigits
+       are stored in ds. */
     char buf[9];
-    int nread;
-    ScmChar r;
-    SCM_ASSERT(ndigs <= 8);
-    r = Scm_ReadXdigitsFromPort(port, FALSE, ndigs, buf, &nread);
+    ScmDString ds;
+    int nread;                  /* # of hexdigits */
+    ScmChar r;                  /* result */
+
+    if (ndigs > 0) {
+        /* Fixed size.  \u, \U or legacy \x */
+        r = Scm_ReadXdigitsFromPort(port, FALSE, ndigs, buf, &nread);
+    } else {
+        /* Ambiguous case.   */
+        ScmChar ch;
+
+        *nextbufsiz = 0;
+        Scm_DStringInit(&ds);
+        for (nread = 0; ; nread++) {
+            ch = Scm_GetcUnsafe(port);
+            if (ch == SCM_CHAR_INVALID) {
+                r = SCM_CHAR_INVALID;
+                goto err;
+            }
+            if (!(ch < 0x80 && isxdigit(ch))) break;
+            Scm_DStringPutc(&ds, ch);
+        }
+
+        if (ch == ';') {
+            int size, length;
+            const char *pbuf = Scm_DStringPeek(&ds, &size, &length);
+            r = Scm_ReadXdigitsFromString(pbuf, size, NULL);
+        } else {
+            Scm_UngetcUnsafe(ch, port);
+            if (strict_r7rs || nread < 2) {
+                r = SCM_CHAR_INVALID;
+            } else {
+                /* legacy compatibility.  backtrack. */
+                const char *pbuf = Scm_DStringGetz(&ds);
+                r = Scm_ReadXdigitsFromString(pbuf, 2, nextbuf);
+                *nextbufsiz = nread - 2;
+            }
+        }
+    }
+ err:
     if (r == SCM_CHAR_INVALID) {
-        ScmDString ds;
+        ScmDString emsg;
         int c, i;
         /* skip chars to the end of string, so that the reader will read
            after the erroneous string */
@@ -738,10 +800,14 @@ static ScmChar read_string_xdigits(ScmPort *port, int ndigs, int key,
             }
         }
         /* construct an error message */
-        Scm_DStringInit(&ds);
-        Scm_DStringPutc(&ds, '\\');
-        Scm_DStringPutc(&ds, key);
-        for (i=0; i<nread; i++) Scm_DStringPutc(&ds, (unsigned char)buf[i]);
+        Scm_DStringInit(&emsg);
+        Scm_DStringPutc(&emsg, '\\');
+        Scm_DStringPutc(&emsg, key);
+        if (ndigs > 0) {
+            Scm_DStringPutz(&emsg, buf, ndigs);
+        } else {
+            Scm_DStringAdd(&emsg, SCM_STRING(Scm_DStringGet(&ds, SCM_STRING_IMMUTABLE)));
+        }
         Scm_ReadError(port,
                       "Bad '\\%c' escape sequence in a string literal: %s",
                       key, Scm_DStringGetz(&ds));
@@ -788,17 +854,43 @@ static ScmObj read_string(ScmPort *port, int incompletep,
             case '\\': ACCUMULATE('\\'); break;
             case '0': ACCUMULATE(0); break;
             case 'x': {
-                int cc = read_string_xdigits(port, 2, 'x', incompletep);
-                ACCUMULATE(cc);
+                int cc;
+                if (ctx->flags & SCM_READ_LEGACY) {
+                    cc = read_string_xdigits(port, 2, 'x', incompletep, FALSE,
+                                             NULL, NULL);
+                    ACCUMULATE(cc);
+                } else {
+                    const char *buf;
+                    int bufsiz;
+                    cc = read_string_xdigits(port, -1, 'x', incompletep,
+                                             (ctx->flags & SCM_READ_STRICT_R7),
+                                             &buf, &bufsiz);
+                    ACCUMULATE(cc);
+                    if (bufsiz > 0) {
+                        Scm_DStringPutz(&ds, buf, bufsiz);
+                    }
+                }
                 break;
             }
             case 'u': {
-                int cc = read_string_xdigits(port, 4, 'u', incompletep);
+                int cc;
+                if (ctx->flags & SCM_READ_STRICT_R7) {
+                    Scm_ReadError(port, "\\u in string literal isn't allowed "
+                                  "in strinct-r7rs mode");
+                }
+                cc = read_string_xdigits(port, 4, 'u', incompletep, FALSE,
+                                         NULL, NULL);
                 ACCUMULATE(Scm_UcsToChar(cc));
                 break;
             }
             case 'U': {
-                int cc = read_string_xdigits(port, 8, 'U', incompletep);
+                int cc;
+                if (ctx->flags & SCM_READ_STRICT_R7) {
+                    Scm_ReadError(port, "\\U in string literal isn't allowed "
+                                  "in strinct-r7rs mode");
+                }
+                cc = read_string_xdigits(port, 8, 'U', incompletep, FALSE,
+                                         NULL, NULL);
                 ACCUMULATE(Scm_UcsToChar(cc));
                 break;
             }
