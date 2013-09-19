@@ -52,6 +52,18 @@
 (test* "string-reader hex-escape legacy support" '(1 2 0 48 48 51)
        (let1 s "\x01\x02\x00003"
          (map (^i (char->integer (string-ref s i))) '(0 1 2 3 4 5))))
+(test* "string-reader hex-escape error cases 1 (no hexdigits)"
+       (test-error)
+       (read-from-string "\"\\x;\""))
+(test* "string-reader hex-escape error cases 2 (integer overflow)"
+       (test-error)
+       (read-from-string "\"\\x11111111111111111111111111111111;\""))
+(test* "string-reader hex-escape error cases 3 (out of unicode range)"
+       (test-error)
+       (read-from-string "\"\\x111111;\""))
+(test* "string-reader hex-escape legacy fallback" "\x11;1111"
+       (read-from-string "\"\\x111111\""))
+
 
 (test* "string-fill!" "ZZZZZZ"
        (string-fill! (string-copy "000000") #\Z))

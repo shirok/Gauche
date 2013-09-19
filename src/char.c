@@ -206,7 +206,7 @@ int Scm_IsDelimiter(ScmChar ch)
 ScmChar Scm_ReadXdigitsFromString(const char *buf, int ndigits,
                                   const char **nextbuf)
 {
-    int i, val = 0;
+    int i, val = 0, overflow = FALSE;
     for (i=0; i<ndigits; i++) {
         if (!isxdigit(buf[i])) {
             if (nextbuf == NULL) return SCM_CHAR_INVALID;
@@ -215,9 +215,14 @@ ScmChar Scm_ReadXdigitsFromString(const char *buf, int ndigits,
                 return val;
             }
         }
-        val = val * 16 + Scm_DigitToInt(buf[i], 16);
+        if (val >= INT_MAX/16) {
+            overflow = TRUE;
+        } else {
+            val = val * 16 + Scm_DigitToInt(buf[i], 16);
+        }
     }
     if (nextbuf != NULL) *nextbuf = buf+i;
+    if (overflow) return SCM_CHAR_INVALID;
     return (ScmChar)val;
 }
 
@@ -246,6 +251,9 @@ ScmChar Scm_ReadXdigitsFromPort(ScmPort *port, int delimited,
             break;
         }
         buf[i] = (char)c;       /* we know c is single byte char here. */
+        if (val >= INT_MAX/16) {
+            return SCM_CHAR_INVALID; /* would overflow */
+        }
         val = val * 16 + dig;
     }
     buf[i] = 0;

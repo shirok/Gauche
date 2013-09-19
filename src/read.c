@@ -770,8 +770,15 @@ static ScmChar read_string_xdigits(ScmPort *port, int ndigs, int key,
 
         if (ch == ';') {
             int size, length;
-            const char *pbuf = Scm_DStringPeek(&ds, &size, &length);
-            r = Scm_ReadXdigitsFromString(pbuf, size, NULL);
+            if (nread == 0) {
+                Scm_DStringPutc(&ds, ch);
+                r = SCM_CHAR_INVALID;
+            } else {
+                const char *pbuf = Scm_DStringPeek(&ds, &size, &length);
+                r = Scm_ReadXdigitsFromString(pbuf, size, NULL);
+                if (r > 0x10ffff || r < 0) r = SCM_CHAR_INVALID;
+                else r = Scm_UcsToChar(r);
+            }
         } else {
             Scm_UngetcUnsafe(ch, port);
             if (strict_r7rs || nread < 2) {
@@ -809,8 +816,8 @@ static ScmChar read_string_xdigits(ScmPort *port, int ndigs, int key,
             Scm_DStringAdd(&emsg, SCM_STRING(Scm_DStringGet(&ds, SCM_STRING_IMMUTABLE)));
         }
         Scm_ReadError(port,
-                      "Bad '\\%c' escape sequence in a string literal: %s",
-                      key, Scm_DStringGetz(&ds));
+                      "Bad \\%c escape sequence in a string literal: `%s'",
+                      key, Scm_DStringGetz(&emsg));
     }
     return r;
 }
