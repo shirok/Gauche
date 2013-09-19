@@ -1,3 +1,8 @@
+2013-09-18  Shiro Kawai  <shiro@acm.org>
+
+	* src/string.c (Scm_DStringPeek): Added.  Useful to avoid allocation
+	  when we use dstr just as a temporary variable-sized buffer.
+
 2013-09-17  Shiro Kawai  <shiro@acm.org>
 
 	* src/gen-unicode.scm: Added code generator for unicode numeric value

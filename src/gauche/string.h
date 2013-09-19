@@ -328,6 +328,7 @@ SCM_EXTERN void        Scm_DStringInit(ScmDString *dstr);
 SCM_EXTERN int         Scm_DStringSize(ScmDString *dstr);
 SCM_EXTERN ScmObj      Scm_DStringGet(ScmDString *dstr, int flags);
 SCM_EXTERN const char *Scm_DStringGetz(ScmDString *dstr);
+SCM_EXTERN const char *Scm_DStringPeek(ScmDString *dstr, int *size, int *len);
 SCM_EXTERN void        Scm_DStringPutz(ScmDString *dstr, const char *str,
 				       int siz);
 SCM_EXTERN void        Scm_DStringAdd(ScmDString *dstr, ScmString *str);

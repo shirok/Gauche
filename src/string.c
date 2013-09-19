@@ -1663,7 +1663,7 @@ void Scm__DStringRealloc(ScmDString *dstr, int minincr)
 }
 
 /* Retrieve accumulated string. */
-static const char *dstring_getz(ScmDString *dstr, int *plen, int *psiz)
+static const char *dstring_getz(ScmDString *dstr, int *psiz, int *plen, int noalloc)
 {
     ScmSmallInt size, len;
     char *buf;
@@ -1671,9 +1671,13 @@ static const char *dstring_getz(ScmDString *dstr, int *plen, int *psiz)
         /* we only have one chunk */
         size = dstr->current - dstr->init.data;
         len = dstr->length;
-        buf = SCM_NEW_ATOMIC2(char*, size+1);
-        memcpy(buf, dstr->init.data, size);
-        buf[size] = '\0';
+        if (noalloc) {
+            buf = dstr->init.data;
+        } else {
+            buf = SCM_NEW_ATOMIC2(char*, size+1);
+            memcpy(buf, dstr->init.data, size);
+            buf[size] = '\0';
+        }
     } else {
         ScmDStringChain *chain = dstr->anchor;
         char *bptr;
@@ -1707,7 +1711,7 @@ static const char *dstring_getz(ScmDString *dstr, int *plen, int *psiz)
 ScmObj Scm_DStringGet(ScmDString *dstr, int flags)
 {
     int len, size;
-    const char *str = dstring_getz(dstr, &len, &size);
+    const char *str = dstring_getz(dstr, &size, &len, FALSE);
     return SCM_OBJ(make_str(len, size, str, flags|SCM_STRING_TERMINATED));
 }
 
@@ -1716,7 +1720,19 @@ ScmObj Scm_DStringGet(ScmDString *dstr, int flags)
 const char *Scm_DStringGetz(ScmDString *dstr)
 {
     int len, size;
-    return dstring_getz(dstr, &len, &size);
+    return dstring_getz(dstr, &size, &len, FALSE);
+}
+
+/* Returns the current content of DString, along with byte size and character
+   length. The returned pointer may not be NUL-terminated.
+   
+   Unlike Scm_DStringGet[z], returned pointer can directly points into
+   the internal buffer of Scm_DString; especially, this never allocates
+   if DString only uses initial buffer.  The caller should be aware that
+   the returned content may be altered by further DString operation. */
+const char *Scm_DStringPeek(ScmDString *dstr, int *size, int *len)
+{
+    return dstring_getz(dstr, size, len, TRUE);
 }
 
 void Scm_DStringPutz(ScmDString *dstr, const char *str, int size)
