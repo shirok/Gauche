@@ -200,7 +200,7 @@ void Scm_WriteSymbolName(ScmString *snam, ScmPort *port, ScmWriteContext *ctx,
                     SCM_PUTC('\\', port);
                     SCM_PUTC(ch, port);
                 } else if (special[ch] & 4) {
-                    Scm_Printf(port, "\\x%02x", ch);
+                    Scm_Printf(port, "\\x%02x;", ch);
                 } else {
                     SCM_PUTC(ch, port);
                 }
