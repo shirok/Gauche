@@ -1705,8 +1705,8 @@ static const char *dstring_getz(ScmDString *dstr, int *psiz, int *plen, int noal
         Scm_Error("ScmDString: total size too big: %ld", size);
     }
 #endif
-    *plen = (int)len;
-    *psiz = (int)size;
+    if (plen) *plen = (int)len;
+    if (psiz) *psiz = (int)size;
     return buf;
 }
 
