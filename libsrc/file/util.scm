@@ -790,7 +790,7 @@
 ;; object.  We'll fix that later.)
 (define (remove-file file)
   (or (sys-unlink file)
-      (error "File does not exist:" file)))
+      (error <system-error> :errno ENOENT "File does not exist:" file)))
 (define delete-file remove-file)
 
 (define (remove-files . paths)
