@@ -117,7 +117,7 @@ extern unsigned int __cdecl _controlfp(unsigned int, unsigned int);
 #define SCM_FP_ENSURE_DOUBLE_PRECISION_END() \
       _controlfp(old_fpc_val__, _MCW_PC); }
 
-#elif defined(_FPU_GETCW)       /* linux */
+#elif defined(_FPU_GETCW) && defined(_FPU_EXTENDED) /* linux x86 */
 
 #define SCM_FP_ENSURE_DOUBLE_PRECISION_BEGIN()        \
     { fpu_control_t old_fpc_val__, new_fpc_val__;     \
