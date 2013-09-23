@@ -45,6 +45,11 @@
 (test-parse "a|b" '(0 #f (alt #\a #\b)))
 (test-parse "[ab]" '(0 #f #[ab]))
 (test-parse "[^ab]" '(0 #f (comp . #[ab])))
+(test-parse "\\x0d;\\x0a;" '(0 #f #\return #\newline))
+(test-parse "\\x0dbc\\x0acd" ;legacy fallback
+            '(0 #f (seq #\return #\b #\c) (seq #\newline #\c #\d)))
+(test-parse "\\u000dbc;" '(0 #f (seq #\return #\b #\c #\;)))
+(test-parse "\x0d;[\x0a;-\x0d]" '(0 #f #\return #[\u000a-\u000d]))
 (test-parse "." '(0 #f any))
 (test-parse "^" '(0 #f bol))
 (test-parse "$" '(0 #f eol))

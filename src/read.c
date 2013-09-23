@@ -354,6 +354,13 @@ inline static int char_word_case_fold(int c)
     return (c >= 0 && c < 128 && (ctypes[(unsigned char)c]&2));
 }
 
+/* R7RS 7.1.1 <delimiter> */
+static int char_is_delimiter(ScmChar ch)
+{
+    return ((ch < 0x80 && strchr("()\";| \t\n\r", ch) != NULL)
+            || SCM_CHAR_EXTRA_WHITESPACE(ch));
+}
+
 static void read_nested_comment(ScmPort *port, ScmReadContext *ctx)
 {
     int nesting = 0;
@@ -597,6 +604,139 @@ static ScmObj read_item(ScmPort *port, ScmReadContext *ctx)
     }
 }
 
+/*--------------------------------------------------------
+ * Common routine to handle hex-digit escape \xNN etc.
+ */
+
+/*
+   Hex-escape sequence can appear in the following places:
+
+   - character literals      #\x1b
+   - string literals         "\x1b;("
+   - symbol literals         |\x1b;|
+   - character set literals  #[\x1b;-\x1f;]
+   - regexp literals         #/\x1b;+ /
+
+   Legacy Gauche supports fixed-digit syntax.
+
+   \xN{2}   - char code up to 256 in _native encoding_
+   \uN{4}   - unicode codepoint in BMP
+   \UN{8}   - unicode codepoint
+
+   New (R7RS) syntax has variable number of digits, terminated by ';'
+
+   \xN{1,}; - unicode codepoint
+
+   There's an ambiguity in '\x' case - we first try to read it as R7RS syntax,
+   then falls back to legacy syntax, by default.  Because of this backtrack,
+   the API is a bit complicated.
+
+   Scm_ReadXdigitsFromString reads from char* buffer, up to buflen octets.
+   The preceding backslash and a character 'x', 'u' or 'U' should already
+   be read.  The character is passed to KEY.  It also receives
+   ScmReadContextFlags; only SCM_READ_LEGACY and SCM_READ_STRICT_R7 matter.
+
+   Character literal doesn't take terminating ';'.  TERMINATOR character
+   indicates whether we expect terminator or not.
+
+   NEXTBUF is an output variable points to the next character on success.
+   Returns the retrieved decoded character, or SCM_CHAR_INVALID on error.
+
+   Scm_ReadXdigitsFromPort is a convenience routine on top of
+   Scm_ReadXdigitsFromString, when the caller is reading from a port.
+   Since we need look ahead arbitrary number of characters, we can't just
+   return a retrieved character.  The procedure takes ScmDString to which
+   the read characters (the decoded character, plus remaining hexdigit
+   characters) are accumulated.   When the escape syntax is invalid,
+   it returns #<string> of prefetched characters.  On success, it returns
+   #t.
+*/
+
+ScmChar Scm_ReadXdigitsFromString(const char *buf,
+                                  int buflen,
+                                  ScmChar key, /* x, u or U */
+                                  int flags, /* ScmReadContextFlags */
+                                  int terminator, /* TRUE expecting ';' */
+                                  const char **nextbuf)
+{
+    int legacy_fallback = TRUE;
+
+    if (key == 'x' && !(flags & SCM_READ_LEGACY)) {
+        int val = 0, i;
+        int overflow = FALSE;
+        for (i=0; i<buflen; i++) {
+            if (isxdigit(buf[i])) {
+                val = val*16 + Scm_DigitToInt(buf[i], 16);
+                if (val > 0x10ffff) overflow = TRUE;
+            } else if (terminator && buf[i] == ';' && i > 0) {
+                /* R7RS syntax */
+                *nextbuf = buf+i+1;
+                return overflow? SCM_CHAR_INVALID : Scm_UcsToChar(val);
+            } else {
+                break;
+            }
+        }
+        if (!terminator && i == buflen) {
+            *nextbuf = buf+i;
+            return overflow? SCM_CHAR_INVALID:Scm_UcsToChar(val);
+        }
+        /* Fallback to legacy syntax */
+        legacy_fallback = TRUE;
+    }
+    if (flags&SCM_READ_STRICT_R7) return SCM_CHAR_INVALID;
+    else {
+        int val = 0, i;
+        int ndigits = (key == 'u')? 4 : (key == 'x')? 2 : 8;
+        if (ndigits > buflen) return SCM_CHAR_INVALID;
+        for (i=0; i<ndigits; i++) {
+            if (!isxdigit(buf[i])) return SCM_CHAR_INVALID;
+            val = val * 16 + Scm_DigitToInt(buf[i], 16);
+        }
+        *nextbuf = buf + ndigits;
+        if (!legacy_fallback) val = Scm_UcsToChar(val);
+        return val;
+    }
+}
+
+/* On success, parsed char and other prefetched hexdigits are added
+   to BUF and returns #t.  Otherwise the prefetched string is returned. */
+ScmObj Scm_ReadXdigitsFromPort(ScmPort *port, int key, int flags,
+                               int incompletep, ScmDString *buf)
+{
+    ScmDString ds;
+    int r, numchars;
+    const char *chars, *next;
+
+    Scm_DStringInit(&ds);
+    for (;;) {
+        int ch = Scm_GetcUnsafe(port);
+        if (ch == ';') {
+            Scm_DStringPutc(&ds, ch);
+            break;
+        }
+        if (ch == EOF || ch >= 0x80 || !isxdigit(ch)) {
+            Scm_UngetcUnsafe(ch, port);
+            break;
+        }
+        Scm_DStringPutc(&ds, ch);
+    }
+    
+    chars = Scm_DStringPeek(&ds, &numchars, NULL);
+
+    r = Scm_ReadXdigitsFromString(chars, numchars, key, flags, TRUE, &next);
+    if (r != SCM_CHAR_INVALID) {
+        if (incompletep) Scm_DStringPutb(buf, r);
+        else             Scm_DStringPutc(buf, r);
+        if (next - chars < numchars) {
+            Scm_DStringPutz(buf, next, numchars - (next-chars));
+        }
+        return SCM_TRUE;
+    } else {
+        return Scm_MakeString(chars, numchars, -1, SCM_STRING_COPYING);
+    }
+}
+
+
 /*----------------------------------------------------------------
  * List
  */
@@ -715,89 +855,19 @@ static ScmObj read_quoted(ScmPort *port, ScmObj quoter, ScmReadContext *ctx)
  * String
  */
 
-/* Handling \xNN;, \uNNNN, \UNNNNNNNN escapes.
-   Some historical context:
-
-     Originally Gauche uses fixed-width numeric escapes. 
-       \xN{2}    - A raw byte code.
-       \uN{4}    - Unicode character in BMP.
-       \UN{8}    - Unicode character.
-     R7RS defines this:
-       \xN{1,};  - Unicode character.
-
-   Unfortunately two usage of \x are incompatible.  To ease transition,
-   we support the following criterion:
-
-   - If we read \x, read ahead as many hexdigits as possible.  If the
-     first non-hexdigit char is ';', we get R7RS syntax.  Otherwise,
-     if we have more than two hexdigits, take the first two for a
-     byte code, and use the rest as the part of string.
-
-   Theoretically we need to buffer unlimited number of hexdigits
-   for backtrack.  In practice we can reasonably expect the number of
-   contiguous hexdigits wouldn't be too big.  So we use a fixed-size
-   buffer first, and fall back to DString later.
- */
-static ScmChar read_string_xdigits(ScmPort *port, int ndigs, int key,
-                                   int incompletep, int strict_r7rs,
-                                   const char **nextbuf, int *nextbufsiz) 
+/* Handling \xNN;, \uNNNN, \UNNNNNNNN escapes.  To make it easier
+   to support both legacy \xN{2} syntax and new \xN{1,} syntax,
+   we read-ahead as many hexdigits as possible first, then parse it,
+   and append the result to BUF, along with any unused digits. */
+static void read_string_xdigits(ScmPort *port, int key, int flags,
+                                int incompletep, ScmDString *buf)
 {
-    /* If ndigs > 0, hexdigits are stored in buf.  Otherwise, hexdigits
-       are stored in ds. */
-    char buf[9];
-    ScmDString ds;
-    int nread;                  /* # of hexdigits */
-    ScmChar r;                  /* result */
-
-    if (ndigs > 0) {
-        /* Fixed size.  \u, \U or legacy \x */
-        r = Scm_ReadXdigitsFromPort(port, FALSE, ndigs, buf, &nread);
-    } else {
-        /* Ambiguous case.   */
-        ScmChar ch;
-
-        *nextbufsiz = 0;
-        Scm_DStringInit(&ds);
-        for (nread = 0; ; nread++) {
-            ch = Scm_GetcUnsafe(port);
-            if (ch == SCM_CHAR_INVALID) {
-                r = SCM_CHAR_INVALID;
-                goto err;
-            }
-            if (!(ch < 0x80 && isxdigit(ch))) break;
-            Scm_DStringPutc(&ds, ch);
-        }
-
-        if (ch == ';') {
-            int size, length;
-            if (nread == 0) {
-                Scm_DStringPutc(&ds, ch);
-                r = SCM_CHAR_INVALID;
-            } else {
-                const char *pbuf = Scm_DStringPeek(&ds, &size, &length);
-                r = Scm_ReadXdigitsFromString(pbuf, size, NULL);
-                if (r > 0x10ffff || r < 0) r = SCM_CHAR_INVALID;
-                else r = Scm_UcsToChar(r);
-            }
-        } else {
-            Scm_UngetcUnsafe(ch, port);
-            if (strict_r7rs || nread < 2) {
-                r = SCM_CHAR_INVALID;
-            } else {
-                /* legacy compatibility.  backtrack. */
-                const char *pbuf = Scm_DStringGetz(&ds);
-                r = Scm_ReadXdigitsFromString(pbuf, 2, nextbuf);
-                *nextbufsiz = nread - 2;
-            }
-        }
-    }
- err:
-    if (r == SCM_CHAR_INVALID) {
-        ScmDString emsg;
-        int c, i;
+    ScmObj bad = Scm_ReadXdigitsFromPort(port, key, flags, incompletep, buf);
+    if (SCM_STRINGP(bad)) {
         /* skip chars to the end of string, so that the reader will read
            after the erroneous string */
         for (;;) {
+            int c;
             if (incompletep) c = Scm_GetbUnsafe(port);
             else c = Scm_GetcUnsafe(port);
             if (c == EOF || c == '"') break;
@@ -806,20 +876,10 @@ static ScmChar read_string_xdigits(ScmPort *port, int ndigs, int key,
                 else c = Scm_GetcUnsafe(port);
             }
         }
-        /* construct an error message */
-        Scm_DStringInit(&emsg);
-        Scm_DStringPutc(&emsg, '\\');
-        Scm_DStringPutc(&emsg, key);
-        if (ndigs > 0) {
-            Scm_DStringPutz(&emsg, buf, ndigs);
-        } else {
-            Scm_DStringAdd(&emsg, SCM_STRING(Scm_DStringGet(&ds, SCM_STRING_IMMUTABLE)));
-        }
         Scm_ReadError(port,
-                      "Bad \\%c escape sequence in a string literal: `%s'",
-                      key, Scm_DStringGetz(&emsg));
+                      "Bad \\%c escape sequence in a string literal: `\\%c%A'",
+                      key, key, bad);
     }
-    return r;
 }
 
 static ScmObj read_string(ScmPort *port, int incompletep,
@@ -861,44 +921,15 @@ static ScmObj read_string(ScmPort *port, int incompletep,
             case '\\': ACCUMULATE('\\'); break;
             case '0': ACCUMULATE(0); break;
             case 'x': {
-                int cc;
-                if (ctx->flags & SCM_READ_LEGACY) {
-                    cc = read_string_xdigits(port, 2, 'x', incompletep, FALSE,
-                                             NULL, NULL);
-                    ACCUMULATE(cc);
-                } else {
-                    const char *buf;
-                    int bufsiz;
-                    cc = read_string_xdigits(port, -1, 'x', incompletep,
-                                             (ctx->flags & SCM_READ_STRICT_R7),
-                                             &buf, &bufsiz);
-                    ACCUMULATE(cc);
-                    if (bufsiz > 0) {
-                        Scm_DStringPutz(&ds, buf, bufsiz);
-                    }
-                }
+                read_string_xdigits(port, 'x', ctx->flags, incompletep, &ds);
                 break;
             }
-            case 'u': {
-                int cc;
+            case 'u': case 'U': {
                 if (ctx->flags & SCM_READ_STRICT_R7) {
-                    Scm_ReadError(port, "\\u in string literal isn't allowed "
-                                  "in strinct-r7rs mode");
+                    Scm_ReadError(port, "\\%c in string literal isn't allowed "
+                                  "in strinct-r7rs mode", c);
                 }
-                cc = read_string_xdigits(port, 4, 'u', incompletep, FALSE,
-                                         NULL, NULL);
-                ACCUMULATE(Scm_UcsToChar(cc));
-                break;
-            }
-            case 'U': {
-                int cc;
-                if (ctx->flags & SCM_READ_STRICT_R7) {
-                    Scm_ReadError(port, "\\U in string literal isn't allowed "
-                                  "in strinct-r7rs mode");
-                }
-                cc = read_string_xdigits(port, 8, 'U', incompletep, FALSE,
-                                         NULL, NULL);
-                ACCUMULATE(Scm_UcsToChar(cc));
+                read_string_xdigits(port, c, ctx->flags, incompletep, &ds);
                 break;
             }
                 /* R6RS-style line continuation handling*/
@@ -1008,7 +1039,7 @@ static ScmObj read_char(ScmPort *port, ScmReadContext *ctx)
 
         if (ctx->flags & SCM_READ_STRICT_R7) {
             ScmChar following = Scm_GetcUnsafe(port);
-            if (!Scm_IsDelimiter(following)) {
+            if (!char_is_delimiter(following)) {
                 Scm_Error("Character literal isn't delimited: #\\%s%C ...",
                           name, following);
             }
@@ -1026,22 +1057,24 @@ static ScmObj read_char(ScmPort *port, ScmReadContext *ctx)
 
         /* handle #\x1f etc. */
         if (cname[0] == 'x' && isxdigit(cname[1])) {
-            int code = Scm_ReadXdigitsFromString(cname+1, namesize-1, NULL);
-            if (code < 0) goto unknown;
-            if (ctx->flags & SCM_READ_LEGACY) {
-                /* in legacy mode, #\xNN uses native charactor code */
-                return SCM_MAKE_CHAR(code);
-            } else {
-                return SCM_MAKE_CHAR(Scm_UcsToChar(code));
-            }
+            const char *nextptr;
+            ScmChar code = Scm_ReadXdigitsFromString(cname+1, namesize-1,
+                                                     'x', 0, FALSE, &nextptr);
+            if (code == SCM_CHAR_INVALID || *nextptr != '\0') goto unknown;
+            return SCM_MAKE_CHAR(code);
         }
         /* handle #\uxxxx or #\uxxxxxxxx*/
         if ((cname[0] == 'u') && isxdigit(cname[1])
             && !(ctx->flags & SCM_READ_STRICT_R7)) {
-            int code;
             if (namesize >= 5 && namesize <= 9) {
-                code = Scm_ReadXdigitsFromString(cname+1, namesize-1, NULL);
-                if (code >= 0) return SCM_MAKE_CHAR(Scm_UcsToChar(code));
+                const char *nextptr;
+                ScmChar code = Scm_ReadXdigitsFromString(cname+1,
+                                                         namesize-1,
+                                                         'x', 0, FALSE,
+                                                         &nextptr);
+                if (code >= 0 && *nextptr == '\0') {
+                    return SCM_MAKE_CHAR(code);
+                }
             }
             /* if we come here, it's an error. */
             Scm_ReadError(port, "Bad UCS character code: #\\%s", cname);
@@ -1170,13 +1203,15 @@ static ScmObj read_escaped_symbol(ScmPort *port, ScmChar delim, int interned,
                 SCM_DSTRING_PUTC(&ds, c);
             } else {
                 switch (c) {
-                case 'x':       /* R7RS-style hex escape. */
-                    c = Scm_ReadXdigitsFromPort(port, TRUE, 8, buf, &digs);
-                    if (c == SCM_CHAR_INVALID) {
-                        Scm_ReadError(port, "invalid hex escape in a symbol literal: \\x%s", buf);
+                case 'x': {
+                    /* R7RS-style hex escape. */
+                    ScmObj bad = Scm_ReadXdigitsFromPort(port, 'x', ctx->flags,
+                                                         FALSE, &ds);
+                    if (SCM_STRINGP(bad)) {
+                        Scm_ReadError(port, "invalid hex escape in a symbol literal: \\x%C", bad);
                     }
-                    SCM_DSTRING_PUTC(&ds, Scm_UcsToChar(c));
                     break;
+                }
                 case '\\': case '|': SCM_DSTRING_PUTC(&ds, c); break;
                 case 'a': SCM_DSTRING_PUTC(&ds, '\a'); break;
                 case 'b': SCM_DSTRING_PUTC(&ds, '\b'); break;

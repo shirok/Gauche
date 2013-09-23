@@ -94,6 +94,15 @@ SCM_EXTERN ScmObj Scm_ReadFromCString(const char *string);
 SCM_EXTERN void   Scm_ReadError(ScmPort *port, const char *fmt, ...);
 
 /*
+ * Common utilities to handle hex-digit escapes
+ */
+SCM_EXTERN ScmChar Scm_ReadXdigitsFromString(const char *, int,
+                                             ScmChar, int, int,
+                                             const char**);
+SCM_EXTERN ScmObj  Scm_ReadXdigitsFromPort(ScmPort *port, int key, int flags,
+                                           int incompletep, ScmDString *buf);
+
+/*
  * SRFI-10 hash-comma syntax
  */
 SCM_EXTERN ScmObj Scm_DefineReaderCtor(ScmObj symbol, ScmObj proc,

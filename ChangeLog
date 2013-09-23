@@ -1,3 +1,11 @@
+2013-09-22  Shiro Kawai  <shiro@acm.org>
+
+	* src/read.c (Scm_ReadXdigitsFromString, Scm_ReadXdigitsFromPort):
+	  Rewritten to handle \x, \u and \U hex-digit escapes consistently,
+	  with the support of bothnew R7RS-style syntax and legacy syntax.
+	  They used to be in char.c, but moved to read.c.  The API has been
+	  changed (INCOMPATIBLE CHANGE).
+
 2013-09-18  Shiro Kawai  <shiro@acm.org>
 
 	* src/read.c (read_string), src/string.c (string_putc): Switched to

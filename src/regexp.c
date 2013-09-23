@@ -336,7 +336,7 @@ static ScmObj rc1_read_integer(regcomp_ctx *ctx);
 static ScmObj rc1_group_name(regcomp_ctx *ctx);
 static ScmObj rc1_lex_minmax(regcomp_ctx *ctx);
 static ScmObj rc1_lex_open_paren(regcomp_ctx *ctx);
-static ScmChar rc1_lex_xdigits(ScmPort *port, int ndigs, int key);
+static ScmObj rc1_lex_xdigits(ScmPort *port, int key);
 
 /*----------------------------------------------------------------
  * pass1 - parser
@@ -423,15 +423,8 @@ static ScmObj rc1_lex(regcomp_ctx *ctx)
         case 'e': return SCM_MAKE_CHAR(0x1b);
         case 'b': return SCM_SYM_WB;
         case 'B': return SCM_SYM_NWB;
-        case 'x':
-            ch = rc1_lex_xdigits(ctx->ipat, 2, 'x');
-            return SCM_MAKE_CHAR(ch);
-        case 'u':
-            ch = rc1_lex_xdigits(ctx->ipat, 4, 'u');
-            return SCM_MAKE_CHAR(Scm_UcsToChar(ch));
-        case 'U':
-            ch = rc1_lex_xdigits(ctx->ipat, 8, 'U');
-            return SCM_MAKE_CHAR(Scm_UcsToChar(ch));
+        case 'x': case 'u': case 'U':
+            return rc1_lex_xdigits(ctx->ipat, ch);
         case 'd':
             cs = Scm_GetStandardCharSet(SCM_CHAR_SET_DIGIT);
             rc_register_charset(ctx, SCM_CHAR_SET(cs));
@@ -481,33 +474,48 @@ static ScmObj rc1_lex(regcomp_ctx *ctx)
     /*NOTREACHED*/
 }
 
-/* Read \x, \u, \U escape sequence in the regexp spec. */
-static ScmChar rc1_lex_xdigits(ScmPort *port, int ndigs, int key)
+/* Read \x, \u, \U escape sequence in the regexp spec.
+   This may read-ahead some hexdigit characters.  In such case, it
+   returns SEQ node. */
+static ScmObj rc1_lex_xdigits(ScmPort *port, int key)
 {
-    char buf[8];
-    int nread;
-    ScmChar r;
-    SCM_ASSERT(ndigs <= 8);
-    r = Scm_ReadXdigitsFromPort(port, FALSE, ndigs, buf, &nread);
-    if (r == SCM_CHAR_INVALID) {
-        ScmDString ds;
-        int c, i;
+    ScmDString buf;
+
+    Scm_DStringInit(&buf);
+    ScmObj bad = Scm_ReadXdigitsFromPort(port, key, 0, FALSE, &buf);
+    if (SCM_STRINGP(bad)) {
         /* skip chars to the end of regexp, so that the reader will read
            after the erroneous string */
         for (;;) {
+            int c;
             SCM_GETC(c, port);
             if (c == EOF || c == '/') break;
             if (c == '\\') SCM_GETC(c, port);
         }
         /* construct an error message */
-        Scm_DStringInit(&ds);
-        Scm_DStringPutc(&ds, '\\');
-        Scm_DStringPutc(&ds, key);
-        for (i=0; i<nread; i++) Scm_DStringPutc(&ds, (unsigned char)buf[i]);
-        Scm_Error("Bad '\\%c' escape sequence in a regexp literal: %s",
-                  key, Scm_DStringGetz(&ds));
+        Scm_ReadError(port,
+                      "Bad '\\%c' escape sequence in a regexp literal: \\%c%A",
+                      key, key, bad);
+    } else {
+        const char *chars;
+        int size, len;
+        ScmChar ch;
+    
+        chars = Scm_DStringPeek(&buf, &size, &len);
+        if (len == 1) {
+            SCM_CHAR_GET(chars, ch);
+            return SCM_MAKE_CHAR(ch);
+        } else {
+            ScmObj h = SCM_NIL, t = SCM_NIL;
+            SCM_APPEND1(h, t, SCM_SYM_SEQ);
+            while (len-- > 0) {
+                SCM_CHAR_GET(chars, ch);
+                chars += SCM_CHAR_NBYTES(ch);
+                SCM_APPEND1(h, t, SCM_MAKE_CHAR(ch));
+            }
+            return h;
+        }
     }
-    return r;
 }
 
 /* Called after '+', '*' or '?' is read, and check if there's a
