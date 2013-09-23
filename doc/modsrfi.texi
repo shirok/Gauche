@@ -4345,14 +4345,50 @@ SRFI-43のいくつかの関数は組み込みになっています。@ref{Vecto
 
 @defun vector-unfold f length seed @dots{}
 [SRFI-43]
+Creates a vector of length @var{length}, filling elements
+left to right by calling @var{f} repeatedly.  
+
+The procedure @var{f} must take as many arguments as
+one plus number of seed values, and must return the same number
+of values.  The first argument is the index.  The first return
+value is used for the element of the result vector, and the
+rest of return values are passed to the next call of @var{f}.
+
+@example
+(vector-unfold (^[i x] (values (cons i x) (* x 2))) 8 1)
+ @result{} #((0 . 1) (1 . 2) (2 . 4) (3 . 8)
+    (4 . 16) (5 . 32) (6 . 64) (7 . 128))
+@end example
 @end defun
 
 @defun vector-unfold-right f length seed @dots{}
 [SRFI-43]
+Creates a vector of length @var{length}, filling elements
+right to left by calling @var{f} repeatedly.  
+
+The procedure @var{f} must take as many arguments as
+one plus number of seed values, and must return the same number
+of values.  The first argument is the index.  The first return
+value is used for the element of the result vector, and the
+rest of return values are passed to the next call of @var{f}.
+
+@example
+(vector-unfold-right (^[i x] (values (cons i x) (* x 2))) 8 1)
+ @result{} #((0 . 128) (1 . 64) (2 . 32) (3 . 16)
+    (4 . 8) (5 . 4) (6 . 2) (7 . 1))
+@end example
 @end defun
 
 @defun vector-reverse-copy vec :optional start end
 [SRFI-43]
+Copies the vector @var{vec} with reversing its elements.
+Optional @var{start} and @var{end} arguments can limit
+the range of the input.
+
+@example
+(vector-reverse-copy '#(a b c d e) 1 4)
+ @result{} #(d c b)
+@end example
 @end defun
 
 @defun vector-append vec @dots{}
@@ -4555,14 +4591,41 @@ Swaps vector @var{vec}'s @code{i}-th and @code{j}-th elements.
 
 @defun vector-reverse! vec :optional start end
 [SRFI-43]
+Reverse the elements of @var{vec}.  Returns an undefined value.
+Optional @var{start} and @var{end} arguments can limit
+the range of operation.
+
+@example
+(rlet1 v (vector 'a 'b 'c 'd 'e)
+  (vector-reverse! v 0 4))
+  @result{} #(d c b a e)
+@end example
+
 @end defun
 
 @defun vector-copy! target tstart source :optional sstart send
 [SRFI-43]
+Copies the content of @var{source} vector intto the @var{target} vector
+starting from @var{tstart} in the target.
+Optional @var{sstart} and @var{send} limits the range of source
+vector.
+
+@example
+(rlet1 v (vector 'a 'b 'c 'd 'e)
+  (vector-copy! v 2 '#(1 2)))
+  @result{} #(a b 1 2 e)
+@end example
 @end defun
 
 @defun vector-reverse-copy! target tstart source :optional sstart send
 [SRFI-43]
+Like @code{vector-copy!}, but reverses the order of elements from @var{start}.
+
+@example
+(rlet1 v (vector 'a 'b 'c 'd 'e)
+  (vector-reverse-copy! v 2 '#(1 2)))
+  @result{} #(a b 2 1 e)
+@end example
 @end defun
 
 @c EN
@@ -4573,10 +4636,12 @@ Swaps vector @var{vec}'s @code{i}-th and @code{j}-th elements.
 
 @defun reverse-vector->list vec :optional start end
 [SRFI-43]
+Same as @code{(reverse (vector->list vec start end))}, but more efficient.
 @end defun
 
 @defun reverse-list->vector list :optional start end
 [SRFI-43]
+Same as @code{(reverse (list->vector list start end))}, but more efficient.
 @end defun
 
 @c ----------------------------------------------------------------------
