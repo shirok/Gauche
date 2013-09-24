@@ -1235,7 +1235,7 @@ On the other hand, since @code{require} and @code{use} is recognized
 by the compiler, the specified file is loaded even if the form
 is in the conditional expression.   If you really need to load
 a file on certain condition, use @code{load} or do dispatch in macro
-(i.e. at compile time).
+(e.g. @code{cond-expand} form (@xref{Feature conditional}).)
 @c JP
 @item require はコンパイル時に評価される
 上記の裏返しですが、@code{require}と@code{use}はコンパイル時に
@@ -1243,6 +1243,7 @@ a file on certain condition, use @code{load} or do dispatch in macro
 置いておいても、指定されたファイルは条件にかかわらず読み込まれてしまいます。
 どうしてももし条件によって読み込むかどうかを変えたい場合は、@code{load}を使うか、
 条件判断自体をマクロで行うようにしてください。
+(例えば、@code{cond-expand}フォーム等を使って。(@ref{Feature conditional}参照))
 @c COMMON
 @end table
 

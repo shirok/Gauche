@@ -829,123 +829,6 @@ Gauche はそれぞれの @var{requirement} をひとつずつチェックし、
 @end deffn
 
 @c ----------------------------------------------------------------------
-@c @node Record types, Let-values, Feature-based program configuration language, Library modules - SRFIs
-@c @section @code{srfi-9} - Record types
-@c @c NODE レコード型, @code{srfi-9} - レコード型
-
-@c @deftp {Module} srfi-9
-@c @mdindex srfi-9
-@c @c EN
-@c Contains a macro to use record types.  A record type is implemented on
-@c top of Gauche's object system.
-
-@c The SRFI-9 record type is not as powerful as the object system, but
-@c it will be useful if you want your program to be portable.
-
-@c See also @ref{SLIB-compatible record type},
-@c which provides an SCM-compatible
-@c procedural interface of record types.
-@c @c JP
-@c このモジュールはレコード型を使うマクロを含んでいます。レコード型は
-@c Gauche のオブジェクトシステム上で実装されています。
-
-@c SRFI-9 のレコード型はオブジェクトシステムほどには強力ではありませんが、
-@c ポータブルなプログラムを書くときには役に立ちます。
-
-@c ちなみに、レコード型に対するSCMコンパチブルな
-@c 手続き的APIを提供する@ref{SLIB-compatible record type}モジュールもあります。
-@c @c COMMON
-@c @end deftp
-
-@c @defmac define-record-type name (constructor init-tag @dots{}) predicate (field accessor [modifier]) @dots{}
-@c @c EN
-@c Creates a record type and binds it to @var{name}.
-@c In Gauche, a record type is just a subclass of @code{<record>}.
-
-@c @var{constructor} is bound to a procedure that creates an instance
-@c of the record type,
-@c which takes as many arguments as @var{init-tag} @dots{}.  Each
-@c @var{init-tag} corresponds to one of the field name, and the fields
-@c of the created record instance is initialized accordingly.  Not all
-@c of fields need to appear in @var{init-tag}; uninitialized fields remain
-@c unbound.
-
-@c @var{predicate} is bound to a procedure that takes one argument, and
-@c returns #t if the argument is an instance of the defined record type,
-@c #f otherwise.
-
-@c Followings are field specifications.  The record has fields
-@c @var{field} @dots{}, and each field can be accessed by a method
-@c @var{accessor}.  If @var{modifier} is given to the field, it is bound
-@c to a method that sets the value to the field.
-
-@c Example:
-@c @c JP
-@c レコード型を作成し、それを @var{name} に束縛します。Gauche では、
-@c レコード型は @code{<record>} のサブクラスです。
-
-@c @var{constructor} はそのレコード型のインスタンスを作成する手続きに
-@c 束縛されており、@var{init-tag} @dots{} として多くの引数をとります。
-@c それぞれの @var{init-tag} はフィールド名に対応しており、作成された
-@c レコード型のインスタンスのフィールドはそれぞれの  @var{init-tag}
-@c にしたがって、初期化されます。@var{init-tag} には全てのフィールドが
-@c ある必要なはく、初期化されないフィールドは、未束縛のままになります。
-
-@c @var{predicate} は、一つの引数をとり、もしその引数が、定義された
-@c レコード型のインスタンスであれば、@code{#t} を返し、さもなければ、
-@c @code{#f} を返すような手続きに束縛されます。
-
-@c そのあとは、フィールドの仕様です。レコードはフィールド
-@c @var{field} @dots{} をもち、それぞれのフィールドはメソッド
-@c @var{accessor} によってアクセス可能です。そのフィールドに対して
-@c @var{modifier} が与えられていれば、それは、そのフィールドの
-@c 値をセットするメソッドに束縛されます。
-
-@c 例:
-@c @c COMMON
-@c @example
-@c (define-record-type pare
-@c   (kons x y) pare?
-@c   (x kar set-kar!)
-@c   (y kdr))
-@c  @result{} #<class pare>
-
-@c (pare? (kons 2 3)) @result{} #t
-@c (pare? (cons 2 3)) @result{} #f
-
-@c (kar (kons 2 3)) @result{} 2
-@c (kdr (kons 2 3)) @result{} 3
-
-@c (let ((x (kons 2 3)))
-@c   (set-kar! x -1)
-@c   (kar x)) @result{} -1
-@c @end example
-
-@c @c EN
-@c Conceptually, the above example is expanded into the following
-@c sequence of forms.
-@c @c JP
-@c 概念的には、上の例は以下の形式のならびに展開されます。
-@c @c COMMON
-@c @example
-@c (define-class pare (<record>) (x y))
-@c (define (kons x y)
-@c   (let ((obj (make pare)))
-@c     (slot-set! obj 'x x)
-@c     (slot-set! obj 'y y)
-@c     obj))
-@c (define (pare? obj) (is-a? obj pare))
-@c (define-method kar ((obj pare))
-@c   (slot-ref obj 'x))
-@c (define-method set-kar! ((obj pare) value)
-@c   (slot-set! obj 'x value))
-@c (define-method kdr ((obj pare))
-@c   (slot-ref obj 'y))
-@c @end example
-
-@c @end defmac
-
-@c ----------------------------------------------------------------------
 @node Let-values, String library, Feature-based program configuration language, Library modules - SRFIs
 @section @code{srfi-11} - Let-values
 
@@ -4948,6 +4831,7 @@ the optional argument.
 
 @deftp {Module} srfi-106
 @mdindex srfi-106
+@c EN
 A portable basic socket interface.
 
 Although comprehensive network API is provided by @code{gauche.net}
@@ -4961,9 +4845,26 @@ but the interface may differ.
 A socket object created by this srfi's API is an instance
 of Gauche's @code{<socket>}, so it can be passed to the API
 in @code{gauche.net} and vice versa.
+@c JP
+ポータブルなソケットインタフェースです。
+
+Gaucheは@code{gauche.net}モジュールで包括的なネットワークAPIを提供しています
+(@ref{Networking}参照)。しかしそれはGauche特有のものです。
+このsrfiはソケット操作の小さなサブセットを提供し、
+簡単なネットワーキングを必要とするアプリケーションをポータブルに書けるようにします。
+
+@code{gauche.net}と同じ名前を持ち、インタフェースが異なる手続きがあることに注意してください。
+
+このsrfiのAPIで作られるソケットオブジェクトはGaucheの@code{<socket>}オブジェクト
+そのものなので、@code{gauche.net}のAPIに渡したり、またその逆も可能です。
+@c COMMON
 @end deftp
 
+@c EN
 @subheading Socket object
+@c JP
+@subheading ソケットオブジェクト
+@c COMMON
 
 @defun make-client-socket node service :optional ai-family ai-socktype ai-flags ai-protocol
 [SRFI-106]
