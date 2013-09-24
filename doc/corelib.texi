@@ -19599,6 +19599,34 @@ EFBIG
 @end example
 @end defun
 
+@defun sys-errno->symbol k
+@defunx sys-symbol->errno symbol
+@c EN
+These procedures convert between integer error number and the symbol
+of its unix name (e.g. @code{EINTR}).
+
+If the given error number or name isn't available on the running
+platform, those procedures return @code{#f}.  See @code{sys-strerror} 
+above for potentially available error names.
+
+Valid error names and their actual values differ among platforms.
+These procedures make it easy to write portable meta-code that deal
+with system errors.
+
+@c TODO: Note about Windows platforms.
+@c JP
+これらの手続きは、整数のエラー番号と、Unixでのエラー名を表すシンボル(例:@code{EINTR})とを
+相互に変換します。
+
+与えられたエラー番号もしくはエラー名が実行中のプラットフォームで有効でない場合は
+@code{#f}が返されます。使えるかもしれないエラー名については上の@code{sys-strerror}
+の項を参照してください。
+
+有効なエラー名およびその整数値はプラットフォーム毎に異なります。
+これらの手続きは、システムエラーを扱うメタなコードをポータブルに書く時に役立つでしょう。
+@c COMMON
+@end defun
+
 @node Time, Process management, System inquiry, System interface
 @subsection Time
 @c NODE 時間

@@ -1,3 +1,8 @@
+2013-09-23  Shiro Kawai  <shiro@acm.org>
+
+	* src/libsys.scm (sys-errno->symbol, sys-symbol->errno): Mapping
+	  between integer error numbers and their symbolic names.
+
 2013-09-22  Shiro Kawai  <shiro@acm.org>
 
 	* src/read.c (Scm_ReadXdigitsFromString, Scm_ReadXdigitsFromPort):
