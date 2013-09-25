@@ -1,3 +1,13 @@
+2013-09-24  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/exception.h, src/error.c: Changed the role of 'message'
+	  slot in ScmMessageCondition, to enable R7RS error-object-message
+	  and error-object-irritants with keeping ABI compatibility.
+	  Scheme-level interface is compatibile, but C code accessing
+	  message field directly would get something a bit different from
+	  what it got in previous versions.  Those code should use
+	  Scm_ConditionMessage() API instead of direct field access.
+
 2013-09-23  Shiro Kawai  <shiro@acm.org>
 
 	* src/libsys.scm (sys-errno->symbol, sys-symbol->errno): Mapping

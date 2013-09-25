@@ -100,18 +100,66 @@ static ScmObj message_allocate(ScmClass *klass, ScmObj initargs)
     return SCM_OBJ(e);
 }
 
+/* See comment on gauche/exception.h about hack in 'message' slot.
+   TODO: Remove this hack on 1.0 release. */
 static ScmObj message_get(ScmMessageCondition *obj)
 {
-    return SCM_MESSAGE_CONDITION(obj)->message;
+    ScmObj msglist = obj->message;
+    if (SCM_PAIRP(msglist)) return SCM_CAR(msglist);
+    else return msglist;
 }
 
 static void message_set(ScmMessageCondition *obj, ScmObj val)
 {
-    obj->message = val;
+    ScmObj msglist = obj->message;
+    if (SCM_PAIRP(msglist)) SCM_SET_CAR(msglist, val);
+    else SCM_MESSAGE_CONDITION(obj)->message = SCM_LIST2(val, val);
+}
+
+static ScmObj message_prefix_get(ScmMessageCondition *obj)
+{
+    ScmObj msglist = obj->message;
+    if (SCM_PAIRP(msglist) && SCM_PAIRP(SCM_CDR(msglist))) {
+        return SCM_CADR(msglist);
+    } else {
+        return msglist;
+    }
+}
+
+static void message_prefix_set(ScmMessageCondition *obj, ScmObj val)
+{
+    ScmObj msglist = obj->message;
+    if (SCM_PAIRP(msglist) && SCM_PAIRP(SCM_CDR(msglist))) {
+        SCM_SET_CAR(SCM_CDR(msglist), val);
+    } else {
+        obj->message = SCM_LIST2(msglist, val);
+    }
+}
+
+static ScmObj message_args_get(ScmMessageCondition *obj)
+{
+    ScmObj msglist = obj->message;
+    if (SCM_PAIRP(msglist) && SCM_PAIRP(SCM_CDR(msglist))) {
+        return SCM_CDDR(msglist);
+    } else {
+        return SCM_NIL;
+    }
+}
+
+static void message_args_set(ScmMessageCondition *obj, ScmObj val)
+{
+    ScmObj msglist = obj->message;
+    if (SCM_PAIRP(msglist) && SCM_PAIRP(SCM_CDR(msglist))) {
+        SCM_SET_CDR(SCM_CDR(msglist), val);
+    } else {
+        obj->message = Scm_Cons(msglist, Scm_Cons(msglist, val));
+    }
 }
 
 static ScmClassStaticSlotSpec message_slots[] = {
     SCM_CLASS_SLOT_SPEC("message", message_get, message_set),
+    SCM_CLASS_SLOT_SPEC("message-prefix",   message_prefix_get, message_prefix_set),
+    SCM_CLASS_SLOT_SPEC("message-args", message_args_get, message_args_set),
     SCM_CLASS_SLOT_SPEC_END()
 };
 
@@ -418,7 +466,7 @@ ScmObj Scm_MakeThreadException(ScmClass *klass, ScmVM *thread)
 ScmObj Scm_MakeError(ScmObj message)
 {
     ScmError *e = SCM_ERROR(message_allocate(SCM_CLASS_ERROR, SCM_NIL));
-    e->message = message;
+    e->message = SCM_LIST2(message, message);
     return SCM_OBJ(e);
 }
 
@@ -426,7 +474,7 @@ ScmObj Scm_MakeSystemError(ScmObj message, int en)
 {
     ScmSystemError *e =
         SCM_SYSTEM_ERROR(syserror_allocate(SCM_CLASS_SYSTEM_ERROR, SCM_NIL));
-    e->common.message = message;
+    e->common.message = SCM_LIST2(message, message);
     e->error_number = en;
     return SCM_OBJ(e);
 }
@@ -435,7 +483,7 @@ ScmObj Scm_MakeReadError(ScmObj message, ScmPort *port, int line)
 {
     ScmReadError *e =
         SCM_READ_ERROR(readerror_allocate(SCM_CLASS_READ_ERROR, SCM_NIL));
-    e->common.message = message;
+    e->common.message = SCM_LIST2(message, message);
     e->port = port;
     e->line = line;
     return SCM_OBJ(e);
@@ -457,12 +505,12 @@ int Scm_ConditionHasType(ScmObj c, ScmObj k)
 ScmObj Scm_ConditionMessage(ScmObj c)
 {
     if (SCM_MESSAGE_CONDITION_P(c)) {
-        return SCM_MESSAGE_CONDITION(c)->message;
+        return message_get(SCM_MESSAGE_CONDITION(c));
     } else if (SCM_COMPOUND_CONDITION_P(c)) {
         ScmObj cp;
         SCM_FOR_EACH(cp, SCM_COMPOUND_CONDITION(c)->conditions) {
             if (SCM_MESSAGE_CONDITION_P(SCM_CAR(cp))) {
-                return SCM_MESSAGE_CONDITION(SCM_CAR(cp))->message;
+                return message_get(SCM_MESSAGE_CONDITION(SCM_CAR(cp)));
             }
         }
     }
@@ -679,7 +727,7 @@ void Scm_PortError(ScmPort *port, int reason, const char *msg, ...)
             peclass = SCM_CLASS_PORT_ERROR; break;
         }
         pe = porterror_allocate(peclass, SCM_NIL);
-        SCM_ERROR(pe)->message = smsg;
+        SCM_ERROR(pe)->message = SCM_LIST2(smsg, smsg);
         SCM_PORT_ERROR(pe)->port = port;
 
         if (en != 0) {

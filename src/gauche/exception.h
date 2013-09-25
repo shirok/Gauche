@@ -80,9 +80,28 @@ SCM_CLASS_DECL(Scm_ConditionClass);
 SCM_EXTERN int Scm_ConditionHasType(ScmObj c, ScmObj k);
 
 /* <message-condition> : condition with message. */
+/* R7RS requires error condition to store 'message' and 'irritants' separately.
+   We can't add fields during 0.9 to keep ABI compatibility.  So, as the
+   temporary solution, we clam them into the 'message' fields.  The message
+   field now contain a list of one or more elements, as follows:
+    (<preformatted-message> <message-prefix> <irritant> ...)
+   Where <preformatted-message> is a string and that's what we get
+   to access "message" slot of a error condition.  <message-prefix> and
+   <irritant>s are just what is passed to "error" procedure:
+      (error <message-prefix> <irritant> ...)
+   For errorf and the family, it's tricky to separate <irritant>s.  For now
+   we preformat the message and treat it as if it was given as the
+   <message-prefix>, with no irritants.
+
+   In Scheme level we won't show this structure.  If Scheme code accesses
+   the message slot, we return <preformatetd-message>.
+
+   C code that access 'message' slot directly needs to be modified.
+ */
+
 typedef struct ScmMessageConditionRec {
     ScmCondition common;
-    ScmObj message;             /* message */
+    ScmObj message;  /* message - should be accessed via Scm_ConditionMessage */
 } ScmMessageCondition;
 
 SCM_CLASS_DECL(Scm_MessageConditionClass);
@@ -109,7 +128,7 @@ SCM_CLASS_DECL(Scm_ErrorClass);
 #define SCM_CLASS_ERROR            (&Scm_ErrorClass)
 #define SCM_ERRORP(obj)            SCM_ISA(obj, SCM_CLASS_ERROR)
 #define SCM_ERROR(obj)             ((ScmError*)(obj))
-#define SCM_ERROR_MESSAGE(obj)     SCM_ERROR(obj)->message
+#define SCM_ERROR_MESSAGE(obj)     Scm_ConditionMessage(obj)
 
 SCM_EXTERN ScmObj Scm_MakeError(ScmObj message);
 

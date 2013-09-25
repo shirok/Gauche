@@ -65,7 +65,10 @@
        (if (null? msgs)
          (apply make msg keys)
          (apply make msg :message (mkmsg (car msgs) (cdr msgs)) keys)))]
-    [else (make <error> :message (mkmsg msg args))])))
+    [else (make <error>
+            :message (mkmsg msg args)
+            :message-prefix msg
+            :message-args args)])))
 
 (define-in-module gauche (errorf fmt . args)
   (raise

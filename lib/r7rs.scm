@@ -308,9 +308,12 @@
   (define (error-object? e) (condition-has-type? e <error>))
   (define (error-object-message e)
     (if (condition-has-type? e <message-condition>)
-      (condition-ref e 'message)
-      (format "object is not a condition: ~s" e))) ;TODO: should reraise an error?
-  (define error-object-irritants (undefined))      ;WRITEME
+      (condition-ref e 'message-prefix)
+      "")) ; for now, we take permissive stance.
+  (define (error-object-irritants e)
+    (if (condition-has-type? e <message-condition>)
+      (condition-ref e 'message-args)
+      '()))
   (define (read-error? e) (condition-has-type? e <read-error>))
   (define (file-error? e) ;TODO: have a distinct type <file-error>
     ;; for the time being, we use heuristics
