@@ -2994,7 +2994,8 @@ that is, you can mix @code{define-values} in internal defines.
 @defspec define-constant variable expression
 @defspecx define-constant (variable . formals) body @dots{}
 @c EN
-Like @code{define}, but that the compiler assumes
+This form is only effective in toplevel.
+Like top-level @code{define}, but that the compiler assumes
 the value of @var{variable} won't change and generates
 optimized code.
 
@@ -3002,19 +3003,30 @@ An error is signaled when you use @code{set!} to change the value
 of @var{variable}.   It is allowed to redefine @var{variable},
 but a warning is printed.
 @c JP
-@code{define}と同じように動作しますが、
+このフォームはトップレベルでしか使えません。
+トップレベルの@code{define}と同じように動作しますが、
 コンパイラは@var{variable}の値が今後変更されないものとして
 最適化されたコードを生成します。
 
 @var{variable}の値を@code{set!}で変更しようとするとエラーとなります。
 @var{variable}を再定義することは許されますが、警告が表示されます。
 @c COMMON
+
+@c EN
+There's no ``internal @code{define-constant}'', since the compiler
+can figure out whether a local binding is mutated,
+and optimize code accordingly, without a help of declarations.
+@c JP
+``内部@code{define-constant}'' にあたるものはありません。宣言が無くても
+コンパイラはどのローカル束縛が変更されないかを検出して最適化できるからです。
+@c COMMON
 @end defspec
 
 @defspec define-in-module module variable expression
 @defspecx define-in-module module (variable . formals) body @dots{}
 @c EN
-This form creates a global binding of @var{variable} in
+This form must appear in the toplevel.
+It creates a global binding of @var{variable} in
 @var{module}, which must be either a symbol of the module name or
 a module object.  If @var{module} is a symbol, the named module
 must exist.
@@ -3023,7 +3035,8 @@ must exist.
 
 The second form is merely a syntactic sugar of:
 @c JP
-この形式は@var{variable}のグローバルな束縛を@var{module}中に作成します。
+この形式はトップレベルでしか使えません。
+@var{variable}のグローバルな束縛を@var{module}中に作成します。
 @var{module}はモジュール名を表すシンボルか、モジュールオブジェクトで
 なければなりません。@var{module}がシンボルの場合、その名前を持つ
 モジュールが既に存在している必要があります。
@@ -3342,7 +3355,9 @@ Gaucheで使えるfeature identifier一覧は下を見てください。
 @itemx gauche-X.X.X
 Indicates you're running on Gauche.  @code{X.X.X} is the gauche's version
 (e.g. @code{gauche-0.9.4}), in case you want to have code
-for specific Gauche version.  (It might be
+for specific Gauche version.  (Such feature identifier is suggested by
+R7RS; but it might not be useful if we have means to compare versions.
+Something to consider in future versions.)
 
 @item gauche.os.windows
 @itemx gauche.os.cygwin
@@ -3350,7 +3365,7 @@ Defined on Windows-native platform and Cygwin/Windows platform, respectively.
 If neither is defined you can assume it's a unix variant.
 (Cygwin is supposedly
 unix variant, but corners are different enough to deserve it's own
-feature identifier.)  
+feature identifier.)
 
 @item gauche.ces.utf8
 @itemx gauche.ces.eucjp
