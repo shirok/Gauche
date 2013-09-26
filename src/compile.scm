@@ -1576,6 +1576,16 @@
                          [(var init) `(,var ,init . ,src)]
                          [_ (error "malformed internal define:" (caar exprs))])
                (pass1/body-rec rest (cons def intdefs) cenv))]
+            [(global-eq? head 'define-syntax cenv) ; internal syntax definition
+             (match args
+               [(name trans-spec)
+                (let* ([trans (pass1/eval-macro-rhs
+                               'define-syntax trans-spec
+                               (cenv-add-name cenv (variable-name name)))]
+                       [newenv (cenv-extend cenv `((,name . ,trans)) SYNTAX)])
+                  (pass1/body-rec rest intdefs newenv))]
+               [_ (error "syntax-error: malformed internal define-syntax:"
+                         `(,op ,@args))])]
             [(global-eq? head 'begin cenv) ;intersperse forms
              (pass1/body-rec (append (imap (cut cons <> src) args) rest)
                              intdefs cenv)]
