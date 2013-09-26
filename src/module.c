@@ -262,8 +262,17 @@ static ScmGloc *search_binding(ScmModule *module, ScmSymbol *symbol,
     if (!exclude_self) {
         v = Scm_HashTableRef(external_only? m->external:m->internal,
                              SCM_OBJ(symbol), SCM_FALSE);
-        if (SCM_GLOCP(v) && !SCM_GLOC_PHANTOM_BINDING_P(SCM_GLOC(v))) {
-            return SCM_GLOC(v);
+        if (SCM_GLOCP(v)) {
+            if (SCM_GLOC_PHANTOM_BINDING_P(SCM_GLOC(v))) {
+                /* If we're here, the symbol is external to MODULE but
+                   the real GLOC is somewhere in imported or inherited
+                   modules.  We turn off external_only switch so that
+                   when we search inherited modules we look into it's
+                   internal bindings. */
+                external_only = FALSE;
+            } else {
+                return SCM_GLOC(v);
+            }
         }
         if (stay_in_module) return NULL;
     }
@@ -314,13 +323,14 @@ static ScmGloc *search_binding(ScmModule *module, ScmSymbol *symbol,
             if (!SCM_SYMBOLP(sym)) return NULL;
             symbol = SCM_SYMBOL(sym);
         }
-        if (external_only) {
-            v = Scm_HashTableRef(m->external, SCM_OBJ(symbol), SCM_FALSE);
-        } else {
-            v = Scm_HashTableRef(m->internal, SCM_OBJ(symbol), SCM_FALSE);
-        }
-        if (SCM_GLOCP(v) && !SCM_GLOC_PHANTOM_BINDING_P(SCM_GLOC(v))) {
-            return SCM_GLOC(v);
+        v = Scm_HashTableRef(external_only?m->external:m->internal,
+                             SCM_OBJ(symbol), SCM_FALSE);
+        if (SCM_GLOCP(v)) {
+            if (SCM_GLOC_PHANTOM_BINDING_P(SCM_GLOC(v))) {
+                external_only = FALSE; /* See above comment */
+            } else {
+                return SCM_GLOC(v);
+            }
         }
     }
     return NULL;

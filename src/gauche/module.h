@@ -87,7 +87,8 @@ enum {
     SCM_BINDING_INLINABLE = (1L<<2),      /*(M) inlinable binding */
     SCM_BINDING_EXTERNAL = (1L<<3)        /*(F) only search externally visible
                                             bindings, as if we're importing
-                                            the module. */
+                                            the module.  Currently used to
+                                            create alias binding. */
 };
 
 SCM_EXTERN ScmGloc *Scm_FindBinding(ScmModule *module, ScmSymbol *symbol,

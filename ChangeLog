@@ -1,5 +1,9 @@
 2013-09-25  Shiro Kawai  <shiro@acm.org>
 
+	* src/module.c (search_binding): Fixed a bug in transitive export; the
+	  bug prevented the 'only' modifier work on transitively exported
+	  symbols.
+
 	* src/compile.scm (pass1/body-rec): Support internal syntax definitions.
 
 2013-09-24  Shiro Kawai  <shiro@acm.org>
