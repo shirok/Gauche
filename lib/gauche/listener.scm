@@ -181,7 +181,7 @@
   (with-input-from-string str
     (^[]
       ;; charset that delimits token
-      (define special-chars #[\x00-\x20\"\'()\,\;\[\\\]\`{|}\x7f])
+      (define special-chars #[\u0000-\u0020\"\'()\,\;\[\\\]\`{|}\u007f])
 
       ;; main loop
       (define (rec closer)

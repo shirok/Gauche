@@ -83,7 +83,7 @@
     (map (^d (x->integer (m d))) '(1 2))))
 
 (define-constant *ct-token-chars*
-  (char-set-difference #[\x21-\x7e] #[()<>@,\;:\\\"/\[\]?=]))
+  (char-set-difference #[\u0021-\u007e] #[()<>@,\;:\\\"/\[\]?=]))
 
 ;; RFC2045 Content-Type header field
 ;; returns (<type> <subtype> (<attribute> . <value>) ...)
@@ -235,13 +235,13 @@
         [cslen (string-length (x->string charset))]
         [pass-through? (and (not force)
                             (ces-upper-compatible? charset 'ascii)
-                            (string-every #[\x00-\x7f] body))])
+                            (string-every #[\u0000-\u007f] body))])
     ;; estimates the length of an encoded word.  it is not trivial since
     ;; we have to ces-convert each segment separately, and there's no
     ;; general way to estimate the size of ces-converted string.
     ;; we throw in some heuristics here.
     (define (estimate-width s i)
-      (let1 na (string-count s #[\x00-\x7f] 0 i)
+      (let1 na (string-count s #[\u0000-\u007f] 0 i)
         (+ 6 cslen
            (if (eq? enc 'B)
              (ceiling (* (+ na (* (- i na) 3)) 4/3))

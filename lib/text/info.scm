@@ -64,7 +64,7 @@
 ;; Find bzip2 location
 (define bzip2  (find-file-in-paths "bzip2"))
 
-;; Read an info file FILE, and returns a list of strings splitted by ^_ (#\x1f)
+;; Read an info file FILE, and returns a list of strings splitted by ^_ (#\u001f)
 ;; If FILE is not found, look for compressed one.
 (define (read-info-file-split file opts)
   (define (with-input-from-info thunk)
@@ -80,12 +80,12 @@
           [else (error "can't find info file" file)]))
   (with-input-from-info
    (lambda ()
-     (let loop ([c (skip-while (char-set-complement #[\x1f]))]
+     (let loop ([c (skip-while (char-set-complement #[\u001f]))]
                 [r '()])
        (if (eof-object? c)
          (reverse! r)
-         (let* ([head (next-token #[\x1f\n] '(#[\x1f\n] *eof*))]
-                [body (next-token #[\n] '(#[\x1f] *eof*))])
+         (let* ([head (next-token #[\u001f\n] '(#[\u001f\n] *eof*))]
+                [body (next-token #[\n] '(#[\u001f] *eof*))])
            (loop (read-char) (acons head body r)))))))
   )
 
@@ -120,7 +120,7 @@
     (lambda ()
       (generator-for-each (^[line]
                             (rxmatch-case line
-                              (#/^Node: ([^\x7f]+)\x7f(\d+)/ (#f node count)
+                              (#/^Node: ([^\u007f]+)\u007f(\d+)/ (#f node count)
                                (hash-table-put! (ref info 'node-table)
                                                 node
                                                 (find-file (x->integer count))))

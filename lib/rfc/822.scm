@@ -109,7 +109,7 @@
         (let1 name (and-let* ([ (string? n) ]
                               [name (string-incomplete->complete n)]
                               [name (string-trim-both name)]
-                              [ (string-every #[\x21-\x39\x3b-\x7e] name) ])
+                              [ (string-every #[\u0021-\u0039\u003b-\u007e] name) ])
                      (string-downcase name))
           (cond
            [name
@@ -329,10 +329,10 @@
 
 (define (rfc822-invalid-header-field body)
   (cond [(string-incomplete? body) 'incomplete-string]
-        [(string-index body #[^\x01-\x7f]) 'bad-character]
+        [(string-index body #[^\u0001-\u007f]) 'bad-character]
         [else
          (let1 lines (string-split body "\r\n ")
            (cond [(any (^s (> (string-size s) 998)) lines) 'line-too-long]
-                 [(any (^s (string-index s #[\x0d\x0a])) lines) 'stray-crlf]
+                 [(any (^s (string-index s #[\u000d\u000a])) lines) 'stray-crlf]
                  [else #f]))]))
 

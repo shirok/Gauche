@@ -52,7 +52,7 @@
              (cond [(eof-object? c2) (write-char c acc) (accum c2 acc)]
                    [(char=? c2 #\,)
                     (write-char (read-char) acc) (accum (read-char) acc)]
-                   [(char-set-contains? #[\x00-\x20\),\;\\\]\}\x7f] c2)
+                   [(char-set-contains? #[\u0000-\u0020\),\;\\\]\}\u007f] c2)
                     (write-char c acc) (accum (read-char) acc)]
                    [else (cons (get-output-string acc) (insert))]))]
           [else (write-char c acc) (accum (read-char) acc)]))
