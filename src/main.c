@@ -169,6 +169,9 @@ void further_options(const char *optarg)
     else if (strcmp(optarg, "case-fold") == 0) {
         SCM_VM_RUNTIME_FLAG_SET(vm, SCM_CASE_FOLD);
     }
+    else if (strcmp(optarg, "warn-legacy-syntax") == 0) {
+        SCM_VM_RUNTIME_FLAG_SET(vm, SCM_READER_WARN_LEGACY);
+    }
     else if (strcmp(optarg, "test") == 0) {
         test_mode = TRUE;
     }

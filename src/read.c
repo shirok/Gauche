@@ -672,6 +672,8 @@ ScmChar Scm_ReadXdigitsFromString(const char *buf,
                 /* R7RS syntax */
                 *nextbuf = buf+i+1;
                 return overflow? SCM_CHAR_INVALID : Scm_UcsToChar(val);
+            } else if (terminator && i < 2) {
+                return SCM_CHAR_INVALID;
             } else {
                 break;
             }
@@ -684,7 +686,12 @@ ScmChar Scm_ReadXdigitsFromString(const char *buf,
         legacy_fallback = TRUE;
     }
     if (flags&SCM_READ_STRICT_R7) return SCM_CHAR_INVALID;
-    else {
+    if (!(flags&SCM_READ_LEGACY) && key == 'x'
+        && SCM_VM_RUNTIME_FLAG_IS_SET(Scm_VM(), SCM_READER_WARN_LEGACY)) {
+        Scm_Warn("Legacy \\x hex-escape: \\x%c%c", buf[0], buf[1]);
+    }
+
+    {
         int val = 0, i;
         int ndigits = (key == 'u')? 4 : (key == 'x')? 2 : 8;
         if (ndigits > buflen) return SCM_CHAR_INVALID;

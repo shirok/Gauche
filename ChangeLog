@@ -1,3 +1,13 @@
+2013-09-28  Shiro Kawai  <shiro@acm.org>
+
+	* src/read.c: Issue warning when we see legacy \xNN hex-digit escape,
+	  if SCM_READER_WARN_LEGACY runtime flag is set.  We'll also use
+	  this flag for some other planned syntax changes (e.g. string
+	  interpolation syntax).
+	* src/main.c: Added -fwarn-legacy-syntax option that turns on the
+	  SCM_READER_WARN_LEGACY flag.  For the time being we treat it
+	  unofficial, let's see how useful it is.
+
 2013-09-25  Shiro Kawai  <shiro@acm.org>
 
 	* src/module.c (search_binding): Fixed a bug in transitive export; the
