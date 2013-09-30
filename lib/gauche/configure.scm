@@ -611,7 +611,7 @@
 ;;
 
 ;; API
-;; Common featuer for AC_CHECK_PROG, AC_PATH_PROG etc.
+;; Common feature for AC_CHECK_PROG, AC_PATH_PROG etc.
 ;; Search one of programs listed in PROGS within PATHS.
 ;; PATHS can be #f - then we use PATH enviornment variable.
 ;; For each found program, FILTER is called with full path of the program;
