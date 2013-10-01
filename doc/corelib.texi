@@ -8364,6 +8364,14 @@ and its cdr is used as a value.
 @end example
 @end defun
 
+@defun hash-table-copy ht
+@c EN
+Returns a new copy of a hash table @var{ht}.
+@c JP
+ハッシュテーブル@var{ht}のコピーを作って返します。
+@c COMMON
+@end defun
+
 @defun hash-table-get ht key :optional default
 @c EN
 Search @var{key} from a hash table @var{ht}, and returns its value
