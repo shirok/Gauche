@@ -4363,9 +4363,9 @@ MSBからビットを取り出します。
 @c COMMON
 
 @example
-(generator->list (bits->generator #b10110)
+(generator->list (bits->generator #b10110))
  @result{} (#f #t #t #f #t)
-(generator->list (reverse-bits->generator #b10110)
+(generator->list (reverse-bits->generator #b10110))
  @result{} (#t #f #t #t #f)
 @end example
 
