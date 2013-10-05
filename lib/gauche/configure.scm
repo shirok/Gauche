@@ -74,7 +74,7 @@
           cf-msg-checking cf-msg-result cf-msg-warn cf-msg-error
           cf-echo
           cf-define cf-ref cf$ cf-output cf-show-variables
-          check-for-programs cf-check-prog cf-path-prog))
+          cf-check-prog cf-path-prog))
 (select-module gauche.configure)
 
 ;; A package
@@ -159,6 +159,7 @@
      :tarname (cgen-safe-name-friendly (string-downcase package-name))))
   (initialize-default-definitions)
   (parse-command-line-arguments)
+  (check-directory-names)
   )
 
 (define (initialize-default-definitions)
@@ -177,6 +178,8 @@
   (cf-define 'MAKEFLAGS "")
 
   (cf-define 'default_prefix "/usr/local")
+  (cf-define 'prefix "NONE")       ;will be replaced by cf-output
+  (cf-define 'exec_prefix "NONE")  ;will be replaced by cf-output
   (cf-define 'bindir "${exec_prefix}/bin")
   (cf-define 'sbindir "${exec_prefix}/sbin")
   (cf-define 'libexecdir "${exec_prefix}/libexec")
@@ -196,7 +199,7 @@
   (cf-define 'libdir "${exec_prefix}/lib")
   (cf-define 'localedir "${datarootdir}/locale")
   (cf-define 'mandir "${datarootdir}/man")
-  
+
   (cf-define 'cross_compiling "no")
   (cf-define 'subdirs "")
   )
@@ -275,6 +278,30 @@
               (exit 1)]))
     ))
 
+(define (check-directory-names)
+  ;; --bindir etc. must have absolute pathnames, and no trailing slash
+  (dolist [var '(exec_prefix prefix bindir sbindir libexecdir datarootdir
+                 datadir sysconfdir sharedstatedir localstatedir includedir
+                 oldincludedir docdir infodir htmldir dvidir pdfdir psdir
+                 libdir localedir mandir)]
+    (let1 val (cf$ var)
+      (when (string-suffix? "/" val)
+        (cf-define var (string-trim-right val #[/])))
+      (unless (or (absolute-path? val)
+                  (string-prefix? "$" val)
+                  (and (memq var '(prefix exec_prefix))
+                       (member val '("NONE" ""))))
+        (exit 1 "absolute directory name required for --~a but got: ~a"
+              var val))))
+  ;; setup srcdir and builddir
+  (unless (cf-defined? 'srcdir)
+    (cf-define 'srcdir (sys-dirname (car (command-line)))))
+  (cf-define 'top_srcdir (cf$ 'srcdir))
+  (unless (cf-defined? 'builddir)
+    (cf-define 'builddir "."))
+  (cf-define 'top_builddir (cf$ 'builddir))
+  )
+
 (define (usage)
   (print "Usage: "(car (command-line))" args ...")
   (print "  Generate Makefiles and other files suitable for your system.")
@@ -319,24 +346,69 @@
    (^[name val] (hash-table-put! (ensure-package)'packages name val))))
 
 ;; API
+;; This is a macro, so that we can register helpstr to the global registry.
+;; Hence arguments must be literal.
+;(define-macro (cf-help-string cmdarg description)
+  
+
+;; API
 ;; Like AC_OUTPUT
 (define (cf-output . files)
-  (define defs (~ (ensure-package)'defs))
-  (define (subst m)
-    (let1 name (string->symbol (m 1))
-      (or (dict-get defs name #f)
-          (begin (warn "@~a@ isn't substituted." name)
-                 #`"@,|name|@"))))
-  (define (replace-1 line outp)
-    (display (regexp-replace-all #/@(\w+)@/ line subst) outp)
-    (newline outp))
+  (define base-defs (~ (ensure-package)'defs))
+  (define (make-subst path-prefix)
+    (receive (srcdir top_srcdir builddir top_builddir)
+        (adjust-srcdirs path-prefix)
+      (let1 defs (make-stacked-map (alist->hash-table
+                                    `((srcdir       . ,srcdir)
+                                      (top_srcdir   . ,top_srcdir)
+                                      (builddir     . ,builddir)
+                                      (top_builddir . ,top_builddir))
+                                    'eq?)
+                                   base-defs)
+        (^[m]
+          (let1 name (string->symbol (m 1))
+            (or (dict-get defs name #f)
+                (begin (warn "@~a@ isn't substituted." name)
+                       #`"@,|name|@")))))))
+  (define (adjust-srcdirs path-prefix)
+    (let ([srcdir    (~ base-defs'srcdir)]
+          [tsrcdir   (~ base-defs'top_srcdir)]
+          [builddir  (~ base-defs'builddir)]
+          [tbuilddir (~ base-defs'top_builddir)])
+      (if (equal? path-prefix ".")
+        (values srcdir tsrcdir builddir tbuilddir)
+        (let1 revpath ($ apply build-path
+                         $ map (^_ "..") (string-split path-prefix #[\\/]))
+          (values (if (equal? srcdir ".")
+                    srcdir
+                    (simplify-path (build-path srcdir path-prefix)))
+                  (simplify-path (build-path revpath tsrcdir))
+                  (if (equal? builddir ".")
+                    builddir
+                    (simplify-path (build-path builddir path-prefix)))
+                  (simplify-path (build-path revpath tbuilddir)))))))
+                  
+  (define (make-replace-1 output-file)
+    (let1 subst (make-subst (sys-dirname (simplify-path output-file)))
+      (^[line outp]
+        (display (regexp-replace-all #/@(\w+)@/ line subst) outp)
+        (newline outp))))
+
+  ;; Realize prefix and exec_prefix if they're not set.
+  (when (equal? (cf$ 'prefix) "NONE")
+    (cf-define 'prefix (cf$ 'default_prefix)))
+  (when (equal? (cf$ 'exec_prefix) "NONE")
+    (cf-define 'exec_prefix "${prefix}"))
   
   (dolist [f files]
-    (let1 inf #`",|f|.in"
+    (let1 inf (build-path (cf$'srcdir) #`",|f|.in")
       (unless (file-is-readable? inf)
         (error "Cannot read input file ~s" inf))
-      (file-filter-for-each replace-1 :input inf :output f
-                            :temporary-file #t :leave-unchanged #t))))
+      (unless (file-is-directory? (sys-dirname f))
+        (make-directory* (sys-dirname f)))
+      (file-filter-for-each (make-replace-1 f) :input inf :output f
+                            :temporary-file #t :leave-unchanged #t)))
+  0)
 
 ;; API
 ;; Show definitions.

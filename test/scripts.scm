@@ -51,6 +51,69 @@
   (test* #`"gauhce-config ,opt" (gauche-config opt) (run-gauche-config opt)))
 
 ;;=======================================================================
+(test-section "configure")
+
+(use gauche.configure)
+(test-module 'gauche.configure)
+
+(remove-files "test.o" "test2.o")
+(make-directory* "test.o/src")
+(make-directory* "test2.o")
+(let ([extdir (build-path (or (sys-getenv "top_srcdir") "..") "ext")])
+  (define (filter-copy infile outfile)
+    (file-filter (^[in out]
+                   (dolist [line (port->string-list in)]
+                     (display ($ regexp-replace-all* line #/@@/ ""
+                                 #/\(cf-output \"Makefile\"\)/
+                                 "(cf-output \"Makefile\" \"src/Makefile\")")
+                              out)
+                     (newline out)))
+                 :input infile
+                 :output outfile))
+  (filter-copy (build-path extdir "template.configure") "test.o/configure")
+  (filter-copy (build-path extdir "template.Makefile.in") "test.o/Makefile.in")
+
+  (with-output-to-file "test.o/src/Makefile.in"
+    (^[]
+      (print "srcdir = @srcdir@")
+      (print "top_srcdir = @top_srcdir@")
+      (print "builddir = @builddir@")
+      (print "top_builddir = @top_builddir@")))
+  )
+
+;; TODO: We haven't finished LOCAL_PATHS handling, so we give dummy
+;; arguments to configure now.  Remove those dummy arguments once
+;; we finish LOCAL_PATHS handling.
+(test* "running `configure' script" 0
+       (process-exit-status
+        (run-process `("../gosh" "-ftest" "./configure" "LOCAL_PATHS=x")
+                     :output *nulldev* :wait #t :directory "test.o")))
+(test* "Makefile substitution" '()
+       (and (file-exists? "test.o/Makefile")
+            (filter #/@\w+@/ (file->string-list "test.o/Makefile"))))
+(test* "VERSION generation" "1.0\n"
+       (and (file-exists? "test.o/VERSION")
+            (file->string "test.o/VERSION")))
+(test* "srcdir etc."
+       '("srcdir = ." "top_srcdir = .." "builddir = ." "top_builddir = ..")
+       (file->string-list "test.o/src/Makefile"))
+
+(test* "running `configure' script in different directory" 0
+       (process-exit-status
+        (run-process `("../gosh" "-ftest" "../test.o/configure" "LOCAL_PATHS=x")
+                     :output *nulldev* :wait #t :directory "test2.o")))
+
+(test* "Makefiles in proper builddir" '(#t #t)
+       (list (file-exists? "test2.o/Makefile")
+             (file-exists? "test2.o/src/Makefile")))
+
+(test* "srcdir etc."
+       '("srcdir = ../test.o/src" "top_srcdir = ../../test.o" "builddir = ." "top_builddir = ..")
+       (file->string-list "test2.o/src/Makefile"))
+
+(remove-files "test.o" "test2.o")
+
+;;=======================================================================
 (test-section "gauche-install")
 
 (define (run-install . args)

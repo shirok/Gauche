@@ -1,3 +1,8 @@
+2013-10-04  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/configure.scm: Added support for directory stuff
+	  (srcdir etc.), and added tests.
+
 2013-09-28  Shiro Kawai  <shiro@acm.org>
 
 	* src/read.c: Issue warning when we see legacy \xNN hex-digit escape,

@@ -3,32 +3,34 @@
 ;; Run ./configure (or gosh ./configure) to generate Makefiles.
 
 (use gauche.configure)
-(cf-init "@@package@@" "1.0" "shiro@acm.org")
 
-;; Set up gauche related commands.  The commands are set by scanning
-;; PATH.  You can override them by "GOSH=/my/gosh ./configure" etc.
-;; These variables may contain spaces in the pathnames (especially on
-;; Windows); Makefile.ins and other files that refer to those variables
-;; have to quote them properly.
-(cf-path-prog 'GOSH            "gosh")
-(cf-path-prog 'GAUCHE_CONFIG   "gauche-config")
-(cf-path-prog 'GAUCHE_PACKAGE  "gauche-package")
-(cf-path-prog 'GAUCHE_INSTALL  "gauche-install")
-(cf-path-prog 'GAUCHE_CESCONV  "gauche-cesconv")
+(define (main args)
+  (cf-init "@@package@@" "1.0" "shiro@acm.org")
 
-;; Usually these parameters are set by AC_PROG_CC, but we'd rather use
-;; the same one as Gauche has been compiled with.
-(cf-define 'SOEXT  (gauche-config "--so-suffix"))
-(cf-define 'OBJEXT (gauche-config "--object-suffix"))
-(cf-define 'EXEEXT (gauche-config "--executable-suffix"))
+  ;; Set up gauche related commands.  The commands are set by scanning
+  ;; PATH.  You can override them by "GOSH=/my/gosh ./configure" etc.
+  ;; These variables may contain spaces in the pathnames (especially on
+  ;; Windows); Makefile.ins and other files that refer to those variables
+  ;; have to quote them properly.
+  (cf-path-prog 'GOSH            "gosh")
+  (cf-path-prog 'GAUCHE_CONFIG   "gauche-config")
+  (cf-path-prog 'GAUCHE_PACKAGE  "gauche-package")
+  (cf-path-prog 'GAUCHE_INSTALL  "gauche-install")
+  (cf-path-prog 'GAUCHE_CESCONV  "gauche-cesconv")
 
-(cf-define 'GAUCHE_PKGINCDIR  (gauche-config "--pkgincdir"))
-(cf-define 'GAUCHE_PKGLIBDIR  (gauche-config "--pkglibdir"))
-(cf-define 'GAUCHE_PKGARCHDIR (gauche-config "--pkgarchdir"))
+  ;; Some common parameters
+  (cf-define 'SOEXT  (gauche-config "--so-suffix"))
+  (cf-define 'OBJEXT (gauche-config "--object-suffix"))
+  (cf-define 'EXEEXT (gauche-config "--executable-suffix"))
 
-;; Output
-(cf-echo (cf$ 'PACKAGE_VERSION) > "VERSION")
-(cf-output "Makefile")
+  (cf-define 'GAUCHE_PKGINCDIR  (gauche-config "--pkgincdir"))
+  (cf-define 'GAUCHE_PKGLIBDIR  (gauche-config "--pkglibdir"))
+  (cf-define 'GAUCHE_PKGARCHDIR (gauche-config "--pkgarchdir"))
+
+  ;; Output
+  (cf-echo (cf$ 'PACKAGE_VERSION) > "VERSION")
+  (cf-output "Makefile")
+  )
 
 ;; Local variables:
 ;; mode: scheme
