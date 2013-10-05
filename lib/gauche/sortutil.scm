@@ -8,6 +8,9 @@
 ;;;
 ;;; sort-by family is addition by SK.
 ;;;
+;;; modified to adopt srfi-95
+;;; modified to handle <sequence> object.  we don't use gauche.sequence
+;;; to avoid dependency.
 
 ;; To be autoloaded
 (define-module gauche.sortutil
@@ -23,28 +26,27 @@
 (define (default-less? x y)
   (< (compare x y) 0))
 
-;;; (sorted? sequence less?)
-;;; is true when sequence is a list (x0 x1 ... xm) or a vector #(x0 ... xm)
-;;; such that for all 1 <= i <= m,
-;;;	(not (less? (list-ref list i) (list-ref list (- i 1)))).
+;;; (sorted? sequence :optional less? key)
 
-(define (sorted? seq less?)
+
+(define (sorted? seq :optional (less? default-less?) (key identity))
   (cond
-   ((null? seq) #t)
-   ((vector? seq)
-    (let ((n (vector-length seq)))
+   [(null? seq) #t]
+   [(vector? seq)
+    (let [(n (vector-length seq))]
       (if (<= n 1)
         #t
-        (do ((i 1 (+ i 1)))
-            ((or (= i n)
-                 (less? (vector-ref seq (- i 1))
-                        (vector-ref seq i)))
-             (= i n)) )) ))
-   (else
-    (let loop ((last (car seq)) (next (cdr seq)))
+        (do [(i 1 (+ i 1))]
+            [(or (= i n)
+                 (less? (key (vector-ref seq (- i 1)))
+                        (key (vector-ref seq i))))
+             (= i n)]
+          )))]
+   [else
+    (let loop ([last (car seq)] [next (cdr seq)])
       (or (null? next)
-          (and (not (less? (car next) last))
-               (loop (car next) (cdr next)) )) )) ))
+          (and (not (less? (key (car next)) last))
+               (loop (car next) (cdr next)) )) )] ))
 
 ;;; (merge a b less?)
 ;;; takes two lists a and b such that (sorted? a less?) and (sorted? b less?)
