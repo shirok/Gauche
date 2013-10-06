@@ -109,8 +109,11 @@
 
   (define (transform-decl decl)
     (cond [(eq? (car decl) 'include-library-declarations)
-           ;; WRITEME
-           (error "include-library-declarations isn't supported yet:" decl)]
+           ;; TODO: This is too permissive---this allows the files
+           ;; to have not only library decls but also ordinary scheme
+           ;; expressions.  But this can delegate file searching business
+           ;; to 'include' syntax so it's an easy path.
+           `(include ,@(cdr decl))]
           [(memq (car decl)
                  '(export import include include-ci begin cond-expand))
            decl]
