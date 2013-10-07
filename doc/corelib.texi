@@ -16511,6 +16511,16 @@ to the number of elements.
 @c COMMON
 @end defun
 
+@defun sorted? seq cmpfn
+Returns @code{#t} iff elements in @var{seq} are in sorted
+order, regarding the compare function @var{cmpfn}.
+@end defun
+
+
+@defun merge a b cmpfn
+@defunx merge! a b cmpfn
+@end defun
+
 
 @c ----------------------------------------------------------------------
 @node System interface, Development helper API, Comparison and sorting, Core library
