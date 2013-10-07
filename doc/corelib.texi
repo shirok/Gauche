@@ -16519,6 +16519,12 @@ order, regarding the compare function @var{cmpfn}.
 
 @defun merge a b cmpfn
 @defunx merge! a b cmpfn
+Arguments @var{a} and @var{b} are lists, and their elements are
+sorted using the compare function @var{cmpfn}.  These procedures
+merges two list and returns a list, whose elements are sorted
+using @var{cmpfn}.  The destructive version @code{merge!} reuses
+cells in @var{a} and @var{b}; the returned list is @code{eq?} to
+either @var{a} or @var{b}.
 @end defun
 
 
