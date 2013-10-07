@@ -51,7 +51,7 @@ SCMFILES = srfi-0.scm \
        gauche/vecutil.scm gauche/condutil.scm gauche/portutil.scm \
        gauche/hashutil.scm gauche/treeutil.scm \
        gauche/modutil.scm gauche/libutil.scm gauche/sortutil.scm \
-       gauche/fileutil.scm gauche/sysutil.scm \
+       guache/generic-sortutil.scm gauche/fileutil.scm gauche/sysutil.scm \
        gauche/regexp.scm gauche/process.scm gauche/signal.scm \
        gauche/numerical.scm gauche/let-opt.scm gauche/logical.scm \
        gauche/vm/debugger.scm gauche/vm/insn-core.scm gauche/vm/insn.scm \
