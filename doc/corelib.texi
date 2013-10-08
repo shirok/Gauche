@@ -16341,6 +16341,12 @@ it reads the first form of the code and see if it is a
 @section Comparison and sorting
 @c NODE 比較とソート
 
+@c EN
+@subsection Comparison
+@c JP
+@subsection 比較
+@c COMMON
+
 @defun compare obj1 obj2
 @c EN
 A general comparison procedure.  Returns -1 if @var{obj1} is less than
@@ -16374,66 +16380,113 @@ for user-defined classes.
 @c COMMON
 @end deffn
 
-@defun sort seq :optional cmpfn
-@defunx sort! seq :optional cmpfn
 @c EN
-Sorts elements in a sequence @var{seq} (a list or a vector)
-in ascending order and returns the sorted sequence.
-@code{sort!} destructively reuses the original sequence.
-The sorting order is specified by @code{cmpfn}, which is
-a procedure takes two elements of @var{seq}, and returns @code{#t}
-if the first argument strictly precedes the second.
+@subsection Sorting and merging
 @c JP
-シーケンス@var{seq}(リストかベクタ)の要素を昇順にソートし、
-ソートされたシーケンスを返します。
-@code{sort!}は、オリジナルのシーケンスを破壊的に再利用します。
-ソート順は@code{cmpfn}で指定されます。@code{cmpfn}は@var{seq}のふたつの要素を
-引数に取り、最初の要素が厳密に2番目の要素より先行するものの場合は
-@code{#t}を返す手続きです。
+@subsection ソートとマージ
 @c COMMON
 
 @c EN
-Note that it is not guaranteed that, after @code{sort!},
-@var{seq} points to a sorted sequence.
-if @var{seq} is a list, the first pair of the original
-@var{seq} may no longer be the first in the sorted sequence.
-Always use the returned value of @code{sort!}.
+The interface of sorting and merging API complies SRFI-95, with the
+following extensions:
 @c JP
-@code{sort!}の後で@var{seq}が必ずしもソート済みのシーケンスを
-指すとは限らないことに注意してください。
-@var{seq}がリストの場合、オリジナルのリストの最初のペアが
-ソート済みリストでも最初に来るとは限りません。
-常に@code{sort!}の戻り値を使うようにしてください。
+ソートとマージのインタフェースはSRFI-95に準拠し、さらに次の点で拡張されています。
+@c COMMON
+
+@itemize @bullet
+@item
+@c EN
+You can sort not only lists, vectors and strings, but
+any sequence (an instance of @code{<sequence>}).
+@c JP
+リスト、ベクタ、文字列だけでなく、あらゆるシーケンス
+(@code{<sequence>}のインスタンス)をソートできます。
+@c COMMON
+@item
+@c EN
+You can omit comparison procedure; in that case,
+elements are compared in terms of @code{compare} procedure
+described above.
+@c JP
+比較関数を省略できます。省略された場合、
+要素同士は上で述べた@code{compare}関数を使って比較されます。
+@c COMMON
+@end itemize
+
+@defun sort seq :optional cmpfn keyfn
+@defunx sort! seq :optional cmpfn keyfn
+[SRFI-95+]
+@c EN
+Sorts elements in a sequence @var{seq}
+in ascending order and returns the sorted sequence.
+@code{sort!} destructively reuses the original sequence.
+
+You can pass an instance of any @code{<sequence>} as @var{seq};
+the same type of sequence will be returned.  For @code{sort}, the
+sequence type must have builder interface so that @code{sort} can
+build a new sequence of the same type (See @ref{Fundamental iterator creators}, 
+for the builder interface).
+For @code{sort!}, @var{seq} must be mutable.
+
+The sorting order is specified by @code{cmpfn}, which is
+a procedure takes two elements of @var{seq}, and returns @code{#t}
+if the first argument strictly precedes the second.
+When omitted, we use @code{(^[a b] (< (compare a b) 0))}.
+
+If the optional argument @var{keyfn} is given, the elements are
+first passed to it and the results are used for comparison.
+It is guaranteed that @var{keyfn} is called at most once per
+element.
+@c JP
+シーケンス@var{seq}の要素を昇順にソートし、
+ソートされたシーケンスを返します。
+@code{sort!}は、オリジナルのシーケンスを破壊的に再利用します。
+
+@var{seq}には@code{<sequence>}クラスのインスタンスを渡すことができます。
+同じ型のシーケンスが返されます。@code{sort}の場合、
+@var{seq}と同じ型のシーケンスを新たに作る必要があるので、
+@var{seq}の型はビルダーインタフェースを実装していなければなりません
+(ビルダーインタフェースについては@ref{Fundamental iterator creators}を参照)。
+@code{sort!}の場合、@var{seq}は変更可能でなければなりません。
+
+ソート順は@code{cmpfn}で指定されます。@code{cmpfn}は@var{seq}のふたつの要素を
+引数に取り、最初の要素が厳密に2番目の要素より先行する場合に
+@code{#t}を返す手続きです。
+省略された場合は@code{(^[a b] (< (compare a b) 0))}が使われます。
+
+省略可能な手続き引数@var{keyfn}が与えられた場合、
+要素はまず@var{keyfn}に渡され、その結果が比較に使われます。
+@var{keyfn}は各要素に対してたかだか1回しか呼ばれないことが保証されます。
 @c COMMON
 
 @example
 (sort '(("Chopin" "Frederic")
         ("Liszt" "Franz")
         ("Alkan" "Charles-Valentin"))
-      (lambda (x y) (string<? (car x) (car y))))
+      string<?
+      car)
   @result{} (("Alkan" "Charles-Valentin")
       ("Chopin" "Frederic")
       ("Liszt" "Franz"))
 @end example
 
 @c EN
-When @var{cmpfn} is omitted, the @code{compare} procedure
-is used to determine which element is @emph{less}.
-@c JP
-@var{cmpfn}が省略された場合は@code{compare}手続きが
-どちらの要素がより「小さい」かを判定するのに使われます。
-@c COMMON
-
-@c EN
 In the current implementation, quicksort and heapsort
-algorithm is used when @var{cmpfn} is omitted,
-and merge sort algorithm is used when @var{cmpfn} is given.
-This might be changed later.
+algorithm is used when bogh @var{cmpfn} and @var{keyfn} is omitted,
+and merge sort algorithm is used otherwise.  That is, the sort
+is stable if you pass at least @var{cmpfn} (note that to guarantee
+stability, @var{cmpfn} must return @code{#f} when given identical arguments.)
+SRFI-95 requires stability, but also requires @var{cmpfn} argument,
+so those procedures are upper-compatible to SRFI-95.
 @c JP
 現在の実装では、@var{cmpfn}が省略された場合は
 クィックソートとヒープソートを使い、
 @var{cmpfn}が与えられた場合はマージソートを使っています。
-これは将来変更されるかもしれません。
+すなわち、少なくとも@var{cmpfn}を指定すれば、ソートは安定であることが
+保証されます (ただし、安定であるためには
+@var{cmpfn}は等しい引数が与えられた時に必ず@code{#f}を返さなければなりません)。
+SRFI-95は安定性を要求しますが、同時に@var{cmpfn}が与えられることも要求するので、
+これらの手続きはSRFI-95の上位互換です。
 @c COMMON
 
 @c EN
@@ -16446,85 +16499,90 @@ add objects one at at time, you can also use treemaps
 @c COMMON
 @end defun
 
-@defun stable-sort seq :optional cmpfn
-@defunx stable-sort! seq :optional cmpfn
+@defun sorted? seq :optional cmpfn keyfn
+[SRFI-95+]
 @c EN
-Sort a sequence @var{seq} (a list or a vector), using stable sort algorithm
-(currently they are using merge sort).
-The sorting order is specified by @code{cmpfn}, which is
-a procedure takes two elements of @var{list}, and returns @code{#t}
-if the first argument strictly precedes the second.
+Returns @code{#t} iff elements in @var{seq} are in sorted order.
+You can pass any sequence to @var{seq}.
+The optional argument @var{cmpfn} and @var{keyfn} are the same as
+
+In SRFI-95, @var{cmpfn} can't be omitted.
+@code{sort}.
 @c JP
-安定ソートアルゴリズム(現時点ではマージソート)を使って、並び @var{seq}
-(リストまたはベクタ)をソートします。ソート順は @code{cmpfn} で指定します。
-@code{cmpfn} は @var{list} のふたつの要素を引数として取る関数で、
-厳密に、最初の引数が第二の引数の前にくるものである場合に @code{#t}
-を返します。
+@var{seq}の要素がソートされている時に限り@code{#t}を返します。
+@var{seq}にはどんなシーケンスを渡すこともできます。
+省略可能引数@var{cmpfn}と@var{keyfn}の意味は@code{sort}と同じです。
+
+SRFI-95では@var{cmpfn}は必須になっています。
 @c COMMON
 @end defun
 
-@defun sort-by seq key :optional cmpfn
-@defunx sort-by! seq key :optional cmpfn
-@defunx stable-sort-by seq key :optional cmpfn
-@defunx stable-sort-by! seq key :optional cmpfn
+
+@defun merge a b :optional cmpfn keyfn
+@defunx merge! a b :optional cmpfn keyfn
+[SRFI-95+]
 @c EN
-Sorts @var{seq}, by comparing the key values obtained by
-applying the @var{key} procedure to each element of @var{seq}.
-The code @code{(stable-sort-by seq key cmp)} returns the same result
-as the following code:
-
-@example
-(stable-sort seq (lambda (a b) (cmp (key a) (key b))))
-@end example
-
-Besides more compact notation, @code{sort-by} family procedures
-guarantee that @var{key} procedure is called at most the number
-of elements in @var{seq}.  In the above example using @code{stable-sort},
-@var{key} may be called @var{n}log@var{n} or even more times
-where @var{n} is the number of elements in @var{seq}.
-So @code{sort-by} etc. are good if the @var{key} procedure is
-a relatively heavy operation.
-
-The trade-off is the space; @code{sort-by} family consumes
-extra space to save all the key values, which is proportional
-to the number of elements.
-@c JP
-@var{key}をシーケンス@var{seq}の各要素に適用して得られる値の比較をもとに
-@var{seq}をソートします。@code{(stable-sort-by seq key cmp)}は次のコードと
-同じ結果を返します:
-
-@example
-(stable-sort seq (lambda (a b) (cmp (key a) (key b))))
-@end example
-
-よりコンパクトに書けるという以外に、
-@code{sort-by}族の手続きは@var{key}手続きをたかだか@var{seq}の要素数
-しか呼び出さないという性質があります。上記の@code{stable-sort}を
-使った例では、@var{key}は@var{seq}の要素数を@var{n}とする時
-@var{n}log@var{n} 回以上呼び出される可能性があります。
-したがって、@code{sort-by}族は@var{key}手続きが比較的高価な場合に
-威力を発揮します。
-
-トレードオフは空間です。@code{sort-by}族はあらかじめ比較対象となる
-値を計算しておくために、@var{seq}の要素数に比例した余分なメモリを
-必要とします。
-@c COMMON
-@end defun
-
-@defun sorted? seq cmpfn
-Returns @code{#t} iff elements in @var{seq} are in sorted
-order, regarding the compare function @var{cmpfn}.
-@end defun
-
-
-@defun merge a b cmpfn
-@defunx merge! a b cmpfn
 Arguments @var{a} and @var{b} are lists, and their elements are
 sorted using the compare function @var{cmpfn}.  These procedures
 merges two list and returns a list, whose elements are sorted
 using @var{cmpfn}.  The destructive version @code{merge!} reuses
 cells in @var{a} and @var{b}; the returned list is @code{eq?} to
 either @var{a} or @var{b}.
+
+In SRFI-95, @var{cmpfn} can't be omitted.
+@c JP
+引数@var{a}と@var{b}はリストで、比較関数@var{cmpfn}によって
+既にソートされているものとします。これらの手続きは二つのソート済みリストを
+マージして、ソートされた一つのリストにします。@code{merge!}は破壊的バージョンで、
+@var{a}と@var{b}のセルを再利用します。戻り値は@var{a}か@var{b}に対して@code{eq?}と
+なります。
+
+SRFI-95では@var{cmpfn}は必須になっています。
+@c COMMON
+@end defun
+
+@c EN
+The following procedures are for the backward compatibility.  Their
+features are already covered by extended @code{sort} and @code{sort!}.
+@c JP
+以下の手続きは後方互換性のために残されていますが、その機能は
+拡張された@code{sort}および@code{sort!}によってカバーされています。
+@c COMMON
+
+
+@defun stable-sort seq :optional cmpfn keyfn
+@defunx stable-sort! seq :optional cmpfn keyfn
+@c EN
+Sort a sequence @var{seq}, using stable sort algorithm.
+Arguments @var{cmpfn} and @var{keyfn} are the same as @code{sort}
+and @code{sort!}.
+
+In fact, @code{sort} and @code{sort!} now uses stable algorithm
+when @var{cmpfn} is provided, so these procedures are redundant,
+unless you want to omit @var{cmpfn} and yet guarantee stable sort.
+@c JP
+安定ソートアルゴリズムを使って、シーケンス @var{seq}をソートします。
+@var{cmpfn}と@var{keyfn}引数は@code{sort}および@code{sort!}と同じです。
+
+実のところ、現在では@var{sort}と@var{sort!}は@var{cmpfn}が与えられれば
+安定ソートアルゴリズムを使うので、これらの手続きは
+どうしても@var{cmpfn}を省略しつつ安定ソートしたい、という場合でなければ
+使う必要はありません。
+@c COMMON
+@end defun
+
+@defun sort-by seq keyfn :optional cmpfn
+@defunx sort-by! seq keyfn :optional cmpfn
+@defunx stable-sort-by seq keyfn :optional cmpfn
+@defunx stable-sort-by! seq keyfn :optional cmpfn
+@c EN
+Variations of sort procedures that takes a key extrating function.
+These are redundant now, for @code{sort} etc. takes optional @var{keyfn}.
+@c JP
+比較のためのキーを取り出す関数を取る、ソート手続きの別バージョンです。
+@code{sort}等の手続きが省略可能な@var{keyfn}を取るようになったので、
+現在ではこれらの関数は冗長です。
+@c COMMON
 @end defun
 
 

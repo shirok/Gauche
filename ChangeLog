@@ -1,3 +1,8 @@
+2013-10-06  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/sortutil.scm, lib/gauche/generic-sortutil.scm:
+	  Adapted to SRFI-95, and also handles generic <sequence>.
+
 2013-10-04  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/configure.scm: Added support for directory stuff

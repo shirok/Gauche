@@ -481,6 +481,14 @@ Supported natively.  @xref{Conditionals}.
 @c COMMON
 
 @c EN
+@item SRFI-95, Sorting and merging
+Supported natively.  @xref{Comparison and sorting}.
+@c JP
+@item SRFI-95, ソートとマージ
+組み込みです。@ref{Comparison and sorting}参照。
+@c COMMON
+
+@c EN
 @item SRFI-98, An interface to access environment variables
 Supported by the module @code{srfi-98}.  @xref{Accessing environment variables}.
 @c JP
@@ -500,7 +508,7 @@ Supported by the module @code{gauche.record}.  @xref{Record types}.
 @item SRFI-106, Basic socket interface
 Supported by the module @code{srfi-106}.  @xref{Basic socket interface}.
 @c JP
-@item SRFI-99, 基本的なソケットインタフェース
+@item SRFI-106, 基本的なソケットインタフェース
 モジュール@code{srfi-106}でサポートされます。@ref{Basic socket interface}参照。
 @c COMMON
 
