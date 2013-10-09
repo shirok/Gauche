@@ -909,7 +909,7 @@ void Scm__InitModule(void)
         "srfi-2", "srfi-6", "srfi-8", "srfi-10", "srfi-16", "srfi-17",
         "srfi-22", "srfi-23", "srfi-26", "srfi-28", "srfi-31", "srfi-34",
         "srfi-35", "srfi-36", "srfi-38", "srfi-45", "srfi-55", "srfi-61",
-        "srfi-62", "srfi-87",
+        "srfi-62", "srfi-87", "srfi-95",
         "gauche.vm.debugger",   /* for the backward compatibility */
         NULL };
     const char **modname;
