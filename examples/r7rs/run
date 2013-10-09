@@ -1,0 +1,1 @@
+../../src/gosh -ftest -r7 -I. life.scm
