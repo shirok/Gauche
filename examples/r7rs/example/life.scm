@@ -25,8 +25,7 @@
         ((2) (ref grid i j))
         (else #false)))
     (define (life-print grid)
-      ;(display "\x1B;[1H\x1B;[J") ; clear vt100
-      (display "\x1B[1H\x1B[J") ; clear vt100 ;; gauche compatibility for now
+      (display "\x1B;[1H\x1B;[J") ; clear vt100
       (each grid
             (lambda (i j v)
               (display (if v "*" " "))
