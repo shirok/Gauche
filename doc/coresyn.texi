@@ -431,16 +431,7 @@ Other than the above case, @code{#!@var{identifier}} is read as
 a token with special meanings.  This kind token can be a special
 directive for the reader, instead of read as a datum.
 
-By default, three of such tokens are recognized.  @code{#!fold-case}
-and @code{#!no-fold-case} switches the reader's case sensitivity;
-@code{#!fold-case} makes the reader case insensitive, and
-@code{#!no-fold-case} makes it case sensitive.  (Also see
-@ref{Case-sensitivity}).
-
-The token @code{#!r6rs} is introduced in R6RS and used to indicate the
-program is strictly conforms R6RS.  Gauche doesn't support R6RS, and
-currently it issues warning when it sees @code{#!r6rs} token, though
-it keeps reading on.
+By default, the following tokens are recognized.
 @c JP
 文字シーケンス@code{#!}は、どこでどのように現れるかによって2つの全く異なる
 意味を持ちます。
@@ -455,16 +446,49 @@ it keeps reading on.
 れ、特別な意味を持ちます。この種のトークンはデータとして読まれるのでは
 なく、リーダに対して特別な指定を与えることもあります。
 
-デフォルトでは、このような3つのトークンが認識されます。
-@code{#!fold-case}と@code{#!no-fold-case}はリーダが大文字小文字を区別す
-るかどうかを切り替えます。@code{#!fold-case}に出会うとリーダは大文字小
+デフォルトでは、以下のトークンが認識されます。
+@c COMMON
+
+@table @code
+@item #!fold-case
+@itemx #!no-fold-case
+@c EN
+Switches the reader's case sensitivity;
+@code{#!fold-case} makes the reader case insensitive, and
+@code{#!no-fold-case} makes it case sensitive.  (Also see
+@ref{Case-sensitivity}).
+@c JP
+リーダが大文字小文字を区別するかどうかを切り替えます。
+@code{#!fold-case}に出会うとリーダは大文字小
 文字を区別しないモードになり、@code{#!no-fold-case}に出会うとその逆にな
 ります。(@ref{Case-sensitivity}も参照してください。)
-
-トークン@code{#!r6rs}はR6RSで導入され、プログラムがR6RSに準拠しているこ
-とを示します。GaucheはR6RSをサポートしていませんが、今のところこのトー
+@c COMMON
+@item #!r6rs
+@c EN
+This token is introduced in R6RS and used to indicate the
+program is strictly conforms R6RS.  Gauche doesn't support R6RS, and
+currently it issues warning when it sees @code{#!r6rs} token, though
+it keeps reading on.
+@c JP
+このトークンはR6RSで導入され、プログラムがR6RSに準拠しているこ
+とを示します。GaucheはR6RSを完全にサポートしていませんが、今のところこのトー
 クンに出会っても警告を出すだけで読み込みは継続します。
 @c COMMON
+@item #!r7rs
+@c EN
+Make the reader complies R7RS.
+@c JP
+リーダをR7RSに準拠したモードにします。
+@c COMMON
+@c TODO: Describe concrete details
+@item #!gauche-legacy
+@c EN
+Make the reader compatible to Gauche 0.9.3 and before.
+@c JP
+リーダをGauche 0.9.3およびそれ以前のものと互換にします。
+@c COMMON
+@c TODO: Describe concrete details
+@end table
 
 @c ----------------------------------------------------------------------
 @node Literals, Making Procedures, Lexical structure, Core syntax
