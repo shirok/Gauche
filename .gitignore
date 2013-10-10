@@ -34,6 +34,8 @@ test.record
 test/rfc.scm
 
 # Precomp and etc.
+.deps
+.dirstamp
 ext/Makefile.ext
 ext/bcrypt/crypt--bcrypt.c
 ext/binary/binarylib.c
@@ -93,13 +95,17 @@ ext/zlib/zliblib.c
 gc/.deps/
 gc/.libs/
 gc/bdw-gc.pc
+gc/cord/.deps
+gc/cord/.dirstamp
 gc/include/private/stamp-h1
+gc/libatomic_ops-1.2/
 gc/libatomic_ops/pkgconfig/atomic_ops-uninstalled.pc
 gc/libatomic_ops/pkgconfig/atomic_ops.pc
 gc/libatomic_ops/src/.deps/
 gc/libatomic_ops/src/stamp-h1
 gc/libatomic_ops/tests/.deps/
 gc/libtool
+gc/tests/.deps/
 lib/binary/io.scm
 lib/gauche/array.scm
 lib/gauche/charconv.scm
