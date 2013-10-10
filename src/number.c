@@ -36,8 +36,8 @@
 #include "gauche/scmconst.h"
 #include "gauche/bits.h"
 #include "gauche/bits_inline.h"
-#include "gauche/builtin-syms.h"
-#include "gauche/arith.h"
+#include "gauche/priv/builtin-syms.h"
+#include "gauche/priv/arith.h"
 
 #include <limits.h>
 #include <float.h>

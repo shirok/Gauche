@@ -3,7 +3,7 @@
  */
 
 #include "gauche.h"
-#include "gauche/arith.h"
+#include "gauche/priv/arith.h"
 #include "gauche/scmconst.h"
 
 #define UMAX SCM_ULONG_MAX
@@ -25,7 +25,7 @@ void message(FILE *out, const char *m, int filler)
 }
 
 /*=============================================================
- * Testing macros in gauche/arith.h
+ * Testing macros in gauche/priv/arith.h
  */
 
 #define TEST_SECTION(name) message(stdout, "<" name ">", '-')

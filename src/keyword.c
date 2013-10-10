@@ -40,7 +40,7 @@
 
 static void keyword_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
-    if (SCM_WRITE_MODE(ctx) == SCM_WRITE_DISPLAY) {
+    if (Scm_WriteContextMode(ctx) == SCM_WRITE_DISPLAY) {
         SCM_PUTS(SCM_KEYWORD(obj)->name, port);
     } else {
         SCM_PUTC(':', port);

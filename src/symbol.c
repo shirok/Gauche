@@ -33,7 +33,7 @@
 
 #define LIBGAUCHE_BODY
 #include "gauche.h"
-#include "gauche/builtin-syms.h"
+#include "gauche/priv/builtin-syms.h"
 
 /*-----------------------------------------------------------
  * Symbols
@@ -164,7 +164,7 @@ void Scm_WriteSymbolName(ScmString *snam, ScmPort *port, ScmWriteContext *ctx,
     const char *p = SCM_STRING_BODY_START(b), *q;
     int siz = SCM_STRING_BODY_SIZE(b), i;
     int escape = FALSE;
-    int spmask = ((SCM_WRITE_CASE(ctx) == SCM_WRITE_CASE_FOLD)? 0x12 : 0x02);
+    int spmask = (Scm_WriteContextCase(ctx) == SCM_WRITE_CASE_FOLD)? 0x12 : 0x02;
 
     if (siz == 0) {         /* special case */
         if (!(flags & SCM_SYMBOL_WRITER_NOESCAPE_EMPTY)) {
@@ -222,7 +222,7 @@ void Scm_WriteSymbolName(ScmString *snam, ScmPort *port, ScmWriteContext *ctx,
  */
 static void symbol_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
-    if (SCM_WRITE_MODE(ctx) == SCM_WRITE_DISPLAY) {
+    if (Scm_WriteContextMode(ctx) == SCM_WRITE_DISPLAY) {
         SCM_PUTS(SCM_SYMBOL_NAME(obj), port);
     } else {
         if (!SCM_SYMBOL_INTERNED(obj)) SCM_PUTZ("#:", -1, port);

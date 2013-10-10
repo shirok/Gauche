@@ -36,7 +36,7 @@
 #include "gauche/class.h"
 #include "gauche/code.h"
 #include "gauche/vminsn.h"
-#include "gauche/builtin-syms.h"
+#include "gauche/priv/builtin-syms.h"
 
 /*===============================================================
  * NVM related stuff

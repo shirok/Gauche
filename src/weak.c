@@ -55,8 +55,11 @@ static void weakvector_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
     Scm_Printf(port, "#,(<weak-vector> %d", v->size);
     for (i=0; i<v->size; i++) {
         SCM_PUTC(' ', port);
-        if (ptrs[i]) Scm_Write(ptrs[i], SCM_OBJ(port), ctx->mode);
-        else         Scm_Write(SCM_FALSE, SCM_OBJ(port), ctx->mode);
+        if (ptrs[i]) {
+            Scm_Write(ptrs[i], SCM_OBJ(port), Scm_WriteContextMode(ctx));
+        } else {
+            Scm_Write(SCM_FALSE, SCM_OBJ(port), Scm_WriteContextMode(ctx));
+        }
     }
     SCM_PUTC(')', port);
 }

@@ -35,7 +35,7 @@
 #include "gauche.h"
 #include "gauche/class.h"
 #include "gauche/code.h"
-#include "gauche/builtin-syms.h"
+#include "gauche/priv/builtin-syms.h"
 
 /*=================================================================
  * Classes

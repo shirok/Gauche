@@ -35,7 +35,7 @@
 #include "gauche.h"
 #include "gauche/class.h"
 #include "gauche/bignum.h"
-#include "gauche/builtin-syms.h"
+#include "gauche/priv/builtin-syms.h"
 
 #include <locale.h>
 #include <errno.h>

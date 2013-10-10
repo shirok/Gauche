@@ -32,7 +32,7 @@
  */
 
 #include <gauche.h>
-#include <gauche/builtin-syms.h>
+#include <gauche/priv/builtin-syms.h>
 
 extern ScmObj Scm_ReadBinaryU8(ScmPort *iport, ScmSymbol *e);
 extern ScmObj Scm_ReadBinaryU16(ScmPort *iport, ScmSymbol *e);

@@ -36,7 +36,7 @@
 #include "gauche/macro.h"
 #include "gauche/class.h"
 #include "gauche/code.h"
-#include "gauche/builtin-syms.h"
+#include "gauche/priv/builtin-syms.h"
 
 /* Some routines uses small array on stack to keep data about
    arguments to dispatch.  If the # of args used for dispach is bigger

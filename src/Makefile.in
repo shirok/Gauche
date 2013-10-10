@@ -131,7 +131,7 @@ INSTALL_HEADERS = gauche.h \
 	../gc/include/gc_typed.h ../gc/include/gc_version.h 
 INSTALL_SUBHEADERS = \
 	gauche/bignum.h gauche/bits.h gauche/bits_inline.h \
-	gauche/builtin-syms.h gauche/bytes_inline.h \
+	gauche/bytes_inline.h \
 	gauche/char_euc_jp.h gauche/char_none.h \
 	gauche/char_sjis.h gauche/char_utf_8.h gauche/charset.h \
 	gauche/class.h gauche/code.h gauche/collection.h \
@@ -157,7 +157,9 @@ INSTALL_SCMS = genstub precomp gencomp cesconv
 
 GENERATED_SCRIPTS = gauche-install gauche-package gauche-cesconv
 
-PRIVATE_HEADERS = gauche/arith.h gauche/arith_i386.h
+PRIVATE_HEADERS = gauche/priv/arith.h gauche/priv/arith_i386.h \
+	          gauche/priv/arith_x86_64.h \
+	          gauche/priv/builtin-syms.h gauche/priv/writerP.h
 
 # MinGW specific
 INSTALL_MINGWHEADERS = gauche/win-compat.h
@@ -235,7 +237,7 @@ $(OBJECTS) : $(HEADERS)
 autoloads.c : autoloads.scm
 	$(BUILD_GOSH) autoloads.scm
 
-builtin-syms.c gauche/builtin-syms.h : builtin-syms.scm
+builtin-syms.c gauche/priv/builtin-syms.h : builtin-syms.scm
 	$(BUILD_GOSH) builtin-syms.scm
 
 vminsn.c gauche/vminsn.h ../lib/gauche/vm/insn.scm : vminsn.scm geninsn
@@ -397,7 +399,7 @@ test-vmstack$(EXEEXT) : test-vmstack.$(OBJEXT) $(LIBGAUCHE).$(SOEXT)
 test-arith$(EXEEXT) : test-arith.$(OBJEXT) $(LIBGAUCHE).$(SOEXT)
 	$(LINK)	-o test-arith$(EXEEXT) test-arith.$(OBJEXT) $(gosh_LDADD) $(LIBS)
 
-test-arith.$(OBJEXT) : gauche/arith.h
+test-arith.$(OBJEXT) : gauche/priv/arith.h
 
 install-check :
 	@rm -rf test.log
@@ -407,7 +409,7 @@ install-check :
 
 # clean ------------------------------------------------
 GENERATED = compile.c autoloads.c builtin-syms.c \
-	    gauche/builtin-syms.h vminsn.c gauche/vminsn.h \
+	    gauche/priv/builtin-syms.h vminsn.c gauche/vminsn.h \
             ../lib/gauche/vm/insn.scm \
 	    libalpha.c libbool.c libchar.c libdict.c libeval.c libexc.c \
 	    libio.c liblazy.c liblist.c libmisc.c libmod.c libnum.c \

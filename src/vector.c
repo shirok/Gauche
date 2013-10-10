@@ -48,7 +48,8 @@ static void vector_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
     SCM_PUTZ("#(", -1, port);
     for (i=0; i<SCM_VECTOR_SIZE(obj); i++) {
         if (i != 0) SCM_PUTC(' ', port);
-        Scm_Write(SCM_VECTOR_ELEMENT(obj, i), SCM_OBJ(port), ctx->mode);
+        Scm_Write(SCM_VECTOR_ELEMENT(obj, i), SCM_OBJ(port),
+                  Scm_WriteContextMode(ctx));
     }
     SCM_PUTZ(")", -1, port);
 }

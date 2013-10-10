@@ -13,7 +13,7 @@
     :name "builtin-syms"
     :preamble "/* Generated from builtin-syms.scm.  DO NOT EDIT */"
     :c-file "builtin-syms.c"
-    :h-file "gauche/builtin-syms.h"
+    :h-file "gauche/priv/builtin-syms.h"
     :init-prologue "static void init_builtin_syms(void)\n{"
     :init-epilogue "}"
     ))

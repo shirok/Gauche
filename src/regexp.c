@@ -38,7 +38,7 @@
 #include "gauche.h"
 #include "gauche/regexp.h"
 #include "gauche/class.h"
-#include "gauche/builtin-syms.h"
+#include "gauche/priv/builtin-syms.h"
 
 /* I don't like to reinvent wheels, so I looked for a regexp implementation
  * that can handle multibyte encodings and not bound to Unicode.

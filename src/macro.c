@@ -36,7 +36,7 @@
 #include "gauche/macro.h"
 #include "gauche/code.h"
 #include "gauche/vminsn.h"
-#include "gauche/builtin-syms.h"
+#include "gauche/priv/builtin-syms.h"
 
 /* avoid C++ reserved name conflict.
    (I hate languages that take away names from programmers!) */

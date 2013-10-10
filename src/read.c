@@ -38,7 +38,7 @@
 #include "gauche.h"
 #include "gauche/vm.h"
 #include "gauche/port.h"
-#include "gauche/builtin-syms.h"
+#include "gauche/priv/builtin-syms.h"
 
 /*
  * READ

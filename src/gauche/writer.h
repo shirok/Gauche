@@ -36,14 +36,7 @@
 #ifndef GAUCHE_WRITER_H
 #define GAUCHE_WRITER_H
 
-struct ScmWriteContextRec {
-    short mode;                 /* print mode */
-    short flags;                /* internal */
-    int limit;                  /* internal */
-    int ncirc;                  /* internal */
-    ScmHashTable *table;        /* internal */
-    ScmObj obj;                 /* internal */
-};
+typedef struct ScmWriteContextRec ScmWriteContext;
 
 /* Print mode flags */
 enum {
@@ -60,8 +53,8 @@ enum {
     SCM_WRITE_CASE_MASK = 0x0c
 };
 
-#define SCM_WRITE_MODE(ctx)   ((ctx)->mode & SCM_WRITE_MODE_MASK)
-#define SCM_WRITE_CASE(ctx)   ((ctx)->mode & SCM_WRITE_CASE_MASK)
+SCM_EXTERN int Scm_WriteContextMode(ScmWriteContext *ctx);
+SCM_EXTERN int Scm_WriteContextCase(ScmWriteContext *ctx);
 
 SCM_EXTERN void Scm_Write(ScmObj obj, ScmObj port, int mode);
 SCM_EXTERN int Scm_WriteCircular(ScmObj obj, ScmObj port, int mode, int width);

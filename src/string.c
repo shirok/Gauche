@@ -1378,7 +1378,7 @@ static inline void string_putc(ScmChar ch, ScmPort *port, int bytemode)
 static void string_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
     ScmString *str = SCM_STRING(obj);
-    if (SCM_WRITE_MODE(ctx) == SCM_WRITE_DISPLAY) {
+    if (Scm_WriteContextMode(ctx) == SCM_WRITE_DISPLAY) {
         SCM_PUTS(str, port);
     } else {
         const ScmStringBody *b = SCM_STRING_BODY(str);

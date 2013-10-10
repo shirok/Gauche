@@ -33,7 +33,7 @@
 
 #define LIBGAUCHE_BODY
 #include "gauche.h"
-#include "gauche/builtin-syms.h"
+#include "gauche/priv/builtin-syms.h"
 #include "gauche/class.h"
 
 /*

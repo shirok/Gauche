@@ -34,7 +34,7 @@
 #define LIBGAUCHE_BODY
 #include "gauche.h"
 #include "gauche/paths.h"
-#include "gauche/builtin-syms.h"
+#include "gauche/priv/builtin-syms.h"
 
 /* GC_print_static_roots() is declared in private/gc_priv.h.  It is too much
    hassle to include it with other GC internal baggages, so we just declare

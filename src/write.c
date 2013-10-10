@@ -34,7 +34,8 @@
 #define LIBGAUCHE_BODY
 #include "gauche.h"
 #include "gauche/port.h"
-#include "gauche/builtin-syms.h"
+#include "gauche/priv/builtin-syms.h"
+#include "gauche/priv/writerP.h"
 
 #include <ctype.h>
 
@@ -112,6 +113,20 @@ SCM_DEFINE_GENERIC(Scm_GenericWriteObject, write_object_fallback, NULL);
 #define DEFAULT_CASE \
    (SCM_VM_RUNTIME_FLAG_IS_SET(Scm_VM(), SCM_CASE_FOLD)? \
     SCM_WRITE_CASE_FOLD:SCM_WRITE_CASE_NOFOLD)
+
+/*
+ * WriteContext public API
+ */
+int Scm_WriteContextMode(ScmWriteContext *ctx)
+{
+    return SCM_WRITE_MODE(ctx);
+}
+
+int Scm_WriteContextCase(ScmWriteContext *ctx)
+{
+    return SCM_WRITE_CASE(ctx);
+}
+
 
 /*
  * Scm_Write - Standard Write.

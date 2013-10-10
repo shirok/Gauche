@@ -44,7 +44,7 @@
             <gauche/code.h>
             <gauche/vminsn.h>
             <gauche/macro.h>
-            <gauche/builtin-syms.h>)))
+            <gauche/priv/builtin-syms.h>)))
 
 ;;; THE COMPILER
 ;;;
