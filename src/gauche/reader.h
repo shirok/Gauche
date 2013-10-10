@@ -36,32 +36,27 @@
 #ifndef GAUCHE_READER_H
 #define GAUCHE_READER_H
 
-/*
- * ReadContext
- */
-typedef struct ScmReadContextRec {
-    SCM_HEADER;
-    int flags;                  /* see below */
-    ScmHashTable *table;        /* used internally. */
-    ScmObj pending;             /* used internally. */
-} ScmReadContext;
-
-enum ScmReadContextFlags {
-    SCM_READ_SOURCE_INFO = (1L<<0),  /* preserving souce file information */
-    SCM_READ_LITERAL_IMMUTABLE = (1L<<1), /* literal should be read as immutable */
-    SCM_READ_DISABLE_CTOR = (1L<<2), /* disable #,() */
-    SCM_READ_RECURSIVELY = (1L<<3),  /* used internally. */
-    SCM_READ_LEGACY = (1L<<4),       /* make the reader fully compatible
-                                        < 0.9.4  */
-    SCM_READ_STRICT_R7 = (1L<<5)     /* strict conformance of R7RS */
-};
+typedef struct ScmReadContextRec ScmReadContext; /* opaque */
 
 SCM_CLASS_DECL(Scm_ReadContextClass);
 #define SCM_CLASS_READ_CONTEXT   (&Scm_ReadContextClass)
 #define SCM_READ_CONTEXT(obj)    ((ScmReadContext*)(obj))
 #define SCM_READ_CONTEXT_P(obj)  SCM_XTYPEP(obj, SCM_CLASS_READ_CONTEXT)
 
-ScmReadContext *Scm_MakeReadContext(ScmReadContext *proto);
+SCM_EXTERN ScmReadContext *Scm_MakeReadContext(ScmReadContext *proto);
+SCM_EXTERN int             Scm_ReadContextLiteralImmutable(ScmReadContext *);
+SCM_EXTERN ScmReadContext *Scm_CurrentReadContext();
+SCM_EXTERN ScmReadContext *Scm_SetCurrentReadContext(ScmReadContext *ctx);
+
+enum ScmReadLexicalMode {
+    SCM_READ_PERMISSIVE,        /* allow both r7rs and legacy syntax */
+    SCM_READ_WARN_LEGACY,       /* ditto, but warn legacy syntax */
+    SCM_READ_LEGACY,            /* fully compatible  <0.9.4 */
+    SCM_READ_STRICT_R7          /* strictly r7 */
+};
+
+/* returns previous settings */
+SCM_EXTERN u_long Scm_ReadContextSetLexicalMode(ScmReadContext*, u_long);
 
 /* An object to keep unrealized circular reference (e.g. #N=) during
  * 'read'.  It is replaced by the reference value before exitting 'read',
@@ -96,10 +91,13 @@ SCM_EXTERN void   Scm_ReadError(ScmPort *port, const char *fmt, ...);
 /*
  * Common utilities to handle hex-digit escapes
  */
-SCM_EXTERN ScmChar Scm_ReadXdigitsFromString(const char *, int,
-                                             ScmChar, int, int,
+SCM_EXTERN ScmChar Scm_ReadXdigitsFromString(const char *buf,
+                                             int buflen,
+                                             ScmChar key,
+                                             u_long mode,
+                                             int terminator,
                                              const char**);
-SCM_EXTERN ScmObj  Scm_ReadXdigitsFromPort(ScmPort *port, int key, int flags,
+SCM_EXTERN ScmObj  Scm_ReadXdigitsFromPort(ScmPort *port, int key, u_long mode,
                                            int incompletep, ScmDString *buf);
 
 /*
@@ -113,10 +111,6 @@ SCM_EXTERN ScmObj Scm_GetReaderCtor(ScmObj symbol, ScmObj module);
  * Hash-bang reader directive handlers
  */
 SCM_EXTERN ScmObj Scm_DefineReaderDirective(ScmObj symbol, ScmObj proc);
-
-/* Internal */
-SCM_EXTERN void   Scm__InstallReadUvectorHook(ScmObj (*)(ScmPort*, const char*, ScmReadContext*));
-
 
 #endif  /*GAUCHE_READER_H*/
 

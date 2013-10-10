@@ -639,9 +639,8 @@ enum {
                                            module */
     SCM_COLLECT_VM_STATS     = (1L<<5), /* enable statistics collection
                                            (incurs runtime overhead) */
-    SCM_COLLECT_LOAD_STATS   = (1L<<6), /* log the stats of file load
+    SCM_COLLECT_LOAD_STATS   = (1L<<6)  /* log the stats of file load
                                            timings (incurs runtime overhead) */
-    SCM_READER_WARN_LEGACY   = (1L<<7)  /* warns legacy syntax */
 };
 
 #define SCM_VM_RUNTIME_FLAG_IS_SET(vm, flag) ((vm)->runtimeFlags & (flag))

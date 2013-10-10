@@ -39,6 +39,7 @@
 #include "gauche/vm.h"
 #include "gauche/port.h"
 #include "gauche/priv/builtin-syms.h"
+#include "gauche/priv/readerP.h"
 
 /*
  * READ
@@ -84,6 +85,9 @@ static struct {
     ScmInternalMutex mutex;
 } hashBangData = { NULL };
 
+/* Parameter location for default reader mode */
+ScmParameterLoc defaultReadContext;
+
 /*----------------------------------------------------------------
  * Entry points
  *   Note: Entire read operation are done while locking the input port.
@@ -98,7 +102,7 @@ ScmObj Scm_ReadWithContext(ScmObj port, ScmReadContext *ctx)
     if (!SCM_PORTP(port) || SCM_PORT_DIR(port) != SCM_PORT_INPUT) {
         Scm_Error("input port required: %S", port);
     }
-    if (!(ctx->flags & SCM_READ_RECURSIVELY)) {
+    if (!(ctx->flags & RCTX_RECURSIVELY)) {
         ctx->table = NULL;
         ctx->pending = SCM_NIL;
     }
@@ -109,7 +113,7 @@ ScmObj Scm_ReadWithContext(ScmObj port, ScmReadContext *ctx)
         PORT_SAFE_CALL(SCM_PORT(port), r = read_item(SCM_PORT(port), ctx));
         PORT_UNLOCK(SCM_PORT(port));
     }
-    if (!(ctx->flags & SCM_READ_RECURSIVELY)) {
+    if (!(ctx->flags & RCTX_RECURSIVELY)) {
         read_context_flush(ctx);
     }
     return r;
@@ -148,7 +152,7 @@ ScmObj Scm_ReadListWithContext(ScmObj port, ScmChar closer, ScmReadContext *ctx)
     if (!SCM_PORTP(port) || SCM_PORT_DIR(port) != SCM_PORT_INPUT) {
         Scm_Error("input port required: %S", port);
     }
-    if (!(ctx->flags & SCM_READ_RECURSIVELY)) {
+    if (!(ctx->flags & RCTX_RECURSIVELY)) {
         ctx->table = NULL;
         ctx->pending = SCM_NIL;
     }
@@ -159,7 +163,7 @@ ScmObj Scm_ReadListWithContext(ScmObj port, ScmChar closer, ScmReadContext *ctx)
         PORT_SAFE_CALL(SCM_PORT(port), r = read_list(SCM_PORT(port), closer, ctx));
         PORT_UNLOCK(SCM_PORT(port));
     }
-    if (!(ctx->flags & SCM_READ_RECURSIVELY)) {
+    if (!(ctx->flags & RCTX_RECURSIVELY)) {
         read_context_flush(ctx);
     }
     return r;
@@ -175,23 +179,33 @@ ScmObj Scm_ReadList(ScmObj port, ScmChar closer)
  * Read context
  */
 
-ScmReadContext *Scm_MakeReadContext(ScmReadContext *proto)
+ScmReadContext *Scm_CurrentReadContext()
+{
+    ScmObj c = Scm_ParameterRef(Scm_VM(), &defaultReadContext);
+    SCM_ASSERT(SCM_READ_CONTEXT_P(c));
+    return SCM_READ_CONTEXT(c);
+}
+
+ScmReadContext *Scm_SetCurrentReadContext(ScmReadContext *ctx)
+{
+    ScmObj p = Scm_ParameterSet(Scm_VM(), &defaultReadContext, SCM_OBJ(ctx));
+    SCM_ASSERT(SCM_READ_CONTEXT_P(p));
+    return SCM_READ_CONTEXT(p);
+}
+
+static ScmReadContext *make_read_context(ScmReadContext *proto) 
 {
     ScmReadContext *ctx = SCM_NEW(ScmReadContext);
     SCM_SET_CLASS(ctx, SCM_CLASS_READ_CONTEXT);
-    if (proto == NULL) {
-        ctx->flags = SCM_READ_SOURCE_INFO;
-        ctx->table = NULL;
-        ctx->pending = SCM_NIL;
-    } else {
-        /* TODO: we haven't thought well of the case when prototype
-           is given.  Should we copy the #n= table as well?  How should
-           we handle pending read references? */
-        ctx->flags = proto->flags;
-        ctx->table = NULL;
-        ctx->pending = SCM_NIL;
-    }
+    ctx->flags = proto ? proto->flags : 0;
+    ctx->table = NULL;
+    ctx->pending = SCM_NIL;
     return ctx;
+}
+
+ScmReadContext *Scm_MakeReadContext(ScmReadContext *proto)
+{
+    return make_read_context(proto? proto : Scm_CurrentReadContext());
 }
 
 static void read_context_print(ScmObj obj, ScmPort *port,
@@ -201,6 +215,19 @@ static void read_context_print(ScmObj obj, ScmPort *port,
 }
 
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_ReadContextClass, read_context_print);
+
+/* public API */
+int Scm_ReadContextLiteralImmutable(ScmReadContext *ctx)
+{
+    return (ctx->flags & RCTX_LITERAL_IMMUTABLE);
+}
+
+u_long Scm_ReadContextSetLexicalMode(ScmReadContext *ctx, u_long mode)
+{
+    u_long prev = RCTX_LEXICAL_MODE(ctx);
+    RCTX_LEXICAL_MODE_SET(ctx, mode);
+    return prev;
+}
 
 /*----------------------------------------------------------------
  * Error
@@ -526,7 +553,7 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
                 /* #;expr - comment out sexpr */
                 {
                     int orig = ctx->flags;
-                    ctx->flags |= SCM_READ_DISABLE_CTOR;
+                    ctx->flags |= RCTX_DISABLE_CTOR;
                     read_item(port, ctx); /* read and discard */
                     ctx->flags = orig;
                     return SCM_UNDEFINED; /* indicate this is a comment */
@@ -634,7 +661,7 @@ static ScmObj read_item(ScmPort *port, ScmReadContext *ctx)
    Scm_ReadXdigitsFromString reads from char* buffer, up to buflen octets.
    The preceding backslash and a character 'x', 'u' or 'U' should already
    be read.  The character is passed to KEY.  It also receives
-   ScmReadContextFlags; only SCM_READ_LEGACY and SCM_READ_STRICT_R7 matter.
+   ScmReadLexicalMode.
 
    Character literal doesn't take terminating ';'.  TERMINATOR character
    indicates whether we expect terminator or not.
@@ -655,13 +682,13 @@ static ScmObj read_item(ScmPort *port, ScmReadContext *ctx)
 ScmChar Scm_ReadXdigitsFromString(const char *buf,
                                   int buflen,
                                   ScmChar key, /* x, u or U */
-                                  int flags, /* ScmReadContextFlags */
+                                  u_long mode, /* ScmReadLexicalMode */
                                   int terminator, /* TRUE expecting ';' */
                                   const char **nextbuf)
 {
     int legacy_fallback = TRUE;
 
-    if (key == 'x' && !(flags & SCM_READ_LEGACY)) {
+    if (key == 'x' && mode != SCM_READ_LEGACY) {
         int val = 0, i;
         int overflow = FALSE;
         for (i=0; i<buflen; i++) {
@@ -685,9 +712,8 @@ ScmChar Scm_ReadXdigitsFromString(const char *buf,
         /* Fallback to legacy syntax */
         legacy_fallback = TRUE;
     }
-    if (flags&SCM_READ_STRICT_R7) return SCM_CHAR_INVALID;
-    if (!(flags&SCM_READ_LEGACY) && key == 'x'
-        && SCM_VM_RUNTIME_FLAG_IS_SET(Scm_VM(), SCM_READER_WARN_LEGACY)) {
+    if (mode == SCM_READ_STRICT_R7) return SCM_CHAR_INVALID;
+    if (key == 'x' && mode == SCM_READ_WARN_LEGACY) {
         Scm_Warn("Legacy \\x hex-escape: \\x%c%c", buf[0], buf[1]);
     }
 
@@ -707,7 +733,7 @@ ScmChar Scm_ReadXdigitsFromString(const char *buf,
 
 /* On success, parsed char and other prefetched hexdigits are added
    to BUF and returns #t.  Otherwise the prefetched string is returned. */
-ScmObj Scm_ReadXdigitsFromPort(ScmPort *port, int key, int flags,
+ScmObj Scm_ReadXdigitsFromPort(ScmPort *port, int key, u_long mode,
                                int incompletep, ScmDString *buf)
 {
     ScmDString ds;
@@ -730,7 +756,7 @@ ScmObj Scm_ReadXdigitsFromPort(ScmPort *port, int key, int flags,
     
     chars = Scm_DStringPeek(&ds, &numchars, NULL);
 
-    r = Scm_ReadXdigitsFromString(chars, numchars, key, flags, TRUE, &next);
+    r = Scm_ReadXdigitsFromString(chars, numchars, key, mode, TRUE, &next);
     if (r != SCM_CHAR_INVALID) {
         if (incompletep) Scm_DStringPutb(buf, r);
         else             Scm_DStringPutc(buf, r);
@@ -810,11 +836,11 @@ static ScmObj read_list(ScmPort *port, ScmChar closer, ScmReadContext *ctx)
     int line = -1;
     ScmObj r;
 
-    if (ctx->flags & SCM_READ_SOURCE_INFO) line = Scm_PortLine(port);
+    if (ctx->flags & RCTX_SOURCE_INFO) line = Scm_PortLine(port);
 
     r = read_list_int(port, closer, ctx, &has_ref, line);
 
-    if (SCM_PAIRP(r) && (ctx->flags & SCM_READ_SOURCE_INFO) && line >= 0) {
+    if (SCM_PAIRP(r) && (ctx->flags & RCTX_SOURCE_INFO) && line >= 0) {
         /* Swap the head of the list for an extended pair to record
            source-code info.*/
         r = Scm_ExtendedCons(SCM_CAR(r), SCM_CDR(r));
@@ -832,7 +858,7 @@ static ScmObj read_vector(ScmPort *port, ScmChar closer, ScmReadContext *ctx)
     int line = -1;
     ScmObj r;
 
-    if (ctx->flags & SCM_READ_SOURCE_INFO) line = Scm_PortLine(port);
+    if (ctx->flags & RCTX_SOURCE_INFO) line = Scm_PortLine(port);
     r = read_list_int(port, closer, ctx, &has_ref, line);
     r = Scm_ListToVector(r, 0, -1);
     if (has_ref) ref_push(ctx, r, SCM_FALSE);
@@ -844,7 +870,7 @@ static ScmObj read_quoted(ScmPort *port, ScmObj quoter, ScmReadContext *ctx)
     int line = -1;
     ScmObj item, r;
 
-    if (ctx->flags & SCM_READ_SOURCE_INFO) line = Scm_PortLine(port);
+    if (ctx->flags & RCTX_SOURCE_INFO) line = Scm_PortLine(port);
     item = read_item(port, ctx);
     if (SCM_EOFP(item)) Scm_ReadError(port, "unterminated quote");
     if (line >= 0) {
@@ -866,10 +892,10 @@ static ScmObj read_quoted(ScmPort *port, ScmObj quoter, ScmReadContext *ctx)
    to support both legacy \xN{2} syntax and new \xN{1,} syntax,
    we read-ahead as many hexdigits as possible first, then parse it,
    and append the result to BUF, along with any unused digits. */
-static void read_string_xdigits(ScmPort *port, int key, int flags,
+static void read_string_xdigits(ScmPort *port, int key, u_long mode,
                                 int incompletep, ScmDString *buf)
 {
-    ScmObj bad = Scm_ReadXdigitsFromPort(port, key, flags, incompletep, buf);
+    ScmObj bad = Scm_ReadXdigitsFromPort(port, key, mode, incompletep, buf);
     if (SCM_STRINGP(bad)) {
         /* skip chars to the end of string, so that the reader will read
            after the erroneous string */
@@ -928,15 +954,17 @@ static ScmObj read_string(ScmPort *port, int incompletep,
             case '\\': ACCUMULATE('\\'); break;
             case '0': ACCUMULATE(0); break;
             case 'x': {
-                read_string_xdigits(port, 'x', ctx->flags, incompletep, &ds);
+                read_string_xdigits(port, 'x', RCTX_LEXICAL_MODE(ctx),
+                                    incompletep, &ds);
                 break;
             }
             case 'u': case 'U': {
-                if (ctx->flags & SCM_READ_STRICT_R7) {
+                if (RCTX_LEXICAL_MODE(ctx) == SCM_READ_STRICT_R7) {
                     Scm_ReadError(port, "\\%c in string literal isn't allowed "
                                   "in strinct-r7rs mode", c);
                 }
-                read_string_xdigits(port, c, ctx->flags, incompletep, &ds);
+                read_string_xdigits(port, c, RCTX_LEXICAL_MODE(ctx),
+                                    incompletep, &ds);
                 break;
             }
                 /* R6RS-style line continuation handling*/
@@ -1044,7 +1072,7 @@ static ScmObj read_char(ScmPort *port, ScmReadContext *ctx)
         /* need to read word to see if it is a character name */
         name = SCM_STRING(read_word(port, c, ctx, TRUE, FALSE));
 
-        if (ctx->flags & SCM_READ_STRICT_R7) {
+        if (RCTX_LEXICAL_MODE(ctx) == SCM_READ_STRICT_R7) {
             ScmChar following = Scm_GetcUnsafe(port);
             if (!char_is_delimiter(following)) {
                 Scm_Error("Character literal isn't delimited: #\\%s%C ...",
@@ -1072,7 +1100,7 @@ static ScmObj read_char(ScmPort *port, ScmReadContext *ctx)
         }
         /* handle #\uxxxx or #\uxxxxxxxx*/
         if ((cname[0] == 'u') && isxdigit(cname[1])
-            && !(ctx->flags & SCM_READ_STRICT_R7)) {
+            && (RCTX_LEXICAL_MODE(ctx) != SCM_READ_STRICT_R7)) {
             if (namesize >= 5 && namesize <= 9) {
                 const char *nextptr;
                 ScmChar code = Scm_ReadXdigitsFromString(cname+1,
@@ -1206,13 +1234,14 @@ static ScmObj read_escaped_symbol(ScmPort *port, ScmChar delim, int interned,
             /* CL-style single escape */
             c = Scm_GetcUnsafe(port);
             if (c == EOF) goto err;
-            if (ctx->flags & SCM_READ_LEGACY) {
+            if (RCTX_LEXICAL_MODE(ctx) == SCM_READ_LEGACY) {
                 SCM_DSTRING_PUTC(&ds, c);
             } else {
                 switch (c) {
                 case 'x': {
                     /* R7RS-style hex escape. */
-                    ScmObj bad = Scm_ReadXdigitsFromPort(port, 'x', ctx->flags,
+                    ScmObj bad = Scm_ReadXdigitsFromPort(port, 'x',
+                                                         RCTX_LEXICAL_MODE(ctx),
                                                          FALSE, &ds);
                     if (SCM_STRINGP(bad)) {
                         Scm_ReadError(port, "invalid hex escape in a symbol literal: \\x%C", bad);
@@ -1226,7 +1255,7 @@ static ScmObj read_escaped_symbol(ScmPort *port, ScmChar delim, int interned,
                 case 'n': SCM_DSTRING_PUTC(&ds, '\n'); break;
                 case 'r': SCM_DSTRING_PUTC(&ds, '\r'); break;
                 default:
-                    if (ctx->flags & SCM_READ_STRICT_R7) {
+                    if (RCTX_LEXICAL_MODE(ctx) == SCM_READ_STRICT_R7) {
                         Scm_ReadError(port, "invalid backslash-escape in a symbol literal: \\%A", SCM_MAKE_CHAR(c));
                     } else {
                         SCM_DSTRING_PUTC(&ds, c);
@@ -1393,7 +1422,7 @@ static ScmObj read_sharp_comma(ScmPort *port, ScmReadContext *ctx)
                       next);
     }
 
-    if (ctx->flags & SCM_READ_SOURCE_INFO) line = Scm_PortLine(port);
+    if (ctx->flags & RCTX_SOURCE_INFO) line = Scm_PortLine(port);
 
     form = read_list_int(port, ')', ctx, &has_ref, line);
     len = Scm_Length(form);
@@ -1409,7 +1438,7 @@ static ScmObj process_sharp_comma(ScmPort *port, ScmObj key, ScmObj args,
 {
     ScmObj r, e;
 
-    if (ctx->flags & SCM_READ_DISABLE_CTOR) return SCM_FALSE;
+    if (ctx->flags & RCTX_DISABLE_CTOR) return SCM_FALSE;
 
     (void)SCM_INTERNAL_MUTEX_LOCK(readCtorData.mutex);
     e = Scm_HashTableRef(readCtorData.table, key, SCM_FALSE);
@@ -1602,7 +1631,7 @@ static ScmObj read_sharp_word_1(ScmPort *port, char ch, ScmReadContext *ctx)
 
 static ScmObj read_sharp_word(ScmPort *port, char ch, ScmReadContext *ctx)
 {
-    if (ctx->flags & SCM_READ_LEGACY) {
+    if (RCTX_LEXICAL_MODE(ctx) == SCM_READ_LEGACY) {
         return read_sharp_word_legacy(port, ch, ctx);
     } else {
         return read_sharp_word_1(port, ch, ctx);
@@ -1632,5 +1661,7 @@ void Scm__InitRead(void)
     hashBangData.table =
         SCM_HASH_TABLE(Scm_MakeHashTableSimple(SCM_HASH_EQ, 0));
     (void)SCM_INTERNAL_MUTEX_INIT(hashBangData.mutex);
-}
 
+    Scm_InitParameterLoc(Scm_VM(), &defaultReadContext,
+                         SCM_OBJ(make_read_context(NULL)));
+}

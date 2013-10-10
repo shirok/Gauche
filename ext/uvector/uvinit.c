@@ -35,6 +35,7 @@
 #include <gauche/extend.h>
 #define EXTUVECTOR_EXPORTS
 #include "gauche/uvector.h"
+#include "gauche/priv/readerP.h"
 #include "uvectorP.h"
 
 /*
@@ -62,7 +63,7 @@ static ScmObj read_uvector(ScmPort *port, const char *tag,
     else if (strcmp(tag, "f64") == 0) uv = Scm_ListToF64Vector(list, 0);
     else Scm_Error("invalid unform vector tag: %s", tag);
     /* If we are reading source file, let literal uvectors be immutable. */
-    if (ctx->flags & SCM_READ_LITERAL_IMMUTABLE) {
+    if (Scm_ReadContextLiteralImmutable(ctx)) {
         SCM_UVECTOR_IMMUTABLE_P(uv) = TRUE;
     }
     return uv;

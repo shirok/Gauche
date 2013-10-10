@@ -440,6 +440,22 @@
             (Scm_DStringPutz (& ds) buf nbytes)))
     (result (Scm_DStringGet (& ds) SCM_STRING_INCOMPLETE))))
 
+;; Reader parameters
+(define-cproc read-lexical-mode (:optional k)
+  (let* ([ctx::ScmReadContext* (Scm_MakeReadContext NULL)])
+    (cond
+      [(SCM_EQ k 'legacy)
+       (Scm_ReadContextSetLexicalMode ctx SCM_READ_LEGACY)]
+      [(SCM_EQ k 'permissive)
+       (Scm_ReadContextSetLexicalMode ctx SCM_READ_PERMISSIVE)]
+      [(SCM_EQ k 'warn-legacy)
+       (Scm_ReadContextSetLexicalMode ctx SCM_READ_WARN_LEGACY)]
+      [(SCM_EQ k 'strict-r7)
+       (Scm_ReadContextSetLexicalMode ctx SCM_READ_STRICT_R7)]
+      [else
+       (Scm_Error "read-lexical-mode requires either 'legacy, 'permissive, 'warn-legacy or 'strict-r7, but got: %S" (SCM_OBJ k))])
+    (result (SCM_OBJ (Scm_SetCurrentReadContext ctx)))))
+
 ;; Read time constructor (srfi-10)
 (select-module gauche)
 
@@ -704,6 +720,12 @@
   (^[sym port ctx]
     (port-case-fold-set! port #f)
     (values)))
+
+(define-reader-directive 'gauche-legacy
+  (^[sym port ctx] (read-lexical-mode 'legacy)))
+
+(define-reader-directive 'r7rs
+  (^[sym port ctx] (read-lexical-mode 'strict-r7)))
 
 ;; HIGHLY EXPERIMENTAL
 (define-reader-directive 'c-expr

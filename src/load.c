@@ -35,6 +35,7 @@
 #include "gauche.h"
 #include "gauche/port.h"
 #include "gauche/priv/builtin-syms.h"
+#include "gauche/priv/readerP.h"
 
 #include <ctype.h>
 #include <fcntl.h>
@@ -159,7 +160,7 @@ void Scm_LoadPacketInit(ScmLoadPacket *p)
 struct load_info {
     ScmPort *port;
     ScmModule *prev_module;
-    ScmReadContext *ctx;
+    ScmReadContext *prev_ctx;
     ScmObj prev_port;
     ScmObj prev_history;
     ScmObj prev_next;
@@ -190,6 +191,7 @@ static ScmObj load_after(ScmObj *args, int nargs, void *data)
     PARAM_SET(vm, load_history, p->prev_history);
     PARAM_SET(vm, load_next, p->prev_next);
     PARAM_SET(vm, load_main_script, p->prev_main_script);
+    Scm_SetCurrentReadContext(p->prev_ctx);
     vm->evalSituation = p->prev_situation;
     return SCM_UNDEFINED;
 }
@@ -198,7 +200,7 @@ static ScmObj load_after(ScmObj *args, int nargs, void *data)
 static ScmObj load_cc(ScmObj result, void **data)
 {
     struct load_info *p = (struct load_info*)(data[0]);
-    ScmObj expr = Scm_ReadWithContext(SCM_OBJ(p->port), p->ctx);
+    ScmObj expr = Scm_Read(SCM_OBJ(p->port));
 
     if (!SCM_EOFP(expr)) {
         Scm_VMPushCC(load_cc, data, 1);
@@ -220,6 +222,7 @@ ScmObj Scm_VMLoadFromPort(ScmPort *port, ScmObj next_paths,
     ScmObj port_info;
     ScmVM *vm = Scm_VM();
     ScmModule *module = vm->module;
+    ScmReadContext *newctx;
 
     /* Sanity check */
     if (!SCM_IPORTP(port))
@@ -243,8 +246,9 @@ ScmObj Scm_VMLoadFromPort(ScmPort *port, ScmObj next_paths,
     p->prev_main_script = PARAM_REF(vm, load_main_script);
     p->prev_situation = vm->evalSituation;
 
-    p->ctx = Scm_MakeReadContext(NULL);
-    p->ctx->flags = SCM_READ_LITERAL_IMMUTABLE | SCM_READ_SOURCE_INFO;
+    newctx = Scm_MakeReadContext(NULL);
+    newctx->flags |= RCTX_LITERAL_IMMUTABLE | RCTX_SOURCE_INFO;
+    p->prev_ctx = Scm_SetCurrentReadContext(newctx);
 
     PARAM_SET(vm, load_next, next_paths);
     PARAM_SET(vm, load_port, SCM_OBJ(port));

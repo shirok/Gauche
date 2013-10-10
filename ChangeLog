@@ -1,3 +1,13 @@
+2013-10-10  Shiro Kawai  <shiro@acm.org>
+
+	* src/read.c, src/gauche/reader.h, src/gauche/priv/readerP.h:
+	  Moved ScmReadContext implementation delcs into a private header.
+	  Added public API to modify reader lexical compatibility mode.
+	  Use parameter to keep the default read context.
+	  Integrate WARN_LEGACY flag to read context instead of vm runtime flag.
+	* src/libio.scm: Added parameter-like procedure read-lexical-mode
+	  and supported #!gauche-legacy and #!r7rs switch.
+
 2013-10-09  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/priv/*.h: Moved some private header files into separate
