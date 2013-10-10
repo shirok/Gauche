@@ -39,8 +39,7 @@
 
 /* NB: For the time being, we let all threads share the index into the
  * parameter array---if one thread creates a parameter, we globally allocate
- * an index for it.  This may make parameter array bigger than necessary,
- * for it only 
+ * an index for it.
  */
 
 #ifndef GAUCHE_PARAMETER_H
@@ -49,7 +48,7 @@
 /* Parameter location, C-level "handle" to the parameter.
    This is not a first-class object in Scheme; Scheme's <parameter>
    object contains more stuff like filter procedures or hooks.
-   They are not available from C API. */
+   Those extra stuff is not accessible from C API. */
 typedef struct ScmParameterLocRec {
     int  index;
     ScmObj initialValue;
@@ -62,7 +61,7 @@ SCM_EXTERN ScmObj Scm_ParameterSet(ScmVM *vm, const ScmParameterLoc *location,
                                    ScmObj value);
 
 /* A "primitive parameter" is a mere SUBR that acts like parameter
-   (except it doesn't have a filter, and hooks). */
+   (except it doesn't have filters and hooks). */
 SCM_EXTERN void Scm_DefinePrimitiveParameter(ScmModule *mod,
                                              const char *name,
                                              ScmObj initval,
