@@ -36,21 +36,21 @@
 #ifndef GAUCHE_WRITER_H
 #define GAUCHE_WRITER_H
 
-typedef struct ScmWriteContextRec ScmWriteContext;
+typedef struct ScmWriteContextRec ScmWriteContext; /* opaque */
 
 /* Print mode flags */
-enum {
+enum ScmWriteModeFlags {
     SCM_WRITE_WRITE = 0,        /* write mode   */
     SCM_WRITE_DISPLAY = 1,      /* display mode */
     SCM_WRITE_SHARED = 2,       /* write/ss mode   */
-    SCM_WRITE_WALK = 3,         /* this is a special mode in write/ss */
-    SCM_WRITE_MODE_MASK = 0x3,
+};
 
+/* Case folding mode flags */
+enum ScmWriteCaseFlags {
     SCM_WRITE_CASE_FOLD = 4,    /* case-fold mode.  need to escape capital
                                    letters. */
     SCM_WRITE_CASE_NOFOLD = 8,  /* case-sensitive mode.  no need to escape
                                    capital letters */
-    SCM_WRITE_CASE_MASK = 0x0c
 };
 
 SCM_EXTERN int Scm_WriteContextMode(ScmWriteContext *ctx);

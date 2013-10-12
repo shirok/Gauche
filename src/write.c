@@ -238,7 +238,6 @@ int Scm_WriteCircular(ScmObj obj, ScmObj port, int mode, int width)
         ctx.flags |= WRITE_LIMITED;
         ctx.limit = width;
     }
-    ctx.ncirc = 0;
     ctx.table = SCM_HASH_TABLE(Scm_MakeHashTableSimple(SCM_HASH_EQ, 8));
 
     if (width <= 0) {

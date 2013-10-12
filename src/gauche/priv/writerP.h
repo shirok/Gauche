@@ -37,11 +37,12 @@
 struct ScmWriteContextRec {
     short mode;                 /* print mode */
     short flags;                /* internal */
-    int limit;                  /* internal */
-    int ncirc;                  /* internal */
-    ScmHashTable *table;        /* internal */
-    ScmObj obj;                 /* internal */
+    int limit;                  /* used in WriteLimited */
+    ScmHashTable *table;        /* table for shared structure priting */
 };
+
+#define SCM_WRITE_MODE_MASK  0x03
+#define SCM_WRITE_CASE_MASK  0x0c
 
 #define SCM_WRITE_MODE(ctx)   ((ctx)->mode & SCM_WRITE_MODE_MASK)
 #define SCM_WRITE_CASE(ctx)   ((ctx)->mode & SCM_WRITE_CASE_MASK)
