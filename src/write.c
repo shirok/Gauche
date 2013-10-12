@@ -276,9 +276,6 @@ int Scm_WriteCircular(ScmObj obj, ScmObj port, int mode, int width)
  * Internal writer
  */
 
-#define CASE_ITAG(obj, str) \
-    case SCM_ITAG(obj): Scm_PutzUnsafe(str, -1, port); break;
-
 /* Obj is PTR, except pair and vector */
 static void write_general(ScmObj obj, ScmPort *out, ScmWriteContext *ctx)
 {
@@ -372,6 +369,47 @@ static int write_char(ScmChar ch, ScmPort *port, ScmWriteContext *ctx)
             return 1;
         }
     }
+}
+
+/* If OBJ is a primitive object (roughly, immediate or number), write it to
+   PORT.  Assumes the caller locks the PORT.
+   Returns the # of characters written, or #f if OBJ is not a primitive object.
+ */
+ScmObj Scm_WritePrimitive(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
+{
+#define CASE_ITAG_RET(obj, str)                 \
+    case SCM_ITAG(obj):                         \
+        Scm_PutzUnsafe(str, -1, port);          \
+        return SCM_MAKE_INT(sizeof(str));
+
+    if (SCM_IMMEDIATEP(obj)) {
+        switch (SCM_ITAG(obj)) {
+            CASE_ITAG_RET(SCM_FALSE,     "#f");
+            CASE_ITAG_RET(SCM_TRUE,      "#t");
+            CASE_ITAG_RET(SCM_NIL,       "()");
+            CASE_ITAG_RET(SCM_EOF,       "#<eof>");
+            CASE_ITAG_RET(SCM_UNDEFINED, "#<undef>");
+            CASE_ITAG_RET(SCM_UNBOUND,   "#<unbound>");
+        default:
+            Scm_Panic("write: unknown itag object: %08x", SCM_WORD(obj));
+        }
+    }
+    else if (SCM_INTP(obj)) {
+        char buf[SPBUFSIZ];
+        int k = snprintf(buf, SPBUFSIZ, "%ld", SCM_INT_VALUE(obj));
+        Scm_PutzUnsafe(buf, -1, port);
+        return SCM_MAKE_INT(k);
+    }
+    else if (SCM_CHARP(obj)) {
+        int k = write_char(SCM_CHAR_VALUE(obj), port, ctx);
+        return SCM_MAKE_INT(k);
+    }
+    else if (SCM_NUMBERP(obj)) {
+        Scm_PrintNumber(port, obj, NULL);
+        return SCM_MAKE_INT(1); /* TODO - waiting for Scm_PrintNumber to return
+                                   meaningful number */
+    }
+    return SCM_FALSE;
 }
 
 /* We need two passes to realize write/ss.
@@ -532,36 +570,6 @@ static void write_walk(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 
 /* pass 2 */
 
-static void write_ss_nonptr(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
-{
-    if (SCM_IMMEDIATEP(obj)) {
-        switch (SCM_ITAG(obj)) {
-            CASE_ITAG(SCM_FALSE,     "#f");
-            CASE_ITAG(SCM_TRUE,      "#t");
-            CASE_ITAG(SCM_NIL,       "()");
-            CASE_ITAG(SCM_EOF,       "#<eof>");
-            CASE_ITAG(SCM_UNDEFINED, "#<undef>");
-            CASE_ITAG(SCM_UNBOUND,   "#<unbound>");
-        default:
-            Scm_Panic("write: unknown itag object: %08x", SCM_WORD(obj));
-        }
-    }
-    else if (SCM_INTP(obj)) {
-        char buf[SPBUFSIZ];
-        snprintf(buf, SPBUFSIZ, "%ld", SCM_INT_VALUE(obj));
-        Scm_PutzUnsafe(buf, -1, port);
-    }
-    else if (SCM_FLONUMP(obj)) {
-        write_general(obj, port, ctx);
-        return;
-    }
-    else if (SCM_CHARP(obj)) {
-        write_char(SCM_CHAR_VALUE(obj), port, ctx);
-    }
-    else Scm_Panic("write: got a bogus object: %08x", SCM_WORD(obj));
-    return;
-}
-
 /* A limit of stack depth to detect (potential) car-circular structure
    when we're writing out without shared structure notation.  This is
    an arbitrary limit, but we used to SEGVed in such case, so it's better
@@ -601,17 +609,14 @@ static void write_ss_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
             if (port->src.ostr.length >= ctx->limit) return;
         }
 
-        if (!SCM_PTRP(obj)) {
-            write_ss_nonptr(obj, port, ctx);
-            goto next;
-        }
-        if (SCM_NUMBERP(obj)) {
-            /* number may be heap allocated, but we don't use srfi-38 notation. */
-            write_general(obj, port, ctx);
+        /* number may be heap allocated, but we don't use srfi-38 notation. */              if (!SCM_PTRP(obj) || SCM_NUMBERP(obj)) {
+            if (SCM_FALSEP(Scm_WritePrimitive(obj, port, ctx))) {
+                Scm_Panic("write: got a bogus object: %08x", SCM_WORD(obj));
+            }
             goto next;
         }
         if ((SCM_STRINGP(obj) && SCM_STRING_NULL_P(obj))
-                 || (SCM_VECTORP(obj) && SCM_VECTOR_SIZE(obj) == 0)) {
+            || (SCM_VECTORP(obj) && SCM_VECTOR_SIZE(obj) == 0)) {
             /* special case where we don't put a reference tag. */
             write_general(obj, port, ctx);
             goto next;
