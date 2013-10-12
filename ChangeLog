@@ -1,3 +1,10 @@
+2013-10-12  Shiro Kawai  <shiro@acm.org>
+
+	* src/write.c (write_char): Use numeric notation for unprintable
+	  characters.  NB: Currently, we print with internal encoding,
+	  which is incompatible to R7RS if Gauche is compiled with euc-jp
+	  or sjis.  We eventually need some writer-mode switch.
+
 2013-10-10  Shiro Kawai  <shiro@acm.org>
 
 	* src/read.c, src/gauche/reader.h, src/gauche/priv/readerP.h:

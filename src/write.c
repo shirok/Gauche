@@ -36,6 +36,7 @@
 #include "gauche/port.h"
 #include "gauche/priv/builtin-syms.h"
 #include "gauche/priv/writerP.h"
+#include "gauche/char_attr.h"
 
 #include <ctype.h>
 
@@ -275,15 +276,6 @@ int Scm_WriteCircular(ScmObj obj, ScmObj port, int mode, int width)
  * Internal writer
  */
 
-/* character name table (first 33 chars of ASCII)*/
-static const char *char_names[] = {
-    "null",   "x01",   "x02",    "x03",   "x04",   "x05",   "x06",   "x07",
-    "x08",    "tab",   "newline","x0b",   "x0c",   "return","x0e",   "x0f",
-    "x10",    "x11",   "x12",    "x13",   "x14",   "x15",   "x16",   "x17",
-    "x18",    "x19",   "x1a",    "escape","x1c",   "x1d",   "x1e",   "x1f",
-    "space"
-};
-
 #define CASE_ITAG(obj, str) \
     case SCM_ITAG(obj): Scm_PutzUnsafe(str, -1, port); break;
 
@@ -319,6 +311,67 @@ static ScmObj write_object_fallback(ScmObj *args, int nargs, ScmGeneric *gf)
                (SCM_FALSEP(klass->redefined)? " " : ":redefined "),
                args[0]);
     return SCM_TRUE;
+}
+
+/* character name table (first 33 chars of ASCII)*/
+static const char *char_names[] = {
+    "null",   "x01",   "x02",    "x03",   "x04",   "x05",   "x06",   "alarm",
+    "backspace","tab", "newline","x0b",   "x0c",   "return","x0e",   "x0f",
+    "x10",    "x11",   "x12",    "x13",   "x14",   "x15",   "x16",   "x17",
+    "x18",    "x19",   "x1a",    "escape","x1c",   "x1d",   "x1e",   "x1f",
+    "space"
+};
+
+/* Returns # of chars written.
+   This can be better in char.c, but to do so, we'd better to clean up
+   public interface for ScmWriteContext.
+   TODO: It would be nice to have a mode to print character in unicode
+   character name.
+ */
+static int write_char(ScmChar ch, ScmPort *port, ScmWriteContext *ctx)
+{
+    if (SCM_WRITE_MODE(ctx) == SCM_WRITE_DISPLAY) {
+        Scm_PutcUnsafe(ch, port);
+        return 1;
+    } else {
+        const char *cname = NULL;
+        char buf[SPBUFSIZ];
+
+        Scm_PutzUnsafe("#\\", -1, port);
+        if (ch <= 0x20)       cname = char_names[ch];
+        else if (ch == 0x7f)  cname = "del";
+        else {
+            switch (Scm_CharGeneralCategory(ch)) {
+            case SCM_CHAR_CATEGORY_Mn:
+            case SCM_CHAR_CATEGORY_Mc:
+            case SCM_CHAR_CATEGORY_Me:
+            case SCM_CHAR_CATEGORY_Zs:
+            case SCM_CHAR_CATEGORY_Zl:
+            case SCM_CHAR_CATEGORY_Zp:
+            case SCM_CHAR_CATEGORY_Cc:
+            case SCM_CHAR_CATEGORY_Cf:
+            case SCM_CHAR_CATEGORY_Cs:
+            case SCM_CHAR_CATEGORY_Co:
+            case SCM_CHAR_CATEGORY_Cn:
+                /* NB: Legacy Gauche uses native character code for #\xNNNN
+                   notation, while R7RS uses Unicode codepoint.  We eventually
+                   need a write mode (legacy or r7rs) and switch the output
+                   accordingly---the safe bet is to use #\uNNNN for legacy
+                   mode and #\xNNNN for R7RS mode.  */
+                snprintf(buf, SPBUFSIZ, "x%04x", (unsigned int)ch);
+                cname = buf;
+                break;
+            }
+        }
+            
+        if (cname) {
+            Scm_PutzUnsafe(cname, -1, port);
+            return strlen(cname);
+        } else {
+            Scm_PutcUnsafe(ch, port);
+            return 1;
+        }
+    }
 }
 
 /* We need two passes to realize write/ss.
@@ -503,15 +556,7 @@ static void write_ss_nonptr(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
         return;
     }
     else if (SCM_CHARP(obj)) {
-        ScmChar ch = SCM_CHAR_VALUE(obj);
-        if (SCM_WRITE_MODE(ctx) == SCM_WRITE_DISPLAY) {
-            Scm_PutcUnsafe(ch, port);
-        } else {
-            Scm_PutzUnsafe("#\\", -1, port);
-            if (ch <= 0x20)       Scm_PutzUnsafe(char_names[ch], -1, port);
-            else if (ch == 0x7f)  Scm_PutzUnsafe("del", -1, port);
-            else                  Scm_PutcUnsafe(ch, port);
-        }
+        write_char(SCM_CHAR_VALUE(obj), port, ctx);
     }
     else Scm_Panic("write: got a bogus object: %08x", SCM_WORD(obj));
     return;
