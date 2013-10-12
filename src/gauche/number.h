@@ -335,8 +335,8 @@ typedef struct ScmNumberFormatRec {
 } ScmNumberFormat;
 
 SCM_EXTERN void   Scm_NumberFormatInit(ScmNumberFormat*);
-SCM_EXTERN void   Scm_PrintNumber(ScmPort *port, ScmObj n, ScmNumberFormat *f);
-SCM_EXTERN void   Scm_PrintDouble(ScmPort *port, double d, ScmNumberFormat *f);
+SCM_EXTERN size_t Scm_PrintNumber(ScmPort *port, ScmObj n, ScmNumberFormat *f);
+SCM_EXTERN size_t Scm_PrintDouble(ScmPort *port, double d, ScmNumberFormat *f);
 
 /* Higher-level convenience routines */
 SCM_EXTERN ScmObj Scm_NumberToString(ScmObj num, int radix, u_long flags);

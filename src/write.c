@@ -325,7 +325,7 @@ static const char *char_names[] = {
    TODO: It would be nice to have a mode to print character in unicode
    character name.
  */
-static int write_char(ScmChar ch, ScmPort *port, ScmWriteContext *ctx)
+static size_t write_char(ScmChar ch, ScmPort *port, ScmWriteContext *ctx)
 {
     if (SCM_WRITE_MODE(ctx) == SCM_WRITE_DISPLAY) {
         Scm_PutcUnsafe(ch, port);
@@ -401,13 +401,11 @@ ScmObj Scm_WritePrimitive(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
         return SCM_MAKE_INT(k);
     }
     else if (SCM_CHARP(obj)) {
-        int k = write_char(SCM_CHAR_VALUE(obj), port, ctx);
+        size_t k = write_char(SCM_CHAR_VALUE(obj), port, ctx);
         return SCM_MAKE_INT(k);
     }
     else if (SCM_NUMBERP(obj)) {
-        Scm_PrintNumber(port, obj, NULL);
-        return SCM_MAKE_INT(1); /* TODO - waiting for Scm_PrintNumber to return
-                                   meaningful number */
+        return SCM_MAKE_INT(Scm_PrintNumber(port, obj, NULL));
     }
     return SCM_FALSE;
 }

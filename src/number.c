@@ -3501,48 +3501,60 @@ static void number_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 
 #define FLT_BUF 50
 
-static void
+static size_t
 print_number(ScmPort *port, ScmObj obj, u_long flags, ScmNumberFormat *fmt)
 {
-    ScmObj r = SCM_NIL;
+    ScmObj s;
     int use_upper = flags & SCM_NUMBER_FORMAT_USE_UPPER;
     int show_plus = flags & SCM_NUMBER_FORMAT_SHOW_PLUS;
     int radix = fmt->radix;
+    int nchars = 0;
     char buf[FLT_BUF];
 
     if (SCM_INTP(obj)) {
         long value = SCM_INT_VALUE(obj);
         int i;
-        if (value == 0) { SCM_PUTC('0', port); return; }
+        if (value == 0) { SCM_PUTC('0', port); return 1; }
         if (value < 0) {
             SCM_PUTC('-', port);
+            nchars++;
             value = -value;     /* this won't overflow */
         }
         for (i = FLT_BUF-1; i >= 0 && value > 0; i--) {
             int c = value % radix;
             buf[i] = (c<10)?(c+'0'):(use_upper?(c-10+'A'):(c-10+'a'));
             value /= radix;
+            nchars++;
         }
         Scm_Putz(buf+i+1, FLT_BUF-i-1, port);
+        return nchars;
     } else if (SCM_BIGNUMP(obj)) {
-        SCM_PUTS(Scm_BignumToString(SCM_BIGNUM(obj), radix, use_upper), port);
+        s = Scm_BignumToString(SCM_BIGNUM(obj), radix, use_upper);
+        Scm_Puts(SCM_STRING(s), port);
+        return SCM_STRING_BODY_LENGTH(SCM_STRING_BODY(s));
     } else if (SCM_FLONUMP(obj)) {
         print_double(buf, FLT_BUF, SCM_FLONUM_VALUE(obj),
                      show_plus, fmt->precision, fmt->exp_lo, fmt->exp_hi);
         Scm_Putz(buf, -1, port);
+        return strlen(buf);
     } else if (SCM_RATNUMP(obj)) {
-        print_number(port, SCM_RATNUM_NUMER(obj), flags, fmt);
+        nchars = print_number(port, SCM_RATNUM_NUMER(obj), flags, fmt);
         Scm_Putc('/', port);
-        print_number(port, SCM_RATNUM_DENOM(obj),
-                     flags & ~SCM_NUMBER_FORMAT_SHOW_PLUS, fmt);
+        nchars++;
+        nchars += print_number(port, SCM_RATNUM_DENOM(obj),
+                               flags & ~SCM_NUMBER_FORMAT_SHOW_PLUS, fmt);
+        return nchars;
     } else if (SCM_COMPNUMP(obj)) {
         print_double(buf, FLT_BUF, SCM_COMPNUM_REAL(obj),
                      show_plus, fmt->precision, fmt->exp_lo, fmt->exp_hi);
         Scm_Putz(buf, -1, port);
+        nchars += strlen(buf);
         print_double(buf, FLT_BUF, SCM_COMPNUM_IMAG(obj),
                      TRUE, fmt->precision, fmt->exp_lo, fmt->exp_hi);
         Scm_Putz(buf, -1, port);
+        nchars += strlen(buf);
         Scm_Putc('i', port);
+        return nchars+1;
     } else {
         Scm_Error("number required: %S", obj);
     }
@@ -3571,20 +3583,21 @@ ScmObj Scm_NumberToString(ScmObj obj, int radix, u_long flags)
 }
 
 /* API.  FMT can be NULL. */
-void Scm_PrintNumber(ScmPort *port, ScmObj n, ScmNumberFormat *fmt)
+size_t Scm_PrintNumber(ScmPort *port, ScmObj n, ScmNumberFormat *fmt)
 {
     ScmNumberFormat defaults;
     if (fmt == NULL) {
         Scm_NumberFormatInit(&defaults);
         fmt = &defaults;
     }
-    print_number(port, n, fmt->flags, fmt);
+    return print_number(port, n, fmt->flags, fmt);
 }
 
 /* API.  FMT can be NULL.  Utility to expose Burger&Dybvig algorithm. */
-void Scm_PrintDouble(ScmPort *port, double d, ScmNumberFormat *fmt)
+size_t Scm_PrintDouble(ScmPort *port, double d, ScmNumberFormat *fmt)
 {
     char buf[FLT_BUF];
+    size_t nchars;
     ScmNumberFormat defaults;
     if (fmt == NULL) {
         Scm_NumberFormatInit(&defaults);
@@ -3593,7 +3606,9 @@ void Scm_PrintDouble(ScmPort *port, double d, ScmNumberFormat *fmt)
     print_double(buf, FLT_BUF, d,
                  fmt->flags & SCM_NUMBER_FORMAT_SHOW_PLUS,
                  fmt->precision, fmt->exp_lo, fmt->exp_hi);
-    Scm_Putz(buf, (int)strlen(buf), port);
+    nchars = strlen(buf);
+    Scm_Putz(buf, (int)nchars, port);
+    return nchars;
 }
 
 /*
