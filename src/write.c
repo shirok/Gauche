@@ -118,16 +118,26 @@ SCM_DEFINE_GENERIC(Scm_GenericWriteObject, write_object_fallback, NULL);
 /*
  * WriteContext public API
  */
-int Scm_WriteContextMode(ScmWriteContext *ctx)
+int Scm_WriteContextMode(const ScmWriteContext *ctx)
 {
     return SCM_WRITE_MODE(ctx);
 }
 
-int Scm_WriteContextCase(ScmWriteContext *ctx)
+int Scm_WriteContextCase(const ScmWriteContext *ctx)
 {
     return SCM_WRITE_CASE(ctx);
 }
 
+void Scm__WriteContextInit(ScmWriteContext *ctx, int mode, int flags, int limit)
+{
+    ctx->mode = mode;
+    /* if case mode is not specified, use default taken from VM default */
+    if (SCM_WRITE_CASE(ctx) == 0) ctx->mode |= DEFAULT_CASE;
+    ctx->flags = flags;
+    ctx->limit = limit;
+    if (limit > 0) ctx->flags |= WRITE_LIMITED;
+    ctx->table = NULL;
+}
 
 /*
  * Scm_Write - Standard Write.
@@ -142,8 +152,7 @@ void Scm_Write(ScmObj obj, ScmObj p, int mode)
         Scm_Error("output port required, but got %S", p);
     }
     port = SCM_PORT(p);
-    ctx.mode = mode;
-    ctx.flags = 0;
+    Scm__WriteContextInit(&ctx, mode, 0, 0);
 
     /* if this is a "walk" pass of write/ss, dispatch to the walker */
     if (port->flags & SCM_PORT_WALKING) {
@@ -157,9 +166,6 @@ void Scm_Write(ScmObj obj, ScmObj p, int mode)
         write_ss_rec(obj, port, &ctx);
         return;
     }
-
-    /* if case mode is not specified, use default taken from VM default */
-    if (SCM_WRITE_CASE(&ctx) == 0) ctx.mode |= DEFAULT_CASE;
 
     vm = Scm_VM();
     PORT_LOCK(port, vm);
@@ -192,11 +198,8 @@ int Scm_WriteLimited(ScmObj obj, ScmObj port, int mode, int width)
         Scm_Error("output port required, but got %S", port);
     out = Scm_MakeOutputStringPort(TRUE);
     SCM_PORT(out)->data = SCM_PORT(port)->data;
-    ctx.mode = mode;
-    ctx.flags = WRITE_LIMITED;
-    ctx.limit = width;
-    /* if case mode is not specified, use default taken from VM default */
-    if (SCM_WRITE_CASE(&ctx) == 0) ctx.mode |= DEFAULT_CASE;
+    Scm__WriteContextInit(&ctx, mode, 0, width);
+
     /* the walk pass does not produce any output, so we return immediately. */
     if (SCM_PORT(port)->flags & SCM_PORT_WALKING) {
         SCM_ASSERT(SCM_PAIRP(SCM_PORT(port)->data)&&SCM_HASH_TABLE_P(SCM_CDR(SCM_PORT(port)->data)));
@@ -232,13 +235,7 @@ int Scm_WriteCircular(ScmObj obj, ScmObj port, int mode, int width)
     if (!SCM_OPORTP(port)) {
         Scm_Error("output port required, but got %S", port);
     }
-    ctx.mode = mode;
-    ctx.flags = WRITE_CIRCULAR;
-    if (SCM_WRITE_CASE(&ctx) == 0) ctx.mode |= DEFAULT_CASE;
-    if (width > 0) {
-        ctx.flags |= WRITE_LIMITED;
-        ctx.limit = width;
-    }
+    Scm__WriteContextInit(&ctx, mode, WRITE_CIRCULAR, width);
     ctx.table = SCM_HASH_TABLE(Scm_MakeHashTableSimple(SCM_HASH_EQ, 8));
 
     if (width <= 0) {
@@ -375,7 +372,7 @@ static size_t write_char(ScmChar ch, ScmPort *port, ScmWriteContext *ctx)
    PORT.  Assumes the caller locks the PORT.
    Returns the # of characters written, or #f if OBJ is not a primitive object.
  */
-ScmObj Scm_WritePrimitive(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
+ScmObj Scm__WritePrimitive(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
 #define CASE_ITAG_RET(obj, str)                 \
     case SCM_ITAG(obj):                         \
@@ -608,7 +605,7 @@ static void write_ss_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
         }
 
         /* number may be heap allocated, but we don't use srfi-38 notation. */              if (!SCM_PTRP(obj) || SCM_NUMBERP(obj)) {
-            if (SCM_FALSEP(Scm_WritePrimitive(obj, port, ctx))) {
+            if (SCM_FALSEP(Scm__WritePrimitive(obj, port, ctx))) {
                 Scm_Panic("write: got a bogus object: %08x", SCM_WORD(obj));
             }
             goto next;

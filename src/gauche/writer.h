@@ -53,8 +53,8 @@ enum ScmWriteCaseFlags {
                                    capital letters */
 };
 
-SCM_EXTERN int Scm_WriteContextMode(ScmWriteContext *ctx);
-SCM_EXTERN int Scm_WriteContextCase(ScmWriteContext *ctx);
+SCM_EXTERN int Scm_WriteContextMode(const ScmWriteContext *ctx);
+SCM_EXTERN int Scm_WriteContextCase(const ScmWriteContext *ctx);
 
 SCM_EXTERN void Scm_Write(ScmObj obj, ScmObj port, int mode);
 SCM_EXTERN int Scm_WriteCircular(ScmObj obj, ScmObj port, int mode, int width);

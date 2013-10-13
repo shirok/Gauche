@@ -47,4 +47,9 @@ struct ScmWriteContextRec {
 #define SCM_WRITE_MODE(ctx)   ((ctx)->mode & SCM_WRITE_MODE_MASK)
 #define SCM_WRITE_CASE(ctx)   ((ctx)->mode & SCM_WRITE_CASE_MASK)
 
+SCM_EXTERN void   Scm__WriteContextInit(ScmWriteContext *ctx,
+                                        int mode, int flags, int limit);
+SCM_EXTERN ScmObj Scm__WritePrimitive(ScmObj obj, ScmPort *port,
+                                      ScmWriteContext *ctx);
+
 #endif /*GAUCHE_PRIV_WRITERP_H*/
