@@ -20,7 +20,8 @@
 ;; lcs on text.  Returns edit-list (as defined in lcs-edit-list).
 (define (diff a b :key (reader read-line) (equal equal?))
   (lcs-edit-list (source->list a reader)
-                 (source->list b reader)))
+                 (source->list b reader)
+                 equal))
 
 (define (write-line-diff line type)
   (case type
