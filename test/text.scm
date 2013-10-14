@@ -71,6 +71,7 @@
 ;;-------------------------------------------------------------------
 (test-section "diff")
 (use text.diff)
+(use srfi-13)
 (test-module 'text.diff)
 
 (define diff-a "foo
@@ -87,6 +88,14 @@ fuga
 hoge
 fuga
 ")
+
+(test* "diff"
+       '(((- 2 "bar")) ((- 4 "baz") (+ 3 "fuga")) ((+ 5 "fuga")))
+       (diff diff-a diff-b))
+
+(test* "diff"
+       '(((- 2 "bar")) ((- 4 "baz") (+ 3 "FUGA")) ((+ 5 "FUGA")))
+       (diff diff-a (string-upcase diff-b) :equal string-ci=?))
 
 (test* "diff-report"
        "  foo\n  bar\n- bar\n  baz\n- baz\n+ fuga\n  hoge\n+ fuga\n"
