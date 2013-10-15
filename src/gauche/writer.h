@@ -36,8 +36,6 @@
 #ifndef GAUCHE_WRITER_H
 #define GAUCHE_WRITER_H
 
-typedef struct ScmWriteContextRec ScmWriteContext; /* opaque */
-
 /* Print mode flags */
 enum ScmWriteModeFlags {
     SCM_WRITE_WRITE = 0,        /* write mode   */
