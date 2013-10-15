@@ -273,9 +273,12 @@
 ;; ($include var)
 ;;   Preprocessor directives.
 ;;
-(define-cise-stmt $undef   [(_ var) `("#undef " ,(x->string var) "\n")])
-(define-cise-stmt $define  [(_ var) `("#define " ,(x->string var) "\n")])
-(define-cise-stmt $include [(_ var) `("#include " ,(write-to-string var) "\n")])
+(define-cise-stmt $undef
+  [(_ var) `("\n" |#reset-line| "#undef " ,(x->string var) "\n")])
+(define-cise-stmt $define
+  [(_ var) `("\n" |#reset-line| "#define " ,(x->string var) "\n")])
+(define-cise-stmt $include
+  [(_ var) `("\n" |#reset-line| "#include " ,(write-to-string var) "\n")])
 
 ;;
 ;; ($lrefNN depth offset)
