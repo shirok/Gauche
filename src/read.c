@@ -197,7 +197,7 @@ static ScmReadContext *make_read_context(ScmReadContext *proto)
 {
     ScmReadContext *ctx = SCM_NEW(ScmReadContext);
     SCM_SET_CLASS(ctx, SCM_CLASS_READ_CONTEXT);
-    ctx->flags = proto ? proto->flags : 0;
+    ctx->flags = proto ? proto->flags : RCTX_SOURCE_INFO;
     ctx->table = NULL;
     ctx->pending = SCM_NIL;
     return ctx;
