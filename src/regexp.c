@@ -496,7 +496,7 @@ static ScmObj rc1_lex_xdigits(ScmPort *port, int key)
         Scm_ReadError(port,
                       "Bad '\\%c' escape sequence in a regexp literal: \\%c%A",
                       key, key, bad);
-	return SCM_UNDEFINED;	/* dummy */
+        return SCM_UNDEFINED;	/* dummy */
     } else {
         const char *chars;
         int size, len;
