@@ -560,7 +560,7 @@ ScmObj Scm_InflateSync(ScmPort *port)
  */
 extern void Scm_Init_zliblib(ScmModule*);
 
-ScmObj Scm_Init_rfc__zlib(void)
+SCM_EXTENSION_ENTRY void Scm_Init_rfc__zlib(void)
 {
     ScmModule *mod;
     ScmClass *cond_meta;

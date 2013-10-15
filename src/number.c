@@ -3557,6 +3557,7 @@ print_number(ScmPort *port, ScmObj obj, u_long flags, ScmNumberFormat *fmt)
         return nchars+1;
     } else {
         Scm_Error("number required: %S", obj);
+	return 0;		/* dummy */
     }
 }
 
