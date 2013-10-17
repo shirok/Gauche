@@ -3,7 +3,7 @@
 ;;;
 
 (use srfi-1)
-(use util.list)
+(use file.util)
 (use gauche.cgen)
 (use gauche.parameter)
 (use gauche.sequence)
@@ -47,6 +47,7 @@
     (cgen-body "};")
     (cgen-init "#undef INTERN")
 
+    (make-directory* "gauche/priv/")
     (cgen-emit-h (cgen-current-unit))
     (cgen-emit-c (cgen-current-unit))
     0))
