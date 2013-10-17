@@ -1326,7 +1326,7 @@ static size_t jconv_iconv(ScmConvInfo *info, const char **iptr, size_t *iroom,
     if (r == (size_t)-1) {
         if (errno == EINVAL) return INPUT_NOT_ENOUGH;
         if (errno == E2BIG)  return OUTPUT_NOT_ENOUGH;
-	return ILLEGAL_SEQUENCE;
+        return ILLEGAL_SEQUENCE;
     } else {
         return (int)r;
     }

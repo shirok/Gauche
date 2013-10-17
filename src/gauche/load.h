@@ -73,7 +73,7 @@ typedef struct ScmLoadPacketRec {
 SCM_EXTERN ScmObj Scm_VMLoadFromPort(ScmPort *port, ScmObj next_paths,
                                      ScmObj env, int flags);
 SCM_EXTERN ScmObj Scm_VMLoad(ScmString *file, ScmObj paths, ScmObj env,
-			     int flags);
+                             int flags);
 
 #if !defined(GAUCHE_API_PRE_0_9)
 SCM_EXTERN void Scm_LoadPacketInit(ScmLoadPacket *p);
@@ -159,7 +159,7 @@ SCM_CLASS_DECL(Scm_AutoloadClass);
 
 SCM_EXTERN ScmObj Scm_MakeAutoload(ScmModule *where,
                                    ScmSymbol *name, ScmString *path,
-				   ScmSymbol *import_from);
+                                   ScmSymbol *import_from);
 SCM_EXTERN void   Scm_DefineAutoload(ScmModule *where, ScmObj file_or_module,
                                      ScmObj list);
 SCM_EXTERN ScmObj Scm_ResolveAutoload(ScmAutoload *autoload, int flags);

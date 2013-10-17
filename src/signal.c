@@ -568,15 +568,15 @@ static SCM_DEFINE_SUBR(through_sighandler_stub, 1, 0,
  */
 #if defined(GAUCHE_WINDOWS)
 int sigaction(int signum, const struct sigaction *act,
-	      struct sigaction *oact)
+              struct sigaction *oact)
 {
     if (oact != NULL) {
-	Scm_Panic("sigaction() with oldact != NULL isn't supported on MinGW port");
+        Scm_Panic("sigaction() with oldact != NULL isn't supported on MinGW port");
     }
     if (signal(signum, act->sa_handler) == SIG_ERR) {
-	return -1;
+        return -1;
     } else {
-	return 0;
+        return 0;
     }
 }
 

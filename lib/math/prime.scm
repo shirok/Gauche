@@ -83,7 +83,7 @@
           (let1 i (- (take-first-term (integer->index (* p p)) p start-index)
                      start-index)
             (u8vector-multi-copy! bytevec i p *sieve-filler*))
-	  (sieve! qs))))))
+          (sieve! qs))))))
 
 (define (bytevec->generator bytevec start)
   (let1 i 0

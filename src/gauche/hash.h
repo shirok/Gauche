@@ -168,13 +168,13 @@ typedef struct ScmHashEntryRec {
 
 SCM_EXTERN ScmHashEntry *Scm_HashTableGet(ScmHashTable *hash, ScmObj key);
 SCM_EXTERN ScmHashEntry *Scm_HashTableAdd(ScmHashTable *hash,
-					  ScmObj key, ScmObj value);
+                                          ScmObj key, ScmObj value);
 SCM_EXTERN ScmHashEntry *Scm_HashTablePut(ScmHashTable *hash,
-					  ScmObj key, ScmObj value);
+                                          ScmObj key, ScmObj value);
 
 SCM_EXTERN ScmObj Scm_MakeHashTable(ScmHashProc *hashfn,
-				    ScmHashCompareProc *cmpfn,
-				    unsigned int initSize);
+                                    ScmHashCompareProc *cmpfn,
+                                    unsigned int initSize);
 
 #if defined(GAUCHE_API_PRE_0_9)
 #define Scm_HashIterInit(table, iter) Scm__HashIterInitCompat(table, iter)

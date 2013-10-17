@@ -70,7 +70,7 @@
  * It is ARMv6 which introduced LDREX/STREX (exclusives).
  * It is ARMv7 which introduced DMB/DSB instructions (memory barrier).
  *
- * 	-- gniibe  2012-11-27
+ *      -- gniibe  2012-11-27
  */
 #if defined(__ARMEL__)
 #define AO_USE_PTHREAD_DEFS 1

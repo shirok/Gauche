@@ -949,7 +949,7 @@ ScmObj Scm_OpenFilePort(const char *path, int flags, int buffering, int perm)
 #if defined(GAUCHE_WINDOWS)
     /* Force binary mode if not specified */
     if (!(flags & (O_TEXT|O_BINARY))) {
-	flags |= O_BINARY;
+        flags |= O_BINARY;
     }
 #endif /*GAUCHE_WINDOWS*/
     fd = open(path, flags, perm);

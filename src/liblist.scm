@@ -398,7 +398,7 @@
             [else (loop (cdr lis))])))
   (let restart ([ans lis])
     (cond [(null-list? ans) ans]
-	  [(not (pred (car ans))) (restart (cdr ans))]
+          [(not (pred (car ans))) (restart (cdr ans))]
           [else (keep! ans (cdr ans)) ans])))
 
 (define (remove  pred l) (filter  (^x (not (pred x))) l))

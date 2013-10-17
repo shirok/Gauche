@@ -162,9 +162,9 @@
                            "test.o/bin/command2")
               (and (= (file-perm "test1.o/dest/test.o/bin/command1")
                       (file-perm "test1.o/dest/test.o/bin/command2")
-		      (cond-expand
-		       [gauche.os.windows #o444]
-		       [else #o555]))
+                      (cond-expand
+                       [gauche.os.windows #o444]
+                       [else #o555]))
                    (file-equal? "test.o/bin/command1"
                                 "test1.o/dest/test.o/bin/command1")
                    (file-equal? "test.o/bin/command2"
@@ -183,9 +183,9 @@
                            "test.o/bin/command2")
               (and (= (file-perm "test1.o/dest/bin/command1")
                       (file-perm "test1.o/dest/bin/command2")
-		      (cond-expand
-		       [gauche.os.windows #o444]
-		       [else #o555]))
+                      (cond-expand
+                       [gauche.os.windows #o444]
+                       [else #o555]))
                    (file-equal? "test.o/bin/command1"
                                 "test1.o/dest/bin/command1")
                    (file-equal? "test.o/bin/command2"

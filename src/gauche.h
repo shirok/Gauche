@@ -225,8 +225,8 @@ typedef struct ScmClassRec ScmClass;
 
 /* Type coercer */
 
-#define	SCM_OBJ(obj)      ((ScmObj)(obj))
-#define	SCM_WORD(obj)     ((ScmWord)(obj))
+#define SCM_OBJ(obj)      ((ScmObj)(obj))
+#define SCM_WORD(obj)     ((ScmWord)(obj))
 
 /*
  * PRIMARY TAG IDENTIFICATION
@@ -276,7 +276,7 @@ typedef struct ScmClassRec ScmClass;
  */
 #define SCM_BOOLP(obj)       ((obj) == SCM_TRUE || (obj) == SCM_FALSE)
 #define SCM_BOOL_VALUE(obj)  (!SCM_FALSEP(obj))
-#define	SCM_MAKE_BOOL(obj)   ((obj)? SCM_TRUE:SCM_FALSE)
+#define SCM_MAKE_BOOL(obj)   ((obj)? SCM_TRUE:SCM_FALSE)
 
 #define SCM_EQ(x, y)         ((x) == (y))
 
@@ -326,10 +326,10 @@ typedef struct ScmFlonumRec {
  *  For character cases, I only care about ASCII chars (at least for now)
  */
 
-#define	SCM_CHAR(obj)           ((ScmChar)(obj))
-#define	SCM_CHARP(obj)          ((SCM_WORD(obj)&0xff) == 3)
-#define	SCM_CHAR_VALUE(obj)     SCM_CHAR(((unsigned long)SCM_WORD(obj)) >> 8)
-#define	SCM_MAKE_CHAR(ch)       SCM_OBJ((((unsigned long)(ch))<<8) + 3)
+#define SCM_CHAR(obj)           ((ScmChar)(obj))
+#define SCM_CHARP(obj)          ((SCM_WORD(obj)&0xff) == 3)
+#define SCM_CHAR_VALUE(obj)     SCM_CHAR(((unsigned long)SCM_WORD(obj)) >> 8)
+#define SCM_MAKE_CHAR(ch)       SCM_OBJ((((unsigned long)(ch))<<8) + 3)
 
 #define SCM_CHAR_INVALID        ((ScmChar)(-1)) /* indicate invalid char */
 #define SCM_CHAR_MAX            (0xffffff)
@@ -577,9 +577,9 @@ SCM_EXTERN ScmObj Scm_Values(ScmObj args);
 SCM_EXTERN ScmObj Scm_Values2(ScmObj val0, ScmObj val1);
 SCM_EXTERN ScmObj Scm_Values3(ScmObj val0, ScmObj val1, ScmObj val2);
 SCM_EXTERN ScmObj Scm_Values4(ScmObj val0, ScmObj val1, ScmObj val2,
-			      ScmObj val3);
+                              ScmObj val3);
 SCM_EXTERN ScmObj Scm_Values5(ScmObj val0, ScmObj val1, ScmObj val2,
-			      ScmObj val3, ScmObj val4);
+                              ScmObj val3, ScmObj val4);
 
 /* CPS API for evaluating Scheme fragments on VM. */
 SCM_EXTERN ScmObj Scm_VMApply(ScmObj proc, ScmObj args);
@@ -599,7 +599,7 @@ SCM_EXTERN ScmObj Scm_VMDynamicWind(ScmObj pre, ScmObj body, ScmObj post);
 SCM_EXTERN ScmObj Scm_VMDynamicWindC(ScmSubrProc *before,
                                      ScmSubrProc *body,
                                      ScmSubrProc *after,
-				     void *data);
+                                     void *data);
 
 SCM_EXTERN ScmObj Scm_VMWithErrorHandler(ScmObj handler, ScmObj thunk);
 SCM_EXTERN ScmObj Scm_VMWithGuardHandler(ScmObj handler, ScmObj thunk);
@@ -607,7 +607,7 @@ SCM_EXTERN ScmObj Scm_VMWithExceptionHandler(ScmObj handler, ScmObj thunk);
 
 /* Miscellaneous stuff */
 SCM_EXTERN ScmObj Scm_MakeMacroTransformer(ScmSymbol *name,
-					   ScmObj proc);
+                                           ScmObj proc);
 SCM_EXTERN ScmObj Scm_MakeMacroAutoload(ScmSymbol *name,
                                         ScmAutoload *al);
 
@@ -802,8 +802,8 @@ SCM_EXTERN void Scm_InitStaticClassWithMeta(ScmClass *klass,
 
 /* OBSOLETE */
 SCM_EXTERN void Scm_InitBuiltinClass(ScmClass *c, const char *name,
-				     ScmClassStaticSlotSpec *slots,
-				     int withMeta,
+                                     ScmClassStaticSlotSpec *slots,
+                                     int withMeta,
                                      ScmModule *m);
 
 SCM_EXTERN ScmClass *Scm_ClassOf(ScmObj obj);
@@ -1039,31 +1039,31 @@ SCM_CLASS_DECL(Scm_NullClass);
 
 /* Useful macros to manipulate lists. */
 
-#define	SCM_FOR_EACH(p, list) \
+#define SCM_FOR_EACH(p, list) \
     for((p) = (list); SCM_PAIRP(p); (p) = SCM_CDR(p))
 
-#define	SCM_APPEND1(start, last, obj)                           \
+#define SCM_APPEND1(start, last, obj)                           \
     do {                                                        \
-	if (SCM_NULLP(start)) {                                 \
-	    (start) = (last) = Scm_Cons((obj), SCM_NIL);        \
-	} else {                                                \
-	    SCM_SET_CDR((last), Scm_Cons((obj), SCM_NIL));      \
-	    (last) = SCM_CDR(last);                             \
-	}                                                       \
+        if (SCM_NULLP(start)) {                                 \
+            (start) = (last) = Scm_Cons((obj), SCM_NIL);        \
+        } else {                                                \
+            SCM_SET_CDR((last), Scm_Cons((obj), SCM_NIL));      \
+            (last) = SCM_CDR(last);                             \
+        }                                                       \
     } while (0)
 
-#define	SCM_APPEND(start, last, obj)                    \
+#define SCM_APPEND(start, last, obj)                    \
     do {                                                \
         ScmObj list_SCM_GLS = (obj);                    \
-	if (SCM_NULLP(start)) {                         \
-	    (start) = (list_SCM_GLS);                   \
+        if (SCM_NULLP(start)) {                         \
+            (start) = (list_SCM_GLS);                   \
             if (!SCM_NULLP(list_SCM_GLS)) {             \
                 (last) = Scm_LastPair(list_SCM_GLS);    \
             }                                           \
         } else {                                        \
-	    SCM_SET_CDR((last), (list_SCM_GLS));        \
-	    (last) = Scm_LastPair(last);                \
-	}                                               \
+            SCM_SET_CDR((last), (list_SCM_GLS));        \
+            (last) = Scm_LastPair(last);                \
+        }                                               \
     } while (0)
 
 #define SCM_LIST1(a)             Scm_Cons(a, SCM_NIL)
@@ -1091,7 +1091,7 @@ SCM_EXTERN ScmObj Scm_VaCons(va_list elts);
 SCM_EXTERN ScmObj Scm_ArrayToList(ScmObj *elts, int nelts);
 SCM_EXTERN ScmObj Scm_ArrayToListWithTail(ScmObj *elts, int nelts, ScmObj tail);
 SCM_EXTERN ScmObj *Scm_ListToArray(ScmObj list, int *nelts, ScmObj *store,
-				   int alloc);
+                                   int alloc);
 
 SCM_EXTERN ScmObj Scm_Car(ScmObj obj);
 SCM_EXTERN ScmObj Scm_Cdr(ScmObj obj);
@@ -1416,13 +1416,13 @@ struct ScmSubrRec {
                          func, inliner, data)
 
 SCM_EXTERN ScmObj Scm_MakeSubr(ScmSubrProc *func,
-			       void *data,
-			       int required, int optional,
-			       ScmObj info);
+                               void *data,
+                               int required, int optional,
+                               ScmObj info);
 SCM_EXTERN ScmObj Scm_NullProc(void);
 
 SCM_EXTERN ScmObj Scm_SetterSet(ScmProcedure *proc, ScmProcedure *setter,
-				int lock);
+                                int lock);
 SCM_EXTERN ScmObj Scm_Setter(ScmObj proc);
 SCM_EXTERN int    Scm_HasSetter(ScmObj proc);
 
@@ -1452,10 +1452,10 @@ SCM_CLASS_DECL(Scm_GenericClass);
     }
 
 SCM_EXTERN void Scm_InitBuiltinGeneric(ScmGeneric *gf, const char *name,
-				       ScmModule *mod);
+                                       ScmModule *mod);
 SCM_EXTERN ScmObj Scm_MakeBaseGeneric(ScmObj name,
-				      ScmObj (*fallback)(ScmObj *, int, ScmGeneric*),
-				      void *data);
+                                      ScmObj (*fallback)(ScmObj *, int, ScmGeneric*),
+                                      void *data);
 SCM_EXTERN ScmObj Scm_NoNextMethod(ScmObj *argv, int argc, ScmGeneric *gf);
 SCM_EXTERN ScmObj Scm_NoOperation(ScmObj *argv, int argc, ScmGeneric *gf);
 SCM_EXTERN ScmObj Scm_InvalidApply(ScmObj *argv, int argc, ScmGeneric *gf);

@@ -426,10 +426,10 @@
 
 (let1 tree (make-tree-map = <)
   (test* "tree-map-pop-min! and num-entries" 0 
-	 (begin
-	   (tree-map-put! tree 0 0)
-	   (tree-map-pop-min! tree)
-	   (tree-map-num-entries tree))))
+         (begin
+           (tree-map-put! tree 0 0)
+           (tree-map-pop-min! tree)
+           (tree-map-num-entries tree))))
 
 (test-end)
 

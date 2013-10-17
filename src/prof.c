@@ -232,8 +232,8 @@ void Scm_ProfilerStart(void)
             SCM_HASH_TABLE(Scm_MakeHashTableSimple(SCM_HASH_EQ, 0));
         unlink(templat);       /* keep anonymous tmpfile */
     } else if (vm->prof->samplerFd < 0) {
-	vm->prof->samplerFd = Scm_Mkstemp(templat);
-	unlink(templat);
+        vm->prof->samplerFd = Scm_Mkstemp(templat);
+        unlink(templat);
     }
 
     if (vm->prof->state == SCM_PROFILER_RUNNING) return;

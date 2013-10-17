@@ -113,10 +113,10 @@ ScmObj Scm_VaList(va_list pvar)
     ScmObj start = SCM_NIL, cp = SCM_NIL, obj;
 
     for (obj = va_arg(pvar, ScmObj);
-	 obj != NULL;
-	 obj = va_arg(pvar, ScmObj))
+         obj != NULL;
+         obj = va_arg(pvar, ScmObj))
     {
-	if (SCM_NULLP(start)) {
+        if (SCM_NULLP(start)) {
             start = SCM_OBJ(SCM_NEW(ScmPair));
             SCM_SET_CAR(start, obj);
             SCM_SET_CDR(start, SCM_NIL);
@@ -128,7 +128,7 @@ ScmObj Scm_VaList(va_list pvar)
             SCM_SET_CAR(item, obj);
             SCM_SET_CDR(item, SCM_NIL);
             cp = item;
-	}
+        }
     }
     return start;
 }
@@ -181,7 +181,7 @@ ScmObj *Scm_ListToArray(ScmObj list, int *nelts, ScmObj *store, int alloc)
 
 /* cXr stuff */
 
-#define	CXR(cname, sname, body)                 \
+#define CXR(cname, sname, body)                 \
 ScmObj cname (ScmObj obj)                       \
 {                                               \
    ScmObj obj2 = obj;                           \
@@ -189,11 +189,11 @@ ScmObj cname (ScmObj obj)                       \
    return obj2;                                 \
 }
 
-#define	A                                                       \
+#define A                                                       \
    if (!SCM_PAIRP(obj2)) Scm_Error("bad object: %S", obj);      \
    obj2 = SCM_CAR(obj2);
 
-#define	D                                                       \
+#define D                                                       \
    if (!SCM_PAIRP(obj2)) Scm_Error("bad object: %S", obj);      \
    obj2 = SCM_CDR(obj2);
 
@@ -222,15 +222,15 @@ int Scm_Length(ScmObj obj)
         if (SCM_NULLP(obj)) break;
         if (!SCM_PAIRP(obj)) return SCM_LIST_DOTTED;
 
-	obj = SCM_CDR(obj);
-	len++;
+        obj = SCM_CDR(obj);
+        len++;
         if (SCM_NULLP(obj)) break;
         if (!SCM_PAIRP(obj)) return SCM_LIST_DOTTED;
 
-	obj = SCM_CDR(obj);
-	slow = SCM_CDR(slow);
-	if (obj == slow) return SCM_LIST_CIRCULAR;
-	len++;
+        obj = SCM_CDR(obj);
+        slow = SCM_CDR(slow);
+        if (obj == slow) return SCM_LIST_CIRCULAR;
+        len++;
     }
     return len;
 }
@@ -280,7 +280,7 @@ ScmObj Scm_Append2X(ScmObj list, ScmObj obj)
 {
     ScmObj cp;
     SCM_FOR_EACH(cp, list) {
-	if (SCM_NULLP(SCM_CDR(cp))) {
+        if (SCM_NULLP(SCM_CDR(cp))) {
             SCM_SET_CDR(cp, obj);
             return list;
         }
@@ -300,7 +300,7 @@ ScmObj Scm_Append2(ScmObj list, ScmObj obj)
     if (!SCM_PAIRP(list)) return obj;
 
     SCM_FOR_EACH(list, list) {
-	SCM_APPEND1(start, last, SCM_CAR(list));
+        SCM_APPEND1(start, last, SCM_CAR(list));
     }
     SCM_SET_CDR(last, obj);
 
@@ -346,7 +346,7 @@ ScmObj Scm_Reverse2(ScmObj list, ScmObj tail)
     SCM_SET_CDR(p, tail);
     result = SCM_OBJ(p);
     SCM_FOR_EACH(cp, list) {
-	SCM_SET_CAR(result, SCM_CAR(cp));
+        SCM_SET_CAR(result, SCM_CAR(cp));
         p = SCM_NEW(ScmPair);
         SCM_SET_CAR(p, SCM_NIL);
         SCM_SET_CDR(p, result);
@@ -432,8 +432,8 @@ ScmObj Scm_LastPair(ScmObj l)
 
     if (!SCM_PAIRP(l)) Scm_Error("pair required: %S", l);
     SCM_FOR_EACH(cp, l) {
-	ScmObj cdr = SCM_CDR(cp);
-	if (!SCM_PAIRP(cdr)) return cp;
+        ScmObj cdr = SCM_CDR(cp);
+        if (!SCM_PAIRP(cdr)) return cp;
     }
     return SCM_UNDEFINED;       /* NOTREACHED */
 }
@@ -527,9 +527,9 @@ ScmObj Scm_Assv(ScmObj obj, ScmObj alist)
     ScmObj cp;
     if (!SCM_LISTP(alist)) Scm_Error("assv: list required, but got %S", alist);
     SCM_FOR_EACH(cp,alist) {
-	ScmObj entry = SCM_CAR(cp);
-	if (!SCM_PAIRP(entry)) continue;
-	if (Scm_EqvP(obj, SCM_CAR(entry))) return entry;
+        ScmObj entry = SCM_CAR(cp);
+        if (!SCM_PAIRP(entry)) continue;
+        if (Scm_EqvP(obj, SCM_CAR(entry))) return entry;
     }
     return SCM_FALSE;
 }

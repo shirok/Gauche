@@ -81,10 +81,10 @@
 
       (let lp1 ((list-a (car lists))
                 (others (cdr lists)))
-	(or (null? others)
-	    (let ((list-b (car others))
-		  (others (cdr others)))
-	      (if (eq? list-a list-b)	; EQ? => LIST=
+        (or (null? others)
+            (let ((list-b (car others))
+                  (others (cdr others)))
+              (if (eq? list-a list-b)   ; EQ? => LIST=
                 (lp1 list-b others)
                 (let lp2 ((list-a list-a) (list-c list-b))
                   (if (null-list? list-a)
@@ -105,41 +105,41 @@
 
 (define (unzip2 lis)
   (let recur ((lis lis))
-    (if (null-list? lis) (values lis lis)	; Use NOT-PAIR? to handle
-	(let ((elt (car lis)))			; dotted lists.
-	  (receive (a b) (recur (cdr lis))
-	    (values (cons (car  elt) a)
-		    (cons (cadr elt) b)))))))
+    (if (null-list? lis) (values lis lis)       ; Use NOT-PAIR? to handle
+        (let ((elt (car lis)))                  ; dotted lists.
+          (receive (a b) (recur (cdr lis))
+            (values (cons (car  elt) a)
+                    (cons (cadr elt) b)))))))
 
 (define (unzip3 lis)
   (let recur ((lis lis))
     (if (null-list? lis) (values lis lis lis)
-	(let ((elt (car lis)))
-	  (receive (a b c) (recur (cdr lis))
-	    (values (cons (car   elt) a)
-		    (cons (cadr  elt) b)
-		    (cons (caddr elt) c)))))))
+        (let ((elt (car lis)))
+          (receive (a b c) (recur (cdr lis))
+            (values (cons (car   elt) a)
+                    (cons (cadr  elt) b)
+                    (cons (caddr elt) c)))))))
 
 (define (unzip4 lis)
   (let recur ((lis lis))
     (if (null-list? lis) (values lis lis lis lis)
-	(let ((elt (car lis)))
-	  (receive (a b c d) (recur (cdr lis))
-	    (values (cons (car    elt) a)
-		    (cons (cadr   elt) b)
-		    (cons (caddr  elt) c)
-		    (cons (cadddr elt) d)))))))
+        (let ((elt (car lis)))
+          (receive (a b c d) (recur (cdr lis))
+            (values (cons (car    elt) a)
+                    (cons (cadr   elt) b)
+                    (cons (caddr  elt) c)
+                    (cons (cadddr elt) d)))))))
 
 (define (unzip5 lis)
   (let recur ((lis lis))
     (if (null-list? lis) (values lis lis lis lis lis)
-	(let ((elt (car lis)))
-	  (receive (a b c d e) (recur (cdr lis))
-	    (values (cons (car     elt) a)
-		    (cons (cadr    elt) b)
-		    (cons (caddr   elt) c)
-		    (cons (cadddr  elt) d)
-		    (cons (car (cddddr  elt)) e)))))))
+        (let ((elt (car lis)))
+          (receive (a b c d e) (recur (cdr lis))
+            (values (cons (car     elt) a)
+                    (cons (cadr    elt) b)
+                    (cons (caddr   elt) c)
+                    (cons (cadddr  elt) d)
+                    (cons (car (cddddr  elt)) e)))))))
 
 ;;;
 ;;; N-th functions of SRFI-1
@@ -168,13 +168,13 @@
   (call-with-current-continuation
     (lambda (abort)
       (let recur ((lists lists))
-	(if (pair? lists)
-	    (let ((lis (car lists)))
-	      (if (null-list? lis) (abort '())
-		  (cons (cdr lis) (recur (cdr lists)))))
-	    '())))))
+        (if (pair? lists)
+            (let ((lis (car lists)))
+              (if (null-list? lis) (abort '())
+                  (cons (cdr lis) (recur (cdr lists)))))
+            '())))))
 
-(define (%cars+ lists last-elt)	; (append! (map car lists) (list last-elt))
+(define (%cars+ lists last-elt) ; (append! (map car lists) (list last-elt))
   (let recur ((lists lists))
     (if (pair? lists) (cons (caar lists) (recur (cdr lists))) (list last-elt))))
 
@@ -233,25 +233,25 @@
 
 (define (pair-fold-right f zero lis1 . lists)
   (if (pair? lists)
-    (let recur ((lists (cons lis1 lists)))		; N-ary case
+    (let recur ((lists (cons lis1 lists)))              ; N-ary case
       (let ((cdrs (%cdrs lists)))
         (if (null? cdrs) zero
             (apply f (append! lists (list (recur cdrs)))))))
 
-    (let recur ((lis lis1))				; Fast path
+    (let recur ((lis lis1))                             ; Fast path
       (if (null-list? lis) zero (f lis (recur (cdr lis)))))))
 
 (define (pair-fold f zero lis1 . lists)
   (if (pair? lists)
-    (let lp ((lists (cons lis1 lists)) (ans zero))	; N-ary case
+    (let lp ((lists (cons lis1 lists)) (ans zero))      ; N-ary case
       (let ((tails (%cdrs lists)))
         (if (null? tails) ans
             (lp tails (apply f (append! lists (list ans)))))))
 
     (let lp ((lis lis1) (ans zero))
       (if (null-list? lis) ans
-          (let ((tail (cdr lis)))		; Grab the cdr now,
-            (lp tail (f lis ans)))))))	; in case F SET-CDR!s LIS.
+          (let ((tail (cdr lis)))               ; Grab the cdr now,
+            (lp tail (f lis ans)))))))  ; in case F SET-CDR!s LIS.
 
 ;;;
 ;;; Mapper of SRFI-1
@@ -269,8 +269,8 @@
     ;; Fast path.
     (let lp ((lis lis1))
       (if (not (null-list? lis))
-        (let ((tail (cdr lis)))	; Grab the cdr now,
-          (proc lis)		; in case PROC SET-CDR!s LIS.
+        (let ((tail (cdr lis))) ; Grab the cdr now,
+          (proc lis)            ; in case PROC SET-CDR!s LIS.
           (lp tail))))))
 
 ;;; We stop when LIS1 runs out, not when any list runs out.
@@ -299,38 +299,38 @@
       ;;   SCAN-IN:  (cdr in-prev)  = LIS.
       ;;   SCAN-OUT: (cdr out-prev) = LIS.
       (letrec ((scan-in (lambda (in-prev out-prev lis)
-			  (let lp ((in-prev in-prev) (lis lis))
-			    (if (pair? lis)
+                          (let lp ((in-prev in-prev) (lis lis))
+                            (if (pair? lis)
                               (if (pred (car lis))
                                 (lp lis (cdr lis))
                                 (begin (set-cdr! out-prev lis)
                                        (scan-out in-prev lis (cdr lis))))
                               (set-cdr! out-prev lis))))) ; Done.
 
-	       (scan-out (lambda (in-prev out-prev lis)
-			   (let lp ((out-prev out-prev) (lis lis))
-			     (if (pair? lis)
+               (scan-out (lambda (in-prev out-prev lis)
+                           (let lp ((out-prev out-prev) (lis lis))
+                             (if (pair? lis)
                                (if (pred (car lis))
                                  (begin (set-cdr! in-prev lis)
                                         (scan-in lis out-prev (cdr lis)))
                                  (lp lis (cdr lis)))
                                (set-cdr! in-prev lis)))))) ; Done.
 
-	;; Crank up the scan&splice loops.
-	(if (pred (car lis))
+        ;; Crank up the scan&splice loops.
+        (if (pred (car lis))
           ;; LIS begins in-list. Search for out-list's first pair.
           (let lp ((prev-l lis) (l (cdr lis)))
             (cond ((null-list? l) (values lis l))
                   ((pred (car l)) (lp l (cdr l)))
                   (else (scan-out prev-l l (cdr l))
-                        (values lis l))))	; Done.
+                        (values lis l))))       ; Done.
 
           ;; LIS begins out-list. Search for in-list's first pair.
           (let lp ((prev-l lis) (l (cdr lis)))
             (cond ((null-list? l) (values l lis))
                   ((pred (car l))
                    (scan-in l prev-l (cdr l))
-                   (values l lis))		; Done.
+                   (values l lis))              ; Done.
                   (else (lp l (cdr l)))))))))
 
 ;;;
@@ -426,161 +426,161 @@
   (check-arg procedure? =)
   (or (not (pair? lists)) ; 0-ary case
       (let lp ((s1 (car lists)) (rest (cdr lists)))
-	(or (not (pair? rest))
-	    (let ((s2 (car rest))  (rest (cdr rest)))
-	      (and (or (eq? s2 s1)	; Fast path
-		       (%lset2<= = s1 s2)) ; Real test
-		   (lp s2 rest)))))))
+        (or (not (pair? rest))
+            (let ((s2 (car rest))  (rest (cdr rest)))
+              (and (or (eq? s2 s1)      ; Fast path
+                       (%lset2<= = s1 s2)) ; Real test
+                   (lp s2 rest)))))))
 
 (define (lset= = . lists)
   (check-arg procedure? =)
   (or (not (pair? lists)) ; 0-ary case
       (let lp ((s1 (car lists)) (rest (cdr lists)))
-	(or (not (pair? rest))
-	    (let ((s2   (car rest))
-		  (rest (cdr rest)))
-	      (and (or (eq? s1 s2)	; Fast path
-		       (and (%lset2<= = s1 s2) (%lset2<= = s2 s1))) ; Real test
-		   (lp s2 rest)))))))
+        (or (not (pair? rest))
+            (let ((s2   (car rest))
+                  (rest (cdr rest)))
+              (and (or (eq? s1 s2)      ; Fast path
+                       (and (%lset2<= = s1 s2) (%lset2<= = s2 s1))) ; Real test
+                   (lp s2 rest)))))))
 
 
 (define (lset-adjoin = lis . elts)
   (check-arg procedure? =)
   (fold (lambda (elt ans) (if (member elt ans =) ans (cons elt ans)))
-	lis elts))
+        lis elts))
 
 
 (define (lset-union = . lists)
   (check-arg procedure? =)
-  (reduce (lambda (lis ans)		; Compute ANS + LIS.
-	    (cond ((null? lis) ans)	; Don't copy any lists
-		  ((null? ans) lis) 	; if we don't have to.
-		  ((eq? lis ans) ans)
-		  (else
-		   (fold (lambda (elt ans) (if (any (lambda (x) (= x elt)) ans)
+  (reduce (lambda (lis ans)             ; Compute ANS + LIS.
+            (cond ((null? lis) ans)     ; Don't copy any lists
+                  ((null? ans) lis)     ; if we don't have to.
+                  ((eq? lis ans) ans)
+                  (else
+                   (fold (lambda (elt ans) (if (any (lambda (x) (= x elt)) ans)
                                              ans
                                              (cons elt ans)))
-			 ans lis))))
-	  '() lists))
+                         ans lis))))
+          '() lists))
 
 (define (lset-union! = . lists)
   (check-arg procedure? =)
-  (reduce (lambda (lis ans)		; Splice new elts of LIS onto the front of ANS.
-	    (cond ((null? lis) ans)	; Don't copy any lists
-		  ((null? ans) lis) 	; if we don't have to.
-		  ((eq? lis ans) ans)
-		  (else
-		   (pair-fold (lambda (pair ans)
-				(let ((elt (car pair)))
-				  (if (any (lambda (x) (= x elt)) ans)
+  (reduce (lambda (lis ans)             ; Splice new elts of LIS onto the front of ANS.
+            (cond ((null? lis) ans)     ; Don't copy any lists
+                  ((null? ans) lis)     ; if we don't have to.
+                  ((eq? lis ans) ans)
+                  (else
+                   (pair-fold (lambda (pair ans)
+                                (let ((elt (car pair)))
+                                  (if (any (lambda (x) (= x elt)) ans)
                                     ans
                                     (begin (set-cdr! pair ans) pair))))
-			      ans lis))))
-	  '() lists))
+                              ans lis))))
+          '() lists))
 
 
 (define (lset-intersection = lis1 . lists)
   (check-arg procedure? =)
   (let ((lists (delete lis1 lists eq?))) ; Throw out any LIS1 vals.
-    (cond ((any null-list? lists) '())		; Short cut
-	  ((null? lists)          lis1)		; Short cut
-	  (else (filter (lambda (x)
-			  (every (lambda (lis) (member x lis =)) lists))
-			lis1)))))
+    (cond ((any null-list? lists) '())          ; Short cut
+          ((null? lists)          lis1)         ; Short cut
+          (else (filter (lambda (x)
+                          (every (lambda (lis) (member x lis =)) lists))
+                        lis1)))))
 
 (define (lset-intersection! = lis1 . lists)
   (check-arg procedure? =)
   (let ((lists (delete lis1 lists eq?))) ; Throw out any LIS1 vals.
-    (cond ((any null-list? lists) '())		; Short cut
-	  ((null? lists)          lis1)		; Short cut
-	  (else (filter! (lambda (x)
-			   (every (lambda (lis) (member x lis =)) lists))
-			 lis1)))))
+    (cond ((any null-list? lists) '())          ; Short cut
+          ((null? lists)          lis1)         ; Short cut
+          (else (filter! (lambda (x)
+                           (every (lambda (lis) (member x lis =)) lists))
+                         lis1)))))
 
 
 (define (lset-difference = lis1 . lists)
   (check-arg procedure? =)
-  (let ((lists (filter pair? lists)))	; Throw out empty lists.
-    (cond ((null? lists)     lis1)	; Short cut
-	  ((memq lis1 lists) '())	; Short cut
-	  (else (filter (lambda (x)
-			  (every (lambda (lis) (not (member x lis =)))
-				 lists))
-			lis1)))))
+  (let ((lists (filter pair? lists)))   ; Throw out empty lists.
+    (cond ((null? lists)     lis1)      ; Short cut
+          ((memq lis1 lists) '())       ; Short cut
+          (else (filter (lambda (x)
+                          (every (lambda (lis) (not (member x lis =)))
+                                 lists))
+                        lis1)))))
 
 (define (lset-difference! = lis1 . lists)
   (check-arg procedure? =)
-  (let ((lists (filter pair? lists)))	; Throw out empty lists.
-    (cond ((null? lists)     lis1)	; Short cut
-	  ((memq lis1 lists) '())	; Short cut
-	  (else (filter! (lambda (x)
-			   (every (lambda (lis) (not (member x lis =)))
-				  lists))
-			 lis1)))))
+  (let ((lists (filter pair? lists)))   ; Throw out empty lists.
+    (cond ((null? lists)     lis1)      ; Short cut
+          ((memq lis1 lists) '())       ; Short cut
+          (else (filter! (lambda (x)
+                           (every (lambda (lis) (not (member x lis =)))
+                                  lists))
+                         lis1)))))
 
 
 (define (lset-xor = . lists)
   (check-arg procedure? =)
-  (reduce (lambda (b a)			; Compute A xor B:
-	    ;; Note that this code relies on the constant-time
-	    ;; short-cuts provided by LSET-DIFF+INTERSECTION,
-	    ;; LSET-DIFFERENCE & APPEND to provide constant-time short
-	    ;; cuts for the cases A = (), B = (), and A eq? B. It takes
-	    ;; a careful case analysis to see it, but it's carefully
-	    ;; built in.
+  (reduce (lambda (b a)                 ; Compute A xor B:
+            ;; Note that this code relies on the constant-time
+            ;; short-cuts provided by LSET-DIFF+INTERSECTION,
+            ;; LSET-DIFFERENCE & APPEND to provide constant-time short
+            ;; cuts for the cases A = (), B = (), and A eq? B. It takes
+            ;; a careful case analysis to see it, but it's carefully
+            ;; built in.
 
-	    ;; Compute a-b and a^b, then compute b-(a^b) and
-	    ;; cons it onto the front of a-b.
-	    (receive (a-b a-int-b)   (lset-diff+intersection = a b)
-	      (cond ((null? a-b)     (lset-difference = b a))
-		    ((null? a-int-b) (append b a))
-		    (else (fold (lambda (xb ans)
-				  (if (member xb a-int-b =) ans (cons xb ans)))
-				a-b
-				b)))))
-	  '() lists))
+            ;; Compute a-b and a^b, then compute b-(a^b) and
+            ;; cons it onto the front of a-b.
+            (receive (a-b a-int-b)   (lset-diff+intersection = a b)
+              (cond ((null? a-b)     (lset-difference = b a))
+                    ((null? a-int-b) (append b a))
+                    (else (fold (lambda (xb ans)
+                                  (if (member xb a-int-b =) ans (cons xb ans)))
+                                a-b
+                                b)))))
+          '() lists))
 
 
 (define (lset-xor! = . lists)
   (check-arg procedure? =)
-  (reduce (lambda (b a)			; Compute A xor B:
-	    ;; Note that this code relies on the constant-time
-	    ;; short-cuts provided by LSET-DIFF+INTERSECTION,
-	    ;; LSET-DIFFERENCE & APPEND to provide constant-time short
-	    ;; cuts for the cases A = (), B = (), and A eq? B. It takes
-	    ;; a careful case analysis to see it, but it's carefully
-	    ;; built in.
+  (reduce (lambda (b a)                 ; Compute A xor B:
+            ;; Note that this code relies on the constant-time
+            ;; short-cuts provided by LSET-DIFF+INTERSECTION,
+            ;; LSET-DIFFERENCE & APPEND to provide constant-time short
+            ;; cuts for the cases A = (), B = (), and A eq? B. It takes
+            ;; a careful case analysis to see it, but it's carefully
+            ;; built in.
 
-	    ;; Compute a-b and a^b, then compute b-(a^b) and
-	    ;; cons it onto the front of a-b.
-	    (receive (a-b a-int-b)   (lset-diff+intersection! = a b)
-	      (cond ((null? a-b)     (lset-difference! = b a))
-		    ((null? a-int-b) (append! b a))
-		    (else (pair-fold (lambda (b-pair ans)
-				       (if (member (car b-pair) a-int-b =) ans
-					   (begin (set-cdr! b-pair ans) b-pair)))
-				     a-b
-				     b)))))
-	  '() lists))
+            ;; Compute a-b and a^b, then compute b-(a^b) and
+            ;; cons it onto the front of a-b.
+            (receive (a-b a-int-b)   (lset-diff+intersection! = a b)
+              (cond ((null? a-b)     (lset-difference! = b a))
+                    ((null? a-int-b) (append! b a))
+                    (else (pair-fold (lambda (b-pair ans)
+                                       (if (member (car b-pair) a-int-b =) ans
+                                           (begin (set-cdr! b-pair ans) b-pair)))
+                                     a-b
+                                     b)))))
+          '() lists))
 
 
 (define (lset-diff+intersection = lis1 . lists)
   (check-arg procedure? =)
-  (cond ((every null-list? lists) (values lis1 '()))	; Short cut
-	((memq lis1 lists)        (values '() lis1))	; Short cut
-	(else (partition (lambda (elt)
-			   (not (any (lambda (lis) (member elt lis =))
-				     lists)))
-			 lis1))))
+  (cond ((every null-list? lists) (values lis1 '()))    ; Short cut
+        ((memq lis1 lists)        (values '() lis1))    ; Short cut
+        (else (partition (lambda (elt)
+                           (not (any (lambda (lis) (member elt lis =))
+                                     lists)))
+                         lis1))))
 
 (define (lset-diff+intersection! = lis1 . lists)
   (check-arg procedure? =)
-  (cond ((every null-list? lists) (values lis1 '()))	; Short cut
-	((memq lis1 lists)        (values '() lis1))	; Short cut
-	(else (partition! (lambda (elt)
-			    (not (any (lambda (lis) (member elt lis =))
-				      lists)))
-			  lis1))))
+  (cond ((every null-list? lists) (values lis1 '()))    ; Short cut
+        ((memq lis1 lists)        (values '() lis1))    ; Short cut
+        (else (partition! (lambda (elt)
+                            (not (any (lambda (lis) (member elt lis =))
+                                      lists)))
+                          lis1))))
 
 (define map-in-order map) ; Gauche's map is already in order
 

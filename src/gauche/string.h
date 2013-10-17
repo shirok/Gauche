@@ -152,7 +152,7 @@ SCM_CLASS_DECL(Scm_StringClass);
 
 SCM_EXTERN ScmObj  Scm_MakeString(const char *str,
                                   ScmSmallInt size, ScmSmallInt len,
-				  int flags);
+                                  int flags);
 SCM_EXTERN ScmObj  Scm_MakeFillString(ScmSmallInt len, ScmChar fill);
 SCM_EXTERN ScmObj  Scm_CopyStringWithFlags(ScmString *str, int flags, int mask);
 
@@ -330,7 +330,7 @@ SCM_EXTERN ScmObj      Scm_DStringGet(ScmDString *dstr, int flags);
 SCM_EXTERN const char *Scm_DStringGetz(ScmDString *dstr);
 SCM_EXTERN const char *Scm_DStringPeek(ScmDString *dstr, int *size, int *len);
 SCM_EXTERN void        Scm_DStringPutz(ScmDString *dstr, const char *str,
-				       int siz);
+                                       int siz);
 SCM_EXTERN void        Scm_DStringAdd(ScmDString *dstr, ScmString *str);
 SCM_EXTERN void        Scm_DStringPutb(ScmDString *dstr, char byte);
 SCM_EXTERN void        Scm_DStringPutc(ScmDString *dstr, ScmChar ch);
@@ -378,7 +378,7 @@ SCM_CLASS_DECL(Scm_StringPointerClass);
 #define SCM_STRING_POINTER(obj)   ((ScmStringPointer*)obj)
 
 SCM_EXTERN ScmObj Scm_MakeStringPointer(ScmString *src, ScmSmallInt index,
-					ScmSmallInt start, ScmSmallInt end);
+                                        ScmSmallInt start, ScmSmallInt end);
 SCM_EXTERN ScmObj Scm_StringPointerRef(ScmStringPointer *sp);
 SCM_EXTERN ScmObj Scm_StringPointerNext(ScmStringPointer *sp);
 SCM_EXTERN ScmObj Scm_StringPointerPrev(ScmStringPointer *sp);

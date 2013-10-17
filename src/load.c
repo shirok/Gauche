@@ -425,12 +425,12 @@ static ScmObj break_env_paths(const char *envname)
 #endif /*GAUCHE_WINDOWS*/
 
     if (e == NULL || strlen(e) == 0) {
-	return SCM_NIL;
+        return SCM_NIL;
     } else if (Scm_IsSugid()) {
         /* don't trust env when setugid'd */
         return SCM_NIL;
     } else {
-	return Scm_StringSplitByChar(SCM_STRING(SCM_MAKE_STR_COPYING(e)),
+        return Scm_StringSplitByChar(SCM_STRING(SCM_MAKE_STR_COPYING(e)),
                                      delim);
     }
 }

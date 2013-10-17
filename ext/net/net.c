@@ -172,24 +172,24 @@ static void sockport_err(ScmSocket *sock, const char *io)
 ScmObj Scm_SocketInputPort(ScmSocket *sock, int buffering)
 {
     if (sock->inPort == NULL) {
-	ScmObj sockname;
-	int infd;
+        ScmObj sockname;
+        int infd;
         if (sock->type != SOCK_DGRAM &&
             sock->status < SCM_SOCKET_STATUS_CONNECTED) {
             sockport_err(sock, "input");
         }
 #ifndef GAUCHE_WINDOWS
-	infd = sock->fd;
+        infd = sock->fd;
 #else  /*GAUCHE_WINDOWS*/
         /* infd will be closed when this socket is closed. */
-	sock->infd = infd = _open_osfhandle(sock->fd, O_RDONLY);
+        sock->infd = infd = _open_osfhandle(sock->fd, O_RDONLY);
 #endif /*GAUCHE_WINDOWS*/
         if (infd == INVALID_SOCKET) sockport_err(sock, "input");
 
         /* NB: I keep the socket itself in the port name, in order to avoid
            the socket from GCed prematurely if application doesn't keep
            pointer to the socket. */
-	sockname = SCM_LIST2(SCM_MAKE_STR("socket input"), SCM_OBJ(sock));
+        sockname = SCM_LIST2(SCM_MAKE_STR("socket input"), SCM_OBJ(sock));
         sock->inPort = SCM_PORT(Scm_MakePortWithFd(sockname, SCM_PORT_INPUT,
                                                    infd, buffering, FALSE));
     }
@@ -199,26 +199,26 @@ ScmObj Scm_SocketInputPort(ScmSocket *sock, int buffering)
 ScmObj Scm_SocketOutputPort(ScmSocket *sock, int buffering)
 {
     if (sock->outPort == NULL) {
-	ScmObj sockname;
-	int outfd;
+        ScmObj sockname;
+        int outfd;
         if (sock->type != SOCK_DGRAM &&
             sock->status < SCM_SOCKET_STATUS_CONNECTED) {
             sockport_err(sock, "output");
         }
 #ifndef GAUCHE_WINDOWS
-	outfd = sock->fd;
+        outfd = sock->fd;
 #else  /*GAUCHE_WINDOWS*/
         /* outfd will be closed when this socket is closed. */
-	sock->outfd = outfd = _open_osfhandle(sock->fd, 0);
+        sock->outfd = outfd = _open_osfhandle(sock->fd, 0);
 #endif /*GAUCHE_WINDOWS*/
         if (outfd == INVALID_SOCKET) sockport_err(sock, "output");
 
         /* NB: I keep the socket itself in the port name, in order to avoid
            the socket from GCed prematurely if application doesn't keep
            pointer to the socket. */
-	sockname = SCM_LIST2(SCM_MAKE_STR("socket output"), SCM_OBJ(sock));
+        sockname = SCM_LIST2(SCM_MAKE_STR("socket output"), SCM_OBJ(sock));
         sock->outPort = SCM_PORT(Scm_MakePortWithFd(sockname, SCM_PORT_OUTPUT,
-						    outfd, buffering, FALSE));
+                                                    outfd, buffering, FALSE));
     }
     return SCM_OBJ(sock->outPort);
 }
@@ -386,7 +386,7 @@ ScmObj Scm_SocketSendMsg(ScmSocket *sock, ScmObj msg, int flags)
     return SCM_MAKE_INT(r);
 #else  /*GAUCHE_WINDOWS*/
     Scm_Error("sendmsg is not implemented on this platform.");
-    return SCM_UNDEFINED;	/* dummy */
+    return SCM_UNDEFINED;       /* dummy */
 #endif /*GAUCHE_WINDOWS*/
 }
 

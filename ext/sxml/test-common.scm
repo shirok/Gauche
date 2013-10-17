@@ -30,16 +30,16 @@
 
 ; Some useful increment/decrement operators
 
-				; Mutable increment
+                                ; Mutable increment
 (define-macro (++! x) `(inc! ,x))
 
-				; Read-only increment
+                                ; Read-only increment
 (define-macro (++ x) `(+ 1 ,x))
 
-				; Mutable decrement
+                                ; Mutable decrement
 (define-macro (--! x) `(dec! ,x))
 
-				; Read-only decrement
+                                ; Read-only decrement
 (define-macro (-- x) `(- ,x 1))
 
 ;; Excerpt from util.scm --------------------------------------
@@ -59,11 +59,11 @@
     (define (re-write body)
       (cond
        ((vector? body)
-	(list->vector (re-write (vector->list body))))
+        (list->vector (re-write (vector->list body))))
        ((not (pair? body)) body)
        ((and (eq? 'quote (car body)) (pair? (cdr body))
-	     (string? (cadr body)))
-	(string->symbol (cadr body)))
+             (string? (cadr body)))
+        (string->symbol (cadr body)))
        (else (cons (re-write (car body)) (re-write (cdr body))))))
     (cons 'begin (re-write body))))
 

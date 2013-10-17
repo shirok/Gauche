@@ -3161,7 +3161,7 @@ void Scm_InitBuiltinGeneric(ScmGeneric *gf, const char *name, ScmModule *mod)
     ScmObj s = SCM_INTERN(name);
     gf->common.info = s;
     if (gf->fallback == NULL) {
-	gf->fallback = Scm_NoNextMethod;
+        gf->fallback = Scm_NoNextMethod;
     }
     (void)SCM_INTERNAL_MUTEX_INIT(gf->lock);
     Scm_Define(mod, SCM_SYMBOL(s), SCM_OBJ(gf));

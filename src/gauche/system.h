@@ -247,9 +247,9 @@ SCM_CLASS_DECL(Scm_SysFdsetClass);
 #define SCM_SYS_FDSET_P(obj)    (SCM_XTYPEP(obj, SCM_CLASS_SYS_FDSET))
 
 SCM_EXTERN ScmObj Scm_SysSelect(ScmObj rfds, ScmObj wfds, ScmObj efds,
-				ScmObj timeout);
+                                ScmObj timeout);
 SCM_EXTERN ScmObj Scm_SysSelectX(ScmObj rfds, ScmObj wfds, ScmObj efds,
-				 ScmObj timeout);
+                                 ScmObj timeout);
 #else  /*!HAVE_SELECT*/
 /* dummy definitions */
 typedef struct ScmHeaderRec ScmSysFdset;

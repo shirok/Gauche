@@ -142,8 +142,8 @@
          `((test6.o ,(make-string 100 #\o))
            (test7.o ,(make-string 100 #\o))
            (test2.d :mode #o777
-		    ((test10.o ,(make-string 100 #\o))
-		     (test11.o ,(make-string 100 #\o))
+                    ((test10.o ,(make-string 100 #\o))
+                     (test11.o ,(make-string 100 #\o))
                      test12.o)))])
      (test.d ((test10.o ,(make-string 100 #\o))
               ,(cond-expand
@@ -291,7 +291,7 @@
           (directory-fold "test.out"
                           (^[path result]
                             (if (and (file-is-regular? path)
-				     (= (file-size path) 100))
+                                     (= (file-size path) 100))
                                 (cons path result)
                                 result))
                           '()

@@ -19,18 +19,18 @@
      (lambda (server)
 
        (define (accept-handler sock flag)
-	 (let* ((client (socket-accept server))
-		(output (socket-output-port client)))
-	   (selector-add! selector
-			  (socket-input-port client :buffered? #f)
-			  (lambda (input flag)
-			    (echo client input output))
-			  '(r))))
+         (let* ((client (socket-accept server))
+                (output (socket-output-port client)))
+           (selector-add! selector
+                          (socket-input-port client :buffered? #f)
+                          (lambda (input flag)
+                            (echo client input output))
+                          '(r))))
 
        (selector-add! selector
-		      (socket-fd server)
-		      accept-handler
-		      '(r)))
+                      (socket-fd server)
+                      accept-handler
+                      '(r)))
      servers)
     (do () (#f) (selector-select selector))))
 

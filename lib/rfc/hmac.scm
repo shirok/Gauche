@@ -69,10 +69,10 @@
 
 (define-method hmac-final! ((self <hmac>))
   (let* ((v (string->u8vector (key-of self)))
-	 (opad (u8vector->string (u8vector-xor v #x5c)))
-	 (inner (digest-final! (hasher-of self)))
-	 (outer (digest-string (class-of (hasher-of self))
-			       (string-append opad inner))))
+         (opad (u8vector->string (u8vector-xor v #x5c)))
+         (inner (digest-final! (hasher-of self)))
+         (outer (digest-string (class-of (hasher-of self))
+                               (string-append opad inner))))
     outer))
 
 (define (hmac-digest . args)

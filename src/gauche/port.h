@@ -333,7 +333,7 @@ SCM_EXTERN ScmObj Scm_ReadLineUnsafe(ScmPort *port);
 #define SCM_PORT_CURERR (1<<2)
 
 SCM_EXTERN ScmObj Scm_WithPort(ScmPort *port[], ScmObj thunk,
-			       int mask, int closep);
+                               int mask, int closep);
 #endif
 
 /*================================================================
@@ -388,16 +388,16 @@ SCM_EXTERN ScmObj Scm__GetRemainingInputStringCompat(ScmPort *port);
 
 SCM_EXTERN ScmObj Scm_MakeVirtualPort(ScmClass *klass,
                                       int direction,
-				      const ScmPortVTable *vtable);
+                                      const ScmPortVTable *vtable);
 SCM_EXTERN ScmObj Scm_MakeBufferedPort(ScmClass *klass,
                                        ScmObj name, int direction,
                                        int ownerp,
                                        ScmPortBuffer *bufrec);
 SCM_EXTERN ScmObj Scm_MakePortWithFd(ScmObj name,
-				     int direction,
-				     int fd,
-				     int bufmode,
-				     int ownerp);
+                                     int direction,
+                                     int fd,
+                                     int bufmode,
+                                     int ownerp);
 
 SCM_EXTERN ScmObj Scm_MakeCodingAwarePort(ScmPort *iport);
 

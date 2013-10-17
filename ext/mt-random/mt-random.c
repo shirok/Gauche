@@ -72,7 +72,7 @@ void Scm_MTInitByUI(ScmMersenneTwister *mt, unsigned long s)
     mt->mt[0]= s & 0xffffffffUL;
     for (mti=1; mti<N; mti++) {
         mt->mt[mti] =
-	    (1812433253UL * (mt->mt[mti-1] ^ (mt->mt[mti-1] >> 30)) + mti);
+            (1812433253UL * (mt->mt[mti-1] ^ (mt->mt[mti-1] >> 30)) + mti);
         /* See Knuth TAOCP Vol2. 3rd Ed. P.106 for multiplier. */
         /* In the previous versions, MSBs of the seed affect   */
         /* only MSBs of the array mt[].                        */

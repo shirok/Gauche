@@ -191,7 +191,7 @@ SCM_EXTERN ScmObj Scm_MakeIdentifier(ScmSymbol *name, ScmModule *mod,
                                      ScmObj env);
 SCM_EXTERN ScmObj Scm_CopyIdentifier(ScmIdentifier *id);
 SCM_EXTERN int    Scm_IdentifierBindingEqv(ScmIdentifier *id, ScmSymbol *sym,
-					   ScmObj env);
+                                           ScmObj env);
 SCM_EXTERN int    Scm_FreeVariableEqv(ScmObj var, ScmObj sym, ScmObj env);
 
 /*
@@ -654,8 +654,8 @@ enum {
 typedef ScmObj ScmCContinuationProc(ScmObj result, void **data);
 
 SCM_EXTERN void Scm_VMPushCC(ScmCContinuationProc *func,
-			     void **data,
-			     int datasize);
+                             void **data,
+                             int datasize);
 
 #define SCM_CCONT_DATA_SIZE 6   /* Maximum datasize for VMPushCC */
 

@@ -92,7 +92,7 @@ enum {
 };
 
 SCM_EXTERN ScmGloc *Scm_FindBinding(ScmModule *module, ScmSymbol *symbol,
-				    int flags);
+                                    int flags);
 SCM_EXTERN ScmGloc *Scm_MakeBinding(ScmModule *module, ScmSymbol *symbol,
                                     ScmObj value, int flags);
 SCM_EXTERN ScmObj Scm_GlobalVariableRef(ScmModule *module,
@@ -105,7 +105,7 @@ SCM_EXTERN int    Scm_AliasBinding(ScmModule *target, ScmSymbol *targetName,
 /* Convenience API.  Wrapper of Scm_MakeBinding. */
 SCM_EXTERN ScmObj Scm_Define(ScmModule *module,
                              ScmSymbol *symbol,
-			     ScmObj value);
+                             ScmObj value);
 SCM_EXTERN ScmObj Scm_DefineConst(ScmModule *module,
                                   ScmSymbol *symbol,
                                   ScmObj value);

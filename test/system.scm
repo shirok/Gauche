@@ -80,7 +80,7 @@
 
 (test* "getenv"
        (string-trim-both
-	(get-command-output (cond-expand
+        (get-command-output (cond-expand
                              (gauche.os.windows "echo %PATH%")
                              (else "echo $PATH"))))
        (sys-getenv "PATH"))
@@ -517,7 +517,7 @@
 
 (cond-expand
  [(and (not gauche.os.windows)  ;; win32 doesn't support fork at all.
-       (not gauche.os.cygwin))	;; cygwin's fork is not reliable.
+       (not gauche.os.cygwin))  ;; cygwin's fork is not reliable.
   (test* "fork & wait" #t
          (let ((pid (sys-fork)))
            (if (= pid 0)

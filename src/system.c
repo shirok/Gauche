@@ -77,7 +77,7 @@ extern char **environ;
 #include <tlhelp32.h>
 static HANDLE *win_prepare_handles(int *fds);
 static int win_wait_for_handles(HANDLE *handles, int nhandles, int options,
-				int *status /*out*/);
+                                int *status /*out*/);
 #endif  /* GAUCHE_WINDOWS */
 
 #ifdef HAVE_GLOB_H
@@ -240,14 +240,14 @@ ScmObj Scm_ReadDirectory(ScmString *pathname)
 
     dirp = FindFirstFile(SCM_MBS2WCS(path), &fdata);
     if (dirp == INVALID_HANDLE_VALUE) {
-	if ((winerrno = GetLastError()) != ERROR_FILE_NOT_FOUND) goto err;
-	return head;
+        if ((winerrno = GetLastError()) != ERROR_FILE_NOT_FOUND) goto err;
+        return head;
     }
     tpath = SCM_WCS2MBS(fdata.cFileName);
     SCM_APPEND1(head, tail, SCM_MAKE_STR_COPYING(tpath));
     while (FindNextFile(dirp, &fdata) != 0) {
         tpath = SCM_WCS2MBS(fdata.cFileName);
-	SCM_APPEND1(head, tail, SCM_MAKE_STR_COPYING(tpath));
+        SCM_APPEND1(head, tail, SCM_MAKE_STR_COPYING(tpath));
     }
     winerrno = GetLastError();
     FindClose(dirp);
@@ -255,8 +255,8 @@ ScmObj Scm_ReadDirectory(ScmString *pathname)
     return head;
  err:
     Scm_Error("Searching directory failed by windows error %d",
-	      winerrno);
-    return SCM_UNDEFINED;	/* dummy */
+              winerrno);
+    return SCM_UNDEFINED;       /* dummy */
 #endif
 }
 
@@ -455,7 +455,7 @@ ScmObj Scm_NormalizePathname(ScmString *pathname, int flags)
     }
     if (!(flags & SCM_PATH_CANONICALIZE)) {
         Scm_DStringPutz(&buf, srcp, endp - srcp);
-	return Scm_DStringGet(&buf, 0);
+        return Scm_DStringGet(&buf, 0);
     }
 #else /* GAUCHE_WINDOWS */
     if ((flags & SCM_PATH_EXPAND) && size >= 1 && *str == '~') {
@@ -494,7 +494,7 @@ ScmObj Scm_NormalizePathname(ScmString *pathname, int flags)
     }
     if (!(flags & SCM_PATH_CANONICALIZE)) {
         copy_win32_path(&buf, srcp, endp);
-	return Scm_DStringGet(&buf, 0);
+        return Scm_DStringGet(&buf, 0);
     }
 #endif /* GAUCHE_WINDOWS */
 
@@ -708,7 +708,7 @@ ScmObj Scm_SysMkstemp(ScmString *templat)
     int fd;
     const char *t = Scm_GetStringContent(templat, &siz, NULL, NULL);
     if (siz >= MKSTEMP_PATH_MAX-6) {
-	Scm_Error("pathname too long: %S", templat);
+        Scm_Error("pathname too long: %S", templat);
     }
     memcpy(name, t, siz);
     memcpy(name + siz, "XXXXXX", 6);
@@ -716,8 +716,8 @@ ScmObj Scm_SysMkstemp(ScmString *templat)
     fd = Scm_Mkstemp(name);
     sname = SCM_MAKE_STR_COPYING(name);
     SCM_RETURN(Scm_Values2(Scm_MakePortWithFd(sname, SCM_PORT_OUTPUT, fd,
-					      SCM_PORT_BUFFER_FULL, TRUE),
-			   sname));
+                                              SCM_PORT_BUFFER_FULL, TRUE),
+                           sname));
 }
 
 /*===============================================================
@@ -1635,8 +1635,8 @@ ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap,
         }
         /* TODO: We should probably use Windows API to handle various
            options consistently with fork-and-exec case above. */
-	execvp(program, (const char *const*)argv);
-	Scm_Panic("exec failed: %s: %s", program, strerror(errno));
+        execvp(program, (const char *const*)argv);
+        Scm_Panic("exec failed: %s: %s", program, strerror(errno));
     }
     return SCM_FALSE; /* dummy */
 #endif /* GAUCHE_WINDOWS */
@@ -2268,12 +2268,12 @@ static ScmObj get_relative_processes(int childrenp)
 
     snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
     if (snapshot == INVALID_HANDLE_VALUE) {
-	Scm_Error("couldn't take process snapshot in getppid()");
+        Scm_Error("couldn't take process snapshot in getppid()");
     }
     entry.dwSize = sizeof(PROCESSENTRY32);
     if (!Process32First(snapshot, &entry)) {
-	CloseHandle(snapshot);
-	Scm_Error("Process32First failed in getppid()");
+        CloseHandle(snapshot);
+        Scm_Error("Process32First failed in getppid()");
     }
     do {
         if (childrenp) {
@@ -2357,7 +2357,7 @@ struct passwd *getpwnam(const char *name)
     USER_INFO_2 *res;
     if (NetUserGetInfo(NULL, (LPCWSTR)SCM_MBS2WCS(name), 2, (LPBYTE*)&res)
         != NERR_Success) {
-	return NULL;
+        return NULL;
     }
     convert_user(res, &pwbuf);
     NetApiBufferFree(res);
@@ -2372,7 +2372,7 @@ struct passwd *getpwuid(uid_t uid)
     TCHAR buf[NAMELENGTH];
     DWORD len = NAMELENGTH;
     if (GetUserName(buf, &len) == 0) {
-	return NULL;
+        return NULL;
     }
     return getpwnam(SCM_WCS2MBS(buf));
 }
@@ -2429,9 +2429,9 @@ const char *getlogin(void)
     BOOL r;
     r = GetUserName(buf, &size);
     if (r) {
-	return SCM_WCS2MBS(buf);
+        return SCM_WCS2MBS(buf);
     } else {
-	return NULL;
+        return NULL;
     }
 }
 

@@ -422,7 +422,7 @@
              (cut with-output-to-port out base64-decode))))
     (let1 buf (open-output-string :private? #t)
       (let loop ([line (read-line inp)])
-	(unless (eof-object? line)
+        (unless (eof-object? line)
           (display line buf)
           (loop (read-line inp))))
       (base64-output (get-output-string buf) outp))

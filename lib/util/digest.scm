@@ -37,7 +37,7 @@
 
 (define-module util.digest
   (export <message-digest-algorithm> <message-digest-algorithm-meta>
-	  digest-update! digest-final! digest digest-string
+          digest-update! digest-final! digest digest-string
           digest-hexify)
   )
 (select-module util.digest)

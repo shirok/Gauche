@@ -774,9 +774,9 @@
   (syntax-rules ()
     ((_ x y)
      (let-syntax
-	 ((helper
-	   (syntax-rules ()
-	     ((_ u) (+ x u)))))
+         ((helper
+           (syntax-rules ()
+             ((_ u) (+ x u)))))
        (helper y)))))
 
 (test "lexical scope" 5
@@ -786,9 +786,9 @@
   (syntax-rules ()
     ((_ var body)
      (let-syntax
-	 ((helper
-	   (syntax-rules ()
-	     ((_) (lambda (var) body)))))
+         ((helper
+           (syntax-rules ()
+             ((_) (lambda (var) body)))))
        (helper)))))
 
 (test "lexical scope" 5
@@ -798,9 +798,9 @@
   (syntax-rules ()
     ((_ var body)
      (let-syntax
-	 ((helper
-	   (syntax-rules ()
-	     ((_ vvar bbody) (lambda (vvar) bbody)))))
+         ((helper
+           (syntax-rules ()
+             ((_ vvar bbody) (lambda (vvar) bbody)))))
        (helper var body)))))
 
 (test "passing by parameters" 5

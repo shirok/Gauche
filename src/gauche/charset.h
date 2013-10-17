@@ -74,13 +74,13 @@ SCM_EXTERN ScmObj Scm_CharSetCopy(ScmCharSet *src);
 SCM_EXTERN int    Scm_CharSetEq(ScmCharSet *x, ScmCharSet *y);
 SCM_EXTERN int    Scm_CharSetLE(ScmCharSet *x, ScmCharSet *y);
 SCM_EXTERN ScmObj Scm_CharSetAddRange(ScmCharSet *cs,
-				      ScmChar from, ScmChar to);
+                                      ScmChar from, ScmChar to);
 SCM_EXTERN ScmObj Scm_CharSetAdd(ScmCharSet *dest, ScmCharSet *src);
 SCM_EXTERN ScmObj Scm_CharSetComplement(ScmCharSet *cs);
 SCM_EXTERN ScmObj Scm_CharSetCaseFold(ScmCharSet *cs);
 SCM_EXTERN ScmObj Scm_CharSetRanges(ScmCharSet *cs);
 SCM_EXTERN ScmObj Scm_CharSetRead(ScmPort *input, int *complement_p,
-				  int error_p, int bracket_syntax);
+                                  int error_p, int bracket_syntax);
 
 SCM_EXTERN int    Scm_CharSetContains(ScmCharSet *cs, ScmChar c);
 SCM_EXTERN void   Scm_CharSetDump(ScmCharSet *cs, ScmPort *port);

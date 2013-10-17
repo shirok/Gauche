@@ -52,62 +52,62 @@
 ; referenced in ?expr will be printed upon the assertion failure.
 
 (define-macro (assert expr . others)
-			; given the list of expressions or vars,
-			; make the list appropriate for cerr
+                        ; given the list of expressions or vars,
+                        ; make the list appropriate for cerr
   (define (make-print-list prefix lst)
     (cond
      ((null? lst) '())
      ((symbol? (car lst))
       (cons #\newline
-	(cons (list 'quote (car lst))
-	  (cons ": " (cons (car lst) (make-print-list #\newline (cdr lst)))))))
+        (cons (list 'quote (car lst))
+          (cons ": " (cons (car lst) (make-print-list #\newline (cdr lst)))))))
      (else
       (cons prefix (cons (car lst) (make-print-list "" (cdr lst)))))))
 
-			; return the list of all unique "interesting"
-			; variables in the expr. Variables that are certain
-			; to be bound to procedures are not interesting.
+                        ; return the list of all unique "interesting"
+                        ; variables in the expr. Variables that are certain
+                        ; to be bound to procedures are not interesting.
   (define (vars-of expr)
     (let loop ((expr expr) (vars '()))
       (cond
-       ((not (pair? expr)) vars)	; not an application -- ignore
+       ((not (pair? expr)) vars)        ; not an application -- ignore
        ((memq (car expr)
-	      '(quote let let* letrec let-values* lambda cond quasiquote
-		      case define do assert))
-	vars)				; won't go there
-       (else				; ignore the head of the application
-	(let inner ((expr (cdr expr)) (vars vars))
-	  (cond
-	   ((null? expr) vars)
-	   ((symbol? (car expr))
-	    (inner (cdr expr)
-		   (if (memq (car expr) vars) vars (cons (car expr) vars))))
-	   (else
-	    (inner (cdr expr) (loop (car expr) vars)))))))))
+              '(quote let let* letrec let-values* lambda cond quasiquote
+                      case define do assert))
+        vars)                           ; won't go there
+       (else                            ; ignore the head of the application
+        (let inner ((expr (cdr expr)) (vars vars))
+          (cond
+           ((null? expr) vars)
+           ((symbol? (car expr))
+            (inner (cdr expr)
+                   (if (memq (car expr) vars) vars (cons (car expr) vars))))
+           (else
+            (inner (cdr expr) (loop (car expr) vars)))))))))
 
   (cond
-   ((null? others)		; the most common case
+   ((null? others)              ; the most common case
     `(or ,expr (begin (cerr "failed assertion: " ',expr nl "bindings"
-			    ,@(make-print-list #\newline (vars-of expr)) nl)
-		      (error "assertion failure"))))
+                            ,@(make-print-list #\newline (vars-of expr)) nl)
+                      (error "assertion failure"))))
    ((eq? (car others) 'report:) ; another common case
     `(or ,expr (begin (cerr "failed assertion: " ',expr
-			    ,@(make-print-list #\newline (cdr others)) nl)
-		      (error "assertion failure"))))
+                            ,@(make-print-list #\newline (cdr others)) nl)
+                      (error "assertion failure"))))
    ((not (memq 'report: others))
     `(or (and ,expr ,@others)
-	 (begin (cerr "failed assertion: " '(,expr ,@others) nl "bindings"
-		      ,@(make-print-list #\newline
-			 (vars-of (cons 'and (cons expr others)))) nl)
-		      (error "assertion failure"))))
-   (else			; report: occurs somewhere in 'others'
+         (begin (cerr "failed assertion: " '(,expr ,@others) nl "bindings"
+                      ,@(make-print-list #\newline
+                         (vars-of (cons 'and (cons expr others)))) nl)
+                      (error "assertion failure"))))
+   (else                        ; report: occurs somewhere in 'others'
     (let loop ((exprs (list expr)) (reported others))
       (cond
        ((eq? (car reported) 'report:)
-	`(or (and ,@(reverse exprs))
-	     (begin (cerr "failed assertion: " ',(reverse exprs)
-			  ,@(make-print-list #\newline (cdr reported)) nl)
-		    (error "assertion failure"))))
+        `(or (and ,@(reverse exprs))
+             (begin (cerr "failed assertion: " ',(reverse exprs)
+                          ,@(make-print-list #\newline (cdr reported)) nl)
+                    (error "assertion failure"))))
        (else (loop (cons (car reported) exprs) (cdr reported)))))))
 )
 

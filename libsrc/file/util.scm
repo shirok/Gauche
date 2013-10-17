@@ -50,7 +50,7 @@
           create-directory-tree check-directory-tree
           build-path resolve-path expand-path simplify-path decompose-path
           absolute-path? relative-path? find-file-in-paths
-	  path-separator
+          path-separator
           path-extension path-sans-extension path-swap-extension
           file-is-readable? file-is-writable? file-is-executable?
           file-is-symlink?
@@ -528,7 +528,7 @@
  [gauche.os.windows
   (define (%stat-compare s1 s2 f1 f2)
     (let ([p1 (sys-normalize-pathname f1 :absolute #t :canonicalize #t)]
-	  [p2 (sys-normalize-pathname f2 :absolute #t :canonicalize #t)])
+          [p2 (sys-normalize-pathname f2 :absolute #t :canonicalize #t)])
       (equal? p1 p2)))
   (define (file-eq? f1 f2)  (%stat-compare #f #f f1 f2))
   (define (file-eqv? f1 f2) (%stat-compare #f #f f1 f2))

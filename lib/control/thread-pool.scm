@@ -46,7 +46,7 @@
   (use control.job)
   (export <thread-pool>
           <thread-pool-shut-down>
-	  make-thread-pool thread-pool-results thread-pool-shut-down?
+          make-thread-pool thread-pool-results thread-pool-shut-down?
           add-job! wait-all terminate-all!))
 (select-module control.thread-pool)
 

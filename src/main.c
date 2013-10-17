@@ -35,7 +35,7 @@
 
 #include <signal.h>
 #include <ctype.h>
-#include <fcntl.h>		/* for _O_BINMODE on windows. */
+#include <fcntl.h>              /* for _O_BINMODE on windows. */
 
 #ifdef HAVE_GETOPT_H
 #include <getopt.h>
@@ -252,7 +252,7 @@ int parse_options(int argc, char *argv[])
             pre_cmds = Scm_Acons(SCM_MAKE_CHAR(c),
                                  SCM_MAKE_STR_COPYING(optarg), pre_cmds);
             break;
-	case '-': break;
+        case '-': break;
         case '?': usage(); break;
         }
     }
@@ -589,9 +589,9 @@ int main(int argc, char **argv)
         if (argv[argind][0] == '/') {
             scriptfile = argv[argind];
 #if defined(__CYGWIN__) || defined(GAUCHE_WINDOWS)
-	} else if (isalpha(argv[argind][0]) && argv[argind][1] == ':') {
-	    /* support of wicked legacy DOS drive letter */
-	    scriptfile = argv[argind];
+        } else if (isalpha(argv[argind][0]) && argv[argind][1] == ':') {
+            /* support of wicked legacy DOS drive letter */
+            scriptfile = argv[argind];
 #endif /* __CYGWIN__ || GAUCHE_WINDOWS */
         } else {
             if (stat(argv[argind], &statbuf) == 0) {
