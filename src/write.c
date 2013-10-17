@@ -360,10 +360,10 @@ static size_t write_char(ScmChar ch, ScmPort *port, ScmWriteContext *ctx)
             
         if (cname) {
             Scm_PutzUnsafe(cname, -1, port);
-            return strlen(cname);
+            return strlen(cname)+2; /* +2 for '#\' */
         } else {
             Scm_PutcUnsafe(ch, port);
-            return 1;
+            return 3;               /* +2 for '#\' */
         }
     }
 }
@@ -377,7 +377,7 @@ ScmObj Scm__WritePrimitive(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 #define CASE_ITAG_RET(obj, str)                 \
     case SCM_ITAG(obj):                         \
         Scm_PutzUnsafe(str, -1, port);          \
-        return SCM_MAKE_INT(sizeof(str));
+        return SCM_MAKE_INT(sizeof(str)-1);
 
     if (SCM_IMMEDIATEP(obj)) {
         switch (SCM_ITAG(obj)) {
