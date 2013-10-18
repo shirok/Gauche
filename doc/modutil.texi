@@ -8899,13 +8899,35 @@ behavior in a specific request:
 
 
 @defun http-compose-query path params :optional encoding
+@c EN
 A helper procedure to create a request-uri from
 a list of query parameters.  @var{Encoding} specifies
 the character encodings to be used.
+@c JP
+クエリパラメータのリストからリクエストURIを生成する補助関数です。
+@var{encoding}引数はクエリパラメータの文字エンコーディングを指定します。
+@c COMMON
 
 @example
 (http-compose-query "/search" '((q "$foo") (n 20)))
  @result{} "/search?q=%24foo&n=20"
+
+(http-compose-query "" '((x "a b") (x 2)))
+ @result{} "?x=a%20b&x=2"
+@end example
+
+@c EN
+If @var{path} is @code{#f}, only the query parameter part
+is returned (compare the following example and the last
+example):
+@c JP
+@var{path}が@code{#f}の場合は、クエリパラメータの部分だけが返されます
+(次の例と直前の例を比べてみてください)。
+@c COMMON
+
+@example
+(http-compose-query #f '((x "a b") (x 2)))
+ @result{} "x=a%20b&x=2"
 @end example
 @end defun
 
