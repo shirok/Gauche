@@ -887,6 +887,15 @@
          (topological-sort (map (cut map symbol->string <>) input) string=?))
   )
 
+;; cycle
+(test* "topological-sort: error" (test-error)
+       (topological-sort '((watch tie)
+			   (tie watch))))
+(test* "topological-sort: error" (test-error)
+       (topological-sort '((shirt watch)
+			   (watch tie)
+			   (tie watch))))
+
 ;;-----------------------------------------------
 (test-section "util.trie")
 (use util.trie)
