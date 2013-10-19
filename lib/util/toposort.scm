@@ -53,7 +53,9 @@
   (set! queue (append-map (lambda (p) (if (= (cdr p) 0) (list (car p)) '()))
                           table))
   (set! result queue)
-  (when (null? queue) (error "graph has circular dependency" nodes))
   (traverse)
+  (let1 rest (filter (lambda (e) (not (zero? (cdr e)))) table)
+    (unless (null? rest)
+      (error "graph has circular dependency" (map car rest))))
   (reverse result))
 
