@@ -190,7 +190,7 @@
         [(assert nassert)  (apply unparse-assert-like test)]
         [else (err "invalid AST in the test part of cpat" test)]))
     (seq yes)
-    (when no (disp "|") (seq no))
+    (unless (null? no) (disp "|") (seq no))
     (disp ")"))
 
   (define (unparse-assert-like op . asst)

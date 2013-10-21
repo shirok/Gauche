@@ -1,3 +1,12 @@
+2013-10-20  Shiro Kawai  <shiro@acm.org>
+
+	* src/regexp.c (rc1_parse, rc3_rec): Fixed a bug handling
+	  (?(condition)yes-pattern).  It should take into account of
+	  empty no-pattern, e.g. (?(condition)yes-pattern|), which makes
+	  the pattern always match if condition doesn't hold.
+	  Patch from leque.
+	* lib/gauche/regexp.scm (regexp-unparse): Ditto.
+
 2013-10-13  Shiro Kawai  <shiro@acm.org>
 
 	* lib/text/diff.scm (diff): Bug fix: 'Equal' keyword argument was

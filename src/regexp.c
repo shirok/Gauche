@@ -922,7 +922,7 @@ static ScmObj rc1_parse(regcomp_ctx *ctx, int bolp, ScmObj groups)
                 npat = SCM_CDDR(elt);
             } else {
                 ypat = item;
-                npat = SCM_FALSE;
+                npat = SCM_NIL;
             }
             PUSH(SCM_LIST4(SCM_SYM_CPAT, cond, ypat, npat));
             bolp = FALSE;
@@ -1693,8 +1693,7 @@ static void rc3_rec(regcomp_ctx *ctx, ScmObj ast, int lastp)
             ocodep2 = ctx->codep;
             rc3_emit_offset(ctx, 0); /* will be patched */
             rc3_fill_offset(ctx, ocodep1, ctx->codep);
-            if (SCM_FALSEP(npat)) rc3_emit(ctx, RE_FAIL);
-            else rc3_seq(ctx, npat, lastp);
+            rc3_seq(ctx, npat, lastp);
             rc3_fill_offset(ctx, ocodep2, ctx->codep);
         } else {
             SCM_ASSERT(SCM_EQ(SCM_CAR(cond), SCM_SYM_ASSERT)
@@ -1712,8 +1711,7 @@ static void rc3_rec(regcomp_ctx *ctx, ScmObj ast, int lastp)
             ocodep3 = ctx->codep;
             rc3_emit_offset(ctx, 0); /* will be patched */
             rc3_fill_offset(ctx, ocodep2, ctx->codep);
-            if (SCM_FALSEP(npat)) rc3_emit(ctx, RE_FAIL);
-            else rc3_seq(ctx, npat, lastp);
+            rc3_seq(ctx, npat, lastp);
             rc3_fill_offset(ctx, ocodep3, ctx->codep);
         }
         return;
