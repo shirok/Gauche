@@ -455,6 +455,15 @@ static int skipws(ScmPort *port, ScmReadContext *ctx)
     }
 }
 
+static void reject_in_r7(ScmPort *port, ScmReadContext *ctx, const char *token)
+{
+    if (RCTX_LEXICAL_MODE(ctx) == SCM_READ_STRICT_R7) {
+        Scm_ReadError(port,
+                      "lexical syntax %s isn't allowed in strict R7RS mode",
+                      token);
+    }
+}
+
 static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
 {
     int c = skipws(port, ctx);
@@ -487,9 +496,11 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
                 return read_shebang(port, ctx);
             case '/':
                 /* #/.../ literal regexp */
+                reject_in_r7(port, ctx, "#/.../");
                 return read_regexp(port);
             case '[':
                 /* #[...] literal charset */
+                reject_in_r7(port, ctx, "#[...]");
                 return read_charset(port);
             case ',':
                 /* #,(form) - SRFI-10 read-time macro */
@@ -500,6 +511,7 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
                 read_nested_comment(port, ctx);
                 return SCM_UNDEFINED;
             case '`':
+                /* TODO: Switch interpretation of #` based on reader mode */
                 /* #`"..." is a special syntax of #,(string-interpolate "...") */
                 {
                     ScmObj form = read_item(port, ctx);
@@ -509,6 +521,7 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
                 }
             case '?':
                 /* #? - debug directives */
+                reject_in_r7(port, ctx, "#?");
                 {
                     int c2;
                     ScmObj form;
@@ -530,6 +543,7 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
                 /* #N# or #N= form */
                 return read_reference(port, c1, ctx);
             case '*':
+                reject_in_r7(port, ctx, "#*");
                 /* #*"...." byte string
                    #*01001001 for bit vector, maybe in future. */
                 {
@@ -539,6 +553,7 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
                     Scm_ReadError(port, "unsupported #*-syntax: #*%C", c2);
                 }
             case ':':
+                reject_in_r7(port, ctx, "#:");
                 /* #:name - uninterned symbol */
                 {
                     int c2 = Scm_GetcUnsafe(port);
@@ -582,8 +597,10 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
         return read_escaped_symbol(port, '|', TRUE, ctx);
     case '[':
         /* TODO: make it customizable */
+        reject_in_r7(port, ctx, "[]");
         return read_list(port, ']', ctx);
     case '{':
+        reject_in_r7(port, ctx, "{}");
         /* srfi-105 experimental support */
         {
             ScmObj r = read_list(port, '}', ctx);
@@ -615,7 +632,7 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
            but some Scheme programs use such identifiers. */
         return read_symbol_or_number(port, c, ctx);
     case ')':; case ']':; case '}':;
-        Scm_ReadError(port, "extra close parenthesis");
+        Scm_ReadError(port, "extra close parenthesis `%c'", c);
     case EOF:
         return SCM_EOF;
     default:
