@@ -87,7 +87,7 @@
       (sys-link to1 to2))
     (begin
       (copy-file from1 to1 :safe #t :if-exists if-exists)
-      (guard (e (else (sys-unlink to1) (sys-unlink to2) (raise e)))
+      (guard (e [else (sys-unlink to1) (sys-unlink to2) (raise e)])
         (copy-file from2 to2 :safe #t :if-exists if-exists)))))
 
 (define (%dbm-rename2 from1 to1 from2 to2 :key (if-exists :error))
@@ -109,15 +109,15 @@
 
 (define-method dbm-open ((self <dbm>))
   (define (pick-proc slot default custom)
-    (let ((spec (slot-ref self slot)))
-      (cond ((eq? spec #f) identity)
-            ((eq? spec #t) default)
-            ((and (pair? spec)
+    (let1 spec (slot-ref self slot)
+      (cond [(eq? spec #f) identity]
+            [(eq? spec #t) default]
+            [(and (pair? spec)
                   (null? (cddr spec))
                   (procedure? (car spec))
                   (procedure? (cadr spec)))
-             (custom spec))
-            (else (errorf "bad value for ~s: has to be boolean or a list of two procedures, but got ~s" slot spec)))))
+             (custom spec)]
+            [else (errorf "bad value for ~s: has to be boolean or a list of two procedures, but got ~s" slot spec)])))
 
   (slot-set! self 'k2s (pick-proc 'key-convert write-to-string car))
   (slot-set! self 's2k (pick-proc 'key-convert read-from-string cadr))
@@ -207,17 +207,17 @@
   ;; but it opens from-db first with read mode, so if the implementation
   ;; has sane locking, the to-db opening with create option would fail.
   ;; (That's why we're using let* here.)
-  (let* ((from-db (dbm-open class :path from :rw-mode :read))
-         (to-db   (dbm-open class :path to   :rw-mode :create)))
-    (dbm-for-each from-db (lambda (k v) (dbm-put! to-db k v)))
+  (let* ([from-db (dbm-open class :path from :rw-mode :read)]
+         [to-db   (dbm-open class :path to   :rw-mode :create)])
+    (dbm-for-each from-db (^[k v] (dbm-put! to-db k v)))
     (dbm-close to-db)
     (dbm-close from-db)))
 
 (define-method dbm-db-move ((class <dbm-meta>) from to)
   ;; generic one - see above.
-  (let* ((from-db (dbm-open class :path from :rw-mode :read))
-         (to-db   (dbm-open class :path to   :rw-mode :create)))
-    (dbm-for-each from-db (lambda (k v) (dbm-put! to-db k v)))
+  (let* ([from-db (dbm-open class :path from :rw-mode :read)]
+         [to-db   (dbm-open class :path to   :rw-mode :create)])
+    (dbm-for-each from-db (^[k v] (dbm-put! to-db k v)))
     (dbm-close to-db)
     (dbm-close from-db)
     (dbm-db-remove class from)))
