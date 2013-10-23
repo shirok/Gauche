@@ -123,17 +123,16 @@
 ;; The default method uses text.sql to parse the SQL statement, and calls
 ;; legacy dbd API.  This will go away once the drivers switched to the
 ;; new dbd API.
-(define-method dbi-prepare ((c <dbi-connection>) (sql <string>) . args)
-  (let-keywords args ((pass-through #f))
-    (let1 prepared (if pass-through
-                     (lambda args
-                       (unless (null? args)
-                         (error <dbi-parameter-error>
-                                "parameter is given to the pass through sql:"
-                                sql))
-                       sql)
-                     (dbi-prepare-sql c sql))
-      (make <dbi-query> :connection c :prepared prepared))))
+(define-method dbi-prepare ((c <dbi-connection>) (sql <string>)
+                            :key (pass-through #f))
+  (let1 prepared (if pass-through
+                   (^ args
+                     (unless (null? args)
+                       (error <dbi-parameter-error>
+                              "parameter is given to the pass through sql:" sql))
+                     sql)
+                   (dbi-prepare-sql c sql))
+    (make <dbi-query> :connection c :prepared prepared)))
 
 (define-method dbi-execute ((q <dbi-query>) . params)
   (dbi-execute-using-connection (ref q 'connection) q params))
@@ -163,7 +162,7 @@
 ;; Returns a list of available dbd.* backends.  Each entry is
 ;; a cons of a module name and its driver name.
 (define (dbi-list-drivers)
-  (library-map 'dbd.* (lambda (m p) m)))
+  (library-map 'dbd.* (^[m p] m)))
 
 ;;;==============================================================
 ;;; DBD-level APIs
@@ -172,13 +171,13 @@
 ;; Subclass SHOULD implement this.
 (define-method dbi-make-connection ((d <dbi-driver>)
                                     (options <string>)
-                                    (option-alist <list>) . args)
+                                    (option-alist <list>)
+                                    :key (username "") (password ""))
   ;; The default method here is just a temporary one to use
   ;; older dbd drivers.  Will go away once the drivers catch up
   ;; the new interface.
-  (let-keywords args ((username "") (password ""))
-    ;; call deprecated dbi-make-connection API.
-    (dbi-make-connection d username password (or options ""))))
+  ;; Calls deprecated dbi-make-connection API.
+  (dbi-make-connection d username password (or options "")))
 
 ;; Usually the subclass should define these for the connection
 ;; and result set objects.
@@ -196,26 +195,24 @@
   (rxmatch-case data-source-name
     (#/^dbi:([\w-]+)(?::(.*))?$/ (#f driver options)
      (if (and options (not (string-null? options)))
-       (let1 alist (map (lambda (nv)
-                          (receive (n v) (string-scan nv "=" 'both)
-                            (if n (cons n v) (cons nv #t))))
+       (let1 alist (map (^[nv] (receive (n v) (string-scan nv "=" 'both)
+                                 (if n (cons n v) (cons nv #t))))
                         (string-split options #\;))
          (values driver options alist))
        (values driver "" '())))
-    (else
-     (error <dbi-error> "bad data source name spec:" data-source-name))))
+    (else (error <dbi-error> "bad data source name spec:" data-source-name))))
 
 ;; Loads a concrete driver module, and returns an instance of
 ;; the driver.
 (define (dbi-make-driver driver-name)
-  (let* ((module (string->symbol #`"dbd.,driver-name"))
-         (path   (module-name->path module))
-         (class-name  (string->symbol #`"<,|driver-name|-driver>")))
-    (or (and-let* (( (library-exists? path :strict? #t) )
-                   (driver-class
+  (let* ([module (string->symbol #`"dbd.,driver-name")]
+         [path   (module-name->path module)]
+         [class-name  (string->symbol #`"<,|driver-name|-driver>")])
+    (or (and-let* ([ (library-exists? path :strict? #t) ]
+                   [driver-class
                     (begin (eval `(require ,(path-sans-extension path))
                                  (current-module))
-                           (global-variable-ref module class-name #f))))
+                           (global-variable-ref module class-name #f))])
           (make driver-class :driver-name driver-name))
         (errorf <dbi-nonexistent-driver-error>
                 :driver-name driver-name
@@ -225,78 +222,77 @@
 ;; dbi-prepare-sql returns a procedure, which generates a complete sql
 ;; when called with binding values to the parameters.
 (define (dbi-prepare-sql conn sql)
-  (let* ((tokens (sql-tokenize sql))
-         (num-params (count (lambda (elt)
+  (let* ([tokens (sql-tokenize sql)]
+         [num-params (count (^[elt]
                               (match elt
-                                (('parameter (? integer?)) #t)
-                                (('parameter (? string? name))
+                                [('parameter (? integer?)) #t]
+                                [('parameter (? string? name))
                                  (errorf <dbi-unsupported-error>
-                                         "Named parameter (:~a) isn't supported yet" name))
-                                (else #f)))
-                            tokens)))
-    (lambda args
+                                         "Named parameter (:~a) isn't supported yet" name)]
+                                [else #f]))
+                            tokens)])
+    (^ args
       (unless (= (length args) num-params)
         (error <dbi-parameter-error>
                "wrong number of parameters given to an SQL:" sql))
       (call-with-output-string
-        (lambda (p)
-          (with-port-locking p
-            (cut generate-sql/parameters conn tokens args p sql)))))))
+        (^p (with-port-locking p
+              (cut generate-sql/parameters conn tokens args p sql)))))))
 
 (define (generate-sql/parameters conn tokens args p sql)
-  (let loop ((tokens tokens)
-             (args   args)
-             (delim  #t))
+  (let loop ([tokens tokens]
+             [args   args]
+             [delim  #t])
     (unless (null? tokens)
       (match (car tokens)
-        ((? char? x)
+        [(? char? x)
          (display x p)
-         (loop (cdr tokens) args #t))
-        ((? symbol? x)
+         (loop (cdr tokens) args #t)]
+        [(? symbol? x)
          (unless delim (write-char #\space p))
          (display x p)
-         (loop (cdr tokens) args #f))
-        ((? string? x)
+         (loop (cdr tokens) args #f)]
+        [(? string? x)
          (unless delim (write-char #\space p))
          (display x p)
-         (loop (cdr tokens) args #f))
-        (('delimited x)
+         (loop (cdr tokens) args #f)]
+        [('delimited x)
          (unless delim (write-char #\space p))
          (format p "\"~a\"" (regexp-replace-all #/\"/ x "\"\""))
-         (loop (cdr tokens) args #f))
-        (('string x)
+         (loop (cdr tokens) args #f)]
+        [('string x)
          (unless delim (write-char #\space p))
          (format p "'~a'" (regexp-replace-all #/'/ x "''"))
-         (loop (cdr tokens) args #f))
-        (('number x)
+         (loop (cdr tokens) args #f)]
+        [('number x)
          (unless delim (write-char #\space p))
          (display x p)
-         (loop (cdr tokens) args #f))
-        (('parameter n)
+         (loop (cdr tokens) args #f)]
+        [('parameter n)
          (unless delim (write-char #\space p))
-         (let* ((argval (car args))
-                (s (cond
-                    ((not argval) "NULL")
-                    ((string? argval)
-                     #`"',(dbi-escape-sql conn argval)'")
-                    ((symbol? argval)
-                     #`"',(dbi-escape-sql conn (symbol->string argval))'")
-                    ((real? argval) (number->string argval))
-                    (else (error <dbi-parameter-error>
-                                 "bad type of parameter for SQL:" argval)))))
+         (let* ([argval (car args)]
+                [s (cond
+                    [(not argval) "NULL"]
+                    [(string? argval)
+                     #`"',(dbi-escape-sql conn argval)'"]
+                    [(symbol? argval)
+                     #`"',(dbi-escape-sql conn (symbol->string argval))'"]
+                    [(real? argval) (number->string argval)]
+                    [else (error <dbi-parameter-error>
+                                 "bad type of parameter for SQL:" argval)])])
            (display s p))
-         (loop (cdr tokens) (cdr args) #f))
-        (('bitstring x)
+         (loop (cdr tokens) (cdr args) #f)]
+        [('bitstring x)
          (unless delim (write-char #\space p))
          (format p "B'~a'" x)
-         (loop (cdr tokens) args #f))
-        (('hexstring x)
+         (loop (cdr tokens) args #f)]
+        [('hexstring x)
          (unless delim (write-char #\space p))
          (format p "X'~a'" x)
-         (loop (cdr tokens) args #f))
-        (else
+         (loop (cdr tokens) args #f)]
+        [else
          (errorf <dbi-unsupported-error>
-                 "unsupported SQL token ~a in ~s" (car tokens) sql))
+                 "unsupported SQL token ~a in ~s" (car tokens) sql)]
         ))))
 
 
