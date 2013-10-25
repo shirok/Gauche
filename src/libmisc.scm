@@ -93,6 +93,13 @@
 (define foreign-pointer-attribute-set foreign-pointer-attribute-set!)
 
 ;;
+;; Certain internal procedures use this
+;;
+(select-module gauche.internal)
+(define-cproc %immediate? (obj) ::<boolean> :constant
+  (result (not (SCM_PTRP obj))))
+
+;;
 ;; Static configuration
 ;;
 
