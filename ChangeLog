@@ -1,3 +1,23 @@
+2013-10-25  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/system.h, src/signal.c: Changed handling of SIGPIPE.
+	  If Gauche is asked to take care of SIGPIPE, we do nothing for
+	  it by default.  The program can handle the situation by
+	  capturing EPIPE <system-error> anyway.
+	* src/gauche/port.h, src/libio.scm, src/port.c, src/portapi.c:
+	  Added an internal flag that can terminate the process if
+	  writing raised EPIPE.  By default, only stdout and stderr have the
+	  flag set.  This makes casual tools that write to stdout to be piped
+	  together behave the similar way as other Unix commands, while
+	  other use of pipes (e.g. sockets) won't cause annoying termination
+	  via SIGPIPE.
+	  NB: We still need an API to change this flag.
+	  NB: Code that has been accessed ScmBufferedPort.mode needs to be
+	  changed to use the new API Scm_GetPortBufferingMode etc.
+	  (Scm_KeywordToBufferingMode, Scm_GetPortBufferingModeAsKeyword):
+	  More descriptive API name than Scm_BufferingMode and
+	  Scm_GetBufferingMode.  The latter will be removed after 1.0 release.
+
 2013-10-20  Shiro Kawai  <shiro@acm.org>
 
 	* src/regexp.c (rc1_parse, rc3_rec): Fixed a bug handling

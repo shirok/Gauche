@@ -119,9 +119,9 @@
   (setter (port::<port> mode) ::<void>
           (unless (== (SCM_PORT_TYPE port) SCM_PORT_FILE)
             (Scm_Error "can't set buffering mode to non-buffered port: %S"port))
-          (set! (ref (-> port src) buf mode)
-                (Scm_BufferingMode mode (-> port direction) -1)))
-  Scm_GetBufferingMode)
+          (Scm_SetPortBufferingMode
+           port (Scm_BufferingMode mode (-> port direction) -1)))
+  (result (Scm_GetPortBufferingModeAsKeyword port)))
 
 (define-cproc port-case-fold-set! (port::<port> flag::<boolean>) ::<void>
   (if flag

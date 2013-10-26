@@ -110,7 +110,7 @@ void Scm_PutbUnsafe(ScmByte b, ScmPort *p)
         }
         SCM_ASSERT(p->src.buf.current < p->src.buf.end);
         *p->src.buf.current++ = b;
-        if (p->src.buf.mode == SCM_PORT_BUFFER_NONE) {
+        if (SCM_PORT_BUFFER_MODE(p) == SCM_PORT_BUFFER_NONE) {
             SAFE_CALL(p, bufport_flush(p, 1, FALSE));
         }
         UNLOCK(p);
@@ -155,11 +155,11 @@ void Scm_PutcUnsafe(ScmChar c, ScmPort *p)
         SCM_ASSERT(p->src.buf.current+nb <= p->src.buf.end);
         SCM_CHAR_PUT(p->src.buf.current, c);
         p->src.buf.current += nb;
-        if (p->src.buf.mode == SCM_PORT_BUFFER_LINE) {
+        if (SCM_PORT_BUFFER_MODE(p) == SCM_PORT_BUFFER_LINE) {
             if (c == '\n') {
                 SAFE_CALL(p, bufport_flush(p, nb, FALSE));
             }
-        } else if (p->src.buf.mode == SCM_PORT_BUFFER_NONE) {
+        } else if (SCM_PORT_BUFFER_MODE(p) == SCM_PORT_BUFFER_NONE) {
             SAFE_CALL(p, bufport_flush(p, nb, FALSE));
         }
         UNLOCK(p);
@@ -200,7 +200,7 @@ void Scm_PutsUnsafe(ScmString *s, ScmPort *p)
         const char *ss = Scm_GetStringContent(s, &size, NULL, NULL);
         SAFE_CALL(p, bufport_write(p, ss, size));
 
-        if (p->src.buf.mode == SCM_PORT_BUFFER_LINE) {
+        if (SCM_PORT_BUFFER_MODE(p) == SCM_PORT_BUFFER_LINE) {
             const char *cp = p->src.buf.current;
             while (cp-- > p->src.buf.buffer) {
                 if (*cp == '\n') {
@@ -208,7 +208,7 @@ void Scm_PutsUnsafe(ScmString *s, ScmPort *p)
                     break;
                 }
             }
-        } else if (p->src.buf.mode == SCM_PORT_BUFFER_NONE) {
+        } else if (SCM_PORT_BUFFER_MODE(p) == SCM_PORT_BUFFER_NONE) {
             SAFE_CALL(p, bufport_flush(p, 0, TRUE));
         }
         UNLOCK(p);
@@ -247,7 +247,7 @@ void Scm_PutzUnsafe(const char *s, int siz, ScmPort *p)
     switch (SCM_PORT_TYPE(p)) {
     case SCM_PORT_FILE:
         SAFE_CALL(p, bufport_write(p, s, siz));
-        if (p->src.buf.mode == SCM_PORT_BUFFER_LINE) {
+        if (SCM_PORT_BUFFER_MODE(p) == SCM_PORT_BUFFER_LINE) {
             const char *cp = p->src.buf.current;
             while (cp-- > p->src.buf.buffer) {
                 if (*cp == '\n') {
@@ -255,7 +255,7 @@ void Scm_PutzUnsafe(const char *s, int siz, ScmPort *p)
                     break;
                 }
             }
-        } else if (p->src.buf.mode == SCM_PORT_BUFFER_NONE) {
+        } else if (SCM_PORT_BUFFER_MODE(p) == SCM_PORT_BUFFER_NONE) {
             SAFE_CALL(p, bufport_flush(p, 0, TRUE));
         }
         UNLOCK(p);

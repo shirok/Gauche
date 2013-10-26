@@ -78,7 +78,7 @@ typedef struct ScmPortBufferRec {
     char *current;      /* current buffer position */
     char *end;          /* the end of the current valid data */
     int  size;          /* buffer size */
-    int  mode;          /* buffering mode (ScmPortBufferMode) */
+    int  mode;          /* buffering mode (ScmPortBufferMode) & SIGPIPE flag */
     int  (*filler)(ScmPort *p, int min);
     int  (*flusher)(ScmPort *p, int cnt, int forcep);
     void (*closer)(ScmPort *p);
@@ -181,10 +181,18 @@ enum ScmPortDirection {
 
 /* Port buffering mode */
 enum ScmPortBufferMode {
-    SCM_PORT_BUFFER_FULL,       /* full buffering */
-    SCM_PORT_BUFFER_LINE,       /* flush the buffer for each line */
-    SCM_PORT_BUFFER_NONE        /* flush the buffer for every output */
+    SCM_PORT_BUFFER_FULL = 0,       /* full buffering */
+    SCM_PORT_BUFFER_LINE = 1,       /* flush the buffer for each line */
+    SCM_PORT_BUFFER_NONE = 2,       /* flush the buffer for every output */
+
+    SCM_PORT_BUFFER_MODE_MASK = 0x07 /* for future extension */
 };
+
+/* If this flag is set in `mode' member of ScmPortBuffer, SIGPIPE causes
+   the process to terminate.  By default this flag is off except stdin and
+   stdout ports; it is to emulate default Unix behavior.  On Windows platform
+   this flag is ignored, for we don't have SIGPIPE.  */
+#define SCM_PORT_BUFFER_SIGPIPE_SENSITIVE  (1L<<8)
 
 /* Port types.  The type is also represented by a port's class, but
    C routine can dispatch quicker using these flags.  User code
@@ -273,9 +281,21 @@ SCM_CLASS_DECL(Scm_CodingAwarePortClass);
 SCM_CLASS_DECL(Scm_LimitedLengthPortClass);
 #define SCM_CLASS_LIMITED_LENGTH_PORT (&Scm_LimitedLengthPortClass)
 
+/* Conversion between Scheme keyword and ScmPortBufferMode enums */
+SCM_EXTERN ScmObj Scm_GetPortBufferingModeAsKeyword(ScmPort *port);
+SCM_EXTERN int    Scm_BufferingModeAsKeyword(ScmObj flag,
+                                             int direction,
+                                             int fallback);
 
-SCM_EXTERN ScmObj Scm_GetBufferingMode(ScmPort *port);
-SCM_EXTERN int    Scm_BufferingMode(ScmObj flag, int direction, int fallback);
+SCM_EXTERN ScmObj Scm_GetBufferingMode(ScmPort *port); /* obsoleted */
+SCM_EXTERN int    Scm_BufferingMode(ScmObj flag,       /* obsoleted */
+                                    int direction,
+                                    int fallback);
+
+SCM_EXTERN int    Scm_GetPortBufferingMode(ScmPort *port);
+SCM_EXTERN void   Scm_SetPortBufferingMode(ScmPort *port, int mode);
+SCM_EXTERN int    Scm_GetPortBufferSigpipeSensitive(ScmPort *port);
+SCM_EXTERN void   Scm_SetPortBufferSigpipeSensitive(ScmPort *port, int sensitive);
 
 SCM_EXTERN void   Scm_FlushAllPorts(int exitting);
 

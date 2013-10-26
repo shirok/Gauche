@@ -46,6 +46,11 @@
 #define MAX(a, b) ((a)>(b)? (a) : (b))
 #define MIN(a, b) ((a)<(b)? (a) : (b))
 
+#define SCM_PORT_BUFFER_MODE(obj) \
+    (SCM_PORT(obj)->src.buf.mode & SCM_PORT_BUFFER_MODE_MASK)
+#define SCM_PORT_BUFFER_SIGPIPE_SENSITIVE_P(obj) \
+    (SCM_PORT(obj)->src.buf.mode & SCM_PORT_BUFFER_SIGPIPE_SENSITIVE)
+
 /*================================================================
  * Class stuff
  */
@@ -529,6 +534,33 @@ ScmObj Scm_MakeBufferedPort(ScmClass *klass,
     return SCM_OBJ(p);
 }
 
+/* some accessor APIs */
+int Scm_GetPortBufferingMode(ScmPort *port)
+{
+    return SCM_PORT_BUFFER_MODE(port);
+}
+
+void Scm_SetPortBufferingMode(ScmPort *port, int mode)
+{
+    port->src.buf.mode =
+        (port->src.buf.mode & ~SCM_PORT_BUFFER_MODE_MASK)
+        | (mode & SCM_PORT_BUFFER_MODE_MASK);
+}
+
+int Scm_GetPortBufferSigpipeSensitive(ScmPort *port)
+{
+    return (SCM_PORT_BUFFER_SIGPIPE_SENSITIVE_P(port) != FALSE);
+}
+
+void Scm_SetPortBufferSigpipeSensitive(ScmPort *port, int sensitive)
+{
+    if (sensitive) {
+        port->src.buf.mode &= ~SCM_PORT_BUFFER_SIGPIPE_SENSITIVE;
+    } else {
+        port->src.buf.mode |=  SCM_PORT_BUFFER_SIGPIPE_SENSITIVE;
+    }
+}
+
 /* flushes the buffer, to make a room of cnt bytes.
    cnt == 0 means all the available data.   Note that, unless forcep == TRUE,
    this function only does "best effort" to make room, but doesn't
@@ -595,7 +627,7 @@ static int bufport_fill(ScmPort *p, int min, int allow_less)
         p->src.buf.current = p->src.buf.end = p->src.buf.buffer;
     }
     if (min <= 0) min = SCM_PORT_BUFFER_ROOM(p);
-    if (p->src.buf.mode != SCM_PORT_BUFFER_NONE) {
+    if (SCM_PORT_BUFFER_MODE(p) != SCM_PORT_BUFFER_NONE) {
         toread = SCM_PORT_BUFFER_ROOM(p);
     } else {
         toread = min;
@@ -638,7 +670,7 @@ static int bufport_read(ScmPort *p, char *dst, int siz)
         /* We check data availability first, since we might already get
            some data from the remanings in the buffer, and it is enough
            if buffering mode is not full. */
-        if (nread && (p->src.buf.mode != SCM_PORT_BUFFER_FULL)) {
+        if (nread && (SCM_PORT_BUFFER_MODE(p) != SCM_PORT_BUFFER_FULL)) {
             if (p->src.buf.ready
                 && p->src.buf.ready(p) == SCM_FD_WOULDBLOCK) {
                 break;
@@ -815,7 +847,7 @@ static ScmObj key_modest = SCM_UNBOUND;
 static ScmObj key_line   = SCM_UNBOUND;
 static ScmObj key_none   = SCM_UNBOUND;
 
-int Scm_BufferingMode(ScmObj flag, int direction, int fallback)
+int Scm_KeywordToBufferingMode(ScmObj flag, int direction, int fallback)
 {
     if (SCM_EQ(flag, key_full)) return SCM_PORT_BUFFER_FULL;
     if (SCM_EQ(flag, key_none)) return SCM_PORT_BUFFER_NONE;
@@ -837,10 +869,10 @@ int Scm_BufferingMode(ScmObj flag, int direction, int fallback)
     return -1;                  /* dummy */
 }
 
-ScmObj Scm_GetBufferingMode(ScmPort *port)
+ScmObj Scm_GetPortBufferingModeAsKeyword(ScmPort *port)
 {
     if (SCM_PORT_TYPE(port) == SCM_PORT_FILE) {
-        switch (port->src.buf.mode) {
+        switch (SCM_PORT_BUFFER_MODE(port)) {
         case SCM_PORT_BUFFER_FULL: return key_full;
         case SCM_PORT_BUFFER_NONE: return key_none;
         default:
@@ -849,6 +881,17 @@ ScmObj Scm_GetBufferingMode(ScmPort *port)
         }
     }
     return SCM_FALSE;
+}
+
+/* For the backward compatibility until release 1.0 */
+int Scm_BufferingMode(ScmObj flag, int direction, int fallback)
+{
+    return Scm_KeywordToBufferingMode(flag, direction, fallback);
+}
+
+ScmObj Scm_GetBufferingMode(ScmPort *port)
+{
+    return Scm_GetPortBufferingModeAsKeyword(port);
 }
 
 /*===============================================================
@@ -900,6 +943,15 @@ static int file_flusher(ScmPort *p, int cnt, int forcep)
         errno = 0;
         SCM_SYSCALL(r, write(fd, datptr, datsiz-nwrote));
         if (r < 0) {
+            if (SCM_PORT_BUFFER_SIGPIPE_SENSITIVE_P(p)) {
+                /* (sort of) emulate termination by SIGPIPE.
+                   NB: The difference is visible from the outside world
+                   as the process exit status differ (WIFEXITED
+                   instead of WIFSIGNALED).  If it becomes a problem,
+                   we can reset the signal handler to SIG_DFL and
+                   send SIGPIPE to self. */
+                Scm_Exit(1);    /* exit code is somewhat arbitrary */
+            }
             p->error = TRUE;
             Scm_SysError("write failed on %S", p);
         } else {
@@ -1639,15 +1691,19 @@ void Scm__InitPort(void)
     scm_stdin  = Scm_MakePortWithFd(SCM_MAKE_STR("(standard input)"),
                                     SCM_PORT_INPUT, 0,
                                     SCM_PORT_BUFFER_FULL, TRUE);
+    /* By default, stdout and stderr are SIGPIPE sensitive */
     scm_stdout = Scm_MakePortWithFd(SCM_MAKE_STR("(standard output)"),
-                                    SCM_PORT_OUTPUT, 1,
-                                    isatty(1)
-                                    ? SCM_PORT_BUFFER_LINE
-                                    : SCM_PORT_BUFFER_FULL,
+                                    SCM_PORT_OUTPUT, 1, 
+                                    ((isatty(1)
+                                      ? SCM_PORT_BUFFER_LINE
+                                      : SCM_PORT_BUFFER_FULL)
+                                     | SCM_PORT_BUFFER_SIGPIPE_SENSITIVE),
                                     TRUE);
     scm_stderr = Scm_MakePortWithFd(SCM_MAKE_STR("(standard error output)"),
                                     SCM_PORT_OUTPUT, 2,
-                                    SCM_PORT_BUFFER_NONE, TRUE);
+                                    (SCM_PORT_BUFFER_NONE
+                                     | SCM_PORT_BUFFER_SIGPIPE_SENSITIVE),
+                                    TRUE);
 
     /* The root VM is initialized with bogus standard ports; we need to
        reset them. */

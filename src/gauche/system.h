@@ -45,16 +45,21 @@
  * hides restarting.
  */
 
-#define SCM_SYSCALL3(result, expr, check)       \
-  do {                                          \
-    (result) = (expr);                          \
-    if ((check) && errno == EINTR) {            \
-      ScmVM *vm__ = Scm_VM();                   \
-      errno = 0;                                \
-      SCM_SIGCHECK(vm__);                       \
-    } else {                                    \
-      break;                                    \
-    }                                           \
+#define SCM_SYSCALL3(result, expr, check)                       \
+  do {                                                          \
+    (result) = (expr);                                          \
+    if ((check) && (errno == EINTR || errno == EPIPE)) {        \
+      ScmVM *vm__ = Scm_VM();                                   \
+      int epipe__ = (errno == EPIPE);                           \
+      errno = 0;                                                \
+      SCM_SIGCHECK(vm__);                                       \
+      if (epipe__) {                                            \
+        errno = EPIPE;                                          \
+        break;                                                  \
+      }                                                         \
+    } else {                                                    \
+      break;                                                    \
+    }                                                           \
   } while (1)
 
 #define SCM_SYSCALL(result, expr) \

@@ -172,7 +172,7 @@
 ;         (handler)
 ;         (read-line epipe-in)))
 
-(test* "listener (fatal error)" <unhandled-signal-error>
+(test* "listener (fatal error)" <system-error>
        (begin
          (close-input-port opipe-in)
          (send-expr "(+ 1 2)")

@@ -103,7 +103,37 @@ static struct sigHandlersRec {
 static unsigned int signalPendingLimit = SIGNAL_PENDING_LIMIT_DEFAULT;
 
 
-/* Table of signals and its initial behavior. */
+/* Table of signals and its initial behavior.   If Application asks
+   Gauche to handle a specific signal (via Scm_SetMasterSigmask),
+   Gauche installs a signal handler specified in this table.
+
+   Note on SIGPIPE behavior: The Unix convention is that the default
+   behavior or writing to closed pipe terminates the process.  It is
+   suitable for small commands designed to be piped together, for
+   a failure of any one of the commands in the chunk causes
+   entire chain to be finished promptly.  However it is rather an
+   annoyance if we use an fd for transient communication (e.g.
+   sockets, most notably).  Since signal handlers are process-global,
+   it is quite tricky for general libraries/middlewares to control
+   SIGPIPE behavior transparently.
+
+   As a library, Gauche employs simpler model: Application will specify
+   which signals they want handle and which signals they want Gauche
+   to handle.  Once app delegates handling of a specific signal,
+   Gauche has a right to install its own handler.
+
+   So, here's the deal: If the app wants to handle SIGPIPE by itself,
+   it's fine.  By default SIGPIPE terminates the process.  If the app
+   installs its own SIGPIPE handler that returns, then Gauche sees
+   EPIPE and raises <system-error>.
+
+   If the app let Gauche to handle SIGPIPE, we install our own handler,
+   which does nothing.  Scheme code can handle the situation via EPIPE
+   <system-error>.  To emulate Unix default behavior, however, EPIPE
+   caused by standard output and standard error will terminate the
+   process by default.  It can be configured per-port basis.
+*/
+
 #define SIGDEF_NOHANDLE 0       /* Gauche doesn't install a signal handler,
                                    leaving it to the application. */
 #define SIGDEF_DFL      1       /* Gauche resets the singal handler to
@@ -112,6 +142,8 @@ static unsigned int signalPendingLimit = SIGNAL_PENDING_LIMIT_DEFAULT;
                                    that raises an error. */
 #define SIGDEF_EXIT     3       /* Gauche installs a handler that calls
                                    Scm_Exit(). */
+#define SIGDEF_INDIFFERENT 4    /* Gauche installs a handler that does
+                                   nothing. */
 
 #define SIGDEF(x, flag)  { #x, x, flag }
 
@@ -150,7 +182,8 @@ static struct sigdesc {
     SIGDEF(SIGUSR2, SIGDEF_ERROR),    /* User-defined signal 2 (POSIX) */
 #endif
 #ifdef SIGPIPE
-    SIGDEF(SIGPIPE, SIGDEF_ERROR),    /* Broken pipe (POSIX) */
+    SIGDEF(SIGPIPE, SIGDEF_INDIFFERENT), /* Broken pipe (POSIX).
+                                            See above note on SIGPIPE. */
 #endif
 #ifdef SIGALRM
     SIGDEF(SIGALRM, SIGDEF_ERROR),    /* Alarm clock (POSIX) */
@@ -537,22 +570,20 @@ static SCM_DEFINE_SUBR(exit_sighandler_stub, 1, 0,
 
 #define EXIT_SIGHANDLER    SCM_OBJ(&exit_sighandler_stub)
 
-#if 0                           /* not used for now */
 /* For some signals, gauche does nothing */
-static ScmObj through_sighandler(ScmObj *args, int nargs, void *data)
+static ScmObj indifferent_sighandler(ScmObj *args, int nargs, void *data)
 {
     return SCM_UNDEFINED;
 }
 
-static SCM_DEFINE_STRING_CONST(through_sighandler_name,
-                               "%through-signal-handler", 20, 20);
-static SCM_DEFINE_SUBR(through_sighandler_stub, 1, 0,
-                       SCM_OBJ(&through_sighandler_name),
-                       through_sighandler,
+static SCM_DEFINE_STRING_CONST(indifferent_sighandler_name,
+                               "%indifferent-signal-handler", 27, 27);
+static SCM_DEFINE_SUBR(indifferent_sighandler_stub, 1, 0,
+                       SCM_OBJ(&indifferent_sighandler_name),
+                       indifferent_sighandler,
                        NULL, NULL);
 
-#define THROUGH_SIGHANDLER    SCM_OBJ(&through_sighandler_stub)
-#endif
+#define INDIFFERENT_SIGHANDLER    SCM_OBJ(&indifferent_sighandler_stub)
 
 /*
  * An emulation stub for Windows
@@ -710,7 +741,7 @@ sigset_t Scm_GetMasterSigmask(void)
 }
 
 /* this should be called before any thread is created. */
-void Scm_SetMasterSigmask(sigset_t *set)
+ void Scm_SetMasterSigmask(sigset_t *set)
 {
     struct sigdesc *desc = sigDesc;
     struct sigaction acton, actoff;
@@ -748,6 +779,9 @@ void Scm_SetMasterSigmask(sigset_t *set)
                     break;
                 case SIGDEF_EXIT:
                     sigHandlers.handlers[desc->num] = EXIT_SIGHANDLER;
+                    break;
+                case SIGDEF_INDIFFERENT:
+                    sigHandlers.handlers[desc->num] = INDIFFERENT_SIGHANDLER;
                     break;
                 default:
                     Scm_Panic("Scm_SetMasterSigmask: can't be here");
