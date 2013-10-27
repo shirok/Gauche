@@ -40,7 +40,8 @@
 enum ScmWriteModeFlags {
     SCM_WRITE_WRITE = 0,        /* write mode   */
     SCM_WRITE_DISPLAY = 1,      /* display mode */
-    SCM_WRITE_SHARED = 2,       /* write/ss mode   */
+    SCM_WRITE_SHARED = 2,       /* write/ss mode */
+    SCM_WRITE_CIRCULAR = 3      /* write-circular mode */
 };
 
 /* Case folding mode flags */

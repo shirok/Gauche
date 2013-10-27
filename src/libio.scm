@@ -554,7 +554,45 @@
 
 (define-cproc flush-all-ports () ::<void> (Scm_FlushAllPorts FALSE))
 
+;;
+;; Internal recusive writer
+;;
+(select-module gauche.internal)
 
+;; Extract recursive context.  Attaching a context to a port
+;; is a temporary solution (see the discussion in src/write.c),
+;; and we may redesign the whole thing in future.
+(define-cproc %write-recursive-context (port::<output-port>)
+  (if (and (SCM_PAIRP (-> port data))
+           (SCM_HASH_TABLE_P (SCM_CDR (-> port data))))
+    (result (-> port data))
+    (result '#f)))
+
+(define (%write-walk-rec obj port tab)
+  (unless (or (%immediate? obj) (keyword? obj) (number? obj)
+              (and (symbol? obj) (symbol-interned? obj))
+              (equal? obj "") (equal? obj '#()))
+    (if (hash-table-exists? tab obj)
+      (hash-table-put! tab obj #t)   ; seen more than once
+      (begin
+        (hash-table-put! tab obj #f) ; seen once
+        (cond
+         [(symbol? obj)] ; uninterned symbols
+         [(string? obj)]
+         [(pair? obj)
+          (%write-walk-rec (car obj) port tab)
+          (%write-walk-rec (cdr obj) port tab)]
+         [(vector? obj)
+          (dotimes [i (vector-length obj)]
+            (%write-walk-rec (vector-ref obj i) port tab))]
+         [else
+          ;; generic objects.  we go walk pass via write-object
+          ;; (we already have a dummy port)
+          (write-object obj port)])))))
+
+;;
+;; format
+;;
 (select-module gauche.internal)
 
 (define-cproc %format

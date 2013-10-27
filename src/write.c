@@ -115,6 +115,11 @@ SCM_DEFINE_GENERIC(Scm_GenericWriteObject, write_object_fallback, NULL);
    (SCM_VM_RUNTIME_FLAG_IS_SET(Scm_VM(), SCM_CASE_FOLD)? \
     SCM_WRITE_CASE_FOLD:SCM_WRITE_CASE_NOFOLD)
 
+/* Whether we need 'walk' pass to find out shared and/or ciruclar
+   structure */
+#define WRITER_NEED_2PASS(ctx) \
+    (SCM_WRITE_MODE(ctx) & (SCM_WRITE_SHARED|SCM_WRITE_CIRCULAR))
+
 /*
  * WriteContext public API
  */
@@ -138,6 +143,17 @@ void Scm__WriteContextInit(ScmWriteContext *ctx, int mode, int flags, int limit)
     if (limit > 0) ctx->flags |= WRITE_LIMITED;
     ctx->table = NULL;
 }
+
+/*
+ * Entry points
+ *
+ *  For shared/circular structure detection, we have to distinguish
+ *  the "toplevel" call to write and the recursive calls.  The catch
+ *  is that Scm_Write etc. can be called recursively, via write-object
+ *  method, and we can't rely on its arguments to determine which is
+ *  the case.  So we see the port to find out if we're in the recursive
+ *  mode (see the above discussion about the context.)
+ */
 
 /*
  * Scm_Write - Standard Write.
@@ -169,7 +185,7 @@ void Scm_Write(ScmObj obj, ScmObj p, int mode)
 
     vm = Scm_VM();
     PORT_LOCK(port, vm);
-    if (SCM_WRITE_MODE(&ctx) == SCM_WRITE_SHARED) {
+    if (WRITER_NEED_2PASS(&ctx)) {
         PORT_SAFE_CALL(port, write_ss(obj, port, &ctx));
     } else {
         PORT_SAFE_CALL(port, write_ss_rec(obj, port, &ctx));
@@ -472,95 +488,10 @@ static ScmPort *make_walker_port(void)
 /* pass 1 */
 static void write_walk(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
+    static ScmObj proc = SCM_UNDEFINED;
     ScmHashTable *ht = SCM_HASH_TABLE(SCM_CDR(port->data));
-    ScmObj stack = SCM_NIL;
-
-#define REGISTER(obj)                                           \
-    do {                                                        \
-        ScmObj e = Scm_HashTableRef(ht, (obj), SCM_UNBOUND);    \
-        if (!SCM_UNBOUNDP(e)) {                                 \
-            Scm_HashTableSet(ht, (obj), SCM_TRUE, 0);           \
-            goto next;                                          \
-        }                                                       \
-        Scm_HashTableSet(ht, obj, SCM_FALSE, 0);                \
-    } while (0)
-
-    for (;;) {
-    walk1:
-        if (!SCM_PTRP(obj) || SCM_KEYWORDP(obj) || SCM_NUMBERP(obj)
-            || (SCM_SYMBOLP(obj) && SCM_SYMBOL_INTERNED(obj))) {
-            goto next;
-        }
-
-        if (SCM_STRINGP(obj)) {
-            if (!SCM_STRING_NULL_P(obj)) REGISTER(obj);
-            goto next;
-        }
-        if (SCM_SYMBOLP(obj)) {
-            SCM_ASSERT(!SCM_SYMBOL_INTERNED(obj));
-            REGISTER(obj);
-            goto next;
-        }
-
-        if (SCM_PAIRP(obj)) {
-            REGISTER(obj);
-            stack = Scm_Acons(SCM_TRUE, SCM_CDR(obj), stack);
-            obj = SCM_CAR(obj);
-            goto walk1;
-        }
-        if (SCM_VECTORP(obj)) {
-            if (SCM_VECTOR_SIZE(obj) == 0) goto next;
-            REGISTER(obj);
-            stack = Scm_Acons(SCM_MAKE_INT(1), obj, stack);
-            obj = SCM_VECTOR_ELEMENT(obj, 0);
-            goto walk1;
-        }
-        /* Now we have user-defined object.
-           Call the user's print routine. */
-        REGISTER(obj);
-        write_general(obj, port, ctx);
-        goto next;
-    next:
-        while (SCM_PAIRP(stack)) {
-            ScmObj top = SCM_CAR(stack);
-            SCM_ASSERT(top);
-            if (SCM_INTP(SCM_CAR(top))) {
-                ScmObj v = SCM_CDR(top);
-                int i = SCM_INT_VALUE(SCM_CAR(top));
-                if (i == SCM_VECTOR_SIZE(v)) {
-                    stack = SCM_CDR(stack);
-                } else {
-                    obj = SCM_VECTOR_ELEMENT(v, i);
-                    SCM_SET_CAR(top, SCM_MAKE_INT(i+1));
-                    goto walk1;
-                }
-            } else {
-                /* A simple way would be:
-                 *   obj = SCM_CDR(top); stack = SCM_CDR(stack); goto walk1;
-                 * However it will cause consing for every cdr traversal.
-                 * We'd rather reuse the cell.
-                 */
-                ScmObj v = SCM_CDR(top);
-                if (SCM_PAIRP(v)) {
-                    ScmObj e = Scm_HashTableRef(ht, v, SCM_UNBOUND);
-                    if (!SCM_UNBOUNDP(e)) {
-                        Scm_HashTableSet(ht, v, SCM_TRUE, 0);
-                        stack = SCM_CDR(stack);
-                    } else {
-                        Scm_HashTableSet(ht, v, SCM_FALSE, 0);
-                        obj = SCM_CAR(v);
-                        SCM_SET_CDR(top, SCM_CDR(v)); /*  reuse stack top */
-                        goto walk1;
-                    }
-                } else {
-                    obj = v;
-                    stack = SCM_CDR(stack);
-                    goto walk1;
-                }
-            }
-        }
-        break;
-    }
+    SCM_BIND_PROC(proc, "%write-walk-rec", Scm_GaucheInternalModule());
+    Scm_ApplyRec3(proc, obj, SCM_OBJ(port), SCM_OBJ(ht));
 }
 
 /* pass 2 */
