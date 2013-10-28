@@ -610,7 +610,7 @@
 
 (define (%format-common port fmt args shared?)
   (cond [(eqv? port #f)
-         (let ((out (open-output-string :private? #t)))
+         (let1 out (open-output-string :private? #t)
            (%format out fmt args shared?)
            (get-output-string out))]
         [(eqv? port #t)
@@ -692,8 +692,8 @@
   (proc (open-input-string str)))
 
 (define-in-module gauche (call-with-string-io str proc)
-  (let ((out (open-output-string))
-        (in  (open-input-string str)))
+  (let ([out (open-output-string)]
+        [in  (open-input-string str)])
     (proc in out)
     (get-output-string out)))
 
