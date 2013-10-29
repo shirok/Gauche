@@ -133,7 +133,7 @@ int Scm_WriteContextCase(const ScmWriteContext *ctx)
     return SCM_WRITE_CASE(ctx);
 }
 
-void Scm__WriteContextInit(ScmWriteContext *ctx, int mode, int flags, int limit)
+static void write_context_init(ScmWriteContext *ctx, int mode, int flags, int limit)
 {
     ctx->mode = mode;
     /* if case mode is not specified, use default taken from VM default */
@@ -143,6 +143,20 @@ void Scm__WriteContextInit(ScmWriteContext *ctx, int mode, int flags, int limit)
     if (limit > 0) ctx->flags |= WRITE_LIMITED;
     ctx->table = NULL;
 }
+
+ScmWriteContext *Scm_MakeWriteContext(ScmWriteContext *proto)
+{
+    ScmWriteContext *ctx = SCM_NEW(ScmWriteContext);
+    SCM_SET_CLASS(ctx, SCM_CLASS_WRITE_CONTEXT);
+    if (proto) {
+        write_context_init(ctx, proto->mode, proto->flags, proto->limit);
+    } else {
+        write_context_init(ctx, 0, 0, 0);
+    }
+    return ctx;
+}
+
+SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_WriteContextClass, NULL);
 
 /*
  * Entry points
@@ -160,7 +174,7 @@ void Scm__WriteContextInit(ScmWriteContext *ctx, int mode, int flags, int limit)
  */
 void Scm_Write(ScmObj obj, ScmObj p, int mode)
 {
-    ScmWriteContext ctx;
+    ScmWriteContext *ctx;
     ScmVM *vm;
     ScmPort *port;
 
@@ -168,27 +182,28 @@ void Scm_Write(ScmObj obj, ScmObj p, int mode)
         Scm_Error("output port required, but got %S", p);
     }
     port = SCM_PORT(p);
-    Scm__WriteContextInit(&ctx, mode, 0, 0);
+    ctx = Scm_MakeWriteContext(NULL);
+    write_context_init(ctx, mode, 0, 0);
 
     /* if this is a "walk" pass of write/ss, dispatch to the walker */
     if (port->flags & SCM_PORT_WALKING) {
         SCM_ASSERT(SCM_PAIRP(port->data)&&SCM_HASH_TABLE_P(SCM_CDR(port->data)));
-        write_walk(obj, port, &ctx);
+        write_walk(obj, port, ctx);
         return;
     }
     /* if this is a "output" pass of write/ss, call the recursive routine */
     if (port->flags & SCM_PORT_WRITESS) {
         SCM_ASSERT(SCM_PAIRP(port->data)&&SCM_HASH_TABLE_P(SCM_CDR(port->data)));
-        write_ss_rec(obj, port, &ctx);
+        write_ss_rec(obj, port, ctx);
         return;
     }
 
     vm = Scm_VM();
     PORT_LOCK(port, vm);
-    if (WRITER_NEED_2PASS(&ctx)) {
-        PORT_SAFE_CALL(port, write_ss(obj, port, &ctx));
+    if (WRITER_NEED_2PASS(ctx)) {
+        PORT_SAFE_CALL(port, write_ss(obj, port, ctx));
     } else {
-        PORT_SAFE_CALL(port, write_ss_rec(obj, port, &ctx));
+        PORT_SAFE_CALL(port, write_ss_rec(obj, port, ctx));
     }
     PORT_UNLOCK(port);
 }
@@ -205,26 +220,28 @@ void Scm_Write(ScmObj obj, ScmObj p, int mode)
  */
 int Scm_WriteLimited(ScmObj obj, ScmObj port, int mode, int width)
 {
-    ScmWriteContext ctx;
+    ScmWriteContext *ctx;
     ScmString *str;
     ScmObj out;
     int nc, sharedp = FALSE;
 
-    if (!SCM_OPORTP(port))
+    if (!SCM_OPORTP(port)) {
         Scm_Error("output port required, but got %S", port);
+    }
     out = Scm_MakeOutputStringPort(TRUE);
     SCM_PORT(out)->data = SCM_PORT(port)->data;
-    Scm__WriteContextInit(&ctx, mode, 0, width);
+    ctx = Scm_MakeWriteContext(NULL);
+    write_context_init(ctx, mode, 0, width);
 
     /* the walk pass does not produce any output, so we return immediately. */
     if (SCM_PORT(port)->flags & SCM_PORT_WALKING) {
         SCM_ASSERT(SCM_PAIRP(SCM_PORT(port)->data)&&SCM_HASH_TABLE_P(SCM_CDR(SCM_PORT(port)->data)));
-        write_walk(obj, SCM_PORT(port), &ctx);
+        write_walk(obj, SCM_PORT(port), ctx);
         return 0;               /* doesn't really matter */
     }
     /* we don't need to lock out, for it is private. */
-    sharedp = SCM_WRITE_MODE(&ctx) == SCM_WRITE_SHARED;
-    format_write(obj, SCM_PORT(out), &ctx, sharedp);
+    sharedp = SCM_WRITE_MODE(ctx) == SCM_WRITE_SHARED;
+    format_write(obj, SCM_PORT(out), ctx, sharedp);
     str = SCM_STRING(Scm_GetOutputString(SCM_PORT(out), 0));
     nc = SCM_STRING_BODY_LENGTH(SCM_STRING_BODY(str));
     if (nc > width) {
@@ -245,34 +262,35 @@ int Scm_WriteCircular(ScmObj obj, ScmObj port, int mode, int width)
 {
     ScmObj out;
     ScmString *str;
-    ScmWriteContext ctx;
+    ScmWriteContext *ctx;
     int nc;
 
     if (!SCM_OPORTP(port)) {
         Scm_Error("output port required, but got %S", port);
     }
-    Scm__WriteContextInit(&ctx, mode, WRITE_CIRCULAR, width);
-    ctx.table = SCM_HASH_TABLE(Scm_MakeHashTableSimple(SCM_HASH_EQ, 8));
+    ctx = Scm_MakeWriteContext(NULL);
+    write_context_init(ctx, mode, WRITE_CIRCULAR, width);
+    ctx->table = SCM_HASH_TABLE(Scm_MakeHashTableSimple(SCM_HASH_EQ, 8));
 
     if (width <= 0) {
         ScmVM *vm = Scm_VM();
         PORT_LOCK(SCM_PORT(port), vm);
         PORT_SAFE_CALL(SCM_PORT(port),
-                       format_write(obj, SCM_PORT(port), &ctx, TRUE));
+                       format_write(obj, SCM_PORT(port), ctx, TRUE));
         PORT_UNLOCK(SCM_PORT(port));
         return 0;
     }
 
     if (SCM_PORT(port)->flags & SCM_PORT_WALKING) {
         SCM_ASSERT(SCM_PAIRP(SCM_PORT(port)->data)&&SCM_HASH_TABLE_P(SCM_CDR(SCM_PORT(port)->data)));
-        write_walk(obj, SCM_PORT(port), &ctx);
+        write_walk(obj, SCM_PORT(port), ctx);
         return 0;               /* doesn't really matter */
     }
 
     out = Scm_MakeOutputStringPort(TRUE);
     SCM_PORT(out)->data = SCM_PORT(port)->data;
     /* no need to lock out, for it is private */
-    format_write(obj, SCM_PORT(out), &ctx, TRUE);
+    format_write(obj, SCM_PORT(out), ctx, TRUE);
     str = SCM_STRING(Scm_GetOutputString(SCM_PORT(out),0));
     nc = SCM_STRING_BODY_LENGTH(SCM_STRING_BODY(str));
     if (nc > width) {

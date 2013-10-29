@@ -37,6 +37,7 @@
 #include "gauche/class.h"
 #include "gauche/code.h"
 #include "gauche/priv/builtin-syms.h"
+#include "gauche/priv/writerP.h"
 
 /* Some routines uses small array on stack to keep data about
    arguments to dispatch.  If the # of args used for dispach is bigger
@@ -3325,6 +3326,9 @@ void Scm__InitClass(void)
     /* weak.c */
     CINIT(SCM_CLASS_WEAK_VECTOR,      "<weak-vector>");
     CINIT(SCM_CLASS_WEAK_HASH_TABLE,  "<weak-hash-table>");
+
+    /* write.c */
+    BINIT(SCM_CLASS_WRITE_CONTEXT,    "<write-context>", NULL);
 
 #define GINIT(gf, nam) \
     Scm_InitBuiltinGeneric(gf, nam, mod);

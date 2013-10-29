@@ -67,5 +67,6 @@ SCM_EXTERN ScmObj Scm_Sprintf(const char *fmt, ...);
 SCM_EXTERN ScmObj Scm_SprintfShared(const char *fmt, ...);
 SCM_EXTERN ScmObj Scm_Vsprintf(const char *fmt, va_list args, int sharedp);
 
+
 #endif  /*GAUCHE_WRITER_H*/
 

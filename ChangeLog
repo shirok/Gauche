@@ -1,3 +1,9 @@
+2013-10-28  Shiro Kawai  <shiro@acm.org>
+
+	* src/write.c, src/class.c, src/gauche/priv/writerP.h:
+	  Made ScmWriteContext a Scheme object.  Another step towards
+	  rewriting 'write' subsystem.
+
 2013-10-26  Shiro Kawai  <shiro@acm.org>
 
 	* src/write.c (write_walk), src/libio.scm (%write-walk-rec): A
