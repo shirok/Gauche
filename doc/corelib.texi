@@ -18950,6 +18950,7 @@ No signal handles are installed for these signals by @code{gosh},
        終了するシグナルハンドラをセットします。
 @c COMMON
 @item SIGPIPE
+@c EN
 @code{Gosh} installs a signal handler that does nothing---that is,
 this signal is effectively ignored by default.
 
@@ -18957,13 +18958,13 @@ It is a design choice.  Since Gauche delays actual handling
 of signals, @code{SIGPIPE} would be handled after the system call
 that tries to write to a broken pipe returns with @code{EPIPE}.
 That makes the signal a lot less useful, for we can handle the
-situation with error handlers for @code{EPIPE}.
+situation with error handlers for @code{<system-error>} with @code{EPIPE}.
 
 The default Unix behaivor of @code{SIGPIPE} is to terminate
 the process.  It is useful for the traditional command-line tools
-that are often piped together---if one of downstream command fails,
-the upstream process receives @code{SIGPIPE} and automatically
-shuts down the entire chain.  The signal is, however, rather an
+that are often piped together---if one of downstream commands fails,
+the upstream process receives @code{SIGPIPE} and the entire
+command chain is shut down without a fuss.  The signal is, however, rather an
 annoyance for other types of output such as sockets.
 
 Gauche does support this ``exit when pipe gets stuck'' convention
@@ -18971,6 +18972,33 @@ by ports.   A port can be configured as @emph{sigpipe sensitive};
 if writing to that port caused @code{EPIPE}, it terminates the
 process.  By default, standard output and standard error output
 are configured in that way.
+@c TODO: In the port section, explain how to configure so.
+@c JP
+@code{Gosh}は何もしないシグナルハンドラを設定します。
+つまり、事実上このシグナルはデフォルトで無視されます。
+
+この設計の意図は次のとおりです。Gaucheはシグナルの処理を安全な
+ポイントまで遅延するため、@code{SIGPIPE}はそれを発生させた
+システムコールが@code{EPIPE}を返した後で処理されることになります。
+この事実によって、@code{SIGPIPE}を処理する必要性は大きく低下します。
+書き出した先のパイプが壊れていた場合には@code{EPIPE}の@code{<system-error>}
+をハンドルすれば良いからです。
+
+Unixのデフォルトの@code{SIGPIPE}処理は、プロセスを終了させます。
+これは伝統的な、パイプでつないでゆくコマンドラインツールにとっては
+便利な振る舞いです。下流のコマンドが失敗した場合、上流のコマンドは
+@code{SIGPIPE}を受け取るので、つながれたすべてのコマンドが
+静かに終了するからです。
+けれども、ソケットなど他の種類の出力に対しては、このシグナルは
+しばしば邪魔になります。
+
+Gaucheは、この「パイプが詰まったら終了する」という慣習を、
+ポートによってサポートします。ポートを「SIGPIPEを感知する」モード
+にセットすることができます。そのようなポートへの書き込みが
+@code{EPIPE}を発生させる状況になったら、プロセスが終了します。
+デフォルトでは、標準出力および標準エラー出力のポートが
+このモードになっています。
+@c COMMON
 @item SIGPWR, SIGXCPU, SIGUSR1, SIGUSR2
 @c EN
 On Linux platforms with thread support, these signals are used
