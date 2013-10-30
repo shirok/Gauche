@@ -18949,6 +18949,28 @@ No signal handles are installed for these signals by @code{gosh},
 @code{gosh}はこれらのシグナルに対して、終了コード0でアプリケーションを
        終了するシグナルハンドラをセットします。
 @c COMMON
+@item SIGPIPE
+@code{Gosh} installs a signal handler that does nothing---that is,
+this signal is effectively ignored by default.
+
+It is a design choice.  Since Gauche delays actual handling
+of signals, @code{SIGPIPE} would be handled after the system call
+that tries to write to a broken pipe returns with @code{EPIPE}.
+That makes the signal a lot less useful, for we can handle the
+situation with error handlers for @code{EPIPE}.
+
+The default Unix behaivor of @code{SIGPIPE} is to terminate
+the process.  It is useful for the traditional command-line tools
+that are often piped together---if one of downstream command fails,
+the upstream process receives @code{SIGPIPE} and automatically
+shuts down the entire chain.  The signal is, however, rather an
+annoyance for other types of output such as sockets.
+
+Gauche does support this ``exit when pipe gets stuck'' convention
+by ports.   A port can be configured as @emph{sigpipe sensitive};
+if writing to that port caused @code{EPIPE}, it terminates the
+process.  By default, standard output and standard error output
+are configured in that way.
 @item SIGPWR, SIGXCPU, SIGUSR1, SIGUSR2
 @c EN
 On Linux platforms with thread support, these signals are used
