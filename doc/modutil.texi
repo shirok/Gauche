@@ -1687,18 +1687,34 @@ with a preposition (e.g. @code{list-of}).
 @subheading グローバルな状態
 @c COMMON
 
+@c EN
 All the generators in this module shares a global random state.
 The random seed is initialized by a fixed value when the module
-is loaded.  You can get and set the random seed by
+is loaded.
+You can get and set the random seed by
 the following procedure.
+@c JP
+このモジュールのジェネレータはすべて一つのグローバルな乱数状態を共有します。
+モジュールがロードされた時点で、固定のシードによりこの状態は初期化されます。
+次の手続きでグローバルな乱数状態のシードを読み出したり、新たな値に
+設定することができます。
+@c COMMON
 
 @defun random-data-seed
 @defunx {(setter random-data-seed)} seed-value
+@c EN
 Calling @code{random-data-seed} (without arguments)
 returns the random seed value used to initialize the current random state.
 
 It can be used with generic setter, to reinitialize the random state
 with @var{seed-value}.
+@c JP
+引数無しで@code{random-data-seed}を呼ぶと、現在の乱数状態を初期化した
+シード値が返されます。
+
+ジェネリックなセッターと一緒に使えば、乱数状態を@var{seed-value}をシードとして
+再初期化することができます。
+@c COMMON
 
 @example
 (random-data-seed)  @result{} @r{integer}
@@ -1707,50 +1723,109 @@ with @var{seed-value}.
 (set! (random-data-seed) 1) 
 @end example
 
+@c EN
 Note: This procedure doesn't have parameter interface (alter the global
 value by giving the new value as an argument), since it doesn't work
-like a parameter.  You can get the random seed value, but you can't
+like a parameter (@xref{Parameters}).
+You can get the random seed value, but you can't
 get the current random state itself---if you restore the
 random seed value again, the internal state is reset, instead
 of restoring the state at the time you called @code{random-data-seed}.
+@c JP
+註: この手続きはパラメータインタフェース (引数として値を与えるとそれを新たな
+値に設定し、以前の値を返す) にはなっていません。本質的に、パラメータとは
+相容れないからです (@ref{Parameters}参照)。
+得られるのは現在の乱数状態の出発点となるシード値であって、
+現在の乱数状態そのものではありません。一旦別のシード値に切り替えて、
+その後元のシード値に戻した場合、乱数状態は切り替えた時点に戻るのではなく、
+あらためて初期化されます。
+@c COMMON
 
+@c EN
 If you want to use different random state temporarily, and ensure to
 restore original state afterwards, use @code{with-random-data-seed} below.
+@c JP
+乱数状態を一時的に切り替えて、その後で切り替えた時点の状態を確実に回復したい場合は、
+次に示す@code{with-random-data-seed}を使ってください。
+@c COMMON
 @end defun
 
 @defun with-random-data-seed seed thunk
+@c EN
 Saves the current global random state, initializes the random state with
 @var{seed}, then executes @var{thunk}.  If @var{thunk} returns or
 the control exits out of @var{thunk}, the state at the time
 @code{with-random-data-seed} was called is restored.
+@c JP
+現在のグローバルな乱数状態を保存し、乱数状態を@var{seed}で初期化して
+@var{thunk}を実行します。@var{thunk}から帰ってくるか、
+制御が@var{thunk}を抜け出した場合、乱数状態は@code{with-random-data-seed}が
+呼び出された時点の状態に戻されます。
+@c COMMON
 @end defun
 
+@c EN
 Since the default random seed value is fixed, you can get deterministic
 output when you call the random data generators below without altering
 the random seed explicitly.
+@c JP
+デフォルトのランダムシードが固定なのは、何もしなければ再現可能な振る舞いが得られる
+からです。
+@c COMMON
 
+@c EN
 @subheading Generators of primitive data types
+@c JP
+@subheading プリミティブデータ型のジェネレータ
+@c COMMON
 
+@c EN
 Those generators generate uniformly distributed data.
+@c JP
+以下のジェネレータは特に断りが無い限り、一様分布するデータを生成します。
+@c COMMON
 
+@c EN
 In the following examples, we use @code{generator->list} to show
 some concrete data from the generators.  It is provided
 in @code{gauche.generator} module.  @xref{Generators}, for more
 utilities work on generators.
+@c JP
+例の中では、生成された値を具体的に示すために
+@code{gauche.generator}モジュールの@code{generator->list}を
+使っています。ジェネレータを扱うユーティリティについては
+@ref{Generators}を参照してください。
+@c COMMON
 
 @defun integers$ size :optional (start 0)
 @defunx integers-between$ lower-bound upper-bound
-Create integer generators.  The first one, @code{integers$}, creates
+@c EN
+Create exact integer generators.  The first one, @code{integers$}, creates
 a generator that generats integers from start (inclusive) below
 start+size (exclusive) uniformly.  The second one, @code{integers-between$},
 creates a generator that generates integers between
 @var{lower-bound} and @var{upper-bound} (both inclusive) unformly.
+@c JP
+正確な整数のジェネレータを作成します。
+@code{integer$}が返すジェネレータは、
+@var{start} 以上 @var{start} + @var{size} 未満の整数を一様に発生させます。
+@code{integers-between$}はが返すジェネレータは、@var{lower-bound}以上、
+@var{upper-bound}以下の整数を一様に発生させます。
+@c COMMON
 
 @example
+@c EN
 ;; A dice roller
+@c JP
+;; サイコロ
+@c COMMON
 (define dice (integers$ 6 1))
 
+@c EN
 ;; Roll the dice 10 times
+@c JP
+;; サイコロを10回振ってみる
+@c COMMON
 (generator->list dice 10)
  @result{} (6 6 2 4 2 5 5 1 2 2)
 @end example
@@ -1765,8 +1840,13 @@ creates a generator that generates integers between
 @defunx uint32s
 @defunx int64s
 @defunx uint64s
+@c EN
 Uniform integer generators.  Generate integers in fixnum range, and
 8/16/32/64bit signed and unsigned integers, respectively.
+@c JP
+固定範囲の一様整数ジェネレータです。
+それぞれ、fixnumおよび8/16/32/64ビットの符号つき/符号無し整数を生成します。
+@c COMMON
 
 @example
 (generator->list int8s 10)
@@ -1775,7 +1855,11 @@ Uniform integer generators.  Generate integers in fixnum range, and
 @end defun
 
 @defun booleans
+@c EN
 Generates boolean values (@code{#f} and @code{#t}) in equal probability.
+@c JP
+真偽値(@code{#f}と@code{#t})を等確率で生成します。
+@c COMMON
 
 @example
 (generator->list booleans 10)
@@ -1784,8 +1868,13 @@ Generates boolean values (@code{#f} and @code{#t}) in equal probability.
 @end defun
 
 @defun chars$ :optional char-set
+@c EN
 Creates a generator that generates characters in @var{char-set} uniformly.
 The default @var{char-set} is @code{#[A-Za-z0-9]}.
+@c JP
+@var{char-set}にある文字を一様分布で生成するジェネレータを作ります。
+@var{char-set}が省略された場合は@code{#[A-Za-z0-9]}が使われます。
+@c COMMON
 
 @example
 (define alphanumeric-chars (chars$))
@@ -1797,11 +1886,20 @@ The default @var{char-set} is @code{#[A-Za-z0-9]}.
 
 @defun reals$ :optional size start
 @defunx reals-between$ lower-bound upper-bound
+@c EN
 Create a generator that generates real numbers uniformly with given range.
 The first procedure, @code{reals$}, returns reals between start
-and start+size, inclusively.  The defualt of size is 1.0 and start is 0.0.
+and start+size, inclusively.  The default of size is 1.0 and start is 0.0.
 The second procedure, @code{reals-between$}, returns reals between
 lower-bound and upper-bound, inclusively.
+@c JP
+与えられた範囲の実数値を一様に生成するジェネレータを返します。
+@code{reals$}の返すジェネレータは、
+@var{start} 以上 @var{start} + @var{size} 以下の実数値を生成します。
+@var{size}のデフォルト値は@code{1.0}、@var{start}のデフォルト値は@code{0.0}です。
+@code{reals-between$}の返すジェネレータは、
+@var{lower-bound}以上@var{upper-bound}以下の実数値を生成します。
+@c COMMON
 
 @example
 (define uniform-100 (reals$ 100))
@@ -1809,40 +1907,92 @@ lower-bound and upper-bound, inclusively.
 (generator->list uniform-100 10)
  @result{} (81.67965004942268 81.84927577572596 53.02443813660833)
 @end example
+
+@c EN
+Note that a generator from @code{reals$} can generate the upper-bound
+value start+size, as opposed to @code{integers$}.  If you need to exclude
+the bound value, just discard the bound value; @code{gfilter} may come
+handy.
+@c JP
+@code{reals$}の返すジェネレータは、@code{integer$}と違って
+上限の値を生成し得ることに注意してください。限界値を除外したい場合は、
+@code{gfilter}等を使ってその値を棄却します。
+@c COMMON
+
+@example
+(define generate-from-0-below-1
+  (gfilter (^r (not (= r 1.0))) (reals$ 1.0 0.0)))
+@end example
 @end defun
 
+@c EN
 @subheading Nonuniform distributions
+@c JP
+@subheading 非一様分布
+@c COMMON
 
 @defun reals-normal$ :optional mean deviation
+@c EN
 Creates a generator that yields real numbers from normal distribution
 with @var{mean} and @var{deviation}.  The default of @var{mean} is 0.0
 and @var{deviation} is 1.0.
+@c JP
+期待値@var{mean}、標準偏差@var{deviation}の正規分布に従って実数値を生成する
+ジェネレータを作ります。省略時は@var{mean}が0.0、@var{deviation}が
+1.0になります。
+@c COMMON
 @end defun
 
 @defun reals-exponential$ mean
+@c EN
 Creates a generator that yields real numbers from exponential distribution
 with @var{mean}.
+@c JP
+期待値@var{mean}の指数分布に従って実数値を生成するジェネレータを作ります。
+@c COMMON
 @end defun
 
 @defun integers-geometric$ p
+@c EN
 Creates a generator that yields integers from geometric distribution
-with success probability @var{p}.  The mean is @code{1/p} and
+with success probability @var{p} (0 <= p <= 1).  The mean is @code{1/p} and
 variance is @code{(1-p)/p^2}.
+@c JP
+成功確率@var{p} (0 ≦ p ≦ 1) である幾何分布に従って
+非負整数値を生成するジェネレータを作ります。
+期待値は@code{1/p}、分散は@code{(1-p)/p^2}になります。
+@c COMMON
 @end defun
 
 @defun integers-poisson$ L
+@c EN
 Creates a generator that yields integers from poisson distribution with
 mean @var{L}, variance @var{L}.
+@c JP
+期待値@var{L}のポアソン分布に従う非負整数値を生成するジェネレータを作ります。
+分散も@var{L}になります。
+@c COMMON
 @end defun
 
+@c EN
 @subheading Aggregate data generators
+@c JP
+@subheading 複合データ型のジェネレータ
+@c COMMON
 
 @defun samples-from generators
+@c EN
 Takes a finite sequence of generators
 (sequence in the sense of @code{gauche.sequence}),
 and returns a generator.  Every time the resulting generator is called,
 it picks one of the input generators in equal probability, then
 calls it to get a value.
+@c JP
+ジェネレータの有限シーケンス (ここでは@code{gauche.sequence}がシーケンスとして
+扱うもの) を取り、新たなジェネレータを返します。
+返されたジェネレータは、値を必要とする度に、
+入力となるジェネレータのどれかを等確率で選んで、その入力ジェネレータから値を取ります。
+@c COMMON
 
 @example
 (define g (samples-from (list uint8s (chars$ #[a-z]))))
@@ -1853,13 +2003,23 @@ calls it to get a value.
 @end defun
 
 @defun weighted-samples-from weight&gens
-The argument is a list of pairs of a real number and a generator.
+@c EN
+The argument is a list of pairs of a nonnegative real number and a generator.
 The real number determines the weight, or the relative probability
 that the generator is chosen.  The sum of weight doesn't need to
 be 1.0.
+@c JP
+引数は、非負の実数値とジェネレータのペアのリストです。
+実数値が「重み」、すなわちペアとなっているジェネレータが選ばれる相対確率を決定します。
+重みの総和が1.0である必要はありません。
+@c COMMON
 
+@c EN
 The following example chooses the uint8 generator four times frequently
 than the character generator.
+@c JP
+次の例では、@code{uint8}ジェネレータは文字ジェネレータより4倍頻繁に使われます。
+@c COMMON
 
 @example
 (define g (weighted-samples-from
@@ -1872,8 +2032,15 @@ than the character generator.
 @end defun
 
 @defun pairs-of car-gen cdr-gen
-Returns a generator that yields pairs, whose car is generated from @var{car-gen}
+@c EN
+Returns a generator that yields pairs,
+whose car is generated from @var{car-gen}
 and whose cdr is generated from @var{cdr-gen}.
+@c JP
+ペアを生成するジェネレータを作ります。
+各ペアのcarはジェネレータ@var{car-gen}、
+cdrはジェネレータ@var{cdr-gen}によって生成されます。
+@c COMMON
 
 @example
 (define g (pairs-of int8s booleans))
@@ -1884,7 +2051,13 @@ and whose cdr is generated from @var{cdr-gen}.
 @end defun
 
 @defun tuples-of gen @dots{}
-Returns a generator that yields lists, whose i-th element is generated from the i-th argument.
+@c EN
+Returns a generator that yields lists, 
+whose i-th element is generated from the i-th argument.
+@c JP
+リストを生成するジェネレータを作ります。
+各リストのi番目の要素はi番目の引数のジェネレータによって生成されます。
+@c COMMON
 
 @example
 (define g (tuples-of int8s booleans (char$)))
@@ -1895,7 +2068,20 @@ Returns a generator that yields lists, whose i-th element is generated from the 
 @end defun
 
 @defun permutations-of seq
-Returns a generator that yields a random permutations of @code{seq}.
+@c EN
+Returns a generator that yields a random permutations of @var{seq}.
+
+The type of @var{seq} should be a sequence with a builder
+(@xref{Sequence framework}).  The type of generated objects
+will be the same as @var{seq}.
+@c JP
+シーケンス@var{seq}の要素をランダムに並べ替えたシーケンスを生成する
+ジェネレータを作ります。
+
+@var{seq}の型は、ビルダーを持つシーケンスである必要があります
+(@ref{Sequence framework}参照)。生成されるオブジェクトは
+@var{seq}と同じ型になります。
+@c COMMON
 
 @example
 (generator->list (permutations-of '(1 2 3)) 3)
@@ -1907,8 +2093,21 @@ Returns a generator that yields a random permutations of @code{seq}.
 @end defun
 
 @defun combinations-of size seq
+@c EN
 Returns a generator that yields a sequence of @var{size} elements
 randomly picked from @var{seq}.
+
+The type of @var{seq} should be a sequence with a builder
+(@xref{Sequence framework}).  The type of generated objects
+will be the same as @var{seq}.
+@c JP
+シーケンス@var{seq}からランダムに@var{size}個の要素を取り出して
+並べたシーケンスを生成するジェネレータを作ります。
+
+@var{seq}の型は、ビルダーを持つシーケンスである必要があります
+(@ref{Sequence framework}参照)。生成されるオブジェクトは
+@var{seq}と同じ型になります。
+@c COMMON
 
 @example
 (generator->list (combinations-of 2 '(a b c)) 5)
@@ -1919,17 +2118,35 @@ randomly picked from @var{seq}.
 @end example
 @end defun
 
+@c EN
 The following procedures takes optional @var{sizer} argument, which can
 be either a nonnegative integer or a generator of nonnegative integers.
 The value of the sizer determines the length of the result data.
+@c JP
+以下の手続きは、省略可能な@var{sizer}引数を取ります。
+@var{sizer}引数は非負整数か、非負整数を生成するジェネレータで、
+その値(もしくは生成された値)が、最終的に生成されるデータの長さを決定します。
+@c COMMON
 
+@c EN
 Unlike most of Gauche procedures, @var{sizer} argument comes first
 when not omitted.  We couldn't resist the temptation to
 write something like @code{(lists-of 3 booleans)}.
+@c JP
+Gaucheの他のほとんどの手続きと違って、@var{sizer}引数は省略されない時は
+第一引数になります。これは統一性を損ないますが、
+@code{(lists-of 3 booleans)} のように書ける、という誘惑に勝てませんでした。
+@c COMMON
 
+@c EN
 If @var{sizer} is omitted, the default value is taken from
 the parameter @code{default-sizer}.  The default of @code{default-sizer}
 is @code{(integers-poisson$ 4)}.
+@c JP
+@var{sizer}引数が省略された場合、パラメータ@code{default-sizer}の値が
+使われます。@code{default-sizer}のデフォルトは
+@code{(integers-poisson$ 4)}で作られるジェネレータです。
+@c COMMON
 
 @defun lists-of item-gen
 @defunx lists-of sizer item-gen
@@ -1937,28 +2154,50 @@ is @code{(integers-poisson$ 4)}.
 @defunx vectors-of sizer item-gen
 @defunx strings-of item-gen
 @defunx strings-of sizer item-gen
-Creates a generator that generates lists, vectors or strings of values from @var{item-gen}, respectively.
+@c EN
+Creates a generator that generates lists, vectors or strings of values from @var{item-gen}, respectively.  The size of each datum is determined by
+@var{sizer}.
+@c JP
+それぞれ、リスト、ベクタ、文字列を生成するジェネレータを作ります。
+作られるデータの各要素はジェネレータ@var{item-gen}から取られます。
+各データの長さは@var{sizer}により決定されます。
+@c COMMON
 
 @example
 (generator->list (lists-of 3 uint8s) 4)
  @result{} ((254 46 0) (77 158 46) (1 134 156) (74 5 110))
 
+@c EN
 ;; using the default sizer
+@c JP
+;; デフォルトのsizerを使う
+@c COMMON
 (generator->list (lists-of uint8s) 4)
  @result{} ((93 249) (131 97) (98 206 144 247 241) (126 156 31))
 
+@c EN
 ;; using a generator for the sizer
+@c JP
+;; sizerにジェネレータを使う
+@c COMMON
 (generator->list (strings-of (integers$ 8) (chars$)) 5)
  @result{} ("dTJYVhu" "F" "PXkC" "w" "")
 @end example
 @end defun
 
 @deffn {Parameter} default-sizer
+@c EN
 The sizer used by @code{lists-of}, @code{vectors-of} and @code{strings-of}
 when @var{sizer} argument is omitted.
 
 The value must be either an nonnegative integer, or a generator
 of nonnegative integers.
+@c JP
+@code{lists-of}、@code{vectors-of}、@code{strings-of}で
+@var{sizer}引数が省略された場合に使われるsizerです。
+
+値は、非負整数か、非負整数を生成するジェネレータでなければなりません。
+@c COMMON
 @end deffn
 
 @c ----------------------------------------------------------------------
