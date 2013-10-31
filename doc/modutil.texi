@@ -1656,18 +1656,36 @@ bcryptアルゴリズムでは少なくとも16バイトの長さが必要です
 
 @deftp {Module} data.random
 @mdindex data.random
+@c EN
 This module defines a set of generators and generator makers
 that yield random data of specific type and distribution.
+@c JP
+このモジュールは、特定のデータ型や、特定の値の分布を持つランダムなデータを
+生成するジェネレータ、およびそういったジェネレータを作り出すジェネレータ構築器を
+提供します。
+@c COMMON
 @end deftp
 
-A naming convention: Procedures that takes data and returns
+@c EN
+A naming convention: Procedures that takes parameters and returns
 a generator is suffixed by @code{$} (e.g. @code{integer$}).
 Procedures that are generators themselves are not (e.g. @code{fixnums}).
 Procedures that are combinators, that is, the ones that take
 one or more generators and returns a generator, generally ends
 with a preposition (e.g. @code{list-of}).
+@c JP
+名前付けの規則：パラメータを受け取り、それにそったジェネレータを返す
+手続きにはサフィックス@code{$}がついています (例: @code{integer$})。
+それ自体がジェネレータである手続きにはサフィックスがつきません (例: @code{fixnums})。
+コンビネータ、つまり複数のジェネレータを取ってジェネレータを返す手続きの名前は、
+通常前置詞で終わります (例: @code{list-of})。
+@c COMMON
 
+@c EN
 @subheading Global state
+@c JP
+@subheading グローバルな状態
+@c COMMON
 
 All the generators in this module shares a global random state.
 The random seed is initialized by a fixed value when the module
