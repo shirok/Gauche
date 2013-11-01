@@ -51,6 +51,7 @@
 
           default-sizer
           samples-from pairs-of tuples-of lists-of vectors-of strings-of
+          sequences-of
           permutations-of combinations-of weighted-samples-from
           ))
 (select-module data.random)
@@ -320,6 +321,17 @@ plot 'tmp' using (bin($1,binwidth)):(1.0) smooth freq with boxes
        (^[] (let1 len (sizer)
               (with-output-to-string
                 (^[] (do-ec (: i len) (display (item-gen))))))))]))
+
+;; API
+(define sequences-of
+  (case-lambda
+    [(class item-gen) (sequences-of class (default-sizer) item-gen)]
+    [(class sizer item-gen)
+     (%with-sizer sizer
+       (^[] (let1 len (sizer)
+              (with-builder (class add! get :size len)
+                (dotimes [len] (add! (item-gen)))
+                (get)))))]))
 
 ;; API
 (define (permutations-of seq)

@@ -1,3 +1,7 @@
+2013-10-31  Shiro Kawai  <shiro@acm.org>
+
+	* lib/data/random.scm (sequences-of): Added.
+
 2013-10-28  Shiro Kawai  <shiro@acm.org>
 
 	* src/write.c, src/class.c, src/gauche/priv/writerP.h:
