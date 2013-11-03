@@ -36,6 +36,7 @@
 #include "gauche/port.h"
 #include "gauche/priv/builtin-syms.h"
 #include "gauche/priv/readerP.h"
+#include "gauche/priv/portP.h"
 
 #include <ctype.h>
 #include <fcntl.h>

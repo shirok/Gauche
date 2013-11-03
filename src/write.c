@@ -36,6 +36,7 @@
 #include "gauche/port.h"
 #include "gauche/priv/builtin-syms.h"
 #include "gauche/priv/writerP.h"
+#include "gauche/priv/portP.h"
 #include "gauche/char_attr.h"
 
 #include <ctype.h>

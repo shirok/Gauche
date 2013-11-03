@@ -1,3 +1,7 @@
+2013-11-02  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/priv/portP.h: Spritted internal stuff from port.h.
+
 2013-10-31  Shiro Kawai  <shiro@acm.org>
 
 	* lib/data/random.scm (sequences-of): Added.
