@@ -273,13 +273,17 @@ enum ScmPortICPolicy {
 #define SCM_GETC(c, p)     (c = Scm_Getc(SCM_PORT(p)))
 
 SCM_CLASS_DECL(Scm_PortClass);
-#define SCM_CLASS_PORT      (&Scm_PortClass)
+#define SCM_CLASS_PORT                (&Scm_PortClass)
 
 SCM_CLASS_DECL(Scm_CodingAwarePortClass);
-#define SCM_CLASS_CODING_AWARE_PORT (&Scm_CodingAwarePortClass)
+#define SCM_CLASS_CODING_AWARE_PORT   (&Scm_CodingAwarePortClass)
 
 SCM_CLASS_DECL(Scm_LimitedLengthPortClass);
 #define SCM_CLASS_LIMITED_LENGTH_PORT (&Scm_LimitedLengthPortClass)
+
+SCM_CLASS_DECL(Scm_WriterPortClass);
+#define SCM_CLASS_WRITER_PORT         (&Scm_WriterPortClass)
+
 
 /* Conversion between Scheme keyword and ScmPortBufferMode enums */
 SCM_EXTERN ScmObj Scm_GetPortBufferingModeAsKeyword(ScmPort *port);
@@ -418,8 +422,8 @@ SCM_EXTERN ScmObj Scm_MakePortWithFd(ScmObj name,
                                      int fd,
                                      int bufmode,
                                      int ownerp);
-
 SCM_EXTERN ScmObj Scm_MakeCodingAwarePort(ScmPort *iport);
+SCM_EXTERN ScmObj Scm_MakeWriterPort(ScmPort *port);
 
 #endif /*GAUCHE_PORT_H*/
 

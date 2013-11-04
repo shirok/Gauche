@@ -80,6 +80,10 @@ SCM_DEFINE_BASE_CLASS(Scm_LimitedLengthPortClass,
                       ScmPort, /* instance type */
                       port_print, NULL, NULL, NULL, port_cpl);
 
+SCM_DEFINE_BASE_CLASS(Scm_WriterPortClass,
+                      ScmPort, /* instance type */
+                      port_print, NULL, NULL, NULL, port_cpl);
+
 /*================================================================
  * Common
  */
@@ -1261,6 +1265,84 @@ ScmObj Scm_MakeVirtualPort(ScmClass *klass, int direction,
 }
 
 /*===============================================================
+ * Writer port
+ */
+
+/* Writer port is a wrapper port to keep transient information
+   need for writing out shared/circular structures.  It just forwards
+   all I/O operations to the wrapped port.  */
+
+#define WRITER_PORT_WRAPPED(p)  SCM_PORT(p->src.vt.data)
+
+/* default dummy procedures */
+static int writer_port_getb(ScmPort *p)
+{
+    return Scm_Getb(WRITER_PORT_WRAPPED(p));
+}
+
+static int writer_port_getc(ScmPort *p)
+{
+    return Scm_Getc(WRITER_PORT_WRAPPED(p));
+}
+
+static int writer_port_getz(char *buf, int buflen, ScmPort *p)
+{
+    return Scm_Getz(buf, buflen, WRITER_PORT_WRAPPED(p));
+}
+
+static int writer_port_ready(ScmPort *p, int charp)
+{
+    if (charp) return Scm_CharReady(WRITER_PORT_WRAPPED(p));
+    else       return Scm_ByteReady(WRITER_PORT_WRAPPED(p));
+}
+
+static void writer_port_putb(ScmByte b, ScmPort *p)
+{
+    Scm_Putb(b, WRITER_PORT_WRAPPED(p));
+}
+
+static void writer_port_putc(ScmChar c, ScmPort *p)
+{
+    Scm_Putc(c, WRITER_PORT_WRAPPED(p));
+}
+
+static void writer_port_putz(const char *str, int len, ScmPort *p)
+{
+    Scm_Putz(str, len, WRITER_PORT_WRAPPED(p));
+}
+
+static void writer_port_puts(ScmString *s, ScmPort *p)
+{
+    Scm_Puts(s, WRITER_PORT_WRAPPED(p));
+}
+
+static void writer_port_flush(ScmPort *p)
+{
+    Scm_Flush(WRITER_PORT_WRAPPED(p));
+}
+
+ScmObj Scm_MakeWriterPort(ScmPort *wrapped)
+{
+    ScmPort *p = make_port(SCM_CLASS_WRITER_PORT,
+                           SCM_PORT_DIR(wrapped),
+                           SCM_PORT_PROC);
+    p->src.vt.Getb = writer_port_getb;
+    p->src.vt.Getc = writer_port_getc;
+    p->src.vt.Getz = writer_port_getz;
+    p->src.vt.Ready = writer_port_ready;
+    p->src.vt.Putb = writer_port_putb;
+    p->src.vt.Putc = writer_port_putc;
+    p->src.vt.Putz = writer_port_putz;
+    p->src.vt.Puts = writer_port_puts;
+    p->src.vt.Flush = writer_port_flush;
+    p->src.vt.data = wrapped;
+
+    p->name = wrapped->name;
+    /* TODO: line and bytes? */
+    return SCM_OBJ(p);
+}
+
+/*===============================================================
  * Coding-aware port
  */
 
@@ -1687,6 +1769,8 @@ void Scm__InitPort(void)
                         Scm_GaucheModule(), NULL, 0);
     Scm_InitStaticClass(&Scm_CodingAwarePortClass, "<coding-aware-port>",
                         Scm_GaucheModule(), NULL, 0);
+    Scm_InitStaticClass(&Scm_CodingAwarePortClass, "<writer-port>",
+                        Scm_GaucheInternalModule(), NULL, 0);
 
     scm_stdin  = Scm_MakePortWithFd(SCM_MAKE_STR("(standard input)"),
                                     SCM_PORT_INPUT, 0,
