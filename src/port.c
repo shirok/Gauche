@@ -1321,7 +1321,7 @@ static void writer_port_flush(ScmPort *p)
     Scm_Flush(WRITER_PORT_WRAPPED(p));
 }
 
-ScmObj Scm_MakeWriterPort(ScmPort *wrapped)
+ScmObj Scm_MakeWriterPort(ScmPort *wrapped, ScmObj context)
 {
     ScmPort *p = make_port(SCM_CLASS_WRITER_PORT,
                            SCM_PORT_DIR(wrapped),
@@ -1338,6 +1338,7 @@ ScmObj Scm_MakeWriterPort(ScmPort *wrapped)
     p->src.vt.data = wrapped;
 
     p->name = wrapped->name;
+    p->data = context;
     /* TODO: line and bytes? */
     return SCM_OBJ(p);
 }

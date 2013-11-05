@@ -423,7 +423,7 @@ SCM_EXTERN ScmObj Scm_MakePortWithFd(ScmObj name,
                                      int bufmode,
                                      int ownerp);
 SCM_EXTERN ScmObj Scm_MakeCodingAwarePort(ScmPort *iport);
-SCM_EXTERN ScmObj Scm_MakeWriterPort(ScmPort *port);
+SCM_EXTERN ScmObj Scm_MakeWriterPort(ScmPort *port, ScmObj context);
 
 #endif /*GAUCHE_PORT_H*/
 
