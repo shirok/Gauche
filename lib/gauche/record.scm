@@ -79,7 +79,7 @@
 (define-macro (for-each-subst subs . forms)
   (define (walk x sub)
     (cond [(symbol? x)
-           (string->symbol ($ regexp-replace #/\?\?/ (symbol->string x) sub))]
+           (string->symbol (regexp-replace #/\?\?/ (symbol->string x) sub))]
           [(pair? x) (cons (walk (car x) sub) (walk (cdr x) sub))]
           [else x]))
   `(begin
@@ -128,7 +128,7 @@
 ;; slot-ref/slot-set! prefer direct slots to inherited slots
 ;; with the same name.
 (define-method compute-slots ((class <record-meta>))
-  (fold (^(c r) (append (slot-ref c'direct-slots) r))
+  (fold (^[c r] (append (slot-ref c'direct-slots) r))
         '() (reverse (slot-ref class'cpl))))
 
 (define-method compute-get-n-set ((class <record-meta>) slot)
@@ -139,7 +139,7 @@
       (compute-slot-accessor class slot (slot-definition-option slot :index))
     (if (slot-definition-option slot :immutable #f)
       `(,(^o (slot-ref-using-accessor o s))
-        ,(^(o v) (errorf "slot ~a of ~a is immutable"
+        ,(^[o v] (errorf "slot ~a of ~a is immutable"
                          (slot-definition-name slot) o))
         ,(^o (slot-bound-using-accessor? o s)))
       s)))
@@ -149,7 +149,7 @@
   (unless (vector? specs)
     (error "make-rtd: fieldspecs must be a vector, but got" specs))
   (map-with-index
-   (^(k spec)
+   (^[k spec]
      (match spec
        [('mutable   (? id? name))
         `(,(unwrap-syntax name) :index ,(+ k offset))]
@@ -185,19 +185,19 @@
 
 (define (rtd-all-field-names rtd)
   (%check-rtd rtd)
-  (let loop ((rtd (rtd-parent rtd))
-             (r (map slot-definition-name (class-direct-slots rtd))))
+  (let loop ([rtd (rtd-parent rtd)]
+             [r (map slot-definition-name (class-direct-slots rtd))])
     (if rtd
       (loop (rtd-parent rtd)
-            (fold-right (^(s r) (cons (slot-definition-name s) r))
+            (fold-right (^[s r] (cons (slot-definition-name s) r))
                         r (class-direct-slots rtd)))
       (list->vector r))))
 
 (define (rtd-field-mutable? rtd field)
   (%check-rtd rtd)
-  (cond [(assq field (class-slots rtd))
-         => (^s (not (slot-definition-option s :immutable #f)))]
-        [else (error "rtd-mutable?: ~a does not have a slot ~a" rtd field)]))
+  (if-let1 s (assq field (class-slots rtd))
+    (not (slot-definition-option s :immutable #f))
+    (error "rtd-mutable?: ~a does not have a slot ~a" rtd field)))
 
 ;;;
 ;;; Procedural layer
@@ -207,8 +207,8 @@
   (make (if parent (class-of parent) <record-meta>)
     :name name :field-specs fieldspecs :metaclass <record-meta>
     :supers (list (or parent <record>))
-    :slots (fieldspecs->slotspecs
-            fieldspecs (if parent (length (class-slots parent)) 0))))
+    :slots ($ fieldspecs->slotspecs fieldspecs
+              $ if parent (length (class-slots parent)) 0)))
 
 (define (rtd? obj) (is-a? obj <record-meta>))
 
@@ -291,10 +291,10 @@
 ;; returns (index immutable?)
 (define (%get-slot-index rtd field modify?)
   (%check-rtd rtd)
-  (cond [(assq field (class-slots rtd))
-         => (^s (values (slot-definition-option s :index)
-                        (slot-definition-option s :immutable #f)))]
-        [else (errorf "record ~s does not have a slot named ~s" rtd field)]))
+  (if-let1 s (assq field (class-slots rtd))
+    (values (slot-definition-option s :index)
+            (slot-definition-option s :immutable #f))
+    (errorf "record ~s does not have a slot named ~s" rtd field)))
 
 (define-macro (define-rtd-methods rtd-meta ctor-name-base referencer* mutator*)
   (define gen-default-ctor (sym+ ctor-name-base '-default))
