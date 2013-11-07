@@ -16917,35 +16917,77 @@ POSIXのabort()を呼びます。通常、現在のプロセスは終了され�
 @subsection Command-line arguments
 @c NODE コマンドライン引数
 
+@c EN
 The recommended way to get command-line arguments passed to a
 Scheme script is the argument to the @code{main} procedure
 (@xref{Writing Scheme scripts}).  For the convenience,
 there are a few ways to access to the command-line arguments
 globally.
+@c JP
+Schemeスクリプトに渡されたコマンドライン引数を受け取るには、
+@var{main}関数の引数を使うのが推奨される方法です
+(@xref{Writing Scheme scripts})。
+ただ、簡便のために、どこからでもコマンドライン引数にアクセスできる
+インターフェースもいくつか用意してあります。
+@c COMMON
 
+@c EN
 Note that a Scheme code may not always be called with a command-line
 argument---for example, an application-embedded Scheme scriptlet may
 not have the concept of command-line at all.  That's why the @code{main}
 argument is preferred, since it is an explicit interface; if @code{main}
 is called, the caller is responsible to pass in something.
+@c JP
+Schemeコードが実行される時、常にコマンドライン引数が存在するわけではない
+ことに注意してください。例えばアプリケーションに埋め込まれたSchemeコード片にとっては、
+コマンドライン引数は意味を持ちません。なるべく@code{main}関数の引数を使うべき、
+というのはそのためです。@code{main}関数の引数は明示的だからです。
+@code{main}が呼ばれたなら、呼び出す側は意識してコマンドライン引数を渡している
+わけですから。
+@c COMMON
 
+@c EN
 That said, here are how to access the command-line arguments:
+@c JP
+この注意を念頭に置いておいてください。
+以下にコマンドライン引数にアクセスする方法を示します。
+@c COMMON
 
 @deffn {Parameter} command-line
 [R7RS+]
+@c EN
 When called without arguments, it returns a list of command-line arguments,
 including the program name in the first element, as a list of strings.
+@c JP
+引数なしで呼ばれた場合は、コマンドライン引数のリストを文字列のリストとして返します。
+最初の要素はプログラム名です。
+@c COMMON
 
+@c EN
 When Gauche is used as an embedded language, it is application's discretion
 to set up this parameter.  If the application does nothing, this parameter
 will have an empty list.  When you use this parameter in the library
 you have to deal with that situation.
+@c JP
+Gaucheが埋め込み言語として使われた場合、このパラメータの値はアプリケーションの
+設定に依存します。アプリケーションが何もしていなければ、
+このパラメータの値は空リストとなります。ライブラリ中でこのパラメータの値を
+使う場合は、その可能性を念頭に置いてください。
+@c COMMON
 
+@c EN
 When called with one argument, a list of string, it will become the
 new value of the parameter.  You can use @code{parameterize} to
 switch the value of @code{command-line} dynamically
 (@xref{Parameters}).  Note that R7RS only defines zero-argument
 @code{command-line}.
+@c JP
+一つの引数で呼び出すこともできます。その場合、引数は文字列のリストでなければなりません。
+渡された引数が、新たなパラメータの値となります。
+@code{parameterize}を使って@code{command-line}の値を
+動的に変えることができます (@ref{Parameters}参照)。
+R7RSは、ゼロ引数の@code{command-line}のみ定義しています。
+@c COMMON
 @end deffn
 
 @defvar *program-name*

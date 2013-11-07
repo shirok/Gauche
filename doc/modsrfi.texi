@@ -39,6 +39,7 @@ of supported SRFIs.
 @c ----------------------------------------------------------------------
 @node List library, Homogeneous vectors, Library modules - SRFIs, Library modules - SRFIs
 @section @code{srfi-1} - List library
+@c NODE リストライブラリ, @code{srfi-1} - リストライブラリ
 
 @deftp {Module} srfi-1
 @mdindex srfi-1
