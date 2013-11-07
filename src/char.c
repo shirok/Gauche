@@ -79,10 +79,14 @@ int Scm_SupportedCharacterEncodingP(const char *encoding)
 }
 
 /* '0' -> 0, 'a' -> 10, etc.
-   Radix is assumed in the range [2, 36] */
-int Scm_DigitToInt(ScmChar ch, int radix)
+   Radix is assumed in the range [2, 36] if non-extended,
+   [2, 10] if extended.
+   'Extended' means we recognize not only ASCII but all Nd characters.
+*/
+int Scm_DigitToInt(ScmChar ch, int radix, int extended)
 {
     if (ch < '0') return -1;
+    if (radix < 2) return -1;
     if (radix <= 10) {
         if (ch < '0' + radix) return (ch - '0');
     } else {
@@ -92,7 +96,7 @@ int Scm_DigitToInt(ScmChar ch, int radix)
         if (ch < 'a') return -1;
         if (ch < 'a' + radix - 10) return (ch - 'a' + 10);
     }
-    if (ch > 0x80) {
+    if (extended && ch > 0x80 && radix <= 10) {
         ScmChar ucschar = Scm_CharToUcs(ch);
         int val = ucs_digit_value(ucschar);
         if (val < 0 || val >= radix) return -1;
@@ -102,15 +106,17 @@ int Scm_DigitToInt(ScmChar ch, int radix)
     }
 }
 
-ScmChar Scm_IntToDigit(int n, int radix)
+ScmChar Scm_IntToDigit(int n, int radix, int basechar1, int basechar2)
 {
     if (n < 0) return SCM_CHAR_INVALID;
+    if (basechar1 == 0) basechar1 = '0';
+    if (basechar2 == 0) basechar2 = 'a';
     if (radix <= 10) {
-        if (n < radix) return (ScmChar)(n + '0');
+        if (n < radix) return (ScmChar)(n + basechar1);
         else return SCM_CHAR_INVALID;
     } else {
-        if (n < 10) return (ScmChar)(n + '0');
-        if (n < radix) return (ScmChar)(n - 10 + 'a');
+        if (n < 10) return (ScmChar)(n + basechar1);
+        if (n < radix) return (ScmChar)(n - 10 + basechar2);
         else return SCM_CHAR_INVALID;
     }
 }

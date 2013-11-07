@@ -709,7 +709,7 @@ ScmChar Scm_ReadXdigitsFromString(const char *buf,
         int overflow = FALSE;
         for (i=0; i<buflen; i++) {
             if (isxdigit(buf[i])) {
-                val = val*16 + Scm_DigitToInt(buf[i], 16);
+                val = val*16 + Scm_DigitToInt(buf[i], 16, FALSE);
                 if (val > 0x10ffff) overflow = TRUE;
             } else if (terminator && buf[i] == ';' && i > 0) {
                 /* R7RS syntax */
@@ -739,7 +739,7 @@ ScmChar Scm_ReadXdigitsFromString(const char *buf,
         if (ndigits > buflen) return SCM_CHAR_INVALID;
         for (i=0; i<ndigits; i++) {
             if (!isxdigit(buf[i])) return SCM_CHAR_INVALID;
-            val = val * 16 + Scm_DigitToInt(buf[i], 16);
+            val = val * 16 + Scm_DigitToInt(buf[i], 16, FALSE);
         }
         *nextbuf = buf + ndigits;
         if (!legacy_fallback) val = Scm_UcsToChar(val);
@@ -1338,7 +1338,7 @@ static ScmObj read_charset(ScmPort *port)
 static ScmObj read_reference(ScmPort *port, ScmChar ch, ScmReadContext *ctx)
 {
     ScmObj e = SCM_UNBOUND;
-    int refnum = Scm_DigitToInt(ch, 10);
+    int refnum = Scm_DigitToInt(ch, 10, FALSE);
 
     for (;;) {
         ch = Scm_GetcUnsafe(port);
@@ -1346,7 +1346,7 @@ static ScmObj read_reference(ScmPort *port, ScmChar ch, ScmReadContext *ctx)
             Scm_ReadError(port, "unterminated reference form (#digits)");
         }
         if (SCM_CHAR_ASCII_P(ch) && isdigit(ch)) {
-            refnum = refnum*10+Scm_DigitToInt(ch, 10);
+            refnum = refnum*10+Scm_DigitToInt(ch, 10, FALSE);
             if (refnum < 0) Scm_ReadError(port, "reference number overflow");
             continue;
         }

@@ -1,3 +1,12 @@
+2013-11-07  Shiro Kawai  <shiro@acm.org>
+
+	* src/char.c (Scm_DigitToInt, Scm_IntToDigit): More generalized
+	  treatment of non-ASCII digit characters.  THIS CHANGE BREAKS ABI
+	  COMPATIBILITY.  We think it's better to make it clean, hoping
+	  no external modules rely on this API.
+	* src/libchar.scm (digit->integer, integer->digit): Extended
+	  accordingly.  In Scheme level it's backward compatibile.
+
 2013-11-02  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/priv/portP.h: Spritted internal stuff from port.h.

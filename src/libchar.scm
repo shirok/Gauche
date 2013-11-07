@@ -118,20 +118,22 @@
 (define-cproc char-downcase (c::<char>) ::<char> Scm_CharDowncase)
 
 (select-module gauche)
-(define-cproc digit->integer (ch::<char> :optional (radix::<fixnum> 10))
+(define-cproc digit->integer (ch::<char> :optional (radix::<fixnum> 10) (extended-range?::<boolean> #f))
   :constant
   (let* ([r::int])
     (when (or (< radix 2) (> radix 36))
       (Scm_Error "radix must be between 2 and 36, but got %d" radix))
-    (set! r (Scm_DigitToInt ch radix))
+    (when (and extended-range? (> radix 10))
+      (Scm_Error "for extended range, radix can't exceed 10" radix))
+    (set! r (Scm_DigitToInt ch radix extended-range?))
     (result (?: (>= r 0) (SCM_MAKE_INT r) '#f))))
 
-(define-cproc integer->digit (n::<fixnum> :optional (radix::<fixnum> 10))
+(define-cproc integer->digit (n::<fixnum> :optional (radix::<fixnum> 10) (basechar1::<char> #\0) (basechar2::<char> #\a))
   :constant
   (let* ([r::ScmChar])
     (when (or (< radix 2) (> radix 36))
       (Scm_Error "radix must be between 2 and 36, but got %d" radix))
-    (set! r (Scm_IntToDigit n radix))
+    (set! r (Scm_IntToDigit n radix basechar1 basechar2))
     (result (?: (== r SCM_CHAR_INVALID) '#f (SCM_MAKE_CHAR r)))))
 
 (define-cproc ucs->char (n::<int>)

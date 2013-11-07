@@ -4711,7 +4711,7 @@ use @code{string-upcase} etc. in @code{text.unicode} module
 @c COMMON
 @end defun
 
-@defun digit->integer char :optional (radix 10)
+@defun digit->integer char :optional (radix 10) (extended-range? #f)
 @c EN
 If given character @var{char} is a valid digit character in radix
 @var{radix} number, the corresponding integer is returned.  Otherwise
@@ -4725,6 +4725,19 @@ If given character @var{char} is a valid digit character in radix
 (digit->integer #\e 16) @result{} 14
 (digit->integer #\9 8) @result{} #f
 @end example
+
+@c EN
+If the optional @var{extended-range?} argument is true,
+this procedure recognizes not only ASCII digits, but also
+all characters with @code{Nd} general category---such as
+FULLWIDTH DIGIT ZERO to NINE (U+ff10 - U+ff19).
+@c JP
+省略可能引数@var{extended-range?}に真の値が与えられると、
+この手続きはASCIIの数字だけでなく、@code{Nd}カテゴリに属する
+すべての文字、例えば
+FULLWIDTH DIGIT ZEROからNINE (U+ff10 - U+ff19) も認識します。
+@c COMMON
+
 @c EN
 Note: CommonLisp has a similar function in rather confusing name,
 @code{digit-char-p}.
@@ -4733,7 +4746,7 @@ Common Lispには同様の手続きが@code{digit-char-p}というやや曖昧�
 @c COMMON
 @end defun
 
-@defun integer->digit integer :optional (radix 10)
+@defun integer->digit integer :optional (radix 10) (basechar1 #\0) (basechar2 #\a)
 @c EN
 Reverse operation of @code{digit->integer}.  Returns a character that
 represents the number @var{integer} in the radix @var{radix} system.
@@ -4747,6 +4760,28 @@ If @var{integer} is out of the valid range, @code{#f} is returned.
 (integer->digit 13 16) @result{} #\d
 (integer->digit 10) @result{} #f
 @end example
+
+@c EN
+The optional @var{basechar1} argument specifies the character
+that stands for zero; by default, it's @code{#\0}.  You can give
+alternative character, for example, U+0660 (ARABIC-INDIC DIGIT ZERO)
+to convert an integer to a arabic-indic digit character.
+@c JP
+省略可能引数@var{basechar1}はゼロに相当する文字を指定します。
+デフォルトは@code{#\0}です。ここに、例えばU+0660 (ARABIC-INDIC DIGIT ZERO)
+を与えれば、整数をアラビア・インド数字に変換できます。
+@c COMMON
+
+@c EN
+Another optional @var{basechar2} argument is used for integers over 10.
+The default value is @code{#\a}.  You can pass @code{#\A} to get
+upper-case hex digits, for example.
+@c JP
+もうひとるの省略可能引数@var{basechar2}は、10を越える整数に使う文字の起点を
+指定します。デフォルトは@code{#\a}です。ここに@code{#\A}を渡せば、
+16進数表記で小文字のかわりに大文字を使うようになります。
+@c COMMON
+
 @c EN
 Note: CommonLisp's @code{digit-char}.
 @c JP

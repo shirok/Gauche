@@ -401,7 +401,7 @@
           string-ci=? string-ci>=?
           string-ci>? string-downcase
           string-foldcase string-upcase)
-  (define (digit-value c) (digit->integer c))
+  (define (digit-value c) (digit->integer c 10 #t))
   (define+ string-ci=?  text.unicode)   ; not gauche's.
   (define+ string-ci<?  text.unicode)   ; not gauche's.
   (define+ string-ci>?  text.unicode)   ; not gauche's.

@@ -342,8 +342,8 @@ typedef struct ScmFlonumRec {
 #define SCM_CHAR_UPCASE(ch)     Scm_CharUpcase(ch)
 #define SCM_CHAR_DOWNCASE(ch)   Scm_CharDowncase(ch)
 
-SCM_EXTERN int Scm_DigitToInt(ScmChar ch, int radix);
-SCM_EXTERN ScmChar Scm_IntToDigit(int n, int radix);
+SCM_EXTERN int Scm_DigitToInt(ScmChar ch, int radix, int extended);
+SCM_EXTERN ScmChar Scm_IntToDigit(int n, int radix, int basechar1, int basechar2);
 SCM_EXTERN int Scm_CharToUcs(ScmChar ch);
 SCM_EXTERN ScmChar Scm_UcsToChar(int ucs);
 SCM_EXTERN ScmObj Scm_CharEncodingName(void);
