@@ -155,6 +155,7 @@ static ScmPort *make_port(ScmClass *klass, int dir, int type)
     port->lockOwner = NULL;
     port->lockCount = 0;
     port->data = SCM_FALSE;
+    port->attrs = SCM_NIL;
     port->line = 1;
 
     Scm_RegisterFinalizer(SCM_OBJ(port), port_finalize, NULL);
@@ -211,7 +212,9 @@ ScmObj Scm_VMWithPortLocking(ScmPort *port, ScmObj closure)
 
 /*===============================================================
  * Getting information
+ * NB: Port attribute access API is in portapi.c
  */
+
 ScmObj Scm_PortName(ScmPort *port)
 {
     return port->name;

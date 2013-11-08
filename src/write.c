@@ -33,7 +33,6 @@
 
 #define LIBGAUCHE_BODY
 #include "gauche.h"
-#include "gauche/port.h"
 #include "gauche/priv/builtin-syms.h"
 #include "gauche/priv/writerP.h"
 #include "gauche/priv/portP.h"
@@ -290,6 +289,7 @@ int Scm_WriteCircular(ScmObj obj, ScmObj port, int mode, int width)
 
     out = Scm_MakeOutputStringPort(TRUE);
     SCM_PORT(out)->data = SCM_PORT(port)->data;
+
     /* no need to lock out, for it is private */
     format_write(obj, SCM_PORT(out), ctx, TRUE);
     str = SCM_STRING(Scm_GetOutputString(SCM_PORT(out),0));
@@ -730,7 +730,6 @@ static void format_write(ScmObj obj, ScmPort *port, ScmWriteContext *ctx,
         return;
     }
     if (sharedp) {
-
         write_ss(obj, port, ctx);
     } else {
         write_ss_rec(obj, port, ctx);

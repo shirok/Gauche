@@ -11,7 +11,11 @@
 (define *unit*
   (make <cgen-unit>
     :name "builtin-syms"
-    :preamble "/* Generated from builtin-syms.scm.  DO NOT EDIT */"
+    :preamble "/* Generated from builtin-syms.scm.  DO NOT EDIT\n\
+                  This file may be changed by minor version up, and\n\
+                  binaries including builtin-syms.h must be recompiled.\n\
+                  That is, binary compatibility isn't guaranteed if you\n\
+                  use SCM_SYM_*. */"
     :c-file "builtin-syms.c"
     :h-file "gauche/priv/builtin-syms.h"
     :init-prologue "static void init_builtin_syms(void)\n{"
@@ -127,7 +131,7 @@
     (*load-path-hooks*         SCM_SYM_LOAD_PATH_HOOKS)
     (*dynamic-load-path*       SCM_SYM_DYNAMIC_LOAD_PATH)
 
-    ;; reader, compiler, vm
+    ;; reader, writer, compiler, vm
     (source-info               SCM_SYM_SOURCE_INFO)
     (bind-info                 SCM_SYM_BIND_INFO)
     (arg-info                  SCM_SYM_ARG_INFO)

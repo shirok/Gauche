@@ -108,6 +108,20 @@
     (result (?: (< i 0) SCM_FALSE (Scm_MakeInteger i)))))
 (define-cproc port-fd-dup! (dst::<port> src::<port>) ::<void> Scm_PortFdDup)
 
+(define-cproc port-attribute-set! (port::<port> key val)
+  Scm_PortAttrSet)
+(define-cproc port-attribute-ref (port::<port> key :optional fallback)
+  (setter port-attribute-set!)
+  Scm_PortAttrGet)
+(define-cproc port-attribute-create! (port::<port> key
+                                      :optional (get #f) (set #f))
+  Scm_PortAttrCreate)
+(define-cproc port-attribute-delete! (port::<port> key)
+  Scm_PortAttrDelete)
+(define-cproc port-attributes (port::<port>)
+  Scm_PortAttrs)
+
+
 (define-cproc port-type (port::<port>)
   (case (SCM_PORT_TYPE port)
     [(SCM_PORT_FILE) (result 'file)]

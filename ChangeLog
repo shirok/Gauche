@@ -1,3 +1,10 @@
+2013-11-08  Shiro Kawai <shiro@acm.org>
+
+	* src/port.c, src/portapi.c (Scm_PortAttrGet etc.): Port attributes.
+	  This is to generalize accessing various information on ports,
+	  and eventually allow ports to abstract broader external
+	  resources (e.g. accessing httpd via ports).
+
 2013-11-07  Shiro Kawai  <shiro@acm.org>
 
 	* src/char.c (Scm_DigitToInt, Scm_IntToDigit): More generalized

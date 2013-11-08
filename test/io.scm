@@ -104,6 +104,51 @@
            (call-with-input-file "tmp2.o" read)))
 
 ;;-------------------------------------------------------------------
+(test-section "port-attributes")
+
+(let ([p (open-output-file "tmp.o" :if-exists? :supersede)])
+  (test* "port-attribute-ref (nonexistent)" (test-error)
+         (port-attribute-ref p 'my-attribute))
+  (test* "port-attribute-ref (fallback)" 'none
+         (port-attribute-ref p 'my-attribute 'none))
+  (test* "port-attribute-set! (autocreate)" 'ok
+         (begin (port-attribute-set! p 'my-attribute 'ok)
+                (port-attribute-ref p 'my-attribute)))
+  (test* "port-attribute-create! (existent)" (test-error)
+         (port-attribute-create! p 'my-attribute))
+  (test* "port-attribute-create! (procedural)" 1
+         (let1 val 0
+           (define (get port :optional fallback) (inc! val) val)
+           (define (set port newval) (set! val newval))
+           (port-attribute-create! p 'my-attribute2 get set)
+           (port-attribute-ref p 'my-attribute2)))
+  (test* "port-attribute (procedural)" 101
+         (begin
+           (port-attribute-set! p 'my-attribute2 100)
+           (port-attribute-ref p 'my-attribute2)))
+  (test* "port-attribute again (procedural)" 102
+         (port-attribute-ref p 'my-attribute2))
+  (test* "port-attribute-create! (procedural, read-only)" 11
+         (let1 val 10
+           (define (get port :optional fallback) (inc! val) val)
+           (port-attribute-create! p 'my-attribute3 get)
+           (port-attribute-ref p 'my-attribute3)))
+  (test* "port-attribute-set! (procedural, read-only)" (test-error)
+         (port-attribute-set! p 'my-attribute3 20))
+  (test* "port-attributes" '((my-attribute . ok)
+                             (my-attribute2 . 103)
+                             (my-attribute3 . 12))
+         (sort (port-attributes p)
+               string<?
+               ($ symbol->string $ car $)))
+  (test* "port-attribute-delete!" '((my-attribute3 . 13))
+         (begin
+           (port-attribute-delete! p 'my-attribute)
+           (port-attribute-delete! p 'my-attribute2)
+           (port-attributes p)))
+  )
+
+;;-------------------------------------------------------------------
 (test-section "port-fd-dup!")
 
 (cond-expand

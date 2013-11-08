@@ -978,6 +978,158 @@ ScmObj Scm_PortSeekUnsafe(ScmPort *p, ScmObj off, int whence)
     else return Scm_OffsetToInteger(r);
 }
 
+/*=================================================================
+ * Port Attributes
+ *
+ * Port attributes are stored in alist.  Each entry is either one
+ * of the following form:
+ *  (key value)          Just a value
+ *  (key getter setter)  Procedurally handled value.  Getter will be
+ *                       called as (getter port [fallback]), and Setter
+ *                       will be called as (setter port value).
+ *                       Setter can be #f if the attr is read-only.
+ *                       Port is locked while getter and setter is called.
+ *
+ * The latter type of attribute can be created by Scm_PortAttrCreate.
+ */
+
+#ifdef SAFE_PORT_OP
+ScmObj Scm_PortAttrGet(ScmPort *p, ScmObj key, ScmObj fallback)
+#else
+ScmObj Scm_PortAttrGetUnsafe(ScmPort *p, ScmObj key, ScmObj fallback)
+#endif
+{
+    ScmObj v, r = SCM_UNBOUND;
+    VMDECL;
+    SHORTCUT(p, return Scm_PortAttrGetUnsafe(p, key, fallback););
+    LOCK(p);
+    v = Scm_Assq(key, p->attrs);
+    if (SCM_PAIRP(v)) {
+        SCM_ASSERT(SCM_PAIRP(SCM_CDR(v)));
+        if (SCM_PAIRP(SCM_CDDR(v))) {
+            /* procedural */
+            ScmObj getter = SCM_CADR(v);
+            if (SCM_UNBOUNDP(fallback)) {
+                SAFE_CALL(p, r = Scm_ApplyRec1(getter, SCM_OBJ(p)));
+            } else {
+                SAFE_CALL(p, r = Scm_ApplyRec2(getter, SCM_OBJ(p), fallback));
+            }
+        } else {
+            r = SCM_CADR(v);
+        }
+    } else {
+        r = fallback;
+    }
+    UNLOCK(p);
+    
+    if (SCM_UNBOUNDP(r)) {
+        Scm_Error("No port attribute for key %S in port %S", key, SCM_OBJ(p));
+    }
+    return r;
+}
+
+
+#ifdef SAFE_PORT_OP
+ScmObj Scm_PortAttrSet(ScmPort *p, ScmObj key, ScmObj val)
+#else
+ScmObj Scm_PortAttrSetUnsafe(ScmPort *p, ScmObj key, ScmObj val)
+#endif
+{
+    int err_readonly = FALSE;
+    int exists = FALSE;
+    VMDECL;
+    SHORTCUT(p, return Scm_PortAttrSetUnsafe(p, key, val););
+    LOCK(p);
+    ScmObj v = Scm_Assq(key, p->attrs);
+    if (SCM_PAIRP(v)) {
+        SCM_ASSERT(SCM_PAIRP(SCM_CDR(v)));
+        exists = TRUE;
+        if (SCM_PAIRP(SCM_CDDR(v))) {
+            /* procedural */
+            ScmObj setter = SCM_CAR(SCM_CDDR(v));
+            if (SCM_FALSEP(setter)) {
+                err_readonly = TRUE;
+            } else {
+                SAFE_CALL(p, Scm_ApplyRec2(setter, SCM_OBJ(p), val));
+            }
+        } else {
+            SCM_SET_CAR(SCM_CDR(v), val);
+        }
+    } else {
+        p->attrs = Scm_Cons(SCM_LIST2(key, val), p->attrs);
+    }
+    UNLOCK(p);
+    if (err_readonly) {
+        Scm_Error("Port attribute %A is read-only in port: %S",
+                  key, SCM_OBJ(p));
+    }
+    return SCM_MAKE_BOOL(exists);
+}
+
+#ifdef SAFE_PORT_OP
+ScmObj Scm_PortAttrCreate(ScmPort *p, ScmObj key, ScmObj get, ScmObj set)
+#else
+ScmObj Scm_PortAttrCreateUnsafe(ScmPort *p, ScmObj key, ScmObj get, ScmObj set)
+#endif
+{
+    int err_exists = FALSE;
+    VMDECL;
+    SHORTCUT(p, return Scm_PortAttrCreateUnsafe(p, key, get, set););
+
+    /* If get == #f, we create an ordinary attr entry.  Otherwise,
+       we create a procedural entry. */
+    ScmObj entry = (SCM_FALSEP(get)
+                    ? SCM_LIST2(key, SCM_FALSE)
+                    : SCM_LIST3(key, get, set));
+    LOCK(p);
+    ScmObj v = Scm_Assq(key, p->attrs);
+    if (SCM_FALSEP(v)) {
+        p->attrs = Scm_Cons(entry, p->attrs);
+    } else {
+        err_exists = TRUE;
+    }
+    UNLOCK(p);
+    if (err_exists) {
+        Scm_Error("Couldn't create port attribute %A in %S: Named attribute already exists.",
+                  key, SCM_OBJ(p));
+    }
+    return SCM_UNDEFINED;       /* we may return more useful info in future */
+}
+
+#ifdef SAFE_PORT_OP
+ScmObj Scm_PortAttrDelete(ScmPort *p, ScmObj key)
+#else
+ScmObj Scm_PortAttrDeleteUnsafe(ScmPort *p, ScmObj key)
+#endif
+{
+    VMDECL;
+    SHORTCUT(p, return Scm_PortAttrDeleteUnsafe(p, key););
+    LOCK(p);
+    p->attrs = Scm_AssocDelete(key, p->attrs, SCM_CMP_EQ);
+    UNLOCK(p);
+    return SCM_UNDEFINED;       /* we may return more useful info in future */
+}
+
+#ifdef SAFE_PORT_OP
+ScmObj Scm_PortAttrs(ScmPort *p)
+#else
+ScmObj Scm_PortAttrsUnsafe(ScmPort *p)
+#endif
+{
+    ScmObj h = SCM_NIL, t = SCM_NIL, cp;
+    VMDECL;
+    SHORTCUT(p, return Scm_PortAttrsUnsafe(p););
+    LOCK(p);
+    SCM_FOR_EACH(cp, p->attrs) {
+        ScmObj k = SCM_CAAR(cp);
+        ScmObj v = Scm_PortAttrGetUnsafe(p, k, SCM_UNBOUND);
+        SCM_APPEND1(h, t, Scm_Cons(k, v));
+    }
+    UNLOCK(p);
+    return h;
+}
+
+
 #undef VMDECL
 #undef LOCK
 #undef UNLOCK
