@@ -106,7 +106,7 @@
 ;;-------------------------------------------------------------------
 (test-section "port-attributes")
 
-(let ([p (open-output-file "tmp.o" :if-exists? :supersede)])
+(let ([p (open-output-file "tmp.o" :if-exists :supersede)])
   (test* "port-attribute-ref (nonexistent)" (test-error)
          (port-attribute-ref p 'my-attribute))
   (test* "port-attribute-ref (fallback)" 'none
