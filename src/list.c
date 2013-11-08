@@ -81,13 +81,11 @@ ScmObj Scm_Acons(ScmObj caar, ScmObj cdar, ScmObj cdr)
 
 ScmObj Scm_List(ScmObj elt, ...)
 {
-    va_list pvar;
-    ScmObj cdr;
-
     if (elt == NULL) return SCM_NIL;
 
+    va_list pvar;
     va_start(pvar, elt);
-    cdr = Scm_VaList(pvar);
+    ScmObj cdr = Scm_VaList(pvar);
     va_end(pvar);
     return Scm_Cons(elt, cdr);
 }
@@ -95,13 +93,11 @@ ScmObj Scm_List(ScmObj elt, ...)
 
 ScmObj Scm_Conses(ScmObj elt, ...)
 {
-    va_list pvar;
-    ScmObj cdr;
-
     if (elt == NULL) return SCM_NIL;
 
+    va_list pvar;
     va_start(pvar, elt);
-    cdr = Scm_VaCons(pvar);
+    ScmObj cdr = Scm_VaCons(pvar);
     va_end(pvar);
     if (cdr == NULL) return elt;
     else             return Scm_Cons(elt, cdr);
@@ -149,8 +145,7 @@ ScmObj Scm_ArrayToListWithTail(ScmObj *elts, int nelts, ScmObj tail)
 {
     ScmObj h = SCM_NIL, t = SCM_NIL;
     if (elts) {
-        int i;
-        for (i=0; i<nelts; i++) SCM_APPEND1(h, t, *elts++);
+        for (int i=0; i<nelts; i++) SCM_APPEND1(h, t, *elts++);
     }
     if (!SCM_NULLP(tail)) SCM_APPEND(h, t, tail);
     return h;
@@ -158,9 +153,10 @@ ScmObj Scm_ArrayToListWithTail(ScmObj *elts, int nelts, ScmObj tail)
 
 ScmObj *Scm_ListToArray(ScmObj list, int *nelts, ScmObj *store, int alloc)
 {
-    ScmObj *array, lp;
-    int len = Scm_Length(list), i;
+    int len = Scm_Length(list);
     if (len < 0) Scm_Error("proper list required, but got %S", list);
+
+    ScmObj *array;
     if (store == NULL) {
         array = SCM_NEW_ARRAY(ScmObj, len);
     } else {
@@ -172,7 +168,8 @@ ScmObj *Scm_ListToArray(ScmObj list, int *nelts, ScmObj *store, int alloc)
             array = store;
         }
     }
-    for (i=0, lp=list; i<len; i++, lp=SCM_CDR(lp)) {
+    int i = 0;
+    for (ScmObj lp=list; i<len; i++, lp=SCM_CDR(lp)) {
         array[i] = SCM_CAR(lp);
     }
     *nelts = len;
@@ -242,10 +239,9 @@ int Scm_Length(ScmObj obj)
 
 ScmObj Scm_CopyList(ScmObj list)
 {
-    ScmObj start = SCM_NIL, last = SCM_NIL;
-
     if (!SCM_PAIRP(list)) return list;
 
+    ScmObj start = SCM_NIL, last = SCM_NIL;
     SCM_FOR_EACH(list, list) {
         SCM_APPEND1(start, last, SCM_CAR(list));
     }
@@ -260,10 +256,10 @@ ScmObj Scm_CopyList(ScmObj list)
 
 ScmObj Scm_MakeList(ScmSmallInt len, ScmObj fill)
 {
-    ScmObj start = SCM_NIL, last = SCM_NIL;
     if (len < 0) {
         Scm_Error("make-list: negative length given: %d", len);
     }
+    ScmObj start = SCM_NIL, last = SCM_NIL;
     while (len--) {
         SCM_APPEND1(start, last, fill);
     }
@@ -295,10 +291,9 @@ ScmObj Scm_Append2X(ScmObj list, ScmObj obj)
 
 ScmObj Scm_Append2(ScmObj list, ScmObj obj)
 {
-    ScmObj start = SCM_NIL, last = SCM_NIL;
-
     if (!SCM_PAIRP(list)) return obj;
 
+    ScmObj start = SCM_NIL, last = SCM_NIL;
     SCM_FOR_EACH(list, list) {
         SCM_APPEND1(start, last, SCM_CAR(list));
     }
@@ -336,15 +331,13 @@ ScmObj Scm_Append(ScmObj args)
 
 ScmObj Scm_Reverse2(ScmObj list, ScmObj tail)
 {
-    ScmObj cp, result;
-    ScmPair *p;
-
     if (!SCM_PAIRP(list)) return tail;
 
-    p = SCM_NEW(ScmPair);
+    ScmPair *p = SCM_NEW(ScmPair);
     SCM_SET_CAR(p, SCM_NIL);
     SCM_SET_CDR(p, tail);
-    result = SCM_OBJ(p);
+    ScmObj result = SCM_OBJ(p);
+    ScmObj cp;
     SCM_FOR_EACH(cp, list) {
         SCM_SET_CAR(result, SCM_CAR(cp));
         p = SCM_NEW(ScmPair);
@@ -370,8 +363,8 @@ ScmObj Scm_Reverse(ScmObj list)
 
 ScmObj Scm_Reverse2X(ScmObj list, ScmObj tail)
 {
+    if (!SCM_PAIRP(list)) return tail;
     ScmObj first, next, result = tail;
-    if (!SCM_PAIRP(list)) return result;
     for (first = list; SCM_PAIRP(first); first = next) {
         next = SCM_CDR(first);
         SCM_SET_CDR(first, result);
@@ -392,8 +385,8 @@ ScmObj Scm_ReverseX(ScmObj list)
 
 ScmObj Scm_ListTail(ScmObj list, ScmSmallInt i, ScmObj fallback)
 {
-    ScmSmallInt cnt = i;
     if (i < 0) goto err;
+    ScmSmallInt cnt = i;
     while (cnt-- > 0) {
         if (!SCM_PAIRP(list)) goto err;
         list = SCM_CDR(list);
@@ -406,9 +399,8 @@ ScmObj Scm_ListTail(ScmObj list, ScmSmallInt i, ScmObj fallback)
 
 ScmObj Scm_ListRef(ScmObj list, ScmSmallInt i, ScmObj fallback)
 {
-    ScmSmallInt k;
     if (i < 0) goto err;
-    for (k=0; k<i; k++) {
+    for (ScmSmallInt k=0; k<i; k++) {
         if (!SCM_PAIRP(list)) goto err;
         list = SCM_CDR(list);
     }
@@ -428,9 +420,9 @@ ScmObj Scm_ListRef(ScmObj list, ScmSmallInt i, ScmObj fallback)
 
 ScmObj Scm_LastPair(ScmObj l)
 {
-    ScmObj cp;
-
     if (!SCM_PAIRP(l)) Scm_Error("pair required: %S", l);
+
+    ScmObj cp;
     SCM_FOR_EACH(cp, l) {
         ScmObj cdr = SCM_CDR(cp);
         if (!SCM_PAIRP(cdr)) return cp;
@@ -470,9 +462,9 @@ ScmObj Scm_Member(ScmObj obj, ScmObj list, int cmpmode)
 /* delete. */
 ScmObj Scm_Delete(ScmObj obj, ScmObj list, int cmpmode)
 {
-    ScmObj start = SCM_NIL, last = SCM_NIL, cp, prev = list;
-
     if (SCM_NULLP(list)) return SCM_NIL;
+
+    ScmObj start = SCM_NIL, last = SCM_NIL, cp, prev = list;
     SCM_FOR_EACH(cp, list) {
         if (Scm_EqualM(obj, SCM_CAR(cp), cmpmode)) {
             for (; prev != cp; prev = SCM_CDR(prev))
@@ -512,8 +504,8 @@ ScmObj Scm_DeleteX(ScmObj obj, ScmObj list, int cmpmode)
 
 ScmObj Scm_Assq(ScmObj obj, ScmObj alist)
 {
-    ScmObj cp;
     if (!SCM_LISTP(alist)) Scm_Error("assq: list required, but got %S", alist);
+    ScmObj cp;
     SCM_FOR_EACH(cp,alist) {
         ScmObj entry = SCM_CAR(cp);
         if (!SCM_PAIRP(entry)) continue;
@@ -524,8 +516,8 @@ ScmObj Scm_Assq(ScmObj obj, ScmObj alist)
 
 ScmObj Scm_Assv(ScmObj obj, ScmObj alist)
 {
-    ScmObj cp;
     if (!SCM_LISTP(alist)) Scm_Error("assv: list required, but got %S", alist);
+    ScmObj cp;
     SCM_FOR_EACH(cp,alist) {
         ScmObj entry = SCM_CAR(cp);
         if (!SCM_PAIRP(entry)) continue;
@@ -536,8 +528,8 @@ ScmObj Scm_Assv(ScmObj obj, ScmObj alist)
 
 ScmObj Scm_Assoc(ScmObj obj, ScmObj alist, int cmpmode)
 {
-    ScmObj cp;
     if (!SCM_LISTP(alist)) Scm_Error("assoc: list required, but got %S", alist);
+    ScmObj cp;
     SCM_FOR_EACH(cp,alist) {
         ScmObj entry = SCM_CAR(cp);
         if (!SCM_PAIRP(entry)) continue;
@@ -549,12 +541,12 @@ ScmObj Scm_Assoc(ScmObj obj, ScmObj alist, int cmpmode)
 /* Assoc-delete */
 ScmObj Scm_AssocDelete(ScmObj elt, ScmObj alist, int cmpmode)
 {
-    ScmObj start = SCM_NIL, last = SCM_NIL, cp, p, prev = alist;
     if (!SCM_LISTP(alist)) {
         Scm_Error("assoc-delete: list required, but got %S", alist);
     }
     if (SCM_NULLP(alist)) return SCM_NIL;
 
+    ScmObj start = SCM_NIL, last = SCM_NIL, cp, p, prev = alist;
     SCM_FOR_EACH(cp, alist) {
         p = SCM_CAR(cp);
         if (SCM_PAIRP(p)) {
@@ -573,10 +565,10 @@ ScmObj Scm_AssocDelete(ScmObj elt, ScmObj alist, int cmpmode)
 
 ScmObj Scm_AssocDeleteX(ScmObj elt, ScmObj alist, int cmpmode)
 {
-    ScmObj cp, prev = SCM_NIL;
     if (!SCM_LISTP(alist)) {
         Scm_Error("assoc-delete!: list required, but got %S", alist);
     }
+    ScmObj cp, prev = SCM_NIL;
     SCM_FOR_EACH(cp, alist) {
         ScmObj e = SCM_CAR(cp);
         if (SCM_PAIRP(e)) {
@@ -656,28 +648,30 @@ ScmObj Scm_MonotonicMerge(ScmObj start, ScmObj sequences)
 /* WILL RENAME IN 1.0 */
 ScmObj Scm_MonotonicMerge1(ScmObj sequences)
 {
-    ScmObj result = SCM_NIL, next, h;
-    ScmObj *seqv, *sp, *tp;
+    ScmObj result = SCM_NIL;
     int nseqs = Scm_Length(sequences);
-
     if (nseqs < 0) Scm_Error("bad list of sequences: %S", sequences);
-    seqv = SCM_NEW_ARRAY(ScmObj, nseqs);
-    for (sp=seqv; SCM_PAIRP(sequences); sp++, sequences=SCM_CDR(sequences)) {
+    ScmObj *seqv = SCM_NEW_ARRAY(ScmObj, nseqs);
+    for (ScmObj *sp=seqv;
+         SCM_PAIRP(sequences);
+         sp++, sequences=SCM_CDR(sequences)) {
         *sp = SCM_CAR(sequences);
     }
 
     for (;;) {
         /* have we consumed all the inputs? */
+        ScmObj *sp;
         for (sp=seqv; sp<seqv+nseqs; sp++) {
             if (!SCM_NULLP(*sp)) break;
         }
         if (sp == seqv+nseqs) return Scm_ReverseX(result);
 
         /* select candidate */
-        next = SCM_FALSE;
+        ScmObj next = SCM_FALSE;
         for (sp = seqv; sp < seqv+nseqs; sp++) {
             if (!SCM_PAIRP(*sp)) continue;
-            h = SCM_CAR(*sp);
+            ScmObj h = SCM_CAR(*sp);
+            ScmObj *tp;
             for (tp = seqv; tp < seqv+nseqs; tp++) {
                 if (!SCM_PAIRP(*tp)) continue;
                 if (!SCM_FALSEP(Scm_Memq(h, SCM_CDR(*tp)))) {
@@ -726,12 +720,11 @@ ScmObj Scm_ExtendedCons(ScmObj car, ScmObj cdr)
 
 ScmObj Scm_PairAttrGet(ScmPair *pair, ScmObj key, ScmObj fallback)
 {
-    ScmObj p;
     if (!SCM_EXTENDED_PAIR_P(pair)) {
         goto fallback;
     }
 
-    p = Scm_Assq(key, SCM_EXTENDED_PAIR(pair)->attributes);
+    ScmObj p = Scm_Assq(key, SCM_EXTENDED_PAIR(pair)->attributes);
     if (SCM_PAIRP(p)) return SCM_CDR(p);
   fallback:
     if (fallback == SCM_UNBOUND)
@@ -742,13 +735,12 @@ ScmObj Scm_PairAttrGet(ScmPair *pair, ScmObj key, ScmObj fallback)
 
 ScmObj Scm_PairAttrSet(ScmPair *pair, ScmObj key, ScmObj value)
 {
-    ScmObj p;
     if (!SCM_EXTENDED_PAIR_P(pair)) {
         Scm_Error("Cannot set pair attribute (%S) to non-extended pair: %S",
                   key, SCM_OBJ(pair));
     }
 
-    p = Scm_Assq(key, SCM_EXTENDED_PAIR(pair)->attributes);
+    ScmObj p = Scm_Assq(key, SCM_EXTENDED_PAIR(pair)->attributes);
     if (SCM_PAIRP(p)) SCM_SET_CDR(p, value);
     else SCM_EXTENDED_PAIR(pair)->attributes
         = Scm_Acons(key, value, SCM_EXTENDED_PAIR(pair)->attributes);
