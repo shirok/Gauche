@@ -307,9 +307,9 @@
 (define-method cgen-emit-decl ((node <cgen-cpp-define>))
   (cpp-define-common node))
 
-(define (cgen-define name . maybe-value)
+(define (cgen-define name :optional (value ""))
   (cgen-add!
-   (make <cgen-cpp-define> :name name :value (get-optional maybe-value ""))))
+   (make <cgen-cpp-define> :name name :value value)))
 
 ;;=============================================================
 ;; Utilities

@@ -293,9 +293,9 @@
              [(#x950412de) (search (cut read-binary-uint32 #f 'big-endian))]
              [else (warn "invalid magic: ~S" magic) #f])))))))
 
-(define (lookup-message gfile msg msg2 . opt)
+(define (lookup-message gfile msg msg2 :optional (encoding (encoding-of gfile)))
   ((if (eq? (type-of gfile) 'mo) lookup-mo-message lookup-po-message)
-   (filename-of gfile) msg msg2 (get-optional opt (encoding-of gfile))))
+   (filename-of gfile) msg msg2 encoding))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; the subset C parser for ngettext plural forms

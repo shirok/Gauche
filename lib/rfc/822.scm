@@ -132,9 +132,9 @@
            [else (loop r (reader iport))])))])
     ))
 
-(define (rfc822-header-ref header field-name . maybe-default)
+(define (rfc822-header-ref header field-name :optional (default #f))
   (cond [(assoc field-name header) => cadr]
-        [else (get-optional maybe-default #f)]))
+        [else default]))
 
 ;; backward compatibility
 (define rfc822-header->list rfc822-read-headers)
@@ -188,11 +188,11 @@
     (,*rfc822-atext-chars* . ,rfc822-dot-atom)))
 
 ;; Returns the next token or EOF
-(define (rfc822-next-token input . opts)
+(define (rfc822-next-token input :optional (table *rfc822-standard-tokenizers*))
   (let ([toktab (map (^e (if (char-set? e)
                            (cons e (cut next-token-of e <>))
                            e))
-                     (get-optional opts *rfc822-standard-tokenizers*))]
+		     table)]
         [c (rfc822-skip-cfws input)])
     (cond [(eof-object? c) c]
           [(find (^e (char-set-contains? (car e) c)) toktab)

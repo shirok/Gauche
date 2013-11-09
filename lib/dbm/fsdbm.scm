@@ -272,10 +272,10 @@
                       (with-input-from-string path
                         (cut shash 0 *hash-range*)))))
 
-(define (value-file-path key . maybe-dir)
+(define (value-file-path key :optional (dir #f))
   (let1 p (key->path key)
-    (cond [(get-optional maybe-dir #f)
-           => (cut build-path <> (path->hash p) p)]
-          [else (build-path (path->hash p) p)])))
+    (if dir
+	(build-path dir (path->hash p) p)
+	(build-path (path->hash p) p))))
 
 

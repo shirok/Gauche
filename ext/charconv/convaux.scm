@@ -87,23 +87,23 @@
     (define (find-entry ces)
       (find (^e (memq ces (car e))) ces-compatibility-table))
 
-    (define (ces-equivalent? a b . unknown-fallback)
+    (define (ces-equivalent? a b :optional (unknown-fallback #f))
       (let* ([ces-a   (canon-name a)]
              [ces-b   (canon-name b)]
              [entry-a (find-entry ces-a)]
              [entry-b (find-entry ces-b)])
         (cond [(or (eq? ces-a 'none) (eq? ces-b 'none)) #t]
               [(or (not entry-a) (not entry-b))
-               (get-optional unknown-fallback #f)]
+               unknown-fallback]
               [else (eq? entry-a entry-b)])))
 
-    (define (ces-upper-compatible? a b . unknown-fallback)
+    (define (ces-upper-compatible? a b :optional (unknown-fallback #f))
       (let* ([ces-a   (canon-name a)]
              [ces-b   (canon-name b)]
              [entry-a (find-entry ces-a)])
         (cond [(or (eq? ces-a 'none) (eq? ces-b 'none)) #t]
               [(or (not entry-a) (not (find-entry ces-b)))
-               (get-optional unknown-fallback #f)]
+	       unknown-fallback]
               [else (let loop ([entry entry-a])
                       (or (boolean (memq ces-b (car entry)))
                           (any loop (map find-entry (cdr entry)))))])))

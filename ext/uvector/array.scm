@@ -494,9 +494,8 @@
 (define (array-size ar)
   (reduce * 1 (map (cute array-length ar <>) (iota (array-rank ar)))))
 
-(define (array-equal? a b . opt)
-  (let ([eq (get-optional opt equal?)]
-        [r (array-rank a)])
+(define (array-equal? a b :optional (eq equal?))
+  (let1 r (array-rank a)
     (and (= r (array-rank b))
          (every (^[dim] (and (= (array-start a dim) (array-start b dim))
                              (= (array-end a dim) (array-end b dim))))

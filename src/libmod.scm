@@ -138,8 +138,8 @@
                  name module))
     (result r2)))
 
-(define-in-module gauche (symbol-bound? name . maybe-module) ; Deprecated
-  (global-variable-bound? (get-optional maybe-module #f) name))
+(define-in-module gauche (symbol-bound? name :optional (module #f)) ; Deprecated
+  (global-variable-bound? module name))
 
 ;; Module import/export internal APIs.  Not public.
 (select-module gauche.internal)
