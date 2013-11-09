@@ -483,18 +483,16 @@ static void process_command_args(ScmObj cmd_args)
 int execute_script(const char *scriptfile, ScmObj args)
 {
     /* If script file is specified, load it. */
-    ScmModule *mainmod;
     ScmObj mainproc = SCM_FALSE;
-    ScmEvalPacket epak;
     ScmLoadPacket lpak;
 
     Scm_Load(scriptfile, SCM_LOAD_PROPAGATE_ERROR, &lpak);
     if (!lpak.loaded) return 1;
 
     /* If symbol 'main is bound, call it (SRFI-22).   */
-    mainmod = (SCM_SYMBOLP(main_module)
-               ? Scm_FindModule(SCM_SYMBOL(main_module), 0)
-               : Scm_UserModule());
+    ScmModule *mainmod = (SCM_SYMBOLP(main_module)
+                          ? Scm_FindModule(SCM_SYMBOL(main_module), 0)
+                          : Scm_UserModule());
     if (mainmod) {
         mainproc = Scm_GlobalVariableRef(mainmod,
                                          SCM_SYMBOL(SCM_INTERN("main")),
@@ -502,6 +500,7 @@ int execute_script(const char *scriptfile, ScmObj args)
     }
     if (SCM_PROCEDUREP(mainproc)) {
 #if 0 /* Temporarily turned off due to the bug that loses stack traces. */
+        ScmEvalPacket epak;
         int r = Scm_Apply(mainproc, SCM_LIST1(args), &epak);
         if (r > 0) {
             ScmObj res = epak.results[0];
@@ -550,15 +549,12 @@ void enter_repl()
  */
 int main(int argc, char **argv)
 {
-    int argind;
     const char *scriptfile = NULL;
     ScmObj args = SCM_NIL;
     int exit_code = 0;
-    ScmLoadPacket lpak;
-    int has_console;
 
     /* Initial setup. */
-    has_console = init_console();
+    int has_console = init_console();
     GC_INIT();
     Scm_Init(GAUCHE_SIGNATURE);
     sig_setup();
@@ -568,7 +564,7 @@ int main(int argc, char **argv)
 #endif /*defined(GAUCHE_WINDOWS)*/
 
     /* Check command-line options */
-    argind = parse_options(argc, argv);
+    int argind = parse_options(argc, argv);
 
     /* If -ftest option is given and we seem to be in the source
        tree, adds build directories to the library path _before_
@@ -614,6 +610,7 @@ int main(int argc, char **argv)
     process_command_args(Scm_Reverse(pre_cmds));
 
     /* Set up instruments. */
+    ScmLoadPacket lpak;
     if (profiling_mode) {
         if (Scm_Require(SCM_MAKE_STR("gauche/vm/profiler"), 0, &lpak) < 0) {
             error_exit(lpak.exception);

@@ -58,29 +58,25 @@ static ScmHashTable *obtable = NULL;
 /* Intern */
 ScmObj Scm_MakeSymbol(ScmString *name, int interned)
 {
-    ScmObj e;
-    ScmObj sname;
-    ScmSymbol *sym;
-
     if (interned) {
         /* fast path */
         SCM_INTERNAL_MUTEX_LOCK(obtable_mutex);
-        e = Scm_HashTableRef(obtable, SCM_OBJ(name), SCM_FALSE);
+        ScmObj e = Scm_HashTableRef(obtable, SCM_OBJ(name), SCM_FALSE);
         SCM_INTERNAL_MUTEX_UNLOCK(obtable_mutex);
         if (!SCM_FALSEP(e)) return e;
     }
 
-    sname = Scm_CopyStringWithFlags(name, SCM_STRING_IMMUTABLE,
-                                    SCM_STRING_IMMUTABLE);
-    sym = make_sym(sname, interned);
+    ScmObj sname = Scm_CopyStringWithFlags(name, SCM_STRING_IMMUTABLE,
+                                           SCM_STRING_IMMUTABLE);
+    ScmSymbol *sym = make_sym(sname, interned);
     if (!interned) return SCM_OBJ(sym);
 
     /* Using SCM_DICT_NO_OVERWRITE ensures that if another thread interns
        the same name symbol between above HashTableRef and here, we'll
        get the already interned symbol. */
     SCM_INTERNAL_MUTEX_LOCK(obtable_mutex);
-    e = Scm_HashTableSet(obtable, SCM_OBJ(name), SCM_OBJ(sym),
-                         SCM_DICT_NO_OVERWRITE);
+    ScmObj e = Scm_HashTableSet(obtable, SCM_OBJ(name), SCM_OBJ(sym),
+                                SCM_DICT_NO_OVERWRITE);
     SCM_INTERNAL_MUTEX_UNLOCK(obtable_mutex);
     return e;
 }
@@ -91,20 +87,17 @@ static SCM_DEFINE_STRING_CONST(default_prefix, "G", 1, 1);
 /* Returns uninterned symbol.   PREFIX can be NULL */
 ScmObj Scm_Gensym(ScmString *prefix)
 {
-    ScmObj name;
-    ScmSymbol *sym;
     char numbuf[50];
-    int nc;
     /* We don't need mutex for this variable, since a race on it is
        tolerated---multiple threads may be get the same name symbols,
        but they are uninterned and never be eq? to each other. */
     static intptr_t gensym_count = 0;
 
     if (prefix == NULL) prefix = &default_prefix;
-    nc = snprintf(numbuf, 49, "%"PRIdPTR, gensym_count++);
+    int nc = snprintf(numbuf, 49, "%"PRIdPTR, gensym_count++);
     numbuf[49] = '\0';
-    name = Scm_StringAppendC(prefix, numbuf, nc, nc);
-    sym = make_sym(name, FALSE);
+    ScmObj name = Scm_StringAppendC(prefix, numbuf, nc, nc);
+    ScmSymbol *sym = make_sym(name, FALSE);
     return SCM_OBJ(sym);
 }
 
@@ -161,8 +154,8 @@ void Scm_WriteSymbolName(ScmString *snam, ScmPort *port, ScmWriteContext *ctx,
     /* TODO: For now, we regard chars over 0x80 is all "printable".
        Need a more consistent mechanism. */
     const ScmStringBody *b = SCM_STRING_BODY(snam);
-    const char *p = SCM_STRING_BODY_START(b), *q;
-    int siz = SCM_STRING_BODY_SIZE(b), i;
+    const char *p = SCM_STRING_BODY_START(b);
+    int siz = SCM_STRING_BODY_SIZE(b);
     int escape = FALSE;
     int spmask = (Scm_WriteContextCase(ctx) == SCM_WRITE_CASE_FOLD)? 0x12 : 0x02;
 
@@ -181,7 +174,8 @@ void Scm_WriteSymbolName(ScmString *snam, ScmPort *port, ScmWriteContext *ctx,
         && (!(flags & SCM_SYMBOL_WRITER_NOESCAPE_INITIAL))) {
         escape = TRUE;
     } else {
-        for (i=0, q=p; i<siz; i++, q++) {
+        const char *q = p;
+        for (int i=0; i<siz; i++, q++) {
             if ((unsigned int)*q < 128
                 && (special[(unsigned int)*q]&spmask)) {
                 escape = TRUE;
@@ -191,7 +185,7 @@ void Scm_WriteSymbolName(ScmString *snam, ScmPort *port, ScmWriteContext *ctx,
     }
     if (escape) {
         SCM_PUTC('|', port);
-        for (q=p; q<p+siz; ) {
+        for (const char *q=p; q<p+siz; ) {
             unsigned int ch;
             SCM_CHAR_GET(q, ch);
             q += SCM_CHAR_NBYTES(ch);

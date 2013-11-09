@@ -53,11 +53,9 @@ static const char *dl_open_errstr = NULL;
 static void *dl_open(const char *path)
 {
     NSObjectFileImage image;
-    NSObjectFileImageReturnCode r;
-    NSModule module;
     unsigned long options = NSLINKMODULE_OPTION_BINDNOW|NSLINKMODULE_OPTION_RETURN_ON_ERROR;
 
-    r = NSCreateObjectFileImageFromFile(path, &image);
+    NSObjectFileImageReturnCode r = NSCreateObjectFileImageFromFile(path, &image);
     if (r != NSObjectFileImageSuccess) {
         switch (r) {
         case NSObjectFileImageInappropriateFile:
@@ -79,7 +77,7 @@ static void *dl_open(const char *path)
         return NULL;
     }
 
-    module = NSLinkModule(image, path, options);
+    NSModule module = NSLinkModule(image, path, options);
     NSDestroyObjectFileImage(image);
     if (module == NULL) {
         dl_open_errstr = "NSLinkModule failed";
@@ -103,4 +101,3 @@ static void dl_close(void *handle)
 {
     (void)NSUnLinkModule((NSModule)handle, NSUNLINKMODULE_OPTION_NONE);
 }
-

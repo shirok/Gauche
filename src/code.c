@@ -97,7 +97,7 @@ void Scm_CompiledCodeCopyX(ScmCompiledCode *dest,
 {
     SCM_ASSERT(dest->builder == NULL);
     SCM_ASSERT(src->builder == NULL);
-    
+
     memcpy(dest, src, sizeof(ScmCompiledCode));
 }
 
@@ -115,10 +115,9 @@ void Scm_VMExecuteToplevels(ScmCompiledCode *cs[])
 static ScmObj execute_toplevels_cc(ScmObj result, void **data)
 {
     ScmCompiledCode **cs = (ScmCompiledCode **)data[0];
-    ScmVM *vm;
     if (cs[0] == NULL) return SCM_UNDEFINED;
     data[0] = cs+1;
-    vm = Scm_VM();
+    ScmVM *vm = Scm_VM();
     Scm_VMPushCC(execute_toplevels_cc, data, 1);
     vm->base = cs[0];
     vm->pc = vm->base->code;
@@ -139,25 +138,19 @@ static void print_header(const char *prefix, ScmObj name, ScmCompiledCode *cc);
 
 void Scm_CompiledCodeDump(ScmCompiledCode *cc)
 {
-    int i;
-    ScmWord *p;
-    ScmObj closures = SCM_NIL, lifted = SCM_NIL, shown_lifted = SCM_NIL, cp;
+    ScmObj closures = SCM_NIL, lifted = SCM_NIL, shown_lifted = SCM_NIL;
     int clonum = 0, more = FALSE;
 
     print_header("main_code", SCM_MAKE_STR(""), cc);
     do {
-        p = cc->code;
+        ScmWord *p = cc->code;
         Scm_Printf(SCM_CUROUT, "args: %S\n", cc->argInfo);
-        for (i=0; i < cc->codeSize; i++) {
+        for (int i=0; i < cc->codeSize; i++) {
             ScmWord insn = p[i];
-            ScmObj info, s;
             ScmPort *out = SCM_PORT(Scm_MakeOutputStringPort(TRUE));
-            u_int code;
-            const char *insn_name;
-
-            info = Scm_Assq(SCM_MAKE_INT(i), cc->info);
-            code = SCM_VM_INSN_CODE(insn);
-            insn_name = Scm_VMInsnName(code);
+            ScmObj info = Scm_Assq(SCM_MAKE_INT(i), cc->info);
+            u_int code = SCM_VM_INSN_CODE(insn);
+            const char *insn_name = Scm_VMInsnName(code);
 
             switch (Scm_VMInsnNumParams(code)) {
             case 0:
@@ -194,8 +187,9 @@ void Scm_CompiledCodeDump(ScmCompiledCode *cc)
                 clonum++;
                 i++;
                 break;
-            case SCM_VM_OPERAND_CODES:
+            case SCM_VM_OPERAND_CODES: {
                 Scm_Printf(out, "(");
+                ScmObj cp;
                 SCM_FOR_EACH(cp, SCM_OBJ(p[i+1])) {
                     if (SCM_COMPILED_CODE_P(SCM_CAR(cp))) {
                         closures = Scm_Acons(SCM_CAR(cp),
@@ -208,12 +202,13 @@ void Scm_CompiledCodeDump(ScmCompiledCode *cc)
                 Scm_Printf(out, ")");
                 i++;
                 break;
+            }
             default:
                 /*nothing*/;
             }
 
             /* Show info */
-            s = Scm_GetOutputStringUnsafe(out, 0);
+            ScmObj s = Scm_GetOutputStringUnsafe(out, 0);
             if (!SCM_PAIRP(info)) {
                 Scm_Puts(SCM_STRING(s), SCM_CUROUT);
                 Scm_Putc('\n', SCM_CUROUT);
@@ -276,10 +271,7 @@ static void print_header(const char *prefix, ScmObj name, ScmCompiledCode *cc)
  */
 static ScmObj check_lifted_closure(ScmWord *p, ScmObj lifted)
 {
-    ScmIdentifier *id;
-    ScmObj g;
     ScmWord code = SCM_VM_INSN_CODE(p[0]);
-    int i;
     static ScmWord gref_insns[] = {
         SCM_VM_GREF,
         SCM_VM_GREF_PUSH,
@@ -291,12 +283,12 @@ static ScmObj check_lifted_closure(ScmWord *p, ScmObj lifted)
     };
 
     if (!SCM_IDENTIFIERP(p[1])) return lifted;
-    id = SCM_IDENTIFIER(p[1]);
+    ScmIdentifier *id = SCM_IDENTIFIER(p[1]);
     if (SCM_SYMBOL_INTERNED(id->name)) return lifted;
 
-    for (i=0; i < sizeof(gref_insns)/sizeof(ScmWord); i++) {
+    for (int i=0; i < sizeof(gref_insns)/sizeof(ScmWord); i++) {
         if (code == gref_insns[i]) {
-            g = Scm_GlobalVariableRef(id->module, id->name,
+            ScmObj g = Scm_GlobalVariableRef(id->module, id->name,
                                       SCM_BINDING_STAY_IN_MODULE);
             if (SCM_CLOSUREP(g)) {
                 if (SCM_FALSEP(Scm_Assq(SCM_CLOSURE(g)->code, lifted))) {
@@ -369,8 +361,7 @@ typedef struct cc_builder_rec {
 
 static cc_builder *make_cc_builder(void)
 {
-    cc_builder *b;
-    b = SCM_NEW(cc_builder);
+    cc_builder *b = SCM_NEW(cc_builder);
     b->chunks = NULL;
     b->numChunks = 0;
     b->constants = SCM_NIL;
@@ -431,8 +422,6 @@ static void finish_transition(cc_builder *b);
 /* Flush the currentInsn buffer. */
 static void cc_builder_flush(cc_builder *b)
 {
-    u_int code;
-
     if ((b)->currentInsn == CC_BUILDER_BUFFER_EMPTY) return;
     if ((b)->currentInsn == CC_BUILDER_BUFFER_TRANS) {
         finish_transition(b);
@@ -440,7 +429,7 @@ static void cc_builder_flush(cc_builder *b)
     cc_builder_add_info(b);
     cc_builder_add_word(b, b->currentInsn);
 
-    code = SCM_VM_INSN_CODE(b->currentInsn);
+    u_int code = SCM_VM_INSN_CODE(b->currentInsn);
     switch (Scm_VMInsnOperandType(code)) {
     case SCM_VM_OPERAND_ADDR:
         /* Addr should be a label.  We just push the label reference
@@ -496,11 +485,9 @@ static void cc_builder_flush(cc_builder *b)
 static void cc_builder_jumpopt(ScmCompiledCode *cc)
 {
     ScmWord *cp = cc->code;
-    u_int code, i;
-    ScmWord *target;
 
-    for (i=0; i<(u_int)cc->codeSize; i++) {
-        code = SCM_VM_INSN_CODE(*cp); cp++;
+    for (u_int i=0; i<(u_int)cc->codeSize; i++) {
+        u_int code = SCM_VM_INSN_CODE(*cp); cp++;
         switch (Scm_VMInsnOperandType(code)) {
         case SCM_VM_OPERAND_OBJ:;
         case SCM_VM_OPERAND_CODE:;
@@ -510,8 +497,8 @@ static void cc_builder_jumpopt(ScmCompiledCode *cc)
         case SCM_VM_OPERAND_OBJ_ADDR:
             i++; cp++;
             /*FALLTHROUGH*/
-        case SCM_VM_OPERAND_ADDR:
-            target = (ScmWord*)*cp;
+        case SCM_VM_OPERAND_ADDR: {
+            ScmWord *target = (ScmWord*)*cp;
             while (SCM_VM_INSN_CODE(*target) == SCM_VM_JUMP
                    || (code == SCM_VM_BF
                        && SCM_VM_INSN_CODE(*target) == SCM_VM_BF)) {
@@ -522,6 +509,7 @@ static void cc_builder_jumpopt(ScmCompiledCode *cc)
             }
             i++; cp++;
             break;
+        }
         default:
             break;
         }
@@ -546,10 +534,9 @@ ScmObj Scm_MakeCompiledCodeBuilder(int reqargs, int optargs,
 /* Returns a label identifier (integer) unique to this code block */
 ScmObj Scm_CompiledCodeNewLabel(ScmCompiledCode *cc)
 {
-    ScmObj label;
     cc_builder *b;
     CC_BUILDER_GET(b, cc);
-    label = SCM_MAKE_INT(b->labelCount);
+    ScmObj label = SCM_MAKE_INT(b->labelCount);
     b->labelCount++;
     return label;
 }
@@ -573,18 +560,14 @@ void Scm_CompiledCodeSetLabel(ScmCompiledCode *cc, ScmObj label)
    Perform label resolution and jump optimization. */
 void Scm_CompiledCodeFinishBuilder(ScmCompiledCode *cc, int maxstack)
 {
-    ScmObj cp;
     cc_builder *b;
-    cc_builder_chunk *bc, *bcprev;
-    int i, j, numConstants;
-
     CC_BUILDER_GET(b, cc);
     cc_builder_flush(b);
     cc->code = SCM_NEW_ATOMIC2(ScmWord *, b->currentIndex * sizeof(ScmWord));
     cc->codeSize = b->currentIndex;
 
     /* reverse chunks, leaving the first chunk in bcprev. */
-    bcprev = NULL;
+    cc_builder_chunk *bc, *bcprev = NULL;
     for (bc = b->chunks; bc;) {
         cc_builder_chunk *next = bc->prev;
         bc->prev = bcprev;
@@ -594,7 +577,7 @@ void Scm_CompiledCodeFinishBuilder(ScmCompiledCode *cc, int maxstack)
 
     /* pack words */
     bc = bcprev;
-    for (i=0, j=0; i<b->currentIndex; i++, j++) {
+    for (int i=0, j=0; i<b->currentIndex; i++, j++) {
         if (j >= CC_BUILDER_CHUNK_SIZE) {
             bc = bc->prev;
             j = 0;
@@ -603,17 +586,18 @@ void Scm_CompiledCodeFinishBuilder(ScmCompiledCode *cc, int maxstack)
     }
 
     /* pack constants */
-    numConstants = Scm_Length(b->constants);
+    int numConstants = Scm_Length(b->constants);
     if (numConstants > 0) {
-        ScmObj cp;
         cc->constants = SCM_NEW_ARRAY(ScmObj, numConstants);
-        for (i=0, cp=b->constants; i<numConstants; i++, cp=SCM_CDR(cp)) {
+        ScmObj cp = b->constants;
+        for (int i=0; i<numConstants; i++, cp=SCM_CDR(cp)) {
             cc->constants[i] = SCM_CAR(cp);
         }
     }
     cc->constantSize = numConstants;
 
     /* resolve labels */
+    ScmObj cp;
     SCM_FOR_EACH(cp, b->labelRefs) {
         int destAddr = cc_builder_label_def(b, SCM_CAAR(cp));
         int operandAddr;
@@ -807,10 +791,9 @@ void Scm_CompiledCodeEmit(ScmCompiledCode *cc,
    Addr operand -> integer offset from the beginning of the code */
 ScmObj Scm_CompiledCodeToList(ScmCompiledCode *cc)
 {
-    u_int i, off;
     ScmObj h = SCM_NIL, t = SCM_NIL;
 
-    for (i=0; i<(u_int)cc->codeSize; i++) {
+    for (u_int i=0; i<(u_int)cc->codeSize; i++) {
         ScmWord insn = cc->code[i];
         u_int code = SCM_VM_INSN_CODE(insn);
         const char *name = Scm_VMInsnName(code);
@@ -836,16 +819,18 @@ ScmObj Scm_CompiledCodeToList(ScmCompiledCode *cc)
         case SCM_VM_OPERAND_CODES:;
             SCM_APPEND1(h, t, SCM_OBJ(cc->code[++i]));
             break;
-        case SCM_VM_OPERAND_ADDR:
-            off = (u_int)((ScmWord*)cc->code[++i] - cc->code);
+        case SCM_VM_OPERAND_ADDR: {
+            u_int off = (u_int)((ScmWord*)cc->code[++i] - cc->code);
             SCM_APPEND1(h, t, SCM_MAKE_INT(off));
             break;
-        case SCM_VM_OPERAND_OBJ_ADDR:
-            off = (u_int)((ScmWord*)cc->code[i+2] - cc->code);
+        }
+        case SCM_VM_OPERAND_OBJ_ADDR: {
+            u_int off = (u_int)((ScmWord*)cc->code[i+2] - cc->code);
             SCM_APPEND(h, t, SCM_LIST2(SCM_OBJ(cc->code[i+1]),
                                        SCM_MAKE_INT(off)));
             i += 2;
             break;
+        }
         }
     }
     return h;
@@ -952,17 +937,13 @@ int Scm_VMInsnOperandType(u_int code)
 
 int Scm_VMInsnNameToCode(ScmObj name)
 {
-    const char *n;
-    struct insn_info *info;
-    int i;
-
     if (SCM_SYMBOLP(name))  name = SCM_OBJ(SCM_SYMBOL_NAME(name));
     else if (!SCM_STRINGP(name)) {
         Scm_Error("vm-insn-name->code: requires a symbol or a string, but got %S", name);
     }
-    n = Scm_GetStringConst(SCM_STRING(name));
-    info = insn_table;
-    for (i=0; i<SCM_VM_NUM_INSNS; i++) {
+    const char *n = Scm_GetStringConst(SCM_STRING(name));
+    struct insn_info *info = insn_table;
+    for (int i=0; i<SCM_VM_NUM_INSNS; i++) {
         if (strcmp(insn_table[i].name, n) == 0) {
             return i;
         }
@@ -974,10 +955,10 @@ int Scm_VMInsnNameToCode(ScmObj name)
 /* (kind of) inversion of VMInsnInspect. */
 ScmWord Scm_VMInsnBuild(ScmObj obj)
 {
-    int len = Scm_Length(obj), code, arg0, arg1;
+    int len = Scm_Length(obj);
 
     if (len < 1 || len > 3 || !SCM_SYMBOLP(SCM_CAR(obj))) goto badspec;
-    code = Scm_VMInsnNameToCode(SCM_CAR(obj));
+    int code = Scm_VMInsnNameToCode(SCM_CAR(obj));
 
     switch (Scm_VMInsnNumParams(code)) {
     case 0:
@@ -986,24 +967,26 @@ ScmWord Scm_VMInsnBuild(ScmObj obj)
                       SCM_CAR(obj), obj);
         }
         return SCM_VM_INSN(code);
-    case 1:
+    case 1: {
         if (len != 2) {
             Scm_Error("VM instruction %S takes one parameter, but got %S",
                       SCM_CAR(obj), obj);
         }
         if (!SCM_INTP(SCM_CADR(obj))) goto badspec;
-        arg0 = SCM_INT_VALUE(SCM_CADR(obj));
+        int arg0 = SCM_INT_VALUE(SCM_CADR(obj));
         return SCM_VM_INSN1(code, arg0);
-    case 2:
+    }
+    case 2: {
         if (len != 3) {
             Scm_Error("VM instruction %S takes two parameters, but got %S",
                       SCM_CAR(obj), obj);
         }
         if (!SCM_INTP(SCM_CADR(obj))) goto badspec;
         if (!SCM_INTP(SCM_CAR(SCM_CDDR(obj)))) goto badspec;
-        arg0 = SCM_INT_VALUE(SCM_CADR(obj));
-        arg1 = SCM_INT_VALUE(SCM_CAR(SCM_CDDR(obj)));
+        int arg0 = SCM_INT_VALUE(SCM_CADR(obj));
+        int arg1 = SCM_INT_VALUE(SCM_CAR(SCM_CDDR(obj)));
         return SCM_VM_INSN2(code, arg0, arg1);
+    }
     }
     /*FALLTHROUGH*/
   badspec:

@@ -219,11 +219,8 @@ static ScmObj load_body(ScmObj *args, int nargs, void *data)
 ScmObj Scm_VMLoadFromPort(ScmPort *port, ScmObj next_paths,
                           ScmObj env, int flags)
 {
-    struct load_info *p;
-    ScmObj port_info;
     ScmVM *vm = Scm_VM();
     ScmModule *module = vm->module;
-    ScmReadContext *newctx;
 
     /* Sanity check */
     if (!SCM_IPORTP(port))
@@ -238,7 +235,7 @@ ScmObj Scm_VMLoadFromPort(ScmPort *port, ScmObj next_paths,
         Scm_Error("bad load environment (must be a module or #f): %S", env);
     }
 
-    p = SCM_NEW(struct load_info);
+    struct load_info *p = SCM_NEW(struct load_info);
     p->port = port;
     p->prev_module    = vm->module;
     p->prev_port      = PARAM_REF(vm, load_port);
@@ -247,7 +244,7 @@ ScmObj Scm_VMLoadFromPort(ScmPort *port, ScmObj next_paths,
     p->prev_main_script = PARAM_REF(vm, load_main_script);
     p->prev_situation = vm->evalSituation;
 
-    newctx = Scm_MakeReadContext(NULL);
+    ScmReadContext *newctx = Scm_MakeReadContext(NULL);
     newctx->flags |= RCTX_LITERAL_IMMUTABLE | RCTX_SOURCE_INFO;
     p->prev_ctx = Scm_SetCurrentReadContext(newctx);
 
@@ -256,6 +253,7 @@ ScmObj Scm_VMLoadFromPort(ScmPort *port, ScmObj next_paths,
     PARAM_SET(vm, load_main_script, SCM_MAKE_BOOL(flags&SCM_LOAD_MAIN_SCRIPT));
     vm->module = module;
     vm->evalSituation = SCM_VM_LOADING;
+    ScmObj port_info;
     if (SCM_PORTP(p->prev_port)) {
         port_info = SCM_LIST2(p->prev_port,
                               Scm_MakeInteger(Scm_PortLine(SCM_PORT(p->prev_port))));
@@ -271,9 +269,7 @@ ScmObj Scm_VMLoadFromPort(ScmPort *port, ScmObj next_paths,
 int Scm_LoadFromPort(ScmPort *port, u_long flags, ScmLoadPacket *packet)
 {
     static ScmObj load_from_port = SCM_UNDEFINED;
-    ScmEvalPacket eresult;
     ScmObj args = SCM_NIL;
-    int r;
     SCM_BIND_PROC(load_from_port, "load-from-port", Scm_GaucheModule());
     load_packet_prepare(packet);
 
@@ -288,7 +284,8 @@ int Scm_LoadFromPort(ScmPort *port, u_long flags, ScmLoadPacket *packet)
         if (packet) packet->loaded = TRUE;
         return 0;
     } else {
-        r = Scm_Apply(load_from_port, args, &eresult);
+        ScmEvalPacket eresult;
+        int r = Scm_Apply(load_from_port, args, &eresult);
         if (packet) {
             packet->exception = eresult.exception;
             packet->loaded = (r >= 0);
@@ -364,7 +361,6 @@ int Scm_Load(const char *cpath, u_long flags, ScmLoadPacket *packet)
     static ScmObj load_proc = SCM_UNDEFINED;
     ScmObj f = SCM_MAKE_STR_COPYING(cpath);
     ScmObj opts = SCM_NIL;
-    ScmEvalPacket eresult;
     SCM_BIND_PROC(load_proc, "load", Scm_SchemeModule());
 
     if (flags&SCM_LOAD_QUIET_NOFILE) {
@@ -385,6 +381,7 @@ int Scm_Load(const char *cpath, u_long flags, ScmLoadPacket *packet)
         }
         return 0;
     } else {
+        ScmEvalPacket eresult;
         int r = Scm_Apply(load_proc, Scm_Cons(f, opts), &eresult);
         if (packet) {
             packet->exception = eresult.exception;
@@ -400,18 +397,16 @@ int Scm_Load(const char *cpath, u_long flags, ScmLoadPacket *packet)
 
 ScmObj Scm_GetLoadPath(void)
 {
-    ScmObj paths;
     (void)SCM_INTERNAL_MUTEX_LOCK(ldinfo.path_mutex);
-    paths = Scm_CopyList(ldinfo.load_path_rec->value);
+    ScmObj paths = Scm_CopyList(ldinfo.load_path_rec->value);
     (void)SCM_INTERNAL_MUTEX_UNLOCK(ldinfo.path_mutex);
     return paths;
 }
 
 ScmObj Scm_GetDynLoadPath(void)
 {
-    ScmObj paths;
     (void)SCM_INTERNAL_MUTEX_LOCK(ldinfo.path_mutex);
-    paths = Scm_CopyList(ldinfo.dynload_path_rec->value);
+    ScmObj paths = Scm_CopyList(ldinfo.dynload_path_rec->value);
     (void)SCM_INTERNAL_MUTEX_UNLOCK(ldinfo.path_mutex);
     return paths;
 }
@@ -459,12 +454,10 @@ static ScmObj add_list_item(ScmObj orig, ScmObj item, int afterp)
 ScmObj Scm_AddLoadPath(const char *cpath, int afterp)
 {
     ScmObj spath = SCM_MAKE_STR_COPYING(cpath);
-    ScmObj dpath;
-    ScmObj r;
     struct stat statbuf;
 
     /* check dynload path */
-    dpath = Scm_StringAppendC(SCM_STRING(spath), "/", 1, 1);
+    ScmObj dpath = Scm_StringAppendC(SCM_STRING(spath), "/", 1, 1);
     dpath = Scm_StringAppendC(SCM_STRING(dpath), Scm_HostArchitecture(),-1,-1);
     if (stat(Scm_GetStringConst(SCM_STRING(dpath)), &statbuf) < 0
         || !S_ISDIR(statbuf.st_mode)) {
@@ -479,7 +472,7 @@ ScmObj Scm_AddLoadPath(const char *cpath, int afterp)
     (void)SCM_INTERNAL_MUTEX_LOCK(ldinfo.path_mutex);
     ADD_LIST_ITEM(ldinfo.load_path_rec->value, spath, afterp);
     ADD_LIST_ITEM(ldinfo.dynload_path_rec->value, dpath, afterp);
-    r = ldinfo.load_path_rec->value;
+    ScmObj r = ldinfo.load_path_rec->value;
     (void)SCM_INTERNAL_MUTEX_UNLOCK(ldinfo.path_mutex);
 
     return r;
@@ -596,11 +589,10 @@ struct dlobj_rec {
 /* for debug */
 static void dump_dlobj(dlobj *dlo)
 {
-    dlobj_initfn *ifn;
     printf("{\n  dlobj \"%s\"%s\n",
            dlo->path, dlo->loaded? " (loaded)" : " (not loaded)");
     printf("  initfns:\n");
-    for (ifn = dlo->initfns; ifn; ifn = ifn->next) {
+    for (dlobj_initfn *ifn = dlo->initfns; ifn; ifn = ifn->next) {
         printf("    name=\"%s\", fn=%p %s}\n",
                ifn->name, ifn->fn,
                ifn->initialized? "(initialized) ":"");
@@ -610,9 +602,8 @@ static void dump_dlobj(dlobj *dlo)
 
 static void dump_dlobjs(void)
 {
-    dlobj *dlo = ldinfo.dso_list;
     printf("Registerd dlobjs:\n");
-    for (; dlo; dlo = dlo->next) {
+    for (dlobj *dlo = ldinfo.dso_list; dlo; dlo = dlo->next) {
         dump_dlobj(dlo);
     }
 }
@@ -679,18 +670,16 @@ static void unlock_dlobj(dlobj *dlo)
 
 static const char *derive_dynload_initfn(const char *filename)
 {
-    const char *head, *tail, *s;
-    char *name, *d;
-
-    head = strrchr(filename, '/');
+    const char *head = strrchr(filename, '/');
     if (head == NULL) head = filename;
     else head++;
-    tail = strchr(head, '.');
+    const char *tail = strchr(head, '.');
     if (tail == NULL) tail = filename + strlen(filename);
 
-    name = SCM_NEW_ATOMIC2(char *, sizeof(DYNLOAD_PREFIX) + tail - head);
+    char *name = SCM_NEW_ATOMIC2(char *, sizeof(DYNLOAD_PREFIX) + tail - head);
     strcpy(name, DYNLOAD_PREFIX);
-    for (s = head, d = name + sizeof(DYNLOAD_PREFIX) - 1; s < tail; s++, d++) {
+    char *d = name + sizeof(DYNLOAD_PREFIX) - 1;
+    for (const char *s = head; s < tail; s++, d++) {
         if (isalnum(*s)) *d = tolower(*s);
         else *d = '_';
     }
@@ -718,12 +707,11 @@ static dlobj_initfn *find_initfn(dlobj *dlo, const char *name)
 /* From the given DSO name, find out the path of the actual DSO */
 static const char *find_dso_path(ScmString *dsoname)
 {
-    ScmObj spath;
     static ScmObj find_file = SCM_UNDEFINED;
     SCM_BIND_PROC(find_file, "find-load-file", Scm_GaucheInternalModule());
 
-    spath = Scm_ApplyRec5(find_file, SCM_OBJ(dsoname), Scm_GetDynLoadPath(),
-                          ldinfo.dso_suffixes, SCM_FALSE, SCM_FALSE);
+    ScmObj spath = Scm_ApplyRec5(find_file, SCM_OBJ(dsoname), Scm_GetDynLoadPath(),
+                                 ldinfo.dso_suffixes, SCM_FALSE, SCM_FALSE);
     if (SCM_FALSEP(spath)) {
         Scm_Error("can't find dlopen-able module %S", dsoname);
     }
@@ -833,10 +821,9 @@ void Scm_RegisterPrelinked(ScmString *dsoname,
     const char *path = pseudo_pathname_for_prelinked(dsoname);
     dlobj *dlo = find_dlobj(path);
     dlo->loaded = TRUE;
-    int i;
 
     (void)SCM_INTERNAL_MUTEX_LOCK(ldinfo.dso_mutex);
-    for (i=0; initfns[i] && initfn_names[i]; i++) {
+    for (int i=0; initfns[i] && initfn_names[i]; i++) {
         dlobj_initfn *ifn = find_initfn(dlo, initfn_names[i]);
         SCM_ASSERT(ifn->fn == NULL);
         ifn->fn = initfns[i];
@@ -847,12 +834,11 @@ void Scm_RegisterPrelinked(ScmString *dsoname,
 
 static const char *find_prelinked(ScmString *dsoname)
 {
-    ScmObj z = SCM_FALSE;
     (void)SCM_INTERNAL_MUTEX_LOCK(ldinfo.dso_mutex);
     /* in general it is dangerous to invoke equal?-comparison during lock,
        but in this case we know they're string comparison and won't raise
        an error. */
-    z = Scm_Member(SCM_OBJ(dsoname), ldinfo.dso_prelinked, SCM_CMP_EQUAL);
+    ScmObj z = Scm_Member(SCM_OBJ(dsoname), ldinfo.dso_prelinked, SCM_CMP_EQUAL);
     (void)SCM_INTERNAL_MUTEX_UNLOCK(ldinfo.dso_mutex);
     return SCM_FALSEP(z) ? NULL : pseudo_pathname_for_prelinked(dsoname);
 }
@@ -865,14 +851,11 @@ static const char *find_prelinked(ScmString *dsoname)
 */
 ScmObj Scm_DynLoad(ScmString *dsoname, ScmObj initfn, u_long flags/*reserved*/)
 {
-    const char *dsopath, *initname;
-    dlobj *dlo;
-
-    dsopath = find_prelinked(dsoname);
+    const char *dsopath = find_prelinked(dsoname);
     if (!dsopath) dsopath = find_dso_path(dsoname);
-    initname = get_initfn_name(initfn, dsopath);
-    dlo = find_dlobj(dsopath);
-    
+    const char *initname = get_initfn_name(initfn, dsopath);
+    dlobj *dlo = find_dlobj(dsopath);
+
     /* Load the dlobj if necessary. */
     lock_dlobj(dlo);
     if (!dlo->loaded) {
@@ -979,10 +962,8 @@ int do_require(ScmObj feature, int flags, ScmModule *base_mod,
                ScmLoadPacket *packet)
 {
     ScmVM *vm = Scm_VM();
-    ScmObj provided, providing, p, q;
-    ScmModule *prev_mod;
-    int loop = FALSE, r;
-    ScmLoadPacket xresult;
+    ScmObj provided;
+    int loop = FALSE;
 
     load_packet_prepare(packet);
     if (!SCM_STRINGP(feature)) {
@@ -999,16 +980,16 @@ int do_require(ScmObj feature, int flags, ScmModule *base_mod,
     for (;;) {
         provided = Scm_Member(feature, ldinfo.provided, SCM_CMP_EQUAL);
         if (!SCM_FALSEP(provided)) break;
-        providing = Scm_Assoc(feature, ldinfo.providing, SCM_CMP_EQUAL);
+        ScmObj providing = Scm_Assoc(feature, ldinfo.providing, SCM_CMP_EQUAL);
         if (SCM_FALSEP(providing)) break;
 
         /* Checks for dependencies */
-        p = providing;
+        ScmObj p = providing;
         SCM_ASSERT(SCM_PAIRP(p) && SCM_PAIRP(SCM_CDR(p)));
         if (SCM_CADR(p) == SCM_OBJ(vm)) { loop = TRUE; break; }
 
         for (;;) {
-            q = Scm_Assq(SCM_CDR(p), ldinfo.waiting);
+            ScmObj q = Scm_Assq(SCM_CDR(p), ldinfo.waiting);
             if (SCM_FALSEP(q)) break;
             SCM_ASSERT(SCM_PAIRP(q));
             p = Scm_Assoc(SCM_CDR(q), ldinfo.providing, SCM_CMP_EQUAL);
@@ -1038,9 +1019,10 @@ int do_require(ScmObj feature, int flags, ScmModule *base_mod,
     if (!SCM_FALSEP(provided)) return 0; /* no work to do */
     /* Make sure to load the file into base_mod.   We don't need UNWIND_PROTECT
        here, since errors are caught in Scm_Load. */
-    prev_mod = vm->module;
+    ScmLoadPacket xresult;
+    ScmModule *prev_mod = vm->module;
     vm->module = base_mod;
-    r = Scm_Load(Scm_GetStringConst(SCM_STRING(feature)), 0, &xresult);
+    int r = Scm_Load(Scm_GetStringConst(SCM_STRING(feature)), 0, &xresult);
     vm->module = prev_mod;
     if (packet) packet->exception = xresult.exception;
 
@@ -1056,7 +1038,7 @@ int do_require(ScmObj feature, int flags, ScmModule *base_mod,
 
     /* Success */
     (void)SCM_INTERNAL_MUTEX_LOCK(ldinfo.prov_mutex);
-    p = Scm_Assoc(feature, ldinfo.providing, SCM_CMP_EQUAL);
+    ScmObj p = Scm_Assoc(feature, ldinfo.providing, SCM_CMP_EQUAL);
     ldinfo.providing = Scm_AssocDeleteX(feature, ldinfo.providing, SCM_CMP_EQUAL);
     /* `Autoprovide' feature */
     if (SCM_NULLP(SCM_CDDR(p))
@@ -1071,7 +1053,6 @@ int do_require(ScmObj feature, int flags, ScmModule *base_mod,
 
 ScmObj Scm_Provide(ScmObj feature)
 {
-    ScmObj cp;
     ScmVM *self = Scm_VM();
 
     if (!SCM_STRINGP(feature)&&!SCM_FALSEP(feature)) {
@@ -1082,6 +1063,7 @@ ScmObj Scm_Provide(ScmObj feature)
         && SCM_FALSEP(Scm_Member(feature, ldinfo.provided, SCM_CMP_EQUAL))) {
         ldinfo.provided = Scm_Cons(feature, ldinfo.provided);
     }
+    ScmObj cp;
     SCM_FOR_EACH(cp, ldinfo.providing) {
         if (SCM_CADR(SCM_CAR(cp)) == SCM_OBJ(self)) {
             SCM_SET_CDR(SCM_CDR(SCM_CAR(cp)), SCM_LIST1(feature));
@@ -1095,9 +1077,8 @@ ScmObj Scm_Provide(ScmObj feature)
 
 int Scm_ProvidedP(ScmObj feature)
 {
-    int r;
     (void)SCM_INTERNAL_MUTEX_LOCK(ldinfo.prov_mutex);
-    r = !SCM_FALSEP(Scm_Member(feature, ldinfo.provided, SCM_CMP_EQUAL));
+    int r = !SCM_FALSEP(Scm_Member(feature, ldinfo.provided, SCM_CMP_EQUAL));
     (void)SCM_INTERNAL_MUTEX_UNLOCK(ldinfo.prov_mutex);
     return r;
 }
@@ -1140,7 +1121,6 @@ void Scm_DefineAutoload(ScmModule *where,
 {
     ScmString *path = NULL;
     ScmSymbol *import_from = NULL;
-    ScmObj ep;
 
     if (SCM_STRINGP(file_or_module)) {
         path = SCM_STRING(file_or_module);
@@ -1151,6 +1131,7 @@ void Scm_DefineAutoload(ScmModule *where,
         Scm_Error("autoload: string or symbol required, but got %S",
                   file_or_module);
     }
+    ScmObj ep;
     SCM_FOR_EACH(ep, list) {
         ScmObj entry = SCM_CAR(ep);
         if (SCM_SYMBOLP(entry)) {
@@ -1241,13 +1222,12 @@ ScmObj Scm_ResolveAutoload(ScmAutoload *adata, int flags)
                import the binding individually. */
             ScmModule *m = Scm_FindModule(adata->import_from,
                                           SCM_FIND_MODULE_QUIET);
-            ScmGloc *f, *g;
             if (m == NULL) {
                 Scm_Error("Trying to autoload module %S from file %S, but the file doesn't define such a module",
                           adata->import_from, adata->path);
             }
-            f = Scm_FindBinding(SCM_MODULE(m), adata->name, 0);
-            g = Scm_FindBinding(adata->module, adata->name, 0);
+            ScmGloc *f = Scm_FindBinding(SCM_MODULE(m), adata->name, 0);
+            ScmGloc *g = Scm_FindBinding(adata->module, adata->name, 0);
             SCM_ASSERT(f != NULL);
             SCM_ASSERT(g != NULL);
             adata->value = SCM_GLOC_GET(f);
@@ -1316,19 +1296,19 @@ void Scm__InitLoad(void)
 {
     ScmModule *m = Scm_SchemeModule();
     ScmVM *vm = Scm_VM();
-    ScmObj init_load_path, init_dynload_path, init_load_suffixes, t;
+    ScmObj t;
 
-    init_load_path = t = SCM_NIL;
+    ScmObj init_load_path = t = SCM_NIL;
     SCM_APPEND(init_load_path, t, break_env_paths("GAUCHE_LOAD_PATH"));
     SCM_APPEND1(init_load_path, t, Scm_SiteLibraryDirectory());
     SCM_APPEND1(init_load_path, t, Scm_LibraryDirectory());
 
-    init_dynload_path = t = SCM_NIL;
+    ScmObj init_dynload_path = t = SCM_NIL;
     SCM_APPEND(init_dynload_path, t, break_env_paths("GAUCHE_DYNLOAD_PATH"));
     SCM_APPEND1(init_dynload_path, t, Scm_SiteArchitectureDirectory());
     SCM_APPEND1(init_dynload_path, t, Scm_ArchitectureDirectory());
 
-    init_load_suffixes = t = SCM_NIL;
+    ScmObj init_load_suffixes = t = SCM_NIL;
     SCM_APPEND1(init_load_suffixes, t, SCM_MAKE_STR(".sci"));
     SCM_APPEND1(init_load_suffixes, t, SCM_MAKE_STR(".scm"));
 

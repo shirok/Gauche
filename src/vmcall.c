@@ -46,16 +46,16 @@
 #if !defined(APPLY_CALL)
 #define ADJUST_ARGUMENT_FRAME(proc, argc)                               \
     do {                                                                \
-        int reqargs, optargs;                                           \
-        reqargs = SCM_PROCEDURE_REQUIRED(proc);                         \
-        optargs = SCM_PROCEDURE_OPTIONAL(proc);                         \
+        int reqargs = SCM_PROCEDURE_REQUIRED(proc);                     \
+        int optargs = SCM_PROCEDURE_OPTIONAL(proc);                     \
         if (optargs) {                                                  \
-            ScmObj p = SCM_NIL, a;                                      \
+            ScmObj p = SCM_NIL;                                         \
             if (argc < reqargs) {                                       \
                 wna(vm, VAL0, argc, -1); RETURN_OP(); NEXT;             \
             }                                                           \
             /* fold &rest args */                                       \
             while (argc > reqargs+optargs-1) {                          \
+                ScmObj a;                                               \
                 POP_ARG(a);                                             \
                 p = Scm_Cons(a, p);                                     \
                 argc--;                                                 \
@@ -71,11 +71,10 @@
 #else /*APPLY_CALL*/
 #define ADJUST_ARGUMENT_FRAME(proc, argc)                               \
     do {                                                                \
-        int reqargs, optargs;                                           \
-        int c, rargc = check_arglist_tail_for_apply(vm, *(vm->sp - 1)); \
+        int rargc = check_arglist_tail_for_apply(vm, *(vm->sp - 1));    \
         ScmObj p, a;                                                    \
-        reqargs = SCM_PROCEDURE_REQUIRED(proc);                         \
-        optargs = SCM_PROCEDURE_OPTIONAL(proc);                         \
+        int reqargs = SCM_PROCEDURE_REQUIRED(proc);                     \
+        int optargs = SCM_PROCEDURE_OPTIONAL(proc);                     \
         if (optargs) {                                                  \
             if ((rargc+argc-1) < reqargs) {                             \
                 wna(vm, VAL0, rargc+argc-1, rargc); RETURN_OP(); NEXT;  \
@@ -84,7 +83,7 @@
             if (argc > reqargs+optargs) {                               \
                 /* fold rest args. */                                   \
                 p = Scm_CopyList(p);                                    \
-                for (c=argc; c>reqargs+optargs; c--) {                  \
+                for (int c=argc; c>reqargs+optargs; c--) {              \
                     POP_ARG(a);                                         \
                     p = Scm_Cons(a, p);                                 \
                 }                                                       \
@@ -92,7 +91,9 @@
             } else {                                                    \
                 /* 'unfold' rest arg */                                 \
                 CHECK_STACK(reqargs + optargs - argc + 1);              \
-                for (c=argc; SCM_PAIRP(p) && c<reqargs+optargs; c++) {  \
+                for (int c=argc;                                        \
+                     SCM_PAIRP(p) && c<reqargs+optargs;                 \
+                     c++) {                                             \
                     PUSH_ARG(SCM_CAR(p));                               \
                     p = SCM_CDR(p);                                     \
                 }                                                       \
@@ -218,11 +219,10 @@
                that it is converted to an application of pure generic
                fn apply-generic. */
             ScmObj args, arg;
-            int i;
 #if !defined(APPLY_CALL)
             if (argc < 2) CHECK_STACK(2);
             args = SCM_NIL;
-            for (i=0; i<argc; i++) {
+            for (int i=0; i<argc; i++) {
                 POP_ARG(arg);
                 args = Scm_Cons(arg, args);
             }
@@ -234,7 +234,7 @@
             if (argc < 3) CHECK_STACK(3);
             POP_ARG(args);
             argc--;
-            for (i=0; i<argc; i++) {
+            for (int i=0; i<argc; i++) {
                 POP_ARG(arg);
                 args = Scm_Cons(arg, args);
             }
@@ -271,8 +271,7 @@
 #if GAUCHE_FFX
             {
                 ScmObj *ap = ARGP;
-                int i = 0;
-                for (;i<argc; i++, ap++) SCM_FLONUM_ENSURE_MEM(*ap);
+                for (int i=0;i<argc; i++, ap++) SCM_FLONUM_ENSURE_MEM(*ap);
             }
 #endif /*GAUCHE_FFX*/
             mm = Scm_SortMethods(mm, ARGP, argc);

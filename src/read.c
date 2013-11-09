@@ -126,9 +126,9 @@ ScmObj Scm_Read(ScmObj port)
 /* Convenience functions */
 ScmObj Scm_ReadFromString(ScmString *str)
 {
-    ScmObj inp = Scm_MakeInputStringPort(str, TRUE), r;
+    ScmObj inp = Scm_MakeInputStringPort(str, TRUE);
     ScmReadContext *ctx = Scm_MakeReadContext(NULL);
-    r = read_item(SCM_PORT(inp), ctx);
+    ScmObj r = read_item(SCM_PORT(inp), ctx);
     read_context_flush(ctx);
     return r;
 }
@@ -137,9 +137,8 @@ ScmObj Scm_ReadFromCString(const char *cstr)
 {
     ScmObj s = SCM_MAKE_STR_IMMUTABLE(cstr);
     ScmObj inp = Scm_MakeInputStringPort(SCM_STRING(s), TRUE);
-    ScmObj r;
     ScmReadContext *ctx = Scm_MakeReadContext(NULL);
-    r = read_item(SCM_PORT(inp), ctx);
+    ScmObj r = read_item(SCM_PORT(inp), ctx);
     read_context_flush(ctx);
     return r;
 }
@@ -192,7 +191,7 @@ ScmReadContext *Scm_SetCurrentReadContext(ScmReadContext *ctx)
     return SCM_READ_CONTEXT(p);
 }
 
-static ScmReadContext *make_read_context(ScmReadContext *proto) 
+static ScmReadContext *make_read_context(ScmReadContext *proto)
 {
     ScmReadContext *ctx = SCM_NEW(ScmReadContext);
     SCM_SET_CLASS(ctx, SCM_CLASS_READ_CONTEXT);
@@ -236,21 +235,20 @@ void Scm_ReadError(ScmPort *port, const char *msg, ...)
 {
     ScmObj ostr = Scm_MakeOutputStringPort(TRUE);
     ScmObj name = Scm_PortName(port);
-    ScmObj rerr;
     int line = Scm_PortLine(port);
-    va_list ap;
 
     Scm_Printf(SCM_PORT(ostr), "Read error at %S:",
                SCM_STRINGP(name)? name : SCM_OBJ(SCM_MAKE_STR("??")));
     if (line >= 0) {
         Scm_Printf(SCM_PORT(ostr), "line %d: ", line);
     }
+    va_list ap;
     va_start(ap, msg);
     Scm_Vprintf(SCM_PORT(ostr), msg, ap, TRUE);
     va_end(ap);
 
-    rerr = Scm_MakeReadError(Scm_GetOutputString(SCM_PORT(ostr), 0),
-                             port, line);
+    ScmObj rerr = Scm_MakeReadError(Scm_GetOutputString(SCM_PORT(ostr), 0),
+                                    port, line);
     Scm_Raise(rerr);
 }
 
@@ -267,8 +265,7 @@ SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_ReadReferenceClass, read_reference_print);
 
 ScmObj Scm_MakeReadReference(void)
 {
-    ScmReadReference *a;
-    a = SCM_NEW(ScmReadReference);
+    ScmReadReference *a = SCM_NEW(ScmReadReference);
     SCM_SET_CLASS(a, SCM_CLASS_READ_REFERENCE);
     a->value = SCM_UNBOUND;
     return SCM_OBJ(a);
@@ -308,13 +305,13 @@ static ScmObj ref_register(ScmReadContext *ctx, ScmObj obj, int refnum)
 */
 static void read_context_flush(ScmReadContext *ctx)
 {
-    ScmObj cp, ep, entry, obj, finisher;
+    ScmObj cp, ep;
 
     SCM_FOR_EACH(cp, ctx->pending) {
-        entry = SCM_CAR(cp);
+        ScmObj entry = SCM_CAR(cp);
         SCM_ASSERT(SCM_PAIRP(entry));
-        obj = SCM_CAR(entry);
-        finisher = SCM_CDR(entry);
+        ScmObj obj = SCM_CAR(entry);
+        ScmObj finisher = SCM_CDR(entry);
 
         if (!SCM_FALSEP(finisher)) {
             Scm_ApplyRec(finisher, SCM_LIST1(obj));
@@ -391,18 +388,18 @@ static void read_nested_comment(ScmPort *port, ScmReadContext *ctx)
 {
     int nesting = 0;
     int line = Scm_PortLine(port);
-    ScmChar c, c1;
 
-    for (c = Scm_GetcUnsafe(port);;) {
+    for (ScmChar c = Scm_GetcUnsafe(port);;) {
         switch (c) {
-        case '#':
-            c1 = Scm_GetcUnsafe(port);
+        case '#': {
+            ScmChar c1 = Scm_GetcUnsafe(port);
             if (c1 == '|')   { nesting++; break; }
             else if (c1 == EOF) goto eof;
             else c = c1;
             continue;
-        case '|':
-            c1 = Scm_GetcUnsafe(port);
+        }
+        case '|': {
+            ScmChar c1 = Scm_GetcUnsafe(port);
             if (c1 == '#') {
                 if (nesting-- == 0) {
                     return;
@@ -412,6 +409,7 @@ static void read_nested_comment(ScmPort *port, ScmReadContext *ctx)
             else if (c1 == EOF) goto eof;
             else c = c1;
             continue;
+        }
         case EOF:
           eof:
             Scm_ReadError(port, "encountered EOF inside nested multi-line comment (comment begins at line %d)", line);
@@ -509,69 +507,61 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
                    it is equivalent to whitespace, so we return #<undef> */
                 read_nested_comment(port, ctx);
                 return SCM_UNDEFINED;
-            case '`':
+            case '`': {
                 /* TODO: Switch interpretation of #` based on reader mode */
                 /* #`"..." is a special syntax of #,(string-interpolate "...") */
-                {
-                    ScmObj form = read_item(port, ctx);
-                    return process_sharp_comma(port,
-                                               SCM_SYM_STRING_INTERPOLATE,
-                                               SCM_LIST1(form), ctx, FALSE);
-                }
-            case '?':
+                ScmObj form = read_item(port, ctx);
+                return process_sharp_comma(port,
+                                           SCM_SYM_STRING_INTERPOLATE,
+                                           SCM_LIST1(form), ctx, FALSE);
+            }
+            case '?': {
                 /* #? - debug directives */
                 reject_in_r7(port, ctx, "#?");
-                {
-                    int c2;
-                    ScmObj form;
-
-                    c2 = Scm_GetcUnsafe(port);
-                    switch (c2) {
-                    case '=':
-                        /* #?=form - debug print */
-                        form = read_item(port, ctx);
-                        return SCM_LIST2(SCM_SYM_DEBUG_PRINT, form);
-                    case EOF:
-                        return SCM_EOF;
-                    default:
-                        Scm_ReadError(port, "unsupported #?-syntax: #?%C", c2);
-                    }
+                int c2 = Scm_GetcUnsafe(port);
+                switch (c2) {
+                case '=': {
+                    /* #?=form - debug print */
+                    ScmObj form = read_item(port, ctx);
+                    return SCM_LIST2(SCM_SYM_DEBUG_PRINT, form);
                 }
+                case EOF:
+                    return SCM_EOF;
+                default:
+                    Scm_ReadError(port, "unsupported #?-syntax: #?%C", c2);
+                }
+            }
             case '0': case '1': case '2': case '3': case '4':
             case '5': case '6': case '7': case '8': case '9':
                 /* #N# or #N= form */
                 return read_reference(port, c1, ctx);
-            case '*':
+            case '*': {
                 reject_in_r7(port, ctx, "#*");
                 /* #*"...." byte string
                    #*01001001 for bit vector, maybe in future. */
-                {
-                    int c2;
-                    c2 = Scm_GetcUnsafe(port);
-                    if (c2 == '"') return read_string(port, TRUE, ctx);
-                    Scm_ReadError(port, "unsupported #*-syntax: #*%C", c2);
-                }
-            case ':':
+                int c2 = Scm_GetcUnsafe(port);
+                if (c2 == '"') return read_string(port, TRUE, ctx);
+                Scm_ReadError(port, "unsupported #*-syntax: #*%C", c2);
+            }
+            case ':': {
                 reject_in_r7(port, ctx, "#:");
                 /* #:name - uninterned symbol */
-                {
-                    int c2 = Scm_GetcUnsafe(port);
-                    if (c2 == '|') {
-                        return read_escaped_symbol(port, c2, FALSE, ctx);
-                    } else {
-                        ScmObj name = read_word(port, c2, ctx, FALSE, FALSE);
-                        return Scm_MakeSymbol(SCM_STRING(name), FALSE);
-                    }
+                int c2 = Scm_GetcUnsafe(port);
+                if (c2 == '|') {
+                    return read_escaped_symbol(port, c2, FALSE, ctx);
+                } else {
+                    ScmObj name = read_word(port, c2, ctx, FALSE, FALSE);
+                    return Scm_MakeSymbol(SCM_STRING(name), FALSE);
                 }
-            case ';':
+            }
+            case ';': {
                 /* #;expr - comment out sexpr */
-                {
-                    int orig = ctx->flags;
-                    ctx->flags |= RCTX_DISABLE_CTOR;
-                    read_item(port, ctx); /* read and discard */
-                    ctx->flags = orig;
-                    return SCM_UNDEFINED; /* indicate this is a comment */
-                }
+                int orig = ctx->flags;
+                ctx->flags |= RCTX_DISABLE_CTOR;
+                read_item(port, ctx); /* read and discard */
+                ctx->flags = orig;
+                return SCM_UNDEFINED; /* indicate this is a comment */
+            }
             default:
                 Scm_ReadError(port, "unsupported #-syntax: #%C", c1);
             }
@@ -616,7 +606,7 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
         /* Note: R5RS doesn't permit identifiers beginning with '+' or '-',
            but some Scheme programs use such identifiers. */
         return read_symbol_or_number(port, c, ctx);
-    case '.':;
+    case '.':
         {
             int c1 = Scm_GetcUnsafe(port);
             if (!char_word_constituent(c1, FALSE)) {
@@ -734,10 +724,10 @@ ScmChar Scm_ReadXdigitsFromString(const char *buf,
     }
 
     {
-        int val = 0, i;
+        int val = 0;
         int ndigits = (key == 'u')? 4 : (key == 'x')? 2 : 8;
         if (ndigits > buflen) return SCM_CHAR_INVALID;
-        for (i=0; i<ndigits; i++) {
+        for (int i=0; i<ndigits; i++) {
             if (!isxdigit(buf[i])) return SCM_CHAR_INVALID;
             val = val * 16 + Scm_DigitToInt(buf[i], 16, FALSE);
         }
@@ -753,8 +743,6 @@ ScmObj Scm_ReadXdigitsFromPort(ScmPort *port, int key, u_long mode,
                                int incompletep, ScmDString *buf)
 {
     ScmDString ds;
-    int r, numchars;
-    const char *chars, *next;
 
     Scm_DStringInit(&ds);
     for (;;) {
@@ -769,10 +757,12 @@ ScmObj Scm_ReadXdigitsFromPort(ScmPort *port, int key, u_long mode,
         }
         Scm_DStringPutc(&ds, ch);
     }
-    
-    chars = Scm_DStringPeek(&ds, &numchars, NULL);
 
-    r = Scm_ReadXdigitsFromString(chars, numchars, key, mode, TRUE, &next);
+    int numchars;
+    const char *chars = Scm_DStringPeek(&ds, &numchars, NULL);
+    const char *next;
+
+    int r = Scm_ReadXdigitsFromString(chars, numchars, key, mode, TRUE, &next);
     if (r != SCM_CHAR_INVALID) {
         if (incompletep) Scm_DStringPutb(buf, r);
         else             Scm_DStringPutc(buf, r);
@@ -795,11 +785,11 @@ ScmObj Scm_ReadXdigitsFromPort(ScmPort *port, int key, u_long mode,
 static ScmObj read_list_int(ScmPort *port, ScmChar closer,
                             ScmReadContext *ctx, int *has_ref, int start_line)
 {
-    ScmObj start = SCM_NIL, last = SCM_NIL, item;
-    int c, dot_seen = FALSE, ref_seen = FALSE;
+    ScmObj start = SCM_NIL, last = SCM_NIL;
+    int dot_seen = FALSE, ref_seen = FALSE;
 
     for (;;) {
-        c = skipws(port, ctx);
+        int c = skipws(port, ctx);
         if (c == EOF) goto eoferr;
         if (c == closer) {
             *has_ref = !!ref_seen;
@@ -808,6 +798,7 @@ static ScmObj read_list_int(ScmPort *port, ScmChar closer,
 
         if (dot_seen) goto baddot;
 
+        ScmObj item;
         if (c == '.') {
             int c2 = Scm_GetcUnsafe(port);
             if (c2 == closer) {
@@ -850,11 +841,10 @@ static ScmObj read_list(ScmPort *port, ScmChar closer, ScmReadContext *ctx)
 {
     int has_ref;
     int line = -1;
-    ScmObj r;
 
     if (ctx->flags & RCTX_SOURCE_INFO) line = Scm_PortLine(port);
 
-    r = read_list_int(port, closer, ctx, &has_ref, line);
+    ScmObj r = read_list_int(port, closer, ctx, &has_ref, line);
 
     if (SCM_PAIRP(r) && (ctx->flags & RCTX_SOURCE_INFO) && line >= 0) {
         /* Swap the head of the list for an extended pair to record
@@ -884,10 +874,10 @@ static ScmObj read_vector(ScmPort *port, ScmChar closer, ScmReadContext *ctx)
 static ScmObj read_quoted(ScmPort *port, ScmObj quoter, ScmReadContext *ctx)
 {
     int line = -1;
-    ScmObj item, r;
+    ScmObj r;
 
     if (ctx->flags & RCTX_SOURCE_INFO) line = Scm_PortLine(port);
-    item = read_item(port, ctx);
+    ScmObj item = read_item(port, ctx);
     if (SCM_EOFP(item)) Scm_ReadError(port, "unterminated quote");
     if (line >= 0) {
         r = Scm_ExtendedCons(quoter, Scm_Cons(item, SCM_NIL));
@@ -1071,20 +1061,16 @@ static struct char_name {
 
 static ScmObj read_char(ScmPort *port, ScmReadContext *ctx)
 {
-    int c;
     ScmString *name;
-    const char *cname;
-    u_int namelen, namesize;
-    struct char_name *cntab = char_names;
 
-    c = Scm_GetcUnsafe(port);
+    int c = Scm_GetcUnsafe(port);
     switch (c) {
     case EOF: Scm_ReadError(port, "EOF encountered in character literal");
     case '(':; case ')':; case '[':; case ']':; case '{':; case '}':;
     case '"':; case ' ':; case '\\':; case '|':; case ';':;
     case '#':;
         return SCM_MAKE_CHAR(c);
-    default:
+    default: {
         /* need to read word to see if it is a character name */
         name = SCM_STRING(read_word(port, c, ctx, TRUE, FALSE));
 
@@ -1096,13 +1082,16 @@ static ScmObj read_char(ScmPort *port, ScmReadContext *ctx)
             }
             Scm_UngetcUnsafe(following, port);
         }
-        
-        cname = Scm_GetStringContent(name, &namesize, &namelen, NULL);
+
+        u_int namelen, namesize;
+        const char *cname = Scm_GetStringContent(name, &namesize, &namelen,
+                                                 NULL);
         if (namelen == 1) {
             return SCM_MAKE_CHAR(c);
         }
         if (namelen != namesize) {
             /* no character name contains multibyte chars */
+
             goto unknown;
         }
 
@@ -1131,6 +1120,7 @@ static ScmObj read_char(ScmPort *port, ScmReadContext *ctx)
             Scm_ReadError(port, "Bad UCS character code: #\\%s", cname);
         }
 
+        struct char_name *cntab = char_names;
         while (cntab->name) {
             if (cntab->size == namesize
                 && strncmp(cntab->name, cname, namesize) == 0) {
@@ -1140,6 +1130,7 @@ static ScmObj read_char(ScmPort *port, ScmReadContext *ctx)
         }
       unknown:
         Scm_ReadError(port, "Unknown character name: #\\%A", name);
+    }
     }
     return SCM_UNDEFINED;       /* dummy */
 }
@@ -1157,7 +1148,6 @@ static ScmObj read_char(ScmPort *port, ScmReadContext *ctx)
 static ScmObj read_word(ScmPort *port, ScmChar initial, ScmReadContext *ctx,
                         int temp_case_fold, int include_hash_sign)
 {
-    int c = 0;
     int case_fold = temp_case_fold || SCM_PORT_CASE_FOLD(port);
     ScmDString ds;
     Scm_DStringInit(&ds);
@@ -1167,7 +1157,7 @@ static ScmObj read_word(ScmPort *port, ScmChar initial, ScmReadContext *ctx,
     }
 
     for (;;) {
-        c = Scm_GetcUnsafe(port);
+        int c = Scm_GetcUnsafe(port);
         if (c == EOF || !char_word_constituent(c, include_hash_sign)) {
             Scm_UngetcUnsafe(c, port);
             return Scm_DStringGet(&ds, 0);
@@ -1212,20 +1202,19 @@ static ScmObj read_symbol_or_number(ScmPort *port, ScmChar initial, ScmReadConte
     ScmObj num = Scm_StringToNumber(s, 10, 0);
     if (num != SCM_FALSE) return num;
     check_valid_symbol(s);
-    return Scm_Intern(s);    
+    return Scm_Intern(s);
 }
 
 static ScmObj read_keyword(ScmPort *port, ScmReadContext *ctx)
 {
     int c2 = Scm_GetcUnsafe(port);
-    ScmObj name;
 
     if (c2 == '|') {
-        name = read_escaped_symbol(port, c2, FALSE, ctx); /* read as uninterned */
+        ScmObj name = read_escaped_symbol(port, c2, FALSE, ctx); /* read as uninterned */
         return Scm_MakeKeyword(SCM_SYMBOL_NAME(name));
     } else {
         Scm_UngetcUnsafe(c2, port);
-        name = read_word(port, SCM_CHAR_INVALID, ctx, FALSE, FALSE);
+        ScmObj name = read_word(port, SCM_CHAR_INVALID, ctx, FALSE, FALSE);
         return Scm_MakeKeyword(SCM_STRING(name));
     }
 }
@@ -1233,14 +1222,12 @@ static ScmObj read_keyword(ScmPort *port, ScmReadContext *ctx)
 static ScmObj read_escaped_symbol(ScmPort *port, ScmChar delim, int interned,
                                   ScmReadContext *ctx)
 {
-    int c, c2;
     char buf[9];
-    int digs;
     ScmDString ds;
     Scm_DStringInit(&ds);
 
     for (;;) {
-        c = Scm_GetcUnsafe(port);
+        int c = Scm_GetcUnsafe(port);
         if (c == EOF) {
             goto err;
         } else if (c == delim) {
@@ -1295,18 +1282,17 @@ static ScmObj read_escaped_symbol(ScmPort *port, ScmChar delim, int interned,
 /* gauche extension :  #/regexp/ */
 static ScmObj read_regexp(ScmPort *port)
 {
-    ScmChar c = 0, c1 = 0;
     ScmDString ds;
     Scm_DStringInit(&ds);
     for (;;) {
-        c = Scm_GetcUnsafe(port);
+        ScmChar c = Scm_GetcUnsafe(port);
         if (c == SCM_CHAR_INVALID) {
             Scm_ReadError(port, "unterminated literal regexp");
         }
         if (c == '\\') {
             /* NB: We "eat" a backslash before '/', since it is only dealt
                with the reader and nothing to do with regexp parser itself. */
-            c1 = Scm_GetcUnsafe(port);
+            ScmChar c1 = Scm_GetcUnsafe(port);
             if (c1 == SCM_CHAR_INVALID) {
                 Scm_ReadError(port, "unterminated literal regexp");
             }
@@ -1370,7 +1356,6 @@ static ScmObj read_reference(ScmPort *port, ScmChar ch, ScmReadContext *ctx)
         }
     } else {
         /* #digit= - register */
-        ScmObj val;
         ScmObj ref = Scm_MakeReadReference();
 
         if (ctx->table == NULL) {
@@ -1384,7 +1369,7 @@ static ScmObj read_reference(ScmPort *port, ScmChar ch, ScmReadContext *ctx)
                           refnum);
         }
         ref_register(ctx, ref, refnum);
-        val = read_item(port, ctx);
+        ScmObj val = read_item(port, ctx);
         if (ref == val) {
             /* an edge case: #0=#0# */
             Scm_ReadError(port, "indeterminate read reference: #%d=#%d#",
@@ -1406,11 +1391,10 @@ static ScmObj read_reference(ScmPort *port, ScmChar ch, ScmReadContext *ctx)
 ScmObj Scm_DefineReaderCtor(ScmObj symbol, ScmObj proc, ScmObj finisher,
                             ScmObj module /*reserved*/)
 {
-    ScmObj pair;
     if (!SCM_PROCEDUREP(proc)) {
         Scm_Error("procedure required, but got %S\n", proc);
     }
-    pair = Scm_Cons(proc, finisher);
+    ScmObj pair = Scm_Cons(proc, finisher);
     (void)SCM_INTERNAL_MUTEX_LOCK(readCtorData.mutex);
     Scm_HashTableSet(readCtorData.table, symbol, pair, 0);
     (void)SCM_INTERNAL_MUTEX_UNLOCK(readCtorData.mutex);
@@ -1419,49 +1403,44 @@ ScmObj Scm_DefineReaderCtor(ScmObj symbol, ScmObj proc, ScmObj finisher,
 
 ScmObj Scm_GetReaderCtor(ScmObj symbol, ScmObj module /*reserved*/)
 {
-    ScmObj r;
     (void)SCM_INTERNAL_MUTEX_LOCK(readCtorData.mutex);
-    r = Scm_HashTableRef(readCtorData.table, symbol, SCM_FALSE);
+    ScmObj r = Scm_HashTableRef(readCtorData.table, symbol, SCM_FALSE);
     (void)SCM_INTERNAL_MUTEX_UNLOCK(readCtorData.mutex);
     return r;
 }
 
 static ScmObj read_sharp_comma(ScmPort *port, ScmReadContext *ctx)
 {
-    int len, has_ref, line=-1;
-    ScmChar next;
-    ScmObj form, r;
-
-    next = Scm_GetcUnsafe(port);
+    ScmChar next = Scm_GetcUnsafe(port);
     if (next != '(') {
         Scm_ReadError(port, "bad #,-form: '(' should be followed, but got %C",
                       next);
     }
 
+    int has_ref, line = -1;
     if (ctx->flags & RCTX_SOURCE_INFO) line = Scm_PortLine(port);
 
-    form = read_list_int(port, ')', ctx, &has_ref, line);
-    len = Scm_Length(form);
+    ScmObj form = read_list_int(port, ')', ctx, &has_ref, line);
+    int len = Scm_Length(form);
     if (len <= 0) {
         Scm_ReadError(port, "bad #,-form: #,%S", form);
     }
-    r = process_sharp_comma(port, SCM_CAR(form), SCM_CDR(form), ctx, has_ref);
+    ScmObj r = process_sharp_comma(port, SCM_CAR(form), SCM_CDR(form), ctx,
+                                   has_ref);
     return r;
 }
 
 static ScmObj process_sharp_comma(ScmPort *port, ScmObj key, ScmObj args,
                                   ScmReadContext *ctx, int has_ref)
 {
-    ScmObj r, e;
-
     if (ctx->flags & RCTX_DISABLE_CTOR) return SCM_FALSE;
 
     (void)SCM_INTERNAL_MUTEX_LOCK(readCtorData.mutex);
-    e = Scm_HashTableRef(readCtorData.table, key, SCM_FALSE);
+    ScmObj e = Scm_HashTableRef(readCtorData.table, key, SCM_FALSE);
     (void)SCM_INTERNAL_MUTEX_UNLOCK(readCtorData.mutex);
 
     if (!SCM_PAIRP(e)) Scm_ReadError(port, "unknown #,-key: %S", key);
-    r = Scm_ApplyRec(SCM_CAR(e), args);
+    ScmObj r = Scm_ApplyRec(SCM_CAR(e), args);
     if (has_ref) ref_push(ctx, r, SCM_CDR(e));
     return r;
 }
@@ -1508,10 +1487,10 @@ static ScmObj read_shebang(ScmPort *port, ScmReadContext *ctx)
         }
         /*NOTREACHED*/
     } else {
-        ScmObj id = read_symbol(port, c2, ctx), e, r;
+        ScmObj id = read_symbol(port, c2, ctx);
         SCM_ASSERT(SCM_SYMBOLP(id));
         (void)SCM_INTERNAL_MUTEX_LOCK(hashBangData.mutex);
-        e = Scm_HashTableRef(hashBangData.table, id, SCM_FALSE);
+        ScmObj e = Scm_HashTableRef(hashBangData.table, id, SCM_FALSE);
         (void)SCM_INTERNAL_MUTEX_UNLOCK(hashBangData.mutex);
         if (SCM_FALSEP(e)) {
             Scm_Warn("Ignoring unrecognized hash-bang directive: #!%S", id);
@@ -1520,7 +1499,7 @@ static ScmObj read_shebang(ScmPort *port, ScmReadContext *ctx)
         /* Reader directive may return zero or one value.  When it returns
            no values, we call Scm_VMSetResult to adjust the number of values.
          */
-        r = Scm_ApplyRec3(e, id, SCM_OBJ(port), SCM_OBJ(ctx));
+        ScmObj r = Scm_ApplyRec3(e, id, SCM_OBJ(port), SCM_OBJ(ctx));
         if (Scm_VMGetNumResults(Scm_VM()) == 1) return r;
         else { Scm_VMSetResult(SCM_UNDEFINED); return SCM_UNDEFINED; }
     }

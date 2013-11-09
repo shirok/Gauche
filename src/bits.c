@@ -96,10 +96,9 @@ void Scm_BitsOperate(ScmBits *r, ScmBitOp op,
     int sb = s%SCM_WORD_BITS;
     int ew = e/SCM_WORD_BITS;
     int eb = e%SCM_WORD_BITS;
-    int w;
 
     /* NB: Not very optimized for speed.  Rewrite when we hit a bottleneck. */
-    for (w = sw;w < ew + (eb?1:0); w++) {
+    for (int w = sw; w < ew + (eb?1:0); w++) {
         u_long z = 0;
         switch (op) {
         case SCM_BIT_AND:  z = a[w] & b[w];    break;
@@ -184,12 +183,11 @@ int Scm_BitsCount1(const ScmBits *bits, int start, int end)
     int ew = (end-1)/ SCM_WORD_BITS;
     int sb = start  % SCM_WORD_BITS;
     int eb = end    % SCM_WORD_BITS;
-    u_long num;
 
     if (start == end) return 0;
     if (sw == ew) return count_bits(bits[sw] & SCM_BITS_MASK(sb, eb));
 
-    num = count_bits(bits[sw] & SCM_BITS_MASK(sb, 0));
+    u_long num = count_bits(bits[sw] & SCM_BITS_MASK(sb, 0));
     for (sw++; sw < ew; sw++) num += count_bits(bits[sw]);
     return num + (count_bits((bits[ew]) & SCM_BITS_MASK(0, eb)));
 }
@@ -200,12 +198,11 @@ int Scm_BitsCount0(const ScmBits *bits, int start, int end)
     int ew = (end-1)/ SCM_WORD_BITS;
     int sb = start  % SCM_WORD_BITS;
     int eb = end    % SCM_WORD_BITS;
-    u_long num;
 
     if (start == end) return 0;
     if (sw == ew) return count_bits(~bits[sw] & SCM_BITS_MASK(sb, eb));
 
-    num = count_bits(~bits[sw] & SCM_BITS_MASK(sb, 0));
+    u_long num = count_bits(~bits[sw] & SCM_BITS_MASK(sb, 0));
     for (sw++; sw < ew; sw++) num += count_bits(~bits[sw]);
     return num + (count_bits(~bits[ew] & SCM_BITS_MASK(0, eb)));
 }
@@ -316,5 +313,3 @@ int Scm_BitsHighest0(const ScmBits *bits, int start, int end)
         return -1;
     }
 }
-
-

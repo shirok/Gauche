@@ -41,17 +41,16 @@
 
 static void *dl_open(const char *path)
 {
-    LPTSTR xpath;
-    xpath = (LPTSTR)SCM_MBS2WCS(path);
+    LPTSTR xpath = (LPTSTR)SCM_MBS2WCS(path);
     return (void*)LoadLibrary(xpath);
 }
 
 static const char *dl_error(void)
 {
-    char buf[80], *p;
+    char buf[80];
     DWORD code = GetLastError();
     snprintf(buf, sizeof(buf), "error code %ld", code);
-    p = SCM_NEW_ATOMIC2(char *, strlen(buf)+1);
+    char *p = SCM_NEW_ATOMIC2(char *, strlen(buf)+1);
     strcpy(p, buf);
     return p;
 }

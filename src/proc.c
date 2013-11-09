@@ -66,13 +66,11 @@ static void proc_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 ScmObj Scm_MakeClosure(ScmObj code, ScmEnvFrame *env)
 {
     ScmClosure *c = SCM_NEW(ScmClosure);
-    int req, opt;
-    ScmObj info;
 
     SCM_ASSERT(SCM_COMPILED_CODE(code));
-    info = Scm_CompiledCodeFullName(SCM_COMPILED_CODE(code));
-    req  = SCM_COMPILED_CODE_REQUIRED_ARGS(code);
-    opt  = SCM_COMPILED_CODE_OPTIONAL_ARGS(code);
+    ScmObj info = Scm_CompiledCodeFullName(SCM_COMPILED_CODE(code));
+    int req = SCM_COMPILED_CODE_REQUIRED_ARGS(code);
+    int opt = SCM_COMPILED_CODE_OPTIONAL_ARGS(code);
 
     SCM_SET_CLASS(c, SCM_CLASS_PROCEDURE);
     SCM_PROCEDURE_INIT(c, req, opt, SCM_PROC_CLOSURE, info);
@@ -193,10 +191,9 @@ static ScmObj kick_curried(ScmObj *args, int nargs, void *data)
     default:
         {
             ScmObj h = SCM_NIL, t = SCM_NIL;
-            int i;
-            for (i = 0; i < p->ngiven; i++) SCM_APPEND1(h, t, av[i]);
+            for (int i = 0; i < p->ngiven; i++) SCM_APPEND1(h, t, av[i]);
             if (SCM_PAIRP(p->more)) SCM_APPEND(h, t, Scm_CopyList(p->more));
-            for (i = 0; i < nargs; i++) SCM_APPEND1(h, t, args[i]);
+            for (int i = 0; i < nargs; i++) SCM_APPEND1(h, t, args[i]);
             return Scm_VMApply(proc, h);
         }
     }
@@ -207,10 +204,8 @@ ScmObj Scm_CurryProcedure(ScmObj proc, ScmObj *given, int ngiven, int foldlen)
 {
     int required = SCM_PROCEDURE_REQUIRED(proc);
     int n = ngiven - foldlen;
-    int i;
     ScmObj h = SCM_NIL, t = SCM_NIL;
     ScmObj restarg = (foldlen > 0)? given[n] : SCM_NIL;
-    ScmObj subr;
 
     SCM_ASSERT(SCM_PROCEDUREP(proc));
     SCM_ASSERT(ngiven < required && ngiven > 0);
@@ -226,11 +221,11 @@ ScmObj Scm_CurryProcedure(ScmObj proc, ScmObj *given, int ngiven, int foldlen)
     case 1: packet->argv[0] = given[0]; /*FALLTHROUGH*/
     }
     if (foldlen > 0) {
-        for (i=n; i<4 && SCM_PAIRP(restarg); i++, restarg = SCM_CDR(restarg)) {
+        for (int i=n; i<4 && SCM_PAIRP(restarg); i++, restarg = SCM_CDR(restarg)) {
             packet->argv[i] = SCM_CAR(restarg);
         }
     }
-    for (i=4; i<n; i++) {
+    for (int i=4; i<n; i++) {
         SCM_APPEND1(h, t, given[i]);
     }
     if (SCM_PAIRP(restarg)) {
@@ -238,9 +233,9 @@ ScmObj Scm_CurryProcedure(ScmObj proc, ScmObj *given, int ngiven, int foldlen)
     }
     packet->more = h;
 
-    subr = Scm_MakeSubr(kick_curried, (void*)packet,
-                        required - ngiven, SCM_PROCEDURE_OPTIONAL(proc),
-                        Scm_Cons(SCM_SYM_CURRIED, SCM_PROCEDURE_INFO(proc)));
+    ScmObj subr = Scm_MakeSubr(kick_curried, (void*)packet,
+                               required - ngiven, SCM_PROCEDURE_OPTIONAL(proc),
+                               Scm_Cons(SCM_SYM_CURRIED, SCM_PROCEDURE_INFO(proc)));
     SCM_PROCEDURE_CURRYING(subr) = TRUE;
     return subr;
 }
