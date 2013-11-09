@@ -140,15 +140,14 @@ void Scm_Putc(ScmChar c, ScmPort *p)
 void Scm_PutcUnsafe(ScmChar c, ScmPort *p)
 #endif
 {
-    int nb;
     VMDECL;
     SHORTCUT(p, Scm_PutcUnsafe(c, p); return);
     LOCK(p);
     CLOSE_CHECK(p);
 
     switch (SCM_PORT_TYPE(p)) {
-    case SCM_PORT_FILE:
-        nb = SCM_CHAR_NBYTES(c);
+    case SCM_PORT_FILE: {
+        int nb = SCM_CHAR_NBYTES(c);
         if (p->src.buf.current+nb > p->src.buf.end) {
             SAFE_CALL(p, bufport_flush(p, (int)(p->src.buf.current - p->src.buf.buffer), FALSE));
         }
@@ -164,6 +163,7 @@ void Scm_PutcUnsafe(ScmChar c, ScmPort *p)
         }
         UNLOCK(p);
         break;
+    }
     case SCM_PORT_OSTR:
         SCM_DSTRING_PUTC(&p->src.ostr, c);
         UNLOCK(p);
@@ -336,11 +336,11 @@ ScmChar Scm_Peekc(ScmPort *p)
 ScmChar Scm_PeekcUnsafe(ScmPort *p)
 #endif
 {
-    ScmChar ch;
     VMDECL;
     SHORTCUT(p, return Scm_PeekcUnsafe(p));
     LOCK(p);
-    if ((ch = p->ungotten) == SCM_CHAR_INVALID) {
+    ScmChar ch = p->ungotten;
+    if (ch == SCM_CHAR_INVALID) {
         ch = Scm_GetcUnsafe(p);
         p->ungotten = ch;
     }
@@ -387,9 +387,8 @@ int Scm_PeekbUnsafe(ScmPort *p)
         if (b >= 0) {
             if (p->scrcnt > 0) {
                 /* unshift scratch buffer */
-                int i;
                 SCM_ASSERT(p->scrcnt < SCM_CHAR_MAX_BYTES);
-                for (i=p->scrcnt; i>0; i--) {
+                for (int i=p->scrcnt; i>0; i--) {
                     p->scratch[i] = p->scratch[i-1];
                 }
                 p->scratch[0] = b;
@@ -414,8 +413,7 @@ int Scm_PeekbUnsafe(ScmPort *p)
 /* shift scratch buffer content */
 static inline void shift_scratch(ScmPort *p, int off)
 {
-    u_int i;
-    for (i=0; i<p->scrcnt; i++) {
+    for (u_int i=0; i<p->scrcnt; i++) {
         p->scratch[i] = p->scratch[i+off];
     }
 }
@@ -446,7 +444,7 @@ int Scm_Getb(ScmPort *p)
 int Scm_GetbUnsafe(ScmPort *p)
 #endif
 {
-    int b = 0, r = 0;
+    int b = 0;
     VMDECL;
     SHORTCUT(p, return Scm_GetbUnsafe(p));
     LOCK(p);
@@ -461,6 +459,7 @@ int Scm_GetbUnsafe(ScmPort *p)
         switch (SCM_PORT_TYPE(p)) {
         case SCM_PORT_FILE:
             if (p->src.buf.current >= p->src.buf.end) {
+                int r = 0;
                 SAFE_CALL(p, r = bufport_fill(p, 1, FALSE));
                 if (r == 0) {
                     UNLOCK(p);
@@ -501,12 +500,13 @@ static int getc_scratch_unsafe(ScmPort *p)
 #endif
 {
     char tbuf[SCM_CHAR_MAX_BYTES];
-    int nb = SCM_CHAR_NFOLLOWS(p->scratch[0]), ch, i, curr = p->scrcnt;
-    int r = 0;
+    int nb = SCM_CHAR_NFOLLOWS(p->scratch[0]);
+    int curr = p->scrcnt;
 
     memcpy(tbuf, p->scratch, curr);
     p->scrcnt = 0;
-    for (i=curr; i<=nb; i++) {
+    for (int i=curr; i<=nb; i++) {
+        int r = EOF;
         SAFE_CALL(p, r = Scm_Getb(p));
         if (r == EOF) {
             UNLOCK(p);
@@ -515,6 +515,7 @@ static int getc_scratch_unsafe(ScmPort *p)
         }
         tbuf[i] = (char)r;
     }
+    int ch;
     SCM_CHAR_GET(tbuf, ch);
     return ch;
 }
@@ -526,34 +527,35 @@ int Scm_Getc(ScmPort *p)
 int Scm_GetcUnsafe(ScmPort *p)
 #endif
 {
-    int first, nb, c = 0, r = 0;
     VMDECL;
     SHORTCUT(p, return Scm_GetcUnsafe(p));
     LOCK(p);
     CLOSE_CHECK(p);
     if (p->scrcnt > 0) {
-        r = GETC_SCRATCH(p);
+        int r = GETC_SCRATCH(p);
         UNLOCK(p);
         return r;
     }
     if (p->ungotten != SCM_CHAR_INVALID) {
-        c = p->ungotten;
+        int c = p->ungotten;
         p->ungotten = SCM_CHAR_INVALID;
         UNLOCK(p);
         return c;
     }
 
     switch (SCM_PORT_TYPE(p)) {
-    case SCM_PORT_FILE:
+    case SCM_PORT_FILE: {
+        int c = 0;
         if (p->src.buf.current >= p->src.buf.end) {
+            int r = 0;
             SAFE_CALL(p, r = bufport_fill(p, 1, FALSE));
             if (r == 0) {
                 UNLOCK(p);
                 return EOF;
             }
         }
-        first = (unsigned char)*p->src.buf.current++;
-        nb = SCM_CHAR_NFOLLOWS(first);
+        int first = (unsigned char)*p->src.buf.current++;
+        int nb = SCM_CHAR_NFOLLOWS(first);
         p->bytes++;
         if (nb > 0) {
             if (p->src.buf.current + nb > p->src.buf.end) {
@@ -598,13 +600,15 @@ int Scm_GetcUnsafe(ScmPort *p)
         }
         UNLOCK(p);
         return c;
-    case SCM_PORT_ISTR:
+    }
+    case SCM_PORT_ISTR: {
         if (p->src.istr.current >= p->src.istr.end) {
             UNLOCK(p);
             return EOF;
         }
-        first = (unsigned char)*p->src.istr.current++;
-        nb = SCM_CHAR_NFOLLOWS(first);
+        int c = 0;
+        int first = (unsigned char)*p->src.istr.current++;
+        int nb = SCM_CHAR_NFOLLOWS(first);
         p->bytes++;
         if (nb > 0) {
             if (p->src.istr.current + nb > p->src.istr.end) {
@@ -622,11 +626,14 @@ int Scm_GetcUnsafe(ScmPort *p)
         }
         UNLOCK(p);
         return c;
-    case SCM_PORT_PROC:
+    }
+    case SCM_PORT_PROC: {
+        int c = 0;
         SAFE_CALL(p, c = p->src.vt.Getc(p));
         if (c == '\n') p->line++;
         UNLOCK(p);
         return c;
+    }
     default:
         UNLOCK(p);
         Scm_PortError(p, SCM_PORT_ERROR_INPUT, "bad port type for input: %S", p);
@@ -651,7 +658,6 @@ static int getz_scratch(char *buf, int buflen, ScmPort *p)
 static int getz_scratch_unsafe(char *buf, int buflen, ScmPort *p)
 #endif
 {
-    int i, n = 0;
     if (p->scrcnt >= (u_int)buflen) {
         memcpy(buf, p->scratch, buflen);
         p->scrcnt -= buflen;
@@ -659,8 +665,9 @@ static int getz_scratch_unsafe(char *buf, int buflen, ScmPort *p)
         return buflen;
     } else {
         memcpy(buf, p->scratch, p->scrcnt);
-        i = p->scrcnt;
+        int i = p->scrcnt;
         p->scrcnt = 0;
+        int n = 0;
         SAFE_CALL(p, n = Scm_Getz(buf+i, buflen-i, p));
         return i + n;
     }
@@ -670,10 +677,9 @@ static int getz_scratch_unsafe(char *buf, int buflen, ScmPort *p)
 #define GETZ_ISTR getz_istr
 static int getz_istr(ScmPort *p, char *buf, int buflen)
 {
-    int siz;
     if (p->src.istr.current + buflen >= p->src.istr.end) {
         if (p->src.istr.current >= p->src.istr.end) return EOF;
-        siz = (int)(p->src.istr.end - p->src.istr.current);
+        int siz = (int)(p->src.istr.end - p->src.istr.current);
         memcpy(buf, p->src.istr.current, siz);
         p->src.istr.current = p->src.istr.end;
         return siz;
@@ -691,14 +697,13 @@ int Scm_Getz(char *buf, int buflen, ScmPort *p)
 int Scm_GetzUnsafe(char *buf, int buflen, ScmPort *p)
 #endif
 {
-    int siz = 0, r = 0;
     VMDECL;
     SHORTCUT(p, return Scm_GetzUnsafe(buf, buflen, p));
     LOCK(p);
     CLOSE_CHECK(p);
 
     if (p->scrcnt) {
-        r = GETZ_SCRATCH(buf, buflen, p);
+        int r = GETZ_SCRATCH(buf, buflen, p);
         UNLOCK(p);
         return r;
     }
@@ -706,28 +711,33 @@ int Scm_GetzUnsafe(char *buf, int buflen, ScmPort *p)
         p->scrcnt = SCM_CHAR_NBYTES(p->ungotten);
         SCM_CHAR_PUT(p->scratch, p->ungotten);
         p->ungotten = SCM_CHAR_INVALID;
-        r = GETZ_SCRATCH(buf, buflen, p);
+        int r = GETZ_SCRATCH(buf, buflen, p);
         UNLOCK(p);
         return r;
     }
 
     switch (SCM_PORT_TYPE(p)) {
-    case SCM_PORT_FILE:
+    case SCM_PORT_FILE: {
+        int siz = 0;
         SAFE_CALL(p, siz = bufport_read(p, buf, buflen));
         p->bytes += siz;
         UNLOCK(p);
         if (siz == 0) return EOF;
         else return siz;
-    case SCM_PORT_ISTR:
-        r = GETZ_ISTR(p, buf, buflen);
+    }
+    case SCM_PORT_ISTR: {
+        int r = GETZ_ISTR(p, buf, buflen);
         p->bytes += r;
         UNLOCK(p);
         return r;
-    case SCM_PORT_PROC:
+    }
+    case SCM_PORT_PROC: {
+        int r = 0;
         SAFE_CALL(p, r = p->src.vt.Getz(buf, buflen, p));
         p->bytes += r;
         UNLOCK(p);
         return r;
+    }
     default:
         UNLOCK(p);
         Scm_PortError(p, SCM_PORT_ERROR_INPUT, "bad port type for input: %S", p);
@@ -760,17 +770,16 @@ int Scm_GetzUnsafe(char *buf, int buflen, ScmPort *p)
    line of xml doc to find out charset parameter). */
 ScmObj readline_body(ScmPort *p)
 {
-    int b1 = 0, b2 = 0;
     ScmDString ds;
 
     Scm_DStringInit(&ds);
-    b1 = Scm_GetbUnsafe(p);
+    int b1 = Scm_GetbUnsafe(p);
     if (b1 == EOF) return SCM_EOF;
     for (;;) {
         if (b1 == EOF) return Scm_DStringGet(&ds, 0);
         if (b1 == '\n') break;
         if (b1 == '\r') {
-            b2 = Scm_GetbUnsafe(p);
+            int b2 = Scm_GetbUnsafe(p);
             if (b2 == EOF || b2 == '\n') break;
             Scm_UngetbUnsafe(b2, p);
             break;
@@ -999,11 +1008,11 @@ ScmObj Scm_PortAttrGet(ScmPort *p, ScmObj key, ScmObj fallback)
 ScmObj Scm_PortAttrGetUnsafe(ScmPort *p, ScmObj key, ScmObj fallback)
 #endif
 {
-    ScmObj v, r = SCM_UNBOUND;
+    ScmObj r = SCM_UNBOUND;
     VMDECL;
     SHORTCUT(p, return Scm_PortAttrGetUnsafe(p, key, fallback););
     LOCK(p);
-    v = Scm_Assq(key, p->attrs);
+    ScmObj v = Scm_Assq(key, p->attrs);
     if (SCM_PAIRP(v)) {
         SCM_ASSERT(SCM_PAIRP(SCM_CDR(v)));
         if (SCM_PAIRP(SCM_CDDR(v))) {
@@ -1021,7 +1030,7 @@ ScmObj Scm_PortAttrGetUnsafe(ScmPort *p, ScmObj key, ScmObj fallback)
         r = fallback;
     }
     UNLOCK(p);
-    
+
     if (SCM_UNBOUNDP(r)) {
         Scm_Error("No port attribute for key %S in port %S", key, SCM_OBJ(p));
     }
@@ -1116,10 +1125,11 @@ ScmObj Scm_PortAttrs(ScmPort *p)
 ScmObj Scm_PortAttrsUnsafe(ScmPort *p)
 #endif
 {
-    ScmObj h = SCM_NIL, t = SCM_NIL, cp;
+    ScmObj h = SCM_NIL, t = SCM_NIL;
     VMDECL;
     SHORTCUT(p, return Scm_PortAttrsUnsafe(p););
     LOCK(p);
+    ScmObj cp;
     SCM_FOR_EACH(cp, p->attrs) {
         ScmObj k = SCM_CAAR(cp);
         ScmObj v = Scm_PortAttrGetUnsafe(p, k, SCM_UNBOUND);
@@ -1136,4 +1146,3 @@ ScmObj Scm_PortAttrsUnsafe(ScmPort *p)
 #undef SAFE_CALL
 #undef SHORTCUT
 #undef CLOSE_CHECK
-

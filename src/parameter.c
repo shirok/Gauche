@@ -76,21 +76,19 @@ ScmInternalMutex parameter_mutex = SCM_INTERNAL_MUTEX_INITIALIZER;
 void Scm__VMParameterTableInit(ScmVMParameterTable *table,
                                ScmVM *base)
 {
-    int i;
-
     if (base) {
         /* NB: In this case, the caller is the owner thread of BASE,
            so we don't need to worry about base->parameters being
            modified during copying. */
         table->vector = SCM_NEW_ARRAY(ScmObj, base->parameters.size);
         table->size = base->parameters.size;
-        for (i=0; i<table->size; i++) {
+        for (int i=0; i<table->size; i++) {
             table->vector[i] = base->parameters.vector[i];
         }
     } else {
         table->vector = SCM_NEW_ARRAY(ScmObj, PARAMETER_INIT_SIZE);
         table->size = PARAMETER_INIT_SIZE;
-        for (i=0; i<table->size; i++) {
+        for (int i=0; i<table->size; i++) {
             table->vector[i] = SCM_UNBOUND;
         }
     }
@@ -99,9 +97,10 @@ void Scm__VMParameterTableInit(ScmVMParameterTable *table,
 static void ensure_parameter_slot(ScmVMParameterTable *p, int index)
 {
     if (index >= p->size) {
-        int i, newsiz = ((index+PARAMETER_GROW)/PARAMETER_GROW)*PARAMETER_GROW;
+        int newsiz = ((index+PARAMETER_GROW)/PARAMETER_GROW)*PARAMETER_GROW;
         ScmObj *newvec = SCM_NEW_ARRAY(ScmObj, newsiz);
 
+        int i;
         for (i=0; i < p->size; i++) {
             newvec[i] = p->vector[i];
             p->vector[i] = SCM_FALSE; /*be friendly to GC*/
@@ -119,10 +118,8 @@ static void ensure_parameter_slot(ScmVMParameterTable *p, int index)
  */
 void Scm_InitParameterLoc(ScmVM *vm, ScmParameterLoc *location, ScmObj initval)
 {
-    int index;
-    
     SCM_INTERNAL_MUTEX_LOCK(parameter_mutex);
-    index = next_parameter_index++;
+    int index = next_parameter_index++;
     SCM_INTERNAL_MUTEX_UNLOCK(parameter_mutex);
 
     ensure_parameter_slot(&(vm->parameters), index);
@@ -144,10 +141,9 @@ void Scm_MakeParameterSlot(ScmVM *vm, ScmParameterLoc *location)
 ScmObj Scm_ParameterRef(ScmVM *vm, const ScmParameterLoc *loc)
 {
     ScmVMParameterTable *p = &(vm->parameters);
-    ScmObj v;
-    
+
     if (loc->index >= p->size) return loc->initialValue;
-    v = p->vector[loc->index];
+    ScmObj v = p->vector[loc->index];
     if (SCM_UNBOUNDP(v)) {
         v = p->vector[loc->index] = loc->initialValue;
     }
@@ -203,11 +199,10 @@ void Scm_DefinePrimitiveParameter(ScmModule *mod,
     struct prim_data *pd = SCM_NEW(struct prim_data);
     ScmVM *vm = Scm_VM();
     ScmObj sname = SCM_MAKE_STR_IMMUTABLE(name);
-    ScmObj subr;
 
     pd->name = name;
     Scm_InitParameterLoc(vm, &pd->loc, initval);
-    subr = Scm_MakeSubr(parameter_handler, pd, 0, 1, sname);
+    ScmObj subr = Scm_MakeSubr(parameter_handler, pd, 0, 1, sname);
     Scm_Define(mod, SCM_SYMBOL(Scm_Intern(SCM_STRING(sname))), subr);
     *location = pd->loc;
 }
@@ -216,4 +211,3 @@ void Scm__InitParameter(void)
 {
     SCM_INTERNAL_MUTEX_INIT(parameter_mutex);
 }
-

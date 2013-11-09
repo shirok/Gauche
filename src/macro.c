@@ -102,7 +102,7 @@ typedef struct ScmSyntaxPatternRec {
     short numFollowingItems;    /* only used in pattern (not template).
                                    this specifies the # of items that follows
                                    the repetition, excluding the last CDR.
-                                   
+
                                    E.g. From (x ... y z), `x ...' part becomes
                                    SyntaxPattern with numFollowingItems=2.
                                    From (x ... . y), `x ...' part becomes
@@ -144,11 +144,10 @@ ScmSyntaxPattern *make_syntax_pattern(int level, int numFollowing)
 
 static void synrule_print(ScmObj obj, ScmPort *port, ScmWriteContext *mode)
 {
-    int i;
     ScmSyntaxRules *r = SCM_SYNTAX_RULES(obj);
 
     Scm_Printf(port, "#<syntax-rules(%d)\n", r->numRules);
-    for (i = 0; i < r->numRules; i++) {
+    for (int i = 0; i < r->numRules; i++) {
         Scm_Printf(port, "%2d: (numPvars=%d, maxLevel=%d)\n",
                    i, r->rules[i].numPvars, r->rules[i].maxLevel);
         Scm_Printf(port, "   pattern  = %S\n", r->rules[i].pattern);
@@ -331,9 +330,9 @@ static inline ScmObj pvar_to_pvref(PatternContext *ctx,
                                    ScmSyntaxPattern *pat,
                                    ScmObj pvar)
 {
-    ScmObj q = Scm_Assq(pvar, ctx->pvars), pvref;
+    ScmObj q = Scm_Assq(pvar, ctx->pvars);
     if (!SCM_PAIRP(q)) return pvar;
-    pvref = SCM_CDR(q);
+    ScmObj pvref = SCM_CDR(q);
     if (PVREF_LEVEL(pvref) > pat->level) {
         Scm_Error("%S: Pattern variable %S is used in wrong level: %S",
                   ctx->name, pvar, ctx->form);
@@ -352,13 +351,13 @@ static inline ScmObj pvref_to_pvar(PatternContext *ctx, ScmObj pvref)
 /* search an identifier with name NAME from a list of identifiers */
 static ScmObj id_memq(ScmObj name, ScmObj list)
 {
-    ScmObj lp;
     ScmObj n;
     if (SCM_IDENTIFIERP(name)) {
         n = SCM_OBJ(SCM_IDENTIFIER(name)->name);
     } else {
         n = name;
     }
+    ScmObj lp;
     SCM_FOR_EACH(lp, list) {
         if (SCM_OBJ(SCM_IDENTIFIER(SCM_CAR(lp))->name) == name)
             return SCM_CAR(lp);
@@ -419,7 +418,7 @@ static ScmObj compile_rule1(ScmObj form,
                             int patternp)
 {
     if (SCM_PAIRP(form)) {
-        ScmObj pp, h = SCM_NIL, t = SCM_NIL;
+        ScmObj h = SCM_NIL, t = SCM_NIL;
         int ellipsis_seen = FALSE;
 
         if (SCM_PAIRP(SCM_CDR(form)) && isEllipsis(ctx, SCM_CAR(form))) {
@@ -435,10 +434,10 @@ static ScmObj compile_rule1(ScmObj form,
             ctx->ellipsis = save_elli;
             return r;
         }
-        
+
+        ScmObj pp;
         SCM_FOR_EACH(pp, form) {
             if (ELLIPSIS_FOLLOWING(pp, ctx)) {
-                ScmSyntaxPattern *nspat;
                 int num_trailing = 0;
 
                 if (patternp && ellipsis_seen) {
@@ -448,7 +447,7 @@ static ScmObj compile_rule1(ScmObj form,
                               "in a pattern: %S", ctx->name, form);
                     ellipsis_seen = TRUE;
                 }
-                
+
                 if (patternp) {
                     /* Count trailing items to set ScmSyntaxPattern->repeat. */
                     ScmObj trailing = SCM_CDDR(pp);
@@ -457,7 +456,8 @@ static ScmObj compile_rule1(ScmObj form,
                         trailing = SCM_CDR(trailing);
                     }
                 }
-                nspat = make_syntax_pattern(spat->level+1, num_trailing);
+                ScmSyntaxPattern *nspat = make_syntax_pattern(spat->level + 1,
+                                                              num_trailing);
                 if (ctx->maxlev <= spat->level) ctx->maxlev++;
                 nspat->pattern = compile_rule1(SCM_CAR(pp), nspat, ctx,
                                                patternp);
@@ -504,9 +504,9 @@ static ScmObj compile_rule1(ScmObj form,
     }
 #endif
     if (SCM_SYMBOLP(form)||SCM_IDENTIFIERP(form)) {
-        ScmObj q;
         if (isEllipsis(ctx, form)) BAD_ELLIPSIS(ctx);
-        if (!SCM_FALSEP(q = id_memq(form, ctx->literals))) return q;
+        ScmObj q = id_memq(form, ctx->literals);
+        if (!SCM_FALSEP(q)) return q;
 
         if (patternp) {
             return add_pvar(ctx, spat, form);
@@ -543,10 +543,7 @@ static ScmSyntaxRules *compile_rules(ScmObj name,
                                      ScmObj env) /* compiler env */
 {
     PatternContext ctx;
-    ScmSyntaxPattern *pat, *tmpl;
-    ScmSyntaxRules *sr;
-    ScmObj rp;
-    int numRules = Scm_Length(rules), i;
+    int numRules = Scm_Length(rules);
 
     if (numRules < 1) goto badform;
     if (Scm_Length(literals) < 0) goto badform;
@@ -557,16 +554,17 @@ static ScmSyntaxRules *compile_rules(ScmObj name,
     ctx.mod = mod;
     ctx.env = env;
 
-    sr = make_syntax_rules(numRules);
+    ScmSyntaxRules *sr = make_syntax_rules(numRules);
     sr->name = name;
     sr->numRules = numRules;
     sr->maxNumPvars = 0;
-    for (i=0, rp = rules; i < numRules; i++, rp = SCM_CDR(rp)) {
+    ScmObj rp = rules;
+    for (int i=0; i < numRules; i++, rp = SCM_CDR(rp)) {
         ScmObj rule = SCM_CAR(rp);
         if (Scm_Length(rule) != 2) goto badform;
 
-        pat  = make_syntax_pattern(0, 0);
-        tmpl = make_syntax_pattern(0, 0);
+        ScmSyntaxPattern *pat  = make_syntax_pattern(0, 0);
+        ScmSyntaxPattern *tmpl = make_syntax_pattern(0, 0);
         ctx.pvars = SCM_NIL;
         ctx.tvars = SCM_NIL;
         ctx.pvcnt = 0;
@@ -642,10 +640,9 @@ static ScmObj get_pvref_value(ScmObj pvref, MatchVar *mvec,
                               int *indices, int *exlev)
 {
     int level = PVREF_LEVEL(pvref), count = PVREF_COUNT(pvref);
-    int i, j;
     ScmObj tree = mvec[count].root;
-    for (i=1; i<=level; i++) {
-        for (j=0; j<indices[i]; j++) {
+    for (int i=1; i<=level; i++) {
+        for (int j=0; j<indices[i]; j++) {
             if (!SCM_PAIRP(tree)) {
                 *exlev = i;
                 return SCM_UNBOUND;
@@ -665,8 +662,7 @@ static ScmObj get_pvref_value(ScmObj pvref, MatchVar *mvec,
 #ifdef DEBUG_SYNRULE
 static void print_matchvec(MatchVar *mvec, int numPvars, ScmPort *port)
 {
-    int i;
-    for (i=0; i<numPvars; i++) {
+    for (int i=0; i<numPvars; i++) {
         Scm_Printf(port, "[%S %S %S]\n",
                    mvec[i].branch, mvec[i].sprout, mvec[i].root);
     }
@@ -681,16 +677,14 @@ static int match_synrule(ScmObj form, ScmObj pattern, ScmObj env,
 /* add a new "sprout" to the given tree at the given level. */
 static void grow_branch(MatchVar *rec, int level)
 {
-    ScmObj trunc;
-    int i;
     if (level <= 1) return;
     if (rec->root == SCM_NIL) {
         rec->sprout = rec->root = SPROUT;
         if (level == 2) return;
     }
 
-    trunc = rec->root;
-    for (i=1; i<level-1; i++, trunc = SCM_CAR(trunc)) {
+    ScmObj trunc = rec->root;
+    for (int i=1; i<level-1; i++, trunc = SCM_CAR(trunc)) {
         SCM_FOR_EACH(trunc, trunc) {
             if (SCM_NULLP(SCM_CDR(trunc))) break;
         }
@@ -771,9 +765,8 @@ static inline int match_subpattern(ScmObj form, ScmSyntaxPattern *pat,
 {
     /* TODO: If pat->numFollowingItems == 0, we don't need to calculate
        length beforehand.  Some optimization opportunity. */
-    int limit;
-    ScmObj p;
-    for (p = form, limit = 0; SCM_PAIRP(p); p = SCM_CDR(p)) {
+    int limit = 0;
+    for (ScmObj p = form; SCM_PAIRP(p); p = SCM_CDR(p)) {
         limit++;
     }
     limit -= pat->numFollowingItems;
@@ -828,12 +821,13 @@ static int match_synrule(ScmObj form, ScmObj pattern, ScmObj env,
             return SCM_NULLP(form);
     }
     if (SCM_VECTORP(pattern)) {
-        int i, plen, flen, has_elli = FALSE, elli;
         if (!SCM_VECTORP(form)) return FALSE;
-        plen = SCM_VECTOR_SIZE(pattern);
-        elli = flen = SCM_VECTOR_SIZE(form);
+        int plen = SCM_VECTOR_SIZE(pattern);
+        int elli = SCM_VECTOR_SIZE(form);
+        int flen = elli;
+        int has_elli = FALSE;
         if (plen == 0) return (flen == 0);
-        for (i=0; i < plen; i++) {
+        for (int i=0; i < plen; i++) {
             if (SCM_SYNTAX_PATTERN_P(SCM_VECTOR_ELEMENT(pattern, i))) {
                 has_elli = TRUE;
                 elli = i;
@@ -842,7 +836,7 @@ static int match_synrule(ScmObj form, ScmObj pattern, ScmObj env,
         }
         if ((!has_elli && plen!=flen) || (has_elli && plen-1>flen)) return FALSE;
 
-        for (i=0; i < elli; i++) {
+        for (int i=0; i < elli; i++) {
             if (!match_synrule(SCM_VECTOR_ELEMENT(form, i),
                                SCM_VECTOR_ELEMENT(pattern, i),
                                env, mvec))
@@ -854,7 +848,7 @@ static int match_synrule(ScmObj form, ScmObj pattern, ScmObj env,
             ScmObj frest = Scm_VectorToList(SCM_VECTOR(form), elli, flen);
             return match_subpattern(frest, SCM_SYNTAX_PATTERN(pat),
                                     prest, env, mvec);
-        } else { 
+        } else {
             return TRUE;
         }
     }
@@ -876,22 +870,22 @@ static ScmObj realize_template_rec(ScmObj template,
                                    int *exlev)
 {
     if (SCM_PAIRP(template)) {
-        ScmObj h = SCM_NIL, t = SCM_NIL, r, e;
+        ScmObj h = SCM_NIL, t = SCM_NIL;
         while (SCM_PAIRP(template)) {
-            e = SCM_CAR(template);
+            ScmObj e = SCM_CAR(template);
             if (SCM_SYNTAX_PATTERN_P(e)) {
-                r = realize_template_rec(e, mvec, level, indices, idlist, exlev);
+                ScmObj r = realize_template_rec(e, mvec, level, indices, idlist, exlev);
                 if (SCM_UNBOUNDP(r)) return r;
                 SCM_APPEND(h, t, r);
             } else {
-                r = realize_template_rec(e, mvec, level, indices, idlist, exlev);
+                ScmObj r = realize_template_rec(e, mvec, level, indices, idlist, exlev);
                 if (SCM_UNBOUNDP(r)) return r;
                 SCM_APPEND1(h, t, r);
             }
             template = SCM_CDR(template);
         }
         if (!SCM_NULLP(template)) {
-            r = realize_template_rec(template, mvec, level, indices, idlist, exlev);
+            ScmObj r = realize_template_rec(template, mvec, level, indices, idlist, exlev);
             if (SCM_UNBOUNDP(r)) return r;
             if (SCM_NULLP(h)) return r; /* (a ... . b) and a ... is empty */
             SCM_APPEND(h, t, r);
@@ -903,27 +897,27 @@ static ScmObj realize_template_rec(ScmObj template,
     }
     if (SCM_SYNTAX_PATTERN_P(template)) {
         ScmSyntaxPattern *pat = SCM_SYNTAX_PATTERN(template);
-        ScmObj h = SCM_NIL, t = SCM_NIL, r;
+        ScmObj h = SCM_NIL, t = SCM_NIL;
         indices[level+1] = 0;
         for (;;) {
-            r = realize_template_rec(pat->pattern, mvec, level+1, indices, idlist, exlev);
+            ScmObj r = realize_template_rec(pat->pattern, mvec, level+1, indices, idlist, exlev);
             if (SCM_UNBOUNDP(r)) return (*exlev < pat->level)? r : h;
             SCM_APPEND1(h, t, r);
             indices[level+1]++;
         }
     }
     if (SCM_VECTORP(template)) {
-        ScmObj h = SCM_NIL, t = SCM_NIL, r, *pe;
-        int len = SCM_VECTOR_SIZE(template), i;
-        pe = SCM_VECTOR_ELEMENTS(template);
+        ScmObj h = SCM_NIL, t = SCM_NIL;
+        int len = SCM_VECTOR_SIZE(template);
+        ScmObj *pe = SCM_VECTOR_ELEMENTS(template);
 
-        for (i=0; i<len; i++, pe++) {
+        for (int i=0; i<len; i++, pe++) {
             if (SCM_SYNTAX_PATTERN_P(*pe)) {
-                r = realize_template_rec(*pe, mvec, level, indices, idlist, exlev);
+                ScmObj r = realize_template_rec(*pe, mvec, level, indices, idlist, exlev);
                 if (SCM_UNBOUNDP(r)) return r;
                 SCM_APPEND(h, t, r);
             } else {
-                r = realize_template_rec(*pe, mvec, level, indices, idlist, exlev);
+                ScmObj r = realize_template_rec(*pe, mvec, level, indices, idlist, exlev);
                 if (SCM_UNBOUNDP(r)) return r;
                 SCM_APPEND1(h, t, r);
             }
@@ -952,26 +946,24 @@ static ScmObj realize_template_rec(ScmObj template,
 static ScmObj realize_template(ScmSyntaxRuleBranch *branch,
                                MatchVar *mvec)
 {
-    int index[DEFAULT_MAX_LEVEL], *indices = index, i;
+    int index[DEFAULT_MAX_LEVEL], *indices = index;
     int exlev = 0;
     ScmObj idlist = SCM_NIL;
 
     if (branch->maxLevel > DEFAULT_MAX_LEVEL)
         indices = SCM_NEW_ATOMIC2(int*, (branch->maxLevel+1) * sizeof(int));
-    for (i=0; i<=branch->maxLevel; i++) indices[i] = 0;
+    for (int i=0; i<=branch->maxLevel; i++) indices[i] = 0;
     return realize_template_rec(branch->template, mvec, 0, indices, &idlist, &exlev);
 }
 
 static ScmObj synrule_expand(ScmObj form, ScmObj env, ScmSyntaxRules *sr)
 {
     MatchVar *mvec = alloc_matchvec(sr->maxNumPvars);
-    ScmObj expanded;
-    int i;
 
 #ifdef DEBUG_SYNRULE
     Scm_Printf(SCM_CUROUT, "**** synrule_transform: %S\n", form);
 #endif
-    for (i=0; i<sr->numRules; i++) {
+    for (int i=0; i<sr->numRules; i++) {
 #ifdef DEBUG_SYNRULE
         Scm_Printf(SCM_CUROUT, "pattern #%d: %S\n", i, sr->rules[i].pattern);
 #endif
@@ -981,7 +973,7 @@ static ScmObj synrule_expand(ScmObj form, ScmObj env, ScmSyntaxRules *sr)
             Scm_Printf(SCM_CUROUT, "success #%d:\n", i);
             print_matchvec(mvec, sr->rules[i].numPvars, SCM_CUROUT);
 #endif
-            expanded = realize_template(&sr->rules[i], mvec);
+            ScmObj expanded = realize_template(&sr->rules[i], mvec);
 #ifdef DEBUG_SYNRULE
             Scm_Printf(SCM_CUROUT, "result: %S\n", expanded);
 #endif
@@ -1004,11 +996,10 @@ ScmObj Scm_CompileSyntaxRules(ScmObj name, ScmObj ellipsis,
                               ScmObj literals, ScmObj rules,
                               ScmObj mod, ScmObj env)
 {
-    ScmSyntaxRules *sr;
-
     if (SCM_IDENTIFIERP(name)) name = SCM_OBJ(SCM_IDENTIFIER(name)->name);
     if (!SCM_MODULEP(mod)) Scm_Error("module required, but got %S", mod);
-    sr = compile_rules(name, ellipsis, literals, rules, SCM_MODULE(mod), env);
+    ScmSyntaxRules *sr = compile_rules(name, ellipsis, literals, rules,
+                                       SCM_MODULE(mod), env);
     return Scm_MakeMacro(SCM_SYMBOL(name), synrule_transform, (void*)sr);
 }
 
@@ -1024,18 +1015,17 @@ ScmObj macro_expand_cc(ScmObj result, void **data)
 
 ScmObj Scm_VMMacroExpand(ScmObj expr, ScmObj env, int oncep)
 {
-    ScmObj sym, op;
     ScmMacro *mac;
 
     if (!SCM_PAIRP(expr)) return expr;
-    op = SCM_CAR(expr);
+    ScmObj op = SCM_CAR(expr);
     if (SCM_MACROP(op)) {
         mac = SCM_MACRO(op);
     } else if (!SCM_SYMBOLP(op) && !SCM_IDENTIFIERP(op)) {
         return expr;
     } else {
         mac = NULL;
-        sym = op;
+        ScmObj sym = op;
         if (SCM_MACROP(sym)) {
             /* local syntactic binding */
             mac = SCM_MACRO(sym);

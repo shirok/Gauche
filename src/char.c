@@ -236,8 +236,6 @@ static void charset_print(ScmObj obj, ScmPort *out, ScmWriteContext *ctx)
 {
     int prev, code, first = TRUE;
     ScmCharSet *cs = SCM_CHAR_SET(obj);
-    ScmTreeIter iter;
-    ScmDictEntry *e;
 
     Scm_Printf(out, "#[");
     for (prev = -1, code = 0; code < SCM_CHAR_SET_SMALL_CHARS; code++) {
@@ -260,6 +258,8 @@ static void charset_print(ScmObj obj, ScmPort *out, ScmWriteContext *ctx)
             charset_print_ch(out, code-1, FALSE);
         }
     }
+    ScmTreeIter iter;
+    ScmDictEntry *e;
     Scm_TreeIterInit(&iter, &cs->large, NULL);
     while ((e = Scm_TreeIterNext(&iter)) != NULL) {
         charset_print_ch(out, (int)e->key, FALSE);
@@ -334,8 +334,6 @@ int Scm_CharSetEq(ScmCharSet *x, ScmCharSet *y)
 /* whether x <= y */
 int Scm_CharSetLE(ScmCharSet *x, ScmCharSet *y)
 {
-    ScmTreeIter xi;
-    ScmDictEntry *xe, *ye, *yl, *yh;
     if (!Scm_BitsIncludes(y->small, x->small, 0, SCM_CHAR_SET_SMALL_CHARS))
         return FALSE;
     /* For each range of X, check if it is fully contained by a range of Y.
@@ -347,6 +345,8 @@ int Scm_CharSetLE(ScmCharSet *x, ScmCharSet *y)
      *         xk<---------->xv
      *    yk<------------------>yv
      */
+    ScmTreeIter xi;
+    ScmDictEntry *xe, *ye, *yl, *yh;
     Scm_TreeIterInit(&xi, &x->large, NULL);
     for (xe = Scm_TreeIterNext(&xi); xe; xe = Scm_TreeIterNext(&xi)) {
         ye = Scm_TreeCoreClosestEntries(&y->large, xe->key, &yl, &yh);
@@ -410,11 +410,10 @@ ScmObj Scm_CharSetAddRange(ScmCharSet *cs, ScmChar from, ScmChar to)
 
 ScmObj Scm_CharSetAdd(ScmCharSet *dst, ScmCharSet *src)
 {
-    ScmTreeIter iter;
-    ScmDictEntry *e;
-
     if (dst == src) return SCM_OBJ(dst);  /* precaution */
 
+    ScmTreeIter iter;
+    ScmDictEntry *e;
     Scm_BitsOperate(dst->small, SCM_BIT_IOR, dst->small, src->small,
                     0, SCM_CHAR_SET_SMALL_CHARS);
     Scm_TreeIterInit(&iter, &src->large, NULL);
@@ -426,12 +425,11 @@ ScmObj Scm_CharSetAdd(ScmCharSet *dst, ScmCharSet *src)
 
 ScmObj Scm_CharSetComplement(ScmCharSet *cs)
 {
-    int last;
     ScmDictEntry *e, *n;
 
     Scm_BitsOperate(cs->small, SCM_BIT_NOT1, cs->small, NULL,
                     0, SCM_CHAR_SET_SMALL_CHARS);
-    last = SCM_CHAR_SET_SMALL_CHARS-1;
+    int last = SCM_CHAR_SET_SMALL_CHARS-1;
     /* we can't use treeiter, since we modify the tree while traversing it. */
     while ((e = Scm_TreeCoreNextEntry(&cs->large, last)) != NULL) {
         Scm_TreeCoreSearch(&cs->large, e->key, SCM_DICT_DELETE);
@@ -451,23 +449,20 @@ ScmObj Scm_CharSetComplement(ScmCharSet *cs)
 /* Make CS case-insensitive. */
 ScmObj Scm_CharSetCaseFold(ScmCharSet *cs)
 {
-    ScmChar c, uch, lch;
-    ScmTreeIter iter;
-    ScmDictEntry *e;
-    int ch;
-
-    for (ch='a'; ch<='z'; ch++) {
+    for (int ch='a'; ch<='z'; ch++) {
         if (MASK_ISSET(cs, ch) || MASK_ISSET(cs, (ch-('a'-'A')))) {
             MASK_SET(cs, ch);
             MASK_SET(cs, (ch-('a'-'A')));
         }
     }
 
+    ScmTreeIter iter;
+    ScmDictEntry *e;
     Scm_TreeIterInit(&iter, &cs->large, NULL);
     while ((e = Scm_TreeIterNext(&iter)) != NULL) {
-        for (c = e->key; c <= e->value; c++) {
-            uch = Scm_CharUpcase(c);
-            lch = Scm_CharDowncase(c);
+        for (ScmChar c = e->key; c <= e->value; c++) {
+            ScmChar uch = Scm_CharUpcase(c);
+            ScmChar lch = Scm_CharDowncase(c);
             Scm_CharSetAddRange(cs, uch, uch);
             Scm_CharSetAddRange(cs, lch, lch);
         }
@@ -498,27 +493,28 @@ int Scm_CharSetContains(ScmCharSet *cs, ScmChar c)
 /* returns a list of ranges contained in the charset */
 ScmObj Scm_CharSetRanges(ScmCharSet *cs)
 {
-    ScmObj h = SCM_NIL, t = SCM_NIL, cell;
+    ScmObj h = SCM_NIL, t = SCM_NIL;
     int ind, begin = 0, prev = FALSE;
-    ScmTreeIter iter;
-    ScmDictEntry *e;
 
     for (ind = 0; ind < SCM_CHAR_SET_SMALL_CHARS; ind++) {
         int bit = MASK_ISSET(cs, ind);
         if (!prev && bit) begin = ind;
         if (prev && !bit) {
-            cell = Scm_Cons(SCM_MAKE_INT(begin), SCM_MAKE_INT(ind-1));
+            ScmObj cell = Scm_Cons(SCM_MAKE_INT(begin), SCM_MAKE_INT(ind-1));
             SCM_APPEND1(h, t, cell);
         }
         prev = bit;
     }
     if (prev) {
-        cell = Scm_Cons(SCM_MAKE_INT(begin), SCM_MAKE_INT(ind-1));
+        ScmObj cell = Scm_Cons(SCM_MAKE_INT(begin), SCM_MAKE_INT(ind-1));
         SCM_APPEND1(h, t, cell);
     }
+
+    ScmTreeIter iter;
+    ScmDictEntry *e;
     Scm_TreeIterInit(&iter, &cs->large, NULL);
     while ((e = Scm_TreeIterNext(&iter)) != NULL) {
-        cell = Scm_Cons(SCM_MAKE_INT(e->key), SCM_MAKE_INT(e->value));
+        ScmObj cell = Scm_Cons(SCM_MAKE_INT(e->key), SCM_MAKE_INT(e->value));
         SCM_APPEND1(h, t, cell);
     }
     return h;
@@ -526,9 +522,8 @@ ScmObj Scm_CharSetRanges(ScmCharSet *cs)
 
 void Scm_CharSetDump(ScmCharSet *cs, ScmPort *port)
 {
-    int i;
     Scm_Printf(port, "CharSet %p\nmask:", cs);
-    for (i=0; i<SCM_BITS_NUM_WORDS(SCM_CHAR_SET_SMALL_CHARS); i++) {
+    for (int i=0; i<SCM_BITS_NUM_WORDS(SCM_CHAR_SET_SMALL_CHARS); i++) {
 #if SIZEOF_LONG == 4
         Scm_Printf(port, "[%08lx]", cs->small[i]);
 #else
@@ -572,21 +567,19 @@ ScmObj Scm_CharSetRead(ScmPort *input, int *complement_p,
 
     Scm_DStringInit(&buf);
     if (read_charset_syntax(input, bracket_syntax, &buf, &complement)) {
-        ScmChar ch;
         int lastchar = -1, inrange = FALSE, moreset_complement = FALSE;
         ScmCharSet *set = SCM_CHAR_SET(Scm_MakeEmptyCharSet());
-        ScmObj moreset;
-        ScmObj chars = SCM_NIL;
         int size;
         const char *cp = Scm_DStringPeek(&buf, &size, NULL);
         const char *end = cp + size;
-        const char *nextcp;
-        
+
         while (cp < end) {
+            ScmChar ch;
             SCM_CHAR_GET(cp, ch);
             if (ch == SCM_CHAR_INVALID) goto err;
             cp += SCM_CHAR_NBYTES(ch);
 
+            ScmObj moreset;
             switch (ch) {
             case '-':
                 if (inrange) goto ordchar;
@@ -699,10 +692,10 @@ int read_charset_syntax(ScmPort *input, int bracket_syntax, ScmDString *buf,
 {
 #define REAL_BEGIN 1
 #define CARET_BEGIN 2
-    int ch;
     int begin = REAL_BEGIN, complement = FALSE, brackets = 0;
 
     for (;;) {
+        int ch;
         SCM_GETC(ch, input);
         if (ch == EOF) return FALSE;
 
@@ -720,7 +713,7 @@ int read_charset_syntax(ScmPort *input, int bracket_syntax, ScmDString *buf,
         begin = FALSE;
 
         Scm_DStringPutc(buf, ch);
-        
+
         switch (ch) {
         case ']': brackets--; break;
         case '[': brackets++; break;
@@ -744,8 +737,8 @@ ScmObj read_predef_charset(const char **cp, int error_p)
 {
     int i;
     char name[MAX_CHARSET_NAME_LEN];
-    ScmChar ch;
     for (i=0; i<MAX_CHARSET_NAME_LEN; i++) {
+        ScmChar ch;
         SCM_CHAR_GET(*cp, ch);
         if (ch == SCM_CHAR_INVALID) return SCM_FALSE;
         *cp += SCM_CHAR_NBYTES(ch);
@@ -841,11 +834,10 @@ const ScmCharCaseMap *Scm__CharCaseMap(ScmChar ch,
 {
     if (ch < 0x10000) {
         int subtable = casemap_000[(ch >> 8) & 0xff];
-        unsigned short cmap;
-
         if (subtable == 255) return &casemap_identity;
 
-        cmap = casemap_subtable[subtable][(unsigned char)(ch & 0xff)];
+        unsigned short cmap =
+                casemap_subtable[subtable][(unsigned char)(ch & 0xff)];
         if (cmap == SCM_CHAR_NO_CASE_MAPPING) return &casemap_identity;
         if (cmap & 0x8000) {
             /* mapping is extended. */
@@ -938,11 +930,10 @@ ScmChar Scm_CharTitlecase(ScmChar ch)
 ScmChar Scm_CharFoldcase(ScmChar ch)
 {
     ScmCharCaseMap cm;
-    const ScmCharCaseMap *pcm;
 #if defined(GAUCHE_CHAR_ENCODING_EUC_JP) || defined(GAUCHE_CHAR_ENCODING_SJIS)
     if (Scm__CharInUnicodeP(ch)) {
         ScmChar ucs = (ScmChar)Scm_CharToUcs(ch);
-        pcm = Scm__CharCaseMap(ucs, &cm, FALSE);
+        const ScmCharCaseMap *pcm = Scm__CharCaseMap(ucs, &cm, FALSE);
         if (pcm->to_lower_simple == 0 && pcm->to_upper_simple == 0) {
             /* we don't have case folding */
             return ch;
@@ -963,7 +954,7 @@ ScmChar Scm_CharFoldcase(ScmChar ch)
            U+0131 Turkish i (LATIN SMALL LETTER DOTLESS I) */
         return ch;
     }
-    pcm = Scm__CharCaseMap(ch, &cm, FALSE);
+    const ScmCharCaseMap *pcm = Scm__CharCaseMap(ch, &cm, FALSE);
     if (pcm->to_lower_simple == 0 && pcm->to_upper_simple == 0) {
         /* we don't have case folding */
         return ch;
@@ -993,15 +984,13 @@ static ScmInternalMutex predef_charsets_mutex;
 
 static void install_charsets(void)
 {
-    int i, code;
-
     SCM_INTERNAL_MUTEX_LOCK(predef_charsets_mutex);
 
 #define CS(n)  predef_charsets[n]
-    for (i = 0; i < SCM_CHAR_SET_NUM_PREDEFINED_SETS; i++) {
+    for (int i = 0; i < SCM_CHAR_SET_NUM_PREDEFINED_SETS; i++) {
         CS(i) = SCM_CHAR_SET(Scm_MakeEmptyCharSet());
     }
-    for (code = 0; code < SCM_CHAR_SET_SMALL_CHARS; code++) {
+    for (int code = 0; code < SCM_CHAR_SET_SMALL_CHARS; code++) {
         if (isalnum(code)) MASK_SET(CS(SCM_CHAR_SET_ALNUM), code);
         if (isalpha(code)) MASK_SET(CS(SCM_CHAR_SET_ALPHA), code);
         if (iscntrl(code)) MASK_SET(CS(SCM_CHAR_SET_CNTRL), code);

@@ -381,7 +381,7 @@ static ScmObj compound_allocate(ScmClass *klass, ScmObj initargs)
 
 ScmObj Scm_MakeCompoundCondition(ScmObj conditions)
 {
-    ScmObj h = SCM_NIL, t = SCM_NIL, cp, cond;
+    ScmObj h = SCM_NIL, t = SCM_NIL;
     int serious = FALSE;
     int nconds = Scm_Length(conditions);
 
@@ -401,6 +401,7 @@ ScmObj Scm_MakeCompoundCondition(ScmObj conditions)
     }
 
     /* collect conditions and creates compound one */
+    ScmObj cp;
     SCM_FOR_EACH(cp, conditions) {
         ScmObj c = SCM_CAR(cp);
         if (!SCM_CONDITIONP(c)) {
@@ -417,10 +418,10 @@ ScmObj Scm_MakeCompoundCondition(ScmObj conditions)
             SCM_APPEND1(h, t, c);
         }
     }
-    cond = compound_allocate((serious?
-                              SCM_CLASS_COMPOUND_CONDITION :
-                              SCM_CLASS_SERIOUS_COMPOUND_CONDITION),
-                             SCM_NIL);
+    ScmObj cond = compound_allocate((serious?
+                                     SCM_CLASS_COMPOUND_CONDITION :
+                                     SCM_CLASS_SERIOUS_COMPOUND_CONDITION),
+                                    SCM_NIL);
     SCM_COMPOUND_CONDITION(cond)->conditions = h;
     return cond;
 }
@@ -491,11 +492,11 @@ ScmObj Scm_MakeReadError(ScmObj message, ScmPort *port, int line)
 
 int Scm_ConditionHasType(ScmObj c, ScmObj k)
 {
-    ScmObj cp;
-
     if (!SCM_CONDITIONP(c)) return FALSE;
     if (!SCM_CLASSP(k)) return FALSE;
     if (!SCM_COMPOUND_CONDITION_P(c)) return SCM_ISA(c, SCM_CLASS(k));
+
+    ScmObj cp;
     SCM_FOR_EACH(cp, SCM_COMPOUND_CONDITION(c)->conditions) {
         if (SCM_ISA(SCM_CAR(cp), SCM_CLASS(k))) return TRUE;
     }
@@ -696,8 +697,7 @@ void Scm_TypeError(const char *what, const char *expected, ScmObj got)
  */
 void Scm_PortError(ScmPort *port, int reason, const char *msg, ...)
 {
-    ScmObj e, smsg, pe;
-    ScmClass *peclass;
+    ScmObj e;
     ScmVM *vm = Scm_VM();
     va_list args;
     int en = get_errno();
@@ -712,7 +712,8 @@ void Scm_PortError(ScmPort *port, int reason, const char *msg, ...)
             SCM_PUTZ(": ", -1, ostr);
             SCM_PUTS(syserr, ostr);
         }
-        smsg = Scm_GetOutputString(SCM_PORT(ostr), 0);
+        ScmObj smsg = Scm_GetOutputString(SCM_PORT(ostr), 0);
+        ScmClass *peclass;
 
         switch (reason) {
         case SCM_PORT_ERROR_INPUT:
@@ -726,7 +727,7 @@ void Scm_PortError(ScmPort *port, int reason, const char *msg, ...)
         default:
             peclass = SCM_CLASS_PORT_ERROR; break;
         }
-        pe = porterror_allocate(peclass, SCM_NIL);
+        ScmObj pe = porterror_allocate(peclass, SCM_NIL);
         SCM_ERROR(pe)->message = SCM_LIST2(smsg, smsg);
         SCM_PORT_ERROR(pe)->port = port;
 
@@ -917,17 +918,14 @@ void Scm_ShowStackTrace(ScmPort *out, ScmObj stacklite,
    E is a thrown condition, not necessarily an error object. */
 static void Scm_PrintDefaultErrorHeading(ScmObj e, ScmPort *out)
 {
-    ScmObj msg;
-    char *heading, *p;
-
     if (SCM_CONDITIONP(e)) {
-        heading = Scm_GetString(SCM_STRING(Scm_ConditionTypeName(e)));
+        char *heading = Scm_GetString(SCM_STRING(Scm_ConditionTypeName(e)));
         /* TODO: considring that the class name may contain multibyte
            characters, we should use string-upcase here. */
-        for (p=heading; *p; p++) {
+        for (char *p=heading; *p; p++) {
             *p = toupper(*p);
         }
-        msg = Scm_ConditionMessage(e);
+        ScmObj msg = Scm_ConditionMessage(e);
         if (!SCM_FALSEP(msg)) {
             Scm_Printf(out, "*** %s: %A\n", heading, msg);
         } else {
@@ -994,7 +992,6 @@ void Scm_ReportError(ScmObj e)
 void Scm__InitExceptions(void)
 {
     ScmModule *mod = Scm_GaucheModule();
-    ScmClass *cond_meta;
 
     ScmObj mes_ser_supers
         = SCM_LIST2(SCM_OBJ(SCM_CLASS_MESSAGE_CONDITION),
@@ -1006,7 +1003,7 @@ void Scm__InitExceptions(void)
     Scm_InitStaticClassWithMeta(SCM_CLASS_CONDITION,
                                 "<condition>",
                                 mod, NULL, SCM_FALSE, NULL, 0);
-    cond_meta = Scm_ClassOf(SCM_OBJ(SCM_CLASS_CONDITION));
+    ScmClass *cond_meta = Scm_ClassOf(SCM_OBJ(SCM_CLASS_CONDITION));
     Scm_InitStaticClassWithMeta(SCM_CLASS_SERIOUS_CONDITION,
                                 "<serious-condition>",
                                 mod, cond_meta, SCM_FALSE, NULL, 0);
@@ -1064,4 +1061,3 @@ void Scm__InitExceptions(void)
                                 mod, cond_meta, com_ser_supers,
                                 compound_slots, 0);
 }
-

@@ -245,10 +245,10 @@ static ScmClassStaticSlotSpec identifier_slots[] = {
    substricture. */
 static ScmObj unwrap_rec(ScmObj form, ScmObj history)
 {
-    ScmObj newh;
-
     if (!SCM_PTRP(form)) return form;
     if (!SCM_FALSEP(Scm_Memq(form, history))) return form;
+
+    ScmObj newh;
 
     if (SCM_PAIRP(form)) {
         ScmObj ca, cd;
@@ -265,14 +265,15 @@ static ScmObj unwrap_rec(ScmObj form, ScmObj history)
         return SCM_OBJ(SCM_IDENTIFIER(form)->name);
     }
     if (SCM_VECTORP(form)) {
-        int i, j, len = SCM_VECTOR_SIZE(form);
-        ScmObj elt, *pelt = SCM_VECTOR_ELEMENTS(form);
+        int len = SCM_VECTOR_SIZE(form);
+        ScmObj *pelt = SCM_VECTOR_ELEMENTS(form);
         newh = Scm_Cons(form, history);
-        for (i=0; i<len; i++, pelt++) {
-            elt = unwrap_rec(*pelt, newh);
+        for (int i=0; i<len; i++, pelt++) {
+            ScmObj elt = unwrap_rec(*pelt, newh);
             if (elt != *pelt) {
                 ScmObj newvec = Scm_MakeVector(len, SCM_FALSE);
                 pelt = SCM_VECTOR_ELEMENTS(form);
+                int j;
                 for (j=0; j<i; j++, pelt++) {
                     SCM_VECTOR_ELEMENT(newvec, j) = *pelt;
                 }
@@ -326,4 +327,3 @@ void Scm__InitCompaux(void)
 
     Scm_ApplyRec0(SCM_GLOC_GET(init_compiler_gloc));
 }
-

@@ -162,7 +162,6 @@ static ScmEnvFrame *get_env(ScmVM *vm);
 ScmVM *Scm_NewVM(ScmVM *proto, ScmObj name)
 {
     ScmVM *v = SCM_NEW(ScmVM);
-    int i;
 
     SCM_SET_CLASS(v, SCM_CLASS_VM);
     v->state = SCM_VM_NEW;
@@ -213,7 +212,7 @@ ScmVM *Scm_NewVM(ScmVM *proto, ScmObj name)
     v->pc = PC_TO_RETURN;
     v->base = NULL;
     v->val0 = SCM_UNDEFINED;
-    for (i=0; i<SCM_VM_MAX_VALUES; i++) v->vals[i] = SCM_UNDEFINED;
+    for (int i=0; i<SCM_VM_MAX_VALUES; i++) v->vals[i] = SCM_UNDEFINED;
     v->numVals = 1;
 
     v->handlers = SCM_NIL;
@@ -312,10 +311,9 @@ int Scm_VMGetNumResults(ScmVM *vm)
 ScmObj Scm_VMGetResult(ScmVM *vm)
 {
     ScmObj head = SCM_NIL, tail = SCM_NIL;
-    int i;
     if (vm->numVals == 0) return SCM_NIL;
     SCM_APPEND1(head, tail, vm->val0);
-    for (i=1; i<vm->numVals; i++) {
+    for (int i=1; i<vm->numVals; i++) {
         SCM_APPEND1(head, tail, vm->vals[i-1]);
     }
     return head;
@@ -378,9 +376,9 @@ static void vm_finalize(ScmObj obj, void *data)
    to the live VM in the global hashtable. */
 static void vm_register(ScmVM *vm)
 {
-    ScmDictEntry *e;
     SCM_INTERNAL_MUTEX_LOCK(vm_table_mutex);
-    e = Scm_HashCoreSearch(&vm_table, (intptr_t)vm, SCM_DICT_CREATE);
+    ScmDictEntry *e = Scm_HashCoreSearch(&vm_table, (intptr_t)vm,
+                                         SCM_DICT_CREATE);
     (void)SCM_DICT_SET_VALUE(e, SCM_TRUE);
     SCM_INTERNAL_MUTEX_UNLOCK(vm_table_mutex);
 }
@@ -773,6 +771,7 @@ static void wna(ScmVM *vm, ScmObj proc, int ngiven, int foldlen)
         /*TODO: how should we count this path for profiling? */
     } else {
         Scm_Error("wrong number of arguments for %S (required %d, got %d)",
+
                   proc, reqargs, ngiven);
         /*NOTREACHED*/
     }
@@ -804,8 +803,7 @@ static void run_loop()
 #if 0
     static int init = 0;
     if (!init) {
-        int i;
-        for (i=0; i<SCM_VM_NUM_INSNS; i++) {
+        for (int i=0; i<SCM_VM_NUM_INSNS; i++) {
             fprintf(stderr, "%3d %-15s %p (+%04x, %5d)\n",
                     i, Scm_VMInsnName(i),
                     dispatch_table[i],
@@ -888,17 +886,16 @@ static inline ScmEnvFrame *save_env(ScmVM *vm, ScmEnvFrame *env_begin)
     if (!IN_STACK_P((ScmObj*)e)) return e;
 
     do {
-        long esize = (long)e->size, i;
-        ScmObj *d, *s;
-
+        long esize = (long)e->size;
         if (esize < 0) {
             /* forwaded frame */
             if (prev) prev->up = FORWARDED_ENV(e);
             return head;
         }
 
-        d = SCM_NEW2(ScmObj*, ENV_SIZE(esize) * sizeof(ScmObj));
-        for (i=esize, s = (ScmObj*)e - esize; i>0; i--) {
+        ScmObj *d = SCM_NEW2(ScmObj*, ENV_SIZE(esize) * sizeof(ScmObj));
+        ScmObj *s = (ScmObj*)e - esize;
+        for (long i=esize; i>0; i--) {
             SCM_FLONUM_ENSURE_MEM(*s);
             *d++ = *s++;
         }
@@ -923,11 +920,7 @@ static inline ScmEnvFrame *save_env(ScmVM *vm, ScmEnvFrame *env_begin)
  */
 static void save_cont(ScmVM *vm)
 {
-    ScmContFrame *c = vm->cont, *prev = NULL, *tmp;
-    ScmCStack *cstk;
-    ScmEscapePoint *ep;
-    ScmObj *s, *d;
-    int i;
+    ScmContFrame *c = vm->cont, *prev = NULL;
 
     /* Save the environment chain first. */
     vm->env = save_env(vm, vm->env);
@@ -949,10 +942,10 @@ static void save_cont(ScmVM *vm)
 
         /* copy cont frame */
         if (!C_CONTINUATION_P(c)) {
-            s = (ScmObj*)c - c->size;
-            d = heap;
+            ScmObj *s = (ScmObj*)c - c->size;
+            ScmObj *d = heap;
             if (c->size) {
-                for (i=c->size; i>0; i--) {
+                for (int i=c->size; i>0; i--) {
                     SCM_FLONUM_ENSURE_MEM(*s);
                     *d++ = *s++;
                 }
@@ -960,9 +953,9 @@ static void save_cont(ScmVM *vm)
             *(ScmContFrame*)d = *c; /* copy the frame */
         } else {
             /* C continuation */
-            s = (ScmObj*)c - c->size;
-            d = heap;
-            for (i=CONT_FRAME_SIZE + c->size; i>0; i--) {
+            ScmObj *s = (ScmObj*)c - c->size;
+            ScmObj *d = heap;
+            for (int i=CONT_FRAME_SIZE + c->size; i>0; i--) {
                 /* NB: C continuation frame contains opaque pointer,
                    so we shouldn't ENSURE_MEM. */
                 *d++ = *s++;
@@ -973,7 +966,7 @@ static void save_cont(ScmVM *vm)
         if (prev) prev->prev = csave;
         prev = csave;
 
-        tmp = c->prev;
+        ScmContFrame *tmp = c->prev;
         c->prev = csave;
         c->size = -1;
         c = tmp;
@@ -983,17 +976,17 @@ static void save_cont(ScmVM *vm)
     if (FORWARDED_CONT_P(vm->cont)) {
         vm->cont = FORWARDED_CONT(vm->cont);
     }
-    for (cstk = vm->cstack; cstk; cstk = cstk->prev) {
+    for (ScmCStack *cstk = vm->cstack; cstk; cstk = cstk->prev) {
         if (FORWARDED_CONT_P(cstk->cont)) {
             cstk->cont = FORWARDED_CONT(cstk->cont);
         }
     }
-    for (ep = vm->escapePoint; ep; ep = ep->prev) {
+    for (ScmEscapePoint *ep = vm->escapePoint; ep; ep = ep->prev) {
         if (FORWARDED_CONT_P(ep->cont)) {
             ep->cont = FORWARDED_CONT(ep->cont);
         }
     }
-    for (ep = SCM_VM_FLOATING_EP(vm); ep; ep = ep->floating) {
+    for (ScmEscapePoint *ep = SCM_VM_FLOATING_EP(vm); ep; ep = ep->floating) {
         if (FORWARDED_CONT_P(ep->cont)) {
             ep->cont = FORWARDED_CONT(ep->cont);
         }
@@ -1002,7 +995,6 @@ static void save_cont(ScmVM *vm)
 
 static void save_stack(ScmVM *vm)
 {
-    ScmObj *p;
 #if HAVE_GETTIMEOFDAY
     int stats = SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_COLLECT_VM_STATS);
     struct timeval t0, t1;
@@ -1018,7 +1010,7 @@ static void save_stack(ScmVM *vm)
     vm->sp -= (ScmObj*)vm->argp - vm->stackBase;
     vm->argp = vm->stackBase;
     /* Clear the stack.  This removes bogus pointers and accelerates GC */
-    for (p = vm->sp; p < vm->stackEnd; p++) *p = NULL;
+    for (ScmObj *p = vm->sp; p < vm->stackEnd; p++) *p = NULL;
 
 #if HAVE_GETTIMEOFDAY
     if (stats) {
@@ -1032,13 +1024,10 @@ static void save_stack(ScmVM *vm)
 
 static ScmEnvFrame *get_env(ScmVM *vm)
 {
-    ScmEnvFrame *e;
-    ScmContFrame *c;
-
-    e = save_env(vm, vm->env);
+    ScmEnvFrame *e = save_env(vm, vm->env);
     if (e != vm->env) {
         vm->env = e;
-        for (c = vm->cont; IN_STACK_P((ScmObj*)c); c = c->prev) {
+        for (ScmContFrame *c = vm->cont; IN_STACK_P((ScmObj*)c); c = c->prev) {
             if (FORWARDED_ENV_P(c->env)) {
                 c->env = FORWARDED_ENV(c->env);
             }
@@ -1116,10 +1105,8 @@ static void print_flush_fpstack_count(void*z)
 
 void Scm_VMFlushFPStack(ScmVM *vm)
 {
-    ScmEnvFrame *visited[ENV_CACHE_SIZE], *e;
-    ScmContFrame *c;
-    int visited_index = 0, i;
-    ScmObj *p;
+    ScmEnvFrame *visited[ENV_CACHE_SIZE];
+    int visited_index = 0;
 #ifdef COUNT_FLUSH_FPSTACK
     struct timeval t0, t1;
     gettimeofday(&t0, NULL);
@@ -1127,25 +1114,25 @@ void Scm_VMFlushFPStack(ScmVM *vm)
 
     /* first, scan value registers and incomplete frames */
     SCM_FLONUM_ENSURE_MEM(VAL0);
-    for (i=0; i<SCM_VM_MAX_VALUES; i++) {
+    for (int i=0; i<SCM_VM_MAX_VALUES; i++) {
         SCM_FLONUM_ENSURE_MEM(vm->vals[i]);
     }
     if (IN_STACK_P(ARGP)) {
-        for (p = ARGP; p < SP; p++) SCM_FLONUM_ENSURE_MEM(*p);
+        for (ScmObj *p = ARGP; p < SP; p++) SCM_FLONUM_ENSURE_MEM(*p);
     }
 
     /* scan the main environment chain */
-    e = ENV;
+    ScmEnvFrame *e = ENV;
     while (IN_STACK_P((ScmObj*)e)) {
-        for (i = 0; i < visited_index; i++) {
+        for (int i = 0; i < visited_index; i++) {
             if (visited[i] == e) goto next;
         }
         if (visited_index < ENV_CACHE_SIZE) {
             visited[visited_index++] = e;
         }
 
-        for (i = 0; i < e->size; i++) {
-            p = &ENV_DATA(e, i);
+        for (int i = 0; i < e->size; i++) {
+            ScmObj *p = &ENV_DATA(e, i);
             SCM_FLONUM_ENSURE_MEM(*p);
         }
       next:
@@ -1153,26 +1140,26 @@ void Scm_VMFlushFPStack(ScmVM *vm)
     }
 
     /* scan the env chains grabbed by cont chain */
-    c = CONT;
+    ScmContFrame *c = CONT;
     while (IN_STACK_P((ScmObj*)c)) {
         e = c->env;
         while (IN_STACK_P((ScmObj*)e)) {
-            for (i = 0; i < visited_index; i++) {
+            for (int i = 0; i < visited_index; i++) {
                 if (visited[i] == e) goto next2;
             }
             if (visited_index < ENV_CACHE_SIZE) {
                 visited[visited_index++] = e;
             }
-            for (i = 0; i < e->size; i++) {
-                p = &ENV_DATA(e, i);
+            for (int i = 0; i < e->size; i++) {
+                ScmObj *p = &ENV_DATA(e, i);
                 SCM_FLONUM_ENSURE_MEM(*p);
             }
           next2:
             e = e->up;
         }
         if (IN_STACK_P((ScmObj*)c) && c->size > 0) {
-            p = (ScmObj*)c - c->size;
-            for (i=0; i<c->size; i++, p++) SCM_FLONUM_ENSURE_MEM(*p);
+            ScmObj *p = (ScmObj*)c - c->size;
+            for (int i=0; i<c->size; i++, p++) SCM_FLONUM_ENSURE_MEM(*p);
         }
         c = c->prev;
     }
@@ -1229,7 +1216,6 @@ ScmObj Scm_VMApply(ScmObj proc, ScmObj args)
 {
     int numargs = Scm_Length(args);
     int reqstack;
-    ScmObj cp;
     ScmVM *vm = theVM;
 
     if (numargs < 0) Scm_Error("improper list not allowed: %S", args);
@@ -1243,6 +1229,7 @@ ScmObj Scm_VMApply(ScmObj proc, ScmObj args)
     }
     CHECK_STACK(reqstack);
 
+    ScmObj cp;
     SCM_FOR_EACH(cp, args) {
         PUSH_ARG(SCM_CAR(cp));
     }
@@ -1356,17 +1343,14 @@ ScmObj Scm_VMEval(ScmObj expr, ScmObj e)
 void Scm_VMPushCC(ScmCContinuationProc *after,
                   void **data, int datasize)
 {
-    int i;
-    ScmContFrame *cc;
-    ScmObj *s;
     ScmVM *vm = theVM;
 
     CHECK_STACK(CONT_FRAME_SIZE+datasize);
-    s = SP;
-    for (i=0; i<datasize; i++) {
+    ScmObj *s = SP;
+    for (int i=0; i<datasize; i++) {
         *s++ = SCM_OBJ(data[i]);
     }
-    cc = (ScmContFrame*)s;
+    ScmContFrame *cc = (ScmContFrame*)s;
     s += CONT_FRAME_SIZE;
     cc->prev = CONT;
     cc->size = datasize;
@@ -1514,26 +1498,26 @@ ScmObj Scm_EvalRec(ScmObj expr, ScmObj e)
    of this case. */
 static ScmObj apply_rec(ScmVM *vm, ScmObj proc, int nargs)
 {
-    ScmObj program;
     ScmWord code[2];
     code[0] = SCM_WORD(SCM_VM_INSN1(SCM_VM_VALUES_APPLY, nargs));
     code[1] = SCM_WORD(SCM_VM_INSN(SCM_VM_RET));
 
     vm->val0 = proc;
-    program = vm->base? SCM_OBJ(vm->base) : SCM_OBJ(&internal_apply_compiled_code);
+    ScmObj program = vm->base?
+            SCM_OBJ(vm->base) : SCM_OBJ(&internal_apply_compiled_code);
     return user_eval_inner(program, code);
 }
 
 ScmObj Scm_ApplyRec(ScmObj proc, ScmObj args)
 {
-    int nargs = Scm_Length(args), i;
+    int nargs = Scm_Length(args);
     ScmVM *vm = theVM;
 
     if (nargs < 0) {
         Scm_Error("improper list not allowed: %S", args);
     }
 
-    for (i=0; i<nargs; i++) {
+    for (int i=0; i<nargs; i++) {
         if (i == SCM_VM_MAX_VALUES-1) {
             vm->vals[i] = args;
             break;
@@ -1644,10 +1628,8 @@ static ScmObj safe_eval_thunk(ScmObj *args, int nargs, void *data)
 
 static ScmObj safe_eval_int(ScmObj *args, int nargs, void *data)
 {
-    ScmObj thunk, handler;
-
-    thunk   = Scm_MakeSubr(safe_eval_thunk, data, 0, 0, SCM_FALSE);
-    handler = Scm_MakeSubr(safe_eval_handler, data, 1, 0, SCM_FALSE);
+    ScmObj thunk   = Scm_MakeSubr(safe_eval_thunk, data, 0, 0, SCM_FALSE);
+    ScmObj handler = Scm_MakeSubr(safe_eval_handler, data, 1, 0, SCM_FALSE);
     return Scm_VMWithErrorHandler(handler, thunk);
 }
 
@@ -1655,11 +1637,9 @@ static int safe_eval_wrap(int kind, ScmObj arg0, ScmObj args,
                           const char *cstr, ScmObj env,
                           ScmEvalPacket *result)
 {
-    struct eval_packet_rec epak;
-    ScmObj proc, r;
     ScmVM *vm = theVM;
-    int i;
 
+    struct eval_packet_rec epak;
     epak.env  = env;
     epak.kind = kind;
     epak.arg0 = arg0;
@@ -1667,15 +1647,15 @@ static int safe_eval_wrap(int kind, ScmObj arg0, ScmObj args,
     epak.cstr = cstr;
     epak.exception = SCM_UNBOUND;
 
-    proc = Scm_MakeSubr(safe_eval_int, &epak, 0, 0, SCM_FALSE);
-    r = Scm_ApplyRec(proc, SCM_NIL);
+    ScmObj proc = Scm_MakeSubr(safe_eval_int, &epak, 0, 0, SCM_FALSE);
+    ScmObj r = Scm_ApplyRec(proc, SCM_NIL);
 
     if (SCM_UNBOUNDP(epak.exception)) {
         /* normal termination */
         if (result) {
             result->numResults = vm->numVals;
             result->results[0] = r;
-            for (i=1; i<vm->numVals; i++) {
+            for (int i=1; i<vm->numVals; i++) {
                 result->results[i] = vm->vals[i-1];
             }
             result->exception = SCM_FALSE;
@@ -1781,11 +1761,10 @@ static ScmObj dynwind_before_cc(ScmObj result, void **data)
     ScmObj before  = SCM_OBJ(data[0]);
     ScmObj body = SCM_OBJ(data[1]);
     ScmObj after = SCM_OBJ(data[2]);
-    ScmObj prev;
     void *d[2];
     ScmVM *vm = theVM;
+    ScmObj prev = vm->handlers;
 
-    prev = vm->handlers;
     d[0] = (void*)after;
     d[1] = (void*)prev;
     vm->handlers = Scm_Cons(Scm_Cons(before, after), prev);
@@ -1832,12 +1811,11 @@ ScmObj Scm_VMDynamicWindC(ScmSubrProc *before,
                           ScmSubrProc *after,
                           void *data)
 {
-    ScmObj beforeproc, bodyproc, afterproc;
-    beforeproc =
+    ScmObj beforeproc =
         before ? Scm_MakeSubr(before, data, 0, 0, SCM_FALSE) : Scm_NullProc();
-    afterproc =
+    ScmObj afterproc =
         after ? Scm_MakeSubr(after, data, 0, 0, SCM_FALSE) : Scm_NullProc();
-    bodyproc =
+    ScmObj bodyproc =
         body ? Scm_MakeSubr(body, data, 0, 0, SCM_FALSE) : Scm_NullProc();
 
     return Scm_VMDynamicWind(beforeproc, bodyproc, afterproc);
@@ -1941,13 +1919,12 @@ void Scm_VMDefaultExceptionHandler(ScmObj e)
 {
     ScmVM *vm = theVM;
     ScmEscapePoint *ep = vm->escapePoint;
-    ScmObj hp;
 
     if (ep) {
         /* There's an escape point defined by with-error-handler. */
         ScmObj target, current;
         ScmObj result = SCM_FALSE, rvals[SCM_VM_MAX_VALUES];
-        int numVals = 0, i;
+        int numVals = 0;
 
         /* To conform SRFI-34, the error handler (clauses in 'guard' form)
            should be executed with the same continuation and dynamic
@@ -1959,7 +1936,8 @@ void Scm_VMDefaultExceptionHandler(ScmObj e)
         if (ep->rewindBefore) {
             target = ep->handlers;
             current = vm->handlers;
-            for (hp=current; SCM_PAIRP(hp) && (hp!=target); hp=SCM_CDR(hp)) {
+            for (ScmObj hp=current; SCM_PAIRP(hp) && (hp!=target);
+                 hp=SCM_CDR(hp)) {
                 ScmObj proc = SCM_CDAR(hp);
                 vm->handlers = SCM_CDR(hp);
                 Scm_ApplyRec(proc, SCM_NIL);
@@ -1980,12 +1958,13 @@ void Scm_VMDefaultExceptionHandler(ScmObj e)
         SCM_UNWIND_PROTECT {
             result = Scm_ApplyRec(ep->ehandler, SCM_LIST1(e));
             if ((numVals = vm->numVals) > 1) {
-                for (i=0; i<numVals-1; i++) rvals[i] = vm->vals[i];
+                for (int i=0; i<numVals-1; i++) rvals[i] = vm->vals[i];
             }
             if (!ep->rewindBefore) {
                 target = ep->handlers;
                 current = vm->handlers;
-                for (hp=current; SCM_PAIRP(hp) && (hp!=target); hp=SCM_CDR(hp)) {
+                for (ScmObj hp=current; SCM_PAIRP(hp) && (hp!=target);
+                     hp=SCM_CDR(hp)) {
                     ScmObj proc = SCM_CDAR(hp);
                     vm->handlers = SCM_CDR(hp);
                     Scm_ApplyRec(proc, SCM_NIL);
@@ -2001,7 +1980,7 @@ void Scm_VMDefaultExceptionHandler(ScmObj e)
         SCM_END_PROTECT;
 
         /* Install the continuation */
-        for (i=0; i<numVals; i++) vm->vals[i] = rvals[i];
+        for (int i=0; i<numVals; i++) vm->vals[i] = rvals[i];
         vm->numVals = numVals;
         vm->val0 = result;
         vm->cont = ep->cont;
@@ -2015,6 +1994,7 @@ void Scm_VMDefaultExceptionHandler(ScmObj e)
            C stacks. */
         Scm_ReportError(e);
         /* unwind the dynamic handlers */
+        ScmObj hp;
         SCM_FOR_EACH(hp, vm->handlers) {
             ScmObj proc = SCM_CDAR(hp);
             vm->handlers = SCM_CDR(hp);
@@ -2118,7 +2098,6 @@ static ScmObj with_error_handler(ScmVM *vm, ScmObj handler,
                                  ScmObj thunk, int rewindBefore)
 {
     ScmEscapePoint *ep = SCM_NEW(ScmEscapePoint);
-    ScmObj before, after;
 
     /* NB: we can save pointer to the stack area (vm->cont) to ep->cont,
      * since such ep is always accessible via vm->escapePoint chain and
@@ -2139,8 +2118,8 @@ static ScmObj with_error_handler(ScmVM *vm, ScmObj handler,
     vm->escapePoint = ep; /* This will be done in install_ehandler, but
                              make sure ep is visible from save_cont
                              to redirect ep->cont */
-    before = Scm_MakeSubr(install_ehandler, ep, 0, 0, SCM_FALSE);
-    after  = Scm_MakeSubr(discard_ehandler, ep, 0, 0, SCM_FALSE);
+    ScmObj before = Scm_MakeSubr(install_ehandler, ep, 0, 0, SCM_FALSE);
+    ScmObj after  = Scm_MakeSubr(discard_ehandler, ep, 0, 0, SCM_FALSE);
     return Scm_VMDynamicWind(before, thunk, after);
 }
 
@@ -2197,10 +2176,9 @@ static ScmObj throw_cont_calculate_handlers(ScmEscapePoint *ep, /*target*/
         SCM_APPEND1(h, t, Scm_Cons(SCM_CDAR(p), SCM_CDR(p)));
     }
     SCM_FOR_EACH(p, target) {
-        ScmObj chain;
         SCM_ASSERT(SCM_PAIRP(SCM_CAR(p)));
         if (!SCM_FALSEP(Scm_Memq(SCM_CAR(p), current))) continue;
-        chain = Scm_Memq(SCM_CAR(p), ep->handlers);
+        ScmObj chain = Scm_Memq(SCM_CAR(p), ep->handlers);
         SCM_ASSERT(SCM_PAIRP(chain));
         /* push 'before' handlers to be called */
         SCM_APPEND1(h, t, Scm_Cons(SCM_CAAR(p), SCM_CDR(chain)));
@@ -2217,7 +2195,7 @@ static ScmObj throw_cont_body(ScmObj handlers,    /* after/before thunks
                                                      target continuation */
 {
     void *data[3];
-    int nargs, i;
+    int nargs;
     ScmObj ap;
     ScmVM *vm = theVM;
 
@@ -2225,10 +2203,9 @@ static ScmObj throw_cont_body(ScmObj handlers,    /* after/before thunks
      * first, check to see if we need to evaluate dynamic handlers.
      */
     if (SCM_PAIRP(handlers)) {
-        ScmObj handler, chain;
         SCM_ASSERT(SCM_PAIRP(SCM_CAR(handlers)));
-        handler = SCM_CAAR(handlers);
-        chain   = SCM_CDAR(handlers);
+        ScmObj handler = SCM_CAAR(handlers);
+        ScmObj chain   = SCM_CDAR(handlers);
 
         data[0] = (void*)SCM_CDR(handlers);
         data[1] = (void*)ep;
@@ -2265,7 +2242,8 @@ static ScmObj throw_cont_body(ScmObj handlers,    /* after/before thunks
         Scm_Error("too many values passed to the continuation");
     }
 
-    for (i=0, ap=SCM_CDR(args); SCM_PAIRP(ap); i++, ap=SCM_CDR(ap)) {
+    ap = SCM_CDR(args);
+    for (int i=0; SCM_PAIRP(ap); i++, ap=SCM_CDR(ap)) {
         vm->vals[i] = SCM_CAR(ap);
     }
     vm->numVals = nargs;
@@ -2286,7 +2264,6 @@ static ScmObj throw_continuation(ScmObj *argframe, int nargs, void *data)
     ScmEscapePoint *ep = (ScmEscapePoint*)data;
     ScmObj args = argframe[0];
     ScmVM *vm = theVM;
-    ScmObj handlers_to_call;
 
     /* First, check to see if we need to rewind C stack.
        NB: If we are invoking a partial continuation (ep->cstack == NULL),
@@ -2322,26 +2299,24 @@ static ScmObj throw_continuation(ScmObj *argframe, int nargs, void *data)
         save_cont(vm);
     }
 
-    handlers_to_call = throw_cont_calculate_handlers(ep, vm);
+    ScmObj handlers_to_call = throw_cont_calculate_handlers(ep, vm);
     return throw_cont_body(handlers_to_call, ep, args);
 }
 
 ScmObj Scm_VMCallCC(ScmObj proc)
 {
-    ScmObj contproc;
-    ScmEscapePoint *ep;
     ScmVM *vm = theVM;
 
     save_cont(vm);
-    ep = SCM_NEW(ScmEscapePoint);
+    ScmEscapePoint *ep = SCM_NEW(ScmEscapePoint);
     ep->prev = NULL;
     ep->ehandler = SCM_FALSE;
     ep->cont = vm->cont;
     ep->handlers = vm->handlers;
     ep->cstack = vm->cstack;
 
-    contproc = Scm_MakeSubr(throw_continuation, ep, 0, 1,
-                            SCM_MAKE_STR("continuation"));
+    ScmObj contproc = Scm_MakeSubr(throw_continuation, ep, 0, 1,
+                                   SCM_MAKE_STR("continuation"));
     return Scm_VMApply1(proc, contproc);
 }
 
@@ -2351,9 +2326,6 @@ ScmObj Scm_VMCallCC(ScmObj proc)
    partial continuation. */
 ScmObj Scm_VMCallPC(ScmObj proc)
 {
-    ScmObj contproc;
-    ScmEscapePoint *ep;
-    ScmContFrame *c, *cp;
     ScmVM *vm = theVM;
 
     /* save the continuation.  we only need to save the portion above the
@@ -2363,6 +2335,7 @@ ScmObj Scm_VMCallPC(ScmObj proc)
     save_cont(vm);
 
     /* find the latest boundary frame */
+    ScmContFrame *c, *cp;
     for (c = vm->cont, cp = NULL;
          c && !BOUNDARY_FRAME_P(c);
          cp = c, c = c->prev)
@@ -2370,15 +2343,15 @@ ScmObj Scm_VMCallPC(ScmObj proc)
 
     if (cp != NULL) cp->prev = NULL; /* cut the dynamic chain */
 
-    ep = SCM_NEW(ScmEscapePoint);
+    ScmEscapePoint *ep = SCM_NEW(ScmEscapePoint);
     ep->prev = NULL;
     ep->ehandler = SCM_FALSE;
     ep->cont = (cp? vm->cont : NULL);
     ep->handlers = vm->handlers;
     ep->cstack = NULL; /* so that the partial continuation can be run
                           on any cstack state. */
-    contproc = Scm_MakeSubr(throw_continuation, ep, 0, 1,
-                            SCM_MAKE_STR("partial continuation"));
+    ScmObj contproc = Scm_MakeSubr(throw_continuation, ep, 0, 1,
+                                   SCM_MAKE_STR("partial continuation"));
     /* Remove the saved continuation chain.
        NB: c can be NULL if we've been executing a partial continuation.
        It's ok, for a continuation pointed by cstack will be restored
@@ -2421,14 +2394,12 @@ void Scm_VMRewindProtect(ScmVM *vm)
 
 ScmObj Scm_VMValues(ScmVM *vm, ScmObj args)
 {
-    ScmObj cp;
-    int nvals;
-
     if (!SCM_PAIRP(args)) {
         vm->numVals = 0;
         return SCM_UNDEFINED;
     }
-    nvals = 1;
+    int nvals = 1;
+    ScmObj cp;
     SCM_FOR_EACH(cp, SCM_CDR(args)) {
         vm->vals[nvals-1] = SCM_CAR(cp);
         if (nvals++ >= SCM_VM_MAX_VALUES) {
@@ -2524,15 +2495,13 @@ ScmObj Scm_Values5(ScmObj val0, ScmObj val1,
 static ScmObj process_queued_requests_cc(ScmObj result, void **data)
 {
     /* restore the saved continuation of normal execution flow of VM */
-    int i;
-    ScmObj cp;
     ScmVM *vm = theVM;
 
     vm->numVals = (int)(intptr_t)data[0];
     vm->val0 = data[1];
     if (vm->numVals > 1) {
-        cp = SCM_OBJ(data[2]);
-        for (i=0; i<vm->numVals-1; i++) {
+        ScmObj cp = SCM_OBJ(data[2]);
+        for (int i=0; i<vm->numVals-1; i++) {
             vm->vals[i] = SCM_CAR(cp);
             cp = SCM_CDR(cp);
         }
@@ -2548,10 +2517,9 @@ static void process_queued_requests(ScmVM *vm)
     data[0] = (void*)(intptr_t)vm->numVals;
     data[1] = vm->val0;
     if (vm->numVals > 1) {
-        int i;
         ScmObj h = SCM_NIL, t = SCM_NIL;
 
-        for (i=0; i<vm->numVals-1; i++) {
+        for (int i=0; i<vm->numVals-1; i++) {
             SCM_APPEND1(h, t, vm->vals[i]);
         }
         data[2] = h;
@@ -2624,9 +2592,7 @@ ScmObj Scm_VMGetStackLite(ScmVM *vm)
 {
     ScmContFrame *c = vm->cont;
     ScmObj stack = SCM_NIL, tail = SCM_NIL;
-    ScmObj info;
-
-    info = Scm_VMGetSourceInfo(vm->base, vm->pc);
+    ScmObj info = Scm_VMGetSourceInfo(vm->base, vm->pc);
     if (!SCM_FALSEP(info)) SCM_APPEND1(stack, tail, info);
     while (c) {
         info = Scm_VMGetSourceInfo(c->base, c->pc);
@@ -2648,19 +2614,16 @@ struct EnvTab {
 
 static ScmObj env2vec(ScmEnvFrame *env, struct EnvTab *etab)
 {
-    int i;
-    ScmObj vec;
-
     if (!env) return SCM_FALSE;
-    for (i=0; i<etab->numEntries; i++) {
+    for (int i=0; i<etab->numEntries; i++) {
         if (etab->entries[i].env == env) {
             return etab->entries[i].vec;
         }
     }
-    vec = Scm_MakeVector((int)env->size+2, SCM_FALSE);
+    ScmObj vec = Scm_MakeVector((int)env->size+2, SCM_FALSE);
     SCM_VECTOR_ELEMENT(vec, 0) = env2vec(env->up, etab);
     SCM_VECTOR_ELEMENT(vec, 1) = SCM_NIL; /*Scm_VMGetBindInfo(env->info);*/
-    for (i=0; i<env->size; i++) {
+    for (int i=0; i<env->size; i++) {
         SCM_VECTOR_ELEMENT(vec, i+2) = ENV_DATA(env, (env->size-i-1));
     }
     if (etab->numEntries < DEFAULT_ENV_TABLE_SIZE) {
@@ -2701,13 +2664,12 @@ ScmObj Scm_VMGetStack(ScmVM *vm)
  */
 static ScmObj get_debug_info(ScmCompiledCode *base, SCM_PCTYPE pc)
 {
-    int off;
-    ScmObj ip;
     if (base == NULL
         || (pc < base->code || pc >= base->code + base->codeSize)) {
         return SCM_FALSE;
     }
-    off = (int)(pc - base->code);
+    int off = (int)(pc - base->code);
+    ScmObj ip;
     SCM_FOR_EACH(ip, base->info) {
         ScmObj p = SCM_CAR(ip);
         if (!SCM_PAIRP(p) || !SCM_INTP(SCM_CAR(p))) continue;
@@ -2743,11 +2705,10 @@ ScmObj Scm_VMGetBindInfo(ScmCompiledCode *base, SCM_PCTYPE pc)
 
 static void dump_env(ScmEnvFrame *env, ScmPort *out)
 {
-    int i;
     Scm_Printf(out, "   %p %55.1S\n", env, env->info);
     Scm_Printf(out, "       up=%p size=%d\n", env->up, env->size);
     Scm_Printf(out, "       [");
-    for (i=0; i<env->size; i++) {
+    for (int i=0; i<env->size; i++) {
         Scm_Printf(out, " %S", ENV_DATA(env, i));
     }
     Scm_Printf(out, " ]\n");
@@ -2818,13 +2779,13 @@ struct GC_ms_entry *vm_stack_mark(GC_word *addr,
     struct GC_ms_entry *e = mark_sp;
     ScmObj *vmsb = ((ScmObj*)addr)+1;
     ScmVM *vm = (ScmVM*)*addr;
-    int i, limit = vm->sp - vm->stackBase + 5;
-    void * spb = (void *)vm->stackBase;
-    void * sbe = (void *)(vm->stackBase + SCM_VM_STACK_SIZE);
-    void * hb = GC_least_plausible_heap_addr;
-    void * he = GC_greatest_plausible_heap_addr;
+    int limit = vm->sp - vm->stackBase + 5;
+    void *spb = (void *)vm->stackBase;
+    void *sbe = (void *)(vm->stackBase + SCM_VM_STACK_SIZE);
+    void *hb = GC_least_plausible_heap_addr;
+    void *he = GC_greatest_plausible_heap_addr;
 
-    for (i=0; i<limit; i++, vmsb++) {
+    for (int i=0; i<limit; i++, vmsb++) {
         ScmObj z = *vmsb;
         if ((hb < (void *)z && (void *)z < spb)
             || ((void *)z > sbe && (void *)z < he)) {

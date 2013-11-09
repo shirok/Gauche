@@ -86,15 +86,12 @@
 
 static void sampler_flush(ScmVM *vm)
 {
-    int nsamples;
-    ssize_t r;
-
     if (vm->prof == NULL) return; /* for safety */
     if (vm->prof->samplerFd < 0 || vm->prof->currentSample == 0) return;
 
-    nsamples = vm->prof->currentSample;
-    r = write(vm->prof->samplerFd, vm->prof->samples,
-              nsamples * sizeof(ScmProfSample[1]));
+    int nsamples = vm->prof->currentSample;
+    ssize_t r = write(vm->prof->samplerFd, vm->prof->samples,
+                      nsamples * sizeof(ScmProfSample[1]));
     if (r == (ssize_t)-1) {
         vm->prof->errorOccurred++;
     }
@@ -105,10 +102,7 @@ static void sampler_flush(ScmVM *vm)
 /* signal handler */
 static void sampler_sample(int sig)
 {
-    ScmVM *vm;
-    int i;
-
-    vm = Scm_VM();
+    ScmVM *vm = Scm_VM();
     if (vm->prof == NULL) return;
     if (vm->prof->state != SCM_PROFILER_RUNNING) return;
 
@@ -118,7 +112,7 @@ static void sampler_sample(int sig)
         ITIMER_START();
     }
 
-    i = vm->prof->currentSample++;
+    int i = vm->prof->currentSample++;
     if (vm->base) {
         /* If vm->pc is RET and val0 is a subr, it is pretty likely that
            we're actually executing that subr. */
@@ -140,8 +134,7 @@ static void sampler_sample(int sig)
 /* register samples into the stat table.  Called from Scm_ProfilerResult */
 void collect_samples(ScmVMProfiler *prof)
 {
-    int i, cnt;
-    for (i=0; i<prof->currentSample; i++) {
+    for (int i=0; i<prof->currentSample; i++) {
         ScmObj e = Scm_HashTableRef(prof->statHash,
                                     prof->samples[i].func, SCM_UNBOUND);
         if (SCM_UNBOUNDP(e)) {
@@ -150,7 +143,7 @@ void collect_samples(ScmVMProfiler *prof)
                      prof->samples[i].func, prof->samples[i].func);
         } else {
             SCM_ASSERT(SCM_PAIRP(e));
-            cnt = SCM_INT_VALUE(SCM_CDR(e)) + 1;
+            int cnt = SCM_INT_VALUE(SCM_CDR(e)) + 1;
             SCM_SET_CDR(e, SCM_MAKE_INT(cnt));
         }
     }
@@ -165,24 +158,21 @@ void collect_samples(ScmVMProfiler *prof)
 
 void Scm_ProfilerCountBufferFlush(ScmVM *vm)
 {
-    int i, ncounts;
-    ScmObj func;
-    sigset_t set;
-
     if (vm->prof == NULL) return; /* for safety */
     if (vm->prof->currentCount == 0) return;
 
     /* suspend itimer during hash table operation */
+    sigset_t set;
     sigemptyset(&set);
     sigaddset(&set, SIGPROF);
     SIGPROCMASK(SIG_BLOCK, &set, NULL);
 
-    ncounts = vm->prof->currentCount;
-    for (i=0; i<ncounts; i++) {
+    int ncounts = vm->prof->currentCount;
+    for (int i=0; i<ncounts; i++) {
         ScmObj e;
         int cnt;
 
-        func = vm->prof->counts[i].func;
+        ScmObj func = vm->prof->counts[i].func;
         if (SCM_METHODP(func) && SCM_METHOD(func)->func == NULL) {
             /* func is Scheme-defined method.  Record the code of
                method body, so that we can match it with sampling
@@ -216,7 +206,6 @@ void Scm_ProfilerCountBufferFlush(ScmVM *vm)
  */
 void Scm_ProfilerStart(void)
 {
-    struct sigaction act;
     ScmVM *vm = Scm_VM();
     char templat[] = "/tmp/gauche-profXXXXXX";
 
@@ -241,6 +230,7 @@ void Scm_ProfilerStart(void)
     vm->profilerRunning = TRUE;
 
     /* NB: this should be done globally!!! */
+    struct sigaction act;
     act.sa_handler = sampler_sample;
     sigfillset(&act.sa_mask);
     act.sa_flags = SA_RESTART;
@@ -286,9 +276,6 @@ void Scm_ProfilerReset(void)
 /* Returns the statHash */
 ScmObj Scm_ProfilerRawResult(void)
 {
-    off_t off;
-    ssize_t r;
-    ScmObj sampler_port;
     ScmVM *vm = Scm_VM();
 
     if (vm->prof == NULL) return SCM_FALSE;
@@ -305,18 +292,19 @@ ScmObj Scm_ProfilerRawResult(void)
     collect_samples(vm->prof);
 
     /* collect samples in the saved file */
+    off_t off;
     SCM_SYSCALL(off, lseek(vm->prof->samplerFd, 0, SEEK_SET));
     if (off == (off_t)-1) {
         Scm_ProfilerReset();
         Scm_Error("profiler: seek failed in retrieving sample data");
     }
-    sampler_port =
+    ScmObj sampler_port =
         Scm_MakePortWithFd(SCM_FALSE, SCM_PORT_INPUT, vm->prof->samplerFd,
                            SCM_PORT_BUFFER_FULL, FALSE);
 
     for (;;) {
-        r = read(vm->prof->samplerFd, vm->prof->samples,
-                 sizeof(ScmProfSample[1]) * SCM_PROF_SAMPLES_IN_BUFFER);
+        ssize_t r = read(vm->prof->samplerFd, vm->prof->samples,
+                         sizeof(ScmProfSample[1]) * SCM_PROF_SAMPLES_IN_BUFFER);
         if (r <= 0) break;
         vm->prof->currentSample = r / sizeof(ScmProfSample[1]);
         collect_samples(vm->prof);

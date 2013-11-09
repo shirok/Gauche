@@ -217,8 +217,7 @@ static ScmObj class_array_to_list(ScmClass **array, int len)
 static ScmObj class_array_to_names(ScmClass **array, int len)
 {
     ScmObj h = SCM_NIL, t = SCM_NIL;
-    int i;
-    for (i=0; i<len; i++, array++) SCM_APPEND1(h, t, (*array)->name);
+    for (int i=0; i<len; i++, array++) SCM_APPEND1(h, t, (*array)->name);
     return h;
 }
 
@@ -229,10 +228,10 @@ static ScmObj class_array_to_names(ScmClass **array, int len)
 ScmObj Scm__InternalClassName(ScmClass *klass)
 {
     ScmObj name = klass->name;
-    int size;
 
     if (SCM_SYMBOLP(name)) {
         const ScmStringBody *b = SCM_STRING_BODY(SCM_SYMBOL_NAME(name));
+        int size;
         if (((size = SCM_STRING_BODY_SIZE(b)) > 2)
             && SCM_STRING_BODY_START(b)[0] == '<'
             && SCM_STRING_BODY_START(b)[size-1] == '>') {
@@ -571,12 +570,11 @@ static ScmObj class_cpl(ScmClass *klass)
    form a single inheritance chain. */
 static void find_core_allocator(ScmClass *klass)
 {
-    ScmClass **p;
     ScmClass *b = NULL; /* the base class klass gets the allocate func */
     int object_inherited = FALSE;
 
     klass->allocate = NULL;
-    for (p = klass->cpa; *p; p++) {
+    for (ScmClass **p = klass->cpa; *p; p++) {
         if (SCM_CLASS_CATEGORY(*p) == SCM_CLASS_BUILTIN) {
             Scm_Error("class '%S' attempted to inherit from a builtin class "
                       "%S; you cannot subclass a builtin class.",
@@ -632,8 +630,6 @@ static void find_core_allocator(ScmClass *klass)
 
 static void class_cpl_set(ScmClass *klass, ScmObj val)
 {
-    int len, i;
-    ScmObj cp;
     CHECK_MALLEABLE(klass, "(setter cpl)");
 
     /* We make sure things are consistent. */
@@ -642,10 +638,11 @@ static void class_cpl_set(ScmClass *klass, ScmObj val)
     if (SCM_CAR(val) != SCM_OBJ(klass)) goto err;
 
     /* set up the cpa */
-    cp = SCM_CDR(val);
-    if ((len = Scm_Length(cp)) < 0) goto err;
+    ScmObj cp = SCM_CDR(val);
+    int len = Scm_Length(cp);
+    if (len < 0) goto err;
     klass->cpa = class_list_to_array(cp, len);
-    for (i=0; i<len; i++) {
+    for (int i=0; i<len; i++) {
         /* sanity check */
         if (klass->cpa[i] == SCM_CLASS_BOTTOM) goto err;
     }
@@ -668,8 +665,8 @@ static ScmObj class_direct_supers(ScmClass *klass)
 
 static void class_direct_supers_set(ScmClass *klass, ScmObj val)
 {
-    ScmObj vp;
     CHECK_MALLEABLE(klass, "(setter direct-supers)")
+    ScmObj vp;
     SCM_FOR_EACH(vp, val) {
         if (!Scm_TypeP(SCM_CAR(vp), SCM_CLASS_CLASS))
             Scm_Error("non-class object found in direct superclass list: %S",
@@ -685,8 +682,8 @@ static ScmObj class_direct_slots(ScmClass *klass)
 
 static void class_direct_slots_set(ScmClass *klass, ScmObj val)
 {
-    ScmObj vp;
     CHECK_MALLEABLE(klass, "(setter direct-slots)");
+    ScmObj vp;
     SCM_FOR_EACH(vp, val) {
         if (!SCM_PAIRP(SCM_CAR(vp)))
             Scm_Error("bad slot spec found in direct slot list: %S",
@@ -702,8 +699,8 @@ static ScmObj class_slots_ref(ScmClass *klass)
 
 static void class_slots_set(ScmClass *klass, ScmObj val)
 {
-    ScmObj vp;
     CHECK_MALLEABLE(klass, "(setter slots)");
+    ScmObj vp;
     SCM_FOR_EACH(vp, val) {
         if (!SCM_PAIRP(SCM_CAR(vp)))
             Scm_Error("bad slot spec found in slot list: %S",
@@ -719,8 +716,8 @@ static ScmObj class_accessors(ScmClass *klass)
 
 static void class_accessors_set(ScmClass *klass, ScmObj val)
 {
-    ScmObj vp;
     CHECK_MALLEABLE(klass, "(setter accessors)");
+    ScmObj vp;
     SCM_FOR_EACH(vp, val) {
         if (!SCM_PAIRP(SCM_CAR(vp))
             || !SCM_SLOT_ACCESSOR_P(SCM_CDAR(vp)))
@@ -737,8 +734,8 @@ static ScmObj class_numislots(ScmClass *klass)
 
 static void class_numislots_set(ScmClass *klass, ScmObj snf)
 {
-    int nf = 0;
     CHECK_MALLEABLE(klass, "(setter num-instance-slots)");
+    int nf = 0;
     if (!SCM_INTP(snf) || (nf = SCM_INT_VALUE(snf)) < 0) {
         Scm_Error("invalid argument: %S", snf);
         /*NOTREACHED*/
@@ -763,8 +760,8 @@ static ScmObj class_initargs(ScmClass *klass)
 
 static void class_initargs_set(ScmClass *klass, ScmObj val)
 {
-    int len = Scm_Length(val);
     CHECK_MALLEABLE(klass, "(setter initargs)");
+    int len = Scm_Length(val);
     if (len < 0 || len%2 != 0) {
         Scm_Error("class-initargs must be a list of even number of elements, but got %S", val);
     }
@@ -778,8 +775,8 @@ static ScmObj class_defined_modules(ScmClass *klass)
 
 static void class_defined_modules_set(ScmClass *klass, ScmObj val)
 {
-    ScmObj cp;
     CHECK_MALLEABLE(klass, "(setter defined-modules)");
+    ScmObj cp;
     SCM_FOR_EACH(cp, val) {
         if (!SCM_MODULEP(SCM_CAR(cp))) goto err;
     }
@@ -805,7 +802,6 @@ static ScmObj class_direct_methods(ScmClass *klass)
 
 static ScmObj class_redefined(ScmClass *klass)
 {
-    ScmObj r;
     int abandoned = FALSE;
 
     /* If this class is being redefined by other thread, you should wait */
@@ -821,7 +817,7 @@ static ScmObj class_redefined(ScmClass *klass)
             (void)SCM_INTERNAL_COND_WAIT(klass->cv, klass->mutex);
         }
     }
-    r = klass->redefined;
+    ScmObj r = klass->redefined;
     (void)SCM_INTERNAL_MUTEX_UNLOCK(klass->mutex);
     if (abandoned) {
         Scm_Warn("redefinition of class %S has been abandoned", klass);
@@ -890,11 +886,10 @@ static ScmClass *make_implicit_meta(const char *name,
 
 int Scm_SubtypeP(ScmClass *sub, ScmClass *type)
 {
-    ScmClass **p;
     if (sub == type) return TRUE;
     if (sub == SCM_CLASS_BOTTOM) return TRUE;
 
-    p = sub->cpa;
+    ScmClass **p = sub->cpa;
     while (*p) {
         if (*p++ == type) return TRUE;
     }
@@ -911,14 +906,15 @@ int Scm_TypeP(ScmObj obj, ScmClass *type)
  */
 ScmObj Scm_ComputeCPL(ScmClass *klass)
 {
-    ScmObj seqh = SCM_NIL, seqt = SCM_NIL, ds, dp, result;
+    ScmObj seqh = SCM_NIL, seqt = SCM_NIL;
 
     /* a trick to ensure we have <object> <top> at the end of CPL. */
-    ds = Scm_Delete(SCM_OBJ(SCM_CLASS_OBJECT), klass->directSupers,
-                    SCM_CMP_EQ);
+    ScmObj ds = Scm_Delete(SCM_OBJ(SCM_CLASS_OBJECT), klass->directSupers,
+                           SCM_CMP_EQ);
     ds = Scm_Delete(SCM_OBJ(SCM_CLASS_TOP), ds, SCM_CMP_EQ);
     ds = Scm_Append2(ds, SCM_LIST1(SCM_OBJ(SCM_CLASS_OBJECT)));
 
+    ScmObj dp;
     SCM_FOR_EACH(dp, klass->directSupers) {
         if (!Scm_TypeP(SCM_CAR(dp), SCM_CLASS_CLASS))
             Scm_Error("non-class found in direct superclass list: %S",
@@ -932,7 +928,7 @@ ScmObj Scm_ComputeCPL(ScmClass *klass)
 
     SCM_APPEND1(seqh, seqt, ds);
 
-    result = Scm_MonotonicMerge1(seqh);
+    ScmObj result = Scm_MonotonicMerge1(seqh);
     if (SCM_FALSEP(result))
         Scm_Error("discrepancy found in class precedence lists of the superclasses: %S",
                   klass->directSupers);
@@ -985,18 +981,16 @@ static void unlock_class_redefinition(ScmVM *vm)
 /* %start-class-redefinition klass */
 void Scm_StartClassRedefinition(ScmClass *klass)
 {
-    int success = FALSE;
-    ScmVM *vm;
-
     if (SCM_CLASS_CATEGORY(klass) != SCM_CLASS_SCHEME) {
         Scm_Error("cannot redefine class %S, which is not a Scheme-defined class", klass);
     }
-    vm = Scm_VM();
+    ScmVM *vm = Scm_VM();
 
     /* First, acquire the global lock. */
     lock_class_redefinition(vm);
 
     /* Mark this class to be redefined. */
+    int success = FALSE;
     (void)SCM_INTERNAL_MUTEX_LOCK(klass->mutex);
     if (SCM_FALSEP(klass->redefined)) {
         klass->redefined = SCM_OBJ(vm);
@@ -1016,14 +1010,12 @@ void Scm_StartClassRedefinition(ScmClass *klass)
 /* %commit-class-redefinition klass newklass */
 void Scm_CommitClassRedefinition(ScmClass *klass, ScmObj newklass)
 {
-    ScmVM *vm;
-
     if (SCM_CLASS_CATEGORY(klass) != SCM_CLASS_SCHEME) return;
     if (!SCM_FALSEP(newklass)&&!SCM_CLASSP(newklass)) {
         Scm_Error("class or #f required, but got %S", newklass);
     }
 
-    vm = Scm_VM();
+    ScmVM *vm = Scm_VM();
 
     /* Release the lock of the class.
        We execute this regardless of class_redefinition_lock.owner.
@@ -1048,9 +1040,8 @@ void Scm_CommitClassRedefinition(ScmClass *klass, ScmObj newklass)
    returns the class; otherwise returns #f. */
 ScmObj Scm_CheckClassBinding(ScmObj name, ScmModule *module)
 {
-    ScmObj v;
     if (!SCM_SYMBOLP(name)) return SCM_FALSE;
-    v = Scm_GlobalVariableRef(module, SCM_SYMBOL(name), 0);
+    ScmObj v = Scm_GlobalVariableRef(module, SCM_SYMBOL(name), 0);
     return SCM_CLASSP(v) ? v : SCM_FALSE;
 }
 
@@ -1059,8 +1050,8 @@ ScmObj Scm_CheckClassBinding(ScmObj name, ScmModule *module)
    binding, replace it to newklass. */
 void Scm_ReplaceClassBinding(ScmClass *klass, ScmClass *newklass)
 {
-    ScmObj cp;
     if (!SCM_SYMBOLP(klass->name)) return;
+    ScmObj cp;
     SCM_FOR_EACH(cp, klass->modules) {
         if (!SCM_MODULEP(SCM_CAR(cp))) continue;
         Scm_Define(SCM_MODULE(SCM_CAR(cp)),
@@ -1191,13 +1182,11 @@ ScmObj Scm_VMTouchInstance(ScmObj obj)
 */
 ScmObj Scm_AllocateInstance(ScmClass *klass, int coresize)
 {
-    int i;
     ScmObj obj = SCM_NEW2(ScmObj, coresize);
-    ScmObj *slots;
 
     if (SCM_CLASS_CATEGORY(klass) == SCM_CLASS_BASE
         || SCM_CLASS_CATEGORY(klass) == SCM_CLASS_SCHEME) {
-        slots = SCM_NEW_ARRAY(ScmObj, klass->numInstanceSlots);
+        ScmObj *slots = SCM_NEW_ARRAY(ScmObj, klass->numInstanceSlots);
 
         /* NB: actually, for Scheme instances, 'coresize' argument is
            redundant since klass->coreSize has it.  There's a historical
@@ -1207,7 +1196,7 @@ ScmObj Scm_AllocateInstance(ScmClass *klass, int coresize)
             Scm_Printf(SCM_CURERR, "WARNING: allocating instance of class %S: coresize argument %d doesn't match the class definition's (%d)\n", klass, coresize, klass->coreSize);
         }
 
-        for (i=0; i<klass->numInstanceSlots; i++) {
+        for (int i=0; i<klass->numInstanceSlots; i++) {
             slots[i] = SCM_UNBOUND;
         }
         SCM_INSTANCE(obj)->slots = slots;
@@ -1224,10 +1213,6 @@ ScmObj Scm__AllocateAndInitializeInstance(ScmClass *klass,
                                           ScmObj *inits, int numInits,
                                           u_long flags /*reserved*/)
 {
-    int corewords, i;
-    ScmObj obj;
-    ScmObj *slots;
-
     if (SCM_CLASS_CATEGORY(klass) != SCM_CLASS_BASE
         && SCM_CLASS_CATEGORY(klass) != SCM_CLASS_SCHEME) {
         Scm_Error("Scm_AllocateAndInitializeInstance can't be called on "
@@ -1239,11 +1224,11 @@ ScmObj Scm__AllocateAndInitializeInstance(ScmClass *klass,
        and the instances' slot vector will never be replaced.
        We may provide an another mode to allocate the slot vector separately,
        using FLAGS argument. */
-    corewords = (klass->coreSize + sizeof(ScmObj)-1)/sizeof(ScmObj);
-    obj = SCM_NEW2(ScmObj, (corewords+klass->numInstanceSlots)*sizeof(ScmObj));
+    int corewords = (klass->coreSize + sizeof(ScmObj)-1)/sizeof(ScmObj);
+    ScmObj obj = SCM_NEW2(ScmObj, (corewords+klass->numInstanceSlots)*sizeof(ScmObj));
     SCM_SET_CLASS(obj, klass);
-    slots = ((ScmObj*)obj) + corewords;
-    for (i=0; i<klass->numInstanceSlots; i++) {
+    ScmObj *slots = ((ScmObj*)obj) + corewords;
+    for (int i=0; i<klass->numInstanceSlots; i++) {
         if (i < numInits) slots[i] = inits[i];
         else slots[i] = SCM_UNBOUND;
     }
@@ -1254,12 +1239,11 @@ ScmObj Scm__AllocateAndInitializeInstance(ScmClass *klass,
 /* Invoke class redefinition method */
 static ScmObj instance_class_redefinition(ScmObj obj, ScmClass *old)
 {
-    ScmObj newc;
     (void)SCM_INTERNAL_MUTEX_LOCK(old->mutex);
     while (!SCM_ISA(old->redefined, SCM_CLASS_CLASS)) {
         (void)SCM_INTERNAL_COND_WAIT(old->cv, old->mutex);
     }
-    newc = old->redefined;
+    ScmObj newc = old->redefined;
     (void)SCM_INTERNAL_MUTEX_UNLOCK(old->mutex);
     if (SCM_CLASSP(newc)) {
         return Scm_VMApply2(SCM_OBJ(&Scm_GenericChangeClass), obj, newc);
@@ -1453,17 +1437,16 @@ static ScmObj slot_ref_cc(ScmObj result, void **data)
 ScmObj Scm_VMSlotRef(ScmObj obj, ScmObj slot, int boundp)
 {
     ScmClass *klass = Scm_ClassOf(obj);
-    ScmSlotAccessor *sa;
-    void *data[3];
 
     if (!SCM_FALSEP(klass->redefined)) {
+        void *data[3];
         data[0] = obj;
         data[1] = slot;
         data[2] = (void*)(intptr_t)boundp;
         Scm_VMPushCC(slot_ref_cc, data, 3);
         return instance_class_redefinition(obj, klass);
     }
-    sa = Scm_GetSlotAccessor(klass, slot);
+    ScmSlotAccessor *sa = Scm_GetSlotAccessor(klass, slot);
     if (sa == NULL) return SLOT_MISSING3(klass, obj, slot);
     else            return slot_ref_using_accessor(obj, sa, boundp);
 }
@@ -1507,12 +1490,11 @@ static ScmObj slot_ref_using_class(ScmNextMethod *nm, ScmObj *argv,
     ScmClass *klass = SCM_CLASS(argv[0]);
     ScmObj obj = argv[1];
     ScmObj slot = argv[2];
-    ScmSlotAccessor *sa;
 
     if (!SCM_EQ(SCM_OBJ(klass), SCM_OBJ(Scm_ClassOf(obj)))) {
         Scm_Error("slot-ref-using-class: class %S is not the class of object %S", klass, obj);
     }
-    sa = Scm_GetSlotAccessor(klass, slot);
+    ScmSlotAccessor *sa = Scm_GetSlotAccessor(klass, slot);
     if (sa == NULL) return SLOT_MISSING3(klass, obj, slot);
     else            return slot_ref_using_accessor(obj, sa, FALSE);
 }
@@ -1581,16 +1563,15 @@ static ScmObj slot_set_cc(ScmObj result, void **data)
 ScmObj Scm_VMSlotSet(ScmObj obj, ScmObj slot, ScmObj val)
 {
     ScmClass *klass = Scm_ClassOf(obj);
-    ScmSlotAccessor *sa;
-    void *data[3];
     if (!SCM_FALSEP(klass->redefined)) {
+        void *data[3];
         data[0] = obj;
         data[1] = slot;
         data[2] = val;
         Scm_VMPushCC(slot_set_cc, data, 3);
         return instance_class_redefinition(obj, klass);
     }
-    sa = Scm_GetSlotAccessor(klass, slot);
+    ScmSlotAccessor *sa = Scm_GetSlotAccessor(klass, slot);
     if (sa == NULL) return SLOT_MISSING4(klass, obj, slot, val);
     else            return slot_set_using_accessor(obj, sa, val);
 }
@@ -1635,12 +1616,11 @@ static ScmObj slot_set_using_class(ScmNextMethod *nm, ScmObj *argv,
     ScmObj obj = argv[1];
     ScmObj slot = argv[2];
     ScmObj val = argv[3];
-    ScmSlotAccessor *sa;
 
     if (!SCM_EQ(SCM_OBJ(klass), SCM_OBJ(Scm_ClassOf(obj)))) {
         Scm_Error("slot-ref-using-class: class %S is not the class of object %S", klass, obj);
     }
-    sa = Scm_GetSlotAccessor(klass, slot);
+    ScmSlotAccessor *sa = Scm_GetSlotAccessor(klass, slot);
     if (sa == NULL) return SLOT_MISSING4(klass, obj, slot, val);
     else            return slot_set_using_accessor(obj, sa, val);
 }
@@ -1672,9 +1652,9 @@ static ScmObj slot_boundp_cc(ScmObj result, void **data)
 ScmObj Scm_VMSlotBoundP(ScmObj obj, ScmObj slot)
 {
     ScmClass *klass = Scm_ClassOf(obj);
-    void *data[2];
 
     if (!SCM_FALSEP(klass->redefined)) {
+        void *data[2];
         data[0] = obj;
         data[1] = slot;
         Scm_VMPushCC(slot_boundp_cc, data, 2);
@@ -1703,12 +1683,11 @@ static ScmObj slot_bound_using_class_p(ScmNextMethod *nm, ScmObj *argv,
     ScmClass *klass = SCM_CLASS(argv[0]);
     ScmObj obj = argv[1];
     ScmObj slot = argv[2];
-    ScmSlotAccessor *sa;
 
     if (!SCM_EQ(SCM_OBJ(klass), SCM_OBJ(Scm_ClassOf(obj)))) {
         Scm_Error("slot-bound-using-class?: class %S is not the class of object %S", klass, obj);
     }
-    sa = Scm_GetSlotAccessor(klass, slot);
+    ScmSlotAccessor *sa =Scm_GetSlotAccessor(klass, slot);
     if (sa == NULL) return SLOT_MISSING3(klass, obj, slot);
     else            return slot_ref_using_accessor(obj, sa, TRUE);
 }
@@ -1732,15 +1711,14 @@ static SCM_DEFINE_METHOD(slot_bound_using_class_p_rec,
  */
 static ScmObj builtin_initialize(ScmObj *argv, int argc, ScmGeneric *gf)
 {
-    ScmObj instance, initargs, ap;
-    ScmClass *klass;
     SCM_ASSERT(argc == 2);
-    instance = argv[0];
-    initargs = argv[1];
+    ScmObj instance = argv[0];
+    ScmObj initargs = argv[1];
     if (Scm_Length(initargs) % 2) {
         Scm_Error("initializer list is not even: %S", initargs);
     }
-    klass = Scm_ClassOf(instance);
+    ScmClass *klass = Scm_ClassOf(instance);
+    ScmObj ap;
     SCM_FOR_EACH(ap, klass->accessors) {
         ScmSlotAccessor *acc = SCM_SLOT_ACCESSOR(SCM_CDAR(ap));
         if (acc->setter && SCM_KEYWORDP(acc->initKeyword)) {
@@ -1924,10 +1902,10 @@ static ScmObj object_initialize_cc(ScmObj result, void **data);
 
 static ScmObj object_initialize1(ScmObj obj, ScmObj accs, ScmObj initargs)
 {
-    void *next[3];
     if (SCM_NULLP(accs)) return obj;
     SCM_ASSERT(SCM_PAIRP(SCM_CAR(accs))
                && SCM_SLOT_ACCESSOR_P(SCM_CDAR(accs)));
+    void *next[3];
     next[0] = obj;
     next[1] = SCM_CDR(accs);
     next[2] = initargs;
@@ -2193,15 +2171,14 @@ static inline int method_more_specific(ScmMethod *x, ScmMethod *y,
 {
     ScmClass **xs = x->specializers;
     ScmClass **ys = y->specializers;
-    ScmClass *ac, **acpl;
-    int i, xreq = SCM_PROCEDURE_REQUIRED(x), yreq = SCM_PROCEDURE_REQUIRED(y);
+    int xreq = SCM_PROCEDURE_REQUIRED(x), yreq = SCM_PROCEDURE_REQUIRED(y);
 
-    for (i=0; i<xreq && i<yreq; i++) {
+    for (int i=0; i<xreq && i<yreq; i++) {
         if (xs[i] != ys[i]) {
-            ac = targv[i];
+            ScmClass *ac = targv[i];
             if (xs[i] == ac) return TRUE;
             if (ys[i] == ac) return FALSE;
-            for (acpl = ac->cpa; *acpl; acpl++) {
+            for (ScmClass **acpl = ac->cpa; *acpl; acpl++) {
                 if (xs[i] == *acpl) return TRUE;
                 if (ys[i] == *acpl) return FALSE;
             }
@@ -2224,14 +2201,15 @@ static ScmObj method_more_specific_p(ScmNextMethod *nm, ScmObj *argv,
 {
     ScmMethod *x = SCM_METHOD(argv[0]);
     ScmMethod *y = SCM_METHOD(argv[1]);
-    ScmObj targlist = argv[2], tp;
+    ScmObj targlist = argv[2];
     ScmClass *targv_s[PREALLOC_SIZE], **targv = targv_s;
-    int targc = Scm_Length(targlist), i;
+    int targc = Scm_Length(targlist);
     if (targc < 0) Scm_Error("bad targ list: %S", targlist);
     if (targc > PREALLOC_SIZE) {
         targv = SCM_NEW_ARRAY(ScmClass*, targc);
     }
-    i = 0;
+    int i = 0;
+    ScmObj tp;
     SCM_FOR_EACH(tp, targlist) {
         if (!Scm_TypeP(SCM_CAR(tp), SCM_CLASS_CLASS))
             Scm_Error("bad class object in type list: %S", SCM_CAR(tp));
@@ -2265,23 +2243,23 @@ ScmObj Scm_SortMethods(ScmObj methods, ScmObj *argv, int argc)
 {
     ScmObj array_s[PREALLOC_SIZE], *array = array_s;
     ScmClass *targv_s[PREALLOC_SIZE], **targv = targv_s;
-    int cnt = 0, len = Scm_Length(methods), step, i, j;
-    ScmObj mp;
+    int cnt = 0, len = Scm_Length(methods);
 
     if (len >= PREALLOC_SIZE)  array = SCM_NEW_ARRAY(ScmObj, len);
     if (argc >= PREALLOC_SIZE) targv = SCM_NEW_ARRAY(ScmClass*, argc);
 
+    ScmObj mp;
     SCM_FOR_EACH(mp, methods) {
         if (!Scm_TypeP(SCM_CAR(mp), SCM_CLASS_METHOD))
             Scm_Error("bad method in applicable method list: %S", SCM_CAR(mp));
         array[cnt] = SCM_CAR(mp);
         cnt++;
     }
-    for (i=0; i<argc; i++) targv[i] = Scm_ClassOf(argv[i]);
+    for (int i=0; i<argc; i++) targv[i] = Scm_ClassOf(argv[i]);
 
-    for (step = len/2; step > 0; step /= 2) {
-        for (i=step; i<len; i++) {
-            for (j=i-step; j >= 0; j -= step) {
+    for (int step = len/2; step > 0; step /= 2) {
+        for (int i=step; i<len; i++) {
+            for (int j=i-step; j >= 0; j -= step) {
                 if (method_more_specific(SCM_METHOD(array[j]),
                                          SCM_METHOD(array[j+step]),
                                          targv, argc)) {
@@ -2327,25 +2305,23 @@ static ScmObj method_initialize(ScmNextMethod *nm, ScmObj *argv, int argc,
                                 void *data)
 {
     ScmMethod *m = SCM_METHOD(argv[0]);
-    ScmGeneric *g;
     ScmObj initargs = argv[1];
     ScmObj llist = Scm_GetKeyword(key_lambda_list, initargs, SCM_FALSE);
     ScmObj generic = Scm_GetKeyword(key_generic, initargs, SCM_FALSE);
     ScmObj specs = Scm_GetKeyword(key_specializers, initargs, SCM_FALSE);
     ScmObj body = Scm_GetKeyword(key_body, initargs, SCM_FALSE);
-    ScmClass **specarray;
     ScmObj lp, h, t;
-    int speclen = 0, req = 0, opt = 0, i;
+    int speclen = 0, req = 0, opt = 0;
 
     if (!Scm_TypeP(generic, SCM_CLASS_GENERIC))
         Scm_Error("generic function required for :generic argument: %S",
                   generic);
-    g = SCM_GENERIC(generic);
+    ScmGeneric *g = SCM_GENERIC(generic);
     if (!SCM_CLOSUREP(body))
         Scm_Error("closure required for :body argument: %S", body);
     if ((speclen = Scm_Length(specs)) < 0)
         Scm_Error("invalid specializers list: %S", specs);
-    specarray = class_list_to_array(specs, speclen);
+    ScmClass **specarray = class_list_to_array(specs, speclen);
 
     /* find out # of args from lambda list */
     SCM_FOR_EACH(lp, llist) req++;
@@ -2372,14 +2348,14 @@ static ScmObj method_initialize(ScmNextMethod *nm, ScmObj *argv, int argc,
        some existing named closure is given as BODY; as far as the standard
        macro is used, though, altering it should be OK. */
     h = t = SCM_NIL;
-    for (i=0; i<speclen; i++) {
+    for (int i=0; i<speclen; i++) {
         SCM_APPEND1(h, t, specarray[i]->name);
     }
     SCM_COMPILED_CODE(m->data)->name = Scm_Cons(SCM_PROCEDURE_INFO(g), h);
 
     /* Register this method to all classes in the specializers.
        This has to come after the part that may throw an error. */
-    for (i=0; i<speclen; i++) {
+    for (int i=0; i<speclen; i++) {
         Scm_AddDirectMethod(specarray[i], m);
     }
     return SCM_OBJ(m);
@@ -2458,9 +2434,9 @@ static void method_specializers_set(ScmMethod *m, ScmObj val)
  */
 ScmObj Scm_UpdateDirectMethod(ScmMethod *m, ScmClass *old, ScmClass *newc)
 {
-    int i, rec = SCM_PROCEDURE_REQUIRED(m);
+    int rec = SCM_PROCEDURE_REQUIRED(m);
     ScmClass **sp = m->specializers;
-    for (i=0; i<rec; i++) {
+    for (int i=0; i<rec; i++) {
         if (sp[i] == old) sp[i] = newc;
     }
     if (SCM_FALSEP(Scm_Memq(SCM_OBJ(m), newc->directMethods))) {
@@ -2492,9 +2468,6 @@ static SCM_DEFINE_METHOD(generic_updatedirectmethod_rec,
  */
 ScmObj Scm_AddMethod(ScmGeneric *gf, ScmMethod *method)
 {
-    ScmObj mp, pair;
-    int replaced = FALSE, reqs = gf->maxReqargs;
-
     if (method->generic && method->generic != gf)
         Scm_Error("method %S already added to a generic function %S",
                   method, method->generic);
@@ -2502,15 +2475,18 @@ ScmObj Scm_AddMethod(ScmGeneric *gf, ScmMethod *method)
         Scm_Error("method %S already appears in a method list of generic %S"
                   " something wrong in MOP implementation?",
                   method, gf);
+
+    int replaced = FALSE, reqs = gf->maxReqargs;
     method->generic = gf;
     /* pre-allocate cons pair to avoid triggering GC in the critical region */
-    pair = Scm_Cons(SCM_OBJ(method), gf->methods);
+    ScmObj pair = Scm_Cons(SCM_OBJ(method), gf->methods);
     if (SCM_PROCEDURE_REQUIRED(method) > reqs) {
         reqs = SCM_PROCEDURE_REQUIRED(method);
     }
 
     /* Check if a method with the same signature exists */
     (void)SCM_INTERNAL_MUTEX_LOCK(gf->lock);
+    ScmObj mp;
     SCM_FOR_EACH(mp, gf->methods) {
         ScmMethod *mm = SCM_METHOD(SCM_CAR(mp));
         if (SCM_PROCEDURE_REQUIRED(method) == SCM_PROCEDURE_REQUIRED(mm)
@@ -2556,12 +2532,10 @@ static SCM_DEFINE_METHOD(generic_addmethod_rec,
  */
 ScmObj Scm_DeleteMethod(ScmGeneric *gf, ScmMethod *method)
 {
-    ScmObj mp;
-
     if (!method->generic || method->generic != gf) return SCM_UNDEFINED;
 
     (void)SCM_INTERNAL_MUTEX_LOCK(gf->lock);
-    mp = gf->methods;
+    ScmObj mp = gf->methods;
     if (SCM_PAIRP(mp)) {
         if (SCM_EQ(SCM_CAR(mp), SCM_OBJ(method))) {
             gf->methods = SCM_CDR(mp);
@@ -2793,8 +2767,7 @@ static ScmForeignPointer *make_foreign_int(ScmClass *klass, void *ptr,
                                            ScmObj attr,
                                            struct foreign_data_rec *data)
 {
-    ScmForeignPointer *obj;
-    obj = SCM_NEW(ScmForeignPointer);
+    ScmForeignPointer *obj = SCM_NEW(ScmForeignPointer);
     SCM_SET_CLASS(obj, klass);
     obj->ptr = ptr;
     obj->attributes = attr;
@@ -2828,10 +2801,9 @@ ScmObj Scm_MakeForeignPointerWithAttr(ScmClass *klass, void *ptr, ScmObj attr)
     }
 
     if (data->identity_map) {
-        ScmDictEntry *e;
         (void)SCM_INTERNAL_MUTEX_LOCK(data->identity_mutex);
-        e = Scm_HashCoreSearch(data->identity_map,
-                               (intptr_t)ptr, SCM_DICT_CREATE);
+        ScmDictEntry *e = Scm_HashCoreSearch(data->identity_map,
+                                             (intptr_t)ptr, SCM_DICT_CREATE);
         if (e->value) {
             if (Scm_WeakBoxEmptyP((ScmWeakBox*)e->value)) {
                 obj = make_foreign_int(klass, ptr, attr, data);
@@ -2872,7 +2844,6 @@ ScmObj Scm_ForeignPointerAttrGet(ScmForeignPointer *fp,
 ScmObj Scm_ForeignPointerAttrSet(ScmForeignPointer *fp,
                                  ScmObj key, ScmObj value)
 {
-    ScmObj p, r = SCM_UNDEFINED;
     struct foreign_data_rec *data
         = (struct foreign_data_rec*)(SCM_CLASS_OF(fp)->data);
 
@@ -2882,7 +2853,8 @@ ScmObj Scm_ForeignPointerAttrSet(ScmForeignPointer *fp,
        keep the size of each foreign pointer instance small.  We'll reconsider
        the design if the performance ever becomes a problem.  */
     (void)SCM_INTERNAL_MUTEX_LOCK(data->attr_mutex);
-    p = Scm_Assq(key, fp->attributes);
+    ScmObj r = SCM_UNDEFINED;
+    ScmObj p = Scm_Assq(key, fp->attributes);
     if (SCM_PAIRP(p)) {
         SCM_SET_CDR(p, value);
         r = value;
@@ -2971,11 +2943,10 @@ static ScmClassStaticSlotSpec slot_accessor_slots[] = {
  */
 static void initialize_builtin_cpl(ScmClass *klass, ScmObj supers)
 {
-    ScmClass **p;
     ScmObj h = SCM_NIL, t = SCM_NIL;
 
     SCM_APPEND1(h, t, SCM_OBJ(klass));
-    for (p = klass->cpa; *p; p++) SCM_APPEND1(h, t, SCM_OBJ(*p));
+    for (ScmClass **p = klass->cpa; *p; p++) SCM_APPEND1(h, t, SCM_OBJ(*p));
     klass->cpl = h;
     if (SCM_PAIRP(supers)) {
         /* Check validity of the given supers. */
@@ -3015,9 +2986,7 @@ static void init_class(ScmClass *klass,
                        ScmClassStaticSlotSpec *specs,
                        int flags)  /* reserved */
 {
-    ScmObj slots = SCM_NIL, t = SCM_NIL;
-    ScmObj acc = SCM_NIL, sp;
-    ScmClass **super;
+    ScmObj slots = SCM_NIL, t = SCM_NIL, acc = SCM_NIL;
 
     /* initialize CPL and directSupers */
     if (klass->cpa == NULL) {
@@ -3026,7 +2995,8 @@ static void init_class(ScmClass *klass,
 #if defined(GAUCHE_BROKEN_LINKER_WORKAROUND)
     /* Patch up CPA extra indirection */
     {
-        ScmClass **c, **d, **cpa; int depth = 0;
+        ScmClass **c, **d, **cpa;
+        int depth = 0;
         for (c = klass->cpa; *c; c++) depth++;
         cpa = SCM_NEW2(ScmClass**, (depth+1) * sizeof(ScmClass*));
         for (c = klass->cpa, d = cpa; *c; c++, d++) {
@@ -3061,7 +3031,8 @@ static void init_class(ScmClass *klass,
     klass->directSlots = slots;
 
     /* compute other slots inherited from supers */
-    for (super = klass->cpa; *super; super++) {
+    for (ScmClass **super = klass->cpa; *super; super++) {
+        ScmObj sp;
         SCM_FOR_EACH(sp, (*super)->directSlots) {
             ScmObj slot = SCM_CAR(sp), snam, p, a;
             SCM_ASSERT(SCM_PAIRP(slot));
@@ -3127,11 +3098,8 @@ void Scm_InitStaticClassWithMeta(ScmClass *klass,
     if (meta) {
         SCM_SET_CLASS(klass, meta);
     } else {
-        int nlen;
-        char *metaname;
-
-        nlen = (int)strlen(name);
-        metaname = SCM_NEW_ATOMIC2(char *, nlen + 6);
+        int nlen = (int)strlen(name);
+        char *metaname = SCM_NEW_ATOMIC2(char *, nlen + 6);
 
         if (name[nlen - 1] == '>') {
             strncpy(metaname, name, nlen-1);

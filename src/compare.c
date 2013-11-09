@@ -41,8 +41,6 @@
 
 int Scm_Compare(ScmObj x, ScmObj y)
 {
-    ScmClass *cx, *cy;
-
     /* Shortcut for typical case */
     if (SCM_NUMBERP(x) && SCM_NUMBERP(y))
         return Scm_NumCmp(x, y);
@@ -52,8 +50,8 @@ int Scm_Compare(ScmObj x, ScmObj y)
         return SCM_CHAR_VALUE(x) == SCM_CHAR_VALUE(y)? 0 :
             SCM_CHAR_VALUE(x) < SCM_CHAR_VALUE(y)? -1 : 1;
 
-    cx = Scm_ClassOf(x);
-    cy = Scm_ClassOf(y);
+    ScmClass *cx = Scm_ClassOf(x);
+    ScmClass *cy = Scm_ClassOf(y);
     if (Scm_SubtypeP(cx, cy)) {
         if (cy->compare) return cy->compare(x, y, FALSE);
     } else {
@@ -120,11 +118,10 @@ static inline void shift_up(ScmObj *elts, int root, int nelts,
 static void sort_h(ScmObj *elts, int nelts,
                    int (*cmp)(ScmObj, ScmObj, ScmObj), ScmObj data)
 {
-    int l, r;
-    for (l=nelts/2-1; l>=0; l--) {
+    for (int l=nelts/2-1; l>=0; l--) {
         shift_up(elts, l, nelts, cmp, data);
     }
-    for (r=nelts-1; r>=1; r--) {
+    for (int r=nelts-1; r>=1; r--) {
         ScmObj tmp = elts[r];
         elts[r] = elts[0];
         elts[0] = tmp;
@@ -142,12 +139,12 @@ static void sort_q(ScmObj *elts, int lo, int hi, int depth, int limit,
             break;
         } else {
             int l = lo, r = hi;
-            ScmObj pivot = elts[lo], tmp;
+            ScmObj pivot = elts[lo];
             while (l <= r) {
                 while (l <= r && cmp(elts[l], pivot, data) < 0) l++;
                 while (l <= r && cmp(pivot, elts[r], data) < 0) r--;
                 if (l > r) break;
-                tmp = elts[l]; elts[l] = elts[r]; elts[r] = tmp;
+                ScmObj tmp = elts[l]; elts[l] = elts[r]; elts[r] = tmp;
                 l++;
                 r--;
             }
@@ -195,13 +192,13 @@ void Scm_SortArray(ScmObj *elts, int nelts, ScmObj cmpfn)
 
 static ScmObj sort_list_int(ScmObj objs, ScmObj fn, int destructive)
 {
-    ScmObj cp;
-    ScmObj starray[STATIC_SIZE], *array;
-    int len = STATIC_SIZE, i;
-    array = Scm_ListToArray(objs, &len, starray, TRUE);
+    ScmObj starray[STATIC_SIZE];
+    int len = STATIC_SIZE;
+    ScmObj *array = Scm_ListToArray(objs, &len, starray, TRUE);
     Scm_SortArray(array, len, fn);
     if (destructive) {
-        for (i=0, cp=objs; i<len; i++, cp = SCM_CDR(cp)) {
+        ScmObj cp = objs;
+        for (int i=0; i<len; i++, cp = SCM_CDR(cp)) {
             SCM_SET_CAR(cp, array[i]);
         }
         return objs;

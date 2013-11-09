@@ -219,31 +219,28 @@ ScmObj Scm_ReadDirectory(ScmString *pathname)
     closedir(dirp);
     return head;
 #else  /* GAUCHE_WINDOWS */
-    HANDLE dirp;
     WIN32_FIND_DATA fdata;
     DWORD winerrno;
-    const char *path, *tpath;
-    int pathlen;
     ScmObj pattern;
-    ScmChar lastchar;
 
-    if ((pathlen = SCM_STRING_LENGTH(pathname)) == 0) {
+    int pathlen = SCM_STRING_LENGTH(pathname);
+    if (pathlen == 0) {
         Scm_Error("Couldn't open directory \"\"");
     }
-    lastchar = Scm_StringRef(pathname, pathlen-1, FALSE);
+    ScmChar lastchar = Scm_StringRef(pathname, pathlen-1, FALSE);
     if (lastchar == SCM_CHAR('/') || lastchar == SCM_CHAR('\\')) {
         pattern = Scm_StringAppendC(pathname, "*", 1, 1);
     } else {
         pattern = Scm_StringAppendC(pathname, "\\*", 2, 2);
     }
-    path = Scm_GetStringConst(SCM_STRING(pattern));
+    const char *path = Scm_GetStringConst(SCM_STRING(pattern));
 
-    dirp = FindFirstFile(SCM_MBS2WCS(path), &fdata);
+    HANDLE dirp = FindFirstFile(SCM_MBS2WCS(path), &fdata);
     if (dirp == INVALID_HANDLE_VALUE) {
         if ((winerrno = GetLastError()) != ERROR_FILE_NOT_FOUND) goto err;
         return head;
     }
-    tpath = SCM_WCS2MBS(fdata.cFileName);
+    const char *tpath = SCM_WCS2MBS(fdata.cFileName);
     SCM_APPEND1(head, tail, SCM_MAKE_STR_COPYING(tpath));
     while (FindNextFile(dirp, &fdata) != 0) {
         tpath = SCM_WCS2MBS(fdata.cFileName);
@@ -327,10 +324,10 @@ static const char *skip_separators(const char *p, const char *end)
 static const char *truncate_trailing_separators(const char *path,
                                                 const char *end)
 {
-    const char *p = get_first_separator(path, end), *q;
+    const char *p = get_first_separator(path, end);
     if (p == NULL) return end;
     for (;;) {
-        q = skip_separators(p, end);
+        const char *q = skip_separators(p, end);
         if (q == end) return p;
         p = get_first_separator(q, end);
         if (p == NULL) return end;
@@ -344,7 +341,6 @@ static void put_user_home(ScmDString *dst,
                           const char *end)
 {
     struct passwd *pwd;
-    int dirlen;
 
     if (name == end) {
         pwd = getpwuid(geteuid());
@@ -363,7 +359,7 @@ static void put_user_home(ScmDString *dst,
             Scm_Error("couldn't get home directory of user \"%s\".\n", uname);
         }
     }
-    dirlen = (int)strlen(pwd->pw_dir);
+    int dirlen = (int)strlen(pwd->pw_dir);
     Scm_DStringPutz(dst, pwd->pw_dir, dirlen);
     if (pwd->pw_dir[dirlen-1] != '/') Scm_DStringPutc(dst, '/');
 }
@@ -390,14 +386,13 @@ static const char *expand_tilde(ScmDString *dst,
 /* Put current dir to DST */
 static void put_current_dir(ScmDString *dst)
 {
-    int dirlen;
 #define GETCWD_PATH_MAX 1024  /* TODO: must be configured */
     char p[GETCWD_PATH_MAX];
     if (getcwd(p, GETCWD_PATH_MAX-1) == NULL) {
         Scm_SigCheck(Scm_VM());
         Scm_SysError("couldn't get current directory.");
     }
-    dirlen = (int)strlen(p);
+    int dirlen = (int)strlen(p);
     Scm_DStringPutz(dst, p, dirlen);
     if (!SEPARATOR_P(p[dirlen-1])) {
         Scm_DStringPutc(dst, SEPARATOR);
@@ -507,10 +502,9 @@ ScmObj Scm_NormalizePathname(ScmString *pathname, int flags)
         int cnt = 0;            /* # of components except ".."'s */
         int final = FALSE;
         int wentup = FALSE;     /* true if the last loop went up a dir */
-        const char *p;
 
         for (;;) {
-            p = get_first_separator(srcp, endp);
+            const char *p = get_first_separator(srcp, endp);
             if (p == NULL) {
                 final = TRUE;
                 p = endp;
@@ -561,15 +555,14 @@ ScmObj Scm_TmpDir(void)
 #if defined(GAUCHE_WINDOWS)
 # define TMP_PATH_MAX 1024
     TCHAR buf[TMP_PATH_MAX+1], *tbuf = buf;
-    DWORD r, r2;
     /* According to the windows document, this API checks environment
        variables TMP, TEMP, and USERPROFILE.  Fallback is the Windows
        directory. */
-    r = GetTempPath(TMP_PATH_MAX, buf);
+    DWORD r = GetTempPath(TMP_PATH_MAX, buf);
     if (r == 0) Scm_SysError("GetTempPath failed");
     if (r > TMP_PATH_MAX) {
         tbuf = SCM_NEW_ATOMIC_ARRAY(TCHAR, r+1);
-        r2 = GetTempPath(r, tbuf);
+        DWORD r2 = GetTempPath(r, tbuf);
         if (r2 != r) Scm_SysError("GetTempPath failed");
     }
     return SCM_MAKE_STR_COPYING(SCM_WCS2MBS(tbuf));
@@ -591,7 +584,6 @@ ScmObj Scm_BaseName(ScmString *filename)
 {
     u_int size;
     const char *path = Scm_GetStringContent(filename, &size, NULL, NULL);
-    const char *endp, *last;
 
 #if defined(GAUCHE_WINDOWS)
     /* Ignore drive letter, for it can never be a part of basename. */
@@ -602,8 +594,8 @@ ScmObj Scm_BaseName(ScmString *filename)
 #endif /* GAUCHE_WINDOWS) */
 
     if (size == 0) return SCM_MAKE_STR("");
-    endp = truncate_trailing_separators(path, path+size);
-    last = get_last_separator(path, endp);
+    const char *endp = truncate_trailing_separators(path, path+size);
+    const char *last = get_last_separator(path, endp);
     if (last == NULL) {
         return Scm_MakeString(path, (int)(endp-path), -1, 0);
     } else {
@@ -615,7 +607,6 @@ ScmObj Scm_DirName(ScmString *filename)
 {
     u_int size;
     const char *path = Scm_GetStringContent(filename, &size, NULL, NULL);
-    const char *endp, *last;
 #if defined(GAUCHE_WINDOWS)
     int drive_letter = -1;
     if (size >= 2 && path[1] == ':' && isalpha(path[0])) {
@@ -626,9 +617,9 @@ ScmObj Scm_DirName(ScmString *filename)
 #endif /* GAUCHE_WINDOWS */
 
     if (size == 0) { path = NULL; goto finale; }
-    endp = truncate_trailing_separators(path, path+size);
+    const char *endp = truncate_trailing_separators(path, path+size);
     if (endp == path) { path = ROOTDIR, size = 1; goto finale; }
-    last = get_last_separator(path, endp);
+    const char *last = get_last_separator(path, endp);
     if (last == NULL) { path = ".", size = 1; goto finale; }
 
     /* we have "something/", and 'last' points to the last separator. */
@@ -703,9 +694,7 @@ ScmObj Scm_SysMkstemp(ScmString *templat)
 {
 #define MKSTEMP_PATH_MAX 1025  /* Geez, remove me */
     char name[MKSTEMP_PATH_MAX];
-    ScmObj sname;
     u_int siz;
-    int fd;
     const char *t = Scm_GetStringContent(templat, &siz, NULL, NULL);
     if (siz >= MKSTEMP_PATH_MAX-6) {
         Scm_Error("pathname too long: %S", templat);
@@ -713,8 +702,8 @@ ScmObj Scm_SysMkstemp(ScmString *templat)
     memcpy(name, t, siz);
     memcpy(name + siz, "XXXXXX", 6);
     name[siz+6] = '\0';
-    fd = Scm_Mkstemp(name);
-    sname = SCM_MAKE_STR_COPYING(name);
+    int fd = Scm_Mkstemp(name);
+    ScmObj sname = SCM_MAKE_STR_COPYING(name);
     SCM_RETURN(Scm_Values2(Scm_MakePortWithFd(sname, SCM_PORT_OUTPUT, fd,
                                               SCM_PORT_BUFFER_FULL, TRUE),
                            sname));
@@ -949,10 +938,9 @@ ScmObj Scm_Int64SecondsToTime(ScmInt64 sec)
 
 ScmObj Scm_RealSecondsToTime(double sec)
 {
-    double s, frac;
-    ScmInt64 secs;
-    frac = modf(sec, &s);
-    secs = Scm_DoubleToInt64(s);
+    double s;
+    double frac = modf(sec, &s);
+    ScmInt64 secs = Scm_DoubleToInt64(s);
     return Scm_MakeTime64(SCM_SYM_TIME_UTC, secs, (long)(frac * 1.0e9));
 }
 
@@ -989,11 +977,11 @@ static ScmObj time_nsec_get(ScmTime *t)
 
 static void time_nsec_set(ScmTime *t, ScmObj val)
 {
-    long l;
     if (!SCM_REALP(val)) {
         Scm_Error("real number required, but got %S", val);
     }
-    if ((l = Scm_GetInteger(val)) >= 1000000000) {
+    long l = Scm_GetInteger(val);
+    if (l >= 1000000000) {
         Scm_Error("nanoseconds out of range: %ld", l);
     }
     t->nsec = l;
@@ -1232,8 +1220,7 @@ static ScmObj make_group(struct group *g)
 
 ScmObj Scm_GetGroupById(gid_t gid)
 {
-    struct group *gdata;
-    gdata = getgrgid(gid);
+    struct group *gdata = getgrgid(gid);
     if (gdata == NULL) {
         Scm_SigCheck(Scm_VM());
         return SCM_FALSE;
@@ -1244,8 +1231,7 @@ ScmObj Scm_GetGroupById(gid_t gid)
 
 ScmObj Scm_GetGroupByName(ScmString *name)
 {
-    struct group *gdata;
-    gdata = getgrnam(Scm_GetStringConst(name));
+    struct group *gdata = getgrnam(Scm_GetStringConst(name));
     if (gdata == NULL) {
         Scm_SigCheck(Scm_VM());
         return SCM_FALSE;
@@ -1314,8 +1300,7 @@ static ScmObj make_passwd(struct passwd *pw)
 
 ScmObj Scm_GetPasswdById(uid_t uid)
 {
-    struct passwd *pdata;
-    pdata = getpwuid(uid);
+    struct passwd *pdata = getpwuid(uid);
     if (pdata == NULL) {
         Scm_SigCheck(Scm_VM());
         return SCM_FALSE;
@@ -1326,8 +1311,7 @@ ScmObj Scm_GetPasswdById(uid_t uid)
 
 ScmObj Scm_GetPasswdByName(ScmString *name)
 {
-    struct passwd *pdata;
-    pdata = getpwnam(Scm_GetStringConst(name));
+    struct passwd *pdata = getpwnam(Scm_GetStringConst(name));
     if (pdata == NULL) {
         Scm_SigCheck(Scm_VM());
         return SCM_FALSE;
@@ -1396,9 +1380,8 @@ static struct process_mgr_rec {
 
 ScmObj win_process_register(ScmObj process)
 {
-    ScmObj pair;
     SCM_ASSERT(Scm_WinProcessP(process));
-    pair = Scm_Cons(process, SCM_NIL);
+    ScmObj pair = Scm_Cons(process, SCM_NIL);
     SCM_INTERNAL_MUTEX_LOCK(process_mgr.mutex);
     SCM_SET_CDR(pair, process_mgr.children);
     process_mgr.children = pair;
@@ -1417,26 +1400,24 @@ ScmObj win_process_unregister(ScmObj process)
 
 int win_process_active_child_p(ScmObj process)
 {
-    ScmObj r;
     SCM_INTERNAL_MUTEX_LOCK(process_mgr.mutex);
-    r = Scm_Member(process, process_mgr.children, SCM_CMP_EQ);
+    ScmObj r = Scm_Member(process, process_mgr.children, SCM_CMP_EQ);
     SCM_INTERNAL_MUTEX_UNLOCK(process_mgr.mutex);
     return !SCM_FALSEP(r);
 }
 
 ScmObj *win_process_get_array(int *size /*out*/)
 {
-    ScmObj *r;
     SCM_INTERNAL_MUTEX_LOCK(process_mgr.mutex);
-    r = Scm_ListToArray(process_mgr.children, size, NULL, TRUE);
+    ScmObj *r = Scm_ListToArray(process_mgr.children, size, NULL, TRUE);
     SCM_INTERNAL_MUTEX_UNLOCK(process_mgr.mutex);
     return r;
 }
 
 void win_process_cleanup(void *data)
 {
-    ScmObj cp;
     SCM_INTERNAL_MUTEX_LOCK(process_mgr.mutex);
+    ScmObj cp;
     SCM_FOR_EACH(cp, process_mgr.children) {
         CloseHandle(Scm_WinHandle(SCM_CAR(cp), SCM_FALSE));
     }
@@ -1458,15 +1439,15 @@ void win_process_cleanup(void *data)
 #if defined(GAUCHE_WINDOWS)
 char *win_create_command_line(ScmObj args)
 {
-    ScmObj ap, out;
     ScmObj ostr = Scm_MakeOutputStringPort(TRUE);
     static ScmObj proc = SCM_UNDEFINED;
     SCM_BIND_PROC(proc, "%sys-escape-windows-command-line", Scm_GaucheModule());
+    ScmObj ap;
     SCM_FOR_EACH(ap, args) {
       ScmObj escaped = Scm_ApplyRec1(proc, SCM_CAR(ap));
       Scm_Printf(SCM_PORT(ostr), "%A ", escaped);
     }
-    out = Scm_GetOutputStringUnsafe(SCM_PORT(ostr), 0);
+    ScmObj out = Scm_GetOutputStringUnsafe(SCM_PORT(ostr), 0);
     return Scm_GetString(SCM_STRING(out));
 }
 #endif /*GAUCHE_WINDOWS*/
@@ -1496,23 +1477,20 @@ ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap,
                    ScmSysSigset *mask, ScmString *dir, int flags)
 {
     int argc = Scm_Length(args);
-    char **argv;
-    const char *program, *cdir = NULL;
     pid_t pid = 0;
     int forkp = flags & SCM_EXEC_WITH_FORK;
     int detachp = flags & SCM_EXEC_DETACHED;
-    int *fds;
 
     if (argc < 1) {
         Scm_Error("argument list must have at least one element: %S", args);
     }
 
     /* make a C array of C strings */
-    argv = Scm_ListToCStringArray(args, TRUE, NULL);
-    program = Scm_GetStringConst(file);
+    char **argv = Scm_ListToCStringArray(args, TRUE, NULL);
+    const char *program = Scm_GetStringConst(file);
 
     /* setting up iomap table */
-    fds = Scm_SysPrepareFdMap(iomap);
+    int *fds = Scm_SysPrepareFdMap(iomap);
 
     /*
      * From now on, we have totally different code for Unix and Windows.
@@ -1521,6 +1499,7 @@ ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap,
     /*
      * Unix path
      */
+    const char *cdir = NULL;
     if (dir != NULL) cdir = Scm_GetStringConst(dir);
 
     /* When requested, call fork() here. */
@@ -1587,18 +1566,16 @@ ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap,
     if (forkp) {
         TCHAR  program_path[MAX_PATH+1], *filepart;
         HANDLE *hs = win_prepare_handles(fds);
-        BOOL r, pathlen;
-        STARTUPINFO si;
         PROCESS_INFORMATION pi;
-        LPCTSTR curdir = NULL;
         DWORD creation_flags = 0;
 
-        pathlen = SearchPath(NULL, SCM_MBS2WCS(program),
-                             _T(".exe"), MAX_PATH, program_path,
-                             &filepart);
+        BOOL pathlen = SearchPath(NULL, SCM_MBS2WCS(program),
+                                  _T(".exe"), MAX_PATH, program_path,
+                                  &filepart);
         if (pathlen == 0) Scm_SysError("cannot find program '%s'", program);
         program_path[pathlen] = 0;
 
+        STARTUPINFO si;
         GetStartupInfo(&si);
         if (hs != NULL) {
             si.dwFlags |= STARTF_USESTDHANDLES;
@@ -1607,22 +1584,23 @@ ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap,
             si.hStdError  = hs[2];
         }
 
+        LPCTSTR curdir = NULL;
         if (cdir != NULL) curdir = SCM_MBS2WCS(cdir);
 
         if (detachp) {
             creation_flags |= CREATE_NEW_PROCESS_GROUP;
         }
 
-        r = CreateProcess(program_path,
-                          SCM_MBS2WCS(win_create_command_line(args)),
-                          NULL, /* process attr */
-                          NULL, /* thread addr */
-                          TRUE, /* inherit handles */
-                          creation_flags, /* creation flags */
-                          NULL, /* nenvironment */
-                          curdir, /* current dir */
-                          &si,  /* startup info */
-                          &pi); /* process info */
+        BOOL r = CreateProcess(program_path,
+                               SCM_MBS2WCS(win_create_command_line(args)),
+                               NULL, /* process attr */
+                               NULL, /* thread addr */
+                               TRUE, /* inherit handles */
+                               creation_flags, /* creation flags */
+                               NULL, /* nenvironment */
+                               curdir, /* current dir */
+                               &si,  /* startup info */
+                               &pi); /* process info */
         if (r == 0) Scm_SysError("spawning %s failed", program);
         CloseHandle(pi.hThread); /* we don't need it. */
         return win_process_register(Scm_MakeWinProcess(pi.hProcess));
@@ -1666,9 +1644,7 @@ int *Scm_SysPrepareFdMap(ScmObj iomap)
 {
     int *fds = NULL;
     if (SCM_PAIRP(iomap)) {
-        ScmObj iop;
-        int iollen = Scm_Length(iomap), i = 0;
-        int *tofd, *fromfd;
+        int iollen = Scm_Length(iomap);
 
         /* check argument vailidity before duping file descriptors, so that
            we can still use Scm_Error */
@@ -1677,8 +1653,11 @@ int *Scm_SysPrepareFdMap(ScmObj iomap)
         }
         fds    = SCM_NEW_ATOMIC2(int *, 2 * iollen * sizeof(int) + 1);
         fds[0] = iollen;
-        tofd   = fds + 1;
-        fromfd = fds + 1 + iollen;
+        int *tofd   = fds + 1;
+        int *fromfd = fds + 1 + iollen;
+
+        ScmObj iop;
+        int i = 0;
         SCM_FOR_EACH(iop, iomap) {
             ScmObj port, elt = SCM_CAR(iop);
             if (!SCM_PAIRP(elt) || !SCM_INTP(SCM_CAR(elt))
@@ -1713,13 +1692,12 @@ int *Scm_SysPrepareFdMap(ScmObj iomap)
 
 void Scm_SysSwapFds(int *fds)
 {
-    int *tofd, *fromfd, nfds, maxfd, i, j, fd;
-
     if (fds == NULL) return;
 
-    nfds   = fds[0];
-    tofd   = fds + 1;
-    fromfd = fds + 1 + nfds;
+    int maxfd;
+    int nfds = fds[0];
+    int *tofd   = fds + 1;
+    int *fromfd = fds + 1 + nfds;
 
     /* TODO: use getdtablehi if available */
 #if !defined(GAUCHE_WINDOWS)
@@ -1732,9 +1710,9 @@ void Scm_SysSwapFds(int *fds)
 
     /* Dup fromfd to the corresponding tofd.  We need to be careful
        not to override the destination fd if it will be used. */
-    for (i=0; i<nfds; i++) {
+    for (int i=0; i<nfds; i++) {
         if (tofd[i] == fromfd[i]) continue;
-        for (j=i+1; j<nfds; j++) {
+        for (int j=i+1; j<nfds; j++) {
             if (tofd[i] == fromfd[j]) {
                 int tmp = dup(tofd[i]);
                 if (tmp < 0) Scm_Panic("dup failed: %s", strerror(errno));
@@ -1746,7 +1724,8 @@ void Scm_SysSwapFds(int *fds)
     }
 
     /* Close unused fds */
-    for (fd=0; fd<maxfd; fd++) {
+    for (int fd=0; fd<maxfd; fd++) {
+        int j;
         for (j=0; j<nfds; j++) if (fd == tofd[j]) break;
         if (j == nfds) close(fd);
     }
@@ -1755,16 +1734,13 @@ void Scm_SysSwapFds(int *fds)
 #if defined(GAUCHE_WINDOWS)
 static HANDLE *win_prepare_handles(int *fds)
 {
-    int count, i;
-    HANDLE *hs;
-
     if (fds == NULL) return NULL;
 
     /* For the time being, we only consider stdin, stdout, and stderr. */
-    hs = SCM_NEW_ATOMIC_ARRAY(HANDLE, 3);
-    count = fds[0];
+    HANDLE *hs = SCM_NEW_ATOMIC_ARRAY(HANDLE, 3);
+    int count = fds[0];
 
-    for (i=0; i<count; i++) {
+    for (int i=0; i<count; i++) {
         int to = fds[i+1], from = fds[i+1+count];
         if (to >= 0 && to < 3) {
             if (from >= 3) {
@@ -1785,7 +1761,7 @@ static HANDLE *win_prepare_handles(int *fds)
             }
         }
     }
-    for (i=0; i<3; i++) {
+    for (int i=0; i<3; i++) {
         if (hs[i] == NULL) {
             hs[i] = (HANDLE)_get_osfhandle(i);
         }
@@ -2134,23 +2110,21 @@ void Scm_SetEnv(const char *name, const char *value, int overwrite)
     SCM_SYSCALL(r, setenv(name, value, overwrite));
     if (r < 0) Scm_SysError("setenv failed on '%s=%s'", name, value);
 #elif defined(HAVE_PUTENV)
-    char *nameval;
-    int nlen, vlen, r;
-
     if (!overwrite) {
         /* check the existence of NAME first. */
         if (getenv(name) != NULL) return;
     }
-    nlen = (int)strlen(name);
-    vlen = (int)strlen(value);
+    int nlen = (int)strlen(name);
+    int vlen = (int)strlen(value);
     /* we need malloc, since the pointer will be owned by the system */
-    nameval = (char*)malloc(nlen+vlen+2);
+    char *nameval = (char*)malloc(nlen+vlen+2);
     if (nameval == NULL) {
         Scm_Error("sys-setenv: out of memory");
     }
     strcpy(nameval, name);
     strcpy(nameval+nlen, "=");
     strcpy(nameval+nlen+1, value);
+    int r;
     SCM_SYSCALL(r, putenv(nameval));
     if (r < 0) Scm_SysError("putenv failed on '%s'", nameval);
 #else /* !HAVE_SETENV && !HAVE_PUTENV */

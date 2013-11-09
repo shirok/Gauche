@@ -132,8 +132,8 @@ ScmDictEntry *Scm_TreeCoreClosestEntries(ScmTreeCore *tc,
                                          ScmDictEntry **lo,
                                          ScmDictEntry **hi)
 {
-    Node *l, *h, *r;
-    r = core_ref(tc, key, TREE_NEAR, &l, &h);
+    Node *l, *h;
+    Node *r = core_ref(tc, key, TREE_NEAR, &l, &h);
     *lo = (ScmDictEntry*)l;
     *hi = (ScmDictEntry*)h;
     return (ScmDictEntry*)r;
@@ -186,13 +186,12 @@ int Scm_TreeCoreNumEntries(ScmTreeCore *tc)
 int Scm_TreeCoreEq(ScmTreeCore *a, ScmTreeCore *b)
 {
     ScmTreeIter ai, bi;
-    ScmDictEntry *ae, *be;
     if (a->num_entries != b->num_entries) return FALSE;
     Scm_TreeIterInit(&ai, a, NULL);
     Scm_TreeIterInit(&bi, b, NULL);
     for (;;) {
-        ae = Scm_TreeIterNext(&ai);
-        be = Scm_TreeIterNext(&bi);
+        ScmDictEntry *ae = Scm_TreeIterNext(&ai);
+        ScmDictEntry *be = Scm_TreeIterNext(&bi);
         if (ae == NULL) {
             if (be == NULL) return TRUE;
             else return FALSE;
@@ -370,9 +369,8 @@ ScmObj Scm_TreeMapDelete(ScmTreeMap *tm, ScmObj key)
 /* for debug */
 static void dump_traverse(Node *node, int depth, ScmPort *out, int scmobj)
 {
-    int i;
     if (node->left) dump_traverse(node->left, depth+1, out, scmobj);
-    for (i=0; i<depth; i++) Scm_Printf(out, "  ");
+    for (int i=0; i<depth; i++) Scm_Printf(out, "  ");
     if (scmobj) {
         Scm_Printf(out, "%c:%S => %S\n", BLACKP(node)?'B':'R',
                    SCM_OBJ(node->key), SCM_OBJ(node->value));
@@ -482,9 +480,9 @@ static void replace_node(ScmTreeCore *tc, Node *n, Node *m)
 */
 static void rotate_right(ScmTreeCore *tc, Node *n)
 {
-    Node *l = n->left, *gr;
+    Node *l = n->left;
     SCM_ASSERT(l != NULL);
-    gr = l->right;
+    Node *gr = l->right;
 
     replace_node(tc, n, l);
     l->right = n;  n->parent = l;
@@ -501,9 +499,9 @@ static void rotate_right(ScmTreeCore *tc, Node *n)
 */
 static void rotate_left(ScmTreeCore *tc, Node *n)
 {
-    Node *r = n->right, *gl;
+    Node *r = n->right;
     SCM_ASSERT(r != NULL);
-    gl = r->left;
+    Node *gl = r->left;
 
     replace_node(tc, n, r);
     r->left = n;   n->parent = r;
@@ -519,15 +517,15 @@ static void rotate_left(ScmTreeCore *tc, Node *n)
 /* balance tree after insertion of N */
 static void balance_tree(ScmTreeCore *tc, Node *n)
 {
-    Node *p = n->parent, *u, *g;
+    Node *p = n->parent;
 
     if (!p) { BALANCE_CASE("1"); n->color = BLACK; return; }  /* root */
     if (BLACKP(p)) { BALANCE_CASE("2"); return; }      /* nothing to do */
 
     /* Here we're sure we have grandparent. */
-    g = p->parent;
+    Node *g = p->parent;
     SCM_ASSERT(g != NULL);
-    u = (g->left == p)? g->right : g->left;
+    Node *u = (g->left == p)? g->right : g->left;
 
     if (REDP(u)) {
         p->color = u->color = BLACK;
@@ -568,7 +566,7 @@ static void balance_tree(ScmTreeCore *tc, Node *n)
    Note that CHILD can be NULL (empty BLACK node) */
 static void delete_node1(ScmTreeCore *tc, Node *todie, Node *child)
 {
-    Node *sibling, *parent = todie->parent;
+    Node *parent = todie->parent;
 
     replace_node(tc, todie, child);
     if (REDP(todie)) { DELETE_CASE("1"); return; }
@@ -577,7 +575,7 @@ static void delete_node1(ScmTreeCore *tc, Node *todie, Node *child)
   recur:
     /* At this point, child is BLACK. */
     if (parent == NULL) { DELETE_CASE("3"); return; }
-    sibling = SIBLING2(parent, child);
+    Node *sibling = SIBLING2(parent, child);
     /* sibling can't be NULL, since it would break the invariance of
        consistent # of black nodes for every path. */
     SCM_ASSERT(sibling != NULL);
@@ -644,8 +642,6 @@ static void delete_node1(ScmTreeCore *tc, Node *todie, Node *child)
 static void swap_node(ScmTreeCore *tc, Node *x, Node *y)
 {
 #define SWAP(x, y, tmp) do { tmp = x; x = y; y = tmp; } while (0)
-    Node *t;
-    int c;
     if (x->parent) {
         if (LEFTP(x)) x->parent->left = y;
         else          x->parent->right = y;
@@ -654,6 +650,7 @@ static void swap_node(ScmTreeCore *tc, Node *x, Node *y)
         if (LEFTP(y)) y->parent->left = x;
         else          y->parent->right = x;
     }
+    Node *t;
     SWAP(x->parent, y->parent, t);
 
     if (x->left) x->left->parent = y;
@@ -664,6 +661,7 @@ static void swap_node(ScmTreeCore *tc, Node *x, Node *y)
     if (y->right) y->right->parent = x;
     SWAP(x->right, y->right, t);
 
+    int c;
     SWAP(x->color, y->color, c);
     if (x == ROOT(tc)) SET_ROOT(tc, y);
     else if (y == ROOT(tc)) SET_ROOT(tc, x);
@@ -778,4 +776,3 @@ static Node *copy_tree(Node *parent, Node *self)
     if (self->right) n->right = copy_tree(n, self->right);
     return n;
 }
-

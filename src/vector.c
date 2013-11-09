@@ -44,9 +44,8 @@
 
 static void vector_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
-    int i;
     SCM_PUTZ("#(", -1, port);
-    for (i=0; i<SCM_VECTOR_SIZE(obj); i++) {
+    for (int i=0; i<SCM_VECTOR_SIZE(obj); i++) {
         if (i != 0) SCM_PUTC(' ', port);
         Scm_Write(SCM_VECTOR_ELEMENT(obj, i), SCM_OBJ(port),
                   Scm_WriteContextMode(ctx));
@@ -68,22 +67,18 @@ static ScmVector *make_vector(ScmSmallInt size)
 
 ScmObj Scm_MakeVector(ScmSmallInt size, ScmObj fill)
 {
-    ScmSmallInt i;
-    ScmVector *v;
     if (size < 0) {
         Scm_Error("vector size must be a positive integer, but got %d", size);
     }
-    v = make_vector(size);
+    ScmVector *v = make_vector(size);
     if (SCM_UNBOUNDP(fill)) fill = SCM_UNDEFINED;
-    for (i=0; i<size; i++) v->elements[i] = fill;
+    for (ScmSmallInt i=0; i<size; i++) v->elements[i] = fill;
     return SCM_OBJ(v);
 }
 
 ScmObj Scm_ListToVector(ScmObj l, ScmSmallInt start, ScmSmallInt end)
 {
     ScmVector *v;
-    ScmObj e;
-    ScmSmallInt i;
 
     if (end < 0) {
         ScmSmallInt size = Scm_Length(l);
@@ -94,8 +89,8 @@ ScmObj Scm_ListToVector(ScmObj l, ScmSmallInt start, ScmSmallInt end)
         SCM_CHECK_START_END(start, end, end);
         v = make_vector(end - start);
     }
-    e = Scm_ListTail(l, start, SCM_UNBOUND);
-    for (i=0; i<end-start; i++, e=SCM_CDR(e)) {
+    ScmObj e = Scm_ListTail(l, start, SCM_UNBOUND);
+    for (ScmSmallInt i=0; i<end-start; i++, e=SCM_CDR(e)) {
         if (!SCM_PAIRP(e)) {
             Scm_Error("list too short: %S", l);
         }
@@ -135,9 +130,9 @@ ScmObj Scm_VectorSet(ScmVector *vec, ScmSmallInt i, ScmObj obj)
 ScmObj Scm_VectorFill(ScmVector *vec, ScmObj fill,
                       ScmSmallInt start, ScmSmallInt end)
 {
-    ScmSmallInt i, len = SCM_VECTOR_SIZE(vec);
+    ScmSmallInt len = SCM_VECTOR_SIZE(vec);
     SCM_CHECK_START_END(start, end, len);
-    for (i=start; i < end; i++) {
+    for (ScmSmallInt i=start; i < end; i++) {
         SCM_VECTOR_ELEMENT(vec, i) = fill;
     }
     return SCM_OBJ(vec);
@@ -146,7 +141,7 @@ ScmObj Scm_VectorFill(ScmVector *vec, ScmObj fill,
 ScmObj Scm_VectorCopy(ScmVector *vec,
                       ScmSmallInt start, ScmSmallInt end, ScmObj fill)
 {
-    ScmSmallInt i, len = SCM_VECTOR_SIZE(vec);
+    ScmSmallInt len = SCM_VECTOR_SIZE(vec);
     ScmVector *v = NULL;
     if (end < 0) end = len;
     if (end < start) {
@@ -157,7 +152,7 @@ ScmObj Scm_VectorCopy(ScmVector *vec,
     } else {
         if (SCM_UNBOUNDP(fill)) fill = SCM_UNDEFINED;
         v = make_vector(end - start);
-        for (i=0; i<end-start; i++) {
+        for (ScmSmallInt i=0; i<end-start; i++) {
             if (i+start < 0 || i+start >= len) {
                 SCM_VECTOR_ELEMENT(v, i) = fill;
             } else {
@@ -264,10 +259,9 @@ int Scm_UVectorSizeInBytes(ScmUVector *uv)
 ScmObj Scm_MakeUVectorFull(ScmClass *klass, ScmSmallInt size, void *init,
                            int immutable, void *owner)
 {
-    ScmUVector *vec;
     int eltsize = Scm_UVectorElementSize(klass);
     SCM_ASSERT(eltsize >= 1);
-    vec = SCM_NEW(ScmUVector);
+    ScmUVector *vec = SCM_NEW(ScmUVector);
     SCM_SET_CLASS(vec, klass);
     if (init) {
         vec->elements = init;   /* trust the caller */
@@ -328,9 +322,8 @@ ScmObj SCM_CPP_CAT3(Scm_Make,tag,Vector)(ScmSmallInt size, T fill)      \
     ScmUVector *u =                                                     \
         (ScmUVector*)Scm_MakeUVector(SCM_CPP_CAT3(SCM_CLASS_,tag,VECTOR),\
                                      size, NULL);                       \
-    ScmSmallInt i;                                                      \
     T *elts = SCM_CPP_CAT3(SCM_,tag,VECTOR_ELEMENTS)(u);                \
-    for (i=0; i<size; i++) *elts++ = fill;                              \
+    for (ScmSmallInt i=0; i<size; i++) *elts++ = fill;                  \
     return SCM_OBJ(u);                                                  \
 }
 
@@ -401,9 +394,8 @@ static void SCM_CPP_CAT3(print_,tag,vector)(ScmObj obj,                 \
                                             ScmPort *out,               \
                                             ScmWriteContext *ctx)       \
 {                                                                       \
-    int i;                                                              \
     Scm_Printf(out, "#"#tag"(");                                        \
-    for (i=0; i<SCM_CPP_CAT3(SCM_,TAG,VECTOR_SIZE)(obj); i++) {         \
+    for (int i=0; i<SCM_CPP_CAT3(SCM_,TAG,VECTOR_SIZE)(obj); i++) {     \
         T elt = SCM_CPP_CAT3(SCM_,TAG,VECTOR_ELEMENTS)(obj)[i];         \
         if (i != 0) Scm_Printf(out, " ");                               \
         pr(out, elt);                                                   \
@@ -464,12 +456,11 @@ DEF_PRINT(F64, f64, double, fpr)
 #define DEF_CMP(TAG, tag, T, eq)                                        \
 static int SCM_CPP_CAT3(compare_,tag,vector)(ScmObj x, ScmObj y, int equalp) \
 {                                                                       \
-    ScmSmallInt len = SCM_CPP_CAT3(SCM_,TAG,VECTOR_SIZE)(x), i;         \
-    T xx, yy;                                                           \
+    ScmSmallInt len = SCM_CPP_CAT3(SCM_,TAG,VECTOR_SIZE)(x);            \
     if (SCM_CPP_CAT3(SCM_,TAG,VECTOR_SIZE)(y) != len) return -1;        \
-    for (i=0; i<len; i++) {                                             \
-        xx = SCM_CPP_CAT3(SCM_,TAG,VECTOR_ELEMENTS)(x)[i];              \
-        yy = SCM_CPP_CAT3(SCM_,TAG,VECTOR_ELEMENTS)(y)[i];              \
+    for (ScmSmallInt i=0; i<len; i++) {                                 \
+        T xx = SCM_CPP_CAT3(SCM_,TAG,VECTOR_ELEMENTS)(x)[i];            \
+        T yy = SCM_CPP_CAT3(SCM_,TAG,VECTOR_ELEMENTS)(y)[i];            \
         if (!eq(xx,yy)) {                                               \
             return -1;                                                  \
         }                                                               \

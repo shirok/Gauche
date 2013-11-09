@@ -171,9 +171,9 @@ u_long Scm_Hash(ScmObj obj)
         h = COMBINE(h, h2);
         return h;
     } else if (SCM_VECTORP(obj)) {
-        int i, siz = SCM_VECTOR_SIZE(obj);
+        int siz = SCM_VECTOR_SIZE(obj);
         u_long h = 0, h2;
-        for (i=0; i<siz; i++) {
+        for (int i=0; i<siz; i++) {
             h2 = Scm_Hash(SCM_VECTOR_ELEMENT(obj, i));
             h = COMBINE(h, h2);
         }
@@ -201,9 +201,8 @@ u_long Scm_Hash(ScmObj obj)
     }
   string_hash:
     {
-        const char *p;
         const ScmStringBody *b = SCM_STRING_BODY(obj);
-        p = SCM_STRING_BODY_START(b);
+        const char *p = SCM_STRING_BODY_START(b);
         STRING_HASH(hashval, p, SCM_STRING_BODY_SIZE(b));
         return hashval;
     }
@@ -212,9 +211,8 @@ u_long Scm_Hash(ScmObj obj)
 u_long Scm_HashString(ScmString *str, u_long modulo)
 {
     u_long hashval;
-    const char *p;
     const ScmStringBody *b = SCM_STRING_BODY(str);
-    p = SCM_STRING_BODY_START(b);
+    const char *p = SCM_STRING_BODY_START(b);
     STRING_HASH(hashval, p, SCM_STRING_BODY_SIZE(b));
     if (modulo == 0) return hashval;
     else return (hashval % modulo);
@@ -268,14 +266,14 @@ static Entry *insert_entry(ScmHashCore *table,
 
     if (table->numEntries > table->numBuckets*MAX_AVG_CHAIN_LIMITS) {
         /* Extend the table */
-        Entry **newb, *f;
-        ScmHashIter iter;
-        int i, newsize = (table->numBuckets << EXTEND_BITS);
+        int newsize = (table->numBuckets << EXTEND_BITS);
         int newbits = table->numBucketsLog2 + EXTEND_BITS;
 
-        newb = SCM_NEW_ARRAY(Entry*, newsize);
-        for (i=0; i<newsize; i++) newb[i] = NULL;
+        Entry **newb = SCM_NEW_ARRAY(Entry*, newsize);
+        for (int i=0; i<newsize; i++) newb[i] = NULL;
 
+        ScmHashIter iter;
+        Entry *f;
         Scm_HashIterInit(&iter, table);
         while ((f = (Entry*)Scm_HashIterNext(&iter)) != NULL) {
             index = HASH2INDEX(newsize, newbits, f->hashval);
@@ -283,7 +281,7 @@ static Entry *insert_entry(ScmHashCore *table,
             newb[index] = f;
         }
         /* gc friendliness */
-        for (i=0; i<table->numBuckets; i++) table->buckets[i] = NULL;
+        for (int i=0; i<table->numBuckets; i++) table->buckets[i] = NULL;
 
         table->numBuckets = newsize;
         table->numBucketsLog2 = newbits;
@@ -337,12 +335,12 @@ static Entry *address_access(ScmHashCore *table,
                              ScmDictOp op)
 {
     u_long hashval, index;
-    Entry *e, *p, **buckets = (Entry**)table->buckets;
+    Entry **buckets = (Entry**)table->buckets;
 
     ADDRESS_HASH(hashval, key);
     index = HASH2INDEX(table->numBuckets, table->numBucketsLog2, hashval);
 
-    for (e = buckets[index], p = NULL; e; p = e, e = e->next) {
+    for (Entry *e = buckets[index], *p = NULL; e; p = e, e = e->next) {
         if (e->key == key) FOUND(table, op, e, p, index);
     }
     NOTFOUND(table, op, key, hashval, index);
@@ -390,24 +388,20 @@ static int equal_cmp(const ScmHashCore *table, intptr_t key, intptr_t k2)
  */
 static Entry *string_access(ScmHashCore *table, intptr_t k, ScmDictOp op)
 {
-    u_long hashval, index;
-    int size;
-    const char *s;
     ScmObj key = SCM_OBJ(k);
-    Entry *e, *p, **buckets;
-    const ScmStringBody *keyb;
 
     if (!SCM_STRINGP(key)) {
         Scm_Error("Got non-string key %S to the string hashtable.", key);
     }
-    keyb = SCM_STRING_BODY(key);
-    s = SCM_STRING_BODY_START(keyb);
-    size = SCM_STRING_BODY_SIZE(keyb);
+    const ScmStringBody *keyb = SCM_STRING_BODY(key);
+    const char *s = SCM_STRING_BODY_START(keyb);
+    int size = SCM_STRING_BODY_SIZE(keyb);
+    u_long hashval;
     STRING_HASH(hashval, s, size);
-    index = HASH2INDEX(table->numBuckets, table->numBucketsLog2, hashval);
-    buckets = (Entry**)table->buckets;
+    u_long index = HASH2INDEX(table->numBuckets, table->numBucketsLog2, hashval);
+    Entry **buckets = (Entry**)table->buckets;
 
-    for (e = buckets[index], p = NULL; e; p = e, e = e->next) {
+    for (Entry *e = buckets[index], *p = NULL; e; p = e, e = e->next) {
         ScmObj ee = SCM_OBJ(e->key);
         const ScmStringBody *eeb = SCM_STRING_BODY(ee);
         int eesize = SCM_STRING_BODY_SIZE(eeb);
@@ -423,9 +417,8 @@ static Entry *string_access(ScmHashCore *table, intptr_t k, ScmDictOp op)
 static u_long string_hash(const ScmHashCore *table, intptr_t key)
 {
     u_long hashval;
-    const char *p;
     const ScmStringBody *b = SCM_STRING_BODY(key);
-    p = SCM_STRING_BODY_START(b);
+    const char *p = SCM_STRING_BODY_START(b);
     STRING_HASH(hashval, p, SCM_STRING_BODY_SIZE(b));
     return hashval;
 }
@@ -450,8 +443,7 @@ static u_long multiword_hash(const ScmHashCore *table, intptr_t key)
     ScmWord keysize = (ScmWord)table->data;
     ScmWord *keyarray = (ScmWord*)key;
     u_long h = 0, h1;
-    int i;
-    for (i=0; i<keysize; i++) {
+    for (int i=0; i<keysize; i++) {
         ADDRESS_HASH(h1, keyarray[i]);
         h = COMBINE(h, h1);
     }
@@ -464,13 +456,12 @@ static Entry *multiword_access(ScmHashCore *table, intptr_t k, ScmDictOp op)
 {
     u_long hashval, index;
     ScmWord keysize = (ScmWord)table->data;
-    Entry *e, *p, **buckets;
 
     hashval = multiword_hash(table, k);
     index = HASH2INDEX(table->numBuckets, table->numBucketsLog2, hashval);
-    buckets = (Entry**)table->buckets;
+    Entry **buckets = (Entry**)table->buckets;
 
-    for (e = buckets[index], p = NULL; e; p = e, e = e->next) {
+    for (Entry *e = buckets[index], *p = NULL; e; p = e, e = e->next) {
         if (memcmp((void*)k, (void*)e->key, keysize*sizeof(ScmWord)) == 0)
             FOUND(table, op, e, p, index);
     }
@@ -486,13 +477,12 @@ static Entry *multiword_access(ScmHashCore *table, intptr_t k, ScmDictOp op)
 static Entry *general_access(ScmHashCore *table, intptr_t key, ScmDictOp op)
 {
     u_long hashval, index;
-    Entry *e, *p, **buckets;
 
     hashval = table->hashfn(table, key);
     index = HASH2INDEX(table->numBuckets, table->numBucketsLog2, hashval);
-    buckets = (Entry**)table->buckets;
+    Entry **buckets = (Entry**)table->buckets;
 
-    for (e = buckets[index], p = NULL; e; p = e, e = e->next) {
+    for (Entry *e = buckets[index], *p = NULL; e; p = e, e = e->next) {
         if (table->cmpfn(table, key, e->key)) FOUND(table, op, e, p, index);
     }
     NOTFOUND(table, op, key, hashval, index);
@@ -509,13 +499,10 @@ static void hash_core_init(ScmHashCore *table,
                            unsigned int initSize,
                            void *data)
 {
-    Entry **b;
-    u_int i;
-
     if (initSize != 0) initSize = round2up(initSize);
     else initSize = DEFAULT_NUM_BUCKETS;
 
-    b = SCM_NEW_ARRAY(Entry*, initSize);
+    Entry **b = SCM_NEW_ARRAY(Entry*, initSize);
     table->buckets = (void**)b;
     table->numBuckets = initSize;
     table->numEntries = 0;
@@ -523,10 +510,11 @@ static void hash_core_init(ScmHashCore *table,
     table->hashfn = hashfn;
     table->cmpfn = cmpfn;
     table->data = data;
-    for (i=initSize, table->numBucketsLog2=0; i > 1; i /= 2) {
+    table->numBucketsLog2 = 0;
+    for (u_int i=initSize; i > 1; i /= 2) {
         table->numBucketsLog2++;
     }
-    for (i=0; i<initSize; i++) table->buckets[i] = NULL;
+    for (u_int i=0; i<initSize; i++) table->buckets[i] = NULL;
 }
 
 /* choose appropriate procedures for predefined hash types. */
@@ -598,15 +586,13 @@ int Scm_HashCoreTypeToProcs(ScmHashType type,
 void Scm_HashCoreCopy(ScmHashCore *dst, const ScmHashCore *src)
 {
     Entry **b = SCM_NEW_ARRAY(Entry*, src->numBuckets);
-    int i;
-    Entry *e, *p, *s;
 
-    for (i=0; i<src->numBuckets; i++) {
-        p = NULL;
-        s = (Entry*)src->buckets[i];
+    for (int i=0; i<src->numBuckets; i++) {
+        Entry *p = NULL;
+        Entry *s = (Entry*)src->buckets[i];
         b[i] = NULL;
         while (s) {
-            e = SCM_NEW(Entry);
+            Entry *e = SCM_NEW(Entry);
             e->key = s->key;
             e->value = s->value;
             e->next = NULL;
@@ -632,8 +618,7 @@ void Scm_HashCoreCopy(ScmHashCore *dst, const ScmHashCore *src)
 
 void Scm_HashCoreClear(ScmHashCore *table)
 {
-    int i;
-    for (i=0; i<table->numBuckets; i++) {
+    for (int i=0; i<table->numBuckets; i++) {
         table->buckets[i] = NULL;
     }
     table->numEntries = 0;
@@ -658,9 +643,8 @@ int Scm_HashCoreNumEntries(ScmHashCore *table)
  */
 void Scm_HashIterInit(ScmHashIter *iter, ScmHashCore *table)
 {
-    int i;
     iter->core = table;
-    for (i=0; i<table->numBuckets; i++) {
+    for (int i=0; i<table->numBuckets; i++) {
         if (table->buckets[i]) {
             iter->bucket = i;
             iter->next = table->buckets[i];
@@ -701,12 +685,11 @@ SCM_DEFINE_BUILTIN_CLASS(Scm_HashTableClass, hash_print, NULL, NULL, NULL,
 
 ScmObj Scm_MakeHashTableSimple(ScmHashType type, int initSize)
 {
-    ScmHashTable *z;
     /* We only allow ScmObj in <hash-table> */
     if (type > SCM_HASH_GENERAL) {
         Scm_Error("Scm_MakeHashTableSimple: wrong type arg: %d", type);
     }
-    z = SCM_NEW(ScmHashTable);
+    ScmHashTable *z = SCM_NEW(ScmHashTable);
     SCM_SET_CLASS(z, SCM_CLASS_HASH_TABLE);
     Scm_HashCoreInitSimple(&z->core, type, initSize, NULL);
     z->type = type;
@@ -782,18 +765,17 @@ ScmObj Scm_HashTableStat(ScmHashTable *table)
 {
     ScmObj h = SCM_NIL, t = SCM_NIL;
     ScmHashCore *c = SCM_HASH_TABLE_CORE(table);
-    ScmVector *v = SCM_VECTOR(Scm_MakeVector(c->numBuckets, SCM_NIL));
-    ScmObj *vp;
-    Entry** b = BUCKETS(c);
-    int i;
-
     SCM_APPEND1(h, t, SCM_MAKE_KEYWORD("num-entries"));
     SCM_APPEND1(h, t, Scm_MakeInteger(c->numEntries));
     SCM_APPEND1(h, t, SCM_MAKE_KEYWORD("num-buckets"));
     SCM_APPEND1(h, t, Scm_MakeInteger(c->numBuckets));
     SCM_APPEND1(h, t, SCM_MAKE_KEYWORD("num-buckets-log2"));
     SCM_APPEND1(h, t, Scm_MakeInteger(c->numBucketsLog2));
-    for (vp = SCM_VECTOR_ELEMENTS(v), i = 0; i<c->numBuckets; i++, vp++) {
+
+    Entry** b = BUCKETS(c);
+    ScmVector *v = SCM_VECTOR(Scm_MakeVector(c->numBuckets, SCM_NIL));
+    ScmObj *vp = SCM_VECTOR_ELEMENTS(v);
+    for (int i = 0; i<c->numBuckets; i++, vp++) {
         Entry *e = b[i];
         for (; e; e = e->next) {
             *vp = Scm_Acons(SCM_DICT_KEY(e), SCM_DICT_VALUE(e), *vp);
@@ -958,4 +940,3 @@ ScmObj Scm_MakeHashTable(ScmHashProc *hashfn,
     return SCM_UNDEFINED;
 #endif
 }
-

@@ -360,10 +360,6 @@ void Scm_Exit(int code)
 
 void Scm_Cleanup(void)
 {
-    ScmVM *vm = Scm_VM();
-    ScmObj hp;
-    struct cleanup_handler_rec *ch;
-
     if (!cleanup.dirty) return;
     cleanup.dirty = FALSE;
 
@@ -372,13 +368,15 @@ void Scm_Cleanup(void)
        (A handler may intentionally raise an error to skip the rest of
        handlers).  We may change to break from SCM_FOR_EACH in case if
        we detect error in Scm_Apply. */
+    ScmVM *vm = Scm_VM();
+    ScmObj hp;
     SCM_FOR_EACH(hp, vm->handlers) {
         vm->handlers = SCM_CDR(hp);
         Scm_Apply(SCM_CDAR(hp), SCM_NIL, NULL);
     }
 
     /* Call the C-registered cleanup handlers. */
-    for (ch = cleanup.handlers; ch; ch = ch->next) {
+    for (struct cleanup_handler_rec *ch = cleanup.handlers; ch; ch = ch->next) {
         ch->handler(ch->data);
     }
 
@@ -449,7 +447,6 @@ Scm_AddFeature(const char *feature, const char *module)
 static void
 init_cond_features()
 {
-    int i;
     /* The initial cond-features list. */
     static struct {
         const char *feature;
@@ -550,7 +547,7 @@ init_cond_features()
         { NULL, NULL }
     };
 
-    for (i=0; init_features[i].feature; i++) {
+    for (int i=0; init_features[i].feature; i++) {
         Scm_AddFeature(init_features[i].feature, init_features[i].module);
     }
 }
@@ -668,12 +665,8 @@ int main(void)
 void Scm_SimpleMain(int argc, const char *argv[],
                     const char *script, u_long flags)
 {
-    ScmModule *user = Scm_UserModule();
-    ScmObj mainproc, args;
-    ScmLoadPacket lpak;
-
     SCM_ASSERT(argc > 0);
-    args = Scm_InitCommandLine(argc, argv);
+    ScmObj args = Scm_InitCommandLine(argc, argv);
 
     if (script) {
         ScmObj s = SCM_MAKE_STR(script);
@@ -681,7 +674,8 @@ void Scm_SimpleMain(int argc, const char *argv[],
         Scm_LoadFromPort(SCM_PORT(p), SCM_LOAD_PROPAGATE_ERROR, NULL);
     }
 
-    mainproc = Scm_GlobalVariableRef(user, SCM_SYMBOL(SCM_INTERN("main")), 0);
+    ScmModule *user = Scm_UserModule();
+    ScmObj mainproc = Scm_GlobalVariableRef(user, SCM_SYMBOL(SCM_INTERN("main")), 0);
     if (SCM_PROCEDUREP(mainproc)) {
         ScmObj r = Scm_ApplyRec1(mainproc, args);
         if (SCM_INTP(r)) Scm_Exit(SCM_INT_VALUE(r));
@@ -690,4 +684,3 @@ void Scm_SimpleMain(int argc, const char *argv[],
         Scm_Exit(70);
     }
 }
-

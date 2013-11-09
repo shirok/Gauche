@@ -89,27 +89,26 @@ static ScmWord fetch_insn_counting(ScmVM *vm, ScmWord code)
 
 static void dump_insn_frequency(void *data)
 {
-    int i, j;
     Scm_Printf(SCM_CUROUT, "(:instruction-frequencies (");
-    for (i=0; i<SCM_VM_NUM_INSNS; i++) {
+    for (int i=0; i<SCM_VM_NUM_INSNS; i++) {
         Scm_Printf(SCM_CUROUT, "(%s %d", Scm_VMInsnName(i), insn1_freq[i]);
-        for (j=0; j<SCM_VM_NUM_INSNS; j++) {
+        for (int j=0; j<SCM_VM_NUM_INSNS; j++) {
             Scm_Printf(SCM_CUROUT, " %d", insn2_freq[i][j]);
         }
         Scm_Printf(SCM_CUROUT, ")\n");
     }
     Scm_Printf(SCM_CUROUT, ")\n :lref-frequencies (");
-    for (i=0; i<LREF_FREQ_COUNT_MAX; i++) {
+    for (int i=0; i<LREF_FREQ_COUNT_MAX; i++) {
         Scm_Printf(SCM_CUROUT, "(");
-        for (j=0; j<LREF_FREQ_COUNT_MAX; j++) {
+        for (int j=0; j<LREF_FREQ_COUNT_MAX; j++) {
             Scm_Printf(SCM_CUROUT, "%d ", lref_freq[i][j]);
         }
         Scm_Printf(SCM_CUROUT, ")\n");
     }
     Scm_Printf(SCM_CUROUT, ")\n :lset-frequencies (");
-    for (i=0; i<LREF_FREQ_COUNT_MAX; i++) {
+    for (int i=0; i<LREF_FREQ_COUNT_MAX; i++) {
         Scm_Printf(SCM_CUROUT, "(");
-        for (j=0; j<LREF_FREQ_COUNT_MAX; j++) {
+        for (int j=0; j<LREF_FREQ_COUNT_MAX; j++) {
             Scm_Printf(SCM_CUROUT, "%d ", lset_freq[i][j]);
         }
         Scm_Printf(SCM_CUROUT, ")\n");
@@ -119,4 +118,3 @@ static void dump_insn_frequency(void *data)
 }
 
 #endif /*COUNT_INSN_FREQUENCY*/
-

@@ -72,8 +72,6 @@ int Scm_EqvP(ScmObj x, ScmObj y)
 
 int Scm_EqualP(ScmObj x, ScmObj y)
 {
-    ScmClass *cx, *cy;
-
     if (SCM_EQ(x, y)) return TRUE;
     if (SCM_PAIRP(x)) {
         if (!SCM_PAIRP(y)) return FALSE;
@@ -134,8 +132,8 @@ int Scm_EqualP(ScmObj x, ScmObj y)
     /* End of EXPERIMENTAL code */
 
     if (!SCM_HPTRP(x)) return (x == y);
-    cx = Scm_ClassOf(x);
-    cy = Scm_ClassOf(y);
+    ScmClass *cx = Scm_ClassOf(x);
+    ScmClass *cy = Scm_ClassOf(y);
     if (cx == cy && cx->compare) {
         return (cx->compare(x, y, TRUE) == 0);
     }

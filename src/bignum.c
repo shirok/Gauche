@@ -103,8 +103,7 @@ static ScmBignum *bignum_2scmpl(ScmBignum *br);
  */
 static ScmBignum *bignum_clear(ScmBignum *b)
 {
-    u_int i;
-    for (i=0; i<b->size; i++) b->values[i] = 0;
+    for (u_int i=0; i<b->size; i++) b->values[i] = 0;
     return b;
 }
 
@@ -112,10 +111,9 @@ static ScmBignum *bignum_clear(ScmBignum *b)
 
 static ScmBignum *make_bignum(int size)
 {
-    ScmBignum *b;
     if (size < 0) Scm_Error("invalid bignum size (internal error): %d", size);
     if (size > (int)SCM_BIGNUM_MAX_DIGITS) Scm_Error("too large bignum");
-    b = SCM_NEW_ATOMIC2(ScmBignum*, BIGNUM_SIZE(size));
+    ScmBignum *b = SCM_NEW_ATOMIC2(ScmBignum*, BIGNUM_SIZE(size));
     SCM_SET_CLASS(b, SCM_CLASS_INTEGER);
     b->size = size;
     b->sign = 1;
@@ -168,13 +166,12 @@ ScmObj Scm_MakeBignumFromUI(u_long val)
 ScmObj Scm_MakeBignumFromUIArray(int sign, const u_long *values, int size)
 {
     ScmBignum *b = make_bignum(size);
-    int i;
     if (sign != 0) {
         b->sign = (sign > 0)? 1 : -1;
-        for (i=0; i<size; i++) b->values[i] = values[i];
+        for (int i=0; i<size; i++) b->values[i] = values[i];
     } else {
         int nonzerop = FALSE;
-        for (i=0; i<size; i++) {
+        for (int i=0; i<size; i++) {
             if ((b->values[i] = values[i]) != 0) nonzerop = TRUE;
         }
         if (nonzerop) {
@@ -189,18 +186,16 @@ ScmObj Scm_MakeBignumFromUIArray(int sign, const u_long *values, int size)
 
 ScmObj Scm_MakeBignumFromDouble(double val)
 {
-    int exponent, sign;
-    ScmObj mantissa, b;
-
     if (val >= LONG_MIN && val <= LONG_MAX) {
         return Scm_MakeBignumFromSI((long)val);
     }
 
-    mantissa = Scm_DecodeFlonum(val, &exponent, &sign);
+    int exponent, sign;
+    ScmObj mantissa = Scm_DecodeFlonum(val, &exponent, &sign);
     if (!SCM_NUMBERP(mantissa)) {
         Scm_Error("can't convert %lf to an integer", val);
     }
-    b = Scm_Ash(mantissa, exponent);
+    ScmObj b = Scm_Ash(mantissa, exponent);
     if (sign < 0) b = Scm_Negate(b);
     /* always returns bignum */
     if (SCM_INTP(b)) {
@@ -212,10 +207,9 @@ ScmObj Scm_MakeBignumFromDouble(double val)
 
 ScmObj Scm_BignumCopy(const ScmBignum *b)
 {
-    u_int i;
     ScmBignum *c = make_bignum(b->size);
     c->sign = b->sign;
-    for (i=0; i<b->size; i++) c->values[i] = b->values[i];
+    for (u_int i=0; i<b->size; i++) c->values[i] = b->values[i];
     return SCM_OBJ(c);
 }
 
@@ -416,13 +410,12 @@ double Scm_BignumToDouble(const ScmBignum *b)
 {
     ScmBits *bits = (ScmBits*)b->values;
     ScmBits dst[2];
-    int maxbit, exponent;
 
     /* first, filter out a special case. */
     if (b->size == 0) return 0.0;
 
-    maxbit = Scm_BitsHighest1(bits, 0, b->size*WORD_BITS);
-    exponent = maxbit+1023;
+    int maxbit = Scm_BitsHighest1(bits, 0, b->size*WORD_BITS);
+    int exponent = maxbit+1023;
 #if SIZEOF_LONG >= 8
     SCM_ASSERT(maxbit >= 54);   /* because b is normalized */
     dst[0] = 0;
@@ -485,14 +478,12 @@ ScmObj Scm_BignumNegate(const ScmBignum *b)
 /* bx and by must be normalized */
 int Scm_BignumCmp(const ScmBignum *bx, const ScmBignum *by)
 {
-    int i;
-
     if (bx->sign < by->sign) return -1;
     if (bx->sign > by->sign) return 1;
     if (bx->size < by->size) return (bx->sign > 0) ? -1 : 1;
     if (bx->size > by->size) return (bx->sign > 0) ? 1 : -1;
 
-    for (i=(int)bx->size-1; i>=0; i--) {
+    for (int i=(int)bx->size-1; i>=0; i--) {
         if (bx->values[i] < by->values[i]) return (bx->sign > 0) ? -1 : 1;
         if (bx->values[i] > by->values[i]) return (bx->sign > 0) ? 1 : -1;
     }
@@ -502,11 +493,9 @@ int Scm_BignumCmp(const ScmBignum *bx, const ScmBignum *by)
 /* compare absolute values.  assume bx and by are nomalized. */
 int Scm_BignumAbsCmp(const ScmBignum *bx, const ScmBignum *by)
 {
-    int i;
-
     if (bx->size < by->size) return -1;
     if (bx->size > by->size) return 1;
-    for (i=(int)bx->size-1; i>=0; i--) {
+    for (int i=(int)bx->size-1; i>=0; i--) {
         if (bx->values[i] < by->values[i]) return -1;
         if (bx->values[i] > by->values[i]) return 1;
     }
@@ -526,9 +515,6 @@ int Scm_BignumCmp3U(const ScmBignum *bx,
 {
     u_int xsize = SCM_BIGNUM_SIZE(bx), ysize = SCM_BIGNUM_SIZE(by);
     u_int osize = SCM_BIGNUM_SIZE(off);
-    u_int tsize;
-    int i;
-    ScmBignum *br;
 
     if (xsize > ysize) return 1;
     if (xsize < ysize) {
@@ -556,12 +542,13 @@ int Scm_BignumCmp3U(const ScmBignum *bx,
         }
         /* fallthrough */
     }
-    tsize = bignum_safe_size_for_add(bx, off);
+    u_int tsize = bignum_safe_size_for_add(bx, off);
+    ScmBignum *br;
     ALLOC_TEMP_BIGNUM(br, tsize);
     bignum_add_int(br, bx, off);
 
     if (br->size < by->size) return -1;
-    for (i=(int)br->size-1; i>=0; i--) {
+    for (int i=(int)br->size-1; i>=0; i--) {
         if (i >= (int)by->size) {
             if (br->values[i]) return 1;
             continue;
@@ -594,9 +581,8 @@ static int bignum_safe_size_for_add(const ScmBignum *x, const ScmBignum *y)
 static ScmBignum *bignum_2scmpl(ScmBignum *br)
 {
     int rsize = SCM_BIGNUM_SIZE(br);
-    int i;
-    u_long c;
-    for (i=0, c=1; i<rsize; i++) {
+    u_long c = 1;
+    for (int i=0; i<rsize; i++) {
         unsigned long x = ~br->values[i];
         UADD(br->values[i], c, x, 0);
     }
@@ -617,26 +603,25 @@ static ScmBignum *bignum_add_int(ScmBignum *br,
     int rsize = SCM_BIGNUM_SIZE(br);
     int xsize = SCM_BIGNUM_SIZE(bx);
     int ysize = SCM_BIGNUM_SIZE(by);
-    int i;
-    u_long c, x, y;
+    u_long c = 0;
 
-    for (i=0, c=0; i<rsize; i++, xsize--, ysize--) {
+    for (int i=0; i<rsize; i++, xsize--, ysize--) {
         if (xsize <= 0) {
             if (ysize <= 0) {
                 UADD(br->values[i], c, 0, 0);
                 continue;
             }
-            y = by->values[i];
+            u_long y = by->values[i];
             UADD(br->values[i], c, 0, y);
             continue;
         }
         if (ysize <= 0) {
-            x = bx->values[i];
+            u_long x = bx->values[i];
             UADD(br->values[i], c, x, 0);
             continue;
         }
-        x = bx->values[i];
-        y = by->values[i];
+        u_long x = bx->values[i];
+        u_long y = by->values[i];
         UADD(br->values[i], c, x, y);
     }
     return br;
@@ -650,26 +635,25 @@ static ScmBignum *bignum_sub_int(ScmBignum *br,
     int rsize = SCM_BIGNUM_SIZE(br);
     int xsize = SCM_BIGNUM_SIZE(bx);
     int ysize = SCM_BIGNUM_SIZE(by);
-    int i;
-    u_long c, x, y;
+    u_long c = 0;
 
-    for (i=0, c=0; i<rsize; i++, xsize--, ysize--) {
+    for (int i=0; i<rsize; i++, xsize--, ysize--) {
         if (xsize <= 0) {
             if (ysize <= 0) {
                 USUB(br->values[i], c, 0, 0);
                 continue;
             }
-            y = by->values[i];
+            u_long y = by->values[i];
             USUB(br->values[i], c, 0, y);
             continue;
         }
         if (ysize <= 0) {
-            x = bx->values[i];
+            u_long x = bx->values[i];
             USUB(br->values[i], c, x, 0);
             continue;
         }
-        x = bx->values[i];
-        y = by->values[i];
+        u_long x = bx->values[i];
+        u_long y = by->values[i];
         USUB(br->values[i], c, x, y);
     }
     if (c != 0) {
@@ -710,19 +694,19 @@ static ScmBignum *bignum_sub(const ScmBignum *bx, const ScmBignum *by)
 /* returns bx + y, not nomalized */
 static ScmBignum *bignum_add_si(const ScmBignum *bx, long y)
 {
-    long c;
-    u_int i, rsize = bx->size+1;
+    long c = 0;
+    u_int rsize = bx->size+1;
     u_long yabs = ((y < 0)? -y : y);
     int ysign = ((y < 0)? -1 : 1);
     ScmBignum *br = make_bignum(rsize);
     br->sign = bx->sign;
     if (SCM_BIGNUM_SIGN(bx) == ysign) {
-        for (c=0, i=0; i<bx->size; i++) {
+        for (u_int i=0; i<bx->size; i++) {
             UADD(br->values[i], c, bx->values[i], yabs);
             yabs = 0;
         }
     } else {
-        for (c=0, i=0; i<bx->size; i++) {
+        for (u_int i=0; i<bx->size; i++) {
             USUB(br->values[i], c, bx->values[i], yabs);
             yabs = 0;
         }
@@ -790,24 +774,23 @@ static ScmBignum *bignum_rshift(ScmBignum *br, const ScmBignum *bx, int amount)
    has enough size.  br and bx can be the same object. */
 static ScmBignum *bignum_lshift(ScmBignum *br, const ScmBignum *bx, int amount)
 {
-    int nwords, nbits, i;
-    u_long x;
+    int nwords = amount / WORD_BITS;
+    int nbits = amount % WORD_BITS;
 
-    nwords = amount / WORD_BITS;
-    nbits = amount % WORD_BITS;
     if (nbits == 0) {
         /* short path */
-        for (i = (int)bx->size-1; i>=0; i--) {
+        for (int i = (int)bx->size-1; i>=0; i--) {
             if ((int)br->size > i+nwords) br->values[i+nwords] = bx->values[i];
         }
-        for (i = nwords-1; i>=0; i--) br->values[i] = 0;
+        for (int i = nwords-1; i>=0; i--) br->values[i] = 0;
     } else {
         if (br->size > bx->size + nwords) {
             br->values[bx->size+nwords] =
                 bx->values[bx->size-1]>>(WORD_BITS-nbits);
         }
+        int i;
         for (i = (int)bx->size-1; i > 0; i--) {
-            x = (bx->values[i]<<nbits)|(bx->values[i-1]>>(WORD_BITS-nbits));
+            u_long x = (bx->values[i]<<nbits)|(bx->values[i-1]>>(WORD_BITS-nbits));
             if ((int)br->size > i+nwords) br->values[i+nwords] = x;
         }
         br->values[nwords] = bx->values[0]<<nbits;
@@ -827,15 +810,13 @@ static ScmBignum *bignum_lshift(ScmBignum *br, const ScmBignum *bx, int amount)
 static ScmBignum *bignum_mul_word(ScmBignum *br, const ScmBignum *bx,
                                   u_long y, int off)
 {
-    u_long hi, lo, x, r0, r1, c;
-    u_int i,j;
-
-    for (i=0; i<bx->size; i++) {
-        x = bx->values[i];
+    for (int i=0; i<bx->size; i++) {
+        u_long hi, lo, r1;
+        u_long x = bx->values[i];
         UMUL(hi, lo, x, y);
-        c = 0;
 
-        r0 = br->values[i+off];
+        u_long c = 0;
+        u_long r0 = br->values[i+off];
         UADD(r1, c, r0, lo);
         br->values[i+off] = r1;
 
@@ -843,7 +824,7 @@ static ScmBignum *bignum_mul_word(ScmBignum *br, const ScmBignum *bx,
         UADD(r1, c, r0, hi);
         br->values[i+off+1] = r1;
 
-        for (j=i+off+2; c && j<br->size; j++) {
+        for (int j=i+off+2; c && j<br->size; j++) {
             r0 = br->values[j];
             UADD(r1, c, r0, 0);
             br->values[j] = r1;
@@ -855,9 +836,8 @@ static ScmBignum *bignum_mul_word(ScmBignum *br, const ScmBignum *bx,
 /* returns bx * by.  not normalized */
 static ScmBignum *bignum_mul(const ScmBignum *bx, const ScmBignum *by)
 {
-    u_int i;
     ScmBignum *br = make_bignum(bx->size + by->size);
-    for (i=0; i<by->size; i++) {
+    for (u_int i=0; i<by->size; i++) {
         bignum_mul_word(br, bx, by->values[i], i);
     }
     br->sign = bx->sign * by->sign;
@@ -867,17 +847,15 @@ static ScmBignum *bignum_mul(const ScmBignum *bx, const ScmBignum *by)
 /* return bx * y,  y != 0 and y != 1 */
 static ScmBignum *bignum_mul_si(const ScmBignum *bx, long y)
 {
-    ScmBignum *br;
-    u_long yabs;
-
     if (y == -1) {
-        br = SCM_BIGNUM(Scm_BignumCopy(bx));
+        ScmBignum *br = SCM_BIGNUM(Scm_BignumCopy(bx));
         br->sign = -br->sign;
         return br;
     }
     /* TODO: optimize for 2^n case !*/
+    ScmBignum *br;
     br = make_bignum(bx->size + 1); /* TODO: more accurate estimation */
-    yabs = (y<0)? -y:y;
+    u_long yabs = (y<0)? -y:y;
     br->sign = bx->sign;
     bignum_mul_word(br, bx, yabs, 0);
     if (y<0) br->sign = -br->sign;
@@ -921,10 +899,9 @@ static ScmBignum *bignum_gdiv(const ScmBignum *dividend,
                               const ScmBignum *divisor,
                               ScmBignum *quotient)
 {
-    ScmBignum *u, *v;
     int d = div_normalization_factor(divisor->values[divisor->size-1]);
-    int j, k, n, m;
-    u_long vn_1, vn_2, vv, uj, uj2, cy;
+    int n, m;
+    u_long vv, uj, uj2, cy;
 
 #define DIGIT(num, n) (((n)%2)? HI((num)->values[(n)/2]) : LO((num)->values[(n)/2]))
 #define DIGIT2(num, n) \
@@ -942,7 +919,8 @@ static ScmBignum *bignum_gdiv(const ScmBignum *dividend,
      (num->values[(n)/2] = (v)))
 
     /* normalize */
-    u = make_bignum(dividend->size + 1); /*will be returned as a remainder */
+    ScmBignum *u, *v;
+    u = make_bignum(dividend->size + 1); /* will be returned as a remainder */
     ALLOC_TEMP_BIGNUM(v, divisor->size);
     if (d >= HALF_BITS) {
         d -= HALF_BITS;
@@ -954,8 +932,8 @@ static ScmBignum *bignum_gdiv(const ScmBignum *dividend,
     }
     bignum_lshift(u, dividend, d);
     bignum_lshift(v, divisor, d);
-    vn_1 = DIGIT(v, n-1);
-    vn_2 = DIGIT(v, n-2);
+    u_long vn_1 = DIGIT(v, n-1);
+    u_long vn_2 = DIGIT(v, n-2);
 #undef DIV_DEBUG
 #ifdef DIV_DEBUG
     Scm_Printf(SCM_CUROUT, "shift=%d, n=%d, m=%d\n", d, n, m);
@@ -964,7 +942,7 @@ static ScmBignum *bignum_gdiv(const ScmBignum *dividend,
     Scm_Printf(SCM_CUROUT, "\nvn_1=%08lx, vn_2=%08lx\n", vn_1, vn_2);
 #endif
 
-    for (j = m; j >= 0; j--) {
+    for (int j = m; j >= 0; j--) {
         u_long uu = (DIGIT(u, j+n) << HALF_BITS) + DIGIT(u, j+n-1);
         u_long qq = uu/vn_1;
         u_long rr = uu%vn_1;
@@ -981,7 +959,7 @@ static ScmBignum *bignum_gdiv(const ScmBignum *dividend,
                    uu, qq, rr);
 #endif
         cy = 0;
-        for (k = 0; k < n; k++) {
+        for (int k = 0; k < n; k++) {
             vv = qq * DIGIT(v, k);
             uj = DIGIT2(u, j+k);
             uj2 = uj - vv - cy;
@@ -996,7 +974,7 @@ static ScmBignum *bignum_gdiv(const ScmBignum *dividend,
         if (cy) {
             qq--;
             cy = 0;
-            for (k = 0; k < n; k++) {
+            for (int k = 0; k < n; k++) {
                 vv = DIGIT(v, k);
                 uj = DIGIT(u, j+k) + vv + cy;
                 cy = (uj >= HALF_WORD)? 1 : 0;
@@ -1107,15 +1085,13 @@ long Scm_BignumRemSI(const ScmBignum *dividend, long divisor)
    remainder */
 ScmObj Scm_BignumDivRem(const ScmBignum *dividend, const ScmBignum *divisor)
 {
-    ScmBignum *q, *r;
-
     /* special case */
     if (Scm_BignumAbsCmp(dividend, divisor) < 0) {
         return Scm_Cons(SCM_MAKE_INT(0), SCM_OBJ(dividend));
     }
 
-    q = make_bignum(dividend->size - divisor->size + 1);
-    r = bignum_gdiv(dividend, divisor, q);
+    ScmBignum *q = make_bignum(dividend->size - divisor->size + 1);
+    ScmBignum *r = bignum_gdiv(dividend, divisor, q);
     q->sign = dividend->sign * divisor->sign;
     r->sign = dividend->sign;
 
@@ -1180,27 +1156,30 @@ ScmObj Scm_BignumLogAnd(const ScmBignum *x, const ScmBignum *y)
     int xsize = SCM_BIGNUM_SIZE(x), xsign = SCM_BIGNUM_SIGN(x);
     int ysize = SCM_BIGNUM_SIZE(y), ysign = SCM_BIGNUM_SIGN(y);
     int zsize, minsize = min(xsize, ysize);
-    ScmBignum *xx, *yy, *z;
 
     if (xsign > 0) {
         if (ysign > 0) {
-            z = bignum_and(make_bignum(minsize), x, y, minsize, 0, 0);
+            ScmBignum *z = bignum_and(make_bignum(minsize), x, y, minsize,
+                                      0, 0);
             return Scm_NormalizeBignum(z);
         } else {
-            yy = SCM_BIGNUM(Scm_BignumComplement(y));
-            z = bignum_and(make_bignum(xsize), x, yy, minsize, xsize, 0);
+            ScmBignum *yy = SCM_BIGNUM(Scm_BignumComplement(y));
+            ScmBignum *z = bignum_and(make_bignum(xsize), x, yy, minsize,
+                                      xsize, 0);
             return Scm_NormalizeBignum(z);
         }
     } else {
         if (ysign > 0) {
-            xx = SCM_BIGNUM(Scm_BignumComplement(x));
-            z = bignum_and(make_bignum(ysize), xx, y, minsize, 0, ysize);
+            ScmBignum *xx = SCM_BIGNUM(Scm_BignumComplement(x));
+            ScmBignum *z = bignum_and(make_bignum(ysize), xx, y, minsize,
+                                      0, ysize);
             return Scm_NormalizeBignum(z);
         } else {
-            xx = SCM_BIGNUM(Scm_BignumComplement(x));
-            yy = SCM_BIGNUM(Scm_BignumComplement(y));
+            ScmBignum *xx = SCM_BIGNUM(Scm_BignumComplement(x));
+            ScmBignum *yy = SCM_BIGNUM(Scm_BignumComplement(y));
             zsize = max(xsize, ysize);
-            z = bignum_and(make_bignum(zsize), xx, yy, minsize, xsize, ysize);
+            ScmBignum *z = bignum_and(make_bignum(zsize), xx, yy, minsize,
+                                      xsize, ysize);
             SCM_BIGNUM_SIGN(z) = -1;
             bignum_2scmpl(z);
             return Scm_NormalizeBignum(z);
@@ -1231,32 +1210,35 @@ ScmObj Scm_BignumLogIor(const ScmBignum *x, const ScmBignum *y)
 {
     int xsize = SCM_BIGNUM_SIZE(x), xsign = SCM_BIGNUM_SIGN(x);
     int ysize = SCM_BIGNUM_SIZE(y), ysign = SCM_BIGNUM_SIGN(y);
-    int zsize, minsize = min(xsize, ysize);
-    ScmBignum *xx, *yy, *z;
+    int minsize = min(xsize, ysize);
 
     if (xsign >= 0) {
         if (ysign >= 0) {
-            zsize = max(xsize, ysize);
-            z = bignum_ior(make_bignum(zsize), x, y, minsize, xsize, ysize);
+            int zsize = max(xsize, ysize);
+            ScmBignum *z = bignum_ior(make_bignum(zsize), x, y, minsize,
+                                      xsize, ysize);
             return Scm_NormalizeBignum(z);
         } else {
-            yy = SCM_BIGNUM(Scm_BignumComplement(y));
-            z = bignum_ior(make_bignum(ysize), x, yy, minsize, 0, ysize);
+            ScmBignum *yy = SCM_BIGNUM(Scm_BignumComplement(y));
+            ScmBignum *z = bignum_ior(make_bignum(ysize), x, yy, minsize,
+                                      0, ysize);
             SCM_BIGNUM_SIGN(z) = -1;
             bignum_2scmpl(z);
             return Scm_NormalizeBignum(z);
         }
     } else {
         if (ysign >= 0) {
-            xx = SCM_BIGNUM(Scm_BignumComplement(x));
-            z = bignum_ior(make_bignum(xsize), xx, y, minsize, xsize, 0);
+            ScmBignum *xx = SCM_BIGNUM(Scm_BignumComplement(x));
+            ScmBignum *z = bignum_ior(make_bignum(xsize), xx, y, minsize,
+                                      xsize, 0);
             SCM_BIGNUM_SIGN(z) = -1;
             bignum_2scmpl(z);
             return Scm_NormalizeBignum(z);
         } else {
-            xx = SCM_BIGNUM(Scm_BignumComplement(x));
-            yy = SCM_BIGNUM(Scm_BignumComplement(y));
-            z = bignum_ior(make_bignum(minsize), xx, yy, minsize, 0, 0);
+            ScmBignum *xx = SCM_BIGNUM(Scm_BignumComplement(x));
+            ScmBignum *yy = SCM_BIGNUM(Scm_BignumComplement(y));
+            ScmBignum *z = bignum_ior(make_bignum(minsize), xx, yy, minsize,
+                                      0, 0);
             SCM_BIGNUM_SIGN(z) = -1;
             bignum_2scmpl(z);
             return Scm_NormalizeBignum(z);
@@ -1274,11 +1256,10 @@ ScmObj Scm_BignumLogXor(const ScmBignum *x, const ScmBignum *y)
 
 int Scm_BignumLogCount(const ScmBignum *b)
 {
-    ScmBits *bits;
     const ScmBignum *z = (SCM_BIGNUM_SIGN(b)>0)? b : SCM_BIGNUM(Scm_BignumComplement(b));
     int size = SCM_BIGNUM_SIZE(z) * SCM_WORD_BITS;
 
-    bits = (ScmBits*)z->values;
+    ScmBits *bits = (ScmBits*)z->values;
     if (b->sign > 0) {
         return Scm_BitsCount1(bits, 0, size);
     } else {
@@ -1297,13 +1278,11 @@ ScmObj Scm_BignumToString(const ScmBignum *b, int radix, int use_upper)
     static const char utab[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     const char *tab = use_upper? utab : ltab;
     ScmObj h = SCM_NIL, t = SCM_NIL;
-    ScmBignum *q;
-    long rem;
     if (radix < 2 || radix > 36)
         Scm_Error("radix out of range: %d", radix);
-    q = SCM_BIGNUM(Scm_BignumCopy(b));
+    ScmBignum *q = SCM_BIGNUM(Scm_BignumCopy(b));
     for (;q->size > 0;) {
-        rem = bignum_sdiv(q, radix);
+        long rem = bignum_sdiv(q, radix);
         SCM_ASSERT(rem >= 0 && rem < radix);
         SCM_APPEND1(h, t, SCM_MAKE_CHAR(tab[rem]));
         for (; q->values[q->size-1] == 0 && q->size > 0; q->size--)
@@ -1315,10 +1294,9 @@ ScmObj Scm_BignumToString(const ScmBignum *b, int radix, int use_upper)
 
 int Scm_DumpBignum(const ScmBignum *b, ScmPort *out)
 {
-    int i;
     Scm_Printf(out, "#<bignum ");
     if (b->sign < 0) SCM_PUTC('-', out);
-    for (i=(int)b->size-1; i>=0; i--) {
+    for (int i=(int)b->size-1; i>=0; i--) {
         Scm_Printf(out, "%08lx ", b->values[i]);
     }
     SCM_PUTC('>', out);
@@ -1347,12 +1325,12 @@ ScmBignum *Scm_MakeBignumWithSize(int size, u_long init)
 ScmBignum *Scm_BignumAccMultAddUI(ScmBignum *acc, u_long coef, u_long c)
 {
     ScmBignum *r;
-    u_int rsize = acc->size + 1, i;
+    u_int rsize = acc->size + 1;
     ALLOC_TEMP_BIGNUM(r, rsize);
     r->values[0] = c;
     bignum_mul_word(r, acc, coef, 0);
     if (r->values[rsize-1] == 0) {
-        for (i=0; i<acc->size; i++) {
+        for (u_int i=0; i<acc->size; i++) {
             acc->values[i] = r->values[i];
         }
         return acc;
@@ -1360,10 +1338,9 @@ ScmBignum *Scm_BignumAccMultAddUI(ScmBignum *acc, u_long coef, u_long c)
         ScmBignum *rr;
         rr = make_bignum(rsize + 3); /* 3 is arbitrary size increment */
         rr->sign = acc->sign;
-        for (i=0; i<rsize; i++) {
+        for (u_int i=0; i<rsize; i++) {
             rr->values[i] = r->values[i];
         }
         return rr;
     }
 }
-
