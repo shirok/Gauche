@@ -76,10 +76,10 @@
 /* generic routine to handle byte-stream */
 static inline int getbytes(char *buf, int len, ScmPort *iport)
 {
-    int nread = 0, r;
+    int nread = 0;
     ENSURE_IPORT(iport);
     while (nread < len) {
-        r = Scm_Getz(buf, len-nread, iport);
+        int r = Scm_Getz(buf, len-nread, iport);
         if (r <= 0) return EOF;
         nread += r;
         buf += r;
@@ -305,12 +305,11 @@ static void extract(ScmUVector *uv, char *buf, int off, int eltsize)
 {
     int size = Scm_UVectorSizeInBytes(uv);
     unsigned char *b = (unsigned char*)SCM_UVECTOR_ELEMENTS(uv) + off;
-    int i;
 
     if (off < 0 || off+eltsize > size) {
         Scm_Error("offset %d is out of bound of the uvector.", off);
     }
-    for (i=0; i<eltsize; i++) {
+    for (int i=0; i<eltsize; i++) {
         *buf++ = *b++;
     }
 }
@@ -326,10 +325,10 @@ ScmObj Scm_GetBinaryU8(ScmUVector *uv, int off, ScmSymbol *endian)
 
 ScmObj Scm_GetBinaryS8(ScmUVector *uv, int off, ScmSymbol *endian)
 {
-    unsigned char b; int r;
+    unsigned char b;
     CHECK_ENDIAN(endian);
     extract(uv, (char *)&b, off, 1);
-    r = b;
+    int r = b;
     if (r >= 128) r -= 256;
     return SCM_MAKE_INT(r);
 }
@@ -423,14 +422,13 @@ static void inject(ScmUVector *uv, char *buf, int off, int eltsize)
 {
     int size = Scm_UVectorSizeInBytes(uv);
     unsigned char *b = (unsigned char*)SCM_UVECTOR_ELEMENTS(uv) + off;
-    int i;
 
     SCM_UVECTOR_CHECK_MUTABLE(SCM_OBJ(uv));
 
     if (off < 0 || off+eltsize > size) {
         Scm_Error("offset %d is out of bound of the uvector.", off);
     }
-    for (i=0; i<eltsize; i++) {
+    for (int i=0; i<eltsize; i++) {
         *b++ = *buf++;
     }
 }

@@ -64,12 +64,12 @@ static SCM_DEFINE_SUBR(thread_error_handler_STUB, 1, 0, SCM_OBJ(&thread_error_ha
    is not created. */
 ScmObj Scm_MakeThread(ScmProcedure *thunk, ScmObj name)
 {
-    ScmVM *current = Scm_VM(), *vm;
+    ScmVM *current = Scm_VM();
 
     if (SCM_PROCEDURE_REQUIRED(thunk) != 0) {
         Scm_Error("thunk required, but got %S", thunk);
     }
-    vm = Scm_NewVM(current, name);
+    ScmVM *vm = Scm_NewVM(current, name);
     vm->thunk = thunk;
     vm->defaultEscapeHandler = SCM_OBJ(&thread_error_handler_STUB);
     return SCM_OBJ(vm);
@@ -82,13 +82,13 @@ ScmObj Scm_MakeThread(ScmProcedure *thunk, ScmObj name)
    Caller must hold vm->vmlock */
 static void thread_cleanup_inner(ScmVM *vm)
 {
-    ScmObj e;
     /* Change this VM state to TERMINATED, and signals the change
        to the waiting threads. */
     vm->state = SCM_VM_TERMINATED;
     if (vm->canceller) {
         /* This thread is cancelled. */
-        e = Scm_MakeThreadException(SCM_CLASS_TERMINATED_THREAD_EXCEPTION, vm);
+        ScmObj e = Scm_MakeThreadException(
+            SCM_CLASS_TERMINATED_THREAD_EXCEPTION, vm);
         SCM_THREAD_EXCEPTION(e)->data = SCM_OBJ(vm->canceller);
         vm->resultException = e;
     }
@@ -120,21 +120,22 @@ static SCM_INTERNAL_THREAD_PROC_RETTYPE thread_entry(void *data)
         SCM_UNWIND_PROTECT {
             vm->result = Scm_ApplyRec(SCM_OBJ(vm->thunk), SCM_NIL);
         } SCM_WHEN_ERROR {
-            ScmObj exc;
             switch (vm->escapeReason) {
             case SCM_VM_ESCAPE_CONT:
                 /*TODO: better message*/
                 vm->resultException =
                     Scm_MakeError(SCM_MAKE_STR("stale continuation thrown"));
                 break;
-            default:
-                Scm_Panic("unknown escape");
-            case SCM_VM_ESCAPE_ERROR:
-                exc = Scm_MakeThreadException(SCM_CLASS_UNCAUGHT_EXCEPTION, vm);
+            case SCM_VM_ESCAPE_ERROR: {
+                ScmObj exc = Scm_MakeThreadException(
+                    SCM_CLASS_UNCAUGHT_EXCEPTION, vm);
                 SCM_THREAD_EXCEPTION(exc)->data = SCM_OBJ(vm->escapeData[1]);
                 vm->resultException = exc;
                 Scm_ReportError(SCM_OBJ(vm->escapeData[1]));
                 break;
+            }
+            default:
+                Scm_Panic("unknown escape");
             }
         } SCM_END_PROTECT;
         SCM_INTERNAL_THREAD_CLEANUP_POP();
@@ -214,11 +215,11 @@ ScmObj Scm_ThreadStart(ScmVM *vm)
 ScmObj Scm_ThreadJoin(ScmVM *target, ScmObj timeout, ScmObj timeoutval)
 {
 #ifdef GAUCHE_HAS_THREADS
-    struct timespec ts, *pts;
+    struct timespec ts;
     ScmObj result = SCM_FALSE, resultx = SCM_FALSE;
     int intr = FALSE, tout = FALSE;
 
-    pts = Scm_GetTimeSpec(timeout, &ts);
+    struct timespec *pts = Scm_GetTimeSpec(timeout, &ts);
     SCM_INTERNAL_MUTEX_SAFE_LOCK_BEGIN(target->vmlock);
     while (target->state != SCM_VM_TERMINATED) {
         if (pts) {
@@ -279,12 +280,12 @@ ScmObj Scm_ThreadJoin(ScmVM *target, ScmObj timeout, ScmObj timeoutval)
 ScmObj Scm_ThreadStop(ScmVM *target, ScmObj timeout, ScmObj timeoutval)
 {
 #ifdef GAUCHE_HAS_THREADS
-    struct timespec ts, *pts;
+    struct timespec ts;
     ScmVM *vm = Scm_VM();
     ScmVM *taker = NULL;
     int timedout;
     int invalid_state = FALSE;
-    pts = Scm_GetTimeSpec(timeout, &ts);
+    struct timespec *pts = Scm_GetTimeSpec(timeout, &ts);
 
  retry:
     timedout = FALSE;
@@ -371,14 +372,14 @@ ScmObj Scm_ThreadCont(ScmVM *target)
 ScmObj Scm_ThreadSleep(ScmObj timeout)
 {
 #ifdef GAUCHE_HAS_THREADS
-    struct timespec ts, *pts;
+    struct timespec ts;
     ScmInternalCond dummyc;
     ScmInternalMutex dummym;
     int intr = FALSE;
 
     SCM_INTERNAL_COND_INIT(dummyc);
     SCM_INTERNAL_MUTEX_INIT(dummym);
-    pts = Scm_GetTimeSpec(timeout, &ts);
+    struct timespec *pts = Scm_GetTimeSpec(timeout, &ts);
     if (pts == NULL) Scm_Error("thread-sleep! can't take #f as a timeout value");
     SCM_INTERNAL_MUTEX_LOCK(dummym);
     if (SCM_INTERNAL_COND_TIMEDWAIT(dummyc, dummym, pts) == SCM_INTERNAL_COND_INTR) {

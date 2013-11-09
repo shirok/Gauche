@@ -71,13 +71,11 @@ typedef struct guess_dfa_rec {
 
 static const char *guess_jp(const char *buf, int buflen, void *data)
 {
-    int i;
     guess_dfa eucj = DFA_INIT(guess_eucj_st, guess_eucj_ar);
     guess_dfa sjis = DFA_INIT(guess_sjis_st, guess_sjis_ar);
     guess_dfa utf8 = DFA_INIT(guess_utf8_st, guess_utf8_ar);
-    guess_dfa *top = NULL;
 
-    for (i=0; i<buflen; i++) {
+    for (int i=0; i<buflen; i++) {
         int c = (unsigned char)buf[i];
 
         /* special treatment of jis escape sequence */
@@ -109,6 +107,7 @@ static const char *guess_jp(const char *buf, int buflen, void *data)
 
     /* Now, we have ambigous code.  Pick the highest score.  If more than
        one candidate tie, pick the default encoding. */
+    guess_dfa *top = NULL;
     if (DFA_ALIVE(eucj)) top = &eucj;
     if (DFA_ALIVE(utf8)) {
         if (top) {
@@ -148,4 +147,3 @@ void Scm_Init_convguess(void)
 {
     Scm_RegisterCodeGuessingProc("*JP", guess_jp, NULL);
 }
-

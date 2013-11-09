@@ -147,10 +147,10 @@ ScmObj Scm_MakeZlibError(ScmObj message, int error_code)
 void Scm_ZlibError(int error_code, const char *msg, ...)
 {
     ScmObj e;
-    va_list args;
     ScmVM *vm = Scm_VM();
 
     SCM_UNWIND_PROTECT {
+        va_list args;
         ScmObj ostr = Scm_MakeOutputStringPort(TRUE);
         va_start(args, msg);
         Scm_Vprintf(SCM_PORT(ostr), msg, args, TRUE);
@@ -178,17 +178,17 @@ static ScmObj porterror_allocate(ScmClass *klass, ScmObj initargs)
 
 void Scm_ZlibPortError(ScmPort *port, int error_code, const char *msg, ...)
 {
-    ScmObj pe, e, smsg;
-    va_list args;
+    ScmObj e;
     ScmVM *vm = Scm_VM();
 
     SCM_UNWIND_PROTECT {
+        va_list args;
         ScmObj ostr = Scm_MakeOutputStringPort(TRUE);
         va_start(args, msg);
         Scm_Vprintf(SCM_PORT(ostr), msg, args, TRUE);
         va_end(args);
-        smsg = Scm_GetOutputString(SCM_PORT(ostr), 0);
-        pe = porterror_allocate(SCM_CLASS_IO_READ_ERROR, SCM_NIL);
+        ScmObj smsg = Scm_GetOutputString(SCM_PORT(ostr), 0);
+        ScmObj pe = porterror_allocate(SCM_CLASS_IO_READ_ERROR, SCM_NIL);
         SCM_ERROR(pe)->message = smsg;
         SCM_PORT_ERROR(pe)->port = port;
         e = Scm_MakeCompoundCondition(SCM_LIST2(Scm_MakeZlibError(smsg, error_code),
@@ -229,7 +229,7 @@ static int deflate_flusher(ScmPort *port, int cnt, int forcep)
 {
     ScmZlibInfo *info = SCM_PORT_ZLIB_INFO(port);
     z_streamp strm = SCM_PORT_ZSTREAM(port);
-    int ret, nread, nwrite, total = 0;
+    int total = 0;
     unsigned char *inbuf = (unsigned char*)port->src.buf.buffer;
     unsigned char outbuf[CHUNK];
 
@@ -243,13 +243,13 @@ static int deflate_flusher(ScmPort *port, int cnt, int forcep)
     for (;;) {
         strm->next_out = outbuf;
         strm->avail_out = CHUNK;
-        ret = deflate(strm, info->flush);
+        int ret = deflate(strm, info->flush);
         SCM_ASSERT(ret == Z_OK);
         if (strm->avail_out != 0) {
             info->flush = Z_NO_FLUSH;
         }
-        nread = strm->next_in - inbuf;
-        nwrite = strm->next_out - outbuf;
+        int nread = strm->next_in - inbuf;
+        int nwrite = strm->next_out - outbuf;
         total += nread;
         if (nwrite > 0) {
             Scm_Putz((char*)outbuf, nwrite, info->remote);
@@ -265,7 +265,6 @@ static void deflate_closer(ScmPort *port)
 {
     ScmZlibInfo *info = SCM_PORT_ZLIB_INFO(port);
     z_streamp strm = SCM_PORT_ZSTREAM(port);
-    int r, nwrite;
     unsigned char *inbuf = (unsigned char*)port->src.buf.buffer;
     unsigned char outbuf[CHUNK];
 
@@ -274,10 +273,11 @@ static void deflate_closer(ScmPort *port)
     strm->next_out = outbuf;
     strm->avail_out = CHUNK;
 
+    int r;
     do {
         r = deflate(strm, Z_FINISH);
         SCM_ASSERT(r == Z_OK || r == Z_STREAM_END);
-        nwrite = strm->next_out - outbuf;
+        int nwrite = strm->next_out - outbuf;
         if (nwrite > 0) {
             Scm_Putz((char*)outbuf, nwrite, info->remote);
             strm->next_out = outbuf;
@@ -304,11 +304,8 @@ ScmObj Scm_MakeDeflatingPort(ScmPort *source, int level,
                              int strategy, ScmObj dict,
                              int bufsiz, int ownerp)
 {
-    ScmPortBuffer bufrec;
-    ScmObj name = port_name("deflating", source);
     ScmZlibInfo *info = SCM_NEW(ScmZlibInfo);
     z_streamp strm = SCM_NEW_ATOMIC2(z_streamp, sizeof(z_stream));
-    int r;
 
     bufsiz = fix_buffer_size(bufsiz);
 
@@ -317,8 +314,8 @@ ScmObj Scm_MakeDeflatingPort(ScmPort *source, int level,
     strm->opaque = NULL;
     strm->next_in = NULL;
     strm->avail_in = 0;
-    r = deflateInit2(strm, level, Z_DEFLATED, window_bits,
-                     memlevel, strategy);
+    int r = deflateInit2(strm, level, Z_DEFLATED, window_bits,
+                         memlevel, strategy);
     if (r != Z_OK) {
         Scm_ZlibError(r, "deflateInit2 error: %s", strm->msg);
     }
@@ -326,9 +323,9 @@ ScmObj Scm_MakeDeflatingPort(ScmPort *source, int level,
     if (!SCM_FALSEP(dict)) {
         if (!SCM_STRINGP(dict))
             Scm_Error("String required, but got %S", dict);
-        r = deflateSetDictionary(strm,
-                                 (unsigned char*)SCM_STRING_START(dict),
-                                 SCM_STRING_SIZE(dict));
+        int r = deflateSetDictionary(strm,
+                                     (unsigned char*)SCM_STRING_START(dict),
+                                     SCM_STRING_SIZE(dict));
         if (r != Z_OK) {
             Scm_ZlibError(r, "deflateSetDictionary failed: %s", strm->msg);
         }
@@ -348,6 +345,7 @@ ScmObj Scm_MakeDeflatingPort(ScmPort *source, int level,
     info->level = level;
     info->strategy = strategy;
 
+    ScmPortBuffer bufrec;
     memset(&bufrec, 0, sizeof(bufrec));
     bufrec.size = bufsiz;
     bufrec.buffer = SCM_NEW_ATOMIC2(char *, bufsiz);
@@ -359,6 +357,7 @@ ScmObj Scm_MakeDeflatingPort(ScmPort *source, int level,
     bufrec.filenum = zlib_fileno;
     bufrec.data = (void*)info;
 
+    ScmObj name = port_name("deflating", source);
     return Scm_MakeBufferedPort(SCM_CLASS_DEFLATING_PORT, name,
                                 SCM_PORT_OUTPUT, TRUE, &bufrec);
 }
@@ -371,14 +370,14 @@ static int inflate_filler(ScmPort *port, int mincnt)
 {
     ScmZlibInfo *info = SCM_PORT_ZLIB_INFO(port);
     z_streamp strm = SCM_PORT_ZSTREAM(port);
-    int r, nread;
     unsigned char *outbuf = (unsigned char*)port->src.buf.end;
+    int r;
 
     if (info->stream_endp) return 0;
 
-    nread = Scm_Getz(info->ptr,
-                     info->bufsiz - (info->ptr - info->buf),
-                     info->remote);
+    int nread = Scm_Getz(info->ptr,
+                         info->bufsiz - (info->ptr - info->buf),
+                         info->remote);
 
     if (nread <= 0) {
         /* input reached EOF */
@@ -459,11 +458,8 @@ ScmObj Scm_MakeInflatingPort(ScmPort *sink, int bufsiz,
                              int window_bits, ScmObj dict,
                              int ownerp)
 {
-    ScmPortBuffer bufrec;
-    ScmObj name = port_name("inflating", sink);
     ScmZlibInfo *info = SCM_NEW(ScmZlibInfo);
     z_streamp strm = SCM_NEW_ATOMIC2(z_streamp, sizeof(z_stream));
-    int r;
 
     bufsiz = fix_buffer_size(bufsiz);
 
@@ -472,7 +468,7 @@ ScmObj Scm_MakeInflatingPort(ScmPort *sink, int bufsiz,
     strm->opaque = NULL;
     strm->next_in = NULL;
     strm->avail_in = 0;
-    r = inflateInit2(strm, window_bits);
+    int r = inflateInit2(strm, window_bits);
     if (r != Z_OK)
         Scm_ZlibError(r, "inflateInit2 error: %s", strm->msg);
 
@@ -498,6 +494,7 @@ ScmObj Scm_MakeInflatingPort(ScmPort *sink, int bufsiz,
     info->strategy = 0;
     info->dict_adler = SCM_FALSE;
 
+    ScmPortBuffer bufrec;
     memset(&bufrec, 0, sizeof(bufrec));
     bufrec.size = info->bufsiz;
     bufrec.buffer = SCM_NEW_ATOMIC2(char *, info->bufsiz);
@@ -509,6 +506,7 @@ ScmObj Scm_MakeInflatingPort(ScmPort *sink, int bufsiz,
     bufrec.filenum = zlib_fileno;
     bufrec.data = (void*)info;
 
+    ScmObj name = port_name("inflating", sink);
     return Scm_MakeBufferedPort(SCM_CLASS_INFLATING_PORT, name,
                                 SCM_PORT_INPUT, TRUE, &bufrec);
 }
@@ -519,14 +517,14 @@ ScmObj Scm_InflateSync(ScmPort *port)
     z_streamp strm = SCM_PORT_ZSTREAM(port);
     unsigned char *outbuf = (unsigned char*)port->src.buf.end;
     unsigned long curr_in = strm->total_in;
-    int r, nread;
 
     if (info->stream_endp) return SCM_FALSE;
 
+    int r;
     do {
-        nread = Scm_Getz(info->ptr,
-                         info->bufsiz - (info->ptr - info->buf),
-                         info->remote);
+        int nread = Scm_Getz(info->ptr,
+                             info->bufsiz - (info->ptr - info->buf),
+                             info->remote);
         if (nread <= 0) {
             /* input reached EOF */
             if (info->ptr == info->buf) {
@@ -562,21 +560,18 @@ extern void Scm_Init_zliblib(ScmModule*);
 
 SCM_EXTENSION_ENTRY void Scm_Init_rfc__zlib(void)
 {
-    ScmModule *mod;
-    ScmClass *cond_meta;
-
     /* Register this DSO to Gauche */
     SCM_INIT_EXTENSION(rfc__zlib);
 
     /* Create the module if it doesn't exist yet. */
-    mod = SCM_MODULE(SCM_FIND_MODULE("rfc.zlib", TRUE));
+    ScmModule *mod = SCM_MODULE(SCM_FIND_MODULE("rfc.zlib", TRUE));
 
     Scm_InitStaticClass(&Scm_DeflatingPortClass, "<deflating-port>",
                         mod, NULL, 0);
     Scm_InitStaticClass(&Scm_InflatingPortClass, "<inflating-port>",
                         mod, NULL, 0);
 
-    cond_meta = Scm_ClassOf(SCM_OBJ(SCM_CLASS_CONDITION));
+    ScmClass *cond_meta = Scm_ClassOf(SCM_OBJ(SCM_CLASS_CONDITION));
     Scm_InitStaticClassWithMeta(SCM_CLASS_ZLIB_ERROR,
                                 "<zlib-error>",
                                 mod, cond_meta, SCM_FALSE,

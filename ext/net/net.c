@@ -172,7 +172,6 @@ static void sockport_err(ScmSocket *sock, const char *io)
 ScmObj Scm_SocketInputPort(ScmSocket *sock, int buffering)
 {
     if (sock->inPort == NULL) {
-        ScmObj sockname;
         int infd;
         if (sock->type != SOCK_DGRAM &&
             sock->status < SCM_SOCKET_STATUS_CONNECTED) {
@@ -189,7 +188,8 @@ ScmObj Scm_SocketInputPort(ScmSocket *sock, int buffering)
         /* NB: I keep the socket itself in the port name, in order to avoid
            the socket from GCed prematurely if application doesn't keep
            pointer to the socket. */
-        sockname = SCM_LIST2(SCM_MAKE_STR("socket input"), SCM_OBJ(sock));
+        ScmObj sockname = SCM_LIST2(SCM_MAKE_STR("socket input"),
+                                    SCM_OBJ(sock));
         sock->inPort = SCM_PORT(Scm_MakePortWithFd(sockname, SCM_PORT_INPUT,
                                                    infd, buffering, FALSE));
     }
@@ -199,7 +199,6 @@ ScmObj Scm_SocketInputPort(ScmSocket *sock, int buffering)
 ScmObj Scm_SocketOutputPort(ScmSocket *sock, int buffering)
 {
     if (sock->outPort == NULL) {
-        ScmObj sockname;
         int outfd;
         if (sock->type != SOCK_DGRAM &&
             sock->status < SCM_SOCKET_STATUS_CONNECTED) {
@@ -216,7 +215,8 @@ ScmObj Scm_SocketOutputPort(ScmSocket *sock, int buffering)
         /* NB: I keep the socket itself in the port name, in order to avoid
            the socket from GCed prematurely if application doesn't keep
            pointer to the socket. */
-        sockname = SCM_LIST2(SCM_MAKE_STR("socket output"), SCM_OBJ(sock));
+        ScmObj sockname = SCM_LIST2(SCM_MAKE_STR("socket output"),
+                                    SCM_OBJ(sock));
         sock->outPort = SCM_PORT(Scm_MakePortWithFd(sockname, SCM_PORT_OUTPUT,
                                                     outfd, buffering, FALSE));
     }
@@ -236,7 +236,6 @@ ScmObj Scm_SocketOutputPort(ScmSocket *sock, int buffering)
 
 ScmObj Scm_SocketBind(ScmSocket *sock, ScmSockAddr *addr)
 {
-    ScmSockAddr *naddr;
     int r;
     CLOSE_CHECK(sock->fd, "bind", sock);
     SCM_SYSCALL(r, bind(sock->fd, &addr->addr, addr->addrlen));
@@ -246,8 +245,8 @@ ScmObj Scm_SocketBind(ScmSocket *sock, ScmSockAddr *addr)
     /* The system may assign different address than <addr>, especially when
        <addr> contains some 'wild card' (e.g. port=0).  We call getsockname
        to obtain the exact address.   Patch provided by ODA Hideo */
-    naddr = SCM_SOCKADDR(Scm_MakeSockAddr(SCM_CLASS_OF(addr),
-                                          &addr->addr, addr->addrlen));
+    ScmSockAddr *naddr = SCM_SOCKADDR(
+        Scm_MakeSockAddr(SCM_CLASS_OF(addr), &addr->addr, addr->addrlen));
     SCM_SYSCALL(r, getsockname(sock->fd, &naddr->addr, &naddr->addrlen));
     if (r < 0) {
         Scm_SysError("getsockname failed to %S", addr);
@@ -274,7 +273,6 @@ ScmObj Scm_SocketAccept(ScmSocket *sock)
     Socket newfd;
     struct sockaddr_storage addrbuf;
     socklen_t addrlen = sizeof(addrbuf);
-    ScmSocket *newsock;
     ScmClass *addrClass = Scm_ClassOf(SCM_OBJ(sock->address));
 
     CLOSE_CHECK(sock->fd, "accept from", sock);
@@ -286,7 +284,7 @@ ScmObj Scm_SocketAccept(ScmSocket *sock)
             Scm_SysError("accept(2) failed");
         }
     }
-    newsock = make_socket(newfd, sock->type);
+    ScmSocket *newsock = make_socket(newfd, sock->type);
     newsock->address =
         SCM_SOCKADDR(Scm_MakeSockAddr(addrClass,
                                       (struct sockaddr*)&addrbuf,
@@ -352,10 +350,10 @@ static const char *get_message_body(ScmObj msg, u_int *size)
 
 ScmObj Scm_SocketSend(ScmSocket *sock, ScmObj msg, int flags)
 {
-    int r; u_int size;
-    const char *cmsg;
+    int r;
+    u_int size;
     CLOSE_CHECK(sock->fd, "send to", sock);
-    cmsg = get_message_body(msg, &size);
+    const char *cmsg = get_message_body(msg, &size);
     SCM_SYSCALL(r, send(sock->fd, cmsg, size, flags));
     if (r < 0) Scm_SysError("send(2) failed");
     return SCM_MAKE_INT(r);
@@ -364,10 +362,10 @@ ScmObj Scm_SocketSend(ScmSocket *sock, ScmObj msg, int flags)
 ScmObj Scm_SocketSendTo(ScmSocket *sock, ScmObj msg, ScmSockAddr *to,
                         int flags)
 {
-    int r; u_int size;
-    const char *cmsg;
+    int r;
+    u_int size;
     CLOSE_CHECK(sock->fd, "send to", sock);
-    cmsg = get_message_body(msg, &size);
+    const char *cmsg = get_message_body(msg, &size);
     SCM_SYSCALL(r, sendto(sock->fd, cmsg, size, flags,
                           &SCM_SOCKADDR(to)->addr, SCM_SOCKADDR(to)->addrlen));
     if (r < 0) Scm_SysError("sendto(2) failed");
@@ -377,10 +375,10 @@ ScmObj Scm_SocketSendTo(ScmSocket *sock, ScmObj msg, ScmSockAddr *to,
 ScmObj Scm_SocketSendMsg(ScmSocket *sock, ScmObj msg, int flags)
 {
 #if !GAUCHE_WINDOWS
-    int r; u_int size;
-    const char *cmsg;
+    int r;
+    u_int size;
     CLOSE_CHECK(sock->fd, "send to", sock);
-    cmsg = get_message_body(msg, &size);
+    const char *cmsg = get_message_body(msg, &size);
     SCM_SYSCALL(r, sendmsg(sock->fd, (struct msghdr*)cmsg, flags));
     if (r < 0) Scm_SysError("sendmsg(2) failed");
     return SCM_MAKE_INT(r);
@@ -393,9 +391,8 @@ ScmObj Scm_SocketSendMsg(ScmSocket *sock, ScmObj msg, int flags)
 ScmObj Scm_SocketRecv(ScmSocket *sock, int bytes, int flags)
 {
     int r;
-    char *buf;
     CLOSE_CHECK(sock->fd, "recv from", sock);
-    buf = SCM_NEW_ATOMIC2(char*, bytes);
+    char *buf = SCM_NEW_ATOMIC2(char*, bytes);
     SCM_SYSCALL(r, recv(sock->fd, buf, bytes, flags));
     if (r < 0) {
         Scm_SysError("recv(2) failed");
@@ -416,9 +413,8 @@ ScmObj Scm_SocketRecvX(ScmSocket *sock, ScmUVector *buf, int flags)
 {
     int r;
     u_int size;
-    char *z;
     CLOSE_CHECK(sock->fd, "recv from", sock);
-    z = get_message_buffer(buf, &size);
+    char *z = get_message_buffer(buf, &size);
     SCM_SYSCALL(r, recv(sock->fd, z, size, flags));
     if (r < 0) {
         Scm_SysError("recv(2) failed");
@@ -429,11 +425,10 @@ ScmObj Scm_SocketRecvX(ScmSocket *sock, ScmUVector *buf, int flags)
 ScmObj Scm_SocketRecvFrom(ScmSocket *sock, int bytes, int flags)
 {
     int r;
-    char *buf;
     struct sockaddr_storage from;
     socklen_t fromlen = sizeof(from);
     CLOSE_CHECK(sock->fd, "recv from", sock);
-    buf = SCM_NEW_ATOMIC2(char*, bytes);
+    char *buf = SCM_NEW_ATOMIC2(char*, bytes);
     SCM_SYSCALL(r, recvfrom(sock->fd, buf, bytes, flags,
                             (struct sockaddr*)&from, &fromlen));
     if (r < 0) {
@@ -454,18 +449,18 @@ ScmObj Scm_SocketRecvFromX(ScmSocket *sock, ScmUVector *buf,
 {
     int r;
     u_int size;
-    char *z;
     struct sockaddr_storage from;
     socklen_t fromlen = sizeof(from);
-    ScmObj cp, addr = SCM_FALSE;
+    ScmObj addr = SCM_FALSE;
 
     CLOSE_CHECK(sock->fd, "recv from", sock);
-    z = get_message_buffer(buf, &size);
+    char *z = get_message_buffer(buf, &size);
     SCM_SYSCALL(r, recvfrom(sock->fd, z, size, flags,
                             (struct sockaddr*)&from, &fromlen));
     if (r < 0) {
         Scm_SysError("recvfrom(2) failed");
     }
+    ScmObj cp;
     SCM_FOR_EACH(cp, addrs) {
         ScmObj a = SCM_CAR(cp);
         if (Scm_SockAddrP(a)) {
@@ -514,7 +509,6 @@ ScmObj Scm_SocketBuildMsg(ScmSockAddr *name, ScmVector *iov,
     }
 
     if (iov != NULL) {
-        int i;
         int iovsiz = SCM_VECTOR_SIZE(iov) * sizeof(struct iovec);
         msg->msg_iovlen = SCM_VECTOR_SIZE(iov);
         if (bufsiz >= iovsiz) {
@@ -523,7 +517,7 @@ ScmObj Scm_SocketBuildMsg(ScmSockAddr *name, ScmVector *iov,
         } else {
             msg->msg_iov = SCM_NEW_ARRAY(struct iovec, msg->msg_iovlen);
         }
-        for (i=0; i < msg->msg_iovlen; i++) {
+        for (int i=0; i < msg->msg_iovlen; i++) {
             ScmObj elt = SCM_VECTOR_ELEMENT(iov, i);
             u_int iovlen;
             msg->msg_iov[i].iov_base = (char*)get_message_body(elt, &iovlen);
@@ -537,7 +531,6 @@ ScmObj Scm_SocketBuildMsg(ScmSockAddr *name, ScmVector *iov,
     if (SCM_PAIRP(control)) {
         ScmObj cp;
         int ctrllen = 0;
-        struct cmsghdr *cmsg;
 
         SCM_FOR_EACH(cp, control) {
             u_int clen;
@@ -558,7 +551,7 @@ ScmObj Scm_SocketBuildMsg(ScmSockAddr *name, ScmVector *iov,
         } else {
             msg->msg_control = SCM_NEW_ATOMIC_ARRAY(char, ctrllen);
         }
-        cmsg = CMSG_FIRSTHDR(msg);
+        struct cmsghdr *cmsg = CMSG_FIRSTHDR(msg);
         SCM_FOR_EACH(cp, control) {
             u_int clen;
             ScmObj c = SCM_CAR(cp);
@@ -675,24 +668,24 @@ ScmObj Scm_SocketIoctl(ScmSocket *s, int request, ScmObj data)
 int inet_pton(int af, const char *src, void *dst)
 {
     TCHAR *str = SCM_MBS2WCS(src);
-    int r;
-    INT addrsize;
-    struct sockaddr_in sa;
-    struct sockaddr_in6 sa6;
 
     switch (af) {
-    case AF_INET:
-        addrsize = (INT)sizeof(sa);
-        r = WSAStringToAddress(str, af, NULL, (LPSOCKADDR)&sa, &addrsize);
+    case AF_INET: {
+        struct sockaddr_in sa;
+        INT addrsize = (INT)sizeof(sa);
+        int r = WSAStringToAddress(str, af, NULL, (LPSOCKADDR)&sa, &addrsize);
         if (r != 0) return -1;
         memcpy(dst, &sa.sin_addr, sizeof(struct in_addr));
         return 1;
-    case AF_INET6:
-        addrsize = (INT)sizeof(sa6);
-        r = WSAStringToAddress(str, af, NULL, (LPSOCKADDR)&sa6, &addrsize);
+    }
+    case AF_INET6: {
+        struct sockaddr_in6 sa6;
+        INT addrsize = (INT)sizeof(sa6);
+        int r = WSAStringToAddress(str, af, NULL, (LPSOCKADDR)&sa6, &addrsize);
         if (r != 0) return -1;
         memcpy(dst, &sa6.sin6_addr, sizeof(struct in6_addr));
         return 1;
+    }
     }
     return -1;
 }
@@ -700,29 +693,29 @@ int inet_pton(int af, const char *src, void *dst)
 const char *inet_ntop(int af, const void *src, char *dst, socklen_t size)
 {
 #define ADDR_MAXLEN 64
-    struct sockaddr_in sa;
-    struct sockaddr_in6 sa6;
     TCHAR buf[ADDR_MAXLEN];
-    int r;
-    size_t ressize;
     DWORD tressize = ADDR_MAXLEN-1;
     const char *res;
 
     switch (af) {
-    case AF_INET:
+    case AF_INET: {
+        struct sockaddr_in sa;
         memset(&sa, 0, sizeof(sa));
         sa.sin_family = AF_INET;
         memcpy(&sa.sin_addr, src, sizeof(struct in_addr));
-        r = WSAAddressToString((LPSOCKADDR)&sa, (DWORD)sizeof(sa), NULL,
-                               buf, &tressize);
+        int r = WSAAddressToString((LPSOCKADDR)&sa, (DWORD)sizeof(sa), NULL,
+                                   buf, &tressize);
         break;
-    case AF_INET6:
+    }
+    case AF_INET6: {
+        struct sockaddr_in6 sa6;
         memset(&sa6, 0, sizeof(sa6));
         sa6.sin6_family = AF_INET6;
         memcpy(&sa6.sin6_addr, src, sizeof(struct in6_addr));
-        r = WSAAddressToString((LPSOCKADDR)&sa6, (DWORD)sizeof(sa6), NULL,
-                               buf, &tressize);
+        int r = WSAAddressToString((LPSOCKADDR)&sa6, (DWORD)sizeof(sa6), NULL,
+                                   buf, &tressize);
         break;
+    }
     default:
         return NULL;
     }
@@ -730,7 +723,7 @@ const char *inet_ntop(int af, const void *src, char *dst, socklen_t size)
     if (r != 0) return NULL;
     buf[tressize] = 0;
     res = SCM_WCS2MBS(buf);
-    ressize = strlen(res);
+    size_t ressize = strlen(res);
     if (size <= (int)ressize) return NULL;
     memcpy(dst, res, ressize+1);
     return dst;
@@ -752,10 +745,8 @@ extern void Scm_Init_netaux(void);
 
 SCM_EXTENSION_ENTRY void Scm_Init_gauche__net(void)
 {
-    ScmModule *mod;
-
     SCM_INIT_EXTENSION(gauche__net);
-    mod = SCM_FIND_MODULE("gauche.net", SCM_FIND_MODULE_CREATE);
+    ScmModule *mod = SCM_FIND_MODULE("gauche.net", SCM_FIND_MODULE_CREATE);
 #ifdef HAVE_IPV6
     Scm_AddFeature("gauche.net.ipv6", NULL);
 #endif

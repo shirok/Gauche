@@ -99,9 +99,8 @@ static ScmObj sockaddr_allocate(ScmClass *klass, ScmObj initargs)
 /* creates sockaddr from struct sockaddr. */
 ScmObj Scm_MakeSockAddr(ScmClass *klass, struct sockaddr *saddr, int len)
 {
-    ScmSockAddr *addr;
-    addr = SCM_NEW_ATOMIC2(ScmSockAddr*,
-                           sizeof(ScmSockAddr) - sizeof(struct sockaddr) + len);
+    ScmSockAddr *addr = SCM_NEW_ATOMIC2(
+        ScmSockAddr*, sizeof(ScmSockAddr) - sizeof(struct sockaddr) + len);
     if (klass == NULL) {
         switch (saddr->sa_family) {
         case AF_UNIX:
@@ -133,12 +132,11 @@ ScmObj Scm_MakeSockAddr(ScmClass *klass, struct sockaddr *saddr, int len)
 static ScmObj sockaddr_un_allocate(ScmClass *klass, ScmObj initargs)
 {
     ScmObj path = Scm_GetKeyword(key_path, initargs, SCM_FALSE);
-    ScmSockAddrUn *addr;
-
     if (!SCM_FALSEP(path) && !SCM_STRINGP(path)) {
         Scm_Error(":path parameter must be a string, but got %S", path);
     }
-    addr = SCM_NEW_ATOMIC(ScmSockAddrUn);
+
+    ScmSockAddrUn *addr = SCM_NEW_ATOMIC(ScmSockAddrUn);
     SCM_SET_CLASS(addr, SCM_CLASS_SOCKADDR_UN);
     memset(&addr->addr, 0, sizeof(struct sockaddr_un));
 #ifdef HAVE_STRUCT_SOCKADDR_UN_SUN_LEN
@@ -186,13 +184,12 @@ static ScmObj sockaddr_in_allocate(ScmClass *klass, ScmObj initargs)
 {
     ScmObj host = Scm_GetKeyword(key_host, initargs, key_any);
     ScmObj port = Scm_GetKeyword(key_port, initargs, SCM_MAKE_INT(0));
-    ScmSockAddrIn *addr;
 
     if (!SCM_INTP(port)) {
         Scm_Error(":port parameter must be a small exact integer, but got %S",
                   port);
     }
-    addr = SCM_NEW_ATOMIC(ScmSockAddrIn);
+    ScmSockAddrIn *addr = SCM_NEW_ATOMIC(ScmSockAddrIn);
     SCM_SET_CLASS(addr, SCM_CLASS_SOCKADDR_IN);
     memset(&addr->addr, 0, sizeof(struct sockaddr_in));
 #ifdef HAVE_STRUCT_SOCKADDR_IN_SIN_LEN
@@ -206,11 +203,11 @@ static ScmObj sockaddr_in_allocate(ScmClass *klass, ScmObj initargs)
         if (inet_pton(AF_INET, hname, &addr->addr.sin_addr) <= 0) {
             /* Now, we need to look up the host name.
                Call MT-safe Scm_GetHostByName */
-            ScmObj ap, hent = Scm_GetHostByName(hname);
+            ScmObj hent = Scm_GetHostByName(hname);
             if (!SCM_SYS_HOSTENT_P(hent)) {
                 Scm_Error("unknown host: %S", host);
             }
-            ap = SCM_SYS_HOSTENT(hent)->addresses;
+            ScmObj ap = SCM_SYS_HOSTENT(hent)->addresses;
             if (SCM_NULLP(ap) || !SCM_STRINGP(SCM_CAR(ap))) {
                 Scm_Error("host have unknown address type: %S", host);
             }
@@ -231,13 +228,11 @@ static ScmObj sockaddr_in_allocate(ScmClass *klass, ScmObj initargs)
         if (ov) Scm_Error("host address is out of range: %S", host);
         addr->addr.sin_addr.s_addr = htonl(a);
     } else if (SCM_U8VECTORP(host)) {
-        const unsigned char *p;
-        unsigned long a;
         if (SCM_U8VECTOR_SIZE(host) < 4) {
             Scm_Error("host address is too short: %S", host);
         }
-        p = SCM_U8VECTOR_ELEMENTS(host);
-        a = (p[0]<<24)+(p[1]<<16)+(p[2]<<8)+p[3];
+        const unsigned char *p = SCM_U8VECTOR_ELEMENTS(host);
+        unsigned long a = (p[0]<<24)+(p[1]<<16)+(p[2]<<8)+p[3];
         addr->addr.sin_addr.s_addr = htonl(a);
     } else {
         Scm_Error("bad :host parameter: %S", host);
@@ -276,13 +271,12 @@ static ScmObj sockaddr_in6_allocate(ScmClass *klass, ScmObj initargs)
 {
     ScmObj host = Scm_GetKeyword(key_host, initargs, key_any);
     ScmObj port = Scm_GetKeyword(key_port, initargs, SCM_MAKE_INT(0));
-    ScmSockAddrIn6 *addr;
 
     if (!SCM_INTP(port)) {
         Scm_Error(":port parameter must be a small exact integer, but got %S",
                   port);
     }
-    addr = SCM_NEW_ATOMIC(ScmSockAddrIn6);
+    ScmSockAddrIn6 *addr = SCM_NEW_ATOMIC(ScmSockAddrIn6);
     SCM_SET_CLASS(addr, SCM_CLASS_SOCKADDR_IN6);
     memset(&addr->addr, 0, sizeof(struct sockaddr_in6));
 #ifdef HAVE_STRUCT_SOCKADDR_IN6_SIN6_LEN
@@ -293,11 +287,10 @@ static ScmObj sockaddr_in6_allocate(ScmClass *klass, ScmObj initargs)
     if (SCM_STRINGP(host)) {
         const char *hname = Scm_GetStringConst(SCM_STRING(host));
         struct addrinfo hints, *res;
-        int r;
         memset(&hints, 0, sizeof(hints));
         hints.ai_family = AF_INET6;
         hints.ai_socktype = SOCK_STREAM;
-        r = getaddrinfo(hname, NULL, &hints, &res);
+        int r = getaddrinfo(hname, NULL, &hints, &res);
         if (r) Scm_Error("getaddrinfo: %s", gai_strerror(r));
         addr->addr.sin6_addr = ((struct sockaddr_in6*)res->ai_addr)->sin6_addr;
         freeaddrinfo(res);
@@ -307,20 +300,17 @@ static ScmObj sockaddr_in6_allocate(ScmClass *klass, ScmObj initargs)
         addr->addr.sin6_addr = in6addr_loopback;
     } else if (SCM_INTEGERP(host)) {
         /* NB: Can we have more efficient way? */
-        int i;
-        for (i=15; i>=0; i--) {
+        for (int i=15; i>=0; i--) {
             ScmObj u8 = Scm_LogAnd(host, SCM_MAKE_INT(0xff));
             addr->addr.sin6_addr.s6_addr[i] = SCM_INT_VALUE(u8);
             host = Scm_Ash(host, -8);
         }
     } else if (SCM_U8VECTORP(host)) {
-        const unsigned char *p;
-        int i;
         if (SCM_U8VECTOR_SIZE(host) < 16) {
             Scm_Error("host address is too short: %S", host);
         }
-        p = SCM_U8VECTOR_ELEMENTS(host);
-        for (i=0; i<16; i++) {
+        const unsigned char *p = SCM_U8VECTOR_ELEMENTS(host);
+        for (int i=0; i<16; i++) {
             addr->addr.sin6_addr.s6_addr[i] = p[i];
         }
     } else {
@@ -394,8 +384,7 @@ ScmObj Scm_InetStringToAddress(const char *s,
             return SCM_TRUE;
         } else {
             ScmObj s = SCM_MAKE_INT(0);
-            int i;
-            for (i=0; i<4; i++) {
+            for (int i=0; i<4; i++) {
                 s = Scm_Add(Scm_Ash(s, 32),
                             Scm_MakeIntegerU(ntohl(S6_ADDR32(in6, i))));
             }
@@ -434,11 +423,9 @@ ScmObj Scm_InetAddressToString(ScmObj addr,  /* integer or uvector */
         char buf[INET6_ADDRSTRLEN];
         struct in6_addr in6;
         if (SCM_INTEGERP(addr)) {
-            u_long a;
-            int i;
             ScmObj mask = Scm_MakeIntegerU(0xffffffffUL);
-            for (i=0; i<4; i++) {
-                a = Scm_GetIntegerU(Scm_LogAnd(addr, mask));
+            for (int i=0; i<4; i++) {
+                u_long a = Scm_GetIntegerU(Scm_LogAnd(addr, mask));
                 S6_ADDR32(in6, 3-i) = htonl(a);
                 addr = Scm_Ash(addr, -32);
             }
@@ -485,4 +472,3 @@ void Scm_Init_NetAddr(ScmModule *mod)
     Scm_InitStaticClass(&Scm_SockAddrIn6Class, "<sockaddr-in6>", mod, NULL, 0);
 #endif /* HAVE_IPV6 */
 }
-

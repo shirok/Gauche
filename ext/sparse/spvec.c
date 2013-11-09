@@ -65,22 +65,19 @@ SCM_DEFINE_BUILTIN_CLASS(Scm_SparseVectorBaseClass,
 
 ScmObj SparseVectorRef(SparseVector *sv, u_long index, ScmObj fallback)
 {
-    ScmObj v;
-    Leaf *leaf;
     INDEX_CHECK(index);
-    leaf = CompactTrieGet(&sv->trie, index >> sv->desc->shift);
+    Leaf *leaf = CompactTrieGet(&sv->trie, index >> sv->desc->shift);
     if (leaf == NULL) return fallback;
-    v = sv->desc->ref(leaf, index);
+    ScmObj v = sv->desc->ref(leaf, index);
     if (SCM_UNBOUNDP(v)) return fallback;
     else return v;
 }
 
 void SparseVectorSet(SparseVector *sv, u_long index, ScmObj value)
 {
-    Leaf *leaf;
     INDEX_CHECK(index);
-    leaf = CompactTrieAdd(&sv->trie, index >> sv->desc->shift,
-                          sv->desc->allocate, sv);
+    Leaf *leaf = CompactTrieAdd(&sv->trie, index >> sv->desc->shift,
+                                sv->desc->allocate, sv);
     /* set returns TRUE if this is a new entry */
     if (sv->desc->set(leaf, index, value)) sv->numEntries++;
 }
@@ -88,12 +85,10 @@ void SparseVectorSet(SparseVector *sv, u_long index, ScmObj value)
 /* returns value of the deleted entry, or SCM_UNBOUND if there's no entry */
 ScmObj SparseVectorDelete(SparseVector *sv, u_long index)
 {
-    ScmObj r;
-    Leaf *leaf;
     INDEX_CHECK(index);
-    leaf = CompactTrieGet(&sv->trie, index >> sv->desc->shift);
+    Leaf *leaf = CompactTrieGet(&sv->trie, index >> sv->desc->shift);
     if (leaf == NULL) return SCM_UNBOUND;
-    r = sv->desc->delete(leaf, index);
+    ScmObj r = sv->desc->delete(leaf, index);
     if (!SCM_UNBOUNDP(r)) sv->numEntries--;
     return r;
 }
@@ -146,9 +141,8 @@ ScmObj SparseVectorInc(SparseVector *sv, u_long index,
                        ScmObj delta,    /* number */
                        ScmObj fallback) /* number */
 {
-    Leaf *leaf;
     INDEX_CHECK(index);
-    leaf = CompactTrieGet(&sv->trie, index >> sv->desc->shift);
+    Leaf *leaf = CompactTrieGet(&sv->trie, index >> sv->desc->shift);
     if (leaf == NULL) {
         ScmObj v = Scm_Add(fallback, delta);
         SparseVectorSet(sv, index, v);
@@ -236,9 +230,8 @@ static ScmObj g_iter(Leaf *leaf, int *index)
 
 static void g_dump(ScmPort *out, Leaf *leaf, int indent, void *data)
 {
-    int i;
     GLeaf *z = (GLeaf*)leaf;
-    for (i=0; i<2; i++) {
+    for (int i=0; i<2; i++) {
         if (!SCM_UNBOUNDP(z->val[i])) {
             Scm_Printf(out, "\n  %*s%2d: %25.1S", indent, "", i, z->val[i]);
         }
@@ -559,7 +552,6 @@ U_DECL(f64, F64, SHIFT64);
 ScmObj MakeSparseVector(ScmClass *klass, u_long flags)
 {
     SparseVectorDescriptor *desc = NULL;
-    SparseVector *v = SCM_NEW(SparseVector);
 
     if (SCM_EQ(SCM_CLASS_SPARSE_VECTOR, klass))         desc = &g_desc;
     else if (SCM_EQ(SCM_CLASS_SPARSE_S8VECTOR, klass))  desc = &s8_desc;
@@ -578,6 +570,7 @@ ScmObj MakeSparseVector(ScmClass *klass, u_long flags)
                       SCM_OBJ(klass));
     }
 
+    SparseVector *v = SCM_NEW(SparseVector);
     SCM_SET_CLASS(v, klass);
     CompactTrieInit(&v->trie);
     v->numEntries = 0;
@@ -609,4 +602,3 @@ void Scm_Init_spvec(ScmModule *mod)
     INITC(Scm_SparseF32VectorClass, "<sparse-f32vector>");
     INITC(Scm_SparseF64VectorClass, "<sparse-f64vector>");
 }
-

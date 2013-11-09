@@ -77,14 +77,11 @@ static ScmObj mutex_allocate(ScmClass *klass, ScmObj initargs)
 static void mutex_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
     ScmMutex *mutex = SCM_MUTEX(obj);
-    ScmVM *vm;
-    ScmObj name;
-    int locked;
 
     (void)SCM_INTERNAL_MUTEX_LOCK(mutex->mutex);
-    locked = mutex->locked;
-    vm = mutex->owner;
-    name = mutex->name;
+    int locked = mutex->locked;
+    ScmVM *vm = mutex->owner;
+    ScmObj name = mutex->name;
     (void)SCM_INTERNAL_MUTEX_UNLOCK(mutex->mutex);
 
     if (SCM_FALSEP(name)) Scm_Printf(port, "#<mutex %p ", mutex);
@@ -173,12 +170,12 @@ ScmObj Scm_MakeMutex(ScmObj name)
 ScmObj Scm_MutexLock(ScmMutex *mutex, ScmObj timeout, ScmVM *owner)
 {
 #ifdef GAUCHE_HAS_THREADS
-    struct timespec ts, *pts;
+    struct timespec ts;
     ScmObj r = SCM_TRUE;
     ScmVM *abandoned = NULL;
     int intr = FALSE;
 
-    pts = Scm_GetTimeSpec(timeout, &ts);
+    struct timespec *pts = Scm_GetTimeSpec(timeout, &ts);
     SCM_INTERNAL_MUTEX_SAFE_LOCK_BEGIN(mutex->mutex);
     while (mutex->locked) {
         if (mutex->owner && mutex->owner->state == SCM_VM_TERMINATED) {
@@ -215,10 +212,10 @@ ScmObj Scm_MutexUnlock(ScmMutex *mutex, ScmConditionVariable *cv, ScmObj timeout
 {
     ScmObj r = SCM_TRUE;
 #ifdef GAUCHE_HAS_THREADS
-    struct timespec ts, *pts;
+    struct timespec ts;
     int intr = FALSE;
 
-    pts = Scm_GetTimeSpec(timeout, &ts);
+    struct timespec *pts = Scm_GetTimeSpec(timeout, &ts);
     SCM_INTERNAL_MUTEX_SAFE_LOCK_BEGIN(mutex->mutex);
     mutex->locked = FALSE;
     mutex->owner = NULL;

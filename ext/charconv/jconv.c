@@ -147,10 +147,9 @@
 static size_t sjis2eucj(ScmConvInfo *cinfo, const char *inptr, size_t inroom,
                         char *outptr, size_t outroom, size_t *outchars)
 {
-    unsigned char s1, s2;
     static const unsigned char cvt[] = { 0xa1, 0xa8, 0xa3, 0xa4, 0xa5, 0xac, 0xae, 0xad, 0xaf, 0xee };
 
-    s1 = inptr[0];
+    unsigned char s1 = inptr[0];
     if (s1 < 0x7f) {
         *outptr = s1;
         *outchars = 1;
@@ -160,7 +159,7 @@ static size_t sjis2eucj(ScmConvInfo *cinfo, const char *inptr, size_t inroom,
         /* Double byte char */
         unsigned char m, e1, e2;
         INCHK(2);
-        s2 = inptr[1];
+        unsigned char s2 = inptr[1];
         if (s2 < 0x40 || s2 > 0xfc) {
             EUCJ_SUBST;
             return 2;
@@ -290,8 +289,7 @@ static size_t sjis2eucj(ScmConvInfo *cinfo, const char *inptr, size_t inroom,
 static size_t eucj2sjis(ScmConvInfo *cinfo, const char *inptr, size_t inroom,
                         char *outptr, size_t outroom, size_t *outchars)
 {
-    unsigned char e1, e2;
-    e1 = inptr[0];
+    unsigned char e1 = inptr[0];
     if (e1 <= 0x7f) {
         outptr[0] = e1;
         *outchars = 1;
@@ -301,7 +299,7 @@ static size_t eucj2sjis(ScmConvInfo *cinfo, const char *inptr, size_t inroom,
         /* double byte char (JISX 0213 plane 1) */
         unsigned char s1, s2;
         INCHK(2);
-        e2 = inptr[1];
+        unsigned char e2 = inptr[1];
         if (e2 < 0xa1 || e2 == 0xff) {
             SJIS_SUBST;
             return 2;
@@ -323,7 +321,7 @@ static size_t eucj2sjis(ScmConvInfo *cinfo, const char *inptr, size_t inroom,
     if (e1 == 0x8e) {
         /* JISX 0201 kana */
         INCHK(2);
-        e2 = inptr[1];
+        unsigned char e2 = inptr[1];
         if (e2 < 0xa1 || e2 == 0xff) {
             outptr[0] = SUBST1_CHAR;
         } else {
@@ -340,7 +338,7 @@ static size_t eucj2sjis(ScmConvInfo *cinfo, const char *inptr, size_t inroom,
         INCHK(3);
         OUTCHK(2);
         e1 = inptr[1];
-        e2 = inptr[2];
+        unsigned char e2 = inptr[2];
         if (e1 < 0xa1 || e1 == 0xff || e2 < 0xa1 || e2 == 0xff) {
             SJIS_SUBST;
             return 3;
@@ -465,11 +463,10 @@ static inline size_t utf2euc_2(ScmConvInfo *cinfo, unsigned char u0,
                                const char *inptr, size_t inroom,
                                char *outptr, size_t outroom, size_t *outchars)
 {
-    unsigned char u1;
     const unsigned short *etab = NULL;
 
     INCHK(2);
-    u1 = (unsigned char)inptr[1];
+    unsigned char u1 = (unsigned char)inptr[1];
     if (u1 < 0x80 || u1 >= 0xc0) return ILLEGAL_SEQUENCE;
 
     switch (u0) {
@@ -510,13 +507,12 @@ static inline size_t utf2euc_3(ScmConvInfo *cinfo, unsigned char u0,
                                const char *inptr, size_t inroom,
                                char *outptr, size_t outroom, size_t *outchars)
 {
-    unsigned char u1, u2;
     const unsigned char *tab1 = NULL;
     const unsigned short (*tab2)[64] = NULL;
 
     INCHK(3);
-    u1 = (unsigned char)inptr[1];
-    u2 = (unsigned char)inptr[2];
+    unsigned char u1 = (unsigned char)inptr[1];
+    unsigned char u2 = (unsigned char)inptr[2];
 
     switch (u0) {
     case 0xe1: /* special case : there's only 6 chars */
@@ -560,7 +556,6 @@ static inline size_t utf2euc_4(ScmConvInfo *cinfo, unsigned char u0,
                                const char *inptr, size_t inroom,
                                char *outptr, size_t outroom, size_t *outchars)
 {
-    unsigned char u1, u2, u3;
     const unsigned short *tab = NULL;
 
     INCHK(4);
@@ -568,9 +563,9 @@ static inline size_t utf2euc_4(ScmConvInfo *cinfo, unsigned char u0,
         EUCJ_SUBST;
         return 4;
     }
-    u1 = (unsigned char)inptr[1];
-    u2 = (unsigned char)inptr[2];
-    u3 = (unsigned char)inptr[3];
+    unsigned char u1 = (unsigned char)inptr[1];
+    unsigned char u2 = (unsigned char)inptr[2];
+    unsigned char u3 = (unsigned char)inptr[3];
 
     switch (u1) {
     case 0xa0: tab = utf2euc_f0_a0; break;
@@ -588,9 +583,8 @@ static inline size_t utf2euc_4(ScmConvInfo *cinfo, unsigned char u0,
         break;
     }
     if (tab != NULL) {
-        int i;
         unsigned short u2u3 = u2*256 + u3;
-        for (i=0; tab[i]; i+=2) {
+        for (int i=0; tab[i]; i+=2) {
             if (tab[i] == u2u3) {
                 return utf2euc_emit_euc(tab[i+1], 4, outptr, outroom, outchars);
             }
@@ -604,8 +598,7 @@ static inline size_t utf2euc_4(ScmConvInfo *cinfo, unsigned char u0,
 static size_t utf2eucj(ScmConvInfo *cinfo, const char *inptr, size_t inroom,
                        char *outptr, size_t outroom, size_t *outchars)
 {
-    unsigned char u0;
-    u0 = (unsigned char)inptr[0];
+    unsigned char u0 = (unsigned char)inptr[0];
 
     if (u0 <= 0x7f) {
         *outptr = u0;
@@ -731,17 +724,14 @@ static inline size_t eucj2utf_emit_utf(unsigned int ucs, size_t inchars,
 static size_t eucj2utf(ScmConvInfo *cinfo, const char *inptr, size_t inroom,
                        char *outptr, size_t outroom, size_t *outchars)
 {
-    unsigned char e0, e1, e2;
-    unsigned int ucs;
-
-    e0 = (unsigned char)inptr[0];
+    unsigned char e0 = (unsigned char)inptr[0];
     if (e0 < 0xa0) {
         if (e0 == 0x8e) {
             /* JIS X 0201 KANA */
             INCHK(2);
-            e1 = (unsigned char)inptr[1];
+            unsigned char e1 = (unsigned char)inptr[1];
             if (e1 < 0xa1 || e1 > 0xdf) return ILLEGAL_SEQUENCE;
-            ucs = 0xff61 + (e1 - 0xa1);
+            unsigned int ucs = 0xff61 + (e1 - 0xa1);
             return eucj2utf_emit_utf(ucs, 2, outptr, outroom, outchars);
         }
         else if (e0 == 0x8f) {
@@ -749,8 +739,8 @@ static size_t eucj2utf(ScmConvInfo *cinfo, const char *inptr, size_t inroom,
             int index;
 
             INCHK(3);
-            e1 = (unsigned char)inptr[1];
-            e2 = (unsigned char)inptr[2];
+            unsigned char e1 = (unsigned char)inptr[1];
+            unsigned char e2 = (unsigned char)inptr[2];
             if (e1 < 0xa1 || e1 > 0xfe || e2 < 0xa1 || e2 > 0xfe) {
                 return ILLEGAL_SEQUENCE;
             }
@@ -759,7 +749,7 @@ static size_t eucj2utf(ScmConvInfo *cinfo, const char *inptr, size_t inroom,
                 UTF8_SUBST;
                 return 3;
             }
-            ucs = euc_jisx0213_2_to_ucs2[index][e2 - 0xa1];
+            unsigned int ucs = euc_jisx0213_2_to_ucs2[index][e2 - 0xa1];
             return eucj2utf_emit_utf(ucs, 3, outptr, outroom, outchars);
         }
         else {
@@ -772,9 +762,9 @@ static size_t eucj2utf(ScmConvInfo *cinfo, const char *inptr, size_t inroom,
     if (e0 > 0xa0 && e0 < 0xff) {
         /* JIS X 0213 plane 1 */
         INCHK(2);
-        e1 = (unsigned char)inptr[1];
+        unsigned char e1 = (unsigned char)inptr[1];
         if (e1 < 0xa1 || e1 > 0xfe) return ILLEGAL_SEQUENCE;
-        ucs = euc_jisx0213_1_to_ucs2[e0 - 0xa1][e1 - 0xa1];
+        unsigned int ucs = euc_jisx0213_1_to_ucs2[e0 - 0xa1][e1 - 0xa1];
         return eucj2utf_emit_utf(ucs, 2, outptr, outroom, outchars);
     }
     return ILLEGAL_SEQUENCE;
@@ -834,10 +824,9 @@ enum {
    or an error code.  cinfo->istate is updated accordingly. */
 static size_t jis_esc(ScmConvInfo *cinfo, const char *inptr, size_t inroom)
 {
-    unsigned char j1, j2;
     INCHK(2);
-    j1 = inptr[0];
-    j2 = inptr[1];
+    unsigned char j1 = inptr[0];
+    unsigned char j2 = inptr[1];
     switch (j1) {
     case '(':
         switch (j2) {
@@ -895,14 +884,13 @@ static size_t jis_esc(ScmConvInfo *cinfo, const char *inptr, size_t inroom)
 static size_t jis2eucj(ScmConvInfo *cinfo, const char *inptr, size_t inroom,
                        char *outptr, size_t outroom, size_t *outchars)
 {
-    unsigned char j0, j1;
-    size_t inoffset = 0, r;
+    size_t inoffset = 0;
 
-    j0 = inptr[inoffset];
+    unsigned char j0 = inptr[inoffset];
     /* skip escape sequence */
     while (j0 == 0x1b) {
         inoffset++;
-        r = jis_esc(cinfo, inptr+inoffset, inroom-inoffset);
+        size_t r = jis_esc(cinfo, inptr+inoffset, inroom-inoffset);
         if (ERRP(r)) return r;
         inoffset += r;
         if (inoffset >= inroom) {
@@ -947,27 +935,29 @@ static size_t jis2eucj(ScmConvInfo *cinfo, const char *inptr, size_t inroom,
         case JIS_78:
             /* for now, I ignore the difference between JIS78 and JIS83 */
             /* FALLTHROUGH */
-        case JIS_0213_1:
+        case JIS_0213_1: {
             INCHK(inoffset+2);
             OUTCHK(2);
-            j1 = inptr[inoffset+1];
+            unsigned char j1 = inptr[inoffset+1];
             outptr[0] = j0 + 0x80;
             outptr[1] = j1 + 0x80;
             *outchars = 2;
             return 2+inoffset;
+        }
         case JIS_0212:
             /* jis x 0212 and jis x 0213 plane 2 are different character sets,
                but uses the same conversion scheme. */
             /* FALLTHROUGH */
-        case JIS_0213_2:
+        case JIS_0213_2: {
             INCHK(inoffset+2);
             OUTCHK(3);
-            j1 = inptr[inoffset+1];
+            unsigned char j1 = inptr[inoffset+1];
             outptr[0] = 0x8f;
             outptr[1] = j0 + 0x80;
             outptr[2] = j1 + 0x80;
             *outchars = 3;
             return 2+inoffset;
+        }
         case JIS_UNKNOWN:
             outptr[0] = SUBST1_CHAR;
             *outchars = 1;
@@ -1022,20 +1012,18 @@ static size_t jis_ensure_state(ScmConvInfo *cinfo, int newstate, size_t outbytes
 static size_t eucj2jis(ScmConvInfo *cinfo, const char *inptr, size_t inroom,
                        char *outptr, size_t outroom, size_t *outchars)
 {
-    unsigned char e0, e1;
-    size_t outoffset = 0;
-    e0 = inptr[0];
+    unsigned char e0 = inptr[0];
     if (e0 < 0x80) {
-        outoffset = jis_ensure_state(cinfo, JIS_ASCII, 1, outptr, outroom);
+        size_t outoffset = jis_ensure_state(cinfo, JIS_ASCII, 1, outptr, outroom);
         if (ERRP(outoffset)) return outoffset;
         outptr[outoffset] = e0;
         *outchars = outoffset+1;
         return 1;
     } else if (e0 == 0x8e) {
         INCHK(2);
-        e1 = inptr[1];
+        unsigned char e1 = inptr[1];
         if (e1 > 0xa0 && e1 < 0xff) {
-            outoffset = jis_ensure_state(cinfo, JIS_KANA, 1, outptr, outroom);
+            size_t outoffset = jis_ensure_state(cinfo, JIS_KANA, 1, outptr, outroom);
             if (ERRP(outoffset)) return outoffset;
             outptr[outoffset] = e1 - 0x80;
             *outchars = outoffset+1;
@@ -1044,7 +1032,7 @@ static size_t eucj2jis(ScmConvInfo *cinfo, const char *inptr, size_t inroom,
     } else if (e0 == 0x8f) {
         INCHK(3);
         e0 = inptr[1];
-        e1 = inptr[2];
+        unsigned char e1 = inptr[2];
         if (e0 > 0xa0 && e0 < 0xff && e1 > 0xa0 && e1 < 0xff) {
             int newstate = JIS_0212;
             switch (e0) {
@@ -1054,7 +1042,7 @@ static size_t eucj2jis(ScmConvInfo *cinfo, const char *inptr, size_t inroom,
             default:
                 if (e0 >= 0xee) newstate = JIS_0213_2;
             }
-            outoffset = jis_ensure_state(cinfo, newstate, 2, outptr, outroom);
+            size_t outoffset = jis_ensure_state(cinfo, newstate, 2, outptr, outroom);
             outptr[outoffset] = e0 - 0x80;
             outptr[outoffset+1] = e1 - 0x80;
             *outchars = outoffset+1;
@@ -1062,9 +1050,9 @@ static size_t eucj2jis(ScmConvInfo *cinfo, const char *inptr, size_t inroom,
         }
     } else if (e0 > 0xa0 && e0 < 0xff) {
         INCHK(2);
-        e1 = inptr[1];
+        unsigned char e1 = inptr[1];
         if (e1 > 0xa0 && e1 < 0xff) {
-            outoffset = jis_ensure_state(cinfo, JIS_0213_1, 2, outptr, outroom);
+            size_t outoffset = jis_ensure_state(cinfo, JIS_0213_1, 2, outptr, outroom);
             if (ERRP(outoffset)) return outoffset;
             outptr[outoffset] = e0 - 0x80;
             outptr[outoffset+1] = e1 - 0x80;
@@ -1236,14 +1224,15 @@ static size_t jconv_1tier(ScmConvInfo *info, const char **iptr,
     const char *inp = *iptr;
     char *outp = *optr;
     int inr = (int)*iroom, outr = (int)*oroom;
-    size_t outchars, inchars, converted = 0;
+    size_t converted = 0;
 
 #ifdef JCONV_DEBUG
     fprintf(stderr, "jconv_1tier %s->%s\n", info->fromCode, info->toCode);
 #endif
     SCM_ASSERT(cvt != NULL);
     while (inr > 0 && outr > 0) {
-        inchars = cvt(info, inp, inr, outp, outr, &outchars);
+        size_t outchars;
+        size_t inchars = cvt(info, inp, inr, outp, outr, &outchars);
         if (ERRP(inchars)) {
             converted = inchars;
             break;
@@ -1273,13 +1262,14 @@ static size_t jconv_2tier(ScmConvInfo *info, const char **iptr, size_t *iroom,
     const char *inp = *iptr;
     char *outp = *optr;
     int inr = (int)*iroom, outr = (int)*oroom;
-    size_t outchars, inchars, bufchars, converted = 0;
+    size_t converted = 0;
 
 #ifdef JCONV_DEBUG
     fprintf(stderr, "jconv_2tier %s->%s\n", info->fromCode, info->toCode);
 #endif
     while (inr > 0 && outr > 0) {
-        inchars  = icvt(info, inp, inr, buf, INTBUFSIZ, &bufchars);
+        size_t outchars, bufchars;
+        size_t inchars = icvt(info, inp, inr, buf, INTBUFSIZ, &bufchars);
         if (ERRP(inchars)) {
             converted = inchars;
             break;
@@ -1317,11 +1307,10 @@ static size_t jconv_2tier(ScmConvInfo *info, const char **iptr, size_t *iroom,
 static size_t jconv_iconv(ScmConvInfo *info, const char **iptr, size_t *iroom,
                           char **optr, size_t *oroom)
 {
-    size_t r;
 #ifdef JCONV_DEBUG
     fprintf(stderr, "jconv_iconv %s->%s\n", info->fromCode, info->toCode);
 #endif
-    r = iconv(info->handle, (char **)iptr, iroom, optr, oroom);
+    size_t r = iconv(info->handle, (char **)iptr, iroom, optr, oroom);
     info->ostate = JIS_UNKNOWN;
     if (r == (size_t)-1) {
         if (errno == EINVAL) return INPUT_NOT_ENOUGH;
@@ -1336,9 +1325,8 @@ static size_t jconv_iconv(ScmConvInfo *info, const char **iptr, size_t *iroom,
 static size_t jconv_iconv_reset(ScmConvInfo *info, char *optr, size_t oroom)
 {
     size_t oroom_prev = oroom;
-    size_t r;
     if (info->ostate == JIS_ASCII) return 0;
-    r = iconv(info->handle, NULL, 0, &optr, &oroom);
+    size_t r = iconv(info->handle, NULL, 0, &optr, &oroom);
     if (r == (size_t)-1) {
         if (errno == E2BIG)  return OUTPUT_NOT_ENOUGH;
         Scm_Panic("jconv_iconv_reset: unknown error number %d\n", errno);
@@ -1355,15 +1343,13 @@ static size_t jconv_iconv_reset(ScmConvInfo *info, char *optr, size_t oroom)
  */
 ScmConvInfo *jconv_open(const char *toCode, const char *fromCode)
 {
-    ScmConvInfo *info;
     ScmConvHandler handler = NULL;
-    int incode, outcode;
     ScmConvProc convproc[2];
     ScmConvReset reset;
     iconv_t handle = (iconv_t)-1;
 
-    incode  = conv_name_find(fromCode);
-    outcode = conv_name_find(toCode);
+    int incode  = conv_name_find(fromCode);
+    int outcode = conv_name_find(toCode);
 
     if (incode == JCODE_NONE || outcode == JCODE_NONE) {
         /* conversion to/from none means no conversion */
@@ -1405,6 +1391,7 @@ ScmConvInfo *jconv_open(const char *toCode, const char *fromCode)
         convproc[1] = conv_converter[outcode].outconv;
         reset = conv_converter[outcode].reset;
     }
+    ScmConvInfo *info;
     info = SCM_NEW(ScmConvInfo);
     info->jconv = handler;
     info->convproc[0] = convproc[0];

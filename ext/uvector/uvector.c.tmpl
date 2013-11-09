@@ -212,13 +212,12 @@ static inline void uint64print(ScmPort *out, ScmUInt64 v)
 
 ScmObj Scm_ListTo${T}Vector(ScmObj list, int clamp)
 {
-    int length = Scm_Length(list), i;
-    ScmUVector *vec;
-    ScmObj cp;
-
+    int length = Scm_Length(list);
     if (length < 0) Scm_Error("improper list not allowed: %S", list);
-    vec = (ScmUVector*)Scm_Make${T}Vector(length, 0);
-    for (i=0, cp=list; i<length; i++, cp = SCM_CDR(cp)) {
+
+    ScmUVector *vec = (ScmUVector*)Scm_Make${T}Vector(length, 0);
+    ScmObj cp = list;
+    for (int i=0; i<length; i++, cp = SCM_CDR(cp)) {
         ${etype} elt;
         ScmObj obj = SCM_CAR(cp);
         ${UNBOX elt obj clamp};
@@ -229,9 +228,8 @@ ScmObj Scm_ListTo${T}Vector(ScmObj list, int clamp)
 
 ScmObj Scm_ObjArrayTo${T}Vector(ScmObj *arr, int size, int clamp)
 {
-    int i;
     ScmUVector *vec = (ScmUVector*)Scm_Make${T}Vector(size, 0);
-    for (i=0; i<size; i++) {
+    for (int i=0; i<size; i++) {
         ${etype} elt;
         ScmObj obj = arr[i];
         ${UNBOX elt obj clamp};
@@ -242,7 +240,7 @@ ScmObj Scm_ObjArrayTo${T}Vector(ScmObj *arr, int size, int clamp)
 
 ScmObj Scm_VectorTo${T}Vector(ScmVector *ivec, int start, int end, int clamp)
 {
-    int length = SCM_VECTOR_SIZE(ivec), i;
+    int length = SCM_VECTOR_SIZE(ivec);
     SCM_CHECK_START_END(start, end, length);
     return Scm_ObjArrayTo${T}Vector(SCM_VECTOR_ELEMENTS(ivec)+start,
                                     end-start, clamp);
@@ -254,47 +252,45 @@ ScmObj Scm_VectorTo${T}Vector(ScmVector *ivec, int start, int end, int clamp)
 
 ScmObj Scm_${T}VectorFill(Scm${T}Vector *vec, ${etype} fill, int start, int end)
 {
-    int i, size = SCM_${T}VECTOR_SIZE(vec);
+    int size = SCM_${T}VECTOR_SIZE(vec);
     SCM_CHECK_START_END(start, end, size);
     SCM_UVECTOR_CHECK_MUTABLE(vec);
-    for (i=start; i<end; i++) SCM_${T}VECTOR_ELEMENTS(vec)[i] = fill;
+    for (int i=start; i<end; i++) SCM_${T}VECTOR_ELEMENTS(vec)[i] = fill;
     return SCM_OBJ(vec);
 }
 
 ScmObj Scm_${T}VectorRef(Scm${T}Vector *vec, int index, ScmObj fallback)
 {
-    ScmObj r;
-    ${etype} elt;
     if (index < 0 || index >= SCM_${T}VECTOR_SIZE(vec)) {
         if (SCM_UNBOUNDP(fallback))
             Scm_Error("index out of range: %d", index);
         return fallback;
     }
-    elt = SCM_${T}VECTOR_ELEMENTS(vec)[index];
+    ${etype} elt = SCM_${T}VECTOR_ELEMENTS(vec)[index];
+    ScmObj r;
     ${BOX r elt};
     return r;
 }
 
 ScmObj Scm_VM${T}VectorRef(Scm${T}Vector *vec, int index, ScmObj fallback)
 {
-    ScmObj r;
-    ${etype} elt;
     if (index < 0 || index >= SCM_${T}VECTOR_SIZE(vec)) {
         if (SCM_UNBOUNDP(fallback))
             Scm_Error("index out of range: %d", index);
         return fallback;
     }
-    elt = SCM_${T}VECTOR_ELEMENTS(vec)[index];
+    ${etype} elt = SCM_${T}VECTOR_ELEMENTS(vec)[index];
+    ScmObj r;
     ${VMBOX r elt};
     return r;
 }
 
 ScmObj Scm_${T}VectorSet(Scm${T}Vector *vec, int index, ScmObj val, int clamp)
 {
-    ${etype} elt;
     if (index < 0 || index >= SCM_${T}VECTOR_SIZE(vec))
         Scm_Error("index out of range: %d", index);
     SCM_UVECTOR_CHECK_MUTABLE(vec);
+    ${etype} elt;
     ${UNBOX elt val clamp};
     SCM_${T}VECTOR_ELEMENTS(vec)[index] = elt;
     return SCM_OBJ(vec);
@@ -303,9 +299,9 @@ ScmObj Scm_${T}VectorSet(Scm${T}Vector *vec, int index, ScmObj val, int clamp)
 ScmObj Scm_${T}VectorToList(Scm${T}Vector *vec, int start, int end)
 {
     ScmObj head = SCM_NIL, tail = SCM_NIL;
-    int i, size = SCM_${T}VECTOR_SIZE(vec);
+    int size = SCM_${T}VECTOR_SIZE(vec);
     SCM_CHECK_START_END(start, end, size);
-    for (i=start; i<end; i++) {
+    for (int i=start; i<end; i++) {
         ScmObj obj;
         ${etype} elt = SCM_${T}VECTOR_ELEMENTS(vec)[i];
         ${BOX obj elt};
@@ -316,11 +312,10 @@ ScmObj Scm_${T}VectorToList(Scm${T}Vector *vec, int start, int end)
 
 ScmObj Scm_${T}VectorToVector(Scm${T}Vector *vec, int start, int end)
 {
-    ScmObj ovec;
-    int i, size = SCM_${T}VECTOR_SIZE(vec);
+    int size = SCM_${T}VECTOR_SIZE(vec);
     SCM_CHECK_START_END(start, end, size);
-    ovec = Scm_MakeVector(end-start, SCM_UNDEFINED);
-    for (i=start; i<end; i++) {
+    ScmObj ovec = Scm_MakeVector(end-start, SCM_UNDEFINED);
+    for (int i=start; i<end; i++) {
         ScmObj obj;
         ${etype} elt = SCM_${T}VECTOR_ELEMENTS(vec)[i];
         ${BOX obj elt};
@@ -716,13 +711,13 @@ static inline ScmUInt64 u64num(ScmObj x, int *oor)
 static void ${t}vector_${opname}(const char *name,
                                  ScmObj d, ScmObj s0, ScmObj s1, int clamp)
 {
-    int i, size = SCM_${T}VECTOR_SIZE(d), oor;
+    int size = SCM_${T}VECTOR_SIZE(d), oor;
     ${ntype} r, v0, v1;
     ScmObj rr, vv1;
 
     switch (arg2_check(name, s0, s1, TRUE)) {
     case ARGTYPE_UVECTOR:
-        for (i=0; i<size; i++) {
+        for (int i=0; i<size; i++) {
             v0 = ${REF_NTYPE s0 i};
             v1 = ${REF_NTYPE s1 i};
             r = ${t}${t}_${opname}(v0, v1, clamp);
@@ -730,7 +725,7 @@ static void ${t}vector_${opname}(const char *name,
         }
         break;
     case ARGTYPE_VECTOR:
-        for (i=0; i<size; i++) {
+        for (int i=0; i<size; i++) {
             v0 = ${REF_NTYPE s0 i};
             vv1 = SCM_VECTOR_ELEMENTS(s1)[i];
             v1 = ${t}num(vv1, &oor);
@@ -745,7 +740,7 @@ static void ${t}vector_${opname}(const char *name,
         }
         break;
     case ARGTYPE_LIST:
-        for (i=0; i<size; i++) {
+        for (int i=0; i<size; i++) {
             v0 = ${REF_NTYPE s0 i};
             vv1 = SCM_CAR(s1); s1 = SCM_CDR(s1);
             v1 = ${t}num(vv1, &oor);
@@ -761,7 +756,7 @@ static void ${t}vector_${opname}(const char *name,
         break;
     case ARGTYPE_CONST:
         v1 = ${t}num(s1, &oor);
-        for (i=0; i<size; i++) {
+        for (int i=0; i<size; i++) {
             v0 = ${REF_NTYPE s0 i};
             if (!oor) {
                 r = ${t}g_${opname}(v0, v1, clamp);
@@ -849,13 +844,13 @@ static inline ScmUInt64 bitext64(ScmObj x)
 static void ${t}vector_${opname}(const char *name,
                                  ScmObj d, ScmObj s0, ScmObj s1)
 {
-    int i, size = SCM_${T}VECTOR_SIZE(d);
+    int size = SCM_${T}VECTOR_SIZE(d);
     ${ntype} r, v0, v1;
     ScmObj vv1;
 
     switch(arg2_check(name, s0, s1, TRUE)) {
     case ARGTYPE_UVECTOR:
-        for (i=0; i<size; i++) {
+        for (int i=0; i<size; i++) {
             v0 = ${REF_NTYPE s0 i};
             v1 = ${REF_NTYPE s1 i};
             ${BITOP r v0 v1};
@@ -863,7 +858,7 @@ static void ${t}vector_${opname}(const char *name,
         }
         break;
     case ARGTYPE_VECTOR:
-        for (i=0; i<size; i++) {
+        for (int i=0; i<size; i++) {
             v0 = ${REF_NTYPE s0 i};
             vv1 = SCM_VECTOR_ELEMENTS(s1)[i];
             ${BITEXT v1 vv1};
@@ -872,7 +867,7 @@ static void ${t}vector_${opname}(const char *name,
         }
         break;
     case ARGTYPE_LIST:
-        for (i=0; i<size; i++) {
+        for (int i=0; i<size; i++) {
             v0 = ${REF_NTYPE s0 i};
             vv1 = SCM_VECTOR_ELEMENTS(s1)[i];
             ${BITEXT v1 vv1};
@@ -882,7 +877,7 @@ static void ${t}vector_${opname}(const char *name,
         break;
     case ARGTYPE_CONST:
         ${BITEXT v1 s1};
-        for (i=0; i<size; i++) {
+        for (int i=0; i<size; i++) {
             v0 = ${REF_NTYPE s0 i};
             ${BITOP r v0 v1};
             SCM_${T}VECTOR_ELEMENTS(d)[i] = ${CAST_N2E r};
@@ -1011,21 +1006,21 @@ static inline ScmUInt64 u64muladd(ScmUInt64 x, ScmUInt64 y, ScmUInt64 acc, ScmOb
 ///(define *tmpl-dotop* '(
 static ScmObj ${T}VectorDotProd(Scm${T}Vector *x, ScmObj y, int vmp)
 {
-    int i, size = SCM_${T}VECTOR_SIZE(x), oor;
+    int size = SCM_${T}VECTOR_SIZE(x), oor;
     ${ntype} r, vx, vy;
     ScmObj rr = SCM_MAKE_INT(0), vvy, vvx;
 
     ${ZERO r};
     switch (arg2_check("${t}vector-dot", SCM_OBJ(x), y, FALSE)) {
     case ARGTYPE_UVECTOR:
-        for (i=0; i<size; i++) {
+        for (int i=0; i<size; i++) {
             vx = ${REF_NTYPE x i};
             vy = ${REF_NTYPE y i};
             r = ${t}muladd(vx, vy, r, &rr);
         }
         break;
     case ARGTYPE_VECTOR:
-        for (i=0; i<size; i++) {
+        for (int i=0; i<size; i++) {
             vx = ${REF_NTYPE x i};
             vvy = SCM_VECTOR_ELEMENTS(y)[i];
             vy = ${t}num(vvy, &oor);
@@ -1038,7 +1033,7 @@ static ScmObj ${T}VectorDotProd(Scm${T}Vector *x, ScmObj y, int vmp)
         }
         break;
     case ARGTYPE_LIST:
-        for (i=0; i<size; i++) {
+        for (int i=0; i<size; i++) {
             vx = ${REF_NTYPE x i};
             vvy = SCM_CAR(y); y = SCM_CDR(y);
             vy = ${t}num(vvy, &oor);
@@ -1097,7 +1092,7 @@ ScmObj Scm_VM${T}VectorDotProd(Scm${T}Vector *x, ScmObj y)
 
 ScmObj Scm_${T}Vector${Opname}(Scm${T}Vector *x, ScmObj min, ScmObj max)
 {
-    int i, size = SCM_${T}VECTOR_SIZE(x);
+    int size = SCM_${T}VECTOR_SIZE(x);
     ArgType mintype, maxtype;
     ${ntype} val, minval, maxval;
     int mindc = FALSE, maxdc = FALSE;         /* true if "don't care" */
@@ -1121,7 +1116,7 @@ ScmObj Scm_${T}Vector${Opname}(Scm${T}Vector *x, ScmObj min, ScmObj max)
         ${GETLIM maxval maxdc max};
     }
 
-    for (i=0; i<size; i++) {
+    for (int i=0; i<size; i++) {
         val = ${REF_NTYPE x i};
         switch (mintype) {
         case ARGTYPE_UVECTOR:
@@ -1175,9 +1170,9 @@ ScmObj Scm_${T}Vector${Opname}(Scm${T}Vector *x, ScmObj min, ScmObj max)
 
 static void f64vector_swapb_arm2le(ScmF64Vector *v)
 {
-    int i, len = SCM_UVECTOR_SIZE(v);
+    int len = SCM_UVECTOR_SIZE(v);
     double *d = SCM_F64VECTOR_ELEMENTS(v);
-    for (i=0; i<len; i++, d++) {
+    for (int i=0; i<len; i++, d++) {
         swap_f64_t v;
         v.val = *d;
         SWAP_ARM2LE(v);
@@ -1187,9 +1182,9 @@ static void f64vector_swapb_arm2le(ScmF64Vector *v)
 
 static void f64vector_swapb_arm2be(ScmF64Vector *v)
 {
-    int i, len = SCM_UVECTOR_SIZE(v);
+    int len = SCM_UVECTOR_SIZE(v);
     double *d = SCM_F64VECTOR_ELEMENTS(v);
-    for (i=0; i<len; i++, d++) {
+    for (int i=0; i<len; i++, d++) {
         swap_f64_t v;
         v.val = *d;
         SWAP_ARM2BE(v);
@@ -1232,9 +1227,9 @@ ScmObj Scm_F64VectorSwapBytesX_ARM2BE(ScmF64Vector *v)
 
 static void ${t}vector_swapb(Scm${T}Vector *v)
 {
-    int i, len = SCM_UVECTOR_SIZE(v);
+    int len = SCM_UVECTOR_SIZE(v);
     ${etype} *d = SCM_${T}VECTOR_ELEMENTS(v);
-    for (i=0; i<len; i++, d++) {
+    for (int i=0; i<len; i++, d++) {
         swap_${t}_t v;
         v.val = *d;
         ${SWAPB}(v);
@@ -1354,16 +1349,16 @@ ScmObj Scm_UVectorSwapBytesX(ScmUVector *v, int option)
 ScmObj Scm_ReadBlockX(ScmUVector *v, ScmPort *port,
                       int start, int end, ScmSymbol *endian)
 {
-    int len = SCM_UVECTOR_SIZE(v), eltsize, r;
+    int len = SCM_UVECTOR_SIZE(v);
 
     SCM_CHECK_START_END(start, end, len);
     SCM_UVECTOR_CHECK_MUTABLE(v);
     CHECK_ENDIAN(endian);
 
-    eltsize = Scm_UVectorElementSize(Scm_ClassOf(SCM_OBJ(v)));
+    int eltsize = Scm_UVectorElementSize(Scm_ClassOf(SCM_OBJ(v)));
     SCM_ASSERT(eltsize >= 1);
-    r = Scm_Getz((char*)v->elements + start*eltsize,
-                 (end-start)*eltsize, port);
+    int r = Scm_Getz((char*)v->elements + start*eltsize,
+                     (end-start)*eltsize, port);
     if (r == EOF) SCM_RETURN(SCM_EOF);
 #ifdef DOUBLE_ARMENDIAN
     if (SCM_EQ(Scm_NativeEndian(), SCM_SYM_ARM_LITTLE_ENDIAN)) {
@@ -1400,11 +1395,11 @@ ScmObj Scm_ReadBlockX(ScmUVector *v, ScmPort *port,
 ScmObj Scm_WriteBlock(ScmUVector *v, ScmPort *port,
                       int start, int end, ScmSymbol *endian)
 {
-    int len = SCM_UVECTOR_SIZE(v), eltsize, swap_needed = FALSE, swap_type;
+    int len = SCM_UVECTOR_SIZE(v), swap_needed = FALSE, swap_type;
     SCM_CHECK_START_END(start, end, len);
     CHECK_ENDIAN(endian);
 
-    eltsize = Scm_UVectorElementSize(Scm_ClassOf(SCM_OBJ(v)));
+    int eltsize = Scm_UVectorElementSize(Scm_ClassOf(SCM_OBJ(v)));
     SCM_ASSERT(eltsize >= 1);
 #ifdef DOUBLE_ARMENDIAN
     if (SCM_EQ(Scm_NativeEndian(), SCM_SYM_ARM_LITTLE_ENDIAN)) {
@@ -1443,12 +1438,10 @@ ScmObj Scm_WriteBlock(ScmUVector *v, ScmPort *port,
                  (end-start)*eltsize, port);
     } else {
         /* ugly */
-        int i;
-
         switch (eltsize) {
         case 2: {
             swap_u16_t d;
-            for (i=start; i<end; i++) {
+            for (int i=start; i<end; i++) {
                 d.val = ((unsigned short*)v->elements)[i];
                 SWAP_2(d);
                 Scm_Putz((const char*)d.buf, 2, port);
@@ -1457,7 +1450,7 @@ ScmObj Scm_WriteBlock(ScmUVector *v, ScmPort *port,
         }
         case 4: {
             swap_u32_t d;
-            for (i=start; i<end; i++) {
+            for (int i=start; i<end; i++) {
                 d.val = ((ScmUInt32*)v->elements)[i];
                 SWAP_4(d);
                 Scm_Putz((const char*)d.buf, 4, port);
@@ -1468,21 +1461,21 @@ ScmObj Scm_WriteBlock(ScmUVector *v, ScmPort *port,
             swap_u64_t d;
             switch (swap_type) {
             case SWAPB_STD:
-                for (i=start; i<end; i++) {
+                for (int i=start; i<end; i++) {
                     d.val = ((ScmUInt64*)v->elements)[i];
                     SWAP_8(d);
                     Scm_Putz((const char*)d.buf, 8, port);
                 }
                 break;
             case SWAPB_ARM_LE:
-                for (i=start; i<end; i++) {
+                for (int i=start; i<end; i++) {
                     d.val = ((ScmUInt64*)v->elements)[i];
                     SWAP_ARM2LE(d);
                     Scm_Putz((const char*)d.buf, 8, port);
                 }
                 break;
             case SWAPB_ARM_BE:
-                for (i=start; i<end; i++) {
+                for (int i=start; i<end; i++) {
                     d.val = ((ScmUInt64*)v->elements)[i];
                     SWAP_ARM2BE(d);
                     Scm_Putz((const char*)d.buf, 8, port);
