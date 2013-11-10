@@ -1,3 +1,8 @@
+2013-11-10  Shiro Kawai  <shiro@acm.org>
+
+	* src/regexp.c (rex_rec): Fixed submatch capture failure. Patch
+	  from leque.
+
 2013-11-08  Shiro Kawai <shiro@acm.org>
 
 	* src/port.c, src/portapi.c (Scm_PortAttrGet etc.): Port attributes.

@@ -2447,9 +2447,11 @@ static void rex_rec(const unsigned char *code,
         case RE_BEGIN: {
             int grpno = *code++;
             const char *opos = ctx->matches[grpno]->startp;
+            const char *oend = ctx->matches[grpno]->endp;
             ctx->matches[grpno]->startp = input;
             rex_rec(code, input, ctx);
             ctx->matches[grpno]->startp = opos;
+            ctx->matches[grpno]->endp = oend;
             return;
         }
         case RE_BEGIN_RL: {

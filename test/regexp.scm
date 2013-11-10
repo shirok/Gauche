@@ -240,6 +240,11 @@
 (test-re #/(.)*/         "abc"     '("abc" "c"))
 (test-re #/(a([^a])*)*/  "abcaBC"  '("abcaBC" "aBC" "C"))
 (test-re #/b|()|a/       "cac"     '("" ""))
+(test-re #/(a)*a/        "a"       '("a" #f))
+(test-re #/(a)*a/        "aa"      '("aa" "a"))
+(test-re #/(a)*a/        "aaa"     '("aaa" "a"))
+(test-re #/(a)*?a/       "a"       '("a" #f))
+(test-re #/(a)*?a/       "aa"      '("a" #f))
 
 ;;-------------------------------------------------------------------------
 (test-section "simple meta")
@@ -521,6 +526,9 @@
 (test-re #/(.+)\1/i "AbCaBC" '("AbCaBC" "AbC"))
 (test-re #/(.+)\1/ "AbCAb1" '())
 (test-re #/((.)\2)/ "aa" '("aa" "aa" "a"))
+(test-re #/(a)*\1/ "aa" '("aa" "a"))
+(test-re #/(aa)*\1/ "aaa" '())
+(test-re #/(aa)*\1/ "aaaaa" '("aaaa" "aa"))
 (test* "^\\1(.)$" (test-error) (string->regexp "^\\1(.)"))
 (test* "^(\\1)$" (test-error) (string->regexp "^(\\1)$"))
 (test* "(.)\\2" (test-error) (string->regexp "(.)\\2"))
