@@ -87,7 +87,7 @@
     ))
 
 (define (html-doctype :key (type :html-4.01-strict))
-  (cond ((find (lambda (e) (memq type (car e))) *doctype-alist*)
+  (cond ((find (^e (memq type (car e))) *doctype-alist*)
          => caddr )
         (else (error "Unknown doctype type spec" type))))
 

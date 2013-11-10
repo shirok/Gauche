@@ -47,7 +47,7 @@
            (tree-map->alist (ctor)))
     (test* "tree-map->alist" '((0 . "0") (1 . "1") (2 . "2"))
            (let1 tree (ctor)
-             (for-each (lambda (p) (tree-map-put! tree (car p) (cdr p)))
+             (for-each (^p (tree-map-put! tree (car p) (cdr p)))
                        '((0 . "0") (1 . "1") (2 . "2")))
              (tree-map->alist tree)))
     (test* "alist->tree-map" '((0 . "0") (1 . "1") (2 . "2"))

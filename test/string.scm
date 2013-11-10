@@ -574,7 +574,7 @@
 
 (define (string-port-tester . args)
   (let ((out (open-output-string)))
-    (for-each (lambda (s) (display s out)) args)
+    (for-each (^s (display s out)) args)
     (get-output-string out)))
 
 (define (test-string-port signature total seg)

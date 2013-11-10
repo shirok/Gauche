@@ -106,7 +106,7 @@
                  [in-place-dir gauche-builddir])
     (unless (and (file-exists? sofile)
                  (every (cut file-mtime>? sofile <>) ofiles))
-      (let1 all-ofiles (string-join (map (lambda (f) #`"',f'") ofiles) " ")
+      (let1 all-ofiles (string-join (map (^f #`"',f'") ofiles) " ")
         (run #`",(or ld CC) ,(or ldflags \"\") ,(LIBDIR) ,LDFLAGS ,sofile ,all-ofiles ,LIBS ,(or libs \"\")")))))
 
 (define (gauche-package-compile-and-link module-name files . args)
@@ -147,7 +147,7 @@
                    ;; NB: we wrap to-dir by closure to for the case if
                    ;; to-dir includes submatch replacement spec.
                    [new (regexp-replace-all (string->regexp orig-dir) olddirs
-                                            (lambda (m) #`",|to-dir|/src"))])
+                                            (^m #`",|to-dir|/src"))])
           (if (equal? dir-key "--sysincdir")
             #`",|new|,|sep|,|to-dir|/gc/include"
             new))

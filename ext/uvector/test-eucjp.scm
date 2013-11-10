@@ -13,7 +13,7 @@
 (test "mb string->u8vector (start,end)" 'error
       (lambda ()
         (with-error-handler
-            (lambda (e) 'error)
+            (^e 'error)
           (lambda ()
             (string->u8vector "¤¢¤¤¤¦" 0 4)))))
 

@@ -151,7 +151,7 @@
 (define (%telnet-send-command self args)
   (let ((out (output-of self)))
     (write-byte *telnet-iac* out)
-    (for-each (lambda (b) (write-byte b out)) args)))
+    (for-each (^b (write-byte b out)) args)))
 
 (define-method telnet-recv ((self <telnet>))
   (let* ((inb (read-block 4000 (input-of self))))

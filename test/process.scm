@@ -58,7 +58,7 @@
 
 (define (cmds . args)
   (let1 cmdlist (apply cmd args)
-    (string-concatenate (apply append (map (lambda (x) `(,x " ")) cmdlist)))))
+    (string-concatenate (apply append (map (^x `(,x " ")) cmdlist)))))
 
 (define (rmrf . files)
   ;; shorthand of normalizing pathname.  this doesn't do anything on

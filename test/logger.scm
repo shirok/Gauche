@@ -50,7 +50,7 @@
       (lambda ()
         (map (lambda (line)
                (cond ((#/^... .. ..:..:.. .+\[\d+\]: (.*)$/ line)
-                      => (lambda (m) (m 1)))
+                      => (^m (m 1)))
                      (else #f)))
              (call-with-input-file "test.o" port->string-list))))
 

@@ -62,7 +62,7 @@
 
 ;;; Make a list of length LEN. Elt i is (PROC i) for 0 <= i < LEN.
 (define (list-tabulate len proc)
-  (check-arg (lambda (n) (and (integer? n) (>= n 0))) len)
+  (check-arg (^n (and (integer? n) (>= n 0))) len)
   (do ((i (- len 1) (- i 1))
        (ans '() (cons (proc i) ans)))
       ((< i 0) ans)))
@@ -388,8 +388,8 @@
                                    rest)))))))
       (values lis suffix))))
 
-(define (break  pred lis) (span  (lambda (x) (not (pred x))) lis))
-(define (break! pred lis) (span! (lambda (x) (not (pred x))) lis))
+(define (break  pred lis) (span  (^x (not (pred x))) lis))
+(define (break! pred lis) (span! (^x (not (pred x))) lis))
 
 (define (list-index pred lis1 . lists)
   (if (pair? lists)
@@ -420,7 +420,7 @@
 ;;;   FILTER in this source code share longest common tails between args
 ;;;   and results to get structure sharing in the lset procedures.
 
-(define (%lset2<= = lis1 lis2) (every (lambda (x) (member x lis2 =)) lis1))
+(define (%lset2<= = lis1 lis2) (every (^x (member x lis2 =)) lis1))
 
 (define (lset<= = . lists)
   (check-arg procedure? =)
@@ -457,7 +457,7 @@
                   ((null? ans) lis)     ; if we don't have to.
                   ((eq? lis ans) ans)
                   (else
-                   (fold (lambda (elt ans) (if (any (lambda (x) (= x elt)) ans)
+                   (fold (lambda (elt ans) (if (any (^x (= x elt)) ans)
                                              ans
                                              (cons elt ans)))
                          ans lis))))
@@ -472,7 +472,7 @@
                   (else
                    (pair-fold (lambda (pair ans)
                                 (let ((elt (car pair)))
-                                  (if (any (lambda (x) (= x elt)) ans)
+                                  (if (any (^x (= x elt)) ans)
                                     ans
                                     (begin (set-cdr! pair ans) pair))))
                               ans lis))))

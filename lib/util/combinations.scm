@@ -205,7 +205,7 @@
       (list '())
       (let ((x (car set))
             (rest (power-set-binary (cdr set))))
-        (append rest (map (lambda (s) (cons x s)) rest)))))
+        (append rest (map (^s (cons x s)) rest)))))
 
 ;; use combinations for nice ordering
 (define (power-set set)
@@ -284,7 +284,7 @@
             (rest (cartesian-product (cdr lol))))
         (append-map!
          (lambda (sub-prod)
-           (map (lambda (x) (cons x sub-prod)) l))
+           (map (^x (cons x sub-prod)) l))
          rest))))
 
 (define (cartesian-product-right-for-each proc lol)
@@ -292,7 +292,7 @@
       (proc '())
       (cartesian-product-right-for-each
        (lambda (sub-prod)
-         (for-each (lambda (x) (proc (cons x sub-prod))) (car lol)))
+         (for-each (^x (proc (cons x sub-prod))) (car lol)))
        (cdr lol))))
 
 

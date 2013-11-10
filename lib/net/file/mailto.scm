@@ -20,7 +20,7 @@
             (headers (map (lambda (x)
                             (and-let* ((h (string-split x "=")))
                               (list (string-downcase (car h)) (cadr h))))
-                          (filter (lambda (x) (not (equal? x "")))
+                          (filter (^x (not (equal? x "")))
                                   (string-split (or headers1 "") "&")))))
         (and-let* ((to (assoc "to" headers)))
           (push! rcpt (cadr to))
@@ -43,7 +43,7 @@
          (apply send-mail
                 :body (string-incomplete->complete (string-concatenate-reverse mess))
                 :to (recipients-of obj)
-                (concatenate (map (lambda (x) (list (make-keyword (car x)) (cadr x)))
+                (concatenate (map (^x (list (make-keyword (car x)) (cadr x)))
                                   (headers-of obj))))))
      1024)))
 

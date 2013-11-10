@@ -33,7 +33,7 @@
 (prim-test "cond" 5        (lambda ()  (cond (#f 2) (else 5))))
 (prim-test "cond" 2        (lambda ()  (cond (1 2) (else 5))))
 (prim-test "cond" 8        (lambda ()  (cond (#f 2) (1 8) (else 5))))
-(prim-test "cond" 3        (lambda ()  (cond (1 => (lambda (x) (+ x 2))) (else 8))))
+(prim-test "cond" 3        (lambda ()  (cond (1 => (^x (+ x 2))) (else 8))))
 (prim-test "cond (srfi-61)" 1 (lambda () (cond (1 number? => values) (else 8))))
 (prim-test "cond (srfi-61)" 8 (lambda () (cond (1 string? => values) (else 8))))
 (prim-test "cond (srfi-61)" '(1 2)
@@ -76,13 +76,13 @@
 ;;----------------------------------------------------------------
 (test-section "closure and saved env")
 
-(prim-test "lambda" 5  (lambda ()  ((lambda (x) (car x)) '(5 6 7))))
+(prim-test "lambda" 5  (lambda ()  ((^x (car x)) '(5 6 7))))
 (prim-test "lambda" 12
       (lambda ()
         ((lambda (x y)
-           ((lambda (z) (* (car z) (cdr z))) (cons x y))) 3 4)))
+           ((^z (* (car z) (cdr z))) (cons x y))) 3 4)))
 
-(define (addN n) (lambda (a) (+ a n)))
+(define (addN n) (^a (+ a n)))
 (prim-test "lambda" 5 (lambda ()  ((addN 2) 3)))
 (define add3 (addN 3))
 (prim-test "lambda" 9 (lambda ()  (add3 6)))
@@ -339,7 +339,7 @@
 (prim-test "eval" #t
       (lambda ()
         (with-error-handler
-         (lambda (e) #t)
+         (^e #t)
          (lambda () (eval '(car '(3 2)) (null-environment 5))))))
 
 ;; check interaction w/ modules
@@ -356,7 +356,7 @@
 (prim-test "eval (module)" '(x y)
       (lambda ()
         (with-error-handler
-            (lambda (e) foo)
+            (^e foo)
           (lambda ()
             (eval '(apply car foo '()) (find-module 'primsyn.test))))))
 
@@ -368,7 +368,7 @@
   (prim-test (string-append "max literal arguments for " msg)
              'caught 
              (lambda ()
-               (with-error-handler (lambda (e) 'caught)
+               (with-error-handler (^e 'caught)
                  (lambda () (eval expr (interaction-environment)))))))
 
 (test-max-literal-args "inliner" `(list ,@(make-list 10000 #f)))
@@ -385,7 +385,7 @@
 (prim-test "internal-define inilining" '(1)
            (lambda ()
              (with-error-handler
-                 (lambda (e) 'ouch!)
+                 (^e 'ouch!)
                (lambda ()
                  (eval '(let ()
                           (define (a x) x)
@@ -398,7 +398,7 @@
 ;; (found and fixed by Kazuki Tsujimoto)
 (prim-test "multiple inlining" 0
            (lambda ()
-             (let ((f (lambda (i) (set! i 0) i))) (f (f 1)))))
+             (let ((f (^i (set! i 0) i))) (f (f 1)))))
 
 ;; this caused an internal compiler error in 0.9.1
 (define (zero) 0)

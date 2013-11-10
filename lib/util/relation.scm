@@ -145,12 +145,12 @@
 ;; the list of getters, for example.
 (define-method relation-column-getters ((r <relation>))
   (let1 accessor (relation-accessor r)
-    (map (lambda (c) (lambda (row) (accessor row c)))
+    (map (^c (lambda (row) (accessor row c)))
          (relation-column-names r))))
 
 (define-method relation-column-setters ((r <relation>))
   (let1 modifier (relation-modifier r)
-    (map (lambda (c) (lambda (row val) (modifier row c val)))
+    (map (^c (lambda (row val) (modifier row c val)))
          (relation-column-names r))))
 
 ;; Returns a procedure that coerces a row into a sequence.
@@ -288,7 +288,7 @@
 
 (define-method relation-coercer ((r <object-set-relation>))
   (lambda (row)
-    (map (lambda (s) (slot-ref row s)) (relation-column-names r))))
+    (map (^s (slot-ref row s)) (relation-column-names r))))
 
 (define-method relation-insertable? ((r <object-set-relation>)) #t)
 (define-method relation-insert! ((r <object-set-relation>) row)

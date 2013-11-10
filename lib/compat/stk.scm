@@ -202,7 +202,7 @@
 (define posix-stat sys-stat)
 (define (posix-stat->vector stat)
   (apply vector
-         (map (lambda (p) (p stat))
+         (map (^p (p stat))
               (list sys-stat->dev
                     sys-stat->ino
                     sys-stat->mode

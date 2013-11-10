@@ -1865,9 +1865,9 @@
     (loop (+ b 1) (+ b b 1) (+ b b 3) (+ n 1))))
 
 (test* "logbit?" '(#f #t #t #f #t #f #f)
-              (map (lambda (i) (logbit? i #b10110)) '(0 1 2 3 4 5 6)))
+              (map (^i (logbit? i #b10110)) '(0 1 2 3 4 5 6)))
 (test* "logbit?" '(#f #t #f #t #f #t #t)
-              (map (lambda (i) (logbit? i #b-10110)) '(0 1 2 3 4 5 6)))
+              (map (^i (logbit? i #b-10110)) '(0 1 2 3 4 5 6)))
 
 (test* "copy-bit" #b11010110
       (copy-bit 4 #b11000110 #t))

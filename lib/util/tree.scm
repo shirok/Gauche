@@ -14,7 +14,7 @@
 
 (define (tree-walk tree proc leaf? walker)
   (define (rec node)
-    (walker (lambda (n) (if (leaf? n) (proc n) (rec n))) node))
+    (walker (^n (if (leaf? n) (proc n) (rec n))) node))
   (if (leaf? tree) (proc tree) (rec tree)))
 
 (define (tree-fold tree proc knil leaf? folder)
@@ -26,7 +26,7 @@
 (define (tree-walk-bf tree proc leaf? walker)
   (define (rec node)
     (let* ((branches '()))
-      (walker (lambda (n) (if (leaf? n) (proc n) (push! branches n))) node)
+      (walker (^n (if (leaf? n) (proc n) (push! branches n))) node)
       (for-each rec (reverse branches))))
   (if (leaf? tree) (proc tree) (rec tree)))
 

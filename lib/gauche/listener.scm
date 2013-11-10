@@ -61,7 +61,7 @@
    (evaluator   :init-keyword :evaluator :init-form eval)
    (printer     :init-keyword :printer
                 :init-form (lambda args
-                             (for-each (lambda (r) (write r) (newline)) args)))
+                             (for-each (^r (write r) (newline)) args)))
    (prompter    :init-keyword :prompter
                 :init-form (cut display "listener> "))
    (environment :init-keyword :environment

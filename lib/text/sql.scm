@@ -123,7 +123,7 @@
   ;;
   (define (skip-ws s)
     (cond ((#/^\s+(--)?/ s)
-           => (lambda (m) (if (m 1) (skip-comment s) (m 'after))))
+           => (^m (if (m 1) (skip-comment s) (m 'after))))
           (else s)))
   (define (skip-comment s)
     (cond ((string-scan s "\n" 'after))
