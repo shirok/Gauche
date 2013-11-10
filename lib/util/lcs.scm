@@ -58,9 +58,8 @@
 ;; The Myers's paper gives refinement of the algorithm
 ;; that improves worst case behavior, but I don't implement it yet. --[SK]
 
-(define (lcs-with-positions a-ls b-ls . opt-eq)
-  (let* ((eq (get-optional opt-eq equal?))
-         (A  (list->vector a-ls))
+(define (lcs-with-positions a-ls b-ls :optional (eq equal?))
+  (let* ((A  (list->vector a-ls))
          (B  (list->vector b-ls))
          (N  (vector-length A))
          (M  (vector-length B))
@@ -124,13 +123,13 @@
       )))
 
 ;; Just returns the LCS
-(define (lcs a b . opt-eq)
-  (map car (cadr (lcs-with-positions a b (get-optional opt-eq equal?)))))
+(define (lcs a b :optional (eq equal?))
+  (map car (cadr (lcs-with-positions a b eq))))
 
 ;; Fundamental iterator to deal with editlist.
 ;;   Similar to Perl's Algorith::Diff's traverse_sequence.
-(define (lcs-fold a-only b-only both seed a b . opt-eq)
-  (let1 common (cadr (lcs-with-positions a b (get-optional opt-eq equal?)))
+(define (lcs-fold a-only b-only both seed a b :optional (eq equal?))
+  (let1 common (cadr (lcs-with-positions a b eq))
     ;; Calculates edit-list from the LCS.
     ;; Loop parameters:
     ;;   common - list of common elements

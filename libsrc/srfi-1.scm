@@ -208,8 +208,8 @@
 ;;; Folders of SRFI-1
 ;;;
 
-(define (unfold-right p f g seed . maybe-tail)
-  (let lp ((seed seed) (ans (get-optional maybe-tail '())))
+(define (unfold-right p f g seed :optional (ans '()))
+  (let lp ((seed seed) (ans ans))
     (if (p seed)
       ans
       (lp (g seed)

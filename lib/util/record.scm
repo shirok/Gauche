@@ -42,12 +42,11 @@
     :slots (map list fields)
     :name (string->symbol (x->string name))))
 
-(define (record-constructor record-class . opt-fields)
-  (let ((fields (get-optional opt-fields (record-type-fields record-class))))
-    (lambda args
-      (let ((rec (make record-class)))
-        (for-each (lambda (f v) (slot-set! rec f v)) fields args)
-        rec))))
+(define (record-constructor record-class :optional (fields (record-type-fields record-class)))
+  (lambda args
+    (let ((rec (make record-class)))
+      (for-each (lambda (f v) (slot-set! rec f v)) fields args)
+      rec)))
 
 (define (record-predicate record-class)
   (lambda (obj) (is-a? obj record-class)))

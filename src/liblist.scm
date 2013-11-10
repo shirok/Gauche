@@ -694,19 +694,19 @@
   (cond [(assoc key alist eq) => cdr]
         [else default]))
 
-(define (assq-ref alist key . opts)
-  (assoc-ref alist key (get-optional opts #f) eq?))
-(define (assv-ref alist key . opts)
-  (assoc-ref alist key (get-optional opts #f) eqv?))
+(define (assq-ref alist key :optional (default #f))
+  (assoc-ref alist key default eq?))
+(define (assv-ref alist key :optional (default #f))
+  (assoc-ref alist key default eqv?))
 
 (define (rassoc-ref alist key :optional (default #f) (eq equal?))
   (cond [(rassoc key alist eq) => car]
         [else default]))
 
-(define (rassq-ref alist key . opts)
-  (rassoc-ref alist key (get-optional opts #f) eq?))
-(define (rassv-ref alist key . opts)
-  (rassoc-ref alist key (get-optional opts #f) eqv?))
+(define (rassq-ref alist key :optional (default #f))
+  (rassoc-ref alist key default eq?))
+(define (rassv-ref alist key :optional (default #f))
+  (rassoc-ref alist key default eqv?))
 
 ;; 'assoc-set!'
 (define (assoc-set! alist key val :optional (eq equal?))
