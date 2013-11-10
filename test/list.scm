@@ -9,7 +9,7 @@
 (test-section "ref,set!")
 
 (test* "list-ref" '(e d c b a)
-       (map (lambda (k) (list-ref '(a b c d e) k)) '(4 3 2 1 0)))
+       (map (^k (list-ref '(a b c d e) k)) '(4 3 2 1 0)))
 (test* "list-set!" '(a (b) c (d) e)
        (rlet1 lis (list 'a 'b 'c 'd 'e)
          (for-each (lambda (k)

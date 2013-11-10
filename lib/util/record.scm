@@ -63,6 +63,6 @@
   (slot-ref record-class 'name))
 
 (define (record-type-fields record-class)
-  (map (lambda (x) (if (pair? x) (car x) x))
+  (map (^x (if (pair? x) (car x) x))
        (compute-slots record-class)))
 

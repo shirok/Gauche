@@ -17,7 +17,7 @@
 ;;  nodes : a list of (<from> <to0> <to1> ...)
 
 (define (topological-sort nodes :optional (eq eqv?))
-  (define table (map (lambda (n) (cons (car n) 0)) nodes))
+  (define table (map (^n (cons (car n) 0)) nodes))
   (define queue '())
   (define result '())
 
@@ -26,7 +26,7 @@
     (for-each (lambda (node)
                 (for-each (lambda (to)
                             (cond ((assoc to table eq)
-                                   => (lambda (p) (inc! (cdr p))))
+                                   => (^p (inc! (cdr p))))
                                   (else
                                    (push! table (cons to 1)))))
                           (cdr node)))
@@ -50,11 +50,11 @@
         (traverse))))
 
   (set-up)
-  (set! queue (append-map (lambda (p) (if (= (cdr p) 0) (list (car p)) '()))
+  (set! queue (append-map (^p (if (= (cdr p) 0) (list (car p)) '()))
                           table))
   (set! result queue)
   (traverse)
-  (let1 rest (filter (lambda (e) (not (zero? (cdr e)))) table)
+  (let1 rest (filter (^e (not (zero? (cdr e)))) table)
     (unless (null? rest)
       (error "graph has circular dependency" (map car rest))))
   (reverse result))

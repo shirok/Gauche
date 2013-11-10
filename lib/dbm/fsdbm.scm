@@ -134,7 +134,7 @@
   (next-method)
   (let ((path (value-file-path (%dbm-k2s self key) (ref self 'path))))
     (cond ((call-with-input-file path
-             (lambda (p) (and p (%dbm-s2v self (read-chunk p))))
+             (^p (and p (%dbm-s2v self (read-chunk p))))
              :if-does-not-exist #f))
           ((pair? args) (car args))
           (else (errorf "fsdbm: no data for key ~s in database ~s"
@@ -159,7 +159,7 @@
         (if k
           (proc (%dbm-s2k self k)
                 (call-with-input-file path
-                  (lambda (p) (%dbm-s2v self (read-chunk p))))
+                  (^p (%dbm-s2v self (read-chunk p))))
                 seed)
           seed))))
   (next-method)

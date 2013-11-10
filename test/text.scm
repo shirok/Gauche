@@ -253,13 +253,13 @@ fuga
        (test-parseutil skip-until "xxxc" '(#[c-f] *eof*)))
 (test* "skip-until proc" '(#\c #\space)
        (test-parseutil skip-until "xxxc bcd"
-                       (lambda (x) (not (eqv? x #\x)))))
+                       (^x (not (eqv? x #\x)))))
 (test* "skip-until proc" '(eof eof)
        (test-parseutil skip-until "xxx"
-                       (lambda (x) (not (eqv? x #\x)))))
+                       (^x (not (eqv? x #\x)))))
 (test* "skip-until proc" (test-error)
        (test-parseutil skip-until "yyyy"
-                       (lambda (x) (eqv? x #\x))))
+                       (^x (eqv? x #\x))))
 (test* "skip-while" '(#\d #\d)
        (test-parseutil skip-while "xxxd" '(#\a #\space #\x)))
 (test* "skip-while" '(#\d #\d)
@@ -270,14 +270,14 @@ fuga
        (test-parseutil skip-while "xxxa" #[ax ]))
 (test* "skip-while" '(#\d #\d)
        (test-parseutil skip-while "xxxd"
-                       (lambda (x) (eqv? x #\x))))
+                       (^x (eqv? x #\x))))
 (test* "skip-while" '(#\y #\y)
        (test-parseutil skip-while "yxxxd"
-                       (lambda (x) (eqv? x #\x))))
+                       (^x (eqv? x #\x))))
 (test* "skip-while" '(eof eof)
        (test-parseutil skip-while "yxxxd"
-                       (lambda (x) (and (char? x)
-                                        (char-alphabetic? x)))))
+                       (^x (and (char? x)
+				(char-alphabetic? x)))))
 
 (test* "next-token" '("" #\d)
        (test-parseutil next-token "xxxd" #[ax ] #[d] "next token"))
@@ -291,10 +291,10 @@ fuga
        (test-parseutil next-token "   aeio" #[\s] '(#[\s] *eof*) "next token"))
 (test* "next-token" '("aeio" #\tab)
        (test-parseutil next-token "   aeio\tnjj"
-                       (lambda (x) (and (char? x)
-                                        (char-whitespace? x)))
-                       (lambda (x) (or (eof-object? x)
-                                       (char-whitespace? x)))
+                       (^x (and (char? x)
+				(char-whitespace? x)))
+                       (^x (or (eof-object? x)
+			       (char-whitespace? x)))
                        "next token"
                        ))
 
@@ -310,10 +310,10 @@ fuga
        (test-parseutil next-token-of "rnge!rg0#$@ bag" #[\S]))
 (test* "next-token-of" '("xxx" #\d)
        (test-parseutil next-token-of "xxxd"
-                       (lambda (x) (eqv? x #\x))))
+                       (^x (eqv? x #\x))))
 (test* "next-token-of" '("xxxx" eof)
        (test-parseutil next-token-of "xxxx"
-                       (lambda (x) (eqv? x #\x))))
+                       (^x (eqv? x #\x))))
 
 (test* "read-string" '("aaaa" #\a)
        (test-parseutil read-string "aaaaa" 4))

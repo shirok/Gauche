@@ -139,7 +139,7 @@
        (call-with-output-string
          (lambda (o)
            (let* ((p (make <virtual-output-port>
-                       :putc (lambda (c) (write-char c o)))))
+                       :putc (^c (write-char c o)))))
              (write-char #\a p)
              (display "bcd" p)
              (write-byte 101 p)
@@ -150,7 +150,7 @@
        (call-with-output-string
          (lambda (o)
            (let* ((p (make <virtual-output-port>
-                       :putb (lambda (b) (write-byte b o)))))
+                       :putb (^b (write-byte b o)))))
              (write-char #\a p)
              (display "bcd" p)
              (write-byte 101 p)
@@ -161,9 +161,9 @@
        (call-with-output-string
          (lambda (o)
            (let* ((p (make <virtual-output-port>
-                       :putb (lambda (b) #f)
-                       :putc (lambda (c) #f)
-                       :puts (lambda (s) (display s o)))))
+                       :putb (^b #f)
+                       :putc (^c #f)
+                       :puts (^s (display s o)))))
              (write-char #\a p)
              (display "bcd" p)
              (write-byte 101 p)
@@ -246,7 +246,7 @@
                      (if size
                        (list :buffer-size size)
                        '()))))
-      (string-for-each (lambda (c) (write-char c p)) src)
+      (string-for-each (^c (write-char c p)) src)
       (close-output-port p)
       (list (equal? src (get-output-string sink))
             closed?)))
@@ -347,7 +347,7 @@
   (define (tester size limit)
     (test* #`"size=,size limit=,limit" #t
            (let* ((source (string-tabulate
-                           (lambda (i) (integer->char (modulo i 128)))
+                           (^i (integer->char (modulo i 128)))
                            size))
                   (expected (if (<= limit size)
                               (string-take source limit)

@@ -574,7 +574,7 @@
                (begin (close-input-port in)
                       (display (make-string 69999) out)
                       (with-error-handler
-                          (lambda (e) (sys-exit 0))
+                          (^e (sys-exit 0))
                         (lambda ()
                           (newline out)
                           (close-output-port out)
@@ -668,7 +668,7 @@
            (sys-fdset-set! fdset 3 #t)
            (sys-fdset-set! fdset 4 #f)
            (cons (sys-fdset-max-fd fdset)
-                 (map (lambda (i) (sys-fdset-ref fdset i)) (iota 5)))))
+                 (map (^i (sys-fdset-ref fdset i)) (iota 5)))))
 
   (test* "fdset" '(-1 7 7 4 10 10 -1)
          (let ((fdset (make <sys-fdset>))
@@ -842,8 +842,8 @@
              (call/cc
               (lambda (k)
                 (set-signal-handler! SIGINT  k)
-                (set-signal-handler! SIGCHLD (lambda (k) (sys-wait) (set! chld #t)))
-                (set-signal-handler! SIGHUP  (lambda (k) (set! sig 'hup)))
+                (set-signal-handler! SIGCHLD (^k (sys-wait) (set! chld #t)))
+                (set-signal-handler! SIGHUP  (^k (set! sig 'hup)))
                 (sys-sigmask SIG_BLOCK mask1)
                 (let ((pid (sys-fork)))
                   (if (= pid 0)
@@ -910,7 +910,7 @@
    [(and gauche.sys.sigwait
          (not gauche.os.cygwin))
     (let ()
-      (define z (lambda (n) (raise 'foo)))
+      (define z (^n (raise 'foo)))
       
       (set-signal-handler! SIGCHLD #t)
       (set-signal-handler! SIGINT z)

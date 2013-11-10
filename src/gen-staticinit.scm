@@ -149,7 +149,7 @@
              (and fn
                   (let ([content (hash-table-get *embedded-scm-table* fn)])
                     (and content
-                         (cons fn (lambda (_) (open-input-string content)))))))))))
+                         (cons fn (^_ (open-input-string content)))))))))))
 
 (define (embed-scm)
   ;; Table of module path -> source

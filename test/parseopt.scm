@@ -180,33 +180,33 @@
 
 (test* "let-args (callback)" 25
        (let-args '("-foo" "5")
-           ((foo "foo=n" => (lambda (x) (* x x)))
+           ((foo "foo=n" => (^x (* x x)))
             (bar "bar"))
          foo))
 
 (test* "let-args (callback)" #f
        (let-args '()
-           ((foo "foo=n" => (lambda (x) (* x x)))
+           ((foo "foo=n" => (^x (* x x)))
             (bar "bar"))
          foo))
 
 (test* "let-args (callback)" 8
        (let-args '()
-           ((foo "foo=n" 8 => (lambda (x) (* x x)))
+           ((foo "foo=n" 8 => (^x (* x x)))
             (bar "bar"))
          foo))
 
 (test* "let-args (side-effect)" 5
        (let ((boo 0))
          (let-args '("-foo" "5")
-             ((#f "foo=n" => (lambda (x) (set! boo x)))
+             ((#f "foo=n" => (^x (set! boo x)))
               (bar "bar"))
            boo)))
 
 (test* "let-args (side-effect)" 0
        (let ((boo 0))
          (let-args '("-bar")
-             ((#f "foo=n" => (lambda (x) (set! boo x)))
+             ((#f "foo=n" => (^x (set! boo x)))
               (#f "bar"))
            boo)))
 

@@ -161,7 +161,7 @@
   (cond ((and (string? ctype)
               (rxmatch #/(\;|\s)boundary=\"([^\"])\"/
                        ctype))
-         => (lambda (m) (rxmatch-substring m)))
+         => (^m (rxmatch-substring m)))
         (else #f)))
 
 (define (smtp-generate-boundary)

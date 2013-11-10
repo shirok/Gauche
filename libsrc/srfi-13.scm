@@ -125,7 +125,7 @@
 ;;;
 
 (define (string-tabulate proc len)
-  (check-arg (lambda (l) (and (integer? l) (>= l 0))) len)
+  (check-arg (^l (and (integer? l) (>= l 0))) len)
   (let ((sink (open-output-string)))
     (do ((i 0 (+ i 1)))
         ((>= i len) (get-output-string sink))
@@ -142,7 +142,7 @@
 
 (define (string-copy! target tstart s . args)
   (check-arg string? target)
-  (check-arg (lambda (x) (and (integer? x) (>= x 0))) tstart)
+  (check-arg (^x (and (integer? x) (>= x 0))) tstart)
   (let* ((str (apply %maybe-substring s args))
          (slen (string-length str))
          (tlen (string-length target)))
@@ -286,84 +286,84 @@
   (check-arg string? s1)
   (check-arg string? s2)
   (apply string-compare
-         s1 s2 (lambda (_) #f) (lambda (_) #t) (lambda (_) #f)
+         s1 s2 (^_ #f) (^_ #t) (^_ #f)
          args))
 
 (define (string<> s1 s2 . args)
   (check-arg string? s1)
   (check-arg string? s2)
   (apply string-compare
-         s1 s2 (lambda (_) #t) (lambda (_) #f) (lambda (_) #t)
+         s1 s2 (^_ #t) (^_ #f) (^_ #t)
          args))
 
 (define (string< s1 s2 . args)
   (check-arg string? s1)
   (check-arg string? s2)
   (apply string-compare
-         s1 s2 (lambda (_) #t) (lambda (_) #f) (lambda (_) #f)
+         s1 s2 (^_ #t) (^_ #f) (^_ #f)
          args))
 
 (define (string<= s1 s2 . args)
   (check-arg string? s1)
   (check-arg string? s2)
   (apply string-compare
-         s1 s2 (lambda (_) #t) (lambda (_) #t) (lambda (_) #f)
+         s1 s2 (^_ #t) (^_ #t) (^_ #f)
          args))
 
 (define (string> s1 s2 . args)
   (check-arg string? s1)
   (check-arg string? s2)
   (apply string-compare
-         s1 s2 (lambda (_) #f) (lambda (_) #f) (lambda (_) #t)
+         s1 s2 (^_ #f) (^_ #f) (^_ #t)
          args))
 
 (define (string>= s1 s2 . args)
   (check-arg string? s1)
   (check-arg string? s2)
   (apply string-compare
-         s1 s2 (lambda (_) #f) (lambda (_) #t) (lambda (_) #t)
+         s1 s2 (^_ #f) (^_ #t) (^_ #t)
          args))
 
 (define (string-ci= s1 s2 . args)
   (check-arg string? s1)
   (check-arg string? s2)
   (apply string-compare-ci
-         s1 s2 (lambda (_) #f) (lambda (_) #t) (lambda (_) #f)
+         s1 s2 (^_ #f) (^_ #t) (^_ #f)
          args))
 
 (define (string-ci<> s1 s2 . args)
   (check-arg string? s1)
   (check-arg string? s2)
   (apply string-compare-ci
-         s1 s2 (lambda (_) #t) (lambda (_) #f) (lambda (_) #t)
+         s1 s2 (^_ #t) (^_ #f) (^_ #t)
          args))
 
 (define (string-ci< s1 s2 . args)
   (check-arg string? s1)
   (check-arg string? s2)
   (apply string-compare-ci
-         s1 s2 (lambda (_) #t) (lambda (_) #f) (lambda (_) #f)
+         s1 s2 (^_ #t) (^_ #f) (^_ #f)
          args))
 
 (define (string-ci<= s1 s2 . args)
   (check-arg string? s1)
   (check-arg string? s2)
   (apply string-compare-ci
-         s1 s2 (lambda (_) #t) (lambda (_) #t) (lambda (_) #f)
+         s1 s2 (^_ #t) (^_ #t) (^_ #f)
          args))
 
 (define (string-ci> s1 s2 . args)
   (check-arg string? s1)
   (check-arg string? s2)
   (apply string-compare-ci
-         s1 s2 (lambda (_) #f) (lambda (_) #f) (lambda (_) #t)
+         s1 s2 (^_ #f) (^_ #f) (^_ #t)
          args))
 
 (define (string-ci>= s1 s2 . args)
   (check-arg string? s1)
   (check-arg string? s2)
   (apply string-compare-ci
-         s1 s2 (lambda (_) #f) (lambda (_) #t) (lambda (_) #t)
+         s1 s2 (^_ #f) (^_ #t) (^_ #t)
          args))
 
 ;;;
@@ -688,7 +688,7 @@
     ))
 
 (define (string-unfold p f g seed
-                       :optional (base "") (make-final (lambda (_) "")))
+                       :optional (base "") (make-final (^_ "")))
   (check-arg procedure? p)
   (check-arg procedure? f)
   (check-arg procedure? g)
@@ -702,7 +702,7 @@
                (loop (g seed)))))))
 
 (define (string-unfold-right p f g seed
-                             :optional (base "") (make-final (lambda (_) "")))
+                             :optional (base "") (make-final (^_ "")))
   (check-arg procedure? p)
   (check-arg procedure? f)
   (check-arg procedure? g)
@@ -738,7 +738,7 @@
 
 (define (xsubstring s from :optional to start end)
   (check-arg string? s)
-  (check-arg (lambda (x) (and (integer? x) (exact? x))) from)
+  (check-arg (^x (and (integer? x) (exact? x))) from)
   (let* ((str (%maybe-substring s start end))
          (len (string-length str))
          (from-rank (quotient from len))
@@ -772,7 +772,7 @@
 
 (define (string-xcopy! target tstart s sfrom . args)
   (check-arg string? target)
-  (check-arg (lambda (x) (and (integer? x) (exact? x))) tstart)
+  (check-arg (^x (and (integer? x) (exact? x))) tstart)
   (let ((result (apply xsubstring s sfrom args)))
     (string-copy! target tstart result)))
 

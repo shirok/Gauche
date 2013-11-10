@@ -198,8 +198,8 @@
 (test* "string-every" #t (string-every #[あ-ん] "ああいあ"))
 (test* "string-every" #f (string-every #[あ-ん] "ああaあ"))
 (test* "string-every" #t (string-every #[あ-ん] ""))
-(test* "string-every" #t (string-every (lambda (x) (char-ci=? x #\あ)) "ああああ"))
-(test* "string-every" #f (string-every (lambda (x) (char-ci=? x #\あ)) "あいあい"))
+(test* "string-every" #t (string-every (^x (char-ci=? x #\あ)) "ああああ"))
+(test* "string-every" #f (string-every (^x (char-ci=? x #\あ)) "あいあい"))
 
 (test* "string-any" #t (string-any #\あ "ああああ"))
 (test* "string-any" #f (string-any #\あ "いうえお"))
@@ -207,8 +207,8 @@
 (test* "string-any" #t (string-any #[あ-ん] "すきーむ"))
 (test* "string-any" #f (string-any #[あ-ん] "スキーム"))
 (test* "string-any" #f (string-any #[あ-ん] ""))
-(test* "string-any" #t (string-any (lambda (x) (char-ci=? x #\あ)) "らららあ"))
-(test* "string-any" #f (string-any (lambda (x) (char-ci=? x #\あ)) "ラララア"))
+(test* "string-any" #t (string-any (^x (char-ci=? x #\あ)) "らららあ"))
+(test* "string-any" #f (string-any (^x (char-ci=? x #\あ)) "ラララア"))
 (test* "string-tabulate" "アィイゥウ"
        (string-tabulate (lambda (code)
                           (integer->char (+ code
@@ -421,19 +421,19 @@
 
 (define (byte-list->port p bytes)
   (set! *flusher-out* '())
-  (for-each (lambda (b) (write-byte b p)) bytes)
+  (for-each (^b (write-byte b p)) bytes)
   (close-output-port p)
   *flusher-out*)
 
 (define (char-list->port p chars)
   (set! *flusher-out* '())
-  (for-each (lambda (c) (write-char c p)) chars)
+  (for-each (^c (write-char c p)) chars)
   (close-output-port p)
   *flusher-out*)
 
 (define (string-list->port p strs)
   (set! *flusher-out* '())
-  (for-each (lambda (s) (display s p)) strs)
+  (for-each (^s (display s p)) strs)
   (close-output-port p)
   *flusher-out*)
 

@@ -201,8 +201,8 @@
 
 (define (make-stream n . rest)
   (stream-tabulate n (if (null? rest)
-                       (lambda (_) #f)
-                       (lambda (_) (car rest)))))
+                       (^_ #f)
+                       (^_ (car rest)))))
 
 (define (stream-tabulate n init-proc)
   (let loop ((i 0))
@@ -568,7 +568,7 @@
   (values (stream-take-while pred str) (stream-drop-while pred str)))
 
 (define (stream-break pred str)
-  (stream-span (lambda (x) (not (pred x))) str))
+  (stream-span (^x (not (pred x))) str))
 
 (define (stream-any pred . strs)
   (and (not (find stream-null? strs))
@@ -616,7 +616,7 @@
   (stream-delay
     (cond
       ((stream-null? str) stream-null)
-      ((any (lambda (x) (= x (stream-car str))) already)
+      ((any (^x (= x (stream-car str))) already)
        (stream-delete-dups (stream-cdr str) already =))
       (else
         (stream-cons (stream-car str)
@@ -655,7 +655,7 @@
             (stream-cons (stream-car in) (stream-replace (stream-cdr in) reps))))))
 
 (define (stream-translate str from to)
-  (stream-map (lambda (c) (if (equal? c from) to c)) str))
+  (stream-map (^c (if (equal? c from) to c)) str))
 
 (define (write-stream stream :optional
                       (port (current-output-port)) (writer write-char))

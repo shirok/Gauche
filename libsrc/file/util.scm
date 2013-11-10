@@ -124,7 +124,7 @@
 ;; utility for directory-list and directory-list2
 (define (%directory-filter dir pred filter-add-path?)
   (if filter-add-path?
-    (filter (lambda (e) (pred (build-path dir e))) (sys-readdir dir))
+    (filter (^e (pred (build-path dir e))) (sys-readdir dir))
     (filter pred (sys-readdir dir))))
 
 (define (%directory-filter-compose opts)
@@ -132,7 +132,7 @@
                       (filter #f))
     (apply every-pred
            (cond-list
-            [children? (lambda (e) (not (member (sys-basename e) '("." ".."))))]
+            [children? (^e (not (member (sys-basename e) '("." ".."))))]
             [filter]))))
 
 ;; directory-list DIR &keyword ADD-PATH? FILTER-ADD-PATH? CHILDREN? FILTER
@@ -158,7 +158,7 @@
          [entries (sort (%directory-filter dir filters filter-add-path?))])
     (if add-path?
       (partition selector (map (cut build-path dir <>) entries))
-      (partition (lambda (e) (selector (build-path dir e))) entries))))
+      (partition (^e (selector (build-path dir e))) entries))))
 
 ;; directory-fold DIR PROC KNIL &keyword LISTER FOLDER FOLLOW-LINK?
 (define (directory-fold dir proc knil

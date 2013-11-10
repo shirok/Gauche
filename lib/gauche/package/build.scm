@@ -76,7 +76,7 @@
   (cond
    ((#/(.*)(?:\.tar\.gz|\.tgz|\.taz|\.tar\.bz|\.tar\.bz2|\.tbz|\.tbz2|\.tar)$/
        (sys-basename file))
-    => (lambda (m) (m 1)))
+    => (^m (m 1)))
    (else
     (error "can't determine package directory from tarball " file))))
 

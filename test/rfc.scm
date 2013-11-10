@@ -922,7 +922,7 @@ Content-Length: 4349
             (let* ([headers (rfc822-read-headers in)]
                    [bodylen
                     (cond [(assoc-ref headers "content-length")
-                           => (lambda (e) (string->number (car e)))]
+                           => (^e (string->number (car e)))]
                           [else 0])]
                    [body (read-block bodylen in)])
               (cond

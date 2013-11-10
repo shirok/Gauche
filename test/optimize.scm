@@ -36,7 +36,7 @@
        (proc->insn/split (^[] (+ (const4) (const4)))))
 
 ;; Combinatorial
-(define-inline (make-adder n) (lambda (m) (+ n m)))
+(define-inline (make-adder n) (^m (+ n m)))
 (define-inline add4 (make-adder 4))
 (test* "inlining add4 + constant folding" '(((CONSTI 9)) ((RET)))
        (proc->insn/split (^[] (+ (add4 2) 3))))
@@ -113,7 +113,7 @@
 
 (test* "eta conversion hazard" '(9 3)
        (let ((a 1))
-         (let ((b (hoop (lambda (c) (set! a 9) (+ c 1)) 2)))
+         (let ((b (hoop (^c (set! a 9) (+ c 1)) 2)))
            (hoop2 a b))))
 
 (test-end)

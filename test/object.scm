@@ -127,7 +127,7 @@
 (define r3 (make <r> :b 100 :a 20))
 
 (define-method slot-values ((obj <r>))
-  (map (lambda (s) (slot-ref obj s)) '(a b)))
+  (map (^s (slot-ref obj s)) '(a b)))
 
 (test* "make <r>" '(4 5) (slot-values r1))
 (test* "make <r> :a" '(9 5) (slot-values r2))
@@ -141,14 +141,14 @@
    (c :allocation :class         :init-keyword :c :init-value #\c)
    (s :allocation :each-subclass :init-keyword :s :init-value #\s)
    (v :allocation :virtual       :init-keyword :v
-      :slot-ref (lambda (o) (cons (slot-ref o 'i) (slot-ref o 'c)))
+      :slot-ref (^o (cons (slot-ref o 'i) (slot-ref o 'c)))
       :slot-set! (lambda (o v)
                    (slot-set! o 'i (car v))
                    (slot-set! o 'c (cdr v))))
    ))
 
 (define-method slot-values ((obj <s>))
-  (map (lambda (s) (slot-ref obj s)) '(i c s v)))
+  (map (^s (slot-ref obj s)) '(i c s v)))
 
 (define s1 (make <s>))
 (define s2 (make <s>))
@@ -226,9 +226,9 @@
 
 (define-class <sss> ()
   ((v :allocation :virtual
-      :slot-ref  (lambda (o) (slot-ref o 'vv))
+      :slot-ref  (^o (slot-ref o 'vv))
       :slot-set! (lambda (o v) (slot-set! o 'vv v))
-      :slot-bound? (lambda (o) (slot-bound? o 'vv)))
+      :slot-bound? (^o (slot-bound? o 'vv)))
    vv))
 
 (define s5 (make <sss>))
@@ -421,7 +421,7 @@
 
 (test* "subclass redefinition <y> (slots)"
        '((a b c) (a b c x) (c d e a b) (c d e a b x))
-       (map (lambda (c) (map (lambda (s) (car s)) (class-slots c)))
+       (map (^c (map (lambda (s) (car s)) (class-slots c)))
             (list <x>-orig <x> <y>-orig <y>)))
 
 (test* "subclass redefinition <w> (links)"
@@ -434,7 +434,7 @@
 
 (test* "subclass redefinition <w> (slots)"
        '((e f c d a b) (e f c d a b x) (e f c d a b) (e f c d a b x))
-       (map (lambda (c) (map (lambda (s) (car s)) (class-slots c)))
+       (map (^c (map (lambda (s) (car s)) (class-slots c)))
             (list <w>-orig <w> <w2>-orig <w2>)))
 
 (test* "subclass redefinition (hierarchy)"
@@ -518,7 +518,7 @@
 
 (test* "instance update (y2) - cascade"
        '(5 7 9 3)
-       (map (lambda (s) (slot-ref y2 s)) '(a c e x)))
+       (map (^s (slot-ref y2 s)) '(a c e x)))
 
 (test* "redefine <y> without inheriting <x>" '(a e)
        (begin
@@ -534,7 +534,7 @@
              (memq <x> (ref <y> 'direct-supers))))
 
 (test* "instance update (y1)" '(0 4)
-       (map (lambda (s) (slot-ref y1 s)) '(a e)))
+       (map (^s (slot-ref y1 s)) '(a e)))
 
 (test* "subclass redefinition <w>" '(e f a)
        (map car (class-slots <w>)))
@@ -774,7 +774,7 @@
          (set! (a-of zz) 1)
          (set! (b-of zz) 2)
          (set! (c-of zz) 3)
-         (map (lambda (s) (slot-ref zz s)) '(a b c))))
+         (map (^s (slot-ref zz s)) '(a b c))))
 
 (define-class <uu> (<zz>)
   (d e f))
@@ -787,7 +787,7 @@
          (set! (d-of uu) 4)
          (set! (e-of uu) 5)
          (set! (f-of uu) 6)
-         (map (lambda (s) (slot-ref uu s)) '(a b c d e f))))
+         (map (^s (slot-ref uu s)) '(a b c d e f))))
 
 (define-class <vv> (<zz> <xx>)
   ())
@@ -797,7 +797,7 @@
          (set! (a-of vv) 1)
          (set! (b-of vv) 2)
          (set! (c-of vv) 3)
-         (map (lambda (s) (slot-ref vv s)) '(a b c))))
+         (map (^s (slot-ref vv s)) '(a b c))))
 (test "metaclass" '(<vv> <yy> <xx>)
       (lambda () (class-slot-ref <listing-class> 'classes)))
 
@@ -814,7 +814,7 @@
          (set! (d-of ww) 4)
          (set! (e-of ww) 5)
          (set! (f-of ww) 6)
-         (map (lambda (s) (slot-ref ww s)) '(a b c d e f))))
+         (map (^s (slot-ref ww s)) '(a b c d e f))))
 (test* "metaclass" '(<ww> <vv> <yy> <xx>)
        (class-slot-ref <listing-class> 'classes))
 
@@ -873,7 +873,7 @@
    (doc2 :init-value "no doc")
    (sub  :allocation :virtual
          :slot-set! (lambda (o v) #f)
-         :slot-ref  (lambda (o) (slot-ref o 'doc2)))))
+         :slot-ref  (^o (slot-ref o 'doc2)))))
 
 (test* "redefinition of metaclass" '("Doc doc" "no doc" "no doc")
        (list (slot-ref <xxx> 'doc)
@@ -1067,7 +1067,7 @@
 
 (test* "instance-pool-for-each" (list pool-x1 pool-z1 pool-x2 pool-z2)
        (let ((r '()))
-         (instance-pool-for-each <pool-x> (lambda (p) (push! r p)))
+         (instance-pool-for-each <pool-x> (^p (push! r p)))
          r)
        (cut lset= eq? <> <>))
 

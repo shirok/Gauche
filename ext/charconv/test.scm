@@ -145,10 +145,10 @@
   (test-output "char" read-char write-char file from to))
 
 (define (test-output/chunk256 file from to)
-  (test-output "chunk256" (lambda (p) (read-block 256 p)) display file from to))
+  (test-output "chunk256" (^p (read-block 256 p)) display file from to))
 
 (define (test-output/chunk20 file from to)
-  (test-output "chunk20" (lambda (p) (read-block 20 p)) display file from to))
+  (test-output "chunk20" (^p (read-block 20 p)) display file from to))
 
 (define internal-enc
   (case (gauche-character-encoding)

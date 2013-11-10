@@ -115,7 +115,7 @@
   (define (emit-defs slots readers)
     `(begin
        (define-class ,name (,super)
-         ,(map (lambda (s) `(,s :init-keyword ,(make-keyword s))) slots)
+         ,(map (^s `(,s :init-keyword ,(make-keyword s))) slots)
          :metaclass <condition-meta>)
        ,@readers
        ,@(if pred

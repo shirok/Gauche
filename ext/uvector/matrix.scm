@@ -438,7 +438,7 @@
             (make-string width (string-ref x 0))
             (receive (quot rem) (quotient&remainder width len)
               (string-append
-               (apply string-append (map (lambda (n) x) (iota quot)))
+               (apply string-append (map (^n x) (iota quot)))
                (substring x 0 rem)))))))
     (define (pad x width)
       (let* ([res (x->string x)]

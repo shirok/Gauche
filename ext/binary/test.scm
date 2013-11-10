@@ -128,7 +128,7 @@
   (test* label '(#t #f #t #f)
          (map (lambda (val)
                 (with-error-handler
-                    (lambda (e) #f)
+                    (^e #f)
                   (lambda ()
                     (and (call-with-output-string (cut proc val <>))
                          #t))))
