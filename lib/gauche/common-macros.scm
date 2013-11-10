@@ -362,7 +362,7 @@
     [(_ (var lis) . body)
      (begin (for-each (lambda (var) . body) lis) '())]
     [(_ (lis) . body)
-     (begin (for-each (lambda (_) . body) lis) '())]
+     (begin (for-each (^_ . body) lis) '())]
     [(_ . other)
      (syntax-error "malformed dolist" (dolist . other))]))
 

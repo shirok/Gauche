@@ -15,27 +15,27 @@
 
 (prim-test "basic" '(1 . 2)
       (lambda ()
-        (cons 1 (with-error-handler (lambda (e) 2)
+        (cons 1 (with-error-handler (^e 2)
                                     (lambda () (car 2))))))
 (prim-test "basic" '(1 2 3)
       (lambda ()
-        (list (with-error-handler (lambda (e) 1)
+        (list (with-error-handler (^e 1)
                                   (lambda () (car 2)))
-              (with-error-handler (lambda (e) -1)
+              (with-error-handler (^e -1)
                                   (lambda () 2))
-              (with-error-handler (lambda (e) 3)
+              (with-error-handler (^e 3)
                                   (lambda () (car 3))))))
 
 (prim-test "with let" 1
       (lambda ()
         (let ((x 1))
-          (with-error-handler (lambda (e) x)
+          (with-error-handler (^e x)
                               (lambda () (car 0))))))
 
 (prim-test "with let" 1
       (lambda ()
         (let ((x 1))
-          (with-error-handler (lambda (e) x)
+          (with-error-handler (^e x)
                               (lambda ()
                                 (let ((x 2))
                                   (car x)))))))
@@ -43,10 +43,10 @@
 (prim-test "cascade" 3
       (lambda ()
         (with-error-handler
-         (lambda (e) 3)
+         (^e 3)
          (lambda ()
            (with-error-handler
-            (lambda (e) (car 0))
+            (^e (car 0))
             (lambda ()
               (car 4)))))))
 
@@ -54,7 +54,7 @@
       (lambda ()
         (cons 1
               (with-error-handler
-               (lambda (e) 2)
+               (^e 2)
                (lambda ()
                  (sort '(1 8 3 7 4)
                        (lambda (a b) (car a))))))))
@@ -63,7 +63,7 @@
       (lambda ()
         (let ((x '()))
           (with-error-handler
-           (lambda (e) (set! x (cons 'b x)))
+           (^e (set! x (cons 'b x)))
            (lambda ()
              (dynamic-wind
               (lambda () (set! x (cons 'c x)))
@@ -78,7 +78,7 @@
            (lambda () (push! x 'a))
            (lambda ()
              (with-error-handler
-              (lambda (e) (push! x 'e))
+              (^e (push! x 'e))
               (lambda ()
                 (dynamic-wind
                  (lambda () (push! x 'b))
@@ -93,7 +93,7 @@
         (let loop ((i 0))
           (if (< i 10)
               (begin (with-error-handler
-                      (lambda (e) i)
+                      (^e i)
                       (lambda () (car i)))
                      (loop (+ i 1)))
               i))))
@@ -108,13 +108,13 @@
       (lambda ()
         (let ((x '()))
           (with-error-handler
-           (lambda (e) (push! x 'e))
+           (^e (push! x 'e))
            (lambda ()
              (dynamic-wind
               (lambda () (push! x 'a))
               (lambda ()
                 (with-error-handler
-                 (lambda (e) (push! x 'c) (car 9))
+                 (^e (push! x 'c) (car 9))
                  (lambda ()
                    (push! x 'b)
                    (car 3)
@@ -129,13 +129,13 @@
            (lambda () (push! x 'a))
            (lambda ()
              (with-error-handler
-              (lambda (e) (push! x 'e))
+              (^e (push! x 'e))
               (lambda ()
                 (dynamic-wind
                  (lambda () (push! x 'b))
                  (lambda ()
                    (with-error-handler
-                    (lambda (e) (push! x 'd) (raise e))
+                    (^e (push! x 'd) (raise e))
                     (lambda ()  (push! x 'c) (car 3) (push! x 'z))))
                  (lambda () (push! x 'f))))))
            (lambda () (push! x 'g)))
@@ -148,13 +148,13 @@
            (lambda () (push! x 'a))
            (lambda ()
              (with-error-handler
-              (lambda (e) (push! x e))
+              (^e (push! x e))
               (lambda ()
                 (dynamic-wind
                  (lambda () (push! x 'b))
                  (lambda ()
                    (with-error-handler
-                    (lambda (e) (push! x 'd))
+                    (^e (push! x 'd))
                     (lambda ()  (push! x 'c) (car 3) (push! x 'z))))
                  (lambda () (push! x 'f))))))
            (lambda () (push! x 'g)))
@@ -167,19 +167,19 @@
            (lambda () (push! x 'a))
            (lambda ()
              (with-error-handler
-              (lambda (e) (push! x 'g))
+              (^e (push! x 'g))
               (lambda ()
                 (dynamic-wind
                  (lambda () (push! x 'b))
                  (lambda ()
                    (with-error-handler
-                    (lambda (e) (push! x 'f) (raise e))
+                    (^e (push! x 'f) (raise e))
                     (lambda ()
                       (dynamic-wind
                        (lambda () (push! x 'c))
                        (lambda ()
                          (with-error-handler
-                          (lambda (e) (push! x 'e) (raise e))
+                          (^e (push! x 'e) (raise e))
                           (lambda () (push! x 'd) (car 3) (push! x 'z))))
                        (lambda () (push! x 'h))))))
                  (lambda () (push! x 'i))))))
@@ -193,10 +193,10 @@
            (lambda () (push! x 'a))
            (lambda ()
              (with-error-handler
-              (lambda (e) (push! x 'e))
+              (^e (push! x 'e))
               (lambda ()
                 (with-error-handler
-                 (lambda (e) (push! x 'd) (raise e))
+                 (^e (push! x 'd) (raise e))
                  (lambda ()
                    (dynamic-wind
                     (lambda () (push! x 'b))
@@ -209,7 +209,7 @@
       (lambda ()
         (let ((x '()))
           (with-error-handler
-           (lambda (e) (push! x 'e))
+           (^e (push! x 'e))
            (lambda () 
              (dynamic-wind
               (lambda () (push! x 'a))
@@ -218,7 +218,7 @@
                  (lambda () (push! x 'b))
                  (lambda ()
                    (with-error-handler
-                    (lambda (e) (push! x 'd) (raise e))
+                    (^e (push! x 'd) (raise e))
                     (lambda ()  (push! x 'c) (open-input-file 3) (push! x 'z))))
                  (lambda () (push! x 'f))))
               (lambda () (push! x 'g)))))
@@ -231,7 +231,7 @@
       (lambda ()
         (let ((x '()))
           (with-error-handler
-           (lambda (e) (push! x 'c))
+           (^e (push! x 'c))
            (lambda ()
              (dynamic-wind
               (lambda () (push! x 'a) (car 3) (push! x 'z))
@@ -243,7 +243,7 @@
       (lambda ()
         (let ((x '()))
           (with-error-handler
-           (lambda (e) (push! x 'd))
+           (^e (push! x 'd))
            (lambda ()
              (dynamic-wind
               (lambda () (push! x 'a))
@@ -258,7 +258,7 @@
            (lambda () (push! x 'a))
            (lambda ()
              (with-error-handler
-              (lambda (e) (push! x 'c))
+              (^e (push! x 'c))
               (lambda ()
                 (dynamic-wind
                  (lambda () (push! x 'b) (car 3) (push! x 'z))
@@ -274,7 +274,7 @@
            (lambda () (push! x 'a))
            (lambda ()
              (with-error-handler
-              (lambda (e) (push! x 'e))
+              (^e (push! x 'e))
               (lambda ()
                 (dynamic-wind
                  (lambda () (push! x 'b))
@@ -287,13 +287,13 @@
       (lambda ()
         (let ((x '()))
           (with-error-handler
-           (lambda (e) (push! x 'd))
+           (^e (push! x 'd))
            (lambda ()
              (dynamic-wind
               (lambda () (push! x 'a))
               (lambda ()
                 (with-error-handler
-                 (lambda (e) (push! x 'c) (raise e))
+                 (^e (push! x 'c) (raise e))
                  (lambda ()
                    (dynamic-wind
                     (lambda () (push! x 'b) (car 3) (push! x 'z))
@@ -306,13 +306,13 @@
       (lambda ()
         (let ((x '()))
           (with-error-handler
-           (lambda (e) (push! x 'f))
+           (^e (push! x 'f))
            (lambda ()
              (dynamic-wind
               (lambda () (push! x 'a))
               (lambda ()
                 (with-error-handler
-                 (lambda (e) (push! x 'e) (raise e))
+                 (^e (push! x 'e) (raise e))
                  (lambda ()
                    (dynamic-wind
                     (lambda () (push! x 'b))
@@ -329,7 +329,7 @@
         (let ((x '())
               (c #f))
           (with-error-handler
-           (lambda (e) (push! x 'x))
+           (^e (push! x 'x))
            (lambda ()
              (push! x 'a)
              (set! c (call/cc identity))
@@ -347,13 +347,13 @@
            (lambda () (push! x 'a))
            (lambda ()
              (with-error-handler
-              (lambda (e) (push! x 'x))
+              (^e (push! x 'x))
               (lambda ()
                 (dynamic-wind
                  (lambda () (push! x 'b))
                  (lambda ()
                    (push! x 'c)
-                   (set! c (call/cc (lambda (k) k)))
+                   (set! c (call/cc (^k k)))
                    (car 3)
                    (push! x 'd))
                  (lambda () (push! x 'e))))))
@@ -369,7 +369,7 @@
       (lambda ()
         (let ((x '()))
           (with-exception-handler
-           (lambda (e) (push! x e))
+           (^e (push! x e))
            (lambda ()
              (push! x 'a)
              (raise 'b)
@@ -383,7 +383,7 @@
            (lambda () (push! x 'a))
            (lambda ()
              (with-exception-handler
-              (lambda (e) (push! x e))
+              (^e (push! x e))
               (lambda ()
                 (dynamic-wind
                  (lambda () (push! x 'b))
@@ -426,10 +426,10 @@
       (lambda ()
         (let ((x '()))
           (with-error-handler
-           (lambda (e) (push! x 'g))
+           (^e (push! x 'g))
            (lambda ()
              (with-exception-handler
-              (lambda (e) (push! x 'c))
+              (^e (push! x 'c))
               (lambda ()
                 (dynamic-wind
                  (lambda () (push! x 'a))
@@ -444,10 +444,10 @@
       (lambda ()
         (let ((x '()))
           (with-exception-handler
-           (lambda (e) (push! x e))
+           (^e (push! x e))
            (lambda ()
              (with-error-handler
-              (lambda (e) (push! x 'z))
+              (^e (push! x 'z))
               (lambda ()
                 (push! x 'a)
                 (raise 'b)
@@ -458,19 +458,19 @@
       (lambda ()
         (let ((x '()))
           (with-exception-handler
-           (lambda (e) (push! x e))
+           (^e (push! x e))
            (lambda ()
              (dynamic-wind
               (lambda () (push! x 'a))
               (lambda ()
                 (with-error-handler
-                 (lambda (e) (push! x 'z))
+                 (^e (push! x 'z))
                  (lambda ()
                    (dynamic-wind
                     (lambda () (push! x 'b))
                     (lambda ()
                       (with-error-handler
-                       (lambda (e) (push! x 'f))
+                       (^e (push! x 'f))
                        (lambda ()
                          (push! x 'c)
                          (raise 'd)
@@ -489,7 +489,7 @@
         (let ((x 0))
           (do () ((> x 0) 'ok)
             (with-error-handler
-                (lambda (e) (inc! x))
+                (^e (inc! x))
               (lambda () (car x)))))))
 
 
@@ -498,7 +498,7 @@
         (let ((x 0))
           (let loop ()
             (with-error-handler
-                (lambda (e) (inc! x) (loop))
+                (^e (inc! x) (loop))
               (lambda ()
                 (if (> x 2)
                     'ok
@@ -589,7 +589,7 @@
              (cons
               4
               (with-error-handler
-                  (lambda (e) (stack-buster 100000) 'ok)
+                  (^e (stack-buster 100000) 'ok)
                 (lambda () (error "foo"))))))
 
 (prim-test "stack overflow in error handler (nested)" '(4 . ok)
@@ -599,7 +599,7 @@
               (with-error-handler
                   (lambda (e)
                     (with-error-handler
-                        (lambda (e) 'ok)
+                        (^e 'ok)
                       (lambda () (stack-buster 100000) (error "pop"))))
                 (lambda () (error "foo"))))))
 
@@ -608,12 +608,12 @@
              (cons
               4
               (with-error-handler
-                  (lambda (e) 'ok)
+                  (^e 'ok)
                 (lambda ()
                   (with-error-handler
                       (lambda (e)
                         (with-error-handler
-                            (lambda (e) (error "bar"))
+                            (^e (error "bar"))
                           (lambda () (stack-buster 100000) (error "pop"))))
                     (lambda () (error "foo"))))))))
 
