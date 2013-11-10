@@ -132,7 +132,6 @@ ScmObj Scm_SysFcntl(ScmObj port_or_fd, int op, ScmObj arg)
 {
 #if !defined(GAUCHE_WINDOWS)
     int fd = Scm_GetPortFd(port_or_fd, TRUE), r;
-    ScmSysFlock *fl;
 
     switch (op) {
     case F_GETFD:; case F_GETFL:;
@@ -177,7 +176,7 @@ ScmObj Scm_SysFcntl(ScmObj port_or_fd, int op, ScmObj arg)
             Scm_Error("flock object required for fcntl(%s), but got %S",
                       flag_name(op), arg);
         }
-        fl = SCM_SYS_FLOCK(arg);
+        ScmSysFlock *fl = SCM_SYS_FLOCK(arg);
         SCM_SYSCALL(r, fcntl(fd, op, &fl->lock));
         if (op == F_SETLK) {
             if (r >= 0) return SCM_TRUE;
@@ -203,10 +202,8 @@ extern void Scm_Init_fcntlib(ScmModule *mod);
 
 SCM_EXTENSION_ENTRY void Scm_Init_gauche__fcntl(void)
 {
-    ScmModule *mod;
-
     SCM_INIT_EXTENSION(gauche__fcntl);
-    mod = SCM_FIND_MODULE("gauche.fcntl", SCM_FIND_MODULE_CREATE);
+    ScmModule *mod = SCM_FIND_MODULE("gauche.fcntl", SCM_FIND_MODULE_CREATE);
     Scm_InitStaticClass(&Scm_SysFlockClass, "<sys-flock>",
                         mod, flock_slots, 0);
     Scm_Init_fcntlib(mod);
@@ -215,4 +212,3 @@ SCM_EXTENSION_ENTRY void Scm_Init_gauche__fcntl(void)
     Scm_AddFeature("gauche.sys.fcntl", NULL);
 #endif
 }
-

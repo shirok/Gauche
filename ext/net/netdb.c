@@ -64,14 +64,13 @@ static ScmSysHostent *make_hostent(struct hostent *he)
 {
     ScmSysHostent *entry = SCM_NEW(ScmSysHostent);
     ScmObj h = SCM_NIL, t = SCM_NIL;
-    char **p;
 
     SCM_SET_CLASS(entry, SCM_CLASS_SYS_HOSTENT);
     entry->name = SCM_MAKE_STR_COPYING(he->h_name);
     entry->aliases = Scm_CStringArrayToList((const char**)he->h_aliases, -1,
                                             SCM_STRING_COPYING);
     if (he->h_addrtype == AF_INET) {
-        for (p = he->h_addr_list; *p; p++) {
+        for (char **p = he->h_addr_list; *p; p++) {
             char buf[50];
             struct in_addr *addr = (struct in_addr*)*p;
             unsigned long addrval = ntohl(addr->s_addr);
@@ -500,13 +499,12 @@ ScmObj Scm_GetAddrinfo(const char *nodename,
                        struct addrinfo *hints)
 {
     ScmObj h = SCM_NIL, t = SCM_NIL;
-    struct addrinfo *res, *res0;
-    int r;
+    struct addrinfo *res0;
 
-    r = getaddrinfo(nodename, servname, hints, &res0);
+    int r = getaddrinfo(nodename, servname, hints, &res0);
     if (r) Scm_Error("getaddrinfo failed: %s", gai_strerror(r));
 
-    for (res = res0; res != NULL; res = res->ai_next) {
+    for (struct addrinfo *res = res0; res != NULL; res = res->ai_next) {
         SCM_APPEND1(h, t, SCM_OBJ(make_addrinfo(res)));
     }
     freeaddrinfo(res0);
@@ -516,9 +514,8 @@ ScmObj Scm_GetAddrinfo(const char *nodename,
 ScmObj Scm_GetNameinfo(ScmSockAddr *addr, int flags)
 {
     char host[NI_MAXHOST], serv[NI_MAXSERV];
-    int r;
 
-    r = getnameinfo(&addr->addr, addr->addrlen,
+    int r = getnameinfo(&addr->addr, addr->addrlen,
                     host, sizeof(host), serv, sizeof(serv), flags);
     if (r) Scm_Error("getnameinfo failed: %s", gai_strerror(r));
     return Scm_Values2(SCM_MAKE_STR_COPYING(host), SCM_MAKE_STR_COPYING(serv));

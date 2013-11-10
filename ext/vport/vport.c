@@ -90,20 +90,17 @@ static int vport_getb(ScmPort *p)
     if (SCM_FALSEP(data->getb_proc)) {
         /* If the port doesn't have get-byte method, use get-char
            if possible. */
-        ScmObj ch;
-        ScmChar c;
         char buf[SCM_CHAR_MAX_BYTES];
-        int nb, i;
 
         if (SCM_FALSEP(data->getc_proc)) return EOF;
-        ch = Scm_ApplyRec(data->getc_proc, SCM_NIL);
+        ScmObj ch = Scm_ApplyRec(data->getc_proc, SCM_NIL);
         if (!SCM_CHARP(ch)) return EOF;
 
-        c = SCM_CHAR_VALUE(ch);
-        nb = SCM_CHAR_NBYTES(c);
+        ScmChar c = SCM_CHAR_VALUE(ch);
+        int nb = SCM_CHAR_NBYTES(c);
         SCM_CHAR_PUT(buf, c);
 
-        for (i=1; i<nb; i++) {
+        for (int i=1; i<nb; i++) {
             /* pushback for later use.  this isn't very efficient;
                if efficiency becomes a problem, we need another API
                to pushback multiple bytes. */
@@ -127,17 +124,14 @@ static int vport_getc(ScmPort *p)
 
     if (SCM_FALSEP(data->getc_proc)) {
         /* If the port doesn't have get-char method, try get-byte */
-        ScmObj b;
-        int n, i;
-        ScmChar ch;
         char buf[SCM_CHAR_MAX_BYTES];
 
         if (SCM_FALSEP(data->getb_proc)) return EOF;
-        b = Scm_ApplyRec(data->getb_proc, SCM_NIL);
+        ScmObj b = Scm_ApplyRec(data->getb_proc, SCM_NIL);
         if (!SCM_INTP(b)) return EOF;
         buf[0] = (char)SCM_INT_VALUE(b);
-        n = SCM_CHAR_NFOLLOWS(p->scratch[0]);
-        for (i=0; i<n; i++) {
+        int n = SCM_CHAR_NFOLLOWS(p->scratch[0]);
+        for (int i=0; i<n; i++) {
             b = Scm_ApplyRec(data->getb_proc, SCM_NIL);
             if (!SCM_INTP(b)) {
                 /* TODO: should raise an exception? */
@@ -145,6 +139,7 @@ static int vport_getc(ScmPort *p)
             }
             buf[i+1] = (char)SCM_INT_VALUE(b);
         }
+        ScmChar ch;
         SCM_CHAR_GET(buf, ch);
         return ch;
     } else {
@@ -164,11 +159,11 @@ static int vport_getz(char *buf, int buflen, ScmPort *p)
 
     if (!SCM_FALSEP(data->gets_proc)) {
         u_int size;
-        const char *start;
         ScmObj s = Scm_ApplyRec(data->gets_proc,
                                 SCM_LIST1(SCM_MAKE_INT(buflen)));
         if (!SCM_STRINGP(s)) return EOF;
-        start = Scm_GetStringContent(SCM_STRING(s), &size, NULL, NULL);
+        const char *start = Scm_GetStringContent(SCM_STRING(s), &size,
+                                                 NULL, NULL);
         if ((int)size > buflen) {
             /* NB: should raise an exception? */
             memcpy(buf, start, buflen);
@@ -178,9 +173,9 @@ static int vport_getz(char *buf, int buflen, ScmPort *p)
             return size;
         }
     } else {
-        int byte, i;
-        for (i=0; i<buflen; i++) {
-            byte = vport_getb(p);
+        int i = 0;
+        for (; i<buflen; i++) {
+            int byte = vport_getb(p);
             if (byte == EOF) break;
             buf[i] = byte;
         }
@@ -245,9 +240,9 @@ static void vport_putc(ScmChar c, ScmPort *p)
                           "cannot perform output to the port %S", p);
         } else {
             unsigned char buf[SCM_CHAR_MAX_BYTES];
-            int i, n=SCM_CHAR_NBYTES(c);
+            int n = SCM_CHAR_NBYTES(c);
             SCM_CHAR_PUT(buf, c);
-            for (i=0; i<n; i++) {
+            for (int i=0; i<n; i++) {
                 Scm_ApplyRec(data->putb_proc, SCM_LIST1(SCM_MAKE_INT(buf[i])));
             }
         }
@@ -269,8 +264,7 @@ static void vport_putz(const char *buf, int size, ScmPort *p)
                      SCM_LIST1(Scm_MakeString(buf, size, -1,
                                               SCM_STRING_COPYING)));
     } else if (!SCM_FALSEP(data->putb_proc)) {
-        int i;
-        for (i=0; i<size; i++) {
+        for (int i=0; i<size; i++) {
             unsigned char b = buf[i];
             Scm_ApplyRec(data->putb_proc, SCM_LIST1(SCM_MAKE_INT(b)));
         }
@@ -297,10 +291,9 @@ static void vport_puts(ScmString *s, ScmPort *p)
         /* we perform binary output */
         vport_putz(SCM_STRING_BODY_START(b), SCM_STRING_BODY_SIZE(b), p);
     } else if (!SCM_FALSEP(data->putc_proc)) {
-        ScmChar c;
-        int i;
         const char *cp = SCM_STRING_BODY_START(b);
-        for (i=0; i < (int)SCM_STRING_BODY_LENGTH(b); i++) {
+        for (int i=0; i < (int)SCM_STRING_BODY_LENGTH(b); i++) {
+            ScmChar c;
             SCM_CHAR_GET(cp, c);
             cp += SCM_CHAR_NFOLLOWS(*cp)+1;
             Scm_ApplyRec(data->putc_proc, SCM_LIST1(SCM_MAKE_CHAR(c)));
@@ -359,10 +352,7 @@ static off_t vport_seek(ScmPort *p, off_t off, int whence)
 
 static ScmObj vport_allocate(ScmClass *klass, ScmObj initargs)
 {
-    ScmObj port;
     vport *data = SCM_NEW(vport);
-    ScmPortVTable vtab;
-    int dir = 0;
 
     data->getb_proc = SCM_FALSE;
     data->getc_proc = SCM_FALSE;
@@ -375,6 +365,7 @@ static ScmObj vport_allocate(ScmClass *klass, ScmObj initargs)
     data->close_proc = SCM_FALSE;
     data->seek_proc = SCM_FALSE;
 
+    ScmPortVTable vtab;
     vtab.Getb = vport_getb;
     vtab.Getc = vport_getc;
     vtab.Getz = vport_getz;
@@ -387,6 +378,7 @@ static ScmObj vport_allocate(ScmClass *klass, ScmObj initargs)
     vtab.Close = vport_close;
     vtab.Seek  = vport_seek;
 
+    int dir = 0;
     if (Scm_SubtypeP(klass, SCM_CLASS_VIRTUAL_INPUT_PORT)) {
         dir = SCM_PORT_INPUT;
     } else if (Scm_SubtypeP(klass, SCM_CLASS_VIRTUAL_OUTPUT_PORT)) {
@@ -394,7 +386,7 @@ static ScmObj vport_allocate(ScmClass *klass, ScmObj initargs)
     } else {
         Scm_Panic("vport_allocate: implementaion error (class wiring screwed?)");
     }
-    port = Scm_MakeVirtualPort(klass, dir, &vtab);
+    ScmObj port = Scm_MakeVirtualPort(klass, dir, &vtab);
     SCM_PORT(port)->src.vt.data = data;
     return port;
 }
@@ -510,14 +502,13 @@ typedef struct bport_rec {
 static int bport_fill(ScmPort *p, int cnt)
 {
     bport *data = (bport*)p->src.buf.data;
-    ScmObj vec, r;
     SCM_ASSERT(data != NULL);
     if (SCM_FALSEP(data->fill_proc)) {
         return 0;               /* indicates EOF */
     }
-    vec = Scm_MakeU8VectorFromArrayShared(cnt,
-                                          (unsigned char*)p->src.buf.buffer);
-    r = Scm_ApplyRec(data->fill_proc, SCM_LIST1(vec));
+    ScmObj vec = Scm_MakeU8VectorFromArrayShared(
+        cnt, (unsigned char*)p->src.buf.buffer);
+    ScmObj r = Scm_ApplyRec(data->fill_proc, SCM_LIST1(vec));
     if (SCM_INTP(r)) return SCM_INT_VALUE(r);
     else if (SCM_EOFP(r)) return 0;
     else return -1;
@@ -529,14 +520,14 @@ static int bport_fill(ScmPort *p, int cnt)
 static int bport_flush(ScmPort *p, int cnt, int forcep)
 {
     bport *data = (bport*)p->src.buf.data;
-    ScmObj vec, r;
     SCM_ASSERT(data != NULL);
     if (SCM_FALSEP(data->flush_proc)) {
         return cnt;             /* blackhole */
     }
-    vec = Scm_MakeU8VectorFromArrayShared(cnt,
-                                          (unsigned char*)p->src.buf.buffer);
-    r = Scm_ApplyRec(data->flush_proc, SCM_LIST2(vec, SCM_MAKE_BOOL(forcep)));
+    ScmObj vec = Scm_MakeU8VectorFromArrayShared(
+        cnt, (unsigned char*)p->src.buf.buffer);
+    ScmObj r = Scm_ApplyRec(data->flush_proc,
+                            SCM_LIST2(vec, SCM_MAKE_BOOL(forcep)));
     if (SCM_INTP(r)) return SCM_INT_VALUE(r);
     else if (SCM_EOFP(r)) return 0;
     else return -1;
@@ -612,10 +603,7 @@ static off_t bport_seek(ScmPort *p, off_t off, int whence)
 
 static ScmObj bport_allocate(ScmClass *klass, ScmObj initargs)
 {
-    ScmObj port;
     bport *data = SCM_NEW(bport);
-    ScmPortBuffer buf;
-    int dir = 0;
     int bufsize = Scm_GetInteger(Scm_GetKeyword(key_bufsize, initargs,
                                                 SCM_MAKE_INT(0)));
 
@@ -626,6 +614,7 @@ static ScmObj bport_allocate(ScmClass *klass, ScmObj initargs)
     data->filenum_proc = SCM_FALSE;
     data->seek_proc  = SCM_FALSE;
 
+    ScmPortBuffer buf;
     if (bufsize > 0) {
         buf.buffer = SCM_NEW_ATOMIC2(char*, bufsize);
         buf.size = bufsize;
@@ -645,6 +634,7 @@ static ScmObj bport_allocate(ScmClass *klass, ScmObj initargs)
     buf.seeker  = bport_seek;
     buf.data    = data;
 
+    int dir = 0;
     if (Scm_SubtypeP(klass, SCM_CLASS_BUFFERED_INPUT_PORT)) {
         dir = SCM_PORT_INPUT;
     } else if (Scm_SubtypeP(klass, SCM_CLASS_BUFFERED_OUTPUT_PORT)) {
@@ -652,7 +642,7 @@ static ScmObj bport_allocate(ScmClass *klass, ScmObj initargs)
     } else {
         Scm_Panic("bport_allocate: implementaion error (class wiring screwed?)");
     }
-    port = Scm_MakeBufferedPort(klass, SCM_FALSE, dir, TRUE, &buf);
+    ScmObj port = Scm_MakeBufferedPort(klass, SCM_FALSE, dir, TRUE, &buf);
     return port;
 }
 
@@ -708,9 +698,8 @@ void Scm_Init_vportlib(ScmModule*);
 
 SCM_EXTENSION_ENTRY void Scm_Init_gauche__vport(void)
 {
-    ScmModule *mod;
     SCM_INIT_EXTENSION(gauche__vport);
-    mod = SCM_FIND_MODULE("gauche.vport", SCM_FIND_MODULE_CREATE);
+    ScmModule *mod = SCM_FIND_MODULE("gauche.vport", SCM_FIND_MODULE_CREATE);
 
     Scm_InitStaticClass(&Scm_VirtualInputPortClass,
                         "<virtual-input-port>", mod, viport_slots, 0);
@@ -725,4 +714,3 @@ SCM_EXTENSION_ENTRY void Scm_Init_gauche__vport(void)
 
     Scm_Init_vportlib(mod);
 }
-

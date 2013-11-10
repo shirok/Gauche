@@ -45,11 +45,11 @@ static ScmObj read_uvector(ScmPort *port, const char *tag,
                            ScmReadContext *ctx)
 {
     ScmChar c;
-    ScmObj list, uv = SCM_UNDEFINED;
+    ScmObj uv = SCM_UNDEFINED;
 
     SCM_GETC(c, port);
     if (c != '(') Scm_Error("bad uniform vector syntax for %s", tag);
-    list = Scm_ReadList(SCM_OBJ(port), ')');
+    ScmObj list = Scm_ReadList(SCM_OBJ(port), ')');
     if (strcmp(tag, "s8") == 0)  uv = Scm_ListToS8Vector(list, 0);
     else if (strcmp(tag, "u8") == 0)  uv = Scm_ListToU8Vector(list, 0);
     else if (strcmp(tag, "s16") == 0) uv = Scm_ListToS16Vector(list, 0);
@@ -78,10 +78,8 @@ extern void Scm_Init_uvseq(void);
 
 SCM_EXTENSION_ENTRY void Scm_Init_libgauche_uvector(void)
 {
-    ScmModule *m;
-
     SCM_INIT_EXTENSION(uvector);
-    m = SCM_FIND_MODULE("gauche.uvector", SCM_FIND_MODULE_CREATE);
+    ScmModule *m = SCM_FIND_MODULE("gauche.uvector", SCM_FIND_MODULE_CREATE);
     Scm_InitStaticClassWithMeta(&Scm_UVectorClass,   "<uvector>", m, NULL, SCM_NIL, NULL, 0);
     Scm_InitStaticClassWithMeta(&Scm_S8VectorClass,  "<s8vector>", m, NULL, SCM_NIL, NULL, 0);
     Scm_InitStaticClassWithMeta(&Scm_U8VectorClass,  "<u8vector>", m, NULL, SCM_NIL, NULL, 0);

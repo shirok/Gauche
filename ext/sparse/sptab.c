@@ -140,7 +140,6 @@ ScmObj SparseTableRef(SparseTable *sh, ScmObj key, ScmObj fallback)
 {
     u_long hv = sh->hashfn(key);
     TLeaf *z = (TLeaf*)CompactTrieGet(&sh->trie, hv);
-    ScmObj cp;
 
     if (z != NULL) {
         if (!leaf_is_chained(z)) {
@@ -149,6 +148,7 @@ ScmObj SparseTableRef(SparseTable *sh, ScmObj key, ScmObj fallback)
         } else if (sh->cmpfn(key, SCM_CAR(z->chain.pair))) {
             return SCM_CDR(z->chain.pair);
         } else {
+            ScmObj cp;
             SCM_FOR_EACH(cp, z->chain.next) {
                 ScmObj p = SCM_CAR(cp);
                 if (sh->cmpfn(key, SCM_CAR(p))) return SCM_CDR(p);
@@ -168,7 +168,6 @@ ScmObj SparseTableSet(SparseTable *sh, ScmObj key,
     int createp = !(flags&SCM_DICT_NO_CREATE);
     u_long hv = sh->hashfn(key);
     TLeaf *z;
-    ScmObj cp;
 
     if (!createp) {
         z = (TLeaf*)CompactTrieGet(&sh->trie, hv);
@@ -200,6 +199,7 @@ ScmObj SparseTableSet(SparseTable *sh, ScmObj key,
         SCM_SET_CDR(z->chain.pair, value);
         return value;
     }
+    ScmObj cp;
     SCM_FOR_EACH(cp, z->chain.next) {
         ScmObj p = SCM_CAR(cp);
         SCM_ASSERT(SCM_PAIRP(p));
@@ -349,12 +349,12 @@ ScmObj SparseTableIterNext(SparseTableIter *it)
 static void leaf_dump(ScmPort *out, Leaf *leaf, int indent, void *data)
 {
     TLeaf *z = (TLeaf*)leaf;
-    ScmObj cp;
 
     if (leaf_is_chained(z)) {
         Scm_Printf(out, "(chained)");
         Scm_Printf(out, "\n  %*s%S => %25.1S", indent, "",
                    SCM_CAR(z->chain.pair), SCM_CDR(z->chain.pair));
+        ScmObj cp;
         SCM_FOR_EACH(cp, z->chain.next) {
             ScmObj p = SCM_CAR(cp);
             SCM_ASSERT(SCM_PAIRP(p));
