@@ -559,9 +559,9 @@ int Scm_GetPortBufferSigpipeSensitive(ScmPort *port)
 void Scm_SetPortBufferSigpipeSensitive(ScmPort *port, int sensitive)
 {
     if (sensitive) {
-        port->src.buf.mode &= ~SCM_PORT_BUFFER_SIGPIPE_SENSITIVE;
-    } else {
         port->src.buf.mode |=  SCM_PORT_BUFFER_SIGPIPE_SENSITIVE;
+    } else {
+        port->src.buf.mode &= ~SCM_PORT_BUFFER_SIGPIPE_SENSITIVE;
     }
 }
 
