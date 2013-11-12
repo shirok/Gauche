@@ -1,3 +1,9 @@
+2013-11-12  Shiro Kawai  <shiro@acm.org>
+
+	* test/r7rs.scm, test/r7rs-test.scm: Added r7rs test taken from Chibi.
+	  Run r7rs.scm, which is a Gauche wrapper to execute r7rs-test.scm.
+	  Not yet added to TESTS, for we have a few missing features.
+
 2013-11-10  Shiro Kawai  <shiro@acm.org>
 
 	* src/regexp.c (rex_rec): Fixed submatch capture failure. Patch
