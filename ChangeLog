@@ -1,3 +1,8 @@
+2013-11-13  Shiro Kawai  <shiro@acm.org>
+
+	* ext/text/unicode.scm (%foldcase): Fixed handling of final sigma---
+	  we need the same treatment as string-downcase.
+
 2013-11-12  Shiro Kawai  <shiro@acm.org>
 
 	* test/r7rs.scm, test/r7rs-test.scm: Added r7rs test taken from Chibi.
