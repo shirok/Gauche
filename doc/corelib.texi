@@ -7663,69 +7663,137 @@ The @code{parse-date} example above becomes simpler if you use
 @subsection Inspecting and assembling regular expressions
 @c NODE 正規表現の調査と合成
 
-When Gauche reads regexp from a string, first it parses
-the string representation and construct an abstract
+@c EN
+When Gauche reads a string representation of regexp, first it parses
+the string and construct an abstract
 syntax tree (AST), performs some optimizations on it,
 then compiles it into an instruction sequence to be
 executed by the regexp engine.
+@c JP
+Gaucheはregexpの文字列表記を読むと、その文字列をパーズして
+抽象構文木 (AST) を作り、それにいくらかの最適化を施したのち、
+正規表現エンジンで実行されるインストラクション列へとコンパイルします。
+@c COMMON
 
+@c EN
 The following procedures expose this process to
 user programs.  It may be easier for programs to
 manipulate an AST than a string representation.
+@c JP
+以下の手続きはこのプロセスをユーザプログラムに見せるものです。
+プログラム的に正規表現をいじる場合は、文字列形式よりも
+ASTの方が扱いやすいでしょう。
+@c COMMON
 
 @defun regexp-parse string :key case-fold
+@c EN
 Parses a string specification of regexp in @var{string}
 and returns its AST, represented in S-expression.
 See below for the spec of AST.
+@c JP
+正規表現の文字列表記である@var{string}をパーズし、S式で表現された
+ASTを返します。ASTの仕様は下で述べます。
+@c COMMON
 
+@c EN
 When a true value is given to the keyword argument @var{case-fold},
 returned AST will match case-insensitively.
 (Case insensitive regexp is handled in parser level,
 not by the engine).
+@c JP
+@var{case-fold}キーワード引数に真の値が与えられた場合は、
+大文字小文字を区別せずにマッチを行うASTが変えされます
+(エンジン自体に「大文字小文字を区別しない」モードがあるわけではなく、
+パーザの段階で異なるASTが生成されます。)
+@c COMMON
 @end defun
 
 @defun regexp-optimize ast
+@c EN
 Performs some rudimental optimization on the regexp AST,
 returning regexp AST.
 
-Currently it only optimizes some obvious cases.  The plan is
+Currently it only optimizes some trivial cases.  The plan is
 to make it cleverer in future.
+@c JP
+正規表現のASTに対して、いくつかの原始的な最適化を施して結果のASTを返します。
+
+現在のところ、最適化はごく簡単なものです。将来はもっと賢くする予定です。
+@c COMMON
 @end defun
 
 @defun regexp-compile ast
+@c EN
 Takes a regexp AST and returns a regexp object.
 Currently the outermost form of @var{ast} must be
 the zero-th capturing group.  (That is, @var{ast}
 should have the form @code{(0 #f @var{x} @dots{})}.)
 The outer grouping is always added
 by @code{regexp-parse} to capture the entire regexp.
+@c JP
+正規表現のASTを受け取り、マッチに使える正規表現オブジェクトを返します。
+渡されるASTの一番外側は、0番めの捕捉グループでなければなりません
+(@var{ast}は@code{(0 #f @var{x} @dots{})}という形でなければ
+ならない、ということです)。@code{regexp-parse}は常にこの捕捉グループを
+追加します。正規表現にマッチした全体の文字列を捕捉するためです。
+@c COMMON
 
+@c EN
 Note: The function does some basic check to see the given AST
 is valid, but it may not reject invalid ASTs.  In such case,
 the returned regexp object doesn't work properly.  It is
 caller's responsibility to provide a properly constructed AST.
 (Even if it rejects an AST, error messages are often
-incomprehensible.)
+incomprehensible.  So, don't use this procedure as a AST validness checker.)
+@c JP
+註：この関数は渡されたASTが有効なものであるかどうかについて
+簡単なチェックを行いますが、有効でないASTを受け入れてしまうかもしれません。
+その場合、変えされる正規表現オブジェクトの動作は不定です。
+正しい形式のASTを渡すのは呼出側の責任です
+(この関数が有効でないASTを見つけてエラーにする場合でも、
+そのエラーメッセージからどこがおかしいかを判断するのが難しい場合があります。
+この手続きをASTが有効であるかどうかのチェッカーとして使うのは避けましょう。)
+@c COMMON
 @end defun
 
 @defun regexp-ast regexp
+@c EN
 Returns AST used for the regexp object @var{regexp}.
+@c JP
+正規表現オブジェクト@var{regexp}が使っているASTを返します。
+@c COMMON
 @end defun
 
 @defun regexp-unparse ast :key (on-error :error)
+@c EN
 From the regexp's @var{ast}, reconstruct the string representation
 of the regexp.  The keyword argument @var{on-error} can be
 a keyword @code{:error} (default) or @code{#f}.  If it's the former,
 an error is signaled when @var{ast} isn't valid regexp AST.
 If it's the latter, @code{regexp-unparse} just returns @code{#f}.
+@c JP
+正規表現の@var{ast}から、その正規表現の文字列表記を再構成して返します。
+キーワード引数@var{on-error}は、キーワード@code{:error} (デフォルト)
+もしくは@code{#f}です。それが@code{:error}の場合、@var{ast}が不正
+であればエラーが報告され、@code{#f}の場合は@code{regexp-unparse}から
+@code{#f}が返されます。
+@c COMMON
 @end defun
 
+@c EN
 This is the structure of AST.  Note that this is originally
 developed only for internal use, and not very convenient to manipulate
 from the code (e.g. if you insert or delete a subtree, you have to
 renumber capturing groups to make them consitent.)  There's a plan
 to provide a better representation, such as SRE, and a tool
 to convert it to this AST back and forth.   Contributions are welcome.
+@c JP
+以下にASTの構造を示します。この仕様は当初、内部的に使うためだけに設計されたので、
+コードで直接いじるのには若干不便です (例えば、部分木を削除したり
+追加した場合、捕捉グループの番号を振りなおして一貫性を保つ必要があるかもしれません。)
+いずれSREのようなより良い表現を採用し、この内部形式との相互変換手続きを用意する
+予定です。パッチ歓迎です。
+@c COMMON
 
 @smallexample
 <ast> : <clause>   ; special clause
