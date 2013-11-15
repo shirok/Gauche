@@ -314,7 +314,7 @@ plot 'tmp' using (bin($1,binwidth)):(1.0) smooth freq with boxes
 ;; API
 (define strings-of
   (case-lambda
-    [()         (strings-of (default-sizer) (char))]
+    [()         (strings-of (default-sizer) (chars$))]
     [(item-gen) (strings-of (default-sizer) item-gen)]
     [(sizer item-gen) 
      (%with-sizer sizer
