@@ -63,7 +63,7 @@ static ScmString *make_str(ScmSmallInt len, ScmSmallInt siz,
     if (len > SCM_STRING_MAX_LENGTH) {
         Scm_Error("string length too big: %ld", len);
     }
-#endif /*SIZEOF_INT > 4*/
+#endif /*SCM__STRING_NEED_CHECK_SIZE*/
 
     s->body = NULL;
     s->initialBody.flags = flags & SCM_STRING_FLAG_MASK;
