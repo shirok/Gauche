@@ -4427,7 +4427,7 @@ Comparison of @var{value} and an element in @var{vec} is
 done by a procedure @var{cmp}, which takes two arguments,
 and should return a negative integer if the first argument is less than the
 second, 0 if they are the same, and a positive integer if the first
-is greater than tne second.
+is greater than the second.
 
 Elements in @var{vec} must be ordered from smaller to greater
 w.r.t. @var{cmp}.  Using that fact, this procedure performs
