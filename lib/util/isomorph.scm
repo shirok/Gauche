@@ -33,22 +33,16 @@
 
 (define-module util.isomorph
   (use srfi-1)
+  (use srfi-43)
   (export isomorphic? object-isomorphic?)
   )
 (select-module util.isomorph)
 
-(define (isomorphic? a b . args)
-  (define ctx (if (pair? args)
-                  (if (hash-table? (car args))
-                      (car args)
-                      (error "hash table required, but got" (car args)))
-                  (make-hash-table)))
-
+(define (isomorphic? a b :optional (ctx (make-hash-table)))
   (define (iso? a b)
-    (cond ((or (boolean? a) (char? a) (number? a) (undefined? a)
-               (eof-object? a))
+    (cond ((or (boolean? a) (null? a) (char? a) (number? a) (symbol? a)
+               (keyword? a) (undefined? a) (eof-object? a))
            (eqv? a b))
-          ((eq? a '()) (eq? b '()))
           ((hash-table-get ctx a #f)   ;node has been appeared
            => (lambda (bb) (eq? bb b)))
           (else
@@ -57,19 +51,14 @@
                                  (iso? (car a) (car b))
                                  (iso? (cdr a) (cdr b))))
                  ((string? a) (and (string? b) (string=? a b)))
-                 ((symbol? a) (eq? a b))
-                 ((keyword? a) (eqv? a b))
                  ((vector? a) (vector-iso? a b))
                  (else (object-isomorphic? a b ctx))
                  ))))
 
   (define (vector-iso? a b)
     (and (vector? b)
-         (let loop ((la (vector->list a)) (lb (vector->list b)))
-           (cond ((null? la) (null? lb))
-                 ((null? lb) #f)
-                 ((iso? (car la) (car lb)) (loop (cdr la) (cdr lb)))
-                 (else #f)))))
+         (= (vector-length a) (vector-length b))
+         (vector-every iso? a b)))
 
   (define (hash-iso? a b)
     (and (hash-table? b)
@@ -83,8 +72,9 @@
                             (loop (cdr la) (alist-delete (caar la) lb)))))
                  (else #f)))))
 
-  (iso? a b)
-  )
+  (unless (hash-table? ctx)
+    (error "hash table required, but got" ctx))
+  (iso? a b))
 
 (define-method object-isomorphic? (a b context)
   (equal? a b))                         ;default
