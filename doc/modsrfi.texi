@@ -4459,7 +4459,7 @@ of @var{vec1} @var{vec2} @dots{} left to right.
 If all the elements (when the lengths of vectors differ, the
 first N elements where N is the length of the shortest) satisfy
 @var{pred}, returns the last result of @var{pred}.   Otherwise
-returns @code{#t}.
+returns @code{#f}.
 @end defun
 
 @c EN
