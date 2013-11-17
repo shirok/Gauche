@@ -121,6 +121,7 @@ lib/os/
 lib/rfc/sha1.scm
 lib/rfc/zlib.scm
 lib/slib.scm
+lib/srfi/
 lib/sxml/
 src/autoloads.c
 src/builtin-syms.c
@@ -131,8 +132,8 @@ src/gauche-config.c
 src/gauche-install
 src/gauche-package
 src/gauche/arch.h
-src/gauche/builtin-syms.h
 src/gauche/config_threads.h
+src/gauche/priv/builtin-syms.h
 src/gauche/vminsn.h
 src/genconfig
 src/libalpha.c
