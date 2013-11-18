@@ -40,20 +40,19 @@
 
 (define (isomorphic? a b :optional (ctx (make-hash-table)))
   (define (iso? a b)
-    (cond ((or (boolean? a) (null? a) (char? a) (number? a) (symbol? a)
+    (cond [(or (boolean? a) (null? a) (char? a) (number? a) (symbol? a)
                (keyword? a) (undefined? a) (eof-object? a))
-           (eqv? a b))
-          ((hash-table-get ctx a #f)   ;node has been appeared
-           => (lambda (bb) (eq? bb b)))
-          (else
+           (eqv? a b)]
+          [(hash-table-get ctx a #f)   ;node has been appeared
+           => (^[bb] (eq? bb b))]
+          [else
            (hash-table-put! ctx a b)
-           (cond ((pair? a) (and (pair? b)
-                                 (iso? (car a) (car b))
-                                 (iso? (cdr a) (cdr b))))
-                 ((string? a) (and (string? b) (string=? a b)))
-                 ((vector? a) (vector-iso? a b))
-                 (else (object-isomorphic? a b ctx))
-                 ))))
+           (cond [(pair? a)   (and (pair? b)
+                                   (iso? (car a) (car b))
+                                   (iso? (cdr a) (cdr b)))]
+                 [(string? a) (and (string? b) (string=? a b))]
+                 [(vector? a) (vector-iso? a b)]
+                 [else (object-isomorphic? a b ctx)])]))
 
   (define (vector-iso? a b)
     (and (vector? b)
@@ -62,15 +61,14 @@
 
   (define (hash-iso? a b)
     (and (hash-table? b)
-         (let loop ((la (hash-table-map a cons))
-                    (lb (hash-table-map b cons)))
-           (cond ((null? a) (null? b))
-                 ((null? b) #f)
-                 ((assq (caar la) lb)
-                  => (lambda (p)
-                       (and (iso? (cdar la) (cdr p))
-                            (loop (cdr la) (alist-delete (caar la) lb)))))
-                 (else #f)))))
+         (let loop ([la (hash-table-map a cons)]
+                    [lb (hash-table-map b cons)])
+           (cond [(null? a) (null? b)]
+                 [(null? b) #f]
+                 [(assq (caar la) lb)
+                  => (^p (and (iso? (cdar la) (cdr p))
+                              (loop (cdr la) (alist-delete (caar la) lb))))]
+                 [else #f]))))
 
   (unless (hash-table? ctx)
     (error "hash table required, but got" ctx))
