@@ -126,10 +126,10 @@
 (define-cproc hash (obj)     ::<ulong> :fast-flonum Scm_Hash)
 (define-cproc hash-table? (obj) ::<boolean> :fast-flonum SCM_HASH_TABLE_P)
 
-(define-cproc make-hash-table (:optional (type eq?))
+(define-cproc make-hash-table (:optional (type eq?) (init-size::<int> 0))
   (let* ([ctype::int 0])
     (set-hash-type! ctype type)
-    (result (Scm_MakeHashTableSimple ctype 0))))
+    (result (Scm_MakeHashTableSimple ctype init-size))))
 
 (define-cproc hash-table-type (hash::<hash-table>)
   (get-hash-type (-> hash type)))
