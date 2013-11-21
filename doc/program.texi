@@ -321,6 +321,7 @@ See @ref{Using profiler} for the details of the profiler.
 @end deftp
 
 @deftp {Command Option} -r standard-revision
+@c EN
 Start @code{gosh} with an environment of the specified revision
 of Scheme standard.  Currently only 7 is supported as
 @var{standar-revision}.
@@ -331,7 +332,7 @@ procedures by default without explicitly declaring it.
 
 It is convenient for Gauche scripting, but if you want to
 stick to stanard Scheme, it gets in your way.  Especially, since
-the @code{import} form have different syntax in Gauche and R7RS,
+the @code{import} form have different syntax and semantics in Gauche and R7RS,
 a Scheme script written in R7RS can't be executed by the default mode
 of @code{gosh}.  You can execute the script by prepending @code{(extend r7rs)}
 to it, but it'll be nicer if you can run it without modification.
@@ -344,6 +345,30 @@ that extends the @code{r7rs} module, which defines two R7RS forms,
 If you invoke @code{gosh} into an interactive REPL mode with @code{-r7} option,
 all standard R7RS-small libraries (except @code{(scheme r5rs)} are already
 imported for your convenience.
+@c JP
+@code{gosh}を、指定されたリビジョンのScheme標準環境で起動します。
+現在のバージョンでは@var{standard-revision}として7のみがサポートされます。
+
+デフォルトでは、@code{gosh}起動時のモジュールは@code{user}モジュールで、
+これは@code{gauche}モジュールを継承しています。すなわち、特に何も指定しないでも
+Gaucheのコア関数は全て使えるようになっています。
+
+これはGaucheスクリプトを書く時には便利ですが、標準のSchemeに沿ったコードを
+書くときは邪魔になることがあります。特に、GaucheとR7RSでは@code{import}フォームの
+構文と意味が異なるので、R7RS用に書かれたSchemeスクリプトを
+@code{gosh}のデフォルトのモードで直接実行することはできません。
+コードの先頭に@code{(extend r7rs)}をつけてやれば良いのですが、
+変更無しに実行できた方が良いわけです。
+
+@code{-r7}オプションが与えられると、@code{gosh}は起動時のモジュールを
+@code{r7rs.user}モジュールにします。これは@code{r7rs}モジュールを継承した
+もので、@code{import}と@code{define-library}だけが定義されています。
+ここから例えば@code{(import (scheme base))}などとしてスクリプトを書いてゆけます。
+
+@code{-r7}をつけた@code{gosh}を対話REPLとして起動した場合は、簡便のために
+@code{(scheme r5rs)}を除く全てのR7RS-smallライブラリが
+importされた状態になっています。
+@c COMMON
 @end deftp
 
 
