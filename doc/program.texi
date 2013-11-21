@@ -320,6 +320,32 @@ See @ref{Using profiler} for the details of the profiler.
 @c COMMON
 @end deftp
 
+@deftp {Command Option} -r standard-revision
+Start @code{gosh} with an environment of the specified revision
+of Scheme standard.  Currently only 7 is supported as
+@var{standar-revision}.
+
+By default, @code{gosh} starts with @code{user} module, which inherits
+@code{gauche} module.  That means you can use whole Gauche core
+procedures by default without explicitly declaring it.
+
+It is convenient for Gauche scripting, but if you want to
+stick to stanard Scheme, it gets in your way.  Especially, since
+the @code{import} form have different syntax in Gauche and R7RS,
+a Scheme script written in R7RS can't be executed by the default mode
+of @code{gosh}.  You can execute the script by prepending @code{(extend r7rs)}
+to it, but it'll be nicer if you can run it without modification.
+
+By giving @code{-r7} option, @code{gosh} starts with @code{r7rs.user} module
+that extends the @code{r7rs} module, which defines two R7RS forms,
+@code{import} and @code{define-library}.  You can start your script with
+@code{(import (scheme base))}, for example.
+
+If you invoke @code{gosh} into an interactive REPL mode with @code{-r7} option,
+all standard R7RS-small libraries (except @code{(scheme r5rs)} are already
+imported for your convenience.
+@end deftp
+
 
 @deftp {Command Option} @code{--}
 @c EN
