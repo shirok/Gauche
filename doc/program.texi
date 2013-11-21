@@ -468,13 +468,13 @@ Windowsネイティブ環境(mingw)では、インタプリタとしてふたつ
 
 @c EN
 The main purpose of @code{gosh-noconsole.exe} is for Windows
-scripting.   If a Scheme script is associated to @code{gosh.exe}
+scripting.   If a Scheme script were associated to @code{gosh.exe}
 and invoked from Explorer, it would always open a new
-console window.
-The console would be of little use, since
+console window.  However,
+this console would be of little use, since
 it would dissapear once the script exits, and the user wouldn't
 be likely to have enough time to look at it.
-If you associate Scheme scripts to @code{gosh-noconsole.exe},
+If you associate Scheme scripts to @code{gosh-noconsole.exe} instead,
 you can avoid this annoying console from popping up.
 @c JP
 @code{gosh-noconsole.exe}の目的は、Windows上でのスクリプティングです。
@@ -530,6 +530,11 @@ You may put settings there that would help interactive debugging.
 (As of Gauche release 0.7.3,
 @file{.gaucherc} is no longer loaded when @code{gosh} is run
 in script mode.)
+
+Note that @file{.gaucherc} is always loaded in the @code{user} module,
+even if @code{gosh} is invoked with @code{-r7} option.  The file
+itself is a Gauche-specific feature, so you don't need to consider
+portability in it.
 @c JP
 インタラクティブセッションでは、@code{gosh}は
 @code{gauche.interactive}モジュールをロードします
@@ -539,6 +544,11 @@ in script mode.)
 インタラクティブデバッグに便利な設定をそこに書いておくことができます。
 (Gauche release 0.7.3から、@file{.gaucherc}はgoshがスクリプトモードで
 起動された時は読まれなくなりました。)
+
+@code{.gaucherc}は常に@code{user}モジュールへとロードされます
+(@code{gosh}が@code{-r7}オプションつきで起動されていてもそうです)。
+@code{.gaucherc}を自動で読み込む、という機能自体がGauche特有の機能ですから、
+そこでポータビリティを考慮する必要はないわけです。
 @c COMMON
 
 @c EN
