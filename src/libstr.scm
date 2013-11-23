@@ -78,7 +78,8 @@
     (result (Scm_StringJoin strs delim gm))))
 
 (define-reader-ctor 'string-interpolate
-  (^s (string-interpolate s))) ;;lambda is required to delay loading
+  (^ args
+    (apply string-interpolate args))) ;;lambda is required to delay loading
 
 ;;
 ;; Conversions

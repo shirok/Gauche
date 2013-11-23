@@ -1,3 +1,9 @@
+2013-11-22  Shiro Kawai  <shiro@acm.org>
+
+	* src/read.c, src/libstr.scm, lib/gauche/interpolate.scm:
+	  Enabled the new string interpolation syntax #"... ~expr ...".
+	  Still needs appropriate check according to the reader mode.
+
 2013-11-19  Shiro Kawai  <shiro@acm.org>
 
 	* src/libdict.scm (make-hash-table): Experimentally added

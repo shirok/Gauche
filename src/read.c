@@ -491,6 +491,15 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
             case '!':
                 /* #! is either a script shebang or a reader directive */
                 return read_shebang(port, ctx);
+            case '"': {
+                /* TODO: Switch interpretation of #"..." based on reader mode */
+                /* #"..." string interpolation  */
+                Scm_UngetcUnsafe(c1, port);
+                ScmObj form = read_item(port, ctx);
+                return process_sharp_comma(port,
+                                           SCM_SYM_STRING_INTERPOLATE,
+                                           SCM_LIST2(form, SCM_FALSE), ctx, FALSE);
+            }
             case '/':
                 /* #/.../ literal regexp */
                 reject_in_r7(port, ctx, "#/.../");
@@ -508,12 +517,14 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
                 read_nested_comment(port, ctx);
                 return SCM_UNDEFINED;
             case '`': {
+                /* Legacy string interpolation syntax */
                 /* TODO: Switch interpretation of #` based on reader mode */
                 /* #`"..." is a special syntax of #,(string-interpolate "...") */
                 ScmObj form = read_item(port, ctx);
                 return process_sharp_comma(port,
                                            SCM_SYM_STRING_INTERPOLATE,
-                                           SCM_LIST1(form), ctx, FALSE);
+                                           SCM_LIST2(form, SCM_TRUE),
+                                           ctx, FALSE);
             }
             case '?': {
                 /* #? - debug directives */

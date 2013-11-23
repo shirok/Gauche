@@ -31,26 +31,34 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
-;;; #`"The value is ,|foo|." => (string-append "The value is " foo ".")
-;;;
+;; Legacy syntax:
+;;  #`"The value is ,(foo)." => (string-append "The value is " (foo) ".")
+;;
+;; New syntax:
+;;  #"The value is ~(foo)." => (string-append "The value is " (foo) ".")
 
 (define-module gauche.interpolate
   (export string-interpolate)
   )
 (select-module gauche.interpolate)
 
-(define (string-interpolate str)
+;; NB: For 0.9.4, we have to make single-argument string-interpolate work
+;; in legacy mode, since pre-0.9.4 compiler also use this definition while
+;; generating libstr.c from libstr.scm.  It should work as before.  Once we
+;; release 0.9.4, read.c adds the second arg for the legacy mode and we can
+;; flip the default.
+(define (string-interpolate str :optional (legacy? #t))
   (if (string? str)
-    (%string-interpolate str)
+    (%string-interpolate str (if legacy? #\, #\~))
     (errorf "malformed string-interpolate: ~s" (list 'string-interpolate str))))
 
-(define (%string-interpolate str)
+(define (%string-interpolate str unquote-char)
   (define (accum c acc)
     (cond [(eof-object? c) (list (get-output-string acc))]
-          [(char=? c #\,)
+          [(char=? c unquote-char)
            (let1 c2 (peek-char)
              (cond [(eof-object? c2) (write-char c acc) (accum c2 acc)]
-                   [(char=? c2 #\,)
+                   [(char=? c2 unquote-char)
                     (write-char (read-char) acc) (accum (read-char) acc)]
                    [(char-set-contains? #[\u0000-\u0020\),\;\\\]\}\u007f] c2)
                     (write-char c acc) (accum (read-char) acc)]
