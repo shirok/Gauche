@@ -28,7 +28,7 @@
 (define-syntax test-parse
   (syntax-rules ()
     ((_ re ast)
-     (test* #`"regexp-parse \",re\"" ast (regexp-parse re)))))
+     (test* #"regexp-parse \"~re\"" ast (regexp-parse re)))))
 
 ;;-------------------------------------------------------------------------
 (test-section "regexp-parse")
@@ -111,7 +111,7 @@
 (define-syntax test-regexp-compile
   (syntax-rules ()
     [(_ pat)
-     (test* #`"regexp-compile \",|pat|\""
+     (test* #"regexp-compile \"~|pat|\""
             (let1 orig (string->regexp pat)
               (list (regexp->string orig)
                     (regexp-num-groups orig)
@@ -171,7 +171,7 @@
 (define-syntax test-regexp-laset
   (syntax-rules ()
     [(_ pat exp)
-     (test* #`"regexp-laset \",|pat|\"" exp
+     (test* #"regexp-laset \"~|pat|\"" exp
             (%regexp-laset (regexp-compile (regexp-parse pat))))]))
 
 (test-regexp-laset "abc" #[a])

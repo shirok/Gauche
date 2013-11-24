@@ -17,16 +17,16 @@
 
 (define (md p) (sys-mkdir p #o777))
 (define (mf p) (with-output-to-file p (cut display "z")))
-(define (rmrf p) (sys-system #`"rm -rf ,p"))
+(define (rmrf p) (sys-system #"rm -rf ~p"))
 
 (and glob (test-module 'gauche.fileutil)) ;; trigger autoload
 
 (rmrf "tmp1.o")
 
 (define (file-pred-tests path expected)
-  (test* #`"file-exists? (,path)" (car expected) (file-exists? path))
-  (test* #`"file-is-regular? (,path)" (cadr expected) (file-is-regular? path))
-  (test* #`"file-is-directory? (,path)" (caddr expected) (file-is-directory? path)))
+  (test* #"file-exists? (~path)" (car expected) (file-exists? path))
+  (test* #"file-is-regular? (~path)" (cadr expected) (file-is-regular? path))
+  (test* #"file-is-directory? (~path)" (caddr expected) (file-is-directory? path)))
 
 (file-pred-tests "tmp1.o" '(#f #f #f))
 

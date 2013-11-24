@@ -68,10 +68,10 @@
   (dolist [f files]
     (cond-expand
      [gauche.os.windows
-      (sys-system #`"rmdir /q /s ,(n f) > NUL 2>&1")
-      (sys-system #`"del /q ,(n f) > NUL 2>&1")]
+      (sys-system #"rmdir /q /s ~(n f) > NUL 2>&1")
+      (sys-system #"del /q ~(n f) > NUL 2>&1")]
      [else
-      (sys-system #`"rm -rf ,f > /dev/null")])))
+      (sys-system #"rm -rf ~f > /dev/null")])))
 
 (define (touch file)
   (with-output-to-file file (cut values)))

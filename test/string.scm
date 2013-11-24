@@ -620,16 +620,16 @@
 
 (test* "string interpolation" "string interpolation"
        (let ((x "inter") (y "polation"))
-         #`"string ,|x|,|y|"))
+         #"string ~|x|~|y|"))
 (test "string interpolation" "string interpolation"
       (lambda ()
         (define (x) "inter")
         (define (y) "polation")
-        #`"string ,(x),(y)"))
+        #"string ~(x)~(y)"))
 (test "string interpolation" "string interpolation"
       (lambda ()
         (define (x a)
           (if a "inter" "polation"))
-        #`"string ,(x #t),(x #f)"))
+        #"string ~(x #t)~(x #f)"))
 
 (test-end)

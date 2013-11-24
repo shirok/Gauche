@@ -48,7 +48,7 @@
     "--so-libs" "--dylib-suffix" "--dylib-ldflags" "--rpath-flag"))
 
 (dolist [opt *config-options*]
-  (test* #`"gauhce-config ,opt" (gauche-config opt) (run-gauche-config opt)))
+  (test* #"gauhce-config ~opt" (gauche-config opt) (run-gauche-config opt)))
 
 ;;=======================================================================
 (test-section "configure")
@@ -208,8 +208,8 @@
 
 (define (package-generate-tests)
   (define (file-check name)
-    (test* #`"checking existence of ,name" #t
-           (file-exists? #`"test.o/Test/,name")))
+    (test* #"checking existence of ~name" #t
+           (file-exists? #"test.o/Test/~name")))
   (define pwd (sys-getcwd))
   (define top-srcdir (sys-normalize-pathname
                       (or (sys-getenv "top_srcdir") "..")
@@ -225,17 +225,17 @@
            (define sep (cond-expand [gauche.os.windows ";"][else ":"]))
            (define top-srcdir ,top-srcdir)
            ;; This is used to copy templates from.
-           (define (gauche-library-directory) #`",|top-srcdir|/ext/x")
+           (define (gauche-library-directory) #"~|top-srcdir|/ext/x")
            ;; Intercept gauche-config to override compiler flags
            (define gauche-config-orig
              (with-module gauche.config gauche-config))
            (define-in-module gauche.config (gauche-config opt)
              (cond [(equal? opt "--incdirs")
-                    #`",|top-srcdir|/src,|sep|,|prefix|../../src/,|sep|,|top-srcdir|/gc/include"]
+                    #"~|top-srcdir|/src~|sep|~|prefix|../../src/~|sep|~|top-srcdir|/gc/include"]
                    [(equal? opt "--archdirs")
-                    #`",|prefix|../../src"]
+                    #"~|prefix|../../src"]
                    [else (gauche-config-orig opt)]))
-           (load #`",|top-srcdir|/src/gauche-package.in"))))
+           (load #"~|top-srcdir|/src/gauche-package.in"))))
 
   (run-process
    `(../gosh -ftest ./run generate Test test.module)

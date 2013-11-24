@@ -106,7 +106,7 @@ Content-Length: 4349
         (lambda (ind wday)
           (receive (y m d H M S tz wd)
               (rfc822-parse-date
-               #`",|wday|, ,(+ 2 ind) Jan 2000 00:00:00 +0000")
+               #"~|wday|, ~(+ 2 ind) Jan 2000 00:00:00 +0000")
             wd))
         '("Sun" "Mon" "Tue" "Wed" "Thu" "Fri" "Sat" "Znn")))
 
@@ -115,7 +115,7 @@ Content-Length: 4349
        (map (lambda (mon)
               (receive (y m d H M S tz wd)
                   (rfc822-parse-date
-                   #`"1 ,mon 1999 00:00:00 +0000")
+                   #"1 ~mon 1999 00:00:00 +0000")
                 m))
             '("Jan" "Feb" "Mar" "Apr" "May" "Jun" "Jul" "Aug"
               "Sep" "Oct" "Nov" "Dec" "Zzz")))
@@ -201,7 +201,7 @@ Content-Length: 4349
                           (with-output-to-string
                             (cut rfc822-write-headers hdrs
                                  :check (lambda (name body reason)
-                                          (values #`"x-,name"
+                                          (values #"x-~name"
                                                   (x->string reason))))))
                    )])])
 
@@ -598,15 +598,15 @@ Content-Length: 4349
 
 ;; NB: this assumes the test is run either under src/ or test/
 (define (mime-message-tester num headers)
-  (let ((src #`"../test/data/rfc-mime-,|num|.txt")
-        (res (call-with-input-file #`"../test/data/rfc-mime-,|num|.res.txt"
+  (let ((src #"../test/data/rfc-mime-~|num|.txt")
+        (res (call-with-input-file #"../test/data/rfc-mime-~|num|.res.txt"
                read)))
     (call-with-input-file src
       (lambda (inp)
         (let* ((title (read-line inp)) ;; test title
                (expl  (read-line inp)) ;; explanation (ignored)
                (headers (or headers (rfc822-read-headers inp))))
-          (test* #`"mime-parse-message (,|num| - ,|title|)"
+          (test* #"mime-parse-message (~|num| - ~|title|)"
                  res
                  (and (equal? (mime-parse-version
                                (rfc822-header-ref headers "mime-version"))
@@ -668,20 +668,20 @@ Content-Length: 4349
        `(,(mime-parse-content-type ctype) '() ,body)]
       [("message/rfc822" _ ("text/plain" _ body))
        `(("message" "rfc822") '()
-         ,#`"content-type: text/plain\r\n\r\n,body")]
+         ,#"content-type: text/plain\r\n\r\n~body")]
       [(ctype _ children ...)
        `(,(mime-parse-content-type ctype) '()
          (subparts ,@(map gen-parts children)))]))
-  (let1 src (call-with-input-file #`"../test/data/rfc-mime-,|num|.res.txt" read)
+  (let1 src (call-with-input-file #"../test/data/rfc-mime-~|num|.res.txt" read)
     (receive (composed boundary)
         (mime-compose-message-string (list (gen-parts src)))
-      (test* #`"mime-roundtrip (,num)"
+      (test* #"mime-roundtrip (~num)"
              `("multipart/mixed" 0 ,src)
              (mime-message-resolver
               (call-with-input-string composed
                 (cut mime-parse-message <>
                      `(("mime-version" "1.0")
-                       ("content-type" ,#`"multipart/mixed; boundary=\",|boundary|\""))
+                       ("content-type" ,#"multipart/mixed; boundary=\"~|boundary|\""))
                      (cut mime-body->string <> <>)))
               #f)))))
                      
@@ -866,7 +866,7 @@ Content-Length: 4349
 
 (use gauche.parameter)
 
-(test* "http-user-agent" #`"gauche.http/,(gauche-version)"
+(test* "http-user-agent" #"gauche.http/~(gauche-version)"
        (and (is-a? http-user-agent <parameter>)
             (http-user-agent)))
 
@@ -893,7 +893,7 @@ Content-Length: 4349
       (let1 ht (make-hash-table 'string=?)
         (hash-table-put! ht "/redirect01"
                          `("HTTP/1.x 302 Moved Temporarily\n"
-                           ,#`"Location: http://localhost:,|*http-port*|/redirect02\n\n"))
+                           ,#"Location: http://localhost:~|*http-port*|/redirect02\n\n"))
         (hash-table-put! ht "/redirect11"
                          '("HTTP/1.x 302 Moved Temporarily\n"
                            "Location: /redirect12\n\n"))
@@ -959,10 +959,10 @@ Content-Length: 4349
 (let ([expected `(("method" "GET")
                   ("request-uri" "/get")
                   ("request-body" "")
-                  ("host" ,#`"localhost:,*http-port*")
-                  ("user-agent" ,#`"gauche.http/,(gauche-version)")
+                  ("host" ,#"localhost:~*http-port*")
+                  ("user-agent" ,#"gauche.http/~(gauche-version)")
                   ("my-header" "foo"))]
-      [host #`"localhost:,*http-port*"])
+      [host #"localhost:~*http-port*"])
   (define (req-body . args)
     (values-ref (apply http-request args) 2))
 
@@ -1038,25 +1038,25 @@ Content-Length: 4349
 
 (test* "http-get (redirect)" "/redirect02"
        (receive (code headers body)
-           (http-request 'GET #`"localhost:,*http-port*" "/redirect01")
+           (http-request 'GET #"localhost:~*http-port*" "/redirect01")
          (cond ((assoc-ref (read-from-string body) "request-uri")
                 => car))))
 
 (test* "http-get (redirect)" "/redirect12"
        (receive (code headers body)
-           (http-request 'GET #`"localhost:,*http-port*" "/redirect11")
+           (http-request 'GET #"localhost:~*http-port*" "/redirect11")
          (cond ((assoc-ref (read-from-string body) "request-uri")
                 => car))))
 
 (test* "http-get (no redirect)" "/redirect12"
        (receive (code headers body)
-           (http-request 'GET #`"localhost:,*http-port*" "/redirect11"
+           (http-request 'GET #"localhost:~*http-port*" "/redirect11"
                          :redirect-handler #f)
          (rfc822-header-ref headers "location")))
 
 (test* "http-get (custom redirect)" "/foofoo"
        (receive (code headers body)
-           (http-request 'GET #`"localhost:,*http-port*" "/redirect11"
+           (http-request 'GET #"localhost:~*http-port*" "/redirect11"
                          :redirect-handler (^[meth code hdrs body]
                                              `(GET . "/foofoo")))
          (cond ((assoc-ref (read-from-string body) "request-uri")
@@ -1064,22 +1064,22 @@ Content-Length: 4349
 
 (test* "http-get (custom redirect to HEAD)" #f
        (receive (code headers body)
-           (http-request 'GET #`"localhost:,*http-port*" "/redirect11"
+           (http-request 'GET #"localhost:~*http-port*" "/redirect11"
                          :redirect-handler (^[meth code hdrs body]
                                              `(HEAD . "/foofoo")))
          body))
 
 (test* "http-get (loop)" (test-error <http-error>)
-       (http-request 'GET #`"localhost:,*http-port*" "/loop1"))
+       (http-request 'GET #"localhost:~*http-port*" "/loop1"))
 
 (test* "http-get (chunked body)" "OK"
        (receive (code headers body)
-           (http-request 'GET #`"localhost:,*http-port*" "/chunked")
+           (http-request 'GET #"localhost:~*http-port*" "/chunked")
          body))
 
 (test* "http-head" #t
        (receive (code headers body)
-           (http-request 'HEAD #`"localhost:,*http-port*" "/")
+           (http-request 'HEAD #"localhost:~*http-port*" "/")
          (and (equal? code "200")
               (equal? headers '(("content-type" "text/plain")))
               (not body))))
@@ -1087,11 +1087,11 @@ Content-Length: 4349
 (let1 expected `(("method" "POST")
                  ("request-uri" "/post")
                  ("content-length" "4")
-                 ("host" ,#`"localhost:,*http-port*")
-                 ("user-agent" ,#`"gauche.http/,(gauche-version)")
+                 ("host" ,#"localhost:~*http-port*")
+                 ("user-agent" ,#"gauche.http/~(gauche-version)")
                  ("request-body" "data"))
   (define (tester msg thunk)
-    (test* #`"http-post ,msg" expected
+    (test* #"http-post ~msg" expected
            (receive (code headers body) (thunk)
              (and (equal? code "200")
                   (equal? headers '(("content-type" "text/plain")))
@@ -1100,17 +1100,17 @@ Content-Length: 4349
 
   (tester "(new API)"
           (lambda ()
-            (http-request 'POST #`"localhost:,*http-port*" "/post"
+            (http-request 'POST #"localhost:~*http-port*" "/post"
                           :sender (http-string-sender "data"))))
 
   (tester "(old API)"
           (lambda ()
-            (http-post #`"localhost:,*http-port*" "/post" "data")))
+            (http-post #"localhost:~*http-port*" "/post" "data")))
   )
 
 (let1 expected '(("a" "b") ("c" "d"))
   (define (tester msg thunk)
-    (test* #`"http-post (multipart/form-data) ,msg" expected
+    (test* #"http-post (multipart/form-data) ~msg" expected
            (receive (code headers body) (thunk)
              
              (and-let* ([ (equal? code "200") ]
@@ -1133,18 +1133,18 @@ Content-Length: 4349
 
   (tester "(new API)"
           (lambda ()
-            (http-request 'POST #`"localhost:,*http-port*" "/post"
+            (http-request 'POST #"localhost:~*http-port*" "/post"
                           :sender
                           (http-multipart-sender '(("a" "b") ("c" "d"))))))
   (tester "(old API)"
           (lambda ()
-            (http-post #`"localhost:,*http-port*" "/post"
+            (http-post #"localhost:~*http-port*" "/post"
                        '(("a" "b") ("c" "d")))))
   )
 
 (test* "<http-error>" #t
        (guard (e (else (is-a? e <http-error>)))
-         (http-request 'GET #`"localhost:,*http-port*" "/exit")))
+         (http-request 'GET #"localhost:~*http-port*" "/exit")))
 
 (sys-waitpid -1)
 

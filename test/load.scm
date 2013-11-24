@@ -16,10 +16,10 @@
   (dolist [f files]
     (cond-expand
      [gauche.os.windows
-      (sys-system #`"rmdir /q /s ,(P f) > NUL 2>&1")
-      (sys-system #`"del /q ,(P f) > NUL 2>&1")]
+      (sys-system #"rmdir /q /s ~(P f) > NUL 2>&1")
+      (sys-system #"del /q ~(P f) > NUL 2>&1")]
      [else
-      (sys-system #`"rm -rf ,f > /dev/null")])))
+      (sys-system #"rm -rf ~f > /dev/null")])))
 
 ;;----------------------------------------------------------------
 (test-section "require and provide")
@@ -222,8 +222,8 @@
 (test-section "libutil")
 
 (sys-system "mkdir test.o")
-(sys-system #`"mkdir ,(P \"test.o/_test\")")
-(sys-system #`"mkdir ,(P \"test.o/_tset\")")
+(sys-system #"mkdir ~(P \"test.o/_test\")")
+(sys-system #"mkdir ~(P \"test.o/_tset\")")
 
 (with-output-to-file "test.o/_test.scm"
   (^[]
@@ -396,12 +396,12 @@
 (define (dummy-load-path-hook archive relpath suffixes)
   (and (equal? (sys-basename archive) "test.o")
        (member ".scm" suffixes)
-       (cons #`",|archive|/,|relpath|.scm"
+       (cons #"~|archive|/~|relpath|.scm"
              (^[path]
                (open-input-string
                 (format "(define *path* ~s)" path))))))
 
-(test* "dummy-load-path-hook" #`",(sys-getcwd)/test.o/non/existent/file.scm"
+(test* "dummy-load-path-hook" #"~(sys-getcwd)/test.o/non/existent/file.scm"
        (unwind-protect
            (begin
              ((with-module gauche.internal %add-load-path-hook!)
@@ -409,7 +409,7 @@
              ;; just create a dummy file - content doesn't matter.
              (with-output-to-file "test.o"
                (^[] (print)))
-             (load "non/existent/file" :paths `(,#`",(sys-getcwd)/test.o"))
+             (load "non/existent/file" :paths `(,#"~(sys-getcwd)/test.o"))
              (global-variable-ref (current-module) '*path*))
          ((with-module gauche.internal %delete-load-path-hook!)
           dummy-load-path-hook)))

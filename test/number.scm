@@ -828,7 +828,7 @@
         (mm (list (- a) (- b))))
     (define (test4 op opname rev results)
       (for-each (lambda (result comb args)
-                  (test* #`",|msg| ,(if rev 'rev \"\") ,opname(,comb)" result
+                  (test* #"~msg ~(if rev 'rev \"\") ~opname(~comb)" result
                          (apply op (if rev (reverse args) args))))
                 results '(++ +- -+ --) (list pp pm mp mm)))
     (test4 =  '=  #f (list eq #f #f eq))
@@ -866,11 +866,11 @@
 ;; up to 4 args in stack and the rest by list, so we want to test the
 ;; boundary case.
 (define (numcmp-multiarg-test lis eq lt le gt ge)
-  (test* #`"=,lis" eq (apply = lis))
-  (test* #`"<,lis" lt (apply < lis))
-  (test* #`"<=,lis" le (apply <= lis))
-  (test* #`">,lis" gt (apply > lis))
-  (test* #`">=,lis" ge (apply >= lis)))
+  (test* #"=~lis" eq (apply = lis))
+  (test* #"<~lis" lt (apply < lis))
+  (test* #"<=~lis" le (apply <= lis))
+  (test* #">~lis" gt (apply > lis))
+  (test* #">=~lis" ge (apply >= lis)))
 
 ;;                                      =  <  <= >  >=
 (numcmp-multiarg-test '(1 2 3 4)        #f #t #t #f #f)
@@ -2046,7 +2046,7 @@
 ;; system's tgamma and lgamma.
 '(let ()
   (define (test-gamma name fn0 fn1)
-    (test* #`"alt-,name" #f
+    (test* #"alt-~name" #f
            (any (^[x] (let* ([y0 (fn0 x)]
                              [y1 (fn1 x)]
                              [e  (/ (abs (- y0 y1)) y0)])
@@ -2177,17 +2177,17 @@
 ;; may reorder or change operations based on the assumption of the
 ;; normal definition of those arithmetic operations.
 
-(define-method object-+ ((a <string>) b) #`",|a|+,|b|")
-(define-method object-+ (a (b <string>)) #`",|a|+,|b|")
-(define-method object-- ((a <string>) b) #`",|a|-,|b|")
-(define-method object-- (a (b <string>)) #`",|a|-,|b|")
-(define-method object-* ((a <string>) b) #`",|a|*,|b|")
-(define-method object-* (a (b <string>)) #`",|a|*,|b|")
-(define-method object-/ ((a <string>) b) #`",|a|/,|b|")
-(define-method object-/ (a (b <string>)) #`",|a|/,|b|")
+(define-method object-+ ((a <string>) b) #"~|a|+~|b|")
+(define-method object-+ (a (b <string>)) #"~|a|+~|b|")
+(define-method object-- ((a <string>) b) #"~|a|-~|b|")
+(define-method object-- (a (b <string>)) #"~|a|-~|b|")
+(define-method object-* ((a <string>) b) #"~|a|*~|b|")
+(define-method object-* (a (b <string>)) #"~|a|*~|b|")
+(define-method object-/ ((a <string>) b) #"~|a|/~|b|")
+(define-method object-/ (a (b <string>)) #"~|a|/~|b|")
 
-(define-method object-- ((a <string>)) #`"-,|a|")
-(define-method object-/ ((a <string>)) #`"/,|a|")
+(define-method object-- ((a <string>)) #"-~|a|")
+(define-method object-/ ((a <string>)) #"/~|a|")
 
 (test* "object-+" "a+b" (+ "a" "b"))
 (test* "object-+" "a+b" (+ "a" 'b))

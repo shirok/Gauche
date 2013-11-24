@@ -27,20 +27,20 @@
 (define (cmd-rmrf dir)
   (cond-expand
    (gauche.os.windows
-    (sys-system #`"rmdir /q /s ,(n dir) > NUL 2>&1")
-    (sys-system #`"del /q ,(n dir) > NUL 2>&1"))
+    (sys-system #"rmdir /q /s ~(n dir) > NUL 2>&1")
+    (sys-system #"del /q ~(n dir) > NUL 2>&1"))
    (else
-    (sys-system #`"rm -rf ,dir > /dev/null"))))
+    (sys-system #"rm -rf ~dir > /dev/null"))))
 
 (define (cmd-mkdir dir)
   (cond-expand
-   (gauche.os.windows (sys-system #`"mkdir ,(n dir)"))
-   (else (sys-system #`"mkdir ,dir"))))
+   (gauche.os.windows (sys-system #"mkdir ~(n dir)"))
+   (else (sys-system #"mkdir ~dir"))))
 
 (define (cmd-touch path)
   (cond-expand
-   (gauche.os.windows (sys-system #`"echo \"\" > ,(n path)"))
-   (else (sys-system #`"touch ,path"))))
+   (gauche.os.windows (sys-system #"echo \"\" > ~(n path)"))
+   (else (sys-system #"touch ~path"))))
 
 (define (get-command-output command)
   (cmd-rmrf "test.out")
@@ -133,9 +133,9 @@
 
 (let ([envs (sys-environ)])
   (define (env-test var)
-    (test* #`"sys-environ (,var)" #t
+    (test* #"sys-environ (~var)" #t
            (cond [(sys-getenv var)
-                  => (^[val] (boolean (member #`",|var|=,|val|" envs)))]
+                  => (^[val] (boolean (member #"~|var|=~|val|" envs)))]
                  [else #t])))
   (env-test "HOME")
   (env-test "USER")

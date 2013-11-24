@@ -193,7 +193,7 @@
 (let ()
   (define (t nam p)
     (test* nam #t (boolean (p 'c (generator->lseq 'a 'b 'c gnull))))
-    (test* #`",nam (lazyness)" #t
+    (test* #"~nam (lazyness)" #t
            (boolean (p 'b (generator->lseq 'a 'b 'c (gerr 0)))))
     (test* nam #f (boolean (p 'z (generator->lseq 'a 'b 'c gnull)))))
   (t "memq" memq)
@@ -202,7 +202,7 @@
   (define (t nam p)
     (test* nam '(c . 2)
            (p 'c (generator->lseq '(a . 0) '(b . 1) '(c . 2) gnull)))
-    (test* #`",nam (lazyness)" '(b . 1)
+    (test* #"~nam (lazyness)" '(b . 1)
            (p 'b (generator->lseq '(a . 0) '(b . 1) '(c . 2) (gerr 0))))
     (test* nam #f (p 'z (generator->lseq 'a 'b 'c gnull))))
   (t "assq" assq)

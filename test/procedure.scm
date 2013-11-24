@@ -465,7 +465,7 @@
   (for-each (lambda (arg&exp)
               (let [(args (car arg&exp))
                     (exp  (cdr arg&exp))]
-                (test* #`"case-lambda ,sig ,(length args)" exp
+                (test* #"case-lambda ~sig ~(length args)" exp
                        (apply fn args))))
             arg&exp))
 

@@ -461,7 +461,7 @@
 (define-module mplbug-user2 (import mplbug-B) (import mplbug-A))
 
 (define (mplbug-test mod var)
-  (test* #`"mpl search (,mod,,,var)" #t
+  (test* #"mpl search (~mod,~var)" #t
          (global-variable-bound? (find-module mod) var)))
 
 (mplbug-test 'mplbug-user1 'a)

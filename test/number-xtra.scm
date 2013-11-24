@@ -58,7 +58,7 @@
                             (let* ((num (string->number input))
                                    (num2 (string->number (number->string num))))
                               (unless (eqv? num num2)
-                                (print #`"ERROR: ,num and ,num2 (original ,input)"))))
+                                (print #"ERROR: ~num and ~num2 (original ~input)"))))
                           read-line))))
 
 

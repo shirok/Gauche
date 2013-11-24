@@ -387,18 +387,18 @@
   (define (get-val key) (if (string? key) (cdr (assoc key alist)) key))
 
   (define (test-key-val name key expected-key both-proc key-proc val-proc)
-    (test* #`",name (,key)" (list expected-key (get-val expected-key))
+    (test* #"~name (~key)" (list expected-key (get-val expected-key))
            (receive (k v) (both-proc tree key) (list k v)))
-    (test* #`",|name|-key (,key)" expected-key
+    (test* #"~|name|-key (~key)" expected-key
            (key-proc tree key))
-    (test* #`",|name|-value (,key)" (get-val expected-key)
+    (test* #"~|name|-value (~key)" (get-val expected-key)
            (val-proc tree key))
     (unless expected-key
-      (test* #`",name (,key) / fallback" (list 0 1)
+      (test* #"~name (~key) / fallback" (list 0 1)
              (receive (k v) (both-proc tree key 0 1) (list k v)))
-      (test* #`",|name|-key (,key) / fallback" 0
+      (test* #"~|name|-key (~key) / fallback" 0
              (key-proc tree key 0))
-      (test* #`",|name|-value (,key) / fallback" 0
+      (test* #"~|name|-value (~key) / fallback" 0
              (val-proc tree key 0))))
 
   (define (tester key floor ceil pred succ)
