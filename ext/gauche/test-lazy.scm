@@ -12,7 +12,7 @@
 
 (let ()
   (define (test-eager-lazy name l e . args)
-    (test* #`"eager vs lazy (,name)" (apply e args) (apply l args)))
+    (test* #"eager vs lazy (~name)" (apply e args) (apply l args)))
   (define (map-accumx f s xs) (values-ref (map-accum f s xs) 0))
   (define (state-filter f s xs)
     (if (null? xs)

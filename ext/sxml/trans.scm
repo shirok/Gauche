@@ -88,7 +88,7 @@
                              (write `(%run-test ,@(cdr sexp)))
                              (newline))))))
 
-(define (adjpath templ file) #`",(sys-dirname templ)/,file")
+(define (adjpath templ file) #"~(sys-dirname templ)/~file")
 
 ;; entry point
 (define (main args)

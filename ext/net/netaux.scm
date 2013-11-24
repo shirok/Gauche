@@ -212,11 +212,11 @@
 ;; accessor methods
 
 (define-method sockaddr-name ((addr <sockaddr-in>))
-  #`",(inet-address->string (sockaddr-addr addr) AF_INET):,(sockaddr-port addr)")
+  #"~(inet-address->string (sockaddr-addr addr) AF_INET):~(sockaddr-port addr)")
 
 ;; NB: this should be conditionally defined by cond-expand at compile-time,
 ;; instead of load-time dispatch.  We need to clean up cond feature management
 ;; more to do so.
 (if ipv6-capable
   (define-method sockaddr-name ((addr <sockaddr-in6>))
-    #`"[,(inet-address->string (sockaddr-addr addr) AF_INET6)]:,(sockaddr-port addr)"))
+    #"[~(inet-address->string (sockaddr-addr addr) AF_INET6)]:~(sockaddr-port addr)"))

@@ -164,7 +164,7 @@
 
 ;; generate a state transition procedure of k-th octet of n-octet utf8 sequence
 (define-macro (decode-utf8-gen-1 strictness)
-  (define (name prefix) (string->symbol #`",|prefix|-,|strictness|"))
+  (define (name prefix) (string->symbol #"~|prefix|-~|strictness|"))
   `(define (,(name "u1") b val)
      (if (eof-object? b)
        (values b #f)
@@ -179,7 +179,7 @@
 
 (define-macro (decode-utf8-gen-n n limit strictness)
   (define (rec n k)
-    (let1 name (string->symbol #`"u,|n|-,|k|-,|strictness|")
+    (let1 name (string->symbol #"u~|n|-~|k|-~|strictness|")
       (if (= k (- n 1))
         ;; last byte
         `((define (,name b val)
@@ -198,7 +198,7 @@
                           [else         ,(out-of-range strictness)])))]
              [else ,(bad-octet strictness)])))
         ;; intermediate byte
-        (let1 next-name (string->symbol #`"u,|n|-,(+ k 1)-,|strictness|")
+        (let1 next-name (string->symbol #"u~|n|-~(+ k 1)-~|strictness|")
           `((define (,name b val)
               (cond [(eof-object? b) ,(end-input strictness)]
                     [(<= #x80 b #xbf) (values (+ (ash val 6) (logand b #x3f))
@@ -209,7 +209,7 @@
     (case strictness
       [(strict)     `(values 'bad #f)]
       [(permissive) `(values v #f)]
-      [(ignore)     `(values 0 ,(string->symbol #`"u1-,|strictness|"))]))
+      [(ignore)     `(values 0 ,(string->symbol #"u1-~|strictness|"))]))
   (define (bad-octet strictness)
     (case strictness
       [(strict permissive) `(values 'bad #f)]

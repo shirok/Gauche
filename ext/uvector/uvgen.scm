@@ -120,186 +120,184 @@
 (define (make-s8rules)
   `((etype     "signed char")
     (ntype     "long")
-    (REF_NTYPE ,(^[v i] #`"(long)SCM_S8VECTOR_ELEMENTS(,v)[,i]"))
-    (CAST_N2E  ,(^[exp] #`"(signed char)(,exp)"))
+    (REF_NTYPE ,(^[v i] #"(long)SCM_S8VECTOR_ELEMENTS(~v)[~i]"))
+    (CAST_N2E  ,(^[exp] #"(signed char)(~exp)"))
     (UNBOX     ,(^[dst src clamp]
-                  #`",dst = (signed char)Scm_GetInteger8Clamp(,src, ,clamp, NULL)"))
+                  #"~dst = (signed char)Scm_GetInteger8Clamp(~src, ~clamp, NULL)"))
     (NUNBOX    ,(^[dst src clamp]
-                  #`",dst = Scm_GetInteger8Clamp(,src, ,clamp, NULL)"))
-    (BOX       ,(^[dst src] #`",dst = SCM_MAKE_INT(,src)"))
-    (VMBOX     ,(^[dst src] #`",dst = SCM_MAKE_INT(,src)"))
-    (NBOX      ,(^[dst src] #`",dst = Scm_MakeInteger(,src)"))
-    (VMNBOX    ,(^[dst src] #`",dst = Scm_MakeInteger(,src)"))
-    (EQ        ,(^[x y]     #`"(,x == ,y)"))
-    (PRINT     ,(^[out elt] #`"Scm_Printf(,out, \"%d\", ,elt)"))
+                  #"~dst = Scm_GetInteger8Clamp(~src, ~clamp, NULL)"))
+    (BOX       ,(^[dst src] #"~dst = SCM_MAKE_INT(~src)"))
+    (VMBOX     ,(^[dst src] #"~dst = SCM_MAKE_INT(~src)"))
+    (NBOX      ,(^[dst src] #"~dst = Scm_MakeInteger(~src)"))
+    (VMNBOX    ,(^[dst src] #"~dst = Scm_MakeInteger(~src)"))
+    (EQ        ,(^[x y]     #"(~x == ~y)"))
+    (PRINT     ,(^[out elt] #"Scm_Printf(~out, \"%d\", ~elt)"))
     ,@(common-rules 's8)))
 
 (define (make-u8rules)
   `((etype     "unsigned char")
     (ntype     "long")
-    (REF_NTYPE ,(^[v i] #`"(long)SCM_U8VECTOR_ELEMENTS(,v)[,i]"))
-    (CAST_N2E  ,(^[exp] #`"(unsigned char)(,exp)"))
+    (REF_NTYPE ,(^[v i] #"(long)SCM_U8VECTOR_ELEMENTS(~v)[~i]"))
+    (CAST_N2E  ,(^[exp] #"(unsigned char)(~exp)"))
     (UNBOX     ,(^[dst src clamp]
-                  #`",dst = (u_char)Scm_GetIntegerU8Clamp(,src, ,clamp, NULL)"))
+                  #"~dst = (u_char)Scm_GetIntegerU8Clamp(~src, ~clamp, NULL)"))
     (NUNBOX    ,(^[dst src clamp]
-                  #`",dst = Scm_GetIntegerU8Clamp(,src, ,clamp, NULL)"))
-    (BOX       ,(^[dst src] #`",dst = SCM_MAKE_INT(,src)"))
-    (VMBOX     ,(^[dst src] #`",dst = SCM_MAKE_INT(,src)"))
-    (NBOX      ,(^[dst src] #`",dst = Scm_MakeIntegerU(,src)"))
-    (VMNBOX    ,(^[dst src] #`",dst = Scm_MakeIntegerU(,src)"))
-    (EQ        ,(^[x y]     #`"(,x == ,y)"))
-    (PRINT     ,(^[out elt] #`"Scm_Printf(,out, \"%d\", ,elt)"))
+                  #"~dst = Scm_GetIntegerU8Clamp(~src, ~clamp, NULL)"))
+    (BOX       ,(^[dst src] #"~dst = SCM_MAKE_INT(~src)"))
+    (VMBOX     ,(^[dst src] #"~dst = SCM_MAKE_INT(~src)"))
+    (NBOX      ,(^[dst src] #"~dst = Scm_MakeIntegerU(~src)"))
+    (VMNBOX    ,(^[dst src] #"~dst = Scm_MakeIntegerU(~src)"))
+    (EQ        ,(^[x y]     #"(~x == ~y)"))
+    (PRINT     ,(^[out elt] #"Scm_Printf(~out, \"%d\", ~elt)"))
     ,@(common-rules 'u8)))
 
 (define (make-s16rules)
   `((etype     "short")
     (ntype     "long")
-    (REF_NTYPE ,(^[v i] #`"(long)SCM_S16VECTOR_ELEMENTS(,v)[,i]"))
-    (CAST_N2E  ,(^[exp] #`"(short)(,exp)"))
+    (REF_NTYPE ,(^[v i] #"(long)SCM_S16VECTOR_ELEMENTS(~v)[~i]"))
+    (CAST_N2E  ,(^[exp] #"(short)(~exp)"))
     (UNBOX     ,(^[dst src clamp]
-                  #`",dst = (short)Scm_GetInteger16Clamp(,src, ,clamp, NULL)"))
+                  #"~dst = (short)Scm_GetInteger16Clamp(~src, ~clamp, NULL)"))
     (NUNBOX    ,(^[dst src clamp]
-                  #`",dst = Scm_GetInteger16Clamp(,src, ,clamp, NULL)"))
-    (BOX       ,(^[dst src] #`",dst = SCM_MAKE_INT(,src)"))
-    (VMBOX     ,(^[dst src] #`",dst = SCM_MAKE_INT(,src)"))
-    (NBOX      ,(^[dst src] #`",dst = Scm_MakeInteger(,src)"))
-    (VMNBOX    ,(^[dst src] #`",dst = Scm_MakeInteger(,src)"))
-    (EQ        ,(^[x y]     #`"(,x == ,y)"))
-    (PRINT     ,(^[out elt] #`"Scm_Printf(,out, \"%d\", ,elt)"))
+                  #"~dst = Scm_GetInteger16Clamp(~src, ~clamp, NULL)"))
+    (BOX       ,(^[dst src] #"~dst = SCM_MAKE_INT(~src)"))
+    (VMBOX     ,(^[dst src] #"~dst = SCM_MAKE_INT(~src)"))
+    (NBOX      ,(^[dst src] #"~dst = Scm_MakeInteger(~src)"))
+    (VMNBOX    ,(^[dst src] #"~dst = Scm_MakeInteger(~src)"))
+    (EQ        ,(^[x y]     #"(~x == ~y)"))
+    (PRINT     ,(^[out elt] #"Scm_Printf(~out, \"%d\", ~elt)"))
     ,@(common-rules 's16)))
 
 (define (make-u16rules)
   `((etype     "unsigned short")
     (ntype     "long")
-    (REF_NTYPE ,(^[v i] #`"(long)SCM_U16VECTOR_ELEMENTS(,v)[,i]"))
-    (CAST_N2E  ,(^[exp] #`"(unsigned short)(,exp)"))
+    (REF_NTYPE ,(^[v i] #"(long)SCM_U16VECTOR_ELEMENTS(~v)[~i]"))
+    (CAST_N2E  ,(^[exp] #"(unsigned short)(~exp)"))
     (UNBOX     ,(^[dst src clamp]
-                  #`",dst = (u_short)Scm_GetIntegerU16Clamp(,src, ,clamp, NULL)"))
+                  #"~dst = (u_short)Scm_GetIntegerU16Clamp(~src, ~clamp, NULL)"))
     (NUNBOX    ,(^[dst src clamp]
-                  #`",dst = Scm_GetIntegerU16Clamp(,src, ,clamp, NULL)"))
-    (BOX       ,(^[dst src] #`",dst = SCM_MAKE_INT(,src)"))
-    (VMBOX     ,(^[dst src] #`",dst = SCM_MAKE_INT(,src)"))
-    (NBOX      ,(^[dst src] #`",dst = Scm_MakeIntegerU(,src)"))
-    (VMNBOX    ,(^[dst src] #`",dst = Scm_MakeIntegerU(,src)"))
-    (EQ        ,(^[x y]     #`"(,x == ,y)"))
-    (PRINT     ,(^[out elt] #`"Scm_Printf(,out, \"%d\", ,elt)"))
+                  #"~dst = Scm_GetIntegerU16Clamp(~src, ~clamp, NULL)"))
+    (BOX       ,(^[dst src] #"~dst = SCM_MAKE_INT(~src)"))
+    (VMBOX     ,(^[dst src] #"~dst = SCM_MAKE_INT(~src)"))
+    (NBOX      ,(^[dst src] #"~dst = Scm_MakeIntegerU(~src)"))
+    (VMNBOX    ,(^[dst src] #"~dst = Scm_MakeIntegerU(~src)"))
+    (EQ        ,(^[x y]     #"(~x == ~y)"))
+    (PRINT     ,(^[out elt] #"Scm_Printf(~out, \"%d\", ~elt)"))
     ,@(common-rules 'u16)))
 
 (define (make-s32rules)
   `((etype     "ScmInt32")
     (ntype     "long")
-    (REF_NTYPE ,(^[v i] #`"(long)SCM_S32VECTOR_ELEMENTS(,v)[,i]"))
-    (CAST_N2E  ,(^[exp] #`"(ScmInt32)(,exp)"))
+    (REF_NTYPE ,(^[v i] #"(long)SCM_S32VECTOR_ELEMENTS(~v)[~i]"))
+    (CAST_N2E  ,(^[exp] #"(ScmInt32)(~exp)"))
     (UNBOX     ,(^[dst src clamp]
-                  #`",dst = (ScmInt32)Scm_GetInteger32Clamp(,src,, ,clamp,, NULL)"))
+                  #"~dst = (ScmInt32)Scm_GetInteger32Clamp(~src, ~clamp, NULL)"))
     (NUNBOX    ,(^[dst src clamp]
-                  #`",dst = Scm_GetInteger32Clamp(,src,, ,clamp,, NULL)"))
-    (BOX       ,(^[dst src] #`",dst = Scm_MakeInteger(,src)"))
-    (VMBOX     ,(^[dst src] #`",dst = Scm_MakeInteger(,src)"))
-    (NBOX      ,(^[dst src] #`",dst = Scm_MakeInteger(,src)"))
-    (VMNBOX    ,(^[dst src] #`",dst = Scm_MakeInteger(,src)"))
-    (EQ        ,(^[x y]     #`"(,x == ,y)"))
-    (PRINT     ,(^[out elt] #`"Scm_Printf(,out,, \"%d\",, ,elt)"))
+                  #"~dst = Scm_GetInteger32Clamp(~src, ~clamp, NULL)"))
+    (BOX       ,(^[dst src] #"~dst = Scm_MakeInteger(~src)"))
+    (VMBOX     ,(^[dst src] #"~dst = Scm_MakeInteger(~src)"))
+    (NBOX      ,(^[dst src] #"~dst = Scm_MakeInteger(~src)"))
+    (VMNBOX    ,(^[dst src] #"~dst = Scm_MakeInteger(~src)"))
+    (EQ        ,(^[x y]     #"(~x == ~y)"))
+    (PRINT     ,(^[out elt] #"Scm_Printf(~out, \"%d\", ~elt)"))
     ,@(common-rules 's32)))
 
 (define (make-u32rules)
   `((etype     "ScmUInt32")
     (ntype     "u_long")
-    (REF_NTYPE ,(^[v i] #`"(u_long)SCM_U32VECTOR_ELEMENTS(,v)[,i]"))
-    (CAST_N2E  ,(^[exp] #`"(ScmUInt32)(,exp)"))
+    (REF_NTYPE ,(^[v i] #"(u_long)SCM_U32VECTOR_ELEMENTS(~v)[~i]"))
+    (CAST_N2E  ,(^[exp] #"(ScmUInt32)(~exp)"))
     (UNBOX     ,(^[dst src clamp]
-                  #`",dst = (ScmUInt32)Scm_GetIntegerU32Clamp(,src,, ,clamp,, NULL)"))
+                  #"~dst = (ScmUInt32)Scm_GetIntegerU32Clamp(~src, ~clamp, NULL)"))
     (NUNBOX    ,(^[dst src clamp]
-                  #`",dst = Scm_GetIntegerU32Clamp(,src,, ,clamp,, NULL)"))
-    (BOX       ,(^[dst src] #`",dst = Scm_MakeIntegerU(,src)"))
-    (VMBOX     ,(^[dst src] #`",dst = Scm_MakeIntegerU(,src)"))
-    (NBOX      ,(^[dst src] #`",dst = Scm_MakeIntegerU(,src)"))
-    (VMNBOX    ,(^[dst src] #`",dst = Scm_MakeIntegerU(,src)"))
-    (EQ        ,(^[x y]     #`"(,x == ,y)"))
-    (PRINT     ,(^[out elt] #`"Scm_Printf(,out,, \"%u\",, ,elt)"))
+                  #"~dst = Scm_GetIntegerU32Clamp(~src, ~clamp, NULL)"))
+    (BOX       ,(^[dst src] #"~dst = Scm_MakeIntegerU(~src)"))
+    (VMBOX     ,(^[dst src] #"~dst = Scm_MakeIntegerU(~src)"))
+    (NBOX      ,(^[dst src] #"~dst = Scm_MakeIntegerU(~src)"))
+    (VMNBOX    ,(^[dst src] #"~dst = Scm_MakeIntegerU(~src)"))
+    (EQ        ,(^[x y]     #"(~x == ~y)"))
+    (PRINT     ,(^[out elt] #"Scm_Printf(~out, \"%u\", ~elt)"))
     ,@(common-rules 'u32)))
 
 (define (make-s64rules)
   `((etype     "ScmInt64")
     (ntype     "ScmInt64")
-    (REF_NTYPE ,(^[v i] #`"SCM_S64VECTOR_ELEMENTS(,v)[,i]"))
+    (REF_NTYPE ,(^[v i] #"SCM_S64VECTOR_ELEMENTS(~v)[~i]"))
     (CAST_N2E  ,identity)
     (UNBOX     ,(^[dst src clamp]
-                  #`",dst = Scm_GetInteger64Clamp(,src,, ,clamp,, NULL)"))
+                  #"~dst = Scm_GetInteger64Clamp(~src, ~clamp, NULL)"))
     (NUNBOX    ,(^[dst src clamp]
-                  #`",dst = Scm_GetInteger64Clamp(,src,, ,clamp,, NULL)"))
-    (BOX       ,(^[dst src] #`",dst = Scm_MakeInteger64(,src)"))
-    (VMBOX     ,(^[dst src] #`",dst = Scm_MakeInteger64(,src)"))
-    (NBOX      ,(^[dst src] #`",dst = Scm_MakeInteger64(,src)"))
-    (VMNBOX    ,(^[dst src] #`",dst = Scm_MakeInteger64(,src)"))
-    (EQ        ,(^[x y]     #`"int64eqv(,x,, ,y)"))
-    (PRINT     ,(^[out elt] #`"int64print(,out,, ,elt)"))
+                  #"~dst = Scm_GetInteger64Clamp(~src, ~clamp, NULL)"))
+    (BOX       ,(^[dst src] #"~dst = Scm_MakeInteger64(~src)"))
+    (VMBOX     ,(^[dst src] #"~dst = Scm_MakeInteger64(~src)"))
+    (NBOX      ,(^[dst src] #"~dst = Scm_MakeInteger64(~src)"))
+    (VMNBOX    ,(^[dst src] #"~dst = Scm_MakeInteger64(~src)"))
+    (EQ        ,(^[x y]     #"int64eqv(~x, ~y)"))
+    (PRINT     ,(^[out elt] #"int64print(~out, ~elt)"))
     ,@(common-rules 's64)))
 
 (define (make-u64rules)
   `((etype     "ScmUInt64")
     (ntype     "ScmUInt64")
-    (REF_NTYPE ,(^[v i] #`"SCM_U64VECTOR_ELEMENTS(,v)[,i]"))
+    (REF_NTYPE ,(^[v i] #"SCM_U64VECTOR_ELEMENTS(~v)[~i]"))
     (CAST_N2E  ,identity)
     (UNBOX     ,(^[dst src clamp]
-                  #`",dst = Scm_GetIntegerU64Clamp(,src,, ,clamp,, NULL)"))
+                  #"~dst = Scm_GetIntegerU64Clamp(~src, ~clamp, NULL)"))
     (NUNBOX    ,(^[dst src clamp]
-                  #`",dst = Scm_GetIntegerU64Clamp(,src,, ,clamp,, NULL)"))
-    (BOX       ,(^[dst src] #`",dst = Scm_MakeIntegerU64(,src)"))
-    (VMBOX     ,(^[dst src] #`",dst = Scm_MakeIntegerU64(,src)"))
-    (NBOX      ,(^[dst src] #`",dst = Scm_MakeIntegerU64(,src)"))
-    (VMNBOX    ,(^[dst src] #`",dst = Scm_MakeIntegerU64(,src)"))
-    (EQ        ,(^[x y]     #`"uint64eqv(,x,, ,y)"))
-    (PRINT     ,(^[out elt] #`"uint64print(,out,, ,elt)"))
+                  #"~dst = Scm_GetIntegerU64Clamp(~src, ~clamp, NULL)"))
+    (BOX       ,(^[dst src] #"~dst = Scm_MakeIntegerU64(~src)"))
+    (VMBOX     ,(^[dst src] #"~dst = Scm_MakeIntegerU64(~src)"))
+    (NBOX      ,(^[dst src] #"~dst = Scm_MakeIntegerU64(~src)"))
+    (VMNBOX    ,(^[dst src] #"~dst = Scm_MakeIntegerU64(~src)"))
+    (EQ        ,(^[x y]     #"uint64eqv(~x, ~y)"))
+    (PRINT     ,(^[out elt] #"uint64print(~out, ~elt)"))
     ,@(common-rules 'u64)))
 
 (define (make-f16rules)
   `((etype     "ScmHalfFloat")
     (ntype     "double")
-    (REF_NTYPE ,(^[v i] #`"Scm_HalfToDouble(SCM_F16VECTOR_ELEMENTS(,v)[,i])"))
-    (CAST_N2E  ,(^[exp] #`"Scm_DoubleToHalf(,exp)"))
+    (REF_NTYPE ,(^[v i] #"Scm_HalfToDouble(SCM_F16VECTOR_ELEMENTS(~v)[~i])"))
+    (CAST_N2E  ,(^[exp] #"Scm_DoubleToHalf(~exp)"))
     (UNBOX     ,(^[dst src clamp]
-                  #`",dst = Scm_DoubleToHalf(Scm_GetDouble(,src))"))
+                  #"~dst = Scm_DoubleToHalf(Scm_GetDouble(~src))"))
     (NUNBOX    ,(^[dst src clamp]
-                  #`",dst = Scm_GetDouble(,src)"))
-    (BOX       ,(^[dst src] #`",dst = Scm_MakeFlonum(Scm_HalfToDouble(,src))"))
-    (VMBOX     ,(^[dst src] #`",dst = Scm_VMReturnFlonum(Scm_HalfToDouble(,src))"))
-    (NBOX      ,(^[dst src] #`",dst = Scm_MakeFlonum(,src)"))
-    (VMNBOX    ,(^[dst src] #`",dst = Scm_VMReturnFlonum(,src)"))
-    (EQ        ,(^[x y]     #`"SCM_HALF_FLOAT_CMP(==,, ,x,, ,y)"))
-    (PRINT     ,(^[out elt] #`"Scm_PrintDouble(,out,, Scm_HalfToDouble(,elt),, 0)"))
+                  #"~dst = Scm_GetDouble(~src)"))
+    (BOX       ,(^[dst src] #"~dst = Scm_MakeFlonum(Scm_HalfToDouble(~src))"))
+    (VMBOX     ,(^[dst src] #"~dst = Scm_VMReturnFlonum(Scm_HalfToDouble(~src))"))
+    (NBOX      ,(^[dst src] #"~dst = Scm_MakeFlonum(~src)"))
+    (VMNBOX    ,(^[dst src] #"~dst = Scm_VMReturnFlonum(~src)"))
+    (EQ        ,(^[x y]     #"SCM_HALF_FLOAT_CMP(==, ~x, ~y)"))
+    (PRINT     ,(^[out elt] #"Scm_PrintDouble(~out, Scm_HalfToDouble(~elt), 0)"))
     ,@(common-rules 'f16)))
 
 (define (make-f32rules)
   `((etype     "float")
     (ntype     "double")
-    (REF_NTYPE ,(^[v i] #`"(double)SCM_F32VECTOR_ELEMENTS(,v)[,i]"))
-    (CAST_N2E  ,(^[exp] #`"(float)(,exp)"))
-    (UNBOX     ,(^[dst src clamp]
-                  #`",dst = (float)Scm_GetDouble(,src)"))
-    (NUNBOX    ,(^[dst src clamp]
-                  #`",dst = Scm_GetDouble(,src)"))
-    (BOX       ,(^[dst src] #`",dst = Scm_MakeFlonum((double),src)"))
-    (VMBOX     ,(^[dst src] #`",dst = Scm_VMReturnFlonum((double),src)"))
-    (NBOX      ,(^[dst src] #`",dst = Scm_MakeFlonum(,src)"))
-    (VMNBOX    ,(^[dst src] #`",dst = Scm_VMReturnFlonum(,src)"))
-    (EQ        ,(^[x y]     #`"(,x == ,y)"))
-    (PRINT     ,(^[out elt] #`"Scm_PrintDouble(,out,, (double),elt,, 0)"))
+    (REF_NTYPE ,(^[v i] #"(double)SCM_F32VECTOR_ELEMENTS(~v)[~i]"))
+    (CAST_N2E  ,(^[exp] #"(float)(~exp)"))
+    (UNBOX     ,(^[dst src clamp] #"~dst = (float)Scm_GetDouble(~src)"))
+    (NUNBOX    ,(^[dst src clamp] #"~dst = Scm_GetDouble(~src)"))
+    (BOX       ,(^[dst src] #"~dst = Scm_MakeFlonum((double)~src)"))
+    (VMBOX     ,(^[dst src] #"~dst = Scm_VMReturnFlonum((double)~src)"))
+    (NBOX      ,(^[dst src] #"~dst = Scm_MakeFlonum(~src)"))
+    (VMNBOX    ,(^[dst src] #"~dst = Scm_VMReturnFlonum(~src)"))
+    (EQ        ,(^[x y]     #"(~x == ~y)"))
+    (PRINT     ,(^[out elt] #"Scm_PrintDouble(~out, (double)~elt, 0)"))
     ,@(common-rules 'f32)))
 
 (define (make-f64rules)
   `((etype     "double")
     (ntype     "double")
-    (REF_NTYPE ,(^[v i] #`"SCM_F64VECTOR_ELEMENTS(,v)[,i]"))
+    (REF_NTYPE ,(^[v i] #"SCM_F64VECTOR_ELEMENTS(~v)[~i]"))
     (CAST_N2E  ,identity)
-    (UNBOX     ,(^[dst src clamp] #`",dst = Scm_GetDouble(,src)"))
-    (NUNBOX    ,(^[dst src clamp] #`",dst = Scm_GetDouble(,src)"))
-    (BOX       ,(^[dst src]       #`",dst = Scm_MakeFlonum(,src)"))
-    (VMBOX     ,(^[dst src]       #`",dst = Scm_VMReturnFlonum(,src)"))
-    (NBOX      ,(^[dst src]      #`",dst = Scm_MakeFlonum(,src)"))
-    (VMNBOX    ,(^[dst src]      #`",dst = Scm_VMReturnFlonum(,src)"))
-    (EQ        ,(^[x y]           #`"(,x == ,y)"))
-    (PRINT     ,(^[out elt]  #`"Scm_PrintDouble(,out,, (double),elt,, 0)"))
+    (UNBOX     ,(^[dst src clamp] #"~dst = Scm_GetDouble(~src)"))
+    (NUNBOX    ,(^[dst src clamp] #"~dst = Scm_GetDouble(~src)"))
+    (BOX       ,(^[dst src]       #"~dst = Scm_MakeFlonum(~src)"))
+    (VMBOX     ,(^[dst src]       #"~dst = Scm_VMReturnFlonum(~src)"))
+    (NBOX      ,(^[dst src]       #"~dst = Scm_MakeFlonum(~src)"))
+    (VMNBOX    ,(^[dst src]       #"~dst = Scm_VMReturnFlonum(~src)"))
+    (EQ        ,(^[x y]           #"(~x == ~y)"))
+    (PRINT     ,(^[out elt]  #"Scm_PrintDouble(~out, (double)~elt, 0)"))
     ,@(common-rules 'f64)))
 
 (define (dummy . _) "/* not implemented */")
@@ -335,13 +333,13 @@
                [c-op (case (string->symbol opname)
                        ((and) "&") ((ior) "|") ((xor) "^"))])
            (if (member tag '("s8" "u8" "s16" "u16" "s32" "u32"))
-             #`",r = ,v0 ,c-op ,v1"
-             #`"INT64BITOP(,|r|,, ,|v0|,, ,|c-op|,, ,|v1|)")))
+             #"~r = ~v0 ~c-op ~v1"
+             #"INT64BITOP(~|r|, ~|v0|, ~|c-op|, ~|v1|)")))
        (define (BITEXT r v)
          (let1 tag (getval rule 't)
            (if (member tag '("s8" "u8" "s16" "u16" "s32" "u32"))
-             #`",|r| = bitext(,|v|)"
-             #`",|r| = bitext64(,|v|)")))
+             #"~r = bitext(~v)"
+             #"~r = bitext64(~v)")))
        (for-each (cute substitute <> `((opname  ,opname)
                                        (Opname  ,Opname)
                                        (BITOP  ,BITOP)
@@ -356,8 +354,8 @@
     (let1 tag (string->symbol (getval rule 't))
       (define (ZERO r)
         (case tag
-          [(s64 u64) #`"SCM_SET_INT64_ZERO(,r)"]
-          [else #`",r = 0"]))
+          [(s64 u64) #"SCM_SET_INT64_ZERO(~r)"]
+          [else #"~r = 0"]))
       (for-each (cute substitute <> `((ZERO  ,ZERO) ,@rule))
                 *tmpl-dotop*))))
 
@@ -368,39 +366,39 @@
           [cast (getval rule 'CAST_N2E)])
       (define (ZERO r)
         (case tag
-          [(s64 u64) #`"SCM_SET_INT64_ZERO(,r)"]
-          [else #`",r = 0"]))
+          [(s64 u64) #"SCM_SET_INT64_ZERO(~r)"]
+          [else #"~r = 0"]))
       (define (GETLIM r dc v)
         (let1 getter
             (case tag
-              [(s8)  #`"Scm_GetInteger8Clamp(,v, SCM_CLAMP_BOTH, NULL)"]
-              [(u8)  #`"Scm_GetIntegerU8Clamp(,v, SCM_CLAMP_BOTH, NULL)"]
-              [(s16) #`"Scm_GetInteger16Clamp(,v, SCM_CLAMP_BOTH, NULL)"]
-              [(u16) #`"Scm_GetIntegerU16Clamp(,v, SCM_CLAMP_BOTH, NULL)"]
-              [(s32) #`"Scm_GetInteger32Clamp(,|v|, SCM_CLAMP_BOTH, NULL)"]
-              [(u32) #`"Scm_GetIntegerU32Clamp(,|v|, SCM_CLAMP_BOTH, NULL)"]
-              [(s64) #`"Scm_GetInteger64Clamp(,|v|, SCM_CLAMP_BOTH, NULL)"]
-              [(u64) #`"Scm_GetIntegerU64Clamp(,|v|, SCM_CLAMP_BOTH, NULL)"]
-              [(f16 f32 f64) #`"Scm_GetDouble(,|v|)"])
+              [(s8)  #"Scm_GetInteger8Clamp(~|v|, SCM_CLAMP_BOTH, NULL)"]
+              [(u8)  #"Scm_GetIntegerU8Clamp(~|v|, SCM_CLAMP_BOTH, NULL)"]
+              [(s16) #"Scm_GetInteger16Clamp(~|v|, SCM_CLAMP_BOTH, NULL)"]
+              [(u16) #"Scm_GetIntegerU16Clamp(~|v|, SCM_CLAMP_BOTH, NULL)"]
+              [(s32) #"Scm_GetInteger32Clamp(~|v|, SCM_CLAMP_BOTH, NULL)"]
+              [(u32) #"Scm_GetIntegerU32Clamp(~|v|, SCM_CLAMP_BOTH, NULL)"]
+              [(s64) #"Scm_GetInteger64Clamp(~|v|, SCM_CLAMP_BOTH, NULL)"]
+              [(u64) #"Scm_GetIntegerU64Clamp(~|v|, SCM_CLAMP_BOTH, NULL)"]
+              [(f16 f32 f64) #"Scm_GetDouble(~|v|)"])
           (tree->string
            `("if ((",dc" = SCM_FALSEP(",v")) == FALSE) {\n"
              "  ",r" = ",getter";\n"
              "}"))))
       (define (LT a b)
         (case tag
-          [(s64 u64) #`"INT64LT(,|a|,, ,|b|)"]
-          [else      #`"(,|a| < ,|b|)"]))
+          [(s64 u64) #"INT64LT(~|a|, ~|b|)"]
+          [else      #"(~a < ~b)"]))
       (dolist [ops `(("range-check" "RangeCheck"
                       ""
                       "return Scm_MakeInteger(i)"
                       "SCM_FALSE")
                      ("clamp" "Clamp"
                       "ScmObj d = Scm_UVectorCopy(SCM_UVECTOR(x), 0, -1)"
-                      ,#`"SCM_,|TAG|VECTOR_ELEMENTS(d)[i] = ,(cast \"val\")"
+                      ,#"SCM_~|TAG|VECTOR_ELEMENTS(d)[i] = ~(cast \"val\")"
                       "d")
                      ("clamp!" "ClampX"
                       ""
-                      ,#`"SCM_,|TAG|VECTOR_ELEMENTS(x)[i] = ,(cast \"val\")"
+                      ,#"SCM_~|TAG|VECTOR_ELEMENTS(x)[i] = ~(cast \"val\")"
                       "SCM_OBJ(x)")
                      )]
         (for-each (cute substitute <> `((GETLIM  ,GETLIM)

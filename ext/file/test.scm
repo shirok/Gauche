@@ -120,10 +120,10 @@
 
   (cond-expand
    [gauche.os.windows
-    (sys-system #`"rmdir /q /s ,(n dir) > NUL 2>&1")
-    (sys-system #`"del /q ,(n dir) > NUL 2>&1")]
+    (sys-system #"rmdir /q /s ~(n dir) > NUL 2>&1")
+    (sys-system #"del /q ~(n dir) > NUL 2>&1")]
    [else
-    (sys-system #`"rm -rf ,dir > /dev/null")]))
+    (sys-system #"rm -rf ~dir > /dev/null")]))
 
 ;; prepare test data set
 (define *test-tree*
@@ -584,7 +584,7 @@
    [gauche.sys.symlink
     (let ()
       (define (tester desc fn expect . opts)
-        (test* #`"dangling symlink - ,desc" expect
+        (test* #"dangling symlink - ~desc" expect
                (begin
                  (sys-symlink "no such file" "test.out")
                  (apply fn "test.out" "test2.out" opts)
@@ -627,7 +627,7 @@
 (define (test-lock-file type)
   (remove-files "test.out" "test.out.2")
 
-  (test* #`"with-lock-file (,type) just lock&release" '(#t #f)
+  (test* #"with-lock-file (~type) just lock&release" '(#t #f)
          (let1 r (with-lock-file "test.out"
                                  (^[] (file-exists? "test.out"))
                                  :type type)
@@ -635,7 +635,7 @@
 
   (remove-files "test.out" "test.out.2")
 
-  (test* #`"with-lock-file (,type) lock giveup" `((,<lock-file-failure> #t) #f)
+  (test* #"with-lock-file (~type) lock giveup" `((,<lock-file-failure> #t) #f)
          (let1 r
              (with-lock-file "test.out"
                              (^[]
@@ -653,7 +653,7 @@
 
   (remove-files "test.out" "test.out.2")
 
-  (test* #`"with-lock-file (,type) stealing" 'got
+  (test* #"with-lock-file (~type) stealing" 'got
          (begin
            (case type
              [(file) (touch-file "test.out")]
@@ -666,7 +666,7 @@
                            :abandon-timeout 1)))
   (remove-files "test.out" "test.out.2")
 
-  (test* #`"with-lock-file (,type) stealing failure"
+  (test* #"with-lock-file (~type) stealing failure"
          (test-error <lock-file-failure>)
          (begin
            (case type

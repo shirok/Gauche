@@ -66,10 +66,10 @@
 ;;
 
 (define-macro (define-appender tag)
-  (let ([app   (string->symbol #`",|tag|vector-append")]
-        [len   (string->symbol #`",|tag|vector-length")]
-        [make  (string->symbol #`"make-,|tag|vector")]
-        [copy! (string->symbol #`",|tag|vector-copy!")])
+  (let ([app   (string->symbol #"~|tag|vector-append")]
+        [len   (string->symbol #"~|tag|vector-length")]
+        [make  (string->symbol #"make-~|tag|vector")]
+        [copy! (string->symbol #"~|tag|vector-copy!")])
     `(define (,app . vs)
        (let* ([size (apply + (map ,len vs))]
               [dest (,make size)])
@@ -96,18 +96,18 @@
 ;;
 
 (define-macro (%define-srfi-4-collection-interface tag)
-  (let* ([tagvector (string->symbol #`",|tag|vector")]
-         [class     (string->symbol #`"<,|tagvector|>")]
-         [meta      (string->symbol #`"<,|tagvector|-meta>")]
-         [len       (string->symbol #`",|tagvector|-length")]
-         [ref       (string->symbol #`",|tagvector|-ref")]
-         [set       (string->symbol #`",|tagvector|-set!")]
-         [copy      (string->symbol #`",|tagvector|-copy")]
-         [->list    (string->symbol #`",|tagvector|->list")]
-         [list->    (string->symbol #`"list->,|tagvector|")]
-         [->vec     (string->symbol #`",|tagvector|->vector")]
-         [vec->     (string->symbol #`"vector->,|tagvector|")]
-         [make      (string->symbol #`"make-,|tagvector|")])
+  (let* ([tagvector (string->symbol #"~|tag|vector")]
+         [class     (string->symbol #"<~|tagvector|>")]
+         [meta      (string->symbol #"<~|tagvector|-meta>")]
+         [len       (string->symbol #"~|tagvector|-length")]
+         [ref       (string->symbol #"~|tagvector|-ref")]
+         [set       (string->symbol #"~|tagvector|-set!")]
+         [copy      (string->symbol #"~|tagvector|-copy")]
+         [->list    (string->symbol #"~|tagvector|->list")]
+         [list->    (string->symbol #"list->~|tagvector|")]
+         [->vec     (string->symbol #"~|tagvector|->vector")]
+         [vec->     (string->symbol #"vector->~|tagvector|")]
+         [make      (string->symbol #"make-~|tagvector|")])
     `(begin
        (define-method call-with-iterator ((v ,class) proc :key (start #f))
          (let* ([len (,len v)] [i (or start 0)])

@@ -18,14 +18,14 @@
            (exit 1))
          ;; NB: we cannot use file.util now, for it is being compiled.
          (let1 sfxs (map (cut rxmatch->string #/\.[^\.]+$/ <>)
-                         (glob #`",|tname|.*"))
+                         (glob #"~|tname|.*"))
            (with-output-to-file file
              (^[]
                (print "static const char *ndbm_suffixes[] = {")
                (for-each (cut format #t "  ~s,\n" <>) sfxs)
                (print "  NULL")
                (print "};"))))
-         (for-each sys-unlink (glob #`",|tname|.*"))))]
+         (for-each sys-unlink (glob #"~|tname|.*"))))]
     [else (print "Usage: gosh ndbm-suffixes.scm <outfile>") (exit 1)])
   0)
 

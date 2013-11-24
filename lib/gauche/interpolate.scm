@@ -36,6 +36,25 @@
 ;;
 ;; New syntax:
 ;;  #"The value is ~(foo)." => (string-append "The value is " (foo) ".")
+;;
+;; We use 'read' to get expression after reading an unquote character
+;; (#\, for the legacy syntax, #\~ for the new syntax.)  This presents
+;; a problem if the expression is an indentfier, immediately followed by
+;; a non-delimiting character.  Suppose we have #"It's ~foo."  After
+;; reading #\~, we call 'read', which reads an identifier named "foo.",
+;; but the original intention might be an identifier "foo", followed by
+;; a literal ".".
+;;
+;; An easy solution, which we currently use, is to delimit the symbol
+;; by vertical bars: #"It's ~|foo|."   It is logical---the 'read' procedure
+;; just reads "|foo|" as a symbol foo, regadless of what's following---but
+;; I don't like it, for it looks visually as if we have a special syntax
+;; for the single-variable case, even though we don't.
+;;
+;; One idea is to use curly-braces: ~{foo}.  Instead of having it a 'special'
+;; syntax, we can interpret it as a srfi-105 (curly-infix) syntax, in which
+;; {expr} is just expr.  If we support srfi-105 by default, this feature comes
+;; for free.  We don't know yet, though.
 
 (define-module gauche.interpolate
   (export string-interpolate)

@@ -12,23 +12,23 @@
 
 (define (simple-test name obj %ref %set! %exists? key1 key2
                      :optional (val1 'ok) (val2 'okok) (val3 'okokok))
-  (test* #`",name basic set!/ref" val1
+  (test* #"~name basic set!/ref" val1
          (begin (%set! obj (key1) val1)
                 (%ref obj (key1))))
-  (test* #`",name referencing nokey" (test-error)
+  (test* #"~name referencing nokey" (test-error)
          (%ref obj (key2)))
-  (test* #`",name referencing nokey fallback" 'huh?
+  (test* #"~name referencing nokey fallback" 'huh?
          (%ref obj (key2) 'huh?))
-  (test* #`",name exists?" #t (%exists? obj (key1)))
-  (test* #`",name exists?" #f (%exists? obj (key2)))
-  (test* #`",name replace" val2
+  (test* #"~name exists?" #t (%exists? obj (key1)))
+  (test* #"~name exists?" #f (%exists? obj (key2)))
+  (test* #"~name replace" val2
          (begin (%set! obj (key1) val2)
                 (%ref obj (key1))))
-  (test* #`",name add" val3
+  (test* #"~name add" val3
          (begin (%set! obj (key2) val3)
                 (%ref obj (key2))))
-  (test* #`",name ref" val2 (%ref obj (key1)))
-  (test* #`",name generic setter" val1
+  (test* #"~name ref" val2 (%ref obj (key1)))
+  (test* #"~name generic setter" val1
          (begin (set! (%ref obj (key1)) val1)
                 (%ref obj (key1))))
   )
@@ -49,7 +49,7 @@
 
 (define (heavy-test name obj %ref %set! %cnt %clr %keys %vals %del %copy
                     %check keygen valgen)
-  (test* #`",name many set!" *data-set-size*
+  (test* #"~name many set!" *data-set-size*
          (let/cc return
            (hash-table-fold *data-set*
                             (^[k v cnt]
@@ -63,11 +63,11 @@
                                    `(error ,cnt ,kk ,vv ,(%ref obj kk #f))))))
                             0)))
 
-  (test* #`",name many numelements" *data-set-size* (%cnt obj))
+  (test* #"~name many numelements" *data-set-size* (%cnt obj))
 
-  (when %check (test* #`",name many check" #t (begin (%check obj) #t)))
+  (when %check (test* #"~name many check" #t (begin (%check obj) #t)))
 
-  (test* #`",name many ref" *data-set-size*
+  (test* #"~name many ref" *data-set-size*
          (let/cc return
            (hash-table-fold *data-set*
                             (^[k v cnt]
@@ -77,7 +77,7 @@
                                   (+ cnt 1)
                                   (return `(error ,cnt ,kk ,vv ,(%ref obj kk))))))
                             0)))
-  (test* #`",name keys" *data-set-size*
+  (test* #"~name keys" *data-set-size*
          (let/cc return
            (let1 tt (make-sparse-table 'equal?)
              (hash-table-for-each *data-set*
@@ -87,7 +87,7 @@
                                (+ cnt 1)
                                (return `(error ,cnt ,k))))
                    0 (%keys obj)))))
-  (test* #`",name values" *data-set-size*
+  (test* #"~name values" *data-set-size*
          (let/cc return
            (let1 tt (make-sparse-table 'equal?)
              (hash-table-for-each *data-set*
@@ -97,15 +97,15 @@
                                (+ cnt 1)
                                (return `(error ,cnt ,v))))
                    0 (%vals obj)))))
-  (test* #`",name many copy" (list *data-set-size* #t #t)
+  (test* #"~name many copy" (list *data-set-size* #t #t)
          (let* ([new (%copy obj)]
                 [keys (%keys new)])
            (list (length keys)
                  (if %check (begin (%check new) #t) #t)
                  (every (^k (equal? (%ref new k) (%ref obj k))) keys))))
 
-  (test* #`",name many clear!" 0 (begin (%clr obj) (%cnt obj)))
-  (test* #`",name many ref2" *data-set-size*
+  (test* #"~name many clear!" 0 (begin (%clr obj) (%cnt obj)))
+  (test* #"~name many ref2" *data-set-size*
          (let/cc return
            (hash-table-fold *data-set*
                             (^[k v cnt]
@@ -116,7 +116,7 @@
                                   (+ cnt 1))))
                             0)))
 
-  (test* #`",name many delete!" '(#t 0)
+  (test* #"~name many delete!" '(#t 0)
          (begin
            (hash-table-for-each *data-set*
                                 (^[k v] (%set! obj (keygen k) (valgen v))))
@@ -134,7 +134,7 @@
 (test-section "sparse-vector")
 
 (define (spvec-simple tag)
-  (apply simple-test #`"sparse-,(or tag \"\")vector" (make-sparse-vector tag)
+  (apply simple-test #"sparse-~(or tag \"\")vector" (make-sparse-vector tag)
          sparse-vector-ref sparse-vector-set! sparse-vector-exists?
          (const 0) (const 1)
          (if (memq tag '(f16 f32 f64))
@@ -144,7 +144,7 @@
 (for-each spvec-simple '(#f s8 u8 s16 u16 s32 u32 s64 u64 f16 f32 f64))
 
 (define (spvec-heavy tag valgen)
-  (heavy-test #`"sparse-,(or tag \"\")vector"
+  (heavy-test #"sparse-~(or tag \"\")vector"
               (make-sparse-vector tag)
               sparse-vector-ref sparse-vector-set!
               sparse-vector-num-entries sparse-vector-clear!
@@ -171,7 +171,7 @@
 (test-section "sparse-table")
 
 (define (sptab-simple type key1 key2)
-  (simple-test #`"sparse-table (,type)" (make-sparse-table type)
+  (simple-test #"sparse-table (~type)" (make-sparse-table type)
                sparse-table-ref sparse-table-set! sparse-table-exists?
                key1 key2))
 
@@ -181,7 +181,7 @@
 (sptab-simple 'string=? (cut string #\a) (cut string #\b))
 
 (define (sptab-heavy type keygen)
-  (heavy-test #`"sparse-table (,type)" (make-sparse-table type)
+  (heavy-test #"sparse-table (~type)" (make-sparse-table type)
               sparse-table-ref sparse-table-set! sparse-table-num-entries
               sparse-table-clear! sparse-table-keys sparse-table-values
               sparse-table-delete! sparse-table-copy %sparse-table-check

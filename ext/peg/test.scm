@@ -52,13 +52,13 @@
 (define-syntax test-succ
   (syntax-rules ()
     [(_ label expect parse input)
-     (test* #`",label (success)" expect
+     (test* #"~label (success)" expect
             (peg-parse-string parse input))]))
 
 (define-syntax test-fail
   (syntax-rules ()
     [(_ label expect parse input)
-     (test* #`",label (failure)" expect
+     (test* #"~label (failure)" expect
             (guard (e [(<parse-error> e)
                        (list (ref e 'position) (ref e 'objects))]
                       [else e])
@@ -536,8 +536,8 @@
        (p        ($do [number?] [eof] ($return #t))))
   (define (%test str . fails?)
     (if (null? fails?)
-      (test-succ #`"number(1) \",str\"" #t p str)
-      (test-fail #`"number(1) \",str\"" (car fails?) p str)))
+      (test-succ #"number(1) \"~str\"" #t p str)
+      (test-fail #"number(1) \"~str\"" (car fails?) p str)))
   (%test "27652") (%test "-27652") (%test "+27652")
   (%test "" '(0 #[0-9])) (%test "-" '(1 #[0-9])) (%test "+" '(1 #[0-9]))
   (%test "+27.46") (%test "0.46")
@@ -662,7 +662,7 @@
 
 (let ()
   (define (t str)
-    (test* #`"parse error ,str" (test-error <json-parse-error>)
+    (test* #"parse error ~str" (test-error <json-parse-error>)
            (parse-json-string str)))
   (t "{\"x\": 100")
   (t "{x : 100}}")
@@ -786,7 +786,7 @@
 
 (let ()
   (define (t obj)
-    (test* #`"writer error ,obj" (test-error <json-construct-error>)
+    (test* #"writer error ~obj" (test-error <json-construct-error>)
            (construct-json-string obj)))
   (t "a")
   (t '#(1 2 x))

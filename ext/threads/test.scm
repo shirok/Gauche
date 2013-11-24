@@ -573,7 +573,7 @@
         (sys-nanosleep #e1e7)
         (loop (dequeue/wait! qs)))))
 
-  (test* #`"synchronized queue ,name" data
+  (test* #"synchronized queue ~name" data
          (let* ([cs (map (^_ (thread-start! (make-thread consumer)))
                          (iota nthreads))]
                 [p1 (make-thread producer)])

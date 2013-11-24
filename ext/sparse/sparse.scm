@@ -66,15 +66,15 @@
  )
 
 (define-macro (define-stuff type iter ref set)
-  (let ([x-fold     (string->symbol #`",|type|-fold")]
-        [x-map      (string->symbol #`",|type|-map")]
-        [x-for-each (string->symbol #`",|type|-for-each")]
-        [x-keys     (string->symbol #`",|type|-keys")]
-        [x-values   (string->symbol #`",|type|-values")]
-        [x-update!  (string->symbol #`",|type|-update!")]
-        [x-push!    (string->symbol #`",|type|-push!")]
-        [x-pop!     (string->symbol #`",|type|-pop!")]
-        [x-pop!-aux (string->symbol #`"%,|type|-pop!-aux")])
+  (let ([x-fold     (string->symbol #"~|type|-fold")]
+        [x-map      (string->symbol #"~|type|-map")]
+        [x-for-each (string->symbol #"~|type|-for-each")]
+        [x-keys     (string->symbol #"~|type|-keys")]
+        [x-values   (string->symbol #"~|type|-values")]
+        [x-update!  (string->symbol #"~|type|-update!")]
+        [x-push!    (string->symbol #"~|type|-push!")]
+        [x-pop!     (string->symbol #"~|type|-pop!")]
+        [x-pop!-aux (string->symbol #"%~|type|-pop!-aux")])
     `(begin
        (define (,x-fold st proc seed)
          (let ([iter (,iter st)]

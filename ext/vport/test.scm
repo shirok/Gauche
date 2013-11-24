@@ -176,7 +176,7 @@
 
 (let ()
   (define (test-biport file size)
-    (let* ((ifile #`",(sys-dirname (current-load-path))/,file")
+    (let* ((ifile #"~(sys-dirname (current-load-path))/~file")
            (src (open-input-file ifile))
            (p (apply make <buffered-input-port>
                      :fill  (lambda (buf) (read-block! buf src))
@@ -234,7 +234,7 @@
 
 (let ()
   (define (test-boport file size)
-    (let* ((ifile #`",(sys-dirname (current-load-path))/,file")
+    (let* ((ifile #"~(sys-dirname (current-load-path))/~file")
            (src  (file->string ifile))
            (sink (open-output-string))
            (closed? #f)
@@ -273,7 +273,7 @@
 
 (let ()
   (define (tester size)
-    (test* #`"size=,size" #t
+    (test* #"size=~size" #t
            (let1 v (make-u8vector size 0)
              (dotimes (i size) (u8vector-set! v i (modulo i 256)))
              (let* ((p (open-input-uvector v))
@@ -314,7 +314,7 @@
 
 (let ()
   (define (tester size)
-    (test* #`"size=,size" #t
+    (test* #"size=~size" #t
            (let1 v (make-u8vector size 0)
              (dotimes (i size) (u8vector-set! v i (modulo i 256)))
              (let* ((dst (make-u8vector size 0))
@@ -345,7 +345,7 @@
 
 (let ()
   (define (tester size limit)
-    (test* #`"size=,size limit=,limit" #t
+    (test* #"size=~size limit=~limit" #t
            (let* ((source (string-tabulate
                            (^i (integer->char (modulo i 128)))
                            size))

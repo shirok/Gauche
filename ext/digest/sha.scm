@@ -81,12 +81,12 @@
 ;;;
 
 (define-macro (define-framework n block-size)
-  (let ([meta   (string->symbol #`"<sha,|n|-meta>")]
-        [cls    (string->symbol #`"<sha,|n|>")]
-        [init   (string->symbol #`"%sha,|n|-init")]
-        [update (string->symbol #`"%sha,|n|-update")]
-        [final  (string->symbol #`"%sha,|n|-final")]
-        [digest (string->symbol #`"sha,|n|-digest")])
+  (let ([meta   (string->symbol #"<sha~|n|-meta>")]
+        [cls    (string->symbol #"<sha~|n|>")]
+        [init   (string->symbol #"%sha~|n|-init")]
+        [update (string->symbol #"%sha~|n|-update")]
+        [final  (string->symbol #"%sha~|n|-final")]
+        [digest (string->symbol #"sha~|n|-digest")])
     `(begin
        (define-class ,meta (<message-digest-algorithm-meta>) ())
        (define-class ,cls (<message-digest-algorithm>)

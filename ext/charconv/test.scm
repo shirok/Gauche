@@ -34,7 +34,7 @@
   (let1 srcdir (sys-dirname (current-load-path))
     (dolist [from from-codes]
       (dolist [to to-codes]
-        (tester #`",|srcdir|/,|file|" from to)))))
+        (tester #"~|srcdir|/~|file|" from to)))))
 
 ;;--------------------------------------------------------------------
 (test-section "ces-equivalent? and ces-upper-compatible?")
@@ -291,7 +291,7 @@
 
 (define (test-wrap/in str from to)
   (if (ces-conversion-supported? from to)
-      (test* #`"wrap-input-conversion-port (,|from|, ,|to|)"
+      (test* #"wrap-input-conversion-port (~|from|, ~|to|)"
              (string-complete->incomplete
               (port->string (open-input-conversion-port
                              (open-input-string str)
@@ -300,12 +300,12 @@
               (port->string (wrap-with-input-conversion
                              (open-input-string str)
                              from :to-code to))))
-      (test* #`"wrap-input-conversion-port (,|from|, ,|to|)"
+      (test* #"wrap-input-conversion-port (~|from|, ~|to|)"
              "(not supported)" "(not supported)")))
 
 (define (test-wrap/out str from to)
   (if (ces-conversion-supported? from to)
-      (test* #`"wrap-output-conversion-port (,|from|, ,|to|)"
+      (test* #"wrap-output-conversion-port (~|from|, ~|to|)"
              (string-complete->incomplete
               (let* ((os  (open-output-string))
                      (out (open-output-conversion-port os to :from-code from)))
@@ -318,7 +318,7 @@
                 (display str out)
                 (close-output-port out)
                 (get-output-string os))))
-      (test* #`"wrap-input-conversion-port (,|from|, ,|to|)"
+      (test* #"wrap-input-conversion-port (~|from|, ~|to|)"
              "(not supported)" "(not supported)")))
 
 (map-test test-wrap/in "foobar"
@@ -333,10 +333,10 @@
 
 (define (test-call-with file code)
   (if (ces-conversion-supported? code (gauche-character-encoding))
-    (test* #`"call-with-input-conversion (,|code| -> ,(gauche-character-encoding))"
-           (file->string-conv/in #`",|file|.,code" code)
+    (test* #"call-with-input-conversion (~code -> ~(gauche-character-encoding))"
+           (file->string-conv/in #"~|file|.~code" code)
            (string-complete->incomplete
-            (call-with-input-file #`",|file|.,code"
+            (call-with-input-file #"~|file|.~code"
               (lambda (p)
                 (call-with-input-conversion p port->string
                                             :encoding code))))))
@@ -348,7 +348,7 @@
                                              ((utf-8)  "UTF-8")
                                              ((none)   "UTF-8")))
                port->string)))
-      (test* #`"call-with-output-conversion (,(gauche-character-encoding) -> ,|code|)"
+      (test* #"call-with-output-conversion (~(gauche-character-encoding) -> ~code)"
              (string-complete->incomplete
               (ces-convert s (gauche-character-encoding) code))
              (string-complete->incomplete
@@ -361,7 +361,7 @@
 
 (dolist (file '("data/jp1" "data/jp2" "data/jp3" "data/jp4"))
   (dolist (code '("EUCJP" "UTF-8" "SJIS" "ISO2022JP"))
-    (test-call-with #`",(sys-dirname (current-load-path))/,|file|" code)))
+    (test-call-with #"~(sys-dirname (current-load-path))/~file" code)))
 
 ;;--------------------------------------------------------------------
 (test-section "ucs <-> char")

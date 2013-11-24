@@ -190,9 +190,9 @@
              (sseq 'najr 'ej 'zoo 'bunr)))
 
 (define (test-find-minmax msg ex-min ex-max coll . args)
-  (test* #`"find-min (,|msg|)" ex-min (apply find-min coll args))
-  (test* #`"find-max (,|msg|)" ex-max (apply find-max coll args))
-  (test* #`"find-min&max (,|msg|)" (list ex-min ex-max)
+  (test* #"find-min (~msg)" ex-min (apply find-min coll args))
+  (test* #"find-max (~msg)" ex-max (apply find-max coll args))
+  (test* #"find-min&max (~msg)" (list ex-min ex-max)
          (values->list (apply find-min&max coll args))))
 
 
@@ -560,13 +560,13 @@
 
 (define (permute-tester msg expected source order . fallback)
   (define (unit type elt-coercer order-type)
-    (test* #`"permute,msg ,type by ,order-type"
+    (test* #"permute~msg ~type by ~order-type"
            (map-to type elt-coercer expected)
            (apply permute
                   (map-to type elt-coercer source)
                   (coerce-to order-type order)
                   (map elt-coercer fallback)))
-    (test* #`"permute!,msg ,type by ,order-type"
+    (test* #"permute!~msg ~type by ~order-type"
            (if (= (size-of source) (size-of expected))
              (map-to type elt-coercer expected)
              *test-error*)
@@ -591,11 +591,11 @@
   (define (cmp a b)
     (lset= eqv? (coerce-to <list> a) (coerce-to <list> b)))
   (define (unit type)
-    (test* #`"shuffle ,type"
+    (test* #"shuffle ~type"
            (coerce-to type source)
            (shuffle (coerce-to type source))
            cmp)
-    (test* #`"shuffle! ,type"
+    (test* #"shuffle! ~type"
            (coerce-to type source)
            (let1 imp (coerce-to type source)
              (shuffle! imp)

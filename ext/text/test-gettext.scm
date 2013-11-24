@@ -17,7 +17,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; load test data.  this defines *tests*
 
-(let1 test-file #`"data/gettext.data.,(gauche-character-encoding)"
+(let1 test-file #"data/gettext.data.~(gauche-character-encoding)"
   (load test-file))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

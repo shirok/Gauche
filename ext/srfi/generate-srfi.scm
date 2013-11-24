@@ -16,10 +16,10 @@
 (define (generate top_builddir)
   (make-directory* (build-path top_builddir "lib/srfi"))
   (dolist [srfi *supported-srfis*]
-    (with-output-to-file (build-path top_builddir "lib/srfi" #`",|srfi|.scm")
+    (with-output-to-file (build-path top_builddir "lib/srfi" #"~|srfi|.scm")
       (^[]
         (print ";; Generated automatically.  Do not edit.")
-        (print #`"(define-module srfi.,|srfi| (extend srfi-,|srfi|))")))))
+        (print #"(define-module srfi.~srfi (extend srfi-~srfi))")))))
 
 (define (main args)
   (match (cdr args)
