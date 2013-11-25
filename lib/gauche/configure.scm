@@ -370,6 +370,13 @@
             (or (dict-get defs name #f)
                 (begin (warn "@~a@ isn't substituted." name)
                        #`"@,|name|@")))))))
+  ;; We use '/' in the replaced pathname even on Windows; that's what
+  ;; autoconf-generated configure does, and it's less likely to confuse
+  ;; Unix-originated tools.
+  (define (simplify-path+ path)
+    (cond-expand
+     [gauche.os.windows (string-tr (simplify-path path) "\\\\" "/")]
+     [else (simplify-path path)]))
   (define (adjust-srcdirs path-prefix)
     (let ([srcdir    (~ base-defs'srcdir)]
           [tsrcdir   (~ base-defs'top_srcdir)]
@@ -381,15 +388,15 @@
                          $ map (^_ "..") (string-split path-prefix #[\\/]))
           (values (if (equal? srcdir ".")
                     srcdir
-                    (simplify-path (build-path srcdir path-prefix)))
-                  (simplify-path (build-path revpath tsrcdir))
+                    (simplify-path+ (build-path srcdir path-prefix)))
+                  (simplify-path+ (build-path revpath tsrcdir))
                   (if (equal? builddir ".")
                     builddir
-                    (simplify-path (build-path builddir path-prefix)))
-                  (simplify-path (build-path revpath tbuilddir)))))))
+                    (simplify-path+ (build-path builddir path-prefix)))
+                  (simplify-path+ (build-path revpath tbuilddir)))))))
                   
   (define (make-replace-1 output-file)
-    (let1 subst (make-subst (sys-dirname (simplify-path output-file)))
+    (let1 subst (make-subst (sys-dirname (simplify-path+ output-file)))
       (^[line outp]
         (display (regexp-replace-all #/@(\w+)@/ line subst) outp)
         (newline outp))))
@@ -436,12 +443,19 @@
                     (string-split (or (sys-getenv "PATH") '())
                                   (cond-expand [gauche.os.windows #\;]
                                                [else #\:]))))
+  (define (finder prog)
+    (find-file-in-paths prog :paths paths
+                        :pred (if filter
+                                (^p (and (filter p)
+                                         (file-is-executable? p)))
+                                file-is-executable?)))
   (any (^[prog]
-         (find-file-in-paths prog :paths paths
-                             :pred (if filter
-                                     (^p (and (filter p)
-                                              (file-is-executable? p)))
-                                     file-is-executable?)))
+         (cond-expand [gauche.os.windows
+                       (if (equal? (path-extension prog) "exe")
+
+                         (finder prog)
+                         (or (finder prog) (finder #"~|prog|.exe")))]
+                      [else (finder prog)]))
        progs))
 
 ;; API
