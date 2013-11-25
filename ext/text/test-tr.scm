@@ -42,6 +42,14 @@
        (string-tr "Hello,   World!!!!" "A-Za-z" ""
                   :squeeze #t :complement #t))
 
+(test* "spec edge case (-)" "-bacdaef"
+       (string-tr "Ab-cd-ef" "A-" "-a"))
+(test* "spec edge case (\\)" "a/b"
+       (string-tr "a\\b" "\\\\" "/"))
+(test* "spec edge case (\\)" (test-error)
+       (string-tr "a\\b" "\\" "/"))
+
+
 ;; whole test over smaller table size
 (test* "basic, table-size" "hELLO, wORLD!"
        (string-tr "Hello, World!" "A-Za-z" "a-zA-Z" :table-size 65))

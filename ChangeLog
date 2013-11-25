@@ -1,3 +1,8 @@
+2013-11-24  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/text/tr.scm (build-char-array): Fixed a bug that prevented
+	  having '\' in spec.
+
 2013-11-22  Shiro Kawai  <shiro@acm.org>
 
 	* src/read.c, src/libstr.scm, lib/gauche/interpolate.scm:

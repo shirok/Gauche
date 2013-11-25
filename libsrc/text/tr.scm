@@ -96,7 +96,10 @@
     (^[]
       (define (start c r)
         (cond [(eof-object? c) (reverse r)]
-              [(char=? c #\\) (start (read-char) r)]
+              [(char=? c #\\) (let1 c (read-char)
+                                (when (eof-object? c)
+                                  (error "stray backslash in tr spec" spec))
+                                (maybe-range c (read-char) r))]
               [else (maybe-range c (read-char) r)]))
       (define (maybe-range c c1 r)
         (cond [(eof-object? c1) (reverse (cons (list 1 c) r))]
