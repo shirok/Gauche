@@ -696,6 +696,7 @@ const char *inet_ntop(int af, const void *src, char *dst, socklen_t size)
     TCHAR buf[ADDR_MAXLEN];
     DWORD tressize = ADDR_MAXLEN-1;
     const char *res;
+    int r = 0;
 
     switch (af) {
     case AF_INET: {
@@ -703,8 +704,8 @@ const char *inet_ntop(int af, const void *src, char *dst, socklen_t size)
         memset(&sa, 0, sizeof(sa));
         sa.sin_family = AF_INET;
         memcpy(&sa.sin_addr, src, sizeof(struct in_addr));
-        int r = WSAAddressToString((LPSOCKADDR)&sa, (DWORD)sizeof(sa), NULL,
-                                   buf, &tressize);
+        r = WSAAddressToString((LPSOCKADDR)&sa, (DWORD)sizeof(sa), NULL,
+                               buf, &tressize);
         break;
     }
     case AF_INET6: {
@@ -712,8 +713,8 @@ const char *inet_ntop(int af, const void *src, char *dst, socklen_t size)
         memset(&sa6, 0, sizeof(sa6));
         sa6.sin6_family = AF_INET6;
         memcpy(&sa6.sin6_addr, src, sizeof(struct in6_addr));
-        int r = WSAAddressToString((LPSOCKADDR)&sa6, (DWORD)sizeof(sa6), NULL,
-                                   buf, &tressize);
+        r = WSAAddressToString((LPSOCKADDR)&sa6, (DWORD)sizeof(sa6), NULL,
+                               buf, &tressize);
         break;
     }
     default:

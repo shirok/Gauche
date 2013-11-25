@@ -1867,6 +1867,8 @@ void Scm__SetupPortsForWindows(int has_console)
 {
     if (!has_console) {
         static int initialized = FALSE;
+        static ScmObj orig_stdout = SCM_FALSE;
+        static ScmObj orig_stderr = SCM_FALSE;
         if (!initialized) {
             ScmObj trapperPort = make_trapper_port();
             initialized = TRUE;
@@ -1876,9 +1878,9 @@ void Scm__SetupPortsForWindows(int has_console)
                to those ports will eventually lead to close those fds (when
                those ports are GC-ed), causing complications in the code
                that assumes fds 0, 1 and 2 are reserved.  To make things
-               easier, we just keep original ports. */
-            static ScmObj orig_stdout = scm_stdout;
-            static ScmObj orig_stderr = scm_stderr;
+               easier, we just save the original ports. */
+            orig_stdout = scm_stdout;
+            orig_stderr = scm_stderr;
             scm_stdout = trapperPort;
             scm_stderr = trapperPort;
             Scm_VM()->curout = SCM_PORT(scm_stdout);

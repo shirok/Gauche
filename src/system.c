@@ -1544,6 +1544,7 @@ ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap,
     /*
      * Windows path
      */
+    const char *cdir = NULL;
     if (dir != NULL) {
         /* we need full path for CreateProcess. */
         dir = SCM_STRING(Scm_NormalizePathname(dir, SCM_PATH_ABSOLUTE|SCM_PATH_CANONICALIZE));
