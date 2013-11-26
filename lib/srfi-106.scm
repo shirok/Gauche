@@ -45,9 +45,18 @@
 
 (define-constant *ai-canonname*   net:AI_CANONNAME)
 (define-constant *ai-numerichost* net:AI_NUMERICHOST)
-(define-constant *ai-v4mapped*    net:AI_V4MAPPED)
-(define-constant *ai-all*         net:AI_ALL)
-(define-constant *ai-addrconfig*  net:AI_ADDRCONFIG)
+(define-constant *ai-v4mapped*
+  (cond-expand
+   [gauche.net.ipv6 net:AI_V4MAPPED]
+   [else 0]))
+(define-constant *ai-all*
+  (cond-expand
+   [gauche.net.ipv6 net:AI_ALL]
+   [else 0]))
+(define-constant *ai-addrconfig*
+  (cond-expand
+   [gauche.net.ipv6 net:AI_ADDRCONFIG]
+   [else 0]))
 
 (define-macro (address-info . names)
   (define (lookup name)
@@ -72,7 +81,10 @@
 (define-constant *msg-none*       0)
 (define-constant *msg-peek*       net:MSG_PEEK)
 (define-constant *msg-oob*        net:MSG_OOB)
-(define-constant *msg-waitall*    net:MSG_WAITALL)
+(define-constant *msg-waitall*
+  (cond-expand
+   [gauche.net.ipv6 net:MSG_WAITALL]
+   [else 0]))
 
 (define-macro (message-type . names)
   (define (lookup name)
@@ -110,18 +122,28 @@
                             (ai-protocol *ipproto-ip*))
   (check-arg string? node)
   (check-arg string? service)
-  (let1 ais (net:sys-getaddrinfo node service
-                                 (make net:<sys-addrinfo>
-                                   :flags ai-flags
-                                   :family ai-family
-                                   :socktype ai-socktype
-                                   :protocol ai-protocol))
-    (or (any (^[ai] (guard (e [else #f])
-                      (make-client-socket (~ ai'addr))))
-             ais)
-        ;; If we're here, attempts to connect to every ais failed.
-        ;; TODO: We might want to keep one of the errors for better msg
-        (error "couldn't connect to ~a:~a" node service))))
+  (cond-expand
+   [gauche.net.ipv6
+    (let1 ais (net:sys-getaddrinfo node service
+                                   (make net:<sys-addrinfo>
+                                     :flags ai-flags
+                                     :family ai-family
+                                     :socktype ai-socktype
+                                     :protocol ai-protocol))
+      (or (any (^[ai] (guard (e [else #f])
+                        (net:make-client-socket (~ ai'addr))))
+               ais)
+          ;; If we're here, attempts to connect to every ais failed.
+          ;; TODO: We might want to keep one of the errors for better msg
+          (error "couldn't connect to ~a:~a" node service)))]
+   [else
+    ;; We should handle other options, but this path is rarely used,
+    ;; only for ipv6-less platforms.
+    (let1 addrs (net:make-sockaddrs node service ai-protocol)
+      (or (any (^[addr] (guard (e [else #f])
+                          (net:make-client-socket addr)))
+               addrs)
+          (error "couldn't connect to ~a:~a" node service)))]))
 
 (define (make-server-socket service
                             :optional
@@ -129,18 +151,29 @@
                             (ai-socktype *sock-stream*)
                             (ai-protocol *ipproto-ip*))
   (check-arg string? service)
-  (let1 ais (net:sys-getaddrinfo #f service
-                                 (make net:<sys-addrinfo>
-                                   :flags 0
-                                   :family ai-family
-                                   :socktype ai-socktype
-                                   :protocol ai-protocol))
-    (or (any (^[ai] (guard (e [else #f])
-                      (net:make-server-socket (~ ai'addr))))
-             ais)
-        ;; If we're here, attempts to bind every ais failed.
-        ;; TODO: We might want to keep one of the errors for better msg
-        (error "couldn't create a server socket at service `~a'" service))))
+  (cond-expand
+   [gauche.net.ipv6
+    (let1 ais (net:sys-getaddrinfo #f service
+                                   (make net:<sys-addrinfo>
+                                     :flags 0
+                                     :family ai-family
+                                     :socktype ai-socktype
+                                     :protocol ai-protocol))
+      (or (any (^[ai] (guard (e [else #f])
+                        (net:make-server-socket (~ ai'addr))))
+               ais)
+          ;; If we're here, attempts to bind every ais failed.
+          ;; TODO: We might want to keep one of the errors for better msg
+          (error "couldn't create a server socket at service `~a'" service)))]
+   [else
+     ;; We should handle other options, but this path is rarely used,
+     ;; only for ipv6-less platforms.
+     (let1 addrs (net:make-sockaddrs #f service ai-protocol)
+       (or (any (^[addr] (guard (e [else #f])
+                           (net:make-server-socket addr)))
+                addrs)
+          (error "couldn't create a server socket at service `~a'" service)))]
+   ))
 
 ;;
 ;; Communication
