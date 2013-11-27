@@ -1697,17 +1697,28 @@ respectively.
 @end example
 
 @c EN
-Note: Before the release 0.9.4, the order of arguments
-@var{char/char-set/pred} and @var{s} was flipped.  To keep the
-backward compatibility to the code written for the old API,
-we still accept the old order.  But the new code should
-follow the srfi-13 order.
+Note: Srfi-13 was revised after finalization to switch
+the order of arguments @var{char/char-set/pred} and @var{s} was.
+At the time of finalization, the order was
+@code{(string-filter s pred)} and Gauche implemented it accordingly.
+However, most existing implementations follows the revised order,
+since that was what the srfi-13 reference implementation had.
+
+So, from 0.9.4, we revised the API to comply the current
+srfi-13 spec, but we also accept the old order as well
+not to break the old code.
+We recommend the new code to use the new order.
 @c JP
-註: 0.9.4より前のリリースでは引数
-@var{char/char-set/pred}と@var{s}の順序が逆になっていました。
-以前の仕様で書かれたコードとの互換性を保つため、これらの手続きは
-引数順が逆でも動作します。けれども、新しく書かれるコードは
-SRFI-13の引数順を使うのが良いでしょう。
+註: srfi-13は制定後に改訂され、引数@var{char/char-set/pred}と@var{s}の
+順序が逆になりました。制定時点では引数順は
+@code{(string-filter s pred)}で、Gaucheもそれに従って実装していました。
+しかし既存の実装のほとんどは@code{(string-filter pred s)}という順序に
+なっています。srfi-13の参照実装がそうだったからです。
+
+0.9.4からGaucheも現在のsrfi-13の実装に合わせましたが、
+以前の仕様で書かれたコードとの互換性を保つため、
+引数順を逆にしても動作するようになっています。
+新しく書かれるコードは、現在のsrfi-13の引数順を使うのが良いでしょう。
 @c COMMON
 @end defun
 
