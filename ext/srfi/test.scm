@@ -595,25 +595,25 @@
                         #[a-z]))
 
 (test* "string-filter" "rrrr"
-       (string-filter "Help make programs run, run, RUN!" #\r ))
+       (string-filter #\r "Help make programs run, run, RUN!"))
 (test* "string-filter" "HelpmakeprogramsrunrunRUN"
-       (string-filter "Help make programs run, run, RUN!"
-                      #[a-zA-Z]))
+       (string-filter #[a-zA-Z]
+                      "Help make programs run, run, RUN!"))
 (test* "string-filter" "programsrunrun"
-       (string-filter "Help make programs run, run, RUN!"
-                      (^c (char-lower-case? c)) 10))
+       (string-filter (^c (char-lower-case? c))
+                      "Help make programs run, run, RUN!" 10))
 (test* "string-filter" ""
-       (string-filter "" (^c (char-lower-case? c))))
+       (string-filter (^c (char-lower-case? c)) ""))
 (test* "string-delete" "Help make pogams un, un, RUN!"
-       (string-delete "Help make programs run, run, RUN!" #\r))
+       (string-delete #\r "Help make programs run, run, RUN!"))
 (test* "string-delete" "   , , !"
-       (string-delete "Help make programs run, run, RUN!"
-                      #[a-zA-Z]))
+       (string-delete #[a-zA-Z]
+                      "Help make programs run, run, RUN!"))
 (test* "string-delete" " , , RUN!"
-       (string-delete "Help make programs run, run, RUN!"
-                      (^c (char-lower-case? c)) 10))
+       (string-delete (^c (char-lower-case? c))
+                      "Help make programs run, run, RUN!" 10))
 (test* "string-delete" ""
-       (string-delete "" (^c (char-lower-case? c))))
+       (string-delete (^c (char-lower-case? c)) ""))
 
 ;;
 ;; testing srfi-19

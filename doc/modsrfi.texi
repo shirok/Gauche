@@ -1670,9 +1670,45 @@ which provides similar features but different criteria.
 @subsection String filtering
 @c NODE 文字列のフィルタリング
 
-@defun string-filter s char/char-set/pred :optional start end
-@defunx string-delete s char/char-set/pred :optional start end
+@defun string-filter char/char-set/pred s :optional start end
+@defunx string-delete char/char-set/pred s :optional start end
 [SRFI-13]
+@c EN
+Returns a string consists of characters in a string @var{s} 
+that passes (or don't pass) the test indicated by @var{char/char-set/pred},
+respectively.  
+@c JP
+それぞれ、文字列@var{s}中の文字のうち@var{char/char-set/pred}で示される
+テストを通る、または通らない文字からなる文字列を返します。
+@c COMMON
+
+@example
+(string-filter char-upper-case? "Hello, World!")
+  @result{} "HW"
+
+(string-delete char-upper-case? "Hello, World!")
+  @result{} "ello, orld!"
+
+(string-delete #\l "Hello, World!")
+  @result{} "Heo, Word!"
+
+(string-filter #[\w] "Hello, World!")
+  @result{} "HelloWorld"
+@end example
+
+@c EN
+Note: Before the release 0.9.4, the order of arguments
+@var{char/char-set/pred} and @var{s} was flipped.  To keep the
+backward compatibility to the code written for the old API,
+we still accept the old order.  But the new code should
+follow the srfi-13 order.
+@c JP
+註: 0.9.4より前のリリースでは引数
+@var{char/char-set/pred}と@var{s}の順序が逆になっていました。
+以前の仕様で書かれたコードとの互換性を保つため、これらの手続きは
+引数順が逆でも動作します。けれども、新しく書かれるコードは
+SRFI-13の引数順を使うのが良いでしょう。
+@c COMMON
 @end defun
 
 @node SRFI-13 Low-level string procedures,  , SRFI-13 String filtering, String library

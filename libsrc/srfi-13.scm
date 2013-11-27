@@ -813,27 +813,33 @@
 ;;; Filter
 ;;;
 
-(define (string-filter s c/s/p . args)
-  (check-arg string? s)
-  (let ((src (open-input-string (apply %maybe-substring s args)))
-        (dest (open-output-string))
-        (pred (%get-char-pred c/s/p)))
-    (let loop ((ch (read-char src)))
-      (cond ((eof-object? ch) (get-output-string dest))
-            ((pred c/s/p ch) (write-char ch dest) (loop (read-char src)))
-            (else (loop (read-char src)))))
-    ))
+;; NB: We accidentally got the argument order of string-filter and
+;; string-delete reversed for a good while.  To keep the code that
+;; was written in wrong argument order, we permit both order---
+;; (string-filter pred string) and (string-filter string pred),
+;; although the new code should use the former (srfi-13 style).
 
-(define (string-delete s c/s/p . args)
-  (check-arg string? s)
-  (let ((src (open-input-string (apply %maybe-substring s args)))
-        (dest (open-output-string))
-        (pred (%get-char-pred c/s/p)))
-    (let loop ((ch (read-char src)))
-      (cond ((eof-object? ch) (get-output-string dest))
-            ((pred c/s/p ch) (loop (read-char src)))
-            (else (write-char ch dest) (loop (read-char src)))))
-    ))
+(define (string-filter c/s/p s . args)
+  (if (string? c/s/p)
+    (apply string-filter s c/s/p args) ;; for the backward compatibility
+    (let ([src (open-input-string (apply %maybe-substring s args))]
+          [dest (open-output-string)]
+          [pred (%get-char-pred c/s/p)])
+      (let loop ([ch (read-char src)])
+        (cond [(eof-object? ch) (get-output-string dest)]
+              [(pred c/s/p ch) (write-char ch dest) (loop (read-char src))]
+              [else (loop (read-char src))])))))
+
+(define (string-delete c/s/p s . args)
+  (if (string? c/s/p)
+    (apply string-delete s c/s/p args) ;; for the backward compatibility
+    (let ([src (open-input-string (apply %maybe-substring s args))]
+          [dest (open-output-string)]
+          [pred (%get-char-pred c/s/p)])
+      (let loop ([ch (read-char src)])
+        (cond [(eof-object? ch) (get-output-string dest)]
+              [(pred c/s/p ch) (loop (read-char src))]
+              [else (write-char ch dest) (loop (read-char src))])))))
 
 ;;; Low-level procedures.  These are included for completeness, but
 ;;; I'm not using these in other SRFI-13 routines, since it is more
