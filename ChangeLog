@@ -1,3 +1,9 @@
+2013-11-27  Shiro Kawai  <shiro@acm.org>
+
+	* lib/www/cgi.scm (cgi-get-query): Fixed a bug that caused the
+	  procedure not to retrieve the entire POST request body, if
+	  the input port wasn't fully buffered.
+
 2013-11-26  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/srfi-13.scm (string-filter, string-delete): We noticed that

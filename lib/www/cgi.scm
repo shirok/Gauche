@@ -45,6 +45,7 @@
   (use rfc.822)
   (use gauche.parameter)
   (use gauche.charconv)
+  (use gauche.uvector)
   (use text.tree)
   (use text.html-lite)
   (use file.util)
@@ -161,14 +162,31 @@
              (or (and-let* ([lenp (or content-length
                                       (get-meta "CONTENT_LENGTH"))]
                             [len  (x->integer lenp)]
-                            [ (<= 0 len) ])
-                   (string-incomplete->complete (read-block len)))
+                            [ (<= 0 len) ]
+                            [data (read-complete-block len)])
+                   ;; NB: When we're here, we know content-type is
+                   ;; application/x-www-form-urlencoded, so buf should consist
+                   ;; of ASCII characters.
+                   (u8vector->string data))
                  (port->string (current-input-port))))]
           [else
            (errorf <cgi-request-method-error>
                    :request-method method
                    "Unknown REQUEST_METHOD: ~a" method)]
           )))
+
+;; Read LEN octets from the current input port and returns u8vector.
+;; The port buffering may not be :full, so we should keep reading
+;; until all data is retrieved.
+(define (read-complete-block len)
+  (let ([buf (make-u8vector len)]
+        [inp (current-input-port)])
+    (let loop ([i 0])
+      (let1 nread (read-block! buf inp i)
+        (cond [(eof-object? nread)
+               (errorf <cgi-error> "POST request ends prematurely")]
+              [(< (+ nread i) len) (loop (+ nread i))]
+              [else buf])))))
 
 ;;----------------------------------------------------------------
 ;; API: cgi-parse-parameters &keyword query-string merge-cookies
