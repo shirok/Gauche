@@ -22,7 +22,9 @@
    Note: for MSVC, we already have these in config.h.
 */
 #if defined(__MINGW32__)
+#ifndef WINVER
 #define WINVER 0x0500           /* we support Windows 2000 or later */
+#endif /*WINVER*/
 #include <windows.h>
 #include <shlwapi.h>
 #include <utime.h>
