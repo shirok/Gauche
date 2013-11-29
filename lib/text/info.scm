@@ -101,30 +101,28 @@
 
 (define (parse-indirect-table indirects)
   (with-input-from-string indirects
-    (lambda ()
-      (port-map (lambda (line)
-                  (rxmatch-case line
-                    (#/^([^:]+):\s+(\d+)/ (#f file count)
-                        (cons (x->integer count) file))
-                    (else '())))
-                read-line))))
+    (^[] (port-map (^[line] (rxmatch-case line
+                              [#/^([^:]+):\s+(\d+)/ (#f file count)
+                                  (cons (x->integer count) file)]
+                              [else '()]))
+                   read-line))))
 
 (define (parse-tag-table info indirect tags)
   (define (find-file count)
-    (let loop ((indirect indirect)
-               (prev #f))
-      (cond ((null? indirect) prev)
-            ((< count (caar indirect)) prev)
-            (else (loop (cdr indirect) (cdar indirect))))))
+    (let loop ([indirect indirect]
+               [prev #f])
+      (cond [(null? indirect) prev]
+            [(< count (caar indirect)) prev]
+            [else (loop (cdr indirect) (cdar indirect))])))
   (with-input-from-string tags
-    (lambda ()
+    (^[]
       (generator-for-each (^[line]
                             (rxmatch-case line
-                              (#/^Node: ([^\u007f]+)\u007f(\d+)/ (#f node count)
+                              [#/^Node: ([^\u007f]+)\u007f(\d+)/ (#f node count)
                                (hash-table-put! (ref info 'node-table)
                                                 node
-                                                (find-file (x->integer count))))
-                              (else line #f)))
+                                                (find-file (x->integer count)))]
+                              [else line #f]))
                           read-line)))
   )
 
@@ -135,10 +133,9 @@
     (parse-nodes info parts)))
 
 (define (parse-nodes info parts)
-  (for-each (lambda (p)
-              (unless (string=? (car p) "Tag Table:")
-                (parse-node info p)))
-            parts))
+  (dolist [p parts]
+    (unless (string=? (car p) "Tag Table:")
+      (parse-node info p))))
 
 (define (parse-node info part)
   (rxmatch-case (car part)
@@ -167,7 +164,7 @@
 
 (define-method info-parse-menu ((info <info-node>))
   (with-input-from-string (ref info 'content)
-    (lambda ()
+    (^[]
       (define (skip line)
         (cond [(eof-object? line) '()]
               [(string=? line "* Menu:") (menu (read-line) '())]

@@ -13,9 +13,9 @@
 ;; aux. fun to convert arg to a list
 (define (source->list src reader)
   (port->list reader
-              (cond ((port? src) src)
-                    ((string? src) (open-input-string src))
-                    (else (error "don't know how to diff from:" src)))))
+              (cond [(port? src) src]
+                    [(string? src) (open-input-string src)]
+                    [else (error "don't know how to diff from:" src)])))
 
 ;; lcs on text.  Returns edit-list (as defined in lcs-edit-list).
 (define (diff a b :key (reader read-line) (equal equal?))
@@ -25,17 +25,15 @@
 
 (define (write-line-diff line type)
   (case type
-    ((+)
-     (format #t "+ ~A\n" line))
-    ((-)
-     (format #t "- ~A\n" line))
-    (else
-     (format #t "  ~A\n" line))))
+    [(+)  (format #t "+ ~A\n" line)]
+    [(-)  (format #t "- ~A\n" line)]
+    [else (format #t "  ~A\n" line)]))
 
-(define (diff-report a b :key (writer write-line-diff) (reader read-line) (equal equal?))
-  (lcs-fold (lambda (line _) (writer line '-))
-            (lambda (line _) (writer line '+))
-            (lambda (line _) (writer line #f))
+(define (diff-report a b :key (writer write-line-diff)
+                              (reader read-line) (equal equal?))
+  (lcs-fold (^[line _] [writer line '-])
+            (^[line _] (writer line '+))
+            (^[line _] (writer line #f))
             #f
             (source->list a reader)
             (source->list b reader)
