@@ -519,7 +519,7 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
                 return SCM_UNDEFINED;
             case '`': {
                 /* #`"..." - Legacy string interpolation syntax */
-                reject_in_r7(port, ctx, "#\"...\"");
+                reject_in_r7(port, ctx, "#`\"...\"");
                 ScmObj form = read_item(port, ctx);
                 return process_sharp_comma(port,
                                            SCM_SYM_STRING_INTERPOLATE,
