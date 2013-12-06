@@ -69,9 +69,7 @@
                        [(reg)  `((set! VAL0 ,expr)
                                  (set! (-> vm numVals) 1)
                                  NEXT_PUSHCHECK)]
-                       [(push) `((PUSH-ARG ,expr)
-                                 (set! (-> vm numVals) 1)
-                                 NEXT)]
+                       [(push) `((PUSH-ARG ,expr) NEXT)]
                        [(call) `((set! VAL0 ,expr))]
                        [(ret)  `((set! VAL0 ,expr)
                                  (set! (-> vm numVals) 1)
