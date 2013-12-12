@@ -15893,7 +15893,7 @@ When called outside of @code{load}, these procedures returns
 @subsection Load dynamic library
 @c NODE ダイナミックライブラリのロード
 
-@defun dynamic-load file :key init-function export-symbols
+@defun dynamic-load file :key init-function
 @c EN
 Loads and links a dynamic loadable library (shared library) @var{file}.
 @var{File} shouldn't contain the suffix (``.so'' on most systems);
@@ -15903,16 +15903,6 @@ The keyword argument @var{init-function} specifies the initialization
 function name of the library in a string.  By default, if the file
 basename (without extension) is ``foo'', the initialization function
 name is ``Scm_Init_foo''.
-
-The keyword argument @var{export-symbols} tells whether the dynamic loader
-that the external symbols in @var{file} should be appended to
-the symbol table of the running process.  (Note: I'm talking about
-C function and variable names, not Scheme symbols).
-By default, the symbols
-in @var{file} are not visible from other dynamically loaded libraries.
-If you want to allow other dynamically loaded libraries to call
-C function in your library, you should give @code{#t} to this
-argument.  It sets @code{RTLD_GLOBAL} flag for @code{dlopen()}.
 
 Usually a dynamic loadable library is provided with wrapping Scheme
 module, so the user doesn't have to call this function directly.
@@ -15926,15 +15916,6 @@ There's no way to unload the loaded libraries.
 キーワード引数@var{init-function}は共有ライブラリ中の初期化関数の名前を
 指定します。デフォルトでは、サフィックスを除くファイル名が ``foo'' の場合、
 初期化関数名は ``Scm_Init_foo'' となります。
-
-キーワード引数@var{export-symbols}は、ロードされるライブラリ中の外部シンボルを
-プロセスのシンボルテーブルに追加すべきかどうかを指定します。(註：ここでの「シンボル」
-とはCの関数名や変数名のことで、Schemeのシンボルのことではありません)。
-デフォルトでは共有ライブラリの外部シンボルはプロセスのシンボルテーブルに追加されず、
-それぞれの共有ライブラリは他の共有ライブラリのシンボルを見ることができません。
-@var{export-symbols}に真の値を渡すと、フラグ@code{RTLD_GLOBAL}が
-@code{dlopen()}に渡されて、その共有ライブラリ中のシンボルがこれからロードされる
-共有ライブラリからも見えるようになります。
 
 通常、共有ライブラリはSchemeモジュール中でロードされるので、モジュールユーザが
 直接この手続きを呼ぶ必要はほとんどないでしょう。
