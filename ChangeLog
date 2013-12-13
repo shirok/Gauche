@@ -1,3 +1,8 @@
+2013-12-13  Shiro Kawai  <shiro@acm.org>
+
+	* src/libnum.scm (sqrt): Improved performance.  We did extra sqrt
+	  calculation when the arg was exact but not a square of exact number.
+
 2013-11-27  Shiro Kawai  <shiro@acm.org>
 
 	* lib/www/cgi.scm (cgi-get-query): Fixed a bug that caused the

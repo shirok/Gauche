@@ -393,6 +393,28 @@
     (result (Scm_MakeComplex 0.0 (sqrt (- x))))
     (result (Scm_VMReturnFlonum (sqrt x)))))
 
+;; Fast path for typical case of sqrt.  Handles positive flonum
+;; and exact integer between 0 and 2^52.
+;; If input is outside of the range, returns #f to fallback for
+;; expensive path.
+(select-module gauche.internal)
+(define-cproc %sqrt-fast-path (x) :fast-flonum :constant
+  (cond [(and (SCM_FLONUMP x) (>= (Scm_Sign x) 0))
+         (result (Scm_VMReturnFlonum (sqrt (SCM_FLONUM_VALUE x))))]
+        [(and (SCM_INTEGERP x)
+              (>= (Scm_Sign x) 0)
+              (>= (Scm_NumCmp SCM_2_52 x) 0))
+         (let* ([d::double (Scm_GetDouble x)]
+                [q::double (sqrt d)]
+                [qq::double (floor q)]
+                [dd::double (* qq qq)])
+           ;; NB: The result is in [0, 2^26], so we know it fits in fixnum.
+           (if (== d dd)
+             (result (SCM_MAKE_INT (cast long q)))
+             (result (Scm_VMReturnFlonum q))))]
+        [else (result SCM_FALSE)]))
+
+(select-module gauche)
 (define-cproc %expt (x y) :fast-flonum :constant Scm_Expt)
 
 ;; Now, handles complex numbers.
@@ -409,25 +431,31 @@
           [else (error "number required, but got" z)])
     (/ (log z) (log (car base)))))  ; R6RS addition
 
+(select-module gauche.internal)
 (define-in-module scheme (sqrt z)
   (cond
+   [(%sqrt-fast-path z)] ; fast-path check
    [(and (exact? z) (>= z 0))
     ;; Gauche doesn't have exact complex, so we have real z.
     (if (integer? z)
-      (receive (s r) ((with-module gauche.internal %exact-integer-sqrt) z)
+      (receive (s r) (%exact-integer-sqrt z)
         (if (= r 0) s (%sqrt z)))
-      ;; we have ratnum.  take expensive path.
       (let ([n (numerator z)]
             [d (denominator z)])
-        (receive (ns nr)
-            ((with-module gauche.internal %exact-integer-sqrt) n)
-          (if (= nr 0)
-            (receive (ds dr)
-                ((with-module gauche.internal %exact-integer-sqrt) d)
+        (if-let1 nq (%sqrt-fast-path n)
+          (if-let1 dq (%sqrt-fast-path d)
+            (/ nq dq)
+            (receive (ds dr) (%exact-integer-sqrt d)
               (if (= dr 0)
-                (/ ns ds)
-                (%sqrt z)))
-            (%sqrt z)))))]
+                (/ nq ds)
+                (%sqrt z))))
+          (receive (ns nr) (%exact-integer-sqrt n)
+            (if (= nr 0)
+              (receive (ds dr) (%exact-integer-sqrt d)
+                (if (= dr 0)
+                  (/ ns ds)
+                  (%sqrt z)))
+              (%sqrt z))))))]
    [(real? z) (%sqrt z)]
    [(complex? z) (make-polar (%sqrt (magnitude z)) (/ (angle z) 2.0))]
    [else (error "number required, but got" z)]))
