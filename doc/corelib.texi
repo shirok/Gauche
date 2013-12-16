@@ -57,6 +57,20 @@ Gaucheでは、@emph{クラス}によって型を記述します。クラス自�
 @c COMMON
 
 @c EN
+Since R6RS, Scheme got a standard way to define a new type,
+through @code{define-record-type}.  You can use record types
+in Gauche as well, via @code{gauche.record} module.
+@xref{Record types}.  Internally a record type is implemented
+as a class.
+@c JP
+R6RSから、Schemeにも新しい型を定義する機能が標準で備わりました。
+@code{define-record-type}を使います。Gaucheでも、
+@code{gauche.record}モジュールを使うことでレコード型を定義できます。
+@ref{Record types}を参照してください。内部的にはレコード型は
+クラスで実装されています。
+@c COMMON
+
+@c EN
 In this section we introduce the most basic interface
 to the Gauche's type system.
 @xref{Object system}, for the details of
@@ -109,6 +123,37 @@ and for any object @code{x}, @code{(is-a? x <bottom>)} is @code{#f}.
 どんなクラス@code{X}に対しても@code{(subtype? <bottom> X)}は@code{#t}であり、
 どんなオブジェクト@code{x}に対しても@code{(is-a? x <bottom>)}は@code{#f}です。
 @c COMMON
+
+@c EN
+There's no instance of @code{<bottom>}.
+@c JP
+@code{<bottom>}型のインスタンスは存在しません。
+@c COMMON
+
+@c EN
+Note: Although @code{<bottom>} is subtype of other types,
+the class precedence list (CPL) of @code{<bottom>} only contains
+@code{<bottom>} and @code{<top>}.  It's because it isn't
+always possible to calculate a linear list of all the types.
+Even if it is possible, it would be expensitve to check and update the
+CPL of @code{<bottom>} every time a new class is defined or
+an existing class is redefined.   Procedures @code{subtype?} and
+@code{is-a?} treat @code{<bottom>} specially.
+
+One of use case of @code{<bottom>} is @code{applicable?} procedure.
+@xref{Procedure class and applicability}.
+@c JP
+註: @code{<bottom>}は全ての型のサブタイプですが、そのクラス順位リスト
+(class precedence list, CPL)には@code{<bottom>}と@code{<top>}
+以外のクラスは含まれていません。全ての型を線形に並べることは常に可能である
+とは限らず、まだそうであったとしても新たなクラスの定義や既存のクラスの
+再定義のたびに@code{<bottom>}のCPLを検査してアップデートすることは
+高くつくでしょう。@code{subtype?}や@code{is-a?}といった手続きは
+@code{<bottom>}を特別扱いしています。
+
+@code{<bottom>}の使いどころのひとつは、@code{applicable?}手続きです。
+@ref{Procedure class and applicability}を参照のこと。
+@c COMMON
 @end deftp
 
 @deftp {Builtin Class} <object>
@@ -142,7 +187,7 @@ If the new definition has different configuration of the instance,
 (@xref{Accessing instance}).
 @c JP
 註: Gaucheでは、ユーザ定義クラスを再定義することができます。
-新たな定義でインスタンスの構造が変更された場合、以前のクラスか作られた
+新たな定義でインスタンスの構造が変更された場合、以前のクラスから作られた
 インスタンスに@code{class-of}を適用すると、インスタンスが新しいクラスに
 適合するようにアップデートされます。詳しくは@ref{Class redefinition}を参照して
 ください。インスタンスアップデートを避けるには@code{current-class-of}を
