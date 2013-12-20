@@ -60,6 +60,17 @@
          (cut lset= equal? <> <>))
   )
 
+(let1 bm (make-bimap (make-hash-table 'eqv?) (make-hash-table 'eqv?))
+  (bimap-put! bm 'a 1)
+  (test* "bimap conflict (left)" (test-error)
+         (bimap-put! bm 'a 2 :on-conflict :error))
+  (test* "bimap conflict (right)" (test-error)
+         (bimap-put! bm 'b 1 :on-conflict :error))
+  (test* "bimap conflict (ignore)" 1
+         (begin
+           (bimap-put! bm 'a 3 :on-conflict #f)
+           (bimap-left-get bm 'a))))
+
 (test-section "stacked map")
 
 (let* ([m0 (alist->hash-table '((a . 0) (b . 1) (c . 2)) 'eq?)]

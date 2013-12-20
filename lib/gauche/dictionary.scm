@@ -280,23 +280,27 @@
 (define (bimap-put! bm x y :key (on-conflict :supersede))
   (let ([x-exists? (dict-exists? (bimap-left bm) x)]
         [y-exists? (dict-exists? (bimap-right bm) y)])
-    (case on-conflict
-      [(:error)
-       (if x-exists?
-         (error "attempt to insert duplicate left-key into bimap: " x)
-         (error "attempt to insert duplicate right-key into bimap: " y))]
-      [(#f) #f]
-      [(:supersede)
-       (when x-exists?
-         (dict-delete! (bimap-right bm) (dict-get (bimap-left bm) x)))
-       (when y-exists?
-         (dict-delete! (bimap-left bm) (dict-get (bimap-right bm) y)))
-       (dict-put! (bimap-left bm) x y)
-       (dict-put! (bimap-right bm) y x)
-       #t]
-      [else
-       (error "bimap-put!: on-conflict argument must be either one of \
-              :supersede, :error or #f, but got:" on-conflict)])))
+    (if (or x-exists? y-exists?)
+      (case on-conflict
+        [(:error)
+         (if x-exists?
+           (error "attempt to insert duplicate left-key into bimap: " x)
+           (error "attempt to insert duplicate right-key into bimap: " y))]
+        [(#f) #f]
+        [(:supersede)
+         (when x-exists?
+           (dict-delete! (bimap-right bm) (dict-get (bimap-left bm) x)))
+         (when y-exists?
+           (dict-delete! (bimap-left bm) (dict-get (bimap-right bm) y)))
+         (dict-put! (bimap-left bm) x y)
+         (dict-put! (bimap-right bm) y x)
+         #t]
+        [else
+         (error "bimap-put!: on-conflict argument must be either one of \
+              :supersede, :error or #f, but got:" on-conflict)])
+      (begin
+        (dict-put! (bimap-left bm) x y)
+        (dict-put! (bimap-right bm) y x)))))
 
 ;; the normal ref/set! uses left map
 (define-method dict-get ((dict <bimap>) key . maybe-default)
@@ -318,7 +322,7 @@
 ;;; Stacked map
 ;;;
 
-;; Stacked map allows you to stack (layer) multiple maps and tread
+;; Stacked map allows you to stack (layer) multiple maps and treat
 ;; as if they are a single map.  The top map "shadows" the bottom maps.
 
 (define-class <stacked-map-meta> (<class>) ())
