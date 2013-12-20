@@ -249,11 +249,16 @@
 (define-class <bimap> (<dictionary>)
   ((left  :init-keyword :left)    ; x -> y
    (right :init-keyword :right)   ; y -> x
+   (on-conflict :init-keyword :on-conflict
+                :init-value :supersede)
    )
   :metaclass <bimap-meta>)
 
-(define (make-bimap left right)
-  (make <bimap> :left left :right right))
+(define (make-bimap left right :key (on-conflict :supersede))
+  (unless (memv on-conflict '(#f :error :supersede))
+    (error "got invalid on-conflict value; possible values are "
+           ":supersede, :error or #f, but got" on-conflict))
+  (make <bimap> :left left :right right :on-conflict on-conflict))
 
 (define (bimap-left bm)  (slot-ref bm 'left))
 (define (bimap-right bm) (slot-ref bm 'right))
@@ -277,7 +282,7 @@
 (define-bimap-ops left  bimap-left bimap-right)
 (define-bimap-ops right bimap-right bimap-left)
 
-(define (bimap-put! bm x y :key (on-conflict :supersede))
+(define (bimap-put! bm x y :key (on-conflict (~ bm 'on-conflict)))
   (let ([x-exists? (dict-exists? (bimap-left bm) x)]
         [y-exists? (dict-exists? (bimap-right bm) y)])
     (if (or x-exists? y-exists?)

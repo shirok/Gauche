@@ -3613,7 +3613,7 @@ You don't need to provide every dictionary interface.
 @c NODE 汎用ディクショナリ
 
 @deftp {Class} <bimap>
-@clindex binmap
+@clindex bimap
 Provides a bidirectional map (@emph{bimap}), a relation between two
 set of values, of which you can lookup both ways.
 
@@ -3635,7 +3635,7 @@ precedence; that is, the key given to @code{dict-get} etc. is
 regarded as the key to the left map.
 @end deftp
 
-@defun make-bimap left-map right-map
+@defun make-bimap left-map right-map :key on-conflict
 Creates a new bimap consists of two dictionaries, @var{left-map}
 and @var{right-map}.   It is the caller's responsibility to
 choose appropriate type of dictionaries; for example, if you want
@@ -3646,6 +3646,30 @@ to create it like this:
 (make-bimap (make-hash-table 'string=?)  ; string -> number
             (make-hash-table 'eqv?))     ; number -> string
 @end example
+
+The keyword argument @var{on-conflict} specifies what will happen
+when the added entry would conflict the existing entries.
+The following values are allowed:
+
+@table @code
+@item :supersede
+This is the default behavior.  Duplicate relations are silently
+removed in order to maintain one-to-one mapping.  For example,
+suppose a bimap between strings and numbers has had
+@code{("foo", 1)} and @code{("bar", 2)}.  When you try to
+put @code{("bar", 2)} with this option, the first two entries
+are removed.  Returns @code{#t}.
+
+@item :error
+Raises an error when duplicate relations are found.
+
+@item #f
+When duplicate relations are found, does nothing and returns @code{#f}.
+@end table
+
+Note: At this moment, an attempt to add a relation exactly same as the
+existing one is regareded as a conflict.  This limitation may be
+lifted in future.
 @end defun
 
 @defun bimap-left bimap
@@ -3669,30 +3693,16 @@ Returns @code{#f} if the left or right map of @var{bimap} has an entry of
 the key, @code{#t} otherwise.
 @end defun
 
-@defun bimap-put! bimap x y &key (on-conflict :supersede)
+@defun bimap-put! bimap x y &key on-conflict
 Put a relation (@var{x}, @var{y}) into the bimap.
 After this, @code{(bimap-left-get @var{x})} will return @var{y},
 and @code{(bimap-left-get @var{y})} will return @var{x}.
 
-If there's already a relation (@var{x}, _) and/or (_, @var{y}),
-the behavior depends on the value of the keyword argument @var{on-conflit}.
-
-@table @code
-@item :supersede
-This is the default behavior.  Duplicate relations are silently
-removed in order to maintain one-to-one mapping.  For example,
-suppose a bimap between strings and numbers has had
-@code{("foo", 1)} and @code{("bar", 2)}.  When you try to
-put @code{("bar", 2)} with this option, the first two entries
-are removed.  Returns @code{#t}.
-
-@item :error
-Raises an error when duplicate relations are found.
-
-@item #f
-When duplicate relations are found, does nothing and returns @code{#f}.
-@end table
-
+If the bimap already have relations with @var{x} and/or @var{y},
+the conflict is handled according to the value of @var{on-conflict};
+see @code{make-bimap} for the possible values and their meanings.
+The @var{on-conflict} keyword argument can override the
+bimap's default setting specified at its creation time.
 @end defun
 
 @defun bimap-left-delete! bimap key

@@ -1,3 +1,8 @@
+2013-12-20  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/dictionary.scm (make-bimap, bimap-put!): Allow bimap
+	  to have the default on-conflict setting.
+
 2013-12-19  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi-106.scm (*ai-v4mapped*): Workaround for the platforms

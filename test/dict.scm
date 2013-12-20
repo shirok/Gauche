@@ -71,6 +71,18 @@
            (bimap-put! bm 'a 3 :on-conflict #f)
            (bimap-left-get bm 'a))))
 
+(let1 bm (make-bimap (make-hash-table 'eqv?) (make-hash-table 'eqv?)
+                     :on-conflict :error)
+  (bimap-put! bm 'a 1)
+  (test* "bimap conflict default (left)" (test-error)
+         (bimap-put! bm 'a 2))
+  (test* "bimap conflict default (right)" (test-error)
+         (bimap-put! bm 'b 1))
+  (test* "bimap conflict default override (ignore)" 3
+         (begin
+           (bimap-put! bm 'a 3 :on-conflict :supersede)
+           (bimap-left-get bm 'a))))
+
 (test-section "stacked map")
 
 (let* ([m0 (alist->hash-table '((a . 0) (b . 1) (c . 2)) 'eq?)]
