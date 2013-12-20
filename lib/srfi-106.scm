@@ -45,10 +45,10 @@
 
 (define-constant *ai-canonname*   net:AI_CANONNAME)
 (define-constant *ai-numerichost* net:AI_NUMERICHOST)
+;; NB: AI_V4MAPPED may not be defined even ipv6 is available (e.g. NetBSD)
+;; This is a kludge.
 (define-constant *ai-v4mapped*
-  (cond-expand
-   [gauche.net.ipv6 net:AI_V4MAPPED]
-   [else 0]))
+  (global-variable-ref 'gauche.net 'AI_V4MAPPED 0))
 (define-constant *ai-all*
   (cond-expand
    [gauche.net.ipv6 net:AI_ALL]

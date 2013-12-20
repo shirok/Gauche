@@ -1,3 +1,8 @@
+2013-12-19  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi-106.scm (*ai-v4mapped*): Workaround for the platforms
+	  where AI_V4MAPPED may not be defined even if ipv6 is provided.
+
 2013-12-13  Shiro Kawai  <shiro@acm.org>
 
 	* src/libnum.scm (sqrt): Improved performance.  We did extra sqrt
