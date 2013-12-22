@@ -67,11 +67,11 @@ arch="$host"
 local_inc="@LOCAL_INC@"
 local_lib="@LOCAL_LIB@"
 
-incdirs=`echo $gauche_incdir | sed s/^-I//`
+incdirs=`echo $gauche_incdir | sed s/^-I//`${pathsep}`echo $gauche_siteincdir | sed s/^-I//`
 if [ ! -z "@LOCAL_INCDIRS@" ]; then
   incdirs="$incdirs${pathsep}@LOCAL_INCDIRS@"
 fi
-archdirs=`echo $gauche_archdir | sed s/^-L//`
+archdirs=`echo $gauche_archdir | sed s/^-L//`${pathsep}`echo $gauche_sitearchdir | sed s/^-L//`
 if [ ! -z "@LOCAL_LIBDIRS@" ]; then
   archdirs="$archdirs${pathsep}@LOCAL_LIBDIRS@"
 fi

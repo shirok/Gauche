@@ -1,3 +1,10 @@
+2013-12-22  Shiro Kawai  <shiro@acm.org>
+
+	* src/genconfig.in: Add site-specific directories to --incdirs and
+	  --archdirs options.  Some extention libraries (e.g. Gauche-gl)
+	  installs header files and DSOs there, and libraries depending
+	  on them need to see them at compile time.
+
 2013-12-20  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/dictionary.scm (make-bimap, bimap-put!): Allow bimap
