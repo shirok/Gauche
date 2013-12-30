@@ -1,3 +1,8 @@
+2013-12-30  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/test.scm (closure-grefs): Include PUSH-GREF-CALL
+	  and PUSH-GREF-TAIL-CALL insns to check arity mismatch.
+
 2013-12-24  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm (import): Show a descriptive error message when

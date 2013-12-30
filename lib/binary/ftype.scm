@@ -362,8 +362,8 @@
                   (fobject-storage obj) (fobject-offset obj)))
 
 (define (fobject-set! obj slot val)
-  (fobject-ref/uv (fobject-type obj) slot
-                  (fobject-storage obj) val (fobject-offset obj)))
+  (fobject-set!/uv (fobject-type obj) slot
+                   (fobject-storage obj) (fobject-offset obj) val))
 
 ;; Initializes byte vector v, returns fobject of type ftype.
 ;; TODO: allow constructing fobjects other than fstructs.

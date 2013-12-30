@@ -419,7 +419,7 @@
            [body-sink (header-sink `(("content-length" ,(x->string size))
                                      ,@hdrs))]
            [port (body-sink size)])
-      (call-with-input-file (cut copy-port <> port :size size))
+      (call-with-input-file filename (cut copy-port <> port :size size))
       (body-sink 0))))
 
 ;; See http-compose-form-data definition for params spec.

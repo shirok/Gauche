@@ -333,10 +333,12 @@
 (define (closure-grefs closure)
   (define code->list (with-module gauche.internal vm-code->list))
   (define (gref-numargs code) (cadr code))
+  (define gref-call-insns
+    '(GREF-CALL PUSH-GREF-CALL GREF-TAIL-CALL PUSH-GREF-TAIL-CALL))
   (let loop ([r '()] [code (code->list (closure-code closure))])
     (cond [(null? code) r]
           [(and (pair? (car code))
-                (memq (caar code) '(GREF-CALL GREF-TAIL-CALL)))
+                (memq (caar code) gref-call-insns))
            (if (pair? (cdr code))
              (if (identifier? (cadr code))
                (loop `((,(cadr code) ,(gref-numargs (car code))) ,@r)
