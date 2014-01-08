@@ -1,3 +1,9 @@
+2014-01-07  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.scm: Bind auxiliary syntactic keywords to a dummy
+	  expander; it'd be easier to work with modules if we have toplevel
+	  bindins instead of leaving them undefined.
+
 2013-12-30  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/test.scm (closure-grefs): Include PUSH-GREF-CALL

@@ -1973,6 +1973,9 @@
     [(_ expr) ($const (%internal-macro-expand expr (cenv-frames cenv) #t))]
     [_ (error "syntax-error: malformed %macroexpand-1:" form)]))
 
+(define-pass1-syntax (... form cenv) :null
+  (error "invalid syntax:" form))
+
 (define-pass1-syntax (let-syntax form cenv) :null
   (match form
     [(_ ((name trans-spec) ...) body ...)
@@ -2065,6 +2068,11 @@
             ($const-undef)
             ($seq (imap (cut pass1 <> cenv) body))))]
     [_ (error "syntax-error: malformed unless:" form)]))
+
+(define-pass1-syntax (else form cenv) :null
+  (error "invalid syntax:" form))
+(define-pass1-syntax (=> form cenv) :null
+  (error "invalid syntax:" form))
 
 (define-pass1-syntax (cond form cenv) :null
   (define (process-clauses cls)
