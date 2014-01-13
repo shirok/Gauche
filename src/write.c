@@ -140,20 +140,6 @@ static void write_context_init(ScmWriteContext *ctx, int mode, int flags, int li
     if (limit > 0) ctx->flags |= WRITE_LIMITED;
 }
 
-ScmWriteContext *Scm_MakeWriteContext(ScmWriteContext *proto)
-{
-    ScmWriteContext *ctx = SCM_NEW(ScmWriteContext);
-    SCM_SET_CLASS(ctx, SCM_CLASS_WRITE_CONTEXT);
-    if (proto) {
-        write_context_init(ctx, proto->mode, proto->flags, proto->limit);
-    } else {
-        write_context_init(ctx, 0, 0, 0);
-    }
-    return ctx;
-}
-
-SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_WriteContextClass, NULL);
-
 /*
  * Entry points
  *
@@ -173,21 +159,21 @@ void Scm_Write(ScmObj obj, ScmObj p, int mode)
     if (!SCM_OPORTP(p)) Scm_Error("output port required, but got %S", p);
 
     ScmPort *port = SCM_PORT(p);
-    ScmWriteContext *ctx = Scm_MakeWriteContext(NULL);
-    write_context_init(ctx, mode, 0, 0);
+    ScmWriteContext ctx;
+    write_context_init(&ctx, mode, 0, 0);
 
     if (PORT_RECURSIVE_P(port)) {
         if (PORT_WALKER_P(port)) write_walk(obj, port);
-        else                     write_ss_rec(obj, port, ctx);
+        else                     write_ss_rec(obj, port, &ctx);
         return;
     }
 
     ScmVM *vm = Scm_VM();
     PORT_LOCK(port, vm);
-    if (WRITER_NEED_2PASS(ctx)) {
-        PORT_SAFE_CALL(port, write_ss(obj, port, ctx));
+    if (WRITER_NEED_2PASS(&ctx)) {
+        PORT_SAFE_CALL(port, write_ss(obj, port, &ctx));
     } else {
-        PORT_SAFE_CALL(port, write_ss_rec(obj, port, ctx));
+        PORT_SAFE_CALL(port, write_ss_rec(obj, port, &ctx));
     }
     PORT_UNLOCK(port);
 }
@@ -209,8 +195,8 @@ int Scm_WriteLimited(ScmObj obj, ScmObj p, int mode, int width)
     }
 
     ScmPort *port = SCM_PORT(p);
-    ScmWriteContext *ctx = Scm_MakeWriteContext(NULL);
-    write_context_init(ctx, mode, 0, width);
+    ScmWriteContext ctx;
+    write_context_init(&ctx, mode, 0, width);
 
     /* The walk pass does not produce any output, so we don't bother to
        create an intermediate string port. */
@@ -227,11 +213,11 @@ int Scm_WriteLimited(ScmObj obj, ScmObj p, int mode, int width)
     /* This part is a bit confusing - we only need to call write_ss
        if we're at the toplevel call.  */
     if (PORT_RECURSIVE_P(SCM_PORT(port))) {
-        write_ss_rec(obj, SCM_PORT(out), ctx);
-    } else if (WRITER_NEED_2PASS(ctx)) {
-        write_ss(obj, SCM_PORT(out), ctx);
+        write_ss_rec(obj, SCM_PORT(out), &ctx);
+    } else if (WRITER_NEED_2PASS(&ctx)) {
+        write_ss(obj, SCM_PORT(out), &ctx);
     } else {
-        write_ss_rec(obj, SCM_PORT(out), ctx);
+        write_ss_rec(obj, SCM_PORT(out), &ctx);
     }
     
     ScmString *str = SCM_STRING(Scm_GetOutputString(SCM_PORT(out), 0));

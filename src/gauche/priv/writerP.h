@@ -35,7 +35,6 @@
 #define GAUCHE_PRIV_WRITERP_H
 
 struct ScmWriteContextRec {
-    SCM_HEADER;
     short mode;                 /* print mode */
     short flags;                /* internal */
     int limit;                  /* used in WriteLimited */
@@ -51,12 +50,6 @@ SCM_EXTERN ScmObj Scm__WritePrimitive(ScmObj obj, ScmPort *port,
                                       ScmWriteContext *ctx);
 
 /* For now, let's keep ScmWrteContext class stuff private. */
-SCM_CLASS_DECL(Scm_WriteContextClass);
-#define SCM_CLASS_WRITE_CONTEXT   (&Scm_WriteContextClass)
 #define SCM_WRITE_CONTEXT(obj)    ((ScmWriteContext*)(obj))
-#define SCM_WRITE_CONTEXT_P(obj)  SCM_XTYPEP(obj, SCM_CLASS_WRITE_CONTEXT)
-
-SCM_EXTERN ScmWriteContext *Scm_MakeWriteContext(ScmWriteContext *proto);
-
 
 #endif /*GAUCHE_PRIV_WRITERP_H*/
