@@ -1,3 +1,12 @@
+2014-01-12  Shiro Kawai  <shiro@acm.org>
+
+	* src/write.c: Rewriting to clean up the control flow regarding recursive
+	  situation.  The recursive context should be solely held in the port,
+	  not in the write context.  The slot name of the port is renamed
+	  from 'data' to 'recursiveContext' to indicate the role.
+	  Obsoleted Scm_WriteCircular, for it can be handled by either
+	  Scm_Write or Scm_WriteLimited.
+
 2014-01-07  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm: Bind auxiliary syntactic keywords to a dummy

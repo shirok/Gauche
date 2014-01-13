@@ -561,7 +561,8 @@
   ::<int> (result (Scm_WriteLimited obj port SCM_WRITE_WRITE limit)))
 
 (define-cproc write* (obj :optional (port (current-output-port)))
-  ::<int> (result (Scm_WriteCircular obj port SCM_WRITE_WRITE 0)))
+  ;; TODO: should return # of output char in future
+  ::<int> (Scm_Write obj port SCM_WRITE_CIRCULAR) (result 0))
 
 (define-cproc flush (:optional (oport::<output-port> (current-output-port)))
   ::<void> Scm_Flush)
@@ -577,9 +578,9 @@
 ;; is a temporary solution (see the discussion in src/write.c),
 ;; and we may redesign the whole thing in future.
 (define-cproc %write-recursive-context (port::<output-port>)
-  (if (and (SCM_PAIRP (-> port data))
-           (SCM_HASH_TABLE_P (SCM_CDR (-> port data))))
-    (result (-> port data))
+  (if (and (SCM_PAIRP (-> port recursiveContext))
+           (SCM_HASH_TABLE_P (SCM_CDR (-> port recursiveContext))))
+    (result (-> port recursiveContext))
     (result '#f)))
 
 (define (%write-walk-rec obj port tab)

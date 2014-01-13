@@ -152,7 +152,7 @@ static ScmPort *make_port(ScmClass *klass, int dir, int type)
     (void)SCM_INTERNAL_FASTLOCK_INIT(port->lock);
     port->lockOwner = NULL;
     port->lockCount = 0;
-    port->data = SCM_FALSE;
+    port->recursiveContext = SCM_FALSE;
     port->attrs = SCM_NIL;
     port->line = 1;
 
@@ -1331,7 +1331,7 @@ ScmObj Scm_MakeWriterPort(ScmPort *wrapped, ScmObj context)
     p->src.vt.data = wrapped;
 
     p->name = wrapped->name;
-    p->data = context;
+    p->recursiveContext = context;
     /* TODO: line and bytes? */
     return SCM_OBJ(p);
 }

@@ -40,7 +40,7 @@
 
 #include <ctype.h>
 
-static void write_walk(ScmObj obj, ScmPort *port, ScmWriteContext *ctx);
+static void write_walk(ScmObj obj, ScmPort *port);
 static void write_ss(ScmObj obj, ScmPort *port, ScmWriteContext *ctx);
 static void write_ss_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx);
 static void write_object(ScmObj obj, ScmPort *out, ScmWriteContext *ctx);
@@ -106,9 +106,6 @@ SCM_DEFINE_GENERIC(Scm_GenericWriteObject, write_object_fallback, NULL);
 
 /* Two bitmask used internally to indicate extra write mode */
 #define WRITE_LIMITED   0x10    /* we're limiting the length of output. */
-#define WRITE_CIRCULAR  0x20    /* circular-safe write.  info->table
-                                   is set up to look up for circular
-                                   objects. */
 
 /* VM-default case mode */
 #define DEFAULT_CASE \
@@ -141,7 +138,6 @@ static void write_context_init(ScmWriteContext *ctx, int mode, int flags, int li
     ctx->flags = flags;
     ctx->limit = limit;
     if (limit > 0) ctx->flags |= WRITE_LIMITED;
-    ctx->table = NULL;
 }
 
 ScmWriteContext *Scm_MakeWriteContext(ScmWriteContext *proto)
@@ -174,23 +170,15 @@ SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_WriteContextClass, NULL);
  */
 void Scm_Write(ScmObj obj, ScmObj p, int mode)
 {
-    if (!SCM_OPORTP(p)) {
-        Scm_Error("output port required, but got %S", p);
-    }
+    if (!SCM_OPORTP(p)) Scm_Error("output port required, but got %S", p);
+
     ScmPort *port = SCM_PORT(p);
     ScmWriteContext *ctx = Scm_MakeWriteContext(NULL);
     write_context_init(ctx, mode, 0, 0);
 
-    /* if this is a "walk" pass of write/ss, dispatch to the walker */
-    if (port->flags & SCM_PORT_WALKING) {
-        SCM_ASSERT(SCM_PAIRP(port->data)&&SCM_HASH_TABLE_P(SCM_CDR(port->data)));
-        write_walk(obj, port, ctx);
-        return;
-    }
-    /* if this is a "output" pass of write/ss, call the recursive routine */
-    if (port->flags & SCM_PORT_WRITESS) {
-        SCM_ASSERT(SCM_PAIRP(port->data)&&SCM_HASH_TABLE_P(SCM_CDR(port->data)));
-        write_ss_rec(obj, port, ctx);
+    if (PORT_RECURSIVE_P(port)) {
+        if (PORT_WALKER_P(port)) write_walk(obj, port);
+        else                     write_ss_rec(obj, port, ctx);
         return;
     }
 
@@ -214,25 +202,38 @@ void Scm_Write(ScmObj obj, ScmObj p, int mode)
  *  Current implementation is sloppy, potentially wasting time to write
  *  objects which will be just discarded.
  */
-int Scm_WriteLimited(ScmObj obj, ScmObj port, int mode, int width)
+int Scm_WriteLimited(ScmObj obj, ScmObj p, int mode, int width)
 {
-    if (!SCM_OPORTP(port)) {
-        Scm_Error("output port required, but got %S", port);
+    if (!SCM_OPORTP(p)) {
+        Scm_Error("output port required, but got %S", p);
     }
-    ScmObj out = Scm_MakeOutputStringPort(TRUE);
-    SCM_PORT(out)->data = SCM_PORT(port)->data;
+
+    ScmPort *port = SCM_PORT(p);
     ScmWriteContext *ctx = Scm_MakeWriteContext(NULL);
     write_context_init(ctx, mode, 0, width);
 
-    /* the walk pass does not produce any output, so we return immediately. */
-    if (SCM_PORT(port)->flags & SCM_PORT_WALKING) {
-        SCM_ASSERT(SCM_PAIRP(SCM_PORT(port)->data)&&SCM_HASH_TABLE_P(SCM_CDR(SCM_PORT(port)->data)));
-        write_walk(obj, SCM_PORT(port), ctx);
+    /* The walk pass does not produce any output, so we don't bother to
+       create an intermediate string port. */
+    if (PORT_WALKER_P(SCM_PORT(port))) {
+        SCM_ASSERT(PORT_RECURSIVE_P(SCM_PORT(port)));
+        write_walk(obj, SCM_PORT(port));
         return 0;               /* doesn't really matter */
     }
+
+    ScmObj out = Scm_MakeOutputStringPort(TRUE);
+    SCM_PORT(out)->recursiveContext = SCM_PORT(port)->recursiveContext;
+
     /* we don't need to lock out, for it is private. */
-    int sharedp = SCM_WRITE_MODE(ctx) == SCM_WRITE_SHARED;
-    format_write(obj, SCM_PORT(out), ctx, sharedp);
+    /* This part is a bit confusing - we only need to call write_ss
+       if we're at the toplevel call.  */
+    if (PORT_RECURSIVE_P(SCM_PORT(port))) {
+        write_ss_rec(obj, SCM_PORT(out), ctx);
+    } else if (WRITER_NEED_2PASS(ctx)) {
+        write_ss(obj, SCM_PORT(out), ctx);
+    } else {
+        write_ss_rec(obj, SCM_PORT(out), ctx);
+    }
+    
     ScmString *str = SCM_STRING(Scm_GetOutputString(SCM_PORT(out), 0));
     int nc = SCM_STRING_BODY_LENGTH(SCM_STRING_BODY(str));
     if (nc > width) {
@@ -245,48 +246,14 @@ int Scm_WriteLimited(ScmObj obj, ScmObj port, int mode, int width)
     }
 }
 
-/*
- * Scm_WriteCircular - circular-safe writer
- */
-
+/* OBSOLETED: This is redundant.  Will be gone in 1.0 release. */
 int Scm_WriteCircular(ScmObj obj, ScmObj port, int mode, int width)
 {
-    if (!SCM_OPORTP(port)) {
-        Scm_Error("output port required, but got %S", port);
-    }
-    ScmWriteContext *ctx = Scm_MakeWriteContext(NULL);
-    write_context_init(ctx, mode, WRITE_CIRCULAR, width);
-    ctx->table = SCM_HASH_TABLE(Scm_MakeHashTableSimple(SCM_HASH_EQ, 8));
-
     if (width <= 0) {
-        ScmVM *vm = Scm_VM();
-        PORT_LOCK(SCM_PORT(port), vm);
-        PORT_SAFE_CALL(SCM_PORT(port),
-                       format_write(obj, SCM_PORT(port), ctx, TRUE));
-        PORT_UNLOCK(SCM_PORT(port));
+        Scm_Write(obj, port, mode);
         return 0;
-    }
-
-    if (SCM_PORT(port)->flags & SCM_PORT_WALKING) {
-        SCM_ASSERT(SCM_PAIRP(SCM_PORT(port)->data)&&SCM_HASH_TABLE_P(SCM_CDR(SCM_PORT(port)->data)));
-        write_walk(obj, SCM_PORT(port), ctx);
-        return 0;               /* doesn't really matter */
-    }
-
-    ScmObj out = Scm_MakeOutputStringPort(TRUE);
-    SCM_PORT(out)->data = SCM_PORT(port)->data;
-
-    /* no need to lock out, for it is private */
-    format_write(obj, SCM_PORT(out), ctx, TRUE);
-    ScmString *str = SCM_STRING(Scm_GetOutputString(SCM_PORT(out),0));
-    int nc = SCM_STRING_BODY_LENGTH(SCM_STRING_BODY(str));
-    if (nc > width) {
-        ScmObj sub = Scm_Substring(str, 0, width, FALSE);
-        SCM_PUTS(sub, port);    /* this locks port */
-        return -1;
     } else {
-        SCM_PUTS(str, port);    /* this locks port */
-        return nc;
+        Scm_WriteLimited(obj, port, mode, width);
     }
 }
 
@@ -481,16 +448,16 @@ static ScmPort *make_walker_port(void)
     ScmPort *port = SCM_PORT(Scm_MakeVirtualPort(
         SCM_CLASS_PORT, SCM_PORT_OUTPUT, &walker_port_vtable));
     ScmObj ht = Scm_MakeHashTableSimple(SCM_HASH_EQ, 0);
-    port->data = Scm_Cons(SCM_MAKE_INT(0), ht);
+    port->recursiveContext = Scm_Cons(SCM_MAKE_INT(0), ht);
     port->flags = SCM_PORT_WALKING;
     return port;
 }
 
 /* pass 1 */
-static void write_walk(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
+static void write_walk(ScmObj obj, ScmPort *port)
 {
     static ScmObj proc = SCM_UNDEFINED;
-    ScmHashTable *ht = SCM_HASH_TABLE(SCM_CDR(port->data));
+    ScmHashTable *ht = SCM_HASH_TABLE(SCM_CDR(port->recursiveContext));
     SCM_BIND_PROC(proc, "%write-walk-rec", Scm_GaucheInternalModule());
     Scm_ApplyRec3(proc, obj, SCM_OBJ(port), SCM_OBJ(ht));
 }
@@ -525,8 +492,8 @@ static void write_ss_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
     } while (0)
 
 
-    if (SCM_PAIRP(port->data) && SCM_HASH_TABLE_P(SCM_CDR(port->data))) {
-        ht = SCM_HASH_TABLE(SCM_CDR(port->data));
+    if (SCM_PAIRP(port->recursiveContext) && SCM_HASH_TABLE_P(SCM_CDR(port->recursiveContext))) {
+        ht = SCM_HASH_TABLE(SCM_CDR(port->recursiveContext));
     }
 
     for (;;) {
@@ -558,10 +525,10 @@ static void write_ss_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
                     goto next;
                 } else {
                     /* This object will be seen again. Put a reference tag. */
-                    int count = SCM_INT_VALUE(SCM_CAR(port->data));
+                    int count = SCM_INT_VALUE(SCM_CAR(port->recursiveContext));
                     snprintf(numbuf, 50, "#%d=", count);
                     Scm_HashTableSet(ht, obj, SCM_MAKE_INT(count), 0);
-                    SCM_SET_CAR(port->data, SCM_MAKE_INT(count+1));
+                    SCM_SET_CAR(port->recursiveContext, SCM_MAKE_INT(count+1));
                     Scm_PutzUnsafe(numbuf, -1, port);
                 }
             }
@@ -667,15 +634,15 @@ static void write_ss(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
     ScmPort *walker_port = make_walker_port();
 
     /* pass 1 */
-    write_walk(obj, walker_port, ctx);
+    write_walk(obj, walker_port);
     Scm_ClosePort(walker_port);
 
     /* pass 2 */
     /* TODO: we need to rewind port mode */
-    port->data = walker_port->data;
+    port->recursiveContext = walker_port->recursiveContext;
     port->flags |= SCM_PORT_WRITESS;
     write_ss_rec(obj, port, ctx);
-    port->data = SCM_FALSE;
+    port->recursiveContext = SCM_FALSE;
     port->flags &= ~SCM_PORT_WRITESS;
 }
 
@@ -701,13 +668,13 @@ static void write_ss(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 static void format_write(ScmObj obj, ScmPort *port, ScmWriteContext *ctx,
                          int sharedp)
 {
-    if (port->flags & SCM_PORT_WALKING) {
-        SCM_ASSERT(SCM_PAIRP(port->data)&&SCM_HASH_TABLE_P(SCM_CDR(port->data)));
-        write_walk(obj, port, ctx);
+    if (PORT_WALKER_P(port)) {
+        SCM_ASSERT(SCM_PAIRP(port->recursiveContext)&&SCM_HASH_TABLE_P(SCM_CDR(port->recursiveContext)));
+        write_walk(obj, port);
         return;
     }
     if (port->flags & SCM_PORT_WRITESS) {
-        SCM_ASSERT(SCM_PAIRP(port->data)&&SCM_HASH_TABLE_P(SCM_CDR(port->data)));
+        SCM_ASSERT(SCM_PAIRP(port->recursiveContext)&&SCM_HASH_TABLE_P(SCM_CDR(port->recursiveContext)));
         write_ss_rec(obj, port, ctx);
         return;
     }
@@ -1095,6 +1062,12 @@ void Scm_Format(ScmPort *out, ScmString *fmt, ScmObj args, int sharedp)
  *        %C                  - Take ScmChar argument and outputs it.
  *
  *  Both functions return a number of characters written.
+ *
+ *  A pound flag '#' for the S directive causes WRITE_CIRCULAR output.
+ *
+ *  NB: %A is taken by C99 for hexadecimal output of double numbers.
+ *  We'll introduce a flag for S directive to use DISPLAY mode, and will
+ *  move away from %A in future.
  */
 
 struct vprintf_ctx {
@@ -1110,8 +1083,99 @@ struct vprintf_ctx {
  * va_list type of argument in a closure packet easily.
  */
 
-static void vprintf_proc(ScmPort *out, const char *fmt, ScmObj args,
-                         int sharedp)
+/* Pass 1.  Pop vararg and make a list of arguments.
+ * NB: If we're "walking" pass, and the argument is a Lisp object,
+ * we recurse to it in this pass.
+ */
+static ScmObj vprintf_pass1(ScmPort *out, const char *fmt, va_list ap)
+{
+    ScmObj h = SCM_NIL, t = SCM_NIL;
+    const char *fmtp = fmt;
+    int c, longp;
+
+    while ((c = *fmtp++) != 0) {
+        if (c != '%') continue;
+        longp = FALSE;
+        while ((c = *fmtp++) != 0) {
+            switch (c) {
+            case 'd':; case 'i':; case 'c':
+                if (longp) {
+                    signed long val = va_arg(ap, signed long);
+                    SCM_APPEND1(h, t, Scm_MakeInteger(val));
+                } else {
+                    signed int val = va_arg(ap, signed int);
+                    SCM_APPEND1(h, t, Scm_MakeInteger(val));
+                }
+                break;
+            case 'o':; case 'u':; case 'x':; case 'X':
+                if (longp) {
+                    unsigned long val = va_arg(ap, unsigned long);
+                    SCM_APPEND1(h, t, Scm_MakeIntegerU(val));
+                } else {
+                    unsigned int val = va_arg(ap, unsigned int);
+                    SCM_APPEND1(h, t, Scm_MakeIntegerU(val));
+                }
+                break;
+            case 'e':; case 'E':; case 'f':; case 'g':; case 'G':
+                {
+                    double val = va_arg(ap, double);
+                    SCM_APPEND1(h, t, Scm_MakeFlonum(val));
+                    break;
+                }
+            case 's':;
+                {
+                    char *val = va_arg(ap, char *);
+                    /* for safety */
+                    if (val != NULL) SCM_APPEND1(h, t, SCM_MAKE_STR(val));
+                    else SCM_APPEND1(h, t, SCM_MAKE_STR("(null)"));
+                    break;
+                }
+            case '%':;
+                {
+                    break;
+                }
+            case 'p':
+                {
+                    void *val = va_arg(ap, void *);
+                    SCM_APPEND1(h, t, Scm_MakeIntegerU((u_long)(intptr_t)val));
+                    break;
+                }
+            case 'S':; case 'A':
+                {
+                    ScmObj o = va_arg(ap, ScmObj);
+                    SCM_APPEND1(h, t, o);
+                    if (PORT_WALKER_P(out)) write_walk(o, out);
+                    break;
+                }
+            case 'C':
+                {
+                    int c = va_arg(ap, int);
+                    SCM_APPEND1(h, t, Scm_MakeInteger(c));
+                    break;
+                }
+            case '*':
+                {
+                    int c = va_arg(ap, int);
+                    SCM_APPEND1(h, t, Scm_MakeInteger(c));
+                    continue;
+                }
+            case 'l':
+                longp = TRUE;
+                continue;
+            default:
+                continue;
+            }
+            break;
+        }
+        if (c == 0) {
+            Scm_Error("incomplete %%-directive in format string: %s", fmt);
+        }
+    }
+    return h;
+}
+
+/* Pass 2. */
+static void vprintf_pass2(ScmPort *out, const char *fmt, ScmObj args)
 {
     const char *fmtp = fmt;
     ScmDString argbuf;
@@ -1211,36 +1275,26 @@ static void vprintf_proc(ScmPort *out, const char *fmt, ScmObj args,
                 }
             case 'S':; case 'A':
                 {
-                    ScmWriteContext wctx;
-
                     SCM_ASSERT(SCM_PAIRP(args));
                     ScmObj val = SCM_CAR(args);
                     args = SCM_CDR(args);
 
-                    int mode = (c == 'A')? SCM_WRITE_DISPLAY : SCM_WRITE_WRITE;
-                    wctx.mode = mode | DEFAULT_CASE;
-                    wctx.flags = 0;
-
-                    if (pound_appeared) {
-                        int n = Scm_WriteCircular(val, SCM_OBJ(out), mode, width);
-                        if (n < 0 && prec > 0) {
-                            Scm_PutzUnsafe(" ...", -1, out);
-                        }
-                        if (n > 0) {
-                            for (; n < prec; n++) Scm_PutcUnsafe(' ', out);
-                        }
-                    } else if (width == 0) {
-                        format_write(val, out, &wctx, sharedp);
-                    } else if (dot_appeared) {
-                        int n = Scm_WriteLimited(val, SCM_OBJ(out), mode, width);
-                        if (n < 0 && prec > 0) {
-                            Scm_PutzUnsafe(" ...", -1, out);
-                        }
-                        if (n > 0) {
-                            for (; n < prec; n++) Scm_PutcUnsafe(' ', out);
-                        }
+                    int mode = (pound_appeared
+                                ? SCM_WRITE_CIRCULAR
+                                : ((c == 'A')
+                                   ? SCM_WRITE_DISPLAY
+                                   : SCM_WRITE_WRITE));
+                    int n = 0;
+                    if (width <= 0) {
+                        Scm_Write(val, SCM_OBJ(out), mode);
                     } else {
-                        format_write(val, out, &wctx, sharedp);
+                        Scm_WriteLimited(val, SCM_OBJ(out), mode, width);
+                    }
+                    if (n < 0 && prec > 0) {
+                        Scm_PutzUnsafe(" ...", -1, out);
+                    }
+                    if (n > 0) {
+                        for (; n < prec; n++) Scm_PutcUnsafe(' ', out);
                     }
                     break;
                 }
@@ -1289,101 +1343,18 @@ static void vprintf_proc(ScmPort *out, const char *fmt, ScmObj args,
     }
 }
 
+/* Public APIs */
+
 void Scm_Vprintf(ScmPort *out, const char *fmt, va_list ap, int sharedp)
 {
-    ScmObj h = SCM_NIL, t = SCM_NIL;
-    const char *fmtp = fmt;
-    int c, longp;
+    if (!SCM_OPORTP(out)) Scm_Error("output port required, but got %S", out);
 
-    if (!SCM_OPORTP(out)) {
-        Scm_Error("output port required, but got %S", out);
-    }
-    /*
-     * First pass : pop vararg and make a list of arguments.
-     */
-    while ((c = *fmtp++) != 0) {
-        if (c != '%') continue;
-        longp = FALSE;
-        while ((c = *fmtp++) != 0) {
-            switch (c) {
-            case 'd':; case 'i':; case 'c':
-                if (longp) {
-                    signed long val = va_arg(ap, signed long);
-                    SCM_APPEND1(h, t, Scm_MakeInteger(val));
-                } else {
-                    signed int val = va_arg(ap, signed int);
-                    SCM_APPEND1(h, t, Scm_MakeInteger(val));
-                }
-                break;
-            case 'o':; case 'u':; case 'x':; case 'X':
-                if (longp) {
-                    unsigned long val = va_arg(ap, unsigned long);
-                    SCM_APPEND1(h, t, Scm_MakeIntegerU(val));
-                } else {
-                    unsigned int val = va_arg(ap, unsigned int);
-                    SCM_APPEND1(h, t, Scm_MakeIntegerU(val));
-                }
-                break;
-            case 'e':; case 'E':; case 'f':; case 'g':; case 'G':
-                {
-                    double val = va_arg(ap, double);
-                    SCM_APPEND1(h, t, Scm_MakeFlonum(val));
-                    break;
-                }
-            case 's':;
-                {
-                    char *val = va_arg(ap, char *);
-                    /* for safety */
-                    if (val != NULL) SCM_APPEND1(h, t, SCM_MAKE_STR(val));
-                    else SCM_APPEND1(h, t, SCM_MAKE_STR("(null)"));
-                    break;
-                }
-            case '%':;
-                {
-                    break;
-                }
-            case 'p':
-                {
-                    void *val = va_arg(ap, void *);
-                    SCM_APPEND1(h, t, Scm_MakeIntegerU((u_long)(intptr_t)val));
-                    break;
-                }
-            case 'S':; case 'A':
-                {
-                    ScmObj o = va_arg(ap, ScmObj);
-                    SCM_APPEND1(h, t, o);
-                    break;
-                }
-            case 'C':
-                {
-                    int c = va_arg(ap, int);
-                    SCM_APPEND1(h, t, Scm_MakeInteger(c));
-                    break;
-                }
-            case '*':
-                {
-                    int c = va_arg(ap, int);
-                    SCM_APPEND1(h, t, Scm_MakeInteger(c));
-                    continue;
-                }
-            case 'l':
-                longp = TRUE;
-                continue;
-            default:
-                continue;
-            }
-            break;
-        }
-        if (c == 0) {
-            Scm_Error("incomplete %%-directive in format string: %s", fmt);
-        }
-    }
-    /*
-     * Second pass is called while locking the port.
-     */
+    /* TOOD: handle sharedp */
+    ScmObj args = vprintf_pass1(out, fmt, ap);
+
     ScmVM *vm = Scm_VM();
     PORT_LOCK(out, vm);
-    PORT_SAFE_CALL(out, vprintf_proc(out, fmt, h, sharedp));
+    PORT_SAFE_CALL(out, vprintf_pass2(out, fmt, args));
     PORT_UNLOCK(out);
 }
 
