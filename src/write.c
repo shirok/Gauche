@@ -195,8 +195,6 @@ int Scm_WriteLimited(ScmObj obj, ScmObj p, int mode, int width)
     }
 
     ScmPort *port = SCM_PORT(p);
-    ScmWriteContext ctx;
-    write_context_init(&ctx, mode, 0, width);
 
     /* The walk pass does not produce any output, so we don't bother to
        create an intermediate string port. */
@@ -208,6 +206,8 @@ int Scm_WriteLimited(ScmObj obj, ScmObj p, int mode, int width)
 
     ScmObj out = Scm_MakeOutputStringPort(TRUE);
     SCM_PORT(out)->recursiveContext = SCM_PORT(port)->recursiveContext;
+    ScmWriteContext ctx;
+    write_context_init(&ctx, mode, 0, width);
 
     /* we don't need to lock out, for it is private. */
     /* This part is a bit confusing - we only need to call write_ss
@@ -239,7 +239,7 @@ int Scm_WriteCircular(ScmObj obj, ScmObj port, int mode, int width)
         Scm_Write(obj, port, mode);
         return 0;
     } else {
-        Scm_WriteLimited(obj, port, mode, width);
+        return Scm_WriteLimited(obj, port, mode, width);
     }
 }
 
@@ -1084,7 +1084,7 @@ static ScmObj vprintf_pass1(ScmPort *out, const char *fmt, va_list ap)
         longp = FALSE;
         while ((c = *fmtp++) != 0) {
             switch (c) {
-            case 'd':; case 'i':; case 'c':
+            case 'd': case 'i': case 'c':
                 if (longp) {
                     signed long val = va_arg(ap, signed long);
                     SCM_APPEND1(h, t, Scm_MakeInteger(val));
@@ -1093,7 +1093,7 @@ static ScmObj vprintf_pass1(ScmPort *out, const char *fmt, va_list ap)
                     SCM_APPEND1(h, t, Scm_MakeInteger(val));
                 }
                 break;
-            case 'o':; case 'u':; case 'x':; case 'X':
+            case 'o': case 'u': case 'x': case 'X':
                 if (longp) {
                     unsigned long val = va_arg(ap, unsigned long);
                     SCM_APPEND1(h, t, Scm_MakeIntegerU(val));
@@ -1102,13 +1102,13 @@ static ScmObj vprintf_pass1(ScmPort *out, const char *fmt, va_list ap)
                     SCM_APPEND1(h, t, Scm_MakeIntegerU(val));
                 }
                 break;
-            case 'e':; case 'E':; case 'f':; case 'g':; case 'G':
+            case 'e': case 'E': case 'f': case 'g': case 'G':
                 {
                     double val = va_arg(ap, double);
                     SCM_APPEND1(h, t, Scm_MakeFlonum(val));
                     break;
                 }
-            case 's':;
+            case 's':
                 {
                     char *val = va_arg(ap, char *);
                     /* for safety */
@@ -1116,17 +1116,14 @@ static ScmObj vprintf_pass1(ScmPort *out, const char *fmt, va_list ap)
                     else SCM_APPEND1(h, t, SCM_MAKE_STR("(null)"));
                     break;
                 }
-            case '%':;
-                {
-                    break;
-                }
+            case '%': break;
             case 'p':
                 {
                     void *val = va_arg(ap, void *);
                     SCM_APPEND1(h, t, Scm_MakeIntegerU((u_long)(intptr_t)val));
                     break;
                 }
-            case 'S':; case 'A':
+            case 'S': case 'A':
                 {
                     ScmObj o = va_arg(ap, ScmObj);
                     SCM_APPEND1(h, t, o);
@@ -1184,7 +1181,7 @@ static void vprintf_pass2(ScmPort *out, const char *fmt, ScmObj args)
             case 'l':
                 SCM_DSTRING_PUTB(&argbuf, c);
                 continue;
-            case 'd':; case 'i':; case 'c':
+            case 'd': case 'i': case 'c':
                 {
                     SCM_ASSERT(SCM_PAIRP(args));
                     ScmObj val = SCM_CAR(args);
@@ -1197,7 +1194,7 @@ static void vprintf_pass2(ScmPort *out, const char *fmt, ScmObj args)
                     Scm_PutzUnsafe(buf, -1, out);
                     break;
                 }
-            case 'o':; case 'u':; case 'x':; case 'X':
+            case 'o': case 'u': case 'x': case 'X':
                 {
                     SCM_ASSERT(SCM_PAIRP(args));
                     ScmObj val = SCM_CAR(args);
@@ -1210,7 +1207,7 @@ static void vprintf_pass2(ScmPort *out, const char *fmt, ScmObj args)
                     Scm_PutzUnsafe(buf, -1, out);
                     break;
                 }
-            case 'e':; case 'E':; case 'f':; case 'g':; case 'G':
+            case 'e': case 'E': case 'f': case 'g': case 'G':
                 {
                     SCM_ASSERT(SCM_PAIRP(args));
                     ScmObj val = SCM_CAR(args);
@@ -1223,7 +1220,7 @@ static void vprintf_pass2(ScmPort *out, const char *fmt, ScmObj args)
                     Scm_PutzUnsafe(buf, -1, out);
                     break;
                 }
-            case 's':;
+            case 's':
                 {
                     SCM_ASSERT(SCM_PAIRP(args));
                     ScmObj val = SCM_CAR(args);
@@ -1241,7 +1238,7 @@ static void vprintf_pass2(ScmPort *out, const char *fmt, ScmObj args)
                     }
                     break;
                 }
-            case '%':;
+            case '%':
                 {
                     Scm_PutcUnsafe('%', out);
                     break;
@@ -1259,7 +1256,7 @@ static void vprintf_pass2(ScmPort *out, const char *fmt, ScmObj args)
                     Scm_PutzUnsafe(buf, -1, out);
                     break;
                 }
-            case 'S':; case 'A':
+            case 'S': case 'A':
                 {
                     SCM_ASSERT(SCM_PAIRP(args));
                     ScmObj val = SCM_CAR(args);
@@ -1293,8 +1290,8 @@ static void vprintf_pass2(ScmPort *out, const char *fmt, ScmObj args)
                     Scm_PutcUnsafe(Scm_GetInteger(val), out);
                     break;
                 }
-            case '0':; case '1':; case '2':; case '3':; case '4':;
-            case '5':; case '6':; case '7':; case '8':; case '9':
+            case '0': case '1': case '2': case '3': case '4':
+            case '5': case '6': case '7': case '8': case '9':
                 if (dot_appeared) {
                     prec = prec*10 + (c - '0');
                 } else {
