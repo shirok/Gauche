@@ -359,7 +359,7 @@ static ScmObj id_memq(ScmObj name, ScmObj list)
     }
     ScmObj lp;
     SCM_FOR_EACH(lp, list) {
-        if (SCM_OBJ(SCM_IDENTIFIER(SCM_CAR(lp))->name) == name)
+        if (SCM_OBJ(SCM_IDENTIFIER(SCM_CAR(lp))->name) == n)
             return SCM_CAR(lp);
     }
     return SCM_FALSE;
