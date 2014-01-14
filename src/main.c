@@ -367,9 +367,9 @@ void error_exit(ScmObj c)
 }
 
 /* Returns FALSE if the process doesn't have a console. */
+#if defined(GAUCHE_WINDOWS)
 static int init_console(void)
 {
-#if defined(GAUCHE_WINDOWS)
 #  if defined(GAUCHE_WINDOWS_NOCONSOLE)
     char buf[100];
     int in_fd, out_fd;
@@ -393,11 +393,9 @@ static int init_console(void)
     _setmode(_fileno(stdout), _O_BINARY);
     _setmode(_fileno(stderr), _O_BINARY);
     return TRUE;
-#  endif /*!defined(GAUCHE_WINDOS_NOCONSOLE)*/
-#else  /*!defined(GAUCHE_WINDOWS)*/
-    return TRUE;
-#endif /*!defined(GAUCHE_WINDOWS)*/
+#  endif /*!defined(GAUCHE_WINDOWS_NOCONSOLE)*/
 }
+#endif /*defined(GAUCHE_WINDOWS)*/
 
 /* Process command-line options that needs to run after Scheme runtime
    is initialized.  CMD_ARGS is an list of (OPTION-CHAR . OPTION-ARG) */
@@ -554,7 +552,9 @@ int main(int argc, char **argv)
     int exit_code = 0;
 
     /* Initial setup. */
+#if defined(GAUCHE_WINDOWS)
     int has_console = init_console();
+#endif /*defined(GAUCHE_WINDOWS)*/
     GC_INIT();
     Scm_Init(GAUCHE_SIGNATURE);
     sig_setup();
@@ -575,7 +575,6 @@ int main(int argc, char **argv)
     /* prepare *program-name* and *argv* */
     if (argind < argc) {
         /* We have a script file specified. */
-        ScmObj at = SCM_NIL;
         struct stat statbuf;
 
         /* if the script name is given in relative pathname, see if

@@ -212,8 +212,9 @@
 (define-cproc gloc-ref (gloc::<gloc> :optional fallback)
   (let* ([v::ScmObj (SCM_GLOC_GET gloc)])
     (if (SCM_UNBOUNDP v)
-      (if (SCM_UNBOUNDP fallback)
-        (Scm_Error "gloc %S doesn't have a value" (SCM_OBJ gloc))
+      (begin
+        (when (SCM_UNBOUNDP fallback)
+          (Scm_Error "gloc %S doesn't have a value" (SCM_OBJ gloc)))
         (result fallback))
       (result v))))
 (define-cproc gloc-set! (gloc::<gloc> value) SCM_GLOC_SET)

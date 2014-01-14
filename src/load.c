@@ -586,7 +586,7 @@ struct dlobj_rec {
     ScmInternalCond  cv;
 };
 
-/* for debug */
+#if 0 /* for debug */
 static void dump_dlobj(dlobj *dlo)
 {
     printf("{\n  dlobj \"%s\"%s\n",
@@ -607,6 +607,7 @@ static void dump_dlobjs(void)
         dump_dlobj(dlo);
     }
 }
+#endif
 
 /* NB: we rely on dlcompat library for dlopen instead of using dl_darwin.c
    for now; Boehm GC requires dlopen when compiled with pthread, so there's

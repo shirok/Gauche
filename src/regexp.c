@@ -2161,7 +2161,7 @@ static ScmObj rc_setup_context(regcomp_ctx *ctx, ScmObj ast)
 
 static ScmObj rc_setup_context_seq(regcomp_ctx *ctx, ScmObj seq)
 {
-    ScmObj sp, sp2, obj, head = SCM_NIL, tail = SCM_NIL;
+    ScmObj sp, sp2, obj = SCM_NIL, head = SCM_NIL, tail = SCM_NIL;
     SCM_FOR_EACH(sp, seq) {
         obj = rc_setup_context(ctx, SCM_CAR(sp));
         if (!SCM_EQ(obj, SCM_CAR(sp))) break;

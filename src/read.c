@@ -1233,7 +1233,6 @@ static ScmObj read_keyword(ScmPort *port, ScmReadContext *ctx)
 static ScmObj read_escaped_symbol(ScmPort *port, ScmChar delim, int interned,
                                   ScmReadContext *ctx)
 {
-    char buf[9];
     ScmDString ds;
     Scm_DStringInit(&ds);
 

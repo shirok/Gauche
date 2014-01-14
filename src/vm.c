@@ -2612,6 +2612,7 @@ struct EnvTab {
     int numEntries;
 };
 
+#if 0 /* for now */
 static ScmObj env2vec(ScmEnvFrame *env, struct EnvTab *etab)
 {
     if (!env) return SCM_FALSE;
@@ -2633,6 +2634,7 @@ static ScmObj env2vec(ScmEnvFrame *env, struct EnvTab *etab)
     }
     return vec;
 }
+#endif
 
 ScmObj Scm_VMGetStack(ScmVM *vm)
 {

@@ -27,11 +27,11 @@
                                            attr)))
  (define-cproc fptr-value (fptr)
    (let* ([k::ScmClass* (Scm_ClassOf fptr)])
-     (if (or (== k fptr_simple)
+     (unless (or (== k fptr_simple)
              (== k fptr_unique)
              (== k fptr_maybe))
-       (result (SCM_OBJ_SAFE (SCM_FOREIGN_POINTER_REF ScmObj fptr)))
-       (Scm_Error "fptr required, but got: %S" fptr))))
+       (Scm_Error "fptr required, but got: %S" fptr))
+     (result (SCM_OBJ_SAFE (SCM_FOREIGN_POINTER_REF ScmObj fptr)))))
 
  (initcode
   (set! fptr_simple (Scm_MakeForeignPointerClass

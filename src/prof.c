@@ -298,10 +298,6 @@ ScmObj Scm_ProfilerRawResult(void)
         Scm_ProfilerReset();
         Scm_Error("profiler: seek failed in retrieving sample data");
     }
-    ScmObj sampler_port =
-        Scm_MakePortWithFd(SCM_FALSE, SCM_PORT_INPUT, vm->prof->samplerFd,
-                           SCM_PORT_BUFFER_FULL, FALSE);
-
     for (;;) {
         ssize_t r = read(vm->prof->samplerFd, vm->prof->samples,
                          sizeof(ScmProfSample[1]) * SCM_PROF_SAMPLES_IN_BUFFER);

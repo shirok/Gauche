@@ -59,7 +59,7 @@ enum ScmReadContextFlags {
 #define RCTX_LEXICAL_MODE_SET(ctx, mode)                                \
     (((ctx)->flags)                                                     \
      = (((ctx)->flags & ~RCTX_LEXICAL_MODE_MASK)                        \
-        | ((mode)<<RCTX_LEXICAL_MODE_SHIFT)&RCTX_LEXICAL_MODE_MASK))
+        | (((mode)<<RCTX_LEXICAL_MODE_SHIFT)&RCTX_LEXICAL_MODE_MASK)))
 
 /* Internal */
 SCM_EXTERN void   Scm__InstallReadUvectorHook(ScmObj (*)(ScmPort*, const char*, ScmReadContext*));

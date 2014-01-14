@@ -572,10 +572,9 @@ void Scm_SetPortBufferSigpipeSensitive(ScmPort *port, int sensitive)
 static void bufport_flush(ScmPort *p, int cnt, int forcep)
 {
     int cursiz = SCM_PORT_BUFFER_AVAIL(p);
-    int force = FALSE;
 
     if (cursiz == 0) return;
-    if (cnt <= 0)  { cnt = cursiz; force = TRUE; }
+    if (cnt <= 0)  { cnt = cursiz; }
     int nwrote = p->src.buf.flusher(p, cnt, forcep);
     if (nwrote < 0) {
         p->src.buf.current = p->src.buf.buffer; /* for safety */

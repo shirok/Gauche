@@ -1096,9 +1096,10 @@
            (chmod pathname #o600)))
     (SCM_SYSCALL r (unlink pathname))
     (if (< r 0)
-      (if (== errno ENOENT)
-        (result '#f)
-        (Scm_SysError "unlink failed on %s" pathname))
+      (begin
+        (unless (== errno ENOENT)
+          (Scm_SysError "unlink failed on %s" pathname))
+        (result '#f))
       (result '#t))))
 
 (define-cproc sys-isatty (port_or_fd) ::<boolean>

@@ -550,11 +550,9 @@ ScmObj Scm_ImportModules(ScmModule *module, ScmObj list)
 /* <spec>  :: <name> | (rename <name> <exported-name>) */
 ScmObj Scm_ExportSymbols(ScmModule *module, ScmObj specs)
 {
-    ScmObj lp, badsym = SCM_FALSE;
+    ScmObj lp;
     ScmObj overwritten = SCM_NIL; /* list of (exported-name orig-internal-name
                                      new-internal-name). */
-    int error = FALSE;
-
     /* Check input first */
     SCM_FOR_EACH(lp, specs) {
         ScmObj spec = SCM_CAR(lp);
@@ -650,7 +648,7 @@ ScmObj Scm_ExportAll(ScmModule *module)
             ee = Scm_HashCoreSearch(SCM_HASH_TABLE_CORE(module->external),
                                     e->key, SCM_DICT_CREATE);
             if (!ee->value) {
-                SCM_DICT_SET_VALUE(ee, SCM_DICT_VALUE(e));
+                (void)SCM_DICT_SET_VALUE(ee, SCM_DICT_VALUE(e));
             }
         }
     }

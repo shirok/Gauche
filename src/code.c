@@ -942,7 +942,6 @@ int Scm_VMInsnNameToCode(ScmObj name)
         Scm_Error("vm-insn-name->code: requires a symbol or a string, but got %S", name);
     }
     const char *n = Scm_GetStringConst(SCM_STRING(name));
-    struct insn_info *info = insn_table;
     for (int i=0; i<SCM_VM_NUM_INSNS; i++) {
         if (strcmp(insn_table[i].name, n) == 0) {
             return i;
