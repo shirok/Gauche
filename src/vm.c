@@ -481,6 +481,7 @@ static void vm_unregister(ScmVM *vm)
         newcont->prev = CONT;                           \
         newcont->env = ENV;                             \
         newcont->size = (int)(SP - ARGP);               \
+        newcont->cpc = PC;                              \
         newcont->pc = next_pc;                          \
         newcont->base = BASE;                           \
         CONT = newcont;                                 \
@@ -2595,7 +2596,7 @@ ScmObj Scm_VMGetStackLite(ScmVM *vm)
     ScmObj info = Scm_VMGetSourceInfo(vm->base, vm->pc);
     if (!SCM_FALSEP(info)) SCM_APPEND1(stack, tail, info);
     while (c) {
-        info = Scm_VMGetSourceInfo(c->base, c->pc);
+        info = Scm_VMGetSourceInfo(c->base, c->cpc);
         if (!SCM_FALSEP(info)) SCM_APPEND1(stack, tail, info);
         c = c->prev;
     }

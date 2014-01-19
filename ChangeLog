@@ -1,3 +1,12 @@
+2014-01-19  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/vm.h (ScmContFrame): Added a slot to save current PC.
+	  This isn't needed for execution, but useful to get a sensible
+	  stack trace.
+	  In a sense, this info records "who created this continuation?".
+	  A concern is the impact on the performance, for we have one extra word
+	  to push for each continuation.  Let's see how it goes.
+
 2014-01-12  Shiro Kawai  <shiro@acm.org>
 
 	* src/write.c: Rewriting to clean up the control flow regarding recursive

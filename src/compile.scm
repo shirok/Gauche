@@ -4634,7 +4634,7 @@
                  (compiled-code-emit0! ccb POP-LOCAL-ENV))
                (imax dinit (+ dbody ENV_HEADER_SIZE nlocals))))]
           [else
-           (compiled-code-emit1o! ccb PRE-CALL nlocals merge-label)
+           (compiled-code-emit1oi! ccb PRE-CALL nlocals merge-label info)
            (let1 dinit (pass5/prepare-args inits lvars ccb renv ctx)
              (compiled-code-emit1i! ccb LOCAL-ENV nlocals info)
              (let1 dbody (pass5/rec body ccb (cons lvars renv) 'tail)
@@ -4656,7 +4656,7 @@
                  (compiled-code-emit0! ccb POP-LOCAL-ENV))
                (+ ENV_HEADER_SIZE nlocals (imax dinit dbody)))]
             [else
-             (compiled-code-emit1o! ccb PRE-CALL nlocals merge-label)
+             (compiled-code-emit1oi! ccb PRE-CALL nlocals merge-label info)
              (compiled-code-emit1oi! ccb LOCAL-ENV-CLOSURES nlocals
                                      closures info)
              (let* ([dinit (emit-letrec-inits others nlocals ccb
@@ -4870,7 +4870,7 @@
         (compiled-code-emit1i! ccb LOCAL-ENV-TAIL-CALL nargs ($*-src iform))
         (if (= nargs 0) 0 (imax dinit (+ nargs ENV_HEADER_SIZE))))
       (let1 merge-label (compiled-code-new-label ccb)
-        (compiled-code-emit1o! ccb PRE-CALL nargs merge-label)
+        (compiled-code-emit1oi! ccb PRE-CALL nargs merge-label ($*-src iform))
         (let1 dinit (pass5/prepare-args args #f ccb renv ctx)
           (pass5/rec ($call-proc iform) ccb renv 'normal/top)
           (compiled-code-emit1i! ccb LOCAL-ENV-CALL nargs ($*-src iform))
@@ -4894,7 +4894,7 @@
          [merge-label (compiled-code-new-label ccb)])
     ($call-renv-set! iform (reverse renv))
     (unless (tail-context? ctx)
-      (compiled-code-emit1o! ccb PRE-CALL nargs merge-label))
+      (compiled-code-emit1oi! ccb PRE-CALL nargs merge-label ($*-src iform)))
     (let1 dinit (if (> nargs 0)
                   (rlet1 d (pass5/prepare-args args #f ccb renv ctx)
                     (compiled-code-emit1i! ccb LOCAL-ENV nargs ($*-src iform)))
@@ -4929,7 +4929,7 @@
                                   ($*-src iform))
           (if (= nargs 0) 0 (imax dinit (+ nargs ENV_HEADER_SIZE))))
         (let1 merge-label (compiled-code-new-label ccb)
-          (compiled-code-emit1o! ccb PRE-CALL nargs merge-label)
+          (compiled-code-emit1oi! ccb PRE-CALL nargs merge-label ($*-src iform))
           (let1 dinit (pass5/prepare-args args #f ccb renv ctx)
             (compiled-code-emit1oi! ccb LOCAL-ENV-JUMP (length renv-diff)
                                     (pass5/ensure-label ccb label)
@@ -4951,7 +4951,7 @@
         (compiled-code-emit1i! ccb TAIL-CALL nargs ($*-src iform))
         (imax dinit (+ nargs dproc ENV_HEADER_SIZE)))
       (let1 merge-label (compiled-code-new-label ccb)
-        (compiled-code-emit1o! ccb PRE-CALL nargs merge-label)
+        (compiled-code-emit1oi! ccb PRE-CALL nargs merge-label ($*-src iform))
         (let* ([dproc (pass5/rec ($call-proc iform)
                                  ccb renv (normal-context ctx))]
                [dinit (pass5/prepare-args args #f ccb renv 'normal/top)])
@@ -4970,7 +4970,7 @@
         (compiled-code-emit1i! ccb TAIL-CALL nargs ($*-src iform))
         (imax dinit (+ nargs dproc ENV_HEADER_SIZE)))
       (let1 merge-label (compiled-code-new-label ccb)
-        (compiled-code-emit1o! ccb PRE-CALL nargs merge-label)
+        (compiled-code-emit1oi! ccb PRE-CALL nargs merge-label ($*-src iform))
         (let* ([dinit (pass5/prepare-args args #f ccb renv ctx)]
                [dproc (pass5/rec ($call-proc iform) ccb renv 'normal/top)])
           (compiled-code-emit1i! ccb CALL nargs ($*-src iform))
@@ -5041,7 +5041,7 @@
       (if (tail-context? ctx)
         (pass5/asm-generic ccb insn args info renv)
         (let1 merge-label (compiled-code-new-label ccb)
-          (compiled-code-emit0o! ccb PRE-CALL merge-label)
+          (compiled-code-emit0oi! ccb PRE-CALL merge-label info)
           (let1 d (pass5/asm-generic ccb insn args info renv)
             (compiled-code-set-label! ccb merge-label)
             (+ CONT_FRAME_SIZE d))))]

@@ -109,6 +109,7 @@ typedef struct ScmEnvFrameRec {
  *   +--------+
  *   |  base  |
  *   |   pc   |
+ *   |  cpc   |
  *   | size=N |
  *   |  env   |
  *   |..prev..|<--- ScmContFrame* cont
@@ -127,6 +128,7 @@ typedef struct ScmContFrameRec {
     struct ScmContFrameRec *prev; /* previous frame */
     ScmEnvFrame *env;             /* saved environment */
     int size;                     /* size of argument frame */
+    SCM_PCTYPE cpc;               /* current PC (for debugging info) */
     SCM_PCTYPE pc;                /* next PC */
     ScmCompiledCode *base;        /* base register value */
 } ScmContFrame;
