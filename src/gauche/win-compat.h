@@ -25,6 +25,7 @@
 #ifndef WINVER
 #define WINVER 0x0500           /* we support Windows 2000 or later */
 #endif /*WINVER*/
+#include <winsock2.h>           /* MinGW needs this before windows.h */
 #include <windows.h>
 #include <shlwapi.h>
 #include <utime.h>

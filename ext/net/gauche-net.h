@@ -94,7 +94,8 @@ const char *inet_ntop(int af, const void *src, char *dst, socklen_t size);
  * Sockaddr_storage
  */
 
-#if !defined(HAVE_STRUCT_SOCKADDR_STORAGE) && !defined(_MSC_VER)
+#if !defined(HAVE_STRUCT_SOCKADDR_STORAGE) && !defined(_MSC_VER) \
+    && !defined(_SS_MAXSIZE)
 /* Alternative implementation in case the system doesn't provide
    sockaddr_storage.  The code is based on the reference implementation
    provided in RFC3493.
