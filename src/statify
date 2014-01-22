@@ -13,6 +13,7 @@
 (use gauche.parameter)
 (use gauche.config)
 (use gauche.cgen)
+(use gauche.process)
 (use util.match)
 (use file.util)
 (use srfi-13)
@@ -59,10 +60,19 @@
               (file->string (build-path (libpath) libfile))))
           (p ","))
         (p "};")
-        
+
+        (cond-expand
+         [gauche.os.windows (generate-imp-stub "libgauche-0.9.a")]
+         [else])
+
         (p "int main(int argc, const char **argv)")
         (p "{")
         (p "  ScmObj s, p;")
+
+        (cond-expand
+         [gauche.os.windows (p "  populate_import_pointers();")]
+         [else])
+
         (p "  Scm_Init(GAUCHE_SIGNATURE);")
         (p "  Scm_InitPrelinked();")
         (do-ec (: f (index i) libfiles)
@@ -76,7 +86,14 @@
         (p "}")
         ))
     (close-output-port out)
+
+    (cond-expand
+     [gauche.os.windows (generate-deffile (path-swap-extension ifile "def")
+                                          "libgauche-0.9.a")]
+     [else])
+    
     (rlet1 cfile #`",|tmpfile|.c" (sys-rename tmpfile cfile))))
+
 
 (define (compile cfile ofile linklibs)
   (let* ([cc      (gauche-config "--cc")]
@@ -84,11 +101,47 @@
          [ldflags (gauche-config "-L")]
          [libs    (regexp-replace* (gauche-config "-l") #/-lgauche-\d+\.\d+/ "")]
          [links   (string-join linklibs " ")] ;; -lfoo ..
-         [cmd #`",cc ,cflags -o ,ofile ,ldflags ,cfile libgauche-0.9.a ,libs ,links"]
+         [deffile (cond-expand
+                   [gauche.os.windows
+                    ""(path-swap-extension ofile "def")]
+                   [else ""])]
+         [cmd #`",cc -g ,cflags -o ,ofile ,ldflags ,cfile libgauche-0.9.a ,deffile ,libs ,links"]
          )
     (print cmd)
     (sys-system cmd)))
 
+;; For MinGW
+(define (generate-imp-stub libgauche)
+  (define exptab (make-hash-table 'equal?))
+  (dolist [entry (process-output->string-list `("nm" ,libgauche))]
+    (rxmatch-case entry
+      [#/T _(Scm\w+)/ (_ sym) (set! (~ exptab sym) #t)]
+      [#/U __imp__(Scm\w+)/ (_ sym) (set! (~ exptab sym) #t)]))
+  (hash-table-for-each exptab (^[k v] (print "void *_imp__" k ";")))
+  (print "void populate_import_pointers() {")
+  (print "HMODULE m = GetModuleHandle(NULL);")
+  (print "if (m == NULL) { printf(\"Couldn't get module handle.  Aborting.\"); exit(1); }")
+  (hash-table-for-each
+   exptab
+   (^[k v]
+     (print "  _imp__" k " = (void*)GetProcAddress(m, \"" k "\");")
+     (print "  if (_imp__"k" == NULL) { printf(\"Couldn't get address for `"k"'(%d).  Aborting.\", GetLastError()); exit (1); }")))
+  (print "}")
+  )
+
+(define (generate-deffile deffile libgauche)
+  (define exptab (make-tree-map string=? string<?))
+  (dolist [entry (process-output->string-list `("nm" ,libgauche))]
+    (rxmatch-case entry
+      [#/T _(Scm\w+)/ (_ sym) (set! (~ exptab sym) #t)]))
+  (with-output-to-file deffile
+    (^[]
+      (print "LIBRARY " (path-sans-extension libgauche))
+      (print "EXPORTS")
+      (tree-map-for-each
+       exptab
+       (^[key val] (print "  " key)))
+      )))
 
 ;; Local variables:
 ;; mode: scheme
