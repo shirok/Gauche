@@ -186,7 +186,7 @@
       (let loop ([i 0])
         (let1 nread (read-block! buf inp i)
           (cond [(eof-object? nread)
-                 (errorf <cgi-error> "POST request ends prematurely. Expected content-length: ~a, but EOF encountered after reading ~a octets." len nread)]
+                 (errorf <cgi-error> "POST request ends prematurely.  Expected content-length: ~a, but read only ~a octets." len i)]
                 [(< (+ nread i) len) (loop (+ nread i))]
                 [else buf]))))))
 
