@@ -179,14 +179,16 @@
 ;; The port buffering may not be :full, so we should keep reading
 ;; until all data is retrieved.
 (define (read-complete-block len)
-  (let ([buf (make-u8vector len)]
-        [inp (current-input-port)])
-    (let loop ([i 0])
-      (let1 nread (read-block! buf inp i)
-        (cond [(eof-object? nread)
-               (errorf <cgi-error> "POST request ends prematurely")]
-              [(< (+ nread i) len) (loop (+ nread i))]
-              [else buf])))))
+  (if (zero? len)
+    '#u8()
+    (let ([buf (make-u8vector len)]
+          [inp (current-input-port)])
+      (let loop ([i 0])
+        (let1 nread (read-block! buf inp i)
+          (cond [(eof-object? nread)
+                 (errorf <cgi-error> "POST request ends prematurely. Expected content-length: ~a, but EOF encountered after reading ~a octets." len nread)]
+                [(< (+ nread i) len) (loop (+ nread i))]
+                [else buf]))))))
 
 ;;----------------------------------------------------------------
 ;; API: cgi-parse-parameters &keyword query-string merge-cookies

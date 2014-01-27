@@ -1,3 +1,8 @@
+2014-01-27  Shiro Kawai  <shiro@acm.org>
+
+	* lib/www/cgi.scm (read-complete-block): Fixed a bug in the case
+	  when content-length is zero.
+
 2014-01-19  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/vm.h (ScmContFrame): Added a slot to save current PC.
