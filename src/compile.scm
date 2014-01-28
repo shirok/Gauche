@@ -218,11 +218,14 @@
   (lvar-ref-count-set! lvar 0)
   (lvar-set-count-set! lvar 0))
 
+(define-inline (lvar-immutable? lvar)
+  (= (lvar-set-count lvar) 0))
+
 ;; Returns IForm if this lvar has initval and it never changes.  Only valid
 ;; after lvar reference counting is done (that is, after pass1, and after
 ;; each reset-lvars call.
 (define (lvar-const-value lvar)
-  (and (zero? (lvar-set-count lvar))
+  (and (lvar-immutable? lvar)
        (vector? (lvar-initval lvar))
        (lvar-initval lvar)))
 
@@ -1157,7 +1160,7 @@
 (define (transparent?/rec iform labels)
   (case/unquote
    (iform-tag iform)
-   [($LREF)   (zero? (lvar-set-count ($lref-lvar iform)))]
+   [($LREF)   (lvar-immutable? ($lref-lvar iform))]
    [($GREF)   (gref-inlinable-gloc iform)]
    [($CONST)  #t]
    [($IF)     (and (transparent?/rec ($if-test iform) labels)
@@ -2944,7 +2947,7 @@
 
 (define (pass2/lref-eliminate iform)
   (let1 lvar ($lref-lvar iform)
-    (if (zero? (lvar-set-count lvar))
+    (if (lvar-immutable? lvar)
       (let1 initval (lvar-initval lvar)
         (cond [(not (vector? initval)) iform]
               [($const? initval)
@@ -2953,7 +2956,7 @@
                ($const-value-set! iform ($const-value initval))
                iform]
               [(and ($lref? initval)
-                    (zero? (lvar-set-count ($lref-lvar initval))))
+                    (lvar-immutable? ($lref-lvar initval)))
                (when (eq? iform initval)
                  (error "circular reference appeared in letrec bindings:"
                         (lvar-name lvar)))
@@ -3063,7 +3066,7 @@
       (cond [(null? lvars) (values (reverse! new-lvars) (reverse! new-inits))]
             [(let1 lv (car lvars)
                (and (= (lvar-ref-count lv) 0)
-                    (= (lvar-set-count lv) 0)
+                    (lvar-immutable? lv)
                     (has-tag? (car inits) $LAMBDA)
                     (eq? ($lambda-flag (car inits)) 'used)))
              ;; This lambda node has already been inlinded, so we can skip.
@@ -3115,9 +3118,9 @@
          (let1 lv ($lref-lvar n)
            (if (memq lv lvars)
              (and (= (lvar-ref-count lv) 1)
-                  (= (lvar-set-count lv) 0)
+                  (lvar-immutable? lv)
                   (loop args (cons n ilrefs) subcall-node))
-             (and (= (lvar-set-count lv) 0)
+             (and (lvar-immutable? lv)
                   (loop args ilrefs subcall-node))))]
         [((? $call? n) . args) (if subcall-node
                                  #f
@@ -3156,7 +3159,7 @@
     (cond [(null? lvars)
            (values (reverse rl) (reverse ri) (reverse rr))]
           [(and (zero? (lvar-ref-count (car lvars)))
-                (zero? (lvar-set-count (car lvars))))
+                (lvar-immutable? (car lvars)))
            (let1 init (lvar-initval (car lvars))
              (if (and (eq? type 'rec*)
                       (not (transparent? init)))
@@ -3239,7 +3242,7 @@
 ;;
 
 (define (pass2/optimize-closure lvar lambda-node)
-  (when (and (zero? (lvar-set-count lvar))
+  (when (and (lvar-immutable? lvar)
              (> (lvar-ref-count lvar) 0)
              (has-tag? lambda-node $LAMBDA))
     (or (and (= (lvar-ref-count lvar) (length ($lambda-calls lambda-node)))
@@ -3474,7 +3477,7 @@
     (cond
      [(pass2/self-recursing? initval penv) (if tail? 'tail-rec 'rec)]
      [(and (= (lvar-ref-count lvar) 1)
-           (= (lvar-set-count lvar) 0))
+           (lvar-immutable? lvar))
       ;; we can inline this lambda directly.
       (lvar-ref--! lvar)
       initval]
@@ -4172,7 +4175,7 @@
                       [fvs ($lambda-free-lvars lm)])
                  (when (or (null? fvs)
                            (and (null? (cdr fvs))
-                                (zero? (lvar-set-count (car fvs)))
+                                (lvar-immutable? (car fvs))
                                 (eq? (lvar-initval (car fvs)) lm)))
                    (let1 gvar (make-identifier (gensym) module '())
                      ($lambda-name-set! lm (list top-name
@@ -4211,7 +4214,7 @@
 (define/case (pass4/subst iform labels)
   (iform-tag iform)
   [($DEFINE) (pass4/subst! ($define-expr iform) labels)]
-  [($LREF)   (or (and-let* ([ (= (lvar-set-count ($lref-lvar iform)) 0) ]
+  [($LREF)   (or (and-let* ([ (lvar-immutable? ($lref-lvar iform)) ]
                             [init (lvar-initval ($lref-lvar iform))]
                             [ (vector? init) ]
                             [ (has-tag? init $LAMBDA) ]
@@ -5276,7 +5279,7 @@
   (if (null? args)
     0
     (let1 d (pass5/rec (car args) ccb renv (normal-context ctx))
-      (when (and lvars (> (lvar-set-count (car lvars)) 0))
+      (when (and lvars (not (lvar-immutable? (car lvars))))
         (compiled-code-emit0! ccb BOX))
       (compiled-code-emit-PUSH! ccb)
       ;; NB: We check termination condition here.  This routine is called
@@ -5291,7 +5294,7 @@
                    [depth (+ d 1)]
                    [cnt  1])
           (let1 d (pass5/rec (car args) ccb renv 'normal/top)
-            (when (and lvars (> (lvar-set-count (car lvars)) 0))
+            (when (and lvars (not (lvar-immutable? (car lvars))))
               (compiled-code-emit0! ccb BOX))
             (compiled-code-emit-PUSH! ccb)
             (if (null? (cdr args))
