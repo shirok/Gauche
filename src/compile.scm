@@ -4762,14 +4762,23 @@
   0)
 
 (define (pass5/lambda iform ccb renv)
-  (let1 inliner (let1 v ($lambda-flag iform)
-                  (and (vector? v) v))
+  (let* ([inliner (let1 v ($lambda-flag iform)
+                   (and (vector? v) v))]
+         [ccb (make-compiled-code-builder ($lambda-reqargs iform)
+                                          ($lambda-optarg iform)
+                                          ($lambda-name iform)
+                                          ccb  ; parent
+                                          inliner)])
+    ;; If any of procedure parameters are set!, we should box it
+    ;; upon entering the procedure.
+    (let loop ([lvs ($lambda-lvars iform)]
+               [k 1])
+      (unless (null? lvs)
+        (unless (lvar-immutable? (car lvs))
+          (compiled-code-emit1! ccb BOX k))
+        (loop (cdr lvs) (+ k 1))))
     (pass5 ($lambda-body iform)
-           (make-compiled-code-builder ($lambda-reqargs iform)
-                                       ($lambda-optarg iform)
-                                       ($lambda-name iform)
-                                       ccb  ; parent
-                                       inliner)
+           ccb
            (if (null? ($lambda-lvars iform))
              renv
              (cons ($lambda-lvars iform) renv))
@@ -5280,7 +5289,7 @@
     0
     (let1 d (pass5/rec (car args) ccb renv (normal-context ctx))
       (when (and lvars (not (lvar-immutable? (car lvars))))
-        (compiled-code-emit0! ccb BOX))
+        (compiled-code-emit1! ccb BOX 0))
       (compiled-code-emit-PUSH! ccb)
       ;; NB: We check termination condition here.  This routine is called
       ;; lots of times, and (length args) is usually small (<=2 covers almost
@@ -5295,7 +5304,7 @@
                    [cnt  1])
           (let1 d (pass5/rec (car args) ccb renv 'normal/top)
             (when (and lvars (not (lvar-immutable? (car lvars))))
-              (compiled-code-emit0! ccb BOX))
+              (compiled-code-emit1! ccb BOX 0))
             (compiled-code-emit-PUSH! ccb)
             (if (null? (cdr args))
               (imax depth d)

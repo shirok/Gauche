@@ -1,5 +1,7 @@
 2014-01-28  Shiro Kawai  <shiro@acm.org>
 
+	* src/vminsn.scm (BOX): Changed to be used to box procedure parameters.
+
 	* src/geninsn, lib/gauche/vm/insn-core.scm: Allow insn definitions
 	  to have alternative num-params, so that we can build Gauche
 	  using the previous version of Gauche even if we change the

@@ -1402,11 +1402,18 @@
 
 (define-insn-lref* LREF-RET 0 none (LREF RET))
 
-(define-insn BOX 0 none #f              ; replace VAL0 with box(VAL0)
-  (begin
-    (SCM_FLONUM_ENSURE_MEM VAL0)
-    (let* ((b::ScmBox* (Scm_MakeBox VAL0)))
-      (set! VAL0 (SCM_OBJ b)))
+;; if param == 0, VAL0 <- box(VAL0)
+;; else ENV[param-1] = box(ENV[param-1])
+;; The latter is for arguments that are mutated.
+(define-insn BOX (1 0) none #f
+  (let* ([param::int (SCM_VM_INSN_ARG code)])
+    (cond [(== param 0)
+           (SCM_FLONUM_ENSURE_MEM VAL0)
+           (let* ([b::ScmBox* (Scm_MakeBox VAL0)])
+             (set! VAL0 (SCM_OBJ b)))]
+          [else
+           (let* ([v (ENV-DATA ENV (- param 1))])
+             (SCM_FLONUM_ENSURE_MEM v)
+             (let* ([b::ScmBox* (Scm_MakeBox v)])
+               (set! (ENV-DATA ENV (- param 1)) (SCM_OBJ b))))])
     NEXT))
-
-
