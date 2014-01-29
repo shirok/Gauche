@@ -1,3 +1,10 @@
+2014-01-28  Shiro Kawai  <shiro@acm.org>
+
+	* src/geninsn, lib/gauche/vm/insn-core.scm: Allow insn definitions
+	  to have alternative num-params, so that we can build Gauche
+	  using the previous version of Gauche even if we change the
+	  num-params of insns.
+
 2014-01-27  Shiro Kawai  <shiro@acm.org>
 
 	* lib/www/cgi.scm (read-complete-block): Fixed a bug in the case

@@ -50,6 +50,8 @@
   ((name   :init-keyword :name)           ; name of insn (symbol)
    (code   :init-keyword :code)           ; code of insn (integer)
    (num-params :init-keyword :num-params) ; # of parameters
+   (alt-num-params :init-keyword :alt-num-params) ; Alternative # of params
+                                          ; see vminsn.scm comment
    (operand-type :init-keyword :operand-type) ; operand type
    (combined :init-keyword :combined)     ; combined insns
    (body   :init-keyword :body)           ; body of the insn
@@ -92,7 +94,8 @@
 ;; NB: This must match the macro definitions in src/gauche/code.h !!!
 (define (vm-build-insn insn)
   (define (check insn info n)
-    (unless (= (~ info'num-params) n)
+    (unless (or (= n (~ info'num-params))
+                (memv n (~ info'alt-num-params)))
       (errorf "VM instruction ~a expects ~a parameters, but got ~s"
               (car insn) (~ info'num-params) insn)))
   (match insn

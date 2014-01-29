@@ -41,6 +41,12 @@
 ;;;   <name> - instruction name.  In C, an enum SCM_VM_<name> is defined.
 ;;;
 ;;;   <num-params> - # of parameters the instruction takes.
+;;;                  Can be (N M ...) - in this case, N is the proper
+;;;                  <num-params> of this insn, but vm-build-insn tolerates
+;;;                  the passed insn to have M parameters as well.  If N < M,
+;;;                  extra parameters are ignored.  If N > M, 0 is assumed
+;;;                  for missing parameters.  This is mainly to compile
+;;;                  Gauche itself with the previous version of Gauche.
 ;;;
 ;;;   <operand-type> - none : the insn doesn't take an operand.
 ;;;                    obj  : an ScmObj operand.

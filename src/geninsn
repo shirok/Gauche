@@ -88,8 +88,9 @@
     (format #t ";; #x~3,'0x  ~a\n" (~ insn'code) (~ insn'name))
     (format #t "(make <vm-insn-info> :name '~a :code ~a\n"
             (~ insn'name) (~ insn'code))
-    (format #t "  :num-params ~a :operand-type '~a\n"
-            (~ insn'num-params) (~ insn'operand-type))
+    (format #t "  :num-params ~a :alt-num-params '~a\n"
+            (~ insn'num-params) (~ insn'alt-num-params))
+    (format #t "  :operand-type '~a\n" (~ insn'operand-type))
     (format #t "  :obsoleted ~s\n" (~ insn'obsoleted))
     (format #t "  :combined '~s\n" (~ insn'combined))
     (format #t "  :body '~s)\n\n" (~ insn'body)))
@@ -365,7 +366,9 @@
                            [body #f]
                            [flag #f])
        (make <vm-insn-info>
-         :name name :code insn-num :num-params num-params
+         :name name :code insn-num
+         :num-params (if (pair? num-params) (car num-params) num-params)
+         :alt-num-params (if (pair? num-params) (cdr num-params) '())
          :operand-type operand-type :combined combined
          :body body :obsoleted (eq? flag :obsoleted)))]
     [else (errorf "unrecognized define-insn form: ~s" definsn)]))
