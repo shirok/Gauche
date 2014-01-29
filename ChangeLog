@@ -1,6 +1,11 @@
 2014-01-28  Shiro Kawai  <shiro@acm.org>
 
 	* src/vminsn.scm (BOX): Changed to be used to box procedure parameters.
+	  (ENV-SET): New instruction to initialize env slot (used with
+	  LOCAL-ENV-CLOSURES). 	 We used to use LSET, but we'll box all
+	  set!-able lvars and LSET will do set-box! instead of directly setting
+	  env slot.
+	* src/compile.scm: Changed to emit ENV-SET and new BOX insn.
 
 	* src/geninsn, lib/gauche/vm/insn-core.scm: Allow insn definitions
 	  to have alternative num-params, so that we can build Gauche

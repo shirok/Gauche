@@ -1405,15 +1405,32 @@
 ;; if param == 0, VAL0 <- box(VAL0)
 ;; else ENV[param-1] = box(ENV[param-1])
 ;; The latter is for arguments that are mutated.
+;; NB: Prior to 0.9.4, BOX insn takes no parameters.  To allow 0.9.4 to be
+;; compiled by 0.9.3.3 compiler, we specify alternative num-params.
 (define-insn BOX (1 0) none #f
   (let* ([param::int (SCM_VM_INSN_ARG code)])
-    (cond [(== param 0)
-           (SCM_FLONUM_ENSURE_MEM VAL0)
-           (let* ([b::ScmBox* (Scm_MakeBox VAL0)])
-             (set! VAL0 (SCM_OBJ b)))]
-          [else
-           (let* ([v (ENV-DATA ENV (- param 1))])
-             (SCM_FLONUM_ENSURE_MEM v)
-             (let* ([b::ScmBox* (Scm_MakeBox v)])
-               (set! (ENV-DATA ENV (- param 1)) (SCM_OBJ b))))])
+    (if (== param 0)
+      (begin
+        (SCM_FLONUM_ENSURE_MEM VAL0)
+        (let* ([b::ScmBox* (Scm_MakeBox VAL0)])
+          (set! VAL0 (SCM_OBJ b))))
+      (let* ([off::int (- param 1)])
+        (VM-ASSERT (> (-> ENV size) off))
+        (let* ([v (ENV-DATA ENV off)])
+          (SCM_FLONUM_ENSURE_MEM v)
+          (let* ([b::ScmBox* (Scm_MakeBox v)])
+            (set! (ENV-DATA ENV off) (SCM_OBJ b))))))
+    NEXT))
+
+;; ENV-SET(offset)
+;;  Mutate the top env's specified slot with VAL0
+;;  This is used with LOCAL-ENV-CLOSURES to initialize non-procedure
+;;  slots of the env.  We used to use LSET for this purpose, but now
+;;  LSET counts on that all mutable lvars are boxed, so we need a separete
+;;  insn that directly initialize the env frame.
+(define-insn ENV-SET 1 none #f
+  (let* ([off::int (SCM_VM_INSN_ARG code)])
+    (VM-ASSERT (> (-> ENV size) off))
+    (SCM_FLONUM_ENSURE_MEM VAL0)
+    (set! (ENV-DATA ENV off) VAL0)
     NEXT))

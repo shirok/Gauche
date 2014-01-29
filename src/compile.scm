@@ -4652,7 +4652,8 @@
             [(bottom-context? ctx)
              (compiled-code-emit1oi! ccb LOCAL-ENV-CLOSURES nlocals
                                      closures info)
-             (let* ([dinit (emit-letrec-inits others nlocals ccb
+             (emit-letrec-boxers ccb lvars nlocals)
+             (let* ([dinit (emit-letrec-inits others lvars nlocals ccb
                                               (cons lvars renv) 0)]
                     [dbody (pass5/rec body ccb (cons lvars renv) ctx)])
                (unless (tail-context? ctx)
@@ -4662,7 +4663,8 @@
              (compiled-code-emit1oi! ccb PRE-CALL nlocals merge-label info)
              (compiled-code-emit1oi! ccb LOCAL-ENV-CLOSURES nlocals
                                      closures info)
-             (let* ([dinit (emit-letrec-inits others nlocals ccb
+             (emit-letrec-boxers ccb lvars nlocals)
+             (let* ([dinit (emit-letrec-inits others lvars nlocals ccb
                                               (cons lvars renv) 0)]
                     [dbody (pass5/rec body ccb (cons lvars renv) 'tail)])
                (compiled-code-emit-RET! ccb)
@@ -4704,6 +4706,10 @@
            (and ($lref? init)
                 (not (memq ($lref-lvar init) existing-lvars))))))
 
+;; classify init values into closures/constants and non-closure expressions.
+;; returns two lists: a list of init values (closures or #under values)
+;; corresponding to lvar list, and non-closure init iforms, each
+;; paired with an lvar count.
 (define (partition-letrec-inits inits ccb renv cnt closures others)
   (if (null? inits)
     (values (reverse closures) (reverse others))
@@ -4722,13 +4728,28 @@
                                 (cons (undefined) closures)
                                 (acons cnt init others))]))))
 
-(define (emit-letrec-inits init-alist nlocals ccb renv depth)
+;; box set!-able slots.
+(define (emit-letrec-boxers ccb lvars nlocals)
+  (let loop ([lvars lvars] [cnt nlocals])
+    (unless (null? lvars)
+      (unless (lvar-immutable? (car lvars))
+        (compiled-code-emit1! ccb BOX cnt))
+      (loop (cdr lvars) (- cnt 1)))))
+       
+;; emit LSET or ENV-SET insn to initialize lvars that aren't closures or
+;; constants.  init-alist is the second value partition-letrec-inits
+;; returned, which is a list of (<lvar-count> <init-iform>).
+(define (emit-letrec-inits init-alist lvars nlocals ccb renv depth)
   (if (null? init-alist)
     depth
     (let* ([off&expr (car init-alist)]
-           [d (pass5/rec (cdr off&expr) ccb renv 'normal/bottom)])
-      (compiled-code-emit2! ccb LSET 0 (- nlocals 1 (car off&expr)))
-      (emit-letrec-inits (cdr init-alist) nlocals ccb renv (imax depth d)))))
+           [d (pass5/rec (cdr off&expr) ccb renv 'normal/bottom)]
+           [lvar (list-ref lvars (car off&expr))])
+      (if (lvar-immutable? lvar)
+        (compiled-code-emit1! ccb ENV-SET (- nlocals 1 (car off&expr)))
+        (compiled-code-emit2! ccb LSET 0 (- nlocals 1 (car off&expr))))
+      (emit-letrec-inits (cdr init-alist) lvars nlocals ccb renv
+                         (imax depth d)))))
 
 (define (pass5/$RECEIVE iform ccb renv ctx)
   (let ([nargs  ($receive-reqargs iform)]
@@ -4772,11 +4793,11 @@
     ;; If any of procedure parameters are set!, we should box it
     ;; upon entering the procedure.
     (let loop ([lvs ($lambda-lvars iform)]
-               [k 1])
+               [k (length ($lambda-lvars iform))])
       (unless (null? lvs)
         (unless (lvar-immutable? (car lvs))
-          (compiled-code-emit1! ccb BOX k))
-        (loop (cdr lvs) (+ k 1))))
+          (compiled-code-emit1i! ccb BOX k (lvar-name (car lvs))))
+        (loop (cdr lvs) (- k 1))))
     (pass5 ($lambda-body iform)
            ccb
            (if (null? ($lambda-lvars iform))
