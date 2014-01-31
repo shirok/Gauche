@@ -4333,6 +4333,8 @@
   (receive (depth offset) (renv-lookup renv ($lref-lvar iform))
     (compiled-code-emit2i! ccb LREF depth offset
                            (lvar-name ($lref-lvar iform)))
+    (unless (lvar-immutable? ($lref-lvar iform))
+      (compiled-code-emit0! ccb UNBOX))
     0))
 
 (define (pass5/$LSET iform ccb renv ctx)
@@ -4469,11 +4471,13 @@
                            0
                            info ccb renv ctx))
       (and ($lref? x)
+           (lvar-immutable? ($lref-lvar x))
            (pass5/if-final iform #f LREF-VAL0-BNUMNE
                            (pass5/if-numcmp-lrefarg x renv)
                            (pass5/rec y ccb renv (normal-context ctx))
                            info ccb renv ctx))
       (and ($lref? y)
+           (lvar-immutable? ($lref-lvar y))
            (pass5/if-final iform #f LREF-VAL0-BNUMNE
                            (pass5/if-numcmp-lrefarg y renv)
                            (pass5/rec x ccb renv (normal-context ctx))
@@ -4490,11 +4494,13 @@
   (define .rev. `((,BNLT . ,LREF-VAL0-BNGT) (,BNLE . ,LREF-VAL0-BNGE)
                   (,BNGT . ,LREF-VAL0-BNLT) (,BNGE . ,LREF-VAL0-BNLE)))
   (or (and ($lref? x)
+           (lvar-immutable? ($lref-lvar x))
            (pass5/if-final iform #f (cdr (assv insn .fwd.))
                            (pass5/if-numcmp-lrefarg x renv)
                            (pass5/rec y ccb renv (normal-context ctx))
                            info ccb renv ctx))
       (and ($lref? y)
+           (lvar-immutable? ($lref-lvar y))
            (pass5/if-final iform #f (cdr (assv insn .rev.))
                            (pass5/if-numcmp-lrefarg y renv)
                            (pass5/rec x ccb renv (normal-context ctx))
@@ -4728,7 +4734,8 @@
                                 (cons (undefined) closures)
                                 (acons cnt init others))]))))
 
-;; box set!-able slots.
+;; box set!-able slots in the ENV at stack top.  used in letrec and
+;; receive frame setup.
 (define (emit-letrec-boxers ccb lvars nlocals)
   (let loop ([lvars lvars] [cnt nlocals])
     (unless (null? lvars)
@@ -4761,6 +4768,7 @@
      [(bottom-context? ctx)
       (let1 dinit (pass5/rec expr ccb renv (normal-context ctx))
         (compiled-code-emit2i! ccb TAIL-RECEIVE nargs optarg ($*-src iform))
+        (emit-letrec-boxers ccb lvars (length lvars))
         (let1 dbody (pass5/rec body ccb (cons lvars renv) ctx)
           (unless (tail-context? ctx)
             (compiled-code-emit0! ccb POP-LOCAL-ENV))
@@ -4770,6 +4778,7 @@
             [dinit (pass5/rec expr ccb renv (normal-context ctx))])
         (compiled-code-emit2oi! ccb RECEIVE nargs optarg
                                 merge-label ($*-src iform))
+        (emit-letrec-boxers ccb lvars (length lvars))
         (let1 dbody (pass5/rec body ccb (cons lvars renv) 'tail)
           (compiled-code-emit-RET! ccb)
           (compiled-code-set-label! ccb merge-label)
@@ -4921,15 +4930,14 @@
          [args ($call-args iform)]
          [nargs (length args)]
          [label ($lambda-body proc)]
-         [newenv (if (= nargs 0)
-                   renv
-                   (cons ($lambda-lvars proc) renv))]
+         [lvars ($lambda-lvars proc)]
+         [newenv (if (= nargs 0) renv (cons lvars renv))]
          [merge-label (compiled-code-new-label ccb)])
     ($call-renv-set! iform (reverse renv))
     (unless (tail-context? ctx)
       (compiled-code-emit1oi! ccb PRE-CALL nargs merge-label ($*-src iform)))
     (let1 dinit (if (> nargs 0)
-                  (rlet1 d (pass5/prepare-args args #f ccb renv ctx)
+                  (rlet1 d (pass5/prepare-args args lvars ccb renv ctx)
                     (compiled-code-emit1i! ccb LOCAL-ENV nargs ($*-src iform)))
                   0)
       (compiled-code-set-label! ccb (pass5/ensure-label ccb label))
@@ -4950,20 +4958,21 @@
         [embed-node ($call-proc iform)])
     (let ([nargs (length args)]
           [label ($lambda-body ($call-proc embed-node))]
+          [lvars ($lambda-lvars ($call-proc embed-node))]
           [renv-diff (list-remove-prefix ($call-renv embed-node)
                                          (reverse renv))])
       (unless renv-diff
         (errorf "[internal error] $call[jump] appeared out of context of related $call[embed] (~s vs ~s)"
                 ($call-renv embed-node) renv))
       (if (tail-context? ctx)
-        (let1 dinit (pass5/prepare-args args #f ccb renv ctx)
+        (let1 dinit (pass5/prepare-args args lvars ccb renv ctx)
           (compiled-code-emit1oi! ccb LOCAL-ENV-JUMP (length renv-diff)
                                   (pass5/ensure-label ccb label)
                                   ($*-src iform))
           (if (= nargs 0) 0 (imax dinit (+ nargs ENV_HEADER_SIZE))))
         (let1 merge-label (compiled-code-new-label ccb)
           (compiled-code-emit1oi! ccb PRE-CALL nargs merge-label ($*-src iform))
-          (let1 dinit (pass5/prepare-args args #f ccb renv ctx)
+          (let1 dinit (pass5/prepare-args args lvars ccb renv ctx)
             (compiled-code-emit1oi! ccb LOCAL-ENV-JUMP (length renv-diff)
                                     (pass5/ensure-label ccb label)
                                     ($*-src iform))
@@ -5203,10 +5212,12 @@
            (integer-fits-insn-arg? ($const-value y))
            (pass5/builtin-onearg info NUMADDI ($const-value y) x))
       (and ($lref? y)
+           (lvar-immutable? ($lref-lvar y))
            (receive (depth offset) (renv-lookup renv ($lref-lvar y))
              (pass5/builtin-onearg info LREF-VAL0-NUMADD2
                                    (+ (ash offset 10) depth) x)))
       (and ($lref? x)
+           (lvar-immutable? ($lref-lvar x))
            (receive (depth offset) (renv-lookup renv ($lref-lvar x))
              (pass5/builtin-onearg info LREF-VAL0-NUMADD2
                                    (+ (ash offset 10) depth) y)))
@@ -5304,7 +5315,7 @@
 ;; Emit code to evaluate expressions in args and push its result
 ;; into the stack one by one.  Returns the maximum depth of the stack.
 ;; lvars is #f for regular call sequence, or a list of lvars of the same
-;; length of args for $LET.
+;; length of args for $LET or local calls.
 (define (pass5/prepare-args args lvars ccb renv ctx)
   (if (null? args)
     0

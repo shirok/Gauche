@@ -116,9 +116,9 @@
   [(_ var env off)
    (let1 v (gensym)
      `(let* ([,v (ENV-DATA ,env ,off)])
-        (if (SCM_BOXP ,v)
-          (set! ,var (SCM_BOX_VALUE ,v))
-          (set! ,var ,v))))])
+        (CHECK_UNBOX ,v)
+        (set! ,var ,v)
+        ))])
 
 ;;
 ;; ($w/argr <val> <expr> ...)
@@ -153,7 +153,7 @@
                                                'ENV
                                                `(-> ,(loop (- d 1)) up)))
                                           ,o)))
-                     (if (SCM_BOXP ,val) (set! ,val (SCM_BOX_VALUE ,val)))
+                     (CHECK_UNBOX ,val)
                      ,@body)])])
 
 (define-cise-stmt $w/argr               ; use VAL0 default
@@ -297,7 +297,7 @@
                                           [(0) 'ENV]
                                           [else `(-> ,(loop (- d 1)) up)]))
                                      ,offset)])
-        (when (SCM_BOXP ,v) (set! ,v (SCM_BOX_VALUE ,v)))
+        (CHECK_UNBOX ,v)
         ($result ,v)))])
 
 ;;
@@ -755,11 +755,7 @@
     (VM-ASSERT (!= e NULL))
     (VM-ASSERT (> (-> e size) off))
     (SCM_FLONUM_ENSURE_MEM VAL0)
-    ;; TODO 0.9.2 : Extra check to maintain compatibility
-    (let* ([box::ScmObj (ENV-DATA e off)])
-      (if (SCM_BOXP box)
-        (SCM_BOX_SET box VAL0)
-        (set! (ENV-DATA e off) VAL0)))
+    (CHECK_SET_BOX (ENV-DATA e off) VAL0)
     (set! (-> vm numVals) 1)
     NEXT))
 
@@ -811,9 +807,8 @@
          [v])
     (for [() (> dep 0) (post-- dep)]
          (set! e (-> e up)))
-    ;; TODO 0.9.2: Extra test to keep compatiblity
     (set! v (ENV-DATA e off))
-    (when (SCM_BOXP v) (set! v (SCM_BOX_VALUE v)))
+    (CHECK_UNBOX v)
     ($result v)))
 
 ;; Shortcut for the frequent depth/offset.
@@ -1395,7 +1390,6 @@
     (set! (-> vm handlers) (SCM_CDR (-> vm handlers)))
     NEXT))
 
-
 ;;
 ;; Experimental
 ;;
@@ -1433,4 +1427,11 @@
     (VM-ASSERT (> (-> ENV size) off))
     (SCM_FLONUM_ENSURE_MEM VAL0)
     (set! (ENV-DATA ENV off) VAL0)
+    NEXT))
+
+;; UNBOX
+;;  VAL0 <- unbox(VAL0)
+(define-insn UNBOX 0 none #f
+  (begin
+    (DO_UNBOX VAL0)
     NEXT))

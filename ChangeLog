@@ -1,3 +1,18 @@
+2014-01-30  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c, src/vminsn.scm (UNBOX), src/compile.scm: Finishing explicit
+	  boxing/unboxing.  NB: Although this fix makes the compile emit
+	  necessary BOX/UNBOX instructions for set!-table lvars, we do not
+	  drop implicit unboxing feature yet, since 0.9.4 compiler and runtime
+	  are compiled by 0.9.3.3 compiler that doesn't emit UNBOX insns.
+	  See the comment about auto-unboxing in vm.c; we'll remove
+	  auto-unboxing stuff once we release 0.9.4.
+	* test-0.9.4.sh: A temporary shell script to test BOX/UNBOX stuff.
+	  Ordinary test run doesn't test this, since 0.9.4 build still use
+	  implicit unboxing.  This shell script build 0.9.4, then build it
+	  again _using_0.9.4_compiler_, so that we can test BOX/UNBOX thingy.
+	  We'll remove this script once we release 0.9.4.
+
 2014-01-28  Shiro Kawai  <shiro@acm.org>
 
 	* src/vminsn.scm (BOX): Changed to be used to box procedure parameters.
