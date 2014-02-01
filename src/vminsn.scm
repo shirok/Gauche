@@ -1456,6 +1456,10 @@
 ;; UNBOX
 ;;  VAL0 <- unbox(VAL0)
 (define-insn UNBOX 0 none #f
-  (begin
-    (DO_UNBOX VAL0)
+  ($w/argr v
+    (DO_UNBOX v)
+    (set! VAL0 v)
     NEXT))
+
+(define-insn LREF-UNBOX 2 none (LREF UNBOX) #f :fold-lref)
+
