@@ -56,6 +56,9 @@
    (combined :init-keyword :combined)     ; combined insns
    (body   :init-keyword :body)           ; body of the insn
    (obsoleted :init-keyword :obsoleted)   ; is this insn fading out?
+   (fold-lref :init-keyword :fold-lref)   ; if #t, allow LREFnm + INSN
+                                          ; sequence to be combined into
+                                          ; LREF-INSN(n,m).  This 
 
    (base-variant :init-form #f)           ; 'base' variant of this insn
    (push-variant :init-form #f)           ; 'push' variant of this insn

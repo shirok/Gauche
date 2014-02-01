@@ -833,7 +833,7 @@ static void run_loop()
 
 #ifdef __GNUC__
     static void *dispatch_table[256] = {
-#define DEFINSN(insn, name, nargs, type)   && SCM_CPP_CAT(LABEL_, insn),
+#define DEFINSN(insn, name, nargs, type, flags)   && SCM_CPP_CAT(LABEL_, insn),
 #include "vminsn.c"
 #undef DEFINSN
     };

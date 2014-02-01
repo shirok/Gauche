@@ -1,3 +1,11 @@
+2014-01-31  Shiro Kawai  <shiro@acm.org>
+
+	* src/code.c, src/vminsn.scm, src/geninsn, lib/gauche/vm/insn-core.scm:
+	  The instruction combiner now allows preceding specialized LREFs
+	  such as LREF0 or LREF21 to be combined into generic LREF-STNG(n,m)
+	  (instead of having LREF0-STNG, LREF21-STNG, etc. separately).
+	  Such combined insn is indicated by :fold-lref flag.
+
 2014-01-30  Shiro Kawai  <shiro@acm.org>
 
 	* src/vm.c, src/vminsn.scm (UNBOX), src/compile.scm: Finishing explicit

@@ -92,6 +92,7 @@
             (~ insn'num-params) (~ insn'alt-num-params))
     (format #t "  :operand-type '~a\n" (~ insn'operand-type))
     (format #t "  :obsoleted ~s\n" (~ insn'obsoleted))
+    (format #t "  :fold-lref ~s\n" (~ insn'fold-lref))
     (format #t "  :combined '~s\n" (~ insn'combined))
     (format #t "  :body '~s)\n\n" (~ insn'body)))
   (with-output-to-file "../lib/gauche/vm/insn.scm"
@@ -177,7 +178,7 @@
 ;; Each state is represented by a table, keyed by input insn codes.
 ;; Each value indicates an action and the next state.
 ;;
-;; In the following descrption, we denote a table as [something],
+;; In the following description, we denote a table as [something],
 ;; and the input code as (something), and the output as {something}.
 ;;
 ;; Actions:
@@ -253,9 +254,14 @@
              (not (~ insn'obsoleted)))
     (let loop ([combined (~ insn'combined)]
                [state    root-state])
-      (if (null? (cdr combined))
-        (state-set-insn! state (car combined) insn)
-        (loop (cdr combined) (substate state (car combined)))))))
+      (cond [(null? (cdr combined))
+             (state-set-insn! state (car combined) insn)]
+            [(and (~ insn'fold-lref) (eq? (car combined) 'LREF))
+             (loop (cdr combined) (substate state 'LREF))
+             (dolist [lref .lrefx.]
+               (loop (cdr combined) (substate state lref)))]
+            [else
+             (loop (cdr combined) (substate state (car combined)))]))))
 
 ;; The second path to fixup the STN.  Assign each arc a command.
 (define (fixup-states! root-state)
@@ -364,13 +370,15 @@
     [(_ name num-params operand-type . opts)
      (let-optionals* opts ([combined #f]
                            [body #f]
-                           [flag #f])
+                           . flags)
        (make <vm-insn-info>
          :name name :code insn-num
          :num-params (if (pair? num-params) (car num-params) num-params)
          :alt-num-params (if (pair? num-params) (cdr num-params) '())
          :operand-type operand-type :combined combined
-         :body body :obsoleted (eq? flag :obsoleted)))]
+         :body body
+         :obsoleted (boolean (memq :obsoleted flags))
+         :fold-lref (boolean (memq :fold-lref flags))))]
     [else (errorf "unrecognized define-insn form: ~s" definsn)]))
 
 ;;
@@ -407,11 +415,18 @@
       (cgen-body "#ifdef DEFINSN")
       (dolist [insn insns]
         (cgen-extern #`"  ,(c-insn-name (~ insn'name)),,")
-        (cgen-body (format "DEFINSN(~a, \"~a\", ~a, ~a)"
+        (cgen-body (format "DEFINSN(~a, \"~a\", ~a, ~a, ~a)"
                            (c-insn-name (~ insn'name)) (~ insn'name)
                            (~ insn'num-params)
                            (string-tr (x->string (~ insn'operand-type))
-                                      "a-z+-" "A-Z__"))))
+                                      "a-z+-" "A-Z__")
+                           (string-join
+                            (cond-list
+                             [(~ insn'obsoleted) "SCM_VM_INSN_OBSOLETED"]
+                             [(~ insn'fold-lref) "SCM_VM_INSN_FOLD_LREF"]
+                             [#t "0"])
+                            "|")
+                           )))
       (cgen-extern "  SCM_VM_NUM_INSNS" "};")
       (cgen-body "#endif /*DEFINSN*/")
 

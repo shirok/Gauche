@@ -325,7 +325,12 @@ typedef struct cc_builder_rec {
     int numChunks;
     ScmObj constants;           /* list of constants */
     int currentIndex;
-    ScmWord currentInsn;        /* buffer for instruction combining. */
+    ScmWord currentInsn;        /* buffer for instruction combining.
+                                   this can be a special value either
+                                   CC_BUILDER_BUFFER_EMPTY or
+                                   CC_BUILDER_BUFFER_TRANS.  see below. */
+    int    prevOpcode;          /* previous saved insn opcode */
+    int    currentOpcode;       /* saved insn opcode */
     int    currentArg0;         /* ditto */
     int    currentArg1;         /* ditto */
     ScmObj currentOperand;      /* ditto */
@@ -367,6 +372,7 @@ static cc_builder *make_cc_builder(void)
     b->constants = SCM_NIL;
     b->currentIndex = 0;
     b->currentInsn = CC_BUILDER_BUFFER_EMPTY;
+    b->currentOpcode = b->prevOpcode = -1;
     b->currentOperand = b->currentInfo = SCM_FALSE;
     b->currentState = -1;
     b->labelDefs = b->labelRefs = SCM_NIL;
@@ -467,6 +473,7 @@ static void cc_builder_flush(cc_builder *b)
     }
     b->currentInsn = CC_BUILDER_BUFFER_EMPTY;
     b->currentState = -1;
+    b->currentOpcode = -1;
     return;
   badoperand:
     b->currentInsn = CC_BUILDER_BUFFER_EMPTY;
@@ -657,6 +664,8 @@ static inline void save_params(cc_builder *b, int code,
                                int arg0, int arg1, ScmObj operand,
                                ScmObj info)
 {
+    b->prevOpcode = b->currentOpcode;
+    b->currentOpcode = code;
     switch (Scm_VMInsnNumParams(code)) {
     case 2: b->currentArg1 = arg1;
         /* FALLTHROUGH */
@@ -672,9 +681,37 @@ static inline void save_params(cc_builder *b, int code,
     }
 }
 
+static int vm_insn_flags(u_int code);
+
 /* Fill the current insn word */
 static inline void fill_current_insn(cc_builder *b, int code)
 {
+    /* A special handling of fold-lref insn.
+       Fold-lref insn is a combined insn LREF-XXXX(depth,offset).  What's
+       special about it is that we 'fold' specialized LREF insn
+       (e.g. LREF10) into generic LREF.
+     */
+#define SET_LREF_ARGS(dep, off) \
+    b->currentArg0 = (dep); b->currentArg1 = (off); break
+    if (vm_insn_flags(code) & SCM_VM_INSN_FOLD_LREF) {
+        switch (b->prevOpcode) {
+        case SCM_VM_LREF0:  SET_LREF_ARGS(0, 0);
+        case SCM_VM_LREF1:  SET_LREF_ARGS(0, 1);
+        case SCM_VM_LREF2:  SET_LREF_ARGS(0, 2);
+        case SCM_VM_LREF3:  SET_LREF_ARGS(0, 3);
+        case SCM_VM_LREF10: SET_LREF_ARGS(1, 0);
+        case SCM_VM_LREF11: SET_LREF_ARGS(1, 1);
+        case SCM_VM_LREF12: SET_LREF_ARGS(1, 2);
+        case SCM_VM_LREF20: SET_LREF_ARGS(2, 0);
+        case SCM_VM_LREF21: SET_LREF_ARGS(2, 1);
+        case SCM_VM_LREF30: SET_LREF_ARGS(3, 0);
+        case SCM_VM_LREF: /* args are already set */ break;
+        default: Scm_Error("[internal] Compiler internal error: FOLD_LREF insn needs to be combined with LREF*, but prevOpcode = %d", b->prevOpcode);
+        }
+    }
+#undef SET_LREF_ARGS
+    
+    /* Compose insn word */
     switch (Scm_VMInsnNumParams(code)) {
     case 0: b->currentInsn = SCM_VM_INSN(code); break;
     case 1: b->currentInsn = SCM_VM_INSN1(code, b->currentArg0); break;
@@ -903,9 +940,10 @@ static struct insn_info {
     const char *name;           /* name */
     int nparams;                /* # of parameters */
     int operandType;            /* operand type */
+    int flags;                  /* flags */
 } insn_table[] = {
-#define DEFINSN(sym, nam, np, type) \
-    { nam, np, SCM_CPP_CAT(SCM_VM_OPERAND_, type) },
+#define DEFINSN(sym, nam, np, type, flags)                     \
+    { nam, np, SCM_CPP_CAT(SCM_VM_OPERAND_, type), flags },
 #include "vminsn.c"
 #undef DEFINSN
 };
@@ -927,6 +965,12 @@ int Scm_VMInsnNumParams(u_int code)
 {
     CHECK_CODE(code);
     return insn_table[code].nparams;
+}
+
+int vm_insn_flags(u_int code)   /* private for the time being */
+{
+    CHECK_CODE(code);
+    return insn_table[code].flags;
 }
 
 int Scm_VMInsnOperandType(u_int code)

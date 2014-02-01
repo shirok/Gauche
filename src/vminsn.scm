@@ -36,7 +36,10 @@
 ;;; This file is also used by the compiler.
 ;;;
 ;;;
-;;; (define-insn <name> <num-params> <operand-type> [<combination>] [<body>])
+;;; (define-insn <name> <num-params> <operand-type>
+;;;              :optional (<combination> '())
+;;;                        (<body> #f)
+;;;                        <flags> ...)
 ;;;
 ;;;   <name> - instruction name.  In C, an enum SCM_VM_<name> is defined.
 ;;;
@@ -55,9 +58,30 @@
 ;;;                    codes: a list of ScmCompiledCodes.
 ;;;                    obj+addr : an ScmObj, followed by an address
 ;;;
-;;;   If this insn is a combined insn, <combination> gives a list of
-;;;   insns that combines into this one.  It is used to generate a
-;;;   code-emitting table.
+;;;   <combination>  - If this is a comibined insn, list the ingredients
+;;;                    here.  It is used in multiple purposes:
+;;;                    * The instruction body is generated automatically,
+;;;                      fusing the ingredients' body.
+;;;                    * A DFA is set up in the instruction emitter
+;;;                      that replaces this specific sequence of
+;;;                      insns to the combined insn.  Because of this,
+;;;                      pass5 (instruction generation) doesn't need to
+;;;                      handle instruction combination explicitly.
+;;;
+;;;   <body>         - a CiSE expression that handles the instruction.
+;;;                    can be #f for combined insn.
+;;;
+;;;   <flags>
+;;;           :obsoleted  - mark obsoleted insn.  handled but won't be
+;;;                         generated.
+;;;           :fold-lref  - the insn must be a combination of LREF + something,
+;;;                         with depth and offset parameters.
+;;;                         this indicates that the combined insn should be
+;;;                         emitted even if preceding insn is 'shortcut'
+;;;                         LREFs such as LREF0 or LREF21; that is, instead
+;;;                         of having LREF0-SOMETHING or LREF21-SOMETHING
+;;;                         separately, we'll have LREF-SOMETHING(0,0) and
+;;;                         LREF-SOMETHING(2,1), respectively.
 
 ;;;==============================================================
 ;;; Common Cise macros

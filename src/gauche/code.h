@@ -158,6 +158,12 @@ SCM_EXTERN void   Scm_CompiledCodeEmit(ScmCompiledCode *cc,
 #define SCM_VM_INSN2(code, arg0, arg1)  \
     SCM_WORD((long)((arg1) << 22) | ((arg0) << 12) | (code))
 
+/* insn flags.  see vminsn.scm for details. */
+enum ScmVMInsnFlag {
+    SCM_VM_INSN_OBSOLETED = (1L<<0),
+    SCM_VM_INSN_FOLD_LREF = (1L<<1)
+};
+
 /* Operand type */
 enum {
     SCM_VM_OPERAND_NONE,        /* take no operand */
