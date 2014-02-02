@@ -113,7 +113,7 @@ int Scm_EqualP(ScmObj x, ScmObj y)
         if (!SCM_PAIRP(y)) return FALSE;
         /* We loop on "spine" of lists, so that the typical long flat list
            can be compared quickly.  If we find nested lists/vectors, we
-           jump to Scheme routine.  We adopt hair and tortoise to detect
+           jump to Scheme routine.  We adopt hare and tortoise to detect
            loop in the CDR side. */
         ScmObj xslow = x; ScmObj yslow = y;
         int xcirc = FALSE; int ycirc = FALSE;
@@ -196,76 +196,7 @@ int Scm_EqualP(ScmObj x, ScmObj y)
                       Scm_GaucheInternalModule());
         return !SCM_FALSEP(Scm_ApplyRec2(equal_interleave_proc, x, y));
     }
-}
-
-int Scm_EqualPOrig(ScmObj x, ScmObj y)
-{
-    if (SCM_EQ(x, y)) return TRUE;
-    if (SCM_PAIRP(x)) {
-        if (!SCM_PAIRP(y)) return FALSE;
-        do {
-            if (!Scm_EqualPOrig(SCM_CAR(x), SCM_CAR(y))) return FALSE;
-            x = SCM_CDR(x);
-            y = SCM_CDR(y);
-        } while (SCM_PAIRP(x)&&SCM_PAIRP(y));
-        return Scm_EqualPOrig(x, y);
-    }
-    if (SCM_STRINGP(x)) {
-        if (SCM_STRINGP(y)) {
-            return Scm_StringEqual(SCM_STRING(x), SCM_STRING(y));
-        }
-        return FALSE;
-    }
-    if (SCM_NUMBERP(x)) {
-        if (SCM_NUMBERP(y)) {
-            if ((SCM_EXACTP(x) && SCM_EXACTP(y))
-                || (SCM_INEXACTP(x) && SCM_INEXACTP(y))) {
-                return Scm_NumEq(x, y);
-            }
-        }
-        return FALSE;
-    }
-    if (SCM_VECTORP(x)) {
-        if (SCM_VECTORP(y)) {
-            int sizx = SCM_VECTOR_SIZE(x);
-            int sizy = SCM_VECTOR_SIZE(y);
-            if (sizx == sizy) {
-                while (sizx--) {
-                    if (!Scm_EqualPOrig(SCM_VECTOR_ELEMENT(x, sizx),
-                                        SCM_VECTOR_ELEMENT(y, sizx)))
-                        break;
-                }
-                if (sizx < 0) return TRUE;
-            }
-        }
-        return FALSE;
-    }
-    /* EXPERIMENTAL: when identifier is compared by equal?,
-       we use its symbolic name to compare.  This allows
-       comparing macro output with equal?, and also less confusing
-       when R5RS macro and legacy macro are mixed.
-       For "proper" comparison of identifiers keeping their semantics,
-       we need such procedures as free-identifier=? and bound-identifier=?
-       anyway, so this change of equal? won't have a negative impact, I hope.
-
-       NB: this operation come here instead of the beginning of this
-       procedure, since comparing identifiers are relatively rare so
-       we don't want to check idnetifier-ness every time.
-    */
-    if (SCM_IDENTIFIERP(x) || SCM_IDENTIFIERP(y)) {
-        if (SCM_IDENTIFIERP(x)) x = SCM_OBJ(SCM_IDENTIFIER(x)->name);
-        if (SCM_IDENTIFIERP(y)) y = SCM_OBJ(SCM_IDENTIFIER(y)->name);
-        return SCM_EQ(x, y);
-    }
-    /* End of EXPERIMENTAL code */
-
-    if (!SCM_HPTRP(x)) return (x == y);
-    ScmClass *cx = Scm_ClassOf(x);
-    ScmClass *cy = Scm_ClassOf(y);
-    if (cx == cy && cx->compare) {
-        return (cx->compare(x, y, TRUE) == 0);
-    }
-    return FALSE;
+#undef CHECK_AGGREGATE
 }
 
 int Scm_EqualM(ScmObj x, ScmObj y, int mode)
