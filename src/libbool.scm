@@ -77,5 +77,122 @@
 (select-module gauche)
 (define-cproc compare (x y) ::<fixnum> Scm_Compare)
 
+;; Circular-safe equal?
+;; Based on Michael D. Adams and R. Kent Dybvig: Efficient Nondestructive
+;; Equality Checking for Trees and Graphs, Proceedings of ICFP 08, pp. 179-188.
+;; http://www.cs.indiana.edu/~dyb/pubs/equal.pdf
+;;
+;; NB: To choose restart value of K0, (modulo (sys-random) (* 2 K0)) isn't
+;; strictly uniform, but for our purpose it's ok.   We chose K0 to be prime
+;; so that it would compensate if the quality of randomness of low-bits of
+;; sys-random is not good.
+;;
+;; %interleave-equal? is invoked from C routine Scm_EqualP, which handles
+;; non-aggregate values and user-defined datatypes, so we recurse to equal?
+;; instead of using eqv? for such case (strings are also handled in equal?).
 
+(select-module gauche.internal)
+(define-constant K0 401)
+(define-constant Kb -40)
+(define (%interleave-equal? x y) (%interleave? x y K0))
 
+(define (%interleave? x y k)
+  (let1 ht #f
+    (define (call-union-find x y)
+      (unless ht (set! ht (make-hash-table 'eq?)))
+      (%union-find ht x y))
+    (define (e? x y k)
+      (if (<= k 0)
+        (if (= k Kb)
+          (fast? x y (modulo (sys-random) (* 2 K0)))
+          (slow? x y k))
+        (fast? x y k)))
+    (define (slow? x y k)
+      (cond
+       [(eqv? x y) k]
+       [(pair? x)
+        (and (pair? y)
+             (if (call-union-find x y)
+               0
+               (and-let* ([k (e? (car x) (car y) (- k 1))])
+                 (e? (cdr x) (cdr y) k))))]
+       [(vector? x)
+        (and (vector? y)
+             (let1 n (vector-length x)
+               (and (= (vector-length y) n)
+                    (if (call-union-find x y)
+                      0
+                      (let loop ([i 0] [k (- k 1)])
+                        (if (= i n)
+                          k
+                          (and-let* ([k (e? (vector-ref x i)
+                                            (vector-ref y i) k)])
+                            (loop (+ i 1) k))))))))]
+       [else (and (equal? x y) k)]))
+    (define (fast? x y k)
+      (let1 k (- k 1)
+        (cond
+         [(eqv? x y) k]
+         [(pair? x)
+          (and-let* ([ (pair? y) ]
+                     [k (e? (car x) (car y) k)])
+            (e? (cdr x) (cdr y) k))]
+         [(vector? x)
+          (and (vector? y)
+               (let1 n (vector-length x)
+                 (and (= (vector-length y) n)
+                      (let loop ([i 0] [k k])
+                        (if (= i n)
+                          k
+                          (and-let* ([k (e? (vector-ref x i)
+                                            (vector-ref y i) k)])
+                            (loop (+ i 1) k)))))))]
+         [else (and (equal? x y) k)])))
+    (boolean (e? x y k))))
+
+;; Replace these once we support srfi-111
+(define-macro (%box? x) `(pair? ,x))
+(define-macro (%set-box! x v) `(set-car! ,x ,v))
+(define-macro (%unbox x) `(car ,x))
+(define-macro (%make-box x) `(list ,x))
+
+(define (%union-find ht x y)
+  (define (find b)
+    (let1 n (%unbox b)
+      (if (%box? n)
+        (let loop ([b b] [n n])
+          (let1 nn (%unbox n)
+            (if (%box? nn)
+              (begin
+                (%set-box! b nn)
+                (loop n nn))
+              n)))
+        b)))
+  (let ([bx (hash-table-get ht x #f)]
+        [by (hash-table-get ht y #f)])
+    (if (not bx)
+      (if (not by)
+        (let1 b (%make-box 1)
+          (hash-table-put! ht x b)
+          (hash-table-put! ht y b)
+          #f)
+        (let1 ry (find by)
+          (hash-table-put! ht x ry)
+          #f))
+      (if (not by)
+        (let1 rx (find bx)
+          (hash-table-put! ht y rx)
+          #f)
+        (let ([rx (find bx)] [ry (find by)])
+          (or (eq? rx ry)
+              (let ([nx (%unbox rx)]
+                    [ny (%unbox ry)])
+                (if (> nx ny)
+                  (begin
+                    (%set-box! ry rx)
+                    (%set-box! rx (+ nx ny))
+                    #f)
+                  (begin
+                    (%set-box! rx ry)
+                    (%set-box! ry (+ ny nx))
+                    #f)))))))))

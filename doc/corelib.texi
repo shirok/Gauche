@@ -358,14 +358,15 @@ for user-defined classes.
 @end example
 
 @c EN
-Note: If both @var{obj1} and @var{obj2} have circular structure,
-@code{equal?} may diverge.  You might want to use @code{isomorph?}
-instead (see @ref{Determine isomorphism}).
+Note: This procedure correctly handles the case when
+both @var{obj1} and @var{obj2} have cycles through pairs and vectors,
+as required by R6RS and R7RS.  However, if the cycle involves
+user-defined classes, @code{equal?} may fail to terminate.
 @c JP
-註: @var{obj1}と@var{obj2}がともに循環構造を持っている場合、
-@code{equal?}は発散する可能性があります。
-かわりに@code{isomorph?} (@ref{Determine isomorphism}参照) が使える
-かもしれません。
+註: この手続きは、@var{obj1}と@var{obj2}がともにペアやベクタを介した
+循環構造を持っている場合もR6RSやR7RSに規定されるように値を返します。
+ただし、循環構造がユーザ定義データ型を間に挟んでいる場合は
+終了しない可能性があります。
 @c COMMON
 @end defun
 

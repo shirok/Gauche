@@ -444,6 +444,67 @@
 
 ;;--------------------------------------------------------------------------
 
+(test-section "circular list and equality")
+
+;; At this moment we haven't tested #n=, #n# notation, so we build
+;; circular structure at runtime.
+
+(let ()
+  (define (cdr-cycle . lis)
+    (set-cdr! (last-pair lis) lis)
+    lis)
+  (define (car-cycle . lis)
+    (if (null? lis)
+      lis
+      (let* ([head (cons #f (car lis))]
+             [next (let loop ([lis (cdr lis)])
+                     (if (null? lis)
+                       head
+                       (cons (loop (cdr lis)) (car lis))))])
+        (set-car! head next)
+        head)))
+
+  (test* "equal? w/ cdr-cycle 1" #t
+         (equal? (cdr-cycle 1 2 3) (cdr-cycle 1 2 3 1 2 3)))
+  (test* "equal? w/ cdr-cycle 2" #f
+         (equal? (cdr-cycle 1 2 3) (cdr-cycle 1 2 3 1 2)))
+  (test* "equal? w/ cdr-cycle 3" #f
+         (equal? (cdr-cycle 1 2 3)
+                 (apply append (make-list 10000 (list 1 2 3)))))
+  (test* "equal? w/ cdr-cycle 4" #t
+         (equal? (cdr-cycle 1 2 3)
+                 (apply cdr-cycle (apply append (make-list 10000 (list 1 2 3))))))
+  (test* "equal? w/ cdr-cycle 5" #f
+         (equal? (cdr-cycle 1 2 3) '(1)))
+
+  (test* "equal? w/ car-cycle 1" #t
+         (equal? (car-cycle 1) (car-cycle 1)))
+  (test* "equal? w/ car-cycle 2" #f
+         (equal? (car-cycle 1) (car-cycle 2)))
+  (test* "equal? w/ car-cycle 3" #t
+         (equal? (car-cycle 1 2 3) (car-cycle 1 2 3 1 2 3)))
+  (test* "equal? w/ car-cycle 4" #f
+         (equal? (car-cycle 1 2 3) (car-cycle 1 2 3 1 2)))
+
+  (test* "equal? w/ car/cdr-cycle 1" #t
+         (equal? (cdr-cycle (car-cycle 1))
+                 (cdr-cycle (car-cycle 1))))
+  (test* "equal? w/ car/cdr-cycle 2" #f
+         (equal? (cdr-cycle (car-cycle 1))
+                 (car-cycle (cdr-cycle 1))))
+  (test* "equal? w/ car/cdr-cycle 3" #t
+         (equal? (cdr-cycle (car-cycle 1 2 3))
+                 (cdr-cycle (car-cycle 1 2 3 1 2 3))))
+  (test* "equal? w/ car/cdr-cycle 4" #t
+         (equal? (cdr-cycle (car-cycle 1 2 3))
+                 (cdr-cycle (car-cycle 1 2 3) (car-cycle 1 2 3 1 2 3))))
+  (test* "equal? w/ car/cdr-cycle 4" #f
+         (equal? (cdr-cycle (car-cycle 1 2 3))
+                 (cdr-cycle (car-cycle 1 2 3) (car-cycle 1 2 3 1 2 3 1))))
+  )
+
+;;--------------------------------------------------------------------------
+
 (test-section "monotonic-merge")
 
 ;; monotonic-merge is a core function to implement Dylan-style class

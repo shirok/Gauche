@@ -1,5 +1,10 @@
 2014-02-01  Shiro Kawai  <shiro@acm.org>
 
+	* src/boolean.c (Scm_EqualP), src/libbool.scm (%interleave-equal?):
+	  Made equal? to handle cyclic structures, as specified in R[67]RS.
+	  For the time being, we don't consider cycles involving user-defined
+	  objects and object-equal? method.
+
 	* src/vminsn.scm (LREF-UNBOX): Added.
 
 2014-01-31  Shiro Kawai  <shiro@acm.org>
