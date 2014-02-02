@@ -42,7 +42,7 @@
 
 static void write_walk(ScmObj obj, ScmPort *port);
 static void write_ss(ScmObj obj, ScmPort *port, ScmWriteContext *ctx);
-static void write_ss_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx);
+static void write_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx);
 static void write_object(ScmObj obj, ScmPort *out, ScmWriteContext *ctx);
 static ScmObj write_object_fallback(ScmObj *args, int nargs, ScmGeneric *gf);
 static void format_write(ScmObj obj, ScmPort *port, ScmWriteContext *ctx,
@@ -164,7 +164,7 @@ void Scm_Write(ScmObj obj, ScmObj p, int mode)
 
     if (PORT_RECURSIVE_P(port)) {
         if (PORT_WALKER_P(port)) write_walk(obj, port);
-        else                     write_ss_rec(obj, port, &ctx);
+        else                     write_rec(obj, port, &ctx);
         return;
     }
 
@@ -173,7 +173,7 @@ void Scm_Write(ScmObj obj, ScmObj p, int mode)
     if (WRITER_NEED_2PASS(&ctx)) {
         PORT_SAFE_CALL(port, write_ss(obj, port, &ctx));
     } else {
-        PORT_SAFE_CALL(port, write_ss_rec(obj, port, &ctx));
+        PORT_SAFE_CALL(port, write_rec(obj, port, &ctx));
     }
     PORT_UNLOCK(port);
 }
@@ -209,15 +209,15 @@ int Scm_WriteLimited(ScmObj obj, ScmObj p, int mode, int width)
     ScmWriteContext ctx;
     write_context_init(&ctx, mode, 0, width);
 
-    /* we don't need to lock out, for it is private. */
+    /* we don't need to lock 'out', for it is private. */
     /* This part is a bit confusing - we only need to call write_ss
        if we're at the toplevel call.  */
     if (PORT_RECURSIVE_P(SCM_PORT(port))) {
-        write_ss_rec(obj, SCM_PORT(out), &ctx);
+        write_rec(obj, SCM_PORT(out), &ctx);
     } else if (WRITER_NEED_2PASS(&ctx)) {
         write_ss(obj, SCM_PORT(out), &ctx);
     } else {
-        write_ss_rec(obj, SCM_PORT(out), &ctx);
+        write_rec(obj, SCM_PORT(out), &ctx);
     }
     
     ScmString *str = SCM_STRING(Scm_GetOutputString(SCM_PORT(out), 0));
@@ -397,7 +397,7 @@ ScmObj Scm__WritePrimitive(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
    back system's writer routine such as Scm_Write, Scm_Printf,
    so we can effectively traverse entire data to be printed.
 
-   NB: write_walk and write_ss_rec need to traverse recursive structure.
+   NB: write_walk and write_rec need to traverse recursive structure.
    A simple way is to recurse to each element (e.g. car of a list,
    and each element of a vector) and loop over the sequence.
    However it busts the C stack when deep structure is passed.
@@ -414,7 +414,7 @@ ScmObj Scm__WritePrimitive(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
    written out.  In the second case, we're processing the vector,
    and the next item we should process is pointed by index.
 
-   We also set a limit of stack depth in write_ss_rec; in case
+   We also set a limit of stack depth in write_rec; in case
    car-circular list (e.g. #0=(#0#) ) is given to the plain write.
    It used to SEGV by busting C stack.  With the change of making it
    non-recursive, it would hog all the heap before crash, which is
@@ -440,6 +440,7 @@ static ScmPort *make_walker_port(void)
 }
 
 /* pass 1 */
+/* Implemented in Scheme */
 static void write_walk(ScmObj obj, ScmPort *port)
 {
     static ScmObj proc = SCM_UNDEFINED;
@@ -456,7 +457,7 @@ static void write_walk(ScmObj obj, ScmPort *port)
    than that. */
 #define STACK_LIMIT  0x1000000
 
-static void write_ss_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
+static void write_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
     char numbuf[50];  /* enough to contain long number */
     ScmHashTable *ht = NULL;
@@ -627,7 +628,7 @@ static void write_ss(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
     /* TODO: we need to rewind port mode */
     port->recursiveContext = walker_port->recursiveContext;
     port->flags |= SCM_PORT_WRITESS;
-    write_ss_rec(obj, port, ctx);
+    write_rec(obj, port, ctx);
     port->recursiveContext = SCM_FALSE;
     port->flags &= ~SCM_PORT_WRITESS;
 }
@@ -661,13 +662,13 @@ static void format_write(ScmObj obj, ScmPort *port, ScmWriteContext *ctx,
     }
     if (port->flags & SCM_PORT_WRITESS) {
         SCM_ASSERT(SCM_PAIRP(port->recursiveContext)&&SCM_HASH_TABLE_P(SCM_CDR(port->recursiveContext)));
-        write_ss_rec(obj, port, ctx);
+        write_rec(obj, port, ctx);
         return;
     }
     if (sharedp) {
         write_ss(obj, port, ctx);
     } else {
-        write_ss_rec(obj, port, ctx);
+        write_rec(obj, port, ctx);
     }
 }
 
