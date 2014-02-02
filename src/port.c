@@ -173,7 +173,7 @@ void Scm_ClosePort(ScmPort *port)
                        if (!SCM_PORT_CLOSED_P(port)) {
                            port_cleanup(port);
                        }
-                   } while (0));
+                   } while (0), /*no cleanup*/);
     PORT_UNLOCK(port);
 }
 

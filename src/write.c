@@ -61,45 +61,13 @@ SCM_DEFINE_GENERIC(Scm_GenericWriteObject, write_object_fallback, NULL);
    Do not count on these APIs! */
 
 /* Note: in order to support write/ss, we need to pass down the context
-   along the call tree.  We can think of a few strategies:
-
-  (a) Use separate context argument : this is logically the most natural way.
-      The problem is that the legacy code didn't take the context into
-      account (especially in the printer of user-defined objects).
-
-  (b) Attach context information to the port : this isn't "right", because
-      theoretically a user program may want to mix output of write/ss and
-      other writes into a single port.  However, it isn't likely a problem,
-      since (1) the outmost write() call locks the port, hence only one
-      thread can write to the port during a single write/ss call, and
-      (2) the purpose of write/ss is to produce an output which can be
-      read back, so you don't want to mix up other output.
-
-      Another possible drawback is the overhead of dynamic wind in the
-      toplevel write() call (since we need to remove the context information
-      from the port when write() exits non-locally).  If the port hasn't
-      been locked, we need a C-level unwind-protect anyway, so it's not
-      a problem.   If the port is already locked, extra dynamic wind may
-      impact performance.
-
-      Furthermore, I feel it isn't "right" to modify longer-living data
-      (port) for the sake of local, dynamically-scoped information (context).
-
-      The advantage of this method is that legacy code will work unchanged.
-
-  (c) A variation of (b) is to "wrap" the port by a transient procedural
-      port, which passes through output data to the original port, _and_
-      keeps the context info.  This is clean in the sense that it doesn't
-      contaminate the longer-living data (original port) by the transient
-      info.  We don't need to worry about dynamic winding as well (we can
-      leave the transient port to be GCed).
-
-      The concern is the overhead of forwarding output via procedural
-      port interface.
-
-   I'm not sure which is the best way in long run; so, as a temporary
-   solution, I use the strategy (b), since it is compatible to the current
-   version.  Let's see how it works.
+   along the call tree.
+   For the time being, we attach transient extra info to the port during
+   the call.  It's a bit ugly, though, to rely on such mutation.  In
+   future we might introduce a 'wrapper' port, which operates just like
+   the inner (wrapped) port but can carry extra info.  We can do it with
+   virtual port now, but it takes some overhead; we want it to be much
+   lighter.
  */
 
 #define SPBUFSIZ   50
@@ -140,6 +108,13 @@ static void write_context_init(ScmWriteContext *ctx, int mode, int flags, int li
     if (limit > 0) ctx->flags |= WRITE_LIMITED;
 }
 
+/* Cleanup transient data attached to the port. */
+static void cleanup_port_context(ScmPort *port)
+{
+    port->flags &= ~(SCM_PORT_WALKING|SCM_PORT_WRITESS);
+    port->recursiveContext = SCM_FALSE;
+}
+
 /*
  * Entry points
  *
@@ -171,9 +146,10 @@ void Scm_Write(ScmObj obj, ScmObj p, int mode)
     ScmVM *vm = Scm_VM();
     PORT_LOCK(port, vm);
     if (WRITER_NEED_2PASS(&ctx)) {
-        PORT_SAFE_CALL(port, write_ss(obj, port, &ctx));
+        PORT_SAFE_CALL(port, write_ss(obj, port, &ctx),
+                       cleanup_port_context(port));
     } else {
-        PORT_SAFE_CALL(port, write_rec(obj, port, &ctx));
+        PORT_SAFE_CALL(port, write_rec(obj, port, &ctx), /*no cleanup*/);
     }
     PORT_UNLOCK(port);
 }
@@ -198,9 +174,9 @@ int Scm_WriteLimited(ScmObj obj, ScmObj p, int mode, int width)
 
     /* The walk pass does not produce any output, so we don't bother to
        create an intermediate string port. */
-    if (PORT_WALKER_P(SCM_PORT(port))) {
-        SCM_ASSERT(PORT_RECURSIVE_P(SCM_PORT(port)));
-        write_walk(obj, SCM_PORT(port));
+    if (PORT_WALKER_P(port)) {
+        SCM_ASSERT(PORT_RECURSIVE_P(port));
+        write_walk(obj, port);
         return 0;               /* doesn't really matter */
     }
 
@@ -209,7 +185,7 @@ int Scm_WriteLimited(ScmObj obj, ScmObj p, int mode, int width)
     ScmWriteContext ctx;
     write_context_init(&ctx, mode, 0, width);
 
-    /* we don't need to lock 'out', for it is private. */
+    /* We don't need to lock 'out', nor clean it up, for it is private. */
     /* This part is a bit confusing - we only need to call write_ss
        if we're at the toplevel call.  */
     if (PORT_RECURSIVE_P(SCM_PORT(port))) {
@@ -391,7 +367,11 @@ ScmObj Scm__WritePrimitive(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
    For the walk pass, we can't use generic traversal algorithm
    if the data contains user-defined structures.  In which case,
    we delegate the walk task to the user-defined print routine.
-   In the walk pass, a special dummy port is created.  It is a
+   In the walk pass, we set SCM_PORT_WALKING flag of the port.
+   Port API recognizes this flag and just ignore any output to
+   this port.  Writers recognize this flag and works as the
+   walk pass.
+
    procedural port to which all output is discarded.  If the
    user-defined routine needs to traverse substructure, it calls
    back system's writer routine such as Scm_Write, Scm_Printf,
@@ -420,24 +400,6 @@ ScmObj Scm__WritePrimitive(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
    non-recursive, it would hog all the heap before crash, which is
    rather unpleasant, so we make it bail out before that.
  */
-
-
-/* Dummy port for the walk pass */
-static ScmPortVTable walker_port_vtable = {
-    NULL, NULL, NULL, NULL, NULL,
-    NULL, NULL, NULL, NULL, NULL,
-    NULL, NULL
-};
-
-static ScmPort *make_walker_port(void)
-{
-    ScmPort *port = SCM_PORT(Scm_MakeVirtualPort(
-        SCM_CLASS_PORT, SCM_PORT_OUTPUT, &walker_port_vtable));
-    ScmObj ht = Scm_MakeHashTableSimple(SCM_HASH_EQ, 0);
-    port->recursiveContext = Scm_Cons(SCM_MAKE_INT(0), ht);
-    port->flags = SCM_PORT_WALKING;
-    return port;
-}
 
 /* pass 1 */
 /* Implemented in Scheme */
@@ -615,18 +577,21 @@ static void write_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 }
 
 /* Write/ss main driver
-   NB: this should never be called recursively. */
+   This should never be called recursively.
+   We modify port->flags and port->recursiveContext; they are cleaned up
+   by the caller even if we throw an error during write. */
 static void write_ss(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
-    ScmPort *walker_port = make_walker_port();
-
+    SCM_ASSERT(SCM_FALSEP(port->recursiveContext));
+    
     /* pass 1 */
-    write_walk(obj, walker_port);
-    Scm_ClosePort(walker_port);
+    port->flags |= SCM_PORT_WALKING;
+    port->recursiveContext = Scm_Cons(SCM_MAKE_INT(0),
+                                      Scm_MakeHashTableSimple(SCM_HASH_EQ, 0));
+    write_walk(obj, port);
+    port->flags &= ~SCM_PORT_WALKING;
 
     /* pass 2 */
-    /* TODO: we need to rewind port mode */
-    port->recursiveContext = walker_port->recursiveContext;
     port->flags |= SCM_PORT_WRITESS;
     write_rec(obj, port, ctx);
     port->recursiveContext = SCM_FALSE;
@@ -1022,7 +987,8 @@ void Scm_Format(ScmPort *out, ScmString *fmt, ScmObj args, int sharedp)
 
     ScmVM *vm = Scm_VM();
     PORT_LOCK(out, vm);
-    PORT_SAFE_CALL(out, format_proc(SCM_PORT(out), fmt, args, sharedp));
+    PORT_SAFE_CALL(out, format_proc(SCM_PORT(out), fmt, args, sharedp),
+                   /*no cleanup*/);
     PORT_UNLOCK(out);
 }
 
@@ -1338,7 +1304,7 @@ void Scm_Vprintf(ScmPort *out, const char *fmt, va_list ap, int sharedp)
 
     ScmVM *vm = Scm_VM();
     PORT_LOCK(out, vm);
-    PORT_SAFE_CALL(out, vprintf_pass2(out, fmt, args));
+    PORT_SAFE_CALL(out, vprintf_pass2(out, fmt, args), /*no cleanup*/);
     PORT_UNLOCK(out);
 }
 

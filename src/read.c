@@ -109,7 +109,8 @@ ScmObj Scm_ReadWithContext(ScmObj port, ScmReadContext *ctx)
         r = read_item(SCM_PORT(port), ctx);
     } else {
         PORT_LOCK(SCM_PORT(port), vm);
-        PORT_SAFE_CALL(SCM_PORT(port), r = read_item(SCM_PORT(port), ctx));
+        PORT_SAFE_CALL(SCM_PORT(port),
+                       r = read_item(SCM_PORT(port), ctx), /*no cleanup*/);
         PORT_UNLOCK(SCM_PORT(port));
     }
     if (!(ctx->flags & RCTX_RECURSIVELY)) {
@@ -158,7 +159,9 @@ ScmObj Scm_ReadListWithContext(ScmObj port, ScmChar closer, ScmReadContext *ctx)
         r = read_list(SCM_PORT(port), closer, ctx);
     } else {
         PORT_LOCK(SCM_PORT(port), vm);
-        PORT_SAFE_CALL(SCM_PORT(port), r = read_list(SCM_PORT(port), closer, ctx));
+        PORT_SAFE_CALL(SCM_PORT(port),
+                       r = read_list(SCM_PORT(port), closer, ctx),
+                       /*no cleanup*/);
         PORT_UNLOCK(SCM_PORT(port));
     }
     if (!(ctx->flags & RCTX_RECURSIVELY)) {

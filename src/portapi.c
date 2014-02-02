@@ -64,7 +64,7 @@
 #define VMDECL        ScmVM *vm = Scm_VM()
 #define LOCK(p)       PORT_LOCK(p, vm)
 #define UNLOCK(p)     PORT_UNLOCK(p)
-#define SAFE_CALL(p, exp) PORT_SAFE_CALL(p, exp)
+#define SAFE_CALL(p, exp) PORT_SAFE_CALL(p, exp, /*no cleanup*/)
 #define SHORTCUT(p, unsafe) \
   do { if (PORT_LOCKED(p, vm)) { unsafe; }} while (0)
 #else
@@ -74,7 +74,6 @@
 #define SAFE_CALL(p, exp) (exp)
 #define SHORTCUT(p, unsafe) /* none */
 #endif
-
 
 /* Convenience macro */
 #ifndef CLOSE_CHECK
@@ -88,6 +87,18 @@
     } while (0)
 #endif /* CLOSE_CHECK */
 
+/* In the walk pass of multi-pass writing (see write.c), we set
+   SCM_PORT_WALKING flag of the port.  Usually Scm_Write family recognizes
+   the flag and suppress output.  However, in case if low-level port API
+   is directly called during the walk pass, we just check the flag again.
+*/
+#ifndef WALKER_CHECK
+#define WALKER_CHECK(port)                      \
+    do {                                        \
+        if (PORT_WALKER_P(port)) return;        \
+    } while (0)
+#endif /* WALKER_CHECK */
+
 /*=================================================================
  * Putb
  */
@@ -100,6 +111,7 @@ void Scm_PutbUnsafe(ScmByte b, ScmPort *p)
 {
     VMDECL;
     SHORTCUT(p, Scm_PutbUnsafe(b, p); return);
+    WALKER_CHECK(p);
     LOCK(p);
     CLOSE_CHECK(p);
 
@@ -142,6 +154,7 @@ void Scm_PutcUnsafe(ScmChar c, ScmPort *p)
 {
     VMDECL;
     SHORTCUT(p, Scm_PutcUnsafe(c, p); return);
+    WALKER_CHECK(p);
     LOCK(p);
     CLOSE_CHECK(p);
 
@@ -191,6 +204,7 @@ void Scm_PutsUnsafe(ScmString *s, ScmPort *p)
 {
     VMDECL;
     SHORTCUT(p, Scm_PutsUnsafe(s, p); return);
+    WALKER_CHECK(p);
     LOCK(p);
     CLOSE_CHECK(p);
 
@@ -241,6 +255,7 @@ void Scm_PutzUnsafe(const char *s, int siz, ScmPort *p)
 {
     VMDECL;
     SHORTCUT(p, Scm_PutzUnsafe(s, siz, p); return);
+    WALKER_CHECK(p);
     LOCK(p);
     CLOSE_CHECK(p);
     if (siz < 0) siz = (int)strlen(s);
@@ -287,6 +302,7 @@ void Scm_FlushUnsafe(ScmPort *p)
 {
     VMDECL;
     SHORTCUT(p, Scm_FlushUnsafe(p); return);
+    WALKER_CHECK(p);
     LOCK(p);
     CLOSE_CHECK(p);
     switch (SCM_PORT_TYPE(p)) {

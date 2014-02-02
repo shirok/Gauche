@@ -1,3 +1,10 @@
+2014-02-02  Shiro Kawai  <shiro@acm.org>
+
+	* src/write.c, src/port.c, src/portapi.c, src/read.c: Another step
+	  to improve the writer.  Now we don't create a dummy 'walker' port,
+	  for merely marking the port->flags suffice.  Also placed a cleanup
+	  procedure to remove transient stuff from the port.
+
 2014-02-01  Shiro Kawai  <shiro@acm.org>
 
 	* src/boolean.c (Scm_EqualP), src/libbool.scm (%interleave-equal?):

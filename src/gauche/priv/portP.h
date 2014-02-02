@@ -119,14 +119,17 @@ void Scm__SetupPortsForWindows(int has_console);
 /* Should be used while P is locked by calling thread.
    Evaluate C statement CALL, making sure the port is unlocked in case
    CALL raises an error.
+   CLEANUP is a C stmt called no matter CALL succeeds or not.
    TODO: we may be able to utilize SCM_PORT_PRIVATE flag to avoid
    SCM_UNWIND_PROTECT overhead. */
-#define PORT_SAFE_CALL(p, call)                 \
+#define PORT_SAFE_CALL(p, call, cleanup)        \
     do {                                        \
        SCM_UNWIND_PROTECT {                     \
            call;                                \
+           cleanup;                             \
        } SCM_WHEN_ERROR {                       \
            PORT_UNLOCK(p);                      \
+           cleanup;                             \
            SCM_NEXT_HANDLER;                    \
        } SCM_END_PROTECT;                       \
     } while (0)
