@@ -18694,7 +18694,7 @@ an integer.
 
 @item
 @c EN
-A symbol @code{_} matches anything, without binding a patter variable.
+A symbol @code{_} matches anything, without binding a pattern variable.
 It can be used to show "don't care" placeholder.
 @c JP
 シンボル @code{_} はあらゆるものマッチし、パターン変数は束縛しません。
