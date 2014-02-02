@@ -77,8 +77,9 @@ int Scm_EqvP(ScmObj x, ScmObj y)
 
    It is much easier to write the algorithm in Scheme, but we don't want
    the overhead of crossing C-Scheme boundary for trivial cases.
-   So we cover a simple cases (non-aggregates, depth-1 lists and vectors)
-   in C, and fall back to Scheme routine if 
+   So we cover a simple cases (non-aggregates, user-defined objects and
+   flat lists/vectors) in C, and fall back to Scheme routine if we encounter
+   more complex structures.
 
    Caveat: The cycle may involve user-defined objects.  To detect such
    cycle, we need to pass down the context info to ScmClass.compare
@@ -148,6 +149,12 @@ int Scm_EqualP(ScmObj x, ScmObj y)
         for (; i < len; i++) {
             ScmObj xx = SCM_VECTOR_ELEMENT(x, i);
             ScmObj yy = SCM_VECTOR_ELEMENT(y, i);
+            /* NB: If we detect nested structure in middle of vectors,
+               we run Scheme routine for the entire vector; so we'll test
+               equality of elements before the current one again.  If
+               they are simple objects that's negligible, but there may
+               be objects of user-defined datatypes, for which object-equal?
+               could be expensive; we'll fix it in future. */
             CHECK_AGGREGATE(xx, yy);
         }
         return TRUE;
