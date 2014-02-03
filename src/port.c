@@ -181,31 +181,15 @@ void Scm_ClosePort(ScmPort *port)
  * Locking ports
  */
 
-/*
- * External routine to access port exclusively
- */
-static ScmObj with_port_locking_pre_thunk(ScmObj *args, int nargs, void *data)
-{
-    ScmPort *p = (ScmPort*)data;
-    ScmVM *vm = Scm_VM();
-    PORT_LOCK(p, vm);
-    return SCM_UNDEFINED;
-}
-
-static ScmObj with_port_locking_post_thunk(ScmObj *args, int nargs, void *data)
-{
-    ScmPort *p = (ScmPort*)data;
-    PORT_UNLOCK(p);
-    return SCM_UNDEFINED;
-}
-
+/* OBSOLETED */
+/* C routines can use PORT_SAFE_CALL, so we reimplemented this in libio.scm.
+   Kept here for ABI compatibility; will be gone by 1.0.  */
 ScmObj Scm_VMWithPortLocking(ScmPort *port, ScmObj closure)
 {
-    ScmObj before = Scm_MakeSubr(with_port_locking_pre_thunk, (void*)port,
-                                 0, 0, SCM_FALSE);
-    ScmObj after = Scm_MakeSubr(with_port_locking_post_thunk, (void*)port,
-                                0, 0, SCM_FALSE);
-    return Scm_VMDynamicWind(before, closure, after);
+    static ScmObj with_port_locking_proc = SCM_UNDEFINED;
+    SCM_BIND_PROC(with_port_locking_proc, "with-port-locking",
+                  Scm_GaucheModule());
+    return Scm_ApplyRec1(with_port_locking_proc, closure);
 }
 
 /*===============================================================

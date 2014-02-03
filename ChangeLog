@@ -1,5 +1,8 @@
 2014-02-02  Shiro Kawai  <shiro@acm.org>
 
+	* src/port.c, src/libio.scm (with-port-locking): Moved the definition
+	  from C to Scheme.
+
 	* src/write.c, src/port.c, src/portapi.c, src/read.c: Another step
 	  to improve the writer.  Now we don't create a dummy 'walker' port,
 	  for merely marking the port->flags suffice.  Also placed a cleanup

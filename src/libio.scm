@@ -35,6 +35,7 @@
 
 (inline-stub
  (declcode (.include <gauche/vminsn.h>
+                     <gauche/priv/portP.h>
                      <stdlib.h>
                      <fcntl.h>)))
 
@@ -374,7 +375,20 @@
         (format #f "~s: " n))
       "")))
 
-(define-cproc with-port-locking (port::<port> proc) Scm_VMWithPortLocking)
+(select-module gauche.internal)
+(define-cproc %port-lock (port::<port>) ::<void>
+  (let* ([vm::ScmVM* (Scm_VM)])
+    (PORT_LOCK port vm)))
+(define-cproc %port-unlock (port::<port>) ::<void>
+  (PORT_UNLOCK port))
+
+;; Passing extra args is unusual for with-* style, but it can allow avoiding
+;; closure allocation and may be useful for performance-sensitive parts.
+(define-in-module gauche (with-port-locking port proc . args)
+  (unwind-protect
+      (begin (%port-lock port)
+             (apply proc args))
+    (%port-unlock port)))
 
 ;;;
 ;;; Input
