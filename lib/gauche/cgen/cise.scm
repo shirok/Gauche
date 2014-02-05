@@ -339,7 +339,7 @@
     [#\tab       (wrap-expr "'\\t'"  env)]
     [[? char?]   (wrap-expr `("'" ,(if (char-set-contains? #[[:alnum:]] form)
                                      (string form)
-                                     (format "\\x~2'0x" (char->integer form)))
+                                     (format "\\x~2,'0x" (char->integer form)))
                               "'") env)]
     [_           (error "Invalid CISE form: " form)]))
 
