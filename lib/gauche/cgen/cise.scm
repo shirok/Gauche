@@ -337,10 +337,13 @@
     [#\newline   (wrap-expr "'\\n'"  env)]
     [#\return    (wrap-expr "'\\r'"  env)]
     [#\tab       (wrap-expr "'\\t'"  env)]
-    [[? char?]   (wrap-expr `("'" ,(if (char-set-contains? #[[:alnum:]] form)
-                                     (string form)
-                                     (format "\\x~2,'0x" (char->integer form)))
-                              "'") env)]
+    [[? char?]
+     (if (>= (char->integer form) 128)
+       (error "CISE: Cannot embed non-ASCII character literal (yet):" form)
+       (wrap-expr `("'" ,(if (char-set-contains? #[[:alnum:]] form)
+                           (string form)
+                           (format "\\x~2,'0x" (char->integer form)))
+                    "'") env))]
     [_           (error "Invalid CISE form: " form)]))
 
 ;;
