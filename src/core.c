@@ -94,6 +94,7 @@ extern void Scm_Init_libcode(void);
 extern void Scm_Init_libdict(void);
 extern void Scm_Init_libeval(void);
 extern void Scm_Init_libexc(void);
+extern void Scm_Init_libfmt(void);
 extern void Scm_Init_libio(void);
 extern void Scm_Init_liblazy(void);
 extern void Scm_Init_liblist(void);
@@ -173,6 +174,7 @@ void Scm_Init(const char *signature)
     Scm_Init_libdict();
     Scm_Init_libeval();
     Scm_Init_libexc();
+    Scm_Init_libfmt();
     Scm_Init_libio();
     Scm_Init_liblazy();
     Scm_Init_liblist();

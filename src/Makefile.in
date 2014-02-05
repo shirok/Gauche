@@ -196,8 +196,8 @@ libgauche_OBJECTS = \
 	lazy.$(OBJEXT) repl.$(OBJEXT) autoloads.$(OBJEXT) system.$(OBJEXT) \
 	compile.$(OBJEXT) \
 	libalpha.$(OBJEXT) libbool.$(OBJEXT) libchar.$(OBJEXT) \
-	libcode.$(OBJEXT) \
-	libdict.$(OBJEXT) libeval.$(OBJEXT) libexc.$(OBJEXT) \
+	libcode.$(OBJEXT) libdict.$(OBJEXT) libeval.$(OBJEXT) \
+	libexc.$(OBJEXT) libfmt.$(OBJEXT) \
 	libio.$(OBJEXT) liblazy.$(OBJEXT) liblist.$(OBJEXT) \
 	libmisc.$(OBJEXT) libmod.$(OBJEXT) libnum.$(OBJEXT) \
 	libobj.$(OBJEXT) libomega.$(OBJEXT) libproc.$(OBJEXT) \
@@ -252,6 +252,7 @@ libcode.c  : libcode.scm $(PRECOMP_DEPENDENCY)
 libdict.c  : libdict.scm $(PRECOMP_DEPENDENCY)
 libeval.c  : libeval.scm $(PRECOMP_DEPENDENCY)
 libexc.c   : libexc.scm $(PRECOMP_DEPENDENCY)
+libfmt.c   : libfmt.scm $(PRECOMP_DEPENDENCY)
 libio.c    : libio.scm $(PRECOMP_DEPENDENCY)
 liblazy.c  : liblazy.scm $(PRECOMP_DEPENDENCY)
 liblist.c  : liblist.scm $(PRECOMP_DEPENDENCY)

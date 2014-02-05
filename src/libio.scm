@@ -376,19 +376,53 @@
       "")))
 
 (select-module gauche.internal)
-(define-cproc %port-lock (port::<port>) ::<void>
+
+;; Transient flags during circular/shared-aware writing
+(define-cproc %port-walking? (port::<port>) ::<boolean>
+  (setter (port::<port> flag::<boolean>) ::<void>
+          (if flag
+            (logior= (-> port flags) SCM_PORT_WALKING)
+            (logand= (-> port flags) (lognot SCM_PORT_WALKING))))
+  PORT_WALKER_P)
+(define-cproc %port-recursive-context (port::<port>)
+  (setter (port::<port> obj) ::<void>
+          (set! (-> port recursiveContext) obj))
+  (result (-> port recursiveContext)))
+
+(define-cproc %port-lock! (port::<port>) ::<void>
   (let* ([vm::ScmVM* (Scm_VM)])
     (PORT_LOCK port vm)))
-(define-cproc %port-unlock (port::<port>) ::<void>
+(define-cproc %port-unlock! (port::<port>) ::<void>
   (PORT_UNLOCK port))
 
 ;; Passing extra args is unusual for with-* style, but it can allow avoiding
 ;; closure allocation and may be useful for performance-sensitive parts.
 (define-in-module gauche (with-port-locking port proc . args)
   (unwind-protect
-      (begin (%port-lock port)
+      (begin (%port-lock! port)
              (apply proc args))
-    (%port-unlock port)))
+    (%port-unlock! port)))
+
+(define-in-module gauche.internal ; used by two-pass output
+  (%with-2pass-setup port walker emitter . args)
+  ;; The caller guarantees to call this when port isn't in two-pass
+  ;; mode.   We lock the port, and call WALKER with setting the port
+  ;; to 'walking' mode, then call EMITTER with setting the port to
+  ;; 'write-ss' mode.
+  (unwind-protect
+      (begin
+        (%port-lock! port)
+        (when (%port-recursive-context port)
+          (error "[internal] %with-2pass-setup called recursively on port:"
+                 port))
+        (set! (%port-recursive-context port) (cons 0 (make-hash-table 'eq?)))
+        (set! (%port-walking? port) #t)
+        (apply walker args)
+        (set! (%port-walking? port) #f)
+        (apply emitter args))
+    (set! (%port-walking? port) #f)
+    (set! (%port-recursive-context port) #f)
+    (%port-unlock! port)))
 
 ;;;
 ;;; Input
@@ -588,19 +622,20 @@
 ;;
 (select-module gauche.internal)
 
-;; Extract recursive context.  Attaching a context to a port
-;; is a temporary solution (see the discussion in src/write.c),
-;; and we may redesign the whole thing in future.
-(define-cproc %write-recursive-context (port::<output-port>)
-  (if (and (SCM_PAIRP (-> port recursiveContext))
-           (SCM_HASH_TABLE_P (SCM_CDR (-> port recursiveContext))))
-    (result (-> port recursiveContext))
-    (result '#f)))
+(define-cproc write-need-recurse? (obj) ::<boolean>
+  (result (or (not (SCM_PTRP obj))
+              (SCM_NUMBERP obj)
+              (SCM_KEYWORDP obj)
+              (and (SCM_SYMBOLP obj) (SCM_SYMBOL_INTERNED obj))
+              (and (SCM_STRINGP obj) (== (SCM_STRING_SIZE obj) 0))
+              (and (SCM_VECTORP obj) (== (SCM_VECTOR_SIZE obj) 0)))))
+
+(define (write-walk obj port)
+  (if-let1 ctx (%port-recursive-context port)
+    (%write-walk-rec obj port (cdr ctx))))
 
 (define (%write-walk-rec obj port tab)
-  (unless (or (%immediate? obj) (keyword? obj) (number? obj)
-              (and (symbol? obj) (symbol-interned? obj))
-              (equal? obj "") (equal? obj '#()))
+  (unless (write-need-recurse? obj)
     (if (hash-table-exists? tab obj)
       (hash-table-put! tab obj #t)   ; seen more than once
       (begin
@@ -619,15 +654,6 @@
           ;; (we already have a dummy port)
           (write-object obj port)])))))
 
-;;
-;; format
-;;
-(select-module gauche.internal)
-
-(define-cproc %format
-  (port::<output-port> fmt::<string> args shared::<boolean>) ::<void>
-  Scm_Format)
-
 (select-module gauche.internal)
 
 ;; srfi-38
@@ -636,25 +662,6 @@
 (define-in-module gauche write/ss write-with-shared-structure)
 
 (define-in-module gauche (print . args) (for-each display args) (newline))
-
-(define (%format-common port fmt args shared?)
-  (cond [(eqv? port #f)
-         (let1 out (open-output-string :private? #t)
-           (%format out fmt args shared?)
-           (get-output-string out))]
-        [(eqv? port #t)
-         (%format (current-output-port) fmt args shared?)]
-        [else (%format port fmt args shared?)]))
-
-(define-in-module gauche (format fmt . args)
-  (if (string? fmt)
-    (%format-common #f fmt args #f) ;; srfi-28 compatible behavior
-    (%format-common fmt (car args) (cdr args) #f)))
-
-(define-in-module gauche (format/ss fmt . args)
-  (if (string? fmt)
-    (%format-common #f fmt args #t) ;; srfi-28 compatible behavior
-    (%format-common fmt (car args) (cdr args) #t)))
 
 ;;;
 ;;; With-something

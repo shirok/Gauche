@@ -220,7 +220,7 @@
          (set-cdr! a a)
          (format/ss "The answer is ~a" a)))
 
-(test* "format/ss" "The answer is #0=(a . #0#) #0=(a . #0#)"
+(test* "format/ss" "The answer is #0=(a . #0#) #0#"
        (let ((a (list 'a)))
          (set-cdr! a a)
          (format/ss "The answer is ~s ~s" a a)))

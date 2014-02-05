@@ -687,6 +687,12 @@
 (test* "format ~x" "0000012345"  (format #f "~10,'0x" 74565))
 (test* "format ~x" "0000-12345"  (format #f "~10,'0x" -74565))
 
+(test* "format ~nr" "wud0up"  (format "~36r" 1985913745))
+(test* "format ~nr" "    wud0up"  (format "~36,10r" 1985913745))
+(test* "format ~nr" "****wud0up"  (format "~36,10,'*r" 1985913745))
+(test* "format ~nr" "***+wud0up"  (format "~36,10,'*@r" 1985913745))
+(test* "format ~nR" "WUD0UP"  (format "~36R" 1985913745))
+
 (test* "format v param" "     12345"
        (format #f "~vd" 10 12345))
 (test* "format v param" "0000012345"

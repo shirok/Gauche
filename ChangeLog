@@ -1,3 +1,11 @@
+2014-02-04  Shiro Kawai  <shiro@acm.org>
+
+	* src/write.c, src/libfmt.scm (format): Rewrote format in Scheme.
+	  NB: We might reconsider the semantics of format/ss; the output
+	  of format is usually unreadable by 'read', so usint srfi-38
+	  notation isn't really a point.  The point of format/ss is to
+	  guarantee that it returns even if the arg has circular structure.
+
 2014-02-02  Shiro Kawai  <shiro@acm.org>
 
 	* src/port.c, src/libio.scm (with-port-locking): Moved the definition
