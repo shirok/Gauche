@@ -36,6 +36,7 @@
 #include <math.h>
 #define LIBGAUCHE_BODY
 #include "gauche.h"
+#include "gauche/char_attr.h"
 #include "gauche/priv/portP.h"
 #include "gauche/priv/builtin-syms.h"
 #include "gauche/priv/readerP.h"
@@ -371,12 +372,37 @@ static const unsigned char ctypes[] = {
 
 inline static int char_word_constituent(int c, int include_hash_sign)
 {
-    return (c >= 128 || (c >= 0 && (ctypes[(unsigned char)c]&1))
-            || (c == '#' && include_hash_sign));
+    if (c < 128) {
+        return ((c >= 0 && (ctypes[(unsigned char)c]&1))
+                || (c == '#' && include_hash_sign));
+    } else {
+        /* We follow R6RS spec here */
+        switch (Scm_CharGeneralCategory(c)) {
+        case SCM_CHAR_CATEGORY_Lu:
+        case SCM_CHAR_CATEGORY_Ll:
+        case SCM_CHAR_CATEGORY_Lt:
+        case SCM_CHAR_CATEGORY_Lm:
+        case SCM_CHAR_CATEGORY_Lo:
+        case SCM_CHAR_CATEGORY_Mn:
+        case SCM_CHAR_CATEGORY_Nl:
+        case SCM_CHAR_CATEGORY_No:
+        case SCM_CHAR_CATEGORY_Pd:
+        case SCM_CHAR_CATEGORY_Pc:
+        case SCM_CHAR_CATEGORY_Po:
+        case SCM_CHAR_CATEGORY_Sc:
+        case SCM_CHAR_CATEGORY_Sm:
+        case SCM_CHAR_CATEGORY_Sk:
+        case SCM_CHAR_CATEGORY_So:
+        case SCM_CHAR_CATEGORY_Co: return TRUE;
+        default: return FALSE;
+        }
+    }
 }
 
 inline static int char_word_case_fold(int c)
 {
+    /*NB: Should we adopt full-fledged case folding for #!fold-case mode?
+      It seems overkill to me.  For now, we only handles ASCII range.*/
     return (c >= 0 && c < 128 && (ctypes[(unsigned char)c]&2));
 }
 

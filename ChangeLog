@@ -1,3 +1,10 @@
+2014-02-05  Shiro Kawai  <shiro@acm.org>
+
+	* src/read.c (char_word_constituent): Refined checking symbol
+	  constituent characters beyond ASCII range, following R6RS.
+	  For example, \u3000 followed by 'a' used to be a part of
+	  symbol, but now it correctly delimits a symbol 'a'.
+
 2014-02-04  Shiro Kawai  <shiro@acm.org>
 
 	* src/write.c, src/libfmt.scm (format): Rewrote format in Scheme.
