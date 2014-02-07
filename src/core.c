@@ -472,6 +472,7 @@ init_cond_features()
             
         /* R7RS Appendix B */
         { "exact-closed", NULL },
+        // { "exact-complex", NULL }, /* not yet */
         { "ieee-float", NULL },
         { "full-unicode", NULL },
         { "ratios", NULL },

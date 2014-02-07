@@ -4,7 +4,7 @@
         (scheme inexact) (scheme complex) (scheme time)
         (scheme file) (scheme read) (scheme write)
         (scheme eval) (scheme process-context) (scheme case-lambda)
-        (except (scheme r5rs) write)
+        (scheme r5rs)
         (chibi test)  ; or (srfi 64)
         )
 
@@ -518,7 +518,9 @@
 (test #t (complex? 3))
 (test #t (real? 3))
 (test #t (real? -2.5+0i))
-(test #f (real? -2.5+0.0i))
+(cond-expand
+ [exact-complex (test #f (real? -2.5+0.0i))]
+ [else])
 (test #t (real? #e1e10))
 (test #t (real? +inf.0))
 (test #f (rational? -inf.0))
@@ -761,9 +763,13 @@
 
 (test 0.54030230586814+0.841470984807897i (make-polar 1 1))
 
-(test 1 (real-part 1+2i))
-
-(test 2 (imag-part 1+2i))
+(cond-expand
+ [exact-complex
+  (test 1 (real-part 1+2i))
+  (test 2 (imag-part 1+2i))]
+ [else
+  (test 1.0 (real-part 1+2i))
+  (test 2.0 (imag-part 1+2i))])
 
 (test 2.23606797749979 (magnitude 1+2i))
 
@@ -1886,19 +1892,22 @@
 (test-numeric-syntax "#e0/10" 0 "0")
 (test-numeric-syntax "#i3/2" (/ 3.0 2.0) "1.5")
 ;; Exact complex
-(test-numeric-syntax "1+2i" (make-rectangular 1 2))
-(test-numeric-syntax "1+2I" (make-rectangular 1 2) "1+2i")
-(test-numeric-syntax "1-2i" (make-rectangular 1 -2))
-(test-numeric-syntax "-1+2i" (make-rectangular -1 2))
-(test-numeric-syntax "-1-2i" (make-rectangular -1 -2))
-(test-numeric-syntax "+i" (make-rectangular 0 1) "+i" "+1i" "0+i" "0+1i")
-(test-numeric-syntax "0+i" (make-rectangular 0 1) "+i" "+1i" "0+i" "0+1i")
-(test-numeric-syntax "0+1i" (make-rectangular 0 1) "+i" "+1i" "0+i" "0+1i")
-(test-numeric-syntax "-i" (make-rectangular 0 -1) "-i" "-1i" "0-i" "0-1i")
-(test-numeric-syntax "0-i" (make-rectangular 0 -1) "-i" "-1i" "0-i" "0-1i")
-(test-numeric-syntax "0-1i" (make-rectangular 0 -1) "-i" "-1i" "0-i" "0-1i")
-(test-numeric-syntax "+2i" (make-rectangular 0 2) "2i" "+2i" "0+2i")
-(test-numeric-syntax "-2i" (make-rectangular 0 -2) "-2i" "0-2i")
+(cond-expand
+ [exact-complex
+  (test-numeric-syntax "1+2i" (make-rectangular 1 2))
+  (test-numeric-syntax "1+2I" (make-rectangular 1 2) "1+2i")
+  (test-numeric-syntax "1-2i" (make-rectangular 1 -2))
+  (test-numeric-syntax "-1+2i" (make-rectangular -1 2))
+  (test-numeric-syntax "-1-2i" (make-rectangular -1 -2))
+  (test-numeric-syntax "+i" (make-rectangular 0 1) "+i" "+1i" "0+i" "0+1i")
+  (test-numeric-syntax "0+i" (make-rectangular 0 1) "+i" "+1i" "0+i" "0+1i")
+  (test-numeric-syntax "0+1i" (make-rectangular 0 1) "+i" "+1i" "0+i" "0+1i")
+  (test-numeric-syntax "-i" (make-rectangular 0 -1) "-i" "-1i" "0-i" "0-1i")
+  (test-numeric-syntax "0-i" (make-rectangular 0 -1) "-i" "-1i" "0-i" "0-1i")
+  (test-numeric-syntax "0-1i" (make-rectangular 0 -1) "-i" "-1i" "0-i" "0-1i")
+  (test-numeric-syntax "+2i" (make-rectangular 0 2) "2i" "+2i" "0+2i")
+  (test-numeric-syntax "-2i" (make-rectangular 0 -2) "-2i" "0-2i")]
+ [else])
 ;; Decimal-notation complex numbers (rectangular notation)
 (test-numeric-syntax "1.0+2i" (make-rectangular 1.0 2) "1.0+2.0i" "1.0+2i" "1.+2i" "1.+2.i")
 (test-numeric-syntax "1+2.0i" (make-rectangular 1 2.0) "1.0+2.0i" "1+2.0i" "1.+2.i" "1+2.i")
@@ -1907,7 +1916,10 @@
 (test-numeric-syntax "1.0+1e2i" (make-rectangular 1.0 100.0) "1.0+100.0i" "1.+100.i")
 (test-numeric-syntax "1.0+1s2i" (make-rectangular 1.0 100.0) "1.0+100.0i" "1.+100.i")
 ;; Fractional complex numbers (rectangular notation)
-(test-numeric-syntax "1/2+3/4i" (make-rectangular (/ 1 2) (/ 3 4)))
+(cond-expand
+ [exact-complex
+  (test-numeric-syntax "1/2+3/4i" (make-rectangular (/ 1 2) (/ 3 4)))]
+ [else])
 ;; Mixed fractional/decimal notation complex numbers (rectangular notation)
 (test-numeric-syntax "0.5+3/4i" (make-rectangular 0.5 (/ 3 4))
   "0.5+0.75i" ".5+.75i" "0.5+3/4i" ".5+3/4i" "500.0e-3+750.0e-3i")
@@ -1954,7 +1966,10 @@
 ;; Complex numbers with prefixes
 ;;(test-numeric-syntax "#x10+11i" (make-rectangular 16 17) "16+17i")
 (test-numeric-syntax "#d1.0+1.0i" (make-rectangular 1.0 1.0) "1.0+1.0i" "1.+1.i")
-(test-numeric-syntax "#d10+11i" (make-rectangular 10 11) "10+11i")
+(cond-expand
+ [exact-complex
+  (test-numeric-syntax "#d10+11i" (make-rectangular 10 11) "10+11i")]
+ [else])
 ;;(test-numeric-syntax "#o10+11i" (make-rectangular 8 9) "8+9i")
 ;;(test-numeric-syntax "#b10+11i" (make-rectangular 2 3) "2+3i")
 ;;(test-numeric-syntax "#e1.0+1.0i" (make-rectangular 1 1) "1+1i" "1+i")
