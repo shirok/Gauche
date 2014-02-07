@@ -46,7 +46,10 @@ void Scm__SetupPortsForWindows(int has_console);
 #endif /*defined(GAUCHE_WINDOWS)*/
 
 #define PORT_WALKER_P(port) \
-    (SCM_PORTP(port) && SCM_PORT(port)->flags == SCM_PORT_WALKING)
+    (SCM_PORTP(port) && (SCM_PORT(port)->flags & SCM_PORT_WALKING))
+
+#define PORT_WRITESS_P(port) \
+    (SCM_PORTP(port) && (SCM_PORT(port)->flags & SCM_PORT_WRITESS))
 
 #define PORT_RECURSIVE_P(port) \
     (SCM_PAIRP(port->recursiveContext) && SCM_HASH_TABLE_P(SCM_CDR(port->recursiveContext)))

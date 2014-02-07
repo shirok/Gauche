@@ -37,11 +37,15 @@
 #define GAUCHE_WRITER_H
 
 /* Print mode flags */
+/* R7RS write defaults to "circular write" mode.  We follow that, so
+   by default we go with two-pass circular-only write mode.  Setting
+   SCM_WRITE_SIMPLE makes write use one-pass mode.  Settings
+   SCM_WRITE_SHARED makes write write-shared (srfi-38 write/ss) mode. */
 enum ScmWriteModeFlags {
     SCM_WRITE_WRITE = 0,        /* write mode   */
     SCM_WRITE_DISPLAY = 1,      /* display mode */
     SCM_WRITE_SHARED = 2,       /* write/ss mode */
-    SCM_WRITE_CIRCULAR = 3      /* write-circular mode */
+    SCM_WRITE_SIMPLE = 3        /* write-simple mode */
 };
 
 /* Case folding mode flags */

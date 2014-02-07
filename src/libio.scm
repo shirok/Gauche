@@ -384,6 +384,13 @@
             (logior= (-> port flags) SCM_PORT_WALKING)
             (logand= (-> port flags) (lognot SCM_PORT_WALKING))))
   PORT_WALKER_P)
+(define-cproc %port-writing-shared? (port::<port>) ::<boolean>
+  (setter (port::<port> flag::<boolean>) ::<void>
+          (if flag
+            (logior= (-> port flags) SCM_PORT_WRITESS)
+            (logand= (-> port flags) (lognot SCM_PORT_WRITESS))))
+  PORT_WRITESS_P)
+
 (define-cproc %port-recursive-context (port::<port>)
   (setter (port::<port> obj) ::<void>
           (set! (-> port recursiveContext) obj))
@@ -582,6 +589,16 @@
 (define-cproc write (obj :optional (port::<output-port> (current-output-port)))
   ::<void> (Scm_Write obj (SCM_OBJ port) SCM_WRITE_WRITE))
 
+(define-cproc write-simple (obj :optional (port::<output-port>
+                                           (current-output-port)))
+  ::<void>
+  (Scm_Write obj (SCM_OBJ port) SCM_WRITE_SIMPLE))
+
+(define-cproc write-shared (obj :optional (port::<output-port>
+                                           (current-output-port)))
+  ::<void>
+  (Scm_Write obj (SCM_OBJ port) SCM_WRITE_SHARED))
+
 (define-cproc display
   (obj :optional (port::<output-port> (current-output-port)))
   ::<void> (Scm_Write obj (SCM_OBJ port) SCM_WRITE_DISPLAY))
@@ -608,9 +625,7 @@
                                  :optional (port (current-output-port)))
   ::<int> (result (Scm_WriteLimited obj port SCM_WRITE_WRITE limit)))
 
-(define-cproc write* (obj :optional (port (current-output-port)))
-  ;; TODO: should return # of output char in future
-  ::<int> (Scm_Write obj port SCM_WRITE_CIRCULAR) (result 0))
+(define write* write-shared)
 
 (define-cproc flush (:optional (oport::<output-port> (current-output-port)))
   ::<void> Scm_Flush)
@@ -623,23 +638,23 @@
 (select-module gauche.internal)
 
 (define-cproc write-need-recurse? (obj) ::<boolean>
-  (result (or (not (SCM_PTRP obj))
-              (SCM_NUMBERP obj)
-              (SCM_KEYWORDP obj)
-              (and (SCM_SYMBOLP obj) (SCM_SYMBOL_INTERNED obj))
-              (and (SCM_STRINGP obj) (== (SCM_STRING_SIZE obj) 0))
-              (and (SCM_VECTORP obj) (== (SCM_VECTOR_SIZE obj) 0)))))
+  (result (not (or (not (SCM_PTRP obj))
+                   (SCM_NUMBERP obj)
+                   (SCM_KEYWORDP obj)
+                   (and (SCM_SYMBOLP obj) (SCM_SYMBOL_INTERNED obj)) 
+                   (and (SCM_STRINGP obj) (== (SCM_STRING_SIZE obj) 0))
+                   (and (SCM_VECTORP obj) (== (SCM_VECTOR_SIZE obj) 0))))))
 
 (define (write-walk obj port)
   (if-let1 ctx (%port-recursive-context port)
     (%write-walk-rec obj port (cdr ctx))))
 
 (define (%write-walk-rec obj port tab)
-  (unless (write-need-recurse? obj)
+  (when (write-need-recurse? obj)
     (if (hash-table-exists? tab obj)
-      (hash-table-put! tab obj #t)   ; seen more than once
+      (hash-table-update! tab obj (cut + <> 1))   ; seen more than once
       (begin
-        (hash-table-put! tab obj #f) ; seen once
+        (hash-table-put! tab obj 1) ; seen once
         (cond
          [(symbol? obj)] ; uninterned symbols
          [(string? obj)]
@@ -649,10 +664,13 @@
          [(vector? obj)
           (dotimes [i (vector-length obj)]
             (%write-walk-rec (vector-ref obj i) port tab))]
-         [else
-          ;; generic objects.  we go walk pass via write-object
-          ;; (we already have a dummy port)
-          (write-object obj port)])))))
+         [else ; generic objects.  we go walk pass via write-object
+          (write-object obj port)])
+        ;; If circular-only, we don't count non-circular objects.
+        (unless (%port-writing-shared? port)
+          (when (eqv? (hash-table-get tab obj #f) 1)
+            (hash-table-delete! tab obj)))
+        ))))
 
 (select-module gauche.internal)
 

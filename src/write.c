@@ -79,9 +79,11 @@ SCM_DEFINE_GENERIC(Scm_GenericWriteObject, write_object_fallback, NULL);
     SCM_WRITE_CASE_FOLD:SCM_WRITE_CASE_NOFOLD)
 
 /* Whether we need 'walk' pass to find out shared and/or ciruclar
-   structure */
+   structure.  Now we use two-pass writing by default, and use one-pass
+   writing only when requested specifically (or we're in display mode). */
 #define WRITER_NEED_2PASS(ctx) \
-    (SCM_WRITE_MODE(ctx) & (SCM_WRITE_SHARED|SCM_WRITE_CIRCULAR))
+    ((SCM_WRITE_MODE(ctx) == SCM_WRITE_WRITE)   \
+     || (SCM_WRITE_MODE(ctx) == SCM_WRITE_SHARED))
 
 /*
  * WriteContext public API
@@ -360,7 +362,7 @@ ScmObj Scm__WritePrimitive(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
    all shared substructures and/or cyclic references.  It builds a
    hash table of objects that need special treatment.
 
-   The second pass ("output" pass) writes out the data.
+   The second pass ("emit" pass) writes out the data.
 
    For the walk pass, we can't use generic traversal algorithm
    if the data contains user-defined structures.  In which case,
@@ -370,15 +372,17 @@ ScmObj Scm__WritePrimitive(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
    this port.  Writers recognize this flag and works as the
    walk pass.
 
-   procedural port to which all output is discarded.  If the
-   user-defined routine needs to traverse substructure, it calls
-   back system's writer routine such as Scm_Write, Scm_Printf,
-   so we can effectively traverse entire data to be printed.
+   The walk pass sets up a hashtable that records how many times
+   each aggregate datum has been seen.  If it's >1, emit pass
+   uses #n# and #n= notation.
 
-   NB: write_walk and write_rec need to traverse recursive structure.
-   A simple way is to recurse to each element (e.g. car of a list,
-   and each element of a vector) and loop over the sequence.
-   However it busts the C stack when deep structure is passed.
+   NB: R7RS write-shared doesn't require datum labels on strings,
+   but srfi-38 does.  We follow srfi-38.
+
+   NB: The walk pass is now written in Scheme (libio.scm: write-walk),
+   but the emit pass is in C (write_rec).  Using naive recursion in write_rec
+   can bust the C stack when deep structure is passed, even if it is
+   not circular.
    Thus we avoided recursion by managing traversal stack by our own
    ('stack' local variable).    It made the code ugly.  Oh well.
 
@@ -393,7 +397,7 @@ ScmObj Scm__WritePrimitive(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
    and the next item we should process is pointed by index.
 
    We also set a limit of stack depth in write_rec; in case
-   car-circular list (e.g. #0=(#0#) ) is given to the plain write.
+   car-circular list (e.g. #0=(#0#) ) is given to write-simple.
    It used to SEGV by busting C stack.  With the change of making it
    non-recursive, it would hog all the heap before crash, which is
    rather unpleasant, so we make it bail out before that.
@@ -417,6 +421,10 @@ static void write_walk(ScmObj obj, ScmPort *port)
    than that. */
 #define STACK_LIMIT  0x1000000
 
+/* Trick: The hashtable contains positive integer after the walk pass.
+   If we emit a reference tag N, we replace the entry's value to -N,
+   so that we can distinguish whether we've already emitted the object
+   or not. */
 static void write_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
     char numbuf[50];  /* enough to contain long number */
@@ -449,35 +457,35 @@ static void write_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
             if (port->src.ostr.length >= ctx->limit) return;
         }
 
-        /* number may be heap allocated, but we don't use srfi-38 notation. */              if (!SCM_PTRP(obj) || SCM_NUMBERP(obj)) {
+        /* number may be heap allocated, but we don't use srfi-38 notation. */
+        if (!SCM_PTRP(obj) || SCM_NUMBERP(obj)) {
             if (SCM_FALSEP(Scm__WritePrimitive(obj, port, ctx))) {
                 Scm_Panic("write: got a bogus object: %08x", SCM_WORD(obj));
             }
             goto next;
         }
-        if ((SCM_STRINGP(obj) && SCM_STRING_NULL_P(obj))
+        if ((SCM_STRINGP(obj) && SCM_STRING_SIZE(obj) == 0)
             || (SCM_VECTORP(obj) && SCM_VECTOR_SIZE(obj) == 0)) {
-            /* special case where we don't put a reference tag. */
+            /* we don't put a reference tag for these */
             write_general(obj, port, ctx);
             goto next;
         }
 
         if (ht) {
-            ScmObj e = Scm_HashTableRef(ht, obj, SCM_FALSE);
-            if (!SCM_FALSEP(e)) {
-                if (SCM_INTP(e)) {
-                    /* This object is already printed. */
-                    snprintf(numbuf, 50, "#%ld#", SCM_INT_VALUE(e));
-                    Scm_PutzUnsafe(numbuf, -1, port);
-                    goto next;
-                } else {
-                    /* This object will be seen again. Put a reference tag. */
-                    int count = SCM_INT_VALUE(SCM_CAR(port->recursiveContext));
-                    snprintf(numbuf, 50, "#%d=", count);
-                    Scm_HashTableSet(ht, obj, SCM_MAKE_INT(count), 0);
-                    SCM_SET_CAR(port->recursiveContext, SCM_MAKE_INT(count+1));
-                    Scm_PutzUnsafe(numbuf, -1, port);
-                }
+            ScmObj e = Scm_HashTableRef(ht, obj, SCM_MAKE_INT(1));
+            long k = SCM_INT_VALUE(e);
+            if (k <= 0) {
+                /* This object is already printed. */
+                snprintf(numbuf, 50, "#%ld#", -k);
+                Scm_PutzUnsafe(numbuf, -1, port);
+                goto next;
+            } else if (k > 1) {
+                /* This object will be seen again. Put a reference tag. */
+                int count = SCM_INT_VALUE(SCM_CAR(port->recursiveContext));
+                snprintf(numbuf, 50, "#%d=", count);
+                Scm_HashTableSet(ht, obj, SCM_MAKE_INT(-count), 0);
+                SCM_SET_CAR(port->recursiveContext, SCM_MAKE_INT(count+1));
+                Scm_PutzUnsafe(numbuf, -1, port);
             }
         }
 
@@ -553,7 +561,7 @@ static void write_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
                     obj = v;
                     SCM_SET_CDR(top, SCM_NIL);
                     goto write1;
-                } else if (ht && !SCM_FALSEP(e = Scm_HashTableRef(ht, v, SCM_FALSE))) {
+                } else if (ht && !SCM_EQ(Scm_HashTableRef(ht, v, SCM_MAKE_INT(1)), SCM_MAKE_INT(1)))  {
                     /* cdr part is shared */
                     Scm_PutzUnsafe(" . ", -1, port);
                     obj = v;
@@ -581,19 +589,18 @@ static void write_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 static void write_ss(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
     SCM_ASSERT(SCM_FALSEP(port->recursiveContext));
-    
+
     /* pass 1 */
     port->flags |= SCM_PORT_WALKING;
+    if (SCM_WRITE_MODE(ctx)==SCM_WRITE_SHARED) port->flags |= SCM_PORT_WRITESS;
     port->recursiveContext = Scm_Cons(SCM_MAKE_INT(0),
                                       Scm_MakeHashTableSimple(SCM_HASH_EQ, 0));
     write_walk(obj, port);
-    port->flags &= ~SCM_PORT_WALKING;
+    port->flags &= ~(SCM_PORT_WALKING|SCM_PORT_WRITESS);
 
     /* pass 2 */
-    port->flags |= SCM_PORT_WRITESS;
     write_rec(obj, port, ctx);
     port->recursiveContext = SCM_FALSE;
-    port->flags &= ~SCM_PORT_WRITESS;
 }
 
 /*OBSOLETED*/
@@ -627,7 +634,7 @@ void Scm_Format(ScmPort *out, ScmString *fmt, ScmObj args, int sharedp)
  *
  *  Both functions return a number of characters written.
  *
- *  A pound flag '#' for the S directive causes WRITE_CIRCULAR output.
+ *  A pound flag '#' for the S directive causes circular-safe output.
  *
  *  NB: %A is taken by C99 for hexadecimal output of double numbers.
  *  We'll introduce a flag for S directive to use DISPLAY mode, and will
@@ -841,7 +848,7 @@ static void vprintf_pass2(ScmPort *out, const char *fmt, ScmObj args)
                     args = SCM_CDR(args);
 
                     int mode = (pound_appeared
-                                ? SCM_WRITE_CIRCULAR
+                                ? SCM_WRITE_SHARED
                                 : ((c == 'A')
                                    ? SCM_WRITE_DISPLAY
                                    : SCM_WRITE_WRITE));

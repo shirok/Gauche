@@ -1,3 +1,23 @@
+2014-02-06  Shiro Kawai  <shiro@acm.org>
+
+	* src/write.c, src/libio.scm: Changed the default behavior of
+	  'Scm_Write' and 'write' alinged to r7rs, that is, it detects
+	  circular structures and use datum labels.  The original behavior
+	  is realized by 'write-simple'.  SRFI-38 behavior is still
+	  realized by write/ss and write*, which are merely alises of
+	  r7rs 'write-shared'.
+
+	  The 'mode' of Scm_Write and ScmWriteContext is slightly modified
+	  to adopt this change; now, SCM_WRITE_WRITE works as the updated
+	  'write' (circular-safe), and SCM_WRITE_SHARED works as 'write-shared'.
+	  To get 'write-simple' behavior you have to specify SCM_WRITE_SIMPLE.
+
+	  To distinguish circular-only and shared mode, we have to
+	  add that info to the port flags as well, for the write context
+	  info isn't passed to the user-defined write-object.  SCM_PORT_WRITESS
+	  flag is used for the purpose (the meaning of flag has been
+	  changed).
+
 2014-02-05  Shiro Kawai  <shiro@acm.org>
 
 	* src/read.c (char_word_constituent): Refined checking symbol

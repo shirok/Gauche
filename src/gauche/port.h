@@ -219,10 +219,12 @@ enum ScmFdReadyResult {
 };
 
 /* Other flags used internally */
+/* NB: The first two flags only matter when port->recursiveContext is set,
+   and they're transient by nature.  See write.c for the details. */
 enum ScmPortFlags {
-    SCM_PORT_WRITESS = (1L<<0), /* write/ss on by default? */
-    SCM_PORT_WALKING = (1L<<1), /* this port is a special port only used in
-                                   the 'walk' phase of write/ss. */
+    SCM_PORT_WRITESS = (1L<<0), /* we're write/ss mode.  */
+    SCM_PORT_WALKING = (1L<<1), /* indicates we're currently in 'walk' pass
+                                   of two-pass writing. */
     SCM_PORT_PRIVATE = (1L<<2), /* this port is for 'private' use within
                                    a thread, so never need to be locked. */
     SCM_PORT_CASE_FOLD = (1L<<3) /* read from or write to this port should
