@@ -2828,14 +2828,11 @@ int Scm_NumCmp(ScmObj arg0, ScmObj arg1)
             return 0;
         }
         if (SCM_BIGNUMP(arg1) || SCM_RATNUMP(arg1)) {
-            /* we fall back to inexact comparison, because (a) arg0 can be
-               infinity which cannot be converted to an exact number,
-               and (b) Scm_Sub uses inexact calculation in these cases,
-               and we want to keep the result consistent. */
-            double r = SCM_FLONUM_VALUE(arg0) - Scm_GetDouble(arg1);
-            if (r < 0) return -1;
-            if (r > 0) return 1;
-            return 0;
+            /* R7RS requires transitivity in '=', so we can't coerce
+               arg1 to inexact; we'd rather convert arg0 to exact.
+               NB: Thus we'll have a case that (= x y) => #f but
+               (- x y) => 0.0.  It's ok for the latter is inexact result. */
+            return Scm_NumCmp(Scm_Exact(arg0), arg1);
         }
         badnum = arg1;
     }

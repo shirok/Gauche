@@ -1,3 +1,10 @@
+2014-02-07  Shiro Kawai  <shiro@acm.org>
+
+	* src/number.c (Scm_NumCmp): Fixed Scm_NumCmp when comparing a flonum
+	  and an exact bignum or ratnum.  In that case we need to convert
+	  the flonum to exact (as opposed to converting exact one to inexact),
+	  for the latter would break transitivity of '='.
+
 2014-02-06  Shiro Kawai  <shiro@acm.org>
 
 	* src/core.c (init_cond_features): Added r7rs feature identifier.
