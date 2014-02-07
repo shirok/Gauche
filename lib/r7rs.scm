@@ -499,13 +499,7 @@
   (provide "scheme/time"))
 
 (define-module scheme.write
-  (export (rename r7rs-display display)
-          (rename r7rs-write write)
-          write-shared write-simple)
-  (define r7rs-write    write/ss) ;not exactly...
-  (define write-shared  write/ss)
-  (define write-simple  write)
-  (define r7rs-display  display)
+  (export display write write-shared write-simple)
   (provide "scheme/write"))
 
 (define-module scheme.r5rs
