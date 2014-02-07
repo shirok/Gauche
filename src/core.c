@@ -465,6 +465,11 @@ init_cond_features()
         { "gauche.os.cygwin", NULL },
 #endif
 
+        /* R7RS */
+        /* NB: We should probably make checking 'r7rs' trigger loading
+           r7rs module and setting up the environment. */
+        { "r7rs", NULL },
+            
         /* R7RS Appendix B */
         { "exact-closed", NULL },
         { "ieee-float", NULL },

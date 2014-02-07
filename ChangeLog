@@ -1,5 +1,7 @@
 2014-02-06  Shiro Kawai  <shiro@acm.org>
 
+	* src/core.c (init_cond_features): Added r7rs feature identifier.
+
 	* src/write.c, src/libio.scm: Changed the default behavior of
 	  'Scm_Write' and 'write' alinged to r7rs, that is, it detects
 	  circular structures and use datum labels.  'Display' also does
