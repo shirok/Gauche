@@ -4,3 +4,4 @@ optimize.scm
 control.scm
 debug.scm
 scripts.scm
+r7rs-tests-wrapper.scm
