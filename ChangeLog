@@ -2,7 +2,8 @@
 
 	* src/write.c, src/libio.scm: Changed the default behavior of
 	  'Scm_Write' and 'write' alinged to r7rs, that is, it detects
-	  circular structures and use datum labels.  The original behavior
+	  circular structures and use datum labels.  'Display' also does
+	  2-pass circular detection.   The original 'write' behavior
 	  is realized by 'write-simple'.  SRFI-38 behavior is still
 	  realized by write/ss and write*, which are merely alises of
 	  r7rs 'write-shared'.

@@ -80,10 +80,8 @@ SCM_DEFINE_GENERIC(Scm_GenericWriteObject, write_object_fallback, NULL);
 
 /* Whether we need 'walk' pass to find out shared and/or ciruclar
    structure.  Now we use two-pass writing by default, and use one-pass
-   writing only when requested specifically (or we're in display mode). */
-#define WRITER_NEED_2PASS(ctx) \
-    ((SCM_WRITE_MODE(ctx) == SCM_WRITE_WRITE)   \
-     || (SCM_WRITE_MODE(ctx) == SCM_WRITE_SHARED))
+   writing only when requested specifically. */
+#define WRITER_NEED_2PASS(ctx) (SCM_WRITE_MODE(ctx) != SCM_WRITE_SIMPLE)
 
 /*
  * WriteContext public API
