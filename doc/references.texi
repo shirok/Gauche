@@ -11,6 +11,12 @@ Higher-Order and Symbolic Computation, 11(1), September, 1998
 and ACM SIGPLAN Notices, 33(9), October, 1998. @*
 @url{http://www.schemers.org/Documents/Standards/R5RS/}.
 
+@anchor{r7rs}
+@item [R7RS]
+A. Shinn, J. Cowan, A. A. Greckler (eds.),
+Revised^7 Report on the Algorithmic Language Scheme@*
+@url{http://trac.sacrideo.us/wg/raw-attachment/wiki/WikiStart/r7rs.pdf}.
+
 @anchor{onecont}
 @item [1CC]
 Carl Bruggeman, Oscar Waddell and R. Kent Dybvig,

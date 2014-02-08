@@ -50,10 +50,10 @@ Copyright @copyright{} 2001-2010 Shiro Kawai (shiro@@acm.org)
 
 @ifnottex
 @c EN
-This is a reference manual of Gauche, an R5RS Scheme implementation.
+This is a reference manual of Gauche, an R7RS Scheme implementation.
 This manual is for version @VERSION@.
 @c JP
-本書は、R5RS準拠のScheme処理系、Gaucheのリファレンスマニュアルです。
+本書は、R7RS準拠のScheme処理系、Gaucheのリファレンスマニュアルです。
 Gaucheのバージョン@VERSION@に対応します。
 @c COMMON
 @end ifnottex

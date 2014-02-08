@@ -87,15 +87,15 @@ recent version on the web:
 Gauche is a Scheme script engine; it reads Scheme programs,
 compiles it on-the-fly and executes it on a virtual machine.
 Gauche conforms the language standard
-"Revised^5 Report on the Algorithmic Language Scheme"
-(@ref{r5rs,[R5RS],R5RS}),
+"Revised^7 Report on the Algorithmic Language Scheme"
+(@ref{r7rs,[R7RS],R7RS}),
 and supports various common libraries defined in SRFIs
 (@uref{http://srfi.schemers.org}).
 @c JP
 GaucheはScheme言語のスクリプトエンジンです。
 Schemeプログラムを読み込み、直ちにコンパイルして仮想マシンで実行します。
-Scheme言語の標準である、"Revised^5 Report on the Algorithmic Language Scheme"
-(@ref{r5rs,[R5RS],R5RS})に準拠しています。また、SRFI
+Scheme言語の標準である、"Revised^7 Report on the Algorithmic Language Scheme"
+(@ref{r7rs,[R7RS],R7RS})に準拠しています。また、SRFI
 (@uref{http://srfi.schemers.org}) に規定されている数多くのライブラリを
 サポートしています。
 @c COMMON
@@ -162,20 +162,6 @@ Gaucheは内部的に文字列を全て、コンパイル時に選択したエ�
 @c COMMON
 
 @c EN
-@item Modular development
-@c JP
-@item モジュラー開発
-@c COMMON
-@c EN
-Gauche has a simple module system to separate namespaces,
-which allows the developers to work in parallel without
-worrying name collision.
-@c JP
-Gaucheは名前空間を分離する単純なモジュールシステムを備えており、
-名前の衝突を心配せずに複数の開発者が並行して作業をすることができます。
-@c COMMON
-
-@c EN
 @item Integrated object system
 @c JP
 @item 統合されたオブジェクトシステム
@@ -229,24 +215,25 @@ Gaucheはポートオブジェクトを入出力のための統合された抽�
 それを通して下位のI/Oシステム層にアクセスするユーティリティ関数を提供しています。
 @ref{Input and output}を参照して下さい。
 @c COMMON
-@end table
 
 @c EN
-On the other hand, Gauche is @emph{not} designed for
-applications such like high-performance number cruncher or
-very large scale database handling.
-
-You can still use Gauche as a "glue" language for such applications,
-however.  For example, you can write a performance-critical part
-in another language that compiles to native code, and use Gauche to set up.
+@item Extended language
 @c JP
-一方、Gaucheは所詮インタプリタですから、高速に大量の計算をこなしたり
-巨大なデータセットを扱ったりするのは苦手です。
-
-但し、そのような場合でも、Gaucheを各コンポーネントをつなぐ「糊」言語として
-使うことは可能です。例えば性能の要求の厳しい部分はネイティブコードにコンパイルする言語で
-書いておき、セットアップにGaucheを使うといった方法があります。
+@item 拡張された言語
 @c COMMON
+@c EN
+Gauche is not just an implementation of Scheme; it has some
+language-level enhancements.  For example, @emph{lazy sequences}
+allows you to have lazy data structures that behaves as if
+they're ordinary lists (except that they're realized lazily).
+It is different from library-level implementation such as
+streams (srfi-41), in a sense that you can use any list-processing
+procedures on lazy sequences.  It enables programs to use
+lazy algorithms more liberally.
+@c JP
+@c COMMON
+
+@end table
 
 
 @node Notations,  , Overview of Gauche, Introduction

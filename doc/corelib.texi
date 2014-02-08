@@ -10855,7 +10855,7 @@ Returns @code{#t} iff @var{obj} is a promise object.
 @subsubheading Introduction
 @c JP
 @subsubheading イントロダクション
-@c COMMON
+@c COMMO
 
 @c EN
 A lazy sequence is a list-like structure
