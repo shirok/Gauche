@@ -75,8 +75,8 @@ recent version on the web:
 @c COMMON
 
 @menu
-* Overview of Gauche::
-* Notations::
+* Overview of Gauche::          
+* Notations::                   
 @end menu
 
 @node Overview of Gauche, Notations, Introduction, Introduction
@@ -240,6 +240,15 @@ lazy algorithms more liberally.
 @section Notations
 @c NODE 表記について
 
+@menu
+* Entry format::                
+* Names and namespaces::        
+@end menu
+
+@node Entry format, Names and namespaces, Notations, Notations
+@subsection Entry format
+@c NODE 項目の形式
+
 @c EN
 In this manual, each entry is represented like this:
 
@@ -271,9 +280,9 @@ The following categories will appear in this manual:
 @c COMMON
 @item Special Form
 @c EN
-@tab A special form (in the R5RS term, ``syntax'').
+@tab A special form (in the R7RS term, ``syntax'').
 @c JP
-@tab 特殊形式 (R5RSでは「構文」)
+@tab 特殊形式 (R7RSでは「構文」)
 @c COMMON
 @item Macro
 @c EN
@@ -379,15 +388,22 @@ of the description.  The following origins are noted:
 @c COMMON
 
 @table @asis
-@item [R5RS]
+@item [R7RS]
+@itemx [R7RS+]
+@itemx [R6RS]
+@itemx [R6RS+]
+@itemx [R5RS]
 @itemx [R5RS+]
 @c EN
-The entry works as specified in ``Revised^5 Report of Algorithmic Language
-Scheme.''.  If it is marked as "[R5RS+]", the entry has additional
+The entry works as specified in R7RS, R6RS or R5RS, respectively.
+If a plus sign is appended such as "[R7RS+]", the entry has additional
 functionality.
+
+If multiple 
 @c JP
-この項目はR5RSに定義されるように動作します。"[R5RS+]"とマークされている場合は
-R5RSの仕様に上位互換な形で追加の機能が実装されていることを示します。
+この項目はそれぞれR7RS, R6RS, R5RSで定義されるように動作します。
+"[R7RS+]"のようにプラス記号がついている場合は、
+R7RSの仕様に上位互換な形で追加の機能が実装されていることを示します。
 @c COMMON
 @item [SRFI-@var{n}]
 @itemx [SRFI-@var{n}+]
@@ -406,11 +422,38 @@ The API of the entry reflects the API specified in POSIX.
 @c COMMON
 @end table
 
+
+@node Names and namespaces,  , Entry format, Notations
+@subsection Names and namespaces
+@c NODE 名前と名前空間
+
+Since R6RS, you can split toplevel definitions of Scheme programs
+into multiple namespaces.  In the standards such namespaces are called
+@emph{libraries}.  Gauche predates R6RS and has been calling
+them @emph{modules}, and we use the latter throughout this manual.
+
+(Note: RnRS libraries are not exactly the same thing as Gauche
+modules; RnRS defines libraries in a way that they can be implemented
+in various ways, and it just happens that Gauche realises the library
+semantics using modules.  When you write a portable R7RS library,
+be aware not to rely on Gauche-specific module semantics; especially,
+Gauche modules are more dynamic than RnRS libraries.)
+
+Sometimes the same name is used for multiple definitions in
+different modules.  If we need to distinguish those names,
+we prefix the name with the module name and a hash sign.
+For example, @code{gauche#lambda} means @code{lambda}
+defined in @code{gauche} module.  This does not mean
+you can write @code{gauche#lambda} in the source code,
+though: This notation is just for explanation.
+
+
 @c @node Structure of this document,  , Notations, Introduction
 @c @section Structure of this document
 @c @c NODE 本書の構成
 
 @c @c EN
+
 @c @c JP
 @c @c COMMON
 

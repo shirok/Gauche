@@ -25,25 +25,14 @@ Gaucheの動作を正確に理解する助けになると思います。
 @c NODE 標準への準拠
 
 @c EN
-Gauche conforms "Revised^5 Report of Algorithmic Language Scheme,"
+Gauche conforms "Revised^7 Report of Algorithmic Language Scheme,"
 including optional syntax and procedures, except the following features.
 @c JP
 Gaucheは、以下に挙げる点を除き、オプショナルな構文や手続きも含め
-"Revised^5 Report of Algorithmic Language Scheme" に準拠しています。
+"Revised^7 Report of Algorithmic Language Scheme" に準拠しています。
 @c COMMON
 
 @itemize @bullet
-@item
-@c EN
-By default, Gauche reads symbols in case-sensitive way.
-You can switch the reader's case sensitivity by a command-line
-option or special reader directive
-(@xref{Case-sensitivity}, for details).
-@c JP
-デフォルトで、Gaucheはシンボルの名前の大文字小文字を区別します。
-コマンドラインオプションや特別なリーダ指示子によって、
-大文字小文字を区別するかどうかを切替えることができます(@ref{Case-sensitivity}参照)。
-@c COMMON
 @item
 @c EN
 Continuations created in a certain situation
@@ -58,31 +47,11 @@ C routine) have limited extent (@xref{Continuations}, for details).
 @c EN
 Full numeric tower (integer, rational, real and complex numbers) are supported,
 but rationals are only exact, and complex numbers are always inexact.
-The reader can recognize '@code{#}' as insignificant digits.
 @c JP
 完全なNumeric tower(整数、有理数、実数、複素数)がサポートされますが、
 有理数は正確な表現のみで、また複素数は不正確な表現のみを持ちます。
-リーダは、精度に影響を与えない桁を'@code{#}'で表す数字表記を認識します。
-@c COMMON
-@item
-@c EN
-Procedures @code{transcript-on} and @code{transcript-off}
-are not supported.
-@c JP
-手続き@code{transcript-on}、@code{transcript-off}
-はサポートされていません。
 @c COMMON
 @end itemize
-
-@c EN
-(Note: A new Scheme standard R6RS has been ratified on September 2007.
-Although we don't have a plan to change Gauche to conform R6RS in near future,
-we'll gradually add modules that are compatible to R6RS).
-@c JP
-(註：2007年9月に、新たなSchemeの標準であるR6RSが制定されました。
-GaucheをR6RS準拠にする予定は近い将来にはありませんが、
-R6RSと互換なモジュールを徐々に追加してゆく予定です。)
-@c COMMON
 
 @c EN
 Gauche also supports the following SRFIs (Scheme Request for Implementation).
