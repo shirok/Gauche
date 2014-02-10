@@ -19,13 +19,13 @@
   (cf-path-prog 'GAUCHE_CESCONV  "gauche-cesconv")
 
   ;; Some common parameters
-  (cf-define 'SOEXT  (gauche-config "--so-suffix"))
-  (cf-define 'OBJEXT (gauche-config "--object-suffix"))
-  (cf-define 'EXEEXT (gauche-config "--executable-suffix"))
+  (cf-subst 'SOEXT  (gauche-config "--so-suffix"))
+  (cf-subst 'OBJEXT (gauche-config "--object-suffix"))
+  (cf-subst 'EXEEXT (gauche-config "--executable-suffix"))
 
-  (cf-define 'GAUCHE_PKGINCDIR  (gauche-config "--pkgincdir"))
-  (cf-define 'GAUCHE_PKGLIBDIR  (gauche-config "--pkglibdir"))
-  (cf-define 'GAUCHE_PKGARCHDIR (gauche-config "--pkgarchdir"))
+  (cf-subst 'GAUCHE_PKGINCDIR  (gauche-config "--pkgincdir"))
+  (cf-subst 'GAUCHE_PKGLIBDIR  (gauche-config "--pkglibdir"))
+  (cf-subst 'GAUCHE_PKGARCHDIR (gauche-config "--pkgarchdir"))
 
   ;; Output
   (cf-echo (cf$ 'PACKAGE_VERSION) > "VERSION")

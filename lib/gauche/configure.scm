@@ -52,7 +52,7 @@
 ;; The core feature of gauche.configure is the ability to generate files
 ;; (e.g. Makefile) from templates (e.g. Makefile.in) with replacing
 ;; parameters.  We follow autoconf convension, so the replacement variables
-;; in a template is written like @VAR@.  
+;; in a template is written like @VAR@.
 
 ;; The API is roughly corresponds to autoconf's AC_* macros, while we use
 ;; 'cf-' suffix instead.
@@ -73,7 +73,7 @@
   (export cf-init
           cf-msg-checking cf-msg-result cf-msg-warn cf-msg-error
           cf-echo
-          cf-define cf-ref cf$ cf-output cf-show-variables
+          cf-subst cf-ref cf$ cf-output cf-show-variables
           cf-check-prog cf-path-prog))
 (select-module gauche.configure)
 
@@ -85,7 +85,7 @@
    (url        :init-keyword :url :init-value #f)
    (string     :init-keyword :string)    ; package_string
    (tarname    :init-keyword :tarname)
-   (defs       :init-form (make-hash-table 'eq?))
+   (substs     :init-form (make-hash-table 'eq?)) ;cf-subst'ed thingy
    (features   :init-form (make-hash-table 'eq?)) ;enabled features by cmdarg
    (packages   :init-form (make-hash-table 'eq?)) ;optional packages
    ))
@@ -164,85 +164,85 @@
 
 (define (initialize-default-definitions)
   (define p (current-package))
-  (cf-define 'PACKAGE_NAME    (~ p'name))
-  (cf-define 'PACKAGE_TARNAME (string-tr (string-downcase (~ p'name))
+  (cf-subst 'PACKAGE_NAME    (~ p'name))
+  (cf-subst 'PACKAGE_TARNAME (string-tr (string-downcase (~ p'name))
                                          "a-z0-9_-" "_*" :complement #t))
-  (cf-define 'PACKAGE_VERSION (~ p'version))
-  (cf-define 'PACKAGE_STRING (~ p'string))
-  (cf-define 'PACKAGE_BUGREPORT (~ p'bug-report))
-  (cf-define 'PACKAGE_URL (~ p'url))
+  (cf-subst 'PACKAGE_VERSION (~ p'version))
+  (cf-subst 'PACKAGE_STRING (~ p'string))
+  (cf-subst 'PACKAGE_BUGREPORT (~ p'bug-report))
+  (cf-subst 'PACKAGE_URL (~ p'url))
 
-  (cf-define 'SHELL (or (sys-getenv "CONFIG_SHELL") "/bin/sh"))
-  (cf-define 'LIBOBJS "")
-  (cf-define 'MFLAGS "")
-  (cf-define 'MAKEFLAGS "")
+  (cf-subst 'SHELL (or (sys-getenv "CONFIG_SHELL") "/bin/sh"))
+  (cf-subst 'LIBOBJS "")
+  (cf-subst 'MFLAGS "")
+  (cf-subst 'MAKEFLAGS "")
 
-  (cf-define 'default_prefix "/usr/local")
-  (cf-define 'prefix "NONE")       ;will be replaced by cf-output
-  (cf-define 'exec_prefix "NONE")  ;will be replaced by cf-output
-  (cf-define 'bindir "${exec_prefix}/bin")
-  (cf-define 'sbindir "${exec_prefix}/sbin")
-  (cf-define 'libexecdir "${exec_prefix}/libexec")
-  (cf-define 'datarootdir "${prefix}/share")
-  (cf-define 'datadir "${datarootdir}")
-  (cf-define 'sysconfdir "${prefix}/etc")
-  (cf-define 'sharedstatedir "${prefix}/com")
-  (cf-define 'localstatedir "${prefix}/var")
-  (cf-define 'includedir "${prefix}/include")
-  (cf-define 'oldincludedir "/usr/include")
-  (cf-define 'docdir "${datarootdir}/doc/${PACKAGE_TARNAME}")
-  (cf-define 'infodir "${datarootdir}/info")
-  (cf-define 'htmldir "${docdir}")
-  (cf-define 'dvidir "${docdir}")
-  (cf-define 'pdfdir "${docdir}")
-  (cf-define 'psdir "${docdir}")
-  (cf-define 'libdir "${exec_prefix}/lib")
-  (cf-define 'localedir "${datarootdir}/locale")
-  (cf-define 'mandir "${datarootdir}/man")
+  (cf-subst 'default_prefix "/usr/local")
+  (cf-subst 'prefix "NONE")       ;will be replaced by cf-output
+  (cf-subst 'exec_prefix "NONE")  ;will be replaced by cf-output
+  (cf-subst 'bindir "${exec_prefix}/bin")
+  (cf-subst 'sbindir "${exec_prefix}/sbin")
+  (cf-subst 'libexecdir "${exec_prefix}/libexec")
+  (cf-subst 'datarootdir "${prefix}/share")
+  (cf-subst 'datadir "${datarootdir}")
+  (cf-subst 'sysconfdir "${prefix}/etc")
+  (cf-subst 'sharedstatedir "${prefix}/com")
+  (cf-subst 'localstatedir "${prefix}/var")
+  (cf-subst 'includedir "${prefix}/include")
+  (cf-subst 'oldincludedir "/usr/include")
+  (cf-subst 'docdir "${datarootdir}/doc/${PACKAGE_TARNAME}")
+  (cf-subst 'infodir "${datarootdir}/info")
+  (cf-subst 'htmldir "${docdir}")
+  (cf-subst 'dvidir "${docdir}")
+  (cf-subst 'pdfdir "${docdir}")
+  (cf-subst 'psdir "${docdir}")
+  (cf-subst 'libdir "${exec_prefix}/lib")
+  (cf-subst 'localedir "${datarootdir}/locale")
+  (cf-subst 'mandir "${datarootdir}/man")
 
-  (cf-define 'cross_compiling "no")
-  (cf-define 'subdirs "")
+  (cf-subst 'cross_compiling "no")
+  (cf-subst 'subdirs "")
   )
 
 (define (parse-command-line-arguments)
   (let1 rest
       (parse-options (cdr (command-line))
-        (["bindir=s" (dir) (cf-define 'bindir dir)]
-         ["build=s" (build) (cf-define 'build-alias build)]
+        (["bindir=s" (dir) (cf-subst 'bindir dir)]
+         ["build=s" (build) (cf-subst 'build-alias build)]
          ["c|cache-file=s" (_)
           (values)] ;; support for the compatibility.  we don't do anything.
          ["C|config-cache=s" (_) (values)]
-         ["datadir=s" (dir) (cf-define 'datadir dir)]
-         ["datarootdir=s" (dir) (cf-define 'datarootdir dir)]
-         ["docdir=s" (dir) (cf-define 'docdir dir)]
-         ["dvidir=s" (dir) (cf-define 'dvidir dir)]
-         ["exec_prefix=s" (pre) (cf-define 'exec_prefix pre)]
+         ["datadir=s" (dir) (cf-subst 'datadir dir)]
+         ["datarootdir=s" (dir) (cf-subst 'datarootdir dir)]
+         ["docdir=s" (dir) (cf-subst 'docdir dir)]
+         ["dvidir=s" (dir) (cf-subst 'dvidir dir)]
+         ["exec_prefix=s" (pre) (cf-subst 'exec_prefix pre)]
          ["help" () (usage)]
-         ["host=s" (host) (cf-define 'host-alias host)]
-         ["htmldir=s" (dir) (cf-define 'htmldir dir)]
-         ["includedir=s" (dir) (cf-define 'includedir dir)]
-         ["infodir=s" (dir) (cf-define 'infodir dir)]
-         ["libdir=s" (dir) (cf-define 'libdir dir)]
-         ["libexecdir=s" (dir) (cf-define 'libexecdir dir)]
-         ["localedir=s" (dir) (cf-define 'localedir dir)]
-         ["localstatedir=s" (dir) (cf-define 'localstatedir dir)]
-         ["mandir=s" (dir) (cf-define 'mandir dir)]
+         ["host=s" (host) (cf-subst 'host-alias host)]
+         ["htmldir=s" (dir) (cf-subst 'htmldir dir)]
+         ["includedir=s" (dir) (cf-subst 'includedir dir)]
+         ["infodir=s" (dir) (cf-subst 'infodir dir)]
+         ["libdir=s" (dir) (cf-subst 'libdir dir)]
+         ["libexecdir=s" (dir) (cf-subst 'libexecdir dir)]
+         ["localedir=s" (dir) (cf-subst 'localedir dir)]
+         ["localstatedir=s" (dir) (cf-subst 'localstatedir dir)]
+         ["mandir=s" (dir) (cf-subst 'mandir dir)]
          ;; -no-create
          ;; -no-recursion
          ;; -oldincludedir
-         ["prefix=s" (dir) (cf-define 'prefix dir)]
-         ["program-suffix=s" (arg) (cf-define 'program_suffix arg)]
+         ["prefix=s" (dir) (cf-subst 'prefix dir)]
+         ["program-suffix=s" (arg) (cf-subst 'program_suffix arg)]
          ["program-transform-name=s" (arg)
-          (cf-define 'program_transform_name arg)]
-         ["pdfdir=s" (arg) (cf-define 'pdfdir arg)]
-         ["psdir=s" (arg) (cf-define 'psdir arg)]
+          (cf-subst 'program_transform_name arg)]
+         ["pdfdir=s" (arg) (cf-subst 'pdfdir arg)]
+         ["psdir=s" (arg) (cf-subst 'psdir arg)]
          ["q|quiet|silent" () (run-quietly #t)]
-         ["sbindir=s" (arg) (cf-define 'sbindir arg)]
-         ["sharedstatedir=s" (arg) (cf-define 'sharedstatedir arg)]
-         ["site=s" (arg) (cf-define 'site arg)]
-         ["srcdir=s" (arg) (cf-define 'srcdir arg)]
-         ["sysconfidr=s" (arg) (cf-define 'sysconfdir arg)]
-         ["target=s" (arg) (cf-define 'target_alias arg)]
+         ["sbindir=s" (arg) (cf-subst 'sbindir arg)]
+         ["sharedstatedir=s" (arg) (cf-subst 'sharedstatedir arg)]
+         ["site=s" (arg) (cf-subst 'site arg)]
+         ["srcdir=s" (arg) (cf-subst 'srcdir arg)]
+         ["sysconfidr=s" (arg) (cf-subst 'sysconfdir arg)]
+         ["target=s" (arg) (cf-subst 'target_alias arg)]
          ["v|verbose" () (run-quietly #f)]
          ["V|version" () (exit 0 "gauche.configure ~a" (gauche-version))]
          ;; -x-includes
@@ -272,7 +272,7 @@
     (dolist [arg rest]
       (rxmatch-case arg
         [#/^([-\w]+)=([-\w]*)$/ (_ var val)
-         (cf-define (string->symbol var) val)]
+         (cf-subst (string->symbol var) val)]
         [else (print "Invalid argument: " arg)
               (print "Type `./configure --help' for usage.")
               (exit 1)]))
@@ -286,7 +286,7 @@
                  libdir localedir mandir)]
     (let1 val (cf$ var)
       (when (string-suffix? "/" val)
-        (cf-define var (string-trim-right val #[/])))
+        (cf-subst var (string-trim-right val #[/])))
       (unless (or (absolute-path? val)
                   (string-prefix? "$" val)
                   (and (memq var '(prefix exec_prefix))
@@ -294,12 +294,12 @@
         (exit 1 "absolute directory name required for --~a but got: ~a"
               var val))))
   ;; setup srcdir and builddir
-  (unless (cf-defined? 'srcdir)
-    (cf-define 'srcdir (sys-dirname (car (command-line)))))
-  (cf-define 'top_srcdir (cf$ 'srcdir))
-  (unless (cf-defined? 'builddir)
-    (cf-define 'builddir "."))
-  (cf-define 'top_builddir (cf$ 'builddir))
+  (unless (cf-have-subst? 'srcdir)
+    (cf-subst 'srcdir (sys-dirname (car (command-line)))))
+  (cf-subst 'top_srcdir (cf$ 'srcdir))
+  (unless (cf-have-subst? 'builddir)
+    (cf-subst 'builddir "."))
+  (cf-subst 'top_builddir (cf$ 'builddir))
   )
 
 (define (usage)
@@ -309,17 +309,18 @@
   (exit 1))
 
 ;; API
-;; Like AC_DEFINE
-(define (cf-define symbol :optional (value 1))
-  (dict-put! (~ (ensure-package)'defs) symbol value))
+;; Like AC_SUBST, but we require value (instead of implicitly referencing
+;; a global variable.
+(define (cf-subst symbol value)
+  (dict-put! (~ (ensure-package)'substs) symbol value))
 
 ;; API
-(define (cf-defined? symbol)
-  (dict-exists? (~ (ensure-package)'defs) symbol))
+(define (cf-have-subst? symbol)
+  (dict-exists? (~ (ensure-package)'substs) symbol))
 
 ;; API
 (define (cf-ref symbol :optional (default (undefined)))
-  (rlet1 v (dict-get (~ (ensure-package)'defs) symbol default)
+  (rlet1 v (dict-get (~ (ensure-package)'substs) symbol default)
     (when (undefined? v)
       (errorf "Configure variable ~s is not defined." symbol))))
 
@@ -354,20 +355,20 @@
 ;; API
 ;; Like AC_OUTPUT
 (define (cf-output . files)
-  (define base-defs (~ (ensure-package)'defs))
+  (define base-substs (~ (ensure-package)'substs))
   (define (make-subst path-prefix)
     (receive (srcdir top_srcdir builddir top_builddir)
         (adjust-srcdirs path-prefix)
-      (let1 defs (make-stacked-map (alist->hash-table
+      (let1 substs (make-stacked-map (alist->hash-table
                                     `((srcdir       . ,srcdir)
                                       (top_srcdir   . ,top_srcdir)
                                       (builddir     . ,builddir)
                                       (top_builddir . ,top_builddir))
                                     'eq?)
-                                   base-defs)
+                                   base-substs)
         (^[m]
           (let1 name (string->symbol (m 1))
-            (or (dict-get defs name #f)
+            (or (dict-get substs name #f)
                 (begin (warn "@~a@ isn't substituted." name)
                        #`"@,|name|@")))))))
   ;; We use '/' in the replaced pathname even on Windows; that's what
@@ -378,10 +379,10 @@
      [gauche.os.windows (string-tr (simplify-path path) "\\\\" "/")]
      [else (simplify-path path)]))
   (define (adjust-srcdirs path-prefix)
-    (let ([srcdir    (~ base-defs'srcdir)]
-          [tsrcdir   (~ base-defs'top_srcdir)]
-          [builddir  (~ base-defs'builddir)]
-          [tbuilddir (~ base-defs'top_builddir)])
+    (let ([srcdir    (~ base-substs'srcdir)]
+          [tsrcdir   (~ base-substs'top_srcdir)]
+          [builddir  (~ base-substs'builddir)]
+          [tbuilddir (~ base-substs'top_builddir)])
       (if (equal? path-prefix ".")
         (values srcdir tsrcdir builddir tbuilddir)
         (let1 revpath ($ apply build-path
@@ -403,9 +404,9 @@
 
   ;; Realize prefix and exec_prefix if they're not set.
   (when (equal? (cf$ 'prefix) "NONE")
-    (cf-define 'prefix (cf$ 'default_prefix)))
+    (cf-subst 'prefix (cf$ 'default_prefix)))
   (when (equal? (cf$ 'exec_prefix) "NONE")
-    (cf-define 'exec_prefix "${prefix}"))
+    (cf-subst 'exec_prefix "${prefix}"))
   
   (dolist [f files]
     (let1 inf (build-path (cf$'srcdir) #`",|f|.in")
@@ -420,7 +421,7 @@
 ;; API
 ;; Show definitions.
 (define (cf-show-variables :key (formatter (^[k v] (format #t "~16s ~s" k v))))
-  (let1 dict (~ (ensure-package)'defs)
+  (let1 dict (~ (ensure-package)'substs)
     (dolist [k (sort (dict-keys dict)
                      (^[a b] (string<? (x->string a) (x->string b))))]
       (formatter k (dict-get dict k))
@@ -460,30 +461,30 @@
 
 ;; API
 ;; cf-check-prog works like AC_CHECK_PROG and AC_CHECK_PROGS.
-;; If SYM is already cf-define'd, we don't do anything.
+;; If SYM is already cf-subst'd, we don't do anything.
 (define (cf-check-prog sym prog-or-progs
                        :key (value #f) (default #f) (paths #f) (filter #f))
-  (unless (cf-defined? sym)
+  (unless (cf-have-subst? sym)
     (cf-msg-checking "for ~a" prog-or-progs)
     (if-let1 found (check-for-program (listify prog-or-progs)
                                       :paths paths :filter filter)
       (let1 result (or value (sys-basename found))
         (cf-msg-result "~a" result)
-        (cf-define sym result))
+        (cf-subst sym result))
       (begin (cf-msg-result "no")
-             (and default (cf-define sym default))))))
+             (and default (cf-subst sym default))))))
 
 ;; API
 ;; cf-path-prog works like AC_PATH_PROG and AC_PATH_PROGS.
 (define (cf-path-prog sym prog-or-progs
                       :key (value #f) (default #f) (paths #f) (filter #f))
-  (unless (cf-defined? sym)
+  (unless (cf-have-subst? sym)
     (cf-msg-checking "for ~a" prog-or-progs)
     (if-let1 found (check-for-program (listify prog-or-progs)
                                       :paths paths :filter filter)
       (let1 result (or value found)
         (cf-msg-result "~a" result)
-        (cf-define sym result))
+        (cf-subst sym result))
       (begin (cf-msg-result "no")
-             (and default (cf-define sym default))))))
+             (and default (cf-subst sym default))))))
 
