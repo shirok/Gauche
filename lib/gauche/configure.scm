@@ -57,6 +57,9 @@
 ;; The API is roughly corresponds to autoconf's AC_* macros, while we use
 ;; 'cf-' suffix instead.
 
+;; NB: cf-define currently only suppors substitution DEFS; it doesn't
+;; handle config.h.
+
 (define-module gauche.configure
   (use gauche.parameter)
   (use gauche.generator)
@@ -73,7 +76,8 @@
   (export cf-init
           cf-msg-checking cf-msg-result cf-msg-warn cf-msg-error
           cf-echo
-          cf-subst cf-ref cf$ cf-output cf-show-variables
+          cf-define cf-subst cf-have-subst? cf-ref cf$
+          cf-output cf-show-variables
           cf-check-prog cf-path-prog))
 (select-module gauche.configure)
 
@@ -85,6 +89,7 @@
    (url        :init-keyword :url :init-value #f)
    (string     :init-keyword :string)    ; package_string
    (tarname    :init-keyword :tarname)
+   (defs       :init-form (make-hash-table 'eq?)) ;cf-define'd thingy
    (substs     :init-form (make-hash-table 'eq?)) ;cf-subst'ed thingy
    (features   :init-form (make-hash-table 'eq?)) ;enabled features by cmdarg
    (packages   :init-form (make-hash-table 'eq?)) ;optional packages
@@ -250,19 +255,17 @@
          [else (opt rest cont)
                (rxmatch-case opt
                  [#/^--?enable-([-\w]+)(?:=([-\w]+))$/ (_ feature arg)
-                               (set! (cf-feature-ref (string->symbol feature))
-                                     (or arg "yes"))
-                               (cont rest)]
+                  (set! (cf-feature-ref (string->symbol feature)) (or arg "yes"))
+                  (cont rest)]
                  [#/^--?disable-([-\w]+)$/ (_ feature)
-                                (set! (cf-feature-ref (string->symbol feature)) "no")
-                                (cont rest)]
+                  (set! (cf-feature-ref (string->symbol feature)) "no")
+                  (cont rest)]
                  [#/^--?with-([-\w]+)(?:=([-\w]+))$/ (_ package arg)
-                             (set! (cf-package-ref (string->symbol package))
-                                   (or arg "yes"))
-                             (cont rest)]
+                  (set! (cf-package-ref (string->symbol package)) (or arg "yes"))
+                  (cont rest)]
                  [#/^--?without-([-\w]+)$/ (_ package)
-                                (set! (cf-package-ref (string->symbol package)) "no")
-                                (cont rest)]
+                  (set! (cf-package-ref (string->symbol package)) "no")
+                  (cont rest)]
                  [else
                   (print "Unrecognized option: " opt)
                   (print "Type `./configure --help' for valid options.")
@@ -307,6 +310,10 @@
   (print "  Generate Makefiles and other files suitable for your system.")
   ;; WRITEME - option descriptions
   (exit 1))
+
+;; API
+(define (cf-define symbol :optional (value 1))
+  (dict-put! (~ (ensure-package)'defs) symbol value))
 
 ;; API
 ;; Like AC_SUBST, but we require value (instead of implicitly referencing
@@ -356,16 +363,19 @@
 ;; Like AC_OUTPUT
 (define (cf-output . files)
   (define base-substs (~ (ensure-package)'substs))
+  (define (make-defs)
+    (string-join (dict-map (~ (ensure-package)'defs) (^[k v] #"~|k|=~|v|")) " "))
   (define (make-subst path-prefix)
     (receive (srcdir top_srcdir builddir top_builddir)
         (adjust-srcdirs path-prefix)
       (let1 substs (make-stacked-map (alist->hash-table
-                                    `((srcdir       . ,srcdir)
-                                      (top_srcdir   . ,top_srcdir)
-                                      (builddir     . ,builddir)
-                                      (top_builddir . ,top_builddir))
-                                    'eq?)
-                                   base-substs)
+                                      `((srcdir       . ,srcdir)
+                                        (top_srcdir   . ,top_srcdir)
+                                        (builddir     . ,builddir)
+                                        (top_builddir . ,top_builddir)
+                                        (DEFS . ,(make-defs)))
+                                      'eq?)
+                                     base-substs)
         (^[m]
           (let1 name (string->symbol (m 1))
             (or (dict-get substs name #f)
