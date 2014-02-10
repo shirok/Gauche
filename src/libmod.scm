@@ -177,8 +177,45 @@
   Scm_ImportModules)
 
 ;;;
+;;; Universal import
+;;;
+
+(select-module gauche.internal)
+
+(declare (keep-private-macro import))
+
+;; Kludge: We let user#import handle both gauche#import and r7rs#import, so
+;; that R7RS script can be run by gosh without any special treatment.
+;; If we see r7rs syntax, not only we import the specified module, but
+;; we switch the current module to r7rs.user.
+(define (%expand-user-import args)
+  (if (any (^[import-spec]
+             (or (symbol? import-spec)
+                 (and (list? import-spec)
+                      (pair? (cdr import-spec))
+                      (keyword? (cadr import-spec)))))
+           args)
+    `((with-module gauche import) ,@args)
+    (begin
+      ;; Some black magic needed here to inject the imported module to
+      ;; r7rs.user.  We do this here instead of expanding into forms
+      ;; to do the work, for "select-module" thingy is tricky.
+      (unless (provided? "r7rs")
+        (load "r7rs")
+        (provide "r7rs"))
+      (eval `(import ,@args) (find-module 'r7rs.user))
+      '(select-module r7rs.user))))
+
+(select-module user)
+
+(define-macro (import . import-specs)
+  ((with-module gauche.internal %expand-user-import) import-specs))
+
+;;;
 ;;; GLOCs
 ;;;
+
+(select-module gauche.internal)
 
 ;; GLOCs are not for public use, so all APIs are internal.
 

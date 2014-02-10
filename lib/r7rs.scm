@@ -547,3 +547,4 @@
 (with-module gauche
   (define-syntax define-library (with-module r7rs define-library)))
 
+(provide "r7rs")

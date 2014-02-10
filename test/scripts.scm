@@ -30,6 +30,34 @@
                (process-output->string '("./gosh" "-ftest" "-mfoo" "test.o")))
            (delete-files "test.o")))
 
+(test* "r7rs script support" "bar"
+       (unwind-protect
+           (begin
+             (delete-files "test.o")
+             (with-output-to-file "test.o"
+               (^[]
+                 (write
+                  '(import (scheme base) (scheme write)))
+                 (write
+                  '(display "bar\n"))))
+             (process-output->string '("./gosh" "-ftest" "test.o")))
+         (delete-files "test.o")))
+
+(test* "r7rs script support (don't call main automatically)" "baz"
+       (unwind-protect
+           (begin
+             (delete-files "test.o")
+             (with-output-to-file "test.o"
+               (^[]
+                 (write
+                  '(import (scheme base) (scheme write)))
+                 (write
+                  '(define (main args) (display "bar\n")))
+                 (write
+                  '(display "baz\n"))))
+             (process-output->string '("./gosh" "-ftest" "test.o")))
+         (delete-files "test.o")))
+
 ;;=======================================================================
 (test-section "gauche-config")
 

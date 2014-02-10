@@ -43,7 +43,7 @@
   (define-syntax include (with-module gauche include)))
 (provide "adaptor")
 
-(extend r7rs)
+(require "r7rs")
+(select-module r7rs.user)
 (import (adaptor))
 (include "r7rs-tests.scm")
-

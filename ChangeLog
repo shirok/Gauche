@@ -1,3 +1,8 @@
+2014-02-10  Shiro Kawai  <shiro@acm.org>
+
+	* src/libmod.scm (import): Added user#import that dispatches either
+	  gauche#import or r7rs#import, to support r7rs script natively.
+
 2014-02-07  Shiro Kawai  <shiro@acm.org>
 
 	* src/number.c (Scm_NumCmp): Fixed Scm_NumCmp when comparing a flonum
