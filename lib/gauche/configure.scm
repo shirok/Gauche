@@ -74,6 +74,8 @@
   (use srfi-13)
   (extend gauche.config)
   (export cf-init
+          cf-arg-enable cf-arg-with cf-feature-ref cf-package-ref
+          cf-help-string
           cf-msg-checking cf-msg-result cf-msg-warn cf-msg-error
           cf-echo
           cf-define cf-subst cf-have-subst? cf-ref cf$
@@ -99,6 +101,12 @@
 
 (define run-quietly (make-parameter #f)) ;-silent or -quiet option turn this on
 
+;; Alist of arg processors and help strings given to cf-arg-with and
+;; cf-arg-enable.
+;; Each element is
+;; (<name> <kind> <help-string> <proc-if-given> <proc-if-not-given>)
+(define arg-processors (make-parameter '()))
+
 ;; some internal utilities
 
 (define (listify x) (if (list? x) x (list x)))
@@ -110,6 +118,11 @@
 (define (tee-msg console-fmt log-fmt args)
   (apply format #t console-fmt args)
   (apply log-format log-fmt args))
+
+;; constants for formatting help strings.  see cf-help-string.
+(define-constant *usage-description-indent* 26)
+(define-constant *usage-item-indent* 2)
+(define-constant *usage-fill-column* 79)
 
 ;;
 ;; Basic APIs
@@ -165,7 +178,7 @@
   (initialize-default-definitions)
   (parse-command-line-arguments)
   (check-directory-names)
-  )
+  (process-args))
 
 (define (initialize-default-definitions)
   (define p (current-package))
@@ -216,11 +229,12 @@
          ["build=s" (build) (cf-subst 'build-alias build)]
          ["c|cache-file=s" (_)
           (values)] ;; support for the compatibility.  we don't do anything.
-         ["C|config-cache=s" (_) (values)]
+         ["C|config-cache" (_) (values)]
          ["datadir=s" (dir) (cf-subst 'datadir dir)]
          ["datarootdir=s" (dir) (cf-subst 'datarootdir dir)]
          ["docdir=s" (dir) (cf-subst 'docdir dir)]
          ["dvidir=s" (dir) (cf-subst 'dvidir dir)]
+         ;; --disable-option-checking
          ["exec_prefix=s" (pre) (cf-subst 'exec_prefix pre)]
          ["help" () (usage)]
          ["host=s" (host) (cf-subst 'host-alias host)]
@@ -246,7 +260,7 @@
          ["sharedstatedir=s" (arg) (cf-subst 'sharedstatedir arg)]
          ["site=s" (arg) (cf-subst 'site arg)]
          ["srcdir=s" (arg) (cf-subst 'srcdir arg)]
-         ["sysconfidr=s" (arg) (cf-subst 'sysconfdir arg)]
+         ["sysconfdir=s" (arg) (cf-subst 'sysconfdir arg)]
          ["target=s" (arg) (cf-subst 'target_alias arg)]
          ["v|verbose" () (run-quietly #f)]
          ["V|version" () (exit 0 "gauche.configure ~a" (gauche-version))]
@@ -305,10 +319,85 @@
   (cf-subst 'top_builddir (cf$ 'builddir))
   )
 
+(define (process-args)
+  (dolist [entry (arg-processors)]
+    (match entry
+      [(name kind help-string arg-if-given arg-if-not-given)
+       (let1 val (ecase kind
+                   [(enable) (cf-feature-ref name)]
+                   [(with) (cf-package-ref name)])
+         (if val
+           (arg-if-given val)
+           (arg-if-not-given)))]
+      [_ #f])))
+
 (define (usage)
-  (print "Usage: "(car (command-line))" args ...")
-  (print "  Generate Makefiles and other files suitable for your system.")
-  ;; WRITEME - option descriptions
+  (define p print)
+  (define (opt a b) (display (cf-help-string a b)))
+  (p "Usage: "(car (command-line))" args ... [var=value ...]")
+  (p "  Generate Makefiles and other files suitable for your system.")
+  (p)
+  (p "Configuration options:")
+  (opt "-h, --help" "display this help and exit")
+  (opt "-V, --version" "display version information and exit")
+  (opt "-q, --quiet, --silent" "suppress messages")
+  (opt "-C, --config-cache, --cache-file=FILE"
+      "ignored for the compatibility to autoconf-generated configure")
+  (opt "--srcdir=DIR" "find the sources in DIR")
+  (p)
+  (p "Installation directories:")
+  (opt "--prefix=PREFIX"
+      "install architecture-independent files in PREFIX")
+  (opt "--exec-prefix=EPREFIX"
+      "install architecture-dependent files in PREFIX")
+  (p)
+  (p "Most of the time, giving --prefix and/or --exec-prefix is enough")
+  (p "to install stuff in one location.  You can fine tune installation")
+  (p "directories for different kind of files with the options below:")
+  (p)
+  (opt "--bindir=DIR" "user executables [EPREFIX/bin]")
+  (opt "--sbindir=DIR" "system admin executables [EPREFIX/bin]")
+  (opt "--libexecdir=DIR" "program executables [EPREFIX/libexec]")
+  (opt "--sysconfdir=DIR" "read-only single-machine data [PREFIX/etc]")
+  (opt "--sharedstatedir=DIR"
+       "modifiable architecture-independed data [PREFIX/com]")
+  (opt "--localstatedir=DIR"
+       "modifiable single-machine data [PREFIX/var]")
+  (opt "--libdir=DIR" "object code libraries [EPREFIX/lib]")
+  (opt "--includedir=DIR" "C header files [PREFIX/include]")
+  (opt "--datarootdir=DIR"
+       "read-only architecture-independent data root [PREFIX/share]")
+  (opt "--datadir=DIR"
+       "read-only architecture-independent data root [DATAROOTDIR]")
+  (opt "--infodir=DIR" "info documentation [DATAROOTDIR/info]")
+  (opt "--localedir=DIR" "locale-dependent data [DATAROOTDIR/locale]")
+  (opt "--mandir=DIR" "manual pages [DATAROOTDIR/man]")
+  (opt "--docdir=DIR"
+       #"documentation root [DATAROOTDIR/doc/~(cf$ 'PACKAGE_TARNAME)]")
+  (opt "--htmldir=DIR" "html documentation [DOCDIR]")
+  (opt "--dvidir=DIR" "dvi documentation [DOCDIR]")
+  (opt "--pdfdir=DIR" "pdf documentation [DOCDIR]")
+  (opt "--sdir=DIR" "ps documentation [DOCDIR]")
+  (p)
+  ;; Add --build, --host, --target after checking cross compilation and
+  ;; default setting (should be taken from GOSH settings)
+  (p "Optional Features:")
+  (opt "--disable-FEATURE"
+       "do not include FEATURE (same as --enable-FEATURE=no)")
+  (opt "--enable-FEATURE[=ARG]" "include FEATURE [ARG=yes]")
+  (dolist [e (arg-processors)]
+    (match-let1 (name kind help-string _ _) e
+      (when (eq? kind 'enable)
+        (display help-string))))
+  (p)
+  (p "Optional Packages:")
+  (opt "--with-PACKAGE[=ARG]" "use PACKAGE [ARG=yes]")
+  (opt "--without-PACKAGE" "do not use PACKAGE (same as --with-PACKAGE=no)")
+  (dolist [e (arg-processors)]
+    (match-let1 (name kind help-string _ _) e
+      (when (eq? kind 'with)
+        (display help-string))))
+  ;; TODO: explanation of VAR=VAL
   (exit 1))
 
 ;; API
@@ -335,30 +424,80 @@
 ;; Like cf-ref, but returns empty string if undefined.
 (define (cf$ symbol) (cf-ref symbol ""))
 
+;; --with-PACKAGE and --enable-FEATURE processing
+;; They're recoginzed by cf-init.
+;;
+;;  --enable-FEATURE=VAL
+;;  --enable-FEATURE    == --enable-FEATURE=yes
+;;  --disable-FEATURE   == --enable-FEATURE=no
+;;
+;;  --with-PACKAGE=VAL
+;;  --with-PACKAGE      == --with-PACKAGE=yes
+;;  --without-PACKAGE   == --with-PACKAGE=no
+;;
+;; In order to generate help strings, calls of cf-arg-enable and cf-arg-with
+;; must precede cf-init.
+;;
+;; After cf-init, you can check the feature/package specified to the command
+;; line by cf-feature-ref and cf-package-ref.
+
 ;; API
-;; --enable-FEATURE=VAL
-;; --enable-FEATURE    == --enable-FEATURE=yes
-;; --disable-FEATURE   == --enable-FEATURE=no
 (define cf-feature-ref
   (getter-with-setter
-   (^[name] (hash-table-get (ensure-package)'features name #f))
-   (^[name val] (hash-table-put! (ensure-package)'features name val))))
+   (^[name] (hash-table-get (~ (ensure-package)'features) name #f))
+   (^[name val] (hash-table-put! (~ (ensure-package)'features) name val))))
 
 ;; API
-;; --with-PACKAGE=VAL
-;; --with-PACKAGE      == --with-PACKAGE=yes
-;; --without-PACKAGE   == --with-PACKAGE=no
 (define cf-package-ref
   (getter-with-setter
-   (^[name] (hash-table-get (ensure-package)'packages name #f))
-   (^[name val] (hash-table-put! (ensure-package)'packages name val))))
+   (^[name] (hash-table-get (~ (ensure-package)'packages) name #f))
+   (^[name val] (hash-table-put! (~ (ensure-package)'packages) name val))))
 
 ;; API
-;; This is a macro, so that we can register helpstr to the global registry.
-;; Hence arguments must be literal.
-;(define-macro (cf-help-string cmdarg description)
+(define (cf-arg-enable feature help-string
+                       :optional (action-if-given (^[val] #f))
+                                 (action-if-not-given (^[] #f)))
+  (unless (symbol? feature)
+    (errorf "cf-arg-enable: feature must be a symbol, but got ~s" feature))
+  (push! (arg-processors)
+         (list feature 'enable help-string
+               action-if-given action-if-not-given)))
   
+;; API
+(define (cf-arg-with package help-string
+                     :optional (action-if-given (^[val] #f))
+                               (action-if-not-given (^[] #f)))
+  (unless (symbol? package)
+    (errorf "cf-arg-with: package must be a symbol, but got ~s" package))
+  (push! (arg-processors)
+         (list package 'with help-string
+               action-if-given action-if-not-given)))
 
+;; API
+(define (cf-help-string item description)
+  (define descr-indent (make-string *usage-description-indent* #\space))
+  (define (fill paragraph)
+    (let loop ([words (string-split description #[\s])]
+               [column *usage-description-indent*]
+               [r '()])
+      (if (null? words)
+        (string-concatenate (reverse r))
+        (let* ([word (car words)]
+               [word-len (string-length word)]
+               [nextcol (+ column 1 word-len)])
+          (if (< nextcol *usage-fill-column*)
+            (loop (cdr words) nextcol (cons* word " " r))
+            (loop (cdr words) (+ *usage-description-indent* word-len)
+                  (cons* word descr-indent "\n" r)))))))
+  ;; NB: 'fill' adds one space before the paragraph, hence -1
+  (let1 item-len (string-length item)
+    (if (< (+ item-len *usage-item-indent*) (- *usage-description-indent* 1))
+      (format "~va~va~a\n" *usage-item-indent* " "
+              (- *usage-description-indent* *usage-item-indent* 1) item
+              (fill description))
+      (format "~va~a\n~va~a\n" *usage-item-indent* " " item
+              (- *usage-description-indent* 1) " " (fill description)))))
+         
 ;; API
 ;; Like AC_OUTPUT
 (define (cf-output . files)

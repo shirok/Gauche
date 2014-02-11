@@ -109,12 +109,9 @@
       (print "top_builddir = @top_builddir@")))
   )
 
-;; TODO: We haven't finished LOCAL_PATHS handling, so we give dummy
-;; arguments to configure now.  Remove those dummy arguments once
-;; we finish LOCAL_PATHS handling.
 (test* "running `configure' script" 0
        (process-exit-status
-        (run-process `("../gosh" "-ftest" "./configure" "LOCAL_PATHS=x")
+        (run-process `("../gosh" "-ftest" "./configure")
                      :output *nulldev* :wait #t :directory "test.o")))
 (test* "Makefile substitution" '()
        (and (file-exists? "test.o/Makefile")
@@ -128,7 +125,7 @@
 
 (test* "running `configure' script in different directory" 0
        (process-exit-status
-        (run-process `("../gosh" "-ftest" "../test.o/configure" "LOCAL_PATHS=x")
+        (run-process `("../gosh" "-ftest" "../test.o/configure")
                      :output *nulldev* :wait #t :directory "test2.o")))
 
 (test* "Makefiles in proper builddir" '(#t #t)
