@@ -1,5 +1,9 @@
 2014-02-11  Shiro Kawai  <shiro@acm.org>
 
+	* src/gauche-package.in: Switched using Gauche-based configure
+	  script by default in 'gauche-package generate',
+	  unless --autoconf option is given.
+
 	* lib/gauche/configure.scm: Added cf-arg-with, cf-arg-enable, and
 	  cf-help-string.  Put more stuff in usage.
 

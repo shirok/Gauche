@@ -353,7 +353,7 @@ Options:
 ;; generate
 ;;
 (define-cmd "generate"
-  ("generate package-name [module-name]"
+  ("generate [options] package-name [module-name]"
    "Generate template source tree for a new Gauche extension"
    "
   This command creates a directory <package-name> under the current
@@ -366,39 +366,46 @@ Options:
 
   <module-name>, if given, is used as the name of the module
   instead of <package-name>.  It may affect the generated directory
-  structure.")
-  (let-optionals* args ((package-name #f)
-                        (module-name #f)
-                        . more)
-    (unless (and package-name (null? more)) (usage-self))
-    (unless (#/^[\w-]+$/ package-name)
-      (exit 1 "Invalid character in package-name ~s: You can only use alphanumeric chars, underscore, and minus sign." package-name))
-    (unless (or (not module-name) (#/^[\w.-]+$/ module-name))
-      (exit 1 "Invalid character in module-name ~s" module-name))
-    (let* ([package-name*  (rxmatch-case package-name
-                             (#/^Gauche-(.*)/ (#f rest) rest)
-                             (else package-name))]
-           [extension-name (string-tr package-name* "A-Za-z_-" "a-za-z__")]
-           [module-name (string->symbol (or module-name extension-name))]
-           [tmpl-dir (sys-dirname (gauche-library-directory))]
-           [scm-subdir (sys-dirname (module-name->path module-name))])
-      (make-directory* (simplify-path (build-path package-name scm-subdir)))
-      (for-each
-       (lambda (file)
-         (let* ([src-path (build-path tmpl-dir #`"template.,file")]
-                [dst-name (regexp-replace*
-                           file
-                           #/extension/ extension-name
-                           #/module/ (sys-basename
-                                      (module-name->path module-name)))]
-                [dst-path (if (equal? file "module.scm")
-                            (build-path package-name scm-subdir dst-name)
-                            (build-path package-name dst-name))])
-           (filter-copy src-path dst-path
-                        package-name extension-name module-name '("DIST"))))
-       '("Makefile.in" "configure.ac" "extension.c" "extension.h"
-         "extensionlib.stub" "module.scm" "test.scm" "DIST")))
-    ))
+  structure.
+
+Options:
+  --autoconf         : generate configure.ac to be processed with GNU autoconf,
+                       instead of a Scheme configure script.
+")
+  (let-args args ([autoconf "autoconf"] . args)
+    (let-optionals* args ([package-name #f]
+                          [module-name #f]
+                          . more)
+      (unless (and package-name (null? more)) (usage-self))
+      (unless (#/^[\w-]+$/ package-name)
+        (exit 1 "Invalid character in package-name ~s: You can only use alphanumeric chars, underscore, and minus sign." package-name))
+      (unless (or (not module-name) (#/^[\w.-]+$/ module-name))
+        (exit 1 "Invalid character in module-name ~s" module-name))
+      (let* ([package-name*  (rxmatch-case package-name
+                               (#/^Gauche-(.*)/ (#f rest) rest)
+                               (else package-name))]
+             [extension-name (string-tr package-name* "A-Za-z_-" "a-za-z__")]
+             [module-name (string->symbol (or module-name extension-name))]
+             [tmpl-dir (sys-dirname (gauche-library-directory))]
+             [scm-subdir (sys-dirname (module-name->path module-name))])
+        (make-directory* (simplify-path (build-path package-name scm-subdir)))
+        (dolist [file (cons (if autoconf "configure.ac" "configure")
+                            '("Makefile.in" "extension.c"
+                              "extension.h" "extensionlib.stub"
+                              "module.scm" "test.scm" "DIST"))]
+          (let* ([src-path (build-path tmpl-dir #`"template.,file")]
+                 [dst-name (regexp-replace*
+                            file
+                            #/extension/ extension-name
+                            #/module/ (sys-basename
+                                       (module-name->path module-name)))]
+                 [dst-path (if (equal? file "module.scm")
+                             (build-path package-name scm-subdir dst-name)
+                             (build-path package-name dst-name))])
+            (filter-copy src-path dst-path
+                         package-name extension-name module-name
+                         '("DIST" "configure")))))
+      )))
 
 (define (filter-copy src dst
                      package-name extension-name module-name executables)
