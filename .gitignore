@@ -45,6 +45,11 @@ ext/charconv/eucj2ucs.c
 ext/charconv/guess_tab.c
 ext/charconv/ucs2eucj.c
 ext/dbm/dbmconf.h
+ext/dbm/dbm--gdbm.c
+ext/dbm/dbm--ndbm.c
+ext/dbm/dbm--odbm.c
+ext/dbm/ndbm-makedb
+ext/dbm/ndbm-suffixes.h
 ext/digest/rfc--md5.c
 ext/digest/rfc--sha.c
 ext/fcntl/fcntlib.c
@@ -94,6 +99,8 @@ ext/windows/windows.c
 ext/zlib/zliblib.c
 gc/.deps/
 gc/.libs/
+gc/atomic_ops.c
+gc/atomic_ops_sysdeps.S
 gc/bdw-gc.pc
 gc/cord/.deps
 gc/cord/.dirstamp
@@ -144,6 +151,7 @@ src/libdict.c
 src/libeval.c
 src/libexc.c
 src/libextra.c
+src/libfmt.c
 src/libio.c
 src/liblazy.c
 src/liblist.c
