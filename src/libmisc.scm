@@ -73,7 +73,9 @@
 (define-cproc undefined () (inliner CONSTU) (result SCM_UNDEFINED))
 (define-cproc undefined? (obj) ::<boolean> :constant SCM_UNDEFINEDP)
 
-(define-cproc warn (fmt::<string> :rest args) ::<void> Scm_FWarn)
+(define (warn fmt . args)
+  (apply format (current-error-port) (string-append "WARNING: " fmt) args)
+  (flush (current-error-port)))
 
 ;; Foreign pointer (may be in libsys.scm?)
 

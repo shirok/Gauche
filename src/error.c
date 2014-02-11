@@ -761,14 +761,10 @@ void Scm_Warn(const char *msg, ...)
     va_end(args);
 }
 
-/* format & warn */
+/* OBSOLETED: 'warn' is now in Scheme. */
 void Scm_FWarn(ScmString *fmt, ScmObj args)
 {
-    ScmObj ostr = Scm_MakeOutputStringPort(TRUE);
-    Scm_Format(SCM_PORT(ostr), fmt, args, TRUE);
-    Scm_Printf(SCM_CURERR, "WARNING: %A\n",
-               Scm_GetOutputString(SCM_PORT(ostr), 0));
-    Scm_Flush(SCM_CURERR);
+    Scm_Error("Scm_FWarn is obsoleted");
 }
 
 /*

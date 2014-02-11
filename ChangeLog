@@ -1,3 +1,9 @@
+2014-02-11  Shiro Kawai  <shiro@acm.org>
+
+	* src/libmisc.scm (warn), src/error.c (Scm_FWarn): Rewrote 'warn'
+	  in Scheme, avoiding calling obsoleted Scm_Format.  Also obsoleted
+	  Scm_FWarn.
+
 2014-02-10  Shiro Kawai  <shiro@acm.org>
 
 	* src/libmod.scm (import): Added user#import that dispatches either
