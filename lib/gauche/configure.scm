@@ -79,7 +79,7 @@
           cf-msg-checking cf-msg-result cf-msg-warn cf-msg-error
           cf-echo
           cf-define cf-subst cf-have-subst? cf-ref cf$
-          cf-output cf-show-substs
+          cf-config-headers cf-output cf-show-substs
           cf-check-prog cf-path-prog))
 (select-module gauche.configure)
 
@@ -91,6 +91,7 @@
    (url        :init-keyword :url :init-value #f)
    (string     :init-keyword :string)    ; package_string
    (tarname    :init-keyword :tarname)
+   (config.h   :init-form '())           ; list of (config-header . source)
    (defs       :init-form (make-hash-table 'eq?)) ;cf-define'd thingy
    (substs     :init-form (make-hash-table 'eq?)) ;cf-subst'ed thingy
    (features   :init-form (make-hash-table 'eq?)) ;enabled features by cmdarg
@@ -497,13 +498,24 @@
               (fill description))
       (format "~va~a\n~va~a\n" *usage-item-indent* " " item
               (- *usage-description-indent* 1) " " (fill description)))))
-         
+
+;; API
+(define (cf-config-headers header-or-headers)
+  (dolist [h (listify header-or-headers)]
+    (match (string-split h #\:)
+      [(out src) (push! (~(ensure-package)'config.h) (cons out src))]
+      [(out) (push! (~(ensure-package)'config.h) (cons out #"~|out|.in"))]
+      [_ (error "Invalid header name in cf-config-headers" h)])))
+
 ;; API
 ;; Like AC_OUTPUT
 (define (cf-output . files)
-  (define base-substs (~ (ensure-package)'substs))
+  (define pa (ensure-package))
+  (define base-substs (~ pa'substs))
   (define (make-defs)
-    (string-join (dict-map (~ (ensure-package)'defs) (^[k v] #"~|k|=~|v|")) " "))
+    (if (null? (~ pa'config.h))
+      (string-join (dict-map (~ pa'defs) (^[k v] #"-D~|k|=~|v|")) " ")
+      "-DHAVE_CONFIG_H"))
   (define (make-subst path-prefix)
     (receive (srcdir top_srcdir builddir top_builddir)
         (adjust-srcdirs path-prefix)
@@ -551,6 +563,16 @@
         (display (regexp-replace-all #/@(\w+)@/ line subst) outp)
         (newline outp))))
 
+  (define (make-config.h)
+    (^[line outp]
+      (rxmatch-case line
+        [#/^#undef\s+([A-Za-z_]+)/ (_ name)
+         (if-let1 defval (dict-get (~ pa'defs) (string->symbol name) #f)
+           (display #"#define ~name ~defval" outp)
+           (display #"/* #undef ~name */" outp))]
+        [else (display line outp)])
+      (newline outp)))
+
   ;; Realize prefix and exec_prefix if they're not set.
   (when (equal? (cf$ 'prefix) "NONE")
     (cf-subst 'prefix (cf$ 'default_prefix)))
@@ -565,7 +587,15 @@
         (make-directory* (sys-dirname f)))
       (file-filter-for-each (make-replace-1 f) :input inf :output f
                             :temporary-file #t :leave-unchanged #t)))
-  0)
+  (dolist [h (~ pa'config.h)]
+    (let1 inf (build-path (cf$'srcdir) (cdr h))
+      (unless (file-is-readable? inf)
+        (error "Cannot read input file ~s" inf))
+      (unless (file-is-directory? (sys-dirname (car h)))
+        (make-directory* (sys-dirname (car h))))
+      (file-filter-for-each (make-config.h) :input inf :output (car h)
+                            :temporary-file #t :leave-unchanged #t)))
+  )
 
 ;; API
 ;; Show definitions.

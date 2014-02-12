@@ -93,7 +93,9 @@
                    (dolist [line (port->string-list in)]
                      (display ($ regexp-replace-all* line #/@@/ ""
                                  #/\(cf-output \"Makefile\"\)/
-                                 "(cf-output \"Makefile\" \"src/Makefile\")")
+                                 "(cf-define 'HAVE_STDIO_H \"1\")\n\
+                                  (cf-config-headers \"config.h\")\n\
+                                  (cf-output \"Makefile\" \"src/Makefile\")")
                               out)
                      (newline out)))
                  :input infile
@@ -107,6 +109,16 @@
       (print "top_srcdir = @top_srcdir@")
       (print "builddir = @builddir@")
       (print "top_builddir = @top_builddir@")))
+
+  (with-output-to-file "test.o/config.h.in"
+    (^[]
+      (print "/* Define to 1 if you have the <foo.h> header file */")
+      (print "#undef HAVE_FOO_H")
+      (print)
+      (print "this is literal line")
+      (print "/* Define to 1 if you have the <stdio.h> header file */")
+      (print "#undef HAVE_STDIO_H")
+      ))
   )
 
 (test* "running `configure' script" 0
@@ -135,6 +147,18 @@
 (test* "srcdir etc."
        '("srcdir = ../test.o/src" "top_srcdir = ../../test.o" "builddir = ." "top_builddir = ..")
        (file->string-list "test2.o/src/Makefile"))
+
+(dolist [d '("test.o" "test2.o")]
+  (let1 config.h (build-path d "config.h")
+    (test* config.h
+           '("/* Define to 1 if you have the <foo.h> header file */"
+             "/* #undef HAVE_FOO_H */"
+             ""
+             "this is literal line"
+             "/* Define to 1 if you have the <stdio.h> header file */"
+             "#define HAVE_STDIO_H 1")
+           (and (file-exists? config.h)
+                (file->string-list config.h)))))
 
 (remove-files "test.o" "test2.o")
 
