@@ -9,6 +9,7 @@
 * Generating C code::           gauche.cgen
 * Collection framework::        gauche.collection
 * Configuration parameters::    gauche.config
+* Generating build files::      gauche.configure
 * Dictionary framework::        gauche.dictionary
 * Low-level file operations::   gauche.fcntl
 * Generators::                  gauche.generator
@@ -893,9 +894,9 @@ UTF-8 (Unicode 3.2))間の変換を自前で持つようになりました。
 @end deftp
 
 @menu
-* Supported character encoding schemes::
-* Autodetecting the encoding scheme::
-* Conversion ports::
+* Supported character encoding schemes::  
+* Autodetecting the encoding scheme::  
+* Conversion ports::            
 @end menu
 
 @node Supported character encoding schemes, Autodetecting the encoding scheme, Character code conversion, Character code conversion
@@ -2258,11 +2259,11 @@ takes a collection class argument and returns the collection of the class.
 @end deftp
 
 @menu
-* Mapping over collection::
-* Selection and searching in collection::
-* Miscellaneous operations on collection::
-* Fundamental iterator creators::
-* Implementing collections::
+* Mapping over collection::     
+* Selection and searching in collection::  
+* Miscellaneous operations on collection::  
+* Fundamental iterator creators::  
+* Implementing collections::    
 @end menu
 
 @node Mapping over collection, Selection and searching in collection, Collection framework, Collection framework
@@ -3324,7 +3325,7 @@ performance.
 @c COMMON
 
 @c ----------------------------------------------------------------------
-@node Configuration parameters, Dictionary framework, Collection framework, Library modules - Gauche extensions
+@node Configuration parameters, Generating build files, Collection framework, Library modules - Gauche extensions
 @section @code{gauche.config} - Configuration parameters
 @c NODE コンフィグレーション情報, @code{gauche.config} - コンフィグレーション情報
 
@@ -3362,7 +3363,247 @@ without any argument from the shell, to find out the valid options.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Dictionary framework, Low-level file operations, Configuration parameters, Library modules - Gauche extensions
+@node Generating build files, Dictionary framework, Configuration parameters, Library modules - Gauche extensions
+@section @code{gauche.configure} - Generating build files
+@c NODE ビルド用ファイルの生成, @code{gauche.configure} - ビルド用ファイルの生成
+
+@deftp {Module} gauche.configure
+@mdindex gauhce.configure
+This is a utility library to write @file{configure} script, an alternative
+of autoconf-generated @file{configure} shell script.
+It is used to check the system properties and generates build files
+(usually @file{Makefile}) from templates.
+
+The primary purpose is to replace @file{configure} scripts
+in Gauche extension pakcages.
+
+The advantage of using autoconf is that it generates
+a script that runs on most vanilla unix, for it only uses minimal 
+shell features and basic unix commands.   
+However, when you configure Gauche extension,
+you sure have Gauche already, so you don't need to limit
+yourself with minimal environment.
+
+Writing a @file{configure} script in Gauche means developers
+don't need an extra step to generate @file{configure} before
+distribution.  They can directly check in @file{configure} in
+the source repo, and anybody who pulls the source tree can
+run @file{configure} at once without having autoconf.
+
+Currently, @code{gauche.configure} only covers small subset of
+autoconf, though, so if you need to write complex tests
+you may have to switch back to autoconf.  We'll add tests
+as needed.
+@end deftp
+
+The core feature of @code{gauche.configure} is the ability to generate files
+(e.g. @file{Makefile}) from templates (e.g. @file{Makefile.in}) with replacing
+parameters.  We follow autoconf convension, so the replacement parameters
+in a template is written like @code{@@VAR@@}.  You should be able
+to reuse @file{Makefile.in} used for autoconf without changing them.
+
+The API corresponds to autoconf's @code{AC_*} macros, while we use
+@code{cf-} suffix instead.
+
+@menu
+* Structure of configure script::  
+* Configure API::               
+@end menu
+
+@node Structure of configure script, Configure API, Generating build files, Generating build files
+@subsection Structure of configure script and build files
+@c NODE configureスクリプトの構成とビルドファイル
+
+A @file{configure} script is a script that tests
+running system's properties to determine values of
+parameters, then read one or more template build files,
+and write out one output build file for each, replacing
+parameters for the assigned values.
+
+By convention, a template file has a suffix @code{.in}, and
+the corresponding output file is named without the suffix.
+For example, @code{Makefile.in} is a template that generates
+@code{Makefile}.
+
+Templates may contain parameters, noted @code{@@PARAMETER_NAME@@}.
+This is a fragment of a typical Makefile template:
+
+@example
+GAUCHE_PACKAGE = "@@GAUCHE_PACKAGE@@"
+SOEXT          = @@SOEXT@@
+LOCAL_PATHS    = "@@LOCAL_PATHS@@"
+
+foo.$(SOEXT): $(foo_SRCS)
+        $(GAUCHE_PACKAGE) compile \
+          --local=$(LOCAL_PATHS) --verbose foo $(foo_SRCS)
+@end example
+
+When processed by @code{configure}, @code{@@GAUCHE_PACKAGE@@},
+@code{@@SOEXT@@} and @code{@@LOCAL_PATHS@@} are replaced
+with appropriate values.   If you know autoconf, you are already
+familiar with this.
+
+The Gauche configure script is structurally similar to autoconf's
+@code{configure.in}, but you can use full power of Scheme.  Here's
+an abridged version of sample configure script:
+
+@example
+#!/usr/bin/env gosh
+(use gauche.configure)
+
+;; Argument declarations
+(cf-arg-with 'local
+             (cf-help-string
+              "--with-local=PATH:PATH..."
+              "For each PATH, add PATH/include to the include search
+  paths and PATH/lib to the library search paths.  Useful if you have some
+  libraries installed in non-standard places. ")
+             (^[with-local]
+               (unless (member with-local '("yes" "no" ""))
+                 (cf-subst 'LOCAL_PATHS with-local)))
+             (^[] (cf-subst 'LOCAL_PATHS "")))
+
+;; Initialization
+(cf-init "mylib" "1.0" "nobody@@example.org")
+
+;; Tests & other parameter settings
+(cf-path-prog 'GOSH "gosh")
+(cf-subst 'SOEXT (gauche-config "--so-suffix"))
+
+;; Output
+(cf-echo (cf$ 'PACKAGE_VERSION) > "VERSION")
+(cf-output "Makefile")
+@end example
+
+Instead of writing the calls to @code{cf-*} APIs in the toplevel
+as shown above, you can organize operations in procedures if you like.
+No matter how you organize them,
+you have to execute the following four steps in the script:
+
+@enumerate
+@item
+Extra argument declarations (optional): Declare @code{--with-PACKAGE}
+and/or @code{--enable-FEATURE} options you want to handle.
+@item
+Initialization.  Call to @code{cf-init} sets up global context and
+parses command-line arguments passed to @code{configure}.
+@item
+Tests and other parameter settings (optional): Check system
+characteristics and sets up substitution parameters and/or
+C preprocessor definitions.
+@item
+Output generation
+@end enumerate
+
+Most @code{cf-*} API corresponds to autoconf's @code{AC_*} or
+@code{AS_*} macros.   We need argument declarations
+before @code{cf-init} so that it can generate help message
+including custom arguments.
+
+@node Configure API,  , Structure of configure script, Generating build files
+@subsection Configure API
+
+@c EN
+@subsubheading Initialization
+@c JP
+@subsubheading 初期化
+@c COMMON
+
+@defun cf-init package-name package-version maintainer-email
+@end defun
+
+@c EN
+@subsubheading Command-line arguments
+@c JP
+@subsubheading コマンドライン引数
+@c COMMON
+
+@defun cf-arg-with package help-string :optional proc-if-given proc-if-not-given
+@end defun
+
+@defun cf-arg-enable feature help-string :optional proc-if-given proc-if-not-given
+@end defun
+
+@defun cf-help-string item description
+@end defun
+
+@defun cf-package-ref name
+@end defun
+
+@defun cf-feature-ref name
+@end defun
+
+
+@c EN
+@subsubheading Messages
+@c JP
+@subsubheading メッセージ
+@c COMMON
+
+@defun cf-msg-checking fmt arg @dots{}
+@end defun
+
+@defun cf-msg-result fmt arg @dots{}
+@end defun
+
+@defun cf-msg-warn fmt arg @dots{}
+@end defun
+
+@defun cf-msg-error fmt arg @dots{}
+@end defun
+
+@defun cf-echo arg @dots{} [> file][>> file]
+@end defun
+
+@c EN
+@subsubheading Parameters and definitions
+@c JP
+@subsubheading パラメータと定義
+@c COMMON
+
+@defun cf-define symbol :optional value
+@end defun
+
+@defun cf-subst symbol value
+@end defun
+
+@defun cf-have-subst? symbol
+@end defun
+
+@defun cf-ref symbol :optional default
+@end defun
+
+@defun cf$ symbol
+@end defun
+
+@c EN
+@subsubheading Predefined tests
+@c JP
+@subsubheading 定義済みテスト
+@c COMMON
+
+
+@defun cf-check-prog sym prog-or-progs :key value default paths filter
+@end defun
+
+@defun cf-path-prog sym prog-or-progs :key value default paths filter
+@end defun
+
+@c EN
+@subsubheading Output
+@c JP
+@subsubheading 出力
+@c COMMON
+
+@defun cf-output file @dots{}
+@end defun
+
+@defun cf-show-variables :key formatter
+@end defun
+
+
+@c ----------------------------------------------------------------------
+@node Dictionary framework, Low-level file operations, Generating build files, Library modules - Gauche extensions
 @section @code{gauche.dictionary} - Dictionary framework
 @c NODE ディクショナリフレームワーク, @code{gauche.dictionary} - ディクショナリフレームワーク
 
@@ -3382,8 +3623,8 @@ built on top of other dictionary classes.
 @end deftp
 
 @menu
-* Generic functions for dictionaries::
-* Generic dictionaries::
+* Generic functions for dictionaries::  
+* Generic dictionaries::        
 @end menu
 
 @node Generic functions for dictionaries, Generic dictionaries, Dictionary framework, Dictionary framework
@@ -4122,8 +4363,8 @@ There are several built-in procedures for that; see
 @c COMMON
 
 @menu
-* Generator constructors::
-* Generator operations::
+* Generator constructors::      
+* Generator operations::        
 @end menu
 
 @node Generator constructors, Generator operations, Generators, Generators
@@ -6694,10 +6935,10 @@ take a look at @code{srfi-106} (@xref{Basic socket interface}).
 @c COMMON
 
 @menu
-* Socket address::
-* High-level network functions::
-* Low-level socket interface::
-* Netdb interface::
+* Socket address::              
+* High-level network functions::  
+* Low-level socket interface::  
+* Netdb interface::             
 @end menu
 
 @node Socket address, High-level network functions, Networking, Networking
@@ -9784,9 +10025,9 @@ a convenient way to send/receive information to/from subprocesses.
 @end deftp
 
 @menu
-* Running subprocess::
-* Process object::
-* Process ports::
+* Running subprocess::          
+* Process object::              
+* Process ports::               
 @end menu
 
 @node Running subprocess, Process object, High Level Process Interface, High Level Process Interface
@@ -11102,11 +11343,11 @@ in day-to-day programming, but they might be handy to
 create record types on-the-fly at runtime.
 
 @menu
-* Record types introduction::
-* Record types syntactic layer::
-* Record types inspection layer::
-* Record types procedural layer::
-* Pseudo record types::
+* Record types introduction::   
+* Record types syntactic layer::  
+* Record types inspection layer::  
+* Record types procedural layer::  
+* Pseudo record types::         
 @end menu
 
 @node Record types introduction, Record types syntactic layer, Record types, Record types
@@ -11923,11 +12164,11 @@ Gauche組み込みクラスのうち、リスト、ベクター、そして文�
 @end deftp
 
 @menu
-* Fundamental sequence accessors::
-* Slicing sequence::
-* Mapping over sequences::
-* Other operations over sequences::
-* Implementing sequence::
+* Fundamental sequence accessors::  
+* Slicing sequence::            
+* Mapping over sequences::      
+* Other operations over sequences::  
+* Implementing sequence::       
 @end menu
 
 @node Fundamental sequence accessors, Slicing sequence, Sequence framework, Sequence framework
@@ -12534,8 +12775,8 @@ Windowsネイティブ環境でも使うことができます。
 @end deftp
 
 @menu
-* Posix termios interface::
-* Common high-level terminal control::
+* Posix termios interface::     
+* Common high-level terminal control::  
 @end menu
 
 @node Posix termios interface, Common high-level terminal control, Terminal control, Terminal control
@@ -13642,10 +13883,10 @@ SchemeレベルのスレッドAPIはSRFI-18、``マルチスレッドサポー�
 @c COMMON
 
 @menu
-* Thread programming tips::
-* Thread procedures::
-* Synchronization primitives::
-* Thread exceptions::
+* Thread programming tips::     
+* Thread procedures::           
+* Synchronization primitives::  
+* Thread exceptions::           
 @end menu
 
 @node Thread programming tips, Thread procedures, Threads, Threads
@@ -15674,10 +15915,10 @@ for any of @code{s8}, @code{u8}, @code{s16}, @code{u16},
 @c COMMON
 
 @menu
-* Uvector basic operations::
-* Uvector conversion operations::
-* Uvector numeric operations::
-* Uvector block I/O::
+* Uvector basic operations::    
+* Uvector conversion operations::  
+* Uvector numeric operations::  
+* Uvector block I/O::           
 @end menu
 
 @node Uvector basic operations, Uvector conversion operations, Uniform vectors, Uniform vectors

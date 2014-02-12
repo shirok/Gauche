@@ -79,7 +79,7 @@
           cf-msg-checking cf-msg-result cf-msg-warn cf-msg-error
           cf-echo
           cf-define cf-subst cf-have-subst? cf-ref cf$
-          cf-output cf-show-variables
+          cf-output cf-show-substs
           cf-check-prog cf-path-prog))
 (select-module gauche.configure)
 
@@ -569,7 +569,7 @@
 
 ;; API
 ;; Show definitions.
-(define (cf-show-variables :key (formatter (^[k v] (format #t "~16s ~s" k v))))
+(define (cf-show-substs :key (formatter (^[k v] (format #t "~16s ~s" k v))))
   (let1 dict (~ (ensure-package)'substs)
     (dolist [k (sort (dict-keys dict)
                      (^[a b] (string<? (x->string a) (x->string b))))]
