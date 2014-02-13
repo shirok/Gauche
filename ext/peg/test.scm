@@ -241,6 +241,21 @@
                 ($string (rope-finalize v)))
            "foobar")
 
+;; $lift and $lift*
+(test-succ "$lift" '(#\a . #\b)
+           ($lift cons anychar anychar)
+           "abc")
+(test-fail "$lift" '(1 #\z)
+           ($lift cons anychar ($char #\z))
+           "abc")
+
+(test-succ "$lift*" "abc"
+           ($lift* list->string anychar anychar anychar)
+           "abc")
+(test-fail "$lift" '(2 #\z)
+           ($lift* list->string anychar anychar ($char #\z))
+           "abc")
+
 ;; $fold-parsers and $fold-parsers-right
 (test-succ "$fold-parsers" '()                  ; base case
            ($fold-parsers cons '() '())

@@ -86,28 +86,28 @@
 (define %value-separator ($seq ($char #\,) %ws))
 
 (define %special
-  ($fmap ($ build-special $ string->symbol $ rope-finalize $)
+  ($lift ($ build-special $ string->symbol $ rope-finalize $)
          ($or ($string "false") ($string "true") ($string "null"))))
 
 (define %value
   ($lazy
-   ($fmap (^[v _] v) ($or %special %object %array %number %string) %ws)))
+   ($lift (^[v _] v) ($or %special %object %array %number %string) %ws)))
 
 (define %array
-  ($fmap (^[_0 lis _1] (build-array (rope-finalize lis)))
-         %begin-array ($sep-by %value %value-separator) %end-array))
+  ($lift ($ build-array $ rope-finalize $)
+         ($between %begin-array ($sep-by %value %value-separator) %end-array)))
 
 (define %number
   (let* ([%sign ($or ($do [($char #\-)] ($return -1))
                      ($do [($char #\+)] ($return 1))
                      ($return 1))]
-         [%digits ($fmap ($ string->number $ list->string $) ($many digit 1))]
+         [%digits ($lift ($ string->number $ list->string $) ($many digit 1))]
          [%int %digits]
          [%frac ($do [($char #\.)]
                      [d ($many digit 1)]
                      ($return (string->number (apply string #\0 #\. d))))]
-         [%exp ($fmap (^[_ s d] (* s d)) ($one-of #[eE]) %sign %digits)])
-    ($fmap (^[sign int frac exp]
+         [%exp ($lift (^[_ s d] (* s d)) ($one-of #[eE]) %sign %digits)])
+    ($lift (^[sign int frac exp]
              (let1 mantissa (+ int frac)
                (* sign (if exp (exact->inexact mantissa) mantissa)
                   (if exp (expt 10 exp) 1))))
@@ -116,7 +116,7 @@
 (define %string
   (let* ([%dquote ($char #\")]
          [%escape ($char #\\)]
-         [%hex4 ($fmap (^s (string->number (list->string s) 16))
+         [%hex4 ($lift (^s (string->number (list->string s) 16))
                        ($many hexdigit 4 4))]
          [%special-char
           ($do %escape
@@ -140,7 +140,7 @@
                      [v %value]
                      ($return (cons k v)))
     ($between %begin-object
-              ($fmap ($ build-object $ rope-finalize $)
+              ($lift ($ build-object $ rope-finalize $)
                      ($sep-by %member %value-separator))
               %end-object)))
 

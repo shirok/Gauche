@@ -47,8 +47,10 @@
           peg-run-parser
           peg-parse-string peg-parse-port
           peg-parser->generator ;experimental
-          $return $fail $expect $fmap
-          $do $<< $try $seq $or $fold-parsers $fold-parsers-right
+          $return $fail $expect $lift $lift*
+          $fmap ;obsoleted - same as $lift
+          $<<   ;obsoleted - same as $lift
+          $do $try $seq $or $fold-parsers $fold-parsers-right
           $many $many1 $skip-many
           $repeat $optional
           $alternate
@@ -65,7 +67,7 @@
           anychar upper lower letter alphanum digit
           hexdigit newline tab space spaces eof
 
-          $->rope rope->string rope-finalize
+          $->rope $->string $->symbol rope->string rope-finalize
           )
   )
 
@@ -76,27 +78,46 @@
 ;;;
 ;;;   A ::= B C
 ;;;     => (define a ($seq b c))
-;;;    If you need values of B and C, $do can be used:
-;;;     => (define a ($do ((x b) (y c)) (cons x y)))
+;;;    If you need values of B and C, use monadic macro $do, or applicative
+;;;    combinator $lift
+;;;     => (define a ($do [x b] [y c] ($return (cons x y))))
+;;;     => (define a ($lift cons b c)
 ;;;
 ;;;   A :: B | C
 ;;;     => (define a ($or b c))
+;;;     To be precise, this actually mean B / C in PEG; if B fails without
+;;;     consuming input, we try C.  But if B ever consumes input, we don't
+;;;     backtrack and A failes.  If you want backtracking, use $try as well.
+;;;     => (define a ($or ($try b) c))
 ;;;
 ;;;   A :: B*
 ;;;     => (define a ($many b))
-;;;
 ;;;   A :: B+
 ;;;     => (define a ($many b 1))
-;;;
 ;;;   A ::= B B | B B B
 ;;;     => (define a ($many b 2 3))
+;;;     '$many' gathers the semantic values of B into list.  One common case
+;;;     is that you want a string out of gathered values.  $->string is a
+;;;     combinator that just translates the semantic value.
+;;;     => (define a ($->string ($many b)))
+;;;     If the result of a is futher gathered, it is wasteful to make it
+;;;     a string, since it will be thrown away soon.  We have an efficient
+;;;     intermediate string representation called rope.  Here you can make
+;;;     the result of a as rope:
+;;;     => (define a ($->rope ($many b)))
+;;;     Later, you can concatenate and convert ropes to a string by
+;;;     rope->string.
+;;;     If you don't need the values, you can use $skip-many instead, which
+;;;     is more efficient.
 ;;;
 ;;;   A ::= B?
 ;;;     => (define a ($optional b))
 ;;;
+;;;
+
 
 ;;;  In this module, we provide various consturctors of PARSERs,
-;;;  and a DRIVER procedure.
+;;;  and DRIVER procedures.
 ;;;
 ;;;  A PARSER is merely a closure that takes a list of input (most
 ;;;  likely it's a lazy sequence of characters, but it can be a
@@ -280,14 +301,13 @@
                             [(SCM_CHARP elt) (SCM_PUTC (SCM_CHAR_VALUE elt) p)]
                             [else (rope2string_int elt p)]))
                     obj)]
-         [(not (SCM_NULLP obj))
+         [(not (or (SCM_NULLP obj) (SCM_FALSEP obj)))
           (Scm_Error "rope->string: unknown object to write: %S" obj)]))
 
  (define-cproc rope->string (obj)
-   (body <top>
-         (let* ([p (Scm_MakeOutputStringPort TRUE)])
-           (rope2string_int obj p)
-           (result (Scm_GetOutputString (SCM_PORT p) 0)))))
+   (let* ([p (Scm_MakeOutputStringPort TRUE)])
+     (rope2string_int obj p)
+     (result (Scm_GetOutputString (SCM_PORT p) 0))))
  )
 
 ;;;============================================================
@@ -328,9 +348,9 @@
           ((f v) s1)
           (values r v s1)))))
 
-;; $fmap :: (a,...) -> b, (Parser,..) -> Parser
-;; ($fmap f parser) == ($do [x parser] ($return (f x)))
-(define ($fmap f . parsers)
+;; $lift :: (a,...) -> b, (Parser,..) -> Parser
+;; ($lift f parser) == ($do [x parser] ($return (f x)))
+(define-inline ($lift f . parsers)
   ;; We don't use the straightforward definition (using $do or $bind)
   ;; to reduce closure construction.
   (^s (let accum ([s s] [parsers parsers] [vs '()])
@@ -340,6 +360,20 @@
             (if (parse-success? r)
               (accum s1 (cdr parsers) (cons v vs))
               (values r v s1)))))))
+
+;; Like $lift, but f gets single list argument
+(define-inline ($lift* f . parsers)
+  (^s (let accum ([s s] [parsers parsers] [vs '()])
+        (if (null? parsers)
+          (return-result (f (reverse vs)) s)
+          (receive [r v s1] ((car parsers) s)
+            (if (parse-success? r)
+              (accum s1 (cdr parsers) (cons v vs))
+              (values r v s1)))))))
+
+;; for the backward compatibility - will be dropped by 0.9.5
+(define $fmap $lift)
+(define $<< $lift)
 
 ;; $do clause ... body
 ;;   where
@@ -357,12 +391,6 @@
     [(_ parser clause . rest)
      ($bind parser (^_ ($do clause . rest)))]
     [(_  . other) (syntax-error "malformed $do" ($do . other))]))
-
-;; $<< proc parser ...
-;;   == ($do [tmp parser] ... ($return (proc tmp ...)))
-(define-macro ($<< proc . parsers)
-  (let ((temps (map (lambda (_) (gensym)) parsers)))
-    `($do ,@(map list temps parsers) ($return (,proc ,@temps)))))
 
 ;; $or p1 p2 ...
 ;;   Ordered choice.
@@ -483,6 +511,7 @@
 
 ;; $skip-many p &optional min max
 ;;   Like $many, but does not keep the results. Always returns #f.
+;;   This should be optimized; we don't need to retain intermediate values
 (define ($skip-many parse :optional (min 0) (max #f))
   (%check-min-max min max)
   (if (= min 0)
@@ -598,9 +627,19 @@
 ;;; String parsers
 ;;;
 
-(define ($->rope parser)   ($<< make-rope parser))
-(define ($->string parser) ($<< ($ rope->string $ make-rope $) parser))
-(define ($->symbol parser) ($<< ($ string->symbol $ rope->string $ make-rope $) parser))
+(define-inline ($->rope parser . more-parsers)
+  (if (null? more-parsers)
+    ($lift make-rope parser)
+    (apply $lift* make-rope parser more-parsers)))
+(define-inline ($->string parser . more-parsers)
+  (if (null? more-parsers)
+    ($lift ($ rope->string $ make-rope $) parser)
+    (apply $lift* ($ rope->string $ make-rope $) parser more-parsers)))
+(define-inline ($->symbol parser . more-parsers)
+  (if (null? more-parsers)
+    ($lift ($ string->symbol $ rope->string $ make-rope $) parser)
+    (apply $lift* ($ string->symbol $ rope->string $ make-rope $)
+           parser more-parsers)))
 
 (define (rope-finalize obj)
   (cond [(rope? obj) (rope->string obj)]
@@ -645,8 +684,7 @@
 
 (define ($c x) ($char x))
 
-(define ($y x)
-  ($<< (compose string->symbol rope->string) ($s x)))
+(define ($y x) ($lift ($ string->symbol $ rope->string $) ($s x)))
 
 ;; ($many-chars charset [min [max]]) == ($many ($one-of charset) [min [max]])
 ;;   with possible optimization.
@@ -680,7 +718,7 @@
 (define-char-parser tab      #[\t]          "tab")
 (define-char-parser space    #[\s]          "space")
 
-(define spaces ($<< make-rope ($many space)))
+(define spaces ($lift make-rope ($many space)))
 
 (define (eof s)
   (if (pair? s)

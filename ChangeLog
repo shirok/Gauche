@@ -1,3 +1,9 @@
+2014-02-13  Shiro Kawai  <shiro@acm.org>
+
+	* ext/peg/peg.scm: Consolidated $<< and $fmap and renamed to $lift.
+	  Allow $->rope, $->string, $->symbol to take multiple parsers.
+	* lib/rfc/json.scm: Changed accordingly.
+
 2014-02-11  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche-package.in: Switched using Gauche-based configure
