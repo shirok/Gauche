@@ -338,16 +338,17 @@
 ;;; Combinators
 ;;;
 
+;; API
 ;; p :: Parser
 ;; f :: Value -> Parser
 ;; $bind :: Parser, (Value -> Parser) -> Parser
-
 (define-inline ($bind p f)
   (^s (receive [r v s1] (p s)
         (if (parse-success? r)
           ((f v) s1)
           (values r v s1)))))
 
+;; API
 ;; $lift :: (a,...) -> b, (Parser,..) -> Parser
 ;; ($lift f parser) == ($do [x parser] ($return (f x)))
 (define-inline ($lift f . parsers)
@@ -361,6 +362,7 @@
               (accum s1 (cdr parsers) (cons v vs))
               (values r v s1)))))))
 
+;; API
 ;; Like $lift, but f gets single list argument
 (define-inline ($lift* f . parsers)
   (^s (let accum ([s s] [parsers parsers] [vs '()])
@@ -375,12 +377,12 @@
 (define $fmap $lift)
 (define $<< $lift)
 
+;; API
 ;; $do clause ... body
 ;;   where
 ;;     clause := (var parser)
 ;;            |  (parser)
 ;;            |  parser
-
 (define-syntax $do
   (syntax-rules ()
     [(_ body) body]
@@ -392,6 +394,7 @@
      ($bind parser (^_ ($do clause . rest)))]
     [(_  . other) (syntax-error "malformed $do" ($do . other))]))
 
+;; API
 ;; $or p1 p2 ...
 ;;   Ordered choice.
 (define ($or . parsers)
@@ -412,6 +415,7 @@
                      [(null? vs) (values r v s1)]
                      [else (fail (acons r v vs) s1)])))))]))
 
+;; API
 ;; $fold-parsers proc seed parsers
 ;; $fold-parsers-right proc seed parsers
 ;;   Apply parsers sequentially, passing around seed value.
@@ -421,7 +425,6 @@
 ;;   but it needs to create closures at parsing time, rather than construction
 ;;   time.  Interestingly, $fold-parsers-right can be written simply
 ;;   without this disadvantage.
-
 (define ($fold-parsers proc seed ps)
   (if (null? ps)
     ($return seed)
@@ -434,6 +437,7 @@
               (loop s1 (cdr ps) (proc v1 seed))
               (values r1 v1 s1))))))))
 
+;; API
 (define ($fold-parsers-right proc seed ps)
   (match ps
     [()       ($return seed)]
@@ -441,12 +445,15 @@
                    [seed ($fold-parsers-right proc seed ps)]
                    ($return (proc v seed)))]))
 
+;; API
 ;; $seq p1 p2 ...
 ;;   Match p1, p2 ... sequentially.  On success, returns the semantic
 ;;   value of the last parser.
+;;   To get all the results of p1, p2, ... in a list, use $lift* list p1 p2 ...
 (define ($seq . parsers)
-  ($fold-parsers (lambda (v s) v) #f parsers))
+  ($fold-parsers (^[v s] v) #f parsers))
 
+;; API
 ;; $try parser
 ;;   Try to match parsers.  If it fails, backtrack to
 ;;   the starting position of the stream.  So,
@@ -455,17 +462,17 @@
 ;;         ...)
 ;;   would try a, b, ... even some of them consumes the input.
 (define-inline ($try p)
-  (lambda (s0)
-    (receive (r v s) (p s0)
-      (if (not r)
-        (return-result v s)
-        (values r v s0)))))
+  (^[s0] (receive (r v s) (p s0)
+           (if (not r)
+             (return-result v s)
+             (values r v s0)))))
 
+;; API
 (define-syntax $lazy
   (syntax-rules ()
-    ((_ parse)
+    [(_ parse)
      (let ((p (delay parse)))
-       (lambda (s) ((force p) s))))))
+       (lambda (s) ((force p) s)))]))
 
 ;; alternative $lazy possibility (need benchmark!)
 ;(define-syntax $lazy
@@ -474,24 +481,29 @@
 ;     (letrec ((p (lambda (s) (set! p parse) (p s))))
 ;       (lambda (s) (p s))))))
 
-;; Utilities
+;; Utility
 (define (%check-min-max min max)
   (when (or (negative? min)
             (and max (> min max)))
     (error "invalid argument:" min max)))
 
+;; API
 ;; $count p n
 ;;   Exactly n times of p.  Returns the list.
 (define ($count parse n)
   ($many parse n n))
 
+;; API
+;; $skip-count p n
+;;   Exactly n times of p, discarding the results but the last.
 (define ($skip-count parse n)
   (if (= n 1)
     parse
     ($do parse ($skip-count parse (- n 1)))))
 
-;; $many p &optional min max
-;; $many1 p &optional max
+;; API
+;; $many p :optional min max
+;; $many1 p :optional max
 (define-inline ($many parse :optional (min 0) (max #f))
   (%check-min-max min max)
   (lambda (s)
@@ -509,7 +521,9 @@
     ($do [v parse] [vs ($many parse 0 (- max 1))] ($return (cons v vs)))
     ($do [v parse] [vs ($many parse)] ($return (cons v vs)))))
 
-;; $skip-many p &optional min max
+;; API
+;; $skip-many p :optional min max
+;; $skip-many1 p :optional max
 ;;   Like $many, but does not keep the results. Always returns #f.
 ;;   This should be optimized; we don't need to retain intermediate values
 (define ($skip-many parse :optional (min 0) (max #f))
@@ -526,12 +540,25 @@
     ($do parse [($skip-many1 parse)] ($return #f))
     ($do parse [($skip-many1 parse 0 (- max 1))] ($return #f))))
 
+;; API
+;; $optional p :optional fallback
+;;   Try P.  If not match, use FALLBACK as the value.
+;;   Does not backtrack by default; if P may consume some input and
+;;   you want to backtrack later, wrap it with $try.
 (define ($optional parse :optional (fallback #f))
   ($or parse ($return fallback)))
 
+;; API
+;; $repeat p n
+;;   Exactly n time of P.  Same as ($many p n n)
 (define ($repeat parse n)
   ($many parse n n))
 
+;; API
+;; $sep-by p sep :optional min max
+;;   P sparated by SEP, e.g. P SEP P SEP P.  Returns list of values of P.
+;;   If SEP consumes input then fails, or the following P fails, then the
+;;   entire $sep-by fails.
 (define ($sep-by parse sep :optional (min 0) (max #f))
   (define rep
     ($do [x parse]
@@ -544,16 +571,29 @@
    [(> min 0) rep]
    [else ($or rep ($return '()))]))
 
+;; API
+;; $alternate p sep
+;;   P separated by SEP.  Returns list of values of P.
+;;   Unline $sep-by, this one sets backtrack point before each SEP.  So,
+;;   for example, $sep-by failes with input P SEP P SEP P SEP Q, but
+;;   $alternate returns three results from SEP, leaving SEP Q in the input.
 (define ($alternate parse sep)
   ($or ($do [h parse]
             [t ($many ($try ($do [v1 sep] [v2 parse] ($return (list v1 v2)))))]
             ($return (cons h (apply append! t))))
        ($return '())))
 
+;; API
+;; $end-by p sep :optional min max
+;;   Matches repetition of P SEP.  Returns a list of values of P.
+;;   This one doesn't set backtrack point, so for example the input is
+;;   P SEP P SEP P Q, the entire match fails.
 (define ($end-by parse sep . args)
-  (apply $many ($do [v parse] sep ($return v)) args))
+  (apply $many ($try ($do [v parse] sep ($return v))) args))
 
-;; $sep-end-by
+;; API
+;; $sep-end-by p sep min max
+;;   
 (define ($sep-end-by parse sep :optional (min 0) (max #f))
   (%check-min-max min max)
   (^s (let loop ([vs '()] [s s] [count 0])
@@ -571,9 +611,17 @@
                    (return-result (reverse vs) s)]
                   [else (values r v s.)]))))))
 
+;; API
+;; $between A B C
+;;   Matches A B C, and returns the result of B.
 (define ($between open parse close)
   ($do open [v parse] close ($return v)))
 
+;; API
+;; $not P
+;;   Succeeds when the input does not matches P.  The value is #f.
+;;   If the input matches P, unexpected failure results.
+;;   Unlike other parsers, input may be consumed when this parser succeeds.
 (define ($not parse)
   (lambda (s0)
     (receive (r v s) (parse s0)
@@ -581,9 +629,14 @@
         (return-result #f s)
         (return-failure/unexpect v s0)))))
 
+;; API
+;; $many-till P E :optional min max
+;;
 (define ($many-till parse end . args)
   (apply $many ($do [($not end)] parse) args))
 
+;; API
+;; $chain-left P OP
 (define ($chain-left parse op)
   (lambda (st)
     (receive (r v s) (parse st)
@@ -597,6 +650,8 @@
               (values r1 v1 s1))))
         (values r v s)))))
 
+;; API
+;; $chain-right P OP
 (define ($chain-right parse op)
   (rec (loop s)
     (($do (h parse)
@@ -606,6 +661,8 @@
                ($return h)))
      s)))
 
+;; API
+;; $satisfy
 (define-syntax $satisfy
   (syntax-rules (cut <>)
     [(_ (cut p x <>) expect)            ;TODO: hygiene!
