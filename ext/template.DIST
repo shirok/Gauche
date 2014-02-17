@@ -21,7 +21,7 @@ fi
 
 if [ "$tgz" = "yes" ]; then
   if [ -f Makefile ]; then make maintainer-clean; fi
-  ./DIST gen
+  if [ -f configure.ac ]; then ./DIST gen; fi
   ./configure
   make distclean
 
