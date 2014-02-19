@@ -50,9 +50,7 @@
 (define-constant *ai-v4mapped*
   (global-variable-ref 'gauche.net 'AI_V4MAPPED 0))
 (define-constant *ai-all*
-  (cond-expand
-   [gauche.net.ipv6 net:AI_ALL]
-   [else 0]))
+  (global-variable-ref 'gauche.net 'AI_ALL 0))
 (define-constant *ai-addrconfig*
   (cond-expand
    [gauche.net.ipv6 net:AI_ADDRCONFIG]
