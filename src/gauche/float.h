@@ -142,6 +142,18 @@ extern unsigned int __cdecl _controlfp(unsigned int, unsigned int);
     
 #define SCM_FP_ENSURE_DOUBLE_PRECISION_END()
 
+#elif defined(__NetBSD__) && defined(__i386__) && defined(HAVE_FPSETPREC)
+/*
+ * NetBSD 6.99.26 switched to the x87 default control word (0x037f)
+ * as initial value for new processes.
+ */
+#include <ieeefp.h>
+
+#define SCM_FP_ENSURE_DOUBLE_PRECISION_BEGIN()        \
+    { fp_prec_t old_prec__ = fpsetprec(FP_PD);
+#define SCM_FP_ENSURE_DOUBLE_PRECISION_END() \
+      fpsetprec(old_prec__); }
+
 #else  /* fallback */
 #define SCM_FP_ENSURE_DOUBLE_PRECISION_BEGIN() /* nothing */
 #define SCM_FP_ENSURE_DOUBLE_PRECISION_END()   /* nothing */
