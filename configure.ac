@@ -456,6 +456,7 @@ AC_CHECK_FUNCS(gethostname sethostname getdomainname setdomainname)
 AC_CHECK_FUNCS(gettimeofday getloadavg)
 AC_CHECK_FUNCS(syslog setlogmask)
 AC_CHECK_FUNCS(sigwait)
+AC_CHECK_FUNCS(fpsetprec)
 
 dnl Check for select().  HP-UX and MinGW doesn't like the way configure tests
 dnl select() existence and we know they have one, so we skip the test on them.
