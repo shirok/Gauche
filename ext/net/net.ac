@@ -113,7 +113,12 @@ dnl not supposed to be public.  configure happens to find these, so for
 dnl the time being, we specifically disable checks for these functions
 dnl on netbsd. (2004/5/31)
 dnl
-AC_CHECK_FUNC(gethostbyname_r)
+case "$target" in
+  *-*-netbsd*)
+    ac_cv_func_gethostbyname_r=no;;
+  *)
+    AC_CHECK_FUNC(gethostbyname_r)
+esac
 if test $ac_cv_func_gethostbyname_r = 'yes'; then
   AC_CACHE_CHECK(number of arguments for gethostbyname_r,
                  ac_cv_func_gethostbyname_r_nargs, [
@@ -134,7 +139,7 @@ fi
 
 dnl Kludge: DragonFly BSD's gethostbyaddr_r is broken
 case "$target" in
-  *-*-dragonfly*)
+  *-*-dragonfly*|*-*-netbsd*)
     ac_cv_func_gethostbyaddr_r='no';;
   *)
     AC_CHECK_FUNC(gethostbyaddr_r);;
