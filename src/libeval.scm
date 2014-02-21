@@ -247,7 +247,7 @@
 
 (select-module gauche.internal)
 
-(define (%repl-print . vals) (for-each (^e (write/ss e) (newline)) vals))
+(define (%repl-print . vals) (for-each (^e (write e) (newline)) vals))
 (define (%repl-prompt) (display "gosh> ") (flush))
 
 (define-in-module gauche (read-eval-print-loop :optional (reader #f)

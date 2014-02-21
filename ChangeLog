@@ -1,3 +1,11 @@
+2014-02-20  Shiro Kawai  <shiro@acm.org>
+
+	* src/libeval.scm (%repl-print): Changed to use write (r7rs write,
+	  which doesn't show shared structure but does show cycles) in the
+	  default REPL.  Showing shared structure by default has been a source
+	  of confision for newcomers; now we can avoid that, yet we can
+	  retain circular-safety.
+
 2014-02-13  Shiro Kawai  <shiro@acm.org>
 
 	* ext/peg/peg.scm: Consolidated $<< and $fmap and renamed to $lift.
