@@ -15148,6 +15148,119 @@ We provide these only for the backward compatibility.
 @subsection Output
 @c NODE 出力
 
+@menu
+* Layers of output routines::   
+* Object output::               
+* Formatting output::           
+* Low-level output::            
+@end menu
+
+@node Layers of output routines, Object output, Output, Output
+@subsubsection Layers of output routines
+@c NODE 出力ルーチンの階層
+
+@c EN
+Gauche has quite a few output procedures which may confuse newcomers.
+The following table will help to understand how to use those procedures:
+@c JP
+Gaucheにはたくさんの出力手続きがあり、慣れないうちはどれを使えばよいか迷ってしまう
+かもしれません。次の表は様々な出力手続きを分類するものです。
+@c COMMON
+
+@table @asis
+@c EN
+@item Object writers
+Procedures that write out Scheme objects.
+Although there exist more low-level procedures,
+these are regadarded as a basic layer of output routines, 
+since it works on a generic Scheme object as a single unit.
+They come in two flavors:
+
+@itemize @bullet
+@item
+Write-family procedures: @code{write}, @code{write-shared}, @code{write-simple}--these are to produce @emph{external representation} of Scheme objects, 
+which can be generally read back by @code{read} without losing
+information as much as possible@footnote{In a sense, this is somewhat similar to
+what is called ``serialization'' or ``marshalling'' in other programming
+langauge; you can @code{write} out a generic Scheme object on disk or
+to wire, and @code{read} it to get an object equivalent to the original
+one.  In Lisp-family languages, this is called @emph{read/write invariance}
+and is a built-in feature.
+Note that some objects do not have this invaiance
+in nature, so sometimes you need to make your own serializer/marshaller.}.
+The external representation of most Scheme objects
+are the ones you write literal data in program, so this is the default way
+of writing Scheme objects out.
+@item
+Display-family procedures: 
+@code{display}, @code{print}, @code{newline}.
+These are to produce plain-text output suitable for human readers.
+@end itemize
+@c JP
+@item オブジェクトの出力
+Schemeオブジェクトを出力する手続きです。
+もっと低レベルの手続きもありますが、一般にはこの層が出力ルーチンの基本であると
+みなされています。Schemeのオブジェクト単位で操作をするからです。
+この手続き群はさらに次の二つのグループに分かれます。
+
+@itemize @bullet
+@item
+Write族手続き: @code{write}, @code{write-shared}, @code{write-simple}---これらは、Schemeオブジェクトの@emph{外部表現}を出力します。出力されたものは一般に、
+@code{read}を使って、可能な限り情報を失わずに読み戻すことができます@footnote{ある意味、
+これは他のプログラミング言語でシリアライズやマーシャライズと呼ばれている操作に
+似ています。一般のSchemeオブジェクトをディスクやネットワークに@code{write}して、
+それを@code{read}すれば、元のオブジェクトと等価なオブジェクトが得られるわけです。
+Lisp族言語では、これは@emph{read/write invariance}と呼ばれ、組み込みの機能と
+なっています。但しオブジェクトによってはこの性質を持たないものもあり、
+そういうオブジェクトを扱う時は専用のシリアライザを書く必要があります。}。
+Schemeオブジェクトの外部表現は、リテラルデータをプログラム中に記述するのと
+同じ書き方なので、これがSchemeオブジェクトを出力する際のデフォルトの表現になっています。
+@item
+Display族手続き: @code{display}, @code{print}, @code{newline}.
+これらは人間に読みやすいプレーンテキストな出力を生成します。
+@end itemize
+@c COMMON
+
+@c EN
+@item High-level formatting output
+To produce output in specific width, alignment, etc: @code{format}.
+This corresponds to C's @code{printf}.
+@c JP
+@item 高レベル整形出力
+出力を指定の桁数に揃えたり、どちらかに寄せたり、といった書式を指定できる手続きが
+@code{format}です。Cの@code{printf}のようなものです。
+@c COMMON
+
+@c EN
+@item Low-level type-specific output
+Procedures that deal with raw data.
+@itemize @bullet
+@item
+To output a character or a byte: @code{write-char}, @code{write-byte}.
+@item
+To output an array of binary data: @code{write-block}.
+@item
+To flush the output buffer: @code{flush}, @code{flush-all-ports}.
+@end itemize
+@c JP
+@item 低レベル、特定の型用の出力
+「生」のデータを扱う手続きです。
+@itemize @bullet
+@item
+文字毎やバイト毎の出力: @code{write-char}, @code{write-byte}
+@item
+バイナリデータの配列の出力: @code{write-block}
+@item
+出力バッファのフラッシュ: @code{flush}, @code{flush-all-ports}
+@end itemize
+@c COMMON
+@end table
+
+
+@node Object output, Formatting output, Layers of output routines, Output
+@subsubsection Object output
+@c NODE オブジェクトの出力
+
 @c EN
 For the following procedures, the optional @var{port} argument must be
 an output port, and when omitted, the current output port is assumed.
@@ -15157,90 +15270,145 @@ an output port, and when omitted, the current output port is assumed.
 @c COMMON
 
 @defun write obj :optional port
-@defunx display obj :optional port
-[R5RS]
+@defunx write-shared obj :optional port
+@defunx write-simple obj :optional port
+[R7RS]
 @c EN
-Produces a printable representation of an object @var{obj} to the output port.
-@code{Write} uses object's standard external representation
-whenever possible, so that the written output would be
-read back by @code{read},
-whereas @code{display} produces more human-readable output.
-
-When @code{write} and @code{display} encounter an object of
-a user-defined class, they call the generic function @code{write-object}.
-
-These procedures may not stop when @var{obj} contains a cyclic structure.
-See @code{write/ss} below.
+The @code{write}-family procedures are used to write an
+external representation of Scheme object,
+which can be read back by @code{read} procedure.  The three
+procedures differ in a way to handle shared or circular structures.
 @c JP
-オブジェクト@var{obj}の表示可能な表現を生成し、出力ポートに書き出します。
-@code{write}は可能な限り、@var{obj}の標準的な外部表現を使い、
-生成された出力が@code{read}で再び読み込めるようにします。
-@var{display}はより人間にとって可読性の高い出力を生成します。
+@code{write}族の手続きは、Schemeオブジェクトの外部表現を出力します。
+外部表現は一般に、@code{read}手続きによって読み戻せば、
+元のオブジェクトと同等のオブジェクトとなります。
+この3つの手続きの違いは、共有構造および循環構造の扱いにあります。
+@c COMMON
 
-@code{write}や@code{display}が表示中にユーザ定義クラスのオブジェクトに
+@c EN
+@code{Write} is circular-safe; that is, it uses datum label notation
+(@code{#n=} and @code{#n#}) to show cycles.  It does not use datum label
+notation for non-circular structures that are merely shared 
+(see the second example).
+@c JP
+@code{write}は循環構造に対して安全です。データに循環がある場合は
+データラベル記法(@code{#n=}と@code{#n#})を用いてそれを表現します。
+循環の無い、単に共有されているだけの構造についてはデータラベル記法を使いません
+(二番目の例参照)。
+@c COMMON
+
+@example
+(let1 x (list 1)
+  (set-cdr! x x)   ; create a cycle
+  (write x))
+ @result{} @r{shows} #0=(1 . #0#)
+
+(let1 x (list 1)
+  (write (list x x)))
+ @result{} @r{shows} ((1) (1))
+@end example
+
+@c EN
+@code{Write-shared} is also circular-safe, and it also shows
+shared structures using datum labels.  Use this if you need
+to preserve topology of a graph structure.
+@c JP
+@code{write-shared}も循環構造に対して安全で、さらに共有構造も
+データラベル記法で表示します。グラフ構造のトポロジーを維持する必要がある
+場合はこの手続きを使ってください。
+@c COMMON
+
+@example
+(let1 x (list 1)
+  (write (list x x)))
+ @result{} @r{shows} (#0=(1) #0#)
+@end example
+
+@c EN
+Finally, @code{write-simple} writes out the object recursively
+without taking account of shared or circular structures.  This is fast,
+for it doesn't need to scan the structure before actually writing out.
+However, it won't stop when a circular structure is passed.
+@c JP
+最後に、@code{write-simple}はオブジェクトを、共有構造や循環構造を考慮せずに
+再帰的に表示します。これは出力前に共有構造の検出パスを走らせる必要がないので
+高速です。しかし、渡されたデータに循環があった場合は出力が止まらなくなります。
+@c COMMON
+
+@c EN
+When these procedures encounter an object of
+a user-defined class, they call the generic function @code{write-object}.
+@c JP
+これらの手続きが表示中にユーザ定義クラスのオブジェクトに
 出会った場合は、ジェネリックファンクション@code{write-object}を呼び出します。
+@c COMMON
 
-@var{obj}が循環する構造を持っていた場合、これらの手続きは停止しないかも
-しれません。@code{write/ss}を参照して下さい。
+@c EN
+Historical context: @code{Write} has been in Scheme standards, but
+handling of circular structures hasn't been specified until R7RS.
+In fact, until Gauche 0.9.4,
+@code{write} diverged for circular structures.
+SRFI-38 introduced the datum-label notation and
+@code{write-with-shared-structure} and @code{write/ss} procedures
+to produce such notation, and Gauche supported it.
+R7RS clarified this issue, and Gauche 0.9.4 followed.
+@c JP
+歴史的経緯: @code{Write}は以前のScheme標準にもありましたが、
+循環構造があった場合の振る舞いはR7RSになるまで規定されていませんでした。
+実際、Gauche 0.9.4より前の@code{write}は、循環構造を渡されると停止しません。
+SRFI-38はデータラベル記法および、それを表示するための
+@code{write-with-shared-structure}と@code{write/ss}手続きを導入し、
+Gaucheもそれをサポートしていました。
+R7RSでこの問題は明確にされ、Gaucheも0.9.4からそれに沿っています。
 @c COMMON
 @end defun
+
 
 @defun write-with-shared-structure obj :optional port
 @defunx write/ss obj :optional port
 @defunx write* obj :optional port
 [SRFI-38]
 @c EN
-Produces the output like @code{write}, except that they recognize shared
-substructures and/or cyclic structures, and use @code{#n=} and @code{#n#}
-syntax to indicate them.
+These are aliases of @code{write-shared} above.
 @c JP
-@code{write}と同じような出力を生成しますが、これらの手続きはさらに
-共有される部分構造や循環構造を認識し、@code{#n=}, @code{#n#}構文を使って
-それらを表現します。
+これらは上記の@code{write-shared}の別名です。
+@c COMMON
+
+@c EN
+Gauche has been used the name @code{write*} for long, which is
+taken from STklos.  SRFI-38 defines @code{write-with-shared-structure}
+and @code{write/ss}.  These names are kept for the backward compatibility.
+New code should use @code{write-shared}.
+@c JP
+Gaucheは、STklosから取った@code{write*}という名前を長く使ってきましたが、
+srfi-38によって@code{write-with-shared-structure}と@code{write/ss}が
+定義されました。これらの名前は互換性のためだけに残してあります。
+新たなコードには@code{write-shared}を使ってください。
+@c COMMON
+@end defun
+
+
+@defun display obj :optional port
+[R7RS]
+@c EN
+Produces a human-friendly representation of an object @var{obj} 
+to the output port.
+
+If @var{obj} contains cycles, @code{display} uses datum-label notation.
+
+When @code{display} encounters an object of
+a user-defined class, it calls the generic function @code{write-object}.
+@c JP
+オブジェクト@var{obj}の人に読みやすい表現を、出力ポートに書き出します。
+
+@code{display}が表示中にユーザ定義クラスのオブジェクトに
+出会った場合は、ジェネリックファンクション@code{write-object}を呼び出します。
 @c COMMON
 
 @example
-(write/ss
-  (let ((x (list 'a)))
-    (list x x)))
- @result{} ;; writes (#0=(a) #0#)
-
-(write/ss
-  (let ((x (list 'a)))
-    (set-cdr! x x)
-    x))
- @result{} ;; writes #0=(a . #0#)
+(display "\"Mahalo\", he said.")
+ @result{} @r{shows} "Mahalo", he said.
 @end example
-
-@c EN
-The @code{read} procedure can recognize this syntax, so when you
-read it back, you can get a structure which is isomorphic to
-the original one.
-@c JP
-@code{read}手続きもこの構文を認識するので、読み込めば
-もとの構造と同型の構造が得られます。
-@c COMMON
-
-@c EN
-Three procedures are the same.
-Gauche has been used the name @code{write*} for long, which is
-taken from STklos.  However, @code{write-with-shared-structure}
-and @code{write/ss} have been introduced in srfi-38, so these names will
-be more portable.
-@c JP
-3つの手続きは等価です。
-Gaucheは、STklosから取った@code{write*}という名前を長く使ってきましたが、
-srfi-38によって@code{write-with-shared-structure}と@code{write/ss}が
-定義されました。今後は後者の名前を使った方がポータブルでしょう。
-@c COMMON
-
-@c EN
-Note: The user-defined @code{write-object} methods work
-transparently for these procedures as well.
-@c JP
-註: ユーザ定義の@code{write-object}メソッドはこれらの手続きに対して
-透過的に動作します。
-@c COMMON
 @end defun
 
 
@@ -15254,6 +15422,7 @@ then writes a newline.
 @c COMMON
 @end defun
 
+
 @deffn {Method} write-object (obj <object>) port
 @c EN
 You can customize how the object is printed out by this method.
@@ -15264,52 +15433,24 @@ You can customize how the object is printed out by this method.
 @end deffn
 
 @defun newline :optional port
-[R5RS]
+[R7RS]
 @c EN
-Writes a newline character to @var{port}
+Writes a newline character to @var{port}.
+This is equivalent to @code{(write-char #\newline port)},
+@code{(display "\n" port)}.  It is kept for a historical reason.
 @c JP
-@var{port}に改行文字を書き出します。
+@var{port}に改行文字を書き出します。@code{(write-char #\newline port)}や
+@code{(display "\n" port)}と書いても同じことですが、歴史的な理由から
+残されています。
 @c COMMON
 @end defun
 
-@defun flush :optional port
-@defunx flush-all-ports
-@c EN
-Output the buffered data in @var{port}, or all ports, respectively.
 
-The function "flush" is called in variety of ways on the various
-Scheme implementations: @code{force-output} (Scsh, SCM),
-@code{flush-output} (Gambit), or @code{flush-output-port} (Bigloo).
-The name @code{flush} is taken from STk and STklos.
-@c JP
-それぞれ、@var{port}、および全てのポートにバッファされているデータを
-全て書き出します。
+@node Formatting output, Low-level output, Object output, Output
+@subsubsection Formatting output
+@c NODE フォーマット出力
 
-手続き"flush"はScheme実装によって様々な名前で呼ばれています：
-@code{force-output} (Scsh, SCM)、
-@code{flush-output} (Gambit)、@code{flush-output-port} (Bigloo) 等。
-@code{flush}の名前はSTkとSTklosから取りました。
-@c COMMON
-@end defun
 
-@defun write-char char :optional port
-[R5RS]
-@c EN
-Write a single character @var{char} to the output port @var{port}.
-@c JP
-文字@var{char}をポートに出力します。
-@c COMMON
-@end defun
-
-@defun write-byte byte :optional port
-@c EN
-Write a byte @var{byte} to the port.
-@var{byte} must be an exact integer in range between 0 and 255.
-@c JP
-出力ポートに1バイトのデータ@var{byte}を書き出します。
-@var{byte}は0から255の間の正確な整数でなければなりません。
-@c COMMON
-@end defun
 
 @defun format port string arg @dots{}
 @defunx format string arg @dots{}
@@ -15657,6 +15798,50 @@ absolute position of the arguments, starting from 0.
 @c COMMON
 @end table
 
+@end defun
+
+
+@node Low-level output,  , Formatting output, Output
+@subsubsection Low-level output
+@c NODE 低レベル出力
+
+@defun write-char char :optional port
+[R5RS]
+@c EN
+Write a single character @var{char} to the output port @var{port}.
+@c JP
+文字@var{char}をポートに出力します。
+@c COMMON
+@end defun
+
+@defun write-byte byte :optional port
+@c EN
+Write a byte @var{byte} to the port.
+@var{byte} must be an exact integer in range between 0 and 255.
+@c JP
+出力ポートに1バイトのデータ@var{byte}を書き出します。
+@var{byte}は0から255の間の正確な整数でなければなりません。
+@c COMMON
+@end defun
+
+@defun flush :optional port
+@defunx flush-all-ports
+@c EN
+Output the buffered data in @var{port}, or all ports, respectively.
+
+The function "flush" is called in variety of ways on the various
+Scheme implementations: @code{force-output} (Scsh, SCM),
+@code{flush-output} (Gambit), or @code{flush-output-port} (Bigloo).
+The name @code{flush} is taken from STk and STklos.
+@c JP
+それぞれ、@var{port}、および全てのポートにバッファされているデータを
+全て書き出します。
+
+手続き"flush"はScheme実装によって様々な名前で呼ばれています：
+@code{force-output} (Scsh, SCM)、
+@code{flush-output} (Gambit)、@code{flush-output-port} (Bigloo) 等。
+@code{flush}の名前はSTkとSTklosから取りました。
+@c COMMON
 @end defun
 
 
