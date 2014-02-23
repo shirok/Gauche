@@ -74,9 +74,9 @@
       [#/^\* ([^:]+):\s+([^\)]+\))\.(.*)?/ (#f tag node desc)
         (process-menu node tag desc) (in (read-line))]
       [else (display
-             (regexp-replace-all #/@VERSION@/
-              (regexp-replace-all #/(@x?ref)\{([^\}]+)\}/ line process-ref)
-              *version*))
+             ($ regexp-replace-all* line
+                #/@VERSION@/ *version*
+                #/(@(?:px|x)?ref)\{([^\}]+)\}/ process-ref))
             (newline)
             (in (read-line))]))
 
