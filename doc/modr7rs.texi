@@ -309,17 +309,133 @@ and it is the same as Gauche's built-in @code{case-lambda};
 @section @code{scheme.char} - R7RS char library
 @c NODE R7RS文字ライブラリ, @code{scheme.char} - R7RS文字ライブラリ
 
+@deftp {Module} scheme.char
+@mdindex scheme.char
+Exports bindings of R7RS @code{(scheme char)} library.
+From R7RS programs,
+those bindings are available by @code{(import (scheme char))}.
+@end deftp
+
+The following procedures are the same as Gauche's builtin procedures;
+@pxref{Characters}.
+
+@example
+char-alphabetic? char-ci<=? char-ci<?  char-ci=? char-ci>=? char-ci>?
+char-downcase char-foldcase char-lower-case? char-numeric?
+char-upcase char-upper-case?  char-whitespace?
+@end example
+
+The following procedures are the same as the ones provided
+in @code{text.unicode} module (@pxref{Full string case conversion}).
+They use full case folding by Unicode standard (e.g. taking into
+account of German eszett).
+
+@example
+string-ci<=? string-ci<?  string-ci=? string-ci>=?  string-ci>?
+string-downcase string-foldcase string-upcase
+@end example
+
+@defun digit-value c
+[R7RS]
+If @var{c} is a character with @code{Nd} general category---that is,
+if it represents a decimal digit---this procedure returns the value
+the character represents.  Otherwise it returns @code{#f}.
+
+@example
+(digit-value #\3) @result{} 3
+
+(digit-value #\z) @result{} #f
+@end example
+
+Note that Unicode defines about two dozen sets of digit characters.
+
+@example
+(digit-value #\x11068) @result{} 2
+@end example
+
+Gauche's built-in procedure @code{digit->integer} has more general
+interface (@pxref{Characters}).
+
+@example
+(digit-value c) @equiv{} (digit->integer c 10 #t)
+@end example
+@end defun
+
 @node R7RS complex numbers, R7RS cxr accessors, R7RS char library, Library modules - R7RS integration
 @section @code{scheme.complex} - R7RS complex numbers
 @c NODE R7RS複素数, @code{scheme.compex} - R7RS複素数
+
+@deftp {Module} scheme.complex
+@mdindex scheme.complex
+Exports bindings of R7RS @code{(scheme complex)} library.
+From R7RS programs,
+those bindings are available by @code{(import (scheme complex))}.
+
+This module provides the following bingins, all of which are 
+Gauche built-in (@pxref{Numerical conversions}).
+
+@example
+angle imag-part magnitude make-polar make-rectangular real-part
+@end example
+@end deftp
+
 
 @node R7RS cxr accessors, R7RS eval, R7RS complex numbers, Library modules - R7RS integration
 @section @code{scheme.cxr} - R7RS cxr accessors
 @c NODE R7RS cxrアクセサ, @code{scheme.cxr} - R7RS cxrアクセサ
 
+@deftp {Module} scheme.cxr
+@mdindex scheme.cxr
+Exports bindings of R7RS @code{(scheme cxr)} library.
+From R7RS programs,
+those bindings are available by @code{(import (scheme cxr))}.
+
+This module provides the following bingins, all of which are 
+Gauche built-in (@pxref{List accessors and modifiers}).
+
+@example
+caaar caadr cadar caddr cdaar cdadr cddar cdddr caaaar caaadr caadar
+caaddr cadaar cadadr caddar cadddr cdaaar cdaadr cdadar cdaddr cddaar
+cddadr cdddar cddddr
+@end example
+@end deftp
+
 @node R7RS eval, R7RS file library, R7RS cxr accessors, Library modules - R7RS integration
 @section @code{scheme.eval} - R7RS eval
 @c NODE R7RS eval, @code{scheme.eval} - R7RS eval
+
+@deftp {Module} scheme.eval
+@mdindex scheme.eval
+Exports bindings of R7RS @code{(scheme eval)} library.
+From R7RS programs,
+those bindings are available by @code{(import (scheme eval))}.
+@end deftp
+
+@defun eval expr environment
+[R7RS]
+This is the same as Gauche's built-in @code{eval} (@pxref{Eval and repl}).
+@end defun
+
+@defun environment import-list @dots{}
+[R7RS]
+This is R7RS way to create an environment specifier suitable to pass
+to @code{eval}.  In Gauche, an environment specifier is just a
+module object.
+
+The argument is the same as what @code{import} takes.
+This procedure creates an empty envionment (as a fresh anonymous module;
+see @code{make-module} in @ref{Module introspection}, for the details).
+The following example creates an environment that includes
+@code{scheme.base} bindings plus @code{select-module} syntax from Gauche.
+
+@example
+(environment
+ '(scheme base)
+ '(only (gauche base) select-module))
+ @result{} #<module #f>  ; an anonymous module
+@end example
+@end defun
+
 
 @node R7RS file library, R7RS inexact numbers, R7RS eval, Library modules - R7RS integration
 @section @code{scheme.file} - R7RS file library

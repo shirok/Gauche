@@ -13136,19 +13136,19 @@ A convenience macro to create a (possibly compound) condition.
 
 @defun eval expr env
 @c EN
-[R5RS]
-Evaluate @var{expr}.   @var{env} must be a value returned by
-the following procedures below.  Right now it is just a
-@code{<module>} object, but it is possible that the Gauche
-adopts a first-class environment object in future.
+[R5RS][R7RS]
+Evaluate @var{expr} under the environment @var{env}.
+In Gauche, @var{env} is just a @code{<module>} object.
 @c JP
 [R5RS]
-@var{expr}を評価します。@var{env}は下に述べる手続きにより
-返される値でなければなりません。現時点では、それは単なる
-@code{<module>}オブジェクトですが、Gaucheが将来、ファースト
-クラスの環境オブジェクトを採用する可能性はあります。
+@var{expr}を環境@var{env}内で評価します。
+Gaucheにおいて、@var{env}は単なる@code{<module>}オブジェクトです。
 @c COMMON
 @end defun
+
+R5RS and R7RS provides a portable way to obtain environment
+specifiers.  R5RS way is described below.  R7RS way is
+described in @ref{R7RS eval}.
 
 @defun null-environment version
 @defunx scheme-report-environment version
@@ -13188,7 +13188,6 @@ argument.
 @c JP
 引数@var{version}に5以外の値を渡すとエラーが通知されます。
 @c COMMON
-
 @end defun
 
 @defun read-eval-print-loop :optional reader evaluator printer prompter

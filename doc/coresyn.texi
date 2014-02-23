@@ -4340,6 +4340,15 @@ and are garbage collected when nobody keeps reference to it.
 ような場合です。無名のモジュールはシステムの内部辞書に登録されないので、
 モジュールへの参照が無くなればガベージコレクトされます。
 @c COMMON
+
+@c EN
+R7RS provides another way to create a transient module
+with @code{environment} procedure.  @xref{R7RS eval} for the
+details.
+@c JP
+R7RSでは、@code{environment}手続きによって一時的なモジュールを
+作ることもできます。@ref{R7RS eval}を参照してください。
+@c COMMON
 @end defun
 
 @defun all-modules

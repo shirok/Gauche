@@ -17696,7 +17696,7 @@ Then the created generator works as follows:
 @defunx string-downcase string
 @defunx string-titlecase string
 @defunx string-foldcase string
-[R6RS]
+[R6RS][R7RS]
 Converts given @var{string} to upper case, using language-independent
 full case folding defined by Unicode standard.
 They differ from srfi-13's procedures
