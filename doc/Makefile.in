@@ -31,6 +31,7 @@ TEXIS = concepts.texi      \
 	mapping.texi       \
 	modgauche.texi     \
 	modintro.texi      \
+	modr7rs.texi       \
 	modsrfi.texi       \
 	modutil.texi       \
 	object.texi        \

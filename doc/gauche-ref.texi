@@ -68,6 +68,7 @@ Gaucheのバージョン@VERSION@に対応します。
 * Object system::               
 * Library modules - Overview::  
 * Library modules - Gauche extensions::  
+* Library modules - R7RS integration::  
 * Library modules - SRFIs::     
 * Library modules - Utilities::  
 * References::                  
@@ -87,6 +88,7 @@ Gaucheのバージョン@VERSION@に対応します。
 @include object.texi
 @include modintro.texi
 @include modgauche.texi
+@include modr7rs.texi
 @include modsrfi.texi
 @include modutil.texi
 @include references.texi

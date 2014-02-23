@@ -1,0 +1,367 @@
+@node Library modules - R7RS integration, Library modules - SRFIs, Library modules - Gauche extensions, Top
+@chapter Library modules - R7RS integration
+@c NODE ライブラリモジュール - R7RS統合
+
+@c EN
+Gauche predates R7RS, and for the convenice, Gauche makes quite a few
+procedures as built-in (@xref{Core library}).  Although the set of
+Gauche's core features are mostly superset of R7RS, some functions
+and syntaxes have different names and/or interface from R7RS.
+
+R7RS fully-compatible syntaxes and functions are available
+in the set of modules described in this chapter.  Since R7RS
+programs and libraries needs to follow a specific format
+(@code{import} declaration or @code{define-library} form),
+generally there's no ambiguity in whether you're looking at R7RS code
+or Gauche-specific code.  Also, it is totally transparent to load
+R7RS library into Gauche-specific code or vice versa.
+However, you need to be aware of which ``world'' you're in when
+you code.
+@c JP
+GaucheはR7RS以前からあり、使い勝手のために非常に多くの組み込み手続きを
+持っています(@ref{Core library}参照)。そのほとんどはR7RSのスーパーセットと
+なっていますが、いくつかの手続きや構文は違う名前であったり、
+違うインタフェースを取っていたりします。
+
+R7RSと完全に互換な構文と関数は、本章で説明されるモジュール群によって提供されます。
+R7RSプログラムとライブラリは特定の形式で書かれるので
+(@code{import}宣言で始まるか、もしくは@code{define-library}フォーム)、
+通常はR7RSのコードを見ているのかGauche特有のコードを見ているのかははっきり区別できます。
+また、Gauche特有のコードからR7RSライブラリをロードすることも、その逆も、
+全く透過的にできます。
+但し、コードを書く時には、どちらの「世界」にいるのかを意識する必要があります。
+@c COMMON
+
+@menu
+* Traveling between two worlds back and forth::  
+* Three forms of import::       
+* R7RS library form::           
+* R7RS base library::           
+* R7RS case-lambda::            
+* R7RS char library::           
+* R7RS complex numbers::        
+* R7RS cxr accessors::          
+* R7RS eval::                   
+* R7RS file library::           
+* R7RS inexact numbers::        
+* R7RS lazy evaluation::        
+* R7RS load::                   
+* R7RS process context::        
+* R7RS read::                   
+* R7RS repl::                   
+* R7RS time::                   
+* R7RS write::                  
+* R5RS compatibility::          
+@end menu
+
+@node Traveling between two worlds back and forth, Three forms of import, Library modules - R7RS integration, Library modules - R7RS integration
+@section Traveling between two worlds back and forth
+@c NODE 二つの世界を往き来する
+
+It's not that there are two languages, R7RS and Gauche---we have the same
+compiler and same virtual machine.  It is merely a difference of
+toplevel namespace.
+
+When you start Gauche, either in REPL or as a script, you're in
+@code{user} module, which @emph{inherits} @code{gauche} module.
+Likewise, when you load a library, the initial module is @code{gauche} module
+(until you call @code{select-module}).
+That's why you can access all the built-in procedures of Gauche
+without saying @code{(use something)}.  (@xref{Module inheritance}, for
+the details about inheriting modules).
+
+On the other hand, R7RS requires to be explicit about which namespace
+you're in, by @code{import} form, e.g. @code{(import (scheme base))}.
+The behavior is undefined if you don't import any of R7RS bindings.
+Besides, R7RS library must be explicitly enclosed by @code{define-library} form.
+
+These facts let Gauche to set up appropriate ``world'',
+and you can use R7RS code and Gauche code transparently.
+
+NB: As explained in @ref{Three forms of import},
+R7RS @code{import} is rather different from Gauche
+@code{import}, so we note the former @code{r7rs#import} and the latter
+@code{gauche#import} in this section for clarity.  When you write code
+don't use prefixes @code{r7rs#} and @code{gauche#}; just write @code{import}.
+
+@subheading Loading R7RS libraries
+
+The @code{define-library} form is defined as a macro in @code{gauche} module;
+it sets up R7RS environment before evaluating its contents.
+So, when you load an R7RS library (either from Gauche code via @code{use}
+form, or from R7RS code via @code{r7rs#import} form),
+Gauche starts loading the file in @code{gauche} module, but immediately
+see @code{define-library} form, and the rest is handled in R7RS
+environment.
+
+Suppose you have an R7RS library @code{(mylib foo)} with the following code:
+
+@example
+(define-library (mylib foo)
+  (import (scheme base))
+  (export snoc)
+  (begin
+    (define (snoc x y) (cons y x))))
+@end example
+
+It should be saved as @file{mylib/foo.scm} in the directory in
+@code{*load-path*}.
+
+From R7RS code, this library can be loaded by @code{r7rs#import}:
+
+@example
+(import (mylib foo))
+
+(snoc 1 2) @result{} (2 . 1)
+@end example
+
+To use this library from Gauche code, concatenate elements of library
+names by @code{.} to get a module name, and @code{use} it:
+
+@example
+(use mylib.foo)
+
+(snoc 1 2) @result{} (2 . 1)
+@end example
+
+@subheading Loading Gauche libraries
+
+To use Gauche library @code{foo.bar} from R7RS code,
+split the module name by @code{.} to make a list for the name
+of the library.  For example, @code{gauche.lazy} module can be
+used from R7RS as follows:
+
+@example
+(import (gauche lazy))
+@end example
+
+For SRFI modules, R7RS implementations have a convention to
+name it as @code{(srfi n)}, and Gauche follows it.  
+The following code loads srfi-1 and srfi-13 from R7RS code:
+
+@example
+(import (srfi 1) (srfi 13))
+@end example
+
+(It's not that Gauche treat @code{srfi} name specially; installation
+of Gauche includes adaptor libraries such as @file{srfi/1.scm}.)
+
+A tip: To use Gauche's built-in features (the bindings that are
+available by default in Gauche code) from R7RS code, import
+@code{(gauche base)} library:
+
+@example
+(import (gauche base))
+
+filter @result{} #<closure filter>
+@end example
+
+@subheading Running R7RS scripts
+
+R7RS scripts begins with @code{import} form.  However, @code{r7rs#import}
+is different from @code{gauche#import}---so we employ a trick.
+
+When @code{gosh} is started, it loads the given script file
+in @code{user} module.  We have a separate @code{user#import} macro, which
+examines its arguments and if it is R7RS import syntax, switch to the
+@code{r7rs.user} module and run the @code{r7rs#import}.  Otherwise, it
+runs @code{gauche#import}.  @xref{Three forms of import}, for the details.
+
+An example of R7RS script:
+
+@example
+(import (scheme base) (scheme write))
+(display "Hello, world!\n")
+@end example
+
+If you're already familiar with Gauche scripts, keep in mind that
+R7RS program doesn't treat @code{main} procedure specially; it
+just evaluates toplevel forms from top to bottom.  So the following
+script doesn't output anything:
+
+@example
+(import (scheme base) (scheme write))
+(define (main args)
+  (display "Hello, world!\n")
+  0)
+@end example
+
+@subheading Running Gauche scripts
+
+Since @code{gosh} starts in Gauche environment, you don't need
+special declaration or anything.  A recommended way is to 
+put the main application logic in @code{main} procedure, for
+@code{gosh} runs @code{user#main}, if it exists, after loading the script.
+
+@example
+(define (main args)
+  (display "Hello, world!\n")
+  0)   ; exit code
+@end example
+
+A list of command-line arguments is passed to the @code{main} procedure,
+as specified in SRFI-22.
+
+@subheading Using R7RS REPL
+
+When @code{gosh} is invoked with @code{-r7} option and no script file is
+given, it enters an R7RS REPL mode.  For the convenience, the following
+modules (``libraries'', in R7RS term) are pre-loaded.
+
+@example
+(scheme base) (scheme case-lambda) (scheme char)
+(scheme complex) (scheme cxr) (scheme eval)
+(scheme file) (scheme inexact) (scheme lazy)
+(scheme load) (scheme process-context) (scheme read)
+(scheme repl) (scheme time) (scheme write)
+@end example
+
+Besides, the history variables @code{*1}, @code{*2}, @code{*3},
+@code{*1+}, @code{*2+}, @code{*3+}, @code{*e} and @code{*history}
+are available (@xref{Working in REPL}, for the details of history variables).
+
+You can know you're in R7RS REPL by looking at the prompt, where
+@code{gosh} shows the current module (@code{r7rs.user}):
+
+@example
+gosh[r7rs.user]> 
+@end example
+
+To switch Gauche REPL from R7RS REPL, import @code{(gauche base)} and
+select @code{user} module using @code{select-module}:
+
+@example
+gosh[r7rs.user]> (import (gauche base))
+#<undef>
+gosh[r7rs.user]> (select-module user)
+#<undef>
+gosh> 
+@end example
+
+(You can @code{(select-module gauche)} but that's usually not what you
+want to do---changing @code{gauche} module can have unwanted side effects.)
+
+@subheading Using Gauche REPL
+
+By default, @code{gosh} enters Gauche REPL when no script file is given.
+@xref{Working in REPL}, for detailed explanation of using REPL.
+
+To switch Gauche REPL to R7RS REPL, use @code{r7rs} module and
+switch to @code{r7rs.user} module:
+
+@example
+gosh> (use r7rs)
+#<undef>
+gosh> (select-module r7rs.user)
+#<undef>
+gosh[r7rs.user]> 
+@end example
+
+If you don't start @code{gosh} with @code{-r7} option, however,
+no libraries are preloaded in @code{r7rs.user} module.  The only
+bindings visible initially are @code{import} and @code{define-library};
+even @code{define} is undefined!
+You have to manually do @code{(import (scheme base))} etc. to start
+writing Scheme in this environment.
+
+
+@node Three forms of import, R7RS library form, Traveling between two worlds back and forth, Library modules - R7RS integration
+@section Three import forms
+@c NODE 3つのimport形式
+
+
+@node R7RS library form, R7RS base library, Three forms of import, Library modules - R7RS integration
+@section R7RS library form
+@c NODE R7RSライブラリ形式
+
+@defmac define-library library-name libral-decl @dots{}
+@end defmac
+
+
+@node R7RS base library, R7RS case-lambda, R7RS library form, Library modules - R7RS integration
+@section @code{scheme.base} - R7RS base library
+@c NODE R7RS基本ライブラリ, @code{scheme.base} - R7RS基本ライブラリ
+
+@deftp {Module} scheme.base
+@mdindex scheme.base
+Exports bindings of R7RS @code{(scheme base)} library.  From R7RS programs,
+those bindings are available by @code{(import (scheme base))}.
+@end deftp
+
+
+@node R7RS case-lambda, R7RS char library, R7RS base library, Library modules - R7RS integration
+@section @code{scheme.case-lambda} - R7RS case-lambda
+@c NODE R7RS case-lambda, @code{scheme.case-lambda} - R7RS case-lambda
+
+@deftp {Module} scheme.case-lambda
+@mdindex scheme.case-lambda
+Exports bindings of R7RS @code{(scheme case-lambda)} library.
+From R7RS programs,
+those bindings are available by @code{(import (scheme case-lambda))}.
+
+The only binding exported from this module is @code{case-lambda},
+and it is the same as Gauche's built-in @code{case-lambda};
+@pxref{Making Procedures} for the details.
+@end deftp
+
+
+@node R7RS char library, R7RS complex numbers, R7RS case-lambda, Library modules - R7RS integration
+@section @code{scheme.char} - R7RS char library
+@c NODE R7RS文字ライブラリ, @code{scheme.char} - R7RS文字ライブラリ
+
+@node R7RS complex numbers, R7RS cxr accessors, R7RS char library, Library modules - R7RS integration
+@section @code{scheme.complex} - R7RS complex numbers
+@c NODE R7RS複素数, @code{scheme.compex} - R7RS複素数
+
+@node R7RS cxr accessors, R7RS eval, R7RS complex numbers, Library modules - R7RS integration
+@section @code{scheme.cxr} - R7RS cxr accessors
+@c NODE R7RS cxrアクセサ, @code{scheme.cxr} - R7RS cxrアクセサ
+
+@node R7RS eval, R7RS file library, R7RS cxr accessors, Library modules - R7RS integration
+@section @code{scheme.eval} - R7RS eval
+@c NODE R7RS eval, @code{scheme.eval} - R7RS eval
+
+@node R7RS file library, R7RS inexact numbers, R7RS eval, Library modules - R7RS integration
+@section @code{scheme.file} - R7RS file library
+@c NODE R7RSファイルライブラリ, @code{scheme.file} - R7RSファイルライブラリ
+
+@node R7RS inexact numbers, R7RS lazy evaluation, R7RS file library, Library modules - R7RS integration
+@section @code{scheme.inexact} - R7RS inexact numbers
+@c NODE R7RS不正確数, @code{scheme.inexact} - R7RS不正確数
+
+@node R7RS lazy evaluation, R7RS load, R7RS inexact numbers, Library modules - R7RS integration
+@section @code{scheme.lazy} - R7RS lazy evaluation
+@c NODE R7RS遅延評価, @code{scheme.lazy} - R7RS遅延評価
+
+@node R7RS load, R7RS process context, R7RS lazy evaluation, Library modules - R7RS integration
+@section @code{scheme.load} - R7RS load
+@c NODE R7RS load, @code{scheme.load} - R7RS load
+
+@node R7RS process context, R7RS read, R7RS load, Library modules - R7RS integration
+@section @code{scheme.process-context} - R7RS process context
+@c NODE R7RSプロセスコンテキスト, @code{scheme.process-context} - R7RSプロセスコンテキスト
+
+@node R7RS read, R7RS repl, R7RS process context, Library modules - R7RS integration
+@section @code{scheme.read} - R7RS read
+@c NODE R7RS read, @code{scheme.read} - R7RS read
+
+@node R7RS repl, R7RS time, R7RS read, Library modules - R7RS integration
+@section @code{scheme.repl} - R7RS repl
+@c NODE R7RS repl, @code{scheme.repl} - R7RS repl
+
+@node R7RS time, R7RS write, R7RS repl, Library modules - R7RS integration
+@section @code{scheme.time} - R7RS time
+@c NODE R7RS time, @code{scheme.time} - R7RS time
+
+@node R7RS write, R5RS compatibility, R7RS time, Library modules - R7RS integration
+@section @code{scheme.write} - R7RS write
+@c NODE R7RS write, @code{scheme.write} - R7RS write
+
+@node R5RS compatibility,  , R7RS write, Library modules - R7RS integration
+@section @code{scheme.r5rs} - R5RS compatibility
+@c NODE R5RS compatibility, @code{scheme.r5rs} - R5RS互換性
+
+@c Local variables:
+@c mode: texinfo
+@c coding: utf-8
+@c end:

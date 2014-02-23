@@ -1,4 +1,4 @@
-@node Library modules - SRFIs, Library modules - Utilities, Library modules - Gauche extensions, Top
+@node Library modules - SRFIs, Library modules - Utilities, Library modules - R7RS integration, Top
 @chapter Library modules - SRFIs
 @c NODE ライブラリモジュール - SRFI
 
