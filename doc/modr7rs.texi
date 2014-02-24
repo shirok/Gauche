@@ -371,7 +371,7 @@ Exports bindings of R7RS @code{(scheme complex)} library.
 From R7RS programs,
 those bindings are available by @code{(import (scheme complex))}.
 
-This module provides the following bingins, all of which are 
+This module provides the following bindings, all of which are 
 Gauche built-in (@pxref{Numerical conversions}).
 
 @example
@@ -390,7 +390,7 @@ Exports bindings of R7RS @code{(scheme cxr)} library.
 From R7RS programs,
 those bindings are available by @code{(import (scheme cxr))}.
 
-This module provides the following bingins, all of which are 
+This module provides the following bindings, all of which are 
 Gauche built-in (@pxref{List accessors and modifiers}).
 
 @example
@@ -441,17 +441,119 @@ The following example creates an environment that includes
 @section @code{scheme.file} - R7RS file library
 @c NODE R7RSファイルライブラリ, @code{scheme.file} - R7RSファイルライブラリ
 
+@deftp {Module} scheme.file
+@mdindex scheme.file
+Exports bindings of R7RS @code{(scheme file)} library.
+From R7RS programs,
+those bindings are available by @code{(import (scheme file))}.
+@end deftp
+
+The following bindings provided in this module are
+Gauche built-in (@pxref{File ports}, and @ref{File stats}).
+
+@example
+call-with-input-file call-with-output-file
+file-exists?
+open-input-file open-output-file
+with-input-from-file with-output-to-file
+@end example
+
+@defun delete-file filename
+[R7RS]
+This is the same as @code{delete-file} in @code{file.util}.
+@end defun
+
+@defun open-binary-input-file filename
+@defunx open-binary-output-file filename
+[R7RS]
+In Gauche, ports are both textual and binary at the same time,
+so these R7RS procedures
+are just aliases of @code{open-input-file} and @code{open-output-file},
+respectively.  @xref{File ports}.
+@end defun
+
 @node R7RS inexact numbers, R7RS lazy evaluation, R7RS file library, Library modules - R7RS integration
 @section @code{scheme.inexact} - R7RS inexact numbers
 @c NODE R7RS不正確数, @code{scheme.inexact} - R7RS不正確数
+
+@deftp {Module} scheme.inexact
+@mdindex scheme.inexact
+Exports bindings of R7RS @code{(scheme inexact)} library.
+From R7RS programs,
+those bindings are available by @code{(import (scheme inexact))}.
+
+This module provides the following bindings, all of which are 
+Gauche built-in (@pxref{Arithmetics}, and @ref{Numerical predicates}).
+
+@example
+acos asin atan cos exp finite? infinite? log nan? sin sqrt tan
+@end example
+@end deftp
 
 @node R7RS lazy evaluation, R7RS load, R7RS inexact numbers, Library modules - R7RS integration
 @section @code{scheme.lazy} - R7RS lazy evaluation
 @c NODE R7RS遅延評価, @code{scheme.lazy} - R7RS遅延評価
 
+@deftp {Module} scheme.lazy
+@mdindex scheme.lazy
+Exports bindings of R7RS @code{(scheme lazy)} library.
+From R7RS programs,
+those bindings are available by @code{(import (scheme lazy))}.
+@end deftp
+
+The following bindings this module provides are Gauche built-ins
+(@pxref{Delay force and lazy}).
+
+@example
+delay force promise?
+@end example
+
+@defspec delay-force promise
+[R7RS]
+This is the same as @code{lazy}.
+@xref{Delay force and lazy} for the discussion about when this
+form should be used.
+@end defspec
+
+@defun make-promise obj
+[R7RS]
+If @var{obj} is a promise, it is returned as is.  Otherwise,
+A promise, which yields @var{obj} when forced, is returned.
+Because this is a procedure, expression passed as @var{obj} is
+eagerly evaluated, so this doesn't have effect on lazy evaluation,
+but can be used to ensure you have a promise.
+
+This procedure is important on implementations where
+@code{force} only takes a promise, and portable code should
+use this procedure to yield a value that can be passed to @code{force}.
+
+If you write Gauche-speicific code, however, @code{force} can take
+non-promise values, so you don't need this.
+@end defun
+
+
 @node R7RS load, R7RS process context, R7RS lazy evaluation, Library modules - R7RS integration
 @section @code{scheme.load} - R7RS load
 @c NODE R7RS load, @code{scheme.load} - R7RS load
+
+@deftp {Module} scheme.load
+@mdindex scheme.load
+Exports bindings of R7RS @code{(scheme load)} library.
+From R7RS programs,
+those bindings are available by @code{(import (scheme load))}.
+@end deftp
+
+@defun load file :optional env
+[R7RS]
+R7RS @code{load} takes enviornment as an optional argument,
+while Gauche @code{load} takes it as a keyword argument
+(among other keyword arguments).  @xref{Loading Scheme file}.
+
+In Gauche, @var{env} is just a module.  In portable code,
+you can create a module with desired bindings with R7RS @code{environment}
+procedure; @pxref{R7RS eval}.
+@end defun
+
 
 @node R7RS process context, R7RS read, R7RS load, Library modules - R7RS integration
 @section @code{scheme.process-context} - R7RS process context

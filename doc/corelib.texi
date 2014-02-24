@@ -15896,6 +15896,9 @@ The current module is preserved; even @code{select-module} is
 called in @var{file}, the module in which @code{load} is called
 is restored afterwards.
 
+Gauche's @code{load} is upper-compatible to R5RS @code{load}, but
+R7RS @code{load} differs in optional arguments; @pxref{R7RS load}.
+
 If you want to load a library file, it's better to use `@code{use}'
 (@xref{Defining and selecting modules}), or `@code{require}' described below.
 @xref{Compilation}, for difference between @code{load} and @code{require}.
@@ -15928,6 +15931,9 @@ If you want to load a library file, it's better to use `@code{use}'
 カレントモジュールは保存されます。つまり、@var{file}中で@code{select-module}によって
 カレントモジュールを変更しても、@code{load}が終わったら@code{load}を読んだ時点の
 モジュールに戻ります。
+
+Gaucheの@code{load}はR5RSの@code{load}の上位互換ですが、
+R7RSの@code{load}は省略可能引数が異なります。@ref{R7RS load}参照。
 
 ライブラリファイルをロードする場合は、`@code{use}' (@ref{Defining and selecting modules}参照) を
 使うか、下に説明する`@code{require}' を使う方が良いでしょう。
