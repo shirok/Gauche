@@ -20880,7 +20880,7 @@ given but it's not a child process of the current process,
 an error (@code{<system-error>}, @code{ECHILD}) is signaled.
 @c JP
 待つべき子プロセスが存在しない場合や、@var{pid}に具体的なプロセスIDが
-与えられたがそれが現在のプロセスの子プロセスで内場合は
+与えられたがそれが現在のプロセスの子プロセスでない場合は
 エラー(@code{<system-error>}, @code{ECHILD})となります。
 @c COMMON
 
