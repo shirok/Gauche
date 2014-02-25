@@ -772,7 +772,12 @@ GC_INNER word GC_page_size = 0;
     /* gcc version of boehm-gc).                                        */
     GC_API int GC_CALL GC_get_stack_base(struct GC_stack_base *sb)
     {
-      extern void * _tlsbase __asm__ ("%fs:4");
+#  ifdef __x86_64__
+      PNT_TIB pTib = NtCurrentTeb();
+      void * _tlsbase = pTib->StackBase;
+#  else
+      extern void * _tlsbase __asm__ "%fs:4";
+#  endif
       sb -> mem_base = _tlsbase;
       return GC_SUCCESS;
     }
