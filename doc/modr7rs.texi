@@ -559,17 +559,88 @@ procedure; @pxref{R7RS eval}.
 @section @code{scheme.process-context} - R7RS process context
 @c NODE R7RSプロセスコンテキスト, @code{scheme.process-context} - R7RSプロセスコンテキスト
 
+@deftp {Module} scheme.process-context
+@mdindex scheme.process-context
+Exports bindings of R7RS @code{(scheme process-context)} library.
+From R7RS programs,
+those bindings are available by @code{(import (scheme process-context))}.
+@end deftp
+
+The following bindings are the same as Gauche built-ins
+(@pxref{Command-line arguments}, and @ref{Program termination}):
+
+@example
+command-line exit
+@end example
+
+The following bindings are the same as SRFI-98
+(@pxref{Accessing environment variables}):
+
+@example
+get-environment-variable get-environment-variables
+@end example
+
+@defun emergency-exit :optional (obj 0)
+[R7RS]
+Terminate the program without running any clean-up procedures
+(@var{after} thunks of @code{dynamic-wind}).  Internally, 
+it calls the @code{_exit(2)} system call directly.
+The optional argument is used for the process exit code.
+
+This is almost the same
+as Gauche's @code{sys-exit}, except that @code{sys-exit} requires
+the exit code object (@pxref{Program termination}).
+@end defun
+
 @node R7RS read, R7RS repl, R7RS process context, Library modules - R7RS integration
 @section @code{scheme.read} - R7RS read
 @c NODE R7RS read, @code{scheme.read} - R7RS read
+
+@deftp {Module} scheme.read
+@mdindex scheme.read
+Exports bindings of R7RS @code{(scheme read)} library.
+From R7RS programs,
+those bindings are available by @code{(import (scheme read))}.
+
+The only binding exported from this module is @code{read},
+which is the same as Gauche's built-in.  @xref{Reading data}.
+@end deftp
 
 @node R7RS repl, R7RS time, R7RS read, Library modules - R7RS integration
 @section @code{scheme.repl} - R7RS repl
 @c NODE R7RS repl, @code{scheme.repl} - R7RS repl
 
+@deftp {Module} scheme.repl
+@mdindex scheme.repl
+Exports bindings of R7RS @code{(scheme repl)} library.
+From R7RS programs,
+those bindings are available by @code{(import (scheme repl))}.
+
+The only binding exported from this module is @code{interaction-environment},
+which is the same as Gauche's built-in.  @xref{Eval and repl}.
+@end deftp
+
+
 @node R7RS time, R7RS write, R7RS repl, Library modules - R7RS integration
 @section @code{scheme.time} - R7RS time
 @c NODE R7RS time, @code{scheme.time} - R7RS time
+
+@deftp {Module} scheme.time
+@mdindex scheme.time
+Exports bindings of R7RS @code{(scheme time)} library.
+From R7RS programs,
+those bindings are available by @code{(import (scheme time))}.
+@end deftp
+
+@defun current-second
+@end defun
+
+@defun current-jiffy
+@end defun
+
+@defun jiffies-per-second
+@end defun
+
 
 @node R7RS write, R5RS compatibility, R7RS time, Library modules - R7RS integration
 @section @code{scheme.write} - R7RS write
