@@ -1,3 +1,10 @@
+2014-02-27  Shiro Kawai  <shiro@acm.org>
+
+	* src/libfmt.scm (with-format-params): Fixed a bug in 'v' formatter
+	  parameter handling; we shouldn't set! to the variable for the
+	  parameter, since a formatter can be called multiple times and
+	  every time we should fetch from the arglist.
+
 2014-02-22  Shiro Kawai  <shiro@acm.org>
 
 	* lib/r7rs.scm (gauche.base): Added gauche.base module to allow

@@ -299,24 +299,29 @@
          `(unless (and (not (eq? ,var 'variable)) (,check ,var))
             (error "Bad type of argument for the format parameter ~a: ~s"
                    ',var ,var))))
-  (define (gen-fetch var default :optional (check #f))
-    `(when (eq? ,var 'variable)
-       (set! ,var (fr-next-arg! fmtstr argptr))
-       ,@(cond-list
-          [check `(unless (,check ,var)
-                    (error "Bad type of argument for the format parameter ~a: ~s"
-                           ',var ,var))])))
+  (define (gen-vbind var default :optional (check #f))
+    `(,var 
+      (if (eq? ,var 'variable)
+        ,(if check
+           `(rlet1 ,var (fr-next-arg! fmtstr argptr)
+              (unless (,check ,var)
+                (error "Bad type of argument for the format parameter ~a: ~s"
+                       ',var ,var)))
+           '(fr-next-arg! fmtstr argptr))
+        ,var)))
   (let ([binds1 (map (^b `(,(car b) 'empty)) binds)]
         [binds2 (map ($ apply gen-extract $) binds)]
         [checks (filter identity (map ($ apply gen-check $) binds))]
-        [fetches (map ($ apply gen-fetch $) binds)])
+        [vbinds (map ($ apply gen-vbind $) binds)])
     `(let-optionals* params ,binds1
        (let* ,binds2
          ,@checks
-         (^[port argptr]
-           ,@fetches
-           ,@body)))))
-
+         (if (memq 'variable params)
+           (^[port argptr]
+             (let* ,vbinds
+               ,@body))
+           (^[port argptr] ,@body))))))
+           
 ;; ~S and ~A
 (define (make-format-expr fmtstr params flags print)
   (if (null? params)

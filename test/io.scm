@@ -719,6 +719,9 @@
 (test* "format skip to the end" "||"
        (format #f "|~*|" 1))
 
+;; regression check for format/ss
+(test* "format/ss" "z  " (format/ss "~v,a" 3 'z))
+
 ;;-------------------------------------------------------------------
 (test-section "some corner cases in list reader")
 
