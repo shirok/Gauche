@@ -119,6 +119,8 @@ SCM_EXTERN time_t Scm_GetSysTime(ScmObj val);
 
 SCM_EXTERN void Scm_GetTimeOfDay(u_long *sec, u_long *usec);
 SCM_EXTERN long Scm_CurrentMicroseconds();
+SCM_EXTERN int  Scm_ClockGetTimeMonotonic(u_long *sec, u_long *nsec);
+SCM_EXTERN int  Scm_ClockGetResMonotonic(u_long *sec, u_long *nsec);
 
 /* Gauche also has a <time> object, as specified in SRFI-18, SRFI-19
  * and SRFI-21.  It can be constructed from the basic system interface

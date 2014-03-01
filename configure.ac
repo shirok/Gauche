@@ -349,8 +349,8 @@ dnl   We check sys/types.h merely to include it in the following tests,
 dnl   for some tests needs it.
 AC_HEADER_STDC
 AC_HEADER_TIME
-AC_CHECK_HEADERS(sys/time.h sys/types.h glob.h dlfcn.h getopt.h sched.h unistd.h)
-AC_CHECK_HEADERS(stdint.h inttypes.h rpc/types.h malloc.h)
+AC_CHECK_HEADERS(time.h sys/time.h sys/types.h glob.h dlfcn.h getopt.h sched.h)
+AC_CHECK_HEADERS(unistd.h stdint.h inttypes.h rpc/types.h malloc.h)
 AC_CHECK_HEADERS(syslog.h crypt.h)
 AC_CHECK_HEADERS(pty.h util.h bsd/libutil.h libutil.h sys/loadavg.h sys/resource.h)
 
@@ -438,6 +438,9 @@ AC_CHECK_LIB(m, sin)
 dnl x86-solaris 9 requires this to use isinf
 AC_CHECK_LIB(sunmath, isinf)
 
+dnl clock_gettime may be in librt
+AC_CHECK_LIB(rt, clock_gettime)
+
 dnl For Windows/MinGW, manually adds several libraries
 dnl ALTERNATIVE_GOSH is no-console version of gosh; only built on Windows.
 case "$host" in
@@ -453,7 +456,7 @@ AC_CHECK_FUNCS(symlink readlink lchown mkstemp realpath nanosleep usleep)
 AC_CHECK_FUNCS(random srandom lrand48 srand48)
 AC_CHECK_FUNCS(putenv setenv unsetenv clearenv getpgid)
 AC_CHECK_FUNCS(gethostname sethostname getdomainname setdomainname)
-AC_CHECK_FUNCS(gettimeofday getloadavg)
+AC_CHECK_FUNCS(gettimeofday getloadavg clock_gettime clock_getres)
 AC_CHECK_FUNCS(syslog setlogmask)
 AC_CHECK_FUNCS(sigwait)
 AC_CHECK_FUNCS(fpsetprec)

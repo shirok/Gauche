@@ -793,7 +793,7 @@ static ScmClassStaticSlotSpec stat_slots[] = {
 };
 
 /*===============================================================
- * Time (sys/time.h)
+ * Time (sys/time.h and time.h)
  */
 
 /* Gauche has two notion of time.  A simple number is used by the low-level
@@ -903,6 +903,43 @@ void Scm_GetTimeOfDay(u_long *sec, u_long *usec)
     *usec = 0;
 #endif /* !HAVE_GETTIMEOFDAY && !GAUCHE_WINDOWS */
 }
+
+/* Abstract clock_gettime and clock_getres.
+   If the system doesn't have these, those API returns FALSE; the caller
+   should make up fallback means.
+ */
+int Scm_ClockGetTimeMonotonic(u_long *sec, u_long *nsec)
+{
+#if defined(HAVE_CLOCK_GETTIME) && defined(CLOCK_MONOTONIC)
+    struct timespec ts;
+    int r;
+    SCM_SYSCALL(r, clock_gettime(CLOCK_MONOTONIC, &ts));
+    if (r < 0) Scm_SysError("clock_gettime failed");
+    *sec = (u_long)ts.tv_sec;
+    *nsec = (u_long)ts.tv_nsec;
+    return TRUE;
+#else  /*!HAVE_CLOCK_GETTIME*/
+    *sec = *nsec = 0;
+    return FALSE;
+#endif /*!HAVE_CLOCK_GETTIME*/
+}
+
+int Scm_ClockGetResMonotonic(u_long *sec, u_long *nsec)
+{
+#if defined(HAVE_CLOCK_GETRES) && defined(CLOCK_MONOTONIC)
+    struct timespec ts;
+    int r;
+    SCM_SYSCALL(r, clock_getres(CLOCK_MONOTONIC, &ts));
+    if (r < 0) Scm_SysError("clock_gettime failed");
+    *sec = (u_long)ts.tv_sec;
+    *nsec = (u_long)ts.tv_nsec;
+    return TRUE;
+#else  /*!HAVE_CLOCK_GETTIME*/
+    *sec = *nsec = 0;
+    return FALSE;
+#endif /*!HAVE_CLOCK_GETTIME*/
+}
+
 
 /* Experimental.  This returns the microsecond-resolution time, wrapped
    around the fixnum resolution.  In 32-bit architecture it's a bit more

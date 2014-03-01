@@ -777,6 +777,26 @@
 (define-cproc current-microseconds ()   ;EXPERIMENTAL
   ::<long> Scm_CurrentMicroseconds)
 
+;; Returns #f and #f if the system doesn't provide monotonic time.
+(define-cproc sys-clock-gettime-monotonic () ::(<top> <top>)
+  (let* ([sec::u_long] [nsec::u_long]
+         [r::int (Scm_ClockGetTimeMonotonic (& sec) (& nsec))])
+    (if r
+      (begin (set! SCM_RESULT0 (Scm_MakeIntegerU sec))
+             (set! SCM_RESULT1 (Scm_MakeIntegerU nsec)))
+      (begin (set! SCM_RESULT0 SCM_FALSE)
+             (set! SCM_RESULT1 SCM_FALSE)))))
+
+;; Returns #f and #f if the system doesn't provide monotonic time.
+(define-cproc sys-clock-getres-monotonic () ::(<top> <top>)
+  (let* ([sec::u_long] [nsec::u_long]
+         [r::int (Scm_ClockGetResMonotonic (& sec) (& nsec))])
+    (if r
+      (begin (set! SCM_RESULT0 (Scm_MakeIntegerU sec))
+             (set! SCM_RESULT1 (Scm_MakeIntegerU nsec)))
+      (begin (set! SCM_RESULT0 SCM_FALSE)
+             (set! SCM_RESULT1 SCM_FALSE)))))
+
 (define-cproc current-time ()           ;SRFI-18, SRFI-19, SRFI-21
   Scm_CurrentTime)
 

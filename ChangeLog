@@ -1,3 +1,13 @@
+2014-03-01  Shiro Kawai  <shiro@acm.org>
+
+	* src/system.c (Scm_ClockGetTimeMonotonic, Scm_ClockGetResMonotonic),
+	src/libsys.scm (sys-clock-gettime-monotonic, sys-clock-getres-monotonic):
+	  Added monotonic time clock to be used for TAI time.  If the system
+	  doesn't provide clock_gettime()/clock_getres(), these API return
+	  special values, so that the caller can make up whatever fallback
+	  values suitable for their needs; the gist is that it's often easier
+	  to implement fallback in Scheme.
+
 2014-02-27  Shiro Kawai  <shiro@acm.org>
 
 	* src/libfmt.scm (with-format-params): Fixed a bug in 'v' formatter

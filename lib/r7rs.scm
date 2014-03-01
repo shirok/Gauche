@@ -486,15 +486,24 @@
 
 (define-module scheme.time
   (export current-jiffy jiffies-per-second current-second)
-  (define-values (%epoch-sec %epoch-usec)
-    (sys-gettimeofday))
+  ;; Try to get TAI via clock_gettime if available.  If not, get UTC via
+  ;; gettimeofday and use a constant offset.
+  (define-constant tai-utc 35) ; as of 2014
+  (define (%get-tai)
+    (receive (sec nsec) (sys-clock-gettime-monotonic)
+      (if sec
+        (values sec nsec)
+        (receive (sec usec) (sys-gettimeofday)
+          (values (+ sec tai-utc) (* usec 1000))))))
+  
+  (define-values (%epoch-sec %epoch-usec) (%get-tai))
   (define (current-second)
-    (receive (sec usec) (sys-gettimeofday)
-      (+ sec (/. usec 1e6))))
-  (define (current-jiffy)               ;temporary implementation
-    (receive (sec usec) (sys-gettimeofday)
+    (receive (sec nsec) (%get-tai)
+      (+ sec (/. nsec 1e9))))
+  (define (current-jiffy)
+    (receive (sec nsec) (%get-tai)
       (+ (* (- sec %epoch-sec) #e1e6)
-         (- usec %epoch-usec))))
+         (quotient (- nsec %epoch-nsec)
   (define (jiffies-per-second) #e1e6)
   (provide "scheme/time"))
 
