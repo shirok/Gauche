@@ -495,16 +495,26 @@
         (values sec nsec)
         (receive (sec usec) (sys-gettimeofday)
           (values (+ sec tai-utc) (* usec 1000))))))
+  ;; We reduce resolution in 32bit platform so that we have more time
+  ;; before current-jiffy falls out of fixnum range.  On 32bit machines,
+  ;; 100us resolution gives 53687 seconds before we get bignum.  On 64bit
+  ;; machines, we have enough bits with nanosec resolution.
+  (define-constant jiffy-resolution
+    (if (fixnum? (expt 2 32)) #e1e9 #e1e4))
   
-  (define-values (%epoch-sec %epoch-usec) (%get-tai))
+  (define-values (%epoch-sec %epoch-nsec) (%get-tai))
   (define (current-second)
     (receive (sec nsec) (%get-tai)
       (+ sec (/. nsec 1e9))))
-  (define (current-jiffy)
-    (receive (sec nsec) (%get-tai)
-      (+ (* (- sec %epoch-sec) #e1e6)
-         (quotient (- nsec %epoch-nsec)
-  (define (jiffies-per-second) #e1e6)
+  (define current-jiffy
+    (if (fixnum? (expt 2 32))
+      (^[] (receive (sec nsec) (%get-tai)
+             (+ (* (- sec %epoch-sec) jiffy-resolution)
+                (- nsec %epoch-nsec))))
+      (^[] (receive (sec nsec) (%get-tai)
+             (+ (* (- sec %epoch-sec) jiffy-resolution)
+                (quotient (- nsec %epoch-nsec) (/ #e1e9 jiffy-resolution)))))))
+  (define (jiffies-per-second) jiffy-resolution)
   (provide "scheme/time"))
 
 (define-module scheme.write
