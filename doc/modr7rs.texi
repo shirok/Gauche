@@ -58,10 +58,7 @@ R7RSプログラムとライブラリは特定の形式で書かれるので
 @section Traveling between two worlds back and forth
 @c NODE 二つの世界を往き来する
 
-It's not that there are two languages, R7RS and Gauche---we have the same
-compiler and same virtual machine.  It is merely a difference of
-toplevel namespace.
-
+@c EN
 When you start Gauche, either in REPL or as a script, you're in
 @code{user} module, which @emph{inherits} @code{gauche} module.
 Likewise, when you load a library, the initial module is @code{gauche} module
@@ -69,23 +66,61 @@ Likewise, when you load a library, the initial module is @code{gauche} module
 That's why you can access all the built-in procedures of Gauche
 without saying @code{(use something)}.  (@xref{Module inheritance}, for
 the details about inheriting modules).
+@c JP
+Gaucheを起動した直後は、それがREPLであってもスクリプトファイルの実行であっても、
+トップレベルは@code{user}モジュールになっています。@code{user}モジュールは
+@code{gauche}モジュールを@emph{継承}しています。
+また、ライブラリをロードする際にも、(@code{select-module}が呼ばれるまでは)
+トップレベルは@code{gauche}モジュールになっています。
+これが、@code{(use something)}等といちいち書かないでも
+Gaucheの組み込み手続きを使える理由です。
+(モジュールの継承については@ref{Module inheritance}を参照してください)。
+@c COMMON
 
+@c EN
 On the other hand, R7RS requires to be explicit about which namespace
 you're in, by @code{import} form, e.g. @code{(import (scheme base))}.
-The behavior is undefined if you don't import any of R7RS bindings.
 Besides, R7RS library must be explicitly enclosed by @code{define-library} form.
+Before the firsut @code{import} form of a program, or outside of
+@code{define-library}, is beyond R7RS world---the standard definnes
+nothings about it.
+@c JP
+一方、R7RSでは@code{import}フォームによってどの名前空間に入るかを明示することが
+求められています(例: @code{(import (scheme base))})。
+また、R7RSライブラリはそれぞれ@code{define-library}フォームで囲う必要があります。
+プログラムの最初の@code{import}より前、あるいはライブラリの@code{define-library}の
+外側は、R7RSの世界の外であり、標準では何も規定していません。
+@c COMMON
 
+@c EN
 These facts let Gauche to set up appropriate ``world'',
-and you can use R7RS code and Gauche code transparently.
+and you can use R7RS code and traditional Gauche code transparently.
+@c JP
+Gaucheはこれを利用して、適切な「世界」を設定し、R7RSコードと既存のGaucheコードを
+透過的に混ぜるられるようにしています。
+@c COMMON
 
+@c EN
 NB: As explained in @ref{Three forms of import},
 R7RS @code{import} is rather different from Gauche
 @code{import}, so we note the former @code{r7rs#import} and the latter
 @code{gauche#import} in this section for clarity.  When you write code
 don't use prefixes @code{r7rs#} and @code{gauche#}; just write @code{import}.
+@c JP
+註：@ref{Three forms of import}で説明しますが、
+R7RSの@code{import}はGaucheの@code{import}と異なります。この節では
+区別が必要な時は前者を@code{r7rs#import}、後者を@code{gauche#import}と
+表記しますが、実際のコードでは@code{r7rs#}や@code{gauche#}といったプレフィクスを
+つけずに、単に@code{import}と書いてください。
+@c COMMON
 
+@c EN
 @subheading Loading R7RS libraries
+@c JP
+@subheading R7RSライブラリをロードする
+@c COMMON
 
+@c EN
 The @code{define-library} form is defined as a macro in @code{gauche} module;
 it sets up R7RS environment before evaluating its contents.
 So, when you load an R7RS library (either from Gauche code via @code{use}
@@ -93,8 +128,20 @@ form, or from R7RS code via @code{r7rs#import} form),
 Gauche starts loading the file in @code{gauche} module, but immediately
 see @code{define-library} form, and the rest is handled in R7RS
 environment.
+@c JP
+@code{define-library}フォーム自身は、@code{gauche}モジュール内のマクロとして
+定義されていて、R7RS環境を設定してその中身を評価するコードに展開されます。
+(Gaucheコードから@code{use}を使うか、
+R7RSコードから@code{r7rs#import}フォームを使うかして)R7RSライブラリをロードすると、
+Gaucheはファイルの評価を@code{gauche}モジュール内で始めますが、すぐに
+@code{define-library}フォームに当たるので、その中身はR7RS環境で処理されることになります。
+@c COMMON
 
+@c EN
 Suppose you have an R7RS library @code{(mylib foo)} with the following code:
+@c JP
+以下のコードを持つ、R7RSライブラリ@code{(mylib foo)}があるとしましょう。
+@c COMMON
 
 @example
 (define-library (mylib foo)
@@ -104,10 +151,19 @@ Suppose you have an R7RS library @code{(mylib foo)} with the following code:
     (define (snoc x y) (cons y x))))
 @end example
 
-It should be saved as @file{mylib/foo.scm} in the directory in
+@c EN
+It should be saved as @file{mylib/foo.scm} in one of the directories in
 @code{*load-path*}.
+@c JP
+このファイルは@code{*load-path*}にあるディレクトリのどれかの下に、
+@file{mylib/foo.scm}という名前で保存されなければなりません。
+@c COMMON
 
+@c EN
 From R7RS code, this library can be loaded by @code{r7rs#import}:
+@c JP
+R7RSコードからは、このライブラリは@code{r7rs#import}フォームでロードできます。
+@c COMMON
 
 @example
 (import (mylib foo))
@@ -115,8 +171,13 @@ From R7RS code, this library can be loaded by @code{r7rs#import}:
 (snoc 1 2) @result{} (2 . 1)
 @end example
 
+@c EN
 To use this library from Gauche code, concatenate elements of library
 names by @code{.} to get a module name, and @code{use} it:
+@c JP
+Gaucheコードからこのライブラリを使うには、ライブラリ名の各要素を@code{.}で
+つなげたものをモジュール名として、@code{use}します。
+@c COMMON
 
 @example
 (use mylib.foo)
@@ -124,7 +185,11 @@ names by @code{.} to get a module name, and @code{use} it:
 (snoc 1 2) @result{} (2 . 1)
 @end example
 
+@c EN
 @subheading Loading Gauche libraries
+@c JP
+@subheading Gaucheライブラリのロード
+@c COMMON
 
 To use Gauche library @code{foo.bar} from R7RS code,
 split the module name by @code{.} to make a list for the name
@@ -633,6 +698,9 @@ those bindings are available by @code{(import (scheme time))}.
 @end deftp
 
 @defun current-second
+[R7RS]
+Returns a real number represents the number of seconds since
+the midgnight of Jan. 1, 1970 TAI.
 @end defun
 
 @defun current-jiffy
