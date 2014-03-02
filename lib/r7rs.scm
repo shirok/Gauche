@@ -486,26 +486,27 @@
 
 (define-module scheme.time
   (export current-jiffy jiffies-per-second current-second)
-  ;; Try to get TAI via clock_gettime if available.  If not, get UTC via
-  ;; gettimeofday and use a constant offset.
-  (define-constant tai-utc 35) ; as of 2014
-  (define (%get-tai)
-    (receive (sec nsec) (sys-clock-gettime-monotonic)
-      (if sec
-        (values sec nsec)
-        (receive (sec usec) (sys-gettimeofday)
-          (values (+ sec tai-utc) (* usec 1000))))))
+  (define-constant tai-utc 35) ; TAI is ahead of this amount as of 2014
+  (define-constant tai-off 8)  ; TAI epoch is ahead of this amount
   ;; We reduce resolution in 32bit platform so that we have more time
   ;; before current-jiffy falls out of fixnum range.  On 32bit machines,
   ;; 100us resolution gives 53687 seconds before we get bignum.  On 64bit
   ;; machines, we have enough bits with nanosec resolution.
   (define-constant jiffy-resolution
     (if (fixnum? (expt 2 32)) #e1e9 #e1e4))
-  
-  (define-values (%epoch-sec %epoch-nsec) (%get-tai))
+  ;; We use clock_gettime(CLOCK_MONOTONIC) for current-jiffy if possible,
+  ;; falling back to gettimeofday.
+  (define (%gettime)
+    (receive (sec nsec) (sys-clock-gettime-monotonic)
+      (if sec
+        (values sec nsec)
+        (receive (sec usec) (sys-gettimeofday)
+          (values (+ sec tai-utc) (* usec 1000))))))
+
+  (define-values (%epoch-sec %epoch-nsec) (%gettime))
   (define (current-second)
-    (receive (sec nsec) (%get-tai)
-      (+ sec (/. nsec 1e9))))
+    (receive (sec usec) (sys-gettimeofday)
+      (+ sec (/. usec 1e6) (- tai-utc tai-off))))
   (define current-jiffy
     (if (fixnum? (expt 2 32))
       (^[] (receive (sec nsec) (%get-tai)
