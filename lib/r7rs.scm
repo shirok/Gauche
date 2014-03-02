@@ -509,10 +509,10 @@
       (+ sec (/. usec 1e6) (- tai-utc tai-off))))
   (define current-jiffy
     (if (fixnum? (expt 2 32))
-      (^[] (receive (sec nsec) (%get-tai)
+      (^[] (receive (sec nsec) (%gettime)
              (+ (* (- sec %epoch-sec) jiffy-resolution)
                 (- nsec %epoch-nsec))))
-      (^[] (receive (sec nsec) (%get-tai)
+      (^[] (receive (sec nsec) (%gettime)
              (+ (* (- sec %epoch-sec) jiffy-resolution)
                 (quotient (- nsec %epoch-nsec) (/ #e1e9 jiffy-resolution)))))))
   (define (jiffies-per-second) jiffy-resolution)
