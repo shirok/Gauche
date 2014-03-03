@@ -535,7 +535,7 @@
 (define (shell-escape-string str)
   (cond-expand
    [gauche.os.windows
-    ;; This is supported in src/scmlib.scm.  See the comment in it.
+    ;; This is supported in src/libsys.scm.  See the comment in it.
     (%sys-escape-windows-command-line str)]
    [else
     ;; We follow standard unix shell convention: if STR contains special
