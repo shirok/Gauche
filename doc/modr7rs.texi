@@ -191,29 +191,51 @@ Gaucheコードからこのライブラリを使うには、ライブラリ名�
 @subheading Gaucheライブラリのロード
 @c COMMON
 
+@c EN
 To use Gauche library @code{foo.bar} from R7RS code,
 split the module name by @code{.} to make a list for the name
 of the library.  For example, @code{gauche.lazy} module can be
 used from R7RS as follows:
+@c JP
+Gaucheライブラリの@code{foo.bar}をR7RSコードから使うには、
+モジュール名を@code{.}で区切った名前のリストをライブラリ名として使います。
+例えば@code{gauche.lazy}モジュールは次のとおりR7RSから使えます。
+@c COMMON
 
 @example
 (import (gauche lazy))
 @end example
 
+@c EN
 For SRFI modules, R7RS implementations have a convention to
 name it as @code{(srfi n)}, and Gauche follows it.  
 The following code loads srfi-1 and srfi-13 from R7RS code:
+@c JP
+SRFIモジュールについては、R7RSでは慣習的に@code{(srfi n)}という
+名前を使うので、Gaucheもそれに合わせています。R7RSコードから
+srfi-1とsrfi-13を使うには、次のようにします。
+@c COMMON
 
 @example
 (import (srfi 1) (srfi 13))
 @end example
 
+@c EN
 (It's not that Gauche treat @code{srfi} name specially; installation
 of Gauche includes adaptor libraries such as @file{srfi/1.scm}.)
+@c JP
+(これが動くのは、Gaucheが@code{srfi}という名前を特別扱いしているのではなく、
+Gaucheをインストールした時に@code{srfi/1.scm}等のアダプタライブラリが作られているからです)
+@c COMMON
 
+@c EN
 A tip: To use Gauche's built-in features (the bindings that are
 available by default in Gauche code) from R7RS code, import
 @code{(gauche base)} library:
+@c JP
+ヒント: Gaucheの組み込みの機能 (Gaucheコードでは最初から使える束縛) を
+R7RSコードから使いたい場合は、@code{(gauche base)}ライブラリをimportしてください。
+@c COMMON
 
 @example
 (import (gauche base))
@@ -221,28 +243,58 @@ available by default in Gauche code) from R7RS code, import
 filter @result{} #<closure filter>
 @end example
 
+@c EN
 @subheading Running R7RS scripts
+@c JP
+@subheading R7RSスクリプトの実行
+@c COMMON
 
-R7RS scripts begins with @code{import} form.  However, @code{r7rs#import}
-is different from @code{gauche#import}---so we employ a trick.
+@c EN
+R7RS scripts always begin with @code{import} form.  However, @code{r7rs#import}
+has a different syntax and semantics 
+from @code{gauche#import}---so we employ a trick.
+@c JP
+R7RSスクリプトは必ず@code{import}フォームで始まります。
+しかし、@code{r7rs#import}は@code{gauche#import}と文法や意味が異なります。
+そこで、ちょっとしたトリックを使っています。
+@c COMMON
 
+@c EN
 When @code{gosh} is started, it loads the given script file
 in @code{user} module.  We have a separate @code{user#import} macro, which
 examines its arguments and if it is R7RS import syntax, switch to the
 @code{r7rs.user} module and run the @code{r7rs#import}.  Otherwise, it
 runs @code{gauche#import}.  @xref{Three forms of import}, for the details.
+@c JP
+@code{gosh}がスクリプトファイルを読み込むのは@code{user}モジュールです。
+そこには@code{user#import}というマクロが用意してあり、
+そのマクロは引数を調べて、それがR7RSのimportの構文であれば
+@code{r7rs.user}モジュールに切り替えて@code{r7rs#import}を実行し、
+そうでなければ@code{gauche#import}を実行します。
+詳しくは@ref{Three forms of import}を参照してください。
+@c COMMON
 
+@c EN
 An example of R7RS script:
+@c JP
+R7RSスクリプトの例です:
+@c COMMON
 
 @example
 (import (scheme base) (scheme write))
 (display "Hello, world!\n")
 @end example
 
+@c EN
 If you're already familiar with Gauche scripts, keep in mind that
 R7RS program doesn't treat @code{main} procedure specially; it
 just evaluates toplevel forms from top to bottom.  So the following
 script doesn't output anything:
+@c JP
+Gaucheスクリプトを見慣れている人は、R7RSプログラムが@code{main}手続きを
+特別扱いしないことに気をつけてください。R7RSプログラムは、トップレベルフォームを
+順に評価してゆくだけです。したがって次のスクリプトは何も表示しません:
+@c COMMON
 
 @example
 (import (scheme base) (scheme write))
@@ -251,27 +303,32 @@ script doesn't output anything:
   0)
 @end example
 
-@subheading Running Gauche scripts
+@c EN
+To access the command-line arguments in R7RS scripts, use
+@code{command-line} in @code{(scheme process-context)} library
+(@pxref{R7RS process context}, also @pxref{Command-line arguments}).
+@c JP
+R7RSスクリプトからコマンドライン引数を利用するには、
+@code{(scheme process-context)}ライブラリの@code{command-line}を使います
+(@ref{R7RS process context} および @ref{Command-line arguments}参照)。
+@c COMMON
 
-Since @code{gosh} starts in Gauche environment, you don't need
-special declaration or anything.  A recommended way is to 
-put the main application logic in @code{main} procedure, for
-@code{gosh} runs @code{user#main}, if it exists, after loading the script.
-
-@example
-(define (main args)
-  (display "Hello, world!\n")
-  0)   ; exit code
-@end example
-
-A list of command-line arguments is passed to the @code{main} procedure,
-as specified in SRFI-22.
-
+@c EN
 @subheading Using R7RS REPL
+@c JP
+@subheading R7RS REPLを使う
+@c COMMON
 
+@c EN
 When @code{gosh} is invoked with @code{-r7} option and no script file is
 given, it enters an R7RS REPL mode.  For the convenience, the following
 modules (``libraries'', in R7RS term) are pre-loaded.
+@c JP
+@code{gosh}が@code{-r7}オプションつきで起動され、スクリプトファイルが
+与えられていなかった場合は、R7RS REPLモードになります。
+使いやすいように、以下のモジュール (R7RS用語では「ライブラリ」)は
+自動的にロードされます。
+@c COMMON
 
 @example
 (scheme base) (scheme case-lambda) (scheme char)
@@ -281,19 +338,35 @@ modules (``libraries'', in R7RS term) are pre-loaded.
 (scheme repl) (scheme time) (scheme write)
 @end example
 
+@c EN
 Besides, the history variables @code{*1}, @code{*2}, @code{*3},
 @code{*1+}, @code{*2+}, @code{*3+}, @code{*e} and @code{*history}
 are available (@xref{Working in REPL}, for the details of history variables).
+@c JP
+さらに、ヒストリ変数@code{*1}、@code{*2}、@code{*3}、
+@code{*1+}、@code{*2+}、@code{*3+}、@code{*e} および
+@code{*history}も使えます (ヒストリ変数の詳細については@ref{Working in REPL}参照)。
+@c COMMON
 
+@c EN
 You can know you're in R7RS REPL by looking at the prompt, where
 @code{gosh} shows the current module (@code{r7rs.user}):
+@c JP
+R7RS REPLにいることはプロンプトを見ればわかります。
+現在のモジュールが@code{r7rs.user}となっているからです。
+@c COMMON
 
 @example
 gosh[r7rs.user]> 
 @end example
 
+@c EN
 To switch Gauche REPL from R7RS REPL, import @code{(gauche base)} and
 select @code{user} module using @code{select-module}:
+@c JP
+R7RS REPLからGauche REPLにスイッチするには、@code{(gauche base)}を
+インポートして@code{select-module}を使って@code{user}モジュールを選びます。
+@c COMMON
 
 @example
 gosh[r7rs.user]> (import (gauche base))
@@ -303,16 +376,35 @@ gosh[r7rs.user]> (select-module user)
 gosh> 
 @end example
 
+@c EN
 (You can @code{(select-module gauche)} but that's usually not what you
 want to do---changing @code{gauche} module can have unwanted side effects.)
+@c JP
+(@code{(select-module gauche)}とする手もありますが、おすすめはしません。
+@code{gauche}モジュールの中を変えると思いがけない副作用が生じるかもしれませんから。)
+@c COMMON
 
-@subheading Using Gauche REPL
+@c EN
+@subheading Switching from Gauche REPL
+@c JP
+@subheading Gauche REPLからのスイッチ
+@c COMMON
 
+@c EN
 By default, @code{gosh} enters Gauche REPL when no script file is given.
 @xref{Working in REPL}, for detailed explanation of using REPL.
+@c JP
+デフォルトでは、@code{gosh}はスクリプトファイルが与えられなければGaucheのREPLに
+入ります。REPLの説明は@ref{Working in REPL}を参照してください。
+@c COMMON
 
+@c EN
 To switch Gauche REPL to R7RS REPL, use @code{r7rs} module and
-switch to @code{r7rs.user} module:
+select @code{r7rs.user} module:
+@c JP
+Gauche REPLからR7RS REPLにスイッチするには、
+@code{r7rs}モジュールを@code{use}して@code{r7rs.user}モジュールを選択します。
+@c COMMON
 
 @example
 gosh> (use r7rs)
@@ -322,17 +414,28 @@ gosh> (select-module r7rs.user)
 gosh[r7rs.user]> 
 @end example
 
+@c EN
 If you don't start @code{gosh} with @code{-r7} option, however,
 no libraries are preloaded in @code{r7rs.user} module.  The only
 bindings visible initially are @code{import} and @code{define-library};
 even @code{define} is undefined!
 You have to manually do @code{(import (scheme base))} etc. to start
 writing Scheme in this environment.
+@c JP
+ただし、@code{gosh}を@code{-r7}オプションで起動していなければ、
+@code{r7rs.user}モジュールにはライブラリが一切ロードされていないことに
+注意してください。この状態で使えるフォームは@code{import}と@code{define-library}
+だけです (@code{define}でさえ定義されていません!)
+この環境でSchemeを書くには、まず @code{(import (scheme base))} 等として
+束縛をインポートする必要があります。
+@c COMMON
 
 
 @node Three forms of import, R7RS library form, Traveling between two worlds back and forth, Library modules - R7RS integration
 @section Three import forms
 @c NODE 3つのimport形式
+
+
 
 
 @node R7RS library form, R7RS base library, Three forms of import, Library modules - R7RS integration
