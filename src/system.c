@@ -930,7 +930,7 @@ int Scm_ClockGetResMonotonic(u_long *sec, u_long *nsec)
     struct timespec ts;
     int r;
     SCM_SYSCALL(r, clock_getres(CLOCK_MONOTONIC, &ts));
-    if (r < 0) Scm_SysError("clock_gettime failed");
+    if (r < 0) Scm_SysError("clock_getres failed");
     *sec = (u_long)ts.tv_sec;
     *nsec = (u_long)ts.tv_nsec;
     return TRUE;
