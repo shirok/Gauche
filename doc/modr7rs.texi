@@ -399,11 +399,37 @@ By default, @code{gosh} enters Gauche REPL when no script file is given.
 @c COMMON
 
 @c EN
-To switch Gauche REPL to R7RS REPL, use @code{r7rs} module and
-select @code{r7rs.user} module:
+To switch Gauche REPL to R7RS REPL, simply use r7rs-style import;
+@code{user#import} knows you want R7RS and make a switch.
 @c JP
 Gauche REPLからR7RS REPLにスイッチするには、
-@code{r7rs}モジュールを@code{use}して@code{r7rs.user}モジュールを選択します。
+r7rsスタイルのimportを使ってください。@code{user#import}は
+あなたが欲しいのはR7RSであることを察知して環境を切り替えます。
+@c COMMON
+
+@example
+gosh> (import (scheme base))
+#<undef>
+gosh[r7rs.user]> 
+@end example
+
+@c EN
+If you don't start @code{gosh} with @code{-r7} option, however,
+only the libraries you given to @code{user#import} are loaded at
+this moment.
+@c JP
+ただし、@code{gosh}を@code{-r7}オプションつきで起動していなければ、
+この時点でロードされているのは@code{user#import}で指定したライブラリだけです。
+@c COMMON
+
+@c EN
+If you want to switch the ``vanilla'' r7rs envionment, that is, even
+not loading @code{(scheme base)}, then you can use @code{r7rs}
+module and directly select @code{r7rs.user}:
+@c JP
+もし、「すっぴん」のR7RS環境、つまり@code{(scheme base)}でさえロードされていない
+環境へと切り替えたければ、@code{r7rs}モジュールをuseして
+直接@code{r7rs.user}モジュールを選択します。
 @c COMMON
 
 @example
@@ -415,16 +441,13 @@ gosh[r7rs.user]>
 @end example
 
 @c EN
-If you don't start @code{gosh} with @code{-r7} option, however,
-no libraries are preloaded in @code{r7rs.user} module.  The only
+If you do this, the only
 bindings visible initially are @code{import} and @code{define-library};
 even @code{define} is undefined!
 You have to manually do @code{(import (scheme base))} etc. to start
 writing Scheme in this environment.
 @c JP
-ただし、@code{gosh}を@code{-r7}オプションで起動していなければ、
-@code{r7rs.user}モジュールにはライブラリが一切ロードされていないことに
-注意してください。この状態で使えるフォームは@code{import}と@code{define-library}
+こうして切り替えた場合、使えるフォームは@code{import}と@code{define-library}
 だけです (@code{define}でさえ定義されていません!)
 この環境でSchemeを書くには、まず @code{(import (scheme base))} 等として
 束縛をインポートする必要があります。
@@ -434,8 +457,6 @@ writing Scheme in this environment.
 @node Three forms of import, R7RS library form, Traveling between two worlds back and forth, Library modules - R7RS integration
 @section Three import forms
 @c NODE 3つのimport形式
-
-
 
 
 @node R7RS library form, R7RS base library, Three forms of import, Library modules - R7RS integration
