@@ -403,8 +403,8 @@ To switch Gauche REPL to R7RS REPL, simply use r7rs-style import;
 @code{user#import} knows you want R7RS and make a switch.
 @c JP
 Gauche REPLからR7RS REPLにスイッチするには、
-r7rsスタイルのimportを使ってください。@code{user#import}は
-あなたが欲しいのはR7RSであることを察知して環境を切り替えます。
+単にr7rsスタイルのimportを使うだけです。@code{user#import}は
+あなたが欲しいのがR7RSであることを察知して環境を切り替えます。
 @c COMMON
 
 @example
