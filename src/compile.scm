@@ -2691,9 +2691,8 @@
     (match f
       [((? symbol? a) (? symbol? b) . r) ;likely to be an r7rs-style import
        (error "This import form looks like R7RS `import', as opposed to \
-               Gauche `import'.  If you are running an R7RS script, run \
-               gosh with -r7 option.  If you're in REPL, type (extend r7rs) \
-               to enter the R7RS namespace.")]
+               Gauche `import'.  If you're in REPL, type (use r7rs) \
+               and (select-module r7rs.user) to enter the R7RS namespace.")]
       [(m . r) (process-import (cenv-module cenv) (ensure m) r)]
       [m       (process-import (cenv-module cenv) (ensure m) '())]))
   ($const-undef))
