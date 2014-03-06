@@ -860,6 +860,23 @@ between TAI and UTC using srfi-19 (@xref{SRFI-19 Date}).
 @section @code{scheme.write} - R7RS write
 @c NODE R7RS write, @code{scheme.write} - R7RS write
 
+@deftp {Module} scheme.write
+@mdindex scheme.write
+Exports bindings of R7RS @code{(scheme write)} library.
+From R7RS programs,
+those bindings are available by @code{(import (scheme write))}.
+
+This module provides the following bindings, all of which are 
+Gauche built-in (@pxref{Object output}).
+
+@example
+display write write-shared write-simple
+@end example
+@end deftp
+
+
+
+
 @node R5RS compatibility,  , R7RS write, Library modules - R7RS integration
 @section @code{scheme.r5rs} - R5RS compatibility
 @c NODE R5RS compatibility, @code{scheme.r5rs} - R5RS互換性

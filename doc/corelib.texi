@@ -15400,6 +15400,8 @@ a user-defined class, it calls the generic function @code{write-object}.
 @c JP
 オブジェクト@var{obj}の人に読みやすい表現を、出力ポートに書き出します。
 
+@var{obj}が循環構造を含んでいる場合は、データラベル記法を使って出力します。
+
 @code{display}が表示中にユーザ定義クラスのオブジェクトに
 出会った場合は、ジェネリックファンクション@code{write-object}を呼び出します。
 @c COMMON
@@ -15407,6 +15409,11 @@ a user-defined class, it calls the generic function @code{write-object}.
 @example
 (display "\"Mahalo\", he said.")
  @result{} @r{shows} "Mahalo", he said.
+
+(let ((x (list "imua")))
+  (set-cdr! x x)
+  (display x))
+ @result{} @r{shows} #0=(imua . #0#)
 @end example
 @end defun
 
