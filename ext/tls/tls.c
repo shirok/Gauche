@@ -40,152 +40,147 @@ SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_TLSClass, tls_print);
 
 static void tls_print(ScmObj obj, ScmPort* port, ScmWriteContext* ctx)
 {
-  ScmTLS* t = SCM_TLS(obj);
-  Scm_Printf(port, "#<TLS");
-  /* at the moment there's not much to print, so we leave this hole
-     for future development. */
-  Scm_Printf(port, ">");
+    ScmTLS* t = SCM_TLS(obj);
+    Scm_Printf(port, "#<TLS");
+    /* at the moment there's not much to print, so we leave this hole
+       for future development. */
+    Scm_Printf(port, ">");
 }
 
 static void tls_finalize(ScmObj obj, void* data)
 {
-  ScmTLS* t = SCM_TLS(obj);
+    ScmTLS* t = SCM_TLS(obj);
 #if defined(GAUCHE_USE_AXTLS)
-  Scm_TLSClose(t);
-  ssl_ctx_free(t->ctx);
-  t->ctx = 0;
+    Scm_TLSClose(t);
+    ssl_ctx_free(t->ctx);
+    t->ctx = 0;
 #endif /*GAUCHE_USE_AXTLS*/
 }
 
 static void close_check(ScmTLS* tls, const char* op)
 {
 #if defined(GAUCHE_USE_AXTLS)
-  if (!tls->conn)
-    Scm_Error("attempt to %s closed TLS: %S", op, tls);
+    if (!tls->conn) Scm_Error("attempt to %s closed TLS: %S", op, tls);
 #endif /*GAUCHE_USE_AXTLS*/
 }
 
 ScmObj Scm_MakeTLS(void)
 {
-  ScmTLS* t = SCM_NEW(ScmTLS);
-  SCM_SET_CLASS(t, SCM_CLASS_TLS);
+    ScmTLS* t = SCM_NEW(ScmTLS);
+    SCM_SET_CLASS(t, SCM_CLASS_TLS);
 #if defined(GAUCHE_USE_AXTLS)
-  /* NB: we don't support certificate validation/trust. future work
-     will have to take care of this if anyone cares about it at the
-     policy level. (it should be noted that axTLS does support this;
-     we just don't use it at the moment) */
-  t->ctx = ssl_ctx_new(SSL_SERVER_VERIFY_LATER, 0);
-  t->conn = 0;
-  t->in_port = t->out_port = 0;
+    /* NB: we don't support certificate validation/trust. future work
+       will have to take care of this if anyone cares about it at the
+       policy level. (it should be noted that axTLS does support this;
+       we just don't use it at the moment) */
+    t->ctx = ssl_ctx_new(SSL_SERVER_VERIFY_LATER, 0);
+    t->conn = 0;
+    t->in_port = t->out_port = 0;
 #endif /*GAUCHE_USE_AXTLS*/
-  Scm_RegisterFinalizer(SCM_OBJ(t), tls_finalize, 0);
-  return SCM_OBJ(t);
+    Scm_RegisterFinalizer(SCM_OBJ(t), tls_finalize, 0);
+    return SCM_OBJ(t);
 }
 
 ScmObj Scm_TLSClose(ScmTLS* t)
 {
 #if defined(GAUCHE_USE_AXTLS)
-  if (t->conn)
-  {
-    ssl_free(t->conn);
-    t->conn = 0;
-    t->in_port = t->out_port = 0;
-  }
+    if (t->conn) {
+        ssl_free(t->conn);
+        t->conn = 0;
+        t->in_port = t->out_port = 0;
+    }
 #endif /*GAUCHE_USE_AXTLS*/
-  return SCM_TRUE;
+    return SCM_TRUE;
 }
 
 ScmObj Scm_TLSConnect(ScmTLS* t, int fd)
 {
 #if defined(GAUCHE_USE_AXTLS)
-  if (t->conn)
-    Scm_SysError("attempt to connect already-connected TLS %S", t);
-  t->conn = ssl_client_new(t->ctx, fd, 0, 0);
-  if (SSL_OK != ssl_handshake_status(t->conn))
-    Scm_SysError("TLS handshake failed");
+    if (t->conn) Scm_SysError("attempt to connect already-connected TLS %S", t);
+    t->conn = ssl_client_new(t->ctx, fd, 0, 0);
+    if (SSL_OK != ssl_handshake_status(t->conn)) {
+        Scm_SysError("TLS handshake failed");
+    }
 #endif /*GAUCHE_USE_AXTLS*/
-  return SCM_OBJ(t);
+    return SCM_OBJ(t);
 }
 
 ScmObj Scm_TLSRead(ScmTLS* t)
 {
 #if defined(GAUCHE_USE_AXTLS)
-  int r; uint8_t* buf;
-  close_check(t, "read");
-  while ((r = ssl_read(t->conn, &buf)) == SSL_OK);
-  if (r < 0)
-    Scm_SysError("ssl_read() failed");
-  return Scm_MakeString((char*) buf, r, r, SCM_STRING_INCOMPLETE);
+    int r; uint8_t* buf;
+    close_check(t, "read");
+    while ((r = ssl_read(t->conn, &buf)) == SSL_OK);
+    if (r < 0) Scm_SysError("ssl_read() failed");
+    return Scm_MakeString((char*) buf, r, r, SCM_STRING_INCOMPLETE);
 #else  /*!GAUCHE_USE_AXTLS*/
-  return SCM_FALSE;
+    return SCM_FALSE;
 #endif /*!GAUCHE_USE_AXTLS*/
 }
 
 #if defined(GAUCHE_USE_AXTLS)
 static const uint8_t* get_message_body(ScmObj msg, u_int *size)
 {
-  if (SCM_UVECTORP(msg))
-  {
-    *size = Scm_UVectorSizeInBytes(SCM_UVECTOR(msg));
-    return (const uint8_t*) SCM_UVECTOR_ELEMENTS(msg);
-  }
-  else if (SCM_STRINGP(msg))
-    return (const uint8_t*) Scm_GetStringContent(SCM_STRING(msg), size, 0, 0);
-  else
-  {
-    Scm_TypeError("TLS message", "uniform vector or string", msg);
-    *size = 0;
-    return 0;
-  }
+    if (SCM_UVECTORP(msg)) {
+        *size = Scm_UVectorSizeInBytes(SCM_UVECTOR(msg));
+        return (const uint8_t*) SCM_UVECTOR_ELEMENTS(msg);
+    } else if (SCM_STRINGP(msg)) {
+        return (const uint8_t*)Scm_GetStringContent(SCM_STRING(msg), size, 0, 0);
+    } else {
+        Scm_TypeError("TLS message", "uniform vector or string", msg);
+        *size = 0;
+        return 0;
+    }
 }
 #endif /*GAUCHE_USE_AXTLS*/
 
 ScmObj Scm_TLSWrite(ScmTLS* t, ScmObj msg)
 {
 #if defined(GAUCHE_USE_AXTLS)
-  int r;
-  u_int size;
-  close_check(t, "write");
-  const uint8_t* cmsg = get_message_body(msg, &size);
-  if ((r = ssl_write(t->conn, cmsg, size)) < 0)
-    Scm_SysError("ssl_write() failed");
-  return SCM_MAKE_INT(r);
+    int r;
+    u_int size;
+    close_check(t, "write");
+    const uint8_t* cmsg = get_message_body(msg, &size);
+    if ((r = ssl_write(t->conn, cmsg, size)) < 0) {
+        Scm_SysError("ssl_write() failed");
+    }
+    return SCM_MAKE_INT(r);
 #else  /*!GAUCHE_USE_AXTLS*/
-  return SCM_FALSE;
+    return SCM_FALSE;
 #endif /*!GAUCHE_USE_AXTLS*/
 }
 
 ScmObj Scm_TLSInputPort(ScmTLS* t)
 {
 #if defined(GAUCHE_USE_AXTLS)
-  return SCM_OBJ(t->in_port);
+    return SCM_OBJ(t->in_port);
 #endif /*GAUCHE_USE_AXTLS*/
 }
 
 ScmObj Scm_TLSOutputPort(ScmTLS* t)
 {
 #if defined(GAUCHE_USE_AXTLS)
-  return SCM_OBJ(t->out_port);
+    return SCM_OBJ(t->out_port);
 #endif /*GAUCHE_USE_AXTLS*/
 }
 
 ScmObj Scm_TLSInputPortSet(ScmTLS* t, ScmObj port)
 {
 #if defined(GAUCHE_USE_AXTLS)
-  t->in_port = SCM_PORT(port);
+    t->in_port = SCM_PORT(port);
 #endif /*GAUCHE_USE_AXTLS*/
-  return port;
+    return port;
 }
 
 ScmObj Scm_TLSOutputPortSet(ScmTLS* t, ScmObj port)
 {
 #if defined(GAUCHE_USE_AXTLS)
-  t->out_port = SCM_PORT(port);
+    t->out_port = SCM_PORT(port);
 #endif /*GAUCHE_USE_AXTLS*/
-  return port;
+    return port;
 }
 
 void Scm_Init_tls(ScmModule *mod)
 {
-  Scm_InitStaticClass(&Scm_TLSClass, "<tls>", mod, NULL, 0);
+    Scm_InitStaticClass(&Scm_TLSClass, "<tls>", mod, NULL, 0);
 }
