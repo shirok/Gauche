@@ -802,6 +802,7 @@
 (define (shutdown-secure-agent conn)
   (when (~ conn'secure-agent)
     (tls-close (~ conn'secure-agent))
+    (tls-destroy (~ conn'secure-agent))
     (set! (~ conn'secure-agent) #f)))
 
 (define (start-secure-agent conn)

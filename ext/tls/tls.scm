@@ -35,7 +35,7 @@
 
 (define-module rfc.tls
   (use gauche.vport)
-  (export <tls> make-tls tls-connect tls-close tls-read tls-write
+  (export <tls> make-tls tls-destroy tls-connect tls-close tls-read tls-write
           tls-input-port tls-output-port)
   )
 (select-module rfc.tls)
@@ -45,6 +45,7 @@
 
  (define-type <tls> "ScmTLS*")
  (define-cproc make-tls () Scm_MakeTLS)
+ (define-cproc tls-destroy (tls::<tls>) Scm_TLSDestroy)
  (define-cproc %tls-connect (tls::<tls> fd::<long>) Scm_TLSConnect)
  (define-cproc %tls-close (tls::<tls>) Scm_TLSClose)
  (define-cproc tls-read (tls::<tls>) Scm_TLSRead)

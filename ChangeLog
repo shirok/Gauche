@@ -1,3 +1,11 @@
+2014-03-06  Shiro Kawai  <shiro@acm.org>
+
+	* ext/tls/tls.c, ext/tls/tls.scm (tls-destroy): Added explicit
+	  destruction of TLS context.  An axtls context grabs an fd for
+	  /dev/urandom, and sometimes GC isn't triggered often enough
+	  before unfinalized contexts use up all fds.
+	* lib/rfc/http.scm (shutdown-secure-agent): Destroy TLS context.
+
 2014-03-01  Shiro Kawai  <shiro@acm.org>
 
 	* src/system.c (Scm_ClockGetTimeMonotonic, Scm_ClockGetResMonotonic),
