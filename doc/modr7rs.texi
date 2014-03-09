@@ -458,6 +458,28 @@ writing Scheme in this environment.
 @section Three import forms
 @c NODE 3つのimport形式
 
+Gauche's module system design is inherited from STk, and we've been
+used @code{import} for purely name-space level operation; that is,
+it assumes the module you import from already exists in memory.  
+Loading a file that defines the module (if necessary) is
+done by separate primitives, @code{require}.  In most cases one file
+defines one module, and using that module means @code{require} it then
+@code{import} it (it's so common that Gauche has a macro for it---@code{use}).
+However, separating those two sometimes comes handy when you need
+some untrivial hacks.  @xref{Using modules}, for the details of
+Gauche's @code{import}.
+
+R7RS leaves out the relation between modules (libraries) and files
+in order to give implementation freedom.  If necessary, its @code{import}
+must load a file implicitly and transparently.  So R7RS's @code{import}
+is semantically Gauche's @code{use}.
+
+
+
+@defspec import import-spec @dots{}
+[R7RS]
+@end defspec
+
 
 @node R7RS library form, R7RS base library, Three forms of import, Library modules - R7RS integration
 @section R7RS library form
