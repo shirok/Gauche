@@ -433,7 +433,11 @@
 #   define mach_type_known
 # endif
 # if defined(__CYGWIN32__) || defined(__CYGWIN__)
-#   define I386
+#   if defined(__LP64__)
+#     define X86_64
+#   else
+#     define I386
+#   endif
 #   define CYGWIN32
 #   define mach_type_known
 # endif
