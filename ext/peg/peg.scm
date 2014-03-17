@@ -51,7 +51,7 @@
           $fmap ;obsoleted - same as $lift
           $<<   ;obsoleted - same as $lift
           $do $try $seq $or $fold-parsers $fold-parsers-right
-          $many $many1 $skip-many
+          $many $many1 $skip-many $skip-many1
           $repeat $optional
           $alternate
           $sep-by $end-by $sep-end-by
