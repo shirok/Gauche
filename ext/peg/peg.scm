@@ -537,8 +537,8 @@
 
 (define ($skip-many1 parse :optional (max #f))
   (if max
-    ($do parse [($skip-many1 parse)] ($return #f))
-    ($do parse [($skip-many1 parse 0 (- max 1))] ($return #f))))
+    ($do parse [($skip-many parse 0 (- max 1))] ($return #f))
+    ($do parse [($skip-many parse)] ($return #f))))
 
 ;; API
 ;; $optional p :optional fallback
