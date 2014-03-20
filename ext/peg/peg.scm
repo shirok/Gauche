@@ -47,6 +47,10 @@
           peg-run-parser
           peg-parse-string peg-parse-port
           peg-parser->generator ;experimental
+
+          return-result return-failure/expect return-failure/unexpect
+          return-failure/message return-failure/compound
+          
           $return $fail $expect $lift $lift*
           $fmap ;obsoleted - same as $lift
           $<<   ;obsoleted - same as $lift
@@ -55,7 +59,7 @@
           $repeat $optional
           $alternate
           $sep-by $end-by $sep-end-by
-          $count $between
+          $count $between $followed-by
           $not $many-till $chain-left $chain-right
           $lazy
 
@@ -616,6 +620,12 @@
 ;;   Matches A B C, and returns the result of B.
 (define ($between open parse close)
   ($do open [v parse] close ($return v)))
+
+;; API
+;; $followed-by P S ...
+;;   Matches P S ..., and returns the result of P.
+(define ($followed-by parse . followers)
+  (apply $lift (^[v . _] v) parse followers))
 
 ;; API
 ;; $not P
