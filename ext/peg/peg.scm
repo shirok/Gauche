@@ -48,10 +48,11 @@
           peg-parse-string peg-parse-port
           peg-parser->generator ;experimental
 
+          parse-success?
           return-result return-failure/expect return-failure/unexpect
           return-failure/message return-failure/compound
           
-          $return $fail $expect $lift $lift*
+          $return $fail $expect $lift $lift* $debug
           $fmap ;obsoleted - same as $lift
           $<<   ;obsoleted - same as $lift
           $do $try $seq $or $fold-parsers $fold-parsers-right
@@ -380,6 +381,15 @@
 ;; for the backward compatibility - will be dropped by 0.9.5
 (define $fmap $lift)
 (define $<< $lift)
+
+;; API
+;; For debugging
+(define ($debug name parser)
+  (^s (format (current-error-port) "#?parser(~a)<~,,,,v:s\n"
+              name (debug-print-width) s)
+      (receive [r v s] (parser s)
+        (debug-print-post (list r v s))
+        (values r v s))))
 
 ;; API
 ;; $do clause ... body
