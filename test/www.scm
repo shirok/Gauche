@@ -362,6 +362,10 @@ Content-Disposition: form-data; name=bbb
 
   (sys-system "rm -rf test.o")])
 
+;;------------------------------------------------
+(test-section "www.css")
+(use www.css)
+(test-module 'www.css)
 
 (test-end)
 

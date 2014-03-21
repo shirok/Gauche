@@ -92,7 +92,7 @@ SCMFILES = srfi-0.scm \
        text/csv.scm text/parse.scm text/tree.scm text/sql.scm \
        text/html-lite.scm text/info.scm text/diff.scm \
        text/progress.scm \
-       www/cgi.scm www/cgi-test.scm www/cgi/test.scm
+       www/cgi.scm www/cgi-test.scm www/cgi/test.scm www/css.scm
 
 all:
 
