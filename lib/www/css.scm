@@ -40,7 +40,9 @@
   (use util.match)
   (use text.tree)
   (use srfi-13)
-  (export construct-css simple-selector? css-parse-file)
+  (export construct-css simple-selector?
+          css-parse-file
+          css-parse-selector-string)
   )
 (select-module www.css)
 
@@ -741,6 +743,23 @@
     (^p ($ parse-stylesheet
            $ css-tokenize $ generator->lseq $ port->char-generator p))
     :encoding (or encoding (gauche-character-encoding))))
+
+;; API
+;; A utility function to parse only selector part.
+;; We can't simply use parse-selectors, for it assumes the tokens is
+;; processed as %qualified-rule.
+;; Returns #f if input is unparsable.  It is ok that imput has extra
+;; blocks; they're ignored.
+(define (css-parse-selector-string s)
+  (receive (r v s) ($ %selector-only $ css-tokenize $ x->lseq s)
+    (and (parse-success? r)
+         (parse-selectors v))))
+
+(define %selector-only
+  ($seq %WS*
+        ($many ($seq ($not ($tok 'OPEN-BRACE))
+                     ($/ %paren-block %bracket-block %function-call
+                         %preserved-token ($tok 'WHITESPACE))))))
 
 ;; TODO: make this customizable
 (define css-parser-warn warn)
