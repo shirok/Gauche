@@ -40,7 +40,7 @@
   (use util.match)
   (use text.tree)
   (use srfi-13)
-  (export-all); temporary
+  (export construct-css simple-selector? css-parse-file)
   )
 (select-module www.css)
 
