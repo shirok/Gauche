@@ -51,6 +51,7 @@
 ;;;
 ;;;  <s-css>      : {<ruleset> | <at-rule>} ...
 ;;;  <style-rule> : (style-rule <pattern> <declaration> ...)
+;;;               | (style-decls <declaration> ...)
 ;;;
 ;;;  <pattern>   : <selector> | (or <selector> ...)
 ;;;  <seletor>   : <simple-selector>
@@ -92,6 +93,11 @@
 ;;;  <function>  | (<fn> <arg> ...)
 ;;;  <arg>       | <term> | #(<term> ...) | (/ <term> <term> ...)
 ;;;
+;;;
+;;; NB: style-decls shouldn't appear in a complete stylesheet, but can
+;;;     appear when the 'style' attribute of the document is parsed.
+;;;     It is also useful to render the value for the style attribute.
+;;;
 ;;; NB: Negaton op is :not instead of not, since (not <negation-arg>)
 ;;;     would be ambiguous from the simple node named "not" with one option.
 
@@ -122,6 +128,8 @@
       [('style-rule pattern . decls)
        (write-tree (render-style-rule pattern decls) oport)
        (newline oport)]
+      [('style-decls . decls)
+       (write-tree (intersperse ";" (map render-decl decls)))]
       [_ (error "invalid or unsupported sexpr css:" top)]))
   (define (render-style-rule pattern decls)
     `(,(render-pattern pattern) "{"
