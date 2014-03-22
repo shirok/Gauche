@@ -68,7 +68,7 @@
 ;;;              | (*= <ident> <attrib-value>)           ; E[attrib*=val]
 ;;;              | (^= <ident> <attrib-value>)           ; E[attrib^=val]
 ;;;              | ($= <ident> <attrib-value>)           ; E[attrib$=val]
-;;;              | (not <negation-arg>)                  ; E:not(s)
+;;;              | (:not <negation-arg>)                 ; E:not(s)
 ;;;              | (: <ident>)                           ; E:pseudo-class
 ;;;              | (: (<fn> <ident> ...))                ; E:pseudl-class(arg)
 ;;;              | (:: <ident>)                          ; E::pseudo-element
@@ -91,6 +91,9 @@
 ;;;  <hexcolor>  | (color <string>)  ; <string> must be hexdigits
 ;;;  <function>  | (<fn> <arg> ...)
 ;;;  <arg>       | <term> | #(<term> ...) | (/ <term> <term> ...)
+;;;
+;;; NB: Negaton op is :not instead of not, since (not <negation-arg>)
+;;;     would be ambiguous from the simple node named "not" with one option.
 
 ;;
 ;; Some utilities on S-expr CSS
@@ -99,9 +102,13 @@
 ;; API
 ;; Returns canonicalized simple selector (element . options) or #f
 (define (simple-selector? sel)
+  (define (option? x)
+    (match x
+      [(a b . _) (memq a '(id class has = ~= := *= ^= $= :not : ::))]
+      [_ #f]))
   (match sel
     [(? symbol?) (list sel)]
-    [((? symbol?) (? pair?) ...) sel]
+    [((? symbol?) (? option?) ...) sel]
     [_ #f]))
 
 ;;
@@ -143,6 +150,9 @@
       [((and (or '= '~= '^= '$= '*=) op) ident value)
        `("[" ,ident ,op ,(render-attrval value) "]")]
       [(':= ident value) `("[" ,ident "|=" ,(render-attrval value) "]")]
+      [(':not not-arg) `(":(" ,(if (symbol? not-arg)
+                                 not-arg
+                                 (render-options not-arg)) ")")]
       [(: (fn arg ...)) `(":" ,(render-fn fn arg))]
       [(: ident) `(":" ,ident)]
       [(:: ident) `("::" ,ident)]
@@ -524,19 +534,13 @@
          (return-failure/message "attr-selector" s)))]
     [_ (return-failure/message "attr-selector" s)]))
 
-(define (%negation-op s)
-  (match s
-    [(('IDENT . (? (^y string-ci=? (symbol->string y) "not"))) . rest)
-     (return-result 'not rest)]
-    [_ (return-failure/expect "not" s)]))
-
 (define %class-selector
   ($lift (^[_ class] `(class ,class)) ($delim #\.) ($tok 'IDENT)))
 
 (define %id-selector
   ($do [hashval ($tok 'HASH)]
        (if (cadr hashval) ; hashval is ident
-         ($return (car hashval))
+         ($return `(id ,(car hashval)))
          ($fail "identifier required for id selector"))))
 
 (define %pseudo-fn-arg
@@ -552,7 +556,6 @@
        %pseudo-selector)))
 
 ;; NB: negation-selector is also treated in pseudo-fn
-
 (define (%pseudo-fn s)
   (match s
     [(('funcall name . arg-tokens) . rest)
@@ -568,7 +571,7 @@
 (define %pseudo-selector
   ($lift (^[_ elem? sel]
            (match sel
-             [('not not-arg) `(not ,not-arg)]
+             [('not not-arg) `(:not ,not-arg)]
              [(? symbol?) `(,(if elem? ':: ':) ,sel)]
              [_ `(,(if elem? ':: ':) ,@sel)]))
          ($tok 'COLON) ($optional ($tok 'COLON))
