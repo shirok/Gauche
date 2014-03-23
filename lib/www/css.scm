@@ -192,8 +192,8 @@
   (define (render-expr expr)
     (match expr
       [('/ term ...)  (intersperse "/" (map render-term term))]
-      [('or term ...) (intersperse "," (map render-term term))]
-      [#(term ...) (intersperse " " (map render-term term))]
+      [('or term ...) (intersperse "," (map render-expr term))]
+      [#(term ...) (intersperse " " (map render-expr term))]
       [term (render-term term)]))
   (define (render-term term)
     (match term
@@ -674,9 +674,10 @@
 
 (define %juxtaposed-exprs
   ($lift (^[vs] (match vs [(x) x] [xs (list->vector xs)]))
-         ($many ($/ ($lift (^[v vs] (if (null? vs) v (cons v vs)))
-                           %term ($many ($seq ($tok 'COMMA) %term)))
-                    %term-/))))
+         ($many ($/ ($lift (^[a _ b] `(/ ,a ,b))
+                           %term ($delim #\/) %term)
+                    ($lift (^[v vs] (if (null? vs) v (cons v vs)))
+                           %term ($many ($seq ($tok 'COMMA) %term)))))))
 
 (define *juxta-properties*
   '(margin padding
