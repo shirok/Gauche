@@ -319,12 +319,12 @@
 (define %string
   ($->rope
    ($/ ($between ($char #\")
-                 ($many ($/ ($none-of #[\n\r\f\"])
+                 ($many ($/ ($none-of #[\n\r\f\"\\])
                             ($try ($seq ($char #\\) %nl))
                             %escape))
                  ($or ($char #\") eof))
        ($between ($char #\')
-                 ($many ($/ ($none-of #[\n\r\f\'])
+                 ($many ($/ ($none-of #[\n\r\f\'\\])
                             ($try ($seq ($char #\\) %nl))
                             %escape))
                  ($or ($char #\') eof)))))
