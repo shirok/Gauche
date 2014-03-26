@@ -43,6 +43,9 @@ static void keyword_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
     if (Scm_WriteContextMode(ctx) == SCM_WRITE_DISPLAY) {
         SCM_PUTS(SCM_KEYWORD(obj)->name, port);
     } else {
+#if GAUCHE_UNIFY_SYMBOL_KEYWORD
+        Scm_WriteSymbolName(SCM_KEYWORD(obj)->name, port, ctx, 0);
+#else  /*!GAUCHE_UNIFY_SYMBOL_KEYWORD*/
         SCM_PUTC(':', port);
         /* We basically print keyword names in the same way as symbols
            (i.e. using |-escape if necessary).  However, as a convention,
@@ -58,10 +61,22 @@ static void keyword_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
         Scm_WriteSymbolName(SCM_KEYWORD(obj)->name, port, ctx,
                             (SCM_SYMBOL_WRITER_NOESCAPE_INITIAL
                              |SCM_SYMBOL_WRITER_NOESCAPE_EMPTY));
+#endif /*!GAUCHE_UNIFY_SYMBOL_KEYWORD*/
     }
 }
 
+#if GAUCHE_UNIFY_SYMBOL_KEYWORD
+static ScmClass *keyword_cpl[] = {
+    SCM_CLASS_STATIC_PTR(Scm_SymbolClass),
+    SCM_CLASS_STATIC_PTR(Scm_TopClass),
+    NULL
+};
+
+SCM_DEFINE_BUILTIN_CLASS(Scm_KeywordClass, keyword_print,
+                         NULL, NULL, NULL, keyword_cpl);
+#else  /*!GAUCHE_UNIFY_SYMBOL_KEYWORD*/
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_KeywordClass, keyword_print);
+#endif /*!GAUCHE_UNIFY_SYMBOL_KEYWORD*/
 
 /* Global keyword table. */
 static struct {
@@ -72,6 +87,7 @@ static struct {
 /* Returns a keyword whose name is NAME.  Note that preceding ':' is not
  * a part of the keyword name.
  */
+#if !GAUCHE_UNIFY_SYMBOL_KEYWORD
 ScmObj Scm_MakeKeyword(ScmString *name)
 {
     (void)SCM_INTERNAL_MUTEX_LOCK(keywords.mutex);
@@ -89,6 +105,7 @@ ScmObj Scm_MakeKeyword(ScmString *name)
     (void)SCM_INTERNAL_MUTEX_UNLOCK(keywords.mutex);
     return r;
 }
+#endif  /*!GAUCHE_UNIFY_SYMBOL_KEYWORD*/
 
 ScmObj Scm_GetKeyword(ScmObj key, ScmObj list, ScmObj fallback)
 {

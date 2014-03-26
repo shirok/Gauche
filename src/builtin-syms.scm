@@ -193,6 +193,9 @@
     (symlink                   SCM_SYM_SYMLINK)
     (socket                    SCM_SYM_SOCKET)
     (time-utc                  SCM_SYM_TIME_UTC)
+
+    ;; modules addition (move this up on 1.0 release)
+    (keyword                   SCM_SYM_KEYWORD)
     ))
 
 

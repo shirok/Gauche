@@ -125,6 +125,8 @@ SCM_DECL_BEGIN
 /* Define this to 0 to turn off lazy-pair feature. */
 #define GAUCHE_LAZY_PAIR 1
 
+#undef GAUCHE_UNIFY_SYMBOL_KEYWORD /* not yet */
+
 /* Include appropriate threading interface.  Threading primitives are
    abstracted with SCM_INTERNAL_* macros and ScmInternal* typedefs.
    See gauche/uthread.h for the semantics of these primitives. */
@@ -493,7 +495,9 @@ typedef struct ScmTreeMapRec   ScmTreeMap;
 typedef struct ScmModuleRec    ScmModule;
 typedef struct ScmSymbolRec    ScmSymbol;
 typedef struct ScmGlocRec      ScmGloc;
+#if !GAUCHE_UNIFY_SYMBOL_KEYWORD
 typedef struct ScmKeywordRec   ScmKeyword;
+#endif /*!GAUCHE_UNIFY_SYMBOL_KEYWORD*/
 typedef struct ScmProcedureRec ScmProcedure;
 typedef struct ScmClosureRec   ScmClosure;
 typedef struct ScmSubrRec      ScmSubr;

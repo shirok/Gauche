@@ -3218,9 +3218,6 @@ void Scm__InitClass(void)
     /* hash.c */
     CINIT(SCM_CLASS_HASH_TABLE,       "<hash-table>");
 
-    /* keyword.c */
-    CINIT(SCM_CLASS_KEYWORD,          "<keyword>");
-
     /* list.c */
     CINIT(SCM_CLASS_LIST,             "<list>");
     CINIT(SCM_CLASS_PAIR,             "<pair>");
@@ -3269,6 +3266,9 @@ void Scm__InitClass(void)
     /* symbol.c */
     CINIT(SCM_CLASS_SYMBOL,           "<symbol>");
     CINIT(SCM_CLASS_GLOC,             "<gloc>");
+
+    /* keyword.c */
+    CINIT(SCM_CLASS_KEYWORD,          "<keyword>");
 
     /* system.c */
     /* initialized in Scm__InitSystem */

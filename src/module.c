@@ -110,6 +110,9 @@ DEFINE_STATIC_MODULE(gaucheModule);   /* #<module gauche> */
 DEFINE_STATIC_MODULE(internalModule); /* #<module gauche.internal> */
 DEFINE_STATIC_MODULE(gfModule);       /* #<module gauche.gf> */
 DEFINE_STATIC_MODULE(userModule);     /* #<module user> */
+#if GAUCHE_UNIFY_SYMBOL_KEYWORD
+DEFINE_STATIC_MODULE(keywordModule);  /* #<module keyword> */
+#endif /*!GAUCHE_UNIFY_SYMBOL_KEYWORD*/
 
 static ScmObj defaultParents = SCM_NIL; /* will be initialized */
 static ScmObj defaultMpl =     SCM_NIL; /* will be initialized */
@@ -867,6 +870,13 @@ ScmModule *Scm_UserModule(void)
     return &userModule;
 }
 
+#if GAUCHE_UNIFY_SYMBOL_KEYWORD
+ScmModule *Scm_KeywordModule(void)
+{
+    return &keywordModule;
+}
+#endif /*!GAUCHE_UNIFY_SYMBOL_KEYWORD*/
+
 ScmModule *Scm_CurrentModule(void)
 {
     return Scm_VM()->module;
@@ -902,6 +912,9 @@ void Scm__InitModule(void)
     ScmObj mpl = SCM_NIL;
     INIT_MOD(nullModule, SCM_SYM_NULL, mpl);
     INIT_MOD(schemeModule, SCM_SYM_SCHEME, mpl);
+#if GAUCHE_UNIFY_SYMBOL_KEYWORD
+    INIT_MOD(keywordModule, SCM_SYM_KEYWORD, mpl);
+#endif /*!GAUCHE_UNIFY_SYMBOL_KEYWORD*/
     INIT_MOD(gaucheModule, SCM_SYM_GAUCHE, mpl);
     INIT_MOD(gfModule, SCM_SYM_GAUCHE_GF, mpl);
     INIT_MOD(userModule, SCM_SYM_USER, mpl);

@@ -50,7 +50,11 @@ typedef enum {
 } ScmSymbolFlags;
 
 #define SCM_SYMBOL(obj)          ((ScmSymbol*)(obj))
+#if GAUCHE_UNIFY_SYMBOL_KEYWORD
+#define SCM_SYMBOLP(obj)         SCM_ISA(obj, SCM_CLASS_SYMBOL)
+#else  /*!GAUCHE_UNIFY_SYMBOL_KEYWORD*/
 #define SCM_SYMBOLP(obj)         SCM_XTYPEP(obj, SCM_CLASS_SYMBOL)
+#endif /*!GAUCHE_UNIFY_SYMBOL_KEYWORD*/
 #define SCM_SYMBOL_NAME(obj)     (SCM_SYMBOL(obj)->name)
 #define SCM_SYMBOL_INTERNED(obj) \
     (SCM_SYMBOL(obj)->flags&SCM_SYMBOL_FLAG_INTERNED)

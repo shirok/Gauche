@@ -42,44 +42,60 @@
 static void symbol_print(ScmObj obj, ScmPort *port, ScmWriteContext *);
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_SymbolClass, symbol_print);
 
-static ScmSymbol *make_sym(ScmObj name, int interned)
-{
-    ScmSymbol *sym = SCM_NEW(ScmSymbol);
-    SCM_SET_CLASS(sym, SCM_CLASS_SYMBOL);
-    sym->name = SCM_STRING(name);
-    sym->flags = interned? SCM_SYMBOL_FLAG_INTERNED : 0;
-    return sym;
-}
-
 /* name -> symbol mapper */
 static ScmInternalMutex obtable_mutex = SCM_INTERNAL_MUTEX_INITIALIZER;
 static ScmHashTable *obtable = NULL;
 
-/* Intern */
-ScmObj Scm_MakeSymbol(ScmString *name, int interned)
+/* internal constructor.  NAME must be an immutable string. */
+static ScmSymbol *make_sym(ScmClass *klass, ScmString *name, int interned)
 {
     if (interned) {
         /* fast path */
         SCM_INTERNAL_MUTEX_LOCK(obtable_mutex);
         ScmObj e = Scm_HashTableRef(obtable, SCM_OBJ(name), SCM_FALSE);
         SCM_INTERNAL_MUTEX_UNLOCK(obtable_mutex);
-        if (!SCM_FALSEP(e)) return e;
+        if (!SCM_FALSEP(e)) return SCM_SYMBOL(e);
     }
 
+    ScmSymbol *sym = SCM_NEW(ScmSymbol);
+    SCM_SET_CLASS(sym, klass);
+    sym->name = name;
+    sym->flags = interned? SCM_SYMBOL_FLAG_INTERNED : 0;
+
+    if (!interned) {
+        return sym;
+    } else {
+        /* Using SCM_DICT_NO_OVERWRITE ensures that if another thread interns
+           the same name symbol between above HashTableRef and here, we'll
+           get the already interned symbol. */
+        SCM_INTERNAL_MUTEX_LOCK(obtable_mutex);
+        ScmObj e = Scm_HashTableSet(obtable, SCM_OBJ(name), SCM_OBJ(sym),
+                                    SCM_DICT_NO_OVERWRITE);
+        SCM_INTERNAL_MUTEX_UNLOCK(obtable_mutex);
+        return SCM_SYMBOL(e);
+    }
+}
+
+/* Intern */
+ScmObj Scm_MakeSymbol(ScmString *name, int interned)
+{
     ScmObj sname = Scm_CopyStringWithFlags(name, SCM_STRING_IMMUTABLE,
                                            SCM_STRING_IMMUTABLE);
-    ScmSymbol *sym = make_sym(sname, interned);
-    if (!interned) return SCM_OBJ(sym);
-
-    /* Using SCM_DICT_NO_OVERWRITE ensures that if another thread interns
-       the same name symbol between above HashTableRef and here, we'll
-       get the already interned symbol. */
-    SCM_INTERNAL_MUTEX_LOCK(obtable_mutex);
-    ScmObj e = Scm_HashTableSet(obtable, SCM_OBJ(name), SCM_OBJ(sym),
-                                SCM_DICT_NO_OVERWRITE);
-    SCM_INTERNAL_MUTEX_UNLOCK(obtable_mutex);
-    return e;
+    return SCM_OBJ(make_sym(SCM_CLASS_SYMBOL, SCM_STRING(sname), interned));
 }
+
+#if GAUCHE_UNIFY_SYMBOL_KEYWORD
+/* In unified keyword, we include preceding ':' to the name. */
+ScmObj Scm_MakeKeyword(ScmString *name)
+{
+    /* We could optimize this later. */
+    ScmObj prefix = Scm_MakeString(":", 1, 1, SCM_STRING_IMMUTABLE);
+    ScmObj sname = Scm_StringAppend2(SCM_STRING(prefix), name);
+    ScmSymbol *s = make_sym(SCM_CLASS_KEYWORD, SCM_STRING(sname), TRUE);
+    Scm_DefineConst(Scm_KeywordModule(), s, SCM_OBJ(s));
+    return SCM_OBJ(s);
+}
+#endif  /*GAUCHE_UNIFY_SYMBOL_KEYWORD*/
 
 /* Default prefix string. */
 static SCM_DEFINE_STRING_CONST(default_prefix, "G", 1, 1);
@@ -97,7 +113,7 @@ ScmObj Scm_Gensym(ScmString *prefix)
     int nc = snprintf(numbuf, 49, "%"PRIdPTR, gensym_count++);
     numbuf[49] = '\0';
     ScmObj name = Scm_StringAppendC(prefix, numbuf, nc, nc);
-    ScmSymbol *sym = make_sym(name, FALSE);
+    ScmSymbol *sym = make_sym(SCM_CLASS_SYMBOL, SCM_STRING(name), FALSE);
     return SCM_OBJ(sym);
 }
 
@@ -171,6 +187,9 @@ void Scm_WriteSymbolName(ScmString *snam, ScmPort *port, ScmWriteContext *ctx,
     }
     if ((unsigned int)*p < 128
         && (special[(unsigned int)*p]&1)
+#if GAUCHE_UNIFY_SYMBOL_KEYWORD
+        && (*p != ':')
+#endif
         && (!(flags & SCM_SYMBOL_WRITER_NOESCAPE_INITIAL))) {
         escape = TRUE;
     } else {

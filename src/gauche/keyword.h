@@ -36,10 +36,14 @@
 #ifndef GAUCHE_KEYWORD_H
 #define GAUCHE_KEYWORD_H
 
+#if GAUCHE_UNIFY_SYMBOL_KEYWORD
+typedef ScmSymbol ScmKeyword;
+#else  /*!GAUCHE_UNIFY_SYMBOL_KEYWORD*/
 struct ScmKeywordRec {
     SCM_HEADER;
     ScmString *name;
 };
+#endif /*!GAUCHE_UNIFY_SYMBOL_KEYWORD*/
 
 SCM_CLASS_DECL(Scm_KeywordClass);
 #define SCM_CLASS_KEYWORD       (&Scm_KeywordClass)
