@@ -413,10 +413,10 @@ install-check :
 GENERATED = compile.c autoloads.c builtin-syms.c \
 	    gauche/priv/builtin-syms.h vminsn.c gauche/vminsn.h \
             ../lib/gauche/vm/insn.scm \
-	    libalpha.c libbool.c libchar.c libdict.c libeval.c libexc.c \
-	    libio.c liblazy.c liblist.c libmisc.c libmod.c libnum.c \
-	    libobj.c libproc.c librx.c libstr.c libsym.c libsys.c \
-	    libvec.c libomega.c libextra.c
+	    libalpha.c libbool.c libchar.c libcode.c libdict.c libeval.c \
+	    libexc.c libfmt.c libio.c liblazy.c liblist.c libmisc.c \
+	    libmod.c libnum.c libobj.c libproc.c librx.c libstr.c \
+	    libsym.c libsys.c libvec.c libomega.c libextra.c
 CONFIG_GENERATED = Makefile genconfig makeverslink gauche/config.h
 
 clean :
