@@ -31,6 +31,8 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
+(declare) ;; a dummy form to suppress generation of "sci" file
+
 (define-module gauche.format)
 (select-module gauche.format)
 
