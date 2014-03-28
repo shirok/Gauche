@@ -84,5 +84,31 @@ SCM_EXTERN void Scm_WriteSymbolName(ScmString *snam, ScmPort *port,
 #define SCM_SYMBOL_WRITER_NOESCAPE_INITIAL  1u
 #define SCM_SYMBOL_WRITER_NOESCAPE_EMPTY    2u
 
+#if GAUCHE_UNIFY_SYMBOL_KEYWORD
+typedef ScmSymbol ScmKeyword;
+#else  /*!GAUCHE_UNIFY_SYMBOL_KEYWORD*/
+struct ScmKeywordRec {
+    SCM_HEADER;
+    ScmString *name;
+};
+#endif /*!GAUCHE_UNIFY_SYMBOL_KEYWORD*/
+
+SCM_CLASS_DECL(Scm_KeywordClass);
+#define SCM_CLASS_KEYWORD       (&Scm_KeywordClass)
+
+#define SCM_KEYWORD(obj)        ((ScmKeyword*)(obj))
+#define SCM_KEYWORDP(obj)       SCM_XTYPEP(obj, SCM_CLASS_KEYWORD)
+#define SCM_KEYWORD_NAME(obj)   (SCM_KEYWORD(obj)->name)
+
+SCM_EXTERN ScmObj Scm_MakeKeyword(ScmString *name);
+SCM_EXTERN ScmObj Scm_GetKeyword(ScmObj key, ScmObj list, ScmObj fallback);
+SCM_EXTERN ScmObj Scm_DeleteKeyword(ScmObj key, ScmObj list);
+SCM_EXTERN ScmObj Scm_DeleteKeywordX(ScmObj key, ScmObj list);
+
+#define SCM_MAKE_KEYWORD(cstr) \
+    Scm_MakeKeyword(SCM_STRING(SCM_MAKE_STR_IMMUTABLE(cstr)))
+#define SCM_GET_KEYWORD(cstr, list, fallback) \
+    Scm_GetKeyword(SCM_MAKE_KEYWORD(cstr), list, fallback)
+
 #endif /* GAUCHE_SYMBOL_H */
 

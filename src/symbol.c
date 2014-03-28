@@ -42,9 +42,31 @@
 static void symbol_print(ScmObj obj, ScmPort *port, ScmWriteContext *);
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_SymbolClass, symbol_print);
 
+#if GAUCHE_UNIFY_SYMBOL_KEYWORD
+static ScmClass *keyword_cpl[] = {
+    SCM_CLASS_STATIC_PTR(Scm_SymbolClass),
+    SCM_CLASS_STATIC_PTR(Scm_TopClass),
+    NULL
+};
+
+SCM_DEFINE_BUILTIN_CLASS(Scm_KeywordClass, symbol_print,
+                         NULL, NULL, NULL, keyword_cpl);
+#else  /*!GAUCHE_UNIFY_SYMBOL_KEYWORD*/
+SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_KeywordClass, symbol_print);
+#endif /*!GAUCHE_UNIFY_SYMBOL_KEYWORD*/
+
 /* name -> symbol mapper */
 static ScmInternalMutex obtable_mutex = SCM_INTERNAL_MUTEX_INITIALIZER;
 static ScmHashTable *obtable = NULL;
+
+#if !GAUCHE_UNIFY_SYMBOL_KEYWORD
+/* Global keyword table. */
+static struct {
+    ScmHashTable *table;
+    ScmInternalMutex mutex;
+} keywords = { NULL };
+
+#endif /*!GAUCHE_UNIFY_SYMBOL_KEYWORD*/
 
 /* internal constructor.  NAME must be an immutable string. */
 static ScmSymbol *make_sym(ScmClass *klass, ScmString *name, int interned)
@@ -84,18 +106,33 @@ ScmObj Scm_MakeSymbol(ScmString *name, int interned)
     return SCM_OBJ(make_sym(SCM_CLASS_SYMBOL, SCM_STRING(sname), interned));
 }
 
-#if GAUCHE_UNIFY_SYMBOL_KEYWORD
 /* In unified keyword, we include preceding ':' to the name. */
 ScmObj Scm_MakeKeyword(ScmString *name)
 {
+#if GAUCHE_UNIFY_SYMBOL_KEYWORD
     /* We could optimize this later. */
     ScmObj prefix = Scm_MakeString(":", 1, 1, SCM_STRING_IMMUTABLE);
     ScmObj sname = Scm_StringAppend2(SCM_STRING(prefix), name);
     ScmSymbol *s = make_sym(SCM_CLASS_KEYWORD, SCM_STRING(sname), TRUE);
     Scm_DefineConst(Scm_KeywordModule(), s, SCM_OBJ(s));
     return SCM_OBJ(s);
+#else  /*!GAUCHE_UNIFY_SYMBOL_KEYWORD*/
+    (void)SCM_INTERNAL_MUTEX_LOCK(keywords.mutex);
+    ScmObj r = Scm_HashTableRef(keywords.table, SCM_OBJ(name), SCM_FALSE);
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(keywords.mutex);
+
+    if (SCM_KEYWORDP(r)) return r;
+
+    ScmKeyword *k = SCM_NEW(ScmKeyword);
+    SCM_SET_CLASS(k, SCM_CLASS_KEYWORD);
+    k->name = SCM_STRING(Scm_CopyString(name));
+    (void)SCM_INTERNAL_MUTEX_LOCK(keywords.mutex);
+    r = Scm_HashTableSet(keywords.table, SCM_OBJ(name), SCM_OBJ(k),
+                         SCM_DICT_NO_OVERWRITE);
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(keywords.mutex);
+    return r;
+#endif /*!GAUCHE_UNIFY_SYMBOL_KEYWORD*/
 }
-#endif  /*GAUCHE_UNIFY_SYMBOL_KEYWORD*/
 
 /* Default prefix string. */
 static SCM_DEFINE_STRING_CONST(default_prefix, "G", 1, 1);
@@ -238,9 +275,101 @@ static void symbol_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
     if (Scm_WriteContextMode(ctx) == SCM_WRITE_DISPLAY) {
         SCM_PUTS(SCM_SYMBOL_NAME(obj), port);
     } else {
+#if !GAUCHE_UNIFY_SYMBOL_KEYWORD
+        if (SCM_KEYWORDP(obj)) {
+            SCM_PUTC(':', port);
+            /* We basically print keyword names in the same way as symbols
+               (i.e. using |-escape if necessary).  However, as a convention,
+               two things are different from the default symbol writer.
+               (1) We don't check the noninitials; :1 is unambiguously a
+               keyword, so we don't need to print :|1|.
+               (2) A keyword with an empty name can be printed just as :,
+               instead of :||.
+               These conventions are useful if we pass the S-expression with
+               these keywords to other Scheme implementations that don't support
+               CL-style keywords; they would just read those ones as symbols.
+            */
+            Scm_WriteSymbolName(SCM_KEYWORD(obj)->name, port, ctx,
+                                (SCM_SYMBOL_WRITER_NOESCAPE_INITIAL
+                                 |SCM_SYMBOL_WRITER_NOESCAPE_EMPTY));
+            return;
+        }
+#endif /*!GAUCHE_UNIFY_SYMBOL_KEYWORD*/
         if (!SCM_SYMBOL_INTERNED(obj)) SCM_PUTZ("#:", -1, port);
         Scm_WriteSymbolName(SCM_SYMBOL_NAME(obj), port, ctx, 0);
     }
+}
+
+/*
+ * Keyword Utilities
+ *   The names are historical; KEY doesn't need to be a keyword at all;
+ *   anything that can be compared by eq? do.
+ */
+
+ScmObj Scm_GetKeyword(ScmObj key, ScmObj list, ScmObj fallback)
+{
+    ScmObj cp;
+    SCM_FOR_EACH(cp, list) {
+        if (!SCM_PAIRP(SCM_CDR(cp))) {
+            Scm_Error("incomplete key list: %S", list);
+        }
+        if (key == SCM_CAR(cp)) return SCM_CADR(cp);
+        cp = SCM_CDR(cp);
+    }
+    if (SCM_UNBOUNDP(fallback)) {
+        Scm_Error("value for key %S is not provided: %S", key, list);
+    }
+    return fallback;
+}
+
+ScmObj Scm_DeleteKeyword(ScmObj key, ScmObj list)
+{
+    ScmObj cp;
+    SCM_FOR_EACH(cp, list) {
+        if (!SCM_PAIRP(SCM_CDR(cp))) {
+            Scm_Error("incomplete key list: %S", list);
+        }
+        if (key == SCM_CAR(cp)) {
+            /* found */
+            ScmObj h = SCM_NIL, t = SCM_NIL;
+            ScmObj tail = Scm_DeleteKeyword(key, SCM_CDR(SCM_CDR(cp)));
+            ScmObj cp2;
+            SCM_FOR_EACH(cp2, list) {
+                if (cp2 == cp) {
+                    SCM_APPEND(h, t, tail);
+                    return h;
+                } else {
+                    SCM_APPEND1(h, t, SCM_CAR(cp2));
+                }
+            }
+        }
+        cp = SCM_CDR(cp);
+    }
+    return list;
+}
+
+ScmObj Scm_DeleteKeywordX(ScmObj key, ScmObj list)
+{
+    ScmObj cp, prev = SCM_FALSE;
+    SCM_FOR_EACH(cp, list) {
+        if (!SCM_PAIRP(SCM_CDR(cp))) {
+            Scm_Error("incomplete key list: %S", list);
+        }
+        if (key == SCM_CAR(cp)) {
+            /* found */
+            if (SCM_FALSEP(prev)) {
+                /* we're at the head of list */
+                return Scm_DeleteKeywordX(key, SCM_CDR(SCM_CDR(cp)));
+            } else {
+                ScmObj tail = Scm_DeleteKeywordX(key, SCM_CDR(SCM_CDR(cp)));
+                SCM_SET_CDR(prev, tail);
+                return list;
+            }
+        }
+        cp = SCM_CDR(cp);
+        prev = cp;
+    }
+    return list;
 }
 
 /*
@@ -254,4 +383,8 @@ void Scm__InitSymbol(void)
     SCM_INTERNAL_MUTEX_INIT(obtable_mutex);
     obtable = SCM_HASH_TABLE(Scm_MakeHashTableSimple(SCM_HASH_STRING, 4096));
     init_builtin_syms();
+#if !GAUCHE_UNIFY_SYMBOL_KEYWORD
+    (void)SCM_INTERNAL_MUTEX_INIT(keywords.mutex);
+    keywords.table = SCM_HASH_TABLE(Scm_MakeHashTableSimple(SCM_HASH_STRING, 256));
+#endif /*!GAUCHE_UNIFY_SYMBOL_KEYWORD*/
 }
