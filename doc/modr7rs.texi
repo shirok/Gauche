@@ -872,9 +872,33 @@ between TAI and UTC using srfi-19 (@xref{SRFI-19 Date}).
 @end defun
 
 @defun current-jiffy
+[R7RS]
+Returns an exact integer measuring a real (wallclock) time elapsed
+since some point in the past, which does not change while a
+process is running.  The time unit is @code{(/ jiffies-per-second)}-th
+second.
+
+The absolute value of current jiffies doesn't matter, but
+the difference can be used to measure the time interval.
 @end defun
 
 @defun jiffies-per-second
+Returns a constant to tell how many time units used in @code{current-jiffy}
+consists of a second.  Currently this is 10^9 on 64bit architectures
+(that is, nanosecond resolution) and 10^4 on 32bit architectures
+(100 microseconds resolution).
+
+The resolution for 32bit architectures
+is unfortunately rather coarse, but if we make it finer
+the current jiffy value easily becomes bignums, taking time
+to allocate and operate, beating the purpose of benchmarking.
+With the current choice, we have 53,867 seconds before we spill
+into bignum.   On 64bit architectures we have enough bits
+not to worry about bignums, with nanosecond reslution.
+
+If you want to do more finer benchmarks on 32bit machines,
+you need to roll your own with @code{sys-clock-gettime-monotonic} or
+@code{sys-gettimeofday}.
 @end defun
 
 
