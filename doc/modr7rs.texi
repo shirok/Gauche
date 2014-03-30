@@ -474,10 +474,20 @@ in order to give implementation freedom.  If necessary, its @code{import}
 must load a file implicitly and transparently.  So R7RS's @code{import}
 is semantically Gauche's @code{use}.
 
-
-
 @defspec import import-spec @dots{}
 [R7RS]
+Imports libraries specified by @var{import-spec}s.
+
+R7RS libraries are named by a list of symbols, such as @code{(scheme base)}.
+It is translated to Gauche's module name by joining the symbols
+by periods; so, R7RS @code{(scheme base)} is Gauche's @code{scheme.base},
+and Gauche's @code{util.queue} is R7RS @code{(util queue)}.
+
+@example
+(import (scheme base) 
+        (util queue))
+@end example
+
 @end defspec
 
 
