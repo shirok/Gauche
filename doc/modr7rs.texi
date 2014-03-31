@@ -476,17 +476,56 @@ is semantically Gauche's @code{use}.
 
 @defspec import import-spec @dots{}
 [R7RS]
-Imports libraries specified by @var{import-spec}s.
+Imports libraries specified by @var{import-spec}s.  What R7RS calls
+libraies are what Gauche calls modules; they're the same thing.
 
 R7RS libraries are named by a list of symbols, such as @code{(scheme base)}.
 It is translated to Gauche's module name by joining the symbols
-by periods; so, R7RS @code{(scheme base)} is Gauche's @code{scheme.base},
-and Gauche's @code{util.queue} is R7RS @code{(util queue)}.
+by periods; so, R7RS @code{(scheme base)} is Gauche's @code{scheme.base}.
+Conversely, Gauche's @code{util.queue} is available as
+@code{(util queue)} in R7RS.  To use those two libraries,
+R7RS program needs this form at the beginning.
 
 @example
 (import (scheme base) 
         (util queue))
 @end example
+
+It works just like Gauche's @code{use} forms; that is, if the named
+module doesn't exist in the current process, it loads the file; then
+the module's exported bindings become visible from the current module.
+
+@example
+(use scheme.base)
+(use util.queue)
+@end example
+
+(You may wonder what if R7RS library uses symbols with periods in them.
+Frankly, we haven't decided yet.   It'll likely be that we use some
+escaping mechanism; for the time being you'd want to stick with
+alphanumeric characters and hyphens as possible.)
+
+Just like Gauche's @code{use}, you can select which symbols to be
+imported (or not imported), rename specific symbols, or add
+prefix to all imported symbols.  The formal syntax
+of R7RS import syntax is as follows:
+
+@smallexample
+<import declaration> : (import <import-set> <import-set> ...)
+
+<import-set> : <library-name>
+  | (only <import-set> <identifier> <identifier> ...)
+  | (except <import-set> <identifier> <identifier> ...)
+  | (prefix <import-set> <identifier>)
+  | (rename <import-set>
+            (<identifier> <identifier>)
+            (<identifier> <identifier>) ...)
+
+<library-name> : (<identifier-or-base-10-integer>
+                  <identifier-or-base-10-integer> ...)
+@end smallexample
+
+
 
 @end defspec
 
