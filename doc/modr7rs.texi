@@ -458,6 +458,7 @@ writing Scheme in this environment.
 @section Three import forms
 @c NODE 3つのimport形式
 
+@c EN
 Gauche's module system design is inherited from STk, and we've been
 used @code{import} for purely name-space level operation; that is,
 it assumes the module you import from already exists in memory.  
@@ -468,11 +469,32 @@ defines one module, and using that module means @code{require} it then
 However, separating those two sometimes comes handy when you need
 some untrivial hacks.  @xref{Using modules}, for the details of
 Gauche's @code{import}.
+@c JP
+Gaucheのモジュールシステム設計はSTkを継承していて、
+@code{import}は純粋に名前空間の操作として使われています。
+つまり、既にメモり上に存在するモジュールをインポートするということです。
+そのモジュールが定義されているファイルを、(必要なら)ロードするという
+操作は別のプリミティブ@code{require}により実現されます。
+典型的には、ひとつのファイルがひとつのモジュールを定義していて、
+そのモジュールを使うにはまずファイルを@code{require}し、
+次にモジュールを@code{import}するということになります
+(これはGaucheでは頻繁に出てくる、@code{use}というマクロが定義されているくらいです)。
+けれども、ファイルのロードとモジュールのインポートが分かれていることは、
+たまに変わったハックが必要とされる時に役に立ちます。
+Gaucheの@code{import}については@ref{Using modules}を参照してください。
+@c COMMON
 
+@c EN
 R7RS leaves out the relation between modules (libraries) and files
 in order to give implementation freedom.  If necessary, its @code{import}
 must load a file implicitly and transparently.  So R7RS's @code{import}
 is semantically Gauche's @code{use}.
+@c JP
+R7RSは実装に選択の余地を与えるため、モジュール(ライブラリ)とファイルの関係は
+敢えて規定していません。R7RSの@code{import}は、
+必要ならば暗黙のうちに、透過的にファイルをロードすることが期待されています。
+つまり、R7RSの@code{import}はGaucheの@code{use}と意味的に同じと考えられます。
+@c COMMON
 
 @defspec import import-spec @dots{}
 [R7RS]
