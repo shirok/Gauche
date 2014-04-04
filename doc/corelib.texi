@@ -16707,6 +16707,48 @@ for user-defined classes.
 @c COMMON
 @end deffn
 
+@defun eq-compare obj1 obj2
+@c EN
+Returns -1 (less than), 0 (equal to) or 1 (greater than) 
+according to a certain total ordering of
+@var{obj1} and @var{obj2}.   Both arguments can be any Scheme
+objects, and can be different type of objects.
+The following properties are guaranteed.
+
+@itemize @bullet
+@item
+@code{(eq-compare x y)} is 0 iff @code{(eq? x y)} is @code{#t}.
+@item
+The result is consistent within a single run of the process
+(but may differ between runs).
+@end itemize
+
+Other than these, no actual semantics are given to the ordering.
+
+This procedure is useful when you need to order arbitrary Scheme
+objects, but you don't care the actual order as far as it's consistent.
+@c JP
+とある全順序に従って@var{obj1}と@var{obj2}を比較し、前者が小さければ-1、
+等しければ0、前者が大きければ1を返します。@var{obj1}と@var{obj2}は
+どんなSchemeオブジェクトでも良く、また型が違っていても構いません。
+次の二つの性質が保証されます。
+
+@itemize @bullet
+@item
+@code{(eq? x y)}が@code{#t}なら、そしてその時に限り、
+@code{(eq-compare x y)}は0。
+@item
+結果は、一回のプロセスの実行中で一貫している
+(ただし、別のプロセスの実行では異なる結果を返すかもしれない)。
+@end itemize
+
+これらの性質以外には、順序についていかなる意味もありません。
+
+この手続きは、任意のSchemeオブジェクトをとにかく順序づけたい
+(一貫してさえいれば、実際の順序は何でも良い)、という場合に使います。
+@c COMMON
+@end defun
+
 @c EN
 @subsection Sorting and merging
 @c JP

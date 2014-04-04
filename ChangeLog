@@ -1,3 +1,7 @@
+2014-04-04  Shiro Kawai  <shiro@acm.org>
+
+	* src/libbool.scm (eq-compare): Added.
+
 2014-03-20  Shiro Kawai  <shiro@acm.org>
 
 	* lib/www/css.scm: Added.  Still experimental.
