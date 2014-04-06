@@ -34,9 +34,60 @@
 #include <stdlib.h>
 #define LIBGAUCHE_BODY
 #include "gauche.h"
+#include "gauche/class.h"
 
 /*
- * Compare.
+ * Comparator
+ */
+
+static void comparator_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
+{
+    ScmComparator *c = SCM_COMPARATOR(obj);
+    if (SCM_FALSEP(c->name)) {
+        Scm_Printf(port, "#<comparator %p>", c);
+    } else {
+        Scm_Printf(port, "#<comparator %S>", c->name);
+    }
+}
+
+SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_ComparatorClass, comparator_print);
+
+#define DEFINE_COMPARATOR_ACCESSOR(field) \
+    static ScmObj SCM_CPP_CAT(comparator_, field)(ScmObj c)             \
+    {                                                                   \
+        return SCM_COMPARATOR(c)->field;                                \
+    }
+
+DEFINE_COMPARATOR_ACCESSOR(name)
+DEFINE_COMPARATOR_ACCESSOR(typeFn)
+DEFINE_COMPARATOR_ACCESSOR(eqFn)
+DEFINE_COMPARATOR_ACCESSOR(compareFn)
+DEFINE_COMPARATOR_ACCESSOR(hashFn)
+
+static ScmClassStaticSlotSpec comparator_slots[] = {
+    SCM_CLASS_SLOT_SPEC("name", comparator_name, NULL),
+    SCM_CLASS_SLOT_SPEC("type-test", comparator_typeFn, NULL),
+    SCM_CLASS_SLOT_SPEC("equality-test", comparator_eqFn, NULL),
+    SCM_CLASS_SLOT_SPEC("comparison", comparator_compareFn, NULL),
+    SCM_CLASS_SLOT_SPEC("hash", comparator_hashFn, NULL),
+};
+
+ScmObj Scm_MakeComparator(ScmObj type, ScmObj eq,
+                          ScmObj compare, ScmObj hash,
+                          ScmObj name)
+{
+    ScmComparator *c = SCM_NEW(ScmComparator);
+    SCM_SET_CLASS(c, &Scm_ComparatorClass);
+    c->name = name;
+    c->typeFn = type;
+    c->eqFn = eq;
+    c->compareFn = compare;
+    c->hashFn = hash;
+    return SCM_OBJ(c);
+}
+
+/*
+ * Generic compare.
  */
 
 int Scm_Compare(ScmObj x, ScmObj y)
@@ -215,4 +266,15 @@ ScmObj Scm_SortList(ScmObj objs, ScmObj fn)
 ScmObj Scm_SortListX(ScmObj objs, ScmObj fn)
 {
     return sort_list_int(objs, fn, TRUE);
+}
+
+/*
+ * Initialization
+ */
+
+void Scm__InitComparator()
+{
+    ScmModule *mod = Scm_GaucheModule();
+    Scm_InitStaticClass(SCM_CLASS_COMPARATOR, "<comparator>", mod,
+                        comparator_slots, 0);
 }

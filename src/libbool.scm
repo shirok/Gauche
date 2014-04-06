@@ -70,22 +70,6 @@
     (and b (every identity args))
     (and (not b) (every not args))))
 
-;;
-;; Generic comparison
-;;
-
-(select-module gauche)
-;; returns -1, 0 or 1
-(define-cproc compare (x y) ::<fixnum> Scm_Compare)
-
-;; eq-compare has two properties:
-;;  Gives a total order to every Scheme object (within a single run of process)
-;;  Returns 0 iff (eq? x y) => #t
-(define-cproc eq-compare (x y) ::<fixnum>
-  (if (SCM_EQ x y)
-    (result 0)
-    (result (?: (< (SCM_WORD x) (SCM_WORD y)) -1 1))))
-
 ;; Circular-safe equal?
 ;; Based on Michael D. Adams and R. Kent Dybvig: Efficient Nondestructive
 ;; Equality Checking for Trees and Graphs, Proceedings of ICFP 08, pp. 179-188.

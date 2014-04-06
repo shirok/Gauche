@@ -511,6 +511,7 @@ typedef struct ScmRegexpRec    ScmRegexp;
 typedef struct ScmRegMatchRec  ScmRegMatch;
 typedef struct ScmWriteContextRec ScmWriteContext;
 typedef struct ScmAutoloadRec  ScmAutoload;
+typedef struct ScmComparatorRec ScmComparator;
 
 typedef ScmObj ScmSubrProc(ScmObj *, int, void*);
 
@@ -1803,10 +1804,8 @@ SCM_EXTERN ScmObj Scm_SiteArchitectureDirectory(void);
 SCM_EXTERN ScmObj Scm__RuntimeDirectory(void); /* private */
 
 /* Compare and Sort */
-SCM_EXTERN int Scm_Compare(ScmObj x, ScmObj y);
-SCM_EXTERN void Scm_SortArray(ScmObj *elts, int nelts, ScmObj cmpfn);
-SCM_EXTERN ScmObj Scm_SortList(ScmObj objs, ScmObj fn);
-SCM_EXTERN ScmObj Scm_SortListX(ScmObj objs, ScmObj fn);
+
+#include <gauche/compare.h>
 
 /* Assertion */
 

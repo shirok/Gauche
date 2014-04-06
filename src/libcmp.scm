@@ -1,5 +1,5 @@
 ;;;
-;;; libmisc.scm - miscellaneous built-in procedures
+;;; libcmp.scm - compare and sort
 ;;;
 ;;;   Copyright (c) 2000-2014  Shiro Kawai  <shiro@acm.org>
 ;;;
@@ -32,46 +32,54 @@
 ;;;
 
 (select-module gauche.internal)
-(inline-stub
- (declcode (.include <gauche/vminsn.h>)))
 
 ;;;
-;;; Miscellaneous
+;;; Comparator
 ;;;
 
 (select-module gauche)
+(define-cproc make-comparator (type-test equality-test comparison-proc hash
+                               :optional (name #f))
+  Scm_MakeComparator)
 
-(define-cproc has-setter? (proc) ::<boolean> Scm_HasSetter)
-
-(define-cproc identity (val) :constant (result val))   ;sometimes useful
-
-(define-cproc undefined () (inliner CONSTU) (result SCM_UNDEFINED))
-(define-cproc undefined? (obj) ::<boolean> :constant SCM_UNDEFINEDP)
-
-(define (warn fmt . args)
-  (apply format (current-error-port) (string-append "WARNING: " fmt) args)
-  (flush (current-error-port)))
-
-;; Foreign pointer (may be in libsys.scm?)
+;;;
+;;; Generic comparison
+;;;
 
 (select-module gauche)
+;; returns -1, 0 or 1
+(define-cproc compare (x y) ::<fixnum> Scm_Compare)
 
-(define-cproc foreign-pointer-attributes (fp::<foreign-pointer>)
-  Scm_ForeignPointerAttr)
+;; eq-compare has two properties:
+;;  Gives a total order to every Scheme object (within a single run of process)
+;;  Returns 0 iff (eq? x y) => #t
+(define-cproc eq-compare (x y) ::<fixnum>
+  (if (SCM_EQ x y)
+    (result 0)
+    (result (?: (< (SCM_WORD x) (SCM_WORD y)) -1 1))))
 
-(define-cproc foreign-pointer-attribute-get (fp::<foreign-pointer>
-                                             key :optional fallback)
-  Scm_ForeignPointerAttrGet)
+;;;
+;;; Sorting
+;;;
 
-(define-cproc foreign-pointer-attribute-set! (fp::<foreign-pointer> key value)
-  Scm_ForeignPointerAttrSet)
-
-; for backward compatibility - deprecated
-(define foreign-pointer-attribute-set foreign-pointer-attribute-set!)
-
-;;
-;; Static configuration
-;;
-
+;; The public API for sorting is in lib/gauche/sortutil.scm and
+;; will be autoloaded.  We provide a C-implemented low-level routines.
 (select-module gauche.internal)
-(define-cproc cond-features () Scm_GetFeatures)
+
+(define-cproc %sort (seq)
+  (cond [(SCM_VECTORP seq)
+         (let* ([r (Scm_VectorCopy (SCM_VECTOR seq) 0 -1 SCM_UNDEFINED)])
+           (Scm_SortArray (SCM_VECTOR_ELEMENTS r) (SCM_VECTOR_SIZE r) '#f)
+           (result r))]
+        [(>= (Scm_Length seq) 0) (result (Scm_SortList seq '#f))]
+        [else (SCM_TYPE_ERROR seq "proper list or vector")
+              (result SCM_UNDEFINED)]))
+
+(define-cproc %sort! (seq)
+  (cond [(SCM_VECTORP seq)
+         (Scm_SortArray (SCM_VECTOR_ELEMENTS seq) (SCM_VECTOR_SIZE seq) '#f)
+         (result seq)]
+        [(>= (Scm_Length seq) 0) (result (Scm_SortListX seq '#f))]
+        [else (SCM_TYPE_ERROR seq "proper list or vector")
+              (result SCM_UNDEFINED)]))
+

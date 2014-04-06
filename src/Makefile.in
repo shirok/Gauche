@@ -135,8 +135,9 @@ INSTALL_SUBHEADERS = \
 	gauche/char_euc_jp.h gauche/char_none.h \
 	gauche/char_sjis.h gauche/char_utf_8.h gauche/charset.h \
 	gauche/class.h gauche/code.h gauche/collection.h \
-	gauche/config.h gauche/config_threads.h gauche/exception.h \
-	gauche/extend.h gauche/extern.h gauche/float.h gauche/gloc.h \
+	gauche/config.h gauche/config_threads.h gauche/compare.h \
+	gauche/exception.h gauche/extend.h gauche/extern.h \
+	gauche/float.h gauche/gloc.h \
 	gauche/hash.h gauche/int64.h gauche/load.h \
 	gauche/macro.h gauche/module.h gauche/number.h gauche/parameter.h \
 	gauche/paths.h gauche/port.h gauche/prof.h gauche/pthread.h \
@@ -196,7 +197,7 @@ libgauche_OBJECTS = \
 	lazy.$(OBJEXT) repl.$(OBJEXT) autoloads.$(OBJEXT) system.$(OBJEXT) \
 	compile.$(OBJEXT) \
 	libalpha.$(OBJEXT) libbool.$(OBJEXT) libchar.$(OBJEXT) \
-	libcode.$(OBJEXT) libdict.$(OBJEXT) libeval.$(OBJEXT) \
+	libcode.$(OBJEXT) libcmp.$(OBJEXT) libdict.$(OBJEXT) libeval.$(OBJEXT) \
 	libexc.$(OBJEXT) libfmt.$(OBJEXT) \
 	libio.$(OBJEXT) liblazy.$(OBJEXT) liblist.$(OBJEXT) \
 	libmisc.$(OBJEXT) libmod.$(OBJEXT) libnum.$(OBJEXT) \
@@ -249,6 +250,7 @@ libalpha.c : libalpha.scm $(PRECOMP_DEPENDENCY)
 libbool.c  : libbool.scm $(PRECOMP_DEPENDENCY)
 libchar.c  : libchar.scm $(PRECOMP_DEPENDENCY)
 libcode.c  : libcode.scm $(PRECOMP_DEPENDENCY)
+libcmp.c   : libcmp.scm $(PRECOMP_DEPENDENCY)
 libdict.c  : libdict.scm $(PRECOMP_DEPENDENCY)
 libeval.c  : libeval.scm $(PRECOMP_DEPENDENCY)
 libexc.c   : libexc.scm $(PRECOMP_DEPENDENCY)
@@ -413,8 +415,8 @@ install-check :
 GENERATED = compile.c autoloads.c builtin-syms.c \
 	    gauche/priv/builtin-syms.h vminsn.c gauche/vminsn.h \
             ../lib/gauche/vm/insn.scm \
-	    libalpha.c libbool.c libchar.c libcode.c libdict.c libeval.c \
-	    libexc.c libfmt.c libio.c liblazy.c liblist.c libmisc.c \
+	    libalpha.c libbool.c libchar.c libcode.c libcmp.c libdict.c \
+	    libeval.c libexc.c libfmt.c libio.c liblazy.c liblist.c libmisc.c \
 	    libmod.c libnum.c libobj.c libproc.c librx.c libstr.c \
 	    libsym.c libsys.c libvec.c libomega.c libextra.c
 CONFIG_GENERATED = Makefile genconfig makeverslink gauche/config.h

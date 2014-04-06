@@ -1,3 +1,8 @@
+2014-04-05  Shiro Kawai  <shiro@acm.org>
+
+	* src/compare.c, src/gauche/compare.h, src/libcmp.scm: Start
+	  adding comparator (srfi-114) experimentally.
+
 2014-04-04  Shiro Kawai  <shiro@acm.org>
 
 	* src/libbool.scm (eq-compare): Added.

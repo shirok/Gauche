@@ -3209,6 +3209,9 @@ void Scm__InitClass(void)
     /* char.c */
     CINIT(SCM_CLASS_CHAR_SET,         "<char-set>");
 
+    /* comparator.c */
+    /* initialized in Scm__InitComparator */
+
     /* compile.c */
     /* initialized in Scm__InitCompiler */
 
