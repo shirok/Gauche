@@ -147,6 +147,7 @@ src/libalpha.c
 src/libbool.c
 src/libchar.c
 src/libcode.c
+src/libcmp.c
 src/libdict.c
 src/libeval.c
 src/libexc.c
