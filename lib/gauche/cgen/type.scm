@@ -240,6 +240,7 @@
    (<procedure> "ScmProcedure*" "procedure" "SCM_PROCEDUREP" "SCM_PROCEDURE")
    (<closure> "ScmClosure*" "closure" "SCM_CLOSUREP" "SCM_CLOSURE")
    (<promise> "ScmPromise*" "promise" "SCM_PROMISEP" "SCM_PROMISE")
+   (<comparator> "ScmComparator*" "comparator" "SCM_COMPARATORP" "SCM_COMPARATOR")
    (<hash-table> "ScmHashTable*" "hash table" "SCM_HASH_TABLE_P" "SCM_HASH_TABLE")
    (<tree-map> "ScmTreeMap*" "tree map" "SCM_TREE_MAP_P" "SCM_TREE_MAP")
    (<class> "ScmClass*" "class" "SCM_CLASSP" "SCM_CLASS")

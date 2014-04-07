@@ -34,13 +34,19 @@
 (select-module gauche.internal)
 
 ;;;
-;;; Comparator
+;;; Comparator (a la srfi-114)
 ;;;
 
 (select-module gauche)
 (define-cproc make-comparator (type-test equality-test comparison-proc hash
                                :optional (name #f))
   Scm_MakeComparator)
+
+(define-cproc comparator? (obj) ::<boolean> SCM_COMPARATORP)
+(define-cproc comparator-comparison-procedure? (c::<comparator>) ::<boolean>
+  (result (not (SCM_FALSEP (-> c compareFn)))))
+(define-cproc comparator-hash-function? (c::<comparator>) ::<boolean>
+  (result (not (SCM_FALSEP (-> c hashFn)))))
 
 ;;;
 ;;; Generic comparison

@@ -50,7 +50,7 @@ struct ScmComparatorRec {
 SCM_CLASS_DECL(Scm_ComparatorClass);
 #define SCM_CLASS_COMPARATOR   (&Scm_ComparatorClass)
 #define SCM_COMPARATOR(obj)    ((ScmComparator*)(obj))
-#define SCM_COMPARATOR_P(obj)  SCM_XTYPEP(obj, SCM_CLASS_COMPARATOR)
+#define SCM_COMPARATORP(obj)   SCM_XTYPEP(obj, SCM_CLASS_COMPARATOR)
 
 SCM_EXTERN ScmObj  Scm_MakeComparator(ScmObj type, ScmObj eq,
                                       ScmObj compare, ScmObj hash,
