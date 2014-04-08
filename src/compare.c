@@ -70,6 +70,7 @@ static ScmClassStaticSlotSpec comparator_slots[] = {
     SCM_CLASS_SLOT_SPEC("equality-test", comparator_eqFn, NULL),
     SCM_CLASS_SLOT_SPEC("comparison", comparator_compareFn, NULL),
     SCM_CLASS_SLOT_SPEC("hash", comparator_hashFn, NULL),
+    SCM_CLASS_SLOT_SPEC_END()
 };
 
 ScmObj Scm_MakeComparator(ScmObj type, ScmObj eq,
