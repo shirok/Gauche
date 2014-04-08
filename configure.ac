@@ -337,6 +337,12 @@ AC_CHECK_PROGS(GZIP_PROGRAM, gzip)
 dnl for cross build
 AC_CHECK_PROGS(BUILD_CC, ${build}-gcc ${build_alias}-gcc gcc cc)
 
+dnl for build from repo, we need preinstalled gosh
+dnl NB: The third arg is the value when we don't detect preinstalled gosh.
+dnl In such case, building from repo fails anyway; shall we use alternative
+dnl name or something to tell the builder that she needs preinstalled gosh?
+AC_PATH_PROG(BUILD_GOSH, gosh, gosh)
+
 dnl Safe default CFLAGS (usually -g -O2 if you're using gcc, empty otherwise).
 dnl If the user overrides CFLAGS during configure, which is recorded.
 dnl This information is used when configuring extensions.

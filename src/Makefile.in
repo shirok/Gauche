@@ -102,7 +102,8 @@ BUILD_CFLAGS = -O2
 # when building from tarball.)
 # We clear GAUCHE_LOAD_PATH to make sure we won't read nonstandard stuff.
 BUILD_GOSH  = GAUCHE_LOAD_PATH="" GAUCHE_DYNLOAD_PATH="" \
-	    gosh -l$(srcdir)/preload -I$(top_srcdir)/src -I$(top_srcdir)/lib
+	    @BUILD_GOSH@ -l$(srcdir)/preload \
+	                 -I$(top_srcdir)/src -I$(top_srcdir)/lib
 
 LIB_INSTALL_DIR  = @libdir@
 BIN_INSTALL_DIR  = @bindir@
