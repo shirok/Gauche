@@ -96,7 +96,7 @@ ScmObj Scm_MakeTLS(void)
 ScmObj Scm_TLSDestroy(ScmTLS* t)
 {
 #if defined(GAUCHE_USE_AXTLS)
-    tls_finalize(t, NULL);
+    tls_finalize(SCM_OBJ(t), NULL);
 #endif /*GAUCHE_USE_AXTLS*/
     return SCM_TRUE;
 }
