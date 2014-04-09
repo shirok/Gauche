@@ -38,7 +38,7 @@ typedef unsigned long u_long;
 #define _BSDTYPES_DEFINED
 #endif /* _BSDTYPES_DEFINED */
 #ifndef _T
-#define _T(x) (x)   /* MSVC unicode macro */
+#define _T(x) TEXT(x)   /* MSVC unicode macro */
 #endif /* _T */
 #endif /* __MINGW32__ */
 

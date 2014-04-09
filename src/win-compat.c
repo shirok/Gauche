@@ -14,7 +14,7 @@
 static WCHAR *mbs2wcs(const char *s, void (*errfn)(const char *, ...))
 {
     WCHAR *wb;
-    int nc = MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, s, -1, NULL, 0);
+    int nc = MultiByteToWideChar(CP_UTF8, 0, s, -1, NULL, 0);
     if (nc == 0) {
         errfn("Windows error %d on MultiByteToWideChar", GetLastError());
     }
@@ -23,7 +23,7 @@ static WCHAR *mbs2wcs(const char *s, void (*errfn)(const char *, ...))
 #else
     wb = (WCHAR*)malloc(nc * sizeof(WCHAR));
 #endif
-    if (MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, s, -1, wb, nc) == 0) {
+    if (MultiByteToWideChar(CP_UTF8, 0, s, -1, wb, nc) == 0) {
         errfn("Windows error %d on MultiByteToWideChar", GetLastError());
     }
     return wb;

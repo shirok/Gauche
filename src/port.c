@@ -987,7 +987,11 @@ ScmObj Scm_OpenFilePort(const char *path, int flags, int buffering, int perm)
         flags |= O_BINARY;
     }
 #endif /*GAUCHE_WINDOWS*/
+#if defined(GAUCHE_WINDOWS) && defined(UNICODE)
+    int fd = _wopen(Scm_MBS2WCS(path), flags, perm);
+#else  /*!(defined(GAUCHE_WINDOWS) && defined(UNICODE))*/
     int fd = open(path, flags, perm);
+#endif /*!(defined(GAUCHE_WINDOWS) && defined(UNICODE))*/
     if (fd < 0) return SCM_FALSE;
     ScmPortBuffer bufrec;
     bufrec.mode = buffering;

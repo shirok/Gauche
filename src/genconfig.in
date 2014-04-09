@@ -229,7 +229,7 @@ static struct cmd_rec {
     { NULL, NULL }
 };
 
-#if defined(_MSC_VER) && defined(UNICODE)
+#if (defined(__MINGW32__) || defined(_MSC_VER)) && defined(UNICODE)
 /* mbs <-> wcs stuff */
 #include "win-compat.c"
 #define MBS2WCS(s)   mbs2wcs(s, errfn)

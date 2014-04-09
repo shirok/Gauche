@@ -448,10 +448,15 @@ dnl clock_gettime may be in librt
 AC_CHECK_LIB(rt, clock_gettime)
 
 dnl For Windows/MinGW, manually adds several libraries
+dnl Also adds -DUNICODE to CFLAGS enable Windows wchar API,
+dnl  if GAUCHE_CHAR_ENCODING is UTF_8.
 dnl ALTERNATIVE_GOSH is no-console version of gosh; only built on Windows.
 case "$host" in
   *mingw*) LIBS="$LIBS -lnetapi32 -lshlwapi -lws2_32"
-           ALTERNATIVE_GOSH="gosh-noconsole.exe" ;;
+           ALTERNATIVE_GOSH="gosh-noconsole.exe"
+           case "$GAUCHE_CHAR_ENCODING" in
+             utf8) CFLAGS="$CFLAGS -DUNICODE" ;;
+           esac ;;
   *)       ALTERNATIVE_GOSH="" ;;
 esac
 AC_SUBST(ALTERNATIVE_GOSH)

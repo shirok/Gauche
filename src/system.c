@@ -128,7 +128,7 @@ ScmObj Scm_OffsetToInteger(off_t off)
 /*===============================================================
  * Windows specific - conversion between mbs and wcs.
  */
-#if defined(_MSC_VER) && defined(_UNICODE)
+#if defined(GAUCHE_WINDOWS) && defined(UNICODE)
 #include "win-compat.c"
 
 WCHAR *Scm_MBS2WCS(const char *s)
@@ -140,7 +140,7 @@ const char *Scm_WCS2MBS(const WCHAR *s)
 {
     return wcs2mbs(s, Scm_Error);
 }
-#endif /* defined(MSVC) && defined(UNICODE) */
+#endif /* defined(GAUCHE_WINDOWS) && defined(UNICODE) */
 
 /*===============================================================
  * OBSOLETED: Wrapper to the system call to handle signals.
@@ -2571,7 +2571,7 @@ int link(const char *existing, const char *newpath)
                                              LPSECURITY_ATTRIBUTES);
     static pCreateHardLink_t pCreateHardLink = NULL;
     BOOL r;
-#if defined(_UNICODE)
+#if defined(UNICODE)
 #define CREATEHARDLINK  "CreateHardLinkW"
 #else
 #define CREATEHARDLINK  "CreateHardLinkA"
