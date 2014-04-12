@@ -139,7 +139,11 @@ struct sigaction {
 /* there's a dummy sigaction defined in src/signal.c */
 int sigaction(int signum, const struct sigaction *act, struct sigaction *oact);
 
-/* wchar <-> mbchar stuff.  implementation in win-compat.c */
+/*=======================================================================
+ * wchar <-> mbchar stuff.
+ */
+
+/* Implementation of Scm_MBS2WCS/WCS2MBS is in win-compat.c */
 #if defined(LIBGAUCHE_BODY)
 extern __declspec(dllexport) WCHAR *Scm_MBS2WCS(const char *s);
 extern __declspec(dllexport) const char *Scm_WCS2MBS(const WCHAR *s);
@@ -155,6 +159,22 @@ extern __declspec(dllimport) const char *Scm_WCS2MBS(const WCHAR *s);
 #define SCM_MBS2WCS(s)  (s)
 #define SCM_WCS2MBS(s)  (s)
 #endif /* !UNICODE */
+
+/* Replace some system calls with wide-char counterparts
+   NB: Windows' mkdir() and _wmkdir() takes one argument.
+   NB: stat() needs special treatment; MinGW defines its own macro.
+ */
+#if defined(UNICODE)
+#define open(path, ...)    _wopen(Scm_MBS2WCS(path), __VA_ARGS__)
+#define access(path, mode) _waccess(Scm_MBS2WCS(path), mode)
+#define chdir(dir)         _wchdir(Scm_MBS2WCS(dir))
+#define chmod(path, mode)  _wchmod(Scm_MBS2WCS(path), mode)
+#define mkdir(dir)         _wmkdir(Scm_MBS2WCS(dir))
+#define remove(path)       _wremove(Scm_MBS2WCS(path))
+#define rename(o, n)       _wrename(Scm_MBS2WCS(o), Scm_MBS2WCS(n))
+#define rmdir(dir)         _wrmdir(Scm_MBS2WCS(dir))
+#define unlink(path)       _wunlink(Scm_MBS2WCS(path))
+#endif /*UNICODE*/
 
 /*===================================================================
  * Miscellaneous POSIX stuff
