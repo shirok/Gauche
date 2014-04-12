@@ -70,7 +70,7 @@ extern "C" {
 #define SCM_EXTENSION_ENTRY_QUAL
 #endif
 
-/* MSVC needs dllexport magic */
+/* Windows need dllexport magic */
 #if defined(GAUCHE_WINDOWS)
 #define SCM_EXTENSION_ENTRY SCM_EXTENSION_ENTRY_QUAL __declspec(dllexport)
 #else

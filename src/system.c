@@ -45,17 +45,7 @@
 #include <ctype.h>
 #include <fcntl.h>
 #include <math.h>
-
-#if !defined(_MSC_VER)
 #include <dirent.h>
-#endif /* !_MSC_VER */
-
-#if defined(_MSC_VER)
-/* This is a kludge to patch the defect of config.h misconfiguration. */
-#undef HAVE_SETENV
-#undef HAVE_UNSETENV
-#undef HAVE_GETPGID
-#endif /*_MSC_VER*/
 
 #if !defined(GAUCHE_WINDOWS)
 #include <grp.h>

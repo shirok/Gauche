@@ -75,7 +75,7 @@ typedef double          ScmLongDouble;
 #endif
 
 /* NaN and Infinities.  The following works for most Unix platforms w/gcc.
-   However, MSVC requires a different treatment. */
+   However, Windows require a different treatment. */
 #ifndef SCM_DBL_POSITIVE_INFINITY
 #define SCM_DBL_POSITIVE_INFINITY  (1.0/0.0)
 #endif

@@ -374,10 +374,6 @@ static ScmObj class_allocate(ScmClass *klass, ScmObj initargs)
 {
     ScmClass *instance = SCM_ALLOCATE(ScmClass, klass);
     SCM_SET_CLASS(instance, klass);
-#if defined(GAUCHE_BROKEN_LINKER_WORKAROUND)
-    instance->classPtr = SCM_NEW(ScmClass*);
-    *instance->classPtr = instance;
-#endif
     instance->allocate = NULL;  /* will be set when CPL is set */
     instance->print = NULL;
     instance->compare = object_compare;
@@ -2992,20 +2988,6 @@ static void init_class(ScmClass *klass,
     if (klass->cpa == NULL) {
         klass->cpa = SCM_CLASS_DEFAULT_CPL;
     }
-#if defined(GAUCHE_BROKEN_LINKER_WORKAROUND)
-    /* Patch up CPA extra indirection */
-    {
-        ScmClass **c, **d, **cpa;
-        int depth = 0;
-        for (c = klass->cpa; *c; c++) depth++;
-        cpa = SCM_NEW2(ScmClass**, (depth+1) * sizeof(ScmClass*));
-        for (c = klass->cpa, d = cpa; *c; c++, d++) {
-            *d = **(ScmClass***)c;
-        }
-        *d = NULL;
-        klass->cpa = cpa;
-    }
-#endif /*GAUCHE_BROKEN_LINKER_WORKAROUND*/
 
     klass->name = SCM_INTERN(name);
     initialize_builtin_cpl(klass, supers);
@@ -3138,18 +3120,6 @@ void Scm_InitBuiltinGeneric(ScmGeneric *gf, const char *name, ScmModule *mod)
 
 void Scm_InitBuiltinMethod(ScmMethod *m)
 {
-#if defined(GAUCHE_BROKEN_LINKER_WORKAROUND)
-    /* fix up specializer array */
-    ScmClass **c, **d, **spa;
-    int i;
-    spa = SCM_NEW2(ScmClass**, SCM_PROCEDURE_REQUIRED(m) * sizeof(ScmClass*));
-    for (i = 0, c = m->specializers, d = spa;
-         i < SCM_PROCEDURE_REQUIRED(m);
-         c++, d++, i++) {
-        *d = **(ScmClass***)c;
-    }
-    m->specializers = spa;
-#endif /*GAUCHE_BROKEN_LINKER_WORKAROUND*/
     m->common.info = Scm_Cons(m->generic->common.info,
                               class_array_to_names(m->specializers,
                                                    m->common.required));

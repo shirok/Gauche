@@ -51,12 +51,6 @@
 
   (.if "defined(GAUCHE_WINDOWS)"
        (.undef _SC_CLK_TCK)) ;; avoid undefined reference to sysconf
-  (.if "defined(_MSC_VER)"
-       ;; This is a kludge to workaround the configure misdetection
-       (begin
-         (.undef HAVE_GETDOMAINNAME)
-         (.undef HAVE_UNSETENV)
-         (.undef HAVE_GETPGID)))
   ))
 
 ;;---------------------------------------------------------------------
