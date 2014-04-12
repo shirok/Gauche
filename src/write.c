@@ -159,8 +159,9 @@ void Scm_Write(ScmObj obj, ScmObj p, int mode)
  *  If the output fits within WIDTH, # of characters actually written
  *  is returned.  Othewise, -1 is returned.
  *
- *  Current implementation is sloppy, potentially wasting time to write
- *  objects which will be just discarded.
+ *  Currently this API is only used from Scm_Printf, for 'format' has been
+ *  moved to libfmt.scm.  I don't like the way this is implemented and would
+ *  like to share this with libfmt.scm eventually.
  */
 int Scm_WriteLimited(ScmObj obj, ScmObj p, int mode, int width)
 {
