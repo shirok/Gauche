@@ -940,11 +940,7 @@
       (set! flags (logior flags SCM_EXEC_DETACHED)))
     (result (Scm_SysExec command args iomap sigmask directory flags))))
 
-(define-cproc sys-getcwd () ::<const-cstring>
-  (let* ([p::(.array char [1024])]) ; TODO: size needs to be configured
-    (when (== (getcwd p 1023) NULL) (Scm_SysError "getcwd failed"))
-    (result p)))
-
+(define-cproc sys-getcwd () Scm_GetCwd)
 (define-cproc sys-getegid () ::<int> getegid)
 (define-cproc sys-getgid ()  ::<int> getgid)
 (define-cproc sys-geteuid () ::<int> geteuid)

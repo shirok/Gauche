@@ -81,6 +81,7 @@ SCM_EXTERN ScmObj Scm_OffsetToInteger(off_t o);
  */
 
 SCM_EXTERN ScmObj Scm_ReadDirectory(ScmString *pathname);
+SCM_EXTERN ScmObj Scm_GetCwd(void);
 
 #define SCM_PATH_ABSOLUTE       (1L<<0)
 #define SCM_PATH_EXPAND         (1L<<1)

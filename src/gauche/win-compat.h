@@ -49,6 +49,7 @@ typedef unsigned long u_long;
 #endif
 
 #include <mswsock.h>
+#include <direct.h>
 
 /*======================================================================
  * Time calculation

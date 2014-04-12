@@ -257,6 +257,45 @@ ScmObj Scm_ReadDirectory(ScmString *pathname)
 #endif
 }
 
+/* getcwd compatibility layer.
+   Some implementations of getcwd accepts NULL as buffer to allocate
+   enough buffer memory in it, but that's not standardized and we avoid
+   relying on it.
+ */
+ScmObj Scm_GetCwd(void)
+{
+#if defined(GAUCHE_WINDOWS)&&defined(UNICODE)
+#  define CHAR_T wchar_t
+#  define GETCWD _wgetcwd
+#else  /*!(defined(GAUCHE_WINDOWS)&&defined(UNICODE))*/
+#  define CHAR_T char
+#  define GETCWD getcwd
+#endif /*!(defined(GAUCHE_WINDOWS)&&defined(UNICODE))*/
+
+#define GETCWD_INITIAL_BUFFER_SIZE 1024
+    int bufsiz = GETCWD_INITIAL_BUFFER_SIZE;
+    CHAR_T sbuf[GETCWD_INITIAL_BUFFER_SIZE];
+    CHAR_T *buf = sbuf;
+    CHAR_T *r;
+
+    for (;;) {
+        SCM_SYSCALL3(r, GETCWD(buf, bufsiz), r == NULL);
+        if (r != NULL) break;
+        if (errno == ERANGE) {
+            bufsiz *= 2;
+            buf = SCM_NEW_ATOMIC_ARRAY(CHAR_T, bufsiz);
+        } else {
+            Scm_SysError("getcwd failed");
+        }
+    }
+#if defined(GAUCHE_WINDOWS) && defined(UNICODE)
+    return Scm_MakeString(Scm_WCS2MBS(buf), -1, -1, 0);
+#else  /*!(defined(GAUCHE_WINDOWS) && defined(UNICODE))*/
+    return Scm_MakeString(buf, -1, -1, 0);
+#endif /*!(defined(GAUCHE_WINDOWS) && defined(UNICODE))*/
+#undef CHAR_T
+}
+
 /*===============================================================
  * Pathname manipulation
  *
@@ -386,19 +425,16 @@ static const char *expand_tilde(ScmDString *dst,
 /* Put current dir to DST */
 static void put_current_dir(ScmDString *dst)
 {
-#define GETCWD_PATH_MAX 1024  /* TODO: must be configured */
-    char p[GETCWD_PATH_MAX];
-    if (getcwd(p, GETCWD_PATH_MAX-1) == NULL) {
-        Scm_SigCheck(Scm_VM());
-        Scm_SysError("couldn't get current directory.");
-    }
-    int dirlen = (int)strlen(p);
-    Scm_DStringPutz(dst, p, dirlen);
-    if (!SEPARATOR_P(p[dirlen-1])) {
+    ScmString *dir = SCM_STRING(Scm_GetCwd());
+    u_int size;
+    const char *sdir = Scm_GetStringContent(dir, &size, NULL, NULL);
+
+    Scm_DStringAdd(dst, dir);
+    if (!SEPARATOR_P(sdir[size-1])) {
         Scm_DStringPutc(dst, SEPARATOR);
     }
-#undef GETCWD_PATH_MAX
 }
+
 
 #if defined(GAUCHE_WINDOWS)
 /* win32 specific; copy pathname with replacing '/' by '\\'. */
