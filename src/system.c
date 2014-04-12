@@ -291,7 +291,7 @@ ScmObj Scm_GetCwd(void)
 #if defined(GAUCHE_WINDOWS) && defined(UNICODE)
     return Scm_MakeString(Scm_WCS2MBS(buf), -1, -1, 0);
 #else  /*!(defined(GAUCHE_WINDOWS) && defined(UNICODE))*/
-    return Scm_MakeString(buf, -1, -1, 0);
+    return Scm_MakeString(buf, -1, -1, SCM_STRING_COPYING);
 #endif /*!(defined(GAUCHE_WINDOWS) && defined(UNICODE))*/
 #undef CHAR_T
 }
