@@ -395,6 +395,9 @@ static int init_console(void)
     return TRUE;
 #  endif /*!defined(GAUCHE_WINDOWS_NOCONSOLE)*/
 }
+
+/* called in main to set up trapper ports; defined in port.c */
+extern void Scm__SetupPortsForWindows(int);
 #endif /*defined(GAUCHE_WINDOWS)*/
 
 /* Process command-line options that needs to run after Scheme runtime
