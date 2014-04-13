@@ -134,14 +134,14 @@ void Scm_Write(ScmObj obj, ScmObj p, int mode)
     ScmPort *port = SCM_PORT(p);
     ScmWriteContext ctx;
     write_context_init(&ctx, mode, 0, 0);
+    ScmVM *vm = Scm_VM();
 
-    if (PORT_RECURSIVE_P(port)) {
+    if (PORT_LOCK_OWNER_P(port, vm) && PORT_RECURSIVE_P(port)) {
         if (PORT_WALKER_P(port)) write_walk(obj, port);
         else                     write_rec(obj, port, &ctx);
         return;
     }
 
-    ScmVM *vm = Scm_VM();
     PORT_LOCK(port, vm);
     if (WRITER_NEED_2PASS(&ctx)) {
         PORT_SAFE_CALL(port, write_ss(obj, port, &ctx),
@@ -173,7 +173,7 @@ int Scm_WriteLimited(ScmObj obj, ScmObj p, int mode, int width)
 
     /* The walk pass does not produce any output, so we don't bother to
        create an intermediate string port. */
-    if (PORT_WALKER_P(port)) {
+    if (PORT_LOCK_OWNER_P(port, Scm_VM()) && PORT_WALKER_P(port)) {
         SCM_ASSERT(PORT_RECURSIVE_P(port));
         write_walk(obj, port);
         return 0;               /* doesn't really matter */

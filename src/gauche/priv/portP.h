@@ -54,6 +54,9 @@ void Scm__SetupPortsForWindows(int has_console);
 #define PORT_RECURSIVE_P(port) \
     (SCM_PAIRP(port->recursiveContext) && SCM_HASH_TABLE_P(SCM_CDR(port->recursiveContext)))
 
+#define PORT_LOCK_OWNER_P(port, vm) \
+    ((port)->lockOwner == (vm))
+
 /*================================================================
  * Locking the ports
  *
@@ -131,8 +134,8 @@ void Scm__SetupPortsForWindows(int has_console);
            call;                                \
            cleanup;                             \
        } SCM_WHEN_ERROR {                       \
-           PORT_UNLOCK(p);                      \
            cleanup;                             \
+           PORT_UNLOCK(p);                      \
            SCM_NEXT_HANDLER;                    \
        } SCM_END_PROTECT;                       \
     } while (0)

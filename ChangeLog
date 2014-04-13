@@ -1,3 +1,10 @@
+2014-04-12  Shiro Kawai  <shiro@acm.org>
+
+	* src/write.c (Scm_Write): Fixed a race condition that, while
+	  one thread was in circular-safe writing mode, another thread's
+	  call to Scm_Write mistook that it was within recursive Scm_Write
+	  call.
+
 2014-04-09  Shiro Kawai  <shiro@acm.org>
 
 	* configure.ac: Add -DUNICODE when compiling MinGW with utf-8 encoding.
