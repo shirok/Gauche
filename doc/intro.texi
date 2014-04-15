@@ -427,18 +427,36 @@ The API of the entry reflects the API specified in POSIX.
 @subsection Names and namespaces
 @c NODE 名前と名前空間
 
+@c EN
 Since R6RS, you can split toplevel definitions of Scheme programs
 into multiple namespaces.  In the standards such namespaces are called
 @emph{libraries}.  Gauche predates R6RS and has been calling
 them @emph{modules}, and we use the latter throughout this manual.
+@c JP
+R6RSから、Schemeプログラムのトップレベル定義を複数の名前空間に分けて
+書くことができるようになりました。Schemeの言語標準では名前空間を
+@emph{ライブラリ}と呼んでいます。GaucheはR6RSより前から名前空間を
+サポートし、@emph{モジュール}と呼んできました。本マニュアルでは
+従来どおり@emph{モジュール}という呼称を使います。
+@c COMMON
 
-(Note: RnRS libraries are not exactly the same thing as Gauche
+@c EN
+(Note: RnRS libraries are more abstract concept than Gauche's
 modules; RnRS defines libraries in a way that they can be implemented
 in various ways, and it just happens that Gauche realises the library
 semantics using modules.  When you write a portable R7RS library,
 be aware not to rely on Gauche-specific module semantics; especially,
 Gauche modules are more dynamic than RnRS libraries.)
+@c JP
+(註: RnRSライブラリは、厳密に言えばGaucheのモジュールよりも抽象的な概念です。
+RnRSでは処理系がライブラリを様々な方法で実装できるように規程しています。
+Gaucheではたまたま、モジュールという仕組みを使ってRnRSライブラリのの概念が
+実現されているということです。ポータブルなR7RSライブラリを書く時は、
+Gauche特有のモジュールのセマンティクスに依存しないように気をつけてください。
+GaucheのモジュールはRnRSライブラリよりも動的です。)
+@c COMMON
 
+@c EN
 Sometimes the same name is used for multiple definitions in
 different modules.  If we need to distinguish those names,
 we prefix the name with the module name and a hash sign.
@@ -446,6 +464,15 @@ For example, @code{gauche#lambda} means @code{lambda}
 defined in @code{gauche} module.  This does not mean
 you can write @code{gauche#lambda} in the source code,
 though: This notation is just for explanation.
+@c JP
+時に、同じ名前に対して異なるモジュールで別々の定義が与えられることがあります。
+それらを区別する必要がある時は、本マニュアルでは名前の前にモジュール名と
+ハッシュ記号をつけて表記します。例えば、@code{gauche#lambda}は
+@code{gauche}モジュールで定義された@code{lambda}を指します。
+これはあくまで説明のための表記で、
+ソースコードに@code{gauche#lambda}と書けるわけではないことに
+注意してください。
+@c COMMON
 
 
 @c @node Structure of this document,  , Notations, Introduction

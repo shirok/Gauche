@@ -33,6 +33,23 @@ Gaucheは、以下に挙げる点を除き、オプショナルな構文や手�
 @c COMMON
 
 @itemize @bullet
+@c @item
+@c @c EN
+@c Gauche has a keyword object, expressed as a name prefixed by a colon
+@c (e.g. @code{:key}).  It evaluates to itself, and used extensively when
+@c passing so-called keyword arguments (@xref{Making Procedures}).
+
+@c R7RS requires names starting with colon to be read as a symbol.
+@c In the current version of Gauche, keywords aren't symbols; they are
+@c of disjoint types.  R7RS code that's using symbols starting with colon
+@c needs to be adjusted (most conveniently, using vertical-bar would make
+@c the code both work in R7RS and Gauche, e.g. @code{|:foo|}.)
+
+@c We'll make keywords subtype of symbols in the next Gauche version
+
+@c @c JP
+@c @c COMMON
+
 @item
 @c EN
 Continuations created in a certain situation
