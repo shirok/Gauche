@@ -45,6 +45,7 @@
   (use srfi-13)
   (use srfi-14)
   (use srfi-43)
+  (use text.unicode)
   (export <json-parse-error> <json-construct-error>
           parse-json parse-json-string
           parse-json*
@@ -113,11 +114,26 @@
                   (if exp (expt 10 exp) 1))))
            %sign %int ($or %frac ($return 0)) ($or %exp ($return #f)))))
 
+(define %unicode
+  (let1 %hex4 ($lift (^s (string->number (list->string s) 16))
+                     ($many hexdigit 4 4))
+    ($do [($char #\u)]
+         [c %hex4]
+         (cond [(<= #xd800 c #xdbff)
+                ($or ($try ($do [($string "\\u")]
+                                [c2 %hex4]
+                                (receive (cc x)
+                                    (utf16->ucs4 `(,c ,c2) 'permissive)
+                                  (and (null? x)
+                                       ($return (ucs->char cc))))))
+                     ($fail (format "unpaired surrogate: $x~4,'0x" c)))]
+               [(<= #xdc00 c #xdfff)
+                ($fail (format "unpaired surrogate: $x~4,'0x" c))]
+               [else ($return (ucs->char c))]))))
+
 (define %string
   (let* ([%dquote ($char #\")]
          [%escape ($char #\\)]
-         [%hex4 ($lift (^s (string->number (list->string s) 16))
-                       ($many hexdigit 4 4))]
          [%special-char
           ($do %escape
                ($or ($char #\")
@@ -128,7 +144,7 @@
                     ($do [($char #\n)] ($return #\newline))
                     ($do [($char #\r)] ($return #\return))
                     ($do [($char #\t)] ($return #\tab))
-                    ($do [($char #\u)] (c %hex4) ($return (ucs->char c)))))]
+                    %unicode))]
          [%unescaped ($none-of #[\"])]
          [%body-char ($or %special-char %unescaped)]
          [%string-body ($->rope ($many %body-char))])

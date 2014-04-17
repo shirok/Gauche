@@ -799,6 +799,19 @@
                    ("Country"   . "US"))))
   )
 
+(cond-expand
+ [gauche.ces.utf8
+  (let1 data `(("[\"\\u03bb\"]" #("\x3bb;"))
+               ("[\"\\ud800\"]" ,(test-error <json-parse-error>))
+               ("[\"\\ud867\\ude3d\\u03bb\"]" #("\x29e3d;\x3bb;"))
+               ("[\"\\ude3d\\ud867\"]" ,(test-error <json-parse-error>))
+               ("[\"\\uf020\\u03bb\"]"  #("\xf020;\x3bb;")))
+    (dolist [d data]
+      (test* (format "unicode escape (~s)" (car d))
+             (cadr d)
+             (parse-json-string (car d)))))]
+ [else])
+
 (let ()
   (define (t obj)
     (test* #"writer error ~obj" (test-error <json-construct-error>)
