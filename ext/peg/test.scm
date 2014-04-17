@@ -807,9 +807,13 @@
                ("[\"\\ude3d\\ud867\"]" ,(test-error <json-parse-error>))
                ("[\"\\uf020\\u03bb\"]"  #("\xf020;\x3bb;")))
     (dolist [d data]
-      (test* (format "unicode escape (~s)" (car d))
+      (test* (format "unicode escape reading (~s)" (car d))
              (cadr d)
-             (parse-json-string (car d)))))]
+             (parse-json-string (car d)))
+      (when (vector? (cadr data))
+        (test* (format "unicode escape writing (~s)" (cadr d))
+               (car d)
+               (construct-json-string (cadr d))))))]
  [else])
 
 (let ()

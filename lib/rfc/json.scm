@@ -233,12 +233,17 @@
   (define specials
     '((#\" . #\") (#\\ . #\\) (#\x08 . #\b) (#\page . #\f)
       (#\newline . #\n) (#\return . #\r) (#\tab . #\t)))
+  (define (hexescape code) (format #t "\\u~4,'0x" code))
   (define (print-char c)
     (cond [(assv c specials) => (^p (write-char #\\) (write-char (cdr p)))]
           [(and (char-set-contains? char-set:ascii c)
                 (not (eq? (char-general-category c) 'Cc)))
            (write-char c)]
-          [else (format #t "\\u~4,'0x" (char->ucs c))]))
+          [else
+           (let1 code (char->ucs c)
+             (if (>= code #x10000)
+               (for-each hexescape (ucs4->utf16 code))
+               (hexescape code)))]))
   (display "\"")
   (string-for-each print-char str)
   (display "\""))

@@ -1,6 +1,7 @@
 2014-04-17  Shiro Kawai  <shiro@acm.org>
 
-	* lib/rfc/json.scm (%unicode): Properly support unicode surrogate pairs.
+	* lib/rfc/json.scm (%unicode, print-string): Properly support
+	  unicode surrogate pairs.
 
 2014-04-12  Shiro Kawai  <shiro@acm.org>
 
