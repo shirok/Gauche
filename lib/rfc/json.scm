@@ -115,8 +115,16 @@
            %sign %int ($or %frac ($return 0)) ($or %exp ($return #f)))))
 
 (define %unicode
-  (let1 %hex4 ($lift (^s (string->number (list->string s) 16))
-                     ($many hexdigit 4 4))
+  (let ([%hex4 ($lift (^s (string->number (list->string s) 16))
+                      ($many hexdigit 4 4))]
+        ;; NB: If we just $fail, the higher-level parser may conceal the
+        ;; direct cause of the error by backtracking.  Unpaired surrogate
+        ;; is unrecoverable error, so we throw <json-parse-error> directly.
+        ;; There may be a better way to integrate this kind or error in
+        ;; the combinators; let's see.
+        [err (^c (errorf <json-parse-error>
+                         :position #f :object c
+                         "unpaired surrogate: \\u~4,'0x" c))])
     ($do [($char #\u)]
          [c %hex4]
          (cond [(<= #xd800 c #xdbff)
@@ -126,9 +134,16 @@
                                     (utf16->ucs4 `(,c ,c2) 'permissive)
                                   (and (null? x)
                                        ($return (ucs->char cc))))))
-                     ($fail (format "unpaired surrogate: $x~4,'0x" c)))]
-               [(<= #xdc00 c #xdfff)
-                ($fail (format "unpaired surrogate: $x~4,'0x" c))]
+                     ;; NB: We wrap (err c) with dummy $do to put the call
+                     ;; to the err into parser monad.  Simple ($return (err c))
+                     ;; or ($fail (err c)) won't do, since (err c) is evaluated
+                     ;; at the parser-construction time, not the actual parsing
+                     ;; time.  We need dummy ($return #t) clause to ensure
+                     ;; (err c) is wrapped; ($do x) is expanded to just x.
+                     ;; Definitely we need something better to do this kind of
+                     ;; operation.
+                     ($do [($return #t)] (err c)))]
+               [(<= #xdc00 c #xdfff) (err c)]
                [else ($return (ucs->char c))]))))
 
 (define %string
