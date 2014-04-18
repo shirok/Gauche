@@ -119,8 +119,8 @@
                       ($many hexdigit 4 4))]
         ;; NB: If we just $fail, the higher-level parser may conceal the
         ;; direct cause of the error by backtracking.  Unpaired surrogate
-        ;; is unrecoverable error, so we throw <json-parse-error> directly.
-        ;; There may be a better way to integrate this kind or error in
+        ;; is an unrecoverable error, so we throw <json-parse-error> directly.
+        ;; There may be a better way to integrate this kind of error in
         ;; the combinators; let's see.
         [err (^c (errorf <json-parse-error>
                          :position #f :object c
@@ -135,10 +135,10 @@
                                   (and (null? x)
                                        ($return (ucs->char cc))))))
                      ;; NB: We wrap (err c) with dummy $do to put the call
-                     ;; to the err into parser monad.  Simple ($return (err c))
+                     ;; to the err into a parser monad.  Simple ($return (err c))
                      ;; or ($fail (err c)) won't do, since (err c) is evaluated
                      ;; at the parser-construction time, not the actual parsing
-                     ;; time.  We need dummy ($return #t) clause to ensure
+                     ;; time.  We need a dummy ($return #t) clause to ensure
                      ;; (err c) is wrapped; ($do x) is expanded to just x.
                      ;; Definitely we need something better to do this kind of
                      ;; operation.
