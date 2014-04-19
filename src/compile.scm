@@ -2396,20 +2396,20 @@
   (define (parse-kargs xs os ks r a)
     (match xs
       [() (expand-opt os ks r a)]
-      [(:optional . xs)
+      [(':optional . xs)
        (unless (null? os) (too-many :optional))
        (receive (os xs) (collect-args xs '()) (parse-kargs xs os ks r a))]
-      [(:key . xs)
+      [(':key . xs)
        (unless (null? ks) (too-many :key))
        (receive (ks xs) (collect-args xs '()) (parse-kargs xs os ks r a))]
-      [(:rest . xs)
+      [(':rest . xs)
        (when r (too-many :rest))
        (receive (rs xs) (collect-args xs '())
          (match rs
            [(r) (parse-kargs xs os ks r a)]
            [_ (error ":rest keyword in the extended lambda list must be \
                       followed by exactly one argument:" kargs)]))]
-      [(:allow-other-keys . xs)
+      [(':allow-other-keys . xs)
        (when a (too-many :allow-other-keys))
        (receive (a xs) (collect-args xs '())
          (match a
@@ -2687,9 +2687,12 @@
 
 (define-pass1-syntax (import form cenv) :gauche
   (define (ensure m) (or (find-module m) (error "unknown module" m)))
+  (define (symbol-but-not-keyword? x)
+    (and (symbol? x) (not (keyword? x))))
   (dolist [f (cdr form)]
     (match f
-      [((? symbol? a) (? symbol? b) . r) ;likely to be an r7rs-style import
+      [((? symbol-but-not-keyword? a) (? symbol-but-not-keyword? b) . r)
+       ;;likely to be an r7rs-style import
        (error "This import form looks like R7RS `import', as opposed to \
                Gauche `import'.  If you're in REPL, type (use r7rs) \
                and (select-module r7rs.user) to enter the R7RS namespace.")]

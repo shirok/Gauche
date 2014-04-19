@@ -633,6 +633,11 @@
                  (ks success))
         (cond
          ((eq? '_ p) (ks sf))
+         ((keyword? p)
+          ;;We should make this warning optional, only when keyword-symbol
+          ;;integration mode is turned on.
+          ;;(warn "Unquoted keyword `~s' in match pattern: ~s" p x)
+          (emit `(equal? ,e ,p) sf kf ks))
          ((symid? p) (set! v (cons (cons p e) v))
           (ks sf))
          ((null? p) (emit `(null? ,e) sf kf ks))
@@ -641,7 +646,6 @@
          ((boolean? p) (emit `(equal? ,e ,p) sf kf ks))
          ((char? p) (emit `(equal? ,e ,p) sf kf ks))
          ((number? p) (emit `(equal? ,e ,p) sf kf ks))
-         ((keyword? p) (emit `(equal? ,e ,p) sf kf ks))
          ((and (pair? p) (eq? 'quote (car p)))
           (emit `(equal? ,e ,p) sf kf ks))
          ((and (pair? p) (eq? '? (car p)))

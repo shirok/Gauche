@@ -623,19 +623,19 @@
   (define (required specs args nreqs)
     (match specs
       [()                  (values (reverse args) '() nreqs 0 #f #f)]
-      [(:optional . specs) (optional specs args nreqs 0)]
-      [(:rest . specs)     (rest specs args '() nreqs 0 #f)]
-      [(:key . specs)      (keyword specs args '() nreqs 0)]
-      [(:allow-other-kyes . specs)
+      [(':optional . specs) (optional specs args nreqs 0)]
+      [(':rest . specs)     (rest specs args '() nreqs 0 #f)]
+      [(':key . specs)      (keyword specs args '() nreqs 0)]
+      [(':allow-other-kyes . specs)
        (errorf <cgen-stub-error>
                "misplaced :allow-other-key parameter: ~s in ~a" argspecs name)]
-      [(:optarray (var cnt max) . specs)
+      [(':optarray (var cnt max) . specs)
        (let1 args (cons (make-arg <optarray-arg> var nreqs
                                   :count-var cnt :max-count max)
                         args)
          (match specs
            [() (values (reverse args) '() nreqs max #f #f)]
-           [(:rest . specs) (rest specs args '() nreqs max #f)]
+           [(':rest . specs) (rest specs args '() nreqs max #f)]
            [_ (badarg specs)]))]
       [([? symbol? sym] . specs)
        (required specs
@@ -646,16 +646,16 @@
   (define (optional specs args nreqs nopts)
     (match specs
       [()   (values (reverse args) '() nreqs nopts #f #f)]
-      [(:optional . specs)
+      [(':optional . specs)
        (error <cgen-stub-error> "extra :optional parameter in "name)]
-      [(:key . specs)
+      [(':key . specs)
        (error <cgen-stub-error>
               ":key and :optional can't be used together in "name)]
-      [(:optarray . specs)
+      [(':optarray . specs)
        (error <cgen-stub-error>
               ":optarray and :optional can't be used together in "name)]
-      [(:rest . specs)     (rest specs args '() nreqs nopts #f)]
-      [(:allow-other-keys . specs)
+      [(':rest . specs)     (rest specs args '() nreqs nopts #f)]
+      [(':allow-other-keys . specs)
        (error <cgen-stub-error>
               "misplaced :allow-other-keys parameter in "name)]
       [([? symbol? sym] . specs)
@@ -678,21 +678,21 @@
   (define (keyword specs args keyargs nreqs nopts)
     (match specs
       [() (values (reverse args) (reverse keyargs) nreqs nopts #f #f)]
-      [(:allow-other-keys)
+      [(':allow-other-keys)
        (values (reverse args) (reverse keyargs) nreqs nopts #f #t)]
-      [(:allow-other-keys :rest . specs)
+      [(':allow-other-keys ':rest . specs)
        (rest specs args keyargs nreqs nopts #t)]
-      [(:allow-other-keys . specs)
+      [(':allow-other-keys . specs)
        (error <cgen-stub-error> "misplaced :allow-other-keys parameter in "name)]
-      [(:key . specs)
+      [(':key . specs)
        (error <cgen-stub-error> "extra :key parameter in "name)]
-      [(:optional . specs)
+      [(':optional . specs)
        (error <cgen-stub-error>
               ":key and :optional can't be used together in "name)]
-      [(:optarray . specs)
+      [(':optarray . specs)
        (error <cgen-stub-error>
               ":optarray and :optional can't be used together in "name)]
-      [(:rest . specs)     (rest specs args keyargs nreqs nopts #f)]
+      [(':rest . specs)     (rest specs args keyargs nreqs nopts #f)]
       [([? symbol? sym] . specs)
        (keyword specs args
                 (cons (make-arg <keyword-arg> sym (+ nreqs nopts))
@@ -728,7 +728,7 @@
     (string->symbol (string-drop (keyword->string s) 1)))
 
   (match forms
-    [(:: type . body) (values body type)]
+    [(':: type . body) (values body type)]
     [([? type-symbol? ts] . body) (values body (type-symbol-type ts))]
     [_ (values forms #f)]))
 

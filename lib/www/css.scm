@@ -161,9 +161,9 @@
       [(':not not-arg) `(":(" ,(if (symbol? not-arg)
                                  not-arg
                                  (render-options not-arg)) ")")]
-      [(: (fn arg ...)) `(":" ,(render-fn fn arg))]
-      [(: ident) `(":" ,ident)]
-      [(:: ident) `("::" ,ident)]
+      [(': (fn arg ...)) `(":" ,(render-fn fn arg))]
+      [(': ident) `(":" ,ident)]
+      [(':: ident) `("::" ,ident)]
       [_ (error "invalid selector option:" op)]))
   (define (render-attrval val) (if (string? val) (escape-string val) val))
   (define (escape-string val)

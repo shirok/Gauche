@@ -396,8 +396,11 @@ static ScmObj preprocess_literals(ScmObj literals, ScmModule *mod, ScmObj env)
             SCM_APPEND1(h, t, lit);
         else if (SCM_SYMBOLP(lit))
             SCM_APPEND1(h, t, Scm_MakeIdentifier(SCM_SYMBOL(lit), mod, env));
-        else
-            Scm_Error("literal list contains non-symbol: %S", literals);
+        else if (SCM_KEYWORDP(lit))
+            /* This branch is to allow r7rs-compliant code to go through
+               with legacy mode.  If keyword-symbol integration is turned on,
+               we never reach here. */;
+        else Scm_Error("literal list contains non-symbol: %S", literals);
     }
     if (!SCM_NULLP(lp))
         Scm_Error("bad literal list in syntax-rules: %S", literals);

@@ -82,7 +82,9 @@
 (define-cproc delete-keyword! (key list) Scm_DeleteKeywordX)
 
 (define-cproc keyword->string (key::<keyword>)
-  (result (SCM_OBJ (SCM_KEYWORD_NAME key))))
+  (.if "defined(GAUCHE_UNIFY_SYMBOL_KEYWORD)"
+       (result (Scm_Substring (SCM_KEYWORD_NAME key) 1 -1 FALSE))
+       (result (SCM_OBJ (SCM_KEYWORD_NAME key)))))
 
 (define-in-module gauche (delete-keywords ks kvlist)
   (define (rec kvs)

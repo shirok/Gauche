@@ -704,7 +704,9 @@
 ;; send
 (define (send-request out method uri sender headers enc)
   (define request-line #`",method ,uri HTTP/1.1\r\n")
-  (define request-headers ($ map (cut map x->string <>) $ slices headers 2))
+  (define request-headers
+    ($ map (cut map (^s (if (keyword? s) (keyword->string s) (x->string s))) <>)
+       $ slices headers 2))
   (case method
     [(POST PUT)
      (sender request-headers enc

@@ -188,6 +188,75 @@
 ;; define-cise-expr OP [ENV] CLAUSE ... [:where DEFINITION ...]
 ;; define-cise-toplevel OP [ENV] CLAUSE ... [:where DEFINITION ...]
 ;;
+
+;; Temporary: Pre-0.9.4 Gauche dones't allow keyword in the literal of
+;; syntax-rules, but we need to include :where if keyword-symbol integration
+;; is turned on.  
+(cond-expand
+ [gauche.unified-keyword-symbol
+(define-syntax define-cise-stmt
+  (syntax-rules (:where)
+    ;; recursion
+    [(_ "clauses" op env clauses (:where defs ...))
+     (define-cise-macro (op form env)
+       defs ...
+       (ensure-stmt-ctx form env)
+       (match form . clauses))]
+    [(_ "clauses" op env clauses ())
+     (define-cise-stmt "clauses" op env clauses (:where))]
+    [(_ "clauses" op env (clause ...) (x . y))
+     (define-cise-stmt "clauses" op env (clause ... x) y)]
+    ;; entry
+    [(_ (op . args) . body)       ; single pattern case
+     (define-cise-stmt "clauses" op env (((_ . args) . body)) ())]
+    [(_ op (pat . body) .  clauses) ; (pat . body) rules out a single symbol
+     (define-cise-stmt "clauses" op env ((pat . body)) clauses)]
+    [(_ op env . clauses)
+     (define-cise-stmt "clauses" op env () clauses)]))
+
+(define-syntax define-cise-expr
+  (syntax-rules (:where)
+    ;; recursion
+    [(_ "clauses" op env clauses (:where defs ...))
+     (define-cise-macro (op form env)
+       defs ...
+       (let1 expanded (match form . clauses)
+         (if (and (pair? expanded) (symbol? (car expanded)))
+           (render-rec expanded env)
+           (wrap-expr expanded env))))]
+    [(_ "clauses" op env clauses ())
+     (define-cise-expr "clauses" op env clauses (:where))]
+    [(_ "clauses" op env (clause ...) (x . y))
+     (define-cise-expr "clauses" op env (clause ... x) y)]
+    ;; entry
+    [(_ (op . args) . body)       ; single pattern case
+     (define-cise-expr "clauses" op env (((_ . args) . body)) ())]
+    [(_ op (pat . body) .  clauses)
+     (define-cise-expr "clauses" op env ((pat . body)) clauses)]
+    [(_ op env . clauses)
+     (define-cise-expr "clauses" op env () clauses)]))
+
+(define-syntax define-cise-toplevel
+  (syntax-rules (:where)
+    ;; recursion
+    [(_ "clauses" op env clauses (:where defs ...))
+     (define-cise-macro (op form env)
+       defs ...
+       (ensure-toplevel-ctx form env)
+       (match form . clauses))]
+    [(_ "clauses" op env clauses ())
+     (define-cise-toplevel "clauses" op env clauses (:where))]
+    [(_ "clauses" op env (clause ...) (x . y))
+     (define-cise-toplevel "clauses" op env (clause ... x) y)]
+    ;; entry
+    [(_ (op . args) . body)       ; single pattern case
+     (define-cise-toplevel "clauses" op env (((_ . args) . body)) ())]
+    [(_ op (pat . body) .  clauses) ; (pat . body) rules out a single symbol
+     (define-cise-toplevel "clauses" op env ((pat . body)) clauses)]
+    [(_ op env . clauses)
+     (define-cise-toplevel "clauses" op env () clauses)]))
+]
+[else
 (define-syntax define-cise-stmt
   (syntax-rules ()
     ;; recursion
@@ -249,6 +318,7 @@
      (define-cise-toplevel "clauses" op env ((pat . body)) clauses)]
     [(_ op env . clauses)
      (define-cise-toplevel "clauses" op env () clauses)]))
+])
 
 ;;
 ;; cise-render cise &optional port context
@@ -1041,15 +1111,15 @@
 (define (canonicalize-vardecl vardecls)
   (define (expand-type elt seed)
     (cond
+     [(keyword? elt)  ;; The case of (var ::type)
+      (rxmatch-case (keyword->string elt)
+        [#/^:(.+)$/ (_ t) `(:: ,(string->symbol t) ,@seed)]
+        [else (cons elt seed)])]
      [(symbol? elt)
       (rxmatch-case (symbol->string elt)
         [#/^(.+)::$/ (_ v) `(,(string->symbol v) :: ,@seed)]
         [#/^(.+)::(.+)$/ (_ v t)
             `(,(string->symbol v) :: ,(string->symbol t) ,@seed)]
-        [else (cons elt seed)])]
-     [(keyword? elt)  ;; The case of (var ::type)
-      (rxmatch-case (keyword->string elt)
-        [#/^:(.+)$/ (_ t) `(:: ,(string->symbol t) ,@seed)]
         [else (cons elt seed)])]
      [else (cons elt seed)]))
 
@@ -1058,7 +1128,7 @@
   (define (scan in r)
     (match in
       [() (reverse r)]
-      [([? symbol? var] :: type . rest)
+      [([? symbol? var] ':: type . rest)
        (scan rest `((,var :: ,type) ,@r))]
       [([? symbol? var] . rest)
        (scan rest `((,var :: ScmObj) ,@r))]

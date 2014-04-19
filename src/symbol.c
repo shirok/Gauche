@@ -386,5 +386,8 @@ void Scm__InitSymbol(void)
 #if !GAUCHE_UNIFY_SYMBOL_KEYWORD
     (void)SCM_INTERNAL_MUTEX_INIT(keywords.mutex);
     keywords.table = SCM_HASH_TABLE(Scm_MakeHashTableSimple(SCM_HASH_STRING, 256));
+    /* Temporary: In order to compile 0.9.4 source by 0.9.3.  Should be
+       removed after 0.9.4 release.  See lib/gauche/cgen/cise.scm */
+    Scm_AddFeature("gauche.unified-keyword-symbol", NULL);
 #endif /*!GAUCHE_UNIFY_SYMBOL_KEYWORD*/
 }
