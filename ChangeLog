@@ -1,7 +1,7 @@
 2014-04-27  Shiro Kawai  <shiro@acm.org>
 
 	* src/libio.scm (close-port, call-with-port): Support these r7rs procs
-	  natveily.  They're useful.  (Actually, we didn't have call-with-port
+	  natively.  They're useful.  (Actually, we didn't have call-with-port
 	  even in r7rs module; it was an oversight.)
 
 2014-04-17  Shiro Kawai  <shiro@acm.org>
