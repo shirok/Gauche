@@ -148,8 +148,10 @@
 ;;
 
 (select-module scheme)
-(define-cproc close-input-port (port::<port>)  ::<void> Scm_ClosePort)
-(define-cproc close-output-port (port::<port>) ::<void> Scm_ClosePort)
+(define-cproc close-input-port (port::<input-port>)  ::<void> Scm_ClosePort)
+(define-cproc close-output-port (port::<output-port>) ::<void> Scm_ClosePort)
+(select-module gauche)
+(define-cproc close-port (port::<port>) ::<void> Scm_ClosePort) ;R6RS
 
 (select-module gauche.internal)
 (inline-stub
@@ -703,6 +705,12 @@
   (if (get-keyword :encoding args #f)
     (apply %open-output-file/conv filename args)
     (apply %open-output-file filename args)))
+
+;; R6RS call-with-port
+;; Make sure to close PORT when proc returns or throws an error
+(define-in-module gauche (call-with-port port proc)
+  (unwind-protect (proc port)
+    (close-port port)))
 
 ;; File ports.
 

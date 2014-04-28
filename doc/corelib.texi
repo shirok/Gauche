@@ -13596,8 +13596,10 @@ Schemeプログラムからこれらの値を変更する必要はほとんど�
 @c EN
 Calls @var{thunk}.  During evaluation of thunk, the current input port, current
 output port and current error port are set to @var{port}, respectively.
+Note that @var{port} won't be closed after thunk is executed.
 @c JP
 それぞれ入力、出力、エラーポートを@var{port}にセットした状態で@var{thunk}を呼び出します。
+@code{port}は@var{thunk}実行後にも閉じられないことに注意してください。
 @c COMMON
 @end defun
 
@@ -13608,22 +13610,61 @@ Calls @var{thunk} while the current input, output, and error ports are
 set to @var{iport}, @var{oport}, and @var{eport}, respectively.
 You may pass @code{#f} to any port argument(s) if you don't need
 to alter the port(s).
+
+Note that @var{port} won't be closed after thunk is executed.
+(Unfortunately, recent Scheme standards added a similar
+named procedure, @code{call-with-port},
+which does close the port.  See below.)
 @c JP
 上の3つの動作を同時に行う手続きです。
 入力、出力、エラーの各ポートをそれぞれ@var{iport}, @var{oport}, @var{eport}に
 セットして@var{thunk}を呼び出します。変更する必要がないポートの引数には
 @code{#f}を渡すことができます。
+
+@code{port}は@var{thunk}実行後にも閉じられないことに注意してください
+(最近のScheme標準は良く似た名前の手続き@code{call-with-port}を追加しましたが、
+生憎そちらはポートを閉じる仕様になっています。@code{call-with-port}については
+下で説明します。)
+@c COMMON
+@end defun
+
+@defun close-port port
+@defunx close-input-port port
+@defunx close-output-port port
+[R5RS], [R6RS], [R7RS]
+@c EN
+Closes the port.  @code{Close-port} works both input and
+output ports, while @code{close-input-port} and @code{close-output-port}
+work only for the respective ports and throws an error if another type
+of port is passed.
+
+Theoretically, only @code{close-port} would suffice; having those three
+is merely for historical reason.
+R5RS has @code{close-input-port} and @code{close-output-port};
+R6RS and R7RS support all three.
+@c JP
+ポートを閉じます。@code{close-port}は入力ポートも出力ポートも閉じられますが、
+@code{close-input-port}と@code{close-output-port}はそれぞれ対応するポートのみに
+使え、異なる種類のポートが渡されたらエラーを通知します。
+
+理屈の上では、@code{close-port}だけあれば十分です。3つ手続きがあるのは歴史的理由です。
+R5RSには@code{close-input-port} and @code{close-output-port}だけがありました。
+R6RSとR7RSは3つ全てをサポートしています。
 @c COMMON
 @end defun
 
 
-@defun close-input-port port
-@defunx close-output-port port
-[R5RS]
+@defun call-with-port port proc
+[R6RS][R7RS]
 @c EN
-Closes input and output @var{port}, respectively
+Calls @var{proc} with one argument, @var{port}.  After @var{proc} returns,
+or it throws an uncaptured error, @var{port} is closed.  Value(s) returned
+from @var{proc} will be the return value(s) of @code{call-with-port}.
+
 @c JP
-それぞれ、入力ポートと出力ポートを閉じます。
+@var{proc}を、@var{port}を引数として呼び出します。@var{proc}からリターンするか、
+エラーが投げられた場合は@var{port}がクロースざれます。
+@var{proc}が返す値がそのまま@code{call-with-port}の返り値となります。
 @c COMMON
 @end defun
 

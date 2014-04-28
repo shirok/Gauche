@@ -333,7 +333,7 @@
 
   ;; 6.13 Input and output
   ;; input-port/ output-port? port? current-input-port current-output-port
-  ;; current-error-port close-input-port close-ouptut-port
+  ;; current-error-port close-port close-input-port close-ouptut-port
   ;; open-input-string open-output-string get-output-string
   ;; read-char peek-char read-line eof-object? eof-object char-ready?
   ;; newline write-char
@@ -341,10 +341,6 @@
   (define (binary-port? p) (port? p))     ; gauche's port can handle both
   (define (input-port-open? p) (and (input-port? p) (not (port-closed? p))))
   (define (output-port-open? p) (and (output-port? p) (not (port-closed? p))))
-  (define (close-port p)
-    (cond [(input-port? p)  (close-input-port p)]
-          [(output-port? p) (close-output-port p)]
-          [else (error "port required, but got:" p)]))
   (define (open-input-bytevector bv)   ; temporary implementation
     (check-arg u8vector? bv)
     (open-input-string (u8vector->string bv)))
