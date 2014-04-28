@@ -513,4 +513,28 @@
 
 (rmrf "testc.o")
 
+;;-------------------------------
+(test-section "unwind-protect upon exit")
+
+;; unwind-protect is tested in exception.scm, but we needed to do this test
+;; after we test gauche.process.
+
+(rmrf "test.o" "test1.o")
+
+(with-output-to-file "test.o"
+  (cut write '(define (main args)
+                (unwind-protect (begin
+                                  (with-output-to-file "test1.o"
+                                    (^[] (display "foo\n")))
+                                  (exit 1))
+                  (sys-unlink "test1.o")))))
+
+(test* "unwind-protect upon exit" '(1 #f)
+       ;; we haven't tested file.util yet, so using a clumsy way.
+       (let* ([gosh (string-append (sys-dirname (current-load-path))
+                                   "/../src/gosh")]
+              [p (run-process `(,gosh "-ftest" "test.o") :wait #t)])
+         (list (sys-wait-exit-status (process-exit-status p))
+               (file-exists? "test1.o"))))
+
 (test-end)

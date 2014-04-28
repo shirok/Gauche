@@ -457,14 +457,38 @@
 
 ;;;-------------------------------------------------------------
 ;;; unwind-protect
+;;;
 
+;; We set up exit-handler in the dynamic extent of BODY (but not in HANDLER),
+;; since if BODY calls exit, the error handlers won't be called---the dynamic
+;; environment is rewound upon exit, but that merely reset the error handlers.
+;;
+;; An alternative idea is to treat exit as if it's another kind of a condition,
+;; so that guard clauses are invoked.  We tried it, but the problem is how to
+;; deal with "ignore-errors" idiom, e.g. (guard (e [else #f]) body).  The exit
+;; condition shouldn't be stopped in such a way.
+;;
+;; TODO: Currently definition doesn't work when unwind-protect is used
+;; within a thread that is terminated; thread termination isn't a condition
+;; either.
 (define-syntax unwind-protect
   (syntax-rules ()
     [(unwind-protect body handler ...)
-     (let ((h (lambda () handler ...)))
-       (receive r (guard (e (else (h) (raise e))) body)
-         (h)
-         (apply values r)))]
+     (let ([x (exit-handler)]
+           [h (lambda () handler ...)])
+       (with-error-handler
+           (lambda (e) (exit-handler x) (h) (raise e))
+         (lambda ()
+           (receive r
+               (dynamic-wind
+                 (lambda ()
+                   (exit-handler (lambda (code fmt args) (h) (x code fmt args))))
+                 (lambda () body)
+                 (lambda ()
+                   (exit-handler x)))
+             (h)
+             (apply values r)))
+         :rewind-before #t))]
     [(unwind-protect . other)
      (syntax-error "malformed unwind-protect" (unwind-protect . other))]))
 

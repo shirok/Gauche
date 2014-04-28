@@ -247,6 +247,9 @@
 ;;--------------------------------------------------------------------
 (test-section "unwind-protect")
 
+;; NB: unwind-protect behavior on exit can't be tested here, for we
+;; need to invoke a subprocess.  The tests are in process.scm instead.
+
 (let ()
   (define aaa '())
   (define (foo thunk)
