@@ -3,7 +3,7 @@ This directory contains several Scheme files useful for testing.
 The tests listed in TESTS are run by "make test" in src directory.
 The tests listed in TESTS2 are run by "make test2" in the src directory.
 
-TESTS2 contains test that depends on extension modules, so it should
-be run after make test in ext directory.
+TESTS2 contains tests that depend on extension modules, so it should
+be run after 'make test' in the ext/ directory.
 
 

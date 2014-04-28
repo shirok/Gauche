@@ -62,7 +62,7 @@
 
 (define (rmrf . files)
   ;; shorthand of normalizing pathname.  this doesn't do anything on
-  ;; unix, but on Windows the separator in PATHNAME is replaced.
+  ;; unix, but on Windows separators in PATHNAME are replaced.
   (define (n pathname) (sys-normalize-pathname pathname))
 
   (dolist [f files]
