@@ -16637,21 +16637,38 @@ if you import @code{gauche.collection}.
 @end example
 @end deftp
 
-@defun string->s8vector string :optional start end
-@defunx string->u8vector string :optional start end
+@defun string->s8vector string :optional start end immutable?
+@defunx string->u8vector string :optional start end immutable?
 @c EN
 Returns an s8vector or u8vector whose byte sequence is the same
 as the internal representation of the given string.
 Optional range arguments @var{start} and @var{end} specifies
-the @emph{character position} inside @var{string} to be
+the @emph{character position} (not the byte position) inside @var{string} to be
 converted.
+
+By default, the content of the string is copied to a newly created
+mutable uvector.  However, if a true value is given to the
+optional @var{immutable?} argument, the result is an immutable
+uvector, and it may avoid copying the string body (note that
+in Gauche, the body of string is immutable; @code{string-set!} creates
+a new body, so changing the original string won't affect the
+uvector created by @code{string->u8vector} with @code{immutable?} flag.)
 
 These procedures are useful when you want to access byte
 sequence of the string randomly.
 @c JP
 与えられた文字列の内部表現のバイト列と同じバイト列を持つs8vectorもしくは
 u8vectorを返します。省略可能な範囲引数@var{start}、@var{end}は、
-変換される文字列中の文字位置を指定します。
+変換される文字列中の文字位置を指定します (バイト位置ではないことに注意)。
+
+デフォルトでは、元の文字列の内容が新たに作られる変更可能なユニフォームベクタへと
+コピーされ、そのベクタが返されます。しかし、省略可能引数@var{immutable?}に
+真の値が渡された場合、返されるユニフォームベクタは変更不可能となり、
+また文字列本体のコピーが避けられる可能性があります。
+(Gaucheでは、文字列本体は変更不可能で、@code{string-set!}は新たな
+文字列本体を作り出します。したがって@code{string->u8vector}の
+@code{immutable?}に@code{#t}を渡してユニフォームベクタを作った後、
+元の文字列を変更しても、作られたユニフォームベクタは変更されません。)
 
 これらの手続きは、文字を構成するバイト列をランダムにアクセスしたい場合などに
 有用です。
@@ -16665,6 +16682,16 @@ u8vectorを返します。省略可能な範囲引数@var{start}、@var{end}は�
 (string->u8vector "いろは") @result{} #u8(164 164 164 237 164 207)
 @c COMMON
 @end example
+
+@example
+(string->u8vector "very large string .... " 0 -1 #t)
+@c EN
+  @result{} #u8(...)  ; @r{immutable, sharing content with the original string}
+@c JP
+  @result{} #u8(...)  ; @r{変更不可、元の文字列と内容を共有}
+@c COMMON
+@end example
+
 @end defun
 
 @defun string->s8vector! target tstart string :optional start end
