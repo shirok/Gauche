@@ -1,3 +1,9 @@
+2014-04-29  Shiro Kawai  <shiro@acm.org>
+
+	* ext/uvector/uvlib.stub.tmpl (string->u8vector, string->s8vector):
+	  Added optional immutable? flag; if #t, the result vector becomes
+	  immutable, and we avoid copying the string body.
+
 2014-04-28  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/common-macros.scm (unwind-protect): Fixed the bug that

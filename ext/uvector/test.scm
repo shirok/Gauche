@@ -1390,6 +1390,12 @@
 (test* "string->u8vector (OOB)" (test-error)
        (string->u8vector "abcde" 2 6))
 
+(test* "string->u8vector (immutable)" '(#t #t)
+       (let ([a (string->u8vector "@ABCD" 0 -1 #t)]
+             [b (string->u8vector "@ABCD")])
+         (list (uvector-immutable? a)
+               (equal? a b))))
+
 (test* "string->u8vector!" '#u8(64 65 66 67 68)
        (let1 v (u8vector 0 1 2 3 4)
          (string->u8vector! v 0 "@ABCD")))

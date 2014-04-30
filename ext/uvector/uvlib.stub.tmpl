@@ -279,23 +279,30 @@
 ;;; String operations
 
 (define-cfn string->bytevector
-  (klass::ScmClass* s::ScmString* start::int end::int) :static
+  (klass::ScmClass* s::ScmString* start::int end::int immutable::int) :static
   (let* ([size::u_int] [len::u_int]
          [ss::(const char*) (Scm_GetStringContent s (& size) (& len) NULL)])
     (SCM_CHECK_START_END start end (cast int len))
     (let* ([sp::(const char*) (?: (== start 0) ss (Scm_StringPosition s start))]
            [ep::(const char*) (?: (== end len) (+ ss size) (Scm_StringPosition s end))]
-           [buf::char* (SCM_NEW_ATOMIC2 (char*) (- ep sp))])
-      (memcpy buf sp (- ep sp))
-      (return (Scm_MakeUVectorFull klass (cast int (- ep sp)) buf FALSE NULL)))))
+           [buf::char* NULL])
+      (if immutable
+        (set! buf (cast char* sp))  ; Eek! drop const qualifier
+        (begin
+          (set! buf (SCM_NEW_ATOMIC2 (char*) (- ep sp)))
+          (memcpy buf sp (- ep sp))))
+      (return (Scm_MakeUVectorFull klass (cast int (- ep sp)) buf
+                                   immutable NULL)))))
 
 (define-cproc string->s8vector
-  (s::<string> :optional (start::<fixnum> 0) (end::<fixnum> -1))
-  (result (string->bytevector SCM_CLASS_S8VECTOR s start end)))
+  (s::<string>
+   :optional (start::<fixnum> 0) (end::<fixnum> -1) (immutable?::<boolean> #f))
+  (result (string->bytevector SCM_CLASS_S8VECTOR s start end immutable?)))
 
 (define-cproc string->u8vector
-  (s::<string> :optional (start::<fixnum> 0) (end::<fixnum> -1))
-  (result (string->bytevector SCM_CLASS_U8VECTOR s start end)))
+  (s::<string>
+   :optional (start::<fixnum> 0) (end::<fixnum> -1) (immutable?::<boolean> #f))
+  (result (string->bytevector SCM_CLASS_U8VECTOR s start end immutable?)))
 
 (define-cfn string->bytevector!
   (v::ScmUVector* tstart::int s::ScmString* start::int end::int) :static
