@@ -537,4 +537,6 @@
          (list (sys-wait-exit-status (process-exit-status p))
                (file-exists? "test1.o"))))
 
+(rmrf "test.o" "test1.o")
+
 (test-end)
