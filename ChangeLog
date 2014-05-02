@@ -1,3 +1,10 @@
+2014-05-01  Shiro Kawai  <shiro@acm.org>
+
+	* ext/uvector/uvlib.stub.tmpl (u8vector->string, s8vector->string):
+	  Avoid copying the content when the source vector is immutable and
+	  certain conditions are met.  See the comment in bytevector->string
+	  for the details.
+
 2014-04-29  Shiro Kawai  <shiro@acm.org>
 
 	* ext/uvector/uvlib.stub.tmpl (string->u8vector, string->s8vector):

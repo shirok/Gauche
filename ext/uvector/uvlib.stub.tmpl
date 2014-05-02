@@ -338,9 +338,29 @@
 
 (define-cfn bytevector->string (v::ScmUVector* start::int end::int) :static
   (let* ([len::int (SCM_UVECTOR_SIZE v)])
+    ;; We automatically avoid copying the string contents when the
+    ;; following conditions are met:
+    ;; * The source vector is immutable
+    ;; * The owner of source vector is NULL (If there's an owner such as
+    ;;   mmap handle, it isn't desirable if a string points to the memory
+    ;;   without keeping ownership info.)
+    ;; * The resulting string is not a small fraction of a large vector.
+    ;;   If so, we may waste space by retaining large chunk of memory
+    ;;   most of which won't be ever used.  Here we use some heuristics:
+    ;;   - If the source vector is not small (>= 256)
+    ;;   - and the string covers only a fraction (1/5) or less,
+    ;;   - then we copy the content.
+    ;; NB: We may add a flag that force the content to be shared, for
+    ;; the programs that really want to avoid allocation.
     (SCM_CHECK_START_END start end len)
-    (return (Scm_MakeString (+ (cast char* (SCM_UVECTOR_ELEMENTS v)) start)
-                            (- end start) -1 SCM_STRING_COPYING))))
+    (let* ([flags::int (?: (and (SCM_UVECTOR_IMMUTABLE_P v)
+                                (== (-> v owner) NULL)
+                                (not (and (>= len 256)
+                                          (<= (- end start) (/ len 5)))))
+                           0
+                           SCM_STRING_COPYING)])
+      (return (Scm_MakeString (+ (cast char* (SCM_UVECTOR_ELEMENTS v)) start)
+                            (- end start) -1 flags)))))
 
 (define-cproc s8vector->string (v::<s8vector>
                                 :optional (start::<fixnum> 0)
