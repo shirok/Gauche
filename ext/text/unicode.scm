@@ -1018,17 +1018,9 @@
       (let loop ([ch ch] [prev-break? break?])
         (unless (eof-object? ch)
           (receive (next break?) (breaker)
-            (let1 cnt (%char-xcase-extended ch buf1 CHAR_UPCASE char?)
-              (if (= cnt 1)
-                (let1 cu (vector-ref buf1 0)
-                  (if (and (memv cu '(#\u03a3 #x03a3))
-                           (not prev-break?)
-                           break?)
-                    (sink `(,(if char? #\u03c2 #x03c2)) ch)
-                    (%tr cu buf2 CHAR_DOWNCASE sink char?)))
-                (do-ec
-                 (: i cnt)
-                 (%tr (vector-ref buf1 i) buf2 CHAR_DOWNCASE sink char?))))
+            (do-ec
+             (: i (%char-xcase-extended ch buf1 CHAR_UPCASE char?))
+             (%tr (vector-ref buf1 i) buf2 CHAR_DOWNCASE sink char?))
             (loop next break?)))))))
 
 (define string-xcase

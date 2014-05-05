@@ -191,15 +191,15 @@
   (let-syntax ([do-tests
                 (syntax-rules ()
                   [(_ upper downer titler folder u d t f)
-                   (let ([u u] [d d] [t t] [f f])
-                     (test* (format "~a (from down)" 'upper) u (upper d))
-                     (test* (format "~a (from up)" 'upper) u (upper u))
-                     (test* (format "~a (from down)" 'downer) d (downer d))
-                     (test* (format "~a (from up)" 'downer) d (downer u))
-                     (test* (format "~a (from down)" 'titler) t (titler d))
-                     (test* (format "~a (from up)" 'titler) t (titler u))
-                     (test* (format "~a (from down)" 'folder) f (folder d))
-                     (test* (format "~a (from up)" 'folder) f (folder u)))])])
+                   (let ([u. u] [d. d] [t. t] [f. f])
+                     (test* (format "~a (from down)" 'upper) u. (upper d.))
+                     (test* (format "~a (from up)" 'upper) u. (upper u.))
+                     (test* (format "~a (from down)" 'downer) d. (downer d.))
+                     (test* (format "~a (from up)" 'downer) d. (downer u.))
+                     (test* (format "~a (from down)" 'titler) t. (titler d.))
+                     (test* (format "~a (from up)" 'titler) t. (titler u.))
+                     (test* (format "~a (from down)" 'folder) f. (folder d.))
+                     (test* (format "~a (from up)" 'folder) f. (folder u.)))])])
 
     (do-tests string-upcase string-downcase string-titlecase string-foldcase
               up down title fold)
@@ -226,7 +226,7 @@
   (test-xcase-matrix "ΧΑΟΣΧΑΟΣ.ΧΑΟΣ. Σ."
                      "χαοσχαοσ.χαος. σ."
                      "Χαοσχαοσ.χαος. Σ."
-                     "χαοσχαοσ.χαος. σ.")
+                     "χαοσχαοσ.χαοσ. σ.")
   )
 
 ;; non round-trip mapping

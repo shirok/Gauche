@@ -1,3 +1,11 @@
+2014-05-05  Shiro Kawai  <shiro@acm.org>
+
+	* ext/text/unicode.scm (%foldcase): Fixed string-foldcase behavior.
+	  See the discussion in R7RS mailing list:
+	  http://lists.scheme-reports.org/pipermail/scheme-reports/2014-May/004055.html
+	* test/r7rs-tests.scm: The test for string-foldcase was incorrect.
+	  Fixed along above.
+
 2014-05-01  Shiro Kawai  <shiro@acm.org>
 
 	* ext/uvector/uvlib.stub.tmpl (u8vector->string, s8vector->string):
