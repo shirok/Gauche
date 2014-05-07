@@ -743,6 +743,13 @@ Provides compatibility layers.
 互換性のためのレイヤを提供。
 @c COMMON
 
+@item data.*
+@c EN
+Implementations of various data structures.
+@c JP
+様々なデータ構造の実装
+@c COMMON
+
 @item dbi.*, dbd.*
 @c EN
 Database independent interface layer and drivers.
@@ -799,11 +806,11 @@ Mathematics.
 数学。
 @c COMMON
 
-@item compat.*
+@item os.*
 @c EN
-Compatibility libraries
+Features for specific OSes.
 @c JP
-他の実装とのコンパチビリティに関するライブラリ。 (予定)
+特定のOS向けの機能。
 @c COMMON
 
 @item rfc.*
