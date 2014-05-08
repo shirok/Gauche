@@ -1,3 +1,9 @@
+2014-05-07  Shiro Kawai  <shiro@acm.org>
+
+	* src/main.c (main): Changed handling of command-line args on Windows
+	  so that it can get wide characters properly.   Based on a patch
+	  from SAITO Atsushi.
+
 2014-05-05  Shiro Kawai  <shiro@acm.org>
 
 	* ext/text/unicode.scm (%foldcase): Fixed string-foldcase behavior.

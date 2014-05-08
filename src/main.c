@@ -221,7 +221,7 @@ void feature_options(const char *optarg)
     Scm_AddFeature(optarg, NULL);
 }
 
-int parse_options(int argc, char *argv[])
+int parse_options(int argc, const char *argv[])
 {
     int c;
     while ((c = getopt(argc, argv, "+be:E:ip:ql:L:m:u:Vr:F:f:I:A:-")) >= 0) {
@@ -543,22 +543,34 @@ void enter_repl()
 /*-----------------------------------------------------------------
  * MAIN
  */
-int main(int argc, char **argv)
+int main(int ac, char **av)
 {
     const char *scriptfile = NULL;
     ScmObj args = SCM_NIL;
     int exit_code = 0;
+    /* NB: For Windows, we can't use passed argv array if the command-line
+       argument contains multibyte characters.  We'll overwrite those later. */
+    int argc = ac;
+    const char **argv = av;
 
-    /* Initial setup. */
 #if defined(GAUCHE_WINDOWS)
+    /* Need this before core initialization */
     int has_console = init_console();
 #endif /*defined(GAUCHE_WINDOWS)*/
+
     GC_INIT();
     Scm_Init(GAUCHE_SIGNATURE);
     sig_setup();
+
 #if defined(GAUCHE_WINDOWS)
-    /* Ugly... need some abstraction. */
     Scm__SetupPortsForWindows(has_console);
+#  if defined(UNICODE)
+    /* Set up argument array correctly  */
+    LPWSTR *argvW = CommandLineToArgvW(GetCommandLineW(), &argc);
+    argv = SCM_NEW_ATOMIC_ARRAY(const char*, argc);
+    for (int i=0; i<argc; i++) argv[i] = Scm_WCS2MBS(argvW[i]);
+    LocalFree(argvW);
+#  endif  /* UNICODE */
 #endif /*defined(GAUCHE_WINDOWS)*/
 
     /* Check command-line options */
