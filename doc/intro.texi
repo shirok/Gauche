@@ -140,6 +140,23 @@ Gaucheは頻繁に使われる共通の機能については、豊富な組み�
 @c COMMON
 
 @c EN
+@item Fully utilizing multi-core
+@c JP
+@item マルチコアの完全な活用
+@c COMMON
+@c EN
+Gauche supports native threads on most platforms.
+The internals are fully aware of preemptive/concurrent threads
+(that is, no ``giant global lock''),
+so that you can utilize multiple cores on your machine.
+@c JP
+Gaucheは多くのプラットフォームでネイティブスレッドをサポートしています。
+内部は全てプリエンプティブな並行スレッドを意識してかかれており
+(つまり、「巨大なひとつのロック」はありません)、
+複数のコアを存分に活用できるようになっています。
+@c COMMON
+
+@c EN
 @item Multibyte strings
 @c JP
 @item マルチバイト文字列
