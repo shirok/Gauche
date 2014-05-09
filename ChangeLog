@@ -1,3 +1,9 @@
+2014-05-09  Shiro Kawai  <shiro@acm.org>
+
+	* src/win-compat.c (mbs2wcs, wcs2mbs): Allow libgauche version of
+	  those functions to choose allocator; we need to malloc (instead
+	  of GC_alloc) if we pass the resulting string to OS.
+
 2014-05-07  Shiro Kawai  <shiro@acm.org>
 
 	* src/main.c (main): Changed handling of command-line args on Windows

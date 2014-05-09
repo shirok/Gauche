@@ -123,12 +123,12 @@ ScmObj Scm_OffsetToInteger(off_t off)
 
 WCHAR *Scm_MBS2WCS(const char *s)
 {
-    return mbs2wcs(s, Scm_Error);
+    return mbs2wcs(s, TRUE, Scm_Error);
 }
 
 const char *Scm_WCS2MBS(const WCHAR *s)
 {
-    return wcs2mbs(s, Scm_Error);
+    return wcs2mbs(s, TRUE, Scm_Error);
 }
 #endif /* defined(GAUCHE_WINDOWS) && defined(UNICODE) */
 

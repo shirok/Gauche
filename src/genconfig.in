@@ -232,8 +232,8 @@ static struct cmd_rec {
 #if (defined(__MINGW32__) || defined(_MSC_VER)) && defined(UNICODE)
 /* mbs <-> wcs stuff */
 #include "win-compat.c"
-#define MBS2WCS(s)   mbs2wcs(s, errfn)
-#define WCS2MBS(s)   wcs2mbs(s, errfn)
+#define MBS2WCS(s)   mbs2wcs(s, FALSE, errfn)
+#define WCS2MBS(s)   wcs2mbs(s, FALSE, errfn)
 static void errfn(const char *fmt, ...)
 {
     va_list ap;
@@ -241,10 +241,10 @@ static void errfn(const char *fmt, ...)
     vfprintf(stderr, fmt, ap);
     va_end(ap);
 }
-#else  /* !(defined(_MSC_VER) && defined(UNICODE)) */
+#else  /* !(defined(__MINGW32__) || defined(_MSC_VER)) && defined(UNICODE) */
 #define MBS2WCS(s)  (s)
 #define WCS2MBS(s)  (s)
-#endif /* !(defined(_MSC_VER) && defined(UNICODE)) */
+#endif /* !(defined(__MINGW32__) || defined(_MSC_VER)) && defined(UNICODE) */
 
 static void print_output(struct cmd_rec *cmd)
 {
