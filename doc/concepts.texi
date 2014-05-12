@@ -33,21 +33,37 @@ Gaucheは、以下に挙げる点を除き、オプショナルな構文や手�
 @c COMMON
 
 @itemize @bullet
-@c @item
-@c @c EN
-@c Gauche has a keyword object, expressed as a name prefixed by a colon
-@c (e.g. @code{:key}).  It evaluates to itself, and used extensively when
-@c passing so-called keyword arguments (@xref{Making Procedures}).
+@item
+@c EN
+Gauche has a keyword object, expressed as a name prefixed by a colon
+(e.g. @code{:key}).  It evaluates to itself, and used extensively when
+passing so-called keyword arguments (@xref{Making Procedures}).
 
-@c R7RS requires names starting with colon to be read as a symbol.
-@c In the current version of Gauche, keywords aren't symbols; they are
-@c of disjoint types.  R7RS code that's using symbols starting with colon
-@c needs to be adjusted (most conveniently, using vertical-bar would make
-@c the code both work in R7RS and Gauche, e.g. @code{|:foo|}.)
+R7RS requires names starting with colon to be read as a symbol.
+In the current version of Gauche, keywords aren't symbols; they are
+of disjoint types.  R7RS code that's using symbols starting with colon
+needs to be adjusted (most conveniently, using vertical-bar would make
+the code both work in R7RS and Gauche, e.g. @code{|:foo|}.)
 
-@c We'll make keywords subtype of symbols in the next Gauche version
-
+We'll make keywords subtype of symbols in near future,
+to fully conform R7RS while maintaining the backward compatibility
+as much as possible.  @xref{Keywords}, for what you need to know
+about writing portable code using keywords.
 @c @c JP
+Gaucheには、コロンで始まる名前(例:@code{:key})を持つ、キーワードオブジェクトがあります。
+キーワードはそれ自身に評価され、キーワード引数を渡すときにいつも使われます
+(@ref{Making Procedures}参照)。
+
+R7RSではコロンで始まる名前はシンボルとして読まれることになっています。
+現在のGaucheでは、キーワードはシンボルではなく、それぞれ独立した型に属します。
+コロンで始まるシンボルを使っているR7RSコードは修正が必要になるかもしれません
+(一番簡単な方法は、コロンで始まるシンボルを@code{|:foo|}のように縦棒でエスケープすること
+です。これはR7RSでもGaucheでもシンボルとして読まれます)。
+
+近いうちに、キーワードをシンボルのサブタイプとすることで、
+できるだけ後方互換性を保ちながらR7RSに準拠したふるまいにする予定です。
+キーワードを使ってポータブルなコードを書くために知っておくべきことについては、
+@ref{Keywords}を参照してください。
 @c @c COMMON
 
 @item
