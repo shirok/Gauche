@@ -2915,7 +2915,7 @@
 ;; Penv is a list of $LAMBDA nodes that we're compiling.   It is used to
 ;; detect self-recursive local calls.  Tail? is a flag to indicate whether
 ;; the expression is tail position or not.
-;; Each hander returns IForm.
+;; Each handler returns IForm.
 ;; *pass2-dispatch-table* is defined below, after all handlers are defined.
 (define-inline (pass2/rec iform penv tail?)
   ((vector-ref *pass2-dispatch-table* (iform-tag iform))

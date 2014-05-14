@@ -5807,7 +5807,7 @@ Those slot values can be set at construction time
 by using the keyword of the same name as the slot,
 or can be set by @code{slot-set!} afterwards.  However,
 most of them should be set before calling
-@code{listener-read-hander}.
+@code{listener-read-handler}.
 @c JP
 Replセッションの状態を維持するオブジェクトです。
 オブジェクトのふるまいをカスタマイズするためにいくつもの外部スロットがあります。

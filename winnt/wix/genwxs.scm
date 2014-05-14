@@ -150,7 +150,7 @@
    "\\1"))
   
 
-;; Generate an XML Directory node of teh installation tree.
+;; Generate an XML Directory node of the installation tree.
 ;; Currently we rely on the 'heat.exe' that comes with Wix SDK.
 (define (gen-file-tree)
   (let1 tmpfile "file-tree.xml"
