@@ -2170,32 +2170,26 @@ void Scm_SetEnv(const char *name, const char *value, int overwrite)
 {
 #if defined(GAUCHE_WINDOWS) && defined(UNICODE)
     /* We need to use _wputenv for wide-character support.  Since we pass
-       the converted strings to OS, we have to allocate them by malloc,
-       hence we directly use mbs2wcs. */
-    wchar_t *wname = mbs2wcs(name, FALSE, Scm_Error);
+       the converted strings to OS, we have to allocate them by malloc. */
+    wchar_t *wname = Scm_MBS2WCS(name);
     if (!overwrite) {
         if (_wgetenv(wname) != NULL) return; /* do not overwrite */
     }
-    wchar_t *wvalue = mbs2wcs(value, FALSE, Scm_Error);
+    wchar_t *wvalue = Scm_MBS2WCS(value);
     int nlen = wcslen(wname);
     int vlen = wcslen(wvalue);
     wchar_t *wnameval = (wchar_t*)malloc((nlen+vlen+2)*sizeof(wchar_t));
     if (wnameval == NULL) {
-        free(wname);
-        free(wvalue);
         Scm_Error("sys-setenv: out of memory");
     }
     wcscpy(wnameval, wname);
     wcscpy(wnameval+nlen, L"=");
     wcscpy(wnameval+nlen+1, wvalue);
-    free(wname);
-    free(wvalue);
     int r;
     SCM_SYSCALL(r, _wputenv(wnameval));
     if (r < 0) {
-        const char *nameval = Scm_WCS2MBS(wnameval);
         free(wnameval);
-        Scm_SysError("putenv failed on '%s'", nameval);
+        Scm_SysError("setenv failed on '%s=%s'", name, value);
     }
 #elif defined(HAVE_SETENV)
     int r;
