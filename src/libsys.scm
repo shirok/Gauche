@@ -420,13 +420,7 @@
 
 (define-cproc sys-exit (code::<fixnum>) ::<void> _exit)
 
-(define-cproc sys-getenv (name::<const-cstring>) ::<const-cstring>?
-  (.if "defined(GAUCHE_WINDOWS) && defined(UNICODE)"
-       (let* ([w::wchar_t* (_wgetenv (Scm_MBS2WCS name))])
-         (if (== w NULL)
-           (result NULL)
-           (result (Scm_WCS2MBS w))))
-       (result (getenv name))))
+(define-cproc sys-getenv (name::<const-cstring>) ::<const-cstring>? Scm_GetEnv)
 
 (define-cproc sys-abort () ::<void> abort)
 

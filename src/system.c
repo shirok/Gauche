@@ -487,11 +487,11 @@ ScmObj Scm_NormalizePathname(ScmString *pathname, int flags)
                       SCM_OBJ(pathname));
         }
         srcp++;
-        if ((home = getenv("HOME")) != NULL) { /* MSYS */
+        if ((home = Scm_GetEnv("HOME")) != NULL) { /* MSYS */
             Scm_DStringPutz(&buf, home, -1);
-        } else if ((home = getenv("HOMEDRIVE")) != NULL) { /* cmd.exe */
+        } else if ((home = Scm_GetEnv("HOMEDRIVE")) != NULL) { /* cmd.exe */
             Scm_DStringPutz(&buf, home, -1);
-            if ((home = getenv("HOMEPATH")) != NULL) {
+            if ((home = Scm_GetEnv("HOMEPATH")) != NULL) {
                 Scm_DStringPutz(&buf, home, -1);
             }
         }
@@ -594,8 +594,8 @@ ScmObj Scm_TmpDir(void)
     return SCM_MAKE_STR_COPYING(SCM_WCS2MBS(tbuf));
 #else  /*!GAUCHE_WINDOWS*/
     const char *s;
-    if ((s = getenv("TMPDIR")) != NULL) return SCM_MAKE_STR_COPYING(s);
-    if ((s = getenv("TMP")) != NULL) return SCM_MAKE_STR_COPYING(s);
+    if ((s = Scm_GetEnv("TMPDIR")) != NULL) return SCM_MAKE_STR_COPYING(s);
+    if ((s = Scm_GetEnv("TMP")) != NULL) return SCM_MAKE_STR_COPYING(s);
     else return SCM_MAKE_STR("/tmp"); /* fallback */
 #endif /*!GAUCHE_WINDOWS*/
 }
@@ -2152,19 +2152,47 @@ ScmObj Scm_SysSelectX(ScmObj rfds, ScmObj wfds, ScmObj efds, ScmObj timeout)
  * Environment
  */
 
-/* POSIX has putenv but not setenv.  However, the XPG spec of
-   putenv is broken w.r.t freeing the passed string; there's no
-   way to know when the pointer can be freed.
-   Some Unix appears to violate the spec and copies the passed pointer,
-   which solves the leak, but the code will break if we bring it to
-   the platform with "proper" putenv(3).
+/* We provide a compatibility layer for getenv/setenv stuff, whose semantics
+   slightly differ among platforms.
 
-   So we do not trust putenv(3).
+   POSIX putenv() has a flaw that passed string can't be freed reliably;
+   the system may retain the pointer, so the caller can't free it afterwards,
+   while putenv() itself can't know if the passed pointer is malloc-ed or
+   static.  Some Unixes appears to change the semantics, guaranteeing
+   the system copies the passed string so that the caller can free it;
+   however, it's not easy to check which semantics the given platform uses.
 
-   Our strategy: If the system has setenv(3) we use it, since we know
-   it copies the passed string.  If the system doesn't have setenv(3),
-   we fall back to putenv(3) and let it leak.
+   What POSIX suggests is setenv() when you want to pass malloc-ed
+   strings.  Unfortunately it is a newer addition and not all platforms
+   supports it.  Windows doesn't, either, but it offers _[w]putenv_s
+   as an alternative.  Unfortunately again, current MinGW doesn't include
+   _[w]putenv_s in its headers and import libraries.
+
+   So, for those platforms, we use putenv() and let it leak.
+
+   Another merit of this compatibility layer is to guarantee MT-safeness;
+   Putenv/setenv aren't usally MT-safe, neither is getenv when environment
+   is being modified.
 */
+
+static ScmInternalMutex env_mutex;
+
+const char *Scm_GetEnv(const char *name)
+{
+#if defined(GAUCHE_WINDOWS) && defined(UNICODE)
+    const wchar_t *wname = Scm_MBS2WCS(name);
+    (void)SCM_INTERNAL_MUTEX_LOCK(env_mutex);
+    const wchar_t *wvalue = _wgetenv(wname);
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(env_mutex);
+    if (wvalue == NULL) return NULL;
+    else                return Scm_WCS2MBS(wvalue);
+#else  /*!(defined(GAUCHE_WINDOWS) && defined(UNICODE))*/
+    (void)SCM_INTERNAL_MUTEX_LOCK(env_mutex);
+    const char *value = getenv(name);
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(env_mutex);
+    return value;
+#endif /*!(defined(GAUCHE_WINDOWS) && defined(UNICODE))*/
+}
 
 void Scm_SetEnv(const char *name, const char *value, int overwrite)
 {
@@ -2172,9 +2200,6 @@ void Scm_SetEnv(const char *name, const char *value, int overwrite)
     /* We need to use _wputenv for wide-character support.  Since we pass
        the converted strings to OS, we have to allocate them by malloc. */
     wchar_t *wname = Scm_MBS2WCS(name);
-    if (!overwrite) {
-        if (_wgetenv(wname) != NULL) return; /* do not overwrite */
-    }
     wchar_t *wvalue = Scm_MBS2WCS(value);
     int nlen = wcslen(wname);
     int vlen = wcslen(wvalue);
@@ -2185,21 +2210,25 @@ void Scm_SetEnv(const char *name, const char *value, int overwrite)
     wcscpy(wnameval, wname);
     wcscpy(wnameval+nlen, L"=");
     wcscpy(wnameval+nlen+1, wvalue);
-    int r;
-    SCM_SYSCALL(r, _wputenv(wnameval));
-    if (r < 0) {
+
+    int result = 0;
+    
+    (void)SCM_INTERNAL_MUTEX_LOCK(env_mutex);
+    if (overwrite || _wgetenv(wname) == NULL) {
+        result = _wputenv(wnameval);
+    }
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(env_mutex);
+
+    if (result < 0) {
         free(wnameval);
         Scm_SysError("setenv failed on '%s=%s'", name, value);
     }
 #elif defined(HAVE_SETENV)
-    int r;
-    SCM_SYSCALL(r, setenv(name, value, overwrite));
+    (void)SCM_INTERNAL_MUTEX_LOCK(env_mutex);
+    int r = setenv(name, value, overwrite);
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(env_mutex);
     if (r < 0) Scm_SysError("setenv failed on '%s=%s'", name, value);
 #elif defined(HAVE_PUTENV)
-    if (!overwrite) {
-        /* check the existence of NAME first. */
-        if (getenv(name) != NULL) return;
-    }
     int nlen = (int)strlen(name);
     int vlen = (int)strlen(value);
     /* we need malloc, since the pointer will be owned by the system */
@@ -2210,9 +2239,19 @@ void Scm_SetEnv(const char *name, const char *value, int overwrite)
     strcpy(nameval, name);
     strcpy(nameval+nlen, "=");
     strcpy(nameval+nlen+1, value);
-    int r;
-    SCM_SYSCALL(r, putenv(nameval));
-    if (r < 0) Scm_SysError("putenv failed on '%s'", nameval);
+
+    int result = 0;
+    
+    (void)SCM_INTERNAL_MUTEX_LOCK(env_mutex);
+    if (overwrite || getenv(name) == NULL) {
+        result = putenv(nameval);
+    }
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(env_mutex);
+    if (r < 0) {
+        ScmObj n = Scm_MakeString(nameval, -1, -1, SCM_STRING_COPYING);
+        free (nameval);
+        Scm_SysError("putenv failed on '%A'", n);
+    }
 #else /* !HAVE_SETENV && !HAVE_PUTENV */
     /* We can't do much.  we may replace environ by ourselves, but
        it is unlikely that the system have extern environ and not putenv.
@@ -2225,14 +2264,7 @@ void Scm_SetEnv(const char *name, const char *value, int overwrite)
    Each string is in the format of "key=value". */
 ScmObj Scm_Environ(void)
 {
-#if !defined(GAUCHE_WINDOWS)
-#  if defined(HAVE_CRT_EXTERNS_H)
-    char **environ = *_NSGetEnviron(); /* OSX Hack */
-#  endif /*HAVE_CRT_EXTERNS_H*/
-    if (environ == NULL) return SCM_NIL;
-    else return Scm_CStringArrayToList((const char**)environ, -1,
-                                       SCM_STRING_COPYING);
-#else  /*GAUCHE_WINDOWS*/
+#if defined(GAUCHE_WINDOWS)
 #define ENV_BUFSIZ 64
     LPVOID ss = GetEnvironmentStrings();
     ScmObj h = SCM_NIL, t = SCM_NIL;
@@ -2253,14 +2285,26 @@ ScmObj Scm_Environ(void)
     } while (pp[1] != 0);
     FreeEnvironmentStrings(ss);
     return h;
-#endif /*GAUCHE_WINDOWS*/
+#else
+    (void)SCM_INTERNAL_MUTEX_LOCK(env_mutex);
+#  if defined(HAVE_CRT_EXTERNS_H)
+    char **environ = *_NSGetEnviron();  /* OSX Hack*/
+#  endif
+    ScmObj r = (environ == NULL 
+                ? SCM_NIL
+                : Scm_CStringArrayToList((const char**)environ, -1,
+                                         SCM_STRING_COPYING));
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(env_mutex);
+    return r;
+#endif /*!GAUCHE_WINDOWS*/
 }
 
 void Scm_UnsetEnv(const char *name)
 {
 #if defined(HAVE_UNSETENV)
-    int r = 0;
-    SCM_SYSCALL(r, unsetenv(name));
+    (void)SCM_INTERNAL_MUTEX_LOCK(env_mutex);
+    int r = unsetenv(name);
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(env_mutex);
     if (r < 0) Scm_SysError("unsetenv failed on %s", name);
 #else  /*!HAVE_UNSETENV*/
     Scm_Error("sys-unsetenv is not supported on this platform.");
@@ -2270,8 +2314,9 @@ void Scm_UnsetEnv(const char *name)
 void Scm_ClearEnv()
 {
 #if defined(HAVE_CLEARENV)
-    int r = 0;
-    SCM_SYSCALL(r, clearenv());
+    (void)SCM_INTERNAL_MUTEX_LOCK(env_mutex);
+    int r = clearenv();
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(env_mutex);
     if (r < 0) Scm_SysError("clearenv failed");
 #else  /*!HAVE_UNSETENV*/
     Scm_Error("sys-clearenv is not supported on this platform.");
@@ -2905,6 +2950,7 @@ void Scm__InitSystem(void)
 #ifdef HAVE_SELECT
     Scm_InitStaticClass(&Scm_SysFdsetClass, "<sys-fdset>", mod, NULL, 0);
 #endif
+    SCM_INTERNAL_MUTEX_INIT(env_mutex);
 
 #ifdef GAUCHE_WINDOWS
     init_winsock();

@@ -1,3 +1,8 @@
+2014-05-15  Shiro Kawai  <shiro@acm.org>
+
+	* src/system.c (Scm_GetEnv): Provide a wrapper so that we can mutex
+	  getenv/putenv properly.
+
 2014-05-09  Shiro Kawai  <shiro@acm.org>
 
 	* src/win-compat.c (mbs2wcs, wcs2mbs): Allow libgauche version of

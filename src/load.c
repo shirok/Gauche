@@ -413,7 +413,7 @@ ScmObj Scm_GetDynLoadPath(void)
 
 static ScmObj break_env_paths(const char *envname)
 {
-    const char *e = getenv(envname);
+    const char *e = Scm_GetEnv(envname);
 #ifndef GAUCHE_WINDOWS
     char delim = ':';
 #else  /*GAUCHE_WINDOWS*/
