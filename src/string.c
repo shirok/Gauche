@@ -101,7 +101,7 @@ void Scm_StringDump(FILE *out, ScmObj str)
    argument is in valid range.) */
 char *Scm_StrdupPartial(const char *src, size_t size)
 {
-    char *dst = SCM_NEW_ATOMIC_ARRAY(char*, size+1);
+    char *dst = SCM_NEW_ATOMIC_ARRAY(char, size+1);
     memcpy(dst, src, size);
     dst[size] = '\0';
     return dst;
