@@ -2179,14 +2179,17 @@ const char *Scm_GetEnv(const char *name)
 {
 #if defined(GAUCHE_WINDOWS) && defined(UNICODE)
     const wchar_t *wname = Scm_MBS2WCS(name);
+    const char *value = NULL;
     (void)SCM_INTERNAL_MUTEX_LOCK(env_mutex);
     const wchar_t *wvalue = _wgetenv(wname);
+    if (wvalue != NULL) {
+        value = Scm_WCS2MBS(wvalue);
+    }
     (void)SCM_INTERNAL_MUTEX_UNLOCK(env_mutex);
-    if (wvalue == NULL) return NULL;
-    else                return Scm_WCS2MBS(wvalue);
+    return value;
 #else  /*!(defined(GAUCHE_WINDOWS) && defined(UNICODE))*/
     (void)SCM_INTERNAL_MUTEX_LOCK(env_mutex);
-    const char *value = getenv(name);
+    const char *value = SCM_STRDUP(getenv(name));
     (void)SCM_INTERNAL_MUTEX_UNLOCK(env_mutex);
     return value;
 #endif /*!(defined(GAUCHE_WINDOWS) && defined(UNICODE))*/
