@@ -51,7 +51,6 @@ static const char *dl_error(void)
     DWORD code = GetLastError();
     snprintf(buf, sizeof(buf), "error code %ld", code);
     return SCM_STRDUP(buf);
-    return p;
 }
 
 static ScmDynLoadInitFn dl_sym(void *handle, const char *name)
