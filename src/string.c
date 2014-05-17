@@ -96,6 +96,17 @@ void Scm_StringDump(FILE *out, ScmObj str)
     }
 }
 
+/* Like GC_strndup, but we don't require the source string to be
+   NUL-terminated (instead, we trust the caller that the size
+   argument is in valid range.) */
+char *Scm_StrdupPartial(const char *src, size_t size)
+{
+    char *dst = SCM_NEW_ATOMIC_ARRAY(char*, size+1);
+    memcpy(dst, src, size);
+    dst[size] = '\0';
+    return dst;
+}
+
 /*
  * Multibyte length calculation
  */
@@ -179,11 +190,8 @@ ScmObj Scm_MakeString(const char *str, ScmSmallInt size, ScmSmallInt len,
 
     ScmString *s;
     if (flags & SCM_STRING_COPYING) {
-        char *nstr = SCM_NEW_ATOMIC2(char *, size + 1);
-        memcpy(nstr, str, size);
-        nstr[size] = '\0';          /* be kind to C */
-        flags |= SCM_STRING_TERMINATED;
-        s = make_str(len, size, nstr, flags);
+        flags |= SCM_STRING_TERMINATED; /* SCM_STRDUP_PARTIAL terminates the result str */
+        s = make_str(len, size, SCM_STRDUP_PARTIAL(str, size), flags);
     } else {
         s = make_str(len, size, str, flags);
     }
@@ -232,12 +240,7 @@ ScmObj Scm_ListToString(ScmObj chars)
 char *Scm_GetString(ScmString *str)
 {
     const ScmStringBody *b = SCM_STRING_BODY(str);
-
-    ScmSmallInt size = SCM_STRING_BODY_SIZE(b);
-    char *p = SCM_NEW_ATOMIC2(char *, size+1);
-    memcpy(p, SCM_STRING_BODY_START(b), size);
-    p[size] = '\0';
-    return p;
+    return SCM_STRDUP_PARTIAL(SCM_STRING_BODY_START(b), SCM_STRING_BODY_SIZE(b));
 }
 
 /* Common routine for Scm_GetStringConst and Scm_GetStringContent */
@@ -248,9 +251,7 @@ static const char *get_string_from_body(const ScmStringBody *b)
         /* we can use string data as C-string */
         return SCM_STRING_BODY_START(b);
     } else {
-        char *p = SCM_NEW_ATOMIC2(char *, size+1);
-        memcpy(p, SCM_STRING_BODY_START(b), size);
-        p[size] = '\0';
+        char *p = SCM_STRDUP_PARTIAL(SCM_STRING_BODY_START(b), size);
         /* kludge! This breaks 'const' qualification, but we know
            this is an idempotent operation from the outside.  Note that
            this is safe even multiple threads execute this part
@@ -1657,9 +1658,7 @@ static const char *dstring_getz(ScmDString *dstr, int *psiz, int *plen, int noal
         if (noalloc) {
             buf = dstr->init.data;
         } else {
-            buf = SCM_NEW_ATOMIC2(char*, size+1);
-            memcpy(buf, dstr->init.data, size);
-            buf[size] = '\0';
+            buf = SCM_STRDUP_PARTIAL(dstr->init.data, size);
         }
     } else {
         ScmDStringChain *chain = dstr->anchor;

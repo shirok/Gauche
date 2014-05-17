@@ -1323,10 +1323,7 @@ static const char *look_for_encoding(const char *buf)
     }
 
     /* Copy and return the encoding string */
-    char *encoding = SCM_NEW_ATOMIC2(char*, buf-s+1);
-    memcpy(encoding, s, buf-s);
-    encoding[buf-s] = '\0';
-    return encoding;
+    return SCM_STRDUP_PARTIAL(s, buf-s);
 }
 
 static void coding_port_recognize_encoding(ScmPort *port,

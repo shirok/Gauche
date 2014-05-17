@@ -462,6 +462,8 @@ typedef struct ScmInstanceRec {
 /* Fundamental allocators */
 #define SCM_MALLOC(size)          GC_MALLOC(size)
 #define SCM_MALLOC_ATOMIC(size)   GC_MALLOC_ATOMIC(size)
+#define SCM_STRDUP(s)             GC_STRDUP(s)
+#define SCM_STRDUP_PARTIAL(s, n)  Scm_StrdupPartial(s, n)
 
 #define SCM_NEW(type)         ((type*)(SCM_MALLOC(sizeof(type))))
 #define SCM_NEW_ARRAY(type, nelts) ((type*)(SCM_MALLOC(sizeof(type)*(nelts))))

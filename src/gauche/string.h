@@ -359,6 +359,12 @@ SCM_EXTERN void        Scm_DStringPutc(ScmDString *dstr, ScmChar ch);
 SCM_EXTERN void Scm__DStringRealloc(ScmDString *dstr, int min_incr);
 
 /*
+ * Utility.  Returns NUL-terminated string (SRC doesn't need to be
+ * NUL-terminated, but must be longer than SIZE).
+ */
+SCM_EXTERN char *Scm_StrdupPartial(const char *src, size_t size);
+
+/*
  * String pointers (WILL BE OBSOLETED)
  */
 

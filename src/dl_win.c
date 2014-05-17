@@ -50,8 +50,7 @@ static const char *dl_error(void)
     char buf[80];
     DWORD code = GetLastError();
     snprintf(buf, sizeof(buf), "error code %ld", code);
-    char *p = SCM_NEW_ATOMIC2(char *, strlen(buf)+1);
-    strcpy(p, buf);
+    return SCM_STRDUP(buf);
     return p;
 }
 

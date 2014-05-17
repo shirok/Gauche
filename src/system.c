@@ -379,9 +379,7 @@ static void put_user_home(ScmDString *dst,
         }
     } else {
         int namesiz = (int)(end - name);
-        char *uname = (char*)SCM_MALLOC_ATOMIC(namesiz+1);
-        memcpy(uname, name, namesiz);
-        uname[namesiz] = '\0';
+        char *uname = SCM_STRDUP_PARTIAL(name, namesiz);
         pwd = getpwnam(uname);
         if (pwd == NULL) {
             Scm_SigCheck(Scm_VM());
