@@ -2166,7 +2166,9 @@ ScmObj Scm_SysSelectX(ScmObj rfds, ScmObj wfds, ScmObj efds, ScmObj timeout)
    as an alternative.  Unfortunately again, current MinGW doesn't include
    _[w]putenv_s in its headers and import libraries.
 
-   So, for those platforms, we use putenv() and let it leak.
+   So, for those platforms, we use putenv/_wputenv.  We track allocated
+   memory in env_string table, keyed by names of envvars, and free them
+   whenever we put a new definition of envvars we've inserted before.
 
    Another merit of this compatibility layer is to guarantee MT-safeness;
    Putenv/setenv aren't usally MT-safe, neither is getenv when environment
@@ -2174,6 +2176,9 @@ ScmObj Scm_SysSelectX(ScmObj rfds, ScmObj wfds, ScmObj efds, ScmObj timeout)
 */
 
 static ScmInternalMutex env_mutex;
+static ScmHashCore env_strings; /* name -> malloc-ed mem.
+                                   used with putenv()/_wputenv() to prevent
+                                   leak. */
 
 const char *Scm_GetEnv(const char *name)
 {
@@ -2199,7 +2204,10 @@ void Scm_SetEnv(const char *name, const char *value, int overwrite)
 {
 #if defined(GAUCHE_WINDOWS) && defined(UNICODE)
     /* We need to use _wputenv for wide-character support.  Since we pass
-       the converted strings to OS, we have to allocate them by malloc. */
+       the converted strings to OS, we have to allocate them by malloc.
+       To prevent leak, we register the allocated memory to the global
+       hash table, and free it when Scm_SetEnv is called with the same NAME
+       again. */
     wchar_t *wname = Scm_MBS2WCS(name);
     wchar_t *wvalue = Scm_MBS2WCS(value);
     int nlen = wcslen(wname);
@@ -2212,17 +2220,32 @@ void Scm_SetEnv(const char *name, const char *value, int overwrite)
     wcscpy(wnameval+nlen, L"=");
     wcscpy(wnameval+nlen+1, wvalue);
 
+    ScmObj sname = Scm_MakeString(name, -1, -1, SCM_STRING_COPYING);
+
     int result = 0;
+    wchar_t *prev_mem = NULL;
     
     (void)SCM_INTERNAL_MUTEX_LOCK(env_mutex);
     if (overwrite || _wgetenv(wname) == NULL) {
         result = _wputenv(wnameval);
+        if (result >= 0) {
+            ScmDictEntry *e = Scm_HashCoreSearch(&env_strings,
+                                                 (intptr_t)sname,
+                                                 SCM_DICT_CREATE);
+            /* SCM_DICT_VALUE is only for ScmObj, so we directly access value
+               field here. */
+            prev_mem = (wchar_t*)e->value;
+            e->value = (intptr_t)wnameval; 
+        }
     }
     (void)SCM_INTERNAL_MUTEX_UNLOCK(env_mutex);
 
     if (result < 0) {
         free(wnameval);
         Scm_SysError("setenv failed on '%s=%s'", name, value);
+    }
+    if (prev_mem != NULL) {
+        free(prev_mem);
     }
 #elif defined(HAVE_SETENV)
     (void)SCM_INTERNAL_MUTEX_LOCK(env_mutex);
@@ -2232,7 +2255,6 @@ void Scm_SetEnv(const char *name, const char *value, int overwrite)
 #elif defined(HAVE_PUTENV)
     int nlen = (int)strlen(name);
     int vlen = (int)strlen(value);
-    /* we need malloc, since the pointer will be owned by the system */
     char *nameval = (char*)malloc(nlen+vlen+2);
     if (nameval == NULL) {
         Scm_Error("sys-setenv: out of memory");
@@ -2241,17 +2263,31 @@ void Scm_SetEnv(const char *name, const char *value, int overwrite)
     strcpy(nameval+nlen, "=");
     strcpy(nameval+nlen+1, value);
 
+    ScmObj sname = Scm_MakeString(name, -1, -1, SCM_STRING_COPYING);
+
     int result = 0;
+    chat *prev_mem = NULL;
     
     (void)SCM_INTERNAL_MUTEX_LOCK(env_mutex);
     if (overwrite || getenv(name) == NULL) {
         result = putenv(nameval);
+        if (result >= 0) {
+            ScmDictEntry *e = Scm_HashCoreSearch(&env_strings,
+                                                 (intptr_t)sname,
+                                                 SCM_DICT_CREATE);
+            /* SCM_DICT_VALUE is only for ScmObj, so we directly access value
+               field here. */
+            prev_mem = (char*)e->value;
+            e->value = (intptr_t)nameval; 
+        }
     }
     (void)SCM_INTERNAL_MUTEX_UNLOCK(env_mutex);
     if (r < 0) {
-        ScmObj n = Scm_MakeString(nameval, -1, -1, SCM_STRING_COPYING);
         free (nameval);
-        Scm_SysError("putenv failed on '%A'", n);
+        Scm_SysError("putenv failed on '%s=%s'", name, value);
+    }
+    if (prev_mem != NULL) {
+        free(prev_mem);
     }
 #else /* !HAVE_SETENV && !HAVE_PUTENV */
     /* We can't do much.  we may replace environ by ourselves, but
@@ -2303,10 +2339,21 @@ ScmObj Scm_Environ(void)
 void Scm_UnsetEnv(const char *name)
 {
 #if defined(HAVE_UNSETENV)
+    /* NB: If we HAVE_SETENV, we don't have any entries in env_strings,
+       so the lookup of snv_strings is a waste; but the result is always
+       NULL and it won't harm the operation, and we expect sys-unsetenv
+       is rarely used, so we just let it waste cpu cycles. */
+    char *prev_mem = NULL;
+    ScmObj sname = Scm_MakeString(name, -1, -1, SCM_STRING_COPYING);
     (void)SCM_INTERNAL_MUTEX_LOCK(env_mutex);
     int r = unsetenv(name);
+    ScmDictEntry *e = Scm_HashCoreSearch(&env_strings,
+                                         (intptr_t)sname,
+                                         SCM_DICT_DELETE);
+    if (e != NULL) { prev_mem = e->value; e->value = NULL; }
     (void)SCM_INTERNAL_MUTEX_UNLOCK(env_mutex);
     if (r < 0) Scm_SysError("unsetenv failed on %s", name);
+    if (prev_mem != NULL) free(prev_mem);
 #else  /*!HAVE_UNSETENV*/
     Scm_Error("sys-unsetenv is not supported on this platform.");
 #endif /*!HAVE_UNSETENV*/
@@ -2315,8 +2362,18 @@ void Scm_UnsetEnv(const char *name)
 void Scm_ClearEnv()
 {
 #if defined(HAVE_CLEARENV)
+    /* As in Scm_UnsetEnv, we don't need env_strings business if
+       we HAVE_SETENV, but it does no harm either. */
     (void)SCM_INTERNAL_MUTEX_LOCK(env_mutex);
     int r = clearenv();
+    ScmHashIter iter;
+    Scm_HashIterInit(&iter, &env_strings);
+    ScmDictEntry *e;
+    while ((e = Scm_HashIterNext(&iter)) != NULL) {
+        free(e->value);
+        e->value = NULL;
+    }
+    Scm_HashCoreClear(&env_strings);
     (void)SCM_INTERNAL_MUTEX_UNLOCK(env_mutex);
     if (r < 0) Scm_SysError("clearenv failed");
 #else  /*!HAVE_UNSETENV*/
@@ -2952,6 +3009,7 @@ void Scm__InitSystem(void)
     Scm_InitStaticClass(&Scm_SysFdsetClass, "<sys-fdset>", mod, NULL, 0);
 #endif
     SCM_INTERNAL_MUTEX_INIT(env_mutex);
+    Scm_HashCoreInitSimple(&env_strings, SCM_HASH_STRING, 0, NULL);
 
 #ifdef GAUCHE_WINDOWS
     init_winsock();
