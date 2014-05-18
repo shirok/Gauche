@@ -2350,7 +2350,7 @@ void Scm_UnsetEnv(const char *name)
     ScmDictEntry *e = Scm_HashCoreSearch(&env_strings,
                                          (intptr_t)sname,
                                          SCM_DICT_DELETE);
-    if (e != NULL) { prev_mem = e->value; e->value = NULL; }
+    if (e != NULL) { prev_mem = (char*)e->value; e->value = (intptr_t)NULL; }
     (void)SCM_INTERNAL_MUTEX_UNLOCK(env_mutex);
     if (r < 0) Scm_SysError("unsetenv failed on %s", name);
     if (prev_mem != NULL) free(prev_mem);
@@ -2370,8 +2370,8 @@ void Scm_ClearEnv()
     Scm_HashIterInit(&iter, &env_strings);
     ScmDictEntry *e;
     while ((e = Scm_HashIterNext(&iter)) != NULL) {
-        free(e->value);
-        e->value = NULL;
+        free((void*)e->value);
+        e->value = (intptr_t)NULL;
     }
     Scm_HashCoreClear(&env_strings);
     (void)SCM_INTERNAL_MUTEX_UNLOCK(env_mutex);
