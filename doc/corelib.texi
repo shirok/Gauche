@@ -4152,16 +4152,28 @@ Otherwise, it returns @code{#f}.
 A keyword is a sort of a special symbol that is automatically quoted.
 It is extensively used in pass-by-name arguments (keyword arguments),
 and keyword-value list.
-Unlike CommonLisp, keywords and symbols are distinct types.
+
+Unlike Common Lisp, keywords and symbols are distinct types in
+the current version of Gauche for historical reasons.
+In future, keywords will be a subtype
+of symbols; a keyword will be evaluated as an identifier, just like symbols,
+but happens to have itself as a value.   @xref{Keyword and symbol integration},
+for the details.
 
 See also @ref{Making Procedures} for how Gauche supports keyword
 arguments, and @code{let-keywords} macro (@ref{Optional argument parsing})
 for parsing keyword-value list manually.
 @c JP
-キーワードは特別なシンボルの一種で、自動的にクォートされます。
+キーワードは、自動的にクォートされる特別なシンボルのようなものです。
 名前で渡す引数(キーワード引数)や、キーワード-値のリストで広く使われて
 います。
-CommonLisp とは異なり、キーワードとシンボルは別々の型として扱われます。
+
+CommonLisp とは異なり、歴史的理由から
+現在のGaucheではキーワードとシンボルは別々の型として扱われます。
+将来は、キーワードはシンボルのサブタイプになる予定です。つまり、
+キーワードはシンボルと同様、識別子として扱われ、
+たまたま自分自身を値として持つようになるということです。
+詳細は@ref{Keyword and symbol integration}を参照してください。
 
 Gaucheにおけるキーワード引数のサポートについては@ref{Making Procedures}を、
 また独自にキーワード-値リストをパーズする方法については
@@ -4343,6 +4355,106 @@ the key and the following value is removed from @var{kv-list}.
 @end example
 
 @end defun
+
+@menu
+* Keyword and symbol integration::  
+@end menu
+
+@node Keyword and symbol integration,  , Keywords, Keywords
+@subsection Keyword and symbol integration
+@c NODE キーワードとシンボルの統合
+
+@c EN
+In future versions of Gauche, keywords will become a subtype of symbols,
+automatically bound to itself by default. 
+On the surface it won't make much difference;
+you can write a keyword @code{:key}, which evaluates to itself; so you
+can pass and receive keyword arguments just like as they are now.  You will
+be able to use @code{:key} as variables, e.g. @code{(define :key 3)},
+which changes the value of @code{:key} in your module,
+but that isn't allowed in the current version of Gauche and it will be
+upper-compatible change.  (We assume you know what you're doing
+if you redefine keywords; still the effect stays local in your module
+and other module that import yours.)
+
+However, there are several subtle points that do make difference, that
+would break backward compatibility unless you code carefully.  We explain
+here
+how to write code that works in the current Gauche and will keep working
+after we make the change.
+@c JP
+@c COMMON
+
+@subsubheading @code{(symbol? :key)} that returns @code{#f} now, will return @code{#t}
+
+You will still be able to distinguish keywords by @code{keyword?}; but
+if you need to switch behavior depending whether an object is a symbol
+or a keyword, you have to test keyword-ness first.
+
+@example
+;; will break
+(cond
+  [(symbol? x) (x-is-symbol)]
+  [(keyword? x) (x-is-keyword)])
+
+;; will work on both versions
+(cond
+  [(keyword? x) (x-is-keyword)]
+  [(symbol? x) (x-is-symbol)])
+@end example
+
+@subsubheading Literal keywords in pattern matching
+
+In the current version,
+when keywords appear in a pattern of @code{util.match}
+or @code{syntax-rules}, they only match to themselves.
+After we make keywords as a subtype of symbols, such keywords in
+a pattern are treated as pattern variables, just like symbols.
+
+@example
+;; In the current version
+(match '(a b) [(:key z) (list :key z)] [_ "nope"])
+   @result{} "nope"
+
+;; After keyword symbol integration;
+;; :key is treated just as a pattern variable
+(match '(a b) [(:key z) (list :key z)] [_ "nope"])
+   @result{} (a b)
+@end example
+
+The same thing happens to the patterns in @code{syntax-rules}.
+
+To make the code work in both versions, expilcitly mark the keywords
+as literals.  
+
+@itemize @bullet
+@item
+For @code{match}, quote the keywords you want to be treated as literals.
+@example
+(match '(a b) [(':key z) (list :key z)] [_ "nope"])
+   @result{} "nope"
+@end example
+
+@item
+For @code{syntax-rules}, list the keywords as literals.
+@example
+(syntax-rules (:key)
+  [(_ :key z) (list :key z)])  ;etc.
+@end example
+@end itemize
+
+Note that it was an error in Gauche 0.9.3.3 or before to
+list keywords in the literals of @code{syntax-rules}.
+In 0.9.4 you can do so, and we encourage it, for it is also compatible to R7RS.
+
+@subsubheading Displaying keywords
+
+Now @code{(display :key)} prints @code{key} (no colon), while it will
+print @code{:key} in future.
+
+You can use @code{(display (keyword->string :key))} which prints @code{key}
+in both versions.
+
 
 @c ----------------------------------------------------------------------
 @node Identifiers, Characters, Keywords, Core library
