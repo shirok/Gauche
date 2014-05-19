@@ -42,6 +42,8 @@
   (test-eager-lazy "ltake" ltake take* '(1 2 3 4 5) 10 #t 'z)
   (test-eager-lazy "ltake-while" ltake-while take-while odd? '(1 3 5 4 2))
   (test-eager-lazy "ltake-while" ltake-while take-while even? '(1 3 5 4 2))
+  (test-eager-lazy "lslices" lslices slices '(1 2 3 4 5 6 7) 2)
+  (test-eager-lazy "lslices" lslices slices '(1 2 3 4 5 6 7) 2 #t 'z)
   )
 
 (test* "lazyness - coercion" '(1 2 3 4 5)

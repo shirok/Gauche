@@ -40,7 +40,7 @@
 (define-module gauche.lazy
   (use gauche.generator)
   (export x->lseq lunfold lmap lmap-accum lappend lconcatenate lfilter
-          lfilter-map lstate-filter ltake ltake-while lrxmatch))
+          lfilter-map lstate-filter ltake ltake-while lrxmatch lslices))
 (select-module gauche.lazy)
 
 ;; Universal coercer.
@@ -118,3 +118,5 @@
 ;; ldrop-while is uncessary
 (define (lrxmatch rx seq)
   (generator->lseq (grxmatch rx seq)))
+(define (lslices seq k :optional (fill? #f) (padding #f))
+  (generator->lseq (gslices seq k fill? padding)))

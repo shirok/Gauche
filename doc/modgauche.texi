@@ -5736,6 +5736,15 @@ rarely matching string from very large input.  Unless @var{seq}
 is a string, @code{lrxmatch} buffers certain
 @end defun
 
+@defun lslices seq k :optional fill? padding
+Lazy version of @code{slices} (@xref{List accessors and modifiers}).
+
+@example
+(lslices '(a b c d e f) 2)
+  @result{} ((a b) (c d) (e f))
+@end example
+@end defun
+
 @c ----------------------------------------------------------------------
 @node Listener, User-level logging, Lazy sequence utilities, Library modules - Gauche extensions
 @section @code{gauche.listener} - Listener
