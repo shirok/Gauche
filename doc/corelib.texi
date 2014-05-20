@@ -17561,9 +17561,18 @@ Gaucheが埋め込み言語として使われている場合、これらの変�
 Returns the value of the environment variable @var{name} as a string,
 or @code{#f} if the environment variable is not defined.
 (@xref{Accessing environment variables}).
+
+Note: Most systems doesn't guarantee thread-safety of @code{getenv} while
+environment is being modified; however, Gauche mutexes envionment
+accessing/mutating APIs internally, so you don't need to worry
+about the race condition as far as you use Gauche procedures.
 @c JP
 環境変数@var{name}の値を文字列で返します。もし@var{name}が定義されていなければ、
 @code{#f}が返ります。
+
+註: 多くのシステムでは、環境が変更されている最中の@code{getenv}のスレッド安全性を
+保証していませんが、Gaucheは内部的に環境へのアクセスと変更のAPIを排他制御しているので、
+Gaucheの手続きを使っている限りにおいてはスレッド安全です。
 @c COMMON
 @end defun
 
@@ -17622,7 +17631,7 @@ If the optional argument @var{overwrite} is @code{#f} (default),
 the enviornment is untouched if a variable with @var{name} already
 exists.   If @var{overwrite} is @code{#t}, the variable is overwritten.
 
-Fir @code{sys-putenv}, you have to give a single string
+For @code{sys-putenv}, you have to give a single string
 with the form of @code{NAME=VALUE}, that is, concatenating @var{name}
 and @var{value} with @code{#\=}.  If the enviornmet variable with
 the same name exists, it will be overwritten.
@@ -17642,6 +17651,9 @@ These procedures are only available when a feature identifier
  [else
    ... fallback code ...])
 @end example
+
+These procedures are thread-safe as far as you access and modify
+the environment through Gauche API.
 @end defun
 
 @defun sys-unsetenv name
