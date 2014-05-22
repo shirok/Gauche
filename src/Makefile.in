@@ -320,10 +320,10 @@ $(host)-gauche-config: gauche-config.c
 	$(BUILD_CC) $(BUILD_CFLAGS) $(DEFS) -o $@ gauche-config.c
 
 # we need thread settings in sync with gc.
-gauche/config_threads.h : $(top_builddir)/gc/include/private/config.h
+gauche/config_threads.h : $(top_builddir)/gc/include/config.h
 	rm -f gauche/config_threads.h
 	echo "/* Generated automatically from gc config header; do not edit. */" > gauche/config_threads.h
-	grep '^#define GC_[0-9A-Z_]*THREADS' $(top_builddir)/gc/include/private/config.h >> gauche/config_threads.h || :
+	grep '^#define GC_[0-9A-Z_]*THREADS' $(top_builddir)/gc/include/config.h >> gauche/config_threads.h || :
 
 gauche-config.c paths_arch.c ../lib/gauche/config.scm : genconfig
 	$(SHELL) ./genconfig

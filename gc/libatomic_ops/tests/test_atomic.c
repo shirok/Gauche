@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2003-2005 Hewlett-Packard Development Company, L.P.
- * Original Author: Hans Boehm
  *
  * This file may be redistributed and/or modified under the
  * terms of the GNU General Public License as published by the Free Software
@@ -9,15 +8,25 @@
  * It is distributed in the hope that it will be useful, but WITHOUT ANY
  * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE.  See the GNU General Public License in the
- * file doc/COPYING for more details.
+ * file COPYING for more details.
  */
 
 #if defined(HAVE_CONFIG_H)
 # include "config.h"
 #endif
 
+#if defined(AO_NO_PTHREADS) && defined(AO_USE_PTHREAD_DEFS)
+# include <stdio.h>
 
-#include "run_parallel.inc"
+  int main(void)
+  {
+    printf("test skipped\n");
+    return 0;
+  }
+
+#else
+
+#include "run_parallel.h"
 
 #include "test_atomic_include.h"
 
@@ -45,11 +54,11 @@ void * add1sub1_thr(void * id)
   int i;
 
   for (i = 0; i < NITERS; ++i)
-    if (me & 1)
-      AO_fetch_and_sub1(&counter);
-    else
-      AO_fetch_and_add1(&counter);
-
+    if ((me & 1) != 0) {
+      (void)AO_fetch_and_sub1(&counter);
+    } else {
+      (void)AO_fetch_and_add1(&counter);
+    }
   return 0;
 }
 
@@ -76,36 +85,39 @@ void * acqrel_thr(void *id)
     if (me & 1)
       {
         AO_t my_counter1;
-    if (me != 1)
-      fprintf(stderr, "acqrel test: too many threads\n");
-    my_counter1 = AO_load(&counter1);
-    AO_store(&counter1, my_counter1 + 1);
-    AO_store_release_write(&counter2, my_counter1 + 1);
+        if (me != 1)
+          {
+            fprintf(stderr, "acqrel test: too many threads\n");
+            abort();
+          }
+        my_counter1 = AO_load(&counter1);
+        AO_store(&counter1, my_counter1 + 1);
+        AO_store_release_write(&counter2, my_counter1 + 1);
       }
     else
       {
-    AO_t my_counter1a, my_counter2a;
-    AO_t my_counter1b, my_counter2b;
+        AO_t my_counter1a, my_counter2a;
+        AO_t my_counter1b, my_counter2b;
 
-    my_counter2a = AO_load_acquire_read(&counter2);
-    my_counter1a = AO_load(&counter1);
-    /* Redo this, to make sure that the second load of counter1 */
-    /* is not viewed as a common subexpression.         */
-    my_counter2b = AO_load_acquire_read(&counter2);
-    my_counter1b = AO_load(&counter1);
-    if (my_counter1a < my_counter2a)
-      {
-        fprintf(stderr, "Saw release store out of order: %lu < %lu\n",
-            (unsigned long)my_counter1a, (unsigned long)my_counter2a);
-        abort();
-      }
-    if (my_counter1b < my_counter2b)
-      {
-        fprintf(stderr,
-            "Saw release store out of order (bad CSE?): %lu < %lu\n",
-            (unsigned long)my_counter1b, (unsigned long)my_counter2b);
-        abort();
-      }
+        my_counter2a = AO_load_acquire_read(&counter2);
+        my_counter1a = AO_load(&counter1);
+        /* Redo this, to make sure that the second load of counter1 */
+        /* is not viewed as a common subexpression.         */
+        my_counter2b = AO_load_acquire_read(&counter2);
+        my_counter1b = AO_load(&counter1);
+        if (my_counter1a < my_counter2a)
+          {
+            fprintf(stderr, "Saw release store out of order: %lu < %lu\n",
+                (unsigned long)my_counter1a, (unsigned long)my_counter2a);
+            abort();
+          }
+        if (my_counter1b < my_counter2b)
+          {
+            fprintf(stderr,
+                "Saw release store out of order (bad CSE?): %lu < %lu\n",
+                (unsigned long)my_counter1b, (unsigned long)my_counter2b);
+            abort();
+          }
       }
 
   return 0;
@@ -120,7 +132,7 @@ int acqrel_test(void)
 
 #if defined(AO_HAVE_test_and_set_acquire)
 
-AO_TS_T lock = AO_TS_INITIALIZER;
+AO_TS_t lock = AO_TS_INITIALIZER;
 
 unsigned long locked_counter;
 volatile unsigned long junk = 13;
@@ -135,8 +147,8 @@ void * test_and_set_thr(void * id)
       ++locked_counter;
       if (locked_counter != 1)
         {
-          fprintf(stderr, "Test and set failure 1, counter = %ld\n",
-                  locked_counter);
+          fprintf(stderr, "Test and set failure 1, counter = %ld, id = %d\n",
+                  locked_counter, (int)(AO_PTRDIFF_T)id);
           abort();
         }
       locked_counter *= 2;
@@ -145,8 +157,8 @@ void * test_and_set_thr(void * id)
       locked_counter -= 4;
       if (locked_counter != 1)
         {
-          fprintf(stderr, "Test and set failure 2, counter = %ld\n",
-                  locked_counter);
+          fprintf(stderr, "Test and set failure 2, counter = %ld, id = %d\n",
+                  locked_counter, (int)(AO_PTRDIFF_T)id);
           abort();
         }
       --locked_counter;
@@ -188,3 +200,5 @@ int main(void)
 # endif
   return 0;
 }
+
+#endif /* !AO_NO_PTHREADS || !AO_USE_PTHREAD_DEFS */

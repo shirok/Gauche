@@ -1,32 +1,18 @@
-#! /bin/sh
-
+#!/bin/sh
 set -e
 
-# These version are ok, pre-1.7 is not.  Post 1.7 may produce a lot of
-# warnings for unrelated projects, so prefer 1.7 for now.
-am_version=
-for v in 1.10 1.9 1.8 1.7; do
-    if type -p &>/dev/null automake-$v; then
-	am_version="-$v"
-	break
-    fi
-done
-if [ -z "$am_version" ]; then
-    case "`automake --version`" in
-	*\ 0.*|*\ 1.[0-6].*|*\ 1.[0-6]\ *)
-	    echo "$0: Automake-1.7 or later is needed."
-	    exit 2
-	    ;;
-    esac
-fi
+# This script creates (or regenerates) configure (as well as aclocal.m4,
+# config.h.in, Makefile.in, etc.) missing in the source repository.
+#
+# If you compile from a distribution tarball, you can skip this.  Otherwise,
+# make sure that you have Autoconf, Automake, Libtool, and pkg-config
+# installed on your system, and that the corresponding *.m4 files are visible
+# to the aclocal.  The latter can be achieved by using packages shipped by
+# your OS, or by installing custom versions of all four packages to the same
+# prefix.  Otherwise, you may need to invoke autoreconf with the appropriate
+# -I options to locate the required *.m4 files.
 
-set -x
-aclocal$am_version
-autoconf
-autoheader
-automake$am_version -ac
-libtoolize --automake --force
-set +x
+autoreconf -i
+
 echo
 echo "Ready to run './configure'."
-echo

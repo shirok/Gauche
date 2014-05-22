@@ -32,7 +32,6 @@
 #    include "atomic_ops.h"
 #  endif
 
-   GC_API void GC_CALL GC_noop1(word);
 #  ifdef PCR
 #    include <base/PCR_Base.h>
 #    include <th/PCR_Th.h>
@@ -43,15 +42,9 @@
 #    define UNCOND_UNLOCK() PCR_Th_ML_Release(&GC_allocate_ml)
 #  endif
 
-#  if !defined(AO_HAVE_test_and_set_acquire) && defined(GC_PTHREADS)
-#    define USE_PTHREAD_LOCKS
-#  endif
-
-#  if defined(GC_WIN32_THREADS) && defined(GC_PTHREADS)
-#    define USE_PTHREAD_LOCKS
-#  endif
-
-#  if defined(GC_RTEMS_PTHREADS)
+#  if (!defined(AO_HAVE_test_and_set_acquire) || defined(GC_RTEMS_PTHREADS) \
+       || defined(SN_TARGET_PS3) || defined(GC_WIN32_THREADS) \
+       || defined(LINT2)) && defined(GC_PTHREADS)
 #    define USE_PTHREAD_LOCKS
 #  endif
 
@@ -62,30 +55,26 @@
 #    define NOSERVICE
 #    include <windows.h>
 #    define NO_THREAD (DWORD)(-1)
-     GC_EXTERN DWORD GC_lock_holder;
      GC_EXTERN CRITICAL_SECTION GC_allocate_ml;
 #    ifdef GC_ASSERTIONS
-#        define UNCOND_LOCK() \
-                { EnterCriticalSection(&GC_allocate_ml); \
+       GC_EXTERN DWORD GC_lock_holder;
+#      define SET_LOCK_HOLDER() GC_lock_holder = GetCurrentThreadId()
+#      define UNSET_LOCK_HOLDER() GC_lock_holder = NO_THREAD
+#      define I_HOLD_LOCK() (!GC_need_to_lock \
+                           || GC_lock_holder == GetCurrentThreadId())
+#      define I_DONT_HOLD_LOCK() (!GC_need_to_lock \
+                           || GC_lock_holder != GetCurrentThreadId())
+#      define UNCOND_LOCK() \
+                { GC_ASSERT(I_DONT_HOLD_LOCK()); \
+                  EnterCriticalSection(&GC_allocate_ml); \
                   SET_LOCK_HOLDER(); }
-#        define UNCOND_UNLOCK() \
+#      define UNCOND_UNLOCK() \
                 { GC_ASSERT(I_HOLD_LOCK()); UNSET_LOCK_HOLDER(); \
                   LeaveCriticalSection(&GC_allocate_ml); }
 #    else
 #      define UNCOND_LOCK() EnterCriticalSection(&GC_allocate_ml)
 #      define UNCOND_UNLOCK() LeaveCriticalSection(&GC_allocate_ml)
 #    endif /* !GC_ASSERTIONS */
-#    define SET_LOCK_HOLDER() GC_lock_holder = GetCurrentThreadId()
-#    define UNSET_LOCK_HOLDER() GC_lock_holder = NO_THREAD
-#    define I_HOLD_LOCK() (!GC_need_to_lock \
-                           || GC_lock_holder == GetCurrentThreadId())
-#    define I_DONT_HOLD_LOCK() (!GC_need_to_lock \
-                           || GC_lock_holder != GetCurrentThreadId())
-#  elif defined(SN_TARGET_PS3)
-#    include <pthread.h>
-     GC_EXTERN pthread_mutex_t GC_allocate_ml;
-#    define LOCK() pthread_mutex_lock(&GC_allocate_ml)
-#    define UNLOCK() pthread_mutex_unlock(&GC_allocate_ml)
 #  elif defined(GC_PTHREADS)
 #    include <pthread.h>
 
@@ -128,7 +117,8 @@
         /* GC_call_with_alloc_lock.                                        */
 #     ifdef GC_ASSERTIONS
 #        define UNCOND_LOCK() \
-              { if (AO_test_and_set_acquire(&GC_allocate_lock) == AO_TS_SET) \
+              { GC_ASSERT(I_DONT_HOLD_LOCK()); \
+                if (AO_test_and_set_acquire(&GC_allocate_lock) == AO_TS_SET) \
                   GC_lock(); \
                 SET_LOCK_HOLDER(); }
 #        define UNCOND_UNLOCK() \
@@ -136,74 +126,86 @@
                 AO_CLEAR(&GC_allocate_lock); }
 #     else
 #        define UNCOND_LOCK() \
-              { if (AO_test_and_set_acquire(&GC_allocate_lock) == AO_TS_SET) \
+              { GC_ASSERT(I_DONT_HOLD_LOCK()); \
+                if (AO_test_and_set_acquire(&GC_allocate_lock) == AO_TS_SET) \
                   GC_lock(); }
 #        define UNCOND_UNLOCK() AO_CLEAR(&GC_allocate_lock)
 #     endif /* !GC_ASSERTIONS */
-#    else /* THREAD_LOCAL_ALLOC  || USE_PTHREAD_LOCKS */
+#    else /* THREAD_LOCAL_ALLOC || USE_PTHREAD_LOCKS */
 #      ifndef USE_PTHREAD_LOCKS
 #        define USE_PTHREAD_LOCKS
 #      endif
-#    endif /* THREAD_LOCAL_ALLOC || USE_PTHREAD_LOCK */
+#    endif /* THREAD_LOCAL_ALLOC || USE_PTHREAD_LOCKS */
 #    ifdef USE_PTHREAD_LOCKS
 #      include <pthread.h>
        GC_EXTERN pthread_mutex_t GC_allocate_ml;
 #      ifdef GC_ASSERTIONS
-#        define UNCOND_LOCK() { GC_lock(); SET_LOCK_HOLDER(); }
+#        define UNCOND_LOCK() { GC_ASSERT(I_DONT_HOLD_LOCK()); \
+                                GC_lock(); SET_LOCK_HOLDER(); }
 #        define UNCOND_UNLOCK() \
                 { GC_ASSERT(I_HOLD_LOCK()); UNSET_LOCK_HOLDER(); \
                   pthread_mutex_unlock(&GC_allocate_ml); }
 #      else /* !GC_ASSERTIONS */
 #        if defined(NO_PTHREAD_TRYLOCK)
-#          define UNCOND_LOCK() GC_lock()
-#        else /* !defined(NO_PTHREAD_TRYLOCK) */
-#        define UNCOND_LOCK() \
-           { if (0 != pthread_mutex_trylock(&GC_allocate_ml)) \
-               GC_lock(); }
+#          ifdef USE_SPIN_LOCK
+#            define UNCOND_LOCK() GC_lock()
+#          else
+#            define UNCOND_LOCK() pthread_mutex_lock(&GC_allocate_ml)
+#          endif
+#        else
+#          define UNCOND_LOCK() \
+              { if (0 != pthread_mutex_trylock(&GC_allocate_ml)) \
+                  GC_lock(); }
 #        endif
 #        define UNCOND_UNLOCK() pthread_mutex_unlock(&GC_allocate_ml)
 #      endif /* !GC_ASSERTIONS */
 #    endif /* USE_PTHREAD_LOCKS */
-#    define SET_LOCK_HOLDER() \
+#    ifdef GC_ASSERTIONS
+       GC_EXTERN unsigned long GC_lock_holder;
+#      define SET_LOCK_HOLDER() \
                 GC_lock_holder = NUMERIC_THREAD_ID(pthread_self())
-#    define UNSET_LOCK_HOLDER() GC_lock_holder = NO_THREAD
-#    define I_HOLD_LOCK() \
+#      define UNSET_LOCK_HOLDER() GC_lock_holder = NO_THREAD
+#      define I_HOLD_LOCK() \
                 (!GC_need_to_lock || \
                  GC_lock_holder == NUMERIC_THREAD_ID(pthread_self()))
-#    ifndef NUMERIC_THREAD_ID_UNIQUE
-#      define I_DONT_HOLD_LOCK() 1  /* Conservatively say yes */
-#    else
-#      define I_DONT_HOLD_LOCK() \
+#      ifndef NUMERIC_THREAD_ID_UNIQUE
+#        define I_DONT_HOLD_LOCK() 1  /* Conservatively say yes */
+#      else
+#        define I_DONT_HOLD_LOCK() \
                 (!GC_need_to_lock \
                  || GC_lock_holder != NUMERIC_THREAD_ID(pthread_self()))
-#    endif
+#      endif
+#    endif /* GC_ASSERTIONS */
      GC_EXTERN volatile GC_bool GC_collecting;
 #    define ENTER_GC() GC_collecting = 1;
 #    define EXIT_GC() GC_collecting = 0;
      GC_INNER void GC_lock(void);
-     GC_EXTERN unsigned long GC_lock_holder;
-#    if defined(GC_ASSERTIONS) && defined(PARALLEL_MARK)
-       GC_EXTERN unsigned long GC_mark_lock_holder;
-#    endif
 #  endif /* GC_PTHREADS with linux_threads.c implementation */
    GC_EXTERN GC_bool GC_need_to_lock;
 
 # else /* !THREADS */
-#   define LOCK()
-#   define UNLOCK()
-#   define SET_LOCK_HOLDER()
-#   define UNSET_LOCK_HOLDER()
-#   define I_HOLD_LOCK() TRUE
-#   define I_DONT_HOLD_LOCK() TRUE
+#   define LOCK() (void)0
+#   define UNLOCK() (void)0
+#   ifdef GC_ASSERTIONS
+#     define I_HOLD_LOCK() TRUE
+#     define I_DONT_HOLD_LOCK() TRUE
                 /* Used only in positive assertions or to test whether  */
                 /* we still need to acquire the lock.  TRUE works in    */
                 /* either case.                                         */
+#   endif
 # endif /* !THREADS */
 
 #if defined(UNCOND_LOCK) && !defined(LOCK)
+# ifdef LINT2
+    /* Instruct code analysis tools not to care about GC_need_to_lock   */
+    /* influence to LOCK/UNLOCK semantic.                               */
+#   define LOCK() UNCOND_LOCK()
+#   define UNLOCK() UNCOND_UNLOCK()
+# else
                 /* At least two thread running; need to lock.   */
-#    define LOCK() { if (GC_need_to_lock) UNCOND_LOCK(); }
-#    define UNLOCK() { if (GC_need_to_lock) UNCOND_UNLOCK(); }
+#   define LOCK() do { if (GC_need_to_lock) UNCOND_LOCK(); } while (0)
+#   define UNLOCK() do { if (GC_need_to_lock) UNCOND_UNLOCK(); } while (0)
+# endif
 #endif
 
 # ifndef ENTER_GC

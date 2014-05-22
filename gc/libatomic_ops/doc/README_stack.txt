@@ -18,8 +18,7 @@ to the data structure.
 For details see:
 
 Hans-J. Boehm, "An Almost Non-Blocking Stack", PODC 2004,
-http://portal.acm.org/citation.cfm?doid=1011767.1011774, or
-http://www.hpl.hp.com/techreports/2004/HPL-2004-105.html
+http://portal.acm.org/citation.cfm?doid=1011767.1011774
 (This is not exactly the implementation described there, since the
 interface was cleaned up in the interim.  But it should perform
 very similarly.)

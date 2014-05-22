@@ -28,9 +28,10 @@
 
 #include "../test_and_set_t_is_ao_t.h"
 
-AO_INLINE AO_TS_VAL_t
-AO_test_and_set_full(volatile AO_TS_t *addr)
-{
+#ifndef AO_PREFER_GENERALIZED
+  AO_INLINE AO_TS_VAL_t
+  AO_test_and_set_full(volatile AO_TS_t *addr)
+  {
         register long ret;
 
         __asm__ __volatile__(
@@ -40,8 +41,9 @@ AO_test_and_set_full(volatile AO_TS_t *addr)
                 : "memory");
 
         return (AO_TS_VAL_t)ret;
-}
-#define AO_HAVE_test_and_set_full
+  }
+# define AO_HAVE_test_and_set_full
+#endif /* !AO_PREFER_GENERALIZED */
 
 AO_INLINE int
 AO_compare_and_swap_full(volatile AO_t *addr, AO_t old, AO_t new_val)
@@ -63,3 +65,7 @@ AO_compare_and_swap_full(volatile AO_t *addr, AO_t old, AO_t new_val)
        return (int)ret;
 }
 #define AO_HAVE_compare_and_swap_full
+
+/* TODO: implement AO_fetch_compare_and_swap.   */
+
+#define AO_T_IS_INT

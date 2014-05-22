@@ -28,7 +28,7 @@ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
 AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE. 
+SOFTWARE.
 
 --------------------------------
 
@@ -61,4 +61,3 @@ It is possible that the license of the GPL pieces may be changed for
 future versions to make them more consistent with the rest of the package.
 If you submit patches, and have strong preferences about licensing, please
 express them.
-

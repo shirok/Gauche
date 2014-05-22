@@ -56,7 +56,12 @@
 /* not count on the presence of a type descriptor, and must handle this */
 /* case correctly somehow.                                              */
 #define GC_PROC_BYTES 100
-struct GC_ms_entry;
+
+#ifdef GC_BUILD
+  struct GC_ms_entry;
+#else
+  struct GC_ms_entry { void *opaque; };
+#endif
 typedef struct GC_ms_entry * (*GC_mark_proc)(GC_word * /* addr */,
                                 struct GC_ms_entry * /* mark_stack_ptr */,
                                 struct GC_ms_entry * /* mark_stack_limit */,
@@ -103,8 +108,8 @@ typedef struct GC_ms_entry * (*GC_mark_proc)(GC_word * /* addr */,
                         /* The latter alternative can be used if each   */
                         /* object contains a type descriptor in the     */
                         /* first word.                                  */
-                        /* Note that in multithreaded environments      */
-                        /* per object descriptors must be located in    */
+                        /* Note that in the multi-threaded environments */
+                        /* per-object descriptors must be located in    */
                         /* either the first two or last two words of    */
                         /* the object, since only those are guaranteed  */
                         /* to be cleared while the allocation lock is   */
@@ -164,27 +169,38 @@ GC_API void ** GC_CALL GC_new_free_list_inner(void);
 
 /* Return a new kind, as specified. */
 GC_API unsigned GC_CALL GC_new_kind(void ** /* free_list */,
-                                    GC_word /* mark_descriptor_template */,
-                                    int /* add_size_to_descriptor */,
-                                    int /* clear_new_objects */);
+                            GC_word /* mark_descriptor_template */,
+                            int /* add_size_to_descriptor */,
+                            int /* clear_new_objects */) GC_ATTR_NONNULL(1);
                 /* The last two parameters must be zero or one. */
 GC_API unsigned GC_CALL GC_new_kind_inner(void ** /* free_list */,
-                                    GC_word /* mark_descriptor_template */,
-                                    int /* add_size_to_descriptor */,
-                                    int /* clear_new_objects */);
+                            GC_word /* mark_descriptor_template */,
+                            int /* add_size_to_descriptor */,
+                            int /* clear_new_objects */) GC_ATTR_NONNULL(1);
 
 /* Return a new mark procedure identifier, suitable for use as  */
 /* the first argument in GC_MAKE_PROC.                          */
 GC_API unsigned GC_CALL GC_new_proc(GC_mark_proc);
 GC_API unsigned GC_CALL GC_new_proc_inner(GC_mark_proc);
 
-/* Allocate an object of a given kind.  Note that in multithreaded      */
+/* Allocate an object of a given kind.  By default, there are only      */
+/* a few kinds: composite (pointer-free), atomic, uncollectible, etc.   */
+/* We claim it is possible for clever client code that understands the  */
+/* GC internals to add more, e.g. to communicate object layout          */
+/* information to the collector.  Note that in the multi-threaded       */
 /* contexts, this is usually unsafe for kinds that have the descriptor  */
 /* in the object itself, since there is otherwise a window in which     */
 /* the descriptor is not correct.  Even in the single-threaded case,    */
 /* we need to be sure that cleared objects on a free list don't         */
 /* cause a GC crash if they are accidentally traced.                    */
-GC_API void * GC_CALL GC_generic_malloc(size_t /* lb */, int /* k */);
+GC_API GC_ATTR_MALLOC void * GC_CALL GC_generic_malloc(size_t /* lb */,
+                                                       int /* k */);
+
+GC_API GC_ATTR_MALLOC void * GC_CALL GC_generic_malloc_ignore_off_page(
+                                        size_t /* lb */, int /* k */);
+                                /* As above, but pointers to past the   */
+                                /* first page of the resulting object   */
+                                /* are ignored.                         */
 
 typedef void (GC_CALLBACK * GC_describe_type_fn)(void * /* p */,
                                                  char * /* out_buf */);
@@ -223,6 +239,27 @@ GC_API void * GC_CALL GC_clear_stack(void *);
 typedef void (GC_CALLBACK * GC_start_callback_proc)(void);
 GC_API void GC_CALL GC_set_start_callback(GC_start_callback_proc);
 GC_API GC_start_callback_proc GC_CALL GC_get_start_callback(void);
+
+/* Slow/general mark bit manipulation.  The caller must hold the        */
+/* allocation lock.  GC_is_marked returns 1 (TRUE) or 0.                */
+GC_API int GC_CALL GC_is_marked(const void *) GC_ATTR_NONNULL(1);
+GC_API void GC_CALL GC_clear_mark_bit(const void *) GC_ATTR_NONNULL(1);
+GC_API void GC_CALL GC_set_mark_bit(const void *) GC_ATTR_NONNULL(1);
+
+/* Push everything in the given range onto the mark stack.              */
+/* (GC_push_conditional pushes either all or only dirty pages depending */
+/* on the third argument.)                                              */
+GC_API void GC_CALL GC_push_all(char * /* bottom */, char * /* top */);
+GC_API void GC_CALL GC_push_conditional(char * /* bottom */, char * /* top */,
+                                        int /* bool all */);
+
+/* Set and get the client push-other-roots procedure.  A client         */
+/* supplied procedure should also call the original procedure.          */
+/* Note that both the setter and getter require some external           */
+/* synchronization to avoid data race.                                  */
+typedef void (GC_CALLBACK * GC_push_other_roots_proc)(void);
+GC_API void GC_CALL GC_set_push_other_roots(GC_push_other_roots_proc);
+GC_API GC_push_other_roots_proc GC_CALL GC_get_push_other_roots(void);
 
 #ifdef __cplusplus
   } /* end of extern "C" */

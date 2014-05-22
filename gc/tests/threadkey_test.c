@@ -1,4 +1,8 @@
 
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+
 #ifndef GC_THREADS
 # define GC_THREADS
 #endif
@@ -55,12 +59,12 @@ void * GC_CALLBACK on_thread_exit_inner (struct GC_stack_base * sb, void * arg)
   if (res == GC_SUCCESS)
     GC_unregister_my_thread ();
 
-  return (void*)(GC_word)creation_res;
+  return arg ? (void*)(GC_word)creation_res : 0;
 }
 
 void on_thread_exit (void *v)
 {
-  GC_call_with_stack_base (on_thread_exit_inner, NULL);
+  GC_call_with_stack_base (on_thread_exit_inner, v);
 }
 
 void make_key (void)
@@ -86,8 +90,9 @@ int main (void)
     pthread_t t;
     void *res;
     if (GC_pthread_create (&t, NULL, entry, NULL) == 0
-        && (i & 1) != 0)
-      GC_pthread_join (t, &res);
+        && (i & 1) != 0) {
+      (void)GC_pthread_join(t, &res);
+    }
   }
   return 0;
 }

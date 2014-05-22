@@ -21,12 +21,13 @@
 /* That's hard to fix, but OK if we allocate garbage    */
 /* collected memory.                                    */
 #define MALLOC_CLEAR(n) GC_INTERNAL_MALLOC(n, NORMAL)
-#define PREFIXED(name) GC_##name
 
 #define TS_CACHE_SIZE 1024
-#define CACHE_HASH(n) (((((long)n) >> 8) ^ (long)n) & (TS_CACHE_SIZE - 1))
+#define CACHE_HASH(n) ((((n) >> 8) ^ (n)) & (TS_CACHE_SIZE - 1))
+
 #define TS_HASH_SIZE 1024
-#define HASH(n) (((((long)n) >> 8) ^ (long)n) & (TS_HASH_SIZE - 1))
+#define HASH(p) \
+          ((unsigned)((((word)(p)) >> 8) ^ (word)(p)) & (TS_HASH_SIZE - 1))
 
 /* An entry describing a thread-specific value for a given thread.      */
 /* All such accessible structures preserve the invariant that if either */
@@ -53,38 +54,45 @@ typedef struct thread_specific_entry {
 /* or at least thread stack separation, is at least 4K.                 */
 /* Must be defined so that it never returns 0.  (Page 0 can't really be */
 /* part of any stack, since that would make 0 a valid stack pointer.)   */
-#define quick_thread_id() (((unsigned long)GC_approx_sp()) >> 12)
+#define quick_thread_id() (((word)GC_approx_sp()) >> 12)
 
-#define INVALID_QTID ((unsigned long)0)
+#define INVALID_QTID ((word)0)
 #define INVALID_THREADID ((pthread_t)0)
+
+union ptse_ao_u {
+  tse *p;
+  volatile AO_t ao;
+};
 
 typedef struct thread_specific_data {
     tse * volatile cache[TS_CACHE_SIZE];
                         /* A faster index to the hash table */
-    tse * hash[TS_HASH_SIZE];
+    union ptse_ao_u hash[TS_HASH_SIZE];
     pthread_mutex_t lock;
 } tsd;
 
-typedef tsd * PREFIXED(key_t);
+typedef tsd * GC_key_t;
 
-int PREFIXED(key_create) (tsd ** key_ptr, void (* destructor)(void *));
-int PREFIXED(setspecific) (tsd * key, void * value);
-void PREFIXED(remove_specific) (tsd * key);
+#define GC_key_create(key, d) GC_key_create_inner(key)
+GC_INNER int GC_key_create_inner(tsd ** key_ptr);
+GC_INNER int GC_setspecific(tsd * key, void * value);
+GC_INNER void GC_remove_specific(tsd * key);
 
 /* An internal version of getspecific that assumes a cache miss.        */
-void * PREFIXED(slow_getspecific) (tsd * key, unsigned long qtid,
-                                   tse * volatile * cache_entry);
+GC_INNER void * GC_slow_getspecific(tsd * key, word qtid,
+                                    tse * volatile * cache_entry);
 
 /* GC_INLINE is defined in gc_priv.h. */
-GC_INLINE void * PREFIXED(getspecific) (tsd * key)
+GC_INLINE void * GC_getspecific(tsd * key)
 {
-    unsigned long qtid = quick_thread_id();
-    unsigned hash_val = CACHE_HASH(qtid);
-    tse * volatile * entry_ptr = key -> cache + hash_val;
+    word qtid = quick_thread_id();
+    tse * volatile * entry_ptr = &key->cache[CACHE_HASH(qtid)];
     tse * entry = *entry_ptr;   /* Must be loaded only once.    */
+
+    GC_ASSERT(qtid != INVALID_QTID);
     if (EXPECT(entry -> qtid == qtid, TRUE)) {
       GC_ASSERT(entry -> thread == pthread_self());
       return entry -> value;
     }
-    return PREFIXED(slow_getspecific) (key, qtid, entry_ptr);
+    return GC_slow_getspecific(key, qtid, entry_ptr);
 }

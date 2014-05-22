@@ -15,12 +15,6 @@
 #include "private/gc_priv.h"
 
 #include <stdio.h>
-#include <setjmp.h>
-
-#if defined(OS2) || defined(CX_UX) || defined(__CC_ARM)
-# define _setjmp(b) setjmp(b)
-# define _longjmp(b,v) longjmp(b,v)
-#endif
 
 #ifdef AMIGA
 # ifndef __GNUC__
@@ -30,11 +24,36 @@
 # endif
 #endif
 
-#if defined(__MWERKS__) && !defined(POWERPC)
+#if defined(MACOS) && defined(__MWERKS__)
 
-asm static void PushMacRegisters()
-{
-    sub.w   #4,sp                   // reserve space for one parameter.
+#if defined(POWERPC)
+
+# define NONVOLATILE_GPR_COUNT 19
+  struct ppc_registers {
+        unsigned long gprs[NONVOLATILE_GPR_COUNT];      /* R13-R31 */
+  };
+  typedef struct ppc_registers ppc_registers;
+
+  asm static void getRegisters(register ppc_registers* regs)
+  {
+        stmw    r13,regs->gprs                          /* save R13-R31 */
+        blr
+  }
+
+  static void PushMacRegisters(void)
+  {
+        ppc_registers regs;
+        int i;
+        getRegisters(&regs);
+        for (i = 0; i < NONVOLATILE_GPR_COUNT; i++)
+                GC_push_one(regs.gprs[i]);
+  }
+
+#else /* M68K */
+
+  asm static void PushMacRegisters(void)
+  {
+    sub.w   #4,sp                   /* reserve space for one parameter */
     move.l  a2,(sp)
     jsr         GC_push_one
     move.l  a3,(sp)
@@ -42,11 +61,11 @@ asm static void PushMacRegisters()
     move.l  a4,(sp)
     jsr         GC_push_one
 #   if !__option(a6frames)
-        // <pcb> perhaps a6 should be pushed if stack frames are not being used.
+      /* <pcb> perhaps a6 should be pushed if stack frames are not being used */
         move.l  a6,(sp)
         jsr             GC_push_one
 #   endif
-        // skip a5 (globals), a6 (frame pointer), and a7 (stack pointer)
+        /* skip a5 (globals), a6 (frame pointer), and a7 (stack pointer) */
     move.l  d2,(sp)
     jsr         GC_push_one
     move.l  d3,(sp)
@@ -59,11 +78,13 @@ asm static void PushMacRegisters()
     jsr         GC_push_one
     move.l  d7,(sp)
     jsr         GC_push_one
-    add.w   #4,sp                   // fix stack.
+    add.w   #4,sp                   /* fix stack */
     rts
-}
+  }
 
-#endif /* __MWERKS__ */
+#endif /* M68K */
+
+#endif /* MACOS && __MWERKS__ */
 
 # if defined(SPARC) || defined(IA64)
     /* Value returned from register flushing routine; either sp (SPARC) */
@@ -84,7 +105,7 @@ asm static void PushMacRegisters()
 
 # if defined(M68K) && defined(AMIGA)
     /* This function is not static because it could also be             */
-    /* errorneously defined in .S file, so this error would be caught   */
+    /* erroneously defined in .S file, so this error would be caught    */
     /* by the linker.                                                   */
     void GC_push_regs(void)
     {
@@ -128,9 +149,9 @@ asm static void PushMacRegisters()
     }
 #   define HAVE_PUSH_REGS
 
-# elif defined(M68K) && defined(MACOS)
+# elif defined(MACOS)
 
-#   if defined(THINK_C)
+#   if defined(M68K) && defined(THINK_C)
 #     define PushMacReg(reg) \
               move.l  reg,(sp) \
               jsr             GC_push_one
@@ -174,7 +195,12 @@ asm static void PushMacRegisters()
 #if !defined(HAVE_PUSH_REGS) && defined(UNIX_LIKE)
 # include <signal.h>
 # ifndef NO_GETCONTEXT
-#   include <ucontext.h>
+#   if defined(DARWIN) \
+       && (MAC_OS_X_VERSION_MAX_ALLOWED >= 1060 /*MAC_OS_X_VERSION_10_6*/)
+#     include <sys/ucontext.h>
+#   else
+#     include <ucontext.h>
+#   endif /* !DARWIN */
 #   ifdef GETCONTEXT_FPU_EXCMASK_BUG
 #     include <fenv.h>
 #   endif
@@ -187,7 +213,7 @@ asm static void PushMacRegisters()
 GC_INNER void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
                                           ptr_t arg)
 {
-    word dummy;
+    volatile int dummy;
     void * context = 0;
 
 #   if defined(HAVE_PUSH_REGS)
@@ -234,31 +260,28 @@ GC_INNER void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
         /* subsumed by the getcontext() call.                           */
         GC_save_regs_ret_val = GC_save_regs_in_stack();
 #     endif /* register windows. */
-#   elif defined(HAVE_BUILTIN_UNWIND_INIT) \
-         && !(defined(POWERPC) && defined(DARWIN)) \
-         && !(defined(I386) && defined(RTEMS))
+#   elif defined(HAVE_BUILTIN_UNWIND_INIT)
       /* This was suggested by Richard Henderson as the way to  */
       /* force callee-save registers and register windows onto  */
       /* the stack.                                             */
-      /* Mark Sibly points out that this doesn't seem to work   */
-      /* on MacOS 10.3.9/PowerPC.                               */
       __builtin_unwind_init();
 #   else /* !HAVE_BUILTIN_UNWIND_INIT && !UNIX_LIKE  */
          /* && !HAVE_PUSH_REGS                       */
         /* Generic code                          */
         /* The idea is due to Parag Patel at HP. */
         /* We're not sure whether he would like  */
-        /* to be he acknowledged for it or not.  */
+        /* to be acknowledged for it or not.     */
         jmp_buf regs;
         register word * i = (word *) regs;
         register ptr_t lim = (ptr_t)(regs) + (sizeof regs);
 
         /* Setjmp doesn't always clear all of the buffer.               */
         /* That tends to preserve garbage.  Clear it.                   */
-        for (; (char *)i < lim; i++) {
+        for (; (word)i < (word)lim; i++) {
             *i = 0;
         }
 #       if defined(MSWIN32) || defined(MSWINCE) || defined(UTS4) \
+           || defined(OS2) || defined(CX_UX) || defined(__CC_ARM) \
            || defined(LINUX) || defined(EWS4800) || defined(RTEMS)
           (void) setjmp(regs);
 #       else
@@ -279,10 +302,9 @@ GC_INNER void GC_with_callee_saves_pushed(void (*fn)(ptr_t, void *),
 
 #if defined(ASM_CLEAR_CODE)
 # ifdef LINT
-    /*ARGSUSED*/
     ptr_t GC_clear_stack_inner(ptr_t arg, word limit)
     {
-      return(arg);
+      return limit ? arg : 0; /* use both arguments */
     }
     /* The real version is in a .S file */
 # endif

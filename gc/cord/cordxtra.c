@@ -9,32 +9,40 @@
  * Permission to modify the code and to distribute modified code is granted,
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
- *
- * Author: Hans-J. Boehm (boehm@parc.xerox.com)
  */
+
 /*
  * These are functions on cords that do not need to understand their
  * implementation.  They serve also serve as example client code for
  * cord_basics.
  */
-/* Boehm, December 8, 1995 1:53 pm PST */
+
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+#ifndef CORD_BUILD
+# define CORD_BUILD
+#endif
+
 # include <stdio.h>
 # include <string.h>
 # include <stdlib.h>
 # include <stdarg.h>
+
 # include "cord.h"
 # include "ec.h"
+
 # define I_HIDE_POINTERS    /* So we get access to allocation lock. */
                 /* We use this for lazy file reading,   */
-                /* so that we remain independent    */
-                /* of the threads primitives.       */
+                /* so that we remain independent        */
+                /* of the threads primitives.           */
 # include "gc.h"
 
 /* For now we assume that pointer reads and writes are atomic,  */
 /* i.e. another thread always sees the state before or after    */
-/* a write.  This might be false on a Motorola M68K with    */
+/* a write.  This might be false on a Motorola M68K with        */
 /* pointers that are not 32-bit aligned.  But there probably    */
-/* aren't too many threads packages running on those.       */
+/* aren't too many threads packages running on those.           */
 # define ATOMIC_WRITE(x,y) (x) = (y)
 # define ATOMIC_READ(x) (*(x))
 
@@ -46,14 +54,20 @@
 #   define SEEK_END 2
 # endif
 
-# define BUFSZ 2048 /* Size of stack allocated buffers when     */
-            /* we want large buffers.           */
+# define BUFSZ 2048     /* Size of stack allocated buffers when */
+                        /* we want large buffers.               */
 
 typedef void (* oom_fn)(void);
 
 # define OUT_OF_MEMORY {  if (CORD_oom_fn != (oom_fn) 0) (*CORD_oom_fn)(); \
               ABORT("Out of memory\n"); }
 # define ABORT(msg) { fprintf(stderr, "%s\n", msg); abort(); }
+
+#if __GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 4)
+# define CORD_ATTR_UNUSED __attribute__((__unused__))
+#else
+# define CORD_ATTR_UNUSED /* empty */
+#endif
 
 CORD CORD_cat_char(CORD x, char c)
 {
@@ -121,8 +135,8 @@ int CORD_batched_fill_proc(const char * s, void * client_data)
     return(0);
 }
 
-/* Fill buf with len characters starting at i.              */
-/* Assumes len characters are available.                */
+/* Fill buf with len characters starting at i.  */
+/* Assumes len characters are available.        */
 void CORD_fill_buf(CORD x, size_t i, size_t len, char * buf)
 {
     CORD_fill_data fd;
@@ -348,12 +362,12 @@ size_t CORD_rchr(CORD x, size_t i, int c)
     }
 }
 
-/* Find the first occurrence of s in x at position start or later.  */
+/* Find the first occurrence of s in x at position start or later.      */
 /* This uses an asymptotically poor algorithm, which should typically   */
 /* perform acceptably.  We compare the first few characters directly,   */
-/* and call CORD_ncmp whenever there is a partial match.        */
+/* and call CORD_ncmp whenever there is a partial match.                */
 /* This has the advantage that we allocate very little, or not at all.  */
-/* It's very fast if there are few close misses.            */
+/* It's very fast if there are few close misses.                        */
 size_t CORD_str(CORD x, size_t start, CORD s)
 {
     CORD_pos xpos;
@@ -361,10 +375,10 @@ size_t CORD_str(CORD x, size_t start, CORD s)
     size_t slen;
     register size_t start_len;
     const char * s_start;
-    unsigned long s_buf = 0;    /* The first few characters of s    */
-    unsigned long x_buf = 0;    /* Start of candidate substring.    */
+    unsigned long s_buf = 0;    /* The first few characters of s        */
+    unsigned long x_buf = 0;    /* Start of candidate substring.        */
                     /* Initialized only to make compilers   */
-                    /* happy.               */
+                    /* happy.                               */
     unsigned long mask = 0;
     register size_t i;
     register size_t match_pos;
@@ -426,8 +440,7 @@ void CORD_ec_append_cord(CORD_ec x, CORD s)
     x[0].ec_cord = CORD_cat(x[0].ec_cord, s);
 }
 
-/*ARGSUSED*/
-char CORD_nul_func(size_t i, void * client_data)
+char CORD_nul_func(size_t i CORD_ATTR_UNUSED, void * client_data)
 {
     return((char)(unsigned long)client_data);
 }
@@ -447,9 +460,9 @@ CORD CORD_from_file_eager(FILE * f)
     for(;;) {
         c = getc(f);
         if (c == 0) {
-          /* Append the right number of NULs    */
-          /* Note that any string of NULs is rpresented in 4 words, */
-          /* independent of its length.                 */
+          /* Append the right number of NULs                            */
+          /* Note that any string of NULs is represented in 4 words,    */
+          /* independent of its length.                                 */
             register size_t count = 1;
 
             CORD_ec_flush_buf(ecord);
@@ -463,18 +476,18 @@ CORD CORD_from_file_eager(FILE * f)
     return(CORD_balance(CORD_ec_to_cord(ecord)));
 }
 
-/* The state maintained for a lazily read file consists primarily   */
-/* of a large direct-mapped cache of previously read values.        */
-/* We could rely more on stdio buffering.  That would have 2        */
-/* disadvantages:                           */
-/*      1) Empirically, not all fseek implementations preserve the  */
-/*     buffer whenever they could.                  */
-/*  2) It would fail if 2 different sections of a long cord     */
-/*     were being read alternately.                 */
-/* We do use the stdio buffer for read ahead.               */
-/* To guarantee thread safety in the presence of atomic pointer     */
-/* writes, cache lines are always replaced, and never modified in   */
-/* place.                               */
+/* The state maintained for a lazily read file consists primarily       */
+/* of a large direct-mapped cache of previously read values.            */
+/* We could rely more on stdio buffering.  That would have 2            */
+/* disadvantages:                                                       */
+/*  1) Empirically, not all fseek implementations preserve the          */
+/*     buffer whenever they could.                                      */
+/*  2) It would fail if 2 different sections of a long cord             */
+/*     were being read alternately.                                     */
+/* We do use the stdio buffer for read ahead.                           */
+/* To guarantee thread safety in the presence of atomic pointer         */
+/* writes, cache lines are always replaced, and never modified in       */
+/* place.                                                               */
 
 # define LOG_CACHE_SZ 14
 # define CACHE_SZ (1 << LOG_CACHE_SZ)
@@ -506,8 +519,7 @@ typedef struct {
 } refill_data;
 
 /* Executed with allocation lock. */
-static char refill_cache(client_data)
-refill_data * client_data;
+static char refill_cache(refill_data * client_data)
 {
     register lf_state * state = client_data -> state;
     register size_t file_pos = client_data -> file_pos;
@@ -552,8 +564,7 @@ char CORD_lf_func(size_t i, void * client_data)
     return(cl -> data[MOD_LINE_SZ(i)]);
 }
 
-/*ARGSUSED*/
-void CORD_lf_close_proc(void * obj, void * client_data)
+void CORD_lf_close_proc(void * obj, void * client_data CORD_ATTR_UNUSED)
 {
     if (fclose(((lf_state *)obj) -> lf_file) != 0) {
         ABORT("CORD_lf_close_proc: fclose failed");
@@ -571,7 +582,7 @@ CORD CORD_from_file_lazy_inner(FILE * f, size_t len)
         /* This greatly increases the probability       */
         /* of avoiding deadlock if buffer allocation    */
         /* is redirected to GC_malloc and the           */
-        /* world is multithreaded.                      */
+        /* world is multi-threaded.                     */
         char buf[1];
 
         if (fread(buf, 1, 1, f) > 1) {

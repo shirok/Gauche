@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1991-1994 by Xerox Corporation.  All rights reserved.
  * Copyright (c) 1996-1999 by Silicon Graphics.  All rights reserved.
- * Copyright (c) 1999-2004 Hewlett-Packard Development Company, L.P.
+ * Copyright (c) 2003-2011 Hewlett-Packard Development Company, L.P.
  *
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
@@ -26,9 +26,6 @@
 /* Based on the above references, eieio is intended for use on          */
 /* uncached memory, which we don't support.  It does not order loads    */
 /* from cached memory.                                                  */
-/* Thanks to Maged Michael, Doug Lea, and Roger Hoover for helping to   */
-/* track some of this down and correcting my misunderstandings. -HB     */
-/* Earl Chew subsequently contributed further fixes & additions.        */
 
 #include "../all_aligned_atomic_load_store.h"
 
@@ -105,6 +102,7 @@ AO_store_release(volatile AO_t *addr, AO_t value)
 }
 #define AO_HAVE_store_release
 
+#ifndef AO_PREFER_GENERALIZED
 /* This is similar to the code in the garbage collector.  Deleting      */
 /* this and having it synthesized from compare_and_swap would probably  */
 /* only cost us a load immediate instruction.                           */
@@ -168,79 +166,149 @@ AO_test_and_set_full(volatile AO_TS_t *addr) {
   return result;
 }
 #define AO_HAVE_test_and_set_full
+#endif /* !AO_PREFER_GENERALIZED */
 
-AO_INLINE int
-AO_compare_and_swap(volatile AO_t *addr, AO_t old, AO_t new_val) {
-  AO_t oldval;
-  int result = 0;
-#if defined(__powerpc64__) || defined(__ppc64__) || defined(__64BIT__)
-/* FIXME: Completely untested.  */
-  __asm__ __volatile__(
-               "1:ldarx %0,0,%2\n"   /* load and reserve              */
-               "cmpd %0, %4\n"      /* if load is not equal to  */
-               "bne 2f\n"            /*   old, fail                     */
-               "stdcx. %3,0,%2\n"    /* else store conditional         */
-               "bne- 1b\n"           /* retry if lost reservation      */
-               "li %1,1\n"           /* result = 1;                     */
-               "2:\n"
-              : "=&r"(oldval), "=&r"(result)
-              : "r"(addr), "r"(new_val), "r"(old), "1"(result)
-              : "memory", "cr0");
-#else
-  __asm__ __volatile__(
-               "1:lwarx %0,0,%2\n"   /* load and reserve              */
-               "cmpw %0, %4\n"      /* if load is not equal to  */
-               "bne 2f\n"            /*   old, fail                     */
-               "stwcx. %3,0,%2\n"    /* else store conditional         */
-               "bne- 1b\n"           /* retry if lost reservation      */
-               "li %1,1\n"           /* result = 1;                     */
-               "2:\n"
-              : "=&r"(oldval), "=&r"(result)
-              : "r"(addr), "r"(new_val), "r"(old), "1"(result)
-              : "memory", "cr0");
-#endif
-  return result;
+#ifndef AO_GENERALIZE_ASM_BOOL_CAS
+
+  AO_INLINE int
+  AO_compare_and_swap(volatile AO_t *addr, AO_t old, AO_t new_val)
+  {
+    AO_t oldval;
+    int result = 0;
+#   if defined(__powerpc64__) || defined(__ppc64__) || defined(__64BIT__)
+      __asm__ __volatile__(
+        "1:ldarx %0,0,%2\n"     /* load and reserve             */
+        "cmpd %0, %4\n"         /* if load is not equal to      */
+        "bne 2f\n"              /*   old, fail                  */
+        "stdcx. %3,0,%2\n"      /* else store conditional       */
+        "bne- 1b\n"             /* retry if lost reservation    */
+        "li %1,1\n"             /* result = 1;                  */
+        "2:\n"
+        : "=&r"(oldval), "=&r"(result)
+        : "r"(addr), "r"(new_val), "r"(old), "1"(result)
+        : "memory", "cr0");
+#   else
+      __asm__ __volatile__(
+        "1:lwarx %0,0,%2\n"     /* load and reserve             */
+        "cmpw %0, %4\n"         /* if load is not equal to      */
+        "bne 2f\n"              /*   old, fail                  */
+        "stwcx. %3,0,%2\n"      /* else store conditional       */
+        "bne- 1b\n"             /* retry if lost reservation    */
+        "li %1,1\n"             /* result = 1;                  */
+        "2:\n"
+        : "=&r"(oldval), "=&r"(result)
+        : "r"(addr), "r"(new_val), "r"(old), "1"(result)
+        : "memory", "cr0");
+#   endif
+    return result;
+  }
+# define AO_HAVE_compare_and_swap
+
+  AO_INLINE int
+  AO_compare_and_swap_acquire(volatile AO_t *addr, AO_t old, AO_t new_val)
+  {
+    int result = AO_compare_and_swap(addr, old, new_val);
+    AO_lwsync();
+    return result;
+  }
+# define AO_HAVE_compare_and_swap_acquire
+
+  AO_INLINE int
+  AO_compare_and_swap_release(volatile AO_t *addr, AO_t old, AO_t new_val)
+  {
+    AO_lwsync();
+    return AO_compare_and_swap(addr, old, new_val);
+  }
+# define AO_HAVE_compare_and_swap_release
+
+  AO_INLINE int
+  AO_compare_and_swap_full(volatile AO_t *addr, AO_t old, AO_t new_val)
+  {
+    int result;
+    AO_lwsync();
+    result = AO_compare_and_swap(addr, old, new_val);
+    AO_lwsync();
+    return result;
+  }
+# define AO_HAVE_compare_and_swap_full
+
+#endif /* !AO_GENERALIZE_ASM_BOOL_CAS */
+
+AO_INLINE AO_t
+AO_fetch_compare_and_swap(volatile AO_t *addr, AO_t old_val, AO_t new_val)
+{
+  AO_t fetched_val;
+# if defined(__powerpc64__) || defined(__ppc64__) || defined(__64BIT__)
+    __asm__ __volatile__(
+      "1:ldarx %0,0,%1\n"       /* load and reserve             */
+      "cmpd %0, %3\n"           /* if load is not equal to      */
+      "bne 2f\n"                /*   old_val, fail              */
+      "stdcx. %2,0,%1\n"        /* else store conditional       */
+      "bne- 1b\n"               /* retry if lost reservation    */
+      "2:\n"
+      : "=&r"(fetched_val)
+      : "r"(addr), "r"(new_val), "r"(old_val)
+      : "memory", "cr0");
+# else
+    __asm__ __volatile__(
+      "1:lwarx %0,0,%1\n"       /* load and reserve             */
+      "cmpw %0, %3\n"           /* if load is not equal to      */
+      "bne 2f\n"                /*   old_val, fail              */
+      "stwcx. %2,0,%1\n"        /* else store conditional       */
+      "bne- 1b\n"               /* retry if lost reservation    */
+      "2:\n"
+      : "=&r"(fetched_val)
+      : "r"(addr), "r"(new_val), "r"(old_val)
+      : "memory", "cr0");
+# endif
+  return fetched_val;
 }
-#define AO_HAVE_compare_and_swap
+#define AO_HAVE_fetch_compare_and_swap
 
-AO_INLINE int
-AO_compare_and_swap_acquire(volatile AO_t *addr, AO_t old, AO_t new_val) {
-  int result = AO_compare_and_swap(addr, old, new_val);
+AO_INLINE AO_t
+AO_fetch_compare_and_swap_acquire(volatile AO_t *addr, AO_t old_val,
+                                  AO_t new_val)
+{
+  AO_t result = AO_fetch_compare_and_swap(addr, old_val, new_val);
   AO_lwsync();
   return result;
 }
-#define AO_HAVE_compare_and_swap_acquire
+#define AO_HAVE_fetch_compare_and_swap_acquire
 
-AO_INLINE int
-AO_compare_and_swap_release(volatile AO_t *addr, AO_t old, AO_t new_val) {
+AO_INLINE AO_t
+AO_fetch_compare_and_swap_release(volatile AO_t *addr, AO_t old_val,
+                                  AO_t new_val)
+{
   AO_lwsync();
-  return AO_compare_and_swap(addr, old, new_val);
+  return AO_fetch_compare_and_swap(addr, old_val, new_val);
 }
-#define AO_HAVE_compare_and_swap_release
+#define AO_HAVE_fetch_compare_and_swap_release
 
-AO_INLINE int
-AO_compare_and_swap_full(volatile AO_t *addr, AO_t old, AO_t new_val) {
-  int result;
+AO_INLINE AO_t
+AO_fetch_compare_and_swap_full(volatile AO_t *addr, AO_t old_val,
+                               AO_t new_val)
+{
+  AO_t result;
   AO_lwsync();
-  result = AO_compare_and_swap(addr, old, new_val);
+  result = AO_fetch_compare_and_swap(addr, old_val, new_val);
   AO_lwsync();
   return result;
 }
-#define AO_HAVE_compare_and_swap_full
+#define AO_HAVE_fetch_compare_and_swap_full
 
+#ifndef AO_PREFER_GENERALIZED
 AO_INLINE AO_t
 AO_fetch_and_add(volatile AO_t *addr, AO_t incr) {
   AO_t oldval;
   AO_t newval;
 #if defined(__powerpc64__) || defined(__ppc64__) || defined(__64BIT__)
-/* FIXME: Completely untested.                                          */
   __asm__ __volatile__(
                "1:ldarx %0,0,%2\n"   /* load and reserve                */
                "add %1,%0,%3\n"      /* increment                       */
                "stdcx. %1,0,%2\n"    /* store conditional               */
                "bne- 1b\n"           /* retry if lost reservation       */
               : "=&r"(oldval), "=&r"(newval)
-               : "r"(addr), "r"(incr)
+              : "r"(addr), "r"(incr)
               : "memory", "cr0");
 #else
   __asm__ __volatile__(
@@ -249,7 +317,7 @@ AO_fetch_and_add(volatile AO_t *addr, AO_t incr) {
                "stwcx. %1,0,%2\n"    /* store conditional               */
                "bne- 1b\n"           /* retry if lost reservation       */
               : "=&r"(oldval), "=&r"(newval)
-               : "r"(addr), "r"(incr)
+              : "r"(addr), "r"(incr)
               : "memory", "cr0");
 #endif
   return oldval;
@@ -280,8 +348,12 @@ AO_fetch_and_add_full(volatile AO_t *addr, AO_t incr) {
   return result;
 }
 #define AO_HAVE_fetch_and_add_full
+#endif /* !AO_PREFER_GENERALIZED */
 
 #if defined(__powerpc64__) || defined(__ppc64__) || defined(__64BIT__)
+  /* Empty */
 #else
-# include "../ao_t_is_int.h"
+# define AO_T_IS_INT
 #endif
+
+/* TODO: Implement double-wide operations if available. */

@@ -119,7 +119,7 @@ typedef struct AO__stack {
   AO_stack_aux AO_aux;
 } AO_stack_t;
 
-#define AO_STACK_INITIALIZER {0}
+#define AO_STACK_INITIALIZER {0,{{0}}}
 
 AO_INLINE void AO_stack_init(AO_stack_t *list)
 {
@@ -157,7 +157,7 @@ AO_INLINE void AO_stack_init(AO_stack_t *list)
 typedef volatile AO_double_t AO_stack_t;
 /* AO_val1 is version, AO_val2 is pointer.      */
 
-#define AO_STACK_INITIALIZER {0}
+#define AO_STACK_INITIALIZER AO_DOUBLE_T_INITIALIZER
 
 AO_INLINE void AO_stack_init(AO_stack_t *list)
 {

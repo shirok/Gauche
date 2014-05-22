@@ -43,9 +43,6 @@
 // problems.  The argument for changing it is that the usual default
 // allocator is usually a very bad choice for a garbage collected environment.)
 //
-// This code assumes that the collector itself has been compiled with a
-// compiler that defines __STDC__ .
-//
 
 #ifndef GC_ALLOC_H
 
@@ -131,14 +128,14 @@ public:
   // real one must be updated with a procedure call.
   static size_t GC_bytes_recently_allocd;
 
-  // Same for uncollectable memory.  Not yet reflected in either
+  // Same for uncollectible memory.  Not yet reflected in either
   // GC_bytes_recently_allocd or GC_non_gc_bytes.
   static size_t GC_uncollectable_bytes_recently_allocd;
 
   // Similar counter for explicitly deallocated memory.
   static size_t GC_bytes_recently_freed;
 
-  // Again for uncollectable memory.
+  // Again for uncollectible memory.
   static size_t GC_uncollectable_bytes_recently_freed;
 
   static void * GC_out_of_line_malloc(size_t nwords, int kind);
@@ -250,7 +247,7 @@ class single_client_gc_alloc_template {
 
 typedef single_client_gc_alloc_template<0> single_client_gc_alloc;
 
-// Once more, for uncollectable objects.
+// Once more, for uncollectible objects.
 template <int dummy>
 class single_client_traceable_alloc_template {
     public:

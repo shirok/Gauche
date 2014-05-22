@@ -125,8 +125,7 @@
 
 #undef GC_PTHREADS
 #if (!defined(GC_WIN32_THREADS) || defined(GC_WIN32_PTHREADS) \
-     || defined(GC_RTEMS_PTHREADS) || defined(__CYGWIN32__) \
-     || defined(__CYGWIN__)) && defined(GC_THREADS)
+     || defined(__CYGWIN32__) || defined(__CYGWIN__)) && defined(GC_THREADS)
   /* Posix threads. */
 # define GC_PTHREADS
 #endif
@@ -164,8 +163,9 @@
 # endif
 #endif /* _WIN32_WCE */
 
-#if defined(_DLL) && !defined(GC_NOT_DLL) && !defined(GC_DLL) \
-        && !defined(__GNUC__)
+#if !defined(GC_NOT_DLL) && !defined(GC_DLL) \
+    && ((defined(_DLL) && !defined(__GNUC__)) \
+        || (defined(DLL_EXPORT) && defined(GC_BUILD)))
 # define GC_DLL
 #endif
 
@@ -193,9 +193,17 @@
 #     define GC_API extern __declspec(dllimport)
 #   endif
 
+# elif defined(__SYMBIAN32__)
+#   ifdef GC_BUILD
+#     define GC_API extern EXPORT_C
+#   else
+#     define GC_API extern IMPORT_C
+#   endif
+
 # elif defined(__GNUC__)
     /* Only matters if used in conjunction with -fvisibility=hidden option. */
-#   if __GNUC__ >= 4 && defined(GC_BUILD)
+#   if defined(GC_BUILD) && (__GNUC__ >= 4 \
+                             || defined(GC_VISIBILITY_HIDDEN_SET))
 #     define GC_API extern __attribute__((__visibility__("default")))
 #   endif
 # endif
@@ -219,9 +227,13 @@
   /* non-NULL pointer it returns cannot alias any other pointer valid   */
   /* when the function returns).  If the client code violates this rule */
   /* by using custom GC_oom_func then define GC_OOM_FUNC_RETURNS_ALIAS. */
-# if !defined(GC_OOM_FUNC_RETURNS_ALIAS) && defined(__GNUC__) \
-        && (__GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 1))
+# ifdef GC_OOM_FUNC_RETURNS_ALIAS
+#   define GC_ATTR_MALLOC /* empty */
+# elif defined(__GNUC__) && (__GNUC__ > 3 \
+                             || (__GNUC__ == 3 && __GNUC_MINOR__ >= 1))
 #   define GC_ATTR_MALLOC __attribute__((__malloc__))
+# elif defined(_MSC_VER) && _MSC_VER >= 14
+#   define GC_ATTR_MALLOC __declspec(noalias) __declspec(restrict)
 # else
 #   define GC_ATTR_MALLOC
 # endif
@@ -231,10 +243,33 @@
   /* 'alloc_size' attribute improves __builtin_object_size correctness. */
   /* Only single-argument form of 'alloc_size' attribute is used.       */
 # if defined(__GNUC__) && (__GNUC__ > 4 \
-        || (__GNUC__ == 4 && __GNUC_MINOR__ >= 3 && !defined(__ICC)))
+        || (__GNUC__ == 4 && __GNUC_MINOR__ >= 3 && !defined(__ICC)) \
+        || __clang_major__ > 3 \
+        || (__clang_major__ == 3 && __clang_minor__ >= 2))
 #   define GC_ATTR_ALLOC_SIZE(argnum) __attribute__((__alloc_size__(argnum)))
 # else
 #   define GC_ATTR_ALLOC_SIZE(argnum)
+# endif
+#endif
+
+#ifndef GC_ATTR_NONNULL
+# if defined(__GNUC__) && __GNUC__ >= 4
+#   define GC_ATTR_NONNULL(argnum) __attribute__((__nonnull__(argnum)))
+# else
+#   define GC_ATTR_NONNULL(argnum) /* empty */
+# endif
+#endif
+
+#ifndef GC_ATTR_DEPRECATED
+# ifdef GC_BUILD
+#   undef GC_ATTR_DEPRECATED
+#   define GC_ATTR_DEPRECATED /* empty */
+# elif defined(__GNUC__) && __GNUC__ >= 4
+#   define GC_ATTR_DEPRECATED __attribute__((__deprecated__))
+# elif defined(_MSC_VER) && _MSC_VER >= 12
+#   define GC_ATTR_DEPRECATED __declspec(deprecated)
+# else
+#   define GC_ATTR_DEPRECATED /* empty */
 # endif
 #endif
 
@@ -252,7 +287,7 @@
         && !defined(GC_HAVE_BUILTIN_BACKTRACE)
 #   define GC_HAVE_BUILTIN_BACKTRACE
 # endif
-# if defined(__i386__) || defined(__x86_64__)
+# if defined(__i386__) || defined(__amd64__) || defined(__x86_64__)
 #   define GC_CAN_SAVE_CALL_STACKS
 # endif
 #endif /* GLIBC */
@@ -281,12 +316,18 @@
 /* retrieve the call chain.                                             */
 #if (defined(__linux__) || defined(__NetBSD__) || defined(__OpenBSD__) \
      || defined(__FreeBSD__) || defined(__DragonFly__) \
-     || defined(PLATFORM_ANDROID)) && !defined(GC_CAN_SAVE_CALL_STACKS)
+     || defined(PLATFORM_ANDROID) || defined(__ANDROID__)) \
+    && !defined(GC_CAN_SAVE_CALL_STACKS)
 # define GC_ADD_CALLER
 # if __GNUC__ >= 3 || (__GNUC__ == 2 && __GNUC_MINOR__ >= 95)
     /* gcc knows how to retrieve return address, but we don't know      */
     /* how to generate call stacks.                                     */
 #   define GC_RETURN_ADDR (GC_word)__builtin_return_address(0)
+#   if (__GNUC__ >= 4) && (defined(__i386__) || defined(__amd64__) \
+        || defined(__x86_64__) /* and probably others... */)
+#     define GC_RETURN_ADDR_PARENT \
+        (GC_word)__builtin_extract_return_addr(__builtin_return_address(1))
+#   endif
 # else
     /* Just pass 0 for gcc compatibility.       */
 #   define GC_RETURN_ADDR 0
@@ -321,7 +362,8 @@
 #   endif
 # endif
 
-# if !defined(GC_PTHREAD_EXIT_ATTRIBUTE) && !defined(PLATFORM_ANDROID) \
+# if !defined(GC_PTHREAD_EXIT_ATTRIBUTE) \
+     && !defined(PLATFORM_ANDROID) && !defined(__ANDROID__) \
      && (defined(GC_LINUX_THREADS) || defined(GC_SOLARIS_THREADS))
     /* Intercept pthread_exit on Linux and Solaris.     */
 #   if defined(__GNUC__) /* since GCC v2.7 */

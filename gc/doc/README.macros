@@ -30,6 +30,9 @@ MACRO           EXPLANATION
 GC_DEBUG        Tested by gc.h.  Causes all-upper-case macros to
                 expand to calls to debug versions of collector routines.
 
+GC_NAMESPACE    Tested by gc_cpp.h. Causes gc_cpp symbols to be defined
+                in "boehmgc" namespace.
+
 GC_DEBUG_REPLACEMENT    Tested by gc.h. Causes GC_MALLOC/REALLOC() to be
                 defined as GC_debug_malloc/realloc_replacement().
 
@@ -235,6 +238,10 @@ NO_DEBUGGING    Removes GC_dump and the debugging routines it calls.
 DEBUG_THREADS   Turn on printing additional thread-support debugging
   information.
 
+GC_COLLECT_AT_MALLOC=<n>        Force garbage collection at every
+  GC_malloc_* call with the size greater than the specified value.
+  (Might be useful for application debugging or in find-leak mode.)
+
 JAVA_FINALIZATION       Makes it somewhat safer to finalize objects out of
   order by specifying a nonstandard finalization mark procedure  (see
   finalize.c).  Objects reachable from finalizable objects will be marked
@@ -247,6 +254,8 @@ FINALIZE_ON_DEMAND      Causes finalizers to be run only in response
   to explicit GC_invoke_finalizers() calls.
   In 5.0 this became runtime adjustable, and this only determines the
   initial value of GC_finalize_on_demand.
+
+GC_NO_FINALIZATION      Exclude finalization support (for smaller code size)
 
 ATOMIC_UNCOLLECTABLE    Includes code for GC_malloc_atomic_uncollectable.
   This is useful if either the vendor malloc implementation is poor,
@@ -277,6 +286,9 @@ USE_MUNMAP      Causes memory to be returned to the OS under the right
   Works under some Unix, Linux and Windows versions.
   Requires USE_MMAP except for Windows.
 
+USE_WINALLOC (Cygwin only)   Use Win32 VirtualAlloc (instead of sbrk or mmap)
+  to get new memory.  Useful if memory unmapping (USE_MUNMAP) is enabled.
+
 MUNMAP_THRESHOLD=<value>        Set the desired memory blocks unmapping
   threshold (the number of sequential garbage collections for which
   a candidate block for unmapping should remain free).
@@ -285,9 +297,6 @@ GC_FORCE_UNMAP_ON_GCOLLECT      Set "unmap as much as possible on explicit GC"
   mode on by default.  The mode could be changed at run-time.  Has no effect
   unless unmapping is turned on.  Has no effect on implicitly-initiated
   garbage collections.
-
-MMAP_STACKS (for Solaris threads)       Use mmap from /dev/zero rather than
-  GC_scratch_alloc() to get stack memory.
 
 PRINT_BLACK_LIST        Whenever a black list entry is added, i.e. whenever
   the garbage collector detects a value that looks almost, but not quite,
@@ -466,6 +475,9 @@ DARWIN_DONT_PARSE_STACK         Causes the Darwin port to discover thread
 GC_NO_THREADS_DISCOVERY (Darwin and Win32+DLL only)     Exclude DllMain-based
   (on Windows) and task-threads-based (on Darwin) thread registration support.
 
+GC_INSIDE_DLL (Win32 only)      Enable DllMain-based approach of threads
+  registering even in case GC_DLL is not defined.
+
 GC_DISCOVER_TASK_THREADS (Darwin and Win32+DLL only)    Compile the collector
   with the implicitly turned on task-threads-based (on Darwin) or
   DllMain-based (on Windows) approach of threads registering.  Only for
@@ -520,6 +532,8 @@ GC_ONLY_LOG_TO_FILE     Don't redirect GC stdout and stderr to the log file
   specified by GC_LOG_FILE environment variable.  Has effect only when the
   variable is set (to anything other than "0").
 
+GC_ANDROID_LOG (Android only)   Output error/debug information to Android log.
+
 GC_DONT_EXPAND  Don't expand the heap unless explicitly requested or forced to.
 
 GC_USE_ENTIRE_HEAP      Causes the non-incremental collector to use the
@@ -552,7 +566,7 @@ NO_CANCEL_SAFE (Posix platforms with threads only)      Don't bother trying
 UNICODE (Win32 only)    Use the Unicode variant ('W') of the Win32 API instead
   of ANSI/ASCII one ('A').  Useful for WinCE.
 
-PLATFORM_ANDROID        Compile for Android NDK platform.
+PLATFORM_ANDROID (or __ANDROID__)       Compile for Android NDK platform.
 
 SN_TARGET_PS3           Compile for Sony PS/3.
 

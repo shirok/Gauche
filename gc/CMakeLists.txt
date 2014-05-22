@@ -28,9 +28,7 @@ PROJECT(gc)
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 
 ADD_DEFINITIONS("-D_CRT_SECURE_NO_DEPRECATE
-                 -DALL_INTERIOR_POINTERS
-                 -DGC_BUILD
-")
+                 -DALL_INTERIOR_POINTERS")
 
 IF(APPLE)
     SET(CMAKE_OSX_ARCHITECTURES "ppc;i386;x86_64" CACHE STRING "Build architectures for Mac OS X" FORCE)
@@ -114,7 +112,6 @@ IF(CMAKE_USE_PTHREADS_INIT)
         ENDIF()
         IF ( "HOST" MATCHES .*-.*-openbsd.*)
                 ADD_DEFINITIONS("-DGC_OPENBSD_THREADS")
-                #FIXME openbsd_threads=true
         ENDIF()
         IF ( "HOST" MATCHES .*-.*-freebsd.*)
                 MESSAGE("FreeBSD does not yet fully support threads with Boehm GC.")
@@ -203,7 +200,6 @@ ENDIF(CMAKE_USE_WIN32_THREADS_INIT)
 
 OPTION(enable_gcj_support "Support for gcj" NO)
 IF(enable_gcj_support)
-        #TODO AM_CONDITIONAL(ENABLE_GCJ_SUPPORT,     [test x"$enable_gcj_support" != xno])
         ADD_DEFINITIONS("-DGC_GCJ_SUPPORT")
 ENDIF(enable_gcj_support)
 
@@ -220,7 +216,8 @@ SET_TARGET_PROPERTIES(gcmt-lib PROPERTIES
 ADD_LIBRARY(          gcmt-dll  SHARED     ${SRC})
 
 IF(WIN32)
-  ADD_EXECUTABLE(cord cord/cordbscs.c cord/cordxtra.c cord/de.c cord/de_win.c)
+  ADD_EXECUTABLE(cord cord/cordbscs.c cord/cordxtra.c
+                 cord/tests/de.c cord/tests/de_win.c)
   SET_TARGET_PROPERTIES(cord PROPERTIES WIN32_EXECUTABLE TRUE)
   SET_TARGET_PROPERTIES(cord    PROPERTIES
                       COMPILE_DEFINITIONS GC_NOT_DLL)

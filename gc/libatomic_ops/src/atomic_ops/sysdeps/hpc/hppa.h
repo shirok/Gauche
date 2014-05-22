@@ -20,17 +20,16 @@
  * SOFTWARE.
  *
  * Derived from the corresponding header file for gcc.
- *
  */
 
-#include "../atomic_load_store.h"
+#include "../loadstore/atomic_load.h"
+#include "../loadstore/atomic_store.h"
 
 /* Some architecture set descriptions include special "ordered" memory  */
 /* operations.  As far as we can tell, no existing processors actually  */
 /* require those.  Nor does it appear likely that future processors     */
 /* will.                                                                */
-/* FIXME:                                                               */
-/* The PA emulator on Itanium may obey weaker restrictions.             */
+/* FIXME: The PA emulator on Itanium may obey weaker restrictions.      */
 /* There should be a mode in which we don't assume sequential           */
 /* consistency here.                                                    */
 #include "../ordered.h"
@@ -58,9 +57,8 @@ typedef enum {AO_PA_TS_set = 0, AO_PA_TS_clear = 1} AO_PA_TS_val;
 /* load and clear, so hppa spinlocks must use zero to signify that      */
 /* someone is holding the lock.  The address used for the ldcw          */
 /* semaphore must be 16-byte aligned.                                   */
-
-#define __ldcw(a, ret)  \
-  _LDCWX(0 /* index */, 0 /* s */, a /* base */, ret);
+#define AO_ldcw(a, ret) \
+  _LDCWX(0 /* index */, 0 /* s */, a /* base */, ret)
 
 /* Because malloc only guarantees 8-byte alignment for malloc'd data,   */
 /* and GCC only guarantees 8-byte alignment for stack locals, we can't  */
@@ -69,32 +67,30 @@ typedef enum {AO_PA_TS_set = 0, AO_PA_TS_clear = 1} AO_PA_TS_val;
 /* we use a struct containing an array of four ints for the atomic lock */
 /* type and dynamically select the 16-byte aligned int from the array   */
 /* for the semaphore.                                                   */
-#define __PA_LDCW_ALIGNMENT 16
-
-#define __ldcw_align(a, ret) { \
-  ret = (unsigned long) a;                      \
-  ret += __PA_LDCW_ALIGNMENT - 1;                                       \
-  ret &= ~(__PA_LDCW_ALIGNMENT - 1);                                    \
-}
+#define AO_PA_LDCW_ALIGNMENT 16
+#define AO_ldcw_align(addr) \
+            ((volatile unsigned *)(((unsigned long)(addr) \
+                                        + (AO_PA_LDCW_ALIGNMENT - 1)) \
+                                   & ~(AO_PA_LDCW_ALIGNMENT - 1)))
 
 /* Works on PA 1.1 and PA 2.0 systems */
 AO_INLINE AO_TS_VAL_t
 AO_test_and_set_full(volatile AO_TS_t * addr)
 {
   register unsigned int ret;
-  register unsigned long a;
-  __ldcw_align (addr, a);
-  __ldcw (a, ret);
-  return ret;
+  register unsigned long a = (unsigned long)AO_ldcw_align(addr);
+
+  AO_ldcw(a, ret);
+  return (AO_TS_VAL_t)ret;
 }
 #define AO_HAVE_test_and_set_full
 
 AO_INLINE void
 AO_pa_clear(volatile AO_TS_t * addr)
 {
-  unsigned long a;
-  __ldcw_align (addr,a);
+  volatile unsigned *a = AO_ldcw_align(addr);
+
   AO_compiler_barrier();
-  *(volatile unsigned int *)a = 1;
+  *a = 1;
 }
 #define AO_CLEAR(addr) AO_pa_clear(addr)

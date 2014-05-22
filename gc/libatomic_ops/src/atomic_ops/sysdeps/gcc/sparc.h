@@ -15,9 +15,8 @@
  *
  */
 
-/* FIXME.  Very incomplete.  No support for sparc64.    */
+/* TODO: Very incomplete; Add support for sparc64.      */
 /* Non-ancient SPARCs provide compare-and-swap (casa).  */
-/* We should make that available.                       */
 
 #include "../all_atomic_load_store.h"
 
@@ -61,10 +60,10 @@ AO_compare_and_swap_full(volatile AO_t *addr, AO_t old, AO_t new_val) {
   return (int)ret;
 }
 #define AO_HAVE_compare_and_swap_full
+
+/* TODO: implement AO_fetch_compare_and_swap.   */
 #endif /* !AO_NO_SPARC_V9 */
 
-/* FIXME: This needs to be extended for SPARC v8 and v9.        */
-/* SPARC V8 also has swap.  V9 has CAS.                         */
-/* There are barriers like membar #LoadStore.                   */
-/* CASA (32-bit) and CASXA(64-bit) instructions were            */
-/* added in V9.                                                 */
+/* TODO: Extend this for SPARC v8 and v9 (V8 also has swap, V9 has CAS, */
+/* there are barriers like membar #LoadStore, CASA (32-bit) and         */
+/* CASXA (64-bit) instructions added in V9).                            */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003 Hewlett-Packard Development Company, L.P.
+ * Copyright (c) 2003-2011 Hewlett-Packard Development Company, L.P.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,9 +20,12 @@
  * SOFTWARE.
  */
 
-#ifndef ATOMIC_OPS_H
+#ifndef AO_ATOMIC_OPS_H
+#define AO_ATOMIC_OPS_H
 
-#define ATOMIC_OPS_H
+#include "atomic_ops/ao_version.h"
+                        /* Define version numbers here to allow         */
+                        /* test on build machines for cross-builds.     */
 
 #include <assert.h>
 #include <stddef.h>
@@ -56,7 +59,8 @@
 /*        preceding reads.                                      */
 /* _write: Earlier writes precede both this operation and       */
 /*        later writes.                                         */
-/* _full: Ordered with respect to both earlier and later memops.*/
+/* _full: Ordered with respect to both earlier and later memory */
+/*        operations.                                           */
 /* _release_write: Ordered with respect to earlier writes.      */
 /* _acquire_read: Ordered with respect to later reads.          */
 /*                                                              */
@@ -69,8 +73,11 @@
 /* AO_fetch_and_add                                             */
 /* AO_fetch_and_add1                                            */
 /* AO_fetch_and_sub1                                            */
+/* AO_and                                                       */
 /* AO_or                                                        */
+/* AO_xor                                                       */
 /* AO_compare_and_swap                                          */
+/* AO_fetch_compare_and_swap                                    */
 /*                                                              */
 /* Note that atomicity guarantees are valid only if both        */
 /* readers and writers use AO_ operations to access the         */
@@ -84,9 +91,14 @@
 /* or can only be read concurrently, then x can be accessed     */
 /* via ordinary references and assignments.                     */
 /*                                                              */
-/* Compare_and_exchange takes an address and an expected old    */
-/* value and a new value, and returns an int.  Nonzero          */
+/* AO_compare_and_swap takes an address and an expected old     */
+/* value and a new value, and returns an int.  Non-zero result  */
 /* indicates that it succeeded.                                 */
+/* AO_fetch_compare_and_swap takes an address and an expected   */
+/* old value and a new value, and returns the real old value.   */
+/* The operation succeeded if and only if the expected old      */
+/* value matches the old value returned.                        */
+/*                                                              */
 /* Test_and_set takes an address, atomically replaces it by     */
 /* AO_TS_SET, and returns the prior value.                      */
 /* An AO_TS_t location can be reset with the                    */
@@ -94,8 +106,9 @@
 /* AO_fetch_and_add takes an address and an AO_t increment      */
 /* value.  The AO_fetch_and_add1 and AO_fetch_and_sub1 variants */
 /* are provided, since they allow faster implementations on     */
-/* some hardware. AO_or atomically ors an AO_t value into a     */
-/* memory location, but does not provide access to the original.*/
+/* some hardware. AO_and, AO_or, AO_xor do atomically and, or,  */
+/* xor (respectively) an AO_t value into a memory location,     */
+/* but do not provide access to the original.                   */
 /*                                                              */
 /* We expect this list to grow slowly over time.                */
 /*                                                              */
@@ -105,7 +118,7 @@
 /*      data.x = ...; data.y = ...; ...                         */
 /*      AO_store_release_write(&data_is_initialized, 1)         */
 /* then data is guaranteed to be initialized after the test     */
-/*      if (AO_load_release_read(&data_is_initialized)) ...     */
+/*      if (AO_load_acquire_read(&data_is_initialized)) ...     */
 /* succeeds.  Furthermore, this should generate near-optimal    */
 /* code on all common platforms.                                */
 /*                                                              */
@@ -136,7 +149,7 @@
 /* added as a higher layer.  But that would sacrifice           */
 /* usability from signal handlers.                              */
 /* The synthesis section is implemented almost entirely in      */
-/* atomic_ops_generalize.h.                                     */
+/* atomic_ops/generalize.h.                                     */
 
 /* Some common defaults.  Overridden for some architectures.    */
 #define AO_t size_t
@@ -147,14 +160,21 @@
 #define AO_TS_INITIALIZER (AO_t)AO_TS_CLEAR
 
 /* Platform-dependent stuff:                                    */
-#if defined(__GNUC__) || defined(_MSC_VER) || defined(__INTEL_COMPILER) \
-        || defined(__DMC__) || defined(__WATCOMC__)
+#if (defined(__GNUC__) || defined(_MSC_VER) || defined(__INTEL_COMPILER) \
+        || defined(__DMC__) || defined(__WATCOMC__)) && !defined(AO_NO_INLINE)
 # define AO_INLINE static __inline
-#elif defined(__sun)
+#elif defined(__sun) && !defined(AO_NO_INLINE)
 # define AO_INLINE static inline
 #else
 # define AO_INLINE static
 #endif
+
+#if __GNUC__ >= 3 && !defined(LINT2)
+# define AO_EXPECT_FALSE(expr) __builtin_expect(expr, 0)
+  /* Equivalent to (expr) but predict that usually (expr) == 0. */
+#else
+# define AO_EXPECT_FALSE(expr) (expr)
+#endif /* !__GNUC__ */
 
 #if defined(__GNUC__) && !defined(__INTEL_COMPILER)
 # define AO_compiler_barrier() __asm__ __volatile__("" : : : "memory")
@@ -176,7 +196,8 @@
         /* But the documentation warns about VC++ 2003 and earlier.     */
 # endif
 #elif defined(__INTEL_COMPILER)
-# define AO_compiler_barrier() __memory_barrier() /* Too strong? IA64-only? */
+# define AO_compiler_barrier() __memory_barrier()
+                                        /* FIXME: Too strong? IA64-only? */
 #elif defined(_HPUX_SOURCE)
 # if defined(__ia64)
 #   include <machine/sys/inline.h>
@@ -185,7 +206,7 @@
     /* FIXME - We dont know how to do this.  This is a guess.   */
     /* And probably a bad one.                                  */
     static volatile int AO_barrier_dummy;
-#   define AO_compiler_barrier() AO_barrier_dummy = AO_barrier_dummy
+#   define AO_compiler_barrier() (void)(AO_barrier_dummy = AO_barrier_dummy)
 # endif
 #else
   /* We conjecture that the following usually gives us the right        */
@@ -212,11 +233,12 @@
 #   include "atomic_ops/sysdeps/gcc/x86.h"
 # endif /* __i386__ */
 # if defined(__x86_64__)
-#   if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 2)
+#   if (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 2)) \
+       && !defined(AO_USE_SYNC_CAS_BUILTIN)
       /* It is safe to use __sync CAS built-in on this architecture.    */
 #     define AO_USE_SYNC_CAS_BUILTIN
 #   endif
-#   include "atomic_ops/sysdeps/gcc/x86_64.h"
+#   include "atomic_ops/sysdeps/gcc/x86.h"
 # endif /* __x86_64__ */
 # if defined(__ia64__)
 #   include "atomic_ops/sysdeps/gcc/ia64.h"
@@ -244,7 +266,11 @@
      || defined(__powerpc64__) || defined(__ppc64__)
 #   include "atomic_ops/sysdeps/gcc/powerpc.h"
 # endif /* __powerpc__ */
-# if defined(__arm__) && !defined(AO_USE_PTHREAD_DEFS)
+# if defined(__aarch64__)
+#   include "atomic_ops/sysdeps/gcc/aarch64.h"
+#   define AO_CAN_EMUL_CAS
+# endif /* __aarch64__ */
+# if defined(__arm__)
 #   include "atomic_ops/sysdeps/gcc/arm.h"
 #   define AO_CAN_EMUL_CAS
 # endif /* __arm__ */
@@ -288,10 +314,10 @@
 #     include "atomic_ops/sysdeps/gcc/x86.h"
 #   endif /* __i386__ */
 #   if defined(__x86_64__)
-#     if __INTEL_COMPILER > 1110
+#     if (__INTEL_COMPILER > 1110) && !defined(AO_USE_SYNC_CAS_BUILTIN)
 #       define AO_USE_SYNC_CAS_BUILTIN
 #     endif
-#     include "atomic_ops/sysdeps/gcc/x86_64.h"
+#     include "atomic_ops/sysdeps/gcc/x86.h"
 #   endif /* __x86_64__ */
 # endif
 #endif
@@ -320,12 +346,9 @@
 
 #if defined(__sun) && !defined(__GNUC__) && !defined(AO_USE_PTHREAD_DEFS)
   /* Note: use -DAO_USE_PTHREAD_DEFS if Sun CC does not handle inline asm. */
-# if defined(__i386)
+# if defined(__i386) || defined(__x86_64) || defined(__amd64)
 #   include "atomic_ops/sysdeps/sunc/x86.h"
-# endif /* __i386 */
-# if defined(__x86_64) || defined(__amd64)
-#   include "atomic_ops/sysdeps/sunc/x86_64.h"
-# endif /* __x86_64 */
+# endif
 #endif
 
 #if !defined(__GNUC__) && (defined(sparc) || defined(__sparc)) \
@@ -335,8 +358,11 @@
 #endif
 
 #if defined(AO_REQUIRE_CAS) && !defined(AO_HAVE_compare_and_swap) \
+    && !defined(AO_HAVE_fetch_compare_and_swap) \
     && !defined(AO_HAVE_compare_and_swap_full) \
-    && !defined(AO_HAVE_compare_and_swap_acquire)
+    && !defined(AO_HAVE_fetch_compare_and_swap_full) \
+    && !defined(AO_HAVE_compare_and_swap_acquire) \
+    && !defined(AO_HAVE_fetch_compare_and_swap_acquire)
 # if defined(AO_CAN_EMUL_CAS)
 #   include "atomic_ops/sysdeps/emul_cas.h"
 # else
@@ -355,14 +381,31 @@
 
 /* The generalization section.  */
 #if !defined(AO_GENERALIZE_TWICE) && defined(AO_CAN_EMUL_CAS) \
-    && !defined(AO_HAVE_compare_and_swap_full)
+    && !defined(AO_HAVE_compare_and_swap_full) \
+    && !defined(AO_HAVE_fetch_compare_and_swap_full)
 # define AO_GENERALIZE_TWICE
 #endif
 
-/* Theoretically we should repeatedly include atomic_ops_generalize.h.  */
+/* Theoretically we should repeatedly include atomic_ops/generalize.h.  */
 /* In fact, we observe that this converges after a small fixed number   */
 /* of iterations, usually one.                                          */
 #include "atomic_ops/generalize.h"
+
+#if !defined(AO_GENERALIZE_TWICE) \
+    && defined(AO_HAVE_compare_double_and_swap_double) \
+    && (!defined(AO_HAVE_double_load) || !defined(AO_HAVE_double_store))
+# define AO_GENERALIZE_TWICE
+#endif
+
+#ifdef AO_T_IS_INT
+  /* Included after the first generalization pass.      */
+# include "atomic_ops/sysdeps/ao_t_is_int.h"
+# ifndef AO_GENERALIZE_TWICE
+    /* Always generalize again. */
+#   define AO_GENERALIZE_TWICE
+# endif
+#endif /* AO_T_IS_INT */
+
 #ifdef AO_GENERALIZE_TWICE
 # include "atomic_ops/generalize.h"
 #endif
@@ -372,4 +415,4 @@
 #define AO_T AO_t
 #define AO_TS_VAL AO_TS_VAL_t
 
-#endif /* ATOMIC_OPS_H */
+#endif /* !AO_ATOMIC_OPS_H */

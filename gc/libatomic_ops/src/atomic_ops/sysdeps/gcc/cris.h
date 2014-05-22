@@ -21,10 +21,9 @@
  *
  * Most of this code originally comes from Hans-Peter Nilsson.  It is included
  * here with his permission.
- *
- * This version has not been tested.  It was coped here from a GC
- * patch so that we wouldn't lose the code in the upgrade to gc7.
  */
+
+/* FIXME: seems to be untested.         */
 
 #include "../all_atomic_load_store.h"
 

@@ -8,11 +8,6 @@
 # Permission to modify the code and to distribute modified code is granted,
 # provided the above notices are retained, and a notice that the code was
 # modified is included with the above copyright notice.
-#
-# Original author: Tom Tromey
-# Severely truncated by Hans-J. Boehm
-# Modified by: Grzegorz Jakacki <jakacki at acm dot org>
-# Modified by: Petter Urkedal <petter.urkedal@nordita.dk> (2005-04)
 
 ## Process this file with automake to produce Makefile.in.
 
@@ -34,8 +29,8 @@ SUBDIRS =
 
 ACLOCAL_AMFLAGS = -I m4
 AM_CPPFLAGS = \
-	-I$(top_builddir)/include -I$(top_srcdir)/include \
-	$(ATOMIC_OPS_CFLAGS)
+    -I$(top_builddir)/include -I$(top_srcdir)/include \
+    $(ATOMIC_OPS_CFLAGS)
 
 # Initialize variables so that we can declare files locally.
 EXTRA_DIST =
@@ -54,27 +49,41 @@ pkgconfig_DATA = bdw-gc.pc
 # ---------
 
 lib_LTLIBRARIES += libgc.la
+if SINGLE_GC_OBJ
+libgc_la_SOURCES = extra/gc.c
+else
+EXTRA_DIST += extra/gc.c
 libgc_la_SOURCES = \
-	allchblk.c alloc.c blacklst.c checksums.c dbg_mlc.c \
-	dyn_load.c finalize.c gc_dlopen.c gcj_mlc.c headers.c \
-	malloc.c mallocx.c mark.c mark_rts.c misc.c new_hblk.c \
-	obj_map.c os_dep.c pcr_interface.c ptr_chck.c real_malloc.c reclaim.c \
-	specific.c stubborn.c typd_mlc.c \
-	backgraph.c thread_local_alloc.c
+    allchblk.c alloc.c blacklst.c checksums.c dbg_mlc.c \
+    dyn_load.c finalize.c gc_dlopen.c gcj_mlc.c headers.c \
+    mach_dep.c malloc.c mallocx.c mark.c mark_rts.c misc.c new_hblk.c \
+    obj_map.c os_dep.c pcr_interface.c ptr_chck.c real_malloc.c reclaim.c \
+    specific.c stubborn.c thread_local_alloc.c typd_mlc.c
 
 # C Library: Architecture Dependent
 # ---------------------------------
 
-if PTHREADS
-libgc_la_SOURCES += pthread_start.c pthread_support.c pthread_stop_world.c
-endif
-
-if DARWIN_THREADS
-libgc_la_SOURCES += darwin_stop_world.c
-endif
-
 if WIN32_THREADS
 libgc_la_SOURCES += win32_threads.c
+else
+if PTHREADS
+libgc_la_SOURCES += pthread_start.c pthread_support.c
+if DARWIN_THREADS
+libgc_la_SOURCES += darwin_stop_world.c
+else
+libgc_la_SOURCES += pthread_stop_world.c
+endif
+endif
+endif
+
+if MAKE_BACK_GRAPH
+libgc_la_SOURCES += backgraph.c
+endif
+
+if ENABLE_DISCLAIM
+libgc_la_SOURCES += fnlz_mlc.c
+endif
+
 endif
 
 if USE_INTERNAL_LIBATOMIC_OPS
@@ -91,10 +100,8 @@ libgc_la_LIBADD = @addobjs@ $(THREADDLLIBS) $(UNWINDLIBS) $(ATOMIC_OPS_LIBS)
 libgc_la_DEPENDENCIES = @addobjs@
 libgc_la_LDFLAGS = $(extra_ldflags_libgc) -version-info 1:3:0 -no-undefined
 
-EXTRA_libgc_la_SOURCES = alpha_mach_dep.S \
-    mips_sgi_mach_dep.s mips_ultrix_mach_dep.s \
-    rs6000_mach_dep.s sparc_mach_dep.S sparc_netbsd_mach_dep.s \
-    sparc_sunos4_mach_dep.s ia64_save_regs_in_stack.s
+EXTRA_libgc_la_SOURCES = src/ia64_save_regs_in_stack.s src/sparc_mach_dep.S \
+    src/sparc_netbsd_mach_dep.s src/sparc_sunos4_mach_dep.s
 
 
 # C++ Interface
@@ -150,13 +157,9 @@ endif
 
 ## We need to add DEFS to assembler flags
 ## :FIXME: what if assembler does not accept -D... ?
-##     (use Autoconf to prepare ASDEFS ???)
+## (use Autoconf to prepare ASDEFS?)
 
 CCASFLAGS += $(DEFS)
-
-dist_noinst_SCRIPTS = callprocs configure.host
-    ## callprocs --- used by Makefile.{dj,direct}
-    ## configure.host --- used by Makefile.{am,dj,direct}
 
 # headers which are not installed
 # (see include/include.am for more)
@@ -164,30 +167,28 @@ dist_noinst_SCRIPTS = callprocs configure.host
 
 # documentation which is not installed
 #
-EXTRA_DIST += README.QUICK
+EXTRA_DIST += README.QUICK TODO
 
 # other makefiles
 # :GOTCHA: deliberately we do not include 'Makefile'
 EXTRA_DIST += BCC_MAKEFILE NT_MAKEFILE \
-    OS2_MAKEFILE PCR-Makefile digimars.mak EMX_MAKEFILE	\
-    Makefile.direct Makefile.dj Makefile.DLLs SMakefile.amiga \
+    OS2_MAKEFILE PCR-Makefile digimars.mak EMX_MAKEFILE \
+    Makefile.direct Makefile.dj SMakefile.amiga \
     WCC_MAKEFILE autogen.sh build_atomic_ops.sh build_atomic_ops.sh.cygwin \
     NT_STATIC_THREADS_MAKEFILE NT_X64_STATIC_THREADS_MAKEFILE \
     NT_X64_THREADS_MAKEFILE CMakeLists.txt tests/CMakeLists.txt
 
 # files used by makefiles other than Makefile.am
 #
-EXTRA_DIST += extra/add_gc_prefix.c extra/gc.c extra/gcname.c \
-    extra/if_mach.c extra/if_not_there.c gc.mak \
-    extra/MacOS.c MacProjects.sit.hqx mach_dep.c extra/setjmp_t.c \
-    extra/threadlibs.c extra/AmigaOS.c \
-    Mac_files/datastart.c Mac_files/dataend.c \
-    Mac_files/MacOS_config.h Mac_files/MacOS_Test_config.h \
-    include/private/msvc_dbg.h extra/msvc_dbg.c
-
-# this is an auxiliary shell file used by Makefile and Makefile.direct
-#
-CONFIG_STATUS_DEPENDENCIES = $(srcdir)/configure.host
+EXTRA_DIST += tools/add_gc_prefix.c tools/gcname.c tools/if_mach.c \
+    tools/if_not_there.c tools/setjmp_t.c tools/threadlibs.c \
+    gc.mak extra/MacOS.c extra/AmigaOS.c \
+    extra/symbian/global_end.cpp extra/symbian/global_start.cpp \
+    extra/symbian/init_global_static_roots.cpp extra/symbian.cpp \
+    build/s60v3/bld.inf build/s60v3/libgc.mmp \
+    extra/Mac_files/datastart.c extra/Mac_files/dataend.c \
+    extra/Mac_files/MacOS_config.h \
+    include/private/msvc_dbg.h extra/msvc_dbg.c tools/callprocs.sh
 
 #
 # :GOTCHA: GNU make rule for making .s out of .S is flawed,

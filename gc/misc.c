@@ -26,6 +26,7 @@
 #ifdef GC_SOLARIS_THREADS
 # include <sys/syscall.h>
 #endif
+
 #if defined(MSWIN32) || defined(MSWINCE) \
     || (defined(CYGWIN32) && defined(GC_READ_ENV_FILE))
 # ifndef WIN32_LEAN_AND_MEAN
@@ -35,7 +36,7 @@
 # include <windows.h>
 #endif
 
-#if defined(UNIX_LIKE) || defined(CYGWIN32)
+#if defined(UNIX_LIKE) || defined(CYGWIN32) || defined(SYMBIAN)
 # include <fcntl.h>
 # include <sys/types.h>
 # include <sys/stat.h>
@@ -61,6 +62,8 @@
   /* We need to register the main data segment.  Returns  TRUE unless   */
   /* this is done implicitly as part of dynamic library registration.   */
 # define GC_REGISTER_MAIN_STATIC_DATA() GC_register_main_static_data()
+#elif defined(GC_DONT_REGISTER_MAIN_STATIC_DATA)
+# define GC_REGISTER_MAIN_STATIC_DATA() FALSE
 #else
   /* Don't unnecessarily call GC_register_main_static_data() in case    */
   /* dyn_load.c isn't linked in.                                        */
@@ -82,14 +85,14 @@ ptr_t GC_stackbottom = 0;
   ptr_t GC_register_stackbottom = 0;
 #endif
 
-GC_bool GC_dont_gc = 0;
+int GC_dont_gc = FALSE;
 
-GC_bool GC_dont_precollect = 0;
+int GC_dont_precollect = FALSE;
 
 GC_bool GC_quiet = 0; /* used also in pcr_interface.c */
 
 #ifndef SMALL_CONFIG
-  GC_bool GC_print_stats = 0;
+  int GC_print_stats = 0;
 #endif
 
 #ifdef GC_PRINT_BACK_HEIGHT
@@ -128,6 +131,22 @@ GC_bool GC_quiet = 0; /* used also in pcr_interface.c */
   int GC_all_interior_pointers = 0;
 #endif
 
+#ifdef FINALIZE_ON_DEMAND
+  int GC_finalize_on_demand = 1;
+#else
+  int GC_finalize_on_demand = 0;
+#endif
+
+#ifdef JAVA_FINALIZATION
+  int GC_java_finalization = 1;
+#else
+  int GC_java_finalization = 0;
+#endif
+
+/* All accesses to it should be synchronized to avoid data races.       */
+GC_finalizer_notifier_proc GC_finalizer_notifier =
+                                        (GC_finalizer_notifier_proc)0;
+
 #ifdef GC_FORCE_UNMAP_ON_GCOLLECT
   /* Has no effect unless USE_MUNMAP.                           */
   /* Has no effect on implicitly-initiated garbage collections. */
@@ -142,8 +161,8 @@ GC_bool GC_quiet = 0; /* used also in pcr_interface.c */
 GC_INNER long GC_large_alloc_warn_interval = GC_LARGE_ALLOC_WARN_INTERVAL;
                         /* Interval between unsuppressed warnings.      */
 
-/*ARGSUSED*/
-STATIC void * GC_CALLBACK GC_default_oom_fn(size_t bytes_requested)
+STATIC void * GC_CALLBACK GC_default_oom_fn(
+                                        size_t bytes_requested GC_ATTR_UNUSED)
 {
     return(0);
 }
@@ -153,25 +172,48 @@ GC_oom_func GC_oom_fn = GC_default_oom_fn;
 
 #ifdef CAN_HANDLE_FORK
 # ifdef HANDLE_FORK
-    GC_INNER GC_bool GC_handle_fork = TRUE;
+    GC_INNER int GC_handle_fork = 1;
                         /* The value is examined by GC_thr_init.        */
 # else
-    GC_INNER GC_bool GC_handle_fork = FALSE;
+    GC_INNER int GC_handle_fork = FALSE;
 # endif
-#endif /* CAN_HANDLE_FORK */
 
-/* Overrides the default handle-fork mode.  Non-zero value means GC     */
-/* should install proper pthread_atfork handlers (or abort if not       */
-/* supported).  Has effect only if called before GC_INIT.               */
-/*ARGSUSED*/
-GC_API void GC_CALL GC_set_handle_fork(int value)
+#elif !defined(HAVE_NO_FORK)
+
+  /* Same as above but with GC_CALL calling conventions.  */
+  GC_API void GC_CALL GC_atfork_prepare(void)
+  {
+#   ifdef THREADS
+      ABORT("fork() handling unsupported");
+#   endif
+  }
+
+  GC_API void GC_CALL GC_atfork_parent(void)
+  {
+    /* empty */
+  }
+
+  GC_API void GC_CALL GC_atfork_child(void)
+  {
+    /* empty */
+  }
+#endif /* !CAN_HANDLE_FORK && !HAVE_NO_FORK */
+
+/* Overrides the default automatic handle-fork mode.  Has effect only   */
+/* if called before GC_INIT.                                            */
+GC_API void GC_CALL GC_set_handle_fork(int value GC_ATTR_UNUSED)
 {
 # ifdef CAN_HANDLE_FORK
     if (!GC_is_initialized)
-      GC_handle_fork = (GC_bool)value;
+      GC_handle_fork = value >= -1 ? value : 1;
+                /* Map all negative values except for -1 to a positive one. */
 # elif defined(THREADS) || (defined(DARWIN) && defined(MPROTECT_VDB))
-    if (!GC_is_initialized && value)
-      ABORT("fork() handling disabled");
+    if (!GC_is_initialized && value) {
+#     ifndef SMALL_CONFIG
+        GC_init(); /* just to initialize GC_stderr */
+#     endif
+      ABORT("fork() handling unsupported");
+    }
 # else
     /* No at-fork handler is needed in the single-threaded mode.        */
 # endif
@@ -199,9 +241,9 @@ STATIC void GC_init_size_map(void)
     /* We leave the rest of the array to be filled in on demand. */
 }
 
-/* Fill in additional entries in GC_size_map, including the ith one */
+/* Fill in additional entries in GC_size_map, including the ith one     */
 /* We assume the ith entry is currently 0.                              */
-/* Note that a filled in section of the array ending at n always    */
+/* Note that a filled in section of the array ending at n always        */
 /* has length at least n/4.                                             */
 GC_INNER void GC_extend_size_map(size_t i)
 {
@@ -236,9 +278,10 @@ GC_INNER void GC_extend_size_map(size_t i)
         granule_sz = MAXOBJGRANULES;
     }
     /* If we can fit the same number of larger objects in a block,      */
-    /* do so.                                                   */
+    /* do so.                                                           */
     {
         size_t number_of_objs = HBLK_GRANULES/granule_sz;
+        GC_ASSERT(number_of_objs != 0);
         granule_sz = HBLK_GRANULES/number_of_objs;
         granule_sz &= ~1;
     }
@@ -280,15 +323,14 @@ GC_INNER void GC_extend_size_map(size_t i)
   void *GC_clear_stack_inner(void *, ptr_t);
 #else
   /* Clear the stack up to about limit.  Return arg.  This function is  */
-  /* not static because it could also be errorneously defined in .S     */
+  /* not static because it could also be erroneously defined in .S      */
   /* file, so this error would be caught by the linker.                 */
-  /*ARGSUSED*/
   void * GC_clear_stack_inner(void *arg, ptr_t limit)
   {
-    word dummy[CLEAR_SIZE];
+    volatile word dummy[CLEAR_SIZE];
 
-    BZERO(dummy, CLEAR_SIZE*sizeof(word));
-    if ((ptr_t)(dummy) COOLER_THAN limit) {
+    BZERO((/* no volatile */ void *)dummy, sizeof(dummy));
+    if ((word)GC_approx_sp() COOLER_THAN (word)limit) {
         (void) GC_clear_stack_inner(arg, limit);
     }
     /* Make sure the recursive call is not a tail call, and the bzero   */
@@ -305,7 +347,7 @@ GC_API void * GC_CALL GC_clear_stack(void *arg)
 {
     ptr_t sp = GC_approx_sp();  /* Hotter than actual sp */
 #   ifdef THREADS
-        word dummy[SMALL_CLEAR_SIZE];
+        word volatile dummy[SMALL_CLEAR_SIZE];
         static unsigned random_no = 0;
                                  /* Should be more random than it is ... */
                                  /* Used to occasionally clear a bigger  */
@@ -337,7 +379,7 @@ GC_API void * GC_CALL GC_clear_stack(void *arg)
                         /* implementations of GC_clear_stack_inner.     */
         return GC_clear_stack_inner(arg, limit);
     } else {
-        BZERO(dummy, SMALL_CLEAR_SIZE*sizeof(word));
+        BZERO((void *)dummy, SMALL_CLEAR_SIZE*sizeof(word));
         return arg;
     }
 # else
@@ -350,13 +392,13 @@ GC_API void * GC_CALL GC_clear_stack(void *arg)
     }
     /* Adjust GC_high_water */
         MAKE_COOLER(GC_high_water, WORDS_TO_BYTES(DEGRADE_RATE) + GC_SLOP);
-        if (sp HOTTER_THAN GC_high_water) {
+        if ((word)sp HOTTER_THAN (word)GC_high_water) {
             GC_high_water = sp;
         }
         MAKE_HOTTER(GC_high_water, GC_SLOP);
     limit = GC_min_sp;
     MAKE_HOTTER(limit, SLOP);
-    if (sp COOLER_THAN limit) {
+    if ((word)sp COOLER_THAN (word)limit) {
         limit = (ptr_t)((word)limit & ~0xf);
                         /* Make it sufficiently aligned for assembly    */
                         /* implementations of GC_clear_stack_inner.     */
@@ -366,7 +408,8 @@ GC_API void * GC_CALL GC_clear_stack(void *arg)
         /* Restart clearing process, but limit how much clearing we do. */
         GC_min_sp = sp;
         MAKE_HOTTER(GC_min_sp, CLEAR_THRESHOLD/4);
-        if (GC_min_sp HOTTER_THAN GC_high_water) GC_min_sp = GC_high_water;
+        if ((word)GC_min_sp HOTTER_THAN (word)GC_high_water)
+          GC_min_sp = GC_high_water;
         GC_bytes_allocd_at_reset = GC_bytes_allocd;
     }
     return(arg);
@@ -385,7 +428,7 @@ GC_API void * GC_CALL GC_base(void * p)
     ptr_t limit;
 
     r = p;
-    if (!GC_is_initialized) return 0;
+    if (!EXPECT(GC_is_initialized, TRUE)) return 0;
     h = HBLKPTR(r);
     GET_BI(r, bi);
     candidate_hdr = HDR_FROM_BI(bi, r);
@@ -407,14 +450,23 @@ GC_API void * GC_CALL GC_base(void * p)
 
             r -= obj_displ;
             limit = r + sz;
-            if (limit > (ptr_t)(h + 1) && sz <= HBLKSIZE) {
+            if ((word)limit > (word)(h + 1) && sz <= HBLKSIZE) {
                 return(0);
             }
-            if ((ptr_t)p >= limit) return(0);
+            if ((word)p >= (word)limit) return(0);
         }
     return((void *)r);
 }
 
+/* Return TRUE if and only if p points to somewhere in GC heap. */
+GC_API int GC_CALL GC_is_heap_ptr(const void *p)
+{
+    bottom_index *bi;
+
+    GC_ASSERT(GC_is_initialized);
+    GET_BI(p, bi);
+    return HDR_FROM_BI(bi, p) != 0;
+}
 
 /* Return the size of an object, given a pointer to its base.           */
 /* (For small objects this also happens to work from interior pointers, */
@@ -458,6 +510,8 @@ GC_API size_t GC_CALL GC_get_total_bytes(void)
     return (size_t)(GC_bytes_allocd + GC_bytes_allocd_before_gc);
 }
 
+#ifndef GC_GET_HEAP_USAGE_NOT_NEEDED
+
 /* Return the heap usage information.  This is a thread-safe (atomic)   */
 /* alternative for the five above getters.  NULL pointer is allowed for */
 /* any argument.  Returned (filled in) values are of word type.         */
@@ -481,17 +535,99 @@ GC_API void GC_CALL GC_get_heap_usage_safe(GC_word *pheap_size,
   UNLOCK();
 }
 
+  GC_INNER word GC_reclaimed_bytes_before_gc = 0;
 
-#ifdef THREADS
+  /* Fill in GC statistics provided the destination is of enough size.  */
+  static void fill_prof_stats(struct GC_prof_stats_s *pstats)
+  {
+    pstats->heapsize_full = GC_heapsize;
+    pstats->free_bytes_full = GC_large_free_bytes;
+    pstats->unmapped_bytes = GC_unmapped_bytes;
+    pstats->bytes_allocd_since_gc = GC_bytes_allocd;
+    pstats->allocd_bytes_before_gc = GC_bytes_allocd_before_gc;
+    pstats->non_gc_bytes = GC_non_gc_bytes;
+    pstats->gc_no = GC_gc_no; /* could be -1 */
+#   ifdef PARALLEL_MARK
+      pstats->markers_m1 = (word)GC_markers_m1;
+#   else
+      pstats->markers_m1 = 0; /* one marker */
+#   endif
+    pstats->bytes_reclaimed_since_gc = GC_bytes_found > 0 ?
+                                        (word)GC_bytes_found : 0;
+    pstats->reclaimed_bytes_before_gc = GC_reclaimed_bytes_before_gc;
+  }
+
+# include <string.h> /* for memset() */
+
+  GC_API size_t GC_CALL GC_get_prof_stats(struct GC_prof_stats_s *pstats,
+                                          size_t stats_sz)
+  {
+    struct GC_prof_stats_s stats;
+    DCL_LOCK_STATE;
+
+    LOCK();
+    fill_prof_stats(stats_sz >= sizeof(stats) ? pstats : &stats);
+    UNLOCK();
+
+    if (stats_sz == sizeof(stats)) {
+      return sizeof(stats);
+    } else if (stats_sz > sizeof(stats)) {
+      /* Fill in the remaining part with -1.    */
+      memset((char *)pstats + sizeof(stats), 0xff, stats_sz - sizeof(stats));
+      return sizeof(stats);
+    } else {
+      BCOPY(&stats, pstats, stats_sz);
+      return stats_sz;
+    }
+  }
+
+# ifdef THREADS
+    /* The _unsafe version assumes the caller holds the allocation lock. */
+    GC_API size_t GC_CALL GC_get_prof_stats_unsafe(
+                                            struct GC_prof_stats_s *pstats,
+                                            size_t stats_sz)
+    {
+      struct GC_prof_stats_s stats;
+
+      if (stats_sz >= sizeof(stats)) {
+        fill_prof_stats(pstats);
+        if (stats_sz > sizeof(stats))
+          memset((char *)pstats + sizeof(stats), 0xff,
+                 stats_sz - sizeof(stats));
+        return sizeof(stats);
+      } else {
+        fill_prof_stats(&stats);
+        BCOPY(&stats, pstats, stats_sz);
+        return stats_sz;
+      }
+    }
+# endif /* THREADS */
+
+#endif /* !GC_GET_HEAP_USAGE_NOT_NEEDED */
+
+#if defined(GC_DARWIN_THREADS) || defined(GC_OPENBSD_UTHREADS) \
+    || defined(GC_WIN32_THREADS) || (defined(NACL) && defined(THREADS))
+  /* GC does not use signals to suspend and restart threads.    */
+  GC_API void GC_CALL GC_set_suspend_signal(int sig GC_ATTR_UNUSED)
+  {
+    /* empty */
+  }
+
+  GC_API void GC_CALL GC_set_thr_restart_signal(int sig GC_ATTR_UNUSED)
+  {
+    /* empty */
+  }
+
   GC_API int GC_CALL GC_get_suspend_signal(void)
   {
-#   ifdef SIG_SUSPEND
-      return SIG_SUSPEND;
-#   else
-      return -1;
-#   endif
+    return -1;
   }
-#endif /* THREADS */
+
+  GC_API int GC_CALL GC_get_thr_restart_signal(void)
+  {
+    return -1;
+  }
+#endif /* GC_DARWIN_THREADS || GC_WIN32_THREADS || ... */
 
 #if !defined(_MAX_PATH) && (defined(MSWIN32) || defined(MSWINCE) \
                             || defined(CYGWIN32))
@@ -528,7 +664,7 @@ GC_API void GC_CALL GC_get_heap_usage_safe(GC_word *pheap_size,
       if (len > 4 && path[len - 4] == (TCHAR)'.') {
         len -= 4; /* strip executable file extension */
       }
-      memcpy(&path[len], TEXT(".gc.env"), sizeof(TEXT(".gc.env")));
+      BCOPY(TEXT(".gc.env"), &path[len], sizeof(TEXT(".gc.env")));
       hFile = CreateFile(path, GENERIC_READ,
                          FILE_SHARE_READ | FILE_SHARE_WRITE,
                          NULL /* lpSecurityAttributes */, OPEN_EXISTING,
@@ -604,16 +740,22 @@ GC_INNER GC_bool GC_is_initialized = FALSE;
     GC_INNER CRITICAL_SECTION GC_write_cs;
 #endif
 
-STATIC void GC_exit_check(void)
-{
-   GC_gcollect();
-}
+#ifndef DONT_USE_ATEXIT
+  STATIC void GC_exit_check(void)
+  {
+    if (GC_find_leak) {
+      GC_gcollect();
+    }
+  }
+#endif
 
-#ifdef UNIX_LIKE
+#if defined(UNIX_LIKE) && !defined(NO_DEBUGGING)
   static void looping_handler(int sig)
   {
     GC_err_printf("Caught signal %d: looping in handler\n", sig);
-    for (;;) {}
+    for (;;) {
+       /* empty */
+    }
   }
 
   static GC_bool installed_looping_handler = FALSE;
@@ -632,10 +774,14 @@ STATIC void GC_exit_check(void)
 # define maybe_install_looping_handler()
 #endif
 
-#if !defined(OS2) && !defined(MACOS) && !defined(MSWIN32) && !defined(MSWINCE)
-  STATIC int GC_stdout = 1;
-  STATIC int GC_stderr = 2;
-  STATIC int GC_log = 2; /* stderr */
+#define GC_DEFAULT_STDOUT_FD 1
+#define GC_DEFAULT_STDERR_FD 2
+
+#if !defined(OS2) && !defined(MACOS) && !defined(GC_ANDROID_LOG) \
+    && !defined(MSWIN32) && !defined(MSWINCE)
+  STATIC int GC_stdout = GC_DEFAULT_STDOUT_FD;
+  STATIC int GC_stderr = GC_DEFAULT_STDERR_FD;
+  STATIC int GC_log = GC_DEFAULT_STDERR_FD;
 #endif
 
 STATIC word GC_parse_mem_size_arg(const char *str)
@@ -672,16 +818,15 @@ STATIC word GC_parse_mem_size_arg(const char *str)
   return result;
 }
 
+#define GC_LOG_STD_NAME "gc.log"
+
 GC_API void GC_CALL GC_init(void)
 {
     /* LOCK(); -- no longer does anything this early. */
-#   if !defined(THREADS) && defined(GC_ASSERTIONS)
-        word dummy;
-#   endif
     word initial_heap_sz;
     IF_CANCEL(int cancel_state;)
 
-    if (GC_is_initialized) return;
+    if (EXPECT(GC_is_initialized, TRUE)) return;
 #   ifdef REDIRECT_MALLOC
       {
         static GC_bool init_started = FALSE;
@@ -752,10 +897,17 @@ GC_API void GC_CALL GC_init(void)
           GC_print_stats = 1;
         }
 #     endif
-#     if defined(UNIX_LIKE) || defined(CYGWIN32)
+#     if (defined(UNIX_LIKE) && !defined(GC_ANDROID_LOG)) \
+         || defined(CYGWIN32) || defined(SYMBIAN)
         {
           char * file_name = GETENV("GC_LOG_FILE");
-          if (0 != file_name) {
+#         ifdef GC_LOG_TO_FILE_ALWAYS
+            if (NULL == file_name)
+              file_name = GC_LOG_STD_NAME;
+#         else
+            if (0 != file_name)
+#         endif
+          {
             int log_d = open(file_name, O_CREAT|O_WRONLY|O_APPEND, 0666);
             if (log_d < 0) {
               GC_err_printf("Failed to open %s as log file\n", file_name);
@@ -829,6 +981,16 @@ GC_API void GC_CALL GC_init(void)
 #       endif
       }
     }
+#   ifdef GC_COLLECT_AT_MALLOC
+      {
+        char * string = GETENV("GC_COLLECT_AT_MALLOC");
+        if (0 != string) {
+          size_t min_lb = (size_t)STRTOULL(string, NULL, 10);
+          if (min_lb > 0)
+            GC_dbg_collect_at_malloc_min_lb = min_lb;
+        }
+      }
+#   endif
 #   ifndef GC_DISABLE_INCREMENTAL
       {
         char * time_limit_string = GETENV("GC_PAUSE_TIME_TARGET");
@@ -956,17 +1118,14 @@ GC_API void GC_CALL GC_init(void)
     GC_STATIC_ASSERT(sizeof (signed_word) == sizeof(word));
     GC_STATIC_ASSERT(sizeof (struct hblk) == HBLKSIZE);
 #   ifndef THREADS
-      GC_ASSERT(!((word)GC_stackbottom HOTTER_THAN (word)(&dummy)));
+      GC_ASSERT(!((word)GC_stackbottom HOTTER_THAN (word)GC_approx_sp()));
 #   endif
 #   if !defined(_AUX_SOURCE) || defined(__GNUC__)
       GC_STATIC_ASSERT((word)(-1) > (word)0);
       /* word should be unsigned */
 #   endif
-#   if !defined(__BORLANDC__) && !defined(__CC_ARM) \
-       && !(defined(__clang__) && defined(X86_64)) /* Workaround */
-      GC_STATIC_ASSERT((ptr_t)(word)(-1) > (ptr_t)0);
-      /* Ptr_t comparisons should behave as unsigned comparisons.       */
-#   endif
+    /* We no longer check for ((void*)(-1) > NULL) since all pointers   */
+    /* are explicitly cast to word in every less-greater comparison.    */
     GC_STATIC_ASSERT((signed_word)(-1) < (signed_word)0);
 #   ifndef GC_DISABLE_INCREMENTAL
       if (GC_incremental || 0 != GETENV("GC_ENABLE_INCREMENTAL")) {
@@ -1008,6 +1167,8 @@ GC_API void GC_CALL GC_init(void)
     if (!GC_expand_hp_inner(initial_heap_sz)) {
         GC_err_printf("Can't start up: not enough memory\n");
         EXIT();
+    } else {
+        GC_requested_heapsize += initial_heap_sz;
     }
     if (GC_all_interior_pointers)
       GC_initialize_offsets();
@@ -1039,24 +1200,13 @@ GC_API void GC_CALL GC_init(void)
 #   ifdef STUBBORN_ALLOC
         GC_stubborn_init();
 #   endif
-    /* Convince lint that some things are used */
-#   ifdef LINT
-      {
-          extern char * const GC_copyright[];
-          GC_noop(GC_copyright, GC_find_header, GC_push_one,
-                  GC_call_with_alloc_lock, GC_dont_expand,
-#                 ifndef NO_DEBUGGING
-                    GC_dump,
-#                 endif
-                  GC_register_finalizer_no_order);
+#   ifndef DONT_USE_ATEXIT
+      if (GC_find_leak) {
+        /* This is to give us at least one chance to detect leaks.        */
+        /* This may report some very benign leaks, but ...                */
+        atexit(GC_exit_check);
       }
 #   endif
-
-    if (GC_find_leak) {
-      /* This is to give us at least one chance to detect leaks.        */
-      /* This may report some very benign leaks, but ...                */
-      atexit(GC_exit_check);
-    }
 
     /* The rest of this again assumes we don't really hold      */
     /* the allocation lock.                                     */
@@ -1113,6 +1263,14 @@ GC_API void GC_CALL GC_enable_incremental(void)
   GC_init();
 }
 
+#if defined(THREADS) && (!defined(PARALLEL_MARK) || !defined(CAN_HANDLE_FORK))
+  GC_API void GC_CALL GC_start_mark_threads(void)
+  {
+    /* No action since parallel markers are disabled (or no POSIX fork). */
+    GC_ASSERT(I_DONT_HOLD_LOCK());
+  }
+#endif
+
 #if defined(MSWIN32) || defined(MSWINCE)
 
 # if defined(_MSC_VER) && defined(_DEBUG) && !defined(MSWINCE)
@@ -1142,66 +1300,89 @@ GC_API void GC_CALL GC_enable_incremental(void)
 
   STATIC HANDLE GC_CreateLogFile(void)
   {
+    HANDLE hFile;
+    TCHAR *logPath;
+    BOOL appendToFile = FALSE;
 #   if !defined(NO_GETENV_WIN32) || !defined(OLD_WIN32_LOG_FILE)
-      TCHAR logPath[_MAX_PATH + 0x10]; /* buffer for path + ext */
+      TCHAR pathBuf[_MAX_PATH + 0x10]; /* buffer for path + ext */
+
+      logPath = pathBuf;
 #   endif
+
     /* Use GetEnvironmentVariable instead of GETENV() for unicode support. */
 #   ifndef NO_GETENV_WIN32
-      if (GetEnvironmentVariable(TEXT("GC_LOG_FILE"), logPath,
-                                 _MAX_PATH + 1) - 1U >= (DWORD)_MAX_PATH)
+      if (GetEnvironmentVariable(TEXT("GC_LOG_FILE"), pathBuf,
+                                 _MAX_PATH + 1) - 1U < (DWORD)_MAX_PATH) {
+        appendToFile = TRUE;
+      } else
 #   endif
-    {
+    /* else */ {
       /* Env var not found or its value too long.       */
 #     ifdef OLD_WIN32_LOG_FILE
-        return CreateFile(TEXT("gc.log"), GENERIC_WRITE, FILE_SHARE_READ,
-                          NULL /* lpSecurityAttributes */, CREATE_ALWAYS,
-                          FILE_FLAG_WRITE_THROUGH, NULL /* hTemplateFile */);
+        logPath = TEXT(GC_LOG_STD_NAME);
 #     else
-        int len = (int)GetModuleFileName(NULL /* hModule */, logPath,
+        int len = (int)GetModuleFileName(NULL /* hModule */, pathBuf,
                                          _MAX_PATH + 1);
         /* If GetModuleFileName() has failed then len is 0. */
-        if (len > 4 && logPath[len - 4] == (TCHAR)'.') {
+        if (len > 4 && pathBuf[len - 4] == (TCHAR)'.') {
           len -= 4; /* strip executable file extension */
         }
-        /* strcat/wcscat() are deprecated on WinCE, so use memcpy()     */
-        memcpy(&logPath[len], TEXT(".gc.log"), sizeof(TEXT(".gc.log")));
+        BCOPY(TEXT("." GC_LOG_STD_NAME), &pathBuf[len],
+              sizeof(TEXT("." GC_LOG_STD_NAME)));
 #     endif
     }
-#   if !defined(NO_GETENV_WIN32) || !defined(OLD_WIN32_LOG_FILE)
-      return CreateFile(logPath, GENERIC_WRITE, FILE_SHARE_READ,
-                        NULL /* lpSecurityAttributes */, CREATE_ALWAYS,
-                        GC_print_stats == VERBOSE ? FILE_ATTRIBUTE_NORMAL :
+
+    hFile = CreateFile(logPath, GENERIC_WRITE, FILE_SHARE_READ,
+                       NULL /* lpSecurityAttributes */,
+                       appendToFile ? OPEN_ALWAYS : CREATE_ALWAYS,
+                       GC_print_stats == VERBOSE ? FILE_ATTRIBUTE_NORMAL :
                             /* immediately flush writes unless very verbose */
                             FILE_ATTRIBUTE_NORMAL | FILE_FLAG_WRITE_THROUGH,
-                        NULL /* hTemplateFile */);
+                       NULL /* hTemplateFile */);
+#   ifndef NO_GETENV_WIN32
+      if (appendToFile && hFile != INVALID_HANDLE_VALUE) {
+        LONG posHigh = 0;
+        (void)SetFilePointer(hFile, 0, &posHigh, FILE_END);
+                                  /* Seek to file end (ignoring any error) */
+      }
 #   endif
+    return hFile;
   }
 
   STATIC int GC_write(const char *buf, size_t len)
   {
-      BOOL tmp;
+      BOOL res;
       DWORD written;
+#     if defined(THREADS) && defined(GC_ASSERTIONS)
+        static GC_bool inside_write = FALSE;
+                        /* to prevent infinite recursion at abort.      */
+        if (inside_write)
+          return -1;
+#     endif
+
       if (len == 0)
           return 0;
       IF_NEED_TO_LOCK(EnterCriticalSection(&GC_write_cs));
-#     ifdef THREADS
-        GC_ASSERT(!GC_write_disabled);
+#     if defined(THREADS) && defined(GC_ASSERTIONS)
+        if (GC_write_disabled) {
+          inside_write = TRUE;
+          ABORT("Assertion failure: GC_write called with write_disabled");
+        }
 #     endif
-      if (GC_log == INVALID_HANDLE_VALUE) {
-          IF_NEED_TO_LOCK(LeaveCriticalSection(&GC_write_cs));
-          return -1;
-      } else if (GC_log == 0) {
+      if (GC_log == 0) {
         GC_log = GC_CreateLogFile();
-        /* Ignore open log failure if the collector is built with       */
-        /* print_stats always set on.                                   */
-#       ifndef GC_PRINT_VERBOSE_STATS
-          if (GC_log == INVALID_HANDLE_VALUE)
-            ABORT("Open of log file failed");
+      }
+      if (GC_log == INVALID_HANDLE_VALUE) {
+        IF_NEED_TO_LOCK(LeaveCriticalSection(&GC_write_cs));
+#       ifdef NO_DEBUGGING
+          /* Ignore open log failure (e.g., it might be caused by       */
+          /* read-only folder of the client application).               */
+          return 0;
+#       else
+          return -1;
 #       endif
       }
-      tmp = WriteFile(GC_log, buf, (DWORD)len, &written, NULL);
-      if (!tmp)
-          DebugBreak();
+      res = WriteFile(GC_log, buf, (DWORD)len, &written, NULL);
 #     if defined(_MSC_VER) && defined(_DEBUG)
 #         ifdef MSWINCE
               /* There is no CrtDbgReport() in WinCE */
@@ -1218,7 +1399,7 @@ GC_API void GC_CALL GC_enable_incremental(void)
 #         endif
 #     endif
       IF_NEED_TO_LOCK(LeaveCriticalSection(&GC_write_cs));
-      return tmp ? (int)written : -1;
+      return res ? (int)written : -1;
   }
 
   /* FIXME: This is pretty ugly ... */
@@ -1251,6 +1432,21 @@ GC_API void GC_CALL GC_enable_incremental(void)
   }
 
 # define WRITE(f, buf, len) (GC_set_files(), GC_write(f, buf, len))
+
+#elif defined(GC_ANDROID_LOG)
+
+# include <android/log.h>
+
+# ifndef GC_ANDROID_LOG_TAG
+#   define GC_ANDROID_LOG_TAG "BDWGC"
+# endif
+
+# define GC_stdout ANDROID_LOG_DEBUG
+# define GC_stderr ANDROID_LOG_ERROR
+# define GC_log GC_stdout
+
+# define WRITE(level, buf, unused_len) \
+                __android_log_write(level, GC_ANDROID_LOG_TAG, buf)
 
 #else
 # if !defined(AMIGA) && !defined(__CC_ARM)
@@ -1292,78 +1488,109 @@ GC_API void GC_CALL GC_enable_incremental(void)
   }
 
 # define WRITE(f, buf, len) GC_write(f, buf, len)
-#endif /* !MSWIN32 && !OS2 && !MACOS */
+#endif /* !MSWIN32 && !OS2 && !MACOS && !GC_ANDROID_LOG */
 
 #define BUFSZ 1024
 
 #ifdef NO_VSNPRINTF
   /* In case this function is missing (eg., in DJGPP v2.0.3).   */
-# define vsnprintf(buf, bufsz, format, args) vsprintf(buf, format, args)
+# define GC_VSNPRINTF(buf, bufsz, format, args) vsprintf(buf, format, args)
 #elif defined(_MSC_VER)
 # ifdef MSWINCE
     /* _vsnprintf is deprecated in WinCE */
-#   define vsnprintf StringCchVPrintfA
+#   define GC_VSNPRINTF StringCchVPrintfA
 # else
-#   define vsnprintf _vsnprintf
+#   define GC_VSNPRINTF _vsnprintf
 # endif
+#else
+# define GC_VSNPRINTF vsnprintf
 #endif
+
 /* A version of printf that is unlikely to call malloc, and is thus safer */
 /* to call from the collector in case malloc has been bound to GC_malloc. */
-/* Floating point arguments and formats should be avoided, since fp       */
-/* conversion is more likely to allocate.                                 */
+/* Floating point arguments and formats should be avoided, since FP       */
+/* conversion is more likely to allocate memory.                          */
 /* Assumes that no more than BUFSZ-1 characters are written at once.      */
+#define GC_PRINTF_FILLBUF(buf, format) \
+        do { \
+          va_list args; \
+          va_start(args, format); \
+          (buf)[sizeof(buf) - 1] = 0x15; /* guard */ \
+          (void)GC_VSNPRINTF(buf, sizeof(buf) - 1, format, args); \
+          va_end(args); \
+          if ((buf)[sizeof(buf) - 1] != 0x15) \
+            ABORT("GC_printf clobbered stack"); \
+        } while (0)
+
 void GC_printf(const char *format, ...)
 {
-    va_list args;
-    char buf[BUFSZ+1];
+    char buf[BUFSZ + 1];
 
-    if (GC_quiet) return;
-    va_start(args, format);
-    buf[BUFSZ] = 0x15;
-    (void) vsnprintf(buf, BUFSZ, format, args);
-    va_end(args);
-    if (buf[BUFSZ] != 0x15) ABORT("GC_printf clobbered stack");
-    if (WRITE(GC_stdout, buf, strlen(buf)) < 0)
-      ABORT("write to stdout failed");
+    if (!GC_quiet) {
+      GC_PRINTF_FILLBUF(buf, format);
+      if (WRITE(GC_stdout, buf, strlen(buf)) < 0)
+        ABORT("write to stdout failed");
+    }
 }
 
 void GC_err_printf(const char *format, ...)
 {
-    va_list args;
-    char buf[BUFSZ+1];
+    char buf[BUFSZ + 1];
 
-    va_start(args, format);
-    buf[BUFSZ] = 0x15;
-    (void) vsnprintf(buf, BUFSZ, format, args);
-    va_end(args);
-    if (buf[BUFSZ] != 0x15) ABORT("GC_printf clobbered stack");
-    if (WRITE(GC_stderr, buf, strlen(buf)) < 0)
-      ABORT("write to stderr failed");
+    GC_PRINTF_FILLBUF(buf, format);
+    GC_err_puts(buf);
 }
 
 void GC_log_printf(const char *format, ...)
 {
-    va_list args;
-    char buf[BUFSZ+1];
+    char buf[BUFSZ + 1];
 
-    va_start(args, format);
-    buf[BUFSZ] = 0x15;
-    (void) vsnprintf(buf, BUFSZ, format, args);
-    va_end(args);
-    if (buf[BUFSZ] != 0x15) ABORT("GC_printf clobbered stack");
+    GC_PRINTF_FILLBUF(buf, format);
     if (WRITE(GC_log, buf, strlen(buf)) < 0)
-      ABORT("write to log failed");
+      ABORT("write to GC log failed");
 }
 
-/* This is equivalent to GC_err_printf("%s",s). */
+#ifndef GC_ANDROID_LOG
+
+# define GC_warn_printf GC_err_printf
+
+#else
+
+  GC_INNER void GC_info_log_printf(const char *format, ...)
+  {
+    char buf[BUFSZ + 1];
+
+    GC_PRINTF_FILLBUF(buf, format);
+    (void)WRITE(ANDROID_LOG_INFO, buf, 0 /* unused */);
+  }
+
+  GC_INNER void GC_verbose_log_printf(const char *format, ...)
+  {
+    char buf[BUFSZ + 1];
+
+    GC_PRINTF_FILLBUF(buf, format);
+    (void)WRITE(ANDROID_LOG_VERBOSE, buf, 0); /* ignore write errors */
+  }
+
+  STATIC void GC_warn_printf(const char *format, ...)
+  {
+    char buf[BUFSZ + 1];
+
+    GC_PRINTF_FILLBUF(buf, format);
+    (void)WRITE(ANDROID_LOG_WARN, buf, 0);
+  }
+
+#endif /* GC_ANDROID_LOG */
+
 void GC_err_puts(const char *s)
 {
-    if (WRITE(GC_stderr, s, strlen(s)) < 0) ABORT("write to stderr failed");
+    (void)WRITE(GC_stderr, s, strlen(s)); /* ignore errors */
 }
 
 STATIC void GC_CALLBACK GC_default_warn_proc(char *msg, GC_word arg)
 {
-    GC_err_printf(msg, arg);
+    /* TODO: Add assertion on arg comply with msg (format).     */
+    GC_warn_printf(msg, arg);
 }
 
 GC_INNER GC_warn_proc GC_current_warn_proc = GC_default_warn_proc;
@@ -1405,62 +1632,92 @@ GC_API GC_warn_proc GC_CALL GC_get_warn_proc(void)
 }
 
 #if !defined(PCR) && !defined(SMALL_CONFIG)
-  /* Abort the program with a message. msg must not be NULL. */
-  void GC_abort(const char *msg)
+  /* Print (or display) a message before abnormal exit (including       */
+  /* abort).  Invoked from ABORT(msg) macro (there msg is non-NULL)     */
+  /* and from EXIT() macro (msg is NULL in that case).                  */
+  STATIC void GC_CALLBACK GC_default_on_abort(const char *msg)
   {
-#   if defined(MSWIN32)
-#     ifndef DONT_USE_USER32_DLL
-        /* Use static binding to "user32.dll".  */
-        (void)MessageBoxA(NULL, msg, "Fatal error in GC", MB_ICONERROR|MB_OK);
-#     else
-        /* This simplifies linking - resolve "MessageBoxA" at run-time. */
-        HINSTANCE hU32 = LoadLibrary(TEXT("user32.dll"));
-        if (hU32) {
-          FARPROC pfn = GetProcAddress(hU32, "MessageBoxA");
-          if (pfn)
-            (void)(*(int (WINAPI *)(HWND, LPCSTR, LPCSTR, UINT))pfn)(
-                                NULL /* hWnd */, msg, "Fatal error in GC",
-                                MB_ICONERROR | MB_OK);
-          (void)FreeLibrary(hU32);
-        }
+    GC_find_leak = FALSE; /* disable at-exit GC_gcollect()  */
+
+    if (msg != NULL) {
+#     if defined(MSWIN32)
+#       ifndef DONT_USE_USER32_DLL
+          /* Use static binding to "user32.dll".        */
+          (void)MessageBoxA(NULL, msg, "Fatal error in GC",
+                            MB_ICONERROR | MB_OK);
+#       else
+          /* This simplifies linking - resolve "MessageBoxA" at run-time. */
+          HINSTANCE hU32 = LoadLibrary(TEXT("user32.dll"));
+          if (hU32) {
+            FARPROC pfn = GetProcAddress(hU32, "MessageBoxA");
+            if (pfn)
+              (void)(*(int (WINAPI *)(HWND, LPCSTR, LPCSTR, UINT))pfn)(
+                                  NULL /* hWnd */, msg, "Fatal error in GC",
+                                  MB_ICONERROR | MB_OK);
+            (void)FreeLibrary(hU32);
+          }
+#       endif
+        /* Also duplicate msg to GC log file.   */
 #     endif
-      /* Also duplicate msg to GC log file.     */
-#   endif
-      /* Avoid calling GC_err_printf() here, as GC_abort() could be     */
+
+#   ifndef GC_ANDROID_LOG
+      /* Avoid calling GC_err_printf() here, as GC_on_abort() could be  */
       /* called from it.  Note 1: this is not an atomic output.         */
       /* Note 2: possible write errors are ignored.                     */
-      if (WRITE(GC_stderr, (void *)msg, strlen(msg)) >= 0)
-        (void)WRITE(GC_stderr, (void *)("\n"), 1);
+#     if defined(THREADS) && defined(GC_ASSERTIONS) \
+         && (defined(MSWIN32) || defined(MSWINCE))
+        if (!GC_write_disabled)
+#     endif
+      {
+        if (WRITE(GC_stderr, (void *)msg, strlen(msg)) >= 0)
+          (void)WRITE(GC_stderr, (void *)("\n"), 1);
+      }
+#   else
+      __android_log_assert("*" /* cond */, GC_ANDROID_LOG_TAG, "%s\n", msg);
+#   endif
+    }
 
-    if (GETENV("GC_LOOP_ON_ABORT") != NULL) {
+#   if !defined(NO_DEBUGGING) && !defined(GC_ANDROID_LOG)
+      if (GETENV("GC_LOOP_ON_ABORT") != NULL) {
             /* In many cases it's easier to debug a running process.    */
             /* It's arguably nicer to sleep, but that makes it harder   */
             /* to look at the thread if the debugger doesn't know much  */
             /* about threads.                                           */
-            for(;;) {}
-    }
-#   ifndef LINT2
-      if (!msg) return; /* to suppress compiler warnings in ABORT callers. */
+            for(;;) {
+              /* Empty */
+            }
+      }
 #   endif
-#   if defined(MSWIN32) && (defined(NO_DEBUGGING) || defined(LINT2))
-      /* A more user-friendly abort after showing fatal message.        */
-        _exit(-1); /* exit on error without running "at-exit" callbacks */
-#   elif defined(MSWINCE) && defined(NO_DEBUGGING)
-        ExitProcess(-1);
-#   elif defined(MSWIN32) || defined(MSWINCE)
-        DebugBreak();
-                /* Note that on a WinCE box, this could be silently     */
-                /* ignored (i.e., the program is not aborted).          */
-#   else
-        (void) abort();
-#   endif
+  }
+
+  GC_abort_func GC_on_abort = GC_default_on_abort;
+
+  GC_API void GC_CALL GC_set_abort_func(GC_abort_func fn)
+  {
+      DCL_LOCK_STATE;
+      GC_ASSERT(fn != 0);
+      LOCK();
+      GC_on_abort = fn;
+      UNLOCK();
+  }
+
+  GC_API GC_abort_func GC_CALL GC_get_abort_func(void)
+  {
+      GC_abort_func fn;
+      DCL_LOCK_STATE;
+      LOCK();
+      fn = GC_on_abort;
+      UNLOCK();
+      return fn;
   }
 #endif /* !SMALL_CONFIG */
 
 GC_API void GC_CALL GC_enable(void)
 {
     DCL_LOCK_STATE;
+
     LOCK();
+    GC_ASSERT(GC_dont_gc != 0); /* ensure no counter underflow */
     GC_dont_gc--;
     UNLOCK();
 }
@@ -1499,7 +1756,7 @@ GC_API void ** GC_CALL GC_new_free_list(void)
 }
 
 GC_API unsigned GC_CALL GC_new_kind_inner(void **fl, GC_word descr,
-                                        int adjust, int clear)
+                                          int adjust, int clear)
 {
     unsigned result = GC_n_kinds++;
 
@@ -1509,6 +1766,10 @@ GC_API unsigned GC_CALL GC_new_kind_inner(void **fl, GC_word descr,
     GC_obj_kinds[result].ok_descriptor = descr;
     GC_obj_kinds[result].ok_relocate_descr = adjust;
     GC_obj_kinds[result].ok_init = clear;
+#   ifdef ENABLE_DISCLAIM
+        GC_obj_kinds[result].ok_mark_unconditionally = FALSE;
+        GC_obj_kinds[result].ok_disclaim_proc = 0;
+#   endif
     return result;
 }
 
@@ -1542,18 +1803,37 @@ GC_API unsigned GC_CALL GC_new_proc(GC_mark_proc proc)
     return result;
 }
 
+GC_API void * GC_CALL GC_call_with_alloc_lock(GC_fn_type fn, void *client_data)
+{
+    void * result;
+    DCL_LOCK_STATE;
+
+#   ifdef THREADS
+      LOCK();
+#   endif
+    result = (*fn)(client_data);
+#   ifdef THREADS
+      UNLOCK();
+#   endif
+    return(result);
+}
+
 GC_API void * GC_CALL GC_call_with_stack_base(GC_stack_base_func fn, void *arg)
 {
-    int dummy;
     struct GC_stack_base base;
+    void *result;
 
-    base.mem_base = (void *)&dummy;
+    base.mem_base = (void *)&base;
 #   ifdef IA64
       base.reg_base = (void *)GC_save_regs_in_stack();
       /* Unnecessarily flushes register stack,          */
       /* but that probably doesn't hurt.                */
 #   endif
-    return fn(&base, arg);
+    result = fn(&base, arg);
+    /* Strongly discourage the compiler from treating the above */
+    /* as a tail call.                                          */
+    GC_noop1((word)(&base));
+    return result;
 }
 
 #ifndef THREADS
@@ -1576,12 +1856,15 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
     /* Adjust our stack base value (this could happen if        */
     /* GC_get_main_stack_base() is unimplemented or broken for  */
     /* the platform).                                           */
-    if (GC_stackbottom HOTTER_THAN (ptr_t)(&stacksect))
+    if ((word)GC_stackbottom HOTTER_THAN (word)(&stacksect))
       GC_stackbottom = (ptr_t)(&stacksect);
 
     if (GC_blocked_sp == NULL) {
       /* We are not inside GC_do_blocking() - do nothing more.  */
-      return fn(client_data);
+      client_data = fn(client_data);
+      /* Prevent treating the above as a tail call.     */
+      GC_noop1((word)(&stacksect));
+      return client_data; /* result */
     }
 
     /* Setup new "stack section".       */
@@ -1612,8 +1895,7 @@ GC_API void * GC_CALL GC_call_with_gc_active(GC_fn_type fn,
 }
 
 /* This is nearly the same as in win32_threads.c        */
-/*ARGSUSED*/
-STATIC void GC_do_blocking_inner(ptr_t data, void * context)
+STATIC void GC_do_blocking_inner(ptr_t data, void * context GC_ATTR_UNUSED)
 {
     struct blocking_data * d = (struct blocking_data *) data;
     GC_ASSERT(GC_is_initialized);
@@ -1708,6 +1990,25 @@ GC_API GC_oom_func GC_CALL GC_get_oom_fn(void)
     DCL_LOCK_STATE;
     LOCK();
     fn = GC_oom_fn;
+    UNLOCK();
+    return fn;
+}
+
+GC_API void GC_CALL GC_set_on_heap_resize(GC_on_heap_resize_proc fn)
+{
+    /* fn may be 0 (means no event notifier). */
+    DCL_LOCK_STATE;
+    LOCK();
+    GC_on_heap_resize = fn;
+    UNLOCK();
+}
+
+GC_API GC_on_heap_resize_proc GC_CALL GC_get_on_heap_resize(void)
+{
+    GC_on_heap_resize_proc fn;
+    DCL_LOCK_STATE;
+    LOCK();
+    fn = GC_on_heap_resize;
     UNLOCK();
     return fn;
 }

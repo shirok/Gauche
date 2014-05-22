@@ -33,8 +33,7 @@ It runs a basic correctness test which usually takes well under a minute.
 <FONT COLOR=green>
 On non-Unix, non-Linux platforms, the collector is usually built by copying
 the appropriate makefile (see the platform-specific README in doc/README.xxx
-in the distribution) to the file "Makefile" (overwriting the copy of
-Makefile.direct that was originally there), and then typing "make"
+in the distribution) to the file "Makefile", and then typing "make"
 (or "nmake" or ...).  This builds the library in the source tree.  You may
 want to move it and the files in the include directory to a more convenient
 place.
@@ -104,7 +103,7 @@ int main()
 {
   int i;
 
-  GC_INIT();	/* Optional on Linux/X86; see below.  */
+  GC_INIT();
   for (i = 0; i &lt; 10000000; ++i)
    {
      int **p = (int **) GC_MALLOC(sizeof(int *));
@@ -134,7 +133,7 @@ This can never hurt, and is thus generally good practice.
 
 <H3><FONT COLOR=green>Threads</font></h3>
 <FONT COLOR=green>
-For a multithreaded program some more rules apply:
+For a multi-threaded program, some more rules apply:
 </font>
 <UL>
 <LI>
@@ -210,8 +209,7 @@ On pthread platforms, you will of course also have to link with
 and compile with any thread-safety options required by your compiler.
 On some platforms, you may also need to link with <TT>-ldl</tt>
 or <TT>-lrt</tt>.
-Looking at threadlibs.c in the GC "extra" directory
-should give you the appropriate
+Looking at tools/threadlibs.c should give you the appropriate
 list if a plain <TT>-lpthread</tt> doesn't work.
 </font>
 

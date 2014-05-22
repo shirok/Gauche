@@ -21,6 +21,13 @@
 /* All this cruft is needed because we want to rely on the underlying   */
 /* sprintf implementation whenever possible.                            */
 
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+#ifndef CORD_BUILD
+# define CORD_BUILD
+#endif
+
 #include "cord.h"
 #include "ec.h"
 #include <stdio.h>
@@ -306,9 +313,17 @@ int CORD_vsprintf(CORD * out, CORD format, va_list args)
                             (void) va_arg(args, double);
                             break;
                         default:
+#                           if defined(__va_copy) \
+                               || (defined(__GNUC__) && !defined(__DJGPP__))
+                              va_end(vsprintf_args);
+#                           endif
                             return(-1);
                     }
                     res = vsprintf(buf, conv_spec, vsprintf_args);
+#                   if defined(__va_copy) \
+                       || (defined(__GNUC__) && !defined(__DJGPP__))
+                      va_end(vsprintf_args);
+#                   endif
                     len = (size_t)res;
                     if ((char *)(GC_word)res == buf) {
                         /* old style vsprintf */
@@ -352,7 +367,7 @@ int CORD_fprintf(FILE * f, CORD format, ...)
 {
     va_list args;
     int result;
-    CORD out;
+    CORD out = CORD_EMPTY; /* initialized to prevent compiler warning */
 
     va_start(args, format);
     result = CORD_vsprintf(&out, format, args);
@@ -364,7 +379,7 @@ int CORD_fprintf(FILE * f, CORD format, ...)
 int CORD_vfprintf(FILE * f, CORD format, va_list args)
 {
     int result;
-    CORD out;
+    CORD out = CORD_EMPTY;
 
     result = CORD_vsprintf(&out, format, args);
     if (result > 0) CORD_put(out, f);
@@ -375,7 +390,7 @@ int CORD_printf(CORD format, ...)
 {
     va_list args;
     int result;
-    CORD out;
+    CORD out = CORD_EMPTY;
 
     va_start(args, format);
     result = CORD_vsprintf(&out, format, args);
@@ -387,7 +402,7 @@ int CORD_printf(CORD format, ...)
 int CORD_vprintf(CORD format, va_list args)
 {
     int result;
-    CORD out;
+    CORD out = CORD_EMPTY;
 
     result = CORD_vsprintf(&out, format, args);
     if (result > 0) CORD_put(out, stdout);

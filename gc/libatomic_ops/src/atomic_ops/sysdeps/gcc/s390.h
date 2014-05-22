@@ -30,13 +30,14 @@
 /*   may be delayed.  Otherwise everything is ordered.          */
 /* - There is a hardware compare-and-swap (CS) instruction.     */
 
-#include "../ordered_except_wr.h"
 #include "../all_aligned_atomic_load_store.h"
+
+#include "../ordered_except_wr.h"
 
 #include "../test_and_set_t_is_ao_t.h"
 /* FIXME: Is there a way to do byte-sized test-and-set? */
 
-/* FIXME: AO_nop_full should probably be implemented directly.  */
+/* TODO: AO_nop_full should probably be implemented directly.   */
 /* It appears that certain BCR instructions have that effect.   */
 /* Presumably they're cheaper than CS?                          */
 
@@ -59,4 +60,6 @@ AO_INLINE int AO_compare_and_swap_full(volatile AO_t *addr,
 }
 #define AO_HAVE_compare_and_swap_full
 
-/* FIXME: Add double-wide compare-and-swap for 32-bit executables.      */
+/* TODO: implement AO_fetch_compare_and_swap.   */
+
+/* TODO: Add double-wide operations for 32-bit executables.       */

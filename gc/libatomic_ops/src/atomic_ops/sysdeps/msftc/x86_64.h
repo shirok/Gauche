@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003 Hewlett-Packard Development Company, L.P.
+ * Copyright (c) 2003-2011 Hewlett-Packard Development Company, L.P.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -37,8 +37,6 @@
 # include "../test_and_set_t_is_ao_t.h"
 #endif
 
-#include "../standard_ao_double_t.h"
-
 #include <windows.h>
         /* Seems like over-kill, but that's what MSDN recommends.       */
         /* And apparently winbase.h is not always self-contained.       */
@@ -46,13 +44,14 @@
 /* Assume _MSC_VER >= 1400 */
 #include <intrin.h>
 
-#pragma intrinsic (_ReadWriteBarrier)
-
-#pragma intrinsic (_InterlockedIncrement64)
-#pragma intrinsic (_InterlockedDecrement64)
-#pragma intrinsic (_InterlockedExchange64)
-#pragma intrinsic (_InterlockedExchangeAdd64)
+#pragma intrinsic (_InterlockedExchangeAdd)
 #pragma intrinsic (_InterlockedCompareExchange64)
+
+#ifndef AO_PREFER_GENERALIZED
+
+# pragma intrinsic (_InterlockedIncrement64)
+# pragma intrinsic (_InterlockedDecrement64)
+# pragma intrinsic (_InterlockedExchangeAdd64)
 
 AO_INLINE AO_t
 AO_fetch_and_add_full (volatile AO_t *p, AO_t incr)
@@ -74,52 +73,85 @@ AO_fetch_and_sub1_full (volatile AO_t *p)
   return _InterlockedDecrement64((LONGLONG volatile *)p) + 1;
 }
 #define AO_HAVE_fetch_and_sub1_full
+#endif /* !AO_PREFER_GENERALIZED */
 
-AO_INLINE int
-AO_compare_and_swap_full(volatile AO_t *addr,
-                         AO_t old, AO_t new_val)
+AO_INLINE AO_t
+AO_fetch_compare_and_swap_full(volatile AO_t *addr, AO_t old_val,
+                               AO_t new_val)
 {
-    return _InterlockedCompareExchange64((LONGLONG volatile *)addr,
-                                         (LONGLONG)new_val, (LONGLONG)old)
-           == (LONGLONG)old;
+  return (AO_t)_InterlockedCompareExchange64((LONGLONG volatile *)addr,
+                                        (LONGLONG)new_val, (LONGLONG)old_val);
 }
-#define AO_HAVE_compare_and_swap_full
+#define AO_HAVE_fetch_compare_and_swap_full
+
+AO_INLINE unsigned int
+AO_int_fetch_and_add_full(volatile unsigned int *p, unsigned int incr)
+{
+  return _InterlockedExchangeAdd((LONG volatile *)p, incr);
+}
+#define AO_HAVE_int_fetch_and_add_full
+
+#ifdef AO_ASM_X64_AVAILABLE
+
+  AO_INLINE unsigned char
+  AO_char_fetch_and_add_full(volatile unsigned char *p, unsigned char incr)
+  {
+    __asm
+    {
+      mov al, incr
+      mov rbx, p
+      lock xadd byte ptr [rbx], al
+    }
+  }
+# define AO_HAVE_char_fetch_and_add_full
+
+  AO_INLINE unsigned short
+  AO_short_fetch_and_add_full(volatile unsigned short *p, unsigned short incr)
+  {
+    __asm
+    {
+      mov ax, incr
+      mov rbx, p
+      lock xadd word ptr [rbx], ax
+    }
+  }
+# define AO_HAVE_short_fetch_and_add_full
 
 /* As far as we can tell, the lfence and sfence instructions are not    */
 /* currently needed or useful for cached memory accesses.               */
 
-#ifdef AO_ASM_X64_AVAILABLE
+  AO_INLINE void
+  AO_nop_full(void)
+  {
+    /* Note: "mfence" (SSE2) is supported on all x86_64/amd64 chips.    */
+    __asm { mfence }
+  }
+# define AO_HAVE_nop_full
 
-AO_INLINE void
-AO_nop_full(void)
-{
-  /* Note: "mfence" (SSE2) is supported on all x86_64/amd64 chips.      */
-  __asm { mfence }
-}
-#define AO_HAVE_nop_full
-
-AO_INLINE AO_TS_VAL_t
-AO_test_and_set_full(volatile AO_TS_t *addr)
-{
+  AO_INLINE AO_TS_VAL_t
+  AO_test_and_set_full(volatile AO_TS_t *addr)
+  {
     __asm
     {
         mov     rax,AO_TS_SET           ;
         mov     rbx,addr                ;
         xchg    byte ptr [rbx],al       ;
     }
-}
-#define AO_HAVE_test_and_set_full
+  }
+# define AO_HAVE_test_and_set_full
 
 #endif /* AO_ASM_X64_AVAILABLE */
 
 #ifdef AO_CMPXCHG16B_AVAILABLE
 /* AO_compare_double_and_swap_double_full needs implementation for Win64.
- * Also see ../gcc/x86_64.h for partial old Opteron workaround.
+ * Also see ../gcc/x86.h for partial old Opteron workaround.
  */
 
 # if _MSC_VER >= 1500
 
-#pragma intrinsic (_InterlockedCompareExchange128)
+#   include "../standard_ao_double_t.h"
+
+#   pragma intrinsic (_InterlockedCompareExchange128)
 
 AO_INLINE int
 AO_compare_double_and_swap_double_full(volatile AO_double_t *addr,
@@ -135,6 +167,9 @@ AO_compare_double_and_swap_double_full(volatile AO_double_t *addr,
 #   define AO_HAVE_compare_double_and_swap_double_full
 
 # elif defined(AO_ASM_X64_AVAILABLE)
+
+#   include "../standard_ao_double_t.h"
+
     /* If there is no intrinsic _InterlockedCompareExchange128 then we  */
     /* need basically what's given below.                               */
 AO_INLINE int
@@ -153,6 +188,6 @@ AO_compare_double_and_swap_double_full(volatile AO_double_t *addr,
         }
 }
 #   define AO_HAVE_compare_double_and_swap_double_full
-# endif /* _MSC_VER >= 1500 || AO_ASM_X64_AVAILABLE */
+# endif /* AO_ASM_X64_AVAILABLE && (_MSC_VER < 1500) */
 
 #endif /* AO_CMPXCHG16B_AVAILABLE */

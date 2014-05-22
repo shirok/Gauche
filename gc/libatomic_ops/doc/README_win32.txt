@@ -12,17 +12,20 @@ I haven't been able to make all versions of VC++ happy.  If you know
 how to, please send a patch.
 4) To compile applications, you will need to retain or copy the following
 pieces from the resulting src directory contents:
-	"atomic_ops.h" - Header file defining low-level primitives.  This
-			 includes files from:
-	"atomic_ops"- Subdirectory containing implementation header files.
-	"atomic_ops_stack.h" - Header file describing almost lock-free stack.
-	"atomic_ops_malloc.h" - Header file describing almost lock-free malloc.
-	"libatomic_ops_gpl.lib" - Library containing implementation of the
-				  above two.  The atomic_ops.h implementation
-				  is entirely in the header files in Win32.
+        "atomic_ops.h" - Header file defining low-level primitives.  This
+                         includes files from:
+        "atomic_ops"- Subdirectory containing implementation header files.
+        "atomic_ops_stack.h" - Header file describing almost lock-free stack.
+        "atomic_ops_malloc.h" - Header file describing almost lock-free malloc.
+        "libatomic_ops_gpl.lib" - Library containing implementation of the
+                        above two (plus AO_pause() defined in atomic_ops.c).
+                        The atomic_ops.h implementation is entirely in the
+                        header files in Win32.
 
 Most clients of atomic_ops.h will need to define AO_ASSUME_WINDOWS98 before
 including it.  Compare_and_swap is otherwise not available.
+Defining AO_ASSUME_VISTA will make compare_double_and_swap_double available
+as well.
 
 Note that the library is covered by the GNU General Public License, while
 the top 2 of these pieces allow use in proprietary code.

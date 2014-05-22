@@ -159,7 +159,7 @@ static GC_bool is_in_progress(ptr_t p)
   return FALSE;
 }
 
-GC_INLINE void pop_in_progress(ptr_t p)
+GC_INLINE void pop_in_progress(ptr_t p GC_ATTR_UNUSED)
 {
   --n_in_progress;
   GC_ASSERT(in_progress_space[n_in_progress] == p);
@@ -172,7 +172,7 @@ GC_INLINE void pop_in_progress(ptr_t p)
 /* Execute s once for each predecessor q of p in the points-to graph.   */
 /* s should be a bracketed statement.  We declare q.                    */
 #define FOR_EACH_PRED(q, p, s) \
-  { \
+  do { \
     ptr_t q = GET_OH_BG_PTR(p); \
     if (!((word)q & FLAG_MANY)) { \
       if (q && !((word)q & 1)) s \
@@ -191,7 +191,7 @@ GC_INLINE void pop_in_progress(ptr_t p)
           q = be_ -> edges[local_]; s \
       } \
     } \
-  }
+  } while (0)
 
 /* Ensure that p has a back_edges structure associated with it. */
 static void ensure_struct(ptr_t p)
@@ -209,7 +209,7 @@ static void ensure_struct(ptr_t p)
     }
     be -> height = HEIGHT_UNKNOWN;
     be -> height_gc_no = (unsigned short)(GC_gc_no - 1);
-    GC_ASSERT(be >= back_edge_space);
+    GC_ASSERT((word)be >= (word)back_edge_space);
     SET_OH_BG_PTR(p, (word)be | FLAG_MANY);
   }
 }
@@ -283,8 +283,8 @@ GC_INLINE void GC_apply_to_each_object(per_object_func f)
   GC_apply_to_all_blocks(per_object_helper, (word)f);
 }
 
-/*ARGSUSED*/
-static void reset_back_edge(ptr_t p, size_t n_bytes, word gc_descr)
+static void reset_back_edge(ptr_t p, size_t n_bytes GC_ATTR_UNUSED,
+                            word gc_descr GC_ATTR_UNUSED)
 {
   /* Skip any free list links, or dropped blocks */
   if (GC_HAS_DEBUG_INFO(p)) {
@@ -327,7 +327,7 @@ static void add_back_edges(ptr_t p, size_t n_bytes, word gc_descr)
     if((gc_descr & GC_DS_TAGS) != GC_DS_LENGTH) {
       gc_descr = n_bytes;
     }
-  while (currentp < (word *)(p + gc_descr)) {
+  while ((word)currentp < (word)(p + gc_descr)) {
     word current = *currentp++;
     FIXUP_POINTER(current);
     if (current >= (word)GC_least_plausible_heap_addr &&
@@ -376,8 +376,7 @@ static word backwards_height(ptr_t p)
   FOR_EACH_PRED(q, p, {
     word this_height;
     if (GC_is_marked(q) && !(FLAG_MANY & (word)GET_OH_BG_PTR(p))) {
-      if (GC_print_stats)
-          GC_log_printf("Found bogus pointer from %p to %p\n", q, p);
+      GC_COND_LOG_PRINTF("Found bogus pointer from %p to %p\n", q, p);
         /* Reachable object "points to" unreachable one.                */
         /* Could be caused by our lax treatment of GC descriptors.      */
       this_height = 1;
@@ -400,8 +399,8 @@ STATIC ptr_t GC_deepest_obj = NULL;
 /* next GC.                                                             */
 /* Set GC_max_height to be the maximum height we encounter, and         */
 /* GC_deepest_obj to be the corresponding object.                       */
-/*ARGSUSED*/
-static void update_max_height(ptr_t p, size_t n_bytes, word gc_descr)
+static void update_max_height(ptr_t p, size_t n_bytes GC_ATTR_UNUSED,
+                              word gc_descr GC_ATTR_UNUSED)
 {
   if (GC_is_marked(p) && GC_HAS_DEBUG_INFO(p)) {
     word p_height = 0;
@@ -458,18 +457,17 @@ GC_INNER void GC_traverse_back_graph(void)
 
 void GC_print_back_graph_stats(void)
 {
-  GC_printf("Maximum backwards height of reachable objects at GC %lu is %ld\n",
+  GC_printf("Maximum backwards height of reachable objects at GC %lu is %lu\n",
             (unsigned long) GC_gc_no, (unsigned long)GC_max_height);
   if (GC_max_height > GC_max_max_height) {
     GC_max_max_height = GC_max_height;
-    GC_printf("The following unreachable object is last in a longest chain "
-              "of unreachable objects:\n");
+    GC_err_printf(
+            "The following unreachable object is last in a longest chain "
+            "of unreachable objects:\n");
     GC_print_heap_obj(GC_deepest_obj);
   }
-  if (GC_print_stats) {
-    GC_log_printf("Needed max total of %d back-edge structs\n",
-                  GC_n_back_edge_structs);
-  }
+  GC_COND_LOG_PRINTF("Needed max total of %d back-edge structs\n",
+                     GC_n_back_edge_structs);
   GC_apply_to_each_object(reset_back_edge);
   GC_deepest_obj = 0;
 }

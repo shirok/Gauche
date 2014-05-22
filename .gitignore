@@ -2,7 +2,12 @@ VERSION
 *~
 
 # Automake and Autoconf
-config.*
+config.guess
+config.log
+config.rpath
+config.status
+config.sub
+config.threads
 configure
 autom4te.cache
 Makefile

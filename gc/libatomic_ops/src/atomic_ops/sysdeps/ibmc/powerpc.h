@@ -51,6 +51,7 @@ AO_store_release(volatile AO_t *addr, AO_t value)
 }
 #define AO_HAVE_store_release
 
+#ifndef AO_PREFER_GENERALIZED
 /* This is similar to the code in the garbage collector.  Deleting      */
 /* this and having it synthesized from compare_and_swap would probably  */
 /* only cost us a load immediate instruction.                           */
@@ -84,41 +85,44 @@ AO_test_and_set_full(volatile AO_TS_t *addr) {
   return result;
 }
 #define AO_HAVE_test_and_set_full
+#endif /* !AO_PREFER_GENERALIZED */
 
-/*AO_INLINE int
-AO_compare_and_swap(volatile AO_t *addr, AO_t old, AO_t new_val)
+/*AO_INLINE AO_t
+AO_fetch_compare_and_swap(volatile AO_t *addr, AO_t old_val, AO_t new_val)
 {
 # error FIXME Implement me
 }
-#define AO_HAVE_compare_and_swap*/
+#define AO_HAVE_fetch_compare_and_swap*/
 
-AO_INLINE int
-AO_compare_and_swap_acquire(volatile AO_t *addr, AO_t old, AO_t new_val)
+AO_INLINE AO_t
+AO_fetch_compare_and_swap_acquire(volatile AO_t *addr, AO_t old_val,
+                                  AO_t new_val)
 {
-  int result = AO_compare_and_swap(addr, old, new_val);
+  AO_t result = AO_fetch_compare_and_swap(addr, old_val, new_val);
   AO_lwsync();
   return result;
 }
-#define AO_HAVE_compare_and_swap_acquire
+#define AO_HAVE_fetch_compare_and_swap_acquire
 
-AO_INLINE int
-AO_compare_and_swap_release(volatile AO_t *addr, AO_t old, AO_t new_val)
+AO_INLINE AO_t
+AO_fetch_compare_and_swap_release(volatile AO_t *addr, AO_t old_val,
+                                  AO_t new_val)
 {
   AO_lwsync();
-  return AO_compare_and_swap(addr, old, new_val);
+  return AO_fetch_compare_and_swap(addr, old_val, new_val);
 }
-#define AO_HAVE_compare_and_swap_release
+#define AO_HAVE_fetch_compare_and_swap_release
 
-AO_INLINE int
-AO_compare_and_swap_full(volatile AO_t *addr, AO_t old, AO_t new_val)
+AO_INLINE AO_t
+AO_fetch_compare_and_swap_full(volatile AO_t *addr, AO_t old_val,
+                               AO_t new_val)
 {
-  int result;
+  AO_t result;
   AO_lwsync();
-  result = AO_compare_and_swap(addr, old, new_val);
+  result = AO_fetch_compare_and_swap(addr, old_val, new_val);
   AO_lwsync();
   return result;
 }
-#define AO_HAVE_compare_and_swap_full
+#define AO_HAVE_fetch_compare_and_swap_full
 
-/* FIXME: We should also implement fetch_and_add and or primitives      */
-/* directly.                                                            */
+/* TODO: Implement AO_fetch_and_add, AO_and/or/xor directly.    */

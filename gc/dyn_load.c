@@ -10,9 +10,6 @@
  * Permission to modify the code and to distribute modified code is granted,
  * provided the above notices are retained, and a notice that the code was
  * modified is included with the above copyright notice.
- *
- * Original author: Bill Janssen
- * Heavily modified by Hans Boehm and others
  */
 
 #include "private/gc_priv.h"
@@ -83,20 +80,54 @@ STATIC GC_has_static_roots_func GC_has_static_roots = 0;
 #   define ELFSIZE ARCH_ELFSIZE
 #endif
 
+#if defined(OPENBSD)
+# include <sys/param.h>
+# if OpenBSD >= 200519
+#   define HAVE_DL_ITERATE_PHDR
+# endif
+#endif /* OPENBSD */
+
 #if defined(SCO_ELF) || defined(DGUX) || defined(HURD) \
     || (defined(__ELF__) && (defined(LINUX) || defined(FREEBSD) \
                              || defined(NETBSD) || defined(OPENBSD)))
 # include <stddef.h>
 # if !defined(OPENBSD) && !defined(PLATFORM_ANDROID)
-    /* FIXME: Why we exclude it for OpenBSD? */
+    /* OpenBSD does not have elf.h file; link.h below is sufficient.    */
     /* Exclude Android because linker.h below includes its own version. */
 #   include <elf.h>
 # endif
 # ifdef PLATFORM_ANDROID
-    /* The header file is in "bionic/linker" folder of Android sources. */
     /* If you don't need the "dynamic loading" feature, you may build   */
     /* the collector with -D IGNORE_DYNAMIC_LOADING.                    */
-#   include <linker.h>
+#   ifdef BIONIC_ELFDATA_REDEF_BUG
+      /* Workaround a problem in Bionic (as of Android 4.2) which has   */
+      /* mismatching ELF_DATA definitions in sys/exec_elf.h and         */
+      /* asm/elf.h included from linker.h file (similar to EM_ALPHA).   */
+#     include <asm/elf.h>
+#     include <linux/elf-em.h>
+#     undef ELF_DATA
+#     undef EM_ALPHA
+#   endif
+#   include <link.h>
+#   if !defined(GC_DONT_DEFINE_LINK_MAP)
+      /* link_map and r_debug should be defined explicitly,             */
+      /* as only bionic/linker/linker.h defines them but the header     */
+      /* itself is a C++ one starting from Android 4.3.                 */
+      struct link_map {
+        uintptr_t l_addr;
+        char* l_name;
+        uintptr_t l_ld;
+        struct link_map* l_next;
+        struct link_map* l_prev;
+      };
+      struct r_debug {
+        int32_t r_version;
+        struct link_map* r_map;
+        void (*r_brk)(void);
+        int32_t r_state;
+        uintptr_t r_ldbase;
+      };
+#   endif
 # else
 #   include <link.h>
 # endif
@@ -154,7 +185,8 @@ GC_FirstDLOpenedLinkMap(void)
         dynStructureAddr = &_DYNAMIC;
 #   endif
 
-    if( dynStructureAddr == 0) {
+    if (dynStructureAddr == 0) {
+        /* _DYNAMIC symbol not resolved. */
         return(0);
     }
     if( cachedResult == 0 ) {
@@ -179,6 +211,7 @@ GC_FirstDLOpenedLinkMap(void)
 # endif
 
 # if defined(SOLARISDL)
+
 /* Add dynamic library data sections to the root set.           */
 # if !defined(PCR) && !defined(GC_SOLARIS_THREADS) && defined(THREADS)
         --> fix mutual exclusion with dlopen
@@ -197,10 +230,6 @@ GC_INNER void GC_register_dynamic_libraries(void)
         int i;
 
         e = (ElfW(Ehdr) *) lm->l_addr;
-#       ifdef PLATFORM_ANDROID
-          if (e == NULL)
-            continue;
-#       endif
         p = ((ElfW(Phdr) *)(((char *)(e)) + e->e_phoff));
         offset = ((unsigned long)(lm->l_addr));
         for( i = 0; i < (int)e->e_phnum; i++, p++ ) {
@@ -254,18 +283,18 @@ static void sort_heap_sects(struct HeapSect *base, size_t number_of_elements)
 
     while (nsorted < n) {
       while (nsorted < n &&
-             base[nsorted-1].hs_start < base[nsorted].hs_start)
+             (word)base[nsorted-1].hs_start < (word)base[nsorted].hs_start)
           ++nsorted;
       if (nsorted == n) break;
-      GC_ASSERT(base[nsorted-1].hs_start > base[nsorted].hs_start);
+      GC_ASSERT((word)base[nsorted-1].hs_start > (word)base[nsorted].hs_start);
       i = nsorted - 1;
-      while (i >= 0 && base[i].hs_start > base[i+1].hs_start) {
+      while (i >= 0 && (word)base[i].hs_start > (word)base[i+1].hs_start) {
         struct HeapSect tmp = base[i];
         base[i] = base[i+1];
         base[i+1] = tmp;
         --i;
       }
-      GC_ASSERT(base[nsorted-1].hs_start < base[nsorted].hs_start);
+      GC_ASSERT((word)base[nsorted-1].hs_start < (word)base[nsorted].hs_start);
       ++nsorted;
     }
 }
@@ -306,7 +335,8 @@ STATIC word GC_register_map_entries(char *maps)
             /* This is a writable mapping.  Add it to           */
             /* the root set unless it is already otherwise      */
             /* accounted for.                                   */
-            if (start <= GC_stackbottom && end >= GC_stackbottom) {
+            if ((word)start <= (word)GC_stackbottom
+                && (word)end >= (word)GC_stackbottom) {
                 /* Stack mapping; discard       */
                 continue;
             }
@@ -323,7 +353,7 @@ STATIC word GC_register_map_entries(char *maps)
               /* away pointers in pieces of the stack segment that we   */
               /* don't scan.  We work around this                       */
               /* by treating anything allocated by libpthread as        */
-              /* uncollectable, as we do in some other cases.           */
+              /* uncollectible, as we do in some other cases.           */
               /* A specifically identified problem is that              */
               /* thread stacks contain pointers to dynamic thread       */
               /* vectors, which may be reused due to thread caching.    */
@@ -336,32 +366,34 @@ STATIC word GC_register_map_entries(char *maps)
               /* very suboptimal for performance reasons.               */
 #           endif
             /* We no longer exclude the main data segment.              */
-            if (end <= least_ha || start >= greatest_ha) {
+            if ((word)end <= (word)least_ha
+                || (word)start >= (word)greatest_ha) {
               /* The easy case; just trace entire segment */
               GC_add_roots_inner((char *)start, (char *)end, TRUE);
               continue;
             }
             /* Add sections that don't belong to us. */
               i = 0;
-              while (GC_our_memory[i].hs_start + GC_our_memory[i].hs_bytes
-                     < start)
+              while ((word)(GC_our_memory[i].hs_start
+                                + GC_our_memory[i].hs_bytes) < (word)start)
                   ++i;
               GC_ASSERT(i < GC_n_memory);
-              if (GC_our_memory[i].hs_start <= start) {
+              if ((word)GC_our_memory[i].hs_start <= (word)start) {
                   start = GC_our_memory[i].hs_start
                           + GC_our_memory[i].hs_bytes;
                   ++i;
               }
-              while (i < GC_n_memory && GC_our_memory[i].hs_start < end
-                     && start < end) {
-                  if ((char *)start < GC_our_memory[i].hs_start)
+              while (i < GC_n_memory
+                     && (word)GC_our_memory[i].hs_start < (word)end
+                     && (word)start < (word)end) {
+                  if ((word)start < (word)GC_our_memory[i].hs_start)
                     GC_add_roots_inner((char *)start,
                                        GC_our_memory[i].hs_start, TRUE);
                   start = GC_our_memory[i].hs_start
                           + GC_our_memory[i].hs_bytes;
                   ++i;
               }
-              if (start < end)
+              if ((word)start < (word)end)
                   GC_add_roots_inner((char *)start, (char *)end, TRUE);
         }
     }
@@ -385,16 +417,21 @@ GC_INNER GC_bool GC_register_main_static_data(void)
 #else /* !USE_PROC_FOR_LIBRARIES */
 
 /* The following is the preferred way to walk dynamic libraries */
-/* For glibc 2.2.4+.  Unfortunately, it doesn't work for older  */
+/* for glibc 2.2.4+.  Unfortunately, it doesn't work for older  */
 /* versions.  Thanks to Jakub Jelinek for most of the code.     */
 
-#if (defined(LINUX) || defined (__GLIBC__)) /* Are others OK here, too? */ \
-     && (__GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ > 2) \
-         || (__GLIBC__ == 2 && __GLIBC_MINOR__ == 2 && defined(DT_CONFIG)))
+#if __GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ > 2) \
+    || (__GLIBC__ == 2 && __GLIBC_MINOR__ == 2 && defined(DT_CONFIG)) \
+    || defined(PLATFORM_ANDROID) /* Are others OK here, too? */
 /* We have the header files for a glibc that includes dl_iterate_phdr.  */
 /* It may still not be available in the library on the target system.   */
 /* Thus we also treat it as a weak symbol.                              */
 # define HAVE_DL_ITERATE_PHDR
+# ifdef PLATFORM_ANDROID
+    /* Android headers might have no such definition for some targets.  */
+    int dl_iterate_phdr(int (*cb)(struct dl_phdr_info *, size_t, void *),
+                        void *data);
+# endif
 # pragma weak dl_iterate_phdr
 #endif
 
@@ -448,7 +485,7 @@ STATIC int GC_register_dynlib_callback(struct dl_phdr_info * info,
         case PT_GNU_RELRO:
         /* This entry is known to be constant and will eventually be remapped
            read-only.  However, the address range covered by this entry is
-           typically a subset of a previously encountered `LOAD' segment, so
+           typically a subset of a previously encountered "LOAD" segment, so
            we need to exclude it.  */
         {
             int j;
@@ -456,11 +493,12 @@ STATIC int GC_register_dynlib_callback(struct dl_phdr_info * info,
             start = ((ptr_t)(p->p_vaddr)) + info->dlpi_addr;
             end = start + p->p_memsz;
             for (j = n_load_segs; --j >= 0; ) {
-              if (start >= load_segs[j].start && start < load_segs[j].end) {
+              if ((word)start >= (word)load_segs[j].start
+                  && (word)start < (word)load_segs[j].end) {
                 if (load_segs[j].start2 != 0) {
                   WARN("More than one GNU_RELRO segment per load seg\n",0);
                 } else {
-                  GC_ASSERT(end <= load_segs[j].end);
+                  GC_ASSERT((word)end <= (word)load_segs[j].end);
                   /* Remove from the existing load segment */
                   load_segs[j].end2 = load_segs[j].end;
                   load_segs[j].end = start;
@@ -537,7 +575,7 @@ STATIC GC_bool GC_register_dynamic_libraries_dl_iterate_phdr(void)
     {
       static GC_bool excluded_segs = FALSE;
       n_load_segs = 0;
-      if (!excluded_segs) {
+      if (!EXPECT(excluded_segs, TRUE)) {
         GC_exclude_static_roots_inner((ptr_t)load_segs,
                                       (ptr_t)load_segs + sizeof(load_segs));
         excluded_segs = TRUE;
@@ -552,10 +590,10 @@ STATIC GC_bool GC_register_dynamic_libraries_dl_iterate_phdr(void)
       int i;
 
       for (i = 0; i < n_load_segs; ++i) {
-        if (load_segs[i].end > load_segs[i].start) {
+        if ((word)load_segs[i].end > (word)load_segs[i].start) {
           GC_add_roots_inner(load_segs[i].start, load_segs[i].end, TRUE);
         }
-        if (load_segs[i].end2 > load_segs[i].start2) {
+        if ((word)load_segs[i].end2 > (word)load_segs[i].start2) {
           GC_add_roots_inner(load_segs[i].start2, load_segs[i].end2, TRUE);
         }
       }
@@ -642,19 +680,16 @@ GC_FirstDLOpenedLinkMap(void)
     ElfW(Dyn) *dp;
     static struct link_map *cachedResult = 0;
 
-    if( _DYNAMIC == 0) {
+    if (0 == (ptr_t)_DYNAMIC) {
+        /* _DYNAMIC symbol not resolved. */
         return(0);
     }
     if( cachedResult == 0 ) {
-#if defined(NETBSD) && defined(RTLD_DI_LINKMAP)
+#     if defined(NETBSD) && defined(RTLD_DI_LINKMAP)
         struct link_map *lm = NULL;
-        int rv = dlinfo(RTLD_SELF, RTLD_DI_LINKMAP, &lm); 
-        if (rv != 0)
-            return (0);
-        if (lm == NULL)
-            return (0);
-        cachedResult = lm;
-#else  /* !(defined(NETBSD) && defined(RTLD_DI_LINKMAP)) */
+        if (!dlinfo(RTLD_SELF, RTLD_DI_LINKMAP, &lm))
+            cachedResult = lm;
+#     else
         int tag;
         for( dp = _DYNAMIC; (tag = dp->d_tag) != 0; dp++ ) {
             if( tag == DT_DEBUG ) {
@@ -664,7 +699,7 @@ GC_FirstDLOpenedLinkMap(void)
                 break;
             }
         }
-#endif /* !(defined(NETBSD) && defined(RTLD_DI_LINKMAP)) */
+#     endif /* !NETBSD || !RTLD_DI_LINKMAP */
     }
     return cachedResult;
 }
@@ -747,7 +782,8 @@ GC_INNER void GC_register_dynamic_libraries(void)
 #   endif /* SOLARISDL */
 
     if (fd < 0) {
-      sprintf(buf, "/proc/%ld", (long)getpid());
+      (void)snprintf(buf, sizeof(buf), "/proc/%ld", (long)getpid());
+      buf[sizeof(buf) - 1] = '\0';
         /* The above generates a lint complaint, since pid_t varies.    */
         /* It's unclear how to improve this.                            */
       fd = open(buf, O_RDONLY);
@@ -756,24 +792,27 @@ GC_INNER void GC_register_dynamic_libraries(void)
       }
     }
     if (ioctl(fd, PIOCNMAP, &needed_sz) < 0) {
-        GC_err_printf("fd = %d, errno = %d\n", fd, errno);
-        ABORT("/proc PIOCNMAP ioctl failed");
+        ABORT_ARG2("/proc PIOCNMAP ioctl failed",
+                   ": fd = %d, errno = %d", fd, errno);
     }
     if (needed_sz >= current_sz) {
         current_sz = needed_sz * 2 + 1;
                         /* Expansion, plus room for 0 record */
         addr_map = (prmap_t *)GC_scratch_alloc(
                                 (word)current_sz * sizeof(prmap_t));
+        if (addr_map == NULL)
+          ABORT("Insufficient memory for address map");
     }
     if (ioctl(fd, PIOCMAP, addr_map) < 0) {
-        GC_err_printf("fd = %d, errno = %d, needed_sz = %d, addr_map = %p\n",
-                        fd, errno, needed_sz, addr_map);
-        ABORT("/proc PIOCMAP ioctl failed");
+        ABORT_ARG3("/proc PIOCMAP ioctl failed",
+                   ": errcode= %d, needed_sz= %d, addr_map= %p",
+                   errno, needed_sz, addr_map);
     };
     if (GC_n_heap_sects > 0) {
         heap_end = GC_heap_sects[GC_n_heap_sects-1].hs_start
                         + GC_heap_sects[GC_n_heap_sects-1].hs_bytes;
-        if (heap_end < GC_scratch_last_end_ptr) heap_end = GC_scratch_last_end_ptr;
+        if ((word)heap_end < (word)GC_scratch_last_end_ptr)
+          heap_end = GC_scratch_last_end_ptr;
     }
     for (i = 0; i < needed_sz; i++) {
         flags = addr_map[i].pr_mflags;
@@ -788,11 +827,8 @@ GC_INNER void GC_register_dynamic_libraries(void)
           /* This makes no sense to me. - HB                            */
         start = (ptr_t)(addr_map[i].pr_vaddr);
         if (GC_roots_present(start)) goto irrelevant;
-        if (start < heap_end && start >= heap_start)
+        if ((word)start < (word)heap_end && (word)start >= (word)heap_start)
                 goto irrelevant;
-#       ifdef MMAP_STACKS
-          if (GC_is_thread_stack(start)) goto irrelevant;
-#       endif /* MMAP_STACKS */
 
         limit = start + addr_map[i].pr_size;
         /* The following seemed to be necessary for very old versions   */
@@ -860,18 +896,21 @@ GC_INNER void GC_register_dynamic_libraries(void)
       if (base == limit) return;
       for(;;) {
           GC_get_next_stack(curr_base, limit, &next_stack_lo, &next_stack_hi);
-          if (next_stack_lo >= limit) break;
-          if (next_stack_lo > curr_base)
+          if ((word)next_stack_lo >= (word)limit) break;
+          if ((word)next_stack_lo > (word)curr_base)
             GC_add_roots_inner(curr_base, next_stack_lo, TRUE);
           curr_base = next_stack_hi;
       }
-      if (curr_base < limit) GC_add_roots_inner(curr_base, limit, TRUE);
+      if ((word)curr_base < (word)limit)
+        GC_add_roots_inner(curr_base, limit, TRUE);
 #   else
-      char dummy;
       char * stack_top
-         = (char *) ((word)(&dummy) & ~(GC_sysinfo.dwAllocationGranularity-1));
+         = (char *)((word)GC_approx_sp() &
+                        ~(GC_sysinfo.dwAllocationGranularity - 1));
+
       if (base == limit) return;
-      if (limit > stack_top && base < GC_stackbottom) {
+      if ((word)limit > (word)stack_top
+          && (word)base < (word)GC_stackbottom) {
           /* Part of the stack; ignore it. */
           return;
       }
@@ -928,7 +967,7 @@ GC_INNER void GC_register_dynamic_libraries(void)
       if (GC_no_win32_dlls) return;
 #   endif
     base = limit = p = GC_sysinfo.lpMinimumApplicationAddress;
-    while (p < GC_sysinfo.lpMaximumApplicationAddress) {
+    while ((word)p < (word)GC_sysinfo.lpMaximumApplicationAddress) {
         result = VirtualQuery(p, &buf, sizeof(buf));
 #       ifdef MSWINCE
           if (result == 0) {
@@ -969,7 +1008,7 @@ GC_INNER void GC_register_dynamic_libraries(void)
                 limit = new_limit;
             }
         }
-        if (p > (LPVOID)new_limit /* overflow */) break;
+        if ((word)p > (word)new_limit /* overflow */) break;
         p = (LPVOID)new_limit;
     }
     GC_cond_add_roots(base, limit);
@@ -1015,18 +1054,12 @@ GC_INNER void GC_register_dynamic_libraries(void)
         if (moduleid == LDR_NULL_MODULE)
             break;    /* No more modules */
 
-      /* Check status AFTER checking moduleid because */
-      /* of a bug in the non-shared ldr_next_module stub */
+      /* Check status AFTER checking moduleid because       */
+      /* of a bug in the non-shared ldr_next_module stub.   */
         if (status != 0) {
-          if (GC_print_stats) {
-            GC_log_printf("dynamic_load: status = %d\n", status);
-            if (errno < sys_nerr) {
-              GC_log_printf("dynamic_load: %s\n", sys_errlist[errno]);
-            } else {
-              GC_log_printf("dynamic_load: err_code = %d\n", errno);
-            }
-          }
-          ABORT("ldr_next_module failed");
+          ABORT_ARG3("ldr_next_module failed",
+                     ": status= %d, errcode= %d (%s)", status, errno,
+                     errno < sys_nerr ? sys_errlist[errno] : "");
         }
 
       /* Get the module information */
@@ -1101,7 +1134,7 @@ GC_INNER void GC_register_dynamic_libraries(void)
       /* Get info about next shared library */
         status = shl_get(index, &shl_desc);
 
-      /* Check if this is the end of the list or if some error occured */
+      /* Check if this is the end of the list or if some error occurred */
         if (status != 0) {
 #        ifdef GC_HPUX_THREADS
            /* I've seen errno values of 0.  The man page is not clear   */
@@ -1111,14 +1144,9 @@ GC_INNER void GC_register_dynamic_libraries(void)
           if (errno == EINVAL) {
             break; /* Moved past end of shared library list --> finished */
           } else {
-            if (GC_print_stats) {
-              if (errno < sys_nerr) {
-                GC_log_printf("dynamic_load: %s\n", sys_errlist[errno]);
-              } else {
-                GC_log_printf("dynamic_load: err_code = %d\n", errno);
-              }
-            }
-            ABORT("shl_get failed");
+            ABORT_ARG3("shl_get failed",
+                       ": status= %d, errcode= %d (%s)", status, errno,
+                       errno < sys_nerr ? sys_errlist[errno] : "");
           }
 #        endif
         }
@@ -1215,13 +1243,11 @@ STATIC const struct {
 /* containing private vs. public symbols.  It also constructs   */
 /* sections specifically for zero-sized objects, when the       */
 /* target supports section anchors.                             */
-STATIC const char * GC_dyld_add_sect_fmts[] =
-{
+STATIC const char * const GC_dyld_add_sect_fmts[] = {
   "__bss%u",
   "__pu_bss%u",
   "__zo_bss%u",
-  "__zo_pu_bss%u",
-  NULL
+  "__zo_pu_bss%u"
 };
 
 /* Currently, mach-o will allow up to the max of 2^15 alignment */
@@ -1281,10 +1307,12 @@ STATIC void GC_dyld_image_add(const struct GC_MACH_HEADER *hdr,
   }
 
   /* Sections constructed on demand.    */
-  for (j = 0; (fmt = GC_dyld_add_sect_fmts[j]) != NULL; j++) {
+  for (j = 0; j < sizeof(GC_dyld_add_sect_fmts) / sizeof(char *); j++) {
+    fmt = GC_dyld_add_sect_fmts[j];
     /* Add our manufactured aligned BSS sections.       */
     for (i = 0; i <= L2_MAX_OFILE_ALIGNMENT; i++) {
-      snprintf(secnam, sizeof(secnam), fmt, (unsigned)i);
+      (void)snprintf(secnam, sizeof(secnam), fmt, (unsigned)i);
+      secnam[sizeof(secnam) - 1] = '\0';
       sec = GC_GETSECTBYNAME(hdr, SEG_DATA, secnam);
       if (sec == NULL || sec->size == 0)
         continue;
@@ -1332,9 +1360,11 @@ STATIC void GC_dyld_image_remove(const struct GC_MACH_HEADER *hdr,
   }
 
   /* Remove our on-demand sections.     */
-  for (j = 0; (fmt = GC_dyld_add_sect_fmts[j]) != NULL; j++) {
+  for (j = 0; j < sizeof(GC_dyld_add_sect_fmts) / sizeof(char *); j++) {
+    fmt = GC_dyld_add_sect_fmts[j];
     for (i = 0; i <= L2_MAX_OFILE_ALIGNMENT; i++) {
-      snprintf(secnam, sizeof(secnam), fmt, (unsigned)i);
+      (void)snprintf(secnam, sizeof(secnam), fmt, (unsigned)i);
+      secnam[sizeof(secnam) - 1] = '\0';
       sec = GC_GETSECTBYNAME(hdr, SEG_DATA, secnam);
       if (sec == NULL || sec->size == 0)
         continue;

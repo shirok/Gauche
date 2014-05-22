@@ -1,0 +1,13 @@
+== TODO tasks ==
+
+Add C++0x ATM (atomic memory operations) layer.
+
+
+== FIXME tasks ==
+
+RHELinux6/POWER7 (gcc-4.4.7-3/ppc64), Fedora16/POWER7 (gcc-4.6.2-1/ppc64),
+Debian/powerpc (gcc 4.6.3-7):
+test_stack failed (Debian Bug #680100).
+
+Debian/m68k (Linux 3.2.0-2-atari):
+test_stack failed (Bus error), regression (Debian Bug #680066).

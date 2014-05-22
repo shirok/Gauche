@@ -36,28 +36,39 @@
     && !defined(USE_WIN32_COMPILER_TLS) && !defined(USE_COMPILER_TLS) \
     && !defined(USE_CUSTOM_SPECIFIC)
 # if defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32)
-#   if defined(__GNUC__) /* Fixed for versions past 2.95? */ \
-       || defined(MSWINCE)
+#   if defined(CYGWIN32) && (__GNUC__ >= 4)
+#     if defined(__clang__)
+        /* As of Cygwin clang3.1, thread-local storage is unsupported.  */
+#       define USE_PTHREAD_SPECIFIC
+#     else
+#       define USE_COMPILER_TLS
+#     endif
+#   elif defined(__GNUC__) || defined(MSWINCE)
 #     define USE_WIN32_SPECIFIC
 #   else
 #     define USE_WIN32_COMPILER_TLS
 #   endif /* !GNU */
-# elif defined(LINUX) && !defined(ARM32) && !defined(AVR32) \
-       && (__GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >=3))
+# elif (defined(LINUX) && !defined(ARM32) && !defined(AVR32) \
+         && (__GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 3)) \
+         && !(defined(__clang__) && defined(PLATFORM_ANDROID))) \
+       || (defined(PLATFORM_ANDROID) && defined(ARM32) \
+            && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)))
+          /* As of Android NDK r8e, Clang cannot find __tls_get_addr.   */
 #   define USE_COMPILER_TLS
 # elif defined(GC_DGUX386_THREADS) || defined(GC_OSF1_THREADS) \
-       || defined(GC_DARWIN_THREADS) || defined(GC_AIX_THREADS) \
-       || defined(GC_NETBSD_THREADS) || defined(GC_RTEMS_PTHREADS)
+       || defined(GC_AIX_THREADS) || defined(GC_DARWIN_THREADS) \
+       || defined(GC_FREEBSD_THREADS) || defined(GC_NETBSD_THREADS) \
+       || defined(GC_LINUX_THREADS) || defined(GC_RTEMS_PTHREADS)
 #   define USE_PTHREAD_SPECIFIC
 # elif defined(GC_HPUX_THREADS)
 #   ifdef __GNUC__
-#    define USE_PTHREAD_SPECIFIC
-     /* Empirically, as of gcc 3.3, USE_COMPILER_TLS doesn't work.      */
+#     define USE_PTHREAD_SPECIFIC
+        /* Empirically, as of gcc 3.3, USE_COMPILER_TLS doesn't work.   */
 #   else
-#    define USE_COMPILER_TLS
+#     define USE_COMPILER_TLS
 #   endif
 # else
-#   define USE_CUSTOM_SPECIFIC  /* Use our own. */
+#    define USE_CUSTOM_SPECIFIC  /* Use our own. */
 # endif
 #endif
 
@@ -73,6 +84,9 @@ typedef struct thread_local_freelists {
 #   define ERROR_FL ((void *)(word)-1)
         /* Value used for gcj_freelist[-1]; allocation is       */
         /* erroneous.                                           */
+# endif
+# ifdef ENABLE_DISCLAIM
+    void * finalized_freelists[TINY_FREELISTS];
 # endif
   /* Free lists contain either a pointer or a small count       */
   /* reflecting the number of granules allocated at that        */
@@ -140,6 +154,10 @@ GC_INNER void GC_destroy_thread_local(GC_tlfs p);
 /* invisible to the marker.  It knows how to find all threads;  */
 /* we take care of an individual thread freelist structure.     */
 GC_INNER void GC_mark_thread_local_fls_for(GC_tlfs p);
+
+#ifdef ENABLE_DISCLAIM
+  GC_EXTERN ptr_t * GC_finalized_objfreelist;
+#endif
 
 extern
 #if defined(USE_COMPILER_TLS)

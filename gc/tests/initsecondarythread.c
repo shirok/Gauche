@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011 Ludovic Courtes <ludo@gnu.org>
+ * Copyright (C) 2011 Ludovic Courtes
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED. ANY USE IS AT YOUR OWN RISK.
@@ -14,6 +14,10 @@
 /* Make sure 'GC_INIT' can be called from threads other than the initial
  * thread.
  */
+
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
 
 #ifndef GC_THREADS
 # define GC_THREADS
@@ -61,7 +65,7 @@ int main(void)
     DWORD thread_id;
 # endif
 # if !(defined(BEOS) || defined(MSWIN32) || defined(MSWINCE) \
-       || defined(CYGWIN32) || defined(GC_OPENBSD_THREADS) \
+       || defined(CYGWIN32) || defined(GC_OPENBSD_UTHREADS) \
        || (defined(DARWIN) && !defined(NO_PTHREAD_GET_STACKADDR_NP)) \
        || (defined(LINUX) && !defined(NACL)) \
        || (defined(GC_SOLARIS_THREADS) && !defined(_STRICT_STDC)) \
@@ -72,21 +76,21 @@ int main(void)
 # endif
 # ifdef GC_PTHREADS
     if ((code = pthread_create (&t, NULL, thread, NULL)) != 0) {
-      printf("Thread creation failed %d\n", code);
+      fprintf(stderr, "Thread creation failed %d\n", code);
       return 1;
     }
     if ((code = pthread_join (t, NULL)) != 0) {
-      printf("Thread join failed %d\n", code);
+      fprintf(stderr, "Thread join failed %d\n", code);
       return 1;
     }
 # else
     t = CreateThread(NULL, 0, thread, 0, 0, &thread_id);
     if (t == NULL) {
-      printf("Thread creation failed %d\n", (int)GetLastError());
+      fprintf(stderr, "Thread creation failed %d\n", (int)GetLastError());
       return 1;
     }
     if (WaitForSingleObject(t, INFINITE) != WAIT_OBJECT_0) {
-      printf("Thread join failed %d\n", (int)GetLastError());
+      fprintf(stderr, "Thread join failed %d\n", (int)GetLastError());
       CloseHandle(t);
       return 1;
     }

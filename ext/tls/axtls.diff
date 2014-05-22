@@ -1,5 +1,24 @@
+*** /home/shiro/src/axTLS/ssl/tls1.h	Sat Jun 30 14:59:06 2012
+--- axTLS/ssl/tls1.h	Wed May 21 22:17:11 2014
+***************
+*** 41,47 ****
+  #endif
+  
+  #include "version.h"
+! #include "config.h"
+  #include "os_int.h"
+  #include "crypto.h"
+  #include "crypto_misc.h"
+--- 41,47 ----
+  #endif
+  
+  #include "version.h"
+! #include "../config/config.h"
+  #include "os_int.h"
+  #include "crypto.h"
+  #include "crypto_misc.h"
 *** /home/shiro/src/axTLS/ssl/tls1.c	Sun Jan  6 10:17:37 2013
---- axTLS/ssl/tls1.c	Fri Jul  5 13:38:36 2013
+--- axTLS/ssl/tls1.c	Sat Nov  2 17:37:47 2013
 ***************
 *** 2160,2166 ****
   EXP_FUNC SSL * STDCALL ssl_client_new(SSL_CTX *ssl_ctx, int client_fd, const
@@ -257,7 +276,7 @@
   #!/bin/sh
 ! #ps -ef|grep gnutls-serv | /usr/bin/awk '{print $2}' |xargs kill -9
 *** /home/shiro/src/axTLS/ssl/os_port.h	Fri Jun  8 00:43:25 2012
---- axTLS/ssl/os_port.h	Fri Jul  5 13:38:36 2013
+--- axTLS/ssl/os_port.h	Sat Nov  2 17:37:47 2013
 ***************
 *** 59,64 ****
 --- 59,66 ----
@@ -362,7 +381,7 @@
               break;
       }
 *** /home/shiro/src/axTLS/crypto/os_int.h	Fri Jun  8 00:43:25 2012
---- axTLS/crypto/os_int.h	Fri Jul  5 13:38:36 2013
+--- axTLS/crypto/os_int.h	Sat Nov  2 17:37:47 2013
 ***************
 *** 41,47 ****
   extern "C" {
@@ -381,7 +400,7 @@
   typedef INT8 int8_t;
   typedef UINT16 uint16_t;
 *** /home/shiro/src/axTLS/crypto/crypto_misc.c	Sun Jul  1 01:10:26 2012
---- axTLS/crypto/crypto_misc.c	Fri Jul  5 13:38:36 2013
+--- axTLS/crypto/crypto_misc.c	Sat Nov  2 17:37:47 2013
 ***************
 *** 48,54 ****
   static HCRYPTPROV gCryptProv;
@@ -399,6 +418,25 @@
   /* change to processor registers as appropriate */
   #define ENTROPY_POOL_SIZE 32
   #define ENTROPY_COUNTER1 ((((uint64_t)tv.tv_sec)<<32) | tv.tv_usec)
+*** /home/shiro/src/axTLS/crypto/crypto.h	Fri Jun  8 00:43:25 2012
+--- axTLS/crypto/crypto.h	Wed May 21 22:17:36 2014
+***************
+*** 39,45 ****
+  extern "C" {
+  #endif
+  
+! #include "config.h"
+  #include "bigint_impl.h"
+  #include "bigint.h"
+  
+--- 39,45 ----
+  extern "C" {
+  #endif
+  
+! #include "../config/config.h"
+  #include "bigint_impl.h"
+  #include "bigint.h"
+  
 *** /home/shiro/src/axTLS/crypto/bigint_impl.h	Sat Jan  1 21:45:25 2011
 --- axTLS/crypto/bigint_impl.h	Fri Jul  5 11:43:29 2013
 ***************
@@ -419,7 +457,7 @@
   #define COMP_MAX            0xFFFFFFFFFFFFFFFFui64
   #else
 *** /home/shiro/src/axTLS/config/config.h	Wed Dec 31 14:00:00 1969
---- axTLS/config/config.h	Fri Jul  5 11:45:01 2013
+--- axTLS/config/config.h	Sat Nov  2 17:37:47 2013
 ***************
 *** 0 ****
 --- 1,143 ----

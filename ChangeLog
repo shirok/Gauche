@@ -1,3 +1,7 @@
+2014-05-21  Shiro Kawai  <shiro@acm.org>
+
+	* gc/*: Updated to gc-7.4.0 and libatomic_ops-7.4.2
+
 2014-05-16  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche.h, src/string.c (SCM_STRDUP, SCM_STRDUP_PARTIAL): Added
