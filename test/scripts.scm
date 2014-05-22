@@ -264,30 +264,39 @@
                       (or (sys-getenv "top_srcdir") "..")
                       :absolute #t :canonicalize #t))
 
-  ;; We need to fake some directories in order to make this
-  ;; work without installing.
-  (with-output-to-file "test.o/run"
-    (cut for-each write
-         `((use gauche.config)
-           (define prefix (if (equal? (sys-basename (sys-getcwd)) "Test")
-                            "../" ""))
-           (define sep (cond-expand [gauche.os.windows ";"][else ":"]))
-           (define top-srcdir ,top-srcdir)
-           ;; This is used to copy templates from.
-           (define (gauche-library-directory) #"~|top-srcdir|/ext/x")
-           ;; Intercept gauche-config to override compiler flags
-           (define gauche-config-orig
-             (with-module gauche.config gauche-config))
-           (define-in-module gauche.config (gauche-config opt)
-             (cond [(equal? opt "--incdirs")
-                    #"~|top-srcdir|/src~|sep|~|prefix|../../src/~|sep|~|top-srcdir|/gc/include"]
-                   [(equal? opt "--archdirs")
-                    #"~|prefix|../../src"]
-                   [else (gauche-config-orig opt)]))
-           (load #"~|top-srcdir|/src/gauche-package.in"))))
+  ;; When we run the test before installation, we need to tweak
+  ;; some directories.  We can distinguish it, for install-check
+  ;; passes an argument "install-check" to the test script.
+  (define in-place? (not (equal? (cdr (command-line)) '("install-check"))))
+
+  (define gauche-package
+    (build-path (gauche-architecture-directory) "gauche-package"))
+
+  (when in-place?
+    (with-output-to-file "test.o/run"
+      (cut for-each write
+           `((use gauche.config)
+             (define prefix (if (equal? (sys-basename (sys-getcwd)) "Test")
+                              "../" ""))
+             (define sep (cond-expand [gauche.os.windows ";"][else ":"]))
+             (define top-srcdir ,top-srcdir)
+             ;; This is used to copy templates from.
+             (define (gauche-library-directory) #"~|top-srcdir|/ext/x")
+             ;; Intercept gauche-config to override compiler flags
+             (define gauche-config-orig
+               (with-module gauche.config gauche-config))
+             (define-in-module gauche.config (gauche-config opt)
+               (cond [(equal? opt "--incdirs")
+                      #"~|top-srcdir|/src~|sep|~|prefix|../../src/~|sep|~|top-srcdir|/gc/include"]
+                     [(equal? opt "--archdirs")
+                      #"~|prefix|../../src"]
+                     [else (gauche-config-orig opt)]))
+             (load #"~|top-srcdir|/src/gauche-package.in")))))
 
   (run-process
-   `(../gosh -ftest ./run generate Test test.module)
+   (if in-place?
+     `(../gosh -ftest ./run generate Test test.module)
+     `(,gauche-package generate Test test.module))
    :output :null :error :null :wait #t :directory "test.o/")
 
   (for-each file-check '("DIST" "configure" "Makefile.in"
@@ -296,9 +305,12 @@
 
   (test* "gauche-package compile" #t
          (let* ([p (run-process
-                    `(../../gosh -q -I../../../src -I../../../lib
-                                 ../run compile
-                                 --verbose test test.c testlib.stub)
+                    (if in-place?
+                      `(../../gosh -q -I../../../src -I../../../lib
+                                   ../run compile
+                                   --verbose test test.c testlib.stub)
+                      `(,gauche-package compile
+                                        --verbose test test.c testlib.stub))
                     :redirects '((>& 2 1) (> 1 out)) :directory "test.o/Test")]
                 [o (port->string (process-output p 'out))])
            (process-wait p)
