@@ -3464,7 +3464,7 @@ static void number_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
     Scm_PrintNumber(port, obj, NULL);
 }
 
-#define FLT_BUF 50
+#define FLT_BUF 65  /* need to hold binary representation of the least fixnum */
 
 static size_t
 print_number(ScmPort *port, ScmObj obj, u_long flags, ScmNumberFormat *fmt)
