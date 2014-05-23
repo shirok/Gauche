@@ -271,6 +271,16 @@
 
   (define gauche-package
     (build-path (gauche-architecture-directory) "gauche-package"))
+  (define generate-command
+    (if in-place?
+      `(../gosh -ftest ./run generate Test test.module)
+      `(,gauche-package generate Test test.module)))
+  (define compile-command
+    (if in-place?
+      `(../../gosh -q -I../../../src -I../../../lib
+                   ../run compile
+                   --verbose test test.c testlib.stub)
+      `(,gauche-package compile --verbose test test.c testlib.stub)))    
 
   (when in-place?
     (with-output-to-file "test.o/run"
@@ -293,25 +303,21 @@
                      [else (gauche-config-orig opt)]))
              (load #"~|top-srcdir|/src/gauche-package.in")))))
 
-  (run-process
-   (if in-place?
-     `(../gosh -ftest ./run generate Test test.module)
-     `(,gauche-package generate Test test.module))
-   :output :null :error :null :wait #t :directory "test.o/")
+  (test-log "Running ~a" generate-command)
+  
+  ($ run-process generate-command
+     :output :null :error :null :wait #t :directory "test.o/")
 
   (for-each file-check '("DIST" "configure" "Makefile.in"
                          "test.c" "test.h" "test.scm" "testlib.stub"
                          "test/module.scm"))
 
+  (test-log "Running ~a" compile-command)
+  
   (test* "gauche-package compile" #t
-         (let* ([p (run-process
-                    (if in-place?
-                      `(../../gosh -q -I../../../src -I../../../lib
-                                   ../run compile
-                                   --verbose test test.c testlib.stub)
-                      `(,gauche-package compile
-                                        --verbose test test.c testlib.stub))
-                    :redirects '((>& 2 1) (> 1 out)) :directory "test.o/Test")]
+         (let* ([p ($ run-process
+                      compile-command
+                      :redirects '((>& 2 1) (> 1 out)) :directory "test.o/Test")]
                 [o (port->string (process-output p 'out))])
            (process-wait p)
            ;; if compilation fails, returns the output for better diagnostics.
