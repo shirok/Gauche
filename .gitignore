@@ -9,6 +9,7 @@ config.status
 config.sub
 config.threads
 configure
+libtool
 autom4te.cache
 Makefile
 
@@ -18,6 +19,7 @@ Makefile
 *.la
 *.so
 *.sci
+stamp-h1
 src/libgauche-*.so*
 src/gosh
 doc/*.1
@@ -30,7 +32,8 @@ ext/sxml/ssax-test.scm
 ext/sxml/to-html-test.scm
 ext/sxml/tree-trans-test.scm
 gc/*test
-gc/initsecondarythread
+gc/*.trs
+gc/disclaim_bench
 src/test-arith
 src/test-vmstack
 src/test.log
