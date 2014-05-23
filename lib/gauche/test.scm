@@ -82,7 +82,7 @@
 ;;         into the named file instead of reporting it out immediately.
 
 (define-module gauche.test
-  (export test test* test-start test-end test-section
+  (export test test* test-start test-end test-section test-log
           test-module test-error test-one-of
           test-check test-record-file test-summary-check
           *test-error* *test-report-error* test-error? prim-test))
@@ -397,6 +397,14 @@
       (format #t "Testing ~a ~a\n" msg (make-string (max 5 (- 70 msglen)) #\=)))
     (flush))
   )
+
+;; test-log fmt arg ...
+;; The formatted output, prefixed by ";;",  goes to stdout for the logging.
+(define (test-log fmt . args)
+  (display ";; ")
+  (apply format #t fmt args)
+  (newline)
+  (flush))
 
 ;; test-end :key :exit-on-failure
 ;; avoid using extended formal list since we need to test it.

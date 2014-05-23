@@ -13287,6 +13287,43 @@ Marks beginning of the group of tests.  This is just for logging.
 @c COMMON
 @end defun
 
+@defun test-log fmtstr args @dots{}
+@c EN
+This is also just for logging.  Creates a formatted string
+with @var{fmrstr} and @var{args} just like @code{format},
+then write it to the current output port, with prefix @code{;; } 
+and newline at the end.
+
+With the typical Makefile settings, where you redirect
+stdout of test scripts to a log file, the message only goes to
+the log file.
+
+Using this, you can dump information that can't be automatically
+tested but may be useful for troubleshooting.    For example, 
+you get a myterious test failure reports you can't reproduce
+on your machine, and suspect
+some aspects of the running systems may unpredictably
+affect the test result.
+You can put @code{test-log} in the test code to dump such parameters,
+and ask the reporter to run the test again and analyze the log.
+@c JP
+この手続きも単なるログのためのものです。
+@code{format}と同じように@var{fmtstr}と@var{args}からフォーマット済み文字列を
+作り、@code{;; }を前に、改行文字を後につけて現在の出力ポートへと出力します。
+
+典型的なMakefileでのテスト起動では、テストスクリプトの標準出力をログに流すので、
+このメッセージもログにのみ記録されることになります。
+
+この手続きは、自動化テストで検査することは出来ないけれどトラブルシューティングに
+役に立つかもしれない情報をダンプしておくのに使えます。
+例えば、謎のテスト失敗報告が来て、でも手元ではどうしても再現できず、
+実行システムに固有のある側面が影響しているのではないかと推測できたとしましょう。
+その場合、@code{test-log}でそういった情報をダンプするコードをテストスクリプトに
+仕込んでおいて、もう一度報告者のマシンでテストを走らせてもらい、そのログを解析する
+ことができるでしょう。
+@c COMMON
+@end defun
+
 @defun test-end :key exit-on-failure
 @c EN
 Prints out list of failed tests.  If @var{exit-on-failure} is @code{#f} or
