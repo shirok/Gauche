@@ -13300,7 +13300,7 @@ the log file.
 
 Using this, you can dump information that can't be automatically
 tested but may be useful for troubleshooting.    For example, 
-you get a myterious test failure reports you can't reproduce
+you get a mysterious test failure reports you can't reproduce
 on your machine, and suspect
 some aspects of the running systems may unpredictably
 affect the test result.
