@@ -666,11 +666,13 @@ case $host in
     CYGWIN_FIXDLL='$(srcdir)/src/cygwin-fixdll.sh'
     ;;
   *mingw*)
+    # Kludge: We add -static-libgcc flag when creating dll, in order to avoid
+    # inroducing dependency to libgcc_s_dw2-1.dll.
     SHLIB_SO_CFLAGS=""
-    SHLIB_SO_LDFLAGS='-Wl,--export-all-symbols -Wl,--enable-auto-import -Wl,--enable-runtime-pseudo-reloc -shared -o'
+    SHLIB_SO_LDFLAGS='-Wl,--export-all-symbols -Wl,--enable-auto-import -Wl,--enable-runtime-pseudo-reloc -static-libgcc -shared -o'
     SHLIB_SO_SUFFIX="dll"
     SHLIB_DYLIB_SUFFIX="dll"
-    SHLIB_MAIN_LDFLAGS="-Wl,--enable-auto-import"
+    SHLIB_MAIN_LDFLAGS="-Wl,--enable-auto-import -static-libgcc"
     SHLIB_OK=ok
     GOSH_USE_SHLIB=yes
     ext_use_uvector=yes

@@ -1,3 +1,8 @@
+2014-05-25  Shiro Kawai  <shiro@acm.org>
+
+	* configure.ac: Add -static-libgcc flag when building DLLs on MinGW,
+	  in ordre to avoid dependency on libgcc_s_dw2-1.dll.
+
 2014-05-21  Shiro Kawai  <shiro@acm.org>
 
 	* gc/*: Updated to gc-7.4.0 and libatomic_ops-7.4.2
