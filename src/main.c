@@ -221,7 +221,7 @@ void feature_options(const char *optarg)
     Scm_AddFeature(optarg, NULL);
 }
 
-int parse_options(int argc, const char *argv[])
+int parse_options(int argc, char *argv[])
 {
     int c;
     while ((c = getopt(argc, argv, "+be:E:ip:ql:L:m:u:Vr:F:f:I:A:-")) >= 0) {
@@ -551,7 +551,7 @@ int main(int ac, char **av)
     /* NB: For Windows, we can't use passed argv array if the command-line
        argument contains multibyte characters.  We'll overwrite those later. */
     int argc = ac;
-    const char **argv = av;
+    char **argv = av;
 
 #if defined(GAUCHE_WINDOWS)
     /* Need this before core initialization */
@@ -565,10 +565,13 @@ int main(int ac, char **av)
 #if defined(GAUCHE_WINDOWS)
     Scm__SetupPortsForWindows(has_console);
 #  if defined(UNICODE)
-    /* Set up argument array correctly  */
+    /* Set up argument array correctly */
     LPWSTR *argvW = CommandLineToArgvW(GetCommandLineW(), &argc);
-    argv = SCM_NEW_ATOMIC_ARRAY(const char*, argc);
-    for (int i=0; i<argc; i++) argv[i] = Scm_WCS2MBS(argvW[i]);
+    argv = SCM_NEW_ATOMIC_ARRAY(char*, argc);
+    /* Kludge! Need to discard 'const' qualifier, for getopt() expects
+       char * const*, not const char**.  It's safe since Scm_WCS2MBS
+       always returns freshly allocated strings and we won't share them. */
+    for (int i=0; i<argc; i++) argv[i] = (char*)Scm_WCS2MBS(argvW[i]);
     LocalFree(argvW);
 #  endif  /* UNICODE */
 #endif /*defined(GAUCHE_WINDOWS)*/
