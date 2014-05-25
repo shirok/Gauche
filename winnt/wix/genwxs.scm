@@ -130,7 +130,7 @@
 (define (regkey root key vals)
   `(RegistryKey
     (@ (Root ,(x->string root)) (Key ,key)
-       (Action "createAndRemoveOnUninstall"))
+       (ForceDeleteOnUninstall "yes"))
     ,(match vals
        [(name val)
         `(RegistryValue (@ (Type "string") (Name ,name) (Value ,val)))]

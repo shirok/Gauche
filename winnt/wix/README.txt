@@ -3,7 +3,7 @@ To create Gauche-mingw Windows installer:
 Requirements:
   MinGW
   MSYS
-  WiX toolset 3.5 or later ( http://wix.sourceforge.net/ )
+  WiX toolset 3.8 or later ( http://wixtoolset.org/ )
 
 Make sure WiX toolset is in $PATH.
 
