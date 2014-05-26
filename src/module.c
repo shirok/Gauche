@@ -250,6 +250,9 @@ static ScmGloc *search_binding(ScmModule *module, ScmSymbol *symbol,
                                int stay_in_module, int external_only,
                                int exclude_self)
 {
+    module_cache searched;
+    init_module_cache(&searched);
+
     /* First, search from the specified module.  In this phase, we just ignore
        phantom bindings, for we'll search imported bindings later anyway. */
     if (!exclude_self) {
@@ -269,11 +272,10 @@ static ScmGloc *search_binding(ScmModule *module, ScmSymbol *symbol,
             }
         }
         if (stay_in_module) return NULL;
+        module_add_visited(&searched, SCM_OBJ(module));
     }
 
     ScmObj p, mp;
-    module_cache searched;
-    init_module_cache(&searched);
     /* Next, search from imported modules */
     SCM_FOR_EACH(p, module->imported) {
         ScmObj elt = SCM_CAR(p);
