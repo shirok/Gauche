@@ -2112,14 +2112,14 @@ Evaluates @var{form}s sequentially, and returns the last result(s).
 @c COMMON
 
 @c EN
-@code{Begin} doesn't introduce new "block" like @code{let}, that is,
+@code{Begin} doesn't introduce new scope like @code{let}, that is,
 you can't place "internal define" at the beginning of @var{form}s
 generally.   Semantically @code{begin} behaves as if @var{form}s
 are spliced into the surrounding context.
 For example, topleve expression like the following is the same
 as two toplevel definitions:
 @c JP
-@code{Begin}は@code{let}のような「ブロック」を作成するわけではありません。
+@code{Begin}は@code{let}のように新たなスコープを作成するわけではありません。
 すなわち、一般的には@var{form} @dots{}の先頭に「内部のdefine (internal define)」を
 置くことはできません。意味的には、@code{begin}はまるで@var{form} @dots{}が
 @code{begin}を囲むコンテクスト中に展開されているかのように振舞います。
@@ -2161,14 +2161,14 @@ Evaluates @var{exp0}, @var{exp1}, @dots{}, then returns the result(s)
 of @var{exp0}.   The name is taken from MzScheme.
 This is called @code{prog1} in CommonLisp.
 
-Unlike @code{begin}, this @emph{does} creates a "block",
+Unlike @code{begin}, this @emph{does} creates a new scope,
 for the @code{begin0} form is expanded as follows.
 @c JP
 @var{exp0}, @var{exp1}, @dots{} を評価し、@var{exp0}の結果を返します。
 この名前はMzSchemeから取られました。これはCommonLispで
 @code{prog1}と呼ばれているものです。
 
-@code{begin}と違って、これは「ブロック」を構成します。
+@code{begin}と違って、これは新たなスコープを構成します。
 @code{begin0}フォームは次のように展開されるからです。
 @c COMMON
 

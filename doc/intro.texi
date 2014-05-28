@@ -243,13 +243,19 @@ Gauche is not just an implementation of Scheme; it has some
 language-level enhancements.  For example, @emph{lazy sequences}
 allows you to have lazy data structures that behaves as if
 they're ordinary lists (except that they're realized lazily).
-It is different from library-level implementation such as
+It is different from library-level lazy structure implementation such as
 streams (srfi-41), in a sense that you can use any list-processing
 procedures on lazy sequences.  It enables programs to use
 lazy algorithms more liberally.
 @c JP
+Gaucheは単なるScheme実装というだけでなく、言語レベルでいくつかの拡張が施されています。
+例えば、@emph{遅延シーケンス}によって、あたかもそれが(遅延して実体化される点を除いて)
+普通のリストであるかのように振るまう遅延データ構造を扱うことが可能になります。
+あらゆるリスト処理を使用できるという意味で、遅延シーケンスは、
+例えばストリーム(srfi-41)のようにライブラリレベルで
+実装した遅延構造とは異なります。
+これによって、遅延アルゴリズムをよりふんだんに使用したプログラミングが可能になります。
 @c COMMON
-
 @end table
 
 
