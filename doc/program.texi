@@ -1019,14 +1019,6 @@ gosh> (fact 5)
 120
 @end example
 
-@c EN
-You can also use trace/untrace macros in Gauche, written by Shigenobu Kimura:
-@url{http://homepage.mac.com/skimu/ggc/}.
-@c JP
-また、木村栄伸さんがGauche用のtrace/untraceマクロを書いてくれました：
-@url{http://homepage.mac.com/skimu/ggc/}.
-@c COMMON
-
 @c ----------------------------------------------------------------------
 @node Platform-dependent features, Profiling and tuning, Debugging, Programming in Gauche
 @section Using platform-dependent features
