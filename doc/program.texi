@@ -330,21 +330,23 @@ By default, @code{gosh} starts with @code{user} module, which inherits
 @code{gauche} module.  That means you can use whole Gauche core
 procedures by default without explicitly declaring it.
 
-It is convenient for Gauche scripting, but if you want to
-stick to stanard Scheme, it gets in your way.  Especially, since
-the @code{import} form have different syntax and semantics in Gauche and R7RS,
-a Scheme script written in R7RS can't be executed by the default mode
-of @code{gosh}.  You can execute the script by prepending @code{(extend r7rs)}
-to it, but it'll be nicer if you can run it without modification.
+Proper R7RS code always begins with either @code{define-library}
+or R7RS-style @code{import} form, and Gauche recognizes it and
+automatically switch to R7RS environments so that R7RS scripts and libraries
+can be executed by Gauche without special options.
+However, users who are learning R7RS Scheme may be confused
+when the initial environment doesn't look like R7RS.
 
 By giving @code{-r7} option, @code{gosh} starts with @code{r7rs.user} module
 that extends the @code{r7rs} module, which defines two R7RS forms,
-@code{import} and @code{define-library}.  You can start your script with
-@code{(import (scheme base))}, for example.
+@code{import} and @code{define-library}.
 
 If you invoke @code{gosh} into an interactive REPL mode with @code{-r7} option,
 all standard R7RS-small libraries (except @code{(scheme r5rs)} are already
 imported for your convenience.
+
+@xref{Library modules - R7RS integration}, for the details on
+how Gauche supports R7RS.
 @c JP
 @code{gosh}を、指定されたリビジョンのScheme標準環境で起動します。
 現在のバージョンでは@var{standard-revision}として7のみがサポートされます。
@@ -353,21 +355,23 @@ imported for your convenience.
 これは@code{gauche}モジュールを継承しています。すなわち、特に何も指定しないでも
 Gaucheのコア関数は全て使えるようになっています。
 
-これはGaucheスクリプトを書く時には便利ですが、標準のSchemeに沿ったコードを
-書くときは邪魔になることがあります。特に、GaucheとR7RSでは@code{import}フォームの
-構文と意味が異なるので、R7RS用に書かれたSchemeスクリプトを
-@code{gosh}のデフォルトのモードで直接実行することはできません。
-コードの先頭に@code{(extend r7rs)}をつけてやれば良いのですが、
-変更無しに実行できた方が良いわけです。
+正しいR7RSプログラムは常に@code{define-library}フォームか
+R7RS式の@code{import}フォームで始まり、Gaucheはそれらを見つけると
+自動的にR7RS環境へと切り替えるので、特になにもしなくても
+R7RSスクリプトやライブラリを使うことはできます。
+しかし、R7RS Schemeを勉強中のユーザにとっては、最初に入る環境が
+R7RSでないと混乱してしまうかもしれません。
 
 @code{-r7}オプションが与えられると、@code{gosh}は起動時のモジュールを
 @code{r7rs.user}モジュールにします。これは@code{r7rs}モジュールを継承した
 もので、@code{import}と@code{define-library}だけが定義されています。
-ここから例えば@code{(import (scheme base))}などとしてスクリプトを書いてゆけます。
 
 @code{-r7}をつけた@code{gosh}を対話REPLとして起動した場合は、簡便のために
 @code{(scheme r5rs)}を除く全てのR7RS-smallライブラリが
 importされた状態になっています。
+
+GaucheがR7RSをどのようにサポートしているかの詳細については
+@ref{Library modules - R7RS integration}を参照してください。
 @c COMMON
 @end deftp
 
