@@ -10,7 +10,7 @@ On Unix platforms
 
 In order to build Gauche from the git sources, instead of from
 the distribution, you need to have autoconf 2.54 or higher.
-The author using autoconf 2.57.
+The author using autoconf 2.69.
 
 You also need to have the *latest* release of Gauche installed
 on your machine, for it is required to generate some C files.
@@ -97,9 +97,9 @@ not to introduce undesirable dependencies.
   modules except the 'pre-loaded' ones in HOSTGOSH.
 
 - An extension compiled by gencomp shouldn't depend on other
-  extension compiled by gencomp.  This is because gencomp is
+  extensions compiled by gencomp.  This is because gencomp is
   run by HOSTGOSH and it may not be able to load the other
-  extension compiled for the target gosh.
+  extensions compiled for the target gosh.
 
 - ext/xlink shouldn't depend on anything that requires loading
   extension modules, since it is called before all the extension
@@ -121,7 +121,7 @@ changed since some point of time.  SCM's commit log doesn't replace
 that role---commit logs comes with every commit, however little it
 is, and those small trivial logs are just noise to those want to
 know changes that matter.  Also, commit logs are inherently per-commit,
-so it's not a good place to describe overall intention or plan
+so it's not a good place to describe overall intention or a plan
 of series of changes.
 
 To keep ChangeLog in that role _and_ to be friendly to distributed
