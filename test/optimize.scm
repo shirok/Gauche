@@ -116,5 +116,27 @@
          (let ((b (hoop (^c (set! a 9) (+ c 1)) 2)))
            (hoop2 a b))))
 
+;; This test exhibits a bug on inlining local function more than once.
+;; Fixed by commit dd7a023.
+(test* "copy&inline local function" 'bam
+       (let ()
+         (define (call object message . args)
+           (unless (list? args)
+             (error "Strange arguments: "
+                    `(call (object ,object) (message ,message) (args ,args))))
+           (and-let* ((it (object message)))
+             (apply it object args)))
+
+         (define (foo)
+           (define (bar) (lambda _ (lambda _2 'bam)))
+
+           (define (baz x) (call x 'baz))
+           (define (baz2 x) (call x 'baz))
+
+           (define (test x) (baz x))
+           (define (test2 x) (baz x))
+           (test (bar)))
+         (foo)))
+
 (test-end)
 
