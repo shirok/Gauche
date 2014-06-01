@@ -553,7 +553,7 @@
                     ;          specifically used for communication between
                     ;          pass2/$CALL and pass2/$LET.
                     ;   <packed-iform>  : inlinable lambda
-   ;; The following slot(s) is/are used temporarily during pass2-5, and
+   ;; The following slots are used temporarily during pass2-5, and
    ;; need not be saved when packed.
    (calls '())      ; list of call sites
    (free-lvars '()) ; list of free local variables
@@ -983,6 +983,9 @@
 ;;  (free in iform, bound outside iform) should be shared and their
 ;;  refcount should be adjusted.  lv-alist keeps assoc list of
 ;;  old lvar to copied lvar.
+;;  $CALL nodes need special treatment; if it is a call to local proc,
+;;  the target $lambda node may have a list of call sites.  We need to
+;;  add copied $CALL node as a new call site to the target.
 
 (define (iform-copy iform lv-alist)
   (case/unquote
@@ -1030,10 +1033,21 @@
                                (iform-copy ($label-body iform)
                                            (acons iform newnode lv-alist))))])]
    [($SEQ) ($seq (imap (cut iform-copy <> lv-alist) ($seq-body iform)))]
-   [($CALL) ($call ($*-src iform)
-                   (iform-copy ($call-proc iform) lv-alist)
-                   (imap (cut iform-copy <> lv-alist) ($call-args iform))
-                   ($call-flag iform))]
+   [($CALL) (rlet1 copy ($call ($*-src iform)
+                               (iform-copy ($call-proc iform) lv-alist)
+                               (imap (cut iform-copy <> lv-alist)
+                                     ($call-args iform))
+                               ($call-flag iform))
+              (and-let* ([proc ($call-proc iform)]
+                         [ ($lref? proc) ]
+                         [ (lvar-immutable? ($lref-lvar proc)) ]
+                         [target (lvar-initval ($lref-lvar proc))]
+                         [ (vector? target) ]
+                         [ (has-tag? target $LAMBDA) ]
+                         [old (assq iform ($lambda-calls target))])
+                ($lambda-calls-set! target
+                                    (acons copy (cdr old)
+                                           ($lambda-calls target)))))]
    [($ASM) ($asm ($*-src iform) ($asm-insn iform)
                  (imap (cut iform-copy <> lv-alist) ($asm-args iform)))]
    [($PROMISE)($promise ($*-src iform)
