@@ -370,13 +370,15 @@ static const unsigned char ctypes[] = {
     1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  0,  0,  0,  1,  0,
 };
 
+/* For characters >= 0x80, we follor R[67]RS. */
 inline static int char_word_constituent(int c, int include_hash_sign)
 {
     if (c < 128) {
         return ((c >= 0 && (ctypes[(unsigned char)c]&1))
                 || (c == '#' && include_hash_sign));
+    } else if (c == 0x200c || c == 0x200d) {
+        return TRUE;
     } else {
-        /* We follow R6RS spec here */
         switch (Scm_CharGeneralCategory(c)) {
         case SCM_CHAR_CATEGORY_Lu:
         case SCM_CHAR_CATEGORY_Ll:
