@@ -370,7 +370,7 @@ static const unsigned char ctypes[] = {
     1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  0,  0,  0,  1,  0,
 };
 
-/* For characters >= 0x80, we follor R[67]RS. */
+/* For characters >= 0x80, we follow R[67]RS. */
 inline static int char_word_constituent(int c, int include_hash_sign)
 {
     if (c < 128) {
