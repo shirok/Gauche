@@ -1472,7 +1472,9 @@ to an integer.   @code{Modf} returns two values; a fractional
 part of @var{x} and an integral part of @var{x}.   @code{Frexp}
 returns two values, @var{fraction} and @var{exponent} of @var{x},
 where @var{x} = @var{fraction} * 2^@var{exponent}, and
-0 <= @var{fraction} <= 0.5.  @var{Ldexp} is a reverse operation of
+0.5 <= |@var{fraction}| < 1.0, unless @var{x} is zero.  
+(When @var{x} is zero, both @var{fraction} and @var{exponent} are zero).
+@var{Ldexp} is a reverse operation of
 @code{frexp}; it returns a real number @var{x} * 2^@var{n}.
 @c JP
 これらの手続きは、浮動小数点数を分解したり合成するのに使えます。
@@ -1481,8 +1483,10 @@ where @var{x} = @var{fraction} * 2^@var{exponent}, and
 @var{x}-@var{n}*@var{y}を返します。
 @code{modf}は@var{x}の少数部と整数部を返します。
 @code{frexp}は実数@var{x}を、仮数部と指数部に分解して返します。すなわち、
-@var{x} = @var{fraction} * 2^@var{exponent} かつ 0 <= @var{fraction} <= 0.5
+@var{x}が0でない限り、
+@var{x} = @var{fraction} * 2^@var{exponent} かつ 0.5 <= |@var{fraction}| < 1.0
 であるところの@var{fraction}と@var{exponent}を返します。
+(@var{x}が0であれば、@var{fraction}と@var{exponent}はともに0となります。)
 @code{ldexp}は@code{frexp}の逆関数で、@var{x} * 2^@var{n} を返します。
 @c COMMON
 @example
