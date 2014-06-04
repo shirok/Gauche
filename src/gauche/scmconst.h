@@ -48,8 +48,9 @@ SCM_EXTERN ScmObj Scm__ConstObjs[];   /* initialized in number.c */
 #define SCM_POSITIVE_INFINITY  (Scm__ConstObjs[9])    /* #i1/0 */
 #define SCM_NEGATIVE_INFINITY  (Scm__ConstObjs[10])   /* #i-1/0 */
 #define SCM_NAN                (Scm__ConstObjs[11])   /* #<nan> */
+#define SCM_1_DIV_2_1075       (Scm__ConstObjs[12])   /* 1/2^1075 */
 
-#define SCM_NUM_CONST_OBJS  12
+#define SCM_NUM_CONST_OBJS  13
 
 #endif /*GAUCHE_SCMCONST_H*/
 

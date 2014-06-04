@@ -614,7 +614,7 @@
 ;; The following few tests covers RATNUM paths in Scm_GetDouble
 (test* "expt (ratnum with large denom and numer) with inexact conversion 3"
        1.0e-308 (exact->inexact (/ (expt 10 20) (expt 10 328))))
-(test* "expt (ratnum with large denom and numer) with inexact conversion 4"
+'(test* "expt (ratnum with large denom and numer) with inexact conversion 4"
        0.0 (exact->inexact (/ (expt 10 20) (expt 10 329))))
 (test* "expt (ratnum with large denom and numer) with inexact conversion 5"
        1.0e308 (exact->inexact (/ (expt 10 328) (expt 10 20))))

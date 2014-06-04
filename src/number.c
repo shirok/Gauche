@@ -1263,25 +1263,41 @@ double Scm_GetDouble(ScmObj obj)
             ScmObj numer = SCM_RATNUM_NUMER(obj);
             ScmObj denom = SCM_RATNUM_DENOM(obj);
 
-            if (SCM_INTP(numer)) return 0.0;
-            if (SCM_INTP(denom)) {
+            if (SCM_INTP(numer)) {
+                /* Denominator is too big.  However, there's a case that
+                   OBJ still falls in a subnormal range if its absolute
+                   value is greater than 1/2^1075 (a half of the least
+                   positive subnormal flonum). */
+                if (Scm_NumCmp(Scm_Abs(obj), SCM_1_DIV_2_1075) > 0) {
+                    /* We scale the OBJ so that we can calculate the
+                       flonum approximation in the normalized range,
+                       then rescale the result. */
+                    double adj = Scm_GetDouble(Scm_Div(Scm_Ash(numer, 1075),
+                                                       denom));
+                    return ldexp(adj, -1075);
+                } else {
+                    if (Scm_Sign(obj) > 0) return 0.0;
+                    else return 1.0/SCM_DBL_NEGATIVE_INFINITY;
+                }
+            } else if (SCM_INTP(denom)) {
                 /* dnumer is infinity.  only its sign matters.*/
                 if (Scm_Sign(denom) < 0) return -dnumer;
                 else                     return dnumer;
-            } else {
-                ScmBignum *bnumer = SCM_BIGNUM(numer);
-                ScmBignum *bdenom = SCM_BIGNUM(denom);
-                int snumer = SCM_BIGNUM_SIZE(bnumer);
-                int sdenom = SCM_BIGNUM_SIZE(bdenom);
-                int shift;
-                /* we rip off the first 3 words, which guarantees we preserve
-                   more than 53 bits. */
-                if (snumer > sdenom) shift = (sdenom - 3) * sizeof(long) * 8;
-                else                 shift = (snumer - 3) * sizeof(long) * 8;
-
-                dnumer = Scm_GetDouble(Scm_Ash(SCM_RATNUM_NUMER(obj), -shift));
-                ddenom = Scm_GetDouble(Scm_Ash(SCM_RATNUM_DENOM(obj), -shift));
             }
+
+            /* If we come here, both numer and denom are bignums. */
+            ScmBignum *bnumer = SCM_BIGNUM(numer);
+            ScmBignum *bdenom = SCM_BIGNUM(denom);
+            int snumer = SCM_BIGNUM_SIZE(bnumer);
+            int sdenom = SCM_BIGNUM_SIZE(bdenom);
+            int shift;
+            /* we rip off the first 3 words, which guarantees we preserve
+               more than 53 bits. */
+            if (snumer > sdenom) shift = (sdenom - 3) * sizeof(long) * 8;
+            else                 shift = (snumer - 3) * sizeof(long) * 8;
+
+            dnumer = Scm_GetDouble(Scm_Ash(SCM_RATNUM_NUMER(obj), -shift));
+            ddenom = Scm_GetDouble(Scm_Ash(SCM_RATNUM_DENOM(obj), -shift));
         }
         SCM_FP_ENSURE_DOUBLE_PRECISION_BEGIN();
         /* It is critical to perform this division in IEEE double (53bit
@@ -4184,6 +4200,7 @@ void Scm__InitNumber(void)
     SCM_POSITIVE_INFINITY = Scm_MakeFlonum(SCM_DBL_POSITIVE_INFINITY);
     SCM_NEGATIVE_INFINITY = Scm_MakeFlonum(SCM_DBL_NEGATIVE_INFINITY);
     SCM_NAN               = Scm_MakeFlonum(SCM_DBL_NAN);
+    SCM_1_DIV_2_1075 = Scm_Reciprocal(Scm_Ash(SCM_MAKE_INT(1), 1075));
 
     dexpt2_minus_52 = ldexp(1.0, -52);
     dexpt2_minus_53 = ldexp(1.0, -53);
