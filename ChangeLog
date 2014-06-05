@@ -1,3 +1,10 @@
+2014-06-05  Shiro Kawai  <shiro@acm.org>
+
+	* src/number.c (Scm_GetDouble): exact->inexact conversion didn't
+	  work in denormalized range.
+	  (Scm_EncodeFlonum): Added as an inverse of Scm_DecodeFlonum;
+	  not made public in the header yet.
+
 2014-05-25  Shiro Kawai  <shiro@acm.org>
 
 	* configure.ac: Add -static-libgcc flag when building DLLs on MinGW,

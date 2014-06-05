@@ -614,8 +614,8 @@
 ;; The following few tests covers RATNUM paths in Scm_GetDouble
 (test* "expt (ratnum with large denom and numer) with inexact conversion 3"
        1.0e-308 (exact->inexact (/ (expt 10 20) (expt 10 328))))
-'(test* "expt (ratnum with large denom and numer) with inexact conversion 4"
-       0.0 (exact->inexact (/ (expt 10 20) (expt 10 329))))
+(test* "expt (ratnum with large denom and numer) with inexact conversion 4"
+       1.0e-310 (exact->inexact (/ (expt 10 20) (expt 10 330))))
 (test* "expt (ratnum with large denom and numer) with inexact conversion 5"
        1.0e308 (exact->inexact (/ (expt 10 328) (expt 10 20))))
 (test* "expt (ratnum with large denom and numer) with inexact conversion 6"
@@ -626,6 +626,19 @@
        -inf.0 (exact->inexact (/ (expt 10 329) (- (expt 10 20)))))
 (test* "expt (ratnum with large denom and numer) with inexact conversion 9"
        +inf.0 (exact->inexact (/ (expt -10 329) (- (expt 10 20)))))
+;; denormalized range
+(let ()
+  (define data '(5.0e-324   ; minimum positive denormalized flonum
+                 -5.0e-324
+                 1.0e-323
+                 1.5e-323
+                 2.0e-323
+                 1.0e-322
+                 1.04e-322
+                 1.1e-322))
+  (dolist [d data]
+    (test* #"inexact conversion in subnormal range ~d" d
+           (inexact (exact d)))))
 
 ;; this exhibits a bug fixed on 9/12/2013.
 (test* "real->rational" '(1/3 2/3)

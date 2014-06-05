@@ -520,7 +520,7 @@ ScmHalfFloat Scm_DoubleToHalf(double v)
    On 32bit architecture, lower 20bits of mant1 is used for higher
    bits of mantissa.
  */
-double Scm__EncodeDouble(u_long mant1, u_long mant0, int exp, int sign)
+double Scm__EncodeDouble(u_long mant1, u_long mant0, int exp, int signbit)
 {
     ScmIEEEDouble dd;
 #ifdef DOUBLE_ARMENDIAN
@@ -529,13 +529,13 @@ double Scm__EncodeDouble(u_long mant1, u_long mant0, int exp, int sign)
         dd2.components.mant1 = mant1;
         dd2.components.mant0 = mant0;
         dd2.components.exp = exp;
-        dd2.components.sign = sign;
+        dd2.components.sign = signbit;
         return dd2.d;
     }
 #endif /*DOUBLE_ARMENDIAN*/
 
     dd.components.exp = exp;
-    dd.components.sign = sign;
+    dd.components.sign = signbit;
 #if SIZEOF_LONG >= 8
     dd.components.mant = mant0;
 #else  /*SIZEOF_LONG==4*/
@@ -543,6 +543,40 @@ double Scm__EncodeDouble(u_long mant1, u_long mant0, int exp, int sign)
     dd.components.mant0 = mant0;
 #endif /*SIZEOF_LONG==4*/
     return dd.d;
+}
+
+/* More uesr-friendly flonum construction.  This is inverse of DecodeFlonum,
+   and returns the double representation of sign * mant * 2^exp.
+   If exp is too small for normalized range, this returns denormalized number,
+   nad the bits that doesn't fit in the mantissa are just discarded.  (We don't
+   ronud them, for it will cause double-rounding.  We assume that the caller
+   knows what it is doing when passing very small exp.)
+*/
+double Scm_EncodeFlonum(ScmObj mant, int exp, int sign)
+{
+    ScmUInt64 mant64 = Scm_GetIntegerU64Clamp(mant, SCM_CLAMP_ERROR, NULL);
+    int signbit = sign < 0? 1 : 0;
+    int expfield = exp + 0x3ff + 52;
+    if (expfield <= 0) {
+        /* denormalized range. */
+        int shift = -expfield+1;
+#if SCM_EMULATE_INT64
+        mant64.lo = (mant.lo >> shift) | (mant.hi << (WORD_BITS - shift));
+        mant64.hi >>= shift;
+#else
+        mant64 >>= shift;
+#endif
+        expfield = 0;
+    }
+#if SIZEOF_LONG >= 8
+    return Scm__EncodeDouble(0, mant64, expfield, signbit);
+#elif SCM_EMULATE_INT64
+    return Scm__EncodeDouble(mant64.hi, mant64.lo, expfield, signbit);
+#else
+    u_long hi = (mant64 >> 64);
+    u_long lo = (u_long)(mant64 & ULONG_MAX);
+    return Scm__EncodeDouble(hi, lo, expfield, signbit);
+#endif
 }
 
 /*=====================================================================
@@ -1271,10 +1305,16 @@ double Scm_GetDouble(ScmObj obj)
                 if (Scm_NumCmp(Scm_Abs(obj), SCM_1_DIV_2_1075) > 0) {
                     /* We scale the OBJ so that we can calculate the
                        flonum approximation in the normalized range,
-                       then rescale the result. */
-                    double adj = Scm_GetDouble(Scm_Div(Scm_Ash(numer, 1075),
-                                                       denom));
-                    return ldexp(adj, -1075);
+                       then rescale the result.  The scale factor is chosen
+                       so that we can calculate necessary digits 
+                       without loss of precision.
+                       When we scale back, we can't simply use ldexp, for
+                       in subnormal range we'll get double-rounding. */
+                    double scaled = Scm_GetDouble(Scm_Div(Scm_Ash(numer, 1075),
+                                                          denom));
+                    int exp, sign;
+                    ScmObj mant = Scm_DecodeFlonum(scaled, &exp, &sign);
+                    return Scm_EncodeFlonum(mant, exp-1075, sign);
                 } else {
                     if (Scm_Sign(obj) > 0) return 0.0;
                     else return 1.0/SCM_DBL_NEGATIVE_INFINITY;
