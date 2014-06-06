@@ -1302,7 +1302,7 @@ double Scm_GetDouble(ScmObj obj)
                    OBJ still falls in a subnormal range if its absolute
                    value is greater than 1/2^1075 (a half of the least
                    positive subnormal flonum). */
-                if (Scm_NumCmp(Scm_Abs(obj), SCM_1_DIV_2_1075) > 0) {
+                if (Scm_NumCmp(Scm_Abs(obj), SCM_MIN_DENORMALIZED_FLONUM_EXACT) > 0) {
                     /* We scale the OBJ so that we can calculate the
                        flonum approximation in the normalized range,
                        then rescale the result.  The scale factor is chosen
@@ -1320,9 +1320,17 @@ double Scm_GetDouble(ScmObj obj)
                     else return 1.0/SCM_DBL_NEGATIVE_INFINITY;
                 }
             } else if (SCM_INTP(denom)) {
-                /* dnumer is infinity.  only its sign matters.*/
-                if (Scm_Sign(denom) < 0) return -dnumer;
-                else                     return dnumer;
+                /* Numerator is too big. */
+                if (Scm_NumCmp(Scm_Abs(obj), SCM_MAX_FINITE_FLONUM_EXACT) > 0) {
+                    if (Scm_Sign(denom) < 0) return -dnumer;
+                    else                     return dnumer;
+                } else {
+                    double scaled = Scm_GetDouble(Scm_Div(numer,
+                                                          Scm_Ash(denom, 1024)));
+                    int exp, sign;
+                    ScmObj mant = Scm_DecodeFlonum(scaled, &exp, &sign);
+                    return Scm_EncodeFlonum(mant, exp+1024, sign);
+                }
             }
 
             /* If we come here, both numer and denom are bignums. */
@@ -4236,11 +4244,16 @@ void Scm__InitNumber(void)
     SCM_2_32 = Scm_Ash(SCM_MAKE_INT(1), 32);
     SCM_2_31 = Scm_Ash(SCM_MAKE_INT(1), 31);
     SCM_MINUS_2_31 = Scm_Negate(SCM_2_31);
+    SCM_MIN_DENORMALIZED_FLONUM_EXACT =
+        Scm_Reciprocal(Scm_Ash(SCM_MAKE_INT(1), 1075));
+    SCM_MAX_FINITE_FLONUM_EXACT = Scm_Add(Scm_Sub(Scm_Ash(SCM_MAKE_INT(1), 1024),
+                                                  Scm_Ash(SCM_MAKE_INT(1), 971)),
+                                          Scm_Sub(Scm_Ash(SCM_MAKE_INT(1), 970),
+                                                  SCM_MAKE_INT(1)));
 
     SCM_POSITIVE_INFINITY = Scm_MakeFlonum(SCM_DBL_POSITIVE_INFINITY);
     SCM_NEGATIVE_INFINITY = Scm_MakeFlonum(SCM_DBL_NEGATIVE_INFINITY);
     SCM_NAN               = Scm_MakeFlonum(SCM_DBL_NAN);
-    SCM_1_DIV_2_1075 = Scm_Reciprocal(Scm_Ash(SCM_MAKE_INT(1), 1075));
 
     dexpt2_minus_52 = ldexp(1.0, -52);
     dexpt2_minus_53 = ldexp(1.0, -53);

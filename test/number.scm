@@ -639,6 +639,11 @@
   (dolist [d data]
     (test* #"inexact conversion in subnormal range ~d" d
            (inexact (exact d)))))
+;; close to inifinity (but not quite)
+(test* "ratnum -> flonum, close to infinity 1" 1.0e308
+       (inexact (/ (+ (expt 10 309) 1) 10)))
+(test* "ratnum -> flonum, close to infinity 2" 1.0e308
+       (inexact (/ (+ (expt 10 310) 1) 100)))
 
 ;; this exhibits a bug fixed on 9/12/2013.
 (test* "real->rational" '(1/3 2/3)
