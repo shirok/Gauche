@@ -4048,25 +4048,42 @@ static ScmObj read_real(const char **strp, int *lenp,
                                                 Scm_MakeInteger(exponent-fracdigs)));
         if (minusp) return Scm_Negate(e);
         else        return e;
-    } else {
-        double realnum = Scm_GetDouble(fraction);
+    } 
+      
+    /* Get double approximaiton of fraction.  If fraction >= 2^53 we'll
+       only get approximation, but the error will be corrected in
+       AlgorithmR.  We have to be careful, however, not to overflow
+       the following GetDouble call. */
+    int raise_factor = exponent - fracdigs;
+    double realnum = Scm_GetDouble(fraction);
 
-        realnum = raise_pow10(realnum, exponent-fracdigs);
-
-        if (SCM_IS_INF(realnum)) {
-            /* Special case.  We catch too big exponent here. */
+    if (SCM_IS_INF(realnum)) {
+        /* We have too many digits to fit in double.  We can still get finite
+           number if raise_factor is small, but we need to calculate realnum
+           via rational. */
+        if (raise_factor >= 0) {
+            /* Exponent is too big. */
             return (minusp? SCM_NEGATIVE_INFINITY : SCM_POSITIVE_INFINITY);
         }
-
-        if (realnum > 0.0
-            && (Scm_NumCmp(fraction, SCM_2_52) > 0
-                || exponent-fracdigs > MAX_EXACT_10_EXP
-                || exponent-fracdigs < -MAX_EXACT_10_EXP)) {
-            realnum = algorithmR(fraction, exponent-fracdigs, realnum);
-        }
-        if (minusp) realnum = -realnum;
-        return Scm_MakeFlonum(realnum);
+        IEXPT10_INIT();
+        realnum = Scm_GetDouble(Scm_Div(fraction, iexpt10(-raise_factor)));
+    } else {
+        realnum = raise_pow10(realnum, raise_factor);
     }
+    
+    if (SCM_IS_INF(realnum)) {
+        /* Exponent is too big. */
+        return (minusp? SCM_NEGATIVE_INFINITY : SCM_POSITIVE_INFINITY);
+    }
+
+    if (realnum > 0.0
+        && (Scm_NumCmp(fraction, SCM_2_52) > 0
+            || raise_factor > MAX_EXACT_10_EXP
+            || raise_factor < -MAX_EXACT_10_EXP)) {
+        realnum = algorithmR(fraction, raise_factor, realnum);
+    }
+    if (minusp) realnum = -realnum;
+    return Scm_MakeFlonum(realnum);
 }
 
 /* Entry point */
