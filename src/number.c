@@ -548,8 +548,8 @@ double Scm__EncodeDouble(u_long mant1, u_long mant0, int exp, int signbit)
 /* More uesr-friendly flonum construction.  This is inverse of DecodeFlonum,
    and returns the double representation of sign * mant * 2^exp.
    If exp is too small for normalized range, this returns denormalized number,
-   nad the bits that doesn't fit in the mantissa are just discarded.  (We don't
-   ronud them, for it will cause double-rounding.  We assume that the caller
+   and the bits that don't fit in the mantissa are just discarded.  (We don't
+   round them, for it will cause double-rounding.  We assume that the caller
    knows what it is doing when passing very small exp.)
 */
 double Scm_EncodeFlonum(ScmObj mant, int exp, int sign)
