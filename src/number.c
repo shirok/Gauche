@@ -517,8 +517,8 @@ ScmHalfFloat Scm_DoubleToHalf(double v)
    the last bit really matters.
 
    On 64bit architecture, only mant0 is used for mantissa.
-   On 32bit architecture, lower 20bits of mant1 is used for higher
-   bits of mantissa.
+   On 32bit architecture, mant1 is for lower 32bits of mantissa, and 
+   lower 20bits of mant0 is used for higher bits.
  */
 double Scm__EncodeDouble(u_long mant1, u_long mant0, int exp, int signbit)
 {
@@ -571,11 +571,11 @@ double Scm_EncodeFlonum(ScmObj mant, int exp, int sign)
 #if SIZEOF_LONG >= 8
     return Scm__EncodeDouble(0, mant64, expfield, signbit);
 #elif SCM_EMULATE_INT64
-    return Scm__EncodeDouble(mant64.hi, mant64.lo, expfield, signbit);
+    return Scm__EncodeDouble(mant64.lo, mant64.hi, expfield, signbit);
 #else
     u_long hi = (mant64 >> 32);
     u_long lo = (u_long)(mant64 & ULONG_MAX);
-    return Scm__EncodeDouble(hi, lo, expfield, signbit);
+    return Scm__EncodeDouble(lo, hi, expfield, signbit);
 #endif
 }
 
