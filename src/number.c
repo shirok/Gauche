@@ -573,7 +573,7 @@ double Scm_EncodeFlonum(ScmObj mant, int exp, int sign)
 #elif SCM_EMULATE_INT64
     return Scm__EncodeDouble(mant64.hi, mant64.lo, expfield, signbit);
 #else
-    u_long hi = (mant64 >> 64);
+    u_long hi = (mant64 >> 32);
     u_long lo = (u_long)(mant64 & ULONG_MAX);
     return Scm__EncodeDouble(hi, lo, expfield, signbit);
 #endif
