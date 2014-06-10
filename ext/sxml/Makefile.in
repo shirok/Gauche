@@ -102,4 +102,4 @@ to-html-test.scm: to-html-test.scm.in
 
 check : $(GENERATED_TEST)
 
-install : install-std
+install : install-std $(GENERATED_TEST)
