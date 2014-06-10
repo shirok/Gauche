@@ -24,7 +24,7 @@ Quick Start
 
    % ./configure
    % make
-   % make test
+   % make check
    % make install
 
 @c JP
