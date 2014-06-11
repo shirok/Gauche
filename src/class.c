@@ -2992,6 +2992,10 @@ static void init_class(ScmClass *klass,
     klass->name = SCM_INTERN(name);
     initialize_builtin_cpl(klass, supers);
 
+    /* On Windows, mutex and cv must be initialized at runtime. */
+    SCM_INTERNAL_MUTEX_INIT(klass->mutex);
+    SCM_INTERNAL_COND_INIT(klass->cv);
+
     /* insert binding */
     Scm_Define(mod, SCM_SYMBOL(klass->name), SCM_OBJ(klass));
 
