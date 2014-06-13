@@ -159,8 +159,16 @@ ScmChar Scm_UcsToChar(int n)
     }
     return ucs2char_hook(n);
 #else
+    /* Encoding == 'none'.  It would be safer to reject anything beyond
+       0xff, but it prevents 'none' gosh from reading any source files that
+       have escaped characters in that range, even the section is cond-expanded.
+       That's awfully incovenient, so we use a substitution character '?' here,
+       relying the programmer to properly conditionalize the code.
+       We plan to drop 'none' encoding support in 1.0, so this kludge is
+       just a temporary measure.
+    */
     if (n < 0x100) return (ScmChar)n; /* ISO8859-1 */
-    else return SCM_CHAR_INVALID;
+    else return (ScmChar)'?';
 #endif
 }
 
