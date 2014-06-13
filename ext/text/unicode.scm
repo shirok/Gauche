@@ -980,6 +980,20 @@
   (let1 buf (make-vector SCM_CHAR_FULL_CASE_MAPPING_SIZE)
     (generator-for-each (^[ch] (%tr ch buf CHAR_UPCASE sink char?)) generator)))
 
+;; Greek capital sigma U+03a3 and final sigma U+03c2.
+;; We can't use character literal #\u03a3 etc., for they're not valid
+;; when internal encoding is 'none'.  We intend to make utf-8 support
+;; mandatory in future, and this limitation will be lifted.
+;; For now, they'll be #f when the internal encoding is 'none'.
+(define-constant .capital-sigma.
+  (cond-expand
+   [gauche.ces.none #f]
+   [else (ucs->char #x03a3)]))
+(define-constant .final-sigma.
+  (cond-expand
+   [gauche.ces.none #f]
+   [else (ucs->char #x03c2)]))
+
 ;; Greek capital sigma U+03a3 needs context-sensitive conversion.
 (define (%downcase generator sink char?)
   (let ([breaker (make-word-breaker generator)]
@@ -988,10 +1002,10 @@
       (let loop ([ch ch] [prev-break? break?])
         (unless (eof-object? ch)
           (receive (next break?) (breaker)
-            (if (and (memv ch '(#\u03a3 #x03a3)) ; capital sigma
+            (if (and (memv ch `(,.capital-sigma. #x03a3))
                      (not prev-break?)
                      break?)
-              (sink `(,(if char? #\u03c2 #x03c2)) ch) ; final sigma
+              (sink `(,(if char? .final-sigma. #x03c2)) ch)
               (%tr ch buf CHAR_DOWNCASE sink char?))
             (loop next break?)))))))
 
@@ -1003,10 +1017,10 @@
         (unless (eof-object? ch)
           (receive (next break?) (breaker)
             (cond [prev-break? (%tr ch buf CHAR_TITLECASE sink char?)]
-                  [(and (memv ch '(#\u03a3 #x03a3)) ; capital sigma
+                  [(and (memv ch `(,.capital-sigma. #x03a3))
                         (not prev-break?)
                         break?)
-                   (sink `(,(if char? #\u03c2 #x03c2)) ch)]
+                   (sink `(,(if char? .final-sigma. #x03c2)) ch)]
                   [else (%tr ch buf CHAR_DOWNCASE sink char?)])
             (loop next break?)))))))
 
