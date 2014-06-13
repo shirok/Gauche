@@ -1448,7 +1448,7 @@ ScmObj Scm_StringPointerRef(ScmStringPointer *sp)
     ScmChar ch;
     if (sp->length < 0 || sp->size == sp->length) {
         if (sp->index >= sp->size) return SCM_EOF;
-        ch = *sp->current;
+        ch = *(const unsigned char*)sp->current;
     } else {
         if (sp->index >= sp->length) return SCM_EOF;
         SCM_CHAR_GET(sp->current, ch);
@@ -1462,7 +1462,7 @@ ScmObj Scm_StringPointerNext(ScmStringPointer *sp)
     if (sp->length < 0 || sp->size == sp->length) {
         if (sp->index >= sp->size) return SCM_EOF;
         sp->index++;
-        ch = *sp->current++;
+        ch = *(const unsigned char*)sp->current++;
     } else {
         if (sp->index >= sp->length) return SCM_EOF;
         SCM_CHAR_GET(sp->current, ch);
@@ -1478,7 +1478,7 @@ ScmObj Scm_StringPointerPrev(ScmStringPointer *sp)
     if (sp->index <= 0) return SCM_EOF;
     if (sp->length < 0 || sp->size == sp->length) {
         sp->index--;
-        ch = *--sp->current;
+        ch = *(const unsigned char*)--sp->current;
     } else {
         const char *prev;
         SCM_CHAR_BACKWARD(sp->current, sp->start, prev);
