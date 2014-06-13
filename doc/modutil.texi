@@ -19065,7 +19065,7 @@ The upper bound of the number of items in the queue.
 
 @c EN
 If this slot is zero, the queue cannot hold any items, but
-works as a synchrization device.
+works as a synchronization device.
 A writer will block until a reader appears to take the item;
 a reader will block until a writer appears to give the item.
 @c JP
