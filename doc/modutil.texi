@@ -19131,9 +19131,9 @@ Returns the number of the items in the queue.
 @defun mtqueue-max-length mtqueue
 @c EN
 Returns the maximum number of items the mtqueue can hold.
-Zero indicates unlimited.
+If the queue doesn't have a limit, @code{#f} is returned.
 @c JP
-キューが保持できる要素の最大数を返します。限度がない場合はゼロが返ります。
+キューが保持できる要素の最大数を返します。限度がない場合は@code{#f}が返ります。
 @c COMMON
 @end defun
 
