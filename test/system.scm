@@ -609,28 +609,29 @@
   ;; Testing fork&exec and detached process
   ;; NB: these tests assume we're running the testing gosh in the
   ;; current directory.
-  (cmd-rmrf "test.out")
-  (with-output-to-file "test.out"
-    (lambda ()
-      (write '(begin
-                (sys-nanosleep #e2e8)
-                (write (list (sys-getpid) (sys-getppid) (sys-getpgrp)))))))
-  (receive (in out) (sys-pipe :buffering :none)
-    (define (run-and-read detached)
-      (let1 pid (sys-fork-and-exec "./gosh"
-                                   `("./gosh" "-ftest" "./test.out")
-                                   :iomap `((1 . ,out))
-                                   :detached detached)
-        (begin0 (read in) (sys-waitpid pid))))
-    (test* "fork, exec and detached process (not detached)"
-           `(parent ,(sys-getpid) pgrp ,(sys-getpgrp))
-           (let1 r (run-and-read #f)
-             `(parent ,(cadr r) pgrp ,(caddr r))))
-    (test* "fork, exec and detached process (detached)"
-           `(parent 1 pgrp #t)
-           (let1 r (run-and-read #t)
-             `(parent ,(cadr r) pgrp ,(= (car r) (caddr r)))))
-    )
+  (when (file-exists? "./gosh")
+    (cmd-rmrf "test.out")
+    (with-output-to-file "test.out"
+      (lambda ()
+        (write '(begin
+                  (sys-nanosleep #e2e8)
+                  (write (list (sys-getpid) (sys-getppid) (sys-getpgrp)))))))
+    (receive (in out) (sys-pipe :buffering :none)
+      (define (run-and-read detached)
+        (let1 pid (sys-fork-and-exec "./gosh"
+                                     `("./gosh" "-ftest" "./test.out")
+                                     :iomap `((1 . ,out))
+                                     :detached detached)
+          (begin0 (read in) (sys-waitpid pid))))
+      (test* "fork, exec and detached process (not detached)"
+             `(parent ,(sys-getpid) pgrp ,(sys-getpgrp))
+             (let1 r (run-and-read #f)
+               `(parent ,(cadr r) pgrp ,(caddr r))))
+      (test* "fork, exec and detached process (detached)"
+             `(parent 1 pgrp #t)
+             (let1 r (run-and-read #t)
+               `(parent ,(cadr r) pgrp ,(= (car r) (caddr r)))))
+      ))
   (cmd-rmrf "test.out")
 
   ;; Testing GC in forked process---we don't explicitly spawn a thread here,

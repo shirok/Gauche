@@ -134,9 +134,11 @@
        (begin
          (cond-expand
           [gauche.os.windows
-           (sys-system ".\\gosh -ftest ..\\test\\relative-load-path > test.o")]
+           (let1 gosh (or (sys-getenv "TESTGOSH") ".\\gosh")
+             (sys-system #"~gosh -ftest ..\\test\\relative-load-path > test.o"))]
           [else
-           (sys-system "./gosh -ftest ../test/relative-load-path > test.o")])
+           (let1 gosh (or (sys-getenv "TESTGOSH") "./gosh")
+             (sys-system #"~gosh -ftest ../test/relative-load-path > test.o"))])
          (rlet1 r (with-input-from-file "test.o" read-line)
            (sys-unlink "test.o"))))
 
