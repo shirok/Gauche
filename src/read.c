@@ -734,7 +734,7 @@ ScmChar Scm_ReadXdigitsFromString(const char *buf,
                                   int terminator, /* TRUE expecting ';' */
                                   const char **nextbuf)
 {
-    int legacy_fallback = TRUE;
+    int legacy_fallback = FALSE;
 
     if (key == 'x' && mode != SCM_READ_LEGACY) {
         int val = 0, i;
@@ -774,7 +774,7 @@ ScmChar Scm_ReadXdigitsFromString(const char *buf,
             val = val * 16 + Scm_DigitToInt(buf[i], 16, FALSE);
         }
         *nextbuf = buf + ndigits;
-        if (!legacy_fallback) val = Scm_UcsToChar(val);
+        if (!legacy_fallback && key != 'x') val = Scm_UcsToChar(val);
         return val;
     }
 }
