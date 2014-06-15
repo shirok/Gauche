@@ -427,7 +427,14 @@
 (define-enum STD_ERROR_HANDLE)
 
 (define-cproc sys-get-std-handle (which::<int>)
-  (handle '#f (GetStdHandle (DWORD which))))
+  (let* ([h::HANDLE (GetStdHandle (DWORD which))])
+    (when (== h INVALID_HANDLE_VALUE)
+      (Scm_SysError "GetStdHandle failed"))
+    (let* ([p::HANDLE (GetCurrentProcess)]
+           [h2::HANDLE INVALID_HANDLE_VALUE])
+      (unless (DuplicateHandle p h p (& h2) 0 TRUE DUPLICATE_SAME_ACCESS)
+        (Scm_SysError "DuplicateHandle failed"))
+      (result (Scm_MakeWinHandle h2 '#f)))))
 (define-cproc sys-set-std-handle (which::<int> handle)
   (check (SetStdHandle (DWORD which) (Scm_WinHandle handle '#f))))
 
