@@ -996,8 +996,7 @@
 (test #f (char-lower-case? #\3))
 
 (cond-expand
- [gauche.ces.none]
- [else
+ [gauche.ces.utf-8
 (test #t (char-alphabetic? #\Λ))
 (test #f (char-alphabetic? #\x0E50))
 (test #t (char-upper-case? #\Λ))
@@ -1007,17 +1006,16 @@
 (test #f (char-numeric? #\Λ))
 (test #t (char-numeric? #\x0E50))
 (test #t (char-whitespace? #\x1680))
-])
+][else])
 
 (test 0 (digit-value #\0))
 (test 3 (digit-value #\3))
 (test 9 (digit-value #\9))
 (cond-expand
- [gauche.ces.none]
- [else
+ [gauche.ces.utf-8
 (test 4 (digit-value #\x0664))
 (test 0 (digit-value #\x0AE6))
-])
+][else])
 (test #f (digit-value #\.))
 (test #f (digit-value #\-))
 
@@ -1139,20 +1137,18 @@
 
 ;; cyrillic
 (cond-expand
- [gauche.ces.none]
- [else
+ [gauche.ces.utf-8
 (test "ΑΒΓ" (string-upcase "αβγ"))
 (test "ΑΒΓ" (string-upcase "ΑΒΓ"))
 (test "αβγ" (string-downcase "αβγ"))
 (test "αβγ" (string-downcase "ΑΒΓ"))
 (test "αβγ" (string-foldcase "αβγ"))
 (test "αβγ" (string-foldcase "ΑΒΓ"))
-])
+][else])
 
 ;; special cases
 (cond-expand
- [gauche.ces.none]
- [else
+ [gauche.ces.utf-8
 (test "SSA" (string-upcase "ßa"))
 (test "ßa" (string-downcase "ßa"))
 (test "ssa" (string-downcase "SSA"))
@@ -1160,12 +1156,11 @@
 (test "i̇" (string-downcase "İ"))
 (test "i̇" (string-foldcase "İ"))
 (test "J̌" (string-upcase "ǰ"))
-])
+][else])
 
 ;; context-sensitive (final sigma)
 (cond-expand
- [gauche.ces.none]
- [else
+ [gauche.ces.utf-8
 (test "ΓΛΏΣΣΑ" (string-upcase "γλώσσα"))
 (test "γλώσσα" (string-downcase "ΓΛΏΣΣΑ"))
 (test "γλώσσα" (string-foldcase "ΓΛΏΣΣΑ"))
@@ -1173,7 +1168,7 @@
 (test "μέλος" (string-downcase "ΜΈΛΟΣ"))
 (test "μέλοσ" (string-foldcase "ΜΈΛΟΣ"))
 (test "μέλος ενός" (string-downcase "ΜΈΛΟΣ ΕΝΌΣ"))
-])
+][else])
 
 (test "" (substring "" 0 0))
 (test "" (substring "a" 0 0))
@@ -1815,11 +1810,10 @@
 (test #x7F (char->integer (read (open-input-string "#\\delete"))))
 (test #x1B (char->integer (read (open-input-string "#\\escape"))))
 (cond-expand
- [gauche.ces.none]
- [else
+ [gauche.ces.utf-8
 (test #x03BB (char->integer (read (open-input-string "#\\λ"))))
 (test #x03BB (char->integer (read (open-input-string "#\\x03BB"))))
-])
+][else])
 
 (test "abc" (read (open-input-string "\"abc\"")))
 (test "abc" (read (open-input-string "\"abc\" \"def\"")))
@@ -1839,10 +1833,9 @@
 (test "line 1continued\n" (read (open-input-string "\"line 1\\ \t \n \t continued\n\"")))
 (test "line 1\n\nline 3\n" (read (open-input-string "\"line 1\\ \t \n \t \n\nline 3\n\"")))
 (cond-expand
- [gauche.ces.none]
- [else
+ [gauche.ces.utf-8
 (test #x03BB (char->integer (string-ref (read (open-input-string "\"\\x03BB;\"")) 0)))
-])
+][else])
 
 (test-end)
 

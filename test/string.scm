@@ -43,8 +43,8 @@
 (define x (string-copy "abcde"))
 (test* "string-set!" "abZde" (begin (string-set! x 2 #\Z) x))
 
-(test* "string w/ char >= \\x80" (integer->char #xa1)
-       (string-ref (string (integer->char #xa1)) 0))
+(test* "string w/ char >= \\x80" #\u00a1
+       (string-ref (string #\u00a1) 0))
 
 (test* "string-reader hex-escape" '(1 2 3)
        (let1 s "\x1;\x2;\x00003;"

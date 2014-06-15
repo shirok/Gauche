@@ -192,13 +192,13 @@
     
     ;; Test characters that are in JISX0213 but not in Unicode 6.0.
     (when (eq? (gauche-character-encoding) 'euc-jp)
-      (t #\xa4f7 #t #f #f 'Lo)
-      (t #\xabc4 #t #f #t 'Ll)
-      (t #\xabe6 #f #f #f 'Sk))
+      (t (integer->char #xa4f7) #t #f #f 'Lo)
+      (t (integer->char #xabc4) #t #f #t 'Ll)
+      (t (integer->char #xabe6) #f #f #f 'Sk))
     (when (eq? (gauche-character-encoding) 'sjis)
-      (t #\x82f5 #t #f #f 'Lo)
-      (t #\x8663 #t #f #t 'Ll)
-      (t #\x8686 #f #f #f 'Sk))
+      (t (integer->char #x82f5) #t #f #f 'Lo)
+      (t (integer->char #x8663) #t #f #t 'Ll)
+      (t (integer->char #x8686) #f #f #f 'Sk))
     ))
 
 (test-end)
