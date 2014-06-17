@@ -166,7 +166,7 @@ void further_options(const char *optarg)
     }
     else if (strcmp(optarg, "warn-legacy-syntax") == 0) {
         ScmReadContext *ctx = Scm_MakeReadContext(NULL);
-        Scm_ReadContextSetLexicalMode(ctx, SCM_READ_WARN_LEGACY);
+        Scm_ReadContextLexicalModeSet(ctx, SCM_READ_WARN_LEGACY);
         Scm_SetCurrentReadContext(ctx);
     }
     else if (strcmp(optarg, "test") == 0) {

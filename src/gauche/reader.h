@@ -55,8 +55,9 @@ enum ScmReadLexicalMode {
     SCM_READ_STRICT_R7          /* strictly r7 */
 };
 
+SCM_EXTERN u_long Scm_ReadContextLexicalMode(ScmReadContext*);
 /* returns previous settings */
-SCM_EXTERN u_long Scm_ReadContextSetLexicalMode(ScmReadContext*, u_long);
+SCM_EXTERN u_long Scm_ReadContextLexicalModeSet(ScmReadContext*, u_long);
 
 /* An object to keep unrealized circular reference (e.g. #N=) during
  * 'read'.  It is replaced by the reference value before exitting 'read',

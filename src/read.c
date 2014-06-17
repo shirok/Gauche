@@ -224,12 +224,18 @@ int Scm_ReadContextLiteralImmutable(ScmReadContext *ctx)
     return (ctx->flags & RCTX_LITERAL_IMMUTABLE);
 }
 
-u_long Scm_ReadContextSetLexicalMode(ScmReadContext *ctx, u_long mode)
+u_long Scm_ReadContextLexicalModeSet(ScmReadContext *ctx, u_long mode)
 {
     u_long prev = RCTX_LEXICAL_MODE(ctx);
     RCTX_LEXICAL_MODE_SET(ctx, mode);
     return prev;
 }
+
+u_long Scm_ReadContextLexicalMode(ScmReadContext *ctx)
+{
+    return RCTX_LEXICAL_MODE(ctx);
+}
+
 
 /*----------------------------------------------------------------
  * Error
