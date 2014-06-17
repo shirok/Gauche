@@ -307,4 +307,42 @@
        (read-from-string "#0=#,(foo a #0#)")
        isomorphic?)
 
+
+;;===============================================================
+;; Read context mode
+;;
+
+(test-section "read context mode")
+
+(define (test-reader-lexical-mode mode input expect)
+  (test* (format "reader context mode ~s: ~s" mode input) expect
+         (let1 old-mode #f
+           (dynamic-wind
+             (^[] (set! old-mode (read-lexical-mode mode)))
+             (^[] (guard (e [else 'error])
+                    (let* ([warn-port (open-output-string)]
+                           [r (with-error-to-port warn-port
+                                (cut read-from-string input))]
+                           [w (rxmatch-case (get-output-string warn-port)
+                                [#/^WARNING/ () 'warn]
+                                [else #f])])
+                      (if w (list r w) r))))
+             (^[] (read-lexical-mode old-mode))))))
+
+;; data ::= ((input expect ...) ...)
+(define (test-reader-lexical-modes data)
+  (dolist [d data]
+    (for-each (^[m e] (test-reader-lexical-mode m (car d) e))
+              '(legacy permissive warn-legacy strict-r7)
+              (cdr d))))
+
+(test-reader-lexical-modes
+ '(("\"a\\x30zz\"" "a0zz" "a0zz" ("a0zz" warn) error)))
+(test-reader-lexical-modes
+ '(("\"a\\x30;zz\"" "a0;zz" "a0zz" "a0zz" "a0zz")))
+(test-reader-lexical-modes
+ '(("\"a\\x0030zz\"" "a\030zz" "a\030zz" ("a\030zz" warn) error)))
+(test-reader-lexical-modes
+ '(("\"a\\x0030;zz\"" "a\030;zz" "a0zz" "a0zz" "a0zz")))
+
 (test-end)
