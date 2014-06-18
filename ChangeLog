@@ -1,3 +1,7 @@
+2014-06-18  Shiro Kawai  <shiro@acm.org>
+
+	* gc/*: Updated to gc-7.4.2 (libatomic_ops stays 7.4.2)
+
 2014-06-05  Shiro Kawai  <shiro@acm.org>
 
 	* src/number.c (Scm_GetDouble): exact->inexact conversion didn't

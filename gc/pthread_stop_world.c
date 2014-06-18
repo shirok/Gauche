@@ -129,22 +129,26 @@ STATIC volatile AO_t GC_world_is_stopped = FALSE;
  * Note that we can't just stop a thread; we need it to save its stack
  * pointer(s) and acknowledge.
  */
-
 #ifndef SIG_THR_RESTART
-#  if defined(GC_HPUX_THREADS) || defined(GC_OSF1_THREADS) \
-      || defined(GC_NETBSD_THREADS)
-#    ifdef _SIGRTMIN
-#      define SIG_THR_RESTART _SIGRTMIN + 5
-#    else
-#      define SIG_THR_RESTART SIGRTMIN + 5
-#    endif
-#  else
+# if defined(GC_HPUX_THREADS) || defined(GC_OSF1_THREADS) \
+     || defined(GC_NETBSD_THREADS) || defined(GC_USESIGRT_SIGNALS)
+#   ifdef _SIGRTMIN
+#     define SIG_THR_RESTART _SIGRTMIN + 5
+#   else
+#     define SIG_THR_RESTART SIGRTMIN + 5
+#   endif
+# else
 #   define SIG_THR_RESTART SIGXCPU
-#  endif
+# endif
 #endif
 
-STATIC int GC_sig_suspend = SIG_SUSPEND;
-STATIC int GC_sig_thr_restart = SIG_THR_RESTART;
+#define SIGNAL_UNSET (-1)
+    /* Since SIG_SUSPEND and/or SIG_THR_RESTART could represent */
+    /* a non-constant expression (e.g., in case of SIGRTMIN),   */
+    /* actual signal numbers are determined by GC_stop_init()   */
+    /* unless manually set (before GC initialization).          */
+STATIC int GC_sig_suspend = SIGNAL_UNSET;
+STATIC int GC_sig_thr_restart = SIGNAL_UNSET;
 
 GC_API void GC_CALL GC_set_suspend_signal(int sig)
 {
@@ -162,21 +166,24 @@ GC_API void GC_CALL GC_set_thr_restart_signal(int sig)
 
 GC_API int GC_CALL GC_get_suspend_signal(void)
 {
-  return GC_sig_suspend;
+  return GC_sig_suspend != SIGNAL_UNSET ? GC_sig_suspend : SIG_SUSPEND;
 }
 
 GC_API int GC_CALL GC_get_thr_restart_signal(void)
 {
-  return GC_sig_thr_restart;
+  return GC_sig_thr_restart != SIGNAL_UNSET
+            ? GC_sig_thr_restart : SIG_THR_RESTART;
 }
 
 #ifdef GC_EXPLICIT_SIGNALS_UNBLOCK
-  /* Some targets (eg., Solaris) might require this to be called when   */
+  /* Some targets (e.g., Solaris) might require this to be called when  */
   /* doing thread registering from the thread destructor.               */
   GC_INNER void GC_unblock_gc_signals(void)
   {
     sigset_t set;
     sigemptyset(&set);
+    GC_ASSERT(GC_sig_suspend != SIGNAL_UNSET);
+    GC_ASSERT(GC_sig_thr_restart != SIGNAL_UNSET);
     sigaddset(&set, GC_sig_suspend);
     sigaddset(&set, GC_sig_thr_restart);
     if (pthread_sigmask(SIG_UNBLOCK, &set, NULL) != 0)
@@ -225,8 +232,13 @@ STATIC void GC_suspend_handler_inner(ptr_t sig_arg,
   IF_CANCEL(int cancel_state;)
   AO_t my_stop_count = AO_load(&GC_stop_count);
 
-  if ((signed_word)sig_arg != GC_sig_suspend)
+  if ((signed_word)sig_arg != GC_sig_suspend) {
+#   if defined(GC_FREEBSD_THREADS)
+      /* Workaround "deferred signal handling" bug in FreeBSD 9.2.      */
+      if (0 == sig_arg) return;
+#   endif
     ABORT("Bad signal in suspend_handler");
+  }
 
   DISABLE_CANCEL(cancel_state);
       /* pthread_setcancelstate is not defined to be async-signal-safe. */
@@ -303,7 +315,7 @@ STATIC void GC_restart_handler(int sig)
 # endif
 
   if (sig != GC_sig_thr_restart)
-    ABORT("Bad signal in suspend_handler");
+    ABORT("Bad signal in restart handler");
 
 # ifdef GC_NETBSD_THREADS_WORKAROUND
     sem_post(&GC_restart_ack_sem);
@@ -859,6 +871,13 @@ GC_INNER void GC_stop_init(void)
 # if !defined(GC_OPENBSD_UTHREADS) && !defined(NACL)
     struct sigaction act;
 
+    if (SIGNAL_UNSET == GC_sig_suspend)
+        GC_sig_suspend = SIG_SUSPEND;
+    if (SIGNAL_UNSET == GC_sig_thr_restart)
+        GC_sig_thr_restart = SIG_THR_RESTART;
+    if (GC_sig_suspend == GC_sig_thr_restart)
+        ABORT("Cannot use same signal for thread suspend and resume");
+
     if (sem_init(&GC_suspend_ack_sem, GC_SEM_INIT_PSHARED, 0) != 0)
         ABORT("sem_init failed");
 #   ifdef GC_NETBSD_THREADS_WORKAROUND
@@ -892,8 +911,6 @@ GC_INNER void GC_stop_init(void)
       act.sa_handler = GC_suspend_handler;
 #   endif
     /* act.sa_restorer is deprecated and should not be initialized. */
-    if (GC_sig_suspend == GC_sig_thr_restart)
-        ABORT("Cannot use same signal for thread suspend and resume");
     if (sigaction(GC_sig_suspend, &act, NULL) != 0) {
         ABORT("Cannot set SIG_SUSPEND handler");
     }

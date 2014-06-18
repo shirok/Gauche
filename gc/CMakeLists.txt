@@ -31,7 +31,9 @@ ADD_DEFINITIONS("-D_CRT_SECURE_NO_DEPRECATE
                  -DALL_INTERIOR_POINTERS")
 
 IF(APPLE)
-    SET(CMAKE_OSX_ARCHITECTURES "ppc;i386;x86_64" CACHE STRING "Build architectures for Mac OS X" FORCE)
+    IF("${CMAKE_OSX_ARCHITECTURES}" STREQUAL "")
+        SET(CMAKE_OSX_ARCHITECTURES "ppc;i386;x86_64" CACHE STRING "Build architectures for Mac OS X" FORCE)
+    ENDIF()
 ENDIF(APPLE)
 
 #LIBATOMIC #TODO
@@ -123,8 +125,8 @@ IF(CMAKE_USE_PTHREADS_INIT)
                 IF (${enable_parallel_mark})
                         ADD_DEFINITIONS("-DPARALLEL_MARK")
                 ENDIF()
-                ADD_DEFINITIONS(THREAD_LOCAL_ALLOC")
-                ADD_DEFINITIONS(USE_COMPILER_TLS")
+                ADD_DEFINITIONS("-DTHREAD_LOCAL_ALLOC")
+                ADD_DEFINITIONS("-DUSE_COMPILER_TLS")
         ENDIF()
         IF ( "HOST" MATCHES .*-.*-gnu.*)
                 ADD_DEFINITIONS("-DGC_GNU_THREADS")

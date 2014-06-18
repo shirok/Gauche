@@ -12,14 +12,14 @@
 dnl Process this file with autoconf to produce configure.
 
 # Initialization
-AC_INIT(gc,7.4.0,gc@linux.hpl.hp.com)
+AC_INIT(gc,7.4.2,bdwgc@lists.opendylan.org)
     ## version must conform to [0-9]+[.][0-9]+[.][0-9]+
 AC_CONFIG_SRCDIR(gcj_mlc.c)
 AC_CONFIG_MACRO_DIR([m4])
 AC_CANONICAL_TARGET
 AC_PREREQ(2.61)
 GC_SET_VERSION
-AM_INIT_AUTOMAKE([foreign dist-bzip2 nostdinc])
+AM_INIT_AUTOMAKE([foreign dist-bzip2 nostdinc subdir-objects])
 AC_CONFIG_HEADERS([include/config.h])
 AM_MAINTAINER_MODE
 
@@ -197,7 +197,7 @@ case "$THREADS" in
     AC_CHECK_LIB(pthread, pthread_self, THREADDLLIBS="-lpthread",,)
     case "$host" in
      x86-*-linux* | ia64-*-linux* | i586-*-linux* | i686-*-linux* \
-     | x86_64-*-linux* | alpha-*-linux* | sparc*-*-linux*)
+     | x86_64-*-linux* | alpha-*-linux* | powerpc*-*-linux* | sparc*-*-linux*)
         AC_DEFINE(GC_LINUX_THREADS)
         AC_DEFINE(_REENTRANT)
         if test "${enable_parallel_mark}" != no; then
@@ -598,21 +598,21 @@ case "$host" in
     dnl performance under Irix.
     ;;
  sparc-*-netbsd*)
-    machdep="src/sparc_netbsd_mach_dep.lo"
+    machdep="sparc_netbsd_mach_dep.lo"
     ;;
  sparc*-*-linux* | sparc*-*-openbsd* | sparc64-*-freebsd* | sparc64-*-netbsd*)
-    machdep="src/sparc_mach_dep.lo"
+    machdep="sparc_mach_dep.lo"
     ;;
  sparc-sun-solaris2.3)
-    machdep="src/sparc_mach_dep.lo"
+    machdep="sparc_mach_dep.lo"
     AC_DEFINE(SUNOS53_SHARED_LIB, 1,
               [Define to work around a Solaris 5.3 bug (see dyn_load.c).])
     ;;
  sparc*-sun-solaris2*)
-    machdep="src/sparc_mach_dep.lo"
+    machdep="sparc_mach_dep.lo"
     ;;
  ia64-*-*)
-    machdep="src/ia64_save_regs_in_stack.lo"
+    machdep="ia64_save_regs_in_stack.lo"
     ;;
 esac
 AC_MSG_RESULT($machdep)
@@ -687,6 +687,16 @@ AC_ARG_ENABLE(gcj-support,
 if test x"$enable_gcj_support" != xno; then
     AC_DEFINE(GC_GCJ_SUPPORT, 1, [Define to include support for gcj.])
 fi
+
+dnl Interaction with other programs that might use signals.
+AC_ARG_ENABLE(sigrt-signals,
+    [AC_HELP_STRING([--enable-sigrt-signals],
+        [Force GC to use SIGRTMIN-based signals for thread suspend/resume])])
+if test x"${enable_sigrt_signals}" = xyes; then
+    AC_DEFINE([GC_USESIGRT_SIGNALS], 1,
+              [Force the GC to use signals based on SIGRTMIN+k.])
+fi
+
 
 dnl Debugging
 dnl ---------

@@ -87,6 +87,9 @@
 /* Explicitly prefix exported/imported WINAPI symbols with '_'. */
 #undef GC_UNDERSCORE_STDCALL
 
+/* Force the GC to use signals based on SIGRTMIN+k. */
+#undef GC_USESIGRT_SIGNALS
+
 /* See doc/README.macros. */
 #undef GC_USE_DLOPEN_WRAP
 

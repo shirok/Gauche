@@ -1396,6 +1396,18 @@ GC_EXTERN word GC_n_heap_sects; /* Number of separately added heap      */
 
 GC_EXTERN word GC_page_size;
 
+/* Round up allocation size to a multiple of a page size.       */
+/* GC_setpagesize() is assumed to be already invoked.           */
+#define ROUNDUP_PAGESIZE(bytes) \
+                (((bytes) + GC_page_size - 1) & ~(GC_page_size - 1))
+
+/* Same as above but used to make GET_MEM() argument safe.      */
+#ifdef MMAP_SUPPORTED
+# define ROUNDUP_PAGESIZE_IF_MMAP(bytes) ROUNDUP_PAGESIZE(bytes)
+#else
+# define ROUNDUP_PAGESIZE_IF_MMAP(bytes) (bytes)
+#endif
+
 #if defined(MSWIN32) || defined(MSWINCE) || defined(CYGWIN32)
   struct _SYSTEM_INFO;
   GC_EXTERN struct _SYSTEM_INFO GC_sysinfo;
@@ -2375,14 +2387,15 @@ GC_INNER ptr_t GC_store_debug_info(ptr_t p, word sz, const char *str,
 #endif /* PARALLEL_MARK */
 
 #if defined(GC_PTHREADS) && !defined(GC_WIN32_THREADS) && !defined(NACL) \
-    && !defined(SIG_SUSPEND)
+    && !defined(GC_DARWIN_THREADS) && !defined(SIG_SUSPEND)
   /* We define the thread suspension signal here, so that we can refer  */
   /* to it in the dirty bit implementation, if necessary.  Ideally we   */
   /* would allocate a (real-time?) signal using the standard mechanism. */
   /* unfortunately, there is no standard mechanism.  (There is one      */
   /* in Linux glibc, but it's not exported.)  Thus we continue to use   */
   /* the same hard-coded signals we've always used.                     */
-# if defined(GC_LINUX_THREADS) || defined(GC_DGUX386_THREADS)
+# if (defined(GC_LINUX_THREADS) || defined(GC_DGUX386_THREADS)) \
+     && !defined(GC_USESIGRT_SIGNALS)
 #   if defined(SPARC) && !defined(SIGPWR)
       /* SPARC/Linux doesn't properly define SIGPWR in <signal.h>.      */
       /* It is aliased to SIGLOST in asm/signal.h, though.              */
@@ -2395,12 +2408,10 @@ GC_INNER ptr_t GC_store_debug_info(ptr_t p, word sz, const char *str,
 #   ifndef GC_OPENBSD_UTHREADS
 #     define SIG_SUSPEND SIGXFSZ
 #   endif
-# elif !defined(GC_DARWIN_THREADS)
-#   if defined(_SIGRTMIN)
-#     define SIG_SUSPEND _SIGRTMIN + 6
-#   else
-#     define SIG_SUSPEND SIGRTMIN + 6
-#   endif
+# elif defined(_SIGRTMIN)
+#   define SIG_SUSPEND _SIGRTMIN + 6
+# else
+#   define SIG_SUSPEND SIGRTMIN + 6
 # endif
 #endif /* GC_PTHREADS && !SIG_SUSPEND */
 
