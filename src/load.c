@@ -77,7 +77,8 @@ static struct {
     ScmParameterLoc load_main_script;  /* yields #t during loading main script.
                                           see SCM_LOAD_MAIN_SCRIPT flag
                                           in load.h. */
-
+    ScmParameterLoc load_read_lexical_mode; /* ReadContextLexicalMode */
+    
     /* Dynamic linking */
     ScmObj dso_suffixes;
     dlobj *dso_list;              /* List of dynamically loaded objects. */
@@ -166,6 +167,7 @@ struct load_info {
     ScmObj prev_history;
     ScmObj prev_next;
     ScmObj prev_main_script;
+    ScmObj prev_read_lexical_mode;
     int    prev_situation;
 };
 
@@ -242,6 +244,7 @@ ScmObj Scm_VMLoadFromPort(ScmPort *port, ScmObj next_paths,
     p->prev_history   = PARAM_REF(vm, load_history);
     p->prev_next      = PARAM_REF(vm, load_next);
     p->prev_main_script = PARAM_REF(vm, load_main_script);
+    p->prev_read_lexical_mode = PARAM_REF(vm, load_read_lexical_mode);
     p->prev_situation = vm->evalSituation;
 
     ScmReadContext *newctx = Scm_MakeReadContext(NULL);
@@ -261,6 +264,7 @@ ScmObj Scm_VMLoadFromPort(ScmPort *port, ScmObj next_paths,
         port_info = SCM_LIST1(SCM_FALSE);
     }
     PARAM_SET(vm,load_history, Scm_Cons(port_info, PARAM_REF(vm,load_history)));
+    /* NB: We don't need to change load_read_lexical_mode */
 
     PORT_LOCK(port, vm);
     return Scm_VMDynamicWindC(NULL, load_body, load_after, p);
@@ -1352,4 +1356,5 @@ void Scm__InitLoad(void)
     PARAM_INIT(load_next, SCM_NIL);
     PARAM_INIT(load_port, SCM_FALSE);
     PARAM_INIT(load_main_script, SCM_FALSE);
+    PARAM_INIT(load_read_lexical_mode, SCM_FALSE);
 }

@@ -309,13 +309,13 @@
 
 
 ;;===============================================================
-;; Read context mode
+;; Read lexical mode
 ;;
 
-(test-section "read context mode")
+(test-section "read lexical mode")
 
 (define (test-reader-lexical-mode mode input expect)
-  (test* (format "reader context mode ~s: ~s" mode input) expect
+  (test* (format "reader lexical mode ~s: ~s" mode input) expect
          (let1 old-mode #f
            (dynamic-wind
              (^[] (set! old-mode (read-lexical-mode mode)))
@@ -344,5 +344,18 @@
  '(("\"a\\x0030zz\"" "a\030zz" "a\030zz" ("a\030zz" warn) error)))
 (test-reader-lexical-modes
  '(("\"a\\x0030;zz\"" "a\030;zz" "a0zz" "a0zz" "a0zz")))
+
+(sys-unlink "test.o")
+
+(with-output-to-file "test.o"
+  (lambda ()
+    (write '(read-lexical-mode 'legacy))))
+
+(test* "load restores read lexical mode" #t
+       (let1 x (read-lexical-mode)
+         (load "./test.o")
+         (eq? (read-lexical-mode) x)))
+
+(sys-unlink "test.o")
 
 (test-end)

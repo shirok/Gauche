@@ -196,6 +196,8 @@
 
     ;; modules addition (move this up on 1.0 release)
     (keyword                   SCM_SYM_KEYWORD)
+    ;; load addition (move this up on 1.0 release)
+    (read-lexical-mode         SCM_SYM_READ_LEXICAL_MODE)
     ))
 
 
