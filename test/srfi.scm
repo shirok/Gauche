@@ -1123,6 +1123,15 @@
                         (>= i 5))
                 (if #f #f))))
 
+;; Those tests manifest the bug in the original reference implementation
+(test* ":while loop boundary condition" '(1)
+       (list-ec (:while (:list x '(1 2)) (= x 1)) x))
+(test* ":while loop off-by-one error" '(1)
+       (list-ec (:while (:list x '(1)) #t) x))
+(test* ":while loop off-by-one error on vector" '(1 2 3 4 5)
+       (list-ec (:while (:vector x (index i) '#(1 2 3 4 5)) (< x 10)) x))
+
+
 (test* ": list" '(a b)     (list-ec (: c '(a b)) c))
 (test* ": list" '(a b c d) (list-ec (: c '(a b) '(c d)) c))
 

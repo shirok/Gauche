@@ -1,3 +1,8 @@
+2014-06-20  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi-42.scm: Incorporated bug fixes in srfi-42 reference
+	  implementation.
+
 2014-06-18  Shiro Kawai  <shiro@acm.org>
 
 	* gc/*: Updated to gc-7.4.2 (libatomic_ops stays 7.4.2)
