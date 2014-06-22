@@ -513,30 +513,9 @@
 
 ;; Reader parameters
 (define-cproc read-lexical-mode (:optional k)
-  (let* ([cctx::ScmReadContext* (Scm_CurrentReadContext)]
-         [current '#f])
-    (case (Scm_ReadContextLexicalMode cctx)
-     [(SCM_READ_LEGACY)      (set! current 'legacy)]
-     [(SCM_READ_PERMISSIVE)  (set! current 'permissive)]
-     [(SCM_READ_WARN_LEGACY) (set! current 'warn-legacy)]
-     [(SCM_READ_STRICT_R7)   (set! current 'strict-r7)]
-     [else (Scm_Error "[internal error] Invalid read context lexical mode: %d"
-                      (Scm_ReadContextLexicalMode cctx))])
-    (unless (SCM_UNBOUNDP k)
-      (let* ([ctx::ScmReadContext* (Scm_MakeReadContext NULL)])
-        (cond
-         [(SCM_EQ k 'legacy)
-          (Scm_ReadContextLexicalModeSet ctx SCM_READ_LEGACY)]
-         [(SCM_EQ k 'permissive)
-          (Scm_ReadContextLexicalModeSet ctx SCM_READ_PERMISSIVE)]
-         [(SCM_EQ k 'warn-legacy)
-          (Scm_ReadContextLexicalModeSet ctx SCM_READ_WARN_LEGACY)]
-         [(SCM_EQ k 'strict-r7)
-          (Scm_ReadContextLexicalModeSet ctx SCM_READ_STRICT_R7)]
-         [else
-          (Scm_Error "read-lexical-mode requires either 'legacy, 'permissive, 'warn-legacy or 'strict-r7, but got: %S" (SCM_OBJ k))])
-        (Scm_SetCurrentReadContext ctx)))
-    (result current)))
+  (if (SCM_UNBOUNDP k)
+    (result (Scm_ReaderLexicalMode))
+    (result (Scm_SetReaderLexicalMode k))))
 
 ;; Read time constructor (srfi-10)
 (select-module gauche)
@@ -833,10 +812,10 @@
     (values)))
 
 (define-reader-directive 'gauche-legacy
-  (^[sym port ctx] (read-lexical-mode 'legacy)))
+  (^[sym port ctx] (read-lexical-mode 'legacy) (values)))
 
 (define-reader-directive 'r7rs
-  (^[sym port ctx] (read-lexical-mode 'strict-r7)))
+  (^[sym port ctx] (read-lexical-mode 'strict-r7) (values)))
 
 ;; HIGHLY EXPERIMENTAL
 (define-reader-directive 'c-expr
@@ -844,5 +823,3 @@
     ((with-module gauche.internal vm-compiler-flag-set!)
      SCM_COMPILE_ENABLE_CEXPR)
     (values)))
-
-

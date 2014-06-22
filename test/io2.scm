@@ -345,7 +345,9 @@
 (test-reader-lexical-modes
  '(("\"a\\x0030;zz\"" "a\030;zz" "a0zz" "a0zz" "a0zz")))
 
+;; Load and read-lexical-mode
 (sys-unlink "test.o")
+(sys-unlink "test1.o")
 
 (with-output-to-file "test.o"
   (lambda ()
@@ -356,6 +358,25 @@
          (load "./test.o")
          (eq? (read-lexical-mode) x)))
 
-(sys-unlink "test.o")
+(define (test-reader-lexical-mode-directive directive literal)
+  (with-output-to-file "test.o"
+    (lambda ()
+      (display directive)
+      (display "\n")
+      (display "(with-output-to-file \"test1.o\" (lambda () (display ")
+      (display literal)
+      (display ")))")))
+  (load "./test.o")
+  (with-input-from-file "test1.o" (cut read-line)))
 
+(test* "#!gauche-legacy directive" "0;z"
+       (test-reader-lexical-mode-directive "#!gauche-legacy" "\"\\x30;z\""))
+(test* "#!r7rs directive" "0z"
+       (test-reader-lexical-mode-directive "#!r7rs" "\"\\x30;z\""))
+(test* "#!r7rs directive" (test-error <read-error>)
+       (test-reader-lexical-mode-directive "#!r7rs" "\"\\x30\""))
+
+(sys-unlink "test.o")
+(sys-unlink "test1.o")
+     
 (test-end)

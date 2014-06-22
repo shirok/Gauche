@@ -165,9 +165,7 @@ void further_options(const char *optarg)
         SCM_VM_RUNTIME_FLAG_SET(vm, SCM_CASE_FOLD);
     }
     else if (strcmp(optarg, "warn-legacy-syntax") == 0) {
-        ScmReadContext *ctx = Scm_MakeReadContext(NULL);
-        Scm_ReadContextLexicalModeSet(ctx, SCM_READ_WARN_LEGACY);
-        Scm_SetCurrentReadContext(ctx);
+        Scm_SetReaderLexicalMode(SCM_INTERN("warn-legacy"));
     }
     else if (strcmp(optarg, "test") == 0) {
         test_mode = TRUE;

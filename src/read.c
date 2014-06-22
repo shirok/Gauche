@@ -88,6 +88,9 @@ static struct {
 /* Parameter location for default reader mode */
 ScmParameterLoc defaultReadContext;
 
+/* Parameter location for the current reader lexical mode */
+ScmParameterLoc readerLexicalMode;
+
 /*----------------------------------------------------------------
  * Entry points
  *   Note: Entire read operation are done while locking the input port.
@@ -218,24 +221,34 @@ static void read_context_print(ScmObj obj, ScmPort *port,
 
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_ReadContextClass, read_context_print);
 
-/* public API */
+/* public api */
 int Scm_ReadContextLiteralImmutable(ScmReadContext *ctx)
 {
     return (ctx->flags & RCTX_LITERAL_IMMUTABLE);
 }
 
-u_long Scm_ReadContextLexicalModeSet(ScmReadContext *ctx, u_long mode)
+/*
+ * Reader lexical mode
+ */
+ScmObj Scm_SetReaderLexicalMode(ScmObj mode)
 {
-    u_long prev = RCTX_LEXICAL_MODE(ctx);
-    RCTX_LEXICAL_MODE_SET(ctx, mode);
-    return prev;
+    if (!(SCM_EQ(mode, SCM_SYM_LEGACY)
+          || SCM_EQ(mode, SCM_SYM_WARN_LEGACY)
+          || SCM_EQ(mode, SCM_SYM_PERMISSIVE)
+          || SCM_EQ(mode, SCM_SYM_STRICT_R7))) {
+        Scm_Error("reader-lexical-mode must be one of the following symbols:"
+                  " legacy, warn-legacy, permissive, strict-r7, but got %S",
+                  mode);
+    }
+    ScmObj prev_mode = Scm_ParameterRef(Scm_VM(), &readerLexicalMode);
+    Scm_ParameterSet(Scm_VM(), &readerLexicalMode, mode);
+    return prev_mode;
 }
 
-u_long Scm_ReadContextLexicalMode(ScmReadContext *ctx)
+ScmObj Scm_ReaderLexicalMode()
 {
-    return RCTX_LEXICAL_MODE(ctx);
+    return Scm_ParameterRef(Scm_VM(), &readerLexicalMode);
 }
-
 
 /*----------------------------------------------------------------
  * Error
@@ -491,7 +504,7 @@ static int skipws(ScmPort *port, ScmReadContext *ctx)
 
 static void reject_in_r7(ScmPort *port, ScmReadContext *ctx, const char *token)
 {
-    if (RCTX_LEXICAL_MODE(ctx) == SCM_READ_STRICT_R7) {
+    if (SCM_EQ(Scm_ReaderLexicalMode(), SCM_SYM_STRICT_R7)) {
         Scm_ReadError(port,
                       "lexical syntax %s isn't allowed in strict R7RS mode",
                       token);
@@ -715,7 +728,7 @@ static ScmObj read_item(ScmPort *port, ScmReadContext *ctx)
    Scm_ReadXdigitsFromString reads from char* buffer, up to buflen octets.
    The preceding backslash and a character 'x', 'u' or 'U' should already
    be read.  The character is passed to KEY.  It also receives
-   ScmReadLexicalMode.
+   ScmReaderLexicalMode.
 
    Character literal doesn't take terminating ';'.  TERMINATOR character
    indicates whether we expect terminator or not.
@@ -736,13 +749,13 @@ static ScmObj read_item(ScmPort *port, ScmReadContext *ctx)
 ScmChar Scm_ReadXdigitsFromString(const char *buf,
                                   int buflen,
                                   ScmChar key, /* x, u or U */
-                                  u_long mode, /* ScmReadLexicalMode */
+                                  ScmObj mode, /* ScmReaderLexicalMode */
                                   int terminator, /* TRUE expecting ';' */
                                   const char **nextbuf)
 {
     int legacy_fallback = FALSE;
 
-    if (key == 'x' && mode != SCM_READ_LEGACY) {
+    if (key == 'x' && !SCM_EQ(mode, SCM_SYM_LEGACY)) {
         int val = 0, i;
         int overflow = FALSE;
         for (i=0; i<buflen; i++) {
@@ -766,8 +779,8 @@ ScmChar Scm_ReadXdigitsFromString(const char *buf,
         /* Fallback to legacy syntax */
         legacy_fallback = TRUE;
     }
-    if (mode == SCM_READ_STRICT_R7) return SCM_CHAR_INVALID;
-    if (key == 'x' && mode == SCM_READ_WARN_LEGACY) {
+    if (SCM_EQ(mode, SCM_SYM_STRICT_R7)) return SCM_CHAR_INVALID;
+    if (key == 'x' && SCM_EQ(mode, SCM_SYM_WARN_LEGACY)) {
         Scm_Warn("Legacy \\x hex-escape: \\x%c%c", buf[0], buf[1]);
     }
 
@@ -787,7 +800,7 @@ ScmChar Scm_ReadXdigitsFromString(const char *buf,
 
 /* On success, parsed char and other prefetched hexdigits are added
    to BUF and returns #t.  Otherwise the prefetched string is returned. */
-ScmObj Scm_ReadXdigitsFromPort(ScmPort *port, int key, u_long mode,
+ScmObj Scm_ReadXdigitsFromPort(ScmPort *port, int key, ScmObj mode,
                                int incompletep, ScmDString *buf)
 {
     ScmDString ds;
@@ -946,10 +959,11 @@ static ScmObj read_quoted(ScmPort *port, ScmObj quoter, ScmReadContext *ctx)
    to support both legacy \xN{2} syntax and new \xN{1,} syntax,
    we read-ahead as many hexdigits as possible first, then parse it,
    and append the result to BUF, along with any unused digits. */
-static void read_string_xdigits(ScmPort *port, int key, u_long mode,
+static void read_string_xdigits(ScmPort *port, int key,
                                 int incompletep, ScmDString *buf)
 {
-    ScmObj bad = Scm_ReadXdigitsFromPort(port, key, mode, incompletep, buf);
+    ScmObj bad = Scm_ReadXdigitsFromPort(port, key, Scm_ReaderLexicalMode(),
+                                         incompletep, buf);
     if (SCM_STRINGP(bad)) {
         /* skip chars to the end of string, so that the reader will read
            after the erroneous string */
@@ -1008,17 +1022,15 @@ static ScmObj read_string(ScmPort *port, int incompletep,
             case '\\': ACCUMULATE('\\'); break;
             case '0': ACCUMULATE(0); break;
             case 'x': {
-                read_string_xdigits(port, 'x', RCTX_LEXICAL_MODE(ctx),
-                                    incompletep, &ds);
+                read_string_xdigits(port, 'x', incompletep, &ds);
                 break;
             }
             case 'u': case 'U': {
-                if (RCTX_LEXICAL_MODE(ctx) == SCM_READ_STRICT_R7) {
+                if (SCM_EQ(Scm_ReaderLexicalMode(), SCM_SYM_STRICT_R7)) {
                     Scm_ReadError(port, "\\%c in string literal isn't allowed "
                                   "in strinct-r7rs mode", c);
                 }
-                read_string_xdigits(port, c, RCTX_LEXICAL_MODE(ctx),
-                                    incompletep, &ds);
+                read_string_xdigits(port, c, incompletep, &ds);
                 break;
             }
                 /* R6RS-style line continuation handling*/
@@ -1122,7 +1134,7 @@ static ScmObj read_char(ScmPort *port, ScmReadContext *ctx)
         /* need to read word to see if it is a character name */
         name = SCM_STRING(read_word(port, c, ctx, TRUE, FALSE));
 
-        if (RCTX_LEXICAL_MODE(ctx) == SCM_READ_STRICT_R7) {
+        if (SCM_EQ(Scm_ReaderLexicalMode(), SCM_SYM_STRICT_R7)) {
             ScmChar following = Scm_GetcUnsafe(port);
             if (!char_is_delimiter(following)) {
                 Scm_Error("Character literal isn't delimited: #\\%s%C ...",
@@ -1153,7 +1165,7 @@ static ScmObj read_char(ScmPort *port, ScmReadContext *ctx)
         }
         /* handle #\uxxxx or #\uxxxxxxxx*/
         if ((cname[0] == 'u') && isxdigit(cname[1])
-            && (RCTX_LEXICAL_MODE(ctx) != SCM_READ_STRICT_R7)) {
+            && (!SCM_EQ(Scm_ReaderLexicalMode(), SCM_SYM_STRICT_R7))) {
             if (namesize >= 5 && namesize <= 9) {
                 const char *nextptr;
                 ScmChar code = Scm_ReadXdigitsFromString(cname+1,
@@ -1272,6 +1284,7 @@ static ScmObj read_escaped_symbol(ScmPort *port, ScmChar delim, int interned,
 {
     ScmDString ds;
     Scm_DStringInit(&ds);
+    ScmObj xmode = Scm_ReaderLexicalMode();
 
     for (;;) {
         int c = Scm_GetcUnsafe(port);
@@ -1284,14 +1297,13 @@ static ScmObj read_escaped_symbol(ScmPort *port, ScmChar delim, int interned,
             /* CL-style single escape */
             c = Scm_GetcUnsafe(port);
             if (c == EOF) goto err;
-            if (RCTX_LEXICAL_MODE(ctx) == SCM_READ_LEGACY) {
+            if (SCM_EQ(xmode, SCM_SYM_LEGACY)) {
                 SCM_DSTRING_PUTC(&ds, c);
             } else {
                 switch (c) {
                 case 'x': {
                     /* R7RS-style hex escape. */
-                    ScmObj bad = Scm_ReadXdigitsFromPort(port, 'x',
-                                                         RCTX_LEXICAL_MODE(ctx),
+                    ScmObj bad = Scm_ReadXdigitsFromPort(port, 'x', xmode,
                                                          FALSE, &ds);
                     if (SCM_STRINGP(bad)) {
                         Scm_ReadError(port, "invalid hex escape in a symbol literal: \\x%C", bad);
@@ -1305,7 +1317,7 @@ static ScmObj read_escaped_symbol(ScmPort *port, ScmChar delim, int interned,
                 case 'n': SCM_DSTRING_PUTC(&ds, '\n'); break;
                 case 'r': SCM_DSTRING_PUTC(&ds, '\r'); break;
                 default:
-                    if (RCTX_LEXICAL_MODE(ctx) == SCM_READ_STRICT_R7) {
+                    if (SCM_EQ(xmode, SCM_SYM_STRICT_R7)) {
                         Scm_ReadError(port, "invalid backslash-escape in a symbol literal: \\%A", SCM_MAKE_CHAR(c));
                     } else {
                         SCM_DSTRING_PUTC(&ds, c);
@@ -1673,7 +1685,7 @@ static ScmObj read_sharp_word_1(ScmPort *port, char ch, ScmReadContext *ctx)
 
 static ScmObj read_sharp_word(ScmPort *port, char ch, ScmReadContext *ctx)
 {
-    if (RCTX_LEXICAL_MODE(ctx) == SCM_READ_LEGACY) {
+    if (SCM_EQ(Scm_ReaderLexicalMode(), SCM_SYM_LEGACY)) {
         return read_sharp_word_legacy(port, ch, ctx);
     } else {
         return read_sharp_word_1(port, ch, ctx);
@@ -1706,4 +1718,6 @@ void Scm__InitRead(void)
 
     Scm_InitParameterLoc(Scm_VM(), &defaultReadContext,
                          SCM_OBJ(make_read_context(NULL)));
+    Scm_InitParameterLoc(Scm_VM(), &readerLexicalMode,
+                         SCM_OBJ(SCM_SYM_PERMISSIVE));
 }

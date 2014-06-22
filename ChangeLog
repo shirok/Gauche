@@ -1,3 +1,11 @@
+2014-06-21  Shiro Kawai  <shiro@acm.org>
+
+	* src/read.c: Split reader-lexical-mode from <read-context> and made
+	  it an individual parameter.  The mode can be changed during Scm_Read()
+	  if we encoundter #!r7rs etc., so it doesn't work to carry the info
+	  inside read-context.
+	* src/load.c, src/libio.scm: Changed accordingly.
+
 2014-06-20  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi-42.scm: Incorporated bug fixes in srfi-42 reference

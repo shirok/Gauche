@@ -48,16 +48,16 @@ SCM_EXTERN int             Scm_ReadContextLiteralImmutable(ScmReadContext *);
 SCM_EXTERN ScmReadContext *Scm_CurrentReadContext();
 SCM_EXTERN ScmReadContext *Scm_SetCurrentReadContext(ScmReadContext *ctx);
 
-enum ScmReadLexicalMode {
-    SCM_READ_PERMISSIVE,        /* allow both r7rs and legacy syntax */
-    SCM_READ_WARN_LEGACY,       /* ditto, but warn legacy syntax */
-    SCM_READ_LEGACY,            /* fully compatible  <0.9.4 */
-    SCM_READ_STRICT_R7          /* strictly r7 */
-};
-
-SCM_EXTERN u_long Scm_ReadContextLexicalMode(ScmReadContext*);
-/* returns previous settings */
-SCM_EXTERN u_long Scm_ReadContextLexicalModeSet(ScmReadContext*, u_long);
+/* Reader-lexical-mode
+    permissive
+    legacy
+    warn-legacy
+    strict-r7
+   This is kept in a parameter, so it's thread-local.
+ */
+SCM_EXTERN ScmObj Scm_ReaderLexicalMode(void);
+/* returns previous setting */
+SCM_EXTERN ScmObj Scm_SetReaderLexicalMode(ScmObj);
 
 /* An object to keep unrealized circular reference (e.g. #N=) during
  * 'read'.  It is replaced by the reference value before exitting 'read',
@@ -95,10 +95,10 @@ SCM_EXTERN void   Scm_ReadError(ScmPort *port, const char *fmt, ...);
 SCM_EXTERN ScmChar Scm_ReadXdigitsFromString(const char *buf,
                                              int buflen,
                                              ScmChar key,
-                                             u_long mode,
+                                             ScmObj mode,
                                              int terminator,
                                              const char**);
-SCM_EXTERN ScmObj  Scm_ReadXdigitsFromPort(ScmPort *port, int key, u_long mode,
+SCM_EXTERN ScmObj  Scm_ReadXdigitsFromPort(ScmPort *port, int key, ScmObj mode,
                                            int incompletep, ScmDString *buf);
 
 /*
