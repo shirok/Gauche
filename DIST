@@ -56,7 +56,7 @@ fi
 if [ "$tgz" = "yes" ]; then
   maintainer_clean
   ./DIST gen
-  ./configure --enable-threads=pthreads --enable-multibyte=utf8 -C || exit 1
+  ./configure --enable-threads=pthreads --enable-multibyte=utf8 -C --disable-dependency-tracking || exit 1
   make GOSH=gosh pre-package
   make distclean || exit 1
   rm -rf gc/libatomic_ops/autom4te.cache
