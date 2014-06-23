@@ -1,3 +1,14 @@
+2014-06-22  Shiro Kawai  <shiro@acm.org>
+
+	* ext/windows/console.stub (sys-fill-console-output-attribute)
+	  (sys-fill-console-ouptut-character, sys-flush-console-input-buffer):
+	  Added.
+	  (<win:input-record>): Made key.virtural-key-code return
+	  VirtualKeyCode, and let key.virtual-scan-code return
+	  VirtualScanCode.
+	  (sys-read-console-input): Fix.
+	  Patch from https://github.com/Hamayama.
+
 2014-06-21  Shiro Kawai  <shiro@acm.org>
 
 	* src/read.c: Split reader-lexical-mode from <read-context> and made

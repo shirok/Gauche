@@ -268,7 +268,9 @@
                             :type <boolean>)
    (key.repeat-count        :c-name "rec.Event.KeyEvent.wRepeatCount"
                             :type <int>)
-   (key.virtual-key-code    :c-name "rec.Event.KeyEvent.wVirtualScanCode"
+   (key.virtual-key-code    :c-name "rec.Event.KeyEvent.wVirtualKeyCode"
+                            :type <int>)
+   (key.virtual-scan-code   :c-name "rec.Event.KeyEvent.wVirtualScanCode"
                             :type <int>)
    (key.unicode-char        :c-name "rec.Event.KeyEvent.uChar.UnicodeChar"
                             :type <uint>)
@@ -311,7 +313,7 @@
 (define-cise-stmt peek/read-console-input
   [(_ proc)
    `(let* ([rec (make-input-record)] [cnt::DWORD 0])
-      (check (,proc (Scm_WinHandle h '#t)
+      (check (,proc (Scm_WinHandle h '#f)
                     (& (-> (SCM_WIN_INPUT_RECORD rec) rec))
                     1 (& cnt)))
       (if (== cnt 0) (result SCM_NIL) (result (list rec))))])
@@ -408,6 +410,32 @@
                                         (SCM_STRING_BODY_LENGTH b)
                                         c (& nwritten)))
     (result nwritten)))
+
+(define-cproc sys-fill-console-output-character (h c::<char> len::<ulong>
+                                                   x::<short> y::<short>)
+  ::<int>
+  (let* ([ch::ScmChar (Scm_CharToUcs c)]
+         [coord::COORD] [nwritten::DWORD 0])
+    (= (ref coord X) x (ref coord Y) y)
+    (check (FillConsoleOutputCharacter (Scm_WinHandle h '#f)
+                                        (cast TCHAR ch)
+                                        len
+                                        coord (& nwritten)))
+    (result nwritten)))
+
+(define-cproc sys-fill-console-output-attribute (h attr::<ushort> len::<ulong>
+                                                   x::<short> y::<short>)
+  ::<int>
+  (let* ([c::COORD] [nwritten::DWORD 0])
+    (= (ref c X) x (ref c Y) y)
+    (check (FillConsoleOutputAttribute (Scm_WinHandle h '#f)
+                                        attr
+                                        len
+                                        c (& nwritten)))
+    (result nwritten)))
+
+(define-cproc sys-flush-console-input-buffer (h) ::<void>
+  (check (FlushConsoleInputBuffer (Scm_WinHandle h '#f))))
 
 ;;
 ;; Console Title
