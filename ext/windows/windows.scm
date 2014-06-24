@@ -88,6 +88,9 @@
    sys-set-console-window-info
    sys-write-console
    sys-write-console-output-character
+   sys-fill-console-output-character
+   sys-fill-console-output-attribute
+   sys-flush-console-input-buffer
    sys-get-console-title
    STD_INPUT_HANDLE STD_OUTPUT_HANDLE STD_ERROR_HANDLE
    sys-get-std-handle sys-set-std-handle
