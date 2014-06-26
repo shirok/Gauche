@@ -1,3 +1,10 @@
+2014-06-25  Shiro Kawai  <shiro@acm.org>
+
+	* src/read.c (read_internal): In strict-r7 reader mode, read :foo
+	  as a symbol.  This would be unnecessary once we make keywords
+	  a subtype of symbols, but for now, it would help using third-party
+	  r7rs libraries.
+
 2014-06-22  Shiro Kawai  <shiro@acm.org>
 
 	* ext/windows/console.stub (sys-fill-console-output-attribute)

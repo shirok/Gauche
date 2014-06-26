@@ -630,7 +630,12 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
     case '\'': return read_quoted(port, SCM_SYM_QUOTE, ctx);
     case '`': return read_quoted(port, SCM_SYM_QUASIQUOTE, ctx);
     case ':':
-        return read_keyword(port, ctx);
+        /* Would be removed once we make keywords a subtype of symbols. */
+        if (SCM_EQ(Scm_ReaderLexicalMode(), SCM_SYM_STRICT_R7)) {
+            return read_symbol(port, c, ctx);
+        } else {
+            return read_keyword(port, ctx);
+        }
     case ',':
         {
             int c1 = Scm_GetcUnsafe(port);
