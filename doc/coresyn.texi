@@ -24,75 +24,41 @@
 @c NODE 字句構造
 
 @c EN
-Gauche extends R5RS Scheme parser in some ways:
+Gauche extends R7RS Scheme lexical parser in some ways.
+Besides, because of historical reasons, a few of the default
+lexical syntax may conflict R7RS specification.
+You can set a reader mode to make it R7RS compliant.
 @c JP
-GaucheはR5RS Schemeのパーザをいくつかの点で拡張しています。
+GaucheはR7RS Schemeのパーザをいくつかの点で拡張しています。
+また、歴史的経緯から、デフォルトの字句構文の中に、R7RSの仕様と相反するものが
+いくつかあります。リーダのモードを設定することで、
+R7RS互換にすることもできます。
 @c COMMON
 
 @table @emph
 @c EN
-@item Nested block comments (SRFI-30)
-A text surrounded by '@code{#|}' and '@code{|#}' becomes a comment.
-It can be nested.
-@c JP
-@item ネスト可能なブロックコメント (SRFI-30)
-'@code{#|}' と '@code{|#}' で囲まれたテキストはコメントになります。
-ネスト可能です。
-@c COMMON
+@item Hash-bang directives 
+Tokens beginning with @code{#!} may have special meanings to
+the reader.  R7RS defines two of such directives---@code{#!fold-case}
+and @code{#!no-fold-case}, which switches whether symbols
+are read in case-folding or non-case-folding mode, respectively.
 
-@c EN
-@item Numeric literals
-Either integral part or fraction part of inexact real numbers can be omitted
-if it is zero, i.e. @code{30.}, @code{.25}, @code{-.4} are read as
-real numbers.
-The number reader recognizes '@code{#}' as insignificant digits.
-Complex numbers can be written both in the rectangular format
-(e.g. @code{1+0.3i}) and in the polar format (e.g. 3.0@@1.57).
-Inexact real numbers include
-the positive infinity, the negative infinity, and NaN,
-which are represented as @code{+inf.0}, @code{-inf.0} and @code{+nan.0},
-respectively.  (@code{-nan.0} is also read as NaN.)
-@c JP
-@item 数値リテラル
-不正確な実数の整数部または小数部のいずれかが0の場合、それを省略することが
-できます。例：@code{30.}, @code{.25}, @code{-.4}。
-数値のリーダは、パディングの'@code{#}'を認識します。
-複素数表記は直交座標形 (例：@code{1+0.3i}) でも極座標形 (例：3.0@@1.57) でも
-認識されます。
-非正確な実数は、正の無限大、負の無限大、非数(NaN)を含み、
-それらはそれぞれ@code{+inf.0}、@code{-inf.0}、および@code{+nan.0}と
-表記されます。(@code{-nan.0}も非数(NaN)として読まれます)。
-@c COMMON
+Gauche recognizes some other directives:
 
-@c EN
-@item Symbol names
-Symbol names are case sensitive by default (@xref{Case-sensitivity}).
-Symbol name can begin with digits, '@code{+}' or '@code{-}', as long as
-the entire token doesn't consist valid number syntax.
-Other weird characters can be included in a symbol name by surrounding
-it with '|', e.g. '@code{|this is a symbol|}'.
-@xref{Symbols}, for details.
-@c JP
-@item シンボル名
-シンボル名はデフォルトで大文字小文字を区別します (@ref{Case-sensitivity}参照)。
-数字や'@code{+}', '@code{-}' で始まるシンボル名も、
-トークンが有効な数値リテラルを構成しない限り許されます。
-また、他の変な文字も '|' でシンボルを囲むことによってシンボル名に含めることが
-できます (例：'@code{|this is a symbol|}')。
-@ref{Symbols}も参照して下さい。
-@c COMMON
+@table @code
+@item r7rs
+Sets the reader to @code{strict-r7} mode.
+@item gauche-legacy
+Sets the reader to @code{legacy} mode.
+@end table
 
-@c EN
-@item Character literal by character code
-Character literals can be written using its code,
-by @code{#\x@var{NN}} (Gauche internal code) or @code{#\u@var{NN}} (Unicode).
-@xref{Characters}, for details.
+If Gauche encounters a hash-bang directive that's not recognized,
+the reader just skips it, with prining a warning message.
+
+As a special case,
+if a file begins with @code{#!}, Gauche ignores the entire first line.
+This behavior is defined in SRFI-22, in order to support Unix scripts.
 @c JP
-@item 文字コードによる文字リテラル
-文字リテラルを文字コードにより表記することができます。
-Gauche内部コードを使う @code{#\x@var{NN}} と、
-Unicodeを使う @code{#\u@var{NN}}という表記があります。
-@ref{Characters}を参照して下さい。
 @c COMMON
 
 @c EN
@@ -146,6 +112,62 @@ R7RSではこの構文を採用せず、@code{[]}は言語拡張用に取って�
 種類の括弧を閉じるかに応じて自動的に@code{]}か@code{)}を選んで挿入してくれる
 ものがあります (EmacsのQuackなど)。この記法を使うときは
 そういったモードを活用すると良いでしょう。
+@c COMMON
+
+@c EN
+@item Symbol names
+Symbol names are case sensitive by default (@xref{Case-sensitivity}).
+Symbol name can begin with digits, '@code{+}' or '@code{-}', as long as
+the entire token doesn't consist valid number syntax.
+Other weird characters can be included in a symbol name by surrounding
+it with '|', e.g. '@code{|this is a symbol|}'.
+@xref{Symbols}, for details.
+@c JP
+@item シンボル名
+シンボル名はデフォルトで大文字小文字を区別します (@ref{Case-sensitivity}参照)。
+数字や'@code{+}', '@code{-}' で始まるシンボル名も、
+トークンが有効な数値リテラルを構成しない限り許されます。
+また、他の変な文字も '|' でシンボルを囲むことによってシンボル名に含めることが
+できます (例：'@code{|this is a symbol|}')。
+@ref{Symbols}も参照して下さい。
+@c COMMON
+
+@c EN
+@item Numeric literals
+Either integral part or fraction part of inexact real numbers can be omitted
+if it is zero, i.e. @code{30.}, @code{.25}, @code{-.4} are read as
+real numbers.
+The number reader recognizes '@code{#}' as insignificant digits.
+Complex numbers can be written both in the rectangular format
+(e.g. @code{1+0.3i}) and in the polar format (e.g. 3.0@@1.57).
+Inexact real numbers include
+the positive infinity, the negative infinity, and NaN,
+which are represented as @code{+inf.0}, @code{-inf.0} and @code{+nan.0},
+respectively.  (@code{-nan.0} is also read as NaN.)
+@c JP
+@item 数値リテラル
+不正確な実数の整数部または小数部のいずれかが0の場合、それを省略することが
+できます。例：@code{30.}, @code{.25}, @code{-.4}。
+数値のリーダは、パディングの'@code{#}'を認識します。
+複素数表記は直交座標形 (例：@code{1+0.3i}) でも極座標形 (例：3.0@@1.57) でも
+認識されます。
+非正確な実数は、正の無限大、負の無限大、非数(NaN)を含み、
+それらはそれぞれ@code{+inf.0}、@code{-inf.0}、および@code{+nan.0}と
+表記されます。(@code{-nan.0}も非数(NaN)として読まれます)。
+@c COMMON
+
+
+@c EN
+@item Character literal by character code
+Character literals can be written using its code,
+by @code{#\x@var{NN}} (Gauche internal code) or @code{#\u@var{NN}} (Unicode).
+@xref{Characters}, for details.
+@c JP
+@item 文字コードによる文字リテラル
+文字リテラルを文字コードにより表記することができます。
+Gauche内部コードを使う @code{#\x@var{NN}} と、
+Unicodeを使う @code{#\u@var{NN}}という表記があります。
+@ref{Characters}を参照して下さい。
 @c COMMON
 
 @c EN
