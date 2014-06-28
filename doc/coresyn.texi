@@ -43,21 +43,7 @@ the reader.  R7RS defines two of such directives---@code{#!fold-case}
 and @code{#!no-fold-case}, which switches whether symbols
 are read in case-folding or non-case-folding mode, respectively.
 
-Gauche recognizes some other directives:
-
-@table @code
-@item r7rs
-Sets the reader to @code{strict-r7} mode.
-@item gauche-legacy
-Sets the reader to @code{legacy} mode.
-@end table
-
-If Gauche encounters a hash-bang directive that's not recognized,
-the reader just skips it, with prining a warning message.
-
-As a special case,
-if a file begins with @code{#!}, Gauche ignores the entire first line.
-This behavior is defined in SRFI-22, in order to support Unix scripts.
+See the @emph{Hash-bang token} section below for the details.
 @c JP
 @c COMMON
 
@@ -98,6 +84,8 @@ Gaucheは、R6RSの@code{[]}を@code{()}と同様に扱う構文規則を採用�
 It is purely optional, so you don't need to use them if you don't like them.
 R7RS doesn't adopt this syntax and leaves @code{[]} for extensions,
 so it is safe to stick to @code{()} in portable R7RS programs.
+(If the reader is in @code{strict-r7} mode, an error is signalled
+when @code{[]} is used.)
 
 Scheme-specific modes of some editors (e.g. Quack on Emacs) allows
 you to type just @code{)} and inserts either @code{]} or @code{)}
@@ -107,6 +95,8 @@ using such modes if you use this convention.
 この記法は、必ず従わなければいけないというものではありません。
 R7RSではこの構文を採用せず、@code{[]}は言語拡張用に取ってあるので、
 ポータブルなR7RSプログラムを書く場合は@code{()}だけを使うのが良いでしょう。
+(リーダが@code{strict-r7}モードの時は、@code{[]}が使われていたら
+エラーが通知されます)
 
 エディタのSchemeモードの中には、@code{)}をタイプするとそれがどちらの
 種類の括弧を閉じるかに応じて自動的に@code{]}か@code{)}を選んで挿入してくれる
@@ -190,11 +180,11 @@ The table below lists sharp-syntaxes.
 @multitable {aaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}
 @item @code{#!}
 @c EN
- @tab [R6RS][SRFI-22] It is either a beginning of an interpreter line
+ @tab [R6RS][R7RS][SRFI-22] It is either a beginning of an interpreter line
       (shebang) of a script, or a special token that affects the mode
       of the reader.  See `hash-bang token' section below.
 @c JP
- @tab [R6RS][SRFI-22] これは、スクリプトのインタプリタ指定行(shebang)の
+ @tab [R6RS][R7RS][SRFI-22] これは、スクリプトのインタプリタ指定行(shebang)の
       開始を示すか、リーダのモードに影響を与える特別なトークンとして読まれます。
       下の`hash-bang token'の節を参照してください。
 @c COMMON
@@ -498,16 +488,17 @@ it keeps reading on.
 @c COMMON
 @item #!r7rs
 @c EN
-Make the reader complies R7RS.
+Make the reader @code{strict-r7} mode, that complies R7RS.
 @c JP
-リーダをR7RSに準拠したモードにします。
+リーダをR7RSに準拠した@code{strict-r7}モードにします。
 @c COMMON
 @c TODO: Describe concrete details
 @item #!gauche-legacy
 @c EN
-Make the reader compatible to Gauche 0.9.3 and before.
+Make the reader @code{legacy} mode, that is
+compatible to Gauche 0.9.3 and before.
 @c JP
-リーダをGauche 0.9.3およびそれ以前のものと互換にします。
+リーダをGauche 0.9.3およびそれ以前のものと互換な@code{legacy}モードにします。
 @c COMMON
 @c TODO: Describe concrete details
 @end table
