@@ -43,13 +43,15 @@ R7RS requires names starting with colon to be read as a symbol.
 In the current version of Gauche, keywords aren't symbols; they are
 of disjoint types.  R7RS code that's using symbols starting with colon
 needs to be adjusted (most conveniently, using vertical-bar would make
-the code both work in R7RS and Gauche, e.g. @code{|:foo|}.)
+the code both work in R7RS and Gauche, e.g. @code{|:foo|}.
+Another way is to set the reader to @code{strict-r7} mode,
+by @code{#!r7rs} directive.)
 
 We'll make keywords subtype of symbols in near future,
 to fully conform R7RS while maintaining the backward compatibility
 as much as possible.  @xref{Keywords}, for what you need to know
 about writing portable code using keywords.
-@c @c JP
+@c JP
 Gaucheには、コロンで始まる名前(例:@code{:key})を持つ、キーワードオブジェクトがあります。
 キーワードはそれ自身に評価され、キーワード引数を渡すときにいつも使われます
 (@ref{Making Procedures}参照)。
@@ -58,13 +60,15 @@ R7RSではコロンで始まる名前はシンボルとして読まれること�
 現在のGaucheでは、キーワードはシンボルではなく、それぞれ独立した型に属します。
 コロンで始まるシンボルを使っているR7RSコードは修正が必要になるかもしれません
 (一番簡単な方法は、コロンで始まるシンボルを@code{|:foo|}のように縦棒でエスケープすること
-です。これはR7RSでもGaucheでもシンボルとして読まれます)。
+です。これはR7RSでもGaucheでもシンボルとして読まれます。
+あるいは、@code{#!r7rs}ディレクティブを使ってリーダを
+@code{strict-r7}モードにするという方法もあります。)
 
 近いうちに、キーワードをシンボルのサブタイプとすることで、
 できるだけ後方互換性を保ちながらR7RSに準拠したふるまいにする予定です。
 キーワードを使ってポータブルなコードを書くために知っておくべきことについては、
 @ref{Keywords}を参照してください。
-@c @c COMMON
+@c COMMON
 
 @item
 @c EN
