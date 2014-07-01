@@ -42,6 +42,7 @@ while [ $# -gt 0 ]; do
     rpmfiles) rpmfiles=yes; shift;;
     mingw) mingw=yes; shift;;
     winvc) winvc=yes; shift;;
+    sign) sign=yes; shift;;
     *) echo "DIST [doc][docs][tgz][test][testclean][rpm][rpmfiles][mingw][winvc]"; exit 0;;
   esac
 done
@@ -67,6 +68,10 @@ if [ "$tgz" = "yes" ]; then
   tar cvfX - DIST_EXCLUDE_X . | (cd ../Gauche-$VERSION; tar xf -)
   (cd ..; tar cvf - Gauche-$VERSION | gzip -9 > Gauche-$VERSION.tgz)
   rm -rf ../Gauche-$VERSION
+
+  if [ "$sign" = "yes" ]; then
+    gpg --detach-sign --armor -o ../Gauche-$VERSION.tgz.asc ../Gauche-$VERSION.tgz
+  fi
 fi
 
 if [ "$doc" = "yes" ]; then
