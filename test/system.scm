@@ -611,26 +611,34 @@
   ;; current directory.
   (when (file-exists? "./gosh")
     (cmd-rmrf "test.out")
+    ;; The child process.  Gets the expected ppid in the first arg.
+    ;; If :detached is true, we expect ppid to be 1.  However, the
+    ;; immediate parent may take time to exit, so we loop to synchronize.
     (with-output-to-file "test.out"
       (lambda ()
-        (write '(begin
-                  (sys-nanosleep #e2e8)
-                  (write (list (sys-getpid) (sys-getppid) (sys-getpgrp)))))))
+        (write '(define (main args)
+                  (let1 expected-ppid (x->integer (cadr args))
+                    (let loop ()
+                      (sys-nanosleep #e2e8)
+                      (if (eqv? (sys-getppid) expected-ppid)
+                        (write (list (sys-getpid) (sys-getpgrp)))
+                        (loop))))))))
     (receive (in out) (sys-pipe :buffering :none)
-      (define (run-and-read detached)
+      (define (run-and-read ppid detached)
         (let1 pid (sys-fork-and-exec "./gosh"
-                                     `("./gosh" "-ftest" "./test.out")
+                                     `("./gosh" "-ftest" "./test.out"
+                                       ,(x->string ppid))
                                      :iomap `((1 . ,out))
                                      :detached detached)
           (begin0 (read in) (sys-waitpid pid))))
       (test* "fork, exec and detached process (not detached)"
-             `(parent ,(sys-getpid) pgrp ,(sys-getpgrp))
-             (let1 r (run-and-read #f)
-               `(parent ,(cadr r) pgrp ,(caddr r))))
+             #f
+             (let1 r (run-and-read (sys-getpid) #f)
+               (= (car r) (cadr r))))
       (test* "fork, exec and detached process (detached)"
-             `(parent 1 pgrp #t)
-             (let1 r (run-and-read #t)
-               `(parent ,(cadr r) pgrp ,(= (car r) (caddr r)))))
+             #t
+             (let1 r (run-and-read 1 #t)
+               (= (car r) (cadr r))))
       ))
   (cmd-rmrf "test.out")
 
