@@ -264,8 +264,8 @@ enum ScmPortICPolicy {
 #define SCM_PORT_OWNER_P(obj)   (SCM_PORT(obj)->ownerp)
 #define SCM_PORT_ERROR_OCCURRED_P(obj) (SCM_PORT(obj)->error)
 
-#define SCM_PORT_BUFFER_DATA(obj)  (SCM_PORT(obj)->buf.data)
-#define SCM_PORT_VIRTUAL_DATA(obj) (SCM_PORT(obj)->vt.data)
+#define SCM_PORT_BUFFER_DATA(obj)  (SCM_PORT(obj)->src.buf.data)
+#define SCM_PORT_VIRTUAL_DATA(obj) (SCM_PORT(obj)->src.vt.data)
 
 #define SCM_IPORTP(obj)  (SCM_PORTP(obj)&&(SCM_PORT_DIR(obj)&SCM_PORT_INPUT))
 #define SCM_OPORTP(obj)  (SCM_PORTP(obj)&&(SCM_PORT_DIR(obj)&SCM_PORT_OUTPUT))
