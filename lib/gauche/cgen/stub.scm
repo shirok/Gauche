@@ -1181,7 +1181,7 @@
         (let loop ([body body])
           (match body
             [() #f]
-            [([? string?] . r) (push-stmt! method stmt) (loop r)]
+            [([? string? stmt] . r) (push-stmt! method stmt) (loop r)]
             [(('c-generic-name gen-name) . r)
              (unless (string? gen-name)
                (error <cgen-stub-error>
