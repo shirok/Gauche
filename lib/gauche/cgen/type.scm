@@ -91,7 +91,7 @@
 ;;   <uint32>     <integer>    uint
 ;;   <ushort>     <integer>    ushort
 ;;   <ulong>      <integer>    ulong
-;;   <float>      <real>       float       Unboxed value casted to float
+;;   <float>      <real>       float       Unboxed value cast to float
 ;;   <double>     <real>       double      Alias of <real>
 ;;
 ;;   <boolean>    <boolean>    int         Boolean value
