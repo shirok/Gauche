@@ -26,10 +26,12 @@ Gaucheの動作を正確に理解する助けになると思います。
 
 @c EN
 Gauche conforms "Revised^7 Report of Algorithmic Language Scheme,"
-including optional syntax and procedures, except the following features.
+(R7RS)
+including optional syntax and procedures, with a few exceptions
+explained below.
 @c JP
-Gaucheは、以下に挙げる点を除き、オプショナルな構文や手続きも含め
-"Revised^7 Report of Algorithmic Language Scheme" に準拠しています。
+Gaucheは、後で説明する少しの例外を除き、オプショナルな構文や手続きも含め
+"Revised^7 Report of Algorithmic Language Scheme" (R7RS) に準拠しています。
 @c COMMON
 
 @itemize @bullet
@@ -43,9 +45,7 @@ R7RS requires names starting with colon to be read as a symbol.
 In the current version of Gauche, keywords aren't symbols; they are
 of disjoint types.  R7RS code that's using symbols starting with colon
 needs to be adjusted (most conveniently, using vertical-bar would make
-the code both work in R7RS and Gauche, e.g. @code{|:foo|}.
-Another way is to set the reader to @code{strict-r7} mode,
-by @code{#!r7rs} directive.)
+the code both work in R7RS and Gauche, e.g. @code{|:foo|}.)
 
 We'll make keywords subtype of symbols in near future,
 to fully conform R7RS while maintaining the backward compatibility
@@ -60,9 +60,7 @@ R7RSではコロンで始まる名前はシンボルとして読まれること�
 現在のGaucheでは、キーワードはシンボルではなく、それぞれ独立した型に属します。
 コロンで始まるシンボルを使っているR7RSコードは修正が必要になるかもしれません
 (一番簡単な方法は、コロンで始まるシンボルを@code{|:foo|}のように縦棒でエスケープすること
-です。これはR7RSでもGaucheでもシンボルとして読まれます。
-あるいは、@code{#!r7rs}ディレクティブを使ってリーダを
-@code{strict-r7}モードにするという方法もあります。)
+です。これはR7RSでもGaucheでもシンボルとして読まれます。)
 
 近いうちに、キーワードをシンボルのサブタイプとすることで、
 できるだけ後方互換性を保ちながらR7RSに準拠したふるまいにする予定です。
@@ -89,6 +87,23 @@ but rationals are only exact, and complex numbers are always inexact.
 有理数は正確な表現のみで、また複素数は不正確な表現のみを持ちます。
 @c COMMON
 @end itemize
+
+@c EN
+Note that, since Gauche predates R7RS, most existing Gauche source
+code doesn't follow the R7RS program/library structure.  Gauche can
+read both traditional Gauche modules/scripts and R7RS programs/libraries
+seamlessly.
+@xref{Library modules - R7RS integration}, for the details of how R7RS
+is integrated into Gauche.
+@c JP
+GaucheはR7RS以前から開発されているため、既存のGaucheソースコードの多くはR7RSの
+プログラムやライブラリの構造に従っていないことに注意してください。
+Gaucheは、伝統的なGaucheのモジュール形式やスクリプトも、R7RS形式のプログラムや
+ライブラリも、両方解釈することができます。
+R7RSがどのようにGaucheに統合されているかについては、
+@ref{Library modules - R7RS integration}を参照してください。
+@c COMMON
+
 
 @c EN
 Gauche also supports the following SRFIs (Scheme Request for Implementation).

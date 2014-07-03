@@ -25,8 +25,14 @@
 
 @c EN
 Gauche extends R7RS Scheme lexical parser in some ways.
+
+
+
 Besides, because of historical reasons, a few of the default
 lexical syntax may conflict R7RS specification.
+
+
+
 You can set a reader mode to make it R7RS compliant.
 @c JP
 GaucheはR7RS Schemeのパーザをいくつかの点で拡張しています。
