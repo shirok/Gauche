@@ -343,6 +343,15 @@ The following categories will appear in this manual:
 @c JP
 @tab リーダによって解釈される構文要素
 @c COMMON
+@item Parameter
+@c EN
+@tab A parameter, which is a procedure that follows a certain
+protocol and used to manipulate the dynamic environment.  
+@xref{Parameters}, for the details.
+@c JP
+パラメータ。特定のプロトコルに従う手続きで、動的環境の操作に使われるもの。
+詳しくは@ref{Parameters}参照。
+@c COMMON
 @end multitable
 
 @c EN
