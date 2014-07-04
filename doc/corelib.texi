@@ -14780,11 +14780,12 @@ an input port, and when omitted, the current input port is assumed.
 
 @menu
 * Reading data::                
+* Reader lexical mode::         
 * Read-time constructor::       
 * Input utility functions::     
 @end menu
 
-@node Reading data, Read-time constructor, Input, Input
+@node Reading data, Reader lexical mode, Input, Input
 @subsubsection Reading data
 @c NODE データの読み込み
 
@@ -15045,7 +15046,93 @@ If one byte (octet) is ready to be read from @var{port}, returns
 @code{#t}.
 @end defun
 
-@node Read-time constructor, Input utility functions, Reading data, Input
+@node Reader lexical mode, Read-time constructor, Reading data, Input
+@subsubsection Reader lexical mode
+@c NODE リーダー字句モード
+
+@deffn {Parameter} reader-lexical-mode
+Get/set the reader compatibility mode.  Changing this parameter
+switches behavior of the reader concerning some corner cases
+of the lexical syntax, where legacy Gauche syntax and R7RS syntax
+aren't compatible.
+
+In general, you don't need to change this parameter directly.
+The lexical syntax matters at the read-time, while changing this parameter
+happens at the execution-time; unless you know the exact timing when
+each phase occurs, you might not get what you want.
+
+The hash-bang directive @code{#!gauche-legacy} and @code{#!r7rs}
+indirectly affects this parameter; the first one sets the reader
+mode to @code{legacy}, and the second one to @code{strict-r7}.
+
+The command-line argument @code{-fwarn-legacy} sets the default
+reader mode to @code{warn-legacy}.
+
+Change to this parameter is delimited within @code{load};
+once @code{load} is done, the value of this parameter is reset
+to the value when @code{load} is started.
+
+The parameter takes one of the following symbols as a value.
+
+@table @code
+@item permissive
+This is the default mode.  It tries to find a reasonable
+compromise between two syntax.
+
+In string literals, hex escape sequence
+is first interpreted as R7RS lexical syntax.  If the syntax doesn't
+conform R7RS hex escape, it is interpreted as legacy Gauche hex escape
+syntax.  For example, @code{"\x30;a"} is read as @code{"0a"}, for
+the hex escape sequence including the terminating semicolon is read
+as R7RS hex escape sequence.  It also reads @code{"\x30a"} as
+@code{"0a"}, for the legacy Gauche hex escape always takes two hexadecimal
+digits without the terminator.  With this mode, you can use R7RS
+hex escape syntax for the new code, and yet almost all legacy Gauche
+code can be read without a problem.
+However, if the legacy code has a semicolon followed by hex escape,
+it is interpreted as R7RS syntax and the incompatibility arises.
+
+Identifiers beginning with a colon are read as keywords.  For the
+strict R7RS behavior, you need to use vertical-bar escaping
+(e.g. @code{|:foo|}) to have symbols beginning with colon.
+Note that this incompatibility will be addressed in the future version
+of Gauche, when keywords become a subtype of symbols.
+
+@item strict-r7
+Strict R7RS compatible mode.
+When the reader encounters the hash-bang directive @code{#!r7rs},
+the rest of file is read with this mode.
+
+In this mode, Gauche's extended lexical syntax will raise an error.
+Identifiers beginning with a colon are read as symbols.
+
+Use this mode to read R7RS code with maximum compatibility.
+
+@item legacy
+The reader works as the legacy Gauche (version 0.9.3.3 and before).
+When the reader encounters the hash-bang directive @code{#!gauche-legacy},
+the rest of file is read with this mode.
+
+This only matters when you want to read two-digit hex escape
+followed by semicolon as a character plus a semicolon, e.g.
+@code{"\x30;a"} as @code{"0;a"} instead of @code{"0a"}.
+We expect such a sequence rarely appears in the code,
+but if you dump a data in a string literal format, you may
+have such sequence (especially in incomplete string literals).
+
+@item warn-legacy
+The reader works as the @code{permissive} mode,
+but warns if it reads legacy hex-escape syntax.
+This mode is default when @code{-fwarn-legacy} command-line
+argument is given to @code{gosh}.
+
+This is useful to check if you have any incompatible escape sequence
+in your code.
+@end table
+@end deffn
+
+
+@node Read-time constructor, Input utility functions, Reader lexical mode, Input
 @subsubsection Read-time constructor
 @c NODE 読み込み時コンストラクタ
 

@@ -512,7 +512,7 @@
     (result (Scm_DStringGet (& ds) SCM_STRING_INCOMPLETE))))
 
 ;; Reader parameters
-(define-cproc read-lexical-mode (:optional k)
+(define-cproc reader-lexical-mode (:optional k)
   (if (SCM_UNBOUNDP k)
     (result (Scm_ReaderLexicalMode))
     (result (Scm_SetReaderLexicalMode k))))
@@ -812,10 +812,10 @@
     (values)))
 
 (define-reader-directive 'gauche-legacy
-  (^[sym port ctx] (read-lexical-mode 'legacy) (values)))
+  (^[sym port ctx] (reader-lexical-mode 'legacy) (values)))
 
 (define-reader-directive 'r7rs
-  (^[sym port ctx] (read-lexical-mode 'strict-r7) (values)))
+  (^[sym port ctx] (reader-lexical-mode 'strict-r7) (values)))
 
 ;; HIGHLY EXPERIMENTAL
 (define-reader-directive 'c-expr

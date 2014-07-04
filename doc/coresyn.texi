@@ -495,18 +495,21 @@ it keeps reading on.
 @item #!r7rs
 @c EN
 Make the reader @code{strict-r7} mode, that complies R7RS.
+@xref{Reader lexical mode}, for the details.
 @c JP
 リーダをR7RSに準拠した@code{strict-r7}モードにします。
+詳細は@ref{Reader lexical mode}を参照してください。
 @c COMMON
 @c TODO: Describe concrete details
 @item #!gauche-legacy
 @c EN
 Make the reader @code{legacy} mode, that is
 compatible to Gauche 0.9.3 and before.
+@xref{Reader lexical mode}, for the details.
 @c JP
 リーダをGauche 0.9.3およびそれ以前のものと互換な@code{legacy}モードにします。
+詳細は@ref{Reader lexical mode}を参照してください。
 @c COMMON
-@c TODO: Describe concrete details
 @end table
 
 @c ----------------------------------------------------------------------

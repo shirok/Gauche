@@ -197,7 +197,6 @@
     ;; modules addition (move this up on 1.0 release)
     (keyword                   SCM_SYM_KEYWORD)
     ;; reader addition (move this up on 1.0 release)
-    (read-lexical-mode         SCM_SYM_READ_LEXICAL_MODE)
     (legacy                    SCM_SYM_LEGACY)
     (permissive                SCM_SYM_PERMISSIVE)
     (warn-legacy               SCM_SYM_WARN_LEGACY)

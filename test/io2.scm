@@ -318,7 +318,7 @@
   (test* (format "reader lexical mode ~s: ~s" mode input) expect
          (let1 old-mode #f
            (dynamic-wind
-             (^[] (set! old-mode (read-lexical-mode mode)))
+             (^[] (set! old-mode (reader-lexical-mode mode)))
              (^[] (guard (e [else 'error])
                     (let* ([warn-port (open-output-string)]
                            [r (with-error-to-port warn-port
@@ -327,7 +327,7 @@
                                 [#/^WARNING/ () 'warn]
                                 [else #f])])
                       (if w (list r w) r))))
-             (^[] (read-lexical-mode old-mode))))))
+             (^[] (reader-lexical-mode old-mode))))))
 
 ;; data ::= ((input expect ...) ...)
 (define (test-reader-lexical-modes data)
@@ -345,18 +345,18 @@
 (test-reader-lexical-modes
  '(("\"a\\x0030;zz\"" "a\030;zz" "a0zz" "a0zz" "a0zz")))
 
-;; Load and read-lexical-mode
+;; Load and reader-lexical-mode
 (sys-unlink "test.o")
 (sys-unlink "test1.o")
 
 (with-output-to-file "test.o"
   (lambda ()
-    (write '(read-lexical-mode 'legacy))))
+    (write '(reader-lexical-mode 'legacy))))
 
 (test* "load restores read lexical mode" #t
-       (let1 x (read-lexical-mode)
+       (let1 x (reader-lexical-mode)
          (load "./test.o")
-         (eq? (read-lexical-mode) x)))
+         (eq? (reader-lexical-mode) x)))
 
 (define (test-reader-lexical-mode-directive directive literal)
   (with-output-to-file "test.o"
