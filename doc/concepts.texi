@@ -44,8 +44,10 @@ passing so-called keyword arguments (@xref{Making Procedures}).
 R7RS requires names starting with colon to be read as a symbol.
 In the current version of Gauche, keywords aren't symbols; they are
 of disjoint types.  R7RS code that's using symbols starting with colon
-needs to be adjusted (most conveniently, using vertical-bar would make
-the code both work in R7RS and Gauche, e.g. @code{|:foo|}.)
+needs to be adjusted.  (Most conveniently, using vertical-bar would make
+the code both work in R7RS and Gauche, e.g. @code{|:foo|}.  The reader
+directive @code{#!r7rs} also makes @code{:foo} to be read as a symbol,
+instead of a keyword.)
 
 We'll make keywords subtype of symbols in near future,
 to fully conform R7RS while maintaining the backward compatibility
@@ -60,7 +62,9 @@ R7RSではコロンで始まる名前はシンボルとして読まれること�
 現在のGaucheでは、キーワードはシンボルではなく、それぞれ独立した型に属します。
 コロンで始まるシンボルを使っているR7RSコードは修正が必要になるかもしれません
 (一番簡単な方法は、コロンで始まるシンボルを@code{|:foo|}のように縦棒でエスケープすること
-です。これはR7RSでもGaucheでもシンボルとして読まれます。)
+です。これはR7RSでもGaucheでもシンボルとして読まれます。
+また、リーダーディレクティブ@code{#!r7rs}によっても、@code{:foo}をキーワードでなく
+シンボルとして読ませることができます。)
 
 近いうちに、キーワードをシンボルのサブタイプとすることで、
 できるだけ後方互換性を保ちながらR7RSに準拠したふるまいにする予定です。
@@ -612,7 +616,8 @@ using index access at all.
 
 @c EN
 You can choose @emph{internal} encoding scheme at the time of compiling
-Gauche.   At runtime, a procedure @code{gauche-character-encoding}
+Gauche.
+At runtime, a procedure @code{gauche-character-encoding}
 can be used to query the internal encoding.  At compile time,
 you can use a feature identifier to check the internal encoding.
 (@xref{Platform-dependent features}.)
@@ -709,20 +714,6 @@ literal regular expressions, and so on.
 @c COMMON
 
 @c EN
-So far, Gauche treats any characters other than @code{us-ascii}
-as symbol constituent characters.  Unicode defines more than dozen
-"space" characters, though, and they will be treated as whitespace
-characters in future.  So it's better to avoid those characters
-(except in the strings, regexps and characters) for the time being.
-@c JP
-いまのところ、Gaucheは@code{us-ascii}以外の文字を全て、シンボルを
-構成する文字として扱います。但し、Unicodeは十数個の「空白」文字を定義
-しており、将来はそれらの文字がプログラム上も空白として扱われるように
-なるでしょう。従って現在のところはそれらの文字の使用は
-(文字列、正規表現、文字以外の箇所では)避けておくのが良いでしょう。
-@c COMMON
-
-@c EN
 By default, Gauche assumes a Scheme program is written in
 its internal character encoding.   It is fine as far as you're writing
 scripts to use your own environment, but it becomes a problem if
@@ -802,86 +793,67 @@ this feature.
 
 @c EN
 Historically, most Lisp-family languages are case-insensitive
-for symbols.  Scheme is no exception and R5RS defines symbols are
-read in case-insensitive way.  (Note that symbols are case-sensitive
-internally even in R5RS Scheme; case-insensitivity is about readers.)
+for symbols.  Scheme departed from this tradition since R6RS, and
+the symbols are read in case-sensitive way.
+(Note that symbols have been case-sensitive internally even in R5RS Scheme;
+case-insensitivity is about readers.)
 @c JP
-Lisp系の言語は歴史的にシンボルの大文字小文字を区別していませんでした。
-Schemeもその流れを汲んでおり、R5RSでもシンボルは読み込まれる時に大文字小文字の
-区別をしないと定義されています。(但し、R5RSの範囲内でも処理系内部では
+Lisp系の言語は歴史的にシンボルの大文字小文字を区別していません。
+しかしSchemeはR6RSからその伝統より離脱し、シンボルを読む際に大文字小文字を区別
+するようになりました。(但し、R5RSの範囲内でも処理系内部では
 大文字小文字を区別することになってます。
 ここで問題としているのは読み込み時の動作です。)
 @c COMMON
 
 @c EN
-However, nowadays programming is hardly completed in one language.
-When you have to interact with other languages that distinguish uppercase
-and lowercase characters, it is desirable that Scheme distinguishes them
-as well.
+Gauche reads and writes symbols in case-sensitive manner by default, too.
+However, to support legacy code, you can set the reader to case-insensitive
+mode, in the following ways:
 @c JP
-しかし現在では、プログラミングが一つの言語で完結することは滅多にありません。
-他の言語とインタフェースを取る場合、Scheme側でも大文字小文字を区別するように
-しておいた方が便利です。
+Gaucheの入出力ルーチンも、デフォルトではシンボルの大文字小文字を区別します。
+ただし、古いコードとの互換性のために、リーダを大文字小文字を区別しないモードにすることが
+できます。
 @c COMMON
 
+@table @asis
 @c EN
-So Gauche has two modes in reading and writing symbols.
-@emph{By default, Gauche reads and writes symbols in case-sensitive manner}.
-This behavior doesn't conform R5RS.
-@c JP
-そこでGaucheでは、シンボルの読み込みと書き出しに2つのモードを用意しました。
-@emph{デフォルトのモードでは、Gaucheのリーダとライタはシンボルの大文字小文字を区別します}。
-このふるまいは厳密にはR5RSに準拠しません。
-@c COMMON
-
-@example
-; @r{In case-sensitive mode (default)}
-(eq? 'a 'A) @result{} #f  ; #t @r{in R5RS}
-(symbol->string 'ABC) @result{} "ABC"
-(symbol->string 'abc) @result{} "abc"
-(display (string->symbol "ABC")) @result{} @r{writes} ABC
-(display (string->symbol "abc")) @result{} @r{writes} abc
-@end example
-
-@c EN
-You can make Gauche case-insensitive by giving @code{-fcase-fold}
-command-line option to the @code{gosh} interpreter (@xref{Invoking Gosh}).
-In this mode, the reader folds uppercase characters in symbols to lowercase
-ones.  If a symbol name contains uppercase characters, it is written
-out using |-escape (@xref{Symbols}).
-@c JP
-@code{gosh}インタプリタの起動時に@code{-fcase-fold}コマンドライン引数を
-与えると、Gaucheは大文字小文字を区別しないモードで動作します (@ref{Invoking Gosh}参照)。
-このモードでは、リーダはシンボルの読み込みの際に大文字を小文字に変換します。
-大文字を含んでいるシンボルに関しては、`|' 文字でエスケープされて書き出されます
-(@ref{Symbols}参照)。
-@c COMMON
-
-@example
-; @r{In case-insensitive mode (with -fcase-fold option)}
-(eq? 'a 'A) @result{} #t
-(symbol->string 'ABC) @result{} "abc"
-(symbol->string 'abc) @result{} "abc"
-(display (string->symbol "ABC")) @result{} @r{writes} |ABC|
-(display (string->symbol "abc")) @result{} @r{writes} abc
-@end example
-
-@c EN
-Alternatively, if the reader sees a token @code{#!fold-case},
+@item Use @code{#!fold-case} reader directive
+When Gauche sees a token @code{#!fold-case} during reading a program,
 the reader switches to case-insensitive mode.  A token
 @code{#!no-fold-case} has an opposite effect---to make the
 reader case-sensitive.  These tokens affect the port
 from which they are read, and are in effect until EOF
 or another instance of these tokens are read.
 See @ref{Lexical structure} for more details on @code{#!} syntax.
+This is the way defined in R6RS and R7RS.
 @c JP
-また、リーダはトークン@code{#!fold-case}を読むと大文字小文字を
+@item @code{#!fold-case}リーダディレクティブを使う
+Gaucheはプログラムを読み込む時に、トークン@code{#!fold-case}を見ると大文字小文字を
 区別しないモードに切り替わります。トークン@code{#!no-fold-case}は
 その逆の効果、すなわち大文字小文字を区別するモードへと切り替えます。
 これらのトークンは、それが読まれたポートからの以降の読み込みに影響を
 与えます。切り替えるトークンが再び読まれるか、EOFに出会うまで影響は継続します。
 @code{#!}構文についてより詳しくは@ref{Lexical structure}を参照してください。
+この動作はR6RS及びR7RSで規定されています。
 @c COMMON
+
+@c EN
+@item Use @code{-fcase-fold} command-line argument
+Alternatively, you can give a command-line argument @code{-fcase-fold}
+to the @code{gosh} command (@xref{Invoking Gosh}).
+In this mode, the reader folds uppercase characters in symbols to lowercase
+ones.  If a symbol name contains uppercase characters, it is written
+out using |-escape (@xref{Symbols}).
+@c JP
+@item @code{-fcase-fold}コマンドライン引数を使う
+また、@code{gosh}インタプリタの起動時に@code{-fcase-fold}コマンドライン引数を
+与えると、Gaucheは大文字小文字を区別しないモードで動作します (@ref{Invoking Gosh}参照)。
+このモードでは、リーダはシンボルの読み込みの際に大文字を小文字に変換します。
+大文字を含んでいるシンボルに関しては、`|' 文字でエスケープされて書き出されます
+(@ref{Symbols}参照)。
+@c COMMON
+@end table
+
 
 @node Integrated Object System, Module system, Case-sensitivity, Concepts
 @section Integrated Object System
@@ -896,6 +868,7 @@ GaucheはCLOSに類似した、STklosスタイルのオブジェクトシステ�
 あなたが何らかのオブジェクト指向(OO)言語を使ったことがあれば、
 基本的な使い方は簡単にわかるでしょう。
 @c COMMON
+
 @example
 @c EN
 ;; @r{Defines a class point, that has x and y coordinate}

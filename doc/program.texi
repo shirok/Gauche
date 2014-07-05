@@ -241,14 +241,18 @@ Prohibits the compiler from inlining local procedures.
 Prohibits the compiler from inlining constants.
 @item load-verbose
 Reports whenever a file is loaded.
-@c Uncomment this after documenting 'include' form.
-@c @item include-verbose
-@c Reports whenever a file is included.
+Useful to check precisely which files are loaded in what order.
+@item include-verbose
+Reports whenever a file is included.
+Useful to check precisely which files are included in what order.
+@item warn-legacy
+Warns if the reader sees leagacy hex-escape syntax in string literals.
+@xref{Reader lexical mode}.
 @item no-source-info
 Don't keep source information for debugging.  Consumes less memory.
 @item case-fold
-Ignore case for symbols as specified in R5RS.
-(It is distinguished by default).  @xref{Case-sensitivity}.
+Ignore case for symbols.
+@xref{Case-sensitivity}.
 @item test
 Adds "@code{../src}" and "@code{../lib}" to the load path before loading
 initialization file.  This is useful when you want to test the
@@ -271,12 +275,16 @@ no-inline-locals および no-inline-constants を同時に指定したのと等
 デバッグのためのソースファイル情報を保持しません。メモリの使用量は小さくなります。
 @item load-verbose
 ファイルがロードされる時にそれを報告します。
-@c Uncomment this after documenting 'include' form.
-@c @item include-verbose
-@c ファイルがincludeされる時にそれを報告します。
+正確にどのファイルがどういう順序でロードされているかを調べるのに便利です。
+@item include-verbose
+ファイルがincludeされる時にそれを報告します。
+正確にどのファイルがどういう順序でincludeされているかを調べるのに便利です。
+@item warn-legacy
+文字列リテラル中に古い形式の16進数エスケープ形式があったら警告します。
+@ref{Reader lexical mode} を参照して下さい。
 @item case-fold
-R5RSに示される通り、シンボルの大文字小文字を区別しません。
-(デフォルトではこれらは区別されます)。 @ref{Case-sensitivity} を参照して下さい。
+シンボルの大文字小文字を区別しません。
+@ref{Case-sensitivity} を参照して下さい。
 @item test
 "@code{../src}" と "@code{../lib}" を、初期化ファイルを読む前に
 ロードパスに加えます。これは、作成された@code{gosh}をインストールせずに
@@ -347,6 +355,11 @@ imported for your convenience.
 
 @xref{Library modules - R7RS integration}, for the details on
 how Gauche supports R7RS.
+
+(Note: The @code{-r7} option doesn't change reader lexiacl mode
+(@xref{Reader lexical mode}) to @code{strict-r7}.  That's because
+using @code{strict-r7} mode by default prevents many Gauche code
+from being loaded.)
 @c JP
 @code{gosh}を、指定されたリビジョンのScheme標準環境で起動します。
 現在のバージョンでは@var{standard-revision}として7のみがサポートされます。
@@ -372,6 +385,11 @@ importされた状態になっています。
 
 GaucheがR7RSをどのようにサポートしているかの詳細については
 @ref{Library modules - R7RS integration}を参照してください。
+
+(註: @code{-r7}オプションは、リーダ字句モードを@code{strict-r7}に
+替えることはしません。@code{strict-r7}モードをデフォルトにすると、
+多くのGaucheコードをロードすることができなくなるからです。リーダ字句モードについては
+@ref{Reader lexical mode}を参照してください。)
 @c COMMON
 @end deftp
 

@@ -477,15 +477,17 @@ R6RSから、Schemeプログラムのトップレベル定義を複数の名前�
 modules; RnRS defines libraries in a way that they can be implemented
 in various ways, and it just happens that Gauche realises the library
 semantics using modules.  When you write a portable R7RS library,
-be aware not to rely on Gauche-specific module semantics; especially,
-Gauche modules are more dynamic than RnRS libraries.)
+be aware not to rely on Gauche-specific module semantics.  Especially,
+RnRS libraries are more static than Gauche modules; you cannot
+add definitions to exiting libraries within RnRS, for example.)
 @c JP
 (註: RnRSライブラリは、厳密に言えばGaucheのモジュールよりも抽象的な概念です。
 RnRSでは処理系がライブラリを様々な方法で実装できるように規程しています。
 Gaucheではたまたま、モジュールという仕組みを使ってRnRSライブラリのの概念が
 実現されているということです。ポータブルなR7RSライブラリを書く時は、
 Gauche特有のモジュールのセマンティクスに依存しないように気をつけてください。
-GaucheのモジュールはRnRSライブラリよりも動的です。)
+特に、RnRSライブラリはGaucheのモジュールよりも静的です。
+例えばRnRSの規格内では、既に存在するライブラリに定義を追加することはできません。)
 @c COMMON
 
 @c EN
