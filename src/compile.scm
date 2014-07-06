@@ -626,7 +626,7 @@
 
 ;; The followings are builtin version of standard procedures.
 ;;
-(define-simple-struct $cons $CONS #f (arg0 arg1))
+(define-simple-struct $cons $CONS #f (src arg0 arg1))
 
 ;; quasiquote tends to generate nested $cons, which can be
 ;; packed to $list or $list*.
