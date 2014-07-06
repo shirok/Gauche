@@ -3600,6 +3600,14 @@ Gaucheで使われているモジュールの書法については@ref{Writing G
 併せて参照して下さい。
 @c COMMON
 
+@c EN
+For R7RS programs, they are called ``libraries'' and have different
+syntax than Gauche modules.  @xref{R7RS library form}, for the details.
+@c JP
+R7RSプログラムでは、モジュールに相当するものは「ライブラリ」と呼ばれ、
+Gaucheとは異なる構文で定義します。詳しくは@ref{R7RS library form}を参照してください。
+@c COMMON
+
 @menu
 * Module semantics::            
 * Modules and libraries::       
@@ -3608,7 +3616,6 @@ Gaucheで使われているモジュールの書法については@ref{Writing G
 * Module inheritance::          
 * Module introspection::        
 * Predefined modules::          
-* R7RS Libraries::              
 @end menu
 
 @node Module semantics, Modules and libraries, Modules, Modules
@@ -3847,12 +3854,14 @@ create modules with arbitrary names at run-time.
 @c EN
 However, most libraries use modules to create their own
 namespace, so that they can control which bindings to be
-visible from library users.
+visible from library users.   (This ``library'' is a general
+term, broader than R7RS ``library'').
 
 @c JP
 しかしほとんどのライブラリは、固有の名前空間を生成するために
 モジュールを用います。これにより、どの束縛をライブラリ使用者に
-見せるかを制御できます。
+見せるかを制御できます。(ここでの「ライブラリ」は、R7RSのライブラリだけでなく
+より広い意味で使っています。)
 
 @c EN
 Usually a library is provided in the form of one or more Scheme
@@ -4013,6 +4022,20 @@ exportされた束縛は、カレントモジュールをimportしたモジュ�
 名前@var{name}を持つ束縛が、@var{exported-name}という別名でexportされます。
 @end table
 @c COMMON
+
+@c EN
+Note: In Gauche, @code{export} is just a special form
+you can put in the middle of the program, whereas
+R7RS defines @code{export} as a library declaration,
+that can only appear immediately below @code{define-library} form.
+@xref{R7RS library form}, for the details.
+@c JP
+註: Gaucheの@code{export}は単なるスペシャルフォームで
+プログラムの途中に書くこともできますが、
+R7RSの@code{export}はライブラリ宣言の一部で
+@code{define-library}フォームの直下にしか書けません。
+詳しくは@ref{R7RS library form}を参照してください。
+@c COMMON
 @end defspec
 
 @defspec export-all
@@ -4144,6 +4167,14 @@ list the name with prefix.
 それは出現順に処理されます。すなわち、@code{:prefix}が
 最初に現れた場合、その後に来る@code{:only}や@code{:except}
 はプレフィックスつきの名前を使って指定しなければなりません。
+@c COMMON
+
+@c EN
+Note: R7RS has @code{import} form, which has slightly differnent
+syntax and semantics.  @xref{Three forms of import}, for the details.
+@c JP
+註: R7RSにも@code{import}フォームがありますが、若干構文と意味が異なります。
+@ref{Three forms of import}を参照してください。
 @c COMMON
 @end defspec
 
@@ -4625,7 +4656,7 @@ available from the program, see @ref{Operations on libraries}.
 調べたりする場合は、@ref{Operations on libraries}を参照して下さい。
 @c COMMON
 
-@node Predefined modules, R7RS Libraries, Module introspection, Modules
+@node Predefined modules,  , Module introspection, Modules
 @subsection Predefined modules
 @c NODE 組み込みモジュール
 
@@ -4690,18 +4721,6 @@ all the bindings of @code{gauche} module is imported.
 @code{gauche}モジュール内の全ての束縛がインポートされています。
 @c COMMON
 @end deftp
-
-@node R7RS Libraries,  , Predefined modules, Modules
-@subsection R7RS Libraries
-@c NODE R7RSライブラリ
-
-R7RS uses the term @emph{library} for toplevel namespaces.
-In Gauche, it's the same thing as modules.
-
-
-@defmac define-library library-name library-declaration @dots{}
-@end defmac
-
 
 @c Local variables:
 @c mode: texinfo
