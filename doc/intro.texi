@@ -431,11 +431,16 @@ The entry works as specified in R7RS, R6RS or R5RS, respectively.
 If a plus sign is appended such as "[R7RS+]", the entry has additional
 functionality.
 
-If multiple 
+Since R7RS is mostly upward-compatible to R5RS, and has a lot
+in common with R6RS, we mark an entry as R5RS or R6RS only if
+it is not a part of R7RS.
 @c JP
 この項目はそれぞれR7RS, R6RS, R5RSで定義されるように動作します。
 "[R7RS+]"のようにプラス記号がついている場合は、
 R7RSの仕様に上位互換な形で追加の機能が実装されていることを示します。
+
+R7RSはほぼR5RSの上位互換であり、R6RSとも多くの機能を共有しているので、
+R5RS、R6RSの表示はそれらがR7RSに含まれていない場合のみ記されます。
 @c COMMON
 @item [SRFI-@var{n}]
 @itemx [SRFI-@var{n}+]

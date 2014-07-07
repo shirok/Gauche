@@ -3,10 +3,10 @@
 @c NODE マクロ
 
 @c EN
-Gauche supports both R5RS hygienic macros and
+Gauche supports both R7RS hygienic macros and
 traditional macros.
 @c JP
-Gaucheでは、R5RSに定義される「健全な(hygienic)」マクロと
+Gaucheでは、R7RSに定義される「健全な(hygienic)」マクロと
 伝統的なマクロの両方が使えます。
 @c COMMON
 
@@ -37,13 +37,13 @@ Lisp系言語のマクロは、他の言語に見られるマクロ(例えばC�
 @c NODE 健全なマクロ
 
 @c EN
-R5RS hygienic macro is based on a special pattern language,
+R7RS hygienic macro is based on a special pattern language,
 and guaranteed that no "variable capture" occurs.
 "Variable capture" means that if you insert new variable
 bindings in the expanded form, the new bindings
 shadows the bindings in the form passed to the macro.
 @c JP
-R5RSの健全なマクロは特別なパターン言語に基づいていて、
+R7RSの健全なマクロは特別なパターン言語に基づいていて、
 また「変数捕捉」が起こらないことが保証されています。
 「変数捕捉」とは、マクロが新しい変数束縛を導入した時に、その束縛が
 マクロに渡されたフォーム中の変数名と衝突して、その変数名の本来の束縛を隠して
@@ -51,16 +51,17 @@ R5RSの健全なマクロは特別なパターン言語に基づいていて、
 @c COMMON
 
 @defspec define-syntax name transformer-spec
-[R5RS]
+[R5RS][R6RS][R7RS]
 @end defspec
 
 @defspec let-syntax ((name transformer-spec) @dots{}) body
 @defspecx letrec-syntax ((name transformer-spec) @dots{}) body
-[R5RS]
+[R5RS][R6RS][R7RS]
 @end defspec
 
-@defspec syntax-rules literals clause1 clause2 @dots{}
-[R5RS]
+@defspec syntax-rules (literal @dots{}) clause1 clause2 @dots{}
+@defspecx syntax-rules ellipsis (literal @dots{}) clause1 clause2 @dots{}
+[R7RS]
 @end defspec
 
 

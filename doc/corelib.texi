@@ -250,7 +250,7 @@ Schemeには等価性を判定する汎用的な述語が3つあります。
 @c COMMON
 
 @defun eq? obj1 obj2
-[R5RS]
+[R7RS]
 @c EN
 This is the fastest and finest predicate.
 Returns @code{#t} if @var{obj1} and @var{obj2} are allocated objects of
@@ -282,7 +282,7 @@ Schemeの標準では定められていません。
 @end defun
 
 @defun eqv? obj1 obj2
-[R5RS]
+[R7RS]
 @c EN
 When @var{obj1} and @var{obj2} are both exact or both inexact numbers
 (except NaN),
@@ -524,7 +524,7 @@ class.  That is,
 @defunx real? obj
 @defunx rational? obj
 @defunx integer? obj
-[R5RS]
+[R7RS]
 @c EN
 Returns @code{#t} if @var{obj} is a number, a complex number, a real number,
 a rational number or an integer, respectively.   In Gauche, a set of
@@ -599,7 +599,7 @@ R6RSで規定されている、これらの手続きと@code{-valued}がつい�
 
 @defun exact? obj
 @defunx inexact? obj
-[R5RS]
+[R7RS]
 @c EN
 Returns @code{#t} if @var{obj} is an exact number and an inexact number,
 respectively.
@@ -619,6 +619,7 @@ respectively.
 @end defun
 
 @defun exact-integer? obj
+[R7RS]
 @c EN
 Same as @code{(and (exact? obj) (integer? obj))}, but more efficient.
 @c JP
@@ -627,7 +628,7 @@ Same as @code{(and (exact? obj) (integer? obj))}, but more efficient.
 @end defun
 
 @defun zero? z
-[R5RS]
+[R7RS]
 @c EN
 Returns @code{#t} if a number @var{z} equals to zero.
 @c JP
@@ -644,7 +645,7 @@ Returns @code{#t} if a number @var{z} equals to zero.
 
 @defun positive? x
 @defunx negative? x
-[R5RS]
+[R7RS]
 @c EN
 Returns @code{#t} if a real number @var{x} is positive and negative,
 respectively.  It is an error to pass a non-real number.
@@ -657,7 +658,7 @@ respectively.  It is an error to pass a non-real number.
 @defun finite? z
 @defunx infinite? z
 @defunx nan? z
-[R6RS]
+[R7RS]
 @c EN
 For real numbers, returns @code{#f} iff the given number
 is finite, infinite, or NaN, respectively.
@@ -669,6 +670,8 @@ is infinite, and @code{nan?} returns @code{#t} if at least either
 real or imagnary component is NaN.  (Note: It is incompatible
 to R6RS, in which these procedures must raise an error if
 the given arugment is non-real number.)
+
+In R7RS, these procedures are in @code{(scheme inexact)} library.
 @c JP
 実数に対して、それが有限、無限、NaNであればそれぞれ@code{#t}を返します。
 
@@ -677,12 +680,14 @@ the given arugment is non-real number.)
 無限なら@code{#t}を、@code{nan?}は実数部と仮数部の少なくともどちらかが
 NaNなら@code{#t}を返します。(これはR6RSとは非互換です。R6RSでは
 これらの手続きは引数に非実数の数が与えられた場合はエラーを通知しなければならないからです。)
+
+R7RSではこれらの手続きは@code{(scheme inexact)}ライブラリにあります。
 @c COMMON
 @end defun
 
 @defun odd? n
 @defunx even? n
-[R5RS]
+[R7RS]
 @c EN
 Returns @code{#t} if an integer @var{n} is odd and even,
 respectively.  It is an error to pass a non-integral number.
@@ -719,7 +724,7 @@ routines that does particular optimization.
 @c NODE 数値の比較
 
 @defun = z1 z2 z3 @dots{}
-[R5RS]
+[R7RS]
 @c EN
 If all the numbers @var{z} are equal, returns @code{#t}.
 @c JP
@@ -739,7 +744,7 @@ If all the numbers @var{z} are equal, returns @code{#t}.
 @defunx <= x1 x2 x3 @dots{}
 @defunx > x1 x2 x3 @dots{}
 @defunx >= x1 x2 x3 @dots{}
-[R5RS]
+[R7RS]
 @c EN
 Returns @code{#t} If all the real numbers @var{x} are
 monotonically increasing,
@@ -754,7 +759,7 @@ nonincreasing, respectively.
 
 @defun max x1 x2 @dots{}
 @defunx min x1 x2 @dots{}
-[R5RS]
+[R7RS]
 @c EN
 Returns a maximum or minimum number in the given real numbers, respectively.
 @c JP
@@ -792,7 +797,7 @@ See also @code{find-min&max} in
 
 @defun + z @dots{}
 @defunx * z @dots{}
-[R5RS]
+[R7RS]
 @c EN
 Returns the sum or the product of given numbers, respectively.
 If no argument is given, @code{(+)} yields 0 and @code{(*)} yields 1.
@@ -804,7 +809,7 @@ If no argument is given, @code{(+)} yields 0 and @code{(*)} yields 1.
 
 @defun - z1 z2 @dots{}
 @defunx / z1 z2 @dots{}
-[R5RS]
+[R7RS]
 @c EN
 If only one number @var{z1} is given, returns its
 negation and reciprocal, respectively.
@@ -902,7 +907,7 @@ The complex part is Gauche extension.
 @defun quotient n1 n2
 @defunx remainder n1 n2
 @defunx modulo n1 n2
-[R5RS]
+[R7RS]
 @c EN
 Returns the quotient, remainder and modulo of dividing an integer @var{n1}
 by an integer @var{n2}.   The result is an exact number only if
@@ -1097,7 +1102,7 @@ and returns their results in two values.
 
 @defun gcd n @dots{}
 @defunx lcm n @dots{}
-[R5RS]
+[R7RS]
 @c EN
 Returns the greatest common divisor or the least common multiplier
 of the given integers, respectively
@@ -1136,7 +1141,7 @@ The returned sequence is lazy, so the terms are calculated as needed.
 
 @defun numerator q
 @defunx denominator q
-[R5RS]
+[R7RS]
 @c EN
 Returns the numerator and denominator of a rational number @var{q}.
 @c JP
@@ -1145,7 +1150,7 @@ Returns the numerator and denominator of a rational number @var{q}.
 @end defun
 
 @defun rationalize x ebound
-[R5RS]
+[R7RS]
 @c EN
 Returns the simplest rational appoximation @var{q} of a real number @var{x},
 such that the difference between @var{x} and @var{q} is no more than
@@ -1183,7 +1188,7 @@ Gaucheは不正確な有理数をサポートしないので、引数の少な�
 @defunx ceiling x
 @defunx truncate x
 @defunx round x
-[R5RS]
+[R7RS]
 @c EN
 The argument @var{x} must be a real number.
 @code{Floor} and @code{ceiling} return a maximum integer that
@@ -1255,11 +1260,14 @@ Returns an exact integer only if all the given numbers are exact integers.
 @defunx asin z
 @defunx acos z
 @defunx atan z
-[R5RS][R6RS]
+@defunx atan y x
+[R7RS]
 @c EN
 Transcendental functions.  Work for complex numbers as well.
+In R7RS, these procedures are in the @code{(scheme inexact)} module.
 @c JP
 超越関数です。複素数も扱えます。
+R7RSではこれらの手続きは@code{(scheme inexact)}モジュールにあります。
 @c COMMON
 
 @c EN
@@ -1269,14 +1277,12 @@ base-@var{z2} logarithm of @var{z1}.
 2引数の@code{log}はR6RSで追加されたもので、@var{z2}を底とした@var{z1}の対数を
 返します。
 @c COMMON
-@end defun
 
-@defun atan y x
-[R5RS]
 @c EN
-For real numbers @var{x} and @var{y},
-returns @code{(angle (make-rectangular x y))}.
+The two-argument version of @code{atan} returns
+@code{(angle (make-rectangular x y))} for the real numbers @code{x} and @code{y}.
 @c JP
+2引数の@code{atan}は
 実数@var{x}と@var{y}に対して
 @code{(angle (make-rectangular x y))}を返します。
 @c COMMON
@@ -1296,7 +1302,7 @@ Hyperbolic trigonometric functions.  Work for complex numbers as well.
 @end defun
 
 @defun sqrt z
-[R5RS]
+[R7RS]
 @c EN
 Returns a square root of a complex number @var{z}.
 The branch cut scheme is the same as Common Lisp.
@@ -1321,7 +1327,7 @@ is also an exact number.
 @end defun
 
 @defun exact-integer-sqrt k
-[R6RS]
+[R7RS]
 @c EN
 Given an exact nonnegative integer @var{k},
 returns two exact nonnegative integer @var{s} and @var{r}
@@ -1344,7 +1350,7 @@ that satisfy the following equations:
 
 
 @defun expt z1 z2
-[R5RS]
+[R7RS]
 @c EN
 Returns @var{z1}^@var{z2} (@var{z1} powered by @var{z2}),
 where @var{z1} and @var{z2} are complex numbers.
@@ -1401,15 +1407,19 @@ These names are defined in R6RS.  Common Lisp and ChezScheme have
 
 @defun make-rectangular x1 x2
 @defunx make-polar x1 x2
-[R5RS]
+[R7RS]
 @c EN
 Creates a complex number from two real numbers, @var{x1} and @var{x2}.
 @code{make-rectangular} returns @var{x1} + @b{i}@var{x2}.
 @code{make-polar} returns @var{x1}@b{e}^(@b{i}@var{x2}).
+
+In R7RS, these procedures are in the @code{(scheme complex)} library.
 @c JP
 二つの実数@var{x1}と@var{x2}から複素数を作ります。
 @code{make-rectangular} は @var{x1} + @b{i}@var{x2} を返します。
 @code{make-polar} は @var{x1}@b{e}^(@b{i}@var{x2}) を返します。
+
+R7RSではこれらの手続きは@code{(scheme comlex)}ライブラリにあります。
 @c COMMON
 @end defun
 
@@ -1417,16 +1427,20 @@ Creates a complex number from two real numbers, @var{x1} and @var{x2}.
 @defunx imag-part z
 @defunx magnitude z
 @defunx angle z
-[R5RS]
+[R7RS]
 @c EN
 Decompose a complex number @var{z} and returns a real number.
 @code{real-part} and @code{imag-part} return @var{z}'s real and imaginary
 part, respectively.  @code{magnitude} and @code{angle} return
 @var{z}'s magnitude and angle, respectively.
+
+In R7RS, these procedures are in the @code{(scheme complex)} library.
 @c JP
 複素数@var{z}を取り、実数を返します。
 @code{real-part}と@code{imag-part}は@var{z}の実数部と虚数部をそれぞれ返し、
 @code{magnitude}と@code{angle}は@var{z}の絶対値と偏角をそれぞれ返します。
+
+R7RSではこれらの手続きは@code{(scheme comlex)}ライブラリにあります。
 @c COMMON
 @end defun
 
@@ -1500,7 +1514,7 @@ where @var{x} = @var{fraction} * 2^@var{exponent}, and
 
 @defun exact z
 @defunx inexact z
-[R6RS]
+[R7RS]
 @c EN
 Returns an exact or an inexact representation of the
 given number @var{z}, respectively.  Passing an exact number
@@ -1679,7 +1693,7 @@ we assume closed range.)
 
 @defun number->string z :optional radix use-upper?
 @defunx string->number string :optional radix
-[R5RS+]
+[R7RS+]
 @c EN
 These procedures convert a number and its string representation
 in radix @var{radix} system.
@@ -2136,7 +2150,7 @@ A boolean class.  Only @code{#t} and @code{#f} belong to this class.
 @end deftp
 
 @defun not obj
-[R5RS]
+[R7RS]
 @c EN
 Returns @code{#t} if and only if @var{obj} is @code{#f},
 and returns @code{#f} otherwise.
@@ -2147,7 +2161,7 @@ and returns @code{#f} otherwise.
 @end defun
 
 @defun boolean? obj
-[R5RS]
+[R7RS]
 @c EN
 Returns @code{#t} if @var{obj} is a boolean value.
 @c JP
@@ -2346,7 +2360,7 @@ A class of pairs.
 @c NODE リストに関する述語
 
 @defun pair? obj
-[R5RS]
+[R7RS]
 @c EN
 Returns @code{#t} if @var{obj} is a pair, @code{#f} otherwise.
 @c JP
@@ -2355,7 +2369,7 @@ Returns @code{#t} if @var{obj} is a pair, @code{#f} otherwise.
 @end defun
 
 @defun null? obj
-[R5RS]
+[R7RS]
 @c EN
 Returns @code{#t} if @var{obj} is an empty list, @code{#f} otherwise.
 @c JP
@@ -2382,7 +2396,7 @@ condition when you want to be more picky about non-proper lists.
 @end defun
 
 @defun list? obj
-[R5RS]
+[R7RS]
 @c EN
 Returns @code{#t} if @var{obj} is a proper list, @code{#f} otherwise.
 This function returns @code{#f} if @var{obj} is a dotted or circular list.
@@ -2434,7 +2448,7 @@ which are considered to be dotted lists of length 0.
 @c NODE リストの作成
 
 @defun cons obj1 obj2
-[R5RS]
+[R7RS]
 @c EN
 Constructs a pair of @var{obj1} and @var{obj2} and returns it.
 @c JP
@@ -2446,7 +2460,7 @@ Constructs a pair of @var{obj1} and @var{obj2} and returns it.
 @end defun
 
 @defun make-list len :optional fill
-[SRFI-1]
+[R7RS][SRFI-1]
 @c EN
 Makes a proper list of length @var{len}.  If optional argument
 @var{fill} is provided, each element is initialized by it.  Otherwise
@@ -2462,7 +2476,7 @@ each element is undefined.
 @end defun
 
 @defun list obj @dots{}
-[R5RS]
+[R7RS]
 @c EN
 Makes a list, whose elements are @var{obj} @dots{}.
 @c JP
@@ -2493,7 +2507,7 @@ SRFI-1が@code{cons*}という名前を定義しました。
 @end defun
 
 @defun list-copy list
-[SRFI-1]
+[R7RS][SRFI-1]
 @c EN
 Shallow copies @var{list}.  If @var{list} is circular,
 this function diverges.
@@ -2613,7 +2627,7 @@ the resulting list, like unquote-splicing.
 
 @defun car pair
 @defunx cdr pair
-[R5RS]
+[R7RS]
 @c EN
 Returns car and cdr of @var{pair}, respectively.
 @c JP
@@ -2623,7 +2637,7 @@ Returns car and cdr of @var{pair}, respectively.
 
 @defun set-car! pair obj
 @defunx set-cdr! pair obj
-[R5RS]
+[R7RS]
 @c EN
 Modifies car and cdr of @var{pair}, by @var{obj}, respectively.
 
@@ -2667,15 +2681,20 @@ Note: @code{(setter car)} @equiv{} @code{set-car!}, and
 @end defun
 @defun cdddar pair
 @defunx cddddr pair
-[R5RS]
+[R7RS]
 @c EN
 @code{caar} @equiv{} @code{(car (car x))},
 @code{cadr} @equiv{} @code{(car (cdr x))}, and so on.
+
+In R7RS, more than two-level of accessors are defined in the
+@code{(scheme cxr)} library.
 
 The corresponding setters are also defined.
 @c JP
 @code{caar} @equiv{} @code{(car (car x))},
 @code{cadr} @equiv{} @code{(car (cdr x))}, 等々。
+
+R7RSでは、2レベルよりも深いアクセサは@code{(scheme cxr)}ライブラリに含まれます。
 
 対応するsetterも定義されています。
 @c COMMON
@@ -2688,7 +2707,7 @@ The corresponding setters are also defined.
 @end defun
 
 @defun length list
-[R5RS]
+[R7RS]
 @c EN
 Returns the length of a proper list @var{list}.
 If @var{list} is a dotted list, an error is signaled.
@@ -2925,7 +2944,7 @@ shorter than expected.
 @end defun
 
 @defun list-tail list k :optional fallback
-[R5RS]
+[R7RS]
 @c EN
 Returns @var{k}-th cdr of @var{list}.
 @var{list} can be a proper, dotted or circular list.
@@ -2947,7 +2966,7 @@ Otherwise, an error is signaled.
 @end defun
 
 @defun list-ref list k :optional fallback
-[R5RS+]
+[R7RS+]
 @c EN
 Returns @var{k}-th element of @var{list}.
 @var{list} can be a proper, dotted or circular list.
@@ -3098,7 +3117,7 @@ Inserts @var{item} between elements in the @var{list}.
 @c NODE リストをたどる手続き
 
 @defun map proc list1 list2 @dots{}
-[R5RS+]
+[R7RS+]
 @c EN
 Applies @var{proc} for each element(s) of given list(s),
 and returns a list of the results.  R5RS doesn't specify
@@ -3206,7 +3225,7 @@ Note: The name @code{map*} is along the line of
 @end defun
 
 @defun for-each proc list1 list2 @dots{}
-[R5RS]
+[R7RS]
 @c EN
 Applies @var{proc} for each element(s) of given list(s) in order.
 The results of @var{proc} are discarded.  The return value of
@@ -3269,7 +3288,7 @@ Examples:
 @end defun
 
 @defun fold-right kons knil clist1 clist2 @dots{}
-[SRFI-1]
+[R6RS][SRFI-1]
 @c EN
 The fundamental list recursion operator.
 When it is given a single list
@@ -3386,13 +3405,12 @@ Schemeでは、まず@code{SRFI-1}によって@code{fold}と@code{fold-right}が
 
 @defun reduce f ridentity list
 @defunx reduce-right f ridentity list
-@c EN
 [SRFI-1]
+@c EN
 Variant of @code{fold} and @code{fold-right}.   @var{f} must be a
 binary operator, and @var{ridentity} is the value such that for
 any value @var{x} that is valid as @var{f}'s input,
 @c JP
-[SRFI-1]
 @code{fold} および @code{fold-right} の変形バージョンです。
 @var{f} は二項演算子でなければなりません。
 また、@var{ridentity} は @var{f} の入力として許される
@@ -3605,7 +3623,7 @@ The comparison procedure, @var{elt=}, defaults to @code{equal?}.
 @c NODE 他のリスト手続き
 
 @defun append list @dots{}
-[R5RS]
+[R7RS]
 @c EN
 Returns a list consisting of the elements of the first @var{list} followed by
 the elements of the other lists.  The resulting list is always newly
@@ -3648,7 +3666,7 @@ can be a bit efficient by skipping overhead of @code{apply}.
 
 @defun reverse list :optional (tail '())
 @defunx reverse! list :optional (tail '())
-[R5RS+, SRFI-1+]
+[R7RS+, SRFI-1+]
 @c EN
 Returns a list consisting of the elements of @var{list}
 in the reverse order.
@@ -3712,7 +3730,7 @@ srfi-1との互換のために用意されています。
 @defun memq obj list
 @defunx memv obj list
 @defunx member obj list :optional obj=
-[R5RS][SRFI-1]
+[R7RS][SRFI-1]
 @c EN
 Searches @var{obj} in the @var{list}.  If @code{n}-th element of
 @var{list} equals to @var{obj} (in the sense of @code{eq?} for @code{memq},
@@ -3728,13 +3746,12 @@ Otherwise, @code{#f} is returned.
 @c COMMON
 
 @c EN
-The optional @var{obj=} argument of @code{member} is SRFI-1's
-extension to R5RS.  If given, it is used as a equivalence predicate
+If the optional @var{obj=} argument of @code{member} is given, 
+it is used as a equivalence predicate
 instead of @code{equal?}.
 @c JP
-@code{member}の省略可能引数@var{obj=}はSRFI-1によるR5RSからの拡張です。
-与えられた場合、その手続きが@code{equal?}のかわりに@var{obj}と要素を
-比較するのに使われます。
+@code{member}に省略可能引数@var{obj=}が与えられた場合は、
+その手続きが@code{equal?}のかわりに@var{obj}と要素を比較するのに使われます。
 @c COMMON
 @example
 (memq 'a '(a b c))          @result{} (a b c)
@@ -3812,12 +3829,12 @@ If no pair matches, these return @code{#f}.
 @c COMMON
 
 @c EN
-The optional argument of @code{ascoc} is an extension defined
-in SRFI-1.  If given, it is called instead of @code{equal?}
+If the optional argument of @code{ascoc} is given,
+it is called instead of @code{equal?}
 to check the equivalence of @var{obj} and each key.
 @c JP
-@code{assoc}の省略可能引数はSRFI-1で定義された拡張です。
-与えられた場合、その手続きが@code{equal?}のかわりに、
+@code{assoc}の省略可能引数が与えられた場合は、
+その手続きが@code{equal?}のかわりに、
 @var{obj}と各キーとの同一性判定に使われます。
 @c COMMON
 @end defun
@@ -3966,21 +3983,41 @@ A class for symbols.
 @end  deftp
 
 @deftp {Reader Syntax} @code{|@i{name}|}
+[R7RS]
 @c EN
-Denotes a symbol that has weird name, i.e. the name including the
-characters which is not allowed in the R5RS symbol syntax.
+Denotes a symbol that has weird name, including the characters
+that are not usually allowed in symbols.  It can also include
+hex-escaped characters.
+@c JP
+シンボルの定義では通常許されないような文字を使った妙な名前のシンボルを表記するのに
+使う構文です。16進数エスケープ表記を含めることもできます。
+@c COMMON
+
+@example
+@c EN
+;; @r{A symbol with spaces in its name}
+@c JP
+;; @r{空白を名前に含むシンボル}
+@c COMMON
+'|this is a symbol| @result{} |this is a symbol|
+
+@c EN
+;; @r{Unicode codepoint can be used following backslash-x escape,}
+;; @r{and terminated by semicolon.}
+@c JP
+;; @r{Unicodeコードポイントを、バックスラッシュとxからなるエスケープに続けて}
+;; @r{書くこともできます。セミコロンで終端します。}
+@c COMMON
+'|\x3bb;| @result{} λ
+@end example
+
+@c EN
 If the interpreter is running in case-insensitive mode, this syntax
 can be used to include uppercase characters in a symbol
 (@xref{Case-sensitivity}).
-
-The syntax is taken from CommonLisp.  Some other Scheme implementation
-use it as well.
 @c JP
-R5RSのシンボルの定義では許されていない文字を使った妙な名前のシンボルを表記するのに
-使う構文です。インタプリタが大文字小文字を区別しないモードで走っている場合は、
+インタプリタが大文字小文字を区別しないモードで走っている場合は、
 大文字を含むシンボルを表記するときにも使えます (@ref{Case-sensitivity}参照)。
-
-この表記はCommonLispから取られました。いくつかのSchemeでも同様の表記を採用しています。
 @c COMMON
 @end deftp
 
@@ -4029,7 +4066,7 @@ is the same (@code{eq?}) to which.
 
 
 @defun symbol? obj
-[R5RS]
+[R7RS]
 @c EN
 Returns true if and only if @var{obj} is a symbol.
 @c JP
@@ -4067,7 +4104,7 @@ every pair of arguments are @code{eq?} to each other.
 @end defun
 
 @defun symbol->string symbol
-[R5RS]
+[R7RS]
 @c EN
 Returns the name of @var{symbol} in a string.  Returned
 string is immutable.
@@ -4081,7 +4118,7 @@ string is immutable.
 @end defun
 
 @defun string->symbol string
-[R5RS]
+[R7RS]
 @c EN
 Returns a symbol whose name is a string @var{string}.
 @var{String} may contain weird characters.
@@ -4486,7 +4523,7 @@ in both versions.
 @end  deftp
 
 @deftp {Reader Syntax} @code{#\@i{charname}}
-[R5RS]
+[R7RS]
 @c EN
 Denotes a literal character.
 
@@ -4518,18 +4555,15 @@ Delete (ASCII #x7f)
 @item null
 NUL character (ASCII #x00)
 @item x@var{N}
-A character whose internal encoding is the integer @var{N},
+A character whose Unicode codepoint is the integer @var{N},
 when @var{N} is a hexadecimal integer.
-Note that this notation is not portable among different
-internal encoding schemes except ASCII character range.
+This is R7RS lexical syntax.
 @item u@var{N}
-A character whose UCS character code is the integer @var{N},
+A character whose Unicode codepoint is the integer @var{N},
 where @var{N} is 4-digit or 8-digit hexadecimal number.
-If Gauche is compiled with the internal encoding other than UTF-8,
-the reader uses @code{gauche.charconv} module to convert Unicode
-to the internal character code.  Note that the specified character
-may not be defined in the internal encoding; in which case, either
-a substitution character is used, or an error is signaled.
+
+This is legacy Gauche lexical syntax.  Use @code{\xN} syntax for
+the new code.
 @end table
 @c JP
 リテラルの文字オブジェクトを表現します。
@@ -4560,15 +4594,11 @@ a substitution character is used, or an error is signaled.
 @item null
 NUL文字 (ASCII #x00)
 @item x@var{N}
-@var{N} が16進表記の整数であるとき、内部エンコーディングが整数@var{N}
-であるような文字。この表記はASCII文字の範囲の外では、内部エンコーディングが異なる
-処理系間で互換性が無いことに注意して下さい。
+@var{N} が16進表記の整数であるとき、Unicodeコードポイントが整数@var{N}
+であるような文字。これはR7RSの字句構文です。
 @item u@var{N}
 @var{N}が4桁または8桁の16進数整数であるとき、UCSコード@var{N}であるような文字。
-Gaucheの内部エンコーディングがUTF-8以外でコンパイルされている場合には、
-リーダーは@code{gauche.charconv}モジュールを使ってUnicodeを内部エンコーディングへと
-変換します。Unicodeの該当する文字が内部エンコーディングで定義されていない場合、
-代替文字に置換されるか、エラーとなります。
+これはGaucheの古い構文です。新規のコードでは@code{\xN}を使ってください。
 @end table
 @c COMMON
 
@@ -4577,34 +4607,41 @@ Gaucheの内部エンコーディングがUTF-8以外でコンパイルされて
 #\newline @result{} #\newline ; @r{newline character}
 #\x0a     @result{} #\newline ; @r{ditto}
 #\x41     @result{} #\A       ; @r{ASCII letter 'A'}
-#\u0041   @result{} #\A       ; @r{ASCII letter 'A', specified by UCS}
-#\u3042   @result{} ; @r{Hiragana letter A, specified by UCS}
-#\u0002a6b2 @result{} ; @r{JISX0213 Kanji 2-94-86, specified by UCS4}
+#\x3042   @result{} ; @r{Hiragana letter A}
+#\x2a6b2  @result{} ; @r{JISX0213 Kanji 2-94-86}
 @c JP
 #\newline @result{} #\newline ; @r{改行文字}
 #\x0a     @result{} #\newline ; @r{改行文字}
 #\x41     @result{} #\A       ; @r{ASCII文字 'A'}
-#\u0041   @result{} #\A       ; @r{ASCII文字 'A', UCSコード}
-#\u3042   @result{} #\あ      ; @r{平仮名「あ」, UCSコード}
-#\u0002a6b2 @result{} ; @r{JISX0213 2-94-86 UCS4コード}
+#\x3042   @result{} #\あ      ; @r{平仮名「あ」}
+#\x2a6b2  @result{} ; @r{JISX0213 2-94-86}
 @c COMMON
 @end example
 
 @c EN
-You can denote multibyte characters with this syntax if
-the program text is written in the same encoding as the internal
-character encoding.
+Note: Before 0.9.4, @code{\xNN} syntax uses Gauche's internal
+character encoding as opposed to Unicode codepoint.  Both are
+the same if Gauche is compiled with internal encoding @code{utf-8}
+or @code{none} (if it's @code{none}, only characters up to U+00ff
+is supported and in this range the characters are the same as 
+Unicode characters.)   If Gauche is compiled with encoding
+@code{euc-jp} or @code{sjis}, the souce should be changed if
+it uses @code{\xNN} beyond ASCII characters.
 @c JP
-プログラムテキストがGaucheの内部エンコーディングと同じエンコーディングで
-書かれていれば、マルチバイト文字を直接表記することもできます。
-@example
-#\あ @result{} ; @r{文字「あ」}
-@end example
+註: 0.9.4まで、Gaucheは@code{\xNN}構文を、
+Unicodeコードポイントでなく内部文字エンコーディングで文字を表記するのに
+使っていました。Gaucheの内部エンコーディングを@code{utf-8}もしくは
+@code{none}でコンパイルされている場合は両者に違いはありません
+(@code{none}の場合、U+00ffまでの文字しか扱うことができませんが、
+扱える範囲内ではUnicodeと一致します)。
+内部エンコーディングが@code{euc-jp}か@code{sjis}の場合、
+@code{\xNN}で記されたASCIIの範囲外の文字は、Unicodeコードポイントへの
+修正が必要です。
 @c COMMON
 @end deftp
 
 @defun char? obj
-[R5RS]
+[R7RS]
 @c EN
 Returns @code{#t} if @var{obj} is a character, @code{#f} otherwise.
 @c JP
@@ -4617,7 +4654,7 @@ Returns @code{#t} if @var{obj} is a character, @code{#f} otherwise.
 @defunx char<=? char1 char2 char3 @dots{}
 @defunx char>? char1 char2 char3 @dots{}
 @defunx char>=? char1 char2 char3 @dots{}
-[R5RS,R6RS]
+[R7RS]
 @c EN
 Compares characters.  Character comparison is done in internal
 character encoding.
@@ -4631,15 +4668,19 @@ character encoding.
 @defunx char-ci<=? char1 char2 char3 @dots{}
 @defunx char-ci>? char1 char2 char3 @dots{}
 @defunx char-ci>=? char1 char2 char3 @dots{}
-[R5RS,R6RS]
+[R7RS]
 @c EN
 Compares characters in case-insensitive way.
 The comparison is done in the internal character code
 of the foldcase of the each character; see @code{char-foldcase} below.
+
+In R7RS, these procedures are in the @code{(scheme char)} library.
 @c JP
 文字を、大文字小文字を区別せずに比較します。
 比較はそれぞれの文字のfoldcaseの内部文字エンコーディングに基づいて行われます。
 foldcaseについては下の@code{char-foldcase}を参照してください。
+
+R7RSではこれらの手続きは@code{(scheme char)}ライブラリにあります。
 @c COMMON
 @end defun
 
@@ -4648,7 +4689,7 @@ foldcaseについては下の@code{char-foldcase}を参照してください。
 @defunx char-whitespace? char
 @defunx char-upper-case? char
 @defunx char-lower-case? char
-[R5RS]
+[R7RS]
 @c EN
 Returns true if a character @var{char} is an alphabetic character
 (Unicode character category @code{Lu}, @code{Ll}, @code{Lt},
@@ -4661,6 +4702,8 @@ an upper case character
 (Unicode character category @code{Lu}),
 or a lower case character
 (Unicode character category @code{Ll}), respectively.
+
+In R7RS, these procedures are in the @code{(scheme char)} library.
 @c JP
 文字@var{char}がそれぞれアルファベット
 (Unicode文字カテゴリ @code{Lu}、@code{Ll}、@code{Lt}、
@@ -4669,6 +4712,8 @@ or a lower case character
 空白文字 (Unicode文字カテゴリ @code{Zs}、@code{Zp}、@code{Zl})、
 大文字 (Unicode文字カテゴリ @code{Lu})、
 小文字 (Unicode文字カテゴリ @code{Ll})の時に真の値を返します。
+
+R7RSではこれらの手続きは@code{(scheme char)}ライブラリにあります。
 @c COMMON
 @end defun
 
@@ -4761,7 +4806,7 @@ Unicodeに対応するものがない文字がいくつかあります
 
 @defun char->integer char
 @defunx integer->char n
-[R5RS]
+[R7RS]
 @c EN
 @code{char->integer} returns an exact integer that represents
 internal encoding of the character @var{char}.
@@ -4772,6 +4817,14 @@ true for valid character @var{char}:
 (eq? char (integer->char (char->integer char)))
 @end example
 
+Note: R7RS defines these procedures to deal with Unicode
+codepoints.  Gauche complies it when compiled with @code{utf-8}
+or @code{none} internal encoding (for the latter, only characters
+up to U+00ff are supported).  If Gauche is compiled with
+@code{euc-jp} or @code{sjis} internal encoding, you need to use
+@code{char->ucs}/@code{ucs->char} below to convert between Unicode
+codepoints and characters.
+
 The result is undefined if you pass @var{n} to @code{integer->char}
 that doesn't have a corresponding character.
 @c JP
@@ -4781,6 +4834,13 @@ that doesn't have a corresponding character.
 @example
 (eq? char (integer->char (char->integer char)))
 @end example
+
+註: R7RSでは、これらの手続きはUnicodeコードポイントを扱うとされています。
+Gaucheの内部エンコーディングが@code{utf-8}か@code{none}であればそれに
+合致します (@code{none}の場合はU+00ffまでの文字がサポートされます)。
+内部エンコーディングが@code{euc-jp}か@code{sjis}の場合は、
+Unicodeコードポイントと文字の変換には下の@code{char->ucs}/@code{ucs->char}を
+使ってください。
 
 対応する内部エンコーディングを持つ文字が無い数値を@code{integer->char}に渡した
 場合の結果は不定です。
@@ -4826,12 +4886,10 @@ Gaucheの内部文字エンコーディングがUTF-8でない場合、
 @defunx char-downcase char
 @defunx char-titlecase char
 @defunx char-foldcase char
-[R5RS+]
+[R6RS][R7RS]
 @c EN
 Returns the upper case, lower case, title case and folded case of
-@var{char}, respectively.  R5RS doesn't have
-@code{char-titlecase} and @code{char-foldcase}.
-Foldcase is the same as apply upcase, then downcase.
+@var{char}, respectively.
 
 The mapping is done according to Unicode-defined character-by-character
 case mapping whenever possible.  If the native encoding doesn't support
@@ -4841,9 +4899,12 @@ are Latin-1 (ISO-8859-1) characters.  So, upcasing Latin-1 character
 small y with diaresis (U+00ff) maps to capital y with diaresis
 (U+039c) if the internal encoding is utf-8, but it is no-op if
 the internal encoding is none.
+
+R7RS doesn't have @code{char-titlecase}; other three procedures are
+defined in the @code{(scheme char)} library.  R6RS defines all of them.
 @c JP
 @var{char}の大文字、小文字、titlecase、foldcaseを
-それぞれ返します。foldcaseは最初に大文字にしてそれから小文字にするのと同じ操作です。
+それぞれ返します。
 
 変換は原則としてUnicodeで定義された文字対文字のマッピングに従います。
 Unicodeに従って変換する先の文字が内部エンコーディングでサポートされていない
@@ -4852,6 +4913,9 @@ Unicodeに従って変換する先の文字が内部エンコーディングで�
 small y with diaresis (U+00ff) をupcaseすると、
 内部エンコーディングがutf-8の場合はcapital y with diaresis (U+039c)にマップされますが、
 内部エンコーディングがnoneであれば元の文字がそのまま返されます。
+
+R7RSは@code{char-titlecase}を定義していません。それ以外の3つの手続きは
+@code{(scheme char)}ライブラリにあります。R6RSは全ての手続きを提供しています。
 @c COMMON
 
 @c EN
@@ -4898,6 +4962,14 @@ FULLWIDTH DIGIT ZERO to NINE (U+ff10 - U+ff19).
 この手続きはASCIIの数字だけでなく、@code{Nd}カテゴリに属する
 すべての文字、例えば
 FULLWIDTH DIGIT ZEROからNINE (U+ff10 - U+ff19) も認識します。
+@c COMMON
+
+@c EN
+R7RS has @code{digit-value}, which is equivalent to
+@code{(digit->integer char 10 #t)}.
+@c JP
+R7RSには@code{digit-value}という手続きが定義されていて、それは
+@code{(digit->integer char 10 #t)}と等価です。
 @c COMMON
 
 @c EN
