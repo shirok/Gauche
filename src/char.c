@@ -607,7 +607,9 @@ ScmObj Scm_CharSetRead(ScmPort *input, int *complement_p,
                 case 'f': ch = '\f'; goto ordchar;
                 case 'e': ch = 0x1b; goto ordchar;
                 case 'x': case 'u': case 'U':
-                    ch = Scm_ReadXdigitsFromString(cp, end-cp, ch, 0, TRUE, &cp);
+                    ch = Scm_ReadXdigitsFromString(cp, end-cp, ch,
+                                                   Scm_ReaderLexicalMode(),
+                                                   TRUE, &cp);
                     if (ch == SCM_CHAR_INVALID) goto err;
                     goto ordchar;
                 case 'd':
