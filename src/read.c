@@ -754,7 +754,7 @@ static ScmObj read_item(ScmPort *port, ScmReadContext *ctx)
 ScmChar Scm_ReadXdigitsFromString(const char *buf,
                                   int buflen,
                                   ScmChar key, /* x, u or U */
-                                  ScmObj mode, /* ScmReaderLexicalMode */
+                                  ScmObj mode, /* Reader lexical mode */
                                   int terminator, /* TRUE expecting ';' */
                                   const char **nextbuf)
 {
