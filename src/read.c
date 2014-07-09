@@ -1160,22 +1160,25 @@ static ScmObj read_char(ScmPort *port, ScmReadContext *ctx)
             goto unknown;
         }
 
+        ScmObj lexmode = Scm_ReaderLexicalMode();
+
         /* handle #\x1f etc. */
         if (cname[0] == 'x' && isxdigit(cname[1])) {
             const char *nextptr;
-            ScmChar code = Scm_ReadXdigitsFromString(cname+1, namesize-1,
-                                                     'x', 0, FALSE, &nextptr);
+            ScmChar code = Scm_ReadXdigitsFromString(cname+1, namesize-1, 'x',
+                                                     lexmode, FALSE, &nextptr);
             if (code == SCM_CHAR_INVALID || *nextptr != '\0') goto unknown;
             return SCM_MAKE_CHAR(code);
         }
-        /* handle #\uxxxx or #\uxxxxxxxx*/
+        /* handle legacy #\uxxxx or #\uxxxxxxxx */
         if ((cname[0] == 'u') && isxdigit(cname[1])
-            && (!SCM_EQ(Scm_ReaderLexicalMode(), SCM_SYM_STRICT_R7))) {
+            && (!SCM_EQ(lexmode, SCM_SYM_STRICT_R7))) {
             if (namesize >= 5 && namesize <= 9) {
                 const char *nextptr;
-                ScmChar code = Scm_ReadXdigitsFromString(cname+1,
-                                                         namesize-1,
-                                                         'x', 0, FALSE,
+                /* NB: We want to allow variable number of digits, so
+                   we pass 'x' as key (instead of 'u') here. */
+                ScmChar code = Scm_ReadXdigitsFromString(cname+1, namesize-1,
+                                                         'x', lexmode, FALSE,
                                                          &nextptr);
                 if (code >= 0 && *nextptr == '\0') {
                     return SCM_MAKE_CHAR(code);
