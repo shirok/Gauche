@@ -43,8 +43,16 @@ the reader.  R7RS defines two of such directives---@code{#!fold-case}
 and @code{#!no-fold-case}, which switches whether symbols
 are read in case-folding or non-case-folding mode, respectively.
 
-See the @emph{Hash-bang token} section below for the details.
+See the @emph{Hash-bang token} section below for all the directives
+Gauche has.
 @c JP
+@item hash-bang指示子
+@code{#!}で始まるトークンはリーダに特別な影響を与えます。
+R7RSではそういった指示子がふたつ定義されています。
+シンボルのリード時に大文字小文字を無視するかしないかを
+切り替える、@code{#!fold-case}と@code{#!no-fold-case}です。
+
+Gaucheで使える指示子の一覧については、下の@emph{Hash-bang token}を参照してください。
 @c COMMON
 
 @c EN
@@ -154,12 +162,12 @@ character literals, charcter set literals, string literals,
 symbols, regular expression literals.
 
 R7RS adopted a hex escape notation @code{\xNNNN;} for strings
-and symbols surrounded by vertical bars, and @code{#xNNNN} for
+and symbols surrounded by vertical bars, and @code{#\xNNNN} for
 characters.  The number of digits is variable, and
 the character code is Unicode codepoint.
 
-Gauche had been using two types of escapes; @code{\u}/@code{#u}
-and @code{\x}/@code{#x}.  In general, @code{u} is for Unicode
+Gauche had been using two types of escapes; @code{\u}
+and @code{\x}.  In general, @code{u} is for Unicode
 codepoint, while @code{x} is for the character code in the internal
 encoding.  Besides, except character literals, we used fixed number
 of digits, instead of using the terminator @code{;} as in R7RS.
@@ -180,11 +188,11 @@ backward-compatible.  @xref{Reader lexical mode}, for the details.
 具体的には、文字、文字セット、文字列、シンボル、正規表現リテラルです。
 
 R7RSは文字列および縦棒で囲まれたシンボル中では@code{\xNNNN;}、文字単独では
-@code{#xNNNN}というエスケープ構文を採用しました。16進数の桁数は可変で、
+@code{#\xNNNN}というエスケープ構文を採用しました。16進数の桁数は可変で、
 文字コードはUnicodeコードポイントです。
 
 Gaucheは歴史的に2種類のエスケープを使ってきました。
-@code{\u}/@code{#u}と@code{\x}/@code{#x}です。
+@code{\u}と@code{\x}です。
 @code{u}はUnicodeコードポイントに、@code{x}は内部エンコーディングによる
 文字コードに使っていました。また、文字リテラル以外では
 16進数の桁数は固定で、したがってR7RSのような終端文字(@code{;})を必要としませんでした。
