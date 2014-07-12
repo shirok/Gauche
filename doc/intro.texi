@@ -352,6 +352,17 @@ protocol and used to manipulate the dynamic environment.
 パラメータ。特定のプロトコルに従う手続きで、動的環境の操作に使われるもの。
 詳しくは@ref{Parameters}参照。
 @c COMMON
+@c COMMON
+@item Generic application
+@c EN
+@tab In Gauche, you can ``apply'' a non-procedure object to arguments
+as if it is a procedure (@xref{Applicable objects}, for the details).
+This entry explains the behavior of an object applied to arguments.
+@c JP
+@tab Gauhceでは、手続きでないオブジェクトをあたかの手続きのように
+引数に「適用」することができます(詳しくは@ref{Applicable objects}を参照してください)。
+このエントリは、オブジェクトが引数に適用された時のふるまいを説明します。
+@c COMMON
 @end multitable
 
 @c EN
