@@ -4424,77 +4424,163 @@ here
 how to write code that works in the current Gauche and will keep working
 after we make the change.
 @c JP
+将来のGaucheでは、キーワードは「デフォルトで自分自身に束縛されている」という
+性質を持つ、シンボルのサブタイプとなる予定です。
+表面的にはこの変更はたいした違いをもたらさないでしょう。
+プログラム中に表記してあるキーワードはそれ自身に評価されるので、
+今までどおりキーワード引数を渡すことができます。
+今までと違ってキーワードを変数として使い、例えば@code{(define :key 3)}のように
+新たな値に束縛することはできるようになりますが、その変更は
+そうしているモジュールの中だけに留まります。そもそも現在のGaucheで
+キーワードの束縛は許されていないので、この変更は上位互換です。
+(キーワードを再定義する時はその効果をわきまえて使ってください)。
+
+けれども、違いが現れるいくつかのわかりづらい場合が存在し、
+注意していないと互換性を壊してしまうかもしれません。
+現在のGaucheで使えて、さらに将来に渡っても壊れることがないような方法を
+これから説明します。
 @c COMMON
 
+@c EN
 @subsubheading @code{(symbol? :key)} that returns @code{#f} now, will return @code{#t}
+@c JP
+@subsubheading @code{(symbol? :key)}は現在は@code{#f}を返すが、将来は@code{#t}を返す
+@c COMMON
 
+@c EN
 You will still be able to distinguish keywords by @code{keyword?}; but
 if you need to switch behavior depending whether an object is a symbol
 or a keyword, you have to test keyword-ness first.
+@c JP
+キーワードかどうかの判定には@code{keyword?}を使えますが、
+シンボルかキーワードかで動作を変えるコードでは、常にキーワードの検査を先にするように
+してください。
+@c COMMON
 
 @example
+@c EN
 ;; will break
+@c JP
+;; これは壊れる
+@c COMMON
 (cond
   [(symbol? x) (x-is-symbol)]
   [(keyword? x) (x-is-keyword)])
 
+@c EN
 ;; will work on both versions
+@c JP
+;; これなら大丈夫
+@c COMMON
 (cond
   [(keyword? x) (x-is-keyword)]
   [(symbol? x) (x-is-symbol)])
 @end example
 
+@c EN
 @subsubheading Literal keywords in pattern matching
+@c JP
+@subsubheading パターンマッチ中のリテラルキーワード
+@c COMMON
 
+@c EN
 In the current version,
 when keywords appear in a pattern of @code{util.match}
 or @code{syntax-rules}, they only match to themselves.
 After we make keywords as a subtype of symbols, such keywords in
 a pattern are treated as pattern variables, just like symbols.
+@c JP
+現在のバージョンでは、@code{util.match}や@code{syntax-rules}の
+パターンにキーワードが現れた場合、それはキーワード自身とのみマッチします。
+しかしキーワードがシンボルのサブタイプになると、そういったキーワードはシンボルと
+同じようにパターン変数として扱われます。
+@c COMMON
 
 @example
+@c EN
 ;; In the current version
+@c JP
+;; 現在のバージョン
+@c COMMON
 (match '(a b) [(:key z) (list :key z)] [_ "nope"])
    @result{} "nope"
 
+@c EN
 ;; After keyword symbol integration;
 ;; :key is treated just as a pattern variable
+@c JP
+;; キーワードとシンボルが統合された後
+;; :keyは単なるパターン変数となる
+@c COMMON
 (match '(a b) [(:key z) (list :key z)] [_ "nope"])
    @result{} (a b)
 @end example
 
+@c EN
 The same thing happens to the patterns in @code{syntax-rules}.
 
 To make the code work in both versions, expilcitly mark the keywords
 as literals.  
+@c JP
+@code{syntax-rules}でも同じことが起きます。
+
+どのバージョンでも動くコードにするには、マッチさせたいキーワードが
+リテラルであることを明示してください。
+@c COMMON
 
 @itemize @bullet
 @item
+@c EN
 For @code{match}, quote the keywords you want to be treated as literals.
+@c JP
+@code{match}では、キーワードをクオートしてリテラルであることを示します。
+@c COMMON
 @example
 (match '(a b) [(':key z) (list :key z)] [_ "nope"])
    @result{} "nope"
 @end example
 
 @item
+@c EN
 For @code{syntax-rules}, list the keywords as literals.
+@c JP
+@code{syntax-rules}では、キーワードをリテラルリストに含めてください。
+@c COMMON
 @example
 (syntax-rules (:key)
   [(_ :key z) (list :key z)])  ;etc.
 @end example
 @end itemize
 
+@c EN
 Note that it was an error in Gauche 0.9.3.3 or before to
 list keywords in the literals of @code{syntax-rules}.
 In 0.9.4 you can do so, and we encourage it, for it is also compatible to R7RS.
+@c JP
+Gauche 0.9.3.3とそれ以前のバージョンでは、@code{syntax-rules}のリテラルリストに
+キーワードを入れるとエラーになっていました。
+0.9.4ではそれが出来ますし、そうすべきです。そのコードはR7RSとも互換になります。
+@c COMMON
 
+@c EN
 @subsubheading Displaying keywords
+@c JP
+@subsubheading キーワードの表示
+@c COMMON
 
+@c EN
 Now @code{(display :key)} prints @code{key} (no colon), while it will
 print @code{:key} in future.
 
 You can use @code{(display (keyword->string :key))} which prints @code{key}
 in both versions.
+@c JP
+@code{(display :key)}は今は@code{key}を表示します(コロン無し)が、
+将来は@code{:key}を表示するようになります。
+
+@code{key}を表示したい場合は@code{(display (keyword->string :key))}とすれば、
+どのバージョンでも同じように動作します。
+@c COMMON
 
 
 @c ----------------------------------------------------------------------
@@ -4557,13 +4643,13 @@ NUL character (ASCII #x00)
 @item x@var{N}
 A character whose Unicode codepoint is the integer @var{N},
 when @var{N} is a hexadecimal integer.
-This is R7RS lexical syntax.
+This is R7RS lexical syntax. (See the compatibility note below).
 @item u@var{N}
 A character whose Unicode codepoint is the integer @var{N},
 where @var{N} is 4-digit or 8-digit hexadecimal number.
 
 This is legacy Gauche lexical syntax.  Use @code{\xN} syntax for
-the new code.
+the new code. (See the compatibility note below).
 @end table
 @c JP
 リテラルの文字オブジェクトを表現します。
@@ -4595,10 +4681,11 @@ the new code.
 NUL文字 (ASCII #x00)
 @item x@var{N}
 @var{N} が16進表記の整数であるとき、Unicodeコードポイントが整数@var{N}
-であるような文字。これはR7RSの字句構文です。
+であるような文字。これはR7RSの字句構文です。(下の互換性に関する注も見てください。)
 @item u@var{N}
 @var{N}が4桁または8桁の16進数整数であるとき、UCSコード@var{N}であるような文字。
 これはGaucheの古い構文です。新規のコードでは@code{\xN}を使ってください。
+(下の互換性に関する注も見てください。)
 @end table
 @c COMMON
 
@@ -4617,28 +4704,41 @@ NUL文字 (ASCII #x00)
 #\x2a6b2  @result{} ; @r{JISX0213 2-94-86}
 @c COMMON
 @end example
+@end deftp
 
 @c EN
-Note: Before 0.9.4, @code{\xNN} syntax uses Gauche's internal
+@b{Compatibility note}:
+Before 0.9.4, @code{\xNN} syntax uses Gauche's internal
 character encoding as opposed to Unicode codepoint.  Both are
 the same if Gauche is compiled with internal encoding @code{utf-8}
 or @code{none} (if it's @code{none}, only characters up to U+00ff
 is supported and in this range the characters are the same as 
 Unicode characters.)   If Gauche is compiled with encoding
-@code{euc-jp} or @code{sjis}, the souce should be changed if
-it uses @code{\xNN} beyond ASCII characters.
+@code{euc-jp} or @code{sjis}, the meaning of @code{\xNN} beyond 
+ASCII range differs from 0.9.3.3 or before.
+
+If you set the reader mode to @code{legacy} (@xref{Reader lexical mode}),
+@code{#\xNN} is read as before, keeping the compatibility
+(but it isn't compatible to R7RS).  Alternatively,
+you can use @code{#\uNNNN}, or a character itself, to
+make the code work in both new and old versions of Gauche.
 @c JP
-註: 0.9.4まで、Gaucheは@code{\xNN}構文を、
+@b{互換性に関する注}: 0.9.4まで、Gaucheは@code{\xNN}構文を、
 Unicodeコードポイントでなく内部文字エンコーディングで文字を表記するのに
 使っていました。Gaucheの内部エンコーディングを@code{utf-8}もしくは
 @code{none}でコンパイルされている場合は両者に違いはありません
 (@code{none}の場合、U+00ffまでの文字しか扱うことができませんが、
 扱える範囲内ではUnicodeと一致します)。
 内部エンコーディングが@code{euc-jp}か@code{sjis}の場合、
-@code{\xNN}で記されたASCIIの範囲外の文字は、Unicodeコードポイントへの
-修正が必要です。
+@code{\xNN}で記されたASCIIの範囲外の文字の解釈は、
+0.9.3.3およびそれ以前のGaucheとは異なることになります。
+
+リーダのモードを@code{leagcy}にセットすれば(@ref{Reader lexical mode}参照)、
+@code{#\xNN}は以前と同じ解釈となり、互換性は保たれます
+(ただし、R7RSとは非互換になります)。
+あるいは@code{#\uNNNN}表記や文字そのものを表記することで、
+以前のGaucheでも新しいGaucheでも動作するようにできます。
 @c COMMON
-@end deftp
 
 @defun char? obj
 [R7RS]
@@ -5120,12 +5220,13 @@ Characters between @var{x} and @var{y}, inclusive.
 @item ^
 If @i{char-set-spec} begins with caret, the actual character set
 is a complement of what the rest of @i{char-set-spec} indicates.
-@item \x@var{NN}
-A character whose internal code is a hexadecimal number @var{NN}.
-@item \u@var{NNNN}
-A character whose UCS-2 code is a 4-digit hexadecimal number @var{NNNN}.
-@item \U@var{NNNNNNNN}
-A character whose UCS-4 code is a 8-digit hexadecimal number @var{NNNNNNNN}.
+@item \x@var{N};
+A character whose Unicode codepoint is a hexadecimal number @var{N}.
+@item \u@var{XXXX}
+@itemx \U@var{XXXXXXXX}
+This is a legacy Gauche syntax, for a unicode character
+whose Unicode codepoint is represented by 4-digit and 8-digit hexadecimal
+numbers, respectively.  
 @item \s
 Whitespace characters.
 @item \S
@@ -5153,12 +5254,12 @@ recognized: @code{alnum}, @code{alpha}, @code{blank}, @code{cntrl},
 @end table
 
 @example
-#[aeiou]     ; @r{a character set consists of vowels}
-#[a-zA-Z]    ; @r{alphabet}
-#[[:alpha:]] ; @r{alphabet (using POSIX notation)}
-#[\x0d\x0a]  ; @r{newline and carriage return}
-#[\\\-]      ; @r{backslash and minus}
-#[]          ; @r{empty charset}
+#[aeiou]       ; @r{a character set consists of vowels}
+#[a-zA-Z]      ; @r{alphabet}
+#[[:alpha:]]   ; @r{alphabet (using POSIX notation)}
+#[\\\-]        ; @r{backslash and minus}
+#[]            ; @r{empty charset}
+#[\x0d;\x0a;\x3000;] ; @r{carriage return, newline, and ideographic space}
 @end example
 @c JP
 この構文で、リテラル文字集合を記述することができます。
@@ -5171,12 +5272,8 @@ recognized: @code{alnum}, @code{alpha}, @code{blank}, @code{cntrl},
 @item ^
 カレットが@i{char-set-spec}の最初に来た場合、以降に示される文字集合の
 補集合がこの文字集合となります。
-@item \x@var{NN}
-内部文字コード@var{NN}(16進数表記)の文字。
-@item \u@var{NNNN}
-UnicodeのUCS-2で@var{NNNN}(16進数表記4桁)の文字。
-@item \U@var{NNNNNNNN}
-UnicodeのUCS-4で@var{NNNNNNNN}(16進数表記8桁)の文字。
+@item \x@var{N};
+Unicodeコードポイントが@var{N}(16進数表記)の文字。
 @item \s
 空白文字。
 @item \S
@@ -5206,11 +5303,43 @@ POSIX流文字集合表記。以下の文字集合名が認識されます:
 #[aeiou]     ; @r{母音文字'a', 'e', 'i', 'o', 'u'の集合}
 #[a-zA-Z]    ; @r{アルファベット}
 #[[:alpha:]] ; @r{アルファベット (POSIX表記)}
-#[\x0d\x0a]  ; @r{改行とリターン}
 #[\\\-]      ; @r{バックスラッシュとマイナス文字}
 #[]          ; @r{空の文字集合}
 #[ぁ-ん]     ; @r{平仮名の集合}
+#[\x0d;\x0a;\x3000;]  ; @r{リターン, 改行, 全角空白}
 @end example
+@c COMMON
+
+@c EN
+@b{Note for the compatibility}:
+We used to recognize a syntax @code{\xNN} (two-digit hexadecimal number,
+without semicolon terminator) as a character; for example,
+@code{#[\x0d\x0a]} as a return and a newline.  We still support it
+when we don't see the terminating semicolon, for the compatibility.
+There are ambiguous cases: @code{#[\x0a;]} means only a newline
+in the current syntax, but a newline and a semicolon in legacy syntax.
+
+Setting the reader mode to @code{legacy} restores the old behavior.
+Setting the reader mode to @code{warn-legacy} makes it work like the default
+behavior, but prints warning when it finds legacy syntax.
+@xref{Reader lexical mode}, for the details.
+
+To write code that can work both in new and old syntax, use @code{\u} escape.
+@c JP
+@b{互換性への注}:
+以前は、@code{\xNN} (2桁固定の16進数、終端のセミコロン無し) を文字と認識していました。
+例えば@code{#[\x0d\x0a]}はリターン文字と改行文字セットを意味していました。
+互換性のため、終端のセミコロンが見当たらない場合は古い構文もサポートされます。
+しかし曖昧な場合もあります。@code{#[\x0a;]}は新しい構文では
+改行文字のみのセットですが、古い構文では改行文字とセミコロンになります。
+
+リーダのモードを@code{leagcy}にセットすると、常に古い構文で認識されます。
+リーダのモードを@code{warn-legacy}にセットすると、
+デフォルトと同じように振る舞いますが、古い構文を見つけた場合は警告が出力されます。
+詳しくは@ref{Reader lexical mode}を参照してください。
+
+古い構文と新しい構文の両方で動作するコードが必要な場合は、@code{\u}エスケープを
+使ってください。
 @c COMMON
 @end deftp
 
@@ -5335,7 +5464,7 @@ a sequence of characters, or a sequence of bytes.
 @c EN
 It should be emphasized that Gauche's @emph{internal} string object,
 @emph{string body}, is immutable.
-To comply R5RS in which strings are mutable, a Scheme-level
+To comply R7RS in which strings are mutable, a Scheme-level
 string object is an indirect pointer to a string body.
 Mutating a string means that Gauche creates a new immutable
 string body that reflects the changes, then swap the pointer
@@ -5368,7 +5497,7 @@ See also @ref{String Constructors}.
 @c JP
 GaucheではSchemeの文字列は、内部的には、変更不可能なオブジェクト(文字列実体)を
 用いて表現されている、ということを強調しておきます。
-文字列が変更可能であるR5RSの仕様を満たすために、Schemeレベルの文字列は
+文字列が変更可能であるR7RSの仕様を満たすために、Schemeレベルの文字列は
 文字列実体への間接ポインタとなっています。文字列を変更すると、
 変更を反映した新しいstring bodyが作成され、Schemeレベルの文字列が
 新しい文字列実体を指すように変更されます。
@@ -5398,11 +5527,11 @@ c一文字の文字列を間に挟んで継ぎ足すことで新たな文字列�
 @c COMMON
 
 @c EN
-R5RS string operations are very minimal.  Gauche supports some
+R7RS string operations are very minimal.  Gauche supports some
 extra built-in operations, and also a rich string library
 defined in SRFI-13.   @xref{String library}, for details about SRFI-13.
 @c JP
-R5RSに定義されている文字列操作は非常に限られています。
+R7RSに定義されている文字列操作は非常に限られています。
 Gaucheでは追加の組込み手続きのほか、
 SRFI-13に定義されている豊富な文字列ライブラリを備えています。
 SRFI-13については@ref{String library}を参照してください。
@@ -5424,7 +5553,7 @@ SRFI-13については@ref{String library}を参照してください。
 @c NODE 文字列の表記
 
 @deftp {Reader syntax} @code{"}@dots{}@code{"}
-[R5RS+]
+[R7RS+]
 @c EN
 Denotes a literal string.  Inside the double quotes, the following
 backslash escape sequences are recognized.
@@ -5436,27 +5565,27 @@ backslash escape sequences are recognized.
 @table @code
 @item \"
 @c EN
-[R5RS] Double-quote character
+[R7RS] Double-quote character
 @c JP
-[R5RS] ダブルクオート文字
+[R7RS] ダブルクオート文字
 @c COMMON
 @item \\
 @c EN
-[R5RS] Backslash character
+[R7RS] Backslash character
 @c JP
-[R5RS] バックスラッシュ文字
+[R7RS] バックスラッシュ文字
 @c COMMON
 @item \n
 @c EN
-Newline character (ASCII 0x0a).
+[R7RS] Newline character (ASCII 0x0a).
 @c JP
-改行文字 (ASCII 0x0a)
+[R7RS] 改行文字 (ASCII 0x0a)
 @c COMMON
 @item \r
 @c EN
-Return character (ASCII 0x0d).
+[R7RS] Return character (ASCII 0x0d).
 @c JP
-復帰文字 (ASCII 0x0d)
+[R7RS] 復帰文字 (ASCII 0x0d)
 @c COMMON
 @item \f
 @c EN
@@ -5466,9 +5595,21 @@ Form-feed character (ASCII 0x0c).
 @c COMMON
 @item \t
 @c EN
-Tab character (ASCII 0x09)
+[R7RS] Tab character (ASCII 0x09)
 @c JP
-タブ文字 (ASCII 0x09)
+[R7RS] タブ文字 (ASCII 0x09)
+@c COMMON
+@item \a
+@c EN
+[R7RS] Alarm character (ASCII 0x07).
+@c JP
+[R7RS] アラーム文字 (ASCII 0x07)
+@c COMMON
+@item \b
+@c EN
+[R7RS] Backspace character (ASCII 0x08).
+@c JP
+[R7RS] バックスペース文字 (ASCII 0x08)
 @c COMMON
 @item \0
 @c EN
@@ -5478,19 +5619,20 @@ NUL文字 (ASCII 0x00)
 @c COMMON
 @item \<whitespace>*<newline><whitespace>*
 @c EN
-Ignored.  This can be used to break a long string literal for readability.
+[R7RS] Ignored.  This can be used to break a long string literal for readability.
 This escape sequence is introduced in R6RS.
 @c JP
-無視されます。長い文字列リテラルを読みやすさのために折り返す時に便利です。
+[R7RS] 無視されます。長い文字列リテラルを読みやすさのために折り返す時に便利です。
 このエスケープシーケンスはR6RSで導入されました。
 @c COMMON
-@item \x@var{NN}
+@item \x@var{N};
 @c EN
-A byte represented by two-digit hexadecimal number @var{NN}.
-The byte is interpreted as the internal multibyte encoding.
+[R7RS] A character whose Unicode codepoint is represented by
+hexadecimal number @var{N}, which is any number of hexadecimal digits.
+(See the compatibility notes below.)
 @c JP
-2桁の16進数@var{NN}で指定されるバイト。
-このバイトは内部エンコーディングによって解釈されます。
+[R7RS] 16進数@var{N}で表現されたUnicodeコードポイントの文字。
+16進数は何桁でも良い。(下の互換性に関する注参照。)
 @c COMMON
 @item \u@var{NNNN}
 @c EN
@@ -5507,16 +5649,6 @@ hexadecimal number @var{NNNNNNNN}.
 8桁の16進数@var{NNNNNNNN}によって示されるUCS4コードを持つ文字。
 @c COMMON
 @end table
-
-@c EN
-If Gauche is compiled with internal encoding other than UTF-8,
-the reader uses @code{gauche.charconv} module to interpret
-@code{\uNNNN} and @code{\UNNNNNNNN} escape sequence.
-@c JP
-GaucheがUTF-8以外の内部エンコーディングでコンパイルされていた場合、
-リーダーは@code{gauche.charconv}モジュールを使って
-エスケープシーケンス@code{\uNNNN}と@code{\UNNNNNNNN}の解釈を行います。
-@c COMMON
 
 @c EN
 The following code is an example of backslash-newline escape sequence:
@@ -5550,6 +5682,34 @@ you can put '\n' in the next line like this:
   This is a long message, \
   \n   with a line break.")
 @end example
+
+@c EN
+@b{Note for the compatibility}:
+We used to recognize a syntax @code{\xNN} (two-digit hexadecimal number,
+without semicolon terminator) as a character in a string; for example,
+@code{"\x0d\x0a"} was the same as @code{"\r\n"}.  We still support it
+when we don't see the terminating semicolon, for the compatibility.
+There are ambiguous cases: @code{"\0x0a;"} means @code{"\n"} in the
+current syntax, while @code{"\n;"} in the legacy syntax.
+
+Setting the reader mode to @code{legacy} restores the old behavior.
+Setting the reader mode to @code{warn-legacy} makes it work like the default
+behavior, but prints warning when it finds legacy syntax.
+@xref{Reader lexical mode}, for the details.
+@c JP
+@b{互換性に関する注}:
+以前は、@code{\xNN} (2桁固定の16進数、終端のセミコロン無し) を
+文字列中の文字と認識していました。
+例えば@code{"\x0d\x0a"}は@code{"\r\n"}と同じでした。
+互換性のため、終端のセミコロンが見当たらない場合は古い構文もサポートされます。
+しかし曖昧な場合もあります。@code{"\x0a;"}は新しい構文では
+@code{"\n"}と同じですが、、古い構文では@code{"\n;"}となります。
+
+リーダのモードを@code{leagcy}にセットすると、常に古い構文で認識されます。
+リーダのモードを@code{warn-legacy}にセットすると、
+デフォルトと同じように振る舞いますが、古い構文を見つけた場合は警告が出力されます。
+詳しくは@ref{Reader lexical mode}を参照してください。
+@c COMMON
 @end deftp
 
 @deftp {Reader syntax} @code{#*"}@dots{}@code{"}
@@ -5580,7 +5740,7 @@ and two can coexist).
 @c NODE 文字列に関する述語
 
 @defun string? obj
-[R5RS]
+[R7RS]
 @c EN
 Returns @code{#t} if @var{obj} is a string, @code{#f} otherwise.
 @c JP
@@ -5609,7 +5769,7 @@ Returns @code{#t} if @var{obj} is an incomplete string, @code{#f} otherwise
 @c NODE 文字列の作成
 
 @defun make-string k :optional char
-[R5RS]
+[R7RS]
 @c EN
 Returns a string of length @var{k}.  If optional @var{char} is given,
 the new string is filled with it.  Otherwise, the string is filled with
@@ -5664,7 +5824,7 @@ are used to initialize every byte in the created string.
 @end defun
 
 @defun string char @dots{}
-[R5RS]
+[R7RS]
 @c EN
 Returns a string consisted by @var{char} @dots{}.
 @c JP
@@ -5716,36 +5876,35 @@ Schemeはそのような機能を定義していませんが、Gaucheではリ�
 文字列の補間を実装しました。
 @c COMMON
 
-@deftp {Reader syntax} @code{#`}@var{string-literal}
+@deftp {Reader syntax} @code{#}@var{string-literal}
 @c EN
 Evaluates to a string.  If @var{string-literal} contains the
-character sequence @code{,@var{expr}}, where
+character sequence @code{~@var{expr}}, where
 @var{expr} is a valid external representation
 of a Scheme expression, @var{expr} is evaluated and
 its result is inserted in the original place (by using @code{x->string},
 see @ref{String Constructors}).
 @c JP
-文字列に評価されます。@var{string-literal}内に、@code{,@var{expr}}
+文字列に評価されます。@var{string-literal}内に、@code{~@var{expr}}
 というシーケンス(ここで@var{expr}は有効なScheme式の外部表現)が
 現われたら、@var{expr}が評価されてその結果がもとの位置に埋め込まれます。
 結果の文字列化には@code{x->string}が使われます(@ref{String Constructors}参照)。
 @c COMMON
 
 @c EN
-The comma and the following expression must be adjacent (without containing
+The tilde and the following expression must be adjacent (without containing
 any whitespace characters), or it is not recognized as a special sequence.
 @c JP
-コンマと続く式とは、空白文字等を入れずに隣接していなければなりません。
+チルダと続く式とは、空白文字等を入れずに隣接していなければなりません。
 そうでない場合は置換されません。
 @c COMMON
 
 @c EN
-Two adjacent commas are converted to a single comma.  You can embed
-a comma before a non-whitespace character in @var{string-literal}
-by this.
+To include a tilde itself immediately followed by non-delimiting
+character, use @code{~~}.
 @c JP
-二つの連続するコンマは一つのリテラルのコンマ文字に置き換えられます。
-これによって、コンマと非空白文字の連続を@var{string-literal}に入れることができます。
+すぐ後ろに非空白文字が来る場所にチルダ自身を埋め込みたい場合は
+@code{~~}とします。
 @c COMMON
 
 @c EN
@@ -5765,24 +5924,24 @@ using `|' character, as shown in the last two examples below.
 @c COMMON
 
 @example
-#`"This is Gauche, version ,(gauche-version)."
+#"This is Gauche, version ~(gauche-version)."
  @result{} "This is Gauche, version @VERSION@."
 
-#`"Date: ,(sys-strftime \"%Y/%m/%d\" (sys-localtime (sys-time)))"
+#"Date: ~(sys-strftime \"%Y/%m/%d\" (sys-localtime (sys-time)))"
  @result{} "Date: 2002/02/18"
 
 (let ((a "AAA")
       (b "BBB"))
- #`"xxx ,a ,b zzz")
+ #"xxx ~a ~b zzz")
  @result{} "xxx AAA BBB zzz"
 
-#`"123,,456,,789"
- @result{} "123,456,789"
+#"123~~456~~789"
+ @result{} "123~456~789"
 
-(let ((n 5)) #`"R,|n|RS")
- @result{} "R5RS"
+(let ((n 7)) #"R~|n|RS")
+ @result{} "R7RS"
 
-(let ((x "bar")) #`"foo,|x|.")
+(let ((x "bar")) #"foo~|x|.")
  @result{} "foobar"
 @end example
 
@@ -5795,7 +5954,7 @@ as follows:
 @code{string-append}への呼び出しへと変換されます。
 @c COMMON
 @example
-#`"This is Gauche, version ,(gauche-version)."
+#"This is Gauche, version ~(gauche-version)."
  @equiv{}
 (string-append "This is Gauche, version "
                (x->string (gauche-version))
@@ -5803,13 +5962,59 @@ as follows:
 @end example
 @end deftp
 
+@deftp {Reader syntax} @code{#`}@var{string-literal}
+@c EN
+This is the old style of string-interpolation.  It is still recognized,
+but discouraged for the new code.
+
+Inside @var{string-literal}, you can use @code{,@var{expr}} 
+(instead of @code{~@var{expr}}) to
+evaluate @var{expr}.  If comma isn't immediately followed by a
+character starting an expression, it loses special meaning.
+@c JP
+これは文字列補間の古い書法です。まだ認識されますが、
+新たなコードでは使わないでください。
+
+@var{string-literal}の中で、(@code{~@var{expr}} ではなく)
+@code{,@var{expr}} とマークされた部分の@var{expr}が評価されます。
+コンマのすぐ次に式を開始する文字がこなければ、コンマはその効力を失います。
+@c COMMON
+
+@example
+#`"This is Gauche, version ,(gauche-version)"
+@end example
+@end deftp
+
+
 @c EN
 @emph{Rationale of the syntax:}
-Some other scripting languages use `@code{$expr}' or '@code{#@{...@}}'.
-I chose this syntax with respect to the quasiquote (@xref{Quasiquotation}).
-Although it may be awkward to delimit variable names by `|',
-the comma syntax should be easier to read than the other exotic syntax
-for seasoned Scheme programmers.
+There are wide variation of string interpolation syntax among scripting
+languages.  They are usually linked with other syntax of the language
+(e.g. prefixing @code{$} to mark evaluating place is in sync with variable
+reference syntax in some languages).
+
+The old style of string interpolation syntax was taken from quasiquote
+syntax, because those two are conceptually 
+similar operations (@xref{Quasiquotation}).
+However, since comma character is frequently used in string literals,
+it was rather awkward.
+
+We decided that tilde is more suitable as the unquote character for
+the following reasons.
+
+@itemize
+@item
+Traditionally, Lisp's string formatter @code{format} uses @code{~} to introduce
+format directives (@xref{Formatting output}).  Lispers are used to
+scan @code{~}'s in a string as variable portions.
+@item
+Gauche's @code{~} is a universal accessor, and the operator has a nuance
+of ``taking something out of it''
+(@xref{Universal accessor}).
+@item
+Clojure, a new Lisp dialect, adopted @code{~} as the unquote character in
+the quasiquote syntax, instead of commas.
+@end itemize
 
 Note that Scheme allows wider range of characters for valid identifier names
 than usual scripting languages.
@@ -5817,26 +6022,46 @@ Consequently, you will almost always need to use `|' delimiters
 when you interpolate the value of a variable.
 For example, while you can write
 @code{"$year/$month/$day $hour:$minutes:$seconds"} in Perl,
-you should write @code{#`",|year|/,|month|/,day ,|hour|:,|minutes|:,seconds"}.
+you should write @code{#"~|year|/~|month|/~day ~|hour|:~|minutes|:~seconds"}.
 It may be better always to delimit direct variable references
 in this syntax to avoid confusion.
 @c JP
 @emph{この構文を採用した理由:}
-他のスクリプト言語では、`@code{$expr}' や '@code{#@{...@}}' が良く使われています。
-準クオート (@ref{Quasiquotation}参照) との類似性からこの構文を採用しました。
-変数名の区切りを明確にするのに`|'を使う必要があるのは少々奇妙ですが、
-慣れたSchemeプログラマならコンマ構文を読むのは他の言語から借りた構文よりも
-楽だと思います。
+スクリプト言語の文字列補間構文には様々なバリエーションがありますが、通常、
+その言語の他の構文と関連しているものが多いです
+(例えば、@code{$}で変数参照する言語が、@code{$}を文字列中の評価部分に前置する等)。
+
+Gaucheの古い形式の文字列補間構文では、準クオートの構文を流用していました
+(@ref{Quasiquotation}参照)。準クオートと文字列補間は意味的に似ているからです。
+けれども、コンマはそれ自体が文字列中によく出てくる文字なので、少々不格好な仕様でした。
+
+そこで、以下のような理由から、チルダの方がアンクオート文字としてふさわしいと判断しました。
+
+@itemize
+@item
+伝統的に、Lispの文字列フォーマッティング関数@code{format}では
+@code{~}をフォーマット指示子の導入に使ってきました
+(@ref{Formatting output}参照)。Lisperは文字列中で@code{~}を走査して
+可変部分を見つけるのに慣れています。
+@item
+Gaucheは @code{~} を万能アクセサとして使っていて、この文字には「中から何かを取り出す」
+ニュアンスを付加しています
+(@ref{Universal accessor}参照)。
+@item
+新たなLisp方言であるClojureは、準クオート構文中のアンクオート文字に
+コンマでなく @code{~} を採用しています。
+@end itemize
 
 Schemeは他のスクリプト言語より一般的により多くの文字を変数名に使うことが出来ることに注意して下さい。
 結果として、変数の値を文字列に挿入する際、ほとんどの場合において変数名を`|'で区切る
 必要があるでしょう。例えば、Perlでは
 @code{"$year/$month/$day $hour:$minutes:$seconds"}
 と書けたものが、Gaucheでは
-@code{#`",|year|/,|month|/,day ,|hour|:,|minutes|:,seconds"}
+@code{#`"~|year|/~|month|/~day ~|hour|:~|minutes|:~seconds"}
 と書かねばなりません。
 混乱を避けるためには、この構文内では常に直接の変数参照は`|'で区切るようにしておくのが良いかもしれません。
 @c COMMON
+
 
 @node String Accessors & Modifiers, String Comparison, String interpolation, Strings
 @subsection String Accessors & Modifiers
