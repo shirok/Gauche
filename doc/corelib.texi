@@ -6068,7 +6068,7 @@ Schemeは他のスクリプト言語より一般的により多くの文字を�
 @c NODE 文字列のアクセスと変更
 
 @defun string-length string
-[R5RS]
+[R7RS]
 @c EN
 Returns a length of (possibly incomplete) string @var{string}.
 @c JP
@@ -6096,7 +6096,7 @@ For incomplete string, its length and its size always match.
 @end defun
 
 @defun string-ref cstring k :optional fallback
-[R5RS+]
+[R7RS+]
 @c EN
 Returns @var{k}-th character of a complete string @var{cstring}.
 It is an error to pass an incomplete string.
@@ -6129,8 +6129,9 @@ Returned value is an integer in the range between 0 and 255.
 @end defun
 
 @defun string-set! string k char
+[R7RS]
 @c EN
-[R5RS] Substitute @var{string}'s @var{k}-th character by @var{char}.
+Substitute @var{string}'s @var{k}-th character by @var{char}.
 @var{k} must be greater than or equal to zero, and less than
 @code{(string-length @var{string})}.
 Return value is undefined.
@@ -6140,7 +6141,7 @@ of @var{char} is used to set @var{string}'s @var{k}-th byte.
 
 See the notes in @code{make-string} about performance consideration.
 @c JP
-[R5RS] @var{string}の@var{k}番目の文字を@var{char}で置き換えます。
+@var{string}の@var{k}番目の文字を@var{char}で置き換えます。
 @var{k}は0以上、@code{(string-length @var{string})}より小でなければ
 なりません。戻り値は未定義です。
 
@@ -6174,17 +6175,11 @@ Return value is undefined.
 @c NODE 文字列の比較
 
 @defun string=? string1 string2 string3 @dots{}
-[R5RS][R7RS]
+[R7RS]
 @c EN
 Returns @code{#t} iff all arguments are strings with the same content.
-
-R5RS only defines 2-argument version; Gauche can take more than
-2 argument, as specified in R7RS.
 @c JP
 全ての引数が内容の等しい文字列であれば@code{#t}を返します。
-
-R5RSは2引数の場合しか定義していませんが、Gaucheでは3引数以上渡すこともでき、
-それはR7RSの定義と等価です。
 @c COMMON
 @end defun
 
@@ -6192,19 +6187,13 @@ R5RSは2引数の場合しか定義していませんが、Gaucheでは3引数�
 @defunx string<=? string1 string2 string3 @dots{}
 @defunx string>? string1 string2 string3 @dots{}
 @defunx string>=? string1 string2 string3 @dots{}
-[R5RS][R7RS]
+[R7RS]
 @c EN
 Compares strings in codepoint order.  Returns @code{#t} iff
 all the arguments are ordered.
-
-R5RS only defines 2-argument version; Gauche can take more than
-2 argument, as specified in R7RS.
 @c JP
 文字列同士をコードポイントの順序で比較します。全ての引数が順序どおりであれば
 @code{#t}が、そうでなければ@code{#f}が返されます。
-
-R5RSは2引数の場合しか定義していませんが、Gaucheでは3引数以上渡すこともでき、
-それはR7RSの定義と等価です。
 @c COMMON
 @end defun
 
@@ -6213,13 +6202,10 @@ R5RSは2引数の場合しか定義していませんが、Gaucheでは3引数�
 @defunx string-ci<=? string1 string2 string3 @dots{}
 @defunx string-ci>? string1 string2 string3 @dots{}
 @defunx string-ci>=? string1 string2 string3 @dots{}
-[R5RS]
 @c EN
-Case-insensitive string comparison.  R5RS defines 2-argument version.
-Gauche extends them to allow more than two arguments.
+Case-insensitive string comparison.
 @c JP
 大文字小文字を無視する文字列比較です。
-R5RSは2引数の場合しか定義していませんが、Gaucheでは3引数以上渡すこともできます。
 @c COMMON
 
 @c EN
@@ -6261,7 +6247,7 @@ R7RSでプログラミングする際に@code{(scheme char)}をインポート�
 @c NODE 文字列を扱うその他の手続き
 
 @defun substring string start end
-[R5RS]
+[R7RS]
 @c EN
 Returns a substring of @var{string}, starting from @var{start}-th
 character (inclusive) and ending at @var{end}-th character (exclusive).
@@ -6302,7 +6288,7 @@ for the generic version.
 @end defun
 
 @defun string-append string @dots{}
-[R5RS]
+[R7RS]
 @c EN
 Returns a newly allocated string whose content is concatenation of
 @var{string} @dots{}.
@@ -6321,7 +6307,7 @@ See also @code{string-concatenate} in @ref{SRFI-13 String reverse & append}.
 
 @defun string->list string :optional start end
 @defunx list->string list
-[R5RS+][SRFI-13]
+[R7RS]
 @c EN
 Converts a string to a list of characters or vice versa.
 @c JP
@@ -6329,11 +6315,10 @@ Converts a string to a list of characters or vice versa.
 @c COMMON
 
 @c EN
-You can give an optional start/end indexes to @code{string->list},
-as specified in SRFI-13.
+You can give an optional start/end indexes to @code{string->list}.
 @c JP
 @code{string->list}にはオプショナル引数として開始、終了位置のインデッ
-クスを渡せます。これはSRFI-13で規定されています。
+クスを渡せます。
 @c COMMON
 
 @c EN
@@ -6350,7 +6335,7 @@ may want to use @code{tree->string} in @ref{Lazy text construction}.
 @end defun
 
 @defun string-copy string :optional start end
-[R5RS+][SRFI-13]
+[R7RS]
 @c EN
 Returns a copy of @var{string}.  You can give @var{start} and/or
 @var{end} index to extract the part of the original string
@@ -6378,14 +6363,23 @@ See @code{substring} above for the condition that @var{start} and
 それが返ります。@var{start}と@var{end}が満すべき条件については
 前述の@code{substring}の項を見てください。
 @c COMMON
+
+@c EN
+Node: R7RS's destructive version @code{string-copy!} is provided
+by @code{srfi-13} module (@xref{String library}).
+@c JP
+註: R7RSの破壊的バージョン@code{string-copy!}は@code{srfi-13}モジュールで
+提供されます (@ref{String library}参照)。
+@c COMMON
 @end defun
 
 @defun string-fill! string char :optional start end
+[R7RS]
 @c EN
-[R5RS+][SRFI-13] Fills @var{string} by @var{char}.  Optional
+Fills @var{string} by @var{char}.  Optional
 @var{start} and @var{end} limits the effective area.
 @c JP
-[R5RS+][SRFI-13] @var{string} を @var{char} で埋めます。
+@var{string} を @var{char} で埋めます。
 オプションの @var{start} と @var{end} は、影響を受ける領域を
 制限します。
 @c COMMON
