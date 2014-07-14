@@ -306,8 +306,11 @@
   (define+ vector-for-each gauche)
 
   ;; 6.11 Exceptions
-  ;; raise error
-  (define raise-continuable raise) ;WRITEME
+  ;; raise error - built-in
+  
+  ;; NB: In Gauche, 'raise' is continuable as far as the thrown exception
+  ;; isn't fatal.
+  (define raise-continuable raise)
   (define (error-object? e) (condition-has-type? e <error>))
   (define (error-object-message e)
     (if (condition-has-type? e <message-condition>)
