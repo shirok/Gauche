@@ -1,3 +1,8 @@
+2014-07-14  Shiro Kawai  <shiro@acm.org>
+
+	* lib/r7rs.scm, src/libvec.scm: Moved vector->string and string->vector
+	  from r7rs to core, for less confusion.
+
 2014-06-25  Shiro Kawai  <shiro@acm.org>
 
 	* src/read.c (read_internal): In strict-r7 reader mode, read :foo

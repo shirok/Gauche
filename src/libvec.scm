@@ -83,12 +83,14 @@
   (vec::<vector> fill :optional (start::<fixnum> 0) (end::<fixnum> -1))
   ::<void> Scm_VectorFill)
 
-
-(select-module gauche)
-
 (define-cproc vector-copy
   (v::<vector> :optional (start::<fixnum> 0) (end::<fixnum> -1) fill)
   Scm_VectorCopy)
+
+(define (vector->string v :optional (start 0) (end -1)) ;;R7RS
+  (list->string (vector->list v start end))) ; TODO: can be more efficient
+(define (string->vector s :optional (start 0) (end -1)) ;;R7RS
+  (list->vector (string->list s start end))) ; TOOD: can be more efficient
 
 ;;;
 ;;; Weak vectors

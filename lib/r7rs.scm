@@ -266,11 +266,8 @@
 
   ;; 6.8 Vectors
   ;; vector? make-vector vector vector-length vector-ref vector-set!
-  ;; vector->list list->vector vector-copy vector-copy! vector-append vector-fill!
-  (define (vector->string v :optional (start 0) (end -1))
-    (list->string (vector->list v start end))) ; TODO: can be more efficient
-  (define (string->vector s :optional (start 0) (end -1))
-    (list->vector (string->list s start end))) ; TOOD: can be more efficient
+  ;; vector->list list->vector vector->string string->vector
+  ;; vector-copy vector-copy! vector-append vector-fill!
   (define+ vector-copy!  srfi-43)
   (define+ vector-append srfi-43)
 
