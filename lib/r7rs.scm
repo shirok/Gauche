@@ -219,21 +219,19 @@
   ;; guard quasiquote unquote unquote-splicing case-lambda
 
   ;; 4.3 Macros
-  ;; let-synatx letrec-syntax syntax-rules syntax-errorn
+  ;; let-synatx letrec-syntax syntax-rules syntax-error
 
   ;; 5.3 Variable definitions
   (define-syntax r7rs:define define)
   (define-syntax r7rs:define-values define-values)
 
   ;; 5.4 Syntax definitions
-  ;; TODO: make gauche's define-syntax R7RS compatible
   (define-syntax r7rs:define-syntax define-syntax)
 
   ;; 5.5 Record type definitions
   ;; define-record-type
 
   ;; 6.1 Equivalence predicates
-  ;; TODO: make equal? not diverge
   ;; eqv? eq? equal?
 
   ;; 6.2 Numbers
@@ -259,7 +257,6 @@
 
   ;; 6.6 Characters
   ;; char? char=? char<? char>? char<=? char>=?
-  ;; TODO: handle when native encoding is not utf8
   ;; char->integer integer->char
 
   ;; 6.7 Strings
@@ -335,7 +332,7 @@
   ;; scheme-report-environment null-environment
 
   ;; 6.13 Input and output
-  ;; input-port/ output-port? port? current-input-port current-output-port
+  ;; input-port? output-port? port? current-input-port current-output-port
   ;; current-error-port close-port close-input-port close-ouptut-port
   ;; open-input-string open-output-string get-output-string
   ;; read-char peek-char read-line eof-object? eof-object char-ready?
