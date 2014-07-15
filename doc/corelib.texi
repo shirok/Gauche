@@ -8306,6 +8306,10 @@ on it.   @xref{Collection framework}, and @xref{Sequence framework}.
 If you keep only a homogeneous numeric type, you may be able
 to use SRFI-4 homogeneous vectors (@xref{Homogeneous vectors}).
 
+R7RS defines bytevectors; in Gauche, they're just @code{u8vector}s
+in @code{gauche.uvector} module (r7rs modules defines aliases.
+@xref{R7RS base library}).
+
 @xref{Vector library}, for additional operations on vectors.
 @c JP
 ベクタはSchemeオブジェクトの単純な一次元配列です。
@@ -8320,12 +8324,16 @@ to use SRFI-4 homogeneous vectors (@xref{Homogeneous vectors}).
 数値しか要素に持たないベクタを使う場合、SRFI-4の
 単一型ベクタも使えるかもしれません (@ref{Homogeneous vectors}参照)。
 
+R7RSはバイトベクタを定義しています。Gaucheではそれは単に
+@code{gauche.uvector}モジュールの@code{u8vector}です
+(R7RSモジュールは別名を定義しています。@ref{R7RS base library}参照。)
+
 より多くのベクタに対する操作が@ref{Vector library}で提供されています。
 @c COMMON
 @end deftp
 
 @defun vector? obj
-[R5RS]
+[R7RS]
 @c EN
 Returns @code{#t} if @var{obj} is a vector, @code{#f} otherwise.
 @c JP
@@ -8334,7 +8342,7 @@ Returns @code{#t} if @var{obj} is a vector, @code{#f} otherwise.
 @end defun
 
 @defun make-vector k :optional fill
-[R5RS]
+[R7RS]
 @c EN
 Creates and returns a vector with length @var{k}.
 If optional argument @var{fill} is given, each element of the vector
@@ -8348,7 +8356,7 @@ is undefined.
 @end defun
 
 @defun vector obj @dots{}
-[R5RS]
+[R7RS]
 @c EN
 Creates a vector whose elements are @var{obj} @dots{}.
 @c JP
@@ -8374,7 +8382,7 @@ for all @var{i} between @code{0} and @var{len}
 @end defun
 
 @defun vector-length vector
-[R5RS]
+[R7RS]
 @c EN
 Returns the length of a vector @var{vector}.
 
@@ -8389,7 +8397,7 @@ you can also use a method @code{size-of}.
 @end defun
 
 @defun vector-ref vector k :optional fallback
-[R5RS+]
+[R7RS+]
 @c EN
 Returns @var{k}-th element of vector @var{vector}.
 
@@ -8413,7 +8421,7 @@ you can also use a method @code{ref}.
 @end defun
 
 @defun vector-set! vector k obj
-[R5RS]
+[R7RS]
 @c EN
 Sets @var{k}-th element of the vector @var{vector} to @var{obj}.
 It is an error if @var{k} is negative or greater than or equal to the
@@ -8432,18 +8440,20 @@ a setter method of @code{ref}.
 
 @defun vector->list vector :optional start end
 @defunx list->vector list :optional start end
-[R5RS+][SRFI-43+]
+[R7RS+][SRFI-43+]
 @c EN
 Converts a vector to a list, or vice versa.
 
 The optional @var{start} and @var{end} arguments
 limit the range of the source.
+(R7RS doesn't define @var{start} and @var{end} arguments
+for @code{list->vector}.)
 @c JP
 ベクタをリストに変換したり、その逆を行う手続きです。
 
 省略可能な引数@var{start}と@var{end}を与えることにより、
 値を取り出す範囲を制限することができます。
-
+(R7RSの@code{list->vector}は@var{start}と@var{end}引数を規定していません。)
 @c COMMON
 @example
 (vector->list '#(1 2 3 4 5))     @result{} (1 2 3 4 5)
@@ -8464,8 +8474,45 @@ With @var{gauche.collection} module, you can use
 @c COMMON
 @end defun
 
+@defun vector->string vector :optional start end
+@defunx string->vector string :optional start end
+[R7RS]
+@c EN
+Converts a vector of characters to a string, or vice versa.
+It is an error to pass a vector that contains other than characters
+to @code{vector->string}.
+
+The optional @var{start} and @var{end} arguments
+limit the range of the source.
+@c JP
+文字のベクタをリストに変換したり、その逆を行う手続きです。
+@code{vector->string}に、文字以外の要素を含むベクタを渡した場合はエラーになります。
+
+省略可能な引数@var{start}と@var{end}を与えることにより、
+値を取り出す範囲を制限することができます。
+
+@c COMMON
+@example
+(vector->list '#(1 2 3 4 5))     @result{} (1 2 3 4 5)
+(list->vector '(1 2 3 4 5))      @result{} #(1 2 3 4 5)
+(vector->list '#(1 2 3 4 5) 2 4) @result{} (3 4)
+(list->vector (circular-list 'a 'b 'c) 1 6)
+  @result{} #(b c a b c)
+@end example
+
+@c EN
+With @var{gauche.collection} module, you can use
+@code{(coerce-to <string> @var{vector})} and
+@code{(coerce-to <vector> @var{string})} as well.
+@c JP
+@code{gauche.collection}モジュールをロードしていれば、
+@code{(coerce-to <strin> @var{vector})} と
+@code{(coerce-to <vector> @var{string})} も同じ目的で使えます。
+@c COMMON
+@end defun
+
 @defun vector-fill! vector fill :optional start end
-[R5RS+][SRFI-43]
+[R7RS][SRFI-43]
 @c EN
 Sets all elements in a vector @var{vector} to @var{fill}.
 
@@ -8473,7 +8520,6 @@ Optional @var{start} and @var{end} limits the range
 of effect between @var{start}-th index (inclusive) to
 @var{end}-th index (exclusive).  @var{Start} defaults to
 zero, and @var{end} defaults to the length of @var{vector}.
-These optional arguments are Gauche's extension.
 @c JP
 ベクタ@var{vector}の全ての要素を@var{fill}に変更します。
 
@@ -8481,12 +8527,11 @@ These optional arguments are Gauche's extension.
 @var{start}番目の要素から@var{end}-1番目の要素までのみに
 @var{fill}を格納します。@var{start}と@var{end}の既定値は
 それぞれ0と@var{vector}の大きさです。
-@var{start}, @var{end}引数はGaucheの拡張です。
 @c COMMON
 @end defun
 
 @defun vector-copy vector :optional start end fill
-[SRFI-43]
+[R7RS][SRFI-43]
 @c EN
 Copies a vector @var{vector}.  Optional @var{start} and @var{end}
 arguments can be used to limit the range of @var{vector} to be copied.
