@@ -570,6 +570,96 @@ Exports bindings of R7RS @code{(scheme base)} library.  From R7RS programs,
 those bindings are available by @code{(import (scheme base))}.
 @end deftp
 
+The following syntaxes and procedures are the same as Gauche's
+builtins:
+
+@table @asis
+@item Primitive expression types
+@example
+quote if include include-ci lambda
+@end example
+@item Derived expression types
+@example
+cond case and or when unless cond-expand let let* letrec letrec*
+let-values let*-values begin do make-parameter parameterize
+guard quasiquote unquote unquote-splicing case-lambda
+@end example
+@item Macros
+@example
+let-synatx letrec-syntax syntax-rules syntax-error define-syntax
+@end example
+@item Variable definitions
+define define-values
+@item Record type definitions
+@example
+define-record-type
+@end example
+@item Equivalence predicates
+@example
+eqv? eq? equal?
+@end example
+@item Numbers
+@example
+number? complex? real? rational? integer? exact? exact-integer?
+= < > <= >= zero? positive? negative? odd? even? max min + * - / abs
+floor/ floor-quotient floor-remainder
+truncate/ truncate-quotient truncate-remainder
+quotient modulo remainder gcd lcm numerator denominator
+floor ceiling truncate round rationalize square exact-integer-sqrt
+expt inexact exact number->string string->number
+@end example
+@item Booleans
+@example
+not boolean? boolean=?
+@end example
+@item Pairs and lists
+@example
+pair? cons car cdr set-car! set-cdr! caar cadr cdar cddr null? list?
+make-list list length append reverse list-tail list-ref list-set!
+memq memv member assq assv assoc list-copy
+@end example
+@item Symbols
+@example
+symbol? symbol=? symbol->string string->symbol
+@end example
+@item Characters
+@example
+char? char=? char<? char>? char<=? char>=? char->integer integer->char
+@end example
+@item Strings
+@example
+string? make-string string string-length string-ref string-set!
+string=? string<? string>? string<=? string>=? substring string-append
+string->list list->string string-copy string-copy! string-fill!
+@end example
+@item Vectors
+@example
+vector? make-vector vector vector-length vector-ref vector-set!
+vector->list list->vector vector->string string->vector
+vector-copy vector-copy! vector-append vector-fill!
+@end example
+@item Control features
+@example
+procedure? apply map call-with-current-continuation call/cc 
+values call-with-values dynamic-wind
+@end example
+@item Exception
+@example
+raise error
+@end example
+@item Enviornments and evaluation
+@example
+scheme-report-environment null-environment
+@end example
+@item Input and output
+@example
+input-port? output-port? port? current-input-port current-output-port
+current-error-port close-port close-input-port close-ouptut-port
+open-input-string open-output-string get-output-string
+read-char peek-char read-line eof-object? eof-object char-ready?
+newline write-char
+@end example
+@end table
 
 @node R7RS case-lambda, R7RS char library, R7RS base library, Library modules - R7RS integration
 @section @code{scheme.case-lambda} - R7RS case-lambda
