@@ -1,3 +1,8 @@
+2014-07-16  Shiro Kawai  <shiro@acm.org>
+
+	* lib/scheme/*.scm: Placed dummy modules to use R7RS stdlibs
+	  from Gauche
+
 2014-07-14  Shiro Kawai  <shiro@acm.org>
 
 	* lib/r7rs.scm, src/libvec.scm: Moved vector->string and string->vector

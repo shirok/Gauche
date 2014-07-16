@@ -89,6 +89,11 @@ SCMFILES = srfi-0.scm \
        rfc/822.scm rfc/mime.scm rfc/mime-port.scm rfc/base64.scm rfc/uri.scm \
        rfc/cookie.scm rfc/quoted-printable.scm rfc/http.scm rfc/hmac.scm \
        rfc/ftp.scm rfc/icmp.scm rfc/ip.scm rfc/json.scm \
+       scheme/base.scm scheme/case-lambda.scm scheme/char.scm \
+       scheme/complex.scm scheme/cxr.scm scheme/eval.scm scheme/file.scm \
+       scheme/inexact.scm scheme/lazy.scm scheme/load.scm \
+       scheme/process-context.scm scheme/r5rs.scm scheme/read.scm \
+       scheme/repl.scm scheme/time.scm scheme/write.scm \
        text/csv.scm text/parse.scm text/tree.scm text/sql.scm \
        text/html-lite.scm text/info.scm text/diff.scm \
        text/progress.scm \
