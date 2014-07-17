@@ -548,7 +548,7 @@ static ScmSyntaxRules *compile_rules(ScmObj name,
     PatternContext ctx;
     int numRules = Scm_Length(rules);
 
-    if (numRules < 1) goto badform;
+    if (numRules < 0) goto badform;
     if (Scm_Length(literals) < 0) goto badform;
 
     ctx.name = name;

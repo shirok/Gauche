@@ -1,5 +1,8 @@
 2014-07-16  Shiro Kawai  <shiro@acm.org>
 
+	* src/macro.c (compile_rules): Allow syntax-rules to have no rules,
+	  as the spec permits.
+
 	* lib/scheme/*.scm: Placed dummy modules to use R7RS stdlibs
 	  from Gauche
 
