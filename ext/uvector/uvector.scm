@@ -44,4 +44,10 @@
   (export-all)
   )
 (select-module gauche.uvector)
+
 (dynamic-load "libgauche-uvector")
+
+;; for the bakcward compatibility
+(define read-block! read-uvector!)
+(define write-block write-uvector)
+

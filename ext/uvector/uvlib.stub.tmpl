@@ -247,18 +247,38 @@
     (result (* (- end start)
                (Scm_UVectorElementSize (Scm_ClassOf (SCM_OBJ v)))))))
 
-(define-cproc read-block! (v::<uvector>
-                           :optional (port::<input-port> (current-input-port))
-                                     (start::<fixnum> 0)
-                                     (end::<fixnum> -1)
-                                     (endian::<symbol>? #f))
+(define-cproc read-uvector! (v::<uvector>
+                             :optional (port::<input-port> (current-input-port))
+                                       (start::<fixnum> 0)
+                                       (end::<fixnum> -1)
+                                       (endian::<symbol>? #f))
   Scm_ReadBlockX)
 
-(define-cproc write-block (v::<uvector>
-                           :optional (port::<output-port> (current-output-port))
-                                     (start::<fixnum> 0)
-                                     (end::<fixnum> -1)
-                                     (endian::<symbol>? #f))
+(define-cproc read-uvector (klass::<class> size::<fixnum> 
+                            :optional (port::<input-port> (current-input-port))
+                                      (endian::<symbol>? #f))
+  (unless (Scm_SubtypeP klass SCM_CLASS_UVECTOR)
+    (Scm_TypeError "class" "uniform vector class" (SCM_OBJ klass)))
+  (let* ([v::ScmUVector* (cast ScmUVector* (Scm_MakeUVector klass size NULL))]
+         [r (Scm_ReadBlockX v port 0 size endian)])
+    (if (SCM_EOFP r)
+      (result r)
+      (begin
+        (SCM_ASSERT (SCM_INTP r))
+        (let* ([n::long (SCM_INT_VALUE r)])
+          (SCM_ASSERT (and (<= n size) (<= 0 n)))
+          ;; NB: If read size is a lot shorter than requested size, we may
+          ;; want to copy it instead of just keeping the rest of vector
+          ;; unused.
+          (if (< n size)
+            (result (Scm_UVectorAlias klass v 0 n))
+            (result (SCM_OBJ v))))))))
+
+(define-cproc write-uvector (v::<uvector>
+                             :optional (port::<output-port> (current-output-port))
+                                       (start::<fixnum> 0)
+                                       (end::<fixnum> -1)
+                                       (endian::<symbol>? #f))
   Scm_WriteBlock)
 
 (define-cproc uvector-copy! (dest::<uvector> dstart::<int> src::<uvector>
