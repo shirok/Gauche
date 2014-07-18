@@ -353,9 +353,8 @@
   (define-inline read-u8 read-byte)
   (define-inline peek-u8 peek-byte)
   (define u8-ready? byte-ready?)
-  (define (read-bytevector k . args)  ; temporary implementation
-    (let1 r (apply read-block k args)
-      (if (eof-object? r) r (string->u8vector r))))
+  (define (read-bytevector k :optional (port (current-input-port)))
+    (read-uvector <u8vector> k port))
   (define (read-bytevector! bv :optional (port (current-input-port))
                                          (start 0)
                                          (end (u8vector-length bv)))
