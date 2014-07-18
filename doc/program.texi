@@ -1502,7 +1502,7 @@ and only do tricks on the innermost loop.
 every call to I/O primitives of Gauche locks the port.
 This overhead may be visible if the application does a lot of I/O
 with smaller units (e.g. every bytes).   The primitives that deals
-with larger unit, such as @code{read} and @code{read-block}, are less
+with larger unit, such as @code{read} and @code{read-uvector}, are less
 problematic, since usually they just lock the port once per call and do
 all the low-level I/O without the lock overhead.
 (Note: this doesn't mean those primitives @emph{guarantee}
@@ -1518,7 +1518,7 @@ Gauche のすべての入出力基本関数はポートをロックします。
 アプリケーションでは無視できないでしょう。
 入出力基本関数は通常呼びだし毎にポートをロックし、そこからの
 下位レベルの入出力はロックのオーバーヘッドの影響を受けずに
-行なわれます。ですから @code{read} や@code{raed-block}
+行なわれます。ですから @code{read} や@code{read-uvector}
 などのより大きな単位で入出力を行なう基本関数では問題と
 なることが少なくなります。
 (注意：これらの基本関数が常にポートをロックしつづけることを

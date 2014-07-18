@@ -560,9 +560,9 @@ Gauche の @code{port-tell} を使いましょう。(@ref{Common port operations
 @c COMMON
 @item fgets
 @c EN
-Use @code{read-line} or @code{read-block}.    @xref{Input}.
+Use @code{read-line} or @code{read-string}.    @xref{Input}.
 @c JP
-@code{read-line} あるいは @code{read-block} を使いましょう。@ref{Input} 参照。
+@code{read-line} あるいは @code{read-string} を使いましょう。@ref{Input} 参照。
 @c COMMON
 @item fileno
 @c EN
@@ -635,13 +635,13 @@ Use @code{display}.  @xref{Output}.
 Not directly supported.
 To read binary numbers, see @ref{Binary I/O}.
 If you want to read a chunk of bytes, you may be
-able to use @code{read-block!}.
+able to use @code{read-uvector!}.
 @xref{Uvector block I/O}.
 @c JP
 直接はサポートされていません。
 バイナリの数値を読む場合は@ref{Binary I/O}を参照のこと。
 バイトのチャンクで読みたければ、
-@code{read-block!} が使えるでしょう (@ref{Uvector block I/O}参照)。
+@code{read-uvector!} が使えるでしょう (@ref{Uvector block I/O}参照)。
 @c COMMON
 @item free
 @c EN
@@ -703,13 +703,13 @@ Gauche の @code{port-tell}(@xref{Common port operations}参照)を使いまし�
 Not directly supported.
 To write binary numbers, see @ref{Binary I/O}.
 If you want to write a chunk of bytes,
-you can simply use @code{display} or @code{write-block}
+you can simply use @code{display} or @code{write-uvector}
 (@xref{Uvector block I/O}).
 @c JP
 直接はサポートされていません。
 バイナリの数値を書き出すのなら、@ref{Binary I/O}参照のこと。
 バイト列のチャンクを書き出しすなら、
-単に @code{display} を使うか、@code{write-block} が使えます
+単に @code{display} を使うか、@code{write-uvector} が使えます
 (@ref{Uvector block I/O}参照)。
 @c COMMON
 @item getc
@@ -804,9 +804,9 @@ Gauche の @code{sys-getpwnam} および @code{sys-getpwuid}。
 @c COMMON
 @item gets
 @c EN
-Use @code{read-line} or @code{read-block}.  @xref{Input}.
+Use @code{read-line} or @code{read-string}.  @xref{Input}.
 @c JP
-@code{read-line} または @code{read-block}を使いましょう。@ref{Input}参照。
+@code{read-line} または @code{read-string}を使いましょう。@ref{Input}参照。
 @c COMMON
 @item gettimeofday
 @c EN
@@ -1185,12 +1185,12 @@ as @code{sys-random}.  @xref{Miscellaneous system calls}.
 @item read
 @c EN
 Not supported directly, but you may be able to use
-@code{read-block} (@xref{Input}) or
-@code{read-block!} (@xref{Uvector block I/O}).
+@code{read-uvector} or
+@code{read-uvector!} (@xref{Uvector block I/O}).
 @c JP
 直接はサポートされていませんが、
-@code{read-block} (@ref{Input}参照) あるいは
-@code{read-block!} (@ref{Uvector block I/O}参照)が使えます。
+@code{read-uvector} あるいは
+@code{read-uvector!} (@ref{Uvector block I/O}参照)が使えます。
 @c COMMON
 @item readdir
 @c EN
@@ -1800,11 +1800,11 @@ Gauche はマルチバイト文字列を内部的に処理します。それゆ�
 @c COMMON
 @item write
 @c EN
-R5RS @code{display} (@xref{Output}).
-Or @code{write-block} (@xref{Uvector block I/O}).
+R7RS @code{display} (@xref{Output}).
+Or @code{write-uvector} (@xref{Uvector block I/O}).
 @c JP
-R5RS の @code{display} (@xref{Output})。
-あるいは @code{write-block} (@ref{Uvector block I/O}参照)。
+R7RS の @code{display} (@xref{Output})。
+あるいは @code{write-uvector} (@ref{Uvector block I/O}参照)。
 @c COMMON
 @end table
 

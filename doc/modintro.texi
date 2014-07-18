@@ -673,11 +673,11 @@ universal resource access by uri.  Code contributions are welcome.
 @c EN
 As the bottom level,
 Gauche includes primitive byte I/O (@code{read-byte}, @code{write-byte})
-as well as block I/O (@code{read-block!}, @code{write-block}) in its core.
+as well as block I/O (@code{read-uvector}, @code{read-uvector!}, @code{write-uvector}) in its core.
 (See @ref{Reading data}, @ref{Output}, and @ref{Uvector block I/O}).
 @c JP
-最下層としてGaucheはコアに含まれるブロック入出力(@code{read-block!}
-、@code{write-block})と同様、バイト入出力のプリミティブ
+最下層としてGaucheはコアに含まれるブロック入出力(@code{read-uvector}, @code{read-uvector!}
+、@code{write-uvector})と同様、バイト入出力のプリミティブ
 (@code{read-byte}、@code{write-byte})も含んでいます
 (@ref{Reading data}、@ref{Output}、@ref{Uvector block I/O}参照)。
 @c COMMON

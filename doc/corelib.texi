@@ -2046,12 +2046,12 @@ Schemeの世界では、数値がマシン上でどのように表現されて�
 @c EN
 Gauche's binary I/O procedures, such as in
 the @code{binary.io} module (@xref{Binary I/O}) and
-@code{write-block}/@code{read-block!}
+@code{write-uvector}/@code{read-uvector!}
 (@xref{Uniform vectors}), take optional @var{endian} argument
 to specify the endianness.
 @c JP
 @code{binary.io}モジュール(@ref{Binary I/O}参照)や
-@code{write-block}/@code{read-block!}(@ref{Uniform vectors}参照)
+@code{write-uvector}/@code{read-uvector!}(@ref{Uniform vectors}参照)
 等、Gaucheのバイナリ入出力手続きはエンディアンを指定する
 省略可能な@var{endian}引数を取ります。
 @c COMMON
@@ -14515,15 +14515,16 @@ descriptor.)
 @item :modest
 @c EN
 This is valid only for input ports.  This is almost the same as the mode
-@code{:full}, except that @code{read-block} may return less data
+@code{:full}, except that @code{read-uvector} may return less data
 than requested if the requested amount of data is not immediately available.
-(In the @code{:full} mode, @code{read-block} waits the entire data to be
+(In the @code{:full} mode, @code{read-uvector} waits the entire data to be
 read).   This is suitable for the port connected to a pipe or network.
 @c JP
 このモードは入力ポートにのみ有効です。ほとんど@code{:full}バッファリングモードと
-同じですが、@code{read-block}はポートに要求されたデータより少ないデータしか
+同じですが、@code{read-uvector}はポートに要求されたデータより少ないデータしか
 無かった場合、要求された量がたまるまで待つのではなく、今あるデータだけを
-返します。このモードはポートがパイプやネットワークに接続されている場合に
+返します(@code{:full}の場合は@code{read-uvector}はすべてのデータが到着するまで
+待ちます)。このモードはポートがパイプやネットワークに接続されている場合に
 便利です。
 @c COMMON
 @end table
@@ -15288,6 +15289,14 @@ This optional argument is Gauche's extention to R7RS.
 
 @defun read-block nbytes :optional iport
 @c EN
+This procedure is deprecated - use @code{read-uvector} instead
+(@xref{Uvector block I/O}).
+@c JP
+この手続きは非推奨になりました。@code{read-uvector}を使ってください
+(@ref{Uvector block I/O}参照)。
+@c COMMON
+
+@c EN
 Reads @var{nbytes} bytes from @var{iport}, and returns an incomplete
 string consisted by those bytes.  The size of returned string may
 shorter than @var{nbytes} when @var{iport} doesn't have enough bytes
@@ -15335,28 +15344,14 @@ but the entire data is not available immediately.
 @end itemize
 
 @c EN
-@code{Read-block} returns newly allocated string every time.
-If you want to avoid allocation and read the data into a pre-allocated
-fixed-length buffer, you can use @code{read-block!}
-in @code{gauche.uvector} module (@xref{Uvector block I/O}).
-It uses a uniform vector as the buffer.
-@c JP
-@code{read-block}は呼ばれるたびに新たな文字列をアロケートします。
-アロケーションを避け、あらかじめ用意された固定長のバッファにデータを読み込みたい
-場合は、@code{gauche.uvector}モジュールの@code{read-block!}
-を使って下さい (@ref{Uvector block I/O}参照)。
-@code{Read-block!}はuniform vectorをバッファとして用います。
-@c COMMON
-
-@c EN
 If you want to write a chunk of bytes to a port,
 you can use either @code{display} if the data is in string,
-or @code{write-block} in @code{gauche.uvector} (@xref{Uvector block I/O})
+or @code{write-uvector} in @code{gauche.uvector} (@xref{Uvector block I/O})
 if the data is in uniform vector.
 @c JP
 データブロックをポートに書き出すには、データが文字列で表現されている
 場合は単純に@code{display}が使えます。データがuniform vectorで表現されている
-場合は@code{gauche.uvector}モジュールの@code{write-block}が
+場合は@code{gauche.uvector}モジュールの@code{write-uvector}が
 使えます (@ref{Uvector block I/O}参照)。
 @c COMMON
 @end defun
@@ -15390,7 +15385,7 @@ immediately available from @var{port}.   If the next byte is a part of
 a multibyte character, the attempt to read the whole character may block,
 even if @code{char-ready?} returns @code{#t} on the port.
 (It is unlikely to happen in usual situation, but theoretically it can.
-If you concern, use @code{read-block} to read the input as a byte
+If you concern, use @code{read-uvector} to read the input as a byte
 sequence, then use input string port to read characters.)
 @c JP
 @var{port}から文字が読み出せる状態ならば@code{#t}を返します。
@@ -15399,7 +15394,7 @@ sequence, then use input string port to read characters.)
 を返します。そのバイトがマルチバイト文字を構成する場合、@code{char-ready?}を返した
 ポートから文字全てを読み込もうとすると、ブロックする可能性があります。
 (通常の使用状況ではそのようなことは起きないでしょうが、理論的には起こり得ます。
-慎重を期したい場合は@code{read-block}でバイトシーケンスとして読み込んだ後、
+慎重を期したい場合は@code{read-uvector}でバイトシーケンスとして読み込んだ後、
 入力文字列ポート等を使って文字毎に読むようにして下さい。)
 @c COMMON
 @end defun
@@ -15422,10 +15417,14 @@ R7RSではこの手続きは@code{u8-ready?}と呼ばれています。
 @c NODE リーダー字句モード
 
 @deffn {Parameter} reader-lexical-mode
-Get/set the reader compatibility mode.  Changing this parameter
+@c EN
+Get/set the reader lexcial mode.  Changing this parameter
 switches behavior of the reader concerning some corner cases
 of the lexical syntax, where legacy Gauche syntax and R7RS syntax
 aren't compatible.
+@c JP
+リーダの字句解析モード
+@c COMMON
 
 In general, you don't need to change this parameter directly.
 The lexical syntax matters at the read-time, while changing this parameter
@@ -15516,12 +15515,11 @@ SRFI-10で定義されている読み込み時コンストラクタは、ユー�
 @c COMMON
 
 @deftp {Reader Syntax} @code{#,(@var{tag} @var{arg} @dots{})}
-@c EN
 [SRFI-10]
+@c EN
 Gauche maintains a global table that associates a @var{tag} (symbol)
 to @emph{a constructor procedure}.
 @c JP
-[SRFI-10]
 Gaucheは@var{tag} (シンボル)を@emph{コンストラクタ手続き}に関連付ける
 グローバルなテーブルを管理しています。
 @c COMMON
@@ -15852,7 +15850,7 @@ Procedures that deal with raw data.
 @item
 To output a character or a byte: @code{write-char}, @code{write-byte}.
 @item
-To output an array of binary data: @code{write-block}.
+To output an array of binary data: @code{write-uvector}.
 @item
 To flush the output buffer: @code{flush}, @code{flush-all-ports}.
 @end itemize
@@ -15863,7 +15861,7 @@ To flush the output buffer: @code{flush}, @code{flush-all-ports}.
 @item
 文字毎やバイト毎の出力: @code{write-char}, @code{write-byte}
 @item
-バイナリデータの配列の出力: @code{write-block}
+バイナリデータの配列の出力: @code{write-uvector}
 @item
 出力バッファのフラッシュ: @code{flush}, @code{flush-all-ports}
 @end itemize

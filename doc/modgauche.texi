@@ -12101,6 +12101,7 @@ echoサーバのシンプルな例を示します。
 @example
 (use gauche.net)
 (use gauche.selector)
+(use gauche.uvector)
 
 (define (echo-server port)
   (let ((selector (make <selector>))
@@ -12116,11 +12117,11 @@ echoサーバのシンプルな例を示します。
                        '(r))))
 
     (define (echo client input output)
-      (let ((str (read-block 4096 input)))
+      (let ((str (read-uvector <u8vector> 4096 input)))
         (if (eof-object? str)
             (begin (selector-delete! selector input #f #f)
                    (socket-close client))
-            (begin (display str output)
+            (begin (write-uvector str output)
                    (flush output)))))
 
     (selector-add! selector
@@ -16123,7 +16124,7 @@ When @var{start} and/or @var{end} is/are given, the size of data
 between those indices are calculated.  The special value @code{-1}
 for @var{end} indicates the end of the vector.
 The returned value matches the number of octets to be written out
-by @code{(write-block @var{uvector} port @var{start} @var{end})}.
+by @code{(write-uvector @var{uvector} port @var{start} @var{end})}.
 @c JP
 この手続きは全てのユニフォームベクタに適用することができます。
 @var{uvector}のバイナリデータとしてのサイズをオクテット数で返します。
@@ -16132,7 +16133,7 @@ by @code{(write-block @var{uvector} port @var{start} @var{end})}.
 これらのインデックスの間のデータについてのみサイズが計算されます。
 @var{end}には、ベクタ終端を示すために@code{-1}を与えることもできます。
 返される値は
-@code{(write-block @var{uvector} port @var{start} @var{end})} によって
+@code{(write-uvector @var{uvector} port @var{start} @var{end})} によって
 出力されるオクテット数と一致します。
 @c COMMON
 
@@ -17278,7 +17279,80 @@ So you might want to use it for binary I/O.  Yes, you can do it.
 できます。それなら、それをバイナリI/Oに使えないでしょうか。もちろんできます。
 @c COMMON
 
-@defun read-block! vec :optional iport start end endian
+@defun read-uvector class size :optional iport endian
+@c EN
+Reads @var{size} elements of uvector of class @var{class} from
+@var{iport}, and returns fleshly created uvector.  If @var{iport}
+is omitted, the curret input port is used.
+@c JP
+クラス@code{class}のユニフォームベクタの要素を@var{size}個、@var{iport}から
+読み込み、それを新たに作ったユニフォームベクタとして返します。
+@var{iport}が省略された場合は、現在の入力ポートが使われます。
+@c COMMON
+
+@c EN
+For example, you can read input as an octet stream as follows:
+@c JP
+例えば次のようにして、入力をオクテットストリームとして読み込めます:
+@c COMMON
+
+@example
+(with-input-from-string "abcde"
+  (^[] (read-uvector <u8vector> 5)))
+ @result{} #u8(97 98 99 100 101)
+@end example
+
+@c EN
+If the input port has aleady reached EOF, an EOF object is
+returned.  The returned uvector can be shorter than @var{size}
+if the input reaches EOF before @var{size} elements are read.
+@c JP
+入力ポートが既にEOFに達していた場合はEOFオブジェクトが返されます。
+@var{size}要素を読む前に入力がEOFに達した場合、返されるuvectorの長さは
+@var{size}より短いものとなります。
+@c COMMON
+
+@c EN
+If the @var{iport} is a buffered port with `modest' or `none'
+buffering mode (@xref{File ports}), @code{read-uvector} may return
+before @var{size} elements are read, even if @var{iport}
+hasn't reached EOF.  The ports connected to a pipe or a network socket
+behave so by default.
+@c JP
+@var{iport}がバッファードポートであり、そのバッファリングモードが
+`modest' か `none' であった場合、@code{read-uvector}は@var{iport}が
+EOFに達していなくても、@var{size}要素を読む前に戻ることがあります
+(バッファリングモードについては@ref{File ports}を参照して下さい)。
+パイプやネットワークに接続されたポートはデフォルトでそのように振舞います。
+@c COMMON
+
+@c EN
+The data is read as a byte stream, so if you give uniform vectors
+other than s8vector or u8vector, your result may affected by
+the endianness.  If the optional argument @var{endian} is
+given, the input is interpreted in that endianness.
+When omitted, the value of the parameter @code{default-endian}
+is used.  @xref{Endianness}, for more about endian handling.
+@c JP
+データはバイトストリームとして読まれるので、
+s8vectorとu8vector以外のユニフォームベクタを与えた場合は
+結果がエンディアンに影響を受けることに注意して下さい。
+省略可能引数@var{endian}によって、入力データのエンディアンを指定
+することができます。省略した場合はパラメータ@code{default-endian}の
+値が使われます。エンディアンの扱いについてより詳しくは@ref{Endianness}を参照して
+ください。
+@c COMMON
+
+@c EN
+R7RS has @code{read-bytevector}; it is the same as passing @code{<u8vector>}
+to @code{read-uvector}.
+@c JP
+R7RSには@code{read-bytevector}があります。これは@code{read-uvector}に
+@code{<u8vector>}を渡すのと等価です。
+@c COMMON
+@end defun
+
+@defun read-uvector! vec :optional iport start end endian
 @c EN
 Reads a chunk of data from the given input port @var{iport},
 and stores it to the uniform vector @var{vec}.
@@ -17310,17 +17384,17 @@ is filled, the rest of the vector is untouched.
 @c COMMON
 
 @c EN
-If @var{iport} is already reached EOF when @code{read-block!} is
+If @var{iport} is already reached EOF when @code{read-uvector!} is
 called, an EOF object is returned.  Otherwise,
 the procedure returns the number of @emph{elements} read (not bytes).
 @c JP
-@code{read-block!}が呼ばれた時既に@var{iport}がEOFに達していた場合は
+@code{read-uvector!}が呼ばれた時既に@var{iport}がEOFに達していた場合は
 EOFが、そうでなければ読まれた要素の数 (バイト数ではありません) が返されます。
 @c COMMON
 
 @c EN
 If the @var{iport} is a buffered port with `modest' or `none'
-buffering mode (@xref{File ports}), @code{read-block!} may return
+buffering mode (@xref{File ports}), @code{read-uvector!} may return
 before all the elements in @var{vec} is filled, even if @var{iport}
 hasn't reached EOF.  The ports connected to a pipe or a network socket
 behave so by default.  If you know there will be enough data arriving and
@@ -17328,9 +17402,9 @@ want to make sure @var{vec} is filled, change the buffering mode of
 @var{iport} to `full'.
 @c JP
 @var{iport}がバッファードポートであり、そのバッファリングモードが
-`modest' か `none' であった場合、@code{read-block!}は@var{iport}が
+`modest' か `none' であった場合、@code{read-uvector!}は@var{iport}が
 EOFに達していなくても、@var{vec}を埋める前に戻ることがあります
-(バッファリングモードについては@ref{File ports})を参照して下さい。
+(バッファリングモードについては@ref{File ports}を参照して下さい)。
 パイプやネットワークに接続されたポートはデフォルトでそのように振舞います。
 もし、十分なデータが到着することがわかっており、@var{vec}を確実に埋めたい場合は
 ポートのバッファリングモードを`full'に変更して下さい。
@@ -17354,7 +17428,18 @@ s8vectorとu8vector以外のユニフォームベクタを与えた場合は
 @c COMMON
 @end defun
 
-@defun write-block vec :optional oport start end endian
+@defun read-block! vec :optional iport start end endian
+@c EN
+An old name of @code{read-uvector!}.  Supported for the backward
+compatibility, but new code should use @code{read-uvector!}.
+@c JP
+@code{read-uvector!}の古い名前です。互換性のためサポートされていますが、
+新しいコードでは@code{read-uvector!}を使ってください。
+@c COMMON
+@end defun
+
+
+@defun write-uvector vec :optional oport start end endian
 @c EN
 Writes out the content of the uniform vector @var{vec} 'as is'
 to the output port @var{oport}.   If @var{oport} is omitted,
@@ -17374,18 +17459,29 @@ This procedure returns an unspecified value.
 
 @c EN
 If you write out a uniform vector except s8vector and u8vector, the
-care should be taken about the endianness, as in @code{read-block!}.
+care should be taken about the endianness, as in @code{read-uvector}.
 The optional argument @var{endian} specifies the output endian.
 When it is omitted, the value of the parameter @code{default-endian}
 is used (@xref{Endianness}).
 @c JP
 @code{s8vector}と@code{u8vector}以外のユニフォームベクタを与えた場合、
-@code{read-block!}と同じようにエンディアンの影響を受けることに注意して
+@code{read-uvector}と同じようにエンディアンの影響を受けることに注意して
 下さい。省略可能引数@var{endian}によって出力のエンディアンを
 指定できます。省略した場合はパラメータ@code{default-endian}の値が
 使われます (@xref{Endianness}参照)。
 @c COMMON
 @end defun
+
+@defun write-block vec :optional iport start end endian
+@c EN
+An old name of @code{write-uvector}.  Supported for the backward
+compatibility, but new code should use @code{write-uvector}.
+@c JP
+@code{write-uvector}の古い名前です。互換性のためサポートされていますが、
+新しいコードでは@code{write-uvector}を使ってください。
+@c COMMON
+@end defun
+
 
 @c ----------------------------------------------------------------------
 @node Comparing version numbers, Virtual ports, Uniform vectors, Library modules - Gauche extensions
@@ -17764,11 +17860,11 @@ value(s) read from the port.
 @c EN
 If set, the value must be a procedure that takes one argument,
 a positive exact integer.  It is called when the block binary
-input, such as @code{read-block}, is requested.
+input, such as @code{read-uvector}, is requested.
 @c JP
 設定されているなら、その値は、正の正確な整数の引数をひとつだけとる手続き
 でなければなりません。ブロックバイナリ入力、たとえば、
-@code{read-block}などが要求された場合に、呼出されます。
+@code{read-uvector}などが要求された場合に、呼出されます。
 
 @c EN
 It must return a (maybe incomplete) string up to the specified size,
