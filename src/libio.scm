@@ -464,7 +464,8 @@
 
 (define-cproc eof-object () :constant (result SCM_EOF)) ;R6RS
 
-(define-cproc byte-ready? (port::<input-port>) ::<boolean> Scm_ByteReady)
+(define-cproc byte-ready? (:optional (port::<input-port> (current-input-port)))
+  ::<boolean> Scm_ByteReady)
 
 (define-cproc read-byte (:optional (port::<input-port> (current-input-port)))
   (let* ([b::int])
