@@ -14027,7 +14027,7 @@ in typical cases.
   (get-output-string os))
  @result{} "foo"
 @end example
-@end defun
+@end deffn
 
 @deffn {Parameter} standard-input-port
 @deffnx {Parameter} standard-output-port
@@ -14056,7 +14056,7 @@ low-level libraries referring.
 参照しているシステムのstdioファイルディスクリプタは変更されない、
 という点に注意してください。
 @c COMMON
-@end defun
+@end deffn
 
 @defun with-input-from-port port thunk
 @defunx with-output-to-port port thunk
@@ -15380,7 +15380,7 @@ Returns true if @var{obj} is an EOF object.
 @c COMMON
 @end defun
 
-@defun char-ready? port
+@defun char-ready? :optional port
 [R7RS]
 @c EN
 If a character is ready to be read from @var{port}, returns @code{#t}.
@@ -15404,9 +15404,17 @@ sequence, then use input string port to read characters.)
 @c COMMON
 @end defun
 
-@defun byte-ready? port
+@defun byte-ready? :optional port
+@c EN
 If one byte (octet) is ready to be read from @var{port}, returns
 @code{#t}.
+
+In R7RS, this procedure is called @code{u8-ready?}
+@c JP
+@var{port}から1バイトをすぐに読み込める状態なら@code{#t}を返します。
+
+R7RSではこの手続きは@code{u8-ready?}と呼ばれています。
+@c COMMON
 @end defun
 
 @node Reader lexical mode, Read-time constructor, Reading data, Input
