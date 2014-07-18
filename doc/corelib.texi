@@ -9696,7 +9696,7 @@ Gaucheではどんな型のオブジェクトも適用可能にできるので�
 @end deftp
 
 @defun procedure? obj
-[R5RS]
+[R7RS]
 @c EN
 Returns @code{#t} if @var{obj} is @emph{inherently} applicable
 objects, @code{#f} otherwise.  By @emph{inherently} applicable
@@ -9729,7 +9729,7 @@ Gaucheでは、どんなオブジェクトも適用可能にすることがで�
 @end defun
 
 @defun apply proc arg1 @dots{} args
-[R5RS]
+[R7RS]
 @c EN
 Calls a procedure @var{proc} with a list of arguments,
 @code{(@var{arg1} @dots{} . @var{args})}.
@@ -10674,7 +10674,7 @@ of @code{set!} form, this method is called, that is:
 
 @defun call-with-current-continuation proc
 @defunx call/cc proc
-[R5RS]
+[R7RS]
 @c EN
 Encapsulates the current continuation to a procedure
 (``continuation procedure''), and calls @var{proc} with it.
@@ -10802,7 +10802,7 @@ APIはPLT Schemeから取りました。
 
 
 @defun dynamic-wind before thunk after
-[R5RS]
+[R7RS]
 @c EN
 @var{Before}, @var{thunk} and @var{after} are all procedures with
 no arguments.
@@ -10853,7 +10853,7 @@ scope of @code{dynamic-wind}, @var{before} is called.
 @c NODE 多値
 
 @defun values obj @dots{}
-[R5RS]
+[R7RS]
 @c EN
 Returns @var{obj} @dots{} as multiple values.
 Caller can capture multiple values by a built-in syntax
@@ -10873,7 +10873,7 @@ See also @ref{Let-values}.
 @end defun
 
 @defun call-with-values producer consumer
-[R5RS]
+[R7RS]
 @c EN
 Call a procedure @var{producer} with no argument.
 Then applies a procedure @var{consumer} on the
@@ -11213,12 +11213,12 @@ Schemeは伝統的に、@code{delay}と@code{force}を使った
 メモリを際限なく要求してしまうのです。SRFI-45によって、
 新たなプリミティブ構文@code{lazy}を使えばその問題が回避できることが示されました。
 詳しい議論はSRFI-45のドキュメントを見てください。
-ここでは3つのプリミティブの使い方を説明します。
+ここではこれらのプリミティブの使い方を説明します。
 @c COMMON
 
-@defspec lazy expression
-@defspecx delay expression
-[SRFI-45][R5RS]
+@defspec delay expression
+@defspecx lazy expression
+[R7RS][SRFI-45]
 @c EN
 These forms creates a @emph{promise} that delays the evaluation
 of @var{expression}.  @var{Expression} will be evaluated
@@ -11257,6 +11257,16 @@ Schemeでは静的な型付けをしないので、この使い分けを強制�
 @c COMMON
 
 @c EN
+NB: In R7RS, @code{lazy} is called @code{delay-force}, for the operation
+is conceptually similar to @code{(delay (force expr))} (note that the
+type of @code{force} is @code{Promise a -> a}).
+@c JP
+註: R7RSでは@code{lazy}は@code{delay-force}と呼ばれています。概念的に
+@code{(delay (force expr))}という操作と考えられるからです
+(@code{force}の型は@code{Promise a -> a}であると考えられます)。
+@c COMMON
+
+@c EN
 For the real-world example of use of @code{lazy},
 you may want to check the implementation of @code{util.stream}
 (@xref{Stream library}).
@@ -11267,7 +11277,7 @@ you may want to check the implementation of @code{util.stream}
 @end defspec
 
 @defun force promise
-[R5RS]
+[R7RS]
 @c EN
 If @var{promise} is not a promise, it is just returned.
 
@@ -11289,6 +11299,7 @@ so that subsequent @code{force} on it won't cause the computation.
 @end defun
 
 @defun promise? obj
+[R7RS]
 @c EN
 Returns @code{#t} iff @var{obj} is a promise object.
 @c JP
@@ -12377,15 +12388,16 @@ To signal a compound condition, you can use @code{raise} as explained below.
 
 @defun error string arg @dots{}
 @defunx error condition-type keyword-arg @dots{} string arg @dots{}
+[R7RS+][SRFI-23+] 
 @c EN
-[SRFI-23+] Signals an error.  The first form creates an @code{<error>}
+Signals an error.  The first form creates an @code{<error>}
 condition, with a message consists of @var{string} and @var{arg} @dots{},
-and raises it.  It is compatible to srfi-23's @code{error} behavior.
+and raises it.  It is compatible to R7RS and SRFI-23's @code{error} behavior.
 @c JP
-[SRFI-23+] エラーを通知します。最初の形式は、
+エラーを通知します。最初の形式は、
 @var{string}と@var{arg} @dots{}からなるメッセージを持つ
 @code{<error>}コンディションを作成それを@code{raise}します。
-この形式はsrfi-23の@code{error}と互換です。
+この形式はR7RS及びSRFI-23の@code{error}と互換です。
 @c COMMON
 
 @example
@@ -12461,8 +12473,8 @@ The second form can be used to raise an error other than an
 @c COMMON
 
 @defun raise condition
+[SRFI-18][R7RS]
 @c EN
-[SRFI-18]
 This is the base mechanism of signaling exceptions.
 
 The procedure invokes the current exception handler.
@@ -12483,8 +12495,14 @@ pass a condition which is an instance of @code{<serious-condition>}
 or one of its subclasses.  Gauche's internal mechanism
 guarantees raising such an exception won't return.
 See @ref{Conditions} for the hierarchy of built-in conditions.
+
+R7RS adopted slightly diffrent semantics regarding returning from
+@code{raise}; in R7RS, @code{raise} never returns---if the exception
+handler returns, another exception is raised.
+R7RS has @code{raise-continuable} to explicitly allow returning from
+the exception handler.  For portable programs, always
+pass @code{<serious-condition>} or its subclasses to @code{raise}.
 @c JP
-[SRFI-18]
 これは、例外事態を通知する基本となるメカニズムです。
 
 この手続きは現在の例外ハンドラを呼び出します。引数@var{condition}は
@@ -12503,6 +12521,13 @@ Gaucheの組み込み手続きやライブラリ手続きは常に、@code{<cond
 @code{<serious-condition>}やそのサブクラスのインスタンスを@var{condition}
 として@code{raise}に渡すのが確実です。
 組み込みコンディションのクラス階層については@ref{Conditions}を参照して下さい。
+
+R7RSではやや異なるセマンティクスを採用しています。R7RSの@code{raise}は
+決して戻りません---もしハンドラが戻ってきた場合は、別の例外が投げられます。
+R7RSは@code{raise-continuable}という別の手続きで、ハンドラから
+戻っても良いことを明示します。ポータブルなプログラムでは、
+@code{raise}には常に@code{<serious-condition>}かそのサブクラスを
+渡すようにするのが良いでしょう。
 @c COMMON
 @end defun
 
@@ -12518,7 +12543,7 @@ Gaucheの組み込み手続きやライブラリ手続きは常に、@code{<cond
 @c COMMON
 
 @defmac guard (var clause @dots{}) body @dots{}
-[SRFI-34]
+[R7RS][SRFI-34]
 @c EN
 This is @emph{the} high-level form to handle errors in Gauche.
 @c JP
@@ -12864,13 +12889,12 @@ Returns the current exception handler.
 @end defun
 
 @defun with-exception-handler handler thunk
+[R7RS][SRFI-18]
 @c EN
-[SRFI-18]
 A procedure @var{handler} must take one argument.  This procedure
 sets @var{handler} to the current exception handler and calls
 @var{thunk}.
 @c JP
-[SRFI-18]
 @var{handler}は1引数を取る手続きです。この手続きは、@var{handler}を
 現在の例外ハンドラにセットし、@var{thunk}を呼び出します。
 @c COMMON
@@ -13769,63 +13793,40 @@ and re-invoke them afterwards.
 @c EN
 A port class.   A port is Scheme's way of abstraction of I/O channel.
 Gauche extends a port in number of ways so that it can be used
-in wide range of applications.
+in wide range of applications.  
 @c JP
 Portは、Schemeにおいて抽象化された入出力のインタフェースを提供します。
 Gaucheはportにいくつかの拡張を行い、いろいろなアプリケーションに対応できるようにしました。
 @c COMMON
 
-@c EN
-Standard Scheme (R5RS) essentially defines a port as an entity that
-you can fetch a character at a time and
-look one character ahead from an input port,
-and put a character at a time to an output port.
-Other R5RS I/O routines can be built on top of them.
-@c JP
-標準のSchemeでは、portはキャラクタを一文字づつ読み込む(一文字先読み可)、
-もしくは書き出すだけのもので、他の入出力ルーチンはその上に構築されています。
-@c COMMON
-
-@c EN
-Besides this basics, Gauche's port can handle the following
-operations.
-@c JP
-Gaucheではさらに次のような操作がportに対して可能になっています。
-@c COMMON
-
 @table @asis
 @c EN
-@item Binary I/O
-You can read/write one octet at a time, instead of a character.
-(Remember, Gauche handles multibyte characters, so a character
-may be consisted from more than one bytes).
-Most ports allow you to mix binary I/O and character I/O, if needed.
+@item Textual and binary I/O
+R7RS defines textual and binary ports.  In Gauche, most ports
+can mix both text I/O and binary I/O.  It is cleaner to think
+the two is distinct, for they are sources/sinks of different types of
+objects and you don't need to mix textual and binary I/O.
 
-The most basic binary I/O primitives are @code{read-byte} and
-@code{write-byte}.  You can also use higher-level functionality,
-such as @code{pack} and @code{unpack} in @ref{Packing Binary Data}.
+In practice, however, a port is often a tap to an
+untyped pool of bytes and you may want to decide
+interpret it later.  One example is the standard I/O; in Unix-like
+environment, it's up to the program to use pre-opened ports
+for textual or binary I/O.  R7RS defines the initial ports
+for @code{current-input-port} etc. are textual ports; in Gauche,
+you can use either way.
 @c JP
-@item バイナリI/O
-キャラクタ毎でなく、オクテット毎のI/Oが可能です(Gaucheではマルチバイト文字を
-扱うので、この２つが異なることに注意して下さい)。大抵のポートでは
-キャラクタI/OとバイナリI/Oを混ぜて使うことができます。
+@item テキストとバイナリI/O
+R7RSはテキストポートとバイナリポートを定義しています。
+Gaucheでは、ほとんどのポートはテキストI/OとバイナリI/Oを混ぜて使えます。
+概念的には、異なる型のオブジェクトのソース/シンクは別物と考える方が綺麗ですし、
+ひとつのポートでテキストI/OとバイナリI/Oを混在して使うことは滅多にありません。
 
-最も基本的なバイナリI/Oプリミティブは@code{read-byte}と@code{write-byte}です。
-また、より高機能な@code{pack}や@code{unpack}といった手続きが
-@ref{Packing Binary Data} で提供されています。
-@c COMMON
-
-@c EN
-@item Block I/O
-You can read/write a specified number of byte sequences.
-This can be an efficient way of moving block of data,
-if the port's underlying implementation supports block I/O
-operation.
-@c JP
-@item ブロックI/O
-ポートから指定した数のバイト列を読んだり、ポートへ書いたりできます。
-ポートがブロックI/Oを行うデバイスに接続されている場合、ある程度大きなブロック毎に
-読み書きすると効率の良いデータ転送ができます。
+しかし現実には、ポートを型の無いデータの集まりにつながったものとして、
+データをどう解釈するかは後から決めたい、という場合があります。
+例えば標準入出力です。Unix的な環境では、あらかじめオープンされている標準入出力
+に対してテキストI/Oを行うかバイナリI/Oを行うかはプログラムに任されています。
+R7RSでは、@code{current-input-port}等の初期値はテキストポートであると
+規定しています。Gaucheではどちらにも使うことができます。
 @c COMMON
 
 @c EN
@@ -13967,7 +13968,7 @@ mutex if you know there will be conflicts.
 @defun port? obj
 @defunx input-port? obj
 @defunx output-port? obj
-[R5RS]
+[R7RS]
 @c EN
 Returns true if @var{obj} is a port, an input port and an output port,
 respectively.  @code{Port?} is not listed in the
@@ -13990,55 +13991,70 @@ A closed port can't be reopened.
 @c COMMON
 @end defun
 
-@defun current-input-port
-@defunx current-output-port
-[R5RS]
+@deffn {Parameter} current-input-port
+@deffnx {Parameter} current-output-port
+@deffnx {Parameter} current-error-port
+[R7RS]
 @c EN
-Returns the current input port and the current output port, respectively.
+Returns the current input, output and error output port, respectively.
+
+R7RS defines that the initial values of these ports are textual ports.
+In Gauche, initial ports can handle both textual and binary I/O.
 @c JP
-現在の入力ポートと出力ポートをそれぞれ返します。
+現在の入力ポート、出力ポート、エラー出力ポートをそれぞれ返します。
+
+R7RSではこれらのポートの初期値はテキストポートであると規定されています。
+Gaucheでは、これらのポートの初期値はテキスト入出力もバイナリ入出力も扱えます。
 @c COMMON
+
+@c EN
+Values of the current ports can be temporarily changed by @code{parameterize}
+(@xref{Parameters}), though you might want the convenience procedures
+such as @code{with-output-to-string} or @code{with-input-from-file}
+in typical cases.
+@c JP
+現在のポートの値は@code{parameterize}を使って一時的に変更できます
+(@ref{Parameters}参照)。もっとも、典型的な場合には
+より簡単な@code{with-output-to-string}や@code{with-input-from-file}などの
+手続きが使えるでしょう。
+@c COMMON
+
+@example
+(use gauche.parameter)
+(let1 os (open-output-string)
+  (parameterize ((current-output-port os))
+    (display "foo"))
+  (get-output-string os))
+ @result{} "foo"
+@end example
 @end defun
 
-@defun current-error-port
+@deffn {Parameter} standard-input-port
+@deffnx {Parameter} standard-output-port
+@deffnx {Parameter} standard-error-port
 @c EN
-Returns the current output port.
-@c JP
-現在のエラーポートを返します。
-@c COMMON
-@end defun
-
-@defun standard-input-port :optional new-port
-@defunx standard-output-port :optional new-port
-@defunx standard-error-port :optional new-port
-@c EN
-Without arguments, returns standard i/o ports at the time the program started.
+Returns standard i/o ports at the time the program started.
 These ports are the default values
 of @code{current-input-port}, @code{current-output-port}
 and @code{current-error-port}, respectively.
 
-Passing a port (an input port for @code{standard-input-port}
-and an output port for @code{standard-output-port} and
-@code{standard-error-port} changes the standard ports, returning
-the current value.  Note that changing them from Scheme program usually
-has little effect, since @code{current-input-port} etc. are already
-initialized by the original values.  Changing standard ports neither
-affects low-level C libraries that directly access stdio.
-Change them only if you know what you're doing.
+You can also change value of these procedures by @code{parameterize},
+but note that (1) @code{current-*-port}s are initialized before
+the program execution, so changing values of @code{standard-*-port}
+won't affect them, and (2) changing values these procedures only affect
+Scheme-world, and does not change system-level stdio file descriptors
+low-level libraries referring.
 @c JP
-引数無しで呼ぶと、プログラム開始時点の標準入出力ポートを返します。これらの値が
+プログラム開始時点の標準入出力ポートを返します。これらの値が
 @code{current-input-port}、@code{current-output-port}、
 @code{current-error-port}のデフォルトとなります。
 
-引数にポート(@code{standard-input-port}には入力ポート、
-@code{standard-output-port}と@code{standard-error-port}には
-出力ポート)を渡すことで、これらの手続きが次回から返すポートを変えることができます。
-引数ありで呼ばれた場合、これらの手続きは変更前の、現在の値を返します。
-Schemeプログラムからこれらの値を変更する必要はほとんどないでしょう。
-というのも、これらの値は通常は@code{current-input-port}などを初期化する際にだけ
-使われるからです。また、低レベルのCライブラリが参照している標準入出力を
-これらの手続きで置き換えることもできません。
-どうしても必要がある場合にだけ変更を考えてください。
+これらの手続きの値も@code{parameterize}で変えることができますが、
+(1) @code{current-*-port}はプログラム実行前に初期化されるので、
+プログラム中で@code{standard-*-port}を変更しても影響は及ばない、
+(2) これらの手続きの値の変更はScheme世界だけのことで、低レベルライブラリが
+参照しているシステムのstdioファイルディスクリプタは変更されない、
+という点に注意してください。
 @c COMMON
 @end defun
 
@@ -14083,7 +14099,7 @@ which does close the port.  See below.)
 @defun close-port port
 @defunx close-input-port port
 @defunx close-output-port port
-[R5RS], [R6RS], [R7RS]
+[R7RS]
 @c EN
 Closes the port.  @code{Close-port} works both input and
 output ports, while @code{close-input-port} and @code{close-output-port}
@@ -14107,7 +14123,7 @@ R6RSとR7RSは3つ全てをサポートしています。
 
 
 @defun call-with-port port proc
-[R6RS][R7RS]
+[R7RS]
 @c EN
 Calls @var{proc} with one argument, @var{port}.  After @var{proc} returns,
 or it throws an uncaptured error, @var{port} is closed.  Value(s) returned
@@ -14353,7 +14369,7 @@ Otherwise, @var{size} specifies the number of bytes.
 
 @defun open-input-file filename :key if-does-not-exist buffering element-type encoding conversion-buffer-size
 @defunx open-output-file filename :key if-does-not-exist if-exists buffering element-type encoding conversion-buffer-size
-[R5RS+]
+[R7RS+]
 @c EN
 Opens a file @var{filename} for input or output, and
 returns an input or output port associated with it, respectively.
@@ -14656,7 +14672,7 @@ Gaucheでは、@code{open-input-file}と@code{open-output-file}は
 
 @defun call-with-input-file string proc :key if-does-not-exist buffering element-type encoding conversion-buffer-size
 @defunx call-with-output-file string proc :key if-does-not-exist if-exists buffering element-type encoding conversion-buffer-size
-[R5RS]
+[R7RS+]
 @c EN
 Opens a file specified by @var{string} for input/output,
 and call @var{proc} with one argument, the file port.  When @var{proc}
@@ -14692,7 +14708,7 @@ Returns the value(s) @code{proc} returned.
 
 @defun with-input-from-file string thunk :key if-does-not-exist buffering element-type encoding conversion-buffer-size
 @defunx with-output-to-file string thunk :key if-does-not-exist if-exists buffering element-type encoding conversion-buffer-size
-[R5RS]
+[R7RS]
 @c EN
 Opens a file specified by @var{string} for input or output
 and makes the opened port as the current input or output port,
@@ -14848,7 +14864,7 @@ memory.
 @c COMMON
 
 @defun open-input-string string
-[SRFI-6]
+[R7RS][SRFI-6]
 @c EN
 Creates an input string port that has the content @var{string}.
 This is a more efficient way to access a string in order
@@ -14903,7 +14919,7 @@ If @var{port} has already reached to EOF, a null string is returned.
 
 
 @defun open-output-string
-[SRFI-6]
+[R7RS][SRFI-6]
 @c EN
 Creates an output string port.   Anything written to the
 port is accumulated in the buffer, and can be obtained
@@ -14921,7 +14937,7 @@ sequentially than pre-allocate a string and fill it with
 @end defun
 
 @defun get-output-string port
-[SRFI-6]
+[R7RS][SRFI-6]
 @c EN
 Takes an output string port @code{port} and returns a string
 that has been accumulated to @code{port} so far.
@@ -15126,7 +15142,7 @@ an input port, and when omitted, the current input port is assumed.
 @c NODE データの読み込み
 
 @defun read :optional iport
-[R5RS]
+[R7RS]
 @c EN
 Reads an S-expression from @var{iport} and returns it.
 Gauche recognizes the lexical structure specified in R5RS,
@@ -15168,7 +15184,7 @@ are only provided for srfi-38 compatibility.
 @end defun
 
 @defun read-char :optional iport
-[R5RS]
+[R7RS]
 @c EN
 Reads one character from @var{iport} and returns it.
 If @var{iport} has already
@@ -15186,7 +15202,7 @@ to deal with invalid characters).
 @end defun
 
 @defun peek-char :optional iport
-[R5RS]
+[R7RS]
 @c EN
 Reads one character in @var{iport} and returns it, keeping the character
 in the @var{port}.
@@ -15207,9 +15223,13 @@ to deal with invalid characters).
 Reads one byte from an input port @var{iport}, and returns it as an integer
 in the range between 0 and 255.
 If @var{iport} has already reached EOF, an eof object is returned.
+
+This is called @code{read-u8} in R7RS.
 @c JP
 入力ポート@var{iport}から1バイト読み込み、0から255までの整数値として返します。
 @var{iport}が既にEOFに達していた場合はeofオブジェクトを返します。
+
+R7RSではread-u8と呼ばれています。
 @c COMMON
 @end defun
 
@@ -15218,13 +15238,18 @@ If @var{iport} has already reached EOF, an eof object is returned.
 Peeks one byte at the head of an input port @var{iport}, and returns
 it as an integer in the range between 0 and 255.
 If @var{iport} has already reached EOF, an eof object is returned.
+
+This is called @code{peek-u8} in R7RS.
 @c JP
 入力ポート@var{iport}の先頭の1バイトを見て、それを0から255までの整数値として返します。
 @var{iport}が既にEOFに達していた場合はeofオブジェクトを返します。
+
+R7RSでは@code{peek-u8}と呼ばれています。
 @c COMMON
 @end defun
 
 @defun read-line :optional iport allow-byte-string?
+[R7RS+]
 @c EN
 Reads one line (a sequence of characters terminated by newline or EOF)
 and returns a string.  The terminating newline is not included.
@@ -15248,6 +15273,7 @@ It is particularly useful if you read from a source whose
 character encoding is not yet known; for example, to read XML document,
 you need to check the first line to see if there is a charset parameter
 so that you can then use an appropriate character conversion port.
+This optional argument is Gauche's extention to R7RS.
 @c JP
 @var{iport}から、内部文字エンコーディングでは文字を構成し得ないバイトシーケンスが
 読まれた場合、デフォルトでは@code{read-line}はエラーを通知します。
@@ -15256,6 +15282,7 @@ so that you can then use an appropriate character conversion port.
 返します。この動作は、特に文字エンコーディングが不明なソースから読み込む際に
 便利です。例えばXMLドキュメントを読み込む際、最初の行のcharsetパラメータを
 チェックしてから適切な文字エンコーディング変換ポートを使うといった用途などです。
+この動作はGauche独自の拡張です。
 @c COMMON
 @end defun
 
@@ -15335,7 +15362,7 @@ if the data is in uniform vector.
 @end defun
 
 @defun eof-object
-[R6RS]
+[R7RS]
 @c EN
 Returns an EOF object.
 @c JP
@@ -15345,7 +15372,7 @@ EOFオブジェクトを返します。
 
 
 @defun eof-object? obj
-[R5RS]
+[R7RS]
 @c EN
 Returns true if @var{obj} is an EOF object.
 @c JP
@@ -15354,7 +15381,7 @@ Returns true if @var{obj} is an EOF object.
 @end defun
 
 @defun char-ready? port
-[R5RS]
+[R7RS]
 @c EN
 If a character is ready to be read from @var{port}, returns @code{#t}.
 
