@@ -6,7 +6,7 @@
 @afourpaper
 @dircategory The Algorithmic Language Scheme
 @direntry
-* Gauche: (gauche-refe.info).	        An R5RS Scheme implementation.
+* Gauche: (gauche-refe.info).	        An R7RS Scheme implementation.
 @end direntry
 @c JP
 @setfilename gauche-refj.info
@@ -14,7 +14,7 @@
 @afourpaper
 @dircategory The Algorithmic Language Scheme
 @direntry
-* Gauche (ja): (gauche-refj.info).	An R5RS Scheme implementation.
+* Gauche (ja): (gauche-refj.info).	An R7RS Scheme implementation.
 @end direntry
 @documentencoding utf-8
 @c COMMON

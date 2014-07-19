@@ -243,9 +243,9 @@ The table below lists sharp-syntaxes.
 @c COMMON
 @item @code{#(}
 @c EN
- @tab [R5RS] Introduces a vector.
+ @tab [R7RS] Introduces a vector.
 @c JP
- @tab [R5RS] リテラルベクタ表記の開始です。
+ @tab [R7RS] リテラルベクタ表記の開始です。
 @c COMMON
 @item @code{#)}
 @c EN
@@ -334,9 +334,9 @@ The table below lists sharp-syntaxes.
 @c COMMON
 @item @code{#b}
 @c EN
- @tab [R5RS] Binary number prefix.
+ @tab [R7RS] Binary number prefix.
 @c JP
- @tab [R5RS] 2進数接頭辞。
+ @tab [R7RS] 2進数接頭辞。
 @c COMMON
 @item @code{#c}
 @c EN
@@ -346,22 +346,22 @@ The table below lists sharp-syntaxes.
 @c COMMON
 @item @code{#d}
 @c EN
- @tab [R5RS] Decimal number prefix.
+ @tab [R7RS] Decimal number prefix.
 @c JP
- @tab [R5RS] 10進数接頭辞。
+ @tab [R7RS] 10進数接頭辞。
 @c COMMON
 @item @code{#e}
 @c EN
- @tab [R5RS] Exact number prefix.
+ @tab [R7RS] Exact number prefix.
 @c JP
- @tab [R5RS] 正確数接頭辞。
+ @tab [R7RS] 正確数接頭辞。
 @c COMMON
 @item @code{#f}
 @c EN
- @tab [R5RS] Boolean false, or
+ @tab [R7RS] Boolean false, or
       introducing SRFI-4 uniform vector.  @xref{Uniform vectors}.
 @c JP
- @tab [R5RS] 真理値の偽、あるいは
+ @tab [R7RS] 真理値の偽、あるいは
       SRFI-4 のユニフォームベクタを先導します。@ref{Uniform vectors}参照
 @c COMMON
 @item @code{#g}, @code{#h}
@@ -372,9 +372,9 @@ The table below lists sharp-syntaxes.
 @c COMMON
 @item @code{#i}
 @c EN
- @tab [R5RS] Inxact number prefix.
+ @tab [R7RS] Inxact number prefix.
 @c JP
- @tab [R5RS] 不正確数接頭辞。
+ @tab [R7RS] 不正確数接頭辞。
 @c COMMON
 @item @code{#j}, @code{#k}, @code{#l}, @code{#m}, @code{#n}
 @c EN
@@ -384,9 +384,9 @@ The table below lists sharp-syntaxes.
 @c COMMON
 @item @code{#o}
 @c EN
- @tab [R5RS] Octal number prefix.
+ @tab [R7RS] Octal number prefix.
 @c JP
- @tab [R5RS] 8進数接頭辞。
+ @tab [R7RS] 8進数接頭辞。
 @c COMMON
 @item @code{#p}, @code{#q}, @code{#r}
 @c EN
@@ -402,15 +402,19 @@ The table below lists sharp-syntaxes.
 @c COMMON
 @item @code{#t}
 @c EN
- @tab [R5RS] Boolean true.
+ @tab [R7RS] Boolean true.
 @c JP
- @tab [R5RS] 真理値の真。
+ @tab [R7RS] 真理値の真。
 @c COMMON
 @item @code{#u}
 @c EN
  @tab [SRFI-4] introducing SRFI-4 uniform vector.  @xref{Uniform vectors}.
+ R7RS uses @code{#u8} prefix for bytevectors, which is compatible to
+ @code{u8} uniform vectors.
 @c JP
  @tab [SRFI-4] SRFI-4 のユニフォームベクタを先導します。@ref{Uniform vectors}参照。
+ R7RSもバイトベクタに@code{#u8}のプリフィクスを使いますが、これは
+ @code{u8}ユニフォームベクタと互換です。
 @c COMMON
 @item @code{#v}, @code{#w}
 @c EN
@@ -420,9 +424,9 @@ The table below lists sharp-syntaxes.
 @c COMMON
 @item @code{#x}
 @c EN
- @tab [R5RS] Hexadecimal number prefix.
+ @tab [R7RS] Hexadecimal number prefix.
 @c JP
- @tab [R5RS] 16進数接頭辞
+ @tab [R7RS] 16進数接頭辞
 @c COMMON
 @item @code{#y}, @code{#z}
 @c EN
@@ -438,9 +442,9 @@ The table below lists sharp-syntaxes.
 @c COMMON
 @item @code{#\}
 @c EN
- @tab [R5RS] Introduces a literal character.  @xref{Characters}.
+ @tab [R7RS] Introduces a literal character.  @xref{Characters}.
 @c JP
- @tab [R5RS] リテラルの文字を先導します。@ref{Characters}参照。
+ @tab [R7RS] リテラルの文字を先導します。@ref{Characters}参照。
 @c COMMON
 @item @code{#]}, @code{#^}, @code{#_}
 @c EN
@@ -559,7 +563,7 @@ compatible to Gauche 0.9.3 and before.
 @c NODE リテラル
 
 @defspec quote datum
-[R5RS][R6RS][R7RS]
+[R7RS]
 @c EN
 Evaluates to @var{datum}.
 @c JP
@@ -572,7 +576,7 @@ Evaluates to @var{datum}.
 @end defspec
 
 @deftp {Reader Syntax} @code{'@var{datum}}
-[R5RS][R6RS][R7RS]
+[R7RS]
 @c EN
 Equivalent to @code{(quote datum)}.
 @c JP
@@ -609,7 +613,7 @@ if you try to alter a constant string.
 
 @defspec lambda formals body @dots{}
 @defspecx ^ formals body @dots{}
-[R5RS+][R6RS+][R7RS+]
+[R7RS+]
 @c EN
 Evaluates to a procedure.  The environment in effect when this expression
 is evaluated is stored in the procedure.   When the procedure
@@ -642,16 +646,16 @@ and returns the value(s) of the last expression in the body.
 @end example
 
 @c EN
-Gauche also extends R5RS @code{lambda} to take extended syntax in
+Gauche also extends R7RS @code{lambda} to take extended syntax in
 @var{formals} to specify optional and keyword arguments easily.
-The same functionality can be written in pure R5RS, with parsing
+The same functionality can be written in pure R7RS, with parsing
 variable-length arguments explicitly, but the code tends
 to be longer and verbose.   It is recommended to use extended syntax
 unless you're writing portable code.
 @c JP
 Gaucheはまた、@code{lambda}が取る@var{formals}の構文を拡張し、
 省略可能引数やキーワード引数を簡単に指定できるようにしています。
-同じ機能は純粋なR5RSでも、可変長引数を自力で解析することで実現可能ですが、
+同じ機能は純粋なR7RSでも、可変長引数を自力で解析することで実現可能ですが、
 コードはより長く冗長になってしまいます。ポータブルなコードを書いているのでなければ
 拡張構文を使った方が良いでしょう。
 @c COMMON
@@ -940,9 +944,9 @@ after required and optional arguments are taken.
 See also @code{let-optionals*}, @code{let-keywords} and
 @code{let-keywords*} macros in @ref{Optional argument parsing}
 for an alternative way to receive optional/keyword arguments
-within the spec of R5RS.
+within the spec of R7RS.
 @c JP
-R5RSの仕様範囲内で省略可能引数、キーワード引数を受け取るように
+R7RSの仕様範囲内で省略可能引数、キーワード引数を受け取るように
 書くこともできます。@ref{Optional argument parsing}の
 @code{let-optionals*}、@code{let-keywords}、
 @code{let-keywords*}を参照してください。
@@ -1228,7 +1232,7 @@ the @var{formals} of any @var{clause}.
 
 @defspec set! symbol expression
 @defspecx set! (proc arg @dots{}) expression
-[R5RS][R6RS][R7RS][SRFI-17]
+[R7RS][SRFI-17]
 @c EN
 First, @var{expression} is evaluated.
 In the first form, the binding of @var{symbol} is modified
@@ -1518,7 +1522,7 @@ a @result{} (6 . 0)
 
 @defspec if test consequent alternative
 @defspecx if test consequent
-[R5RS][R6RS][R7RS]
+[R7RS]
 @c EN
 @var{Test} is evaluated.  If it yields a true value,
 @var{consequent} is evaluated.  Otherwise, @var{alternative} is
@@ -1542,7 +1546,7 @@ evaluated.  If @var{alternative} is not provided, it results undefined value.
 @end defspec
 
 @defspec cond clause1 clause2 @dots{}
-[R5RS][R6RS][R7RS][SRFI-61]
+[R7RS][SRFI-61]
 @c EN
 Each @code{clause} must be the form
 @example
@@ -1619,7 +1623,7 @@ If the last clause is else clause and all tests are failed,
 
 
 @defspec case key clause1 clause2 @dots{}
-[R5RS][R6RS][R7RS][SRFI-87]
+[R7RS][SRFI-87]
 @c EN
 @var{Key} may be any expression.
 Each @var{clause} should have the form
@@ -1726,7 +1730,7 @@ you want to detect when unexpected value is passed just in case.
 @end defmac
 
 @defspec and test @dots{}
-[R5RS][R6RS][R7RS]
+[R7RS]
 @c EN
 The @var{test} expressions are evaluated from left to right,
 and the value of the first expression that evaluates to a false
@@ -1752,7 +1756,7 @@ If there are no expressions then @code{#t} is returned.
 
 
 @defspec or test @dots{}
-[R5RS][R6RS][R7RS]
+[R7RS]
 @c EN
 The @var{test} expressions are evaluated from left to right,
 and the value of the first expression that evaluates to a true
@@ -1799,7 +1803,7 @@ value is returned.
 @defspecx let* ((var expr) @dots{}) body @dots{}
 @defspecx letrec ((var expr) @dots{}) body @dots{}
 @defspecx letrec* ((var expr) @dots{}) body @dots{}
-[R5RS][R6RS][R7RS]
+[R7RS]
 @c EN
 Creates a local scope where @var{var} @dots{} are bound to the
 value of @var{expr} @dots{}, then evaluates @var{body} @dots{}.
@@ -2168,7 +2172,7 @@ Some examples:
 
 
 @defspec begin form @dots{}
-[R5RS][R6RS][R7RS]
+[R7RS]
 @c EN
 Evaluates @var{form}s sequentially, and returns the last result(s).
 @c JP
@@ -2249,7 +2253,7 @@ for the @code{begin0} form is expanded as follows.
 @c NODE 繰り返し
 
 @defspec do ((variable init [step]) @dots{}) (test expr @dots{}) body @dots{}
-[R5RS][R6RS][R7RS]
+[R7RS]
 @c EN
 @enumerate
 @item
@@ -2358,7 +2362,7 @@ created.
 
 
 @defspec let name ((var init) @dots{}) body @dots{}
-[R5RS][R6RS][R7RS]
+[R7RS]
 @c EN
 This variation of @code{let} is called ``named let''.  It creates
 the following procedure and binds it to @var{name}, then calls
@@ -2604,7 +2608,7 @@ The return value of @code{until} form itself isn't specified.
 @c NODE 準クオート, 準クオート(Quasiquote)
 
 @defspec quasiquote template
-[R5RS][R6RS][R7RS]
+[R7RS]
 @c EN
 Quasiquotation is a convenient way to build a structure that has
 some fixed parts and some variable parts.  See the explanation below.
@@ -2615,7 +2619,7 @@ some fixed parts and some variable parts.  See the explanation below.
 @end defspec
 
 @deftp {Reader Syntax} @code{`@var{template}}
-[R5RS][R6RS][R7RS]
+[R7RS]
 @c EN
 The syntax @code{`x} is read as @code{(quasiquote x)}.
 @c JP
@@ -2625,7 +2629,7 @@ The syntax @code{`x} is read as @code{(quasiquote x)}.
 
 @defspec unquote datum @dots{}
 @defspecx unquote-splicing datum @dots{}
-[R5RS+][R6RS][R7RS]
+[R7RS]
 @c EN
 These syntaxes have meaning only when they appear in the @var{template}
 of quasiquoted form.  R5RS says nothing about these syntaxes
@@ -2654,7 +2658,7 @@ R6RSではこれらの場合も定義されており、Gaucheもそれに倣っ�
 
 @deftp {Reader Syntax} @code{,@var{datum}}
 @deftpx {Reader Syntax} @code{,@@@var{datum}}
-[R5RS][R6RS][R7RS]
+[R7RS]
 @c EN
 The syntaxes @code{,x} and @code{,@@x} are read as @code{(unquote x)}
 and @code{(unquote-splicing x)}, respectively.
@@ -2940,7 +2944,7 @@ mutating such structures.
 
 @defspec define variable expression
 @defspecx define (variable . formals) body @dots{}
-[R5RS+][R6RS+][R7RS+]
+[R7RS+]
 @c EN
 This form has different meanings in the toplevel (without no
 local bindings) or inside a local scope.

@@ -51,12 +51,12 @@ R7RSの健全なマクロは特別なパターン言語に基づいていて、
 @c COMMON
 
 @defspec define-syntax name transformer-spec
-[R5RS][R6RS][R7RS]
+[R7RS]
 @end defspec
 
 @defspec let-syntax ((name transformer-spec) @dots{}) body
 @defspecx letrec-syntax ((name transformer-spec) @dots{}) body
-[R5RS][R6RS][R7RS]
+[R7RS]
 @end defspec
 
 @defspec syntax-rules (literal @dots{}) clause1 clause2 @dots{}

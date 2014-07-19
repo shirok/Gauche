@@ -2119,7 +2119,7 @@ typechecks the @var{c-expr} according to the @var{cgen-type}.
 @mdindex gauche.collection
 @c EN
 This module provides a set of generic functions (GFs) that iterate over
-various collections.   The Scheme standard [R5RS] has some iterative
+various collections.   The Scheme standard [R7RS] has some iterative
 primitives such as @code{map} and @code{for-each},
 and SRFI-1 (@xref{List library} adds a rich set of such functions,
 but they work only on lists.

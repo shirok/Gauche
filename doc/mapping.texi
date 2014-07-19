@@ -14,9 +14,9 @@ Schemeの関数への対応表を示しておきます。
 @table @code
 @item +
 @c EN
-R5RS arithmetic procedure @code{+}.   @xref{Arithmetics}.
+R7RS arithmetic procedure @code{+}.   @xref{Arithmetics}.
 @c JP
-R5RS の算術演算手続き @code{+}。@ref{Arithmetics}参照。
+R7RS の算術演算手続き @code{+}。@ref{Arithmetics}参照。
 @c COMMON
 @item +=
 @c EN
@@ -26,9 +26,9 @@ Gauche の @code{inc!} マクロ。@ref{Assignments}参照。
 @c COMMON
 @item -
 @c EN
-R5RS arithmetic procedure @code{-}.   @xref{Arithmetics}.
+R7RS arithmetic procedure @code{-}.   @xref{Arithmetics}.
 @c JP
-R5RS の算術演算手続き @code{-}。@ref{Arithmetics}参照。
+R7RS の算術演算手続き @code{-}。@ref{Arithmetics}参照。
 @c COMMON
 @item -=
 @c EN
@@ -44,10 +44,10 @@ Gauche の @code{slot-ref} が近いものです。@ref{Accessing instance}参�
 @c COMMON
 @c EN
 @item * (binary)
-R5RS arithmetic procedure @code{*}.   @xref{Arithmetics}.
+R7RS arithmetic procedure @code{*}.   @xref{Arithmetics}.
 @c JP
 @item * (二項演算子)
-R5RS の算術演算手続き @code{*}。@ref{Arithmetics}参照。
+R7RS の算術演算手続き @code{*}。@ref{Arithmetics}参照。
 @c COMMON
 @c EN
 @item * (unary)
@@ -65,9 +65,9 @@ No equivalent procedure.
 @c COMMON
 @item /
 @c EN
-R5RS arithmetic procedure @code{/}.   @xref{Arithmetics}.
+R7RS arithmetic procedure @code{/}.   @xref{Arithmetics}.
 @c JP
-R5RS の算術演算手続き @code{/}。@ref{Arithmetics}参照。
+R7RS の算術演算手続き @code{/}。@ref{Arithmetics}参照。
 @c COMMON
 @item /=
 @c EN
@@ -92,9 +92,9 @@ pointers.
 @c COMMON
 @item &&
 @c EN
-R5RS syntax @code{and}.  @xref{Conditionals}.
+R7RS syntax @code{and}.  @xref{Conditionals}.
 @c JP
-R5RS の構文 @code{and}。@ref{Conditionals}参照。
+R7RS の構文 @code{and}。@ref{Conditionals}参照。
 @c COMMON
 @item &=
 @c EN
@@ -110,9 +110,9 @@ Gauche の @code{logior}。@ref{Bitwise operations}参照。
 @c COMMON
 @item ||
 @c EN
-R5RS syntax @code{or}.  @xref{Conditionals}.
+R7RS syntax @code{or}.  @xref{Conditionals}.
 @c JP
-R5RS の構文 @code{or}。@ref{Conditionals}参照。
+R7RS の構文 @code{or}。@ref{Conditionals}参照。
 @c COMMON
 @item |=
 @c EN
@@ -128,26 +128,26 @@ Gauche の @code{logxor}。@ref{Bitwise operations}参照。
 @c COMMON
 @item =
 @c EN
-R5RS syntax @code{set!}.  @xref{Assignments}.
+R7RS syntax @code{set!}.  @xref{Assignments}.
 @c JP
-R5RS の構文 @code{set!}。@ref{Assignments}参照。
+R7RS の構文 @code{set!}。@ref{Assignments}参照。
 @c COMMON
 @item ==
 @c EN
-R5RS equivalence procedure, @code{eq?}, @code{eqv?} and @code{equal?}.
+R7RS equivalence procedure, @code{eq?}, @code{eqv?} and @code{equal?}.
 @xref{Equivalence}.
 @c JP
-R5RS の同等性手続き @code{eq?}、@code{eqv?} および @code{equal?}。
+R7RS の同等性手続き @code{eq?}、@code{eqv?} および @code{equal?}。
 @ref{Equivalence}参照。
 @c COMMON
 @item <
 @itemx <=
 @c EN
-R5RS arithmetic procedure @code{<} and @code{<=}.
+R7RS arithmetic procedure @code{<} and @code{<=}.
 @xref{Numerical comparison}.  Unlike C operator, Scheme version
 is transitive.
 @c JP
-R5RS の算術演算手続き @code{<} および @code{<=}。
+R7RS の算術演算手続き @code{<} および @code{<=}。
 @ref{Numerical comparison}参照。C の演算子とちがい、Scheme のものは
 推移的なものです。
 @c COMMON
@@ -166,11 +166,11 @@ No equivalent procedure.
 @item >
 @itemx >=
 @c EN
-R5RS arithmetic procedure @code{>} and @code{>=}.
+R7RS arithmetic procedure @code{>} and @code{>=}.
 @xref{Numerical comparison}.  Unlike C operator, Scheme version
 is transitive.
 @c JP
-R5RS の算術演算手続き @code{<} および @code{<=}。
+R7RS の算術演算手続き @code{<} および @code{<=}。
 @ref{Numerical comparison}参照。C の演算子とちがい、Scheme のものは
 推移的なものです。
 @c COMMON
@@ -188,9 +188,9 @@ No equivalent procedure.
 @c COMMON
 @item %
 @c EN
-R5RS operator @code{modulo} and @code{remainder}.  @xref{Arithmetics}.
+R7RS operator @code{modulo} and @code{remainder}.  @xref{Arithmetics}.
 @c JP
-R5RS の演算子 @code{modulo} および @code{remainder}。@ref{Arithmetics}参照。
+R7RS の演算子 @code{modulo} および @code{remainder}。@ref{Arithmetics}参照。
 @c COMMON
 @item %=
 @c EN
@@ -200,11 +200,11 @@ No equivalent procedure.
 @c COMMON
 @item []
 @c EN
-R5RS @code{vector-ref} (@xref{Vectors}) is something close.
+R7RS @code{vector-ref} (@xref{Vectors}) is something close.
 Or you can use Gauche's generic function @code{ref} (@xref{Sequence framework})
 for arbitrary sequences.
 @c JP
-R5RS の @code{vector-ref} (@ref{Vectors}参照) が近いものです。あるいは、
+R7RS の @code{vector-ref} (@ref{Vectors}参照) が近いものです。あるいは、
 Gauche のジェネリック関数 @code{ref} (@ref{Sequence framework}参照)が、
 任意の並び用になっています。
 @c COMMON
@@ -228,9 +228,9 @@ No equivalent procedure.
 @c COMMON
 @item !
 @c EN
-R5RS procedure @code{not}.  @xref{Booleans}.
+R7RS procedure @code{not}.  @xref{Booleans}.
 @c JP
-R5RS の手続き @code{not}。@ref{Booleans}参照。
+R7RS の手続き @code{not}。@ref{Booleans}参照。
 @c COMMON
 @item !=
 @c EN
@@ -246,9 +246,9 @@ Gauche の @code{sys-abort}。@ref{Program termination}参照。
 @c COMMON
 @item abs
 @c EN
-R5RS @code{abs}.  @xref{Arithmetics}.
+R7RS @code{abs}.  @xref{Arithmetics}.
 @c JP
-R5RS の @code{abs}。@ref{Arithmetics}参照。
+R7RS の @code{abs}。@ref{Arithmetics}参照。
 @c COMMON
 @item access
 @c EN
@@ -258,9 +258,9 @@ Gauche の @code{sys-access}。@ref{File stats}参照。
 @c COMMON
 @item acos
 @c EN
-R5RS @code{acos}.  @xref{Arithmetics}.
+R7RS @code{acos}.  @xref{Arithmetics}.
 @c JP
-R5RS の @code{acos}。@ref{Arithmetics}参照。
+R7RS の @code{acos}。@ref{Arithmetics}参照。
 @c COMMON
 @item alarm
 @c EN
@@ -276,9 +276,9 @@ Gauche の @code{sys-asctime}。@ref{Time}参照。
 @c COMMON
 @item asin
 @c EN
-R5RS @code{asin}.  @xref{Arithmetics}.
+R7RS @code{asin}.  @xref{Arithmetics}.
 @c JP
-R5RS の @code{asin}。@ref{Arithmetics}参照。
+R7RS の @code{asin}。@ref{Arithmetics}参照。
 @c COMMON
 @item assert
 @c EN
@@ -289,9 +289,9 @@ Gauche には同等の関数はありません。
 @item atan
 @itemx atan2
 @c EN
-R5RS @code{atan}.  @xref{Arithmetics}.
+R7RS @code{atan}.  @xref{Arithmetics}.
 @c JP
-R5RS の @code{atan}。@ref{Arithmetics}参照。
+R7RS の @code{atan}。@ref{Arithmetics}参照。
 @c COMMON
 @item atexit
 @c EN
@@ -327,9 +327,9 @@ Scheme ではメモリ割当は自動的に処理されます。
 @c COMMON
 @item ceil
 @c EN
-R5RS @code{ceiling}.  @xref{Arithmetics}.
+R7RS @code{ceiling}.  @xref{Arithmetics}.
 @c JP
-R5RS の @code{ceiling}。@ref{Arithmetics}参照。
+R7RS の @code{ceiling}。@ref{Arithmetics}参照。
 @c COMMON
 @item cfgetispeed
 @itemx cfgetospeed
@@ -448,10 +448,10 @@ Gauche の @code{sys-difftime}。@ref{Time} 参照。
 @c COMMON
 @item div
 @c EN
-You can use R5RS @code{quotient} and @code{remainder}.
+You can use R7RS @code{quotient} and @code{remainder}.
 @xref{Arithmetics}.
 @c JP
-R5RS の @code{quotient} および @code{remainder} を使えます。
+R7RS の @code{quotient} および @code{remainder} を使えます。
 @ref{Arithmetics} 参照。
 @c COMMON
 @item dup
@@ -485,15 +485,15 @@ Use @code{exit} or @code{sys-exit}, depends on what you need.
 @c COMMON
 @item exp
 @c EN
-R5RS @code{exp}.  @xref{Arithmetics}.
+R7RS @code{exp}.  @xref{Arithmetics}.
 @c JP
-R5RS の @code{exp}。@ref{Arithmetics} 参照。
+R7RS の @code{exp}。@ref{Arithmetics} 参照。
 @c COMMON
 @item fabs
 @c EN
-R5RS @code{abs}.  @xref{Arithmetics}.
+R7RS @code{abs}.  @xref{Arithmetics}.
 @c JP
-R5RS の @code{abs}。@ref{Arithmetics} 参照。
+R7RS の @code{abs}。@ref{Arithmetics} 参照。
 @c COMMON
 @item fclose
 @c EN
@@ -572,9 +572,9 @@ Use @code{read-line} or @code{read-string}.    @xref{Input}.
 @c COMMON
 @item floor
 @c EN
-R5RS @code{floor}.   @xref{Arithmetics}.
+R7RS @code{floor}.   @xref{Arithmetics}.
 @c JP
-R5RS の @code{floor}。@ref{Arithmetics} 参照。
+R7RS の @code{floor}。@ref{Arithmetics} 参照。
 @c COMMON
 @item fmod
 @c EN
@@ -584,10 +584,10 @@ Gauche の @code{fmod}。
 @c COMMON
 @item fopen
 @c EN
-R5RS @code{open-input-file} or @code{open-output-file}
+R7RS @code{open-input-file} or @code{open-output-file}
 corresponds to this operation.  @xref{File ports}.
 @c JP
-この操作に対応するのは、R5RS の @code{open-input-file} あるいは
+この操作に対応するのは、R7RS の @code{open-input-file} あるいは
 @code{open-output-file} です。@ref{File ports} 参照。
 @c COMMON
 @item fork
@@ -828,20 +828,20 @@ Gauche の @code{sys-gmtime}。@ref{Time} 参照。
 @c COMMON
 @item isalnum
 @c EN
-Not directly supported, but you can use R5RS @code{char-alphabetic?} and
+Not directly supported, but you can use R7RS @code{char-alphabetic?} and
 @code{char-numeric?}.  @xref{Characters}.   You can also use
 character set.  @xref{Character set}, also @ref{Character-set library}.
 @c JP
-直接はサポートされていませんが、R5RS の @code{char-alphabetic?} および
+直接はサポートされていませんが、R7RS の @code{char-alphabetic?} および
 @code{char-numeric?} が使えます。@ref{Characters} 参照。また、文字集合も
 使えます。@ref{Character set}、@ref{Character-set library} 参照。
 @c COMMON
 @item isalpha
 @c EN
-R5RS @code{char-alphabetic?}.  @xref{Characters}.  See also
+R7RS @code{char-alphabetic?}.  @xref{Characters}.  See also
 @ref{Character set} and @ref{Character-set library}.
 @c JP
-R5RS の @code{char-alphabetic?}。@ref{Characters} 参照。また、
+R7RS の @code{char-alphabetic?}。@ref{Characters} 参照。また、
 @ref{Character set} および @ref{Character-set library} も参照してください。
 @c COMMON
 @item isatty
@@ -862,11 +862,11 @@ Not directly supported, but you can use
 @c COMMON
 @item isdigit
 @c EN
-R5RS @code{char-numeric?}.  @xref{Characters}.
+R7RS @code{char-numeric?}.  @xref{Characters}.
 You can also use @code{(char-set-contains? char-set:digit c)}
 with @code{srfi-14}.   @xref{Character-set library}.
 @c JP
-R5RS の @code{char-numeric?}。@ref{Characters} 参照。
+R7RS の @code{char-numeric?}。@ref{Characters} 参照。
 @code{srfi-14} で、@code{(char-set-contains? char-set:digit c)} も
 使えます。@ref{Character-set library} 参照。
 @c COMMON
@@ -882,11 +882,11 @@ Not directly supported, but you can use
 @c COMMON
 @item islower
 @c EN
-R5RS @code{char-lower-case?}.  @xref{Characters}.
+R7RS @code{char-lower-case?}.  @xref{Characters}.
 You can also use @code{(char-set-contains? char-set:lower-case c)}
 with @code{srfi-14}.   @xref{Character-set library}.
 @c JP
-R5RS の @code{char-lower-case?}。@ref{Characters} 参照。
+R7RS の @code{char-lower-case?}。@ref{Characters} 参照。
 @code{srfi-14} で @code{(char-set-contains? char-set:lower-case c)}
 も使えます。@ref{Character-set library} 参照。
 @c COMMON
@@ -912,21 +912,21 @@ Not directly supported, but you can use
 @c COMMON
 @item isspace
 @c EN
-R5RS @code{char-whitespace?}.  @xref{Characters}.
+R7RS @code{char-whitespace?}.  @xref{Characters}.
 You can also use @code{(char-set-contains? char-set:whitespace c)}
 with @code{srfi-14}.   @xref{Character-set library}.
 @c JP
-R5RS の @code{char-whitespace?}。@ref{Characters} 参照。
+R7RS の @code{char-whitespace?}。@ref{Characters} 参照。
 @code{srfi-14} で @code{(char-set-contains? char-set:whitespace c)}
 も使えます。@ref{Character-set library} 参照。
 @c COMMON
 @item isupper
 @c EN
-R5RS @code{char-upper-case?}.  @xref{Characters}.
+R7RS @code{char-upper-case?}.  @xref{Characters}.
 You can also use @code{(char-set-contains? char-set:upper-case c)}
 with @code{srfi-14}.   @xref{Character-set library}.
 @c JP
-R5RS の @code{char-upper-case?}。@ref{Characters} 参照。
+R7RS の @code{char-upper-case?}。@ref{Characters} 参照。
 @code{srfi-14} で @code{(char-set-contains? char-set:upper-case c)}
 も使えます。@ref{Character-set library} 参照。
 @c COMMON
@@ -948,9 +948,9 @@ Gauche の @code{sys-kill}。@ref{Signal} 参照。
 @c COMMON
 @item labs
 @c EN
-R5RS @code{abs}.  @xref{Arithmetics}.
+R7RS @code{abs}.  @xref{Arithmetics}.
 @c JP
-R5RS の @code{abs}。@ref{Arithmetics} 参照。
+R7RS の @code{abs}。@ref{Arithmetics} 参照。
 @c COMMON
 @item ldexp
 @c EN
@@ -960,10 +960,10 @@ Gauche の @code{ldexp}。
 @c COMMON
 @item ldiv
 @c EN
-Use R5RS @code{quotient} and @code{remainder}.
+Use R7RS @code{quotient} and @code{remainder}.
 @xref{Arithmetics}.
 @c JP
-R5RS の @code{quotient} および @code{remainder} を使いましょう。
+R7RS の @code{quotient} および @code{remainder} を使いましょう。
 @ref{Arithmetics}参照。
 @c COMMON
 @item link
@@ -986,9 +986,9 @@ Gauche の @code{sys-localtime}。@ref{Time} 参照。
 @c COMMON
 @item log
 @c EN
-R5RS @code{log}.  @xref{Arithmetics}.
+R7RS @code{log}.  @xref{Arithmetics}.
 @c JP
-R5RS の @code{log}。@ref{Arithmetics} 参照。
+R7RS の @code{log}。@ref{Arithmetics} 参照。
 @c COMMON
 @item log10
 @c EN
@@ -999,10 +999,10 @@ Not directly supported.  @code{log10(z)} @equiv{} @code{(/ (log z) (log 10))}.
 @c COMMON
 @item longjmp
 @c EN
-R5RS @code{call/cc} provides similar (superior) mechanism.
+R7RS @code{call/cc} provides similar (superior) mechanism.
 @xref{Continuations}.
 @c JP
-R5RS の @code{call/cc} が類似(上位)のメカニズムを提供しています。
+R7RS の @code{call/cc} が類似(上位)のメカニズムを提供しています。
 @ref{Continuations} 参照。
 @c COMMON
 @item lseek
@@ -1077,11 +1077,11 @@ Gauche の @code{modf}。
 @item open
 @c EN
 Not directly supported.
-R5RS @code{open-input-file} or @code{open-output-file}
+R7RS @code{open-input-file} or @code{open-output-file}
 corresponds to this operation.  @xref{File ports}.
 @c JP
 直接はサポートされていません。この操作に対応するのな
-R5RS の @code{open-input-file} または @code{open-output-file} です。
+R7RS の @code{open-input-file} または @code{open-output-file} です。
 @ref{File ports} 参照。
 @c COMMON
 @item opendir
@@ -1130,9 +1130,9 @@ Gauche の @code{sys-pipe}。@ref{Other file operations} 参照。
 @c COMMON
 @item pow
 @c EN
-R5RS @code{expt}.  @xref{Arithmetics}.
+R7RS @code{expt}.  @xref{Arithmetics}.
 @c JP
-R5RS の @code{expt}。@ref{Arithmetics} 参照。
+R7RS の @code{expt}。@ref{Arithmetics} 参照。
 @c COMMON
 @item printf
 @c EN
@@ -1292,10 +1292,10 @@ Gauche の @code{sys-getgid}。
 @c COMMON
 @item setjmp
 @c EN
-R5RS @code{call/cc} provides similar (superior) mechanism.
+R7RS @code{call/cc} provides similar (superior) mechanism.
 @xref{Continuations}.
 @c JP
-R5RS の @code{call/cc} が類似(上位)のメカニズムを提供しています。
+R7RS の @code{call/cc} が類似(上位)のメカニズムを提供しています。
 @ref{Continuations} 参照。
 @c COMMON
 @item setlocale
@@ -1355,10 +1355,10 @@ Not supported yet.
 @c COMMON
 @item siglongjmp
 @c EN
-R5RS @code{call/cc} provides similar (superior) mechanism.
+R7RS @code{call/cc} provides similar (superior) mechanism.
 @xref{Continuations}.
 @c JP
-R5RS の @code{call/cc} が類似(上位)のメカニズムを提供しています。
+R7RS の @code{call/cc} が類似(上位)のメカニズムを提供しています。
 @ref{Continuations} 参照。
 @c COMMON
 @item signal
@@ -1383,10 +1383,10 @@ Signal mask is handled internally.  @xref{Handling signals}.
 @c COMMON
 @item sigsetjmp
 @c EN
-R5RS @code{call/cc} provides similar (superior) mechanism.
+R7RS @code{call/cc} provides similar (superior) mechanism.
 @xref{Continuations}.
 @c JP
-R5RS の @code{call/cc} が類似(上位)のメカニズムを提供しています。
+R7RS の @code{call/cc} が類似(上位)のメカニズムを提供しています。
 @ref{Continuations} 参照。
 @c COMMON
 @item sigsuspend
@@ -1425,9 +1425,9 @@ SLIB has @code{printf} implementation.
 @c COMMON
 @item sqrt
 @c EN
-R5RS @code{sqrt}.  @xref{Arithmetics}.
+R7RS @code{sqrt}.  @xref{Arithmetics}.
 @c JP
-R5RS の @code{sqrt}。@ref{Arithmetics}参照。
+R7RS の @code{sqrt}。@ref{Arithmetics}参照。
 @c COMMON
 @item srand
 @c EN
@@ -1463,17 +1463,17 @@ Gauche の @code{sys-stat}。@ref{File stats}参照。
 @c COMMON
 @item strcasecmp
 @c EN
-R5RS @code{string-ci=?} and other comparison functions.
+R7RS @code{string-ci=?} and other comparison functions.
 @xref{String Comparison}.
 @c JP
-R5RS の @code{string-ci=?} および、その他の比較関数。
+R7RS の @code{string-ci=?} および、その他の比較関数。
 @ref{String Comparison}参照。
 @c COMMON
 @item strcat
 @c EN
-R5RS @code{string-append}.  @xref{String utilities}.
+R7RS @code{string-append}.  @xref{String utilities}.
 @c JP
-R5RS の @code{string-append}。@ref{String utilities}参照。
+R7RS の @code{string-append}。@ref{String utilities}参照。
 @c COMMON
 @item strchr
 @c EN
@@ -1483,10 +1483,10 @@ SRFI-13 の @code{string-index}。  @ref{SRFI-13 String searching}参照。
 @c COMMON
 @item strcmp
 @c EN
-R5RS @code{string=?} and other comparison functions.
+R7RS @code{string=?} and other comparison functions.
 @xref{String Comparison}.
 @c JP
-R5RS の @code{string=?} および、その他の比較関数。
+R7RS の @code{string=?} および、その他の比較関数。
 @ref{String Comparison}参照。
 @c COMMON
 @item strcoll
@@ -1497,9 +1497,9 @@ Not supported yet.
 @c COMMON
 @item strcpy
 @c EN
-R5RS @code{string-copy}.    @xref{String utilities}.
+R7RS @code{string-copy}.    @xref{String utilities}.
 @c JP
-R5RS の @code{string-copy}。@ref{String utilities}参照。
+R7RS の @code{string-copy}。@ref{String utilities}参照。
 @c COMMON
 @item strcspn
 @c EN
@@ -1523,9 +1523,9 @@ Gauche の @code{sys-strftime}。@ref{Time}参照。
 @c COMMON
 @item strlen
 @c EN
-R5RS @code{string-length}.  @xref{String Accessors & Modifiers}.
+R7RS @code{string-length}.  @xref{String Accessors & Modifiers}.
 @c JP
-R5RS の @code{string-length}。@ref{String Accessors & Modifiers}参照。
+R7RS の @code{string-length}。@ref{String Accessors & Modifiers}参照。
 @c COMMON
 @item strncat
 @c EN
@@ -1599,9 +1599,9 @@ SRFI-13 の @code{string-contains}。@ref{SRFI-13 String searching}参照。
 @c COMMON
 @item strtod
 @c EN
-You can use R5RS @code{string->number}.   @xref{Numerical conversions}.
+You can use R7RS @code{string->number}.   @xref{Numerical conversions}.
 @c JP
-R5RS の @code{string->number}が使えます。@ref{Numerical conversions}参照。
+R7RS の @code{string->number}が使えます。@ref{Numerical conversions}参照。
 @c COMMON
 @item strtok
 @c EN
@@ -1612,9 +1612,9 @@ SRFI-13 の @code{string-tokenize}。@ref{SRFI-13 other string operations}参照
 @item strtol
 @itemx strtoul
 @c EN
-You can use R5RS @code{string->number}.   @xref{Numerical conversions}.
+You can use R7RS @code{string->number}.   @xref{Numerical conversions}.
 @c JP
-R5RS の @code{string->number}が使えます。@ref{Numerical conversions}参照。
+R7RS の @code{string->number}が使えます。@ref{Numerical conversions}参照。
 @c COMMON
 @item strxfrm
 @c EN
@@ -1649,9 +1649,9 @@ Gauche の @code{sys-system}。@ref{Process management}参照。
 @item tan
 @itemx tanh
 @c EN
-R5RS @code{tan} and Gauche @code{tanh}.  @xref{Arithmetics}.
+R7RS @code{tan} and Gauche @code{tanh}.  @xref{Arithmetics}.
 @c JP
-R5RS の @code{tan} および Gauche の @code{tanh}。@ref{Arithmetics}参照。
+R7RS の @code{tan} および Gauche の @code{tanh}。@ref{Arithmetics}参照。
 @c COMMON
 @item tcdrain
 @item tcflow
@@ -1704,9 +1704,9 @@ Gauche の @code{sys-tmpnam}。この関数は POSIX にあるので提供され
 @item tolower
 @itemx toupper
 @c EN
-R5RS @code{char-upcase} and @code{char-downcase}.   @xref{Characters}.
+R7RS @code{char-upcase} and @code{char-downcase}.   @xref{Characters}.
 @c JP
-R5RS の @code{char-upcase} および @code{char-downcase}。@ref{Characters}参照。
+R7RS の @code{char-upcase} および @code{char-downcase}。@ref{Characters}参照。
 @c COMMON
 @item ttyname
 @c EN

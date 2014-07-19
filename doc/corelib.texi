@@ -326,7 +326,7 @@ NaNの比較には少々奇妙なところがあります。数値比較は、�
 @end defun
 
 @defun equal? obj1 obj2
-[R5RS+]
+[R7RS+]
 @c EN
 If @var{obj1} and @var{obj2} are both aggregate types,
 @code{equal?} compares its elements recursively.
@@ -489,7 +489,7 @@ These classes consist a class hierarchy of number objects.
  and @code{<integer>} inherits @code{<rational>}.
 
 Note that these classes do not exactly correspond to the
-number hierarchy defined in R5RS.  Especially,
+number hierarchy defined in R7RS.  Especially,
 only exact integers are the instances of the @code{<integer>}
 class.  That is,
 @c JP
@@ -498,8 +498,8 @@ class.  That is,
 @code{<rational>}は@code{<real>}を継承し、
 @code{<integer>}は@code{<rational>}を継承します。
 
-これらのクラスはR5RSで定義されている数値の階層とは必ずしも対応しません。
-特に、@code{<integer>}クラスのインスタンスはR5RSでいうexact integerのみになります。
+これらのクラスはR7RSで定義されている数値の階層とは必ずしも対応しません。
+特に、@code{<integer>}クラスのインスタンスはR7RSでいうexact integerのみになります。
 @c COMMON
 @lisp
 (integer? 1)        @result{} #t
@@ -887,7 +887,7 @@ rational numbers.
 @end defun
 
 @defun abs z
-[R5RS+]
+[R7RS+]
 @c EN
 For real number @var{z}, returns an absolute value of it.
 For complex number @var{z}, returns the magnitude of the number.
@@ -2321,7 +2321,7 @@ An abstract class represents lists.   A parent class of @code{<null>}
 and @code{<pair>}.   Inherits @code{<sequence>}.
 
 Note that a circular list is also an instance of the @code{<list>} class,
-while R5RS procedure @code{list?} returns false on the circular lists and
+while @code{list?} returns false on the circular lists and
 dotted lists.
 @c JP
 リストを表す抽象クラスで、クラス@code{<null>}とクラス@code{<pair>}の親クラスです。
@@ -3120,14 +3120,14 @@ Inserts @var{item} between elements in the @var{list}.
 [R7RS+]
 @c EN
 Applies @var{proc} for each element(s) of given list(s),
-and returns a list of the results.  R5RS doesn't specify
+and returns a list of the results.  R7RS doesn't specify
 the application order of @code{map}, but Gauche guarantees
 @var{proc} is always applied in order of the list(s).
 Gauche's @code{map} also terminates as soon as one of
 the list is exhausted.
 @c JP
 与えられたリストの各要素に対して@var{proc}を適用し、その結果をリストにして
-返します。R5RSでは@var{proc}の適用順序が定められていませんが、Gaucheでは
+返します。R7RSでは@var{proc}の適用順序が定められていませんが、Gaucheでは
 常に@var{proc}はリスト内の順番で呼ばれます。
 複数のリストが与えられた場合、最も短いリストが終了した時点で@var{proc}の適用を
 打ち切ります。
@@ -3811,7 +3811,7 @@ b @result{} ((a . b) (c . d))
 @defun assq obj list
 @defunx assv obj list
 @defunx assoc obj list :optional key=
-[R5RS][SRFI-1]
+[R7RS][SRFI-1]
 @c EN
 Each element in @var{list} must be a pair.
 These procedures search a pair whose car matches @var{obj}
@@ -6277,12 +6277,12 @@ returns a copy of @var{string}.
 @c EN
 Actually, extended @code{string-copy} explained below
 is a superset of @code{substring}.  This procedure is
-kept mostly for compatibility of R5RS programs.
+kept mostly for compatibility of R7RS programs.
 See also @code{subseq} in @ref{Sequence framework},
 for the generic version.
 @c JP
 実は後述する拡張された@code{string-copy}は@code{substring}のスーパーセッ
-トになっています。この手続きの役割は主にR5RSとの互換性のためです。
+トになっています。この手続きの役割は主にR7RSとの互換性のためです。
 @ref{Sequence framework}のジェネリック版@code{subseq}も参照してください。
 @c COMMON
 @end defun
@@ -10130,14 +10130,14 @@ is returned.
 Note: The name @code{.$} comes from the fact that @code{.} is
 commonly used for function composition in literatures and some
 programming languages, and that Gauche uses suffix @code{$} to
-indicate combinators.   However, since it is not a valid R5RS/R6RS
+indicate combinators.   However, since it is not a valid R7RS
 identifier, portable programs may want to use the alias @code{compose},
 with which you can easily add a portable definition using @code{srfi-0},
 for example.
 @c JP
 註: @code{.$}という名前は、文献やいくつかの他のプログラミング言語で
 @code{.}が関数合成によく使われること、そしてGaucheではコンビネータの末尾に
-@code{$}をつける習慣があることから来ています。ただ、これはR5RS/R6RSの
+@code{$}をつける習慣があることから来ています。ただ、これはR7RSの
 範囲内では有効な識別子でないので、ポータビリティを考えるプログラムは
 別名の@code{compose}を使った方が良いでしょう。そうすれば@code{srfi-0}などを
 使って容易に移植が可能です。
@@ -10863,7 +10863,7 @@ See also @ref{Let-values}.
 @c JP
 @var{obj} @dots{} を多値として返します。
 呼び出し側は、組み込み構文の @code{receive} (@ref{Binding constructs}参照)か、
-下に説明するR5RSの手続き@code{call-with-values}を使って多値を受け取ることが
+下に説明するR7RSの手続き@code{call-with-values}を使って多値を受け取ることが
 できます。
 @ref{Let-values}も参照してください。
 @c COMMON
@@ -13611,12 +13611,11 @@ A convenience macro to create a (possibly compound) condition.
 @c NODE eval と repl
 
 @defun eval expr env
+[R7RS]
 @c EN
-[R5RS][R7RS]
 Evaluate @var{expr} under the environment @var{env}.
 In Gauche, @var{env} is just a @code{<module>} object.
 @c JP
-[R5RS]
 @var{expr}を環境@var{env}内で評価します。
 Gaucheにおいて、@var{env}は単なる@code{<module>}オブジェクトです。
 @c COMMON
@@ -13629,8 +13628,8 @@ described in @ref{R7RS eval}.
 @defun null-environment version
 @defunx scheme-report-environment version
 @defunx interaction-environment
-@c EN
 [R5RS]
+@c EN
 Returns an environment specifier which can be used as the second
 argument of @code{eval}.   Right now an environment specifier
 is just a module.  @code{(null-environment 5)} returns
@@ -13644,7 +13643,6 @@ It is possible that the Gauche adopts a first-class environment object
 in future, so do not rely on the fact that the environment specifier
 is just a module.
 @c JP
-[R5RS]
 @code{eval}の第2引数として使われる環境識別子を返します。
 現時点では、環境識別子は単にモジュールです。
 @code{(null-environment 5)}は、R5RSで規定されている単なる構文的な
@@ -14743,14 +14741,14 @@ as the result of @code{with-input-from-file} and
 
 @c EN
 @emph{Notes on semantics of closing file ports:}
-R5RS states, in the description of @code{call-with-input-file} et al.,
+R7RS states, in the description of @code{call-with-port} et al.,
 that @emph{"If @emph{proc} does not return, then the port will
 not be closed automatically unless it is possible
 to prove that the port will never again be used for read or write
 operation."}
 @c JP
 @emph{ポートを閉じるセマンティクスについて:}
-R5RSは@code{call-with-input-file}等の説明において、次のように述べています。
+R7RSは@code{call-with-port}等の説明において、次のように述べています。
 「@emph{procが戻って来なかった場合、今後ポートが読み書きに一切使われないことが
 証明できない限りは、ポートは自動的には閉じられない}」。
 @c COMMON
@@ -15146,7 +15144,7 @@ an input port, and when omitted, the current input port is assumed.
 [R7RS]
 @c EN
 Reads an S-expression from @var{iport} and returns it.
-Gauche recognizes the lexical structure specified in R5RS,
+Gauche recognizes the lexical structure specified in R7RS,
 and some additional lexical structures listed in @ref{Lexical structure}.
 
 If @var{iport} has already reached to the end of file,
@@ -15157,7 +15155,7 @@ and leaves the rest in the port.  It's not like CommonLisp's @code{read},
 which consumes whitespaces after S-expression by default.
 @c JP
 @var{iport}からS式をひとつ読み込んで返します。
-GaucheはR5RSに定義されている構文要素に加え、@ref{Lexical structure}に
+GaucheはR7RSに定義されている構文要素に加え、@ref{Lexical structure}に
 定義されている拡張構文要素を認識します。
 
 @var{iport}が既にEOFに達していた場合は、EOFオブジェクトが返されます。
@@ -16434,7 +16432,7 @@ absolute position of the arguments, starting from 0.
 @c NODE 低レベル出力
 
 @defun write-char char :optional port
-[R5RS]
+[R7RS]
 @c EN
 Write a single character @var{char} to the output port @var{port}.
 @c JP
