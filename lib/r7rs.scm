@@ -331,7 +331,7 @@
   ;; 6.13 Input and output
   ;; input-port? output-port? port? current-input-port current-output-port
   ;; current-error-port close-port close-input-port close-ouptut-port
-  ;; open-input-string open-output-string get-output-string
+  ;; open-input-string open-output-string get-output-string read-string
   ;; read-char peek-char read-line eof-object? eof-object char-ready?
   ;; newline write-char
   (define (textual-port? p) (port? p))    ; gauche's port can handle both
@@ -345,11 +345,6 @@
     (open-output-string))
   (define (get-output-bytevector port) ; temporary implementation
     (string->u8vector (get-output-string port)))
-  (define (read-string n :optional (p (current-input-port)))
-    (let1 r ((with-module text.parse read-string) n p)
-      (if (and (equal? r "") (> n 0))
-        (eof-object)
-        r)))
   (define-inline read-u8 read-byte)
   (define-inline peek-u8 peek-byte)
   (define u8-ready? byte-ready?)

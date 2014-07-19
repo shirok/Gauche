@@ -16639,13 +16639,15 @@ when it returns a true value.
 
 @defun read-string n :optional port
 @c EN
-Reads up to @var{n} characters, collects them into a string, and returns it.
-If the input stream contains less characters, the returns string contains
-as many characters available.
+This is like built-in @code{read-string} (@xref{Reading data}),
+except that this returns @code{""} when the input already reached EOF.
+
+Provided for the compatibility for the code that depends Oleg's library.
 @c JP
-@var{n} 文字まで読み込み、文字列として蓄積しそれを返します。
-入力ストリームに含まれる文字のほうが少ない場合、有効な文字を可能な限り
-含む文字列が返ります。
+組み込みの@code{read-string} (@ref{Reading data}参照) とほぼ同じですが、
+入力が既にEOFに達していた場合は@code{""}を返します。
+
+Olegのライブラリに依存しているコードの互換性のために用意されています。
 @c COMMON
 @end defun
 

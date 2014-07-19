@@ -15287,6 +15287,19 @@ This optional argument is Gauche's extention to R7RS.
 @c COMMON
 @end defun
 
+@defun read-string nchars :optional iport
+[R7RS]
+@c EN
+Read @var{nchars} characters, or as many characters as available
+before EOF, and returns a string that consists of those characters.
+If the input has already reached EOF, an eof object is returned.
+@c JP
+@var{nchars}文字を読み込み、もしくはそれ以前にEOFに達したら読めただけの文字を
+使って文字列を作って返します。もし入力が既にEOFに達していた場合は
+EOFを返します。
+@c COMMON
+@end defun
+
 @defun read-block nbytes :optional iport
 @c EN
 This procedure is deprecated - use @code{read-uvector} instead

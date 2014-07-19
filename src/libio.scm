@@ -485,6 +485,19 @@
       (Scm_ReadError port "read-line: encountered illegal byte sequence: %S" r))
     (result r)))
 
+(define (read-string n :optional (port (current-input-port)))
+  (define o (open-output-string :private? #t))
+  (let loop ([i 0])
+    (if (>= i n)
+      (get-output-string o)
+      (let1 c (read-char port)
+        (if (eof-object? c)
+          (if (= i 0)
+            (eof-object)
+            (get-output-string o))
+          (begin (write-char c o) (loop (+ i 1))))))))
+
+;; DEPRECATED - read-uvector should be used
 (define-cproc read-block (bytes::<fixnum>
                           :optional (port::<input-port> (current-input-port)))
   (when (< bytes 0)

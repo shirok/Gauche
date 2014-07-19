@@ -269,15 +269,11 @@
   (next-token-of/common (cut pred char-list <>) port))
 
 
-;; read-line is built in Gauche.
+;; read-line is built-in.
 
-;; READ-STRING <n> :optional <port>
+;; this is slightly different from built-in read-string
 (define (read-string n :optional (port (current-input-port)))
-  (define o (open-output-string :private? #t))
-  (let loop ((i 0))
-    (if (>= i n)
-      (get-output-string o)
-      (let1 c (read-char port)
-        (if (eof-object? c)
-          (get-output-string o)
-          (begin (write-char c o) (loop (+ i 1))))))))
+  (let1 s ((with-module gauche read-string) n port)
+    (if (eof-object? s)
+      ""
+      s)))
