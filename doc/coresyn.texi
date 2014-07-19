@@ -360,9 +360,11 @@ The table below lists sharp-syntaxes.
 @c EN
  @tab [R7RS] Boolean false, or
       introducing SRFI-4 uniform vector.  @xref{Uniform vectors}.
+      R7RS defines both @code{#f} and @code{#false} as a boolean false value.
 @c JP
  @tab [R7RS] 真理値の偽、あるいは
-      SRFI-4 のユニフォームベクタを先導します。@ref{Uniform vectors}参照
+      SRFI-4 のユニフォームベクタを先導します。@ref{Uniform vectors}参照。
+      R7RSでは真理値の偽として@code{#f}と@code{#false}が使えます。
 @c COMMON
 @item @code{#g}, @code{#h}
 @c EN
@@ -402,9 +404,10 @@ The table below lists sharp-syntaxes.
 @c COMMON
 @item @code{#t}
 @c EN
- @tab [R7RS] Boolean true.
+ @tab [R7RS] Boolean true.  R7RS defines @code{#t} and @code{#true}
+      as a boolean true value.
 @c JP
- @tab [R7RS] 真理値の真。
+ @tab [R7RS] 真理値の真。R7RSでは真理値の真として@code{#t}と@code{#true}が使えます。
 @c COMMON
 @item @code{#u}
 @c EN
