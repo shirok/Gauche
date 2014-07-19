@@ -2254,7 +2254,7 @@ for the @code{begin0} form is expanded as follows.
 @enumerate
 @item
 Evaluates @var{init} @dots{} and binds @var{variable} @dots{} to each result.
-The following steps are evaluated under the enviornment where
+The following steps are evaluated under the environment where
 @var{variables} are bound.
 @item
 Evaluate @var{test}.  If it yields true, evaluates
@@ -4053,6 +4053,7 @@ Gaucheではモジュールはコンパイル時に静的に決定されます�
 @c NODE モジュールの使用
 
 @defspec export spec @dots{}
+[R7RS]
 @c EN
 Makes bindings specified by each @var{spec} available
 to modules that imports the current module.

@@ -546,9 +546,6 @@ of R7RS import syntax is as follows:
 <library-name> : (<identifier-or-base-10-integer>
                   <identifier-or-base-10-integer> ...)
 @end smallexample
-
-
-
 @end defspec
 
 
@@ -557,6 +554,45 @@ of R7RS import syntax is as follows:
 @c NODE R7RSライブラリ形式
 
 @defmac define-library library-name libral-decl @dots{}
+[R7RS]
+Defines a library @var{library-name}, which is a list of 
+symbols or base-10 integer:
+
+@smallexample
+<library-name> : (<identifier-or-base-10-integer>
+                  <identifier-or-base-10-integer> ...)
+@end smallexample
+
+Library decralations can be export declataions, import declartaions,
+@code{begin}-list of Scheme code,
+include forms, or @code{cond-expand} forms.
+
+@smallexample
+<library-decl> : (export <export-spec> @dots{})
+               | <import declaration>
+               | (begin <command-or-definition> @dots{})
+               | (include <string> <string2> @dots{})
+               | (include-ci <string> <string2> @dots{})
+               | (include-library-declarations 
+                        <string> <string2> @dots{})
+               | (cond-expand <cond-expand-clause>
+                              <cond-expand-clause2> @dots{})
+               | (cond-expand <cond-expand-clause>
+                              <cond-expand-clause2> @dots{}
+                              (else <library-decl> @dots{}))
+@end smallexample
+
+The @code{export} declaration is the same Gauche's @code{export}
+form; @pxref{Using modules}.
+
+The @code{import} declaration is R7RS's @code{import} form,
+described in @ref{Three forms of import}.
+
+The @code{include} and @code{include-ci} forms are the same as Gauche's;
+@pxref{Inclusions}.
+
+The @code{cond-expand} form is also the same as Gauche's;
+@pxref{Feature conditional}.
 @end defmac
 
 
@@ -569,6 +605,8 @@ of R7RS import syntax is as follows:
 Exports bindings of R7RS @code{(scheme base)} library.  From R7RS programs,
 those bindings are available by @code{(import (scheme base))}.
 @end deftp
+
+@subheading Bindings common to Gauche's built-ins
 
 The following syntaxes and procedures are the same as Gauche's
 builtins:
@@ -660,6 +698,144 @@ read-char peek-char read-line eof-object? eof-object char-ready?
 newline write-char
 @end example
 @end table
+
+@subheading Bytevector utilities
+
+@defun bytevector n @dots{}
+@defunx bytevector? obj
+@defunx make-bytevector size :optional byte
+@defunx bytevector-length bv
+@defunx bytevector-u8-ref bv index
+@defunx bytevector-u8-set! bv index byte
+@defunx bytevector-copy bv :optional start end
+@defunx bytevector-copy! to at from :optional start end
+@defunx bytevector-append bv @dots{}
+[R7RS]
+R7RS's bytevector is Gauche's u8vector.
+
+These are equivalent to @code{gauche.uvector}'s
+@code{u8vector}, @code{u8vector?},
+@code{make-u8vector}, @code{u8vector-length}, @code{u8vector-ref},
+@code{u8vector-set!}, @code{u8vector-copy}, @code{u8vector-copy!}, and
+@code{u8vector-append}, respectively.  (@xref{Uniform vectors}).
+@end defun
+
+These two procedures are the same as the ones in @code{text.unicode}
+module (@pxref{Unicode transfer encodings}):
+
+@example
+utf8->string string->utf8
+@end example
+
+@subheading Control features
+
+@defun string-map proc str @dots{}
+@defunx string-for-each proc str @dots{}
+[R7RS]
+These take different arguments from 
+@code{string-map} and @code{string-for-each} in SRFI-13
+(@xref{SRFI-13 String mapping}), so provided only in @code{scheme.base} module
+to avoid confusion.
+@end defun
+
+@defun raise-continuable obj
+[R7RS]
+At this moment, this is this is defined as an alias of @code{raise},
+for Gauche's @code{raise} returns unless @var{obj} is not a
+@code{<serious-condition>}.
+@end defun
+
+@defun error-object? exc
+[R7RS]
+Defined as @code{(condition-has-type? exc <error>))}
+@end defun
+
+@defun error-object-message exc
+[R7RS]
+Returns the message portion of @var{exc} if it has one,
+or an empty string otherwise.
+@end defun
+
+@defun error-object-irritants exc
+[R7RS]
+@end defun
+
+@defun read-error? exc
+[R7RS]
+Defined as @code{(condition-has-type? e <read-error>))}.
+@end defun
+
+@defun file-error? exc
+[R7RS]
+At this moment, Gauche doens't have distinct @code{<file-error>} condition,
+but most file errors are thrown as one of @code{<system-error>}s.
+This procedure checks error code of @code{<system-error>} and
+returns @code{#t} if the error is likely to be related to the filesystem.
+@end defun
+
+@subsection Input and output
+
+@defun textual-port? port
+@defunx binary-port? port
+[R7RS]
+Gauche's port can handle both, so these are equivalent to @code{port?}.
+@end defun
+
+@defun input-port-open? port
+@defunx output-port-open? port
+[R7RS]
+@end defun
+
+@defun open-input-bytevector bv
+@defunx open-output-bytevector
+@defunx get-output-bytevector port
+[R7RS]
+@end defun
+
+@defun read-u8 :optional iport
+@defunx peek-u8 :optional iport
+@defunx u8-ready? :optional iport
+[R7RS]
+These are aliases to @code{read-byte}, @code{peek-byte} and @code{byte-ready?},
+respectively.
+@end defun
+
+@defun read-bytevector size :optional iport
+[R7RS]
+Equivalent to @code{(read-uvector <u8vector> size iport)}. 
+@xref{Uvector block I/O}.
+@end defun
+
+@defun read-bytevector! bv :optional iport start end
+[R7RS]
+An alias to @code{read-uvector!}.  @xref{Uvector block I/O}.
+@end defun
+
+@defun write-string string :optional oport start end
+[R7RS]
+@end defun
+
+@defun write-u8
+[R7RS]
+An alias to @code{write-byte}.
+@end defun
+
+@defun write-bytevector bv :optional oport start end
+[R7RS]
+Equivalent to @code{write-uvector}.  @xref{Uvector block I/O}.
+@end defun
+
+@defun flush-output-port :optional oport
+[R7RS]
+An alias to @code{flush}.
+@end defun
+
+@defun features
+[R7RS]
+Returns a list of symbols of supported feature identifiers,
+recognized by @code{cond-expand} (@xref{Feature conditional}).
+@end defun
+
 
 @node R7RS case-lambda, R7RS char library, R7RS base library, Library modules - R7RS integration
 @section @code{scheme.case-lambda} - R7RS case-lambda

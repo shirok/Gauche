@@ -15430,14 +15430,10 @@ R7RSではこの手続きは@code{u8-ready?}と呼ばれています。
 @c NODE リーダー字句モード
 
 @deffn {Parameter} reader-lexical-mode
-@c EN
 Get/set the reader lexcial mode.  Changing this parameter
 switches behavior of the reader concerning some corner cases
 of the lexical syntax, where legacy Gauche syntax and R7RS syntax
 aren't compatible.
-@c JP
-リーダの字句解析モード
-@c COMMON
 
 In general, you don't need to change this parameter directly.
 The lexical syntax matters at the read-time, while changing this parameter
@@ -15978,7 +15974,7 @@ SRFI-38 introduced the datum-label notation and
 to produce such notation, and Gauche supported it.
 R7RS clarified this issue, and Gauche 0.9.4 followed.
 @c JP
-歴史的経緯: @code{Write}は以前のScheme標準にもありましたが、
+歴史的経緯: @code{write}は以前のScheme標準にもありましたが、
 循環構造があった場合の振る舞いはR7RSになるまで規定されていませんでした。
 実際、Gauche 0.9.4より前の@code{write}は、循環構造を渡されると停止しません。
 SRFI-38はデータラベル記法および、それを表示するための
@@ -16450,9 +16446,13 @@ Write a single character @var{char} to the output port @var{port}.
 @c EN
 Write a byte @var{byte} to the port.
 @var{byte} must be an exact integer in range between 0 and 255.
+
+This procedure is called @code{write-u8} in R7RS.
 @c JP
 出力ポートに1バイトのデータ@var{byte}を書き出します。
 @var{byte}は0から255の間の正確な整数でなければなりません。
+
+この手続きはR7RSでは@code{write-u8}と呼ばれています。
 @c COMMON
 @end defun
 
@@ -16465,6 +16465,7 @@ The function "flush" is called in variety of ways on the various
 Scheme implementations: @code{force-output} (Scsh, SCM),
 @code{flush-output} (Gambit), or @code{flush-output-port} (Bigloo).
 The name @code{flush} is taken from STk and STklos.
+R7RS calls this @code{flush-output-port}
 @c JP
 それぞれ、@var{port}、および全てのポートにバッファされているデータを
 全て書き出します。
@@ -16473,6 +16474,7 @@ The name @code{flush} is taken from STk and STklos.
 @code{force-output} (Scsh, SCM)、
 @code{flush-output} (Gambit)、@code{flush-output-port} (Bigloo) 等。
 @code{flush}の名前はSTkとSTklosから取りました。
+R7RSでは@code{flush-output-port}を採用しています。
 @c COMMON
 @end defun
 
@@ -16495,7 +16497,7 @@ The name @code{flush} is taken from STk and STklos.
 @c NODE Schemeファイルのロード
 
 @defun load file :key paths (error-if-not-found #t) environment ignore-coding
-[R5RS+]
+[R7RS+]
 @c EN
 Loads @var{file}, that is, read Scheme expressions in @var{file} and
 evaluates them.
@@ -17676,7 +17678,7 @@ Gaucheは(@code{main}から返る以外に)自分自身を終了させる方法�
 
 
 @defun exit :optional (code 0) (fmtstr #f) args @dots{}
-[POSIX]
+[R7RS+]
 @c EN
 Terminates the current process with the exit code @var{code}.
 @var{Code} must be zero or positive exact integer.
@@ -18033,7 +18035,10 @@ Gaucheが埋め込み言語として使われている場合、これらの変�
 @c EN
 Returns the value of the environment variable @var{name} as a string,
 or @code{#f} if the environment variable is not defined.
-(@xref{Accessing environment variables}).
+
+For the portable code, you may want to use SRFI-98's
+@code{get-environment-variable} (@pxref{Accessing environment variables}),
+which is also in R7RS.
 
 Note: Most systems doesn't guarantee thread-safety of @code{getenv} while
 environment is being modified; however, Gauche mutexes envionment
@@ -18042,6 +18047,9 @@ about the race condition as far as you use Gauche procedures.
 @c JP
 環境変数@var{name}の値を文字列で返します。もし@var{name}が定義されていなければ、
 @code{#f}が返ります。
+
+ポータブルなコードでは、SRFI-98およびR7RSの@code{get-environment-variable}を
+使うのが良いでしょう(@ref{Accessing environment variables}参照)。
 
 註: 多くのシステムでは、環境が変更されている最中の@code{getenv}のスレッド安全性を
 保証していませんが、Gaucheは内部的に環境へのアクセスと変更のAPIを排他制御しているので、
@@ -18088,6 +18096,16 @@ to get the current environment variables.
 の環境変数を取得します。
 @c COMMON
 
+@c EN
+For the portable code, you may want to use SRFI-98's
+@code{get-environment-variables} (@pxref{Accessing environment variables}),
+which is also in R7RS.
+@c JP
+ポータブルなコードでは、SRFI-98およびR7RSの
+@code{get-environment-variables} (@ref{Accessing environment variables}参照),
+を使うのが良いでしょう。
+@c COMMON
+
 @example
 (sys-environ->alist '("A=B" "C=D=E"))
   => (("A" . "B") ("C" . "D=E"))
@@ -18132,7 +18150,7 @@ the environment through Gauche API.
 @defun sys-unsetenv name
 @defunx sys-clearenv
 Remove the environment variable with @var{name} (@code{sys-unsetenv}),
-or all enviornment variables.  @code{sys-clearenv} is handy
+or all environment variables.  @code{sys-clearenv} is handy
 when you need to run subprocess, but you cannot trust the inherited
 environment.
 
@@ -18668,6 +18686,14 @@ named pathname doesn't exist (@xref{File operations}).
 ありますが、そちらはファイルが存在しない場合にエラーを投げます
 (@ref{File operations}参照)。
 @c COMMON
+
+@c EN
+R7RS defines @code{delete-file}, which you may want to use in portable
+programs.
+@c JP
+R7RSは@code{delete-file}を定義しています。ポータブルなプログラムでは
+そちらを使うのが良いでしょう。
+@c COMMON
 @end defun
 
 @defun sys-symlink existing new
@@ -18941,22 +18967,23 @@ See also @ref{File attribute utilities}, for high-level APIs.
 @c COMMON
 
 @defun file-exists? path
-@defunx file-is-regular? path
+[R7RS]
+@c EN
+Returns true if @var{path} exists.
+@c JP
+@var{path}が存在していれば@code{#t}を返します。
+@c COMMON
+@end defun
+
+@defun file-is-regular? path
 @defunx file-is-directory? path
 @c EN
-Returns true if @var{path} exists, is a regular file, or is a directory,
-respectively.   The latter two returns false if @var{path} doesn't
+Returns true if @var{path} is a regular file, or is a directory,
+respectively.   They return false if @var{path} doesn't
 exist at all.
-
-These functions are built on top of primitive
-system interfaces described below; I provide these for convenience
-and compatibility (STk has the same functions).
 @c JP
 それぞれ、@var{path}が存在するか、存在してそれがレギュラーファイルであるか、
 存在してそれがディレクトリであれば@code{#t}を返します。
-
-これらの手続きは便利であり、STkとの互換性もあるので定義されていますが、
-実体は下に説明されている低レベル手続きの上に作成されています。
 @c COMMON
 @end defun
 
@@ -20175,7 +20202,7 @@ Gaucheはその時点のOSレベルのシグナルハンドラを変更しませ
 
 @c EN
 Note that signal handler setting is shared among threads in
-multithread enviornment.  The handler is called from the thread
+multithread environment.  The handler is called from the thread
 which is received the signal.  See @ref{Signals and threads}
 for details.
 @c JP

@@ -362,7 +362,7 @@
                port)
       (display string port)))
   (define-inline write-u8 write-byte)
-  (define write-bytevector write-block)
+  (define write-bytevector write-uvector)
   (define flush-output-port flush)
 
   ;; 6.14 System interface
