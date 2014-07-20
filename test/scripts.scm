@@ -121,10 +121,19 @@
       ))
   )
 
+;; When we run configure, we need to include directories of gosh and
+;; other scripts in PATH.  Before installing Gauche, where we find them
+;; is "..".
+(define (run-with-parent-directory-in-paths cmd . args)
+  (let* ([separ (cond-expand [gauche.os.windows ";"] [else ":"])]
+         [paths #"..~|separ|~(sys-getenv \"PATH\")"])
+    (apply run-process `("env" ,#"PATH=~paths" ,@cmd) args)))
+
 (test* "running `configure' script" 0
        (process-exit-status
-        (run-process `("../gosh" "-ftest" "./configure")
-                     :output *nulldev* :wait #t :directory "test.o")))
+        (run-with-parent-directory-in-paths
+         `("../gosh" "-ftest" "./configure")
+         :output *nulldev* :wait #t :directory "test.o")))
 (test* "Makefile substitution" '()
        (and (file-exists? "test.o/Makefile")
             (filter #/@\w+@/ (file->string-list "test.o/Makefile"))))
@@ -137,8 +146,9 @@
 
 (test* "running `configure' script in different directory" 0
        (process-exit-status
-        (run-process `("../gosh" "-ftest" "../test.o/configure")
-                     :output *nulldev* :wait #t :directory "test2.o")))
+        (run-with-parent-directory-in-paths
+         `("../gosh" "-ftest" "../test.o/configure")
+         :output *nulldev* :wait #t :directory "test2.o")))
 
 (test* "Makefiles in proper builddir" '(#t #t)
        (list (file-exists? "test2.o/Makefile")
