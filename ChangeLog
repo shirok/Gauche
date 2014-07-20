@@ -1,5 +1,7 @@
 2014-07-19  Shiro Kawai  <shiro@acm.org>
 
+	* release 0.9.4
+
 	* lib/gauche/configure.scm (check-for-program): Fixed a bug that refer
 	  to the variable 'paths' that's being defined, i.e.
 	  (define paths (... paths ...)).
