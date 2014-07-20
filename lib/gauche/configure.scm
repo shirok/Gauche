@@ -618,8 +618,8 @@
 ;; it may return #f if the caller wants to exclude the program for some reason.
 ;; If a program found, and FILTER returns true, then this procedure returns
 ;; the full path of the program.  If no program found, #f is returned.
-(define (check-for-program progs :key (paths #f) (filter #f))
-  (define paths (or paths
+(define (check-for-program progs :key ((:paths ps) #f) (filter #f))
+  (define paths (or ps
                     (string-split (or (sys-getenv "PATH") '())
                                   (cond-expand [gauche.os.windows #\;]
                                                [else #\:]))))

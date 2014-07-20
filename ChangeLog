@@ -1,3 +1,9 @@
+2014-07-19  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/configure.scm (check-for-program): Fixed a bug that refer
+	  to the variable 'paths' that's being defined, i.e.
+	  (define paths (... paths ...)).
+
 2014-07-18  Shiro Kawai  <shiro@acm.org>
 
 	* src/libio.scm, lib/r7rs.scm (read-string): Support R7RS-compatible
