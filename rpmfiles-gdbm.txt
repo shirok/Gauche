@@ -1,6 +1,6 @@
-/usr/share/gauche-0.9/0.9.3/lib/dbm/odbm.scm
-/usr/share/gauche-0.9/0.9.3/lib/dbm/gdbm.scm
-/usr/share/gauche-0.9/0.9.3/lib/dbm/ndbm.scm
-/usr/lib/gauche-0.9/0.9.3/x86_64-unknown-linux-gnu/dbm--gdbm.so
-/usr/lib/gauche-0.9/0.9.3/x86_64-unknown-linux-gnu/dbm--ndbm.so
-/usr/lib/gauche-0.9/0.9.3/x86_64-unknown-linux-gnu/dbm--odbm.so
+/usr/share/gauche-0.9/0.9.4/lib/dbm/odbm.scm
+/usr/share/gauche-0.9/0.9.4/lib/dbm/ndbm.scm
+/usr/share/gauche-0.9/0.9.4/lib/dbm/gdbm.scm
+/usr/lib/gauche-0.9/0.9.4/x86_64-unknown-linux-gnu/dbm--odbm.so
+/usr/lib/gauche-0.9/0.9.4/x86_64-unknown-linux-gnu/dbm--gdbm.so
+/usr/lib/gauche-0.9/0.9.4/x86_64-unknown-linux-gnu/dbm--ndbm.so
