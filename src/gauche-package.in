@@ -404,11 +404,13 @@ Options:
                              (build-path package-name dst-name))])
             (filter-copy src-path dst-path
                          package-name extension-name module-name
-                         '("DIST" "configure")))))
+                         '("DIST" "configure")
+                         (if autoconf "configure" "")))))
       )))
 
 (define (filter-copy src dst
-                     package-name extension-name module-name executables)
+                     package-name extension-name module-name executables
+                     configure)
   (let1 EXTENSION-NAME (string-upcase extension-name)
     (file-filter (lambda (in out)
                    (port-for-each
@@ -420,7 +422,8 @@ Options:
                         #/@@modname@@/ (x->string module-name)
                         #/@@modpath@@/ (module-name->path module-name)
                         #/@@extname@@/ extension-name
-                        #/@@EXTNAME@@/ EXTENSION-NAME)
+                        #/@@EXTNAME@@/ EXTENSION-NAME
+                        #/@@configure@@/ configure)
                        out)
                       (newline out))
                     (cut read-line in)))

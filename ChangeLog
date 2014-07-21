@@ -1,3 +1,10 @@
+2014-07-20  Shiro Kawai  <shiro@acm.org>
+
+	* ext/template.Makefile.in (maintainer-clean),
+	  src/gauche-package.in (generate): Do not delete
+	  configure in maintainer-clean if we create skeletons to use
+	  gauche.configure.
+
 2014-07-19  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.9.4

@@ -70,5 +70,5 @@ distclean : clean
 	rm -rf $(CONFIG_GENERATED)
 
 maintainer-clean : clean
-	rm -rf $(CONFIG_GENERATED) configure VERSION
+	rm -rf $(CONFIG_GENERATED) @@configure@@ VERSION
 
