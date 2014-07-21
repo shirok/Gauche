@@ -15428,34 +15428,74 @@ R7RSではこの手続きは@code{u8-ready?}と呼ばれています。
 @c NODE リーダー字句モード
 
 @deffn {Parameter} reader-lexical-mode
+@c EN
 Get/set the reader lexcial mode.  Changing this parameter
 switches behavior of the reader concerning some corner cases
 of the lexical syntax, where legacy Gauche syntax and R7RS syntax
 aren't compatible.
+@c JP
+現在のリーダ字句モードを表すパラメータです。
+このパラメータの値を変えることにより、旧来のGaucheとR7RSで非互換となる
+コーナーケースの字句構文についての解釈を変更できます。
+@c COMMON
 
+@c EN
 In general, you don't need to change this parameter directly.
 The lexical syntax matters at the read-time, while changing this parameter
 happens at the execution-time; unless you know the exact timing when
 each phase occurs, you might not get what you want.
+@c JP
+一般的には、このパラメータを直接変える必要のある場合は少ないでしょう。
+字句構文は読み込み時に問題となりますが、パラメータの変更は実行時に起こります。
+いつ、何が起きるかを正確に把握しているのでない限り、意図したとおりの効果は
+得られないかもしれません。
+@c COMMON
 
+@c EN
 The hash-bang directive @code{#!gauche-legacy} and @code{#!r7rs}
 indirectly affects this parameter; the first one sets the reader
 mode to @code{legacy}, and the second one to @code{strict-r7}.
+@c JP
+hash-bang指示子 @code{#!gauche-legacy} および @code{#!r7rs} は
+間接的にこのパラメータに影響を与えます。@code{#!gauche-legacy}は
+リーダモードを@code{legacy}に、@code{#!r7rs}は@code{strict-r7}に
+変更します。
+@c COMMON
 
+@c EN
 The command-line argument @code{-fwarn-legacy} sets the default
 reader mode to @code{warn-legacy}.
+@c JP
+コマンドライン引数の@code{-fwarn-legacy}はデフォルトのリーダモードを
+@code{warn-legacy}にセットします。
+@c COMMON
 
-Change to this parameter is delimited within @code{load};
+@c EN
+Change to this parameter during @code{load} is delimited within that @code{load};
 once @code{load} is done, the value of this parameter is reset
 to the value when @code{load} is started.
+@c JP
+@code{load}中にこのパラメータを変更した場合、その効果は@code{load}の期間中に
+留まります。その@code{load}が終了した時点で、
+@code{load}開始時のリーダモードが復元されます。
+@c COMMON
 
+@c EN
 The parameter takes one of the following symbols as a value.
+@c JP
+このパラメータは値として次のシンボルのうちいずれかを取ります。
+@c COMMON
 
 @table @code
 @item permissive
+@c EN
 This is the default mode.  It tries to find a reasonable
 compromise between two syntax.
+@c JP
+これがデフォルトのモードです。二つの構文の、ほどほどの妥協点を見つけようとします。
+@c COMMON
 
+@c EN
 In string literals, hex escape sequence
 is first interpreted as R7RS lexical syntax.  If the syntax doesn't
 conform R7RS hex escape, it is interpreted as legacy Gauche hex escape
@@ -15468,24 +15508,59 @@ hex escape syntax for the new code, and yet almost all legacy Gauche
 code can be read without a problem.
 However, if the legacy code has a semicolon followed by hex escape,
 it is interpreted as R7RS syntax and the incompatibility arises.
+@c JP
+文字列リテラル中の16進数エスケープシーケンスは、まず
+R7RSの字句構文で解釈されます。もしそれがR7RSの16進数エスケープシーケンスの
+構文に沿っていなかった場合は、旧来のGaucheの構文で解釈されます。
+例えば、@code{"\x30;a"} は、セミコロンがR7RSのエスケープシーケンスの終端と
+みなされ、@code{"0a"} と読まれます。一方で @code{"\x30a"} も @code{"0a"} と
+読まれます。終端のセミコロンが無く、有効なR7RSの構文でないため、
+旧来のGaucheのエスケープシーケンスとして2桁固定で解釈されるからです。
+このモードでは、新たなコードでR7RSエスケープシーケンスを利用できるうえ、
+ほとんどの既存のGaucheコードはそのまま走ります。
+しかし、もし既存のGaucheコードで、たまたま2桁の16進数エスケープの直後に
+セミコロンがあった場合、それはR7RSとして読まれ、非互換性が生じます。
+@c COMMON
 
-Identifiers beginning with a colon are read as keywords.  For the
+@c EN
+Identifiers beginning with a colon are read as keywords, as they've always been. 
+For the
 strict R7RS behavior, you need to use vertical-bar escaping
 (e.g. @code{|:foo|}) to have symbols beginning with colon.
 Note that this incompatibility will be addressed in the future version
 of Gauche, when keywords become a subtype of symbols.
+@c JP
+コロンで始まる識別子は従来通りキーワードとして読まれます。厳密にR7RSと同じ
+振る舞いにする、つまりシンボルとして読ませるには、縦棒でエスケープしてください。
+(例: @code{|:foo|})。この非互換性は、将来のGaucheでキーワードがシンボルの
+サブタイプとなった時に解消されます。
+@c COMMON
 
 @item strict-r7
+@c EN
 Strict R7RS compatible mode.
 When the reader encounters the hash-bang directive @code{#!r7rs},
 the rest of file is read with this mode.
+@c JP
+厳密にR7RS互換なモード。
+リーダが、hash-bang指示子@code{#!r7rs}に出会うと、ファイルの残りの部分は
+このモードで読まれます。
+@c COMMON
 
+@c EN
 In this mode, Gauche's extended lexical syntax will raise an error.
 Identifiers beginning with a colon are read as symbols.
 
 Use this mode to read R7RS code with maximum compatibility.
+@c JP
+このモードでは、Gaucheの拡張字句構文はエラーとなります。
+コロンで始まる識別子はシンボルとして読まれます。
+
+R7RSとの最大限の互換性を得るにはこのモードを使ってください。
+@c COMMON
 
 @item legacy
+@c EN
 The reader works as the legacy Gauche (version 0.9.3.3 and before).
 When the reader encounters the hash-bang directive @code{#!gauche-legacy},
 the rest of file is read with this mode.
@@ -15496,8 +15571,21 @@ followed by semicolon as a character plus a semicolon, e.g.
 We expect such a sequence rarely appears in the code,
 but if you dump a data in a string literal format, you may
 have such sequence (especially in incomplete string literals).
+@c JP
+リーダは以前の(0.9.3.3及びそれ以前の)Gaucheと同じように動作します。
+リーダがhash-bang指示子@code{#!gauche-legacy}に出会うと、ファイルの残りの部分は
+このモードで読まれます。
+
+このモードが必要になるのは、2桁の16進数エスケープの直後にセミコロンが来ているリテラルを、
+文字＋セミコロンと読みたい場合だけです。例えば
+@code{"\x30;a"}を@code{"0a"}でなく@code{"0;a"}と読みたい、等。
+こういうケースはコードではほとんど無いと思いますが、
+データを文字列リテラルとしてダンプしてある場合、それも不完全な文字列として
+ダンプしてある場合に、こういった並びが出現しているかもしれません。
+@c COMMON
 
 @item warn-legacy
+@c EN
 The reader works as the @code{permissive} mode,
 but warns if it reads legacy hex-escape syntax.
 This mode is default when @code{-fwarn-legacy} command-line
@@ -15505,6 +15593,14 @@ argument is given to @code{gosh}.
 
 This is useful to check if you have any incompatible escape sequence
 in your code.
+@c JP
+リーダは@code{permissive}モードと同様に動作しますが、
+旧来の16進数エスケープに出会うと警告を発します。
+@code{gosh}に@code{-fwarn-legacy}コマンドライン引数が与えられた場合は
+これがデフォルトのモードになります。
+
+コードの中に非互換なエスケープシーケンスが無いかどうか調べるのに役立ちます。
+@c COMMON
 @end table
 @end deffn
 

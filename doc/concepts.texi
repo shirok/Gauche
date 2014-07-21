@@ -30,7 +30,7 @@ Gauche conforms "Revised^7 Report of Algorithmic Language Scheme,"
 including optional syntax and procedures, with a few exceptions
 explained below.
 @c JP
-Gaucheは、後で説明する少しの例外を除き、オプショナルな構文や手続きも含め
+Gaucheは、次に説明する少しの例外を除き、オプショナルな構文や手続きも含め
 "Revised^7 Report of Algorithmic Language Scheme" (R7RS) に準拠しています。
 @c COMMON
 
