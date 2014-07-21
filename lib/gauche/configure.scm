@@ -67,6 +67,8 @@
   (use gauche.parseopt)
   (use gauche.logger)
   (use gauche.cgen)
+  (use gauche.package)
+  (use gauche.process)
   (use util.match)
   (use file.filter)
   (use file.util)
@@ -78,6 +80,7 @@
           cf-help-string
           cf-msg-checking cf-msg-result cf-msg-warn cf-msg-error
           cf-echo
+          cf-make-gpd
           cf-define cf-subst cf-have-subst? cf-ref cf$
           cf-config-headers cf-output cf-show-substs
           cf-check-prog cf-path-prog))
@@ -132,13 +135,13 @@
 ;; API
 ;; Like AC_MSG_*
 (define (cf-msg-checking fmt . args)
-  (tee-msg #`"checking ,|fmt|... " #`"checking: ,fmt" args))
+  (tee-msg #"checking ~|fmt|... " #"checking: ~fmt" args))
 (define (cf-msg-result fmt . args)
-  (tee-msg #`",|fmt|\n" #`"result: ,fmt" args))
+  (tee-msg #"~|fmt|\n" #"result: ~fmt" args))
 (define (cf-msg-warn fmt . args)
-  (tee-msg #`"Warning: ,|fmt|\n" #`"Warning: ,fmt" args))
+  (tee-msg #"Warning: ~|fmt|\n" #"Warning: ~fmt" args))
 (define (cf-msg-error fmt . args)
-  (tee-msg #`"Error: ,|fmt|\n" #`"Error: ,fmt" args)
+  (tee-msg #"Error: ~|fmt|\n" #"Error: ~fmt" args)
   (exit 1))
 
 ;; API
@@ -158,7 +161,7 @@
      `(with-output-to-file ,name
         (cut print ,@(intersperse " " (drop-right* args 2)))
         :if-exists :append)]
-    [_ `(print ,@(intersperse " " (drop-right* args 2)))]))
+    [_ `(,tee-msg "~a\n" "Message: ~a" (list (string-join (list ,@args))))]))
 
 ;; API
 ;; Like AC_INIT
@@ -605,6 +608,19 @@
                      (^[a b] (string<? (x->string a) (x->string b))))]
       (formatter k (dict-get dict k))
       (newline))))
+
+;; API
+;; Create .gpd file.  This is Gauche-specific.
+(define (cf-make-gpd)
+  (let1 gpd-file #"~(cf$ 'PACKAGE_NAME).gpd"
+    (cf-echo #"creating ~gpd-file")
+    (with-output-to-file gpd-file
+      (cut write-gauche-package-description
+           (make <gauche-package-description>
+             :name (cf$ 'PACKAGE_NAME)
+             :version (cf$ 'PACKAGE_VERSION)
+             :configure ($ string-join $ map shell-escape-string
+                           $ command-line))))))
 
 ;;
 ;; Tests - programs

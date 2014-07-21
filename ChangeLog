@@ -1,5 +1,11 @@
 2014-07-20  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/configure (cf-make-gpd): A cf api to generate gpd file.
+	  (cf-echo): Fix a bug that drops last two arg if the output is not
+	  redirected (thanks to KOGURO Naoki).  Also made it appear in
+	  config.log.
+	* ext/template.configure: Added call to cf-make-gpd.
+
 	* ext/template.Makefile.in (maintainer-clean),
 	  src/gauche-package.in (generate): Do not delete
 	  configure in maintainer-clean if we create skeletons to use

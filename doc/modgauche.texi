@@ -3368,7 +3368,7 @@ without any argument from the shell, to find out the valid options.
 @c NODE ビルド用ファイルの生成, @code{gauche.configure} - ビルド用ファイルの生成
 
 @deftp {Module} gauche.configure
-@mdindex gauhce.configure
+@mdindex gauche.configure
 This is a utility library to write @file{configure} script, an alternative
 of autoconf-generated @file{configure} shell script.
 It is used to check the system properties and generates build files
@@ -3599,6 +3599,9 @@ including custom arguments.
 @end defun
 
 @defun cf-show-variables :key formatter
+@end defun
+
+@defun cf-make-gpd
 @end defun
 
 

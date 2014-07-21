@@ -43,6 +43,7 @@
 (cf-subst 'GAUCHE_PKGARCHDIR (gauche-config "--pkgarchdir"))
 
 ;; Output
+(cf-make-gpd)
 (cf-echo (cf$ 'PACKAGE_VERSION) > "VERSION")
 (cf-output "Makefile")
 
