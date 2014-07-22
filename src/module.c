@@ -300,7 +300,7 @@ static ScmGloc *search_binding(ScmModule *module, ScmSymbol *symbol,
                 g = SCM_GLOC(v);
                 if (g->hidden) break;
                 if (SCM_GLOC_PHANTOM_BINDING_P(g)) {
-                    g = search_binding(m, symbol, FALSE, FALSE, TRUE);
+                    g = search_binding(m, g->name, FALSE, FALSE, TRUE);
                     if (g) return g;
                 } else {
                     return g;

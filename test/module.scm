@@ -321,6 +321,18 @@
 (test "transitive export" 1
       (lambda () (global-variable-ref (find-module 'Of-1) 'foo #f)))
 
+(define-module Of-2
+  (import Of)
+  (export (rename foo foo-alias)))
+(define-module Of-3
+  (import Of-2))
+
+(test "export-time renaming and transitive export" '(1 #f)
+      (lambda ()
+        (list
+         (global-variable-ref (find-module 'Of-3) 'foo-alias #f)
+         (global-variable-ref (find-module 'Of-3) 'foo #f))))
+
 ;;------------------------------------------------------------------
 ;; select-module, and restoration in load().
 

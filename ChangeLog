@@ -1,3 +1,8 @@
+2014-07-22  Shiro Kawai  <shiro@acm.org>
+
+	* src/module.c (search_binding): Fixed a bug - when a module exports
+	  an inherited binding with renaming, it wasn't searched properly.
+
 2014-07-20  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/configure (cf-make-gpd): A cf api to generate gpd file.
