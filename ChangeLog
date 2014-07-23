@@ -2,6 +2,8 @@
 
 	* src/module.c (search_binding): Fixed a bug - when a module exports
 	  an inherited binding with renaming, it wasn't searched properly.
+	  Another bug fix - if phantom binding is exported with renaming,
+	  and then renamed on import, this bug sufraces.
 
 2014-07-20  Shiro Kawai  <shiro@acm.org>
 

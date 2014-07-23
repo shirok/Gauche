@@ -333,6 +333,17 @@
          (global-variable-ref (find-module 'Of-3) 'foo-alias #f)
          (global-variable-ref (find-module 'Of-3) 'foo #f))))
 
+(define-module Of-4
+  (import (Of-2 :rename ((foo-alias foo-newname)))))
+
+(test "export-time renaming, transitive export, plus import renaming"
+      '(1 #f #f)
+      (lambda ()
+        (list
+         (global-variable-ref (find-module 'Of-4) 'foo-newname #f)
+         (global-variable-ref (find-module 'Of-4) 'foo-alias #f)
+         (global-variable-ref (find-module 'Of-4) 'foo #f))))
+
 ;;------------------------------------------------------------------
 ;; select-module, and restoration in load().
 
