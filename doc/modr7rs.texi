@@ -231,10 +231,11 @@ Gaucheをインストールした時に@code{srfi/1.scm}等のアダプタライ
 @c EN
 A tip: To use Gauche's built-in features (the bindings that are
 available by default in Gauche code) from R7RS code, import
-@code{(gauche base)} library:
+@code{(gauche base)} library (@xref{Importing gauche built-ins}):
 @c JP
 ヒント: Gaucheの組み込みの機能 (Gaucheコードでは最初から使える束縛) を
-R7RSコードから使いたい場合は、@code{(gauche base)}ライブラリをimportしてください。
+R7RSコードから使いたい場合は、@code{(gauche base)}ライブラリをimportしてください
+(@ref{Importing gauche built-ins}参照)。
 @c COMMON
 
 @example

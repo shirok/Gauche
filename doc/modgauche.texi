@@ -5,6 +5,7 @@
 @c ----------------------------------------------------------------------
 @menu
 * Arrays::                      gauche.array
+* Importing gauche built-ins::  gauche.base
 * Character code conversion::   gauche.charconv
 * Generating C code::           gauche.cgen
 * Collection framework::        gauche.collection
@@ -40,7 +41,7 @@
 * Virtual ports::               gauche.vport
 @end menu
 
-@node Arrays, Character code conversion, Library modules - Gauche extensions, Library modules - Gauche extensions
+@node Arrays, Importing gauche built-ins, Library modules - Gauche extensions, Library modules - Gauche extensions
 @section @code{gauche.array} - Arrays
 @c NODE 配列, @code{gauche.array} - 配列
 
@@ -855,7 +856,58 @@ a square matrix, and @var{pow} must be a nonnegative exact integer.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Character code conversion, Generating C code, Arrays, Library modules - Gauche extensions
+@node Importing gauche built-ins, Character code conversion, Arrays, Library modules - Gauche extensions
+@section @code{gauche.base} - Importing gauche built-ins
+@c NODE Gauche組み込み関数のインポート, @code{gauche.base} - Gauche組み込み関数のインポート
+
+@deftp {Module} gauche.base
+@mdindex gauche.base
+This module exports Gauche built-in procedures and syntaxes, so that
+they can be imported to other modules.
+
+All the bindings available in the @code{gauche} module are exported,
+except @code{import}, which is renamed to @code{gauche:import} to
+avoid conflict with R7RS @code{import}.
+@end deftp
+
+Typical Gauche code doesn't need this module, for built-ins are available
+by default through inheritance.
+A newly created module @emph{inherits} the @code{gauche} module by default.
+(@xref{Module inheritance}, for the details.)
+
+Sometimes you need a module that doesn't inherit the @code{gauche} module,
+yet you want to use Gauche built-in features.  Particulary, R7RS libraries
+and programs require any bindings to be explicitly imported,
+so R7RS's @code{import} and @code{define-library} sets up the module not
+to inherit the @code{gauche} module.   In R7RS code, you need
+@code{(import (gauche base))} to use Gauche's built-in features.
+
+Another use case is to eliminate some built-in bindings, yet
+keep the rest of bindings accessible, in your module.
+For example, the following setup creates @code{almost-gauche} module
+that has almost all default bindings except @code{string-scan}
+and @code{string-split}:
+
+@example
+(define-module almost-gauche
+  (use scheme.r5rs)
+  (use gauche.base :except (string-scan string-split)
+                   :rename ((gauche:import import)))
+  (extend)
+  )
+(select-module almost-gauche)
+
+;; your code here
+@end example
+
+Note the empty @code{extend}; it empties the module's inheritance.
+(The @code{:rename} option of @code{gauche.base} is just to get
+the original name of @code{import} back in @code{almost-gauche} module;
+if you don't use @code{import} directly, you won't need it.)
+
+
+@c ----------------------------------------------------------------------
+@node Character code conversion, Generating C code, Importing gauche built-ins, Library modules - Gauche extensions
 @section @code{gauche.charconv} - Character Code Conversion
 @c NODE 文字コード変換, @code{gauche.charconv} - 文字コード変換
 

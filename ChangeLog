@@ -1,3 +1,9 @@
+2014-07-23  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/base.scm: Split gauche.base form r7rs.scm, for it may
+	  be used from Gauche code by (use gauche.base); see the document
+	  for the use case.
+
 2014-07-22  Shiro Kawai  <shiro@acm.org>
 
 	* src/module.c (search_binding): Fixed a bug - when a module exports
