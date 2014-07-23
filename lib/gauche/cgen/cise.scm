@@ -189,11 +189,6 @@
 ;; define-cise-toplevel OP [ENV] CLAUSE ... [:where DEFINITION ...]
 ;;
 
-;; Temporary: Pre-0.9.4 Gauche dones't allow keyword in the literal of
-;; syntax-rules, but we need to include :where if keyword-symbol integration
-;; is turned on.  
-(cond-expand
- [gauche.unified-keyword-symbol
 (define-syntax define-cise-stmt
   (syntax-rules (:where)
     ;; recursion
@@ -255,70 +250,6 @@
      (define-cise-toplevel "clauses" op env ((pat . body)) clauses)]
     [(_ op env . clauses)
      (define-cise-toplevel "clauses" op env () clauses)]))
-]
-[else
-(define-syntax define-cise-stmt
-  (syntax-rules ()
-    ;; recursion
-    [(_ "clauses" op env clauses (:where defs ...))
-     (define-cise-macro (op form env)
-       defs ...
-       (ensure-stmt-ctx form env)
-       (match form . clauses))]
-    [(_ "clauses" op env clauses ())
-     (define-cise-stmt "clauses" op env clauses (:where))]
-    [(_ "clauses" op env (clause ...) (x . y))
-     (define-cise-stmt "clauses" op env (clause ... x) y)]
-    ;; entry
-    [(_ (op . args) . body)       ; single pattern case
-     (define-cise-stmt "clauses" op env (((_ . args) . body)) ())]
-    [(_ op (pat . body) .  clauses) ; (pat . body) rules out a single symbol
-     (define-cise-stmt "clauses" op env ((pat . body)) clauses)]
-    [(_ op env . clauses)
-     (define-cise-stmt "clauses" op env () clauses)]))
-
-(define-syntax define-cise-expr
-  (syntax-rules ()
-    ;; recursion
-    [(_ "clauses" op env clauses (:where defs ...))
-     (define-cise-macro (op form env)
-       defs ...
-       (let1 expanded (match form . clauses)
-         (if (and (pair? expanded) (symbol? (car expanded)))
-           (render-rec expanded env)
-           (wrap-expr expanded env))))]
-    [(_ "clauses" op env clauses ())
-     (define-cise-expr "clauses" op env clauses (:where))]
-    [(_ "clauses" op env (clause ...) (x . y))
-     (define-cise-expr "clauses" op env (clause ... x) y)]
-    ;; entry
-    [(_ (op . args) . body)       ; single pattern case
-     (define-cise-expr "clauses" op env (((_ . args) . body)) ())]
-    [(_ op (pat . body) .  clauses)
-     (define-cise-expr "clauses" op env ((pat . body)) clauses)]
-    [(_ op env . clauses)
-     (define-cise-expr "clauses" op env () clauses)]))
-
-(define-syntax define-cise-toplevel
-  (syntax-rules ()
-    ;; recursion
-    [(_ "clauses" op env clauses (:where defs ...))
-     (define-cise-macro (op form env)
-       defs ...
-       (ensure-toplevel-ctx form env)
-       (match form . clauses))]
-    [(_ "clauses" op env clauses ())
-     (define-cise-toplevel "clauses" op env clauses (:where))]
-    [(_ "clauses" op env (clause ...) (x . y))
-     (define-cise-toplevel "clauses" op env (clause ... x) y)]
-    ;; entry
-    [(_ (op . args) . body)       ; single pattern case
-     (define-cise-toplevel "clauses" op env (((_ . args) . body)) ())]
-    [(_ op (pat . body) .  clauses) ; (pat . body) rules out a single symbol
-     (define-cise-toplevel "clauses" op env ((pat . body)) clauses)]
-    [(_ op env . clauses)
-     (define-cise-toplevel "clauses" op env () clauses)]))
-])
 
 ;;
 ;; cise-render cise &optional port context
