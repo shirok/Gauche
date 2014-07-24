@@ -170,6 +170,19 @@
            (and (file-exists? config.h)
                 (file->string-list config.h)))))
 
+(remove-files "test2.o/package.gpd")
+
+(test* "gpd"
+       "./configure --with-local=/a/b:/c/d"
+       (and (zero?
+             (process-exit-status
+              (run-with-parent-directory-in-paths
+               `("../gosh" "-ftest" "../test.o/configure"
+                 "--with-local=/a/b:/c/d")
+               :output *nulldev* :wait #t :directory "test2.o")))
+            (cadr (memv :configure
+                        (car (file->sexp-list "test2.o/package.gpd"))))))
+
 (remove-files "test.o" "test2.o")
 
 ;;=======================================================================

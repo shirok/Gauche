@@ -270,25 +270,35 @@
          ["V|version" () (exit 0 "gauche.configure ~a" (gauche-version))]
          ;; -x-includes
          ;; -x-libraries
+         
+         ;; Deal with --enable|--disable|--with|--without options.
+         ;; Note that parse-options split '=arg' part of --enable-*=arg or
+         ;; --with-*=arg; if it is given, it will be in (car rest).
+         ;; maybe-get-arg gets it.
          [else (opt rest cont)
-               (rxmatch-case opt
-                 [#/^--?enable-([-\w]+)(?:=([-\w]+))$/ (_ feature arg)
-                  (set! (cf-feature-ref (string->symbol feature)) (or arg "yes"))
-                  (cont rest)]
-                 [#/^--?disable-([-\w]+)$/ (_ feature)
-                  (set! (cf-feature-ref (string->symbol feature)) "no")
-                  (cont rest)]
-                 [#/^--?with-([-\w]+)(?:=([-\w]+))$/ (_ package arg)
-                  (set! (cf-package-ref (string->symbol package)) (or arg "yes"))
-                  (cont rest)]
-                 [#/^--?without-([-\w]+)$/ (_ package)
-                  (set! (cf-package-ref (string->symbol package)) "no")
-                  (cont rest)]
-                 [else
-                  (print "Unrecognized option: " opt)
-                  (print "Type `./configure --help' for valid options.")
-                  (exit 1)]
-                 )]))
+               (let ([maybe-get-arg (^[] (and (pair? rest)
+                                              (not (#/^-/ (car rest)))
+                                              (pop! rest)))])
+                 (rxmatch-case opt
+                   [#/^enable-([-\w]+)$/ (_ feature)
+                    (set! (cf-feature-ref (string->symbol feature))
+                          (or (maybe-get-arg) "yes"))
+                    (cont rest)]
+                   [#/^disable-([-\w]+)$/ (_ feature)
+                    (set! (cf-feature-ref (string->symbol feature)) "no")
+                    (cont rest)]
+                   [#/^with-([-\w]+)?$/ (_ package)
+                    (set! (cf-package-ref (string->symbol package))
+                          (or (maybe-get-arg) "yes"))
+                    (cont rest)]
+                   [#/^without-([-\w]+)$/ (_ package)
+                    (set! (cf-package-ref (string->symbol package)) "no")
+                    (cont rest)]
+                   [else
+                    (print "Unrecognized option: " opt)
+                    (print "Type `./configure --help' for valid options.")
+                    (exit 1)]
+                   ))]))
     ;; process VAR=VAL
     (dolist [arg rest]
       (rxmatch-case arg
@@ -619,8 +629,8 @@
            (make <gauche-package-description>
              :name (cf$ 'PACKAGE_NAME)
              :version (cf$ 'PACKAGE_VERSION)
-             :configure ($ string-join $ map shell-escape-string
-                           $ command-line))))))
+             :configure ($ string-join $ cons "./configure"
+                           $ map shell-escape-string $ cdr $ command-line))))))
 
 ;;
 ;; Tests - programs

@@ -1,3 +1,8 @@
+2014-07-24  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/configure.scm (parse-command-line-arguments): Fix
+	  handling --enable-*, --disable-*, --with-* and --without-* options.
+
 2014-07-23  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/base.scm: Split gauche.base form r7rs.scm, for it may
