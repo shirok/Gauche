@@ -33,10 +33,7 @@
 
 (define-module gauche.portutil
   (export port->string port->list port->string-list port->sexp-list
-          copy-port
-          ;; transient until 0.9.4 release:
-          port-fold port-fold-right port-for-each port-map)
-  )
+          copy-port))
 (select-module gauche.portutil)
 
 ;;-----------------------------------------------------
@@ -128,10 +125,3 @@
                        (+ count data))))]
         [else (error "unit must be 'char, 'byte, or non-negative integer" unit)]
         ))
-
-;; in order to compile post-0.9.3 source with 0.9.3, we need these
-;; to be in this module.  Remove them after 0.9.4 release.
-(define port-fold generator-fold)
-(define port-fold-right generator-fold-right)
-(define port-for-each generator-for-each)
-(define port-map generator-map)

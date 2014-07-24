@@ -52,8 +52,6 @@
   (export cgen-precompile cgen-precompile-multi))
 (select-module gauche.cgen.precomp)
 
-;; Do not load optimizer unless explicitly requested.  To compile
-;; 0.9.4 with 0.9.3 compiler, we can't depend on the optimizer module.
 (autoload gauche.cgen.optimizer optimize-compiled-code)
 
 ;;================================================================
