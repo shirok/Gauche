@@ -2808,7 +2808,8 @@
       (port-case-fold-set! iport case-fold?)
       (pass1/report-include iport #t)
       (unwind-protect
-          ;; This may be replaced using generator->list once we release 0.9.4.
+          ;; This could be written simpler using port->sexp-list, but it would
+          ;; trigger autoload and reenters to the compiler.
           (let loop ([r (read iport)] [forms '()])
             (if (eof-object? r)
               `((,begin. ,@(reverse forms)) . ,(port-name iport))
