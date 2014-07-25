@@ -11,7 +11,7 @@
 #    Gauche-ENC-VERS.ARCH.rpm     ;; binary package with encoding ENC
 #    Gauche-VERS.src.rpm          ;; source package
 
-%define version  0.9.1
+%define version  0.9.4
 %define encoding utf8
 %define threads  pthreads
 
@@ -28,7 +28,7 @@ URL: http://practical-scheme.net/gauche/
 #Prefix: /usr
 
 %description
-Gauche is a Scheme engine conforming Revised^5 Report on
+Gauche is a Scheme engine conforming Revised^7 Report on
 Algorithmic Language Scheme.  It is designed for rapid development
 of daily tools like system management and text processing.
 It can handle multibyte character strings natively.
@@ -40,7 +40,7 @@ Provides: Gauche libgauche.so
 License: revised BSD
 Requires: Gauche-common
 %description %{encoding}
-Gauche is a Scheme engine conforming Revised^5 Report on
+Gauche is a Scheme engine conforming Revised^7 Report on
 Algorithmic Language Scheme.  It is designed for rapid development
 of daily tools like system management and text processing.
 It can handle multibyte character strings natively.
@@ -51,7 +51,7 @@ Summary: Scheme script engine with multibyte character handling
 Group: Development/Languages
 License: revised BSD
 %description common
-Gauche is a Scheme engine conforming Revised^5 Report on
+Gauche is a Scheme engine conforming Revised^7 Report on
 Algorithmic Language Scheme.  It is designed for rapid development
 of daily tools like system management and text processing.
 It can handle multibyte character strings natively.
@@ -122,6 +122,15 @@ make DESTDIR=${RPM_BUILD_ROOT}/ install-doc
 %defattr(-,root,root)
 
 %changelog
+* Sat Jul 19 2014 Shiro Kawai
+- Gauche release 0.9.4.
+
+* Wed May  9 2012 Shiro Kawai
+- Gauche release 0.9.3.
+
+* Fri Aug  5 2011 Shiro Kawai
+- Gauche release 0.9.2.
+
 * Sat Dec 11 2010 Shiro Kawai
 - Gauche release 0.9.1.
 
