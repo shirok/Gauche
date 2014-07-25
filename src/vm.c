@@ -52,47 +52,6 @@ static int vm_stack_kind;
 static int vm_stack_mark_proc;
 #endif /*USE_CUSTOM_STACK_MARKER*/
 
-/* Switch auto-unboxing (Remove this after 0.9.4 release)
-
-   We box set!-able local variables, so that environment frames can be
-   immutable which will open some optimization opportunities.
-   However, until 0.9.4 release, not all set!-able lvars were boxed, and
-   we relied on a LREF hack that implicitly unboxes the lvar.
-
-   0.9.4 compiler emits all necessary BOX and UNBOX instructions.
-   However, we can't drop implicit unbox of LREF now, since 0.9.4's
-   compiler and runtime are compiled by 0.9.3.3 compiler which doesn't
-   emit UNBOXes.
-
-   So here's what we do: in 0.9.4, we do emit necessary BOX and UNBOX
-   instructions, but we treat UNBOX as nop and keep implicit unboxing
-   in LREF.  Once we release 0.9.4, we can safely turn off implicit
-   unboxing.  During development of 0.9.4, we need to test both
-   "0.9.4 compiled by 0.9.3.3" and "0.9.4 compiled by 0.9.4", hence we
-   have this macro switch.
- */
-#ifndef AUTO_UNBOXING
-#define AUTO_UNBOXING 1
-#endif
-#if AUTO_UNBOXING
-#define CHECK_UNBOX(place) \
-    do { if (SCM_BOXP(place)) (place) = SCM_BOX_VALUE(place); } while (0)
-#define CHECK_SET_BOX(place, val)                       \
-    do { ScmObj tmp__ = (place);                        \
-        if (SCM_BOXP(tmp__)) SCM_BOX_SET(tmp__, (val)); \
-        else (place) = (val);                           \
-    } while (0)
-#define DO_UNBOX(place)     /*nop*/
-#else  /*!AUTO_UNBOXING*/
-#define CHECK_UNBOX(place)  /*nop*/
-#define CHECK_SET_BOX(place, val)               \
-    do { VM_ASSERT(SCM_BOXP(place));            \
-        SCM_BOX_SET(place, val);                \
-    } while (0)
-#define DO_UNBOX(place) \
-    do { VM_ASSERT(SCM_BOXP(place)); (place)= SCM_BOX_VALUE(place); } while (0)
-#endif /*!AUTO_UNBOXING*/
-
 #ifdef HAVE_SCHED_H
 #include <sched.h>
 #endif

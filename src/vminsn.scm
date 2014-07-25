@@ -135,14 +135,12 @@
               `(let* ([,r :: double ,expr])
                  ($result (Scm_VMReturnFlonum ,r))))])
 
-;; Extract local value.  If it is boxed, we need dereference.
+;; Extract local value.
+;; If local var nees unboxing, necessary UNBOX insn will be generated
+;; by the compiler, so we don't need to worry about it.
 (define-cise-stmt $lref!
   [(_ var env off)
-   (let1 v (gensym)
-     `(let* ([,v (ENV-DATA ,env ,off)])
-        (CHECK_UNBOX ,v)
-        (set! ,var ,v)
-        ))])
+   `(set! ,var (ENV-DATA ,env ,off))])
 
 ;;
 ;; ($w/argr <val> <expr> ...)
@@ -177,7 +175,6 @@
                                                'ENV
                                                `(-> ,(loop (- d 1)) up)))
                                           ,o)))
-                     (CHECK_UNBOX ,val)
                      ,@body)])])
 
 (define-cise-stmt $w/argr               ; use VAL0 default
@@ -314,14 +311,12 @@
 ;;
 (define-cise-stmt $lrefNN
   [(_ depth offset)
-   ;; TODO 0.9.2: Extra check for backward compatibility
    (let1 v (gensym)
      `(let* ([,v :: ScmObj (ENV_DATA ,(let loop ((d depth))
                                         (case d
                                           [(0) 'ENV]
                                           [else `(-> ,(loop (- d 1)) up)]))
                                      ,offset)])
-        (CHECK_UNBOX ,v)
         ($result ,v)))])
 
 ;;
@@ -779,7 +774,9 @@
     (VM-ASSERT (!= e NULL))
     (VM-ASSERT (> (-> e size) off))
     (SCM_FLONUM_ENSURE_MEM VAL0)
-    (CHECK_SET_BOX (ENV-DATA e off) VAL0)
+    (let* ([box (ENV-DATA e off)])
+      (VM_ASSERT (SCM_BOXP box))
+      (SCM_BOX_SET box VAL0))
     (set! (-> vm numVals) 1)
     NEXT))
 
@@ -827,13 +824,10 @@
 (define-insn LREF        2 none #f
   (let* ([dep::int (SCM_VM_INSN_ARG0 code)]
          [off::int (SCM_VM_INSN_ARG1 code)]
-         [e::ScmEnvFrame* ENV]
-         [v])
+         [e::ScmEnvFrame* ENV])
     (for [() (> dep 0) (post-- dep)]
          (set! e (-> e up)))
-    (set! v (ENV-DATA e off))
-    (CHECK_UNBOX v)
-    ($result v)))
+    ($result (ENV-DATA e off))))
 
 ;; Shortcut for the frequent depth/offset.
 ;; From statistics, we found that the following depth/offset combinations
@@ -1423,9 +1417,7 @@
 ;; if param == 0, VAL0 <- box(VAL0)
 ;; else ENV[param-1] = box(ENV[param-1])
 ;; The latter is for arguments that are mutated.
-;; NB: Prior to 0.9.4, BOX insn takes no parameters.  To allow 0.9.4 to be
-;; compiled by 0.9.3.3 compiler, we specify alternative num-params.
-(define-insn BOX (1 0) none #f
+(define-insn BOX 1 none #f
   (let* ([param::int (SCM_VM_INSN_ARG code)])
     (if (== param 0)
       (begin
@@ -1457,8 +1449,7 @@
 ;;  VAL0 <- unbox(VAL0)
 (define-insn UNBOX 0 none #f
   ($w/argr v
-    (DO_UNBOX v)
-    (set! VAL0 v)
+    (set! VAL0 (SCM_BOX_VALUE v))
     NEXT))
 
 (define-insn LREF-UNBOX 2 none (LREF UNBOX) #f :fold-lref)
