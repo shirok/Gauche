@@ -61,12 +61,7 @@
   )
 (select-module gauche.interpolate)
 
-;; NB: For 0.9.4, we have to make single-argument string-interpolate work
-;; in legacy mode, since pre-0.9.4 compiler also use this definition while
-;; generating libstr.c from libstr.scm.  It should work as before.  Once we
-;; release 0.9.4, read.c adds the second arg for the legacy mode and we can
-;; flip the default.
-(define (string-interpolate str :optional (legacy? #t))
+(define (string-interpolate str :optional (legacy? #f))
   (if (string? str)
     (%string-interpolate str (if legacy? #\, #\~))
     (errorf "malformed string-interpolate: ~s" (list 'string-interpolate str))))
