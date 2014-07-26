@@ -18704,7 +18704,7 @@ is the same as explained above.
 じです。
 @c COMMON
 
-*@c EN
+@c EN
 For each pathname that matches @var{pattern}, @code{glob-fold}
 calls @var{proc} with the pathname and a seed value.  The initial
 seed value is @var{seed}, and the value @var{proc} returns becomes
