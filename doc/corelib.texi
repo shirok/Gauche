@@ -1391,6 +1391,7 @@ currently we only supports real number argument.
 @defunx greatest-fixnum
 @defunx least-fixnum
 [R6RS]
+@c EN
 These procedures return the width of fixnum (@var{w}),
 the greatest integer representable by fixnum (@var{2^w - 1}),
 and the least integer representable by fixnum (@var{- 2^w}),
@@ -1399,6 +1400,16 @@ you are writing a performance-critical section.
 
 These names are defined in R6RS.  Common Lisp and ChezScheme have
 @code{most-positive-fixnum} and @code{most-negative-fixnum}.
+@c JP
+これらの手続きは、fixnumで表現できる数値の幅 (@var{w}とします)、
+fixnumで表現できる最大の整数値 (@var{2^w - 1})、および
+fixnumで表現できる最小の整数値 (@var{- 2^w}) を
+それぞれ返します。性能が重要になる部分では数値がfixnumの範囲に収まるかどうかを
+気にかける必要があります。
+
+これらの名前はR6RSで定義されました。Common LispとChezSchemeには
+@code{most-positive-fixnum}および@code{most-negative-fixnum}があります。
+@c COMMON
 @end defun
 
 @node Numerical conversions, Bitwise operations, Arithmetics, Numbers
@@ -9448,7 +9459,9 @@ Some examples:
 @end defun
 
 @defun tree-map-map tree-map proc
-Applies @var{proc} with each key/value pair in @var{tree-map},
+@c EN
+Calls @var{proc}, which must take two arguments,
+with each key/value pair in @var{tree-map},
 and collect the results into a list and returns it.  The order
 of results corresponds to the order of keys---that is, the first element
 of the result list is what @var{proc} returns with minimum key and its value,
@@ -9456,18 +9469,34 @@ and the last element of the result list is what @var{proc} returns
 with the maximum key and its value.
 (Note: Like @code{map}, the order that @var{proc} is actually called
 is unspecified; @var{proc} is better to be side-effect free.)
+@c JP
+2引数を取る手続き@var{proc}を、@var{tree-map}の各キーおよび値のペアに
+対して呼び出し、結果をリストにして返します。
+結果のリストは、キーの昇順に並んでいます。つまり、最小のキーとその値で呼び出した
+@var{proc}の結果が最初の要素に、最大のキーとその値で呼び出した@var{proc}の
+結果が最後の要素になります。
+(@code{map}と同様、実際に@var{proc}が呼ばれる順序は保証されていません。
+したがって@var{proc}は副作用の無いものにすべきです)。
+@c COMMON
 @end defun
 
 @defun tree-map-for-each tree-map proc
-Applies @var{proc} with each key/value pair in @var{tree-map},
+@c EN
+Calls @var{proc}, which must take two arguments,
+with each key/value pair in @var{tree-map},
 in the increasing order of the keys.  @var{proc} is called purely
 for side effects; the returned values are discarded.
+@c JP
+2引数を取る手続き@var{proc}を、@var{tree-map}の各キーおよび値のペアに対して、
+キーの昇順に呼び出します。@var{proc}は副作用のためだけに呼ばれ、結果は捨てられます。
+@c COMMON
 @end defun
 
 @defun tree-map-floor tree-map probe :optional fallback-key fallback-value
 @defunx tree-map-ceiling tree-map probe :optional fallback-key fallback-value
 @defunx tree-map-predecessor tree-map probe :optional fallback-key fallback-value
 @defunx tree-map-successor tree-map probe :optional fallback-key fallback-value
+@c EN
 These procedures search the entry which has the closest key
 to the given @var{probe}.  If such an entry is found, returns
 two values, its key and its value.  Otherwise, returns two values,
@@ -9480,24 +9509,48 @@ no less than @var{probe}; @code{tree-map-predecessor} finds the
 maximum key which is strictly less than @var{probe};
 and @code{tree-map-successor} finds the minimum key which
 is strictly greater than @var{probe}.
+@c JP
+これらの手続きは、@var{probe}に最も近いキーを持つエントリを@var{tree-map}から
+探します。そのようなエントリが見つかれば、該当するキーと値が2つの戻り値となります。
+見つからない場合は、@var{fallback-key}と@var{fallback-value}が
+2つの戻り値として返されます。それぞれの省略時の値は@code{#f}です。
+
+それぞれの手続きは異なった「最も近い」の基準を持っています。
+@code{tree-map-floor}は@var{probe}以下で最大のキーを、
+@code{tree-map-ceiling}は@var{probe}以上で最小のキーを、
+@code{tree-map-precedessor}は@var{probe}未満で最大のキーを、
+@code{tree-map-successor}は@var{probe}を越える最小のキーを探します。
+@c COMMON
 @end defun
 
 @defun tree-map-floor-key tree-map probe @var{optional} fallback-key
 @defunx tree-map-ceiling-key tree-map probe @var{optional} fallback-key
 @defunx tree-map-predecessor-key tree-map probe @var{optional} fallback-key
 @defunx tree-map-successor-key tree-map probe @var{optional} fallback-key
+@c EN
 Like @code{tree-map-floor} etc., but only returns the key of
 the found entry (or @var{fallback-key} if there's no entry which satisfies
 the criteria).
+@c JP
+@code{tree-map-floor}等と同様ですが、見つかったエントリのキーのみを返します。
+該当エントリが見つからない場合は@var{fallback-key}の値(デフォルトは@code{#f})が
+返されます。
+@c COMMON
 @end defun
 
 @defun tree-map-floor-value tree-map probe @var{optional} fallback-value
 @defunx tree-map-ceiling-value tree-map probe @var{optional} fallback-value
 @defunx tree-map-predecessor-value tree-map probe @var{optional} fallback-value
 @defunx tree-map-successor-value tree-map probe @var{optional} fallback-value
+@c EN
 Like @code{tree-map-floor} etc., but only returns the value of
 the found entry (or @var{fallback-value} if there's no entry which satisfies
 the criteria).
+@c JP
+@code{tree-map-floor}等と同様ですが、見つかったエントリの値のみを返します。
+該当エントリが見つからない場合は@var{fallback-value}の値(デフォルトは@code{#f})が
+返されます。
+@c COMMON
 @end defun
 
 @defun tree-map-keys tree-map
@@ -9650,6 +9703,7 @@ weak ベクタ @var{wvec}の@var{k}番目の要素を@var{obj}に変更します
 @section Procedures and continuations
 @c NODE 手続きと継続
 
+@c EN
 In Scheme, @emph{procedures} are fundamental blocks to build
 a program (@xref{Making Procedures}).
 A procedure represents a certain computation,
@@ -9657,11 +9711,27 @@ possibly parameterized, and can be @emph{applied} to the actual
 arguments to execute the computation.  Scheme also provides
 the means to extract the continuation of the current computation
 and wraps it in a procedure (@xref{Continuations}).
+@c JP
+Schemeでは、プログラムを組み立てる最も基本となるブロックが@emph{手続き}です
+(@ref{Making Procedures}も参照)。
+手続きは、特定の計算を表現します。引数を取ることも出来ます。
+そして、実引数に@emph{適用}されると、その計算を実行します。
+Schemeはまた、現在の計算の継続を取り出して手続きにラップして返す手段を
+提供しています(@ref{Continuations}参照)。
+@c COMMON
 
+@c EN
 Gauche extends the concept of procedure application, allowing
-you to apply any object; for example, you can set up Gauche to
+you to apply any object as if it's a procedure; 
+for example, you can set up Gauche to
 accept @code{("abc" 2)} can be a valid application syntax.
 @xref{Applicable objects}, for the details.
+@c JP
+Gaucheは手続きの適用の概念を拡張し、どんなオブジェクトでもそれが手続きであるかのように
+適用できるようにしました。例えば@code{("abc" 2)}が有効な適用であるように
+Gaucheをセットアップすることができます。
+詳しくは@ref{Applicable objects}を参照してください。
+@c COMMON
 
 @menu
 * Procedure class and applicability::  
@@ -20344,7 +20414,13 @@ for the details.  @var{Limit} must be a nonnegative exact integer.
 In the current implementaiton the maximum number of @var{limit} is 255.
 Setting limit to zero makes the number of pending signals unlimited.
 @c JP
-
+それぞれ、同一のシグナルをいくつまで保留することを許すかの現在の限界値を
+読み出し、また設定します。
+同一のシグナルが限界値を越える回数、処理されないまま保留された場合、
+Gaucheはプロセスを強制終了します。本節の冒頭の説明を参照してください。
+@var{limit}は非負の正確な整数でなければなりません。
+現在の実装では、@var{limit}に設定できる最大値は255です。
+また、@var{limit}に0を設定すると、無制限にシグナルを保留できるようになります。
 @c COMMON
 @end defun
 
