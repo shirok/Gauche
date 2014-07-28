@@ -1,3 +1,10 @@
+2014-07-27  Shiro Kawai  <shiro@acm.org>
+
+	* src/libomega.scm, src/load.c: Mark all built-in modules as provided,
+	  so that (use <built-in-module>) won't complain.  This used to be
+	  done in load.c, but we kept the module list separately which had
+	  gone out-of-sync.
+
 2014-07-24  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/configure.scm (parse-command-line-arguments): Fix

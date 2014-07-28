@@ -31,6 +31,17 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
+;; Register built-in modules as provided, so that (use <built-in-modue>) won't
+;; complain.
+;; TODO: #<module util.match> isn't built-in, but the module is created during
+;; initializing compile.scm, for it has reference to util.match#match:error.
+;; Eventually it should be addressed by making util.match built-in; but for now,
+;; we use a kludge to exclude util.match explicitly.
+(dolist [m (all-modules)]
+  (let1 n (module-name m)
+    (unless (eq? n 'util.match)
+      (provide (module-name->path n)))))
+
 ;;; TEMPORARY for 0.9.x series
 ;;; Remove this after 1.0 release!!!
 ;;;

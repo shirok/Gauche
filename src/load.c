@@ -1336,13 +1336,9 @@ void Scm__InitLoad(void)
     DEF(ldinfo.load_suffixes_rec, SCM_SYM_LOAD_SUFFIXES, init_load_suffixes);
     DEF(ldinfo.load_path_hooks_rec, SCM_SYM_LOAD_PATH_HOOKS, SCM_NIL);
 
-    ldinfo.provided =
-        SCM_LIST5(SCM_MAKE_STR("srfi-2"), /* and-let* */
-                  SCM_MAKE_STR("srfi-6"), /* string ports (builtin) */
-                  SCM_MAKE_STR("srfi-8"), /* receive (builtin) */
-                  SCM_MAKE_STR("srfi-10"), /* #, (builtin) */
-                  SCM_MAKE_STR("srfi-17")  /* set! (builtin) */
-            );
+    /* NB: Some modules are built-in.  We'll register them to the
+       provided list, in libomega.scm. */
+    ldinfo.provided = SCM_NIL;
     ldinfo.providing = SCM_NIL;
     ldinfo.waiting = SCM_NIL;
     ldinfo.dso_suffixes = SCM_LIST2(SCM_MAKE_STR(".la"),

@@ -378,7 +378,7 @@
        (not (not (library-exists? 'gauche :paths paths-b))))
 (test* "library-exists? gauche, force-search" #f
        (not (not (library-exists? 'gauche :paths paths-b :force-search? #t))))
-(test* "library-exists? gauche" #f
+(test* "library-exists? gauche" #t
        (not (not (library-exists? "gauche" :paths paths-b))))
 ;;NB: this no longer work since gauche.object is compiled in.
 ;(test* "library-exists? gauche/object" #t

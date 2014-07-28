@@ -898,13 +898,16 @@ ScmModule *Scm_CurrentModule(void)
 void Scm__InitModule(void)
 {
     /* List of builtin modules.  We create these so that 'use' or r7rs 'import'
-       won't try to search the file. */
+       won't try to search the file.
+       The modules listed here are marked "provided" at the startup, so it can
+       no longer be loaded by 'use' or 'require'.  Don't list modules that
+       needs to be loaded.
+    */
     static const char *builtin_modules[] = {
         "srfi-2", "srfi-6", "srfi-8", "srfi-10", "srfi-16", "srfi-17",
-        "srfi-22", "srfi-23", "srfi-26", "srfi-28", "srfi-31", "srfi-34",
-        "srfi-35", "srfi-36", "srfi-38", "srfi-45", "srfi-55", "srfi-61",
+        "srfi-22", "srfi-23", "srfi-28", "srfi-34",
+        "srfi-35", "srfi-36", "srfi-38", "srfi-45", "srfi-61",
         "srfi-62", "srfi-87", "srfi-95",
-        "gauche.vm.debugger",   /* for the backward compatibility */
         NULL };
     const char **modname;
 
