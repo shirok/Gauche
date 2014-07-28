@@ -52,6 +52,18 @@
   (apply format (current-error-port) (string-append "WARNING: " fmt) args)
   (flush (current-error-port)))
 
+;; srfi-111 box
+;; NB: We have built-in support for boxes to use internally, but Scheme
+;; interface is less frequently used, so we put these symbols in a separate
+;; module.  It is a bit awkward to do so in the current genstub.
+;; TODO: Better stub syntax for handling modules.
+(select-module srfi-111)
+(define-cproc box (v) (result (SCM_OBJ (Scm_MakeBox v))))
+(define-cproc box? (v) ::<boolean> (result (SCM_BOXP v)))
+(define-cproc unbox (b::<box>) (result (SCM_BOX_VALUE b)))
+(define-cproc set-box! (b::<box> v) ::<void> (SCM_BOX_SET b v))
+(export box box? unbox set-box!)
+
 ;; Foreign pointer (may be in libsys.scm?)
 
 (select-module gauche)

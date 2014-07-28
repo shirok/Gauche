@@ -258,6 +258,7 @@
                     "SCM_COMPILED_CODE_P" "SCM_COMPILED_CODE")
    (<foreign-pointer> "ScmForeignPointer*" "foreign pointer"
                       "SCM_FOREIGN_POINTER_P" "SCM_FOREIGN_POINTER")
+   (<box>  "ScmBox*" "box" "SCM_BOXP" "SCM_BOX")
    ))
 
 ;;

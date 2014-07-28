@@ -33,6 +33,7 @@ of supported SRFIs.
 * Integers as bits::            srfi-60
 * Accessing environment variables::  srfi-98
 * Basic socket interface::      srfi-106
+* Boxes::                       srfi-111
 @end menu
 
 
@@ -4873,7 +4874,7 @@ the optional argument.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Basic socket interface,  , Accessing environment variables, Library modules - SRFIs
+@node Basic socket interface, Boxes, Accessing environment variables, Library modules - SRFIs
 @section @code{srfi-106} - Basic socket interface
 @c NODE 基本的なソケットインタフェース, @code{srfi-106} - 基本的なソケットインタフェース
 
@@ -5131,6 +5132,54 @@ to the combination of corresponding flags.
 
 An error is signaled if other symbols are passed.
 @end defmac
+
+
+@c ----------------------------------------------------------------------
+@node Boxes,  , Basic socket interface, Library modules - SRFIs
+@section @code{srfi-111} - Boxes
+@c NODE ボックス, @code{srfi-111} - ボックス
+
+@deftp {Module} srfi-111
+@mdindex srfi-111
+This module defines the box datatype, which is a simple
+container that can hold one Scheme object.  It can be used
+as a minimal data storage, or a sort of mutable indirect
+``pointer''.
+
+Traditionally a pair (with ignoring its cdr) or a single-element vector
+has been used for this purpose; in modern Scheme you can also define
+a record type with one mutable field.  Nevertheless,
+a box is very common abstraction to describe various
+algorithms, and having common interface to it is useful.
+
+The srfi leaves some details to implementations.  Here are our choices:
+@itemize
+@item
+We don't support autoboxing; that is, it is an error to pass non-box
+value to the procedure expecting boxed value and vice versa.
+@item
+Comparing two boxes with @code{equal?} compares their contents when
+two are not @code{eqv?}.  In the spec, when two boxes are @code{eqv?}
+then they must also be @code{equal?} to each other, but it's up
+to the implementation when two are not @code{eqv?}.
+@end itemize
+@end deftp
+
+@defun box val
+Returns a fresh box object that contains the value @code{val}.
+@end defun
+
+@defun box? obj
+Returns @code{#t} iff @var{obj} is a box object.
+@end defun
+
+@defun unbox box
+Returns @var{box}'s content.
+@end defun
+
+@defun set-box! box val
+Mutate @var{box}'s content with @var{val}.  Returns unspecified value.
+@end defun
 
 
 @c Local variables:

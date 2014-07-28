@@ -1,3 +1,10 @@
+2014-07-28  Shiro Kawai  <shiro@acm.org>
+
+	* src/libmisc.scm (box etc.): srfi-111 support.  This is merely to
+	  expose internal box object to the Scheme world.  We still use
+	  srfi-111 namespace, though.
+	* src/box.c (box_compare): compare contents.
+
 2014-07-27  Shiro Kawai  <shiro@acm.org>
 
 	* src/libomega.scm, src/load.c: Mark all built-in modules as provided,

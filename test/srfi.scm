@@ -1370,4 +1370,29 @@
 (use srfi-98)
 (test-module 'srfi-98)
 
+;;-----------------------------------------------------------------------
+(test-section "srfi-111")
+
+(use srfi-111)
+(test-module 'srfi-111)
+
+;; srfi-111 is built-in.
+(test* "box primitives"
+       '(#t #f 2 3)
+       (let1 b (box 2)
+         (list (box? b) (box? 2) (unbox b)
+               (begin(set-box! b 3)
+                     (unbox b)))))
+
+(test* "box compare"
+       '(#t #f #f #t #f)
+       (let ([b1 (box 2)]
+             [b2 (box 2)]
+             [b3 (box 3)])
+         (list (equal? b1 b2)
+               (equal? b2 b3)
+               (equal? b1 2)
+               (eqv?   b1 b1)
+               (eqv?   b1 b2))))
+
 (test-end)
