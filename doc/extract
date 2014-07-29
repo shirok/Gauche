@@ -61,6 +61,14 @@
         (with-input-from-file (find-included-file file)
           (cut filter pattern-in pattern-out) :encoding 'utf8)
         (in (read-line))]
+      ;; Extract-time include.  @include will be tracked by
+      ;; texinfo-multiple-files-update and the includee must have @node
+      ;; at the toplevel, so this can be used to include files without
+      ;; the restriction.
+      [#/^@c xinclude\s+(\S+)/ (#f file)
+        (with-input-from-file (find-included-file file)
+          (cut filter pattern-in pattern-out) :encoding 'utf8)
+        (in (read-line))]
       [#/^@c COMMON$/ () (in (read-line))]
       [test (^_ (eq? (lang) 'en))
             (display (regexp-replace-all #/@VERSION@/ line *version*))
@@ -89,7 +97,12 @@
 
   (in (read-line)))
 
-(define (find-included-file file) (build-path (srcdir) file))
+;; We search relative to the current directory first, then
+;; relative to $srcdir; for FILE may be the generated one.
+(define (find-included-file file)
+  (if (file-exists? file)
+    file
+    (build-path (srcdir) file)))
 
 (define (lookup name table)
   (cond [(assoc (string-trim-both name) table) => cdr]
