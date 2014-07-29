@@ -692,7 +692,7 @@ echo "include confinc" > confmf
 # Ignore all kinds of additional output from `make'.
 case `$am_make -s -f confmf 2> /dev/null` in #(
 *the\ am__doit\ target*)
-  am__include=include
+  am__include=-include
   am__quote=
   _am_result=GNU
   ;;
