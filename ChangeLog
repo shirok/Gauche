@@ -1,3 +1,9 @@
+2014-07-29  Shiro Kawai  <shiro@acm.org>
+
+	* src/srfis.scm: Consolidate info of supporting srfis in one file,
+	  to generate files that need to reflect the info.
+	* ext/srfi/generate-srfi.scm: Superseded by src/srfis.scm
+
 2014-07-28  Shiro Kawai  <shiro@acm.org>
 
 	* src/libmisc.scm (box etc.): srfi-111 support.  This is merely to

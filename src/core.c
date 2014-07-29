@@ -510,53 +510,8 @@ init_cond_features()
 #endif
 
         /* SRFIs */
-        { "srfi-0", NULL },         /* autoloaded */
-        { "srfi-1", "srfi-1" },
-        { "srfi-2", NULL },         /* builtin */
-        { "srfi-4", "gauche.uvector" },
-        { "srfi-5", "srfi-5" },
-        { "srfi-6", NULL },         /* builtin */
-        { "srfi-7", NULL },         /* autoloaded */
-        { "srfi-8", NULL },         /* builtin */
-        { "srfi-9", "gauche.record" },
-        { "srfi-10", NULL },
-        { "srfi-11", "srfi-11" },
-        { "srfi-13", "srfi-13" },
-        { "srfi-14", "srfi-14" },
-        { "srfi-16", NULL },
-        { "srfi-17", NULL },
-        { "srfi-18", "gauche.threads" },
-        { "srfi-19", "srfi-19" },
-        { "srfi-22", NULL },
-        { "srfi-23", NULL },
-        { "srfi-25", "gauche.array" },
-        { "srfi-26", "srfi-26" },
-        { "srfi-27", "srfi-27" },
-        { "srfi-28", NULL },
-        { "srfi-29", "srfi-29" },
-        { "srfi-30", NULL },
-        { "srfi-31", NULL },
-        { "srfi-34", NULL },
-        { "srfi-35", NULL },
-        { "srfi-36", NULL },
-        { "srfi-37", "srfi-37" },
-        { "srfi-38", NULL },
-        { "srfi-39", "gauche.parameter" },
-        { "srfi-40", "util.stream" },
-        { "srfi-42", "srfi-42" },
-        { "srfi-43", "srfi-43" },
-        { "srfi-45", NULL },
-        { "srfi-46", NULL },
-        { "srfi-55", "srfi-55" },
-        { "srfi-60", "srfi-60" },
-        { "srfi-61", NULL },
-        { "srfi-62", NULL },
-        { "srfi-87", NULL },
-        { "srfi-95", NULL },
-        { "srfi-98", "srfi-98" },
-        { "srfi-99", "gauche.record" },
-        { "srfi-106", "srfi-106" },
-        { "srfi-111", "srfi-111" },
+#include "srfis.c"
+
         { NULL, NULL }
     };
 

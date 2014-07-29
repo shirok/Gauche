@@ -247,6 +247,9 @@ builtin-syms.c gauche/priv/builtin-syms.h : builtin-syms.scm
 vminsn.c gauche/vminsn.h ../lib/gauche/vm/insn.scm : vminsn.scm geninsn
 	$(BUILD_GOSH) geninsn $(srcdir)/vminsn.scm
 
+srfis.c $(top_builddir)/doc/srfis.texi $(top_builddir)/lib/srfi/0.scm : srfis.scm
+	$(BUILD_GOSH) $(srcdir)/srfis.scm $(top_builddir)
+
 compile.c  : compile.scm compile-0.scm $(PRECOMP_DEPENDENCY)
 libalpha.c : libalpha.scm $(PRECOMP_DEPENDENCY)
 libbool.c  : libbool.scm $(PRECOMP_DEPENDENCY)
@@ -276,6 +279,8 @@ libmod.c   : libmod.scm $(PRECOMP_DEPENDENCY)
 	$(BUILD_GOSH) $(PRECOMP) --keep-private-macro=use $(srcdir)/libmod.scm
 
 
+
+
 # char_attr.c and ext/text/unicode_attr.h are automatically generated
 # by gen-unicode.scm, from Unicode character database.  They need to
 # be regenerated only when a new Unicode standard is published.  So we
@@ -296,6 +301,8 @@ char-data : gen-unicode.scm
 	$(BUILD_GOSH) ./gen-unicode.scm $(UNICODEDATA)
 
 char.$(OBJEXT) : char.c char_attr.c
+
+core.$(OBJEXT) : core.c srfis.c
 
 winmain.$(OBJEXT) : main.c $(HEADERS)
 
@@ -417,6 +424,7 @@ install-check :
 GENERATED = compile.c autoloads.c builtin-syms.c \
 	    gauche/priv/builtin-syms.h vminsn.c gauche/vminsn.h \
             ../lib/gauche/vm/insn.scm \
+	    srfis.c ../doc/srfis.texi \
 	    libalpha.c libbool.c libchar.c libcode.c libcmp.c libdict.c \
 	    libeval.c libexc.c libfmt.c libio.c liblazy.c liblist.c libmisc.c \
 	    libmod.c libnum.c libobj.c libproc.c librx.c libstr.c \

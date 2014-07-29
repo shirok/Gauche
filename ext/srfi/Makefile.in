@@ -23,7 +23,7 @@ OBJECTS = $(srfi_1_OBJECTS) \
 	  $(srfi_19_OBJECTS) \
 	  $(srfi_43_OBJECTS)
 
-all : $(LIBFILES) $(top_builddir)/lib/srfi/0.scm
+all : $(LIBFILES)
 
 install : install-std
 
@@ -74,11 +74,3 @@ srfi-43.$(SOEXT) : $(srfi_43_OBJECTS)
 
 srfi-43.c srfi-43.sci : srfi-43.scm
 	$(PRECOMP) -e -P $(srcdir)/srfi-43.scm
-
-#
-# srfi/N dummy modules
-#
-
-$(top_builddir)/lib/srfi/0.scm: generate-srfi.scm
-	$(GOSH) $(srcdir)/generate-srfi.scm $(top_builddir)
-
