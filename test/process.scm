@@ -530,10 +530,8 @@
                   (sys-unlink "test1.o")))))
 
 (test* "unwind-protect upon exit" '(1 #f)
-       ;; we haven't tested file.util yet, so using a clumsy way.
-       (let* ([gosh (string-append (sys-dirname (current-load-path))
-                                   "/../src/gosh")]
-              [p (run-process `(,gosh "-ftest" "test.o") :wait #t)])
+       ;; assuming we're running gosh under $top_builddir/src
+       (let1 p (run-process `("./gosh" "-ftest" "test.o") :wait #t)
          (list (sys-wait-exit-status (process-exit-status p))
                (file-exists? "test1.o"))))
 
