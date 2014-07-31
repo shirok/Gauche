@@ -25,6 +25,7 @@ src/gosh
 doc/*.1
 doc/*.info*.gz
 doc/gauche-ref*.texi
+doc/srfis.texi
 
 # Unit test files
 *.log
@@ -178,3 +179,4 @@ src/makeverslink
 src/paths_arch.c
 src/test-extra
 src/vminsn.c
+src/srfis.c
