@@ -111,6 +111,9 @@
 (define-cproc provided? (feature) ::<boolean> Scm_ProvidedP)
 
 (select-module gauche.internal)
+(define-cproc %loaded-dlobjs () Scm_DLObjs) ; for internal use; name may change
+
+(select-module gauche.internal)
 ;; NB: 'require' is recognized by the compiler, which calls
 ;; this one directly.
 (define-cproc %require (feature) ::<boolean>

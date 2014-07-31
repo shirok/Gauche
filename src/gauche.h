@@ -514,6 +514,7 @@ typedef struct ScmRegMatchRec  ScmRegMatch;
 typedef struct ScmWriteContextRec ScmWriteContext;
 typedef struct ScmAutoloadRec  ScmAutoload;
 typedef struct ScmComparatorRec ScmComparator;
+typedef struct ScmDLObjRec     ScmDLObj; /* see load.c */
 
 typedef ScmObj ScmSubrProc(ScmObj *, int, void*);
 

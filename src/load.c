@@ -33,6 +33,7 @@
 
 #define LIBGAUCHE_BODY
 #include "gauche.h"
+#include "gauche/class.h"
 #include "gauche/port.h"
 #include "gauche/priv/builtin-syms.h"
 #include "gauche/priv/readerP.h"
@@ -45,7 +46,6 @@
  * Load file.
  */
 
-typedef struct dlobj_rec dlobj;
 typedef struct dlobj_initfn_rec dlobj_initfn;
 
 /* Static parameters */
@@ -80,7 +80,7 @@ static struct {
     
     /* Dynamic linking */
     ScmObj dso_suffixes;
-    dlobj *dso_list;              /* List of dynamically loaded objects. */
+    ScmObj dso_list;              /* List of dynamically loaded objects. */
     ScmObj dso_prelinked;         /* List of 'prelinked' DSOs, that is, they
                                      are already linked but pretened to be
                                      DSOs.  dynamic-load won't do anything.
@@ -562,12 +562,6 @@ void Scm_DeleteLoadPathHook(ScmObj proc)
 
 typedef void (*ScmDynLoadInitFn)(void);
 
-enum dlobj_state {
-    DLOBJ_NONE,             /* dlopen and dlsym haven't completed. */
-    DLOBJ_LOADED,           /* dlopened and initfn found, but not init'ed */
-    DLOBJ_INITIALIZED       /* initialized and ready to use */
-};
-
 struct dlobj_initfn_rec {
     struct dlobj_initfn_rec *next; /* chain */
     const char *name;           /* name of initfn (always w/ leading '_') */
@@ -575,8 +569,8 @@ struct dlobj_initfn_rec {
     int initialized;            /* TRUE once fn returns */
 };
 
-struct dlobj_rec {
-    dlobj *next;                /* chain */
+struct ScmDLObjRec {
+    SCM_HEADER;
     const char *path;           /* pathname for DSO, including suffix */
     int loaded;                 /* TRUE if this DSO is already loaded.
                                    It may need to be initialized, though.
@@ -589,28 +583,25 @@ struct dlobj_rec {
     ScmInternalCond  cv;
 };
 
-#if 0 /* for debug */
-static void dump_dlobj(dlobj *dlo)
+static void dlobj_print(ScmObj obj, ScmPort *sink, ScmWriteContext *mode)
 {
-    printf("{\n  dlobj \"%s\"%s\n",
-           dlo->path, dlo->loaded? " (loaded)" : " (not loaded)");
-    printf("  initfns:\n");
-    for (dlobj_initfn *ifn = dlo->initfns; ifn; ifn = ifn->next) {
-        printf("    name=\"%s\", fn=%p %s}\n",
-               ifn->name, ifn->fn,
-               ifn->initialized? "(initialized) ":"");
-    }
-    printf("}\n");
+    Scm_Printf(sink, "#<dlobj \"%s\">", SCM_DLOBJ(obj)->path);
 }
 
-static void dump_dlobjs(void)
+SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_DLObjClass, dlobj_print);
+
+static ScmDLObj *make_dlobj(const char *path)
 {
-    printf("Registerd dlobjs:\n");
-    for (dlobj *dlo = ldinfo.dso_list; dlo; dlo = dlo->next) {
-        dump_dlobj(dlo);
-    }
+    ScmDLObj *z = SCM_NEW(ScmDLObj);
+    SCM_SET_CLASS(z, &Scm_DLObjClass);
+    z->path = path;
+    z->loader = NULL;
+    z->loaded = FALSE;
+    z->initfns = NULL;
+    (void)SCM_INTERNAL_MUTEX_INIT(z->mutex);
+    (void)SCM_INTERNAL_COND_INIT(z->cv);
+    return z;
 }
-#endif
 
 /* NB: we rely on dlcompat library for dlopen instead of using dl_darwin.c
    for now; Boehm GC requires dlopen when compiled with pthread, so there's
@@ -624,29 +615,28 @@ static void dump_dlobjs(void)
 #endif
 
 /* Find dlobj with path, creating one if there aren't, and returns it. */
-static dlobj *find_dlobj(const char *path)
+static ScmDLObj *find_dlobj(const char *path)
 {
-    dlobj *z = NULL;
+    ScmDLObj *z = NULL;
+    ScmObj p;
     (void)SCM_INTERNAL_MUTEX_LOCK(ldinfo.dso_mutex);
-    for (z = ldinfo.dso_list; z; z = z->next) {
-        if (strcmp(z->path, path) == 0) break;
+    SCM_FOR_EACH(p, ldinfo.dso_list) {
+        ScmDLObj *d = SCM_DLOBJ(SCM_CAR(p));
+        SCM_ASSERT(SCM_DLOBJP(d));
+        if (strcmp(d->path, path) == 0) {
+            z = d;
+            break;
+        }
     }
     if (z == NULL) {
-        z = SCM_NEW(dlobj);
-        z->path = path;
-        z->loader = NULL;
-        z->loaded = FALSE;
-        z->initfns = NULL;
-        (void)SCM_INTERNAL_MUTEX_INIT(z->mutex);
-        (void)SCM_INTERNAL_COND_INIT(z->cv);
-        z->next = ldinfo.dso_list;
-        ldinfo.dso_list = z;
+        z = make_dlobj(path);
+        ldinfo.dso_list = Scm_Cons(SCM_OBJ(z), ldinfo.dso_list);
     }
     (void)SCM_INTERNAL_MUTEX_UNLOCK(ldinfo.dso_mutex);
     return z;
 }
 
-static void lock_dlobj(dlobj *dlo)
+static void lock_dlobj(ScmDLObj *dlo)
 {
     ScmVM *vm = Scm_VM();
     (void)SCM_INTERNAL_MUTEX_LOCK(dlo->mutex);
@@ -658,7 +648,7 @@ static void lock_dlobj(dlobj *dlo)
     (void)SCM_INTERNAL_MUTEX_UNLOCK(dlo->mutex);
 }
 
-static void unlock_dlobj(dlobj *dlo)
+static void unlock_dlobj(ScmDLObj *dlo)
 {
     (void)SCM_INTERNAL_MUTEX_LOCK(dlo->mutex);
     dlo->loader = NULL;
@@ -693,7 +683,7 @@ static const char *derive_dynload_initfn(const char *filename)
 
 /* find dlobj_initfn from the given dlobj with name.
    Assuming the caller holding the lock of OBJ. */
-static dlobj_initfn *find_initfn(dlobj *dlo, const char *name)
+static dlobj_initfn *find_initfn(ScmDLObj *dlo, const char *name)
 {
     dlobj_initfn *fns = dlo->initfns;
     for (; fns != NULL; fns = fns->next) {
@@ -738,7 +728,7 @@ const char *get_initfn_name(ScmObj initfn, const char *dsopath)
 
 /* Load the DSO.  The caller holds the lock of dlobj.  May throw an error;
    the caller makes sure it releases the lock even in that case. */
-static void load_dlo(dlobj *dlo)
+static void load_dlo(ScmDLObj *dlo)
 {
     ScmVM *vm = Scm_VM();
     if (SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_LOAD_VERBOSE)) {
@@ -762,7 +752,7 @@ static void load_dlo(dlobj *dlo)
 
 /* Call the DSO's initfn.  The caller holds the lock of dlobj, and responsible
    to release the lock even when this fn throws an error. */
-static void call_initfn(dlobj *dlo, const char *name)
+static void call_initfn(ScmDLObj *dlo, const char *name)
 {
     dlobj_initfn *ifn = find_initfn(dlo, name);
 
@@ -823,7 +813,7 @@ void Scm_RegisterPrelinked(ScmString *dsoname,
                            ScmDynLoadInitFn initfns[])
 {
     const char *path = pseudo_pathname_for_prelinked(dsoname);
-    dlobj *dlo = find_dlobj(path);
+    ScmDLObj *dlo = find_dlobj(path);
     dlo->loaded = TRUE;
 
     (void)SCM_INTERNAL_MUTEX_LOCK(ldinfo.dso_mutex);
@@ -858,7 +848,7 @@ ScmObj Scm_DynLoad(ScmString *dsoname, ScmObj initfn, u_long flags/*reserved*/)
     const char *dsopath = find_prelinked(dsoname);
     if (!dsopath) dsopath = find_dso_path(dsoname);
     const char *initname = get_initfn_name(initfn, dsopath);
-    dlobj *dlo = find_dlobj(dsopath);
+    ScmDLObj *dlo = find_dlobj(dsopath);
 
     /* Load the dlobj if necessary. */
     lock_dlobj(dlo);
@@ -877,6 +867,49 @@ ScmObj Scm_DynLoad(ScmString *dsoname, ScmObj initfn, u_long flags/*reserved*/)
 
     unlock_dlobj(dlo);
     return SCM_TRUE;
+}
+
+/* Expose dlobj to Scheme world */
+
+static ScmObj dlobj_path_get(ScmObj obj)
+{
+    return SCM_MAKE_STR_IMMUTABLE(SCM_DLOBJ(obj)->path);
+}
+
+static ScmObj dlobj_loaded_get(ScmObj obj)
+{
+    return SCM_MAKE_BOOL(SCM_DLOBJ(obj)->loaded);
+}
+
+static ScmObj dlobj_initfns_get(ScmObj obj)
+{
+    ScmObj h = SCM_NIL;
+    ScmObj t = SCM_NIL;
+    lock_dlobj(SCM_DLOBJ(obj));
+    dlobj_initfn *ifn = SCM_DLOBJ(obj)->initfns;
+    for (;ifn != NULL; ifn = ifn->next) {
+        ScmObj p = Scm_Cons(SCM_MAKE_STR_IMMUTABLE(ifn->name),
+                            SCM_MAKE_BOOL(ifn->initialized));
+        SCM_APPEND1(h, t, p);
+    }
+    unlock_dlobj(SCM_DLOBJ(obj));
+    return h;
+}
+
+static ScmClassStaticSlotSpec dlobj_slots[] = {
+    SCM_CLASS_SLOT_SPEC("path", dlobj_path_get, NULL),
+    SCM_CLASS_SLOT_SPEC("loaded?", dlobj_loaded_get, NULL),
+    SCM_CLASS_SLOT_SPEC("init-functions", dlobj_initfns_get, NULL),
+    SCM_CLASS_SLOT_SPEC_END()
+};
+
+ScmObj Scm_DLObjs()
+{
+    ScmObj z = SCM_NIL;
+    (void)SCM_INTERNAL_MUTEX_LOCK(ldinfo.dso_mutex);
+    z = Scm_CopyList(ldinfo.dso_list);
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(ldinfo.dso_mutex);
+    return z;
 }
 
 /*------------------------------------------------------------------
@@ -1328,6 +1361,9 @@ void Scm__InitLoad(void)
     key_paths = SCM_MAKE_KEYWORD("paths");
     key_environment = SCM_MAKE_KEYWORD("environment");
 
+    Scm_InitStaticClass(SCM_CLASS_DLOBJ, "<dlobj>", Scm_GaucheModule(),
+                        dlobj_slots, 0);
+
 #define DEF(rec, sym, val) \
     rec = SCM_GLOC(Scm_Define(m, SCM_SYMBOL(sym), val))
 
@@ -1343,7 +1379,7 @@ void Scm__InitLoad(void)
     ldinfo.waiting = SCM_NIL;
     ldinfo.dso_suffixes = SCM_LIST2(SCM_MAKE_STR(".la"),
                                     SCM_MAKE_STR("." SHLIB_SO_SUFFIX));
-    ldinfo.dso_list = NULL;
+    ldinfo.dso_list = SCM_NIL;
     ldinfo.dso_prelinked = SCM_NIL;
 
 #define PARAM_INIT(name, val) Scm_InitParameterLoc(vm, &ldinfo.name, val)

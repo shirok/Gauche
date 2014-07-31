@@ -1,3 +1,9 @@
+2014-07-31  Shiro Kawai  <shiro@acm.org>
+
+	* src/load.c, src/gauche/load.h: Turn dlobj record to ScmObj.  This
+	  is for better introspection, and for preparation of exposing dlopen
+	  to Scheme.
+
 2014-07-29  Shiro Kawai  <shiro@acm.org>
 
 	* src/srfis.scm: Consolidate info of supporting srfis in one file,

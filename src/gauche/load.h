@@ -110,7 +110,15 @@ SCM_EXTERN void   Scm_DeleteLoadPathHook(ScmObj proc);
  * Dynamic Loading
  */
 
+/* The implementation of ScmDLObjRec is in load.c */
+SCM_CLASS_DECL(Scm_DLObjClass);
+#define SCM_CLASS_DLOBJ        (&Scm_DLObjClass)
+#define SCM_DLOBJ(obj)         ((ScmDLObj*)(obj))
+#define SCM_DLOBJP(obj)        (SCM_XTYPEP(obj, SCM_CLASS_DLOBJ))
+
 SCM_EXTERN ScmObj Scm_DynLoad(ScmString *path, ScmObj initfn, u_long flags);
+
+SCM_EXTERN ScmObj Scm_DLObjs(void);
 
 /*=================================================================
  * Require & Provide
