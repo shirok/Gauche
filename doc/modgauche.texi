@@ -16865,6 +16865,27 @@ s32vectorもしくはu32vectorを返します。
 @c COMMON
 @end defun
 
+@defun string->s32vector! target tstart string :optional start end
+@defunx string->u32vector! target tstart string :optional start end
+@c EN
+@var{Target} must be a mutable s32vector or u32vector, respectively.
+Fill the @var{target} from position @var{tstart} with the codepoint
+of each character of @var{string}, until either @var{string} is exhausted
+or @var{target} is filled to the end. 
+
+Optional range arguments @var{start} and @var{end} specifies
+the @emph{character position} inside @var{string} to be
+considered.
+@c JP
+@var{target}は変更可能なs32vectorもしくはu32vectorでなければなりません。
+@var{target}の場所@var{tstart}から、@var{string}の各文字のコードポイントを
+順に埋めてゆきます。@var{target}ベクタの終端に達するか、文字が無くなるまで繰り返します。
+
+省略可能な引数@var{start}と@var{end}は@var{string}内の文字位置のインデックスで、
+考慮する@var{string}の範囲を制限します。
+@c COMMON
+@end defun
+
 @defun s32vector->string vec :optional start end
 @defunx u32vector->string vec :optional start end
 @c EN

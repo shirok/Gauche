@@ -1484,6 +1484,14 @@
 (test* "string->u32vector (OOB)" (test-error)
        (string->u32vector "abcde" 2 6))
 
+(test* "string->u32vector!" '#u32(64 65 66 67 68 1 1 1)
+       (string->u32vector! (make-u32vector 8 1) 0 "@ABCD"))
+(test* "string->u32vector!" '#u32(1 1 1 1 64 65 66 67)
+       (string->u32vector! (make-u32vector 8 1) 4 "@ABCD"))
+(test* "string->u32vector!" '#u32(1 1 1 66 67 1 1 1)
+       (string->u32vector! (make-u32vector 8 1) 3 "@ABCD" 2 4))
+       
+
 (test* "u32vector->string" "@ABCD"
        (u32vector->string '#u32(64 65 66 67 68)))
 (test* "u32vector->string (start)" "ABCD"

@@ -1,5 +1,7 @@
 2014-07-31  Shiro Kawai  <shiro@acm.org>
 
+	* ext/uvector/uvlib.stub.tmpl (string->[us]32vector!): Added.
+
 	* src/load.c, src/gauche/load.h: Turn dlobj record to ScmObj.  This
 	  is for better introspection, and for preparation of exposing dlopen
 	  to Scheme.

@@ -421,6 +421,41 @@
                                            (end::<fixnum> -1))
   (result (string->wordvector SCM_CLASS_U32VECTOR s start end)))
 
+(define-cfn string->wordvector!
+  (v::ScmUVector* tstart::int s::ScmString* start::int end::int) :static
+  (let* ([tlen::int (SCM_UVECTOR_SIZE v)])
+    (when (and (>= tstart 0) (< tstart tlen))
+      (SCM_UVECTOR_CHECK_MUTABLE v)
+      (let* ([size::u_int] [len::u_int] [i::u_int 0]
+             [ss::(const char*) (Scm_GetStringContent s (& size) (& len) NULL)])
+        (SCM_CHECK_START_END start end (cast int len))
+        (let* ([sp::(const char*)
+                    (?: (== start 0) ss (Scm_StringPosition s start))]
+               [ep::(const char*)
+                    (?: (== end len) (+ ss size) (Scm_StringPosition s end))]
+               [buf::ScmInt32* (cast ScmInt32* (SCM_UVECTOR_ELEMENTS v))]
+               [i::int tstart])
+          (for [() (and (< sp ep) (< i tlen)) (post++ i)]
+            (let* ([ch::ScmChar])
+              (SCM_CHAR_GET sp ch)
+              (set! (aref buf i) ch)
+              (+= sp (SCM_CHAR_NBYTES ch)))))))
+    (return (SCM_OBJ v))))
+
+(define-cproc string->s32vector! (v::<s32vector>
+                                  tstart::<fixnum>
+                                  s::<string>
+                                  :optional (start::<fixnum> 0)
+                                            (end::<fixnum> -1))
+  (result (string->wordvector! (SCM_UVECTOR v) tstart s start end)))
+
+(define-cproc string->u32vector! (v::<u32vector>
+                                  tstart::<fixnum>
+                                  s::<string>
+                                  :optional (start::<fixnum> 0)
+                                            (end::<fixnum> -1))
+  (result (string->wordvector! (SCM_UVECTOR v) tstart s start end)))
+
 (define-cfn wordvector->string (v::ScmUVector* start::int end::int) :static
   (let* ([len::int (SCM_UVECTOR_SIZE v)]
          [s (Scm_MakeOutputStringPort FALSE)])
