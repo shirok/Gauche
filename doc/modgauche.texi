@@ -16381,6 +16381,15 @@ the excess elements are silently discarded.
 @c COMMON
 
 @c EN
+It is ok to pass the same vector to @var{target} and @var{source};
+it always works even if the regions of source and destination are
+overlapping.
+@c JP
+@var{target}と@var{source}に同一のベクタを渡しても構いません。
+コピー先とコピー元の領域が重なっていても、コピーは常に正しく行われます。
+@c COMMON
+
+@c EN
 @emph{Note:} This procedure used to take just two uniform vectors, @var{target}
 and @var{source}, and just copies contents of @var{source} to @var{target}.
 Both vectors had to be the same type and same length.  The API is revised

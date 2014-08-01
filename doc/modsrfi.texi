@@ -1178,11 +1178,13 @@ that the @var{end} argument is optional.
 @c EN
 [SRFI-13] Copies a string @var{s} into a string
 @var{target} from the position @var{tstart}.
+The @var{target} string must be mutable.
 Optional @var{start} and @var{end} arguments limits the range of @var{s}.
 If the copied string run over the end of @var{target}, an error is
 signaled.
 @c JP
 [SRFI-13] 文字列@var{s}を、文字列@var{target}の@var{tstart}番目以降へコピーします。
+@var{target}文字列は変更可能でなければなりません。
 オプションの引数@var{start}と@var{end}は、@var{s}の範囲を制限します。
 コピーされた文字列が@var{target}の終端を越えたらエラーが通知されます。
 @c COMMON
@@ -1191,6 +1193,14 @@ signaled.
 (string-copy! s 2 "ZZ")
 s @result{} "abZZe"
 @end example
+
+@c EN
+It is ok to pass the same string to @var{target} and @var{s}; this
+always work even if the regions of source and destination are overlapping.
+@c JP
+@var{target}と@var{s}に同じ文字列を渡しても構いません。コピー元とコピー先の
+領域が重なっていても、コピーは常に正しく行われます。
+@c COMMON
 @end defun
 
 @defun string-take s nchars
@@ -4538,7 +4548,8 @@ the range of operation.
 @defun vector-copy! target tstart source :optional sstart send
 [SRFI-43]
 Copies the content of @var{source} vector intto the @var{target} vector
-starting from @var{tstart} in the target.
+starting from @var{tstart} in the target.  The @var{target} vector
+must be immutable.
 Optional @var{sstart} and @var{send} limits the range of source
 vector.
 
@@ -4547,6 +4558,10 @@ vector.
   (vector-copy! v 2 '#(1 2)))
   @result{} #(a b 1 2 e)
 @end example
+
+It is ok to pass the same vector to @var{target} and @var{source};
+it always works even if the regions of source and destination are
+overlapping.
 @end defun
 
 @defun vector-reverse-copy! target tstart source :optional sstart send
@@ -4558,6 +4573,10 @@ Like @code{vector-copy!}, but reverses the order of elements from @var{start}.
   (vector-reverse-copy! v 2 '#(1 2)))
   @result{} #(a b 2 1 e)
 @end example
+
+It is ok to pass the same vector to @var{target} and @var{source};
+it always works even if the regions of source and destination are
+overlapping.
 @end defun
 
 @c EN
