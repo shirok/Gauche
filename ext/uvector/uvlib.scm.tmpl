@@ -1,0 +1,202 @@
+///; Process this file with uvgen.scm to generate uvlib.scm
+///; Lines beginning with '///' are directives for ugven.scm.
+
+;;;
+;;;   Copyright (c) 2000-2014 Shiro Kawai, All rights reserved.
+;;;
+;;;   Redistribution and use in source and binary forms, with or without
+;;;   modification, are permitted provided that the following conditions
+;;;   are met:
+;;;
+;;;   1. Redistributions of source code must retain the above copyright
+;;;      notice, this list of conditions and the following disclaimer.
+;;;
+;;;   2. Redistributions in binary form must reproduce the above copyright
+;;;      notice, this list of conditions and the following disclaimer in the
+;;;      documentation and/or other materials provided with the distribution.
+;;;
+;;;   3. Neither the name of the authors nor the names of its contributors
+;;;      may be used to endorse or promote products derived from this
+;;;      software without specific prior written permission.
+;;;
+;;;   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+;;;   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+;;;   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+;;;   A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+;;;   OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+;;;   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED
+;;;   TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+;;;   PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+;;;   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+;;;
+
+///;; Begin template ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+///;;
+///(define *tmpl-body* '(
+
+;;--------------------------------------------------------------------
+;; ${t}vector basic API
+;;
+(define-cproc ${t}vector? (obj) ::<boolean> SCM_${T}VECTORP)
+
+;; we need this in string, for the UNBOX macro is substituted to the
+;; literal C code instead of CISE code.
+"#define ${t}unboxer(filler, fill) ${UNBOX filler fill SCM_CLAMP_ERROR}"
+
+(define-cproc make-${t}vector (length::<fixnum> :optional (fill 0))
+  (let* ([filler :: (${etype})])
+    (${t}unboxer filler fill)
+    (result (Scm_Make${T}Vector length filler))))
+
+(define-cproc ${t}vector (:optarray (elts nelts 10) :rest args)
+  :fast-flonum
+  (cond [(SCM_NULLP args)
+         (result (Scm_ObjArrayTo${T}Vector elts nelts SCM_CLAMP_ERROR))]
+        [else
+         (let* ([i::int (- nelts 1)] [p args])
+           (for [() (>= i 0) (post-- i)]
+                (SCM_FLONUM_ENSURE_MEM (aref elts i))
+                (set! p (Scm_Cons (aref elts i) p)))
+           (result (Scm_ListToUVector SCM_CLASS_${T}VECTOR p SCM_CLAMP_ERROR)))]))
+
+(define-cproc ${t}vector-length (v::<${t}vector>) ::<int> SCM_${T}VECTOR_SIZE)
+
+;; This is only called via apply.  The standard call will be inlined
+;; as UVEC-REF instruction.
+(define-cproc ${t}vector-ref
+  (v::<${t}vector> i::<fixnum> :optional fallback) :fast-flonum
+  (setter ${t}vector-set!)
+  (result (Scm_VMUVectorRef v (Scm_UVectorType (Scm_ClassOf (SCM_OBJ v)))
+                            i fallback)))
+
+(define-cproc ${t}vector-set!
+  (v::<${t}vector> i::<fixnum> val :optional clamp) :fast-flonum
+  (result (Scm_${T}VectorSet v i val (clamp_arg clamp))))
+
+(define-cproc ${t}vector-copy
+  (v::<${t}vector> :optional (start::<fixnum> 0) (end::<fixnum> -1))
+  Scm_${T}VectorCopy)
+
+;; NB: this function accomodates to two APIs.
+;; The 'modern' API, compatible to srfi-13 and srfi-43, takes arguments:
+;;    (dst dstart src :optional sstart send)
+;; The old API only takes:
+;;    (dst src)
+;; We dispatch by the second argument.  The old API is deprecated, but
+;; kept for the existing code.
+(define-cproc ${t}vector-copy!
+  (dst::<${t}vector> dstart :optional src (sstart::<int> 0) (send::<int> -1))
+  (SCM_UVECTOR_CHECK_MUTABLE dst)
+  (cond
+   [(SCM_INTEGERP dstart) ; new API
+    (unless (SCM_${T}VECTORP src)
+      (Scm_Error "${t}vector-copy!: argument is not a matching uvector: %S"src))
+    (result (Scm_${T}VectorCopyX dst (Scm_GetInteger dstart)
+                  (SCM_${T}VECTOR src) sstart send))]
+   [(SCM_${T}VECTORP dstart) ; old API
+    (result (Scm_${T}VectorCopyX dst 0 (SCM_${T}VECTOR dstart) 0 -1))]
+   [else (SCM_TYPE_ERROR dstart "integer") (result SCM_UNDEFINED)]))
+
+;; multi-copy! - copy src repeatedly to different parts of dst.
+(define-cproc ${t}vector-multi-copy!
+  (dst::<${t}vector> dstart::<fixnum> dstride::<fixnum>
+   src::<${t}vector> :optional (sstart::<fixnum> 0) (ssize::<fixnum> 0)
+                               (sstride::<fixnum> -1) (count::<fixnum> -1))
+  ::<void>
+  (SCM_UVECTOR_CHECK_MUTABLE dst)
+  (when (< sstride 0)
+    (if (<= ssize 0) (set! sstride 0) (set! sstride ssize)))
+  (when (<= ssize 0)
+    (set! ssize (- (SCM_UVECTOR_SIZE src) sstart)))
+  (let* ([di::long dstart] [si::long sstart]
+         [dlen::long (SCM_UVECTOR_SIZE dst)]
+         [slen::long (SCM_UVECTOR_SIZE src)]
+         [c::long 0] [k::long]
+         [cnt::long (?: (< count 0) LONG_MAX count)])
+    (if (== ssize 1)
+      ;; shortcut for optimization
+      (for [() (and (< c cnt) (< di dlen) (< si slen)) (inc! c)]
+           (set! (SCM_${T}VECTOR_ELEMENT dst di)
+                 (SCM_${T}VECTOR_ELEMENT src si))
+           (+= di dstride)
+           (+= si sstride))
+      ;; general case
+      (for [() (and (< c cnt) (< di dlen) (< si slen)) (inc! c)]
+           (let* ([nitems::long ssize])
+             (when (< dlen (+ di nitems)) (set! nitems (- dlen di)))
+             (when (< slen (+ si nitems)) (set! nitems (- slen si)))
+             (memmove (+ (SCM_${T}VECTOR_ELEMENTS dst) di)
+                      (+ (SCM_${T}VECTOR_ELEMENTS src) si)
+                      (* nitems (sizeof (.type ${etype})))))
+           (+= di dstride)
+           (+= si sstride)))))
+
+(define-cproc ${t}vector->list
+  (v::<${t}vector> :optional (start::<fixnum> 0) (end::<fixnum> -1))
+  Scm_${T}VectorToList)
+
+(define-cproc list->${t}vector (l::<list> :optional clamp)
+  (result (Scm_ListToUVector SCM_CLASS_${T}VECTOR l (clamp-arg clamp))))
+
+(define-cproc ${t}vector-fill!
+  (v::<${t}vector> val :optional (start::<fixnum> 0) (end::<fixnum> -1))
+  (let* ([filler :: (${etype})])
+    (${t}unboxer filler val)
+    (result (Scm_${T}VectorFill v filler start end))))
+
+(define-cproc ${t}vector->vector
+  (v::<${t}vector> :optional (start::<fixnum> 0) (end::<fixnum> -1))
+  Scm_${T}VectorToVector)
+
+(define-cproc vector->${t}vector
+  (v::<vector> :optional (start::<fixnum> 0) (end::<fixnum> -1) clamp)
+  (result (Scm_VectorTo${T}Vector v start end (clamp-arg clamp))))
+
+///)) ;; end of tmpl-body
+
+///(define *tmpl-numop* '(
+(define-cproc ${t}vector-${opname} (v0::<${t}vector> v1 :optional clamp)
+  :fast-flonum
+  (result (Scm_${T}Vector${Opname} v0 v1 (clamp-arg clamp))))
+
+(define-cproc ${t}vector-${opname}! (v0::<${t}vector> v1 :optional clamp)
+  :fast-flonum
+  (result (Scm_${T}Vector${Opname}X v0 v1 (clamp-arg clamp))))
+///)) ;; end of tmpl-numop
+
+///(define *tmpl-bitop* '(
+(define-cproc ${t}vector-${opname} (v0::<${t}vector> v1)
+  (result (Scm_${T}Vector${Opname} v0 v1)))
+
+(define-cproc ${t}vector-${opname}! (v0::<${t}vector> v1)
+  (result (Scm_${T}Vector${Opname}X v0 v1)))
+///)) ;; end of tmpl-bitop
+
+///(define *tmpl-dotop* '(
+(define-cproc ${t}vector-dot (v0::<${t}vector> v1) Scm_VM${T}VectorDotProd)
+///)) ;; end of tmpl-dotop
+
+///(define *tmpl-rangeop* '(
+(define-cproc ${t}vector-${opname} (v0::<${t}vector> min max)
+  Scm_${T}Vector${Opname})
+///)) ;; end of tmpl-rangeop
+
+///(define *tmpl-swapb* '(
+(define-cproc ${t}vector-swap-bytes (v0::<${t}vector>) Scm_${T}VectorSwapBytes)
+(define-cproc ${t}vector-swap-bytes!(v0::<${t}vector>) Scm_${T}VectorSwapBytesX)
+///)) ;; end of tmpl-rangeop
+
+///(define *extra-procedure*  ;; procedurally generates code
+///  (lambda ()
+///    (generate-numop)
+///    (generate-bitop)
+///    (generate-dotop)
+///    (generate-rangeop)
+///    (generate-swapb)
+///)) ;; end of extra-procedure
+
+///; Local variables:
+///; mode: scheme
+///; end:

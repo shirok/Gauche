@@ -1,3 +1,20 @@
+2014-08-02  Shiro Kawai  <shiro@acm.org>
+
+	* ext/uvector/*, src/vector.c: Restructured the sources.
+	  Now we name the resulting DSO as gauche--uvector.so, consistent
+	  to other extension modules.  IMPORTANT: This means we no longer
+	  allow other extension modules to link with -lgauche-uvector.
+	  We used to need it for extension modules to access uvector features,
+	  but now the basic uvector support is in the core and we no longer
+	  need it.  Besides, building one SO for both dlopen and -l linking
+	  doesn't work on OSX.  Some legacy extension modules may still
+	  referring -lgauche-uvector; they should be updated.
+	  Since gauche--uvector.so is now purely accessed through Scheme,
+	  to provide full line of C API; so some of them are folded
+	  into define-cproc.
+	  The uvector reader is moved to src/vector.c as well, so that
+	  reading uvector literals won't cause autoloading gauche.uvector.
+
 2014-07-31  Shiro Kawai  <shiro@acm.org>
 
 	* ext/uvector/uvlib.stub.tmpl (string->[us]32vector!): Added.

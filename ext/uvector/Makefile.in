@@ -6,43 +6,39 @@ include ../Makefile.ext
 
 SCM_CATEGORY = gauche
 
-LIBFILES = libgauche-uvector.$(SOEXT)
-SCMFILES = array.scm uvector.scm matrix.scm
+LIBFILES = gauche--uvector.$(SOEXT)
+SCMFILES = array.scm uvector.sci matrix.scm
 HDRFILES = gauche/uvector.h
 
 GENERATED = Makefile
-XCLEANFILES =  uvlib.c uvlib.stub uvector.c uvutil.c \
-	       gauche/uvector.h
+XCLEANFILES =  uvlib.scm uvector.c gauche--uvector.c gauche/uvector.h uvector.sci
 
 all : $(LIBFILES)
 
 OBJECTS = uvector.$(OBJEXT)      \
-          uvinit.$(OBJEXT)       \
-          uvlib.$(OBJEXT)        \
-          uvutil.$(OBJEXT)
+          gauche--uvector.$(OBJEXT)
 
-libgauche-uvector.$(SOEXT) : $(OBJECTS)
-	$(MODLINK) libgauche-uvector.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+gauche--uvector.$(SOEXT) : $(OBJECTS)
+	$(MODLINK) gauche--uvector.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+
+uvector.$(OBJEXT) gauche--uvector.$(OBJEXT): gauche/uvector.h uvectorP.h
 
 gauche/uvector.h : uvector.h.tmpl uvgen.scm
 	if test ! -d gauche; then mkdir gauche; fi
 	rm -rf gauche/uvector.h
 	$(GOSH) $(srcdir)/uvgen.scm $(srcdir)/uvector.h.tmpl && mv uvector.h gauche/uvector.h
 
-uvector.$(OBJEXT) uvlib.$(OBJEXT) uvinit.$(OBJEXT) : gauche/uvector.h uvectorP.h
-
 uvector.c : uvector.c.tmpl uvgen.scm
 	rm -rf uvector.c
 	$(GOSH) $(srcdir)/uvgen.scm $(srcdir)/uvector.c.tmpl
 
-uvlib.c : uvlib.stub
+gauche--uvector.c : uvector.scm uvlib.scm
+	$(PRECOMP) -e -P -o gauche--uvector $(srcdir)/uvector.scm
 
-uvlib.stub : uvlib.stub.tmpl
-	rm -rf uvlib.stub
-	$(GOSH) $(srcdir)/uvgen.scm $(srcdir)/uvlib.stub.tmpl
+uvlib.scm : uvlib.scm.tmpl
+	rm -rf uvlib.scm
+	$(GOSH) $(srcdir)/uvgen.scm $(srcdir)/uvlib.scm.tmpl
 
-uvutil.c : uvutil.scm
-	$(PRECOMP) $(srcdir)/uvutil.scm
 
 install : install-std
 

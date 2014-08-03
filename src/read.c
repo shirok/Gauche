@@ -70,9 +70,6 @@ static ScmObj read_shebang(ScmPort *port, ScmReadContext *ctx);
 static ScmObj read_reference(ScmPort *port, ScmChar ch, ScmReadContext *ctx);
 static ScmObj read_sharp_word(ScmPort *port, char c, ScmReadContext *ctx);
 
-/* Special hook for SRFI-4 syntax */
-static ScmObj (*read_uvector_hook)(ScmPort *, const char*, ScmReadContext *) = NULL;
-
 /* Table of 'read-time constructor' in SRFI-10 */
 static struct {
     ScmHashTable *table;
@@ -1624,16 +1621,7 @@ static ScmObj read_sharp_word_legacy(ScmPort *port, char ch, ScmReadContext *ctx
         *bufp = '\0';
         Scm_ReadError(port, "invalid uniform vector tag: %s", buf);
     }
-    if (read_uvector_hook == NULL) {
-        /* Require srfi-4 (gauche/uvector)
-           NB: we don't need mutex here, for the loading of srfi-4 is
-           serialized in Scm_Require. */
-        Scm_Require(SCM_MAKE_STR("gauche/uvector"),
-                    SCM_LOAD_PROPAGATE_ERROR, NULL);
-        if (read_uvector_hook == NULL)
-            Scm_ReadError(port, "couldn't load srfi-4 module");
-    }
-    return read_uvector_hook(port, tag, ctx);
+    return Scm_ReadUVector(port, tag, ctx);
 }
 
 /* A 'new' version, friendly to R7RS */
@@ -1677,18 +1665,7 @@ static ScmObj read_sharp_word_1(ScmPort *port, char ch, ScmReadContext *ctx)
     if (tag == NULL) {
         Scm_ReadError(port, "invalid #-token: #%s", w);
     }
-    /* Uvector support is implemented by gauche.uvector.  When it
-       is loaded, it sets up the pointer read_uvector_hook. */
-    if (read_uvector_hook == NULL) {
-        /* Require srfi-4 (gauche/uvector)
-           NB: we don't need mutex here, for the loading of srfi-4 is
-           serialized in Scm_Require. */
-        Scm_Require(SCM_MAKE_STR("gauche/uvector"),
-                    SCM_LOAD_PROPAGATE_ERROR, NULL);
-        if (read_uvector_hook == NULL)
-            Scm_ReadError(port, "couldn't load srfi-4 module");
-    }
-    return read_uvector_hook(port, tag, ctx);
+    return Scm_ReadUVector(port, tag, ctx);
 }
 
 static ScmObj read_sharp_word(ScmPort *port, char ch, ScmReadContext *ctx)
@@ -1700,9 +1677,11 @@ static ScmObj read_sharp_word(ScmPort *port, char ch, ScmReadContext *ctx)
     }
 }
 
+/* OBSOLETED: gauche.uvector used to call this to set up reader pointer.
+   Now it is read in src/vector.c.   We keep this entry for ABI compatibility.
+   Remove on 1.0 release. */
 void Scm__InstallReadUvectorHook(ScmObj (*f)(ScmPort*, const char*, ScmReadContext *))
 {
-    read_uvector_hook = f;
 }
 
 

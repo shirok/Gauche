@@ -117,53 +117,6 @@ static ArgType arg2_check(const char *name, ScmObj x, ScmObj y, int const_ok)
     return ARGTYPE_CONST;
 }
 
-/*--------------------------------------------------------
- * Comparison and print
- */
-static inline int int64eqv(ScmInt64 x, ScmInt64 y)
-{
-#if SCM_EMULATE_INT64
-    return (x.hi == y.hi && x.lo == y.lo);
-#else
-    return x == y;
-#endif
-}
-
-static inline int uint64eqv(ScmUInt64 x, ScmUInt64 y)
-{
-#if SCM_EMULATE_INT64
-    return (x.hi == y.hi && x.lo == y.lo);
-#else
-    return x == y;
-#endif
-}
-
-static inline void int64print(ScmPort *out, ScmInt64 v)
-{
-#if SCM_EMULATE_INT64
-    Scm_Printf(out, "%S", Scm_MakeInteger64(v));
-#elif SIZEOF_LONG == 4
-    char buf[50];
-    snprintf(buf, 50, "%lld", v);
-    Scm_Printf(out, "%s", buf);
-#else
-    Scm_Printf(out, "%ld", v);
-#endif
-}
-
-static inline void uint64print(ScmPort *out, ScmUInt64 v)
-{
-#if SCM_EMULATE_INT64
-    Scm_Printf(out, "%S", Scm_MakeIntegerU64(v));
-#elif SIZEOF_LONG == 4
-    char buf[50];
-    snprintf(buf, 50, "%llu", v);
-    Scm_Printf(out, "%s", buf);
-#else
-    Scm_Printf(out, "%lu", v);
-#endif
-}
-
 ///)) ;; End prologue
 
 ///;; Begin template ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -210,22 +163,6 @@ static inline void uint64print(ScmPort *out, ScmUInt64 v)
  * Converters
  */
 
-ScmObj Scm_ListTo${T}Vector(ScmObj list, int clamp)
-{
-    int length = Scm_Length(list);
-    if (length < 0) Scm_Error("improper list not allowed: %S", list);
-
-    ScmUVector *vec = (ScmUVector*)Scm_Make${T}Vector(length, 0);
-    ScmObj cp = list;
-    for (int i=0; i<length; i++, cp = SCM_CDR(cp)) {
-        ${etype} elt;
-        ScmObj obj = SCM_CAR(cp);
-        ${UNBOX elt obj clamp};
-        SCM_${T}VECTOR_ELEMENTS(vec)[i] = elt;
-    }
-    return SCM_OBJ(vec);
-}
-
 ScmObj Scm_ObjArrayTo${T}Vector(ScmObj *arr, int size, int clamp)
 {
     ScmUVector *vec = (ScmUVector*)Scm_Make${T}Vector(size, 0);
@@ -257,32 +194,6 @@ ScmObj Scm_${T}VectorFill(Scm${T}Vector *vec, ${etype} fill, int start, int end)
     SCM_UVECTOR_CHECK_MUTABLE(vec);
     for (int i=start; i<end; i++) SCM_${T}VECTOR_ELEMENTS(vec)[i] = fill;
     return SCM_OBJ(vec);
-}
-
-ScmObj Scm_${T}VectorRef(Scm${T}Vector *vec, int index, ScmObj fallback)
-{
-    if (index < 0 || index >= SCM_${T}VECTOR_SIZE(vec)) {
-        if (SCM_UNBOUNDP(fallback))
-            Scm_Error("index out of range: %d", index);
-        return fallback;
-    }
-    ${etype} elt = SCM_${T}VECTOR_ELEMENTS(vec)[index];
-    ScmObj r;
-    ${BOX r elt};
-    return r;
-}
-
-ScmObj Scm_VM${T}VectorRef(Scm${T}Vector *vec, int index, ScmObj fallback)
-{
-    if (index < 0 || index >= SCM_${T}VECTOR_SIZE(vec)) {
-        if (SCM_UNBOUNDP(fallback))
-            Scm_Error("index out of range: %d", index);
-        return fallback;
-    }
-    ${etype} elt = SCM_${T}VECTOR_ELEMENTS(vec)[index];
-    ScmObj r;
-    ${VMBOX r elt};
-    return r;
 }
 
 ScmObj Scm_${T}VectorSet(Scm${T}Vector *vec, int index, ScmObj val, int clamp)

@@ -36,8 +36,6 @@
 #ifndef GAUCHE_READER_H
 #define GAUCHE_READER_H
 
-typedef struct ScmReadContextRec ScmReadContext; /* opaque */
-
 SCM_CLASS_DECL(Scm_ReadContextClass);
 #define SCM_CLASS_READ_CONTEXT   (&Scm_ReadContextClass)
 #define SCM_READ_CONTEXT(obj)    ((ScmReadContext*)(obj))

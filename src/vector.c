@@ -283,6 +283,66 @@ ScmObj Scm_MakeUVector(ScmClass *klass, ScmSmallInt size, void *init)
     return Scm_MakeUVectorFull(klass, size, init, FALSE, NULL);
 }
 
+ScmObj Scm_ListToUVector(ScmClass *klass, ScmObj list, int clamp)
+{
+    ScmUVectorType type = Scm_UVectorType(klass);
+    if (type < 0) Scm_Error("uvector class required, but got: %S", klass);
+    ScmSmallInt length = Scm_Length(list);
+    if (length < 0) Scm_Error("improper list not allowed: %S", list);
+
+    ScmUVector *v = (ScmUVector*)Scm_MakeUVector(klass, length, NULL);
+    ScmObj cp = list;
+    for (int i=0; i<length; i++, cp = SCM_CDR(cp)) {
+        switch (type) {
+        case SCM_UVECTOR_S8:
+            SCM_S8VECTOR_ELEMENTS(v)[i] =
+                (signed char)Scm_GetInteger8Clamp(SCM_CAR(cp), clamp, NULL);
+            break;
+        case SCM_UVECTOR_U8:
+            SCM_U8VECTOR_ELEMENTS(v)[i] =
+                (unsigned char)Scm_GetIntegerU8Clamp(SCM_CAR(cp), clamp, NULL);
+            break;
+        case SCM_UVECTOR_S16:
+            SCM_S16VECTOR_ELEMENTS(v)[i] =
+                (short)Scm_GetInteger16Clamp(SCM_CAR(cp), clamp, NULL);
+            break;
+        case SCM_UVECTOR_U16:
+            SCM_U16VECTOR_ELEMENTS(v)[i] =
+                (u_short)Scm_GetIntegerU16Clamp(SCM_CAR(cp), clamp, NULL);
+            break;
+        case SCM_UVECTOR_S32:
+            SCM_S32VECTOR_ELEMENTS(v)[i] =
+                (ScmInt32)Scm_GetInteger32Clamp(SCM_CAR(cp), clamp, NULL);
+            break;
+        case SCM_UVECTOR_U32:
+            SCM_U32VECTOR_ELEMENTS(v)[i] =
+                (ScmUInt32)Scm_GetIntegerU32Clamp(SCM_CAR(cp), clamp, NULL);
+            break;
+        case SCM_UVECTOR_S64:
+            SCM_S64VECTOR_ELEMENTS(v)[i] =
+                (ScmInt64)Scm_GetInteger64Clamp(SCM_CAR(cp), clamp, NULL);
+            break;
+        case SCM_UVECTOR_U64:
+            SCM_U64VECTOR_ELEMENTS(v)[i] =
+                (ScmUInt64)Scm_GetIntegerU64Clamp(SCM_CAR(cp), clamp, NULL);
+            break;
+        case SCM_UVECTOR_F16:
+            SCM_F16VECTOR_ELEMENTS(v)[i] =
+                (ScmHalfFloat)Scm_DoubleToHalf(Scm_GetDouble(SCM_CAR(cp)));
+            break;
+        case SCM_UVECTOR_F32:
+            SCM_F32VECTOR_ELEMENTS(v)[i] =
+                (float)Scm_GetDouble(SCM_CAR(cp));
+            break;
+        case SCM_UVECTOR_F64:
+            SCM_F64VECTOR_ELEMENTS(v)[i] =
+                Scm_GetDouble(SCM_CAR(cp));
+            break;
+        }
+    }
+    return SCM_OBJ(v);
+}
+
 /* Generic accessor, intended to be called from VM loop.
    (As the 'VM' in the name suggests, the return value of this API
    should immediately be passed to VM.  See comments on FFX in gauche/number.h)
@@ -382,6 +442,38 @@ DEF_UVCTOR_ARRAY(U64, ScmUInt64)
 DEF_UVCTOR_ARRAY(F16, ScmHalfFloat)
 DEF_UVCTOR_ARRAY(F32, float)
 DEF_UVCTOR_ARRAY(F64, double)
+
+/*
+ * Reader
+ */
+ScmObj Scm_ReadUVector(ScmPort *port, const char *tag, ScmReadContext *ctx)
+{
+    ScmChar c;
+    SCM_GETC(c, port);
+    if (c != '(') Scm_Error("bad uniform vector syntax for %s", tag);
+    ScmObj list = Scm_ReadList(SCM_OBJ(port), ')');
+    ScmClass *klass = NULL;
+    if (strcmp(tag, "s8") == 0)       klass = SCM_CLASS_S8VECTOR;
+    else if (strcmp(tag, "u8") == 0)  klass = SCM_CLASS_U8VECTOR;
+    else if (strcmp(tag, "s16") == 0) klass = SCM_CLASS_S16VECTOR;
+    else if (strcmp(tag, "u16") == 0) klass = SCM_CLASS_U16VECTOR;
+    else if (strcmp(tag, "s32") == 0) klass = SCM_CLASS_S32VECTOR;
+    else if (strcmp(tag, "u32") == 0) klass = SCM_CLASS_U32VECTOR;
+    else if (strcmp(tag, "s64") == 0) klass = SCM_CLASS_S64VECTOR;
+    else if (strcmp(tag, "u64") == 0) klass = SCM_CLASS_U64VECTOR;
+    else if (strcmp(tag, "f16") == 0) klass = SCM_CLASS_F16VECTOR;
+    else if (strcmp(tag, "f32") == 0) klass = SCM_CLASS_F32VECTOR;
+    else if (strcmp(tag, "f64") == 0) klass = SCM_CLASS_F64VECTOR;
+    else Scm_Error("invalid unform vector tag: %s", tag);
+
+    ScmObj uv = Scm_ListToUVector(klass, list, 0);
+    
+    /* If we are reading source file, let literal uvectors be immutable. */
+    if (Scm_ReadContextLiteralImmutable(ctx)) {
+        SCM_UVECTOR_IMMUTABLE_P(uv) = TRUE;
+    }
+    return uv;
+}
 
 /*
  * Class-dependent functions

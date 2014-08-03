@@ -16170,6 +16170,19 @@ if you import @code{gauche.collection}
 @end example
 @end deftp
 
+@defun uvector-length uvector
+@c EN
+This is a generic version of @code{@var{TAG}vector-length}; you
+can pass any instance of uniform vector, and it returns the number
+of its elements.
+@c JP
+これは@code{@var{TAG}vector-length}の汎用バージョンです。
+どんな型のユニフォームベクタでも渡すことができ、
+その要素数が返されます。
+@c COMMON
+@end defun
+
+
 @defun uvector-size uvector :optional start end
 @c EN
 This function can be applied to any type of uniform vectors, and
@@ -16180,6 +16193,9 @@ between those indices are calculated.  The special value @code{-1}
 for @var{end} indicates the end of the vector.
 The returned value matches the number of octets to be written out
 by @code{(write-uvector @var{uvector} port @var{start} @var{end})}.
+
+(Do not confuse this with @code{uvector-length}, which returns
+the number of elements.)
 @c JP
 この手続きは全てのユニフォームベクタに適用することができます。
 @var{uvector}のバイナリデータとしてのサイズをオクテット数で返します。
@@ -16190,6 +16206,8 @@ by @code{(write-uvector @var{uvector} port @var{start} @var{end})}.
 返される値は
 @code{(write-uvector @var{uvector} port @var{start} @var{end})} によって
 出力されるオクテット数と一致します。
+
+(要素数を返す@code{uvector-length}と混同しないようにしてください。)
 @c COMMON
 
 @example
