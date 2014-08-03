@@ -99,9 +99,8 @@ ext/util/util--match.c
 ext/util/util--queue.c
 ext/uvector/gauche/
 ext/uvector/uvector.c
-ext/uvector/uvlib.c
-ext/uvector/uvlib.stub
-ext/uvector/uvutil.c
+ext/uvector/uvlib.scm
+ext/uvector/gauche--uvector.c
 ext/vport/vportlib.c
 ext/windows/console.c
 ext/windows/windows.c
