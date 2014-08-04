@@ -741,7 +741,7 @@ to avoid confusion.
 
 @defun raise-continuable obj
 [R7RS]
-At this moment, this is this is defined as an alias of @code{raise},
+At this moment, this is defined as an alias of @code{raise},
 for Gauche's @code{raise} returns unless @var{obj} is not a
 @code{<serious-condition>}.
 @end defun
@@ -768,7 +768,7 @@ Defined as @code{(condition-has-type? e <read-error>))}.
 
 @defun file-error? exc
 [R7RS]
-At this moment, Gauche doens't have distinct @code{<file-error>} condition,
+At this moment, Gauche doesn't have distinct @code{<file-error>} condition,
 but most file errors are thrown as one of @code{<system-error>}s.
 This procedure checks error code of @code{<system-error>} and
 returns @code{#t} if the error is likely to be related to the filesystem.
