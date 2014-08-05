@@ -1,3 +1,7 @@
+2014-08-04  Shiro Kawai  <shiro@acm.org>
+
+	* ext/termios/termiolib.stub (sys-termios-copy): Added.
+
 2014-08-02  Shiro Kawai  <shiro@acm.org>
 
 	* ext/uvector/*, src/vector.c: Restructured the sources.

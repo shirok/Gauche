@@ -124,6 +124,15 @@
   (when (< (cfsetospeed (& (-> term term)) speed) 0)
     (Scm_SysError "cfsetospeed failed")))
 
+;; Returns fresh copy of <sys-termios>
+;; The fields of struct termios are system-dependent, and it may contain
+;; more fields than specified in POSIX.  However, we assume they're safe
+;; for bitwise-copy.
+(define-cproc sys-termios-copy (src::<sys-termios>)
+  (let* ([dest::(ScmSysTermios*) (SCM_SYS_TERMIOS (Scm_MakeSysTermios))])
+    (set! (-> dest term) (-> src term))
+    (result (SCM_OBJ dest))))
+
 ;; pty interface
 (when "defined(HAVE_OPENPTY)"
 (define-cproc sys-openpty (:optional term) Scm_Openpty)
