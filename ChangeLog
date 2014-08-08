@@ -1,3 +1,11 @@
+2014-08-07  Shiro Kawai  <shiro@acm.org>
+
+	* src/write.c (Scm_Write): Avoid using srfi-38 notation if
+	  (display <string>) is called within write-shared.  It doesn't
+	  contribute readability at all (since you can't know what the
+	  label refers), and sometimes interferes with user-defined
+	  object writer.
+
 2014-08-04  Shiro Kawai  <shiro@acm.org>
 
 	* ext/termios/termiolib.stub (sys-termios-copy): Added.

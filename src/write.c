@@ -137,8 +137,16 @@ void Scm_Write(ScmObj obj, ScmObj p, int mode)
     ScmVM *vm = Scm_VM();
 
     if (PORT_LOCK_OWNER_P(port, vm) && PORT_RECURSIVE_P(port)) {
-        if (PORT_WALKER_P(port)) write_walk(obj, port);
-        else                     write_rec(obj, port, &ctx);
+        /* Special treatment - if we're "display"-ing a string, we'll bypass
+           walk path even if we're in the middle of write/ss.  Using srfi-38
+           notation to show displayed strings doesn't make sense at all.
+         */
+        if (PORT_WALKER_P(port) &&
+            !((mode == SCM_WRITE_DISPLAY) && SCM_STRINGP(obj))) {
+            write_walk(obj, port);
+        } else {
+            write_rec(obj, port, &ctx);
+        }
         return;
     }
 

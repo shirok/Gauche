@@ -199,6 +199,21 @@
               (bar (make <bar> :a x :b x)))
          (write-to-string bar write/ss)))
 
+(define-class <baz> ()
+  ((a :init-keyword :a)
+   (b :init-keyword :b)))
+(define-method write-object ((self <baz>) port)
+  (display "#," port)
+  (write `(baz :a ,(ref self 'a) :b ,(ref self 'b)) port))
+(test* "user defined mixed"
+       "#,(baz :a (#0=#,(foo foo foob) #1=#,(foo fee feeb)) :b (#,(bar #0# #1#) #,(bar #1# #0#)))"
+       (let* ((f0 (make <foo> :a 'foo :b 'foob))
+              (f1 (make <foo> :a 'fee :b 'feeb))
+              (b1 (make <bar> :a f0 :b f1))
+              (b2 (make <bar> :a f1 :b f0))
+              (c  (make <baz> :a (list f0 f1) :b (list b1 b2))))
+         (write-to-string c write/ss)))
+
 ;; This test doesn't involve shared structure.  It is to test
 ;; we can handle deep list without busting C stack.
 (test* "deep list doesn't bust C stack" 2000002
