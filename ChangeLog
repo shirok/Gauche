@@ -22,8 +22,8 @@
 	  doesn't work on OSX.  Some legacy extension modules may still
 	  referring -lgauche-uvector; they should be updated.
 	  Since gauche--uvector.so is now purely accessed through Scheme,
-	  to provide full line of C API; so some of them are folded
-	  into define-cproc.
+	  it doesn't make sense to provide full line of C API; so some of
+	  them are folded into define-cproc.
 	  The uvector reader is moved to src/vector.c as well, so that
 	  reading uvector literals won't cause autoloading gauche.uvector.
 
