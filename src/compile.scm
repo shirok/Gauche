@@ -2395,7 +2395,7 @@
   (let loop ((formals formals) (args '()) (n 0))
     (match formals
       [()      (values (reverse args) n 0 '())]
-      [((? keyword?) . _) (values (reverse args) n 1 formals)]
+      [((? keyword-like?) . _) (values (reverse args) n 1 formals)]
       [(x . y) (loop (cdr formals) (cons (car formals) args) (+ n 1))]
       [x       (values (reverse (cons x args)) n 1 '())])))
 
@@ -2405,7 +2405,7 @@
   (define (collect-args xs r)
     (match xs
       [() (values (reverse r) '())]
-      [((? keyword?) . _) (values (reverse r) xs)]
+      [((? keyword-like?) . _) (values (reverse r) xs)]
       [(var . rest) (collect-args rest (cons var r))]))
   (define (parse-kargs xs os ks r a)
     (match xs
@@ -5897,6 +5897,12 @@
      (label normal)
      ))
  )
+
+;; Returns #t iff z is a keyword, or an identifier made from a keyword.
+;; TODO: We should also check iff k isn't bound to something else!
+(define (keyword-like? k)
+  (or (keyword? k)
+      (and (identifier? k) (keyword? (identifier-name k)))))
 
 ;; (define (id->bound-gloc id)
 ;;   (and-let* ([gloc (find-binding (identifier-module id) (identifier-name id) #f)]
