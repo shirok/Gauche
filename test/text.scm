@@ -412,7 +412,9 @@ fuga
 (test* "tree->string" "ab" (tree->string 'ab))
 (test* "tree->string" "ab" (tree->string '(a . b)))
 (test* "tree->string" "ab" (tree->string '(a b)))
-(test* "tree->string" "Ab" (tree->string '(|A| . :b)))
 (test* "tree->string" "ab" (tree->string '((((() ())) . a) ((((b)))))))
+(test* "tree->string"
+       (if (symbol? :b) "A:b" "Ab") ; transient during symbol-keyword integration
+       (tree->string '(|A| . :b)))
 
 (test-end)

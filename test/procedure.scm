@@ -331,7 +331,7 @@
 
 ;; let-keywords* combined with syntax rules
 (define-syntax lambda++
-  (syntax-rules ()
+  (syntax-rules (:key)
     ((lambda++ "sub" () (margs ...) kargs . body)
      (lambda (margs ... . rest)
        (let-keywords* rest kargs

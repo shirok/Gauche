@@ -80,7 +80,9 @@
 (test* "keyword->string" "abc" (keyword->string (make-keyword 'abc)))
 (test* "keyword->string" "a b" (keyword->string (read-from-string ":|a b|")))
 (test* "writer" ":abc" (write-to-string (make-keyword "abc")))
-(test* "writer" ":|a b c|" (write-to-string (make-keyword "a b c")))
+(test* "writer"
+       (if (symbol? :x) "|:a b c|" ":|a b c|");transient during symbol-keyword integration
+       (write-to-string (make-keyword "a b c")))
 (test* "writer" ":" (write-to-string (make-keyword "")))
 (test* "writer" "::" (write-to-string (make-keyword ":")))
 (test* "writer" ":3" (write-to-string (make-keyword "3")))

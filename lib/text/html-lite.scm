@@ -95,20 +95,21 @@
 
 (define (make-html-element name . args)
   (let ((empty? (get-keyword :empty? args #f)))
+    (define (K k) (keyword->string k)) ;; we don't need leading colon
     (define (get-attr args attrs)
       (cond ((null? args) (values (reverse attrs) args))
             ((keyword? (car args))
              (cond ((null? (cdr args))
-                    (values (reverse (list* (car args) " " attrs)) args))
+                    (values (reverse (list* (K (car args)) " " attrs)) args))
                    ((eq? (cadr args) #f)
                     (get-attr (cddr args) attrs))
                    ((eq? (cadr args) #t)
-                    (get-attr (cddr args) (list* (car args) " " attrs)))
+                    (get-attr (cddr args) (list* (K (car args)) " " attrs)))
                    (else
                     (get-attr (cddr args)
                               (list* (format #f "=\"~a\""
                                              (html-escape-string (x->string (cadr args))))
-                                     (car args)
+                                     (K (car args))
                                      " "
                                      attrs)))))
             (else (values (reverse attrs) args))))

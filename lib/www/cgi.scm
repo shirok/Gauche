@@ -401,7 +401,8 @@
       (push! r #`"Set-cookie: ,cookie\r\n"))
     (dolist [p (slices rest 2)]
       (when (pair? (cdr p))
-        (push! r #`",(car p): ,(cadr p)\r\n")))
+        (let1 hdrname (if (keyword? (car p)) (keyword->string (car p)) (car p))
+          (push! r #"~|hdrname|: ~(cadr p)\r\n"))))
     (push! r "\r\n")
     (reverse r)))
 
