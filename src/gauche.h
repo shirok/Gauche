@@ -125,7 +125,10 @@ SCM_DECL_BEGIN
 /* Define this to 0 to turn off lazy-pair feature. */
 #define GAUCHE_LAZY_PAIR 1
 
-#undef GAUCHE_UNIFY_SYMBOL_KEYWORD /* not yet */
+/* Enable an option to make keywords and symbols disjoint.
+   (Transient: Will be gone once we completely migrate to
+   unified keyword-symbol system */
+#define GAUCHE_KEEP_DISJOINT_KEYWORD_OPTION 1
 
 /* Include appropriate threading interface.  Threading primitives are
    abstracted with SCM_INTERNAL_* macros and ScmInternal* typedefs.
@@ -497,9 +500,6 @@ typedef struct ScmTreeMapRec   ScmTreeMap;
 typedef struct ScmModuleRec    ScmModule;
 typedef struct ScmSymbolRec    ScmSymbol;
 typedef struct ScmGlocRec      ScmGloc;
-#if !GAUCHE_UNIFY_SYMBOL_KEYWORD
-typedef struct ScmKeywordRec   ScmKeyword;
-#endif /*!GAUCHE_UNIFY_SYMBOL_KEYWORD*/
 typedef struct ScmProcedureRec ScmProcedure;
 typedef struct ScmClosureRec   ScmClosure;
 typedef struct ScmSubrRec      ScmSubr;

@@ -42,7 +42,6 @@
 static void symbol_print(ScmObj obj, ScmPort *port, ScmWriteContext *);
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_SymbolClass, symbol_print);
 
-#if GAUCHE_UNIFY_SYMBOL_KEYWORD
 static ScmClass *keyword_cpl[] = {
     SCM_CLASS_STATIC_PTR(Scm_SymbolClass),
     SCM_CLASS_STATIC_PTR(Scm_TopClass),
@@ -51,22 +50,20 @@ static ScmClass *keyword_cpl[] = {
 
 SCM_DEFINE_BUILTIN_CLASS(Scm_KeywordClass, symbol_print,
                          NULL, NULL, NULL, keyword_cpl);
-#else  /*!GAUCHE_UNIFY_SYMBOL_KEYWORD*/
-SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_KeywordClass, symbol_print);
-#endif /*!GAUCHE_UNIFY_SYMBOL_KEYWORD*/
 
 /* name -> symbol mapper */
 static ScmInternalMutex obtable_mutex = SCM_INTERNAL_MUTEX_INITIALIZER;
 static ScmHashTable *obtable = NULL;
 
-#if !GAUCHE_UNIFY_SYMBOL_KEYWORD
+#if GAUCHE_KEEP_DISJOINT_KEYWORD_OPTION
 /* Global keyword table. */
 static struct {
     ScmHashTable *table;
     ScmInternalMutex mutex;
 } keywords = { NULL };
 
-#endif /*!GAUCHE_UNIFY_SYMBOL_KEYWORD*/
+static int keyword_disjoint_p = FALSE;
+#endif /*!GAUCHE_KEEP_DISJOINT_KEYWORD_OPTION*/
 
 /* internal constructor.  NAME must be an immutable string. */
 static ScmSymbol *make_sym(ScmClass *klass, ScmString *name, int interned)
@@ -106,32 +103,47 @@ ScmObj Scm_MakeSymbol(ScmString *name, int interned)
     return SCM_OBJ(make_sym(SCM_CLASS_SYMBOL, SCM_STRING(sname), interned));
 }
 
+/* Keyword prefix. */
+static SCM_DEFINE_STRING_CONST(keyword_prefix, ":", 1, 1);
+
 /* In unified keyword, we include preceding ':' to the name. */
 ScmObj Scm_MakeKeyword(ScmString *name)
 {
-#if GAUCHE_UNIFY_SYMBOL_KEYWORD
-    /* We could optimize this later. */
-    ScmObj prefix = Scm_MakeString(":", 1, 1, SCM_STRING_IMMUTABLE);
-    ScmObj sname = Scm_StringAppend2(SCM_STRING(prefix), name);
+#if GAUCHE_KEEP_DISJOINT_KEYWORD_OPTION
+    if (keyword_disjoint_p) {
+        (void)SCM_INTERNAL_MUTEX_LOCK(keywords.mutex);
+        ScmObj r = Scm_HashTableRef(keywords.table, SCM_OBJ(name), SCM_FALSE);
+        (void)SCM_INTERNAL_MUTEX_UNLOCK(keywords.mutex);
+
+        if (SCM_KEYWORDP(r)) return r;
+
+        ScmKeyword *k = SCM_NEW(ScmKeyword);
+        SCM_SET_CLASS(k, SCM_CLASS_KEYWORD);
+        k->name = SCM_STRING(Scm_CopyString(name));
+        (void)SCM_INTERNAL_MUTEX_LOCK(keywords.mutex);
+        r = Scm_HashTableSet(keywords.table, SCM_OBJ(name), SCM_OBJ(k),
+                             SCM_DICT_NO_OVERWRITE);
+        (void)SCM_INTERNAL_MUTEX_UNLOCK(keywords.mutex);
+        return r;
+    }
+#endif /*GAUCHE_KEEP_DISJOINT_KEYWORD_OPTION*/
+    ScmObj sname = Scm_StringAppend2(&keyword_prefix, name);
     ScmSymbol *s = make_sym(SCM_CLASS_KEYWORD, SCM_STRING(sname), TRUE);
     Scm_DefineConst(Scm_KeywordModule(), s, SCM_OBJ(s));
     return SCM_OBJ(s);
-#else  /*!GAUCHE_UNIFY_SYMBOL_KEYWORD*/
-    (void)SCM_INTERNAL_MUTEX_LOCK(keywords.mutex);
-    ScmObj r = Scm_HashTableRef(keywords.table, SCM_OBJ(name), SCM_FALSE);
-    (void)SCM_INTERNAL_MUTEX_UNLOCK(keywords.mutex);
+}
 
-    if (SCM_KEYWORDP(r)) return r;
-
-    ScmKeyword *k = SCM_NEW(ScmKeyword);
-    SCM_SET_CLASS(k, SCM_CLASS_KEYWORD);
-    k->name = SCM_STRING(Scm_CopyString(name));
-    (void)SCM_INTERNAL_MUTEX_LOCK(keywords.mutex);
-    r = Scm_HashTableSet(keywords.table, SCM_OBJ(name), SCM_OBJ(k),
-                         SCM_DICT_NO_OVERWRITE);
-    (void)SCM_INTERNAL_MUTEX_UNLOCK(keywords.mutex);
-    return r;
-#endif /*!GAUCHE_UNIFY_SYMBOL_KEYWORD*/
+ScmObj Scm_KeywordToString(ScmKeyword *k)
+{
+#if GAUCHE_KEEP_DISJOINT_KEYWORD_OPTION
+    if (keyword_disjoint_p) {
+        return SCM_OBJ(k->name);
+    } else {
+        return Scm_Substring(k->name, 1, -1, FALSE);
+    }
+#else  /*!GAUCHE_KEEP_DISJOINT_KEYWORD_OPTION*/
+    return Scm_Substring(k->name, 1, -1, FALSE);
+#endif /*!GAUCHE_KEEP_DISJOINT_KEYWORD_OPTION*/
 }
 
 /* Default prefix string. */
@@ -188,7 +200,7 @@ static const char special[] = {
  /*    !  "  #  $  %  &  '  (  )  *  +  ,  -  .  /  */
     3, 0, 3, 3, 0, 0, 0, 3, 3, 3, 0, 1, 3, 1, 1, 0,
  /* 0  1  2  3  4  5  6  7  8  9  :  ;  <  =  >  ?  */
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 0, 0, 0, 0,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 3, 0, 0, 0, 0,
  /* @  A  B  C  D  E  F  G  H  I  J  K  L  M  N  O  */
     1, 16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,
  /* P  Q  R  S  T  U  V  W  X  Y  Z  [  \  ]  ^  _  */
@@ -223,10 +235,11 @@ void Scm_WriteSymbolName(ScmString *snam, ScmPort *port, ScmWriteContext *ctx,
         return;
     }
     if ((unsigned int)*p < 128
-        && (special[(unsigned int)*p]&1)
-#if GAUCHE_UNIFY_SYMBOL_KEYWORD
-        && (*p != ':')
-#endif
+        && ((special[(unsigned int)*p]&1)
+#if GAUCHE_KEEP_DISJOINT_KEYWORD_OPTION
+            || (keyword_disjoint_p && (*p == ':'))
+#endif /*GAUCHE_KEEP_DISJOINT_KEYWORD_OPTION*/
+            )
         && (!(flags & SCM_SYMBOL_WRITER_NOESCAPE_INITIAL))) {
         escape = TRUE;
     } else {
@@ -275,9 +288,9 @@ static void symbol_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
     if (Scm_WriteContextMode(ctx) == SCM_WRITE_DISPLAY) {
         SCM_PUTS(SCM_SYMBOL_NAME(obj), port);
     } else {
-#if !GAUCHE_UNIFY_SYMBOL_KEYWORD
-        if (SCM_KEYWORDP(obj)) {
-            SCM_PUTC(':', port);
+#if GAUCHE_KEEP_DISJOINT_KEYWORD_OPTION
+        if (SCM_KEYWORDP(obj) && keyword_disjoint_p) {
+            Scm_Putc(':', port);
             /* We basically print keyword names in the same way as symbols
                (i.e. using |-escape if necessary).  However, as a convention,
                two things are different from the default symbol writer.
@@ -294,7 +307,7 @@ static void symbol_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
                                  |SCM_SYMBOL_WRITER_NOESCAPE_EMPTY));
             return;
         }
-#endif /*!GAUCHE_UNIFY_SYMBOL_KEYWORD*/
+#endif /*GAUCHE_KEEP_DISJOINT_KEYWORD_OPTION*/
         if (!SCM_SYMBOL_INTERNED(obj)) SCM_PUTZ("#:", -1, port);
         Scm_WriteSymbolName(SCM_SYMBOL_NAME(obj), port, ctx, 0);
     }
@@ -383,8 +396,23 @@ void Scm__InitSymbol(void)
     SCM_INTERNAL_MUTEX_INIT(obtable_mutex);
     obtable = SCM_HASH_TABLE(Scm_MakeHashTableSimple(SCM_HASH_STRING, 4096));
     init_builtin_syms();
-#if !GAUCHE_UNIFY_SYMBOL_KEYWORD
+#if GAUCHE_KEEP_DISJOINT_KEYWORD_OPTION
     (void)SCM_INTERNAL_MUTEX_INIT(keywords.mutex);
     keywords.table = SCM_HASH_TABLE(Scm_MakeHashTableSimple(SCM_HASH_STRING, 256));
-#endif /*!GAUCHE_UNIFY_SYMBOL_KEYWORD*/
+    /* Preset keyword class precedence list, depending on the value of
+       GAUCHE_KEYWORD_DISJOINT or GAUCHE_KEYWORD_IS_SYMBOL */
+    const char *disjoint = Scm_GetEnv("GAUCHE_KEYWORD_DISJOINT");
+    const char *issymbol = Scm_GetEnv("GAUCHE_KEYWORD_IS_SYMBOL");
+    if (disjoint != NULL) {
+        keyword_disjoint_p = TRUE;
+    } else if (issymbol != NULL) {
+        keyword_disjoint_p = FALSE;
+    } else {
+        keyword_disjoint_p = TRUE; /* This determines the default */
+    }
+    if (keyword_disjoint_p) {
+        Scm_KeywordClass.cpa = &(keyword_cpl[1]);
+        /* The class is initialized later in class.c */
+    }
+#endif /*!GAUCHE_KEEP_DISJOINT_KEYWORD_OPTION*/
 }

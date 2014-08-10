@@ -146,9 +146,7 @@ SCM_EXTERN ScmModule *Scm_SchemeModule(void);
 SCM_EXTERN ScmModule *Scm_GaucheModule(void);
 SCM_EXTERN ScmModule *Scm_UserModule(void);
 SCM_EXTERN ScmModule *Scm_CurrentModule(void);
-#if GAUCHE_UNIFY_SYMBOL_KEYWORD
 SCM_EXTERN ScmModule *Scm_KeywordModule(void);
-#endif /*!GAUCHE_UNIFY_SYMBOL_KEYWORD*/
 
 #define SCM_DEFINE(module, cstr, val)           \
     Scm_Define(SCM_MODULE(module),              \

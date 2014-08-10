@@ -50,11 +50,7 @@ typedef enum {
 } ScmSymbolFlags;
 
 #define SCM_SYMBOL(obj)          ((ScmSymbol*)(obj))
-#if GAUCHE_UNIFY_SYMBOL_KEYWORD
 #define SCM_SYMBOLP(obj)         SCM_ISA(obj, SCM_CLASS_SYMBOL)
-#else  /*!GAUCHE_UNIFY_SYMBOL_KEYWORD*/
-#define SCM_SYMBOLP(obj)         SCM_XTYPEP(obj, SCM_CLASS_SYMBOL)
-#endif /*!GAUCHE_UNIFY_SYMBOL_KEYWORD*/
 #define SCM_SYMBOL_NAME(obj)     (SCM_SYMBOL(obj)->name)
 #define SCM_SYMBOL_INTERNED(obj) \
     (SCM_SYMBOL(obj)->flags&SCM_SYMBOL_FLAG_INTERNED)
@@ -84,14 +80,7 @@ SCM_EXTERN void Scm_WriteSymbolName(ScmString *snam, ScmPort *port,
 #define SCM_SYMBOL_WRITER_NOESCAPE_INITIAL  1u
 #define SCM_SYMBOL_WRITER_NOESCAPE_EMPTY    2u
 
-#if GAUCHE_UNIFY_SYMBOL_KEYWORD
 typedef ScmSymbol ScmKeyword;
-#else  /*!GAUCHE_UNIFY_SYMBOL_KEYWORD*/
-struct ScmKeywordRec {
-    SCM_HEADER;
-    ScmString *name;
-};
-#endif /*!GAUCHE_UNIFY_SYMBOL_KEYWORD*/
 
 SCM_CLASS_DECL(Scm_KeywordClass);
 #define SCM_CLASS_KEYWORD       (&Scm_KeywordClass)
@@ -104,6 +93,7 @@ SCM_EXTERN ScmObj Scm_MakeKeyword(ScmString *name);
 SCM_EXTERN ScmObj Scm_GetKeyword(ScmObj key, ScmObj list, ScmObj fallback);
 SCM_EXTERN ScmObj Scm_DeleteKeyword(ScmObj key, ScmObj list);
 SCM_EXTERN ScmObj Scm_DeleteKeywordX(ScmObj key, ScmObj list);
+SCM_EXTERN ScmObj Scm_KeywordToString(ScmKeyword *k);
 
 #define SCM_MAKE_KEYWORD(cstr) \
     Scm_MakeKeyword(SCM_STRING(SCM_MAKE_STR_IMMUTABLE(cstr)))

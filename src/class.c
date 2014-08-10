@@ -3243,8 +3243,6 @@ void Scm__InitClass(void)
     /* symbol.c */
     CINIT(SCM_CLASS_SYMBOL,           "<symbol>");
     CINIT(SCM_CLASS_GLOC,             "<gloc>");
-
-    /* keyword.c */
     CINIT(SCM_CLASS_KEYWORD,          "<keyword>");
 
     /* system.c */
