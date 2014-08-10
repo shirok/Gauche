@@ -338,6 +338,8 @@ ScmObj Scm_ListToUVector(ScmClass *klass, ScmObj list, int clamp)
             SCM_F64VECTOR_ELEMENTS(v)[i] =
                 Scm_GetDouble(SCM_CAR(cp));
             break;
+        default:
+            Scm_Error("[internal error] unknown uvector type given to Scm_ListToUVector");
         }
     }
     return SCM_OBJ(v);
