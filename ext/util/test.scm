@@ -112,6 +112,32 @@
                     Y))))
           )))
 
+;; interference with hygienic macro
+(let ()
+  (define-syntax define-registrar
+    (syntax-rules ()
+      [(_ varname key default2-var default3-var)
+       (define (varname proc . opts)
+         (match opts
+           [() (set! default3-var proc)]
+           [(':perspective)  (set! default3-var proc)]
+           [(':orthographic) (set! default2-var proc)]
+           [(name)
+            (cond [(name->window name) => (^[win] (ref win'closure) 'key proc)]
+                  [else
+                   (errorf "~a: no such window with name: ~a" 'varname name)])]
+           ))]))
+
+  (define a #f)
+  (define b #f)
+  (define-registrar z x a b)
+  (test* "match in hygienic expansion" '(2 1)
+         (begin (z 1 :perspective)
+                (z 2 :orthographic)
+                (list a b)))
+  )
+
+
 ;;--------------------------------------------------------------
 
 (test* "pred" '(a b c)

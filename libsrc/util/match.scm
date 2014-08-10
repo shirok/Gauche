@@ -331,7 +331,11 @@
 
 (define (validate-pattern pattern)
   (define (simple? x)
-    (or (string? x) (boolean? x) (char? x) (number? x) (null? x) (keyword? x)))
+    (or (string? x) (boolean? x) (char? x) (number? x) (null? x)
+        ;; This last term is to support both disjoint-keyword and
+        ;; keyword-is-symbol runtime.  After we fully migrated to
+        ;; keyword-is-symbol, just remove this term.
+        (and (not (symbol? :x)) (keyword? x))))
   (define (ordinary p)
     (let ((cons-ordinary (lambda (x y) (cons (ordinary x) (ordinary y)))))
       (cond
@@ -456,9 +460,9 @@
       (when (memq p a)
         (match:syntax-err pattern "duplicate variable in pattern"))
       (k p (cons p a)))
-     ((and (pair? p) (eq? 'quote (car p)))
+     ((and (pair? p) (equal? 'quote (car p)))
       (k p a))
-     ((and (pair? p) (eq? '? (car p)))
+     ((and (pair? p) (equal? '? (car p)))
       (cond
        ((not (null? (cddr p)))
         (bound `(and (? ,(cadr p)) ,@(cddr p)) a k))
@@ -633,10 +637,11 @@
                  (ks success))
         (cond
          ((eq? '_ p) (ks sf))
-         ((keyword? p)
-          ;;We should make this warning optional, only when keyword-symbol
-          ;;integration mode is turned on.
-          ;;(warn "Unquoted keyword `~s' in match pattern: ~s" p x)
+         ;; The check of (symbol? :x) is to support both disjoint-keyword and
+         ;; keyword-is-symbol runtime.  Remove this clause once we fully
+         ;; migrated to keyword-is-symbol.
+         ((and (not (symbol? :x)) (keyword? p))
+          (warn "Unquoted keyword `~s' in match pattern: ~s" p x)
           (emit `(equal? ,e ,p) sf kf ks))
          ((symid? p) (set! v (cons (cons p e) v))
           (ks sf))
@@ -646,14 +651,14 @@
          ((boolean? p) (emit `(equal? ,e ,p) sf kf ks))
          ((char? p) (emit `(equal? ,e ,p) sf kf ks))
          ((number? p) (emit `(equal? ,e ,p) sf kf ks))
-         ((and (pair? p) (eq? 'quote (car p)))
+         ((and (pair? p) (equal? 'quote (car p)))
           (emit `(equal? ,e ,p) sf kf ks))
          ((and (pair? p) (eq? '? (car p)))
           (let ((tst `(,(cadr p) ,e)))
             (emit tst sf kf ks)))
          ((and (pair? p) (eq? '= (car p)))
           (if (and (pair? (cadr p))
-                   (eq? (caadr p) 'quote))
+                   (equal? (caadr p) 'quote))
             (next (caddr p) `(ref ,(cadr p) ,e) sf kf ks)
             (next (caddr p) `(,(cadr p) ,e) sf kf ks)))
          ((and (pair? p) (eq? 'and (car p)))
@@ -866,7 +871,7 @@
                          ((char? p) `((char? ,e)))
                          ((number? p) `((number? ,e)))
                          ((and (pair? p)
-                               (eq? 'quote (car p)))
+                               (equal? 'quote (car p)))
                           `((symbol? ,e)))
                          (else '()))))
                      ((eq? (car tst) 'null?)
@@ -1039,7 +1044,7 @@
               (else #f))))))
 
 (define (equal-test? tst)
-  (and (eq? (car tst) 'equal?)
+  (and (equal? (car tst) 'equal?)
        (let ((p (caddr tst)))
          (cond
           ((string? p) 'string?)
@@ -1049,7 +1054,7 @@
           ((and (pair? p)
                 (pair? (cdr p))
                 (null? (cddr p))
-                (eq? 'quote (car p))
+                (equal? 'quote (car p))
                 (symid? (cadr p)))
            'symbol?)
           (else #f)))))
