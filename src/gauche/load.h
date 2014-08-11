@@ -75,16 +75,9 @@ SCM_EXTERN ScmObj Scm_VMLoadFromPort(ScmPort *port, ScmObj next_paths,
 SCM_EXTERN ScmObj Scm_VMLoad(ScmString *file, ScmObj paths, ScmObj env,
                              int flags);
 
-#if !defined(GAUCHE_API_PRE_0_9)
 SCM_EXTERN void Scm_LoadPacketInit(ScmLoadPacket *p);
 SCM_EXTERN int Scm_LoadFromPort(ScmPort *port, u_long flags, ScmLoadPacket *p);
 SCM_EXTERN int Scm_Load(const char *file, u_long flags, ScmLoadPacket *p);
-#else  /*!GAUCHE_API_PRE_0_9*/
-#define Scm_LoadFromPort(port, flags)  Scm__LoadFromPortCompat(port, flags)
-#define Scm_Load(port, flags)          Scm__LoadCompat(port, flags)
-SCM_EXTERN void Scm__LoadFromPortCompat(ScmPort *port, int flags);
-SCM_EXTERN int  Scm__LoadCompat(const char *file, int flags);
-#endif /*!GAUCHE_API_PRE_0_9*/
 
 /* Inernal */
 SCM_EXTERN void   Scm__RecordLoadStart(ScmObj path);
@@ -124,12 +117,7 @@ SCM_EXTERN ScmObj Scm_DLObjs(void);
  * Require & Provide
  */
 
-#if !defined(GAUCHE_API_PRE_0_9)
 SCM_EXTERN int Scm_Require(ScmObj feature, int flags, ScmLoadPacket *p);
-#else  /*GAUCHE_API_PRE_0_9*/
-#define Scm_Require(feature) Scm__RequireCompat(feature)
-SCM_EXTERN ScmObj Scm__RequireCompat(ScmObj feature);
-#endif /*GAUCHE_API_PRE_0_9*/
 SCM_EXTERN ScmObj Scm_Provide(ScmObj feature);
 SCM_EXTERN int    Scm_ProvidedP(ScmObj feature);
 

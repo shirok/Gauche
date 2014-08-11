@@ -876,11 +876,15 @@ ScmHashEntry *Scm_HashTablePut(ScmHashTable *ht, ScmObj key, ScmObj value)
     return (ScmHashEntry*)e;
 }
 
+/* TRANSIENT: Pre-0.9 Compatibility routine.  Kept for the binary compatibility.
+   Will be removed on 1.0 */
 void Scm__HashIterInitCompat(ScmHashTable *table, ScmHashIter *iter)
 {
     Scm_HashIterInit(iter, SCM_HASH_TABLE_CORE(table));
 }
 
+/* TRANSIENT: Pre-0.9 Compatibility routine.  Kept for the binary compatibility.
+   Will be removed on 1.0 */
 ScmHashEntry *Scm__HashIterNextCompat(ScmHashIter *iter)
 {
     ScmDictEntry *e = Scm_HashIterNext(iter);

@@ -412,21 +412,9 @@ SCM_EXTERN ScmObj Scm_SetCurrentErrorPort(ScmPort *port);
 SCM_EXTERN ScmObj Scm_MakeInputStringPort(ScmString *str, int privatep);
 SCM_EXTERN ScmObj Scm_MakeOutputStringPort(int privatep);
 
-#if !defined(GAUCHE_API_PRE_0_9)
 SCM_EXTERN ScmObj Scm_GetOutputString(ScmPort *port, int flags);
 SCM_EXTERN ScmObj Scm_GetOutputStringUnsafe(ScmPort *port, int flags);
 SCM_EXTERN ScmObj Scm_GetRemainingInputString(ScmPort *port, int flags);
-
-#else  /* GAUCHE_API_PRE_0_9 */
-#define Scm_GetOutputString(p) Scm__GetOutputStringCompat(p)
-#define Scm_GetOutputStringUnsafe(p) Scm__GetOutputStringUnsafeCompat(p)
-#define Scm_GetRemainingInputString(p) Scm__GetRemainingInputStringCompat(p)
-
-/* For backward compatibility */
-SCM_EXTERN ScmObj Scm__GetOutputStringCompat(ScmPort *port);
-SCM_EXTERN ScmObj Scm__GetOutputStringUnsafeCompat(ScmPort *port);
-SCM_EXTERN ScmObj Scm__GetRemainingInputStringCompat(ScmPort *port);
-#endif /* GAUCHE_API_PRE_0_9 */
 
 /*================================================================
  * Other type of ports

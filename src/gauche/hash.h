@@ -105,10 +105,8 @@ struct ScmHashIterRec {
     void *next;
 };
 
-#if !defined(GAUCHE_API_PRE_0_9)
 SCM_EXTERN void Scm_HashIterInit(ScmHashIter *iter, ScmHashCore *core);
 SCM_EXTERN ScmDictEntry *Scm_HashIterNext(ScmHashIter *iter);
-#endif /* See the compatibility section below for old APIs */
 
 /*
  * Hash functions
@@ -175,15 +173,6 @@ SCM_EXTERN ScmHashEntry *Scm_HashTablePut(ScmHashTable *hash,
 SCM_EXTERN ScmObj Scm_MakeHashTable(ScmHashProc *hashfn,
                                     ScmHashCompareProc *cmpfn,
                                     unsigned int initSize);
-
-#if defined(GAUCHE_API_PRE_0_9)
-#define Scm_HashIterInit(table, iter) Scm__HashIterInitCompat(table, iter)
-#define Scm_HashIterNext(iter)        Scm__HashIterNextCompat(iter)
-
-SCM_EXTERN void          Scm__HashIterInitCompat(ScmHashTable *table,
-                                                 ScmHashIter *iter);
-SCM_EXTERN ScmHashEntry *Scm__HashIterNextCompat(ScmHashIter *iter);
-#endif /*GAUCHE_API_PRE_0_9*/
 
 #endif /* GAUCHE_HASH_H */
 

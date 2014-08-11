@@ -1308,16 +1308,22 @@ ScmObj Scm_LoadMainScript()     { return PARAM_REF(Scm_VM(), load_main_script); 
  * Compatibility stuff
  */
 
+/* TRANSIENT: Pre-0.9 Compatibility routine.  Kept for the binary compatibility.
+   Will be removed on 1.0 */
 void Scm__LoadFromPortCompat(ScmPort *port, int flags)
 {
     Scm_LoadFromPort(port, flags|SCM_LOAD_PROPAGATE_ERROR, NULL);
 }
 
+/* TRANSIENT: Pre-0.9 Compatibility routine.  Kept for the binary compatibility.
+   Will be removed on 1.0 */
 int  Scm__LoadCompat(const char *file, int flags)
 {
     return (0 == Scm_Load(file, flags|SCM_LOAD_PROPAGATE_ERROR, NULL));
 }
 
+/* TRANSIENT: Pre-0.9 Compatibility routine.  Kept for the binary compatibility.
+   Will be removed on 1.0 */
 ScmObj Scm__RequireCompat(ScmObj feature)
 {
     Scm_Require(feature, SCM_LOAD_PROPAGATE_ERROR, NULL);
