@@ -46,8 +46,6 @@
  * Load file.
  */
 
-typedef struct dlobj_initfn_rec dlobj_initfn;
-
 /* Static parameters */
 static struct {
     /* Load path list */
@@ -100,7 +98,6 @@ static ScmObj key_paths              = SCM_UNBOUND;
 static ScmObj key_environment        = SCM_UNBOUND;
 
 #define PARAM_REF(vm, loc)      Scm_ParameterRef(vm, &ldinfo.loc)
-#define PARAM_SET(vm, loc, val) Scm_ParameterSet(vm, &ldinfo.loc, val)
 
 /*
  * ScmLoadPacket is the way to communicate to Scm_Load facility.
@@ -129,7 +126,6 @@ void Scm_LoadPacketInit(ScmLoadPacket *p)
 
 /*--------------------------------------------------------------------
  * Scm_LoadFromPort
- * Scm_VMLoadFromPort
  *
  *   The most basic function in the load()-family.  Read an expression
  *   from the given port and evaluates it repeatedly, until it reaches
@@ -146,128 +142,9 @@ void Scm_LoadPacketInit(ScmLoadPacket *p)
  *   extension.  SCM_LOAD_QUIET_NOFILE and SCM_LOAD_IGNORE_CODING
  *   won't have any effect for LoadFromPort; see Scm_Load below.
  *
- *   Scm_VMLoadFromPort returns a Scheme object that encodes result
- *   load.  Right now it is used to propagete ScmLoadProvideStatus
- *   to Scm_LoadFromPort, but its meaning may be changed in future;
- *   the application must treat the returned value opaque, and usually
- *   should discard it.
- *
  *   TODO: if we're using coding-aware port, how should we propagate
  *   locking into the wrapped (original) port?
  */
-
-/* A structure to keep around the transient state of the current loading.
-   Created by Scm_VMLoadFromPort and discarded once the loading ends. */
-struct load_info {
-    ScmPort *port;
-    ScmModule *prev_module;
-    ScmReadContext *prev_ctx;
-    ScmObj prev_port;
-    ScmObj prev_history;
-    ScmObj prev_next;
-    ScmObj prev_main_script;
-    ScmObj prev_reader_lexical_mode;
-    int    prev_situation;
-};
-
-/* Clean up */
-static ScmObj load_after(ScmObj *args, int nargs, void *data)
-{
-    struct load_info *p = (struct load_info *)data;
-    ScmVM *vm = Scm_VM();
-
-#ifdef HAVE_GETTIMEOFDAY
-    if (SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_COLLECT_LOAD_STATS)) {
-        struct timeval t0;
-        gettimeofday(&t0, NULL);
-        vm->stat.loadStat =
-            Scm_Cons(Scm_MakeIntegerU(t0.tv_sec*1000000+t0.tv_usec),
-                     vm->stat.loadStat);
-    }
-#endif /*HAVE_GETTIMEOFDAY*/
-
-    Scm_ClosePort(p->port);
-    PORT_UNLOCK(p->port);
-    Scm_SelectModule(p->prev_module);
-    PARAM_SET(vm, load_port, p->prev_port);
-    PARAM_SET(vm, load_history, p->prev_history);
-    PARAM_SET(vm, load_next, p->prev_next);
-    PARAM_SET(vm, load_main_script, p->prev_main_script);
-    Scm_SetReaderLexicalMode(p->prev_reader_lexical_mode);
-    Scm_SetCurrentReadContext(p->prev_ctx);
-    vm->evalSituation = p->prev_situation;
-    return SCM_UNDEFINED;
-}
-
-/* C-continuation of the loading */
-static ScmObj load_cc(ScmObj result, void **data)
-{
-    struct load_info *p = (struct load_info*)(data[0]);
-    ScmObj expr = Scm_Read(SCM_OBJ(p->port));
-
-    if (!SCM_EOFP(expr)) {
-        Scm_VMPushCC(load_cc, data, 1);
-        return Scm_VMEval(expr, SCM_FALSE);
-    } else {
-        return SCM_TRUE;
-    }
-}
-
-static ScmObj load_body(ScmObj *args, int nargs, void *data)
-{
-    return load_cc(SCM_NIL, &data);
-}
-
-ScmObj Scm_VMLoadFromPort(ScmPort *port, ScmObj next_paths,
-                          ScmObj env, int flags)
-{
-    ScmVM *vm = Scm_VM();
-    ScmModule *module = vm->module;
-
-    /* Sanity check */
-    if (!SCM_IPORTP(port))
-        Scm_Error("input port required, but got: %S", port);
-
-
-    if (SCM_PORT_CLOSED_P(port))
-        Scm_Error("port already closed: %S", port);
-    if (SCM_MODULEP(env)) {
-        module = SCM_MODULE(env);
-    } else if (!SCM_UNBOUNDP(env) && !SCM_FALSEP(env)) {
-        Scm_Error("bad load environment (must be a module or #f): %S", env);
-    }
-
-    struct load_info *p = SCM_NEW(struct load_info);
-    p->port = port;
-    p->prev_module    = vm->module;
-    p->prev_port      = PARAM_REF(vm, load_port);
-    p->prev_history   = PARAM_REF(vm, load_history);
-    p->prev_next      = PARAM_REF(vm, load_next);
-    p->prev_main_script = PARAM_REF(vm, load_main_script);
-    p->prev_reader_lexical_mode = Scm_ReaderLexicalMode();
-    p->prev_situation = vm->evalSituation;
-
-    ScmReadContext *newctx = Scm_MakeReadContext(NULL);
-    newctx->flags |= RCTX_LITERAL_IMMUTABLE | RCTX_SOURCE_INFO;
-    p->prev_ctx = Scm_SetCurrentReadContext(newctx);
-
-    PARAM_SET(vm, load_next, next_paths);
-    PARAM_SET(vm, load_port, SCM_OBJ(port));
-    PARAM_SET(vm, load_main_script, SCM_MAKE_BOOL(flags&SCM_LOAD_MAIN_SCRIPT));
-    vm->module = module;
-    vm->evalSituation = SCM_VM_LOADING;
-    ScmObj port_info;
-    if (SCM_PORTP(p->prev_port)) {
-        port_info = SCM_LIST2(p->prev_port,
-                              Scm_MakeInteger(Scm_PortLine(SCM_PORT(p->prev_port))));
-    } else {
-        port_info = SCM_LIST1(SCM_FALSE);
-    }
-    PARAM_SET(vm,load_history, Scm_Cons(port_info, PARAM_REF(vm,load_history)));
-
-    PORT_LOCK(port, vm);
-    return Scm_VMDynamicWindC(NULL, load_body, load_after, p);
-}
 
 int Scm_LoadFromPort(ScmPort *port, u_long flags, ScmLoadPacket *packet)
 {
@@ -310,28 +187,6 @@ int Scm_LoadFromPort(ScmPort *port, u_long flags, ScmLoadPacket *packet)
  *               If #f, the current module is used.
  *  flags      - combination of ScmLoadFlags.
  */
-
-/* internal auxiliary function called from Scheme `load' */
-void Scm__RecordLoadStart(ScmObj load_file_path)
-{
-    ScmVM *vm = Scm_VM();
-#ifdef HAVE_GETTIMEOFDAY
-    if (SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_COLLECT_LOAD_STATS)) {
-        struct timeval t0;
-        gettimeofday(&t0, NULL);
-        vm->stat.loadStat =
-            Scm_Acons(load_file_path,
-                      Scm_MakeIntegerU(t0.tv_sec*1000000+t0.tv_usec),
-                      vm->stat.loadStat);
-    }
-#endif /*HAVE_GETTIMEOFDAY*/
-    if (SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_LOAD_VERBOSE)) {
-        int len = Scm_Length(PARAM_REF(vm, load_history));
-        SCM_PUTZ(";;", 2, SCM_CURERR);
-        while (len-- > 0) SCM_PUTC(' ', SCM_CURERR);
-        Scm_Printf(SCM_CURERR, "Loading %A...\n", load_file_path);
-    }
-}
 
 /* The real `load' function is moved to Scheme.  This is a C stub to
    call it. */
@@ -562,12 +417,12 @@ void Scm_DeleteLoadPathHook(ScmObj proc)
 
 typedef void (*ScmDynLoadInitFn)(void);
 
-struct dlobj_initfn_rec {
+typedef struct dlobj_initfn_rec {
     struct dlobj_initfn_rec *next; /* chain */
     const char *name;           /* name of initfn (always w/ leading '_') */
     ScmDynLoadInitFn fn;        /* function ptr */
     int initialized;            /* TRUE once fn returns */
-};
+} dlobj_initfn;
 
 struct ScmDLObjRec {
     SCM_HEADER;
@@ -1330,6 +1185,19 @@ ScmObj Scm__RequireCompat(ScmObj feature)
     return SCM_TRUE;
 }
 
+/* TRANSIENT: This is entirely moved to Scheme (libeval.scm).  The entry is
+   kept only for the binary compatibility. */
+ScmObj Scm_VMLoadFromPort(ScmPort *port, ScmObj next_paths,
+                          ScmObj env, int flags)
+{
+    Scm_Error("[internal] Scm_VMLoadFromPort() is obsoleted; call load-from-port Scheme procedure.");
+}
+
+/* TRANSIENT: Kept for the binary compatibility; the feature
+   is in libeval.scm now. */
+void Scm__RecordLoadStart(ScmObj load_file_path/*ARGSUSED*/)
+{
+}
 
 /*------------------------------------------------------------------
  * Initialization
@@ -1337,7 +1205,7 @@ ScmObj Scm__RequireCompat(ScmObj feature)
 
 void Scm__InitLoad(void)
 {
-    ScmModule *m = Scm_SchemeModule();
+    ScmModule *m = Scm_GaucheModule();
     ScmVM *vm = Scm_VM();
     ScmObj t;
 
@@ -1367,8 +1235,8 @@ void Scm__InitLoad(void)
     key_paths = SCM_MAKE_KEYWORD("paths");
     key_environment = SCM_MAKE_KEYWORD("environment");
 
-    Scm_InitStaticClass(SCM_CLASS_DLOBJ, "<dlobj>", Scm_GaucheModule(),
-                        dlobj_slots, 0);
+    Scm_InitStaticClass(SCM_CLASS_DLOBJ, "<dlobj>",
+                        m, dlobj_slots, 0);
 
 #define DEF(rec, sym, val) \
     rec = SCM_GLOC(Scm_Define(m, SCM_SYMBOL(sym), val))
@@ -1388,9 +1256,9 @@ void Scm__InitLoad(void)
     ldinfo.dso_list = SCM_NIL;
     ldinfo.dso_prelinked = SCM_NIL;
 
-#define PARAM_INIT(name, val) Scm_InitParameterLoc(vm, &ldinfo.name, val)
-    PARAM_INIT(load_history, SCM_NIL);
-    PARAM_INIT(load_next, SCM_NIL);
-    PARAM_INIT(load_port, SCM_FALSE);
-    PARAM_INIT(load_main_script, SCM_FALSE);
+#define PARAM_INIT(var, name, val) Scm_DefinePrimitiveParameter(m, name, val, &ldinfo.var)
+    PARAM_INIT(load_history, "current-load-history", SCM_NIL);
+    PARAM_INIT(load_next, "current-load-next", SCM_NIL);
+    PARAM_INIT(load_port, "current-load-port", SCM_FALSE);
+    PARAM_INIT(load_main_script, "load-main-script", SCM_FALSE);
 }

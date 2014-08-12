@@ -127,7 +127,7 @@ void Scm_InitParameterLoc(ScmVM *vm, ScmParameterLoc *location, ScmObj initval)
     location->initialValue = initval;
 }
 
-/* NB: This is for the backward binary compatibility.  */
+/* TRANSIENT: This is for the backward binary compatibility.  */
 void Scm_MakeParameterSlot(ScmVM *vm, ScmParameterLoc *location)
 {
     Scm_InitParameterLoc(vm, location, SCM_FALSE);

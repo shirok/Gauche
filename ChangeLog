@@ -1,3 +1,9 @@
+2014-08-11  Shiro Kawai  <shiro@acm.org>
+
+	* src/load.c, src/libeval.scm (load-from-port): Rewrote load-from-port
+	  in Scheme.  Scm_VMLoadFromPort is no longer used.  An internal
+	  procedure Scm__RecordLoadStart is also obsoleted.
+
 2014-08-10  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche.h etc.: Removed pre-0.9 compatibility macro definitions.
