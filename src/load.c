@@ -72,9 +72,6 @@ static struct {
                                           searched. */
     ScmParameterLoc load_port;         /* current port from which we are
                                           loading */
-    ScmParameterLoc load_main_script;  /* yields #t during loading main script.
-                                          see SCM_LOAD_MAIN_SCRIPT flag
-                                          in load.h. */
     
     /* Dynamic linking */
     ScmObj dso_suffixes;
@@ -153,10 +150,6 @@ int Scm_LoadFromPort(ScmPort *port, u_long flags, ScmLoadPacket *packet)
     SCM_BIND_PROC(load_from_port, "load-from-port", Scm_GaucheModule());
     load_packet_prepare(packet);
 
-    if (flags&SCM_LOAD_MAIN_SCRIPT) {
-        args = Scm_Cons(key_main_script, Scm_Cons(SCM_TRUE, args));
-    }
-
     args = Scm_Cons(SCM_OBJ(port), args);
 
     if (flags&SCM_LOAD_PROPAGATE_ERROR) {
@@ -202,9 +195,6 @@ ScmObj Scm_VMLoad(ScmString *filename, ScmObj paths, ScmObj env, int flags)
     if (flags&SCM_LOAD_IGNORE_CODING) {
         opts = Scm_Cons(key_ignore_coding, Scm_Cons(SCM_TRUE, opts));
     }
-    if (flags&SCM_LOAD_MAIN_SCRIPT) {
-        opts = Scm_Cons(key_main_script, Scm_Cons(SCM_TRUE, opts));
-    }
     if (SCM_NULLP(paths) || SCM_PAIRP(paths)) {
         opts = Scm_Cons(key_paths, Scm_Cons(paths, opts));
     }
@@ -226,9 +216,6 @@ int Scm_Load(const char *cpath, u_long flags, ScmLoadPacket *packet)
     }
     if (flags&SCM_LOAD_IGNORE_CODING) {
         opts = Scm_Cons(key_ignore_coding, Scm_Cons(SCM_TRUE, opts));
-    }
-    if (flags&SCM_LOAD_MAIN_SCRIPT) {
-        opts = Scm_Cons(key_main_script, Scm_Cons(SCM_TRUE, opts));
     }
 
     load_packet_prepare(packet);
@@ -1157,7 +1144,6 @@ ScmObj Scm_ResolveAutoload(ScmAutoload *adata, int flags)
 ScmObj Scm_CurrentLoadHistory() { return PARAM_REF(Scm_VM(), load_history); }
 ScmObj Scm_CurrentLoadNext()    { return PARAM_REF(Scm_VM(), load_next); }
 ScmObj Scm_CurrentLoadPort()    { return PARAM_REF(Scm_VM(), load_port); }
-ScmObj Scm_LoadMainScript()     { return PARAM_REF(Scm_VM(), load_main_script); }
 
 /*------------------------------------------------------------------
  * Compatibility stuff
@@ -1199,6 +1185,11 @@ void Scm__RecordLoadStart(ScmObj load_file_path/*ARGSUSED*/)
 {
 }
 
+/* TRANSIENT: Kept for the binary compatibility; not used anymore. */
+ScmObj Scm_LoadMainScript()
+{
+}
+
 /*------------------------------------------------------------------
  * Initialization
  */
@@ -1231,7 +1222,6 @@ void Scm__InitLoad(void)
     key_error_if_not_found = SCM_MAKE_KEYWORD("error-if-not-found");
     key_macro = SCM_MAKE_KEYWORD("macro");
     key_ignore_coding = SCM_MAKE_KEYWORD("ignore-coding");
-    key_main_script = SCM_MAKE_KEYWORD("main-script");
     key_paths = SCM_MAKE_KEYWORD("paths");
     key_environment = SCM_MAKE_KEYWORD("environment");
 
@@ -1260,5 +1250,4 @@ void Scm__InitLoad(void)
     PARAM_INIT(load_history, "current-load-history", SCM_NIL);
     PARAM_INIT(load_next, "current-load-next", SCM_NIL);
     PARAM_INIT(load_port, "current-load-port", SCM_FALSE);
-    PARAM_INIT(load_main_script, "load-main-script", SCM_FALSE);
 }

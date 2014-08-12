@@ -3,6 +3,9 @@
 	* src/load.c, src/libeval.scm (load-from-port): Rewrote load-from-port
 	  in Scheme.  Scm_VMLoadFromPort is no longer used.  An internal
 	  procedure Scm__RecordLoadStart is also obsoleted.
+	  Also dropped LOAD_MAIN_SCRIPT flag.  This flag is introduced on
+	  2011-01-02, but has never been used, and never been officially
+	  announced.
 
 2014-08-10  Shiro Kawai  <shiro@acm.org>
 

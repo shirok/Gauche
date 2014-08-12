@@ -72,8 +72,7 @@
                                          (suffixes *load-suffixes*)
                                          (error-if-not-found #t)
                                          (environment #f)
-                                         (ignore-coding #f)
-                                         (main-script #f))
+                                         (ignore-coding #f))
   ;; NB: 'File not found' error is handled in find-load-file.
   (and-let* ([r (find-load-file file paths suffixes error-if-not-found #t)])
     (let* ([path (car r)]
@@ -90,8 +89,7 @@
                           port
                           (open-coding-aware-port port))
                         :environment environment
-                        :paths remaining-paths
-                        :main-script main-script)))))
+                        :paths remaining-paths)))))
 
 
 (select-module gauche.internal)
@@ -99,8 +97,7 @@
 ;; API: The actual load operation is done here.
 (define-in-module gauche (load-from-port port
                                          :key (paths #f)
-                                              (environment #f)
-                                              (main-script #f))
+                                              (environment #f))
   (unless (input-port? port)
     (error "input port required, but got:" port))
   (unless (or (module? environment) (not environment))
@@ -109,7 +106,6 @@
         [prev-port    (current-load-port)]
         [prev-history (current-load-history)]
         [prev-next    (current-load-next)]
-        [prev-main-script (load-main-script)]
         [prev-reader-lexical-mode (reader-lexical-mode)]
         [prev-eval-situation (vm-eval-situation)]
         [prev-read-context (current-read-context)])
@@ -120,7 +116,6 @@
       (when environment (vm-set-current-module environment))
       (current-load-port port)
       (current-load-next paths)
-      (load-main-script main-script)
       (current-load-history
        (cons (if (port? prev-port)
                (list prev-port (port-current-line prev-port))
@@ -135,7 +130,6 @@
       (current-load-port prev-port)
       (current-load-history prev-history)
       (current-load-next prev-next)
-      (load-main-script prev-main-script)
       (reader-lexical-mode prev-reader-lexical-mode)
       (vm-eval-situation prev-eval-situation)
       (current-read-context prev-read-context)

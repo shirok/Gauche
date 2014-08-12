@@ -42,6 +42,8 @@
 
 /* Flags for Scm_VMLoad (V), Scm_Load (L), Scm_Require (R), Scm_VMLoadPort (P),
  * and Scm_FindFile (F).
+ * NB: We intended to use 1L<<3 for MAIN_SCRIPT flag but it turned out
+ * unnecessary.
  */
 typedef enum {
     SCM_LOAD_QUIET_NOFILE = (1L<<0),
@@ -53,10 +55,6 @@ typedef enum {
 
     SCM_LOAD_PROPAGATE_ERROR = (1L<<2),
     /* [L,R] do not capture an error; let the caller handle it.  */
-
-    SCM_LOAD_MAIN_SCRIPT = (1L<<3),
-    /* [L,V,P] indicates we're loading the file as a "main script"
-       ---a script file given to gosh to load. */
 
     SCM_LOAD_SEARCH_ARCHIVE = (1L<<4)
     /* [F] Search a file to load from archive file, using the hook of
