@@ -89,7 +89,7 @@ void usage(void)
             "           name of the module in which the 'main' procedure is defined.\n"
             "           By default, the 'main' procedure in the user module is called\n"
             "           after loading the script (srfi-22).  This option allows to call\n"
-            "           a main procedure in the different module\n"
+            "           a main procedure in the different module.\n"
             "  -p<type> Turns on the profiler.  Currently <type> can only be\n"
             "           'time'.\n"
             "  -F<feature> Makes <feature> available in cond-expand forms\n"
@@ -100,13 +100,20 @@ void usage(void)
             "  -f<flag> Sets various flags\n"
             "      case-fold       uses case-insensitive reader (as in R5RS)\n"
             "      load-verbose    report while loading files\n"
+            "      include-verbose report while including files\n"
+            "      warn-legacy-syntax\n"
+            "                      print warning when legacy Gauche syntax is encountered\n"
             "      no-inline       don't inline procedures & constants (combined\n"
             "                      no-inline-globals, no-inline-locals, and\n"
             "                      no-inline-constants.)\n"
-            "      no-inline-globals don't inline global procedures.\n"
-            "      no-inline-locals  don't inline local procedures.\n"
-            "      no-inline-constants don't inline constants.\n"
-            "      no-post-inline-pass  don't run post-inline optimization pass.\n"
+            "      no-inline-globals\n"
+            "                      don't inline global procedures.\n"
+            "      no-inline-locals\n"
+            "                      don't inline local procedures.\n"
+            "      no-inline-constants\n"
+            "                      don't inline constants.\n"
+            "      no-post-inline-pass\n"
+            "                      don't run post-inline optimization pass.\n"
             "      no-source-info  don't preserve source information for debugging\n"
             "      test            test mode, to run gosh inside the build tree\n"
             );
@@ -193,7 +200,7 @@ void further_options(const char *optarg)
     }
     else {
         fprintf(stderr, "unknown -f option: %s\n", optarg);
-        fprintf(stderr, "supported options are: -fcase-fold or -fload-verbose, -fno-inline, -fno-inline-globals, -fno-inline-locals, -fno-inline-constants, -fno-source-info, -fno-post-inline-pass, -fno-lambda-lifting-pass, -ftest\n");
+        fprintf(stderr, "supported options are: -fcase-fold, -fload-verbose, -finclude-verbose, -fno-inline, -fno-inline-globals, -fno-inline-locals, -fno-inline-constants, -fno-source-info, -fno-post-inline-pass, -fno-lambda-lifting-pass, -fwarn-legacy-syntax, or -ftest\n");
         exit(1);
     }
 }
