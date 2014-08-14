@@ -103,7 +103,7 @@ static void sampler_flush(ScmVM *vm)
 static void sampler_sample(int sig)
 {
     ScmVM *vm = Scm_VM();
-    if (vm->prof == NULL) return;
+    if (vm == NULL || vm->prof == NULL) return;
     if (vm->prof->state != SCM_PROFILER_RUNNING) return;
 
     if (vm->prof->currentSample >= SCM_PROF_SAMPLES_IN_BUFFER) {
