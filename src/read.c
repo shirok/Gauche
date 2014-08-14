@@ -583,6 +583,11 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
                     ScmObj form = read_item(port, ctx);
                     return SCM_LIST2(SCM_SYM_DEBUG_PRINT, form);
                 }
+                case ',': {
+                    /* #?,form - debug funcall */
+                    ScmObj form = read_item(port, ctx);
+                    return SCM_LIST2(SCM_SYM_DEBUG_FUNCALL, form);
+                }
                 case EOF:
                     return SCM_EOF;
                 default:

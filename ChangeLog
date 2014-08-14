@@ -1,3 +1,9 @@
+2014-08-13  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/vm/debugger.scm (debug-funcall), src/read.c (#?,):
+	  Experimentally added a new debug form, #?,(proc arg ...).  Unlike
+	  debug-print (#?=), this displays the value of arg ....
+
 2014-08-11  Shiro Kawai  <shiro@acm.org>
 
 	* src/load.c, src/libeval.scm (load-from-port): Rewrote load-from-port

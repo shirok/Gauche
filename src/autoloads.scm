@@ -133,9 +133,9 @@
 (autoload gauche.time (:macro time))
 
 (autoload gauche.vm.debugger
-          (:macro debug-print)
+          (:macro debug-print debug-funcall) 
           debug-print-width debug-source-info
-          debug-print-pre debug-print-post)
+          debug-print-pre debug-print-post debug-funcall-pre)
 
 (autoload gauche.vm.profiler profiler-show profiler-show-load-stats)
 

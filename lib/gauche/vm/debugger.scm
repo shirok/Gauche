@@ -64,18 +64,18 @@
 (define (debug-print-pre form)
   (cond [(debug-source-info form)
          => (^[info]
-              (format/ss (current-error-port) "#?=~s:~a:~,,,,v:s\n"
-                         (car info) (cadr info) (debug-print-width) form))]
+              (format (current-error-port) "#?=~s:~a:~,,,,v:s\n"
+                      (car info) (cadr info) (debug-print-width) form))]
         [else
-         (format/ss (current-error-port) "#?=~,,,,v:s\n"
-                    (debug-print-width) form)]))
+         (format (current-error-port) "#?=~,,,,v:s\n"
+                 (debug-print-width) form)]))
 
 (define (debug-print-post vals)
   (if (null? vals)
     (format (current-error-port) "#?-<void>\n")
     (begin
-      (format/ss (current-error-port) "#?-    ~,,,,v:s\n"
-                 (debug-print-width) (car vals))
+      (format (current-error-port) "#?-    ~,,,,v:s\n"
+              (debug-print-width) (car vals))
       (for-each (^[elt]
                   (format/ss (current-error-port)
                              "#?+    ~,,,,v:s\n"
@@ -83,4 +83,39 @@
                 (cdr vals))))
   (apply values vals))
 
+;; debug-funcall
+;; we need aux syntax definition, since we had to get hold of the original
+;; form itself for the source code info, as well as decomposition of it.
+(define-syntax debug-funcall
+  (syntax-rules ()
+    [(_ ?form) (debug-funcall-aux ?form ?form)]))
 
+(define-syntax debug-funcall-aux
+  (syntax-rules ()
+    [(_ ?form (?proc ?arg ...))
+     (debug-funcall-rec ?form ?proc (?arg ...) () ())]
+    [(_ ?form ?_) ?form]))  ;; ignore on non-procedure call
+
+(define-syntax debug-funcall-rec
+  (syntax-rules ()
+    [(_ ?form ?proc () (?tmp ...) (?arg ...))
+     (let ((?tmp ?arg) ...)
+       (debug-funcall-pre '?form '?proc '(?arg ...) (list ?tmp ...))
+       (receive vals (?proc ?tmp ...)
+         (debug-print-post vals)))]
+    [(_ ?form ?proc (?a0 . ?as) (?tmp ...) (?arg ...))
+     (debug-funcall-rec ?form ?proc ?as (?tmp ... tmp) (?arg ... ?a0))]))
+
+;; For now, we don't use argforms, but we pass them in so that in future
+;; we may be able to use them.
+(define (debug-funcall-pre form procname argforms args)
+  (define p (current-error-port))
+  (define w (- (debug-print-width) (string-length "calling `' with args:")))
+  (define argvalw (- (debug-print-width) (string-length "#?,- : ")))
+  (cond [(debug-source-info form)
+         => (^[info] (format p "#?,~s:~a:calling `~,,,,v:s' with args:\n"
+                             (car info) (cadr info) w procname))]
+        [else
+         (format p "#?,calling `~,,,,v:s' with args:\n" w procname)])
+  (dolist [arg args]
+    (format p "#?,> ~,,,,v:s\n" w arg)))
