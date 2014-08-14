@@ -1177,6 +1177,7 @@ ScmObj Scm_VMLoadFromPort(ScmPort *port, ScmObj next_paths,
                           ScmObj env, int flags)
 {
     Scm_Error("[internal] Scm_VMLoadFromPort() is obsoleted; call load-from-port Scheme procedure.");
+    return SCM_UNDEFINED;
 }
 
 /* TRANSIENT: Kept for the binary compatibility; the feature
@@ -1188,6 +1189,7 @@ void Scm__RecordLoadStart(ScmObj load_file_path/*ARGSUSED*/)
 /* TRANSIENT: Kept for the binary compatibility; not used anymore. */
 ScmObj Scm_LoadMainScript()
 {
+    return SCM_UNDEFINED;
 }
 
 /*------------------------------------------------------------------
