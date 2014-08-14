@@ -1,3 +1,9 @@
+2014-08-14  Shiro Kawai  <shiro@acm.org>
+
+	* src/system.c (Scm_AvailableProcessors),
+	  src/syslib.scm (sys-available-processors): Added to query # of
+	  available processors.
+
 2014-08-13  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/vm/debugger.scm (debug-funcall), src/read.c (#?,):

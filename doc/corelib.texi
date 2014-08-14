@@ -18357,6 +18357,27 @@ interpreter itself.
 @c COMMON
 @end defun
 
+@defun sys-available-processors
+@c EN
+Returns the number of available processors on the running platform.
+Return value is always a positive exact integer.  If Gauche can't
+get the information, 1 is returned.
+
+However,
+If an environment variable @code{GAUCHE_AVAILABLE_PROCESSORS} is
+defined and its value can be interpreted as a positive integer,
+then the value is returned regardless of what the hardware/OS tells.
+@c JP
+現在Gaucheが走っているプラットフォームで使えるプロセッサの個数を返します。
+戻り値は常に正の正確な整数です。Gaucheがこの情報を入手できなかった場合は
+1が返ります。
+
+但し、もし環境変数@code{GAUCHE_AVAILABLE_PROCESSORS}が定義されていて、
+その値が正の整数と解釈できるものだった場合、ハードウェア/OSがどう言おうと
+環境変数の値が返されます。
+@c COMMON
+@end defun
+
 @node Filesystems, Unix groups and users, Environment Inquiry, System interface
 @subsection Filesystems
 @c NODE ファイルシステム

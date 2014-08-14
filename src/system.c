@@ -2382,6 +2382,37 @@ void Scm_ClearEnv()
 }
 
 /*===============================================================
+ * Closer-to-metal thingy
+ */
+
+/* Try to find # of available processors.  If we don't know how to
+   find that info on the platform, we fall back to 1.
+   If GAUCHE_AVAILABLE_PROCESSORS environment variable is defined and
+   has the value interpreted as a positive integer, we use that value
+   instead.
+*/
+int Scm_AvailableProcessors()
+{
+    const char *env = Scm_GetEnv("GAUCHE_AVAILABLE_PROCESSORS");
+    if (env && env[0] != '\0') {
+        char *ep;
+        long v = strtol(env, &ep, 10);
+        if (v > 0 && *ep == '\0') return (int)v;
+    }
+#if !defined(GAUCHE_WINDOWS)
+#if   defined(_SC_NPROCESSORS_ONLN)
+    return (int)sysconf(_SC_NPROCESSORS_ONLN);
+#else  /*!defined(_SC_NPROCESSORS_ONLN)*/
+    return 1;                   /* fallback */
+#endif /*!defined(_SC_NPROCESSORS_ONLN)*/
+#else  /*defined(GAUCHE_WINDOWS)*/
+    SYSTEM_INFO sysinfo;
+    GetSystemInfo( &sysinfo );
+    return (int)sysinfo.dwNumberOfProcessors;
+#endif /*defined(GAUCHE_WINDOWS)*/
+}
+
+/*===============================================================
  * Emulation layer for Windows
  */
 #if defined(GAUCHE_WINDOWS)

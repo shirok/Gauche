@@ -1259,6 +1259,13 @@
    ) ;; when defined(HAVE_SELECT)
  )
 
+;;---------------------------------------------------------------------
+;; miscellaneous
+
+(inline-stub
+ (define-cproc sys-available-processors () ::<int>
+   Scm_AvailableProcessors))
+
 ;;;
 ;;; Windows-specific utility
 ;;;
