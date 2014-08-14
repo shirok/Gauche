@@ -356,13 +356,16 @@
 (define-syntax dolist
   (syntax-rules ()
     [(_ (var lis res) . body)
-     (begin (for-each (lambda (var) . body) lis)
-            (let ((var '())) res))      ;bound var for CL compatibility
-     ]
+     (do ([p lis (cdr p)])
+         [(null? p)
+          (let1 var '() res)]      ;bound var for CL compatibility
+       (let1 var (car p) . body))]
     [(_ (var lis) . body)
-     (begin (for-each (lambda (var) . body) lis) '())]
+     (do ([p lis (cdr p)])
+         [(null? p) '()]
+       (let1 var (car p) . body))]
     [(_ (lis) . body)
-     (begin (for-each (lambda (_) . body) lis) '())]
+     (dolist (tmp lis) . body)]
     [(_ . other)
      (syntax-error "malformed dolist" (dolist . other))]))
 
