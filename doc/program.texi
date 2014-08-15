@@ -992,16 +992,20 @@ Gaucheにはまだデバッグをサポートする機能があまり実装さ�
 
 @c EN
 For now, the author uses the classic 'debug print stub' technique
-when necessary.  A special reader syntax @code{#?=@var{expr}} is
-defined, which is read as @code{(debug-print @var{expr})}.
-The macro @code{debug-print} evaluates and returns the result(s),
-printing messages before and after evaluation of @var{expr}.
+when necessary.  Gauche's reader supports special syntaxes
+beginning with @code{#?}, to print the intermediate value.
 @c JP
 今のところ、作者は必要な時は古典的な「プリントスタブ」方式を使っています。
-そのためのリーダーマクロ @code{#?=@var{expr}} が定義されています。
-これは @code{(debug-print @var{expr})} のように読まれ、
-マクロ @code{debug-print} は@var{expr}を評価してその値を返しますが、
-評価前と評価後にメッセージを出力します。
+Gaucheのリーダには、中間の結果を出力するために、
+@code{#?}で始まるいくつかの構文が用意されています。
+@c COMMON
+
+@c EN
+The syntax @code{#?=@var{expr}} shows @var{expr} itself before
+evaluating it, and prints its result(s) after evaluation.  
+@c JP
+構文@code{#?=@var{expr}}は、@var{expr}を評価する前にまずその式自体を
+表示し、評価後にその結果(複数の場合もあります)を表示します。
 @c COMMON
 
 @example
@@ -1018,17 +1022,34 @@ foo
 a
 b
 c
+@end example
+
+@c EN
+The syntax @code{#?,(@var{proc} @var{arg} @dots{})} is specifically
+for procedure call; it prints the value of arguments right before
+calling @var{proc}, and prints the result(s) of call afterwards.
+@c JP
+構文@code{#?,(@var{proc} @var{arg} @dots{})}は特に手続き呼び出しのための
+ものです。@var{proc}を呼ぶ直前に引数の値を表示し、@var{proc}から返ってきたら
+戻り値(複数の場合もあります)を表示します。
+@c COMMON
+
+@example
 gosh> (define (fact n)
         (if (zero? n)
             1
-            (* n #?=(fact (- n 1)))))
+            (* n #?,(fact (- n 1)))))
 fact
-gosh> (fact 5)
-#?="(stdin)":6:(fact (- n 1))
-#?="(stdin)":6:(fact (- n 1))
-#?="(stdin)":6:(fact (- n 1))
-#?="(stdin)":6:(fact (- n 1))
-#?="(stdin)":6:(fact (- n 1))
+#?,"(standard input)":4:calling `fact' with args:
+#?,> 4
+#?,"(standard input)":4:calling `fact' with args:
+#?,> 3
+#?,"(standard input)":4:calling `fact' with args:
+#?,> 2
+#?,"(standard input)":4:calling `fact' with args:
+#?,> 1
+#?,"(standard input)":4:calling `fact' with args:
+#?,> 0
 #?-    1
 #?-    1
 #?-    2
@@ -1036,6 +1057,27 @@ gosh> (fact 5)
 #?-    24
 120
 @end example
+
+@c EN
+Internally, the syntax @code{#?=@var{x}} and @code{#?,@var{x}} are read
+as @code{(debug-print @var{x})} and @code{(debuf-funcall @var{x})},
+respectively, and the macros @code{debug-print} and @code{debug-funcall}
+handles the actual printing.  @xref{Debugging aid}, for more details.
+
+The reasons of special syntax are: (1) It's easy to insert the
+debug stub, for you don't need to enclose the target expression by
+extra parenthesis, and
+(2) It's easy to find and remove those stabs within the editor.
+@c JP
+内部的には、構文@code{#?=@var{x}}と@code{#?,@var{x}}はそれぞれ単に
+@code{(debug-print @var{x})}および@code{(debuf-funcall @var{x})}と読まれ、
+実際の表示についてはマクロ@code{debug-print}と@code{debug-funcall}が
+処理します。詳しくは@ref{Debugging aid}を参照してください。
+
+特別な構文を用意した理由は、(1)目的の式にデバッグスタブを付加するのに、
+式全体を余分な括弧でくくらなくて良いのですぐできる
+(2)デバッグスタブをエディタで探したり取り除いたりするのが極めて簡単、というものです。
+@c COMMON
 
 @c ----------------------------------------------------------------------
 @node Platform-dependent features, Profiling and tuning, Debugging, Programming in Gauche
