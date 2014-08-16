@@ -361,7 +361,7 @@
             field-specs))
   (define (build-def typename parent)
     `(,%define-inline ,typename
-       (,%make ',typename ,(build-field-spec) ,@(if parent `(,parent) '()))))
+       (,%make ',typename ',(build-field-spec) ,@(if parent `(,parent) '()))))
   (define (build-ctor typename)
     (match ctor-spec
       [#f '()]
