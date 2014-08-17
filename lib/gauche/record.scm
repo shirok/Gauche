@@ -34,7 +34,6 @@
 (define-module gauche.record
   (use gauche.sequence)
   (use gauche.uvector)
-  (use srfi-1)
   (use util.match)
 
   (export <record-meta> <record>
@@ -108,18 +107,21 @@
  (define-method initialize ((class <??-pseudo-record-meta>) initargs)
    (next-method)
    (slot-set! class 'instance-class <??>))
- (define-method pseudo-rtd ((class <??-meta>))
+ (define-method %pseudo-rtd ((class <??-meta>))
    <??-pseudo-record>)
- (define-method pseudo-rtd ((class <??-pseudo-record-meta>))
+ (define-method %pseudo-rtd ((class <??-pseudo-record-meta>))
    <??-pseudo-record>)
  )
 
-(define-method pseudo-rtd (other)
-  (error "pseudo-rtd requires a class object <vector>, <list>, \
-          <u8vector>, <s8vector>, <u16vector>, <s16vector>, \
-          <u32vector>, <s32vector>, <u64vector>, <s64vector>, \
-          <f16vector>, <f32vector>, <f64vector>, \
-          or other pseudo-rtd, but got" other))
+(define-method %pseudo-rtd (other) #f)
+
+(define (pseudo-rtd class)
+  (or (%pseudo-rtd class)
+      (error "pseudo-rtd requires a class object <vector>, <list>, \
+              <u8vector>, <s8vector>, <u16vector>, <s16vector>, \
+              <u32vector>, <s32vector>, <u64vector>, <s64vector>, \
+              <f16vector>, <f32vector>, <f64vector>, \
+              or other pseudo-rtd, but got" class)))
 
 ;; We just collect ancestor's slots, ignoring duplicate slot names.
 ;; R6RS records require the same name slot merely shadows ancestors' one,
@@ -144,19 +146,31 @@
         ,(^o (slot-bound-using-accessor? o s)))
       s)))
 
-(define (fieldspecs->slotspecs specs offset)
+(define (%valid-fieldspecs? specs signal-error?)
   (define (id? x) (or (symbol? x) (identifier? x)))
-  (unless (vector? specs)
-    (error "make-rtd: fieldspecs must be a vector, but got" specs))
+  (if (not (vector? specs))
+    (if signal-error?
+      (error "make-rtd: fieldspecs must be a vector, but got" specs)
+      #f)
+    (every (^[spec]
+             (match spec
+               [((or 'mutable 'immutable) (? id? name)) #t]
+               [(? id? name) #t]
+               [other (if signal-error?
+                        (error "make-rtd: invalid field spec:" other)
+                        #f)]))
+           (vector->list specs)))) ;; efficiency?
+
+(define (fieldspecs->slotspecs specs offset)
+  (%valid-fieldspecs? specs #t)
   (map-with-index
    (^[k spec]
      (match spec
-       [('mutable   (? id? name))
+       [('mutable   name)
         `(,(unwrap-syntax name) :index ,(+ k offset))]
-       [('immutable (? id? name))
+       [('immutable name)
         `(,(unwrap-syntax name) :immutable #t :index ,(+ k offset))]
-       [(? id? name) `(,(unwrap-syntax name) :index ,(+ k offset))]
-       [other (error "make-rtd: invalid field spec:" other)]))
+       [name `(,(unwrap-syntax name) :index ,(+ k offset))]))
    specs))
 
 (define (%check-rtd obj)
@@ -275,12 +289,12 @@
 (define (%calculate-field-mapvec allnames fieldspecs)
   (define (bad f)
     (error "rtd-constructor: field-specs contains unrecognized field name:" f))
-  (let1 cat (reverse (map-with-index xcons allnames))
+  (let1 cat (reverse (map-with-index (^[a b] (cons b a)) allnames))
     (map-to <vector> (^f (cond [(assq f cat) => cdr] [else (bad f)]))
             fieldspecs)))
 
-(define-method rtd-predicate ((rtd <record-meta>)) (^o (is-a? o rtd)))
-(define-method rtd-predicate ((rtd <pseudo-record-meta>))
+(define-method %rtd-predicate ((rtd <record-meta>)) (^o (is-a? o rtd)))
+(define-method %rtd-predicate ((rtd <pseudo-record-meta>))
   (let ([iclass (slot-ref rtd 'instance-class)]
         [size   (vector-length (slot-ref rtd 'field-specs))])
     ;; NB: We allow instance to be larger than expected, for it's useful
@@ -300,7 +314,7 @@
   (define gen-default-ctor (sym+ ctor-name-base '-default))
   (define gen-custom-ctor  (sym+ ctor-name-base '-custom))
   `(begin
-     (define-method rtd-constructor ((rtd ,rtd-meta) . rest)
+     (define-method %rtd-constructor ((rtd ,rtd-meta) . rest)
        (%check-rtd rtd)
        (if (null? rest)
          (,gen-default-ctor rtd (length (slot-ref rtd'slots)))
@@ -308,14 +322,14 @@
            (let ([mapvec  (%calculate-field-mapvec all-names (car rest))]
                  [nfields (vector-length all-names)])
              (,gen-custom-ctor rtd (vector-length (car rest)))))))
-     (define-method rtd-accessor ((rtd ,rtd-meta) field)
+     (define-method %rtd-accessor ((rtd ,rtd-meta) field)
        (receive (k immutable?) (%get-slot-index rtd field #f)
          (if immutable?
            (^o (,@referencer* o k))
            (getter-with-setter
             (^o (,@referencer* o k))
             (^(o v) (,@mutator* o k v))))))
-     (define-method rtd-mutator ((rtd ,rtd-meta) field)
+     (define-method %rtd-mutator ((rtd ,rtd-meta) field)
        (receive (k immutable?) (%get-slot-index rtd field #t)
          (when immutable?
            (errorf "slot ~a of record ~s is immutable" field rtd))
@@ -335,6 +349,11 @@
    (??-ref)
    (??-set!))
  )
+
+(define (rtd-predicate rtd) (%rtd-predicate rtd))
+(define (rtd-constructor rtd . args) (apply %rtd-constructor rtd args))
+(define (rtd-accessor rtd field) (%rtd-accessor rtd field))
+(define (rtd-mutator rtd field) (%rtd-mutator rtd field))
 
 ;;;
 ;;; Syntactic layer
