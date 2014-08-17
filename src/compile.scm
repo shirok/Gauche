@@ -1674,7 +1674,7 @@
 (define (ensure-identifier sym-or-id cenv)
   (if (identifier? sym-or-id)
     sym-or-id
-    (make-identifier sym-or-id (cenv-module cenv) '())))
+    (make-identifier sym-or-id (cenv-module cenv) (cenv-frames cenv))))
 
 ;; Does the given argument list satisfy procedure's reqargs/optarg?
 (define (argcount-ok? args reqargs optarg?)
@@ -5753,7 +5753,7 @@
 
 (define (%bind-inline-er-transformer module name xformer)
   (%attach-inline-er-transformer (global-variable-ref module name) xformer
-                                 (make-cenv module))
+                                 (make-cenv module '()))
   (%mark-binding-inlinable! module name)
   name)
 
@@ -5775,7 +5775,8 @@
                 (xformer form
                          (cut ensure-identifier <> macro-def-cenv)
                          (^[a b] ; this is just a placeholder!
-                           (eq? (identifier->symbol a) (identifier->symbol b))))
+                           (free-identifier=? (ensure-identifier a cenv)
+                                              (ensure-identifier b cenv))))
               (cond [(eq? form r) ; no inline operation is triggered.
                      (if (vector? orig-inliner)
                        (expand-inlined-procedure form
@@ -5915,6 +5916,21 @@
          (and (identifier? v)
               (eq? (identifier-name v) sym)
               (null? (identifier-env v))))))
+
+(define (free-identifier=? id1 id2)
+  (or (eq? id1 id2)
+      (and (eq? (identifier-name id1) (identifier-name id2))
+           (let ([m1 (identifier-module id1)]
+                 [e1 (identifier-env id1)]
+                 [m2 (identifier-module id2)]
+                 [e2 (identifier-env id2)])
+             (or (and (eq? m1 m2) (eq? e1 e2))
+                 (let ([v1 (cenv-lookup (make-cenv m1 e1) id1 SYNTAX)]
+                       [v2 (cenv-lookup (make-cenv m2 e2) id2 SYNTAX)])
+                   (or (eq? v1 v2)  ; macro or lvar
+                       (and (identifier? v1)
+                            (identifier? v2)
+                            (global-identifier=? id1 id2)))))))))
 
 ;; Returns #t if id1 and id2 both refer to the same existing global binding.
 ;; Like free-identifier=? but we know id1 and id2 are both toplevel and
