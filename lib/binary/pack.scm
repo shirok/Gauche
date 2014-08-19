@@ -1010,7 +1010,7 @@
 ;; threads with a mutex.
 (define make-packer
   (let ((cache (make-parameter (make-hash-table 'equal?))))
-    (lambda (template cached?)
+    (lambda (template :key (cached? #t))
       (if cached?
         (let ((res (hash-table-get (cache) template #f)))
           (unless res
@@ -1020,7 +1020,7 @@
         (read-all-packers template)))))
 
 (define (pack template values :key (output #f) (to-string? #f) (cached? #t))
-  (let ((packer (make-packer template cached?))
+  (let ((packer (make-packer template :cached? cached?))
         (out (or output
                  (and to-string? (open-output-string))
                  (current-output-port))))
@@ -1041,14 +1041,14 @@
         (current-input-port))))
 
 (define (unpack template :key (cached? #t) :allow-other-keys rest)
-  (let ((packer (make-packer template cached?))
+  (let ((packer (make-packer template :cached? cached?))
         (in (get-input-port rest)))
     (with-input-from-port in
       (cut packer 'unpack))))
 
 ;; just "skip" is too vague
 (define (unpack-skip template :key (cached? #t) :allow-other-keys rest)
-  (let ((packer (make-packer template cached?))
+  (let ((packer (make-packer template :cached? cached?))
         (in (get-input-port rest)))
     (with-input-from-port in
       (cut packer 'skip))))
