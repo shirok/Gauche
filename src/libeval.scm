@@ -589,22 +589,32 @@
 ;;;Tentative compiler macro
 ;;;
 
-;;  (define-compiler-macro <name>
+;;
+;;  (define-compiler-macro <name> <transformer>)
+;;
+;;  The <transformer> is the same as macro transformers, except that
+;;  <transformer> can return the given form untouched if it gives up
+;;  expansion.
+;;
+;;  For the backward compatilibity, the following form is also recognized
+;;  as <transfomer>:
+;;
 ;;    (er-transformer
 ;;     (lambda (form rename compare) ...)))
 ;;
-;; Er-transformer is a wrapper to indicate the transformer is
-;; explicit-renaming.  It leaves room to support other type of macro
-;; transformers in future.
-;; The transformer itself must return <FORM> itself if it aborts
-;; expansion.
+;;  This resembles er-macro-transformer, but in fact we dispatch to a
+;;  half-baked temporary implementation of macro transformer; it is
+;;  for internal optimization experiment until the 'real' macro system
+;;  is in place.   It'll be dropped once we have revised macro system,
+;;  and user code shouldn't use it.
+
+(select-module gauche)
 
 ;; API
 (define-macro (define-compiler-macro name xformer-spec)
-  ;; TODO: Rewrite this after we get builtin patter matching.
-  (unless (and (= (length xformer-spec) 2)
-               (eq? (unwrap-syntax (car xformer-spec)) 'er-transformer))
-    (error "malformed define-compiler-macro: "
-           `(define-compiler-macro ,name ,xformer-spec)))
-  `((with-module gauche.internal %bind-inline-er-transformer)
-    (current-module) ',name ,(cadr xformer-spec)))
+  (if (and (= (length xformer-spec) 2)
+           (eq? (unwrap-syntax (car xformer-spec)) 'er-transformer))
+    `((with-module gauche.internal %bind-inline-er-transformer)
+      (current-module) ',name ,(cadr xformer-spec))
+    `((with-module gauche.internal %attach-inline-transformer)
+      (current-module) ',name ,xformer-spec)))

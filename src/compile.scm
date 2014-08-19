@@ -5796,13 +5796,25 @@
 ;; We haven't decided our base mechanism of hygienic macros,
 ;; but for the time being, we mimic explicitly renaming macro.
 
-(define (%bind-inline-er-transformer module name xformer)
-  (%attach-inline-er-transformer (global-variable-ref module name) xformer
-                                 (make-cenv module '()))
-  (%mark-binding-inlinable! module name)
-  name)
+(define (%bind-inline-er-transformer module name er-xformer)
+  (define macro-def-cenv (make-cenv module '()))
+  ($ %attach-inline-transformer module name
+     (^[form cenv]
+       ;; Call the transformer with rename and compare procedure,
+       ;; just like explicit renaming macro.  However, THE CURRENT
+       ;; CODE DOES NOT IMPLEMENT PROPER SEMANTICS.  They're just
+       ;; placeholders for experiment.
+       (er-xformer form
+                   (cut ensure-identifier <> macro-def-cenv)
+                   (^[a b] (free-identifier=? (ensure-identifier a cenv)
+                                              (ensure-identifier b cenv)))))))
 
-(define (%attach-inline-er-transformer proc xformer macro-def-cenv)
+(define (%attach-inline-transformer module name xformer)
+  (define proc (global-variable-ref module name #f))
+
+  (unless proc
+    (errorf "define-compiler-macro: procedure `~s' not defined in ~s"
+            name module))
   ;; If PROC is defined by define-inline (thus have a packed IForm in
   ;; %procedure-inliner), we keep it and applies expand-inline-procedure
   ;; after the compiler macro finishes its job.
@@ -5812,16 +5824,7 @@
              inline transformers." proc))
     (set! (%procedure-inliner proc)
           (^[form cenv]
-            (let1 r
-                ;; Call the transformer with rename and compare procedure,
-                ;; just like explicit renaming macro.  However, THE CURRENT
-                ;; CODE DOES NOT IMPLEMENT PROPER SEMANTICS.  They're just
-                ;; placeholders for experiment.
-                (xformer form
-                         (cut ensure-identifier <> macro-def-cenv)
-                         (^[a b] ; this is just a placeholder!
-                           (free-identifier=? (ensure-identifier a cenv)
-                                              (ensure-identifier b cenv))))
+            (let1 r (xformer form cenv)
               (cond [(eq? form r) ; no inline operation is triggered.
                      (if (vector? orig-inliner)
                        (expand-inlined-procedure form
@@ -5829,7 +5832,9 @@
                                                  (imap (cut pass1 <> cenv)
                                                        (cdr form)))
                        (undefined))]
-                    [else (pass1 r cenv)]))))))
+                    [else (pass1 r cenv)])))))
+  (%mark-binding-inlinable! module name)
+  name)    
 
 ;;============================================================
 ;; Macro support basis
