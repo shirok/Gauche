@@ -258,3 +258,25 @@
 (define-cproc gloc-const? (gloc::<gloc>) ::<boolean> Scm_GlocConstP)
 (define-cproc gloc-inlinable? (gloc::<gloc>) ::<boolean> Scm_GlocInlinableP)
 
+;;;
+;;; Identifier and binding
+;;;
+
+;; NB: Identifier procedures are in libsym.scm, for we might integrate
+;; symbols and identifiers (we're still not sure).
+
+;; Returns GLOC if id is bound to one, or #f.  If GLOC is returned,
+;; it is always bound.
+
+;; (define (id->bound-gloc id)
+;;   (and-let* ([gloc (find-binding (identifier-module id)
+;;                                  (identifier-name id) #f)]
+;;              [ (gloc-bound? gloc) ])
+;;     gloc))
+(inline-stub
+ (define-cproc id->bound-gloc (id::<identifier>)
+   (let* ([gloc::ScmGloc* (Scm_FindBinding (-> id module) (-> id name) 0)])
+     (if (and gloc (not (SCM_UNBOUNDP (SCM_GLOC_GET gloc))))
+       (result (SCM_OBJ gloc))
+       (result SCM_FALSE))))
+ )

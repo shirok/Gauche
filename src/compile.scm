@@ -112,7 +112,10 @@
 ;; Compile-time constants
 ;;
 
-;; used by cenv-lookup
+;; used by env-lookup-int
+;; NB: We'll get rid of PATTERN variable lookup after we replace the
+;; macro system, then the distinction of LEXICAL/SYNTAX lookup can be
+;; specified by a boolean flag and we can drop these constants.
 (eval-when (:compile-toplevel)
   (define-constant LEXICAL 0)
   (define-constant SYNTAX  1)
@@ -294,37 +297,59 @@
 
 ;; Some cenv-related proceduers are in C for better performance.
 (inline-stub
- ;; cenv-lookup :: Cenv, Name, LookupAs -> Var
+ ;; env-lookup-int :: Name, LookupAs, Module, [Frame] -> Var
  ;;         where Var = Lvar | Identifier | Macro
  ;;
- ;;  LookupAs ::
- ;;      LEXICAL(0) - lookup only lexical bindings
- ;;    | SYNTAX(1)  - lookup lexical and syntactic bindings
- ;;    | PATTERN(2) - lookup lexical, syntactic and pattern bindings
  ;;  PERFORMANCE KLUDGE:
  ;;     - We assume the frame structure is well-formed, so skip some tests.
  ;;     - We assume 'lookupAs' and the car of each frame are small non-negative
  ;;       integers, so we directly compare them without unboxing them.
- (define-cproc cenv-lookup (cenv name lookup-as)
-   (SCM_ASSERT (SCM_VECTORP cenv))
+ (define-cfn env-lookup-int (name lookup-as module::ScmModule* frames) :static
+   ;; First, we look up the identifier directly
+   (when (SCM_IDENTIFIERP name)
+     (dopairs [fp1 frames]
+       (when (> (SCM_CAAR fp1) lookup-as) ; see PERFORMANCE KLUDGE above
+         (continue))
+       ;; inline assq here to squeeze performance.
+       (dolist [vp (SCM_CDAR fp1)]
+         (when (SCM_EQ name (SCM_CAR vp)) (return (SCM_CDR vp))))))
+   ;; Now we 'strip' the identifier's wrapping
    (let* ([name-ident?::int (SCM_IDENTIFIERP name)]
-          [frames (SCM_VECTOR_ELEMENT cenv 1)])
-     (dopairs [fp frames]
-       (when (and name-ident? (== (-> (SCM_IDENTIFIER name) env) fp))
-         ;; strip identifier if we're in the same env (kludge)
-         (set! name (SCM_OBJ (-> (SCM_IDENTIFIER name) name))))
+          [env (?: name-ident?
+                   (-> (SCM_IDENTIFIER name) env)
+                   frames)]
+          [true-name (?: name-ident?
+                         (SCM_OBJ (-> (SCM_IDENTIFIER name) name))
+                         name)])
+     (dopairs [fp env]
        (when (> (SCM_CAAR fp) lookup-as) ; see PERFORMANCE KLUDGE above
          (continue))
        ;; inline assq here to squeeze performance.
        (dolist [vp (SCM_CDAR fp)]
-         (when (SCM_EQ name (SCM_CAR vp)) (return (SCM_CDR vp)))))
+         (when (SCM_EQ true-name (SCM_CAR vp)) (return (SCM_CDR vp)))))
      (if (SCM_SYMBOLP name)
-       (let* ([mod (SCM_VECTOR_ELEMENT cenv 0)])
-         (SCM_ASSERT (SCM_MODULEP mod))
-         (result (Scm_MakeIdentifier (SCM_SYMBOL name) (SCM_MODULE mod) '())))
+       (return (Scm_MakeIdentifier (SCM_SYMBOL name) module '()))
        (begin
          (SCM_ASSERT (SCM_IDENTIFIERP name))
-         (result name)))))
+         (return name)))))
+
+ ;; Internal API - used while macro expansion
+ (define-cproc env-lookup (name module frames)
+   (result (env-lookup-int name (SCM_MAKE_INT 1) ;; SYNTAX
+                           (SCM_MODULE module) frames)))
+ ;; Internal API - for faster CENV lookup
+ (define-cproc cenv-lookup-syntax (cenv name)
+   (result
+    (env-lookup-int name (SCM_MAKE_INT 1)                      ; SYNTAX
+                    (SCM_MODULE (SCM_VECTOR_ELEMENT cenv 0))   ; module
+                    (SCM_VECTOR_ELEMENT cenv 1))))             ; frames
+ ;; Internal API - for faster CENV lookup
+  (define-cproc cenv-lookup-variable (cenv name)
+   (result
+    (env-lookup-int name (SCM_MAKE_INT 0)                      ; LEXICAL
+                    (SCM_MODULE (SCM_VECTOR_ELEMENT cenv 0))   ; module
+                    (SCM_VECTOR_ELEMENT cenv 1))))             ; frames
+
 
  ;; Check if Cenv is toplevel or not.
  ;;
@@ -1439,12 +1464,11 @@
 ;; It would be a large change, so this is a compromise...
 (define-inline (pass1/lookup-head head cenv)
   (or (and (variable? head)
-           (cenv-lookup cenv head SYNTAX))
+           (cenv-lookup-syntax cenv head))
       (and (pair? head)
            (module-qualified-variable? head cenv)
            (let1 mod (ensure-module (cadr head) 'with-module #f)
-             (cenv-lookup (cenv-swap-module cenv mod)
-                          (caddr head) SYNTAX)))))
+             (cenv-lookup-syntax (cenv-swap-module cenv mod) (caddr head))))))
 
 ;;--------------------------------------------------------------
 ;; pass1 :: Sexpr, Cenv -> IForm
@@ -1521,7 +1545,7 @@
      [else (pass1/call program (pass1 (car program) (cenv-sans-name cenv))
                        (cdr program) cenv)])]
    [(variable? program)                 ; variable reference
-    (let1 r (cenv-lookup cenv program LEXICAL)
+    (let1 r (cenv-lookup-variable cenv program)
       (cond [(lvar? r) ($lref r)]
             [(identifier? r)
              (or (and-let* ([const (find-const-binding r)]) ($const const))
@@ -1536,7 +1560,7 @@
 (define (module-qualified-variable? expr cenv)
   (match expr
     [((? variable? wm) mod (? variable? v))
-     (and-let* ([var (cenv-lookup cenv wm SYNTAX)]
+     (and-let* ([var (cenv-lookup-syntax cenv wm)]
                 [ (identifier? var) ])
        (global-identifier=? var (global-id 'with-module)))]
     [_ #f]))
@@ -1586,6 +1610,7 @@
              (pass1/body-macro-expand-rec head exprs intdefs cenv)]
             [(syntax? head) ; when (let-syntax ((xif if)) (xif ...)) etc.
              (pass1/body-finish intdefs exprs cenv)]
+            [(not (identifier? head)) (error "[internal] pass1/body" head)]
             [(global-eq? head 'define cenv)
              (let1 def (match args
                          [((name . formals) . body)
@@ -1603,13 +1628,13 @@
                   (pass1/body-rec rest intdefs newenv))]
                [_ (error "syntax-error: malformed internal define-syntax:"
                          `(,op ,@args))])]
-            [(global-eq? head 'begin cenv) ;intersperse forms
+            [(global-identifier=? head begin.) ;intersperse forms
              (pass1/body-rec (append (imap (cut cons <> src) args) rest)
                              intdefs cenv)]
-            [(global-eq? head 'include cenv)
+            [(global-identifier=? head include.)
              (let1 sexpr&srcs (pass1/expand-include args cenv #f)
                (pass1/body-rec (append sexpr&srcs rest) intdefs cenv))]
-            [(global-eq? head 'include-ci cenv)
+            [(global-identifier=? head include-ci.)
              (let1 sexpr&srcs (pass1/expand-include args cenv #t)
                (pass1/body-rec (append sexpr&srcs rest) intdefs cenv))]
             [(identifier? head)
@@ -1736,13 +1761,24 @@
 
 (define (global-id id) (make-identifier id (find-module 'gauche) '()))
 
-(define lambda. (global-id 'lambda))
+(define define.      (global-id 'define))
+(define lambda.      (global-id 'lambda))
+(define r5rs-define. (make-identifier 'define (find-module 'null) '()))
 (define r5rs-lambda. (make-identifier 'lambda (find-module 'null) '()))
-(define setter. (global-id 'setter))
-(define lazy.   (global-id 'lazy))
-(define eager.  (global-id 'eager))
-(define values. (global-id 'values))
-(define begin.  (global-id 'begin))
+(define setter.      (global-id 'setter))
+(define lazy.        (global-id 'lazy))
+(define eager.       (global-id 'eager))
+(define values.      (global-id 'values))
+(define begin.       (global-id 'begin))
+(define include.     (global-id 'include))
+(define include-ci.  (global-id 'include-ci))
+(define else.        (global-id 'else))
+(define =>.          (global-id '=>))
+
+(define %make-primitive-transformer.
+  (make-identifier '%make-primitive-transformer
+                   (find-module 'gauche.internal)
+                   '()))
 
 ;; Definitions ........................................
 
@@ -1980,6 +2016,15 @@
 
 ;; Macros ...........................................
 
+(define-pass1-syntax (primitive-macro-transformer form cenv) :gauche
+  (match form
+    [(_ xformer)
+     (let1 xf-iform (pass1 xformer cenv)
+       ($call form
+              ($gref %make-primitive-transformer.)
+              (list xf-iform ($const cenv))))]
+    [_ (error "syntax-error: malformed primitive-macro-transformer:" form)]))
+
 (define-pass1-syntax (%macroexpand form cenv) :gauche
   (match form
     [(_ expr) ($const (%internal-macro-expand expr (cenv-frames cenv) #f))]
@@ -2206,9 +2251,9 @@
             (process-binds more body cenv)
             ($it))]
       [(([? variable? var] init) . more)
-       (let* ((lvar (make-lvar var))
-              (newenv (cenv-extend cenv `((,var . ,lvar)) LEXICAL))
-              (itree (pass1 init (cenv-add-name cenv var))))
+       (let* ([lvar (make-lvar var)]
+              [newenv (cenv-extend cenv `((,var . ,lvar)) LEXICAL)]
+              [itree (pass1 init (cenv-add-name cenv var))])
          (lvar-initval-set! lvar itree)
          ($let form 'let
                (list lvar)
@@ -2625,7 +2670,7 @@
     [(_ name expr)
      (unless (variable? name)
        (error "syntax-error: malformed set!:" form))
-     (let ([var (cenv-lookup cenv name LEXICAL)]
+     (let ([var (cenv-lookup-variable cenv name)]
            [val (pass1 expr cenv)])
        (if (lvar? var)
          ($lset var val)
@@ -2844,7 +2889,7 @@
 ;; Class stuff ........................................
 
 ;; KLUDGES.  They should be implemented as macros, but the
-;; current compiler doesn't preserves macro definitions.
+;; current compiler doesn't preserve macro definitions.
 ;; These syntax handler merely expands the given form to
 ;; the call to internal procedures of objlib.scm, which
 ;; returns the macro expanded form.
@@ -5787,6 +5832,26 @@
                     [else (pass1 r cenv)]))))))
 
 ;;============================================================
+;; Macro support basis
+;;
+
+;; Primitive transformer takes the input form, macro-definition
+;; environment, and macro-use environment.
+;;
+;; (Sexpr, Env, Env) -> Sexpr
+;;
+;; The transformer should treat the envionments as opaque data.
+;; Currently it's just Cenv's, but we may change it later.
+
+;; Internal.  The syntax (primitive-macro-transformer xformer)
+;; would be expanded to a call to this procedure.
+(define (%make-primitive-transformer xformer def-env)
+  (%make-macro-transformer (cenv-exp-name def-env)
+                           (^[form use-env]
+                             (xformer form def-env use-env))))
+
+
+;;============================================================
 ;; Utilities
 ;;
 
@@ -5817,17 +5882,6 @@
         [(identifier? arg) (slot-ref arg 'name)]
         [(lvar? arg) (lvar-name arg)]
         [else (error "variable required, but got:" arg)]))
-
-;; Returns GLOC if id is bound to one, or #f.  If GLOC is returned,
-;; it is always bound.
-
-(inline-stub
- (define-cproc id->bound-gloc (id::<identifier>)
-   (let* ([gloc::ScmGloc* (Scm_FindBinding (-> id module) (-> id name) 0)])
-     (if (and gloc (not (SCM_UNBOUNDP (SCM_GLOC_GET gloc))))
-       (result (SCM_OBJ gloc))
-       (result SCM_FALSE))))
- )
 
 ;; GLOBAL-CALL-TYPE
 ;;
@@ -5905,14 +5959,9 @@
   (or (keyword? k)
       (and (identifier? k) (keyword? (identifier-name k)))))
 
-;; (define (id->bound-gloc id)
-;;   (and-let* ([gloc (find-binding (identifier-module id) (identifier-name id) #f)]
-;;              [ (gloc-bound? gloc) ])
-;;     gloc))
-
 (define (global-eq? var sym cenv)  ; like free-identifier=?, used in pass1.
   (and (variable? var)
-       (let1 v (cenv-lookup cenv var LEXICAL)
+       (let1 v (cenv-lookup-variable cenv var)
          (and (identifier? v)
               (eq? (identifier-name v) sym)
               (null? (identifier-env v))))))
@@ -5925,8 +5974,8 @@
                  [m2 (identifier-module id2)]
                  [e2 (identifier-env id2)])
              (or (and (eq? m1 m2) (eq? e1 e2))
-                 (let ([v1 (cenv-lookup (make-cenv m1 e1) id1 SYNTAX)]
-                       [v2 (cenv-lookup (make-cenv m2 e2) id2 SYNTAX)])
+                 (let ([v1 (env-lookup id1 m1 e1)]
+                       [v2 (env-lookup id2 m2 e2)])
                    (or (eq? v1 v2)  ; macro or lvar
                        (and (identifier? v1)
                             (identifier? v2)
@@ -5969,10 +6018,6 @@
 ;; Some C routines called from the expanded macro result.
 ;; These procedures are originally implemented in Scheme, but moved
 ;; here for efficiency.
-;; Some procedures depend on the structure defined in compile.scm,
-;; and need to be adjusted if the structure is changed.
-;; In future, precomp should be extended so that these routines can
-;; be written in compile.scm as "inlined C" code.
 (inline-stub
  ;; %imax - max for unsigned integer only, unsafe.
  (define-cproc %imax (x y)

@@ -1,3 +1,15 @@
+2014-08-18  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.scm (primitive-macro-transformer): Added experimentally;
+	  the plan is to build all other macro system on top of this.  See
+	  if it's feasible.
+	  (cenv-lookup-variable, cenv-lookup-syntax, env-lookup): Split
+	  cenv-lookup into these APIs; mainly to avoid construction of
+	  temporary cenv when we already have module and frames separately.
+	* src/libmod.scm (id->bound-gloc): Moved from compile.scm.
+	* src/macro.c (Scm_MakeMacroTransformer): Changed signature of
+	  the transformer - now it takes form and macro-use environment.
+
 2014-08-16  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm (ensure-identifier): Properly capture the environment

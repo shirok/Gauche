@@ -171,44 +171,12 @@ ScmSyntaxRules *make_syntax_rules(int nr)
  * Macro for the new compiler
  */
 
-/* In the new compiler, macro transformers for hygienic and traditional
- * macros are integrated.
- * The lowest-level macro transformer can be introduced by define-syntax,
- * let-syntax and letrec-syntax (but not syntax-case or syntax-rules; they
- * are built on top of it).
- *
- *   (define-syntax foo <transformer>)
- *
- * Where <transformer> is a procedure that takes one argument, a syntactic
- * closure.  It must return a syntactic closure as the result of trans
- * formation.
- *
- * From the point of the compiler, define-syntax triggers the following
- * actions.
- *
- *  - evaluate <transformer> in the compiler environment.
- *  - encapsulate it into <macro> object, and insert it to the compiler
- *    environment.
- *  - insert the binding to foo in the runtime toplevel environment.
- *
- * Define-macro is also built on top of define-syntax.  Concepturally,
- * it is transformed as follows.
- *
- *  (define-macro foo procedure)
- *   => (define-syntax foo
- *        (lambda (x)
- *          (let ((env  (slot-ref x 'env))
- *                (form (slot-ref x 'expr)))
- *            (make-syntactic-closure
- *              env () (apply procedure form)))))
- */
-
 static ScmObj macro_transform(ScmObj self, ScmObj form, ScmObj env,
                               void *data)
 {
     ScmObj proc = SCM_OBJ(data);
-    SCM_ASSERT(SCM_SYNTACTIC_CLOSURE_P(form));
-    return Scm_ApplyRec(proc, SCM_LIST1(form));
+    SCM_ASSERT(SCM_PAIRP(form));
+    return Scm_ApplyRec2(proc, form, env);
 }
 
 ScmObj Scm_MakeMacroTransformer(ScmSymbol *name, ScmObj proc)

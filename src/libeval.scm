@@ -380,6 +380,9 @@
 (define-cproc make-macro-transformer (name::<symbol> proc::<procedure>)
   Scm_MakeMacroTransformerOld)
 
+(define-cproc %make-macro-transformer (name::<symbol> proc)
+  Scm_MakeMacroTransformer)
+
 (define-cproc compile-syntax-rules (name ellipsis literals rules mod env)
   Scm_CompileSyntaxRules)
 
