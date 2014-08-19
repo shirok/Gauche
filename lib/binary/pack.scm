@@ -1010,7 +1010,7 @@
 ;; threads with a mutex.
 (define make-packer
   (let ((cache (make-parameter (make-hash-table 'equal?))))
-    (lambda (template cached?)
+    (lambda (template :optional (cached? #t))
       (if cached?
         (let ((res (hash-table-get (cache) template #f)))
           (unless res

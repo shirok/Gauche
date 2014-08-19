@@ -1,3 +1,8 @@
+2014-08-19  Shiro Kawai  <shiro@acm.org>
+
+	* lib/binary/pack.scm (make-packer): Made cached? argument :optional
+	  for the consistency with the doc.
+
 2014-08-18  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm (primitive-macro-transformer): Added experimentally;
