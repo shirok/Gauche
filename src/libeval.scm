@@ -137,12 +137,21 @@
       (%record-load-stat #f)
       (%port-unlock! port))
 
-    (unwind-protect
-        (begin (setup-load-context)
-               (do ([s (read port) (read port)])
-                   [(eof-object? s) #t]
-                 (eval s #f)))
-      (restore-load-context))))
+    (guard (e [else (let1 e2 (if (condition? e)
+                               ($ make-compound-condition e
+                                  $ make <load-condition-mixin>
+                                  :history (current-load-history)
+                                  :port (current-load-port)
+                                  :expr #f)
+                               e)
+                      (restore-load-context)
+                      (raise e2))])
+      (setup-load-context)
+      (do ([s (read port) (read port)])
+          [(eof-object? s)]
+        (eval s #f)))
+    (restore-load-context)
+    #t))
 
 ;; A few helper procedures
 (define-cproc %record-load-stat (path) ::<void>

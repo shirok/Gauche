@@ -58,10 +58,11 @@
     |                   +- <file-already-exists-error> ; srfi-36 (*)
     |                   +- <no-such-file-error>        ; srfi-36 (*)
     +- <thread-exception> ; srfi-18
-         +- <join-timeout-exception>      ; srfi-18
-         +- <abandoned-mutex-exception>   ; srfi-18
-         +- <terminated-thread-exception> ; srfi-18
-         +- <uncaught-exception>          ; srfi-18
+    |    +- <join-timeout-exception>      ; srfi-18
+    |    +- <abandoned-mutex-exception>   ; srfi-18
+    |    +- <terminated-thread-exception> ; srfi-18
+    |    +- <uncaught-exception>          ; srfi-18
+    +- <load-condition-mixin> ; compounded to an error during loading
 
  (*) - not implemented yet
 */
@@ -231,6 +232,7 @@ SCM_CLASS_DECL(Scm_SeriousCompoundConditionClass);
 #define SCM_SERIOUS_COMPOUND_CONDITION_P(obj) SCM_ISA(obj, SCM_CLASS_SERIOUS_COMPOUND_CONDITION)
 
 SCM_EXTERN ScmObj Scm_MakeCompoundCondition(ScmObj conditions);
+SCM_EXTERN ScmObj Scm_ExtractSimpleCondition(ScmObj condition, ScmClass *type);
 
 /*---------------------------------------------------
  * Thread exceptions
@@ -270,5 +272,19 @@ SCM_CLASS_DECL(Scm_UncaughtExceptionClass);
 #define SCM_CLASS_UNCAUGHT_EXCEPTION (&Scm_UncaughtExceptionClass)
 #define SCM_UNCAUGHT_EXCEPTION_P(obj) SCM_ISA(obj, SCM_CLASS_UNCAUGHT_EXCEPTION)
 
+/*---------------------------------------------------
+ * Mixins
+ */
+
+typedef struct ScmLoadConditionMixinRec {
+    ScmCondition common;
+    ScmObj history;             /* current-load-history */
+    ScmObj port;                /* current-load-port */
+    ScmObj expr;                /* toplevel expr */
+} ScmLoadConditionMixin;
+
+SCM_CLASS_DECL(Scm_LoadConditionMixinClass);
+#define SCM_CLASS_LOAD_CONDITION_MIXIN (&Scm_LoadConditionMixinClass)
+#define SCM_LOAD_CONDITION_MIXIN_P(obj) SCM_ISA(obj, SCM_CLASS_LOAD_CONDITION_MIXIN)
 
 #endif /*GAUCHE_EXCEPTION_H*/

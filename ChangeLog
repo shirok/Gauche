@@ -1,5 +1,14 @@
 2014-08-20  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/exception.h, lib/error.c (<load-condition-mixin>):
+	  Added a mixin condition type to attach load context to
+	  errors occurred during loading.
+	  (Scm_PrintDefaultErrorHeading): Add load context information
+	  when available.
+	  (Scm_ExtractSimpleCondition): Added.
+	* libeval.scm (load-from-port): Intercept a thrown condition to
+	  attach <load-condition-mixin>.
+
 	* lib/gauche/test.scm (<test-error>, test-check): Checks the
 	  result condition considering compound conditions.  In order to
 	  use condition-has-type?, now <test-error> instance holds
