@@ -140,16 +140,6 @@
     ((condition-sub type inits (other . more))
      (syntax-error "malformed condition field initializer:" other))))
 
-;; A trick to allow slot-ref to be used for compound condition.
-(define-method slot-missing ((class <condition-meta>)
-                             (cc <compound-condition>)
-                             slot)
-  (let loop ((members (ref cc '%conditions)))
-    (cond ((null? members) (slot-missing class cc slot))
-          ((slot-exists? (car members) slot)
-           (slot-ref (car members) slot))
-          (else (loop (cdr members))))))
-
 ;; Aliases for srfi-35/srfi-36 compatibility
 (define &condition   <condition>)
 (define &message     <message-condition>)

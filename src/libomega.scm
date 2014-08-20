@@ -42,6 +42,17 @@
     (unless (eq? n 'util.match)
       (provide (module-name->path n)))))
 
+;; A trick to allow slot-ref to be used for compound condition.
+;; This is better to be in libexc.scm, but we need to evaluate this
+;; after the object system is fully bootstrapped.
+(define-method slot-missing ((class <condition-meta>)
+                             (cc <compound-condition>)
+                             slot)
+  (let loop ((members (slot-ref cc '%conditions)))
+    (cond [(null? members) (slot-missing class cc slot)]
+          [(slot-exists? (car members) slot) (slot-ref (car members) slot)]
+          [else (loop (cdr members))])))
+
 ;;; TEMPORARY for 0.9.x series
 ;;; Remove this after 1.0 release!!!
 ;;;

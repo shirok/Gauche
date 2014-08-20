@@ -88,10 +88,21 @@
           *test-error* *test-report-error* test-error? prim-test))
 (select-module gauche.test)
 
-;; An object to represent error.
+;; An object to represent error.  This class isn't exported; the user
+;; must use `test-error' procedure to create an instance.
+;;
+;; This object is used in both the expected result and the actual result
+;; of test expression.   For the actual result, this object holds the
+;; raised condition in `condition' slot, and its class and message in
+;; the `class' and `message' slots.
+;; For the expected result, class slot must be set as one of <condition>
+;; classes, or #f.  If it's a <condition> class, then it is used to test
+;; the actual result condition has the condition type.  If it's #f,
+;; then any <test-error> object matches.
 (define-class <test-error> ()
-  ((message :init-keyword :message :init-value #f)
-   (class   :init-keyword :class   :init-value #f)))
+  ((condition :init-keyword :condition :init-value #f)
+   (class     :init-keyword :class     :init-value #f)
+   (message   :init-keyword :message   :init-value #f)))
 
 (define-method write-object ((obj <test-error>) out)
   (let1 cname (if (ref obj'class) (class-name (ref obj'class)) 'error)
@@ -116,11 +127,10 @@
 (define (test-check expected result :optional (fallback equal?))
   (cond [(test-error? expected)
          (and (test-error? result)
-              (let ([ex (slot-ref expected'class)]
-                    [ey (slot-ref result'class)])
-                (or (not ex)
-                    (memq (slot-ref expected'class)
-                          (class-precedence-list (slot-ref result'class))))))]
+              (let ([c (slot-ref expected'class)]
+                    [e (slot-ref result'condition)])
+                (or (not c)
+                    (condition-has-type? e c))))]
         [(is-a? expected <test-one-of>)
          ;; NB: not using srfi-1's any to avoid dependency
          (let loop ([choices (slot-ref expected 'choices)])
@@ -208,11 +218,12 @@
            (guard (e [else
                       (when *test-report-error*
                         (report-error e))
-                      (make <test-error>
-                        :class (class-of e)
-                        :message (if (is-a? e <message-condition>)
-                                   (ref e 'message)
-                                   e))])
+                      (make <test-error> :condition e
+                            :class (class-of e)
+                            :message
+                            (if (condition-has-type? e <message-condition>)
+                              (slot-ref e 'message)
+                              e))])
              (thunk)))
          compare))
 

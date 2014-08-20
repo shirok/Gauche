@@ -1,3 +1,14 @@
+2014-08-20  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/test.scm (<test-error>, test-check): Checks the
+	  result condition considering compound conditions.  In order to
+	  use condition-has-type?, now <test-error> instance holds
+	  the actual condition object.
+	* lib/gauche/condutil.scm, src/libomega.scm: Moved
+	  definition of (slot-missing <condition-meta> <compound-condition>
+	  <top>) from the former to the latter; Slots of compound conditions
+	  may be referred without condutil being autoloaded.
+
 2014-08-19  Shiro Kawai  <shiro@acm.org>
 
 	* lib/binary/pack.scm (make-packer): Made cached? argument :optional
