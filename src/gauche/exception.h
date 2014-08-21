@@ -62,9 +62,15 @@
     |    +- <abandoned-mutex-exception>   ; srfi-18
     |    +- <terminated-thread-exception> ; srfi-18
     |    +- <uncaught-exception>          ; srfi-18
-    +- <load-condition-mixin> ; compounded to an error during loading
+    +- <mixin-condition>
+         +- <load-condition-mixin> ; compounded to an error during loading
+         +- <compile-error-mixin>  ; compounded to an error during compiling
 
  (*) - not implemented yet
+
+ SRFI-35 does not make distinction between primary inheritance and mixin
+ inheritance; the <condition-mixin> subtree is Gauche's convention.  The
+ default error reporting routine treats mixins specially.
 */
 
 /*---------------------------------------------------
@@ -276,15 +282,29 @@ SCM_CLASS_DECL(Scm_UncaughtExceptionClass);
  * Mixins
  */
 
+SCM_CLASS_DECL(Scm_MixinConditionClass);
+#define SCM_CLASS_MIXIN_CONDITION   (&Scm_MixinConditionClass)
+#define SCM_MIXIN_CONDITION_P(obj)  SCM_ISA(obj, SCM_CLASS_MIXIN_CONDITION)
+
 typedef struct ScmLoadConditionMixinRec {
     ScmCondition common;
     ScmObj history;             /* current-load-history */
     ScmObj port;                /* current-load-port */
-    ScmObj expr;                /* toplevel expr */
 } ScmLoadConditionMixin;
 
 SCM_CLASS_DECL(Scm_LoadConditionMixinClass);
 #define SCM_CLASS_LOAD_CONDITION_MIXIN (&Scm_LoadConditionMixinClass)
 #define SCM_LOAD_CONDITION_MIXIN_P(obj) SCM_ISA(obj, SCM_CLASS_LOAD_CONDITION_MIXIN)
+#define SCM_LOAD_CONDITION_MIXIN(obj)  ((ScmLoadConditionMixin*)(obj))
+
+typedef struct ScmCompileErrorMixinRec {
+    ScmCondition condition;
+    ScmObj expr;                /* offending expr */
+} ScmCompileErrorMixin;
+
+SCM_CLASS_DECL(ScmCompileErrorMixinClass);
+#define SCM_CLASS_COMPILE_ERROR_MIXIN (&Scm_CompileErrorMixinClass)
+#define SCM_COMPILE_ERROR_MIXIN_P(obj) SCM_ISA(obj, SCM_CLASS_COMPILE_ERROR_MIXIN)
+#define SCM_COMPILE_ERROR_MIXIN(obj)   ((ScmCompileErrorMixin*)(obj))
 
 #endif /*GAUCHE_EXCEPTION_H*/

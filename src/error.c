@@ -354,65 +354,6 @@ static ScmClassStaticSlotSpec porterror_slots[] = {
 };
 
 /*------------------------------------------------------------
- * Mixin conditions
- */
-
-static ScmObj load_condition_mixin_allocate(ScmClass *klass, ScmObj initargs)
-{
-    ScmLoadConditionMixin *c = SCM_ALLOCATE(ScmLoadConditionMixin, klass);
-    SCM_SET_CLASS(c, klass);
-    c->history = SCM_FALSE;
-    c->port = SCM_FALSE;
-    c->expr = SCM_FALSE;
-    return SCM_OBJ(c);
-}
-
-SCM_DEFINE_BASE_CLASS(Scm_LoadConditionMixinClass, ScmLoadConditionMixin,
-                      NULL, NULL, NULL, load_condition_mixin_allocate,
-                      condition_cpl);
-                      
-static ScmObj load_condition_mixin_history_get(ScmObj obj)
-{
-    return ((ScmLoadConditionMixin*)obj)->history;
-}
-
-static void load_condition_mixin_history_set(ScmObj obj, ScmObj v)
-{
-    ((ScmLoadConditionMixin*)obj)->history = v;
-}
-
-static ScmObj load_condition_mixin_port_get(ScmObj obj)
-{
-    return ((ScmLoadConditionMixin*)obj)->port;
-}
-
-static void load_condition_mixin_port_set(ScmObj obj, ScmObj v)
-{       
-    ((ScmLoadConditionMixin*)obj)->port = v;
-}
-
-static ScmObj load_condition_mixin_expr_get(ScmObj obj)
-{
-    return ((ScmLoadConditionMixin*)obj)->expr;
-}
-
-static ScmObj load_condition_mixin_expr_set(ScmObj obj, ScmObj v)
-{
-    ((ScmLoadConditionMixin*)obj)->expr = v;
-}
-
-static ScmClassStaticSlotSpec load_condition_mixin_slots[] = {
-    SCM_CLASS_SLOT_SPEC("history", load_condition_mixin_history_get,
-                        load_condition_mixin_history_set),
-    SCM_CLASS_SLOT_SPEC("port", load_condition_mixin_port_get,
-                        load_condition_mixin_port_set),
-    SCM_CLASS_SLOT_SPEC("expr", load_condition_mixin_expr_get,
-                        load_condition_mixin_expr_set),
-    SCM_CLASS_SLOT_SPEC_END()
-};
-
-
-/*------------------------------------------------------------
  * Compound conditions
  */
 
@@ -613,10 +554,7 @@ ScmObj Scm_ConditionMessage(ScmObj c)
    suitable for the error message.  Because of personal preference
    and backward compatibility, I upcase the class name of the condition
    sans brackets.  If it is a composite condition, the component's typenames
-   are joind with commas.
-   Kludge: We exlude LOAD-CONDITION-MIXIN from compound condition name, for
-   it is used a lot and would be annyoing.  The content of load-condition-mixin
-   is handled specially in PrintDefaultErrorHeading.
+   are joind with commas, excluding mixin conditions.
 */
 ScmObj Scm_ConditionTypeName(ScmObj c)
 {
@@ -632,7 +570,7 @@ ScmObj Scm_ConditionTypeName(ScmObj c)
         ScmObj h = SCM_NIL, t = SCM_NIL, cp;
         SCM_FOR_EACH(cp, SCM_COMPOUND_CONDITION(c)->conditions) {
             ScmObj cc = SCM_CAR(cp);
-            if (SCM_LOAD_CONDITION_MIXIN_P(cc)) continue;
+            if (SCM_MIXIN_CONDITION_P(cc)) continue;
             SCM_APPEND1(h, t, Scm__InternalClassName(Scm_ClassOf(cc)));
         }
         if (SCM_NULLP(h)) {
@@ -642,7 +580,15 @@ ScmObj Scm_ConditionTypeName(ScmObj c)
             sname = Scm_StringJoin(h, &cond_name_delim, SCM_STRING_JOIN_INFIX);
         }
     }
-    return sname;
+
+    ScmDString ds;
+    Scm_DStringInit(&ds);
+    ScmObj p = Scm_MakeInputStringPort(SCM_STRING(sname), TRUE);
+    int ch;
+    while ((ch = Scm_Getc(SCM_PORT(p))) != EOF) {
+        Scm_DStringPutc(&ds, Scm_CharUpcase(ch));
+    }
+    return Scm_DStringGet(&ds, 0);
 }
 
 /*================================================================
@@ -1005,38 +951,29 @@ void Scm_ShowStackTrace(ScmPort *out, ScmObj stacklite,
  */
 
 /* The default procedure to display the header of error message.
-   E is a thrown condition, not necessarily an error object. */
+   E is a thrown condition, not necessarily an error object.
+
+   The actual operation is written in Scheme (libexc.scm).  However,
+   we can't use that before the infrastructure is fully booted; so
+   this routine has a fallback which will be used only during initialization.
+*/
 static void Scm_PrintDefaultErrorHeading(ScmObj e, ScmPort *out)
 {
-    if (SCM_CONDITIONP(e)) {
-        char *heading = Scm_GetString(SCM_STRING(Scm_ConditionTypeName(e)));
-        /* TODO: considring that the class name may contain multibyte
-           characters, we should use string-upcase here. */
-        for (char *p=heading; *p; p++) {
-            *p = toupper(*p);
-        }
-        ScmObj msg = Scm_ConditionMessage(e);
-        if (!SCM_FALSEP(msg)) {
-            Scm_Printf(out, "*** %s: %A\n", heading, msg);
-        } else {
-            Scm_Printf(out, "*** %s\n", heading);
-        }
-
-        ScmObj lc =
-            Scm_ExtractSimpleCondition(e, SCM_CLASS_LOAD_CONDITION_MIXIN);
-        if (SCM_LOAD_CONDITION_MIXIN_P(lc)) {
-            ScmLoadConditionMixin *lcm = (ScmLoadConditionMixin*)lc;
-            ScmObj p = lcm->port;
-            if (SCM_PORTP(p)) {
-                ScmObj n = Scm_PortName(SCM_PORT(p));
-                if (!SCM_FALSEP(n)) {
-                    Scm_Printf(out, "    while loading %S at line %d\n",
-                               n, Scm_PortLine(SCM_PORT(p)));
-                }
-            }
-        }
+    if (Scm_InitializedP()) {
+        static ScmObj print_default_error_heading = SCM_UNDEFINED;
+        SCM_BIND_PROC(print_default_error_heading,
+                      "print-default-error-heading",
+                      Scm_GaucheModule());
+        Scm_ApplyRec2(print_default_error_heading, e, SCM_OBJ(out));
     } else {
-        Scm_Printf(out, "*** ERROR: unhandled exception: %S\n", e);
+        /* Error during initialization. */
+        if (SCM_CONDITIONP(e)) {
+            Scm_Printf(out, "*** %A: %A\n",
+                       Scm_ConditionTypeName(e),
+                       Scm_ConditionMessage(e));
+        } else {
+            Scm_Printf(out, "*** ERROR: Unhandled condition: %S\n", e);
+        }
     }
 }
 
@@ -1156,10 +1093,6 @@ void Scm__InitExceptions(void)
                                 mod, cond_meta, SCM_FALSE,
                                 porterror_slots, 0);
 
-    Scm_InitStaticClassWithMeta(SCM_CLASS_LOAD_CONDITION_MIXIN,
-                                "<load-condition-mixin>",
-                                mod, cond_meta, SCM_FALSE,
-                                load_condition_mixin_slots, 0);
 
     Scm_InitStaticClassWithMeta(SCM_CLASS_COMPOUND_CONDITION,
                                 "<compound-condition>",

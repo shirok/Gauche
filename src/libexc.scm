@@ -57,6 +57,24 @@
 
 (define-cproc report-error (exception) ::<void> Scm_ReportError)
 
+(define-cproc condition-type-name (c) Scm_ConditionTypeName)
+
+(define (print-default-error-heading exc out)
+  (guard (e [else (display "*** ERROR:" out)
+                  (display exc out)
+                  (display "\n" out)])
+    (if (not (condition? exc))
+      (format out "*** ERROR: unhandled exception: ~s\n" exc)
+      (receive (mixins mains)
+          (if (is-a? exc <compound-condition>)
+            (partition (cut is-a? <> <mixin-condition>) (~ exc'%conditions))
+            (values '() (list exc)))
+        (let1 name (condition-type-name exc)
+          (if (condition-has-type? exc <message-condition>)
+            (format out "*** ~a: ~a\n" name (~ exc'message))
+            (format out "*** ~a\n" name)))
+        (for-each (cut report-mixin-condition <> out) (reverse mixins))))))
+
 ;;;
 ;;; Srfi-18 primitives
 ;;;
@@ -87,14 +105,12 @@
 ;;; Thread exception classes
 ;;;
 
+;; TODO - set metaclass of those exceptions to <condition-meta>
+
 (select-module gauche)
 (inline-stub
  (define-cfn thread_exception_allocate (klass::ScmClass* initargs) :static
-   (let* ([e::ScmThreadException* (SCM_ALLOCATE ScmThreadException klass)])
-     (SCM_SET_CLASS e klass)
-     (set! (-> e thread) NULL)
-     (set! (-> e data) SCM_UNDEFINED)
-     (return (SCM_OBJ e))))
+   (return (Scm_MakeThreadException klass NULL)))
 
  (define-cfn thread_exception_print (obj port::ScmPort* ctx::ScmWriteContext*)
    ::void :static
@@ -173,4 +189,50 @@
    (printer   (c "uncaught_exception_print")))
  )
 
+;;;
+;;; Mixin classes
+;;;
+
+;; TODO - set metaclass of those mixins to <condition-meta>
+
+(select-module gauche)
+(inline-stub
+ "static ScmClass *mixin_condition_cpa[] = {
+   SCM_CLASS_STATIC_PTR(Scm_MixinConditionClass),
+   SCM_CLASS_STATIC_PTR(Scm_ConditionClass),
+   SCM_CLASS_STATIC_PTR(Scm_TopClass),
+   NULL
+  };"
+
+ (define-cclass <mixin-condition>
+   "ScmCondition*" "Scm_MixinConditionClass"
+   (c "mixin_condition_cpa+1")
+   () ())
+ 
+ (define-cfn load-condition-mixin-allocate (klass::ScmClass* initargs) :static
+   (let* ([c::ScmLoadConditionMixin* (SCM_ALLOCATE ScmLoadConditionMixin klass)])
+     (SCM_SET_CLASS c klass)
+     (set! (-> c history) SCM_FALSE)
+     (set! (-> c port) SCM_FALSE)
+     (return (SCM_OBJ c))))
+ 
+ (define-cclass <load-condition-mixin>
+   "ScmLoadConditionMixin*" "Scm_LoadConditionMixinClass"
+   (c "mixin_condition_cpa")
+   ((history)
+    (port))
+   (allocator (c "load_condition_mixin_allocate")))
+
+ (define-cfn compile-error-mixin-allocate (klass::ScmClass* initargs) :static
+   (let* ([c::ScmCompileErrorMixin* (SCM_ALLOCATE ScmCompileErrorMixin klass)])
+     (SCM_SET_CLASS c klass)
+     (set! (-> c expr) SCM_FALSE)
+     (return (SCM_OBJ c))))
+ 
+ (define-cclass <compile-error-mixin>
+   "ScmCompileErrorMixin*" "Scm_CompileErrorMixinClass"
+   (c "mixin_condition_cpa")
+   ((expr))
+   (allocator (c "compile_error_mixin_allocate")))
+ )
 

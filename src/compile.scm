@@ -1395,18 +1395,11 @@
   (let1 cenv (cond [(module? env) (make-bottom-cenv env)]
                    [(vector? env) env] ; assumes env is cenv
                    [else (make-bottom-cenv)]) ; use default module
-    (guard
-        (e
-         [else
-          ;; TODO: check if e is an expected error (such as syntax error) or
-          ;; an unexpected error (compiler bug).
-          (let1 srcinfo (and (pair? program)
-                             (pair-attribute-get program 'source-info #f))
-            (if srcinfo
-              (errorf "Compile Error: ~a\n~s:~d:~,,,,40:s\n"
-                      (slot-ref e 'message) (car srcinfo)
-                      (cadr srcinfo) program)
-              (errorf "Compile Error: ~a\n" (slot-ref e 'message))))])
+    (guard (e [else
+               ;; TODO: check if e is an expected error (such as syntax error)
+               ;; or an unexpected error (compiler bug).
+               ($ raise $ make-compound-condition e
+                  $ make <compile-error-mixin> :expr program)])
       (pass5 (pass2-4 (pass1 program cenv) (cenv-module cenv))
              (make-compiled-code-builder 0 0 '%toplevel #f #f)
              '() 'tail))))

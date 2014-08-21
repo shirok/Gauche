@@ -53,6 +53,33 @@
           [(slot-exists? (car members) slot) (slot-ref (car members) slot)]
           [else (loop (cdr members))])))
 
+;; Printing auxiliary error information.  This also is here instead
+;; of libexc.scm because of the initialization order.
+(define-method report-mixin-condition ((c <mixin-condition>) port) #f)
+
+(define-method report-mixin-condition ((c <load-condition-mixin>) port)
+  (and-let* ([p (~ c'port)]
+             [ (port? p) ]
+             [name (port-name p)]
+             [line (port-current-line p)])
+    (format port "    While loading ~s at line ~d\n" name line)))
+
+(define-method report-mixin-condition ((c <compile-error-mixin>) port)
+  (let* ([expr (~ c'expr)]
+         ;; TODO: This is dupe of debug-source-info in gauche.vm.debugger,
+         ;; but we don't want to load it here.  Maybe we should make
+         ;; debug-source-info built-in in future.
+         [src-info (and-let* ([ (pair? expr ) ]
+                              [info ((with-module gauche.internal pair-attribute-get)
+                                     expr 'source-info)]
+                              [ (pair? info) ]
+                              [ (pair? (cdr info)) ])
+                     info)])
+    (if src-info
+      (format port "    While compiling ~s at line ~d: ~s\n"
+              (car src-info) (cadr src-info) expr)
+      (format port "    While compiling: ~s\n" expr))))
+
 ;;; TEMPORARY for 0.9.x series
 ;;; Remove this after 1.0 release!!!
 ;;;

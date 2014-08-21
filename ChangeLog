@@ -1,12 +1,29 @@
+2014-08-21  Shiro Kawai  <shiro@acm.org>
+
+	* src/error.c (Scm_PrintDefaultErrorHeading),
+	  src/libexc.scm (print-default-error-heading): Implement this in
+	  Scheme for the better maintainability.
+	* src/libomega.scm (report-mixin-condition): Generalized handling
+	  mixin conditions.
+	  Note: The above two changes may be a dangerous move, which
+	  can make it difficult to diagnose when we mess up then runtime
+          in a way that error reporting can't be carried out.  Especially,
+	  now we rely on working method dispatch to display mixin condition
+	  messages.  If this becomes an issue, we may replace the mixin
+	  condition mechanism to more primitive ones, like manual dispatch.
+	* src/libexc.scm (<compile-error-mixin>),
+	  src/compile.scm (compile): Handle compile error using mixin
+	  condition.
+
 2014-08-20  Shiro Kawai  <shiro@acm.org>
 
-	* lib/gauche/exception.h, lib/error.c (<load-condition-mixin>):
+	* lib/gauche/exception.h, src/error.c (<load-condition-mixin>):
 	  Added a mixin condition type to attach load context to
 	  errors occurred during loading.
 	  (Scm_PrintDefaultErrorHeading): Add load context information
 	  when available.
 	  (Scm_ExtractSimpleCondition): Added.
-	* libeval.scm (load-from-port): Intercept a thrown condition to
+	* src/libeval.scm (load-from-port): Intercept a thrown condition to
 	  attach <load-condition-mixin>.
 
 	* lib/gauche/test.scm (<test-error>, test-check): Checks the
