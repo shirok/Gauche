@@ -1544,7 +1544,7 @@ SCM_EXTERN ScmObj Scm_Map(ScmObj proc, ScmObj arg1, ScmObj args);
 /* Syntax is a built-in procedure to compile given form. */
 struct ScmSyntaxRec {
     SCM_HEADER;
-    ScmSymbol *name;            /* for debugging */
+    ScmSymbol *name;            /* for debugging.  can be NULL */
     ScmObj     handler;         /* syntax handler.  (Sexpr, Env) -> IForm */
 };
 
@@ -1559,7 +1559,7 @@ SCM_EXTERN ScmObj Scm_MakeSyntax(ScmSymbol *name, ScmObj handler);
 /* Macro */
 struct ScmMacroRec {
     SCM_HEADER;
-    ScmSymbol *name;            /* for debug */
+    ScmSymbol *name;                /* for debugging.  can be NULL */
     ScmTransformerProc transformer; /* (Self, Sexpr, Env) -> Sexpr */
     void *data;
 };

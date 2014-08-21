@@ -389,7 +389,7 @@
 (define-cproc make-macro-transformer (name::<symbol> proc::<procedure>)
   Scm_MakeMacroTransformerOld)
 
-(define-cproc %make-macro-transformer (name::<symbol> proc)
+(define-cproc %make-macro-transformer (name::<symbol>? proc)
   Scm_MakeMacroTransformer)
 
 (define-cproc compile-syntax-rules (name ellipsis literals rules mod env)
@@ -626,4 +626,7 @@
     `((with-module gauche.internal %bind-inline-er-transformer)
       (current-module) ',name ,(cadr xformer-spec))
     `((with-module gauche.internal %attach-inline-transformer)
-      (current-module) ',name ,xformer-spec)))
+      (current-module) ',name
+      (^[form cenv]
+        ((with-module gauche.internal call-macro-expander)
+         ,xformer-spec form cenv)))))

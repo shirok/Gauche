@@ -51,7 +51,8 @@
 
 static void syntax_print(ScmObj obj, ScmPort *port, ScmWriteContext *mode)
 {
-    Scm_Printf(port, "#<syntax %A>", SCM_SYNTAX(obj)->name);
+    ScmSymbol *name = SCM_SYNTAX(obj)->name;
+    Scm_Printf(port, "#<syntax %A>", (name ? SCM_OBJ(name) : SCM_FALSE));
 }
 
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_SyntaxClass, syntax_print);
@@ -71,7 +72,8 @@ ScmObj Scm_MakeSyntax(ScmSymbol *name, ScmObj handler)
 
 static void macro_print(ScmObj obj, ScmPort *port, ScmWriteContext *mode)
 {
-    Scm_Printf(port, "#<macro %A>", SCM_MACRO(obj)->name);
+    ScmSymbol *name = SCM_MACRO(obj)->name;
+    Scm_Printf(port, "#<macro %A>", (name ? SCM_OBJ(name) : SCM_FALSE));
 }
 
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_MacroClass, macro_print);
