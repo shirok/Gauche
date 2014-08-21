@@ -120,11 +120,16 @@ static void init_cond_features(void);
 static int (*ptr_pthread_create)(void) = NULL;
 #endif
 
+/* flag to see if Scheme infrastructure is fully initialized or not */
+static int scheme_initialized = FALSE;
+
 /*
  * Entry point of initlalizing Gauche runtime
  */
 void Scm_Init(const char *signature)
 {
+    if (scheme_initialized) return;
+    
     /* make sure the main program links the same version of libgauche */
     if (strcmp(signature, GAUCHE_SIGNATURE) != 0) {
         Scm_Panic("libgauche ABI version mismatch: libgauche %s, expected %s",
@@ -207,6 +212,13 @@ void Scm_Init(const char *signature)
     /* a trick to make sure the gc thread object is linked */
     ptr_pthread_create = (int (*)(void))GC_pthread_create;
 #endif
+
+    scheme_initialized = TRUE;
+}
+
+int Scm_InitializedP()
+{
+    return scheme_initialized;
 }
 
 /*=============================================================
