@@ -49,7 +49,7 @@
                              (cc <compound-condition>)
                              slot)
   (let loop ((members (slot-ref cc '%conditions)))
-    (cond [(null? members) (slot-missing class cc slot)]
+    (cond [(null? members) (next-method)]
           [(slot-exists? (car members) slot) (slot-ref (car members) slot)]
           [else (loop (cdr members))])))
 
