@@ -247,8 +247,15 @@ builtin-syms.c gauche/priv/builtin-syms.h : builtin-syms.scm
 vminsn.c gauche/vminsn.h ../lib/gauche/vm/insn.scm : vminsn.scm geninsn
 	$(BUILD_GOSH) geninsn $(srcdir)/vminsn.scm
 
-srfis.c $(top_builddir)/doc/srfis.texi $(top_builddir)/lib/srfi/0.scm : srfis.scm
+# NB: srfis.c, lib/srfi/*.scm and doc/srfis.texi are all generated
+# by srfis.scm.  However, if we don't have srfi/0.scm but have srfis.c,
+# we fail to regenerate srfi/0.scm since nothing depends on it.  So
+# we introduce fake dependency from srfis.c to srfi/0.scm.
+$(top_builddir)/doc/srfis.texi $(top_builddir)/lib/srfi/0.scm : srfis.scm
 	$(BUILD_GOSH) $(srcdir)/srfis.scm $(top_builddir)
+
+srfis.c : $(top_builddir)/lib/srfi/0.scm $(top_builddir)/doc/srfis.texi
+	@:
 
 compile.c  : compile.scm compile-0.scm $(PRECOMP_DEPENDENCY)
 libalpha.c : libalpha.scm $(PRECOMP_DEPENDENCY)
