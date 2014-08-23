@@ -2758,9 +2758,9 @@
              [prefix #f])
     (match args
       [() (%import-module current imported prefix)]
-      [(:prefix p . rest)
+      [(':prefix p . rest)
        (loop imported rest (if prefix (string->symbol #`",p,prefix") p))]
-      [(:only (ss ...) . rest)
+      [(':only (ss ...) . rest)
        (let1 m (%make-wrapper-module imported prefix)
          (process-import:mapsym
           :only (unwrap-syntax ss) #f prefix
@@ -2770,13 +2770,13 @@
                                      orig-sym imported))))
          (%extend-module m '())
          (loop m rest #f))]
-      [(:except (ss ...) . rest)
+      [(':except (ss ...) . rest)
        (let1 m (%make-wrapper-module imported prefix)
          (process-import:mapsym
           :except (unwrap-syntax ss) #f prefix
           (^[sym orig-sym] (%hide-binding m orig-sym)))
          (loop m rest #f))]
-      [(:rename ((ss ds) ...) . rest)
+      [(':rename ((ss ds) ...) . rest)
        (let* ([ss (unwrap-syntax ss)]
               [ds (unwrap-syntax ds)]
               [m0 (if prefix (%make-wrapper-module imported prefix) imported)]
