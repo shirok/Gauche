@@ -2020,13 +2020,39 @@
 
 (define-pass1-syntax (%macroexpand form cenv) :gauche
   (match form
-    [(_ expr) ($const (%internal-macro-expand expr (cenv-frames cenv) #f))]
+    [(_ expr) ($const (%internal-macro-expand expr (cenv-module cenv)
+                                              (cenv-frames cenv) #f))]
     [_ (error "syntax-error: malformed %macroexpand:" form)]))
 
 (define-pass1-syntax (%macroexpand-1 form cenv) :gauche
   (match form
-    [(_ expr) ($const (%internal-macro-expand expr (cenv-frames cenv) #t))]
+    [(_ expr) ($const (%internal-macro-expand expr (cenv-module cenv)
+                                              (cenv-frames cenv) #t))]
     [_ (error "syntax-error: malformed %macroexpand-1:" form)]))
+
+(define (%internal-macro-expand expr mod frames once?)
+  (define (xpand expr)
+    (match expr
+      [((? variable? op) . args)
+       (let1 var (env-lookup op mod frames)
+         (cond [(macro? var) (call-macro-expander var expr frames)]
+               [(identifier? var)
+                (if-let1 gval (and-let* ([gloc (id->bound-gloc var)]
+                                         [gval (gloc-ref gloc)]
+                                         [ (macro? gval) ])
+                                gval)
+                  (call-macro-expander gval expr frames)
+                  expr)]
+               [else expr]))]
+      [((? macro? op) . args) (call-macro-expander op expr frames)]
+      [_ expr]))
+  (if once?
+    (xpand expr)
+    (let loop ([expr expr])
+      (let1 e2 (xpand expr)
+        (if (eq? e2 expr)
+          expr
+          (loop e2))))))
 
 (define-pass1-syntax (... form cenv) :null
   (error "invalid syntax:" form))

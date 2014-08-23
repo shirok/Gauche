@@ -980,52 +980,13 @@ ScmObj Scm_CompileSyntaxRules(ScmObj name, ScmObj ellipsis,
  * macro-expand
  */
 
-ScmObj macro_expand_cc(ScmObj result, void **data)
-{
-    ScmObj env = SCM_OBJ(data[0]);
-    return Scm_VMMacroExpand(result, env, FALSE);
-}
-
+/* TRANSIENT
+   Now it's in compile.c (%internal-macro-expand).  This is kept
+   for ABI compatibility, but nobody is supposed to call this.
+ */
 ScmObj Scm_VMMacroExpand(ScmObj expr, ScmObj env, int oncep)
 {
-    ScmMacro *mac;
-
-    if (!SCM_PAIRP(expr)) return expr;
-    ScmObj op = SCM_CAR(expr);
-    if (SCM_MACROP(op)) {
-        mac = SCM_MACRO(op);
-    } else if (!SCM_SYMBOLP(op) && !SCM_IDENTIFIERP(op)) {
-        return expr;
-    } else {
-        mac = NULL;
-        ScmObj sym = op;
-        if (SCM_MACROP(sym)) {
-            /* local syntactic binding */
-            mac = SCM_MACRO(sym);
-        } else {
-            ScmGloc *g = NULL;
-            if (SCM_IDENTIFIERP(sym)) {
-                g = Scm_FindBinding(SCM_IDENTIFIER(sym)->module,
-                                    SCM_IDENTIFIER(sym)->name, 0);
-            } else if (SCM_SYMBOLP(sym)) {
-                g = Scm_FindBinding(Scm_VM()->module,
-                                    SCM_SYMBOL(sym), 0);
-            }
-            if (g) {
-                ScmObj gv = SCM_GLOC_GET(g);
-                if (SCM_MACROP(gv)) mac = SCM_MACRO(gv);
-            }
-        }
-    }
-    if (mac) {
-        if (!oncep) {
-            void *data[1];
-            data[0] = env;
-            Scm_VMPushCC(macro_expand_cc, data, 1);
-        }
-        expr = Scm_CallMacroExpander(mac, expr, env);
-    }
-    return expr;
+    Scm_Error("Scm_VMMacroExpand is obsoleted.");
 }
 
 ScmObj Scm_CallMacroExpander(ScmMacro *mac, ScmObj expr, ScmObj env)

@@ -1,3 +1,9 @@
+2014-08-23  Shiro Kawai  <shiro@acm.org>
+
+	* src/macro.c (Scm_VMMacroExpand): Obsoleted.  Implement it in
+	  compile.c (%internal-macro-expand).
+	* src/libeval.scm (macroexpand, macroexpand-1): Changed accordingly.
+
 2014-08-21  Shiro Kawai  <shiro@acm.org>
 
 	* src/error.c (Scm_PrintDefaultErrorHeading),

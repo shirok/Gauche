@@ -364,15 +364,15 @@
 ;;; Macros
 ;;;
 
+(select-module gauche.internal)
+;; API
+(define-in-module gauche (macroexpand form)
+  (%internal-macro-expand form (vm-current-module) '() #f))
+;; API
+(define-in-module gauche (macroexpand-1 form)
+  (%internal-macro-expand form (vm-current-module) '() #t))
+
 (select-module gauche)
-
-;; API
-(define-cproc macroexpand (form)
-  (result (Scm_VMMacroExpand form SCM_NIL FALSE)))
-;; API
-(define-cproc macroexpand-1 (form)
-  (result (Scm_VMMacroExpand form SCM_NIL TRUE)))
-
 ;; API
 (define-cproc unwrap-syntax (form) Scm_UnwrapSyntax)
 
@@ -411,9 +411,6 @@
 (define-cproc syntax-handler (syn)
   (SCM_ASSERT (SCM_SYNTAXP syn))
   (result (-> (SCM_SYNTAX syn) handler)))
-
-(define-cproc %internal-macro-expand (form env once::<boolean>)
-  Scm_VMMacroExpand)
 
 ;;;
 ;;; System termination
