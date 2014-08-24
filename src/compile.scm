@@ -43,7 +43,7 @@
   (.include <gauche/class.h>
             <gauche/code.h>
             <gauche/vminsn.h>
-            <gauche/macro.h>
+            <gauche/priv/macroP.h>
             <gauche/priv/builtin-syms.h>)))
 
 ;;; THE COMPILER

@@ -33,10 +33,10 @@
 
 #define LIBGAUCHE_BODY
 #include "gauche.h"
-#include "gauche/macro.h"
 #include "gauche/class.h"
 #include "gauche/code.h"
 #include "gauche/priv/builtin-syms.h"
+#include "gauche/priv/macroP.h"
 #include "gauche/priv/writerP.h"
 
 /* Some routines uses small array on stack to keep data about

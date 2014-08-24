@@ -34,7 +34,24 @@
 #ifndef GAUCHE_MACRO_H
 #define GAUCHE_MACRO_H
 
+
 SCM_DECL_BEGIN
+
+/* Syntax is a built-in procedure to compile given form. */
+struct ScmSyntaxRec {
+    SCM_HEADER;
+    ScmSymbol *name;            /* for debugging.  can be NULL */
+    ScmObj     handler;         /* syntax handler.  (Sexpr, Env) -> IForm */
+};
+
+
+/* Macro */
+struct ScmMacroRec {
+    SCM_HEADER;
+    ScmSymbol *name;                /* for debugging.  can be NULL */
+    ScmTransformerProc transformer; /* (Self, Sexpr, Env) -> Sexpr */
+    void *data;
+};
 
 /*
  * SyntaxRules keeps a compiled rules of macro transformation.

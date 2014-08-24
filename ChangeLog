@@ -1,3 +1,10 @@
+2014-08-24  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/macro.h -> lib/gauche/priv/macroP.h: Moved macro
+	  implementation details to private header.  ScmSyntax and
+	  ScmMacro should be treated as opaque objects.  Various files
+	  adjusted.
+
 2014-08-23  Shiro Kawai  <shiro@acm.org>
 
 	* src/macro.c (Scm_VMMacroExpand): Obsoleted.  Implement it in

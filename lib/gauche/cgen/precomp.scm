@@ -385,7 +385,6 @@
 
 (define (setup ext-init? subinits)
   (cgen-decl "#include <gauche/code.h>")
-  (cgen-decl "#include <gauche/macro.h>") ; for MakeMacroTransformerOld. temporary.
   (cond [(and ext-init? (ext-module-file))
          => (^[extm]
               (cgen-decl "#include <gauche/extend.h>")
