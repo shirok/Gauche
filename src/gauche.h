@@ -609,13 +609,6 @@ SCM_EXTERN ScmObj Scm_VMWithGuardHandler(ScmObj handler, ScmObj thunk);
 SCM_EXTERN ScmObj Scm_VMWithExceptionHandler(ScmObj handler, ScmObj thunk);
 
 /* Miscellaneous stuff */
-SCM_EXTERN ScmObj Scm_MakeMacroTransformer(ScmSymbol *name,
-                                           ScmObj proc);
-SCM_EXTERN ScmObj Scm_MakeMacroAutoload(ScmSymbol *name,
-                                        ScmAutoload *al);
-
-SCM_EXTERN ScmObj Scm_UnwrapSyntax(ScmObj form);
-
 SCM_EXTERN int    Scm_VMGetNumResults(ScmVM *vm);
 SCM_EXTERN ScmObj Scm_VMGetResult(ScmVM *vm);
 SCM_EXTERN ScmObj Scm_VMGetStackLite(ScmVM *vm);
@@ -1552,13 +1545,18 @@ SCM_EXTERN ScmObj Scm_MakeSyntax(ScmSymbol *name, ScmObj handler);
 
 #define SCM_MACRO(obj)             ((ScmMacro*)(obj))
 #define SCM_MACROP(obj)            SCM_XTYPEP(obj, SCM_CLASS_MACRO)
-
 SCM_CLASS_DECL(Scm_MacroClass);
 #define SCM_CLASS_MACRO            (&Scm_MacroClass)
 
-SCM_EXTERN ScmObj Scm_MakeMacro(ScmSymbol *name,
-                                ScmTransformerProc transformer,
-                                void *data);
+SCM_EXTERN ScmObj Scm_MakeMacro(ScmSymbol *name, ScmObj transformer);
+SCM_EXTERN ScmObj Scm_MacroTransformer(ScmMacro *mac);
+
+SCM_EXTERN ScmObj Scm_MakeMacroTransformer(ScmSymbol *name,
+                                           ScmObj proc);
+SCM_EXTERN ScmObj Scm_MakeMacroAutoload(ScmSymbol *name,
+                                        ScmAutoload *al);
+
+SCM_EXTERN ScmObj Scm_UnwrapSyntax(ScmObj form);
 
 /*--------------------------------------------------------
  * PROMISE

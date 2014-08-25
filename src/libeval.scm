@@ -390,13 +390,15 @@
   Scm_MakeMacroTransformerOld)
 
 (define-cproc %make-macro-transformer (name::<symbol>? proc)
-  Scm_MakeMacroTransformer)
+  Scm_MakeMacro)
 
 (define-cproc compile-syntax-rules (name ellipsis literals rules mod env)
   Scm_CompileSyntaxRules)
 
-(define-cproc call-macro-expander (mac::<macro> expr env)
-  Scm_CallMacroExpander)
+(define-cproc macro-transformer (mac::<macro>) Scm_MacroTransformer)
+
+(define (call-macro-expander mac expr env)
+  ((macro-transformer mac) expr env))
 
 (define-cproc make-syntax (name::<symbol> proc)
   Scm_MakeSyntax)

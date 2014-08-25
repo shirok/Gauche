@@ -78,15 +78,18 @@ static void macro_print(ScmObj obj, ScmPort *port, ScmWriteContext *mode)
 
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_MacroClass, macro_print);
 
-ScmObj Scm_MakeMacro(ScmSymbol *name, ScmTransformerProc transformer,
-                     void *data)
+ScmObj Scm_MakeMacro(ScmSymbol *name, ScmObj transformer)
 {
     ScmMacro *s = SCM_NEW(ScmMacro);
     SCM_SET_CLASS(s, SCM_CLASS_MACRO);
     s->name = name;
     s->transformer = transformer;
-    s->data = data;
     return SCM_OBJ(s);
+}
+
+ScmObj Scm_MacroTransformer(ScmMacro *mac)
+{
+    return mac->transformer;
 }
 
 /*===================================================================
@@ -170,23 +173,6 @@ ScmSyntaxRules *make_syntax_rules(int nr)
 }
 
 /*===================================================================
- * Macro for the new compiler
- */
-
-static ScmObj macro_transform(ScmObj self, ScmObj form, ScmObj env,
-                              void *data)
-{
-    ScmObj proc = SCM_OBJ(data);
-    SCM_ASSERT(SCM_PAIRP(form));
-    return Scm_ApplyRec2(proc, form, env);
-}
-
-ScmObj Scm_MakeMacroTransformer(ScmSymbol *name, ScmObj proc)
-{
-    return Scm_MakeMacro(name, macro_transform, (void*)proc);
-}
-
-/*===================================================================
  * Traditional Macro
  */
 
@@ -194,9 +180,10 @@ ScmObj Scm_MakeMacroTransformer(ScmSymbol *name, ScmObj proc)
 /* TODO: better error message on syntax error (macro invocation with
    bad number of arguments) */
 
-static ScmObj macro_transform_old(ScmObj self, ScmObj form,
-                                  ScmObj env, void *data)
+static ScmObj macro_transform_old(ScmObj *argv, int argc, void *data)
 {
+    SCM_ASSERT(argc == 2);
+    ScmObj form = argv[0];      /* we ignore env (argv[1]) */
     ScmObj proc = SCM_OBJ(data);
     SCM_ASSERT(SCM_PAIRP(form));
     return Scm_VMApply(proc, SCM_CDR(form));
@@ -204,7 +191,9 @@ static ScmObj macro_transform_old(ScmObj self, ScmObj form,
 
 ScmObj Scm_MakeMacroTransformerOld(ScmSymbol *name, ScmProcedure *proc)
 {
-    return Scm_MakeMacro(name, macro_transform_old, (void*)proc);
+    ScmObj transformer = Scm_MakeSubr(macro_transform_old, proc, 2, 0,
+                                      SCM_FALSE);
+    return Scm_MakeMacro(name, transformer);
 }
 
 static ScmMacro *resolve_macro_autoload(ScmAutoload *adata)
@@ -219,15 +208,23 @@ static ScmMacro *resolve_macro_autoload(ScmAutoload *adata)
     return SCM_MACRO(mac);
 }
 
-static ScmObj macro_autoload(ScmObj self, ScmObj form, ScmObj env, void *data)
+static ScmObj macro_autoload(ScmObj *argv, int argc, void *data)
 {
+    SCM_ASSERT(argc == 2);
+    ScmObj form = argv[0];
+    ScmObj env = argv[1];
+    /* Important to save form and env before calling resolve_macro_autoload,
+       for it may overwrite stack region pointed by argv. */
+    SCM_ASSERT(SCM_AUTOLOADP(data));
     ScmMacro *mac = resolve_macro_autoload(SCM_AUTOLOAD(data));
-    return mac->transformer(SCM_OBJ(mac), form, env, mac->data);
+    return Scm_CallMacroExpander(mac, form, env);
 }
 
 ScmObj Scm_MakeMacroAutoload(ScmSymbol *name, ScmAutoload *adata)
 {
-    return Scm_MakeMacro(name, macro_autoload, (void*)adata);
+    ScmObj transformer = Scm_MakeSubr(macro_autoload, adata,
+                                      2, 0, SCM_FALSE);
+    return Scm_MakeMacro(name, transformer);
 }
 
 /*===================================================================
@@ -957,9 +954,11 @@ static ScmObj synrule_expand(ScmObj form, ScmObj env, ScmSyntaxRules *sr)
     return SCM_NIL;
 }
 
-static ScmObj synrule_transform(ScmObj self, ScmObj form, ScmObj env,
-                                void *data)
+static ScmObj synrule_transform(ScmObj *argv, int argc, void *data)
 {
+    SCM_ASSERT(argc == 2);
+    ScmObj form = argv[0];
+    ScmObj env = argv[1];
     ScmSyntaxRules *sr = (ScmSyntaxRules *)data;
     return synrule_expand(form, env, sr);
 }
@@ -973,7 +972,9 @@ ScmObj Scm_CompileSyntaxRules(ScmObj name, ScmObj ellipsis,
     if (!SCM_MODULEP(mod)) Scm_Error("module required, but got %S", mod);
     ScmSyntaxRules *sr = compile_rules(name, ellipsis, literals, rules,
                                        SCM_MODULE(mod), env);
-    return Scm_MakeMacro(SCM_SYMBOL(name), synrule_transform, (void*)sr);
+    ScmObj sr_xform = Scm_MakeSubr(synrule_transform, sr,
+                                   2, 0, SCM_FALSE);
+    return Scm_MakeMacro(SCM_SYMBOL(name), sr_xform);
 }
 
 /*===================================================================
@@ -991,7 +992,7 @@ ScmObj Scm_VMMacroExpand(ScmObj expr, ScmObj env, int oncep)
 
 ScmObj Scm_CallMacroExpander(ScmMacro *mac, ScmObj expr, ScmObj env)
 {
-    return mac->transformer(SCM_OBJ(mac), expr, env, mac->data);
+    return Scm_ApplyRec2(mac->transformer, expr, env);
 }
 
 /*===================================================================

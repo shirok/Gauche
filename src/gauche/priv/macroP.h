@@ -44,13 +44,11 @@ struct ScmSyntaxRec {
     ScmObj     handler;         /* syntax handler.  (Sexpr, Env) -> IForm */
 };
 
-
 /* Macro */
 struct ScmMacroRec {
     SCM_HEADER;
-    ScmSymbol *name;                /* for debugging.  can be NULL */
-    ScmTransformerProc transformer; /* (Self, Sexpr, Env) -> Sexpr */
-    void *data;
+    ScmSymbol *name;            /* for debugging.  can be NULL */
+    ScmObj transformer;         /* (Sexpr, CEnv) -> Sexpr */
 };
 
 /*

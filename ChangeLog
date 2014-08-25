@@ -1,9 +1,15 @@
 2014-08-24  Shiro Kawai  <shiro@acm.org>
 
-	* lib/gauche/macro.h -> lib/gauche/priv/macroP.h: Moved macro
+	* src/gauche/macro.h -> src/gauche/priv/macroP.h: Moved macro
 	  implementation details to private header.  ScmSyntax and
 	  ScmMacro should be treated as opaque objects.  Various files
 	  adjusted.
+	* src/macro.c (Scm_MakeMacro): Changed ScmMacro structure and
+	  the signature of Scm_MakeMacro.  Now ScmMacro is simply a wrapper
+	  of macro transformer (Sexpr, Env -> Sexpr), with an optional
+	  name.   Technically this is an incompatible change, but we
+	  expect nobody was directly using this interface.
+	* src/libeval.scm (macro-transformer): Added.
 
 2014-08-23  Shiro Kawai  <shiro@acm.org>
 
