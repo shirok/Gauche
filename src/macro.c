@@ -958,9 +958,11 @@ static ScmObj synrule_transform(ScmObj *argv, int argc, void *data)
 {
     SCM_ASSERT(argc == 2);
     ScmObj form = argv[0];
-    ScmObj env = argv[1];
+    ScmObj cenv = argv[1];
+    SCM_ASSERT(SCM_VECTORP(cenv));
+    ScmObj frames = SCM_VECTOR_ELEMENT(cenv, 1);
     ScmSyntaxRules *sr = (ScmSyntaxRules *)data;
-    return synrule_expand(form, env, sr);
+    return synrule_expand(form, frames, sr);
 }
 
 /* NB: a stub for the new compiler (TEMPORARY) */
@@ -990,9 +992,10 @@ ScmObj Scm_VMMacroExpand(ScmObj expr, ScmObj env, int oncep)
     Scm_Error("Scm_VMMacroExpand is obsoleted.");
 }
 
-ScmObj Scm_CallMacroExpander(ScmMacro *mac, ScmObj expr, ScmObj env)
+ScmObj Scm_CallMacroExpander(ScmMacro *mac, ScmObj expr, ScmObj cenv)
 {
-    return Scm_ApplyRec2(mac->transformer, expr, env);
+    SCM_ASSERT(SCM_VECTORP(cenv));
+    return Scm_ApplyRec2(mac->transformer, expr, cenv);
 }
 
 /*===================================================================

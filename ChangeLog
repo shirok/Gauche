@@ -9,7 +9,14 @@
 	  of macro transformer (Sexpr, Env -> Sexpr), with an optional
 	  name.   Technically this is an incompatible change, but we
 	  expect nobody was directly using this interface.
+	  We also change the way the macro expander is called; we pass
+	  CENV, instead of a list frames, to the expander procedure.
+	  This was never specified explicitly, and actually we had it wrong---
+	  tye synrule expander expected frames, and the primitive expander
+	  expected cenv.  It happened to work because we hadn't used env
+	  argument of primitive-expander yet.
 	* src/libeval.scm (macro-transformer): Added.
+	  (call-macro-expander): Pass CENV to the third arg.
 
 2014-08-23  Shiro Kawai  <shiro@acm.org>
 

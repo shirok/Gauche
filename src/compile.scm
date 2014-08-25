@@ -292,8 +292,11 @@
 ;;
 ;;     source-path - While processing included file, this slot is set to
 ;;                the full path of the included filename.
-(define-simple-struct cenv #f make-cenv
+(define-simple-struct cenv #f %make-cenv
   (module frames exp-name current-proc (source-path (current-load-path))))
+
+(define (make-cenv module :optional (frames '()) (exp-name #f))
+  (%make-cenv module frames exp-name))
 
 ;; Some cenv-related proceduers are in C for better performance.
 (inline-stub
@@ -365,16 +368,16 @@
  )
 
 (define-macro (cenv-copy-except cenv . kvs)
-  `(make-cenv ,(get-keyword :module kvs `(cenv-module ,cenv))
-              ,(get-keyword :frames kvs `(cenv-frames ,cenv))
-              ,(get-keyword :exp-name kvs `(cenv-exp-name ,cenv))
-              ,(get-keyword :current-proc kvs `(cenv-current-proc ,cenv))
-              ,(get-keyword :source-path kvs `(cenv-source-path ,cenv))))
+  `(%make-cenv ,(get-keyword :module kvs `(cenv-module ,cenv))
+               ,(get-keyword :frames kvs `(cenv-frames ,cenv))
+               ,(get-keyword :exp-name kvs `(cenv-exp-name ,cenv))
+               ,(get-keyword :current-proc kvs `(cenv-current-proc ,cenv))
+               ,(get-keyword :source-path kvs `(cenv-source-path ,cenv))))
 
 (define-macro (make-bottom-cenv . maybe-module)
   (if (null? maybe-module)
-    `(make-cenv (vm-current-module) '())
-    `(make-cenv ,(car maybe-module) '())))
+    `(%make-cenv (vm-current-module) '())
+    `(%make-cenv ,(car maybe-module) '())))
 
 (define-inline (cenv-swap-module cenv mod)
   (cenv-copy-except cenv :module mod))
@@ -1479,7 +1482,7 @@
       (if gval
         (case type
           [(macro)
-           (pass1 (call-macro-expander gval program (cenv-frames cenv)) cenv)]
+           (pass1 (call-macro-expander gval program cenv) cenv)]
           [(syntax)
            (call-syntax-handler gval program cenv)]
           [(inline)
@@ -1531,7 +1534,7 @@
               [(identifier? h) (pass1/global-call h)]
               [(lvar? h) (pass1/call program ($lref h) (cdr program) cenv)]
               [(macro? h) ;; local macro
-               (pass1 (call-macro-expander h program (cenv-frames cenv)) cenv)]
+               (pass1 (call-macro-expander h program cenv) cenv)]
               [(syntax? h);; locally rebound syntax
                (call-syntax-handler h program cenv)]
               [else (error "[internal] unknown resolution of head:" h)]))]
@@ -1642,7 +1645,7 @@
 
 (define (pass1/body-macro-expand-rec mac exprs intdefs cenv)
   (pass1/body-rec
-   (acons (call-macro-expander mac (caar exprs) (cenv-frames cenv))
+   (acons (call-macro-expander mac (caar exprs) cenv)
           (cdar exprs) ;src
           (cdr exprs)) ;rest
    intdefs cenv))
@@ -2020,31 +2023,29 @@
 
 (define-pass1-syntax (%macroexpand form cenv) :gauche
   (match form
-    [(_ expr) ($const (%internal-macro-expand expr (cenv-module cenv)
-                                              (cenv-frames cenv) #f))]
+    [(_ expr) ($const (%internal-macro-expand expr cenv #f))]
     [_ (error "syntax-error: malformed %macroexpand:" form)]))
 
 (define-pass1-syntax (%macroexpand-1 form cenv) :gauche
   (match form
-    [(_ expr) ($const (%internal-macro-expand expr (cenv-module cenv)
-                                              (cenv-frames cenv) #t))]
+    [(_ expr) ($const (%internal-macro-expand expr cenv #t))]
     [_ (error "syntax-error: malformed %macroexpand-1:" form)]))
 
-(define (%internal-macro-expand expr mod frames once?)
+(define (%internal-macro-expand expr cenv once?)
   (define (xpand expr)
     (match expr
       [((? variable? op) . args)
-       (let1 var (env-lookup op mod frames)
-         (cond [(macro? var) (call-macro-expander var expr frames)]
+       (let1 var (cenv-lookup-syntax cenv op)
+         (cond [(macro? var) (call-macro-expander var expr cenv)]
                [(identifier? var)
                 (if-let1 gval (and-let* ([gloc (id->bound-gloc var)]
                                          [gval (gloc-ref gloc)]
                                          [ (macro? gval) ])
                                 gval)
-                  (call-macro-expander gval expr frames)
+                  (call-macro-expander gval expr cenv)
                   expr)]
                [else expr]))]
-      [((? macro? op) . args) (call-macro-expander op expr frames)]
+      [((? macro? op) . args) (call-macro-expander op expr cenv)]
       [_ expr]))
   (if once?
     (xpand expr)
@@ -5816,7 +5817,7 @@
 ;; but for the time being, we mimic explicitly renaming macro.
 
 (define (%bind-inline-er-transformer module name er-xformer)
-  (define macro-def-cenv (make-cenv module '()))
+  (define macro-def-cenv (%make-cenv module '()))
   ($ %attach-inline-transformer module name
      (^[form cenv]
        ;; Call the transformer with rename and compare procedure,

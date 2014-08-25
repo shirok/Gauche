@@ -367,10 +367,10 @@
 (select-module gauche.internal)
 ;; API
 (define-in-module gauche (macroexpand form)
-  (%internal-macro-expand form (vm-current-module) '() #f))
+  (%internal-macro-expand form (make-cenv (vm-current-module)) #f))
 ;; API
 (define-in-module gauche (macroexpand-1 form)
-  (%internal-macro-expand form (vm-current-module) '() #t))
+  (%internal-macro-expand form (make-cenv (vm-current-module)) #t))
 
 (select-module gauche)
 ;; API
@@ -397,8 +397,8 @@
 
 (define-cproc macro-transformer (mac::<macro>) Scm_MacroTransformer)
 
-(define (call-macro-expander mac expr env)
-  ((macro-transformer mac) expr env))
+(define (call-macro-expander mac expr cenv)
+  ((macro-transformer mac) expr cenv))
 
 (define-cproc make-syntax (name::<symbol> proc)
   Scm_MakeSyntax)
