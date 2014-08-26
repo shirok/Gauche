@@ -576,7 +576,7 @@ static void load_dlo(ScmDLObj *dlo)
     if (SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_LOAD_VERBOSE)) {
         int len = Scm_Length(PARAM_REF(vm, load_history));
         SCM_PUTZ(";;", 2, SCM_CURERR);
-        while (len-- > 0) SCM_PUTC(' ', SCM_CURERR);
+        while (len-- > 0) Scm_Putz("  ", 2, SCM_CURERR);
         Scm_Printf(SCM_CURERR, "Dynamically Loading %s...\n", dlo->path);
     }
     dlo->handle = dl_open(dlo->path);
