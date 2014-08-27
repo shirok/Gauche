@@ -1756,6 +1756,7 @@
                         (make-syntax ',(car formals) ,name)))))
 
 (define (global-id id) (make-identifier id (find-module 'gauche) '()))
+(define (global-id% id) (make-identifier id (find-module 'gauche.internal) '()))
 
 (define define.      (global-id 'define))
 (define lambda.      (global-id 'lambda))
@@ -1771,10 +1772,8 @@
 (define else.        (global-id 'else))
 (define =>.          (global-id '=>))
 
-(define %make-primitive-transformer.
-  (make-identifier '%make-primitive-transformer
-                   (find-module 'gauche.internal)
-                   '()))
+(define %make-primitive-transformer. (global-id% '%make-primitive-transformer))
+(define make-cenv. (global-id% 'make-cenv))
 
 ;; Definitions ........................................
 
@@ -2015,10 +2014,21 @@
 (define-pass1-syntax (primitive-macro-transformer form cenv) :gauche
   (match form
     [(_ xformer)
-     (let1 xf-iform (pass1 xformer cenv)
-       ($call form
-              ($gref %make-primitive-transformer.)
-              (list xf-iform ($const cenv))))]
+     ;; We need to capture the current CENV as the macro definition
+     ;; environment.  There's a catch, though---if we're AOT compiling
+     ;; a macro, the captured CENV must be serializable to a file,
+     ;; which isn't generally the case.
+     ;; So, if we're compiling toplevel, we emit code that reconstruct
+     ;; cenv at runtime.  (Local macros will never "survive" into precompiled
+     ;; file, so we don't need to bother for it.)  Runtime CENV construction
+     ;; will incur some overhead, but it's just per macro definition so
+     ;; it won't be an issue.
+     (let1 def-env-form (if (null? (cenv-frames cenv))
+                          `(,make-cenv. (current-module) '()
+                                        ',(cenv-exp-name cenv))
+                          `',cenv)
+       (pass1 `(,%make-primitive-transformer. ,xformer ,def-env-form)
+              cenv))]
     [_ (error "syntax-error: malformed primitive-macro-transformer:" form)]))
 
 (define-pass1-syntax (%macroexpand form cenv) :gauche
