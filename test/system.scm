@@ -618,11 +618,12 @@
       (lambda ()
         (write '(define (main args)
                   (let1 expected-ppid (x->integer (cadr args))
-                    (let loop ()
+                    (let loop ([c 0])
                       (sys-nanosleep #e2e8)
-                      (if (eqv? (sys-getppid) expected-ppid)
-                        (write (list (sys-getpid) (sys-getpgrp)))
-                        (loop))))))))
+                      (cond [(or (eqv? (sys-getppid) expected-ppid)
+                                 (>= c 50)) ; takes about 10s
+                             (write (list (sys-getpid) (sys-getpgrp)))]
+                            [else (loop (+ c 1))])))))))
     (receive (in out) (sys-pipe :buffering :none)
       (define (run-and-read ppid detached)
         (let1 pid (sys-fork-and-exec "./gosh"
