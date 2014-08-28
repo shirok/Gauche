@@ -1752,8 +1752,8 @@
         ;; a trick to assign comprehensive name to body:
         [name (string->symbol #`"syntax/,(car formals)")])
     `(let ((,name (^ ,(cdr formals) ,@body)))
-       (%insert-binding (find-module ',mod) ',(car formals)
-                        (make-syntax ',(car formals) ,name)))))
+       (%insert-syntax-binding (find-module ',mod) ',(car formals)
+                               (make-syntax ',(car formals) ,name)))))
 
 (define (global-id id) (make-identifier id (find-module 'gauche) '()))
 (define (global-id% id) (make-identifier id (find-module 'gauche.internal) '()))
@@ -1974,13 +1974,13 @@
      (let1 trans
          (make-macro-transformer name
                                  (eval `(,lambda. ,formals ,@body) module))
-       (%insert-binding module name trans)
+       (%insert-syntax-binding module name trans)
        ($const-undef))]
     [(_ name expr)
      (unless (variable? name) (error "syntax-error:" oform))
      ;; TODO: macro autoload
      (let1 trans (make-macro-transformer name (eval expr module))
-       (%insert-binding module name trans)
+       (%insert-syntax-binding module name trans)
        ($const-undef))]
     [_ (error "syntax-error:" oform)]))
 
@@ -1992,7 +1992,7 @@
     [(_ name expr)
      (let* ([cenv (cenv-add-name cenv (variable-name name))]
             [transformer (pass1/eval-macro-rhs 'define-syntax expr cenv)])
-       (%insert-binding (cenv-module cenv) name transformer)
+       (%insert-syntax-binding (cenv-module cenv) name transformer)
        ($const-undef))]
     [_ (error "syntax-error: malformed define-syntax:" form)]))
 
