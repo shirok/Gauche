@@ -621,8 +621,6 @@
 ;; For exported macros, we should include the macro itself in the compiled
 ;; file, so we intercept define-macro and define-syntax.
 
-;; For the time being, we only compile the legacy macros into C file.
-;; R5RS macros are put in ext-module file as is.
 (define (handle-define-macro form)
   (define %define (make-identifier 'define (find-module 'gauche) '()))
   (define %define-syntax (make-identifier 'define-syntax (find-module 'gauche) '()))
@@ -645,14 +643,28 @@
     [(name expr) (do-handle name expr)]
     [_ (error "Malformed define-macro" form)]))
 
+;; At this moment, we can only precompile macros that have closure
+;; in its transformer.
 (define (handle-define-syntax form)
   (match form
-    [(name . _)
+    [(name xformer-spec)
+     ;; This inserts sets-up compile-time environment.
+     (eval-in-current-tmodule
+      `((with-module gauche define-syntax) ,@form))
+     ;; If the macro needs to exported, check if we can put it in
+     ;; precompiled file (it is, if the transformer is a closure).
+     ;; Othewise, we emit the form to *.sci file.
      (when (or (symbol-exported? name)
                (memq name (private-macros-to-keep)))
-       (write-ext-module `(define-syntax . ,form)))]
-    [_ #f])
-  (cons '(with-module gauche define-syntax) form))
+       (let1 val (global-variable-ref (~ (current-tmodule)'module) name #f)
+         (or (and-let* ([ ((with-module gauche.internal macro?) val) ]
+                        [tx ((with-module gauche.internal macro-transformer) val)]
+                        [ (closure? tx) ])
+               `((with-module gauche.internal %insert-syntax-binding)
+                 (current-module) ',name ,xformer-spec))
+             (write-ext-module `(define-syntax . ,form))
+             #f)))]
+    [_ (error "Malformed define-syntax" form)]))
 
 (define (handle-define-constant form)
   (match form

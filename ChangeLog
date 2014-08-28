@@ -1,5 +1,9 @@
 2014-08-28  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/cgen/precomp.scm (handle-define-syntax): Allow
+	  Scheme-defined low-level macro transformer to be compiled
+	  into *.c file, instead of emitting it to *.sci file.
+
 	* src/libmod.scm (%insert-syntax-binding): Added.  Currently our
 	  runtime don't distinguish toplevel value binding and syntax binding,
 	  so %insert-binding can do both, but in future we may treat syntactic
