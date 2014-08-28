@@ -2023,6 +2023,9 @@
      ;; file, so we don't need to bother for it.)  Runtime CENV construction
      ;; will incur some overhead, but it's just per macro definition so
      ;; it won't be an issue.
+     ;; NB: precomp needs to intercept current-module, so we're not using
+     ;; identifier for it.   It causes hygienity problem, though.  Need to
+     ;; be addressed in future.
      (let1 def-env-form (if (null? (cenv-frames cenv))
                           `(,make-cenv. (current-module) '()
                                         ',(cenv-exp-name cenv))
