@@ -23,8 +23,17 @@ gosh \- a Scheme script interpreter
 [-E
 .I expr
 ]
+[-m
+.I module
+]
 [-f
 .I flag
+]
+[-p
+.I type
+]
+[-r
+.I standard
 ]
 [--]
 [
@@ -131,17 +140,32 @@ Turns on the profiler.  Currently
 .I type
 can only be 'time'.
 .TP
+.BI -m module
+When the script file is given, this option specifies the name of
+the module in which the "main" procedure is defined.
+The default is "user".
+.TP
+.BI -r standard
+Starts gosh with the default environment defined
+in RnRS, where n is determined by
+.I standard.
+Currently, only 7 is the valid value of
+.I standard.
+.TP
 .BI -f flag
 Sets various flags.
   case-fold       uses case-insensitive reader (as in R5RS)
   load-verbose    report while loading files
+  include-verbose report while including files
   no-inline       don't inline primitive procedures and constants
-                  (combined no-inline-globals, no-inline-locals, and
-                  no-inline-constants.)
+                  (combined no-inline-globals, no-inline-locals,
+                  and no-inline-constants.)
   no-inline-globals don't inline global procedures.
   no-inline-locals  don't inline local procedures.
   no-inline-constants don't inline constants.
   no-post-inline-pass don't run post-inline optimization pass.
+  warn-legacy-syntax print warning when legacy Gauche syntax
+                  is encountered.
 .TP
 .BI -F feature
 Makes
