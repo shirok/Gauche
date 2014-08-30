@@ -2934,7 +2934,8 @@ The list of classes of the argument list is called
 @emph{method specializer list}, based on which the generic
 function will select appropriate methods(s).
 Here are some examples of @var{specs} and the corresponding
-specializer list:
+specializer list (note that the rest argument isn't considered
+as a part of specializer list; we know it's always a list.):
 @c JP
 @i{class} は引数が所属すべきクラスを指定します。@code{@i{arg}} が単に
 シンボルであれば、@code{(@i{arg} <top>)} と同じです。rest 引数の
@@ -2948,23 +2949,24 @@ specializer list:
 引数リストのクラスのリストは@emph{メソッド特定化子リスト}といい、
 これを基に、ジェネリック関数は適切なメソッドを選択します。@var{specs} と
 それに対応する特定化子リストの例をあげておきます。
+(rest引数は特定化子リストには考慮されないことに注意。リストに決まっているからです。)
 @c COMMON
 
 @example
 specs:        ((self <myclass>) (index <integer>) value)
 specializers: (<myclas> <integer> <top>)
 
-specs:        ((self <myclass>) obj . options)
-specializers: (<myclas> <top> . <top>)
-
 specs:        (obj (attr <string>))
 specializers: (<top> <string>)
 
-specs:        args
-specializers: <top>
+specs:        ((self <myclass>) obj . options)
+specializers: (<myclas> <top>)
 
 specs:        ((self <myclass>) obj :optional (a 0) (b 1) :key (c 2))
-specializers: (<myclas> <top> . <top>)
+specializers: (<myclas> <top>)
+
+specs:        args
+specializers: ()
 @end example
 
 @c EN
