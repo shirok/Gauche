@@ -4205,31 +4205,44 @@ A keyword is a sort of a special symbol that is automatically quoted.
 It is extensively used in pass-by-name arguments (keyword arguments),
 and keyword-value list.
 
-Unlike Common Lisp, keywords and symbols are distinct types in
-the current version of Gauche for historical reasons.
-In future, keywords will be a subtype
-of symbols; a keyword will be evaluated as an identifier, just like symbols,
-but happens to have itself as a value.   @xref{Keyword and symbol integration},
-for the details.
-
-See also @ref{Making Procedures} for how Gauche supports keyword
+See @ref{Making Procedures} for how Gauche supports keyword
 arguments, and @code{let-keywords} macro (@ref{Optional argument parsing})
 for parsing keyword-value list manually.
+
+Unlike Common Lisp, keywords and symbols are distinct types in
+the current version of Gauche by default.
+When you set the environment variable @code{GAUCHE_KEYWORD_IS_SYMBOL},
+however, keywords become a subtype of symbols;
+a keyword will be evaluated as an identifier, just like symbols,
+but just happens to have itself as a value.
+
+Our plan is to make keywords as a subtype of symbols by default
+in near future.  So we urge developers to test their libraries and
+applications with
+@code{GAUCHE_KEYWORD_IS_SYMBOL} to make sure the change won't
+break them.  @xref{Keyword and symbol integration},
+for the hints to keep the compatibility.
 @c JP
 キーワードは、自動的にクォートされる特別なシンボルのようなものです。
 名前で渡す引数(キーワード引数)や、キーワード-値のリストで広く使われて
 います。
 
-CommonLisp とは異なり、歴史的理由から
-現在のGaucheではキーワードとシンボルは別々の型として扱われます。
-将来は、キーワードはシンボルのサブタイプになる予定です。つまり、
-キーワードはシンボルと同様、識別子として扱われ、
-たまたま自分自身を値として持つようになるということです。
-詳細は@ref{Keyword and symbol integration}を参照してください。
-
 Gaucheにおけるキーワード引数のサポートについては@ref{Making Procedures}を、
 また独自にキーワード-値リストをパーズする方法については
 @code{let-keywords} マクロ(@ref{Optional argument parsing}) も参照して下さい。
+
+CommonLisp とは異なり、現在のGaucheではキーワードとシンボルは
+デフォルトで全く別の型として扱われます。ただし、
+環境変数@code{GAUCHE_KEYWORD_IS_SYMBOL}がセットされていると、
+キーワードはシンボルのサブタイプとなります。すなわち、
+キーワードもシンボルと同様通常の変数として評価されるのですが、
+たまたまその値がそれ自身に束縛されているように見えるのです。
+
+この「キーワードはシンボルのサブタイプ」が近い将来デフォルトの動作になる予定です。
+開発者は、@code{GAUCHE_KEYWORD_IS_SYMBOL}をセットした状態で
+ライブラリやアプリケーションが壊れないかどうか確認しておいてください。
+互換性を保つ方法については、
+@ref{Keyword and symbol integration}を参照してください。
 @c COMMON
 @end  deftp
 
@@ -4434,6 +4447,9 @@ would break backward compatibility unless you code carefully.  We explain
 here
 how to write code that works in the current Gauche and will keep working
 after we make the change.
+
+You can test if your library/application works after the change,
+by setting the environment variable @code{GAUCHE_KEYWORD_IS_SYMBOL}.
 @c JP
 将来のGaucheでは、キーワードは「デフォルトで自分自身に束縛されている」という
 性質を持つ、シンボルのサブタイプとなる予定です。
@@ -4450,6 +4466,9 @@ after we make the change.
 注意していないと互換性を壊してしまうかもしれません。
 現在のGaucheで使えて、さらに将来に渡っても壊れることがないような方法を
 これから説明します。
+
+ライブラリやアプリケーションがこの変更後も動くかどうかを確かめるには、
+環境変数@code{GAUCHE_KEYWORD_IS_SYMBOL}をセットして走らせてください。
 @c COMMON
 
 @c EN
@@ -4564,13 +4583,11 @@ For @code{syntax-rules}, list the keywords as literals.
 @end itemize
 
 @c EN
-Note that it was an error in Gauche 0.9.3.3 or before to
-list keywords in the literals of @code{syntax-rules}.
-In 0.9.4 you can do so, and we encourage it, for it is also compatible to R7RS.
+As of Gauche 0.9.5, @code{match} warns if you have unquoted
+keywords in match patterns.
 @c JP
-Gauche 0.9.3.3とそれ以前のバージョンでは、@code{syntax-rules}のリテラルリストに
-キーワードを入れるとエラーになっていました。
-0.9.4ではそれが出来ますし、そうすべきです。そのコードはR7RSとも互換になります。
+Gauche 0.9.5から、@code{match}はパターンにクオートされていないキーワードが
+現れると警告を発します。
 @c COMMON
 
 @c EN

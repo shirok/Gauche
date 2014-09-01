@@ -641,7 +641,10 @@
          ;; keyword-is-symbol runtime.  Remove this clause once we fully
          ;; migrated to keyword-is-symbol.
          ((and (not (symbol? :x)) (keyword? p))
-          (warn "Unquoted keyword `~s' in match pattern: ~s" p x)
+          (warn "Unquoted keyword `~s' in match pattern: ~s.  \
+                 This would likely break in future versions of Gauche.  \
+                 See the ``Keyword and symbol integration'' section \
+                 of the manual for the details.\n" p x)
           (emit `(equal? ,e ,p) sf kf ks))
          ((symid? p) (set! v (cons (cons p e) v))
           (ks sf))
