@@ -106,9 +106,9 @@
 ;;;
 
 (define-method describe (object)
+  (describe-common object)
   (let* ([class (class-of object)]
          [slots (class-slots class)])
-    (format #t "~s is an instance of class ~a\n" object (class-name class))
     (unless (null? slots)
       (format #t "slots:\n")
       (dolist [s (map slot-definition-name slots)]
@@ -120,10 +120,50 @@
     (values)))
 
 (define-method describe ((s <symbol>))
-  (format #t "~s is an instance of class ~a\n" s (class-name (class-of s)))
-  (describe-symbol-bindings s)) ;; autoloaded from gauche.modutil
+  (describe-common s)
+  (describe-symbol-bindings s) ;; autoloaded from gauche.modutil
+  (values))
+
+(define-method describe ((c <char>))
+  (describe-common c)
+  (format #t "  (U+~4,'0x, ~a)\n" (char->ucs c) (char-general-category c))
+  (values))
+
+(define-method describe ((n <integer>))
+  (describe-common n)
+  (when (exact? n)
+    (format #t "  (#x~x" n)
+    (when (<= 1000 n #e1e26) ; 10^26 is approx to 2^89
+      (let loop ([nn n] [unit '(_ Ki Mi Gi Ti Pi Ei Zi Yi)])
+        (cond [(null? unit)]
+              [(< nn 1000)
+               (format #t ", ~~ ~,,,,3a~a" (floor nn) (car unit))]
+              ;; I'm not sure how to round in binary-prefix system, but it's
+              ;; approximation anyway, so here it goes.
+              [(< nn 9950)
+               (let* ([N (floor (+ nn 50))]
+                      [N0 (quotient N 1000)]
+                      [N1 (quotient (modulo N 1000) 100)])
+                 (format #t ", ~~ ~d.~d~a" N0 N1 (cadr unit)))]
+              [else (loop (/ nn 1024) (cdr unit))])))
+    (when (and (<= 0 n #x10ffff)
+               (let1 c (ucs->char n)
+                 (or (memq (char-general-category c) '(Ll Lm Lo Lt Lu
+                                                       Nd Nl No
+                                                       Pc Pd Pe Pf Pi Po Ps
+                                                       Sc Sk Sm So))
+                     (memv c '(#\null #\alarm #\backspace #\tab #\newline
+                               #\return #\escape #\space)))))
+      (format #t ", ~s as char" (ucs->char n)))
+    (when (and (<= 0 n (expt 2 31)))
+      (format #t ", ~a as unix-time"
+              (sys-strftime "%Y-%m-%dT%H:%M:%SZ" (sys-gmtime n))))
+    (format #t ")\n")))
 
 (define d describe)
+
+(define (describe-common obj)
+  (format #t "~s is an instance of class ~a\n" obj (class-name (class-of obj))))
 
 ;;;
 ;;; Enhanced REPL
