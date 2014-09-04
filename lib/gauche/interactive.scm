@@ -158,7 +158,8 @@
     (when (and (<= 0 n (expt 2 31)))
       (format #t ", ~a as unix-time"
               (sys-strftime "%Y-%m-%dT%H:%M:%SZ" (sys-gmtime n))))
-    (format #t ")\n")))
+    (format #t ")\n")
+    (values)))
 
 (define d describe)
 
