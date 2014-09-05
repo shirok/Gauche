@@ -154,6 +154,13 @@
 (test* "base-35 reader" '(#t #t) (radix-tester 35))
 (test* "base-36 reader" '(#t #t) (radix-tester 36))
 
+(test* "Gauche extended format" #x123456789
+       (string->number "#x1_2345_6789"))
+(test* "Gauche extended format" #x-123456789
+       (string->number "#x-123_456_789"))
+(test* "Gauche extended format" #f
+       (string->number "123_456_789"))
+
 ;;------------------------------------------------------------------
 (test-section "rational reader")
 

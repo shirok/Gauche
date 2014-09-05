@@ -3681,9 +3681,10 @@ struct numread_packet {
     int radix;                  /* radix */
     int exactness;              /* exactness; see enum below */
     int padread;                /* '#' padding has been read */
-    int strict;                 /* when true, reports an error if the
-                                   input violates implementation limitation;
-                                   otherwise, the routine returns #f. */
+    int explicit;               /* explicit prefix is appeared */
+    int strict;                 /* reject gauche extension */
+    int throwerror;             /* throws error on parse, instead of
+                                   returning #f. */
 };
 
 enum { /* used in the exactness flag */
@@ -3742,6 +3743,11 @@ static ScmObj read_uint(const char **strp, int *lenp,
     while (len--) {
         int digval = -1;
         char c = tolower(*str++);
+        if (ctx->explicit && !ctx->strict && c == '_') {
+            /* Gauche extension - allow '_' in digits for readability
+               when number is expliticly prefixed. */
+            continue;
+        }
         if (ctx->padread) {
             if (c == '#') digval = 0;
             else break;
@@ -4096,7 +4102,9 @@ static ScmObj read_number(const char *str, int len, int radix, int strict)
     ctx.buflen = len;
     ctx.exactness = NOEXACT;
     ctx.padread = FALSE;
+    ctx.explicit = FALSE;
     ctx.strict = strict;
+    ctx.throwerror = FALSE;
 
 #define CHK_EXACT_COMPLEX()                                                 \
     do {                                                                    \
@@ -4118,26 +4126,32 @@ static ScmObj read_number(const char *str, int len, int radix, int strict)
         case 'x':; case 'X':;
             if (radix_seen) return SCM_FALSE;
             ctx.radix = 16; radix_seen++;
+            ctx.explicit = TRUE;
             continue;
         case 'o':; case 'O':;
             if (radix_seen) return SCM_FALSE;
             ctx.radix = 8; radix_seen++;
+            ctx.explicit = TRUE;
             continue;
         case 'b':; case 'B':;
             if (radix_seen) return SCM_FALSE;
             ctx.radix = 2; radix_seen++;
+            ctx.explicit = TRUE;
             continue;
         case 'd':; case 'D':;
             if (radix_seen) return SCM_FALSE;
             ctx.radix = 10; radix_seen++;
+            ctx.explicit = TRUE;
             continue;
         case 'e':; case 'E':;
             if (exactness_seen) return SCM_FALSE;
             ctx.exactness = EXACT; exactness_seen++;
+            ctx.explicit = TRUE;
             continue;
         case 'i':; case 'I':;
             if (exactness_seen) return SCM_FALSE;
             ctx.exactness = INEXACT; exactness_seen++;
+            ctx.explicit = TRUE;
             continue;
         }
         return SCM_FALSE;
@@ -4205,7 +4219,7 @@ static ScmObj read_number(const char *str, int len, int radix, int strict)
 
 static ScmObj numread_error(const char *msg, struct numread_packet *context)
 {
-    if (context->strict) {
+    if (context->throwerror) {
         Scm_Error("bad number format %s: %A", msg,
                   Scm_MakeString(context->buffer, context->buflen,
                                  context->buflen, 0));

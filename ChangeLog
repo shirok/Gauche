@@ -1,3 +1,11 @@
+2014-09-04  Shiro Kawai  <shiro@acm.org>
+
+	* src/number.c (Scm_StringToNumber): Allow '_' to be inserted between
+	  digits when a number is explicitly prefixed.  This is for the
+	  readability, e.g. #b1101_1000_0001_1101 etc.  We don't allow
+	  unprefixed numbers, though, for the possible incompatibility
+	  (e.g. 3_2 may be interpreted as a symbol.)
+
 2014-09-03  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/interactive.scm (describe): When object is char or integer,
