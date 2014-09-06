@@ -19150,6 +19150,21 @@ If the queue doesn't have the limit, @code{+inf.0} is returned.
 示す整数を返します。例えば、既にキューがいっぱいであれば0が返ります。
 キューに最大容量が設定されていなければ@code{+inf.0}が返ります。
 @c COMMON
+
+@c EN
+Note that even if this returns a non-zero finite value, subsequent 
+@code{enqueue!} may throw an error because of the queue being full.
+It's because another thread may put an item to the queue
+between this procedure call and @code{enqueue!}.  To avoid
+this situation, use @code{enqueue/wait!} to insert item
+to mtqueue with finite max-length.
+@c JP
+この手続きが0以外有限値を返した場合でも、続く@code{enqueue!}の呼び出し時点で
+キューがいっぱいになっている可能性があることに注意してください。
+この手続きの呼び出しと@code{enqueue!}の
+呼び出しの間に、他のスレッドがキューに要素を入れるかもしれないからです。
+有限長のmtqueueに確実に要素を挿入したい場合は@code{enqueue/wait!}を使ってください。
+@c COMMON
 @end defun
 
 
@@ -19175,7 +19190,7 @@ If @var{queue} is an mtqueue, all the objects are enqueued
 atomically; no other objects from other threads can be inserted
 between the objects given to a single @code{enqueue!} call.
 Besides, if the value of its @code{max-length} slot
-is positive, and adding @var{obj}s makes the number of
+has a positive finite value, and adding @var{obj}s makes the number of
 elements in @var{queue} exceeds @code{max-length},
 an error is signaled and @var{queue} won't be modified.
 (If @code{max-length} is zero, this procedure always fail.
@@ -19183,7 +19198,7 @@ Use @code{enqueue/wait!} below.)
 @c JP
 @var{queue}がmtqueueの場合、渡されたオブジェクト全ての追加は
 アトミックに行われます。すなわち、途中に別スレッドが要素を挿入する
-ことはありません。さらに、@code{max-length}スロットが正の値を
+ことはありません。さらに、@code{max-length}スロットが正の有限値を
 持っており、この@code{enqueue!}の実行によってキューの要素数が
 @code{max-length}を越えることになる場合は、@var{queue}は
 変更されずエラーとなります。

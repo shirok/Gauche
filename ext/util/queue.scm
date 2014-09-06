@@ -494,10 +494,14 @@
 (inline-stub
  (define-cfn dequeue-int (q::Queue* result::ScmObj*) ::int
    (cond [(Q_EMPTY_P q) (return TRUE)]
-         [else (set! (* result) (SCM_CAR (Q_HEAD q)))
-               (set! (Q_HEAD q) (SCM_CDR (Q_HEAD q)))
-               (dec! (Q_LENGTH q))
-               (return FALSE)]))
+         [else
+          (let* ([h (Q_HEAD q)])
+            (set! (* result) (SCM_CAR h)
+                  (Q_HEAD q) (SCM_CDR h))
+            (set! (SCM_CAR h) SCM_NIL
+                  (SCM_CDR h) SCM_NIL) ; to be friendly to GC
+            (dec! (Q_LENGTH q))
+            (return FALSE))]))
 
  (define-cproc dequeue! (q::<queue> :optional fallback)
    (let* ([empty::int FALSE] [r SCM_UNDEFINED])
