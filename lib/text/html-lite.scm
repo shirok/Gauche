@@ -84,6 +84,9 @@
      #t
      "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.1//EN\"
        \"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd\">\n")
+    ((:html-5)
+     #t
+     "<!DOCTYPE html>")
     ))
 
 (define (html-doctype :key (type :html-4.01-strict))
@@ -162,10 +165,14 @@
 
 (define-html-elements body address div)
 
+;; SEMANTIC ELEMENT
+(define-html-elements header footer section article nav aside
+                      figure figcaption details summary mark time)
+
 ;; THE ANCHOR ELEMENT
 (define-html-elements a)
 
-;; cLIENT-SIDE IMAGE MAPS
+;; CLIENT-SIDE IMAGE MAPS
 (define-html-elements map area :empty)
 
 ;; THE LINK EKEMENT
