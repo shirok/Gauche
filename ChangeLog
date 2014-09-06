@@ -2,6 +2,8 @@
 
 	* ext/util/queue.scm (dequeue-int): Clear the slots of dequeued
 	  pair, to ensure weak-GC safety.
+	* lib/text/html-lite.scm: Support HTML5 elements and doctype
+	  (patch from Takashi Fujita).
 
 2014-09-04  Shiro Kawai  <shiro@acm.org>
 
