@@ -519,12 +519,15 @@ ScmObj Scm_ImportModule(ScmModule *module,
     {
         ScmObj ms, prev = p;
         SCM_SET_CDR(p, module->imported);
-        /* Remove duplicate module, if any. */
+        /* Remove duplicate module, if any.
+           NB: We allow to import the same module multiple times if they are
+           qualified by :only, :prefix, etc.  Theoretically we should check
+           exactly same qualifications, but we hope that kind of duplication
+           is rare.
+        */
         SCM_FOR_EACH(ms, SCM_CDR(p)) {
             ScmModule *m = SCM_MODULE(SCM_CAR(ms));
-            ScmObj b0 = SCM_MODULEP(m->origin)? m->origin : SCM_OBJ(m);
-            ScmObj b1 = SCM_MODULEP(imp->origin)? imp->origin : SCM_OBJ(imp);
-            if (!SCM_EQ(b0, b1)) {
+            if (!SCM_EQ(SCM_OBJ(m), SCM_OBJ(imp))) {
                 prev = ms;
                 continue;
             }
