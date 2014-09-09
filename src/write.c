@@ -110,6 +110,23 @@ static void write_context_init(ScmWriteContext *ctx, int mode, int flags, int li
 static void cleanup_port_context(ScmPort *port)
 {
     port->flags &= ~(SCM_PORT_WALKING|SCM_PORT_WRITESS);
+    ScmObj p = port->recursiveContext;
+    /* The table for recursive/shared detection should be GC'ed after
+       we drop the reference to it.  However, the table can be quite big
+       after doing write-shared on large graph, and our implementation of
+       big hashtables isn't particularly friendly to GC---it is prone
+       to be a victime of false pointers, especially in 32bit architecture.
+       It becomes an issue if the app repeatedly use write-shared on
+       large graph, for an incorrectly retained hashtable may have false
+       pointers to other incorrectly retained hashtable, making the amount
+       of retained garbage unbounded.  So, we take extra step to clear
+       the table to avoid the risk.  In vast majority of the case, the
+       table is used only for circle detection, in which case the table
+       is small and it won't add much overhead.
+    */
+    if (SCM_PAIRP(p) && SCM_HASH_TABLE_P(SCM_CDR(p))) {
+        Scm_HashCoreClear(SCM_HASH_TABLE_CORE(SCM_CDR(p)));
+    }
     port->recursiveContext = SCM_FALSE;
 }
 
@@ -607,7 +624,7 @@ static void write_ss(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 
     /* pass 2 */
     write_rec(obj, port, ctx);
-    port->recursiveContext = SCM_FALSE;
+    cleanup_port_context(port);
 }
 
 /*OBSOLETED*/
