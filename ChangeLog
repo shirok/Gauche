@@ -1,3 +1,9 @@
+2014-09-09  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/common-macros.scm (dotimes): Return #<undef> unless
+	  the result clause is provided.  It doesn't really matter, but better
+	  to make it explicit that the return value is undefined.
+
 2014-09-07  Shiro Kawai  <shiro@acm.org>
 
 	* src/module.c (Scm_ImportModule): Fix a bug in dupe elimination
