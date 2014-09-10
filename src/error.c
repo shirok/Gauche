@@ -728,7 +728,7 @@ void Scm_TypeError(const char *what, const char *expected, ScmObj got)
 
 
 /*
- * A convenience function to raise port-relates errors.
+ * A convenience function to raise port-related errors.
  * It creates either one of <port-error>, <io-read-error>,
  * <io-write-error>, <io-closed-error>, or <io-unit-error>,
  * depending on the 'reason' argument being

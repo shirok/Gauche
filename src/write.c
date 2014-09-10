@@ -111,11 +111,12 @@ static void cleanup_port_context(ScmPort *port)
 {
     port->flags &= ~(SCM_PORT_WALKING|SCM_PORT_WRITESS);
     ScmObj p = port->recursiveContext;
+    port->recursiveContext = SCM_FALSE;
     /* The table for recursive/shared detection should be GC'ed after
        we drop the reference to it.  However, the table can be quite big
-       after doing write-shared on large graph, and our implementation of
+       after doing write-shared on a large graph, and our implementation of
        big hashtables isn't particularly friendly to GC---it is prone
-       to be a victime of false pointers, especially in 32bit architecture.
+       to be a victim of false pointers, especially on 32bit architecture.
        It becomes an issue if the app repeatedly use write-shared on
        large graph, for an incorrectly retained hashtable may have false
        pointers to other incorrectly retained hashtable, making the amount
@@ -127,7 +128,6 @@ static void cleanup_port_context(ScmPort *port)
     if (SCM_PAIRP(p) && SCM_HASH_TABLE_P(SCM_CDR(p))) {
         Scm_HashCoreClear(SCM_HASH_TABLE_CORE(SCM_CDR(p)));
     }
-    port->recursiveContext = SCM_FALSE;
 }
 
 /*
