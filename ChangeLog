@@ -1,5 +1,8 @@
 2014-09-09  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/vecutil.scm (vector-for-each, vector-for-each-with-index):
+	  Fix bugs when more than one vectors are given.
+
 	* lib/gauche/common-macros.scm (dotimes): Return #<undef> unless
 	  the result clause is provided.  It doesn't really matter, but better
 	  to make it explicit that the return value is undefined.

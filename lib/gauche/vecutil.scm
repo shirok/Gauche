@@ -88,7 +88,7 @@
     (dotimes [i (vector-length vec)] (proc (vector-ref vec i)))
     (let1 vecs (cons vec more)
       (dotimes [i (apply min (map vector-length vecs))]
-        (apply proc (map (^v (vector v i)) vecs))))))
+        (apply proc (map (^v (vector-ref v i)) vecs))))))
 
 ;; srfi-43 vector-for-each
 (define (vector-for-each-with-index proc vec . more)
@@ -97,4 +97,4 @@
     (dotimes [i (vector-length vec)] (proc i (vector-ref vec i)))
     (let1 vecs (cons vec more)
       (dotimes [i (apply min (map vector-length vecs))]
-        (apply proc i (map (^v (vector v i)) vecs))))))
+        (apply proc i (map (^v (vector-ref v i)) vecs))))))
