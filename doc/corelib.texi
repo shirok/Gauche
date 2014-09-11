@@ -12333,7 +12333,7 @@ raise it.
 @end example
 
 @c EN
-@emph{Note:} unlike the exception throwing constructs in some languages,
+Unlike the exception throwing constructs in some languages,
 such as @code{throw} of C++/Java, which abandons its continuation,
 Scheme's @code{raise} may return to its caller.   If you don't
 want @code{raise} to return, a rule of thumb is always to pass
@@ -12341,7 +12341,7 @@ one of error conditions to it; then Gauche guarantees @code{raise}
 wont return.   See the description of @code{raise} in
 @ref{Signaling exceptions} for more details.
 @c JP
-@emph{注意事項:} いくつかの言語での例外を投げる機構、たとえば、
+いくつかの言語での例外を投げる機構、たとえば、
 C++やJavaの @code{throw} はその継続を破棄します。これとは違い
 Schemeの @code{raise} はその呼び出し元へ戻ることができます。もし、
 @code{raise} で元へもどらないで欲しいのなら、簡便な方法としては、
@@ -12350,6 +12350,21 @@ Schemeの @code{raise} はその呼び出し元へ戻ることができます。
 @code{raise}の詳細については、@ref{Signaling exceptions}を参照してください。
 @c COMMON
 
+@c EN
+Note: R7RS adopted slightly different semantics; it splited
+@code{raise} and @code{raise-continuable}, the former is for
+noncontinuable exception (if the exception handler returns,
+it raises another error), and the latter is for continuable
+exception.  When you're in R7RS environment, R7RS-compatble
+@code{raise} will be used instead of this @code{raise}.
+@c JP
+註: R7RSでは少し違ったセマンティクスを採用しています。
+@code{raise}は継続不可能な例外を投げるものとして(もし例外ハンドラから
+制御が戻ってきたら、別のエラーを報告します)、
+別に継続可能な例外を投げる@code{raise-continuable}という手続きを
+設けました。R7RS環境にいるときは、本項の@code{raise}ではなく
+R7RS互換の@code{raise}が見えるようになっています。
+@c COMMON
 
 @c EN
 @subsubheading Defining your own condition

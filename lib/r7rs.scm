@@ -195,7 +195,8 @@
           list->string list-copy list-set!  list?  make-list make-string map
           member memv modulo newline null?  number?  odd?  open-input-string
           open-output-string output-port-open?  pair?  peek-char port?
-          procedure?  quote raise rational?  read-bytevector read-char read-line
+          procedure?  quote (rename r7rs:raise raise)
+          rational?  read-bytevector read-char read-line
           read-u8 remainder round set-car!  square string->list string->symbol
           string->vector string-copy string-copy!  string-for-each string-map
           string-set!  string<?  string>=?  string?  symbol->string symbol?
@@ -300,11 +301,16 @@
   (define+ vector-for-each gauche)
 
   ;; 6.11 Exceptions
-  ;; raise error - built-in
+  ;; error - built-in
   
   ;; NB: In Gauche, 'raise' is continuable as far as the thrown exception
   ;; isn't fatal.
   (define raise-continuable raise)
+  ;; And to conform R7RS, we have to check
+  (define (r7rs:raise c)
+    (begin (raise c)
+           (error "Can't continue execution after raising a condition" c)))
+  
   (define (error-object? e) (condition-has-type? e <error>))
   (define (error-object-message e)
     (if (condition-has-type? e <message-condition>)

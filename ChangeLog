@@ -1,3 +1,8 @@
+2014-09-10  Shiro Kawai  <shiro@acm.org>
+
+	* lib/r7rs.scm (raise): Adjust r7rs#raise to be compatible with r7rs,
+	  instead of using gauche#raise (srfi-19 compatible).
+
 2014-09-09  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/vecutil.scm (vector-for-each, vector-for-each-with-index):
