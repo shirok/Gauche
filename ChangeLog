@@ -1,3 +1,10 @@
+2014-09-11  Shiro Kawai  <shiro@acm.org>
+
+	* src/error.c (Scm_Raise), src/libexc.scm (raise),
+	  src/vm.c (Scm_VMThrowException): The last fix of r7rs#raise
+	  wasn't enough, for it invoked the second error with the same
+	  exception handler as the first raise.
+
 2014-09-10  Shiro Kawai  <shiro@acm.org>
 
 	* lib/r7rs.scm (raise): Adjust r7rs#raise to be compatible with r7rs,

@@ -86,7 +86,15 @@
 (define-cproc with-exception-handler (handler thunk)
   Scm_VMWithExceptionHandler)
 
-(define-cproc raise (exception)  Scm_Raise)
+;; The optional arg is to support r7rs semantics
+(select-module gauche.internal)
+(define-cproc %raise (exception :optional (non-continuable? #f))
+  (let* ([flags::u_long
+          (?: (SCM_FALSEP non-continuable?) 0 SCM_RAISE_NON_CONTINUABLE)])
+    (result (Scm_Raise2 exception flags))))
+
+;; srfi-18 raise
+(define-in-module gauche (raise c) (%raise c))
 
 ;;;
 ;;; Srfi-35

@@ -2038,7 +2038,15 @@ static SCM_DEFINE_SUBR(default_exception_handler_rec, 1, 0,
  *  handler.
  *  Note that this function may return.
  */
+#if  GAUCHE_API_0_95
+ScmObj Scm_VMThrowException(ScmVM *vm, ScmObj exception, u_long raise_flags)
+#else  /*!GAUCHE_API_0_95*/
 ScmObj Scm_VMThrowException(ScmVM *vm, ScmObj exception)
+{
+    return Scm_VMThrowException2(vm, exception, 0);
+}
+ScmObj Scm_VMThrowException2(ScmVM *vm, ScmObj exception, u_long raise_flags)
+#endif /*!GAUCHE_API_0_95*/
 {
     ScmEscapePoint *ep = vm->escapePoint;
 
@@ -2046,7 +2054,8 @@ ScmObj Scm_VMThrowException(ScmVM *vm, ScmObj exception)
 
     if (vm->exceptionHandler != DEFAULT_EXCEPTION_HANDLER) {
         vm->val0 = Scm_ApplyRec(vm->exceptionHandler, SCM_LIST1(exception));
-        if (SCM_SERIOUS_CONDITION_P(exception)) {
+        if (SCM_SERIOUS_CONDITION_P(exception)
+            || raise_flags&SCM_RAISE_NON_CONTINUABLE) {
             /* the user-installed exception handler returned while it
                shouldn't.  In order to prevent infinite loop, we should
                pop the erroneous handler.  For now, we just reset

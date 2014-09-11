@@ -1619,7 +1619,21 @@ SCM_EXTERN void Scm_PortError(ScmPort *port, int reason, const char *msg, ...);
 SCM_EXTERN void Scm_Warn(const char *msg, ...);
 SCM_EXTERN void Scm_FWarn(ScmString *fmt, ScmObj args);
 
+/* TRANSIENT: Scm_Raise2 is to keep ABI compatibility.  Will be gone
+   in 1.0.  */
+#if    GAUCHE_API_0_95
+SCM_EXTERN ScmObj Scm_Raise(ScmObj exception, u_long flags);
+#define Scm_Raise2(e)  Scm_Raise(e, f)
+#else  /*!GAUCHE_API_0_95*/
 SCM_EXTERN ScmObj Scm_Raise(ScmObj exception);
+SCM_EXTERN ScmObj Scm_Raise2(ScmObj exception, u_long flags);
+#endif /*!GAUCHE_API_0_95*/
+
+/* flags for Scm_Raise */
+enum {
+    SCM_RAISE_NON_CONTINUABLE = (1L<<0)
+};
+
 SCM_EXTERN ScmObj Scm_RaiseCondition(ScmObj conditionType, ...);
 
 /* A marker to insert between key-value pair and formatting string

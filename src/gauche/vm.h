@@ -523,7 +523,15 @@ SCM_EXTERN int    Scm_AttachVM(ScmVM *vm);
 SCM_EXTERN void   Scm_DetachVM(ScmVM *vm);
 SCM_EXTERN void   Scm_VMDump(ScmVM *vm);
 SCM_EXTERN void   Scm_VMDefaultExceptionHandler(ScmObj exc);
+/* TRANSIENT: Scm_VMThrowException2 is to keep ABI compatibility.  Will be
+   gone in 1.0 */
+#if    GAUCHE_API_0_95
+SCM_EXTERN ScmObj Scm_VMThrowException(ScmVM *vm, ScmObj exc, u_long flags);
+#define Scm_VMThrowException2(v, e, f)  Scm_VMThrowException(v, e, f)
+#else  /*!GAUCHE_API_0_95*/
 SCM_EXTERN ScmObj Scm_VMThrowException(ScmVM *vm, ScmObj exc);
+SCM_EXTERN ScmObj Scm_VMThrowException2(ScmVM *vm, ScmObj exc, u_long flags);
+#endif /*!GAUCHE_API_0_95*/
 SCM_EXTERN ScmObj Scm_VMGetSourceInfo(ScmCompiledCode *code, SCM_PCTYPE pc);
 SCM_EXTERN ScmObj Scm_VMGetBindInfo(ScmCompiledCode *code, SCM_PCTYPE pc);
 SCM_EXTERN void   Scm_VMSetResult(ScmObj obj);

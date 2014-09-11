@@ -305,11 +305,8 @@
   
   ;; NB: In Gauche, 'raise' is continuable as far as the thrown exception
   ;; isn't fatal.
-  (define raise-continuable raise)
-  ;; And to conform R7RS, we have to check
-  (define (r7rs:raise c)
-    (begin (raise c)
-           (error "Can't continue execution after raising a condition" c)))
+  (define (raise-continuable c) (raise c))
+  (define (r7rs:raise c) ((with-module gauche.internal %raise) c #t))
   
   (define (error-object? e) (condition-has-type? e <error>))
   (define (error-object-message e)

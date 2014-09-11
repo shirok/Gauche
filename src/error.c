@@ -621,7 +621,7 @@ void Scm_Error(const char *msg, ...)
 
     if (SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_ERROR_BEING_HANDLED)) {
         e = Scm_MakeError(SCM_MAKE_STR("Error occurred in error handler"));
-        Scm_VMThrowException(vm, e);
+        Scm_VMThrowException2(vm, e, SCM_RAISE_NON_CONTINUABLE);
     }
     SCM_VM_RUNTIME_FLAG_SET(vm, SCM_ERROR_BEING_HANDLED);
 
@@ -635,7 +635,7 @@ void Scm_Error(const char *msg, ...)
         e = Scm_MakeError(SCM_MAKE_STR("Error occurred in error handler"));
     }
     SCM_END_PROTECT;
-    Scm_VMThrowException(vm, e);
+    Scm_VMThrowException2(vm, e, SCM_RAISE_NON_CONTINUABLE);
     Scm_Panic("Scm_Error: Scm_VMThrowException returned.  something wrong.");
 }
 
@@ -712,7 +712,7 @@ void Scm_SysError(const char *msg, ...)
         e = Scm_MakeError(SCM_MAKE_STR("Error occurred in error handler"));
     }
     SCM_END_PROTECT;
-    Scm_VMThrowException(vm, e);
+    Scm_VMThrowException2(vm, e, SCM_RAISE_NON_CONTINUABLE);
     Scm_Panic("Scm_Error: Scm_VMThrowException returned.  something wrong.");
 }
 
@@ -784,7 +784,7 @@ void Scm_PortError(ScmPort *port, int reason, const char *msg, ...)
         e = Scm_MakeError(SCM_MAKE_STR("Error occurred in error handler"));
     }
     SCM_END_PROTECT;
-    Scm_VMThrowException(vm, e);
+    Scm_VMThrowException2(vm, e, SCM_RAISE_NON_CONTINUABLE);
     Scm_Panic("Scm_Error: Scm_VMThrowException returned.  something wrong.");
 }
 
@@ -813,10 +813,23 @@ void Scm_FWarn(ScmString *fmt, ScmObj args)
  */
 
 /* An external API to hide Scm_VMThrowException. */
+#if  GAUCHE_API_0_95
+ScmObj Scm_Raise(ScmObj condition, u_long flags)
+{
+    return Scm_VMThrowException(Scm_VM(), condition, flags);
+}
+#else  /*!GAUCHE_API_0_95*/
 ScmObj Scm_Raise(ScmObj condition)
 {
-    return Scm_VMThrowException(Scm_VM(), condition);
+    return Scm_Raise2(condition, 0);
 }
+
+ScmObj Scm_Raise2(ScmObj condition, u_long flags)
+{
+    return Scm_VMThrowException2(Scm_VM(), condition, flags);
+}
+#endif /*!GAUCHE_API_0_95*/
+
 
 /* A convenient API---allows to call user-defined condition easily,
    even the condition type is defined in Scheme.  For example:
