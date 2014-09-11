@@ -38,6 +38,8 @@
 (cf-subst 'OBJEXT (gauche-config "--object-suffix"))
 (cf-subst 'EXEEXT (gauche-config "--executable-suffix"))
 
+(cf-subst 'default_prefix (gauche-config "--prefix"))
+ 
 (cf-subst 'GAUCHE_PKGINCDIR  (gauche-config "--pkgincdir"))
 (cf-subst 'GAUCHE_PKGLIBDIR  (gauche-config "--pkglibdir"))
 (cf-subst 'GAUCHE_PKGARCHDIR (gauche-config "--pkgarchdir"))

@@ -1,5 +1,7 @@
 2014-09-11  Shiro Kawai  <shiro@acm.org>
 
+	* ext/template.configure: FIX: Added missing default_prefix setup.
+
 	* src/error.c (Scm_Raise), src/libexc.scm (raise),
 	  src/vm.c (Scm_VMThrowException): The last fix of r7rs#raise
 	  wasn't enough, for it invoked the second error with the same
