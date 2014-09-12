@@ -132,6 +132,60 @@
                 (Scm_UVectorElementSize (Scm_ClassOf (SCM_OBJ v)))))))
  )
 
+;; allocation by class
+(inline-stub
+ (define-cproc make-uvector (klass::<class> size::<fixnum>
+                             :optional (init 0))
+   (unless (>= size 0) (Scm_Error "invalid uvector size: %d" size))
+   (let* ([v (Scm_MakeUVector klass size NULL)])
+     (case (Scm_UVectorType klass)
+       [(SCM_UVECTOR_S8)
+        (Scm_S8VectorFill (SCM_S8VECTOR v) 
+                          (Scm_GetInteger8Clamp init SCM_CLAMP_ERROR NULL)
+                          0 -1)]
+       [(SCM_UVECTOR_U8)
+        (Scm_U8VectorFill (SCM_U8VECTOR v) 
+                          (Scm_GetIntegerU8Clamp init SCM_CLAMP_ERROR NULL)
+                          0 -1)]
+       [(SCM_UVECTOR_S16)
+        (Scm_S16VectorFill (SCM_S16VECTOR v) 
+                           (Scm_GetInteger16Clamp init SCM_CLAMP_ERROR NULL)
+                           0 -1)]
+       [(SCM_UVECTOR_U16)
+        (Scm_U16VectorFill (SCM_U16VECTOR v) 
+                           (Scm_GetIntegerU16Clamp init SCM_CLAMP_ERROR NULL)
+                           0 -1)]
+       [(SCM_UVECTOR_S32)
+        (Scm_S32VectorFill (SCM_S32VECTOR v) 
+                           (Scm_GetInteger32Clamp init SCM_CLAMP_ERROR NULL)
+                           0 -1)]
+       [(SCM_UVECTOR_U32)
+        (Scm_U32VectorFill (SCM_U32VECTOR v) 
+                           (Scm_GetIntegerU32Clamp init SCM_CLAMP_ERROR NULL)
+                           0 -1)]
+       [(SCM_UVECTOR_S64)
+        (Scm_S64VectorFill (SCM_S64VECTOR v) 
+                           (Scm_GetInteger64Clamp init SCM_CLAMP_ERROR NULL)
+                           0 -1)]
+       [(SCM_UVECTOR_U64)
+        (Scm_U64VectorFill (SCM_U64VECTOR v) 
+                           (Scm_GetIntegerU64Clamp init SCM_CLAMP_ERROR NULL)
+                           0 -1)]
+       [(SCM_UVECTOR_F16)
+        (Scm_F16VectorFill (SCM_F16VECTOR v)
+                           (Scm_DoubleToHalf (Scm_GetDouble init))
+                           0 -1)]
+       [(SCM_UVECTOR_F32)
+        (Scm_F32VectorFill (SCM_F32VECTOR v)
+                           (cast float (Scm_GetDouble init))
+                           0 -1)]
+       [(SCM_UVECTOR_F64)
+        (Scm_F64VectorFill (SCM_F64VECTOR v)
+                           (Scm_GetDouble init)
+                           0 -1)]
+       [else SCM_UNDEFINED]) ; can't happen
+     (result v))))
+
 ;; block i/o
 (inline-stub
  (define-cproc read-uvector! (v::<uvector>

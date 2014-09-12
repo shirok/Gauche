@@ -1,5 +1,8 @@
 2014-09-11  Shiro Kawai  <shiro@acm.org>
 
+	* ext/uvector/uvector.scm (make-uvector): Added generic uvector
+	  constructor.
+
 	* ext/template.configure: FIX: Added missing default_prefix setup.
 
 	* src/error.c (Scm_Raise), src/libexc.scm (raise),

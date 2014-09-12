@@ -15892,7 +15892,7 @@ uses SRFI-4 vectors extensively.
 @c COMMON
 @end deftp
 @c EN
-The following ten types of vectors are defined.
+The following eleven types of vectors are defined.
 @table @emph
 @item s8vector
 Elements are exact integers in the range between -2^7 and 2^7-1
@@ -15923,7 +15923,7 @@ C compiler that compiles Gauche.  Usually it is a double precision
 IEEE floating point number.
 @end table
 @c JP
-以下の10タイプのベクタが定義されます。
+以下の11タイプのベクタが定義されます。
 @table @emph
 @item s8vector
 要素が -2^7 から 2^7-1 の間の正確な整数であるベクタ
@@ -16134,6 +16134,22 @@ If @var{fill} is omitted, the content of the vector is undefined.
 (make-u8vector 4 0) @result{} #u8(0 0 0 0)
 @end example
 @end deftp
+
+@defun make-uvector @code{class} @code{len} :optional @code{fill}
+@c EN
+This is a Gauche extension; instead of using separate constructor for
+each uvector type, you can pass the class of desired uvector.
+@c JP
+これはGaucheの拡張です。各ユニフォームベクタの型に対応する関数を呼ぶかわりに、
+欲しいユニフォームベクタのクラスを渡してベクタを作ることができます。
+@c COMMON
+
+@example
+(make-uvector <u8vector> 3)    @result{} #u8(0 0 0)
+(make-uvector <s8vector> 5 -1) @result{} #s8(-1 -1 -1 -1 -1)
+@end example
+@end defun
+
 
 @deftp {Function} @var{TAG}vector-length @r{@var{vec}}
 @findex s8vector-length

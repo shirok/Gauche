@@ -74,6 +74,32 @@
          (^[] (write (f64vector)))))
 
 ;;-------------------------------------------------------------------
+(test-section "constructors")
+
+(define (uvmaketester class specific inits)
+  ;; zero length
+  (test* (format "make ~a 0" (class-name class))
+         (make-uvector class 0)
+         (specific 0))
+  ;; some content
+  (dolist [init inits]
+    (test* (format "make ~a 10 ~a" (class-name class) init)
+           (make-uvector class 10 init)
+           (specific 10 init))))
+
+(uvmaketester <s8vector> make-s8vector '(0 10 -4))
+(uvmaketester <u8vector> make-u8vector '(0 4 255))
+(uvmaketester <s16vector> make-s16vector '(0 -32768 32767))
+(uvmaketester <u16vector> make-u16vector '(0 65535))
+(uvmaketester <s32vector> make-s32vector '(0))
+(uvmaketester <u32vector> make-u32vector '(0))
+(uvmaketester <s64vector> make-s64vector '(0))
+(uvmaketester <u64vector> make-u64vector '(0))
+(uvmaketester <f16vector> make-f16vector '(0 1.0 -1.0)) 
+(uvmaketester <f32vector> make-f32vector '(0 1.0 -1.0)) 
+(uvmaketester <f64vector> make-f64vector '(0 1.0 -1.0)) 
+
+;;-------------------------------------------------------------------
 (test-section "ref and set")
 
 (define (uvrefset-tester make ref set numlist expvec)
