@@ -1623,7 +1623,7 @@ SCM_EXTERN void Scm_FWarn(ScmString *fmt, ScmObj args);
    in 1.0.  */
 #if    GAUCHE_API_0_95
 SCM_EXTERN ScmObj Scm_Raise(ScmObj exception, u_long flags);
-#define Scm_Raise2(e)  Scm_Raise(e, f)
+#define Scm_Raise2(e, f)  Scm_Raise(e, f)
 #else  /*!GAUCHE_API_0_95*/
 SCM_EXTERN ScmObj Scm_Raise(ScmObj exception);
 SCM_EXTERN ScmObj Scm_Raise2(ScmObj exception, u_long flags);
