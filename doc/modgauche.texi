@@ -16235,6 +16235,22 @@ the number of elements.)
 @end example
 @end defun
 
+@defun uvector-class-element-size class
+@c EN
+Returns the size of an element of a uvector of the given class, in bytes.
+An error is raised when @var{class} is not a uvector class.
+@c JP
+与えられたクラスのユニフォームベクタの1要素が占める大きさをバイト数で返します。
+@var{class}がユニフォームベクタのクラスでない場合はエラーが投げられます。
+@c COMMON
+
+@example
+(uvector-class-element-size <u8vector>)  @result{} 1
+(uvector-class-element-size <s64vector>) @result{} 8
+@end example
+@end defun
+
+
 @deftp {Function} @var{TAG}vector-ref @r{@var{vec} @var{k} :optional @var{fallback}}
 @findex s8vector-ref
 @findex u8vector-ref

@@ -1,3 +1,7 @@
+2014-09-12  Shiro Kawai  <shiro@acm.org>
+
+	* ext/uvector/uvector.scm (uvector-class-element-size): Added.
+
 2014-09-11  Shiro Kawai  <shiro@acm.org>
 
 	* ext/uvector/uvector.scm (make-uvector): Added generic uvector

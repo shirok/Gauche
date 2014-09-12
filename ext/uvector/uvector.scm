@@ -130,6 +130,12 @@
      (SCM_CHECK_START_END start end len)
      (result (* (- end start)
                 (Scm_UVectorElementSize (Scm_ClassOf (SCM_OBJ v)))))))
+
+ (define-cproc uvector-class-element-size (c::<class>) ::<fixnum>
+   (let* ([r::int (Scm_UVectorElementSize c)])
+     (when (< r 0)
+       (Scm_Error "A class of uvector is required, but got: %S" c))
+     (result r)))
  )
 
 ;; allocation by class
