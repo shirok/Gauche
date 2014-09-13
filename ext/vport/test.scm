@@ -340,6 +340,49 @@
            (begin (write-byte #x11 p) (flush p) (u8vector-copy v)))
     ))
 
+(let ()
+  (define (tester size)
+    ;; We disable port-buffering so that we can test gradually extending
+    ;; the backing storage.
+    (test* #"extendable u8 size=~size"
+           (list (make-u8vector size 255) (make-u8vector size 255))
+           (let1 p (open-output-uvector '#u8() :extendable #t)
+             (set! (port-buffering p) :none)
+             (dotimes [size] (write-byte 255 p))
+             (list (get-output-uvector p)
+                   (get-output-uvector p :shared #t))))
+    (test* #"extendable s16 size=~size" (make-s16vector size #x1212)
+           (let1 p (open-output-uvector (make-s16vector 10 -1) :extendable #t)
+             (set! (port-buffering p) :none)
+             (dotimes [size] (write-byte #x12 p) (write-byte #x12 p))
+             (get-output-uvector p))))
+  
+  (tester 0)
+  (tester 16)
+  (tester 17)
+  (tester 255)
+  (tester 256)
+  (tester 257))
+
+(test* "unaligned extendable output" '#s32(#x01010101)
+       (let1 p (open-output-uvector '#s32() :extendable #t)
+         (dotimes [7] (write-byte 1 p))
+         (get-output-uvector p)))
+
+(test* "seek with extendable output" '#u8(1 0 0 0 3 0 0 2 0 4 0 0 5)
+       (let1 p (open-output-uvector)
+         (set! (port-buffering p) :none)
+         (write-byte 1 p)
+         (port-seek p 7 SEEK_SET)
+         (write-byte 2 p)
+         (port-seek p -4 SEEK_END)
+         (write-byte 3 p)
+         (port-seek p 4 SEEK_CUR)
+         (write-byte 4 p)
+         (port-seek p 2 SEEK_END)
+         (write-byte 5 p)
+         (get-output-uvector p)))
+
 ;;-----------------------------------------------------------
 (test-section "input-limited-length-port")
 

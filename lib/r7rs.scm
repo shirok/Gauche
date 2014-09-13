@@ -210,6 +210,9 @@
           vector-set!  when write-bytevector write-string zero?
           )
 
+  (autoload gauche.vport
+            open-input-uvector open-output-uvector get-output-uvector)
+
   ;; 4.1 Primitive expression types
   ;; quote, if, include, include-ci
   (define-syntax+ lambda     scheme)
@@ -341,13 +344,14 @@
   (define (binary-port? p) (port? p))     ; gauche's port can handle both
   (define (input-port-open? p) (and (input-port? p) (not (port-closed? p))))
   (define (output-port-open? p) (and (output-port? p) (not (port-closed? p))))
-  (define (open-input-bytevector bv)   ; temporary implementation
+  (define (open-input-bytevector bv)
     (check-arg u8vector? bv)
-    (open-input-string (u8vector->string bv)))
-  (define (open-output-bytevector)     ; temporary implementation
-    (open-output-string))
-  (define (get-output-bytevector port) ; temporary implementation
-    (string->u8vector (get-output-string port)))
+    (open-input-uvector bv))
+  (define (open-output-bytevector) (open-output-uvector))
+  (define (get-output-bytevector port)
+    (or (get-output-uvector port)
+        (error "get-output-bytevector needs a output uvector port, but got:"
+               port)))
   (define-inline read-u8 read-byte)
   (define-inline peek-u8 peek-byte)
   (define u8-ready? byte-ready?)

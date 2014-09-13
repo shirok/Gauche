@@ -1,3 +1,12 @@
+2014-09-13  Shiro Kawai  <shiro@acm.org>
+
+	* ext/vport/vport.scm (open-output-uvector):
+	  Allow option to make the output buffer extendable.
+	  (get-output-uvector): Added to enable retrieving the accumulated
+	  result, needed when the buffer is extendable.
+	* lib/r7rs.scm (open-output-bytevector, get-output-bytevector):
+	  Rewritten using above.
+
 2014-09-12  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/stub.scm (define-cptr): Fix a bug that passes

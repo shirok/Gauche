@@ -33,12 +33,13 @@
 
 (define-module gauche.vport
   (use gauche.uvector)
+  (use util.match)
   (export <virtual-input-port>
           <virtual-output-port>
           <buffered-input-port>
           <buffered-output-port>
           open-input-uvector
-          open-output-uvector
+          open-output-uvector get-output-uvector
           open-input-limited-length-port
           ))
 (select-module gauche.vport)
@@ -77,33 +78,96 @@
       index)
     (make <buffered-input-port> :fill filler :seek seeker)))
 
-(define (open-output-uvector uvector)
-  (let* ([dst (if (u8vector? uvector)
-                uvector
-                (uvector-alias <u8vector> uvector))]
-         [index 0]
-         [len (u8vector-length dst)])
-    (define (flusher buf force?)
-      (let1 req (u8vector-length buf)
-        (cond [(>= index len) req]  ;; simply discard the data
-              [(> req (- len index))
-               (let1 count (- len index)
-                 (u8vector-copy! dst index buf 0 count)
-                 (inc! index count)
-                 req)]
-              [else
-               (u8vector-copy! dst index buf 0 req)
-               (inc! index req)
-               req])))
+;; For output uvector, we keep backing stroage info in port attributes so that
+;; we can retrieve it by get-output-uvector.
+;; The info is #(<buffer> <max-index> <target-class>), where <buffer> is
+;; u8vector (possibly aliased), <max-index> is the maximum index during
+;; write operation, and <target-class> is the original u8vector class.
+(define (%make-uvector-storage uvector)
+  (vector (if (u8vector? uvector) uvector (uvector-alias <u8vector> uvector))
+          0 (class-of uvector)))
+
+;; Ensure the backing storage can contain at least next-index octets.
+;; We adopt allocate-and-copy strategy.  Although this is amortized O(1),
+;; it may not be ideal for our GC; using chained chunks may behave better.
+;; Let's see.
+(define (%extend-uvector-storage! storage next-index)
+  (let* ([cur-buffer (vector-ref storage 0)]
+         [cur-size (uvector-size cur-buffer)])
+    (when (> next-index cur-size)
+      (let* ([next-size (ash 1 (integer-length (- next-index 1)))] ;round up
+             [next-buffer (make-uvector <u8vector> next-size)])
+        (u8vector-copy! next-buffer 0 cur-buffer)
+        (set! (vector-ref storage 0) next-buffer)))))
+
+(define (%storage-buffer storage) (vector-ref storage 0))
+(define (%storage-size storage) (uvector-size (%storage-buffer storage)))
+(define (%storage-get-uvector storage)
+  (match-let1 #(buffer max-index class) storage
+    (let ([aligned-index (if (memv class (list <u8vector> <s8vector>))
+                           max-index
+                           (let1 align (uvector-class-element-size class)
+                             (* (quotient max-index align) align)))])
+      (uvector-alias class buffer 0 aligned-index))))
+(define (%storage-max-index storage) (vector-ref storage 1))
+
+(define (%update-storage-max-index! storage max-index)
+  (update! (vector-ref storage 1) (cut max <> max-index)))
+
+(define (open-output-uvector :optional (uvector #f) :key (extendable #f))
+  ;; If uvector isn't provided, extendable is #t.
+  ;; If uvector is provided, extendable defaults to #f.
+  ;; This is for the backward compatibility, though confusing.
+  (let* ([extendable (if uvector extendable #t)]
+         [uvector (or uvector '#u8())]
+         [storage (%make-uvector-storage uvector)]
+         [index 0])
+    (define (set-index! val)
+      (%update-storage-max-index! storage val)
+      (set! index val))
+    (define (flusher buf flush?)
+      (rlet1 req (u8vector-length buf)
+        (if (> req (- (%storage-size storage) index))
+          ;; buffer is too small.  if we're extendable, realloc the buffer.
+          ;; otherwise we just discard the excess data.
+          (if extendable
+            (begin
+              (%extend-uvector-storage! storage (+ index req))
+              (flusher buf flush?))
+            (let1 count (- (%storage-size storage) index)
+              (u8vector-copy! (%storage-buffer storage) index buf 0 count)
+              (set-index! (+ index count))))
+          (begin ; normal path
+            (u8vector-copy! (%storage-buffer storage) index buf 0 req)
+            (set-index! (+ index req))))))
     (define (seeker offset whence)
-      (cond [(= whence SEEK_SET)
-             (set! index (clamp offset 0 len))]
-            [(= whence SEEK_CUR)
-             (set! index (clamp (+ index offset) 0 len))]
+      (define (do-seek new-index)
+        (when extendable (%extend-uvector-storage! storage new-index))
+        (set-index! (clamp new-index 0 (%storage-size storage))))
+      (cond [(= whence SEEK_SET) (do-seek offset)]
+            [(= whence SEEK_CUR) (do-seek (+ index offset))]
             [(= whence SEEK_END)
-             (set! index (clamp (+ len offset) 0 len))])
+             ;; the meaning of 'end' differ if the storage is extendable or not.
+             ;; if it's extendable, the rightmost end of the data ever written
+             ;; is the 'end' whence; if fixed sized storage, end is the
+             ;; end of the given storage.
+             (if extendable
+               (do-seek (+ (%storage-max-index storage) offset))
+               (do-seek (+ (%storage-size storage) offset)))])
       index)
-    (make <buffered-output-port> :flush flusher :seek seeker)))
+    (rlet1 port (make <buffered-output-port> :flush flusher :seek seeker)
+      (port-attribute-set! port 'uvector-port-backing-storage storage))))
+
+(define (get-output-uvector port :key (shared #f))
+  (with-port-locking port
+    (^[]
+      (and-let* ([storage
+                  (port-attribute-ref port 'uvector-port-backing-storage #f)])
+        (flush port) ; ensure buffered output is written to the storage
+        (let1 vec (%storage-get-uvector storage)
+          (if shared
+            vec
+            (uvector-copy vec)))))))
 
 ;;=======================================================
 ;; A port with limited-length input/output

@@ -18602,18 +18602,122 @@ EOFが返されます。シーク操作も実装されています。
 @c COMMON
 @end defun
 
-@defun open-output-uvector uvector
+@defun open-output-uvector :optional uvector :key extendable
 @c EN
-Returns an output port that fills the given uvector by the
-data output to the port.  If @var{uvector} is completely
-filled, more data are silently discarded.
-Seek operation is also implemented.
+Returns an output port that uses the given uvector as the
+storage for the data output to the port.
+
+If @var{uvector} is completely filled, what happens after that
+depends on @var{extendable} - if it is false (default), the rest
+of data is discarded silently.  If it is true, the storage is
+extended automatically to accomodate more data.
+
+If you give true value to @var{extendable}, you have to retrieve
+the result by @code{get-output-uvector} below, since the uvector
+you passed in won't contain spilled data.
+
+As a special case, you can omit @var{uvector} argument; then
+@code{u8vector} is used as the storage.  In that case
+you can't specify @var{extendable} keyword argument, but it is
+assumed true, since it won't make sense otherwise.  Use
+@code{get-output-uvector} to retrieve the stored result.
+
+Seek operation is also implemented.  Note that the meaning
+of @code{SEEK_END} whence differ between extendable and
+fixed-size uvector ports.  For extendable ports,
+the end whence placed next to the biggest offset of
+the data ever written; if you open a port and just write
+one byte, the end whence is the second byte, no matter
+how big the existing buffer is.  On the other hand,
+for fixed-size uvector ports, end whence is fixed to
+the next to the end of the given buffer, no matter
+how much data you've written to it.  In the latter case,
+you can't seek on or past the end (you need to pass negative
+number along @code{SEEK_END} to @code{port-seek}).
 @c JP
-与えられた uvector をポートへのデータ出力で満たす出力ポートを返します。
-@var{uvector}が満杯になれば、それ以上のデータは黙って廃棄されます。
-シーク操作も実装されています。
+与えられた uvector をデータの格納に使うような出力ポートを返します。
+
+@var{uvector}が全て埋まった後、何が起きるかは、@var{extendable}引数によって
+変わります。もし偽の値(デフォルト)では、更に送られてきたデータは黙って捨てられます。
+@var{extendable}が真の値であった場合、追加のデータを保持するため
+格納領域は自動的に拡張されます。
+
+@var{extendable}に真の値を与えた場合、貯められたデータを取り出すには、
+下で説明する@code{get-output-uvector}を使ってください。渡した@var{uvector}
+引数には溢れたデータは格納されないので。
+
+特別な場合として、@var{uvector}引数を省略することができます。
+この場合、データストレージとして@code{u8vector}が使われます。
+@var{uvector}引数を省略した場合、@var{extendable}引数を
+与えることはできませんが、これは真の値を与えたものとみなされます。
+でないと意味がないからです。@code{get-output-uvector}で
+貯められたデータを取り出すことができます。
+
+ポートに対してシーク操作も使うことができます。
+ただし、whenceに@code{SEEK_END}を与えた場合の解釈が、@var{extendable}かどうかで
+変わることに注意してください。@var{extendable}なポートでは、
+末尾は「それまでに書き込まれたデータのうちもっとも大きなオフセット」の次に
+設定されます。uvectorポートを開いてすぐに1バイト書き込んだ状態では、
+@var{uvector}引数にどんなに大きなベクタを渡していたとしても、@code{SEEK_END}
+の基準点は2バイト目です。一方、@var{extendable}でないポートでは、
+末尾はそれまでに書き込んだデータによらず、常に与えた@var{uvector}の
+末尾の次になります。その場合は、末尾やそれ以降にシークすることはできません
+(@code{port-seek}に@code{SEEK_END}を渡す時、オフセットは必ず負数でなければ
+なりません)。
 @c COMMON
 @end defun
+
+@defun get-output-uvector port :key shared
+@c EN
+If @var{port} is a port created by @code{open-output-uvector}, returns
+a @var{uvector} that contains accumulated data.
+If @var{port} is not a port created by @code{open-output-uvector},
+@code{#f} is returned.
+
+The returned uvector is the same type as the one passed to
+@code{open-output-uvector}, containing up to actually written data; it may
+be smaller than the @var{uvector} passed to @code{open-output-uvector};
+it can be larger if the port is extendable.
+
+If the type of uvector is other than @code{s8vector} and @code{u8vector},
+and the written data doesn't fill up the whole element won't be
+in the result.
+For example, if you use @code{s32vector} to create the port,
+then write 7 bytes to it, @code{get-output-uvector} returns a
+single element @code{s32vector}, for the last 3 bytes does not
+consist a whole 32bit integer.
+
+By default, the returned vector is a fresh copy of the contents.
+Passing true value to @var{shared} may avoid copying and allow
+sharing storage for the one being used by @var{port}.  If you do so,
+keep in mind that if you seek back and write to @var{port} subsequently,
+the content of returned vector may be changed.
+@c JP
+@var{port}が@code{open-output-uvector}で作られたポートであるなら、
+これまでに蓄えられたデータを@var{uvector}として返します。
+@var{port}がそうでない場合は@code{#f}が返されます。
+
+返り値のベクタは、@code{open-output-uvector}に渡したuvector
+と同じ型で、実際に書き込まれたデータの最後尾までの範囲になります。
+それは@code{open-output-uvector}に渡された@var{uvector}より小さいかも
+しれませんし、ポート作成時に@var{extendable}に真の値が渡されていた場合は
+元の@var{uvector}よりも大きいかもしれません。
+
+uvectorの型が@code{s8vector}や@code{u8vector}以外である場合、
+書き込まれたデータのうち完全な要素に足りない部分は結果に含まれません。
+例えば、@code{s32vector}でポートを作り7バイト書き込んでから
+@code{get-output-uvector}を呼ぶと、返される@code{s32vector}は
+1要素になります。最後の3バイトは完全な32bit整数を構成しないからです。
+
+デフォルトでは、返り値のベクタは新たにアロケートされたものです。
+しかし@var{shared}キーワード引数に真の値を渡すと、可能ならば、
+@var{port}が使っている格納領域をそのまま参照するベクタが返されます。
+このオプションによってコピーを減らすことができますが、
+後で@var{port}をシークして前に戻って再書き込みすると、
+返されたベクタの内容が書き換わってしまう可能性があることに注意してください。
+@c COMMON
+@end defun
+
 
 @c EN
 @subsubheading Note on finalization
