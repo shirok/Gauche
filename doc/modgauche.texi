@@ -16384,6 +16384,19 @@ If @var{start} and/or @var{end} are given, they limit the range of
 @end example
 @end deftp
 
+@defun uvector-copy vec :optional start end
+@c EN
+This is a generic version of @code{@var{TAG}vector-copy}.
+You can give any type of uvector to @var{vec}, and get its copy
+(or copy of its part, depending on @var{start}/@var{end} argument).
+@c JP
+これは@code{@var{TAG}vector-copy}の汎用バージョンです。
+どんな型のuvectorでも@var{vec}に渡すことができ、そのコピー
+(もしくは、@var{start}/@var{end}によっては一部のコピー)が返されます。
+@c COMMON
+@end defun
+
+
 @deftp {Function} @var{TAG}vector-copy! @r{@var{target} @var{tstart} @var{source} :optional @var{sstart} @var{send}}
 @findex s8vector-copy!
 @findex u8vector-copy!

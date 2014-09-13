@@ -1,6 +1,7 @@
 2014-09-12  Shiro Kawai  <shiro@acm.org>
 
-	* ext/uvector/uvector.scm (uvector-class-element-size): Added.
+	* ext/uvector/uvector.scm (uvector-class-element-size)
+	  (uvector-copy): Added.
 
 2014-09-11  Shiro Kawai  <shiro@acm.org>
 

@@ -299,8 +299,10 @@
 
 (define (uvcopy-tester copy copy! fill! ->list list-> uvec filler)
   (let* ([c0 (list-> (->list uvec))]
-         [c1 (copy uvec)])
+         [c1 (copy uvec)]
+         [c2 (uvector-copy uvec)])
     (and (equal? c1 uvec)
+         (equal? c2 uvec)
          (begin (fill! c1 filler)
                 (and (equal? c0 uvec)
                      (every (^n (= n filler))  (->list c1))

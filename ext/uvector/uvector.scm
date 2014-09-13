@@ -192,6 +192,22 @@
        [else SCM_UNDEFINED]) ; can't happen
      (result v))))
 
+;; generic copy
+(inline-stub
+ (define-cproc uvector-copy (v::<uvector>
+                             :optional (start::<fixnum> 0)
+                                       (end::<fixnum> -1))
+   (let* ([len::int (SCM_UVECTOR_SIZE v)]
+          [klass::ScmClass* (Scm_ClassOf v)]
+          [eltsize::int (Scm_UVectorElementSize klass)]
+          [src::(const char *) (cast (const char *) (SCM_UVECTOR_ELEMENTS v))])
+     (SCM_CHECK_START_END start end len)
+     (let* ([newsize::int (* (- end start) eltsize)]
+            [dst::(const char *) (SCM_NEW_ATOMIC_ARRAY (const char) newsize)])
+       (memcpy dst (+ src (* start eltsize)) newsize)
+       (result (Scm_MakeUVector klass (- end start) dst)))))
+ )
+
 ;; block i/o
 (inline-stub
  (define-cproc read-uvector! (v::<uvector>
