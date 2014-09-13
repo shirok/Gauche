@@ -235,7 +235,7 @@
 (define-cproc sys-set-screen-buffer-size (h x::<short> y::<short>) ::<void>
   (let* ([c::COORD])
     (= (ref c X) x (ref c Y) y)
-    (check (SetConsoleScreenBufferSize h c))))
+    (check (SetConsoleScreenBufferSize (Scm_WinHandle h '#f) c))))
 
 ;;
 ;; Console input

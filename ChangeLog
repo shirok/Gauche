@@ -1,5 +1,7 @@
 2014-09-13  Shiro Kawai  <shiro@acm.org>
 
+	* ext/windows/console.stub (sys-set-screen-buffer-size): Fixed a bug.
+
 	* ext/vport/vport.scm (open-output-uvector):
 	  Allow option to make the output buffer extendable.
 	  (get-output-uvector): Added to enable retrieving the accumulated
