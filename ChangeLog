@@ -1,5 +1,8 @@
 2014-09-12  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/cgen/stub.scm (define-cptr): Fix a bug that passes
+	  unboxer and boxer names in reverse (thanks to KOGURO Naoki).
+
 	* ext/uvector/uvector.scm (uvector-class-element-size)
 	  (uvector-copy): Added.
 

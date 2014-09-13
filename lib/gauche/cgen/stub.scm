@@ -1593,8 +1593,8 @@
            (make-cgen-type scm-name c-type
                            (x->string scm-name) ; description
                            (x->string c-pred)
-                           (x->string c-boxer)
-                           (x->string c-unboxer))
+                           (x->string c-unboxer)
+                           (x->string c-boxer))
            (cgen-add! fptr)))]
       [_ (error <cgen-stub-error> "invalid define-cptr clause for" scm-name)])))
 
