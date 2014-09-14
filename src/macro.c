@@ -984,12 +984,13 @@ ScmObj Scm_CompileSyntaxRules(ScmObj name, ScmObj ellipsis,
  */
 
 /* TRANSIENT
-   Now it's in compile.c (%internal-macro-expand).  This is kept
+   Now it's in compile.scm (%internal-macro-expand).  This is kept
    for ABI compatibility, but nobody is supposed to call this.
  */
 ScmObj Scm_VMMacroExpand(ScmObj expr, ScmObj env, int oncep)
 {
     Scm_Error("Scm_VMMacroExpand is obsoleted.");
+    return SCM_UNDEFINED;
 }
 
 ScmObj Scm_CallMacroExpander(ScmMacro *mac, ScmObj expr, ScmObj cenv)
