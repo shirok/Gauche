@@ -2701,6 +2701,11 @@ static void accessor_method_slot_accessor_set(ScmAccessorMethod *m, ScmObj v)
  * Foreign pointer mechanism
  */
 
+/* foreign pointer instance flags */
+enum {
+    SCM_FOREIGN_POINTER_INVALID = (1L<<0) /* The pointer is no longer valid. */
+};
+
 struct foreign_data_rec {
     int flags;
     ScmForeignCleanupProc cleanup;
@@ -2767,6 +2772,7 @@ static ScmForeignPointer *make_foreign_int(ScmClass *klass, void *ptr,
     SCM_SET_CLASS(obj, klass);
     obj->ptr = ptr;
     obj->attributes = attr;
+    obj->flags = 0;
     if (data->cleanup) {
         Scm_RegisterFinalizer(SCM_OBJ(obj), fp_finalize, data->cleanup);
     }
@@ -2816,6 +2822,26 @@ ScmObj Scm_MakeForeignPointerWithAttr(ScmClass *klass, void *ptr, ScmObj attr)
         obj = make_foreign_int(klass, ptr, attr, data);
     }
     return SCM_OBJ(obj);
+}
+
+void *Scm_ForeignPointerRef(ScmForeignPointer *fp)
+{
+    if (Scm_ForeignPointerInvalidP(fp)) {
+        Scm_Error("attempt to dereference a foreign pointer "
+                  "that is no longer valid: %S", SCM_OBJ(fp));
+        
+    }
+    return fp->ptr;
+}
+
+int Scm_ForeignPointerInvalidP(ScmForeignPointer *fp)
+{
+    return (fp->flags & SCM_FOREIGN_POINTER_INVALID);
+}
+
+void Scm_ForeignPointerInvalidate(ScmForeignPointer *fp)
+{
+    fp->flags |= SCM_FOREIGN_POINTER_INVALID;
 }
 
 ScmObj Scm_ForeignPointerAttr(ScmForeignPointer *fp)

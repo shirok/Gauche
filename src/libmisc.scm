@@ -68,6 +68,12 @@
 
 (select-module gauche)
 
+(define-cproc foreign-pointer-invalid? (fp::<foreign-pointer>) ::<boolean>
+  Scm_ForeignPointerInvalidP)
+
+(define-cproc foreign-pointer-invalidate! (fp::<foreign-pointer>) ::<void>
+  Scm_ForeignPointerInvalidate)
+
 (define-cproc foreign-pointer-attributes (fp::<foreign-pointer>)
   Scm_ForeignPointerAttr)
 

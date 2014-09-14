@@ -924,12 +924,14 @@ typedef struct ScmForeignPointerRec {
                                    constructed by Scm_MakeForeignPointer. */
     ScmObj attributes;          /* alist.  useful to store e.g. callbacks.
                                    use accessor procedures. */
+    ScmWord flags;              /* used internally.  We use ScmWord to keep
+                                   ScmForeignPointer fit in 4 words. */
 } ScmForeignPointer;
 
 #define SCM_FOREIGN_POINTER_P(obj)   SCM_ISA(obj, SCM_CLASS_FOREIGN_POINTER)
 #define SCM_FOREIGN_POINTER(obj)     ((ScmForeignPointer*)(obj))
 #define SCM_FOREIGN_POINTER_REF(type, obj) \
-    ((type)(SCM_FOREIGN_POINTER(obj)->ptr))
+    ((type)(Scm_ForeignPointerRef(SCM_FOREIGN_POINTER(obj))))
 
 typedef void (*ScmForeignCleanupProc)(ScmObj);
 
@@ -941,8 +943,11 @@ SCM_EXTERN ScmClass *Scm_MakeForeignPointerClass(ScmModule *module,
 SCM_EXTERN ScmObj Scm_MakeForeignPointer(ScmClass *klass, void *ptr);
 SCM_EXTERN ScmObj Scm_MakeForeignPointerWithAttr(ScmClass *klass, void *ptr,
                                                  ScmObj attr);
+SCM_EXTERN void  *Scm_ForeignPointerRef(ScmForeignPointer *fp);
+SCM_EXTERN int    Scm_ForeignPointerInvalidP(ScmForeignPointer *fp);
+SCM_EXTERN void   Scm_ForeignPointerInvalidate(ScmForeignPointer *fp);
 
-/* foreign pointer flags */
+/* foreign pointer class flags */
 enum {
     SCM_FOREIGN_POINTER_KEEP_IDENTITY = (1L<<0),
          /* If set, a foreign pointer class keeps a weak hash table that maps

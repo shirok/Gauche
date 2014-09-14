@@ -1,5 +1,14 @@
 2014-09-13  Shiro Kawai  <shiro@acm.org>
 
+	* src/gauche.h (SCM_FOREIGN_POINTER_REF): Calls Scm_ForeignPointerRef.
+	* src/class.c (Scm_ForeignPointerRef, Scm_ForeignPointerInvalidP)
+	  (Scm_ForeignPointerInvalidate): Added.  When the object pointed
+	  by a foreign pointer became obsoleted (e.g. freed), you can mark
+	  the foreign pointer "invalid", so that the subsequent dereference
+	  of the pointer raises an error.
+	* src/libmisc.scm (foreign-pointer-invalid?, foreign-pointer-invalidate!):
+	  Scheme interface for the above.
+
 	* ext/windows/console.stub (sys-set-screen-buffer-size): Fixed a bug.
 
 	* ext/vport/vport.scm (open-output-uvector):
