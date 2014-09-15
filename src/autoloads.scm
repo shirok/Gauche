@@ -22,7 +22,7 @@
          (list target path
                (fold (^[entry r]
                        (match entry
-                         [(:macro . syms) (fold (cut acons <> #t <>) r syms)]
+                         [(':macro . syms) (fold (cut acons <> #t <>) r syms)]
                          [sym (acons sym #f r)]))
                      '() entries))))
 
