@@ -1,3 +1,8 @@
+2014-09-15  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/interactive.scm (describe): Improve output of
+	  (describe <generic>).
+
 2014-09-13  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche.h (SCM_FOREIGN_POINTER_REF): Calls Scm_ForeignPointerRef.

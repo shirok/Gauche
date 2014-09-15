@@ -161,6 +161,18 @@
     (format #t ")\n")
     (values)))
 
+(define-method describe ((g <generic>))
+  (next-method) ; common object description
+  (print "methods:")
+  (dolist [m (~ g'methods)]
+    (let ([spnames (map class-name (~ m'specializers))]
+          [has-optional? (~ m'optional)])
+      (format #t "  ~s\n"
+              (if has-optional?
+                (append spnames '_) ; this works even spnames is ()
+                spnames))))
+  (values))
+
 (define d describe)
 
 (define (describe-common obj)
