@@ -89,6 +89,54 @@
   (without-echoing #f read-line))
 |#
 
-
-
+;; mode should be either one of 'cooked, 'rare or 'raw
+;; NB: Although we work on the given port and also calls PROC with port,
+;; what's changed is actually a device connected to the port.  There can
+;; be more than one port connected to the same device, and I/O thru those
+;; ports would also be affected.
+;; TODO: What to do with Windows console?
+(define (with-terminal-mode port mode proc)
+  (cond
+   [(sys-isatty port)
+    (let ()
+      (define saved-attr (sys-tcgetattr port))
+      (define new-attr
+        (rlet1 attr (sys-termios-copy saved-attr)
+          (case mode
+            [(raw)
+             (set! (~ attr'iflag)
+                   (logand (~ attr'iflag)
+                           (lognot (logior BRKINT ICRNL INPCK ISTRIP IXON))))
+             (set! (~ attr'oflag) (logand (~ attr'oflag) (lognot OPOST)))
+             (set! (~ attr'cflag) (logand (~ attr'cflag) (lognot CS8)))
+             (set! (~ attr'lflag)
+                   (logand (~ attr'lflag)
+                           (lognot (logior ECHO ICANON IEXTEN ISIG))))]
+            [(rare)
+             (set! (~ attr'iflag)
+                   (logior BRKINT
+                           (logand (~ attr'iflag)
+                                   (lognot (logior ICRNL INPCK ISTRIP IXON)))))
+             (set! (~ attr'oflag) (logand (~ attr'oflag) (lognot OPOST)))
+             (set! (~ attr'cflag) (logand (~ attr'cflag) (lognot CS8)))
+             (set! (~ attr'lflag)
+                   (logior ISIG
+                           (logand (~ attr'lflag)
+                                   (lognot (logior ECHO ICANON IEXTEN)))))]
+            [(cooked)
+             (set! (~ attr'iflag)
+                   (logior (~ attr'iflag)
+                           BRKINT ICRNL INPCK ISTRIP IXON))
+             (set! (~ attr'oflag) (logior (~ attr'oflag) OPOST))
+             (set! (~ attr'lflag)
+                   (logior (~ attr'lflag) ECHO ICANON IEXTEN ISIG))]
+            [else
+             (error "terminal mode needs to be one of cooked, rare or raw, \
+                          but got:" mode)])))
+      (define (set)
+        (sys-tcsetattr port TCSANOW new-attr))
+      (define (reset)
+        (sys-tcsetattr port TCSANOW saved-attr))
+      (unwind-protect (begin (set) (proc port)) (reset)))]
+   [else (proc port)]))
 
