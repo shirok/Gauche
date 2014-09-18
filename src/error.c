@@ -850,6 +850,13 @@ ScmObj Scm_Raise2(ScmObj condition, u_long flags)
 
    This function isn't very efficient; but sometimes you want the convenience
    more, right?
+
+   The argument list format:
+
+     <condition-type> {<string-slot-name> <value>}* <terminator>
+
+     <terminator> : SCM_RAISE_CONDITION_MESSAGE <fmtstr> <fmtarg> ...
+                  | NULL
 */
 
 ScmObj Scm_RaiseCondition(ScmObj condition_type, ...)
