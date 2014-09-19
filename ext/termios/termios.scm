@@ -95,7 +95,7 @@
 ;; be more than one port connected to the same device, and I/O thru those
 ;; ports would also be affected.
 ;; TODO: What to do with Windows console?
-(define (with-terminal-mode port mode proc)
+(define (with-terminal-mode port mode proc :optional (cleanup #f))
   (cond
    [(sys-isatty port)
     (let ()
@@ -136,7 +136,8 @@
       (define (set)
         (sys-tcsetattr port TCSANOW new-attr))
       (define (reset)
-        (sys-tcsetattr port TCSANOW saved-attr))
+        (sys-tcsetattr port TCSANOW saved-attr)
+        (when cleanup (cleanup)))
       (unwind-protect (begin (set) (proc port)) (reset)))]
    [else (proc port)]))
 
