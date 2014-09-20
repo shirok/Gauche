@@ -245,7 +245,13 @@ The table below lists sharp-syntaxes.
       開始を示すか、リーダのモードに影響を与える特別なトークンとして読まれます。
       下の`hash-bang token'の節を参照してください。
 @c COMMON
-@item @code{#"}, @code{##}, @code{#$}, @code{#%}, @code{#&}, @code{#'}
+@item @code{#"}
+@c EN
+ @tab Introduces an interpolated string.  @xref{String interpolation}.
+@c JP
+ @tab 補間された文字列を先導します。@ref{String interpolation}参照。
+@c COMMON
+@item @code{##}, @code{#$}, @code{#%}, @code{#&}, @code{#'}
 @c EN
  @tab Unused.
 @c JP
@@ -467,9 +473,9 @@ The table below lists sharp-syntaxes.
 @c COMMON
 @item @code{#`}
 @c EN
- @tab Introduces an interpolated string.  @xref{String interpolation}.
+ @tab Legacy syntax for string interpolation, superseded by @code{#"}.
 @c JP
- @tab 補間された文字列を先導します。@ref{String interpolation}参照。
+ @tab 文字列補間の古い構文です。新しいコードでは@code{#"}を使ってください。
 @c COMMON
 @item @code{#@{}
 @c EN
@@ -2993,10 +2999,111 @@ It is equivalent to the following form.
 @c EN
 If the form appears inside a local scope (internal define),
 this introduce a local binding of the variable.
-
-@c explanation of internal define here
 @c JP
 このフォームがローカルスコープの中に現われた場合、ローカル変数の束縛となります。
+(内部define)。
+@c COMMON
+
+@c EN
+Internal defines can appear in the beginning of body of @code{lambda}
+or other forms that introduces local bindings.  They are equivalent
+to a @code{letrec*} form, as shown below.
+@c JP
+内部defineは@code{lambda}やその他のローカル束縛を作る構文の、本体部分の先頭に置けます。
+これらは、下に示すように@code{letrec*}フォームと等価です。
+@c COMMON
+
+@example
+(lambda (a b)
+  (define (cube x) (* x x x))
+  (define (square x) (* x x))
+  (+ (cube a) (square b)))
+
+ @equiv{}
+
+(lambda (a b)
+  (letrec* ([cube (lambda (x) (* x x x))]
+            [square (lambda (x) (* x x))])
+    (+ (cube a) (square b))))
+@end example
+
+@c EN
+Since internal defines are essentially a @code{letrec*} form,
+you can write mutually recursive local functions, and you can
+use preceding bindings introduced in the same scope to calculate
+the value to be defined.  However, you can't use a binding that is introduced
+after an internal define form to calculate its value; if you do so,
+Gauche may not report an error immediately, but you may get strange
+errors later on.
+@c JP
+内部defineは実質的に@code{letrec*}フォームなので、
+相互再帰する内部関数を書けますし、また同じスコープで先に導入された定義を
+使って定義される値を計算することもできます。しかし、
+内部defineフォームの後に定義される値を使うことはできません。
+そういったプログラムを書いてもGaucheは直ちにエラーを報告しませんが、
+あとでおかしな結果が出ることがあります。
+@c COMMON
+
+@example
+(lambda (a)
+  (define x (* a 2))
+@c EN
+  (define y (+ x 1))  ; ok to use x to calculate y
+@c JP
+  (define y (+ x 1))  ; yの値を計算するのにxを使ってよい
+@c COMMON
+  (* a y))
+
+(lambda (a)
+@c EN
+  ;; You can refer to even? in odd?, since the value of even?
+  ;; isn't used at the time odd? is defined; it is only used
+  ;; when odd? is called.
+@c JP
+  ;; odd?の中からeven?を参照するのはok。odd?が定義される時点ではeven?
+  ;; の値は使われず、odd?が呼ばれた時に初めて使われるから。
+@c COMMON
+  (define (odd? x) (or (= x 1) (not (even? (- x 1)))))
+  (define (even? x) (or (= x 0) (not (odd? (- x 1)))))
+  (odd? a))
+
+(lambda (a)
+@c EN
+  ;; This is not ok, for defining y needs to use the value
+  ;; of x.  However, you may not get an error immediately.
+@c JP
+  ;; これはダメ。yを定義する時点でxの値を使わないとならないので。
+  ;; ただし、すぐにはエラーとならないかもしれない。
+@c COMMON
+  (define y (+ x 1))
+  (define x (* a 2))
+  (* a y))
+@end example
+
+@c EN
+Inside the body of binding constructs, internal defines must appear
+before any expression of the same level.   The following code isn't allowed, for
+an expression @code{(print a)} precedes the @code{define} form.
+@c JP
+束縛を作るフォームのボディー内で、内部defineは同じレベルにあるすべての式より前に
+現れなければなりません。例えば次のコードは、@code{define}フォームの
+前に式@code{(print a)}があるので不正です。
+@c COMMON
+
+@example
+(lambda (a)
+  (print a)
+  (define (cube x) (* x x x))  ; error!
+  (cube a))
+@end example
+
+@c EN
+It is also invalid to put no expressions but internal defines
+inside the body of binding constructs, although Gauche don't report
+an error.
+@c JP
+束縛を作るフォームのボディー中に、式を置かず内部defineだけを書いておくのも不正ですが、
+Gaucheは特にエラーを出しません。
 @c COMMON
 
 @c EN
