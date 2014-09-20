@@ -1,3 +1,7 @@
+2014-09-20  Shiro Kawai  <shiro@acm.org>
+
+	* ext/binary/binarylib.stub: Merged to io.scm
+
 2014-09-19  Shiro Kawai  <shiro@acm.org>
 
 	* examples/snake.scm: Added a sample of text.console.

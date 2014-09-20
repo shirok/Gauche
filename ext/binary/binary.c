@@ -527,15 +527,3 @@ void Scm_PutBinaryF64(ScmUVector *uv, int off, ScmObj val, ScmSymbol *e)
     SWAP_D(e, v);
     inject(uv, v.buf, off, 8);
 }
-
-/*
- * Init
- */
-extern void Scm_Init_binarylib(ScmModule *mod);
-
-SCM_EXTENSION_ENTRY void Scm_Init_binary__io(void)
-{
-    ScmModule *mod_io = SCM_FIND_MODULE("binary.io", SCM_FIND_MODULE_CREATE);
-    SCM_INIT_EXTENSION(binary__io);
-    Scm_Init_binarylib(mod_io);
-}

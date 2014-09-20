@@ -7,19 +7,20 @@ SCM_CATEGORY = binary
 include ../Makefile.ext
 
 LIBFILES = binary--io.$(SOEXT)
-SCMFILES = io.scm
+SCMFILES = io.sci
 
 GENERATED = Makefile
-XCLEANFILES = binarylib.c
+XCLEANFILES = binary--io.c io.sci
 
-OBJECTS = binary.$(OBJEXT) binarylib.$(OBJEXT)
+OBJECTS = binary--io.$(OBJEXT) binary.$(OBJEXT)
 
 all : $(LIBFILES)
 
 binary--io.$(SOEXT) : $(OBJECTS)
 	$(MODLINK) binary--io.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
-binarylib.c : binarylib.stub
+binary--io.c io.sci : io.scm
+	$(PRECOMP) -e -P -o binary--io $(srcdir)/io.scm
 
 install : install-std
 
