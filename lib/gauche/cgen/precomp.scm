@@ -606,14 +606,23 @@
       ((with-module gauche.cgen.stub cgen-stub-parse-form)
        (unwrap-syntax (cons 'define-cproc args)))
       (undefined))
-    ;; (define-macro (define . f)
-    ;;   ((with-module gauche.cgen.precomp handle-define) f))
     (define-macro (define-constant . f)
       ((with-module gauche.cgen.precomp handle-define-constant) f))
     (define-macro (define-syntax . f)
       ((with-module gauche.cgen.precomp handle-define-syntax) f))
     (define-macro (define-macro . f)
       ((with-module gauche.cgen.precomp handle-define-macro) f))
+    ;; A special directive not to precompile; the given forms are
+    ;; emitted to *.sci file as they are.  It is useful if you delay
+    ;; macro-expansion until the load time (e.g. cond-expand).  The
+    ;; forms are not evaluated at all in the compiling environment,
+    ;; so they are not avaialble for macro expansion of the forms
+    ;; to be precompiled.  (The case can be handled more generally by
+    ;; 'eval-when' mechanism, but properly support eval-when needs more
+    ;; work.)
+    (define-macro (without-precompiling . forms)
+      ((with-module gauche.cgen.precomp handle-without-compiling) forms)
+      (undefined))
     ))
 
 ;; Macros are "consumed" by the Gauche's compiler---that is, it is
@@ -673,6 +682,9 @@
       `((with-module gauche define-constant) ,@form))]
     [_ #f])
   (cons '(with-module gauche define-constant) form))
+
+(define (handle-without-compiling forms)
+  (for-each write-ext-module forms))
 
 ;; check to see if the symbol is exported
 (define (symbol-exported? sym)

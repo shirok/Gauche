@@ -1,5 +1,9 @@
 2014-09-20  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/cgen/precomp.scm (without-precompiling): Added a special
+	  directive to put the forms into *.sci file, without precompiling them.
+	  If we want to cond-expand at load time, we can't precompile it.
+
 	* ext/binary/binarylib.stub: Merged to io.scm
 
 2014-09-19  Shiro Kawai  <shiro@acm.org>
