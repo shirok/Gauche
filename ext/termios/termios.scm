@@ -234,7 +234,10 @@
                       (logand (~ attr'iflag)
                               (lognot (logior BRKINT ICRNL INPCK ISTRIP IXON))))
                 (set! (~ attr'oflag) (logand (~ attr'oflag) (lognot OPOST)))
-                (set! (~ attr'cflag) (logand (~ attr'cflag) (lognot CS8)))
+                (set! (~ attr'cflag)
+                      (logior (logand (~ attr'cflag)
+                                      (lognot (logior CSIZE PARENB)))
+                              CS8))
                 (set! (~ attr'lflag)
                       (logand (~ attr'lflag)
                               (lognot (logior ECHO ICANON IEXTEN ISIG))))]
@@ -244,7 +247,10 @@
                               (logand (~ attr'iflag)
                                       (lognot (logior ICRNL INPCK ISTRIP IXON)))))
                 (set! (~ attr'oflag) (logand (~ attr'oflag) (lognot OPOST)))
-                (set! (~ attr'cflag) (logand (~ attr'cflag) (lognot CS8)))
+                (set! (~ attr'cflag)
+                      (logior (logand (~ attr'cflag)
+                                      (lognot (logior CSIZE PARENB)))
+                              CS8))
                 (set! (~ attr'lflag)
                       (logior ISIG
                               (logand (~ attr'lflag)
