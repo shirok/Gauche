@@ -69,9 +69,9 @@ if test "$ac_cv_use_zlib" = yes; then
   AC_DEFINE(USE_ZLIB)
   ZLIB_ARCHFILES=rfc--zlib.$SHLIB_SO_SUFFIX
   AC_SUBST(ZLIB_ARCHFILES)
-  ZLIB_SCMFILES=zlib.scm
+  ZLIB_SCMFILES=zlib.sci
   AC_SUBST(ZLIB_SCMFILES)
-  ZLIB_OBJECTS="gauche-zlib.$OBJEXT zliblib.$OBJEXT"
+  ZLIB_OBJECTS="gauche-zlib.$OBJEXT rfc--zlib.$OBJEXT"
   AC_SUBST(ZLIB_OBJECTS)
 fi
 AC_SUBST(ZLIB_CPPFLAGS)

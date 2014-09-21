@@ -556,13 +556,8 @@ ScmObj Scm_InflateSync(ScmPort *port)
 /*
  * Module initialization function.
  */
-extern void Scm_Init_zliblib(ScmModule*);
-
-SCM_EXTENSION_ENTRY void Scm_Init_rfc__zlib(void)
+void Scm_Init_zlib(void)
 {
-    /* Register this DSO to Gauche */
-    SCM_INIT_EXTENSION(rfc__zlib);
-
     /* Create the module if it doesn't exist yet. */
     ScmModule *mod = SCM_MODULE(SCM_FIND_MODULE("rfc.zlib", TRUE));
 
@@ -596,7 +591,4 @@ SCM_EXTENSION_ENTRY void Scm_Init_rfc__zlib(void)
                                 "<zlib-version-error>",
                                 mod, cond_meta, SCM_FALSE,
                                 zliberror_slots, 0);
-
-    /* Register stub-generated procedures */
-    Scm_Init_zliblib(mod);
 }

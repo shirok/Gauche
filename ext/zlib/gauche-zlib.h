@@ -126,6 +126,8 @@ extern ScmObj Scm_MakeZlibError(ScmObj message, int error_code);
 extern void Scm_ZlibError(int error_code, const char *msg, ...);
 extern ScmObj Scm_InflateSync(ScmPort *port);
 
+extern void Scm_Init_zlib(void);
+
 /* Epilogue */
 SCM_DECL_END
 

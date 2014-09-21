@@ -1,5 +1,8 @@
-2014-09-20  Shiro Kawai  <shiro@acm.org>
+2014-09-21  Shiro Kawai  <shiro@acm.org>
 
+	* ext/zlib/zliblib.stub: Merged to zlib.scm
+
+2014-09-20  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/precomp.scm (without-precompiling): Added a special
 	  directive to put the forms into *.sci file, without precompiling them.
