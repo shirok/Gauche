@@ -182,13 +182,10 @@ ScmObj Scm_ForkptyAndExec(ScmString *file, ScmObj args, ScmObj iomap,
  * Initializaion
  */
 
-extern void Scm_Init_termiolib(ScmModule *mod);
-
-SCM_EXTENSION_ENTRY void Scm_Init_gauche__termios(void)
+void Scm_Init_termios(void)
 {
     SCM_INIT_EXTENSION(gauche__termios);
     ScmModule *mod = SCM_FIND_MODULE("gauche.termios", SCM_FIND_MODULE_CREATE);
-    Scm_Init_termiolib(mod);
 
 #if !defined(GAUCHE_WINDOWS)
     Scm_InitStaticClass(&Scm_SysTermiosClass, "<sys-termios>", mod,

@@ -87,4 +87,6 @@ ScmObj Scm_ForkptyAndExec(ScmString *file, ScmObj args, ScmObj iomap,
 
 #endif /* !defined(GAUCHE_WINDOWS) */
 
+void Scm_Init_termios(void);
+
 #endif /* GAUCHE_TERMIOS_H */

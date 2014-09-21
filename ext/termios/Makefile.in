@@ -7,19 +7,20 @@ include ../Makefile.ext
 SCM_CATEGORY = gauche
 
 LIBFILES = gauche--termios.$(SOEXT)
-SCMFILES = termios.scm
+SCMFILES = termios.sci
 
-OBJECTS = termios.$(OBJEXT) termiolib.$(OBJEXT)
+OBJECTS = termios.$(OBJEXT) gauche--termios.$(OBJEXT)
 
 GENERATED = Makefile
-XCLEANFILES =  termiolib.c
+XCLEANFILES =  gauche--termios.c termios.sci
 
 all : $(LIBFILES)
 
 gauche--termios.$(SOEXT) : $(OBJECTS)
 	$(MODLINK) gauche--termios.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
-termiolib.c : termiolib.stub
+gauche--termios.c termios.sci : termios.scm
+	$(PRECOMP) -e -P -o gauche--termios $(srcdir)/termios.scm
 
 install : install-std
 
