@@ -47,7 +47,7 @@ test/rfc.scm
 .dirstamp
 ext/Makefile.ext
 ext/bcrypt/crypt--bcrypt.c
-ext/binary/binarylib.c
+ext/binary/binary--io.c
 ext/charconv/charconv.h
 ext/charconv/convaux.c
 ext/charconv/eucj2ucs.c
@@ -61,7 +61,7 @@ ext/dbm/ndbm-makedb
 ext/dbm/ndbm-suffixes.h
 ext/digest/rfc--md5.c
 ext/digest/rfc--sha.c
-ext/fcntl/fcntlib.c
+ext/fcntl/gauche--fcntl.c
 ext/file/file--util.c
 ext/gauche/gauche--collection.c
 ext/gauche/gauche--hook.c
@@ -87,7 +87,7 @@ ext/sxml/sxml-tools.scm
 ext/sxml/to-html.scm
 ext/sxml/tree-trans.scm
 ext/syslog/gauche--syslog.c
-ext/termios/termiolib.c
+ext/termios/gauche--termios.c
 ext/text/text--gettext.c
 ext/text/text--tr.c
 ext/text/text--unicode.c
@@ -104,7 +104,7 @@ ext/uvector/gauche--uvector.c
 ext/vport/vportlib.c
 ext/windows/console.c
 ext/windows/windows.c
-ext/zlib/zliblib.c
+ext/zlib/rfc--zlib.c
 gc/.deps/
 gc/.libs/
 gc/atomic_ops.c
