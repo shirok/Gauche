@@ -78,3 +78,5 @@ extern unsigned long Scm_MTGenrandU32(ScmMersenneTwister *);
 extern float         Scm_MTGenrandF32(ScmMersenneTwister *, int);
 extern double        Scm_MTGenrandF64(ScmMersenneTwister *, int);
 extern ScmObj        Scm_MTGenrandInt(ScmMersenneTwister *mt, ScmObj n);
+
+extern void          Scm_Init_mt_random(void);

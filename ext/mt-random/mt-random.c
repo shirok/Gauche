@@ -302,15 +302,11 @@ static ScmObj mt_allocate(ScmClass *klass, ScmObj initargs)
     return SCM_OBJ(mt);
 }
 
-extern void Scm_Init_mt_lib(ScmModule*);
-
-SCM_EXTENSION_ENTRY void Scm_Init_math__mt_random(void)
+void Scm_Init_mt_random(void)
 {
     ScmModule *mod = SCM_FIND_MODULE("math.mt-random", SCM_FIND_MODULE_CREATE);
-    SCM_INIT_EXTENSION(math__mtrandom);
     Scm_InitStaticClass(&Scm_MersenneTwisterClass, "<mersenne-twister>",
                         mod, NULL, 0);
     key_seed = SCM_MAKE_KEYWORD("seed");
-    Scm_Init_mt_lib(mod);
 }
 

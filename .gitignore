@@ -67,7 +67,7 @@ ext/gauche/gauche--collection.c
 ext/gauche/gauche--hook.c
 ext/gauche/gauche--parameter.c
 ext/gauche/gauche--sequence.c
-ext/mt-random/mt-lib.c
+ext/mt-random/math--mt-random.c
 ext/net/netaux.c
 ext/net/netlib.c
 ext/peg/parser--peg.c

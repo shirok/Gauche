@@ -3,23 +3,24 @@ top_builddir = @top_builddir@
 top_srcdir   = @top_srcdir@
 
 GENERATED = Makefile
-XCLEANFILES = mt-lib.c
+XCLEANFILES = math--mt-random.c
 
 include ../Makefile.ext
 
 SCM_CATEGORY = math
 
 LIBFILES = math--mt-random.$(SOEXT)
-SCMFILES = mt-random.scm
+SCMFILES = mt-random.sci
 
-OBJECTS = mt-random.$(OBJEXT) mt-lib.$(OBJEXT)
+OBJECTS = mt-random.$(OBJEXT) math--mt-random.$(OBJEXT)
 
 all : $(LIBFILES)
 
 math--mt-random.$(SOEXT) : $(OBJECTS)
 	$(MODLINK) math--mt-random.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
-mt-lib.c : mt-lib.stub
+math--mt-random.c mt-random.sci : mt-random.scm
+	$(PRECOMP) -e -P -o math--mt-random $(srcdir)/mt-random.scm
 
 install : install-std
 

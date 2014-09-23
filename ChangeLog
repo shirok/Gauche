@@ -1,3 +1,7 @@
+2014-09-23  Shiro Kawai  <shiro@acm.org>
+
+	* ext/math/mt-lib.stub: Merged to mt-random.scm
+
 2014-09-22  Shiro Kawai  <shiro@acm.org>
 
 	* ext/gauche/fcntlib.stub: Merged to fcntl.scm
