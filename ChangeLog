@@ -1,3 +1,7 @@
+2014-09-22  Shiro Kawai  <shiro@acm.org>
+
+	* ext/gauche/fcntlib.stub: Merged to fcntl.scm
+
 2014-09-21  Shiro Kawai  <shiro@acm.org>
 
 	* ext/zlib/zliblib.stub: Merged to zlib.scm

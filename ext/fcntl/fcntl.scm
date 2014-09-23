@@ -44,10 +44,58 @@
           O_EXCL   O_ACCMODE
           )
   )
-
 (select-module gauche.fcntl)
 
-(dynamic-load "gauche--fcntl")
+(inline-stub
+ (declcode "#include \"gauche/fcntl.h\"")
+ 
+ (define-enum F_DUPFD)
+ (define-enum F_GETFD)
+ (define-enum F_SETFD)
+ (define-enum F_GETFL)
+ (define-enum F_SETFL)
+ (define-enum F_GETLK)
+ (define-enum F_SETLK)
+ (define-enum F_SETLKW)
+
+ (define-enum F_RDLCK)
+ (define-enum F_WRLCK)
+ (define-enum F_UNLCK)
+
+ (define-enum-conditionally F_GETOWN)
+ (define-enum-conditionally F_SETOWN)
+ (define-enum-conditionally F_GETSIG)
+ (define-enum-conditionally F_SETSIG)
+ (define-enum-conditionally F_GETLEASE)
+ (define-enum-conditionally F_SETLEASE)
+ (define-enum-conditionally F_NOTIFY)
+
+ (define-enum-conditionally FD_CLOEXEC)
+
+ (define-enum O_ACCMODE)
+ (define-enum O_RDONLY)
+ (define-enum O_WRONLY)
+ (define-enum O_RDWR)
+ (define-enum O_APPEND)
+ (define-enum O_CREAT)
+ (define-enum O_EXCL)
+ (define-enum-conditionally O_NOCTTY)
+ (define-enum-conditionally O_NONBLOCK)
+ (define-enum-conditionally O_ASYNC)
+ (define-enum O_TRUNC)
+
+ ;; Linux specific F_NOTIFY flags (not available yet, w/o _GNU_SOURCE)
+ (if "defined(F_NOTIFY)"
+   (begin
+     (define-enum DN_ACCESS)
+     (define-enum DN_MODIFY)
+     (define-enum DN_CREATE)
+     (define-enum DN_DELETE)
+     (define-enum DN_RENAME)
+     (define-enum DN_ATTRIB)
+     (define-enum DN_MULTISHOT)
+     ))
+ )
 
 (export-if-defined
  F_GETOWN F_SETOWN F_GETSIG F_SETSIG
@@ -58,3 +106,6 @@
  O_ASYNC   O_NOCTTY  O_NONBLOCK O_TRUNC
  )
 
+(inline-stub
+ (define-cproc sys-fcntl (port-or-fd op::<fixnum> :optional arg) Scm_SysFcntl)
+ (initcode (Scm_Init_fcntl)))

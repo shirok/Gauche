@@ -198,15 +198,15 @@ ScmObj Scm_SysFcntl(ScmObj port_or_fd, int op, ScmObj arg)
  * Initialization
  */
 
-extern void Scm_Init_fcntlib(ScmModule *mod);
+//extern void Scm_Init_fcntlib(ScmModule *mod);
 
-SCM_EXTENSION_ENTRY void Scm_Init_gauche__fcntl(void)
+void Scm_Init_fcntl(void)
 {
-    SCM_INIT_EXTENSION(gauche__fcntl);
+    //SCM_INIT_EXTENSION(gauche__fcntl);
     ScmModule *mod = SCM_FIND_MODULE("gauche.fcntl", SCM_FIND_MODULE_CREATE);
     Scm_InitStaticClass(&Scm_SysFlockClass, "<sys-flock>",
                         mod, flock_slots, 0);
-    Scm_Init_fcntlib(mod);
+    //    Scm_Init_fcntlib(mod);
 
 #ifndef GAUCHE_WINDOWS
     Scm_AddFeature("gauche.sys.fcntl", NULL);
