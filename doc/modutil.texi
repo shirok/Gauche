@@ -11,6 +11,7 @@
 * A common job descriptor for control modules::  control.job
 * Thread pools::                control.thread-pool
 * Password hashing::            crypt.bcrypt
+* Queue::                       data.queue
 * Random data generators::      data.random
 * Database independent access layer::  dbi
 * Generic DBM interface::       dbm
@@ -59,7 +60,6 @@
 * Determine isomorphism::       util.isomorph
 * The longest common subsequence::  util.lcs
 * Pattern matching::            util.match
-* Queue::                       util.queue
 * Red black tree::              util.rbtree
 * SLIB-compatible record type::  util.record
 * Relation framework::          util.relation
@@ -1517,7 +1517,7 @@ better to give some time for the thread to finish the executing jobs.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Password hashing, Random data generators, Thread pools, Library modules - Utilities
+@node Password hashing, Queue, Thread pools, Library modules - Utilities
 @section @code{crypt.bcrypt} - Password hashing
 @c NODE パスワードハッシュ, @code{crypt.bcrypt} - パスワードハッシュ
 
@@ -1649,8 +1649,481 @@ bcryptアルゴリズムでは少なくとも16バイトの長さが必要です
 @end defun
 
 @c ----------------------------------------------------------------------
+@node Queue, Random data generators, Password hashing, Library modules - Utilities
+@section @code{data.queue} - Queue
+@c NODE キュー, @code{data.queue} - キュー
 
-@node Random data generators, Database independent access layer, Password hashing, Library modules - Utilities
+@deftp {Module} data.queue
+@mdindex data.queue
+@c EN
+Provides a queue (FIFO).  You can create a simple queue,
+which is lightweight but not thread-safe, or an MTqueue,
+a thread-safe queue.  Basic queue operations work on
+both type of queues.  When an mtqueue is passed to the
+procedures listed in this section, each operation is
+done in atomic way, unless otherwise noted.
+
+There are also a set of procedures for mtqueues that
+can be used for thread synchronization; for example,
+you can let the consumer thread block if an
+mtqueue is empty, and/or the producer thread block if the number
+of items in the mtqueue reaches a specified limit.
+Using these procedures allows the program to use an mtqueue
+as a @emph{channel}.
+
+The simple queue API is a superset of SLIB's queue implementation.
+@c JP
+キュー(FIFO)機能を提供します。
+極めて軽量ですがスレッドセーフでないシンプルなキューと、
+スレッドセーフなmtqueueがあります。基本的なキュー操作手続きは
+どちらのキューに対しても使うことができます。本節で説明されている
+手続きをmtqueueに適用した場合、特に断りが無い限り、操作は
+アトミックに行われます。
+
+また、スレッド間同期に使えるmtqueue用の手続きも用意されています。
+例えばキューが空の時に読み出しスレッドをブロックさせたり
+キューの長さが指定値に達した場合に書き込みスレッドをブロックさせることができ、
+いわゆる「チャネル」としてキューを使うことができます。
+
+シンプルキューのAPIはSLIBのキュー実装の上位互換になっています。
+@c COMMON
+@end deftp
+
+@deftp {Class} <queue>
+@clindex queue
+@c EN
+A class of simple queue.
+@c JP
+シンプルなキューのクラスです。
+@c COMMON
+
+@defivar {<queue>} length
+@c EN
+A read-only slot that returns the number of items in the queue.
+@c JP
+キュー中の要素の数を返す、読み取り専用のスロットです。
+@c COMMON
+@end defivar
+@end deftp
+
+@deftp {Class} <mtqueue>
+@clindex mtqueue
+@c EN
+A class of mtqueue.  Inherits @code{<queue>}.
+@c JP
+mtqueueのクラスです。@code{<queue>}を継承しています。
+@c COMMON
+
+@defivar {<mtqueue>} max-length
+@c EN
+The upper bound of the number of items in the queue.
+@c JP
+キュー中の要素数の上限を示します。
+@c COMMON
+
+@c EN
+If this slot is zero, the queue cannot hold any items, but
+works as a synchronization device.
+A writer will block until a reader appears to take the item;
+a reader will block until a writer appears to give the item.
+@c JP
+このスロットが0の場合、キューは要素を中に持つことはできませんが、同期デバイスとして動作します。
+書き込みスレッドは、その要素を受け取る読み出しスレッドが現れるまでブロックし、
+読み出しスレッドは、要素を渡してくれる書き込みスレッドが現れるまでブロックします。
+@c COMMON
+@end defivar
+@end deftp
+
+@defun make-queue
+@c EN
+Creates and returns an empty simple queue.
+@c JP
+空のシンプルなキューを作って返します。
+@c COMMON
+@end defun
+
+@defun make-mtqueue &key max-length
+@c EN
+Creates and returns an empty mtqueue.  When an integer is given
+to the keyword argument @var{max-length}, it is used to
+initialize the @code{max-length} slot.
+@c JP
+空のmtqueueを作って返します。整数が@var{max-length}に与えられた場合は、
+それが@code{max-length}スロットの値となります。
+@c COMMON
+@end defun
+
+@defun queue? obj
+@c EN
+Returns @code{#t} if @var{obj} is a queue (either a simple queue
+or an mtqueue).
+@c JP
+@var{obj}がキューであれば(シンプルなキューでもmtqueueでも)@code{#t}を返します。
+@c COMMON
+@end defun
+
+@defun mtqueue? obj
+@c EN
+Returns @code{#t} if @var{obj} is an mtqueue.
+@c JP
+@var{obj}がmtqueueであれば@code{#t}を返します。
+@c COMMON
+@end defun
+
+@defun queue-empty? queue
+@c EN
+Returns @code{#t} if @var{obj} is an empty queue.
+@c JP
+@var{obj}が空のキューであれば@code{#t}を返します。
+@c COMMON
+@end defun
+
+@defun queue-length queue
+@c EN
+Returns the number of the items in the queue.
+@c JP
+キューの中にある要素の数を返します。
+@c COMMON
+@end defun
+
+@defun mtqueue-max-length mtqueue
+@c EN
+Returns the maximum number of items the mtqueue can hold.
+If the queue doesn't have a limit, @code{#f} is returned.
+@c JP
+キューが保持できる要素の最大数を返します。限度がない場合は@code{#f}が返ります。
+@c COMMON
+@end defun
+
+@defun mtqueue-room mtqueue
+@c EN
+Returns the number of elements the mtqueue can accept at this moment
+before it hits its maximum length.   For example, if the queue
+already has the maximum number of elements, 0 is returned.
+If the queue doesn't have the limit, @code{+inf.0} is returned.
+@c JP
+保持できる最大容量に達するまであといくつ要素を受け入れることができるかを
+示す整数を返します。例えば、既にキューがいっぱいであれば0が返ります。
+キューに最大容量が設定されていなければ@code{+inf.0}が返ります。
+@c COMMON
+
+@c EN
+Note that even if this returns a non-zero finite value, subsequent 
+@code{enqueue!} may throw an error because of the queue being full.
+It's because another thread may put an item to the queue
+between this procedure call and @code{enqueue!}.  To avoid
+this situation, use @code{enqueue/wait!} to insert item
+to mtqueue with finite max-length.
+@c JP
+この手続きが0以外有限値を返した場合でも、続く@code{enqueue!}の呼び出し時点で
+キューがいっぱいになっている可能性があることに注意してください。
+この手続きの呼び出しと@code{enqueue!}の
+呼び出しの間に、他のスレッドがキューに要素を入れるかもしれないからです。
+有限長のmtqueueに確実に要素を挿入したい場合は@code{enqueue/wait!}を使ってください。
+@c COMMON
+@end defun
+
+
+@defun copy-queue queue
+@c EN
+Returns a copy of the queue.
+@c JP
+キューqueueのコピーを返します。
+@c COMMON
+@end defun
+
+@defun enqueue! queue obj :optional more-objs @dots{}
+@c EN
+Add @var{obj} to the end of @var{queue}.  You may give more than
+one object, and each of them are enqueued in order.
+@c JP
+@var{obj}をキュー@var{queue}の末尾に追加します。
+一つ以上の@var{obj}を与えることができ、その場合はそれらが順にenqueueされます。
+@c COMMON
+
+@c EN
+If @var{queue} is an mtqueue, all the objects are enqueued
+atomically; no other objects from other threads can be inserted
+between the objects given to a single @code{enqueue!} call.
+Besides, if the value of its @code{max-length} slot
+has a positive finite value, and adding @var{obj}s makes the number of
+elements in @var{queue} exceeds @code{max-length},
+an error is signaled and @var{queue} won't be modified.
+(If @code{max-length} is zero, this procedure always fail.
+Use @code{enqueue/wait!} below.)
+@c JP
+@var{queue}がmtqueueの場合、渡されたオブジェクト全ての追加は
+アトミックに行われます。すなわち、途中に別スレッドが要素を挿入する
+ことはありません。さらに、@code{max-length}スロットが正の有限値を
+持っており、この@code{enqueue!}の実行によってキューの要素数が
+@code{max-length}を越えることになる場合は、@var{queue}は
+変更されずエラーとなります。
+(@code{max-length}がゼロの場合、この手続きは常にエラーとなります。
+下に説明する@code{enqueue/wait!}を使ってください。)
+@c COMMON
+@end defun
+
+@defun queue-push! queue obj :optional more-objs @dots{}
+@c EN
+Add @var{obj} in front of @var{queue}.  You may give more than
+one object, and each of them are pushed in order.
+
+Like @code{enqueue!}, when @var{queue} is an mtqueue,
+all objects are added atomically, and the value of
+@code{max-length} slot is checked.  See @code{enqueue!} above
+for the details.
+@c JP
+@var{obj}をキュー@var{queue}の先頭に追加します。
+一つ以上の@var{obj}を与えることができ、その場合はそれらが順にpushされます。
+
+@code{enqueue!}と同様に、@var{queue}がmtqueueの場合は
+全てのオブジェクトはアトミックに追加され、また@code{max-length}の値も
+チェックされます。詳しくは上の@code{enqueue!}の説明を参照してください。
+@c COMMON
+@end defun
+
+@defun enqueue-unique! queue eq-proc obj :optional more-objs @dots{}
+@defunx queue-push-unique! queue eq-proc obj :optional more-objs @dots{}
+@c EN
+Like @code{enqueue!} and @code{queue-push!}, respectively, except that these
+don't modify @var{queue} if it already contains @var{obj}
+(elements are compared by two-argument procedure @var{eq-proc}).
+
+When @var{queue} is an mtqueue, all objects are added atomically,
+and the value of
+@code{max-length} slot is checked.  See @code{enqueue!} above
+for the details.
+@c JP
+@var{obj}が既に@var{queue}の中に含まれている場合には@var{queue}を
+変更しないことを以外には、@code{enqueue!}および@code{queue-push!}と同じ
+動作をします。@var{obj}が含まれているかどうかの検査は
+2引数の関数@var{eq-proc}で行います。
+
+@var{queue}がmtqueueの場合は
+全てのオブジェクトはアトミックに追加され、また@code{max-length}の値も
+チェックされます。詳しくは上の@code{enqueue!}の説明を参照してください。
+@c COMMON
+@end defun
+
+@defun dequeue! queue :optional fallback
+@defunx queue-pop! queue :optional fallback
+@c EN
+Take one object from the front of the queue @var{queue} and returns it.
+Both function works the same, but @code{queue-pop!} may be used to
+emphasize it works with @code{queue-push!}.
+
+If @var{queue} is empty, @var{fallback} is returned if given,
+otherwise an error is signaled.
+
+If @var{queue} is an mtqueue and its @code{max-length} is zero,
+the queue is always empty.  Use @code{dequeue/wait!} to use
+such a queue as an synchronization device.
+@c JP
+キュー@var{queue}の先頭からひとつ要素を取って返します。
+二つの手続きは全く同じ動作をします。@code{queue-pop!}は@code{queue-push!}と
+ペアで使われていることを強調したいときに使うと良いでしょう。
+
+キューが空の場合は、@var{fallback}が与えられていればそれが返され、
+そうでなければエラーが報告されます。
+
+キューがmtqueueでその@code{max-length}がゼロの場合、
+キューは常に空であるとみなされます。ゼロ長のキューを同期デバイスとして
+使う場合は@code{dequeue/wait!}を使ってください。
+@c COMMON
+@end defun
+
+@defun dequeue-all! queue
+@c EN
+Returns the whole content of the queue by a list, with emptying
+@var{queue}.   If @var{queue} is already empty, returns an empty list.
+See also @code{queue->list} below.
+@c JP
+キューの全ての内容をリストにして返します。キューそのものは空になります。
+キューが既に空の場合は空リストが返されます。
+下の@code{queue->list}も参照してください。
+@c COMMON
+@end defun
+
+@defun queue-front queue :optional fallback
+@defunx queue-rear queue :optional fallback
+@c EN
+Peek the head or the tail of the queue and returns the object, respectively.
+The queue itself is not modified.
+If @var{queue} is empty, @var{fallback} is returned if it is given,
+otherwise an error is signaled.
+@c JP
+キュー@var{queue}の先頭もしくは末尾の要素を返します。キューそのものは変更されません。
+キューが空の場合、@var{fallback}が与えられていればその値を返し、
+そうでなければエラーを報告します。
+@c COMMON
+@end defun
+
+@defun list->queue list :optional class :rest initargs
+@c EN
+Returns a new queue whose content is the elements in @var{list},
+in the given order.
+
+By default the created queue is a simple queue, but you
+can create mtqueue or instances of other subclasses of @code{<queue>}
+by giving the class to the optional @var{class} arguments.
+The optional @var{initargs} arguments are passed to the constructor
+of @var{class}.
+@c JP
+与えられたリスト@var{list}の各要素をその順で持つようなキューを作成して返します。
+
+デフォルトではシンプルキューが作られますが、@var{class}に@code{<class>}の
+サブクラスを渡すことで他のキュークラスのインスタンスを作ることができます。
+@var{initargs}は@var{class}のコンストラクタに渡されます。
+@c COMMON
+@end defun
+
+@defun queue->list queue
+@c EN
+Returns a list whose content is the items in the queue in order.
+Unlike @code{dequeue-all!}, the content of @var{queue} remains intact.
+
+In Gauche, @code{queue->list} copies the content of the queue to a
+freshly allocated list, while @code{dequeue-all!} doesn't copy but
+directly returns the queue's internal list.   There are some Scheme
+systems that has @code{queue->list} but doesn't guarantee the content
+is copied, so if you're planning to share the code among these
+implementations, it's better not to rely on the fact that
+@code{queue->list} copies the content.
+@c JP
+キュー@var{queue}の内容をリストにして返します。
+@code{dequeue-all!}と異なり、キューそのものの内容は変化しません。
+
+Gaucheでは@code{queue->list}は新しいリストをアロケートしてキューの
+内容をコピーします (@code{dequeue-all!}はコピーをせずにキューの内部の
+リストをそのまま返します)。組込みで@code{queue->list}を持っているScheme
+実装がいくつかありますが、その中には@code{queue->list}がキューの
+内容をコピーすることを保証していないものがあるので、それらの処理系と
+共有するコードでは@code{queue->list}がリストをコピーすることを
+あてにしない方が良いでしょう。
+@c COMMON
+@end defun
+
+@defun find-in-queue pred queue
+@c EN
+Returns the first item in @var{queue} that satisfies a
+predicate @var{pred}.  The order of arguments follows
+@code{find} (@xref{Other list procedures}).
+@c JP
+キュー内の要素のうち述語@var{pred}を満たす最初の要素を返します。
+引数の順序は@code{find}に揃えました (@ref{Other list procedures}参照)。
+@c COMMON
+@end defun
+
+@defun any-in-queue pred queue
+@c EN
+Like @code{any} in SRFI-1, apply @var{pred} on each item
+in @var{queue} until it evaluates true, and returns that
+true value (doesn't necessarily be @code{#t}).  If no
+items in the queue satisfies @var{pred}, @code{#f} is returned.
+@c JP
+SRFI-1の@code{any}のように、@var{queue}中の各要素に
+順に@var{pred}を適用し、それが真の値 (@code{#t}である必要はありません) に
+評価されたらその値を返します。@var{pred}を満たす要素が無ければ@code{#f}が
+返ります。
+@c COMMON
+@end defun
+
+@defun every-in-queue pred queue
+@c EN
+Like @code{every} in SRFI-1, apply @var{pred} on each item
+in @var{queue}.  If @var{pred} returns @code{#f}, stops
+iteration and returns @code{#f} immediately.
+Otherwise, returns the result of the application of
+@var{pred} on the last item of the queue.  If the queue
+is empty, @code{#t} is returned.
+@c JP
+SRFI-1の@code{every}のように、@var{queue}中の各要素に
+順に@var{pred}を適用し、それが@code{#f}を返したらすぐ@code{#f}を返します。
+@var{pred}に対し@code{#f}を返す要素が無ければ、最後の要素に@var{pred}を
+適用した結果が返ります。キューが空なら@code{#f}が返ります。
+@c COMMON
+@end defun
+
+@defun remove-from-queue! pred queue
+@c EN
+Removes all items in the queue that satisfies @var{pred}.
+Returns @code{#t} if any item is removed.  Otherwise returns @code{#f}.
+The order of arguments follows
+@code{remove} in SRFI-1 (@xref{SRFI-1 List utilities}).
+@c JP
+キューから、述語@var{pred}を満たす要素を全て取り除きます。
+要素が削除された場合は@code{#t}が、そうでなければ@code{#f}が返されます。
+引数の順序はSRFI-1の@code{remove}に揃えました (@ref{SRFI-1 List utilities}参照)。
+@c COMMON
+@end defun
+
+@c EN
+Note on portability:
+Scheme48 has @code{delete-from-queue!}, which takes object to remove
+rather than predicate, and also takes arguments in reversed order
+(i.e. queue comes first).   Avoid conflicting with that I intentionally
+left out @code{delete-from-queue!}; it's easy to write one in either
+Scheme48 compatible way or consistent to SRFI-1 argument order.
+@c JP
+移植性に関する註：Scheme48には、述語ではなく削除するオブジェクトそのものを取る
+@code{delete-from-queue!}がありますが、引数の順序が逆(キューが先)になっています。
+まぎらわしい衝突を避けるため、敢えて@code{delete-from-queue!}は
+提供しませんでした。@code{remove-from-queue!}を使えば、Scheme48互換の方法でも、
+あるいはSRFI-1と一貫性のある方法でも@code{delete-from-queue!}を簡単に書けるでしょう。
+@c COMMON
+
+@defun enqueue/wait! mtqueue obj :optional timeout timeout-val
+@defunx queue-push/wait! mtqueue obj :optional timeout timeout-val
+@defunx dequeue/wait! mtqueue :optional timeout timeout-val
+@defunx queue-pop/wait! mtqueue :optional timeout timeout-val
+@c EN
+These synchronizing variants work on an mtqueue and
+make the caller thread block when the mtqueue has reached
+its maximum length (for @code{enqueue/wait!} and @code{queue-push/wait!}),
+or the mtqueue is empty (for @code{dequeue/wait!} and
+@code{queue-pop/wait!}).   The blocked caller thread is unblocked
+either when the blocking condition is resolved, or the timeout
+condition is met.
+
+The optional @var{timeout} argument specifies the timeout condition.
+If it is @code{#f}, those procedures wait indefinitely.
+If it is a real number, they wait at least the given number of
+seconds.  If it is a @code{<time>} object (@xref{Time}),
+they wait until the absolute point of time the argument specifies.
+
+In case the call is blocked then timed out, the value of
+@var{timeout-val} is returned, which defaults to @code{#f}.
+
+When @code{enqueue/wait!} and @code{queue-push/wait!} succeeds
+without hitting timeout, they return @code{#t}.
+@c JP
+これらの手続きは@var{mtqueue}に対して使うことができ、
+スレッド間同期を実現できます。
+@code{enqueue/wait!}と@code{queue-push/wait!}は、
+キューの要素数が@var{max-length}を越える場合に、キューに空きができるまで、
+@code{dequeue/wait!}と@code{queue-pop/wait!}は、
+キューが空の場合に、キューに要素が追加されるまで、
+呼び出しスレッドをブロックします。
+
+@var{timeout}引数で、ブロックされたスレッドのタイムアウトを指定することができます。
+@code{#f}は指定しなかった場合と同じで、キューの状態が変化するまで
+無期限に待ちます。実数が渡された場合はそれが秒数と解釈され、最低限
+その時間経過するまでは待ちます。渡されたのが@code{<time>}オブジェクト
+(@ref{Time}参照)である場合は、そのオブジェクトが指定する絶対時刻を
+経過するまで待ちます。
+
+タイムアウトによりブロックが解かれた場合は、@var{timeout-val}で
+指定した値が返されます。@var{timeout-val}の省略時値は@code{#f}です。
+
+@code{enqueue/wait!}と@code{queue-push/wait!}は、
+タイムアウトせずに操作が成功した場合は@code{#t}を返します。
+@c COMMON
+@end defun
+
+
+@c ----------------------------------------------------------------------
+
+@node Random data generators, Database independent access layer, Queue, Library modules - Utilities
 @section @code{data.random} - Random data generators
 @c NODE ランダムデータの生成, @code{data.random} - ランダムデータの生成
 
@@ -18317,7 +18790,7 @@ returns.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Pattern matching, Queue, The longest common subsequence, Library modules - Utilities
+@node Pattern matching, Red black tree, The longest common subsequence, Library modules - Utilities
 @section @code{util.match} - Pattern matching
 @c NODE パターンマッチング, @code{util.match} - パターンマッチング
 
@@ -18993,480 +19466,7 @@ quasipatternの例です。最初の式では、パターンのうち@code{value
 
 
 @c ----------------------------------------------------------------------
-@node Queue, Red black tree, Pattern matching, Library modules - Utilities
-@section @code{util.queue} - Queue
-@c NODE キュー, @code{util.queue} - キュー
-
-@deftp {Module} util.queue
-@mdindex util.queue
-@c EN
-Provides a queue (FIFO).  You can create a simple queue,
-which is lightweight but not thread-safe, or an MTqueue,
-a thread-safe queue.  Basic queue operations work on
-both type of queues.  When an mtqueue is passed to the
-procedures listed in this section, each operation is
-done in atomic way, unless otherwise noted.
-
-There are also a set of procedures for mtqueues that
-can be used for thread synchronization; for example,
-you can let the consumer thread block if an
-mtqueue is empty, and/or the producer thread block if the number
-of items in the mtqueue reaches a specified limit.
-Using these procedures allows the program to use an mtqueue
-as a @emph{channel}.
-
-The simple queue API is a superset of SLIB's queue implementation.
-@c JP
-キュー(FIFO)機能を提供します。
-極めて軽量ですがスレッドセーフでないシンプルなキューと、
-スレッドセーフなmtqueueがあります。基本的なキュー操作手続きは
-どちらのキューに対しても使うことができます。本節で説明されている
-手続きをmtqueueに適用した場合、特に断りが無い限り、操作は
-アトミックに行われます。
-
-また、スレッド間同期に使えるmtqueue用の手続きも用意されています。
-例えばキューが空の時に読み出しスレッドをブロックさせたり
-キューの長さが指定値に達した場合に書き込みスレッドをブロックさせることができ、
-いわゆる「チャネル」としてキューを使うことができます。
-
-シンプルキューのAPIはSLIBのキュー実装の上位互換になっています。
-@c COMMON
-@end deftp
-
-@deftp {Class} <queue>
-@clindex queue
-@c EN
-A class of simple queue.
-@c JP
-シンプルなキューのクラスです。
-@c COMMON
-
-@defivar {<queue>} length
-@c EN
-A read-only slot that returns the number of items in the queue.
-@c JP
-キュー中の要素の数を返す、読み取り専用のスロットです。
-@c COMMON
-@end defivar
-@end deftp
-
-@deftp {Class} <mtqueue>
-@clindex mtqueue
-@c EN
-A class of mtqueue.  Inherits @code{<queue>}.
-@c JP
-mtqueueのクラスです。@code{<queue>}を継承しています。
-@c COMMON
-
-@defivar {<mtqueue>} max-length
-@c EN
-The upper bound of the number of items in the queue.
-@c JP
-キュー中の要素数の上限を示します。
-@c COMMON
-
-@c EN
-If this slot is zero, the queue cannot hold any items, but
-works as a synchronization device.
-A writer will block until a reader appears to take the item;
-a reader will block until a writer appears to give the item.
-@c JP
-このスロットが0の場合、キューは要素を中に持つことはできませんが、同期デバイスとして動作します。
-書き込みスレッドは、その要素を受け取る読み出しスレッドが現れるまでブロックし、
-読み出しスレッドは、要素を渡してくれる書き込みスレッドが現れるまでブロックします。
-@c COMMON
-@end defivar
-@end deftp
-
-@defun make-queue
-@c EN
-Creates and returns an empty simple queue.
-@c JP
-空のシンプルなキューを作って返します。
-@c COMMON
-@end defun
-
-@defun make-mtqueue &key max-length
-@c EN
-Creates and returns an empty mtqueue.  When an integer is given
-to the keyword argument @var{max-length}, it is used to
-initialize the @code{max-length} slot.
-@c JP
-空のmtqueueを作って返します。整数が@var{max-length}に与えられた場合は、
-それが@code{max-length}スロットの値となります。
-@c COMMON
-@end defun
-
-@defun queue? obj
-@c EN
-Returns @code{#t} if @var{obj} is a queue (either a simple queue
-or an mtqueue).
-@c JP
-@var{obj}がキューであれば(シンプルなキューでもmtqueueでも)@code{#t}を返します。
-@c COMMON
-@end defun
-
-@defun mtqueue? obj
-@c EN
-Returns @code{#t} if @var{obj} is an mtqueue.
-@c JP
-@var{obj}がmtqueueであれば@code{#t}を返します。
-@c COMMON
-@end defun
-
-@defun queue-empty? queue
-@c EN
-Returns @code{#t} if @var{obj} is an empty queue.
-@c JP
-@var{obj}が空のキューであれば@code{#t}を返します。
-@c COMMON
-@end defun
-
-@defun queue-length queue
-@c EN
-Returns the number of the items in the queue.
-@c JP
-キューの中にある要素の数を返します。
-@c COMMON
-@end defun
-
-@defun mtqueue-max-length mtqueue
-@c EN
-Returns the maximum number of items the mtqueue can hold.
-If the queue doesn't have a limit, @code{#f} is returned.
-@c JP
-キューが保持できる要素の最大数を返します。限度がない場合は@code{#f}が返ります。
-@c COMMON
-@end defun
-
-@defun mtqueue-room mtqueue
-@c EN
-Returns the number of elements the mtqueue can accept at this moment
-before it hits its maximum length.   For example, if the queue
-already has the maximum number of elements, 0 is returned.
-If the queue doesn't have the limit, @code{+inf.0} is returned.
-@c JP
-保持できる最大容量に達するまであといくつ要素を受け入れることができるかを
-示す整数を返します。例えば、既にキューがいっぱいであれば0が返ります。
-キューに最大容量が設定されていなければ@code{+inf.0}が返ります。
-@c COMMON
-
-@c EN
-Note that even if this returns a non-zero finite value, subsequent 
-@code{enqueue!} may throw an error because of the queue being full.
-It's because another thread may put an item to the queue
-between this procedure call and @code{enqueue!}.  To avoid
-this situation, use @code{enqueue/wait!} to insert item
-to mtqueue with finite max-length.
-@c JP
-この手続きが0以外有限値を返した場合でも、続く@code{enqueue!}の呼び出し時点で
-キューがいっぱいになっている可能性があることに注意してください。
-この手続きの呼び出しと@code{enqueue!}の
-呼び出しの間に、他のスレッドがキューに要素を入れるかもしれないからです。
-有限長のmtqueueに確実に要素を挿入したい場合は@code{enqueue/wait!}を使ってください。
-@c COMMON
-@end defun
-
-
-@defun copy-queue queue
-@c EN
-Returns a copy of the queue.
-@c JP
-キューqueueのコピーを返します。
-@c COMMON
-@end defun
-
-@defun enqueue! queue obj :optional more-objs @dots{}
-@c EN
-Add @var{obj} to the end of @var{queue}.  You may give more than
-one object, and each of them are enqueued in order.
-@c JP
-@var{obj}をキュー@var{queue}の末尾に追加します。
-一つ以上の@var{obj}を与えることができ、その場合はそれらが順にenqueueされます。
-@c COMMON
-
-@c EN
-If @var{queue} is an mtqueue, all the objects are enqueued
-atomically; no other objects from other threads can be inserted
-between the objects given to a single @code{enqueue!} call.
-Besides, if the value of its @code{max-length} slot
-has a positive finite value, and adding @var{obj}s makes the number of
-elements in @var{queue} exceeds @code{max-length},
-an error is signaled and @var{queue} won't be modified.
-(If @code{max-length} is zero, this procedure always fail.
-Use @code{enqueue/wait!} below.)
-@c JP
-@var{queue}がmtqueueの場合、渡されたオブジェクト全ての追加は
-アトミックに行われます。すなわち、途中に別スレッドが要素を挿入する
-ことはありません。さらに、@code{max-length}スロットが正の有限値を
-持っており、この@code{enqueue!}の実行によってキューの要素数が
-@code{max-length}を越えることになる場合は、@var{queue}は
-変更されずエラーとなります。
-(@code{max-length}がゼロの場合、この手続きは常にエラーとなります。
-下に説明する@code{enqueue/wait!}を使ってください。)
-@c COMMON
-@end defun
-
-@defun queue-push! queue obj :optional more-objs @dots{}
-@c EN
-Add @var{obj} in front of @var{queue}.  You may give more than
-one object, and each of them are pushed in order.
-
-Like @code{enqueue!}, when @var{queue} is an mtqueue,
-all objects are added atomically, and the value of
-@code{max-length} slot is checked.  See @code{enqueue!} above
-for the details.
-@c JP
-@var{obj}をキュー@var{queue}の先頭に追加します。
-一つ以上の@var{obj}を与えることができ、その場合はそれらが順にpushされます。
-
-@code{enqueue!}と同様に、@var{queue}がmtqueueの場合は
-全てのオブジェクトはアトミックに追加され、また@code{max-length}の値も
-チェックされます。詳しくは上の@code{enqueue!}の説明を参照してください。
-@c COMMON
-@end defun
-
-@defun enqueue-unique! queue eq-proc obj :optional more-objs @dots{}
-@defunx queue-push-unique! queue eq-proc obj :optional more-objs @dots{}
-@c EN
-Like @code{enqueue!} and @code{queue-push!}, respectively, except that these
-don't modify @var{queue} if it already contains @var{obj}
-(elements are compared by two-argument procedure @var{eq-proc}).
-
-When @var{queue} is an mtqueue, all objects are added atomically,
-and the value of
-@code{max-length} slot is checked.  See @code{enqueue!} above
-for the details.
-@c JP
-@var{obj}が既に@var{queue}の中に含まれている場合には@var{queue}を
-変更しないことを以外には、@code{enqueue!}および@code{queue-push!}と同じ
-動作をします。@var{obj}が含まれているかどうかの検査は
-2引数の関数@var{eq-proc}で行います。
-
-@var{queue}がmtqueueの場合は
-全てのオブジェクトはアトミックに追加され、また@code{max-length}の値も
-チェックされます。詳しくは上の@code{enqueue!}の説明を参照してください。
-@c COMMON
-@end defun
-
-@defun dequeue! queue :optional fallback
-@defunx queue-pop! queue :optional fallback
-@c EN
-Take one object from the front of the queue @var{queue} and returns it.
-Both function works the same, but @code{queue-pop!} may be used to
-emphasize it works with @code{queue-push!}.
-
-If @var{queue} is empty, @var{fallback} is returned if given,
-otherwise an error is signaled.
-
-If @var{queue} is an mtqueue and its @code{max-length} is zero,
-the queue is always empty.  Use @code{dequeue/wait!} to use
-such a queue as an synchronization device.
-@c JP
-キュー@var{queue}の先頭からひとつ要素を取って返します。
-二つの手続きは全く同じ動作をします。@code{queue-pop!}は@code{queue-push!}と
-ペアで使われていることを強調したいときに使うと良いでしょう。
-
-キューが空の場合は、@var{fallback}が与えられていればそれが返され、
-そうでなければエラーが報告されます。
-
-キューがmtqueueでその@code{max-length}がゼロの場合、
-キューは常に空であるとみなされます。ゼロ長のキューを同期デバイスとして
-使う場合は@code{dequeue/wait!}を使ってください。
-@c COMMON
-@end defun
-
-@defun dequeue-all! queue
-@c EN
-Returns the whole content of the queue by a list, with emptying
-@var{queue}.   If @var{queue} is already empty, returns an empty list.
-See also @code{queue->list} below.
-@c JP
-キューの全ての内容をリストにして返します。キューそのものは空になります。
-キューが既に空の場合は空リストが返されます。
-下の@code{queue->list}も参照してください。
-@c COMMON
-@end defun
-
-@defun queue-front queue :optional fallback
-@defunx queue-rear queue :optional fallback
-@c EN
-Peek the head or the tail of the queue and returns the object, respectively.
-@var{util.queue - Queue} is not modified.
-If @var{queue} is empty, @var{fallback} is returned if it is given,
-otherwise an error is signaled.
-@c JP
-キュー@var{queue}の先頭もしくは末尾の要素を返します。キューそのものは変更されません。
-キューが空の場合、@var{fallback}が与えられていればその値を返し、
-そうでなければエラーを報告します。
-@c COMMON
-@end defun
-
-@defun list->queue list :optional class :rest initargs
-@c EN
-Returns a new queue whose content is the elements in @var{list},
-in the given order.
-
-By default the created queue is a simple queue, but you
-can create mtqueue or instances of other subclasses of @code{<queue>}
-by giving the class to the optional @var{class} arguments.
-The optional @var{initargs} arguments are passed to the constructor
-of @var{class}.
-@c JP
-与えられたリスト@var{list}の各要素をその順で持つようなキューを作成して返します。
-
-デフォルトではシンプルキューが作られますが、@var{class}に@code{<class>}の
-サブクラスを渡すことで他のキュークラスのインスタンスを作ることができます。
-@var{initargs}は@var{class}のコンストラクタに渡されます。
-@c COMMON
-@end defun
-
-@defun queue->list queue
-@c EN
-Returns a list whose content is the items in the queue in order.
-Unlike @code{dequeue-all!}, the content of @var{queue} remains intact.
-
-In Gauche, @code{queue->list} copies the content of the queue to a
-freshly allocated list, while @code{dequeue-all!} doesn't copy but
-directly returns the queue's internal list.   There are some Scheme
-systems that has @code{queue->list} but doesn't guarantee the content
-is copied, so if you're planning to share the code among these
-implementations, it's better not to rely on the fact that
-@code{queue->list} copies the content.
-@c JP
-キュー@var{queue}の内容をリストにして返します。
-@code{dequeue-all!}と異なり、キューそのものの内容は変化しません。
-
-Gaucheでは@code{queue->list}は新しいリストをアロケートしてキューの
-内容をコピーします (@code{dequeue-all!}はコピーをせずにキューの内部の
-リストをそのまま返します)。組込みで@code{queue->list}を持っているScheme
-実装がいくつかありますが、その中には@code{queue->list}がキューの
-内容をコピーすることを保証していないものがあるので、それらの処理系と
-共有するコードでは@code{queue->list}がリストをコピーすることを
-あてにしない方が良いでしょう。
-@c COMMON
-@end defun
-
-@defun find-in-queue pred queue
-@c EN
-Returns the first item in @var{queue} that satisfies a
-predicate @var{pred}.  The order of arguments follows
-@code{find} (@xref{Other list procedures}).
-@c JP
-キュー内の要素のうち述語@var{pred}を満たす最初の要素を返します。
-引数の順序は@code{find}に揃えました (@ref{Other list procedures}参照)。
-@c COMMON
-@end defun
-
-@defun any-in-queue pred queue
-@c EN
-Like @code{any} in SRFI-1, apply @var{pred} on each item
-in @var{queue} until it evaluates true, and returns that
-true value (doesn't necessarily be @code{#t}).  If no
-items in the queue satisfies @var{pred}, @code{#f} is returned.
-@c JP
-SRFI-1の@code{any}のように、@var{queue}中の各要素に
-順に@var{pred}を適用し、それが真の値 (@code{#t}である必要はありません) に
-評価されたらその値を返します。@var{pred}を満たす要素が無ければ@code{#f}が
-返ります。
-@c COMMON
-@end defun
-
-@defun every-in-queue pred queue
-@c EN
-Like @code{every} in SRFI-1, apply @var{pred} on each item
-in @var{queue}.  If @var{pred} returns @code{#f}, stops
-iteration and returns @code{#f} immediately.
-Otherwise, returns the result of the application of
-@var{pred} on the last item of the queue.  If the queue
-is empty, @code{#t} is returned.
-@c JP
-SRFI-1の@code{every}のように、@var{queue}中の各要素に
-順に@var{pred}を適用し、それが@code{#f}を返したらすぐ@code{#f}を返します。
-@var{pred}に対し@code{#f}を返す要素が無ければ、最後の要素に@var{pred}を
-適用した結果が返ります。キューが空なら@code{#f}が返ります。
-@c COMMON
-@end defun
-
-@defun remove-from-queue! pred queue
-@c EN
-Removes all items in the queue that satisfies @var{pred}.
-Returns @code{#t} if any item is removed.  Otherwise returns @code{#f}.
-The order of arguments follows
-@code{remove} in SRFI-1 (@xref{SRFI-1 List utilities}).
-@c JP
-キューから、述語@var{pred}を満たす要素を全て取り除きます。
-要素が削除された場合は@code{#t}が、そうでなければ@code{#f}が返されます。
-引数の順序はSRFI-1の@code{remove}に揃えました (@ref{SRFI-1 List utilities}参照)。
-@c COMMON
-@end defun
-
-@c EN
-Note on portability:
-Scheme48 has @code{delete-from-queue!}, which takes object to remove
-rather than predicate, and also takes arguments in reversed order
-(i.e. queue comes first).   Avoid conflicting with that I intentionally
-left out @code{delete-from-queue!}; it's easy to write one in either
-Scheme48 compatible way or consistent to SRFI-1 argument order.
-@c JP
-移植性に関する註：Scheme48には、述語ではなく削除するオブジェクトそのものを取る
-@code{delete-from-queue!}がありますが、引数の順序が逆(キューが先)になっています。
-まぎらわしい衝突を避けるため、敢えて@code{delete-from-queue!}は
-提供しませんでした。@code{remove-from-queue!}を使えば、Scheme48互換の方法でも、
-あるいはSRFI-1と一貫性のある方法でも@code{delete-from-queue!}を簡単に書けるでしょう。
-@c COMMON
-
-@defun enqueue/wait! mtqueue obj :optional timeout timeout-val
-@defunx queue-push/wait! mtqueue obj :optional timeout timeout-val
-@defunx dequeue/wait! mtqueue :optional timeout timeout-val
-@defunx queue-pop/wait! mtqueue :optional timeout timeout-val
-@c EN
-These synchronizing variants work on an mtqueue and
-make the caller thread block when the mtqueue has reached
-its maximum length (for @code{enqueue/wait!} and @code{queue-push/wait!}),
-or the mtqueue is empty (for @code{dequeue/wait!} and
-@code{queue-pop/wait!}).   The blocked caller thread is unblocked
-either when the blocking condition is resolved, or the timeout
-condition is met.
-
-The optional @var{timeout} argument specifies the timeout condition.
-If it is @code{#f}, those procedures wait indefinitely.
-If it is a real number, they wait at least the given number of
-seconds.  If it is a @code{<time>} object (@xref{Time}),
-they wait until the absolute point of time the argument specifies.
-
-In case the call is blocked then timed out, the value of
-@var{timeout-val} is returned, which defaults to @code{#f}.
-
-When @code{enqueue/wait!} and @code{queue-push/wait!} succeeds
-without hitting timeout, they return @code{#t}.
-@c JP
-これらの手続きは@var{mtqueue}に対して使うことができ、
-スレッド間同期を実現できます。
-@code{enqueue/wait!}と@code{queue-push/wait!}は、
-キューの要素数が@var{max-length}を越える場合に、キューに空きができるまで、
-@code{dequeue/wait!}と@code{queue-pop/wait!}は、
-キューが空の場合に、キューに要素が追加されるまで、
-呼び出しスレッドをブロックします。
-
-@var{timeout}引数で、ブロックされたスレッドのタイムアウトを指定することができます。
-@code{#f}は指定しなかった場合と同じで、キューの状態が変化するまで
-無期限に待ちます。実数が渡された場合はそれが秒数と解釈され、最低限
-その時間経過するまでは待ちます。渡されたのが@code{<time>}オブジェクト
-(@ref{Time}参照)である場合は、そのオブジェクトが指定する絶対時刻を
-経過するまで待ちます。
-
-タイムアウトによりブロックが解かれた場合は、@var{timeout-val}で
-指定した値が返されます。@var{timeout-val}の省略時値は@code{#f}です。
-
-@code{enqueue/wait!}と@code{queue-push/wait!}は、
-タイムアウトせずに操作が成功した場合は@code{#t}を返します。
-@c COMMON
-@end defun
-
-
-@c ----------------------------------------------------------------------
-@node Red black tree, SLIB-compatible record type, Queue, Library modules - Utilities
+@node Red black tree, SLIB-compatible record type, Pattern matching, Library modules - Utilities
 @section @code{util.rbtree} - Red black tree
 @c NODE 赤黒木, @code{util.rbtree} - 赤黒木
 

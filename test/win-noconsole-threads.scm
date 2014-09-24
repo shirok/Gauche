@@ -16,7 +16,7 @@
  [else])
 
 (use gauche.threads)
-(use util.queue)
+(use data.queue)
 
 (define (main args)
   (let1 q (make-mtqueue)

@@ -1,5 +1,5 @@
 @SET_MAKE@
-SUBDIRS= gauche util srfi uvector threads charconv binary net termios \
+SUBDIRS= gauche util data srfi uvector threads charconv binary net termios \
          fcntl file sxml syslog dbm mt-random bcrypt digest vport \
          text zlib sparse peg windows tls
 
@@ -36,9 +36,9 @@ all: $(SUBDIRS)
 $(SUBDIRS):
 	(cd $@; $(MAKE) default)
 
-termios uvector sparse: util
+uvector: data
 
-threads bcrypt sxml vport text mt-random digest windows: uvector
+threads bcrypt sxml vport text mt-random digest zlib termios windows: uvector
 
 tls: vport
 

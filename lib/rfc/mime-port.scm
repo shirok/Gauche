@@ -36,7 +36,7 @@
 (define-module rfc.mime-port
   (use gauche.uvector)
   (use gauche.vport)
-  (use util.queue)
+  (use data.queue)
   (use util.match)
   (export make-mime-port))
 (select-module rfc.mime-port)

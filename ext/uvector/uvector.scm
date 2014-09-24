@@ -40,7 +40,7 @@
 (define-module gauche.uvector
   (use gauche.collection)
   (use gauche.sequence)
-  (use util.queue)
+  (use data.queue)
   (export-all)
   )
 (select-module gauche.uvector)

@@ -35,7 +35,7 @@
   (use gauche.uvector)
   (use gauche.sequence)
   (use util.match)
-  (use util.queue)
+  (use data.queue)
   (use srfi-42)
   (export ucs4->utf8  utf8-length  utf8->ucs4
           ucs4->utf16 utf16-length utf16->ucs4

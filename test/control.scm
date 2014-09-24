@@ -3,7 +3,7 @@
 (use gauche.test)
 (use srfi-1)
 (use srfi-19)
-(use util.queue)
+(use data.queue)
 
 (test-start "control")
 

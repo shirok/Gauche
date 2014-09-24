@@ -1,3 +1,7 @@
+2014-09-24  Shiro Kawai  <shiro@acm.org>
+
+	* ext/util/queue.scm, ext/data/queue.scm: util.queue -> data.queue.
+
 2014-09-23  Shiro Kawai  <shiro@acm.org>
 
 	* ext/math/mt-lib.stub: Merged to mt-random.scm

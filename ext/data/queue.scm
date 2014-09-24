@@ -1,5 +1,5 @@
 ;;;
-;;; util.queue - queue (fifo) implementation
+;;; data.queue - queue (fifo) implementation
 ;;;
 ;;;   Copyright (c) 2010-2014  Shiro Kawai  <shiro@acm.org>
 ;;;
@@ -31,10 +31,12 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
-;; This replaces pure Scheme implementation of util.queue.
-;; The motivation of rewriting is to support mt-safe queues efficiently,
-;; for such a queue turned out to be a crucial component of concurrent
-;; programming.
+;; Originally implemented as util.queue; since it is an implementation
+;; of a data structure, we renamed it to data.queue.
+;;
+;; This module supports <queue>, which is fast but not thread-safe,
+;; and <mtqueue>, thread-safe queue that can also be used as a fundamental
+;; block of multi-thread synchronization.
 ;;
 ;; For mt-queue, we use layered mutex; C-level mutex and a Scheme slot
 ;; that keeps the locker.   For lightweight atomic operations such as
@@ -44,8 +46,7 @@
 ;; take indefinitely long.  So we use Scheme-level slot to keep the
 ;; thread that is working on the queue.
 
-(define-module util.queue
-  (use srfi-1)
+(define-module data.queue
   (export <queue> <mtqueue>
           make-queue make-mtqueue queue? mtqueue?
           queue-length mtqueue-max-length mtqueue-room
@@ -59,7 +60,7 @@
 
           enqueue/wait! queue-push/wait! dequeue/wait! queue-pop/wait!)
   )
-(select-module util.queue)
+(select-module data.queue)
 
 ;;;
 ;;;  Data structures

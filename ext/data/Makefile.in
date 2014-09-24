@@ -1,0 +1,28 @@
+srcdir       = @srcdir@
+top_builddir = @top_builddir@
+top_srcdir   = @top_srcdir@
+
+SCM_CATEGORY = data
+
+include ../Makefile.ext
+
+LIBFILES = data--queue.$(SOEXT)
+SCMFILES = queue.sci
+
+GENERATED = Makefile
+XCLEANFILES =  *.c queue.sci
+
+OBJECTS = $(data_queue_OBJECTS)
+
+data_queue_OBJECTS = data--queue.$(OBJEXT)
+
+all : $(LIBFILES)
+
+data--queue.$(SOEXT) : $(data_queue_OBJECTS)
+	$(MODLINK) data--queue.$(SOEXT) $(data_queue_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+
+data--queue.c queue.sci : queue.scm
+	$(PRECOMP) -e -P -o data--queue $(srcdir)/queue.scm
+
+install : install-std
+

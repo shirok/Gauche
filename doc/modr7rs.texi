@@ -505,13 +505,13 @@ libraies are what Gauche calls modules; they're the same thing.
 R7RS libraries are named by a list of symbols, such as @code{(scheme base)}.
 It is translated to Gauche's module name by joining the symbols
 by periods; so, R7RS @code{(scheme base)} is Gauche's @code{scheme.base}.
-Conversely, Gauche's @code{util.queue} is available as
-@code{(util queue)} in R7RS.  To use those two libraries,
+Conversely, Gauche's @code{data.queue} is available as
+@code{(data queue)} in R7RS.  To use those two libraries,
 R7RS program needs this form at the beginning.
 
 @example
 (import (scheme base) 
-        (util queue))
+        (data queue))
 @end example
 
 It works just like Gauche's @code{use} forms; that is, if the named
@@ -520,7 +520,7 @@ the module's exported bindings become visible from the current module.
 
 @example
 (use scheme.base)
-(use util.queue)
+(use data.queue)
 @end example
 
 (You may wonder what if R7RS library uses symbols with periods in them.

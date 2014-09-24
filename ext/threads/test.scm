@@ -558,7 +558,7 @@
 ;; These are actually for testing mtqueue, but put here since they
 ;; require threads to work.
 
-(use util.queue)
+(use data.queue)
 
 (define (test-producer-consumer name qs ndata nthreads)
   (define qr (make-mtqueue))

@@ -83,8 +83,9 @@ See @ref{Operations on libraries}, for the details.
 @c COMMON
 
 @menu
-* Finding libraries you need::
-* Naming convention of libraries::
+* Finding libraries you need::  
+* Naming convention of libraries::  
+* Obsoleted modules::           
 @end menu
 
 @node Finding libraries you need, Naming convention of libraries, Library modules - Overview, Library modules - Overview
@@ -151,15 +152,15 @@ brief descriptions.
 @c COMMON
 
 @menu
-* Library directory - data containers::
-* Library directory - strings and characters::
-* Library directory - data exchange::
-* Library directory - files::
-* Library directory - processes and threads::
-* Library directory - networking::
-* Library directory - input and output::
-* Library directory - time::
-* Library directory - bits and bytes::
+* Library directory - data containers::  
+* Library directory - strings and characters::  
+* Library directory - data exchange::  
+* Library directory - files::   
+* Library directory - processes and threads::  
+* Library directory - networking::  
+* Library directory - input and output::  
+* Library directory - time::    
+* Library directory - bits and bytes::  
 @end menu
 
 @node Library directory - data containers, Library directory - strings and characters, Finding libraries you need, Finding libraries you need
@@ -593,13 +594,13 @@ Gaucheコアはプリミティブな@code{fork}および@code{exec}のインタ�
 @c EN
 Gauche has preemptive threads on most Unix platforms including OSX.
 Check out @ref{Threads} for the basic thread support, including
-primitive mutexes.  The @code{util.queue} module (@xref{Queue})
+primitive mutexes.  The @code{data.queue} module (@xref{Queue})
 provides thread-safe queue that can also be handy for synchronization.
 Thread pool is available in @code{control.thread-pool} (@xref{Thread pools}).
 @c JP
 GaucheはOSXを含む多くのUnixプラットフォームでプリエンプティブなスレッドを
 サポートしています。低レベルの排他制御を含む基本的なスレッドのサポートについては
-@ref{Threads}を参照してください。@code{util.queue}モジュール
+@ref{Threads}を参照してください。@code{data.queue}モジュール
 (@ref{Queue}参照)では、スレッド間同期にも使えるスレッドセーフなキューを
 提供しています。スレッドプールは@code{control.thread-pool} (@ref{Thread pools}参照)
 によって提供されます。
@@ -716,7 +717,7 @@ Gaucheコアはビットシフトおよびマスク操作を提供していま�
 @ref{Bitwise operations}を見てください。
 @c COMMON
 
-@node Naming convention of libraries,  , Finding libraries you need, Library modules - Overview
+@node Naming convention of libraries, Obsoleted modules, Finding libraries you need, Library modules - Overview
 @section Naming convention of libraries
 @c NODE ライブラリの命名規則
 
@@ -855,6 +856,44 @@ Implementations of various protocols and formats mainly used in WWW.
 WWWで主として使われるプロトコルやデータフォーマットの実装。
 @c COMMON
 @end table
+
+@node Obsoleted modules,  , Naming convention of libraries, Library modules - Overview
+@section Obsoleted modules
+@c NODE 廃止されたモジュール
+
+@c EN
+During the course of development of Gauche,
+some modules have been renamed, merged, or dissolved into the core.
+We list such modules here for the reference.
+New code shouldn't use these modules, although they are kept in
+the distribution so that legacy code can keep running.
+@c JP
+Gaucheの開発の過程で、いくつかのモジュールは名前が変わったり、
+合併したり、あるいはコアに取り込まれたりしてきました。
+参考のため、それらのモジュールをここにリストしておきます。
+新たなコードはこれらのモジュールを使うべきではありませんが、
+古いコードがそのまま動きつづけるよう、Gaucheの配布物の中にはこれらの
+モジュールが含まれています。
+@c COMMON
+
+@deftp {Module} util.list
+@mdindex util.list
+@c EN
+Dissolved into the core.
+@c JP
+コアに吸収。
+@c COMMON
+@end deftp
+
+@deftp {Module} util.queue
+@mdindex util.queue
+@c EN
+Renamed to @code{data.queue}.  @xref{Queue}.
+@c JP
+@code{data.queue}へと名前変更。@ref{Queue}参照。
+@c COMMON
+@end deftp
+
 
 @c Local variables:
 @c mode: texinfo

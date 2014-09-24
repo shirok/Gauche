@@ -821,6 +821,7 @@ AC_OUTPUT(Makefile
           ext/bcrypt/Makefile
           ext/binary/Makefile
           ext/charconv/Makefile ext/charconv/charconv.h
+          ext/data/Makefile
           ext/dbm/Makefile
           ext/digest/Makefile
           ext/fcntl/Makefile

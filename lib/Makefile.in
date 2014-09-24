@@ -80,7 +80,7 @@ SCMFILES = srfi-0.scm \
        dbi.scm dbd/null.scm dbm.scm dbm/fsdbm.scm dbm/dump dbm/restore \
        data/random.scm \
        math/const.scm math/prime.scm \
-       util/isomorph.scm util/toposort.scm util/tree.scm \
+       util/isomorph.scm util/toposort.scm util/tree.scm util/queue.scm \
        util/digest.scm util/combinations.scm util/lcs.scm util/list.scm \
        util/record.scm util/relation.scm util/stream.scm util/trie.scm \
        util/rbtree.scm \

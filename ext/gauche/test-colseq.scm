@@ -3,7 +3,7 @@
 (use gauche.test)
 (test-start "collections and sequences")
 
-(use util.queue)
+(use data.queue)
 (use srfi-1)
 (use srfi-13)
 (use gauche.collection)
