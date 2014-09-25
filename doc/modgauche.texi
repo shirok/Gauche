@@ -16073,11 +16073,21 @@ Denotes a literal homogeneous vector.
 @findex f64vector?
 [SRFI-4]
 @c EN
-Returns @code{#t} if @var{obj} is a @var{TAG}vector, @code{#f} otherwise.
+Returns @code{#t} iff @var{obj} is a @var{TAG}vector, @code{#f} otherwise.
 @c JP
 @var{obj}が@var{TAG}vectorなら@code{#t}を、そうでなければ@code{#f}を返します。
 @c COMMON
 @end deftp
+
+@defun uvector? obj
+@c EN
+Returns @code{#t} iff @var{obj} is of any uniform vector type.
+@c JP
+@var{obj}がいずれかの型のユニフォームベクタなら@code{#t}を、
+そうでなければ@code{#f}を返します。
+@c COMMON
+@end defun
+
 
 @deftp {Function} {@var{TAG}vector} @r{@var{x} @dots{}}
 @findex s8vector

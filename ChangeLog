@@ -1,3 +1,7 @@
+2014-09-25  Shiro Kawai  <shiro@acm.org>
+
+	* src/libvec.scm: Added uvector?
+
 2014-09-24  Shiro Kawai  <shiro@acm.org>
 
 	* ext/util/queue.scm, ext/data/queue.scm: util.queue -> data.queue.

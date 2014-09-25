@@ -151,8 +151,7 @@
   SCM_UVECTOR_SIZE)
 (define-cproc uvector-immutable? (v::<uvector>) ::<boolean>
   SCM_UVECTOR_IMMUTABLE_P)
-
-
-
+(define-cproc uvector? (obj) ::<boolean> :constant
+  SCM_UVECTORP)
 
 
