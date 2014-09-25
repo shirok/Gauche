@@ -53,6 +53,7 @@ ext/charconv/convaux.c
 ext/charconv/eucj2ucs.c
 ext/charconv/guess_tab.c
 ext/charconv/ucs2eucj.c
+ext/data/data--queue.c
 ext/dbm/dbmconf.h
 ext/dbm/dbm--gdbm.c
 ext/dbm/dbm--ndbm.c
@@ -96,7 +97,6 @@ ext/tls/axTLS/ssl/ssltest
 ext/tls/axTLS/ssl/test/ssltest.mod.c
 ext/tls/rfc--tls.c
 ext/util/util--match.c
-ext/util/util--queue.c
 ext/uvector/gauche/
 ext/uvector/uvector.c
 ext/uvector/uvlib.scm
