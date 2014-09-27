@@ -826,6 +826,25 @@
 (test "passing by parameters" 5
       (lambda () ((mdm-bar-m3 z (+ z 1)) 4)))
 
+;; Macro defining toplevel macros.
+(define-syntax defMyQuote
+  (syntax-rules ()
+    ((_ name)
+     (begin
+       (define-syntax TEMP
+         (syntax-rules ()
+           ((_ arg)
+            `arg)))
+       (define-syntax name
+         (syntax-rules ()
+           ((_ arg)
+            (TEMP arg))))))))
+
+(defMyQuote MyQuote)
+
+(test "macro defining a toplevel macro" '(1 2 3)
+      (lambda () (MyQuote (1 2 3))))
+
 ;;----------------------------------------------------------------------
 ;; identifier comparison
 

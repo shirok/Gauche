@@ -1818,6 +1818,16 @@
     [(_ name expr)
      (unless (variable? name) (error "syntax-error:" oform))
      (let1 cenv (cenv-add-name cenv (variable-name name))
+       ;; Hygiene alert - currently we strip env info if NAME is inserted
+       ;; by a macro, so it will be visible from the current module.  It
+       ;; is acceptable if the macro definition is in the same module
+       ;; (NAME refers to the global binding of the macro definition
+       ;; environment, which happens to be the current module).  However,
+       ;; It would be difficult to justify if the macro is defined in
+       ;; another module.  Better way is to rename the identifier to
+       ;; a unique name (we should modify the identifier directly, so that
+       ;; the reference to the same identifier inserted in the same macro
+       ;; expansion can still refer to it).
        ($define oform flags
                 (make-identifier (unwrap-syntax name) module '())
                 (pass1 expr cenv)))]
@@ -1974,13 +1984,15 @@
      (let1 trans
          (make-macro-transformer name
                                  (eval `(,lambda. ,formals ,@body) module))
-       (%insert-syntax-binding module name trans)
+       ;; See the "Hygiene alert" in pass1/define.
+       (%insert-syntax-binding module (unwrap-syntax name) trans)
        ($const-undef))]
     [(_ name expr)
      (unless (variable? name) (error "syntax-error:" oform))
      ;; TODO: macro autoload
      (let1 trans (make-macro-transformer name (eval expr module))
-       (%insert-syntax-binding module name trans)
+       ;; See the "Hygiene alert" in pass1/define.
+       (%insert-syntax-binding module (unwrap-syntax name) trans)
        ($const-undef))]
     [_ (error "syntax-error:" oform)]))
 
@@ -1992,7 +2004,9 @@
     [(_ name expr)
      (let* ([cenv (cenv-add-name cenv (variable-name name))]
             [transformer (pass1/eval-macro-rhs 'define-syntax expr cenv)])
-       (%insert-syntax-binding (cenv-module cenv) name transformer)
+       ;; See the "Hygiene alert" in pass1/define.
+       (%insert-syntax-binding (cenv-module cenv) (unwrap-syntax name)
+                               transformer)
        ($const-undef))]
     [_ (error "syntax-error: malformed define-syntax:" form)]))
 

@@ -1,3 +1,10 @@
+2014-09-27  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.scm (define-syntax): Fix the case when toplevel
+	  macro is inserted by another hygienic macro.  We may need to
+	  revisit interpretation of toplevel identifier renaming; see
+	  the comment in pass1/define.
+
 2014-09-26  Shiro Kawai  <shiro@acm.org>
 
 	* src/compare.c (Scm_Compare), src/vector.c, src/symbol.c: Enhanced
