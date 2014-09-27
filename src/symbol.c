@@ -40,7 +40,10 @@
  */
 
 static void symbol_print(ScmObj obj, ScmPort *port, ScmWriteContext *);
-SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_SymbolClass, symbol_print);
+static int symbol_compare(ScmObj x, ScmObj y, int equalp);
+
+SCM_DEFINE_BUILTIN_CLASS(Scm_SymbolClass, symbol_print, symbol_compare,
+                         NULL, NULL, NULL);
 
 static ScmClass *keyword_cpl[] = {
     SCM_CLASS_STATIC_PTR(Scm_SymbolClass),
@@ -48,8 +51,8 @@ static ScmClass *keyword_cpl[] = {
     NULL
 };
 
-SCM_DEFINE_BUILTIN_CLASS(Scm_KeywordClass, symbol_print,
-                         NULL, NULL, NULL, keyword_cpl);
+SCM_DEFINE_BUILTIN_CLASS(Scm_KeywordClass, symbol_print, symbol_compare,
+                         NULL, NULL, keyword_cpl);
 
 /* name -> symbol mapper */
 static ScmInternalMutex obtable_mutex = SCM_INTERNAL_MUTEX_INITIALIZER;
@@ -310,6 +313,29 @@ static void symbol_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 #endif /*GAUCHE_KEEP_DISJOINT_KEYWORD_OPTION*/
         if (!SCM_SYMBOL_INTERNED(obj)) SCM_PUTZ("#:", -1, port);
         Scm_WriteSymbolName(SCM_SYMBOL_NAME(obj), port, ctx, 0);
+    }
+}
+
+/* Symbol comparison procedure.
+   Will be used via 'compare' procedure.  Following srfi-114, we compare
+   by name, but takes extra care of intern/unintern distinction; if the
+   names are the same, interned symbol is less, and if both are
+   uninterned, we compare addresses.
+ */
+static int symbol_compare(ScmObj x, ScmObj y, int equalp)
+{
+    if (equalp) {
+        /* Symbol equality test is handled in Scm_Eq* and will never come
+           here, but just in case.  */
+        return SCM_EQ(x, y)? 0:1;
+    } else if (SCM_EQ(x, y)) {
+        return 0;
+    } else {
+        int r = Scm_StringCmp(SCM_SYMBOL_NAME(x), SCM_SYMBOL_NAME(y));
+        if (r != 0) return r;
+        if (SCM_SYMBOL_INTERNED(x)) return -1; /* y must be uninterned */
+        if (SCM_SYMBOL_INTERNED(y)) return  1; /* y must be uninterned */
+        return (x < y)? -1 : 1;
     }
 }
 

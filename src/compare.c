@@ -102,6 +102,35 @@ int Scm_Compare(ScmObj x, ScmObj y)
         return SCM_CHAR_VALUE(x) == SCM_CHAR_VALUE(y)? 0 :
             SCM_CHAR_VALUE(x) < SCM_CHAR_VALUE(y)? -1 : 1;
 
+    /* srfi-114 default comparator behaviors*/
+    /* () is the smallest of all */
+    if (SCM_NULLP(x)) return (SCM_NULLP(y)? 0 : -1);
+    if (SCM_NULLP(y)) return (SCM_NULLP(x)? 0 : 1);
+    if (SCM_PAIRP(x)) {
+        if (SCM_PAIRP(y)) {
+            ScmObj px = x;
+            ScmObj py = y;
+            while (SCM_PAIRP(px) && SCM_PAIRP(py)) {
+                int r = Scm_Compare(SCM_CAR(px), SCM_CAR(py));
+                if (r != 0) return r;
+                px = SCM_CDR(px);
+                py = SCM_CDR(py);
+            }
+            return Scm_Compare(px, py);
+        }
+        goto distinct_types;
+    }
+    if (SCM_FALSEP(x)) {
+        if (SCM_FALSEP(y)) return  0;
+        if (SCM_TRUEP(y)) return  -1;
+        goto distinct_types;
+    }
+    if (SCM_TRUEP(x)) {
+        if (SCM_FALSEP(y)) return  1;
+        if (SCM_TRUEP(y)) return  0;
+        goto distinct_types;
+    }
+    
     ScmClass *cx = Scm_ClassOf(x);
     ScmClass *cy = Scm_ClassOf(y);
     if (Scm_SubtypeP(cx, cy)) {
@@ -109,6 +138,9 @@ int Scm_Compare(ScmObj x, ScmObj y)
     } else {
         if (cx->compare) return cx->compare(x, y, FALSE);
     }
+ distinct_types:
+    /* x and y are of distinct types.  We can follow the rule of srfi-114
+       default comparator, but for the time being, we bail out. */
     Scm_Error("can't compare %S and %S", x, y);
     return 0; /* dummy */
 }

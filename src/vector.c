@@ -53,8 +53,29 @@ static void vector_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
     SCM_PUTZ(")", -1, port);
 }
 
-SCM_DEFINE_BUILTIN_CLASS(Scm_VectorClass, vector_print, NULL, NULL, NULL,
-                         SCM_CLASS_SEQUENCE_CPL);
+static int vector_compare(ScmObj x, ScmObj y, int equalp)
+{
+    if (equalp) {
+        /* Vector equality is handled in Scm_Eq* and will never come
+           here, but just in case. */
+        return Scm_EqualP(x, y)? 0 : 1;
+    }
+    /* Follow srfi-114 */
+    ScmWord xlen = SCM_VECTOR_SIZE(x);
+    ScmWord ylen = SCM_VECTOR_SIZE(y);
+    if (xlen < ylen) return -1;
+    if (xlen > ylen) return 1;
+    for (int i=0; i<xlen; i++) {
+        int r = Scm_Compare(SCM_VECTOR_ELEMENT(x, i),
+                            SCM_VECTOR_ELEMENT(y, i));
+        if (r != 0) return r;
+    }
+    return 0;
+}
+
+
+SCM_DEFINE_BUILTIN_CLASS(Scm_VectorClass, vector_print, vector_compare,
+                         NULL, NULL, SCM_CLASS_SEQUENCE_CPL);
 
 static ScmVector *make_vector(ScmSmallInt size)
 {
@@ -547,22 +568,33 @@ DEF_PRINT(F64, f64, double, fpr)
 
 /* comparer */
 
-#define DEF_CMP(TAG, tag, T, eq)                                        \
+#define DEF_CMP(TAG, tag, T, eq, lt)                                    \
 static int SCM_CPP_CAT3(compare_,tag,vector)(ScmObj x, ScmObj y, int equalp) \
 {                                                                       \
-    ScmSmallInt len = SCM_CPP_CAT3(SCM_,TAG,VECTOR_SIZE)(x);            \
-    if (SCM_CPP_CAT3(SCM_,TAG,VECTOR_SIZE)(y) != len) return -1;        \
-    for (ScmSmallInt i=0; i<len; i++) {                                 \
-        T xx = SCM_CPP_CAT3(SCM_,TAG,VECTOR_ELEMENTS)(x)[i];            \
-        T yy = SCM_CPP_CAT3(SCM_,TAG,VECTOR_ELEMENTS)(y)[i];            \
-        if (!eq(xx,yy)) {                                               \
-            return -1;                                                  \
+    ScmSmallInt xlen = SCM_CPP_CAT3(SCM_,TAG,VECTOR_SIZE)(x);           \
+    ScmSmallInt ylen = SCM_CPP_CAT3(SCM_,TAG,VECTOR_SIZE)(y);           \
+    if (equalp) {                                                       \
+        if (xlen != ylen) return -1;                                    \
+        for (ScmSmallInt i=0; i<xlen; i++) {                            \
+            T xx = SCM_CPP_CAT3(SCM_,TAG,VECTOR_ELEMENTS)(x)[i];        \
+            T yy = SCM_CPP_CAT3(SCM_,TAG,VECTOR_ELEMENTS)(y)[i];        \
+            if (!eq(xx,yy)) return -1;                                  \
         }                                                               \
+        return 0;                                                       \
+    } else {                                                            \
+        if (xlen != ylen) return (xlen < ylen) ? -1 : 1;                \
+        for (ScmSmallInt i=0; i<xlen; i++) {                            \
+            T xx = SCM_CPP_CAT3(SCM_,TAG,VECTOR_ELEMENTS)(x)[i];        \
+            T yy = SCM_CPP_CAT3(SCM_,TAG,VECTOR_ELEMENTS)(y)[i];        \
+            if (lt(xx, yy)) return -1;                                  \
+            if (!eq(xx,yy)) return 1;                                   \
+        }                                                               \
+        return 0;                                                       \
     }                                                                   \
-    return 0;                                                           \
 }
 
 #define common_eqv(x, y)  ((x)==(y))
+#define common_lt(x, y)   ((x)<(y))
 
 static inline int int64eqv(ScmInt64 x, ScmInt64 y)
 {
@@ -582,16 +614,35 @@ static inline int uint64eqv(ScmUInt64 x, ScmUInt64 y)
 #endif
 }
 
-#define f16eqv(a, b) SCM_HALF_FLOAT_CMP(==, a, b)
+static inline int int64lt(ScmInt64 x, ScmInt64 y)
+{
+#if SCM_EMULATE_INT64
+    return (x.hi < y.hi || (x.hi == y.hi &&& x.lo < y.lo));
+#else
+    return x < y;
+#endif
+}
 
-DEF_CMP(S8, s8, signed char, common_eqv)
-DEF_CMP(U8, u8, unsigned char, common_eqv)
-DEF_CMP(S16, s16, short, common_eqv)
-DEF_CMP(U16, u16, u_short, common_eqv)
-DEF_CMP(S32, s32, ScmInt32, common_eqv)
-DEF_CMP(U32, u32, ScmUInt32, common_eqv)
-DEF_CMP(S64, s64, ScmInt64, int64eqv)
-DEF_CMP(U64, u64, ScmUInt64, uint64eqv)
-DEF_CMP(F16, f16, ScmHalfFloat, f16eqv)
-DEF_CMP(F32, f32, float, common_eqv)
-DEF_CMP(F64, f64, double, common_eqv)
+static inline int uint64lt(ScmUInt64 x, ScmUInt64 y)
+{
+#if SCM_EMULATE_INT64
+    return (x.hi < y.hi || (x.hi == y.hi &&& x.lo < y.lo));
+#else
+    return x < y;
+#endif
+}
+
+#define f16eqv(a, b) SCM_HALF_FLOAT_CMP(==, a, b)
+#define f16lt(a, b)  SCM_HALF_FLOAT_CMP(<, a, b)
+
+DEF_CMP(S8, s8, signed char, common_eqv, common_lt)
+DEF_CMP(U8, u8, unsigned char, common_eqv, common_lt)
+DEF_CMP(S16, s16, short, common_eqv, common_lt)
+DEF_CMP(U16, u16, u_short, common_eqv, common_lt)
+DEF_CMP(S32, s32, ScmInt32, common_eqv, common_lt)
+DEF_CMP(U32, u32, ScmUInt32, common_eqv, common_lt)
+DEF_CMP(S64, s64, ScmInt64, int64eqv, int64lt)
+DEF_CMP(U64, u64, ScmUInt64, uint64eqv, uint64lt)
+DEF_CMP(F16, f16, ScmHalfFloat, f16eqv, f16lt)
+DEF_CMP(F32, f32, float, common_eqv, common_lt)
+DEF_CMP(F64, f64, double, common_eqv, common_lt)

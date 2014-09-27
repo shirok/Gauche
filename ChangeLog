@@ -1,3 +1,10 @@
+2014-09-26  Shiro Kawai  <shiro@acm.org>
+
+	* src/compare.c (Scm_Compare), src/vector.c, src/symbol.c: Enhanced
+	  domain of Scm_Compare to support srfi-114.  Now booleans, lists,
+	  symbols, vectors and uvectors can be compared each other.
+	* src/libcmp.scm (comparator-*): Added some srfi-114 comparator API.
+
 2014-09-25  Shiro Kawai  <shiro@acm.org>
 
 	* src/libvec.scm: Added uvector?

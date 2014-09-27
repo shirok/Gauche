@@ -48,6 +48,15 @@
 (define-cproc comparator-hash-function? (c::<comparator>) ::<boolean>
   (result (not (SCM_FALSEP (-> c hashFn)))))
 
+(define-cproc comparator-type-test-procedure (c::<comparator>) :constant
+  (result (-> c typeFn)))
+(define-cproc comparator-equality-predicate (c::<comparator>) :constant
+  (result (-> c eqFn)))
+(define-cproc comparator-comparison-procedure (c::<comparator>) :constant
+  (result (-> c compareFn)))
+(define-cproc comparator-hash-function (c::<comparator>) :constant
+  (result (-> c hashFn)))
+
 ;;;
 ;;; Generic comparison
 ;;;
