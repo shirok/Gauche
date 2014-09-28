@@ -334,8 +334,8 @@ static int symbol_compare(ScmObj x, ScmObj y, int equalp)
         int r = Scm_StringCmp(SCM_SYMBOL_NAME(x), SCM_SYMBOL_NAME(y));
         if (r != 0) return r;
         if (SCM_SYMBOL_INTERNED(x)) return -1; /* y must be uninterned */
-        if (SCM_SYMBOL_INTERNED(y)) return  1; /* y must be uninterned */
-        return (x < y)? -1 : 1;
+        if (SCM_SYMBOL_INTERNED(y)) return  1; /* x must be uninterned */
+        return (x < y)? -1 : 1;                /* both are uninterned */
     }
 }
 
