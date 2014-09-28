@@ -617,7 +617,7 @@ static inline int uint64eqv(ScmUInt64 x, ScmUInt64 y)
 static inline int int64lt(ScmInt64 x, ScmInt64 y)
 {
 #if SCM_EMULATE_INT64
-    return (x.hi < y.hi || (x.hi == y.hi &&& x.lo < y.lo));
+    return (x.hi < y.hi || (x.hi == y.hi && x.lo < y.lo));
 #else
     return x < y;
 #endif
@@ -626,7 +626,7 @@ static inline int int64lt(ScmInt64 x, ScmInt64 y)
 static inline int uint64lt(ScmUInt64 x, ScmUInt64 y)
 {
 #if SCM_EMULATE_INT64
-    return (x.hi < y.hi || (x.hi == y.hi &&& x.lo < y.lo));
+    return (x.hi < y.hi || (x.hi == y.hi && x.lo < y.lo));
 #else
     return x < y;
 #endif
