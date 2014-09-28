@@ -7,53 +7,81 @@
 
 (test-section "compare")
 
-(define (test-compare* data)
-  (dolist [datum data]
-    (apply (^[what a b eq]
-             (test* #"compare ~what" (if eq '(0 0) '(-1 1))
-                    (list (compare a b)
-                          (compare b a))))
-           datum)))
+(let ()
+  (define (test-compare* data)
+    (dolist [datum data]
+      (apply (^[what a b eq]
+               (test* #"compare ~what" (if eq '(0 0) '(-1 1))
+                      (list (compare a b)
+                            (compare b a))))
+             datum)))
 
-(test-compare*
- '(("boolean" #t #t #t)
-   ("boolean" #f #f #t)
-   ("boolean" #f #t #f)
+  (test-compare*
+   '(("boolean" #t #t #t)
+     ("boolean" #f #f #t)
+     ("boolean" #f #t #f)
 
-   ("char" #\a #\a #t)
-   ("char" #\A #\a #f)
+     ("char" #\a #\a #t)
+     ("char" #\A #\a #f)
 
-   ("string" "ab" "ab"  #t)
-   ("string" "ab" "abc" #f)
-   ("string" "aB" "ab"  #f)
+     ("string" "ab" "ab"  #t)
+     ("string" "ab" "abc" #f)
+     ("string" "aB" "ab"  #f)
 
-   ("symbol" a a #t)
-   ("symbol" A a #f)
-   ("symbol" a ab #f)
-   ("symbol" a #:a #f)
-   ("symbol" #0=#:a #0# #t)
-   
-   ("number" 1 1 #t)
-   ("number" 1 1.0 #t)
-   ("number" -1 1 #f)
+     ("symbol" a a #t)
+     ("symbol" A a #f)
+     ("symbol" a ab #f)
+     ("symbol" a #:a #f)
+     ("symbol" #0=#:a #0# #t)
+     
+     ("number" 1 1 #t)
+     ("number" 1 1.0 #t)
+     ("number" -1 1 #f)
 
-   ("null"   () () #t)
-   ("null"   () a #f)
-   ("pair"   (a b c) (a b c) #t)
-   ("pair"   (A b c) (a b c) #f)
-   ("pair"   (a b)   (a b c) #f)
+     ("null"   () () #t)
+     ("null"   () a #f)
+     ("pair"   (a b c) (a b c) #t)
+     ("pair"   (A b c) (a b c) #f)
+     ("pair"   (a b)   (a b c) #f)
 
-   ("vector" #(a b c) #(a b c) #t)
-   ("vector" #(a B c) #(a b c) #f)
-   ("vector" #(a b) #(a b c) #f)
-   ("vector" #() #() #t)
+     ("vector" #(a b c) #(a b c) #t)
+     ("vector" #(a B c) #(a b c) #f)
+     ("vector" #(a b) #(a b c) #f)
+     ("vector" #() #() #t)
 
-   ("uvector" #u8(1 2 3) #u8(1 2 3) #t)
-   ("uvector" #u8(1 0 3) #u8(1 2 3) #f)
-   ("uvector" #u8(1 2) #u8(1 2 3) #f)
-   ("uvector" #u8() #u8() #t)
+     ("uvector" #u8(1 2 3) #u8(1 2 3) #t)
+     ("uvector" #u8(1 0 3) #u8(1 2 3) #f)
+     ("uvector" #u8(1 2) #u8(1 2 3) #f)
+     ("uvector" #u8() #u8() #t)
 
-   ))
+     )))
+
+;; comparing different types
+(define-class <other-type> () ())
+(define-method object-compare ((a <other-type>) (b <other-type>)) 0)
+
+(let ()
+  ;; NB: We haven't tested gauche.sequence, so no find-index yet.
+  (define (precedence x)
+    (let loop ([cls (list <null> <pair> <boolean> <char> <string>
+                          <symbol> <number> <vector> <u8vector> <s8vector>
+                          <u16vector> <s16vector> <u32vector> <s32vector>
+                          <u64vector> <s64vector> <f16vector> <f32vector>
+                          <f64vector> <hash-table>)]
+               [n 0])
+      (cond [(null? cls) n]
+            [(is-a? x (car cls)) n]
+            [else (loop (cdr cls) (+ n 1))])))
+  (define (compare-matrix vals)
+    (map (^[x] (map (^[y] (list (compare x y) (compare y x))) vals)) vals))
+  (define *data*
+    `(() (a . b) #t #\a "a" 0 #(a) #u8(0) #s8(0) #u16(0) #s16(0)
+      #u32(0) #s32(0) #u64(0) #s64(0) #f16(0) #f32(0) #f64(0)
+      ,(make <other-type>)))
+  
+  (test* "comparing different types"
+         (compare-matrix (map precedence *data*))
+         (compare-matrix *data*)))
 
 (test-end)
 

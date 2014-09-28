@@ -135,14 +135,66 @@ int Scm_Compare(ScmObj x, ScmObj y)
     ScmClass *cy = Scm_ClassOf(y);
     if (Scm_SubtypeP(cx, cy)) {
         if (cy->compare) return cy->compare(x, y, FALSE);
-    } else {
+    } else if (Scm_SubtypeP(cy, cx)) {
         if (cx->compare) return cx->compare(x, y, FALSE);
     }
+    if (cx == cy) {
+        /* x and y are of the same type, and they can't be ordered. */
+        Scm_Error("can't compare %S and %S", x, y);
+    }
+    
  distinct_types:
-    /* x and y are of distinct types.  We can follow the rule of srfi-114
-       default comparator, but for the time being, we bail out. */
+    /* x and y are of distinct types.  Follow the srfi-114 rule:
+       () < pairs < booleans < chars < strings < symbols < numbers
+          < vectors < bytevectors < others
+       Note that we already eliminated NULL.
+    */
+#define ELIMINATE(pred) \
+    do { \
+        if pred(x) return -1;                   \
+        if pred(y) return 1;                    \
+    } while (0)
+
+    ELIMINATE(SCM_PAIRP);
+    ELIMINATE(SCM_BOOLP);
+    ELIMINATE(SCM_CHARP);
+    ELIMINATE(SCM_STRINGP);
+    ELIMINATE(SCM_SYMBOLP);
+    ELIMINATE(SCM_NUMBERP);
+    ELIMINATE(SCM_VECTORP);
+
+    /* To conform srfi-114, we must order u8vector first.  For the
+       consistency, we use this order:
+       u8 < s8 < u16 < s16 < u32 < s32 < u64 < s64 < f16 < f32 < f64
+       Unfortunately this doesn't match the order of ScmUVectorType,
+       so we need some tweak.
+    */
+    if (SCM_UVECTORP(x)) {
+        if (SCM_UVECTORP(y)) {
+            int tx = Scm_UVectorType(Scm_ClassOf(x));
+            int ty = Scm_UVectorType(Scm_ClassOf(y));
+            if (tx/2 < ty/2) return -1;
+            if (tx/2 > ty/2) return 1;
+            if (tx < SCM_UVECTOR_F16) {
+                /* x and y are either sNvector and uNvector with the same N.
+                   The even one is uNvector.
+                 */
+                return (tx%2)? -1:1;
+            } else {
+                return (tx<ty)? -1:1;
+            }
+        }
+        return -1;              /* y is other, so x comes first. */
+    } else if (SCM_UVECTORP(y)) {
+        return 1;               /* x is other, so y comes first. */
+    }
+
+    /* Now we have two objects of different types.  For now we just
+       give up.  A quick hack would be to use the address of their
+       classes, but they won't be consistent across multiple runs,
+       and also class redefinition could change the order. */
     Scm_Error("can't compare %S and %S", x, y);
-    return 0; /* dummy */
+    return 0;                   /* dummy */
 }
 
 /* NB: It turns out that calling back Scheme funtion from sort routine

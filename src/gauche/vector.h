@@ -118,7 +118,8 @@ SCM_CLASS_DECL(Scm_UVectorClass);
 /* A convenient enum to dispatch by specific uvector subclasses
    within a generic uvector API.
    NB: The value of those enums can be embedded in precompiled files,
-   so the order shouldn't be changed unless it's ok tobreak ABI compatibility.
+   and also used in Scm_Compare to order between different uvectors.
+   So the order shouldn't be changed.
 */
 typedef enum {
     SCM_UVECTOR_S8,

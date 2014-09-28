@@ -1,3 +1,8 @@
+2014-09-28  Shiro Kawai  <shiro@acm.org>
+
+	* src/compare.c (Scm_Compare): Implement ordering of different types,
+	  according to srfi-114.
+
 2014-09-27  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm (define-syntax): Fix the case when toplevel
