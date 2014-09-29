@@ -94,8 +94,29 @@ ScmObj Scm_MakeComparator(ScmObj type, ScmObj eq,
 int Scm_Compare(ScmObj x, ScmObj y)
 {
     /* Shortcut for typical case */
-    if (SCM_NUMBERP(x) && SCM_NUMBERP(y))
-        return Scm_NumCmp(x, y);
+    if (SCM_NUMBERP(x) && SCM_NUMBERP(y)) {
+        if (SCM_COMPNUMP(x) || SCM_COMPNUMP(y)) {
+            /* Scm_NumCmp can't compare complex numbers---it doesn't make
+               mathematical sense.  But Scm_Compare is used just to order
+               items, it doesn't need to carry meaning.  So here it goes.
+               We follow srfi-114 spec. */
+            /* TODO: If we ever introduce exact compnums, we should use
+               exact number first to compare, for Scm_GetDouble may lose
+               precision. */
+            /* TODO: Handle NaN. */
+            double xr = Scm_RealPart(x);
+            double yr = Scm_RealPart(y);
+            if (xr < yr) return -1;
+            if (xr > yr) return 1;
+            double xi = Scm_ImagPart(x);
+            double yi = Scm_ImagPart(y);
+            if (xi < yi) return -1;
+            if (xi > yi) return 1;
+            return 0;
+        } else {
+            return Scm_NumCmp(x, y);
+        }
+    }
     if (SCM_STRINGP(x) && SCM_STRINGP(y))
         return Scm_StringCmp(SCM_STRING(x), SCM_STRING(y));
     if (SCM_CHARP(x) && SCM_CHARP(y))
@@ -177,7 +198,7 @@ int Scm_Compare(ScmObj x, ScmObj y)
             if (tx/2 > ty/2) return 1;
             if (tx < SCM_UVECTOR_F16) {
                 /* x and y are either sNvector and uNvector with the same N.
-                   The even one is uNvector.
+                   The odd one is uNvector.
                  */
                 return (tx%2)? -1:1;
             } else {

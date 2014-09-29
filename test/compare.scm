@@ -37,6 +37,10 @@
      ("number" 1 1 #t)
      ("number" 1 1.0 #t)
      ("number" -1 1 #f)
+     ("number" 1 1+i #f)
+     ("number" 1-i 1 #f)
+     ("number" 1+i 1+2i #f)
+     ("number" 1+i 1+i #t)
 
      ("null"   () () #t)
      ("null"   () a #f)
