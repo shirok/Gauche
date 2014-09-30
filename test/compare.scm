@@ -87,6 +87,25 @@
          (compare-matrix (map precedence *data*))
          (compare-matrix *data*)))
 
+;; comparator with no comparison proc / no hash proc
+
+(test* "comparator requires at least either equality or comparison"
+       (test-error)
+       (make-comparator #t #t #f #f))
+(test* "comparator equality fallback behavior" #t
+       ((comparator-equality-predicate (make-comparator #t #t (^[a b] 0) #f))
+        1 2))
+(test* "no comparison proc" #f
+       (comparator-comparison-procedure? (make-comparator #t eq? #f #f)))
+(test* "comparator fallback behavior" (test-error)
+       ((comparator-comparison-procedure (make-comparator #t eq? #f #f))
+        'a 'b))
+(test* "no hash function" #f
+       (comparator-hash-function? (make-comparator #t eq? #f #f)))
+(test* "hash fallback behavior" (test-error)
+       ((comparator-hash-procedure (make-comparator #t eq? #f #f)) 'a))
+
+
 (test-end)
 
 

@@ -75,7 +75,7 @@ static ScmClassStaticSlotSpec comparator_slots[] = {
 
 ScmObj Scm_MakeComparator(ScmObj type, ScmObj eq,
                           ScmObj compare, ScmObj hash,
-                          ScmObj name)
+                          ScmObj name, u_long flags)
 {
     ScmComparator *c = SCM_NEW(ScmComparator);
     SCM_SET_CLASS(c, &Scm_ComparatorClass);
@@ -84,6 +84,7 @@ ScmObj Scm_MakeComparator(ScmObj type, ScmObj eq,
     c->eqFn = eq;
     c->compareFn = compare;
     c->hashFn = hash;
+    c->flags = flags;
     return SCM_OBJ(c);
 }
 

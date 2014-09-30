@@ -37,16 +37,49 @@
 ;;; Comparator (a la srfi-114)
 ;;;
 
-(select-module gauche)
-(define-cproc make-comparator (type-test equality-test comparison-proc hash
-                               :optional (name #f))
-  Scm_MakeComparator)
+(select-module gauche.internal)
+(define-cproc %make-comparator (type-test equality-test comparison-proc hash
+                                name no-compare::<boolean> no-hash::<boolean>)
+  (let* ([flags::ulong (logior (?: no-compare SCM_COMPARATOR_NO_ORDER 0)
+                               (?: no-hash SCM_COMPARATOR_NO_HASH 0))])
+    (result
+     (Scm_MakeComparator type-test equality-test comparison-proc hash
+                         name flags))))
 
+(define-in-module gauche (make-comparator type-test equality-test
+                                          comparison-proc hash
+                                          :optional (name #f))
+  (rlet1 self  ; referred by error proc
+      ;; We use <bottom> for applicability check except type-test, since
+      ;; those procs are only required to handle objects that passes type-test.
+      (let ([type (cond [(eq? type-test #t) (^_ #t)]
+                        [(applicable? type-test <top>) type-test]
+                        [else (error "make-comparator needs a one-argument procedure or #t as type-test, but got:" type-test)])]
+            [eq   (cond
+                   [(eq? equality-test #t)
+                    (if (applicable? comparison-proc <bottom> <bottom>)
+                      (^[a b] (= (comparison-proc a b) 0))
+                      (error "make-comparator needs a procedure as comparison-proc if equality-test is #t, but got:" comparison-proc))]
+                   [(applicable? equality-test <bottom> <bottom>) equality-test]
+                   [else (error "make-comparator needs a procedure or #t as equality-test, but got:" equality-test)])]
+            [cmp  (cond [(eq? comparison-proc #f)
+                         (^[a b] (errorf "can't compare objects by ~s: ~s vs ~s" self a b))]
+                        [(applicable? comparison-proc <bottom> <bottom>)
+                         comparison-proc]
+                        [else (error "make-comparator needs a procedure or #f as comparison-proc, but got:" comparison-proc)])]
+            [hsh  (cond [(eq? hash #f)
+                         (^[a] (errorf "~s doesn't have a hash function"))]
+                        [(applicable? hash <bottom>) hash]
+                        [else (error "make-comparator needs a procedure or #f as hash, but got:" hash)])])
+        (%make-comparator type eq cmp hash name
+                          (not comparison-proc) (not hash)))))
+
+(select-module gauche)
 (define-cproc comparator? (obj) ::<boolean> SCM_COMPARATORP)
 (define-cproc comparator-comparison-procedure? (c::<comparator>) ::<boolean>
-  (result (not (SCM_FALSEP (-> c compareFn)))))
+  (result (not (logior (-> c flags) SCM_COMPARATOR_NO_ORDER))))
 (define-cproc comparator-hash-function? (c::<comparator>) ::<boolean>
-  (result (not (SCM_FALSEP (-> c hashFn)))))
+  (result (not (logior (-> c flags) SCM_COMPARATOR_NO_HASH))))
 
 (define-cproc comparator-type-test-procedure (c::<comparator>) :constant
   (result (-> c typeFn)))

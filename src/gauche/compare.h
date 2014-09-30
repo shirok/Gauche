@@ -41,10 +41,21 @@ SCM_DECL_BEGIN
 struct ScmComparatorRec {
     SCM_HEADER;
     ScmObj name;                /* debugging aid */
-    ScmObj typeFn;              /* proc or #t */
-    ScmObj eqFn;                /* proc or #t */
-    ScmObj compareFn;           /* proc or #f */
-    ScmObj hashFn;              /* proc or #f */
+    ScmObj typeFn;              /* proc */
+    ScmObj eqFn;                /* proc */
+    ScmObj compareFn;           /* proc */
+    ScmObj hashFn;              /* proc */
+    u_long flags;
+};
+
+/* comparators can be constructed with #f for comareFn and/or hashFn.
+   srfi-114 requires accessor functions to those slots returns dummy
+   procedures that raises an error.  We still need to be able to tell
+   these slots have valid procedures.  Instead of storing #f and tweak
+   accessors to return a dummy procedure, we keep the info in flags. */
+enum ScmComparatorFlags {
+    SCM_COMPARATOR_NO_ORDER = (1L<<0), /* 'compare' proc unavailable */
+    SCM_COMPARATOR_NO_HASH  = (1L<<1)  /* 'hash' proc unavailable */
 };
 
 SCM_CLASS_DECL(Scm_ComparatorClass);
@@ -54,8 +65,7 @@ SCM_CLASS_DECL(Scm_ComparatorClass);
 
 SCM_EXTERN ScmObj  Scm_MakeComparator(ScmObj type, ScmObj eq,
                                       ScmObj compare, ScmObj hash,
-                                      ScmObj name);
-
+                                      ScmObj name, u_long flags);
 
 /* Other genreic utilities */
 SCM_EXTERN int    Scm_Compare(ScmObj x, ScmObj y);
