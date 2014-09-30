@@ -71,15 +71,15 @@
                          (^[a] (errorf "~s doesn't have a hash function"))]
                         [(applicable? hash <bottom>) hash]
                         [else (error "make-comparator needs a procedure or #f as hash, but got:" hash)])])
-        (%make-comparator type eq cmp hash name
+        (%make-comparator type eq cmp hsh name
                           (not comparison-proc) (not hash)))))
 
 (select-module gauche)
 (define-cproc comparator? (obj) ::<boolean> SCM_COMPARATORP)
 (define-cproc comparator-comparison-procedure? (c::<comparator>) ::<boolean>
-  (result (not (logior (-> c flags) SCM_COMPARATOR_NO_ORDER))))
+  (result (not (logand (-> c flags) SCM_COMPARATOR_NO_ORDER))))
 (define-cproc comparator-hash-function? (c::<comparator>) ::<boolean>
-  (result (not (logior (-> c flags) SCM_COMPARATOR_NO_HASH))))
+  (result (not (logand (-> c flags) SCM_COMPARATOR_NO_HASH))))
 
 (define-cproc comparator-type-test-procedure (c::<comparator>) :constant
   (result (-> c typeFn)))

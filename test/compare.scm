@@ -95,11 +95,15 @@
 (test* "comparator equality fallback behavior" #t
        ((comparator-equality-predicate (make-comparator #t #t (^[a b] 0) #f))
         1 2))
+(test* "has comparison proc" #t
+       (comparator-comparison-procedure? (make-comparator #t eq? compare #f)))
 (test* "no comparison proc" #f
        (comparator-comparison-procedure? (make-comparator #t eq? #f #f)))
 (test* "comparator fallback behavior" (test-error)
        ((comparator-comparison-procedure (make-comparator #t eq? #f #f))
         'a 'b))
+(test* "has hash function" #t
+       (comparator-hash-function? (make-comparator #t eq? #f hash)))
 (test* "no hash function" #f
        (comparator-hash-function? (make-comparator #t eq? #f #f)))
 (test* "hash fallback behavior" (test-error)
