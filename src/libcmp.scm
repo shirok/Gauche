@@ -40,8 +40,8 @@
 (select-module gauche.internal)
 (define-cproc %make-comparator (type-test equality-test comparison-proc hash
                                 name no-compare::<boolean> no-hash::<boolean>)
-  (let* ([flags::ulong (logior (?: no-compare SCM_COMPARATOR_NO_ORDER 0)
-                               (?: no-hash SCM_COMPARATOR_NO_HASH 0))])
+  (let* ([flags::u_long (logior (?: no-compare SCM_COMPARATOR_NO_ORDER 0)
+                                (?: no-hash SCM_COMPARATOR_NO_HASH 0))])
     (result
      (Scm_MakeComparator type-test equality-test comparison-proc hash
                          name flags))))
