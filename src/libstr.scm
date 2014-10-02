@@ -117,9 +117,11 @@
 (define-cproc %maybe-substring (str::<string> :optional start end)
   Scm_MaybeSubstring)
 
-(define-cproc %hash-string (str::<string> bound) ::<ulong> ; for SRFI-13
+;; bound argument is for srfi-13
+(define-cproc %hash-string (str::<string> :optional bound) ::<ulong>
   (let* ([modulo::u_long 0])
-    (cond [(SCM_UNDEFINEDP bound) (set! modulo SCM_SMALL_INT_MAX)]
+    (cond [(or (SCM_UNBOUNDP bound) (SCM_UNDEFINEDP bound))
+           (set! modulo SCM_SMALL_INT_MAX)]
           [(SCM_INTP bound) (set! modulo (SCM_INT_VALUE bound))]
           [(SCM_BIGNUMP bound)
            (set! modulo

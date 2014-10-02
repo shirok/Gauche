@@ -1,3 +1,8 @@
+2014-10-01  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/computil.scm : Added.  Provides some basic comparators.
+	* src/autoload.scm: Autolaod computil.scm
+
 2014-09-29  Shiro Kawai  <shiro@acm.org>
 
 	* src/compare.c (Scm_Compare): Handle complex number ordering.

@@ -159,6 +159,15 @@
           vector-map-with-index vector-map-with-index!
           vector-for-each-with-index)
 
+(autoload gauche.computil
+          default-comparator eq-comparator eqv-comparator equal-comparator
+          boolean-comparator char-comparator char-ci-comparator
+          string-comparator string-ci-comparator symbol-comparator
+          exact-integer-comparator integer-comparator rational-comparator
+          real-comparator complex-comparator number-comparator
+          pair-comparator list-comparator vector-comparator
+          bytevector-comparator uvector-comparator)
+
 (autoload gauche.fileutil
           glob glob-fold sys-glob glob-component->regexp make-glob-fs-fold
           sys-stat->file-type sys-stat->mode sys-stat->ino

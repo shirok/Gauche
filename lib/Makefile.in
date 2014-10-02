@@ -49,7 +49,7 @@ SCMFILES = srfi-0.scm \
        gauche/test.scm gauche/test/generative.scm gauche/time.scm \
        gauche/redefutil.scm gauche/macroutil.scm gauche/stringutil.scm \
        gauche/vecutil.scm gauche/condutil.scm gauche/portutil.scm \
-       gauche/hashutil.scm gauche/treeutil.scm \
+       gauche/hashutil.scm gauche/treeutil.scm gauche/computil.scm \
        gauche/modutil.scm gauche/libutil.scm gauche/sortutil.scm \
        gauche/generic-sortutil.scm gauche/fileutil.scm gauche/sysutil.scm \
        gauche/regexp.scm gauche/process.scm gauche/signal.scm \
