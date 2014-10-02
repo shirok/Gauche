@@ -1,3 +1,10 @@
+2014-10-02  Shiro Kawai  <shiro@acm.org>
+
+	* src/cross-compile-ios.scm: A script to compile Gauche as an iOS
+	  framework.  This is kind of old---tested on 2013/07 with iOS6
+	  and haven't updated since then.  Just put it in repo for
+	  a reference.
+
 2014-10-01  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/computil.scm : Added.  Provides some basic comparators.
