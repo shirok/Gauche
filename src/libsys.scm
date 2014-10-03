@@ -1062,15 +1062,25 @@
         [(SCM_INTP mode) (result (umask (SCM_INT_VALUE mode)))]
         [else (SCM_TYPE_ERROR mode "fixnum or #f") (result 0)]))
 
-(define-cproc sys-sleep (seconds::<fixnum>) ::<int>
+(define-cproc sys-sleep (seconds::<fixnum>
+                         :optional (no-retry::<boolean> #f))
+  ::<int>
   (.if "defined(GAUCHE_WINDOWS)"
        (begin (Sleep (* seconds 1000)) (result 0))
-       (result (sleep seconds))))
+       (let* ([k::u_int (cast (u_int) seconds)]
+              [vm::ScmVM* (Scm_VM)])
+         (while (> k 0)
+           (set! k (sleep k))
+           (SCM_SIGCHECK vm)
+           (when no-retry (break)))
+         (result k))))
 
 (inline-stub
  (when "defined(HAVE_NANOSLEEP) || defined(GAUCHE_WINDOWS)"
-   (define-cproc sys-nanosleep (nanoseconds)
-     (let* ([spec::(struct timespec)] [rem::(struct timespec)])
+   (define-cproc sys-nanosleep (nanoseconds
+                                :optional (no-retry::<boolean> #f))
+     (let* ([spec::(struct timespec)] [rem::(struct timespec)]
+            [vm::ScmVM* (Scm_VM)])
        (cond
         [(SCM_TIMEP nanoseconds)
          (set! (ref spec tv_sec)  (-> (SCM_TIME nanoseconds) sec)
@@ -1089,7 +1099,13 @@
              (-= (ref spec tv_nsec) 1000000000)
              (+= (ref spec tv_sec) 1)))])
        (set! (ref rem tv_sec) 0 (ref rem tv_nsec) 0)
-       (nanosleep (& spec) (& rem))
+       (while (< (nanosleep (& spec) (& rem)) 0)
+         (unless (== errno EINTR)
+           (Scm_SysError "nanosleep failed"))
+         (SCM_SIGCHECK vm)
+         (when no-retry (break))
+         (set! spec rem)
+         (set! (ref rem tv_sec) 0 (ref rem tv_nsec) 0))
        (if (and (== (ref rem tv_sec) 0) (== (ref rem tv_nsec) 0))
          (result '#f)
          (result (Scm_MakeTime '#f (ref rem tv_sec) (ref rem tv_nsec))))))

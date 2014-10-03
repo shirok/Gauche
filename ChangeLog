@@ -1,3 +1,13 @@
+2014-10-03  Shiro Kawai  <shiro@acm.org>
+
+	* src/libsys.scm (sys-sleep, sys-nanosleep): Changed to retry
+	  sleep/nanosleep by default if it is interrupted by as signal.
+	  They can be interrupted very often, for GC may use signals
+	  to synchronize threads.  We assume it's very unlikely that
+	  there are programs that relies on the previous behavior,
+	  but if you do need those procedures to return by signals,
+	  give #t to the optional argument.
+
 2014-10-02  Shiro Kawai  <shiro@acm.org>
 
 	* src/cross-compile-ios.scm: A script to compile Gauche as an iOS

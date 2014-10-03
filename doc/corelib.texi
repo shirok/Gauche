@@ -22189,16 +22189,52 @@ alarm was due to be delivered (or zero if no alarm is active).
 @c COMMON
 @end defun
 
-@defun sys-sleep seconds
+@defun sys-sleep seconds :optional (no-retry #f)
+[POSIX]
 @c EN
-[POSIX] Suspends the process until the specified number of seconds elapses,
-or the process receives a signal.  Returns zero if it sleeps well,
-or the number of unslept seconds if it is woke up by a signal.
+Suspends the calling thread until the specified number of seconds elapses.
+
+Note that libc's @code{sleep(3)} could return before the specified interval
+if the calling thread receives a signal; in that case,
+@code{sys-sleep} automatically restarts @code{sleep(3)} again with
+remaining time interval
+(after invoking Scheme signal handlers if there's any) by default.
+So you can count on the thread does sleep at least the specified
+amount of time.
+
+If you do want @code{sys-sleep} to return prematurely upon receiving
+a signal, you can give a true value to an optional argument @var{no-retry}.
+
+The reason that we retries by default is that Gauche's GC may use
+signals to synchronize between threads.   If GC is invoked by one thread
+While another thread is sleeping on @code{sleep(3)}, it may return
+prematurely.  It could happen often if other threads allocate a lot,
+which could make @code{sys-sleep} unreliable.
+
+Returns zero if it sleeps well (which is always the case if @var{no-retry}
+is false), or the number of unslept seconds if it is woke up by a signal.
 @c JP
-[POSIX] 指定された秒数が経過するまで、あるいはプロセスがシグナルを受け取るまで
-スレッドを一時停止します。指定時間が満了した場合は0を返し、
+指定された秒数が経過するまで、呼び出したスレッドを一時停止します。
+
+libcの@code{sleep(3)}は、シグナルを受けると指定時間経過前であっても
+戻ってきます。その場合@code{sys-sleep}はデフォルトで、(Schemeのシグナルハンドラが
+あればそれを呼び出した後)残り時間を引数にして再び@code{sleep(3)}を呼び出します。
+従って@code{sys-sleep}を呼び出したスレッドは、少なくとも指定した時間、
+眠れることが保証されます。
+
+もし@code{sys-sleep}がシグナルを受けた場合にすぐ戻ってきてほしければ、
+省略可能引数@code{no-retry}に真の値を渡してください。
+
+デフォルトで@code{sleep(3)}を再呼び出しする理由は、GaucheのGCが
+スレッド間同期にシグナルを使う場合があるからです。
+もし一つのスレッドが@code{sys-sleep}で待っている間にもうひとつのスレッドが
+GCをトリガすると、@code{sys-sleep}が時間経過前に戻ってくる可能性があります。
+他のスレッドがたくさんアロケートする場合、@code{sys-sleep}はすぐに
+戻ってきてしまい、信頼できなくなるかもしれません。
+
+指定時間が満了した場合(@var{no-retry}が偽であれば常にそうです)、
+@code{sys-sleep}は0を返し、
 シグナルによって一時停止が解除された場合は、満了までの秒数を返します。
-@c 満了は完了の方がよいかも?
 @c COMMON
 
 @c EN
@@ -22208,23 +22244,66 @@ To be portable across POSIX implementation, keep @var{seconds} less than
 POSIX実装間でポータブルにするためには、@var{seconds}を65536より小さく保って
 下さい。
 @c COMMON
+
+@c EN
+Some systems may be using @code{alarm(2)} to implement @code{sleep(3)},
+so you shouldn't mix @code{sys-sleep} and @code{sys-alarm}.
+@c JP
+システムによっては@code{sleep(3)}の実装に@code{alarm(2)}を用いている可能性があるので、
+@code{sys-sleep}と@code{sys-alarm}を混ぜて使うことはおすすめしません。
+@c COMMON
 @end defun
 
-@defun sys-nanosleep nanoseconds
-@c EN
+@defun sys-nanosleep nanoseconds :optional (no-retry #f)
 [POSIX]
-Suspends the process until the specified number of nanoseconds elapses,
-or the process receives a signal.  The argument @var{nanoseconds} can be
+@c EN
+Suspends the calling thread until the specified number of nanoseconds elapses.
+The argument @var{nanoseconds} can be
 a @code{<time>} object (@xref{Time}), or a real number.
-Returns @code{#f} if @var{nanoseconds} elapsed, or a @code{<time>}
+
+The system's @code{nanosleep(2)} could return before the specified interval
+if the calling thread receives a signal; in that case,
+@code{sys-nanosleep} automatically restarts @code{nanosleep(2)} again with
+remaining time interval
+(after invoking Scheme signal handlers if there's any) by default.
+So you can count on the thread does sleep at least the specified
+amount of time.
+
+The reason that we retries by default is that Gauche's GC may use
+signals to synchronize between threads.   If GC is invoked by one thread
+While another thread is sleeping on @code{nanosleep(2)}, it may return
+prematurely.  It could happen often if other threads allocate a lot,
+which could make @code{sys-nanosleep} unreliable.
+
+Returns @code{#f} if @var{nanoseconds} elapsed (which is always
+the case if @code{no-retry} is @code{#f}),
+or a @code{<time>}
 object that indicates the remaining time if @code{sys-nanosleep}
 is interrupted by a signal.
 @c JP
-[POSIX]
-指定されたナノ秒が経過するか、シグナルを受け取るまでプロセスを一時停止します。
+指定されたナノ秒が経過するまで、呼び出したスレッドを一時停止します。
 引数@var{nanoseconds}は@code{<time>}オブジェクト(@ref{Time}参照)か
-実数です。@var{nanoseconds}が経過したら@code{#f}を返し、
-@code{sys-nanosleep}がシグナルによって割り込まれると残りの時間を表す
+実数です。
+
+システムの@code{nanosleep(2)}は、シグナルを受けると指定時間経過前であっても
+戻ってきますが、@code{sys-nanosleep}はデフォルトで、(Schemeのシグナルハンドラが
+あればそれを呼び出した後)残り時間を引数にして再び@code{nanosleep(2)}を呼び出します。
+従って@code{sys-nanosleep}を呼び出したスレッドは、少なくとも指定した時間、
+眠れることが保証されます。
+
+もし@code{sys-nanosleep}がシグナルを受けた場合にすぐ戻ってきてほしければ、
+省略可能引数@code{no-retry}に真の値を渡してください。
+
+デフォルトで@code{nanosleep(2)}を再呼び出しする理由は、GaucheのGCが
+スレッド間同期にシグナルを使う場合があるからです。
+もし一つのスレッドが@code{sys-nanosleep}で待っている間にもうひとつのスレッドが
+GCをトリガすると、@code{sys-nanosleep}が時間経過前に戻ってくる可能性があります。
+他のスレッドがたくさんアロケートする場合、@code{sys-nanosleep}はすぐに
+戻ってきてしまい、信頼できなくなるかもしれません。
+
+@var{nanoseconds}が経過したら@code{#f}を返し
+(@code{no-retry}が偽であれば常にそうなります)、
+@code{sys-nanosleep}がシグナルによって割り込まれるた場合は残りの時間を表す
 @code{<time>}オブジェクトを返します。
 @c COMMON
 
