@@ -184,17 +184,16 @@
 
 (define (disasm proc)
   (define dump (with-module gauche.internal vm-dump-code))
-  (define (dump-case-lambda min-reqargs proc-array)
+  (define (dump-case-lambda infos)
     (print "CASE-LAMBDA")
-    (let1 len (vector-length proc-array)
-      (do ([i 0 (+ i 1)])
-          ((= i len) #t)
-        (when (closure? (vector-ref proc-array i))
-          (if (= i (- len 1))
-            (print ";;; numargs >= " (+ i min-reqargs))
-            (print ";;; numargs = " (+ i min-reqargs)))
-          (dump (closure-code (vector-ref proc-array i)))))))
-
+    (dolist [info infos]
+      (apply [^(reqargs optarg proc)
+               (when (closure? proc)
+                 (if optarg
+                   (print ";;; numargs > " reqargs)
+                   (print ";;; numargs = " reqargs))
+                 (dump (closure-code proc)))]
+             info)))
   (cond
    [(closure? proc) (print "CLOSURE " proc) (dump (closure-code proc))]
    [(is-a? proc <method>)
@@ -207,17 +206,7 @@
       (print ">> method " m)
     (cond [(method-code m) => dump]
           [else (print "(defined in C)")]))]
-   [(and (subr? proc)
-         (let1 info (procedure-info proc)
-           ;; NB: Detect case-lamdba.  The format of procedure-info of
-           ;; case-lambda is tentative, and may be changed in future.
-           ;; See the comment of make-case-lambda-dispatcher in intlib.stub.
-           (and (pair? info)
-                (pair? (cdr info))
-                (integer? (cadr info))
-                (pair? (cddr info))
-                (vector? (caddr info))
-                (apply dump-case-lambda (cdr info)))))]
+   [(case-lambda-info proc) => dump-case-lambda]
    [else (print "Disassemble not applicable for " proc)])
   (values))
 

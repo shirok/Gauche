@@ -227,3 +227,26 @@
         (loop (cdr fs) (cdr cs))))
     ((with-module gauche.internal make-case-lambda-dispatcher) v minarg name)))
 
+;; Returns ((<required args> <optional arg> <procedure>) ...)
+;; This also depends on the structure of dispatch vector info.
+;; Programs that needs to deal with case-lambda should use this procedure
+;; instead of directly interpret dispatch vector info.
+(define-in-module gauche (case-lambda-info proc)
+  (and (subr? proc)
+       (let1 info (procedure-info proc)
+         (and (pair? info)
+              (pair? (cdr info))
+              (integer? (cadr info))
+              (pair? (cddr info))
+              (vector? (caddr info))
+              (let* ([min-args (cadr info)]
+                     [dispatch-vec (caddr info)]
+                     [len (vector-length dispatch-vec)])
+                (let loop ([r '()] [i 0])
+                  (if (= i (- len 1))
+                    (if-let1 optproc (vector-ref dispatch-vec i)
+                      (reverse r `((,(+ min-args i -1) #t ,optproc)))
+                      (reverse r))
+                    (if-let1 proc (vector-ref dispatch-vec i)
+                      (loop (cons `(,(+ min-args i) #f ,proc) r) (+ i 1))
+                      (loop r (+ i 1))))))))))

@@ -1,3 +1,10 @@
+2014-10-04  Shiro Kawai  <shiro@acm.org>
+
+	* src/libalpha.scm (case-lambda-info): Encapsulate interpretation
+	  of case-lambda dispatch vector in this procedure, so that other
+	  parts won't depend on the structure of the dispatch vector.
+	* lib/gauche/procedure.scm (disasm): Changed accordingly.
+
 2014-10-03  Shiro Kawai  <shiro@acm.org>
 
 	* src/libsys.scm (sys-sleep, sys-nanosleep): Changed to retry
