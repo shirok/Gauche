@@ -37,7 +37,7 @@
           filter$ partition$ remove$ find$ find-tail$
           any$ every$ delete$ member$ assoc$
           any-pred every-pred
-          applicable? arity procedure-arity-includes?
+          arity procedure-arity-includes?
           <arity-at-least> arity-at-least? arity-at-least-value
           case-lambda ~ ref* disasm
           generator-fold generator-fold-right
@@ -131,21 +131,6 @@
     [(_ (name . formals) . body)
      (define name (curry-lambda formals . body))]))
 |#
-
-;; Applicability -------------------------------------------
-
-;; NB: This takes a list of classes.  But what if we support eqv-specilizer?
-;; One idea is to let the caller wrap a concrete instance.  We'll see...
-(define (applicable? proc . arg-types)
-  (define method-applicable?
-    (with-module gauche.object method-applicable-for-classes?))
-  (let1 c (class-of proc)
-    (cond [(eq? c <procedure>)
-           (procedure-arity-includes? proc (length arg-types))]
-          [(eq? c <generic>)
-           (any (^m (apply method-applicable? m arg-types)) (~ proc'methods))]
-          [(eq? c <method>)  (apply method-applicable? m arg-types)]
-          [else (apply applicable? object-apply c arg-types)])))
 
 ;; Procedure arity -----------------------------------------
 

@@ -1395,10 +1395,8 @@
 ;;----------------------------------------------------------------
 (test-section "applicable?")
 
-;; The procedure applicable? is in lib/gauche/procedure.scm and
-;; it's supposed to be tested in ./procedure.scm, but internally
-;; it depends on libobj's method-applicable-for-clases, so we test
-;; it here.
+;; The procedure applicable? depends on libobj's method-applicable-for-clases,
+;; so we test it here.
 
 (define-syntax atest*
   (syntax-rules (=>)
@@ -1411,6 +1409,13 @@
         [(<top> <top> <top>) => #f])
 (atest* list [() => #t] [(<top>) => #t] [(<top> <top>) => #t])
 (atest* apply [() => #f] [(<top>) => #f] [(<top> <top>) => #t])
+
+(atest* (case-lambda ([a] 1) ([a b c] 2) ([a b c d e . f] 3))
+        [() => #f] [(<top>) => #t] [(<top> <top>) => #f]
+        [(<top> <top> <top>) => #t] [(<top> <top> <top> <top>) => #f]
+        [(<top> <top> <top> <top> <top>) => #t]
+        [(<top> <top> <top> <top> <top> <top>) => #t]
+        [(<top> <top> <top> <top> <top> <top> <top>) => #t])
 
 (atest* ref [() => #f] [(<boolean>) => #f] [(<boolean> <top>) => #f]
         [(<top>) => #f] [(<top> <symbol>) => #t] [(<top> <symbol> <top>) => #t]

@@ -1,5 +1,8 @@
 2014-10-04  Shiro Kawai  <shiro@acm.org>
 
+	* src/libproc.scm (applicable?): Moved from lib/gauche/procedure.scm.
+	  Needed in core in order to construct built-in comparators.
+
 	* src/libalpha.scm (case-lambda-info): Encapsulate interpretation
 	  of case-lambda dispatch vector in this procedure, so that other
 	  parts won't depend on the structure of the dispatch vector.

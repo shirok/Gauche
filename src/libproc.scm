@@ -241,6 +241,26 @@
 (define-cproc procedure-info (proc::<procedure>)
   (result (SCM_PROCEDURE_INFO proc)))
 
+;; NB: This takes a list of classes.  But what if we support eqv-specilizer?
+;; One idea is to let the caller wrap a concrete instance.  We'll see...
+(define (applicable? proc . arg-types)
+  (define method-applicable?
+    (with-module gauche.object method-applicable-for-classes?))
+  (let1 c (class-of proc)
+    (cond [(eq? c <procedure>)
+           (let1 nargs (length arg-types)
+             (if-let1 infos (case-lambda-info proc)
+               (any (^[info] (apply [^(reqargs optarg proc)
+                                      ((if optarg >= =) nargs reqargs)]
+                                    info))
+                    infos)
+               ((if (slot-ref proc 'optional) >= =)
+                nargs (slot-ref proc 'required))))]
+          [(eq? c <generic>)
+           (any (^m (apply method-applicable? m arg-types)) (~ proc'methods))]
+          [(eq? c <method>)  (apply method-applicable? m arg-types)]
+          [else (apply applicable? object-apply c arg-types)])))
+
 (select-module gauche.internal)
 ;; Tester procedures
 ;;   These are not meant to be used in the actual Scheme code.  They're

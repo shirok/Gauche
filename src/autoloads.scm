@@ -123,7 +123,7 @@
           any$ every$ delete$ member$ assoc$
           any-pred every-pred
           ;;(:macro curry-lambda) (:macro define-curry)
-          applicable? arity procedure-arity-includes?
+          arity procedure-arity-includes?
           <arity-at-least> arity-at-least? arity-at-least-value disasm
           generator-fold generator-fold-right generator-for-each
           generator-map generator-find
