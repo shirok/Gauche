@@ -37,15 +37,13 @@
 
 (define-module gauche.computil
   (export default-comparator
-
           boolean-comparator char-comparator char-ci-comparator
-          string-comparator string-ci-comparator symbol-comparator
+          string-ci-comparator symbol-comparator
           exact-integer-comparator integer-comparator rational-comparator
           real-comparator complex-comparator number-comparator
           pair-comparator list-comparator vector-comparator
           bytevector-comparator uvector-comparator
-          
-          eq-comparator eqv-comparator equal-comparator))
+          ))
 (select-module gauche.computil)
 
 ;; Needed to have string-ci compare.
@@ -56,7 +54,7 @@
 (define (a-real-number? x) (and (real? x) (not (nan? x))))
 
 ;; internal
-(define (%default-comparator-accepts? v)
+(define %default-comparator-accepts?
   (any-pred boolean? a-number? char? string? symbol?
             pair? vector? uvector?))
 
@@ -64,12 +62,7 @@
   (make-comparator %default-comparator-accepts?
                    #t compare hash 'default-comparator))
 
-(define eq-comparator
-  (make-comparator #t eq? #f eq-hash 'eq-comparator))
-(define eqv-comparator
-  (make-comparator #t eqv? #f eqv-hash 'eqv-comparator))
-(define equal-comparator
-  (make-comparator #t equal? #f hash 'equal-comparator))
+;; eq-comparator, eqv-comparator, equal-comparator - in libomega.scm
 
 (define boolean-comparator
   (make-comparator boolean? eqv? compare eq-hash 'boolean-comparator))
@@ -79,10 +72,9 @@
   ($ make-comparator char? char-ci=? 
      (^[a b] (compare (char-foldcase a) (char-foldcase b)))
      eqv-hash 'char-ci-comparator))
-(define string-comparator
-  ($ make-comparator string? string=? compare
-     (with-module gauche.internal %hash-string)
-     'string-comparator))
+
+;; string-comparator - in libomega.scm
+
 (define string-ci-comparator
   ($ make-comparator string? string=?
      (^[a b] (compare (string-foldcase a) (string-foldcase b)))
@@ -106,7 +98,7 @@
 (define real-comparator
   (make-comparator a-real-number? = compare eqv-hash 'real-comparator))
 (define complex-comparator
-  (make-comparator a-number? compare eqv-hash 'complex-comparator))
+  (make-comparator a-number? = compare eqv-hash 'complex-comparator))
 (define number-comparator complex-comparator)
 
 (define pair-comparator

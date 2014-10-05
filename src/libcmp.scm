@@ -38,6 +38,8 @@
 ;;;
 
 (select-module gauche.internal)
+(define (default-type-test _) #t)
+
 (define-cproc %make-comparator (type-test equality-test comparison-proc hash
                                 name no-compare::<boolean> no-hash::<boolean>)
   (let* ([flags::u_long (logior (?: no-compare SCM_COMPARATOR_NO_ORDER 0)
@@ -52,7 +54,7 @@
   (rlet1 self  ; referred by error proc
       ;; We use <bottom> for applicability check except type-test, since
       ;; those procs are only required to handle objects that passes type-test.
-      (let ([type (cond [(eq? type-test #t) (^_ #t)]
+      (let ([type (cond [(eq? type-test #t) default-type-test]
                         [(applicable? type-test <top>) type-test]
                         [else (error "make-comparator needs a one-argument procedure or #t as type-test, but got:" type-test)])]
             [eq   (cond

@@ -160,9 +160,9 @@
           vector-for-each-with-index)
 
 (autoload gauche.computil
-          default-comparator eq-comparator eqv-comparator equal-comparator
+          default-comparator
           boolean-comparator char-comparator char-ci-comparator
-          string-comparator string-ci-comparator symbol-comparator
+          string-ci-comparator symbol-comparator
           exact-integer-comparator integer-comparator rational-comparator
           real-comparator complex-comparator number-comparator
           pair-comparator list-comparator vector-comparator
