@@ -148,9 +148,14 @@
 
 (define (arity proc)
   (cond [(or (is-a? proc <procedure>) (is-a? proc <method>))
-         (if (ref proc 'optional)
-           (make <arity-at-least> :value (ref proc 'required))
-           (ref proc 'required))]
+         (if-let1 clambda (case-lambda-info proc)
+           (map (^[info] (if (cadr info)
+                           (make <arity-at-least> :value (car info))
+                           (car info)))
+                clambda)
+           (if (ref proc 'optional)
+             (make <arity-at-least> :value (ref proc 'required))
+             (ref proc 'required)))]
         [(is-a? proc <generic>) (map arity (ref proc 'methods))]
         [else (errorf "cannot get arity of ~s" proc)]))
 
