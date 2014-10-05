@@ -683,7 +683,7 @@ static void hash_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx);
 SCM_DEFINE_BUILTIN_CLASS(Scm_HashTableClass, hash_print, NULL, NULL, NULL,
                          SCM_CLASS_DICTIONARY_CPL);
 
-ScmObj Scm_MakeHashTableSimple(ScmHashType type, int initSize)
+ScmObj Scm_MakeHashTableSimple(ScmHashType type, unsigned int initSize)
 {
     /* We only allow ScmObj in <hash-table> */
     if (type > SCM_HASH_GENERAL) {
@@ -696,6 +696,17 @@ ScmObj Scm_MakeHashTableSimple(ScmHashType type, int initSize)
     return SCM_OBJ(z);
 }
 
+ScmObj Scm_MakeHashTableFull(ScmHashProc hashfn,
+                             ScmHashCompareProc cmpfn,
+                             unsigned int initSize, void *data)
+{
+    ScmHashTable *z = SCM_NEW(ScmHashTable);
+    SCM_SET_CLASS(z, SCM_CLASS_HASH_TABLE);
+    z->type = SCM_HASH_GENERAL;
+    Scm_HashCoreInitGeneral(&z->core, hashfn, cmpfn, initSize, data);
+    return SCM_OBJ(z);
+}
+
 ScmObj Scm_HashTableCopy(ScmHashTable *src)
 {
     ScmHashTable *dst = SCM_NEW(ScmHashTable);
@@ -703,6 +714,11 @@ ScmObj Scm_HashTableCopy(ScmHashTable *src)
     Scm_HashCoreCopy(SCM_HASH_TABLE_CORE(dst), SCM_HASH_TABLE_CORE(src));
     dst->type = src->type;
     return SCM_OBJ(dst);
+}
+
+ScmHashType Scm_HashTableType(ScmHashTable *ht)
+{
+    return ht->type;
 }
 
 ScmObj Scm_HashTableRef(ScmHashTable *ht, ScmObj key, ScmObj fallback)
@@ -897,27 +913,6 @@ ScmObj Scm_MakeHashTableMultiWord(int keysize, int initsize)
     return make_hash_table(SCM_CLASS_HASH_TABLE, SCM_HASH_MULTIWORD,
                            multiword_access, multiword_hash,
                            NULL, initsize, (void*)SCM_WORD(keysize));
-}
-#endif
-
-#if 0
-ScmObj Scm_MakeHashTableFull(ScmClass *klass, int type, ScmHashProc hashfn,
-                             ScmHashCmpProc cmpfn, int initSize, void *data)
-{
-    if (!SCM_EQ(klass, SCM_CLASS_HASH_TABLE)) {
-        if (!Scm_SubtypeP(klass, SCM_CLASS_HASH_TABLE)) {
-            Scm_Error("[internal error]: non-hash-table class is given to Scm_MakeHashTableFull: %S", klass);
-        }
-    }
-
-    switch (type) {
-    case SCM_HASH_GENERAL:;
-        return make_hash_table(klass, type, general_access, hashfn,
-                               cmpfn, initSize, data);
-    default:
-        Scm_Error("[internal error]: wrong TYPE argument passed to Scm_MakeHashTableFull: %d", type);
-        return SCM_UNDEFINED;   /* dummy */
-    }
 }
 #endif
 

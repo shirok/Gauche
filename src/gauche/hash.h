@@ -133,7 +133,14 @@ SCM_CLASS_DECL(Scm_HashTableClass);
 
 #define SCM_HASH_TABLE_CORE(obj) (&SCM_HASH_TABLE(obj)->core)
 
-SCM_EXTERN ScmObj Scm_MakeHashTableSimple(ScmHashType type, int initSize);
+SCM_EXTERN ScmObj Scm_MakeHashTableSimple(ScmHashType type,
+                                          unsigned int initSize);
+SCM_EXTERN ScmObj Scm_MakeHashTableFull(ScmHashProc *hashfn,
+                                        ScmHashCompareProc *cmpfn,
+                                        unsigned int initSize,
+                                        void *data);
+
+SCM_EXTERN ScmHashType Scm_HashTableType(ScmHashTable *tab);
 
 SCM_EXTERN ScmObj Scm_HashTableCopy(ScmHashTable *tab);
 

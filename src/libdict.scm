@@ -102,6 +102,8 @@
 
 (select-module gauche)
 (inline-stub
+ ;; this is called only for simple hash types, so don't need to handle
+ ;; SCM_HASH_GENEAL.
  (define-cise-stmt set-hash-type!
    [(_ cvar scmvar)
     `(cond [(SCM_EQ ,scmvar 'eq?)      (set! ,cvar SCM_HASH_EQ)]
@@ -117,6 +119,7 @@
        [(SCM_HASH_EQV)     (result 'eqv?)]
        [(SCM_HASH_EQUAL)   (result 'equal?)]
        [(SCM_HASH_STRING)  (result 'string=?)]
+       [(SCM_HASH_GENERAL) (result 'general)]
        [else (result '#f)]           ; TODO: need to think over
        )])
  )
@@ -126,13 +129,93 @@
 (define-cproc hash (obj)     ::<ulong> :fast-flonum Scm_Hash)
 (define-cproc hash-table? (obj) ::<boolean> :fast-flonum SCM_HASH_TABLE_P)
 
-(define-cproc make-hash-table (:optional (type eq?) (init-size::<int> 0))
+(define-cproc %make-hash-table-simple (type init-size::<int>)
   (let* ([ctype::int 0])
     (set-hash-type! ctype type)
     (result (Scm_MakeHashTableSimple ctype init-size))))
 
+(inline-stub
+(define-cfn generic-hashtable-hash (h::(const ScmHashCore*) key::intptr_t)
+  ::u_long :static
+  (let* ([c::ScmComparator* (cast ScmComparator* (-> h data))]
+         [t::ScmObj (Scm_ApplyRec1 (-> c typeFn) (SCM_OBJ key))])
+    (when (SCM_FALSEP t)
+      (Scm_Error "Invalid key for hashtable: %S" (SCM_OBJ key)))
+    (let* ([v::ScmObj (Scm_ApplyRec1 (-> c hashFn) (SCM_OBJ key))])
+      (return (Scm_GetIntegerU v)))))
+
+(define-cfn generic-hashtable-eq (h::(const ScmHashCore*)
+                                  a::intptr_t b::intptr_t)
+  ::int :static
+  (let* ([c::ScmComparator* (cast ScmComparator* (-> h data))]
+         [t::ScmObj (Scm_ApplyRec1 (-> c typeFn) (SCM_OBJ a))])
+    ;; NB: a is the key given from outside, and b is the key that's already
+    ;; in the table, so we only need to check a.
+    (when (SCM_FALSEP t)
+      (Scm_Error "Invalid key for hashtable: %S" (SCM_OBJ a)))
+    (let* ([e::ScmObj (Scm_ApplyRec2 (-> c eqFn) (SCM_OBJ a) (SCM_OBJ b))])
+      (return (not (SCM_FALSEP e))))))
+)
+
+(define-cproc %make-hash-table-from-comparator (comparator::<comparator>
+                                                init-size::<int>
+                                                has-type-check::<boolean>)
+  (result (Scm_MakeHashTableFull generic-hashtable-hash
+                                 generic-hashtable-eq
+                                 init-size
+                                 comparator)))
+
+;; Comparator argument can be <comparator> or one of the symbols
+;; eq?, eqv?, equal? or string=?.
+(define (make-hash-table :optional (comparator 'eq?) (init-size 0))
+  (case comparator
+    [(eq? eqv? equal? string=?)
+     (%make-hash-table-simple comparator init-size)]
+    [else
+     (unless (comparator? comparator)
+       (error "make-hash-table requires a comparator or \
+               one of the symbols in eq?, eqv?, equal? or string=?, but got:"
+              comparator))
+     (cond
+      [(eq? comparator eq-comparator)
+       (make-hash-table 'eq? init-size)]
+      [(eq? comparator eqv-comparator)
+       (make-hash-table 'eqv? init-size)]
+      [(eq? comparator equal-comparator)
+       (make-hash-table 'equal? init-size)]
+      [(eq? comparator string-comparator)
+       (make-hash-table 'string=? init-size)]
+      [else
+       (unless (comparator-hash-function? comparator)
+         (error "make-hash-table requires a comparator with hash function, \
+                 but got:" comparator))
+       ($ %make-hash-table-from-comparator
+          comparator init-size
+          (eq? (comparator-type-test-procedure comparator)
+               (with-module gauche.internal default-type-test)))])]))
+
 (define-cproc hash-table-type (hash::<hash-table>)
   (get-hash-type (-> hash type)))
+
+(select-module gauche.internal)
+(define-cproc %hash-table-comparator-int (hash::<hash-table>)
+  (if (== (Scm_HashTableType hash) SCM_HASH_GENERAL)
+    (begin
+      (let* ([r (SCM_OBJ (-> (SCM_HASH_TABLE_CORE hash) data))])
+        (unless (SCM_COMPARATORP r)
+          (Scm_Error "Got some weird hashtable - possibly internal bug: %S"
+                     hash))
+        (result r)))
+    (result '#f)))
+(select-module gauche)
+(define (hash-table-comparator hash)
+  (case (hash-table-type hash)
+    [(eq?) eq-comparator]
+    [(eqv?) eqv-comparator]
+    [(equal?) equal-comparator]
+    [(string=?) string-comparator]
+    [(general) ((with-module gauche.internal %hash-table-comparator-int) hash)]
+    [else (error "unknown hashtable type:" hash)]))
 
 (define-cproc hash-table-num-entries (hash::<hash-table>) ::<int>
   (result (Scm_HashCoreNumEntries (SCM_HASH_TABLE_CORE hash))))

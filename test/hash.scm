@@ -6,11 +6,8 @@
 (use srfi-1)
 (use srfi-13)
 
-;; Note: this file tests basic hash table functionarity, and does not
-;; cover the user-extended hash table (which is done by overloading
-;; object-equal? and object-hash).  It is because object system is
-;; tested _after_ this file.  See test/object.scm for extended hash table
-;; test.
+;; Note: test/object.scm contains extra tests of hashtables using
+;; object-equal? and object-hash overload.
 
 (test-start "hash tables")
 
@@ -283,6 +280,49 @@
        (begin
          (hash-table-delete! h-string "d")
          (hash-table-get h-string "d" #f)))
+
+;;------------------------------------------------------------------
+(test-section "generic hash")
+
+(let* ([c (make-comparator (^x (and (integer? x) (<= 0 x 255)))
+                           (^[a b] (= (modulo a 13) (modulo b 13)))
+                           #f
+                           (^x (eqv-hash (modulo x 13))))]
+       [h (make-hash-table c)])
+  (test* "construction" 'general (hash-table-type h))
+  (test* "retrieve comparator" c (hash-table-comparator h))
+  (test* "nonexistent" #f (hash-table-exists? h 0))
+  (test* "domain error 1" (test-error) (hash-table-exists? h 'a))
+  (test* "domain error 2" (test-error) (hash-table-exists? h -1))
+  (test* "put/get" 'a
+         (begin (hash-table-put! h 1 'a)
+                (hash-table-get h 1)))
+  (test* "hash and equality check" '(#t a)
+         (list (hash-table-exists? h 14)
+               (hash-table-get h 27)))
+  (test* "hash and equality check 2" 'b
+         (begin (hash-table-put! h 40 'b)
+                (hash-table-get h 1)))
+  (test* "hash and equality check 3"
+         '((0 . 247) (1 . 248) (2 . 249) (3 . 250) (4 . 251)
+           (5 . 252) (6 . 253) (7 . 254) (8 . 255) (9 . 243)
+           (10 . 244) (11 . 245) (12 . 246))
+         (begin
+           (dotimes [n 256]
+             (hash-table-put! h n n))
+           (sort-by (hash-table->alist h) car)))
+  )
+
+(let ([x `((eq? . ,eq-comparator)
+           (eqv? . ,eqv-comparator)
+           (equal? . ,equal-comparator)
+           (string=? . ,string-comparator))])
+  (test* "recognizing special comparators"
+         (map car x)
+         (map (^p (hash-table-type (make-hash-table (cdr p)))) x))
+  (test* "retrieving comparators"
+         (map cdr x)
+         (map (^p (hash-table-comparator (make-hash-table (car p)))) x)))
 
 ;;------------------------------------------------------------------
 (test-section "iterators")
