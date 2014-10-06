@@ -10186,6 +10186,40 @@ a symbol.
 @end example
 
 @c EN
+Note: An alternative way to run external process is @code{sys-system},
+which takes a command line as a single string (@xref{Process management}).
+The string is passed to the shell to be interpreted,
+so you can include redirections, or can pipe several commands.
+It would be handy for quick throwaway scripts.
+
+On the other hand, with @code{sys-system}, 
+if you want to change command parameters
+at runtime, you need to worry about properly escape them
+(actually we have one to do the job in @code{gauche.process}; 
+see @code{shell-escape-string}
+below); you need to be aware that @code{/bin/sh}, used by 
+@code{sys-system} via @code{system(3)} call, may differ among
+platforms and be careful not to rely on specific features on
+certain systems.  As a rule of thumb, keep @code{sys-system} for
+really simple tasks with a constant command line,
+and use @code{run-process} for all other stuff.
+@c JP
+注：外部プロセスを走らせる方法にはもうひとつ、@code{sys-system}があります。
+こちらはコマンド行を単一の文字列で渡し、シェルを呼び出して解釈させます
+(@ref{Process management}参照)。
+したがって、入出力のリダイレクトや、パイプでつないだコマンド等もそのまま渡せます。
+書き捨てのスクリプトを素早く書くときはそちらの方が便利でしょう。
+
+一方、@code{sys-system}を使う場合には、コマンドの引数を実行時に可変にしたい場合に
+きちんとエスケープされているかどうかを確認したり (実は@code{gauche.process}
+モジュール中にそれをする関数があります。下の@code{shell-escape-string}を
+参照してください)、また@code{sys-system}が@code{system(3)}経由で
+呼び出す@code{/bin/sh}のプラットフォーム間の違いを気にしたりする必要があります。
+原則として、@code{sys-system}の使用は固定コマンドを呼び出す簡単な場合に
+止めておき、他の仕事には@code{run-process}を使うのが良いでしょう。
+@c COMMON
+
+@c EN
 Note: Old version of this procedure took arguments differently,
 like @code{(run-process "ls" "-al" :wait #t)}, which was compatible
 to STk.  This is still supported but deprecated.
