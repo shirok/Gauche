@@ -1,3 +1,8 @@
+2014-10-06  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/treeutil.scm (make-tree-map): Allow to take a
+	  comparator.
+
 2014-10-05  Shiro Kawai  <shiro@acm.org>
 
 	* src/hash.c, src/libdict.scm: Support general hash table

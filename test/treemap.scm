@@ -431,5 +431,20 @@
            (tree-map-pop-min! tree)
            (tree-map-num-entries tree))))
 
+(let* ([comparator (make-comparator string? #t
+                                    (^[a b] (compare (string->number a)
+                                                     (string->number b)))
+                                    #f)]
+       [tmap (make-tree-map comparator)])
+  (test* "custom comparator" '(("00" . a) ("1" . b) ("10" . c))
+         (begin
+           (dolist [p '(("00" . x) ("1" . t) ("10" . c) ("01" . b)
+                        ("000" . y) ("0" . a))]
+             (tree-map-put! tmap (car p) (cdr p)))
+           (tree-map->alist tmap)))
+  (test* "comparator error check" (test-error)
+         (tree-map-put! tmap 3 'z))
+  )
+
 (test-end)
 
