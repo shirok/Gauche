@@ -124,6 +124,8 @@ SCM_EXTERN void          Scm_TreeCoreDump(ScmTreeCore *tc, ScmPort *out);
  * ScmTreeMap
  */
 
+/* We store ScmComparator in core.data if the treemap is created
+   in the Scheme world.  See make-tree-map in lib/gauche/treeutil.scm */
 struct ScmTreeMapRec {
     SCM_HEADER;
     ScmTreeCore core;

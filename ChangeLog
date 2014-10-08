@@ -1,3 +1,11 @@
+2014-10-07  Shiro Kawai  <shiro@acm.org>
+
+	* src/libdict.scm (%make-tree-map),
+	  lib/gauche/treeutil.scm (make-tree-map): Save a comparator
+	  instead of closure in core->data field.
+	* src/libdict.scm (tree-map-comparator): Added to retrieve
+	  the comparator.
+
 2014-10-06  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/treeutil.scm (make-tree-map): Allow to take a

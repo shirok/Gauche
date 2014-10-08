@@ -43,28 +43,19 @@
 
 (define make-tree-map
   (case-lambda
-    [() (%make-tree-map compare)]
+    [() (%make-tree-map default-comparator)]
     [(cmp)
      (if (comparator? cmp)
        (begin
          (unless (comparator-comparison-procedure? cmp)
            (error "make-tree-map needs a comparator with comparison \
                   procedure, but got:" cmp))
-         (let ([test (comparator-type-test-procedure cmp)]
-               [compare (comparator-comparison-procedure cmp)])
-           (if (eq? test (with-module gauche.internal default-type-test))
-             (%make-tree-map compare) ; we can skip test
-             (rec tmap
-               (letrec ([check
-                         (^x
-                          (unless (test x)
-                            (errorf "Wrong type of argument for ~s: ~s" tmap x)))]
-                        [cmpar
-                         (^[x y] (check x) (check y) (compare x y))])
-                 (%make-tree-map cmpar))))))
-       (%make-tree-map cmp))]
+         (%make-tree-map cmp))
+       (%make-tree-map (make-comparator #t #t cmp #f)))]
     [(=? <?)
-     (%make-tree-map (^[x y](cond [(=? x y) 0] [(<? x y) -1] [else 1])))]))
+     (%make-tree-map
+      ($ make-comparator #t =?
+         (^[x y](cond [(=? x y) 0] [(<? x y) -1] [else 1])) #f))]))
 
 (define (tree-map-empty? tm) (zero? (tree-map-num-entries tm)))
 

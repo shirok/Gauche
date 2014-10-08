@@ -289,15 +289,34 @@
 
 (select-module gauche)
 (inline-stub
+ ;; If tree-map-cmp is called, core->data should contain a comparator.
  (define-cfn tree-map-cmp (core::ScmTreeCore* x::intptr_t y::intptr_t)
    ::int :static
-   (let* ([cmp-proc (SCM_OBJ (-> core data))]
-          [r (Scm_ApplyRec2 cmp-proc (SCM_OBJ x) (SCM_OBJ y))])
-     (return (SCM_INT_VALUE r))))
+   (let* ([cmpr (SCM_OBJ (-> core data))])
+     (SCM_ASSERT (and cmpr (SCM_COMPARATORP cmpr)))
+     (let* ([r (Scm_ApplyRec2 (-> (SCM_COMPARATOR cmpr) compareFn)
+                              (SCM_OBJ x) (SCM_OBJ y))])
+       (unless (SCM_INTP r)
+         (Scm_Error "compare procedure of tree-map's comparator %S returned \
+                     non-integral value: %S" cmpr r))
+       (return (SCM_INT_VALUE r)))))
  )
 
-(define-cproc %make-tree-map (cmp-proc)
-  (result (Scm_MakeTreeMap tree_map_cmp cmp_proc)))
+(define-cproc %make-tree-map (comparator)
+  (begin
+    (SCM_ASSERT (SCM_COMPARATORP comparator))
+    (result (Scm_MakeTreeMap tree_map_cmp comparator))))
+
+;; TODO: We do want to return something even for tree-maps that aren't
+;; created from the Scheme world.  But how?
+(define-cproc tree-map-comparator (tm::<tree-map>)
+  (let* ([d::void* (-> (SCM_TREE_MAP_CORE tm) data)])
+    (if (or (== d NULL)
+            (!= (-> (SCM_TREE_MAP_CORE tm) cmp) tree-map-cmp))
+      (result SCM_FALSE)
+      (begin
+        (SCM_ASSERT (SCM_COMPARATORP d))
+        (result (SCM_OBJ d))))))
 
 (define-cproc tree-map-copy (tm::<tree-map>) Scm_TreeMapCopy)
 
