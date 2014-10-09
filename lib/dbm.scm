@@ -190,6 +190,12 @@
   :map       dbm-map
   :for-each  dbm-for-each)
 
+(define-method dict-comparator ((dbm <dbm>))
+  (let1 k2s (~ dbm'k2s)
+    (make-comparator #t
+                     (^[a b] (equal? (k2s a) (k2s b)))
+                     #f #f)))
+
 ;;
 ;; Meta-operations
 ;;  Subclass has to implement at least dbm-db-exists? and dbm-db-remove.

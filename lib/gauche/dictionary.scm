@@ -37,7 +37,7 @@
           dict-exists? dict-delete!
           dict-fold dict-fold-right
           dict-for-each dict-map
-          dict-keys dict-values
+          dict-keys dict-values dict-comparator
           dict->alist dict-pop! dict-push! dict-update!
           define-dict-interface
 
@@ -57,7 +57,13 @@
 ;;    dict-put! dict key value
 ;;    dict-delete! dict key             ; for deletable dictionary
 ;;
-;; Optional methods:
+;; Quasi-required methods (if not provided, returns #f.  It may hinder
+;; the dict to be used in certain context.):
+;;
+;;    dict-comparator dict
+;;
+;; Optional methods (if not provided, the default method works, though
+;; maybe inefficient.):
 ;;
 ;;    dict-fold dict proc seed
 ;;    dict-fold-right dict proc seed    ; for ordered dictionary
@@ -129,6 +135,9 @@
         [(:->alist)
          `(define-method dict->alist ((,dict ,class))
             (,specific ,dict))]
+        [(:comparator)
+         `(define-method dict-comparator ((,dict ,class))
+            (,specific ,dict))]
         [else (error "invalid kind in define-dict-interface:" kind)])))
   `(begin
      ,@(map (^p (gen-def (car p) (cadr p))) (slices clauses 2))))
@@ -151,7 +160,8 @@
   :pop!       hash-table-pop!
   :push!      hash-table-push!
   :update!    hash-table-update!
-  :->alist    hash-table->alist)
+  :->alist    hash-table->alist
+  :comparator hash-table-comparator)
 
 (define-dict-interface <tree-map>
   :get        tree-map-get
@@ -168,7 +178,8 @@
   :pop!       tree-map-pop!
   :push!      tree-map-push!
   :update!    tree-map-update!
-  :->alist    tree-map->alist)
+  :->alist    tree-map->alist
+  :comparator tree-map-comparator)
 
 ;;-----------------------------------------------
 ;; Fallback methods
@@ -238,6 +249,8 @@
 
 (define-method (setter dict-get) (dict key val)
   (dict-put! dict key val))
+
+(define-method dict-comparator ((dict <dictionary>)) #f)
 
 ;;;
 ;;; Bidirectional map
@@ -318,6 +331,8 @@
   (bimap-left-delete! dict key))
 (define-method dict-fold ((dict <bimap>) proc seed)
   (dict-fold (bimap-left dict) proc seed))
+(define-method dict-comparator ((dict <bimap>))
+  (dict-comparator (bimap-left dict)))
 
 ;; Collection protocol.   We just redirect methods to left map.
 (define-method call-with-iterator ((coll <bimap>) proc . args)

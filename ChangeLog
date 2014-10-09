@@ -1,3 +1,9 @@
+2014-10-08  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/dictionary.scm (dict-comparator): A new dictionary
+	  protocol API to retrieve a comparator.  It is useful to implement
+	  generic meta-operations on dictionaries.
+
 2014-10-07  Shiro Kawai  <shiro@acm.org>
 
 	* src/libdict.scm (%make-tree-map),
