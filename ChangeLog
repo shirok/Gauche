@@ -1,5 +1,7 @@
 2014-10-10  Shiro Kawai  <shiro@acm.org>
 
+	* src/libcmp.scm: Add srfi-114 primitive applicators as SUBR,
+	  for the performance.
 	* lib/gauche/cgen/cise.scm: Make logand, logior and logxor n-ary.
 
 2014-10-09  Shiro Kawai  <shiro@acm.org>

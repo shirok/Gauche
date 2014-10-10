@@ -52,10 +52,14 @@ struct ScmComparatorRec {
    srfi-114 requires accessor functions to those slots returns dummy
    procedures that raises an error.  We still need to be able to tell
    these slots have valid procedures.  Instead of storing #f and tweak
-   accessors to return a dummy procedure, we keep the info in flags. */
+   accessors to return a dummy procedure, we keep the info in flags.
+
+   SCM_COMPARATOR_ANY_TYPE is a small optimization to bypass type test
+   if possible. */
 enum ScmComparatorFlags {
     SCM_COMPARATOR_NO_ORDER = (1L<<0), /* 'compare' proc unavailable */
-    SCM_COMPARATOR_NO_HASH  = (1L<<1)  /* 'hash' proc unavailable */
+    SCM_COMPARATOR_NO_HASH  = (1L<<1), /* 'hash' proc unavailable */
+    SCM_COMPARATOR_ANY_TYPE = (1L<<2)  /* type-test always returns #t */
 };
 
 SCM_CLASS_DECL(Scm_ComparatorClass);

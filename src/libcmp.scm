@@ -41,9 +41,11 @@
 (define (default-type-test _) #t)
 
 (define-cproc %make-comparator (type-test equality-test comparison-proc hash
-                                name no-compare::<boolean> no-hash::<boolean>)
+                                name no-compare::<boolean> no-hash::<boolean>
+                                any-type::<boolean>)
   (let* ([flags::u_long (logior (?: no-compare SCM_COMPARATOR_NO_ORDER 0)
-                                (?: no-hash SCM_COMPARATOR_NO_HASH 0))])
+                                (?: no-hash SCM_COMPARATOR_NO_HASH 0)
+                                (?: any-type SCM_COMPARATOR_ANY_TYPE 0))])
     (result
      (Scm_MakeComparator type-test equality-test comparison-proc hash
                          name flags))))
@@ -74,7 +76,8 @@
                         [(applicable? hash <bottom>) hash]
                         [else (error "make-comparator needs a procedure or #f as hash, but got:" hash)])])
         (%make-comparator type eq cmp hsh name
-                          (not comparison-proc) (not hash)))))
+                          (not comparison-proc) (not hash)
+                          (eq? type default-type-test)))))
 
 (select-module gauche)
 (define-cproc comparator? (obj) ::<boolean> SCM_COMPARATORP)
@@ -91,6 +94,41 @@
   (result (-> c compareFn)))
 (define-cproc comparator-hash-function (c::<comparator>) :constant
   (result (-> c hashFn)))
+
+;; We implement these in C for performance.
+;; TODO: We might be able to do shortcut in comparator-equal? by recognizing
+;; the equality predicate to be eq? or eqv?.
+(define-cproc comparator-test-type (c::<comparator> obj) :constant
+  (if (logand (-> c flags) SCM_COMPARATOR_ANY_TYPE)
+    (result SCM_TRUE)
+    (result (Scm_VMApply1 (-> c typeFn) obj))))
+
+(inline-stub
+ (define-cfn comparator-check-type-cc (result data::void**) :static
+   (when (SCM_FALSEP result)
+     (let* ([c   (SCM_OBJ (aref data 0))]
+            [obj (SCM_OBJ (aref data 1))])
+       (Scm_Error "Comparator %S cannot accept object %S" c obj)))
+   (return SCM_TRUE))
+ )
+
+(define-cproc comparator-check-type (c::<comparator> obj) :constant
+  (if (logand (-> c flags) SCM_COMPARATOR_ANY_TYPE)
+    (result SCM_TRUE)
+    (let* ([data::(.array void* (2))])
+      (set! (aref data 0) c)
+      (set! (aref data 1) obj)
+      (Scm_VMPushCC comparator-check-type-cc data 2)
+      (result (Scm_VMApply1 (-> c typeFn) obj)))))
+
+(define-cproc comparator-equal? (c::<comparator> a b) :constant
+  (result (Scm_VMApply2 (-> c eqFn) a b)))
+
+(define-cproc comparator-compare (c::<comparator> a b) :constant
+  (result (Scm_VMApply2 (-> c compareFn) a b)))
+
+(define-cproc comparator-hash (c::<comparator> x) :constant
+  (result (Scm_VMApply1 (-> c hashFn) x)))
 
 ;;;
 ;;; Generic comparison
