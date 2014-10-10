@@ -747,10 +747,10 @@
 ;;
 ;;   Boolean ops.  C's &&, ||, and !.
 ;;
-;; [cise expr] logand EXPR EXPR
-;; [cise expr] logior EXPR EXPR
-;; [cise expr] logxor EXPR EXPR
-;; [cise expr] lognot EXPR EXPR
+;; [cise expr] logand EXPR EXPR ...
+;; [cise expr] logior EXPR EXPR ...
+;; [cise expr] logxor EXPR EXPR ...
+;; [cise expr] lognot EXPR
 ;;
 ;;   Bitwise ops.
 ;;
@@ -838,6 +838,10 @@
 (define-nary and "&&")
 (define-nary or  "||")
 
+(define-nary logior  "|")
+(define-nary logxor  "^")
+(define-nary logand  "&")
+
 (define-macro (define-unary op sop)
   `(define-cise-macro (,op form env)
      (wrap-expr
@@ -875,9 +879,6 @@
       env)))
 
 (define-binary %       "%")
-(define-binary logior  "|")
-(define-binary logxor  "^")
-(define-binary logand  "&")
 (define-binary <       "<")
 (define-binary <=      "<=")
 (define-binary >       ">")
