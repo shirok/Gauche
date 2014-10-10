@@ -39,7 +39,7 @@
           sparse-table-clear! sparse-table-delete! sparse-table-copy
           sparse-table-update! sparse-table-push! sparse-table-pop!
           sparse-table-fold sparse-table-map sparse-table-for-each
-          sparse-table-keys sparse-table-values
+          sparse-table-keys sparse-table-values sparse-table-comparator
           %sparse-table-dump %sparse-table-check
 
           <sparse-vector-base> <sparse-vector> <sparse-s8vector>
@@ -54,7 +54,8 @@
           sparse-vector-update! sparse-vector-inc!
           sparse-vector-push! sparse-vector-pop!
           sparse-vector-fold sparse-vector-map sparse-vector-for-each
-          sparse-vector-keys sparse-vector-values %sparse-vector-dump
+          sparse-vector-keys sparse-vector-values sparse-vector-comparator
+          %sparse-vector-dump
           )
   )
 (select-module util.sparse)
@@ -123,16 +124,19 @@
  (define-type <sparse-table> "SparseTable*" "sparse table"
    "SPARSE_TABLE_P" "SPARSE_TABLE")
 
- (define-cproc make-sparse-table (type)
+ (define-cproc %make-sparse-table (type cmpr::<comparator>)
    (let* ([t::ScmHashType SCM_HASH_EQ])
      (cond
       [(SCM_EQ type 'eq?)      (set! t SCM_HASH_EQ)]
       [(SCM_EQ type 'eqv?)     (set! t SCM_HASH_EQV)]
       [(SCM_EQ type 'equal?)   (set! t SCM_HASH_EQUAL)]
       [(SCM_EQ type 'string=?) (set! t SCM_HASH_STRING)]
-      [else (Scm_Error "unsupported sparse-table hash type: %S" type)])
-     (result (MakeSparseTable t 0))))
+      [else                    (set! t SCM_HASH_GENERAL)])
+     (result (MakeSparseTable t cmpr 0))))
 
+ (define-cproc sparse-table-comparator (st::<sparse-table>)
+   (result (SCM_OBJ (-> st comparator))))
+ 
  (define-cproc sparse-table-num-entries (st::<sparse-table>) ::<ulong>
    (result (-> st numEntries)))
 
@@ -177,6 +181,30 @@
  (define-cproc %sparse-table-check (st::<sparse-table>) ::<void>
    SparseTableCheck)
  )
+
+;; This is a bit complicated, for we want to recognize common cases
+;; (eq?, eqv?, equal? and string=?) to allow efficient shortcut.
+(define *shortcut-comparators*
+  `((eq? . ,eq-comparator)
+    (eqv? . ,eqv-comparator)
+    (equal? . ,equal-comparator)
+    (string=? . ,string-comparator)))
+
+(define (make-sparse-table comparator)
+  (define (bad)
+    (error "make-sparse-table needs a comparator or one of the symbols eq?, \
+            eqv?, equal? or string=?, as an argument, but got:" comparator))
+  (receive (type cmpr)
+      (cond [(symbol? comparator)
+             (if-let1 cmpr (assq-ref *shortcut-comparators* comparator)
+               (values comparator cmpr)
+               (bad))]
+            [(comparator? comparator)
+             (if-let1 type (rassq-ref *shortcut-comparators* comparator)
+               (values type comparator)
+               (values #f comparator))]
+            [else (bad)])
+    (%make-sparse-table type cmpr)))
 
 (define-stuff sparse-table %sparse-table-iter
   sparse-table-ref sparse-table-set!)
@@ -271,6 +299,12 @@
 (define-stuff sparse-vector %sparse-vector-iter
   sparse-vector-ref sparse-vector-set!)
 
+;; TODO: This is a temporary implementation; we should customize
+;; type test procedure for each subtype of sparse vectors.
+(define (sparse-vector-comparator spvec)
+  (check-arg (cut is-a? <> <sparse-vector-base>) spvec)
+  eqv-comparator)
+
 ;;===============================================================
 ;; dictionary protocol
 ;;
@@ -287,7 +321,8 @@
   :values    sparse-table-values
   :pop!      sparse-table-pop!
   :push!     sparse-table-push!
-  :update!   sparse-table-update!)
+  :update!   sparse-table-update!
+  :comparator sparse-table-comparator)
 
 (define-dict-interface <sparse-vector-base>
   :get       sparse-vector-ref
@@ -301,4 +336,6 @@
   :values    sparse-vector-values
   :pop!      sparse-vector-pop!
   :push!     sparse-vector-push!
-  :update!   sparse-vector-update!)
+  :update!   sparse-vector-update!
+  :comparator sparse-vector-comparator)
+

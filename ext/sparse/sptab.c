@@ -98,12 +98,14 @@ static int string_cmp(ScmObj a, ScmObj b)
     return Scm_StringEqual(SCM_STRING(a), SCM_STRING(b));
 }
 
-ScmObj MakeSparseTable(ScmHashType type, u_long flags)
+ScmObj MakeSparseTable(ScmHashType type, ScmComparator *comparator,
+                       u_long flags)
 {
     SparseTable *v = SCM_NEW(SparseTable);
     SCM_SET_CLASS(v, SCM_CLASS_SPARSE_TABLE);
     CompactTrieInit(&v->trie);
     v->numEntries = 0;
+    v->comparator = comparator;
 
     switch (type) {
     case SCM_HASH_EQ:
@@ -122,6 +124,11 @@ ScmObj MakeSparseTable(ScmHashType type, u_long flags)
         v->hashfn = string_hash;
         v->cmpfn = string_cmp;
         break;
+    case SCM_HASH_GENERAL:
+        SCM_ASSERT(comparator != NULL);
+        v->hashfn = NULL;
+        v->cmpfn = NULL;
+        break;
     default:
         Scm_Error("invalid hash type (%d) for a sparse hash table", type);
     }
@@ -132,26 +139,45 @@ SCM_DEFINE_BUILTIN_CLASS(Scm_SparseTableClass,
                          NULL, NULL, NULL, NULL,
                          SCM_CLASS_DICTIONARY_CPL);
 
+static u_long sparse_table_hash(SparseTable *st, ScmObj key)
+{
+    if (st->hashfn) return st->hashfn(key);
+    ScmObj h = st->comparator->hashFn;
+    ScmObj r = Scm_ApplyRec1(h, key);
+    if (!SCM_INTEGERP(r)) {
+        Scm_Error("hash function %S returns non-integer: %S", h, r);
+    }
+    return Scm_GetIntegerU(r);
+}
+
+static int sparse_table_eq(SparseTable *st, ScmObj a, ScmObj b)
+{
+    if (st->cmpfn) return st->cmpfn(a, b);
+    ScmObj e = st->comparator->eqFn;
+    ScmObj r = Scm_ApplyRec2(e, a, b);
+    return !SCM_FALSEP(r);
+}
+
 /*===================================================================
  * Lookup
  */
 
-ScmObj SparseTableRef(SparseTable *sh, ScmObj key, ScmObj fallback)
+ScmObj SparseTableRef(SparseTable *st, ScmObj key, ScmObj fallback)
 {
-    u_long hv = sh->hashfn(key);
-    TLeaf *z = (TLeaf*)CompactTrieGet(&sh->trie, hv);
+    u_long hv = sparse_table_hash(st, key);
+    TLeaf *z = (TLeaf*)CompactTrieGet(&st->trie, hv);
 
     if (z != NULL) {
         if (!leaf_is_chained(z)) {
-            if (sh->cmpfn(key, z->entry.key)) return z->entry.value;
+            if (sparse_table_eq(st, key, z->entry.key)) return z->entry.value;
             else return fallback;
-        } else if (sh->cmpfn(key, SCM_CAR(z->chain.pair))) {
+        } else if (sparse_table_eq(st, key, SCM_CAR(z->chain.pair))) {
             return SCM_CDR(z->chain.pair);
         } else {
             ScmObj cp;
             SCM_FOR_EACH(cp, z->chain.next) {
                 ScmObj p = SCM_CAR(cp);
-                if (sh->cmpfn(key, SCM_CAR(p))) return SCM_CDR(p);
+                if (sparse_table_eq(st, key, SCM_CAR(p))) return SCM_CDR(p);
             }
         }
     }
@@ -162,18 +188,17 @@ ScmObj SparseTableRef(SparseTable *sh, ScmObj key, ScmObj fallback)
  * Insertion
  */
 
-ScmObj SparseTableSet(SparseTable *sh, ScmObj key,
-                          ScmObj value, int flags)
+ScmObj SparseTableSet(SparseTable *st, ScmObj key, ScmObj value, int flags)
 {
     int createp = !(flags&SCM_DICT_NO_CREATE);
-    u_long hv = sh->hashfn(key);
+    u_long hv = sparse_table_hash(st, key);
     TLeaf *z;
 
     if (!createp) {
-        z = (TLeaf*)CompactTrieGet(&sh->trie, hv);
+        z = (TLeaf*)CompactTrieGet(&st->trie, hv);
         if (z == NULL) return SCM_UNBOUND;
     } else {
-        z = (TLeaf*)CompactTrieAdd(&sh->trie, hv, leaf_allocate, NULL);
+        z = (TLeaf*)CompactTrieAdd(&st->trie, hv, leaf_allocate, NULL);
     }
 
     if (!leaf_is_chained(z)) {
@@ -181,9 +206,9 @@ ScmObj SparseTableSet(SparseTable *sh, ScmObj key,
             /* new entry */
             z->entry.key = key;
             z->entry.value = value;
-            sh->numEntries++;
+            st->numEntries++;
             return value;
-        } else if (sh->cmpfn(z->entry.key, key)) {
+        } else if (sparse_table_eq(st, z->entry.key, key)) {
             z->entry.value = value;
             return value;
         } else {
@@ -195,7 +220,7 @@ ScmObj SparseTableSet(SparseTable *sh, ScmObj key,
         }
     }
     /* we got a chained entry. */
-    if (sh->cmpfn(SCM_CAR(z->chain.pair), key)) {
+    if (sparse_table_eq(st, SCM_CAR(z->chain.pair), key)) {
         SCM_SET_CDR(z->chain.pair, value);
         return value;
     }
@@ -203,14 +228,14 @@ ScmObj SparseTableSet(SparseTable *sh, ScmObj key,
     SCM_FOR_EACH(cp, z->chain.next) {
         ScmObj p = SCM_CAR(cp);
         SCM_ASSERT(SCM_PAIRP(p));
-        if (sh->cmpfn(SCM_CAR(p), key)) {
+        if (sparse_table_eq(st, SCM_CAR(p), key)) {
             SCM_SET_CDR(p, value);
             return value;
         }
     }
     z->chain.next = Scm_Cons(z->chain.pair, z->chain.next);
     z->chain.pair = Scm_Cons(key, value);
-    sh->numEntries++;
+    st->numEntries++;
     return value;
 }
 
@@ -221,19 +246,19 @@ ScmObj SparseTableSet(SparseTable *sh, ScmObj key,
 /* returns value of the deleted entry, or SCM_UNBOUND if there's no entry */
 ScmObj SparseTableDelete(SparseTable *st, ScmObj key)
 {
-    u_long hv = st->hashfn(key);
+    u_long hv = sparse_table_hash(st, key);
     TLeaf *z = (TLeaf*)CompactTrieGet(&st->trie, hv);
     ScmObj retval = SCM_UNBOUND;
 
     if (z != NULL) {
         if (!leaf_is_chained(z)) {
-            if (st->cmpfn(key, z->entry.key)) {
+            if (sparse_table_eq(st, key, z->entry.key)) {
                 retval = z->entry.value;
                 CompactTrieDelete(&st->trie, hv);
                 st->numEntries--;
             }
         } else {
-            if (st->cmpfn(key, SCM_CAR(z->chain.pair))) {
+            if (sparse_table_eq(st, key, SCM_CAR(z->chain.pair))) {
                 ScmObj p = z->chain.next;
                 SCM_ASSERT(SCM_PAIRP(p));
                 retval = SCM_CDR(z->chain.pair);
@@ -244,7 +269,7 @@ ScmObj SparseTableDelete(SparseTable *st, ScmObj key)
                 ScmObj cp, prev = SCM_FALSE;
                 SCM_FOR_EACH(cp, z->chain.next) {
                     ScmObj pp = SCM_CAR(cp);
-                    if (st->cmpfn(key, SCM_CAR(pp))) {
+                    if (sparse_table_eq(st, key, SCM_CAR(pp))) {
                         retval = SCM_CDR(pp);
                         if (SCM_FALSEP(prev)) z->chain.next = SCM_CDR(cp);
                         else SCM_SET_CDR(prev, SCM_CDR(cp));

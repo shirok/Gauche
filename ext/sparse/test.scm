@@ -227,4 +227,27 @@
            (begin (sparse-table-delete! u '(1 . 0)) (vals u)))
     ))
 
+;; custom comparator
+(let ()
+  (define c (make-comparator #t (^[a b] (= (modulo a 3) (modulo b 3))) #f
+                             (^x (modulo x 3))))
+  (define t (make-sparse-table c))
+
+  (dotimes [x 10] (sparse-table-set! t x (+ x 100)))
+  (test* "custom comparator" '((0 . 109) (1 . 107) (2 . 108))
+         (sort-by (sparse-table-map t cons) car))
+  (test* "sparse-table-comparator" c
+         (sparse-table-comparator t)))
+
+(let ([predefs `((eq? . ,eq-comparator)
+                 (eqv? . ,eqv-comparator)
+                 (equal? . ,equal-comparator)
+                 (string=? . ,string-comparator))])
+  (test* "predefined comparators" predefs
+         (map (^p (cons (car p)
+                        ($ sparse-table-comparator
+                           $ make-sparse-table (car p))))
+              predefs)))
+  
+
 (test-end)

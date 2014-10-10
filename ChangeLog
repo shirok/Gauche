@@ -1,3 +1,9 @@
+2014-10-09  Shiro Kawai  <shiro@acm.org>
+
+	* ext/sparse/sparse.scm: Allow make-sparse-table to take comparator.
+	  Add sparse-table-comparator and sparse-vector-comparator to
+	  conform new dictionary protocol.
+
 2014-10-08  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/dictionary.scm (dict-comparator): A new dictionary
