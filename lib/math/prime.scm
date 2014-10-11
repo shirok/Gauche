@@ -39,7 +39,7 @@
   (use gauche.generator)
   (use gauche.sequence)
   (use gauche.threads)
-  (use util.sparse)
+  (use data.sparse)
   (use util.match)
   (export primes *primes* reset-primes
           small-prime? *small-prime-bound*

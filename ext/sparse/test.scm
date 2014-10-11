@@ -1,14 +1,14 @@
 ;;
-;; testing util.sparse
+;; testing data.sparse
 ;;
 
 (use gauche.test)
 (use srfi-1)
 (use srfi-27)
 
-(test-start "util.sparse")
-(use util.sparse)
-(test-module 'util.sparse)
+(test-start "data.sparse")
+(use data.sparse)
+(test-module 'data.sparse)
 
 (define (simple-test name obj %ref %set! %exists? key1 key2
                      :optional (val1 'ok) (val2 'okok) (val3 'okokok))

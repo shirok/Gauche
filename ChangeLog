@@ -1,3 +1,7 @@
+2014-10-11  Shiro Kawai  <shiro@acm.org>
+
+	* ext/sparse/*: Renamed util.sparse -> data.sparse.
+
 2014-10-10  Shiro Kawai  <shiro@acm.org>
 
 	* src/libcmp.scm: Add srfi-114 primitive applicators as SUBR,

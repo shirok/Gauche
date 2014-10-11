@@ -1,6 +1,6 @@
 (add-load-path ".")
 
-(use util.sparse)
+(use data.sparse)
 (use util.match)
 (use gauche.time)
 (use srfi-27)

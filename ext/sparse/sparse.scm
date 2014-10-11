@@ -1,5 +1,5 @@
 ;;;
-;;; util.sparse - sparse data structures
+;;; data.sparse - sparse data structures
 ;;;
 ;;;   Copyright (c) 2007-2014  Shiro Kawai  <shiro@acm.org>
 ;;;
@@ -32,7 +32,7 @@
 ;;;
 
 
-(define-module util.sparse
+(define-module data.sparse
   (use gauche.dictionary)
   (export <sparse-table> make-sparse-table sparse-table-num-entries
           sparse-table-ref sparse-table-set! sparse-table-exists?
@@ -58,7 +58,7 @@
           %sparse-vector-dump
           )
   )
-(select-module util.sparse)
+(select-module data.sparse)
 
 (inline-stub
  "#include \"ctrie.h\""
