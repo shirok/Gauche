@@ -54,7 +54,7 @@
           sparse-vector-update! sparse-vector-inc!
           sparse-vector-push! sparse-vector-pop!
           sparse-vector-fold sparse-vector-map sparse-vector-for-each
-          sparse-vector-keys sparse-vector-values sparse-vector-comparator
+          sparse-vector-keys sparse-vector-values
           %sparse-vector-dump
           )
   )
@@ -299,11 +299,14 @@
 (define-stuff sparse-vector %sparse-vector-iter
   sparse-vector-ref sparse-vector-set!)
 
-;; TODO: This is a temporary implementation; we should customize
-;; type test procedure for each subtype of sparse vectors.
-(define (sparse-vector-comparator spvec)
-  (check-arg (cut is-a? <> <sparse-vector-base>) spvec)
-  eqv-comparator)
+;; sparse vector comparator is just a singleton.
+(define *sparse-vector-comparator* 
+  (make-comparator (^x (and (exact? x) (integer? x) (>= x 0)))
+                   eqv? compare eqv-hash
+                   'sparse-vector-comparator))
+
+(define-method dict-comparator ((spvec <sparse-vector-base>))
+  *sparse-vector-comparator*)
 
 ;;===============================================================
 ;; dictionary protocol
@@ -336,6 +339,5 @@
   :values    sparse-vector-values
   :pop!      sparse-vector-pop!
   :push!     sparse-vector-push!
-  :update!   sparse-vector-update!
-  :comparator sparse-vector-comparator)
+  :update!   sparse-vector-update!)
 
