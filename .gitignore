@@ -72,7 +72,7 @@ ext/mt-random/math--mt-random.c
 ext/net/netaux.c
 ext/net/netlib.c
 ext/peg/parser--peg.c
-ext/sparse/util--sparse.c
+ext/sparse/data--sparse.c
 ext/srfi/srfi-1.c
 ext/srfi/srfi-13.c
 ext/srfi/srfi-19.c
