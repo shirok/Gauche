@@ -45,6 +45,11 @@
                           (equal? (binary-heap-find-max heap) zmax))))
                 input))))
     (let1 hp1 (binary-heap-copy heap)
+      (test* (format "heap(~s) clear" len) #t
+             (begin
+               (binary-heap-clear! hp1)
+               (binary-heap-empty? hp1))))
+    (let1 hp1 (binary-heap-copy heap)
       (test* (format "heap(~s) deletion from min" len)
              data
              (map-in-order (^_ (begin0 (binary-heap-pop-min! hp1)

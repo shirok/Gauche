@@ -36,8 +36,8 @@
   (use gauche.uvector)
   (use srfi-1)
   (export <binary-heap>
-          make-binary-heap binary-heap-num-entries
-          binary-heap-copy binary-heap-check
+          make-binary-heap binary-heap-empty? binary-heap-num-entries
+          binary-heap-copy binary-heap-check binary-heap-clear!
           binary-heap-push!
           binary-heap-find-min binary-heap-find-max
           binary-heap-pop-min! binary-heap-pop-max!
@@ -46,7 +46,8 @@
 
 ;; we use sparse-vector by default; we just make it autoload
 ;; so that the tests won't depend on data.sparse.
-(autoload data.sparse make-sparse-vector <sparse-vector> sparse-vector-copy)
+(autoload data.sparse make-sparse-vector <sparse-vector>
+          sparse-vector-copy sparse-vector-clear!)
 
 ;;;
 ;;; Binary Heap
@@ -118,6 +119,13 @@
     :>: (~ hp'>:)
     :next-leaf (~ hp'next-leaf)))
 
+(define (binary-heap-clear! hp)
+  (set! (~ hp'next-leaf) 1)
+  ;; These are theoretically unnecessary, but works nicely with GC.
+  (let1 st (~ hp'storage)
+    (cond [(vector? st) (vector-fill! st #f)]
+          [(is-a? st <sparse-vector>) (sparse-vector-clear! st)])))
+
 (define (binary-heap-push! hp item)
   (let1 next (~ hp'next-leaf)
     (when (>= (- next 1) (~ hp'capacity))
@@ -129,6 +137,8 @@
       (bh-bubble-up (~ hp'storage) (~ hp'<:) (~ hp'>:) next))))
 
 (define (binary-heap-num-entries hp) (- (~ hp'next-leaf) 1))
+
+(define (binary-heap-empty? hp) (= (~ hp'next-leaf) 1))
 
 (define (binary-heap-find-min hp :optional (fallback (undefined)))
   (if (= (~ hp'next-leaf) 1)
