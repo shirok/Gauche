@@ -1,3 +1,7 @@
+2014-10-13  Shiro Kawai  <shiro@acm.org>
+
+	* lib/data/heap.scm: EXPERIMENTAL: Added binary min-max heap.
+
 2014-10-11  Shiro Kawai  <shiro@acm.org>
 
 	* ext/sparse/*: Renamed util.sparse -> data.sparse.
