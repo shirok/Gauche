@@ -242,23 +242,45 @@
           (swap! storage parent-index index)
           (bubble-up-rec >: parent-index))))))
 
-(define (bh-trickle-down storage <: >: index size)
 
-  (define (getval i) (~ storage i))
-  (define (in-bound? i) (< i size))
+(define (bh-trickle-down storage <: >: index size)
   
+  (define-syntax getval (syntax-rules () [(getval i) (~ storage i)]))
+  (define-syntax in-bound? (syntax-rules () [(in-bound? i) (< i size)]))
+
+  ;; We need to check up to 2 kids and 4 grandkids.  This returns appropriate
+  ;; index for n in 0..5; that is, n=0,1 for kids, n=2,3,4,5 for grandkids.
+  (define (descendant n index)
+    (if (< n 2)
+      (+ (ash index 1) n)
+      (+ (ash index 2) (- n 2))))
+
+  ;; Among self, children and grandchildren, find an index that has
+  ;; the minimum or maximum value.
+  ;; NB: This can be witten more cleanly by making the list of kids index
+  ;; and folding over it; but we want to avoid allocation in it, for this
+  ;; will be called log(n) times in average for every deletion.
+  (define (find-extreme >< index)
+    (let loop ([minval (getval index)]
+               [minidx index]
+               [n 0])
+      (if (> n 5)
+        minidx
+        (let1 i (descendant n index)
+          (if (not (in-bound? i))
+            minidx
+            (let1 v (getval i)
+              (if (>< v minval)
+                (loop v i (+ n 1))
+                (loop minval minidx (+ n 1)))))))))
+
   (define (trickle-down-rec >< index)
-    ;; pick-index is the index of grandchild who has minimum or maximum key.
-    (and-let* ([xkids (take-while in-bound?
-                                  (list* (ash index 1) (+ (ash index 1) 1)
-                                         (iota 4 (ash index 2))))]
-               [ (pair? xkids) ]
-               [pick (find-min (cons index xkids) :key getval :compare ><)]
-               [ (not (= pick index)) ])
-      (swap! storage pick index)
-      (when (>= pick (ash index 2)) ; grandchild
-        (unless (>< (getval pick) (getval (ash pick -1)))
-          (swap! storage (ash pick -1) pick))
-        (trickle-down-rec >< pick))))
+    (let1 pick (find-extreme >< index)
+      (unless (= pick index)
+        (swap! storage pick index)
+        (when (>= pick (ash index 2)) ; grandchild
+          (unless (>< (getval pick) (getval (ash pick -1)))
+            (swap! storage (ash pick -1) pick))
+          (trickle-down-rec >< pick)))))
 
   (trickle-down-rec (if (min-node? index) <: >:) index))
