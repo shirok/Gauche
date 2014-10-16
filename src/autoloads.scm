@@ -166,7 +166,9 @@
           exact-integer-comparator integer-comparator rational-comparator
           real-comparator complex-comparator number-comparator
           pair-comparator list-comparator vector-comparator
-          bytevector-comparator uvector-comparator)
+          bytevector-comparator uvector-comparator
+          make-reverse-comparator make-field-comparator
+          make-car-comparator make-cdr-comparator)
 
 (autoload gauche.fileutil
           glob glob-fold sys-glob glob-component->regexp make-glob-fs-fold

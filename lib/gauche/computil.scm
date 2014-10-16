@@ -112,3 +112,36 @@
 (define bytevector-comparator
   (make-comparator (cut is-a? <> <u8vector>) equal? compare hash
                    'bytevector-comparator))
+
+(define (make-reverse-comparator comparator)
+  (unless (comparator-comparison-procedure? comparator)
+    (error "make-reverse-comparator requires a comparator with comparison \
+            procedure, but got:" comparator))
+  (make-comparator
+   (comparator-type-test-procedure comparator)
+   (comparator-equality-predicate comparator)
+   (let1 cmp (comparator-comparison-procedure comparator)
+     (^[a b] (- (cmp a b))))
+   (and (comparator-hash-function? comparator)
+        (comparator-hash-function comparator))))
+
+;; This is not in srfi-114, but generally useful.
+;; Compare with (accessor obj). 
+(define (make-field-comparator comparator test accessor)
+  (let ([ts  (comparator-type-test-procedure comparator)]
+        [eq  (comparator-equality-predicate comparator)]
+        [cmp (comparator-comparison-procedure comparator)]
+        [hsh (comparator-hash-function comparator)])
+    (make-comparator 
+     (^x (and (test x) (ts (accessor x))))
+     (^[a b] (eq (accessor a) (accessor b)))
+     (and (comparator-comparison-procedure? comparator)
+          (^[a b] (cmp (accessor a) (accessor b))))
+     (and (comparator-hash-function? comparator)
+          (^x (hsh (accessor x)))))))
+
+(define (make-car-comparator comparator)
+  (make-field-comparator comparator pair? car))
+
+(define (make-cdr-comparator comparator)
+  (make-field-comparator comparator pair? cdr))
