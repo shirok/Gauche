@@ -1,3 +1,8 @@
+2014-10-17  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/computil.scm: Changed make-field-comparator to
+	  make-key-comparator, for the consistency.
+
 2014-10-16  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/computil.scm: Added make-reverse-comparator,

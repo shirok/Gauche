@@ -127,21 +127,21 @@
 
 ;; This is not in srfi-114, but generally useful.
 ;; Compare with (accessor obj). 
-(define (make-field-comparator comparator test accessor)
+(define (make-key-comparator comparator test key)
   (let ([ts  (comparator-type-test-procedure comparator)]
         [eq  (comparator-equality-predicate comparator)]
         [cmp (comparator-comparison-procedure comparator)]
         [hsh (comparator-hash-function comparator)])
     (make-comparator 
-     (^x (and (test x) (ts (accessor x))))
-     (^[a b] (eq (accessor a) (accessor b)))
+     (^x (and (test x) (ts (key x))))
+     (^[a b] (eq (key a) (key b)))
      (and (comparator-comparison-procedure? comparator)
-          (^[a b] (cmp (accessor a) (accessor b))))
+          (^[a b] (cmp (key a) (key b))))
      (and (comparator-hash-function? comparator)
-          (^x (hsh (accessor x)))))))
+          (^x (hsh (key x)))))))
 
 (define (make-car-comparator comparator)
-  (make-field-comparator comparator pair? car))
+  (make-key-comparator comparator pair? car))
 
 (define (make-cdr-comparator comparator)
-  (make-field-comparator comparator pair? cdr))
+  (make-key-comparator comparator pair? cdr))
