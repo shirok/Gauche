@@ -11,6 +11,7 @@
 * A common job descriptor for control modules::  control.job
 * Thread pools::                control.thread-pool
 * Password hashing::            crypt.bcrypt
+* Heap::                        data.heap
 * Queue::                       data.queue
 * Random data generators::      data.random
 * Sparse data containers::      data.sparse
@@ -1517,7 +1518,7 @@ better to give some time for the thread to finish the executing jobs.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Password hashing, Queue, Thread pools, Library modules - Utilities
+@node Password hashing, Heap, Thread pools, Library modules - Utilities
 @section @code{crypt.bcrypt} - Password hashing
 @c NODE パスワードハッシュ, @code{crypt.bcrypt} - パスワードハッシュ
 
@@ -1649,7 +1650,137 @@ bcryptアルゴリズムでは少なくとも16バイトの長さが必要です
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Queue, Random data generators, Password hashing, Library modules - Utilities
+@node Heap, Queue, Password hashing, Library modules - Utilities
+@section @code{data.heap} - Heap
+@c NODE ヒープ, @code{data.heap} - ヒープ
+
+@deftp {Module} data.heap
+@mdindex data.heap
+@c EN
+A heap is a data container that allows efficient retrieval of
+the minimum or maximum entry.  Unlike a @code{<tree-map>}
+(@xref{Treemaps}), which always keeps all entries in order,
+a heap only cares the minimum or the maximum of the current set;
+the other entries are only partially ordered, and reordered
+when the minimu/maximum entry is removed.  Hence it is more
+efficient than a treemap if all you need is minimum/maximum value.
+Besides binary heaps can store entries in packed, memory-efficient way.
+@c JP
+ヒープは最小値また最大値を効率よく取り出せるデータコンテナです。
+@code{<tree-map>}は全てのエントリの順序を常に保っていますが (@ref{Treemaps}参照)、
+ヒープは最小値/最大値以外については部分的にしか順序を保持していません。
+最小値/最大値が取り除かれる時点で内部を再構成して、次の最小値/最大値を見つけます。
+したがって、最小値/最大値のみが必要な場合、treemapより効率が良いです。
+さらに、バイナリヒープでは値をメモリ効率の良い詰められた形で保持できます。
+@c COMMON
+@end deftp
+
+@deftp {Class} <binary-heap>
+@clindex binary-heap
+@c EN
+An implementation of a binary heap.  Internally it uses min-max heap,
+so that you can find both minimum and maximum value in O(1).
+Pushing a new value and popping the minimum/maximum value are both O(log n).
+
+It also stores its values in a flat vector, a lot more compact
+than a general tree structure that needs a few pointers per node.
+By default it uses a sparse vector for the backing storage, allowing
+virtually unlimited capacity (@xref{Sparse vectors}).
+But you can use an ordinal vector
+or a uniform vector as a backing storage instead.
+@c JP
+バイナリヒープの実装です。内部的にmin-maxヒープを使っており、
+最大値と最小値のどちらにもO(1)でアクセスできます。新たな値をpushしたり、
+最大最小値をpopするのはO(log n)です。
+
+バイナリヒープはまた、値をフラットなベクタに格納します。一般的なツリー構造が
+ノードあたりいくつかのポインタを必要とするのに比べずっとコンパクトです。
+デフォルトでは疎なベクタ (@ref{Sparse vectors}) がバッキングストレージとして使われ、
+事実上上限なしでデータを格納できますが、通常のベクタやユニフォームベクタを
+バッキングストレージとして指定することもできます。
+@c COMMON
+
+@c EN
+A binary heap isn't MT-safe structure; you must put it in atom
+or use mutexes if multiple threads can access to it
+(@xref{Synchronization primitives}).
+@c JP
+バイナリヒープはスレッドセーフではありません。複数のスレッドでアクセスする
+可能性がある場合は、atomに入れるか、mutexを適切に使ってください(@ref{Synchronization primitives}参照)。
+@c COMMON
+@end deftp
+
+@defun make-binary-heap :key comparator storage key
+Creates and returns a new binary heap.
+
+The @var{comparator} keyword argument specifies how to compare the
+entries.  It must have comparison procedure.  The default is
+@code{default-comparator}.  @xref{Comparators}, for the details of
+comparators.
+
+The @var{stoarge} keyword argument gives alternative
+backing storage.  It must be either a vector, a uniform vector,
+or an instance of @code{<sparse-vector>} (@xref{Sparse vectors}).
+The default is an instance of @code{<sparse-vector>}.
+If you pass a vector or a uniform vector, you can store the value
+up to one less than the length of the vector.  It won't be extended
+once the storage gets full.
+
+The @var{key} keyword argument must be a procedure; it is applied
+on each entry before comparison.  Using key procedure allows you to
+store auxiliary data other than the actual value to be compared.
+The following example shows the entries are compared by their @code{car}'s:
+
+@example
+(define *heap* (make-binary-heap :key car))
+(binary-heap-push! *heap* (cons 1 'a))
+(binary-heap-push! *heap* (cons 3 'b))
+(binary-heap-push! *heap* (cons 1 'c))
+
+(binary-heap-find-min heap) @result{} (1 . c)
+(binary-heap-find-max heap) @result{} (3 . b)
+@end example
+@end defun
+
+@defun binary-heap-copy heap
+Copy the heap.  The backing storage is also copied.
+@end defun
+
+@defun binary-heap-clear! heap
+Empty the heap.
+@end defun
+
+@defun binary-heap-num-entries heap
+Returns the current number of entries in the heap.
+@end defun
+
+@defun binary-heap-empty? heap
+Returns @code{#t} if the heap is empty, @code{#f} otherwise.
+@end defun
+
+@defun binary-heap-push! heap item
+Insert @var{item} into the @var{heap}.  If the heap is already full,
+an error is raised.
+@end defun
+
+@defun binary-heap-find-min heap :optional fallback
+@defunx binary-heap-find-max heap :optional fallback
+Returns the minimum and maximum entry of the heap, respectively.
+The heap will be unmodified.
+
+If the heap is empty, @var{fallback} is returned when it is provided,
+or an error is signaled.
+@end defun
+
+@defun binary-heap-pop-min! heap
+@defunx binary-heap-pop-max! heap
+Removes the minimum and maximum entry of the heap and returns it,
+respectively.  If the heap is empty, an error is signaled.
+@end defun
+
+
+@c ----------------------------------------------------------------------
+@node Queue, Random data generators, Heap, Library modules - Utilities
 @section @code{data.queue} - Queue
 @c NODE キュー, @code{data.queue} - キュー
 
