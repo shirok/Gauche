@@ -135,10 +135,10 @@ R7RS の構文 @code{set!}。@ref{Assignments}参照。
 @item ==
 @c EN
 R7RS equivalence procedure, @code{eq?}, @code{eqv?} and @code{equal?}.
-@xref{Equivalence}.
+@xref{Equality}.
 @c JP
 R7RS の同等性手続き @code{eq?}、@code{eqv?} および @code{equal?}。
-@ref{Equivalence}参照。
+@ref{Equality}参照。
 @c COMMON
 @item <
 @itemx <=
@@ -1159,10 +1159,10 @@ Use @code{display}.   @xref{Output}.
 @item qsort
 @c EN
 Gauche's @code{sort} and @code{sort!} provides a convenient way to sort
-list of items.  @xref{Comparison and sorting}.
+list of items.  @xref{Sorting and merging}.
 @c JP
 Gauche の @code{sort} および @code{sort!} はリストをソートする便利な方法を
-提供しています。@ref{Comparison and sorting} 参照。
+提供しています。@ref{Sorting and merging} 参照。
 @c COMMON
 @item raise
 @c EN

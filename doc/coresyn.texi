@@ -1660,7 +1660,7 @@ may be an ``else clause,'' which has the form
 
 First, @var{key} is evaluated and its result is compared against each
 @var{datum}.  If the result of evaluating @var{key} is equivalent
-(using @code{eqv?}, @xref{Equivalence}), to a @var{datum},
+(using @code{eqv?}, @xref{Equality}), to a @var{datum},
 then the expressions in the corresponding clause are evaluated
 sequentially, and the result(s) of the last expression in the
 @var{clause} is(are) returned from the case expression.
@@ -1687,7 +1687,7 @@ otherwise the result of the case expression is undefined.
 @end example
 
 まず@var{key}が評価され、その結果がそれぞれの@var{datum}と比較されます。
-@var{key}の値と@code{eqv?}(@ref{Equivalence}参照)を使って一致する@var{datum}
+@var{key}の値と@code{eqv?}(@ref{Equality}参照)を使って一致する@var{datum}
 が見つかれば、対応する@var{expr}が順に評価され、その最後の値が@code{case}の
 値となります。@code{=>}を含む節はSRFI-87で定義されています。これらの節では、
 @var{key}の結果が@var{proc}に渡され、その結果が@code{case}の値となります。

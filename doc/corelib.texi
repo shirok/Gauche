@@ -5,7 +5,7 @@
 @c ----------------------------------------------------------------------
 @menu
 * Types and classes::           
-* Equivalence::                 
+* Equality and comparison::     
 * Numbers::                     
 * Booleans::                    
 * Undefined values::            
@@ -27,12 +27,12 @@
 * Eval and repl::               
 * Input and output::            
 * Loading Programs::            
-* Comparison and sorting::      
+* Sorting and merging::         
 * System interface::            
 * Development helper API::      
 @end menu
 
-@node Types and classes, Equivalence, Core library, Core library
+@node Types and classes, Equality and comparison, Core library, Core library
 @section Types and classes
 @c NODE 型とクラス
 
@@ -237,12 +237,32 @@ Otherwise, returns @code{#f}.
 @c COMMON
 @end defun
 
-@node Equivalence, Numbers, Types and classes, Core library
-@section Equivalence
+@node Equality and comparison, Numbers, Types and classes, Core library
+@section Equality and comparison
+@c NODE 等価性と比較
+
+@c EN
+Comparing two objects seems trivial, but if you look into deeper,
+there are lots of subtleties hidden in the corners.  What should it
+mean if two procedures are equal to each other?  How to order two
+complex numbers?  It all depends on your purpose; there's no single
+generic answer.  So Scheme (and Gauche) provides several options,
+as well as the way to make your own.
+@c JP
+@c COMMON
+
+@menu
+* Equality::                    
+* Comparison::                  
+* Comparators::                 
+@end menu
+
+@node Equality, Comparison, Equality and comparison, Equality and comparison
+@subsection Equality
 @c NODE 等価
 
 @c EN
-Scheme has three different general equivalence test predicates.
+Scheme has three different general equality test predicates.
 Other than these, some types have their own comparison predicates.
 @c JP
 Schemeには等価性を判定する汎用的な述語が3つあります。
@@ -423,8 +443,195 @@ provides a procedure @code{isomorphic?} which does the job
 その目的に使えます。(@ref{Determine isomorphism}参照)。
 @c COMMON
 
+@node Comparison, Comparators, Equality, Equality and comparison
+@subsection Comparison
+@c NODE 比較
+
+@c EN
+Equality only concern about whether two objects are equivalent or not.
+However, sometimes we want to see the order among objects.  Again,
+there's no single ``universal order''.  It doesn't make mathematical
+sense to ask if one complex number is greater than another, but 
+having some artificial order is useful when you want a consistent
+result of sorting a list of objects including numbers.
+@c JP
+等価性はオブジェクトが等しいかどうかしか判断しませんが、しばしば
+オブジェクトの順序関係を調べたい場合もあります。
+ここでも、唯一の「万能順序」があるわけではありません。例えばある複素数が
+別の複素数より大きいか小さいかというのは数学的には意味をないませんが、
+数値を含むオブジェクトのリストをソートして一貫性のある結果を得たい場合は
+何らかの適当な順序づけを決めておくことは役に立ちます。
+@c COMMON
+
+@defun compare obj1 obj2
+@c EN
+A general comparison procedure.  Returns -1 if @var{obj1} is less than
+@var{obj2}, 0 if @var{obj1} is equal to @var{obj2}, and 1 if @var{obj1}
+is greater than @var{obj2}.  Signals an error if @var{obj1} and @var{obj2}
+are incomparable.
+
+Some built-in types are handled by this procedure reflecting ``natural''
+order of comparison.  Other built-in types are generally
+uncomparable.  For Scheme-defined classes, this procedure calls
+a generic function @code{object-compare}.
+@c JP
+一般的な比較手続きです。@var{obj1}が@var{obj2}より小さければ-1を、
+等しければ0を、大きければ1を返します。@var{obj1}と@var{obj2}が
+比較できない場合はエラーとなります。
+
+いくつかの組み込み型は「自然な」比較順を用いて比較されます。
+他の組み込み型は通常比較不可能です。Schemeで定義されたクラスについては、
+この手続きはジェネリックファンクション@code{object-compare}を
+呼び出します。
+@c COMMON
+@end defun
+
+@deffn {Generic Function} object-compare obj1 obj2
+@c EN
+Specializing this generic function extends @code{compare} procedure
+for user-defined classes.
+@c JP
+このジェネリックファンクションを特殊化することで
+@code{compare}手続きをユーザ定義クラスに対して動作するように拡張できます。
+@c COMMON
+@end deffn
+
+@defun eq-compare obj1 obj2
+@c EN
+Returns -1 (less than), 0 (equal to) or 1 (greater than) 
+according to a certain total ordering of
+@var{obj1} and @var{obj2}.   Both arguments can be any Scheme
+objects, and can be different type of objects.
+The following properties are guaranteed.
+
+@itemize @bullet
+@item
+@code{(eq-compare x y)} is 0 iff @code{(eq? x y)} is @code{#t}.
+@item
+The result is consistent within a single run of the process
+(but may differ between runs).
+@end itemize
+
+Other than these, no actual semantics are given to the ordering.
+
+This procedure is useful when you need to order arbitrary Scheme
+objects, but you don't care the actual order as far as it's consistent.
+@c JP
+とある全順序に従って@var{obj1}と@var{obj2}を比較し、前者が小さければ-1、
+等しければ0、前者が大きければ1を返します。@var{obj1}と@var{obj2}は
+どんなSchemeオブジェクトでも良く、また型が違っていても構いません。
+次の二つの性質が保証されます。
+
+@itemize @bullet
+@item
+@code{(eq? x y)}が@code{#t}なら、そしてその時に限り、
+@code{(eq-compare x y)}は0。
+@item
+結果は、一回のプロセスの実行中で一貫している
+(ただし、別のプロセスの実行では異なる結果を返すかもしれない)。
+@end itemize
+
+これらの性質以外には、順序についていかなる意味もありません。
+
+この手続きは、任意のSchemeオブジェクトをとにかく順序づけたい
+(一貫してさえいれば、実際の順序は何でも良い)、という場合に使います。
+@c COMMON
+@end defun
+
+
+@node Comparators,  , Comparison, Equality and comparison
+@subsection Comparators
+@c NODE 比較器
+
+Equality and comparison procedures are parameters in various
+data structures.   For example, a treemap needs to order its keys;
+a hashtable needs to see if the keys are the same or not,
+and it also need a hash funciton consistent with the equality predicate.
+
+If we want to work on genereic data structures, we need to abstract those
+variations of comparison schemes.  So here comes the comparator.
+
+@deftp {Builtin Class} <comparator>
+@end deftp
+
+@defun make-comparator type-test equal compare hash :optional name
+[SRFI-114]
+@end defun
+
+@defun comparator? obj
+[SRFI-114]
+@end defun
+
+@defun comparator-comparison-procedure? cmpr
+@defunx comparator-hash-function? cmpr
+[SRFI-114]
+@end defun
+
+@defun comparator-type-test-procedure cmpr
+@defunx comparator-equality-predicate cmpr
+@defunx comparator-comparison-procedure cmpr
+@defunx comparator-hash-function cmpr
+[SRFI-114]
+@end defun
+
+@defun comparator-test-type cmpr obj
+@defunx comparator-check-type cmpr obj
+@defunx comparator-equal? cmpr a b
+@defunx comparator-compare cmpr a b
+@defunx comparator-hash cmpr obj
+[SRFI-114]
+@end defun
+
+@defvar default-comparator
+[SRFI-114]
+@end defvar
+
+@defvar eq-comparator
+@defvarx eqv-comparator
+@defvarx equal-comparator
+[SRFI-114]
+@end defvar
+
+@defvar boolean-comparator
+@defvarx char-comparator
+@defvarx char-ci-comparator
+@defvarx string-comparator
+@defvarx string-ci-comparator
+[SRFI-114]
+@end defvar
+
+@defvar exact-integer-comparator
+@defvarx integer-comparator
+@defvarx rational-comparator
+@defvarx real-comparator
+@defvarx complex-comparator
+@defvarx number-comparator
+[SRFI-114]
+@end defvar
+
+@defvar pair-comparator
+@defvarx list-comparator
+@defvarx vector-comparator
+@defvarx uvector-comparator
+@defvarx bytevector-comparator
+[SRFI-114]
+@end defvar
+
+@defun make-reverse-comparator cmpr
+[SRFI-114]
+@end defun
+
+@defun make-key-comparator cmpr test key
+@end defun
+
+@defun make-car-comparator cmpr
+@defunx make-cdr-comparator cmpr
+[SRFI-114]
+@end defun
+
+
 @c ----------------------------------------------------------------------
-@node Numbers, Booleans, Equivalence, Core library
+@node Numbers, Booleans, Equality and comparison, Core library
 @section Numbers
 @c NODE 数値
 
@@ -9254,7 +9461,7 @@ is smaller than the second), @code{0} (two arguments are the same),
 or @code{1} (the first argument is grater than the second).
 
 Actually, the built-in procedure @code{compare} works as @var{key-compare}
-on most orderable built-in types (@xref{Comparison and sorting}), 
+on most orderable built-in types (@xref{Comparison}), 
 and you can omit the @var{key-compare} argument if the built-in
 @code{compare} is for your need
 (the third form).
@@ -9273,7 +9480,7 @@ and you can omit the @var{key-compare} argument if the built-in
 最初のキーの方が大きければ@code{1}を返す関数です。
 
 大抵の比較可能な組み込み型に対してそのように振る舞う
-組み込み関数@code{compare}があり(@ref{Comparison and sorting}参照)、
+組み込み関数@code{compare}があり(@ref{Comparison}参照)、
 それで十分な場合は@var{key-compare}引数を省略することもできます
 (3番目の形式)。
 @c COMMON
@@ -16676,7 +16883,7 @@ R7RSでは@code{flush-output-port}を採用しています。
 
 
 @c ----------------------------------------------------------------------
-@node Loading Programs, Comparison and sorting, Input and output, Core library
+@node Loading Programs, Sorting and merging, Input and output, Core library
 @section Loading Programs
 @c NODE プログラムのロード
 
@@ -17488,96 +17695,9 @@ it reads the first form of the code and see if it is a
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Comparison and sorting, System interface, Loading Programs, Core library
-@section Comparison and sorting
-@c NODE 比較とソート
-
-@c EN
-@subsection Comparison
-@c JP
-@subsection 比較
-@c COMMON
-
-@defun compare obj1 obj2
-@c EN
-A general comparison procedure.  Returns -1 if @var{obj1} is less than
-@var{obj2}, 0 if @var{obj1} is equal to @var{obj2}, and 1 if @var{obj1}
-is greater than @var{obj2}.  Signals an error if @var{obj1} and @var{obj2}
-are incomparable.
-
-Some built-in types are handled by this procedure reflecting ``natural''
-order of comparison.  Other built-in types are generally
-uncomparable.  For Scheme-defined classes, this procedure calls
-a generic function @code{object-compare}.
-@c JP
-一般的な比較手続きです。@var{obj1}が@var{obj2}より小さければ-1を、
-等しければ0を、大きければ1を返します。@var{obj1}と@var{obj2}が
-比較できない場合はエラーとなります。
-
-いくつかの組み込み型は「自然な」比較順を用いて比較されます。
-他の組み込み型は通常比較不可能です。Schemeで定義されたクラスについては、
-この手続きはジェネリックファンクション@code{object-compare}を
-呼び出します。
-@c COMMON
-@end defun
-
-@deffn {Generic Function} object-compare obj1 obj2
-@c EN
-Specializing this generic function extends @code{compare} procedure
-for user-defined classes.
-@c JP
-このジェネリックファンクションを特殊化することで
-@code{compare}手続きをユーザ定義クラスに対して動作するように拡張できます。
-@c COMMON
-@end deffn
-
-@defun eq-compare obj1 obj2
-@c EN
-Returns -1 (less than), 0 (equal to) or 1 (greater than) 
-according to a certain total ordering of
-@var{obj1} and @var{obj2}.   Both arguments can be any Scheme
-objects, and can be different type of objects.
-The following properties are guaranteed.
-
-@itemize @bullet
-@item
-@code{(eq-compare x y)} is 0 iff @code{(eq? x y)} is @code{#t}.
-@item
-The result is consistent within a single run of the process
-(but may differ between runs).
-@end itemize
-
-Other than these, no actual semantics are given to the ordering.
-
-This procedure is useful when you need to order arbitrary Scheme
-objects, but you don't care the actual order as far as it's consistent.
-@c JP
-とある全順序に従って@var{obj1}と@var{obj2}を比較し、前者が小さければ-1、
-等しければ0、前者が大きければ1を返します。@var{obj1}と@var{obj2}は
-どんなSchemeオブジェクトでも良く、また型が違っていても構いません。
-次の二つの性質が保証されます。
-
-@itemize @bullet
-@item
-@code{(eq? x y)}が@code{#t}なら、そしてその時に限り、
-@code{(eq-compare x y)}は0。
-@item
-結果は、一回のプロセスの実行中で一貫している
-(ただし、別のプロセスの実行では異なる結果を返すかもしれない)。
-@end itemize
-
-これらの性質以外には、順序についていかなる意味もありません。
-
-この手続きは、任意のSchemeオブジェクトをとにかく順序づけたい
-(一貫してさえいれば、実際の順序は何でも良い)、という場合に使います。
-@c COMMON
-@end defun
-
-@c EN
-@subsection Sorting and merging
-@c JP
-@subsection ソートとマージ
-@c COMMON
+@node Sorting and merging, System interface, Loading Programs, Core library
+@section Sorting and merging
+@c NODE ソートとマージ
 
 @c EN
 The interface of sorting and merging API complies SRFI-95, with the
@@ -17780,7 +17900,7 @@ These are redundant now, for @code{sort} etc. takes optional @var{keyfn}.
 
 
 @c ----------------------------------------------------------------------
-@node System interface, Development helper API, Comparison and sorting, Core library
+@node System interface, Development helper API, Sorting and merging, Core library
 @section System interface
 @c NODE システムインタフェース
 

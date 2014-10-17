@@ -21608,7 +21608,7 @@ of connections, where each connection is the form
 that means a node @code{<node>} is connected to other nodes
 @code{<downstream>} etc.   @code{<node>} can be arbitrary
 object, as far as it can be compared by the procedure @var{eqproc},
-which is @var{eqv?} by default (@xref{Equivalence}).
+which is @var{eqv?} by default (@xref{Equality}).
 Returns a list of @code{<node>}s sorted topologically.
 
 If the graph contains circular reference, an error is signaled.
@@ -21621,7 +21621,7 @@ If the graph contains circular reference, an error is signaled.
 これで、ノード@code{<node>}から別のノード@code{<downstream>}等への接続が
 あることを表現します。@code{<node>}はどんなオブジェクトであっても構いませんが、
 同一性の判定が@var{eqproc}で行えなければなりません。@var{eqproc}の既定値は
-@code{eqv?}です (@ref{Equivalence}参照)。
+@code{eqv?}です (@ref{Equality}参照)。
 トポロジカルにソートされたノードのリストを返します。
 
 グラフに循環が検出された場合はエラーとなります。
