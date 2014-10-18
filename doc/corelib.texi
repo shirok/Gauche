@@ -254,6 +254,7 @@ as well as the way to make your own.
 @menu
 * Equality::                    
 * Comparison::                  
+* Hashing::                     
 * Comparators::                 
 @end menu
 
@@ -443,7 +444,7 @@ provides a procedure @code{isomorphic?} which does the job
 その目的に使えます。(@ref{Determine isomorphism}参照)。
 @c COMMON
 
-@node Comparison, Comparators, Equality, Equality and comparison
+@node Comparison, Hashing, Equality, Equality and comparison
 @subsection Comparison
 @c NODE 比較
 
@@ -538,8 +539,130 @@ objects, but you don't care the actual order as far as it's consistent.
 @c COMMON
 @end defun
 
+@node Hashing, Comparators, Comparison, Equality and comparison
+@subsection Hashing
+@c NODE ハッシュ
 
-@node Comparators,  , Comparison, Equality and comparison
+@c EN
+Hash functions have close relationship with equality predicate,
+so we list them here.
+
+@c JP
+ハッシュ関数は等価判定述語と関係が深いので、ここで説明します。
+@c COMMON
+
+@defun eq-hash obj
+@defunx eqv-hash obj
+@c EN
+These are hash functions used for @code{eq?}-type and @code{eqv?}-type
+hash tables.  Returns a non-negative integer up to 2^@emph{n}-1, where
+@emph{n} is system-dependent value no less than 32.
+The returned hash value is system- and process-dependent,
+and can't be carried over the boundary of the running process.
+
+Note: don't hash numbers by @code{eq-hash}.  Two numbers
+are not guaranteed to be @code{eq?} even if they are numerically equal,
+so they are not supposed to be used as a key in @code{eq?}-type hash table.
+@c JP
+この2つは @code{eq?}-タイプおよび @code{eqv?}-タイプのハッシュテーブル
+用のハッシュ関数で、2^@emph{n}-1 以下の非負の整数を返します。ここで、
+@emph{n} は 32 以上のシステム依存の値です。返り値のハッシュ値は、
+システムおよびプロセスに依存する値です。動作しているプロセスの境界を
+超えてもちまわることはできません。
+
+注意: @code{eq-hash} をつかって、数をハッシュしてはいけません。
+2つの数はたとえその値が等しくても @code{eq?} であることは保証されて
+いません。したがって、@code{eq?}-タイプのハッシュテーブルで、
+数のキーとしての使用はサポートされていません。
+@c COMMON
+@end defun
+
+@defun hash obj
+@c EN
+Returns a hash value of @var{obj}.  This is the hash function used
+in @code{equal?}-type hash table.  The hash value is an exact
+non-negative integer, and it has two properties:
+@itemize
+@item
+For any object @var{a} and @var{b},
+if @code{(equal? @var{a} and @var{b})},
+then @code{(= (hash @var{a}) (hash @var{b}))},
+while @code{hash} is defined for types of @var{a} and @var{b}.
+@item
+The value of @code{hash} is independent from the runtime state
+of the machine (such as address of the data); so you can safely save
+the hash value to file and read it again with different process
+without losing validity of the hash value.
+@end itemize
+If @var{obj} is either a number, a boolean, a character,
+a symbol, a keyword, a string, a list or a vector,
+internal hash function is used to calculate the hash value.
+If @var{obj} is other than that, @code{hash} calls
+a generic function @code{object-hash} to calculate the hash value.
+@c JP
+@var{obj} のハッシュ値を返します。@code{equal?}-タイプのハッシュテーブルで
+利用するハッシュ関数です。この関数が返すハッシュ値は正確な非負整数で、
+以下の二つの性質があります。
+@itemize
+@item
+@var{a} および @var{b} の型について、@code{hash} が定義されているとき、
+あらゆるオブジェクト @var{a} および  @var{b} に対して、
+@code{(equal? @var{a} @var{b})} であれば
+@code{(= (hash @var{a}) (hash @var{b}))}。
+@item
+@code{hash} は(そのデータのアドレスというような)実行時の計算機の状態とは
+独立しています。それゆえ、その値をファイルに格納し、別のプロセスで読み込んで
+利用しても、ハッシュ値の正当性を失うことがないので、安全です。
+@end itemize
+@var{obj} が、数値、真理値、文字、シンボル、キーワード、文字列、リスト、
+ベクタのいずれかならば、そのハッシュ値を求めるのには内部ハッシュ関数を
+使います。
+@var{obj} が、それ以外であれば、 @code{hash} は総称関数 @code{object-hash}
+を呼んで、そのハッシュ値を計算します。
+@c COMMON
+@end defun
+
+@deffn {Generic Function} object-hash obj
+@c EN
+By defining a method for this generic function, objects of
+user-defined types can have a hash value and can be used
+in @code{equal?} hash table.
+
+The method has to return an exact non-negative integer, and
+has to follow the same constraints as of @code{hash}.
+
+If the method needs to get hash value of @var{obj}'s elements,
+it has to call @code{hash} on them, not @code{object-hash}.
+For the hashing of primitive objects are done in @code{hash}.
+@c JP
+この総称関数に対するメソッドを定義することにより、ユーザ定義された
+型のオブジェクトはハッシュ値を持つことができ、@code{equal?}型のハッシュ
+テーブルで利用することができるようになります。
+
+メソッドは正確な非負整数を返さなければなりません。また、@code{hash} と
+同じ制約に従わなければなりません。
+
+メソッドが @var{obj} の要素のハッシュ値を必要とする場合には、
+それらに対しては、@code{object-hash} ではなく、@code{hash} を
+呼ばなければなりません。プリミティブなオブジェクトのハッシュ計算は
+@code{hash} が行うからです。
+
+@c COMMON
+@example
+(define-class <myclass> () (x y))
+
+;; user-defined equality function
+(define-method object-equal? ((a <myclass>) (b <myclass>))
+  (and (equal? (ref a 'x) (ref b 'x))
+       (eq?    (ref a 'y) (ref b 'y))))
+
+;; user-defined hash function
+(define-method object-hash ((a <myclass>))
+  (hash (list (ref a 'x) (ref a 'y))))
+@end example
+@end deffn
+
+@node Comparators,  , Hashing, Equality and comparison
 @subsection Comparators
 @c NODE 比較器
 
@@ -8980,173 +9103,27 @@ Hash table class.  Inherits @code{<collection>} and @code{<dictionary>}.
 @c COMMON
 @end deftp
 
-
-@defun make-hash-table :optional type
+@defun make-hash-table :optional comparator
 @c EN
-Creates a hash table.   A symbol @var{type} specifies the type of the table.
-The following types are currently supported.
-(If @var{type} is omitted, @code{eq?} is assumed.)
+Creates a hash table.  The optional @var{comparator} argument
+specifies key equality and hash function.  It can be either a
+comparator (@xref{Comparators}), or one of the symbols 
+@code{eq?}, @code{eqv?}, @code{equal?} or @code{string=?}.
+If it is one of those symbols, @code{eq-comparator},
+@code{eqv-comparator}, @code{equal-comparator} and
+@code{string-comparator} will be used, respectively.
+
+If @var{comparator} is omitted, @code{eq-comparator} is assumed.
 @c JP
-ハッシュテーブルを作成します。シンボル@var{type}はテーブルのタイプを指定します。
-現在、以下のようなタイプがサポートされています。
-(@var{type}が省略された場合は@code{eq?}とみなされます。)
-@c COMMON
-@table @code
-@item eq?
-@c EN
-Keys are compared by @code{eq?}.
-@c JP
-キーの比較に@code{eq?}を使います。
-@c COMMON
-@item eqv?
-@c EN
-Keys are compared by @code{eqv?}.
-@c JP
-キーの比較に@code{eqv?}を使います。
-@c COMMON
-@item equal?
-@c EN
-Keys are compared by @code{equal?}.
-@c JP
-キーの比較に@code{equal?}を使います。
-@c COMMON
-@item string=?
-@c EN
-Keys are compared by @code{string=?}.  Key must be a string.
-@c JP
-キーの比較に@code{string=?}を使います。キーは文字列でなければなりません。
-@c COMMON
-@end table
+ハッシュテーブルを作成します。省略可能な@var{comparator}引数には、
+比較器 (@ref{Comparators}参照)もしくは、シンボル
+@code{eq?}、@code{eqv?}、@code{equal?}、@code{string=?}のいずれかを
+指定します。シンボルの場合はそれぞれ
+@code{eq-comparator}、
+@code{eqv-comparator}、@code{equal-comparator}、
+@code{string-comparator}が使われます。
 
-@c EN
-Hash functions used for @code{eq?}, @code{eqv?} and
-@code{string=?}-type hash tables are built in the system;
-they can be called from Scheme as @code{eq-hash}, @code{eqv-hash},
-and @code{string-hash} (SRFI-13).  Those functions can't be extended
-for user-defined objects.   On the other hand, @code{equal?}-type
-hash tables uses @code{hash} function below, with which you
-define hash functions for user-defined objects.
-@c JP
-@code{eq?}、@code{eqv?}、@code{string=?}タイプのハッシュテーブルでは、
-システム組み込みのハッシュ関数が使われます。Schemeからは、
-それらのハッシュ関数はそれぞれ@code{eq-hash}、@code{eqv-hash}、
-そしてSRFI-13の@code{string-hash}として呼ぶことができます。
-これらの関数はユーザ定義型に対応するように拡張することはできません。
-一方、@code{equal?}タイプのハッシュテーブルは
-下に述べる@code{hash}関数を使います。後者では、ユーザ定義型に対するハッシュ関数を
-独自に定義することができます。
-@c COMMON
-
-@end defun
-
-@defun hash obj
-@c EN
-Returns a hash value of @var{obj}.  This is the hash function used
-in @code{equal?}-type hash table.  The hash value is an exact
-non-negative integer, and it has two properties:
-@itemize
-@item
-For any object @var{a} and @var{b},
-if @code{(equal? @var{a} and @var{b})},
-then @code{(= (hash @var{a}) (hash @var{b}))},
-while @code{hash} is defined for types of @var{a} and @var{b}.
-@item
-The value of @code{hash} is independent from the runtime state
-of the machine (such as address of the data); so you can safely save
-the hash value to file and read it again with different process
-without losing validity of the hash value.
-@end itemize
-If @var{obj} is either a number, a boolean, a character,
-a symbol, a keyword, a string, a list or a vector,
-internal hash function is used to calculate the hash value.
-If @var{obj} is other than that, @code{hash} calls
-a generic function @code{object-hash} to calculate the hash value.
-@c JP
-@var{obj} のハッシュ値を返します。@code{equal?}-タイプのハッシュテーブルで
-利用するハッシュ関数です。この関数が返すハッシュ値は正確な非負整数で、
-以下の二つの性質があります。
-@itemize
-@item
-@var{a} および @var{b} の型について、@code{hash} が定義されているとき、
-あらゆるオブジェクト @var{a} および  @var{b} に対して、
-@code{(equal? @var{a} @var{b})} であれば
-@code{(= (hash @var{a}) (hash @var{b}))}。
-@item
-@code{hash} は(そのデータのアドレスというような)実行時の計算機の状態とは
-独立しています。それゆえ、その値をファイルに格納し、別のプロセスで読み込んで
-利用しても、ハッシュ値の正当性を失うことがないので、安全です。
-@end itemize
-@var{obj} が、数値、真理値、文字、シンボル、キーワード、文字列、リスト、
-ベクタのいずれかならば、そのハッシュ値を求めるのには内部ハッシュ関数を
-使います。
-@var{obj} が、それ以外であれば、 @code{hash} は総称関数 @code{object-hash}
-を呼んで、そのハッシュ値を計算します。
-@c COMMON
-@end defun
-
-@deffn {Generic Function} object-hash obj
-@c EN
-By defining a method for this generic function, objects of
-user-defined types can have a hash value and can be used
-in @code{equal?} hash table.
-
-The method has to return an exact non-negative integer, and
-has to follow the same constraints as of @code{hash}.
-
-If the method needs to get hash value of @var{obj}'s elements,
-it has to call @code{hash} on them, not @code{object-hash}.
-For the hashing of primitive objects are done in @code{hash}.
-@c JP
-この総称関数に対するメソッドを定義することにより、ユーザ定義された
-型のオブジェクトはハッシュ値を持つことができ、@code{equal?}型のハッシュ
-テーブルで利用することができるようになります。
-
-メソッドは正確な非負整数を返さなければなりません。また、@code{hash} と
-同じ制約に従わなければなりません。
-
-メソッドが @var{obj} の要素のハッシュ値を必要とする場合には、
-それらに対しては、@code{object-hash} ではなく、@code{hash} を
-呼ばなければなりません。プリミティブなオブジェクトのハッシュ計算は
-@code{hash} が行うからです。
-
-@c COMMON
-@example
-(define-class <myclass> () (x y))
-
-;; user-defined equality function
-(define-method object-equal? ((a <myclass>) (b <myclass>))
-  (and (equal? (ref a 'x) (ref b 'x))
-       (eq?    (ref a 'y) (ref b 'y))))
-
-;; user-defined hash function
-(define-method object-hash ((a <myclass>))
-  (hash (list (ref a 'x) (ref a 'y))))
-@end example
-@end deffn
-
-@defun eq-hash obj
-@defunx eqv-hash obj
-@c EN
-These are hash functions used for @code{eq?}-type and @code{eqv?}-type
-hash tables.  Returns a non-negative integer up to 2^@emph{n}-1, where
-@emph{n} is system-dependent value no less than 32.
-The returned hash value is system- and process-dependent,
-and can't be carried over the boundary of the running process.
-
-Note: don't hash numbers by @code{eq-hash}.  Two numbers
-are not guaranteed to be @code{eq?} even if they are numerically equal,
-so they are not supposed to be used as a key in @code{eq?}-type hash table.
-@c JP
-この2つは @code{eq?}-タイプおよび @code{eqv?}-タイプのハッシュテーブル
-用のハッシュ関数で、2^@emph{n}-1 以下の非負の整数を返します。ここで、
-@emph{n} は 32 以上のシステム依存の値です。返り値のハッシュ値は、
-システムおよびプロセスに依存する値です。動作しているプロセスの境界を
-超えてもちまわることはできません。
-
-注意: @code{eq-hash} をつかって、数をハッシュしてはいけません。
-2つの数はたとえその値が等しくても @code{eq?} であることは保証されて
-いません。したがって、@code{eq?}-タイプのハッシュテーブルで、
-数のキーとしての使用はサポートされていません。
+@var{comparator}が省略された場合は@code{eq-comparator}が使われます。
 @c COMMON
 @end defun
 

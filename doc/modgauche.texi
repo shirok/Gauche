@@ -3694,7 +3694,7 @@ provided by @code{dbm} module also implement it.
 
 To make your own class implement the dictionary interface, you have
 to provide at least @code{dict-get}, @code{dict-put!},
-@code{dict-delete!} and @code{dict-fold}.
+@code{dict-delete!}, @code{dict-fold} and @code{dict-comparator}.
 (You can omit @code{dict-delete!} if the datatype doesn't allow
 deleting entries.)
 Other generic functions
@@ -3732,6 +3732,14 @@ If the dictionary doesn't have such an entry, this function is noop.
 
 @deffn {Generic function} dict-clear! (dict @code{<dictionary>})
 Empties the dictionary.
+@end deffn
+
+@deffn {Generic function} dict-comparator (dict @code{<dictionary>})
+@c EN
+Should return a comparator used to compare keys.
+@c JP
+キーを比較するのに使われるcomparatorを返します。
+@c COMMON
 @end deffn
 
 @deffn {Generic function} dict-fold (dict @code{<dictionary>}) proc seed
@@ -3889,6 +3897,7 @@ You don't need to provide every dictionary interface.
   :put!       tree-map-put!
   :delete!    tree-map-delete!
   :clear!     tree-map-clear!
+  :comparator tree-map-comparator
   :exists?    tree-map-exists?
   :fold       tree-map-fold
   :fold-right tree-map-fold-right
