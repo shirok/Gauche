@@ -1,3 +1,9 @@
+2014-10-18  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/vecutil.scm (vector-tabluate): Made it restart-safe.
+	  (reverse-list->vector): Implement in core instead of srfi-43.
+	* test/vector.scm: Added.
+
 2014-10-17  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/computil.scm: Changed make-field-comparator to

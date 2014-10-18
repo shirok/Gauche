@@ -8832,6 +8832,25 @@ With @var{gauche.collection} module, you can use
 @c COMMON
 @end defun
 
+@defun reverse-list->vector list :optional start end
+[SRFI-43]
+@c EN
+Without optional arguments, it returns the same thing as
+@code{(list->vector (reverse list))}, but does not
+allocate the intermediate list.   The optional @var{start} and
+@var{end} argument limits the range of the input list.
+@c JP
+省略可能引数が無い場合、
+@code{(list->vector (reverse list))}と同じ結果を返しますが、
+中間リストを作りません。省略可能引数@var{start}および@var{end}が
+与えられた場合は、それは@var{list}の範囲を指定します。
+@c COMMON
+@example
+(reverse-list->vector '(a b c d e f g) 1 5)
+  @result{} #(e d c b)
+@end example
+@end defun
+
 @defun vector->string vector :optional start end
 @defunx string->vector string :optional start end
 [R7RS]

@@ -157,7 +157,7 @@
 (autoload gauche.vecutil
           vector-tabulate vector-map vector-map! vector-for-each
           vector-map-with-index vector-map-with-index!
-          vector-for-each-with-index)
+          vector-for-each-with-index reverse-list->vector)
 
 (autoload gauche.computil
           default-comparator

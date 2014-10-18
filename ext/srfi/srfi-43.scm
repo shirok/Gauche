@@ -1102,19 +1102,20 @@
 ;;;
 ;;; This also diverges on circular lists unless, again, LENGTH returns
 ;;; something that makes - bork.
-(define (reverse-list->vector lst :optional (start 0) (end (length lst)))
-  (let ([start (check-type nonneg-int? start reverse-list->vector)]
-        [end   (check-type nonneg-int? end   reverse-list->vector)])
-    (define (f index l)
-      (cond [(null? l)
-             (error "List too short"
-                    `(list was ,lst)
-                    `(attempted end was ,end)
-                    `(while calling ,reverse-list->vector))]
-            [(pair? l)
-             (values (car l) (cdr l))]
-            [else
-             (error "Erroneous value"
-                    (list list? lst)
-                    `(while calling ,reverse-list->vector))]))
-    (vector-unfold-right f (- end start) (list-tail lst start))))
+;; [SK] - supported in the core
+;; (define (reverse-list->vector lst :optional (start 0) (end (length lst)))
+;;   (let ([start (check-type nonneg-int? start reverse-list->vector)]
+;;         [end   (check-type nonneg-int? end   reverse-list->vector)])
+;;     (define (f index l)
+;;       (cond [(null? l)
+;;              (error "List too short"
+;;                     `(list was ,lst)
+;;                     `(attempted end was ,end)
+;;                     `(while calling ,reverse-list->vector))]
+;;             [(pair? l)
+;;              (values (car l) (cdr l))]
+;;             [else
+;;              (error "Erroneous value"
+;;                     (list list? lst)
+;;                     `(while calling ,reverse-list->vector))]))
+;;     (vector-unfold-right f (- end start) (list-tail lst start))))

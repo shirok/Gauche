@@ -34,13 +34,27 @@
 (define-module gauche.vecutil
   (export vector-tabulate vector-map vector-map! vector-for-each
           vector-map-with-index vector-map-with-index!
-          vector-for-each-with-index))
+          vector-for-each-with-index reverse-list->vector))
 (select-module gauche.vecutil)
 
 ;; like list-tabulate
 (define-inline (vector-tabulate len proc)
-  (rlet1 rvec (make-vector len)
-    (dotimes [i len] (vector-set! rvec i (proc i)))))
+  (do ([i 0 (+ i 1)]
+       [r '() (cons (proc i) r)])
+      [(>= i len) (reverse-list->vector r)]))
+
+(define (reverse-list->vector lis :optional (start 0) (end -1))
+  (let* ([len (length lis)]
+         [end (if (< end 0) len end)])
+    (when (< len start)
+      (errorf "start arugment out of range [0-~s]: ~s" len start))
+    (when (< end start)
+      (errorf "start ~s is greater than end ~s" start end))
+    (do ([vec (make-vector (- end start))]
+         [lis (drop lis start) (cdr lis)]
+         [k (- end start 1) (- k 1)])
+        [(< k 0) vec]
+      (vector-set! vec k (car lis)))))
 
 (define-inline (%vector-update! vec len proc)
   (dotimes [i len] (vector-set! vec i (proc i))))
