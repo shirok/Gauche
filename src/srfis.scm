@@ -533,10 +533,10 @@ case節での@code{=>}
 srfi-95
 
 Sorting and merging
-Supported natively.  @xref{Comparison and sorting}.
+Supported natively.  @xref{Sorting and merging}.
 
 ソートとマージ
-組み込みです。@ref{Comparison and sorting}参照。
+組み込みです。@ref{Sorting and merging}参照。
 
 srfi-98, srfi-98
 
