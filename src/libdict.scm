@@ -276,8 +276,8 @@
 (define-cproc hash-table-stat (hash::<hash-table>)   Scm_HashTableStat)
 
 ;; conversion to/from hash-table
-(define (alist->hash-table a . opt-eq)
-  (rlet1 tb (apply make-hash-table opt-eq)
+(define (alist->hash-table a . opt-cmpr)
+  (rlet1 tb (apply make-hash-table opt-cmpr)
     (for-each (^x (hash-table-put! tb (car x) (cdr x))) a)))
 
 (define (hash-table->alist h)

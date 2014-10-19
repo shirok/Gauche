@@ -1737,8 +1737,8 @@ The following example shows the entries are compared by their @code{car}'s:
 (binary-heap-push! *heap* (cons 3 'b))
 (binary-heap-push! *heap* (cons 1 'c))
 
-(binary-heap-find-min heap) @result{} (1 . c)
-(binary-heap-find-max heap) @result{} (3 . b)
+(binary-heap-find-min *heap*) @result{} (1 . c)
+(binary-heap-find-max *heap*) @result{} (3 . b)
 @end example
 @end defun
 
@@ -3119,11 +3119,18 @@ the former consumes less memory in trade of slight slower access.
 As the table gets larger the difference becomes smaller.)
 @end deftp
 
-@defun make-sparse-table type
-Creates and returns an empty sparse table.  The @var{type} argument
-specifies how to compare the elements; currently it can be
-one of the symbols @code{eq?}, @code{eqv?}, @code{equal?} and
-@code{string=?}, like hash tables (@xref{Hashtables}).
+@defun make-sparse-table comparator
+Creates and returns an empty sparse table.
+The @var{comparator} argument specifies how to compare and hash keys;
+it must be either a comparator (@xref{Comparators}),
+or one of the symbols @code{eq?}, @code{eqv?}, @code{equal?} and
+@code{string=?}, like hash tables (@xref{Hashtables}).   If it is a symbol,
+@code{eq-comparator}, @code{eqv-comparator}, @code{equal-comparator} or
+@code{string-comparator} are used, respectively.
+@end defun
+
+@defun sparse-table-comparator st
+Returns the comparator used in the sparse table @var{st}.
 @end defun
 
 @defun sparse-table-copy st

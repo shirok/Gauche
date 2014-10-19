@@ -554,66 +554,48 @@ so we list them here.
 @defun eq-hash obj
 @defunx eqv-hash obj
 @c EN
-These are hash functions used for @code{eq?}-type and @code{eqv?}-type
-hash tables.  Returns a non-negative integer up to 2^@emph{n}-1, where
-@emph{n} is system-dependent value no less than 32.
+These are hash functions suitable to be used
+with @code{eq?} and @code{eqv?}, respectively.
 The returned hash value is system- and process-dependent,
 and can't be carried over the boundary of the running process.
 
 Note: don't hash numbers by @code{eq-hash}.  Two numbers
-are not guaranteed to be @code{eq?} even if they are numerically equal,
-so they are not supposed to be used as a key in @code{eq?}-type hash table.
+are not guaranteed to be @code{eq?} even if they are numerically equal.
 @c JP
-この2つは @code{eq?}-タイプおよび @code{eqv?}-タイプのハッシュテーブル
-用のハッシュ関数で、2^@emph{n}-1 以下の非負の整数を返します。ここで、
-@emph{n} は 32 以上のシステム依存の値です。返り値のハッシュ値は、
+この2つはそれぞれ@code{eq?}および @code{eqv?}と一緒に使うのに適した
+ハッシュ関数です。返り値のハッシュ値は、
 システムおよびプロセスに依存する値です。動作しているプロセスの境界を
 超えてもちまわることはできません。
 
 注意: @code{eq-hash} をつかって、数をハッシュしてはいけません。
 2つの数はたとえその値が等しくても @code{eq?} であることは保証されて
-いません。したがって、@code{eq?}-タイプのハッシュテーブルで、
-数のキーとしての使用はサポートされていません。
+いません。
 @c COMMON
 @end defun
 
 @defun hash obj
 @c EN
-Returns a hash value of @var{obj}.  This is the hash function used
-in @code{equal?}-type hash table.  The hash value is an exact
-non-negative integer, and it has two properties:
-@itemize
-@item
-For any object @var{a} and @var{b},
-if @code{(equal? @var{a} and @var{b})},
-then @code{(= (hash @var{a}) (hash @var{b}))},
-while @code{hash} is defined for types of @var{a} and @var{b}.
-@item
-The value of @code{hash} is independent from the runtime state
-of the machine (such as address of the data); so you can safely save
+This is a hash function suitable to be used with @code{equal?}.
+
+The hash value is an exact non-negative integer, and
+is independent from the runtime state
+of the machine (such as address of the data); so you can save
 the hash value to file and read it again with different process
 without losing validity of the hash value.
-@end itemize
+
 If @var{obj} is either a number, a boolean, a character,
 a symbol, a keyword, a string, a list or a vector,
 internal hash function is used to calculate the hash value.
 If @var{obj} is other than that, @code{hash} calls
 a generic function @code{object-hash} to calculate the hash value.
 @c JP
-@var{obj} のハッシュ値を返します。@code{equal?}-タイプのハッシュテーブルで
-利用するハッシュ関数です。この関数が返すハッシュ値は正確な非負整数で、
-以下の二つの性質があります。
-@itemize
-@item
-@var{a} および @var{b} の型について、@code{hash} が定義されているとき、
-あらゆるオブジェクト @var{a} および  @var{b} に対して、
-@code{(equal? @var{a} @var{b})} であれば
-@code{(= (hash @var{a}) (hash @var{b}))}。
-@item
-@code{hash} は(そのデータのアドレスというような)実行時の計算機の状態とは
-独立しています。それゆえ、その値をファイルに格納し、別のプロセスで読み込んで
-利用しても、ハッシュ値の正当性を失うことがないので、安全です。
-@end itemize
+@code{equal?}と一緒に使うのに適したハッシュ関数です。
+
+この関数が返すハッシュ値は正確な非負整数で、
+(そのデータのアドレスというような)実行時の計算機の状態とは
+独立した値となります。それゆえ、その値をファイルに格納し、別のプロセスで読み込む
+といった用途に使えます。
+
 @var{obj} が、数値、真理値、文字、シンボル、キーワード、文字列、リスト、
 ベクタのいずれかならば、そのハッシュ値を求めるのには内部ハッシュ関数を
 使います。
@@ -9132,6 +9114,11 @@ If it is one of those symbols, @code{eq-comparator},
 @code{eqv-comparator}, @code{equal-comparator} and
 @code{string-comparator} will be used, respectively.
 
+The comparator must have hash function, off course.  @xref{Hashing},
+for the built-in hash functions.  In general, comparators derived from
+other comparators having hash functions also have appropriate
+hash functions.
+
 If @var{comparator} is omitted, @code{eq-comparator} is assumed.
 @c JP
 ハッシュテーブルを作成します。省略可能な@var{comparator}引数には、
@@ -9141,6 +9128,10 @@ If @var{comparator} is omitted, @code{eq-comparator} is assumed.
 @code{eq-comparator}、
 @code{eqv-comparator}、@code{equal-comparator}、
 @code{string-comparator}が使われます。
+
+比較器はハッシュ関数を持っていなければなりません。組み込みのハッシュ関数については
+@ref{Hashing}を参照してください。比較器を組み合わせて作られた比較器については、
+元の比較器がハッシュ関数を持っていれば、通常は適切なハッシュ関数が設定されます。
 
 @var{comparator}が省略された場合は@code{eq-comparator}が使われます。
 @c COMMON
@@ -9154,14 +9145,26 @@ Returns @code{#t} if @var{obj} is a hash table.
 @c COMMON
 @end defun
 
+@defun hash-table-comparator ht
+@c EN
+Returns a comparator used in the hashtable @var{ht}.
+@c JP
+ハッシュテーブル@var{ht}で使われている比較器を返します。
+@c COMMON
+@end defun
+
 @defun hash-table-type ht
 @c EN
-Returns one of symbols @code{eq?}, @code{eqv?}, @code{equal?} or
-@code{string=?}, indicating the type of the hash table @var{ht}.
+This is an old API, superseded by @code{hash-table-comparator}.
+
+Returns one of symbols @code{eq?}, @code{eqv?}, @code{equal?},
+@code{string=?}, @code{general}, indicating the type of the hash table @var{ht}.
 @c JP
+これは古いAPIで、@code{hash-table-comparator}によって置き換えられます。
+
 ハッシュテーブル@var{ht}のタイプに応じて、シンボル
-@code{eq?}、@code{eqv?}、@code{equal?}、@code{string=?}のいずれかを
-返します。
+@code{eq?}、@code{eqv?}、@code{equal?}、@code{string=?}、
+@code{general}のいずれかを返します。
 @c COMMON
 @end defun
 
@@ -9173,26 +9176,25 @@ Returns the number of entries in the hash table @var{ht}.
 @c COMMON
 @end defun
 
-@defun hash-table type key&value @dots{}
+@defun hash-table comparator key&value @dots{}
 @c EN
-Constructs and returns a hash table of type @var{type} from given
+Constructs and returns a hash table from given
 list of arguments.
-@var{Type} is the same as of @code{make-hash-table}.
+The @var{comparator} argument is the same as of @code{make-hash-table}.
 Each @var{key&value} must be a pair, and its car is used as a key
 and its cdr is used as a value.
 @c JP
-与えられたキーと値の列からタイプが@var{type}であるハッシュテーブルを構築して
-返します。@var{type}の意味は@code{make-hash-table}と同じです。
+与えられたキーと値の列からハッシュテーブルを構築して
+返します。@var{comparator}引数の意味は@code{make-hash-table}と同じです。
 各@var{key&value}はペアでなければならず、そのcarがキー、cdrが値として使われます。
 @c COMMON
 
 @example
 (hash-table 'eq? '(a . 1) '(b . 2))
   @equiv{}
-  (let ((h (make-hash-table 'eq?)))
+  (rlet1 h (make-hash-table 'eq?)
      (hash-table-put! h 'a 1)
-     (hash-table-put! h 'b 2)
-     h)
+     (hash-table-put! h 'b 2))
 @end example
 @end defun
 
@@ -9379,20 +9381,18 @@ Returns all the keys or values of hash table @var{ht} in a list,
 @c COMMON
 @end defun
 
-@defun alist->hash-table alist :optional cmp
+@defun alist->hash-table alist :optional comparator
 @c EN
 Creates and returns a hash table that has entries of
 each element in alist, using its car as the key and
-its cdr as the value.  @var{Cmp} is a symbol specifying
-the comparison function of the created hash table;
-currently @code{eq?}, @code{eqv?}, @code{equal?} and @code{string=?}
-are supported.
+its cdr as the value.  The @var{comparator} argument
+is the same as in @code{make-hash-table}.  The default value
+of @var{comparator} is @code{eq-comparator}.
 @c JP
 alistに含まれるそれぞれの要素をエントリとして持つハッシュテーブルを
 作成して返します。その時、要素のcarがキーとして、要素のcdrが値として
-使われます。@var{cmp}は作成されたハッシュテーブルの比較関数を
-指定するシンボルで、現在は@code{eq?}、@code{eqv?}、@code{equal?}、
-@code{string=?}がサポートされています。
+使われます。@var{comparator}引数の意味は@code{make-hash-table}と同じです。
+@var{comparator}のデフォルト値は@code{eq-comparator}です。
 @c COMMON
 @end defun
 
@@ -9440,45 +9440,54 @@ The @code{<tree-map>} class inherits @code{<sequence>} and
 @c COMMON
 @end deftp
 
-@defun make-tree-map key=? key<?
-@defunx make-tree-map key-compare
-@defunx make-tree-map
+@defun make-tree-map :optional comparator
+@defunx make-tree-map key=? key<?
 @c EN
 Creates and returns an instance of @code{<tree-map>}.
+The keys are compared by @var{comparator},
+whose default is @code{default-comparator}.
+The comparator must have a comparison procedure, for
+we need a total order in the keys.
+@xref{Comparators}, for the details.
 
-If you give two arguments (the first form), each must
+For the backward compatibility, @code{make-tree-map} also
+accepts a procedure as a @var{comparator}; the procedure must
+take two keys and returns either @code{-1}, @code{0}, or @code{1},
+depending on whether the first key is less than, equal to, or
+greater than the second key, respectively.  In other words, it
+is a comparison procedure of a comparator.
+
+The second form of @code{make-tree-map} is also for the 
+backward compatibility; it takes two procedures, each must
 be a procedure that takes two keys; the first one returns
 @code{#t} iff two keys are equal, and the second one returns
 @code{#t} iff the first key is strictly smaller than the second.
-
-The second form takes one comparison procedure @var{key-compare}, that
-takes two keys and return either @code{-1} (the first argument
-is smaller than the second), @code{0} (two arguments are the same),
-or @code{1} (the first argument is grater than the second).
-
-Actually, the built-in procedure @code{compare} works as @var{key-compare}
-on most orderable built-in types (@xref{Comparison}), 
-and you can omit the @var{key-compare} argument if the built-in
-@code{compare} is for your need
-(the third form).
 @c JP
 @code{<tree-map>}オブジェクトを作成して返します。
+キーは比較器@var{comparator}を使って比較されます。@var{comparator}の
+デフォルト値は@code{default-comparator}です。キーには全順序関係が必要なので、
+比較器は比較手続きを持っていなければなりません。
+詳しくは@ref{Comparators}を参照してください。
 
-最初の形式のとおり、2つの引数を与える場合、それぞれの引数は
-2つの引数を受け取って比較する手続きでなければなりません。
-引数にはツリーマップに格納されるキーが渡されます。
+互換性のため、@code{make-tree-map}は@var{comparator}引数に
+単なる手続きを取ることもできます。渡される手続きは2引数を取り、
+最初の引数が2番目の引数より小さいか、等しいか、大きいかに応じて
+@code{-1}、@code{0}、@code{1}をそれぞれ返します。つまり
+この手続きは比較器の比較手続きそのものです。
+
+@code{make-tree-map}の2番目の呼び出し形式も互換性のためのものです。
+それぞれ2引数の2つの手続きを取り、
 最初の手続き@var{key=?}は、2つのキーが等しい場合にのみ真を返し、
 2番目の手続き@var{key<?}は、最初のキーが2番目のキーより前にある(小さい)場合にのみ
 真を返すようにします。
+@c COMMON
+@end defun
 
-1つの引数を取る2番目の形式では、@var{key-compare}は2つのキーを比較し、
-最初のキーの方が小さければ@code{-1}を、2つのキーが等しければ@code{0}を、
-最初のキーの方が大きければ@code{1}を返す関数です。
-
-大抵の比較可能な組み込み型に対してそのように振る舞う
-組み込み関数@code{compare}があり(@ref{Comparison}参照)、
-それで十分な場合は@var{key-compare}引数を省略することもできます
-(3番目の形式)。
+@defun tree-map-comparator tree-map
+@c EN
+Returns the comparator used in the tree map.
+@c JP
+@var{tree-map}で使われている比較器を返します。
 @c COMMON
 @end defun
 
@@ -9794,15 +9803,21 @@ The pairs are in ascending order of the keys.
 @c COMMON
 @end defun
 
-@defun alist->tree-map alist key=? key<?
+@defun alist->tree-map alist :optional comparator
+@defunx alist->tree-map alist key=? key<?
 @c EN
-Creates a new tree map with @var{key=?} and @var{key<?},
-then populates it with @var{alist}, each pair in which are
-interpreted as a cons of a key and its value.  Returns the
-created tree map.
+Creates a new tree map with the @var{comparator} or
+@var{key=?}/@var{key<?} procedures, then
+populates it with @var{alist}, each pair in which are
+interpreted as a cons of a key and its value.
+The meaning of @var{comparator}, @var{key=?} and @var{key<?} are
+the same as @code{make-tree-map}.
 @c JP
-@var{key=?}, @var{key<?} によって新たなtreemapを作成し、
+@var{comparator}または@var{key=?}, @var{key<?} によって新たなtreemapを作成し、
 連想リスト@var{alist}に含まれる要素を追加した上で返します。
+@var{alist}の各ペアのcarがキーに、cdrが値に使われます。
+@var{comparator}, @var{key=?}, @code{key<?}引数の意味は
+@code{make-tree-map}と同じです。
 @c COMMON
 @end defun
 

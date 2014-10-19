@@ -95,8 +95,8 @@
 (define (tree-map->alist tm)
   (tree-map-fold-right tm acons '()))
 
-(define (alist->tree-map alist key=? key<?)
-  (rlet1 tm (make-tree-map key=? key<?)
+(define (alist->tree-map alist . args)
+  (rlet1 tm (apply make-tree-map args)
     (dolist (kv alist)
       (tree-map-put! tm (car kv) (cdr kv)))))
 

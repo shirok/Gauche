@@ -36,8 +36,8 @@
   )
 (select-module gauche.hashutil)
 
-(define (hash-table type . kvs)
-  (rlet1 h (make-hash-table type)
+(define (hash-table cmpr . kvs)
+  (rlet1 h (make-hash-table cmpr)
     (for-each (^[kv] (hash-table-put! h (car kv) (cdr kv))) kvs)))
 
 (define (hash-table-map hash proc)
