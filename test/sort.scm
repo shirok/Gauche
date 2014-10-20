@@ -15,6 +15,15 @@
 
 (test-section "sort")
 
+(test* "sorted?" #t (sorted? '(1 2 3 4 4 5)))
+(test* "sorted?" #f (sorted? '(1 2 3 4 3 5)))
+(test* "sorted? (less)" #t (sorted? '(5 4 3 3 2 1) >))
+(test* "sorted? (less)" #f (sorted? '(5 4 3 1 2 1) >))
+(test* "sorted? (cmpr)" #t (sorted? '(1 2 3 4 4 5) integer-comparator))
+(test* "sorted? (cmpr)" #f (sorted? '(1 2 3 5 4 2) integer-comparator))
+(test* "sorted? (key)" #t (sorted? '(1 3 1 2 4 2) boolean-comparator even?))
+(test* "sorted? (key)" #f (sorted? '(1 3 1 2 1 3) boolean-comparator even?))
+
 (test* "sort (base)" '() (sort '()))
 (test* "sort (base)" '#() (sort '#()))
 (test* "sort (base)" '"" (sort '""))
@@ -82,6 +91,10 @@
 
 (sort-cmp
  char-ci<?
+ '((#\M #\a #\i #\P #\o #\n) (#\a #\i #\M #\n #\o #\P)))
+
+(sort-cmp
+ char-ci-comparator
  '((#\M #\a #\i #\P #\o #\n) (#\a #\i #\M #\n #\o #\P)))
 
 ;; stability

@@ -21,19 +21,25 @@
 ;; we factor out generic versions to a separate file, to avoid
 ;; inadvertent circular dependency with gauche.seqeunce.
 (autoload gauche.generic-sortutil
-          generic-sorted?
-          generic-sort generic-sort-by
-          generic-sort! generic-sort-by!)
+          %generic-sorted? %generic-sort %generic-sort!)
 
 (define %sort  (with-module gauche.internal %sort))
 (define %sort! (with-module gauche.internal %sort!))
 
-(define (default-less? x y)
-  (< (compare x y) 0))
+(define-syntax define-less?
+  (syntax-rules ()
+    [(_ less? cmp this)
+     (define less?
+       (cond [(comparator? cmp) (^[a b] (< (comparator-compare cmp a b) 0))]
+             [(not cmp) (^[a b] (< (compare a b) 0))]
+             [(applicable? cmp <top> <top>) cmp]
+             [else (errorf "~a requires a comparator or a procedure that \
+                            takes two-arguments, but got: ~s" this cmp)]))]))
 
 ;;; (sorted? sequence :optional less? key)
 
-(define (sorted? seq :optional (less? default-less?) (key identity))
+(define (sorted? seq :optional (cmp #f) (key identity))
+  (define-less? less? cmp 'sorted?)
   (cond
    [(null? seq) #t]
    [(vector? seq)
@@ -44,13 +50,13 @@
                    [last (key (vector-ref seq 0))])
           (or (= i n)
               (let1 next (key (vector-ref seq i))
-                (and (less? last next)
+                (and (not (less? next last))
                      (loop (+ i 1) next)))))))]
    [(pair? seq)  ; avoid list? for scanning the entire list
     (let loop ([last (key (car seq))] [rest (cdr seq)])
       (or (null? rest)
           (let1 next (key (car rest))
-            (and (less? last next)
+            (and (not (less? next last))
                  (loop next (cdr rest))))))]
    [(string? seq)
     (if (<= (string-length seq) 1)
@@ -60,9 +66,9 @@
         (let loop ([last last] [next (read-char p)])
           (or (eof-object? next)
               (let1 knext (key next)
-                (and (less? last knext)
+                (and (not (less? knext last))
                      (loop knext (read-char p))))))))]
-   [(is-a? seq <sequence>) (generic-sorted? seq less? key)]
+   [(is-a? seq <sequence>) (%generic-sorted? seq less? key)]
    [else (error "seqeuence required, but got:" seq)]))
 
 ;;; (merge a b less?)
@@ -71,7 +77,8 @@
 ;;; interleaved so that (sorted? (merge a b less?) less?).
 ;;; Note:  this does _not_ accept vectors.  See below.
 
-(define (merge a b :optional (less? default-less?) (key identity))
+(define (merge a b :optional (cmp #f) (key identity))
+  (define-less? less? cmp 'merge)
   (cond
    [(null? a) b]
    [(null? b) a]
@@ -93,7 +100,8 @@
 ;;; single sorted list including the elements of both.
 ;;; Note:  this does _not_ accept vectors.
 
-(define (merge! a b :optional (less? default-less?) (key identity))
+(define (merge! a b :optional (cmp #f) (key identity))
+  (define-less? less? cmp 'merge!)
   (define (loop r a kx b ky)
     (if (less? ky kx)
       (begin
@@ -134,9 +142,9 @@
     (%sort! seq)                  ; use internal version
     (apply stable-sort! seq args)))
 
-(define (stable-sort! seq :optional (less? default-less?) (key identity))
-  (if (not (memq key `(,identity ,values)))
-    (stable-sort-by! seq key less?)
+(define (stable-sort! seq :optional (cmp #f) (key identity))
+  (define-less? less? cmp 'sort!)
+  (if (memq key `(,identity ,values))
     (letrec ([step (^n (cond [(> n 2) (let* ([j (ash n -1)]
                                              [a (step j)]
                                              [k (- n j)]
@@ -166,7 +174,33 @@
                     [i 0 (+ i 1)])
                    [(null? p) vector]
                  (vector-set! vector i (car p))))]
-            [(is-a? seq <sequence>) (generic-sort! seq less?)]
+            [(is-a? seq <sequence>) (%generic-sort! seq less?)]
+            [else (error "sequence required, but got:" seq)]))
+    ;; Avoid making intermediate structure, for the point of stable-sort!
+    ;; is to avoid allocation.
+    (letrec ([kless? (^[a b] (less? (cdr a) (cdr b)))])
+      (cond [(null? seq) seq]
+            [(pair? seq)
+             (do ([spine seq (cdr spine)])
+                 [(null? spine)]
+               (set-car! spine (cons (car spine) (key (car spine)))))
+             (let1 spine (stable-sort! seq kless?)
+               (do ([lis spine (cdr lis)])
+                   [(null? lis)]
+                 (set-car! lis (caar lis)))
+               spine)]
+            [(vector? seq)
+             (let1 len (vector-length seq)
+               (do ([i 0 (+ i 1)])
+                   [(= i len)]
+                 (vector-set! seq i (cons (vector-ref seq i)
+                                          (key (vector-ref seq i)))))
+               (do ([seq (stable-sort! seq kless?)]
+                    [i 0 (+ i 1)])
+                   [(= i len)]
+                 (vector-set! seq i (car (vector-ref seq i))))
+               seq)]
+            [(is-a? seq <sequence>) (%generic-sort! seq less? key)]
             [else (error "sequence required, but got:" seq)]))))
 
 ;;; (sort sequence less?)
@@ -178,62 +212,22 @@
     (%sort seq)  ;; use internal version
     (apply stable-sort seq args)))
 
-(define (stable-sort seq :optional (less? default-less?) (key identity))
+(define (stable-sort seq :optional (cmp #f) (key identity))
+  (define-less? less? cmp 'sort)
   (if (memq key `(,identity ,values))
     (cond [(null? seq) seq]
-          [(pair? seq) (sort! (list-copy seq) less?)]
-          [(vector? seq)
-           (list->vector (sort! (vector->list seq) less?))]
-          [(is-a? seq <sequence>) (generic-sort seq less?)]
+          [(pair? seq) (stable-sort! (list-copy seq) less?)]
+          [(vector? seq) (list->vector (sort! (vector->list seq) less?))]
+          [(is-a? seq <sequence>) (%generic-sort seq less?)]
           [else (error "sequence required, but got:" seq)])
-    (stable-sort-by seq key less?)))
+    (cond [(null? seq) seq]
+          [(pair? seq) (stable-sort! (list-copy seq) less? key)]
+          [(vector? seq) (stable-sort! (vector-copy seq) less? key)]
+          [(is-a? seq <sequence>) (%generic-sort seq less? key)]
+          [else (error "sequence required, but got:" seq)])))
 
-;;;
-;;; (sort-by seq key :optional less?)
-;;;
-
-(define (%make-cmp less?)
-  (if less?
-    (^[a b] (less? (cdr a) (cdr b)))
-    (^[a b] (< (compare (cdr a) (cdr b)) 0))))
-
-(define (sort-by seq key :optional (less? #f))
-  (cond [(null? seq) seq]
-        [(pair? seq)
-         ($ map car
-            $ stable-sort (map (^e (cons e (key e))) seq)
-            $ %make-cmp less?)]
-        [(vector? seq)
-         (list->vector (sort-by (vector->list seq) key less?))]
-        [(is-a? seq <sequence>) (generic-sort-by seq key less?)]
-        [else (error "sequence required, but got:" seq)]))
-
+;; For the backward compatibility
+(define (sort-by seq key :optional (cmp #f)) (sort seq cmp key))
 (define stable-sort-by sort-by)
-
-(define (sort-by! seq key :optional (less? #f))
-  (cond [(null? seq) seq]
-        [(pair? seq)
-         (do ([spine seq (cdr spine)])
-             [(null? spine)]
-           (set-car! spine (cons (car spine) (key (car spine)))))
-         (let1 spine (stable-sort! seq (%make-cmp less?))
-           (do ([lis spine (cdr lis)])
-               [(null? lis)]
-             (set-car! lis (caar lis)))
-           spine)]
-        [(vector? seq)
-         (let1 len (vector-length seq)
-           (do ([i 0 (+ i 1)])
-               [(= i len)]
-             (vector-set! seq i (cons (vector-ref seq i)
-                                      (key (vector-ref seq i)))))
-           (do ([seq (stable-sort! seq (%make-cmp less?))]
-                [i 0 (+ i 1)])
-               [(= i len)]
-             (vector-set! seq i (car (vector-ref seq i))))
-           seq)]
-        [else (generic-sort-by! seq key less?)]))
-
+(define (sort-by! seq key :optional (cmp #f)) (sort! seq cmp key))
 (define stable-sort-by! sort-by!)
-
-

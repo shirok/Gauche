@@ -1,3 +1,12 @@
+2014-10-19  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/sortutil.scm (sorted?): Fixed a bug - the condition of
+	  (sorted? (... x y ...)) should be (not (less? y x)) for every
+	  consecutive pairs, instead of (less? x y).  For example,
+	  (sorted? '(1 1) <) should be #t.
+	* lib/gauche/sortutil.scm, lib/gauche/generic-sortutil.scm:
+	  Accept comparators as well as less-than procedure.
+
 2014-10-18  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/vecutil.scm (vector-tabluate): Made it restart-safe.
