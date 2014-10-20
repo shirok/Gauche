@@ -1,3 +1,9 @@
+2014-10-20  Shiro Kawai  <shiro@acm.org>
+
+	* lib/data/heap.scm: Using backing storage vector from element 0,
+	  by offsetting the index.  It is simpler in terms of API, and
+	  in the long run it will win.
+
 2014-10-19  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/sortutil.scm (sorted?): Fixed a bug - the condition of

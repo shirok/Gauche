@@ -1722,9 +1722,9 @@ The @var{stoarge} keyword argument gives alternative
 backing storage.  It must be either a vector, a uniform vector,
 or an instance of @code{<sparse-vector>} (@xref{Sparse vectors}).
 The default is an instance of @code{<sparse-vector>}.
-If you pass a vector or a uniform vector, you can store the value
-up to one less than the length of the vector.  It won't be extended
-once the storage gets full.
+If you pass a vector or a uniform vector, it determines
+the maximum number of elements the heap can hold.
+The heap won't be extend the storage once it gets full.
 
 The @var{key} keyword argument must be a procedure; it is applied
 on each entry before comparison.  Using key procedure allows you to

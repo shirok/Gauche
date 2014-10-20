@@ -60,18 +60,21 @@
 ;; Min-max heaps and generalized priority queues, CACM 29(10) pp.996-1000
 ;; Oct. 1986, http://dx.doi.org/10.1145/6617.6621
 
-;; Binary heap is stored in an array, S[].
+;; Binary heap is stored in an array, S[].  
 ;;
-;; - S[0] isn't used.
 ;; - S[1] is the root.
 ;; - S[i]'s child is S[2i] and S[2i+1]
 ;; - S[i]'s parent is S[floor(i/2)] when i > 1.
 ;; - Stored data can be anything comparable.
 ;;
+;; Since S[0] won't be used, we treat the backing storage as 1-based;
+;; that is, S[1] is stored in the first element, and so on.
+;;
 ;; Backing storage can be either a flat vector (vector, uvector) or
 ;; a sparse vector.  If it is a flat vector, the heap has maximum size
-;; (we don't extend the buffer).
+;; (we don't extend the buffer automatically).
 
+(define-inline (Ix x) (- x 1)) ; convert 1-base to 0-base
 
 (define-class <binary-heap> ()
   ((comparator :init-keyword :comparator)
@@ -99,8 +102,8 @@
                              or a sparse vector as a storage, but got:"
                             storage))
           :key key
-          :capacity (cond [(vector? storage) (- (vector-length storage) 1)]
-                          [(uvector? storage) (- (uvector-length storage) 1)]
+          :capacity (cond [(vector? storage) (vector-length storage)]
+                          [(uvector? storage) (uvector-length storage)]
                           [else +inf.0])
           :<: (^[a b] (< (cmp (key a) (key b)) 0))
           :>: (^[a b] (> (cmp (key a) (key b)) 0)))))
@@ -131,7 +134,7 @@
     (when (>= (- next 1) (~ hp'capacity))
       (errorf "binary heap ~s is full: couldn't insert ~s" hp item))
     (comparator-check-type (~ hp'comparator) item)
-    (set! (~ hp'storage next) item)
+    (set! (~ hp'storage (Ix next)) item)
     (set! (~ hp'next-leaf) (+ next 1))
     (when (> next 1)
       (bh-bubble-up (~ hp'storage) (~ hp'<:) (~ hp'>:) next))))
@@ -145,39 +148,39 @@
     (if (undefined? fallback)
       (error "binary heap is empty:" hp)
       fallback)
-    (~ hp'storage 1)))
+    (~ hp'storage (Ix 1))))
 
 (define (binary-heap-find-max hp :optional (fallback (undefined)))
   (case (~ hp'next-leaf)
     [(1) (if (undefined? fallback)
            (error "binary heap is empty:" hp)
            fallback)]
-    [(2) (~ hp'storage 1)]
-    [(3) (~ hp'storage 2)]
-    [else (let ([a (~ hp'storage 2)]
-                [b (~ hp'storage 3)])
+    [(2) (~ hp'storage (Ix 1))]
+    [(3) (~ hp'storage (Ix 2))]
+    [else (let ([a (~ hp'storage (Ix 2))]
+                [b (~ hp'storage (Ix 3))])
             (if ((~ hp'>:) a b) a b))]))
 
 (define (binary-heap-pop-min! hp)
   (let1 nelts (binary-heap-num-entries hp)
     (when (= nelts 0) (error "binary heap is empty:" hp))
-    (rlet1 r (~ hp'storage 1)
-      (set! (~ hp'storage 1) (~ hp'storage nelts))
+    (rlet1 r (~ hp'storage (Ix 1))
+      (set! (~ hp'storage (Ix 1)) (~ hp'storage (Ix nelts)))
       (set! (~ hp'next-leaf) nelts)
       (bh-trickle-down (~ hp'storage) (~ hp'<:) (~ hp'>:) 1 nelts))))
 
 (define (binary-heap-pop-max! hp)
   (let1 nelts (binary-heap-num-entries hp)
     (define (swap-and-adjust index)
-      (set! (~ hp'storage index) (~ hp'storage nelts))
+      (set! (~ hp'storage (Ix index)) (~ hp'storage (Ix nelts)))
       (set! (~ hp'next-leaf) nelts)
       (bh-trickle-down (~ hp'storage) (~ hp'<:) (~ hp'>:) index nelts))
     (case nelts
       [(0) (error "binary heap is empty:" hp)]
-      [(1 2) (set! (~ hp'next-leaf) nelts) (~ hp'storage nelts)]
+      [(1 2) (set! (~ hp'next-leaf) nelts) (~ hp'storage (Ix nelts))]
       [else
-       (let ([a (~ hp'storage 2)]
-             [b (~ hp'storage 3)])
+       (let ([a (~ hp'storage (Ix 2))]
+             [b (~ hp'storage (Ix 3))])
          (if ((~ hp'>:) a b)
            (begin (swap-and-adjust 2) a)
            (begin (swap-and-adjust 3) b)))])))
@@ -192,14 +195,16 @@
     (let ([kids  (take-while (cute < <> (~ hp'next-leaf)) (iota 2 (* i 2)))]
           [gkids (take-while (cute < <> (~ hp'next-leaf)) (iota 4 (* i 4)))]
           [cmp (if (min-node? i) (~ hp'<:) (~ hp'>:))])
-      (unless (every (^k (cmp (~ hp'storage i) (~ hp'storage k))) kids)
+      (unless (every (^k (cmp (~ hp'storage(Ix i)) (~ hp'storage(Ix k)))) kids)
         (errorf "parent-kid relation violated: ~a-node[~a]=~s, kids[~a]=~s"
                (if (min-node? i) 'min 'max)
-               i (~ hp'storage i) kids (map (cut ~ hp'storage <>) kids)))
-      (unless (every (^k (cmp (~ hp'storage i) (~ hp'storage k))) gkids)
+               i (~ hp'storage (Ix i)) kids
+               (map (^k (~ hp'storage (Ix k))) kids)))
+      (unless (every (^k (cmp (~ hp'storage(Ix i)) (~ hp'storage(Ix k)))) gkids)
         (errorf "grandparent-grandkid relation violated: ~a-node[~a]=~s, grandkids[~a]=~s"
                (if (min-node? i) 'min 'max)
-               i (~ hp'storage i) gkids (map (cut ~ hp'storage <>) gkids)))
+               i (~ hp'storage (Ix i)) gkids
+               (map (^k (~ hp'storage (Ix k))) gkids)))
       (for-each rec kids)
       #t)))
 
@@ -215,9 +220,9 @@
 (define-syntax swap!
   (syntax-rules ()
     [(_ storage i j)
-     (let1 v (~ storage i)
-       (set! (~ storage i) (~ storage j))
-       (set! (~ storage j) v))]))
+     (let1 v (~ storage (Ix i))
+       (set! (~ storage (Ix i)) (~ storage (Ix j)))
+       (set! (~ storage (Ix j)) v))]))
 
 ;; called with index > 1
 (define (bh-bubble-up storage <: >: index)
@@ -225,18 +230,18 @@
   (define (bubble-up-rec >< index)
     (when (> index 3)
       (let1 grandparent-index (ash index -2)
-        (unless (>< (~ storage grandparent-index) (~ storage index))
+        (unless (>< (~ storage (Ix grandparent-index)) (~ storage (Ix index)))
           (swap! storage grandparent-index index)
           (bubble-up-rec >< grandparent-index)))))
 
   (let1 parent-index (ash index -1)
     (if (min-node? parent-index)
-      (if (<: (~ storage parent-index) (~ storage index))
+      (if (<: (~ storage (Ix parent-index)) (~ storage (Ix index)))
         (bubble-up-rec >: index)
         (begin
           (swap! storage parent-index index)
           (bubble-up-rec <: parent-index)))
-      (if (>: (~ storage parent-index) (~ storage index))
+      (if (>: (~ storage (Ix parent-index)) (~ storage (Ix index)))
         (bubble-up-rec <: index)
         (begin
           (swap! storage parent-index index)
@@ -245,7 +250,7 @@
 
 (define (bh-trickle-down storage <: >: index size)
   
-  (define-syntax getval (syntax-rules () [(getval i) (~ storage i)]))
+  (define-syntax getval (syntax-rules () [(getval i) (~ storage (Ix i))]))
   (define-syntax in-bound? (syntax-rules () [(in-bound? i) (< i size)]))
 
   ;; We need to check up to 2 kids and 4 grandkids.  This returns appropriate

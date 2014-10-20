@@ -22,7 +22,7 @@
 (let ((rs (make-random-source)))
   (define (do-test data comparator) ; data must be sorted
     (define len (length data))
-    (define heap (make-binary-heap :storage (make-vector (+ len 1))
+    (define heap (make-binary-heap :storage (make-vector len)
                                    :comparator comparator))
     (let1 input (shuffle data rs)
       (test* (format "heap(~s) insertion ~s" len input)
