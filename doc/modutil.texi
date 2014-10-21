@@ -1718,9 +1718,9 @@ entries.  It must have comparison procedure.  The default is
 @code{default-comparator}.  @xref{Comparators}, for the details of
 comparators.
 
-The @var{stoarge} keyword argument gives alternative
+The @var{storage} keyword argument gives alternative
 backing storage.  It must be either a vector, a uniform vector,
-or an instance of @code{<sparse-vector>} (@xref{Sparse vectors}).
+or an instance of a sparse vector (@xref{Sparse vectors}).
 The default is an instance of @code{<sparse-vector>}.
 If you pass a vector or a uniform vector, it determines
 the maximum number of elements the heap can hold.
@@ -1740,6 +1740,26 @@ The following example shows the entries are compared by their @code{car}'s:
 (binary-heap-find-min *heap*) @result{} (1 . c)
 (binary-heap-find-max *heap*) @result{} (3 . b)
 @end example
+@end defun
+
+@defun build-binary-heap storage :key comparator key num-entries
+Create a heap from the data in @var{storage}, and returns it.
+(Sometimes this operation is called @emph{heapify}.)
+This allows you to create a heap without allocating a new storage.
+The @var{comparator} and @var{key} arguments are the same as
+@code{make-binary-heap}.
+
+@var{Storage} must be either a vector, a uniform vector,
+or an instance of a sparse vector.  The storage is modified
+to satisfy the heap property, and will be used as the backing
+storage of the created heap.  Since the storage will be owned
+by the heap, you shouldn't modify the storage later.
+
+The storage supposed to have keys from index 0 below
+@var{num-entries}.
+If @var{num-entries} is omitted or @code{#f}, entire vector or
+uniform vector, or up to @code{sparse-vector-num-entries} on
+the sparse vector, is heapified.
 @end defun
 
 @defun binary-heap-copy heap
@@ -1778,6 +1798,26 @@ Removes the minimum and maximum entry of the heap and returns it,
 respectively.  If the heap is empty, an error is signaled.
 @end defun
 
+The following procedures are not heap operations, but provided
+for the convenience.
+
+@defun binary-heap-find heap pred
+Returns an item in the heap that satisfies @var{pred}.
+If there are more than one item that satisfy @var{pred},
+any one of them can be returned.
+@end defun
+
+@defun binary-heap-remove! heap pred
+Remove all items in the heap that satisfy @var{pred}.
+@end defun
+
+@defun binary-heap-delete! heap item
+Delete all items in the heap that are equal to @var{item},
+in terms of the heap's comparator and key procedure.
+
+Note that the key procedure is applied to @var{item} as well
+before comparison.
+@end defun
 
 @c ----------------------------------------------------------------------
 @node Queue, Random data generators, Heap, Library modules - Utilities

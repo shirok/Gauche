@@ -80,4 +80,47 @@
   (do-test '(#\a #\b #\c #\d #\e) default-comparator)
   )
 
+(let ((rs (make-random-source)))
+  (define (suck-all heap)
+    (do ([r '() (cons (binary-heap-pop-min! heap) r)])
+        [(binary-heap-empty? heap) (reverse r)]
+      ))
+  (define (do-heapify lis builder comparator)
+    (test* (format "heapify ~s" lis)
+           lis
+           (let* ([src  (builder (shuffle lis rs))]
+                  [heap (build-binary-heap src :comparator comparator)])
+             (binary-heap-check heap)
+             (suck-all heap))))
+  (define (do-scan lis pred item)
+    (test* (format "find, remove, delete ~s" lis)
+           (list (boolean (find pred lis))
+                 (remove pred lis)
+                 (delete item lis))
+           (let ([heap (build-binary-heap (list->vector (shuffle lis rs)))])
+             (list (if-let1 r (binary-heap-find heap pred)
+                     (pred r)
+                     #f)
+                   (let1 h (binary-heap-copy heap)
+                     (binary-heap-remove! h pred)
+                     (binary-heap-check h)
+                     (suck-all h))
+                   (let1 h (binary-heap-copy heap)
+                     (binary-heap-delete! h item)
+                     (binary-heap-check h)
+                     (suck-all h))))))
+
+  (do-heapify '() list->vector default-comparator)
+  (do-heapify '(1) list->vector default-comparator)
+  (do-heapify (iota 33) list->vector default-comparator)
+  (do-heapify '("a" "aa" "b" "bb" "c" "cc" "d" "dd") list->vector
+              string-comparator)
+
+  (do-scan '() odd? 1)
+  (do-scan (iota 23) odd? 5)
+  (do-scan (iota 42) (^n (< (modulo n 3) 2)) 91)
+  )
+
+  
+
 (test-end)

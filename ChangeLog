@@ -1,3 +1,7 @@
+2014-10-21  Shiro Kawai  <shiro@acm.org>
+
+	* lib/data/heap.scm: Added find/remove!/delete! operations.
+
 2014-10-20  Shiro Kawai  <shiro@acm.org>
 
 	* lib/data/heap.scm: Using backing storage vector from element 0,

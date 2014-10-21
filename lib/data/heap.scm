@@ -36,17 +36,22 @@
   (use gauche.uvector)
   (use srfi-1)
   (export <binary-heap>
-          make-binary-heap binary-heap-empty? binary-heap-num-entries
+          make-binary-heap build-binary-heap
+          binary-heap-comparator binary-heap-key-procedure
+          binary-heap-capacity
+          binary-heap-empty? binary-heap-num-entries
           binary-heap-copy binary-heap-check binary-heap-clear!
           binary-heap-push!
           binary-heap-find-min binary-heap-find-max
           binary-heap-pop-min! binary-heap-pop-max!
+          binary-heap-find binary-heap-remove! binary-heap-delete!
           ))
 (select-module data.heap)
 
 ;; we use sparse-vector by default; we just make it autoload
 ;; so that the tests won't depend on data.sparse.
-(autoload data.sparse make-sparse-vector <sparse-vector>
+(autoload data.sparse make-sparse-vector <sparse-vector-base>
+          sparse-vector-num-entries sparse-vector-exists?
           sparse-vector-copy sparse-vector-clear!)
 
 ;;;
@@ -76,6 +81,13 @@
 
 (define-inline (Ix x) (- x 1)) ; convert 1-base to 0-base
 
+(define-syntax swap!
+  (syntax-rules ()
+    [(_ storage i j)
+     (let1 v (~ storage (Ix i))
+       (set! (~ storage (Ix i)) (~ storage (Ix j)))
+       (set! (~ storage (Ix j)) v))]))
+
 (define-class <binary-heap> ()
   ((comparator :init-keyword :comparator)
    (key        :init-keyword :key)
@@ -96,7 +108,7 @@
   (let1 cmp (comparator-comparison-procedure comparator)
     (make <binary-heap> :comparator comparator
           :storage (if (or (vector? storage) (uvector? storage)
-                           (is-a? storage <sparse-vector>))
+                           (is-a? storage <sparse-vector-base>))
                      storage
                      (error "make-binary-heap requires a vector, a uvector \
                              or a sparse vector as a storage, but got:"
@@ -108,13 +120,44 @@
           :<: (^[a b] (< (cmp (key a) (key b)) 0))
           :>: (^[a b] (> (cmp (key a) (key b)) 0)))))
 
+;; heapify 
+(define (build-binary-heap storage :key (num-entries #f)
+                                        (comparator default-comparator)
+                                        (key identity))
+  (unless (comparator-comparison-procedure? comparator)
+    (error "build-binary-heap requires comparator with comparison procedure, \
+            but got:" comparator))
+  (let* ([xlen (cond
+                [(vector? storage) (vector-length storage)]
+                [(uvector? storage) (uvector-length storage)]
+                [(is-a? storage <sparse-vector-base>)
+                 (sparse-vector-num-entries storage)]
+                [else (error "build-binary-heap requires a vector, a uvector \
+                              or a sparse vector as a storage, but got:"
+                              storage)])]
+         [size (cond [(not num-entries) xlen]
+                     [(and (integer? num-entries) (>= num-entries 0))
+                      (min num-entries xlen)]
+                     [else
+                      (error "invalid num-entris value for build-binary-heap:"
+                             num-entries)])]
+         [cmp (comparator-comparison-procedure comparator)]
+         [<: (^[a b] (< (cmp (key a) (key b)) 0))]
+         [>: (^[a b] (> (cmp (key a) (key b)) 0))])
+    (bh-heapify! storage <: >: size)
+    (make <binary-heap> :comparator comparator :storage storage :key key
+          :<: <: :>: >: :next-leaf (+ size 1)
+          :capacity (cond [(vector? storage) (vector-length storage)]
+                          [(uvector? storage) (uvector-length storage)]
+                          [else +inf.0]))))
+
 (define (binary-heap-copy hp)
   (make <binary-heap>
     :comparator (~ hp'comparator)
     :storage (let1 s (~ hp'storage)
                (cond [(vector? s) (vector-copy s)]
                      [(uvector? s) (uvector-copy s)]
-                     [(is-a? s <sparse-vector>) (sparse-vector-copy s)]
+                     [(is-a? s <sparse-vector-base>) (sparse-vector-copy s)]
                      [else (error "[internal] binary-heap-copy: invalid storage:" s)]))
     :key (~ hp'key)
     :capaticy (~ hp'capacity)
@@ -122,12 +165,16 @@
     :>: (~ hp'>:)
     :next-leaf (~ hp'next-leaf)))
 
+(define (binary-heap-comparator hp) (~ hp'comparator))
+(define (binary-heap-key-procedure hp) (~ hp'key))
+(define (binary-heap-capacity hp) (~ hp'capacity))
+
 (define (binary-heap-clear! hp)
   (set! (~ hp'next-leaf) 1)
   ;; These are theoretically unnecessary, but works nicely with GC.
   (let1 st (~ hp'storage)
     (cond [(vector? st) (vector-fill! st #f)]
-          [(is-a? st <sparse-vector>) (sparse-vector-clear! st)])))
+          [(is-a? st <sparse-vector-base>) (sparse-vector-clear! st)])))
 
 (define (binary-heap-push! hp item)
   (let1 next (~ hp'next-leaf)
@@ -185,6 +232,40 @@
            (begin (swap-and-adjust 2) a)
            (begin (swap-and-adjust 3) b)))])))
 
+;; not exactly heap operations, but useful...
+
+(define (binary-heap-find hp pred)
+  (and-let* ([storage (~ hp'storage)]
+             [i (find-index (^i (pred (~ storage i)))
+                            (liota (binary-heap-num-entries hp)))])
+    ;; NB: This i is 0-base, so we don't need Ix.
+    (~ storage i)))
+
+(define (binary-heap-remove! hp pred)
+  (let1 storage (~ hp'storage)
+
+    (define (finish-up next)
+      (unless (= next (~ hp'next-leaf)) ;; some keys are removed
+        (bh-heapify! storage (~ hp'<:) (~ hp'>:) (- next 1))
+        (set! (~ hp'next-leaf) next))
+      hp)
+
+    (let loop ([i 1] [next (~ hp'next-leaf)])
+      (if (>= i next)
+        (finish-up next)
+        (if (pred (~ storage (Ix i)))
+          (if (= (+ i 1) next)
+            (finish-up i)  ; this is the last item
+            (begin
+              (swap! storage i (- next 1))
+              (loop i (- next 1))))
+          (loop (+ i 1) next))))))
+
+(define (binary-heap-delete! hp item)
+  (let ([cmp (~ hp'comparator)]
+        [key (~ hp'key)])
+    (binary-heap-remove! hp (^e (comparator-equal? cmp (key item) (key e))))))
+
 ;; Internal procedures
 (define-inline (min-node? index) (odd? (integer-length index)))
 
@@ -217,13 +298,6 @@
 ;; if (integer-length i) is odd, we have min node
 ;; else we have max node
 
-(define-syntax swap!
-  (syntax-rules ()
-    [(_ storage i j)
-     (let1 v (~ storage (Ix i))
-       (set! (~ storage (Ix i)) (~ storage (Ix j)))
-       (set! (~ storage (Ix j)) v))]))
-
 ;; called with index > 1
 (define (bh-bubble-up storage <: >: index)
 
@@ -247,6 +321,14 @@
           (swap! storage parent-index index)
           (bubble-up-rec >: parent-index))))))
 
+(define (bh-heapify! storage <: >: size)
+  (do ([i 2 (+ i 1)])
+      [(>= i (+ 1 size))]
+    (when (is-a? storage <sparse-vector-base>)
+      (unless (sparse-vector-exists? storage (Ix i))
+        (errorf "can't heapify a sparse vector with a hole (at index ~s): ~s"
+                (Ix i) storage)))
+    (bh-bubble-up storage <: >: i)))
 
 (define (bh-trickle-down storage <: >: index size)
   
