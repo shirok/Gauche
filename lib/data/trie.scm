@@ -36,11 +36,10 @@
 ;; almost everything during the course of adjusting APIs to other
 ;; parts of Gauche, but the discussion was the source of inspiration anyway.
 
-(define-module util.trie
+(define-module data.trie
   (use srfi-1)
   (use gauche.sequence)
   (use gauche.dictionary)
-  (use util.list)
   (export <trie>
           make-trie trie trie-with-keys
           trie? trie-num-entries trie-exists?
@@ -57,7 +56,7 @@
           alist->trie
           ))
 
-(select-module util.trie)
+(select-module data.trie)
 
 ;; Trie node structure
 ;;
@@ -357,3 +356,7 @@
   :values   trie-values
   :update!  trie-update!
   :->alist  trie->list)
+
+(define-method dict-comparator ((trie <trie>))
+  (error "Comparator is not defined for trie:" trie))
+

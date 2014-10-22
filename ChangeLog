@@ -1,3 +1,7 @@
+2014-10-22  Shiro Kawai  <shiro@acm.org>
+
+	* lib/data/trie.scm: Renamed util.trie -> data.trie.
+
 2014-10-21  Shiro Kawai  <shiro@acm.org>
 
 	* lib/data/heap.scm: Added find/remove!/delete! operations.

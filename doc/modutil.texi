@@ -15,6 +15,7 @@
 * Queue::                       data.queue
 * Random data generators::      data.random
 * Sparse data containers::      data.sparse
+* Trie::                        data.trie
 * Database independent access layer::  dbi
 * Generic DBM interface::       dbm
 * File-system dbm::             dbm.fsdbm
@@ -66,7 +67,6 @@
 * SLIB-compatible record type::  util.record
 * Relation framework::          util.relation
 * Stream library::              util.stream
-* Trie::                        util.trie
 * Topological sort::            util.toposort
 * CGI Utility::                 www.cgi
 * CGI testing::                 www.cgi.test
@@ -2883,7 +2883,7 @@ of nonnegative integers.
 @end deffn
 
 @c ----------------------------------------------------------------------
-@node Sparse data containers, Database independent access layer, Random data generators, Library modules - Utilities
+@node Sparse data containers, Trie, Random data generators, Library modules - Utilities
 @section @code{data.sparse} - Sparse data containers
 @c NODE 疎なデータコンテナ, @code{data.sparse} - 疎なデータコンテナ
 
@@ -3220,11 +3220,451 @@ Empties @var{st}.
 @defunx sparse-table-values st
 @end defun
 
+@c ----------------------------------------------------------------------
+@node Trie, Database independent access layer, Sparse data containers, Library modules - Utilities
+@section @code{data.trie} - Trie
+@c NODE Trie, @code{data.trie} - Trie
+
+@deftp {Module} data.trie
+@mdindex data.trie
+@c EN
+This module provides @emph{Trie}, a dictionary-like data
+structure that maps keys to values, where a key is an arbitrary sequence.
+Internally it stores the data as a tree where each node corresponds
+to each element in the key sequence.
+Key lookup is O(n) where n is the length of the key, and not affected
+much by the number of total entries.
+Also it is easy to find a set of values whose keys have a common prefix.
+@c JP
+このモジュールは@emph{Trie}を提供します。@emph{Trie}はディレクトリに似
+たデータ構造で、キーを値に写像します。また、キーは任意のシーケンスです。
+内部的にはデータはツリーとして保持されます。このとき各ノードがキーシー
+ケンスの各要素に対応します。キーの検索は O(n) で、n はキーの長さです。
+したがって、全体のエントリ数には余り影響を受けません。また、キーが共通
+の接頭辞をもつような値の集合を簡単にみつけられます。
+@c COMMON
+
+@c EN
+The following example may give you the idea.
+@c JP
+以下のサンプルを見れば考え方が理解できると思います。
+@c COMMON
+
+@example
+(define t (make-trie))   ;; create a trie
+
+(trie-put! t "pho" 3)    ;; populate the trie
+(trie-put! t "phone" 5)
+(trie-put! t "phrase" 6)
+
+(trie-get t "phone")  @result{} 5  ;; lookup
+
+(trie-common-prefix t "pho")       ;; common prefix search
+  @result{} (("phone" . 5) ("pho" . 3))
+(trie-common-prefix-keys t "ph")
+  @result{} ("phone" "pho" "phrase")
+@end example
+
+@c EN
+Tries are frequently used with string keys, but you are not
+limited to do so; any sequence (@xref{Sequence framework}) can be
+a key.  If the types of keys differ, they are treated as different
+keys:
+@c JP
+Trieでは文字列キーを使うことが多いですが、それに限定される必要はありま
+せん。あらゆるシーケンス(@xref{Sequence framework})をキーにすることが
+できます。キーの型が違えば、別のキーとして扱われます。
+@c COMMON
+
+@example
+(trie-put! t '(#\p #\h #\o) 8)  ;; different key from "pho"
+@end example
+
+@c EN
+Trie inheris @code{<collection>} and implements collection framework
+including the builder. So you can apply generic collection
+operations on a trie (@xref{Collection framework}).
+When iterated, each element of a trie appears as a pair of a key
+and a value.
+@c JP
+Trieは@code{<collection>}を継承しており、コレクションフレームワークを
+ビルダも含めて実装しています。それゆえ、ジェネリックなコレクション操作
+をTrieに適用することが可能です(@ref{Collection framework}参照)。
+反復するとTrieの各要素がキーと値の対として現れます。
+@c COMMON
+@end deftp
+
+@deftp {Class} <trie>
+@clindex trie
+@c EN
+A class for Trie.  No slots are intended for public.
+Use the following procedures to operate on tries.
+@c JP
+Trieクラス。パブリックなスロットはありません。trieを操作するには以下の
+手続きを使ってください。
+@c COMMON
+
+@c EN
+This class also implements the dictionary interface
+(@xref{Generic functions for dictionaries}).
+@c JP
+このクラスはまた、ディクショナリインタフェースを実装しています
+(@ref{Generic functions for dictionaries}参照)。
+@c COMMON
+@end deftp
+
+@defun make-trie :optional tab-make tab-get tab-put! tab-fold
+@c EN
+Creates and returns an empty trie.  The optional four arguments
+are procedures to customize how the nodes of the internal
+tree are managed.
+@c JP
+空のtrieを生成し返します。4つのオプション引数があり、これらは、
+内部木のノードをどのようにマージするかをカスタマイズする手続きです。
+@c COMMON
+
+@c EN
+Each node can have a table to store its child nodes, indexed
+by an element of the key sequence (e.g. if the trie uses strings
+as keys, a node's table is indexed by characters).
+@c JP
+それぞれのノードは子のノードを格納するテーブルを持つことができます。
+キーシーケンスの要素でインデックスできます。(たとえば、trieがキーとし
+え文字列を使っているとすると、ノードのテーブルは文字でインデックスされ
+ています。)
+@c COMMON
+
+@c EN
+@table @code
+@item tab-make
+A procedure with no arguments.  When called, creates and
+returns an empty table for a node.
+@item tab-get @var{tab} @var{elt}
+Returns a child node indexed by @var{elt}, or returns @code{#f}
+if the table doesn't have a child for @var{elt}.
+@item tab-put! @var{tab} @var{elt} @var{child-node}
+If @var{child-node} isn't @code{#f},
+stores a @var{child-node} with index @var{elt}.
+If @var{child-node} is @code{#f},
+removes the entry with index @var{elt}.
+In both cases, this procedure should return the updated table.
+@item tab-fold @var{tab} @var{proc} @var{seed}
+Calls @var{proc} for every index and node in @var{tab}, while
+passing a seed value, whose initial value is @var{seed}.
+That is, @var{proc} has a type of @code{(index, node, seed) -> seed}.
+Should return the last result of @var{proc}.
+@end table
+@c JP
+@table @code
+@item tab-make
+引数なしの手続き。呼ばれるとノード用の空テーブルを生成し返します。
+@item tab-get @var{tab} @var{elt}
+@var{elt}でインデックスされた子ノードを返すか、あるいは@var{elt}に対応
+する子がテーブルにない場合には @code{#f}を返します。
+@item tab-put! @var{tab} @var{elt} @var{child-node}
+@var{child-node}が@code{#f}でなければ、@var{child-node}に@var{elt}とい
+うインデックスをつけて保存します。@var{child-node}が@code{#f}なら
+@var{elt}のインデックスをもつエントリを削除します。どちらの場合にも
+この手続きは更新されたテーブルを返します。
+@item tab-fold @var{tab} @var{proc} @var{seed}
+@var{tab}内の各インデックスと要素ごとに@var{proc}を呼びます。シード値
+が順に渡されていきます。シード値の初期値は@var{seed}です。すなわち、
+@var{proc}の型は@code{(index, node, seed) -> seed} のような型というこ
+とになります。返り値は最後の@var{proc}の適用結果です。
+@end table
+@c COMMON
+
+@c EN
+The default assumes @code{eqv?}-hashtables, i.e. the
+following procedures are used.
+@c JP
+デフォルトでは@code{eqv?}-ハッシュ可能であることが仮定されます。すなわ
+ち、以下の手続きが使われます。
+@c COMMON
+
+@example
+tab-make: (lambda () (make-hash-table 'eqv?))
+
+tab-get:  (lambda (tab k) (hash-table-get tab k #f))
+
+tab-put!: (lambda (tab k v)
+            (if v
+              (hash-table-put! tab k v)
+              (hash-table-delete! tab k))
+            tab)
+
+tab-fold: hash-table-fold
+@end example
+
+@c EN
+The following example creates a trie using
+assoc list to manage children, while comparing
+string keys with case-insensitive way:
+@c JP
+以下の例では子を管理するのに連想リストを用いるtrieを作成しています。
+文字列キーの比較は大文字小文字を無視する方法で行っています。
+@c COMMON
+
+@example
+(make-trie list
+           (cut assoc-ref <> <> #f char-ci=?)
+           (lambda (t k v)
+             (if v
+               (assoc-set! t k v char-ci=?)
+               (alist-delete! k t char-ci=?)))
+           (lambda (t f s) (fold f s t)))
+@end example
+
+@c EN
+It is important that @code{tab-put!} must return an updated
+table---by that, you can replace the table structure on the fly.
+For example, you may design a table which uses assoc list when
+the number of children are small, and then switches to a vector
+(indexed by character code) once the number of children grows over
+a certain threshold.
+@c JP
+@code{tab-put!}が更新されたテーブルを返すというのは重要で、これのおか
+げで、テーブル構造をおてがるに置き換えることができます。たとえば、
+子の数が少い場合にはテーブルに連想リストを使い、いったん子の数がある閾
+値を越えたら、(文字コードでインデックスされた)ベクタを使うように設計す
+ることができます。
+@c COMMON
+@end defun
+
+@defun trie params kv @dots{}
+@c EN
+Construct a trie with the initial contents
+@var{kv} @dots{}, where each @var{kv} is a pair of a key and a value.
+@var{Params} are a list of arguments
+which will be given to @code{make-trie} to create the trie.
+The following example creates a trie with two entries
+and the default table procedures.
+@c JP
+初期の内容が@var{kv} @dots{} であるようなtrieを構成します。ここで、
+@var{kv}はキーと値の対です。@var{params}はtrieを生成するときに
+@code{make-trie}に渡される引数のリストです。以下の例は2つのエントリ
+とデフォルトのテーブル手続をもつtrieを生成します。
+@c COMMON
+
+@example
+(trie '() '("foo" . a) '("bar" . b))
+@end example
+@end defun
+
+@defun trie-with-keys params key @dots{}
+@c EN
+A convenient version of @code{trie} when you only concern
+the keys.  Each value is the same as its key.
+The following example creates a trie with two entries
+and the default table procedures.
+@c JP
+キーにだけ関心がある場合には便利な@code{trie}。各値はキーと同じ。以下
+の例では2つのエントリとデフォルトのテーブル手続をもつtrieを生成します。
+@c COMMON
+
+@example
+(trie-with-keys '() "foo" "bar")
+@end example
+@end defun
+
+@defun trie? obj
+@c EN
+Returns @code{#t} if @var{obj} is a trie, or @code{#f} otherwise.
+@c JP
+@var{obj}がtrieなら@code{#t}を返し、さもなければ@code{#f}を返します。
+@c COMMON
+@end defun
+
+@defun trie-num-entries trie
+@c EN
+Returns the number of entries in @var{trie}.
+@c JP
+@var{trie}中のエントリの数を返します。
+@c COMMON
+@end defun
+
+@defun trie-exists? trie key
+@c EN
+Returns @code{#t} if @var{trie} contains an entry with @var{key},
+or returns @code{#f} otherwise.
+@c JP
+@var{trie}が@var{key}というキーのエントリを含む場合には@code{#t}を返し、
+さもなければ、@code{#f}を返します。
+@c COMMON
+@end defun
+
+@defun trie-get trie key :optional fallback
+@c EN
+Returns the value associated with @var{key} in @var{trie}, if
+such an entry exists.  When there's no entry for @var{key},
+if @var{fallback} is given, it is returned; otherwise,
+an error is signaled.
+@c JP
+@var{trie}中の@var{key}をもつエントリがあれば、それにむすびついている
+値を返します。そのようなエントリがない場合、@var{fallback}が与えられて
+いればそれを返し、さもなければ、エラーシグナルがあがります。
+@c COMMON
+@end defun
+
+@defun trie-put! trie key value
+@c EN
+Puts @var{value} associated to @var{key} into @var{trie}.
+@c JP
+@var{key}に結びついた@var{value}を@var{trie}に挿入します。
+@c COMMON
+@end defun
+
+@defun trie-update! trie key proc :optional fallback
+@c EN
+Works like the following code, except that the
+lookup of entry in @var{trie} is done only once.
+@c JP
+@var{trie}中のエントリの検索が一度きりしか起らないことをのぞけば以下の
+コードのように動きます。
+@c COMMON
+
+@example
+(let ((val (trie-get trie key fallback)))
+  (trie-put! trie key (proc val)))
+@end example
+@end defun
+
+@defun trie-delete! trie key
+@c EN
+Removes an entry associated with @var{key} from @var{trie}.
+If there's no such entry, this procedure does nothing.
+@c JP
+@var{trie}から@var{key}に関連するエントリを削除します。
+そのようなエントリがない場合にはこの手続きはなにもしません。
+@c COMMON
+@end defun
+
+@defun trie->list trie
+@c EN
+Makes each entry in @var{trie} to a pair @code{(@var{key} . @var{value})}
+and returns a list of pairs of all entries.  The order of entries
+are undefined.
+@c JP
+@var{trie}の各エントリを@code{(@var{key} . @var{value})}という対にして
+すべてのエントリの対のリストを返します。エントリの順序は未定義です。
+@c COMMON
+@end defun
+
+@defun trie-keys trie
+@defunx trie-values trie
+@c EN
+Returns a list of all keys and values in @var{trie}, respectively.
+The order of keys/values are undefined.
+@c JP
+それぞれ、@var{trie}のすべてのキーのリスト、すべての値のリストを返しま
+す。順序は未定義です。
+@c COMMON
+@end defun
+
+@defun trie->hash-table trie ht-type
+@c EN
+Creates a hash table with type @var{ht-type} (see @ref{Hashtables},
+about hash table types), and populates it with every key and value
+pair in @var{trie}.
+@c JP
+@var{ht-type}タイプのハッシュテーブル(ハッシュテーブルのタイプについて
+は@ref{Hashtables}を参照)を作成し、@var{trie}のすべてのキーと値の対を
+セットします。
+@c COMMON
+@end defun
+
+@defun trie-common-prefix trie prefix
+@defunx trie-common-prefix-keys trie prefix
+@defunx trie-common-prefix-values trie prefix
+@c EN
+Gathers all entries whose keys begin with @var{prefix};
+@code{trie-common-prefix} returns those entries in a list of
+pairs @code{(key . value)}; @code{trie-common-prefix-keys} returns
+a list of keys; and @code{trie-common-prefix-values} returns a list
+of values.   The order of entries in a returned list is undefined.
+If @var{trie} contains no entry whose key has @var{prefix}, an
+empty list is returned.
+@c JP
+@var{prefix}ではじまるキーをもつエントリをすべて集め、
+@code{trie-common-prefix}はその各エントリを@code{(key . value)}の対にし
+たリストを返します。@code{trie-common-prefix-keys}は、キーのリストを
+@code{trie-common-prefix-values}は値のリストを返します。返されるリスト
+のエントリの順序は未定義です。
+@var{trie}に指定した@var{prefix}をもつキーのエントリがなければ、
+空リストが返されます。
+@c COMMON
+
+@c EN
+Note that prefix matching doesn't consider the type of sequence;
+if @var{trie} has entries for @code{"foo"} and @code{(#\f #\o #\o)},
+@code{(trie-common-prefix trie "foo")} will return both entries.
+@c JP
+接頭辞照合ではシーケンスの型を考慮しないことに注意してください。
+@var{trie}のなかに@code{"foo"}と@code{(#\f #\o #\o)}に対応するエントリ
+があれば、@code{(trie-common-prefix trie "foo")}はその両方を返します。
+@c COMMON
+@end defun
+
+@defun trie-common-prefix-fold trie prefix proc seed
+@c EN
+For each entry whose key begins with @var{prefix},
+calls @var{proc} with three argments, the entry's key,
+its value, and the current seed value.  @var{Seed} is
+used for the first seed value, and the value @var{proc}
+returns is used for the seed value of the next call of @var{proc}.
+The last returned value from @var{proc} is returned from
+@code{trie-common-prefix-fold}.
+The order of entries on which @var{proc} is called is undefined.
+If @var{trie} contains no entry whose key has @var{prefix},
+@var{proc} is never called and @var{seed} is returned.
+@c JP
+@var{prefix}ではじまるキーをもつ各エントリに対して、@var{proc}を3つの
+引数、エントリのキー、値、現在のシード値で呼びます。@var{seed}は最初の
+シード値として使われ、@var{proc}が返す値は次の@var{proc}の呼び出しのシー
+ド値として使われます。@var{proc}が返した最後の値が
+@code{trie-common-prefix-fold}から返ります。
+@var{proc}が適用される順序は未定義です。@var{trie}が@var{prefix}を持つ
+キーのエントリを含まない場合には@var{proc}が呼ばれることはなく、
+@var{seed}が返ります。
+@c COMMON
+@end defun
+
+@defun trie-common-prefix-map trie prefix proc
+@defunx trie-common-prefix-for-each trie prefix proc
+@c EN
+These are to @var{trie-common-prefix-fold} as @code{map} and @code{for-each}
+are to @code{fold}; @code{trie-common-prefix-map} calls
+@var{proc} with key and value for matching entries and
+gathers its result to a list; @code{trie-common-prefix-for-each}
+also applies @var{proc}, but discards its results.
+@c JP
+@code{map}や@code{for-each}を@code{fold}を合せたのと同じように、
+@var{trie-common-prefix-fold}に合せたものです。
+@code{trie-common-prefix-map}は@var{proc}をマッチするエントリのキーと
+値に適用し結果をリストにあつめます。
+@code{trie-common-prefix-for-each}も同じく@var{proc}を適用しますが
+結果は捨てます。
+@c COMMON
+@end defun
+
+@defun trie-fold trie proc seed
+@defunx trie-map trie proc
+@defunx trie-for-each trie proc
+@c EN
+These procedures are like their common-prefix versions, but
+traverse entire @var{trie} instead.
+@c JP
+これらの手続きはcommon-prefix版とおなじような働きをしますが、
+@var{trie}全体をトラバースします。
+@c COMMON
+@end defun
+
+
 
 
 @c ----------------------------------------------------------------------
 
-@node Database independent access layer, Generic DBM interface, Sparse data containers, Library modules - Utilities
+@node Database independent access layer, Generic DBM interface, Trie, Library modules - Utilities
 @section @code{dbi} - Database independent access layer
 @c NODE データベース非依存アクセス層, @code{dbi} - データベース非依存アクセス層
 
@@ -20764,7 +21204,7 @@ you can write like this:
 @end deftp
 
 @c ----------------------------------------------------------------------
-@node Stream library, Trie, Relation framework, Library modules - Utilities
+@node Stream library, Topological sort, Relation framework, Library modules - Utilities
 @section @code{util.stream} - Stream library
 @c NODE ストリームライブラリ, @code{util.stream} - ストリームライブラリ
 
@@ -21323,447 +21763,7 @@ inserted between elements of @var{stream}.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Trie, Topological sort, Stream library, Library modules - Utilities
-@section @code{util.trie} - Trie
-@c NODE Trie, @code{util.trie} - Trie
-
-@deftp {Module} util.trie
-@mdindex util.trie
-@c EN
-This module provides @emph{Trie}, a dictionary-like data
-structure that maps keys to values, where a key is an arbitrary sequence.
-Internally it stores the data as a tree where each node corresponds
-to each element in the key sequence.
-Key lookup is O(n) where n is the length of the key, and not affected
-much by the number of total entries.
-Also it is easy to find a set of values whose keys have a common prefix.
-@c JP
-このモジュールは@emph{Trie}を提供します。@emph{Trie}はディレクトリに似
-たデータ構造で、キーを値に写像します。また、キーは任意のシーケンスです。
-内部的にはデータはツリーとして保持されます。このとき各ノードがキーシー
-ケンスの各要素に対応します。キーの検索は O(n) で、n はキーの長さです。
-したがって、全体のエントリ数には余り影響を受けません。また、キーが共通
-の接頭辞をもつような値の集合を簡単にみつけられます。
-@c COMMON
-
-@c EN
-The following example may give you the idea.
-@c JP
-以下のサンプルを見れば考え方が理解できると思います。
-@c COMMON
-
-@example
-(define t (make-trie))   ;; create a trie
-
-(trie-put! t "pho" 3)    ;; populate the trie
-(trie-put! t "phone" 5)
-(trie-put! t "phrase" 6)
-
-(trie-get t "phone")  @result{} 5  ;; lookup
-
-(trie-common-prefix t "pho")       ;; common prefix search
-  @result{} (("phone" . 5) ("pho" . 3))
-(trie-common-prefix-keys t "ph")
-  @result{} ("phone" "pho" "phrase")
-@end example
-
-@c EN
-Tries are frequently used with string keys, but you are not
-limited to do so; any sequence (@xref{Sequence framework}) can be
-a key.  If the types of keys differ, they are treated as different
-keys:
-@c JP
-Trieでは文字列キーを使うことが多いですが、それに限定される必要はありま
-せん。あらゆるシーケンス(@xref{Sequence framework})をキーにすることが
-できます。キーの型が違えば、別のキーとして扱われます。
-@c COMMON
-
-@example
-(trie-put! t '(#\p #\h #\o) 8)  ;; different key from "pho"
-@end example
-
-@c EN
-Trie inheris @code{<collection>} and implements collection framework
-including the builder. So you can apply generic collection
-operations on a trie (@xref{Collection framework}).
-When iterated, each element of a trie appears as a pair of a key
-and a value.
-@c JP
-Trieは@code{<collection>}を継承しており、コレクションフレームワークを
-ビルダも含めて実装しています。それゆえ、ジェネリックなコレクション操作
-をTrieに適用することが可能です(@ref{Collection framework}参照)。
-反復するとTrieの各要素がキーと値の対として現れます。
-@c COMMON
-@end deftp
-
-@deftp {Class} <trie>
-@clindex trie
-@c EN
-A class for Trie.  No slots are intended for public.
-Use the following procedures to operate on tries.
-@c JP
-Trieクラス。パブリックなスロットはありません。trieを操作するには以下の
-手続きを使ってください。
-@c COMMON
-
-@c EN
-This class also implements the dictionary interface
-(@xref{Generic functions for dictionaries}).
-@c JP
-このクラスはまた、ディクショナリインタフェースを実装しています
-(@ref{Generic functions for dictionaries}参照)。
-@c COMMON
-@end deftp
-
-@defun make-trie :optional tab-make tab-get tab-put! tab-fold
-@c EN
-Creates and returns an empty trie.  The optional four arguments
-are procedures to customize how the nodes of the internal
-tree are managed.
-@c JP
-空のtrieを生成し返します。4つのオプション引数があり、これらは、
-内部木のノードをどのようにマージするかをカスタマイズする手続きです。
-@c COMMON
-
-@c EN
-Each node can have a table to store its child nodes, indexed
-by an element of the key sequence (e.g. if the trie uses strings
-as keys, a node's table is indexed by characters).
-@c JP
-それぞれのノードは子のノードを格納するテーブルを持つことができます。
-キーシーケンスの要素でインデックスできます。(たとえば、trieがキーとし
-え文字列を使っているとすると、ノードのテーブルは文字でインデックスされ
-ています。)
-@c COMMON
-
-@c EN
-@table @code
-@item tab-make
-A procedure with no arguments.  When called, creates and
-returns an empty table for a node.
-@item tab-get @var{tab} @var{elt}
-Returns a child node indexed by @var{elt}, or returns @code{#f}
-if the table doesn't have a child for @var{elt}.
-@item tab-put! @var{tab} @var{elt} @var{child-node}
-If @var{child-node} isn't @code{#f},
-stores a @var{child-node} with index @var{elt}.
-If @var{child-node} is @code{#f},
-removes the entry with index @var{elt}.
-In both cases, this procedure should return the updated table.
-@item tab-fold @var{tab} @var{proc} @var{seed}
-Calls @var{proc} for every index and node in @var{tab}, while
-passing a seed value, whose initial value is @var{seed}.
-That is, @var{proc} has a type of @code{(index, node, seed) -> seed}.
-Should return the last result of @var{proc}.
-@end table
-@c JP
-@table @code
-@item tab-make
-引数なしの手続き。呼ばれるとノード用の空テーブルを生成し返します。
-@item tab-get @var{tab} @var{elt}
-@var{elt}でインデックスされた子ノードを返すか、あるいは@var{elt}に対応
-する子がテーブルにない場合には @code{#f}を返します。
-@item tab-put! @var{tab} @var{elt} @var{child-node}
-@var{child-node}が@code{#f}でなければ、@var{child-node}に@var{elt}とい
-うインデックスをつけて保存します。@var{child-node}が@code{#f}なら
-@var{elt}のインデックスをもつエントリを削除します。どちらの場合にも
-この手続きは更新されたテーブルを返します。
-@item tab-fold @var{tab} @var{proc} @var{seed}
-@var{tab}内の各インデックスと要素ごとに@var{proc}を呼びます。シード値
-が順に渡されていきます。シード値の初期値は@var{seed}です。すなわち、
-@var{proc}の型は@code{(index, node, seed) -> seed} のような型というこ
-とになります。返り値は最後の@var{proc}の適用結果です。
-@end table
-@c COMMON
-
-@c EN
-The default assumes @code{eqv?}-hashtables, i.e. the
-following procedures are used.
-@c JP
-デフォルトでは@code{eqv?}-ハッシュ可能であることが仮定されます。すなわ
-ち、以下の手続きが使われます。
-@c COMMON
-
-@example
-tab-make: (lambda () (make-hash-table 'eqv?))
-
-tab-get:  (lambda (tab k) (hash-table-get tab k #f))
-
-tab-put!: (lambda (tab k v)
-            (if v
-              (hash-table-put! tab k v)
-              (hash-table-delete! tab k))
-            tab)
-
-tab-fold: hash-table-fold
-@end example
-
-@c EN
-The following example creates a trie using
-assoc list to manage children, while comparing
-string keys with case-insensitive way:
-@c JP
-以下の例では子を管理するのに連想リストを用いるtrieを作成しています。
-文字列キーの比較は大文字小文字を無視する方法で行っています。
-@c COMMON
-
-@example
-(make-trie list
-           (cut assoc-ref <> <> #f char-ci=?)
-           (lambda (t k v)
-             (if v
-               (assoc-set! t k v char-ci=?)
-               (alist-delete! k t char-ci=?)))
-           (lambda (t f s) (fold f s t)))
-@end example
-
-@c EN
-It is important that @code{tab-put!} must return an updated
-table---by that, you can replace the table structure on the fly.
-For example, you may design a table which uses assoc list when
-the number of children are small, and then switches to a vector
-(indexed by character code) once the number of children grows over
-a certain threshold.
-@c JP
-@code{tab-put!}が更新されたテーブルを返すというのは重要で、これのおか
-げで、テーブル構造をおてがるに置き換えることができます。たとえば、
-子の数が少い場合にはテーブルに連想リストを使い、いったん子の数がある閾
-値を越えたら、(文字コードでインデックスされた)ベクタを使うように設計す
-ることができます。
-@c COMMON
-@end defun
-
-@defun trie params kv @dots{}
-@c EN
-Construct a trie with the initial contents
-@var{kv} @dots{}, where each @var{kv} is a pair of a key and a value.
-@var{Params} are a list of arguments
-which will be given to @code{make-trie} to create the trie.
-The following example creates a trie with two entries
-and the default table procedures.
-@c JP
-初期の内容が@var{kv} @dots{} であるようなtrieを構成します。ここで、
-@var{kv}はキーと値の対です。@var{params}はtrieを生成するときに
-@code{make-trie}に渡される引数のリストです。以下の例は2つのエントリ
-とデフォルトのテーブル手続をもつtrieを生成します。
-@c COMMON
-
-@example
-(trie '() '("foo" . a) '("bar" . b))
-@end example
-@end defun
-
-@defun trie-with-keys params key @dots{}
-@c EN
-A convenient version of @code{trie} when you only concern
-the keys.  Each value is the same as its key.
-The following example creates a trie with two entries
-and the default table procedures.
-@c JP
-キーにだけ関心がある場合には便利な@code{trie}。各値はキーと同じ。以下
-の例では2つのエントリとデフォルトのテーブル手続をもつtrieを生成します。
-@c COMMON
-
-@example
-(trie-with-keys '() "foo" "bar")
-@end example
-@end defun
-
-@defun trie? obj
-@c EN
-Returns @code{#t} if @var{obj} is a trie, or @code{#f} otherwise.
-@c JP
-@var{obj}がtrieなら@code{#t}を返し、さもなければ@code{#f}を返します。
-@c COMMON
-@end defun
-
-@defun trie-num-entries trie
-@c EN
-Returns the number of entries in @var{trie}.
-@c JP
-@var{trie}中のエントリの数を返します。
-@c COMMON
-@end defun
-
-@defun trie-exists? trie key
-@c EN
-Returns @code{#t} if @var{trie} contains an entry with @var{key},
-or returns @code{#f} otherwise.
-@c JP
-@var{trie}が@var{key}というキーのエントリを含む場合には@code{#t}を返し、
-さもなければ、@code{#f}を返します。
-@c COMMON
-@end defun
-
-@defun trie-get trie key :optional fallback
-@c EN
-Returns the value associated with @var{key} in @var{trie}, if
-such an entry exists.  When there's no entry for @var{key},
-if @var{fallback} is given, it is returned; otherwise,
-an error is signaled.
-@c JP
-@var{trie}中の@var{key}をもつエントリがあれば、それにむすびついている
-値を返します。そのようなエントリがない場合、@var{fallback}が与えられて
-いればそれを返し、さもなければ、エラーシグナルがあがります。
-@c COMMON
-@end defun
-
-@defun trie-put! trie key value
-@c EN
-Puts @var{value} associated to @var{key} into @var{trie}.
-@c JP
-@var{key}に結びついた@var{value}を@var{trie}に挿入します。
-@c COMMON
-@end defun
-
-@defun trie-update! trie key proc :optional fallback
-@c EN
-Works like the following code, except that the
-lookup of entry in @var{trie} is done only once.
-@c JP
-@var{trie}中のエントリの検索が一度きりしか起らないことをのぞけば以下の
-コードのように動きます。
-@c COMMON
-
-@example
-(let ((val (trie-get trie key fallback)))
-  (trie-put! trie key (proc val)))
-@end example
-@end defun
-
-@defun trie-delete! trie key
-@c EN
-Removes an entry associated with @var{key} from @var{trie}.
-If there's no such entry, this procedure does nothing.
-@c JP
-@var{trie}から@var{key}に関連するエントリを削除します。
-そのようなエントリがない場合にはこの手続きはなにもしません。
-@c COMMON
-@end defun
-
-@defun trie->list trie
-@c EN
-Makes each entry in @var{trie} to a pair @code{(@var{key} . @var{value})}
-and returns a list of pairs of all entries.  The order of entries
-are undefined.
-@c JP
-@var{trie}の各エントリを@code{(@var{key} . @var{value})}という対にして
-すべてのエントリの対のリストを返します。エントリの順序は未定義です。
-@c COMMON
-@end defun
-
-@defun trie-keys trie
-@defunx trie-values trie
-@c EN
-Returns a list of all keys and values in @var{trie}, respectively.
-The order of keys/values are undefined.
-@c JP
-それぞれ、@var{trie}のすべてのキーのリスト、すべての値のリストを返しま
-す。順序は未定義です。
-@c COMMON
-@end defun
-
-@defun trie->hash-table trie ht-type
-@c EN
-Creates a hash table with type @var{ht-type} (see @ref{Hashtables},
-about hash table types), and populates it with every key and value
-pair in @var{trie}.
-@c JP
-@var{ht-type}タイプのハッシュテーブル(ハッシュテーブルのタイプについて
-は@ref{Hashtables}を参照)を作成し、@var{trie}のすべてのキーと値の対を
-セットします。
-@c COMMON
-@end defun
-
-@defun trie-common-prefix trie prefix
-@defunx trie-common-prefix-keys trie prefix
-@defunx trie-common-prefix-values trie prefix
-@c EN
-Gathers all entries whose keys begin with @var{prefix};
-@code{trie-common-prefix} returns those entries in a list of
-pairs @code{(key . value)}; @code{trie-common-prefix-keys} returns
-a list of keys; and @code{trie-common-prefix-values} returns a list
-of values.   The order of entries in a returned list is undefined.
-If @var{trie} contains no entry whose key has @var{prefix}, an
-empty list is returned.
-@c JP
-@var{prefix}ではじまるキーをもつエントリをすべて集め、
-@code{trie-common-prefix}はその各エントリを@code{(key . value)}の対にし
-たリストを返します。@code{trie-common-prefix-keys}は、キーのリストを
-@code{trie-common-prefix-values}は値のリストを返します。返されるリスト
-のエントリの順序は未定義です。
-@var{trie}に指定した@var{prefix}をもつキーのエントリがなければ、
-空リストが返されます。
-@c COMMON
-
-@c EN
-Note that prefix matching doesn't consider the type of sequence;
-if @var{trie} has entries for @code{"foo"} and @code{(#\f #\o #\o)},
-@code{(trie-common-prefix trie "foo")} will return both entries.
-@c JP
-接頭辞照合ではシーケンスの型を考慮しないことに注意してください。
-@var{trie}のなかに@code{"foo"}と@code{(#\f #\o #\o)}に対応するエントリ
-があれば、@code{(trie-common-prefix trie "foo")}はその両方を返します。
-@c COMMON
-@end defun
-
-@defun trie-common-prefix-fold trie prefix proc seed
-@c EN
-For each entry whose key begins with @var{prefix},
-calls @var{proc} with three argments, the entry's key,
-its value, and the current seed value.  @var{Seed} is
-used for the first seed value, and the value @var{proc}
-returns is used for the seed value of the next call of @var{proc}.
-The last returned value from @var{proc} is returned from
-@code{trie-common-prefix-fold}.
-The order of entries on which @var{proc} is called is undefined.
-If @var{trie} contains no entry whose key has @var{prefix},
-@var{proc} is never called and @var{seed} is returned.
-@c JP
-@var{prefix}ではじまるキーをもつ各エントリに対して、@var{proc}を3つの
-引数、エントリのキー、値、現在のシード値で呼びます。@var{seed}は最初の
-シード値として使われ、@var{proc}が返す値は次の@var{proc}の呼び出しのシー
-ド値として使われます。@var{proc}が返した最後の値が
-@code{trie-common-prefix-fold}から返ります。
-@var{proc}が適用される順序は未定義です。@var{trie}が@var{prefix}を持つ
-キーのエントリを含まない場合には@var{proc}が呼ばれることはなく、
-@var{seed}が返ります。
-@c COMMON
-@end defun
-
-@defun trie-common-prefix-map trie prefix proc
-@defunx trie-common-prefix-for-each trie prefix proc
-@c EN
-These are to @var{trie-common-prefix-fold} as @code{map} and @code{for-each}
-are to @code{fold}; @code{trie-common-prefix-map} calls
-@var{proc} with key and value for matching entries and
-gathers its result to a list; @code{trie-common-prefix-for-each}
-also applies @var{proc}, but discards its results.
-@c JP
-@code{map}や@code{for-each}を@code{fold}を合せたのと同じように、
-@var{trie-common-prefix-fold}に合せたものです。
-@code{trie-common-prefix-map}は@var{proc}をマッチするエントリのキーと
-値に適用し結果をリストにあつめます。
-@code{trie-common-prefix-for-each}も同じく@var{proc}を適用しますが
-結果は捨てます。
-@c COMMON
-@end defun
-
-@defun trie-fold trie proc seed
-@defunx trie-map trie proc
-@defunx trie-for-each trie proc
-@c EN
-These procedures are like their common-prefix versions, but
-traverse entire @var{trie} instead.
-@c JP
-これらの手続きはcommon-prefix版とおなじような働きをしますが、
-@var{trie}全体をトラバースします。
-@c COMMON
-@end defun
-
-
-@c ----------------------------------------------------------------------
-@node Topological sort, CGI Utility, Trie, Library modules - Utilities
+@node Topological sort, CGI Utility, Stream library, Library modules - Utilities
 @section @code{util.toposort} - Topological sort
 @c NODE トポロジカルソート, @code{util.toposort} - トポロジカルソート
 
