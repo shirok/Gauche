@@ -167,7 +167,7 @@
           real-comparator complex-comparator number-comparator
           pair-comparator list-comparator vector-comparator
           bytevector-comparator uvector-comparator
-          make-reverse-comparator make-field-comparator
+          make-reverse-comparator make-key-comparator
           make-car-comparator make-cdr-comparator)
 
 (autoload gauche.fileutil
