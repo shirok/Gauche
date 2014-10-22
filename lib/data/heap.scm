@@ -88,6 +88,11 @@
        (set! (~ storage (Ix i)) (~ storage (Ix j)))
        (set! (~ storage (Ix j)) v))]))
 
+;; When an item is removed, we fill the slot with this value to be GC friendly.
+;; 0 is chosen that all supported types of backing storage can hold it; if we
+;; extend the support of backing storage, we may need to reconsider this.
+(define-constant *filler* 0)
+
 (define-class <binary-heap> ()
   ((comparator :init-keyword :comparator)
    (key        :init-keyword :key)
@@ -209,25 +214,29 @@
             (if ((~ hp'>:) a b) a b))]))
 
 (define (binary-heap-pop-min! hp)
-  (let1 nelts (binary-heap-num-entries hp)
+  (let ([nelts (binary-heap-num-entries hp)]
+        [storage (~ hp'storage)])
     (when (= nelts 0) (error "binary heap is empty:" hp))
-    (rlet1 r (~ hp'storage (Ix 1))
-      (set! (~ hp'storage (Ix 1)) (~ hp'storage (Ix nelts)))
+    (rlet1 r (~ storage (Ix 1))
+      (set! (~ storage (Ix 1)) (~ storage (Ix nelts)))
+      (set! (~ storage (Ix nelts)) *filler*)
       (set! (~ hp'next-leaf) nelts)
-      (bh-trickle-down (~ hp'storage) (~ hp'<:) (~ hp'>:) 1 nelts))))
+      (bh-trickle-down storage (~ hp'<:) (~ hp'>:) 1 nelts))))
 
 (define (binary-heap-pop-max! hp)
-  (let1 nelts (binary-heap-num-entries hp)
+  (let ([nelts (binary-heap-num-entries hp)]
+        [storage (~ hp'storage)])
     (define (swap-and-adjust index)
-      (set! (~ hp'storage (Ix index)) (~ hp'storage (Ix nelts)))
+      (set! (~ storage (Ix index)) (~ storage (Ix nelts)))
+      (set! (~ storage (Ix nelts)) *filler*)
       (set! (~ hp'next-leaf) nelts)
-      (bh-trickle-down (~ hp'storage) (~ hp'<:) (~ hp'>:) index nelts))
+      (bh-trickle-down storage (~ hp'<:) (~ hp'>:) index nelts))
     (case nelts
       [(0) (error "binary heap is empty:" hp)]
-      [(1 2) (set! (~ hp'next-leaf) nelts) (~ hp'storage (Ix nelts))]
+      [(1 2) (set! (~ hp'next-leaf) nelts) (~ storage (Ix nelts))]
       [else
-       (let ([a (~ hp'storage (Ix 2))]
-             [b (~ hp'storage (Ix 3))])
+       (let ([a (~ storage (Ix 2))]
+             [b (~ storage (Ix 3))])
          (if ((~ hp'>:) a b)
            (begin (swap-and-adjust 2) a)
            (begin (swap-and-adjust 3) b)))])))
@@ -247,6 +256,10 @@
     (define (finish-up next)
       (unless (= next (~ hp'next-leaf)) ;; some keys are removed
         (bh-heapify! storage (~ hp'<:) (~ hp'>:) (- next 1))
+        (do ([i next (+ i 1)]
+             [lim (~ hp'next-leaf)])
+            [(>= i lim)]
+          (set! (~ hp'storage (Ix i)) *filler*))
         (set! (~ hp'next-leaf) next))
       hp)
 
@@ -371,3 +384,4 @@
           (trickle-down-rec >< pick)))))
 
   (trickle-down-rec (if (min-node? index) <: >:) index))
+
