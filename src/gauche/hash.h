@@ -115,6 +115,7 @@ SCM_EXTERN u_long Scm_EqHash(ScmObj obj);
 SCM_EXTERN u_long Scm_EqvHash(ScmObj obj);
 SCM_EXTERN u_long Scm_Hash(ScmObj obj);
 SCM_EXTERN u_long Scm_HashString(ScmString *str, u_long bound);
+SCM_EXTERN u_long Scm_CombineHashValue(u_long a, u_long b);
 
 /*================================================================
  * ScmHashTable

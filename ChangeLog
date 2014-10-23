@@ -1,3 +1,9 @@
+2014-10-23  Shiro Kawai  <shiro@acm.org>
+
+	* src/libdict.scm (combine-hash-value): Expose internal COMBINE
+	  to be used from other places.  Not sure yet if this is general
+	  enough, so for the time being this is EXPERIMENTAL.
+
 2014-10-22  Shiro Kawai  <shiro@acm.org>
 
 	* lib/data/trie.scm: Renamed util.trie -> data.trie.

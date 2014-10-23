@@ -218,6 +218,17 @@ u_long Scm_HashString(ScmString *str, u_long modulo)
     else return (hashval % modulo);
 }
 
+/* Expose COMBINE. */
+u_long Scm_CombineHashValue(u_long a, u_long b)
+{
+    u_long c = COMBINE(a, b);
+#if SIZEOF_LONG == 8
+    /* we limit portable hash value to 32bit. */
+    c &= 0xffffffff;
+#endif /**/
+    return c;
+}
+
 /*------------------------------------------------------------
  * Parameterization
  *

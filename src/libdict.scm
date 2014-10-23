@@ -127,6 +127,9 @@
 (define-cproc eq-hash (obj)  ::<ulong> :fast-flonum Scm_EqHash)
 (define-cproc eqv-hash (obj) ::<ulong> :fast-flonum Scm_EqvHash)
 (define-cproc hash (obj)     ::<ulong> :fast-flonum Scm_Hash)
+(define-cproc combine-hash-value (a::<ulong> b::<ulong>) ::<ulong>
+  Scm_CombineHashValue)
+
 (define-cproc hash-table? (obj) ::<boolean> :fast-flonum SCM_HASH_TABLE_P)
 
 (define-cproc %make-hash-table-simple (type init-size::<int>)
