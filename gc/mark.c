@@ -953,8 +953,8 @@ STATIC void GC_return_mark_stack(mse * low, mse * high)
                              (AO_t)(my_top + stack_size));
                 /* Ensures visibility of previously written stack contents. */
     }
-    GC_release_mark_lock();
     GC_notify_all_marker();
+    GC_release_mark_lock();
 }
 
 /* Mark from the local mark stack.              */
@@ -1085,8 +1085,8 @@ STATIC void GC_mark_local(mse *local_mark_stack, int id)
                     if (0 == GC_helper_count) need_to_notify = TRUE;
                     GC_VERBOSE_LOG_PRINTF("Finished mark helper %lu\n",
                                           (unsigned long)id);
-                    GC_release_mark_lock();
                     if (need_to_notify) GC_notify_all_marker();
+                    GC_release_mark_lock();
                     return;
                 }
                 /* else there's something on the stack again, or        */
@@ -1133,8 +1133,8 @@ STATIC void GC_do_parallel_mark(void)
     GC_active_count = 0;
     GC_helper_count = 1;
     GC_help_wanted = TRUE;
-    GC_release_mark_lock();
     GC_notify_all_marker();
+    GC_release_mark_lock();
         /* Wake up potential helpers.   */
     GC_mark_local(local_mark_stack, 0);
     GC_acquire_mark_lock();
@@ -1147,8 +1147,8 @@ STATIC void GC_do_parallel_mark(void)
     GC_VERBOSE_LOG_PRINTF("Finished marking for mark phase number %lu\n",
                           (unsigned long)GC_mark_no);
     GC_mark_no++;
-    GC_release_mark_lock();
     GC_notify_all_marker();
+    GC_release_mark_lock();
 }
 
 
