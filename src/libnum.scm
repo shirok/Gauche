@@ -274,6 +274,7 @@
 (define-cproc modulo (n1 n2)    :fast-flonum :constant
   (result (Scm_Modulo n1 n2 FALSE)))
 
+(select-module gauche)
 ;; gcd, lcm: these are the simplest ones.  If you need efficiency, consult
 ;; Knuth: "The Art of Computer Programming" Chap. 4.5.2
 (define-in-module scheme (gcd . args)
