@@ -62,6 +62,49 @@ static void unregister_buffered_port(ScmPort *port);
 static void bufport_flush(ScmPort*, int, int);
 static void file_closer(ScmPort *p);
 
+static ScmObj get_port_name(ScmPort *port)
+{
+    return Scm_PortName(port);
+}
+
+static ScmObj get_port_current_line(ScmPort *port)
+{
+    return SCM_MAKE_INT(Scm_PortLine(port));
+}
+
+static ScmObj get_port_buffering(ScmPort *port)
+{
+    return Scm_GetPortBufferingModeAsKeyword(port);
+}
+
+static void set_port_buffering(ScmPort *port, ScmObj val)
+{
+    if (SCM_PORT_TYPE(port) != SCM_PORT_FILE) {
+        Scm_Error("can't set buffering mode to non-buffered port: %S", port);
+    }
+    Scm_SetPortBufferingMode(port,Scm_BufferingMode(val,port->direction,-1));
+}
+
+static ScmObj get_port_sigpipe_sensitive(ScmPort *port)
+{
+    return SCM_MAKE_BOOL(Scm_GetPortBufferSigpipeSensitive(port));
+}
+
+static void set_port_sigpipe_sensitive(ScmPort *port, ScmObj val)
+{
+    Scm_SetPortBufferSigpipeSensitive(port, SCM_BOOL_VALUE(val));
+}
+
+static ScmClassStaticSlotSpec port_slots[] = {
+    SCM_CLASS_SLOT_SPEC("name", get_port_name, NULL),
+    SCM_CLASS_SLOT_SPEC("buffering", get_port_buffering,
+                        set_port_buffering),
+    SCM_CLASS_SLOT_SPEC("sigpipe-sensitive?", get_port_sigpipe_sensitive,
+                        set_port_sigpipe_sensitive),
+    SCM_CLASS_SLOT_SPEC("current-line", get_port_current_line, NULL),
+    SCM_CLASS_SLOT_SPEC_END()
+};
+
 SCM_DEFINE_BASE_CLASS(Scm_PortClass,
                       ScmPort, /* instance type */
                       port_print, NULL, NULL, NULL, NULL);
@@ -1656,9 +1699,9 @@ void Scm__InitPort(void)
     active_buffered_ports.ports = SCM_WEAK_VECTOR(Scm_MakeWeakVector(PORT_VECTOR_SIZE));
 
     Scm_InitStaticClass(&Scm_PortClass, "<port>",
-                        Scm_GaucheModule(), NULL, 0);
+                        Scm_GaucheModule(), port_slots, 0);
     Scm_InitStaticClass(&Scm_CodingAwarePortClass, "<coding-aware-port>",
-                        Scm_GaucheModule(), NULL, 0);
+                        Scm_GaucheModule(), port_slots, 0);
 
     scm_stdin  = Scm_MakePortWithFd(SCM_MAKE_STR("(standard input)"),
                                     SCM_PORT_INPUT, 0,

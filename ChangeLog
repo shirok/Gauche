@@ -1,3 +1,8 @@
+2014-10-25  Shiro Kawai  <shiro@acm.org>
+
+	* src/port.c: Experimentally allow access port information as
+	  slots.
+
 2014-10-23  Shiro Kawai  <shiro@acm.org>
 
 	* src/libdict.scm (combine-hash-value): Expose internal COMBINE
