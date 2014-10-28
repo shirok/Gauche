@@ -59,5 +59,12 @@
        (letrec ([c (lcons* '(0 1 2 3) '(0 1 2 3) c)])
          (take (lconcatenate c) 10)))
 
+(test* "lazyness - linterweave" '(#0=(1 a 2 b 3 c) #0#)
+       (list (linterweave '(1 2 3 4) '(a b c))
+             (linterweave '(1 2 3) '(a b c d))))
+
+(test* "lazyness - linterweave" '(1 a A 2 b A 3 c A)
+       (linterweave (lrange 1)  '(a b c) '#0=(A . #0#)))
+
 (test-end)
 

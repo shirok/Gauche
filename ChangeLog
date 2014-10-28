@@ -1,3 +1,7 @@
+2014-10-27  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/lazy.scm: Added linterweave.
+
 2014-10-25  Shiro Kawai  <shiro@acm.org>
 
 	* src/port.c: Experimentally allow access port information as

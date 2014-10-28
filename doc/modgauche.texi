@@ -5759,6 +5759,19 @@ This differs from @code{(apply lappend seqs)}, for @code{lconcatenate}
 can handle infinite number of lazy @var{seqs}.
 @end defun
 
+@defun linterweave seq @dots{}
+Returns a lazy seq of the first items from @var{seq} @dots{}, then
+their second items, and so on.   If the length of shortest sequence
+of @var{seqs} is N, the length of the resulting sequence is
+@code{(* N number-of-sequences)}.  If all of @var{seq}s are infinite,
+the resulting sequence is also infinite.
+
+@example
+(linterweave (lrange 0) '(a b c d e) (circular-list '*))
+ @result{} (0 a * 1 b * 2 c * 3 d * 4 e *)
+@end example
+@end defun
+
 @defun lfilter proc seq
 Returns a lazy sequence that consists of non-false values calculated
 by applying @var{proc} on every elements in @var{seq}.

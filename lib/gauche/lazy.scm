@@ -38,9 +38,11 @@
 ;; gauche.generator, which depends on modules built in ext/gauche.
 
 (define-module gauche.lazy
+  (use srfi-1)
   (use gauche.generator)
-  (export x->lseq lunfold lmap lmap-accum lappend lconcatenate lfilter
-          lfilter-map lstate-filter ltake ltake-while lrxmatch lslices))
+  (export x->lseq lunfold lmap lmap-accum lappend lconcatenate
+          linterweave lfilter lfilter-map lstate-filter
+          ltake ltake-while lrxmatch lslices))
 (select-module gauche.lazy)
 
 ;; Universal coercer.
@@ -89,6 +91,8 @@
               [(null? (car args)) (pop! args) (gen)]
               [else (pop! (car args))])))]))
 
+;; Like (apply lappend seqs), but SEQS itself can be a (possibly infinite)
+;; lazy seq.
 (define (lconcatenate lseqs)
   (define cur #f)
   (if (null? lseqs)
@@ -101,6 +105,30 @@
                       elt))]
              [(null? lseqs) (eof-object)]
              [else (set! cur (x->generator (pop! lseqs))) (gen)])))))
+
+;; (linterweave '(1 2 3 ...) '(a b c ...)) => (1 a 2 b 3 c ...)
+;; Continues until all elements are exhausted.
+(define (linterweave . seqs)
+  (define (get-cars!)
+    (let loop ([ss seqs] [rcars '()] [rcdrs '()])
+      (cond [(null? ss) (set! seqs (reverse rcdrs)) (reverse rcars)]
+            [(null? (car ss)) (eof-object)]
+            [else
+             (loop (cdr ss) (cons (caar ss) rcars) (cons (cdar ss) rcdrs))])))
+  (if (null? seqs)
+    '()
+    (let1 cars (get-cars!)
+      (if (eof-object? cars)
+        '()
+        (generator->lseq
+         (rec (gen)
+           (if (null? cars)
+             (begin
+               (set! cars (get-cars!))
+               (if (eof-object? cars)
+                 cars
+                 (gen)))
+             (pop! cars))))))))
 
 ;; NB: Should we define all l* variations corresponds to g* variations?
 (define (lmap-accum fn seed seq . args)
