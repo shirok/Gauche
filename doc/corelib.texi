@@ -1769,31 +1769,63 @@ R7RSではこれらの手続きは@code{(scheme comlex)}ライブラリにあり
 
 @defun decode-float x
 @c EN
-For a given floating-point number, returns
+For a given finite floating-point number, returns
 a vector of three exact integers, @code{#(@var{m}, @var{e}, @var{sign})},
 where
 @example
   @var{x} = (* @var{sign} @var{m} (expt 2.0 @var{e}))
   @var{sign} is either 1, 0 or -1.
 @end example
+
+If @var{x} is @code{+inf.0} or @code{-inf.0}, @var{m} is @code{#t}.
+If @var{x} is @code{+nan.0}, @var{m} is @code{#f}.
+
 The API is taken from ChezScheme.
 @c JP
-与えられた浮動小数点数@var{x}に対して、
+与えられた有限の浮動小数点数@var{x}に対して、
 3つの正確な整数からなるベクタ @code{#(@var{m}, @var{e}, @var{sign})}
 を返します。ここで、
 @example
   @var{x} = (* @var{sign} @var{m} (expt 2.0 @var{e}))
   @var{sign} は 1, 0 または -1.
 @end example
-です。このAPIはChezSchemeから取られました。
+です。
+
+特例として、@var{x}が@code{+inf.0}もしくは@code{-inf.0}の時は
+@var{m}が@code{#t}に、
+@var{x}が@code{+nan.0}の時は@var{m}が@code{#f}になります。
+
+このAPIはChezSchemeから取られました。
 @c COMMON
 @example
 (decode-float 3.1415926)
  @result{} #(7074237631354954 -51 1)
 (* 7074237631354954 (expt 2.0 -51))
  @result{} 3.1415926
+
+(decode-float +nan.0)
+ @result{} #(#f 0 -1)
 @end example
 @end defun
+
+@defun encode-float vector
+@c EN
+This is an inverse of @code{decode-float}.  @var{Vector} must be
+a three-element vector as returned from @code{decode-float}.
+@c JP
+これは@code{decode-float}の逆関数です。@var{vector}は
+@code{decode-float}が返す形式の3要素のベクタでなければなりません。
+@c COMMON
+
+@example
+(encode-float '#(7074237631354954 -51 1))
+ @result{} 3.1415926
+
+(encode-float '#(#t 0 1))
+ @result{} +inf.0
+@end example
+@end defun
+
 
 @defun fmod x y
 @defunx modf x

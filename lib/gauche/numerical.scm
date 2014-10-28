@@ -335,6 +335,17 @@
 ;; R7RS
 (define (square x) (* x x))
 
+;; reverse of decode-float, for the convenience
+(define (encode-float vec)
+  (unless (and (vector? vec)
+               (= (vector-length vec) 3))
+    (error "Vector of length 3 required, but got:" vec))
+  (let1 mantissa (vector-ref vec 0)
+    (case mantissa
+      [(#f) +nan.0]
+      [(#t) (if (< (vector-ref vec 2) 0) -inf.0 +inf.0)]
+      [else (* (vector-ref vec 2) (ldexp mantissa (vector-ref vec 1)))])))
+
 ;; Nearly equal comparison
 ;;  (Unofficial yet; see how it works)
 
