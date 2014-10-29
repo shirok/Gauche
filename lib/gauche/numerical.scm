@@ -337,14 +337,27 @@
 
 ;; reverse of decode-float, for the convenience
 (define (encode-float vec)
+  (define max-mantissa (- (%expt 2 53) 1))
+  (define max-exponent (- 1024 53))
+  (define min-exponent (- -1023 51))
   (unless (and (vector? vec)
                (= (vector-length vec) 3))
     (error "Vector of length 3 required, but got:" vec))
-  (let1 mantissa (vector-ref vec 0)
+  (let ([mantissa (vector-ref vec 0)]
+        [exponent (vector-ref vec 1)]
+        [sign     (vector-ref vec 2)])
+    
+    (unless (<= min-exponent exponent max-exponent)
+      (errorf "Exponent is out of range (must be between ~a and ~a: ~s"
+              min-exponent max-exponent exponent))
     (case mantissa
       [(#f) +nan.0]
       [(#t) (if (< (vector-ref vec 2) 0) -inf.0 +inf.0)]
-      [else (* (vector-ref vec 2) (ldexp mantissa (vector-ref vec 1)))])))
+      [else
+       (unless (<= 0 mantissa max-mantissa)
+         (error "Mantissa is out of range (must be between 0 and 2^53-1):"
+                mantissa))
+       (* (vector-ref vec 2) (ldexp mantissa (vector-ref vec 1)))])))
 
 ;; Nearly equal comparison
 ;;  (Unofficial yet; see how it works)
