@@ -2406,7 +2406,7 @@ static void method_specializers_set(ScmMethod *m, ScmObj val)
 {
     int len = Scm_Length(val);
     if (len != m->common.required)
-        Scm_Error("specializer list doesn't match body's lambda list:", val);
+        Scm_Error("specializer list doesn't match body's lambda list: %S", val);
     if (len == 0)
         m->specializers = NULL;
     else
