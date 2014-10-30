@@ -539,7 +539,7 @@ void CompactTrieCheck(const CompactTrie *ct, ScmObj obj,
     } else {
         int num_leaves = check_rec(ct->root, 0, checker, obj);
         if (ct->numEntries != num_leaves) {
-            Scm_Error("%S: # of leafs (%d) and numEntries (%d) don't agreee",
+            Scm_Error("%S: # of leafs (%d) and numEntries (%d) don't agree",
                       obj, num_leaves, ct->numEntries);
         }
     }
