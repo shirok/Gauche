@@ -82,7 +82,7 @@ static Leaf *leaf_allocate(void *data)
 static u_long string_hash(ScmObj key)
 {
     if (!SCM_STRINGP(key)) {
-        Scm_Error("sparse string hashtable got non-string key:", key);
+        Scm_Error("sparse string hashtable got non-string key: %S", key);
     }
     return Scm_HashString(SCM_STRING(key), 0);
 }
@@ -90,10 +90,10 @@ static u_long string_hash(ScmObj key)
 static int string_cmp(ScmObj a, ScmObj b)
 {
     if (!SCM_STRINGP(a)) {
-        Scm_Error("sparse string hashtable got non-string key:", a);
+        Scm_Error("sparse string hashtable got non-string key: %S", a);
     }
     if (!SCM_STRINGP(b)) {
-        Scm_Error("sparse string hashtable got non-string key:", b);
+        Scm_Error("sparse string hashtable got non-string key: %S", b);
     }
     return Scm_StringEqual(SCM_STRING(a), SCM_STRING(b));
 }
