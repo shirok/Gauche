@@ -2779,11 +2779,14 @@ double Scm_TanPi(double x)
  * Comparison
  */
 
+static inline int nan_p(ScmObj arg)
+{
+    return (SCM_FLONUMP(arg) && SCM_IS_NAN(SCM_FLONUM_VALUE(arg)));
+}
+
 static inline int either_nan_p(ScmObj arg0, ScmObj arg1)
 {
-    if (SCM_FLONUMP(arg0) && SCM_IS_NAN(SCM_FLONUM_VALUE(arg0))) return TRUE;
-    if (SCM_FLONUMP(arg1) && SCM_IS_NAN(SCM_FLONUM_VALUE(arg1))) return TRUE;
-    return FALSE;
+    return (nan_p(arg0) || nan_p(arg1));
 }
 
 int Scm_NumEq(ScmObj arg0, ScmObj arg1)
@@ -2950,39 +2953,38 @@ int Scm_NumCmp(ScmObj arg0, ScmObj arg1)
 
 void Scm_MinMax(ScmObj arg0, ScmObj args, ScmObj *min, ScmObj *max)
 {
+    if (!SCM_REALP(arg0)) Scm_Error("real number required, but got %S", arg0);
+    if (nan_p(arg0)) goto got_nan;
     int inexact = !SCM_EXACTP(arg0);
     ScmObj mi = arg0;
     ScmObj ma = arg0;
 
-    for (;;) {
-        if (!SCM_REALP(arg0))
-            Scm_Error("real number required, but got %S", arg0);
-        if (SCM_NULLP(args)) {
-            if (min) {
-                if (inexact && SCM_EXACTP(mi)) {
-                    *min = Scm_Inexact(mi);
-                } else {
-                    *min = mi;
-                }
-            }
-            if (max) {
-                if (inexact && SCM_EXACTP(ma)) {
-                    *max = Scm_Inexact(ma);
-                } else {
-                    *max = ma;
-                }
-            }
-            return;
-        }
-        if (!SCM_EXACTP(SCM_CAR(args))) inexact = TRUE;
-        if (min && Scm_NumCmp(mi, SCM_CAR(args)) > 0) {
-            mi = SCM_CAR(args);
-        }
-        if (max && Scm_NumCmp(ma, SCM_CAR(args)) < 0) {
-            ma = SCM_CAR(args);
-        }
-        args = SCM_CDR(args);
+    for (;SCM_PAIRP(args); args = SCM_CDR(args)) {
+        ScmObj arg = SCM_CAR(args);
+        if (!SCM_REALP(arg)) Scm_Error("real number required, but got %S", arg);
+        if (nan_p(arg)) goto got_nan;
+        if (!SCM_EXACTP(arg)) inexact = TRUE;
+        if (min && Scm_NumCmp(mi, arg) > 0) mi = arg;
+        if (max && Scm_NumCmp(ma, arg) < 0) ma = arg;
     }
+    if (min) {
+        if (inexact && SCM_EXACTP(mi)) {
+            *min = Scm_Inexact(mi);
+        } else {
+            *min = mi;
+        }
+    }
+    if (max) {
+        if (inexact && SCM_EXACTP(ma)) {
+            *max = Scm_Inexact(ma);
+        } else {
+            *max = ma;
+        }
+    }
+    return;
+ got_nan:
+    if (min) *min = SCM_NAN;
+    if (max) *max = SCM_NAN;
 }
 
 /*===============================================================
