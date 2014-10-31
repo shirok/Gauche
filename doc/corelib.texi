@@ -1077,7 +1077,7 @@ Returns a maximum or minimum number in the given real numbers, respectively.
 If any of the arguments are NaN, NaN is returned.
 @c JP
 与えられた実数のうち、それぞれ最大と最小のものを返します。
-引く数にNaNが含まれていた場合は、NaNが返されます。
+引数にNaNが含まれていた場合は、NaNが返されます。
 @c COMMON
 
 @c EN
