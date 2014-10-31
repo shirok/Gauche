@@ -226,7 +226,7 @@
 (define-cproc log10 (x::<real>) ::<real> log10)
 
 ;; NB: Alternative implemenation of gamma and log-abs-gamma functions are
-;; provided in Scheme (lib/gauche/numeric.scm).
+;; provided in Scheme (lib/gauche/numerical.scm).
 (select-module gauche.internal)
 (inline-stub
  (if "defined(HAVE_TGAMMA)"
