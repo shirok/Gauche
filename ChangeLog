@@ -1,3 +1,11 @@
+2014-11-02  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.scm (%make-er-transormer),
+	  lib/gauche/common-macros.scm (er-macro-transformer): Added to
+	  give a shot.
+	* src/libmod.scm (global-identifier=?, free-identifier=?): Moved
+	  from compile.scm
+
 2014-10-30  Shiro Kawai  <shiro@acm.org>
 
 	* src/number.c (Scm_MinMax): Return NaN if any of the arguments is NaN.

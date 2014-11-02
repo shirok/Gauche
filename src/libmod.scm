@@ -289,3 +289,35 @@
        (result (SCM_OBJ gloc))
        (result SCM_FALSE))))
  )
+
+;; Returns #t if id1 and id2 both refer to the same existing global binding.
+;; Like free-identifier=? but we know id1 and id2 are both toplevel and
+;; at least one is bound, so we skip local binding lookup.
+(define (global-identifier=? id1 id2)
+  (and-let* ([ (identifier? id1) ]
+             [ (identifier? id2) ]
+             [g1 (id->bound-gloc id1)]
+             [g2 (id->bound-gloc id2)])
+    (eq? g1 g2)))
+
+;; Returns #t iff id1 and id2 would resolve to the same binding
+;; (or both are free).
+(define (free-identifier=? id1 id2)
+  (define (lookup id)
+    (env-lookup id (identifier-module id) (identifier-env id)))
+  (define (deep-compare id1 id2)
+    (let ([b1 (lookup id1)]
+          [b2 (lookup id2)])
+      (cond
+       [(or (lvar? b1) (macro? b1))
+        ;;must have the same local variable or syntactic binding
+        (eq? b1 b2)]
+       [(or (lvar? b2) (macro? b2)) #f]
+       [else (let ([g1 (id->bound-gloc id1)]
+                   [g2 (id->bound-gloc id2)])
+               (or (and (not g1) (not g2)) ;both are free
+                   (eq? g1 g2)))])))
+  (and (identifier? id1)
+       (identifier? id2)
+       (or (eq? id1 id2)
+           (deep-compare id1 id2))))

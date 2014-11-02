@@ -347,12 +347,11 @@
                     (SCM_MODULE (SCM_VECTOR_ELEMENT cenv 0))   ; module
                     (SCM_VECTOR_ELEMENT cenv 1))))             ; frames
  ;; Internal API - for faster CENV lookup
-  (define-cproc cenv-lookup-variable (cenv name)
+ (define-cproc cenv-lookup-variable (cenv name)
    (result
     (env-lookup-int name (SCM_MAKE_INT 0)                      ; LEXICAL
                     (SCM_MODULE (SCM_VECTOR_ELEMENT cenv 0))   ; module
                     (SCM_VECTOR_ELEMENT cenv 1))))             ; frames
-
 
  ;; Check if Cenv is toplevel or not.
  ;;
@@ -1773,6 +1772,7 @@
 (define =>.          (global-id '=>))
 
 (define %make-primitive-transformer. (global-id% '%make-primitive-transformer))
+(define %make-er-transformer.        (global-id% '%make-er-transformer))
 (define make-cenv. (global-id% 'make-cenv))
 
 ;; Definitions ........................................
@@ -5904,6 +5904,85 @@
 
 
 ;;============================================================
+;; Macro support basis
+;;
+
+;; Primitive transformer takes the input form, macro-definition
+;; environment, and macro-use environment.
+;;
+;; (Sexpr, Env, Env) -> Sexpr
+;;
+;; The transformer should treat the envionments as opaque data.
+;; Currently it's just Cenv's, but we may change it later.
+
+;; Internal.  The syntax (primitive-macro-transformer xformer)
+;; would be expanded to a call to this procedure.
+(define (%make-primitive-transformer xformer def-env)
+  (%make-macro-transformer (cenv-exp-name def-env)
+                           (^[form use-env] (xformer form def-env use-env))))
+
+;; er-renamer :: (Sym-or-id, [Id]) -> (Id, [Id])
+;; Renamer creates an identifier out of bare symbol.  The identifier is
+;; unique per macro invocation.  We keep an alist of sym & created ids
+;; during one macro invocation to guarantee that eq?-ness of the renamed
+;; identifiers.
+(define (er-renamer sym dict module env)
+  (if-let1 id (assq-ref dict sym)
+    (values id dict)
+    (let1 id (make-identifier
+              (cond [(identifier? sym) (identifier-name sym)]
+                    [(symbol? sym) sym]
+                    ;; TODO: better error message
+                    [else (error "Rename received non-symbol argument:" sym)])
+              module
+              env)
+      (values id (acons sym id dict)))))
+
+;; er-comparer :: (Sym-or-id, Sym-or-id, Env, Env) -> Bool
+(define (er-comparer a b uenv cenv)
+  (let ([a1 (cenv-lookup-variable uenv a)]
+        [b1 (cenv-lookup-variable uenv b)])
+    (or (eq? a1 b1)
+        (free-identifier=? a1 b1))))
+
+;; xformer :: (Sexpr, (Sym -> Sym), (Sym, Sym -> Bool)) -> Sexpr
+(define (%make-er-transformer xformer def-env)
+  (define def-module (cenv-module def-env))
+  (define def-frames (cenv-frames def-env))
+  (define (expand form uenv)
+    (let1 dict '()
+      (xformer form
+               (^[sym]
+                 (receive [id dict_] (er-renamer sym dict def-module def-frames)
+                   (set! dict dict_)
+                   id))
+               (^[a b] (er-comparer a b uenv def-env)))))
+  (%make-macro-transformer (cenv-exp-name def-env) expand))
+
+;; this is called during macro expansion
+(define (%expand-er-transformer form cenv)
+  (match form
+    [(_ xformer)
+     ;; A couple of kludges:
+     ;; If cenv (macro-definition environment) is toplevel, i.e. frames is (),
+     ;; we generate an expression to call make-cenv; it is necessary when we're
+     ;; AOT compiling, for we can't embed cenv structure as literal in the
+     ;; precompiled output.
+     ;; If cenv has local environment, we don't bother that, for the macro
+     ;; will be fully expanded during AOT compilation.  HOWEVER - we can't
+     ;; embed cenv as a vector literal (e.g. `',cenv) since quoting will
+     ;; strip all identifier information in cenv.  The right thing would be
+     ;; to make cenv as a record.  For now, we take advantage that unquoted
+     ;; vector evaluates to itself, and insert cenv without quoting.  This
+     ;; has to change if we prohibit unquoted vector literals.
+     (let1 def-env-form (if (null? (cenv-frames cenv))
+                          `(,make-cenv. (current-module) '()
+                                        ',(cenv-exp-name cenv))
+                          cenv)
+       `(,%make-er-transformer. ,xformer ,def-env-form))]
+    [_ (error "Invalid er-macro-transformer form:" form)]))
+     
+;;============================================================
 ;; Utilities
 ;;
 
@@ -6017,29 +6096,6 @@
          (and (identifier? v)
               (eq? (identifier-name v) sym)
               (null? (identifier-env v))))))
-
-(define (free-identifier=? id1 id2)
-  (or (eq? id1 id2)
-      (and (eq? (identifier-name id1) (identifier-name id2))
-           (let ([m1 (identifier-module id1)]
-                 [e1 (identifier-env id1)]
-                 [m2 (identifier-module id2)]
-                 [e2 (identifier-env id2)])
-             (or (and (eq? m1 m2) (eq? e1 e2))
-                 (let ([v1 (env-lookup id1 m1 e1)]
-                       [v2 (env-lookup id2 m2 e2)])
-                   (or (eq? v1 v2)  ; macro or lvar
-                       (and (identifier? v1)
-                            (identifier? v2)
-                            (global-identifier=? id1 id2)))))))))
-
-;; Returns #t if id1 and id2 both refer to the same existing global binding.
-;; Like free-identifier=? but we know id1 and id2 are both toplevel and
-;; at least one is bound, so we skip local binding lookup.
-(define (global-identifier=? id1 id2)
-  (and-let* ([g1 (id->bound-gloc id1)]
-             [g2 (id->bound-gloc id2)])
-    (eq? g1 g2)))
 
 (define (everyc proc lis c)             ;avoid closure allocation
   (or (null? lis)

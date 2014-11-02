@@ -38,6 +38,124 @@
 
 (test-macro "defmac if" (if a b c) (myif a b c))
 
+;; explicit renaming macros
+
+(test-section "ER macro basics")
+
+(define-syntax er-when
+  (er-macro-transformer
+   (^[f r c]
+     (let ([test (cadr f)]
+           [exprs (cddr f)])
+       `(,(r 'if) ,test (,(r 'begin) ,@exprs))))))
+
+(test "when - basic" #t (^[] (let ((x #f)) (er-when #t (set! x #t)) x)))
+(test "when - basic" #f (^[] (let ((x #f)) (er-when #f (set! x #t)) x)))
+
+(test "when - hygene" 3
+      (^[] (let ([if list]
+                 [begin list])
+             (er-when #t 1 2 3))))
+
+(define-syntax er-aif
+  (er-macro-transformer
+   (^[f r c]
+     (let ([test (cadr f)]
+           [then (caddr f)]
+           [else (cadddr f)])
+       `(,(r 'let) ((it ,test))
+           (,(r 'if) it ,then ,else))))))
+
+(test "aif - basic" 4 (^[] (er-aif (+ 1 2) (+ it 1) #f)))
+(test "aif - basic" 5 (^[] (let ((it 999)) (er-aif (+ 1 2) (+ it 2) #f))))
+
+(test "aif - hygene" 6
+      (^[] (let ((it 999)
+                 (let list))
+             (er-aif (+ 1 2) (+ it 3) #f))))
+(test "aif - nesting" #t
+      (^[] (let ([it 999])
+             (er-aif (+ 1 2) (er-aif (odd? it) it #f) #f))))
+
+(test-section "ER macro local scope")
+
+(let ([if list])
+  (let-syntax ([fake-if (er-macro-transformer
+                         (^[f r c] `(,(r 'if) ,@(cdr f))))])
+    (test "fake-if" '(1 2 3) (^[] (fake-if 1 2 3)))
+    (let ([if +])
+      (test "fake-if" '(4 5 6) (^[] (fake-if 4 5 6))))))
+
+(test-section "ER compare literals")
+
+;; from Clinger "Hygienic Macros Through Explicit Renaming"
+(define-syntax er-cond
+  (er-macro-transformer
+   (^[f r c]
+     (let1 clauses (cdr f)
+       (if (null? clauses)
+         `(,(r 'quote) ,(r 'unspecified))
+         (let* ([first (car clauses)]
+                [rest  (cdr clauses)]
+                [test  (car first)])
+           (cond [(and (or (symbol? test)
+                           (identifier? test))
+                       (c test (r 'else)))
+                  `(,(r 'begin) ,@(cdr first))]
+                 [else `(,(r 'if) ,test
+                         (,(r 'begin) ,@(cdr first))
+                         (er-cond ,@rest))])))))))
+
+(define (er-cond-tester1 x)
+  (er-cond [(odd? x) 'odd] [else 'even]))
+
+(test "er-cond 1" '(even odd)
+      (^[] (list (er-cond-tester1 0) (er-cond-tester1 1))))
+
+(let ([else #f])
+  (define (er-cond-tester2 x)
+    (er-cond [(odd? x) 'odd] [else 'even]))
+  (test "er-cond 2" '(unspecified odd)
+        (^[] (list (er-cond-tester2 0) (er-cond-tester2 1)))))
+
+(define-module er-test-mod
+  (export er-cond2)
+  (define-syntax er-cond2
+    (er-macro-transformer
+     (^[f r c]
+       (let1 clauses (cdr f)
+         (if (null? clauses)
+           `(,(r 'quote) ,(r 'unspecified))
+           (let* ([first (car clauses)]
+                  [rest  (cdr clauses)]
+                  [test  (car first)])
+             (cond [(and (or (symbol? test)
+                             (identifier? test))
+                         (c test (r 'else)))
+                    `(,(r 'begin) ,@(cdr first))]
+                   [else `(,(r 'if) ,test
+                           (,(r 'begin) ,@(cdr first))
+                           (er-cond2 ,@rest))]))))))))
+
+(define-module er-test-mod2
+  (use gauche.test)
+  (import er-test-mod)
+  (define (er-cond-tester1 x)
+    (er-cond2 [(odd? x) 'odd] [else 'even]))
+  (test "er-cond (cross-module)" '(even odd)
+        (^[] (list (er-cond-tester1 0) (er-cond-tester1 1)))))
+
+;; Introducing local bindings
+(let ((x 3))
+  (let-syntax ([foo (er-macro-transformer
+                     (^[f r c]
+                       (let1 body (cdr f)
+                         `(,(r 'let) ([,(r 'x) (,(r '+) ,(r 'x) 2)])
+                           (,(r '+) ,(r 'x) ,@body)))))])
+    (let ((x -1))
+      (test* "er-macro introducing local bindings" 4
+             (foo x)))))
+
 ;;----------------------------------------------------------------------
 ;; basic tests
 

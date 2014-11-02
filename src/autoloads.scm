@@ -110,7 +110,8 @@
           (:macro ecase)
           (:macro dotimes dolist while until)
           (:macro guard unwind-protect)
-          (:macro cond-list))
+          (:macro cond-list)
+          (:macro er-macro-transformer))
 
 (autoload gauche.regexp
           (:macro rxmatch-let rxmatch-if rxmatch-cond rxmatch-case)

@@ -532,3 +532,14 @@
             [r (cond-list . rest)])
        (if tmp (cons (begin . expr) r) r))]
     ))
+
+;;; ------------------------------------------------------------
+;;; er-macro-transformer
+;;;
+
+;; This will become compiled into core after 0.9.5 release; for 0.9.4,
+;; we can't compile-in define-syntaxed macros, so we keep this autoload.
+(define-syntax er-macro-transformer
+  (primitive-macro-transformer
+   (^[form def-env use-env]
+     ((with-module gauche.internal %expand-er-transformer) form use-env))))
