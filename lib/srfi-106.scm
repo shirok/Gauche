@@ -7,7 +7,7 @@
 (define-module srfi-106
   (use gauche.uvector)
   (use gauche.net :prefix net:)
-  (export make-client-socket make-server-socket call-with-socket
+  (export make-client-socket make-server-socket socket? call-with-socket
           socket-input-port socket-output-port
           socket-merge-flags socket-purge-flags
           socket-accept socket-send socket-recv socket-shutdown socket-close
