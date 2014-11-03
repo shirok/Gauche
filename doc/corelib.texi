@@ -8878,7 +8878,7 @@ to @code{vector->string}.
 The optional @var{start} and @var{end} arguments
 limit the range of the source.
 @c JP
-文字のベクタをリストに変換したり、その逆を行う手続きです。
+文字のベクタを文字列に変換したり、その逆を行う手続きです。
 @code{vector->string}に、文字以外の要素を含むベクタを渡した場合はエラーになります。
 
 省略可能な引数@var{start}と@var{end}を与えることにより、
@@ -8899,7 +8899,7 @@ With @var{gauche.collection} module, you can use
 @code{(coerce-to <vector> @var{string})} as well.
 @c JP
 @code{gauche.collection}モジュールをロードしていれば、
-@code{(coerce-to <strin> @var{vector})} と
+@code{(coerce-to <string> @var{vector})} と
 @code{(coerce-to <vector> @var{string})} も同じ目的で使えます。
 @c COMMON
 @end defun
