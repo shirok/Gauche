@@ -1747,7 +1747,10 @@
 ;;
 
 (define-macro (define-pass1-syntax formals module . body)
-  (let ([mod (case module ((:null) 'null) ((:gauche) 'gauche))]
+  (let ([mod (ecase module
+               [(:null) 'null]
+               [(:gauche) 'gauche]
+               [(:internal) 'gauche.internal])]
         ;; a trick to assign comprehensive name to body:
         [name (string->symbol #`"syntax/,(car formals)")])
     `(let ((,name (^ ,(cdr formals) ,@body)))
@@ -1770,10 +1773,11 @@
 (define include-ci.  (global-id 'include-ci))
 (define else.        (global-id 'else))
 (define =>.          (global-id '=>))
+(define current-module. (global-id 'current-module))
 
 (define %make-primitive-transformer. (global-id% '%make-primitive-transformer))
 (define %make-er-transformer.        (global-id% '%make-er-transformer))
-(define make-cenv. (global-id% 'make-cenv))
+(define %make-toplevel-cenv.         (global-id% '%make-toplevel-cenv))
 
 ;; Definitions ........................................
 
@@ -2033,20 +2037,27 @@
      ;; a macro, the captured CENV must be serializable to a file,
      ;; which isn't generally the case.
      ;; So, if we're compiling toplevel, we emit code that reconstruct
-     ;; cenv at runtime.  (Local macros will never "survive" into precompiled
-     ;; file, so we don't need to bother for it.)  Runtime CENV construction
+     ;; cenv at runtime.  Runtime CENV construction
      ;; will incur some overhead, but it's just per macro definition so
      ;; it won't be an issue.
-     ;; NB: precomp needs to intercept current-module, so we're not using
-     ;; identifier for it.   It causes hygienity problem, though.  Need to
-     ;; be addressed in future.
+     ;; If cenv has local environment, we don't bother that, for the macro
+     ;; will be fully expanded during AOT compilation.  HOWEVER - we can't
+     ;; embed cenv as a vector literal (e.g. `',cenv) since quoting will
+     ;; strip all identifier information in cenv.  The right thing would be
+     ;; to make cenv as a record.  For now, we take advantage that unquoted
+     ;; vector evaluates to itself, and insert cenv without quoting.  This
+     ;; has to change if we prohibit unquoted vector literals.
      (let1 def-env-form (if (null? (cenv-frames cenv))
-                          `(,make-cenv. (current-module) '()
-                                        ',(cenv-exp-name cenv))
-                          `',cenv)
+                          `(,%make-toplevel-cenv. ,(cenv-exp-name cenv))
+                          cenv)
        (pass1 `(,%make-primitive-transformer. ,xformer ,def-env-form)
               cenv))]
     [_ (error "syntax-error: malformed primitive-macro-transformer:" form)]))
+
+(define-pass1-syntax (%make-toplevel-cenv form cenv) :internal
+  (match form
+    [(_ name) ($const (%make-cenv (vm-current-module) '() name))]
+    [_ (error "syntax-error: malformed make-toplevel-cenv:" form)]))
 
 (define-pass1-syntax (%macroexpand form cenv) :gauche
   (match form
@@ -5963,21 +5974,9 @@
 (define (%expand-er-transformer form cenv)
   (match form
     [(_ xformer)
-     ;; A couple of kludges:
-     ;; If cenv (macro-definition environment) is toplevel, i.e. frames is (),
-     ;; we generate an expression to call make-cenv; it is necessary when we're
-     ;; AOT compiling, for we can't embed cenv structure as literal in the
-     ;; precompiled output.
-     ;; If cenv has local environment, we don't bother that, for the macro
-     ;; will be fully expanded during AOT compilation.  HOWEVER - we can't
-     ;; embed cenv as a vector literal (e.g. `',cenv) since quoting will
-     ;; strip all identifier information in cenv.  The right thing would be
-     ;; to make cenv as a record.  For now, we take advantage that unquoted
-     ;; vector evaluates to itself, and insert cenv without quoting.  This
-     ;; has to change if we prohibit unquoted vector literals.
+     ;; See the discussion in primitive-macro-transformer above.
      (let1 def-env-form (if (null? (cenv-frames cenv))
-                          `(,make-cenv. (current-module) '()
-                                        ',(cenv-exp-name cenv))
+                          `(,%make-toplevel-cenv. ,(cenv-exp-name cenv))
                           cenv)
        `(,%make-er-transformer. ,xformer ,def-env-form))]
     [_ (error "Invalid er-macro-transformer form:" form)]))
