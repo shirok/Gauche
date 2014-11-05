@@ -2056,6 +2056,7 @@
 
 (define-pass1-syntax (%make-toplevel-cenv form cenv) :internal
   (match form
+    ;; NB: We might need to replace vm-current-module during AOT compilation
     [(_ name) ($const (%make-cenv (vm-current-module) '() name))]
     [_ (error "syntax-error: malformed make-toplevel-cenv:" form)]))
 
