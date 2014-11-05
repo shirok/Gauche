@@ -1,3 +1,7 @@
+2014-11-04  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/test.scm (test-none-of): Added.
+
 2014-11-02  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm (%make-er-transormer),

@@ -83,7 +83,7 @@
 
 (define-module gauche.test
   (export test test* test-start test-end test-section test-log
-          test-module test-error test-one-of
+          test-module test-error test-one-of test-none-of
           test-check test-record-file test-summary-check
           *test-error* *test-report-error* test-error? prim-test))
 (select-module gauche.test)
@@ -115,15 +115,30 @@
 (define (test-error :optional (class #f) (message #f))
   (make <test-error> :class class :message message))
 
-;; An object to represet any one of
+;; An object to represent "any one of Xs"
 (define-class <test-one-of> ()
   ((choices :init-keyword :choices)))
 
 (define-method write-object ((obj <test-one-of>) out)
   (format out "#<test-one-of: any one of ~s>" (slot-ref obj'choices)))
 
+;; API
 (define (test-one-of . choices) (make <test-one-of> :choices choices))
 
+;; An object to represent "none of Xx"
+(define-class <test-none-of> ()
+  ((choices :init-keyword :choices)))
+
+(define-method write-object ((obj <test-none-of>) out)
+  (format out "#<test-none-of: none of ~s>" (slot-ref obj'choices)))
+
+;; API
+(define (test-none-of . choices) (make <test-none-of> :choices choices))
+
+;; API
+;; We don't use generic function dispatch (at least for the time being),
+;; to make it easy to troubleshoot when object system gets messed up.
+;; In future we'll make use of generic functions.
 (define (test-check expected result :optional (fallback equal?))
   (cond [(test-error? expected)
          (and (test-error? result)
@@ -132,20 +147,19 @@
                 (or (not c)
                     (condition-has-type? e c))))]
         [(is-a? expected <test-one-of>)
-         ;; NB: not using srfi-1's any to avoid dependency
-         (let loop ([choices (slot-ref expected 'choices)])
-           (cond [(null? choices) #f]
-                 [(test-check (car choices) result fallback)]
-                 [else (loop (cdr choices))]))]
+         (any (lambda (choice) (test-check choice result fallback))
+              (slot-ref expected 'choices))]
+        [(is-a? expected <test-none-of>)
+         (every (lambda (choice) (not (test-check choice result fallback)))
+                (slot-ref expected 'choices))]
         [else (fallback expected result)]))
 
 (define *test-error* (make <test-error>)) ;DEPRECATED
-
 (define *test-report-error* (sys-getenv "GAUCHE_TEST_REPORT_ERROR"))
-
 (define *test-record-file* (sys-getenv "GAUCHE_TEST_RECORD_FILE"))
 
-(define (test-record-file file) (set! *test-record-file* file)) ;public API
+;; API
+(define (test-record-file file) (set! *test-record-file* file))
 
 ;; List of discrepancies
 (define *discrepancy-list* '())

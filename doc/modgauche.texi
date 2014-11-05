@@ -13722,7 +13722,7 @@ This procedure supports to write such tests conveniently.
 @c COMMON
 
 @c EN
-Returns a special object represents @emph{either one of choices}.
+Returns a special object representing @emph{either one of the choices}.
 The default check procedure, @code{test-check}, recognizes the object
 when it is passed in the @var{expected} argument, and returns true
 if any one of @var{choice} @dots{} passes the check against the result.
@@ -13741,6 +13741,18 @@ For example, the following test passes if @code{proc} returns either
 @example
 (test* "proc returns either 1 or 2" (test-one-of 1 2) (proc))
 @end example
+@end defun
+
+@defun test-none-of choice @dots{}
+@c EN
+Similar to @code{test-one-of}, but creates a special object
+representing @emph{none of the choices}.
+The test succees if the test expression evaluates to a value that
+don't match any of @var{choice}s.
+@c JP
+@emph{@var{choice} @dots{} のいずれでもない} を表現する特別なオブジェクトを返します。
+テストは、テスト結果が@var{choice}のどれにもマッチしなかった時に成功となります。
+@c COMMON
 @end defun
 
 @c EN
