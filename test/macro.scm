@@ -963,6 +963,25 @@
 (test "macro defining a toplevel macro" '(1 2 3)
       (lambda () (MyQuote (1 2 3))))
 
+;; Macro inserting toplevel identifier
+(define-module defFoo-test
+  (export defFoo)
+  (define-syntax defFoo
+    (syntax-rules ()
+      [(_ accessor)
+       (begin
+         (define foo-toplevel 42)
+         (define (accessor) foo-toplevel))])))
+
+(import defFoo-test)
+(defFoo get-foo)
+
+(test "macro injecting toplevel definition" '(#f #f 42)
+      (lambda ()
+        (list (global-variable-ref (current-module) 'foo-toplevel #f)
+              (global-variable-ref (find-module 'defFoo-test) 'foo-toplevel #f)
+              (get-foo))))
+
 ;;----------------------------------------------------------------------
 ;; identifier comparison
 

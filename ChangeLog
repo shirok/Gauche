@@ -1,3 +1,13 @@
+2014-11-05  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.scm (pass1/define): Rename toplevel identifier inserted
+	  by a macro, to keep hygiene.  RnRS does not specify this behavior
+	  and implementations make different choices, but it seems that this
+	  is the most straightforward way for Gauche to do the right thing.
+	  Note that the code relying the (officially undefined) behavior,
+	  that macro-injected toplevel binding appear in the macro calling
+	  module, will break with this change.
+
 2014-11-04  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/test.scm (test-none-of): Added.

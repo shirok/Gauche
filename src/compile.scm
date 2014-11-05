@@ -1822,20 +1822,24 @@
     [(_ name expr)
      (unless (variable? name) (error "syntax-error:" oform))
      (let1 cenv (cenv-add-name cenv (variable-name name))
-       ;; Hygiene alert - currently we strip env info if NAME is inserted
-       ;; by a macro, so it will be visible from the current module.  It
-       ;; is acceptable if the macro definition is in the same module
-       ;; (NAME refers to the global binding of the macro definition
-       ;; environment, which happens to be the current module).  However,
-       ;; It would be difficult to justify if the macro is defined in
-       ;; another module.  Better way is to rename the identifier to
-       ;; a unique name (we should modify the identifier directly, so that
-       ;; the reference to the same identifier inserted in the same macro
-       ;; expansion can still refer to it).
-       ($define oform flags
-                (make-identifier (unwrap-syntax name) module '())
-                (pass1 expr cenv)))]
+       ;; If NAME is an identifier, it is inserted by macro expander; we
+       ;; can't simply place it in $define, since it would insert a toplevel
+       ;; definition into the toplevel of macro-definition environment---
+       ;; we don't want a mere macro call would modify different module.
+       ;; We rename it to uninterned symbol, so, even the binding itself
+       ;; is into the macro-definiting module, it won't be visible from
+       ;; other code except the code generated in the same macro expansion.
+       ;; A trick - we directly modify the identifier, so that other forms
+       ;; referring to the same (eq?) identifier can keep referring it.
+       (let1 id (if (identifier? name)
+                  (%rename-toplevel-identifier! name)
+                  (make-identifier name module '()))
+         ($define oform flags id (pass1 expr cenv))))]
     [_ (error "syntax-error:" oform)]))
+
+(define (%rename-toplevel-identifier! identifier)
+  (slot-set! identifier 'name (gensym #"~(identifier-name identifier)."))
+  identifier)
 
 ;; Inlinable procedure.
 ;;   Inlinable procedure has both properties of a macro and a procedure.
@@ -1965,8 +1969,11 @@
       (set! (%procedure-inliner dummy-proc) (pass1/inliner-procedure packed)))))
 
 (define (pass1/make-inlinable-binding form name iform cenv)
-  ($define form '(inlinable)
-           (make-identifier (unwrap-syntax name) (cenv-module cenv) '()) iform))
+  ;; See the comment in pass1/define about renaming the toplevel identifier.
+  (let1 id (if (identifier? name)
+             (%rename-toplevel-identifier! name)
+             (make-identifier name (cenv-module cenv) '()))
+    ($define form '(inlinable) id iform)))
 
 (define (pass1/inliner-procedure inline-info)
   (unless (vector? inline-info)
