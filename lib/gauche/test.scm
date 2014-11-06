@@ -242,8 +242,14 @@
          compare))
 
 ;; A convenient macro version
-(define-macro (test* msg expect form . compare)
-  `(test ,msg ,expect (lambda () ,form) ,@compare))
+;; We use er-macro-transformer, so test* should be used after macro
+;; subsystem is tested with more primitive framework.
+(define-syntax test*
+  (er-macro-transformer
+   (lambda (f r c)
+     (apply (lambda (_ msg expect form . compare)
+              `(,(r 'test) ,msg ,expect (,(r 'lambda) () ,form) ,@compare))
+            f))))
 
 ;; Toplevel binding sanity check ----------------------------------
 

@@ -1,5 +1,8 @@
 2014-11-05  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/test.scm (test*): Rewrote using er-macro so that
+	  importing only 'test*' but not 'test' will still work.
+
 	* src/compile.scm (pass1/define): Rename toplevel identifier inserted
 	  by a macro, to keep hygiene.  RnRS does not specify this behavior
 	  and implementations make different choices, but it seems that this
