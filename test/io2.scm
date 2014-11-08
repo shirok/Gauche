@@ -298,7 +298,7 @@
 (test* "skipws" 'a
        (read-from-string
         (cond-expand
-         [gauche.ces.utf8 "\u00a0\u1680\u180e\u2000\u200a\u2028\u2029\
+         [gauche.ces.utf8 "\u00a0\u1680\u2000\u200a\u2028\u2029\
                            \u202f\u205f\u3000a"]
          [(or gauche.ces.eucjp gauche.ces.sjis) "\u3000a"]
          [else "a"])))

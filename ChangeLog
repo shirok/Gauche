@@ -1,3 +1,10 @@
+2014-11-07  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/char_utf_8.h (Scm__CharIsExtraWhiteSpace): Do not treat
+	  U+180e as a whitespace char.  It was changed from Zs to Cf in
+	  Unicode 6.3.0.  (NB: We also need update char_attr.[ch] for
+	  char-general-category to reflect the change.)
+
 2014-11-05  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/test.scm (test*): Rewrote using er-macro so that

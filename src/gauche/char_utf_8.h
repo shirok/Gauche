@@ -272,8 +272,7 @@ int Scm__CharIsExtraWhiteSpace(ScmChar c, int intraline)
 {
     if (c < 0x2000) {
         return (c == 0x00a0         /* Zs NO-BREAK SPACE */
-                || c == 0x1680      /* Zs OGHAM SPACE MARK */
-                || c == 0x180e);    /* Zs MONGOLIAN VOWEL SEPARATOR */
+                || c == 0x1680);    /* Zs OGHAM SPACE MARK */
     } else if (c <= 0x200a) {
         /* 0x2000 - 0x200a are all Zs's */
         return TRUE;
