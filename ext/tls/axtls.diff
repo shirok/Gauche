@@ -1,5 +1,5 @@
-*** /home/shiro/src/axTLS/ssl/tls1.h	Sat Jun 30 14:59:06 2012
---- axTLS/ssl/tls1.h	Wed May 21 22:17:11 2014
+*** /home/shiro/src/axtls-code/ssl/tls1.h	Mon Oct 27 00:30:33 2014
+--- axTLS/ssl/tls1.h	Sat Nov  8 20:06:21 2014
 ***************
 *** 41,47 ****
   #endif
@@ -17,70 +17,8 @@
   #include "os_int.h"
   #include "crypto.h"
   #include "crypto_misc.h"
-*** /home/shiro/src/axTLS/ssl/tls1.c	Sun Jan  6 10:17:37 2013
---- axTLS/ssl/tls1.c	Sat Nov  2 17:37:47 2013
-***************
-*** 2160,2166 ****
-  EXP_FUNC SSL * STDCALL ssl_client_new(SSL_CTX *ssl_ctx, int client_fd, const
-          uint8_t *session_id, uint8_t sess_id_size)
-  {
-!     printf(unsupported_str);
-      return NULL;
-  }
-  #endif
---- 2160,2166 ----
-  EXP_FUNC SSL * STDCALL ssl_client_new(SSL_CTX *ssl_ctx, int client_fd, const
-          uint8_t *session_id, uint8_t sess_id_size)
-  {
-!     printf("%s", unsupported_str);
-      return NULL;
-  }
-  #endif
-***************
-*** 2168,2187 ****
-  #if !defined(CONFIG_SSL_CERT_VERIFICATION)
-  EXP_FUNC int STDCALL ssl_verify_cert(const SSL *ssl)
-  {
-!     printf(unsupported_str);
-      return -1;
-  }
-  
-  
-  EXP_FUNC const char * STDCALL ssl_get_cert_dn(const SSL *ssl, int component)
-  {
-!     printf(unsupported_str);
-      return NULL;
-  }
-  
-  EXP_FUNC const char * STDCALL ssl_get_cert_subject_alt_dnsname(const SSL *ssl, int index)
-  {
-!     printf(unsupported_str);
-      return NULL;
-  }
-  
---- 2168,2187 ----
-  #if !defined(CONFIG_SSL_CERT_VERIFICATION)
-  EXP_FUNC int STDCALL ssl_verify_cert(const SSL *ssl)
-  {
-!     printf("%s", unsupported_str);
-      return -1;
-  }
-  
-  
-  EXP_FUNC const char * STDCALL ssl_get_cert_dn(const SSL *ssl, int component)
-  {
-!     printf("%s", unsupported_str);
-      return NULL;
-  }
-  
-  EXP_FUNC const char * STDCALL ssl_get_cert_subject_alt_dnsname(const SSL *ssl, int index)
-  {
-!     printf("%s", unsupported_str);
-      return NULL;
-  }
-  
-*** /home/shiro/src/axTLS/ssl/test/ssltest.c	Fri Jun 24 03:13:05 2011
---- axTLS/ssl/test/ssltest.c	Fri Jul  5 11:43:29 2013
+*** /home/shiro/src/axtls-code/ssl/test/ssltest.c	Fri Oct 31 00:47:35 2014
+--- axTLS/ssl/test/ssltest.c	Sat Nov  8 20:08:44 2014
 ***************
 *** 758,776 ****
   static int client_socket_init(uint16_t port)
@@ -237,8 +175,8 @@
           goto cleanup;
   
 ***************
-*** 2226,2236 ****
---- 2249,2265 ----
+*** 2226,2231 ****
+--- 2249,2258 ----
   
       system("sh ../ssl/test/killopenssl.sh");
   
@@ -246,18 +184,11 @@
 +     } /*have_openssl_p*/
 +     /*</SK>*/
 + 
-+ #if 0
-      if (header_issue())
-      {
-          printf("Header tests failed\n"); TTY_FLUSH();
-          goto cleanup;
-      }
-+ #endif
-  
-      ret = 0;        /* all ok */
-      printf("**** ALL TESTS PASSED ****\n"); TTY_FLUSH();
-*** /home/shiro/src/axTLS/ssl/test/killopenssl.sh	Tue Dec 28 22:06:26 2010
---- axTLS/ssl/test/killopenssl.sh	Fri Jul  5 11:43:29 2013
+      //if (header_issue())
+      //{
+      //    printf("Header tests failed\n"); TTY_FLUSH();
+*** /home/shiro/src/axtls-code/ssl/test/killopenssl.sh	Mon Oct 27 00:30:32 2014
+--- axTLS/ssl/test/killopenssl.sh	Sat Nov  8 20:06:29 2014
 ***************
 *** 1,2 ****
   #!/bin/sh
@@ -266,8 +197,8 @@
   #!/bin/sh
 ! awk '{print $1}' "../ssl/openssl.pid" | xargs kill -9
 ! rm -f ../ssl/openssl.pid
-*** /home/shiro/src/axTLS/ssl/test/killgnutls.sh	Fri May  6 14:12:41 2011
---- axTLS/ssl/test/killgnutls.sh	Fri Jul  5 11:43:29 2013
+*** /home/shiro/src/axtls-code/ssl/test/killgnutls.sh	Mon Oct 27 00:30:32 2014
+--- axTLS/ssl/test/killgnutls.sh	Sat Nov  8 20:06:29 2014
 ***************
 *** 1,2 ****
   #!/bin/sh
@@ -275,8 +206,8 @@
 --- 1,2 ----
   #!/bin/sh
 ! #ps -ef|grep gnutls-serv | /usr/bin/awk '{print $2}' |xargs kill -9
-*** /home/shiro/src/axTLS/ssl/os_port.h	Fri Jun  8 00:43:25 2012
---- axTLS/ssl/os_port.h	Sat Nov  2 17:37:47 2013
+*** /home/shiro/src/axtls-code/ssl/os_port.h	Mon Oct 27 00:30:33 2014
+--- axTLS/ssl/os_port.h	Sat Nov  8 20:06:29 2014
 ***************
 *** 59,64 ****
 --- 59,66 ----
@@ -305,8 +236,8 @@
   
   #else   /* Not Win32 */
   
-*** /home/shiro/src/axTLS/ssl/os_port.c	Sat Jan  1 21:49:03 2011
---- axTLS/ssl/os_port.c	Fri Jul  5 11:43:29 2013
+*** /home/shiro/src/axtls-code/ssl/os_port.c	Mon Oct 27 00:30:33 2014
+--- axTLS/ssl/os_port.c	Sat Nov  8 20:06:29 2014
 ***************
 *** 56,61 ****
 --- 56,62 ----
@@ -327,61 +258,8 @@
   #endif
   
   #undef malloc
-*** /home/shiro/src/axTLS/ssl/loader.c	Sat Feb 11 01:34:56 2012
---- axTLS/ssl/loader.c	Fri Jul  5 11:43:29 2013
-***************
-*** 82,88 ****
-  #ifdef CONFIG_SSL_HAS_PEM
-          ret = ssl_obj_PEM_load(ssl_ctx, obj_type, ssl_obj, password);
-  #else
-!         printf(unsupported_str);
-          ret = SSL_ERROR_NOT_SUPPORTED;
-  #endif
-      }
---- 82,88 ----
-  #ifdef CONFIG_SSL_HAS_PEM
-          ret = ssl_obj_PEM_load(ssl_ctx, obj_type, ssl_obj, password);
-  #else
-!         printf("%s", unsupported_str);
-          ret = SSL_ERROR_NOT_SUPPORTED;
-  #endif
-      }
-***************
-*** 93,99 ****
-      ssl_obj_free(ssl_obj);
-      return ret;
-  #else
-!     printf(unsupported_str);
-      return SSL_ERROR_NOT_SUPPORTED;
-  #endif /* CONFIG_SSL_SKELETON_MODE */
-  }
---- 93,99 ----
-      ssl_obj_free(ssl_obj);
-      return ret;
-  #else
-!     printf("%s", unsupported_str);
-      return SSL_ERROR_NOT_SUPPORTED;
-  #endif /* CONFIG_SSL_SKELETON_MODE */
-  }
-***************
-*** 150,156 ****
-              break;
-  #endif
-          default:
-!             printf(unsupported_str);
-              ret = SSL_ERROR_NOT_SUPPORTED;
-              break;
-      }
---- 150,156 ----
-              break;
-  #endif
-          default:
-!             printf("%s", unsupported_str);
-              ret = SSL_ERROR_NOT_SUPPORTED;
-              break;
-      }
-*** /home/shiro/src/axTLS/crypto/os_int.h	Fri Jun  8 00:43:25 2012
---- axTLS/crypto/os_int.h	Sat Nov  2 17:37:47 2013
+*** /home/shiro/src/axtls-code/crypto/os_int.h	Mon Oct 27 00:30:28 2014
+--- axTLS/crypto/os_int.h	Sat Nov  8 20:06:34 2014
 ***************
 *** 41,47 ****
   extern "C" {
@@ -399,8 +277,8 @@
   typedef UINT8 uint8_t;
   typedef INT8 int8_t;
   typedef UINT16 uint16_t;
-*** /home/shiro/src/axTLS/crypto/crypto_misc.c	Sun Jul  1 01:10:26 2012
---- axTLS/crypto/crypto_misc.c	Sat Nov  2 17:37:47 2013
+*** /home/shiro/src/axtls-code/crypto/crypto_misc.c	Mon Oct 27 00:30:29 2014
+--- axTLS/crypto/crypto_misc.c	Sat Nov  8 20:06:34 2014
 ***************
 *** 48,54 ****
   static HCRYPTPROV gCryptProv;
@@ -418,8 +296,8 @@
   /* change to processor registers as appropriate */
   #define ENTROPY_POOL_SIZE 32
   #define ENTROPY_COUNTER1 ((((uint64_t)tv.tv_sec)<<32) | tv.tv_usec)
-*** /home/shiro/src/axTLS/crypto/crypto.h	Fri Jun  8 00:43:25 2012
---- axTLS/crypto/crypto.h	Wed May 21 22:17:36 2014
+*** /home/shiro/src/axtls-code/crypto/crypto.h	Mon Oct 27 00:30:29 2014
+--- axTLS/crypto/crypto.h	Sat Nov  8 20:06:34 2014
 ***************
 *** 39,45 ****
   extern "C" {
@@ -437,8 +315,8 @@
   #include "bigint_impl.h"
   #include "bigint.h"
   
-*** /home/shiro/src/axTLS/crypto/bigint_impl.h	Sat Jan  1 21:45:25 2011
---- axTLS/crypto/bigint_impl.h	Fri Jul  5 11:43:29 2013
+*** /home/shiro/src/axtls-code/crypto/bigint_impl.h	Mon Oct 27 00:30:28 2014
+--- axTLS/crypto/bigint_impl.h	Sat Nov  8 20:06:34 2014
 ***************
 *** 61,67 ****
   typedef uint32_t long_comp;     /**< A double precision component. */
@@ -456,8 +334,8 @@
   #define COMP_RADIX          4294967296i64         
   #define COMP_MAX            0xFFFFFFFFFFFFFFFFui64
   #else
-*** /home/shiro/src/axTLS/config/config.h	Wed Dec 31 14:00:00 1969
---- axTLS/config/config.h	Sat Nov  2 17:37:47 2013
+*** /home/shiro/src/axtls-code/config/config.h	Wed Dec 31 14:00:00 1969
+--- axTLS/config/config.h	Sat Nov  8 20:10:24 2014
 ***************
 *** 0 ****
 --- 1,143 ----

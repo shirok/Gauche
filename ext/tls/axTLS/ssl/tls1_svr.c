@@ -117,7 +117,6 @@ int do_svr_handshake(SSL *ssl, int handshake_type, uint8_t *buf, int hs_len)
 static int process_client_hello(SSL *ssl)
 {
     uint8_t *buf = ssl->bm_data;
-    uint8_t *record_buf = ssl->hmac_header;
     int pkt_size = ssl->bm_index;
     int i, j, cs_len, id_len, offset = 6 + SSL_RANDOM_SIZE;
     int ret = SSL_OK;
@@ -199,13 +198,13 @@ int process_sslv23_client_hello(SSL *ssl)
 
     DISPLAY_BYTES(ssl, "received %d bytes", buf, read_len, read_len);
     
-    add_packet(ssl, buf, read_len);
-
     /* connection has gone, so die */
-    if (bytes_needed < 0)
+    if (read_len < 0)
     {
         return SSL_ERROR_CONN_LOST;
     }
+
+    add_packet(ssl, buf, read_len);
 
     /* now work out what cipher suite we are going to use */
     for (j = 0; j < NUM_PROTOCOLS; j++)

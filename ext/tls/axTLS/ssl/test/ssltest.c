@@ -2253,13 +2253,11 @@ int main(int argc, char *argv[])
     } /*have_openssl_p*/
     /*</SK>*/
 
-#if 0
-    if (header_issue())
-    {
-        printf("Header tests failed\n"); TTY_FLUSH();
-        goto cleanup;
-    }
-#endif
+    //if (header_issue())
+    //{
+    //    printf("Header tests failed\n"); TTY_FLUSH();
+    //    goto cleanup;
+    //}
 
     ret = 0;        /* all ok */
     printf("**** ALL TESTS PASSED ****\n"); TTY_FLUSH();
