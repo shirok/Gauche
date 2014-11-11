@@ -271,5 +271,5 @@
                  (scheme file) (scheme inexact) (scheme lazy)
                  (scheme load) (scheme process-context) (scheme read)
                  (scheme repl) (scheme time) (scheme write)
-                 (only (gauche) *1 *1+ *2 *2+ *3 *3+ *e *history))
+                 (only (gauche base) *1 *1+ *2 *2+ *3 *3+ *e *history))
         (find-module 'r7rs.user)))

@@ -77,7 +77,13 @@
          `(,@(rec import-set) :prefix ,identifier)]
         [('rename import-set mapping ...)
          `(,@(rec import-set) :rename ,mapping)]
-        [else (list (library-name->module-name import-set))]))
+        [else
+         ;; Kludge: Warn if a programmer say (import gauche).
+         (when (equal? import-set '(gauche))
+           (warn "(import (gauche)) does not import anything.  \
+                  If you intend to import Gauche's built-in bindings, \
+                  say (import (gauche base)).\n"))
+         (list (library-name->module-name import-set))]))
     (let1 import-spec (rec import-set)
       `((,require-if-module-doesnt-exist. ,(car import-spec))
         (,import. ,import-spec)))))

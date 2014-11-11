@@ -1,5 +1,10 @@
 2014-11-10  Shiro Kawai  <shiro@acm.org>
 
+	* lib/r7rs.scm (r7rs-import): Warn when a programmer say
+	  (import (gauche)) in r7rs program.  It's probably the first
+	  attempt for her to use Gauche's builtin bindings in r7rs programs,
+	  and it's better to guide her to (import (gauche base)).
+
 	* src/srfis.scm: For built-in srfi modules, make public symbols
 	  exported so that r7rs programs can see them with (import (srfi N)).
 	  From Gauche programs, those symbols are visible by default since
