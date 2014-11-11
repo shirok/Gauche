@@ -5,8 +5,8 @@
 ;; Run this script with $top_builddir as an argument, and the following
 ;; files are generated:
 ;;
-;;   src/srfis.c       - #included in core.c, to set up
-;;                       cond-expand feature identifier list.
+;;   src/libsrfis.scm  - sets up cond-expand feature identifier list
+;;                       and exported symbols for built-in srfis.
 ;;   lib/srfi/*.scm    - Dummy modules to allow (import (srfi N))
 ;;                       to work.
 ;;   doc/srfis.texi    - Incorporated into concepts.texi for the
@@ -14,12 +14,13 @@
 
 (use util.match)
 (use file.util)
+(use gauche.cgen.literal)
 (use srfi-1)
 (use gauche.generator)
 
 ;;; Parser
 
-;; returns ((num module doc-en doc-ja) ...)
+;; returns ((num module exports doc-en doc-ja) ...)
 (define (parse self)
   (let1 gen ($ record-generator $ file->string-list self :encoding 'utf-8)
     ($ generator->list
@@ -48,7 +49,9 @@
 (define (paragraphs->final-record ps)
   (match ps
     [(entry-line doc-en doc-ja)
-     `(,@(parse-entry-line (car entry-line)) ,doc-en ,doc-ja)]
+     `(,@(parse-entry-line (car entry-line))  ; (N "module") or (N #f)
+       ,(read-from-string (cadr entry-line))   ; list of exported symbols
+       ,doc-en ,doc-ja)]
     [else
      (error "Invalid entry for ~a" (car ps))]))
 
@@ -64,7 +67,7 @@
   (with-output-to-file (build-path top_builddir "doc/srfis.texi")
     (^[] (print "@c -*- coding:utf-8 -*-") (print)
       (dolist [rec records]
-        (match-let1 (n _ doc-en doc-ja) rec
+        (match-let1 (n _ _ doc-en doc-ja) rec
           (print "@c EN")
           (print #"@item SRFI-~|n|, ~(car doc-en)")
           (for-each print (cdr doc-en))
@@ -74,12 +77,21 @@
           (print "@c COMMON")
           (print))))))
 
-(define (generate-cond-features records top_builddir)
-  (with-output-to-file (build-path top_builddir "src/srfis.c")
-    (^[] (dolist [rec records]
-           (match-let1 (n mod _ _) rec
-             (format #t "{ \"srfi-~a\", ~a},\n"
-                     n (if mod (write-to-string mod) "NULL")))))))
+(define (generate-libsrfis records top_builddir)
+  (with-output-to-file (build-path top_builddir "src/libsrfis.scm")
+    (^[]
+      (print "(inline-stub (initcode")
+      (dolist [rec records]
+        (match-let1 (n mod . _) rec
+          (format #t "(Scm_AddFeature \"srfi-~d\" ~s)\n" n (or mod 'NULL))))
+      (print "))")
+      (dolist [rec records]
+        (match-let1 (n _ exports . _) rec
+          (unless (null? exports)
+            (write `(define-module ,(string->symbol #"srfi-~n")
+                      (export ,@exports)))
+            (newline))))
+      )))
 
 (define (generate-srfi-modules records top_builddir)
   (make-directory* (build-path top_builddir "lib/srfi"))
@@ -93,7 +105,7 @@
 
 (define (generate self top_builddir)
   (let1 records (parse self)
-    (generate-cond-features records top_builddir)
+    (generate-libsrfis records top_builddir)
     (generate-texi records top_builddir)
     (generate-srfi-modules records top_builddir)))
 
@@ -112,12 +124,17 @@
 ;; #/^srfi-\d+/ starts a new record.
 ;; If the srfi requires importing a module, list the module name
 ;; after the srfi's name.
+;; The second line lists exported symbols from the srfi, *if* the srfi
+;; is built-in.  Since we don't actually have srfi-N.scm file for built-in
+;; srfis, we have to set up the module exports at the initialization.
+;;
 ;; It is followed by two paragraphs in English and then in Japanese,
 ;; delimited by an empty line.
 ;; In each paragraph, the first line is the header, then description
 ;; follows.
 
 srfi-0
+()
 
 Feature-based conditional expansion construct.
 Built-in.   @xref{Feature conditional}.
@@ -127,6 +144,7 @@ Built-in.   @xref{Feature conditional}.
 
 
 srfi-1, srfi-1
+()
 
 List library.
 Supported by the module @code{srfi-1}.  @xref{List library}.
@@ -137,6 +155,7 @@ Supported by the module @code{srfi-1}.  @xref{List library}.
 SRFI-1の手続きのうちいくつかは組み込みになっています。
 
 srfi-2
+(and-let*)
 
 AND-LET*: an AND with local bindings, a guarded LET* special form.
 Supported natively.  @xref{Binding constructs}.
@@ -145,6 +164,7 @@ AND-LET*: 局所束縛をともなう AND、ガード付 LET* 特殊フォーム
 組み込みです。@ref{Binding constructs}参照。
 
 srfi-4, gauche.uvector
+()
 
 Homogeneous numeric vector datatypes.
 The module @code{gauche.uvector} provides a superset of
@@ -158,6 +178,7 @@ generic interface on the SRFI-4 vectors.  @xref{Uniform vectors}.
 算術演算やジェネリックなインタフェースが定義されています。@ref{Uniform vectors}参照。
 
 srfi-5, srfi-5
+()
 
 A compatible let form with signatures and rest arguments
 Supported by the module @code{srfi-5}.
@@ -169,6 +190,7 @@ Supported by the module @code{srfi-5}.
 
 
 srfi-6
+(open-input-string open-output-string get-output-string)
 
 Basic String Ports.
 SRFI-6 procedures are built-in.  @xref{String ports}.
@@ -177,6 +199,7 @@ SRFI-6 procedures are built-in.  @xref{String ports}.
 SRFI-6の手続きは組み込みになっています。@ref{String ports}参照。
 
 srfi-7
+()
 
 Feature-based program configuration language
 Supported as an autoloaded macro.
@@ -187,6 +210,7 @@ Supported as an autoloaded macro.
 @ref{Feature-based program configuration language}参照。
 
 srfi-8
+(receive)
 
 receive: Binding to multiple values.
 Syntax @code{receive} is built-in.  @xref{Binding constructs}.
@@ -196,6 +220,7 @@ receive: 多値束縛
 
 
 srfi-9, gauche.record
+()
 
 Defining record types.
 Supported by the module @code{gauche.record}.  @xref{Record types}.
@@ -205,6 +230,7 @@ Supported by the module @code{gauche.record}.  @xref{Record types}.
 
 
 srfi-10
+(define-reader-ctor)
 
 Sharp-comma external form.
 Built-in.  @xref{Read-time constructor}.
@@ -214,6 +240,7 @@ Sharp-comma外部フォーム
 
 
 srfi-11, srfi-11
+()
 
 Syntax for receiving multiple values.
 Supported by the module @code{srfi-11}.  @xref{Let-values}.
@@ -222,6 +249,7 @@ Supported by the module @code{srfi-11}.  @xref{Let-values}.
 モジュール@code{srfi-11}でサポートされます。@ref{Let-values}参照。
 
 srfi-13, srfi-13
+()
 
 String library
 Supported by the module @code{srfi-13}.  @xref{String library}.
@@ -232,6 +260,7 @@ Supported by the module @code{srfi-13}.  @xref{String library}.
 (SRFI-13の手続きのいくつかは組み込みになっています。)
 
 srfi-14, srfi-14
+()
 
 Character-set library
 Character-set object and a few SRFI-14 procedures are built-in.
@@ -245,6 +274,7 @@ Complete set of SRFI-14 is supported by the module @code{srfi-14}.
 で提供されています。@ref{Character-set library}参照。
 
 srfi-16
+(case-lambda)
 
 Syntax for procedures of variable arity (case-lambda)
 Built-in.  @xref{Making Procedures}.
@@ -254,6 +284,7 @@ Built-in.  @xref{Making Procedures}.
 
 
 srfi-17
+(setter getter-with-setter)
 
 Generalized set!
 Built-in.  @xref{Assignments}.
@@ -263,6 +294,7 @@ Built-in.  @xref{Assignments}.
 
 
 srfi-18, gauche.threads
+()
 
 Multithreading support
 Some SRFI-18 features are built-in, and the rest is in @code{gauche.threads}
@@ -274,6 +306,7 @@ module.  @xref{Threads}.
 
 
 srfi-19, srfi-19
+()
 
 Time Data Types and Procedures.
 Time data type is Gauche built-in (@xref{Time}).
@@ -287,6 +320,7 @@ SRFI-19の完全なサポートはモジュール@code{srfi-19}で提供され�
 
 
 srfi-22
+()
 
 Running Scheme scripts on Unix
 Supported.  @xref{Writing Scheme scripts}.
@@ -296,6 +330,7 @@ UNIX 上の Scheme スクリプトの実行
 
 
 srfi-23
+(error)
 
 Error reporting mechanism.
 Built-in.   @xref{Signaling exceptions}.
@@ -305,6 +340,7 @@ Built-in.   @xref{Signaling exceptions}.
 
 
 srfi-25, gauche.array
+()
 
 Multi-dimensional array primitives.
 Supported by the module @code{gauche.array}, which defines
@@ -315,6 +351,7 @@ superset of SRFI-25.  @xref{Arrays}.
 なっています。@ref{Arrays}参照。
 
 srfi-26, srfi-26
+()
 
 Notation for specializing parameters without currying.
 As an autoloaded macro.  @xref{Making Procedures}.
@@ -323,6 +360,7 @@ As an autoloaded macro.  @xref{Making Procedures}.
 オートロードされるマクロとして定義されています。@ref{Making Procedures}参照。
 
 srfi-27, srfi-27
+()
 
 Sources of Random Bits.
 Supported by the module @code{srfi-27}.  @xref{Sources of random bits}.
@@ -331,6 +369,7 @@ Supported by the module @code{srfi-27}.  @xref{Sources of random bits}.
 モジュール@code{srfi-27}でサポートされます。@ref{Sources of random bits}参照。
 
 srfi-28
+(format)
 
 Basic format strings.
 Gauche's built-in @code{format} procedure is a superset of
@@ -341,6 +380,7 @@ Gauche組み込みの@code{format}がSRFI-28のものの上位互換に
 なっています。@ref{Output}参照。
 
 srfi-29, srfi-29
+()
 
 Localization
 Supported by the module @code{srfi-29}.
@@ -352,6 +392,7 @@ Supported by the module @code{srfi-29}.
 
 
 srfi-30
+()
 
 Nested multi-line comments.
 Supported by the native reader.  @xref{Lexical structure}.
@@ -361,6 +402,7 @@ Supported by the native reader.  @xref{Lexical structure}.
 
 
 srfi-31
+()
 
 A special form rec for recursive evaluation
 Defined as an autoloaded macro.  @xref{Binding constructs}.
@@ -369,6 +411,7 @@ Defined as an autoloaded macro.  @xref{Binding constructs}.
 オートロードされるマクロとして定義されています。@ref{Binding constructs}参照。
 
 srfi-34
+(with-exception-handler guard raise)
 
 Exception Handling for Programs
 Built-in.  @xref{Exceptions}.
@@ -382,6 +425,7 @@ which differs slightly from srfi-34's.  This may be changed in future.)
 
 
 srfi-35
+(make-condition-type condition-type? make-condition condition? condition-has-type? condition-ref make-compound-condition extract-condition define-condition-type condition &condition &message &serious &error)
 
 Conditions
 Built-in.  @xref{Conditions}.
@@ -391,6 +435,7 @@ Built-in.  @xref{Conditions}.
 
 
 srfi-36
+() ;;ZZZZ
 
 I/O Conditions
 Partly supported.  @xref{Conditions}.
@@ -400,6 +445,7 @@ I/O コンディション
 
 
 srfi-37, srfi-37
+()
 
 args-fold: a program argument processor
 Supported by the module @code{srfi-37}.
@@ -411,6 +457,7 @@ args-fold: プログラム引数処理
 
 
 srfi-38
+(write-with-shared-structure write/ss read-with-shared-structure read/ss)
 
 External Representation for Data With Shared Structure
 Built-in.  See @ref{Reading data} and @ref{Output}.
@@ -419,6 +466,7 @@ Built-in.  See @ref{Reading data} and @ref{Output}.
 組み込みです。@ref{Reading data}と@ref{Output}参照。
 
 srfi-39, gauche.parameter
+()
 
 Parameter objects
 Supported by the module @code{gauche.parameter}.
@@ -429,6 +477,7 @@ Supported by the module @code{gauche.parameter}.
 @ref{Parameters}参照。
 
 srfi-40, util.stream
+()
 
 A Library of Streams
 Supported by the module @code{util.stream}.
@@ -439,6 +488,7 @@ Supported by the module @code{util.stream}.
 @xref{Stream library}.
 
 srfi-42, srfi-42
+()
 
 Eager comprehensions
 Supported by the module @code{srfi-42}.
@@ -450,6 +500,7 @@ Supported by the module @code{srfi-42}.
 
 
 srfi-43, srfi-43
+()
 
 Vector library
 Supported by the module @code{srfi-43}.
@@ -461,6 +512,7 @@ Supported by the module @code{srfi-43}.
 
 
 srfi-45
+(delay force lazy eager)
 
 Primitives for Expressing Iterative Lazy Algorithms
 Built-in.
@@ -472,6 +524,7 @@ Built-in.
 
 
 srfi-46
+(syntax-rules ...)
 
 Basic Syntax-rules Extensions
 Built-in.
@@ -483,6 +536,7 @@ Built-in.
 
 
 srfi-55, srfi-55
+()
 
 require-extension
 Supported as an autoloaded macro.
@@ -494,6 +548,7 @@ requireの拡張
 
 
 srfi-60, srfi-60
+()
 
 Integers as bits
 Most procedures are built-in: @xref{Bitwise operations}.
@@ -505,6 +560,7 @@ The complete support is in @code{srfi-60} module: @xref{Integers as bits}.
 @ref{Integers as bits}参照。
 
 srfi-61
+(cond else)
 
 A more general @code{cond} clause
 Supported natively.  @xref{Conditionals}.
@@ -514,6 +570,7 @@ Supported natively.  @xref{Conditionals}.
 
 
 srfi-62
+()
 
 S-expression comments
 Supported by the native reader.  @xref{Lexical structure}.
@@ -523,6 +580,7 @@ S式コメント
 
 
 srfi-87
+(case => else)
 
 @code{=>} in case clauses
 Supported natively.  @xref{Conditionals}.
@@ -531,6 +589,7 @@ case節での@code{=>}
 組込みです。@ref{Conditionals}参照。
 
 srfi-95
+(sorted? merge merge! sort sort!)
 
 Sorting and merging
 Supported natively.  @xref{Sorting and merging}.
@@ -539,6 +598,7 @@ Supported natively.  @xref{Sorting and merging}.
 組み込みです。@ref{Sorting and merging}参照。
 
 srfi-98, srfi-98
+()
 
 An interface to access environment variables
 Supported by the module @code{srfi-98}.  @xref{Accessing environment variables}.
@@ -547,6 +607,7 @@ Supported by the module @code{srfi-98}.  @xref{Accessing environment variables}.
 モジュール@code{srfi-98}でサポートされます。@ref{Accessing environment variables}参照。
 
 srfi-99, gauche.record
+()
 
 ERR5RS Records
 Supported by the module @code{gauche.record}.  @xref{Record types}.
@@ -555,6 +616,7 @@ ERR5RS レコード
 モジュール@code{gauche.record}でサポートされます。@ref{Record types}参照。
 
 srfi-106, srfi-106
+()
 
 Basic socket interface
 Supported by the module @code{srfi-106}.  @xref{Basic socket interface}.
@@ -564,6 +626,7 @@ Supported by the module @code{srfi-106}.  @xref{Basic socket interface}.
 
 
 srfi-111, srfi-111
+(box box? unbox set-box!)
 
 Boxes
 Supported by the module @code{srfi-111}.  @xref{Boxes}

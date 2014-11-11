@@ -203,7 +203,7 @@ libgauche_OBJECTS = \
 	libio.$(OBJEXT) liblazy.$(OBJEXT) liblist.$(OBJEXT) \
 	libmisc.$(OBJEXT) libmod.$(OBJEXT) libnum.$(OBJEXT) \
 	libobj.$(OBJEXT) libomega.$(OBJEXT) libproc.$(OBJEXT) \
-	librx.$(OBJEXT) libstr.$(OBJEXT) libsym.$(OBJEXT) \
+	librx.$(OBJEXT) libsrfis.$(OBJEXT) libstr.$(OBJEXT) libsym.$(OBJEXT) \
 	libsys.$(OBJEXT) libvec.$(OBJEXT)
 libgauche_LDFLAGS = $(SONAME_FLAG) @SHLIB_DYLIB_LDFLAGS@
 
@@ -247,14 +247,14 @@ builtin-syms.c gauche/priv/builtin-syms.h : builtin-syms.scm
 vminsn.c gauche/vminsn.h ../lib/gauche/vm/insn.scm : vminsn.scm geninsn
 	$(BUILD_GOSH) geninsn $(srcdir)/vminsn.scm
 
-# NB: srfis.c, lib/srfi/*.scm and doc/srfis.texi are all generated
-# by srfis.scm.  However, if we don't have srfi/0.scm but have srfis.c,
+# NB: libsrfis.scm, lib/srfi/*.scm and doc/srfis.texi are all generated
+# by srfis.scm.  However, if we don't have srfi/0.scm but have libsrfis.scm,
 # we fail to regenerate srfi/0.scm since nothing depends on it.  So
-# we introduce fake dependency from srfis.c to srfi/0.scm.
+# we introduce fake dependency from libsrfis.scm to srfi/0.scm.
 $(top_builddir)/doc/srfis.texi $(top_builddir)/lib/srfi/0.scm : srfis.scm
 	$(BUILD_GOSH) $(srcdir)/srfis.scm $(top_builddir)
 
-srfis.c : $(top_builddir)/lib/srfi/0.scm $(top_builddir)/doc/srfis.texi
+libsrfis.scm : $(top_builddir)/lib/srfi/0.scm $(top_builddir)/doc/srfis.texi
 	@:
 
 compile.c  : compile.scm compile-0.scm $(PRECOMP_DEPENDENCY)
@@ -276,6 +276,7 @@ libobj.c   : libobj.scm $(PRECOMP_DEPENDENCY)
 libomega.c : libomega.scm $(PRECOMP_DEPENDENCY)
 libproc.c  : libproc.scm $(PRECOMP_DEPENDENCY)
 librx.c    : librx.scm $(PRECOMP_DEPENDENCY)
+libsrfis.c : libsrfis.scm $(PRECOMP_DEPENDENCY)
 libstr.c   : libstr.scm $(PRECOMP_DEPENDENCY)
 libsym.c   : libsym.scm $(PRECOMP_DEPENDENCY)
 libsys.c   : libsys.scm $(PRECOMP_DEPENDENCY)
@@ -309,7 +310,7 @@ char-data : gen-unicode.scm
 
 char.$(OBJEXT) : char.c char_attr.c
 
-core.$(OBJEXT) : core.c srfis.c
+core.$(OBJEXT) : core.c
 
 winmain.$(OBJEXT) : main.c $(HEADERS)
 
@@ -431,11 +432,11 @@ install-check :
 GENERATED = compile.c autoloads.c builtin-syms.c \
 	    gauche/priv/builtin-syms.h vminsn.c gauche/vminsn.h \
             ../lib/gauche/vm/insn.scm \
-	    srfis.c ../doc/srfis.texi \
+	    libsrfis.scm ../doc/srfis.texi \
 	    libalpha.c libbool.c libchar.c libcode.c libcmp.c libdict.c \
 	    libeval.c libexc.c libfmt.c libio.c liblazy.c liblist.c libmisc.c \
 	    libmod.c libnum.c libobj.c libproc.c librx.c libstr.c \
-	    libsym.c libsys.c libvec.c libomega.c libextra.c
+	    libsrfis.c libsym.c libsys.c libvec.c libomega.c libextra.c
 CONFIG_GENERATED = Makefile genconfig makeverslink gauche/config.h
 
 clean :

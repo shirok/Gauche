@@ -170,6 +170,8 @@ src/libobj.c
 src/libomega.c
 src/libproc.c
 src/librx.c
+src/libsrfis.scm
+src/libsrfis.c
 src/libstr.c
 src/libsym.c
 src/libsys.c
@@ -178,4 +180,3 @@ src/makeverslink
 src/paths_arch.c
 src/test-extra
 src/vminsn.c
-src/srfis.c

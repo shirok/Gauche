@@ -105,6 +105,7 @@ extern void Scm_Init_libnum(void);
 extern void Scm_Init_libobj(void);
 extern void Scm_Init_libproc(void);
 extern void Scm_Init_librx(void);
+extern void Scm_Init_libsrfis(void);
 extern void Scm_Init_libstr(void);
 extern void Scm_Init_libsym(void);
 extern void Scm_Init_libsys(void);
@@ -191,6 +192,7 @@ void Scm_Init(const char *signature)
     Scm_Init_libobj();
     Scm_Init_libproc();
     Scm_Init_librx();
+    Scm_Init_libsrfis();
     Scm_Init_libstr();
     Scm_Init_libsym();
     Scm_Init_libsys();
@@ -520,10 +522,6 @@ init_cond_features()
         { "gauche.net.tls", "rfc.tls" },
         { "gauche.net.tls.openssl", "rfc.tls" },
 #endif
-
-        /* SRFIs */
-#include "srfis.c"
-
         { NULL, NULL }
     };
 

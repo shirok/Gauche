@@ -1,3 +1,12 @@
+2014-11-10  Shiro Kawai  <shiro@acm.org>
+
+	* src/srfis.scm: For built-in srfi modules, make public symbols
+	  exported so that r7rs programs can see them with (import (srfi N)).
+	  From Gauche programs, those symbols are visible by default since
+	  the module inherits the gauche module, so we haven't been careful
+	  about exports.  However, with r7rs programs we need to set them up
+	  correctly.
+
 2014-11-08  Shiro Kawai  <shiro@acm.org>
 
 	* ext/tls: Upgraded to axTLS-1.5.0.
