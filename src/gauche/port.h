@@ -308,7 +308,8 @@ SCM_EXTERN int    Scm_BufferingMode(ScmObj flag,       /* obsoleted */
 SCM_EXTERN int    Scm_GetPortBufferingMode(ScmPort *port);
 SCM_EXTERN void   Scm_SetPortBufferingMode(ScmPort *port, int mode);
 SCM_EXTERN int    Scm_GetPortBufferSigpipeSensitive(ScmPort *port);
-SCM_EXTERN void   Scm_SetPortBufferSigpipeSensitive(ScmPort *port, int sensitive);
+SCM_EXTERN void   Scm_SetPortBufferSigpipeSensitive(ScmPort *port, int sensitive);SCM_EXTERN int    Scm_GetPortCaseFolding(ScmPort *port);
+SCM_EXTERN void   Scm_SetPortCaseFolding(ScmPort *port, int flag);
 
 SCM_EXTERN void   Scm_FlushAllPorts(int exitting);
 

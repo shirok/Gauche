@@ -1,3 +1,10 @@
+2014-11-11  Shiro Kawai  <shiro@acm.org>
+
+	* src/main.c: Enable -fcase-fold in REPL mode, too (we only had it
+	  work on scripts).
+	* src/port.c (Scm_GetPortCaseFolding, Scm_SetPortCaseFolding): APIs
+	  to get/set port's case folding mode.
+
 2014-11-10  Shiro Kawai  <shiro@acm.org>
 
 	* lib/r7rs.scm (r7rs-import): Warn when a programmer say

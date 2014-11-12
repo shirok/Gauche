@@ -588,6 +588,23 @@ void Scm_SetPortBufferSigpipeSensitive(ScmPort *port, int sensitive)
     }
 }
 
+/* Port case folding mode is usually set at port creation, according
+   to the VM's case folding mode.   In rare occasion we need to switch
+   it (but it's not generally recommended). */
+int Scm_GetPortCaseFolding(ScmPort *port)
+{
+    return (SCM_PORT_CASE_FOLD != FALSE);
+}
+
+void Scm_SetPortCaseFolding(ScmPort *port, int folding)
+{
+    if (folding) {
+        SCM_PORT_FLAGS(port) |=  SCM_PORT_CASE_FOLD;
+    } else {
+        SCM_PORT_FLAGS(port) &= ~SCM_PORT_CASE_FOLD;
+    }
+}
+
 /* flushes the buffer, to make a room of cnt bytes.
    cnt == 0 means all the available data.   Note that, unless forcep == TRUE,
    this function only does "best effort" to make room, but doesn't

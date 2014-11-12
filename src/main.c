@@ -534,6 +534,12 @@ void enter_repl()
         }
     }
 
+    /* If -fcase-fold flag is given, switch the stdin port to the
+       case folding mode. */
+    if (SCM_VM_RUNTIME_FLAG_IS_SET(Scm_VM(), SCM_CASE_FOLD)) {
+        Scm_SetPortCaseFolding(SCM_PORT(Scm_Stdin()), TRUE);
+    }
+    
     if (batch_mode || (!isatty(0) && !interactive_mode)) {
         Scm_LoadFromPort(SCM_PORT(Scm_Stdin()), SCM_LOAD_PROPAGATE_ERROR, NULL);
     } else {
