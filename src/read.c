@@ -1218,7 +1218,7 @@ static ScmObj read_char(ScmPort *port, ScmReadContext *ctx)
 static ScmObj read_word(ScmPort *port, ScmChar initial, ScmReadContext *ctx,
                         int temp_case_fold, int include_hash_sign)
 {
-    int case_fold = temp_case_fold || SCM_PORT_CASE_FOLD(port);
+    int case_fold = temp_case_fold || SCM_PORT_CASE_FOLDING(port);
     ScmDString ds;
     Scm_DStringInit(&ds);
     if (initial != SCM_CHAR_INVALID) {

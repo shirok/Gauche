@@ -1,3 +1,9 @@
+2014-11-12  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/port.h (SCM_PORT_CASE_FOLDING): Renamed the macro name
+	  from SCM_PORT_CASE_FOLD, which is the same name for the flag name
+	  and could be confusing.
+
 2014-11-11  Shiro Kawai  <shiro@acm.org>
 
 	* src/main.c: Enable -fcase-fold in REPL mode, too (we only had it

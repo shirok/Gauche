@@ -258,7 +258,7 @@ enum ScmPortICPolicy {
 #define SCM_PORT_FLAGS(obj)     (SCM_PORT(obj)->flags)
 #define SCM_PORT_ICPOLICY(obj)  (SCM_PORT(obj)->icpolicy)
 
-#define SCM_PORT_CASE_FOLD(obj) (SCM_PORT_FLAGS(obj)&SCM_PORT_CASE_FOLD)
+#define SCM_PORT_CASE_FOLDING(obj) (SCM_PORT_FLAGS(obj)&SCM_PORT_CASE_FOLD)
 
 #define SCM_PORT_CLOSED_P(obj)  (SCM_PORT(obj)->closed)
 #define SCM_PORT_OWNER_P(obj)   (SCM_PORT(obj)->ownerp)

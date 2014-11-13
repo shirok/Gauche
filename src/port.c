@@ -593,7 +593,7 @@ void Scm_SetPortBufferSigpipeSensitive(ScmPort *port, int sensitive)
    it (but it's not generally recommended). */
 int Scm_GetPortCaseFolding(ScmPort *port)
 {
-    return (SCM_PORT_CASE_FOLD != FALSE);
+    return (SCM_PORT_CASE_FOLDING(port) != FALSE);
 }
 
 void Scm_SetPortCaseFolding(ScmPort *port, int folding)
