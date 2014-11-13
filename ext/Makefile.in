@@ -36,7 +36,7 @@ all: $(SUBDIRS)
 $(SUBDIRS):
 	(cd $@; $(MAKE) default)
 
-uvector: data
+uvector: data util
 
 threads bcrypt sxml vport text mt-random digest zlib termios windows: uvector
 

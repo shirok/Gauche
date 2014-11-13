@@ -7,7 +7,6 @@
 ;;
 
 (define-module util.match
-  (use srfi-1)
   (export match
           match-lambda
           match-lambda*
@@ -180,8 +179,8 @@
             (string-join (map x->string args) " ")
             val)))
 
-(define match:every every) ; alias srfi-1's every, in case the user of
-                           ; util.match isn't using srfi-1.
+(define match:every every) ; alias gauche's every, in case the user of
+                           ; util.match isn't inheriting gauche.
 
 (define match:syntax-err
   (lambda (obj msg) (error msg obj)))
