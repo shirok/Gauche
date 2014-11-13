@@ -26,7 +26,7 @@ INSTALL         = @INSTALL@
 MKINSTDIR       = $(top_srcdir)/mkinstalldirs
 SLIB_DIR        = @SLIB_DIR@
 
-GENERATED       = gauche/vm/insn.scm gauche/config.scm
+GENERATED       = gauche/vm/insn.scm gauche/config.scm srfi/*
 CONFIG_GENERATED = Makefile slib.scm
 
 SUBDIRS  = gauche gauche/vm gauche/serializer gauche/interactive gauche/mop \
@@ -134,7 +134,7 @@ slibcat-in-place :
 	fi
 
 clean:
-	rm -rf core slibcat *~ srfi/
+	rm -rf core slibcat *~
 	for d in $(SUBDIRS); do if test -d $$d; then (cd $$d; rm -f core *~); fi; done
 
 distclean: clean
