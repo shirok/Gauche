@@ -2055,17 +2055,21 @@
      ;; vector evaluates to itself, and insert cenv without quoting.  This
      ;; has to change if we prohibit unquoted vector literals.
      (let1 def-env-form (if (null? (cenv-frames cenv))
-                          `(,%make-toplevel-cenv. ,(cenv-exp-name cenv))
+                          `(,%make-toplevel-cenv. ',(cenv-exp-name cenv))
                           cenv)
        (pass1 `(,%make-primitive-transformer. ,xformer ,def-env-form)
               cenv))]
     [_ (error "syntax-error: malformed primitive-macro-transformer:" form)]))
 
-(define-pass1-syntax (%make-toplevel-cenv form cenv) :internal
-  (match form
-    ;; NB: We might need to replace vm-current-module during AOT compilation
-    [(_ name) ($const (%make-cenv (vm-current-module) '() name))]
-    [_ (error "syntax-error: malformed make-toplevel-cenv:" form)]))
+;; %make-toplevel-cenv is a procedure, so it refers the runtime module.
+;; In general it doesn't need to be the same as the compile-time module.
+;; However, as far as this form is inserted by primitive-macro-transformer
+;; or er-macro-transformer for the toplevel macro definition, it won't be an
+;; issue.
+;; TODO: Check if it's ok to have something like this:
+;;    (begin (define-syntax ...) (select-module ...) (define-syntax ...)
+(define (%make-toplevel-cenv name) :internal
+  (%make-cenv (vm-current-module) '() name))
 
 (define-pass1-syntax (%macroexpand form cenv) :gauche
   (match form
@@ -5984,7 +5988,7 @@
     [(_ xformer)
      ;; See the discussion in primitive-macro-transformer above.
      (let1 def-env-form (if (null? (cenv-frames cenv))
-                          `(,%make-toplevel-cenv. ,(cenv-exp-name cenv))
+                          `(,%make-toplevel-cenv. ',(cenv-exp-name cenv))
                           cenv)
        `(,%make-er-transformer. ,xformer ,def-env-form))]
     [_ (error "Invalid er-macro-transformer form:" form)]))
