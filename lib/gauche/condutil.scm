@@ -97,31 +97,39 @@
 ;; we extend srfi-35 to allow #f as predicate and accessors, as well as
 ;; omitting accessors.
 
-(define-macro (define-condition-type name super pred . field-specs)
-  (define (badfield-error field)
-    (error "bad field spec for define-condition-type:" field))
-  (define (scan-specs specs slots readers)
-    (match specs
-      [() (emit-defs slots readers)]
-      [((field #f) . rest)
-       (scan-specs rest (cons field slots) readers)]
-      [((field) . rest)
-       (scan-specs rest (cons field slots) readers)]
-      [((field reader) . rest)
-       (scan-specs rest (cons field slots)
-                   (cons `(define (,reader obj) (condition-ref obj ',field))
-                         readers))]
-      [_ (badfield-error (car specs))]))
-  (define (emit-defs slots readers)
-    `(begin
-       (define-class ,name (,super)
-         ,(map (^s `(,s :init-keyword ,(make-keyword s))) slots)
-         :metaclass <condition-meta>)
-       ,@readers
-       ,@(if pred
-           `((define (,pred obj) (condition-has-type? obj ,name)))
-           '())))
-  (scan-specs field-specs '() '()))
+(define-syntax define-condition-type
+  (er-macro-transformer
+   (^[f r c]
+     (match (cdr f)
+       [(name super pred . field-specs)
+        (define (badfield-error field)
+          (error "bad field spec for define-condition-type:" field))
+        (define (scan-specs specs slots readers)
+          (match specs
+            [() (emit-defs slots readers)]
+            [((field #f) . rest)
+             (scan-specs rest (cons field slots) readers)]
+            [((field) . rest)
+             (scan-specs rest (cons field slots) readers)]
+            [((field reader) . rest)
+             (scan-specs rest (cons field slots)
+                         (cons `(,(r'define) (,reader ,(r'obj))
+                                  (,(r'condition-ref) ,(r'obj)
+                                   (,(r'quote) ,field)))
+                               readers))]
+            [_ (badfield-error (car specs))]))
+        (define (emit-defs slots readers)
+          `(,(r'begin)
+            (,(r'define-class) ,name (,super)
+             ,(map (^s `(,s :init-keyword ,(make-keyword s))) slots)
+             :metaclass ,(r'<condition-meta>))
+            ,@readers
+            ,@(if pred
+                `((,(r'define) (,pred ,(r'obj))
+                   (,(r'condition-has-type?) ,(r'obj) ,name)))
+                '())))
+        (scan-specs field-specs '() '())]
+       ))))
 
 (define-syntax condition
   (syntax-rules ()
