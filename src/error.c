@@ -966,6 +966,20 @@ void Scm_ShowStackTrace(ScmPort *out, ScmObj stacklite,
 
 #undef SHOW_EXPR
 
+/* Dump stack trace.  Called from the default error reporter.
+   Also intended to be called from the debugger, so we allow vm to be NULL
+   to mean the current VM. */
+void Scm_DumpStackTrace(ScmVM *vm)
+{
+    if (vm == NULL) vm = Scm_VM();
+    ScmObj stack = Scm_VMGetStackLite(vm);
+    ScmPort *err = SCM_VM_CURRENT_ERROR_PORT(vm);
+    SCM_PUTZ("Stack Trace:\n", -1, err);
+    SCM_PUTZ("_______________________________________\n", -1, err);
+    Scm_ShowStackTrace(err, stack, 0, 0, 0, FMT_ORIG);
+    SCM_FLUSH(err);
+}
+
 /*
  * Default error reporter
  */
@@ -999,16 +1013,9 @@ static void Scm_PrintDefaultErrorHeading(ScmObj e, ScmPort *out)
 
 static void report_error_inner(ScmVM *vm, ScmObj e)
 {
-    ScmObj stack = Scm_VMGetStackLite(vm);
     ScmPort *err = SCM_VM_CURRENT_ERROR_PORT(vm);
-
     Scm_PrintDefaultErrorHeading(e, err);
-    SCM_PUTZ("Stack Trace:\n", -1, err);
-    SCM_PUTZ("_______________________________________\n", -1, err);
-    Scm_ShowStackTrace(err, stack, 0, 0, 0, FMT_ORIG);
-    /* NB: stderr is autoflushed by default, but in case err is replaced
-       by some other port, we explicitly flush it. */
-    SCM_FLUSH(err);
+    Scm_DumpStackTrace(vm);
 }
 
 void Scm_ReportError(ScmObj e)
