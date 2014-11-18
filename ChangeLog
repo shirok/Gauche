@@ -1,3 +1,12 @@
+2014-11-18  Shiro Kawai  <shiro@acm.org>
+
+	* gc/pthread_support.c (start_mark_threads): Experimantally added
+	  code to set up signal masks for parallel marker threads.  Eventually
+	  this should be more generalized API and submitted to upstream,
+	  but for the time being, let's see if this solves the "lost signal"
+	  problem (the issue that delivered signal is discarded when it's
+	  delivered to one of the marker threads instead of Gauche threads.)
+
 2014-11-12  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/port.h (SCM_PORT_CASE_FOLDING): Renamed the macro name

@@ -433,6 +433,27 @@ start_mark_threads(void)
         }
       }
 #   endif /* HPUX || GC_DGUX386_THREADS */
+    /* [SK] Kludge: Mask signals that should be handled by Gauche threads.
+       Eventually, the actual mask should be in sync with the one given to
+       Scm_SetMasterSigmask().  Ideally we need a public API of bdwgc that
+       allows the application to set up the apprpriate mask. */
+    sigset_t set, oldset;
+    sigfillset(&set);
+#if defined(GC_LINUX_THREADS)
+    /* some signals are used in the system */
+    sigdelset(&set, SIGPWR);  /* used in gc */
+    sigdelset(&set, SIGXCPU); /* used in gc */
+    sigdelset(&set, SIGUSR1); /* used in linux threads */
+    sigdelset(&set, SIGUSR2); /* used in linux threads */
+#endif /*GC_LINUX_THREADS*/
+#if defined(GC_FREEBSD_THREADS)
+    sigdelset(&set, SIGUSR1); /* used by GC to stop the world */
+    sigdelset(&set, SIGUSR2); /* used by GC to restart the world */
+#endif /*GC_FREEBSD_THREADS*/
+    if (pthread_sigmask(SIG_BLOCK, &set, &oldset) < 0) {
+      WARN("pthread_sigmask failed, errno = %" WARN_PRIdPTR "\n", errno);
+    }
+    /* [/SK] */
     for (i = 0; i < available_markers_m1; ++i) {
       if (0 != REAL_FUNC(pthread_create)(GC_mark_threads + i, &attr,
                               GC_mark_thread, (void *)(word)i)) {
@@ -442,6 +463,11 @@ start_mark_threads(void)
         break;
       }
     }
+    /* [SK] */
+    if (pthread_sigmask(SIG_SETMASK, &oldset, NULL) < 0) {
+      WARN("pthread_sigmask failed, errno = %" WARN_PRIdPTR "\n", errno);
+    }
+    /* [/SK] */
     GC_markers_m1 = i;
     pthread_attr_destroy(&attr);
     GC_COND_LOG_PRINTF("Started %d mark helper threads\n", GC_markers_m1);
