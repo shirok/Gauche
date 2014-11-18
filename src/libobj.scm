@@ -39,6 +39,10 @@
 (define-module gauche.object)
 (select-module gauche.object)
 
+(define (%id name)
+  ((with-module gauche.internal make-identifier)
+   name (find-module 'gauche.object) '()))
+
 ;;; I'm trying to make MOP as close to STklos and Goops as possible.
 ;;; The perfect compatibility can't be done since the underlying implemenation
 ;;; in C differs a bit.
@@ -80,12 +84,15 @@
 (define (%expand-define-generic name opts)
   (receive (true-name getter-name) (%check-setter-name name)
     (let ([class (get-keyword :class opts <generic>)]
-          [other (delete-keyword :class opts)])
+          [other (delete-keyword :class opts)]
+          [define. (%id'define)]
+          [make. (%id'make)]
+          [Q. (%id'quote)])
       (if getter-name
-        `(begin
-           (define ,true-name (make ,class :name ',true-name ,@other))
-           (set! (setter ,getter-name) ,true-name))
-        `(define ,true-name (make ,class :name ',true-name ,@other))))))
+        `(,(%id'begin)
+          (,define. ,true-name (,make. ,class :name (,Q. ,true-name) ,@other))
+          (,(%id'set!) (,(%id'setter) ,getter-name) ,true-name))
+        `(,define. ,true-name (,make. ,class :name (,Q. ,true-name) ,@other))))))
 
 ;; allow (setter name) type declaration
 (define (%check-setter-name name)
@@ -109,6 +116,18 @@
 ;  (%expand-define-macro name specs body))
 
 (define (%expand-define-method name specs body)
+  (define lambda. (%id'lambda))
+  (define let. (%id'let))
+  (define unless. (%id'unless))
+  (define set!. (%id'set!))
+  (define quote. (%id'quote))
+  (define make. (%id'make))
+  (define apply. (%id'apply))
+  (define list. (%id'list))
+  (define has-setter?. (%id'has-setter?))
+  (define setter. (%id'setter))
+  (define %ensure-generic-function. (%id'%ensure-generic-function))
+  (define add-method!. (%id'add-method!))
   ;; classify arguments to required, rest, and optionals
   ;;  ((a <x>) b (c <y>))   => r:((a <x>) b (c <y>)) r:#f o:#f
   ;;  ((a <x>) b . c)       => r:((a <x>) b) r:c o:#f
@@ -120,28 +139,28 @@
               [(not (pair? ss))    (values (reverse rs) ss #f)]
               [(keyword? (car ss)) (values (reverse rs) (gensym) ss)]
               [else (loop (cdr ss) (cons (car ss) rs))]))
-    (let* ([specializers (map (^s (if (pair? s) (cadr s) '<top>)) reqs)]
+    (let* ([specializers (map (^s (if (pair? s) (cadr s) (%id'<top>))) reqs)]
            [reqargs      (map (^s (if (pair? s) (car s) s)) reqs)]
            [lambda-list  (if rest `(,@reqargs . ,rest) reqargs)]
            [real-args    (if rest
                            `(,@reqargs ,rest next-method)
                            `(,@reqargs next-method))]
            [real-body (if opts
-                        `(lambda ,real-args
-                           (apply (lambda ,opts ,@body) ,rest))
-                        `(lambda ,real-args ,@body))])
+                        `(,lambda. ,real-args
+                           (,apply. (,lambda. ,opts ,@body) ,rest))
+                        `(,lambda. ,real-args ,@body))])
       (receive (true-name getter-name) (%check-setter-name name)
         (let1 gf (gensym)
-          `(let ((,gf (%ensure-generic-function ',true-name (current-module))))
-             (add-method! ,gf
-                          (make <method>
-                            :generic ,gf
-                            :specializers (list ,@specializers)
-                            :lambda-list ',lambda-list
-                            :body ,real-body))
+          `(,let. ((,gf (,%ensure-generic-function. (,quote. ,true-name) (current-module))))
+             (,add-method!. ,gf
+                            (,make. <method>
+                                    :generic ,gf
+                                    :specializers (,list. ,@specializers)
+                                    :lambda-list (,quote. ,lambda-list)
+                                    :body ,real-body))
              ,@(if getter-name
-                 `((unless (has-setter? ,getter-name)
-                     (set! (setter ,getter-name) ,gf)))
+                 `((,unless. (,has-setter?. ,getter-name)
+                     (,set!. (,setter. ,getter-name) ,gf)))
                  '())
              ,gf)))
       )))
@@ -202,43 +221,55 @@
   `((with-module gauche.internal make-identifier) ,name ,mod ,local))
 
 (define (%expand-define-class name supers slots options)
+  (define define. (%id'define))
+  (define let. (%id'let))
+  (define make. (%id'make))
+  (define quote. (%id'quote))
+  (define list. (%id'list))
+  (define when. (%id'when))
+  (define lambda. (%id'lambda))
+  (define %check-class-binding. (%id'%check-class-binding))
+  (define for-each. (%id'for-each))
+  (define class-slots. (%id'class-slots))
   (let* ([metaclass (or (get-keyword :metaclass options #f)
-                        `(,(make-identifier '%get-default-metaclass
-                                            (current-module) '())
-                          (list ,@supers)))]
+                        `(,(%id '%get-default-metaclass)
+                          (,list. ,@supers)))]
          [slot-defs (map %process-slot-definition slots)]
          [class     (gensym)]
          [slot      (gensym)])
-    `(define ,name
-       (let ((,class (make ,metaclass
-                       :name ',name
-                       :supers (list ,@supers)
-                       :slots (list ,@slot-defs)
-                       :defined-modules (list (current-module))
-                       ,@options)))
-         (when (%check-class-binding ',name (current-module))
-           (redefine-class! ,name ,class))
-         (for-each (^[,slot]
-                     (,(make-identifier '%make-accessor (current-module) '())
-                      ,class ,slot (current-module)))
-                   (class-slots ,class))
+    `(,define. ,name
+       (,let. ((,class (,make. ,metaclass
+                               :name (,quote. ,name)
+                               :supers (,list. ,@supers)
+                               :slots (,list. ,@slot-defs)
+                               :defined-modules (,list. (current-module))
+                               ,@options)))
+         (,when. (,%check-class-binding. (,quote. ,name) (current-module))
+           (,(%id'redefine-class!) ,name ,class))
+         (,for-each.
+          (,lambda.[,slot]
+                   (,(%id'%make-accessor) ,class ,slot (current-module)))
+          (,class-slots. ,class))
          ,class))
     ))
 
 (define (%process-slot-definition sdef)
+  (define list. (%id'list))
+  (define quote. (%id'quote))
+  (define lambda. (%id'lambda))
   (if (pair? sdef)
     (let loop ([opts (cdr sdef)] [r '()])
-      (cond [(null? opts) `(list ',(car sdef) ,@(reverse! r))]
+      (cond [(null? opts) `(,list. (,quote. ,(car sdef)) ,@(reverse! r))]
             [(not (and (pair? opts) (pair? (cdr opts))))
              (error "bad slot specification:" sdef)]
             [else
              (case (car opts)
                [(:initform :init-form)
-                (loop (cddr opts) `((^[] ,(cadr opts)) :init-thunk ,@r))]
+                (loop (cddr opts) `((,lambda.[] ,(cadr opts)) :init-thunk ,@r))]
                [(:getter :setter :accessor)
-                (loop (cddr opts) `(',(cadr opts) ,(car opts) ,@r))]
+                (loop (cddr opts) `((,quote. ,(cadr opts)) ,(car opts) ,@r))]
                [else (loop (cddr opts) (list* (cadr opts) (car opts) r))])]))
-    `'(,sdef)))
+    `(,quote. (,sdef))))
 
 ;; Determine default metaclass, that is a class inheriting all the metaclasses
 ;; of supers.  The idea is taken from stklos.  The difference is that
