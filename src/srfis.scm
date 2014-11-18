@@ -435,7 +435,7 @@ Built-in.  @xref{Conditions}.
 
 
 srfi-36
-() ;;ZZZZ
+(&i/o-error &i/o-port-error &i/o-read-error &i/o-write-error &i/o-closed-error &read-error) ; Need filename-related errors
 
 I/O Conditions
 Partly supported.  @xref{Conditions}.
