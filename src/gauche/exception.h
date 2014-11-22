@@ -282,6 +282,13 @@ SCM_CLASS_DECL(Scm_UncaughtExceptionClass);
  * Mixins
  */
 
+/* Mixin conditions are used to be compounded to the main <error> condition
+   to add some more context.  It is not a mixin classes in ordinary sense,
+   since it won't be used for multiple inheritance; instead, an instance
+   of the mixin class is compounded at runtime.  See, for example,
+   the 'compile' function in compile.scm mixing <compile-error-mixin>
+   into the error raised during compilation.  */
+
 SCM_CLASS_DECL(Scm_MixinConditionClass);
 #define SCM_CLASS_MIXIN_CONDITION   (&Scm_MixinConditionClass)
 #define SCM_MIXIN_CONDITION_P(obj)  SCM_ISA(obj, SCM_CLASS_MIXIN_CONDITION)
@@ -302,9 +309,27 @@ typedef struct ScmCompileErrorMixinRec {
     ScmObj expr;                /* offending expr */
 } ScmCompileErrorMixin;
 
-SCM_CLASS_DECL(ScmCompileErrorMixinClass);
+SCM_CLASS_DECL(Scm_CompileErrorMixinClass);
 #define SCM_CLASS_COMPILE_ERROR_MIXIN (&Scm_CompileErrorMixinClass)
 #define SCM_COMPILE_ERROR_MIXIN_P(obj) SCM_ISA(obj, SCM_CLASS_COMPILE_ERROR_MIXIN)
 #define SCM_COMPILE_ERROR_MIXIN(obj)   ((ScmCompileErrorMixin*)(obj))
+
+/* This struct is shared among all subclasses of &i/o-filename-error. */
+typedef struct ScmFilenameErrorMixinRec {
+    ScmCondition common;
+    ScmObj filename;            /* offending name */
+} ScmFilenameErrorMixin;
+
+SCM_CLASS_DECL(Scm_FilenameErrorMixinClass);
+#define SCM_CLASS_FILENAME_ERROR_MIXIN (&Scm_FilenameErrorMixinClass)
+#define SCM_FILENAME_ERROR_MIXIN_P(obj) SCM_ISA(obj, SCM_CLASS_FILENAME_ERROR_MIXIN)
+#define SCM_FILENAME_ERROR_MIXIN(obj)   ((ScmFilenameErrorMixin*)(obj))
+
+SCM_CLASS_DECL(Scm_FilenameErrorMixinClass);
+SCM_CLASS_DECL(Scm_MalformedFilenameErrorMixinClass);
+SCM_CLASS_DECL(Scm_FileProtectionErrorMixinClass);
+SCM_CLASS_DECL(Scm_FileIsReadOnlyErrorMixinClass);
+SCM_CLASS_DECL(Scm_FileAlreadyExistsErrorMixinClass);
+SCM_CLASS_DECL(Scm_NoSuchFileErrorMixinClass);
 
 #endif /*GAUCHE_EXCEPTION_H*/

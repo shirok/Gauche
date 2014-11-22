@@ -242,5 +242,74 @@
    (c "mixin_condition_cpa")
    ((expr))
    (allocator (c "compile_error_mixin_allocate")))
+
+ ;; Filename errors are defined in srfi-36.  Internally most of those filename
+ ;; errors occur as <system-error> first; we compound the following conditions
+ ;; as needed.  In C name we use "Mixin", but in Scheme we follow srfi-36
+ ;; names and drop "-mixin".
+ ;; In C-level all filename mixin classes share one struct definition, and
+ ;; one allocator.
+ (define-cfn filename-error-mixin-allocate (klass::ScmClass* initargs) :static
+   (let* ([c::ScmFilenameErrorMixin* (SCM_ALLOCATE ScmFilenameErrorMixin klass)])
+     (SCM_SET_CLASS c klass)
+     (set! (-> c filename) SCM_FALSE)
+     (return (SCM_OBJ c))))
+
+ "static ScmClass *filename_condition_cpa[] = {
+   SCM_CLASS_STATIC_PTR(Scm_FileProtectionErrorMixinClass),
+   SCM_CLASS_STATIC_PTR(Scm_FilenameErrorMixinClass),
+   SCM_CLASS_STATIC_PTR(Scm_MixinConditionClass),
+   SCM_CLASS_STATIC_PTR(Scm_ConditionClass),
+   SCM_CLASS_STATIC_PTR(Scm_TopClass),
+   NULL
+  };"
+
+ (define-type <i/o-filename-error> "ScmFilenameErrorMixin*" #f
+   "SCM_FILENAME_ERROR_MIXIN_P" "SCM_FILENAME_ERROR_MIXIN")
+ (define-cclass <i/o-filename-error>
+   "ScmFilenameErrorMixin*" "Scm_FilenameErrorMixinClass"
+   (c "filename_condition_cpa+2")
+   ((filename))
+   (allocator (c "filename_error_mixin_allocate")))
+
+ (define-type <i/o-malformed-filename-error> "ScmFilenameErrorMixin*" #f
+   "SCM_FILENAME_ERROR_MIXIN_P" "SCM_FILENAME_ERROR_MIXIN")
+ (define-cclass <i/o-malformed-filename-error>
+   "ScmFilenameErrorMixin*" "Scm_MalformedFilenameErrorClass"
+   (c "filename_condition_cpa+1")
+   ((filename))
+   (allocator (c "filename_error_mixin_allocate")))
+
+ (define-type <i/o-file-protection-error> "ScmFilenameErrorMixin*" #f
+   "SCM_FILENAME_ERROR_MIXIN_P" "SCM_FILENAME_ERROR_MIXIN")
+ (define-cclass <i/o-file-protection-error>
+   "ScmFilenameErrorMixin*" "Scm_FileProtectionErrorMixinClass"
+   (c "filename_condition_cpa+1")
+   ((filename))
+   (allocator (c "filename_error_mixin_allocate")))
+
+ (define-type <i/o-file-is-read-only-error> "ScmFilenameErrorMixin*" #f
+   "SCM_FILENAME_ERROR_MIXIN_P" "SCM_FILENAME_ERROR_MIXIN")
+ (define-cclass <i/o-file-is-read-only-error>
+   "ScmFilenameErrorMixin*" "Scm_FileIsReadOnlyErrorMixinClass"
+   (c "filename_condition_cpa")
+   ((filename))
+   (allocator (c "filename_error_mixin_allocate")))
+
+ (define-type <i/o-file-already-exists-error> "ScmFilenameErrorMixin*" #f
+   "SCM_FILENAME_ERROR_MIXIN_P" "SCM_FILENAME_ERROR_MIXIN")
+ (define-cclass <i/o-file-already-exists-error>
+   "ScmFilenameErrorMixin*" "Scm_FileAlreadyExistsErrorMixinClass"
+   (c "filename_condition_cpa+1")
+   ((filename))
+   (allocator (c "filename_error_mixin_allocate")))
+
+ (define-type <i/o-no-such-file-error> "ScmFilenameErrorMixin*" #f
+   "SCM_FILENAME_ERROR_MIXIN_P" "SCM_FILENAME_ERROR_MIXIN")
+ (define-cclass <i/o-no-such-file-error>
+   "ScmFilenameErrorMixin*" "Scm_NoSuchFileErrorMixinClass"
+   (c "filename_condition_cpa+1")
+   ((filename))
+   (allocator (c "filename_error_mixin_allocate")))
  )
 
