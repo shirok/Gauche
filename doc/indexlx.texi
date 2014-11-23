@@ -1,0 +1,9 @@
+@node Lexical syntax index, Class Index, Module Index, Top
+@appendix Lexical syntax index
+@c NODE Index - 字句構文索引
+@printindex lx
+
+@c Local variables:
+@c mode: texinfo
+@c coding: utf-8
+@c end:

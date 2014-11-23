@@ -43,7 +43,7 @@ the reader.  R7RS defines two of such directives---@code{#!fold-case}
 and @code{#!no-fold-case}, which switches whether symbols
 are read in case-folding or non-case-folding mode, respectively.
 
-See the @emph{Hash-bang token} section below for all the directives
+@xref{Hash-bang token} below, for all the directives
 Gauche has.
 @c JP
 @item hash-bang指示子
@@ -52,11 +52,12 @@ R7RSではそういった指示子がふたつ定義されています。
 シンボルのリード時に大文字小文字を無視するかしないかを
 切り替える、@code{#!fold-case}と@code{#!no-fold-case}です。
 
-Gaucheで使える指示子の一覧については、下の@emph{Hash-bang token}を参照してください。
+Gaucheで使える指示子の一覧については、下の@ref{Hash-bang token}を参照してください。
 @c COMMON
 
 @c EN
 @item Square brackets
+@lxindex [
 Gauche adopts the R6RS syntax that regards @code{[]} the same
 as @code{()}.  Both kind of parentheses are equivalent,
 but the kind of corresponding open and close parentheses match.
@@ -68,6 +69,7 @@ function and macro application.  If such grouping nests, however, use @code{()}
 for outer groupings.  Examples:
 @c JP
 @item 角括弧
+@lxindex [
 Gaucheは、R6RSの@code{[]}を@code{()}と同様に扱う構文規則を採用しています。
 どちらの括弧も全く等価ですが、それぞれの開き括弧と閉じ括弧は対応していなければなりません。
 括弧を混ぜることに眉をひそめる熟練のLisperもいますが、
@@ -166,6 +168,7 @@ Gaucheの拡張機能として、プレフィクス(@code{#e}, @code{#x}等)つ�
 
 @c EN
 @item Hex character escapes
+@lxindex \x
 You can denote a character using hexadecimal
 notation of the character code in some literals; specifically,
 character literals, charcter set literals, string literals,
@@ -194,6 +197,7 @@ You can switch the reader mode so that it becomes
 backward-compatible.  @xref{Reader lexical mode}, for the details.
 @c JP
 @item 16進数文字エスケープ
+@lxindex \x
 いくつかのリテラル中では、文字をその文字コードの16進数表記で記入できます。
 具体的には、文字、文字セット、文字列、シンボル、正規表現リテラルです。
 
@@ -227,6 +231,15 @@ See the table below.
 下の表を参照して下さい。
 @c COMMON
 @end table
+
+@menu
+* Sharp syntax::                
+* Hash-bang token::             
+@end menu
+
+@node Sharp syntax, Hash-bang token, Lexical structure, Lexical structure
+@subsection Sharp syntax
+@c NODE #構文
 
 @c EN
 The table below lists sharp-syntaxes.
@@ -497,7 +510,14 @@ The table below lists sharp-syntaxes.
 @c COMMON
 @end multitable
 
-@subheading Hash-bang token
+@menu
+* Hash-bang token::             
+@end menu
+
+@node Hash-bang token,  , Sharp syntax, Lexical structure
+@subsection Hash-bang token
+@c NODE Hash-bangトークン
+@lxindex #!
 
 @c EN
 A character sequence @code{#!} has two completely different

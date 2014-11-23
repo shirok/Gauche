@@ -20,9 +20,10 @@
 @c COMMON
 @comment %**end of header
 
-@c module and class index
+@c module, class and lexical-syntax index
 @defcodeindex md
 @defcodeindex cl
+@defcodeindex lx
 
 @iftex
 @finalout
@@ -75,6 +76,7 @@ Gaucheのバージョン@VERSION@に対応します。
 * C to Scheme mapping::         
 * Function and Syntax Index::   
 * Module Index::                
+* Lexical syntax index::        
 * Class Index::                 
 * Variable Index::              
 @end menu
@@ -95,6 +97,7 @@ Gaucheのバージョン@VERSION@に対応します。
 @include mapping.texi
 @include indexfn.texi
 @include indexmd.texi
+@include indexlx.texi
 @include indexcl.texi
 @include indexvr.texi
 

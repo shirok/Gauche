@@ -1,4 +1,4 @@
-@node Class Index, Variable Index, Module Index, Top
+@node Class Index, Variable Index, Lexical syntax index, Top
 @appendix Class Index
 @c NODE Index - クラス索引
 

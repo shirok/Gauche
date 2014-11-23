@@ -4340,6 +4340,7 @@ A class for symbols.
 @end  deftp
 
 @deftp {Reader Syntax} @code{|@i{name}|}
+@lxindex |
 [R7RS]
 @c EN
 Denotes a symbol that has weird name, including the characters
@@ -4983,6 +4984,7 @@ in both versions.
 @end  deftp
 
 @deftp {Reader Syntax} @code{#\@i{charname}}
+@lxindex #\
 [R7RS]
 @c EN
 Denotes a literal character.
@@ -5583,6 +5585,7 @@ Gaucheは文字集合オブジェクトのサポートと、
 @end deftp
 
 @deftp {Reader Syntax} @code{#[@i{char-set-spec}]}
+@lxindex #[
 @c EN
 You can write a literal character set in this syntax.
 @i{char-set-spec} is a sequence of characters to be included
@@ -6087,6 +6090,7 @@ behavior, but prints warning when it finds legacy syntax.
 @end deftp
 
 @deftp {Reader syntax} @code{#*"}@dots{}@code{"}
+@lxindex #*
 @c EN
 Denotes incomplete string.  The same escape sequences as the complete
 string syntax are recognized.
@@ -6251,6 +6255,7 @@ Schemeはそのような機能を定義していませんが、Gaucheではリ�
 @c COMMON
 
 @deftp {Reader syntax} @code{#}@var{string-literal}
+@lxindex #"
 @c EN
 Evaluates to a string.  If @var{string-literal} contains the
 character sequence @code{~@var{expr}}, where
@@ -6337,6 +6342,7 @@ as follows:
 @end deftp
 
 @deftp {Reader syntax} @code{#`}@var{string-literal}
+@lxindex #`
 @c EN
 This is the old style of string-interpolation.  It is still recognized,
 but discouraged for the new code.
@@ -7151,6 +7157,7 @@ Gaucheはまた、リテラル正規表現用の構文を備えています。
 
 @deftp {Reader Syntax} @code{#/@i{regexp-spec}/}
 @deftpx {Reader Syntax} @code{#/@i{regexp-spec}/i}
+@lxindex #/
 @c EN
 Denotes literal regular expression object.  When read, it becomes
 an instance of @code{<regexp>}.
@@ -15972,6 +15979,7 @@ SRFI-10で定義されている読み込み時コンストラクタは、ユー�
 @c COMMON
 
 @deftp {Reader Syntax} @code{#,(@var{tag} @var{arg} @dots{})}
+@lxindex #,
 [SRFI-10]
 @c EN
 Gauche maintains a global table that associates a @var{tag} (symbol)
