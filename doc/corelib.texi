@@ -4593,7 +4593,7 @@ CommonLisp とは異なり、現在のGaucheではキーワードとシンボル
 @c COMMON
 @end  deftp
 
-@deftp {Reader syntax} @code{:@var{name}}
+@deftp {Reader Syntax} @code{:@var{name}}
 @c EN
 Read to a keyword whose name is @var{name}.
 (Note that the preceding ':' is not a part of the keyword's name.)
@@ -5929,7 +5929,7 @@ SRFI-13については@ref{String library}を参照してください。
 @subsection String syntax
 @c NODE 文字列の表記
 
-@deftp {Reader syntax} @code{"}@dots{}@code{"}
+@deftp {Reader Syntax} @code{"}@dots{}@code{"}
 [R7RS+]
 @c EN
 Denotes a literal string.  Inside the double quotes, the following
@@ -6089,7 +6089,7 @@ behavior, but prints warning when it finds legacy syntax.
 @c COMMON
 @end deftp
 
-@deftp {Reader syntax} @code{#*"}@dots{}@code{"}
+@deftp {Reader Syntax} @code{#*"}@dots{}@code{"}
 @lxindex #*
 @c EN
 Denotes incomplete string.  The same escape sequences as the complete
@@ -6254,7 +6254,7 @@ Schemeはそのような機能を定義していませんが、Gaucheではリ�
 文字列の補間を実装しました。
 @c COMMON
 
-@deftp {Reader syntax} @code{#}@var{string-literal}
+@deftp {Reader Syntax} @code{#}@var{string-literal}
 @lxindex #"
 @c EN
 Evaluates to a string.  If @var{string-literal} contains the
@@ -6341,7 +6341,7 @@ as follows:
 @end example
 @end deftp
 
-@deftp {Reader syntax} @code{#`}@var{string-literal}
+@deftp {Reader Syntax} @code{#`}@var{string-literal}
 @lxindex #`
 @c EN
 This is the old style of string-interpolation.  It is still recognized,

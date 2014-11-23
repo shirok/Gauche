@@ -186,7 +186,7 @@ but they are space efficient.
 @end deftp
 
 
-@deftp {Reader syntax} @code{#,(<array> @var{shape} @var{obj} @dots{})}
+@deftp {Reader Syntax} @code{#,(<array> @var{shape} @var{obj} @dots{})}
 @c EN
 An array is written out in this format.  (Substitute @code{<array>} for
 @code{<u8array>} if the array is @code{<u8array>}, etc.)
@@ -16115,6 +16115,17 @@ A class for @var{TAG}vector.  It inherits @code{<sequence>}.
 @end deftp
 
 @deftp {Reader Syntax} @code{#@var{TAG}(@var{n} @dots{})}
+@lxindex #s8
+@lxindex #u8
+@lxindex #s16
+@lxindex #u16
+@lxindex #s32
+@lxindex #u32
+@lxindex #s64
+@lxindex #u64
+@lxindex #f16
+@lxindex #f32
+@lxindex #f64
 @c EN
 Denotes a literal homogeneous vector.
 @c JP

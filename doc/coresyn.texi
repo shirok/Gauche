@@ -615,6 +615,7 @@ Evaluates to @var{datum}.
 @end defspec
 
 @deftp {Reader Syntax} @code{'@var{datum}}
+@lxindex '
 [R7RS]
 @c EN
 Equivalent to @code{(quote datum)}.
@@ -2658,6 +2659,7 @@ some fixed parts and some variable parts.  See the explanation below.
 @end defspec
 
 @deftp {Reader Syntax} @code{`@var{template}}
+@lxindex `
 [R7RS]
 @c EN
 The syntax @code{`x} is read as @code{(quasiquote x)}.
@@ -2697,6 +2699,8 @@ R6RSではこれらの場合も定義されており、Gaucheもそれに倣っ�
 
 @deftp {Reader Syntax} @code{,@var{datum}}
 @deftpx {Reader Syntax} @code{,@@@var{datum}}
+@lxindex ,
+@lxindex ,@@
 [R7RS]
 @c EN
 The syntaxes @code{,x} and @code{,@@x} are read as @code{(unquote x)}
