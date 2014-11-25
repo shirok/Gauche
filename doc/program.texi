@@ -435,11 +435,17 @@ The following environment variables are recognized:
 You can specify additional load paths by this environment
 variable, delimiting the paths by '@code{:}'.
 The paths are appended before the system default load paths.
+
+@xref{Loading Scheme file}, for the details of how Gauche finds
+files to load.
 @c JP
 この環境変数によって、追加するロードパスを指定できます。
 パスは '@code{:}' で区切ります。
 この変数によって指定されたパスはシステムのデフォルトのロードパスの前に
 連結されます。
+
+GaucheがロードするSchemeファイルを見つける方法について詳しくは
+@ref{Loading Scheme file}を参照してください。
 @c COMMON
 @end deftp
 
@@ -448,11 +454,65 @@ The paths are appended before the system default load paths.
 You can specify additional load paths for dynamically loaded
 objects by this environment variable, delimiting the paths by '@code{:}'.
 The paths are appended before the system default load paths.
+
+@xref{Loading dynamic library}, for the details of how Gauche
+finds dynamically loadable objects.
 @c JP
 この変数によって、動的にロードするオブジェクト用の追加ロードパスを
 指定できます。パスは '@code{:}' で区切ります。
 この変数によって指定されたパスはシステムのデフォルトのロードパスの前に
 連結されます。
+
+Gaucheが動的にロードするオブジェクトファイルを探す方法については
+@ref{Loading dynamic library}を参照してください。
+@c COMMON
+@end deftp
+
+@deftp {Environment variable} GAUCHE_AVAILABLE_PROCESSORS
+@c EN
+You can get the number of system's processors by
+@code{sys-available-processors} (@xref{Environment Inquiry});
+libraries/programs may use this info to optimize number of
+parallel threads.  But you might change that, for testing
+and benchmarking---e.g. a program automatically uses
+8 threads if there are 8 cores, but you might want to run it
+with 1, 2, 4 threads as well to see the effect of parallelization.
+This environment variable overrides
+the return value of @code{sys-available-processors}.
+@c JP
+@code{sys-available-processors} でシステムのプロセッサ数を
+取得できます(@ref{Environment Inquiry}参照)。
+ライブラリやプログラムの中には、その数に基づいて並行に走るスレッド数を
+調整するものがあります。けれども、テストやベンチマークでその数を
+変えたいと思うことがあるかもしれません。例えば、8コア上では自動的に
+8スレッド使うプログラムがあったとして、並列化の効果を見るためにその
+プログラムを1,2,4スレッドで走らせてベンチマークを取る、といった場合です。
+この環境変数は、@code{sys-available-processors}が返す値を上書きします。
+@c COMMON
+@end deftp
+
+@deftp {Environment variable} GAUCHE_KEYWORD_DISJOINT
+@deftpx {Environment variable} GAUCHE_KEYWORD_IS_SYMBOL
+@c EN
+These two environment variables affect whether keywords are treated
+as symbols or not.  @xref{Keywords}, for the details.
+@c JP
+この二つの環境変数は、キーワードがシンボルとして扱われるかどうかに影響します。
+詳しくは@ref{Keywords}を参照してください。
+@c COMMON
+@end deftp
+
+@deftp {Environment variable} TMP
+@deftpx {Environment variable} TMPDIR
+@deftpx {Environment variable} TEMP
+@deftpx {Environment variable} USERPROFILE
+@c EN
+These may affect the return value of @code{sys-tmpdir}.
+Different environment variables may be used on different platforms.
+@xref{Pathnames}, for the details.
+@c JP
+これらは@code{sys-tmpdir}の返り値に影響を与えます。プラットフォームによって
+参照される環境変数は異なります。@ref{Pathnames}を参照してください。
 @c COMMON
 @end deftp
 
