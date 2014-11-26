@@ -49,8 +49,9 @@
 (define-cproc undefined? (obj) ::<boolean> :constant SCM_UNDEFINEDP)
 
 (define (warn fmt . args)
-  (apply format (current-error-port) (string-append "WARNING: " fmt) args)
-  (flush (current-error-port)))
+  (unless (sys-getenv "GAUCHE_SUPPRESS_WARNING")
+    (apply format (current-error-port) (string-append "WARNING: " fmt) args)
+    (flush (current-error-port))))
 
 ;; srfi-111 box
 ;; NB: We have built-in support for boxes to use internally, but Scheme

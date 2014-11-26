@@ -795,6 +795,7 @@ void Scm_PortError(ScmPort *port, int reason, const char *msg, ...)
 
 void Scm_Warn(const char *msg, ...)
 {
+    if (Scm_GetEnv("GAUCHE_SUPPRESS_WARNING") != NULL) return;
     va_list args;
     va_start(args, msg);
     Scm_Printf(SCM_CURERR, "WARNING: %A\n", Scm_Vsprintf(msg, args, TRUE));

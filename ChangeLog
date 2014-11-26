@@ -1,3 +1,8 @@
+2014-11-25  Shiro Kawai  <shiro@acm.org>
+
+	* src/error.c (Scm_Warn), src/libmisc.scm (warn): Allow suppressing
+	  warning by environment variable GAUCHE_SUPPRESS_WARNING.
+
 2014-11-18  Shiro Kawai  <shiro@acm.org>
 
 	* gc/pthread_support.c (start_mark_threads): Experimantally added
