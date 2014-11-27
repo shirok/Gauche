@@ -22641,6 +22641,40 @@ in @var{obj}, @code{#f} is returned.
 @c COMMON
 @end defun
 
+@defun source-code closure
+@c EN
+Returns the source code of @var{closure}, if available.
+Otherwise, @code{#f} is returned.
+
+Currently, only the code that's directly read from Scheme source
+is available; if the Scheme code is precompiled, the source code
+isn't saved.   It may be changed in future.
+@c JP
+@var{closure}のソースコードが取り出せればそれを返します。そうでなければ
+@code{#f}を返します。
+
+現在、Schemeソースから直接読み込まれた場合のみ、ソースコードが取り出せます。
+プリコンパイルされたSchemeコードではソースコードは保存されません。
+将来は変更されるかもしれません。
+@c COMMON
+@end defun
+
+@defun source-location closure
+@c EN
+Returns the location (a list of filename and line number) where @var{closure}
+is defined, if available.  Otherwise, @code{#f} is returned.
+@c JP
+@var{closure}が定義された場所(ファイル名と行番号)がわかればそれをリストにして
+返します。わからなければ@code{#f}が返ります。
+@c COMMON
+
+@example
+gosh> (use rfc.http)
+#<undef>
+gosh> (source-location http-get)
+("/usr/share/gauche-0.9/0.9.5/lib/rfc/http.scm" 443)
+@end example
+@end defun
 
 @defun disasm closure
 @c EN
