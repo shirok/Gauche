@@ -4931,6 +4931,8 @@
                                           ($lambda-name iform)
                                           ccb  ; parent
                                           inliner)])
+    (and-let* ([src ($lambda-src iform)])
+      (compiled-code-push-info! ccb `(definition (source-info . ,src))))
     ;; If any of procedure parameters are set!, we should box it
     ;; upon entering the procedure.
     (let loop ([lvs ($lambda-lvars iform)]

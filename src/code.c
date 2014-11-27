@@ -563,6 +563,19 @@ void Scm_CompiledCodeSetLabel(ScmCompiledCode *cc, ScmObj label)
                              b->labelDefs);
 }
 
+/* Push arbitrary debug-info into the builder.
+   <debug-info> : (<insn-offset> <item> ...)
+   <insn-offset> : <integer> or 'definition
+   Currently supported item:
+   <item> : (<source-info> . source)
+*/
+void Scm_CompiledCodePushInfo(ScmCompiledCode *cc, ScmObj info)
+{
+    cc_builder *b;
+    CC_BUILDER_GET(b, cc);
+    b->info = Scm_Cons(info, b->info);
+}
+
 /* Pack the code accumulated in the builder into a code vector.
    Perform label resolution and jump optimization. */
 void Scm_CompiledCodeFinishBuilder(ScmCompiledCode *cc, int maxstack)

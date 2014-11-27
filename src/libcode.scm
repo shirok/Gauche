@@ -49,6 +49,7 @@
           compiled-code-emit2! compiled-code-emit2o!
           compiled-code-emit2i! compiled-code-emit2oi!
           compiled-code-new-label compiled-code-set-label!
+          compiled-code-push-info!
           compiled-code-finish-builder
           compiled-code-copy!))
 (select-module gauche.vm.code)
@@ -148,6 +149,13 @@
  (define-cproc compiled-code-copy! (dest::<compiled-code>
                                     src::<compiled-code>)
    ::<void> Scm_CompiledCodeCopyX)
+
+ ;; Push source info to (-> compiled-code info).
+ ;; Usually the source info is pushed as the instructions are emitted.
+ ;; This is mainly used to add info that are not attached to a particular
+ ;; insturuction (e.g. the definition of the entire closure).
+ (define-cproc compiled-code-push-info! (cc::<compiled-code> info)
+   ::<void> Scm_CompiledCodePushInfo)
 
  ;; Kludge: Let gauche.internal import me.  It must be done before the
  ;; compiler runs. This should eventually be done in the gauche.internal side.
