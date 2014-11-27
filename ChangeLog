@@ -1,3 +1,12 @@
+2014-11-26  Shiro Kawai  <shiro@acm.org>
+
+	* src/libcode.scm (compiled-code-push-info!): Added.
+	* src/compile.scm (pass5/lambda): Add 'definition debug info
+	  to the compiled code created by $LAMBDA node.
+	  (pass1/define): Attach original source code info to
+	  the transformed lambda form.
+	* lib/gauche/procedure.scm (source-code, source-location): Added.
+
 2014-11-25  Shiro Kawai  <shiro@acm.org>
 
 	* src/error.c (Scm_Warn), src/libmisc.scm (warn): Allow suppressing

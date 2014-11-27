@@ -1817,7 +1817,9 @@
   (match form
     [(_ (name . args) body ...)
      (pass1/define `(define ,name
-                      (,(if extended? lambda. r5rs-lambda.) ,args ,@body))
+                      ,(with-original-source
+                        `(,(if extended? lambda. r5rs-lambda.) ,args ,@body)
+                        oform))
                    oform flags extended? module cenv)]
     [(_ name expr)
      (unless (variable? name) (error "syntax-error:" oform))
@@ -6026,6 +6028,17 @@
         [(identifier? arg) (slot-ref arg 'name)]
         [(lvar? arg) (lvar-name arg)]
         [else (error "variable required, but got:" arg)]))
+
+;; When the compiler transforms a source ORIGINAL to CONSTRUCTED,
+;; we attach the original source info to the initial pair of the
+;; constructed source.
+(define (with-original-source constructed original)
+  (if (pair? constructed)
+    (rlet1 p (if (extended-pair? constructed)
+               constructed
+               (extended-cons (car constructed) (cdr constructed)))
+      (pair-attribute-set! p 'original original))
+    constructed))
 
 ;; GLOBAL-CALL-TYPE
 ;;

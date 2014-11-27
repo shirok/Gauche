@@ -125,7 +125,8 @@
           any-pred every-pred
           ;;(:macro curry-lambda) (:macro define-curry)
           arity procedure-arity-includes?
-          <arity-at-least> arity-at-least? arity-at-least-value disasm
+          <arity-at-least> arity-at-least? arity-at-least-value
+          source-code source-location disasm
           generator-fold generator-fold-right generator-for-each
           generator-map generator-find
           ;; for the backward compatibility

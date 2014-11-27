@@ -169,6 +169,24 @@
       (any check a)
       (check a))))
 
+;; source-code -------------------------------------------------
+;; Take the source code from a closure.
+
+(define (source-code proc)
+  (and-let* ([ (closure? proc) ]
+             [def (assq-ref (~ (closure-code proc)'info) 'definition)]
+             [src (assq-ref def 'source-info)])
+    (let loop ([src src])
+      (if-let1 orig ((with-module gauche.internal pair-attribute-get)
+                     src 'original #f)
+        (loop orig)
+        src))))
+
+(define (source-location proc)
+  (and-let* ([src (source-code proc)]
+             [ (pair? src) ])
+    ((with-module gauche.internal pair-attribute-get) src 'source-info #f)))
+
 ;; disassembler ------------------------------------------------
 ;; I'm not sure whether this should be here or not, but fot the time being...
 
