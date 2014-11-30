@@ -3573,6 +3573,40 @@ pair in @var{trie}.
 @c COMMON
 @end defun
 
+@defun trie-longest-match trie seq :optional fallback
+@c COMMON
+Returns a pair of the key and its value, where the key is the
+longest prefix of @var{seq}.   If no such key is found, @var{fallback}
+is returned if it is provided, or an error is thrown.
+
+Do not confuse this with @code{trie-common-prefix-*} procedures below;
+In this procedure, the key is the prefix of the given argument.
+In @code{trie-common-prefix-*} procedures, the given argument is
+the prefix of the keys.
+@c EN
+@var{seq}のプレフィクスになっているキーのうちもっとも長いものを見つけて、
+そのキーと値のペアを返します。そういったキーが見つからなかった場合は、
+@var{fallback}が与えられればそれを返し、なければエラーが通知されます。
+
+この手続きと以下の@code{trie-common-prefix-*}手続きを混同しないようにしてください。
+この手続きでは、キーが引数のプレフィクスです。
+@code{trie-common-prefix-*}手続きでは、引数がキーのプレフィクスです。
+@c JP
+
+@example
+(let1 t (make-trie)
+  (trie-put! t "a"  'a)
+  (trie-put! t "ab" 'ab)
+
+  (trie-longest-match t "abc")  @result{} ("ab" . ab)
+  (trie-longest-match t "acd")  @result{} ("a"  . a)
+  (trie-longest-match t "ab")   @result{} ("ab" . ab)
+  (trie-longest-match t "zy")   @result{} error
+  )
+@end example
+@end defun
+
+
 @defun trie-common-prefix trie prefix
 @defunx trie-common-prefix-keys trie prefix
 @defunx trie-common-prefix-values trie prefix

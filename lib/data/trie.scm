@@ -39,6 +39,7 @@
 (define-module data.trie
   (use srfi-1)
   (use gauche.sequence)
+  (use gauche.generator)
   (use gauche.dictionary)
   (export <trie>
           make-trie trie trie-with-keys
@@ -50,6 +51,7 @@
           trie-common-prefix-fold
           trie-common-prefix-map
           trie-common-prefix-for-each
+          trie-longest-match
           trie->list trie->hash-table
           trie-keys trie-values trie-fold trie-map trie-for-each
           call-with-iterator call-with-builder size-of lazy-size-of
@@ -153,41 +155,76 @@
 (define (%no-key seq)
   (error "Trie does not have an entry for a key:" seq))
 
+;;
+;; Primitive accessors
+;; We have three accessors; they are slightly differnt from each other, and
+;; it is simpler to define them separately than compounding them
+;; into one routine.
+;;
+
 ;; internal:  Trie, [a] -> Maybe Node
-(define (%trie-get-node trie seq create?)
+(define (%trie-get-node trie seq)
+  (define (lookup parent tab elt)
+    ((slot-ref trie 'tab-get) tab elt))
+  (define (descent node elt)
+    (and-let* ([tab (%node-table node)])
+      (lookup node tab elt)))
+  (let1 g (x->generator seq)
+    (let loop ([elt (g)] [node (slot-ref trie 'root)])
+      (if (eof-object? elt)
+        node
+        (and-let* ([next (descent node elt)])
+          (loop (g) next))))))
+
+;; internal:  Trie, [a] -> Node
+(define (%trie-get-node-or-create trie seq)
   (define (lookup parent tab elt)
     (if-let1 node ((slot-ref trie 'tab-get) tab elt)
       node
-      (and create?
-           (rlet1 node (%make-node)
-             (set! (%node-table parent)
-                   ((slot-ref trie 'tab-put!) tab elt node))))))
+      (rlet1 node (%make-node)
+        (set! (%node-table parent)
+              ((slot-ref trie 'tab-put!) tab elt node)))))
   (define (descent node elt)
-    (let1 tab (%node-table node)
-      (cond [tab (lookup node tab elt)]
-            [create? (lookup node (%node-table-create trie node) elt)]
-            [else #f])))
-  ;; In creation mode, we don't need to break during traversal, so
-  ;; we save creation of continuation.
-  (if create?
-    (fold (^[elt node] (descent node elt))
-          (slot-ref trie 'root)
-          seq)
-    (let/cc break
-      (fold (^[elt node] (or (descent node elt) (break #f)))
-            (slot-ref trie 'root)
-            seq))))
+    (if-let1 tab (%node-table node)
+      (lookup node tab elt)
+      (lookup node (%node-table-create trie node) elt)))
+  (let1 g (x->generator seq)
+    (let loop ([elt (g)] [node (slot-ref trie 'root)])
+      (if (eof-object? elt)
+        node
+        (and-let* ([next (descent node elt)])
+          (loop (g) next))))))
 
-(define (trie-exists? trie seq) (boolean (%trie-get-node trie seq #f)))
+;; internal:  Trie, [a] -> Maybe (Key . Value)
+(define (%trie-get-node-longest trie seq)
+  (define (lookup parent tab elt)
+    ((slot-ref trie 'tab-get) tab elt))
+  (define (descent node elt)
+    (and-let* ([tab (%node-table node)])
+      (lookup node tab elt)))
+  (let1 g (x->generator seq)
+    ;; last holds the last matched (key . value) pair    
+    (let loop ([elt (g)]
+               [node (slot-ref trie 'root)]
+               [last (%node-find-terminal (slot-ref trie 'root) seq)])
+      (if (eof-object? elt)
+        last
+        (if-let1 next (descent node elt)
+          (loop (g) next (or (%node-find-terminal next seq) last))
+          last)))))
+
+;; Public APIs
+
+(define (trie-exists? trie seq) (boolean (%trie-get-node trie seq)))
 
 (define (trie-get trie seq . opt)
-  (or (and-let* ([node (%trie-get-node trie seq #f)]
+  (or (and-let* ([node (%trie-get-node trie seq)]
                  [p    (%node-find-terminal node seq)])
         (cdr p))
       (get-optional opt (%no-key seq))))
 
 (define (trie-put! trie seq val)
-  (let* ([node (%trie-get-node trie seq #t)]
+  (let* ([node (%trie-get-node-or-create trie seq)]
          [p (%node-find-terminal node seq)])
     (cond [p (set-cdr! p val)]
           [else
@@ -196,7 +233,7 @@
   (undefined))
 
 (define (trie-update! trie seq proc . opt)
-  (let* ([node (%trie-get-node trie seq #t)]
+  (let* ([node (%trie-get-node-or-create trie seq)]
          [p    (%node-find-terminal node seq)])
     (cond [p (update! (cdr p) proc)]
           [else
@@ -208,7 +245,7 @@
 (define (trie-delete! trie seq)
   ;; TODO: prune a table if it becomes empty
   (and-let* ([c (class-of seq)]
-             [node (%trie-get-node trie seq #f)])
+             [node (%trie-get-node trie seq)])
     (update! (cdr node)
              (^[terminals]
                (remove (^p (and (eq? (class-of (car p)) c)
@@ -216,6 +253,10 @@
                                 #t))
                        terminals))))
   (undefined))
+
+(define (trie-longest-match trie seq . opt)
+  (or (%trie-get-node-longest trie seq)
+      (get-optional opt (%no-key seq))))
 
 ;;;===========================================================
 ;;; Scanning
@@ -237,7 +278,7 @@
   (fold-siblings (fold-descendants seed)))
 
 (define (%trie-prefix-collect trie prefix collector)
-  (or (and-let* ([node (%trie-get-node trie prefix #f)])
+  (or (and-let* ([node (%trie-get-node trie prefix)])
         ;; NB: we don't need to reverse, since the order of entries
         ;; are unspecified anyway.
         (%trie-node-fold trie node collector '()))
@@ -253,7 +294,7 @@
   (%trie-prefix-collect trie prefix (^[k v s] (cons v s))))
 
 (define (trie-common-prefix-fold trie prefix proc seed)
-  (%trie-node-fold trie (or (%trie-get-node trie prefix #f) '()) proc seed))
+  (%trie-node-fold trie (or (%trie-get-node trie prefix) '()) proc seed))
 
 (define (trie-common-prefix-map trie prefix proc)
   (trie-common-prefix-fold trie prefix
