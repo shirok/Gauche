@@ -41,7 +41,7 @@
   (export referencer modifier subseq
           fold-right
           fold-with-index map-with-index map-to-with-index for-each-with-index
-          find-index find-with-index group-sequence
+          find-index find-with-index group-sequence sequence-scan
           permute-to permute permute!
           shuffle-to shuffle shuffle!)
   )
@@ -294,6 +294,38 @@
       (reverse! results)
       (reverse! (cons (reverse! (cdr bucket)) results)))
     ))
+
+;; sequence-scan -----------------------------------------------
+
+;; Search NEEDLE from SEQ.  For now, we return the index of match in SEQ.
+;; But if SEQ is a list, index isn't very handy... need to think over it.
+(define-method sequence-scan ((seq <sequence>) (needle <sequence>)
+                              :key ((:test test-proc) eqv?))
+  ;; KMP restart vector
+  (define restarts
+    (rlet1 v (make-vector (size-of needle) -1)
+      (dotimes [i (- (vector-length v) 1)]
+        (let loop ([k (+ (vector-ref v i) 1)])
+          (if (and (> k 0)
+                   (not (test-proc (ref needle i) (ref needle (- k 1)))))
+            (loop (+ (vector-ref v (- k 1)) 1))
+            (vector-set! v (+ i 1) k))))))
+  ;; Match pattern[i] with elt; returns next i
+  (define (step pat rv elt i test-proc)
+    (let loop ([i i])
+      (if (test-proc elt (vector-ref pat i))
+        (+ i 1)
+        (let1 i (vector-ref rv i)
+          (if (= i -1) 0 (loop i))))))
+  (let* ([pat (coerce-to <vector> needle)]
+         [plen (vector-length pat)])
+    (with-iterator [seq end? next]
+      (let loop ([s 0]
+                 [i 0])
+        (cond [(= i plen) (- s plen)]
+              [(end?) #f]
+              [else (let1 i (step pat restarts (next) i test-proc)
+                      (loop (+ s 1) i))])))))
 
 ;; permute -------------------------------------------------------
 

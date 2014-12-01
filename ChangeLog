@@ -1,3 +1,7 @@
+2014-11-30  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/gauche/sequence.scm (sequence-scan): Added.
+
 2014-11-29  Shiro Kawai  <shiro@acm.org>
 
 	* lib/data/trie.scm (trie-longest-match): Added.
