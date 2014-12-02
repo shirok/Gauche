@@ -590,10 +590,7 @@ static void vm_unregister(ScmVM *vm)
         FETCH_OPERAND(v);                                               \
         if (!SCM_GLOCP(v)) {                                            \
             VM_ASSERT(SCM_IDENTIFIERP(v));                              \
-            ScmIdentifier *id = Scm_OutermostIdentifier(SCM_IDENTIFIER(v)); \
-            gloc = Scm_FindBinding(id->module,                          \
-                                   SCM_SYMBOL(id->name),                \
-                                   0);                                  \
+            gloc = Scm_IdentifierGlobalBinding(SCM_IDENTIFIER(v));      \
             if (gloc == NULL) {                                         \
                 VM_ERR(("unbound variable: %S",                         \
                         SCM_IDENTIFIER(v)->name));                      \

@@ -184,7 +184,7 @@ ScmIdentifier *Scm_OutermostIdentifier(ScmIdentifier *id)
 ScmSymbol *Scm_UnwrapIdentifier(ScmIdentifier *id)
 {
     ScmObj z = Scm_OutermostIdentifier(id)->name;
-    SCM_ASSERT(SCM_SYMBOL(z));
+    SCM_ASSERT(SCM_SYMBOLP(z));
     return SCM_SYMBOL(z);
 }
 
@@ -192,7 +192,7 @@ ScmSymbol *Scm_UnwrapIdentifier(ScmIdentifier *id)
 ScmGloc *Scm_IdentifierGlobalBinding(ScmIdentifier *id)
 {
     ScmIdentifier *z = Scm_OutermostIdentifier(id);
-    return Scm_FindBinding(id->module, SCM_SYMBOL(id->name), 0);
+    return Scm_FindBinding(z->module, SCM_SYMBOL(z->name), 0);
 }
 
 /* returns true if SYM has the same binding with ID in ENV. */
@@ -219,7 +219,7 @@ static ScmObj identifier_name_get(ScmObj obj)
 
 static void   identifier_name_set(ScmObj obj, ScmObj val)
 {
-    if (!SCM_SYMBOLP(val) && !SCM_IDENTIFIER(val)) {
+    if (!SCM_SYMBOLP(val) && !SCM_IDENTIFIERP(val)) {
         Scm_Error("symbol or identifier required, but got %S", val);
     }
     SCM_IDENTIFIER(obj)->name = val;
