@@ -1,3 +1,13 @@
+2014-12-01  shiro  <shiro@acm.org>
+
+	* src/gauche/vm.c (ScmIdentifier):
+	* src/compaux.scm (Scm_MakeIdentifier, Scm_OutermostIdentifier)
+	  (Scm_UnwrapIdentifier, Scm_IdentifierGlobalBinding):
+	  Allow nested identifier, that is, identifier to wrap another
+	  identifier.  Will be needed to support nested hygienic macros.
+	  This changes the signature of Scm_MakeIdentifier, so
+	  various files are touched to accomodate it.
+
 2014-11-30  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/gauche/sequence.scm (sequence-scan): Added.

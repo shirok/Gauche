@@ -124,7 +124,7 @@
   (result (SCM_OBJ (-> (SCM_IDENTIFIER obj) name))))
 
 (select-module gauche.internal)
-(define-cproc make-identifier (name::<symbol> mod::<module> env::<list>)
+(define-cproc make-identifier (name mod::<module> env::<list>)
   Scm_MakeIdentifier)
 (define-cproc identifier-module (id::<identifier>)
   (result (SCM_OBJ (-> id module))))

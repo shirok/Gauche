@@ -864,7 +864,7 @@
     (let ([name (cgen-cexpr (~ self'id-name))]
           [cname (~ self'c-name)])
       (or (and-let* ([modnam (~ self'mod-name)])
-            (format #t "  ~a = Scm_MakeIdentifier(SCM_SYMBOL(~a), \
+            (format #t "  ~a = Scm_MakeIdentifier(~a, \
                                   Scm_FindModule(SCM_SYMBOL(~a), \
                                                  SCM_FIND_MODULE_CREATE),
                                   SCM_NIL); /* ~a#~a */\n"
@@ -873,7 +873,7 @@
                     (cgen-safe-comment (~ self'id-name'value)))
             #t)
           (let1 mod-cname (current-tmodule-cname)
-            (format #t "  ~a = Scm_MakeIdentifier(SCM_SYMBOL(~a), \
+            (format #t "  ~a = Scm_MakeIdentifier(~a, \
                                                   SCM_MODULE(~a), \
                                                   SCM_NIL); /* ~a#~a */\n"
                     cname name mod-cname

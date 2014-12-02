@@ -502,7 +502,7 @@ ScmObj Scm_ImportModule(ScmModule *module,
     } else if (SCM_SYMBOLP(imported)) {
         imp = Scm_FindModule(SCM_SYMBOL(imported), 0);
     } else if (SCM_IDENTIFIERP(imported)) {
-        imp = Scm_FindModule(SCM_IDENTIFIER(imported)->name, 0);
+        imp = Scm_FindModule(Scm_UnwrapIdentifier(SCM_IDENTIFIER(imported)), 0);
     } else {
         Scm_Error("module name or module required, but got %S", imported);
     }

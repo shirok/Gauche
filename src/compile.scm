@@ -331,7 +331,7 @@
        (dolist [vp (SCM_CDAR fp)]
          (when (SCM_EQ true-name (SCM_CAR vp)) (return (SCM_CDR vp)))))
      (if (SCM_SYMBOLP name)
-       (return (Scm_MakeIdentifier (SCM_SYMBOL name) module '()))
+       (return (Scm_MakeIdentifier name module '()))
        (begin
          (SCM_ASSERT (SCM_IDENTIFIERP name))
          (return name)))))
@@ -6076,8 +6076,7 @@
 
  (define-cproc global-call-type (id cenv) ::(<top> <top>)
    (let* ([mod::ScmModule* (-> (SCM_IDENTIFIER id) module)]
-          [gloc::ScmGloc* (Scm_FindBinding mod (-> (SCM_IDENTIFIER id) name) 0)]
-          )
+          [gloc::ScmGloc* (Scm_IdentifierGlobalBinding (SCM_IDENTIFIER id))])
      (set! SCM_RESULT0 '#f SCM_RESULT1 '#f)
      (when gloc
        (let* ([gval (SCM_GLOC_GET gloc)])

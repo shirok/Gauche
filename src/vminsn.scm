@@ -448,8 +448,9 @@
     (VM_ASSERT (SCM_IDENTIFIERP var))
     (SCM_FLONUM_ENSURE_MEM val)
     INCR-PC
-    (let* ([mod::ScmModule* (-> (SCM_IDENTIFIER var) module)]
-           [name::ScmSymbol* (-> (SCM_IDENTIFIER var) name)])
+    (let* ([id::ScmIdentifier* (Scm_OutermostIdentifier (SCM_IDENTIFIER var))]
+           [mod::ScmModule* (-> id module)]
+           [name::ScmSymbol* (SCM_SYMBOL (-> id name))])
       (case (SCM_VM_INSN_ARG code)        ;flag
         [(0)                    (Scm_MakeBinding mod name val 0)]
         [(1 SCM_BINDING_CONST)  (Scm_MakeBinding mod name val SCM_BINDING_CONST)]
@@ -793,16 +794,17 @@
       ;; If runtime flag LIMIT_MODULE_MUTATION is set,
       ;; we search only for the id's module, so that set! won't
       ;; mutate bindings in the other module.
-      (let* ([id::ScmIdentifier* (SCM_IDENTIFIER loc)]
+      (let* ([id::ScmIdentifier* (Scm_OutermostIdentifier (SCM_IDENTIFIER loc))]
+             [name::ScmSymbol* (SCM_SYMBOL (-> id name))]
              [limit::int
               (SCM_VM_RUNTIME_FLAG_IS_SET vm SCM_LIMIT_MODULE_MUTATION)]
              [gloc::ScmGloc*
-              (Scm_FindBinding (-> id module) (-> id name)
+              (Scm_FindBinding (-> id module) name
                                (?: limit SCM_BINDING_STAY_IN_MODULE 0))])
         (when (== gloc NULL)
           ;; Do search again for meaningful error message
           (when limit
-            (set! gloc (Scm_FindBinding (-> id module) (-> id name) 0))
+            (set! gloc (Scm_FindBinding (-> id module) name 0))
             (when (!= gloc NULL)
               ($vm-err "can't mutate binding of %S, \
                         which is in another module"

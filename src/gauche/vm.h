@@ -178,7 +178,7 @@ SCM_EXTERN ScmObj Scm_MakeSyntacticClosure(ScmObj env,
 
 typedef struct ScmIdentifierRec {
     SCM_HEADER;
-    ScmSymbol *name;
+    ScmObj name;                /* symbol or identifier */
     ScmModule *module;
     ScmObj env;
 } ScmIdentifier;
@@ -189,12 +189,16 @@ SCM_CLASS_DECL(Scm_IdentifierClass);
 #define SCM_IDENTIFIER(obj)     ((ScmIdentifier*)(obj))
 #define SCM_IDENTIFIERP(obj)    SCM_XTYPEP(obj, SCM_CLASS_IDENTIFIER)
 
-SCM_EXTERN ScmObj Scm_MakeIdentifier(ScmSymbol *name, ScmModule *mod,
+SCM_EXTERN ScmObj Scm_MakeIdentifier(ScmObj name, ScmModule *mod,
                                      ScmObj env);
 SCM_EXTERN ScmObj Scm_CopyIdentifier(ScmIdentifier *id);
 SCM_EXTERN int    Scm_IdentifierBindingEqv(ScmIdentifier *id, ScmSymbol *sym,
                                            ScmObj env);
 SCM_EXTERN int    Scm_FreeVariableEqv(ScmObj var, ScmObj sym, ScmObj env);
+
+SCM_EXTERN ScmIdentifier *Scm_OutermostIdentifier(ScmIdentifier *id);
+SCM_EXTERN ScmSymbol     *Scm_UnwrapIdentifier(ScmIdentifier *id);
+SCM_EXTERN ScmGloc       *Scm_IdentifierGlobalBinding(ScmIdentifier *id);
 
 /*
  * Escape handling

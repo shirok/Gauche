@@ -163,7 +163,7 @@ static ScmObj get_binding_frame(ScmObj var, ScmObj env)
     return SCM_NIL;
 }
 
-ScmObj Scm_MakeIdentifier(ScmSymbol *name, ScmModule *mod, ScmObj env)
+ScmObj Scm_MakeIdentifier(ScmObj name, ScmModule *mod, ScmObj env)
 {
     ScmIdentifier *id = SCM_NEW(ScmIdentifier);
     SCM_SET_CLASS(id, SCM_CLASS_IDENTIFIER);
@@ -171,6 +171,28 @@ ScmObj Scm_MakeIdentifier(ScmSymbol *name, ScmModule *mod, ScmObj env)
     id->module = mod? mod : SCM_CURRENT_MODULE();
     id->env = (env == SCM_NIL)? SCM_NIL : get_binding_frame(SCM_OBJ(name), env);
     return SCM_OBJ(id);
+}
+
+ScmIdentifier *Scm_OutermostIdentifier(ScmIdentifier *id)
+{
+    while (SCM_IDENTIFIERP(id->name)) {
+        id = SCM_IDENTIFIER(SCM_IDENTIFIER(id)->name);
+    }
+    return id;
+}
+
+ScmSymbol *Scm_UnwrapIdentifier(ScmIdentifier *id)
+{
+    ScmObj z = Scm_OutermostIdentifier(id)->name;
+    SCM_ASSERT(SCM_SYMBOL(z));
+    return SCM_SYMBOL(z);
+}
+
+/* returns global binding of the identifier */
+ScmGloc *Scm_IdentifierGlobalBinding(ScmIdentifier *id)
+{
+    ScmIdentifier *z = Scm_OutermostIdentifier(id);
+    return Scm_FindBinding(id->module, SCM_SYMBOL(id->name), 0);
 }
 
 /* returns true if SYM has the same binding with ID in ENV. */
@@ -197,10 +219,10 @@ static ScmObj identifier_name_get(ScmObj obj)
 
 static void   identifier_name_set(ScmObj obj, ScmObj val)
 {
-    if (!SCM_SYMBOLP(val)) {
-        Scm_Error("symbol required, but got %S", val);
+    if (!SCM_SYMBOLP(val) && !SCM_IDENTIFIER(val)) {
+        Scm_Error("symbol or identifier required, but got %S", val);
     }
-    SCM_IDENTIFIER(obj)->name = SCM_SYMBOL(val);
+    SCM_IDENTIFIER(obj)->name = val;
 }
 
 static ScmObj identifier_module_get(ScmObj obj)
@@ -263,7 +285,7 @@ static ScmObj unwrap_rec(ScmObj form, ScmObj history)
         }
     }
     if (SCM_IDENTIFIERP(form)) {
-        return SCM_OBJ(SCM_IDENTIFIER(form)->name);
+        return SCM_OBJ(Scm_UnwrapIdentifier(SCM_IDENTIFIER(form)));
     }
     if (SCM_VECTORP(form)) {
         int len = SCM_VECTOR_SIZE(form);

@@ -244,7 +244,7 @@
 ;; pass1/variable to find whether the variable reference is a constant
 ;; or not.
 (define-cproc find-const-binding (id::<identifier>)
-  (let* ([g::ScmGloc* (Scm_FindBinding (-> id module) (-> id name) 0)])
+  (let* ([g::ScmGloc* (Scm_IdentifierGlobalBinding id)])
     (cond [(or (not g)
                (not (SCM_GLOC_CONST_P g))
                (SCM_VM_COMPILER_FLAG_IS_SET (Scm_VM)
@@ -284,7 +284,7 @@
 ;;     gloc))
 (inline-stub
  (define-cproc id->bound-gloc (id::<identifier>)
-   (let* ([gloc::ScmGloc* (Scm_FindBinding (-> id module) (-> id name) 0)])
+   (let* ([gloc::ScmGloc* (Scm_IdentifierGlobalBinding id)])
      (if (and gloc (not (SCM_UNBOUNDP (SCM_GLOC_GET gloc))))
        (result (SCM_OBJ gloc))
        (result SCM_FALSE))))

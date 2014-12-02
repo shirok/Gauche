@@ -283,13 +283,13 @@ static ScmObj check_lifted_closure(ScmWord *p, ScmObj lifted)
     };
 
     if (!SCM_IDENTIFIERP(p[1])) return lifted;
-    ScmIdentifier *id = SCM_IDENTIFIER(p[1]);
+    ScmIdentifier *id = Scm_OutermostIdentifier(SCM_IDENTIFIER(p[1]));
     if (SCM_SYMBOL_INTERNED(id->name)) return lifted;
 
     for (int i=0; i < sizeof(gref_insns)/sizeof(ScmWord); i++) {
         if (code == gref_insns[i]) {
-            ScmObj g = Scm_GlobalVariableRef(id->module, id->name,
-                                      SCM_BINDING_STAY_IN_MODULE);
+            ScmObj g = Scm_GlobalVariableRef(id->module, SCM_SYMBOL(id->name),
+                                             SCM_BINDING_STAY_IN_MODULE);
             if (SCM_CLOSUREP(g)) {
                 if (SCM_FALSEP(Scm_Assq(SCM_CLOSURE(g)->code, lifted))) {
                     return Scm_Acons(SCM_CLOSURE(g)->code,

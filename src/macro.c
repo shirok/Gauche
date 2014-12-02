@@ -362,7 +362,7 @@ static ScmObj preprocess_literals(ScmObj literals, ScmModule *mod, ScmObj env)
         if (SCM_IDENTIFIERP(lit))
             SCM_APPEND1(h, t, lit);
         else if (SCM_SYMBOLP(lit))
-            SCM_APPEND1(h, t, Scm_MakeIdentifier(SCM_SYMBOL(lit), mod, env));
+            SCM_APPEND1(h, t, Scm_MakeIdentifier(lit, mod, env));
         else if (SCM_KEYWORDP(lit))
             /* This branch is to allow r7rs-compliant code to go through
                with legacy mode.  If keyword-symbol integration is turned on,
@@ -488,8 +488,7 @@ static ScmObj compile_rule1(ScmObj form,
                 if (SCM_IDENTIFIERP(form)) {
                     id = form;
                 } else {
-                    id = Scm_MakeIdentifier(SCM_SYMBOL(form),
-                                            ctx->mod, ctx->env);
+                    id = Scm_MakeIdentifier(form, ctx->mod, ctx->env);
                 }
                 ctx->tvars = Scm_Cons(id, ctx->tvars);
                 return id;
@@ -719,7 +718,7 @@ static inline void match_insert(ScmObj pvref, ScmObj matched, MatchVar *mvec)
 static inline int match_identifier(ScmIdentifier *id, ScmObj obj, ScmObj env)
 {
     if (SCM_SYMBOLP(obj)) {
-        return (id->name == SCM_SYMBOL(obj)
+        return (SCM_EQ(id->name, obj)
                 && Scm_IdentifierBindingEqv(id, SCM_SYMBOL(obj), env));
     }
     if (SCM_IDENTIFIERP(obj)) {
