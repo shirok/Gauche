@@ -1711,6 +1711,7 @@ or use mutexes if multiple threads can access to it
 @end deftp
 
 @defun make-binary-heap :key comparator storage key
+@c EN
 Creates and returns a new binary heap.
 
 The @var{comparator} keyword argument specifies how to compare the
@@ -1730,6 +1731,26 @@ The @var{key} keyword argument must be a procedure; it is applied
 on each entry before comparison.  Using key procedure allows you to
 store auxiliary data other than the actual value to be compared.
 The following example shows the entries are compared by their @code{car}'s:
+@c JP
+新しいバイナリヒープを作って返します。
+
+@var{comparator}キーワード引数は、エントリの比較方法を指定する比較器です。
+比較手続きを持っていなければなりません。省略時は@code{default-comparator}が
+使われます。比較器について詳しくは@ref{Comparators}を参照してください。
+
+@var{storage}キーワード引数には、データの格納に使うデータ構造を渡します。引数は
+ベクタ、ユニフォームベクタ、あるいは疎ベクタ(@ref{Sparse vectors}参照)の
+インスタンスでなければなりません。省略時は@code{<sparse-vector>}の
+インスタンスが使われます。
+
+ベクタまたはユニフォームベクタを渡した場合、そのベクタの大きさが
+ヒープが格納できる要素の最大数を決めます。
+それが一杯になった時に自動的に拡張されることはありません。
+
+@var{key}キーワード引数は手続きでなければならず、要素の比較の前に各要素に適用されます。
+この手続きを使って、実際に比較される値に付随するデータを格納しておくことができます。
+次の例では、データの@code{car}を使って比較しています。
+@c COMMON
 
 @example
 (define *heap* (make-binary-heap :key car))
@@ -1743,6 +1764,7 @@ The following example shows the entries are compared by their @code{car}'s:
 @end defun
 
 @defun build-binary-heap storage :key comparator key num-entries
+@c EN
 Create a heap from the data in @var{storage}, and returns it.
 (Sometimes this operation is called @emph{heapify}.)
 This allows you to create a heap without allocating a new storage.
@@ -1760,63 +1782,135 @@ The storage supposed to have keys from index 0 below
 If @var{num-entries} is omitted or @code{#f}, entire vector or
 uniform vector, or up to @code{sparse-vector-num-entries} on
 the sparse vector, is heapified.
+@c JP
+@var{storage}に入っているデータを使ってヒープを作り返します。
+(この操作はしばしばヒープ化(@emph{heapify})と呼ばれます。)
+データ格納場所を新たにアロケートせずにヒープを作ることが可能です。
+@var{comparator}および@var{key}引数は@code{make-binary-heap}と同じです。
+
+@var{storage}はベクタ、ユニフォームベクタ、疎ベクタのインスタンスでなければ
+なりません。このデータはヒープの属性を満たすために変更され、さらには
+作られたヒープのデータ格納場所となります。ヒープの一部になるので、
+@var{storage}を後から変更してはなりません。
+
+@var{storage}の要素のうち、先頭から@var{num-entries}までの要素が
+有効であるとしてヒープ化されます。@var{num-entries}が省略されるか
+@code{#f}であれば、ベクタおよびユニフォームベクタはその全てが、
+疎ベクタは@code{sparse-vector-num-entries}までの要素がヒープ化されます。
+@c COMMON
 @end defun
 
 @defun binary-heap-copy heap
+@c EN
 Copy the heap.  The backing storage is also copied.
+@c JP
+ヒープをコピーして返します。データ格納場所も全てコピーされます。
+@c COMMON
 @end defun
 
 @defun binary-heap-clear! heap
+@c EN
 Empty the heap.
+@c JP
+ヒープを空にします。
+@c COMMON
 @end defun
 
 @defun binary-heap-num-entries heap
+@c EN
 Returns the current number of entries in the heap.
+@c JP
+ヒープ中の要素数を返します。
+@c COMMON
 @end defun
 
 @defun binary-heap-empty? heap
+@c EN
 Returns @code{#t} if the heap is empty, @code{#f} otherwise.
+@c JP
+ヒープが空なら@code{#t}を、そうでなければ@code{#f}を返します。
+@c COMMON
 @end defun
 
 @defun binary-heap-push! heap item
+@c EN
 Insert @var{item} into the @var{heap}.  If the heap is already full,
 an error is raised.
+@c JP
+@var{item}を@var{heap}に挿入します。ヒープが既に一杯であった場合はエラーが通知されます。
+@c COMMON
 @end defun
 
 @defun binary-heap-find-min heap :optional fallback
 @defunx binary-heap-find-max heap :optional fallback
+@c EN
 Returns the minimum and maximum entry of the heap, respectively.
 The heap will be unmodified.
 
 If the heap is empty, @var{fallback} is returned when it is provided,
 or an error is signaled.
+@c JP
+それぞれヒープ中の最小および最大の要素を返します。ヒープ自体は変更されません。
+
+ヒープが空の場合、@var{fallback}が与えられればそれが返され、
+そうでなければエラーが通知されます。
+@c COMMON
 @end defun
 
 @defun binary-heap-pop-min! heap
 @defunx binary-heap-pop-max! heap
+@c EN
 Removes the minimum and maximum entry of the heap and returns it,
 respectively.  If the heap is empty, an error is signaled.
+@c JP
+それぞれヒープから最小および最大の要素を取り除き、取り除いた要素を返します。
+ヒープが空ならエラーが通知されます。
+@c COMMON
 @end defun
 
+@c EN
 The following procedures are not heap operations, but provided
 for the convenience.
+@c JP
+以下の手続きは一般的なデータ構造としてのヒープの操作には含まれませんが、
+便利なので用意してあります。
+@c COMMON
+
 
 @defun binary-heap-find heap pred
+@c EN
 Returns an item in the heap that satisfies @var{pred}.
 If there are more than one item that satisfy @var{pred},
-any one of them can be returned.
+any one of them can be returned.  If no item satisfy @var{pred},
+@code{#f} is returned.
+@c JP
+ヒープの中で、述語@var{pred}を満たす要素を返します。@var{pred}を満たす要素が
+複数ある場合にどれが返るかは不定です。@var{pred}を満たす要素が無ければ
+@code{#f}が返ります。
+@c COMMON
 @end defun
 
 @defun binary-heap-remove! heap pred
+@c EN
 Remove all items in the heap that satisfy @var{pred}.
+@c JP
+@var{pred}を満たす要素を全てヒープから取り除きます。
+@c COMMON
 @end defun
 
 @defun binary-heap-delete! heap item
+@c EN
 Delete all items in the heap that are equal to @var{item},
 in terms of the heap's comparator and key procedure.
 
 Note that the key procedure is applied to @var{item} as well
 before comparison.
+@c JP
+@var{item}に等しい要素を全てヒープから取り除きます。「等しい」の判定には
+ヒープの比較器およびキー手続きが使われます。
+
+キー手続きは、比較の前に@var{item}にも適用されます。
+@c COMMON
 @end defun
 
 @c ----------------------------------------------------------------------
