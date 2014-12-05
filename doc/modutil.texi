@@ -2983,12 +2983,20 @@ of nonnegative integers.
 
 @deftp {Module} data.sparse
 @mdindex data.sparse
+@c EN
 This module provides a @emph{sparse vector}, a space efficient
 data containter indexed by nonnegative integer, and
 a @emph{sparse table}, a hash table using a sparse vector
 as a backing storage.
+@c JP
+このモジュールは、非負整数でインデックスされる空間効率の良いデータ構造である
+@emph{疎ベクタ} (@emph{sparse vector}) と、
+疎ベクタを格納領域に用いるハッシュテーブルである@emph{疎テーブル} (@emph{sparse table})
+を提供します。
+@c COMMON
 @end deftp
 
+@c EN
 A sparse vector associates a nonnegative integer index
 to a value.  It has @emph{vector} in its name since it is indexed
 by an integer, but it isn't like a flat array on contiguous memory;
@@ -2997,10 +3005,24 @@ implementation uses compact trie structure.)
 It is guaranteed that you can store a value with index at least
 up to @code{2^32-1}; the actual maximum bits of indexes can
 be queried by @code{sparse-vector-max-index-bits}.
+@c JP 
+疎ベクタは非負整数のインデックスと値を関連付けます。
+整数でインデックスされるので名前に@emph{ベクタ}がついていますが、
+連続するメモリに置かれる配列ではなく、むしろ連想配列のようなものです。
+(内部的には、現在の実装はコンパクトなトライを使っています)。
+少なくとも@code{2^32-1}までのインデックスが使えることは保証されています。
+実装が許す最大のインデックスのビット長は
+@code{sparse-vector-max-index-bits}で得ることができます。
+@c COMMON
 
+@c EN
 Unlike ordinary vectors, you don't need to specify the size
 of a sparse vector when you create one.  You can just set
 a value to any index in the supported range.
+@c JP
+通常のベクタと違い、疎ベクタは作る時に大きさを指定する必要がありません。
+サポートされている範囲内ならどんなインデックスにでも単に値を格納できます。
+@c COMMON
 
 @example
 (define v (make-sparse-vector))
@@ -3016,19 +3038,30 @@ a value to any index in the supported range.
 (sparse-vector-ref v 100) @result{} c
 @end example
 
+@c EN
 If you try to access an element that hasn't been set,
 an error is signaled by default.  You can give a
 fallback value to @code{sparse-vector-ref} to suppress
 the error.
+@c JP
+値がセットされていない要素にアクセスすると、デフォルトではエラーが通知されます。
+@code{sparse-vector-ref}の省略可能引数にに既定値を渡すことでそれを回避できます。
+@c COMMON
 
 @example
 (sparse-vector-ref v 1)        @result{} @r{error}
 (sparse-vector-ref v 1 'noval) @result{} noval
 @end example
 
+@c EN
 A sparse table works just like a hash table, but it uses
-a sparse vector to store the values using hashed number of keys.
+a sparse vector to store the values using hashed number of the keys.
+@c JP
+疎テーブルはハッシュテーブルと同じように動作しますが、キーのハッシュ値を
+インデックスとして値を疎ベクタに格納しています。
+@c COMMON
 
+@c EN
 The main reason of these sparse data containers are for
 memory efficiency.   If you want to store values in a vector
 but knows you'll use only some entries sparsely, obviously it
@@ -3042,14 +3075,36 @@ storage.   You'll see the heap size grows quickly and
 GC runs more frequently and longer.
 On the other hand, sparse table works pretty stable with
 large number of entries.
+@c JP
+これらの疎なデータコンテナの主な目的は、メモリ効率です。
+ベクタに値を入れておきたいけれどごく一部のインデックスしか使わないことが
+分かっている、と言った場合に、巨大なベクタをアロケートしてその大部分を
+使わないでおくのは明らかに無駄でしょう。ただそれだけではありません。
+Gaucheのガベージコレクタは、一続きの巨大なメモリ領域を確保するのとあまり
+相性が良くありません。大きなベクタを大量に使うとGCのオーバヘッドが急速に増えます。
+Gaucheの組み込みハッシュテーブルは
+データストアに通常のベクタを使っているのですが、
+大量のデータを詰め込むとその効果が目に見えてきます。ヒープサイズが急に増え、
+GCはより頻繁に走り、しかも一回一回に要する時間は長くなるでしょう。
+一方で、疎テーブルは大量のデータに対してもかなり安定に動作します。
+@c COMMON
 
+@c EN
 Sparse data containers does have overhead on access speed.
 They are a bit slower than the ordinary hash tables,
 and much slower than ordinary vectors.  We should note, however,
-as the number of entries grow, access speed on ordinary hash
+as the number of entries grow, access time on ordinary hash
 tables grows quicker than sparse tables and eventually two become
 comparable.
+@c JP
+疎なデータコンテナは、単純なデータコンテナに比べるとアクセスにオーバヘッドはあります。
+通常のハッシュテーブルより若干遅いですし、通常のベクタと比べるとかなり遅いです。
+けれども、テーブル内のデータ数が大きくなる領域では、通常のハッシュテーブルの
+アクセス時間の方が急速に悪化するため、いずれ二つのアクセス時間は
+そこそこ同じになります。
+@c COMMON
 
+@c EN
 It depends on your application which you should use, and
 if you're not sure, you need to benchmark.
 As a rule of thumb, if you use more than several hashtables
@@ -3057,6 +3112,13 @@ each of which contains more than a few tens of thousands of
 entries, sparse tables may work better.
 If you see GC Warnings telling ``repeated allocation of large
 blocks'', you should definitely consider sparse tables.
+@c JP
+どちらを使うべきかはアプリケーションに依存します。良く分からないのであれば、
+ベンチマークを取りましょう。簡単な基準としては、数万以上のエントリを持つ
+ハッシュテーブルを数個以上作るなら、疎テーブルの方が良くなるかもしれません。
+実行中に``repeated allocation of large blocks''というGCからの
+警告を目にしたなら、疎テーブルへの切り替えを考えてみましょう。
+@c COMMON
 
 @menu
 * Sparse vectors::              
