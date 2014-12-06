@@ -41,7 +41,8 @@
   (export referencer modifier subseq
           fold-right
           fold-with-index map-with-index map-to-with-index for-each-with-index
-          find-index find-with-index group-sequence sequence-scan
+          find-index find-with-index group-sequence
+          sequence->kmp-stepper sequence-contains
           permute-to permute permute!
           shuffle-to shuffle shuffle!)
   )
@@ -295,13 +296,11 @@
       (reverse! (cons (reverse! (cdr bucket)) results)))
     ))
 
-;; sequence-scan -----------------------------------------------
+;; searching sequence -----------------------------------------------
 
-;; Search NEEDLE from SEQ.  For now, we return the index of match in SEQ.
-;; But if SEQ is a list, index isn't very handy... need to think over it.
-(define-method sequence-scan ((seq <sequence>) (needle <sequence>)
-                              :key ((:test test-proc) eqv?))
-  ;; KMP restart vector
+;; Returns procedure to do one step of kmp match.  If NEEDLE's length
+;; is 0, returns #f.
+(define (sequence->kmp-stepper needle :key ((:test test-proc) eqv?))
   (define restarts
     (rlet1 v (make-vector (size-of needle) -1)
       (dotimes [i (- (vector-length v) 1)]
@@ -310,22 +309,34 @@
                    (not (test-proc (ref needle i) (ref needle (- k 1)))))
             (loop (+ (vector-ref v (- k 1)) 1))
             (vector-set! v (+ i 1) k))))))
-  ;; Match pattern[i] with elt; returns next i
-  (define (step pat rv elt i test-proc)
-    (let loop ([i i])
-      (if (test-proc elt (vector-ref pat i))
-        (+ i 1)
-        (let1 i (vector-ref rv i)
-          (if (= i -1) 0 (loop i))))))
   (let* ([pat (coerce-to <vector> needle)]
-         [plen (vector-length pat)])
-    (with-iterator [seq end? next]
-      (let loop ([s 0]
-                 [i 0])
-        (cond [(= i plen) (- s plen)]
-              [(end?) #f]
-              [else (let1 i (step pat restarts (next) i test-proc)
-                      (loop (+ s 1) i))])))))
+         [plen-1 (- (vector-length pat) 1)])
+    (and (>= plen-1 0)
+         ;; Match pattern[i] with elt; returns next i and a flag of whether
+         ;; match is completed or not.  If the flag is #t, i is always equal
+         ;; to the plen.
+         ;; or #f if there's no more pattern to check (i.e. match)
+         (^[elt i]
+           (let loop ([i i])
+             (if (test-proc elt (vector-ref pat i))
+               (values (+ i 1) (= i plen-1))
+               (let1 i (vector-ref restarts i)
+                 (if (= i -1) (values 0 #f) (loop i)))))))))
+
+;; Search NEEDLE from SEQ.  Returns index if found, #f if not.
+;; The name is aligned to string-contains in srfi-13.
+(define-method sequence-contains ((hay <sequence>) (needle <sequence>)
+                                  :key ((:test test-proc) eqv?))
+  (if-let1 stepper (sequence->kmp-stepper needle :test test-proc)
+    (with-iterator [hay end? next]
+      (let loop ([s 0] [i 0])
+        (if (end?)
+          #f
+          (receive (i found) (stepper (next) i)
+            (if found
+              (- s i -1)
+              (loop (+ s 1) i))))))
+    0))
 
 ;; permute -------------------------------------------------------
 

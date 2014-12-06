@@ -558,6 +558,15 @@
        (group-sequence '(1 1 1 2 3 4 4 2 2 3 1 1 3)
                        :test (^[x y] (= (modulo x 2) (modulo y 2)))))
 
+(test* "sequence-contains" '(#f 0 9 #f)
+       (let1 pat "abrabrabre"
+         (list (sequence-contains "abracadabra" pat)
+               (sequence-contains "abrabrabrebrea" pat)
+               (sequence-contains "abrabrabrabrabrabrebra" pat)
+               (sequence-contains "abrabrabrabrabrabrabra" pat))))
+(test* "sequence-contains" 0
+       (sequence-contains "abracadabra" '()))
+
 (define (permute-tester msg expected source order . fallback)
   (define (unit type elt-coercer order-type)
     (test* #"permute~msg ~type by ~order-type"
