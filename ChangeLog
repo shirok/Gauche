@@ -1,5 +1,8 @@
 2014-12-07  Shiro Kawai  <shiro@acm.org>
 
+	* ext/sparse/sparse.scm: Added missing generic ref and
+	  call-with-iterator methods.
+
 	* libsrc/util/match.scm (in): Fixed a bug that emits incorrect
 	  matching code.  See addition in ext/util/test.scm for the
 	  specific pattern to exhibit this bug.

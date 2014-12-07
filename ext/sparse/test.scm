@@ -9,12 +9,16 @@
 (test-start "data.sparse")
 (use data.sparse)
 (test-module 'data.sparse)
+(use gauche.collection)
 
-(define (simple-test name obj %ref %set! %exists? key1 key2
+(define (simple-test name obj %ref %set! %exists? %fold key1 key2
                      :optional (val1 'ok) (val2 'okok) (val3 'okokok))
   (test* #"~name basic set!/ref" val1
          (begin (%set! obj (key1) val1)
                 (%ref obj (key1))))
+  (test* #"~name generic set!/ref" val1
+         (begin (set! (~ obj (key1)) val1)
+                (~ obj (key1))))
   (test* #"~name referencing nokey" (test-error)
          (%ref obj (key2)))
   (test* #"~name referencing nokey fallback" 'huh?
@@ -31,6 +35,10 @@
   (test* #"~name generic setter" val1
          (begin (set! (%ref obj (key1)) val1)
                 (%ref obj (key1))))
+  (test* #"~name folder" '(2 #t)
+         (let1 lis (%fold obj acons '())
+           (list (length lis)
+                 (every (^p (eqv? (%ref obj (car p)) (cdr p))) lis))))
   )
 
 (define (const x) (^[] x))
@@ -97,6 +105,11 @@
                                (+ cnt 1)
                                (return `(error ,cnt ,v))))
                    0 (%vals obj)))))
+  (test* #"~name generic iteration" *data-set-size*
+         (fold (^[kv cnt] (if (equal? (%ref obj (car kv)) (cdr kv))
+                            (+ cnt 1)
+                            cnt))
+               0 obj))
   (test* #"~name many copy" (list *data-set-size* #t #t)
          (let* ([new (%copy obj)]
                 [keys (%keys new)])
@@ -115,7 +128,6 @@
                                   (return `(error ,cnt ,kk ,vv ,(%ref obj kk)))
                                   (+ cnt 1))))
                             0)))
-
   (test* #"~name many delete!" '(#t 0)
          (begin
            (hash-table-for-each *data-set*
@@ -136,6 +148,7 @@
 (define (spvec-simple tag)
   (apply simple-test #"sparse-~(or tag \"\")vector" (make-sparse-vector tag)
          sparse-vector-ref sparse-vector-set! sparse-vector-exists?
+         sparse-vector-fold
          (const 0) (const 1)
          (if (memq tag '(f16 f32 f64))
            '(3.0 6.0 9.0)
@@ -173,6 +186,7 @@
 (define (sptab-simple type key1 key2)
   (simple-test #"sparse-table (~type)" (make-sparse-table type)
                sparse-table-ref sparse-table-set! sparse-table-exists?
+               sparse-table-fold
                key1 key2))
 
 (sptab-simple 'eq?     (const 'a) (const 'b))

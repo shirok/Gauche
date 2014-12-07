@@ -33,6 +33,7 @@
 
 
 (define-module data.sparse
+  (use gauche.collection)
   (use gauche.dictionary)
   (export <sparse-table> make-sparse-table sparse-table-num-entries
           sparse-table-ref sparse-table-set! sparse-table-exists?
@@ -66,7 +67,7 @@
  "#include \"sptab.h\""
  )
 
-(define-macro (define-stuff type iter ref set)
+(define-macro (define-stuff type class iter ref set)
   (let ([x-fold     (string->symbol #"~|type|-fold")]
         [x-map      (string->symbol #"~|type|-map")]
         [x-for-each (string->symbol #"~|type|-for-each")]
@@ -112,6 +113,19 @@
            (errorf "~s's value for key ~s is not a pair: ~s" sv k p))
          (,set sv k (cdr p))
          (car p))
+
+       ;; basic generic operations
+       (define-method ref ((s ,class) key . maybe-fallback)
+         (apply ,ref s key maybe-fallback))
+       (define-method (setter ref) ((s ,class) key v)
+         (,set s key v))
+       (define-method call-with-iterator ((s ,class) proc)
+         (let ([iter (,iter s)]
+               [sentinel (list #f)])
+           (define (next) (receive (k v) (iter sentinel) (cons k v)))
+           (define cache (next))
+           (proc (^[] (eq? (car cache) sentinel))
+                 (^[] (rlet1 v cache (set! cache (next)))))))
        )))
 
 ;;===============================================================
@@ -206,7 +220,7 @@
             [else (bad)])
     (%make-sparse-table type cmpr)))
 
-(define-stuff sparse-table %sparse-table-iter
+(define-stuff sparse-table <sparse-table> %sparse-table-iter
   sparse-table-ref sparse-table-set!)
 
 ;;===============================================================
@@ -296,7 +310,7 @@
    SparseVectorDump)
  )
 
-(define-stuff sparse-vector %sparse-vector-iter
+(define-stuff sparse-vector <sparse-vector-base> %sparse-vector-iter
   sparse-vector-ref sparse-vector-set!)
 
 ;; sparse vector comparator is just a singleton.
@@ -309,7 +323,7 @@
   *sparse-vector-comparator*)
 
 ;;===============================================================
-;; dictionary protocol
+;; protocols
 ;;
 
 (define-dict-interface <sparse-table>
