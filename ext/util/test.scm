@@ -78,6 +78,13 @@
        (match '((1 a b) (4 e) (6 q u e r))
          [(((? number?) (? symbol?) ...) ...) 'a]))
 
+;; the cause of https://github.com/shirok/Gauche/issues/47
+(test* "... must only match a proper list" 'c
+       (match '(1 . 2)
+         [(x) 'a]
+         [(x ...) 'b]
+         [_ 'c]))
+
 ;; examples shown in Wright&Duba
 (test* "xmap" '(2 4 6)
        (letrec ([xmap (^[f l]

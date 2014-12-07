@@ -1006,8 +1006,10 @@
 (define (in e l)
   (or (member e l)
       (and (eq? (car e) 'list?)
-           (or (member `(null? ,(cadr e)) l)
-               (member `(pair? ,(cadr e)) l)))
+           ;; NB: Original Wright's code allows `(pair? ,(cadr e)) here as well,
+           ;; but they are not the same condition - pair? allows improper list
+           ;; but list? doesn't.  Ref: https://github.com/shirok/Gauche/issues/47
+           (member `(null? ,(cadr e)) l))
       (and (eq? (car e) 'not)
            (let* ((srch (cadr e))
                   (const-class (equal-test? srch)))

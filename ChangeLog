@@ -1,3 +1,9 @@
+2014-12-07  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/util/match.scm (in): Fixed a bug that emits incorrect
+	  matching code.  See addition in ext/util/test.scm for the
+	  specific pattern to exhibit this bug.
+
 2014-12-06  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/dictionary.scm (dict-clear!): Added missing export.
