@@ -2251,6 +2251,10 @@
             ($it)
             (process-clauses rest))]
       [((test exprs ...) . rest)          ; (test . exprs)
+       ;; The following check will be unnecessary once we release 0.9.5
+       ;; that includes the bug fix in util.match (commit 867419d44).
+       (unless (list? exprs)
+         (error "syntax-error: bad clause in cond:" form))
        ($if (car cls) (pass1 test (cenv-sans-name cenv))
             ($seq (imap (cut pass1 <> cenv) exprs))
             (process-clauses rest))]
