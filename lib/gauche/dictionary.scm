@@ -38,7 +38,7 @@
           dict-fold dict-fold-right
           dict-for-each dict-map
           dict-keys dict-values dict-comparator
-          dict->alist dict-pop! dict-push! dict-update!
+          dict->alist dict-pop! dict-push! dict-update! dict-clear!
           define-dict-interface
 
           <bimap> make-bimap bimap-put!
