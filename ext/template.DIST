@@ -16,12 +16,12 @@ while [ $# -gt 0 ]; do
 done
 
 if [ "$gen" = "yes" ]; then
-  autoconf
+  if [ -f configure.ac ]; then autoconf; fi
 fi
 
 if [ "$tgz" = "yes" ]; then
   if [ -f Makefile ]; then make maintainer-clean; fi
-  if [ -f configure.ac ]; then ./DIST gen; fi
+  ./DIST gen
   ./configure
   make distclean
 
