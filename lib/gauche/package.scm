@@ -65,10 +65,9 @@
 ;;
 
 (define-module gauche.package
-  (use srfi-1)
-  (use srfi-2)
   (use gauche.collection)
   (use gauche.version)
+  (use gauche.lazy)
   (use file.util)
   (export <gauche-package-description>
           path->gauche-package-description
@@ -82,6 +81,7 @@
 ;;; Reading .gpd contents
 ;;;
 
+;; API
 (define-class <gauche-package-description> ()
   (;; package name, e.g. "Gauche-gtk"
    (name           :init-keyword :name)
@@ -96,6 +96,7 @@
                    :init-value #f)
    ))
 
+;; API
 (define (path->gauche-package-description path)
   (guard (e [(or (<io-error> e) (<read-error> e))
              (errorf "couldn't read the package description ~s: ~a"
@@ -111,6 +112,7 @@
                    :name (cadr f) (cddr f))
             (error "malformed define-gauche-package")))))))
 
+;; API
 (define-method write-gauche-package-description
     ((desc <gauche-package-description>) :optional (out (current-output-port)))
   (format out ";; -*-Scheme-*-\n")
@@ -126,23 +128,15 @@
 ;;; Searching .gpd files
 ;;;
 
-;;; e.g.  (find (lambda (path) ....) (gauche-package-description-paths))
-;;;       (coerce-to <list> (gauche-package-description-paths))
-;;;       (map path->gauche-package-description
-;;;            (gauche-package-description-paths))
-
-;; A pseudo collection to traverse package description filenames.
-(define-class <gauche-package-description-paths> (<collection>)
-  ((paths :init-form *load-path* :init-keyword :paths)))
-
-;; Returns a singleton of <gauche-package-descriptions>.
+;; API.  Returns a lazy list.
 (define (gauche-package-description-paths :key (all-versions #f))
-  (if all-versions
-    (make <gauche-package-description-paths> :paths (get-all-version-paths))
-    (make <gauche-package-description-paths>)))
+  (let1 g (%gpd-path-generator (if all-versions
+                                 (%get-all-version-paths)
+                                 *load-path*))
+    (generator->lseq g)))
 
 ;; scan the directory to find older verison of Gauche library directories.
-(define (get-all-version-paths)
+(define (%get-all-version-paths)
   (apply append
          *load-path*
          (filter-map
@@ -156,11 +150,8 @@
                 (sort-by (delete p pdirs) sys-basename version>?)))
           *load-path*)))
 
-;; Iterator protocol
-(define-method call-with-iterator ((gpd <gauche-package-description-paths>)
-                                   proc . args)
-  (let ([paths (ref gpd 'paths)]
-        [files '()]
+(define (%gpd-path-generator paths)
+  (let ([files '()]
         [visited (make-hash-table 'string=?)])
     (define (interesting? path)
       (and (#/\.gpd$/ path)
@@ -181,11 +172,11 @@
                     [else (loop)]))))
         (pop! files)))
     (let1 buf (pick-next)
-      (define (end?) (not buf))
-      (define (next) (begin0 buf (set! buf (pick-next))))
-      (proc end? next))))
+      (^[] (if (not buf)
+             (eof-object)
+             (begin0 buf (set! buf (pick-next))))))))
 
-;; utility
+;; API.  utility
 (define (find-gauche-package-description name :key (all-versions #f))
   (and-let* ([path (find (string->regexp #`"/,|name|\\.gpd$")
                          (gauche-package-description-paths
