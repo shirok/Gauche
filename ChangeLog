@@ -1,3 +1,8 @@
+2014-12-09  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/gauche/sequence.scm (break-list-by-sequence)
+	  (break-list-by-sequence!): Added.
+
 2014-12-07  Shiro Kawai  <shiro@acm.org>
 
 	* ext/sparse/sparse.scm: Added missing generic ref and
@@ -11,12 +16,12 @@
 
 	* lib/gauche/dictionary.scm (dict-clear!): Added missing export.
 
-2014-12-05  shiro  <shiro@acm.org>
+2014-12-05  Shiro Kawai <shiro@acm.org>
 
 	* libsrc/gauche/sequence.scm (sequence-contains): Renamed for clarity.
 	  (sequence->kmp-stepper): Expose KMP search element.
 
-2014-12-01  shiro  <shiro@acm.org>
+2014-12-01  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/vm.c (ScmIdentifier):
 	* src/compaux.scm (Scm_MakeIdentifier, Scm_OutermostIdentifier)
@@ -1746,7 +1751,7 @@
 	  taking the last k elements of a lazy sequence.  Not an ideal
 	  solution, but would work for the time being.
 
-2013-04-27  shiro  <shiro@acm.org>
+2013-04-27  Shiro Kawai  <shiro@acm.org>
 
 	* src/liblist.scm (length<=?): Added.
 
@@ -1936,7 +1941,7 @@
 	* src/librx.scm (rxmatch-named-groups): Added for completeness.
 	* src/autoloads.scm, test/regexp.scm: Changed accordingly.
 
-2013-01-28  shiro  <shiro@acm.org>
+2013-01-28  Shiro Kawai  <shiro@acm.org>
 
 	* src/string.c (Scm_GetStringConst),
 	  lib/gauche/cgen/type.scm (<const-cstring>): Instead of having
@@ -1965,7 +1970,7 @@
 	  result than just a booelan.  The previous twos-exponent is renamed
 	  to twos-exponent-factor.
 
-2013-01-16  shiro  <shiro@acm.org>
+2013-01-16  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm (pass1): Made the compiler reject too may literal
 	  arguments that wouldn't fit in VM stack, instead of SEGVing at
@@ -2010,7 +2015,7 @@
 	  trivial to write in Scheme, but usually they are wanted in optimized
 	  code, and I've seen it enough to include a native, fast version.
 
-2013-01-04  shiro  <shiro@acm.org>
+2013-01-04  Shiro Kawai  <shiro@acm.org>
 
 	* lib/math/prime.scm: Exposed small-prime?.
 

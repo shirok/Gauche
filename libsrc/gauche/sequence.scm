@@ -43,6 +43,7 @@
           fold-with-index map-with-index map-to-with-index for-each-with-index
           find-index find-with-index group-sequence
           sequence->kmp-stepper sequence-contains
+          break-list-by-sequence! break-list-by-sequence
           permute-to permute permute!
           shuffle-to shuffle shuffle!)
   )
@@ -338,6 +339,42 @@
               (loop (+ s 1) i))))))
     0))
 
+;; Search NEEDLE from LIS and returns two values
+(define-method break-list-by-sequence! (lis (needle <sequence>)
+                                            :key (test eqv?))
+  (%break-list-1 lis needle test #f))
+(define-method break-list-by-sequence (lis (needle <sequence>)
+                                           :key (test eqv?))
+  (%break-list-1 lis needle test #t))
+
+(define (%break-list-1 lis needle test-proc copy?)
+  (if-let1 stepper (sequence->kmp-stepper needle :test test-proc)
+    (let loop ([cur lis]
+               [prev #f] ; prev cell of cur
+               [last #f] ; last cell before the current match
+               [i 0])    ; index in needle
+      (if (null? cur)
+        (values lis '())
+        (receive (i found) (stepper (car cur) i)
+          (cond [found
+                 (if last
+                   (let1 head (cdr last)
+                     (if copy?
+                       (let loop ([p lis] [h '()] [t '()])
+                         (cond [(eq? p head) (values h p)]
+                               [(null? h) (let1 h (list (car p))
+                                            (loop (cdr p) h h))]
+                               [else (set-cdr! t (list (car p)))
+                                     (loop (cdr p) h (cdr t))]))
+                       (begin (set-cdr! last '())
+                              (values lis head))))
+                   (values '() lis))]
+                [(= i 0) ; match failure - we'll start over fresh.
+                 (loop (cdr cur) cur cur i)]
+                [else
+                 (loop (cdr cur) cur last i)]))))
+    (values '() lis)))
+                 
 ;; permute -------------------------------------------------------
 
 (define-method permute-to ((class <class>) (src <sequence>) (ord <sequence>)

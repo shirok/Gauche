@@ -567,6 +567,32 @@
 (test* "sequence-contains" 0
        (sequence-contains "abracadabra" '()))
 
+(let ([data
+       ;; (input needle before after)
+       '(((1 2 3 4 5 4 5 6 7 8 9) (4 5 4 5 6) (1 2 3) (4 5 4 5 6 7 8 9))
+         ((4 5 4 5 6)             (4 5 4 5 6) ()      (4 5 4 5 6))
+         ((4 5 4 5 5 4 5 4 5 6)   (4 5 4 5 6) (4 5 4 5 5) (4 5 4 5 6))
+         (()                      (4 5 4 5 6) ()      ())
+         ((4 5 6 4 5 4 5 1)       (4 5 4 5 6) (4 5 6 4 5 4 5 1) ())
+         ((4 5 6 4 5 4 5 1)       ()          () (4 5 6 4 5 4 5 1))
+         )])
+  (define (tester !? in needle before after)
+    (test* (format "break-list-by-sequence~a ~s" (if !? '! "") in)
+           (list before after)
+           (receive (a b) ((if !?
+                             break-list-by-sequence!
+                             break-list-by-sequence)
+                           in needle)
+             (and (or (not !?)
+                      (null? a)
+                      (eq? a in))  ; check if head part is shared
+                  (list a b)))))
+    
+  (dolist [datum data]
+    (apply tester #f datum)
+    (apply tester #t datum)))
+  
+
 (define (permute-tester msg expected source order . fallback)
   (define (unit type elt-coercer order-type)
     (test* #"permute~msg ~type by ~order-type"
