@@ -339,7 +339,7 @@
               (loop (+ s 1) i))))))
     0))
 
-;; Search NEEDLE from LIS and returns two values
+;; Search NEEDLE from LIS and split LIS right in front of found NEEDLE.
 (define-method break-list-by-sequence! (lis (needle <sequence>)
                                             :key (test eqv?))
   (%break-list-1 lis needle test #f))
