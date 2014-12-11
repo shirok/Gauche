@@ -841,6 +841,22 @@ a square matrix, and @var{pow} must be a nonnegative exact integer.
 
 @defun array-div-left a b
 @defunx array-div-right a b
+@c EN
+Inverse of @code{array-mul}; @code{array-div-left}
+rrturns a matrix @code{M} such that @code{(array-mul B M)}
+equals to @code{A}, and @code{array-div-right} returns
+a matrix @code{M} such that @code{(array-mul M B)} equals to @code{A}.
+@var{A} and @var{B} must be a 2-dimensional square matrix.
+If @code{B} isn't regular, an error is thrown.
+@c JP
+@code{array-mul}の逆を行います。
+@code{array-div-left}は@code{(array-mul B M)}が@code{A}と
+等しくなるような行列@code{M}を、
+@code{array-div-right}は@code{(array-mul M B)}が@code{A}と
+等しくなるような行列@code{M}を返します。
+@var{A}と@var{B}は2次元の正方行列でなければなりません。
+@var{B}が正則行列でない場合はエラーが通知されます。
+@c COMMON
 @end defun
 
 @defun array-add-elements array array-or-scalar @dots{}
