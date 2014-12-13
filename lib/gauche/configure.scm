@@ -267,7 +267,11 @@
          ["sysconfdir=s" (arg) (cf-subst 'sysconfdir arg)]
          ["target=s" (arg) (cf-subst 'target_alias arg)]
          ["v|verbose" () (run-quietly #f)]
-         ["V|version" () (exit 0 "gauche.configure ~a" (gauche-version))]
+         ["V|version" ()
+          (format #t "~a configure ~a\n"
+                  (~ (current-package)'name)
+                  (~ (current-package)'version))
+          (exit 0)]
          ;; -x-includes
          ;; -x-libraries
          

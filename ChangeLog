@@ -1,3 +1,10 @@
+2014-12-12  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/configure.scm (parse-command-line-arguments):
+	  Made ./configure -V|version option output the package name and
+	  the package version in the same format as autoconf-generated
+	  configure scripts.
+
 2014-12-09  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/gauche/sequence.scm (break-list-by-sequence)

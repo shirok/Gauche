@@ -127,6 +127,8 @@
 ;;; Driver
 ;;;
 
+;; API
+;; Fetch tarball from URI, untar, build and install
 (define (gauche-package-build uri :key (config  '()) (configure-options #f)
                               ((:install-only install-only?) #f)
                               ((:dry-run dry?) #f)
@@ -156,4 +158,3 @@
       (when (or install? install-only?)
         (make-install config dir sudo-user sudo-pass))
       (when clean?   (clean config dir)))))
-

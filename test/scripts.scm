@@ -144,6 +144,13 @@
        '("srcdir = ." "top_srcdir = .." "builddir = ." "top_builddir = ..")
        (file->string-list "test.o/src/Makefile"))
 
+(test* "configure --version" "package configure 1.0"
+       (read-line
+        (process-output
+         (run-with-parent-directory-in-paths
+          `("../gosh" "-ftest" "./configure" "--version")
+          :output :pipe :directory "test.o"))))
+
 (test* "running `configure' script in different directory" 0
        (process-exit-status
         (run-with-parent-directory-in-paths
