@@ -18,6 +18,7 @@
 (use srfi-1)
 (use srfi-27)
 (use gauche.sequence)
+(use util.match)
 
 (let ((rs (make-random-source)))
   (define (do-test data comparator) ; data must be sorted
@@ -119,6 +120,46 @@
   (do-scan '() odd? 1)
   (do-scan (iota 23) odd? 5)
   (do-scan (iota 42) (^n (< (modulo n 3) 2)) 91)
+  )
+
+(let ()
+  (define (test-swap source actions)
+    ;; actions : ((min|max item expected-result expected-min expected-max) ...)
+    (let1 hp (build-binary-heap source)
+      (dolist [action actions]
+        (match-let1 (minmax item xresult xmin xmax) action
+          (test* (format "swap ~s ~s ~s" source minmax item)
+                 (list xresult xmin xmax)
+                 (let1 r ((ecase minmax
+                            [(min) binary-heap-swap-min!]
+                            [(max) binary-heap-swap-max!])
+                          hp item)
+                   (list r
+                         (binary-heap-find-min hp)
+                         (binary-heap-find-max hp))))))))
+
+  (test-swap (vector 1 3 5 7 9 11 13 15 17)
+             '((min 4 1 3 17)
+               (min 2 3 2 17)
+               (max 16 17 2 16)
+               (max 1 16 1 15)
+               (min 20 1 2 20)
+               (min 10 2 4 20)))
+  (test-swap (vector 1)
+             '((min 2 1 2 2)
+               (max 1 2 1 1)
+               (min 0 1 0 0)))
+  (test-swap (vector 3 1)
+             '((min 4 1 3 4)
+               (max 5 4 3 5)
+               (min 6 3 5 6)
+               (max 0 6 0 5)))
+  (test-swap (vector 4 2 5)
+             '((max 3 5 2 4)
+               (max 1 4 1 3)
+               (max 1 3 1 2)
+               (max 1 2 1 1)
+               (max 1 1 1 1)))
   )
 
 ;; trie

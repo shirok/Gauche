@@ -44,6 +44,7 @@
           binary-heap-push!
           binary-heap-find-min binary-heap-find-max
           binary-heap-pop-min! binary-heap-pop-max!
+          binary-heap-swap-min! binary-heap-swap-max!
           binary-heap-find binary-heap-remove! binary-heap-delete!
           ))
 (select-module data.heap)
@@ -240,6 +241,43 @@
          (if ((~ hp'>:) a b)
            (begin (swap-and-adjust 2) a)
            (begin (swap-and-adjust 3) b)))])))
+
+;; (binary-heap-swap-* hp item) is operationally equivalent to
+;; (rlet1 entry (binary-heap-pop-* hp) (binary-heap-push! hp item))
+;; but it is more efficient.
+(define (binary-heap-swap-min! hp item)
+  (let1 storage (~ hp'storage)
+    (when (binary-heap-empty? hp) (error "binary heap is empty:" hp))
+    (rlet1 r (~ storage (Ix 1))
+      (set! (~ storage (Ix 1)) item)
+      (let1 n (binary-heap-num-entries hp)
+        (when (> n 1)
+          (bh-trickle-down storage (~ hp'<:) (~ hp'>:) 1 (+ n 1)))))))
+
+(define (binary-heap-swap-max! hp item)
+  (let ([storage (~ hp'storage)]
+        [nelts (binary-heap-num-entries hp)])
+    (define (store-and-adjust index)
+      (let1 a (~ storage (Ix 1))
+        (set! (~ storage (Ix index)) item)
+        (when ((~ hp'>:) a item)
+          (swap! storage 1 index))
+        (bh-trickle-down storage (~ hp'<:) (~ hp'>:) index (+ nelts 1))))
+    (case nelts
+      [(0) (error "binary heap is empty:" hp)]
+      [(1) (rlet1 r (~ storage (Ix 1))
+             (set! (~ storage (Ix 1)) item))]
+      [(2) (rlet1 r (~ storage (Ix 2))
+             (let1 a (~ storage (Ix 1))
+               (set! (~ storage (Ix 2)) item)
+               (when ((~ hp'>:) a item)
+                 (swap! storage 1 2))))]
+      [else
+       (let ([a (~ storage (Ix 2))]
+             [b (~ storage (Ix 3))])
+         (if ((~ hp'>:) a b)
+           (begin (store-and-adjust 2) a)
+           (begin (store-and-adjust 3) b)))])))
 
 ;; not exactly heap operations, but useful...
 

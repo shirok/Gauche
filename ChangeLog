@@ -1,3 +1,7 @@
+2014-12-13  Shiro Kawai  <shiro@acm.org>
+
+	* lib/data/heap.scm (binary-heap-swap-{min|max}!): Added.
+
 2014-12-12  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/configure.scm (parse-command-line-arguments):

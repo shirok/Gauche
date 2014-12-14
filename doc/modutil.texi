@@ -1876,6 +1876,33 @@ for the convenience.
 便利なので用意してあります。
 @c COMMON
 
+@defun binary-heap-swap-min! heap item
+@defunx binary-heap-swap-max! heap item
+@c EN
+These are operationally equivalent to the followings, respectively:
+@c JP
+これらはそれぞれ以下のコードと操作的には等価です。
+@c COMMON
+
+@example
+(begin0 (binary-heap-pop-min! heap)
+  (binary-heap-push! heap item))
+
+(begin0 (binary-heap-pop-max! heap)
+  (binary-heap-push! heap item))
+@end example
+
+@c EN
+However, those procedures are slightly efficient, 
+using heap property maintaining procedure only once per function call.
+@c JP
+ただしこれらの手続きは、
+ヒープ特性を維持するための手続きを呼び出し毎に1回しか行わないので、
+やや効率的です。
+@c COMMON
+@end defun
+
+
 
 @defun binary-heap-find heap pred
 @c EN
