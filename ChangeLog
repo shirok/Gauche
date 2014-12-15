@@ -1,3 +1,9 @@
+2014-12-14  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cgen/unit.scm (cgen-safe-name{-friendly}): Allow ':'
+	  to be in C name, so that we can call C++ namespace-qualified
+	  functions.
+
 2014-12-13  Shiro Kawai  <shiro@acm.org>
 
 	* lib/data/heap.scm (binary-heap-swap-{min|max}!): Added.

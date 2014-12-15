@@ -335,7 +335,7 @@
   (with-string-io str
     (^[] (let loop ((b (read-byte)))
            (cond [(eof-object? b)]
-                 [(or (<= 48 b 57)
+                 [(or (<= 48 b 58)
                       (<= 65 b 90)
                       (<= 97 b 122))
                   (write-byte b) (loop (read-byte))]
@@ -359,7 +359,7 @@
                [(#\!) (display #\X) (loop (read-char))]
                [(#\<) (display "_LT") (loop (read-char))]
                [(#\>) (display "_GT") (loop (read-char))]
-               [(#\* #\> #\@ #\$ #\% #\^ #\& #\* #\+ #\= #\: #\. #\/ #\~)
+               [(#\* #\> #\@ #\$ #\% #\^ #\& #\* #\+ #\= #\. #\/ #\~)
                 (display #\_)
                 (display (number->string (char->integer c) 16))
                 (loop (read-char))]

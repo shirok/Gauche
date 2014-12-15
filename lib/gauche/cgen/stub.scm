@@ -1557,8 +1557,25 @@
 ;;    [(print print-proc)]
 ;;    [(cleanup cleanup-proc)]
 ;;
-;;  qualifier :: :private
-;;  flag :: :keep-identity | :map-nul
+;;  qualifier : :private
+;;  flag      : :keep-identity | :map-null
+;;
+;;  scm-name  : Scheme variable name; this will be bound to a newly-created
+;;              subclass of <foreign-pointer> to represent this C-ptr type.
+;;  c-type    : Name of the actual C type we wrap.
+;;  c-name    : A C variable name (must have type ScmClass *).  If :private
+;;              qualifier is given, static definition of the varaible is
+;;              generated; otherwise, the definition & declaration must
+;;              be provided elsewhere.  In initialization code, an instance
+;;              of a class (the same one bound to scm-name in the Scheme
+;;              world) will be stored in this C variable.
+;;  c-pred    : A macro name to determine if ScmObj is this type.
+;;  c-boxer   : A macro name to wrap C pointer and return ScmObj
+;;  c-unboxer : A macro name to extract C pointer from ScmObj
+;;
+;;  If :private is given, c-pred, c-boxer and c-unboxer definitions are
+;;  generated automatically.  Otherwise those definitions must be provided
+;;  elsewhere.
 
 (define-class <c-ptr> (<stub>)
   ((c-type       :init-keyword :c-type)
