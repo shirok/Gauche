@@ -77,12 +77,14 @@
   (and-let* ([r (find-load-file file paths suffixes error-if-not-found #t)])
     (let* ([path (car r)]
            [remaining-paths (cadr r)]
-           [opener (if (pair? (cddr r)) (caddr r) open-input-file)]
+           [hooked? (pair? (cddr r))]
+           [opener (if hooked? (caddr r) open-input-file)]
            [port (guard (e [else e]) (opener path))])
       (when (%load-verbose?)
-        (format (current-error-port) ";;~aLoading ~a...\n"
+        (format (current-error-port) ";;~aLoading ~a~a...\n"
                 (make-string (* (length (current-load-history)) 2) #\space)
-                path))
+                path
+                (if hooked? " (hooked) " "")))
       (if (not (input-port? port))
         (and error-if-not-found (raise port))
         (load-from-port (if ignore-coding
