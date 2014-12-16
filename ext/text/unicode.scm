@@ -34,6 +34,7 @@
 (define-module text.unicode
   (use gauche.uvector)
   (use gauche.sequence)
+  (use gauche.generator)
   (use util.match)
   (use data.queue)
   (use srfi-42)
@@ -440,11 +441,6 @@
 ;; Utiltiies
 ;;
 
-;; These should be eventually in the coming gauche.generator module.
-(define (generator->list gen) (port-map identity gen))
-(define (gen-map f gen)
-  (^[] (let1 v (gen) (if (eof-object? v) v (f v)))))
-
 ;; Given breaker generator, returns a generator that returns a cluster
 ;; (grapheme cluster or word) at a time.
 ;; Item = Char | Int
@@ -476,7 +472,7 @@
      (^[str]
        (with-input-from-string str
          (cut generator->list
-              (cluster-reader-maker (gen-map char->ucs read-char)
+              (cluster-reader-maker (generator-map char->ucs read-char)
                                     (^[cs] (map-to <string> ucs->char cs))))))]
     ))
 
@@ -1044,7 +1040,7 @@
                     (^[] (doer read-char (^[cs alt] (map display cs)) #t))))]
     [else
      (^[str doer] (with-string-io str
-                    (^[] (doer (gen-map char->ucs read-char)
+                    (^[] (doer (generator-map char->ucs read-char)
                                (^[cs alt]
                                  (let1 cs_ (map ucs->char cs)
                                    (if (every char? cs_)

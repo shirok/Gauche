@@ -162,7 +162,7 @@
     (setup ext-initializer sub-initializers)
     (with-input-from-file src
       (cut emit-toplevel-executor
-           (reverse (port-fold compile-toplevel-form '() read))))
+           (reverse (generator-fold compile-toplevel-form '() read))))
     (finalize sub-initializers)
     (cgen-emit-c (cgen-current-unit))))
 

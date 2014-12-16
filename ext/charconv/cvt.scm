@@ -52,19 +52,19 @@
 ;; Or
 ;;   (EUC-JP-codepoint . (UCS4-codepoint . UCS4-combining-character))
 (define (parse)
-  (port-fold (lambda (line knil)
-               (rxmatch-case line
-                 (#/^0x([0-9A-F]+)\s+U\+([0-9A-F]+)(\+[0-9A-F]+)?/
-                       (#f code uni uni2)
-                       (let ((n-code (string->number code 16))
-                             (n-uni  (string->number uni 16))
-                             (n-uni2 (and uni2 (string->number uni2 16))))
-                         (if n-uni2
-                             (acons n-code (cons n-uni n-uni2) knil)
-                             (acons n-code n-uni knil))))
-                 (else knil)))
-             '()
-             read-line))
+  (generator-fold (^[line knil]
+                    (rxmatch-case line
+                      (#/^0x([0-9A-F]+)\s+U\+([0-9A-F]+)(\+[0-9A-F]+)?/
+                            (#f code uni uni2)
+                            (let ((n-code (string->number code 16))
+                                  (n-uni  (string->number uni 16))
+                                  (n-uni2 (and uni2 (string->number uni2 16))))
+                              (if n-uni2
+                                (acons n-code (cons n-uni n-uni2) knil)
+                                (acons n-code n-uni knil))))
+                      (else knil)))
+                  '()
+                  read-line))
 
 (define (ucs4->utf8 code)
   (cond ((< code #x80)

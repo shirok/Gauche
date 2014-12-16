@@ -477,7 +477,7 @@
   (with-string-io value
     (lambda ()
       (display "\"")
-      (port-for-each
+      (generator-for-each
        (^b (if (or (= #x20 b) (= #x21 b) ; #x22 = #\"
                    (<= #x23 b #x3e)      ; #x3f = #\?  - avoid trigraph trap
                    (<= #x40 b #x5b)      ; #x5c = #\\

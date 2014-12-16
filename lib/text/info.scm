@@ -101,11 +101,12 @@
 
 (define (parse-indirect-table indirects)
   (with-input-from-string indirects
-    (^[] (port-map (^[line] (rxmatch-case line
-                              [#/^([^:]+):\s+(\d+)/ (#f file count)
-                                  (cons (x->integer count) file)]
-                              [else '()]))
-                   read-line))))
+    (cut generator-map
+         (^[line] (rxmatch-case line
+                    [#/^([^:]+):\s+(\d+)/ (#f file count)
+                     (cons (x->integer count) file)]
+                    [else '()]))
+                     read-line)))
 
 (define (parse-tag-table info indirect tags)
   (define (find-file count)
@@ -115,16 +116,15 @@
             [(< count (caar indirect)) prev]
             [else (loop (cdr indirect) (cdar indirect))])))
   (with-input-from-string tags
-    (^[]
-      (generator-for-each (^[line]
-                            (rxmatch-case line
-                              [#/^Node: ([^\u007f]+)\u007f(\d+)/ (#f node count)
-                               (hash-table-put! (ref info 'node-table)
-                                                node
-                                                (find-file (x->integer count)))]
-                              [else line #f]))
-                          read-line)))
-  )
+    (cut generator-for-each
+         (^[line]
+           (rxmatch-case line
+             [#/^Node: ([^\u007f]+)\u007f(\d+)/ (#f node count)
+              (hash-table-put! (ref info 'node-table)
+                               node
+                               (find-file (x->integer count)))]
+             [else line #f]))
+         read-line)))
 
 (define (read-sub-info-file info file opts)
   (let1 parts (read-info-file-split file opts)

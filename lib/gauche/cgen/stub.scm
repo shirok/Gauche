@@ -249,7 +249,7 @@
        (for-each cgen-define predef-syms)
        (cgen-include "<gauche.h>")
        (with-input-from-file stubfile
-         (cut port-fold
+         (cut generator-fold
               ;; We treat the initial raw strings specially---they will be
               ;; in decl part.  The flag decl-strings? tracks that.
               (^[form decl-strings?]
@@ -1688,7 +1688,7 @@
     ;; TODO: search path
     (error <cgen-stub-error> "couldn't find include file: " file))
   (with-input-from-file file
-    (^[] (port-for-each cgen-stub-parse-form read)))
+    (cut generator-for-each cgen-stub-parse-form read))
   )
 
 (define-form-parser initcode codes
