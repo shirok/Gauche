@@ -113,6 +113,9 @@
           (:macro cond-list)
           (:macro er-macro-transformer))
 
+(autoload gauche.macroutil
+          (:macro with-renaming))
+
 (autoload gauche.regexp
           (:macro rxmatch-let rxmatch-if rxmatch-cond rxmatch-case)
           regexp-unparse rxmatch-substrings rxmatch-positions)

@@ -156,6 +156,24 @@
       (test* "er-macro introducing local bindings" 4
              (foo x)))))
 
+;; with-renaming
+;; Note: currently with-renaming dependns on util.match, too.
+(let ((unquote list)
+      (x 1)
+      (y 2))
+  (let-syntax ([foo (er-macro-transformer
+                     (^[f r c]
+                       (let ([a (cadr f)]
+                             [b (caddr f)])
+                         (with-renaming r
+                           (list x ,a y ,b '#(x ,a y ,b))))))])
+    (let ((list vector)
+          (x 10)
+          (y 20))
+      (test* "er-macro and with-renaming"
+             '(1 3 2 4 #(x 3 y 4))
+             (foo 3 4)))))
+
 ;;----------------------------------------------------------------------
 ;; basic tests
 

@@ -1,3 +1,10 @@
+2014-12-17  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/macroutil.scm (with-renaming): Experimentally added
+	  a utility to construct the result form within er macro transformer.
+	  NB: The old undocumented macros defined in macroutil.scm are removed,
+	  for they aren't used much after all.
+
 2014-12-14  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/unit.scm (cgen-safe-name{-friendly}): Allow ':'
