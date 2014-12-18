@@ -3,55 +3,49 @@ gauche binary, that can run stand-alone (that is, you don't need to
 install Gauche runtime separately---everything is in one executable).
 
 This is still an experimental feature.  The building process isn't
-streamlined: You need manual tweak depending on your configuration.
+streamlined: You may need manual tweak depending on your configuration.
 Also there's no easy way yet to statically link external Gauche
 extensions such as Gauche-gl.  We'll gradually address these issues.
 
 
-[1. Prerequisites]
+[1. Build a static library]
 
-You need to compile and install the Gauche from the source
-(at this moment, the build process uses features added after
-the last release 0.9.3.3, so you need to install development head
-version of gauche; this will change once we release 0.9.4.)
+Static library isn't built by default.
+After building Gauche in usual way (e.g. configure + make),
+go to $(TOP_SRCDIR) and run 'make static'.  It creates
+libgauche-static-X.Y.a  where X.Y is the ABI version.
 
-[2. Build a static library]
+IMPORTANT: The static library includes all objects under ext/.
+If you enable dbm.gdbm module, there'll be object files that
+depends on gdbm, which will be covered by GPL.  On some systems
+(e.g. Linux), ndbm and odbm interface are also provided by gdbm
+package and falls under the same license.
 
-Clean the source tree and run configure with appropriate options,
-then build Gauche as usual.
+If you need the final binary GPL-free for some reason,
+run 'make static' with setting environment variable
+LIBGAUCHE_STATIC_EXCLUDES.  For example:
 
-  Note: If you intend to distribute the compiled binary, be aware
-  that if you link gdbm, the binary is covered by GPL.
-  If you want to 
+  LIBGAUCHE_STATIC_EXCLUDES=dbm.gdbm,dbm.ndbm,dbm.odbm make static
 
-Then, in $(TOP_SRCDIR)/src, run 'make static'.
-This builds libgauche-0.9.a.
+This still includes gdbm-related object files, but there's
+no dependency from the core features, so if you create final
+binary they'll be excluded.
 
-[3. Bundle your script source]
 
-Run make-standalone script.  It will be something like this:
+[2. Bundle your script source]
 
-  ./make-standalone -o command yourscript.scm -lz
+Copy the created libgauche-static-X.Y.a to your source directory,
+and run build-standalone subcommand:
 
-  Note: At this moment, you need to add -l options manually
-  that are required by Gauche extensions.  If you include
-  ext/zlib, you need -lz.  If you include dbm, you're likely
-  to need to add -lgdbm -lgdbm_compat (actual options vary
-  depending on the platform.)
-
-The 'make-standalone' script needs to get files from Gauche's
-source directory and build directory.  If you don't run the
-script in-place, you need to tell the script those directories
-by --srcdir and --builddir options.
+  gosh build-standalone -o command yourscript.scm 
 
 The resulting binary doesn't depend on neither Gauche DSOs nor
 installed Gauche libraries.  You can copy just the binary onto
 the target platform.
 
 Note: It still depends on the system libraries (e.g. -lpthread)
-or the libraries you gave to make-standaline (e.g. -lz), and they
-are needed on the target platform.
+and they are needed on the target platform.
 
 Since the result binary includes entire Gauche bundled libraries,
-it tends to be large (11MB on Linux/x86_64).
+it tends to be large (around 12MB on Linux/x86_64).
 
