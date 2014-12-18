@@ -156,6 +156,8 @@ AC_SUBST(GDBMLIB)
 AC_SUBST(NDBMLIB)
 AC_SUBST(ODBMLIB)
 
+EXT_LIBS="$EXT_LIBS $GDBMLIB $NDBMLIB $ODBMLIB"
+
 dnl Local variables:
 dnl mode: autoconf
 dnl end:

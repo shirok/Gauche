@@ -90,6 +90,7 @@ fi
 
 if test "$ac_cv_use_iconv" = yes; then
   AC_DEFINE(USE_ICONV)
+  EXT_LIBS="$EXT_LIBS $ICONV_LIB"
 fi
 AC_SUBST(ICONV_NAME)
 AC_SUBST(ICONV_LIB)

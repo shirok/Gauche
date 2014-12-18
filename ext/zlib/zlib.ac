@@ -73,11 +73,10 @@ if test "$ac_cv_use_zlib" = yes; then
   AC_SUBST(ZLIB_SCMFILES)
   ZLIB_OBJECTS="gauche-zlib.$OBJEXT rfc--zlib.$OBJEXT"
   AC_SUBST(ZLIB_OBJECTS)
+  EXT_LIBS="$EXT_LIBS $ZLIB_LIB"
 fi
 AC_SUBST(ZLIB_CPPFLAGS)
 AC_SUBST(ZLIB_LDFLAGS)
-
-
 
 
 dnl Local variables:

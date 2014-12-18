@@ -1,3 +1,9 @@
+2014-12-18  Shiro Kawai  <shiro@acm.org>
+
+	* configure.ac, ext/*/*.ac, src/Makefile/in, src/genconfig.in:
+	  Add --static-libs option to gauche-config, which lists all
+	  libraries needed for statically linked binary.
+
 2014-12-17  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/macroutil.scm (with-renaming): Experimentally added

@@ -787,11 +787,26 @@ AC_GAUCHE_OPTFLAGS
 dnl ===========================================================
 dnl Tests for extensions
 
+EXT_LIBS=
+# Those *.ac's may add libraries to EXT_LIBS.
 m4_include([ext/charconv/charconv.ac])
 m4_include([ext/dbm/dbm.ac])
 m4_include([ext/net/net.ac])
 m4_include([ext/zlib/zlib.ac])
 m4_include([ext/tls/tls.ac])
+
+dnl Setup STATIC_LIBS
+STATIC_LIBS=
+for lib in $EXT_LIBS $LIBS; do
+  if [ echo "$STATIC_LIBS" | grep -e $lib > /dev/null 2>&1 ]
+  then
+    : # lib is alreay in STATIC_LIBS.  do nothing
+  else
+    STATIC_LIBS="$STATIC_LIBS $lib"
+  fi
+done
+STATIC_LIBS="`echo $LIBGAUCHE_STATIC | sed s/^lib/-l/` $STATIC_LIBS"
+AC_SUBST(STATIC_LIBS)
 
 dnl ===========================================================
 dnl Cross compiling

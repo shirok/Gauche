@@ -268,7 +268,8 @@ dnl Windows/MinGW is special and we know the answer, so we just don't
 dnl bother checking it.
 case "$target" in
   *mingw32*)
-    LIBS="$LIBS -lws2_32" ;;
+    LIBS="$LIBS -lws2_32"
+    EXT_LIBS="$EXT_LIBS -lws2_32" ;;
   *)
     TYPE_SOCKLEN_T;;
 esac

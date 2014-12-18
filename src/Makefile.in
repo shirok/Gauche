@@ -149,7 +149,7 @@ INSTALL_SUBHEADERS = \
 	gauche/vminsn.h gauche/weak.h gauche/win-compat.h gauche/writer.h \
 	gauche/wthread.h
 
-INSTALL_LIBS = $(LIBGAUCHE).$(SOEXT)
+INSTALL_LIBS = $(LIBGAUCHE).$(SOEXT) $(LIBGAUCHE_STATIC).a
 INSTALL_BINS = gosh$(EXEEXT)           \
 	       @ALTERNATIVE_GOSH@      \
 	       gauche-config$(EXEEXT)  \
@@ -371,7 +371,7 @@ static : $(LIBGAUCHE_STATIC).a
 $(LIBGAUCHE_STATIC).a : all staticinit.$(OBJEXT)
 	$(AR) cr $(LIBGAUCHE_STATIC).a $(libgauche_OBJECTS) $(libgc_OBJECTS) staticinit.$(OBJEXT) `cd $(top_builddir)/ext; $(MAKE) -s list-objects`
 
-staticinit.c : all
+staticinit.c : all gen-staticinit.scm
 	$(BUILD_GOSH) $(srcdir)/gen-staticinit.scm $(top_srcdir) $(top_builddir)
 
 # tests -----------------------------------------------
@@ -444,7 +444,8 @@ clean :
 	rm -rf core core.[0-9]* gosh$(EXEEXT) gauche-config$(EXEEXT) \
 	       test-vmstack$(EXEEXT) test-arith$(EXEEXT) test-extra$(EXEEXT) \
 	       $(GENERATED_SCRIPTS) gauche-config.c \
-	       $(LIBGAUCHE).$(SOEXT)* *.$(OBJEXT) *~ *.a *.t *.def *.exp *.exe \
+	       $(LIBGAUCHE).$(SOEXT)* $(LIBGAUCHE_STATIC).a \
+               *.$(OBJEXT) *~ *.a *.t *.def *.exp *.exe \
 	       test.log test.dir so_locations gauche/*~ paths_arch.c \
 	       gauche/config_threads.h gauche-config.in.c staticinit.c \
 	       gauche-install.in.c gauche-package.in.c gauche-cesconv.in.c \

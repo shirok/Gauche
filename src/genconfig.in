@@ -67,6 +67,8 @@ arch="$host"
 local_inc="@LOCAL_INC@"
 local_lib="@LOCAL_LIB@"
 
+static_libs="@STATIC_LIBS@"
+
 incdirs=`echo $gauche_incdir | sed s/^-I//`${pathsep}`echo $gauche_siteincdir | sed s/^-I//`
 if [ ! -z "@LOCAL_INCDIRS@" ]; then
   incdirs="$incdirs${pathsep}@LOCAL_INCDIRS@"
@@ -172,6 +174,11 @@ static void usage (void) {
         "       LDFLAGS to create dynamically linked libraries\\n"
         "  --rpath-flag\\n"
         "       Compiler flag(s) to embed RPATH\\n"
+        "  --static-libs\\n"
+        "       Returns a list of libraries required to link Gauche statically.\\n"
+        "       Similar to '-l', but this includes the libraries that are used\\n"
+        "       for extension modules, and also the static library itself,\\n"
+        "       that is -lgauche-static-X.X.\\n"
         "  --fixup-extension FILE [MODULE]\\n"
         "       creates FILE_head.c and FILE_tail.c.  They are required for GC\\n"
         "       to work properly on some platforms.  MODULE must be the extension\\n"
@@ -225,6 +232,7 @@ static struct cmd_rec {
     { "--dylib-suffix",   "$shlib_dylib_suffix" },
     { "--dylib-ldflags",  "$shlib_dylib_ldflags" },
     { "--libgauche-so",   "$libgauche_so" },
+    { "--static-libs",    "$static_libs" },
 
     { NULL, NULL }
 };
@@ -444,6 +452,7 @@ cat > ../lib/gauche/config.scm.tmp.$$ <<EOF
     ("--dylib-suffix"    "$shlib_dylib_suffix")
     ("--dylib-ldflags"   "$shlib_dylib_ldflags")
     ("--libgauche-so"    "$libgauche_so")
+    ("--static-libs"     "$static_libs")
     )))
 
 EOF
