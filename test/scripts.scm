@@ -84,6 +84,14 @@
 (use gauche.configure)
 (test-module 'gauche.configure)
 
+;; NB: At this moment, running env.exe via run-process doesn't work,
+;; if gosh is runnung under MSYS shell.  (It is ok if gosh is running
+;; under cmd.)
+;; So we skip this test on MinGW.
+(cond-expand
+ [gauche.os.windows]
+ [else
+
 (remove-files "test.o" "test2.o")
 (make-directory* "test.o/src")
 (make-directory* "test2.o")
@@ -191,6 +199,8 @@
                         (car (file->sexp-list "test2.o/package.gpd"))))))
 
 (remove-files "test.o" "test2.o")
+
+]) ; cond-expand except windows
 
 ;;=======================================================================
 (test-section "gauche-install")
