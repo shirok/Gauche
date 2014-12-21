@@ -1,3 +1,7 @@
+2014-12-21  Shiro Kawai  <shiro@acm.org>
+
+	* src/load.c: Support '.sld' suffix by default.
+
 2014-12-18  Shiro Kawai  <shiro@acm.org>
 
 	* configure.ac, ext/*/*.ac, src/Makefile/in, src/genconfig.in:
