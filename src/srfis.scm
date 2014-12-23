@@ -633,3 +633,13 @@ Supported by the module @code{srfi-111}.  @xref{Boxes}
 
 ボックス
 モジュール@code{srfi-111}でサポートされます。@ref{Boxes}参照。
+
+
+srfi-114, srfi-114
+()
+
+Comparators
+Supported by the module @code{srfi-114}.
+
+比較器
+モジュール@code{srfi-114}でサポートされます。
