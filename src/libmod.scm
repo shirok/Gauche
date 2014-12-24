@@ -34,7 +34,8 @@
 (select-module gauche)
 
 (inline-stub
- (declcode (.include <gauche/vminsn.h>)))
+ (declcode (.include "gauche/vminsn.h")
+           (.include "gauche/priv/moduleP.h")))
 
 ;;;
 ;;; Modules API

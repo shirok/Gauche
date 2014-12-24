@@ -1,3 +1,8 @@
+2014-12-23  Shiro Kawai  <shiro@acm.org>
+
+	* src/module.c: Introduced gauche.keyword module to allow R7RS
+	  modules to use keyword default bindings.  See the comment.
+
 2014-12-21  Shiro Kawai  <shiro@acm.org>
 
 	* src/load.c: Support '.sld' suffix by default.

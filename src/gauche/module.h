@@ -76,9 +76,6 @@ SCM_CLASS_DECL(Scm_ModuleClass);
 
 SCM_EXTERN ScmObj Scm_MakeModule(ScmSymbol *name, int error_if_exists);
 
-/* internal */
-SCM_EXTERN ScmObj Scm__MakeWrapperModule(ScmModule *origin, ScmObj prefix);
-
 /* Flags for Scm_FindBinding (F), MakeBinding (M)
    and Scm_GlobalVariableRef (R)*/
 enum {
@@ -146,7 +143,6 @@ SCM_EXTERN ScmModule *Scm_SchemeModule(void);
 SCM_EXTERN ScmModule *Scm_GaucheModule(void);
 SCM_EXTERN ScmModule *Scm_UserModule(void);
 SCM_EXTERN ScmModule *Scm_CurrentModule(void);
-SCM_EXTERN ScmModule *Scm_KeywordModule(void);
 
 #define SCM_DEFINE(module, cstr, val)           \
     Scm_Define(SCM_MODULE(module),              \

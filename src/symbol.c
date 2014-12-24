@@ -34,6 +34,7 @@
 #define LIBGAUCHE_BODY
 #include "gauche.h"
 #include "gauche/priv/builtin-syms.h"
+#include "gauche/priv/moduleP.h"
 
 /*-----------------------------------------------------------
  * Symbols
@@ -132,7 +133,7 @@ ScmObj Scm_MakeKeyword(ScmString *name)
 #endif /*GAUCHE_KEEP_DISJOINT_KEYWORD_OPTION*/
     ScmObj sname = Scm_StringAppend2(&keyword_prefix, name);
     ScmSymbol *s = make_sym(SCM_CLASS_KEYWORD, SCM_STRING(sname), TRUE);
-    Scm_DefineConst(Scm_KeywordModule(), s, SCM_OBJ(s));
+    Scm_DefineConst(Scm__GaucheKeywordModule(), s, SCM_OBJ(s));
     return SCM_OBJ(s);
 }
 

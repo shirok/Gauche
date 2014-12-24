@@ -33,8 +33,9 @@
 
 #define LIBGAUCHE_BODY
 #include "gauche.h"
-#include "gauche/priv/builtin-syms.h"
 #include "gauche/class.h"
+#include "gauche/priv/builtin-syms.h"
+#include "gauche/priv/moduleP.h"
 
 /*
  * Modules
@@ -61,9 +62,9 @@
  *  it, recovering its resouces.
  */
 
-/* Mutex of module operation
+/* Note on mutex of module operation
  *
- * [SK] Each module used to have a mutex for accesses to it.  I changed it
+ * Each module used to have a mutex for accesses to it.  I changed it
  * to use a single global lock (modules.mutex), based on the following
  * observations:
  *
@@ -75,6 +76,34 @@
  *    affect normal runtime performance.
  *
  * Benchmark showed the change made program loading 30% faster.
+ */
+
+/* Special treatment of keyword modules.
+ * We need to achieve two goals:
+ *
+ * (1) For ordinary Gauche programs (modules that uses implicit inheritance
+ *   of #<module gauche>), we want to see all keywords being bound to
+ *   itself by default.  It can be achieved by inheriting a module that
+ *   has such keyword bindings.
+ * (2) For R7RS programs we want to see the default keyword bindings only
+ *   when the programmer explicitly asks so - notably, by importing some
+ *   special module.  It can be achieved by a module that has all keywords
+ *   each bound to itself, *and* exports all of such bindings.
+ *
+ * It turned out we can't use one 'keyword' module for both purpose; if
+ * we have a keyword module that exports all bindings, they are automatically   
+ * exported from modules that inherits them.  This means if a R7RS program
+ * imports any of Gauche modules, it carries all of keyword bindings.  It's
+ * not only nasty, but also dangerous for it can shadow bindings to the
+ * symbols starting with a colon inadvertently.
+ *
+ * So we have two modules, #<module gauche.keyword> and
+ * #<module keyword>.  The former have export-all flag, and to be imported
+ * from R7RS programs as needed.  The latter doesn't export anything, and
+ * to be inherited to Gauche modules by default.  Whenever a keyword
+ * is created, its default binding is inserted to both - actually,
+ * to prevent two modules from being out of sync, we specially wire them
+ * to share a single hashtable for their internal bindings.
  */
 
 static void module_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
@@ -111,6 +140,7 @@ DEFINE_STATIC_MODULE(internalModule); /* #<module gauche.internal> */
 DEFINE_STATIC_MODULE(gfModule);       /* #<module gauche.gf> */
 DEFINE_STATIC_MODULE(userModule);     /* #<module user> */
 DEFINE_STATIC_MODULE(keywordModule);  /* #<module keyword> */
+DEFINE_STATIC_MODULE(gkeywordModule); /* #<module gauche.keyword> */
 
 static ScmObj defaultParents = SCM_NIL; /* will be initialized */
 static ScmObj defaultMpl =     SCM_NIL; /* will be initialized */
@@ -119,24 +149,28 @@ static ScmObj defaultMpl =     SCM_NIL; /* will be initialized */
  * Constructor
  */
 
-static void init_module(ScmModule *m, ScmObj name)
+static void init_module(ScmModule *m, ScmObj name, ScmHashTable *internal)
 {
     m->name = name;
     m->imported = m->depended = SCM_NIL;
     m->exportAll = FALSE;
     m->parents = defaultParents;
     m->mpl = Scm_Cons(SCM_OBJ(m), defaultMpl);
-    m->internal = SCM_HASH_TABLE(Scm_MakeHashTableSimple(SCM_HASH_EQ, 0));
+    if (internal) {
+        m->internal = internal;
+    } else {
+        m->internal = SCM_HASH_TABLE(Scm_MakeHashTableSimple(SCM_HASH_EQ, 0));
+    }
     m->external = SCM_HASH_TABLE(Scm_MakeHashTableSimple(SCM_HASH_EQ, 0));
     m->origin = m->prefix = SCM_FALSE;
 }
 
 /* Internal */
-static ScmObj make_module(ScmObj name)
+static ScmObj make_module(ScmObj name, ScmHashTable *internal)
 {
     ScmModule *m = SCM_NEW(ScmModule);
     SCM_SET_CLASS(m, SCM_CLASS_MODULE);
-    init_module(m, name);
+    init_module(m, name, internal);
     return SCM_OBJ(m);
 }
 
@@ -158,7 +192,7 @@ static ScmModule *lookup_module_create(ScmSymbol *name, int *created)
                                          (intptr_t)name,
                                          SCM_DICT_CREATE);
     if (e->value == 0) {
-        (void)SCM_DICT_SET_VALUE(e, make_module(SCM_OBJ(name)));
+        (void)SCM_DICT_SET_VALUE(e, make_module(SCM_OBJ(name), NULL));
         *created = TRUE;
     } else {
         *created = FALSE;
@@ -170,7 +204,7 @@ static ScmModule *lookup_module_create(ScmSymbol *name, int *created)
 ScmObj Scm_MakeModule(ScmSymbol *name, int error_if_exists)
 {
     if (name == NULL) {
-        return make_module(SCM_FALSE);
+        return make_module(SCM_FALSE, NULL);
     }
     int created;
     ScmObj r = SCM_OBJ(lookup_module_create(name, &created));
@@ -187,7 +221,7 @@ ScmObj Scm_MakeModule(ScmSymbol *name, int error_if_exists)
 /* internal API to create an anonymous wrapper module */
 ScmObj Scm__MakeWrapperModule(ScmModule *origin, ScmObj prefix)
 {
-    ScmModule *m = SCM_MODULE(make_module(SCM_FALSE));
+    ScmModule *m = SCM_MODULE(make_module(SCM_FALSE, NULL));
     m->parents = SCM_LIST1(SCM_OBJ(origin));
     m->mpl = Scm_Cons(SCM_OBJ(m), origin->mpl);
     m->prefix = prefix;
@@ -397,8 +431,8 @@ ScmGloc *Scm_MakeBinding(ScmModule *module, ScmSymbol *symbol,
     Scm_GlocMark(g, kind);
 
     if (prev_kind != 0) {
-        /* TODO: value and oldval may have circular structure, and we should
-           avoid diverging. */
+        /* NB: Scm_EqualP may throw an error.  It won't leave the state
+           inconsistent, but be aware. */
         if (prev_kind != kind || !Scm_EqualP(value, oldval)) {
             Scm_Warn("redefining %s %S::%S",
                      (prev_kind == SCM_BINDING_CONST)? "constant" : "inlinable",
@@ -465,7 +499,7 @@ void Scm_HideBinding(ScmModule *module, ScmSymbol *symbol)
  *   CAVEATS:
  *
  *   - gloc's module remains the same.
- *   - autoload won't resolved.
+ *   - autoload won't be resolved.
  *   - TARGETNAME shouldn't be bound in TARGET beforehand.  We don't check
  *     it and just insert the gloc.  If there is an existing binding,
  *     it would become orphaned, possibly causing problems.
@@ -874,9 +908,14 @@ ScmModule *Scm_UserModule(void)
     return &userModule;
 }
 
-ScmModule *Scm_KeywordModule(void)
+ScmModule *Scm__KeywordModule(void) /* internal */
 {
     return &keywordModule;
+}
+
+ScmModule *Scm__GaucheKeywordModule(void) /* internal */
+{
+    return &gkeywordModule;
 }
 
 ScmModule *Scm_CurrentModule(void)
@@ -885,10 +924,10 @@ ScmModule *Scm_CurrentModule(void)
 }
 
 /* NB: we don't need to lock the global module table in initialization */
-#define INIT_MOD(mod, mname, mpl)                                           \
+#define INIT_MOD(mod, mname, mpl, inttab)                                   \
     do {                                                                    \
       SCM_SET_CLASS(&mod, SCM_CLASS_MODULE);                                \
-      init_module(&mod, mname);                                             \
+      init_module(&mod, mname,  inttab);                                    \
       Scm_HashTableSet(modules.table, (mod).name, SCM_OBJ(&mod), 0);        \
       mod.parents = (SCM_NULLP(mpl)? SCM_NIL : SCM_LIST1(SCM_CAR(mpl)));    \
       mpl = mod.mpl = Scm_Cons(SCM_OBJ(&mod), mpl);                         \
@@ -915,12 +954,12 @@ void Scm__InitModule(void)
 
     /* standard module chain */
     ScmObj mpl = SCM_NIL;
-    INIT_MOD(nullModule, SCM_SYM_NULL, mpl);
-    INIT_MOD(schemeModule, SCM_SYM_SCHEME, mpl);
-    INIT_MOD(keywordModule, SCM_SYM_KEYWORD, mpl);
-    INIT_MOD(gaucheModule, SCM_SYM_GAUCHE, mpl);
-    INIT_MOD(gfModule, SCM_SYM_GAUCHE_GF, mpl);
-    INIT_MOD(userModule, SCM_SYM_USER, mpl);
+    INIT_MOD(nullModule, SCM_SYM_NULL, mpl, NULL);
+    INIT_MOD(schemeModule, SCM_SYM_SCHEME, mpl, NULL);
+    INIT_MOD(keywordModule, SCM_SYM_KEYWORD, mpl, NULL);
+    INIT_MOD(gaucheModule, SCM_SYM_GAUCHE, mpl, NULL);
+    INIT_MOD(gfModule, SCM_SYM_GAUCHE_GF, mpl, NULL);
+    INIT_MOD(userModule, SCM_SYM_USER, mpl, NULL);
 
     mpl = SCM_CDR(mpl);  /* default mpl doesn't include user module */
     defaultParents = SCM_LIST1(SCM_CAR(mpl));
@@ -928,7 +967,12 @@ void Scm__InitModule(void)
 
     /* other modules */
     mpl = defaultMpl;
-    INIT_MOD(internalModule, SCM_SYM_GAUCHE_INTERNAL, mpl);
+    INIT_MOD(internalModule, SCM_SYM_GAUCHE_INTERNAL, mpl, NULL);
+
+    mpl = keywordModule.mpl;
+    INIT_MOD(gkeywordModule, SCM_INTERN("gauche.keyword"), mpl,
+             keywordModule.internal);
+    gkeywordModule.exportAll = TRUE;
 
     /* create predefined moudles */
     for (modname = builtin_modules; *modname; modname++) {
