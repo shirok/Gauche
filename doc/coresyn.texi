@@ -4931,6 +4931,48 @@ all the bindings of @code{gauche} module is imported.
 @c COMMON
 @end deftp
 
+@deftp {Builtin Module} gauche.keyword
+@mdindex gauche.keyword
+@c EN
+When Gauche is running with @code{GAUCHE_KEYWORD_IS_SYMBOL} mode
+keywords (symbols beginning with @code{:}) is automatically bound
+to itself in this module. 
+(@xref{Keywords}, for the details.)
+
+If you use the default module inheritance,
+you don't need to use this module, since
+the keyword module is included in the inheritance chain.
+If you don't inherit @code{gauche} module, however, importing this
+module gives you access to the keywords without quotes.
+For example, R7RS programs
+and libraries would require @code{(import (gauche keyword))},
+or you have to quote all keywords.
+@c JP
+Gaucheが@code{GAUCHE_KEYWORD_IS_SYMBOL}モードで実行されている時は、
+キーワード (@code{:}で始まるシンボル) が自動的にこのモジュールの中で
+自分自身に束縛されます。(詳しくは@ref{Keywords}を参照してください。)
+
+デフォルトのモジュール継承を使っている場合、キーワードモジュールは
+継承チェインの中に含まれているので、このモジュールを陽に使用する必要はありません。
+@code{gauche}を継承しないモジュールを書いていて、キーワードをクオートせずに
+使いたい場合にこのモジュールをインポートしてください。
+例えばR7RSプログラムやライブラリは、@code{(import (gauche keyword))}
+しない限り、キーワードにクオートが必要です。
+@c COMMON
+
+@example
+;; R7RS program
+(import (scheme base)
+        (gauche base)    ; to use Gauche builtins
+        (gauche keyword))
+
+;; Without importing gauche.keyword,
+;; you need to write ':directory below.
+(sys-exec "ls" '("ls" "-l") :directory "/")
+@end example
+@end deftp
+
+
 @c Local variables:
 @c mode: texinfo
 @c coding: utf-8
