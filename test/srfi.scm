@@ -1400,4 +1400,68 @@
 (use srfi-114)
 (test-module 'srfi-114)
 
+;; builtin comparators are tested in test/compare.scm
+(let ()
+  (define (test-cmp msg cmpr data) ; data = ((a b result) ...)
+    (test* msg data
+           (map (^x (list (car x) (cadr x)
+                          (comparator-compare cmpr (car x) (cadr x))))
+                data)))
+
+  (test-cmp "inexact1"
+            (make-inexact-real-comparator 0.25 'round 'min)
+            '((1.0 1.1 0)
+              (1.1 1.2 -1)
+              (1.2 1.1 1)
+              (1.1 1.0 0)
+              (1.2 1.3 0)
+              (+nan.0 1.1 -1)
+              (1.1 +nan.0 1)
+              (+nan.0 +nan.0 0)))
+
+  (test-cmp "inexact2"
+            (make-inexact-real-comparator 0.25 'round 'max)
+            '((+nan.0 1.1 1)
+              (1.1 +nan.0 -1)
+              (+nan.0 +nan.0 0)))
+
+  (test-cmp "inexact3 - nan handling"
+            ($ make-inexact-real-comparator 0.25 'round
+               (^x (comparator-compare default-comparator 0 x)))
+            '((+nan.0 1.1 -1)
+              (+nan.0 0 0)
+              (+nan.0 -1.1 1)
+              (+nan.0 +nan.0 0)))
+
+  (test-cmp "list" (make-list-comparator
+                    (make-inexact-real-comparator 0.25 'round 'error))
+            '(((1 2 3) (1 2 3) 0)
+              ((1 2 3) (1.1 2 3) 0)
+              ((1 2 3) (1.1 2) 1)
+              ((1 2 3) (1.2 2) -1)
+              ((1 2 3) (1.2 2 3) -1)
+              (() () 0)
+              (() (1) -1)
+              ((1 2 3) (1 2 2.9) 0)
+              ((1 2 3) (1 2.2 2.9) -1)
+              ((1 2.2 2.9) (1 2 3) 1)
+              ))
+            
+  (test-cmp "vector" (make-vector-comparator
+                      (make-inexact-real-comparator 0.25 'round 'error))
+            '((#(1 2 3) #(1 2 3) 0)
+              (#(1 2 3) #(1.1 2 3) 0)
+              (#(1 2 3) #(1.1 2) 1)
+              (#(1 2 3) #(1.2 2) 1)
+              (#(1 2 3) #(1.2 2 3) -1)
+              (#() #() 0)
+              (#() #(1) -1)
+              (#(1 2 3) #(1 2 2.9) 0)
+              (#(1 2 3) #(1 2.2 2.9) -1)
+              (#(1 2.2 2.9) #(1 2 3) 1)
+              ))
+            
+  )
+  
+
 (test-end)
