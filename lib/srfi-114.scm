@@ -307,8 +307,7 @@
   (make-comparator (comparator-type-test-procedure cmp)
                    (comparator-equality-predicate cmp)
                    (and (comparator-comparison-procedure? cmp)
-                        (let1 c (comparator-comparison-procedure cmp)
-                          (^[a b] (- (comparator-compare c a b)))))
+                        (^[a b] (- (comparator-compare cmp a b))))
                    (and (comparator-hash-function? cmp)
                         (comparator-hash-function cmp))))
 

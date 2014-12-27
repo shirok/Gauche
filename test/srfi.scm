@@ -1462,6 +1462,19 @@
               ))
             
   )
-  
+
+
+(let ()
+  (define (test-minmax msg cmp min-item max-item args)
+    (test* (format "test-minmax ~a" msg)
+           (list min-item max-item max-item min-item)
+           (list (apply comparator-min cmp args)
+                 (apply comparator-max cmp args)
+                 (apply comparator-min (make-reverse-comparator cmp) args)
+                 (apply comparator-max (make-reverse-comparator cmp) args))))
+
+  (test-minmax "default" default-comparator 1 9
+               '(3 1 4 5 9 2 6 8 7))
+  )
 
 (test-end)
