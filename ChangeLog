@@ -1,3 +1,8 @@
+2014-12-27  Shiro Kawai  <shiro@acm.org>
+
+	* lib/Makefile.in: Don't forget to install srfi-18.scm
+	* ext/threads/threads.scm: Re-export current-thread
+
 2014-12-23  Shiro Kawai  <shiro@acm.org>
 
 	* src/module.c: Introduced gauche.keyword module to allow R7RS

@@ -34,6 +34,7 @@
 (define-module gauche.threads
   (use gauche.record)
   (export gauche-thread-type
+          current-thread                ;re-exporting the builtin
 
           thread? make-thread thread-name thread-specific-set! thread-specific
           thread-state thread-start! thread-yield! thread-sleep!
