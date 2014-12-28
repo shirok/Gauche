@@ -346,7 +346,8 @@
      (let1 r expr
        (cond [(= r 0) equal]
              [(< r 0) less]
-             [(else greater)]))]))
+             [else greater]))]
+    [(_ . x) (syntax-error "malformed if3:" (if3 . x))]))
 
 (define-syntax define-ifx
   (syntax-rules ()
