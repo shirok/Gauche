@@ -352,12 +352,17 @@ Gauche では @code{map} の実装はこの順になっているので、@code{m
 @defun pair-for-each f clist1 clist2 @dots{}
 @c EN
 [SRFI-1]
-Like @code{for-each}, but the procedure @var{f} is applied on each @code{cdr}
-of @var{clist}s.
+Like @code{for-each}, but the procedure @var{f} is applied on
+@var{clist}s themselves first, then each @code{cdr}s of them, and so on.
 @c JP
-@code{for-each} と似ていますが、手続き @var{f} は各リスト @var{clist} の
-@code{cdr} に適用されます。
+@code{for-each} と似ていますが、手続き @var{f} はまず @var{clist}自体に
+適用され、次ににそれらの@code{cdr} に適用され、となります。
 @c COMMON
+
+@example
+(pair-for-each write '(a b c))
+ @result{} @r{prints} (a b c)(b c)(c)
+@end example
 @end defun
 
 @subsubheading List partitioning
