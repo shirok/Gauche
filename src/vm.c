@@ -222,7 +222,7 @@ ScmVM *Scm_NewVM(ScmVM *proto, ScmObj name)
     v->escapeReason = SCM_VM_ESCAPE_NONE;
     v->escapeData[0] = NULL;
     v->escapeData[1] = NULL;
-    v->defaultEscapeHandler = SCM_FALSE;
+    v->customErrorReporter = (proto? proto->customErrorReporter : SCM_FALSE);
 
     v->evalSituation = SCM_VM_EXECUTING;
 

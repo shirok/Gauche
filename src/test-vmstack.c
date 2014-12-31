@@ -51,7 +51,7 @@ int main(int argc, char **argv)
     Scm_Init(GAUCHE_SIGNATURE);
 
     eproc = Scm_MakeSubr(dummy_eproc, NULL, 0, 1, SCM_FALSE);
-    Scm_VM()->defaultEscapeHandler = eproc;
+    Scm_VM()->customErrorReporter = eproc;
 
     test_eval("simple expression", "(+ 1 2 3)");
     test_eval("with-error-handler (1)",

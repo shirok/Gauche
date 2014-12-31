@@ -71,7 +71,7 @@ ScmObj Scm_MakeThread(ScmProcedure *thunk, ScmObj name)
     }
     ScmVM *vm = Scm_NewVM(current, name);
     vm->thunk = thunk;
-    vm->defaultEscapeHandler = SCM_OBJ(&thread_error_handler_STUB);
+    vm->customErrorReporter = SCM_OBJ(&thread_error_handler_STUB);
     return SCM_OBJ(vm);
 }
 

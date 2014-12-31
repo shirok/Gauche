@@ -499,8 +499,14 @@ struct ScmVMRec {
                                    longjmp(). */
     void *escapeData[2];        /* ditto. */
 
-    /* Custom debugger */
-    ScmObj defaultEscapeHandler;
+    /* Custom debugger or error reporter */
+    ScmObj customErrorReporter; /* If set, Scm_ReportError (report-error) calls
+                                   this procedure with an exception object.
+                                   The default behavior is to show the error
+                                   type, message, and the stack trace.
+                                   Alter this only if you want to customize
+                                   it per thread.
+                                 */
 
     /* Program information */
     ScmObj dummy0;              /* for the ABI compatibility.  remove on 1.0. */

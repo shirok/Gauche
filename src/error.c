@@ -1039,8 +1039,8 @@ void Scm_ReportError(ScmObj e)
 
     SCM_VM_RUNTIME_FLAG_SET(vm, SCM_ERROR_BEING_REPORTED);
     SCM_UNWIND_PROTECT {
-        if (SCM_PROCEDUREP(vm->defaultEscapeHandler)) {
-            Scm_ApplyRec(vm->defaultEscapeHandler, SCM_LIST1(e));
+        if (SCM_PROCEDUREP(vm->customErrorReporter)) {
+            Scm_ApplyRec(vm->customErrorReporter, SCM_LIST1(e));
         } else {
             report_error_inner(vm, e);
         }

@@ -553,10 +553,10 @@
                       SCM_STACK_TRACE_FORMAT_ORIGINAL))
 
 ;; API
-(define-cproc vm-set-default-exception-handler (vm::<thread> handler) ::<void>
+(define-cproc vm-set-custom-error-reporter (vm::<thread> handler) ::<void>
   (unless (or (SCM_FALSEP handler) (SCM_PROCEDUREP handler))
     (SCM_TYPE_ERROR handler "a procedure or #f"))
-  (set! (-> vm defaultEscapeHandler) handler))
+  (set! (-> vm customErrorReporter) handler))
 
 ;; parameter internal API
 ;; These will be called by the public API in gauche.parameter.  The protocol

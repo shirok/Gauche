@@ -1,3 +1,18 @@
+2014-12-30  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/vm.h: INCOMPATIBLE CHANGE: Renamed
+	  ScmVM.defaultEscapeHandler for customErrorReporter.  The name was
+	  misleading as if it would handle escaping situation caused by
+	  exceptions; in fact, we have totally separate mechanism to handle
+	  exceptions, and the said slot is merely called by Scm_ReportError,
+	  which is the default action when the exception isn't handled at
+	  all.
+	  ABI compatibility is kept, but any extension code that refers to
+	  this slot would break.  Since this is undocumented niche feature,
+	  we hope this won't affect much.
+	* src/libeval.scm: vm-set-default-exception-handler becomes
+	  vm-set-custom-error-reporter, as well.
+
 2014-12-27  Shiro Kawai  <shiro@acm.org>
 
 	* lib/Makefile.in: Don't forget to install srfi-18.scm
