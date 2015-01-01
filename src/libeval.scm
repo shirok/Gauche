@@ -553,7 +553,8 @@
                       SCM_STACK_TRACE_FORMAT_ORIGINAL))
 
 ;; API
-(define-cproc vm-set-custom-error-reporter (vm::<thread> handler) ::<void>
+(select-module gauche.internal)
+(define-cproc %vm-custom-error-reporter-set! (vm::<thread> handler) ::<void>
   (unless (or (SCM_FALSEP handler) (SCM_PROCEDUREP handler))
     (SCM_TYPE_ERROR handler "a procedure or #f"))
   (set! (-> vm customErrorReporter) handler))

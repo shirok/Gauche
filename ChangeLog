@@ -1,5 +1,10 @@
 2014-12-31  Shiro Kawai  <shiro@acm.org>
 
+	* src/libeval.scm (%vm-custom-error-reporter-set!): Renamed from
+	  vm-set-custom-error-reporter, and moved to gauche.internal module.
+	  This is something you don't need to touch daily, so no reason to
+	  expose it by default.
+
 	* src/vm.c (Scm_VMDefaultExceptionHandler),
 	  src/error.c (Scm_ReportError): Instead of calling
 	  vm->customErrorHandler in Scm_ReportError, we lifted the check
