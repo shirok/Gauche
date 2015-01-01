@@ -1,5 +1,11 @@
 2014-12-31  Shiro Kawai  <shiro@acm.org>
 
+	* ext/threads/threads.c (make-thread): Set custom-error-reporter
+	  of newly created thread to suppress the default error message;
+	  the unhandled error (which causes error message by default)
+	  should be handled by the caller of thread-join!.  If one wants
+	  to report an error within the thread, use guard and report-error.
+
 	* src/libeval.scm (%vm-custom-error-reporter-set!): Renamed from
 	  vm-set-custom-error-reporter, and moved to gauche.internal module.
 	  This is something you don't need to touch daily, so no reason to

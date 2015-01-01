@@ -100,6 +100,10 @@
      (slot-ref thread 'specific))
    thread-specific-set!))
 
+(define (make-thread thunk :optional (name #f))
+  (rlet1 t (%make-thread thunk name)
+    ((with-module gauche.internal %vm-custom-error-reporter-set!) t (^e #f))))
+
 (inline-stub
  (define-cproc thread-state (vm::<thread>)
    (case (-> vm state)
@@ -110,8 +114,7 @@
      [else (Scm_Error "[internal] thread state has invalid value: %d"
                       (-> vm state))]))
 
- (define-cproc make-thread (thunk::<procedure> :optional (name #f))
-   Scm_MakeThread)
+ (define-cproc %make-thread (thunk::<procedure> name) Scm_MakeThread)
 
  (define-cproc thread-start! (vm::<thread>) Scm_ThreadStart)
 
