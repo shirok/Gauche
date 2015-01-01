@@ -1,5 +1,14 @@
 2014-12-31  Shiro Kawai  <shiro@acm.org>
 
+	* src/vm.c (Scm_VMDefaultExceptionHandler),
+	  src/error.c (Scm_ReportError): Instead of calling
+	  vm->customErrorHandler in Scm_ReportError, we lifted the check
+	  to Scm_VMDefaultExceptionHandler; if vm->customErrorHandler is
+	  set, it is called directly, and Scm_ReportError always print
+	  the default message and stack trace.  This seems the sane way
+	  to do it - we don't remember why we chose to dispatch inside
+	  Scm_ReportError initially.
+
 	* ext/threads/threads.c (Scm_MakeThread): Do not alter
 	  customErrorReporter in the new thread.  Instead, we just drop
 	  call of Scm_ReportError in thread_entry.  If the programmer

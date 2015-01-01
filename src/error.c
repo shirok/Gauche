@@ -1012,47 +1012,12 @@ static void Scm_PrintDefaultErrorHeading(ScmObj e, ScmPort *out)
     }
 }
 
-static void report_error_inner(ScmVM *vm, ScmObj e)
-{
-    ScmPort *err = SCM_VM_CURRENT_ERROR_PORT(vm);
-    Scm_PrintDefaultErrorHeading(e, err);
-    Scm_DumpStackTrace(vm);
-}
-
 void Scm_ReportError(ScmObj e)
 {
     ScmVM *vm = Scm_VM();
-
-    if (SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_ERROR_BEING_REPORTED)) {
-        /* An _uncaptured_ error occurred during reporting an error.
-           We can't proceed, for it will cause infinite loop.
-           Note that it is OK for an error to occur inside the error
-           reporter, as far as the error is handled by user-installed
-           handler.   The user-installed handler can even invoke a
-           continuation that is captured outside; the flag is reset
-           in such case.
-           Be careful that it is possible that stderr is no longer
-           available here (since it may be the very cause of the
-           recursive error).  All we can do is to abort. */
-        Scm_Abort("Unhandled error occurred during reporting an error.  Process aborted.\n");
-    }
-
-    SCM_VM_RUNTIME_FLAG_SET(vm, SCM_ERROR_BEING_REPORTED);
-    SCM_UNWIND_PROTECT {
-        if (SCM_PROCEDUREP(vm->customErrorReporter)) {
-            Scm_ApplyRec(vm->customErrorReporter, SCM_LIST1(e));
-        } else {
-            report_error_inner(vm, e);
-        }
-    }
-    SCM_WHEN_ERROR {
-        /* NB: this is called when a continuation captured outside is
-           invoked inside the error reporter.   It may be invoked by
-           the user's error handler.  */
-        SCM_VM_RUNTIME_FLAG_CLEAR(vm, SCM_ERROR_BEING_REPORTED);
-    }
-    SCM_END_PROTECT;
-    SCM_VM_RUNTIME_FLAG_CLEAR(vm, SCM_ERROR_BEING_REPORTED);
+    ScmPort *err = SCM_VM_CURRENT_ERROR_PORT(vm);
+    Scm_PrintDefaultErrorHeading(e, err);
+    Scm_DumpStackTrace(vm);
 }
 
 /*

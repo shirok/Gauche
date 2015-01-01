@@ -129,6 +129,8 @@ static int    check_arglist_tail_for_apply(ScmVM *vm, ScmObj restargs);
 
 static ScmEnvFrame *get_env(ScmVM *vm);
 
+static void   call_error_reporter(ScmObj e);
+
 /*#define COUNT_INSN_FREQUENCY*/
 #ifdef COUNT_INSN_FREQUENCY
 #include "vmstat.c"
@@ -1991,7 +1993,7 @@ void Scm_VMDefaultExceptionHandler(ScmObj e)
         /* We don't have an active error handler, so this is the fallback
            behavior.  Reports the error and rewind dynamic handlers and
            C stacks. */
-        Scm_ReportError(e);
+        call_error_reporter(e);
         /* unwind the dynamic handlers */
         ScmObj hp;
         SCM_FOR_EACH(hp, vm->handlers) {
@@ -2009,6 +2011,45 @@ void Scm_VMDefaultExceptionHandler(ScmObj e)
     } else {
         exit(EX_SOFTWARE);
     }
+}
+
+/* Call error reporter - either the custome one, or the default
+   Scm_ReportError.  We set SCM_ERROR_BEING_REPORTED flag during it
+   to prevent infinite loop. */
+static void call_error_reporter(ScmObj e)
+{
+    ScmVM *vm = Scm_VM();
+
+    if (SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_ERROR_BEING_REPORTED)) {
+        /* An _uncaptured_ error occurred during reporting an error.
+           We can't proceed, for it will cause infinite loop.
+           Note that it is OK for an error to occur inside the error
+           reporter, as far as the error is handled by user-installed
+           handler.   The user-installed handler can even invoke a
+           continuation that is captured outside; the flag is reset
+           in such case.
+           Be careful that it is possible that stderr is no longer
+           available here (since it may be the very cause of the
+           recursive error).  All we can do is to abort. */
+        Scm_Abort("Unhandled error occurred during reporting an error.  Process aborted.\n");
+    }
+
+    SCM_VM_RUNTIME_FLAG_SET(vm, SCM_ERROR_BEING_REPORTED);
+    SCM_UNWIND_PROTECT {
+        if (SCM_PROCEDUREP(vm->customErrorReporter)) {
+            Scm_ApplyRec(vm->customErrorReporter, SCM_LIST1(e));
+        } else {
+            Scm_ReportError(e);
+        }
+    }
+    SCM_WHEN_ERROR {
+        /* NB: this is called when a continuation captured outside is
+           invoked inside the error reporter.   It may be invoked by
+           the user's error handler.  */
+        SCM_VM_RUNTIME_FLAG_CLEAR(vm, SCM_ERROR_BEING_REPORTED);
+    }
+    SCM_END_PROTECT;
+    SCM_VM_RUNTIME_FLAG_CLEAR(vm, SCM_ERROR_BEING_REPORTED);
 }
 
 static ScmObj default_exception_handler_body(ScmObj *argv,
