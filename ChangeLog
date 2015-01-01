@@ -1,3 +1,11 @@
+2014-12-31  Shiro Kawai  <shiro@acm.org>
+
+	* ext/threads/threads.c (Scm_MakeThread): Do not alter
+	  customErrorReporter in the new thread.  Instead, we just drop
+	  call of Scm_ReportError in thread_entry.  If the programmer
+	  needs the thread to report error, she can call report-error
+	  within guard clauses.
+
 2014-12-30  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/vm.h: INCOMPATIBLE CHANGE: Renamed

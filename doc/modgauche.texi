@@ -14123,6 +14123,12 @@ SchemeレベルのスレッドAPIはSRFI-18、``マルチスレッドサポー�
 @c NODE スレッドプログラミングTips
 
 @c EN
+@subsubheading What's Gauche threads for
+@c JP
+@subsubheading Gaucheのスレッドをどう使うか
+@c COMMON
+
+@c EN
 Although the surface API of threads looks simple and portable,
 you need to know how the threads are implemented in order to utilize
 the feature's potential.   Some languages support threads as
@@ -14264,6 +14270,69 @@ are not only but one of the ways to realize those features.
 それらの機能を実現するために、ネイティブスレッドが唯一の方法ではないということを
 心に留め置いて下さい。
 @c COMMON
+
+@c EN
+@subsubheading Uncaught errors in a thread body
+@c JP
+@subsubheading スレッドボディ内で捕捉されないエラー
+@c COMMON
+
+When you run a single-thread program that raises an unexpected (unhandled)
+error, Gauche prints an error message and a stack trace by default.
+So sometimes it perplexes programmers when a thread doesn't print
+anything when it dies because of an unhandled error.
+
+What's happneing is this: An unhandled error in a thread body would
+cause the thread to terminate, and the error itself will propagate
+to the thread who's expecting the result of the terminated thread.
+So, you get the error (wrapped by @code{<uncaught-exception>})
+when you call @code{thread-join!} on a thread which is terminated
+because of an unhandled error.  The behavior is defined in SRFI-18.
+
+If you fire a thread for one-shot calculation, expecting to receive
+the result by @code{thread-join!}, then this is reasonable---you can
+handle the error situation in the ``parent'' thread.  However,
+if you run a thread to loop indefinitely to process something and
+not expect to retrieve its result via @code{thread-join!}, this becomes
+a pitfall; the thread may die unexpectedly but you wouldn't know it.
+(If such a thread is garbage-collected, a warning is printed.
+However you wouldn't know when that happens so you can't count on it.)
+
+The rule of thumb is that you always wrap the body of such thread
+with @code{guard}, and handles the error explicitly.  You can call
+@code{report-error} to display the default error message and a stack
+trace.
+
+@example
+(thread-start!
+ (make-thread (^[] (guard (e [else (report-error e) #f])
+                     ... thread body ...))))
+@end example
+
+@xref{Thread exceptions}, for the details of thread exception handling.
+
+Note: As of 0.9.5, Gauche has a known bug that the tail call of
+error handling clauses of @code{guard} doesn't become a proper
+tail call.   So, the following code, which should run safely
+in Scheme, could eat up a stack:
+
+@example
+(thread-start!
+ (make-thread (^[] (let loop ()
+                     (guard (e [else (report-error e) (loop)])
+                       ... thread body ...)))))
+@end example
+
+For the time being, you can lift the call to loop outside of
+@code{guard} as workaround.
+
+@example
+(thread-start!
+ (make-thread (^[] (let loop ()
+                     (guard (e [else (report-error e)])
+                       ... thread body ...)
+                     (loop)))))
+@end example
 
 
 @node Thread procedures, Synchronization primitives, Thread programming tips, Threads

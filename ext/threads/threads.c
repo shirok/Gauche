@@ -48,18 +48,6 @@
  * Thread interface
  */
 
-static ScmObj thread_error_handler(ScmObj *args, int nargs, void *data)
-{
-    /* For now, uncaptured error causes thread termination with
-       setting <uncaught-exception> to the resultException field.
-       It is handled in thread_entry(), so we don't need to do anything
-       here. */
-    return SCM_UNDEFINED;
-}
-
-static SCM_DEFINE_STRING_CONST(thread_error_handler_NAME, "thread-error-handler", 20, 20);
-static SCM_DEFINE_SUBR(thread_error_handler_STUB, 1, 0, SCM_OBJ(&thread_error_handler_NAME), thread_error_handler, NULL, NULL);
-
 /* Creation.  In the "NEW" state, a VM is allocated but actual thread
    is not created. */
 ScmObj Scm_MakeThread(ScmProcedure *thunk, ScmObj name)
@@ -71,7 +59,6 @@ ScmObj Scm_MakeThread(ScmProcedure *thunk, ScmObj name)
     }
     ScmVM *vm = Scm_NewVM(current, name);
     vm->thunk = thunk;
-    vm->customErrorReporter = SCM_OBJ(&thread_error_handler_STUB);
     return SCM_OBJ(vm);
 }
 
@@ -127,11 +114,12 @@ static SCM_INTERNAL_THREAD_PROC_RETTYPE thread_entry(void *data)
                     Scm_MakeError(SCM_MAKE_STR("stale continuation thrown"));
                 break;
             case SCM_VM_ESCAPE_ERROR: {
-                ScmObj exc = Scm_MakeThreadException(
-                    SCM_CLASS_UNCAUGHT_EXCEPTION, vm);
+                /* Error handling is delegated to the thread that calls
+                   thread-join!. */
+                ScmObj exc =
+                    Scm_MakeThreadException(SCM_CLASS_UNCAUGHT_EXCEPTION, vm);
                 SCM_THREAD_EXCEPTION(exc)->data = SCM_OBJ(vm->escapeData[1]);
                 vm->resultException = exc;
-                Scm_ReportError(SCM_OBJ(vm->escapeData[1]));
                 break;
             }
             default:
