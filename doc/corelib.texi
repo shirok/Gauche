@@ -12131,11 +12131,11 @@ need to write one; just use @code{math.prime}. @xref{Prime numbers}).
 @c EN
 Just pretend we already have some prime numbers
 calculated in a variable @code{*primes*}, and you need
-to calculate a prime number equal to or grater than @var{n}
+to find a prime number equal to or grater than @var{n}
 (for simplicity, we assume @var{n} is an odd number).
 @c JP
 まず、既にある程度の計算済みの素数列が@code{*primes*}にあるとします。
-すると、与えられた@var{n}以上の素数を計算する手続きが次のとおり書けます
+すると、与えられた@var{n}以上の素数をひとつ見つける手続きが次のとおり書けます
 (@var{n}は奇数とします。)
 @c COMMON
 
@@ -13188,13 +13188,29 @@ installed, the following action is taken.
 @c COMMON
 
 @itemize @bullet
+If an unhandled exception occurs within a thread other than the primordial
+one, it terminates the thread, and the thrown condition 
+is wrapped by @code{<uncaught-exception>} condition and stored in the
+thread object.  If other thread calls @code{thread-join!} to retrieve
+result, the the @code{<uncaught-exception>} is thrown in that thread.
+Note that no messages are displayed when the original uncaught exception
+is thrown.  @xref{Thread programming tips}, for the details.
+@c JP
+もしメインスレッド以外のスレッドで捕捉されない例外が起きた場合、そのスレッドは終了し、
+投げられた例外は@code{<uncaught-exception>}でラップされて
+スレッドオブジェクトに保存されます。他のスレッドが@code{thread-join!}で
+スレッドの結果を取り出そうとした時に、その@code{<uncaught-exception>}が投げられます。
+元の捕捉されない例外が起きた時点では何もメッセージなどが表示されないことに注意してください。
+詳しくは@ref{Thread programming tips}を参照。
+@c COMMON
 @item
 @c EN
-If the program is running interactively (in repl), the information
+Otherwise,
+if the program is running interactively (in repl), the information
 of the thrown exception and stack trace are displayed, and
 the program returns to the toplevel prompt.
 @c JP
-プログラムが対話的に走っている場合(REPL)、投げられた例外の情報とスタッ
+そうでなく、プログラムが対話的に走っている場合(REPL)、投げられた例外の情報とスタッ
 クトレースが表示され、プログラムはトップレベルのプロンプトに戻ります。
 @c COMMON
 @item
@@ -13203,7 +13219,7 @@ If the program is running non-interactively, the information
 of the thrown exception and stack trace are displayed, then
 the program exits with an exit status @code{EX_SOFTWARE} (70).
 @c JP
-プログラムが対話的に走っているのではない場合は、投げられた例外の情報と
+そうでなく、プログラムが対話的に走っているのではない場合は、投げられた例外の情報と
 スタックトレースが表示された後、プログラムは終了コード
 @code{EX_SOFTWARE} (70)で終了します。
 @c COMMON
