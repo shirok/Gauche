@@ -1,3 +1,7 @@
+2015-01-02  Shiro Kawai  <shiro@acm.org>
+
+	* doc/corelib.texi (report-error): Documented.
+
 2014-12-31  Shiro Kawai  <shiro@acm.org>
 
 	* ext/threads/threads.c (make-thread): Set custom-error-reporter

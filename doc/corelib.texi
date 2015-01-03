@@ -13187,7 +13187,7 @@ installed, the following action is taken.
 場合以下のようなことが起ります。
 @c COMMON
 
-@itemize @bullet
+@enumerate
 If an unhandled exception occurs within a thread other than the primordial
 one, it terminates the thread, and the thrown condition 
 is wrapped by @code{<uncaught-exception>} condition and stored in the
@@ -13223,7 +13223,30 @@ the program exits with an exit status @code{EX_SOFTWARE} (70).
 スタックトレースが表示された後、プログラムは終了コード
 @code{EX_SOFTWARE} (70)で終了します。
 @c COMMON
-@end itemize
+@end enumerate
+
+@c EN
+The default error message and stack trace in the above case 2 and case 3
+is printed by @code{report-error} procedure.  You can use it
+in your error handler if you need the same information.
+@c JP
+上の2と3でのエラーメッセージとスタックトレースは、@code{report-error}手続きによって
+出力されています。自分のエラーハンドラ内で同じ情報を出力したければ
+これを使うことができます。
+@c COMMON
+
+@defun report-error exn
+Prints type and message of a thrown condition object @var{exn},
+then print the current stack trace.  This is the procedure
+the system calls when you see an error reported on REPL.
+
+Note: As of 0.9.5, this procedure prints stack trace of
+the context where @code{report-error} is called, rather than
+the context where @var{exn} is thrown.  In general what
+you want to print is the latter, and we have a plan to
+attach stack trace info to @code{<condition>} object in future.
+@end defun
+
 
 @c EN
 @subsubheading Low-level exception handling mechanism
