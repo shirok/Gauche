@@ -76,9 +76,9 @@
                               [ (pair? (cdr info)) ])
                      info)])
     (if src-info
-      (format port "    While compiling ~s at line ~d: ~s\n"
+      (format port "    While compiling ~s at line ~d: ~,,,,105:s\n"
               (car src-info) (cadr src-info) expr)
-      (format port "    While compiling: ~s\n" expr))))
+      (format port "    While compiling: ~,,,,90:s\n" expr))))
 
 ;; Built-in comparators.  These are here instead of libcmp.scm, for
 ;; hash functions need to be defined before this.
