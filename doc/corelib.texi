@@ -13236,15 +13236,39 @@ in your error handler if you need the same information.
 @c COMMON
 
 @defun report-error exn
+@c EN
 Prints type and message of a thrown condition object @var{exn},
 then print the current stack trace.  This is the procedure
 the system calls when you see an error reported on REPL.
 
+Since you can @code{raise} any object, @var{exn} can be any
+object; it's not needed to be an instance of @code{<condition>}. 
+A suitable message is chosen by @code{report-error}.
+
 Note: As of 0.9.5, this procedure prints stack trace of
 the context where @code{report-error} is called, rather than
-the context where @var{exn} is thrown.  In general what
+the context where @var{exn} is thrown.  It doesn't matter much
+as far as you call @code{report-error} directly inisde the
+error handler, but in general what
 you want to print is the latter, and we have a plan to
 attach stack trace info to @code{<condition>} object in future.
+@c JP
+投げられたコンディションオブジェクト@var{exn}の型とメッセージを表示し、
+それからスタックトレースを出力します。REPLでエラーが報告される時の
+表示を出しているのがこの手続きです。
+
+@code{raise}は任意のオブジェクトをコンディションとして投げることが出来るので、
+@var{exn}も@code{<condition>}オブジェクトの
+インスタンスである必要はなく、どんな型でも許されます。
+@code{report-error}は適切なメッセージを選んで表示します。
+
+註: 0.9.5の時点で、この手続きは@var{exn}が投げられたコンテキストでの
+スタックトレースではなく、@code{report-error}自身が呼ばれたコンテキストでの
+スタックトレースを表示します。@code{report-error}をエラーハンドラから
+直接呼んでいる限りにおいてはあまり違いは出ませんが、一般的に望ましいのは
+前者なので、将来的には@code{<condition>}オブジェクトにスタックトレース情報を
+つける予定があります。
+@c COMMON
 @end defun
 
 
