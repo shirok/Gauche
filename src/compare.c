@@ -124,6 +124,10 @@ int Scm_Compare(ScmObj x, ScmObj y)
         return SCM_CHAR_VALUE(x) == SCM_CHAR_VALUE(y)? 0 :
             SCM_CHAR_VALUE(x) < SCM_CHAR_VALUE(y)? -1 : 1;
 
+    /* Set cx, cy here, for we may jump to distinct_types later. */
+    ScmClass *cx = Scm_ClassOf(x);
+    ScmClass *cy = Scm_ClassOf(y);
+
     /* srfi-114 default comparator behaviors*/
     /* () is the smallest of all */
     if (SCM_NULLP(x)) return (SCM_NULLP(y)? 0 : -1);
@@ -153,8 +157,6 @@ int Scm_Compare(ScmObj x, ScmObj y)
         goto distinct_types;
     }
     
-    ScmClass *cx = Scm_ClassOf(x);
-    ScmClass *cy = Scm_ClassOf(y);
     if (Scm_SubtypeP(cx, cy)) {
         if (cy->compare) return cy->compare(x, y, FALSE);
     } else if (Scm_SubtypeP(cy, cx)) {
@@ -211,12 +213,26 @@ int Scm_Compare(ScmObj x, ScmObj y)
         return 1;               /* x is other, so y comes first. */
     }
 
-    /* Now we have two objects of different types.  For now we just
-       give up.  A quick hack would be to use the address of their
-       classes, but they won't be consistent across multiple runs,
-       and also class redefinition could change the order. */
-    Scm_Error("can't compare %S and %S", x, y);
-    return 0;                   /* dummy */
+    /* Now we have two objects of different types, both are not the
+       types defined the order in srfi-114.
+       To achieve better stability, we first compare the name of the
+       classes and the name if its defining modules; if they are still
+       the same, we fall back to compare addresses.
+       Note: Addresses and defining modules may be changed when
+       the class is redefined.
+    */
+    ScmObj nx = cx->name;
+    ScmObj ny = cy->name;
+    int nr = Scm_Compare(nx, ny);
+    if (nr != 0) return nr;
+
+    ScmObj mx = cx->modules;
+    ScmObj my = cy->modules;
+    int mr = Scm_Compare(mx, my);
+    if (mr != 0) return mr;
+
+    if (cx < cy) return -1;
+    else return 1;
 }
 
 /* NB: It turns out that calling back Scheme funtion from sort routine

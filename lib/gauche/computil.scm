@@ -48,19 +48,15 @@
 
 ;; Needed to have string-ci compare.
 ;; TODO: We don't want to depend on text.unincode here, though.
-(autoload text.unicode string-foldcase)
+(autoload text.unicode string-ci=? string-foldcase)
 
 (define (a-number? x) (and (number? x) (not (nan? x))))
 (define (a-real-number? x) (and (real? x) (not (nan? x))))
 
-;; internal
-(define %default-comparator-accepts?
-  (any-pred boolean? a-number? char? string? symbol?
-            pair? vector? uvector?))
-
+;; any object can be made comparable thru object-compare, so we just accept
+;; any object for default-comparator.
 (define default-comparator
-  (make-comparator %default-comparator-accepts?
-                   #t compare hash 'default-comparator))
+  (make-comparator #t #t compare hash 'default-comparator))
 
 ;; eq-comparator, eqv-comparator, equal-comparator - in libomega.scm
 
