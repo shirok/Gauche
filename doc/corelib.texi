@@ -13248,7 +13248,7 @@ A suitable message is chosen by @code{report-error}.
 Note: As of 0.9.5, this procedure prints stack trace of
 the context where @code{report-error} is called, rather than
 the context where @var{exn} is thrown.  It doesn't matter much
-as far as you call @code{report-error} directly inisde the
+as far as you call @code{report-error} directly inside the
 error handler, but in general what
 you want to print is the latter, and we have a plan to
 attach stack trace info to @code{<condition>} object in future.
