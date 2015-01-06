@@ -8,15 +8,16 @@
 (test-section "compare")
 
 (let ()
-  (define (test-compare* data)
+  (define (test-compare* cmp data)
     (dolist [datum data]
       (apply (^[what a b eq]
                (test* #"compare ~what" (if eq '(0 0) '(-1 1))
-                      (list (compare a b)
-                            (compare b a))))
+                      (list (cmp a b)
+                            (cmp b a))))
              datum)))
 
   (test-compare*
+   compare
    '(("boolean" #t #t #t)
      ("boolean" #f #f #t)
      ("boolean" #f #t #f)
@@ -58,7 +59,14 @@
      ("uvector" #u8(1 2) #u8(1 2 3) #f)
      ("uvector" #u8() #u8() #t)
 
-     )))
+     ))
+
+  (test-compare*
+   (^[a b] (comparator-compare string-ci-comparator a b))
+   '(("string-ci" "abc" "ABC" #t)
+     ("string-ci" "ABC" "abd" #f)
+     ))
+  )
 
 ;; comparing different types
 (define-class <other-type> () ())

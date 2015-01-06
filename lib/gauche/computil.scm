@@ -76,7 +76,7 @@
 ;; string-comparator - in libomega.scm
 
 (define string-ci-comparator
-  ($ make-comparator string? string=?
+  ($ make-comparator string? string-ci=?
      (^[a b] (compare (string-foldcase a) (string-foldcase b)))
      (^s ((with-module gauche.internal %hash-string) (string-foldcase s)))
      'string-ci-comparator))
