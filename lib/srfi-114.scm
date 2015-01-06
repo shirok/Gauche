@@ -365,6 +365,12 @@
 (define-ifx if>=? >=)
 (define-ifx if-not=? !=)
 
+(define (make=? comparator)
+  (rec (cmp a b . args)
+    (and (comparator-equal? comparator a b)
+         (or (null? args)
+             (apply cmp b args)))))
+
 (define (gen-make-x op)
   (^[comparator]
     (rec (cmp a b . args)
@@ -374,7 +380,6 @@
                #t
                (apply cmp b args)))))))
 
-(define make=? (gen-make-x =))
 (define make<? (gen-make-x <))
 (define make>? (gen-make-x >))
 (define make<=? (gen-make-x <=))
