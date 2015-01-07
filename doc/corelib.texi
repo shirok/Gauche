@@ -13235,7 +13235,7 @@ in your error handler if you need the same information.
 これを使うことができます。
 @c COMMON
 
-@defun report-error exn
+@defun report-error exn :optional sink
 @c EN
 Prints type and message of a thrown condition object @var{exn},
 then print the current stack trace.  This is the procedure
@@ -13244,6 +13244,15 @@ the system calls when you see an error reported on REPL.
 Since you can @code{raise} any object, @var{exn} can be any
 object; it's not needed to be an instance of @code{<condition>}. 
 A suitable message is chosen by @code{report-error}.
+
+You can specify where the output goes by the optional @var{sink}
+argument: If it is an output port, the output goes there; you can
+also pass @code{#t} for the current output port and @code{#f} for
+the output string port, just like @code{format}.  That is, when
+you pass @code{#f}, the message goes to a temporary output string
+port, and gathered string is returned.  For all the other cases,
+an undefined value is returned.  If @var{sink} is omitted or
+any other object listed above, the current error port is used.
 
 Note: As of 0.9.5, this procedure prints stack trace of
 the context where @code{report-error} is called, rather than
@@ -13261,6 +13270,14 @@ attach stack trace info to @code{<condition>} object in future.
 @var{exn}も@code{<condition>}オブジェクトの
 インスタンスである必要はなく、どんな型でも許されます。
 @code{report-error}は適切なメッセージを選んで表示します。
+
+出力の行き先は省略可能引数@var{sink}で指定できます。出力ポートを渡せば
+そこに出力されます。また、@code{format}と同様に、@code{#t}を渡すことで
+現在の出力ポートに、@code{#f}を渡すことで一時的な文字列ポートに出力できます。
+@code{#f}を渡した場合、一時的な文字列ポートに出力された文字列が
+返り値となります。その他の場合は未定義値が返されます。
+@var{sink}が省略されるか、上記以外の値であった場合は
+現在のエラーポートが使われます。
 
 註: 0.9.5の時点で、この手続きは@var{exn}が投げられたコンテキストでの
 スタックトレースではなく、@code{report-error}自身が呼ばれたコンテキストでの

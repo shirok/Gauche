@@ -969,16 +969,16 @@ void Scm_ShowStackTrace(ScmPort *out, ScmObj stacklite,
 
 /* Dump stack trace.  Called from the default error reporter.
    Also intended to be called from the debugger, so we allow vm to be NULL
-   to mean the current VM. */
-void Scm_DumpStackTrace(ScmVM *vm)
+   to mean the current VM, and port to be NULL for the current error port. */
+void Scm_DumpStackTrace(ScmVM *vm, ScmPort *port)
 {
     if (vm == NULL) vm = Scm_VM();
+    if (port == NULL) port = SCM_VM_CURRENT_ERROR_PORT(vm);
     ScmObj stack = Scm_VMGetStackLite(vm);
-    ScmPort *err = SCM_VM_CURRENT_ERROR_PORT(vm);
-    SCM_PUTZ("Stack Trace:\n", -1, err);
-    SCM_PUTZ("_______________________________________\n", -1, err);
-    Scm_ShowStackTrace(err, stack, 0, 0, 0, FMT_ORIG);
-    SCM_FLUSH(err);
+    SCM_PUTZ("Stack Trace:\n", -1, port);
+    SCM_PUTZ("_______________________________________\n", -1, port);
+    Scm_ShowStackTrace(port, stack, 0, 0, 0, FMT_ORIG);
+    SCM_FLUSH(port);
 }
 
 /*
@@ -1012,13 +1012,39 @@ static void Scm_PrintDefaultErrorHeading(ScmObj e, ScmPort *out)
     }
 }
 
-void Scm_ReportError(ScmObj e)
+/* We treat out == #f or #t just like 'format' - #t for the current output
+   port, and #f for string port.  If it's output port, use it.  For any
+   other objects, we use current error port.  This permissive behavior is
+   intentional - report-error is usually called during error handling,
+   and raising an error there masks the original error.
+*/
+#if GAUCHE_API_0_95
+ScmObj Scm_ReportError(ScmObj e, ScmObj out)
+#else  /*!GAUCHE_API_0_95*/
+ScmObj Scm_ReportError2(ScmObj e, ScmObj out)
+#endif /*!GAUCHE_API_0_95*/
 {
     ScmVM *vm = Scm_VM();
-    ScmPort *err = SCM_VM_CURRENT_ERROR_PORT(vm);
-    Scm_PrintDefaultErrorHeading(e, err);
-    Scm_DumpStackTrace(vm);
+    ScmPort *port = SCM_VM_CURRENT_ERROR_PORT(vm);
+    if (SCM_FALSEP(out)) {
+        port = SCM_PORT(Scm_MakeOutputStringPort(TRUE));
+    } else if (SCM_TRUEP(out)) {
+        port = SCM_VM_CURRENT_OUTPUT_PORT(vm);
+    } else if (SCM_OPORTP(out)) {
+        port = SCM_PORT(out);
+    }
+    Scm_PrintDefaultErrorHeading(e, port);
+    Scm_DumpStackTrace(vm, port);
+    if (SCM_FALSEP(out)) return Scm_GetOutputString(SCM_PORT(port), 0);
+    else return SCM_UNDEFINED;
 }
+
+#if !GAUCHE_API_0_95
+ScmObj Scm_ReportError(ScmObj e)
+{
+    return Scm_ReportError2(e, SCM_UNBOUND);
+}
+#endif /*!GAUCHE_API_0_95*/
 
 /*
  * Initialization

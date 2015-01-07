@@ -1659,7 +1659,14 @@ SCM_EXTERN void Scm_ShowStackTrace(ScmPort *out, ScmObj stacklite,
                                    int maxdepth, int skip, int offset,
                                    int format);
 
-SCM_EXTERN void Scm_ReportError(ScmObj e);
+/* TRANSIENT: Scm_ReportErrr2 is to keep ABI compatibility.  Will be gone
+   in 1.0.  */
+#if    GAUCHE_API_0_95
+SCM_EXTERN ScmObj Scm_ReportError(ScmObj e, ScmObj out);
+#else  /*!GAUCHE_API_0_95*/
+SCM_EXTERN ScmObj Scm_ReportError(ScmObj e);
+SCM_EXTERN ScmObj Scm_ReportError2(ScmObj e, ScmObj out);
+#endif /*!GAUCHE_API_0_95*/
 
 /*--------------------------------------------------------
  * REGEXP

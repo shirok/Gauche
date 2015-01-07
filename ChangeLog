@@ -1,3 +1,10 @@
+2015-01-07  Shiro Kawai  <shiro@acm.org>
+
+	* src/error.c (Scm_ReportError), src/libexc.scm (report-error):
+	  Added optional sink argument to specify where the message go.
+	  We want to change C API Scm_ReportError accordingly; to keep
+	  0.9 ABI compatibility, there's some transient code in place.
+
 2015-01-06  Shiro Kawai  <shiro@acm.org>
 
 	* src/compare.c (Scm_Compare): Handle comparison of different
