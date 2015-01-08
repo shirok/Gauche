@@ -43,7 +43,7 @@ SCMFILES = srfi-0.scm \
        srfi-25.scm srfi-26.scm srfi-27.scm \
        srfi-29.scm srfi-29/bundle.scm srfi-29/format.scm srfi-31.scm \
        srfi-37.scm srfi-42.scm srfi-55.scm srfi-60.scm srfi-98.scm \
-       srfi-106.scm srfi-114.scm \
+       srfi-106.scm srfi-113.scm srfi-114.scm \
        srfi/*.scm \
        slib.scm	 \
        gauche/test.scm gauche/test/generative.scm gauche/time.scm \

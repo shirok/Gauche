@@ -1,3 +1,7 @@
+2015-01-08  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi-113.scm: Added srfi-113.
+
 2015-01-07  Shiro Kawai  <shiro@acm.org>
 
 	* src/error.c (Scm_ReportError), src/libexc.scm (report-error):

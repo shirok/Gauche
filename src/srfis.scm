@@ -635,11 +635,21 @@ Supported by the module @code{srfi-111}.  @xref{Boxes}
 モジュール@code{srfi-111}でサポートされます。@ref{Boxes}参照。
 
 
+srfi-113, srfi-113
+()
+
+Sets and Bags
+Supported by the module @code{srfi-113}.
+
+セットとバッグ
+モジュール@code{srfi-113}でサポートされます。
+
+
 srfi-114, srfi-114
 ()
 
 Comparators
-Supported by the module @code{srfi-114}.
+Some of the features are built-in.  Full srfi spec is supported by the module @code{srfi-114}.
 
 比較器
-モジュール@code{srfi-114}でサポートされます。
+いくつかの機能は組み込みです。srfiの完全な仕様はモジュール@code{srfi-114}でサポートされます。
