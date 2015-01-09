@@ -50,7 +50,26 @@ static void comparator_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
     }
 }
 
-SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_ComparatorClass, comparator_print);
+static int comparator_compare(ScmObj a, ScmObj b, int equalp) 
+{
+    if (!equalp) Scm_Error("can't compare comparators: %S and %S", a, b);
+    SCM_ASSERT(SCM_COMPARATORP(a) && SCM_COMPARATORP(b));
+    ScmComparator *ca = SCM_COMPARATOR(a);
+    ScmComparator *cb = SCM_COMPARATOR(b);
+    if (Scm_EqualP(ca->typeFn, cb->typeFn)
+        && Scm_EqualP(ca->eqFn, cb->eqFn)
+        && Scm_EqualP(ca->compareFn, cb->compareFn)
+        && Scm_EqualP(ca->hashFn, cb->hashFn)
+        && Scm_EqualP(ca->name, cb->name)) {
+        return 0;
+    } else {
+        return 1;
+    }
+}
+
+SCM_DEFINE_BUILTIN_CLASS(Scm_ComparatorClass, comparator_print,
+                         comparator_compare, NULL, NULL,
+                         SCM_CLASS_DEFAULT_CPL);
 
 #define DEFINE_COMPARATOR_ACCESSOR(field) \
     static ScmObj SCM_CPP_CAT(comparator_, field)(ScmObj c)             \
@@ -73,6 +92,8 @@ static ScmClassStaticSlotSpec comparator_slots[] = {
     SCM_CLASS_SLOT_SPEC_END()
 };
 
+/* Unlike Scheme's make-comparator, TYPE, EQ, COMPARE and HASH arguments
+   all must be a procedure.  */
 ScmObj Scm_MakeComparator(ScmObj type, ScmObj eq,
                           ScmObj compare, ScmObj hash,
                           ScmObj name, u_long flags)

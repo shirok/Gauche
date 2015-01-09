@@ -649,22 +649,98 @@ For the hashing of primitive objects are done in @code{hash}.
 @c NODE 比較器
 
 Equality and comparison procedures are parameters in various
-data structures.   For example, a treemap needs to order its keys;
+data structures.   A treemap needs to order its keys;
 a hashtable needs to see if the keys are the same or not,
 and it also need a hash funciton consistent with the equality predicate.
 
 If we want to work on genereic data structures, we need to abstract those
-variations of comparison schemes.  So here comes the comparator.
+variations of comparison schemes.  So here comes the comparator,
+a record that bundles closely-related comparison procedures together.
+
+(The APIs of comparators are defined in SRFI-114, which is rather
+large.  Gauche supports essential APIs in the core.  To access full
+set of APIs, use @code{srfi-114} module.)
 
 @deftp {Builtin Class} <comparator>
+A record that packages the following procedures:
+
+@table @emph
+@item Type test predicate
+Checks if an object can be compared with this comparator.
+@item Equality predicate
+See if given two objects
+are equal to each other; returns a boolean value.
+@item Comparison procedure
+Compare given two objects, and returs either -1 (the first one is less
+than the second), 0 (they are equal), or 1 (the first one is greater
+than the second).
+@item Hash function
+Returns a hash value of the given object.
+@end table
+
+A comparator may not have a comparison procedure and/or
+a hash function.  You can check if a comarison procedure
+or a hash function is available in a given comparator
+by @code{comparator-comparison-procedure?} and
+@code{comparator-hash-function?}, respectively.
+
+Some built-in data types such as hashtables (@xref{Hashtables})
+and treemaps (@xref{Treemaps}), take a comparator in their constructors.
+The sort and merge procedures also accept comparators
+(@xref{Sorting and merging}).
 @end deftp
 
 @defun make-comparator type-test equal compare hash :optional name
 [SRFI-114+]
+Creates a new comparator form the given @var{type-test}, 
+@var{equal}, @var{compare} and @var{hash} functions, and returns it.
+
+See the description of @code{<comparator>} above for the role of
+those procedures.
+
+Acutally, some arguments can be non-procedures, to use predefined
+procedures, for the convenience.  Even if non-procedure arguments
+are passed, the corresponding accessors (e.g.
+@code{comparator-type-test-procedure} for the @code{type-test}
+procedure) always return a procedure---either the given one
+or the predefined one.
+
+The @var{type-test} argument must be either @code{#t} or
+a predicate taking one argument to test suitability of
+the object for comaring by the resulting comparator.
+If it is @code{#t}, 
+a procedure that always return @code{#t} is used.
+
+The @var{equal} argument must be either @code{#t}, or
+a predicate taking two arguments to test equality.
+If it is @code{#t}, the @var{compare} argument must be a procedure,
+and the predefined equality procedure passes both arguments
+to it, and return true iff the compare procedure returns 0.
+
+The @var{compare} argument must be either @code{#f}, or
+a procedure taking two arguments and returning either -1, 0, or
+1, depending on whether the first argument is less than, equal to,
+or greater than the second argument.
+If it is @code{#f}, it indicates the comparator can't order objects
+(equality can still be tested, though).  The predefined procedure
+just throws an error.
+
+The @var{hash} argument must be either @code{#f}, or
+a procedure taking one argument and returning nonnegative exact
+integer.  SRFI-114 doesn't specify the range of the hash value,
+but in Gauche, hashtable won't use greater than 32bits range,
+most likely much less bits, so you can limit to the result to
+fixnum range.  If @var{#f} is given, it indicates the comparator
+can't hash objects; the predefined procedure just throws an error.
+
+The fifth, optional argument @var{name}, is Gauche's extension.
+It can be any object but usually a symbol; it is only used when
+printing the comparator, to help debugging.
 @end defun
 
 @defun comparator? obj
 [SRFI-114]
+Returns true iff @var{obj} is a comparator.
 @end defun
 
 @defun comparator-comparison-procedure? cmpr
