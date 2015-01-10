@@ -34,6 +34,7 @@ of supported SRFIs.
 * Accessing environment variables::  srfi-98
 * Basic socket interface::      srfi-106
 * Boxes::                       srfi-111
+* Fullset of comparator API::   srfi-114
 @end menu
 
 
@@ -5159,7 +5160,7 @@ An error is signaled if other symbols are passed.
 
 
 @c ----------------------------------------------------------------------
-@node Boxes,  , Basic socket interface, Library modules - SRFIs
+@node Boxes, Fullset of comparator API, Basic socket interface, Library modules - SRFIs
 @section @code{srfi-111} - Boxes
 @c NODE ボックス, @code{srfi-111} - ボックス
 
@@ -5203,6 +5204,180 @@ Returns @var{box}'s content.
 
 @defun set-box! box val
 Mutate @var{box}'s content with @var{val}.  Returns unspecified value.
+@end defun
+
+@c ----------------------------------------------------------------------
+@node Fullset of comparator API,  , Boxes, Library modules - SRFIs
+@section @code{srfi-114} - Comparators
+@c NODE 比較器APIのフルセット, @code{srfi-114} - 比較器
+
+@deftp {Module} srfi-114
+@mdindex srfi-114
+Gauche has built-in support of srfi-114-compatible comparators,
+but the core only provides basic APIs.  This module provides
+full set of srfi-114 procedures.
+@end deftp
+
+The following procedures are built-in.  @xref{Comparators}, for
+the detailed documentation.   Those are also exported from @code{srfi-114}
+for the compatibility.
+
+@table @asis
+@item Predicates
+@code{comparator?},
+@code{comparator-comparison-procedure?},
+@code{comparator-hash-function?},
+
+@item Standard comparators
+@code{boolean-comparator},
+@code{char-comparator},
+@code{char-ci-comparator},
+@code{string-comparator},
+@code{string-ci-comparator},
+@code{symbol-comparator},
+@code{exact-integer-comparator},
+@code{integer-comparator},
+@code{rational-comparator},
+@code{real-comparator},
+@code{complex-comparator},
+@code{number-comparator},
+@code{pair-comparator},
+@code{list-comparator},
+@code{vector-comparator},
+@code{bytevector-comparator},
+@code{uvector-comparator}
+
+@item The default comparator
+@code{default-comparator}
+
+@item Comparator constructors
+@code{make-comparator},
+@code{make-car-comparator},
+@code{make-cdr-comparator}
+
+@item Wrapped equality predicates
+@code{eq-comparator},
+@code{eqv-comparator},
+@code{equal-comparator}
+
+@item Accessors
+@code{comparator-type-test-procedure},
+@code{comparator-equality-predicate},
+@code{comparator-comparison-procedure},
+@code{comparator-hash-function}
+
+@item Primitive applicators
+@code{comparator-test-type},
+@code{comparator-check-type},
+@code{comparator-equal?},
+@code{comparator-compare},
+@code{comparator-hash}
+@end table
+
+@subsubheading Auxiliary comparator constructors
+
+@defun make-inexact-real-comparator epsilon rounding nan-handling
+@end defun
+
+@defun make-list-comparator element-comparator
+@defunx make-vector-comparator element-comparator
+@defunx make-bytevector-comparator element-comparator
+@end defun
+
+@defun make-listwise-comparator type-test element-comparator empty? head tail
+@end defun
+
+@defun make-vectorwise-comparator type-test element-comparator length ref
+@end defun
+
+@defun make-pair-comparator car-comparator cdr-comparator
+@end defun
+
+@defun make-improper-list-comparator element-comparator
+@end defun
+
+@defun make-selecting-comparator comparator1 comparator2 @dots{}
+@end defun
+
+@defun make-refining-comparator comparator1 comparator2 @dots{}
+@end defun
+
+@defun make-reverse-comparator comparator
+@end defun
+
+@defun make-debug-comparator comparator
+@end defun
+
+@subsubheading Comparison procedure constructors
+
+@defun make-comparison< lt-pred
+@end defun
+
+@defun make-comparison> gt-pred
+@end defun
+
+@defun make-comparison<= le-pred
+@end defun
+
+@defun make-comparison>= ge-pred
+@end defun
+
+@defun make-comparison=/< eq-pred lt-pred
+@end defun
+
+@defun make-comparison=/> eq-pred gt-pred
+@end defun
+
+@subsubheading Comparison syntax
+
+@defmac if3 expr less equal greater
+@end defmac
+
+@defmac if=? expr consequent :optional alternate
+@defmacx if<? expr consequent :optional alternate
+@defmacx if>? expr consequent :optional alternate
+@defmacx if<=? expr consequent :optional alternate
+@defmacx if>=? expr consequent :optional alternate
+@defmacx if-not=? expr consequent :optional alternate
+@end defmac
+
+@subsubheading Comparison predicates
+
+@defun =? comparator obj1 obj2 obj3 @dots{}
+@defunx <?
+@defunx >?
+@defunx <=?
+@defunx >=?
+@end defun
+
+@subsubheading Comparison predicate constructors
+
+@defun make=? comparator
+@defunx make<? comparator
+@defunx make>? comparator
+@defunx make<=? comparator
+@defunx make>=? comparator
+@end defun
+
+@subsubheading Interval comparison predicates
+
+
+@defun in-open-interval? [comparator] obj1 obj2 obj3
+@end defun
+
+@defun in-closed-interval? [comparator] obj1 obj2 obj3
+@end defun
+
+@defun in-open-closed-interval? [comparator] obj1 obj2 obj3
+@end defun
+
+@defun in-closed-open-interval? [comparator] obj1 obj2 obj3
+@end defun
+
+@subsubheading Min/max comparison procedures
+
+@defun comparator-min comparator obj1 obj2 @dots{}
+@defunx comparator-max comparator obj1 obj2 @dots{}
 @end defun
 
 

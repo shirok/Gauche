@@ -37,7 +37,11 @@
 
 (define-module srfi-114
   (use gauche.uvector)
-  (export boolean-comparator char-comparator char-ci-comparator
+  (export comparator?                   ;builtin
+          comparator-comparison-procedure? ;builtin
+          comparator-hash-function?        ;builtin
+
+          boolean-comparator char-comparator char-ci-comparator
           string-comparator string-ci-comparator symbol-comparator
           exact-integer-comparator integer-comparator rational-comparator
           real-comparator complex-comparator number-comparator

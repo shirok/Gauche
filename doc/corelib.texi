@@ -657,9 +657,9 @@ If we want to work on genereic data structures, we need to abstract those
 variations of comparison schemes.  So here comes the comparator,
 a record that bundles closely-related comparison procedures together.
 
-(The APIs of comparators are defined in SRFI-114, which is rather
+The APIs of comparators are defined in SRFI-114, which is rather
 large.  Gauche supports essential APIs in the core.  To access full
-set of APIs, use @code{srfi-114} module.)
+set of APIs, use @code{srfi-114} module (@xref{Fullset of comparator API}).
 
 @deftp {Builtin Class} <comparator>
 A record that packages the following procedures:
