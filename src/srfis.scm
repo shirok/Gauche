@@ -649,7 +649,7 @@ srfi-114, srfi-114
 ()
 
 Comparators
-Some of the features are built-in.  Full srfi spec is supported by the module @code{srfi-114}.
+Some of the features are built-in (@xref{Comparators}).  Full srfi spec is supported by the module @code{srfi-114} (@xref{Fullset of comparator API}).
 
 比較器
-いくつかの機能は組み込みです。srfiの完全な仕様はモジュール@code{srfi-114}でサポートされます。
+いくつかの機能は組み込みです(@ref{Comparators}参照)。srfiの完全な仕様はモジュール@code{srfi-114}でサポートされます(@ref{Fullset of comparator API}参照)。
