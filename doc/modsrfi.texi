@@ -34,6 +34,7 @@ of supported SRFIs.
 * Accessing environment variables::  srfi-98
 * Basic socket interface::      srfi-106
 * Boxes::                       srfi-111
+* Sets and bags::               srfi-113
 * Fullset of comparator API::   srfi-114
 @end menu
 
@@ -471,6 +472,10 @@ All procedures in this category takes a comparison procedure
 @var{elt=}, as the first argument, which is used to determine
 two elements in the given sets are the same.
 
+Since lists require linear time to search, those procedures aren't
+suitable to deal with large sets.  @xref{Sets and bags}, if you
+know your sets will contain more than a dozen items or so.
+
 See also @ref{Combination library}, which
 concerns combinations of elements in the set.
 @c JP
@@ -480,6 +485,11 @@ concerns combinations of elements in the set.
 この範疇にあるすべての手続きは、比較手続き @var{elt=} を最初の引数として
 とります。この比較手続きは与えられた二つの集合の要素が等しいかどうかを
 判定します。
+
+リストは検索に線形時間を必要とするため、ここに挙げた手続きは
+大きな集合を扱うには向いていません。もし対象となる集合が
+二桁以上の要素を持つことが分かっているなら、@ref{Sets and bags}を
+参照してください。
 
 集合の要素の組み合せについては @ref{Combination library}
 も参照してください。
@@ -5160,7 +5170,7 @@ An error is signaled if other symbols are passed.
 
 
 @c ----------------------------------------------------------------------
-@node Boxes, Fullset of comparator API, Basic socket interface, Library modules - SRFIs
+@node Boxes, Sets and bags, Basic socket interface, Library modules - SRFIs
 @section @code{srfi-111} - Boxes
 @c NODE ボックス, @code{srfi-111} - ボックス
 
@@ -5207,7 +5217,256 @@ Mutate @var{box}'s content with @var{val}.  Returns unspecified value.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Fullset of comparator API,  , Boxes, Library modules - SRFIs
+@node Sets and bags, Fullset of comparator API, Boxes, Library modules - SRFIs
+@section @code{srfi-113} - Sets and bags
+@c NODE setとbag, @code{srfi-113} - setとbag
+
+@deftp {Module} srfi-113
+@mdindex srfi-113
+Sets and bags are unordered collection of Scheme values.
+A set doesn't allow dupicate items in it; while a bag allows them.
+@end deftp
+
+@subheading Constructors
+
+@defun set comparator elt @dots{}
+@defunx bag comparator elt @dots{}
+@end defun
+
+@defun set-unfold continue? mapper successor seed comparator
+@defunx bag-unfold continue? mapper successor seed comparator
+@end defun
+
+@subheading Predicates
+
+@defun set-contains? set obj
+@defunx bag-contains? bag obj
+@end defun
+
+@defun set-empty? set
+@defunx bag-empty? bag
+@end defun
+
+@defun set-disjoint? a b
+@defunx bag-disjoint? a b
+@end defun
+
+@subheading Accessors
+
+@defun set-member set obj default
+@defunx bag-member bag obj default
+@end defun
+
+@defun set-element-comparator set
+@defunx bag-element-comparator bag
+@end defun
+
+@subheading Updaters
+
+@defun set-adjoin set elt @dots{}
+@defunx bag-adjoin bag elt @dots{}
+@end defun
+
+@defun set-adjoin! set elt @dots{}
+@defunx bag-adjoin! bag elt @dots{}
+@end defun
+
+@defun set-replace set elt
+@defunx bag-replace bag elt
+@end defun
+
+@defun set-replace! set elt
+@defunx bag-replace! bag elt
+@end defun
+
+@defun set-delete set elt @dots{}
+@defunx bag-delete bag elt @dots{}
+@end defun
+
+@defun set-delete! set elt @dots{}
+@defunx bag-delete! bag elt @dots{}
+@end defun
+
+@defun set-delete-all set elt-list
+@defunx bag-delete-all bag elt-list
+@end defun
+
+@defun set-delete-all! set elt-list
+@defunx bag-delete-all! bag elt-list
+@end defun
+
+@defun set-search! set elt failure success
+@defunx bag-search! bag elt failure success
+@end defun
+
+@subheading The whole set
+
+@defun set-size set
+@defunx bag-size bag
+@end defun
+
+@defun set-find pred set failure
+@defunx bag-find pred bag failure
+@end defun
+
+@defun set-count pred set
+@defunx bag-count pred bag
+@end defun
+
+@defun set-any? pred set
+@defunx bag-any? pred bag
+@end defun
+
+@defun set-every? pred set
+@defunx bag-every? pred bag
+@end defun
+
+@subheading Mapping and folding
+
+@defun set-map comparator proc set
+@defunx bag-map comparator proc bag
+@end defun
+
+@defun set-for-each proc set
+@defunx bag-for-each proc bag
+@end defun
+
+@defun set-fold proc seed set
+@defunx bag-fold proc seed bag
+@end defun
+
+@defun set-filter pred set
+@defunx bag-filter pred bag
+@end defun
+
+@defun set-filter! pred set
+@defunx bag-filter! pred bag
+@end defun
+
+@defun set-remove pred set
+@defunx bag-remove pred bag
+@end defun
+
+@defun set-remove! pred set
+@defunx bag-remove! pred bag
+@end defun
+
+@defun set-partition pred set
+@defunx bag-partition pred bag
+@end defun
+
+@defun set-partition! pred set
+@defunx bag-partition! pred bag
+@end defun
+
+@subheading Copying and conversion
+
+@defun set-copy set
+@defunx bag-copy bag
+@end defun
+
+@defun set->list set
+@defunx bag->list bag
+@end defun
+
+@defun list->set comparator elt-list
+@defunx list->bag comparator elt-list
+@end defun
+
+@defun list->set! set elt-list
+@defunx list->bag! bag elt-list
+@end defun
+
+@defun bag->set bag
+@defunx set->bag set
+@defunx set->bag! bag set
+@end defun
+
+@defun bag->alist bag
+@end defun
+
+@defun alist->bag comparator bag
+@end defun
+
+@subheading Subsets
+
+@defun set=? set1 set2 @dots{}
+@defunx bag=? bag1 bag2 @dots{}
+@end defun
+
+@defun set<? set1 set2 @dots{}
+@defunx bag<? bag1 bag2 @dots{}
+@defunx set>? set1 set2 @dots{}
+@defunx bag>? bag1 bag2 @dots{}
+@defunx set<=? set1 set2 @dots{}
+@defunx bag<=? bag1 bag2 @dots{}
+@defunx set>=? set1 set2 @dots{}
+@defunx bag>=? bag1 bag2 @dots{}
+@end defun
+
+@subheading Set theory operations
+
+@defun set-union set1 set2 @dots{}
+@defunx bag-union bag1 bag2 @dots{}
+@end defun
+
+@defun set-intersection set1 set2 @dots{}
+@defunx bag-intersection bag1 bag2 @dots{}
+@end defun
+
+@defun set-difference set1 set2 @dots{}
+@defunx bag-difference bag1 bag2 @dots{}
+@end defun
+
+@defun set-xor set1 set2 @dots{}
+@defunx bag-xor bag1 bag2 @dots{}
+@end defun
+
+@defun set-union! set1 set2 @dots{}
+@defunx bag-union! bag1 bag2 @dots{}
+@defunx set-intersection! set1 set2 @dots{}
+@defunx bag-intersection! bag1 bag2 @dots{}
+@defunx set-difference! set1 set2 @dots{}
+@defunx bag-difference! bag1 bag2 @dots{}
+@defunx set-xor! set1 set2 @dots{}
+@defunx bag-xor! bag1 bag2 @dots{}
+@end defun
+
+@subheading Bag-specific procedures
+
+@defun bag-sum bag1 bag2 @dots{}
+@defunx bag-sum! bag1 bag2 @dots{}
+@end defun
+
+@defun bag-product bag1 bag2 @dots{}
+@defunx bag-product! bag1 bag2 @dots{}
+@end defun
+
+@defun bag-unique-size bag
+@end defun
+
+@defun bag-element-count bag elt
+@end defun
+
+@defun bag-for-each-unique proc bag
+@end defun
+
+@defun bag-fold-unique proc seed bag
+@end defun
+
+@defun bag-increment! bag elt count
+@defunx bag-decrement! bag elt count
+@end defun
+
+@subheading Comparators
+
+@defvr {Comparator} set-comparator
+@defvrx {Comparator} bag-comparator
+@end defvr
+
+
+@c ----------------------------------------------------------------------
+@node Fullset of comparator API,  , Sets and bags, Library modules - SRFIs
 @section @code{srfi-114} - Comparators
 @c NODE 比較器APIのフルセット, @code{srfi-114} - 比較器
 

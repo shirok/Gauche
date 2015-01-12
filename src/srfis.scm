@@ -639,10 +639,10 @@ srfi-113, srfi-113
 ()
 
 Sets and Bags
-Supported by the module @code{srfi-113}.
+Supported by the module @code{srfi-113}.  @xref{Sets and bags}.
 
 セットとバッグ
-モジュール@code{srfi-113}でサポートされます。
+モジュール@code{srfi-113}でサポートされます。 @ref{Sets and bags}参照。
 
 
 srfi-114, srfi-114
