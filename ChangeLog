@@ -1,3 +1,8 @@
+2015-01-14  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/record.scm: Fix a bug when there's one argument
+	  given to the custom constructor.
+
 2015-01-09  Shiro Kawai  <shiro@acm.org>
 
 	* src/compare.c (comparator_compare): Make equal? to compare

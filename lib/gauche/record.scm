@@ -255,10 +255,9 @@
      (define tmps (map (^_(gensym)) (iota (+ precalc-args 1))))
      `(case ,len
         [(0) ,(let1 vars '() `(lambda ,vars ,,01-maker))]
-        [(1) ,(let1 vars `(,(car tmps)) `(lambda ,vars ,,01-maker))]
         ,@(map (^n (let1 vars (drop tmps (- precalc-args n -1))
                      `[(,n) (lambda ,vars ,,body-maker)]))
-               (iota (- precalc-args 1) 2))
+               (iota (- precalc-args 1) 1))
         [else (lambda (,@(cdr tmps) . ,(car tmps))
                 ,,rest-maker)])))
 

@@ -238,6 +238,26 @@
        (let1 t (%triple 1 2 3)
          (map (cut slot-ref t <>) '(x y z))))
 
+;; constructor argumetns
+(define-record-type r0
+  (make-r0 b)
+  r0?
+  (a r0-a)
+  (b r0-b))
+
+(test* "custom constructor argument" 3
+       (r0-b (make-r0 3)))
+
+(define-record-type r1
+  (make-r1 b a)
+  r1?
+  (a r1-a)
+  (b r1-b))
+
+(test* "custom constructor argument" '(4 5)
+       (let1 r (make-r1 5 4)
+         (list (r1-a r) (r1-b r))))
+
 ;;--------------------------------------------------------------------
 (test-section "pseudo record")
 
