@@ -36,7 +36,8 @@ TEXIS = concepts.texi      \
 	modutil.texi       \
 	object.texi        \
 	program.texi       \
-	references.texi
+	references.texi    \
+	srfis.texi
 
 # Manual page destination.  Default @mandir@ doesn't include 'share'
 # in the path, so I redefine it---a user can still override it by
@@ -88,6 +89,10 @@ dvi : gauche-refe.dvi
 pdf : gauche-refe.pdf
 
 info : gauche-refe.info.gz gauche-refj.info.gz
+
+# special rule to regenerate srfis.tex in case srfis.scm is modified.
+srfis.texi : $(top_builddir)/src/srfis.scm
+	cd $(top_builddir)/src; $(MAKE) libsrfis.scm
 
 gauche-refe.html : gauche-refe.texi
 	texi2html --number gauche-refe.texi
