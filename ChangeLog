@@ -3,6 +3,9 @@
 	* lib/gauche/record.scm: Fix a bug when there's one argument
 	  given to the custom constructor.
 
+	* src/libvec.scm (%uvector-ref), src/vector.c (Scm_VMUVectorRef):
+	  Fixed a bug that leaked #<unbound>.  Patch from wasao.
+
 2015-01-09  Shiro Kawai  <shiro@acm.org>
 
 	* src/compare.c (comparator_compare): Make equal? to compare
