@@ -118,19 +118,12 @@
 ;; this one internally).
 (select-module gauche.internal)
 
-(define-cproc %uvector-ref (v::<uvector> t::<int> k::<integer>
+(define-cproc %uvector-ref (v::<uvector> t::<int> k::<fixnum>
                                          :optional fallback)
   :constant
   (unless (== (Scm_UVectorType (SCM_CLASS_OF v)) t)
     (Scm_TypeError "vec" (Scm_UVectorTypeName t) (SCM_OBJ v)))
-  (cond [(or (SCM_BIGNUMP k)
-             (< (SCM_INT_VALUE k) 0)
-             (>= (SCM_INT_VALUE k) (SCM_UVECTOR_SIZE v)))
-         (when (SCM_UNBOUNDP fallback)
-           (Scm_Error "%s-ref index out of range: %S"
-                      (Scm_UVectorTypeName t) k))
-         (result fallback)]
-        [else (result (Scm_VMUVectorRef v t (SCM_INT_VALUE k) fallback))]))
+  (result (Scm_VMUVectorRef v t (SCM_INT_VALUE k) fallback)))
 
 (select-module gauche)
 (inline-stub

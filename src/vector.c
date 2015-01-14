@@ -373,7 +373,13 @@ ScmObj Scm_ListToUVector(ScmClass *klass, ScmObj list, int clamp)
 ScmObj Scm_VMUVectorRef(ScmUVector *v, int t, ScmSmallInt k, ScmObj fallback)
 {
     SCM_ASSERT(Scm_UVectorType(SCM_CLASS_OF(v)) == t);
-    if (k < 0 || k >= SCM_UVECTOR_SIZE(v)) return fallback;
+    if (k < 0 || k >= SCM_UVECTOR_SIZE(v)) {
+        if (SCM_UNBOUNDP(fallback)) {
+            Scm_Error("%s-ref index out of range: %ld",
+                      Scm_UVectorTypeName(t), k);
+        }
+        return fallback;
+    }
     switch (t) {
     case SCM_UVECTOR_S8:  return SCM_MAKE_INT(SCM_S8VECTOR_ELEMENT(v, k));
     case SCM_UVECTOR_U8:  return SCM_MAKE_INT(SCM_U8VECTOR_ELEMENT(v, k));
