@@ -1716,7 +1716,7 @@ Creates and returns a new binary heap.
 
 The @var{comparator} keyword argument specifies how to compare the
 entries.  It must have comparison procedure.  The default is
-@code{default-comparator}.  @xref{Comparators}, for the details of
+@code{default-comparator}.  @xref{Basic comparators}, for the details of
 comparators.
 
 The @var{storage} keyword argument gives alternative
@@ -1736,7 +1736,7 @@ The following example shows the entries are compared by their @code{car}'s:
 
 @var{comparator}キーワード引数は、エントリの比較方法を指定する比較器です。
 比較手続きを持っていなければなりません。省略時は@code{default-comparator}が
-使われます。比較器について詳しくは@ref{Comparators}を参照してください。
+使われます。比較器について詳しくは@ref{Basic comparators}を参照してください。
 
 @var{storage}キーワード引数には、データの格納に使うデータ構造を渡します。引数は
 ベクタ、ユニフォームベクタ、あるいは疎ベクタ(@ref{Sparse vectors}参照)の
@@ -3345,7 +3345,7 @@ As the table gets larger the difference becomes smaller.)
 @defun make-sparse-table comparator
 Creates and returns an empty sparse table.
 The @var{comparator} argument specifies how to compare and hash keys;
-it must be either a comparator (@xref{Comparators}),
+it must be either a comparator (@xref{Basic comparators}),
 or one of the symbols @code{eq?}, @code{eqv?}, @code{equal?} and
 @code{string=?}, like hash tables (@xref{Hashtables}).   If it is a symbol,
 @code{eq-comparator}, @code{eqv-comparator}, @code{equal-comparator} or

@@ -35,7 +35,7 @@ of supported SRFIs.
 * Basic socket interface::      srfi-106
 * Boxes::                       srfi-111
 * Sets and bags::               srfi-113
-* Fullset of comparator API::   srfi-114
+* Comparators::                 srfi-114
 @end menu
 
 
@@ -5217,7 +5217,7 @@ Mutate @var{box}'s content with @var{val}.  Returns unspecified value.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Sets and bags, Fullset of comparator API, Boxes, Library modules - SRFIs
+@node Sets and bags, Comparators, Boxes, Library modules - SRFIs
 @section @code{srfi-113} - Sets and bags
 @c NODE setとbag, @code{srfi-113} - setとbag
 
@@ -5466,9 +5466,9 @@ A set doesn't allow dupicate items in it; while a bag allows them.
 
 
 @c ----------------------------------------------------------------------
-@node Fullset of comparator API,  , Sets and bags, Library modules - SRFIs
+@node Comparators,  , Sets and bags, Library modules - SRFIs
 @section @code{srfi-114} - Comparators
-@c NODE 比較器APIのフルセット, @code{srfi-114} - 比較器
+@c NODE 比較器, @code{srfi-114} - 比較器
 
 @deftp {Module} srfi-114
 @mdindex srfi-114
@@ -5477,7 +5477,7 @@ but the core only provides basic APIs.  This module provides
 full set of srfi-114 procedures.
 @end deftp
 
-The following procedures are built-in.  @xref{Comparators}, for
+The following procedures are built-in.  @xref{Basic comparators}, for
 the detailed documentation.   Those are also exported from @code{srfi-114}
 for the compatibility.
 
@@ -5603,10 +5603,10 @@ for the compatibility.
 @subsubheading Comparison predicates
 
 @defun =? comparator obj1 obj2 obj3 @dots{}
-@defunx <?
-@defunx >?
-@defunx <=?
-@defunx >=?
+@defunx <? comparator obj1 obj2 obj3 @dots{}
+@defunx >? comparator obj1 obj2 obj3 @dots{}
+@defunx <=? comparator obj1 obj2 obj3 @dots{}
+@defunx >=? comparator obj1 obj2 obj3 @dots{}
 @end defun
 
 @subsubheading Comparison predicate constructors

@@ -255,7 +255,7 @@ as well as the way to make your own.
 * Equality::                    
 * Comparison::                  
 * Hashing::                     
-* Comparators::                 
+* Basic comparators::                 
 @end menu
 
 @node Equality, Comparison, Equality and comparison, Equality and comparison
@@ -539,7 +539,7 @@ objects, but you don't care the actual order as far as it's consistent.
 @c COMMON
 @end defun
 
-@node Hashing, Comparators, Comparison, Equality and comparison
+@node Hashing, Basic comparators, Comparison, Equality and comparison
 @subsection Hashing
 @c NODE ハッシュ
 
@@ -644,9 +644,9 @@ For the hashing of primitive objects are done in @code{hash}.
 @end example
 @end deffn
 
-@node Comparators,  , Hashing, Equality and comparison
-@subsection Comparators
-@c NODE 比較器
+@node Basic comparators,  , Hashing, Equality and comparison
+@subsection Basic comparators
+@c NODE 基本的な比較器
 
 Equality and comparison procedures are parameters in various
 data structures.   A treemap needs to order its keys;
@@ -659,7 +659,7 @@ a record that bundles closely-related comparison procedures together.
 
 The APIs of comparators are defined in SRFI-114, which is rather
 large.  Gauche supports essential APIs in the core.  To access full
-set of APIs, use @code{srfi-114} module (@xref{Fullset of comparator API}).
+set of APIs, use @code{srfi-114} module (@xref{Comparators}).
 
 @deftp {Builtin Class} <comparator>
 A record that packages the following procedures:
@@ -746,6 +746,13 @@ Returns true iff @var{obj} is a comparator.
 @defun comparator-comparison-procedure? cmpr
 @defunx comparator-hash-function? cmpr
 [SRFI-114]
+Returns true iff a comparator @var{cmpr} has provided comparison procedure
+and hash function, respectively.
+
+Note that @code{comparator-comparison-procedure} and 
+@code{comparator-hash-function} always returns a procedure, even
+no procedure is given when a comparator is created; in that case,
+returned procedures are just raises an error when called.
 @end defun
 
 @defun comparator-type-test-procedure cmpr
@@ -753,6 +760,12 @@ Returns true iff @var{obj} is a comparator.
 @defunx comparator-comparison-procedure cmpr
 @defunx comparator-hash-function cmpr
 [SRFI-114]
+Returns type test procedure, equality predicate, comparison procedure
+and hash function of comparator @var{cmpr}, respectively.
+
+These accessors always return procedures; if you give boolean
+values to @code{make-comparator},
+appropriate default procedures are returned.
 @end defun
 
 @defun comparator-test-type cmpr obj
@@ -761,10 +774,67 @@ Returns true iff @var{obj} is a comparator.
 @defunx comparator-compare cmpr a b
 @defunx comparator-hash cmpr obj
 [SRFI-114]
+Apply the comparator's procedures to the given arguments.
+The following eqivalence holds, but these are slightly compact,
+and in Gauche they are a bit more efficient.
+
+@example
+(comparator-test-type cmpr obj)
+  @equiv{} ((comparator-type-test-procedure cmpr) obj))
+
+(comparator-check-type cmpr obj)
+  @equiv{} (or ((comparator-type-test-procedure cmpr) obj)
+      (error ...))
+
+(comparator-equal? cmpr a b)
+  @equiv{} ((comparator-equality-predicate cmpr) a b)
+
+(comparator-compare cmpr a b)
+  @equiv{} ((comparator-comparison-procedure cmpr) a b)
+
+(comparator-hash cmpr obj)
+  @equiv{} ((comparator-hash-function cmpr) obj)
+@end example
 @end defun
 
 @defvar default-comparator
 [SRFI-114]
+This variable bounds to a comparator that is used by default in
+many context.
+
+It can compare most of Scheme objects, even between objects with
+different types.  The ordering of heterogeneous objects are
+purely artificial---whether @code{#t} is smaller than @code{#(a b c)} or
+not doesn't mean anything, but having some consistent order
+allows us to put Scheme objects in treemaps (@xref{Treemaps}) or heaps
+(@xref{Heap}).  The @code{default-comparator} gives this expedient
+ordering.
+
+@code{Srfi-114} specifies the ordering of Scheme native objects.
+Gauche enhanced it to cover general objects.
+
+@enumerate 
+@item
+Empty list.
+@item
+Pairs.
+@item
+Booleans.
+@item
+Characters.
+@item
+Strings.
+@item
+Symbols.
+@item
+Numbers.
+@item 
+Vectors.
+@item 
+Uniform vectors.
+@item
+All other objects.
+@end enumerate
 @end defvar
 
 @defvar eq-comparator
@@ -9225,7 +9295,7 @@ Hash table class.  Inherits @code{<collection>} and @code{<dictionary>}.
 @c EN
 Creates a hash table.  The optional @var{comparator} argument
 specifies key equality and hash function.  It can be either a
-comparator (@xref{Comparators}), or one of the symbols 
+comparator (@xref{Basic comparators}), or one of the symbols 
 @code{eq?}, @code{eqv?}, @code{equal?} or @code{string=?}.
 If it is one of those symbols, @code{eq-comparator},
 @code{eqv-comparator}, @code{equal-comparator} and
@@ -9239,7 +9309,7 @@ hash functions.
 If @var{comparator} is omitted, @code{eq-comparator} is assumed.
 @c JP
 ハッシュテーブルを作成します。省略可能な@var{comparator}引数には、
-比較器 (@ref{Comparators}参照)もしくは、シンボル
+比較器 (@ref{Basic comparators}参照)もしくは、シンボル
 @code{eq?}、@code{eqv?}、@code{equal?}、@code{string=?}のいずれかを
 指定します。シンボルの場合はそれぞれ
 @code{eq-comparator}、
@@ -9565,7 +9635,7 @@ The keys are compared by @var{comparator},
 whose default is @code{default-comparator}.
 The comparator must have a comparison procedure, for
 we need a total order in the keys.
-@xref{Comparators}, for the details.
+@xref{Basic comparators}, for the details.
 
 For the backward compatibility, @code{make-tree-map} also
 accepts a procedure as a @var{comparator}; the procedure must
@@ -9584,7 +9654,7 @@ be a procedure that takes two keys; the first one returns
 キーは比較器@var{comparator}を使って比較されます。@var{comparator}の
 デフォルト値は@code{default-comparator}です。キーには全順序関係が必要なので、
 比較器は比較手続きを持っていなければなりません。
-詳しくは@ref{Comparators}を参照してください。
+詳しくは@ref{Basic comparators}を参照してください。
 
 互換性のため、@code{make-tree-map}は@var{comparator}引数に
 単なる手続きを取ることもできます。渡される手続きは2引数を取り、
@@ -17927,9 +17997,9 @@ any sequence (an instance of @code{<sequence>}).
 @item
 @c EN
 You can use both comparison procedures
-and comparators (@xref{Comparators}) to specify the order.
+and comparators (@xref{Basic comparators}) to specify the order.
 @c JP
-順序を指定するのに、比較関数も比較器(@ref{Comparators}参照)も
+順序を指定するのに、比較関数も比較器(@ref{Basic comparators}参照)も
 使うことができます。
 @c COMMON
 @item
