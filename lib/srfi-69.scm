@@ -28,7 +28,7 @@
           [(eq? equal eq?)         eq-comparator]
           [(eq? equal string=?)    string-comparator]
           [(eq? equal string-ci=?) string-ci-comparator]
-          [else (make-comparator #t equal #f hash)])))
+          [else (make-comparator #t equal #f (with-module gauche hash))])))
 
 (define (make-hash-table :optional (equal equal?) (hasher #f) :rest opts)
   ((with-module gauche make-hash-table)
