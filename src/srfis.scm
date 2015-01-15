@@ -579,6 +579,21 @@ S式コメント
 ネイティブのリーダでサポートされています。@ref{Lexical structure}参照。
 
 
+srfi-69
+()
+
+Basic hash tables
+Supported by the module @code{srfi-69} (@xref{Basic hash tables}).
+Note that Gauche provides
+built-in hashtable support (@xref{Hashtables}).
+They just use different names in some procedures.
+
+基本的なハッシュテーブル
+モジュール@code{srfi-69}でサポートされます (@ref{Basic hash tables}参照)。
+Gaucheにも組み込みのハッシュテーブルサポートがありますが(@ref{Hashtables}参照)、
+いくつかの手続きにおいて異なる名前を使っています。
+
+
 srfi-87
 (case => else)
 

@@ -31,6 +31,7 @@ of supported SRFIs.
 * Vector library::              srfi-43
 * Requiring extensions::        srfi-55
 * Integers as bits::            srfi-60
+* Basic hash tables::           srfi-69
 * Accessing environment variables::  srfi-98
 * Basic socket interface::      srfi-106
 * Boxes::                       srfi-111
@@ -4688,7 +4689,7 @@ Roughly correspons to Gauche's @code{use} forms:
 @end defmac
 
 @c ----------------------------------------------------------------------
-@node Integers as bits, Accessing environment variables, Requiring extensions, Library modules - SRFIs
+@node Integers as bits, Basic hash tables, Requiring extensions, Library modules - SRFIs
 @section @code{srfi-60} - Integers as bits
 @c NODE 整数に対するビット操作, @code{srfi-60} - 整数に対するビット操作
 
@@ -4850,7 +4851,173 @@ each value as a binary digit.  If @var{n} is nonnegative integer,
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Accessing environment variables, Basic socket interface, Integers as bits, Library modules - SRFIs
+@node Basic hash tables, Accessing environment variables, Integers as bits, Library modules - SRFIs
+@section @code{srfi-69} - Basic hash tables
+@c NODE 基本的なハッシュテーブル, @code{srfi-69} - 基本的なハッシュテーブル
+
+@deftp {Module} srfi-69
+@mdindex srfi-69
+This module is a thin adaptor on Gauche's built-in hashtables
+(@xref{Hashtables}).  This is provided for the compatibility
+to the portable libraries; the hashtable object created by
+this module's @code{make-hash-table} is the same as the one
+created by Gauche's built-in, and you can pass the table to
+both APIs.
+@end deftp
+
+Here's a summary of difference between srfi-69 and Gauche's built-in
+hash table API:
+
+@itemize
+@item
+The constructor @code{make-hash-table}, as well as @code{alist->hash-table},
+takes equality predicate and hash function, instead of a single
+comparator argument.
+@item
+The hash function passed to @code{srfi-69}'s @code{make-hash-table}
+takes two arguments, an object to calculate a hash value,
+and a positive integer that limits the range of the hash value.
+@item
+@code{Srfi-69}'s primary hash table accessor is @code{hash-table-ref},
+which takes a thunk to be called when the table doesn't have an
+entry for the given key, while Gauche's @code{hash-table-get} takes
+a fallback value for that.
+@code{Srfi-69} also has @code{hash-table-ref/default},
+which takes a fallback value like Gauche's @code{hash-table-get},
+but the default value can't be omitted.
+@item
+The basic iterator of @code{srfi-69} is called @code{hash-table-walk},
+which is Gauche's @code{hash-table-for-each}.  The srfi name is chosen
+to avoid conflict with existing Scheme implementations.
+@end itemize
+
+The following procedures are the same as Gauche's built-in ones.
+@xref{Hashtables}, for the details.
+
+@example
+hash-table?       hash-table-delete!   hash-table-exists?
+hash-table-keys   hash-table-values    hash-table-fold
+hash-table->alist hash-table-copy 
+@end example
+
+
+@defun make-hash-table :optional eq-pred hash-proc :rest args
+[SRFI-69]
+Creates a new hashtable and returns it.  This is the same name
+as Gauche's built-in procedure, but the arguments are different.
+
+The @var{eq-pred} argument is an equality predicate; it takes
+two arguments and returns @code{#t} if two are the same,
+and @code{#f} if not.  When omitted, @code{equal?} is used.
+
+The @var{hash-proc} argument is a hash function.
+It takes two arguments: an object to hash, and a positive
+integer to limit the range of the hash value.  (Note that
+Gauche's native hash functions takes only one argument.)
+When omitted, Gauche tries to choose appropriate hash function
+if @code{eq-pred} is known one (@code{eq?}, @code{eqv?},
+@code{equal?}, @code{string=?} or @code{string-ci=?}).
+Otherwise we use Gauche's @code{hash} procedure, but there's
+no guarantee that it works appropriately; you should give
+suitable @var{hash-proc} if you pass custom @var{eq-pred}.
+
+The returned hash table is an instance of Gauche's native
+hash table.  You can pass it to Gauche's builtin procedures.
+
+@code{Srfi-69} allows implementation-specific arguments @var{args} to be
+passed to @code{make-hash-table}.  At this moment, Gauche
+ignores them.
+@end defun
+
+@defun alist->hash-table alist :optional eq-pred hash-fn :rest args
+[SRFI-69]
+Like Gauche's builtin @code{alist->hash-table}, but takes
+@var{eq-pred} and @var{hash-fn} separately,
+instead of a single comparator.
+
+The @var{alist} argument is a list of pairs.  The car of each
+pair is used for a key, and the cdr for its value.
+
+See @code{make-hash-table} above for the description of
+@var{eq-pred}, @var{hash-fn} and @var{args}.
+@end defun
+
+@defun hash-table-equivalence-function ht
+@defunx hash-table-hash-function ht
+[SRFI-69]
+Returns equivalence function and hash function of the
+hashtable @var{ht}.
+
+The hash function returned from @code{hash-table-hash-function}
+takes two arguments, an object to hash and bound, a positive exact integer.
+Note that the function returned by @code{hash-table-hash-function} may not
+be @code{eq?} to the one you gave to @code{make-hash-table}.
+@end defun
+
+@defun hash-table-ref ht key :optional thunk
+[SRFI-69]
+Looks up the value corresponding to @var{key} in a hash table @var{ht}.
+If there's no entry for @var{key}, @var{thunk} is called
+without arguments.  The default of @var{thunk} is to signal an error.
+@end defun
+
+@defun hash-table-ref/default ht key default
+[SRFI-69]
+Looks up the value corresponding to @var{key} in a hash table @var{ht}.
+This is like Gauche's @code{hash-table-get}, but @var{default} can't be
+omitted.
+@end defun
+
+@defun hash-table-set! ht key val
+[SRFI-69]
+This is the same as Gauche's @code{hash-table-put!}.
+@end defun
+
+@defun hash-table-update! ht key proc :optional thunk
+@defunx hash-table-update!/default ht key proc default
+[SRFI-69]
+@end defun
+
+@defun hash-table-size ht
+[SRFI-69]
+Returns the number of entries in a hash table @var{ht}.  The same as Gauche's
+@code{hash-table-num-entries}.
+@end defun
+          
+@defun hash-table-walk ht proc
+[SRFI-69]
+For each entry in a hash table @var{ht}, 
+calls @var{proc} with two arguments, a key and its value.
+It's the same as Gauche's @code{hash-table-for-each}.
+@end defun
+
+@defun hash-table-merge! ht1 ht2
+[SRFI-69]
+Add all entries in a hash table @var{ht2} into a hash table @var{ht1},
+and returns @var{ht1}.
+@end defun
+
+@defun hash obj :optional bound
+[SRFI-69]
+Like Gauche's @code{hash}, except this one can take bound argument;
+if provided, it must be a positive integer, and the return value
+is limited between 0 and @code{(- bound 1)}, inclusive.
+@end defun
+
+@defun string-hash obj :optional bound
+@defunx string-ci-hash obj :optional bound
+[SRFI-69]
+These are like @code{srfi-13}'s (@xref{String library}), except
+these don't take @var{start} and @var{end} argument.
+@end defun
+
+@defun hash-by-identity obj :optional bound
+[SRFI-69]
+This is Gauche's @code{eq-hash}, except this one can take bound argument.
+@end defun
+
+@c ----------------------------------------------------------------------
+@node Accessing environment variables, Basic socket interface, Basic hash tables, Library modules - SRFIs
 @section @code{srfi-98} - Accessing environemnt variables
 @c NODE 環境変数へのアクセス, @code{srfi-98} - 環境変数へのアクセス
 
