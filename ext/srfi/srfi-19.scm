@@ -31,7 +31,7 @@
   (use srfi-13)
   (export time-tai time-utc time-monotonic time-thread
           time-process time-duration current-time time-resolution
-          make-time time-type time-second time-nanosecond
+          make-time time? time-type time-second time-nanosecond
           set-time-type! set-time-second! set-time-nanosecond! copy-time
           time=? time<? time<=? time>? time>=?
           time-difference time-difference! add-duration add-duration!
