@@ -237,7 +237,7 @@ int Scm_Compare(ScmObj x, ScmObj y)
     /* Now we have two objects of different types, both are not the
        types defined the order in srfi-114.
        To achieve better stability, we first compare the name of the
-       classes and the name if its defining modules; if they are still
+       classes and the names of their defining modules; if they are still
        the same, we fall back to compare addresses.
        Note: Addresses and defining modules may be changed when
        the class is redefined.
@@ -249,8 +249,16 @@ int Scm_Compare(ScmObj x, ScmObj y)
 
     ScmObj mx = cx->modules;
     ScmObj my = cy->modules;
-    int mr = Scm_Compare(mx, my);
-    if (mr != 0) return mr;
+    while (SCM_PAIRP(mx) && SCM_PAIRP(my)) {
+        SCM_ASSERT(SCM_MODULEP(SCM_CAR(mx)) && SCM_MODULEP(SCM_CAR(my)));
+        int r = Scm_Compare(SCM_MODULE(SCM_CAR(mx))->name,
+                            SCM_MODULE(SCM_CAR(my))->name);
+        if (r != 0) return r;
+        mx = SCM_CDR(mx);
+        my = SCM_CDR(my);
+    }
+    if (SCM_PAIRP(mx)) return -1;
+    if (SCM_PAIRP(my)) return 1;
 
     if (cx < cy) return -1;
     else return 1;

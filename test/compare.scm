@@ -95,6 +95,26 @@
          (compare-matrix (map precedence *data*))
          (compare-matrix *data*)))
 
+;; comparing different user-defined types
+(define-module compare-test-a
+  (define-class <compare-test-x> () ())
+  (define-class <compare-test-y> () ()))
+(define-module compare-test-b
+  (define-class <compare-test-x> () ())
+  (define-class <compare-test-y> () ()))
+(let ([ax (make (with-module compare-test-a <compare-test-x>))]
+      [ay (make (with-module compare-test-a <compare-test-y>))]
+      [bx (make (with-module compare-test-b <compare-test-x>))]
+      [by (make (with-module compare-test-b <compare-test-y>))])
+  (test* "comparing different user-defined types"
+         '(-1 1 -1 1 1 -1)
+         (list (compare ax ay)
+               (compare ay ax)
+               (compare ax bx)
+               (compare bx ax)
+               (compare ay bx)
+               (compare bx ay))))
+
 (let ()
   (define ca (make-car-comparator string-comparator))
   (define cd (make-cdr-comparator integer-comparator))
