@@ -201,6 +201,8 @@ SCM_EXTERN u_int  Scm_GetIntegerU16Clamp(ScmObj obj, int clamp, int *oor);
 SCM_EXTERN ScmInt32  Scm_GetInteger32Clamp(ScmObj obj, int clamp, int *oor);
 SCM_EXTERN ScmUInt32 Scm_GetIntegerU32Clamp(ScmObj obj, int clamp, int *oor);
 
+SCM_EXTERN u_long Scm_GetIntegerUMod(ScmObj obj);
+
 /* 64bit integer stuff */
 #if SIZEOF_LONG == 4
 SCM_EXTERN ScmObj Scm_MakeInteger64(ScmInt64 i);

@@ -1040,6 +1040,26 @@ ScmUInt32 Scm_GetIntegerU32Clamp(ScmObj obj, int clamp, int *oor)
 #endif /* SIZEOF_LONG >= 8 */
 }
 
+/* get an unsigned integer value modulo u_long range.
+   convenient when you only concern lower bits. */
+u_long Scm_GetIntegerUMod(ScmObj obj)
+{
+    if (SCM_INTP(obj)) return (u_long)SCM_INT_VALUE(obj);
+    if (SCM_BIGNUMP(obj)) {
+        if (SCM_BIGNUM_SIZE(obj) == 0) {
+            /* this shouldn't happen in normalized bignums, but just in case */
+            return 0;
+        }
+        if (SCM_BIGNUM_SIGN(obj) < 0) {
+            u_long v = SCM_BIGNUM(obj)->values[0];
+            return ~v + 1;
+        } else {
+            return SCM_BIGNUM(obj)->values[0];
+        }
+    }
+    Scm_Error("Exact integer required, but got %S", obj);
+    return 0;                   /* dummy */
+}
 
 #if SIZEOF_LONG == 4
 /* we need special routines */

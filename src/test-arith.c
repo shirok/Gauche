@@ -649,6 +649,38 @@ void test_32_64(void)
 }
 
 /*=============================================================
+ * Testing rounding to machine-word
+ */
+
+void test_round_ulong_1(u_long expect, ScmObj obj)
+{
+    Scm_Printf(SCM_CUROUT, "testing Scm_GetIntegerUMod(%S), expects %lu =>",
+               obj, expect);
+    u_long r = Scm_GetIntegerUMod(obj);
+    if (expect == r) {
+        Scm_Printf(SCM_CUROUT, "ok\n");
+    } else {
+        Scm_Printf(SCM_CUROUT, "ERROR: got %lu\n", r);
+        errcount++;
+    }
+}
+
+void test_round_ulong()
+{
+    TEST_SECTION("integers modulo ulong range");
+    test_round_ulong_1(142857, SCM_MAKE_INT(142857));
+    test_round_ulong_1(285714, Scm_Add(Scm_Expt(SCM_MAKE_INT(2),
+                                                SCM_MAKE_INT(100)),
+                                       SCM_MAKE_INT(285714)));
+    test_round_ulong_1(UMAX, SCM_MAKE_INT(-1));
+#if SIZEOF_LONG == 4
+    test_round_ulong_1(571428, Scm_Sub(SCM_MAKE_INT(571428), SCM_2_32));
+#else  /*SIZEOF_LONG > 4 */
+    test_round_ulong_1(571428, Scm_Sub(SCM_MAKE_INT(571428), SCM_2_64));
+#endif /*SIZEOF_LONG > 4 */
+}
+
+/*=============================================================
  * Testing 16bit floats
  */
 
@@ -780,6 +812,8 @@ int main(int argc, char **argv)
     test_smulov();
 
     test_32_64();
+
+    test_round_ulong();
 
     test_f16();
 
