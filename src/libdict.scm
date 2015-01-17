@@ -145,7 +145,10 @@
     (when (SCM_FALSEP t)
       (Scm_Error "Invalid key for hashtable: %S" (SCM_OBJ key)))
     (let* ([v::ScmObj (Scm_ApplyRec1 (-> c hashFn) (SCM_OBJ key))])
-      (return (Scm_GetIntegerU v)))))
+      (unless (or (SCM_INTP v) (SCM_BIGNUMP v))
+        (Scm_Error "Comparator %S's hash function should return \
+                    an exact integer, but got: %S" c v))
+      (return (Scm_GetIntegerUMod v)))))
 
 (define-cfn generic-hashtable-eq (h::(const ScmHashCore*)
                                   a::intptr_t b::intptr_t)
