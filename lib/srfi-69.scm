@@ -18,6 +18,11 @@
           hash string-hash string-ci-hash hash-by-identity))
 (select-module srfi-69)
 
+;; These procedures are the same as Gauche's built-in:
+;; hash-table?       hash-table-delete!   hash-table-exists?
+;; hash-table-keys   hash-table-values    hash-table-fold
+;;hash-table->alist hash-table-copy 
+
 (define-constant *hasher-range* (+ (greatest-fixnum) 1))
 
 (define (%choose-comparator equal hasher) ; equal never be #f.
@@ -33,8 +38,6 @@
 (define (make-hash-table :optional (equal equal?) (hasher #f) :rest opts)
   ((with-module gauche make-hash-table)
    (%choose-comparator equal hasher)))
-
-(define hash-table? (with-module gauche hash-table?))
 
 (define (alist->hash-table alist :optional (equal equal?) (hasher #f) :rest opts)
   ((with-module gauche alist->hash-table)
@@ -65,9 +68,6 @@
 (define (hash-table-set! ht key val)
   (hash-table-put! ht key val))
 
-(define hash-table-delete! (with-module gauche hash-table-delete!))
-(define hash-table-exists? (with-module gauche hash-table-exists?))
-
 (define (hash-table-update! ht key proc :optional (thunk no-key-thunk))
   ((with-module gauche hash-table-update!)
    ht key
@@ -80,15 +80,8 @@
   ((with-module gauche hash-table-update!) ht key proc default))
 
 (define hash-table-size hash-table-num-entries)
-(define hash-table-keys (with-module gauche hash-table-keys))
-(define hash-table-values (with-module gauche hash-table-values))
 
-(define (hash-table-walk ht proc)
-  (hash-table-for-each ht proc))
-
-(define hash-table-fold (with-module gauche hash-table-fold))
-(define hash-table->alist (with-module gauche hash-table->alist))
-(define hash-table-copy (with-module gauche hash-table-copy))
+(define (hash-table-walk ht proc) (hash-table-for-each ht proc))
 
 (define (hash-table-merge! ht1 ht2)
   (hash-table-for-each ht2 (^[k v] (hash-table-put! ht1 k v)))

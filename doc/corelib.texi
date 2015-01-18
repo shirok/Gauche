@@ -9281,6 +9281,22 @@ This is equivalent to SRFI-43's @code{vector-for-each}.
 @section Hashtables
 @c NODE ハッシュテーブル
 
+@c EN
+Gauche's native hashtable API is Gauche-specific.   For portable
+programs, you can use @code{srfi-69} (@xref{Basic hash tables})
+for the time being.
+
+There will be a revised hashtable API as a part of R7RS-large,
+we plan to adapt Gauche's native API once it is published.
+@c JP
+Gaucheの組み込みハッシュテーブルAPIはGauche特有のものです。
+ポータブルなプログラムを書く場合は、今のところ@code{srfi-69}が使えます
+(@ref{Basic hash tables}参照)。
+
+R7RS-largeの一部になる、新たなハッシュテーブルのSRFIが出たら、
+Gaucheもそれに合わせる予定です。
+@c COMMON
+
 @deftp {Builtin Class} <hash-table>
 @clindex hash-table
 @c EN
