@@ -2935,7 +2935,9 @@ The list of classes of the argument list is called
 function will select appropriate methods(s).
 Here are some examples of @var{specs} and the corresponding
 specializer list (note that the rest argument isn't considered
-as a part of specializer list; we know it's always a list.):
+as a part of specializer list; we know it's always a list.)
+The @code{optional} item indiecates whether the method takes
+rest arguments or not.
 @c JP
 @i{class} は引数が所属すべきクラスを指定します。@code{@i{arg}} が単に
 シンボルであれば、@code{(@i{arg} <top>)} と同じです。rest 引数の
@@ -2950,31 +2952,40 @@ as a part of specializer list; we know it's always a list.):
 これを基に、ジェネリック関数は適切なメソッドを選択します。@var{specs} と
 それに対応する特定化子リストの例をあげておきます。
 (rest引数は特定化子リストには考慮されないことに注意。リストに決まっているからです。)
+@code{optional}の項はメソッドがrest引数を取るかどうかを示します。
 @c COMMON
 
 @example
 specs:        ((self <myclass>) (index <integer>) value)
 specializers: (<myclas> <integer> <top>)
+optional:     #f
 
 specs:        (obj (attr <string>))
 specializers: (<top> <string>)
+optional:     #f
 
 specs:        ((self <myclass>) obj . options)
 specializers: (<myclas> <top>)
+optional:     #t
 
 specs:        ((self <myclass>) obj :optional (a 0) (b 1) :key (c 2))
 specializers: (<myclas> <top>)
+optional:     #t
 
 specs:        args
 specializers: ()
+optional:     #t
 @end example
 
 @c EN
-If you define a method on @var{name} whose specializer list matches with
-one in the generic function's methods, then the existing method is
+If you define a method on @var{name} whose specializer list,
+and whether it takes rest argumetns,
+matche with one in the generic function's methods,
+then the existing method is
 replaced by the newly defined one.
 @c JP
-その特定化子リストがジェネリック関数の中のメソッドの一つに一致するような
+その特定化子リストがジェネリック関数の中のメソッドの一つに一致し、
+rest引数の有無も同じである
 @var{name} 上のメソッドを定義すると、既存のメソッドは新しく定義された
 メソッドに置き換えられます。
 @c COMMON
