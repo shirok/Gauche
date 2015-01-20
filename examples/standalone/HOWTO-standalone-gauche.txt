@@ -1,4 +1,4 @@
-This directory contains code to show how to build a statically-linked
+This document explains how to build a statically-linked
 gauche binary, that can run stand-alone (that is, you don't need to
 install Gauche runtime separately---everything is in one executable).
 
@@ -39,6 +39,15 @@ and run build-standalone subcommand:
 
   gosh build-standalone -o command yourscript.scm 
 
+This looks header files (gauche.h etc.) and the static library
+file (libgauche-static-X.Y.a) from the installed Gauche's paths.
+If those are not in the installation location (especially
+libgauche-static-X.Y.a, which isn't installed by default),
+you need to tell the commane where to look for.
+
+  gosh build-standalone -I/path/to/headers -L/path/to/library \
+         -o command yourscript.scm
+
 The resulting binary doesn't depend on neither Gauche DSOs nor
 installed Gauche libraries.  You can copy just the binary onto
 the target platform.
@@ -48,4 +57,8 @@ and they are needed on the target platform.
 
 Since the result binary includes entire Gauche bundled libraries,
 it tends to be large (around 12MB on Linux/x86_64).
+
+
+This directory contains a sample script.  After building
+the static library, run make and you'll get sample-repl.
 

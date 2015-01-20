@@ -35,16 +35,23 @@
 (use gauche.parseopt)
 
 (define (usage)
-  (print "Usage: make-standalone [-o outfile] file.scm")
-  (print "  -o outfile     Specify output file name.")
+  (print "Usage: make-standalone [-o outfile][-I dir][-L dir] file.scm")
+  (print "  -o outfile  Specify output file name.")
+  (print "  -I dir      Specify extra include directory to find gauche.h etc.")
+  (print "  -L dir      Specify extra library directory to find libgauche-static.")
   (exit 1))
 
 (define (main args)
   (let-args (cdr args) ([outfile "o=s" #f]
+                        [incdirs "I=s" #f]
+                        [libdirs "L=s" #f]
                         [else _ (usage)]
                         . files)
     (when (null? files) (usage))
-    (build-standalone (car files) :outfile outfile))
+    (build-standalone (car files)
+                      :outfile outfile
+                      :include-dirs (if incdirs (list incdirs) '())
+                      :library-dirs (if libdirs (list libdirs) '())))
   0)
 
 ;; Local variables:

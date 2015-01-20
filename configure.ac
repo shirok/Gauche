@@ -860,6 +860,8 @@ AC_OUTPUT(Makefile
           ext/vport/Makefile
           ext/zlib/Makefile
           ext/windows/Makefile
+          examples/Makefile
+          examples/standalone/Makefile
          )
 
 dnl ===========================================================

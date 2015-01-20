@@ -1,0 +1,30 @@
+srcdir       = @srcdir@
+VPATH        = $(srcdir)
+top_builddir = @top_builddir@
+top_srcdir   = @top_srcdir@
+
+GENERATED = sample-repl sample-repl.c
+CONFIG_GENERATED = Makefile
+
+all: sample-repl
+
+clean:
+	rm -f core *~ $(GENERATED)
+
+distclean: clean
+	rm -f $(CONFIG_GENERATED)
+
+maintainer-clean: clean
+	rm -f $(CONFIG_GENERATED)
+
+sample-repl: sample-repl.scm
+	@if [ ! -f $(top_builddir)/src/libgauche-static-0.9.a ]; then \
+	  echo "**********************************************"; \
+	  echo "*     Gauche static library is missing.      *"; \
+	  echo "*     Go to src and run 'make static'.       *"; \
+	  echo "**********************************************"; \
+	  exit 1;\
+	fi
+	$(top_builddir)/src/gosh -ftest build-standalone -I $(top_srcdir)/src -L $(top_builddir)/src -o sample-repl sample-repl.scm
+
+

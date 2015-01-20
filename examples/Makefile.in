@@ -1,0 +1,24 @@
+srcdir       = @srcdir@
+VPATH        = $(srcdir)
+top_builddir = @top_builddir@
+top_srcdir   = @top_srcdir@
+
+SUBDIRS = standalone
+
+CONFIG_GENERATED = Makefile
+
+all:
+
+check:
+
+clean:
+	for d in $(SUBDIRS); do cd $$d; $(MAKE) clean; done
+	rm -f core *~
+
+distclean: clean
+	for d in $(SUBDIRS); do cd $$d; $(MAKE) distclean; done
+	rm -f $(CONFIG_GENERATED)
+
+maintainer-clean: clean
+	for d in $(SUBDIRS); do cd $$d; $(MAKE) maintainer-clean; done
+	rm -f $(CONFIG_GENERATED)

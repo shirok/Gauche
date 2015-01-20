@@ -14,8 +14,8 @@ srcdir      = @srcdir@
 datadir     = @datadir@
 datarootdir = @datarootdir@
 
-SUBDIRS = gc src lib ext doc
-SRIDBUS = doc ext lib src gc
+SUBDIRS = gc src lib ext doc examples
+SRIDBUS = examples doc ext lib src gc
 LIBATOMICDIR = gc/libatomic_ops
 MKINSTDIR = @top_srcdir@/mkinstalldirs
 INSTALL = @INSTALL@
