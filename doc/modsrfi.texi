@@ -5391,31 +5391,85 @@ Mutate @var{box}'s content with @var{val}.  Returns unspecified value.
 @deftp {Module} srfi-113
 @mdindex srfi-113
 Sets and bags are unordered collection of Scheme values.
-A set doesn't allow dupicate items in it; while a bag allows them.
+A set doesn't count duplicates; if you add an item
+which is already in a set, you still have one item of the kind.
+A bag counts duplicates; if you add an item which
+is already in a bag, you have two items of the kind.
+
+To check whether the items are ``the same'', sets and bags
+takes a comparator at constrution time.  The comparator
+doesn't need to have a comparison procedure (we don't need
+to order the elements) but has to have a hash function.
 @end deftp
 
 @subheading Constructors
 
 @defun set comparator elt @dots{}
 @defunx bag comparator elt @dots{}
+Creates a new set and bag from given elements @var{elt} @dots{}.
+Given @var{comparator} will be used to compare equality of elements.
+
+@example
+(set->list (set eq-comparator 'a 'b 'a 'b))
+  @result{} (a b)
+
+(bag->list (bag eq-comparator 'a 'b 'a 'b))
+  @result{} (a a b b)
+@end example
 @end defun
 
-@defun set-unfold continue? mapper successor seed comparator
-@defunx bag-unfold continue? mapper successor seed comparator
+@defun set-unfold stop? mapper successor seed comparator
+@defunx bag-unfold stop? mapper successor seed comparator
+Procedurally creates a set or a bag.  The first three
+arguments, @var{stop?},  @var{mapper} and @var{successor},
+are all procedures that takes one argument, the current seed value.
+It may be easier to know their types:
+
+@example
+seed      :: Seed
+stop?     :: Seed -> Boolean
+mapper    :: Seed -> ElementType
+successor :: Seed -> Seed
+@end example
+
+The @code{stop?} procedure takes the current seed value and
+returns a boolean value - if it is true, iteration stops.
+
+The @code{mapper} procedure takes the current seed value
+and returns an item, which is to be included in the resulting set or bag.
+
+The @code{successor} procedure takes the current seed value
+and returns the next seed value.
+
+And the @code{seed} argument gives the initial seed value.
+
+@example
+(set->list (set-unfold (^s (= s 75))
+                       integer->char
+                       (^s (+ s 1))
+                       65
+                       eqv-comparator))
+ @result{} (#\D #\H #\A #\E #\I #\J #\B #\F #\C #\G)
+@end example
 @end defun
 
 @subheading Predicates
 
 @defun set-contains? set obj
 @defunx bag-contains? bag obj
+Check if @var{obj} is in the set or the bag.
 @end defun
 
 @defun set-empty? set
 @defunx bag-empty? bag
+Returns @code{#t} iff the given set or bag is empty.
 @end defun
 
-@defun set-disjoint? a b
-@defunx bag-disjoint? a b
+@defun set-disjoint? set1 set2
+@defunx bag-disjoint? bag1 bag2
+Returns @code{#t} iff the given arguments (sets or bags) don't have
+common items.  Both arguments must have the same comparator---otherwise
+an error is signaled.
 @end defun
 
 @subheading Accessors
