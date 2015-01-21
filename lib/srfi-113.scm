@@ -166,9 +166,9 @@
         (cdr list))))
 
 ;; This procedure is used directly when there are exactly two arguments.
-
+;; [SK] Gauche's equal? is more permissive than eq? when comparing comparators.
 (define (check-same-comparator a b)
-  (if (not (eq? (sob-comparator a) (sob-comparator b)))
+  (if (not (equal? (sob-comparator a) (sob-comparator b)))
     (error "different comparators" a b)))
 
 ;; This procedure defends against inserting an element
