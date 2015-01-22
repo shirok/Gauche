@@ -26,7 +26,9 @@
 
 (prim-test "when" 4          (lambda ()  (when 3 5 4)))
 (prim-test "when" (undefined)    (lambda ()  (when #f 5 4)))
+(prim-test "when" (undefined)    (lambda ()  (when #f unbound-var)))
 (prim-test "unless" (undefined)  (lambda ()  (unless 3 5 4)))
+(prim-test "unless" (undefined)  (lambda ()  (unless #t unbound-var)))
 (prim-test "unless" 4        (lambda ()  (unless #f 5 4)))
 
 (prim-test "cond" (undefined)  (lambda ()  (cond (#f 2))))
