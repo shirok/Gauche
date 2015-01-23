@@ -2187,20 +2187,20 @@
 
 (define-pass1-syntax (when form cenv) :gauche
   (match form
-    [(_ test body ...)
+    [(_ test expr1 expr2 ...)
      (let1 cenv (cenv-sans-name cenv)
        ($if form (pass1 test cenv)
-            ($seq (imap (cut pass1 <> cenv) body))
+            ($seq (imap (cut pass1 <> cenv) (cons expr1 expr2)))
             ($const-undef)))]
     [_ (error "syntax-error: malformed when:" form)]))
 
 (define-pass1-syntax (unless form cenv) :gauche
   (match form
-    [(_ test body ...)
+    [(_ test expr1 expr2 ...)
      (let1 cenv (cenv-sans-name cenv)
        ($if form (pass1 test cenv)
             ($const-undef)
-            ($seq (imap (cut pass1 <> cenv) body))))]
+            ($seq (imap (cut pass1 <> cenv) (cons expr1 expr2)))))]
     [_ (error "syntax-error: malformed unless:" form)]))
 
 (define-pass1-syntax (else form cenv) :null
