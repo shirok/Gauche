@@ -5476,44 +5476,80 @@ an error is signaled.
 
 @defun set-member set obj default
 @defunx bag-member bag obj default
+Returns an element in the given set or bag which is equal to @var{obj}
+in terms of the set's or the bag's comparator.  If no such element is
+found, @var{default} will be returned.
+
+Note that the returned object doesn't need to be ``the same''
+as @var{obj} in a usual sense.  See the following example:
+
+@example
+(let s (set string-ci-comparator "abc" def")
+  (set-member s "ABC" #f))
+  @result{} "abc"
+@end example
 @end defun
 
 @defun set-element-comparator set
 @defunx bag-element-comparator bag
+Returns the comparator used to compare the elements for the set or the bag.
 @end defun
 
 @subheading Updaters
 
 @defun set-adjoin set elt @dots{}
 @defunx bag-adjoin bag elt @dots{}
-@end defun
-
-@defun set-adjoin! set elt @dots{}
-@defunx bag-adjoin! bag elt @dots{}
+Returns a newly created set or bag that contains all the elements
+in the original set/bag, plus given elements.  The new set/bag's
+comparator is the same as the original set/bag's one.
 @end defun
 
 @defun set-replace set elt
 @defunx bag-replace bag elt
-@end defun
+Returns a newly created set/bag with the same comparator with
+the original set/bag, and the same elements, except that the elements
+equal to @var{elt} (in terms of set/bag's comparator) is replaced
+by @var{elt}.  If the original set/bag doesn't contain an element
+equal to @var{elt}, the original one is returned.
 
-@defun set-replace! set elt
-@defunx bag-replace! bag elt
+@example
+(let ((s (set string-ci-comparator "ABC" "def")))
+  (set->list (set-replace s "abc")))
+  @result{} ("abc" "def")
+@end example
 @end defun
 
 @defun set-delete set elt @dots{}
 @defunx bag-delete bag elt @dots{}
-@end defun
-
-@defun set-delete! set elt @dots{}
-@defunx bag-delete! bag elt @dots{}
+Returns a newly created set or bag that has the same comparator
+and the same elements in the original set/bag, except that the
+item which is equal to @var{elt}.
 @end defun
 
 @defun set-delete-all set elt-list
 @defunx bag-delete-all bag elt-list
+Returns a newly created set or bag with the same comparator of
+the original set/bag, with the elements of the original set/bag
+except the ones listed in @var{elt-list}.
 @end defun
 
-@defun set-delete-all! set elt-list
+
+@defun set-adjoin! set elt @dots{}
+@defunx bag-adjoin! bag elt @dots{}
+@defunx set-replace! set elt
+@defunx bag-replace! bag elt
+@defunx set-delete! set elt @dots{}
+@defunx bag-delete! bag elt @dots{}
+@defunx set-delete-all! set elt-list
 @defunx bag-delete-all! bag elt-list
+These are the linear update versions of their counterparts.
+It works just like the ones without @code{!}, except that
+the original set/bag @emph{may} be reused to produce the result,
+instead of new one being allocated.
+
+Note that it's not guaranteed that the original
+set/bag is modified, so you should use the return value of them,
+instead of relying on the side effects.
 @end defun
 
 @defun set-search! set elt failure success
