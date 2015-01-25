@@ -1,3 +1,7 @@
+2015-01-24  Shiro Kawai  <shiro@acm.org>
+
+	* lib/text/gap-buffer (text.gap-buffer): Added experimentally.
+
 2015-01-17  Shiro Kawai  <shiro@acm.org>
 
 	* src/number.c (Scm_GetIntegerUMod): Added - a convenience routine to
