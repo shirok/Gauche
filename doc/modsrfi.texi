@@ -5554,6 +5554,47 @@ instead of relying on the side effects.
 
 @defun set-search! set elt failure success
 @defunx bag-search! bag elt failure success
+Lookup-and-modify procedures.  The @var{failure} and @var{success}
+arguments are procedures.
+
+First, they search @var{elt} in the given set/bag.  
+If an item that matches @var{elt} is found, the @var{success} procedure
+is called with three arguments, as follows:
+@example
+(success item update remove)
+@end example
+The @var{update} argument is a procedure that takes two arguments,
+as @code{(update new-item retval)}.  It replaces the matching @var{item} in the
+set/bag with @var{new-item}, and returns @var{retval}.
+The @var{remove} argument is a procedure that takes one argument,
+as @code{(remove retval)}.  It removes the mathing @var{item} in
+the set/bag, and returns @var{retval}.
+
+If an item that matches @var{elt} is not found, the @var{failure} procedure
+is called with two arguments, as follows:
+@example
+(failure insert ignore)
+@end example
+The @var{insert} argument is a procedure that takes one argument,
+as @code{(insert retval)}.  It inserts @var{elt} into the set/bag, and
+returns @var{retval}.
+The @var{ignore} argument is a procedure that takes one argument,
+as @code{(ignore retval)}.  It just returns @var{retval}.
+
+The return values of @code{set-search!} and @code{bag-search!} is
+the modified set/bag (which may or may not be @code{eq?} to the passed one),
+and the value returned by @var{success} or @var{failure} procedures.
+
+Note that @var{retval} isn't used in this process; it is just to provide
+one of the return values of @code{set-search!}/@code{bag-search!}, for
+the procedures passed to @var{success} or @var{failure} are expected
+to be tail-called.
+
+If there are more than one item that matches @var{elt} in a bag,
+@code{bag-search!} only invokes @var{success} for the first item
+it finds.  You can recurse into @code{bag-search!} in the @var{failure}
+procedure to visit all matching items.  It is guaranteed that @var{success}
+and @var{failure} procedures are tail-called.
 @end defun
 
 @subheading The whole set
