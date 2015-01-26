@@ -96,7 +96,7 @@ SCMFILES = srfi-0.scm \
        scheme/repl.scm scheme/time.scm scheme/write.scm \
        text/csv.scm text/parse.scm text/tree.scm text/sql.scm \
        text/html-lite.scm text/info.scm text/diff.scm \
-       text/progress.scm text/console.scm \
+       text/progress.scm text/console.scm text/gap-buffer.scm \
        www/cgi.scm www/cgi-test.scm www/cgi/test.scm www/css.scm
 
 all:
