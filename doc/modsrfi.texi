@@ -5601,60 +5601,113 @@ and @var{failure} procedures are tail-called.
 
 @defun set-size set
 @defunx bag-size bag
+Returns the number of items in the set/bag.
 @end defun
 
 @defun set-find pred set failure
 @defunx bag-find pred bag failure
+Apply @var{pred} on each item in the set/bag, and returns the
+first item on which @var{pred} returns true.  Since sets and bags
+are unordered, if there are more than one items that satisfy @var{pred},
+you won't know which one will be returned.
+
+If there're no items that satisfy @var{pred}, a thunk @code{failure}
+is called and its result is returned.
 @end defun
 
 @defun set-count pred set
 @defunx bag-count pred bag
+Returns the number of items that satisfy @var{pred} in the set/bag.
 @end defun
 
 @defun set-any? pred set
 @defunx bag-any? pred bag
+Returns true iff any item in the set/bag satisfy @var{pred}.
 @end defun
 
 @defun set-every? pred set
 @defunx bag-every? pred bag
+Returns true iff every item in the set/bag satisfy @var{pred}.
 @end defun
 
 @subheading Mapping and folding
 
 @defun set-map comparator proc set
 @defunx bag-map comparator proc bag
+Create and return a new set/bag with the comparator @var{comparator},
+whose items are calculated by applying @var{proc} to each element
+in the original set/bag.
 @end defun
 
 @defun set-for-each proc set
 @defunx bag-for-each proc bag
+Apply @var{proc} to each element in the set/bag.   The result of @var{proc}
+is ignored.  Return value is undefined.
 @end defun
 
 @defun set-fold proc seed set
 @defunx bag-fold proc seed bag
+For each item in the set/bag, call @var{proc} with two arguments, an item
+and a seed value.  What @var{proc} returns becomes the next seed value.
+The @var{seed} argument gives the initial seed value, and the last return
+value of @var{proc} will be the result of @code{set-fold}/@code{bag-fold}.
+
+@example
+(bag-fold + 0 (bag eqv-comparator 1 1 2 2 3 3 4 4))
+  @result{} 20
+@end example
 @end defun
 
 @defun set-filter pred set
 @defunx bag-filter pred bag
-@end defun
+Returns a newly created set/bag with the same comparator of the original
+set/bag, and its content consists of items from the original set/bag
+that satisfy @var{pred}.
 
-@defun set-filter! pred set
-@defunx bag-filter! pred bag
+@example
+(set->list (set-filter odd? (set eqv-comparator 1 2 3 4 5)))
+  @result{} (1 3 5)
+@end example
 @end defun
 
 @defun set-remove pred set
 @defunx bag-remove pred bag
-@end defun
+Returns a newly created set/bag with the same comparator of the original
+set/bag, and its content consists of items from the original set/bag
+that does not satisfy @var{pred}.
 
-@defun set-remove! pred set
-@defunx bag-remove! pred bag
+@example
+(set->list (set-remove odd? (set eqv-comparator 1 2 3 4 5)))
+  @result{} (2 4)
+@end example
 @end defun
 
 @defun set-partition pred set
 @defunx bag-partition pred bag
+Returns two sets or bags, both have the same comparator of the original
+set or bag.  The first one consists of the items from the original set/bag
+that satisfy @var{pred}, and the second one consists of the items that don't.
+
+@example
+(receive (in out) (set-remove odd? (set eqv-comparator 1 2 3 4 5))
+  (values (set->list in)
+          (set->list out)))
+  @result{} (1 3 5) @r{and} (2 4)
+@end example
 @end defun
 
-@defun set-partition! pred set
+@defun set-filter! pred set
+@defunx bag-filter! pred bag
+@defunx set-remove! pred set
+@defunx bag-remove! pred bag
+@defunx set-partition! pred set
 @defunx bag-partition! pred bag
+Linear update versions of their counterparts (the procedures without @code{!}).
+They work like their respective counterpart, but they are allowed (but not
+required) to reuse the original set/bag to produce the result(s).
+
+Note that it is not guaranteed that the original set/bag is modified, so
+you have to use the return value(s) instead of relying on the side effects.
 @end defun
 
 @subheading Copying and conversion
