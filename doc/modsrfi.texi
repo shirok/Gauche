@@ -5714,29 +5714,65 @@ you have to use the return value(s) instead of relying on the side effects.
 
 @defun set-copy set
 @defunx bag-copy bag
+Returns a copy of the set/bag.
 @end defun
 
 @defun set->list set
 @defunx bag->list bag
+Returns a list of all items in the set/bag.
+Since sets and bags are unordered, there's no guarantee on the
+order of items.
 @end defun
 
 @defun list->set comparator elt-list
 @defunx list->bag comparator elt-list
+Creates a set or a bag with the given comparator, and
+the list of element.  Functionally equivalent to the followings:
+
+@example
+(apply set comparator elt-list)
+(apply bag comparator elt-list)
+@end example
 @end defun
 
 @defun list->set! set elt-list
 @defunx list->bag! bag elt-list
+Add items in @var{elt-list} to the existing set/bag, and returns
+the updated set/bag.  The original set/bag is also modified.
+Functionally equivalent to the followings:
+
+@example
+(apply set-adjoin! set elt-list)
+(apply bag-adjoin! bag elt-list)
+@end example
 @end defun
 
 @defun bag->set bag
 @defunx set->bag set
-@defunx set->bag! bag set
+Conversions between a bag and a set.  Returns a newly created bag or set,
+respectively.
+
+If @var{bag} has duplicated items, @code{bag->set} coerces them to one
+item.
 @end defun
+
+@defun set->bag! bag set
+Adds all items in @var{set} to @var{bag}, and returns @var{bag}.
+Both @var{bag} and @var{set} must have the same comparator.
+@end defun
+
 
 @defun bag->alist bag
+Returns a list of @code{(item . count)}, where @var{item} is
+an item in @var{bag}, and @var{count} is the number of that item
+in the bag.
 @end defun
 
-@defun alist->bag comparator bag
+@defun alist->bag comparator alist
+Creates a new bag with @var{comparator}, and fills it according to
+@var{alist}, which must be a list of @code{(item . count)}.
+
+If there's duplicate items in @var{alist}, only fist one counts.
 @end defun
 
 @subheading Subsets
