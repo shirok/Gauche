@@ -364,6 +364,26 @@ ScmChar Scm_PeekcUnsafe(ScmPort *p)
     return ch;
 }
 
+/* At this moment we only allow one character to be 'ungotten',
+   but we might change it in future, so this one returns a list. */
+#ifdef SAFE_PORT_OP
+ScmObj Scm_UngottenChars(ScmPort *p)
+#else
+ScmObj Scm_UngottenCharsUnsafe(ScmPort *p)
+#endif
+{
+    VMDECL;
+    SHORTCUT(p, return Scm_UngottenCharsUnsafe(p));
+    LOCK(p);
+    ScmChar ch = p->ungotten;
+    UNLOCK(p);
+    if (ch == SCM_CHAR_INVALID) {
+        return SCM_NIL;
+    } else {
+        return SCM_LIST1(SCM_MAKE_CHAR(ch));
+    }
+}
+
 /*=================================================================
  * Ungetb & PeekByte
  */
@@ -417,6 +437,26 @@ int Scm_PeekbUnsafe(ScmPort *p)
     }
     UNLOCK(p);
     return b;
+}
+
+#ifdef SAFE_PORT_OP
+ScmObj Scm_UngottenBytes(ScmPort *p)
+#else
+ScmObj Scm_UngottenBytesUnsafe(ScmPort *p)
+#endif
+{
+    VMDECL;
+    SHORTCUT(p, return Scm_UngottenBytesUnsafe(p));
+    char buf[SCM_CHAR_MAX_BYTES];
+    LOCK(p);
+    for (int i=0; i<p->scrcnt; i++) buf[i] = p->scratch[i];
+    int n = p->scrcnt;
+    UNLOCK(p);
+    ScmObj h = SCM_NIL, t = SCM_NIL;
+    for (int i=0; i<n; i++) {
+        SCM_APPEND1(h, t, SCM_MAKE_INT((unsigned char)buf[i]));
+    }
+    return h;
 }
 
 /*=================================================================

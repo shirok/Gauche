@@ -362,6 +362,8 @@ SCM_EXTERN int    Scm_Getc(ScmPort *port);
 SCM_EXTERN int    Scm_Getz(char *buf, int buflen, ScmPort *port);
 SCM_EXTERN ScmChar Scm_Peekc(ScmPort *port);
 SCM_EXTERN int    Scm_Peekb(ScmPort *port);
+SCM_EXTERN ScmObj Scm_UngottenChars(ScmPort *port);
+SCM_EXTERN ScmObj Scm_UngottenBytes(ScmPort *port);
 
 SCM_EXTERN void   Scm_UngetcUnsafe(ScmChar ch, ScmPort *port);
 SCM_EXTERN void   Scm_UngetbUnsafe(int b, ScmPort *port);
@@ -370,6 +372,8 @@ SCM_EXTERN int    Scm_GetcUnsafe(ScmPort *port);
 SCM_EXTERN int    Scm_GetzUnsafe(char *buf, int buflen, ScmPort *port);
 SCM_EXTERN ScmChar Scm_PeekcUnsafe(ScmPort *port);
 SCM_EXTERN int    Scm_PeekbUnsafe(ScmPort *port);
+SCM_EXTERN ScmObj Scm_UngottenCharsUnsafe(ScmPort *port);
+SCM_EXTERN ScmObj Scm_UngottenBytesUnsafe(ScmPort *port);
 
 SCM_EXTERN ScmObj Scm_ReadLine(ScmPort *port);
 SCM_EXTERN ScmObj Scm_ReadLineUnsafe(ScmPort *port);

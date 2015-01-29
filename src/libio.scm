@@ -531,6 +531,12 @@
     (result (Scm_ReaderLexicalMode))
     (result (Scm_SetReaderLexicalMode k))))
 
+(select-module gauche.internal)
+(define-cproc %port-ungotten-chars (port::<input-port>)
+  Scm_UngottenChars)
+(define-cproc %port-ungotten-bytes (port::<input-port>)
+  Scm_UngottenBytes)
+
 ;; Read time constructor (srfi-10)
 (select-module gauche)
 

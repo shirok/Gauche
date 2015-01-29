@@ -1,3 +1,13 @@
+2015-01-29  Shiro Kawai  <shiro@acm.org>
+
+	* src/portapi.c (Scm_UngottenChars, Scm_UngottenBytes): API
+	  to retrieve bufferd chars/bytes.  Note that the current getc-ungetc
+	  API may be changed in future, so don't rely on these too much.
+	  (The semantics of "ungetting" isn't well defined, especially when
+	  binary i/o and character i/o are mixed.)
+	* src/libio.scm (%port-ungotten-chars, %port-ungotten-bytes):
+	  Exposing above in gauche.internal module.
+
 2015-01-24  Shiro Kawai  <shiro@acm.org>
 
 	* lib/text/gap-buffer (text.gap-buffer): Added experimentally.
