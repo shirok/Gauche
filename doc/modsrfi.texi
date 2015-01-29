@@ -5779,6 +5779,10 @@ If there's duplicate items in @var{alist}, only fist one counts.
 
 @defun set=? set1 set2 @dots{}
 @defunx bag=? bag1 bag2 @dots{}
+Returns true iff all sets/bags have exactly same items.
+
+The comparators of the argument sets/bags are not checked, but assumed
+to be the same, in terms of the equality of items.
 @end defun
 
 @defun set<? set1 set2 @dots{}
@@ -5789,24 +5793,34 @@ If there's duplicate items in @var{alist}, only fist one counts.
 @defunx bag<=? bag1 bag2 @dots{}
 @defunx set>=? set1 set2 @dots{}
 @defunx bag>=? bag1 bag2 @dots{}
+Returs true iff each preceding set/bag is a proper subset of, 
+a proper superset of, a subset of, or a superset of the following
+set/bags, respectively.
+
+Again, the comparators of the argument sets/bags are not checked, but assumed
+to be the same, in terms of the equality of items.
 @end defun
 
 @subheading Set theory operations
 
 @defun set-union set1 set2 @dots{}
 @defunx bag-union bag1 bag2 @dots{}
+Returns a newly allocated set or bag which is a union of all
+the sets/bags.
 @end defun
 
 @defun set-intersection set1 set2 @dots{}
 @defunx bag-intersection bag1 bag2 @dots{}
+Returns a newly allocated set or bag which is an intersection of
+all the sets/bags.
 @end defun
 
 @defun set-difference set1 set2 @dots{}
 @defunx bag-difference bag1 bag2 @dots{}
 @end defun
 
-@defun set-xor set1 set2 @dots{}
-@defunx bag-xor bag1 bag2 @dots{}
+@defun set-xor set1 set2
+@defunx bag-xor bag1 bag2
 @end defun
 
 @defun set-union! set1 set2 @dots{}
@@ -5815,8 +5829,8 @@ If there's duplicate items in @var{alist}, only fist one counts.
 @defunx bag-intersection! bag1 bag2 @dots{}
 @defunx set-difference! set1 set2 @dots{}
 @defunx bag-difference! bag1 bag2 @dots{}
-@defunx set-xor! set1 set2 @dots{}
-@defunx bag-xor! bag1 bag2 @dots{}
+@defunx set-xor! set1 set2
+@defunx bag-xor! bag1 bag2
 @end defun
 
 @subheading Bag-specific procedures
