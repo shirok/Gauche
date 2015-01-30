@@ -1,3 +1,8 @@
+2015-01-30  Shiro Kawai  <shiro@acm.org>
+
+	* src/prof.c (Scm_ProfilerStart): Use Scm_TmpDir to get temporary
+	  directory, instead of hardcoding "/tmp".
+
 2015-01-29  Shiro Kawai  <shiro@acm.org>
 
 	* src/portapi.c (Scm_UngottenChars, Scm_UngottenBytes): API

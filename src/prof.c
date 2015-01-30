@@ -207,22 +207,24 @@ void Scm_ProfilerCountBufferFlush(ScmVM *vm)
 void Scm_ProfilerStart(void)
 {
     ScmVM *vm = Scm_VM();
-    char templat[] = "/tmp/gauche-profXXXXXX";
+    ScmObj templat = Scm_StringAppendC(SCM_STRING(Scm_TmpDir()),
+                                       "/gauche-profXXXXXX", -1, -1);
+    char *templat_buf = Scm_GetString(SCM_STRING(templat)); /*mutable copy*/
 
     if (!vm->prof) {
         vm->prof = SCM_NEW(ScmVMProfiler);
         vm->prof->state = SCM_PROFILER_INACTIVE;
-        vm->prof->samplerFd = Scm_Mkstemp(templat);
+        vm->prof->samplerFd = Scm_Mkstemp(templat_buf);
         vm->prof->currentSample = 0;
         vm->prof->totalSamples = 0;
         vm->prof->errorOccurred = 0;
         vm->prof->currentCount = 0;
         vm->prof->statHash =
             SCM_HASH_TABLE(Scm_MakeHashTableSimple(SCM_HASH_EQ, 0));
-        unlink(templat);       /* keep anonymous tmpfile */
+        unlink(templat_buf);       /* keep anonymous tmpfile */
     } else if (vm->prof->samplerFd < 0) {
         vm->prof->samplerFd = Scm_Mkstemp(templat);
-        unlink(templat);
+        unlink(templat_buf);
     }
 
     if (vm->prof->state == SCM_PROFILER_RUNNING) return;
