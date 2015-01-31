@@ -416,4 +416,47 @@
   (tester 0  10)
   )
 
+;;-----------------------------------------------------------
+(test-section "input-list-port")
+
+(let ()
+  (define (make-char-list-port)
+    (open-input-char-list (string->list "Aloha, honua.")))
+  (define (make-byte-list-port)
+    (open-input-byte-list (iota 10 48)))
+
+  (test* "char-list, all" "Aloha, honua."
+         (call-with-output-string
+           (cut copy-port (make-char-list-port) <>)))
+  (test* "char-list, remaining" "honua."
+         (let1 p (make-char-list-port)
+           (dotimes [n 7] (read-char p))
+           (list->string (get-remaining-input-list p))))
+  (test* "char-list, remaining, with push-back" "honua."
+         (let1 p (make-char-list-port)
+           (dotimes [n 7] (read-char p))
+           (peek-char p)
+           (list->string (get-remaining-input-list p))))
+
+  (test* "byte-list, all" "0123456789"
+         (let1 p (make-byte-list-port)
+           (with-output-to-string
+             (cut generator-for-each (^b (write-char (integer->char b)))
+                  (cut read-byte p)))))
+  (test* "byte-list, remaining" '(53 54 55 56 57)
+         (let1 p (make-byte-list-port)
+           (dotimes [n 5] (read-byte p))
+           (get-remaining-input-list p)))
+  (test* "byte-list, push-back, remaining" '(53 54 55 56 57)
+         (let1 p (make-byte-list-port)
+           (dotimes [n 5] (read-byte p))
+           (peek-byte p)
+           (get-remaining-input-list p)))
+  (test* "byte-list, push-back as char, remaining" '(53 54 55 56 57)
+         (let1 p (make-byte-list-port)
+           (dotimes [n 5] (read-byte p))
+           (peek-char p)
+           (get-remaining-input-list p)))
+  )
+
 (test-end)

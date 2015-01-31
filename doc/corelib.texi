@@ -12266,6 +12266,72 @@ the result consists of inexact numbers.
 @c COMMON
 @end defun
 
+@defun port->char-lseq :optional port
+@defunx port->byte-lseq :optional port
+@defunx port->string-lseq :optional port
+@defunx port->sexp-lseq :optional port
+@c EN
+These are the same as the following expressions, respectively.
+They are provided for the convenience, since this pattern appears
+frequently.
+@c JP
+これらの手続きは以下の式とそれぞれ同等です。このパターンは良く現れるので、
+簡便のために用意しました。
+@c COMMON
+
+@example
+(generator->lseq (cut read-char port))
+(generator->lseq (cut read-byte port))
+(generator->lseq (cut read-line port))
+(generator->lseq (cut read port))
+@end example
+
+@c EN
+If @var{port} is omitted, the current input port is used.
+
+Note that the lazy sequence may buffer some items, so 
+once you make an lseq from a port, only use the resulting lseq
+and don't ever read from @var{port} directly.
+@c JP
+@var{port}が省略された場合はcurrent-input-portが使われます。
+
+遅延シーケンスが入力をいくらかバッファする可能性があるので、
+一度lseqを作った後では、@var{port}から直接読み出しをしないようにしてください。
+@c COMMON
+
+@c EN
+You can also convert input data into various lists by
+the following expressions (@xref{Input utility functions}).
+Those procedures read the port eagerly until EOF and returns
+the whole data in a list, while @code{lseq} versions read
+the port lazily.
+@c JP
+入力ポートを色々なリストに変換するには、他に次のような手続きがあります
+(@ref{Input utility functions}参照)。@code{lseq}版がポートを
+必要に応じて読むのに対し、
+これらの手続きはポートをEOFに達するまで一気に読み込み、
+全てのデータをリストにしてから返します。
+@c COMMON
+
+@example
+(port->list read-char port)
+(port->list read-byte port)
+(port->string-list port)
+(port->sexp-list port)
+@end example
+
+@c EN
+Those procedures make (lazy) lists out of ports.  The opposite can be
+done by @code{open-input-char-list} and @code{open-input-byte-list};
+@xref{Virtual ports}, for the details.
+@c JP
+これらの手続きは、ポートからリストを作りだします。反対の手続きとして、
+@code{open-input-char-list}と@code{open-input-byte-list}があります
+(@ref{Virtual ports}参照)。
+@c COMMON
+@end defun
+
+
 @c EN
 See also @ref{Lazy sequence utilities}, for more utility procedures
 that creates lazy sequences.

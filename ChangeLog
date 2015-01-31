@@ -1,4 +1,11 @@
-2015-01-30  Shiro Kawai  <shiro@acm.org>
+2015-01-31  Shiro Kawai  <shiro@acm.org>
+
+	* ext/vport/vport.scm (open-input-char-list, open-input-byte-list):
+	  Added list ports.
+	* src/liblazy.scm (port->char-lseq, port->byte-lseq, port->string-lseq)
+	  (port->sexp-lseq): Added for the convenience.
+
+(2015-01-30  Shiro Kawai  <shiro@acm.org>
 
 	* src/prof.c (Scm_ProfilerStart): Use Scm_TmpDir to get temporary
 	  directory, instead of hardcoding "/tmp".

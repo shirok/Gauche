@@ -18780,7 +18780,7 @@ of @code{<buffered-input-port>} above for the details.
 @c EN
 The following two procedures returns a buffered input/output port
 backed up by a uniform vector.    The source or destination vector
-can be any type of uniform vector, but they are aliased
+can be any type of uniform vector, but they will be aliased
 to @code{u8vector} (see @code{uvector-alias} in
 @ref{Uvector conversion operations}).
 @c JP
@@ -18933,6 +18933,47 @@ uvectorの型が@code{s8vector}や@code{u8vector}以外である場合、
 後で@var{port}をシークして前に戻って再書き込みすると、
 返されたベクタの内容が書き換わってしまう可能性があることに注意してください。
 @c COMMON
+@end defun
+
+@c EN
+@subsubheading List ports
+@c JP
+@subsubheading リストポート
+@c COMMON
+
+@c EN
+The following procedures allow you to use list of characters
+or octets as a source of an input port.  These are (a kind of)
+opposite of @code{port->list} family
+(@xref{Input utility functions}) or @code{port->char-lseq} famliy
+(@xref{Lazy sequences}).
+@c JP
+
+@c COMMON
+
+@defun open-input-char-list char-list
+@defunx open-input-byte-list byte-list
+Creates and returns an input port that uses
+the given list of characters and bytes as the source.
+
+@example
+(read (open-input-char-list '(#\a #\b)))
+ @result{} ab
+@end example
+@end defun
+
+@defun get-remaining-input-list port
+If @var{port} is the one created by @code{open-input-char-list} 
+or @code{open-input-byte-list}, returns a list of remaining data
+that hasn't been read yet.  If the port already read everything,
+or the port is not the one created by @code{open-input-char-list} 
+or @code{open-input-byte-list}, an empty list is returned.
+
+A caveat: Gauche allows mixing binary input and textual input from
+the same port.  If you read or even peek a byte from a port
+created from a character list, the port buffers a character
+and disassembles it to bytes; the disassembled character
+may not be included in the remaining input list.
 @end defun
 
 

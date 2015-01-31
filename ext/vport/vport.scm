@@ -41,6 +41,7 @@
           open-input-uvector
           open-output-uvector get-output-uvector
           open-input-limited-length-port
+          open-input-char-list open-input-byte-list get-remaining-input-list
           ))
 (select-module gauche.vport)
 
@@ -78,7 +79,7 @@
       index)
     (make <buffered-input-port> :fill filler :seek seeker)))
 
-;; For output uvector, we keep backing stroage info in port attributes so that
+;; For output uvector, we keep backing storage info in port attributes so that
 ;; we can retrieve it by get-output-uvector.
 ;; The info is #(<buffer> <max-index> <target-class>), where <buffer> is
 ;; u8vector (possibly aliased), <max-index> is the maximum index during
@@ -193,3 +194,44 @@
       (when closed (closed)))
     (make <buffered-input-port> :fill filler :close closer)))
 
+;;=======================================================
+;; A port read from list of chars or bytes
+;;
+
+(define (open-input-char-list lis)
+  (define (getc)
+    (if (null? lis)
+      (eof-object)
+      (rlet1 c (pop! lis)
+        (unless (char? c)
+          (error "input-char-list: source contains non-char value:" c)))))
+  (rlet1 p (make <virtual-input-port> :getc getc)
+    (define (getlist)
+      (let1 cc ((with-module gauche.internal %port-ungotten-chars) p)
+        (append cc lis)))
+    (port-attribute-set! p 'get-input-list getlist)))
+
+(define (open-input-byte-list lis)
+  (define (getb)
+    (if (null? lis)
+      (eof-object)
+      (rlet1 b (pop! lis)
+        (unless (and (integer? b) (<= 0 b 255))
+          (error "input-byte-list: source contains other than bytes:" b)))))
+  (define (char->bytes c)
+    (let1 b (char->integer c)
+      (if (< b #x80)
+        (list b)
+        ;; this is inefficient, but we assume it's a rare path
+        (u8vector->list (string->u8vector (string c))))))
+  (rlet1 p (make <virtual-input-port> :getb getb)
+    (define (getlist)
+      (let ([bb ((with-module gauche.internal %port-ungotten-bytes) p)]
+            [cc ((with-module gauche.internal %port-ungotten-chars) p)])
+        (concatenate `(,@(map char->bytes cc) ,bb ,lis))))
+    (port-attribute-set! p 'get-input-list getlist)))
+
+(define (get-remaining-input-list p)
+  (if-let1 getlist (port-attribute-ref p 'get-input-list)
+    (getlist)
+    '()))

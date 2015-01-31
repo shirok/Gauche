@@ -136,6 +136,15 @@
                    (rlet1 v (+ start (* k step)) (inc! k) (dec! count))))))))
     (generator->lseq gen)))
 
+(define-in-module gauche (port->char-lseq :optional (port (current-input-port)))
+  (generator->lseq (cut read-char port)))
+(define-in-module gauche (port->byte-lseq :optional (port (current-input-port)))
+  (generator->lseq (cut read-byte port)))
+(define-in-module gauche (port->string-lseq :optional (port (current-input-port)))
+  (generator->lseq (cut read-line port)))
+(define-in-module gauche (port->sexp-lseq :optional (port (current-input-port)))
+  (generator->lseq (cut read port)))
+
 (select-module gauche)
 (define-macro (lcons a b)
   ;; poor man's explicit renaming.
