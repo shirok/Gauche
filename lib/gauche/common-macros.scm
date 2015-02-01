@@ -177,6 +177,8 @@
 
 (define-syntax if-let1                  ;like aif in On Lisp, but explicit var
   (syntax-rules ()
+    [(if-let1 var exp then)
+     (let ((var exp)) (if var then #f))]
     [(if-let1 var exp then . else)
      (let ((var exp)) (if var then . else))]))
 
