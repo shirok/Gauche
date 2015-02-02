@@ -180,6 +180,11 @@
     [(if-let1 var exp then . else)
      (let ((var exp)) (if var then . else))]))
 
+(define-syntax and-let1                 ;returns #f if test evaluates to #f
+  (syntax-rules ()
+    [(and-let1 var test exp)
+     (let ((var test)) (and var exp))]))
+
 (define-syntax let/cc                   ;as in PLT
   (syntax-rules ()
     [(let/cc var . body)

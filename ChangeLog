@@ -1,3 +1,8 @@
+2015-02-01  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/common-macros.scm (and-let1): Added experimentally.
+	  I feel that I wrote single-binding and-let* enough times.
+
 2015-01-31  Shiro Kawai  <shiro@acm.org>
 
 	* ext/vport/vport.scm (open-input-char-list, open-input-byte-list):
