@@ -1,3 +1,8 @@
+2015-02-03  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/common-macros.scm (and-let1): Allow multiple exprs
+	  in body.  Added doc (so it's official).
+
 2015-02-01  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/common-macros.scm (and-let1): Added experimentally.

@@ -2081,6 +2081,35 @@ number from a few possibilities (environment variable, configuration file,
 
 @end defmac
 
+@defmac and-let1 var test exp1 exp2 @dots{}
+@c EN
+Evaluates @var{test}, and if it isn't @code{#f}, binds @var{var} to it
+and evaluates @var{exp1} @var{exp2} @dots{}.  Returns the result(s) of
+the last expression.  If @var{test} evaluates to @code{#f}, returns @code{#f}.
+
+This can be easily written by @code{and-let*} or @code{if-let1} as follows.
+However, we've written this idiom so many times that it deserves
+another macro.
+@c JP
+@var{test}を評価し、それが@code{#f}でなければ@var{var}をその値に束縛して
+@var{exp1} @var{exp2} @dots{}を評価します。戻り値は最後の式の値です。
+@var{test}が@code{#f}だった場合は単に@code{#f}を返します。
+
+これは@code{and-let*}や@code{if-let1}を使って次のとおり書くこともできます。
+しかし、このパターンを書くことがあまりに多いため、専用のマクロを用意する価値が
+あると判断しました。
+@c COMMON
+
+@example
+(and-let* ([var test])
+  exp1
+  exp2 @dots{})
+
+(if-let1 var test
+  (begin exp1 exp2 @dots{})
+  #f)
+@end example
+@end defmac
 
 @defmac fluid-let ((var val) @dots{}) body @dots{}
 @c EN

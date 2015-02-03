@@ -182,8 +182,8 @@
 
 (define-syntax and-let1                 ;returns #f if test evaluates to #f
   (syntax-rules ()
-    [(and-let1 var test exp)
-     (let ((var test)) (and var exp))]))
+    [(and-let1 var test exp exp2 ...)
+     (let ((var test)) (and var (begin exp exp2 ...)))]))
 
 (define-syntax let/cc                   ;as in PLT
   (syntax-rules ()
