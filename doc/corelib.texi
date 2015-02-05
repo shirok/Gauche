@@ -18808,25 +18808,52 @@ which is also in R7RS.
 
 @defun sys-setenv name value &optional overwrite
 @defunx sys-putenv name=value
+@c EN
 @var{sys-setenv} inserts an environment variable @var{name} with
 the value @var{value}.
 Both @var{name} and @var{value} must be a string.
 If the optional argument @var{overwrite} is @code{#f} (default),
 the enviornment is untouched if a variable with @var{name} already
-exists.   If @var{overwrite} is @code{#t}, the variable is overwritten.
+exists.   If @var{overwrite} is true, the variable is overwritten.
+@c JP
+@var{sys-setenv}は環境変数@var{name}とその値@var{value}を
+プロセスの実行環境に挿入します。
+ただし、省略可能引数@var{overwrite}が@code{#f}(デフォルト値)の場合、
+@var{name}が既に存在したら実行環境は変更されません。
+@var{overwrite}が真の値であれば、環境変数は上書きされます。
+@c COMMON
 
+@c EN
 For @code{sys-putenv}, you have to give a single string
 with the form of @code{NAME=VALUE}, that is, concatenating @var{name}
 and @var{value} with @code{#\=}.  If the enviornmet variable with
 the same name exists, it will be overwritten.
+@c JP
+@code{sys-putenv}では、環境変数を名前と値を@code{#\=}でつないだ
+@code{NAME=VALUE}という形式で指定します。
+同名の環境変数が既に存在する場合は常に上書きされます。
+@c COMMON
 
+@c EN
 These API reflects POSIX @code{setenv(3)} and @code{putenv(3)}.
 However, unlike @code{putenv(3)}, modifying the string passed
 to @code{sys-putenv} afterwards won't affect the environment.
+@c JP
+これらのAPIはPOSIXの@code{setenv(3)}と@code{putenv(3)}のインタフェースを
+反映しています。しかし、@code{putenv(3)}と違って
+@code{sys-putenv}に渡した文字列はコピーされるので、後でその文字列を
+破壊的変更してもプロセスの実行環境に影響はありません。
+@c COMMON
 
+@c EN
 These procedures are only available when a feature identifier
 @code{gauche.sys.setenv} exists.  Use @code{cond-expand}
 (@xref{Feature conditional}) to check their availability.
+@c JP
+これらの手続きは機能識別子@code{gauche.sys.setenv}がある場合のみ使えます。
+下の例のように@code{cond-expand}で使えるかどうかチェックしてください
+(@ref{Feature conditional}参照)。
+@c COMMON
 
 @example
 (cond-expand
@@ -18836,12 +18863,17 @@ These procedures are only available when a feature identifier
    ... fallback code ...])
 @end example
 
+@c EN
 These procedures are thread-safe as far as you access and modify
 the environment through Gauche API.
+@c JP
+これらの手続きは、他の方法で環境変数を変更しない限り、スレッドセーフです。
+@c COMMON
 @end defun
 
 @defun sys-unsetenv name
 @defunx sys-clearenv
+@c EN
 Remove the environment variable with @var{name} (@code{sys-unsetenv}),
 or all environment variables.  @code{sys-clearenv} is handy
 when you need to run subprocess, but you cannot trust the inherited
@@ -18850,6 +18882,16 @@ environment.
 These procedures are only available when a feature identifier
 @code{gauche.sys.unsetenv} exists.  Use @code{cond-expand}
 (@xref{Feature conditional}) to check their availability.
+@c JP
+@code{sys-unsetenv}は環境変数@var{name}を、また
+@code{sys-clearenv}は全ての環境変数をプロセスの実行環境から取り除きます。
+@code{sys-clearenv}は、子プロセスを走らせる際に予期せぬ環境変数を
+注入されないようにするのに便利です。
+
+これらの手続きは機能識別子@code{gauche.sys.unsetenv}がある場合のみ使えます。
+下の例のように@code{cond-expand}で使えるかどうかチェックしてください
+(@ref{Feature conditional}参照)。
+@c COMMON
 
 @example
 (cond-expand
@@ -21540,13 +21582,25 @@ This may be just a @code{"/dev/tty"}.   See also @code{sys-ttyname}.
 
 @defun sys-getrlimit resource
 @defunx sys-setrlimit resource current :optional maximum
-[POSIX] Get and set resource limits respectively.
+[POSIX] 
+@c EN
+Get and set resource limits respectively.
 @var{Resource} is an integer constant to specify the resource
 of concern.  The following constants are defined.
 (The constants marked as bsd and/or linux indicates that they
 are not defined in POSIX but defined in BSD and/or Linux.
 Other systems may or may not have them.  Consult @code{getrlimit}
 manpage of your system for the details.)
+@c JP
+プロセスのリソースリミットを取得あるいは設定します。
+@var{resource}はリソースの種類を指定する整数値です。
+以下にリストする定数が定義されています。
+(@code{bsd}、@code{linux}とマークされている値は、POSIXでは
+定義されていないけれどBSDもしくはLinuxで定義されていることを示します。
+他のプラットフォームでそれらが定義されているかどうかは、
+該当システムの@code{getrlimit}のマニュアルを参照してください。)
+
+@c COMMON
 
 @example
 RLIMIT_AS                      RLIMIT_CORE
@@ -22259,10 +22313,6 @@ Unixでは、実行されるプロセスが@code{setsid(2)}を呼んで
 親子関係はなくなりますが。返されるpidは実際に走っているこのプロセスのもので、
 すぐに終了する中間プロセスのものではありません。)
 
-実行されるプロセスの親が
-また。Windowsネイティブ環境では、
-実行されるプロセスが新たに作られたプロセスグループに属します。
-
 Windowsネイティブ環境では、このフラグがあると
 プロセス作成時に@code{CREATE_NEW_PROCESS_GROUP}フラグが使われます。
 @c COMMON
@@ -22439,17 +22489,34 @@ Windowsネイティブ環境では、@code{sys-wait-stopped?}が真を返すこ�
 (今のところ)ありません。
 @c COMMON
 
+@c EN
 @subsubheading Windows specific utilities
+@c JP
+@subsubheading Windows特有のユーティリティ
+@c COMMON
 
+@c EN
 The following procedures are to access Windows process handle.
 They are only available on Windows native platforms.
+@c JP
+以下の手続きはWindowsのプロセスハンドルにアクセスするものです。
+Windowsネイティブ環境でのみ提供されます。
+@c COMMON
 
 @defun sys-win-process? obj
-[Windows] Returns @code{#t} iff @var{obj} is a Windows process handle object.
+[Windows] 
+@c EN
+Returns @code{#t} iff @var{obj} is a Windows process handle object.
+@c JP
+@var{obj}がWindowsプロセスハンドルの場合に@code{#t}を、それ以外では@code{#f}を
+返します。
+@c COMMON
 @end defun
 
 @defun sys-win-process-pid handle
-[Windows] Returns an integer PID of the process represented by
+[Windows] 
+@c EN
+Returns an integer PID of the process represented by
 a Windows process handle @var{handle}.  An error is signaled
 if @var{handle} is not a valid Windows process handle.
 
@@ -22457,6 +22524,14 @@ Note that the API to get a pid from a process handle is only
 provided on or after Windows XP SP1.  If you call this
 procedure on Windows version before that, @code{-1} will be
 returned.
+@c JP
+Windowsプロセスハンドル@var{handle}が示すプロセスの、整数のpid値を
+返します。@var{handle}が有効なWindowsプロセスハンドルでない場合はエラーが
+通知されっす。
+
+プロセスハンドルからプロセスIDを得るAPIはWindows XP SP1から提供されるように
+なりました。それ以前のWindowsでこの手続きを呼ぶと@code{-1}が返されます。
+@c COMMON
 @end defun
 
 
