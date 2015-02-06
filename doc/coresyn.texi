@@ -2101,9 +2101,17 @@ another macro.
 @c COMMON
 
 @example
+(and-let var test
+  exp1
+  exp2 @dots{})
+
+@equiv{}
+
 (and-let* ([var test])
   exp1
   exp2 @dots{})
+
+@equiv{}
 
 (if-let1 var test
   (begin exp1 exp2 @dots{})
