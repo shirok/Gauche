@@ -5817,10 +5817,28 @@ all the sets/bags.
 
 @defun set-difference set1 set2 @dots{}
 @defunx bag-difference bag1 bag2 @dots{}
+Returns a newly created set or bag that contains items in @var{set1}/@var{bag1}
+except those are also in @var{set2}/@var{bag2} @dots{}.
+
+@example
+(sort (set->list (set-difference (set eqv-comparator 1 2 3 4 5 6 7)
+                                 (set eqv-comparator 3 5 7 9 11 13)
+                                 (set eqv-comparator 4 8 16 32))))
+  @result{} (1 2 6)
+@end example
 @end defun
 
 @defun set-xor set1 set2
 @defunx bag-xor bag1 bag2
+Returns a newly created set or bag that consists of items
+that are either in @var{set1}/@var{bag1} or @var{set2}/@var{bag2},
+but not in both.
+
+@example
+(sort (set->list (set-xor (set eqv-comparator 2 3 5 7 11 13 17)
+                          (set eqv-comparator 3 5 7 9 11 13 15))))
+  @result{} (2 9 15 17)
+@end example
 @end defun
 
 @defun set-union! set1 set2 @dots{}
@@ -5831,16 +5849,42 @@ all the sets/bags.
 @defunx bag-difference! bag1 bag2 @dots{}
 @defunx set-xor! set1 set2
 @defunx bag-xor! bag1 bag2
+Linear update versions of their corresponding procedures.
+Those procedures works like their @code{!}-less counterparts,
+except that they are allowed to, but not required to, reuse
+@var{set1}/@var{bag1} to produce the result.
+
+The caller should always use the returned set/bag instead of
+relying on the side effects.
 @end defun
 
 @subheading Bag-specific procedures
 
 @defun bag-sum bag1 bag2 @dots{}
 @defunx bag-sum! bag1 bag2 @dots{}
+Returns a bag that gathers all the items in given bags, counting
+duplicates.  The functional version @code{bag-sum} always
+creates new bag to return.
+The linear update version @code{bag-sum!} is allowed to,
+but not required to, modify @var{bag1} to produce the result.
+
+@example
+(sort (bag->list (bag-sum (bag eqv-comparator 1 1 2 4 5 5 6)
+                          (bag eqv-comparator 3 3 5 9))))
+  @result{} (1 1 2 3 3 4 5 5 5 6 9)
+@end example
+
+Note the difference from @code{bag-union}:
+
+@example
+(sort (bag->list (bag-union (bag eqv-comparator 1 1 2 4 5 5 6)
+                            (bag eqv-comparator 3 3 5 9))))
+  @result{} (1 1 2 3 3 4 5 5 6 9)
+@end example
 @end defun
 
-@defun bag-product bag1 bag2 @dots{}
-@defunx bag-product! bag1 bag2 @dots{}
+@defun bag-product n bag
+@defunx bag-product! n bag
 @end defun
 
 @defun bag-unique-size bag
