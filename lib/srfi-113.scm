@@ -1255,7 +1255,7 @@
 
 ;;; A few bag-specific procedures
 
-(define (sob-product! result sob n)
+(define (sob-product! n result sob)
   (let ((rht (sob-hash-table result)))
     (hash-table-for-each
       (lambda (elem count) (hash-table-set! rht elem (* count n)))
@@ -1265,15 +1265,15 @@
 (define (valid-n n)
    (and (integer? n) (exact? n) (positive? n)))
 
-(define (bag-product bag n)
+(define (bag-product n bag)
   (check-bag bag)
   (valid-n n)
-  (sob-product! (sob-empty-copy bag) bag n))
+  (sob-product! n (sob-empty-copy bag) bag))
 
-(define (bag-product! bag n)
+(define (bag-product! n bag)
   (check-bag bag)
   (valid-n n)
-  (sob-product! bag bag n))
+  (sob-product! n bag bag))
 
 (define (bag-unique-size bag)
   (check-bag bag)
