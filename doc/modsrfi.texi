@@ -5885,28 +5885,71 @@ Note the difference from @code{bag-union}:
 
 @defun bag-product n bag
 @defunx bag-product! n bag
+Returns a bag that contains every item as @var{n}-times
+many as the original bag.  A fresh bag is created and returned
+by @code{bag-product}, while @code{bag-product!} may reuse
+@var{bag} to produce the result.
+
+@example
+(sort (bag->list (bag-product 2 (bag eq-comparator 'a 'b 'r 'a))))
+  @result{} (a a a a b b r r)
+@end example
 @end defun
 
 @defun bag-unique-size bag
+Returns the number of unique elements in @var{bag}.
+
+@example
+(bag-unique-size (bag eqv-comparator 1 1 2 2 3 3 4))
+ @result{} 4
+@end example
 @end defun
 
 @defun bag-element-count bag elt
+Returns the number of specified element @var{elt} in @var{bag}.
+
+@example
+(bag-element-count (bag eqv-comparator 1 1 2 2 2 3 3) 2)
+ @result{} 3
+@end example
 @end defun
 
 @defun bag-for-each-unique proc bag
+For each unique item in @var{bag}, calls @code{proc} with two arguments:
+The item, and the count of the item in the bag.
 @end defun
 
 @defun bag-fold-unique proc seed bag
+For each unique item in @var{bag}, calls @var{proc} with three arguments:
+The item, the count of the item, and the previous seed value.
+The @var{seed} argument provides the initial seed value; the result
+of @var{proc} is used for the next seed value, and the last
+result of @code{proc} is returned from @code{bag-fold-unique}.
+
+@example
+(sort (bag-fold-unique acons '()
+        (bag equal-comparator "a" "a" "b" "b" "b" "c" "d"))
+      string<? car)
+ @result{} (("a" . 2) ("b" . 3) ("c" . 1) ("d" . 1))
+@end example
 @end defun
 
 @defun bag-increment! bag elt count
 @defunx bag-decrement! bag elt count
+Linear update @var{bag} to increase or decrease the count of @var{elt} in it
+by @var{count}, which must be an exact integer.  Note that the
+element count won't get below zero; if a bag has two @code{a}'s, and
+you call @code{(bag-decrement! bag 'a 100)}, you get a bag
+with zero @code{a}'s.
 @end defun
 
 @subheading Comparators
 
 @defvr {Comparator} set-comparator
 @defvrx {Comparator} bag-comparator
+Comparators to be used to compare sets or bags.  They don't provide
+comparison procedure, for you cannot define a total order among sets or bags.
+They do provide hash functions.
 @end defvr
 
 

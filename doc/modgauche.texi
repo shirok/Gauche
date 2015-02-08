@@ -1707,7 +1707,7 @@ is used as the file name, with extension @code{.c} or @code{.h}
 is attached, respectively.
 
 To get the file names to be generated, use @code{cgen-unit-c-file}
-and @code{cugen-unit-h-file} generic functions, instead of reading
+and @code{cgen-unit-h-file} generic functions, instead of reading
 these slots.
 @end defivar
 
