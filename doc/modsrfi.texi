@@ -6024,6 +6024,58 @@ for the compatibility.
 @subsubheading Auxiliary comparator constructors
 
 @defun make-inexact-real-comparator epsilon rounding nan-handling
+Returns a comparator for inexact real numbers, taking into
+account of errors and NaNs.
+
+The basic idea is that we compare two finite real numbers
+after rounding them to @var{epsilon} interval, which must be
+a nonnegative real number.
+(Note that it's not to compare two numbers ``close enough'', as often
+being done to compare inexact numbers.  ``Close enough'' scheme
+won't be transitive.)
+
+The rounding mode is specified by the @var{rounding} argument.
+It can be either one of the symbols @code{round}, @code{ceiling},
+@code{floor} or @code{truncate}, or a procedure that takes
+two arguments, a real number and an epsilon, and returns
+the rounded result of the first argument according to the
+given epsilon.
+
+The @var{nan-handling} argument determines how to handle the
+case to compare NaN and non-NaN numbers.  (If both are NaNs,
+this comparator regards them as equal).  It can be either
+one of the followings:
+@table @asis
+@item @code{min}
+If it's a symbol @code{min}, NaN is compared as smaller than
+all other real numbers, even than @code{-inf.0}.
+@item @code{max}
+If it's a symbol @code{min}, NaN is compared as greater than
+all other real numbers, even than @code{+inf.0}.
+@item @code{error}
+If it's a symbol @code{error}, an error is signaled.
+@item a procedure taking one argument
+The procedure is invoked with the real number which is not NaN.
+If it ever returns, it must return eithr 1, 0 or -1, for
+it's used as the result of the comparison procedure of
+the comparator.  However, since the procedure doesn't know
+@emph{which} argument is non-NaN, it's hard to have consistent
+semantics; the best bet is to throw a custom error.
+@end table
+
+@example
+(define c (make-inexact-real-comparator 0.1 'round 'error))
+
+(comparator-compare c 0.112 0.098) @result{} 0
+(comparator-compare c 0.131 0.172) @result{} -1
+@end example
+
+Note: Rounding to the nearest epsilon interval would involve
+scaling inexact numbers, and that may reveal small difference
+between the actual number and its notation.  For example,
+an inexact real number denoted as @code{0.15} is actually
+slightly smaller than @code{15/100}, and rounding with epsilon
+@code{0.1} would result @code{0.1}, not @code{0.2}.
 @end defun
 
 @defun make-list-comparator element-comparator
