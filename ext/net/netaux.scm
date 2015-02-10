@@ -34,6 +34,7 @@
 (select-module gauche.net)
 (use srfi-1)
 (use gauche.sequence)
+(use gauche.lazy)
 (use util.match)
 
 ;; default backlog value for socket-listen
@@ -45,6 +46,7 @@
 ;; is not yet built.  So we use a bit of kludge here.
 (define ipv6-capable (global-variable-bound? 'gauche.net 'sys-getaddrinfo))
 
+;; API
 (define (make-sys-addrinfo :key (flags 0) (family AF_UNSPEC)
                                 (socktype 0) (protocol 0))
   (if ipv6-capable
@@ -61,8 +63,8 @@
     [(inet6) PF_INET6] ;;this can't happen if !ipv6-capable
     [else (error "unknown family of socket address" addr)]))
 
+;; API
 ;; High-level interface.  We need some hardcoded heuristics here.
-
 (define (make-client-socket proto . args)
   (cond [(eq? proto 'unix)
          (let-optionals* args ([path #f])
@@ -104,17 +106,24 @@
     (rlet1 socket (any try-connect (make-sockaddrs host port))
       (unless socket (raise err)))))
 
+;; API
 (define (make-server-socket proto . args)
   (cond [(eq? proto 'unix)
-         (let-optionals* args ((path #f))
+         (let-optionals* args ([path #f])
            (unless (string? path)
              (error "unix socket requires pathname, but got" path))
            (apply make-server-socket-unix path (cdr args)))]
         [(eq? proto 'inet)
-         (let-optionals* args ((port #f))
-           (unless (or (integer? port) (string? port))
-             (error "inet socket requires port, but got" port))
-           (apply make-server-socket-inet port (cdr args)))]
+         (let-optionals* args ([port #f])
+           (define (err)
+             (error "inet socket requires integer port number or \
+                     string service name, or a list of them, but got:" port))
+           (cond [(list? port)
+                  (unless (every (any-pred integer? string?) port) (err))
+                  (apply make-server-socket-inet* port (cdr args))]
+                 [(or (integer? port) (string? port))
+                  (apply make-server-socket-inet port (cdr args))]
+                 [else (err)]))]
         [(is-a? proto <sockaddr>)
          ;; caller provided sockaddr
          (apply make-server-socket-from-addr proto args)]
@@ -144,6 +153,17 @@
 (define (make-server-socket-inet port . args)
   (apply make-server-socket-from-addr (car (make-sockaddrs #f port)) args))
 
+(define (make-server-socket-inet* ports . args)
+  (let1 err #f
+    (define (try-bind address)
+      (guard (e [else (set! err e) #f])
+        (apply make-server-socket-from-addr address args)))
+    (rlet1 socket (any try-bind ($ lconcatenate $ lmap
+                                   (cut make-sockaddrs #f <>)
+                                   ports))
+      (unless socket (raise err)))))
+
+;; API
 (define (make-server-sockets host port . args)
   (let1 ss (make-sockaddrs host port)
     ;; Heuristics - if we have both v4 and v6 sockets, we *may* need
@@ -170,6 +190,7 @@
                 v4s)
           (map (cut apply make-server-socket <> args) ss)))])))
 
+;; API
 (define (make-sockaddrs host port :optional (proto 'tcp))
   (if ipv6-capable
     (let* ([socktype (case proto
@@ -191,6 +212,7 @@
                (slot-ref hh 'addresses)))
         (list (make <sockaddr-in> :host :any :port port))))))
 
+;; API
 (define (call-with-client-socket socket proc
                                  :key (input-buffering #f) (output-buffering #f))
   (unwind-protect
@@ -210,7 +232,7 @@
 ;; provide them in Scheme.
 
 ;; accessor methods
-
+;; API
 (define-method sockaddr-name ((addr <sockaddr-in>))
   #"~(inet-address->string (sockaddr-addr addr) AF_INET):~(sockaddr-port addr)")
 
@@ -218,5 +240,6 @@
 ;; instead of load-time dispatch.  We need to clean up cond feature management
 ;; more to do so.
 (if ipv6-capable
+  ;; API
   (define-method sockaddr-name ((addr <sockaddr-in6>))
     #"[~(inet-address->string (sockaddr-addr addr) AF_INET6)]:~(sockaddr-port addr)"))

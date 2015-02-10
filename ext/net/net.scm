@@ -37,6 +37,7 @@
   (use srfi-1)
   (use gauche.uvector)
   (use gauche.sequence)
+  (use gauche.lazy)
   (export <socket> make-socket
           PF_UNSPEC PF_UNIX PF_INET AF_UNSPEC AF_UNIX AF_INET
           SOCK_STREAM SOCK_DGRAM SOCK_RAW

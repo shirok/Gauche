@@ -1,3 +1,8 @@
+2015-02-10  Shiro Kawai  <shiro@acm.org>
+
+	* ext/net/netaux.scm (make-server-socket): Allow passing multiple
+	  ports and let the function choose an available one.
+
 2015-02-03  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/common-macros.scm (and-let1): Allow multiple exprs
