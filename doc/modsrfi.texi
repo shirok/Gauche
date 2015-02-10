@@ -6081,6 +6081,21 @@ slightly smaller than @code{15/100}, and rounding with epsilon
 @defun make-list-comparator element-comparator
 @defunx make-vector-comparator element-comparator
 @defunx make-bytevector-comparator element-comparator
+Returns a new comparator that compares lists, vectors and
+bytevectors element-wise using @var{element-comparator},
+respectively.  These are more general versions of
+@code{list-comparator}, @code{vector-comparator} and
+@code{bytevector-comparator}, which use @code{default-comparator}
+as @var{element-comparator}.
+
+For a list comparator, it is an error to pass improper lists.
+
+Note that comparing sequences of different lenghts is slightly
+different between lists and vector/bytevectors.  List comparator
+uses ``dictionary'' order, so @code{(1 3)} comes after @code{(1 2 3)},
+assuming elements are compared numerically.
+For vectors and bytevectors, shorter one always precedes the other,
+so @code{#(1 3)} comes before @code{#(1 2 3)}.
 @end defun
 
 @defun make-listwise-comparator type-test element-comparator empty? head tail

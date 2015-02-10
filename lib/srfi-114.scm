@@ -156,12 +156,22 @@
         (let1 r (elt-compare (car a) (car b))
           (if (= r 0) (f (cdr a) (cdr b)) r))))))
 
+(define (%gen-listwise-hash elt-hash null? car cdr)
+  (rec (h x)
+    (let loop ([v 10037] [x x])
+    (if (null? x)
+      v
+      (loop (combine-hash-value (car x) v) (cdr x))))))
+
 (define (make-listwise-comparator test elt-comparator null? car cdr)
   (make-comparator test #t
                    (%gen-listwise-compare
                     (comparator-comparison-procedure elt-comparator)
                     null? car cdr)
-                   #f)) ; hash combiner?
+                   (and (comparator-hash-function? elt-comparator)
+                        (%gen-listwise-hash
+                         (comparator-hash-function elt-comparator)
+                         null? car cdr))))
 
 (define (make-list-comparator element-comparator)
   (make-listwise-comparator list? element-comparator null? car cdr))
@@ -181,12 +191,22 @@
                      (loop (+ i 1))
                      r))))]))))
 
+(define (%gen-vectorwise-hash elt-hash len ref)
+  (^[x]
+    (let loop ([v 10037] [i (- (len x) 1)])
+    (if (< i 0)
+      v
+      (loop (combine-hash-value (elt-hash (ref x i)) v) (- i 1))))))
+
 (define (make-vectorwise-comparator test elt-comparator len ref)
   (make-comparator test #t
                    (%gen-vectorwise-compare
                     (comparator-comparison-procedure elt-comparator)
                     len ref)
-                   #f)) ; hash combiner?
+                   (and (comparator-hash-function? elt-comparator)
+                        (%gen-vectorwise-hash
+                         (comparator-hash-function elt-comparator)
+                         len ref))))
 
 (define (make-vector-comparator elt-comparator)
   (make-vectorwise-comparator vector? elt-comparator vector-length vector-ref))
