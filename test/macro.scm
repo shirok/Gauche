@@ -706,6 +706,26 @@
       (lambda ()
         (let-syntax ([if fi]) (if #f 'ok 'ng))))
 
+;; Macro-generating-macro scoping
+;; Currently it's not working.
+(define-syntax mgm-bar
+  (syntax-rules ()
+    ((_ . xs) '(bad . xs))))
+
+(define-syntax mgm-foo
+  (syntax-rules ()
+    ((_ xs)
+     (letrec-syntax ((mgm-bar
+                      (syntax-rules ()
+                        ((_ (%x . %xs) %ys)
+                         (mgm-bar %xs (%x . %ys)))
+                        ((_ () %ys)
+                         '%ys))))
+       (mgm-bar xs ())))))
+
+'(test "macro-generating-macro scope" '(x y)
+      (lambda () (mgm-foo (x y))))
+
 ;;----------------------------------------------------------------------
 ;; macro and internal define
 
