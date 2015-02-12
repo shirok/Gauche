@@ -1,3 +1,9 @@
+2015-02-11  Shiro Kawai  <shiro@acm.org>
+
+	* ext/net/netaux.scm (make-server-sockets): Handle the case when
+	  port is 0.  Also avoid using cond-expand, for this file can be
+	  precompiled on different platform than the target.
+
 2015-02-10  Shiro Kawai  <shiro@acm.org>
 
 	* ext/net/netaux.scm (make-server-socket): Allow passing multiple

@@ -153,7 +153,7 @@
 (define (make-server-socket-inet port . args)
   (apply make-server-socket-from-addr (car (make-sockaddrs #f port)) args))
 
-(define (make-server-socket-inet* ports . args)
+(define (make-server-socket-inet* ports . args) ; taking multiple ports
   (let1 err #f
     (define (try-bind address)
       (guard (e [else (set! err e) #f])
@@ -164,31 +164,41 @@
       (unless socket (raise err)))))
 
 ;; API
+;; Listen both v4 and v6 sockets, unless the system supports dual-stack
+;; socket.
+;; Heuristics - if we have both v4 and v6 sockets, we *may* need
+;; only v6 sockets if the system defaults to dual-stack socket.
+;; Unfortunately the behavior is system dependent.  So we try to
+;; open both (first v6, then v4) and if the latter fails to bind
+;; we assume v6 socket listens both.
 (define (make-server-sockets host port . args)
-  (let1 ss (make-sockaddrs host port)
-    ;; Heuristics - if we have both v4 and v6 sockets, we *may* need
-    ;; only v6 sockets if the system defaults to dual-stack socket.
-    ;; Unfortunately the behavior is system dependent.  So we try to
-    ;; open both (first v6, then v4) and if the latter fails to bind
-    ;; we assume v6 socket listens both.
-    (cond-expand
-     [gauche.os.windows
-      ;; mingw doesn't have EADDRINUSE.  it's likely not to have ipv6 either,
-      ;; so we just use the default.  NB: we can't switch here with
-      ;; gauche.sys.ipv6; see the comment on ipv6-capable definition above.
-      (map (cut apply make-server-socket <> args) ss)]
-     [else
-      (let ([v4s (filter (^s (eq? (sockaddr-family s) 'inet)) ss)]
-            [v6s (filter (^s (eq? (sockaddr-family s) 'inet6)) ss)])
-        (if (and (not (null? v4s)) (not (null? v6s)))
-          (fold (^(s ss)
-                  (guard (e [(and (<system-error> e)
-                                  (eqv? (~ e'errno) EADDRINUSE))
-                             ss])         ;ignore s
-                    (cons (apply make-server-socket s args) ss)))
-                (map (cut apply make-server-socket <> args) v6s)
-                v4s)
-          (map (cut apply make-server-socket <> args) ss)))])))
+  (define (v4addrs ss)
+    (filter (^s (eq? (sockaddr-family s) 'inet)) ss))
+  (define (v6addrs ss)
+    (filter (^s (eq? (sockaddr-family s) 'inet6)) ss))
+
+  ;; try v4 socket with the same port of opened v6 socket S6.  Returns
+  ;; (S6 S4) or (S6).
+  ;; NB: It is possible that v4's port is taken by another process,
+  ;; instead of dual-stack S6 socket.
+  (define (try-v4 s6)
+    ;; we take port number from opened socket instead of PORT arg,
+    ;; since PORT can be 0 and system can have chosen arbitrary port for S6.
+    (let1 port (sockaddr-port (socket-address s6))
+      (guard (e [(and (<system-error> e) (eqv? (~ e'errno) EADDRINUSE))
+                 (list s6)]
+                [else (raise e)])
+        (list s6 (apply make-server-socket port args)))))
+
+  (let* ([ss (make-sockaddrs host port)]
+         [a6s (v6addrs ss)])
+    ;; NB: Mingw doesn't have EADDRINUSE.  it's likely not to have ipv6 either,
+    ;; so we just use the default.  NB: we can't switch here with
+    ;; gauche.sys.ipv6; see the comment on ipv6-capable definition above.
+    (if (or (null? a6s)
+            (not (global-variable-ref (find-module 'gauche) 'EADDRINUSE #f)))
+      (map (cut apply make-server-socket <> args) ss)
+      (append-map try-v4 (map (cut apply make-server-socket <> args) a6s)))))
 
 ;; API
 (define (make-sockaddrs host port :optional (proto 'tcp))
