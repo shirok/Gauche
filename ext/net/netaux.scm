@@ -181,15 +181,19 @@
   ;; (S6 S4) or (S6).
   ;; NB: It is possible that v4's port is taken by another process,
   ;; instead of dual-stack S6 socket.
-  (define (try-v4 s6)
-    ;; we take port number from opened socket instead of PORT arg,
-    ;; since PORT can be 0 and system can have chosen arbitrary port for S6.
-    (let1 port (sockaddr-port (socket-address s6))
+  (define (try-v4 s6 addrs)
+    ;; If the original port argument is 0, we take port number from
+    ;; the opened v6 socket.
+    (let1 a4s (if (zero? port)
+                ($ v4addrs $ make-sockaddrs host
+                   $ sockaddr-port $ socket-address s6)
+                (v4addrs addrs))
       (guard (e [(and (<system-error> e) (eqv? (~ e'errno) EADDRINUSE))
                  (list s6)]
                 [else (raise e)])
-        (list s6 (apply make-server-socket port args)))))
+        (list s6 (filter-map (cut apply make-server-socket <> args) a4s)))))
 
+  ;; Bind multiple v6 sockaddrs.  
   (let* ([ss (make-sockaddrs host port)]
          [a6s (v6addrs ss)])
     ;; NB: Mingw doesn't have EADDRINUSE.  it's likely not to have ipv6 either,
@@ -198,7 +202,8 @@
     (if (or (null? a6s)
             (not (global-variable-ref (find-module 'gauche) 'EADDRINUSE #f)))
       (map (cut apply make-server-socket <> args) ss)
-      (append-map try-v4 (map (cut apply make-server-socket <> args) a6s)))))
+      (append-map (cut try-v4 <> ss)
+                  (map (cut apply make-server-socket <> args) a6s)))))
 
 ;; API
 (define (make-sockaddrs host port :optional (proto 'tcp))
