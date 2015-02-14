@@ -177,8 +177,21 @@
   (define (v6addrs ss)
     (filter (^s (eq? (sockaddr-family s) 'inet6)) ss))
 
-  ;; try v4 socket with the same port of opened v6 socket S6.  Returns
-  ;; (S6 S4) or (S6).
+  ;; Kludge: These may not be bound on certain platforms,
+  ;; so we look them up at runtime.
+  (define EADDRINUSE
+    (global-variable-ref (find-module 'gauche) 'EADDRINUSE #f))
+  (define EADDRNOTAVAIL
+    (global-variable-ref (find-module 'gauche) 'EADDRNOTAVAIL #f))
+  (define <sockaddr-in6>
+    (global-variable-ref (find-module 'gauche.net) '<sockaddr-in6> #f))
+
+  (define (bind-failed? e)
+    (and (<system-error> e)
+         (memv (~ e'errno) `(,EADDRINUSE ,EADDRNOTAVAIL))))
+
+  ;; try binding v4 socket with the same port of opened v6 socket S6.
+  ;; Returns (S6 S4) on success, or (S6) on failure.
   ;; NB: It is possible that v4's port is taken by another process,
   ;; instead of dual-stack S6 socket.
   (define (try-v4 s6 addrs)
@@ -188,22 +201,42 @@
                 ($ v4addrs $ make-sockaddrs host
                    $ sockaddr-port $ socket-address s6)
                 (v4addrs addrs))
-      (guard (e [(and (<system-error> e) (eqv? (~ e'errno) EADDRINUSE))
-                 (list s6)]
+      (guard (e [(bind-failed? e) (list s6)]
                 [else (raise e)])
         (list s6 (filter-map (cut apply make-server-socket <> args) a4s)))))
 
-  ;; Bind multiple v6 sockaddrs.  
+  ;; try binding v6 socket on addr.  If actual-port is not #f, reallocate
+  ;; addr with the given port.  It is for the case that the given port is 0.
+  (define (try-v6 addr actual-port)
+    (let1 addr (if actual-port
+                 (make <sockaddr-in6>
+                   :host (sockaddr-addr addr) :port actual-port)
+                 addr)
+      (guard (e [(bind-failed? e) (values #f actual-port)])
+        (let1 s6 (apply make-server-socket addr args)
+          (values s6
+                  (if (zero? port)
+                    (sockaddr-port (socket-address s6))
+                    #f))))))
+
+  ;; Bind multiple v6 sockaddrs.
+  ;; If PORT is zero, we have to use the actual port number of the first
+  ;; socket we can bind.  So it's more involved than simply mapping
+  ;; make-server-socket.
+  (define (make-v6socks a6s)
+    (receive (socks _) (map-accum try-v6 #f a6s)
+      (filter identity socks)))
+  
   (let* ([ss (make-sockaddrs host port)]
          [a6s (v6addrs ss)])
     ;; NB: Mingw doesn't have EADDRINUSE.  it's likely not to have ipv6 either,
     ;; so we just use the default.  NB: we can't switch here with
     ;; gauche.sys.ipv6; see the comment on ipv6-capable definition above.
     (if (or (null? a6s)
-            (not (global-variable-ref (find-module 'gauche) 'EADDRINUSE #f)))
+            (not EADDRINUSE)
+            (not <sockaddr-in6>))
       (map (cut apply make-server-socket <> args) ss)
-      (append-map (cut try-v4 <> ss)
-                  (map (cut apply make-server-socket <> args) a6s)))))
+      (append-map (cut try-v4 <> ss) (make-v6socks (v6addrs ss))))))
 
 ;; API
 (define (make-sockaddrs host port :optional (proto 'tcp))
