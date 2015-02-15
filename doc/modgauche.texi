@@ -7563,6 +7563,14 @@ immediately after other process releases the port.
 @c COMMON
 
 @c EN
+Alternatively, you can pass a list of positive exact integers to @var{port}.
+In that case, Gauche tries to bind each port in the list until it succeeds.
+@c JP
+あるいは、正の正確な整数のリストを@var{port}に渡すことも出来ます。
+その場合、Gaucheは与えられたポート番号で順にbindを試し、成功したらそのソケットを返します。
+@c COMMON
+
+@c EN
 If keyword argument @code{sock-init} is given, it should be a procedure
 that takes two arguments, a created socket and the socket address.
 The procedure is called just after the socket is created.  It is
@@ -7622,6 +7630,10 @@ Returns a list of opened, bound and listened sockets.
 
 This procedure is particularly useful when the host
 has multiple protocol stacks, such as IPv4 and IPv6.
+In that case, this procedure may return a list of IPv4 socket(s) and
+IPv6 socket(s).
+(On some OSes, single socket can listen both IPv4 and IPv6.  On
+such platform, a list of single socket will be returned.)
 
 The meaning of keyword arguments are the same as of @code{make-server-socket}.
 @c JP
@@ -7631,9 +7643,24 @@ The meaning of keyword arguments are the same as of @code{make-server-socket}.
 サービス名も指定できます。
 
 この手続きは、ホストが複数のプロトコルスタック(IPv4とIPv6など)を
-持つ場合に特に便利です。
+持つ場合に特に便利です。その場合、この手続きはIPv4用のソケットと
+IPv6用のソケットのリストを返すかもしれません。
+(OSによっては、一つのソケットでIPv4もIPv6も両方listenできるものが
+あります。そういったOSでは単一のソケットのリストが返るでしょう。)
 
 キーワード引数の意味は@code{make-server-socket}のと同じです。
+@c COMMON
+
+@c EN
+You can pass 0 to @var{port}, just like @code{make-server-socket},
+to let the system choose an available port number.  If pass 0 as
+port and this procedure returns multiple sockets, it is guaranteed
+that all the sockets share the same port number.
+@c JP
+@code{make-server-socket}と同様、@var{port}に0を渡すことで、
+システムに空いているポートを自動的にアサインしてもらうことができます。
+@var{port}に0を渡して複数のソケットが返される場合、それらのソケットは
+同じポート番号を持つことが保証されます。
 @c COMMON
 @end defun
 
