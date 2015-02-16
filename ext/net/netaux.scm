@@ -203,7 +203,7 @@
                 (v4addrs addrs))
       (guard (e [(bind-failed? e) (list s6)]
                 [else (raise e)])
-        (list s6 (filter-map (cut apply make-server-socket <> args) a4s)))))
+        (cons s6 (filter-map (cut apply make-server-socket <> args) a4s)))))
 
   ;; try binding v6 socket on addr.  If actual-port is not #f, reallocate
   ;; addr with the given port.  It is for the case that the given port is 0.
