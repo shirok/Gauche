@@ -6099,9 +6099,58 @@ so @code{#(1 3)} comes before @code{#(1 2 3)}.
 @end defun
 
 @defun make-listwise-comparator type-test element-comparator empty? head tail
+More general version of @code{make-list-comparator}.
+Returns a comparator that compares structures which can be
+traversed using three procedures, @var{empty?}, @var{head} and @var{tail}.
+Each of those procedure receives a structure to be compared, and @var{empty?}
+must return @code{#t} iff the structure is empty, @var{head}
+must return the first element in the structure, and @var{tail}
+must return the same type of structure containing all the elements
+but the head.  The @var{type-test} predicate checks if the arguments
+passed to the comparator to be a suitable structure.
+
+That is, @code{make-list-comparator} can be written in
+@code{make-listwise-comparator} as follows.
+@example
+(make-list-compartator element-comparator)
+  @equiv{}
+  (make-listwise-comparator list? element-compartor null? car cdr)
+@end example
+
+This can be used to compare list-like structures.  For example,
+the following call returns a comparator that compares elements
+of two lazy streams (@xref{Stream library}).
+
+@example
+(make-listwise-comparator stream?
+                          element-comparator
+                          stream-null?
+                          stream-car
+                          stream-cdr)
+@end example
 @end defun
 
 @defun make-vectorwise-comparator type-test element-comparator length ref
+More general version of @code{make-vector-comparator}.
+Returns a comparator that compares structures which can be
+traversed using two procedures, @var{length} and @var{ref}.
+The @var{length} procedure must return the number of elements in the
+structure.  The @var{ref} procedure receives a structure and a nonnegative
+exact integer index @var{k}, and must return @var{k}-th element
+of the structure.
+
+That is, the following equivalence holds:
+@example
+(make-vector-comparator element-comparator)
+  @equiv{}
+  (make-vectorwise-comparator vector? element-comparator
+                              vector-length vector-ref)
+
+(make-bytevector-comparator element-comparator)
+  @equiv{}
+  (make-vectorwise-comparator u8vector? element-comparator
+                              u8vector-length u8vector-ref)
+@end example
 @end defun
 
 @defun make-pair-comparator car-comparator cdr-comparator
