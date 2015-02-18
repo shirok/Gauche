@@ -157,11 +157,11 @@
           (if (= r 0) (f (cdr a) (cdr b)) r))))))
 
 (define (%gen-listwise-hash elt-hash null? car cdr)
-  (rec (h x)
+  (^[x]
     (let loop ([v 10037] [x x])
-    (if (null? x)
-      v
-      (loop (combine-hash-value (car x) v) (cdr x))))))
+      (if (null? x)
+        v
+        (loop (combine-hash-value (elt-hash (car x)) v) (cdr x))))))
 
 (define (make-listwise-comparator test elt-comparator null? car cdr)
   (make-comparator test #t
