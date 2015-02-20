@@ -104,23 +104,37 @@
     (result SCM_TRUE)
     (result (Scm_VMApply1 (-> c typeFn) obj))))
 
+;; Utility to write check then operate.
 (inline-stub
- (define-cfn comparator-check-type-cc (result data::void**) :static
-   (when (SCM_FALSEP result)
-     (let* ([c   (SCM_OBJ (aref data 0))]
-            [obj (SCM_OBJ (aref data 1))])
-       (Scm_Error "Comparator %S cannot accept object %S" c obj)))
-   (return SCM_TRUE))
+ ;; assumes 'data' and 'result' is bound.  evaluate body where
+ ;; 'cmp' and 'obj' is bound.
+ (define-cise-stmt comparator-cc-body1
+   [(_ body)
+    `(begin
+       (let* ([cmp::ScmComparator* (SCM_COMPARATOR (aref data 0))]
+              [obj (SCM_OBJ (aref data 1))])
+         (when (SCM_FALSEP result)
+           (Scm_Error "Comparator %S cannot accept object %S" cmp obj))
+         ,body))])
+
+ (define-cise-stmt comparator-proc-body1
+   [(_ cmp arg cc-fn body)
+    `(if (logand (-> ,cmp flags) SCM_COMPARATOR_ANY_TYPE)
+       ,body
+       (let* ([data::(.array void* (2))])
+         (set! (aref data 0) ,cmp)
+         (set! (aref data 1) ,arg)
+         (Scm_VMPushCC ,cc-fn data 2)
+         (result (Scm_VMApply1 (-> ,cmp typeFn) ,arg))))])
  )
 
-(define-cproc comparator-check-type (c::<comparator> obj) :constant
-  (if (logand (-> c flags) SCM_COMPARATOR_ANY_TYPE)
-    (result SCM_TRUE)
-    (let* ([data::(.array void* (2))])
-      (set! (aref data 0) c)
-      (set! (aref data 1) obj)
-      (Scm_VMPushCC comparator-check-type-cc data 2)
-      (result (Scm_VMApply1 (-> c typeFn) obj)))))
+(inline-stub
+ (define-cfn comparator-check-type-cc (result data::void**) :static
+   (comparator-cc-body1 (return SCM_TRUE)))
+ (define-cproc comparator-check-type (c::<comparator> obj) :constant
+   (comparator-proc-body1 c obj comparator-check-type-cc
+                          (result SCM_TRUE)))
+ )
 
 (define-cproc comparator-equal? (c::<comparator> a b) :constant
   (result (Scm_VMApply2 (-> c eqFn) a b)))
@@ -128,8 +142,15 @@
 (define-cproc comparator-compare (c::<comparator> a b) :constant
   (result (Scm_VMApply2 (-> c compareFn) a b)))
 
-(define-cproc comparator-hash (c::<comparator> x) :constant
-  (result (Scm_VMApply1 (-> c hashFn) x)))
+(inline-stub
+ (define-cfn comparator-hash-cc (result data::void**) :static
+   (comparator-cc-body1 (return (Scm_VMApply1 (-> cmp hashFn) obj))))
+
+ (define-cproc comparator-hash (c::<comparator> x) :constant
+   (comparator-proc-body1 c x comparator-hash-cc
+                          (result (Scm_VMApply1 (-> c hashFn) x))))
+ )
+
 
 ;;;
 ;;; Generic comparison
