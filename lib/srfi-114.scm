@@ -129,7 +129,7 @@
        (if (applicable? nan-handling <real>)
          (^[which num] (nan-handling num))
          (error "make-inexact-comparator requires `nan-handling' argument to be either a procedure taking one real number, or one of the symbols 'min or 'max, but got:" nan-handling))]))
-  (make-comparator (every-pred real? inexact?)
+  (make-comparator real?
                    #t
                    (^[a b]
                      (if (nan? a)
