@@ -104,7 +104,7 @@
     (result SCM_TRUE)
     (result (Scm_VMApply1 (-> c typeFn) obj))))
 
-;; Utility to write check then operate.
+;; Utility to write check-then-operate.
 (inline-stub
  ;; assumes 'data' and 'result' is bound.  evaluate body where
  ;; 'cmp' and 'obj' is bound.
@@ -126,6 +126,44 @@
          (set! (aref data 1) ,arg)
          (Scm_VMPushCC ,cc-fn data 2)
          (result (Scm_VMApply1 (-> ,cmp typeFn) ,arg))))])
+
+ ;; assumes 'data' and 'result' is bound.  evaluate body where
+ ;; 'cmp', 'a' and 'b' is bound.
+ (define-cise-stmt comparator-cc-body2b
+   [(_ body)
+    `(begin
+       (let* ([cmp::ScmComparator* (SCM_COMPARATOR (aref data 0))]
+              [a (SCM_OBJ (aref data 1))]
+              [b (SCM_OBJ (aref data 2))])
+         (when (SCM_FALSEP result)
+           (Scm_Error "Comparator %S cannot accept object %S" cmp b))
+         ,body))])
+
+ (define-cise-stmt comparator-cc-body2a
+   [(_ cc-fn-b)
+    `(begin
+       (let* ([cmp::ScmComparator* (SCM_COMPARATOR (aref data 0))]
+              [a (SCM_OBJ (aref data 1))]
+              [b (SCM_OBJ (aref data 2))])
+         (when (SCM_FALSEP result)
+           (Scm_Error "Comparator %S cannot accept object %S" cmp a))
+         (let* ([data::(.array void* (3))])
+           (set! (aref data 0) cmp)
+           (set! (aref data 1) a)
+           (set! (aref data 2) b)
+           (Scm_VMPushCC ,cc-fn-b data 3)
+           (return (Scm_VMApply1 (-> cmp typeFn) b)))))])
+
+ (define-cise-stmt comparator-proc-body2
+   [(_ cmp a b cc-fn-a body)
+    `(if (logand (-> ,cmp flags) SCM_COMPARATOR_ANY_TYPE)
+       ,body
+       (let* ([data::(.array void* (3))])
+         (set! (aref data 0) ,cmp)
+         (set! (aref data 1) ,a)
+         (set! (aref data 2) ,b)
+         (Scm_VMPushCC ,cc-fn-a data 3)
+         (result (Scm_VMApply1 (-> ,cmp typeFn) ,a))))])
  )
 
 (inline-stub
@@ -136,12 +174,6 @@
                           (result SCM_TRUE)))
  )
 
-(define-cproc comparator-equal? (c::<comparator> a b) :constant
-  (result (Scm_VMApply2 (-> c eqFn) a b)))
-
-(define-cproc comparator-compare (c::<comparator> a b) :constant
-  (result (Scm_VMApply2 (-> c compareFn) a b)))
-
 (inline-stub
  (define-cfn comparator-hash-cc (result data::void**) :static
    (comparator-cc-body1 (return (Scm_VMApply1 (-> cmp hashFn) obj))))
@@ -149,6 +181,26 @@
  (define-cproc comparator-hash (c::<comparator> x) :constant
    (comparator-proc-body1 c x comparator-hash-cc
                           (result (Scm_VMApply1 (-> c hashFn) x))))
+ )
+
+(inline-stub
+ (define-cfn comparator-equal-cc-b (result data::void**) :static
+   (comparator-cc-body2b (return (Scm_VMApply2 (-> cmp eqFn) a b))))
+ (define-cfn comparator-equal-cc-a (result data::void**) :static
+   (comparator-cc-body2a comparator-equal-cc-b))
+ (define-cproc comparator-equal? (c::<comparator> a b) :constant
+   (comparator-proc-body2 c a b comparator-equal-cc-a
+                          (result (Scm_VMApply2 (-> c eqFn) a b))))
+ )
+
+(inline-stub
+ (define-cfn comparator-compare-cc-b (result data::void**) :static
+   (comparator-cc-body2b (return (Scm_VMApply2 (-> cmp compareFn) a b))))
+ (define-cfn comparator-compare-cc-a (result data::void**) :static
+   (comparator-cc-body2a comparator-compare-cc-b))
+ (define-cproc comparator-compare (c::<comparator> a b) :constant
+   (comparator-proc-body2 c a b comparator-compare-cc-a
+                          (result (Scm_VMApply2 (-> c compareFn) a b))))
  )
 
 
