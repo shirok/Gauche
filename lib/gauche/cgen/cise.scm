@@ -397,12 +397,6 @@
 ;; C function definition
 ;;
 (define-cise-macro (define-cfn form env)
-  (define (argchk args)
-    (match (canonicalize-vardecl args)
-      [() '()]
-      [((var ':: type) . rest) `((,var . ,type) ,@(argchk rest))]
-      [(var . rest) `((,var . ScmObj) ,@(argchk rest))]))
-
   (define (gen-args args env)
     (let1 eenv (expr-env env)
       ($ intersperse ","
@@ -435,11 +429,11 @@
   (ensure-toplevel-ctx form env)
   (match form
     [(_ name (args ...) ':: ret-type . body)
-     (check-static name (argchk args) ret-type body)]
+     (check-static name (canonicalize-argdecl args) ret-type body)]
     [(_ name (args ...) [? type-symbol? ts] . body)
-     (check-static name (argchk args) (type-symbol-type ts) body)]
+     (check-static name (canonicalize-argdecl args) (type-symbol-type ts) body)]
     [(_ name (args ...) . body)
-     (check-static name (argchk args) 'ScmObj body)]))
+     (check-static name (canonicalize-argdecl args) 'ScmObj body)]))
 
 ;;------------------------------------------------------------
 ;; Syntax
@@ -1072,4 +1066,13 @@
 
   (scan (fold-right expand-type '() vardecls) '()))
 
-
+;; Like canonicalize-vardecl, but for argument declarations.
+;; (foo::type bar baz:: type bee :: type)
+;; => ((foo . type) (bar . ScmObj) (baz . type) (bee . type))
+(define (canonicalize-argdecl argdecls)
+  (define (rec args)
+    (match (canonicalize-vardecl args)
+      [() '()]
+      [((var ':: type) . rest) `((,var . ,type) ,@(rec rest))]
+      [(var . rest) `((,var . ScmObj) ,@(rec rest))]))
+  (rec argdecls))
