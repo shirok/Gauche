@@ -48,6 +48,7 @@
   (use gauche.cgen.cise)
   (use gauche.cgen.tmodule)
   (export <cgen-stub-unit> <cgen-stub-error>
+          cgen-stub-cise-context
           cgen-genstub
           cgen-stub-parser cgen-stub-parse-form)
   )
@@ -235,8 +236,8 @@
 (define (cgen-genstub stubfile :key (predef-syms '()))
   (unless (file-is-readable? stubfile)
     (error <cgen-stub-error> "Couldn't read input file:" stubfile))
-  (let1 prefix
-      (cgen-safe-name-friendly (path-sans-extension (sys-basename stubfile)))
+  (let1 prefix ($ cgen-safe-name-friendly $ path-sans-extension
+                  $ sys-basename stubfile)
     (parameterize ([cgen-current-unit
                     (make <cgen-stub-unit>
                       :name (path-sans-extension (sys-basename stubfile))
@@ -272,6 +273,27 @@
    ))
 
 (define-condition-type <cgen-stub-error> <error> #f)
+
+;; API
+;; We use customized cise context while generating stubs
+(define (cgen-stub-cise-context :optional (orig-context (cise-context)))
+  (rlet1 ctx (cise-context-copy orig-context)
+    ;; Override "return"
+    ($ cise-register-macro! 'return
+       (^[form env]
+         (match form
+           [(_)         `(goto SCM_STUB_RETURN)]
+           [(_ e0)       `(begin (set! SCM_RESULT ,e0)
+                                 (goto SCM_STUB_RETURN))]
+           [(_ e0 e1)    `(begin (set! SCM_RESULT ,e0)
+                                 (set! SCM_RESULT ,e1)
+                                 (goto SCM_STUB_RETURN))]
+           [(_ e0 e1 e2) `(begin (set! SCM_RESULT ,e0)
+                                 (set! SCM_RESULT ,e1)
+                                 (set! SCM_RESULT ,e2)
+                                 (goto SCM_STUB_RETURN))]
+           [_ (error "Too many values to return")]))
+       ctx)))
 
 ;;===================================================================
 ;; Form parsers
@@ -808,21 +830,24 @@
     (push-stmt! cproc "{")
     (push-stmt! cproc #`",(~ rettype'c-type) SCM_RESULT;")
     (push-stmt! cproc #`"SCM_RESULT = ,c-func-name(,(args));")
+    (push-stmt! cproc "SCM_STUB_RETURN:") ; label
     (push-stmt! cproc (cgen-return-stmt (cgen-box-expr rettype "SCM_RESULT")))
     (push-stmt! cproc "}"))
-  (match form
-    [([? check-expr expr])
-     (let1 rt (~ cproc'return-type)
-       (if rt
-         (process-call-spec cproc `(,rt ,expr)) ; for transition
-         (typed-result *scm-type* expr)))]
-    [('<void> [? check-expr expr])
-     (push-stmt! cproc #`",expr(,(args));")
-     (push-stmt! cproc "SCM_RETURN(SCM_UNDEFINED);")]
-    [(typename [? check-expr expr])
-     (unless (and (symbol? typename) (check-expr expr)) (err))
-     (typed-result (name->type typename) expr)]
-    [else (err)]))
+  (parameterize ([cise-context (cgen-stub-cise-context)])
+    (match form
+      [([? check-expr expr])
+       (let1 rt (~ cproc'return-type)
+         (if rt
+           (process-call-spec cproc `(,rt ,expr)) ; for transition
+           (typed-result *scm-type* expr)))]
+      [('<void> [? check-expr expr])
+       (push-stmt! cproc #`",expr(,(args));")
+       (push-stmt! cproc "SCM_STUB_RETURN:") ; label
+       (push-stmt! cproc "SCM_RETURN(SCM_UNDEFINED);")]
+      [(typename [? check-expr expr])
+       (unless (and (symbol? typename) (check-expr expr)) (err))
+       (typed-result (name->type typename) expr)]
+      [else (err)])))
 
 (define-method process-body-spec ((cproc <procstub>) form)
   (define (err) (error <cgen-stub-error> "malformed 'body' spec:" form))
@@ -842,19 +867,21 @@
       (push-stmt! cproc "{")
       (push-stmt! cproc #`",(~ rettype'c-type) SCM_RESULT;")
       (push-stmt! cproc #`" SCM_RESULT = (,expr);")
+      (push-stmt! cproc "SCM_STUB_RETURN:") ; label
       (push-stmt! cproc (cgen-return-stmt (cgen-box-expr rettype "SCM_RESULT")))
       (push-stmt! cproc "}")))
-  (match form
-    [('<void> . stmts)
-     (error <cgen-stub-error> "<void> type isn't allowed in 'expr' directive:" form)]
-    [([? symbol? rettype] expr)
-     (typed-result (name->type rettype) expr)]
-    [(expr)
-     (let1 rt (~ cproc'return-type)
-       (if rt
-         (process-expr-spec cproc `(,rt ,expr)) ; for transition
-         (typed-result *scm-type* expr)))]
-    [else (error <cgen-stub-error> "malformed 'expr' spec:" form)]))
+  (parameterize ([cise-context (cgen-stub-cise-context)])
+    (match form
+      [('<void> . stmts)
+       (error <cgen-stub-error> "<void> type isn't allowed in 'expr' directive:" form)]
+      [([? symbol? rettype] expr)
+       (typed-result (name->type rettype) expr)]
+      [(expr)
+       (let1 rt (~ cproc'return-type)
+         (if rt
+           (process-expr-spec cproc `(,rt ,expr)) ; for transition
+           (typed-result *scm-type* expr)))]
+      [else (error <cgen-stub-error> "malformed 'expr' spec:" form)])))
 
 (define-method process-catch-spec ((cproc <procstub>) form)
   (match form
@@ -886,6 +913,7 @@
     (push-stmt! cproc "{")
     (push-stmt! cproc #`",(~ rettype'c-type) SCM_RESULT;")
     (for-each expand-stmt stmts)
+    (push-stmt! cproc "SCM_STUB_RETURN:") ; label
     (push-stmt! cproc (cgen-return-stmt (cgen-box-expr rettype "SCM_RESULT")))
     (push-stmt! cproc "}"))
   (define (typed-results rettypes stmts)
@@ -902,6 +930,7 @@
                              (cgen-box-expr rettype #`"SCM_RESULT,i"))
                            rettypes)
            ",")
+        (push-stmt! cproc "SCM_STUB_RETURN:") ; label
         (push-stmt! cproc
                     (case nrets
                       [(0) (cgen-return-stmt "Scm_Values(SCM_NIL)")]
@@ -913,17 +942,19 @@
                       [else (cgen-return-stmt
                              #`"Scm_Values(Scm_List(,results,, NULL))")]))
         )))
-  (match rettype
-    [#f             ; the default case; we assume it is <top>.
-     (typed-result *scm-type* body)]
-    ['<void>        ; no results
-     (for-each expand-stmt body)
-     (push-stmt! cproc "SCM_RETURN(SCM_UNDEFINED);")]
-    [[? symbol? t]  ; single result
-     (typed-result (name->type t) body)]
-    [[? list? ts]   ; multiple values
-     (typed-results (map name->type ts) body)]
-    [_ (error <cgen-stub-error> "invalid cproc return type:" rettype)]))
+  (parameterize ([cise-context (cgen-stub-cise-context)])
+    (match rettype
+      [#f             ; the default case; we assume it is <top>.
+       (typed-result *scm-type* body)]
+      ['<void>        ; no results
+       (for-each expand-stmt body)
+       (push-stmt! cproc "SCM_STUB_RETURN:") ; label
+       (push-stmt! cproc "SCM_RETURN(SCM_UNDEFINED);")]
+      [[? symbol? t]  ; single result
+       (typed-result (name->type t) body)]
+      [[? list? ts]   ; multiple values
+       (typed-results (map name->type ts) body)]
+      [_ (error <cgen-stub-error> "invalid cproc return type:" rettype)])))
 
 ;;;
 ;;; Emitting code

@@ -1,3 +1,17 @@
+2015-02-22  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cgen/stub.scm: During expanding stub procedures
+	  (define-cproc etc) we set up a custom cise context to override
+	  "return" macro; so that we can say (return something) safely
+          in the stub procedures, instead of (result something), which
+	  is somewhat awkward.  The difference from C return is that
+	  it can handle multiple return values.
+	  Note that this 'return' macro really behaves like return---it
+	  skips the rest of the procedure, unlike the 'result' macro that
+	  merely assigns SCM_RESUT values.  The code that relies the
+	  'result' macro to continue execution (which is a bad habit)
+	  can't just replace 'result' to 'return'.
+
 2015-02-11  Shiro Kawai  <shiro@acm.org>
 
 	* ext/net/netaux.scm (make-server-sockets): Handle the case when
