@@ -285,12 +285,12 @@
            [(_)         `(goto SCM_STUB_RETURN)]
            [(_ e0)       `(begin (set! SCM_RESULT ,e0)
                                  (goto SCM_STUB_RETURN))]
-           [(_ e0 e1)    `(begin (set! SCM_RESULT ,e0)
-                                 (set! SCM_RESULT ,e1)
+           [(_ e0 e1)    `(begin (set! SCM_RESULT0 ,e0)
+                                 (set! SCM_RESULT1 ,e1)
                                  (goto SCM_STUB_RETURN))]
-           [(_ e0 e1 e2) `(begin (set! SCM_RESULT ,e0)
-                                 (set! SCM_RESULT ,e1)
-                                 (set! SCM_RESULT ,e2)
+           [(_ e0 e1 e2) `(begin (set! SCM_RESULT0 ,e0)
+                                 (set! SCM_RESULT1 ,e1)
+                                 (set! SCM_RESULT2 ,e2)
                                  (goto SCM_STUB_RETURN))]
            [_ (error "Too many values to return")]))
        ctx)))
