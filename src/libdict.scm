@@ -46,7 +46,7 @@
    [(_ dict referencer)
     `(let* ([v (,referencer ,dict key fallback)])
        (dict-check-entry ,dict key (SCM_UNBOUNDP v))
-       (result v))])
+       (return v))])
 
  (define-cise-expr dict-exists?
    [(_ dict referencer)
@@ -67,7 +67,7 @@
                 (cast void (SCM_DICT_SET_VALUE e fallback)))])
        (set! (aref data 0) (cast void* e))
        (Scm_VMPushCC ,cc data 1)
-       (result (Scm_VMApply1 proc (SCM_DICT_VALUE e))))])
+       (return (Scm_VMApply1 proc (SCM_DICT_VALUE e))))])
 
  (define-cise-stmt dict-push!
    [(_ dict searcher xtractor)
@@ -85,15 +85,16 @@
        (cond
         [(not e)
          (dict-check-entry ,dict key (SCM_UNBOUNDP fallback))
-         (result fallback)]
+         (return fallback)]
         [(not (SCM_PAIRP (SCM_DICT_VALUE e)))
          (when (SCM_UNBOUNDP fallback)
            (Scm_Error "%S's value for key %S is not a pair: %S"
                       ,dict key (SCM_DICT_VALUE e)))
-         (result fallback)]
+         (return fallback)]
         [else
-         (result (SCM_CAR (SCM_DICT_VALUE e)))
-         (cast void (SCM_DICT_SET_VALUE e (SCM_CDR (SCM_DICT_VALUE e))))]))])
+         (let* ([resultval_ (SCM_CAR (SCM_DICT_VALUE e))])
+           (cast void (SCM_DICT_SET_VALUE e (SCM_CDR (SCM_DICT_VALUE e))))
+           (return resultval_))]))])
  )
 
 ;;;
@@ -115,12 +116,12 @@
  (define-cise-stmt get-hash-type
    [(_ expr)
     `(case ,expr
-       [(SCM_HASH_EQ)      (result 'eq?)]
-       [(SCM_HASH_EQV)     (result 'eqv?)]
-       [(SCM_HASH_EQUAL)   (result 'equal?)]
-       [(SCM_HASH_STRING)  (result 'string=?)]
-       [(SCM_HASH_GENERAL) (result 'general)]
-       [else (result '#f)]           ; TODO: need to think over
+       [(SCM_HASH_EQ)      (return 'eq?)]
+       [(SCM_HASH_EQV)     (return 'eqv?)]
+       [(SCM_HASH_EQUAL)   (return 'equal?)]
+       [(SCM_HASH_STRING)  (return 'string=?)]
+       [(SCM_HASH_GENERAL) (return 'general)]
+       [else (return '#f)]           ; TODO: need to think over
        )])
  )
 
@@ -135,7 +136,7 @@
 (define-cproc %make-hash-table-simple (type init-size::<int>)
   (let* ([ctype::int 0])
     (set-hash-type! ctype type)
-    (result (Scm_MakeHashTableSimple ctype init-size))))
+    (return (Scm_MakeHashTableSimple ctype init-size))))
 
 (inline-stub
 (define-cfn generic-hashtable-hash (h::(const ScmHashCore*) key::intptr_t)
@@ -166,7 +167,7 @@
 (define-cproc %make-hash-table-from-comparator (comparator::<comparator>
                                                 init-size::<int>
                                                 has-type-check::<boolean>)
-  (result (Scm_MakeHashTableFull generic-hashtable-hash
+  (return (Scm_MakeHashTableFull generic-hashtable-hash
                                  generic-hashtable-eq
                                  init-size
                                  comparator)))
@@ -211,8 +212,8 @@
         (unless (SCM_COMPARATORP r)
           (Scm_Error "Got some weird hashtable - possibly internal bug: %S"
                      hash))
-        (result r)))
-    (result '#f)))
+        (return r)))
+    (return '#f)))
 (select-module gauche)
 (define (hash-table-comparator hash)
   (case (hash-table-type hash)
@@ -224,7 +225,7 @@
     [else (error "unknown hashtable type:" hash)]))
 
 (define-cproc hash-table-num-entries (hash::<hash-table>) ::<int>
-  (result (Scm_HashCoreNumEntries (SCM_HASH_TABLE_CORE hash))))
+  (return (Scm_HashCoreNumEntries (SCM_HASH_TABLE_CORE hash))))
 
 (define-cproc hash-table-clear! (hash::<hash-table>) ::<void>
   (Scm_HashCoreClear (SCM_HASH_TABLE_CORE hash)))
@@ -238,10 +239,10 @@
 ;; this is hash-table-remove! in STk.  I use `delete' for
 ;; it's consistent with SRFI-1 and dbm-delete!.
 (define-cproc hash-table-delete! (hash::<hash-table> key) ::<boolean>
-  (result (not (SCM_UNBOUNDP (Scm_HashTableDelete hash key)))))
+  (return (not (SCM_UNBOUNDP (Scm_HashTableDelete hash key)))))
 
 (define-cproc hash-table-exists? (hash::<hash-table> key) ::<boolean>
-  (result (dict-exists? hash Scm_HashTableRef)))
+  (return (dict-exists? hash Scm_HashTableRef)))
 
 (inline-stub
  (define-cfn hash-table-update-cc (result (data :: void**)) :static
@@ -274,7 +275,7 @@
 (define-cproc %hash-table-iter (hash::<hash-table>)
   (let* ([iter::ScmHashIter* (SCM_NEW ScmHashIter)])
     (Scm_HashIterInit iter (SCM_HASH_TABLE_CORE hash))
-    (result (Scm_MakeSubr hash_table_iter iter 1 0 '"hash-table-iterator"))))
+    (return (Scm_MakeSubr hash_table_iter iter 1 0 '"hash-table-iterator"))))
 
 (define-cproc hash-table-copy (hash::<hash-table>)   Scm_HashTableCopy)
 (define-cproc hash-table-keys (hash::<hash-table>)   Scm_HashTableKeys)
@@ -311,7 +312,7 @@
 (define-cproc %make-tree-map (comparator)
   (begin
     (SCM_ASSERT (SCM_COMPARATORP comparator))
-    (result (Scm_MakeTreeMap tree_map_cmp comparator))))
+    (return (Scm_MakeTreeMap tree_map_cmp comparator))))
 
 ;; TODO: We do want to return something even for tree-maps that aren't
 ;; created from the Scheme world.  But how?
@@ -319,10 +320,10 @@
   (let* ([d::void* (-> (SCM_TREE_MAP_CORE tm) data)])
     (if (or (== d NULL)
             (!= (-> (SCM_TREE_MAP_CORE tm) cmp) tree-map-cmp))
-      (result SCM_FALSE)
+      (return SCM_FALSE)
       (begin
         (SCM_ASSERT (SCM_COMPARATORP d))
-        (result (SCM_OBJ d))))))
+        (return (SCM_OBJ d))))))
 
 (define-cproc tree-map-copy (tm::<tree-map>) Scm_TreeMapCopy)
 
@@ -335,7 +336,7 @@
   (Scm_TreeMapSet tm key val 0))
 
 (define-cproc tree-map-delete! (tm::<tree-map> key) ::<boolean>
-  (result (not (SCM_UNBOUNDP (Scm_TreeMapDelete tm key)))))
+  (return (not (SCM_UNBOUNDP (Scm_TreeMapDelete tm key)))))
 
 (inline-stub
  (define-cfn tree-map-update-cc (result data::void**) :static
@@ -354,10 +355,10 @@
   (dict-pop! tm Scm_TreeCoreSearch SCM_TREE_MAP_CORE))
 
 (define-cproc tree-map-exists? (tm::<tree-map> key) ::<boolean>
-  (result (dict-exists? tm Scm_TreeMapRef)))
+  (return (dict-exists? tm Scm_TreeMapRef)))
 
 (define-cproc tree-map-num-entries (tm::<tree-map>) ::<int>
-  (result (Scm_TreeCoreNumEntries (SCM_TREE_MAP_CORE tm))))
+  (return (Scm_TreeCoreNumEntries (SCM_TREE_MAP_CORE tm))))
 
 (define-cproc %tree-map-bound (tm::<tree-map> min::<boolean> pop::<boolean>)
   (let* ([op::ScmTreeCoreBoundOp (?: min SCM_TREE_CORE_MIN SCM_TREE_CORE_MAX)]
@@ -366,8 +367,8 @@
               (Scm_TreeCorePopBound (SCM_TREE_MAP_CORE tm) op)
               (Scm_TreeCoreGetBound (SCM_TREE_MAP_CORE tm) op))])
     (if e
-      (result (Scm_Cons (SCM_DICT_KEY e) (SCM_DICT_VALUE e)))
-      (result '#f))))
+      (return (Scm_Cons (SCM_DICT_KEY e) (SCM_DICT_VALUE e)))
+      (return '#f))))
 
 (inline-stub
  (define-cfn tree-map-iter (args::ScmObj* nargs::int data::void*) :static
@@ -383,11 +384,11 @@
 (define-cproc %tree-map-iter (tm::<tree-map>)
   (let* ([iter::ScmTreeIter* (SCM_NEW ScmTreeIter)])
     (Scm_TreeIterInit iter (SCM_TREE_MAP_CORE tm) NULL)
-    (result (Scm_MakeSubr tree_map_iter iter 2 0 '"tree-map-iterator"))))
+    (return (Scm_MakeSubr tree_map_iter iter 2 0 '"tree-map-iterator"))))
 
 (define-cproc %tree-map-check-consistency (tm::<tree-map>)
   (Scm_TreeCoreCheckConsistency (SCM_TREE_MAP_CORE tm))
-  (result '#t))
+  (return '#t))
 
 (define-cproc %tree-map-dump (tm::<tree-map>) ::<void>
   (Scm_TreeMapDump tm SCM_CUROUT))
@@ -414,9 +415,9 @@
         [(!= ,lh NULL) (,make-result (SCM_DICT_KEY ,lh) (SCM_DICT_VALUE ,lh))]
         [else          (,make-result key-fb val-fb)]))])
 
- (define-cise-stmt tree-map-closest-key-result [(_ k v) `(result ,k)])
- (define-cise-stmt tree-map-closest-val-result [(_ k v) `(result ,v)])
- (define-cise-stmt tree-map-closest-kv-result  [(_ k v) `(result ,k ,v)])
+ (define-cise-stmt tree-map-closest-key-result [(_ k v) `(return ,k)])
+ (define-cise-stmt tree-map-closest-val-result [(_ k v) `(return ,v)])
+ (define-cise-stmt tree-map-closest-kv-result  [(_ k v) `(return ,k ,v)])
  )
 
 (define-cproc tree-map-floor
@@ -454,6 +455,3 @@
 (define-cproc tree-map-successor-value
   (tm::<tree-map> key :optional (val-fb #f))
   (tree-map-closest-entry #f hi tree-map-closest-val-result))
-
-
-

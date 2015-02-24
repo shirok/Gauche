@@ -188,7 +188,7 @@
          (set! val (Scm_MakeBaseGeneric (SCM_OBJ name) call_fallback_proc val))
          (set! val (Scm_MakeBaseGeneric (SCM_OBJ name) NULL NULL))))
      (Scm_Define module name val)
-     (result val)))
+     (return val)))
 
  (define-cproc %make-next-method (gf methods::<list> args::<list>)
    (let* ([argv::ScmObj*] [argc::int])
@@ -198,13 +198,13 @@
        (unless (Scm_TypeP mp SCM_CLASS_METHOD)
          (Scm_Error "method required, but got %S" mp)))
      (set! argv (Scm_ListToArray args (& argc) NULL TRUE))
-     (result (Scm_MakeNextMethod (SCM_GENERIC gf) methods argv argc
+     (return (Scm_MakeNextMethod (SCM_GENERIC gf) methods argv argc
                                  FALSE FALSE))))
 
  (define-cproc %method-code (method::<method>)
    (if (-> method func)
-     (result SCM_FALSE)
-     (result (-> method data))))
+     (return SCM_FALSE)
+     (return (-> method data))))
  )
 
 ;;----------------------------------------------------------------
@@ -515,23 +515,23 @@
 ;; current-class-of doesn't updates OBJ, and returns possibly the old class
 ;; which has been redefined.  Should only be used in class redefinition
 ;; routines.
-(define-cproc current-class-of (obj) (result (SCM_OBJ (Scm_ClassOf obj))))
+(define-cproc current-class-of (obj) (return (SCM_OBJ (Scm_ClassOf obj))))
 (define-cproc is-a? (obj klass::<class>) (inliner IS-A) Scm_VMIsA)
 (define-cproc subtype? (c1::<class> c2::<class>) ::<boolean> Scm_SubtypeP)
 
 (define-cproc slot-ref (obj slot)
   (inliner SLOT-REF) (setter slot-set!)
-  (result (Scm_VMSlotRef obj slot FALSE)))
+  (return (Scm_VMSlotRef obj slot FALSE)))
 
 (define-cproc slot-set! (obj slot value) (inliner SLOT-SET) Scm_VMSlotSet)
 
 (define-cproc slot-bound? (obj slot) Scm_VMSlotBoundP)
 
 (define-cproc slot-ref-using-accessor (obj accessor::<slot-accessor>)
-  (result (Scm_VMSlotRefUsingAccessor obj accessor FALSE)))
+  (return (Scm_VMSlotRefUsingAccessor obj accessor FALSE)))
 
 (define-cproc slot-bound-using-accessor? (obj accessor::<slot-accessor>)
-  (result (Scm_VMSlotRefUsingAccessor obj accessor TRUE)))
+  (return (Scm_VMSlotRefUsingAccessor obj accessor TRUE)))
 
 (define-cproc slot-set-using-accessor! (obj accessor::<slot-accessor> value)
   Scm_VMSlotSetUsingAccessor)
@@ -557,17 +557,17 @@
     (when (== numinits 10)
       (let* ([i::int 10])
         (dolist [init rinits] (Scm_InstanceSlotSet obj (post++ i) init))))
-    (result obj)))
+    (return obj)))
 
 (define-cproc %make-recordv (klass::<class> argv::<vector>)
   (let* ([v::ScmObj* (SCM_VECTOR_ELEMENTS argv)]
          [n::int     (SCM_VECTOR_SIZE argv)])
-    (result (Scm__AllocateAndInitializeInstance klass v n 0))))
+    (return (Scm__AllocateAndInitializeInstance klass v n 0))))
 
 (define-cproc %record-ref (klass::<class> obj k::<fixnum>)
   (unless (SCM_ISA obj klass)
     (Scm_Error "record-ref: instance of %S expected, got %S" klass obj))
-  (result (Scm_InstanceSlotRef obj k)))
+  (return (Scm_InstanceSlotRef obj k)))
 
 (define-cproc %record-set! (klass::<class> obj k::<fixnum> val) ::<void>
   (unless (SCM_ISA obj klass)
@@ -650,7 +650,7 @@
                 (set! (aref cp n) (SCM_CLASS c))
                 (post++ n))
               classes)
-    (result (Scm_MethodApplicableForClasses m cp argc))))
+    (return (Scm_MethodApplicableForClasses m cp argc))))
 
 ;;----------------------------------------------------------------
 ;; Introspection routines

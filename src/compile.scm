@@ -251,7 +251,7 @@
                (SCM_VECTOR_ELEMENT v LVAR_OFFSET_NAME) name
                (SCM_VECTOR_ELEMENT v LVAR_OFFSET_INITVAL) SCM_UNDEFINED)
          (SCM_APPEND1 h t v)))
-     (result h)))
+     (return h)))
 
  (define-cise-stmt update!
    [(_ offset delta)
@@ -338,17 +338,17 @@
 
  ;; Internal API - used while macro expansion
  (define-cproc env-lookup (name module frames)
-   (result (env-lookup-int name (SCM_MAKE_INT 1) ;; SYNTAX
+   (return (env-lookup-int name (SCM_MAKE_INT 1) ;; SYNTAX
                            (SCM_MODULE module) frames)))
  ;; Internal API - for faster CENV lookup
  (define-cproc cenv-lookup-syntax (cenv name)
-   (result
+   (return
     (env-lookup-int name (SCM_MAKE_INT 1)                      ; SYNTAX
                     (SCM_MODULE (SCM_VECTOR_ELEMENT cenv 0))   ; module
                     (SCM_VECTOR_ELEMENT cenv 1))))             ; frames
  ;; Internal API - for faster CENV lookup
  (define-cproc cenv-lookup-variable (cenv name)
-   (result
+   (return
     (env-lookup-int name (SCM_MAKE_INT 0)                      ; LEXICAL
                     (SCM_MODULE (SCM_VECTOR_ELEMENT cenv 0))   ; module
                     (SCM_VECTOR_ELEMENT cenv 1))))             ; frames
@@ -2033,7 +2033,7 @@
 
 (inline-stub
  (define-cproc make-toplevel-closure (code::<compiled-code>)
-  (result (Scm_MakeClosure (SCM_OBJ code) NULL)))
+  (return (Scm_MakeClosure (SCM_OBJ code) NULL)))
  )
 
 ;; Macros ...........................................
@@ -5525,7 +5525,7 @@
  (define-cproc %procedure-inliner (proc::<procedure>)
    (setter (proc::<procedure> inliner) ::<void>
            (set! (-> proc inliner) inliner))
-   (result (?: (-> proc inliner) (-> proc inliner) '#f)))
+   (return (?: (-> proc inliner) (-> proc inliner) '#f)))
 
  (define-cproc %mark-binding-inlinable! (mod::<module> name::<symbol>) ::<void>
    (let* ([g::ScmGloc* (Scm_FindBinding mod name 0)])
@@ -6158,7 +6158,7 @@
 (inline-stub
  ;; %imax - max for unsigned integer only, unsafe.
  (define-cproc %imax (x y)
-   (if (> (SCM_WORD x) (SCM_WORD y)) (result x) (result y)))
+   (if (> (SCM_WORD x) (SCM_WORD y)) (return x) (return y)))
 
  ;; (%map1c proc lis c) = (map (cut proc <> c) lis)
  (define-cfn map1c_cc (result data::void**) :static
@@ -6175,14 +6175,14 @@
 
  (define-cproc %map1c (proc lis c)
    (let* ([data::(.array void* [4])])
-     (cond [(SCM_NULLP lis) (result SCM_NIL)]
+     (cond [(SCM_NULLP lis) (return SCM_NIL)]
            [else
             (set! (aref data 0) proc
                   (aref data 1) SCM_NIL
                   (aref data 2) (SCM_CDR lis)
                   (aref data 3) c)
             (Scm_VMPushCC map1c_cc data 4)
-            (result (Scm_VMApply2 proc (SCM_CAR lis) c))])))
+            (return (Scm_VMApply2 proc (SCM_CAR lis) c))])))
 
  ;; (%map1cc proc lis c1 c2) = (map (cut proc <> c1 c2) lis)
  (define-cfn map1cc-cc (result (data :: void**)) :static
@@ -6200,7 +6200,7 @@
 
  (define-cproc %map1cc (proc lis c1 c2)
    (if (SCM_NULLP lis)
-     (result SCM_NIL)
+     (return SCM_NIL)
      (let* ([data::(.array void* [5])])
        (set! (aref data 0) proc
              (aref data 1) SCM_NIL
@@ -6208,7 +6208,7 @@
              (aref data 3) c1
              (aref data 4) c2)
        (Scm_VMPushCC map1cc-cc data 5)
-       (result (Scm_VMApply3 proc (SCM_CAR lis) c1 c2)))))
+       (return (Scm_VMApply3 proc (SCM_CAR lis) c1 c2)))))
 
  ;; (%map-cons lis1 lis2) = (map cons lis1 lis2)
  (define-cproc %map-cons (lis1 lis2)
@@ -6216,7 +6216,7 @@
      (while (and (SCM_PAIRP lis1) (SCM_PAIRP lis2))
        (SCM_APPEND1 h t (Scm_Cons (SCM_CAR lis1) (SCM_CAR lis2)))
        (set! lis1 (SCM_CDR lis1) lis2 (SCM_CDR lis2)))
-     (result h)))
+     (return h)))
  )
 
 ;;============================================================
@@ -6231,12 +6231,12 @@
  ;; Eval situation flag (for eval-when constrcut)
  (define-cproc vm-eval-situation (:optional val) ::<int>
    (let* ([vm::ScmVM* (Scm_VM)])
-     (cond [(SCM_UNBOUNDP val) (result (-> vm evalSituation))]
+     (cond [(SCM_UNBOUNDP val) (return (-> vm evalSituation))]
            [else
             (unless (SCM_INTP val) (SCM_TYPE_ERROR val "integer"))
             (let* ([prev::int (-> vm evalSituation)])
               (set! (-> vm evalSituation) (SCM_INT_VALUE val))
-              (result prev))])))
+              (return prev))])))
 
  (define-enum SCM_VM_EXECUTING)
  (define-enum SCM_VM_LOADING)
@@ -6244,18 +6244,18 @@
 
  ;; Compiler flags
  (define-cproc vm-compiler-flag-is-set? (flag::<uint>) ::<boolean>
-   (result (SCM_VM_COMPILER_FLAG_IS_SET (Scm_VM) flag)))
+   (return (SCM_VM_COMPILER_FLAG_IS_SET (Scm_VM) flag)))
  (define-cproc vm-compiler-flag-set! (flag::<uint>) ::<void>
    (SCM_VM_COMPILER_FLAG_SET (Scm_VM) flag))
  (define-cproc vm-compiler-flag-clear! (flag::<uint>) ::<void>
    (SCM_VM_COMPILER_FLAG_CLEAR (Scm_VM) flag))
 
  (define-cproc vm-compiler-flag-noinline-locals? () ::<boolean>
-   (result (SCM_VM_COMPILER_FLAG_IS_SET (Scm_VM) SCM_COMPILE_NOINLINE_LOCALS)))
+   (return (SCM_VM_COMPILER_FLAG_IS_SET (Scm_VM) SCM_COMPILE_NOINLINE_LOCALS)))
  (define-cproc vm-compiler-flag-no-post-inline? () ::<boolean>
-   (result (SCM_VM_COMPILER_FLAG_IS_SET (Scm_VM) SCM_COMPILE_NO_POST_INLINE_OPT)))
+   (return (SCM_VM_COMPILER_FLAG_IS_SET (Scm_VM) SCM_COMPILE_NO_POST_INLINE_OPT)))
  (define-cproc vm-compiler-flag-no-lifting? () ::<boolean>
-   (result (SCM_VM_COMPILER_FLAG_IS_SET (Scm_VM) SCM_COMPILE_NO_LIFTING)))
+   (return (SCM_VM_COMPILER_FLAG_IS_SET (Scm_VM) SCM_COMPILE_NO_LIFTING)))
 
  (define-enum SCM_COMPILE_NOINLINE_GLOBALS)
  (define-enum SCM_COMPILE_NOINLINE_LOCALS)
@@ -6269,7 +6269,7 @@
  (define-enum SCM_COMPILE_ENABLE_CEXPR)
 
  ;; Set/get VM's current module info. (temporary)
- (define-cproc vm-current-module () (result (SCM_OBJ (-> (Scm_VM) module))))
+ (define-cproc vm-current-module () (return (SCM_OBJ (-> (Scm_VM) module))))
  (define-cproc vm-set-current-module (mod::<module>) ::<void>
    (set! (-> (Scm_VM) module) mod))
  )

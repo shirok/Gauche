@@ -41,21 +41,21 @@
 
 (define-cproc string->regexp (str::<string> :key (case-fold #f))
   (let* ([flags::int (?: (SCM_BOOL_VALUE case-fold) SCM_REGEXP_CASE_FOLD 0)])
-    (result (Scm_RegComp str flags))))
-(define-cproc regexp-ast (regexp::<regexp>) (result (-> regexp ast)))
+    (return (Scm_RegComp str flags))))
+(define-cproc regexp-ast (regexp::<regexp>) (return (-> regexp ast)))
 (define-cproc regexp-case-fold? (regexp::<regexp>) ::<boolean>
-  (result (logand (-> regexp flags) SCM_REGEXP_CASE_FOLD)))
+  (return (logand (-> regexp flags) SCM_REGEXP_CASE_FOLD)))
 
 (define-cproc regexp-parse (str::<string> :key (case-fold #f))
   (let* ([flags::int (?: (SCM_BOOL_VALUE case-fold) SCM_REGEXP_CASE_FOLD 0)])
-    (result (Scm_RegComp str (logior flags SCM_REGEXP_PARSE_ONLY)))))
+    (return (Scm_RegComp str (logior flags SCM_REGEXP_PARSE_ONLY)))))
 (define-cproc regexp-compile (ast)  Scm_RegCompFromAST)
 (define-cproc regexp-optimize (ast) Scm_RegOptimizeAST)
 
 (define-cproc regexp-num-groups (regexp::<regexp>) ::<int>
-  (result (-> regexp numGroups)))
+  (return (-> regexp numGroups)))
 (define-cproc regexp-named-groups (regexp::<regexp>)
-  (result (-> regexp grpNames)))
+  (return (-> regexp grpNames)))
 
 (define-cproc rxmatch (regexp str::<string>)
   (let* ([rx::ScmRegexp* NULL])
@@ -63,7 +63,7 @@
                                                       (SCM_STRING regexp) 0)))]
           [(SCM_REGEXPP regexp) (set! rx (SCM_REGEXP regexp))]
           [else (SCM_TYPE_ERROR regexp "regexp")])
-    (result (Scm_RegExec rx str))))
+    (return (Scm_RegExec rx str))))
 
 (inline-stub
  (define-cise-stmt rxmatchop
@@ -71,10 +71,10 @@
    [(_ fn)        (template `(,fn (SCM_REGMATCH match) obj))]
    :where
    (define (template result)
-     `(cond [(SCM_FALSEP match) (result '#f)]
-            [(SCM_REGMATCHP match) (result ,result)]
+     `(cond [(SCM_FALSEP match) (return '#f)]
+            [(SCM_REGMATCHP match) (return ,result)]
             [else (SCM_TYPE_ERROR match "regmatch object or #f")
-                  (result SCM_UNDEFINED)])))
+                  (return SCM_UNDEFINED)])))
  )
 
 (define-cproc rxmatch-substring (match :optional (obj 0))
@@ -89,11 +89,11 @@
   (rxmatchop Scm_RegMatchAfter))
 (define-cproc rxmatch-num-matches (match)
   (if (SCM_FALSEP match)
-    (result (SCM_MAKE_INT 0))
+    (return (SCM_MAKE_INT 0))
     (rxmatchop (SCM_MAKE_INT (-> (SCM_REGMATCH match) numMatches)))))
 (define-cproc rxmatch-named-groups (match)
   (if (SCM_FALSEP match)
-    (result SCM_NIL)
+    (return SCM_NIL)
     (rxmatchop (-> (SCM_REGMATCH match) grpNames))))
 
 (select-module gauche.internal)
@@ -103,9 +103,9 @@
 (define-cproc %regexp-pattern (regexp::<regexp>)
   (setter (regexp::<regexp> pat::<string>) ::<void>
           (set! (-> regexp pattern) (SCM_OBJ pat)))
-  (result (-> regexp pattern)))
+  (return (-> regexp pattern)))
 (define-cproc %regexp-laset (regexp::<regexp>) ; for testing
-  (result (-> regexp laset)))
+  (return (-> regexp laset)))
 
 (select-module gauche.internal)
 ;; aux routine for regexp-replace[-all]

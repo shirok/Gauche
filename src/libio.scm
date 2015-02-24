@@ -63,36 +63,36 @@
 
 (define-cproc current-input-port (:optional newport)
   (cond [(SCM_IPORTP newport)
-         (result (Scm_SetCurrentInputPort (SCM_PORT newport)))]
+         (return (Scm_SetCurrentInputPort (SCM_PORT newport)))]
         [(not (SCM_UNBOUNDP newport))
          (Scm_TypeError "current-input-port" "input port" newport)
-         (result SCM_UNDEFINED)]
-        [else (result (SCM_OBJ SCM_CURIN))]))
+         (return SCM_UNDEFINED)]
+        [else (return (SCM_OBJ SCM_CURIN))]))
 
 (define-cproc current-output-port (:optional newport)
   (cond [(SCM_OPORTP newport)
-         (result (Scm_SetCurrentOutputPort (SCM_PORT newport)))]
+         (return (Scm_SetCurrentOutputPort (SCM_PORT newport)))]
         [(not (SCM_UNBOUNDP newport))
          (Scm_TypeError "current-output-port" "output port" newport)
-         (result SCM_UNDEFINED)]
-        [else (result (SCM_OBJ SCM_CUROUT))]))
+         (return SCM_UNDEFINED)]
+        [else (return (SCM_OBJ SCM_CUROUT))]))
 
 (select-module gauche)
 
 (define-cproc current-error-port (:optional newport)
   (cond
-   [(SCM_OPORTP newport) (result (Scm_SetCurrentErrorPort (SCM_PORT newport)))]
+   [(SCM_OPORTP newport) (return (Scm_SetCurrentErrorPort (SCM_PORT newport)))]
    [(not (SCM_UNBOUNDP newport))
     (Scm_TypeError "current-error-port" "output port" newport)
-    (result SCM_UNDEFINED)]
-   [else (result (SCM_OBJ SCM_CURERR))]))
+    (return SCM_UNDEFINED)]
+   [else (return (SCM_OBJ SCM_CURERR))]))
 
 (define-cproc standard-input-port (:optional (p::<input-port>? #f))
-  (result (?: p (Scm_SetStdin p) (Scm_Stdin))))
+  (return (?: p (Scm_SetStdin p) (Scm_Stdin))))
 (define-cproc standard-output-port (:optional (p::<output-port>? #f))
-  (result (?: p (Scm_SetStdout p) (Scm_Stdout))))
+  (return (?: p (Scm_SetStdout p) (Scm_Stdout))))
 (define-cproc standard-error-port (:optional (p::<output-port>? #f))
-  (result (?: p (Scm_SetStderr p) (Scm_Stderr))))
+  (return (?: p (Scm_SetStderr p) (Scm_Stderr))))
 
 
 ;;
@@ -106,7 +106,7 @@
 
 (define-cproc port-file-number (port::<port>)
   (let* ([i::int (Scm_PortFileNo port)])
-    (result (?: (< i 0) SCM_FALSE (Scm_MakeInteger i)))))
+    (return (?: (< i 0) SCM_FALSE (Scm_MakeInteger i)))))
 (define-cproc port-fd-dup! (dst::<port> src::<port>) ::<void> Scm_PortFdDup)
 
 (define-cproc port-attribute-set! (port::<port> key val)
@@ -125,10 +125,10 @@
 
 (define-cproc port-type (port::<port>)
   (case (SCM_PORT_TYPE port)
-    [(SCM_PORT_FILE) (result 'file)]
-    [(SCM_PORT_PROC) (result 'proc)]
-    [(SCM_PORT_OSTR SCM_PORT_ISTR) (result 'string)]
-    [else (result '#f)]))
+    [(SCM_PORT_FILE) (return 'file)]
+    [(SCM_PORT_PROC) (return 'proc)]
+    [(SCM_PORT_OSTR SCM_PORT_ISTR) (return 'string)]
+    [else (return '#f)]))
 
 (define-cproc port-buffering (port::<port>)
   (setter (port::<port> mode) ::<void>
@@ -136,7 +136,7 @@
             (Scm_Error "can't set buffering mode to non-buffered port: %S"port))
           (Scm_SetPortBufferingMode
            port (Scm_BufferingMode mode (-> port direction) -1)))
-  (result (Scm_GetPortBufferingModeAsKeyword port)))
+  (return (Scm_GetPortBufferingModeAsKeyword port)))
 
 (define-cproc port-case-fold-set! (port::<port> flag::<boolean>) ::<void>
   (if flag
@@ -195,7 +195,7 @@
                                 O_RDONLY bufmode 0)])
       (when (and (SCM_FALSEP o) (not (%open/allow-noexist? ignerr)))
         (Scm_SysError "couldn't open input file: %S" path))
-      (result o))))
+      (return o))))
 
 ;; Primitive open routine.  The Scheme wrapper handles other keyword args
 (define-cproc %open-output-file (path::<string>
@@ -234,7 +234,7 @@
                  (not (%open/allow-noexist? ignerr-noexist))
                  (not (%open/allow-exist? ignerr-exist)))
         (Scm_Error "couldn't open output file: %S" path))
-      (result o))))
+      (return o))))
 
 ;; Open port from fd
 (select-module gauche)
@@ -246,7 +246,7 @@
   (let* ([bufmode::int (Scm_BufferingMode buffering SCM_PORT_INPUT
                                           SCM_PORT_BUFFER_FULL)])
     (when (< fd 0) (Scm_Error "bad file descriptor: %d" fd))
-    (result (Scm_MakePortWithFd name SCM_PORT_INPUT fd bufmode ownerP))))
+    (return (Scm_MakePortWithFd name SCM_PORT_INPUT fd bufmode ownerP))))
 
 (define-cproc open-output-fd-port (fd::<fixnum>
                                    :key (buffering #f)
@@ -255,7 +255,7 @@
   (let* ([bufmode::int (Scm_BufferingMode buffering SCM_PORT_OUTPUT
                                           SCM_PORT_BUFFER_FULL)])
     (when (< fd 0) (Scm_Error "bad file descriptor: %d" fd))
-    (result (Scm_MakePortWithFd name SCM_PORT_OUTPUT fd bufmode owner?))))
+    (return (Scm_MakePortWithFd name SCM_PORT_OUTPUT fd bufmode owner?))))
 
 ;; Buffered port
 (select-module gauche)
@@ -299,7 +299,7 @@
           (ref bufrec ready)   NULL
           (ref bufrec filenum) NULL
           (ref bufrec data)    (cast void* filler))
-    (result (Scm_MakeBufferedPort SCM_CLASS_PORT SCM_FALSE SCM_PORT_INPUT TRUE (& bufrec)))))
+    (return (Scm_MakeBufferedPort SCM_CLASS_PORT SCM_FALSE SCM_PORT_INPUT TRUE (& bufrec)))))
 
 (inline-stub
  (define-cfn bufport-flusher (p::ScmPort* cnt::int forcep::int) ::int :static
@@ -322,7 +322,7 @@
           (ref bufrec ready)   NULL
           (ref bufrec filenum) NULL
           (ref bufrec data)    (cast void* flusher))
-    (result (Scm_MakeBufferedPort SCM_CLASS_PORT SCM_FALSE SCM_PORT_OUTPUT
+    (return (Scm_MakeBufferedPort SCM_CLASS_PORT SCM_FALSE SCM_PORT_OUTPUT
                                   TRUE (& bufrec)))))
 
 ;; String ports (srfi-6)
@@ -335,13 +335,13 @@
   Scm_MakeOutputStringPort)
 
 (define-cproc get-output-string (oport::<output-port>) ;SRFI-6
-  (result (Scm_GetOutputString oport 0)))
+  (return (Scm_GetOutputString oport 0)))
 
 (define-cproc get-output-byte-string (oport::<output-port>)
-  (result (Scm_GetOutputString oport SCM_STRING_INCOMPLETE)))
+  (return (Scm_GetOutputString oport SCM_STRING_INCOMPLETE)))
 
 (define-cproc get-remaining-input-string (iport::<input-port>)
-  (result (Scm_GetRemainingInputString iport 0)))
+  (return (Scm_GetRemainingInputString iport 0)))
 
 ;; Coding aware port
 (select-module gauche)
@@ -396,7 +396,7 @@
 (define-cproc %port-recursive-context (port::<port>)
   (setter (port::<port> obj) ::<void>
           (set! (-> port recursiveContext) obj))
-  (result (-> port recursiveContext)))
+  (return (-> port recursiveContext)))
 
 (define-cproc %port-lock! (port::<port>) ::<void>
   (let* ([vm::ScmVM* (Scm_VM)])
@@ -440,18 +440,18 @@
 (select-module scheme)
 
 (define-cproc read (:optional (port::<input-port> (current-input-port)))
-  (result (Scm_Read (SCM_OBJ port))))
+  (return (Scm_Read (SCM_OBJ port))))
 
 (define-cproc read-char (:optional (port::<input-port> (current-input-port)))
   (inliner READ-CHAR)
   (let* ([ch::int])
     (SCM_GETC ch port)
-    (result (?: (== ch EOF) SCM_EOF (SCM_MAKE_CHAR ch)))))
+    (return (?: (== ch EOF) SCM_EOF (SCM_MAKE_CHAR ch)))))
 
 (define-cproc peek-char (:optional (port::<input-port> (current-input-port)))
   (inliner PEEK-CHAR)
   (let* ([ch::ScmChar (Scm_Peekc port)])
-    (result (?: (== ch SCM_CHAR_INVALID) SCM_EOF (SCM_MAKE_CHAR ch)))))
+    (return (?: (== ch SCM_CHAR_INVALID) SCM_EOF (SCM_MAKE_CHAR ch)))))
 
 (define-cproc eof-object? (obj) ::<boolean> :fast-flonum
   (inliner EOFP) SCM_EOFP)
@@ -462,7 +462,7 @@
 
 (select-module gauche)
 
-(define-cproc eof-object () :constant (result SCM_EOF)) ;R6RS
+(define-cproc eof-object () :constant (return SCM_EOF)) ;R6RS
 
 (define-cproc byte-ready? (:optional (port::<input-port> (current-input-port)))
   ::<boolean> Scm_ByteReady)
@@ -470,11 +470,11 @@
 (define-cproc read-byte (:optional (port::<input-port> (current-input-port)))
   (let* ([b::int])
     (SCM_GETB b port)
-    (result (?: (< b 0) SCM_EOF (SCM_MAKE_INT b)))))
+    (return (?: (< b 0) SCM_EOF (SCM_MAKE_INT b)))))
 
 (define-cproc peek-byte (:optional (port::<input-port> (current-input-port)))
   (let* ([b::int (Scm_Peekb port)])
-    (result (?: (< b 0) SCM_EOF (SCM_MAKE_INT b)))))
+    (return (?: (< b 0) SCM_EOF (SCM_MAKE_INT b)))))
 
 (define-cproc read-line (:optional (port::<input-port> (current-input-port))
                                    (allowbytestr #f))
@@ -483,7 +483,7 @@
                (SCM_STRINGP r)
                (SCM_STRING_INCOMPLETE_P r))
       (Scm_ReadError port "read-line: encountered illegal byte sequence: %S" r))
-    (result r)))
+    (return r)))
 
 (define (read-string n :optional (port (current-input-port)))
   (define o (open-output-string :private? #t))
@@ -503,19 +503,19 @@
   (when (< bytes 0)
     (Scm_Error "bytes must be non-negative integer: %d" bytes))
   (if (== bytes 0)
-    (result (Scm_MakeString "" 0 0 0))
+    (return (Scm_MakeString "" 0 0 0))
     (let* ([buf::char* (SCM_NEW_ATOMIC2 (C: char*) (+ bytes 1))]
            [nread::int (Scm_Getz buf bytes port)])
-      (cond [(<= nread 0) (result SCM_EOF)]
+      (cond [(<= nread 0) (return SCM_EOF)]
             [else
              (SCM_ASSERT (<= nread bytes))
              (set! (aref buf nread) #\x00)
-             (result (Scm_MakeString buf nread nread SCM_STRING_INCOMPLETE))]
+             (return (Scm_MakeString buf nread nread SCM_STRING_INCOMPLETE))]
             ))))
 
 (define-cproc read-list (closer::<char>
                          :optional (port (current-input-port)))
-  (result (Scm_ReadList port closer)))
+  (return (Scm_ReadList port closer)))
 
 (define-cproc port->byte-string (port::<input-port>)
   (let* ([ds::ScmDString] [buf::(.array char (1024))])
@@ -523,13 +523,13 @@
     (loop (let* ([nbytes::int (Scm_Getz buf 1024 port)])
             (when (<= nbytes 0) (break))
             (Scm_DStringPutz (& ds) buf nbytes)))
-    (result (Scm_DStringGet (& ds) SCM_STRING_INCOMPLETE))))
+    (return (Scm_DStringGet (& ds) SCM_STRING_INCOMPLETE))))
 
 ;; Reader parameters
 (define-cproc reader-lexical-mode (:optional k)
   (if (SCM_UNBOUNDP k)
-    (result (Scm_ReaderLexicalMode))
-    (result (Scm_SetReaderLexicalMode k))))
+    (return (Scm_ReaderLexicalMode))
+    (return (Scm_SetReaderLexicalMode k))))
 
 (select-module gauche.internal)
 (define-cproc %port-ungotten-chars (port::<input-port>)
@@ -541,10 +541,10 @@
 (select-module gauche)
 
 (define-cproc define-reader-ctor (symbol proc :optional (finisher #f))
-  (result (Scm_DefineReaderCtor symbol proc finisher SCM_FALSE)))
+  (return (Scm_DefineReaderCtor symbol proc finisher SCM_FALSE)))
 
 (define-cproc %get-reader-ctor (symbol)
-  (result (Scm_GetReaderCtor symbol SCM_FALSE)))
+  (return (Scm_GetReaderCtor symbol SCM_FALSE)))
 
 (define-cproc define-reader-directive (symbol proc)
   Scm_DefineReaderDirective)
@@ -559,20 +559,20 @@
 
 (define-cproc current-read-context (:optional ctx)
   (if (SCM_UNBOUNDP ctx)
-    (result (SCM_OBJ (Scm_CurrentReadContext)))
+    (return (SCM_OBJ (Scm_CurrentReadContext)))
     (if (SCM_READ_CONTEXT_P ctx)
-      (result (SCM_OBJ (Scm_SetCurrentReadContext (SCM_READ_CONTEXT ctx))))
+      (return (SCM_OBJ (Scm_SetCurrentReadContext (SCM_READ_CONTEXT ctx))))
       (Scm_Error "<read-context> required, but got:" ctx))))
 
 (define-cproc read-reference? (obj) ::<boolean> SCM_READ_REFERENCE_P)
 
 (define-cproc read-reference-has-value? (ref::<read-reference>)
-  ::<boolean> (result (not (SCM_UNBOUNDP (-> ref value)))))
+  ::<boolean> (return (not (SCM_UNBOUNDP (-> ref value)))))
 
 (define-cproc read-reference-value (ref::<read-reference>)
   (when (SCM_UNBOUNDP (-> ref value))
     (Scm_Error "read reference hasn't been resolved"))
-  (result (-> ref value)))
+  (return (-> ref value)))
 
 ;; srfi-38
 (define-in-module gauche read-with-shared-structure read)
@@ -638,11 +638,11 @@
   (when (or (< byte 0) (> byte 255))
     (Scm_Error "argument out of range: %d" byte))
   (SCM_PUTB byte port)
-  (result 1))
+  (return 1))
 
 (define-cproc write-limited (obj limit::<fixnum>
                                  :optional (port (current-output-port)))
-  ::<int> (result (Scm_WriteLimited obj port SCM_WRITE_WRITE limit)))
+  ::<int> (return (Scm_WriteLimited obj port SCM_WRITE_WRITE limit)))
 
 (define write* write-shared)
 
@@ -657,7 +657,7 @@
 (select-module gauche.internal)
 
 (define-cproc write-need-recurse? (obj) ::<boolean>
-  (result (not (or (not (SCM_PTRP obj))
+  (return (not (or (not (SCM_PTRP obj))
                    (SCM_NUMBERP obj)
                    (SCM_KEYWORDP obj)
                    (and (SCM_SYMBOLP obj) (SCM_SYMBOL_INTERNED obj)) 

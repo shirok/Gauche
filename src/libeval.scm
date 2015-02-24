@@ -55,11 +55,11 @@
 ;; for now, just return a module.
 (define-cproc null-environment (version::<fixnum>)
   (when (!= version 5) (Scm_Error "unknown rNrs version: %d" version))
-  (result (SCM_OBJ (Scm_NullModule))))
+  (return (SCM_OBJ (Scm_NullModule))))
 (define-cproc scheme-report-environment (version::<fixnum>)
   (when (!= version 5) (Scm_Error "unknown rNrs version: %d" version))
-  (result (SCM_OBJ (Scm_SchemeModule))))
-(define-cproc interaction-environment () (result (SCM_OBJ (Scm_UserModule))))
+  (return (SCM_OBJ (Scm_SchemeModule))))
+(define-cproc interaction-environment () (return (SCM_OBJ (Scm_UserModule))))
 
 ;;;
 ;;; Load
@@ -175,10 +175,10 @@
           (logior (-> ctx flags)
                   (logior RCTX_LITERAL_IMMUTABLE
                           RCTX_SOURCE_INFO)))
-    (result (SCM_OBJ ctx))))
+    (return (SCM_OBJ ctx))))
 
 (define-cproc %load-verbose? () ::<boolean>
-  (result (SCM_VM_RUNTIME_FLAG_IS_SET (Scm_VM) SCM_LOAD_VERBOSE)))
+  (return (SCM_VM_RUNTIME_FLAG_IS_SET (Scm_VM) SCM_LOAD_VERBOSE)))
 
 
 (select-module gauche)
@@ -187,7 +187,7 @@
 (define-cproc dynamic-load (file::<string>
                             :key (init-function #f)
                             (export-symbols #f)); for backward compatibility
-  (result (Scm_DynLoad file init_function 0)))
+  (return (Scm_DynLoad file init_function 0)))
 
 ;; API
 (define-cproc provide (feature)   Scm_Provide)
@@ -201,10 +201,10 @@
 ;; NB: 'require' is recognized by the compiler, which calls
 ;; this one directly.
 (define-cproc %require (feature) ::<boolean>
-  (result (not (Scm_Require feature SCM_LOAD_PROPAGATE_ERROR NULL))))
+  (return (not (Scm_Require feature SCM_LOAD_PROPAGATE_ERROR NULL))))
 
 (define-cproc %add-load-path (path::<const-cstring> :optional afterp)
-  (result (Scm_AddLoadPath path (not (SCM_FALSEP afterp)))))
+  (return (Scm_AddLoadPath path (not (SCM_FALSEP afterp)))))
 
 (define-cproc %autoload (mod::<module> file-or-module entries)
   ::<void> Scm_DefineAutoload)
@@ -410,11 +410,11 @@
 
 (define-cproc call-syntax-handler (syn program cenv)
   (SCM_ASSERT (SCM_SYNTAXP syn))
-  (result (Scm_VMApply2 (-> (SCM_SYNTAX syn) handler) program cenv)))
+  (return (Scm_VMApply2 (-> (SCM_SYNTAX syn) handler) program cenv)))
 
 (define-cproc syntax-handler (syn)
   (SCM_ASSERT (SCM_SYNTAXP syn))
-  (result (-> (SCM_SYNTAX syn) handler)))
+  (return (-> (SCM_SYNTAX syn) handler)))
 
 ;;;
 ;;; System termination
@@ -456,7 +456,7 @@
 
 ;; API
 (define-cproc gc-stat ()
-  (result
+  (return
    (list
     (list ':total-heap-size
           (Scm_MakeIntegerFromUI (cast u_long (GC_get_heap_size))))
@@ -478,13 +478,13 @@
 (select-module gauche)
 ;; API
 ;; Obtain info about gauche itself
-(define-cproc gauche-version () ::<const-cstring> (result GAUCHE_VERSION))
+(define-cproc gauche-version () ::<const-cstring> (return GAUCHE_VERSION))
 (define-cproc gauche-architecture () ::<const-cstring> Scm_HostArchitecture)
 (define-cproc gauche-library-directory () Scm_LibraryDirectory)
 (define-cproc gauche-architecture-directory () Scm_ArchitectureDirectory)
 (define-cproc gauche-site-library-directory () Scm_SiteLibraryDirectory)
 (define-cproc gauche-site-architecture-directory () Scm_SiteArchitectureDirectory)
-(define-cproc gauche-dso-suffix () ::<const-cstring> (result SHLIB_SO_SUFFIX))
+(define-cproc gauche-dso-suffix () ::<const-cstring> (return SHLIB_SO_SUFFIX))
 
 ;; Temporary - only usable on Windows(mingw) and Darwin; used to replace
 ;; '@' in the paths embedded in gauche.config.
@@ -526,7 +526,7 @@
  )
 ;; API
 ;; Other thread stuff is in ext/threads/thrlib.stub
-(define-cproc current-thread () (result (SCM_OBJ (Scm_VM))))
+(define-cproc current-thread () (return (SCM_OBJ (Scm_VM))))
 
 ;; API
 (define-cproc vm-dump
@@ -536,12 +536,12 @@
 ;; API
 (define-cproc vm-get-stack-trace
   (:optional (vm::<thread> (c "SCM_OBJ(Scm_VM())")))
-  (result (Scm_VMGetStack vm)))
+  (return (Scm_VMGetStack vm)))
 
 ;; API
 (define-cproc vm-get-stack-trace-lite
   (:optional (vm::<thread> (c "SCM_OBJ(Scm_VM())")))
-  (result (Scm_VMGetStackLite vm)))
+  (return (Scm_VMGetStackLite vm)))
 
 (define-cproc %vm-show-stack-trace (trace :key
                                           (port::<port> (current-output-port))
@@ -569,19 +569,19 @@
 (define-cproc %vm-make-parameter-slot () ::<int>
   (let* ([loc::ScmParameterLoc])
     (Scm_InitParameterLoc (Scm_VM) (& loc) SCM_FALSE)
-    (result (ref loc index))))
+    (return (ref loc index))))
 
 (define-cproc %vm-parameter-ref (index::<int> init-value)
   (let* ([loc::ScmParameterLoc])
     (set! (ref loc index) index
           (ref loc initialValue) init-value)
-    (result (Scm_ParameterRef (Scm_VM) (& loc)))))
+    (return (Scm_ParameterRef (Scm_VM) (& loc)))))
 
 (define-cproc %vm-parameter-set! (index::<int> init-value new-value)
   (let* ([loc::ScmParameterLoc])
     (set! (ref loc index) index
           (ref loc initialValue) init-value)
-    (result (Scm_ParameterSet (Scm_VM) (& loc) new-value))))
+    (return (Scm_ParameterSet (Scm_VM) (& loc) new-value))))
 
 ;; TRANSIENT
 ;; For the backward compatibility---files precompiled by 0.9.2 or before

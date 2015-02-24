@@ -45,7 +45,7 @@
 (select-module scheme)
 
 (define-cproc vector (:rest args) (inliner VEC)
-  (result (Scm_ListToVector args 0 -1)))
+  (return (Scm_ListToVector args 0 -1)))
 
 (define-cproc vector? (obj) ::<boolean> :fast-flonum :constant
   (inliner VECTORP) SCM_VECTORP)
@@ -61,8 +61,8 @@
              (>= (SCM_INT_VALUE k) (SCM_VECTOR_SIZE vec)))
          (when (SCM_UNBOUNDP fallback)
            (Scm_Error "vector-ref index out of range: %S" k))
-         (result fallback)]
-        [else (result (SCM_VECTOR_ELEMENT vec (SCM_INT_VALUE k)))]))
+         (return fallback)]
+        [else (return (SCM_VECTOR_ELEMENT vec (SCM_INT_VALUE k)))]))
 
 (define-cproc vector-set! (vec::<vector> k::<integer> obj) ::<void>
   (if (or (SCM_BIGNUMP k)
@@ -101,7 +101,7 @@
 (define-cproc make-weak-vector (size::<fixnum>) Scm_MakeWeakVector)
 
 (define-cproc weak-vector-length (wv::<weak-vector>) ::<int>
-  (result (-> wv size)))
+  (return (-> wv size)))
 
 (define-cproc weak-vector-ref
   (wv::<weak-vector> index::<fixnum> :optional fallback)
@@ -123,7 +123,7 @@
   :constant
   (unless (== (Scm_UVectorType (SCM_CLASS_OF v)) t)
     (Scm_TypeError "vec" (Scm_UVectorTypeName t) (SCM_OBJ v)))
-  (result (Scm_VMUVectorRef v t (SCM_INT_VALUE k) fallback)))
+  (return (Scm_VMUVectorRef v t (SCM_INT_VALUE k) fallback)))
 
 (select-module gauche)
 (inline-stub

@@ -46,7 +46,7 @@
   (let* ([flags::u_long (logior (?: no-compare SCM_COMPARATOR_NO_ORDER 0)
                                 (?: no-hash SCM_COMPARATOR_NO_HASH 0)
                                 (?: any-type SCM_COMPARATOR_ANY_TYPE 0))])
-    (result
+    (return
      (Scm_MakeComparator type-test equality-test comparison-proc hash
                          name flags))))
 
@@ -83,26 +83,26 @@
 (select-module gauche)
 (define-cproc comparator? (obj) ::<boolean> SCM_COMPARATORP)
 (define-cproc comparator-comparison-procedure? (c::<comparator>) ::<boolean>
-  (result (not (logand (-> c flags) SCM_COMPARATOR_NO_ORDER))))
+  (return (not (logand (-> c flags) SCM_COMPARATOR_NO_ORDER))))
 (define-cproc comparator-hash-function? (c::<comparator>) ::<boolean>
-  (result (not (logand (-> c flags) SCM_COMPARATOR_NO_HASH))))
+  (return (not (logand (-> c flags) SCM_COMPARATOR_NO_HASH))))
 
 (define-cproc comparator-type-test-procedure (c::<comparator>) :constant
-  (result (-> c typeFn)))
+  (return (-> c typeFn)))
 (define-cproc comparator-equality-predicate (c::<comparator>) :constant
-  (result (-> c eqFn)))
+  (return (-> c eqFn)))
 (define-cproc comparator-comparison-procedure (c::<comparator>) :constant
-  (result (-> c compareFn)))
+  (return (-> c compareFn)))
 (define-cproc comparator-hash-function (c::<comparator>) :constant
-  (result (-> c hashFn)))
+  (return (-> c hashFn)))
 
 ;; We implement these in C for performance.
 ;; TODO: We might be able to do shortcut in comparator-equal? by recognizing
 ;; the equality predicate to be eq? or eqv?.
 (define-cproc comparator-test-type (c::<comparator> obj) :constant
   (if (logand (-> c flags) SCM_COMPARATOR_ANY_TYPE)
-    (result SCM_TRUE)
-    (result (Scm_VMApply1 (-> c typeFn) obj))))
+    (return SCM_TRUE)
+    (return (Scm_VMApply1 (-> c typeFn) obj))))
 
 ;; Utility to write check-then-operate.
 (inline-stub
@@ -125,7 +125,7 @@
          (set! (aref data 0) ,cmp)
          (set! (aref data 1) ,arg)
          (Scm_VMPushCC ,cc-fn data 2)
-         (result (Scm_VMApply1 (-> ,cmp typeFn) ,arg))))])
+         (return (Scm_VMApply1 (-> ,cmp typeFn) ,arg))))])
 
  ;; assumes 'data' and 'result' is bound.  evaluate body where
  ;; 'cmp', 'a' and 'b' is bound.
@@ -163,7 +163,7 @@
          (set! (aref data 1) ,a)
          (set! (aref data 2) ,b)
          (Scm_VMPushCC ,cc-fn-a data 3)
-         (result (Scm_VMApply1 (-> ,cmp typeFn) ,a))))])
+         (return (Scm_VMApply1 (-> ,cmp typeFn) ,a))))])
  )
 
 (inline-stub
@@ -171,7 +171,7 @@
    (comparator-cc-body1 (return SCM_TRUE)))
  (define-cproc comparator-check-type (c::<comparator> obj) :constant
    (comparator-proc-body1 c obj comparator-check-type-cc
-                          (result SCM_TRUE)))
+                          (return SCM_TRUE)))
  )
 
 (inline-stub
@@ -180,7 +180,7 @@
 
  (define-cproc comparator-hash (c::<comparator> x) :constant
    (comparator-proc-body1 c x comparator-hash-cc
-                          (result (Scm_VMApply1 (-> c hashFn) x))))
+                          (return (Scm_VMApply1 (-> c hashFn) x))))
  )
 
 (inline-stub
@@ -190,7 +190,7 @@
    (comparator-cc-body2a comparator-equal-cc-b))
  (define-cproc comparator-equal? (c::<comparator> a b) :constant
    (comparator-proc-body2 c a b comparator-equal-cc-a
-                          (result (Scm_VMApply2 (-> c eqFn) a b))))
+                          (return (Scm_VMApply2 (-> c eqFn) a b))))
  )
 
 (inline-stub
@@ -200,7 +200,7 @@
    (comparator-cc-body2a comparator-compare-cc-b))
  (define-cproc comparator-compare (c::<comparator> a b) :constant
    (comparator-proc-body2 c a b comparator-compare-cc-a
-                          (result (Scm_VMApply2 (-> c compareFn) a b))))
+                          (return (Scm_VMApply2 (-> c compareFn) a b))))
  )
 
 
@@ -217,8 +217,8 @@
 ;;  Returns 0 iff (eq? x y) => #t
 (define-cproc eq-compare (x y) ::<fixnum>
   (if (SCM_EQ x y)
-    (result 0)
-    (result (?: (< (SCM_WORD x) (SCM_WORD y)) -1 1))))
+    (return 0)
+    (return (?: (< (SCM_WORD x) (SCM_WORD y)) -1 1))))
 
 ;;;
 ;;; Sorting
@@ -232,16 +232,16 @@
   (cond [(SCM_VECTORP seq)
          (let* ([r (Scm_VectorCopy (SCM_VECTOR seq) 0 -1 SCM_UNDEFINED)])
            (Scm_SortArray (SCM_VECTOR_ELEMENTS r) (SCM_VECTOR_SIZE r) '#f)
-           (result r))]
-        [(>= (Scm_Length seq) 0) (result (Scm_SortList seq '#f))]
+           (return r))]
+        [(>= (Scm_Length seq) 0) (return (Scm_SortList seq '#f))]
         [else (SCM_TYPE_ERROR seq "proper list or vector")
-              (result SCM_UNDEFINED)]))
+              (return SCM_UNDEFINED)]))
 
 (define-cproc %sort! (seq)
   (cond [(SCM_VECTORP seq)
          (Scm_SortArray (SCM_VECTOR_ELEMENTS seq) (SCM_VECTOR_SIZE seq) '#f)
-         (result seq)]
-        [(>= (Scm_Length seq) 0) (result (Scm_SortListX seq '#f))]
+         (return seq)]
+        [(>= (Scm_Length seq) 0) (return (Scm_SortListX seq '#f))]
         [else (SCM_TYPE_ERROR seq "proper list or vector")
-              (result SCM_UNDEFINED)]))
+              (return SCM_UNDEFINED)]))
 

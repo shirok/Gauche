@@ -43,9 +43,9 @@
 
 (define-cproc has-setter? (proc) ::<boolean> Scm_HasSetter)
 
-(define-cproc identity (val) :constant (result val))   ;sometimes useful
+(define-cproc identity (val) :constant (return val))   ;sometimes useful
 
-(define-cproc undefined () (inliner CONSTU) (result SCM_UNDEFINED))
+(define-cproc undefined () (inliner CONSTU) (return SCM_UNDEFINED))
 (define-cproc undefined? (obj) ::<boolean> :constant SCM_UNDEFINEDP)
 
 (define (warn fmt . args)
@@ -59,9 +59,9 @@
 ;; module.  It is a bit awkward to do so in the current genstub.
 ;; TODO: Better stub syntax for handling modules.
 (select-module srfi-111)
-(define-cproc box (v) (result (SCM_OBJ (Scm_MakeBox v))))
-(define-cproc box? (v) ::<boolean> (result (SCM_BOXP v)))
-(define-cproc unbox (b::<box>) (result (SCM_BOX_VALUE b)))
+(define-cproc box (v) (return (SCM_OBJ (Scm_MakeBox v))))
+(define-cproc box? (v) ::<boolean> (return (SCM_BOXP v)))
+(define-cproc unbox (b::<box>) (return (SCM_BOX_VALUE b)))
 (define-cproc set-box! (b::<box> v) ::<void> (SCM_BOX_SET b v))
 (export box box? unbox set-box!)
 

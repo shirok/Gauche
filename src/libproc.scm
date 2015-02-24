@@ -49,7 +49,7 @@
 (define-cproc apply (proc arg1 :rest args)
   (inliner TAIL-APPLY)
   (let* ([head::ScmObj] [tail::ScmObj])
-    (cond [(SCM_NULLP args) (result (Scm_VMApply proc arg1))]
+    (cond [(SCM_NULLP args) (return (Scm_VMApply proc arg1))]
           [else (set! head (Scm_Cons arg1 SCM_NIL)
                       tail head)
                 (dopairs [cp args]
@@ -59,7 +59,7 @@
                   (unless (SCM_PAIRP (SCM_CDR cp))
                     (Scm_Error "improper list not allowed: %S" (SCM_CDR cp)))
                   (SCM_APPEND1 head tail (SCM_CAR cp)))
-                (result (Scm_VMApply proc head))])))
+                (return (Scm_VMApply proc head))])))
 
 (define-cproc call-with-current-continuation (proc) Scm_VMCallCC)
 (define-cproc values (:rest args) :constant (inliner VALUES) Scm_Values)
@@ -72,7 +72,7 @@
 
 (select-module gauche.internal)
 ;; for partial continuation.  See lib/gauche/partcont.scm
-(define-cproc %call/pc (proc) (result (Scm_VMCallPC proc)))
+(define-cproc %call/pc (proc) (return (Scm_VMCallPC proc)))
 
 ;;;
 ;;; Extended argument parsing
@@ -229,17 +229,17 @@
 (define-cproc subr? (obj)    ::<boolean> SCM_SUBRP)
 (define-cproc closure? (obj) ::<boolean> SCM_CLOSUREP)
 (define-cproc toplevel-closure? (obj) ::<boolean>
-  (result (and (SCM_CLOSUREP obj) (== (-> (SCM_CLOSURE obj) env) NULL))))
+  (return (and (SCM_CLOSUREP obj) (== (-> (SCM_CLOSURE obj) env) NULL))))
 
-(define-cproc closure-code (clo::<closure>) (result (-> clo code)))
+(define-cproc closure-code (clo::<closure>) (return (-> clo code)))
 (define-cproc method-code (m::<method>)
   (if (-> m func)
     ;; code is not available for C-defined method
-    (result SCM_FALSE)
-    (result (SCM_OBJ (-> m data)))))
+    (return SCM_FALSE)
+    (return (SCM_OBJ (-> m data)))))
 
 (define-cproc procedure-info (proc::<procedure>)
-  (result (SCM_PROCEDURE_INFO proc)))
+  (return (SCM_PROCEDURE_INFO proc)))
 
 ;; NB: This takes a list of classes.  But what if we support eqv-specilizer?
 ;; One idea is to let the caller wrap a concrete instance.  We'll see...

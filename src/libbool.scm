@@ -60,7 +60,7 @@
 (select-module gauche)
 ;; a convenient coercer
 (define-cproc boolean (obj) ::<boolean> :constant
-  (result (not (SCM_FALSEP obj))))
+  (return (not (SCM_FALSEP obj))))
 
 ;; R7RS
 (define (boolean=? a b . args)

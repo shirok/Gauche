@@ -47,9 +47,9 @@
 
 (select-module gauche)
 (define-cproc string-incomplete? (obj) ::<boolean>
-  (result (and (SCM_STRINGP obj) (SCM_STRING_INCOMPLETE_P obj))))
+  (return (and (SCM_STRINGP obj) (SCM_STRING_INCOMPLETE_P obj))))
 (define-cproc string-immutable? (obj) ::<boolean>
-  (result (and (SCM_STRINGP obj) (SCM_STRING_IMMUTABLE_P obj))))
+  (return (and (SCM_STRINGP obj) (SCM_STRING_IMMUTABLE_P obj))))
 
 ;;
 ;; Constructors
@@ -60,7 +60,7 @@
   Scm_MakeFillString)
 (define-cproc string (:rest chars) Scm_ListToString)
 (define-cproc string-copy (str::<string> :optional start end)
-  (result (Scm_CopyString (SCM_STRING (Scm_MaybeSubstring str start end)))))
+  (return (Scm_CopyString (SCM_STRING (Scm_MaybeSubstring str start end)))))
 
 (define-cproc string-append (:rest args) Scm_StringAppend)
 
@@ -75,7 +75,7 @@
      [(SCM_EQ grammar 'prefix) (set! gm SCM_STRING_JOIN_PREFIX)]
      [else (SCM_TYPE_ERROR grammar "one of the symbols infix, strict-infix, \
                                      suffix, or prefix")])
-    (result (Scm_StringJoin strs delim gm))))
+    (return (Scm_StringJoin strs delim gm))))
 
 (define-reader-ctor 'string-interpolate
   (^ args
@@ -87,7 +87,7 @@
 
 (select-module scheme)
 (define-cproc string->list (str::<string> :optional start end)
-  (result (Scm_StringToList (SCM_STRING (Scm_MaybeSubstring str start end)))))
+  (return (Scm_StringToList (SCM_STRING (Scm_MaybeSubstring str start end)))))
 (define-cproc list->string (list::<list>) Scm_ListToString)
 
 ;;
@@ -96,17 +96,17 @@
 
 (select-module scheme)
 (define-cproc string-length (str::<string>) ::<fixnum> :constant
-  (result (SCM_STRING_BODY_LENGTH (SCM_STRING_BODY str))))
+  (return (SCM_STRING_BODY_LENGTH (SCM_STRING_BODY str))))
 (define-cproc string-ref (str::<string> k::<fixnum> :optional fallback)
   :constant
   (let* ([r::ScmChar (Scm_StringRef str k (SCM_UNBOUNDP fallback))])
-    (result (?: (== r SCM_CHAR_INVALID) fallback (SCM_MAKE_CHAR r)))))
+    (return (?: (== r SCM_CHAR_INVALID) fallback (SCM_MAKE_CHAR r)))))
 (define-cproc substring (str::<string> start::<fixnum> end::<fixnum>)
-  (result (Scm_Substring str start end FALSE)))
+  (return (Scm_Substring str start end FALSE)))
 
 (select-module gauche)
 (define-cproc string-size (str::<string>) ::<fixnum> :constant
-  (result (SCM_STRING_BODY_SIZE (SCM_STRING_BODY str))))
+  (return (SCM_STRING_BODY_SIZE (SCM_STRING_BODY str))))
 
 (select-module gauche.internal)
 ;; see lib/gauche/stringutil.scm for generic string-split
@@ -127,7 +127,7 @@
            (set! modulo
                  (Scm_BignumToUI (SCM_BIGNUM bound) SCM_CLAMP_BOTH NULL))])
     (when (== modulo 0) (Scm_Error "argument out of domain: %S" bound))
-    (result (Scm_HashString str modulo))))
+    (return (Scm_HashString str modulo))))
 
 (select-module gauche)
 (inline-stub
@@ -148,22 +148,22 @@
 (define-cproc string-scan (s1::<string> s2 :optional (mode index))
   (let* ([rmode::int (string-scan-mode mode)])
     (cond
-     [(SCM_STRINGP s2) (result (Scm_StringScan s1 (SCM_STRING s2) rmode))]
+     [(SCM_STRINGP s2) (return (Scm_StringScan s1 (SCM_STRING s2) rmode))]
      [(SCM_CHARP s2)
-      (result (Scm_StringScanChar s1 (SCM_CHAR_VALUE s2) rmode))]
+      (return (Scm_StringScanChar s1 (SCM_CHAR_VALUE s2) rmode))]
      [else (Scm_Error "bad type of argument for s2: %S, must be \
                        either string or character" s2)
-           (result SCM_UNDEFINED)])))
+           (return SCM_UNDEFINED)])))
 
 (define-cproc string-scan-right (s1::<string> s2 :optional (mode index))
   (let* ([rmode::int (string-scan-mode mode)])
     (cond
-     [(SCM_STRINGP s2) (result (Scm_StringScanRight s1 (SCM_STRING s2) rmode))]
+     [(SCM_STRINGP s2) (return (Scm_StringScanRight s1 (SCM_STRING s2) rmode))]
      [(SCM_CHARP s2)
-      (result (Scm_StringScanCharRight s1 (SCM_CHAR_VALUE s2) rmode))]
+      (return (Scm_StringScanCharRight s1 (SCM_CHAR_VALUE s2) rmode))]
      [else (Scm_Error "bad type of argument for s2: %S, must be \
                        either string or character" s2)
-           (result SCM_UNDEFINED)])))
+           (return SCM_UNDEFINED)])))
 
 ;;
 ;; Modifying string
@@ -172,7 +172,7 @@
 
 (select-module gauche.internal)
 (define-cproc %string-replace-body! (target::<string> source::<string>)
-  (result (Scm_StringReplaceBody target (SCM_STRING_BODY source))))
+  (return (Scm_StringReplaceBody target (SCM_STRING_BODY source))))
 
 (define-in-module scheme (string-set! str k ch)
   (check-arg string? str)
@@ -235,12 +235,12 @@
    [(_ cmp)
     `(while TRUE
        (if ,cmp
-         (cond [(SCM_NULLP ss) (result TRUE) break]
+         (cond [(SCM_NULLP ss) (return TRUE) break]
                [(not (SCM_STRINGP (SCM_CAR ss)))
                 (SCM_TYPE_ERROR (SCM_CAR ss) "string")]
                [else (set! s1 s2) (set! s2 (SCM_STRING (SCM_CAR ss)))
                      (set! ss (SCM_CDR ss))])
-         (begin (result FALSE) break)))])
+         (begin (return FALSE) break)))])
  )
 
 (define-cproc string=? (s1::<string> s2::<string> :rest ss)
@@ -288,7 +288,7 @@
   (let* ([s (Scm_StringIncompleteToComplete str SCM_ILLEGAL_CHAR_REJECT
                                             (SCM_CHAR 0))])
     (unless (SCM_FALSEP s) (set! (-> str body) (SCM_STRING_BODY s)))
-    (result s)))
+    (return s)))
 
 (define-cproc string-complete->incomplete (str::<string>)
   Scm_StringCompleteToIncomplete)
@@ -301,21 +301,21 @@
           [(SCM_CHARP handling)     (set! h SCM_ILLEGAL_CHAR_REPLACE
                                           sub (SCM_CHAR_VALUE handling))]
           [else (SCM_TYPE_ERROR handling ":omit, #f, or a character")])
-    (result (Scm_StringIncompleteToComplete str h sub))))
+    (return (Scm_StringIncompleteToComplete str h sub))))
 
 (define-cproc make-byte-string (size::<int32> :optional (byte::<uint8> 0))
   (let* ([s::char*])
     (when (< size 0) (Scm_Error "size out of bound: %d" size))
     (set! s (SCM_NEW_ATOMIC2 (C: char*) size))
     (memset s byte size)
-    (result (Scm_MakeString s size size SCM_STRING_INCOMPLETE))))
+    (return (Scm_MakeString s size size SCM_STRING_INCOMPLETE))))
 
 (define-cproc string-byte-ref (str::<string> k::<fixnum> :optional fallback)
   (let* ([r::int (Scm_StringByteRef str k (SCM_UNBOUNDP fallback))])
-    (result (?: (< r 0) fallback (SCM_MAKE_INT r)))))
+    (return (?: (< r 0) fallback (SCM_MAKE_INT r)))))
 
 (define-cproc byte-substring (str::<string> start::<fixnum> end::<fixnum>)
-  (result (Scm_Substring str start end TRUE)))
+  (return (Scm_Substring str start end TRUE)))
 
 ;;
 ;; String pointers
@@ -344,13 +344,13 @@
 (define-cproc string-pointer-set! (sp::<string-pointer> index::<fixnum>)
   Scm_StringPointerSet)
 (define-cproc string-pointer-substring (sp::<string-pointer> :key (after #f))
-  (result (Scm_StringPointerSubstring sp (not (SCM_FALSEP after)))))
+  (return (Scm_StringPointerSubstring sp (not (SCM_FALSEP after)))))
 (define-cproc string-pointer-index (sp::<string-pointer>) ::<int>
-  (result (-> sp index)))
+  (return (-> sp index)))
 (define-cproc string-pointer-copy (sp::<string-pointer>)
   Scm_StringPointerCopy)
 (define-cproc string-pointer-byte-index (sp::<string-pointer>) ::<int>
-  (result (cast int (- (-> sp current) (-> sp start)))))
+  (return (cast int (- (-> sp current) (-> sp start)))))
 
 (select-module gauche.internal)
 (define-cproc %string-pointer-dump (sp::<string-pointer>) ::<void>

@@ -43,14 +43,14 @@
 (define-cproc symbol? (obj) ::<boolean> :fast-flonum :constant
   (inliner SYMBOLP) SCM_SYMBOLP)
 (define-cproc symbol->string (obj::<symbol>) :constant
-  (result (SCM_OBJ (SCM_SYMBOL_NAME obj))))
+  (return (SCM_OBJ (SCM_SYMBOL_NAME obj))))
 (define-cproc string->symbol (obj::<string>) :constant Scm_Intern)
 
 (select-module gauche)
 (define-cproc gensym (:optional (prefix::<string>? #f)) Scm_Gensym)
 (define-cproc symbol-interned? (s::<symbol>) ::<boolean> SCM_SYMBOL_INTERNED)
 (define-cproc string->uninterned-symbol (name::<string>)
-  (result (Scm_MakeSymbol name FALSE)))
+  (return (Scm_MakeSymbol name FALSE)))
 (define-cproc symbol-sans-prefix (s::<symbol> p::<symbol>)
   Scm_SymbolSansPrefix)
 
@@ -73,7 +73,7 @@
     (cond [(SCM_STRINGP name) (set! sname (SCM_STRING name))]
           [(SCM_SYMBOLP name) (set! sname (SCM_SYMBOL_NAME name))]
           [else (SCM_TYPE_ERROR name "string or symbol")])
-    (result (Scm_MakeKeyword sname))))
+    (return (Scm_MakeKeyword sname))))
 
 (define-cproc get-keyword (key list :optional fallback) :constant
   Scm_GetKeyword)
@@ -121,15 +121,15 @@
 (define-cproc identifier? (obj) ::<boolean> :constant
   (inliner IDENTIFIERP) SCM_IDENTIFIERP)
 (define-cproc identifier->symbol (obj::<identifier>) :constant
-  (result (SCM_OBJ (-> (SCM_IDENTIFIER obj) name))))
+  (return (SCM_OBJ (-> (SCM_IDENTIFIER obj) name))))
 
 (select-module gauche.internal)
 (define-cproc make-identifier (name mod::<module> env::<list>)
   Scm_MakeIdentifier)
 (define-cproc identifier-module (id::<identifier>)
-  (result (SCM_OBJ (-> id module))))
+  (return (SCM_OBJ (-> id module))))
 (define-cproc identifier-name (id::<identifier>)
-  (result (SCM_OBJ (-> id name))))
+  (return (SCM_OBJ (-> id name))))
 (define-cproc identifier-env (id::<identifier>)
-  (result (-> id env)))
+  (return (-> id env)))
 

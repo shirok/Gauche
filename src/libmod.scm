@@ -44,16 +44,16 @@
 (define-cproc module? (obj) ::<boolean> :constant SCM_MODULEP)
 
 (define-cproc module-name (mod::<module>)
-  (result (SCM_OBJ (-> (SCM_MODULE mod) name))))
+  (return (SCM_OBJ (-> (SCM_MODULE mod) name))))
 
-(define-cproc module-parents (mod::<module>) (result (-> mod parents)))
-(define-cproc module-precedence-list (mod::<module>) (result (-> mod mpl)))
-(define-cproc module-imports (mod::<module>) (result (-> mod imported)))
+(define-cproc module-parents (mod::<module>) (return (-> mod parents)))
+(define-cproc module-precedence-list (mod::<module>) (return (-> mod mpl)))
+(define-cproc module-imports (mod::<module>) (return (-> mod imported)))
 (define-cproc module-exports (mod::<module>) Scm_ModuleExports)
-(define-cproc module-table (mod::<module>) (result (SCM_OBJ (-> mod internal))))
+(define-cproc module-table (mod::<module>) (return (SCM_OBJ (-> mod internal))))
 
 (define-cproc find-module (name::<symbol>) ::<module>?
-  (result (Scm_FindModule name SCM_FIND_MODULE_QUIET)))
+  (return (Scm_FindModule name SCM_FIND_MODULE_QUIET)))
 
 (define-cproc all-modules () Scm_AllModules)
 
@@ -62,7 +62,7 @@
     (cond [(SCM_EQ if-exists ':error) (set! error_if_exists TRUE)]
           [(SCM_FALSEP if-exists)     (set! error_if_exists FALSE)]
           [else (Scm_TypeError ":if-exists" ":error or #f" if_exists)])
-    (result (Scm_MakeModule name error_if_exists))))
+    (return (Scm_MakeModule name error_if_exists))))
 
 ;; (use x.y.z) ==> (requrie "x/y/z") (import x.y.z)
 (define-macro (use module . options)
@@ -122,7 +122,7 @@
 
 ;; Global bindind access, public API
 (define-cproc global-variable-bound? (mod-or-name name::<symbol>) ::<boolean>
-  (result
+  (return
    (not (SCM_UNBOUNDP
          (Scm_GlobalVariableRef (get-module-from-mod-or-name mod-or-name)
                                 name 0)))))
@@ -137,7 +137,7 @@
     (when (SCM_UNBOUNDP r2)
       (Scm_Error "global variable %S is not bound in module %S"
                  name module))
-    (result r2)))
+    (return r2)))
 
 (define-in-module gauche (symbol-bound? name :optional (module #f)) ; Deprecated
   (global-variable-bound? module name))
@@ -238,7 +238,7 @@
 (define-cproc find-binding (mod::<module> name::<symbol>
                                           stay-in-module::<boolean>)
   ::<gloc>?
-  (result (Scm_FindBinding mod name
+  (return (Scm_FindBinding mod name
                            (?: stay_in_module SCM_BINDING_STAY_IN_MODULE 0))))
 
 ;; This small piece of code encapsulates the common procedure in
@@ -250,20 +250,20 @@
                (not (SCM_GLOC_CONST_P g))
                (SCM_VM_COMPILER_FLAG_IS_SET (Scm_VM)
                                             SCM_COMPILE_NOINLINE_CONSTS))
-           (result SCM_FALSE)]
+           (return SCM_FALSE)]
           [else
-           (result (SCM_GLOC_GET g))])))
+           (return (SCM_GLOC_GET g))])))
 
 (define-cproc gloc-bound? (gloc::<gloc>) ::<boolean>
-  (result (not (SCM_UNBOUNDP (SCM_GLOC_GET gloc)))))
+  (return (not (SCM_UNBOUNDP (SCM_GLOC_GET gloc)))))
 (define-cproc gloc-ref (gloc::<gloc> :optional fallback)
   (let* ([v::ScmObj (SCM_GLOC_GET gloc)])
     (if (SCM_UNBOUNDP v)
       (begin
         (when (SCM_UNBOUNDP fallback)
           (Scm_Error "gloc %S doesn't have a value" (SCM_OBJ gloc)))
-        (result fallback))
-      (result v))))
+        (return fallback))
+      (return v))))
 (define-cproc gloc-set! (gloc::<gloc> value) SCM_GLOC_SET)
 (define-cproc gloc-const? (gloc::<gloc>) ::<boolean> Scm_GlocConstP)
 (define-cproc gloc-inlinable? (gloc::<gloc>) ::<boolean> Scm_GlocInlinableP)
@@ -287,8 +287,8 @@
  (define-cproc id->bound-gloc (id::<identifier>)
    (let* ([gloc::ScmGloc* (Scm_IdentifierGlobalBinding id)])
      (if (and gloc (not (SCM_UNBOUNDP (SCM_GLOC_GET gloc))))
-       (result (SCM_OBJ gloc))
-       (result SCM_FALSE))))
+       (return (SCM_OBJ gloc))
+       (return SCM_FALSE))))
  )
 
 ;; Returns #t if id1 and id2 both refer to the same existing global binding.

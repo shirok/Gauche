@@ -52,13 +52,13 @@
    ;; Assumes local variables c1, c2, chars
    [(_ op)
     `(while 1
-       (cond [(not (SCM_PAIRP chars)) (result (,op c1 c2)) (break)]
+       (cond [(not (SCM_PAIRP chars)) (return (,op c1 c2)) (break)]
              [(,op c1 c2) (unless (SCM_CHARP (SCM_CAR chars))
                             (Scm_TypeError "char" "character" (SCM_CAR chars)))
               (set! c1 c2)
               (set! c2 (SCM_CHAR_VALUE (SCM_CAR chars)))
               (set! chars (SCM_CDR chars))]
-             [else (result FALSE) (break)]))])
+             [else (return FALSE) (break)]))])
  )
 
 (define-cproc char=? (c1::<char> c2::<char> :rest chars)
@@ -80,14 +80,14 @@
        (set! c1 (Scm_CharFoldcase c1))
        (set! c2 (Scm_CharFoldcase c2))
        (while 1
-         (cond [(not (SCM_PAIRP chars)) (result (,op c1 c2)) (break)]
+         (cond [(not (SCM_PAIRP chars)) (return (,op c1 c2)) (break)]
                [(,op c1 c2) (unless (SCM_CHARP (SCM_CAR chars))
                               (Scm_TypeError "char" "character" (SCM_CAR chars)))
                 (set! c1 c2)
                 (set! c2 (Scm_CharFoldcase
                           (SCM_CHAR_VALUE (SCM_CAR chars))))
                 (set! chars (SCM_CDR chars))]
-               [else (result FALSE) (break)])))])
+               [else (return FALSE) (break)])))])
  )
 
 (define-cproc char-ci=? (c1::<char> c2::<char> :rest chars)
@@ -104,15 +104,15 @@
 (define-cproc char-alphabetic? (c::<char>) ::<boolean> Scm_CharAlphabeticP)
 (define-cproc char-numeric? (c::<char>) ::<boolean> Scm_CharNumericP)
 (define-cproc char-whitespace? (c::<char>) ::<boolean>
-  (result (or (and (SCM_CHAR_ASCII_P c) (isspace c))
+  (return (or (and (SCM_CHAR_ASCII_P c) (isspace c))
               (SCM_CHAR_EXTRA_WHITESPACE c))))
 (define-cproc char-upper-case? (c::<char>) ::<boolean> Scm_CharUppercaseP)
 (define-cproc char-lower-case? (c::<char>) ::<boolean> Scm_CharLowercaseP)
 
 (define-cproc char->integer (c::<char>) ::<long> :constant
-  (result (cast (signed long) c)))
+  (return (cast (signed long) c)))
 (define-cproc integer->char (c::<int>) ::<char> :constant
-  (result (cast ScmChar c)))
+  (return (cast ScmChar c)))
 
 (define-cproc char-upcase (c::<char>)   ::<char> Scm_CharUpcase)
 (define-cproc char-downcase (c::<char>) ::<char> Scm_CharDowncase)
@@ -126,7 +126,7 @@
     (when (and extended-range? (> radix 10))
       (Scm_Error "for extended range, radix can't exceed 10" radix))
     (set! r (Scm_DigitToInt ch radix extended-range?))
-    (result (?: (>= r 0) (SCM_MAKE_INT r) '#f))))
+    (return (?: (>= r 0) (SCM_MAKE_INT r) '#f))))
 
 (define-cproc integer->digit (n::<fixnum> :optional (radix::<fixnum> 10) (basechar1::<char> #\0) (basechar2::<char> #\a))
   :constant
@@ -134,20 +134,20 @@
     (when (or (< radix 2) (> radix 36))
       (Scm_Error "radix must be between 2 and 36, but got %d" radix))
     (set! r (Scm_IntToDigit n radix basechar1 basechar2))
-    (result (?: (== r SCM_CHAR_INVALID) '#f (SCM_MAKE_CHAR r)))))
+    (return (?: (== r SCM_CHAR_INVALID) '#f (SCM_MAKE_CHAR r)))))
 
 (define-cproc ucs->char (n::<int>)
   (let* ([ch::ScmChar (Scm_UcsToChar n)])
-    (result (?: (== ch SCM_CHAR_INVALID) '#f (SCM_MAKE_CHAR ch)))))
+    (return (?: (== ch SCM_CHAR_INVALID) '#f (SCM_MAKE_CHAR ch)))))
 
 (define-cproc char->ucs (c::<char>)
   (let* ([ucs::int (Scm_CharToUcs c)])
-    (result (?: (< ucs 0) '#f (Scm_MakeInteger ucs)))))
+    (return (?: (< ucs 0) '#f (Scm_MakeInteger ucs)))))
 
 (define-cproc gauche-character-encoding () Scm_CharEncodingName)
 
 (define-cproc supported-character-encodings ()
-  (result (Scm_CStringArrayToList (Scm_SupportedCharacterEncodings) -1 0)))
+  (return (Scm_CStringArrayToList (Scm_SupportedCharacterEncodings) -1 0)))
 
 (define-cproc supported-character-encoding? (encoding::<const-cstring>)
   ::<boolean> Scm_SupportedCharacterEncodingP)
@@ -159,36 +159,36 @@
 
 (define-cproc char-general-category (c::<char>) :constant
   (case (Scm_CharGeneralCategory c)
-    [(SCM_CHAR_CATEGORY_Lu) (result 'Lu)]
-    [(SCM_CHAR_CATEGORY_Ll) (result 'Ll)]
-    [(SCM_CHAR_CATEGORY_Lt) (result 'Lt)]
-    [(SCM_CHAR_CATEGORY_Lm) (result 'Lm)]
-    [(SCM_CHAR_CATEGORY_Lo) (result 'Lo)]
-    [(SCM_CHAR_CATEGORY_Mn) (result 'Mn)]
-    [(SCM_CHAR_CATEGORY_Mc) (result 'Mc)]
-    [(SCM_CHAR_CATEGORY_Me) (result 'Me)]
-    [(SCM_CHAR_CATEGORY_Nd) (result 'Nd)]
-    [(SCM_CHAR_CATEGORY_Nl) (result 'Nl)]
-    [(SCM_CHAR_CATEGORY_No) (result 'No)]
-    [(SCM_CHAR_CATEGORY_Pc) (result 'Pc)]
-    [(SCM_CHAR_CATEGORY_Pd) (result 'Pd)]
-    [(SCM_CHAR_CATEGORY_Ps) (result 'Ps)]
-    [(SCM_CHAR_CATEGORY_Pe) (result 'Pe)]
-    [(SCM_CHAR_CATEGORY_Pi) (result 'Pi)]
-    [(SCM_CHAR_CATEGORY_Pf) (result 'Pf)]
-    [(SCM_CHAR_CATEGORY_Po) (result 'Po)]
-    [(SCM_CHAR_CATEGORY_Sm) (result 'Sm)]
-    [(SCM_CHAR_CATEGORY_Sc) (result 'Sc)]
-    [(SCM_CHAR_CATEGORY_Sk) (result 'Sk)]
-    [(SCM_CHAR_CATEGORY_So) (result 'So)]
-    [(SCM_CHAR_CATEGORY_Zs) (result 'Zs)]
-    [(SCM_CHAR_CATEGORY_Zl) (result 'Zl)]
-    [(SCM_CHAR_CATEGORY_Zp) (result 'Zp)]
-    [(SCM_CHAR_CATEGORY_Cc) (result 'Cc)]
-    [(SCM_CHAR_CATEGORY_Cf) (result 'Cf)]
-    [(SCM_CHAR_CATEGORY_Cs) (result 'Cs)]
-    [(SCM_CHAR_CATEGORY_Co) (result 'Co)]
-    [(SCM_CHAR_CATEGORY_Cn) (result 'Cn)]))
+    [(SCM_CHAR_CATEGORY_Lu) (return 'Lu)]
+    [(SCM_CHAR_CATEGORY_Ll) (return 'Ll)]
+    [(SCM_CHAR_CATEGORY_Lt) (return 'Lt)]
+    [(SCM_CHAR_CATEGORY_Lm) (return 'Lm)]
+    [(SCM_CHAR_CATEGORY_Lo) (return 'Lo)]
+    [(SCM_CHAR_CATEGORY_Mn) (return 'Mn)]
+    [(SCM_CHAR_CATEGORY_Mc) (return 'Mc)]
+    [(SCM_CHAR_CATEGORY_Me) (return 'Me)]
+    [(SCM_CHAR_CATEGORY_Nd) (return 'Nd)]
+    [(SCM_CHAR_CATEGORY_Nl) (return 'Nl)]
+    [(SCM_CHAR_CATEGORY_No) (return 'No)]
+    [(SCM_CHAR_CATEGORY_Pc) (return 'Pc)]
+    [(SCM_CHAR_CATEGORY_Pd) (return 'Pd)]
+    [(SCM_CHAR_CATEGORY_Ps) (return 'Ps)]
+    [(SCM_CHAR_CATEGORY_Pe) (return 'Pe)]
+    [(SCM_CHAR_CATEGORY_Pi) (return 'Pi)]
+    [(SCM_CHAR_CATEGORY_Pf) (return 'Pf)]
+    [(SCM_CHAR_CATEGORY_Po) (return 'Po)]
+    [(SCM_CHAR_CATEGORY_Sm) (return 'Sm)]
+    [(SCM_CHAR_CATEGORY_Sc) (return 'Sc)]
+    [(SCM_CHAR_CATEGORY_Sk) (return 'Sk)]
+    [(SCM_CHAR_CATEGORY_So) (return 'So)]
+    [(SCM_CHAR_CATEGORY_Zs) (return 'Zs)]
+    [(SCM_CHAR_CATEGORY_Zl) (return 'Zl)]
+    [(SCM_CHAR_CATEGORY_Zp) (return 'Zp)]
+    [(SCM_CHAR_CATEGORY_Cc) (return 'Cc)]
+    [(SCM_CHAR_CATEGORY_Cf) (return 'Cf)]
+    [(SCM_CHAR_CATEGORY_Cs) (return 'Cs)]
+    [(SCM_CHAR_CATEGORY_Co) (return 'Co)]
+    [(SCM_CHAR_CATEGORY_Cn) (return 'Cn)]))
 
 
 ;;;
@@ -210,7 +210,7 @@
 (define-cproc char-set (:rest chars) ::<char-set>
   (let* ([cs::ScmCharSet* (SCM_CHARSET (Scm_MakeEmptyCharSet))])
     (char_set_add cs chars)
-    (result cs)))
+    (return cs)))
 
 (define-cproc char-set-copy (cs::<char-set>) Scm_CharSetCopy)
 
@@ -221,7 +221,7 @@
 
 (define-cproc read-char-set
   (port::<input-port> :key (error::<boolean> #t) (posix-bracket::<boolean> #t))
-  (result (Scm_CharSetRead port NULL error posix-bracket)))
+  (return (Scm_CharSetRead port NULL error posix-bracket)))
 
 (define-cproc char-set-contains? (cs::<char-set> ch::<char>)
   ::<boolean> :constant Scm_CharSetContains)
@@ -240,7 +240,7 @@
   ::<boolean> Scm_CharSetLE)
 
 (define-cproc %char-set-add-chars! (cs::<char-set> chars::<list>) ::<char-set>
-  (char_set_add cs chars) (result cs))
+  (char_set_add cs chars) (return cs))
 
 (define-cproc %char-set-add-range! (cs::<char-set> from to)
   (let* ([f::long -1] [t::long -1])
@@ -254,7 +254,7 @@
     (when (< t 0) (SCM_TYPE_ERROR to "character or positive exact integer"))
     (when (> t SCM_CHAR_MAX)
       (Scm_Error "'to' argument out of range: %S" to))
-    (result (Scm_CharSetAddRange cs (cast ScmChar f) (cast ScmChar t)))))
+    (return (Scm_CharSetAddRange cs (cast ScmChar f) (cast ScmChar t)))))
 
 (define-cproc %char-set-add! (dst::<char-set> src::<char-set>) Scm_CharSetAdd)
 (define-cproc %char-set-ranges (cs::<char-set>) Scm_CharSetRanges)
