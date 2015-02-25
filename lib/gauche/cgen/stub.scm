@@ -48,7 +48,7 @@
   (use gauche.cgen.cise)
   (use gauche.cgen.tmodule)
   (export <cgen-stub-unit> <cgen-stub-error>
-          cgen-stub-cise-context
+          cgen-stub-cise-ambient
           cgen-genstub
           cgen-stub-parser cgen-stub-parse-form)
   )
@@ -276,8 +276,8 @@
 
 ;; API
 ;; We use customized cise context while generating stubs
-(define (cgen-stub-cise-context :optional (orig-context (cise-context)))
-  (rlet1 ctx (cise-context-copy orig-context)
+(define (cgen-stub-cise-ambient :optional (orig-ambient (cise-ambient)))
+  (rlet1 ctx (cise-ambient-copy orig-ambient)
     ;; Override "return"
     ($ cise-register-macro! 'return
        (^[form env]
@@ -833,7 +833,7 @@
     (push-stmt! cproc "SCM_STUB_RETURN:") ; label
     (push-stmt! cproc (cgen-return-stmt (cgen-box-expr rettype "SCM_RESULT")))
     (push-stmt! cproc "}"))
-  (parameterize ([cise-context (cgen-stub-cise-context)])
+  (parameterize ([cise-ambient (cgen-stub-cise-ambient)])
     (match form
       [([? check-expr expr])
        (let1 rt (~ cproc'return-type)
@@ -870,7 +870,7 @@
       (push-stmt! cproc "SCM_STUB_RETURN:") ; label
       (push-stmt! cproc (cgen-return-stmt (cgen-box-expr rettype "SCM_RESULT")))
       (push-stmt! cproc "}")))
-  (parameterize ([cise-context (cgen-stub-cise-context)])
+  (parameterize ([cise-ambient (cgen-stub-cise-ambient)])
     (match form
       [('<void> . stmts)
        (error <cgen-stub-error> "<void> type isn't allowed in 'expr' directive:" form)]
@@ -942,7 +942,7 @@
                       [else (cgen-return-stmt
                              #`"Scm_Values(Scm_List(,results,, NULL))")]))
         )))
-  (parameterize ([cise-context (cgen-stub-cise-context)])
+  (parameterize ([cise-ambient (cgen-stub-cise-ambient)])
     (match rettype
       [#f             ; the default case; we assume it is <top>.
        (typed-result *scm-type* body)]

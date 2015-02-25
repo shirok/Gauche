@@ -1,3 +1,9 @@
+2015-02-24  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cgen/cise.scm: Renamed cgen-context to cgen-ambient,
+	  for the term 'context' is also used in the local C context
+	  (toplevel, stmt, expr) and confusing.
+
 2015-02-22  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/stub.scm: During expanding stub procedures

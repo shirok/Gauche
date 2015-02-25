@@ -44,7 +44,8 @@
   (use util.list)
   (export cise-render cise-render-to-string cise-render-rec
           cise-translate
-          cise-context cise-context-copy cise-register-macro! cise-lookup-macro
+          cise-ambient cise-ambient-copy cise-register-macro!
+          cise-lookup-macro
           cise-emit-source-line
           define-cise-macro
           define-cise-stmt
@@ -61,20 +62,27 @@
 ;; If true, include #line directive in the output.
 (define cise-emit-source-line (make-parameter #t))
 
-;; The global context
-(define-class <cise-context> ()
-  ((macros :init-keyword :macros :init-form (make-hash-table 'eq?))
+;; The global settings
+(define-class <cise-ambient> ()
+  (;; CiSE macro definitions
+   ;;   The default cise-ambient holds all predefined macros; you can
+   ;;   copy the default ambient and add custom macros.
+   (macros :init-keyword :macros :init-form (make-hash-table 'eq?))
+   ;; Stree for forward declarations.  Some macros, such as define-cfn,
+   ;; insert this.  This must be emitted at toplevel, so local
+   ;; transformation functinos such as cise-render DOES NOT emit
+   ;; the code put here.  Cise-translate does.
    (static-decls  :init-keyword :static-decls  :init-value '())))
 
 ;; Keeps the cise macro bindings.
-(define cise-context (make-parameter (make <cise-context>)))
+(define cise-ambient (make-parameter (make <cise-ambient>)))
 
 ;;=============================================================
 ;; Environment
 ;;
 
-;; Environment must be treated opaque from outside of CISE module.
-
+;; Environment keeps transient information during cise macro expansion.
+;; It must be treated opaque from outside of CISE module.
 (define-class <cise-env> ()
   ((context :init-keyword :context) ; toplevel, stmt or expr
    (decls   :init-keyword :decls)   ; list of extra decls
@@ -131,11 +139,11 @@
 ;; Global decls
 ;;
 
-(define (push-static-decl! stree :optional (context (cise-context)))
-  (push! (ref context'static-decls) stree))
+(define (push-static-decl! stree :optional (ambient (cise-ambient)))
+  (push! (~ ambient'static-decls) stree))
 
-(define (emit-static-decls port :optional (context (cise-context)))
-  (dolist [stree (reverse (ref context'static-decls))]
+(define (emit-static-decls port :optional (ambient (cise-ambient)))
+  (dolist [stree (reverse (~ ambient'static-decls))]
     (render-finalize stree port)))
 
 ;;=============================================================
@@ -146,35 +154,35 @@
 ;;  All other stuff is handled by "cise macros"
 
 ;;
-;; cise-register-macro! NAME EXPANDER &optional CONTEXT
+;; cise-register-macro! NAME EXPANDER &optional AMBIENT
 ;;
 ;;   Register cise macro expander EXPANDER with the name NAME.
 ;;   EXPANDER takes twi arguments, the form to expand and a
 ;;   opaque cise environmen.
 ;;
-(define (cise-register-macro! name expander :optional (context (cise-context)))
-  (hash-table-put! (ref context'macros) name expander))
+(define (cise-register-macro! name expander :optional (ambient (cise-ambient)))
+  (hash-table-put! (~ ambient'macros) name expander))
 
 ;;
-;; cise-lookup-macro NAME &optional CONTEXT
+;; cise-lookup-macro NAME &optional AMBIENT
 ;;
 ;;   Lookup cise macro.
 ;;
-(define (cise-lookup-macro name :optional (context (cise-context)))
-  (hash-table-get (ref context'macros) name #f))
+(define (cise-lookup-macro name :optional (ambient (cise-ambient)))
+  (hash-table-get (~ ambient'macros) name #f))
 
 ;;
-;; copy the current cise context
+;; copy the current cise ambient
 ;;
-(define (cise-context-copy :optional (context (cise-context)))
-  (make <cise-context>
-    :macros (hash-table-copy (ref context'macros))
-    :static-decls  (ref context'static-decls)))
+(define (cise-ambient-copy :optional (ambient (cise-ambient)))
+  (make <cise-ambient>
+    :macros (hash-table-copy (~ ambient'macros))
+    :static-decls  (~ ambient'static-decls)))
 
 ;;
 ;; define-cise-macro (OP FORM ENV) . BODY
 ;;
-;;   Default syntax to add new cise macro to the current context.
+;;   Default syntax to add new cise macro to the current ambient.
 ;;
 (define-syntax define-cise-macro
   (syntax-rules ()
@@ -362,7 +370,7 @@
 
 (define (cise-translate inp outp
                         :key (environment (make-module #f))
-                             (context (cise-context-copy (cise-context))))
+                             (ambient (cise-ambient-copy)))
   (define (finish toutp)
     (unless (eq? outp toutp)
       (emit-static-decls outp)
@@ -371,7 +379,7 @@
 
   (eval '(use gauche.cgen.cise) environment)
   (eval '(use util.match) environment)
-  (parameterize ([cise-context context])
+  (parameterize ([cise-ambient ambient])
     (let loop ([toutp outp])
       (match (read inp)
         [(? eof-object?) (finish toutp)]
