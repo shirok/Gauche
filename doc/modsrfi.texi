@@ -6154,6 +6154,8 @@ That is, the following equivalence holds:
 @end defun
 
 @defun make-pair-comparator car-comparator cdr-comparator
+Creates a comparator that compares pairs, with their cars
+by @var{car-comparator} and their cdrs by @var{cdr-comparator}.
 @end defun
 
 @defun make-improper-list-comparator element-comparator
