@@ -44,7 +44,8 @@
   (use util.list)
   (export cise-render cise-render-to-string cise-render-rec
           cise-translate
-          cise-ambient cise-ambient-copy cise-register-macro!
+          cise-ambient cise-ambient-copy cise-ambient-decl-strings
+          cise-register-macro!
           cise-lookup-macro
           cise-emit-source-line
           define-cise-macro
@@ -71,7 +72,10 @@
    ;; Stree for forward declarations.  Some macros, such as define-cfn,
    ;; insert this.  This must be emitted at toplevel, so local
    ;; transformation functinos such as cise-render DOES NOT emit
-   ;; the code put here.  Cise-translate does.
+   ;; the code put here.  Cise-translate does.   If the caller only calls
+   ;; local transformation functions and need to expand macros that
+   ;; generates static-decls, the caller has to call emit-static-decls
+   ;; at the point where toplevel code is allowed.
    (static-decls  :init-keyword :static-decls  :init-value '())))
 
 ;; Keeps the cise macro bindings.
@@ -146,6 +150,11 @@
   (dolist [stree (reverse (~ ambient'static-decls))]
     (render-finalize stree port)))
 
+;; external API
+(define (cise-ambient-decl-strings ambient)
+  (call-with-output-string
+    (cut emit-static-decls <> ambient)))
+
 ;;=============================================================
 ;; Expander
 ;;
@@ -174,10 +183,18 @@
 ;;
 ;; copy the current cise ambient
 ;;
-(define (cise-ambient-copy :optional (ambient (cise-ambient)))
+;;   By default, static-decls are copied.  It's useful when you save
+;;   the snapshot of ambient for the later retry.  Another usage is
+;;   to have a transient "child" ambient, where you add new macros,
+;;   emit something, and come back to the original ambient.  In that
+;;   case you want to clear out static-decls.  Hence we have the second
+;;   argument.   NB: This spec smells fishy.  May change later.
+(define (cise-ambient-copy :optional
+                           (ambient (cise-ambient))
+                           (static-decls (~ ambient'static-decls)))
   (make <cise-ambient>
     :macros (hash-table-copy (~ ambient'macros))
-    :static-decls  (~ ambient'static-decls)))
+    :static-decls static-decls))
 
 ;;
 ;; define-cise-macro (OP FORM ENV) . BODY

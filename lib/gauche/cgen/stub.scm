@@ -37,6 +37,7 @@
   (use srfi-42)
   (use util.match)
   (use text.tr)
+  (use text.tree)
   (use file.util)
   (use util.list)
   (use gauche.parameter)
@@ -273,27 +274,6 @@
    ))
 
 (define-condition-type <cgen-stub-error> <error> #f)
-
-;; API
-;; We use customized cise context while generating stubs
-(define (cgen-stub-cise-ambient :optional (orig-ambient (cise-ambient)))
-  (rlet1 ctx (cise-ambient-copy orig-ambient)
-    ;; Override "return"
-    ($ cise-register-macro! 'return
-       (^[form env]
-         (match form
-           [(_)         `(goto SCM_STUB_RETURN)]
-           [(_ e0)       `(begin (set! SCM_RESULT ,e0)
-                                 (goto SCM_STUB_RETURN))]
-           [(_ e0 e1)    `(begin (set! SCM_RESULT0 ,e0)
-                                 (set! SCM_RESULT1 ,e1)
-                                 (goto SCM_STUB_RETURN))]
-           [(_ e0 e1 e2) `(begin (set! SCM_RESULT0 ,e0)
-                                 (set! SCM_RESULT1 ,e1)
-                                 (set! SCM_RESULT2 ,e2)
-                                 (goto SCM_STUB_RETURN))]
-           [_ (error "Too many values to return")]))
-       ctx)))
 
 ;;===================================================================
 ;; Form parsers
@@ -557,12 +537,44 @@
    (flags             :initform '() :init-keyword :flags)
       ;; list of keywords to modify code generation.  currently
       ;; :fast-flonum and :constant are supported.
+   (forward-decls     :initform '())
+      ;; list of strings for code that must be emitted before the
+      ;; procedure definition
    ))
 
 (define (get-arg cproc arg) (find (^x (eq? arg (~ x'name))) (~ cproc'args)))
 (define (push-stmt! cproc stmt) (push! (~ cproc'stmts) stmt))
 
 (define-generic c-stub-name )
+
+;; API
+;; We use customized cise context while generating stubs
+(define (cgen-stub-cise-ambient :optional (orig-ambient (cise-ambient)))
+  (rlet1 ctx (cise-ambient-copy orig-ambient '())
+    ;; Override "return"
+    ($ cise-register-macro! 'return
+       (^[form env]
+         (match form
+           [(_)         `(goto SCM_STUB_RETURN)]
+           [(_ e0)       `(begin (set! SCM_RESULT ,e0)
+                                 (goto SCM_STUB_RETURN))]
+           [(_ e0 e1)    `(begin (set! SCM_RESULT0 ,e0)
+                                 (set! SCM_RESULT1 ,e1)
+                                 (goto SCM_STUB_RETURN))]
+           [(_ e0 e1 e2) `(begin (set! SCM_RESULT0 ,e0)
+                                 (set! SCM_RESULT1 ,e1)
+                                 (set! SCM_RESULT2 ,e2)
+                                 (goto SCM_STUB_RETURN))]
+           [_ (error "Too many values to return")]))
+       ctx)))
+
+(define-syntax with-cise-ambient
+  (syntax-rules ()
+    [(_ procstub body ...)
+     (parameterize ([cise-ambient (cgen-stub-cise-ambient (cise-ambient))])
+       body ...
+       (push! (~ procstub'forward-decls)
+              (cise-ambient-decl-strings (cise-ambient))))]))
 
 ;;-----------------------------------------------------------------
 ;; (define-cproc scheme-name (argspec) body)
@@ -833,21 +845,21 @@
     (push-stmt! cproc "SCM_STUB_RETURN:") ; label
     (push-stmt! cproc (cgen-return-stmt (cgen-box-expr rettype "SCM_RESULT")))
     (push-stmt! cproc "}"))
-  (parameterize ([cise-ambient (cgen-stub-cise-ambient)])
-    (match form
-      [([? check-expr expr])
-       (let1 rt (~ cproc'return-type)
-         (if rt
-           (process-call-spec cproc `(,rt ,expr)) ; for transition
-           (typed-result *scm-type* expr)))]
-      [('<void> [? check-expr expr])
-       (push-stmt! cproc #`",expr(,(args));")
-       (push-stmt! cproc "SCM_STUB_RETURN:") ; label
-       (push-stmt! cproc "SCM_RETURN(SCM_UNDEFINED);")]
-      [(typename [? check-expr expr])
-       (unless (and (symbol? typename) (check-expr expr)) (err))
-       (typed-result (name->type typename) expr)]
-      [else (err)])))
+  ($ with-cise-ambient cproc
+     (match form
+       [([? check-expr expr])
+        (let1 rt (~ cproc'return-type)
+          (if rt
+            (process-call-spec cproc `(,rt ,expr)) ; for transition
+            (typed-result *scm-type* expr)))]
+       [('<void> [? check-expr expr])
+        (push-stmt! cproc #`",expr(,(args));")
+        (push-stmt! cproc "SCM_STUB_RETURN:") ; label
+        (push-stmt! cproc "SCM_RETURN(SCM_UNDEFINED);")]
+       [(typename [? check-expr expr])
+        (unless (and (symbol? typename) (check-expr expr)) (err))
+        (typed-result (name->type typename) expr)]
+       [else (err)])))
 
 (define-method process-body-spec ((cproc <procstub>) form)
   (define (err) (error <cgen-stub-error> "malformed 'body' spec:" form))
@@ -870,18 +882,18 @@
       (push-stmt! cproc "SCM_STUB_RETURN:") ; label
       (push-stmt! cproc (cgen-return-stmt (cgen-box-expr rettype "SCM_RESULT")))
       (push-stmt! cproc "}")))
-  (parameterize ([cise-ambient (cgen-stub-cise-ambient)])
-    (match form
-      [('<void> . stmts)
-       (error <cgen-stub-error> "<void> type isn't allowed in 'expr' directive:" form)]
-      [([? symbol? rettype] expr)
-       (typed-result (name->type rettype) expr)]
-      [(expr)
-       (let1 rt (~ cproc'return-type)
-         (if rt
-           (process-expr-spec cproc `(,rt ,expr)) ; for transition
-           (typed-result *scm-type* expr)))]
-      [else (error <cgen-stub-error> "malformed 'expr' spec:" form)])))
+  ($ with-cise-ambient cproc
+     (match form
+       [('<void> . stmts)
+        (error <cgen-stub-error> "<void> type isn't allowed in 'expr' directive:" form)]
+       [([? symbol? rettype] expr)
+        (typed-result (name->type rettype) expr)]
+       [(expr)
+        (let1 rt (~ cproc'return-type)
+          (if rt
+            (process-expr-spec cproc `(,rt ,expr)) ; for transition
+            (typed-result *scm-type* expr)))]
+       [else (error <cgen-stub-error> "malformed 'expr' spec:" form)])))
 
 (define-method process-catch-spec ((cproc <procstub>) form)
   (match form
@@ -942,23 +954,26 @@
                       [else (cgen-return-stmt
                              #`"Scm_Values(Scm_List(,results,, NULL))")]))
         )))
-  (parameterize ([cise-ambient (cgen-stub-cise-ambient)])
-    (match rettype
-      [#f             ; the default case; we assume it is <top>.
-       (typed-result *scm-type* body)]
-      ['<void>        ; no results
-       (for-each expand-stmt body)
-       (push-stmt! cproc "SCM_STUB_RETURN:") ; label
-       (push-stmt! cproc "SCM_RETURN(SCM_UNDEFINED);")]
-      [[? symbol? t]  ; single result
-       (typed-result (name->type t) body)]
-      [[? list? ts]   ; multiple values
-       (typed-results (map name->type ts) body)]
-      [_ (error <cgen-stub-error> "invalid cproc return type:" rettype)])))
+  ($ with-cise-ambient cproc
+     (match rettype
+       [#f             ; the default case; we assume it is <top>.
+        (typed-result *scm-type* body)]
+       ['<void>        ; no results
+        (for-each expand-stmt body)
+        (push-stmt! cproc "SCM_STUB_RETURN:") ; label
+        (push-stmt! cproc "SCM_RETURN(SCM_UNDEFINED);")]
+       [[? symbol? t]  ; single result
+        (typed-result (name->type t) body)]
+       [[? list? ts]   ; multiple values
+        (typed-results (map name->type ts) body)]
+       [_ (error <cgen-stub-error> "invalid cproc return type:" rettype)])))
 
 ;;;
 ;;; Emitting code
 ;;;
+
+(define-method cgen-emit-decl ((proc <procstub>))
+  (dolist [s (~ proc'forward-decls)] (p s)))
 
 (define-method cgen-emit-body ((cproc <cproc>))
   (p "static ScmObj "(~ cproc'c-name)"(ScmObj *SCM_FP, int SCM_ARGCNT, void *data_)")
