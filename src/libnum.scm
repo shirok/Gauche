@@ -125,11 +125,11 @@
  (define-cise-stmt numcmp
    [(_ compar)
     `(begin
-       (cond [(not (,compar arg0 arg1))]
+       (cond [(not (,compar arg0 arg1)) (return FALSE)]
              [(== optcnt 0) (return TRUE)]
-             [(not (,compar arg1 (aref oarg 0)))]
+             [(not (,compar arg1 (aref oarg 0))) (return FALSE)]
              [(== optcnt 1) (return TRUE)]
-             [(not (,compar (aref oarg 0) (aref oarg 1)))]
+             [(not (,compar (aref oarg 0) (aref oarg 1))) (return FALSE)]
              [(and (== optcnt 2) (SCM_NULLP args)) (return TRUE)]
              [else
               (set! arg0 (aref oarg 1)
