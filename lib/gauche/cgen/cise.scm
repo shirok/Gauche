@@ -44,7 +44,8 @@
   (use util.list)
   (export cise-render cise-render-to-string cise-render-rec
           cise-translate
-          cise-ambient cise-ambient-copy cise-ambient-decl-strings
+          cise-ambient cise-default-ambient cise-ambient-copy
+          cise-ambient-decl-strings
           cise-register-macro!
           cise-lookup-macro
           cise-emit-source-line
@@ -78,8 +79,20 @@
    ;; at the point where toplevel code is allowed.
    (static-decls  :init-keyword :static-decls  :init-value '())))
 
+;; The default ambient - this should be only modified during loading of
+;; this module, in order to register all the default cise macros.  Once
+;; this module is loaded, this must be treated as immutable, and the
+;; user must get its copy to use via cise-default-ambient.
+(define *default-ambient* (make <cise-ambient>))
+
+;; Returns a copy of the default ambient
+(define (cise-default-ambient) (cise-ambient-copy *default-ambient* '()))
+
 ;; Keeps the cise macro bindings.
-(define cise-ambient (make-parameter (make <cise-ambient>)))
+;; We initialize it with *default-ambient* so that it gets all the cise
+;; macros in this module.  At the end of this module we replace its
+;; value with a copy, so that the default ambient is "sealed".
+(define cise-ambient (make-parameter *default-ambient*))
 
 ;;=============================================================
 ;; Environment
@@ -459,6 +472,67 @@
      (check-static name (canonicalize-argdecl args) (type-symbol-type ts) body)]
     [(_ name (args ...) . body)
      (check-static name (canonicalize-argdecl args) 'ScmObj body)]))
+
+;;------------------------------------------------------------
+;; CPS transformation
+;;
+;;  (define-cproc ...
+;;    ...
+;;    (let1/cps resultvar expr
+;;      (closevar ...)
+;;      expr2 ...))
+;;
+;;  =>
+;;  (define-cfn tmp_cc (resultvar data::(void**))
+;;    (let* ([closevar (aref data 0)]
+;;           ...)
+;;      expr2 ...))
+;;
+;;  (define-cproc
+;;    ...
+;;    (let* ([data ...])
+;;      (set! (aref data 0) closevar)
+;;      ...
+;;      (Scm_VMPushCC tmp_cc data k)
+;;      expr))
+;;
+
+(define-cise-macro (let1/cps form env)
+  (match form
+    [(_ rvar expr vars . body)
+     (let* ([tmp-cc (gensym "tmp_cc_")]
+            [data (gensym "data")]
+            [closed (canonicalize-argdecl vars)]
+            [cc-env (make-env 'toplevel '())])
+       ;; NB: We want to check the # of closed variables is smaller
+       ;; than SCM_CCONT_DATA_SIZE, but it's not available at runtime
+       ;; (and if we're cross-compiling, our runtime's value may be
+       ;; different from the target system's.
+
+       ;; KLUDGE! If we're in stub generation, cise-ambient is set up
+       ;; to alter 'return' macro.  But we need the original 'return'
+       ;; macro in order to expand define-cfn.  We need better mechanism
+       ;; to handle it smoothly.
+       (let1 amb (cise-default-ambient)
+         (parameterize ([cise-ambient amb])
+           (push-static-decl!
+            (cise-render-to-string
+             `(define-cfn ,tmp-cc (,rvar ,data :: void**) :static
+                (let* ,(map-with-index
+                        (^[i p]
+                          `(,(car p) :: ,(cdr p)
+                            (cast (,(cdr p)) (aref ,data ,i))))
+                        closed)
+                  ,@body))
+             'toplevel)))
+         (for-each push-static-decl! (reverse (~ amb'static-decls))))
+         
+       `(let* ([,data :: (.array void* (,(length closed)))])
+          ,@(map-with-index
+             (^[i p] `(set! (aref ,data ,i) (cast void* ,(car p))))
+             closed)
+          (Scm_VMPushCC ,tmp-cc ,data ,(length closed))
+          (return ,expr)))]))
 
 ;;------------------------------------------------------------
 ;; Syntax
@@ -1101,3 +1175,10 @@
       [((var ':: type) . rest) `((,var . ,type) ,@(rec rest))]
       [(var . rest) `((,var . ScmObj) ,@(rec rest))]))
   (rec argdecls))
+
+;;=============================================================
+;; Sealing the default environment
+;;   This must come at the bottom of the module.
+
+(cise-ambient (cise-default-ambient))
+
