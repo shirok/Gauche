@@ -312,7 +312,7 @@
  (define-cproc rope->string (obj)
    (let* ([p (Scm_MakeOutputStringPort TRUE)])
      (rope2string_int obj p)
-     (result (Scm_GetOutputString (SCM_PORT p) 0))))
+     (return (Scm_GetOutputString (SCM_PORT p) 0))))
  )
 
 ;;;============================================================

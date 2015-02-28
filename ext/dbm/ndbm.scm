@@ -230,7 +230,7 @@
      (set! (-> z dbf) (dbm_open (Scm_GetString name) flags mode))
      (when (== (-> z dbf) NULL)
        (Scm_SysError "couldn't open ndbm file %S" name))
-     (result (SCM_OBJ z))))
+     (return (SCM_OBJ z))))
 
  (define-cproc ndbm-close (ndbm::<ndbm-file>) ::<void>
    (when (-> ndbm dbf)
@@ -238,7 +238,7 @@
      (set! (-> ndbm dbf) NULL)))
 
  (define-cproc ndbm-closed? (ndbm::<ndbm-file>) ::<boolean>
-   (result (== (-> ndbm dbf) NULL)))
+   (return (== (-> ndbm dbf) NULL)))
 
  (define-cproc ndbm-store (ndbm::<ndbm-file> key::<string> val::<string>
                                              :optional (flags::<fixnum> 0))
@@ -247,7 +247,7 @@
      (CHECK_NDBM ndbm)
      (TO_DATUM dkey key)
      (TO_DATUM dval val)
-     (result (dbm_store (-> ndbm dbf) dkey dval flags))))
+     (return (dbm_store (-> ndbm dbf) dkey dval flags))))
 
  (define-cproc ndbm-fetch (ndbm::<ndbm-file> key::<string>)
    (let* ([dkey::datum] [dval::datum])
@@ -261,13 +261,13 @@
      (CHECK_NDBM ndbm)
      (TO_DATUM dkey key)
      (set! dval (dbm_fetch (-> ndbm dbf) dkey))
-     (result (!= (ref dval dptr) NULL))))
+     (return (!= (ref dval dptr) NULL))))
 
  (define-cproc ndbm-delete (ndbm::<ndbm-file> key::<string>) ::<int>
    (let* ([dkey::datum])
      (CHECK_NDBM ndbm)
      (TO_DATUM dkey key)
-     (result (dbm_delete (-> ndbm dbf) dkey))))
+     (return (dbm_delete (-> ndbm dbf) dkey))))
 
  (define-cproc ndbm-firstkey (ndbm::<ndbm-file>)
    (let* ([dkey::datum])
@@ -283,7 +283,7 @@
 
  (define-cproc ndbm-error (ndbm::<ndbm-file>) ::<int>
    (CHECK_NDBM ndbm)
-   (result (dbm_error (-> ndbm dbf))))
+   (return (dbm_error (-> ndbm dbf))))
 
  (define-cproc ndbm-clearerror (ndbm::<ndbm-file>) ::<void>
    (CHECK_NDBM ndbm)

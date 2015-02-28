@@ -107,13 +107,13 @@
    (let* ([start::(const unsigned char*)]
           [siz::int])
      (data_element data (& start) (& siz))
-     (result (adler32 adler start siz))))
+     (return (adler32 adler start siz))))
 
  (define-cproc crc32 (data :optional (crc::<ulong> 0)) ::<ulong>
    (let* ([start::(const unsigned char*)]
           [siz::int])
      (data_element data (& start) (& siz))
-     (result (crc32 crc start siz))))
+     (return (crc32 crc start siz))))
 
  (define-cproc %open-deflating-port (source::<output-port>
                                      compression-level::<fixnum>
@@ -123,7 +123,7 @@
                                      dictionary
                                      buffer-size::<fixnum>
                                      owner?)
-   (result (Scm_MakeDeflatingPort source compression-level window-bits
+   (return (Scm_MakeDeflatingPort source compression-level window-bits
                                   memory-level strategy dictionary
                                   buffer-size (not (SCM_FALSEP owner?)))))
 
@@ -132,14 +132,14 @@
                                     (window-bits::<fixnum> 15)
                                     (dictionary #f)
                                     (owner? #f))
-   (result (Scm_MakeInflatingPort sink buffer-size window-bits dictionary
+   (return (Scm_MakeInflatingPort sink buffer-size window-bits dictionary
                                   (not (SCM_FALSEP owner?)))))
 
  (define-cproc zstream-total-in (port::<xflating-port>) ::<ulong>
-   (result (-> (SCM_PORT_ZSTREAM port) total-in)))
+   (return (-> (SCM_PORT_ZSTREAM port) total-in)))
 
  (define-cproc zstream-total-out (port::<xflating-port>) ::<ulong>
-   (result (-> (SCM_PORT_ZSTREAM port) total-out)))
+   (return (-> (SCM_PORT_ZSTREAM port) total-out)))
 
  (define-cproc zstream-params-set! (port::<deflating-port>
                                     :key (compression-level #f) (strategy #f))
@@ -165,13 +165,13 @@
    (Scm_Flush port))
 
  (define-cproc zstream-adler32 (port::<deflating-port>) ::<ulong>
-   (result (-> (SCM_PORT_ZSTREAM port) adler)))
+   (return (-> (SCM_PORT_ZSTREAM port) adler)))
 
  (define-cproc zstream-data-type (port::<deflating-port>) ::<int>
-   (result (-> (SCM_PORT_ZSTREAM port) data_type)))
+   (return (-> (SCM_PORT_ZSTREAM port) data_type)))
 
  (define-cproc zstream-dictionary-adler32 (port::<xflating-port>)
-   (result (-> (SCM_PORT_ZLIB_INFO port) dict_adler)))
+   (return (-> (SCM_PORT_ZLIB_INFO port) dict_adler)))
 
  (define-cproc inflate-sync (port::<inflating-port>) Scm_InflateSync)
  )

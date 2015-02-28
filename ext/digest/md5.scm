@@ -123,7 +123,7 @@
  (define-cproc %md5-final (md5::<md5-context>)
    (let* ([digest::(.array (unsigned char) [16])])
      (MD5_Final digest (& (-> md5 ctx)))
-     (result (Scm_MakeString (cast (char *) digest) 16 16
+     (return (Scm_MakeString (cast (char *) digest) 16 16
                              (logior SCM_STRING_INCOMPLETE
                                      SCM_STRING_COPYING)))))
  )

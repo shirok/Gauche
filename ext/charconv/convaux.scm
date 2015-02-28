@@ -202,7 +202,7 @@
  (define-cproc ces-conversion-supported? (from to) ::<boolean>
    (let* ([cfrom::(const char*) (Scm_GetCESName from "from-code")]
           [cto  ::(const char*) (Scm_GetCESName to "to-code")])
-     (result (Scm_ConversionSupportedP cfrom cto))))
+     (return (Scm_ConversionSupportedP cfrom cto))))
 
  ;; NB: :handler interface is experimental.  Do not use it.
  (define-cproc open-input-conversion-port (source::<input-port>
@@ -213,7 +213,7 @@
                                                 (handler #f))
    (let* ([fc::(const char*) (Scm_GetCESName from_code "from-code")]
           [tc::(const char*) (Scm_GetCESName to_code "to-code")])
-     (result (Scm_MakeInputConversionPort source fc tc handler buffer_size
+     (return (Scm_MakeInputConversionPort source fc tc handler buffer_size
                                           (not (SCM_FALSEP ownerP))))))
 
  (define-cproc open-output-conversion-port (sink::<output-port>
@@ -223,7 +223,7 @@
                                                  (owner? #f))
    (let* ([fc::(const char*) (Scm_GetCESName from_code "from-code")]
           [tc::(const char*) (Scm_GetCESName to_code "to-code")])
-     (result (Scm_MakeOutputConversionPort sink tc fc buffer_size
+     (return (Scm_MakeOutputConversionPort sink tc fc buffer_size
                                            (not (SCM_FALSEP ownerP))))))
 
  (define-cproc ces-guess-from-string (string::<string> scheme::<string>)
@@ -232,8 +232,8 @@
           [guessed::(const char*)
                     (Scm_GuessCES (Scm_GetStringConst scheme) s size)])
      (if guessed
-       (result (SCM_MAKE_STR guessed))
-       (result '#f))))
+       (return (SCM_MAKE_STR guessed))
+       (return '#f))))
  )
 
 

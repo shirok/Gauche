@@ -267,9 +267,9 @@
 ;;;
 (inline-stub
  (define-cproc make-queue ()
-   (result (makeq (& QueueClass))))
+   (return (makeq (& QueueClass))))
  (define-cproc make-mtqueue (:key (max-length #f))
-   (result (makemtq (& MtQueueClass)
+   (return (makemtq (& MtQueueClass)
                     (?: (SCM_UINTP max-length)
                         (SCM_INT_VALUE max-length)
                         -1))))
@@ -302,8 +302,8 @@
    (if (MTQP q)
      (let* ([r::int FALSE])
        (with-mtq-light-lock q (set! r (Q_EMPTY_P q)))
-       (result r))
-     (result (Q_EMPTY_P q))))
+       (return r))
+     (return (Q_EMPTY_P q))))
  )
 
 (define-inline (queue? q)   (is-a? q <queue>))
@@ -321,11 +321,11 @@
  ;; API
  (define-cproc queue-length (q::<queue>) ::<int> Q_LENGTH)
  (define-cproc mtqueue-max-length (q::<mtqueue>)
-   (result (?: (>= (MTQ_MAXLEN q) 0) (SCM_MAKE_INT (MTQ_MAXLEN q)) '#f)))
+   (return (?: (>= (MTQ_MAXLEN q) 0) (SCM_MAKE_INT (MTQ_MAXLEN q)) '#f)))
 
  ;; caller must hold lock
  (define-cproc %mtqueue-overflow? (q::<mtqueue> cnt::<int>) ::<boolean>
-   (result (mtq-overflows q cnt)))
+   (return (mtq-overflows q cnt)))
 
  ;; API
  (define-cproc mtqueue-room (q::<mtqueue>) ::<number>
@@ -334,11 +334,11 @@
        (when (>= (MTQ_MAXLEN q) 0)
          (set! room (- (MTQ_MAXLEN q) (Q_LENGTH q)))))
      (if (>= room 0)
-       (result (SCM_MAKE_INT room))
-       (result SCM_POSITIVE_INFINITY))))
+       (return (SCM_MAKE_INT room))
+       (return SCM_POSITIVE_INFINITY))))
 
  ;; caller must hold big lock
- (define-cproc %qhead (q::<queue>) (result (Q_HEAD q)))
+ (define-cproc %qhead (q::<queue>) (return (Q_HEAD q)))
 
  (define-cfn queue-peek-both-int (q::Queue* ph::ScmObj* pt::ScmObj*) ::int
    (when (Q_EMPTY_P q) (return FALSE))
@@ -351,9 +351,9 @@
      (if (not (MTQP q))
        (set! ok (queue-peek-both-int q (& h) (& t)))
        (with-mtq-light-lock q (set! ok (queue-peek-both-int q (& h) (& t)))))
-     (cond [ok (result h t)]
+     (cond [ok (return h t)]
            [(SCM_UNBOUNDP fallback) (Scm_Error "queue is empty: %S" q)]
-           [else (result fallback fallback)])))
+           [else (return fallback fallback)])))
  )
 
 ;; APIs
@@ -408,7 +408,7 @@
        (set! tail head cnt 1)
        (set! tail (Scm_LastPair more-objs) cnt (Scm_Length head)))
      (q-write-op enqueue_int q cnt head tail)
-     (result (SCM_OBJ q))))
+     (return (SCM_OBJ q))))
 
  ;; API
  (define-cproc enqueue/wait! (q::<mtqueue> obj :optional (timeout #f)
@@ -424,7 +424,7 @@
                                   (set! retval '#t)
                                   (notify-readers (Q q))))
           (enqueue_int (Q q) 1 cell cell))
-     (result retval)))
+     (return retval)))
  )
 
 (define (enqueue-unique! q cmp obj . more-objs)
@@ -459,7 +459,7 @@
              tail (Scm_LastPair head)
              cnt  (Scm_Length head)))
      (q-write-op queue-push-int q cnt head tail)
-     (result (SCM_OBJ q))))
+     (return (SCM_OBJ q))))
 
  (define-cproc queue-push/wait! (q::<mtqueue> obj :optional (timeout #f)
                                                             (timeout-val #f))
@@ -473,7 +473,7 @@
                            (begin (queue_push_int (Q q) 1 cell cell)
                                   (notify-readers (Q q))))
           (queue_push_int (Q q) 1 cell cell))
-     (result retval)))
+     (return retval)))
  )
 
 (define (queue-push-unique! q cmp obj . more-objs)
@@ -514,7 +514,7 @@
          (Scm_Error "queue is empty: %S" q)
          (set! r fallback))
        (when (MTQP q) (notify-writers q)))
-     (result r)))
+     (return r)))
 
  (define-cproc dequeue/wait! (q::<mtqueue> :optional (timeout #f)
                                                      (timeout-val #f))
@@ -529,7 +529,7 @@
                                   (notify-writers (Q q))))
           ;; no threads
           (dequeue_int (Q q) (& retval)))
-     (result retval)))
+     (return retval)))
 
  (define-cfn dequeue-all-int (q::Queue*)
    (let* ([lis (Q_HEAD q)])
@@ -538,11 +538,11 @@
 
  (define-cproc dequeue-all! (q::<queue>)
    (if (not (MTQP q))
-     (result (dequeue-all-int q))
+     (return (dequeue-all-int q))
      (let* ([r])
        (with-mtq-light-lock q (set! r (dequeue-all-int q)))
        (notify-writers q)
-       (result r))))
+       (return r))))
  )
 
 (define queue-pop! dequeue!)

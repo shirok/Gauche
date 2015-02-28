@@ -81,7 +81,7 @@
             [term::ScmSysTermios* (SCM_SYS_TERMIOS (Scm_MakeSysTermios))])
        (when (< (tcgetattr fd (& (-> term term))) 0)
          (Scm_SysError "tcgetattr failed"))
-       (result (SCM_OBJ term))))
+       (return (SCM_OBJ term))))
 
    (define-cproc sys-tcsetattr (port-or-fd option::<fixnum> term::<sys-termios>)
      ::<void>
@@ -91,7 +91,7 @@
 
    (define-cproc sys-tcsendbreak (port-or-fd duration::<fixnum>) ::<boolean>
      (let* ([fd::int (Scm_GetPortFd port-or-fd TRUE)])
-       (result (>= (tcsendbreak fd duration) 0))))
+       (return (>= (tcsendbreak fd duration) 0))))
 
    (define-cproc sys-tcdrain (port-or-fd) ::<void>
      (let* ([fd::int (Scm_GetPortFd port-or-fd TRUE)])
@@ -109,7 +109,7 @@
      (let* ([fd::int (Scm_GetPortFd port-or-fd TRUE)]
             [r::pid_t (tcgetpgrp fd)])
        (when (< r 0) (Scm_SysError "tcgetpgrp failed"))
-       (result r)))
+       (return r)))
 
    (define-cproc sys-tcsetpgrp (port-or-fd pgrp::<int>) ::<void>
      (let* ([fd::int (Scm_GetPortFd port-or-fd TRUE)])
@@ -117,7 +117,7 @@
 
    (define-cproc sys-cfgetispeed (term::<sys-termios>) ::<int>
      (let* ([s::speed_t (cfgetispeed (& (-> term term)))])
-       (result s)))
+       (return s)))
 
    (define-cproc sys-cfsetispeed (term::<sys-termios> speed::<int>) ::<void>
      (when (< (cfsetispeed (& (-> term term)) speed) 0)
@@ -125,7 +125,7 @@
 
    (define-cproc sys-cfgetospeed (term::<sys-termios>) ::<int>
      (let* ([s::speed_t (cfgetospeed (& (-> term term)))])
-       (result s)))
+       (return s)))
 
    (define-cproc sys-cfsetospeed (term::<sys-termios> speed::<int>) ::<void>
      (when (< (cfsetospeed (& (-> term term)) speed) 0)
@@ -138,7 +138,7 @@
    (define-cproc sys-termios-copy (src::<sys-termios>)
      (let* ([dest::(ScmSysTermios*) (SCM_SYS_TERMIOS (Scm_MakeSysTermios))])
        (set! (-> dest term) (-> src term))
-       (result (SCM_OBJ dest))))
+       (return (SCM_OBJ dest))))
 
    ;; pty interface
    (when "defined(HAVE_OPENPTY)"

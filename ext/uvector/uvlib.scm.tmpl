@@ -48,18 +48,18 @@
 (define-cproc make-${t}vector (length::<fixnum> :optional (fill 0))
   (let* ([filler :: (${etype})])
     (${t}unboxer filler fill)
-    (result (Scm_Make${T}Vector length filler))))
+    (return (Scm_Make${T}Vector length filler))))
 
 (define-cproc ${t}vector (:optarray (elts nelts 10) :rest args)
   :fast-flonum
   (cond [(SCM_NULLP args)
-         (result (Scm_ObjArrayTo${T}Vector elts nelts SCM_CLAMP_ERROR))]
+         (return (Scm_ObjArrayTo${T}Vector elts nelts SCM_CLAMP_ERROR))]
         [else
          (let* ([i::int (- nelts 1)] [p args])
            (for [() (>= i 0) (post-- i)]
                 (SCM_FLONUM_ENSURE_MEM (aref elts i))
                 (set! p (Scm_Cons (aref elts i) p)))
-           (result (Scm_ListToUVector SCM_CLASS_${T}VECTOR p SCM_CLAMP_ERROR)))]))
+           (return (Scm_ListToUVector SCM_CLASS_${T}VECTOR p SCM_CLAMP_ERROR)))]))
 
 (define-cproc ${t}vector-length (v::<${t}vector>) ::<int> SCM_${T}VECTOR_SIZE)
 
@@ -68,12 +68,12 @@
 (define-cproc ${t}vector-ref
   (v::<${t}vector> i::<fixnum> :optional fallback) :fast-flonum
   (setter ${t}vector-set!)
-  (result (Scm_VMUVectorRef v (Scm_UVectorType (Scm_ClassOf (SCM_OBJ v)))
+  (return (Scm_VMUVectorRef v (Scm_UVectorType (Scm_ClassOf (SCM_OBJ v)))
                             i fallback)))
 
 (define-cproc ${t}vector-set!
   (v::<${t}vector> i::<fixnum> val :optional clamp) :fast-flonum
-  (result (Scm_${T}VectorSet v i val (clamp_arg clamp))))
+  (return (Scm_${T}VectorSet v i val (clamp_arg clamp))))
 
 (define-cproc ${t}vector-copy
   (v::<${t}vector> :optional (start::<fixnum> 0) (end::<fixnum> -1))
@@ -93,11 +93,11 @@
    [(SCM_INTEGERP dstart) ; new API
     (unless (SCM_${T}VECTORP src)
       (Scm_Error "${t}vector-copy!: argument is not a matching uvector: %S"src))
-    (result (Scm_${T}VectorCopyX dst (Scm_GetInteger dstart)
+    (return (Scm_${T}VectorCopyX dst (Scm_GetInteger dstart)
                   (SCM_${T}VECTOR src) sstart send))]
    [(SCM_${T}VECTORP dstart) ; old API
-    (result (Scm_${T}VectorCopyX dst 0 (SCM_${T}VECTOR dstart) 0 -1))]
-   [else (SCM_TYPE_ERROR dstart "integer") (result SCM_UNDEFINED)]))
+    (return (Scm_${T}VectorCopyX dst 0 (SCM_${T}VECTOR dstart) 0 -1))]
+   [else (SCM_TYPE_ERROR dstart "integer") (return SCM_UNDEFINED)]))
 
 ;; multi-copy! - copy src repeatedly to different parts of dst.
 (define-cproc ${t}vector-multi-copy!
@@ -138,13 +138,13 @@
   Scm_${T}VectorToList)
 
 (define-cproc list->${t}vector (l::<list> :optional clamp)
-  (result (Scm_ListToUVector SCM_CLASS_${T}VECTOR l (clamp-arg clamp))))
+  (return (Scm_ListToUVector SCM_CLASS_${T}VECTOR l (clamp-arg clamp))))
 
 (define-cproc ${t}vector-fill!
   (v::<${t}vector> val :optional (start::<fixnum> 0) (end::<fixnum> -1))
   (let* ([filler :: (${etype})])
     (${t}unboxer filler val)
-    (result (Scm_${T}VectorFill v filler start end))))
+    (return (Scm_${T}VectorFill v filler start end))))
 
 (define-cproc ${t}vector->vector
   (v::<${t}vector> :optional (start::<fixnum> 0) (end::<fixnum> -1))
@@ -152,26 +152,26 @@
 
 (define-cproc vector->${t}vector
   (v::<vector> :optional (start::<fixnum> 0) (end::<fixnum> -1) clamp)
-  (result (Scm_VectorTo${T}Vector v start end (clamp-arg clamp))))
+  (return (Scm_VectorTo${T}Vector v start end (clamp-arg clamp))))
 
 ///)) ;; end of tmpl-body
 
 ///(define *tmpl-numop* '(
 (define-cproc ${t}vector-${opname} (v0::<${t}vector> v1 :optional clamp)
   :fast-flonum
-  (result (Scm_${T}Vector${Opname} v0 v1 (clamp-arg clamp))))
+  (return (Scm_${T}Vector${Opname} v0 v1 (clamp-arg clamp))))
 
 (define-cproc ${t}vector-${opname}! (v0::<${t}vector> v1 :optional clamp)
   :fast-flonum
-  (result (Scm_${T}Vector${Opname}X v0 v1 (clamp-arg clamp))))
+  (return (Scm_${T}Vector${Opname}X v0 v1 (clamp-arg clamp))))
 ///)) ;; end of tmpl-numop
 
 ///(define *tmpl-bitop* '(
 (define-cproc ${t}vector-${opname} (v0::<${t}vector> v1)
-  (result (Scm_${T}Vector${Opname} v0 v1)))
+  (return (Scm_${T}Vector${Opname} v0 v1)))
 
 (define-cproc ${t}vector-${opname}! (v0::<${t}vector> v1)
-  (result (Scm_${T}Vector${Opname}X v0 v1)))
+  (return (Scm_${T}Vector${Opname}X v0 v1)))
 ///)) ;; end of tmpl-bitop
 
 ///(define *tmpl-dotop* '(

@@ -128,14 +128,14 @@
    ::<int>
    (let* ([len::int (SCM_UVECTOR_SIZE v)])
      (SCM_CHECK_START_END start end len)
-     (result (* (- end start)
+     (return (* (- end start)
                 (Scm_UVectorElementSize (Scm_ClassOf (SCM_OBJ v)))))))
 
  (define-cproc uvector-class-element-size (c::<class>) ::<fixnum>
    (let* ([r::int (Scm_UVectorElementSize c)])
      (when (< r 0)
        (Scm_Error "A class of uvector is required, but got: %S" c))
-     (result r)))
+     (return r)))
  )
 
 ;; allocation by class
@@ -190,7 +190,7 @@
                            (Scm_GetDouble init)
                            0 -1)]
        [else SCM_UNDEFINED]) ; can't happen
-     (result v))))
+     (return v))))
 
 ;; generic copy
 (inline-stub
@@ -205,7 +205,7 @@
      (let* ([newsize::int (* (- end start) eltsize)]
             [dst::char* (SCM_NEW_ATOMIC_ARRAY (char) newsize)])
        (memcpy dst (+ src (* start eltsize)) newsize)
-       (result (Scm_MakeUVector klass (- end start) dst)))))
+       (return (Scm_MakeUVector klass (- end start) dst)))))
  )
 
 ;; block i/o
@@ -225,7 +225,7 @@
    (let* ([v::ScmUVector* (cast ScmUVector* (Scm_MakeUVector klass size NULL))]
           [r (Scm_ReadBlockX v port 0 size endian)])
      (if (SCM_EOFP r)
-       (result r)
+       (return r)
        (begin
          (SCM_ASSERT (SCM_INTP r))
          (let* ([n::long (SCM_INT_VALUE r)])
@@ -234,8 +234,8 @@
            ;; want to copy it instead of just keeping the rest of vector
            ;; unused.
            (if (< n size)
-             (result (Scm_UVectorAlias klass v 0 n))
-             (result (SCM_OBJ v))))))))
+             (return (Scm_UVectorAlias klass v 0 n))
+             (return (SCM_OBJ v))))))))
 
  (define-cproc write-uvector (v::<uvector>
                               :optional (port::<output-port> (current-output-port))
@@ -301,12 +301,12 @@
  (define-cproc string->s8vector
    (s::<string>
     :optional (start::<fixnum> 0) (end::<fixnum> -1) (immutable?::<boolean> #f))
-   (result (string->bytevector SCM_CLASS_S8VECTOR s start end immutable?)))
+   (return (string->bytevector SCM_CLASS_S8VECTOR s start end immutable?)))
 
  (define-cproc string->u8vector
    (s::<string>
     :optional (start::<fixnum> 0) (end::<fixnum> -1) (immutable?::<boolean> #f))
-   (result (string->bytevector SCM_CLASS_U8VECTOR s start end immutable?)))
+   (return (string->bytevector SCM_CLASS_U8VECTOR s start end immutable?)))
 
  (define-cfn string->bytevector!
    (v::ScmUVector* tstart::int s::ScmString* start::int end::int) :static
@@ -325,14 +325,14 @@
                                   s::<string>
                                   :optional (start::<fixnum> 0)
                                   (end::<fixnum> -1))
-   (result (string->bytevector! (SCM_UVECTOR v) tstart s start end)))
+   (return (string->bytevector! (SCM_UVECTOR v) tstart s start end)))
 
  (define-cproc string->u8vector! (v::<u8vector>
                                   tstart::<int>
                                   s::<string>
                                   :optional (start::<fixnum> 0)
                                   (end::<fixnum> -1))
-   (result (string->bytevector! (SCM_UVECTOR v) tstart s start end)))
+   (return (string->bytevector! (SCM_UVECTOR v) tstart s start end)))
 
  (define-cfn bytevector->string (v::ScmUVector* start::int end::int) :static
    (let* ([len::int (SCM_UVECTOR_SIZE v)])
@@ -363,12 +363,12 @@
  (define-cproc s8vector->string (v::<s8vector>
                                  :optional (start::<fixnum> 0)
                                            (end::<fixnum> -1))
-   (result (bytevector->string (SCM_UVECTOR v) start end)))
+   (return (bytevector->string (SCM_UVECTOR v) start end)))
 
  (define-cproc u8vector->string (v::<u8vector>
                                  :optional (start::<fixnum> 0)
                                            (end::<fixnum> -1))
-   (result (bytevector->string (SCM_UVECTOR v) start end)))
+   (return (bytevector->string (SCM_UVECTOR v) start end)))
 
  (define-cfn string->wordvector
    (klass::ScmClass* s::ScmString* start::int end::int) :static
@@ -386,12 +386,12 @@
  (define-cproc string->s32vector (s::<string>
                                   :optional (start::<fixnum> 0)
                                   (end::<fixnum> -1))
-   (result (string->wordvector SCM_CLASS_S32VECTOR s start end)))
+   (return (string->wordvector SCM_CLASS_S32VECTOR s start end)))
 
  (define-cproc string->u32vector (s::<string>
                                   :optional (start::<fixnum> 0)
                                   (end::<fixnum> -1))
-   (result (string->wordvector SCM_CLASS_U32VECTOR s start end)))
+   (return (string->wordvector SCM_CLASS_U32VECTOR s start end)))
 
  (define-cfn string->wordvector!
    (v::ScmUVector* tstart::int s::ScmString* start::int end::int) :static
@@ -413,14 +413,14 @@
                                    s::<string>
                                    :optional (start::<fixnum> 0)
                                              (end::<fixnum> -1))
-   (result (string->wordvector! (SCM_UVECTOR v) tstart s start end)))
+   (return (string->wordvector! (SCM_UVECTOR v) tstart s start end)))
 
  (define-cproc string->u32vector! (v::<u32vector>
                                    tstart::<fixnum>
                                    s::<string>
                                    :optional (start::<fixnum> 0)
                                              (end::<fixnum> -1))
-   (result (string->wordvector! (SCM_UVECTOR v) tstart s start end)))
+   (return (string->wordvector! (SCM_UVECTOR v) tstart s start end)))
 
  (define-cfn wordvector->string (v::ScmUVector* start::int end::int) :static
    (let* ([len::int (SCM_UVECTOR_SIZE v)]
@@ -435,12 +435,12 @@
  (define-cproc s32vector->string (v::<s32vector>
                                   :optional (start::<fixnum> 0)
                                             (end::<fixnum> -1))
-   (result (wordvector->string (SCM_UVECTOR v) start end)))
+   (return (wordvector->string (SCM_UVECTOR v) start end)))
 
  (define-cproc u32vector->string (v::<u32vector>
                                   :optional (start::<fixnum> 0)
                                             (end::<fixnum> -1))
-   (result (wordvector->string (SCM_UVECTOR v) start end)))
+   (return (wordvector->string (SCM_UVECTOR v) start end)))
  )
 
 ;; for the bakcward compatibility

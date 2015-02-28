@@ -23,8 +23,9 @@
    (let* ([data::void* NULL] [size::int 0]
           [c::char* (crypt_ra pass setting (& data) (& size))])
      (when (== c NULL) (Scm_SysError "crypt_ra failed"))
-     (result (SCM_MAKE_STR_COPYING c))
-     (free data)))
+     (let* ([r (SCM_MAKE_STR_COPYING c)])
+       (free data)
+       (return r))))
 
  (define-cproc crypt-gensalt-ra (prefix::<const-cstring>
                                  count::<ulong>
@@ -34,8 +35,9 @@
                                             (SCM_U8VECTOR_ELEMENTS randomsrc))
                                       (SCM_U8VECTOR_SIZE randomsrc))])
      (when (== c NULL) (Scm_SysError "crypt_gensalt_ra failed"))
-     (result (SCM_MAKE_STR_COPYING c))
-     (free c)))
+     (let* ([r (SCM_MAKE_STR_COPYING c)])
+       (free c)
+       (return r))))
  )
 
 (define (bcrypt-hashpw pass :optional (setting #f))

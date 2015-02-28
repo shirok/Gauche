@@ -414,13 +414,13 @@
      (cond [(< ch #x20000)
             (let* ([k::u_char (aref break_table (>> ch 8))])
               (if (== k 255)
-                (result GB_Other)
+                (return GB_Other)
                 (let* ([b::u_char (aref break_subtable k (logand ch #xff))])
-                  (result (>> b 4)))))]
+                  (return (>> b 4)))))]
            [(or (== #xE0001 ch)
-                (and (<= #xE0020 ch) (<= ch #xE007F))) (result GB_Control)]
-           [(and (<= #xE0100 ch) (<= ch #xE01EF)) (result GB_Extend)]
-           [else (result GB_Other)])))
+                (and (<= #xE0020 ch) (<= ch #xE007F))) (return GB_Control)]
+           [(and (<= #xE0100 ch) (<= ch #xE01EF)) (return GB_Extend)]
+           [else (return GB_Other)])))
 
  (define-cproc wb-property (scode) ::<int>
    (let* ([ch::int])
@@ -428,13 +428,13 @@
      (cond [(< ch #x20000)
             (let* ([k::u_char (aref break_table (>> ch 8))])
               (if (== k 255)
-                (result WB_Other)
+                (return WB_Other)
                 (let* ([b::u_char (aref break_subtable k (logand ch #xff))])
-                  (result (logand b #x0f)))))]
+                  (return (logand b #x0f)))))]
            [(or (== #xE0001 ch)
-                (and (<= #xE0020 ch) (<= ch #xE007F))) (result WB_Format)]
-           [(and (<= #xE0100 ch) (<= ch #xE01EF)) (result WB_Extend)]
-           [else (result WB_Other)])))
+                (and (<= #xE0020 ch) (<= ch #xE007F))) (return WB_Format)]
+           [(and (<= #xE0100 ch) (<= ch #xE01EF)) (return WB_Extend)]
+           [else (return WB_Other)])))
  )
 
 ;;=========================================================================
@@ -925,17 +925,16 @@
              (?: charp
                  (SCM_MAKE_CHAR (+ ch (-> pcm ,to_x_simple)))
                  (SCM_MAKE_INT  (+ ch (-> pcm ,to_x_simple)))))
-       (result 1)]
+       (return 1)]
       [else
        (for ((set! i 0) (< i SCM_CHAR_FULL_CASE_MAPPING_SIZE) (post++ i))
             (when (== (aref (-> pcm ,to_x_full) i) -1)
-              (result i)
-              (break))
+              (return i))
             (set! (SCM_VECTOR_ELEMENT buf i)
                   (?: charp
                       (SCM_MAKE_CHAR (aref (-> pcm ,to_x_full) i))
                       (SCM_MAKE_INT  (aref (-> pcm ,to_x_full) i)))))
-       (when (== i SCM_CHAR_FULL_CASE_MAPPING_SIZE) (result i))])])
+       (when (== i SCM_CHAR_FULL_CASE_MAPPING_SIZE) (return i))])])
 
  (define-cproc %char-xcase-extended (scode buf::<vector>
                                      kind::<int> charp::<boolean>)

@@ -178,7 +178,7 @@
    [(_ final ctx size)
     `(let* ([digest::(.array (unsigned char) (,size))])
        (,final digest (& (-> ,ctx ctx)))
-       (result (Scm_MakeString (cast (const char*) digest)
+       (return (Scm_MakeString (cast (const char*) digest)
                                ,size ,size
                                (logior SCM_STRING_INCOMPLETE
                                        SCM_STRING_COPYING))))])

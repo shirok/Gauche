@@ -63,7 +63,7 @@
      (dotimes (i N)
        (set! (aref (SCM_U32VECTOR_ELEMENTS v) i) (aref (-> mt mt) i)))
      (set! (aref (SCM_U32VECTOR_ELEMENTS v) N) (-> mt mti))
-     (result v)))
+     (return v)))
 
  (define-cproc mt-random-set-state! (mt::<mersenne-twister> state::<u32vector>)
    ::<void>
@@ -76,10 +76,10 @@
    (set! (-> mt mti) (aref (SCM_U32VECTOR_ELEMENTS state) N)))
 
  (define-cproc mt-random-real (mt::<mersenne-twister>) ::<double>
-   (result (Scm_MTGenrandF64 mt TRUE)))
+   (return (Scm_MTGenrandF64 mt TRUE)))
 
  (define-cproc mt-random-real0 (mt::<mersenne-twister>) ::<double>
-   (result (Scm_MTGenrandF64 mt FALSE)))
+   (return (Scm_MTGenrandF64 mt FALSE)))
 
  (define-cproc %mt-random-integer (mt::<mersenne-twister> n)
    Scm_MTGenrandInt)
@@ -91,19 +91,19 @@
    (let* ([p::ScmUInt32* (SCM_U32VECTOR_ELEMENTS v)])
      (dotimes [i (SCM_U32VECTOR_SIZE v)]
        (set! (* (post++ p)) (Scm_MTGenrandU32 mt)))
-     (result (SCM_OBJ v))))
+     (return (SCM_OBJ v))))
 
  (define-cproc mt-random-fill-f32vector! (mt::<mersenne-twister> v::<f32vector>)
    (let* ([p::float* (SCM_F32VECTOR_ELEMENTS v)])
      (dotimes [i (SCM_F32VECTOR_SIZE v)]
        (set! (* (post++ p)) (Scm_MTGenrandF32 mt TRUE)))
-     (result (SCM_OBJ v))))
+     (return (SCM_OBJ v))))
 
  (define-cproc mt-random-fill-f64vector! (mt::<mersenne-twister> v::<f64vector>)
    (let* ([p::double* (SCM_F64VECTOR_ELEMENTS v)])
      (dotimes [i (SCM_F64VECTOR_SIZE v)]
        (set! (* (post++ p)) (Scm_MTGenrandF64 mt TRUE)))
-     (result (SCM_OBJ v))))
+     (return (SCM_OBJ v))))
  )
 
 (define (%get-nword-random-int mt n)

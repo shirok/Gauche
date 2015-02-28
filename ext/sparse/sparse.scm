@@ -146,30 +146,30 @@
       [(SCM_EQ type 'equal?)   (set! t SCM_HASH_EQUAL)]
       [(SCM_EQ type 'string=?) (set! t SCM_HASH_STRING)]
       [else                    (set! t SCM_HASH_GENERAL)])
-     (result (MakeSparseTable t cmpr 0))))
+     (return (MakeSparseTable t cmpr 0))))
 
  (define-cproc sparse-table-comparator (st::<sparse-table>)
-   (result (SCM_OBJ (-> st comparator))))
+   (return (SCM_OBJ (-> st comparator))))
  
  (define-cproc sparse-table-num-entries (st::<sparse-table>) ::<ulong>
-   (result (-> st numEntries)))
+   (return (-> st numEntries)))
 
  (define-cproc sparse-table-set! (st::<sparse-table> key value)
-   (result (SparseTableSet st key value 0)))
+   (return (SparseTableSet st key value 0)))
 
  (define-cproc sparse-table-ref (st::<sparse-table> key :optional fallback)
    (setter sparse-table-set!)
    (let* ([r (SparseTableRef st key fallback)])
      (when (SCM_UNBOUNDP r)
        (Scm_Error "%S doesn't have an entry for key %S" (SCM_OBJ st) key))
-     (result r)))
+     (return r)))
 
  (define-cproc sparse-table-exists? (st::<sparse-table> key) ::<boolean>
    (let* ([r (SparseTableRef st key SCM_UNBOUND)])
-     (result (not (SCM_UNBOUNDP r)))))
+     (return (not (SCM_UNBOUNDP r)))))
 
  (define-cproc sparse-table-delete! (st::<sparse-table> key) ::<boolean>
-   (result (not (SCM_UNBOUNDP (SparseTableDelete st key)))))
+   (return (not (SCM_UNBOUNDP (SparseTableDelete st key)))))
 
  (define-cproc sparse-table-clear! (st::<sparse-table>) ::<void>
    SparseTableClear)
@@ -187,7 +187,7 @@
  (define-cproc %sparse-table-iter (st::<sparse-table>)
    (let* ([iter::SparseTableIter* (SCM_NEW SparseTableIter)])
      (SparseTableIterInit iter st)
-     (result (Scm_MakeSubr sparse-table-iter iter 1 0 '"sparse-table-iterator"))))
+     (return (Scm_MakeSubr sparse-table-iter iter 1 0 '"sparse-table-iterator"))))
 
  (define-cproc %sparse-table-dump (st::<sparse-table>) ::<void>
    SparseTableDump)
@@ -252,13 +252,13 @@
                                  one of symbols s8, u8, s16, u16, s32, u32, \
                                  s64, u64, f16, f32, f64"
                                 type)])
-     (result (MakeSparseVector klass flags))))
+     (return (MakeSparseVector klass flags))))
 
  (define-cproc sparse-vector-max-index-bits () ::<int>
-   (result SPARSE_VECTOR_MAX_INDEX_BITS))
+   (return SPARSE_VECTOR_MAX_INDEX_BITS))
 
  (define-cproc sparse-vector-num-entries (sv::<sparse-vector>) ::<ulong>
-   (result (-> sv numEntries)))
+   (return (-> sv numEntries)))
 
  (define-cproc sparse-vector-set!
    (sv::<sparse-vector> index::<ulong> value) ::<void>
@@ -270,16 +270,16 @@
    (let* ([r (SparseVectorRef sv index fallback)])
      (when (SCM_UNBOUNDP r)
        (Scm_Error "%S doesn't have an entry at index %lu" (SCM_OBJ sv) index))
-     (result r)))
+     (return r)))
 
  (define-cproc sparse-vector-exists?
    (sv::<sparse-vector> index::<ulong>) ::<boolean>
    (let* ([r (SparseVectorRef sv index SCM_UNBOUND)])
-     (result (not (SCM_UNBOUNDP r)))))
+     (return (not (SCM_UNBOUNDP r)))))
 
  (define-cproc sparse-vector-delete! (sv::<sparse-vector> index::<ulong>)
    ::<boolean>
-   (result (not (SCM_UNBOUNDP (SparseVectorDelete sv index)))))
+   (return (not (SCM_UNBOUNDP (SparseVectorDelete sv index)))))
 
  (define-cproc sparse-vector-clear! (sv::<sparse-vector>) ::<void>
    SparseVectorClear)
@@ -303,7 +303,7 @@
  (define-cproc %sparse-vector-iter (sv::<sparse-vector>)
    (let* ([iter::SparseVectorIter* (SCM_NEW SparseVectorIter)])
      (SparseVectorIterInit iter sv)
-     (result
+     (return
       (Scm_MakeSubr sparse-vector-iter iter 1 0 '"sparse-vector-iterator"))))
 
  (define-cproc %sparse-vector-dump (sv::<sparse-vector>) ::<void>
