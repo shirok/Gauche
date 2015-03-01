@@ -6286,28 +6286,29 @@
 ;; Dummy macros
 ;;
 
+(define (%precomp-only name)
+  (warn "The ~a form can only be used for Scheme sources \
+         to be pre-compiled.  Since you're loading the file without \
+         pre-compilation, this form is ignored (Current module=~s)"
+        name (current-module))
+  (undefined))
+
 (select-module gauche)
 
 (declare (keep-private-macro inline-stub define-cproc declare))
 
-;; The form (inline-stub ...) allows genstub directives embedded
-;; within a Scheme source.  It is only valid when the source is
-;; pre-compiled into C.  Technically we can kick C compiler at
-;; runtime, but it'll need some more work, so we signal an error
-;; when inline-stub form is evaluated at runtime.  The precompiler
-;; (precomp) handles this form specially.
+;; Those forms are recognized by the AOT compiler (precomp), and
+;; translated to C.  They can't be evaluated at runtime, so
+;; we have dummy macros to warn.
 (define-macro (inline-stub . _)
-  (warn "The inline-stub form can only be used for Scheme sources \
-         to be pre-compiled.  Since you're loading the file without \
-         pre-compilation, the definitions and expressions in the \
-         inline-stub form are ignored.  (Current module=~s)"
-        (current-module)))
-
-;; So as define-cproc.
+  ((with-module gauche.internal %precop-only) 'inline-stub))
 (define-macro (define-cproc . _)
-  (warn "The define-cproc form can only be used for Scheme sources \
-         to be pre-compiled.  Since you're loading the file without \
-         pre-compilation, the definition is ignored."))
+  ((with-module gauche.internal %precop-only) 'define-cproc))
+(define-macro (define-enum . _)
+  ((with-module gauche.internal %precop-only) 'define-enum))
+(define-macro (define-enum-conditionally . _)
+  ((with-module gauche.internal %precop-only) 'define-enum-conditionally))
+
 
 ;; The form (declare ...) may be used in wider purpose.  For the time
 ;; being we use it in limited purposes for compilers.  In interpreter
