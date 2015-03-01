@@ -23,7 +23,8 @@ all : $(LIBFILES)
 gauche--net.$(SOEXT) : $(OBJECTS)
 	$(MODLINK) gauche--net.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
-netlib.c : netlib.stub
+netlib.c : netlib.scm
+	$(PRECOMP) $(srcdir)/netlib.scm
 
 netaux.c : netaux.scm
 	$(PRECOMP) $(srcdir)/netaux.scm

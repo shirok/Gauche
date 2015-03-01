@@ -31,67 +31,91 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
-"#include \"gauche-net.h\"
-#include <gauche/class.h>
-#include <gauche/bignum.h>
-"
+(select-module gauche.net)
 
-(define-type <socket-address> "ScmSockAddr*" "socket address"
-  "Scm_SockAddrP" "SCM_SOCKADDR")
+(inline-stub
 
-(define-type <socket> "ScmSocket*")
+ (declcode "#include \"gauche-net.h\"")
+ (declcode "#include <gauche/class.h>")
+ (declcode "#include <gauche/bignum.h>")
+
+ (define-type <socket-address> "ScmSockAddr*" "socket address"
+   "Scm_SockAddrP" "SCM_SOCKADDR")
+
+ (define-type <socket> "ScmSocket*")
+ )
 
 ;;----------------------------------------------------------
 ;; Socket address methods
 
-(define-cgeneric sockaddr-name "Scm_GenericSockAddrName" (extern))
-(define-cgeneric sockaddr-family "Scm_GenericSockAddrFamily" (extern))
-(define-cgeneric sockaddr-addr "Scm_GenericSockAddrAddr" (extern))
-(define-cgeneric sockaddr-port "Scm_GenericSockAddrPort" (extern))
+(inline-stub
 
-(define-cmethod sockaddr-name ((addr "Scm_SockAddrClass"))
-  (return '"unknown"))
+ (define-cgeneric sockaddr-name "Scm_GenericSockAddrName" (extern))
+ (define-cgeneric sockaddr-family "Scm_GenericSockAddrFamily" (extern))
+ (define-cgeneric sockaddr-addr "Scm_GenericSockAddrAddr" (extern))
+ (define-cgeneric sockaddr-port "Scm_GenericSockAddrPort" (extern))
 
-(define-cmethod sockaddr-family ((addr "Scm_SockAddrClass"))
-  (return 'unknown))
+ (define-cmethod sockaddr-name ((addr "Scm_SockAddrClass"))
+   (return '"unknown"))
 
-(define-cmethod sockaddr-name ((addr "Scm_SockAddrUnClass"))
-  (return
-   (?: (> (-> (cast ScmSockAddr* addr) addrlen) (sizeof (struct sockaddr)))
-       (SCM_MAKE_STR (ref (-> (cast ScmSockAddrUn* addr) addr) sun_path))
-       (SCM_MAKE_STR ""))))
+ (define-cmethod sockaddr-family ((addr "Scm_SockAddrClass"))
+   (return 'unknown))
 
-(define-cmethod sockaddr-family ((addr "Scm_SockAddrUnClass")) (return 'unix))
+ (define-cmethod sockaddr-name ((addr "Scm_SockAddrUnClass"))
+   (return
+    (?: (> (-> (cast ScmSockAddr* addr) addrlen) (sizeof (struct sockaddr)))
+        (SCM_MAKE_STR (ref (-> (cast ScmSockAddrUn* addr) addr) sun_path))
+        (SCM_MAKE_STR ""))))
 
-(define-cmethod sockaddr-family ((addr "Scm_SockAddrInClass")) (return 'inet))
+ (define-cmethod sockaddr-family ((addr "Scm_SockAddrUnClass")) (return 'unix))
 
-(define-cmethod sockaddr-addr ((addr "Scm_SockAddrInClass")) ::<ulong>
-  (let* ([a::ScmSockAddrIn* (cast ScmSockAddrIn* addr)])
-    (return (ntohl (ref (-> a addr) sin_addr s_addr)))))
+ (define-cmethod sockaddr-family ((addr "Scm_SockAddrInClass")) (return 'inet))
 
-(define-cmethod sockaddr-port ((addr "Scm_SockAddrInClass")) ::<ushort>
-  (let* ([a::ScmSockAddrIn* (cast ScmSockAddrIn* addr)])
-    (return (ntohs (ref (-> a addr) sin_port)))))
+ (define-cmethod sockaddr-addr ((addr "Scm_SockAddrInClass")) ::<ulong>
+   (let* ([a::ScmSockAddrIn* (cast ScmSockAddrIn* addr)])
+     (return (ntohl (ref (-> a addr) sin_addr s_addr)))))
 
-(when "defined HAVE_IPV6"
-  (define-cmethod sockaddr-family ((addr "Scm_SockAddrIn6Class"))
-    (return 'inet6))
+ (define-cmethod sockaddr-port ((addr "Scm_SockAddrInClass")) ::<ushort>
+   (let* ([a::ScmSockAddrIn* (cast ScmSockAddrIn* addr)])
+     (return (ntohs (ref (-> a addr) sin_port)))))
 
-  (define-cmethod sockaddr-addr ((addr "Scm_SockAddrIn6Class"))
-    (let* ([a::ScmSockAddrIn6* (cast ScmSockAddrIn6* addr)]
-           [p::ScmUInt32*
-            (cast ScmUInt32* (ref (-> a addr) sin6_addr s6_addr))]
-           [i::int]
-           [n (Scm_MakeIntegerFromUI (ntohl (* (post++ p))))])
-      (dotimes [i 3]
-        (set! n (Scm_LogIor (Scm_Ash n 32)
-                            (Scm_MakeIntegerFromUI (ntohl (* (post++ p)))))))
-      (return n)))
+ (when "defined HAVE_IPV6"
+   (define-cmethod sockaddr-family ((addr "Scm_SockAddrIn6Class"))
+     (return 'inet6))
 
-  (define-cmethod sockaddr-port ((addr "Scm_SockAddrIn6Class")) ::<ushort>
-    (let* ([a::ScmSockAddrIn6* (cast ScmSockAddrIn6* addr)])
-      (return (ntohs (ref (-> a addr) sin6_port)))))
-  )
+   (define-cmethod sockaddr-addr ((addr "Scm_SockAddrIn6Class"))
+     (let* ([a::ScmSockAddrIn6* (cast ScmSockAddrIn6* addr)]
+            [p::ScmUInt32*
+             (cast ScmUInt32* (ref (-> a addr) sin6_addr s6_addr))]
+            [i::int]
+            [n (Scm_MakeIntegerFromUI (ntohl (* (post++ p))))])
+       (dotimes [i 3]
+         (set! n (Scm_LogIor (Scm_Ash n 32)
+                             (Scm_MakeIntegerFromUI (ntohl (* (post++ p)))))))
+       (return n)))
+
+   (define-cmethod sockaddr-port ((addr "Scm_SockAddrIn6Class")) ::<ushort>
+     (let* ([a::ScmSockAddrIn6* (cast ScmSockAddrIn6* addr)])
+       (return (ntohs (ref (-> a addr) sin6_port)))))
+   )
+ )
+
+;; Although many systems support this feature (e.g. inet_ntop/inet_pton
+;; or WSAAdressToString/WSAStringToAddress), it would be too cumbersome
+;; to check availability of those and switch the implementation.  So we
+;; provide them in Scheme.
+
+;; API
+(define-method sockaddr-name ((addr <sockaddr-in>))
+  #"~(inet-address->string (sockaddr-addr addr) AF_INET):~(sockaddr-port addr)")
+
+;; NB: this should be conditionally defined by cond-expand at compile-time,
+;; instead of load-time dispatch.  We need to clean up cond feature management
+;; more to do so.
+(if (global-variable-bound? (find-module 'gauche.net) '<sockaddr-in6>)
+  ;; API
+  (define-method sockaddr-name ((addr <sockaddr-in6>))
+    #"[~(inet-address->string (sockaddr-addr addr) AF_INET6)]:~(sockaddr-port addr)"))
 
 ;;----------------------------------------------------------
 ;; low-level socket routines
@@ -172,15 +196,17 @@
                                             SCM_PORT_BUFFER_LINE))])
     (return (Scm_SocketOutputPort sock bufmode))))
 
-(if "defined(SHUT_RD) && defined(SHUD_WR) && defined(SHUT_RDWR)"
-  (begin
-    (define-enum SHUT_RD)
-    (define-enum SHUT_WR)
-    (define-enum SHUT_RDWR))
-  (begin
-    (define-constant SHUT_RD 0)
-    (define-constant SHUT_WR 1)
-    (define-constant SHUT_RDWR 2)))
+(inline-stub 
+ (if "defined(SHUT_RD) && defined(SHUD_WR) && defined(SHUT_RDWR)"
+   (begin
+     (define-enum SHUT_RD)
+     (define-enum SHUT_WR)
+     (define-enum SHUT_RDWR))
+   (begin
+     (define-constant SHUT_RD 0)
+     (define-constant SHUT_WR 1)
+     (define-constant SHUT_RDWR 2)))
+ )
 
 (define-cproc socket-shutdown (sock::<socket> :optional (how::<fixnum> 2))
   Scm_SocketShutdown)
@@ -371,7 +397,8 @@
 ;;----------------------------------------------------------
 ;; IPv6 routines
 
-"extern ScmObj addrinfo_allocate(ScmClass *klass, ScmObj initargs);"
+(inline-stub 
+(declcode "extern ScmObj addrinfo_allocate(ScmClass *klass, ScmObj initargs);")
 
 (if "defined HAVE_IPV6"
     (begin
@@ -410,6 +437,7 @@
         (addr::<socket-address> :optional flags::<fixnum>)
         Scm_GetNameinfo)
       ))
+)
 
 (define-enum-conditionally AF_INET6)
 (define-enum-conditionally PF_INET6)
@@ -480,6 +508,7 @@
     (if (SCM_FALSEP r) (return SCM_FALSE) (return (SCM_MAKE_INT proto)))))
 
 (define-cproc inet-address->string (addr proto::<int>) Scm_InetAddressToString)
+
 
 ;; Local variables:
 ;; mode: scheme

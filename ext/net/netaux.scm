@@ -274,20 +274,3 @@
 
 ;;=================================================================
 ;; IP address <-> string converter
-;; Although many systems support this feature (e.g. inet_ntop/inet_pton
-;; or WSAAdressToString/WSAStringToAddress), it would be too cumbersome
-;; to check availability of those and switch the implementation.  So we
-;; provide them in Scheme.
-
-;; accessor methods
-;; API
-(define-method sockaddr-name ((addr <sockaddr-in>))
-  #"~(inet-address->string (sockaddr-addr addr) AF_INET):~(sockaddr-port addr)")
-
-;; NB: this should be conditionally defined by cond-expand at compile-time,
-;; instead of load-time dispatch.  We need to clean up cond feature management
-;; more to do so.
-(if ipv6-capable
-  ;; API
-  (define-method sockaddr-name ((addr <sockaddr-in6>))
-    #"[~(inet-address->string (sockaddr-addr addr) AF_INET6)]:~(sockaddr-port addr)"))
