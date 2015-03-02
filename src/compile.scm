@@ -6301,13 +6301,13 @@
 ;; translated to C.  They can't be evaluated at runtime, so
 ;; we have dummy macros to warn.
 (define-macro (inline-stub . _)
-  ((with-module gauche.internal %precop-only) 'inline-stub))
+  ((with-module gauche.internal %precomp-only) 'inline-stub))
 (define-macro (define-cproc . _)
-  ((with-module gauche.internal %precop-only) 'define-cproc))
+  ((with-module gauche.internal %precomp-only) 'define-cproc))
 (define-macro (define-enum . _)
-  ((with-module gauche.internal %precop-only) 'define-enum))
+  ((with-module gauche.internal %precomp-only) 'define-enum))
 (define-macro (define-enum-conditionally . _)
-  ((with-module gauche.internal %precop-only) 'define-enum-conditionally))
+  ((with-module gauche.internal %precomp-only) 'define-enum-conditionally))
 
 
 ;; The form (declare ...) may be used in wider purpose.  For the time
