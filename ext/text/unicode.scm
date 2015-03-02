@@ -934,7 +934,7 @@
                   (?: charp
                       (SCM_MAKE_CHAR (aref (-> pcm ,to_x_full) i))
                       (SCM_MAKE_INT  (aref (-> pcm ,to_x_full) i)))))
-       (when (== i SCM_CHAR_FULL_CASE_MAPPING_SIZE) (return i))])])
+       (return i)])])
 
  (define-cproc %char-xcase-extended (scode buf::<vector>
                                      kind::<int> charp::<boolean>)
