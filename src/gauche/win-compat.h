@@ -24,6 +24,7 @@
 #include <utime.h>
 #include <mswsock.h>
 #include <direct.h>
+#include <tchar.h>
 #undef small  /* windows.h defines 'small' as 'char'; what's the hell? */
 
 #ifndef _BSDTYPES_DEFINED

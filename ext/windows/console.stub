@@ -71,7 +71,7 @@
 (define-enum CTRL_C_EVENT)
 (define-enum CTRL_BREAK_EVENT)
 
-(define-cproc sys-generate-console-ctrl-event (event::<int> pgid::<int>)
+(define-cproc sys-generate-console-ctrl-event (event::<int> pgid::<uint>)
   ::<void>
   (check (GenerateConsoleCtrlEvent (DWORD event) (DWORD pgid))))
 
@@ -84,7 +84,7 @@
 (define-enum FILE_SHARE_READ)
 (define-enum FILE_SHARE_WRITE)
 
-(define-cproc sys-create-console-screen-buffer (desired-access::<uint>
+(define-cproc sys-create-console-screen-buffer (desired-access::<int>
                                                 share-mode::<uint>
                                                 inheritable::<boolean>)
   (let* ([sa::SECURITY_ATTRIBUTES])
@@ -106,10 +106,10 @@
                                                 x::<short> y::<short>
                                                 fill::<ulong>)
   ::<void>
-  (unless (< (SCM_UVECTOR_SIZE scroll-rectangle) 4)
+  (when (< (SCM_UVECTOR_SIZE scroll-rectangle) 4)
     (Scm_Error "s16vector of minimum length 4 required for scroll-rectangle: %S"
                scroll-rectangle))
-  (unless (and clip-rectangle (< (SCM_UVECTOR_SIZE clip-rectangle) 4))
+  (when (and clip-rectangle (< (SCM_UVECTOR_SIZE clip-rectangle) 4))
     (Scm_Error "s16vector of minimum length 4 required for clip-rectangle: %S"
                clip-rectangle))
   (let* ([c::COORD] [ci::CHAR_INFO])
@@ -118,7 +118,7 @@
     (check (ScrollConsoleScreenBuffer
             (Scm_WinHandle handle '#f)
             (cast (SMALL_RECT*) (SCM_UVECTOR_ELEMENTS scroll-rectangle))
-            (cast (SMALL_RECT*) (SCM_UVECTOR_ELEMENTS clip-rectangle))
+            (?: clip-rectangle (cast (SMALL_RECT*) (SCM_UVECTOR_ELEMENTS clip-rectangle)) NULL)
             c (& ci)))))
 
 ;;
@@ -298,12 +298,12 @@
                             :type <boolean>))
   (allocate (c "make_input_record")))
 
-(define-cproc sys-get-number-of-console-input-events (h) ::<int>
+(define-cproc sys-get-number-of-console-input-events (h) ::<uint>
   (let* ([num::DWORD 0])
     (check (GetNumberOfConsoleInputEvents (Scm_WinHandle h '#f) (& num)))
     (result num)))
 
-(define-cproc sys-get-number-of-console-mouse-buttons () ::<int>
+(define-cproc sys-get-number-of-console-mouse-buttons () ::<uint>
   (let* ([num::DWORD 0])
     (check (GetNumberOfConsoleMouseButtons (& num)))
     (result num)))
@@ -323,7 +323,7 @@
 (define-cproc sys-read-console-input (h)
   (peek/read-console-input ReadConsoleInput))
 
-(define-cproc sys-read-console (h buf::<uvector>) ::<int>
+(define-cproc sys-read-console (h buf::<uvector>) ::<uint>
   (unless (or (SCM_U8VECTORP buf) (SCM_U16VECTORP buf))
     (Scm_TypeError "buf" "u8vector or u16vector" (SCM_OBJ buf)))
   (SCM_UVECTOR_CHECK_MUTABLE buf)
@@ -359,7 +359,7 @@
 (define-cproc sys-read-console-output-attribute (handle
                                                  buf::<u16vector>
                                                  x::<short> y::<short>)
-  ::<int>
+  ::<uint>
   (let* ([len::DWORD (SCM_UVECTOR_SIZE buf)] [nread::DWORD] [coord::COORD])
     (= (ref coord X) x (ref coord Y) y)
     (check (ReadConsoleOutputAttribute (Scm_WinHandle handle '#f)
@@ -367,14 +367,16 @@
                                        len coord (& nread)))
     (result nread)))
 
-(define-cproc sys-read-console-output-character (handle len::<ushort>
+(define-cproc sys-read-console-output-character (handle len::<uint>
                                                         x::<short> y::<short>)
   ::<const-cstring>
+  (when (> len USHRT_MAX)
+    (Scm_Error "ReadConsoleOutputCharacter: length argument too large"))
   (let* ([coord::COORD] [nread::DWORD 0]
          [pbuf::LPTSTR (SCM_NEW_ATOMIC_ARRAY TCHAR (+ len 1))])
     (= (ref coord X) x (ref coord Y) y)
-    (check (ReadConsoleOutputCharacter handle pbuf len coord (& nread)))
-    (= (aref pbuf len) 0)
+    (check (ReadConsoleOutputCharacter (Scm_WinHandle handle '#f) pbuf len coord (& nread)))
+    (= (aref pbuf nread) 0)
     (result (SCM_WCS2MBS pbuf))))
 
 (define-cproc sys-set-console-text-attribute (h attr::<ushort>) ::<void>
@@ -390,30 +392,30 @@
                                (cast (SMALL_RECT*)
                                      (SCM_UVECTOR_ELEMENTS window)))))
 
-(define-cproc sys-write-console (h s::<string>) ::<int>
-  (let* ([b::(const ScmStringBody*) (SCM_STRING_BODY s)]
+(define-cproc sys-write-console (h s::<string>) ::<uint>
+  (let* ([wcs::TCHAR* (SCM_MBS2WCS (Scm_GetStringConst s))]
          [nwritten::DWORD 0])
     (check (WriteConsole (Scm_WinHandle h '#f)
-                         (SCM_MBS2WCS (SCM_STRING_BODY_START b))
-                         (SCM_STRING_BODY_LENGTH b)
+                         wcs
+                         (_tcslen wcs)
                          (& nwritten) NULL))
     (result nwritten)))
 
 (define-cproc sys-write-console-output-character (h s::<string>
                                                     x::<short> y::<short>)
-  ::<int>
-  (let* ([b::(const ScmStringBody*) (SCM_STRING_BODY s)]
+  ::<uint>
+  (let* ([wcs::TCHAR* (SCM_MBS2WCS (Scm_GetStringConst s))]
          [c::COORD] [nwritten::DWORD 0])
     (= (ref c X) x (ref c Y) y)
     (check (WriteConsoleOutputCharacter (Scm_WinHandle h '#f)
-                                        (SCM_MBS2WCS (SCM_STRING_BODY_START b))
-                                        (SCM_STRING_BODY_LENGTH b)
+                                        wcs
+                                        (_tcslen wcs)
                                         c (& nwritten)))
     (result nwritten)))
 
-(define-cproc sys-fill-console-output-character (h c::<char> len::<ulong>
+(define-cproc sys-fill-console-output-character (h c::<char> len::<uint>
                                                    x::<short> y::<short>)
-  ::<int>
+  ::<uint>
   (let* ([ch::ScmChar (Scm_CharToUcs c)]
          [coord::COORD] [nwritten::DWORD 0])
     (= (ref coord X) x (ref coord Y) y)
@@ -423,9 +425,9 @@
                                         coord (& nwritten)))
     (result nwritten)))
 
-(define-cproc sys-fill-console-output-attribute (h attr::<ushort> len::<ulong>
+(define-cproc sys-fill-console-output-attribute (h attr::<ushort> len::<uint>
                                                    x::<short> y::<short>)
-  ::<int>
+  ::<uint>
   (let* ([c::COORD] [nwritten::DWORD 0])
     (= (ref c X) x (ref c Y) y)
     (check (FillConsoleOutputAttribute (Scm_WinHandle h '#f)
@@ -446,6 +448,12 @@
     (when (== r 0) (Scm_SysError "GetConsoleTitle failed"))
     (= (aref buf 1023) 0)
     (result (SCM_WCS2MBS buf))))
+
+(define-cproc sys-set-console-title (s::<string>) ::<void>
+  (let* ([wcs::TCHAR* (SCM_MBS2WCS (Scm_GetStringConst s))])
+    (when (>= (_tcslen wcs) 1024)
+      (Scm_Error "SetConsoleTitle: string argument too long"))
+    (check (SetConsoleTitle wcs))))
 
 ;;
 ;; Std Handles
