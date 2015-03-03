@@ -3158,6 +3158,7 @@ blocks'', you should definitely consider sparse tables.
 
 @deftp {Class} <sparse-vector-base>
 @clindex sparse-vector-base
+@c EN
 An abstract base class of sparse vectors.
 Inherits @code{<dictionary>} and @code{<collection>}.
 Note that sparse vectors are @emph{not} @code{<sequence>}; even
@@ -3174,6 +3175,20 @@ All of these sparse vectors can be accessed by the same API.
 Sparse vectors also implements the Collection API
 (@xref{Collection framework}) and the Dictionary API
 (@xref{Dictionary framework}).
+@c JP
+疎なベクタの抽象ベースクラスです。@code{<dictionary>}と@code{<collection>}を
+継承しています。@code{<sequence>}は継承していないことに注意してください。
+疎なベクタは整数でインデクス可能ですが、インデクスの順番に要素にアクセスする手段を
+持っていません。
+
+疎なベクタは、@code{<vector>}と同様、任意のSchemeオブジェクトを格納可能である
+ものもあれば、@code{<s8vector>}等と同様に特定の範囲の数値のみ格納可能なものもあります。
+全ての疎なベクタは同一セットのAPIで利用可能です。
+
+疎なベクタはまた、コレクションAPIとディクショナリAPIを実装しています。これらについては
+@ref{Collection framework}および@ref{Dictionary framework}を
+参照してください。
+@c COMMON
 @end deftp
 
 @deftp {Class} <sparse-vector>
@@ -3190,6 +3205,7 @@ Sparse vectors also implements the Collection API
 @clindex sparse-f16vector
 @clindex sparse-f32vector
 @clindex sparse-f64vector
+@c EN
 The actual sparse vector classes.  Inherits @code{<sparse-vector-base>}.
 An instance of @code{<sparse-vector>} can contain any Scheme objects.
 
@@ -3201,9 +3217,23 @@ is the same as the corresponding @code{<@var{TAG}vector>} class
 in @code{gauche.uvector} (@xref{Uniform vectors}).  That is,
 @code{<sparse-u8vector>} can have exact integer values
 between 0 and 255.
+@c JP
+疎なベクタの具体クラスです。それぞれ@code{<sparse-vector-base>}を継承します。
+
+@code{<sparse-vector>}のインスタンスは任意のSchemeオブジェクトを格納できます。
+
+@var{TAG}は @code{s8}, @code{u8},
+@code{s16}, @code{u16}, @code{s32}, @code{u32},
+@code{s64}, @code{u64}, @code{f16}, @code{f32}, @code{f64}のいずれかで、
+それぞれの疎なベクタの格納可能な値は、@code{gauche.uvector}の
+対応する@code{<@var{TAG}vector>}に準じます(@ref{Uniform vectors}参照)。
+つまり、@code{<sparse-u8vector>}の要素には0以上255以下の正確な整数を
+格納できます。
+@c COMMON
 @end deftp
 
 @defun make-sparse-vector :optional type
+@c EN
 Creates an empty sparse vector.  The @var{type} argument can be
 @code{#f} (default), one of subclasses of @code{<sparse-vector-base>},
 or a symbol of either one of @code{s8}, @code{u8},
@@ -3216,12 +3246,30 @@ created.  If it is a class, an instance of the class is created
 @code{<sparse-vector-base>}.)
 If it is a symbol, an instance of corresponding @code{<sparse-@var{TAG}vector>}
 is created.
+@c JP
+空の疎なベクタを作成して返します。@var{type}引数は@code{#f}(デフォルト)か、
+@code{<sparse-vector-base>}のサブクラスのどれか、
+あるいはシンボル@code{s8}, @code{u8},
+@code{s16}, @code{u16}, @code{s32}, @code{u32},
+@code{s64}, @code{u64}, @code{f16}, @code{f32}, @code{f64}のいずれかを
+指定できます。
+
+@var{type}が省略されるか@code{#f}の場合は@code{<sparse-vector>}のインスタンスが
+作られます。@var{type}がクラスであればそのインスタンスが、またシンボルであれば、
+対応する@code{<sparse-@var{TAG}vector>}のインスタンスが作られます。
+@c COMMON
 @end defun
 
 @defun sparse-vector-max-index-bits
+@c EN
 Returns maximum number of bits of allowed integer.  If this
 returns 32, the index up to @code{(expt 2 32)} is supported.
 It is guaranteed that this is at least 32.
+@c JP
+実装が利用できる、疎なベクタのインデックスの最大のビット数を返します。
+例えばこれが32を返したなら、インデックスとして@code{(expt 2 32)}まで
+使えるということです。この値は最低でも32であることが保証されています。
+@c COMMON
 @end defun
 
 In the following entries, the argument @var{sv} denotes
