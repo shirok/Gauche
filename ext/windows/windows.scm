@@ -92,6 +92,7 @@
    sys-fill-console-output-attribute
    sys-flush-console-input-buffer
    sys-get-console-title
+   sys-set-console-title
    STD_INPUT_HANDLE STD_OUTPUT_HANDLE STD_ERROR_HANDLE
    sys-get-std-handle sys-set-std-handle
    ))
