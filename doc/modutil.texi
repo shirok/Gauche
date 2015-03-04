@@ -3272,23 +3272,42 @@ It is guaranteed that this is at least 32.
 @c COMMON
 @end defun
 
+@c EN
 In the following entries, the argument @var{sv} denotes
 an instance of sparse vector; an error is signaled if other
 object is passed.
+@c JP
+以下のエントリにおいて、引数@var{sv}は疎なベクタのインスタンスです。
+他のオブジェクトが渡された場合はエラーが報告されます。
+@c COMMON
 
 @defun sparse-vector-copy sv
+@c EN
 Returns a copy of a sparse vector @var{sv}.
+@c JP
+疎なベクタ@var{sv}のコピーを返します。
+@c COMMON
 @end defun
 
 @defun sparse-vector-ref sv k :optional default
+@c EN
 Returns @var{k}-th element of a sparse vector @var{sv}, where
 @var{k} must be a nonnegative exact integer.  If @var{k} is
 equal to or greater than the allowed index range, an error
-is signaled.
+is signaled. (See @code{sparse-vector-max-index-bits}).
 
 If @var{k} is within the allowed range but the sparse vector
 doesn't have a value for @var{k}, @var{default} is returned
 if it is provided, otherwise an error is signaled.
+@c JP
+疎なベクタ@var{sv}のインデックス@var{k}にある要素を返します。
+@var{k}は非負の正確な整数でなければなりません。
+@var{k}が許容される範囲を越えている場合はエラーが報告されます
+(@code{sparse-vector-max-index-bits}参照)。
+
+@var{k}が許容される範囲内で、それに対応する要素がない場合は、
+@var{default}が与えられればそれを返し、無ければエラーが報告されます。
+@c COMMON
 @end defun
 
 @defun sparse-vector-set! sv k value
