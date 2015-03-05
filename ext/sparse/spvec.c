@@ -103,6 +103,7 @@ ScmObj SparseVectorCopy(const SparseVector *src)
 {
     SparseVector *dst =
         (SparseVector*)MakeSparseVector(Scm_ClassOf(SCM_OBJ(src)),
+                                        src->defaultValue,
                                         src->flags);
     CompactTrieCopy(&dst->trie, &src->trie, src->desc->copy, src->desc);
     dst->numEntries = src->numEntries;
@@ -139,8 +140,15 @@ ScmObj SparseVectorIterNext(SparseVectorIter *iter)
 /* TODO: Allow clamp arg */
 ScmObj SparseVectorInc(SparseVector *sv, u_long index,
                        ScmObj delta,    /* number */
-                       ScmObj fallback) /* number */
+                       ScmObj fallback) /* number or unbound */
 {
+    if (!SCM_NUMBERP(fallback)) {
+        if (SCM_NUMBERP(sv->defaultValue)) {
+            fallback = sv->defaultValue;
+        } else {
+            fallback = SCM_MAKE_INT(0);
+        }
+    }
     INDEX_CHECK(index);
     Leaf *leaf = CompactTrieGet(&sv->trie, index >> sv->desc->shift);
     if (leaf == NULL) {
@@ -549,7 +557,7 @@ U_DECL(f64, F64, SHIFT64);
  * Generic constructor
  */
 
-ScmObj MakeSparseVector(ScmClass *klass, u_long flags)
+ScmObj MakeSparseVector(ScmClass *klass, ScmObj defaultValue, u_long flags)
 {
     SparseVectorDescriptor *desc = NULL;
 
@@ -576,6 +584,7 @@ ScmObj MakeSparseVector(ScmClass *klass, u_long flags)
     v->numEntries = 0;
     v->desc = desc;
     v->flags = flags;
+    v->defaultValue = defaultValue;
     return SCM_OBJ(v);
 }
 

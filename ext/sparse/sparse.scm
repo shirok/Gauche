@@ -99,8 +99,10 @@
        (define (,x-update! sv k proc . fallback)
          (rlet1 tmp (proc (apply ,ref sv k fallback))
            (,set sv k tmp)))
-       (define (,x-push! sv k val)
-         (,set sv k (cons val (,ref sv k '()))))
+       ;; Treatment of defauleValue differ between sptab and spvec atm,
+       ;; so we define push! separately.
+       ;; (define (,x-push! sv k val)
+       ;;   (,set sv k (cons val (,ref sv k '()))))
        (define (,x-pop! sv k . fallback)
          (if (null? fallback)
            (,x-pop!-aux sv k (,ref sv k))
@@ -220,19 +222,28 @@
             [else (bad)])
     (%make-sparse-table type cmpr)))
 
+(define (sparse-table-push! sptab key val)
+  ;; Can be optimized
+  (sparse-table-set! sptab key (cons val (sparse-table-ref sptab key '()))))
+
 (define-stuff sparse-table <sparse-table> %sparse-table-iter
   sparse-table-ref sparse-table-set!)
 
 ;;===============================================================
 ;; Sparse vectors
 ;;
+
+(define (make-sparse-vector :optional (type #f)
+                            :key (flags 0) default)
+  (%make-sparse-vector type default flags))
+
 (inline-stub
  (initcode "Scm_Init_spvec(Scm_CurrentModule());")
 
  (define-type <sparse-vector> "SparseVector*" "sparse vector"
    "SPARSE_VECTOR_BASE_P" "SPARSE_VECTOR")
 
- (define-cproc make-sparse-vector (:optional (type #f) (flags::<ulong> 0))
+ (define-cproc %make-sparse-vector (type default-value flags::<ulong>)
    (let* ([klass::ScmClass* NULL])
      (cond [(SCM_CLASSP type)  (set! klass (SCM_CLASS type))]
            [(SCM_FALSEP type)  (set! klass SCM_CLASS_SPARSE_VECTOR)]
@@ -252,7 +263,7 @@
                                  one of symbols s8, u8, s16, u16, s32, u32, \
                                  s64, u64, f16, f32, f64"
                                 type)])
-     (return (MakeSparseVector klass flags))))
+     (return (MakeSparseVector klass default-value 0))))
 
  (define-cproc sparse-vector-max-index-bits () ::<int>
    (return SPARSE_VECTOR_MAX_INDEX_BITS))
@@ -265,17 +276,26 @@
    SparseVectorSet)
 
  (define-cproc sparse-vector-ref
-   (sv::<sparse-vector> index::<ulong> :optional fallback)
+   (sv::<sparse-vector> index::<integer> :optional fallback)
    (setter sparse-vector-set!)
-   (let* ([r (SparseVectorRef sv index fallback)])
-     (when (SCM_UNBOUNDP r)
-       (Scm_Error "%S doesn't have an entry at index %lu" (SCM_OBJ sv) index))
-     (return r)))
+   (let* ([oor::int FALSE]
+          [i::u_long (Scm_GetIntegerUClamp index SCM_CLAMP_NONE (& oor))]
+          [r SCM_UNBOUND])
+     (when (not oor)
+       (set! r (SparseVectorRef sv i fallback)))
+     (if (SCM_UNBOUNDP r)
+       (if (SCM_UNDEFINEDP (-> sv defaultValue))
+         (Scm_Error "%S doesn't have an entry at index %S" (SCM_OBJ sv) index)
+         (return (-> sv defaultValue)))
+       (return r))))
 
  (define-cproc sparse-vector-exists?
    (sv::<sparse-vector> index::<ulong>) ::<boolean>
    (let* ([r (SparseVectorRef sv index SCM_UNBOUND)])
      (return (not (SCM_UNBOUNDP r)))))
+
+ (define-cproc sparse-vector-default-value (sv::<sparse-vector>)
+   (return (-> sv defaultValue)))
 
  (define-cproc sparse-vector-delete! (sv::<sparse-vector> index::<ulong>)
    ::<boolean>
@@ -289,7 +309,7 @@
  (define-cproc sparse-vector-inc! (sv::<sparse-vector>
                                    index::<ulong>
                                    delta::<number>
-                                   :optional (fallback::<number> 0))
+                                   :optional fallback)
    SparseVectorInc)
 
  (define-cfn sparse-vector-iter (args::ScmObj* nargs::int data::void*) :static
@@ -309,6 +329,12 @@
  (define-cproc %sparse-vector-dump (sv::<sparse-vector>) ::<void>
    SparseVectorDump)
  )
+
+(define (sparse-vector-push! spvec key val)
+  ;; Can be optimized
+  (if (undefined? (sparse-vector-default-value spvec))
+    (sparse-vector-set! spvec key (cons val (sparse-vector-ref spvec key '())))
+    (sparse-vector-set! spvec key (cons val (sparse-vector-ref spvec key)))))
 
 (define-stuff sparse-vector <sparse-vector-base> %sparse-vector-iter
   sparse-vector-ref sparse-vector-set!)

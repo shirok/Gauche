@@ -264,4 +264,25 @@
               predefs)))
   
 
+;; Default value behavior
+(let ()
+  (define z (make-sparse-vector #f :default 99))
+  (define y (make-sparse-vector #f :default '(a)))
+
+  (test* "sparse vector with default value" 99
+         (sparse-vector-ref z (expt 2 1000)))
+  (test* "sparse-vector-inc! with default value" '(100 10)
+         (begin
+           (sparse-vector-inc! z 3 1)
+           (sparse-vector-inc! z 5 1 9)
+           (list (sparse-vector-ref z 3)
+                 (sparse-vector-ref z 5))))
+  (test* "sparse-vector-pop! with default value" 'a
+         (sparse-vector-pop! y 0))
+  (test* "sparse-vector-push! with default value" '(b a)
+         (begin
+           (sparse-vector-push! y 1 'b)
+           (sparse-vector-ref y 1)))
+  )
+
 (test-end)

@@ -59,6 +59,7 @@ typedef struct SparseVectorRec {
     CompactTrie trie;
     u_long      numEntries;
     u_long      flags;          /* reserved */
+    ScmObj      defaultValue;
 } SparseVector;
 
 /* Iterator. */
@@ -110,7 +111,7 @@ enum {
 };
 
 /* Generic API. */
-extern ScmObj MakeSparseVector(ScmClass *klass, u_long flags);
+extern ScmObj MakeSparseVector(ScmClass *klass, ScmObj defaultValue, u_long flags);
 extern ScmObj SparseVectorRef(SparseVector *sv, u_long index, ScmObj fallback);
 extern void   SparseVectorSet(SparseVector *sv, u_long index, ScmObj value);
 extern ScmObj SparseVectorDelete(SparseVector *sv, u_long index);
