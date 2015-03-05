@@ -38,7 +38,7 @@
  */
 
 typedef struct TLeafRec {
-    Leaf hdr;                   /* if key0 > 65536, the entry is chained. */
+    Leaf hdr;                   /* data bit 0 indicates if key is chained */
     union {
         struct {
             ScmObj key;
@@ -51,21 +51,19 @@ typedef struct TLeafRec {
     };
 } TLeaf;
 
-#define LEAF_CHAIN_BIT 0x10000
-
 static inline int leaf_is_chained(TLeaf *leaf)
 {
-    return leaf->hdr.key0 & LEAF_CHAIN_BIT;
+    return LEAF_DATA(leaf)&1;
 }
 
 static inline void leaf_mark_chained(TLeaf *leaf)
 {
-    leaf->hdr.key0 |= LEAF_CHAIN_BIT;
+    LEAF_DATA_BIT_SET(leaf, 0);
 }
 
 static inline void leaf_mark_unchained(TLeaf *leaf)
 {
-    leaf->hdr.key0 &= ~LEAF_CHAIN_BIT;
+    LEAF_DATA_BIT_RESET(leaf, 0);
 }
 
 static Leaf *leaf_allocate(void *data)

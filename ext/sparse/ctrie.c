@@ -69,11 +69,7 @@ void CompactTrieInit(CompactTrie *t)
 
 #define NODE_ENTRY(node, off)        ((node)->entries[(off)])
 
-#if SIZEOF_LONG == 4
 #define KEY_MASK(key) /* empty */
-#else
-#define KEY_MASK(key) (key &= ((1UL<<32)-1))
-#endif
 
 /* When extending the node, we increase the number of entries by this
    number instead of increasing every word, to avoid too frequent
@@ -140,8 +136,8 @@ static int node_delete(Node *orig, u_long ind)
 static Leaf *new_leaf(u_long key, Leaf *(*creator)(void*), void *data)
 {
     Leaf *l = creator(data);
-    l->key0 = key & 0xffff;
-    l->key1 = (key>>16) & 0xffff;
+    l->key0 = KEY_2_LEAF_KEY0(key);
+    l->key1 = KEY_2_LEAF_KEY1(key);
     return l;
 }
 
@@ -451,9 +447,9 @@ static char digit32(u_int n)
     return (n < 10)? (char)(n+'0') : (char)(n-10+'a');
 }
 
-#define BUF_SIZE 8
+#define BUF_SIZE 14
 
-static char *key_dump(u_long key, char *buf) /* buf must be of length 8 */
+static char *key_dump(u_long key, char *buf) /* buf must be BUF_SIZE length */
 {
     buf[BUF_SIZE-1] = '\0';
     for (int i=0; i<BUF_SIZE-1; i++) {

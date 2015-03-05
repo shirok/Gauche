@@ -86,17 +86,43 @@ typedef struct LeafRec {
     u_long   key1;              /* upper half word of the key */
 } Leaf;
 
-#define LEAF_KEY(leaf) (((leaf)->key0&0xffff) + (((leaf)->key1&0xffff) << 16))
+#define LEAF(x) ((Leaf*)(x))
 
-#define LEAF_DATA(leaf) ((leaf)->key0 >> 16)
+#if SIZEOF_LONG == 4
+
+#define LEAF_KEY(leaf) \
+    ((LEAF(leaf)->key0&0xffff) + ((LEAF(leaf)->key1&0xffff) << 16))
+#define KEY_2_LEAF_KEY0(key)  (LEAF(key)&0xffff)
+#define KEY_2_LEAF_KEY1(key)  ((LEAF(key)>>16)&0xffff)
+
+#define LEAF_DATA(leaf) (LEAF(leaf)->key0 >> 16)
 #define LEAF_DATA_SET(leaf, val) \
-    (((leaf)->key0) = (((leaf)->key0)&0x0ffff) | ((val)<<16))
+    ((LEAF(leaf)->key0) = ((LEAF(leaf)->key0)&0x0ffff) | ((val)<<16))
 #define LEAF_DATA_BIT_TEST(leaf, bit) \
-    (((leaf)->key0) & (1UL << ((bit)+16)))
+    ((LEAF(leaf)->key0) & (1UL << ((bit)+16)))
 #define LEAF_DATA_BIT_SET(leaf, bit) \
-    (((leaf)->key0) |= (1UL << ((bit)+16)))
+    ((LEAF(leaf)->key0) |= (1UL << ((bit)+16)))
 #define LEAF_DATA_BIT_RESET(leaf, bit) \
-    (((leaf)->key0) &= ~(1UL << ((bit)+16)))
+    ((LEAF(leaf)->key0) &= ~(1UL << ((bit)+16)))
+
+#else  /*assuming SIZEOF_LONG >= 8*/
+
+#define LEAF_KEY(leaf) \
+    ((LEAF(leaf)->key0&0xffffffff) + ((LEAF(leaf)->key1&0xffffffff) << 32))
+#define KEY_2_LEAF_KEY0(key)  ((key)&0xffffffff)
+#define KEY_2_LEAF_KEY1(key)  (((key)>>32)&0xffffffff)
+
+#define LEAF_DATA(leaf) (LEAF(leaf)->key0 >> 32)
+#define LEAF_DATA_SET(leaf, val) \
+    ((LEAF(leaf)->key0) = ((LEAF(leaf)->key0)&0x0ffffffff) | ((val)<<32))
+#define LEAF_DATA_BIT_TEST(leaf, bit) \
+    ((LEAF(leaf)->key0) & (1UL << ((bit)+32)))
+#define LEAF_DATA_BIT_SET(leaf, bit) \
+    ((LEAF(leaf)->key0) |= (1UL << ((bit)+32)))
+#define LEAF_DATA_BIT_RESET(leaf, bit) \
+    ((LEAF(leaf)->key0) &= ~(1UL << ((bit)+32)))
+
+#endif /*assuming SIZEOF_LONG >= 8*/
 
 typedef struct CompactTrieRec {
     u_int    numEntries;

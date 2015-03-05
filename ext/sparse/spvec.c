@@ -33,16 +33,7 @@
 
 #include "spvec.h"
 
-#if SIZEOF_LONG == 4
 #define INDEX_CHECK(n)  /*empty*/
-#else   /* SIZEOF_LONG > 4 */
-#define INDEX_CHECK(n)                                                  \
-    do {                                                                \
-        if ((n) >= (1UL << SPARSE_VECTOR_MAX_INDEX_BITS)) {             \
-            Scm_Error("sparse vector index out of range: %lu\n", (n));  \
-        }                                                               \
-    } while (0)
-#endif  /* SIZEOF_LONG > 4 */
 
 /*===================================================================
  * Generic stuff
@@ -175,7 +166,7 @@ void SparseVectorDump(SparseVector *sv)
 
 /*-------------------------------------------------------------------
  * General vector
-v */
+ */
 
 typedef struct GLeafRec {
     Leaf hdr;
