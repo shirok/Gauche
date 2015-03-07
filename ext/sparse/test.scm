@@ -297,7 +297,11 @@
   (define data
     (delete-duplicates
      (generator->list
-      (gmap cons (lists-of 2 (integers$ 10000)) (strings-of))
+      (gmap cons
+            (lists-of 2 (integers$ (if (> (greatest-fixnum) (expt 2 32))
+                                     (expt 2 32)
+                                     (expt 2 16))))
+            (strings-of))
       1000)
      (^[a b] (equal? (car a) (car b)))))
 
@@ -314,6 +318,43 @@
                        #f
                        (list x y v (sparse-matrix-ref mat x y)))))
                  data))))
+
+  (test* "fold" '(() ())
+         (let ([mat (make-sparse-matrix)]
+               [tab (make-hash-table 'equal?)]
+               [bad '()])
+           (dolist [d data]
+             (match-let1 ((x y) . v) d
+               (sparse-matrix-set! mat x y v)
+               (hash-table-put! tab (cons x y) v)))
+           ($ sparse-matrix-for-each mat
+              (^[x y v]
+                (unless (equal? v (hash-table-get tab (cons x y) #f))
+                  (push! bad (list x y (hash-table-get tab (cons x y) #f) v)))
+                (hash-table-delete! tab (cons x y))))
+           (list bad (hash-table->alist tab))))
+
+  (test* "setter, default value" '(a b (z . a) (a . a))
+         (let* ([mat (make-sparse-matrix #f :default 'a)]
+                [a (sparse-matrix-ref mat 100 200)]
+                [_ (set! (sparse-matrix-ref mat 100 200) 'b)]
+                [b (sparse-matrix-ref mat 100 200)]
+                [_ (sparse-matrix-push! mat 200 100 'z)]
+                [za (sparse-matrix-ref mat 200 100)]
+                [_ (sparse-matrix-update! mat 300 400
+                                          (^x (cons x x)))]
+                [aa (sparse-matrix-ref mat 300 400)])
+           (list a b za aa)))
+
+  (test* "uniform" '(#f 3 #t 13)
+         (let* ([mat (make-sparse-matrix 'u8)]
+                [A (sparse-matrix-exists? mat 123 456)]
+                [_ (sparse-matrix-set! mat 123 456 3)]
+                [a (sparse-matrix-ref mat 123 456)]
+                [B (sparse-matrix-exists? mat 123 456)]
+                [_ (sparse-matrix-inc! mat 123 456 10)]
+                [b (sparse-matrix-ref mat 123 456)])
+           (list A a B b)))
   )
 
 (test-end)

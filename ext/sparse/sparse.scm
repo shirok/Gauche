@@ -77,7 +77,8 @@
 (inline-stub
  (declcode "#include \"ctrie.h\""
            "#include \"spvec.h\""
-           "#include \"sptab.h\"")
+           "#include \"sptab.h\""
+           "#include <gauche/bits_inline.h>")
  )
 
 (define-macro (define-stuff type class iter ref set)
@@ -388,9 +389,17 @@
         (Scm_Error ,#"~|which| index is out of range: %S" ,which)
         (begin (set! (* ,oor) ,oorval) (return 0)))])
   
-  ;; Calculate linear index from 2d indexes (x,y).
+  ;; Calculate linear index from 2d indexes (x,y) by interleaving the bits.
   ;; When the input is out of range, if OOR is provided it is set;
   ;; otherwise an error is signaled.
+  ;; We initially thought of taking 5 bits at a time to match up the node
+  ;; size; however it made code complicated to deal with the last
+  ;; 2 or 4 bits in 32bit/64bit integer.  Also, if key is distributed
+  ;; enough, we wonder if there's much sense aligning to the node boundary.
+  ;; So we adopt 4 bits interleaving instead.
+  "#define INTERLEAVE_SHIFT 4"
+  "#define INTERLEAVE_MASK ((1UL<<INTERLEAVE_SHIFT)-1)"
+  
   (define-cfn index-combine-2d (x y oor::int*)
     ::u_long :static
     (unless (SCM_INTEGERP x)
@@ -399,31 +408,37 @@
       (Scm_Error "Exact integer required for y, but got %S" y))
     (let* ([oorx::int FALSE] [oory::int FALSE]
            [ix::u_long (Scm_GetIntegerUClamp x SCM_CLAMP_NONE (& oorx))]
-           [iy::u_long (Scm_GetIntegerUClamp y SCM_CLAMP_NONE (& oory))])
+           [iy::u_long (Scm_GetIntegerUClamp y SCM_CLAMP_NONE (& oory))]
+           [bx::int  (Scm__HighestBitNumber ix)]
+           [by::int  (Scm__HighestBitNumber iy)])
       (when oorx (oor-check oor x X_OOR))
       (when oory (oor-check oor y Y_OOR))
       (when (>= ix (<< (cast (u_long) 1) (/ SPARSE_VECTOR_MAX_INDEX_BITS 2)))
         (oor-check oor x X_OOR))
       (when (>= iy (<< (cast (u_long) 1) (/ SPARSE_VECTOR_MAX_INDEX_BITS 2)))
         (oor-check oor y Y_OOR))
-      (let* ([ind::u_long 0])
-        (while (or ix iy)
-          (set! ind (logior (<< ind TRIE_SHIFT) (logand ix TRIE_MASK)))
-          (set! ind (logior (<< ind TRIE_SHIFT) (logand iy TRIE_MASK)))
-          (set! ix (>> ix TRIE_SHIFT))
-          (set! iy (>> iy TRIE_SHIFT)))
+      (let* ([bmax::int (?: (> bx by) bx by)]
+             [shift::int 0]
+             [ind::u_long 0])
+        (while (< shift (+ bmax 1))
+          (set! ind (logior ind (<< (logand ix (<< INTERLEAVE_MASK shift))
+                                    shift)))
+          (set! ind (logior ind (<< (logand iy (<< INTERLEAVE_MASK shift))
+                                    (+ shift INTERLEAVE_SHIFT))))
+          (set! shift (+ shift INTERLEAVE_SHIFT)))
         (when oor (set! (* oor) 0))
         (return ind))))
 
   (define-cfn index-split-2d (index::ScmObj px::(u_long*) py::(u_long*))
     ::void :static
-    (let* ([x::u_long 0] [y::u_long 0]
+    (let* ([x::u_long 0] [y::u_long 0] [shift::int 0]
            [i::u_long (Scm_GetIntegerU index)])
       (while i
-        (set! y (logand i TRIE_MASK))
-        (set! i (>> i TRIE_SHIFT))
-        (set! x (logand i TRIE_MASK))
-        (set! i (>> i TRIE_SHIFT)))
+        (set! x (logior x (<< (logand i INTERLEAVE_MASK) shift)))
+        (set! i (>> i INTERLEAVE_SHIFT))
+        (set! y (logior y (<< (logand i INTERLEAVE_MASK) shift)))
+        (set! i (>> i INTERLEAVE_SHIFT))
+        (set! shift (+ shift INTERLEAVE_SHIFT)))
       (set! (* px) x)
       (set! (* py) y)))
   )
@@ -461,7 +476,7 @@
 
 (define-cproc sparse-matrix-ref
   (sv::<sparse-matrix> x y :optional fallback)
-  (setter sparse-vector-set!)
+  (setter sparse-matrix-set!)
   (let* ([oor::int 0]
          [i::u_long (index-combine-2d x y (& oor))]
          [r SCM_UNBOUND])
