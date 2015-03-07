@@ -496,6 +496,19 @@
 ;;      (Scm_VMPushCC tmp_cc data k)
 ;;      expr))
 ;;
+;; NB: This macro assumes the outer cproc returns one ScmObj, via
+;; SCM_RESULT.  So it doesn't work well if the outer cproc is declared
+;; with some other return values.  For example, if the outer cproc
+;; is supposed to have ::<void> return val, you actually should
+;; write something like the following:
+;;
+;;   (define-cproc foo (args ...)   ;; don't declare return type here
+;;     ...
+;;     (let1/cps r (Scm_VMApply1 proc x ...)
+;;       [var ...]
+;;       ...
+;;       (return SCM_UNDEFINED)))   ;; explicitly return #<undef>
+;;
 
 (define-cise-macro (let1/cps form env)
   (match form

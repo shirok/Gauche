@@ -53,17 +53,17 @@ typedef struct TLeafRec {
 
 static inline int leaf_is_chained(TLeaf *leaf)
 {
-    return LEAF_DATA(leaf)&1;
+    return leaf_data(LEAF(leaf))&1;
 }
 
 static inline void leaf_mark_chained(TLeaf *leaf)
 {
-    LEAF_DATA_BIT_SET(leaf, 0);
+    leaf_data_bit_set(LEAF(leaf), 0);
 }
 
 static inline void leaf_mark_unchained(TLeaf *leaf)
 {
-    LEAF_DATA_BIT_RESET(leaf, 0);
+    leaf_data_bit_reset(LEAF(leaf), 0);
 }
 
 static Leaf *leaf_allocate(void *data)

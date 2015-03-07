@@ -78,52 +78,66 @@ typedef struct NodeRec {
     void    *entries[2];        /* variable length; 2 is the minimum entries */
 } Node;
 
-/* We split key into two words; a well distributed keys are hard to
+/* The leaf stores key bits.
+   We split key into two words; a well distributed keys are hard to
    distinguish from pointers by our conserative GC, and sometimes lead
    to poor GC performance when we have very large table.  */
 typedef struct LeafRec {
-    u_long   key0;              /* lower half word of the key + subclass data */
-    u_long   key1;              /* upper half word of the key */
+    u_long   key0; /* lower half word of the key + flags */
+    u_long   key1; /* upper half word of the key */
 } Leaf;
 
 #define LEAF(x) ((Leaf*)(x))
 
 #if SIZEOF_LONG == 4
+#define LEAF_KEY_BITS  16
+#else  /* SIZEOF_LONG >= 8 */
+#define LEAF_KEY_BITS  32
+#endif /* SIZEOF_LONG >= 8 */
 
-#define LEAF_KEY(leaf) \
-    ((LEAF(leaf)->key0&0xffff) + ((LEAF(leaf)->key1&0xffff) << 16))
-#define KEY_2_LEAF_KEY0(key)  (LEAF(key)&0xffff)
-#define KEY_2_LEAF_KEY1(key)  ((LEAF(key)>>16)&0xffff)
+#define LEAF_KEY_MASK   ((1UL<<LEAF_KEY_BITS)-1)
 
-#define LEAF_DATA(leaf) (LEAF(leaf)->key0 >> 16)
-#define LEAF_DATA_SET(leaf, val) \
-    ((LEAF(leaf)->key0) = ((LEAF(leaf)->key0)&0x0ffff) | ((val)<<16))
-#define LEAF_DATA_BIT_TEST(leaf, bit) \
-    ((LEAF(leaf)->key0) & (1UL << ((bit)+16)))
-#define LEAF_DATA_BIT_SET(leaf, bit) \
-    ((LEAF(leaf)->key0) |= (1UL << ((bit)+16)))
-#define LEAF_DATA_BIT_RESET(leaf, bit) \
-    ((LEAF(leaf)->key0) &= ~(1UL << ((bit)+16)))
+/* managing key in the leaf */
+static u_long leaf_key(Leaf *leaf)
+{
+    return (((leaf->key1&LEAF_KEY_MASK) << LEAF_KEY_BITS)
+            + (leaf->key0&LEAF_KEY_MASK));
+}
 
-#else  /*assuming SIZEOF_LONG >= 8*/
+static inline void leaf_key_set(Leaf *leaf, u_long key)
+{
+    leaf->key0 = key & LEAF_KEY_MASK;
+    leaf->key1 = (key >> LEAF_KEY_BITS) & LEAF_KEY_MASK;
+}
 
-#define LEAF_KEY(leaf) \
-    ((LEAF(leaf)->key0&0xffffffff) + ((LEAF(leaf)->key1&0xffffffff) << 32))
-#define KEY_2_LEAF_KEY0(key)  ((key)&0xffffffff)
-#define KEY_2_LEAF_KEY1(key)  (((key)>>32)&0xffffffff)
+static inline u_long leaf_data(Leaf *leaf)
+{       
+    return (leaf->key0 >> LEAF_KEY_BITS);
+}
 
-#define LEAF_DATA(leaf) (LEAF(leaf)->key0 >> 32)
-#define LEAF_DATA_SET(leaf, val) \
-    ((LEAF(leaf)->key0) = ((LEAF(leaf)->key0)&0x0ffffffff) | ((val)<<32))
-#define LEAF_DATA_BIT_TEST(leaf, bit) \
-    ((LEAF(leaf)->key0) & (1UL << ((bit)+32)))
-#define LEAF_DATA_BIT_SET(leaf, bit) \
-    ((LEAF(leaf)->key0) |= (1UL << ((bit)+32)))
-#define LEAF_DATA_BIT_RESET(leaf, bit) \
-    ((LEAF(leaf)->key0) &= ~(1UL << ((bit)+32)))
+static inline void leaf_data_set(Leaf *leaf, u_long data)
+{
+    leaf->key0 = (leaf->key0 & LEAF_KEY_MASK) | (data << LEAF_KEY_BITS);
+}
 
-#endif /*assuming SIZEOF_LONG >= 8*/
+static inline int leaf_data_bit_test(Leaf *leaf, int bit)
+{
+    return !!(leaf->key0 & (1UL << (bit + LEAF_KEY_BITS)));
+}
 
+static inline void leaf_data_bit_set(Leaf *leaf, int bit)
+{
+    leaf->key0 |= (1UL << (bit + LEAF_KEY_BITS));
+}
+
+static inline void leaf_data_bit_reset(Leaf *leaf, int bit)
+{
+    leaf->key0 &= ~(1UL << (bit + LEAF_KEY_BITS));
+}
+
+/*
+ * Anchor to hold the trie
+ */
 typedef struct CompactTrieRec {
     u_int    numEntries;
     Node     *root;

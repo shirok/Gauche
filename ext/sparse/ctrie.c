@@ -136,8 +136,7 @@ static int node_delete(Node *orig, u_long ind)
 static Leaf *new_leaf(u_long key, Leaf *(*creator)(void*), void *data)
 {
     Leaf *l = creator(data);
-    l->key0 = KEY_2_LEAF_KEY0(key);
-    l->key1 = KEY_2_LEAF_KEY1(key);
+    leaf_key_set(l, key);
     return l;
 }
 
@@ -150,7 +149,7 @@ static Leaf *get_rec(Node *n, u_long key, int level)
     if (!NODE_HAS_ARC(n, ind)) return NULL;
     if (NODE_ARC_IS_LEAF(n, ind)) {
         Leaf *l = (Leaf*)NODE_ENTRY(n, NODE_INDEX2OFF(n, ind));
-        if (LEAF_KEY(l) == key) return l;
+        if (leaf_key(l) == key) return l;
         else return NULL;
     } else {
         return get_rec((Node*)NODE_ENTRY(n, NODE_INDEX2OFF(n, ind)),
@@ -190,10 +189,10 @@ static Node *add_rec(CompactTrie *ct, Node *n, u_long key, int level,
     else {
         u_long off = NODE_INDEX2OFF(n, ind);
         Leaf *l0 = (Leaf*)NODE_ENTRY(n, off);
-        u_long k0 = LEAF_KEY(l0);
+        u_long k0 = leaf_key(l0);
 
         if (key == k0) { *result = l0; return n; }
-        u_long i0 = KEY2INDEX(LEAF_KEY(l0), level+1);
+        u_long i0 = KEY2INDEX(leaf_key(l0), level+1);
         Node *m = make_node(NODE_SIZE_INCR);
         NODE_ARC_SET(m, i0);
         NODE_LEAF_SET(m, i0);
@@ -250,7 +249,7 @@ void *del_rec(CompactTrie *ct, Node *n, u_long key, int level,
             }
         } else {
             Leaf *l0 = (Leaf*)NODE_ENTRY(n, off);
-            u_long k0 = LEAF_KEY(l0);
+            u_long k0 = leaf_key(l0);
             if (key == k0) {
                 /* We found the leaf to delete.  If deletion of the leaf
                    causes this node to have only one leaf, we tell the
@@ -434,7 +433,7 @@ Leaf *CompactTrieIterNext(CompactTrieIter *it)
     } else {
         l = CompactTrieNextLeaf(it->trie, it->key);
     }
-    if (l) it->key = LEAF_KEY(l);
+    if (l) it->key = leaf_key(l);
     else   it->end = TRUE;
     return l;
 }
@@ -463,8 +462,8 @@ static void leaf_dump(ScmPort *out, Leaf *self, int indent,
                       void (*dumper)(ScmPort*, Leaf*, int, void*), void *data)
 {
     char keybuf[BUF_SIZE];
-    Scm_Printf(out, "LEAF(%s,%x) ", key_dump(LEAF_KEY(self), keybuf),
-               LEAF_KEY(self));
+    Scm_Printf(out, "LEAF(%s,%x) ", key_dump(leaf_key(self), keybuf),
+               leaf_key(self));
     if (dumper) dumper(out, self, indent, data);
     Scm_Printf(out, "\n");
 }

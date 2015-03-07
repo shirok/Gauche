@@ -1,3 +1,7 @@
+2015-03-06  Shiro Kawai  <shiro@acm.org>
+
+	* ext/sparse/sparse.scm: Add sparse matrix.
+
 2015-03-04  Shiro Kawai  <shiro@acm.org>
 
 	* ext/sparse/spvec.c: Add default value to sparse vectors.

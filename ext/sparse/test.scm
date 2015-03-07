@@ -3,6 +3,9 @@
 ;;
 
 (use gauche.test)
+(use gauche.generator)
+(use data.random)
+(use util.match)
 (use srfi-1)
 (use srfi-27)
 
@@ -283,6 +286,34 @@
          (begin
            (sparse-vector-push! y 1 'b)
            (sparse-vector-ref y 1)))
+  )
+
+;; sparse matrix----------------------------------------------------
+(test-section "sparse-matrix")
+
+(set! (random-data-seed) 42) ; for consistent result
+
+(let ()
+  (define data
+    (delete-duplicates
+     (generator->list
+      (gmap cons (lists-of 2 (integers$ 10000)) (strings-of))
+      1000)
+     (^[a b] (equal? (car a) (car b)))))
+
+  (test* "set! and ref" (list (length data) #f)
+         (let1 mat (make-sparse-matrix)
+           (dolist [d data]
+             (match-let1 ((x y) . v) d
+               (sparse-matrix-set! mat x y v)))
+           (list
+            (sparse-matrix-num-entries mat)
+            (any (^[d]
+                   (match-let1 ((x y) . v) d
+                     (if (equal? (sparse-matrix-ref mat x y) v)
+                       #f
+                       (list x y v (sparse-matrix-ref mat x y)))))
+                 data))))
   )
 
 (test-end)
