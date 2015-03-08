@@ -125,4 +125,7 @@ typedef pthread_mutex_t ScmInternalFastlock;
 #define SCM_INTERNAL_FASTLOCK_DESTROY(fl) SCM_INTERNAL_MUTEX_DESTROY(fl)
 #endif /*!HAVE_PTHREAD_SPINLOCK_T*/
 
+/* Issues a full memory barrier */
+#define SCM_INTERNAL_SYNC()                 __sync_synchronize()
+
 #endif /* GAUCHE_PTHREAD_H */

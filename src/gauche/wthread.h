@@ -141,4 +141,7 @@ typedef HANDLE ScmInternalFastlock;
 #define SCM_INTERNAL_FASTLOCK_UNLOCK(fl) SCM_INTERNAL_MUTEX_UNLOCK(fl)
 #define SCM_INTERNAL_FASTLOCK_DESTROY(fl) SCM_INTERNAL_MUTEX_DESTROY(fl)
 
+/* Issues a full memory barrier */
+#define SCM_INTERNAL_SYNC()                 MemoryBarrier()
+
 #endif /* GAUCHE_WTHREAD_H */

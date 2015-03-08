@@ -142,4 +142,7 @@ typedef int ScmInternalCond;
 #define SCM_INTERNAL_COND_TIMEDOUT         (0)
 #define SCM_INTERNAL_COND_INTR             (0)
 
+/* Issues a full memory barrier */
+#define SCM_INTERNAL_SYNC()
+
 #endif /* GAUCHE_UTHREAD_H */

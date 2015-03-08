@@ -119,7 +119,10 @@ void Scm__SetupPortsForWindows(int has_console);
 /* Unlock a port P.  Assumes the calling thread has the lock */
 #define PORT_UNLOCK(p)                                  \
     do {                                                \
-        if (--p->lockCount <= 0) p->lockOwner = NULL;   \
+        if (--p->lockCount <= 0) {                      \
+            SCM_INTERNAL_SYNC();                        \
+            p->lockOwner = NULL;                        \
+        } \
     } while (0)
 
 /* Should be used while P is locked by calling thread.
