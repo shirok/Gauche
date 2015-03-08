@@ -1,5 +1,8 @@
 2015-03-07  Shiro Kawai  <shiro@acm.org>
 
+	* gc/libatomic_ops/src/atomic_ops/sysdeps/gcc/mips.h:
+	  mips64el support.  Patch from James Cogwill.
+
 	* src/gauche/priv/portP.h: Fix race condition in PORT_UNLOCK
 	  by adding a memory barrier.  Patch from James Cogwill.
 
