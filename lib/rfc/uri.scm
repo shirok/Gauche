@@ -139,7 +139,11 @@
            (when host (display host))
            (when port (display ":") (display port))))]
       [(path) path]
-      [(path+query) (if query #"~|path|?~|query|")]
+      [(path+query)
+       (with-output-to-string
+         (^[]
+           (when path (display path))
+           (when query (display "?") (display query))))]
       [(query) query]
       [(path+query+fragment)
        (with-output-to-string
