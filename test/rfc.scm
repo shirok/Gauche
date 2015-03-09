@@ -859,6 +859,50 @@ Content-Length: 4349
            (uri-compose-data data :content-type ct)))
   )
 
+;; uri-ref
+;; test-data : ((input (parts expected) ...) ...)
+(let ([data '(("http://user@foo.bar.baz:8080/path/to/resource?query#frag"
+               (scheme "http")
+               (userinfo "user")
+               (host "foo.bar.baz")
+               (port 8080)
+               (authority "//user@foo.bar.baz:8080/")
+               (scheme+authority "http://user@foo.bar.baz:8080/")
+               (host+port "foo.bar.baz:8080")
+               (userinfo+host+port "user@foo.bar.baz:8080")
+               (path "/path/to/resource")
+               (path+query "/path/to/resource?query")
+               (query "query")
+               (path+query+fragment "/path/to/resource?query#frag")
+               (fragment "frag"))
+              ("mailto:foo@example.com?subject=Hello"
+               (scheme "mailto")
+               (userinfo #f)
+               (host #f)
+               (port #f)
+               (authority "///")
+               (scheme+authority "mailto:///")
+               (host+port "")
+               (userinfo+host+port "")
+               (path "foo@example.com")
+               (path+query "foo@example.com?subject=Hello")
+               (query "subject=Hello")
+               (path+query+fragment "foo@example.com?subject=Hello")
+               (fragment #f)))])
+  (define (test-uri-ref datum)
+    (test* #"test uri-ref ~(car datum)" '()
+           (let ([input (car datum)]
+                 [testers (cdr datum)]
+                 [bad '()])
+             (dolist [tester testers]
+               (let1 r (uri-ref input (car tester))
+                 (unless (equal? r (cadr tester))
+                   (push! bad `(,(car tester) :expeced ,(cadr tester)
+                                :got ,r)))))
+             bad)))
+
+  (for-each test-uri-ref data))
+
 ;;--------------------------------------------------------------------
 (test-section "rfc.http")
 (use rfc.http)

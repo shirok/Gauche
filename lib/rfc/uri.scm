@@ -52,7 +52,7 @@
   (use gauche.charconv)
   (use gauche.uvector)
   (export uri-scheme&specific uri-decompose-hierarchical
-          uri-decompose-authority uri-parse
+          uri-decompose-authority uri-parse uri-ref
           uri-merge uri-compose
           uri-decode uri-decode-string
           uri-encode uri-encode-string
@@ -112,6 +112,42 @@
                 (filter-non-empty-string path)
                 query
                 fragment)))))
+
+;; Convenience utility
+;;  (uri-ref "http://foo:8080/baz?q" 'host) => "foo"
+;;  (uri-ref "http://foo:8080/baz?q" 'host+port) => "foo:8080"
+;;  (uri-ref "http://foo:8080/baz?q" 'path+query) => "/baz?q"
+(define (uri-ref uri parts)
+  (receive (scheme userinfo host port path query fragment) (uri-parse uri)
+    (ecase parts
+      [(scheme) scheme]
+      [(userinfo) userinfo]
+      [(host) host]
+      [(port) port]
+      [(authority) (uri-compose :userinfo userinfo :host host :port port)]
+      [(scheme+authority)
+       (uri-compose :scheme scheme :userinfo userinfo :host host :port port)]
+      [(host+port)
+       (with-output-to-string
+         (^[]
+           (when host (display host))
+           (when port (display ":") (display port))))]
+      [(userinfo+host+port)
+       (with-output-to-string
+         (^[]
+           (when userinfo (display userinfo) (display "@"))
+           (when host (display host))
+           (when port (display ":") (display port))))]
+      [(path) path]
+      [(path+query) (if query #"~|path|?~|query|")]
+      [(query) query]
+      [(path+query+fragment)
+       (with-output-to-string
+         (^[]
+           (display path)
+           (when query (display "?") (display query))
+           (when fragment (display "#") (display fragment))))]
+      [(fragment) fragment])))
 
 ;;==============================================================
 ;; Generic constructor
