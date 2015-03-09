@@ -3011,13 +3011,15 @@ of nonnegative integers.
 @deftp {Module} data.sparse
 @mdindex data.sparse
 @c EN
-This module provides a @emph{sparse vector}, a space efficient
-data containter indexed by nonnegative integer, and
+This module provides a @emph{sparse vector} and @emph{sparse matrix}, 
+a space efficient data containter indexed by nonnegative integer(s), and
 a @emph{sparse table}, a hash table using a sparse vector
 as a backing storage.
 @c JP
 このモジュールは、非負整数でインデックスされる空間効率の良いデータ構造である
-@emph{疎ベクタ} (@emph{sparse vector}) と、
+@emph{疎ベクタ} (@emph{sparse vector})と
+@emph{疎行列} (@emph{sparse matrix})、
+および
 疎ベクタを格納領域に用いるハッシュテーブルである@emph{疎テーブル} (@emph{sparse table})
 を提供します。
 @c COMMON
@@ -3032,6 +3034,7 @@ implementation uses compact trie structure.)
 It is guaranteed that you can store a value with index at least
 up to @code{2^32-1}; the actual maximum bits of indexes can
 be queried by @code{sparse-vector-max-index-bits}.
+(We have a plan to remove the maximum bits limitation in future).
 @c JP 
 疎ベクタは非負整数のインデックスと値を関連付けます。
 整数でインデックスされるので名前に@emph{ベクタ}がついていますが、
@@ -3040,6 +3043,7 @@ be queried by @code{sparse-vector-max-index-bits}.
 少なくとも@code{2^32-1}までのインデックスが使えることは保証されています。
 実装が許す最大のインデックスのビット長は
 @code{sparse-vector-max-index-bits}で得ることができます。
+(将来的にはこの制限を無くす計画です)。
 @c COMMON
 
 @c EN
@@ -3084,6 +3088,13 @@ fallback value to @code{sparse-vector-ref}, to suppress the error.
 (let1 w (make-sparse-vector #f :default 'x)
   (sparse-vector-ref w 1))     @result{} x
 @end example
+
+@c EN
+A sparse matrix is like a sparse vector, except it can be indexed
+by a pair of integers.
+@c JP
+疎行列は、二つの整数でインデックスされるという点以外は疎なベクタと同じです。
+@c COMMON
 
 @c EN
 A sparse table works just like a hash table, but it uses
@@ -3154,10 +3165,11 @@ blocks'', you should definitely consider sparse tables.
 
 @menu
 * Sparse vectors::              
+* Sparse matrixes::             
 * Sparse tables::               
 @end menu
 
-@node Sparse vectors, Sparse tables, Sparse data containers, Sparse data containers
+@node Sparse vectors, Sparse matrixes, Sparse data containers, Sparse data containers
 @subsection Sparse vectors
 @c NODE 疎なベクタ
 
@@ -3434,7 +3446,86 @@ and gathered to a list and returned by @code{sparse-vector-map}.
 Returns a list of all keys and all values in @var{sv}, respectively.
 @end defun
 
-@node Sparse tables,  , Sparse vectors, Sparse data containers
+@node Sparse matrixes, Sparse tables, Sparse vectors, Sparse data containers
+@subsection Sparse matrixes
+@c NODE 疎行列
+
+A sparse matrix is like a sparse vector, except it can be indexed
+by two integers.
+
+Currently, each index can have half of bits of
+@code{sparse-vector-max-index-bits}.  We'll remove
+this limitation in future.
+
+
+@deftp {Class} <sparse-matrix-base>
+@clindex sparse-matrix-base
+@end deftp
+
+@deftp {Class} <sparse-matrix>
+@deftpx {Class} <sparse-@var{TAG}matrix>
+@clindex sparse-matrix
+@clindex sparse-s8matrix
+@clindex sparse-u8matrix
+@clindex sparse-s16matrix
+@clindex sparse-u16matrix
+@clindex sparse-s32matrix
+@clindex sparse-u32matrix
+@clindex sparse-s64matrix
+@clindex sparse-u64matrix
+@clindex sparse-f16matrix
+@clindex sparse-f32matrix
+@clindex sparse-f64matrix
+@end deftp
+
+@defun make-sparse-matrix type :key default
+@end defun
+
+@defun sparse-matrix-num-entries mat
+@end defun
+
+@defun sparse-matrix-ref mat x y :optional fallback
+@end defun
+
+@defun sparse-matrix-set! mat x y value
+@end defun
+
+@defun sparse-matrix-exists? mat x y
+@end defun
+
+@defun sparse-matrix-clear! mat x y
+@end defun
+
+@defun sparse-matrix-delete! mat x y
+@end defun
+
+@defun sparse-matrix-copy mat
+@end defun
+
+@defun sparse-matrix-update! mat x y proc :optional fallback
+@end defun
+
+@defun sparse-matrix-inc! mat x y delta :optional fallback
+@end defun
+
+@defun sparse-matrix-push! mat x y val
+@end defun
+
+@defun sparse-matrix-pop! mat x y
+@end defun
+
+@defun sparse-matrix-fold mat proc seed
+@end defun
+
+@defun sparse-matrix-map mat proc
+@defunx sparse-matrix-for-each mat proc
+@end defun
+
+@defun sparse-matrix-keys mat
+@defunx sparse-matrix-values mat
+@end defun
+
+@node Sparse tables,  , Sparse matrixes, Sparse data containers
 @subsection Sparse tables
 @c NODE 疎なテーブル
 
