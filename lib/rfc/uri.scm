@@ -119,39 +119,43 @@
 ;;  (uri-ref "http://foo:8080/baz?q" 'path+query) => "/baz?q"
 (define (uri-ref uri parts)
   (receive (scheme userinfo host port path query fragment) (uri-parse uri)
-    (ecase parts
-      [(scheme) scheme]
-      [(userinfo) userinfo]
-      [(host) host]
-      [(port) port]
-      [(authority) (uri-compose :userinfo userinfo :host host :port port)]
-      [(scheme+authority)
-       (uri-compose :scheme scheme :userinfo userinfo :host host :port port)]
-      [(host+port)
-       (with-output-to-string
-         (^[]
-           (when host (display host))
-           (when port (display ":") (display port))))]
-      [(userinfo+host+port)
-       (with-output-to-string
-         (^[]
-           (when userinfo (display userinfo) (display "@"))
-           (when host (display host))
-           (when port (display ":") (display port))))]
-      [(path) path]
-      [(path+query)
-       (with-output-to-string
-         (^[]
-           (when path (display path))
-           (when query (display "?") (display query))))]
-      [(query) query]
-      [(path+query+fragment)
-       (with-output-to-string
-         (^[]
-           (display path)
-           (when query (display "?") (display query))
-           (when fragment (display "#") (display fragment))))]
-      [(fragment) fragment])))
+    (define (get-part part)
+      (ecase part
+        [(scheme) scheme]
+        [(userinfo) userinfo]
+        [(host) host]
+        [(port) port]
+        [(authority) (uri-compose :userinfo userinfo :host host :port port)]
+        [(scheme+authority)
+         (uri-compose :scheme scheme :userinfo userinfo :host host :port port)]
+        [(host+port)
+         (with-output-to-string
+           (^[]
+             (when host (display host))
+             (when port (display ":") (display port))))]
+        [(userinfo+host+port)
+         (with-output-to-string
+           (^[]
+             (when userinfo (display userinfo) (display "@"))
+             (when host (display host))
+             (when port (display ":") (display port))))]
+        [(path) path]
+        [(path+query)
+         (with-output-to-string
+           (^[]
+             (when path (display path))
+             (when query (display "?") (display query))))]
+        [(query) query]
+        [(path+query+fragment)
+         (with-output-to-string
+           (^[]
+             (display path)
+             (when query (display "?") (display query))
+             (when fragment (display "#") (display fragment))))]
+        [(fragment) fragment]))
+    (if (list? parts)
+      (map get-part parts)
+      (get-part parts))))
 
 ;;==============================================================
 ;; Generic constructor

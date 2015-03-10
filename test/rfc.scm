@@ -874,7 +874,9 @@ Content-Length: 4349
                (path+query "/path/to/resource?query")
                (query "query")
                (path+query+fragment "/path/to/resource?query#frag")
-               (fragment "frag"))
+               (fragment "frag")
+               ((host+port path+query)
+                ("foo.bar.baz:8080" "/path/to/resource?query")))
               ("mailto:foo@example.com?subject=Hello"
                (scheme "mailto")
                (userinfo #f)
