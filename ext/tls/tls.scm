@@ -36,15 +36,35 @@
 (define-module rfc.tls
   (use gauche.vport)
   (export <tls> make-tls tls-destroy tls-connect tls-close tls-read tls-write
-          tls-input-port tls-output-port)
+          tls-input-port tls-output-port
+
+          SSL_SERVER_VERIFY_LATER SSL_CLIENT_AUTHENTICATION
+          SSL_DISPLAY_BYTES SSL_DISPLAY_STATES SSL_DISPLAY_CERTS
+          SSL_DISPLAY_RSA SSL_CONNECT_IN_PARTS)
   )
 (select-module rfc.tls)
 
 (inline-stub
- "#include \"gauche-tls.h\" "
+ (declcode "#include \"gauche-tls.h\" ")
 
  (define-type <tls> "ScmTLS*")
- (define-cproc make-tls () Scm_MakeTLS)
+
+ (define-enum SSL_SERVER_VERIFY_LATER)
+ (define-enum SSL_CLIENT_AUTHENTICATION)
+ (define-enum SSL_DISPLAY_BYTES)
+ (define-enum SSL_DISPLAY_STATES)
+ (define-enum SSL_DISPLAY_CERTS)
+ (define-enum SSL_DISPLAY_RSA)
+ (define-enum SSL_CONNECT_IN_PARTS)
+ 
+ (define-cproc make-tls (:optional flags (num-sessions::<int> 0))
+   ;; NB: By default, we don't support certificate validation/trust.
+   ;; Future work will have to take care of this if anyone cares about
+   ;; it at the policy level.
+   (let* ([f::uint32_t SSL_SERVER_VERIFY_LATER])
+     (when (SCM_INTEGERP flags)
+       (set! f (Scm_GetIntegerU32Clamp flags SCM_CLAMP_ERROR NULL)))
+     (return (Scm_MakeTLS f num-sessions))))
  (define-cproc tls-destroy (tls::<tls>) Scm_TLSDestroy)
  (define-cproc %tls-connect (tls::<tls> fd::<long>) Scm_TLSConnect)
  (define-cproc %tls-close (tls::<tls>) Scm_TLSClose)
@@ -69,8 +89,10 @@
 
 ;; API
 (define (tls-close t)
-  (close-input-port (tls-input-port t))
-  (close-output-port (tls-output-port t))
+  (when (input-port? (tls-input-port t))
+    (close-input-port (tls-input-port t)))
+  (when (output-port? (tls-output-port t))
+    (close-output-port (tls-output-port t)))
   (%tls-close t))
 
 (define (make-tls-input-port tls)

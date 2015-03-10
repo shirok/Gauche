@@ -62,7 +62,7 @@ SCM_CLASS_DECL(Scm_TLSClass);
 #define SCM_TLS(obj)    ((ScmTLS*)obj)
 #define SCM_TLSP(obj)   SCM_XTYPEP(obj, SCM_CLASS_TLS)
 
-extern ScmObj Scm_MakeTLS(void);
+extern ScmObj Scm_MakeTLS(uint32_t options, int num_sessions);
 extern ScmObj Scm_TLSDestroy(ScmTLS* t);
 extern ScmObj Scm_TLSConnect(ScmTLS* t, int fd);
 extern ScmObj Scm_TLSClose(ScmTLS* t);

@@ -73,16 +73,12 @@ static void close_check(ScmTLS* tls, const char* op)
 #endif /*GAUCHE_USE_AXTLS*/
 }
 
-ScmObj Scm_MakeTLS(void)
+ScmObj Scm_MakeTLS(uint32_t options, int num_sessions)
 {
     ScmTLS* t = SCM_NEW(ScmTLS);
     SCM_SET_CLASS(t, SCM_CLASS_TLS);
 #if defined(GAUCHE_USE_AXTLS)
-    /* NB: we don't support certificate validation/trust. future work
-       will have to take care of this if anyone cares about it at the
-       policy level. (it should be noted that axTLS does support this;
-       we just don't use it at the moment) */
-    t->ctx = ssl_ctx_new(SSL_SERVER_VERIFY_LATER, 0);
+    t->ctx = ssl_ctx_new(options, num_sessions);
     t->conn = NULL;
     t->in_port = t->out_port = 0;
 #endif /*GAUCHE_USE_AXTLS*/
@@ -119,8 +115,9 @@ ScmObj Scm_TLSConnect(ScmTLS* t, int fd)
     context_check(t, "connect");
     if (t->conn) Scm_SysError("attempt to connect already-connected TLS %S", t);
     t->conn = ssl_client_new(t->ctx, fd, 0, 0);
-    if (SSL_OK != ssl_handshake_status(t->conn)) {
-        Scm_SysError("TLS handshake failed");
+    int r = ssl_handshake_status(t->conn);
+    if (r != SSL_OK) {
+        Scm_Error("TLS handshake failed: %d", r);
     }
 #endif /*GAUCHE_USE_AXTLS*/
     return SCM_OBJ(t);

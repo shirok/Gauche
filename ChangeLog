@@ -1,6 +1,10 @@
 2015-03-09  Shiro Kawai  <shiro@acm.org>
 
-	* lib/rfc/uri.scm: (uri-ref) added.
+	* ext/tls/tls.scm (make-tls): Expose flags and num-sessions argument
+	  of ssl_ctx_new to Scheme.  Useful for debugging by giving
+	  SSL_DISPLAY_BYTES and/or SSL_DISPLAY_STATES, for example.
+
+	* lib/rfc/uri.scm (uri-ref): added.
 
 2015-03-07  Shiro Kawai  <shiro@acm.org>
 
