@@ -12668,11 +12668,109 @@ Uniform Resource Identifiers、
 @c COMMON
 @end deftp
 
+First, lets review the structur of URI briefly.
+The following graph shows how the URI is constructed:
+
+@example
+URI-+-scheme
+    |
+    +-specific--+--authority-+--userinfo
+                |            +--host
+                |            +--port
+                +--path
+                +--query
+                +--fragment
+@end example
+
+Not all URIs have this full hierachy.  For exmaple,
+@code{mailto:admin@@example.com} has only @emph{scheme} (@code{mailto})
+and @emph{specific} (@code{admin@@example.com}) parts.
+
+Most popular URI schemes, however, organize resources
+in a tree, so they adopt @emph{authority} (which usually identifies
+the server) and the hierarchical @emph{path}.  In the URI
+@code{http://example.com:8080/search?q=key#results}, the authority
+part is @code{exmaple.com:8080}, the path is @code{/search},
+the query is @code{key} and the fragment is @code{results}.
+The userinfo can be provided before hostname, such as @code{anonymous}
+in @code{ftp://anonymous@@example.com/pub/}.
+
+We have procedures that decompose a URI into those parts,
+and that compose a URI from those parts.
+
 @c EN
 @subheading Parsing URI
 @c JP
 @subheading URIのパーズ
 @c COMMON
+
+@defun uri-ref uri parts
+Extract specific part(s) from the given URI.  You can fully
+decompose URI by the procedures described below, but in actual
+applications, you often need only some of the parts.  This procedure
+comes handy for it.
+
+The @var{parts} argument may be a symbol, or a list of symbols,
+to name the desired parts.  The recognized symbos are as follows.
+
+@table @code
+@item scheme
+The scheme part, as string..
+@item authority
+The authority part, as string.
+If URI doesn't have the part, @code{#f}.
+@item userinfo
+The userinfo part, as string.  If URI doesn't have the part, @code{#f}.
+@item host
+The host part, as string.  If URI doesn't have the part, @code{#f}.
+@item port
+The port part, as integer.  If URI doesn't have the part, @code{#f}.
+@item path
+The path part, as string.  If URI isn't hierarchical, this returns
+the specific part.
+@item query
+The query part, as string. If URI doesn't have the part, @code{#f}.
+@item fragment
+The fragment part, as string.  If URI doesn't have the part, @code{#f}.
+@item scheme+authority
+The scheme and authority part.
+@item host+port
+The host and port part.
+@item userinfo+host+port
+The userinfo, host and port part.
+@item path+query
+The path and query part.
+@item path+query+fragment
+The path, query and fragment part.
+@end table
+
+@example
+(define uri "http://foo:bar@@example.com:8080/search?q=word#results")
+
+(uri-ref uri 'scheme)             @result{} "http"
+(uri-ref uri 'authority)          @result{} "//foo:bar@@example.com:8080/"
+(uri-ref uri 'userinfo)           @result{} "foo:bar"
+(uri-ref uri 'host)               @result{} "example.com"
+(uri-ref uri 'port)               @result{} 8080
+(uri-ref uri 'path)               @result{} "/search"
+(uri-ref uri 'query)              @result{} "q=word"
+(uri-ref uri 'fragment)           @result{} "results"
+(uri-ref uri 'scheme+authority)   @result{} "http://foo:bar@@example.com:8080/"
+(uri-ref uri 'host+port)          @result{} "example.com:8080"
+(uri-ref uri 'userinfo+host+port) @result{} "foo:bar@@example.com:8080"
+(uri-ref uri 'path+query)         @result{} "/search?q=word"
+(uri-ref uri 'path+query+fragment)@result{} "/search?q=word#results"
+@end example
+
+You can extract multiple parts at once by specifying a list of parts.
+A list of parts is returned.
+
+@example
+(uri-ref uri '(host+port path+query))
+  @result{} ("example.com:8080" "/search?q=word")
+@end example
+@end defun
+
 
 @defun uri-parse uri
 @defunx uri-scheme&specific uri
