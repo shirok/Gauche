@@ -1,3 +1,7 @@
+2015-03-14  Shiro Kawai  <shiro@acm.org>
+
+	* lib/rfc/http.scm (http-status-code->description): Added.
+
 2015-03-09  Shiro Kawai  <shiro@acm.org>
 
 	* ext/tls/tls.scm (make-tls): Expose flags and num-sessions argument

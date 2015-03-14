@@ -11079,6 +11079,24 @@ and the boundary string.
 @var{Encoding} specifies the character encodings to be used.
 @end defun
 
+@defun http-status-code->description code
+@c EN
+Returns a brief description of http status code @code{code},
+which may be an integer or a string (e.g. @code{"404"}).
+If @code{code} isn't one of known code, @code{#f} is returned.
+@c JP
+HTTPステータスコード@code{code}の簡単な説明を返します。
+@code{code}は整数か、整数を表す文字列です(例: @code{"404"})。
+@code{code}が知られているものでなかった場合は@code{#f}が返されます。
+@c COMMON
+
+@example
+(http-status-code->description 404)
+  @result{} "Not Found"
+@end example
+@end defun
+
+
 @c EN
 @subheading Secure connection
 @c JP
