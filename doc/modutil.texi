@@ -10639,7 +10639,7 @@ Other keywords are used as the header of the MIME part.
 
 最初の形式は使うのが簡単で、また@var{request-uri}のクエリパラメータリストと
 同じ形式なのでGETとPOSTでルーチンを共有したい場合にも便利でしょう。
-この形式では、各値はMIMEパーとに@code{text/plain}として置かれます。
+この形式では、各値はMIMEパートに@code{text/plain}として置かれます。
 文字コードは下に述べる@code{request-encoding}キーワード引数により変換されます。
 
 二番目の形式では、MIMEパートの属性についてより細かな指定を行うことができます。
