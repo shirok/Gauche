@@ -1,3 +1,8 @@
+2015-03-19  Shiro Kawai  <shiro@acm.org>
+
+	* lib/util/dominator.scm: Added.  (NB: If we have enough graph-related
+	  libraries, we may want to have util.graph.* subcategory).
+
 2015-03-14  Shiro Kawai  <shiro@acm.org>
 
 	* lib/rfc/http.scm (http-status-code->description): Added.

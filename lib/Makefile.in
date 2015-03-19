@@ -83,7 +83,7 @@ SCMFILES = srfi-0.scm \
        util/isomorph.scm util/toposort.scm util/tree.scm util/queue.scm \
        util/digest.scm util/combinations.scm util/lcs.scm util/list.scm \
        util/record.scm util/relation.scm util/stream.scm util/trie.scm \
-       util/rbtree.scm util/sparse.scm \
+       util/rbtree.scm util/sparse.scm util/dominator.scm \
        compat/jfilter.scm compat/stk.scm compat/norational.scm \
        file/filter.scm \
        rfc/822.scm rfc/mime.scm rfc/mime-port.scm rfc/base64.scm rfc/uri.scm \

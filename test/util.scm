@@ -310,6 +310,29 @@
        (cartesian-product-right '((a b c) (0 1))))
 
 ;;-----------------------------------------------
+(test-section "util.dominator")
+(use util.dominator)
+(test-module 'util.dominator)
+
+(let ((graph1 '((a b c)
+                (b d)
+                (c d)
+                (d e f)
+                (e h)
+                (f g)
+                (g d h)
+                (h j k)
+                (i h)
+                (j l)
+                (k l))))
+  (test* "dominators"
+         '((l h) (j h) (k h) (h d) (e d) (g f) (f d) (d a) (b a) (c a) (a a))
+         ($ calculate-dominators 'a
+            (^n (filter-map (^g (and (memq n (cdr g)) (car g))) graph1))
+            (^n (assoc-ref graph1 n '()))
+            eq-comparator)))
+
+;;-----------------------------------------------
 (test-section "util.isomorph")
 (use util.isomorph)
 (test-module 'util.isomorph)
