@@ -106,12 +106,12 @@
                  [in-place-dir gauche-builddir])
     (unless (and (file-exists? sofile)
                  (every (cut file-mtime>? sofile <>) ofiles))
-      (let1 all-ofiles (string-join (map (^f #`"',f'") ofiles) " ")
-        (run #`",(or ld CC) ,(or ldflags \"\") ,(LIBDIR) ,LDFLAGS ,sofile ,all-ofiles ,LIBS ,(or libs \"\")")))))
+      (let1 all-ofiles (string-join (map (^f #"'~f'") ofiles) " ")
+        (run #"~(or ld CC) ~(or ldflags \"\") ~(LIBDIR) ~LDFLAGS ~sofile ~all-ofiles ~LIBS ~(or libs \"\")")))))
 
 (define (gauche-package-compile-and-link module-name files . args)
   (let1 sofile (or (get-keyword :output args #f)
-                   #`",|module-name|.,|SOEXT|")
+                   #"~|module-name|.~|SOEXT|")
     (parameterize ([dry-run (get-keyword :dry-run args #f)]
                    [verbose-run (get-keyword :verbose args #f)])
       (guard (e [else (sys-unlink sofile)
@@ -128,11 +128,11 @@
 
 (define (gauche-package-clean module-name files :key (output #f))
   (when module-name
-    (sys-unlink #`",|module-name|_head.c")
-    (sys-unlink #`",|module-name|_tail.c")
-    (sys-unlink #`",|module-name|_head.,|OBJEXT|")
-    (sys-unlink #`",|module-name|_tail.,|OBJEXT|")
-    (sys-unlink #`",|module-name|.,|SOEXT|"))
+    (sys-unlink #"~|module-name|_head.c")
+    (sys-unlink #"~|module-name|_tail.c")
+    (sys-unlink #"~|module-name|_head.~|OBJEXT|")
+    (sys-unlink #"~|module-name|_tail.~|OBJEXT|")
+    (sys-unlink #"~|module-name|.~|SOEXT|"))
   (when output
     (sys-unlink output))
   (dolist (f files)
@@ -147,9 +147,9 @@
                    ;; NB: we wrap to-dir by closure to for the case if
                    ;; to-dir includes submatch replacement spec.
                    [new (regexp-replace-all (string->regexp orig-dir) olddirs
-                                            (^m #`",|to-dir|/src"))])
+                                            (^m #"~|to-dir|/src"))])
           (if (equal? dir-key "--sysincdir")
-            #`",|new|,|sep|,|to-dir|/gc/include"
+            #"~|new|~|sep|~|to-dir|/gc/include"
             new))
         olddirs))
-  (string-join (map (^s #`"'-,|flag|,|s|'") (string-split dirs sep)) " "))
+  (string-join (map (^s #"'-~|flag|~|s|'") (string-split dirs sep)) " "))

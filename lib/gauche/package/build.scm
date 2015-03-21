@@ -57,59 +57,59 @@
 (define *rm-program*    (find-file-in-paths "rm"))
 
 (define (untar config file)
-  (let ((build-dir (assq-ref config 'build-dir "."))
-        (cat   (assq-ref config 'cat   *cat-program*))
-        (tar   (assq-ref config 'tar   *tar-program*))
-        (gzip  (assq-ref config 'gzip  *gzip-program*))
-        (bzip2 (assq-ref config 'bzip2 *bzip2-program*)))
+  (let ([build-dir (assq-ref config 'build-dir ".")]
+        [cat   (assq-ref config 'cat   *cat-program*)]
+        [tar   (assq-ref config 'tar   *tar-program*)]
+        [gzip  (assq-ref config 'gzip  *gzip-program*)]
+        [bzip2 (assq-ref config 'bzip2 *bzip2-program*)])
     (rxmatch-case (sys-basename file)
       (#/(?:\.tar\.gz|\.tgz|\.taz)$/ (#f)
-       (run #`"\",cat\" \",file\" | \",gzip\" -d | \",tar\" xfC - \",build-dir\""))
+       (run #"\"~cat\" \"~file\" | \"~gzip\" -d | \"~tar\" xfC - \"~build-dir\""))
       (#/(?:\.tar\.bz|\.tar\.bz2|\.tbz|\.tbz2)$/ (#f)
-       (run #`"\",cat\" \",file\" | \",bzip2\" -d | \",tar\" xfC - \",build-dir\""))
+       (run #"\"~cat\" \"~file\" | \"~bzip2\" -d | \"~tar\" xfC - \"~build-dir\""))
       (#/\.tar$/ (#f)
-       (run #`"\",tar\" xfC \",file\" \",build-dir\""))
+       (run #"\"~tar\" xfC \"~file\" \"~build-dir\""))
       (else
        (error "can't decide the package format of " file)))))
 
 (define (tarball->package-directory file)
   (cond
-   ((#/(.*)(?:\.tar\.gz|\.tgz|\.taz|\.tar\.bz|\.tar\.bz2|\.tbz|\.tbz2|\.tar)$/
+   [(#/(.*)(?:\.tar\.gz|\.tgz|\.taz|\.tar\.bz|\.tar\.bz2|\.tbz|\.tbz2|\.tar)$/
        (sys-basename file))
-    => (^m (m 1)))
-   (else
-    (error "can't determine package directory from tarball " file))))
+    => (^m (m 1))]
+   [else
+    (error "can't determine package directory from tarball " file)]))
 
 ;; when reconfiguring, give package name.
 (define (configure config dir package-name configure-options)
   (let1 conf-cmd
       (cond
-       [configure-options #`"./configure ,configure-options"]
+       [configure-options #"./configure ~configure-options"]
        [(and-let* ([ package-name ]
                    [gpd (find-gauche-package-description package-name)])
           (ref gpd 'configure))]
        [else "./configure"])
-    (run #`"cd \",dir\"; ,conf-cmd")))
+    (run #"cd \"~dir\"; ~conf-cmd")))
 
 (define (make config dir)
-  (let ((make (assq-ref config 'make *make-program*)))
-    (run #`"cd \",dir\"; \",make\"")))
+  (let1 make (assq-ref config 'make *make-program*)
+    (run #"cd \"~dir\"; \"~make\"")))
 
 (define (make-check config dir)
-  (let ((make (assq-ref config 'make *make-program*)))
-    (run #`"cd \",dir\"; \",make\" check")))
+  (let1 make (assq-ref config 'make *make-program*)
+    (run #"cd \"~dir\"; \"~make\" check")))
 
 (define (make-install config dir sudo-user sudo-pass)
-  (let ((make (assq-ref config 'make *make-program*))
-        (sudo (assq-ref config 'sudo *sudo-program*)))
+  (let ([make (assq-ref config 'make *make-program*)]
+        [sudo (assq-ref config 'sudo *sudo-program*)])
     (if sudo-user
-      (run #`"cd \",dir\"; \",sudo\" -u \",sudo-user\" -S \",make\" install"
+      (run #"cd \"~dir\"; \"~sudo\" -u \"~sudo-user\" -S \"~make\" install"
            :stdin-string sudo-pass)
-      (run #`"cd \",dir\"; \",make\" install"))))
+      (run #"cd \"~dir\"; \"~make\" install"))))
 
 (define (clean config dir)
-  (let ((rm (assq-ref config 'rm *rm-program*)))
-    (run #`"\",rm\" -rf \",dir\"")))
+  (let1 rm (assq-ref config 'rm *rm-program*)
+    (run #"\"~rm\" -rf \"~dir\"")))
 
 ;; extracting package name from directory name (PACKAGE-VERSION)
 (define (package-name basename)
@@ -120,7 +120,7 @@
 
 ;; get reconfigure options
 (define (get-reconf-options package)
-  (and-let* ((gpd (find-gauche-package-description package :all-versions #t)))
+  (and-let* ([gpd (find-gauche-package-description package :all-versions #t)])
     (string-scan (ref gpd 'configure) #\space 'after)))
 
 ;;;
@@ -138,12 +138,12 @@
                               ((:clean clean?) #f)
                               ((:sudo-install sudo-user) #f)
                               ((:sudo-password sudo-pass) #f))
-  (parameterize ((dry-run dry?))
-    (let* ((tarball   (gauche-package-ensure uri :config config))
-           (build-dir (assq-ref config 'build-dir "."))
-           (basename  (tarball->package-directory tarball))
-           (dir       (build-path build-dir basename))
-           (packname  (package-name basename)))
+  (parameterize ([dry-run dry?])
+    (let* ([tarball   (gauche-package-ensure uri :config config)]
+           [build-dir (assq-ref config 'build-dir ".")]
+           [basename  (tarball->package-directory tarball)]
+           [dir       (build-path build-dir basename)]
+           [packname  (package-name basename)])
       (when (and sudo-user (not sudo-pass))
         (set! sudo-pass (get-password)))
       (unless install-only?
@@ -175,7 +175,7 @@
   (define pkgname #"~|package|-~|version|")
   (parameterize ((dry-run dry?))
     (when (file-exists? "Makefile")
-      (run #"~make maintainer-clean"))
+      (run #"\"~make\" maintainer-clean"))
     (when (file-exists? "DIST")
       (run #"./DIST gen"))
     (run #"./configure")
@@ -183,8 +183,8 @@
                            "-X DIST_EXCLUDE"
                            "")
       (sys-mkdir #"../~pkgname" #o755)
-      (run #"~tar c ~exclude-option --exclude-vcs -f - . | (cd ../~pkgname ; ~tar xf -)")
-      (run #"cd ..; ~tar c~(if verbose 'v \"\")f - ~pkgname | ~gzip -9 > ~|pkgname|.tgz")
+      (run #"\"~tar\" c ~exclude-option --exclude-vcs -f - . | (cd ../~pkgname ; \"~tar\" xf -)")
+      (run #"cd ..; \"~tar\" c~(if verbose 'v \"\")f - ~pkgname | \"~gzip\" -9 > ~|pkgname|.tgz")
       (remove-directory* #"../~pkgname"))
     (when verbose
       (print #"../~|pkgname|.tgz is ready"))))
