@@ -1,3 +1,9 @@
+2015-03-20  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/package/util.scm (find-package-name-and-version): Added.
+	* lib/gauche/package/build.scm, src/gauche-package.in:
+	  Added "make-tarball" command; this will replace "DIST tgz".
+
 2015-03-19  Shiro Kawai  <shiro@acm.org>
 
 	* lib/util/dominator.scm: Added.  (NB: If we have enough graph-related

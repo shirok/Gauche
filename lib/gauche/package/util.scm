@@ -37,8 +37,12 @@
   (use gauche.process)
   (use gauche.parameter)
   (use gauche.termios)
+  (use util.match)
+  (use file.util)
+  (use srfi-13)
   (use srfi-14)
-  (export run dry-run verbose-run get-password))
+  (export run dry-run verbose-run get-password
+          find-package-name-and-version))
 (select-module gauche.package.util)
 
 (define dry-run     (make-parameter #f))
@@ -100,3 +104,28 @@
     (lambda () (display "Password: ") (flush)))
   (without-echoing #f read-line))
 
+;; Determine package name and version heuristically
+;; - If we have autoconf configure.ac, look for AC_INIT.
+;; - If we have Scheme configure script, look for cf-init.
+;; - Otherwise, look at the current directory name and VERSION file.
+(define (find-package-name-and-version :key (top-srcdir "."))
+  (or (and-let* ([f (build-path top-srcdir "configure.ac")]
+                 [ (file-exists? f) ]
+                 [x (find #/^\s*AC_INIT\(/ (file->string-list f))])
+        (rxmatch-case x
+          [#/AC_INIT\(\s*([\w-.]+)\s*,(?:\s*([\w-.]+))?/ (_ pkg ver)
+           (list pkg ver)]
+          [else #f]))
+      (and-let* ([f (build-path top-srcdir "configure")]
+                 [ (file-exists? f) ]
+                 [s (guard (e [else #f]) (file->sexp-list f))]
+                 [t (find (^x (and (pair? x) (eq? (car x) 'cf-init))) s)])
+        (match t
+          [('cf-init pkg ver . _) (list pkg ver)]
+          [_ #f]))
+      (and-let* ([vf (build-path top-srcdir "VERSION")]
+                 [ (file-exists? vf) ]
+                 [ver (string-trim-both (file->string vf))])
+        (list ($ sys-basename $ sys-dirname $ simplify-path
+                 $ sys-normalize-pathname vf :absolute #t)
+              ver))))

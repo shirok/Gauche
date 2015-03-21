@@ -42,8 +42,8 @@
   (use gauche.package.fetch)
   (use gauche.parameter)
   (use file.util)
-  (use util.list)
-  (export gauche-package-build))
+  (use util.match)
+  (export gauche-package-build gauche-package-tarball))
 (select-module gauche.package.build)
 
 ;; Default programs
@@ -158,3 +158,33 @@
       (when (or install? install-only?)
         (make-install config dir sudo-user sudo-pass))
       (when clean?   (clean config dir)))))
+
+;; API
+;; Create tarball
+;; NB: In future, we hope we can create tarball purely in Gauche
+(define (gauche-package-tarball :key (config '())
+                                     ((:dry-run dry?) #f)
+                                     (verbose #f))
+  (define tar  (assq-ref config 'tar *tar-program*))
+  (define make (assq-ref config 'make *make-program*))
+  (define gzip (assq-ref config 'gzip *gzip-program*))
+  (define-values (package version)
+    (match (find-package-name-and-version)
+      [(p v) (=> fail) (if (and p v) (values p v) (fail))]
+      [_ (error "Couldn't find package name and/or version.  Aborting.")]))
+  (define pkgname #"~|package|-~|version|")
+  (parameterize ((dry-run dry?))
+    (when (file-exists? "Makefile")
+      (run #"~make maintainer-clean"))
+    (when (file-exists? "DIST")
+      (run #"./DIST gen"))
+    (run #"./configure")
+    (let1 exclude-option (if (file-exists? "DIST_EXCLUDE")
+                           "-X DIST_EXCLUDE"
+                           "")
+      (sys-mkdir #"../~pkgname" #o755)
+      (run #"~tar c ~exclude-option --exclude-vcs -f - . | (cd ../~pkgname ; ~tar xf -)")
+      (run #"cd ..; ~tar c~(if verbose 'v \"\")f - ~pkgname | ~gzip -9 > ~|pkgname|.tgz")
+      (remove-directory* #"../~pkgname"))
+    (when verbose
+      (print #"../~|pkgname|.tgz is ready"))))

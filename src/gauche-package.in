@@ -45,7 +45,8 @@
 (use util.list)
 
 (autoload gauche.package.build
-          gauche-package-build)
+          gauche-package-build
+          gauche-package-tarball)
 (autoload gauche.package.compile
           gauche-package-compile-and-link
           gauche-package-compile
@@ -432,6 +433,31 @@ Options:
     (when (member (sys-basename dst) executables)
       (sys-chmod dst #o755))
     ))
+
+;;------------------------------------------------------
+;; make-tarball
+;;
+
+(define-cmd "make-tarball"
+  ("make-tarball [options]"
+   "Create tarball of the package for distribution."
+   "
+  This command must be run at the top source directory of the package.  It
+  first cleans the directory for distribution (by make maintainer-clean,
+  run configure, then make disclean), then call tar to create
+  ../$PACKAGE_NAME-$VERSION.tgz.  Certain predefined files (such as .git)
+  are excluded; if you want to exclude other files, list them in DIST_EXCLUDE.
+
+Options:
+  -n, --dry-run       : just display commands to be executed.
+  -v, --verbose       : reports package contents
+  ")
+  (let-args args ((dry-run "n|dry-run")
+                  (verbose "v|verbose"))
+    (unless (or (file-exists? "configure")
+                (file-exists? "configure.ac"))
+      (exit 1 "`gauche-package make-tarball' should be run in the top source directory."))
+    (gauche-package-tarball :config *config* :dry-run dry-run :verbose verbose)))
 
 ;;------------------------------------------------------
 ;; help
