@@ -1,3 +1,9 @@
+2015-03-21  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche-package.in, ext/template.DIST: Retire DIST script;
+	  we no longer need autoconf (DIST gen), and DIST tgz is handled
+	  by 'gauche-package make-tarball'.
+
 2015-03-20  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/package/util.scm (find-package-name-and-version): Added.
