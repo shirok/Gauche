@@ -348,7 +348,7 @@
   ($ run-process generate-command
      :output :null :error :null :wait #t :directory "test.o/")
 
-  (for-each file-check '("DIST" "configure" "Makefile.in"
+  (for-each file-check '("configure" "Makefile.in"
                          "test.c" "test.h" "test.scm" "testlib.stub"
                          "test/module.scm"))
 
