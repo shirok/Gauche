@@ -326,7 +326,7 @@
                 (j l)
                 (k l))))
   (test* "dominators"
-         '((l h) (j h) (k h) (h d) (e d) (g f) (f d) (d a) (b a) (c a) (a a))
+         '((l h) (j h) (k h) (h d) (e d) (g f) (f d) (d a) (b a) (c a))
          ($ calculate-dominators 'a
             (^n (filter-map (^g (and (memq n (cdr g)) (car g))) graph1))
             (^n (assoc-ref graph1 n '()))

@@ -60,6 +60,7 @@
 * Unicode utilities::           text.unicode
 * Combination library::         util.combinations
 * Message digester framework::  util.digest
+* Calculate dominator tree::    util.dominator
 * Determine isomorphism::       util.isomorph
 * The longest common subsequence::  util.lcs
 * Pattern matching::            util.match
@@ -19890,7 +19891,7 @@ Returns a cartesian product of sets in @var{list-of-sets}.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Message digester framework, Determine isomorphism, Combination library, Library modules - Utilities
+@node Message digester framework, Calculate dominator tree, Combination library, Library modules - Utilities
 @section @code{util.digest} - Message digester framework
 @c NODE メッセージダイジェストフレームワーク, @code{util.digest} - メッセージダイジェストフレームワーク
 
@@ -20006,7 +20007,45 @@ converts it to a hexified string.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Determine isomorphism, The longest common subsequence, Message digester framework, Library modules - Utilities
+@node Calculate dominator tree, Determine isomorphism, Message digester framework, Library modules - Utilities
+@section @code{util.dominator} - Calculate dominator tree
+@c NODE 支配木, @code{util.dominator} - 支配木
+
+@deftp {Module} util.dominator
+@mdindex util.dominator
+Dominator tree is an auxiliary structure for control flow graphs.
+It is frequently used in the flow analysis of compilers, but
+also useful for handling general directed graphs.
+@end deftp
+
+@defun calculate-dominators start upstreams downstreams node-comparator
+The four arguments represent a directed, possibly cyclic, graph.
+Here, we use @code{Node} to denote an abstract type of a node 
+of the graph.  It can be anything---the algorithm is oblivious on
+the actual type of nodes.
+
+@table @asis
+@item @var{start} @code{:: Node}
+The start node, or the enter node, of the graph.
+@item @var{upstreams} @code{:: Node -> (Node @dots{})}
+A procedure that takes a node, and returns its upstream
+(immediate ancestor) nodes.
+@item @var{downstreams} @code{:: Node -> (Node @dots{})}
+A procedure that takes a node, and returns its downstream
+(immediate descendant) nodes.
+@item @var{node-comparator}
+A comparator that is used to determine if two nodes are equal to each other.
+It doesn't need to have comparison procedure (we don't need to see
+which is smaller than the other), but it has to have hash function,
+for we use hashtables internally.
+@end table
+
+The procedure returns a list of @code{(node1 node2)}, where
+@code{node2} is an immediate dominator of @code{node1}.n
+@end defun
+
+@c ----------------------------------------------------------------------
+@node Determine isomorphism, The longest common subsequence, Calculate dominator tree, Library modules - Utilities
 @section @code{util.isomorph} - Determine isomorphism
 @c NODE 同型判定, @code{util.isomorph} - 同型判定
 

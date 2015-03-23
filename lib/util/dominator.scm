@@ -32,7 +32,7 @@
 ;;;
 
 (define-module util.dominator
-  (use gauche.sequence)
+  (use srfi-42)
   (export calculate-dominators))
 (select-module util.dominator)
 
@@ -52,11 +52,11 @@
 ;;  [(node, immediate-dominator-node)]
 
 (define (calculate-dominators start upstreams downstreams node-comparator)
-  (define t:id->node (make-tree-map = <))
+  (define t:id->node (make-hash-table 'eqv?))
   (define t:upstream-ids (make-hash-table 'eqv?)) ; id -> [id]
   (define t:downstream-ids (make-hash-table 'eqv?)) ; id -> [id]
   (define t:node->id (make-hash-table node-comparator))
-  (define (id->node id) (tree-map-get t:id->node id #f))
+  (define (id->node id) (hash-table-get t:id->node id #f))
   (define (node->id node) (hash-table-get t:node->id node #f))
   (define (id->upstream-ids id) (hash-table-get t:upstream-ids id '()))
   (define (id->downstream-ids id) (hash-table-get t:downstream-ids id '()))
@@ -67,7 +67,7 @@
       (begin
         (hash-table-put! t:node->id node #t) ; mark visited
         (let1 next-id (fold postorder next-id (downstreams node))
-          (tree-map-put! t:id->node next-id node)
+          (hash-table-put! t:id->node next-id node)
           (hash-table-put! t:node->id node next-id)
           (+ next-id 1)))))
 
@@ -111,4 +111,5 @@
     (vector-set! doms (- nnodes 1) (- nnodes 1))
     (setup! start)
     (iterate! doms (- nnodes 1))
-    (map-with-index (^[i idom] `(,(id->node i) ,(id->node idom))) doms)))
+    (list-ec (: i (- nnodes 1))
+             (list (id->node i) (id->node (vector-ref doms i))))))
