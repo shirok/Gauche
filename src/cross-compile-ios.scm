@@ -17,22 +17,22 @@
 (define *abi-version* "0.9")
 
 ;; SDK versions
-(define *ios-deploy-target-version* "6.1")
-(define *ios-build-sdk-version* "6.1")
+(define *ios-deploy-target-version* "7.1")
+(define *ios-build-sdk-version* "8.2")
 
 ;;
 ;; Architecture-dependent stuff
 ;;
 (define (devroot target)
   (ecase target
-    [(armv7 armv7s)
+    [(armv7 armv7s arm64)
      "/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer"]
     [(i386)
      "/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer"]))
 
 (define (sdkroot target)
   (ecase target
-    [(armv7 armv7s)
+    [(armv7 armv7s arm64)
      (build-path (devroot target)
                  #`"SDKs/iPhoneOS,|*ios-build-sdk-version*|.sdk")]
     [(i386)
@@ -41,17 +41,20 @@
 
 (define (environment-alist target)
   (let ([dev (devroot target)]
-        [sdk (sdkroot target)]
+        [sdkdir (sdkroot target)]
         [cflags-xtra (case target
                        [(i386) " -DNO_DYLD_BIND_FULLY_IMAGE"]
-                       [else ""])])
-    `(("CC"       . ,(build-path dev "usr/bin/llvm-gcc"))
+                       [else ""])]
+        [sdk (case target
+               [(i386) "iphonesimulator"]
+               [else "iphoneos"])])
+    `(("CC"       . ,(process-output->string `("xcrun" "-find" "-sdk" ,sdk "clang")))
       ("LD"       . ,(build-path dev "usr/bin/ld"))
-      ("AR"       . ,(build-path dev "usr/bin/ar"))
+      ("AR"       . ,(process-output->string `("xcrun" "-find" "-sdk" ,sdk "ar")))
       ("NM"       . ,(build-path dev "usr/bin/nm"))
-      ("RANLIB"   . ,(build-path dev "usr/bin/ranlib"))
-      ("CFLAGS"   . ,#`"-arch ,target -pipe -no-cpp-precomp -isysroot ,sdk -miphoneos-version-min=,*ios-deploy-target-version* -I,|sdk|/usr/include/ ,cflags-xtra")
-      ("LDFLAGS"  . ,#`"-L,|sdk|/usr/lib/"))))
+      ("RANLIB"   . ,(process-output->string `("xcrun" "-find" "-sdk" ,sdk "ranlib")))
+      ("CFLAGS"   . ,#`"-arch ,target -pipe -no-cpp-precomp -isysroot ,sdkdir -miphoneos-version-min=,*ios-deploy-target-version* -I,|sdkdir|/usr/include/ ,cflags-xtra")
+      ("LDFLAGS"  . ,#`"-L,|sdkdir|/usr/lib/"))))
 
 (define (build-1 target)
   (let* ([envs (map (^p #`",(car p)=,(cdr p)") (environment-alist target))]
@@ -60,6 +63,7 @@
          [host (ecase target
                  [(armv7)  "arm-apple-darwin7"]
                  [(armv7s) "arm-apple-darwin7s"]
+                 [(arm64) "arm-apple-darwin8"]
                  [(i386)   "i386-apple-darwin12.4"])]
          [configure-cmd `("/usr/bin/env" ,@envs
                           "../../configure"
@@ -82,11 +86,12 @@
 (define (run-lipo)
   (define (archive target)
     (build-path *builddir* (x->string target) "src"
-                #`"libgauche-,|*abi-version*|.a"))
+                #`"libgauche-static-,|*abi-version*|.a"))
   (make-directory* *outdir*)
   (let* ([cmd `("xcrun" "-sdk" "iphoneos" "lipo"
                 "-arch" "armv7s" ,(archive 'armv7s)
                 "-arch" "armv7" ,(archive 'armv7)
+                "-arch" "arm64" ,(archive 'arm64)
                 "-arch" "i386" ,(archive 'i386)
                 "-create"
                 "-output" ,(build-path *outdir*
@@ -96,9 +101,11 @@
       (error "Process failed:" cmd))))
 
 (define (run-all)
-  (remove-directory* *builddir*)
+  (when (file-exists? *builddir*)
+    (remove-directory* *builddir*))
   (build-1 'armv7)
   (build-1 'armv7s)
+  (build-1 'arm64)
   (build-1 'i386)
   (run-lipo))
 
