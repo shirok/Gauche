@@ -62,6 +62,11 @@ List known installed packages\&.
 Make gpd file (called from the configure script)\&.
 .RE
 .PP
+\fBmake\-tarball\fR
+.RS 4
+Make tarball of the package distribution.\&.
+.RE
+.PP
 \fBreconfigure\fR
 .RS 4
 Show configure options of package\&.
