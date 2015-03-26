@@ -55,20 +55,14 @@
           (equal? (sys-getenv "TERM") "dumb")
           (not (sys-isatty (current-output-port)))
           (not *pager*))
-      display
-      (lambda (s)
-        (let1 p (run-process *pager* :input :pipe)
-          ;; NB: ignore SIGPIPE, for the pager may be terminated prematurely.
-          ;; This is not MT safe.
-          (let1 h #f
-            (with-signal-handlers
-                ((SIGPIPE => #f))
-              (lambda ()
-                (guard (e (else #f))
-                  (display s (process-input p)))
-                (close-output-port (process-input p))
-                (process-wait p))))))
-      ))
+    display
+    (^s
+     (let1 p (run-process *pager* :input :pipe)
+       (guard (e (else #f))
+         (display s (process-input p)))
+       (close-output-port (process-input p))
+       (process-wait p)))))
+
 
 (define (get-info-paths)
   (let* ((syspath (cond ((sys-getenv "INFOPATH") => (cut string-split <> #\:))
