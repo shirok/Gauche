@@ -65,30 +65,28 @@
 
 
 (define (get-info-paths)
-  (let* ((syspath (cond ((sys-getenv "INFOPATH") => (cut string-split <> #\:))
-                        (else '())))
-         (instpath (list (gauche-config "--infodir")))
-         (in-place (list "../doc")))
+  (let* ([syspath (cond [(sys-getenv "INFOPATH") => (cut string-split <> #\:)]
+                        [else '()])]
+         [instpath (list (gauche-config "--infodir"))]
+         [in-place (list "../doc")])
     (append syspath instpath in-place)))
 
 (define (find-info-file)
-  (let ((paths (get-info-paths)))
+  (let1 paths (get-info-paths)
     (or (find-file-in-paths *info-file*
                             :paths paths
-                            :pred (lambda (p)
-                                    (or (file-is-readable? p)
-                                        (file-is-readable? #`",|p|.gz")
-                                        (file-is-readable? #`",|p|.bz2"))))
+                            :pred (^p (or (file-is-readable? p)
+                                          (file-is-readable? #"~|p|.gz")
+                                          (file-is-readable? #"~|p|.bz2"))))
         (errorf "couldn't find info file ~s in paths: ~s" *info-file* paths))
     ))
 
 (define (info fn)
   (unless *info*
     (set! *info* (open-info-file (find-info-file)))
-    (for-each (lambda (p)
-                (hash-table-put! *info-index* (car p) (cdr p)))
-              (info-parse-menu (info-get-node *info*
-                                              "Function and Syntax Index"))))
+    (dolist [p ($ info-parse-menu
+                  $ info-get-node *info* "Function and Syntax Index")]
+      (hash-table-put! *info-index* (car p) (cdr p))))
   (let1 nodename (hash-table-get *info-index* (x->string fn) #f)
     (unless nodename (errorf "no info document for ~a" fn))
     (viewer (ref (info-get-node *info* nodename) 'content)))
