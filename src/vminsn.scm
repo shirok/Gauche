@@ -1417,21 +1417,30 @@
 (define-insn-lref* LREF-RET 0 none (LREF RET))
 
 ;; if param == 0, VAL0 <- box(VAL0)
-;; else ENV[param-1] = box(ENV[param-1])
-;; The latter is for arguments that are mutated.
+;; else if param > 0,  ENV[param-1] <- box(ENV[param-1])
+;; else *(SP+param) <- box(*(SP+param)) ; param < 0, so this accesses valid region of SP.
+;; The second case is for arguments that are mutated.
+;; The third case is used with LOCAL-ENV-JUMP (see pass5/jump-call) - in
+;; this case we don't have local env frame yet.
 (define-insn BOX 1 none #f
   (let* ([param::int (SCM_VM_INSN_ARG code)])
-    (if (== param 0)
-      (begin
-        (SCM_FLONUM_ENSURE_MEM VAL0)
-        (let* ([b::ScmBox* (Scm_MakeBox VAL0)])
-          (set! VAL0 (SCM_OBJ b))))
-      (let* ([off::int (- param 1)])
-        (VM-ASSERT (> (-> ENV size) off))
-        (let* ([v (ENV-DATA ENV off)])
-          (SCM_FLONUM_ENSURE_MEM v)
-          (let* ([b::ScmBox* (Scm_MakeBox v)])
-            (set! (ENV-DATA ENV off) (SCM_OBJ b))))))
+    (cond [(== param 0)
+           (SCM_FLONUM_ENSURE_MEM VAL0)
+           (let* ([b::ScmBox* (Scm_MakeBox VAL0)])
+             (set! VAL0 (SCM_OBJ b)))]
+          [(> param 0)
+           (let* ([off::int (- param 1)])
+             (VM-ASSERT (> (-> ENV size) off))
+             (let* ([v (ENV-DATA ENV off)])
+               (SCM_FLONUM_ENSURE_MEM v)
+               (let* ([b::ScmBox* (Scm_MakeBox v)])
+                 (set! (ENV-DATA ENV off) (SCM_OBJ b)))))]
+          [else
+           (VM-ASSERT (>= (+ SP param) (-> vm stackBase)))
+           (let* ([v (* (+ SP param))])
+             (SCM_FLONUM_ENSURE_MEM v)
+             (let* ([b::ScmBox* (Scm_MakeBox v)])
+               (set! (* (+ SP param)) (SCM_OBJ b))))])
     NEXT))
 
 ;; ENV-SET(offset)

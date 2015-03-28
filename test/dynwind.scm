@@ -70,6 +70,20 @@
                [(> x 5) x]
              #f)))
 
+;; continuation of
+
+(test "call/cc and set!" '((#t . 2) (#t . 1))
+      (lambda ()
+        (let ([cont #f]
+              [r '()])
+          (let ([f (lambda (x y) (set! r (acons x y r)) (set! x #f))])
+            (f #t (call/cc (lambda (c) (set! cont c) 1))))
+          (if cont
+            (let ([k cont])
+              (set! cont #f)
+              (k 2))
+            r))))
+
 ;;------------------------------------------------------------------------
 ;; Test for continuation thrown over C stack boundary
 ;;

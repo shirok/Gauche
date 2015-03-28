@@ -1,3 +1,16 @@
+2015-03-27  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.scm (pass5/prepare-args, pass5/box-mutable-lvars):
+	  Fix incorrect insertion of BOX instruction.  The mutable variable
+	  in local environment must be BOXed after all the values in the
+	  env are evaluated, otherwise the result would be incorrect if
+	  a continuation is captured in one of the init expression of
+	  the variable and restarted.  See the added test in test/dynwind.scm
+	  to reproduce the issue.  Thansk to @gengar68 for finding the bug.
+	* src/vminsn.scm (BOX): We enhanced BOX insn with negative parameter;
+	  we need to support both cases of the env frame is already created
+	  and is yet to be created.
+
 2015-03-21  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche-package.in, ext/template.DIST: Retire DIST script;

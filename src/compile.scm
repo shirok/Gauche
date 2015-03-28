@@ -4774,16 +4774,18 @@
         [(let)
          (cond
           [(bottom-context? ctx)
-           (let1 dinit (pass5/prepare-args inits lvars ccb renv ctx)
+           (let1 dinit (pass5/prepare-args inits ccb renv ctx)
              (compiled-code-emit1i! ccb LOCAL-ENV nlocals info)
+             (pass5/box-mutable-lvars lvars ccb #t)
              (let1 dbody (pass5/rec body ccb (cons lvars renv) ctx)
                (unless (tail-context? ctx)
                  (compiled-code-emit0! ccb POP-LOCAL-ENV))
                (imax dinit (+ dbody ENV_HEADER_SIZE nlocals))))]
           [else
            (compiled-code-emit1oi! ccb PRE-CALL nlocals merge-label info)
-           (let1 dinit (pass5/prepare-args inits lvars ccb renv ctx)
+           (let1 dinit (pass5/prepare-args inits ccb renv ctx)
              (compiled-code-emit1i! ccb LOCAL-ENV nlocals info)
+             (pass5/box-mutable-lvars lvars ccb #t)
              (let1 dbody (pass5/rec body ccb (cons lvars renv) 'tail)
                (compiled-code-emit-RET! ccb)
                (compiled-code-set-label! ccb merge-label)
@@ -5047,13 +5049,13 @@
   (let* ([args ($call-args iform)]
          [nargs (length args)])
     (if (tail-context? ctx)
-      (let1 dinit (pass5/prepare-args args #f ccb renv ctx)
+      (let1 dinit (pass5/prepare-args args ccb renv ctx)
         (pass5/rec ($call-proc iform) ccb renv 'normal/top)
         (compiled-code-emit1i! ccb LOCAL-ENV-TAIL-CALL nargs ($*-src iform))
         (if (= nargs 0) 0 (imax dinit (+ nargs ENV_HEADER_SIZE))))
       (let1 merge-label (compiled-code-new-label ccb)
         (compiled-code-emit1oi! ccb PRE-CALL nargs merge-label ($*-src iform))
-        (let1 dinit (pass5/prepare-args args #f ccb renv ctx)
+        (let1 dinit (pass5/prepare-args args ccb renv ctx)
           (pass5/rec ($call-proc iform) ccb renv 'normal/top)
           (compiled-code-emit1i! ccb LOCAL-ENV-CALL nargs ($*-src iform))
           (compiled-code-set-label! ccb merge-label)
@@ -5077,8 +5079,9 @@
     (unless (tail-context? ctx)
       (compiled-code-emit1oi! ccb PRE-CALL nargs merge-label ($*-src iform)))
     (let1 dinit (if (> nargs 0)
-                  (rlet1 d (pass5/prepare-args args lvars ccb renv ctx)
-                    (compiled-code-emit1i! ccb LOCAL-ENV nargs ($*-src iform)))
+                  (rlet1 d (pass5/prepare-args args ccb renv ctx)
+                    (compiled-code-emit1i! ccb LOCAL-ENV nargs ($*-src iform))
+                    (pass5/box-mutable-lvars lvars ccb #t))
                   0)
       (compiled-code-set-label! ccb (pass5/ensure-label ccb label))
       (let1 dbody (pass5/rec ($label-body label) ccb newenv 'tail)
@@ -5105,14 +5108,16 @@
         (errorf "[internal error] $call[jump] appeared out of context of related $call[embed] (~s vs ~s)"
                 ($call-renv embed-node) renv))
       (if (tail-context? ctx)
-        (let1 dinit (pass5/prepare-args args lvars ccb renv ctx)
+        (let1 dinit (pass5/prepare-args args ccb renv ctx)
+          (pass5/box-mutable-lvars lvars ccb #f)
           (compiled-code-emit1oi! ccb LOCAL-ENV-JUMP (length renv-diff)
                                   (pass5/ensure-label ccb label)
                                   ($*-src iform))
           (if (= nargs 0) 0 (imax dinit (+ nargs ENV_HEADER_SIZE))))
         (let1 merge-label (compiled-code-new-label ccb)
           (compiled-code-emit1oi! ccb PRE-CALL nargs merge-label ($*-src iform))
-          (let1 dinit (pass5/prepare-args args lvars ccb renv ctx)
+          (let1 dinit (pass5/prepare-args args ccb renv ctx)
+            (pass5/box-mutable-lvars lvars ccb #f)
             (compiled-code-emit1oi! ccb LOCAL-ENV-JUMP (length renv-diff)
                                     (pass5/ensure-label ccb label)
                                     ($*-src iform))
@@ -5129,14 +5134,14 @@
     (if (tail-context? ctx)
       (let* ([dproc (pass5/rec ($call-proc iform)
                                ccb renv (normal-context ctx))]
-             [dinit (pass5/prepare-args args #f ccb renv 'normal/top)])
+             [dinit (pass5/prepare-args args ccb renv 'normal/top)])
         (compiled-code-emit1i! ccb TAIL-CALL nargs ($*-src iform))
         (imax dinit (+ nargs dproc ENV_HEADER_SIZE)))
       (let1 merge-label (compiled-code-new-label ccb)
         (compiled-code-emit1oi! ccb PRE-CALL nargs merge-label ($*-src iform))
         (let* ([dproc (pass5/rec ($call-proc iform)
                                  ccb renv (normal-context ctx))]
-               [dinit (pass5/prepare-args args #f ccb renv 'normal/top)])
+               [dinit (pass5/prepare-args args ccb renv 'normal/top)])
           (compiled-code-emit1i! ccb CALL nargs ($*-src iform))
           (compiled-code-set-label! ccb merge-label)
           (+ CONT_FRAME_SIZE (imax dinit (+ nargs dproc ENV_HEADER_SIZE)))))
@@ -5147,13 +5152,13 @@
   (let* ([args ($call-args iform)]
          [nargs (length args)])
     (if (tail-context? ctx)
-      (let* ([dinit (pass5/prepare-args args #f ccb renv ctx)]
+      (let* ([dinit (pass5/prepare-args args ccb renv ctx)]
              [dproc (pass5/rec ($call-proc iform) ccb renv 'normal/top)])
         (compiled-code-emit1i! ccb TAIL-CALL nargs ($*-src iform))
         (imax dinit (+ nargs dproc ENV_HEADER_SIZE)))
       (let1 merge-label (compiled-code-new-label ccb)
         (compiled-code-emit1oi! ccb PRE-CALL nargs merge-label ($*-src iform))
-        (let* ([dinit (pass5/prepare-args args #f ccb renv ctx)]
+        (let* ([dinit (pass5/prepare-args args ccb renv ctx)]
                [dproc (pass5/rec ($call-proc iform) ccb renv 'normal/top)])
           (compiled-code-emit1i! ccb CALL nargs ($*-src iform))
           (compiled-code-set-label! ccb merge-label)
@@ -5456,12 +5461,10 @@
 ;; into the stack one by one.  Returns the maximum depth of the stack.
 ;; lvars is #f for regular call sequence, or a list of lvars of the same
 ;; length of args for $LET or local calls.
-(define (pass5/prepare-args args lvars ccb renv ctx)
+(define (pass5/prepare-args args ccb renv ctx)
   (if (null? args)
     0
     (let1 d (pass5/rec (car args) ccb renv (normal-context ctx))
-      (when (and lvars (not (lvar-immutable? (car lvars))))
-        (compiled-code-emit1! ccb BOX 0))
       (compiled-code-emit-PUSH! ccb)
       ;; NB: We check termination condition here.  This routine is called
       ;; lots of times, and (length args) is usually small (<=2 covers almost
@@ -5471,17 +5474,25 @@
       (if (null? (cdr args))
         d
         (let loop ([args  (cdr args)]
-                   [lvars (and lvars (cdr lvars))]
                    [depth (+ d 1)]
                    [cnt  1])
           (let1 d (pass5/rec (car args) ccb renv 'normal/top)
-            (when (and lvars (not (lvar-immutable? (car lvars))))
-              (compiled-code-emit1! ccb BOX 0))
             (compiled-code-emit-PUSH! ccb)
             (if (null? (cdr args))
               (imax depth d)
-              (loop (cdr args) (and lvars (cdr lvars))
-                    (imax depth (+ d cnt 1)) (+ cnt 1)))))))))
+              (loop (cdr args) (imax depth (+ d cnt 1)) (+ cnt 1)))))))))
+
+;; In case of $LET
+(define (pass5/box-mutable-lvars lvars ccb has-frame?)
+  (let1 envsize (length lvars)
+    (let loop ([lvars lvars]
+               [k 0])
+      (unless (null? lvars)
+        (unless (lvar-immutable? (car lvars))
+          (if has-frame?
+            (compiled-code-emit1! ccb BOX (- envsize k))
+            (compiled-code-emit1! ccb BOX (- k envsize))))
+        (loop (cdr lvars) (+ k 1))))))
 
 ;;============================================================
 ;; Inliners of builtin procedures
