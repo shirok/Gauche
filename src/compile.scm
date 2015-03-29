@@ -5131,7 +5131,7 @@
            (compiled-code-emit1oi! ccb LOCAL-ENV-JUMP env-depth label src)]
           [(not (lvar-immutable? (car lvs))) ; need boxing
            (compiled-code-emit1i! ccb LOCAL-ENV-SHIFT env-depth src)
-           (pass5/box-mutable-lvars lvs ccb)
+           (pass5/box-mutable-lvars lvars ccb)
            (compiled-code-emit0oi! ccb JUMP label src)]
           [else
            (loop (cdr lvs))])))
