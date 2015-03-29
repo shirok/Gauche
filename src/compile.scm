@@ -5498,7 +5498,7 @@
                [k 0])
       (unless (null? lvars)
         (unless (lvar-immutable? (car lvars))
-          (compiled-code-emit1! ccb BOX (- envsize k)))
+          (compiled-code-emit1i! ccb BOX (- envsize k) (lvar-name (car lvars))))
         (loop (cdr lvars) (+ k 1))))))
 
 ;;============================================================

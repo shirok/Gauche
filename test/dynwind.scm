@@ -70,8 +70,13 @@
                [(> x 5) x]
              #f)))
 
-;; continuation of
-
+;; When the continuation is restarted, the incomplete frame at the
+;; time of capture must be restored.  After introducing BOXing of mutable
+;; vars and before d84eb08, this was broken since we BOX variables before
+;; the frame is completed, and continuation captures the reference to the
+;; box instead of the original value---and the content of box wasn't
+;; restored by restarting the continuation!
+;; The following tests check the regression.
 (test "call/cc and set!" '((#t . 2) (#t . 1))
       (lambda ()
         (let ([cont #f]
@@ -83,6 +88,20 @@
               (set! cont #f)
               (k 2))
             r))))
+
+(test "call/cc and set! w/LOCAL-ENV-SHIFT"
+      '(((0) ()))
+      (lambda ()
+        (let loop ([j 0]
+                   [t '()]
+                   [r '()]
+                   [k 0])
+          (let ([x (list j)]
+                [y (list t)])
+            (push! t (cons x y))
+            (if (= k 1)
+              r
+              (loop (+ j 1) '() t (+ k 1)))))))
 
 ;;------------------------------------------------------------------------
 ;; Test for continuation thrown over C stack boundary
