@@ -1,3 +1,13 @@
+2015-03-28  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.scm (pass5/emit-local-env-jump),
+	  src/vminsn.scm (LOCAL-ENV-SHIFT, BOX),
+	  src/vm.c (local_env_shift): Improvement of the last commit - instead
+	  of changing BOX behavior to add another 'mode', we split
+	  LOCAL-ENV-JUMP insn to LOCAL-ENV-SHIFT + JUMP, and insert boxing
+	  operatins inbetween when necessary.  If there's no mutable variable
+	  in the frame, we use LOCAL-ENV-JUMP as before.
+
 2015-03-27  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm (pass5/prepare-args, pass5/box-mutable-lvars):

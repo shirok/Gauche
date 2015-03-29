@@ -520,45 +520,11 @@
   (begin (set! ENV (-> ENV up)) NEXT))
 
 ;; LOCAL-ENV-JUMP(DEPTH) <addr>
-;;  This instruction appears when local function call is optimized.
-;;  The stack already has NLOCALS values.  This instruction creates an
-;;  env frame with them (just like LOCAL-ENV), then jump to <addr>.
-;;  (# of arguments can be known by SP - ARGP).
+;;  Combination of LOCAL-ENV-SHIFT + JUMP.
+;;  We can use this when none of the new environment needs boxing.
 (define-insn LOCAL-ENV-JUMP 1 addr #f
-  (let* ([nargs::int (cast int (- SP ARGP))]
-         [env_depth::int (SCM_VM_INSN_ARG code)]
-         [to::ScmObj*] [tenv::ScmEnvFrame* ENV])
-    ;; We can discard env_depth environment frames.
-    ;; There are several cases:
-    ;;  - if the target env frame (TENV) is in stack:
-    ;;   -- if the current cont frame is over TENV
-    ;;      => shift argframe on top of the current cont frame
-    ;;   -- otherwise => shift argframe on top of TENV
-    ;;  - if TENV is in heap:
-    ;;   -- if the current cont frame is in stack
-    ;;      => shift argframe on top of the current cont frame
-    ;;   -- otherwise => shift argframe at the stack base
-    (while (> (post-- env_depth) 0)
-      (SCM_ASSERT tenv)
-      (set! tenv (-> tenv up)))
-    (cond [(IN-STACK-P (cast ScmObj* tenv))
-           (if (and (IN-STACK-P (cast ScmObj* CONT))
-                    (> (cast ScmObj* CONT) (cast ScmObj* tenv)))
-             (set! to (CONT-FRAME-END CONT))
-             (set! to (+ (cast ScmObj* tenv) ENV_HDR_SIZE)))]
-          [else
-           (if (IN-STACK-P (cast ScmObj* CONT))
-             (set! to (CONT-FRAME-END CONT))
-             (set! to (-> vm stackBase)))]) ; continuation has been saved
-    (when (and (> nargs 0) (!= to ARGP))
-      (let* ([t::ScmObj* to] [a::ScmObj* ARGP])
-        (dotimes [c nargs]
-          (set! (* (post++ t)) (* (post++ a))))))
-    (set! ARGP to)
-    (set! SP (+ to nargs))
-    (if (> nargs 0)
-      (FINISH-ENV SCM_FALSE tenv)
-      (set! ENV tenv))
+  (begin
+    (local_env_shift vm (SCM_VM_INSN_ARG code))
     (FETCH-LOCATION PC)
     CHECK-INTR
     NEXT))
@@ -1418,10 +1384,7 @@
 
 ;; if param == 0, VAL0 <- box(VAL0)
 ;; else if param > 0,  ENV[param-1] <- box(ENV[param-1])
-;; else *(SP+param) <- box(*(SP+param)) ; param < 0, so this accesses valid region of SP.
 ;; The second case is for arguments that are mutated.
-;; The third case is used with LOCAL-ENV-JUMP (see pass5/jump-call) - in
-;; this case we don't have local env frame yet.
 (define-insn BOX 1 none #f
   (let* ([param::int (SCM_VM_INSN_ARG code)])
     (cond [(== param 0)
@@ -1434,13 +1397,7 @@
              (let* ([v (ENV-DATA ENV off)])
                (SCM_FLONUM_ENSURE_MEM v)
                (let* ([b::ScmBox* (Scm_MakeBox v)])
-                 (set! (ENV-DATA ENV off) (SCM_OBJ b)))))]
-          [else
-           (VM-ASSERT (>= (+ SP param) (-> vm stackBase)))
-           (let* ([v (* (+ SP param))])
-             (SCM_FLONUM_ENSURE_MEM v)
-             (let* ([b::ScmBox* (Scm_MakeBox v)])
-               (set! (* (+ SP param)) (SCM_OBJ b))))])
+                 (set! (ENV-DATA ENV off) (SCM_OBJ b)))))])
     NEXT))
 
 ;; ENV-SET(offset)
@@ -1465,3 +1422,11 @@
 
 (define-insn LREF-UNBOX 2 none (LREF UNBOX) #f :fold-lref)
 
+;; LOCAL-ENV-SHIFT(DEPTH)
+;;  This instruction appears when local function call is optimized.
+;;  The stack already has NLOCALS values.  We discard DEPTH env frames,
+;;  and creates a new local env from the stack value.
+(define-insn LOCAL-ENV-SHIFT 1 none #f
+  (begin
+    (local_env_shift vm (SCM_VM_INSN_ARG code))
+    NEXT))

@@ -782,6 +782,62 @@ static void wna(ScmVM *vm, ScmObj proc, int ngiven, int foldlen)
 #endif
 }
 
+/* local_env_shift
+   Called from LOCAL-ENV-SHIFT and LOCAL-ENV-JUMP insns (see vminsn.scm),
+   and adjusts env frames for optimized local function call.
+   This routine does two things
+   - Creates a new local env frame from the values in the current stack.
+     The size of frame can be determined by SP-ARGP.
+   - Discard DEPTH env frames.
+ */
+static void local_env_shift(ScmVM *vm, int env_depth)
+{
+    int nargs = (int)(SP - ARGP);
+    ScmEnvFrame *tenv = ENV;
+    /* We can discard env_depth environment frames.
+       There are several cases:
+        - if the target env frame (TENV) is in stack:
+         -- if the current cont frame is over TENV
+            => shift argframe on top of the current cont frame
+         -- otherwise => shift argframe on top of TENV
+        - if TENV is in heap:
+         -- if the current cont frame is in stack
+            => shift argframe on top of the current cont frame
+         -- otherwise => shift argframe at the stack base
+    */
+    while (env_depth-- > 0) {
+        SCM_ASSERT(tenv);
+        tenv = tenv->up;
+    }
+ 
+    ScmObj *to;
+    if (IN_STACK_P((ScmObj*)tenv)) {
+        if (IN_STACK_P((ScmObj*)CONT) && (((ScmObj*)CONT) > ((ScmObj*)tenv))) {
+            to = CONT_FRAME_END(CONT);
+         } else {
+            to = ((ScmObj*)tenv) + ENV_HDR_SIZE;
+        }
+    } else {
+        if (IN_STACK_P((ScmObj*)CONT)) {
+            to = CONT_FRAME_END(CONT);
+        } else {
+            to = vm->stackBase; /* continuation has already been saved */
+        }
+    }
+    if (nargs > 0 && to != ARGP) {
+        ScmObj *t = to;
+        ScmObj *a = ARGP;
+        for (int c = 0; c < nargs; c++) {
+            *t++ = *a++;
+        }
+    }
+    ARGP = to;
+    SP = to + nargs;
+    if (nargs > 0) { FINISH_ENV(SCM_FALSE, tenv); }
+    else           { ENV = tenv; }
+}
+
+
 /*===================================================================
  * Main loop of VM
  */

@@ -4776,7 +4776,7 @@
           [(bottom-context? ctx)
            (let1 dinit (pass5/prepare-args inits ccb renv ctx)
              (compiled-code-emit1i! ccb LOCAL-ENV nlocals info)
-             (pass5/box-mutable-lvars lvars ccb #t)
+             (pass5/box-mutable-lvars lvars ccb)
              (let1 dbody (pass5/rec body ccb (cons lvars renv) ctx)
                (unless (tail-context? ctx)
                  (compiled-code-emit0! ccb POP-LOCAL-ENV))
@@ -4785,7 +4785,7 @@
            (compiled-code-emit1oi! ccb PRE-CALL nlocals merge-label info)
            (let1 dinit (pass5/prepare-args inits ccb renv ctx)
              (compiled-code-emit1i! ccb LOCAL-ENV nlocals info)
-             (pass5/box-mutable-lvars lvars ccb #t)
+             (pass5/box-mutable-lvars lvars ccb)
              (let1 dbody (pass5/rec body ccb (cons lvars renv) 'tail)
                (compiled-code-emit-RET! ccb)
                (compiled-code-set-label! ccb merge-label)
@@ -5081,7 +5081,7 @@
     (let1 dinit (if (> nargs 0)
                   (rlet1 d (pass5/prepare-args args ccb renv ctx)
                     (compiled-code-emit1i! ccb LOCAL-ENV nargs ($*-src iform))
-                    (pass5/box-mutable-lvars lvars ccb #t))
+                    (pass5/box-mutable-lvars lvars ccb))
                   0)
       (compiled-code-set-label! ccb (pass5/ensure-label ccb label))
       (let1 dbody (pass5/rec ($label-body label) ccb newenv 'tail)
@@ -5109,23 +5109,32 @@
                 ($call-renv embed-node) renv))
       (if (tail-context? ctx)
         (let1 dinit (pass5/prepare-args args ccb renv ctx)
-          (pass5/box-mutable-lvars lvars ccb #f)
-          (compiled-code-emit1oi! ccb LOCAL-ENV-JUMP (length renv-diff)
-                                  (pass5/ensure-label ccb label)
-                                  ($*-src iform))
+          (pass5/emit-local-env-jump ccb lvars (length renv-diff)
+                                     (pass5/ensure-label ccb label)
+                                     ($*-src iform))
           (if (= nargs 0) 0 (imax dinit (+ nargs ENV_HEADER_SIZE))))
         (let1 merge-label (compiled-code-new-label ccb)
           (compiled-code-emit1oi! ccb PRE-CALL nargs merge-label ($*-src iform))
           (let1 dinit (pass5/prepare-args args ccb renv ctx)
-            (pass5/box-mutable-lvars lvars ccb #f)
-            (compiled-code-emit1oi! ccb LOCAL-ENV-JUMP (length renv-diff)
-                                    (pass5/ensure-label ccb label)
-                                    ($*-src iform))
+            (pass5/emit-local-env-jump ccb lvars (length renv-diff)
+                                       (pass5/ensure-label ccb label)
+                                       ($*-src iform))
             (compiled-code-set-label! ccb merge-label)
             (if (= nargs 0)
               CONT_FRAME_SIZE
               (imax dinit (+ nargs ENV_HEADER_SIZE CONT_FRAME_SIZE)))))
         ))))
+
+(define (pass5/emit-local-env-jump ccb lvars env-depth label src)
+  (let loop ([lvs lvars])
+    (cond [(null? lvs)  ; no need of boxing.
+           (compiled-code-emit1oi! ccb LOCAL-ENV-JUMP env-depth label src)]
+          [(not (lvar-immutable? (car lvs))) ; need boxing
+           (compiled-code-emit1i! ccb LOCAL-ENV-SHIFT env-depth src)
+           (pass5/box-mutable-lvars lvs ccb)
+           (compiled-code-emit0oi! ccb JUMP label src)]
+          [else
+           (loop (cdr lvs))])))
 
 ;; Head-heavy call
 (define (pass5/head-heavy-call iform ccb renv ctx)
@@ -5483,15 +5492,13 @@
               (loop (cdr args) (imax depth (+ d cnt 1)) (+ cnt 1)))))))))
 
 ;; In case of $LET
-(define (pass5/box-mutable-lvars lvars ccb has-frame?)
+(define (pass5/box-mutable-lvars lvars ccb)
   (let1 envsize (length lvars)
     (let loop ([lvars lvars]
                [k 0])
       (unless (null? lvars)
         (unless (lvar-immutable? (car lvars))
-          (if has-frame?
-            (compiled-code-emit1! ccb BOX (- envsize k))
-            (compiled-code-emit1! ccb BOX (- k envsize))))
+          (compiled-code-emit1! ccb BOX (- envsize k)))
         (loop (cdr lvars) (+ k 1))))))
 
 ;;============================================================
