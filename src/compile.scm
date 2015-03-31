@@ -5989,10 +5989,12 @@
 
 ;; er-comparer :: (Sym-or-id, Sym-or-id, Env, Env) -> Bool
 (define (er-comparer a b uenv cenv)
-  (let ([a1 (cenv-lookup-variable uenv a)]
-        [b1 (cenv-lookup-variable uenv b)])
-    (or (eq? a1 b1)
-        (free-identifier=? a1 b1))))
+  (and (variable? a)
+       (variable? b)
+       (let ([a1 (cenv-lookup-variable uenv a)]
+             [b1 (cenv-lookup-variable uenv b)])
+         (or (eq? a1 b1)
+             (free-identifier=? a1 b1)))))
 
 ;; xformer :: (Sexpr, (Sym -> Sym), (Sym, Sym -> Bool)) -> Sexpr
 (define (%make-er-transformer xformer def-env)

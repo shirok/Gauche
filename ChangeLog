@@ -1,3 +1,9 @@
+2015-03-30  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.scm (er-comparer): Check if args are variable; without
+	  this check, compiler barfs with assertion failure if the user passes
+	  non-variable arg to 'compare' proc of er-transformer.
+
 2015-03-28  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm (pass5/emit-local-env-jump),
