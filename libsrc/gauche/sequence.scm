@@ -44,6 +44,7 @@
           find-index find-with-index group-sequence
           sequence->kmp-stepper sequence-contains
           break-list-by-sequence! break-list-by-sequence
+          common-prefix-to common-prefix
           permute-to permute permute!
           shuffle-to shuffle shuffle!)
   )
@@ -374,7 +375,30 @@
                 [else
                  (loop (cdr cur) cur last i)]))))
     (values '() lis)))
-                 
+
+;; prefix, suffix ------------------------------------------------
+
+(define-method common-prefix-to ((class <class>)
+                                 (a <sequence>)
+                                 (b <sequence>)
+                                 :key (key identity) (test eqv?))
+  (with-builder (class add! get)
+    (with-iterator (a a-end? a-next)
+      (with-iterator (b b-end? b-next)
+        (let loop ()
+          (if (or (a-end?) (b-end?))
+            (get)
+            (let ([a1 (a-next)]
+                  [b1 (b-next)])
+              (if (test (key a1) (key b1))
+                (begin (add! a1) (loop))
+                (get)))))))))
+
+(define-method common-prefix ((a <sequence>) (b <sequence>) . args)
+  (apply common-prefix-to (class-of a) a b args))
+
+;; TODO: suffix
+
 ;; permute -------------------------------------------------------
 
 (define-method permute-to ((class <class>) (src <sequence>) (ord <sequence>)

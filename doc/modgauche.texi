@@ -12706,6 +12706,45 @@ use @code{group-collection}
 @c COMMON
 @end deffn
 
+@subsubheading Prefix
+
+@deffn {Generic function} common-prefix (a <sequence>) (b <sequence>) :key key test
+Returns a new sequence of the same type of @var{a} which contains
+the common prefix of sequences @var{a} and @var{b}.  The types of
+@var{a} and @var{b} doesn't need to match.
+The type of @var{a} must have a builder.
+
+For each corresponding element in @var{a} and @var{b}, the @var{key}
+procedure is applied (default @code{identity}), then compared with
+@var{test} procedure (default @code{eqv?}).
+
+@example
+(common-prefix '(a b c d e) '(a b c e f))
+  @result{} (a b c)
+
+(common-prefix "abcef" '#(#\a #\b #\c #\d #\e)
+  @result{} "abc"
+@end example
+
+For strings, @code{srfi-13} has a specific function with
+related feature: @code{string-prefix-length}
+(@xref{SRFI-13 String Prefixes & Suffixes}).
+@end deffn
+
+@deffn {Generic function} common-prefix-to (class <class>) (a <sequence>) (b <sequence>) :key key test
+Returns a new sequence of the type @var{class} which contains
+the common prefix of sequences @var{a} and @var{b}.  The types of
+@var{a} and @var{b} doesn't need to match, and neither
+needs to have a builder.
+
+The meanings of keyword arguments are the same as @code{common-prefix}.
+
+@example
+(common-prefix-to <list> "abcde" "ABCDE" :test char-ci=?
+  @result{} '(#\a #\b #\c)
+@end example
+@end deffn
+
 
 @subsubheading Permutation and shuffling
 

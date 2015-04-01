@@ -592,6 +592,20 @@
     (apply tester #f datum)
     (apply tester #t datum)))
   
+(test* "common-prefix" '(a b c)
+       (common-prefix-to <list> '(a b c d e) '(a b c e d)))
+(test* "common-prefix" '(a b c)
+       (common-prefix '(a b c d e) '#(a b c e d)))
+(test* "common-prefix" '#(a b c)
+       (common-prefix '#(a b c e d) '(a b c d e)))
+(test* "common-prefix" "xyz"
+       (common-prefix "xyz" "xyzw"))
+(test* "common-prefix" ""
+       (common-prefix "xyz" "abc"))
+(test* "common-prefix" '()
+       (common-prefix '(a b c) ""))
+(test* "common-prefix" "ABC"
+       (common-prefix "ABCE" "abcd" :test char-ci=?))
 
 (define (permute-tester msg expected source order . fallback)
   (define (unit type elt-coercer order-type)
