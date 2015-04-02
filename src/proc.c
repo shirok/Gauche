@@ -51,7 +51,7 @@ static void proc_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
     if (SCM_PROCEDURE_TYPE(obj) == SCM_PROC_SUBR) {
         SCM_PUTZ("#<subr", -1, port);
         if (!SCM_FALSEP(info)) {
-            Scm_Printf(port, " %A", info);
+            Scm_Printf(port, " %S", info);
         }
         SCM_PUTC('>', port);
     } else {
