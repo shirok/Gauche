@@ -540,6 +540,8 @@
    (forward-decls     :initform '())
       ;; list of strings for code that must be emitted before the
       ;; procedure definition
+   (info              :initform #f)
+      ;; cgen-literal of ScmObj to be set in the 'info' slot of ScmProcedure.
    ))
 
 (define (get-arg cproc arg) (find (^x (eq? arg (~ x'name))) (~ cproc'args)))
@@ -622,6 +624,7 @@
                       :allow-other-keys? other-keys?)
           (process-body cproc body)
           (check-fast-flonum cproc args)
+          (assign-proc-info! cproc)
           (cgen-add! cproc))))))
 
 (define-method c-stub-name ((cproc <cproc>)) #`",(~ cproc'c-name)__STUB")
@@ -968,6 +971,22 @@
         (typed-results (map name->type ts) body)]
        [_ (error <cgen-stub-error> "invalid cproc return type:" rettype)])))
 
+(define-method assign-proc-info! ((proc <cproc>))
+  (define (arginfo arg) (~ arg'name))
+  (let* ([qargs (filter (cut is-a? <> <required-arg>) (~ proc'args))]
+         [oargs (filter (cut is-a? <> <optional-arg>) (~ proc'args))]
+         [kargs (filter (cut is-a? <> <keyword-arg>) (~ proc'args))]
+         [rarg  (filter (cut is-a? <> <rest-arg>) (~ proc'args))]
+         [aarg  (filter (cut is-a? <> <optarray-arg>) (~ proc'args))]
+         [info  `(,(~ proc'scheme-name)
+                  ,@(map arginfo qargs)
+                  ,@(cond-list
+                     [(pair? oargs) @ `(:optional ,@(map arginfo oargs))]
+                     [(pair? kargs) @ `(:key ,@(map arginfo kargs))]
+                     [(pair? rarg) @ `(:rest ,(arginfo (car rarg)))]
+                     [(pair? aarg) @ `(:optarray ,(arginfo (car aarg)))]))])
+    (set! (~ proc'info) (make-literal info))))
+
 ;;;
 ;;; Emitting code
 ;;;
@@ -1037,8 +1056,8 @@
                   [else (+ (~ cproc'num-optargs) 1)])); opt
     (unless (null? flags)                             ; cst
       (if (memq :constant flags) (display "1, ") (display "0, ")))
-    (format #t "~a," (cgen-c-name (~ cproc'proc-name))); inf
-    (unless (null? flags)                              ; flags
+    (format #t "SCM_FALSE,")                          ; info - to be set in init
+    (unless (null? flags)                             ; flags
       (if (memq :fast-flonum flags)
         (display "SCM_SUBR_IMMEDIATE_ARG, ")
         (display "0, ")))
@@ -1058,6 +1077,9 @@
        (c-stub-name cproc)
        (if (or (~ cproc'inline-insn) (memq :constant (~ cproc'flags)))
          "SCM_BINDING_INLINABLE" "0")))
+  (when (~ cproc'info)
+    (f "  ~a.common.info = ~a;"
+       (c-stub-name cproc) (cgen-c-name (~ cproc'info))))
   (next-method)
   )
 
