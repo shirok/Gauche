@@ -1320,6 +1320,22 @@ the substring of @var{s} is used as the source.
 @defun string-compare s1 s2 proc< proc= proc> :optional start1 end1 start2 end2
 @defunx string-compare-ci s1 s2 proc< proc= proc> :optional start1 end1 start2 end2
 [SRFI-13]
+Compares two strings @var{s1} and @var{s2} codepoint-wise.  When mismatch
+is first found, call either one of procedure @var{proc<}, @var{proc=} or
+@var{proc>}, depending on the mismatched codepoint, with the index
+in @var{s1} when mismatch occurs.  The optional arguments restricts
+the range of the input strings; however, the index passed to one 
+of the procedures is always an index from the beginning of @var{s1}.
+
+@example
+(string-compare "abc" "abz"
+                (^i `(< ,i)) (^i `(= ,i)) (^i `(> ,i)))
+  @result{} (< 2)
+@end example
+
+The case-insensitive variant, @var{string-compare-ci}, compares
+each codepoint with character-wise case-folding.  It won't consider
+special case folding such as German eszett.
 @end defun
 
 @defun string= s1 s2 :optional start1 end1 start2 end2
@@ -1354,6 +1370,9 @@ the substring of @var{s} is used as the source.
 @defunx string-prefix-length-ci s1 s2 :optional start1 end1 start2 end2
 @defunx string-suffix-length-ci s1 s2 :optional start1 end1 start2 end2
 [SRFI-13]
+Returns the length of the longest common prefix/suffix of two strings,
+@var{s1} and @var{s2}.  The optional arguments restrict the range of
+search.  The @code{*-ci} variations use case foling character comparison.
 @end defun
 
 @defun string-prefix? s1 s2 :optional start1 end1 start2 end2
