@@ -43,6 +43,7 @@
   (use gauche.vm.insn)
   (use gauche.parameter)
   (use gauche.sequence)
+  (use gauche.experimental.lamb)
   (use file.util)
   (use util.match)
   (use util.toposort)
