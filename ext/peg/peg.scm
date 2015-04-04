@@ -33,13 +33,11 @@
 ;;;
 
 (define-module parser.peg
-  (use srfi-1)
   (use srfi-13)
   (use srfi-14)
   (use gauche.collection)
   (use gauche.generator)
   (use gauche.lazy)
-  (use util.list)
   (use util.match)
   (export <parse-error>
           make-peg-parse-error

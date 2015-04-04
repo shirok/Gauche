@@ -66,8 +66,6 @@
 
 (define-module util.relation
   (use gauche.sequence)
-  (use srfi-1)
-  (use util.list)
   (export <relation>
           relation-column-names relation-column-name?
           relation-column-getter relation-column-setter

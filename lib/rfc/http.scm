@@ -44,8 +44,6 @@
 ;; The features required for typical client usage are implemented first.
 
 (define-module rfc.http
-  (use srfi-1)
-  (use srfi-2)
   (use srfi-11)
   (use srfi-13)
   (use rfc.822)
@@ -57,7 +55,6 @@
   (use gauche.sequence)
   (use gauche.uvector)
   (use util.match)
-  (use util.list)
   (use text.tree)
   (export <http-error>
           http-user-agent make-http-connection reset-http-connection

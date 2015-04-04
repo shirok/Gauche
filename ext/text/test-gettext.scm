@@ -1,7 +1,5 @@
 (use gauche.test)
 (use gauche.charconv)
-(use util.list)
-(use srfi-1)
 
 (add-load-path "../../test")
 (define *test-locale-dirs* '("../../test/data/locale"))

@@ -4,7 +4,6 @@
 
 (use gauche.test)
 (use util.match)
-(use util.list)
 (use gauche.sequence)
 (test-start "text.unicode")
 

@@ -32,16 +32,13 @@
 ;;;
 
 (define-module gauche.cgen.cise
-  (use srfi-1)
   (use srfi-13)
   (use gauche.sequence)
   (use gauche.parameter)
   (use gauche.cgen.unit)
   (use gauche.cgen.literal)
-  (use gauche.experimental.app)
   (use gauche.experimental.lamb)
   (use util.match)
-  (use util.list)
   (export cise-render cise-render-to-string cise-render-rec
           cise-translate
           cise-ambient cise-default-ambient cise-ambient-copy

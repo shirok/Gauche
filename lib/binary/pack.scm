@@ -15,11 +15,9 @@
 ;;   "vlp" references would be gone.
 
 (define-module binary.pack
-  (use srfi-1)
   (use srfi-11)   ;; let-values
   (use srfi-13)   ;; string library
   (use srfi-14)   ;; char-set library
-  (use util.list) ;; list library (srfi-1+)
   (use text.parse)
   (use gauche.uvector)
   (use gauche.parameter)

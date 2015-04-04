@@ -11,7 +11,6 @@
 
 (define-module srfi-29.bundle
   (use srfi-13)
-  (use util.list)
   (use gauche.parameter)
   (export current-language current-country current-locale-details
           load-bundle! store-bundle! declare-bundle! localized-template))

@@ -32,11 +32,9 @@
 ;;;
 
 (define-module gauche.cgen.unit
-  (use srfi-1)
   (use srfi-13)
   (use srfi-42)
   (use util.match)
-  (use util.list)
   (use gauche.parameter)
   (use gauche.sequence)
   (export <cgen-unit> cgen-current-unit

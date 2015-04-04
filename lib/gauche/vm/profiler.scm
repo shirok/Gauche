@@ -32,9 +32,7 @@
 ;;;
 
 (define-module gauche.vm.profiler
-  (use srfi-1)
   (use srfi-13)
-  (use util.list)
   (use util.match)
   (extend gauche.internal)
   (export profiler-show profiler-get-result

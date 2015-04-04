@@ -38,7 +38,6 @@
   (use gauche.parameter)
   (use gauche.sequence)
   (use gauche.cgen.unit)
-  (use gauche.experimental.app)
   (use util.match)
   (export <cgen-literal> cgen-c-name cgen-cexpr cgen-make-literal
           cgen-literal-static?

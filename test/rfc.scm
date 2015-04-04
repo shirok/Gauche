@@ -5,7 +5,6 @@
 (use gauche.test)
 (use gauche.sequence)
 (use gauche.process)
-(use util.list)
 (use util.match)
 (use srfi-19)
 (test-start "rfc")
@@ -931,7 +930,6 @@ Content-Length: 4349
 (define *simple-httpd*
   '(
     (use gauche.net)
-    (use util.list)
     (use rfc.822)
     (define *http-port* 6726)
 

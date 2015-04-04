@@ -2,8 +2,6 @@
 ;;; Generates default autoloads
 ;;;
 
-(use srfi-1)
-(use util.list)
 (use util.match)
 (use gauche.cgen)
 

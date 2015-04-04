@@ -2,10 +2,8 @@
 ;; Generates uvect.c from uvect.c.tmpl
 ;;
 
-(use srfi-1)
 (use srfi-13)
 (use text.tree)
-(use util.list)
 (use file.util)
 (use gauche.sequence)
 (use gauche.parseopt)

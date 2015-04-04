@@ -43,7 +43,6 @@
 (define-module gauche.package.fetch
   (use rfc.uri)
   (use file.util)
-  (use util.list)
   (use gauche.package.util)
   (use gauche.parameter)
   (export gauche-package-ensure))
