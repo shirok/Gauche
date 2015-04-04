@@ -1,3 +1,7 @@
+2015-04-04  Shiro Kawai  <shiro@acm.org>
+
+	* src/libsym.scm (symbol-append): Added.
+
 2015-03-31  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/gauche/sequence.scm (common-prefix, common-prefix-to): Added.

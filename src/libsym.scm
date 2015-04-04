@@ -54,6 +54,25 @@
 (define-cproc symbol-sans-prefix (s::<symbol> p::<symbol>)
   Scm_SymbolSansPrefix)
 
+;; Bigloo has symbol-append symbol ... -> symbol
+;; We enhance it a bit.
+(define symbol-append
+  (letrec ([->string
+            ;; to make it work regardless of keyword-symbol integration
+            (^x (if (keyword? x)
+                  #":~(keyword->string x)"
+                  (x->string x)))]
+           [do-append
+            (^[objs interned?]
+              ((if interned? string->symbol string->uninterned-symbol)
+               (apply string-append (map ->string objs))))])
+    (case-lambda
+      [() '||] ; edge case
+      [(maybe-flag . syms)
+       (if (boolean? maybe-flag)
+         (do-append syms maybe-flag)
+         (do-append (cons maybe-flag syms) #t))])))
+
 ;; R7RS
 (define (symbol=? x y . rest)
   (if-let1 z (find ($ not $ symbol? $) (list* x y rest))

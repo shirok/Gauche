@@ -66,6 +66,14 @@
 (test* "prefix" 'bar (symbol-sans-prefix 'foo:bar 'foo:))
 (test* "prefix" #f   (symbol-sans-prefix 'foo:bar 'bar:))
 
+(test* "symbol-append" 'ab:c45 (symbol-append 'ab ':c 45))
+(test* "symbol-append" 'quux (symbol-append #t 'qu "ux"))
+(test* "symbol-append" #t
+       (let1 x (symbol-append #f 'qu "ux")
+         (and (not (symbol-interned? x))
+              (equal? (symbol->string x) "quux"))))
+(test* "symbol-append" '|| (symbol-append))
+(test* "symbol-append" '|| (symbol-append #t))
 
 ;;----------------------------------------------------------------
 (test-section "keywords")

@@ -4686,6 +4686,49 @@ Otherwise, it returns @code{#f}.
 @end example
 @end defun
 
+@defun symbol-append interned? objs @dots{}
+@defunx symbol-append objs @dots{}
+@c EN
+Returns a symbol with the name which is a concatenation of
+string representation of @var{objs}.
+
+If the first argument is a boolean, it is recognized as the
+first form; the first argument specifies whether the resulting
+symbol is interned or not.
+
+Each other argument is converted to a string as follows:
+If it is a keyword, its name (with the preceding @code{:}) is used.
+For all other objects, @code{x->string} is used.  (The special treatment
+of keyword is to keep the consistency before and after
+keyword-symbol integration.  @xref{Keyword and symbol integration}, for
+the details.)
+
+This is upper-compatible to Bigloo's same name procedure, which
+only allows symbols as the arguments and the result is always interned.
+@c JP
+@var{objs}の文字列表記をつなげた名前を持つシンボルを返します。
+
+最初の引数が真偽値の場合は、最初の形式と解釈されます。@var{interned?}引数は
+結果のシンボルがインターンされているかどうかを指定します。
+
+それ以外の引数はそれぞれ次のとおり変換されます：キーワードであれば
+(先頭の@code{:}を含む)名前に、それ以外は@code{x->string}を適用した結果に。
+(キーワードを特別扱いするのは、キーワード-シンボル統合の後でも動作が
+変わらないようにするためです。詳しくは@ref{Keyword and symbol integration}を
+参照。)
+
+これは、Biglooにある同名の手続きの上位互換になっています。Bigloo版は
+シンボルのみを引数に許し、また結果は常にインターンされまう。
+@c COMMON
+
+@example
+(string-append 'ab 'cd) @result{} abcd
+(string-append 'ab ':c 30) @result{} ab:c30
+(string-append #f 'g 100) @result{} #:g100
+@end example
+@end defun
+
+
 @c ----------------------------------------------------------------------
 @node Keywords, Identifiers, Symbols, Core library
 @section Keywords
