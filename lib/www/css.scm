@@ -39,6 +39,7 @@
   (use parser.peg)
   (use util.match)
   (use text.tree)
+  (use srfi-1)
   (use srfi-13)
   (export construct-css simple-selector?
           css-parse-file
@@ -49,7 +50,8 @@
 ;;;
 ;;; S-expression CSS
 ;;;
-;;;  <s-css>      : {<ruleset> | <at-rule>} ...
+;;;  <s-css>      : {<style-rule> | <at-rule>} ...
+;;;
 ;;;  <style-rule> : (style-rule <pattern> <declaration> ...)
 ;;;               | (style-decls <declaration> ...)
 ;;;
@@ -93,6 +95,8 @@
 ;;;  <function>  | (<fn> <arg> ...)
 ;;;  <arg>       | <term> | #(<term> ...) | (/ <term> <term> ...)
 ;;;
+;;;  <at-rule>    : <at-media-rule>   ; other @rule isn't supported yet
+;;;  <at-media-rule> : (@media (<symbol> ...) <style-rule> ...)
 ;;;
 ;;; NB: style-decls shouldn't appear in a complete stylesheet, but can
 ;;;     appear when the 'style' attribute of the document is parsed.
@@ -445,15 +449,25 @@
                  %preserved-token)
              %WS*)))
 
-(define (block-parser opener closer tag)
+(define %component-value+  ; whitespace preserving
+  ($lazy ($/ ($seq ($tok 'WHITESPACE) ($return '(WHITESPACE)))
+             %brace-block %paren-block %bracket-block %function-call
+             %preserved-token)))
+
+(define (block-parser opener closer tag :optional (preserve-ws? #f))
   ($lift (^[_ _ v _] `(,tag ,@v))
          ($tok opener) %WS*
-         ($many ($seq ($not ($tok closer)) %component-value))
+         ($many ($seq ($not ($tok closer))
+                      (if preserve-ws? %component-value+ %component-value)))
          ($tok closer)))
 
 (define %brace-block (block-parser 'OPEN-BRACE 'CLOSE-BRACE 'brace-block))
 (define %paren-block (block-parser 'OPEN-PAREN 'CLOSE-PAREN 'paren-block))
 (define %bracket-block (block-parser 'OPEN-BRACKET 'CLOSE-BRACKET 'bracket-block))
+;; like %brace-block but we preserve whitespaces at the toplevel inside
+;; the block.  necessary to handle @media directive.
+(define %brace-block+ (block-parser 'OPEN-BRACE 'CLOSE-BRACE 'brace-block #t))
+
 (define %function-call
   ($lift (^[fn args _] `(funcall ,fn ,@args))
          ($tok 'FUNCTION)
@@ -466,7 +480,7 @@
          ($many ($seq ($not ($tok 'OPEN-BRACE))
                       ($not ($tok 'SEMICOLON))
                       %component-value))
-         ($/ %brace-block ($tok 'SEMICOLON))))
+         ($/ %brace-block+ ($tok 'SEMICOLON))))
 
 (define %qualified-rule
   ;; NB: We preserve whitespaces between qualifiers, for it is
@@ -729,23 +743,49 @@
                            block-token))
         #f))))
 
+;; Parse %at-rule.  This must be customizable.  For now, we only handle
+;; @media.
+(define (parse-at-rule at-keyword args block-token
+                       qualified-rule-handler)
+  (or (and-let* ([ (eq? at-keyword 'media) ]
+                 [syms (map (^a (match a [('IDENT . x) x] [_ #f])) args)]
+                 [tokens (match block-token [('brace-block . xs) xs] [_ #f])])
+        (let loop ([tokens tokens]
+                   [decls '()])
+          (if (null? tokens)
+            `(@media ,syms
+                     ,@(map (^p (qualified-rule-handler (car p) (cdr p)))
+                            (reverse decls)))
+            (receive (sels rest)
+                (break (^t (match t [('brace-block . _) #t] [_ #f])) tokens)
+              (if (null? rest)
+                (begin
+                  (unless (every (^s (match s [('WHITESPACE) #t][_ #f])) sels)
+                    (css-parser-warn "A selector in media block missing rules: ~s\n"
+                                     sels))
+                  (loop '() decls))
+                (loop (cdr rest) (acons sels (car rest) decls)))))))
+      (css-parser-warn "Ignored unsupported at-rule: ~s\n"
+                       (list at-keyword args block-token))))
+
 ;; Integrated stylesheet parser
-(define (make-stylesheet-parser qualified-rule-handler)
+(define (make-stylesheet-parser qualified-rule-handler at-rule-handler)
   ($seq %inter-rule-spaces
         ($many ($followed-by
-                ($/ ($lift (^[a]
-                             (css-parser-warn "Ignored unsupported at-rule: ~s\n"
-                                              a)
-                             #f)
+                ($/ ($lift (^[a] (at-rule-handler (car a) (cadr a) (caddr a)
+                                                  qualified-rule-handler))
                            %at-rule)
                     ($lift (^[q] (qualified-rule-handler (car q) (cadr q)))
                            %qualified-rule))
                 %inter-rule-spaces))))
 
 (define (parse-stylesheet tokens
-                          :key (qualified-rule-handler parse-style-rule))
+                          :key (qualified-rule-handler parse-style-rule)
+                               (at-rule-handler parse-at-rule))
   (receive (r rest)
-      (peg-run-parser (make-stylesheet-parser qualified-rule-handler) tokens)
+      (peg-run-parser (make-stylesheet-parser qualified-rule-handler
+                                              at-rule-handler)
+                      tokens)
     (filter identity r)))
 
 ;; API
@@ -760,7 +800,7 @@
 ;; A utility function to parse only selector part.
 ;; We can't simply use parse-selectors, for it assumes the tokens is
 ;; processed as %qualified-rule.
-;; Returns #f if input is unparsable.  It is ok that imput has extra
+;; Returns #f if input is unparsable.  It is ok that input has extra
 ;; blocks; they're ignored.
 (define (css-parse-selector-string s)
   (receive (r v s) ($ %selector-only $ css-tokenize $ x->lseq s)

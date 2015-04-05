@@ -367,6 +367,16 @@ Content-Disposition: form-data; name=bbb
 (use www.css)
 (test-module 'www.css)
 
+;; NB: this assumes the test is run either under src/ or test/
+(define (run-css-parser-test)
+  (dolist [infile (glob "../test/data/css-*.css")]
+    (test* #"css parser ~infile"
+           (call-with-input-file (path-swap-extension infile "sxcss") read)
+           (css-parse-file infile)
+           equal?)))
+
+(run-css-parser-test)
+
 (test-end)
 
 
