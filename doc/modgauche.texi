@@ -12722,7 +12722,7 @@ procedure is applied (default @code{identity}), then compared with
 (common-prefix '(a b c d e) '(a b c e f))
   @result{} (a b c)
 
-(common-prefix "abcef" '#(#\a #\b #\c #\d #\e)
+(common-prefix "abcef" '#(#\a #\b #\c #\d #\e))
   @result{} "abc"
 @end example
 
@@ -12740,7 +12740,7 @@ needs to have a builder.
 The meanings of keyword arguments are the same as @code{common-prefix}.
 
 @example
-(common-prefix-to <list> "abcde" "ABCEF" :test char-ci=?
+(common-prefix-to <list> "abcde" "ABCEF" :test char-ci=?)
   @result{} '(#\a #\b #\c)
 @end example
 @end deffn
