@@ -780,8 +780,10 @@
                                                   media)])
                 `(@import ,url-string ,media-kinds))]
              [_ #f]))
-      (css-parser-warn "Ignored unsupported at-rule: ~s\n"
-                       (list at-keyword args block-token))))
+      (begin
+        (css-parser-warn "Ignored unsupported at-rule: ~s\n"
+                         (list at-keyword args block-token))
+        #f)))
 
 ;; Integrated stylesheet parser
 (define (make-stylesheet-parser qualified-rule-handler at-rule-handler)
