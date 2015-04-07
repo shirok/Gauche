@@ -95,8 +95,10 @@
 ;;;  <function>  | (<fn> <arg> ...)
 ;;;  <arg>       | <term> | #(<term> ...) | (/ <term> <term> ...)
 ;;;
-;;;  <at-rule>    : <at-media-rule>   ; other @rule isn't supported yet
-;;;  <at-media-rule> : (@media (<symbol> ...) <style-rule> ...)
+;;;  <at-rule>    : <at-media-rule> | <at-import-rule>
+;;;                     ; NB: Other at-rules are not supported yet
+;;;  <at-media-rule>  : (@media (<symbol> ...) <style-rule> ...)
+;;;  <at-import-rule> : (@import <string> (<symbol> ...))
 ;;;
 ;;; NB: style-decls shouldn't appear in a complete stylesheet, but can
 ;;;     appear when the 'style' attribute of the document is parsed.
@@ -765,6 +767,19 @@
                                      sels))
                   (loop '() decls))
                 (loop (cdr rest) (acons sels (car rest) decls)))))))
+      (and (eq? at-keyword 'import)
+           (match args
+             [(url . media)
+              (and-let* ([url-string (match url
+                                       [('STRING . s) s]
+                                       [('URL . s) s]
+                                       [_ #f])]
+                         [media-kinds (filter-map (^x (match x
+                                                        [('IDENT . s) s]
+                                                        [_ #f]))
+                                                  media)])
+                `(@import ,url-string ,media-kinds))]
+             [_ #f]))
       (css-parser-warn "Ignored unsupported at-rule: ~s\n"
                        (list at-keyword args block-token))))
 
