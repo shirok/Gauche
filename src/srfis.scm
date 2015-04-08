@@ -594,6 +594,21 @@ Gaucheにも組み込みのハッシュテーブルサポートがあります�
 いくつかの手続きにおいて異なる名前を使っています。
 
 
+srfi-78
+()
+
+Lightweight testing
+Supported by the module @code{srfi-78}.
+Since Gauche already has its own test framework (@xref{Unit testing}),
+this is mainly for third-party modules that adopt srfi-78 for testing.
+
+軽いテストフレームワーク
+モジュール@code{srfi-78}でサポートされます。
+Gaucheは既に独自のテストフレームワークを持っているので(@ref{Unit testing}参照)、
+このモジュールは主としてサードパーティ製のモジュールがsrfi-78をテストに
+使っている場合をサポートするためのものです。
+
+
 srfi-87
 (case => else)
 
