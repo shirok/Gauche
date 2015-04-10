@@ -348,22 +348,29 @@ static void fixup_extension(int argc, char **argv)
     if (m) free(m);
 }
 
+static void process(const char *arg)
+{
+        struct cmd_rec *cp = cmds;
+
+        while (cp->cmd != NULL) {
+            if (strcmp(cp->cmd, arg) == 0) {
+                print_output(cp);
+                return;
+            }
+            cp++;
+        }
+        usage();
+}
+
 int main(int argc, char **argv)
 {
     if (argc < 2) usage();
     if (strcmp(argv[1], "--fixup-extension") == 0) {
         fixup_extension(argc, argv);
     } else {
-        struct cmd_rec *cp = cmds;
-
-        while (cp->cmd != NULL) {
-            if (strcmp(cp->cmd, argv[1]) == 0) {
-                print_output(cp);
-                exit(0);
-            }
-            cp++;
+        for (argv++; *argv; argv++) {
+            process(*argv);
         }
-        usage();
     }
     return 0;
 }
