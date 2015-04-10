@@ -38,11 +38,13 @@ $(SUBDIRS):
 
 uvector: data util
 
-gauche srfi: util
+gauche srfi: util uvector
 
 charconv net: gauche srfi
 
-threads bcrypt sxml vport text mt-random digest zlib termios windows: uvector
+text: uvector charconv
+
+threads bcrypt sxml vport mt-random digest zlib termios windows: uvector
 
 tls: vport
 

@@ -6,7 +6,7 @@
 2015-04-09  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/record.scm -> libsrc/gauche/record.scm,
-	  ext/gauche/Makefile.in: 
+	  ext/gauche/Makefile.in: Precompile gauche.record
 
 	* src/libsym.scm (identifier-append): Added (experimental)
 
