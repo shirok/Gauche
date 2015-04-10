@@ -120,7 +120,8 @@ cat > gauche-config.c.tmp.$$ <<EOF
 #include <ctype.h>
 
 static void usage (void) {
-  fputs("Usage: gauche-config [option]\\n"
+  fputs("Usage: gauche-config [option ...]\\n"
+        "Multiple options can be given, except --fixup-extension.\\n"
         "\\n"
         "General parameter\\n"
         "  -V   the current gauche version\\n"
@@ -348,18 +349,17 @@ static void fixup_extension(int argc, char **argv)
     if (m) free(m);
 }
 
-static void process(const char *arg)
+static int process(const char *arg, int check)
 {
-        struct cmd_rec *cp = cmds;
-
-        while (cp->cmd != NULL) {
-            if (strcmp(cp->cmd, arg) == 0) {
-                print_output(cp);
-                return;
-            }
-            cp++;
+    struct cmd_rec *cp = cmds;
+    while (cp->cmd != NULL) {
+        if (strcmp(cp->cmd, arg) == 0) {
+            if (!check) print_output(cp);
+            return 1;
         }
-        usage();
+        cp++;
+    }
+    return 0;
 }
 
 int main(int argc, char **argv)
@@ -368,8 +368,12 @@ int main(int argc, char **argv)
     if (strcmp(argv[1], "--fixup-extension") == 0) {
         fixup_extension(argc, argv);
     } else {
-        for (argv++; *argv; argv++) {
-            process(*argv);
+        char **av;
+        for (av = argv+1; *av; av++) {
+            if (!process(*av, 1)) usage();
+        }
+        for (av = argv+1; *av; av++) {
+            process(*av, 0);
         }
     }
     return 0;
