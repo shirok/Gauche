@@ -73,23 +73,8 @@
 
 ;; some convenience utility
 
-;; concatenate symbols or identifiers.  If any one of args is an identifier,
-;; the result is also an identifier with the same scope of the first
-;; identifier in the args.
-(define (sym+ . args)
-  (define (namecat args)
-    ($ string->symbol $ apply string-append
-       $ map (^s (x->string
-                  (if (identifier? s)
-                    ((with-module gauche.internal identifier-name) s)
-                    s)))
-       args))
-  (if-let1 first-id (find identifier? args)
-    ($ (with-module gauche.internal make-identifier)
-       (namecat args)
-       ((with-module gauche.internal identifier-module) first-id)
-       ((with-module gauche.internal identifier-env) first-id))
-    (namecat args)))
+(define-macro (sym+ . args)
+  `((with-module gauche.internal identifier-append) ,@args))
 
 (define-macro (for-each-subst subs . forms)
   (define (walk x sub)

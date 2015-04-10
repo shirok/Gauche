@@ -9,11 +9,13 @@ include ../Makefile.ext
 LIBFILES = gauche--collection.$(SOEXT) \
            gauche--sequence.$(SOEXT)   \
            gauche--parameter.$(SOEXT)  \
-           gauche--hook.$(SOEXT)
+           gauche--hook.$(SOEXT) \
+	   gauche--record.$(SOEXT)
 SCMFILES = collection.sci \
            sequence.sci   \
            parameter.sci  \
-           hook.sci
+           hook.sci \
+	   record.sci
 
 GENERATED = Makefile
 XCLEANFILES = *.c $(SCMFILES)
@@ -23,7 +25,8 @@ all : $(LIBFILES)
 OBJECTS = $(gauche-collection_OBJECTS) \
 	  $(gauche-sequence_OBJECTS) \
 	  $(gauche-parameter_OBJECTS) \
-	  $(gauche-hook_OBJECTS)
+	  $(gauche-hook_OBJECTS) \
+	  $(gauche-record_OBJECTS)
 
 # gauche.collection
 gauche-collection_OBJECTS = gauche--collection.$(OBJEXT)
@@ -62,6 +65,15 @@ gauche--hook.$(SOEXT) : $(gauche-hook_OBJECTS)
 
 gauche--hook.c hook.sci : $(top_srcdir)/libsrc/gauche/hook.scm
 	$(PRECOMP) -e -P -o gauche--hook $(top_srcdir)/libsrc/gauche/hook.scm
+
+# gauche.record
+gauche-record_OBJECTS = gauche--record.$(OBJEXT)
+
+gauche--record.$(SOEXT) : $(gauche-record_OBJECTS)
+	$(MODLINK) gauche--record.$(SOEXT) $(gauche-record_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+
+gauche--record.c record.sci : $(top_srcdir)/libsrc/gauche/record.scm
+	$(PRECOMP) -e -P -o gauche--record $(top_srcdir)/libsrc/gauche/record.scm
 
 install : install-std
 
