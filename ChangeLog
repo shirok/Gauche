@@ -1,3 +1,7 @@
+2015-04-09  Shiro Kawai  <shiro@acm.org>
+
+	* src/libsym.scm (identifier-append): Added (experimental)
+
 2015-04-08  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi-78.scm: Added.

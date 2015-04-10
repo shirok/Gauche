@@ -56,12 +56,13 @@
 
 ;; Bigloo has symbol-append symbol ... -> symbol
 ;; We enhance it a bit.
-(define symbol-append
+(select-module gauche.internal)
+(define-in-module gauche symbol-append
   (letrec ([->string
             ;; to make it work regardless of keyword-symbol integration
-            (^x (if (keyword? x)
-                  #":~(keyword->string x)"
-                  (x->string x)))]
+            (^x (cond [(keyword? x) #":~(keyword->string x)"]
+                      [(identifier? x) (identifier-name x)]
+                      [else (x->string x)]))]
            [do-append
             (^[objs interned?]
               ((if interned? string->symbol string->uninterned-symbol)
@@ -74,6 +75,7 @@
          (do-append (cons maybe-flag syms) #t))])))
 
 ;; R7RS
+(select-module gauche)
 (define (symbol=? x y . rest)
   (if-let1 z (find ($ not $ symbol? $) (list* x y rest))
     (error "symbol required, but got:" z))
@@ -152,3 +154,17 @@
 (define-cproc identifier-env (id::<identifier>)
   (return (-> id env)))
 
+(select-module gauche.internal)
+;; EXPERIMENTAL
+;; Concatenate symbols or identifiers.  If any one of args is an identifier,
+;; the result is also an identifier with the same scope of the first
+;; identifier in the args.
+;; This sounds pretty kludgy.  I suspect this won't be necessary once
+;; we use er-macro for everything low-level (rename procedure should take
+;; care of identifier marking).  It is needed, for now, to add certain level
+;; of hygiene to define-macro.
+(define (identifier-append . args)
+  (let1 r (apply symbol-append #t args)
+    (if-let1 first-id (find identifier? args)
+      (make-identifier r (identifier-module first-id) (identifier-env first-id))
+      r)))
