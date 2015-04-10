@@ -4718,7 +4718,7 @@ only allows symbols as the arguments and the result is always interned.
 参照。)
 
 これは、Biglooにある同名の手続きの上位互換になっています。Bigloo版は
-シンボルのみを引数に許し、また結果は常にインターンされまう。
+シンボルのみを引数に許し、また結果は常にインターンされます。
 @c COMMON
 
 @example
