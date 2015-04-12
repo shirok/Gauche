@@ -10,12 +10,14 @@ LIBFILES = gauche--collection.$(SOEXT) \
            gauche--sequence.$(SOEXT)   \
            gauche--parameter.$(SOEXT)  \
            gauche--hook.$(SOEXT) \
-	   gauche--record.$(SOEXT)
+	   gauche--record.$(SOEXT) \
+	   gauche--generator.$(SOEXT)
 SCMFILES = collection.sci \
            sequence.sci   \
            parameter.sci  \
            hook.sci \
-	   record.sci
+	   record.sci \
+	   generator.sci
 
 GENERATED = Makefile
 XCLEANFILES = *.c $(SCMFILES)
@@ -26,7 +28,8 @@ OBJECTS = $(gauche-collection_OBJECTS) \
 	  $(gauche-sequence_OBJECTS) \
 	  $(gauche-parameter_OBJECTS) \
 	  $(gauche-hook_OBJECTS) \
-	  $(gauche-record_OBJECTS)
+	  $(gauche-record_OBJECTS) \
+	  $(gauche-generator_OBJECTS)
 
 # gauche.collection
 gauche-collection_OBJECTS = gauche--collection.$(OBJEXT)
@@ -74,6 +77,15 @@ gauche--record.$(SOEXT) : $(gauche-record_OBJECTS)
 
 gauche--record.c record.sci : $(top_srcdir)/libsrc/gauche/record.scm
 	$(PRECOMP) -e -P -o gauche--record $(top_srcdir)/libsrc/gauche/record.scm
+
+# gauche.generator
+gauche-generator_OBJECTS = gauche--generator.$(OBJEXT)
+
+gauche--generator.$(SOEXT) : $(gauche-generator_OBJECTS)
+	$(MODLINK) gauche--generator.$(SOEXT) $(gauche-generator_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+
+gauche--generator.c generator.sci : $(top_srcdir)/libsrc/gauche/generator.scm
+	$(PRECOMP) -e -P -o gauche--generator $(top_srcdir)/libsrc/gauche/generator.scm
 
 install : install-std
 

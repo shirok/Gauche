@@ -68,6 +68,8 @@ ext/gauche/gauche--collection.c
 ext/gauche/gauche--hook.c
 ext/gauche/gauche--parameter.c
 ext/gauche/gauche--sequence.c
+ext/gauche/gauche--record.c
+ext/gauche/gauche--generator.c
 ext/mt-random/math--mt-random.c
 ext/net/netaux.c
 ext/net/netlib.c

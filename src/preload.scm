@@ -15,6 +15,8 @@
 (use gauche.parameter)
 (use gauche.uvector)
 (use gauche.regexp)
+(use gauche.record)
+(use gauche.generator)
 (use srfi-1)
 (use srfi-13)
 (use file.util)
