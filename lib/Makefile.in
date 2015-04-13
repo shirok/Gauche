@@ -86,7 +86,7 @@ SCMFILES = srfi-0.scm \
        util/rbtree.scm util/sparse.scm util/dominator.scm \
        compat/jfilter.scm compat/stk.scm compat/norational.scm \
        file/filter.scm \
-       rfc/822.scm rfc/mime.scm rfc/mime-port.scm rfc/base64.scm rfc/uri.scm \
+       rfc/822.scm rfc/mime-port.scm rfc/base64.scm rfc/uri.scm \
        rfc/cookie.scm rfc/quoted-printable.scm rfc/http.scm rfc/hmac.scm \
        rfc/ftp.scm rfc/icmp.scm rfc/ip.scm rfc/json.scm \
        scheme/base.scm scheme/case-lambda.scm scheme/char.scm \

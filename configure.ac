@@ -858,6 +858,7 @@ AC_OUTPUT(Makefile
           ext/util/Makefile
           ext/uvector/Makefile
           ext/vport/Makefile
+          ext/rfc/Makefile
           ext/zlib/Makefile
           ext/windows/Makefile
           examples/Makefile

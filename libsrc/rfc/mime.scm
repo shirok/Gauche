@@ -43,7 +43,6 @@
 ;;            Character Sets, Languages, and Continuations
 
 (define-module rfc.mime
-  (use srfi-1)
   (use srfi-13)
   (use srfi-14)
   (use rfc.822)
@@ -309,8 +308,6 @@
 ;;===============================================================
 ;; Basic streaming parser
 ;;
-
-(define-constant *eof-object* (read-from-string ""))
 
 ;; message information packet
 (define-class <mime-part> ()

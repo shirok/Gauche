@@ -1,0 +1,29 @@
+srcdir       = @srcdir@
+top_builddir = @top_builddir@
+top_srcdir   = @top_srcdir@
+
+SCM_CATEGORY = rfc
+
+include ../Makefile.ext
+
+LIBFILES = rfc--mime.$(SOEXT)
+SCMFILES = mime.sci
+
+GENERATED = Makefile
+XCLEANFILES = *.c $(SCMFILES)
+
+all : $(LIBFILES)
+
+OBJECTS = $(rfc-mime_OBJECTS)
+
+# rfc.mime
+rfc-mime_OBJECTS = rfc--mime.$(OBJEXT)
+
+rfc--mime.$(SOEXT) : $(rfc-mime_OBJECTS)
+	$(MODLINK) rfc--mime.$(SOEXT) $(rfc-mime_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+
+rfc--mime.c mime.sci : $(top_srcdir)/libsrc/rfc/mime.scm
+	$(PRECOMP) -e -P -o rfc--mime $(top_srcdir)/libsrc/rfc/mime.scm
+
+install : install-std
+
