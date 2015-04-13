@@ -1,3 +1,8 @@
+2015-04-12  Shiro Kawai  <shiro@acm.org>
+
+	* lib/rfc/json.scm: Updated to follow rfc7159 (allow any value
+	  on the toplevel of json).
+
 2015-04-10  Shiro Kawai  <shiro@acm.org>
 
 	* src/genconfig.in: Allow multiple arguments to gauche-config

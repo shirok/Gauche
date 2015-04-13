@@ -1,5 +1,5 @@
 ;;;
-;;; json.scm - JSON (RFC4627) Parser
+;;; json.scm - JSON (RFC7159) Parser
 ;;;
 ;;;   Copyright (c) 2006 Rui Ueyama (rui314@gmail.com)
 ;;;
@@ -31,7 +31,7 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
-;;; http://www.ietf.org/rfc/rfc4627.txt
+;;; http://www.ietf.org/rfc/rfc7159.txt
 
 ;; NOTE: This module depends on parser.peg, whose API is not officially
 ;; fixed.  Hence do not take this code as an example of parser.peg;
@@ -175,7 +175,7 @@
                      ($sep-by %member %value-separator))
               %end-object)))
 
-(define json-parser ($seq %ws ($or eof %object %array)))
+(define json-parser ($seq %ws ($or eof %value)))
 
 ;; entry point
 (define (parse-json :optional (port (current-input-port)))
