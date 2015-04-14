@@ -12709,6 +12709,7 @@ use @code{group-collection}
 @subsubheading Prefix
 
 @deffn {Generic function} common-prefix (a <sequence>) (b <sequence>) :key key test
+@c EN
 Returns a new sequence of the same type of @var{a} which contains
 the common prefix of sequences @var{a} and @var{b}.  The types of
 @var{a} and @var{b} doesn't need to match.
@@ -12717,6 +12718,15 @@ The type of @var{a} must have a builder.
 For each corresponding element in @var{a} and @var{b}, the @var{key}
 procedure is applied (default @code{identity}), then compared with
 @var{test} procedure (default @code{eqv?}).
+@c JP
+シーケンス@var{a}と@var{b}に共通するプレフィクスを、@var{a}と同じ型の
+新たなシーケンスで返します。@var{a}と@var{b}の型は異なっていても構いません。
+@var{a}の型はビルダーを持っている必要があります。
+
+@var{a}と@var{b}のそれぞれ対応する要素について、まず@var{key}手続きが
+呼ばれ、その結果が@var{test}手続きで比較されます。省略時にはそれぞれ
+@code{identity}および@code{eqv?}が使われます。
+@c COMMON
 
 @example
 (common-prefix '(a b c d e) '(a b c e f))
@@ -12726,18 +12736,34 @@ procedure is applied (default @code{identity}), then compared with
   @result{} "abc"
 @end example
 
+@c EN
 For strings, @code{srfi-13} has a specific function with
 related feature: @code{string-prefix-length}
 (@xref{SRFI-13 String Prefixes & Suffixes}).
+@c JP
+文字列については、@code{srfi-13}に似た機能を持つ手続き
+@code{string-prefix-length}があります。
+(@ref{SRFI-13 String Prefixes & Suffixes}参照)。
+@c COMMON
 @end deffn
 
 @deffn {Generic function} common-prefix-to (class <class>) (a <sequence>) (b <sequence>) :key key test
+@c EN
 Returns a new sequence of the type @var{class} which contains
 the common prefix of sequences @var{a} and @var{b}.  The types of
 @var{a} and @var{b} doesn't need to match, and neither
-needs to have a builder.
+needs to have a builder.  The @var{class} must be a sequence class
+with a builder.
 
 The meanings of keyword arguments are the same as @code{common-prefix}.
+@c JP
+シーケンス@var{a}と@var{b}に共通するプレフィクスを、@var{class}の
+インスタンスとして返します。@var{a}と@var{b}の型は異なっていても構わず、
+ビルダーを持っていなくても構いません。@var{class}はビルダーを備えた
+シーケンスのクラスである必要があります。
+
+キーワード引数については@code{common-prefix}と同じです。
+@c COMMON
 
 @example
 (common-prefix-to <list> "abcde" "ABCEF" :test char-ci=?)
@@ -12749,6 +12775,7 @@ The meanings of keyword arguments are the same as @code{common-prefix}.
 @subsubheading Permutation and shuffling
 
 @deffn {Generic function} permute (src <sequence>) (permuter <sequence>) :optional fallback
+@c EN
 Returns a newly created sequence of the same type as @var{src}, in which
 the elements are permuted from @var{src} according to @var{permuter}.
 
@@ -12760,6 +12787,17 @@ can be any kind of sequence, unrelated to the type of @var{src}.
 
 It is allowed that the same index @var{i} can appear more than once
 in @var{permuter}.
+@c JP
+シーケンス@var{src}の要素を@var{permuter}に従って並べ替えた、新たなシーケンスを
+作って返します。返されるシーケンスは@var{src}と同じ型です。
+
+@var{permuter}は正確な整数のシーケンスです。@var{pertmuter}の@var{k}番目の
+要素が@var{i}であれば、結果の@var{k}番目の要素が@code{(ref @var{src} @var{i})}
+になります。従って結果のシーケンスの長さは@var{permuter}と長さと同じになります。
+@var{permuter}の型は@var{src}の型と違っていて構いません。
+
+同じインデックス@var{i}が複数回@var{permuter}に現れても構いません。
+@c COMMON
 
 @example
 (permute '(a b c d) '(3 2 0 1))     @result{} (d c a b)
@@ -12767,11 +12805,19 @@ in @var{permuter}.
 (permute '(a b c d) '(0 0 1 1 2 2)) @result{} (a a b b c c)
 @end example
 
+@c EN
 If an integer in @var{permuter} is out of the valid range as the index
 of @var{src}, then an error is signaled unless @var{fallback} is given.
 If @var{fallback} is given, what value is used depends on the result of
 @code{(ref @var{src} @var{i} @var{fallback})}---which usually returns
 @var{fallback} for the out-of-range index @var{i}.
+@c JP
+@var{permuter}の要素の整数が@var{src}の有効なインデックスの範囲外であった場合、
+デフォルトではエラーが通知されます。しかし@var{fallback}が与えられた場合は、
+@var{src}の要素の読み出しが@code{(ref @var{src} @var{i} @var{fallback})}
+として行われます。これは通常、@var{i}が範囲外であった場合に@var{fallback}を
+返します。
+@c COMMON
 
 @example
 (permute '#(a b c) '(3 2 1 0) 'foo) @result{} #(foo c b a)
@@ -12782,8 +12828,13 @@ If @var{fallback} is given, what value is used depends on the result of
 @end deffn
 
 @deffn {Generic function} permute-to (class <class>) (src <sequence>) (permuter <sequence>) :optional fallback
+@c EN
 Like @code{permute}, but the result will be an instance of the given @var{class}
 instead of the class of @var{src}.
+@c JP
+結果のシーケンスが@var{src}の型でなく@var{class}になること以外は、
+@code{permute}と同じです。
+@c COMMON
 
 @example
 (permute-to <string> '(#\a #\b #\c #\d #\r)
@@ -12793,33 +12844,59 @@ instead of the class of @var{src}.
 @end deffn
 
 @deffn {Generic function} permute! (src <sequence>) (permuter <sequence>) :optional fallback
+@c EN
 Also like @code{permute}, but the result is stored back to @var{src}.
 @var{Src} must be a mutable sequence, and the length of @var{src} and
 @var{permuter} must be the same.
+@c JP
+これも@code{permute}と似ていますが、結果は新たに作られるシーケンスではなく
+@var{src}を破壊的変更して格納されます。@var{src}は変更可能でなければならず、
+また@var{src}と@var{permuter}は同じ長さでなければなりません。
+@c COMMON
 @end deffn
 
 @deffn {Generic function} shuffle (src <sequence>) :optional random-source
+@c EN
 Returns a new sequence of the same type and size as @var{src},
 in which elements are randomly permuted.
+@c JP
+@var{src}と同じ型、長さのシーケンスで、@var{src}の要素の順序がランダムに
+置き換えられたものを返します。
+@c COMMON
 
 @example
 (shuffle '(a b c d e))  @result{} (e b d c a)
 (shuffle "abcde")       @result{} "bacde"
 @end example
 
+@c EN
 This generic function uses @code{srfi-27} (@xref{Sources of random bits}).
 By default it uses @code{default-random-source}, but you can pass
 an alternative random source by the optional argument.
+@c JP
+このジェネリックファンクションは@code{srfi-27} (@ref{Sources of random bits}参照)
+を使っています。デフォルトでは乱数源として@code{default-random-source}が
+使われますが、省略可能引数に乱数源を渡すこともできます。
+@c COMMON
 @end deffn
 
 @deffn {Generic function} shuffle-to (class <class>) (src <sequence>) :optional random-source
+@c EN
 Like @code{shuffle}, except that the result will be an instance of
 @var{class} instead of the class of @var{src}.
+@c JP
+結果を@var{src}の型ではなく@var{class}のインスタンスとして返す@code{shuffle}です。
+@c COMMON
 @end deffn
 
 @deffn {Generic function} shuffle! (src <sequence>) :optional random-source
+@c EN
 Like @code{shuffle}, but the result is stored back to @var{src}.
 @var{Src} must be a mutable sequence.
+@c JP
+結果を@var{src}を破壊的変更して格納する@code{shuffle}です。
+@var{src}は変更可能でなければなりません。
+@c COMMON
 @end deffn
 
 
