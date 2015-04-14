@@ -11319,10 +11319,10 @@ ICMPv4およびICMPv6のタイプとコードの説明テキストを返しま�
 @deftp {Module} rfc.json
 @mdindex rfc.json
 @c EN
-Procedures to parse JSON (RFC4627) data to S-expressions,
+Procedures to parse JSON (RFC7159) data to S-expressions,
 and convert S-expressions to JSON representation, are provided.
 @c JP
-RFC4627で規定される、JSON形式をパーズしてS式に直す手続きと、
+RFC7159で規定される、JSON形式をパーズしてS式に直す手続きと、
 S式をJSON形式に変換する手続きが提供されます。
 @c COMMON
 @end deftp
