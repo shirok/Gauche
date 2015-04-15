@@ -3737,40 +3737,86 @@ Gaucheで使えるfeature identifier一覧は下を見てください。
 @table @code
 @item gauche
 @itemx gauche-X.X.X
-Indicates you're running on Gauche.  @code{X.X.X} is the gauche's version
+@c EN
+Indicates you're running on Gauche.  It is useful to put Gauche-specific
+code in a portable program.
+@code{X.X.X} is the gauche's version
 (e.g. @code{gauche-0.9.4}), in case you want to have code
 for specific Gauche version.  (Such feature identifier is suggested by
-R7RS; but it might not be useful if we have means to compare versions.
+R7RS; but it might not be useful if we don't have means to compare versions.
 Something to consider in future versions.)
+@c JP
+プログラムをGaucheで実行していることを示します。ポータブルなプログラムの中に
+Gauche特有のコードを埋め込むのに便利です。
+@code{X.X.X}はGaucheのバージョンで(例: @code{gauche-0.9.4})、
+特定のGaucheのバージョンのみに依存したコードを入れるのに使えます。
+(処理系のバージョンつきの機能識別子はR7RSで示唆されているものですが、
+バージョンを比較する機能がないとあまり有用ではないでしょう。
+将来はそのような機能が追加されるかもしれません。)
+@c COMMON
 
 @item gauche.os.windows
 @itemx gauche.os.cygwin
+@c EN
 Defined on Windows-native platform and Cygwin/Windows platform, respectively.
 If neither is defined you can assume it's a unix variant.
 (Cygwin is supposedly
 unix variant, but corners are different enough to deserve it's own
 feature identifier.)
+@c JP
+それぞれ、WindowネイティブプラットフォームとCygwin/Windowsプラットフォームを
+示します。どちらも定義されていなければ、Unix系と考えて構いません。
+(CygwinもUnix系と言えなくはありませんが、他のUnix系に比べて
+色々違いがあるので、機能識別子を用意してあります。)
+@c COMMON
 
 @item gauche.ces.utf8
 @itemx gauche.ces.eucjp
 @itemx gauche.ces.sjis
 @itemx gauche.ces.none
+@c EN
 Either one of these is defined based on Gauche's native character
 encoding scheme.  @xref{Multibyte strings}, for the details.
+@c JP
+これらのうちのいずれか一つが、Gaucheの内部エンコーディングに合わせて
+定義されます。詳しくは@ref{Multibyte strings}を参照してください。
+@c COMMON
 
 @item gauche.net.tls
+@c EN
 Defined if the runtime supports TLS in networking.
+@c JP
+TLS/SSLサポートがあれば定義されます。
+@c COMMON
 
 @item gauche.net.ipv6
+@c EN
 Defined if the runtime supports IPv6.
+Note that this only indicates Gauche has been built with IPv6 support;
+the OS may not allow IPv6 features, in that case you'll get system error
+when you try to use IPv6.
+@c JP
+IPv6サポートが組み込まれていれば定義されます。
+ただし、これがGaucheがIPv6サポート込みでビルドされたことを示すだけです。
+OSがIPv6サポートをオフにしている場合、IPv6機能を使おうとするとシステムエラーが
+投げられます。
+@c COMMON
 
 @item gauche.sys.threads
 @itemx gauche.sys.pthreads
 @itemx gauhce.sys.wthreads
+@c EN
 If the runtime supports multithreading, @code{gauche.sys.threads} is
 defined (@xref{Threads}).  Multithreading is based on either POSIX pthreads
 or Windows threads.  The former defines @code{gauche.sys.pthreads},
 and the latter defines @code{gauche.sys.wthreads}.
+@c JP
+マルチスレッドがサポートされていれば@code{gauche.sys.threads}が定義されます
+(@ref{Threads}参照)。また、マルチスレッドは内部ではプラットフォームによって
+POSIXスレッドかWindowsスレッドを利用しますが、前者の場合は
+@code{gauche.sys.pthreads}が、後者では@code{gauche.sys.wthreads}が
+併せて定義されます。
+@c COMMON
 
 @item gauche.sys.sigwait
 @itemx gauche.sys.setenv
@@ -3790,8 +3836,12 @@ and the latter defines @code{gauche.sys.wthreads}.
 @itemx gauche.sys.setlogmask
 @itemx gauche.sys.openpty
 @itemx gauche.sys.forkpty
+@c EN
 Those are defined based on the availability of these system features
 of the platform.
+@c JP
+これらシステムの機能が使えるのなら対応する機能識別子が定義されます。
+@c COMMON
 @end table
 
 
@@ -3803,29 +3853,58 @@ of the platform.
 
 @table @code
 @item r7rs
+@c EN
 Indicates the implementation complies r7rs.
+@c JP
+実装がr7rs準拠であることを示します。
+@c COMMON
 
 @item exact-closed
+@c EN
 Exact arithmetic operations are closed; that is, dividing
 an exact number by a non-zero exact number always yields an exact
 number.
+@c JP
+数値計算が正確な値について閉じている、つまり、正確な数を
+ゼロ以外の正確な数で割った結果が常に正確な数になることを示します。
+@c COMMON
 
 @item ieee-float
+@c EN
 Using IEEE floating-point number internally.
+@c JP
+内部的にIEEE浮動小数点数を使っていることを示します。
+@c COMMN
 
 @item full-unicode
+@c EN
 Full unicode support.
+@c JP
+Unicodeの全ての範囲をサポートしていることを示します。
+@c COMMON
 
 @item ratios
+@c EN
 Rational number support
+@c JP
+有理数のサポートがあることを示します。
+@c COMMON
 
 @item posix
 @itemx windows
+@c EN
 Either one is defined, according to the platform.
+@c JP
+プラットフォームによってどちらかが定義されます。
+@c COMMON
 
 @item big-endian
 @itemx little-endian
+@c EN
 Either one is defined, according to the platform.
+@c JP
+プラットフォームによってどちらかが定義されます。
+@c COMMON
 @end table
 
 
