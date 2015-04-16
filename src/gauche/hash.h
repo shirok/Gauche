@@ -162,10 +162,10 @@ SCM_EXTERN ScmObj Scm_HashTableStat(ScmHashTable *table);
  * For backward compatibility.  DEPRECATED.
  */
 
-#define SCM_HASHTABLE       SCM_HASH_TABLE
-#define SCM_HASHTABLEP      SCM_HASH_TABLE_P
-#define SCM_CLASS_HASHTABLE SCM_CLASS_HASH_TABLE
-#define SCM_HASH_ADDRESS    SCM_HASH_EQ
+#define SCM_HASHTABLE(x)       SCM_HASH_TABLE(x)
+#define SCM_HASHTABLEP(x)      SCM_HASH_TABLE_P(x)
+#define SCM_CLASS_HASHTABLE    SCM_CLASS_HASH_TABLE
+#define SCM_HASH_ADDRESS       SCM_HASH_EQ
 
 typedef struct ScmHashEntryRec {
     void *key;

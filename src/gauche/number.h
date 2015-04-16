@@ -235,8 +235,8 @@ SCM_EXTERN ScmUInt64 Scm_GetIntegerU64Clamp(ScmObj obj, int clamp, int *oor);
 #define Scm_GetIntegerU64(x) Scm_GetIntegerU64Clamp(x, SCM_CLAMP_ERROR, NULL)
 
 /* for backward compatibility -- will be gone soon */
-#define Scm_MakeIntegerFromUI Scm_MakeIntegerU
-#define Scm_GetUInteger       Scm_GetIntegerU
+#define Scm_MakeIntegerFromUI(x) Scm_MakeIntegerU(x)
+#define Scm_GetUInteger(x)       Scm_GetIntegerU(x)
 
 SCM_EXTERN ScmObj Scm_MakeRational(ScmObj numer, ScmObj denom);
 SCM_EXTERN ScmObj Scm_MakeRatnum(ScmObj numer, ScmObj denom);
