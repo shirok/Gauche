@@ -183,7 +183,7 @@
             [else (write-char c r) (loop (peek-next-char input))]))))
 
 ;; Default tokenizer table
-(define-constant *rfc822-standard-tokenizers*
+(define *rfc822-standard-tokenizers*
   `((#[\"] . ,rfc822-quoted-string)
     (,*rfc822-atext-chars* . ,rfc822-dot-atom)))
 

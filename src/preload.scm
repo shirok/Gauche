@@ -22,6 +22,7 @@
 (use file.util)
 (use text.tr)
 (use util.match)
+(use rfc.822)
 (use rfc.mime)
 
 

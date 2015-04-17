@@ -4,10 +4,213 @@
 
 (use gauche.test)
 (use util.match)
-(use rfc.822)
+(use srfi-19)
+(use gauche.sequence)
 
 (test-start "precompiled rfc modules")
 
+;;--------------------------------------------------------------------
+(test-section "rfc.822")
+(use rfc.822)
+(test-module 'rfc.822)
+
+(define rfc822-header1
+  "Received: by foo.bar.com id ZZZ55555; Thu, 31 May 2001 16:38:04 -1000 (HST)
+Received: from ooo.ooo.com (ooo.ooo.com [1.2.3.4])
+\tby foo.bar.com (9.9.9+3.2W/3.7W-) with ESMTP id ZZZ55555
+\tfor <yoo@bar.com>; Thu, 31 May 2001 16:38:02 -1000 (HST)
+Received: from zzz ([1.2.3.5]) by ooo.ooo.com  with Maccrosoft SMTPSVC(5.5.1877.197.19);
+\t Thu, 31 May 2001 22:33:16 -0400
+Message-ID: <beefbeefbeefbeef@ooo.ooo.com>
+Subject: Bogus Tester
+From: Bogus Sender <bogus@ooo.com>
+To: You <you@bar.com>, Another <another@ooo.com>
+Date: Fri, 01 Jun 2001 02:37:31 (GMT)
+Mime-Version: 1.0
+Content-Type: text/html
+Content-Transfer-Encoding: quoted-printable
+X-MSMail-Priority: Normal
+X-mailer: FooMail 4.0 4.03 (SMT460B92F)
+Content-Length: 4349
+
+")
+
+(define rfc822-header1-list
+  '(("received" "by foo.bar.com id ZZZ55555; Thu, 31 May 2001 16:38:04 -1000 (HST)")
+    ("received" "from ooo.ooo.com (ooo.ooo.com [1.2.3.4])\tby foo.bar.com (9.9.9+3.2W/3.7W-) with ESMTP id ZZZ55555\tfor <yoo@bar.com>; Thu, 31 May 2001 16:38:02 -1000 (HST)")
+    ("received" "from zzz ([1.2.3.5]) by ooo.ooo.com  with Maccrosoft SMTPSVC(5.5.1877.197.19);\t Thu, 31 May 2001 22:33:16 -0400")
+    ("message-id" "<beefbeefbeefbeef@ooo.ooo.com>")
+    ("subject" "Bogus Tester")
+    ("from" "Bogus Sender <bogus@ooo.com>")
+    ("to" "You <you@bar.com>, Another <another@ooo.com>")
+    ("date" "Fri, 01 Jun 2001 02:37:31 (GMT)")
+    ("mime-version" "1.0")
+    ("content-type" "text/html")
+    ("content-transfer-encoding" "quoted-printable")
+    ("x-msmail-priority" "Normal")
+    ("x-mailer" "FooMail 4.0 4.03 (SMT460B92F)")
+    ("content-length" "4349")
+    ))
+
+(test* "rfc822-read-headers" #t
+       (equal? rfc822-header1-list
+               (rfc822-read-headers (open-input-string rfc822-header1))))
+
+;; token parsers
+(test* "rfc822-field->tokens (basic)"
+       '(("aa") ("bb") ("cc") ("dd") ("ee") (" a\"aa\\aa (a)"))
+       (map rfc822-field->tokens
+            '("aa"
+              "  bb   "
+              " (comment) cc(comment)"
+              " (co\\mm$$*##&$%ent) dd(com (me) nt)"
+              "\"ee\""
+              "  \" a\\\"aa\\\\aa (a)\" (comment\\))")))
+
+(test* "rfc822-field->tokens"
+       '("from" "aaaaa.aaa.org" "by" "ggg.gggg.net" "with" "ESMTP" "id" "24D50175C8")
+       (rfc822-field->tokens
+        "from aaaaa.aaa.org (aaaaa.aaa.org [192.168.0.9]) by ggg.gggg.net (Postfix) with ESMTP id 24D50175C8"))
+
+
+(test* "rfc822-parse-date" '(2003 3 4 12 34 56 -3600 2)
+       (receive r (rfc822-parse-date "Tue,  4 Mar 2003 12:34:56 -3600") r))
+
+(test* "rfc822-parse-date" '(2003 3 4 12 34 56 0 2)
+       (receive r (rfc822-parse-date "Tue,  4 Mar 2003 12:34:56 UT") r))
+
+(test* "rfc822-parse-date (no weekday)" '(2003 3 4 12 34 56 -3600 #f)
+       (receive r (rfc822-parse-date "4 Mar 2003 12:34:56 -3600") r))
+
+(test* "rfc822-parse-date (no timezone)" '(2003 3 4 12 34 56 #f #f)
+       (receive r (rfc822-parse-date "4 Mar 2003 12:34:56") r))
+
+(test* "rfc822-parse-date (old tz)" '(2003 3 4 12 34 56 #f #f)
+       (receive r (rfc822-parse-date "4 Mar 2003 12:34:56 jst") r))
+
+(test* "rfc822-parse-date (no seconds)" '(2003 3 4 12 34 #f 900 #f)
+       (receive r (rfc822-parse-date "4 Mar 2003 12:34 +0900") r))
+
+(test* "rfc822-parse-date (no seconds)" '(2003 3 4 12 34 #f 900 2)
+       (receive r (rfc822-parse-date "Tue, 04 Mar 2003 12:34 +0900") r))
+
+(test* "rfc822-parse-date (2digit year)" '(2003 3 4 12 34 56 -3600 2)
+       (receive r (rfc822-parse-date "Tue,  4 Mar 03 12:34:56 -3600") r))
+
+(test* "rfc822-parse-date (2digit year)" '(1987 3 4 12 34 56 -3600 2)
+       (receive r (rfc822-parse-date "Tue,  4 Mar 87 12:34:56 -3600") r))
+
+(test* "rfc822-parse-date (Weekday, exhausive)" '(0 1 2 3 4 5 6 #f)
+       (map-with-index
+        (lambda (ind wday)
+          (receive (y m d H M S tz wd)
+              (rfc822-parse-date
+               #"~|wday|, ~(+ 2 ind) Jan 2000 00:00:00 +0000")
+            wd))
+        '("Sun" "Mon" "Tue" "Wed" "Thu" "Fri" "Sat" "Znn")))
+
+(test* "rfc822-parse-date (Months, exhausive)"
+       '(1 2 3 4 5 6 7 8 9 10 11 12 #f)
+       (map (lambda (mon)
+              (receive (y m d H M S tz wd)
+                  (rfc822-parse-date
+                   #"1 ~mon 1999 00:00:00 +0000")
+                m))
+            '("Jan" "Feb" "Mar" "Apr" "May" "Jun" "Jul" "Aug"
+              "Sep" "Oct" "Nov" "Dec" "Zzz")))
+
+(test* "rfc822-parse-date (invalid)" '(#f #f #f #f #f #f #f #f)
+       (receive r (rfc822-parse-date "Sun 2 Mar 2002") r))
+
+(test* "date->rfc822-date" "Sun, 29 Nov 2009 01:23:45 +0000"
+       (date->rfc822-date (make-date 0 45 23 01 29 11 2009 0)))
+(test* "date->rfc822-date" "Sun, 29 Nov 2009 01:23:45 +0900"
+       (date->rfc822-date (make-date 0 45 23 01 29 11 2009 32400)))
+(test* "date->rfc822-date" "Sun, 29 Nov 2009 01:23:45 -0830"
+       (date->rfc822-date (make-date 0 45 23 01 29 11 2009 -30600)))
+(test* "date->rfc822-date" "Sun, 29 Nov 2009 01:23:45 +0030"
+       (date->rfc822-date (make-date 0 45 23 01 29 11 2009 1800)))
+
+
+(test* "rfc822-invalid-header-field" #f
+       (rfc822-invalid-header-field "abcde"))
+(test* "rfc822-invalid-header-field" 'incomplete-string
+       (rfc822-invalid-header-field #*"abcde"))
+;; unicode literal doesn't work with none encoding
+(unless (eq? (gauche-character-encoding) 'none)
+  (test* "rfc822-invalid-header-field" 'bad-character
+         (rfc822-invalid-header-field "abc\u3030 def"))
+  )
+(test* "rfc822-invalid-header-field" 'bad-character
+       (rfc822-invalid-header-field "abc\x00 def"))
+(test* "rfc822-invalid-header-field" 'line-too-long
+       (rfc822-invalid-header-field (make-string 1000 #\a)))
+(test* "rfc822-invalid-header-field" 'line-too-long
+       (rfc822-invalid-header-field
+        (string-append (string-join (make-list 5 (make-string 78 #\a))
+                                    "\r\n ")
+                       (make-string 1000 #\a))))
+(test* "rfc822-invalid-header-field" 'stray-crlf
+       (rfc822-invalid-header-field
+        (string-join (make-list 5 (make-string 78 #\a)) "\r\n")))
+(test* "rfc822-invalid-header-field" 'stray-crlf
+       (rfc822-invalid-header-field "abc\ndef"))
+(test* "rfc822-invalid-header-field" 'stray-crlf
+       (rfc822-invalid-header-field "abc\rdef"))
+
+(test* "rfc822-write-headers"
+       "name: Shiro Kawai\r\n\
+        address: 1234 Lambda St.\r\n \
+        Higher Order Functions, HI, 99899\r\n\
+        registration-date: 2007-12-10\r\n\r\n"
+       (with-output-to-string
+         (cut rfc822-write-headers
+              '(("name" "Shiro Kawai")
+                ("address" "1234 Lambda St.\r\n Higher Order Functions, HI, 99899")
+                ("registration-date" "2007-12-10")))))
+
+(test* "rfc822-write-headers (ignore error)"
+       (make-list 2 "name: Shiro\x00Kawai\r\n\r\n")
+       (map (lambda (x)
+              (with-output-to-string
+                (cut rfc822-write-headers '(("name" "Shiro\x00Kawai"))
+                     :check x)))
+            '(#f :ignore)))
+
+(test* "rfc822-write-headers (continue)"
+       "x: A\r\nx: B\r\nx: C\r\n\r\n"
+       (call-with-output-string
+         (lambda (p)
+           (rfc822-write-headers '(("x" "A") ("x" "B")) :output p :continue #t)
+           (rfc822-write-headers '(("x" "C")) :output p))))
+
+(let-syntax ([test-reason
+              (syntax-rules ()
+                [(_ expect hdrs)
+                 (begin
+                   (test* (format "rfc822-write-headers error (~a)" expect)
+                          expect
+                          (guard (e (else (rxmatch-case (ref e'message)
+                                            [#/\(([\w-]+)\)/ (_ m) m]
+                                            [else e])))
+                            (with-output-to-string
+                              (cut rfc822-write-headers hdrs))))
+                   (test* (format "rfc822-write-headers handle (~a)" expect)
+                          (format "x-name: ~a\r\n\r\n" expect)
+                          (with-output-to-string
+                            (cut rfc822-write-headers hdrs
+                                 :check (lambda (name body reason)
+                                          (values #"x-~name"
+                                                  (x->string reason))))))
+                   )])])
+
+  (test-reason "bad-character" '(("name" "Shiro\x00Kawai")))
+  (test-reason "incomplete-string" '(("name" #*"Shiro Kawai")))
+  (test-reason "stray-crlf" '(("name" "Shiro\nKawai")))
+  (test-reason "line-too-long" `(("name" ,(make-string 1000 #\a))))
+  )
+        
+;;--------------------------------------------------------------------
 (test-section "rfc.mime")
 (use rfc.mime)
 (test-module 'rfc.mime)

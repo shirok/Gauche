@@ -6,8 +6,10 @@ SCM_CATEGORY = rfc
 
 include ../Makefile.ext
 
-LIBFILES = rfc--mime.$(SOEXT)
-SCMFILES = mime.sci
+LIBFILES = rfc--mime.$(SOEXT) \
+	   rfc--822.$(SOEXT)
+SCMFILES = mime.sci \
+	   822.sci
 
 GENERATED = Makefile
 XCLEANFILES = *.c $(SCMFILES)
@@ -24,6 +26,15 @@ rfc--mime.$(SOEXT) : $(rfc-mime_OBJECTS)
 
 rfc--mime.c mime.sci : $(top_srcdir)/libsrc/rfc/mime.scm
 	$(PRECOMP) -e -P -o rfc--mime $(top_srcdir)/libsrc/rfc/mime.scm
+
+# rfc.822
+rfc-822_OBJECTS = rfc--822.$(OBJEXT)
+
+rfc--822.$(SOEXT) : $(rfc-822_OBJECTS)
+	$(MODLINK) rfc--822.$(SOEXT) $(rfc-822_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+
+rfc--822.c 822.sci : $(top_srcdir)/libsrc/rfc/822.scm
+	$(PRECOMP) -e -P -o rfc--822 $(top_srcdir)/libsrc/rfc/822.scm
 
 install : install-std
 
