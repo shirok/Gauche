@@ -249,6 +249,13 @@ complex numbers?  It all depends on your purpose; there's no single
 generic answer.  So Scheme (and Gauche) provides several options,
 as well as the way to make your own.
 @c JP
+ふたつのオブジェクトを比較するというのは簡単な話のように思えるかもしれません。
+しかし詳しく見てゆくと、一筋縄ではいかない特別なケースが出てきます。
+ふたつの手続きが等しいとはどういうことでしょうか。
+複素数を何らかの基準で順番に並べるにはどうすばいいでしょう。
+一般的な回答は無く、目的によるとしか言えません。
+そこで、Schemeでは(Gaucheも)、いくつかの選択肢を用意しておき、
+さらに必要ならばユーザが独自の定義を与えることもできるようにしています。
 @c COMMON
 
 @menu
@@ -648,18 +655,37 @@ For the hashing of primitive objects are done in @code{hash}.
 @subsection Basic comparators
 @c NODE 基本的な比較器
 
+@c EN
 Equality and comparison procedures are parameters in various
 data structures.   A treemap needs to order its keys;
 a hashtable needs to see if the keys are the same or not,
 and it also need a hash funciton consistent with the equality predicate.
+@c JP
+等価性判定と大小比較は色々なデータ構造のパラメータになっています。
+treemapはキーの大小を比較します。ハッシュテーブルはキーが等しいかどうかを調べ、
+またハッシュ関数と等価性判定に一貫性が無ければなりません。
+@c COMMON
 
+@c EN
 If we want to work on genereic data structures, we need to abstract those
 variations of comparison schemes.  So here comes the comparator,
 a record that bundles closely-related comparison procedures together.
+@c JP
+ジェネリックなデータ構造を作りたければ、こういった比較についてのバリエーションを
+抽象化する必要があります。そのために導入されたのが比較器(comparator)です。
+これは、比較について関係の深いいくつかの手続きをまとめた構造体です。
+@c COMMON
 
+@c EN
 The APIs of comparators are defined in SRFI-114, which is rather
 large.  Gauche supports essential APIs in the core.  To access full
 set of APIs, use @code{srfi-114} module (@xref{Comparators}).
+@c JP
+比較器のAPIはSRFI-114で定義されていますがかなり大きいので、
+Gaucheでは重要なAPIだけを組み込みで用意しています。
+全てのAPIを使うには@code{srfi-114}を@code{use}してください
+(@ref{Comparators}参照)。
+@c COMMON
 
 @deftp {Builtin Class} <comparator>
 A record that packages the following procedures:
@@ -841,6 +867,13 @@ All other objects.
 @defvarx eqv-comparator
 @defvarx equal-comparator
 [SRFI-114]
+Built-in comparators that uses @code{eq?}, @code{eqv?} and @code{equal?}
+for the equality predicate, respectively.  They accept any kind of
+Scheme objects.  Each has corresponding hash functions
+(i.e. @code{eq-hash} for @code{eq-comparator},
+@code{eqv-hash} for @code{eqv-comparator} and
+@code{hash} for @code{equal-comparator}).
+None has comparison procedure, though.
 @end defvar
 
 @defvar boolean-comparator
@@ -849,6 +882,12 @@ All other objects.
 @defvarx string-comparator
 @defvarx string-ci-comparator
 [SRFI-114]
+Compare booleans, characters, and strings, respectively.
+The @code{*-ci-*} variants uses case-insensitive comparison.
+All have appropriate hash functions, too.
+
+The string case-insensitive comparison uses Unicode full-string case
+conversion (@xref{Full string case conversion}).
 @end defvar
 
 @defvar exact-integer-comparator
@@ -22916,10 +22955,10 @@ GCをトリガすると、@code{sys-nanosleep}が時間経過前に戻ってく�
 他のスレッドがたくさんアロケートする場合、@code{sys-nanosleep}はすぐに
 戻ってきてしまい、信頼できなくなるかもしれません。
 
-@var{nanoseconds}が経過したら@code{#f}を返し
-(@code{no-retry}が偽であれば常にそうなります)、
-@code{sys-nanosleep}がシグナルによって割り込まれるた場合は残りの時間を表す
-@code{<time>}オブジェクトを返します。
+@var{nanoseconds}が経過した場合の返り値は@code{#f}です。
+@code{no-retry}が偽であれば常にそうなります。
+@code{sys-nanosleep}がシグナルによって割り込まれた場合は、
+残りの時間を表す@code{<time>}オブジェクトを返します。
 @c COMMON
 
 @example
