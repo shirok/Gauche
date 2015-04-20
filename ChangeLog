@@ -1,3 +1,8 @@
+2015-04-20  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/interactive.scm (describe): Show the source location
+	  for a procedure, if available.
+
 2015-04-13  Shiro Kawai  <shiro@acm.org>
 
 	* lib/rfc/mime.scm -> libsrc/rfc/mime.scm,

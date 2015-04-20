@@ -105,19 +105,9 @@
 ;;; Describe - describe object
 ;;;
 
-(define-method describe (object)
+(define-method describe (object) ; default
   (describe-common object)
-  (let* ([class (class-of object)]
-         [slots (class-slots class)])
-    (unless (null? slots)
-      (format #t "slots:\n")
-      (dolist [s (map slot-definition-name slots)]
-        (format #t "  ~10s: ~a\n" s
-                (if (slot-bound? object s)
-                  (with-output-to-string
-                    (^[] (write-limited (slot-ref object s) 60)))
-                  "#<unbound>"))))
-    (values)))
+  (describe-slots object))
 
 (define-method describe ((s <symbol>))
   (describe-common s)
@@ -173,10 +163,30 @@
                 spnames))))
   (values))
 
+(define-method describe ((p <procedure>))
+  (describe-common p)
+  (if-let1 source (source-location p)
+    (format #t "Defined at ~s:~d\n" (car source) (cadr source)))
+  (describe-slots p)
+  (values))
+
 (define d describe)
 
 (define (describe-common obj)
   (format #t "~s is an instance of class ~a\n" obj (class-name (class-of obj))))
+
+(define (describe-slots obj)
+  (let* ([class (class-of obj)]
+         [slots (class-slots class)])
+    (unless (null? slots)
+      (format #t "slots:\n")
+      (dolist [s (map slot-definition-name slots)]
+        (format #t "  ~10s: ~a\n" s
+                (if (slot-bound? obj s)
+                  (with-output-to-string
+                    (^[] (write-limited (slot-ref obj s) 60)))
+                  "#<unbound>"))))
+    (values)))
 
 ;;;
 ;;; Enhanced REPL
