@@ -1,3 +1,8 @@
+2015-04-21  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/vm/profiler.scm (profiler-show-load-stats): Fix a bug
+	  that didn't exclude time for subloads.  Patch from Duy Nguyen.
+
 2015-04-20  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/interactive.scm (describe): Show the source location
