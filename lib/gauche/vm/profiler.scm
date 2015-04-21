@@ -93,18 +93,18 @@
         (match stats
           [()  (show-results)]
           [((f . t) . more)
-           (receive (_ rest) (cumulate f t more) (start rest))]
+           (receive (_ rest) (cumulate f t 0 more) (start rest))]
           [(_ . more) (start more)] ;; this can't happen, but tolerate
           ))
-      ;; cumulate :: String, Integer, [Stat] -> Integer, [Stat]
-      (define (cumulate filename start-time stats)
+      ;; cumulate :: String, Integer, Integer, [Stat] -> Integer, [Stat]
+      (define (cumulate filename start-time exclude stats)
         (match stats
           [() (show-results)]  ;; premature stats data; we discard current fn.
           [((f . t) . more)
-           (receive (time-spent rest) (cumulate f t more)
-             (cumulate filename (+ start-time time-spent) rest))]
+           (receive (time-spent rest) (cumulate f t 0 more)
+             (cumulate filename start-time (+ exclude time-spent) rest))]
           [(t . more)
-           (set! results (cons (cons filename (- t start-time)) results))
+           (set! results (cons (cons filename (- t start-time exclude)) results))
            (values (- t start-time) more)]))
       (define (show-results)
         (print "Load statistics:")
