@@ -36,8 +36,8 @@
 (define-module gauche.interactive
   (export apropos describe d read-eval-print-loop
           ;; autoloaded symbols follow
-          info reload reload-modified-modules module-reload-rules
-          reload-verbose)
+          info reload ed
+          reload-modified-modules module-reload-rules reload-verbose)
   )
 (select-module gauche.interactive)
 
@@ -263,6 +263,9 @@
 ;; Autoload module reloader
 (autoload gauche.reload reload reload-modified-modules
                         module-reload-rules reload-verbose)
+
+;; Autoload editor invoker
+(autoload gauche.interactive.ed ed ed-pick-file)
 
 ;; See (describe <symbol>) above
 (autoload gauche.modutil describe-symbol-bindings)
