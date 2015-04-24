@@ -421,7 +421,13 @@
 ;;;
 
 (select-module gauche)
-(define-cproc %exit (:optional (code::<fixnum> 0)) ::<void> Scm_Exit)
+(define-cproc %exit (:optional (code 0)) ::<void>
+  (let* ([status::int 0])
+    (cond
+     [(SCM_EQ code SCM_TRUE)]  ; status == 0
+     [(SCM_INTP code) (set! status (SCM_INT_VALUE code))]
+     [else (set! status 70)])  ; EX_SOFTWARE
+    (Scm_Exit status)))
 
 ;; API
 ;; exit handler.  we don't want to import the fluff with gauche.parameter,
