@@ -5723,6 +5723,117 @@ to parse the info file.
 @c COMMON
 @end defun
 
+@defun ed filename-or-procedure :key editor load-after
+@c EN
+Invoke an external editor to open the named file, or the file containing
+the definition of the given procedure (if it can be known).  
+For the latter, it uses @code{source-location} procedure to find out
+the source code location (@xref{Debugging aid}).
+@c JP
+外部エディタを起動し、与えられた名前のファイル、もしくは与えられた手続きの定義がある
+ファイルを開きます。後者については、与えられた手続きを
+@code{source-location}に渡して定義箇所を調べます(@ref{Debugging aid}参照)。
+定義箇所がわからなければファイルは開かれません。
+@c COMMON
+
+@c EN
+The name of the editor to invoke is determined as follows:
+@c JP
+起動するエディタの名前は次の順序で決定されます。
+@c COMMON
+
+@enumerate
+@item
+@c EN
+The @var{editor} keyword argument.
+@c JP
+キーワード引数@var{editor}。
+@c COMMON
+@item
+@c EN
+The value of the variable @code{*editor*} in the @code{user} module,
+if defined.  This is handy that you can set this in your @code{.gaucherc}.
+@c JP
+@code{user}モジュール中の変数@code{*editor*}の値。
+これは、@code{.gaucherc}内で設定しておくのが便利です。
+@c COMMON
+@item
+@c EN
+The value of the enviroment variable @code{GAUCHE_EDITOR}.
+@c JP
+環境変数@code{GAUCHE_EDITOR}の値
+@c COMMON
+@item
+@c EN
+The value of the enviroment variable @code{EDITOR}.
+@c JP
+環境変数@code{EDITOR}の値
+@c COMMON
+@end enumerate
+
+@c EN
+If none of the above is defined or @code{#f}, the procedure prompts the user
+to type in the name of the editor.
+@c JP
+上記のどの値も定義されていないか@code{#f}なら、
+手続き@code{ed}はユーザにエディタ名を入力するように促します。
+@c COMMON
+
+@c EN
+Once the editor name is obtained, it is invoked as a subprocess,
+with the following format:
+@c JP
+エディタの名前がわかったら、それが子プロセスとして次の形式で実行されます。
+@c COMMON
+
+@example
+EDITOR +lineno filename
+@end example
+
+@c EN
+The @var{lineno} is an integer line number, 1 being the first line.
+The editor is expected to locate the cursor on the specified line.
+@c JP
+@var{lineno}は整数の行番号で、1が先頭行です。エディタは指定された行の頭に
+カーソルを移動することが期待されます。
+@c COMMON
+
+@c EN
+Once the editor process exits, the procedure checks if the name
+file is updated.  If so, it may load the file, according to the
+value of the @var{load-after} keyword argument.  It may take one
+of the following values:
+@c JP
+エディタプロセスが終了したら、@code{ed}はファイルが更新されたかどうかを調べ、
+更新された場合は@var{load-after}引数の値によってそのファイルをロードするかどうかを
+決定します。@var{load-after}引数の値は以下のいずれかです。
+@c COMMON
+
+@table @code
+@item #t
+@c EN
+Load the file automatically if it's updated.
+@c JP
+ファイルが更新されていれば自動的にロード
+@c COMMON
+@item #f
+@c EN
+Do not load the file.
+@c JP
+ファイルをロードしない
+@c COMMON
+@item ask
+@c EN
+The symbol @code{ask} cause the procedure to prompt the user
+whether it should load the file.  This is the default.
+@c JP
+シンボル@code{ask}の場合は、ロードすべきかどうかユーザに尋ねる。
+これがデフォルトの動作です。
+@c COMMON
+@end table
+@end defun
+
+
 @c ----------------------------------------------------------------------
 @node Lazy sequence utilities, Listener, Interactive session, Library modules - Gauche extensions
 @section @code{gauche.lazy} - Lazy sequence utilities

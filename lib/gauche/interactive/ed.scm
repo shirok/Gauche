@@ -39,6 +39,9 @@
   (export ed ed-pick-file))
 (select-module gauche.interactive.ed)
 
+;; To remember editor name user typed in
+(define *user-entered-editor* #f)
+
 ;; API
 ;; (ed path-or-proc :key editor load-after)
 ;;   Starts an external editor.  The editor program path is determined
@@ -69,6 +72,7 @@
 ;; For now we just require one argument.
 
 (define (ed path-or-proc :key (editor #f) (load-after 'ask))
+  (consume-remaining-whitespaces)
   (if-let1 target (ed-pick-file path-or-proc)
     (let* ([filename (car target)]
            [lineno   (cadr target)]
@@ -96,6 +100,20 @@
 (define-method ed-pick-file ((fn <top>)) #f)
 
 ;; internal
+;; Consume any whitespaces and a newline in the current input if any;
+;; so that when we ask a user next question we can read user's input.
+;; NB: This may fail to work if the current input port is cascaded,
+;; e.g. with a ces-conversion port.
+(define (consume-remaining-whitespaces)
+  (let loop ()
+    (when (char-ready?)
+      (let1 c (peek-char)
+        (case c
+          [(#\space) (read-char) (loop)]
+          [(#\newline) (read-char)]
+          [else #t])))))
+
+;; internal
 ;; NB: If specified editor isn't actually name an executable, we let
 ;; run-process to throw an error rather than doing some clever things.
 (define (pick-editor editor)
@@ -104,25 +122,29 @@
       (sys-getenv "GAUCHE_EDITOR")
       (sys-getenv "EDITOR")
       (begin
-        (format #t "Editor name (or just return to abort): ")
+        (if *user-entered-editor*
+          (format #t "Editor name [~a]: " *user-entered-editor*)
+          (format #t "Editor name (or just return to abort): "))
         (flush)
         (let1 ans (read-line)
-          (and (not (#/^\s*$/ ans)) ans)))))
+          (if (#/^\s*$/ ans)
+            *user-entered-editor*
+            (begin (set! *user-entered-editor* ans) ans))))))
 
 ;; internal
 ;; Determine whether we should reload the file if it's updated.
 (define (load-after? load-after name)
-  (case load-after
+  (ecase load-after
     [(#t) #t]
     [(#f) #f]
     [(ask)
-     (format #t "Reload ~s? [y/n]: " name)
-     (flush)
      (let loop ()
+       (format #t "Reload ~s? [y/N]: " name)
+       (flush)
        (rxmatch-case (read-line)
          [#/^y/i () #t]
-         [#/^$/  () (loop)]
-         [else #f]))]))
+         [#/^n/i () #f]
+         [else (loop)]))]))
 
 ;; internal
 ;; Invoke external editor; won't return until the editor exits.
