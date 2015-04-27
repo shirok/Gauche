@@ -59,6 +59,15 @@ shell and you can reconfigure with the same options.  It is a
 convenient way to update Gauche.
 @c COMMON
 
+@c JP
+注: gitレポジトリの開発版HEADをコンパイルする場合は、configureを
+走らせる前にいくつか準備が必要です。詳しくはHACKINGファイルを参照して
+ください。
+@c EN
+Note: If you are compiling from development HEAD cloned from
+git repository, you need extra steps before running configure.
+See the file HACKING for the details.
+@c COMMON
 
 @c JP
 スレッドサポート
