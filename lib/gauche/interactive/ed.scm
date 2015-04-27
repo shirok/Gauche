@@ -96,7 +96,13 @@
 
 (define-generic ed-pick-file)
 (define-method ed-pick-file ((fn <string>)) (list fn 1))
-(define-method ed-pick-file ((fn <procedure>)) (source-location fn))
+(define-method ed-pick-file ((fn <procedure>))
+  (let1 loc (source-location fn)
+    ;; If the recorded file does not exist, it is either (1) removed
+    ;; after loaded, (2) cwd has been changed, or (3) it's a pseudo filename
+    ;; such as "(standard input)".  In either case, opening such file isn't
+    ;; much useful since that won't contain the definition.  So we ignore it.
+    (and (file-exists? (car loc)) loc)))
 (define-method ed-pick-file ((fn <top>)) #f)
 
 ;; internal
