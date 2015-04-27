@@ -207,7 +207,6 @@
 (define-in-module gauche.internal (make-case-lambda minarg maxarg
                                                     formals closures
                                                     :optional (name #f))
-
   (define (fill-dispatch-vector! v formals closure)
     (define (%set n)
       (let1 i (- n minarg)

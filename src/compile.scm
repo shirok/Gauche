@@ -2504,8 +2504,8 @@
        (unless (null? kargs)
          (error "syntax-error: extended lambda list isn't allowed in receive:"
                 form))
-       (let* ((lvars (imap make-lvar+ args))
-              (newenv (cenv-extend cenv (%map-cons args lvars) LEXICAL)))
+       (let* ([lvars (imap make-lvar+ args)]
+              [newenv (cenv-extend cenv (%map-cons args lvars) LEXICAL)])
          ($receive form reqargs optarg lvars (pass1 expr cenv)
                    (pass1/body body newenv))))]
     [_ (error "syntax-error: malformed receive:" form)]))
@@ -2513,7 +2513,7 @@
 ;; Returns <list of args>, <# of reqargs>, <has optarg?>, <kargs>
 ;; <kargs> is like (:optional (x #f) (y #f) :rest k) etc.
 (define (parse-lambda-args formals)
-  (let loop ((formals formals) (args '()) (n 0))
+  (let loop ([formals formals] [args '()] [n 0])
     (match formals
       [()      (values (reverse args) n 0 '())]
       [((? keyword-like?) . _) (values (reverse args) n 1 formals)]
@@ -4054,7 +4054,7 @@
     (,(global-id 'procedure?) . ,pass3/pred:procedure?)))
 
 (define (pass3/find-deducible-predicate id)
-  (let loop ((tab *pass3/pred-table*))
+  (let loop ([tab *pass3/pred-table*])
     (cond [(null? tab) pass3/pred:fallback]
           [(global-identifier=? id (caar tab)) (cdar tab)]
           [else (loop (cdr tab))])))
@@ -4487,8 +4487,8 @@
     0))
 
 (define (pass5/$GSET iform ccb renv ctx)
-  (let ((d (pass5/rec ($gset-expr iform) ccb renv (normal-context ctx)))
-        (id ($gset-id iform)))
+  (let ([d (pass5/rec ($gset-expr iform) ccb renv (normal-context ctx))]
+        [id ($gset-id iform)])
     (compiled-code-emit0oi! ccb GSET id id)
     d))
 
@@ -4525,8 +4525,8 @@
     ;; Select an appropriate branch instruction
     (cond
      [(has-tag? test $ASM)
-      (let ((code (car ($asm-insn test))); ASM code
-            (args ($asm-args test)))
+      (let ([code (car ($asm-insn test))]; ASM code
+            [args ($asm-args test)])
         (cond
          [(eqv? code NULLP)
           (pass5/if-final iform (car args) BNNULL 0 0
