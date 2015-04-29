@@ -425,7 +425,7 @@ Most Scheme objects are heap allocated, and except Scheme pairs,
 heap allocated Scheme object has a fixed header.  We don't go
 into more details here, but we'll revisit this topic in
 @ref{Creating new Scheme datatypes}.   Certain frequently used
-Scheme objcts, such as boolean values, small exact integers
+Scheme objects, such as boolean values, small exact integers
 and characters, are encoded in a word without allocating
 objects in heap, and we call them @emph{immediate values}.
 
