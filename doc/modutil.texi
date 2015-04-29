@@ -19361,6 +19361,7 @@ an output string port, and returns the result string.
 
 @deftp {Module} text.unicode
 @mdindex text.unicode
+@c EN
 This module provides various operations on a sequence of Unicode codepoints.
 
 Gauche can be compiled with a native encoding other than Unicode,
@@ -19368,7 +19369,16 @@ and the full Unicode-compatible behavior on characters and strings may
 not be available on such systems.  So we provide most operations in two
 flavors: Operations on characters and strings, or operations on
 codepoints represented as a sequence of integers.
+@c JP
+このモジュールは、Unicodeのコードポイントの列に対する様々な操作を提供します。
 
+Gaucheはコンパイル時に、内部文字エンコーディングとしてUnicode以外も選べます。
+その場合、文字列に対して完全にUnicode互換の動作を提供できない場合があります。
+そこで、本モジュールの多くの操作は、文字列を対象にするものと、
+コードポイントの数値のシーケンスを対象にするものの両方で提供されます。
+@c COMMON
+
+@c EN
 If Gauche is compiled with its native encoding being @code{none},
 @code{euc-jp} or @code{sjis}, character-and-string operations
 are likely to be partial functions of the operations defined
@@ -19376,7 +19386,15 @@ in Unicode standard.  That is, if the operation can yield a
 character that are not supported in the native encoding, it
 may be remapped to an alternative character.  Each manual entry
 explains the detailed behavior.
+@c JP
+Gaucheの内部エンコーディングが@code{none}、
+@code{euc-jp}、@code{sjis}の場合は、
+文字および文字列に対する操作はUnicode標準で定義されたものと完全には一致しないでしょう。
+操作の結果が、内部エンコーディングでは定義されていない文字になった場合、
+それは代替文字に置き換えられます。各関数のエントリで詳しく説明してあります。
+@c COMMON
 
+@c EN
 The codepoint operations are independent from Gauche's native
 encoding and supports full spec as defined in Unicode standard.
 If Gauche is compiled with the @code{utf-8} native encoding,
@@ -19385,6 +19403,15 @@ when you convert codepoints and characters by @code{char->integer} and
 @code{integer->char}.  The codepoint operations are handy when
 you need to support the algorithms described in Unicode standard
 fully, no matter what the running Gauche's native encoding is.
+@c JP
+コードポイントの列に対する操作はGaucheの内部文字エンコーディングとは
+無関係であり、Unicode標準の定義が完全にサポートされます。
+Gaucheが@code{utf-8}でコンパイルされている場合、コードポイント列に
+対する操作は、文字列に対する操作と (各要素を@code{char->integer}および
+@code{integer->char}で変換すること以外は)一致します。
+コードポイント列に対する操作はGaucheの内部文字エンコーディングにかかわらず
+ポータブルなアルゴリズムを必要とする場合に便利です。
+@c COMMON
 @end deftp
 
 @menu
