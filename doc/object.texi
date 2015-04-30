@@ -3513,7 +3513,7 @@ number of allocated instance slots in the class's @code{num-instance-slots}
 slot.  It is not recommended for other specialized methods to use or
 change the value of this slot, unless you know a very good reason to
 override the object system behavior in deep down.  Usually it is suffice
-to call @code{next-method} to let the base method reserve an instnace
+to call @code{next-method} to let the base method reserve an instance
 slot for you.
 
 See the examples below for modifying instance slot access behaviors.

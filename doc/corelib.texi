@@ -183,7 +183,7 @@ Note: In Gauche, you can redefine existing user-defined classes.
 If the new definition has different configuration of the instance,
 @code{class-of} on existing instance triggers instance updates;
 @xref{Class redefinition} for the details.  Using
-@code{current-class-of} supresses instance updates
+@code{current-class-of} suppresses instance updates
 (@xref{Accessing instance}).
 @c JP
 註: Gaucheでは、ユーザ定義クラスを再定義することができます。
@@ -8846,7 +8846,7 @@ If it's the latter, @code{regexp-unparse} just returns @code{#f}.
 This is the structure of AST.  Note that this is originally
 developed only for internal use, and not very convenient to manipulate
 from the code (e.g. if you insert or delete a subtree, you have to
-renumber capturing groups to make them consitent.)  There's a plan
+renumber capturing groups to make them consistent.)  There's a plan
 to provide a better representation, such as SRE, and a tool
 to convert it to this AST back and forth.   Contributions are welcome.
 @c JP
@@ -11342,7 +11342,7 @@ to execute step 3 again), an error is signaled as follows.
 
 @c EN
 This is because C routines don't expect the calling function to return
-more than once.  The C stack frame on which the Scheme callbak was
+more than once.  The C stack frame on which the Scheme callback was
 originally called
 is likely to be deallocated or modified at the time the continuation
 is invoked.
@@ -11541,7 +11541,7 @@ of characters, terminated by EOF.
 
 @c EN
 Since it is such a handy abstraction, Gauche provides a
-set of utilties (see @ref{Generators}) to construct and generators
+set of utilities (see @ref{Generators}) to construct and generators
 out of various sources, including other generators.
 @c JP
 こうした抽象化は手軽であるため、Gaucheは、他のジェネレータを含むさまざまなソースから
@@ -11837,7 +11837,7 @@ delay : a -> Promise a
 @c EN
 Since we don't have static typing, we can't enforce this usage.
 The programmer has to choose appropriate one from the context.
-Generally, @code{lazy} appearers only to surround the entire
+Generally, @code{lazy} appears only to surround the entire
 body of function that express a lazy algorithm.
 @c JP
 Schemeでは静的な型付けをしないので、この使い分けを強制することができません。
@@ -12006,7 +12006,7 @@ calculated, even if you don't use it.  In most cases
 you don't need to care, for calculating one item more
 is a negligible overhead.  However, when you create
 a self-referential lazy structure, in which the earlier
-elements of a sequence is used to caculate the latter
+elements of a sequence is used to calculate the latter
 elements of itself, a bit of caution is needed;
 a valid code for fully lazy circular structure may not
 terminate in Gauche's lazy sequences.  We'll show a
@@ -12208,7 +12208,7 @@ carを取ろうとした時点でこの遅延ペアはforceされ、そのcdrが
 
 @c EN
 We can workaround this issue by 
-avoiding accessing the immedietely preceding value.
+avoiding accessing the immediately preceding value.
 Fibonacci numbers F(n) = F(n-1) + F(n-2) = 2*F(n-2) + F(n-3), so we
 can write our sequence as follows.
 @c JP
@@ -15086,7 +15086,7 @@ of copying.  If it is an integer, a buffer of the size
 (in case of zero, a system default size) is used to copy,
 using block I/O.  Generally it is the fastest if you copy
 between normal files.   If @var{unit} is a symbol @code{byte},
-the copying is done byte by byte, using C-verson of @code{read-byte}
+the copying is done byte by byte, using C-version of @code{read-byte}
 and @code{write-byte}.  If @var{unit} is a symbol @code{char},
 the copying is done character by character, using C-version of
 @code{read-char} and @code{write-char}.
@@ -15577,7 +15577,7 @@ system-level; if either @var{toport} or @var{fromport} is buffered,
 the buffered contents are not shared.
 
 This procedure is mainly intended for programs that needs to control
-open file descriptos explicitly; e.g. a daemon process would want to redirect
+open file descriptors explicitly; e.g. a daemon process would want to redirect
 its I/O to a harmless device such as @file{/dev/null}, and a shell process
 would want to set up file descriptors before executing the child process.
 @c JP
@@ -17716,7 +17716,7 @@ the subsequent @code{require} won't load the same file again.
 @c EN
 Because of the autoproviding, i.e. @code{require}
 automatically provides the required feature, you hardly need to
-use a @code{provide} form explcitily.   There are a couple of scenarios that
+use a @code{provide} form explicitly.   There are a couple of scenarios that
 you may want to use a @code{provide} form:
 @c JP
 @code{require}が要求された機能を自動的に@code{provide}されたかのように
@@ -17732,7 +17732,7 @@ you may want to use a @code{provide} form:
 To provide a feature (or features) that is/are different from
 the one that caused loading the file.
 
-Suppose feature X supesedes feature Y and providing
+Suppose feature X supersedes feature Y and providing
 compatible APIs of Y but with different implementation.
 Once @file{X.scm} is loaded, you don't want @file{Y.scm} to be loaded;
 so you want to tell the user that @file{X.scm} also provides the feature Y.
@@ -17742,7 +17742,7 @@ Adding @code{(provide "X")} and @code{(provide "Y")} at the end of
 to specify @code{(provide "X")} in @file{X.scm} explicitly to
 provide X as well.)
 
-Of course, this doens't prevent users from loading @file{Y.scm} by
+Of course, this doesn't prevent users from loading @file{Y.scm} by
 specifing @code{(require "Y")} before @code{(require "X")}.
 It should be considered just as a workaround in a production
 where other solutions are costly, instead of a permanent solution.
@@ -18551,11 +18551,11 @@ Another useful case is when you
 want to call a third-party code which calls @code{exit} inside.  In
 that case you may swap the @code{exit-handler} for the one
 that raises a non-error exception while calling the third-party code.
-Non-error exception isn't caught in @code{exit}, effectivelly
+Non-error exception isn't caught in @code{exit}, effectively
 interrupts the steps explained above.   (Yet the @var{after} thunks
 of dynamic handlers are processed just like normal exception
 handling case.)
-Your appication code can then capture the exception.
+Your application code can then capture the exception.
 You can use @code{parameterize}
 to swap @code{exit-handler} dynamically
 and thread-safely (@xref{Parameters}).
@@ -18816,7 +18816,7 @@ For the portable code, you may want to use SRFI-98's
 which is also in R7RS.
 
 Note: Most systems doesn't guarantee thread-safety of @code{getenv} while
-environment is being modified; however, Gauche mutexes envionment
+environment is being modified; however, Gauche mutexes environment
 accessing/mutating APIs internally, so you don't need to worry
 about the race condition as far as you use Gauche procedures.
 @c JP
@@ -18838,7 +18838,7 @@ Returns the current environment as a list of strings.  Each string
 is a form of @code{NAME=VALUE}, where @code{NAME} is the name of
 the environment variable and @code{VALUE} is its value.  @code{NAME}
 never contains a character @code{#\=}.  This is useful when you want
-to obtail the all enviroment variables of the current process.
+to obtail the all environment variables of the current process.
 Use @code{sys-getenv} if you want to query a specific environment
 variable.
 @c JP
@@ -18908,7 +18908,7 @@ exists.   If @var{overwrite} is true, the variable is overwritten.
 @c EN
 For @code{sys-putenv}, you have to give a single string
 with the form of @code{NAME=VALUE}, that is, concatenating @var{name}
-and @var{value} with @code{#\=}.  If the enviornmet variable with
+and @var{value} with @code{#\=}.  If the environment variable with
 the same name exists, it will be overwritten.
 @c JP
 @code{sys-putenv}では、環境変数を名前と値を@code{#\=}でつないだ
@@ -19091,7 +19091,7 @@ returns a list of pathnames that matches the given @var{pattern}.
 This feature used to be a wrapper of system-provided @code{glob} function,
 hence it was named @code{sys-glob}.  However, as of Gauche version 0.8.12,
 it was reimplemented in Scheme on top of other system calls, to overcome
-incompatibilies between platforms and for the opportunity to put
+incompatibilities between platforms and for the opportunity to put
 more functionalities.  So we renamed it @code{glob}.
 The old name @code{sys-glob} is kept for compatibility, but new
 programs should use @code{glob}.
@@ -20796,7 +20796,7 @@ recording the signal).
 @c EN
 If the same signal is delivered more than once before VM processes
 the first one, the second one and later have no effect.  (This is consistent
-to the traditioncal Unix signal model.)  In other words,
+to the traditional Unix signal model.)  In other words,
 for each VM loop a signal handler can be invoked at most once per
 each signal.
 @c JP
@@ -21017,13 +21017,13 @@ If @var{handler} is @code{#<undef>} (@xref{Undefined values}),
 it indicates Gauche to leave the current OS's signal handler as it is.
 This value isn't as much use in @code{set-signal-handler!} as
 in @code{get-signal-handler}: If @code{#<undef>} is passed
-to @code{set-signal-handler!}, it immeidately returns without
+to @code{set-signal-handler!}, it immediately returns without
 modifying anything.   However, if you get @code{#<undef>}
 from @code{get-signal-handler}, you can know that the
 signal handler behavior hasn't been modified by Gauche.
 (Note that once Gauche ever installs a signal handler,
 there is no way to revert back to make @code{get-signal-handler}
-reutrn @code{#<undef>}).
+return @code{#<undef>}).
 @c JP
 @var{handler}が@code{#<undef>}
 (@ref{Undefined values}参照) であった場合は、
@@ -21085,7 +21085,7 @@ Gets/sets the maximum number of pending signals per each signal type.
 If the number of pending signals exceeds this limit, Gauche aborts
 the process.  See the explanation at the beginning of this section
 for the details.  @var{Limit} must be a nonnegative exact integer.
-In the current implementaiton the maximum number of @var{limit} is 255.
+In the current implementation the maximum number of @var{limit} is 255.
 Setting limit to zero makes the number of pending signals unlimited.
 @c JP
 それぞれ、同一のシグナルをいくつまで保留することを許すかの現在の限界値を

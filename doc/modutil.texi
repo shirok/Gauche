@@ -3013,7 +3013,7 @@ of nonnegative integers.
 @mdindex data.sparse
 @c EN
 This module provides a @emph{sparse vector} and @emph{sparse matrix}, 
-a space efficient data containter indexed by nonnegative integer(s), and
+a space efficient data container indexed by nonnegative integer(s), and
 a @emph{sparse table}, a hash table using a sparse vector
 as a backing storage.
 @c JP
@@ -3663,7 +3663,7 @@ Trieでは文字列キーを使うことが多いですが、それに限定さ�
 @end example
 
 @c EN
-Trie inheris @code{<collection>} and implements collection framework
+Trie inherits @code{<collection>} and implements collection framework
 including the builder. So you can apply generic collection
 operations on a trie (@xref{Collection framework}).
 When iterated, each element of a trie appears as a pair of a key
@@ -4024,7 +4024,7 @@ if @var{trie} has entries for @code{"foo"} and @code{(#\f #\o #\o)},
 @defun trie-common-prefix-fold trie prefix proc seed
 @c EN
 For each entry whose key begins with @var{prefix},
-calls @var{proc} with three argments, the entry's key,
+calls @var{proc} with three arguments, the entry's key,
 its value, and the current seed value.  @var{Seed} is
 used for the first seed value, and the value @var{proc}
 returns is used for the seed value of the next call of @var{proc}.
@@ -4503,7 +4503,7 @@ more efficient if you issue similar queries lots of time.
 @c COMMON
 
 @c EN
-If the backend does't support prepared statements (SQL templates
+If the backend doesn't support prepared statements (SQL templates
 having @code{?} parameters), the driver may use @code{text.sql}
 module to parse @var{sql}.  It may raise @code{<sql-parse-error>}
 condition if the given SQL is not well formed.
@@ -5720,7 +5720,7 @@ That makes it difficult to pass around dbm databases
 between different machines.
 A safe way is to write out the content of a dbm database
 into some portable format on the source machine,
-and rebuild another dbm databse from it on the destination
+and rebuild another dbm database from it on the destination
 machine.
 
 The operation is so common that Gauche provides convenience
@@ -6382,7 +6382,7 @@ like @code{map} and @code{for-each} to @code{fold}.
 
 The procedure @var{proc} is called with two arguments,
 an item read from the input and an output port.
-The results of @var{proc} are collected as a list and retured
+The results of @var{proc} are collected as a list and returned
 by @code{file-filter-map}, and discarded by @code{file-filter-for-each}.
 
 The meaning of keyword arguments are the same as @code{file-filter-fold}.
@@ -6745,7 +6745,7 @@ followed.
 @c EN
 If @var{src} is a regular file, copies its content to @var{dst}, just like
 @code{copy-file} does.  If @var{src} is a directory, recursively
-desends it and copy the file tree to @var{dst}.  Basically
+descends it and copy the file tree to @var{dst}.  Basically
 it mimics the behavior of @code{cp -r} command.
 
 If there's any symbolic links under @var{src}, the link itself
@@ -7669,7 +7669,7 @@ stealing behavior safely.  The creation and removal of the primary
 lock file (named by @var{lock-name} argument) are guarded by
 the secondary lock file (named by @var{secondary-lock-file} argument,
 defaulted by @code{.2} suffix attached to @var{lock-name}).
-The secondary lock is aquired for a very short period so there's
+The secondary lock is acquired for a very short period so there's
 much less chance to be left behind by abnormal terminations.
 If it happens, however, we just give up; we don't steal the
 secondary lock.
@@ -7698,7 +7698,7 @@ but it may be slower than @code{file}.
 
 Accepts a nonnegative real number that specifies either
 the interval to attempt to acquire the primary lock, or the maximum
-time we should keep retrying, respecively, in seconds.
+time we should keep retrying, respectively, in seconds.
 The default value is 1 second interval and 10 second limit.
 To prevent retrying, give 0 to @var{retry-limit}.
 
@@ -8245,7 +8245,7 @@ the upper bound of the prime number to be tried.  If it is given,
 @code{naive-factorize} leaves a factor @var{f} as is if it can't be
 divided by any primes less than or equal to @var{divisor-limit}.
 So, the last element of the returned list may be composite number.
-This is handy to exclude trivial factors befor applying more sophisticated
+This is handy to exclude trivial factors before applying more sophisticated
 factorizing algorithms.
 @c JP
 オプショナル引数@var{divisor-limit}を与えると、試行する素数の上限を指定
@@ -9139,7 +9139,7 @@ Calls @code{AllocConsole} and @code{FreeConsole}, respectively.
 @c @node PEG stream, PEG performance tips, PEG combinators, Parser combinators for PEG
 @c @subsection PEG stream
 
-@c @defun make-peg-steram generator :optional fini
+@c @defun make-peg-stream generator :optional fini
 @c @end defun
 
 @c @defun string->peg-stream string
@@ -9510,7 +9510,7 @@ Parses RFC822 type date format and returns SRFI-19 @code{<date>} object
 (see @ref{SRFI-19 Date}).  If @var{string} can't be parsed,
 returns @code{#f} instead.
 
-To consturct rfc822 date string from SRFI-19 date, you can use
+To construct rfc822 date string from SRFI-19 date, you can use
 @code{date->rfc822-date} below.
 @c JP
 RFC822形式の日付フォーマットをパーズし、SRFI-19 の @code{<date>} オブジェクト
@@ -9732,7 +9732,7 @@ RFC 6265で定義されている「クッキー」情報を
 @c EN
 Parse a cookie string @var{string}, which is the value of ``Cookie''
 request header.  Usually, the same information is available to CGI
-program via the environemnt variable @code{HTTP_COOKIE}.
+program via the environment variable @code{HTTP_COOKIE}.
 
 If the cookie version is known, via ``Cookie2'' request header,
 the integer version must be passed to @var{version}.  Otherwise,
@@ -10010,7 +10010,7 @@ those information is given in the @var{host} argument.
 @c EN
 If the keyword arugment @var{account} is given, its value
 is passed to ftp @code{ACCT} command when requested by
-the server at login time.  The defalut value is a null string @code{""}.
+the server at login time.  The default value is a null string @code{""}.
 @c JP
 キーワード引数@var{account}が与えられた場合には、その値が、ログイン時
 にサーバーからの要求でFTPの@code{ACCT}コマンドに渡されます。デフォルト
@@ -11150,7 +11150,7 @@ so you usually don't need to use these functions.
 @c COMMON
 
 @c EN
-The @var{offset} argument specifies the beginnig of the IP packet
+The @var{offset} argument specifies the beginning of the IP packet
 in @var{packet}.  If @var{packet} contains only one IP packet
 you can pass 0.  It is not an optional argument, since these routines
 may be used in speed-sensitive inner loop.
@@ -11425,7 +11425,7 @@ and returns parsed results as a list.
 
 @defun parse-json-string str
 @c EN
-Parses the JSON string and resurns the result in an S-expression.
+Parses the JSON string and returns the result in an S-expression.
 May raise a @code{<json-parse-error>} condition when parse error occurs.
 
 See @code{parse-json} above for the mappings from JSON datatypes
@@ -11533,7 +11533,7 @@ RFC4627はJSONテキストはobjectかarrayであると定めているので、
 でなければなりません。
 
 @var{obj}がJSONにマップできないオブジェクトを含んでいた場合は
-@code{<json-consturct-error>}コンディションが投げられます。
+@code{<json-construct-error>}コンディションが投げられます。
 
 Schemeオブジェクトは以下のようにJSONへと変換されます。
 @c COMMON
@@ -13421,7 +13421,7 @@ There are a couple of special modes specifiable by @var{window-bits}.
 When an integer between -8 and -15 is given to
 @var{window-bits}, the port produces a raw deflated data,
 that lacks zlib header and trailer.  In this case, Adler32 checksum isn't
-calculated.  The actual window size is determiend by the absolute value of
+calculated.  The actual window size is determined by the absolute value of
 @var{window-bits}.
 @c JP
 @var{window-bits}よって、2つばかり特別なモードを指定することができます。
@@ -13588,7 +13588,7 @@ Takes an input port @var{source} from which a compressed data
 can be read, and creates and returns a new instance of
 @code{<inflating-port>}, that is, a port that allows
 decompressed data from it.
-This procedure covers zlib's functionarity of
+This procedure covers zlib's functionality of
 @code{inflateInit2()} and @code{inflateSetDictionary()}.
 @c JP
 圧縮データを読み出せる入力ポート@var{source}を取り、
@@ -13608,7 +13608,7 @@ the same as @code{open-deflating-port}.
 
 @c EN
 The meaning of @var{window-bits} is almost the same,
-except that if a value incresed by 32 is given, the inflating port
+except that if a value increased by 32 is given, the inflating port
 automatically detects whether the source stream is
 zlib or gzip by its header.
 @c JP
@@ -15603,7 +15603,7 @@ if @var{obj} is SXML element, otherwise returns @var{#f}.
 The function @code{ntype-names??} takes a list of acceptable node names as a
 criterion and returns a function, which, when applied to a node,
 will return @code{#t} if the node name is present in criterion list
-and @code{#f} othervise.
+and @code{#f} otherwise.
 @c JP
 関数@code{ntype-names??}は、判定基準として受け付け可能なノード名のリストを取り、
 関数を返します。この関数は、ノードに適用された際、そのノード名が判定基準リストに
@@ -17182,7 +17182,7 @@ Returns a fast 'node-parent' function, i.e.
 a function of one argument - SXML element - which returns its parent
 node using @code{*PARENT*} pointer in aux-list.
 '@code{*TOP-PTR*} may be used as a pointer to root node.
-It return an empty list when applyed to root node.
+It return an empty list when applied to root node.
 @c JP
 高速な'node-parent'関数を返します。
 すなわち、SXML要素を1引数として取り、補助リストで
@@ -17262,7 +17262,7 @@ Creates the XML markup for attributes.
 
 @defun sxml:string->xml string
 @c EN
-Return a string or a list of strings where all the occurences of
+Return a string or a list of strings where all the occurrences of
 characters @code{<}, @code{>},
 @code{&}, @code{"}, or @code{'} in a given string are
 replaced by corresponding
@@ -17522,10 +17522,10 @@ omitted.  Default: @code{#t}.
 @code{standalone} - Whether to define the XML document as standalone in
 the XML declaration.  Should be one of the symbols @code{yes},
 @code{no} or @code{omit}, the later causing standalone declaration to
-be supressed.  Default: @code{omit}.
+be suppressed.  Default: @code{omit}.
 @c JP
 @code{standalone} - XML ドキュメントを XML 宣言でスタンドアローンとし
-て定義するかどうか。@code{yes}、@code{no}、@code{omit}のうちいづれかの
+て定義するかどうか。@code{yes}、@code{no}、@code{omit}のうちいずれかの
 シンボルでなければならない。デフォルトは @code{omit}
 @c COMMON
 
@@ -20735,7 +20735,7 @@ keywords match the same object (in the sense of @code{equal?}).
 
 @item
 @c EN
-Quoted expression matches the same experssion (in the sense of @code{equal?}).
+Quoted expression matches the same expression (in the sense of @code{equal?}).
 You can use a quoted symbol to match the symbol itself.
 @c JP
 クウォートされた式は(@code{equal?} という意味で)同じ式とマッチします。
@@ -20890,7 +20890,7 @@ called, it returns the matched value.
 @c EN
 @code{`qp} is a quasipattern.  @var{qp} is quoted, in the sense
 that it matches itself, @emph{except} the pattern that is unquoted.
-(Don't confuse quasipatern to quasiquote, though the functions are
+(Don't confuse quasipattern to quasiquote, though the functions are
 similar.  Quasiquote turns off evaluation except unquoted subtree.
 Quasiquote turns off the special pattern syntax except unquoted subtree.
 See the examples below).
@@ -22243,7 +22243,7 @@ of the given stream.   If the given stream has less than
 would raise an error when the elements beyond the original stream
 is accessed.  On the other hand, the stream returned by
 @code{stream-take-safe} will return a shortened stream when
-the given steram has less than @var{count} elements.
+the given stream has less than @var{count} elements.
 
 @example
 (stream->list (stream-take (stream-iota -1) 10))
@@ -22769,7 +22769,7 @@ and converts the character encoding if necessary.
 The output behavior of @code{cgi-main} can be customized
 by a keyword argument @var{output-proc}; if it is given,
 the text tree (either the normal return value of @var{proc},
-or an error page constructed by ther error handler) is passed
+or an error page constructed by the error handler) is passed
 to the procedure given to @var{output-proc}.  The procedure
 is responsible to format and output a text to the current
 output port, including character conversions, if necessary.
@@ -22957,7 +22957,7 @@ created by this action will be unlinked when @code{cgi-main} exits.
 
 @item file+name
 Like @code{file}, but the value of the parameter is a list of
-tempoary filename and the filename passed by the client.
+temporary filename and the filename passed by the client.
 It is useful if you want to use client's filename (but do not
 blindly assume the client sends a valid pathname; for example,
 you shouldn't use it to rename the uploaded file without

@@ -1685,9 +1685,9 @@ During the processing, a "current unit" is kept in a parameter
 @code{cgen-current-unit}, and most cgen APIs implicitly work to it.
 
 The following slot are for public use.  They are used to tailor
-the output.  Usually you set those slots at initializatoin time.
+the output.  Usually you set those slots at initialization time.
 The effect is undefined if you change them in the middle of
-the code geneartion process.
+the code generation process.
 
 @defivar {<cgen-unit>} name
 A string to name this unit.  This is used for the default name
@@ -1962,7 +1962,7 @@ If you don't specialize any one of these method, it doesn't
 generate code in that part.
 @end deffn
 
-Once you define your subclass and create an instace,
+Once you define your subclass and create an instance,
 you can submit it to the current cgen unit by this procedure:
 
 @defun cgen-add! cgen-node
@@ -2734,7 +2734,7 @@ The idea of passing the return type is taken from CommonLisp's @code{map}
 function, but taking a class metaobject, @code{map-to} is much flexible
 to extend using method dispatch.
 This protocol (``-to'' variant takes a class metaobject
-for the result collection) is used thoughout the collection framework.
+for the result collection) is used throughout the collection framework.
 @c JP
 そこで、結果の型を明示的に指定する@code{map-to}という別のメソッドを定義しました。
 結果の型を渡すのは、CommonLispの@code{map}関数にならっていますが、
@@ -2780,7 +2780,7 @@ Returns a minimum or maximum element in the collection @var{coll}.
 
 A one-argument procedure @var{key}, whose default is @code{identity},
 is applied for each element to obtain a comparison value.
-Then a compaison value is compared by a two-argument procedure
+Then a comparison value is compared by a two-argument procedure
 @var{compare}, whose default is @code{<}.
 If the collection has zero or one element, the @var{compare} procedure
 is never called.
@@ -3082,7 +3082,7 @@ to return elements in order, from 0-th element to the last element.
 If a keyword argument @var{start} is given, however, the iteration
 begins from @var{start}-th element and ends at the last element.
 If the collection is not a sequence, the iteration order is
-arbtrary, and @var{start} argument has no effect.
+arbitrary, and @var{start} argument has no effect.
 @c JP
 コレクションがシーケンスでもある場合、インクリメント手続きはシーケンスの順番に要素を取り出します。
 キーワード引数@var{start}が与えられていればイテレーションの範囲は
@@ -3355,7 +3355,7 @@ Gaucheのオブジェクトシステムとうまく調和しません。
 The current implementation is close to the iterator object approach,
 but using closures instead of iterator objects so that avoiding
 dispatching in the inner loop.  Also it allows the iterator
-implementator to take care of the resource problem.
+implementor to take care of the resource problem.
 @c JP
 現在の実装はイテレータオブジェクトアプローチに近いですが、イテレータオブジェクトを
 作る代わりにクロージャを使うことで内部のループでのメソッドディスパッチを
@@ -5759,13 +5759,13 @@ if defined.  This is handy that you can set this in your @code{.gaucherc}.
 @c COMMON
 @item
 @c EN
-The value of the enviroment variable @code{GAUCHE_EDITOR}.
+The value of the environment variable @code{GAUCHE_EDITOR}.
 @c JP
 環境変数@code{GAUCHE_EDITOR}の値
 @c COMMON
 @item
 @c EN
-The value of the enviroment variable @code{EDITOR}.
+The value of the environment variable @code{EDITOR}.
 @c JP
 環境変数@code{EDITOR}の値
 @c COMMON
@@ -5841,7 +5841,7 @@ whether it should load the file.  This is the default.
 
 @deftp {Module} gauche.lazy
 @mdindex gauche.lazy
-This module provides utiltiy procedures that yields lazy sequences.
+This module provides utility procedures that yields lazy sequences.
 For the details of lazy sequences, see @ref{Lazy sequences}.
 @end deftp
 
@@ -7644,7 +7644,7 @@ specified by @var{address-spec}.
 The socket is bound to a unix domain socket with a name @var{path}.
 The keyword argument @var{backlog} is passed to @code{socket-listen}
 to specify the maximum number of connection request the server can keep
-befor accepting them.  The default is 5.  If your server is very busy
+before accepting them.  The default is 5.  If your server is very busy
 and you see "connection refused" often, you might want to increase it.
 @c JP
 パス名@var{path}を持つUnixドメインソケットが作成されます。
@@ -9840,7 +9840,7 @@ the procedure is used as if it is the body of @code{else} option clause.
 @c EN
 Gauche internally supports partial continuations
 (a.k.a. delimited continuations) natively.
-This module exposes the feature for genreal use.
+This module exposes the feature for general use.
 @c JP
 Gaucheは内部的に、部分継続(限定継続と呼ばれることもあります)を
 ネイティブでサポートしています。このモジュールはその機能を
@@ -10127,7 +10127,7 @@ end of @code{reset}, and bind it to the variable @var{k}.
 @c COMMON
 @item
 @c EN
-The continuation of @code{shift} becoms a null continuation as well,
+The continuation of @code{shift} becomes a null continuation as well,
 so after @code{shift} returns, the control skips the rest of
 operations until the corresponding @code{reset}.
 @c JP
@@ -10524,7 +10524,7 @@ it never returns.
 Specifies how to redirect child process's I/Os.
 Each @var{iospec}
 can be one of the followings, where @var{fd}, @var{fd0}, and @var{fd1}
-are nonnegative integers referring to the file descriptr
+are nonnegative integers referring to the file descriptor
 @emph{of the child process}.
 @c JP
 子プロセスのI/Oをどのようにリダイレクトするかを指定します。
@@ -10637,7 +10637,7 @@ an integer or a file output port.
 If it is a string, it names a file.  The output of the child to
 the file descriptor @var{fd} is written to the file.
 If the named file already exists, @code{>} first truncates its
-content, whlie @code{>>} appends to the existing content.
+content, while @code{>>} appends to the existing content.
 
 For other arguments, @code{>} and @code{>>} works the same.
 
@@ -10848,7 +10848,7 @@ If @var{directory} is @code{#f}, this argument is ignored.
 An error is signaled if @var{directory} is other type of objects,
 or it is a string but is not a name of a existing directory.
 
-When @var{host} keyword argunmet is also given, this argument
+When @var{host} keyword argument is also given, this argument
 specifies the working directory of the @emph{remote} process.
 
 Note: @code{run-process} checks the validity of @var{directory},
@@ -11690,7 +11690,7 @@ several related values to carry around, and don't need fancier
 mechanisms such as class redefinitions.
 @item
 As Gauche's extention, you can define pseudo record types,
-which interpretes ordinary aggregate types such as vectors and lists
+which interprets ordinary aggregate types such as vectors and lists
 as records.  (For Common Lisp users; it is like the @code{:type}
 option of @code{defstruct}).
 This helps flexibility of interface.  For example, you can ask
@@ -11777,7 +11777,7 @@ If it is @code{#t}, a default constructor is created with a name
 The default constructor takes as many arguments as
 the number of fields of the record, including inherited ones if any.
 When called, it allocates an instance of the record, and initialize its
-fields with the given arguments in the order (inhertied fields comes
+fields with the given arguments in the order (inherited fields comes
 first), and returns the record.
 
 The last variation of @var{ctor-spec} creates a custom
@@ -11966,7 +11966,7 @@ all inherited fields.
 @defun rtd-field-mutable? rtd field-name
 [SRFI-99]
 Returns @code{#t} iff the field with the name @var{field-name}
-of a record represened by @var{rtd} is mutable.
+of a record represented by @var{rtd} is mutable.
 @end defun
 
 
@@ -13039,7 +13039,7 @@ For the common applications, you might find @code{gauche.logger} module
 easier to use (@xref{User-level logging}).  This module is for those
 who need direct access to the syslog API.
 
-The procedures are only defined if the undelying system supports them.
+The procedures are only defined if the underlying system supports them.
 @c JP
 このモジュールは syslog(3) のシステムロガーのインタフェースを提供します。
 
@@ -13830,7 +13830,7 @@ check:
 Note that to make @code{test-record-file} work, it must be placed
 before the call to @code{test-start}.
 
-Alternatively, you can use the envionment variable
+Alternatively, you can use the environment variable
 @code{GAUCHE_TEST_RECORD_FILE} to specify the test record file.
 @c JP
 @code{test-record-file}手続きがうまく動作するためには、それが
@@ -13843,7 +13843,7 @@ test record fileを指定することもできます。
 
 @deftp {Environment Variable} GAUCHE_TEST_RECORD_FILE
 @c EN
-If this environment varaible is set when the test script is run,
+If this environment variable is set when the test script is run,
 its value is used as the name of the test record file.
 
 If the test script calls @code{test-record-file}, it takes precedence
@@ -13983,7 +13983,7 @@ procedure is to compare inexact numbers tolerating small error.
 @c COMMON
 
 @c EN
-When @var{thunk} signals an uncaptured error, it is catched and
+When @var{thunk} signals an uncaptured error, it is caught and
 yields a special error object @code{<test-error>}.
 You can check it with another error object created by
 @code{test-error} function to see if it is an expected type
@@ -14187,7 +14187,7 @@ this test can catch some careless misses.
 @c COMMON
 
 @c EN
-Sometimes you have a global vaiable that may not be
+Sometimes you have a global variable that may not be
 defined depending on compiler options or platforms, and
 you check its existence at runtime before using it.
 The undefined variable reference check by @code{test-module}
@@ -14343,7 +14343,7 @@ Threads are built on top of Win32 threads.
 @end table
 
 @c EN
-(Note: On pthreads plaforms, it should return @code{pthreads} instead
+(Note: On pthreads platforms, it should return @code{pthreads} instead
 of @code{pthread}; then the returned symbol would correspond to the
 value given to @code{--enable-threads} option at configuration time.
 It's a historical overlook, stuck for the backward compatibility.)

@@ -403,7 +403,7 @@ The table below lists sharp-syntaxes.
 @c COMMON
 @item @code{#i}
 @c EN
- @tab [R7RS] Inxact number prefix.
+ @tab [R7RS] Inexact number prefix.
 @c JP
  @tab [R7RS] 不正確数接頭辞。
 @c COMMON
@@ -1186,7 +1186,7 @@ tempted to write it as a chain of nested function calls.
 The Scheme syntax can get awkward in such code.  Close
 parentheses tend to clutter at the end of expressions.
 Inner applications tends to pushed toward right columns
-with the standard indentention rules.  Compare the
+with the standard indentation rules.  Compare the
 following two code functionally equivalent to each other:
 @c JP
 関数的にコードを書いていると、関数呼び出しが深くネストすることが多くなります。
@@ -2261,7 +2261,7 @@ Evaluates @var{form}s sequentially, and returns the last result(s).
 you can't place "internal define" at the beginning of @var{form}s
 generally.   Semantically @code{begin} behaves as if @var{form}s
 are spliced into the surrounding context.
-For example, topleve expression like the following is the same
+For example, toplevel expression like the following is the same
 as two toplevel definitions:
 @c JP
 @code{Begin}は@code{let}のように新たなスコープを作成するわけではありません。
@@ -2958,7 +2958,7 @@ R5RSの仕様では、これらのフォームで、内側のunquote-splicingが
 @c COMMON
 
 @c EN
-@subheading How static are quasiquated forms?
+@subheading How static are quasiquoted forms?
 @c JP
 @subheading 準クォートはどのくらい静的か
 @c COMMON
@@ -2979,7 +2979,7 @@ a quasiquoted form has static parts.
 @c EN
 First of all, if there's no variable parts in quasiquoted
 form, like @code{`(a b c)}, the entire form is allocated statically.
-If there is a static tail in the sturcture, it is also allocated
+If there is a static tail in the structure, it is also allocated
 statically; e.g. @code{`((,x a b) (,y c d))} works like
 @code{(list (cons x '(a b)) (cons y '(c d)))}.
 @c JP
@@ -2991,7 +2991,7 @@ statically; e.g. @code{`((,x a b) (,y c d))} works like
 
 @c EN
 Furthermore, when an unquoted expression is a
-constant expressoin, Gauche embeds it into the static
+constant expression, Gauche embeds it into the static
 form.  If you've defined a constant like
 @code{(define-constant x 3)}, then the form
 @code{`(,x ,(+ x 1))} is compiled as the constant @code{'(3 4)}.
@@ -3571,7 +3571,7 @@ depending on available features provided by the
 implemantation and/or platform.  For example,
 you may want to switch behavior depending on whether
 networking is available, or to embed an
-implementaiton specific procedures in otherwise-portable code.
+implementation specific procedures in otherwise-portable code.
 @c JP
 しばしば、実装やプラットフォームがどういった機能を提供しているかに
 応じてコードを切り替えたいことがあります。例えば、ネットワークが使えるか

@@ -411,7 +411,7 @@ Gauche には同等の関数はありません。@code{sys-readdir} を使うと
 @c COMMON
 @item creat
 @c EN
-A file is implictly created by default when you open it for writing.
+A file is implicitly created by default when you open it for writing.
 See @ref{File ports} for more control over the creation of files.
 @c JP
 デフォルトでは、書き込みのためにファイルをオープンしたときに、暗黙のうちに
