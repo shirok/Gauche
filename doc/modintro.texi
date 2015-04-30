@@ -467,7 +467,7 @@ Or, JSON can be handled by @ref{JSON parsing and construction}.
 
 @c EN
 When you exchange table-formatted data, one of the easiest way
-may be the plain text, one row per line, and columns are separeted
+may be the plain text, one row per line, and columns are separated
 by some specific characters (e.g. comma).  See @ref{CSV tables} for
 basic parser/writer for them.
 @c JP

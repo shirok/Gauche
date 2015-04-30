@@ -222,7 +222,7 @@ The SSAX distribution is also available at sourceforge:@*
 @item [MT]
 M. Matsumoto and T. Nishimura, "Mersenne Twister: A 623-dimensionally
 equidistributed uniform pseudorandom number generator", ACM Trans. on
-Modeling and Computer Simulation Vol. 8, No. 1, Januray pp.3-30 1998.@*
+Modeling and Computer Simulation Vol. 8, No. 1, January pp.3-30 1998.@*
 @url{http://dl.acm.org/citation.cfm?id=272995}
 
 @anchor{oleg1}

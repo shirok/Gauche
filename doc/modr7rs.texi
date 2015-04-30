@@ -424,7 +424,7 @@ this moment.
 @c COMMON
 
 @c EN
-If you want to switch the ``vanilla'' r7rs envionment, that is, even
+If you want to switch the ``vanilla'' r7rs environment, that is, even
 not loading @code{(scheme base)}, then you can use @code{r7rs}
 module and directly select @code{r7rs.user}:
 @c JP
@@ -972,7 +972,7 @@ to @code{eval}.  In Gauche, an environment specifier is just a
 module object.
 
 The argument is the same as what @code{import} takes.
-This procedure creates an empty envionment (as a fresh anonymous module;
+This procedure creates an empty environment (as a fresh anonymous module;
 see @code{make-module} in @ref{Module introspection}, for the details).
 The following example creates an environment that includes
 @code{scheme.base} bindings plus @code{select-module} syntax from Gauche.
