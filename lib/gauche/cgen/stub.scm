@@ -167,7 +167,7 @@
 ;;             results.
 ;;        a string : becomes the body of C code.
 ;;
-;;   define-cgeneric name c-name property-clause ...)
+;;   define-cgeneric name c-name property-clause ...
 ;;
 ;;      Defines generic function.   C-name specifies a C variable name
 ;;      that keeps the generic function structure.  One or more of
@@ -321,6 +321,15 @@
 
 (define-form-parser define-cfn args
   (cgen-body (cise-render-to-string `(define-cfn ,@args) 'toplevel)))
+
+;; extra check of valid clauses
+(define (check-clauses directive name clauses valid-keys)
+  (and-let1 bad (find (^c (or (not (pair? c))
+                              (not (memq (car c) valid-keys))))
+                      clauses)
+    (errorf <cgen-stub-error>
+            "Invalid clause for ~s ~s: Expected a list starting with either one of ~s, but got: ~s"
+            directive name valid-keys bad)))
 
 ;;===================================================================
 ;; Type handling
@@ -1661,6 +1670,7 @@
                  z scm-name)))
     (match args
       [(c-type c-varname c-pred c-boxer c-unboxer . clauses)
+       (check-clauses 'define-cptr scm-name clauses '(flags print cleanup))
        (let ([flags (or (assq-ref clauses 'flags) '())]
              [print-proc (assq-ref clauses 'print)]
              [cleanup-proc (assq-ref clauses 'cleanup)])
