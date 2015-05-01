@@ -90,7 +90,6 @@ static struct {
 static ScmObj key_error_if_not_found = SCM_UNBOUND;
 static ScmObj key_macro              = SCM_UNBOUND;
 static ScmObj key_ignore_coding      = SCM_UNBOUND;
-static ScmObj key_main_script        = SCM_UNBOUND;
 static ScmObj key_paths              = SCM_UNBOUND;
 static ScmObj key_environment        = SCM_UNBOUND;
 
@@ -1199,7 +1198,6 @@ ScmObj Scm_LoadMainScript()
 void Scm__InitLoad(void)
 {
     ScmModule *m = Scm_GaucheModule();
-    ScmVM *vm = Scm_VM();
     ScmObj t;
 
     ScmObj init_load_path = t = SCM_NIL;

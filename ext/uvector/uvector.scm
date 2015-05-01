@@ -114,10 +114,10 @@
                                   (SCM_OBJ ,type))])
        (,c-fn ,v opt))])
 
- (define-cproc uvector-swap-bytes (v::<uvector> :optional (type::<symbol>? #f))
+ (define-cproc uvector-swap-bytes (v::<uvector> :optional (type::<symbol>? #f)) ::<void>
    (swap-bytes-common Scm_UVectorSwapBytes v type))
 
- (define-cproc uvector-swap-bytes! (v::<uvector> :optional (type::<symbol>? #f))
+ (define-cproc uvector-swap-bytes! (v::<uvector> :optional (type::<symbol>? #f)) ::<void>
    (swap-bytes-common Scm_UVectorSwapBytesX v type))
  )
 
