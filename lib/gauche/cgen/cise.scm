@@ -459,6 +459,8 @@
     (match body
       [(':static . body) (record-static name args ret-type)
                          (gen-cfn "static" name args ret-type body)]
+      [(':static-inline . body) (record-static name args ret-type)
+                                (gen-cfn "static inline" name args ret-type body)]
       [_                 (gen-cfn "" name args ret-type body)]))
 
   (ensure-toplevel-ctx form env)
