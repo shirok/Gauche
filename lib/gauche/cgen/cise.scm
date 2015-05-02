@@ -431,14 +431,24 @@
 ;;------------------------------------------------------------
 ;; C function definition
 ;;
+
+;; (define-cfn <name> (<arg> ...) [<rettype> [<qualifier> ...]] <body>)
+
 (define-cise-macro (define-cfn form env)
   (define (gen-args args env)
     (let1 eenv (expr-env env)
       ($ intersperse ","
          $ map (^.[(var . type) (cise-render-typed-var type var eenv)]) args)))
 
-  (define (gen-cfn cls name args rettype body)
-    `(,(cise-render-identifier cls) " "
+  (define (gen-qualifiers quals) ; we might support more qualifiers in future
+    (intersperse " "
+                 (map (^[qual] (ecase qual
+                                 [(:static) "static"]
+                                 [(:inline) "inline"]))
+                      (reverse quals))))
+
+  (define (gen-cfn name quals args rettype body)
+    `(,@(gen-qualifiers quals) " "
       ,(cise-render-typed-var rettype name env)
       "(" ,(gen-args args env) ")"
       "{",(cise-render-to-string `(begin ,@body) 'stmt)"}"))
@@ -449,26 +459,34 @@
   (define (type-symbol-type s)
     (string->symbol (string-drop (keyword->string s) 1)))
 
-  (define (record-static name args ret-type)
+  (define (record-static name quals args ret-type)
     (push-static-decl!
      `(,(source-info form env)
-       "static ",ret-type" ",(cise-render-identifier name)
+       ,@(gen-qualifiers quals) " "
+       ,ret-type" ",(cise-render-identifier name)
        "(",(gen-args args env)");")))
 
-  (define (check-static name args ret-type body)
+  (define (check-quals name quals args ret-type body)
     (match body
-      [(':static . body) (record-static name args ret-type)
-                         (gen-cfn "static" name args ret-type body)]
-      [_                 (gen-cfn "" name args ret-type body)]))
+      [(':static . body)
+       (check-quals name `(:static ,@quals) args ret-type body)]
+      [(':inline . body)
+       (check-quals name `(:inline ,@quals) args ret-type body)]
+      [((? keyword? z) . body)
+       (errorf "Invalid qualifier in define-cfn ~s: ~s" name z)]
+      [_
+       (when (memq :static quals)
+         (record-static name quals args ret-type))
+       (gen-cfn name quals args ret-type body)]))
 
   (ensure-toplevel-ctx form env)
   (match form
     [(_ name (args ...) ':: ret-type . body)
-     (check-static name (canonicalize-argdecl args) ret-type body)]
+     (check-quals name '() (canonicalize-argdecl args) ret-type body)]
     [(_ name (args ...) [? type-symbol? ts] . body)
-     (check-static name (canonicalize-argdecl args) (type-symbol-type ts) body)]
+     (check-quals name '() (canonicalize-argdecl args) (type-symbol-type ts) body)]
     [(_ name (args ...) . body)
-     (check-static name (canonicalize-argdecl args) 'ScmObj body)]))
+     (check-quals name '() (canonicalize-argdecl args) 'ScmObj body)]))
 
 ;;------------------------------------------------------------
 ;; CPS transformation
