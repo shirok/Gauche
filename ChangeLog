@@ -1,5 +1,8 @@
 2015-05-01  Shiro Kawai  <shiro@acm.org>
 
+	* src/gauche.h (SCM_NORETURN): Allow using
+	  __attribute__((__noreturn__)) in gcc.
+
 	* lib/gauche/cgen/cise.scm (define-cfn): Allow :inline qualifier.
 
 2015-04-25  Shiro Kawai <shiro@acm.org>

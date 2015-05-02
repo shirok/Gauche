@@ -159,6 +159,13 @@ SCM_DECL_BEGIN
 #define SCM_ALIGN8  /*empty*/
 #endif /* !__GNUC__ */
 
+/* 'No return' attribute */
+#ifdef __GNUC__
+#define SCM_NORETURN  __attribute__((__noreturn__))
+#else  /*__GNUC__*/
+#define SCM_NORETURN  /*empty*/
+#endif /*__GNUC__*/
+
 /*-------------------------------------------------------------
  * BASIC TYPES
  */
@@ -1777,9 +1784,9 @@ SCM_EXTERN void   Scm_ProfilerReset(void);
 SCM_EXTERN void Scm_Init(const char *signature);
 SCM_EXTERN int  Scm_InitializedP(void);
 SCM_EXTERN void Scm_Cleanup(void);
-SCM_EXTERN void Scm_Exit(int code);
-SCM_EXTERN void Scm_Abort(const char *msg);
-SCM_EXTERN void Scm_Panic(const char *msg, ...);
+SCM_EXTERN void Scm_Exit(int code) SCM_NORETURN;
+SCM_EXTERN void Scm_Abort(const char *msg) SCM_NORETURN;
+SCM_EXTERN void Scm_Panic(const char *msg, ...) SCM_NORETURN;
 SCM_EXTERN ScmObj Scm_InitCommandLine(int argc, const char *argv[]);
 
 SCM_EXTERN void Scm_SimpleMain(int argc, const char *argv[],
