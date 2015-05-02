@@ -54,7 +54,8 @@
              (p "\"" (regexp-replace-all #/[\\\"]/ line "\\\\\\0") "\"")
              (loop (read-line))])))
 
-  (receive (out name) (sys-mkstemp tmpl-file)
+  (receive (out name)
+      (sys-mkstemp (build-path (temporary-directory) (sys-basename tmpl-file)))
     (unwind-protect
      (begin
        (with-output-to-port out
