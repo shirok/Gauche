@@ -87,7 +87,6 @@
      (let* ([a::ScmSockAddrIn6* (cast ScmSockAddrIn6* addr)]
             [p::ScmUInt32*
              (cast ScmUInt32* (ref (-> a addr) sin6_addr s6_addr))]
-            [i::int]
             [n (Scm_MakeIntegerFromUI (ntohl (* (post++ p))))])
        (dotimes [i 3]
          (set! n (Scm_LogIor (Scm_Ash n 32)

@@ -576,7 +576,6 @@ static void write_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
             } else {
                 /* we're processing a list */
                 ScmObj v = SCM_CDR(top);
-                ScmObj e;
                 if (SCM_NULLP(v)) { /* we've done with this list */
                     Scm_PutcUnsafe(')', port);
                     POP();

@@ -40,7 +40,6 @@ SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_TLSClass, tls_print);
 
 static void tls_print(ScmObj obj, ScmPort* port, ScmWriteContext* ctx)
 {
-    ScmTLS* t = SCM_TLS(obj);
     Scm_Printf(port, "#<TLS");
     /* at the moment there's not much to print, so we leave this hole
        for future development. */
