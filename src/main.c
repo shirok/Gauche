@@ -90,8 +90,7 @@ void usage(void)
             "           By default, the 'main' procedure in the user module is called\n"
             "           after loading the script (srfi-22).  This option allows to call\n"
             "           a main procedure in the different module.\n"
-            "  -p<type> Turns on the profiler.  Currently <type> can only be\n"
-            "           'time'.\n"
+            "  -p<type> Turns on the profiler.  <Type> can be 'time' or 'load'.\n"
             "  -F<feature> Makes <feature> available in cond-expand forms\n"
             "  -r<standard>  Starts gosh with the default environment defined\n"
             "           in RnRS, where n is determined by <standard>.  The following\n"
@@ -217,7 +216,7 @@ void profiler_options(const char *optarg)
     }
     else {
         fprintf(stderr, "unknown -p option: %s\n", optarg);
-        fprintf(stderr, "supported profiling options are: -ptime\n");
+        fprintf(stderr, "supported profiling options are: -ptime or -pload\n");
     }
 }
 

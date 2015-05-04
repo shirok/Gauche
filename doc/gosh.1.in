@@ -17,6 +17,9 @@ gosh \- a Scheme script interpreter
 [-l
 .I file
 ]
+[-L
+.I file
+]
 [-e
 .I expr
 ]
@@ -28,6 +31,9 @@ gosh \- a Scheme script interpreter
 ]
 [-f
 .I flag
+]
+[-F
+.I feature
 ]
 [-p
 .I type
@@ -136,9 +142,9 @@ Same as -e, except that the
 is read as if it is surrounded by parenthesis.
 .TP
 .BI -p type
-Turns on the profiler.  Currently
-.I type
-can only be 'time'.
+Turns on the profiler.
+.I Type
+can be either 'time' or 'load'.
 .TP
 .BI -m module
 When the script file is given, this option specifies the name of
