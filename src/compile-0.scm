@@ -182,7 +182,7 @@
 ;; <constructor> : <symbol> | #f
 ;; <slot-spec>   : <slot-name> | (<slot-name> [<init-value>])
 ;;
-;; For each <slot-spec>, the following accessor/modifier are automatially
+;; For each <slot-spec>, the following accessor/modifier are automatically
 ;; generated.
 ;;
 ;;   NAME-SLOT      - accessor (macro)

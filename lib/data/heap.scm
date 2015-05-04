@@ -150,7 +150,7 @@
                      [(and (integer? num-entries) (>= num-entries 0))
                       (min num-entries xlen)]
                      [else
-                      (error "invalid num-entris value for build-binary-heap:"
+                      (error "invalid num-entries value for build-binary-heap:"
                              num-entries)])])
     (receive (<: >:)
         (ecase (comparator-flavor comparator)

@@ -101,7 +101,7 @@ SCM_EXTERN int Scm_ConditionHasType(ScmObj c, ScmObj k);
    <message-prefix>, with no irritants.
 
    In Scheme level we won't show this structure.  If Scheme code accesses
-   the message slot, we return <preformatetd-message>.
+   the message slot, we return <preformatted-message>.
 
    C code that access 'message' slot directly needs to be modified.
  */
