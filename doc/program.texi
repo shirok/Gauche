@@ -239,13 +239,17 @@ Prohibits the compiler from inlining global procedures.
 Prohibits the compiler from inlining local procedures.
 @item no-inline-constants
 Prohibits the compiler from inlining constants.
+@item no-post-inline-pass
+Prohibits the compiler from running post-inline optimization pass.
+@item no-lambda-lifting-pass
+Prohibits the compiler from running lambda-lifting pass.
 @item load-verbose
 Reports whenever a file is loaded.
 Useful to check precisely which files are loaded in what order.
 @item include-verbose
 Reports whenever a file is included.
 Useful to check precisely which files are included in what order.
-@item warn-legacy
+@item warn-legacy-syntax
 Warns if the reader sees leagacy hex-escape syntax in string literals.
 @xref{Reader lexical mode}.
 @item no-source-info
@@ -271,6 +275,10 @@ no-inline-locals および no-inline-constants を同時に指定したのと等
 局所(local)関数のインライン展開を展開を行ないません。
 @item no-inline-constants
 定数のインライン展開を行ないません。
+@item no-post-inline-pass
+インライン展開後に再び最適化パスを走らせるのを抑止します。
+@item no-lambda-lifting-pass
+lambda lifting最適化パスを抑止します。
 @item no-source-info
 デバッグのためのソースファイル情報を保持しません。メモリの使用量は小さくなります。
 @item load-verbose
@@ -279,7 +287,7 @@ no-inline-locals および no-inline-constants を同時に指定したのと等
 @item include-verbose
 ファイルがincludeされる時にそれを報告します。
 正確にどのファイルがどういう順序でincludeされているかを調べるのに便利です。
-@item warn-legacy
+@item warn-legacy-syntax
 文字列リテラル中に古い形式の16進数エスケープ形式があったら警告します。
 @ref{Reader lexical mode} を参照して下さい。
 @item case-fold
@@ -515,6 +523,17 @@ Different environment variables may be used on different platforms.
 参照される環境変数は異なります。@ref{Pathnames}を参照してください。
 @c COMMON
 @end deftp
+
+@deftp {Environment variable} GAUCHE_SUPPRESS_WARNING
+@c EN
+Suppress system warnings (@code{WARNING: ...}).  Not generally recommended;
+use only if you absolutely need to.
+@c JP
+システムの警告(@code{WARNING: ...})を抑止します。気軽に使うべきではありません。
+どうしても必要な場合のみ使ってください。
+@c COMMON
+@end deftp
+
 
 @c EN
 @subheading Windows-specific executable

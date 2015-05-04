@@ -160,7 +160,7 @@ Currently, only 7 is the valid value of
 .TP
 .BI -f flag
 Sets various flags.
-  case-fold       uses case-insensitive reader (as in R5RS)
+  case-fold       use case-insensitive reader (as in R5RS)
   load-verbose    report while loading files
   include-verbose report while including files
   no-inline       don't inline primitive procedures and constants
@@ -170,8 +170,14 @@ Sets various flags.
   no-inline-locals  don't inline local procedures.
   no-inline-constants don't inline constants.
   no-post-inline-pass don't run post-inline optimization pass.
+  no-lambda-lifting-pass don't run lambda lifting optimization pass.
+  no-source-info  don't retain source information.
   warn-legacy-syntax print warning when legacy Gauche syntax
                   is encountered.
+  test            assume being run in the build tree; tries to
+                  load files from the current build instead of
+                  installation directories.  Useful to test
+                  the build without installation.
 .TP
 .BI -F feature
 Makes
