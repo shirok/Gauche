@@ -78,6 +78,287 @@ some_trick();
      '((a init) (b init) (c init)))
   )
 
+;; define-cfn
+(parameterize ([cise-emit-source-line #f])
+  (define (c form exp)
+    (test* (format "cise transform: ~a" form) exp
+           (cise-render-to-string form 'toplevel)))
+  (define err (test-error))
+
+  (c '(define-cfn) err)
+  (c '(define-cfn a) err)
+  (c '(define-cfn ()) err)
+  (c '(define-cfn a ()) " ScmObj a(){{}}")
+  (c '(define-cfn a () b) " ScmObj a(){{b;}}")
+  (c '(define-cfn a () :static) "static ScmObj a(){{}}")
+  (c '(define-cfn a () :inline) "inline ScmObj a(){{}}")
+  (c '(define-cfn a () :static :inline)
+     "static inline ScmObj a(){{}}")
+  (c '(define-cfn a () :unknown) err)
+  (c '(define-cfn a () ::foo) " foo a(){{}}")
+  (c '(define-cfn a () ::(foo bar)) " foo bar a(){{}}")
+  (c '(define-cfn a (b c::int))
+     " ScmObj a(ScmObj b,int c){{}}"))
+
+;; statement-level tests
+(parameterize ([cise-emit-source-line #f])
+  (define (c form exp)
+    (test* (format "cise transform: ~a" form) exp
+           (cise-render-to-string form 'stmt)))
+  (define (t op exp0 exp1 exp2 exp3)
+    (c (list op) exp0)
+    (c (list op 'a) exp1)
+    (c (list op 'a 'b) exp2)
+    (c (list op 'a 'b 'c) exp3))
+  (define err (test-error))
+
+  ;; simple statement forms
+  (t 'begin "{}" "{a;}" "{a;b;}" "{a;b;c;}")
+  (t 'if err err "if (a){b;}" "if (a){b;} else {c;}")
+  (c '(if a b c d) err)
+
+  (t 'when err "if (a){{}}" "if (a){{b;}}" "if (a){{b;c;}}")
+  (t 'unless err "if (!(a)){{}}" "if (!(a)){{b;}}" "if (!(a)){{b;c;}}")
+
+  (t 'return "return;" "return (a);" err err)
+  (t 'break "break;" err err err)
+  (t 'continue "continue;" err err err)
+  (t 'label err "a :; " err err)
+  (t 'goto err "goto a;" err err)
+
+  ;; some simple preprocessor directives
+  ;; NB. all directives should start with "\n"
+  (t '.if err err
+     "\n#if a\nb;\n#endif /* a */\n"
+     "\n#if a\nb;\n#else  /* !a */\nc;\n#endif /* a */\n")
+  (c '(.if a b c d) err)
+  (t '.undef err "#undef a\n" err err)
+  ;; (.include) should probably error out
+  (t '.include ""
+     "#include a\n"
+     "#include a\n#include b\n"
+     "#include a\n#include b\n#include c\n"))
+
+;; let*
+(parameterize ([cise-emit-source-line #f])
+  (define (c form exp)
+    (test* (format "cise transform: ~a" form) exp
+           (cise-render-to-string form 'stmt)))
+  (c '(let*) (test-error))
+  (c '(let* ()) "{}")
+  (c '(let* () c) "{c;}")
+  (c '(let* (a) b) "{ScmObj a;b;}")
+  (c '(let* (a::(b c)) d) "{b c a;d;}")
+  (c '(let* ([a]) b) "{ScmObj a;b;}")
+  (c '(let* ([a b]) c) "{ScmObj a=b;c;}")
+  (c '(let* ([a] [b]) c) "{ScmObj a;ScmObj b;c;}")
+  (c '(let* ([a]) b c) "{ScmObj a;b;c;}")
+  (c '(let* ([a::]) b) (test-error))
+  (c '(let* ([a::b]) c) "{b a;c;}")
+  (c '(let* ([a::b c]) d) "{b a=c;d;}"))
+
+;; cond
+(parameterize ([cise-emit-source-line #f])
+  (define (c form exp)
+    (test* (format "cise transform: ~a" form) exp
+           (cise-render-to-string form 'stmt)))
+  (define err (test-error))
+  #;(c '(cond) err)
+  (c '(cond) "")
+  (c '(cond a) err)
+  (c '(cond (a)) "if (a){}")
+  (c '(cond (a b)) "if (a){b;}")
+  (c '(cond (a b) (c d)) "if (a){b;}else if(c){d;}")
+  (c '(cond (a b) (else c)) "if (a){b;} else {c;}")
+  (c '(cond (a b) (else)) "if (a){b;} else {}")
+  (c '(cond (a b) (c d) (else e))
+     "if (a){b;}else if(c){d;} else {e;}")
+  #;(c '(cond (else c)) err)
+  (c '(cond (else c)) " else {c;}"))
+
+;; case
+(parameterize ([cise-emit-source-line #f])
+  (define (c form exp)
+    (test* (format "cise transform: ~a" form) exp
+           (cise-render-to-string form 'stmt)))
+  (define err (test-error))
+  (c '(case) err)
+  (c '(case x) "switch (x) {}")
+  (c '(case x a) err)
+  (c '(case x (a)) err)
+  (c '(case x [(a)])
+     "switch (x) {case a : {break;}}")
+  (c '(case x [(a) b])
+     "switch (x) {case a : {b;break;}}")
+  (c '(case x [(a) b] [(c) d])
+     "switch (x) {case a : {b;break;}case c : {d;break;}}")
+  (c '(case x [(a) b] (else c))
+     "switch (x) {case a : {b;break;}default: {c;break;}}")
+  (c '(case x [(a) b] (else))
+     "switch (x) {case a : {b;break;}default: {break;}}")
+  (c '(case x [(a) b] [(c) d] (else e))
+     "switch (x) {case a : {b;break;}case c : {d;break;}default: {e;break;}}")
+  (c '(case x (else c))
+     "switch (x) {default: {c;break;}}"))
+
+;; case/fallthrough
+(parameterize ([cise-emit-source-line #f])
+  (define (c form exp)
+    (test* (format "cise transform: ~a" form) exp
+           (cise-render-to-string form 'stmt)))
+  (define err (test-error))
+  (c '(case/fallthrough) err)
+  (c '(case/fallthrough x) "switch (x) {}")
+  (c '(case/fallthrough x a) err)
+  (c '(case/fallthrough x (a)) err)
+  (c '(case/fallthrough x [(a)])
+     "switch (x) {case a : {}}")
+  (c '(case/fallthrough x [(a) b])
+     "switch (x) {case a : {b;}}")
+  (c '(case/fallthrough x [(a) b] [(c) d])
+     "switch (x) {case a : {b;}case c : {d;}}")
+  (c '(case/fallthrough x [(a) b] (else c))
+     "switch (x) {case a : {b;}default: {c;}}")
+  (c '(case/fallthrough x [(a) b] (else))
+     "switch (x) {case a : {b;}default: {}}")
+  (c '(case/fallthrough x [(a) b] [(c) d] (else e))
+     "switch (x) {case a : {b;}case c : {d;}default: {e;}}")
+  (c '(case/fallthrough x (else c))
+     "switch (x) {default: {c;}}"))
+
+;; for/loop
+(parameterize ([cise-emit-source-line #f])
+  (define (c form exp)
+    (test* (format "cise transform: ~a" form) exp
+           (cise-render-to-string form 'stmt)))
+  (define err (test-error))
+  (c '(for) err)
+  (c '(for ()) "for (;;){}")
+  (c '(for () a) "for (;;){a;}")
+  (c '(for (a)) err)
+  (c '(for (a b)) err)
+  (c '(for (a b c)) "for (a; b; c){}")
+  (c '(for (a b c d)) err)
+  (c '(loop) "for (;;){}")
+  (c '(loop a) "for (;;){a;}"))
+
+;; while
+(parameterize ([cise-emit-source-line #f])
+  (define (c form exp)
+    (test* (format "cise transform: ~a" form) exp
+           (cise-render-to-string form 'stmt)))
+  (define err (test-error))
+  (c '(while) err)
+  (c '(while a) "while(a){}")
+  (c '(while a b) "while(a){b;}")
+  (c '(while a b c) "while(a){b;c;}"))
+
+;; dotimes
+(parameterize ([cise-emit-source-line #f])
+  (define (next-gensym-counter)
+    (let1 sym (symbol->string (gensym ""))
+      (+ (string->number sym) 1)))
+  (define (c form exp)
+    (test* (format "cise transform: ~a" form) exp
+           (cise-render-to-string form 'stmt)))
+  (define err (test-error))
+  (c '(dotimes) err)
+  (c '(dotimes ()) err)
+  (c '(dotimes (a)) err)
+  (let1 sym (format "cise__~a" (next-gensym-counter))
+    (c '(dotimes (a b))
+       (format "{int a=0;int ~a=b;for (; (a)<(~a); (a)++){}}" sym sym))))
+
+;; expression-level tests
+(parameterize ([cise-emit-source-line #f])
+  (define (c form exp)
+    (test* (format "cise transform: ~a" form) exp
+           (cise-render-to-string form 'expr)))
+  (define err (test-error))
+  (define (t op exp0 exp1 exp2 exp3)
+    (c (list op) exp0)
+    (c (list op 'a) exp1)
+    (c (list op 'a 'b) exp2)
+    (c (list op 'a 'b 'c) exp3))
+
+  #;(t '+ "(0)" "(a)" "(a)+(b)" "((a)+(b))+(c)")
+  (t '+ err "+(a)" "(a)+(b)" "((a)+(b))+(c)")
+  (t '- err "-(a)" "(a)-(b)" "((a)-(b))-(c)")
+  ;; (* a) is pointer dereference, not multiplication
+  ;; (*) should probably return 1
+  (t '* err "*(a)" "(a)*(b)" "((a)*(b))*(c)")
+  #;(t '/ err "1.0/(a)" "(a)/(b)" "((a)/(b))/(c)")
+  (t '/ err "/(a)" "(a)/(b)" "((a)/(b))/(c)")
+  (t '% err err "(a)%(b)" err)
+
+  #;(t 'and err "(a)" "(a)&&(b)" "((a)&&(b))&&(c)")
+  (t 'and err "&&(a)" "(a)&&(b)" "((a)&&(b))&&(c)")
+  #;(t 'or err "(a)" "(a)||(b)" "((a)||(b))||(c)")
+  (t 'or err "||(a)" "(a)||(b)" "((a)||(b))||(c)")
+  (t 'not err "!(a)" err err)
+
+  #;(t 'logand err err "(a)&(b)" "((a)&(b))&(c)")
+  (t 'logand err "&(a)" "(a)&(b)" "((a)&(b))&(c)")
+  #;(t 'logior err err "(a)|(b)" "((a)|(b))|(c)")
+  (t 'logior err "|(a)" "(a)|(b)" "((a)|(b))|(c)")
+  #;(t 'logxor err err "(a)^(b)" "((a)^(b))^(c)")
+  (t 'logxor err "^(a)" "(a)^(b)" "((a)^(b))^(c)")
+  (t 'lognot err "~(a)" err err)
+
+  (t '& err "&(a)" err err)
+
+  (t 'pre++ err "++(a)" err err)
+  (t 'pre-- err "--(a)" err err)
+  (t 'post++ err "(a)++" err err)
+  (t 'post-- err "(a)--" err err)
+
+  (t '< err err "(a)<(b)" err)
+  (t '<= err err "(a)<=(b)" err)
+  (t '> err err "(a)>(b)" err)
+  (t '>= err err "(a)>=(b)" err)
+  (t '== err err "(a)==(b)" err)
+  (t '!= err err "(a)!=(b)" err)
+
+  (t '<< err err "(a)<<(b)" err)
+  (t '>> err err "(a)>>(b)" err)
+
+  #;(t 'set! err err "a=(b)" err)
+  (t 'set! "" err "a=(b)" err)
+  (c '(set! a b c d) "a=(b),c=(d)")
+  (c '(set! a b c d e) err)
+  (c '(set! a b c d e f) "a=(b),c=(d),e=(f)")
+
+  ;; NB. are parentheses around 'a' necessary? "=" assignments do not
+  ;; have them
+  (t '+= err err "(a)+=(b)" err)
+  (t '-= err err "(a)-=(b)" err)
+  (t '*= err err "(a)*=(b)" err)
+  (t '/= err err "(a)/=(b)" err)
+  (t '%= err err "(a)%=(b)" err)
+  (t '>>= err err "(a)>>=(b)" err)
+  (t '<<= err err "(a)<<=(b)" err)
+  (t 'logand= err err "(a)&=(b)" err)
+  (t 'logior= err err "(a)|=(b)" err)
+  (t 'logxor= err err "(a)^=(b)" err)
+
+  #;(t '-> err err "(a)->b" "(a)->b->c")
+  (t '-> err "(a)->" "(a)->b" "(a)->b->c")
+  #;(t 'ref err err "(a).b" "(a).b.c")
+  (t 'ref err "(a)." "(a).b" "(a).b.c")
+  #;(t 'aref err err "(a)[b]" "(a)[b][c]")
+  (t 'aref err "(a)" "(a)[b]" "(a)[b][c]")
+
+  (t 'cast err err "((a )(b))" err)
+  #;(t '.type err "a " "a b " "a b c ")
+  (t '.type " " "a " "a b " "a b c ")
+
+  (t '?: err err err "((a)?(b):(c))")
+  (c '(?: a b c d) err))
+
+#;(test* "operator expressions should be rejected at toplevel"
+       (test-error)
+       (cise-render-to-string '(< a b) 'toplevel))
+
 ;;====================================================================
 (test-section "gauche.cgen.stub")
 (use gauche.cgen.stub)
