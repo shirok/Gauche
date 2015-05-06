@@ -16,7 +16,7 @@ XCLEANFILES = *.c $(SCMFILES)
 
 all : $(LIBFILES)
 
-OBJECTS = $(rfc-mime_OBJECTS)
+OBJECTS = $(rfc-mime_OBJECTS) $(rfc-822_OBJECTS)
 
 # rfc.mime
 rfc-mime_OBJECTS = rfc--mime.$(OBJEXT)
