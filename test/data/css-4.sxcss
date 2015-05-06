@@ -1,0 +1,4 @@
+(
+ (style-rule body
+             (font #((60 %) (or "Lucida sans" Ariel Helvetica sans-serif))))
+ )

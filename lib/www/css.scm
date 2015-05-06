@@ -692,7 +692,7 @@
   ($lift (^[vs] (match vs [(x) x] [xs (list->vector xs)]))
          ($many ($/ ($lift (^[a _ b] `(/ ,a ,b))
                            %term ($delim #\/) %term)
-                    ($lift (^[v vs] (if (null? vs) v (cons v vs)))
+                    ($lift (^[v vs] (if (null? vs) v (cons* 'or v vs)))
                            %term ($many ($seq ($tok 'COMMA) %term)))))))
 
 (define *juxta-properties*
