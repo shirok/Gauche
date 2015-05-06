@@ -255,7 +255,11 @@
               ;; in decl part.  The flag decl-strings? tracks that.
               (^[form decl-strings?]
                 (cond [(and decl-strings? (string? form)) (cgen-decl form) #t]
-                      [else (cgen-stub-parse-form form) #f]))
+                      [else
+                       (guard (e [else
+                                  ($ raise $ make-compound-condition e
+                                     $ make <compile-error-mixin> :expr form)])
+                         (cgen-stub-parse-form form) #f)]))
               #t read))
        (cgen-emit-c (cgen-current-unit))))))
 
