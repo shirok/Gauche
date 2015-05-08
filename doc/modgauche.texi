@@ -2216,8 +2216,117 @@ typechecks the @var{c-expr} according to the @var{cgen-type}.
 @node C in S expression,  , Conversions between Scheme and C, Generating C code
 @subsection CiSE - C in S expression
 
+Some low-level routines in Gauche are implemented in C, but they're
+written in S-expression.  We call it ``C in S expression'', or @emph{CiSE}.
+
+The advantage of using S-expression is its readability, obviously.
+Another advantage is that it allows us to write macros as
+S-expr to S-expr translation, just like the legacy Scheme macros.
+That's a powerful feature---effectively you can extend C language
+to suit your needs.
+
+The @code{gauche.cgen.cise} module provides a set of tools to convert
+CiSE code into C code to be passed to the C compiler.  It also has
+some support to overcome C quirks, such as preparing forward
+declarations.
+
+Currently, we don't do rigorous check for CiSE; you can pass a
+CiSE that yields invalid C code, which will cause the C compiler
+to emit errors.  The translater inserts line directives by default so the
+C compiler error message points to the location of original (CiSE) source
+instead of generated code; however, sometimes you need to look at
+the generated code to figure out what went wrong.  We hope this
+will be improved in future.
+
+In Gauche source code, CiSE is extensively used in precompiled Scheme
+files and recognized by the precompiler (@code{precomp}).  However,
+@code{gauche.cgen.cise} is an independent module only relies
+on @code{gauche.cgen} basic features, so you can plug it
+to your own C code generating programs.
+
+@menu
+* CiSE overview::               
+* CiSE syntax::                 
+* CiSE procedures::             
+@end menu
+
+@node CiSE overview, CiSE syntax, C in S expression, C in S expression
+@subsubsection CiSE overview
+
+Before diving into the details, it's easier to grasp
+some basic concepts.
+
+A @emph{CiSE fragment} is an S-expression that follows
+CiSE syntax (@xref{CiSE syntax}).  A CiSE fragment can be
+tralslated to C code by @code{cise-render} to a C code fragment.
+Note that some translation may not be local, meaning it may
+want to emit forward declarations before other C code fragments.
+So, the full translation requires buffering---you process all
+the CiSE fragments and saves output, emit forward declarations,
+then emit the saved C code fragments.  We have a wrapper procedure,
+@code{cise-translate}, to take care of it, but for your purpose
+you may want to roll your own wrapper.
+
+A @emph{CiSE macro} is a Scheme code that translates a CiSE
+fragment to another CiSE fragment.  There are number of
+predefined CiSE macros.  You can add your own CiSE macros by
+utilities such as
+@code{define-cise-stmt} and @code{define-cise-expr}.
+
+A @emph{CiSE ambient} is a bundle of information that affects
+fragment translation.  It contains CiSE macro definitions,
+and also it keeps track of forward declarations.
+
+@node CiSE syntax, CiSE procedures, CiSE overview, C in S expression
+@subsubsection CiSE syntax
 
 
+@node CiSE procedures,  , CiSE syntax, C in S expression
+@subsubsection CiSE procedures
+
+
+@deftp {Parameter} cise-ambient
+@end deftp
+
+@defun cise-default-ambient
+@end defun
+
+@defun cise-ambient-copy ambient
+@end defun
+
+@defun cise-ambient-decl-strings ambient
+@end defun
+
+@deftp {Parameter} cise-emit-source-line
+@end deftp
+
+@defun cise-render cise-fragment :optional port context
+@end defun
+
+@defun cise-render-to-string cise-fragment :optional context
+@end defun
+
+@defun cise-render-rec cise-fragment stmt/expr env
+@end defun
+
+@defun cise-translate inp outp :key environment
+@end defun
+
+
+@defun cise-register-macro! name expander :optional ambient
+@end defun
+
+@defun cise-lookup-macro name :optional ambient
+@end defun
+
+@defmac define-cise-stmt name [env] clause @dots{} [:where definition @dots{}]
+@defmacx define-cise-expr name [env] clause @dots{} [:where definition @dots{}]
+@defmacx define-cise-toplevel name [env] clause @dots{} [:where definition @dots{}]
+@end defmac
+
+@defmac define-cise-macro (name form env) body @dots{}
+@defmacx define-cise-macro name name2
+@end defmac
 
 @c ----------------------------------------------------------------------
 @node Collection framework, Configuration parameters, Generating C code, Library modules - Gauche extensions
