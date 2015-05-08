@@ -95,6 +95,7 @@
     (format #t "  :fold-lref ~s\n" (~ insn'fold-lref))
     (format #t "  :combined '~s\n" (~ insn'combined))
     (format #t "  :body '~s)\n\n" (~ insn'body)))
+  (make-directory* "../lib/gauche/vm")
   (with-output-to-file "../lib/gauche/vm/insn.scm"
     (^[]
       (write-header)
