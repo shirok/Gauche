@@ -12,6 +12,10 @@ configure
 libtool
 autom4te.cache
 Makefile
+gc/include/config.h
+gc/libatomic_ops/src/config.h
+lib/gauche/config.scm
+src/gauche/config.h
 
 # Compiler-generated files
 *.o
