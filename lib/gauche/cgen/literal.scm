@@ -527,9 +527,15 @@
    )
   (make (value)
     (cond
-     [(fixnum? value)
+     ;; We don't use fixnum?, since we may be cross-compiling on 64bit
+     ;; machine for 32bit machine.  This is the range of 30bit fixnum.
+     [(< (- (%expt 2 29)) value (- (%expt 2 29) 1))
       (make <cgen-scheme-integer> :value value :c-name #f)]
-     [(< (- (%expt 2 31)) value (- (%expt 2 32)))
+     ;; Integers that doesn't fit in 30bit fixnum but the literal number
+     ;; can fit in C 32bit integers.  Note: We can use both signed and
+     ;; unsigned literals, so the upper bound is 2^32-1, while
+     ;; the lower bound is -2^31.
+     [(< (- (%expt 2 31)) value (- (%expt 2 32) 1))
       (make <cgen-scheme-integer> :value value
             :c-name (cgen-allocate-static-datum))]
      [else

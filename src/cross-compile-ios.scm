@@ -8,7 +8,7 @@
 ;; Global parameters
 
 ;; we build stuff under *builddir*/$ARCH
-(define *builddir* "build")
+(define *builddir* "build-ios")
 
 ;; the final output destination
 (define *outdir* (build-path *builddir* "Gauche-iOS.framework"))
@@ -18,7 +18,7 @@
 
 ;; SDK versions
 (define *ios-deploy-target-version* "7.1")
-(define *ios-build-sdk-version* "8.2")
+;(define *ios-build-sdk-version* "8.3")  ;unused for now
 
 ;;
 ;; Architecture-dependent stuff
@@ -34,10 +34,10 @@
   (ecase target
     [(armv7 armv7s arm64)
      (build-path (devroot target)
-                 #`"SDKs/iPhoneOS,|*ios-build-sdk-version*|.sdk")]
+                 #`"SDKs/iPhoneOS.sdk")]
     [(i386)
      (build-path (devroot target)
-                 #`"SDKs/iPhoneSimulator,|*ios-build-sdk-version*|.sdk")]))
+                 #`"SDKs/iPhoneSimulator.sdk")]))
 
 (define (environment-alist target)
   (let ([dev (devroot target)]

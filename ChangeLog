@@ -1,3 +1,9 @@
+2015-05-08  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cgen/literal.scm (<cgen-scheme-integer>): Fix
+	  cross-compiling issue - we may generate code for 32bit architecure
+	  using 64bit gosh.
+
 2015-05-01  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche.h (SCM_NORETURN): Allow using
