@@ -11,7 +11,7 @@
 (define *builddir* "build-ios")
 
 ;; the final output destination
-(define *outdir* (build-path *builddir* "Gauche-iOS.framework"))
+(define *outdir* (build-path *builddir* "Gauche-iOS-core.framework"))
 
 ;; gauche abi version
 (define *abi-version* "0.9")
@@ -27,7 +27,7 @@
   (ecase target
     [(armv7 armv7s arm64)
      "/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer"]
-    [(i386)
+    [(i386 x86_64)
      "/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer"]))
 
 (define (sdkroot target)
@@ -35,7 +35,7 @@
     [(armv7 armv7s arm64)
      (build-path (devroot target)
                  #`"SDKs/iPhoneOS.sdk")]
-    [(i386)
+    [(i386 x86_64)
      (build-path (devroot target)
                  #`"SDKs/iPhoneSimulator.sdk")]))
 
@@ -43,10 +43,10 @@
   (let ([dev (devroot target)]
         [sdkdir (sdkroot target)]
         [cflags-xtra (case target
-                       [(i386) " -DNO_DYLD_BIND_FULLY_IMAGE"]
+                       [(i386 x86_64) " -DNO_DYLD_BIND_FULLY_IMAGE"]
                        [else ""])]
         [sdk (case target
-               [(i386) "iphonesimulator"]
+               [(i386 x86_64) "iphonesimulator"]
                [else "iphoneos"])])
     `(("CC"       . ,(process-output->string `("xcrun" "-find" "-sdk" ,sdk "clang")))
       ("LD"       . ,(build-path dev "usr/bin/ld"))
@@ -64,7 +64,8 @@
                  [(armv7)  "arm-apple-darwin7"]
                  [(armv7s) "arm-apple-darwin7s"]
                  [(arm64) "arm-apple-darwin8"]
-                 [(i386)   "i386-apple-darwin12.4"])]
+                 [(i386)   "i386-apple-darwin12.4"]
+                 [(x86_64)   "x86_64-apple-darwin12.4"])]
          [configure-cmd `("/usr/bin/env" ,@envs
                           "../../configure"
                           ,#`"--build=,build"
@@ -93,6 +94,7 @@
                 "-arch" "armv7" ,(archive 'armv7)
                 "-arch" "arm64" ,(archive 'arm64)
                 "-arch" "i386" ,(archive 'i386)
+                "-arch" "x86_64" ,(archive 'x86_64)
                 "-create"
                 "-output" ,(build-path *outdir*
                                        #`"libgauche-,|*abi-version*|.a"))]
@@ -107,14 +109,17 @@
   (build-1 'armv7s)
   (build-1 'arm64)
   (build-1 'i386)
+  (build-1 'x86_64)
   (run-lipo))
 
 (define (copy-includes)
   (define (copy file dst)
     (let* ([src1 (build-path "src" file)]
            [src2 (build-path *builddir* "i386/src" file)]
+           [src3 (build-path *builddir* "x86_64/src" file)]
            [src (cond [(file-exists? src1) src1]
                       [(file-exists? src2) src2]
+                      [(file-exists? src3) src3]
                       [else (error "Missing file:" file)])])
       (print "Copying " src " -> " dst)
       (with-output-to-file dst
@@ -122,9 +127,9 @@
           (do-generator [line (file->line-generator src)]
             (print (regexp-replace-all*
                     line
-                    #/#include <gc\.h>/ "#include <Gauche-iOS/gc.h>"
-                    #/#\s*include <(gauche.*)\.h>/ "#include <Gauche-iOS/\\1.h>"
-                    #/#\s*include \"(gc.*)\.h\"/ "#include \"Gauche-iOS/\\1.h\"")))))))
+                    #/#include <gc\.h>/ "#include <Gauche-iOS-core/gc.h>"
+                    #/#\s*include <(gauche.*)\.h>/ "#include <Gauche-iOS-core/\\1.h>"
+                    #/#\s*include \"(gc.*)\.h\"/ "#include \"Gauche-iOS-core/\\1.h\"")))))))
   (make-directory* (build-path *outdir* "Headers/gauche"))
   (dolist [hdr (mfvar-ref "src/Makefile.in" "INSTALL_HEADERS")]
     (copy  hdr (build-path *outdir* "Headers" (sys-basename hdr))))
@@ -137,7 +142,7 @@
 
 (define (wire-stuff)
   (sys-symlink #`"libgauche-,|*abi-version*|.a"
-               (build-path *outdir* "Gauche-iOS")))
+               (build-path *outdir* "Gauche-iOS-core")))
 
 (define (preparation)
   (sys-system "./DIST gen")
