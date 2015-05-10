@@ -26,19 +26,36 @@ separate framework.
 3. You can just copy Gauche-iOS-core.framework to wherever
    suits you.
 
-4. In your App, add Gauche-iOS-core.framework in the framework
-   section.  You can use Gauche functions by including gauche.h
-   as follows:
+Now, the following steps are to use Gauche inside iOS app:
+
+1. In your App, add Gauche-iOS-core.framework in the framework
+   section.  You also need to add libraries Gauche depends on---
+   typically it's libz and libiconv.
+
+2. You have to call initialization routine before any other
+   Gauche functions.  We'd suggest to call it in AppDelegate's
+   application:didFinishLaunchingWithOptions.  You need these
+   two imports near the beginning of AppDelegate.m.
+
+   #import <Gauche-iOS-core/gauche.h>
+   #import <Gauche-iOS-core/gauche/static.h>
+
+   And in application:didFinishLaunchingWithOptions method,
+   call:
+
+     SCM_INIT_STATIC();
+
+   This sets up Gauche runtime.
+
+3. For other files, you only need to include gauche.h:
 
    #import <Gauche-iOS-core/gauche.h>
 
-   You need to call GC_INIT() and Scm_Init(GAUCHE_SIGNATURE)
-   somewhere in your app, before using any other Gauche functions.
+   And you can call Gauche API.
 
    NB: Gauche requires Gauche VM to be attached to the thread
    the Gauche API is called.  If you're in a thread that iOS created,
    it's likely that there's no Gauche VM.  You should call
    Scm_AttachVM() within the thread (but that feature is way less
    tested; expect some rough road.)
-
 

@@ -62,3 +62,28 @@ it tends to be large (around 12MB on Linux/x86_64).
 This directory contains a sample script.  After building
 the static library, run make and you'll get sample-repl.
 
+
+[3. Using Gauche API from statically linked C applications]
+
+If you want to call Gauche API from statically linked C app,
+you need slightly different initialization than the usual.
+Instead of calling GC_INIT() and Scm_Init(), you should do
+the following:
+
+  (1) include gauche/static.h along gauche.h
+
+    #include <gauche.h>
+    #include <gauche/static.h>
+
+  (2) call SCM_INIT_STATIC() from main(), instead of GC_INIT()
+      and Scm_INIT().
+
+    int main() {
+      :
+      SCM_INIT_STATIC();
+      :
+    }
+
+
+
+
