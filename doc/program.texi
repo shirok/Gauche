@@ -641,7 +641,7 @@ portability in it.
 @code{gauche.interactive}モジュールをロードします
 (@ref{Interactive session}参照)。
 このモジュールはまた、ユーザーのホームディレクトリに@file{.gaucherc}という
-ファイルがあればをれをロードします。
+ファイルがあればそれをロードします。
 インタラクティブデバッグに便利な設定をそこに書いておくことができます。
 (Gauche release 0.7.3から、@file{.gaucherc}はgoshがスクリプトモードで
 起動された時は読まれなくなりました。)
