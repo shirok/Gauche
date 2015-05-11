@@ -1862,7 +1862,7 @@ Use this only when you think some human needs to read the generated
 C code (which is not recommended, by the way.)
 
 If you want to write out a Scheme string as a C string literal,
-you can use @code{cgen-safe-string-literal}.  It escapes control
+you can use @code{cgen-safe-string}.  It escapes control
 characters and non-ascii characters.  If the Scheme string contains
 a character beyond ASCII, it is encoded in Gauche's native encoding.
 (NB: It also escapes @code{?}, to avoid accidenal formation of
@@ -2279,7 +2279,7 @@ some basic concepts.
 
 A @emph{CiSE fragment} is an S-expression that follows
 CiSE syntax (@xref{CiSE syntax}).  A CiSE fragment can be
-tralslated to C code by @code{cise-render} to a C code fragment.
+translated to C code by @code{cise-render} to a C code fragment.
 Note that some translation may not be local, meaning it may
 want to emit forward declarations before other C code fragments.
 So, the full translation requires buffering---you process all
