@@ -47,7 +47,8 @@
           cgen-extern cgen-decl cgen-body cgen-init
           cgen-include cgen-define
 
-          cgen-safe-name cgen-safe-name-friendly cgen-safe-comment
+          cgen-safe-name cgen-safe-name-friendly
+          cgen-safe-string cgen-safe-comment
 
           ;; semi-private routines
           cgen-emit-static-data)
@@ -364,9 +365,19 @@
                [else (display c) (loop (read-char))]
                ))))))
 
+(define (cgen-safe-string value)
+  (with-string-io value
+    (lambda ()
+      (display "\"")
+      (generator-for-each
+       (^b (if (or (= #x20 b) (= #x21 b) ; #x22 = #\"
+                   (<= #x23 b #x3e)      ; #x3f = #\?  - avoid trigraph trap
+                   (<= #x40 b #x5b)      ; #x5c = #\\
+                   (<= #x5d b #x7e))
+             (write-byte b)
+             (format #t "\\~3,'0o" b))) read-byte)
+      (display "\""))))
+
 ;; Escape  '*/' so that str can be inserted safely within a comment.
 (define (cgen-safe-comment str)
   (regexp-replace-all* (x->string str) #/\/\*/ "/ *" #/\*\// "* /"))
-
-
-

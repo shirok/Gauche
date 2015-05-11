@@ -43,7 +43,9 @@
           cgen-literal-static?
           define-cgen-literal cgen-literal
           cgen-allocate-static-datum
-          c-safe-string-literal         ;useful to emit C string constant
+
+          ;; Deprecated - use cgen-safe-string
+          c-safe-string-literal
           )
   )
 (select-module gauche.cgen.literal)
@@ -467,23 +469,13 @@
       :c-name (cgen-allocate-static-datum
                'constant 'ScmString
                (format "  SCM_STRING_CONST_INITIALIZER(~a, ~a, ~a)"
-                       (c-safe-string-literal value)
+                       (cgen-safe-string value)
                        (string-size value) (string-length value)))
       :value value))
   )
 
-(define (c-safe-string-literal value)
-  (with-string-io value
-    (lambda ()
-      (display "\"")
-      (generator-for-each
-       (^b (if (or (= #x20 b) (= #x21 b) ; #x22 = #\"
-                   (<= #x23 b #x3e)      ; #x3f = #\?  - avoid trigraph trap
-                   (<= #x40 b #x5b)      ; #x5c = #\\
-                   (<= #x5d b #x7e))
-             (write-byte b)
-             (format #t "\\~3,'0o" b))) read-byte)
-      (display "\""))))
+;; For the backward compatibility
+(define c-safe-string-literal cgen-safe-string)
 
 ;; symbol ------------------------------------------------------
 

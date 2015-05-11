@@ -89,7 +89,7 @@
            (cgen-decl #`"extern void ,initfn(void);")
            (cgen-init
             #`"  {"
-            #`"    const char *initfn_names[] = { ,(c-safe-string-literal (string-append \"_\" initfn)), NULL };"
+            #`"    const char *initfn_names[] = { ,(cgen-safe-string (string-append \"_\" initfn)), NULL };"
             #`"    void (*initfns[])(void) = { ,initfn, NULL };"
             
             #`"    Scm_RegisterPrelinked(SCM_STRING(,(cgen-cexpr str)), initfn_names, initfns);"
@@ -160,7 +160,7 @@
              "           SCM_OBJ(scmtab));")
   ;; Set up load hook
   (cgen-decl "static const char *embedded_load_hook = "
-             (c-safe-string-literal (write-to-string *hook-source*))
+             (cgen-safe-string (write-to-string *hook-source*))
              ";")
   (cgen-init "Scm_AddLoadPath(\"\", FALSE);")
   (cgen-init "Scm_EvalCStringRec(embedded_load_hook,"

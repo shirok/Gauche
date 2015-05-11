@@ -60,7 +60,7 @@
     (cgen-decl "#include <gauche.h>"
                "#include <gauche/static.h>")
     (cgen-decl (format "const char *main_script = ~a;"
-                       (c-safe-string-literal (file->string file))))
+                       (cgen-safe-string (file->string file))))
     (cgen-init "SCM_INIT_STATIC();"
                "Scm_SimpleMain(argc, argv, main_script, 0);")
     (cgen-emit-c (cgen-current-unit)))

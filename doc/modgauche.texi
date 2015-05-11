@@ -1837,8 +1837,9 @@ if you don't use other parts of the @code{cgen} modules.
 
 @defun cgen-safe-name string
 @defunx cgen-safe-name-friendly string
+@defunx cgen-safe-string string
 @defunx cgen-safe-comment string
-Escapes characters invalid in C identifiers or C comments.
+Escapes characters invalid in C identifiers, C string literals or C comments.
 
 With @code{cgen-safe-name}, characters other than ASCII alphabets
 and digits are converted to a form @code{_XX}, where @code{XX} is
@@ -1860,13 +1861,33 @@ both @code{read-line} and @code{read_line} map to @code{read_line}.
 Use this only when you think some human needs to read the generated
 C code (which is not recommended, by the way.)
 
-Much simpler is @code{c-safe-comment}, which just converts
+If you want to write out a Scheme string as a C string literal,
+you can use @code{cgen-safe-string-literal}.  It escapes control
+characters and non-ascii characters.  If the Scheme string contains
+a character beyond ASCII, it is encoded in Gauche's native encoding.
+(NB: It also escapes @code{?}, to avoid accidenal formation of
+C trigraphs).
+
+Much simpler is @code{cgen-safe-comment}, which just converts
 @code{/*} and @code{*/} into @code{/ *} and @code{* /} (a space
 between those two characters), so that it won't terminate the
 comment inadvertently.  (Technically, escaping only @code{*/} suffice,
 but some simple-minded C parser might be confused by @code{/*} in the
 comments).   The conversion isn't injective as well.
+
+@example
+(cgen-safe-name "char-alphabetic?")
+  @result{} "char_2dalphabetic_3f"
+(cgen-safe-name-friendly "char-alphabetic?")
+  @result{} "char_alphabeticP"
+(cgen-safe-string "char-alphabetic?")
+  @result{} "\"char-alphabetic\\077\""
+
+(cgen-safe-comment "*/*"
+  @result{} "* / *"
+@end example
 @end defun
+
 
 If you want to conditionalize a fragment by C preprocessor
 @code{#ifdef}s, use the following macro:
