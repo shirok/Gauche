@@ -120,7 +120,7 @@ typedef int ScmInternalFastlock;
 #define SCM_INTERNAL_FASTLOCK_INIT(fl)     (0)
 #define SCM_INTERNAL_FASTLOCK_LOCK(fl)     (0)
 #define SCM_INTERNAL_FASTLOCK_UNLOCK(fl)   (0)
-#define SCM_INTENRAL_FASTLOCK_DESTROY(fl)  (0)
+#define SCM_INTERNAL_FASTLOCK_DESTROY(fl)  (0)
 
 /* ScmInternalCond - condition varaiable
  *
