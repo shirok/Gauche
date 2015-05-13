@@ -475,7 +475,7 @@ AM_CONDITIONAL(AVOID_CPP_LIB,test $avoid_cpp_lib = yes)
 # extra LD Flags which are required for targets
 case "${host}" in
   *-*-darwin*)
-    extra_ldflags_libgc=-Wl,-single_module
+    extra_ldflags_libgc="-Wl,-single_module -framework CoreFoundation"
     ;;
 esac
 AC_SUBST(extra_ldflags_libgc)
