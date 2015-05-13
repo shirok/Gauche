@@ -604,12 +604,10 @@ case $host in
     SHLIB_SO_CFLAGS="-no-cpp-precomp -fPIC -fno-common"
     SHLIB_SO_LDFLAGS="-bundle $FLAT_NAMESPACE -undefined suppress -o"
     SHLIB_SO_SUFFIX="so"
+    SHLIB_DYLIB_LDFLAGS='-framework CoreFoundation -dynamiclib -o'
     if test "$ac_gauche_framework" = yes; then
-      SHLIB_DYLIB_LDFLAGS='-framework CoreFoundation -dynamiclib -o'
       AC_DEFINE(GAUCHE_MACOSX_FRAMEWORK, 1, [Define 1 if building framework on MacOSX])
       xhost="${host}-framework"
-    else
-      SHLIB_DYLIB_LDFLAGS="-dynamiclib -o"
     fi
     SHLIB_DYLIB_SUFFIX="dylib"
     SHLIB_LIBS_FOR_EXT=""

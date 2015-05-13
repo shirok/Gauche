@@ -1,3 +1,12 @@
+2015-05-12  Shiro Kawai  <shiro@acm.org>
+
+	* gc/darwin_stop_world.c: Backported iOS 8 support from bdwgc
+	  upstream.
+	* configure.ac, gc/configure.ac: The above change requires to link
+	  CoreFoundation on darwin.  (The upstream bdwgc doesn't have
+	  this modification, so there may be another way; if we figure it
+	  out, we might revert this change.)
+
 2015-05-10  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/unit.scm (gauche.cgen.unit): Renamed and moved
