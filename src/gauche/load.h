@@ -76,6 +76,8 @@ SCM_EXTERN ScmObj Scm_VMLoad(ScmString *file, ScmObj paths, ScmObj env,
 SCM_EXTERN void Scm_LoadPacketInit(ScmLoadPacket *p);
 SCM_EXTERN int Scm_LoadFromPort(ScmPort *port, u_long flags, ScmLoadPacket *p);
 SCM_EXTERN int Scm_Load(const char *file, u_long flags, ScmLoadPacket *p);
+SCM_EXTERN int Scm_LoadFromCString(const char *program, u_long flags,
+                                   ScmLoadPacket *p);
 
 /*=================================================================
  * Dynamic state access

@@ -1,3 +1,7 @@
+2015-05-14  Shiro Kawai  <shiro@acm.org>
+
+	* src/load.c (Scm_LoadFromCString): Added.
+
 2015-05-12  Shiro Kawai  <shiro@acm.org>
 
 	* gc/darwin_stop_world.c: Backported iOS 8 support from bdwgc

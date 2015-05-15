@@ -235,6 +235,14 @@ int Scm_Load(const char *cpath, u_long flags, ScmLoadPacket *packet)
     }
 }
 
+/* A convenience routine */
+int Scm_LoadFromCString(const char *program, u_long flags, ScmLoadPacket *p)
+{
+    ScmObj ip = Scm_MakeInputStringPort(SCM_STRING(SCM_MAKE_STR(program)), TRUE);
+    return Scm_LoadFromPort(SCM_PORT(ip), flags, p);
+}
+
+
 /*
  * Utilities
  */
