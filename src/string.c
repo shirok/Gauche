@@ -43,28 +43,30 @@ static void string_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx);
 SCM_DEFINE_BUILTIN_CLASS(Scm_StringClass, string_print, NULL, NULL, NULL,
                          SCM_CLASS_SEQUENCE_CPL);
 
-#define SCM__STRING_NEED_CHECK_SIZE  (SIZEOF_INT > 4)
+#define CHECK_SIZE(siz)                                         \
+    do {                                                        \
+        if ((siz) > SCM_STRING_MAX_SIZE) {                      \
+            Scm_Error("string size too big: %ld", (siz));       \
+        }                                                       \
+    } while (0)
 
 /* Internal primitive constructor.   LEN can be negative if the string
    is incomplete. */
 static ScmString *make_str(ScmSmallInt len, ScmSmallInt siz,
                            const char *p, int flags)
 {
-    ScmString *s = SCM_NEW(ScmString);
-    SCM_SET_CLASS(s, SCM_CLASS_STRING);
-
     if (len < 0) flags |= SCM_STRING_INCOMPLETE;
     if (flags & SCM_STRING_INCOMPLETE) len = siz;
 
-#if SCM__STRING_NEED_CHECK_SIZE
-    if (size > SCM_STRING_MAX_SIZE) {
-        Scm_Error("string size too big: %ld", size);
+    if (siz > SCM_STRING_MAX_SIZE) {
+        Scm_Error("string size too big: %ld", siz);
     }
-    if (len > SCM_STRING_MAX_LENGTH) {
-        Scm_Error("string length too big: %ld", len);
+    if (len > siz) {
+        Scm_Error("string length (%ld) exceeds size (%ld)", len, siz);
     }
-#endif /*SCM__STRING_NEED_CHECK_SIZE*/
 
+    ScmString *s = SCM_NEW(ScmString);
+    SCM_SET_CLASS(s, SCM_CLASS_STRING);
     s->body = NULL;
     s->initialBody.flags = flags & SCM_STRING_FLAG_MASK;
     s->initialBody.length = len;
@@ -141,7 +143,6 @@ static inline ScmSmallInt count_size_and_length(const char *str,
 static inline ScmSmallInt count_length(const char *str, ScmSmallInt size)
 {
     ScmSmallInt count = 0;
-
     while (size-- > 0) {
         unsigned char c = (unsigned char)*str;
         int i = SCM_CHAR_NFOLLOWS(c);
@@ -163,11 +164,9 @@ int Scm_MBLen(const char *str, const char *stop)
 {
     ScmSmallInt size = (stop == NULL)? strlen(str) : (stop - str);
     ScmSmallInt len = count_length(str, size);
-#if SCM__STRING_NEED_CHECK_SIZE
-    if (len > SCM_STRING_MAX_LEN) {
+    if (len > SCM_STRING_MAX_LENGTH) {
         Scm_Error("Scm_MBLen: length too big: %ld", len);
     }
-#endif
     return (int)len; /* we keep the result int for the backward compatibility */
 }
 
@@ -187,6 +186,7 @@ ScmObj Scm_MakeString(const char *str, ScmSmallInt size, ScmSmallInt len,
     } else {
         if (len < 0) len = count_length(str, size);
     }
+    /* Range of size and len will be checked in make_str */
 
     ScmString *s;
     if (flags & SCM_STRING_COPYING) {
@@ -201,8 +201,8 @@ ScmObj Scm_MakeString(const char *str, ScmSmallInt size, ScmSmallInt len,
 ScmObj Scm_MakeFillString(ScmSmallInt len, ScmChar fill)
 {
     if (len < 0) Scm_Error("length out of range: %d", len);
-
     ScmSmallInt csize = SCM_CHAR_NBYTES(fill);
+    CHECK_SIZE(csize*len);
     char *ptr = SCM_NEW_ATOMIC2(char *, csize*len+1);
     char *p = ptr;
     for (int i=0; i<len; i++, p+=csize) {
@@ -223,6 +223,7 @@ ScmObj Scm_ListToString(ScmObj chars)
         ScmChar ch = SCM_CHAR_VALUE(SCM_CAR(cp));
         size += SCM_CHAR_NBYTES(ch);
         len++;
+        CHECK_SIZE(size);
     }
     char *buf = SCM_NEW_ATOMIC2(char *, size+1);
     char *bufp = buf;
@@ -590,6 +591,7 @@ ScmObj Scm_StringAppend2(ScmString *x, ScmString *y)
     ScmSmallInt lenx = SCM_STRING_BODY_LENGTH(xb);
     ScmSmallInt sizey = SCM_STRING_BODY_SIZE(yb);
     ScmSmallInt leny = SCM_STRING_BODY_LENGTH(yb);
+    CHECK_SIZE(sizex+sizey);
     int flags = 0;
     char *p = SCM_NEW_ATOMIC2(char *,sizex + sizey + 1);
 
@@ -614,6 +616,7 @@ ScmObj Scm_StringAppendC(ScmString *x, const char *str,
 
     if (sizey < 0) count_size_and_length(str, &sizey, &leny);
     else if (leny < 0) leny = count_length(str, sizey);
+    CHECK_SIZE(sizex+sizey);
 
     char *p = SCM_NEW_ATOMIC2(char *, sizex + sizey + 1);
     memcpy(p, xb->start, sizex);
@@ -656,6 +659,7 @@ ScmObj Scm_StringAppend(ScmObj strs)
         b = SCM_STRING_BODY(SCM_CAR(cp));
         size += SCM_STRING_BODY_SIZE(b);
         len += SCM_STRING_BODY_LENGTH(b);
+        CHECK_SIZE(size);
         if (SCM_STRING_BODY_INCOMPLETE_P(b)) {
             flags |= SCM_STRING_INCOMPLETE;
         }
@@ -715,6 +719,7 @@ ScmObj Scm_StringJoin(ScmObj strs, ScmString *delim, int grammer)
         b = SCM_STRING_BODY(SCM_CAR(cp));
         size += SCM_STRING_BODY_SIZE(b);
         len  += SCM_STRING_BODY_LENGTH(b);
+        CHECK_SIZE(size);
         if (SCM_STRING_BODY_INCOMPLETE_P(b)) {
             flags |= SCM_STRING_INCOMPLETE;
         }
@@ -728,6 +733,7 @@ ScmObj Scm_StringJoin(ScmObj strs, ScmString *delim, int grammer)
     }
     size += dsize * ndelim;
     len += dlen * ndelim;
+    CHECK_SIZE(size);
 
     char *buf = SCM_NEW_ATOMIC2(char *, size+1);
     char *bufp = buf;
@@ -1599,11 +1605,9 @@ int Scm_DStringSize(ScmDString *dstr)
     } else {
         size = dstr->current - dstr->init.data;
     }
-#if SCM__STRING_NEED_CHECK_SIZE
     if (size > SCM_STRING_MAX_SIZE) {
         Scm_Error("Scm_DStringSize: size exceeded the range: %ld", size);
     }
-#endif
     return (int)size;
 }
 
@@ -1654,6 +1658,7 @@ static const char *dstring_getz(ScmDString *dstr, int *psiz, int *plen, int noal
     if (dstr->anchor == NULL) {
         /* we only have one chunk */
         size = dstr->current - dstr->init.data;
+        CHECK_SIZE(size);
         len = dstr->length;
         if (noalloc) {
             buf = dstr->init.data;
@@ -1665,6 +1670,7 @@ static const char *dstring_getz(ScmDString *dstr, int *psiz, int *plen, int noal
         char *bptr;
 
         size = Scm_DStringSize(dstr);
+        CHECK_SIZE(size);
         len = dstr->length;
         bptr = buf = SCM_NEW_ATOMIC2(char*, size+1);
 
@@ -1677,14 +1683,6 @@ static const char *dstring_getz(ScmDString *dstr, int *psiz, int *plen, int noal
         *bptr = '\0';
     }
     if (len < 0) len = count_length(buf, size);
-#if SCM__STRING_NEED_CHECK_SIZE
-    if (len > SCM_STRING_MAX_LEN) {
-        Scm_Error("ScmDString: total length too big: %ld", len);
-    }
-    if (size > SCM_STRING_MAX_SIZE) {
-        Scm_Error("ScmDString: total size too big: %ld", size);
-    }
-#endif
     if (plen) *plen = (int)len;
     if (psiz) *psiz = (int)size;
     return buf;

@@ -62,12 +62,13 @@
  * ScmString is alive, even if its content is mutated and the initial
  * content isn't used.   Another reason to avoid string mutations.
  */
-/* NB: For the backward compatibility, the string size is 'int' - we can
-   have up to 2G long string.  Theoretically we can make it bigger; but
-   having such large string in flat array is a bad idea.  For the long term,
-   we should have a simple string that has the flat multibyte characters,
-   and a compound ones that has cord-like structure.  We'll defer having
-   >2G strings by then.
+/* NB: For the backward compatibility, the string size is 'int'.  We limit
+   the length of strings up to min(INT_MAX, SCM_SMALL_INT_MAX).
+   Theoretically we can make it bigger; but having such large string in
+   flat array is a bad idea.  For the long term, we should have a simple
+   string that has the flat multibyte characters,
+   and a compound ones that has cord-like structure.
+   We'll defer having >2G strings by then.
 */
 typedef struct ScmStringBodyRec {
     unsigned int flags;
@@ -76,8 +77,13 @@ typedef struct ScmStringBodyRec {
     const char *start;
 } ScmStringBody;
 
+#if SIZEOF_LONG == 4
+#define SCM_STRING_MAX_SIZE    SCM_SMALL_INT_MAX
+#define SCM_STRING_MAX_LENGTH  SCM_SMALL_INT_MAX
+#else /*SIZEOF_LONG > 4*/
 #define SCM_STRING_MAX_SIZE    INT_MAX
 #define SCM_STRING_MAX_LENGTH  INT_MAX
+#endif
 
 struct ScmStringRec {
     SCM_HEADER;
