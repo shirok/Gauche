@@ -142,6 +142,14 @@ typedef HANDLE ScmInternalFastlock;
 #define SCM_INTERNAL_FASTLOCK_DESTROY(fl) SCM_INTERNAL_MUTEX_DESTROY(fl)
 
 /* Issues a full memory barrier */
+#if 0        /* MinGW doesn't seem to have MemoryBarrier() */
 #define SCM_INTERNAL_SYNC()                 MemoryBarrier()
+#else
+#define SCM_INTERNAL_SYNC()                     \
+    do {                                        \
+        long dummy = 0;                         \
+        InterLockExchange(&dummy, 1);           \
+    } while (0)
+#endif
 
 #endif /* GAUCHE_WTHREAD_H */
