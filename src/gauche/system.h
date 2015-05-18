@@ -154,7 +154,7 @@ typedef struct timespec ScmTimeSpec;
 #else
 typedef struct {
     time_t tv_sec;
-    long   tv_usec;
+    long   tv_nsec;
 } ScmTimeSpec;
 #endif /*!HAVE_STRUCT_TIMESPEC && GAUCHE_WINDOWS*/
 
