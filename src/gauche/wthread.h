@@ -131,7 +131,7 @@ SCM_EXTERN int  Scm__InternalCondSignal(ScmInternalCond *cond);
 SCM_EXTERN int  Scm__InternalCondBroadcast(ScmInternalCond *cond);
 SCM_EXTERN int  Scm__InternalCondWait(ScmInternalCond *cond,
                                       ScmInternalMutex *mutex,
-                                      struct timespec *pts);
+                                      ScmTimeSpec *pts);
 SCM_EXTERN void Scm__InternalCondDestroy(ScmInternalCond *cond);
 
 /* We don't provide fast lock */

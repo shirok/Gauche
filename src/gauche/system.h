@@ -147,13 +147,18 @@ SCM_EXTERN ScmObj Scm_Int64SecondsToTime(ScmInt64 sec);
 SCM_EXTERN ScmObj Scm_RealSecondsToTime(double sec);
 SCM_EXTERN ScmObj Scm_TimeToSeconds(ScmTime *t);
 
-#if !defined(HAVE_STRUCT_TIMESPEC)
-struct timespec {
+/* struct timespec compatibility handling.  Mingw 3.21, at least, has
+   incompatible struct timespec. */
+#if defined(HAVE_STRUCT_TIMESPEC) || !defined(GAUCHE_WINDOWS)
+typedef struct timespec ScmTimeSpec;
+#else
+typedef struct {
     time_t tv_sec;
     long   tv_usec;
-};
-#endif /*!HAVE_STRUCT_TIMESPEC*/
-SCM_EXTERN struct timespec *Scm_GetTimeSpec(ScmObj t, struct timespec *spec);
+} ScmTimeSpec;
+#endif /*!HAVE_STRUCT_TIMESPEC && GAUCHE_WINDOWS*/
+
+SCM_EXTERN ScmTimeSpec *Scm_GetTimeSpec(ScmObj t, ScmTimeSpec *spec);
 
 /* sched_yield */
 SCM_EXTERN void   Scm_YieldCPU(void);
@@ -172,6 +177,8 @@ SCM_CLASS_DECL(Scm_SysTmClass);
 
 SCM_EXTERN ScmObj Scm_MakeSysTm(struct tm *);
 
+SCM_EXTERN int    Scm_NanoSleep(const ScmTimeSpec *req,
+                                ScmTimeSpec *rem);
 
 /*==============================================================
  * Groups and users

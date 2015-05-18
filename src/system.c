@@ -935,7 +935,7 @@ void Scm_GetTimeOfDay(u_long *sec, u_long *usec)
 int Scm_ClockGetTimeMonotonic(u_long *sec, u_long *nsec)
 {
 #if defined(HAVE_CLOCK_GETTIME) && defined(CLOCK_MONOTONIC)
-    struct timespec ts;
+    ScmTimeSpec ts;
     int r;
     SCM_SYSCALL(r, clock_gettime(CLOCK_MONOTONIC, &ts));
     if (r < 0) Scm_SysError("clock_gettime failed");
@@ -951,7 +951,7 @@ int Scm_ClockGetTimeMonotonic(u_long *sec, u_long *nsec)
 int Scm_ClockGetResMonotonic(u_long *sec, u_long *nsec)
 {
 #if defined(HAVE_CLOCK_GETRES) && defined(CLOCK_MONOTONIC)
-    struct timespec ts;
+    ScmTimeSpec ts;
     int r;
     SCM_SYSCALL(r, clock_getres(CLOCK_MONOTONIC, &ts));
     if (r < 0) Scm_SysError("clock_getres failed");
@@ -1112,7 +1112,7 @@ ScmObj Scm_TimeToSeconds(ScmTime *t)
 }
 
 /* Scheme time -> timespec conversion */
-struct timespec *Scm_GetTimeSpec(ScmObj t, struct timespec *spec)
+ScmTimeSpec *Scm_GetTimeSpec(ScmObj t, ScmTimeSpec *spec)
 {
     if (SCM_FALSEP(t)) return NULL;
     if (SCM_TIMEP(t)) {
@@ -1220,6 +1220,46 @@ static ScmClassStaticSlotSpec tm_slots[] = {
     SCM_CLASS_SLOT_SPEC_END()
 };
 
+/*
+ * nanosleep() compatibility layer
+ */
+int Scm_NanoSleep(const ScmTimeSpec *req, ScmTimeSpec *rem)
+{
+#if defined(GAUCHE_WINDOWS)
+    /* Recent mingw32 includes nanosleep but it seems broken, so we keep
+       using this compatibility code for the time being. */
+    DWORD msecs = 0;
+    time_t sec;
+    u_long overflow = 0, c;
+    const DWORD MSEC_OVERFLOW = 4294967; /* 4294967*1000 = 0xfffffed8 */
+
+    /* It's very unlikely that we overflow msecs, but just in case... */
+    if (req->tv_sec > 0 || (req->tv_sec == 0 && req->tv_nsec > 0)) {
+        if (req->tv_sec >= MSEC_OVERFLOW) {
+            overflow = req->tv_sec / MSEC_OVERFLOW;
+            sec = req->tv_sec % MSEC_OVERFLOW;
+        } else {
+            sec = req->tv_sec;
+        }
+        msecs = (sec * 1000 + (req->tv_nsec + 999999)/1000000);
+    }
+    Sleep (msecs);
+    for (c = 0; c < overflow; c++) {
+        Sleep(MSEC_OVERFLOW * 1000);
+    }
+    if (rem) {
+        rem->tv_sec = rem->tv_nsec = 0;
+    }
+    return 0;
+#elif defined(HAVE_NANOSLEEP)
+    return nanosleep(req, rem);
+#else   /* !defined(HAVE_NANOSLEEP) && !defined(GAUCHE_WINDOWS) */
+    /* This case should be excluded at the caller site */
+    errno = EINVAL;
+    return -1;
+#endif
+}
+
 /*===============================================================
  * Yielding CPU (sched.h, if available)
  */
@@ -1232,14 +1272,16 @@ Scm_YieldCPU(void)
 {
 #if defined(HAVE_SCHED_YIELD)
     sched_yield();
+#elif defined(GAUCHE_WINDOWS)
+    /* Windows have select(), but it doesn't allow all fds are NULL. */
+    Sleep(10);
 #elif defined(HAVE_NANOSLEEP)
+    /* We can use struct timespec instead of ScmTimeSpec here, for mingw
+       won't use this path. */
     struct timespec spec;
     spec.tv_sec = 0;
     spec.tv_nsec = 1;
     nanosleep(&spec, NULL);
-#elif defined(GAUCHE_WINDOWS)
-    /* Windows have select(), but it doesn't allow all fds are NULL. */
-    Sleep(10);
 #elif defined(HAVE_SELECT)
     struct timeval tv;
     tv.tv_sec = 0;
@@ -2769,34 +2811,6 @@ int link(const char *existing, const char *newpath)
     return r? 0 : -1;
 }
 
-/* nanosleep.  We emulate it with Sleep(). */
-int nanosleep(const struct timespec *req, struct timespec *rem)
-{
-    DWORD msecs = 0;
-    time_t sec;
-    u_long overflow = 0, c;
-    const DWORD MSEC_OVERFLOW = 4294967; /* 4294967*1000 = 0xfffffed8 */
-
-    /* It's very unlikely that we overflow msecs, but just in case... */
-    if (req->tv_sec > 0 || (req->tv_sec == 0 && req->tv_nsec > 0)) {
-        if (req->tv_sec >= MSEC_OVERFLOW) {
-            overflow = req->tv_sec / MSEC_OVERFLOW;
-            sec = req->tv_sec % MSEC_OVERFLOW;
-        } else {
-            sec = req->tv_sec;
-        }
-        msecs = (sec * 1000 + (req->tv_nsec + 999999)/1000000);
-    }
-    Sleep (msecs);
-    for (c = 0; c < overflow; c++) {
-        Sleep(MSEC_OVERFLOW * 1000);
-    }
-    if (rem) {
-        rem->tv_sec = rem->tv_nsec = 0;
-    }
-    return 0;
-}
-
 /* Winsock requires some obscure initialization.
    We perform initialization here, since winsock module is used
    in both gauche.net and gauche.auxsys. */
@@ -2875,7 +2889,7 @@ void Scm__InternalCondInit(ScmInternalCond *cond)
 }
 
 int Scm__InternalCondWait(ScmInternalCond *cond, ScmInternalMutex *mutex,
-                          struct timespec *pts)
+                          ScmTimeSpec *pts)
 {
     DWORD r0, r1;
     DWORD timeout_msec;

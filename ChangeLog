@@ -1,3 +1,8 @@
+2015-05-17  Shiro Kawai  <shiro@acm.org>
+
+	* src/system.c (nanosleep), src/gauche/system.h (struct timespec):
+	  Workaround for the mingw timespec incompatibility.
+
 2015-05-14  Shiro Kawai  <shiro@acm.org>
 
 	* src/load.c (Scm_LoadFromCString): Added.

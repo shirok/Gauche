@@ -1079,7 +1079,7 @@
  (when "defined(HAVE_NANOSLEEP) || defined(GAUCHE_WINDOWS)"
    (define-cproc sys-nanosleep (nanoseconds
                                 :optional (no-retry::<boolean> #f))
-     (let* ([spec::(struct timespec)] [rem::(struct timespec)]
+     (let* ([spec::ScmTimeSpec] [rem::ScmTimeSpec]
             [vm::ScmVM* (Scm_VM)])
        (cond
         [(SCM_TIMEP nanoseconds)
@@ -1099,7 +1099,7 @@
              (-= (ref spec tv_nsec) 1000000000)
              (+= (ref spec tv_sec) 1)))])
        (set! (ref rem tv_sec) 0 (ref rem tv_nsec) 0)
-       (while (< (nanosleep (& spec) (& rem)) 0)
+       (while (< (Scm_NanoSleep (& spec) (& rem)) 0)
          (unless (== errno EINTR)
            (Scm_SysError "nanosleep failed"))
          (SCM_SIGCHECK vm)

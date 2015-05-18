@@ -467,8 +467,8 @@ ScmObj Scm_MakeLazyPair(ScmObj item, ScmObj generator)
  */
 ScmObj Scm_ForceLazyPair(volatile ScmLazyPair *lp)
 {
-    static const struct timespec req = {0, 1000000};
-    struct timespec rem;
+    static const ScmTimeSpec req = {0, 1000000};
+    ScmTimeSpec rem;
     ScmVM *vm = Scm_VM();
 
     do {
@@ -517,7 +517,7 @@ ScmObj Scm_ForceLazyPair(volatile ScmLazyPair *lp)
         /* Somebody's already working on forcing.  Let's wait for it
            to finish, or to abort. */
         while (SCM_HTAG(lp) == 7 && lp->owner != 0) {
-            nanosleep(&req, &rem);
+            Scm_NanoSleep(&req, &rem);
         }
     } while (lp->owner == 0); /* we retry if the previous owner abandoned. */
     return SCM_OBJ(lp);
@@ -544,8 +544,8 @@ int Scm_DecomposeLazyPair(ScmObj obj, ScmObj *item, ScmObj *generator)
 {
     if (SCM_LAZY_PAIR_P(obj)) {
         volatile ScmLazyPair *lp = SCM_LAZY_PAIR(obj);
-        static const struct timespec req = {0, 1000000};
-        struct timespec rem;
+        static const ScmTimeSpec req = {0, 1000000};
+        ScmTimeSpec rem;
         ScmVM *vm = Scm_VM();
 
         for (;;) {
@@ -565,7 +565,7 @@ int Scm_DecomposeLazyPair(ScmObj obj, ScmObj *item, ScmObj *generator)
                 SCM_ASSERT(SCM_HTAG(lp) != 7);
                 break;
             }
-            nanosleep(&req, &rem);
+            Scm_NanoSleep(&req, &rem);
         }
         /*FALLTHROUGH*/
     }
