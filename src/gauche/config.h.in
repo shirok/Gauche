@@ -212,6 +212,9 @@
 /* Define to 1 if the system has setenv */
 #undef HAVE_SETENV
 
+/* Define to 1 if the system has setgroups */
+#undef HAVE_SETGROUPS
+
 /* Define to 1 if the system has sethostname */
 #undef HAVE_SETHOSTNAME
 
