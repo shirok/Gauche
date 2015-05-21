@@ -52,7 +52,7 @@ SSLTEST_OBJECTS = axTLS/ssl/test/ssltest.mod.$(OBJEXT)
 @GAUCHE_TLS_SWITCH_NONE@EXTRA_DIRS_TARGET = 
 
 GENERATED = Makefile
-XCLEANFILES = rfc--tls.c *.sci $(AXTLS_OBJECTS) $(SSLTEST_OBJECTS) $(SSLTEST_GENERATED) $(SSLTEST) ssltest.log axTLS/ssl/openssl.pid
+XCLEANFILES = rfc--tls.c *.sci $(AXTLS_OBJECTS) $(SSLTEST_OBJECTS) $(SSLTEST_GENERATED) $(SSLTEST) ssltest.log axTLS/ssl/openssl.pid axtls_dirs
 
 @CROSS_COMPILING_no@all : $(LIBFILES) $(EXTRA_TEST_BIN)
 @CROSS_COMPILING_yes@all : $(LIBFILES)
@@ -66,6 +66,7 @@ tls.sci rfc--tls.c : tls.scm
 # For out-of-source-tree build
 axtls_dirs :
 	mkdir -p axTLS/ssl axTLS/ssl/test axTLS/crypto
+	touch axtls_dirs
 
 $(AXTLS_OBJECTS): $(EXTRA_DIRS_TARGET)
 
