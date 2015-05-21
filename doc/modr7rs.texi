@@ -628,7 +628,9 @@ guard quasiquote unquote unquote-splicing case-lambda
 let-synatx letrec-syntax syntax-rules syntax-error define-syntax
 @end example
 @item Variable definitions
+@example
 define define-values
+@end example
 @item Record type definitions
 @example
 define-record-type
