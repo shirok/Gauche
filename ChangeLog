@@ -1,3 +1,9 @@
+2015-05-20  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.scm: Save closure arginfo to ScmCompiledCode.
+	  Taking procedure-info of the closure now returns not only
+	  the procedure name, but procedure name + formals.
+
 2015-05-17  Shiro Kawai  <shiro@acm.org>
 
 	* src/system.c (nanosleep), src/gauche/system.h (struct timespec):

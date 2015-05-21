@@ -75,7 +75,7 @@
    Scm_VMInsnNameToCode)
 
  (define-cproc make-compiled-code-builder (reqargs::<uint16> optargs::<uint16>
-                                                             name parent intform)
+                                           name arginfo parent intform)
    Scm_MakeCompiledCodeBuilder)
 
  ;; CompiledCodeEmit is performance critical.  To reduce the overhead of

@@ -68,7 +68,8 @@ ScmObj Scm_MakeClosure(ScmObj code, ScmEnvFrame *env)
     ScmClosure *c = SCM_NEW(ScmClosure);
 
     SCM_ASSERT(SCM_COMPILED_CODE(code));
-    ScmObj info = Scm_CompiledCodeFullName(SCM_COMPILED_CODE(code));
+    ScmObj info = Scm_Cons(Scm_CompiledCodeFullName(SCM_COMPILED_CODE(code)),
+                           SCM_COMPILED_CODE(code)->argInfo);
     int req = SCM_COMPILED_CODE_REQUIRED_ARGS(code);
     int opt = SCM_COMPILED_CODE_OPTIONAL_ARGS(code);
 

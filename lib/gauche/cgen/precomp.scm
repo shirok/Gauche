@@ -705,6 +705,7 @@
   ((code-name   :init-keyword :code-name)
    (code-vector-c-name :init-keyword :code-vector-c-name)
    (literals    :init-keyword :literals)
+   (arg-info    :init-keyword :arg-info)
    )
   (make (value)
     (let* ([code (if (run-extra-optimization-passes)
@@ -728,7 +729,9 @@
                 (if (cgen-literal-static? code-name)
                   (cgen-cexpr code-name)
                   "SCM_FALSE")
-                (cgen-cexpr arg-info))
+                (if (cgen-literal-static? arg-info)
+                  (cgen-cexpr arg-info)
+                  "SCM_FALSE"))
         (format #t "            ~a, ~a)"
                 (let1 parent-code (~ code'parent)
                   (if (memq parent-code (omitted-code))
@@ -742,6 +745,7 @@
                                                 init-thunk)
             :code-vector-c-name cvn
             :code-name code-name
+            :arg-info arg-info
             :literals lv)))
   (init (self)
     (unless (cgen-literal-static? (~ self'code-name))
@@ -835,12 +839,16 @@
 
 (define (fill-code code)
   (let ([cvn  (~ code'code-vector-c-name)]
-        [lv   (~ code'literals)])
+        [lv   (~ code'literals)]
+        [ai   (~ code'arg-info)])
     (for-each-with-index
      (^[index lit] (when (and lit (not (cgen-literal-static? lit)))
                      (format #t "  ((ScmWord*)~a)[~a] = SCM_WORD(~a);\n"
                              cvn index (cgen-cexpr lit))))
-     lv)))
+     lv)
+    (unless (cgen-literal-static? ai)
+      (format #t "  SCM_COMPILED_CODE(~a)->argInfo = SCM_OBJ(~a);\n"
+              (cgen-cexpr code) (cgen-cexpr ai)))))
 
 ;; If the compiled-code has packed IForm for inliner, translate it for
 ;; the target VM insns and returns the packed IForm.

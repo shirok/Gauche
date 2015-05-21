@@ -117,8 +117,8 @@ SCM_EXTERN void   Scm_VMExecuteToplevels(ScmCompiledCode *cv[]);
 
 /* Builder API */
 SCM_EXTERN ScmObj Scm_MakeCompiledCodeBuilder(int reqargs, int optargs,
-                                              ScmObj name, ScmObj parent,
-                                              ScmObj intForm);
+                                              ScmObj name, ScmObj arginfo,
+                                              ScmObj parent, ScmObj intForm);
 SCM_EXTERN ScmObj Scm_CompiledCodeCurrentInsn(ScmCompiledCode *cc);
 SCM_EXTERN void   Scm_CompiledCodeReplaceInsn(ScmCompiledCode *cc,
                                               ScmObj insn,

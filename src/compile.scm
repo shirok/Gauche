@@ -1403,7 +1403,7 @@
                ($ raise $ make-compound-condition e
                   $ make <compile-error-mixin> :expr program)])
       (pass5 (pass2-4 (pass1 program cenv) (cenv-module cenv))
-             (make-compiled-code-builder 0 0 '%toplevel #f #f)
+             (make-compiled-code-builder 0 0 '%toplevel #f #f #f)
              '() 'tail))))
 
 ;; stub for future extension
@@ -1427,7 +1427,7 @@
 (define (compile-p5 program :optional (env (vm-current-module)))
   (let1 cenv (make-bottom-cenv env)
     (vm-dump-code (pass5 (pass2-4 (pass1 program cenv) (cenv-module cenv))
-                         (make-compiled-code-builder 0 0 '%toplevel #f #f)
+                         (make-compiled-code-builder 0 0 '%toplevel #f #f #f)
                          '() 'tail))))
 
 ;;===============================================================
@@ -2470,13 +2470,22 @@
 
 (define-pass1-syntax (lambda form cenv) :null
   (match form
-    [(_ formals . body) (pass1/lambda form formals body cenv #f)]
+    [(_ formals . body)
+     (pass1/lambda (add-arg-info form formals) formals body cenv #f)]
     [_ (error "syntax-error: malformed lambda:" form)]))
 
 (define-pass1-syntax (lambda form cenv) :gauche
   (match form
-    [(_ formals . body) (pass1/lambda form formals body cenv #t)]
+    [(_ formals . body)
+     (pass1/lambda (add-arg-info form formals) formals body cenv #t)]
     [_ (error "syntax-error: malformed lambda:" form)]))
+
+;; Add formals list as 'arg-info attributes of the source form
+(define (add-arg-info form formals)
+  (rlet1 xform (if (extended-pair? form)
+                 form
+                 (extended-cons (car form) (cdr form)))
+    (pair-attribute-set! xform 'arg-info formals)))
 
 (define (pass1/lambda form formals body cenv extended?)
   (receive (args reqargs optarg kargs) (parse-lambda-args formals)
@@ -4937,6 +4946,12 @@
          [ccb (make-compiled-code-builder ($lambda-reqargs iform)
                                           ($lambda-optarg iform)
                                           ($lambda-name iform)
+                                          ;; TODO: For the time being, if we
+                                          ;; don't have arg-info, we show
+                                          ;; (proc . _).  We can do better, tho.
+                                          (if-let1 p ($lambda-src iform)
+                                            (pair-attribute-get p 'arg-info #f)
+                                            '_)
                                           ccb  ; parent
                                           inliner)])
     (and-let* ([src ($lambda-src iform)])
