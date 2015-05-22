@@ -4949,9 +4949,9 @@
                                           ;; TODO: For the time being, if we
                                           ;; don't have arg-info, we show
                                           ;; (proc . _).  We can do better, tho.
-                                          (if-let1 p ($lambda-src iform)
-                                            (pair-attribute-get p 'arg-info #f)
-                                            '_)
+                                          (or (and-let* ([p ($lambda-src iform)])
+                                                (pair-attribute-get p 'arg-info #f))
+                                              '_)
                                           ccb  ; parent
                                           inliner)])
     (and-let* ([src ($lambda-src iform)])
