@@ -148,7 +148,7 @@ typedef HANDLE ScmInternalFastlock;
 #define SCM_INTERNAL_SYNC()                     \
     do {                                        \
         long dummy = 0;                         \
-        InterLockExchange(&dummy, 1);           \
+        InterlockedExchange(&dummy, 1);         \
     } while (0)
 #endif
 

@@ -147,6 +147,8 @@ SCM_EXTERN ScmObj Scm_Int64SecondsToTime(ScmInt64 sec);
 SCM_EXTERN ScmObj Scm_RealSecondsToTime(double sec);
 SCM_EXTERN ScmObj Scm_TimeToSeconds(ScmTime *t);
 
+
+#if 0 /* (moved to gauche.h) */
 /* struct timespec compatibility handling.  Mingw 3.21, at least, has
    incompatible struct timespec. */
 #if defined(HAVE_STRUCT_TIMESPEC) || !defined(GAUCHE_WINDOWS)
@@ -157,6 +159,8 @@ typedef struct {
     long   tv_nsec;
 } ScmTimeSpec;
 #endif /*!HAVE_STRUCT_TIMESPEC && GAUCHE_WINDOWS*/
+#endif
+
 
 SCM_EXTERN ScmTimeSpec *Scm_GetTimeSpec(ScmObj t, ScmTimeSpec *spec);
 

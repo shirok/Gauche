@@ -130,6 +130,20 @@ SCM_DECL_BEGIN
    unified keyword-symbol system */
 #define GAUCHE_KEEP_DISJOINT_KEYWORD_OPTION 1
 
+
+/* (moved from system.h) */
+/* struct timespec compatibility handling.  Mingw 3.21, at least, has
+   incompatible struct timespec. */
+#if defined(HAVE_STRUCT_TIMESPEC) || !defined(GAUCHE_WINDOWS)
+typedef struct timespec ScmTimeSpec;
+#else
+typedef struct {
+    time_t tv_sec;
+    long   tv_nsec;
+} ScmTimeSpec;
+#endif /*!HAVE_STRUCT_TIMESPEC && GAUCHE_WINDOWS*/
+
+
 /* Include appropriate threading interface.  Threading primitives are
    abstracted with SCM_INTERNAL_* macros and ScmInternal* typedefs.
    See gauche/uthread.h for the semantics of these primitives. */
