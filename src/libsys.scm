@@ -1015,7 +1015,8 @@
                    gids)
          (SCM_SYSCALL r (setgroups ngid glist))
          (when (< r 0)
-           (Scm_SysError "setgroups failed with %S" gids)))))
+           (Scm_SysError "setgroups failed with %S" gids))))
+     (initcode (Scm_AddFeature "gauche.sys.setgroups" NULL)))
    ) ;; !defined(GAUCHE_WINDOWS)
  )
 

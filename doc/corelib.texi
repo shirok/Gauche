@@ -21564,6 +21564,31 @@ user id (@xref{Unix groups and users}).
 @c COMMON
 @end defun
 
+@defun sys-setgroups gids
+@c EN
+Sets the current process's groups to the given
+list of integer group ids.
+The caller must have the appropriate priviledge.
+
+This procedure is only available when the feature id
+@code{gauche.sys.setgroups} exists.  Use @code{cond-expand} for
+the portable program:
+@c JP
+現在のプロセスのグループIDのリストを、
+引数@var{gids}で与えたグループIDのリストに置き換えます。
+呼び出すプロセスは適切な特権を持っていなければなりません。
+
+この手続きは、機能識別子@code{gauche.sys.setgroups}があるときのみ
+使えます。ポータブルなコードでは@code{cond-expand}を用いてください。
+@c COMMON
+
+@example
+(cond-expand
+  [gauche.sys.setgroups (sys-setgroups '(0 1))]
+  [else])
+@end example
+@end defun
+
 @defun sys-getlogin
 @c EN
 [POSIX] Returns a string of the name of the user logged in on the
