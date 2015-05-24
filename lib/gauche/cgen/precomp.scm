@@ -715,7 +715,7 @@
            [lv  (extract-literals cv)]
            [cvn (allocate-code-vector cv lv (~ code'full-name))]
            [code-name (cgen-literal (~ code'name))]
-           [arg-info (cgen-literal (~ code'arg-info))]
+           [arg-info (cgen-literal (unwrap-syntax (~ code'arg-info)))]
            [inliner (check-packed-inliner code)])
       (define (init-thunk)
         (format #t "    SCM_COMPILED_CODE_CONST_INITIALIZER(  /* ~a */\n"
