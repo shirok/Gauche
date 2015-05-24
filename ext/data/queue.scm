@@ -199,7 +199,7 @@
  "#define CW_INTR     2"
  ;; (wait-cv Q SLOT PTIMESPEC STATUS)
  ;;   Wait on Q's condition variable in SLOT.  PTIMESPEC is a pointer
- ;;   to struct timespec or NULL, specifies timeout.  Must be called
+ ;;   to ScmTimeSpec or NULL, specifies timeout.  Must be called
  ;;   while MTQ_MUTEX(Q) is held.  When returns, MTQ_MUTEX(Q) is held,
  ;;   and status contains either 0 (condition met), CW_TIMEOUT (timed out),
  ;;   or CW_INTR (interrupted).
@@ -228,8 +228,8 @@
  (define-cise-stmt do-with-timeout
    [(_ q retval timeout timeout-val cv-slot init wait-check do-ok)
     (let ([ts (gensym)] [pts (gensym)] [status (gensym)] [inited (gensym)])
-      `(let* ([,ts :: (struct timespec)] [,status :: int 0]
-              [,pts :: (struct timespec*) (Scm_GetTimeSpec ,timeout (& ,ts))]
+      `(let* ([,ts :: (ScmTimeSpec)] [,status :: int 0]
+              [,pts :: (ScmTimeSpec*) (Scm_GetTimeSpec ,timeout (& ,ts))]
               [,inited :: int FALSE])
          (while TRUE
            (with-mtq-mutex-lock ,q
@@ -414,7 +414,7 @@
  (define-cproc enqueue/wait! (q::<mtqueue> obj :optional (timeout #f)
                                                          (timeout-val #f))
    (let* ([cell (SCM_LIST1 obj)] [retval (SCM_OBJ q)])
-     (.if "defined(HAVE_STRUCT_TIMESPEC)&&defined (GAUCHE_HAS_THREADS)"
+     (.if "defined(GAUCHE_HAS_THREADS)"
           (do-with-timeout q retval timeout timeout-val writerWait
                            (begin)
                            (?: (!= (MTQ_MAXLEN q) 0)
@@ -464,7 +464,7 @@
  (define-cproc queue-push/wait! (q::<mtqueue> obj :optional (timeout #f)
                                                             (timeout-val #f))
    (let* ([cell (SCM_LIST1 obj)] [retval (SCM_OBJ q)])
-     (.if "defined(HAVE_STRUCT_TIMESPEC)&&defined(GAUCHE_HAS_THREADS)"
+     (.if "defined(GAUCHE_HAS_THREADS)"
           (do-with-timeout q retval timeout timeout-val writerWait
                            (begin)
                            (?: (!= (MTQ_MAXLEN q) 0)
@@ -519,7 +519,7 @@
  (define-cproc dequeue/wait! (q::<mtqueue> :optional (timeout #f)
                                                      (timeout-val #f))
    (let* ([retval SCM_UNDEFINED])
-     (.if "defined(HAVE_STRUCT_TIMESPEC)&&defined (GAUCHE_HAS_THREADS)"
+     (.if "defined(GAUCHE_HAS_THREADS)"
           (do-with-timeout q retval timeout timeout-val readerWait
                            (begin (post++ (MTQ_READER_SEM q))
                                   (notify-writers (Q q)))

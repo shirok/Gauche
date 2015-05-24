@@ -149,10 +149,10 @@ SCM_EXTERN ScmObj Scm_TimeToSeconds(ScmTime *t);
 
 /* struct timespec compatibility handling.  Mingw 3.21, at least, has
    incompatible struct timespec. */
-#if defined(HAVE_STRUCT_TIMESPEC) || !defined(GAUCHE_WINDOWS)
+#if defined(HAVE_STRUCT_TIMESPEC) && !defined(GAUCHE_WINDOWS)
 typedef struct timespec ScmTimeSpec;
 #else
-typedef struct {
+typedef struct ScmTimeSpecRec {
     time_t tv_sec;
     long   tv_nsec;
 } ScmTimeSpec;

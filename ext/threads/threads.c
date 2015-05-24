@@ -203,11 +203,11 @@ ScmObj Scm_ThreadStart(ScmVM *vm)
 ScmObj Scm_ThreadJoin(ScmVM *target, ScmObj timeout, ScmObj timeoutval)
 {
 #ifdef GAUCHE_HAS_THREADS
-    struct timespec ts;
+    ScmTimeSpec ts;
     ScmObj result = SCM_FALSE, resultx = SCM_FALSE;
     int intr = FALSE, tout = FALSE;
 
-    struct timespec *pts = Scm_GetTimeSpec(timeout, &ts);
+    ScmTimeSpec *pts = Scm_GetTimeSpec(timeout, &ts);
     SCM_INTERNAL_MUTEX_SAFE_LOCK_BEGIN(target->vmlock);
     while (target->state != SCM_VM_TERMINATED) {
         if (pts) {
@@ -268,12 +268,12 @@ ScmObj Scm_ThreadJoin(ScmVM *target, ScmObj timeout, ScmObj timeoutval)
 ScmObj Scm_ThreadStop(ScmVM *target, ScmObj timeout, ScmObj timeoutval)
 {
 #ifdef GAUCHE_HAS_THREADS
-    struct timespec ts;
+    ScmTimeSpec ts;
     ScmVM *vm = Scm_VM();
     ScmVM *taker = NULL;
     int timedout;
     int invalid_state = FALSE;
-    struct timespec *pts = Scm_GetTimeSpec(timeout, &ts);
+    ScmTimeSpec *pts = Scm_GetTimeSpec(timeout, &ts);
 
  retry:
     timedout = FALSE;
@@ -360,14 +360,14 @@ ScmObj Scm_ThreadCont(ScmVM *target)
 ScmObj Scm_ThreadSleep(ScmObj timeout)
 {
 #ifdef GAUCHE_HAS_THREADS
-    struct timespec ts;
+    ScmTimeSpec ts;
     ScmInternalCond dummyc;
     ScmInternalMutex dummym;
     int intr = FALSE;
 
     SCM_INTERNAL_COND_INIT(dummyc);
     SCM_INTERNAL_MUTEX_INIT(dummym);
-    struct timespec *pts = Scm_GetTimeSpec(timeout, &ts);
+    ScmTimeSpec *pts = Scm_GetTimeSpec(timeout, &ts);
     if (pts == NULL) Scm_Error("thread-sleep! can't take #f as a timeout value");
     SCM_INTERNAL_MUTEX_LOCK(dummym);
     if (SCM_INTERNAL_COND_TIMEDWAIT(dummyc, dummym, pts) == SCM_INTERNAL_COND_INTR) {
@@ -398,7 +398,7 @@ ScmObj Scm_ThreadSleep(ScmObj timeout)
    gracefully. */
 static int wait_for_termination(ScmVM *target)
 {
-    struct timespec ts;
+    ScmTimeSpec ts;
     int r;
     ScmObj t = Scm_MakeFlonum(0.001); /* 1ms. somewhat arbitrary */
     Scm_GetTimeSpec(t, &ts);
