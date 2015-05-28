@@ -186,7 +186,7 @@
   (let1 next (~ hp'next-leaf)
     (when (>= (- next 1) (~ hp'capacity))
       (errorf "binary heap ~s is full: couldn't insert ~s" hp item))
-    (comparator-check-type (~ hp'comparator) item)
+    (comparator-check-type (~ hp'comparator) ((~ hp'key) item))
     (set! (~ hp'storage (Ix next)) item)
     (set! (~ hp'next-leaf) (+ next 1))
     (when (> next 1)
