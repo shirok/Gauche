@@ -358,6 +358,150 @@
     )
   )
 
-  
+;; data.cache depends on data.heap, so we come here.  
+(test-section "data.cache")
+(use data.cache)
+(test-module 'data.cache)
+
+;; TTL cache tester
+;; Avoid tests from depending on timing, we mock timestamper.
+(let* ([t 0]
+       [c0 (make-ttl-cache 10 :timestamper (^[] t))])
+  (test* "TTL empty" 'none (cache-lookup! c0 'a 'none))
+  (test* "TTL fill" '((a . 1) (b . 2) (c . 3) #f)
+         (begin
+           (cache-register! c0 'a 1)
+           (inc! t)
+           (cache-register! c0 'b 2)
+           (inc! t)
+           (cache-register! c0 'c 3)
+           (list (cache-check! c0 'a)
+                 (cache-check! c0 'b)
+                 (cache-check! c0 'c)
+                 (cache-check! c0 'd))))
+  (test* "TTL lookup" '(1 2 3 #f)
+         (let* ([a (cache-lookup! c0 'a)]
+                [b (begin (inc! t) (cache-lookup! c0 'b))]
+                [c (begin (inc! t) (cache-lookup! c0 'c))]
+                [d (cache-lookup! c0 'd #f)])
+           (list a b c d)))
+  ;; content and timestamp
+  ;;   a -> 1 : 0
+  ;;   b -> 2 : 1
+  ;;   c -> 3 : 2
+  (test* "TTL timeout" '(#f 2 3)
+         (begin (set! t 11) ; expire 'a'
+                (list
+                 (cache-lookup! c0 'a #f)
+                 (cache-lookup! c0 'b #f)
+                 (cache-lookup! c0 'c #f))))
+  ;; content and timestamp
+  ;;   b -> 2 : 1
+  ;;   c -> 3 : 2
+  (test* "TTL through, register" '(6 7 8 9)
+         (let* ([a1 (cache-through! c0 'a (^_ 6))]
+                [b1 (begin (set! t 12) (cache-through! c0 'b (^_ 7)))]
+                [a2 (begin (cache-register! c0 'a 8)
+                           (cache-lookup! c0 'a))]
+                [b2 (begin (set! t 13)
+                           (cache-register! c0 'b 9)
+                           (cache-lookup! c0 'b))])
+           (list a1 b1 a2 b2)))
+  ;; content and timestamp
+  ;;   a -> 8 : 12
+  ;;   b -> 9 : 13
+  (test* "TTL multiple timestamps" '(#f 14)
+         (begin
+           (set! t 14)
+           (cache-write! c0 'b 10)
+           (cache-write! c0 'c 11)
+           (set! t 15)
+           (cache-write! c0 'b 12)
+           (cache-write! c0 'c 13)
+           (set! t 16)
+           (cache-write! c0 'c 14)
+           (set! t 26)              ; expire b but not c
+           (list (cache-lookup! c0 'b #f)
+                 (cache-lookup! c0 'c #f))))
+  ;; content and timestamp
+  ;;   c -> 14 : 16
+  (test* "TTL evict" #f
+         (begin
+           (cache-evict! c0 'c)
+           (cache-lookup! c0 'c #f)))
+  )
+
+;; TTLR cache tester
+;; Avoid tests from depending on timing, we mock timestamper.
+(let* ([t 0]
+       [c0 (make-ttlr-cache 10 :timestamper (^[] t))])
+  (test* "TTLR empty" 'none (cache-lookup! c0 'a 'none))
+  (test* "TTLR fill" '((a . 1) (b . 2) (c . 3) #f)
+         (begin
+           (cache-register! c0 'a 1)
+           (cache-register! c0 'b 2)
+           (cache-register! c0 'c 3)
+           (list (cache-check! c0 'a)
+                 (cache-check! c0 'b)
+                 (cache-check! c0 'c)
+                 (cache-check! c0 'd))))
+  (test* "TTLR lookup" '(1 2 3 #f)
+         (let* ([a (cache-lookup! c0 'a)]
+                [b (begin (inc! t) (cache-lookup! c0 'b))]
+                [c (begin (inc! t) (cache-lookup! c0 'c))]
+                [d (cache-lookup! c0 'd #f)])
+           (list a b c d)))
+  ;; content and timestamp
+  ;;   a -> 1 : 0
+  ;;   b -> 2 : 1
+  ;;   c -> 3 : 2
+  (test* "TTLR timeout" '(#f 2 3)
+         (begin (set! t 11)
+                (list
+                 (cache-lookup! c0 'a #f)
+                 (cache-lookup! c0 'b #f)
+                 (cache-lookup! c0 'c #f))))
+  ;; content and timestamp
+  ;;   b -> 2 : 11
+  ;;   c -> 3 : 11
+  (test* "TTLR through, register" '(6 2 8 9)
+         (let* ([a1 (cache-through! c0 'a (^_ 6))]
+                [b1 (begin (set! t 12) (cache-through! c0 'b (^_ 7)))]
+                [a2 (begin (cache-register! c0 'a 8)
+                           (cache-lookup! c0 'a))]
+                [b2 (begin (set! t 13)
+                           (cache-register! c0 'b 9)
+                           (cache-lookup! c0 'b))])
+           (list a1 b1 a2 b2)))
+  ;; content ant timestamp
+  ;;   a -> 8 : 12
+  ;;   b -> 9 : 13
+  ;;   c -> 3 : 11
+  (test* "TTLR multiple" '(8 9 #f)
+         (begin
+           (set! t 22)  ; expires c
+           (list (cache-lookup! c0 'a #f)
+                 (cache-lookup! c0 'b #f)
+                 (cache-lookup! c0 'c #f))))
+  ;; content and timestamp
+  ;;   a -> 8 : 22
+  ;;   b -> 9 : 22
+  (test* "TTLR multiple - evict" '(8 #f #f)
+         ;; evict an entry that has multiple timestamps
+         (begin
+           (cache-evict! c0 'b)
+           (list (cache-lookup! c0 'a #f)
+                 (cache-lookup! c0 'b #f)
+                 (cache-lookup! c0 'c #f))))
+  ;; content and timestamp
+  ;;   a -> 8 : 22
+  (test* "TTLR multiple - expire" '(#f #f #f)
+         ;; expiring an entry with multiple timestamps
+         (begin
+           (set! t 33)
+           (list (cache-lookup! c0 'a #f)
+                 (cache-lookup! c0 'b #f)
+                 (cache-lookup! c0 'c #f))))
+  )
 
 (test-end)
