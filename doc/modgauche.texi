@@ -4022,6 +4022,15 @@ in the increasing order of keys.
 @c COMMON
 @end deffn
 
+@deffn {Generic function} dict->alist (dict @code{<dictionary>})
+@c EN
+Returns a list of pairs of key and value in the dictionary.
+The order of pairs is undefined.
+@c JP
+ディクショナリ中の各キーと値の対のリストを返します。対の順番は未定義です。
+@c COMMON
+@end deffn
+
 @deffn {Generic function} dict-push! (dict @code{<dictionary>}) key value
 @c EN
 A shorthand way to say @code{(dict-put! dict key (cons value (dict-get dict key '())))}.  A concrete implementation may be more efficient
