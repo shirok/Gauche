@@ -39,7 +39,7 @@
 ;;
 ;; User-side API
 ;;
-;;  (make-***-cache [args ...] :key dict comparator ...)      procedure
+;;  (make-***-cache [args ...] :key storage comparator ...)   procedure
 ;;     Arguments varies depending on the alrogithm.
 ;;
 ;;  (cache-lookup! cache key [default]) => value              procedure
@@ -47,6 +47,9 @@
 ;;  (cache-evict! cache key) => void                             method*
 ;;  (cache-clear! cache) => void                                 method*
 ;;  (cache-write! cache key value) => void                       method
+;;
+;;  (cache-storage cache) => dictionary                       procedure
+;;  (cache-compartor cache) => comparator                     procedure
 ;;
 ;; Implementor-side API
 ;;
@@ -70,35 +73,44 @@
 ;;    
 
 (define-module data.cache
+  (use gauche.collection)
   (use gauche.dictionary)
   (use data.queue)
   (use data.heap)
   (use srfi-114)
   (export <cache>
+          cache-storage cache-comparator
           cache-lookup! cache-through!
           cache-check! cache-register! cache-write!
           cache-evict! cache-clear!
 
           ;; Concrete implementations
           make-basic-cache
+          make-fifo-cache
           make-ttl-cache
           make-ttlr-cache))
 (select-module data.cache)
 
+;; storage and comparator 
+
 (define-class <cache> ()
-  ([dict :init-keyword :dict :init-value #f] ; initialize sets default dict
-   [comparator :init-keyword :comparator :init-value #f] ; initialize sets it up
+  (;; private.  must be treated read-only.
+   [storage :init-keyword :storage :init-value #f]
+   [comparator :init-keyword :comparator :init-value #f]
    ))
+
+(define-inline (cache-storage cache)    (slot-ref cache 'storage))
+(define-inline (cache-comparator cache) (slot-ref cache 'comparator))
 
 (define-method initialize ((c <cache>) initargs)
   (next-method)
-  (if (~ c'dict)
-    (unless (~ c'comparator)
-      (set! (~ c'comparator) (dict-comparator (~ c'dict))))
+  (if (cache-storage c)
+    (unless (cache-comparator c)
+      (slot-set! c 'comparator (dict-comparator (cache-storage c))))
     (begin
-      (unless (~ c'comparator)
-        (set! (~ c'comparator) default-comparator))
-      (set! (~ c'dict) (make-hash-table (~ c'comparator))))))
+      (unless (cache-comparator c)
+        (slot-set! c 'comparator default-comparator))
+      (slot-set! c 'storage (make-hash-table (cache-comparator c))))))
 
 ;;;
 ;;; Cache external API
@@ -128,28 +140,109 @@
 (define-class <basic-cache> (<cache>)
   ())
 
-(define (make-basic-cache :key (dict #f) (comparator #f))
-  (make <basic-cache> :dict dict :comparator comparator))
+(define (make-basic-cache :key (storage #f) (comparator #f))
+  (make <basic-cache> :storage storage :comparator comparator))
 
 (define *none* (list #f))
 
 (define-method cache-check! ((cache <basic-cache>) key)
-  (let1 v (dict-get (~ cache'dict) key *none*)
+  (let1 v (dict-get (cache-storage cache) key *none*)
     (and (not (eq? v *none*))
          (cons key v))))
       
 (define-method cache-register! ((cache <basic-cache>) key value)
-  (dict-put! (~ cache'dict) key value)
+  (dict-put! (cache-storage cache) key value)
   (cons key value))
 
 (define-method cache-write! ((cache <basic-cache>) key value)
-  (dict-put! (~ cache'dict) key value))
+  (dict-put! (cache-storage cache) key value))
 
 (define-method cache-evict! ((cache <basic-cache>) key)
-  (dict-delete! (~ cache'dict) key))
+  (dict-delete! (cache-storage cache) key))
 
 (define-method cache-clear! ((cache <basic-cache>))
-  (dict-clear! (~ cache'dict)))
+  (dict-clear! (cache-storage cache)))
+
+;; FIFO Cache
+;;  - To recover the order from dict, we keep (<n> . <value>) in the dict.
+;;    <n> being increasing order of nonnegative integers.
+;;  - A queue holds (<key> . <n>)
+;;  - We don't want <n> to become bignums in long-running process, so
+;;    when we see <n> gets too big, we renumber entries.
+
+(define-class <fifo-cache> (<cache>)
+  ([capacity :init-keyword :capacity]
+   ;; private
+   [queue :init-form (make-queue)]
+   [counter :init-value 0]))
+
+(define (make-fifo-cache capacity :key (storage #f) (comparator #f))
+  (make <fifo-cache> :storage storage :comparator comparator
+        :capacity capacity))
+
+(define-method initialize ((c <fifo-cache>) initargs)
+  (next-method)
+  (let1 entries (dict->alist (cache-storage c))  ; entries :: [(key n . val)]
+    (unless (null? entries)
+      (let ([queue (~ c'queue)]
+            [maxn 0])
+        (dolist [entry (sort entries < cadr)]
+          (enqueue! queue (cons (car entry) (cadr entry))) ; (key . n)
+          (when (> (cadr entry) maxn) (set! maxn (cadr entry))))
+        (set! (~ c'counter) (+ maxn 1))))))
+
+(define-method cache-check! ((cache <fifo-cache>) key)
+  (and-let1 nv (dict-get (cache-storage cache) key #f)
+    (cons key (cdr nv))))
+
+(define (%fifo-add! cache key value)
+  (let ([dict (cache-storage cache)]
+        [queue (~ cache'queue)])
+    (when (>= (size-of dict) (~ cache'capacity))
+      ;; NB: The queue may have multiple entries for the key.  We only
+      ;; concern the newest entry, so we loop if the queue head is old.
+      ;; The queue should never be empty during this loop, because size of
+      ;; queue >= size of dict.
+      (let loop ([kn (dequeue! queue)])
+        (let1 nv (dict-get dict (car kn) #f)
+          (if (and (pair? nv) (= (cdr kn) (car nv)))
+            (dict-delete! dict (car kn))
+            (loop (dequeue! queue))))))
+    (let1 n (~ cache'counter)
+      (dict-put! dict key (cons n value))
+      (enqueue! queue (cons key n))
+      (if (= n (greatest-fixnum))
+        (%fifo-renumber cache)
+        (set! (~ cache'counter) (+ n 1))))))
+
+(define (%fifo-renumber cache)
+  (let ([dict (cache-storage cache)]
+        [queue (~ cache'queue)]
+        [seen (make-hash-table (~ cache'comparator))])
+    (define cnt (- (size-of dict) 1))
+    (dolist [kn (sort (dequeue-all! queue) > cdr)]
+      (unless (hash-table-exists? seen (car kn))
+        (hash-table-put! seen (car kn) #t)
+        (queue-push! queue (cons (car kn) cnt))
+        (dict-update! dict (car kn) (^[nv] (cons cnt (cdr nv))))
+        (dec! cnt)))
+    (set! (~ cache'counter) (size-of dict))))
+
+(define-method cache-register! ((cache <fifo-cache>) key value)
+  (%fifo-add! cache key value))
+
+(define-method cache-write! ((cache <fifo-cache>) key value)
+  (%fifo-add! cache key value))
+
+(define-method cache-evict! ((cache <fifo-cache>) key)
+  ;; We leave queue entry; they'll be cleared eventually.
+  (dict-delete! (cache-storage cache) key))
+
+(define-method cache-clear! ((cache <fifo-cache>))
+  (dict-clear! (cache-storage cache))
+  (dequeue-all! (~ cache'queue))
+  (undefined))
+  
 
 ;; TTL Cache
 ;;  - Timestamps is a heap with (<timestamp> . <key>).   There can
@@ -162,9 +255,9 @@
    [timestamps] ; heap of (timestamp . key), sorted by timestamp.
    ))
 
-(define (make-ttl-cache ttl :key (dict #f) (comparator #f)
+(define (make-ttl-cache ttl :key (storage #f) (comparator #f)
                                  (timestamper sys-time))
-  (make <ttl-cache> :dict dict :comparator comparator
+  (make <ttl-cache> :storage storage :comparator comparator
         :ttl ttl :timestamper timestamper))
 
 (define-method initialize ((c <ttl-cache>) initargs)
@@ -172,14 +265,14 @@
   (let1 heap (make-binary-heap :comparator number-comparator :key car)
     (set! (~ c'timestamps) heap)
     ;; Set up for prefilled dict
-    (dict-for-each (~ c'dict)
+    (dict-for-each (cache-storage c)
                    (^[k ts] (binary-heap-push! heap (cons (car ts) k)))))
   )
 
 (define (%ttl-sweep! c)
   (let ([cutoff (- ((~ c'timestamper)) (~ c'ttl))]
         [ts  (~ c'timestamps)]
-        [tab (~ c'dict)])
+        [tab (cache-storage c)])
     (let loop ()
       (when (> (binary-heap-num-entries ts) 0)
          (let1 p (binary-heap-find-min ts)
@@ -196,27 +289,27 @@
 
 (define-method cache-check! ((c <ttl-cache>) key)
   (%ttl-sweep! c)
-  (and-let1 tv (dict-get (~ c'dict) key #f)
+  (and-let1 tv (dict-get (cache-storage c) key #f)
     (cons key (cdr tv))))
 
 (define-method cache-register! ((c <ttl-cache>) key val)
   (let1 t (%ttl-timestamp c)
-    (dict-put! (~ c'dict) key (cons t val))
+    (dict-put! (cache-storage c) key (cons t val))
     (binary-heap-push! (~ c'timestamps) (cons t key)))
   (cons key val))
 
 (define-method cache-evict! ((c <ttl-cache>) key)
-  (dict-delete! (~ c'dict) key)
+  (dict-delete! (cache-storage c) key)
   (let1 cmp (~ c'comparator)
     (binary-heap-remove! (~ c'timestamps)
                          (^e (comparator-equal? cmp (cdr e) key)))))
 
 (define-method cache-clear! ((c <ttl-cache>))
-  (dict-clear! (~ c'dict))
+  (dict-clear! (cache-storage c))
   (binary-heap-clear! (~ c'timestamps)))
 
 (define-method cache-write! ((c <ttl-cache>) key val)
-  (if-let1 tv (dict-get (~ c'dict) key #f)
+  (if-let1 tv (dict-get (cache-storage c) key #f)
     (let1 t (%ttl-timestamp c)
       (set! (car tv) t)
       (set! (cdr tv) val)
@@ -232,14 +325,14 @@
 (define-class <ttlr-cache> (<ttl-cache>)
   ())
   
-(define (make-ttlr-cache ttl :key (dict #f) (comparator #f)
+(define (make-ttlr-cache ttl :key (storage #f) (comparator #f)
                                   (timestamper sys-time))
-  (make <ttlr-cache> :dict dict :comparator comparator
+  (make <ttlr-cache> :storage storage :comparator comparator
         :ttl ttl :timestamper timestamper))
 
 (define-method cache-check! ((c <ttlr-cache>) key)
   (%ttl-sweep! c)
-  (and-let* ([tv (dict-get (~ c'dict) key #f)]
+  (and-let* ([tv (dict-get (cache-storage c) key #f)]
              [t  (%ttl-timestamp c)])
     (set! (car tv) t)
     (binary-heap-push! (~ c'timestamps) (cons t key))

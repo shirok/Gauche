@@ -363,6 +363,64 @@
 (use data.cache)
 (test-module 'data.cache)
 
+;; FIFO cache
+(let* ([c (make-fifo-cache 4)])
+  (test* "FIFO empty" 'none (cache-lookup! c 'a 'none))
+  (test* "FIFO fill" '((a . 4) (b . 2) (c . 3) (d . 5))
+         (begin
+           (cache-write! c 'a 1)
+           (cache-write! c 'b 2)
+           (cache-write! c 'c 3)
+           (cache-write! c 'a 4)
+           (cache-write! c 'd 5)
+           (list (cache-check! c 'a)
+                 (cache-check! c 'b)
+                 (cache-check! c 'c)
+                 (cache-check! c 'd))))
+  (test* "FIFO non-spill" '((a . 6) (b . 7) (c . 3) (d . 5))
+         (begin
+           (cache-write! c 'a 6)
+           (cache-write! c 'b 7)
+           (list (cache-check! c 'a)
+                 (cache-check! c 'b)
+                 (cache-check! c 'c)
+                 (cache-check! c 'd))))
+  (test* "FIFO spill" '((a . 6) (b . 7) #f #f (e . 8) (f . 9))
+         (begin
+           (cache-write! c 'e 8)
+           (cache-write! c 'f 9)
+           (list (cache-check! c 'a)
+                 (cache-check! c 'b)
+                 (cache-check! c 'c)
+                 (cache-check! c 'd)
+                 (cache-check! c 'e)
+                 (cache-check! c 'f))))
+  (test* "FIFO evict" '(#f (b . 7) #f (d . 10) (e . 8) (f . 9))
+         (begin
+           (cache-evict! c 'a)
+           (cache-write! c 'd 10)
+           (list (cache-check! c 'a)
+                 (cache-check! c 'b)
+                 (cache-check! c 'c)
+                 (cache-check! c 'd)
+                 (cache-check! c 'e)
+                 (cache-check! c 'f))))
+  ;; To test renumber, we forcibly change the counter value - do not do this
+  ;; in the actual code!
+  (set! (~ c'counter) (- (greatest-fixnum) 1))
+  (test* "FIFO renumber" '((a . 11) #f (c . 13) (d . 12) #f (f . 9))
+         (begin
+           (cache-write! c 'a '11)
+           (cache-write! c 'd '12)
+           (cache-write! c 'c '13)
+           (list (cache-check! c 'a)
+                 (cache-check! c 'b)
+                 (cache-check! c 'c)
+                 (cache-check! c 'd)
+                 (cache-check! c 'e)
+                 (cache-check! c 'f))))
+  )
+
 ;; TTL cache tester
 ;; Avoid tests from depending on timing, we mock timestamper.
 (let* ([t 0]
