@@ -3875,8 +3875,13 @@ built on top of other dictionary classes.
 @subsection Generic functions for dictionaries
 @c NODE ディクショナリのためのジェネリック関数
 
+@c EN
 These generic functions are useful to implement algorithms
-common to any dictionary-like objects.
+common to any dictionary-like objects, a data structure
+that maps discrete, finite set of keys to values.  
+(Theoretically we can think of continuous and/or infinite set of
+keys, but implementation-wise it is cleaner to limit the dictionary
+
 Among built-in classes, @code{<hash-table>} and @code{<tree-map>}
 implement the dictionary interface.  All the @code{<dbm>} classes
 provided by @code{dbm} module also implement it.
@@ -3893,34 +3898,88 @@ implement other methods as well, potentially to gain better performance.
 (Note: Dictionaries are also collections, so you can use collection
 methods as well; for example, to get the number of entries, just use
 @code{size-of}).
+@c JP
+これらのジェネリック関数は、ディクショナリ(離散的で有限なキーの集合から値の集合への
+写像を表現するデータ構造)に対して共通するアルゴリズムを書くのに便利です。
+(理論的には連続した、また無限なキーの集合を考えることもできますが、
+実装上は有限集合に限る方がずっと簡潔になります。)
+
+組み込みクラスでは、@code{<hash-table>}と@code{<tree-map>}が
+ディクショナリのインタフェースを実装しています。@code{dbm}モジュール群の
+提供する@code{<dbm>}クラスもそうです。
+
+自分の定義したクラスにディクショナリのインタフェースを実装するには、
+最低限、@code{dict-get}、@code{dict-put!}、
+@code{dict-delete!}、@code{dict-fold}、@code{dict-comparator}の
+メソッドを実装してください
+(データ型がエントリの削除を許さない場合は、@code{dict-delete!}の実装を
+省略することができます。)
+他のジェネリック関数には、これらの基本的なメソッドを使ったデフォルト実装が
+提供されます。ただ、他のジェネリック関数についても
+自分のクラスに最適化した実装を書くと性能上有利になるでしょう。
+
+註：ディクショナリはコレクションを継承しているので、コレクションを
+扱うジェネリック関数はディクショナリに対しても使えます。
+例えばエントリの数を得るには@code{size-of}ジェネリック関数が使えます。
+@c COMMON
 
 @deffn {Generic function} dict-get (dict @code{<dictionary>}) key :optional default
+@c EN
 Returns the value corresponding to the @var{key}.
 If the dictionary doesn't have an entry with @var{key},
 returns @var{default} when it is provided, or raises an error
 if not.
+@c JP
+@var{key}に関連付けられた値を返します。もし@var{key}を持つエントリが
+ディクショナリに無い場合、@var{default}が与えられていればそれを返し、
+そうでなければエラーが通知されます。
+@c COMMON
 @end deffn
 
 @deffn {Generic function} dict-put! (dict @code{<dictionary>}) key value
+@c EN
 Puts the mapping from @var{key} to @var{value} into the dictionary.
+@c JP
+@var{key}から@var{value}への関連づけをディクショナリに追加します。
+@c COMMON
 @end deffn
 
 @deffn {Generic function} {(setter dict-get)} (dict @code{<dictionary>}) key value
+@c EN
 This works the same as @code{dict-put!}.
+@c JP
+@code{dict-put!}と同じ動作です。
+@c COMMON
 @end deffn
 
 @deffn {Generic function} dict-exists? (dict @code{<dictionary>}) key
+@c EN
 Returns @code{#t} if the dictionary has an entry with @var{key},
 @code{#f} if not.
+@c JP
+ディクショナリが@var{key}をキーに持つエントリを保持していれば@code{#t}を、
+そうでなければ@code{#f}を返します。
+@c COMMON
 @end deffn
 
 @deffn {Generic function} dict-delete! (dict @code{<dictionary>}) key
+@c EN
 Removes an entry with @var{key} form the dictionary.
 If the dictionary doesn't have such an entry, this function is noop.
+@c JP
+ディクショナリから@var{key}をキーに持つエントリを除去します。
+@var{key}を持つエントリが無ければ何もしません。
+@c COMMON
 @end deffn
 
 @deffn {Generic function} dict-clear! (dict @code{<dictionary>})
-Empties the dictionary.
+@c EN
+Empties the dictionary.  Usually this is much faster than looping
+over keys to delete them one by one.
+@c JP
+ディクショナリを空にします。通常、全キーをループしてひとつづつ消していくよりも
+ずっと高速です。
+@c COMMON
 @end deffn
 
 @deffn {Generic function} dict-comparator (dict @code{<dictionary>})
