@@ -1682,9 +1682,10 @@ a cached version of @code{file->string}:
     (^[path] (cache-through! file-cache path file->string))))
 @end example
 
-The procedure closes @code{file-cache}, which is LRU (Least recently used)
-cache that associates string pathnames to the file contents.
-The actual logic is @code{cache-through!}, which first consults the
+The procedure closes a variable @code{file-cache},
+which is an LRU (least recently used) cache that associates
+string pathnames to the file contents.
+The actual logic is in @code{cache-through!}, which first consults the
 cache if it has an entry for the @code{path}.  If the cache has
 the entry, its value (the file content) is returned.  If not,
 it calls @var{file->string} with the @var{path} to fetch the file content,
@@ -1693,7 +1694,7 @@ set to 10 (the first argument of @code{make-lru-cache}), so when the
 11th file is read, the least recently used file will be purged from the
 cache.
 
-The effect of cache isn't very visible from the above cache.  You
+The effect of cache isn't very visible in the above example.  You
 can insert some print stubs to see the cache is actually in action:
 
 @example
@@ -1744,6 +1745,170 @@ cache algorithm, so you can't just pass a random dictionary;
 it has to be created by the same kind of cache.
 If you pass in the storage, the comparator is taken from it.
 
+Thus, the comparator constructors uniformly take keyword arguments
+@code{comparator} and @code{storage}; you can specify either one,
+or omit both to use the defaults.
+
+@subheading Predefined caches
+
+For @code{storage} and @code{comparator} keyword arguments, see above.
+
+@defun make-fifo-cache capacity :key storage comparator
+Creates and returns a FIFO (first-in, first-out) cache that can
+hold up to @var{capacity} entries.
+If the number of entries exceeds @var{capacity}, the oldest entry
+is removed.
+@end defun
+
+@defun make-lru-cache capacity :key storage comparator
+Creates and returns an LRU (least recently used) cache that can
+hold up to @var{capacity} entries.
+If the number of entries exceeds @var{capacity}, the least recently used
+entry is removed.
+@end defun
+
+@defun make-ttl-cache timeout :key storage comparator timestamper
+Creates and returns a TTL (time to live) cache with the timeout value
+@var{timeout}.
+Each entry is timestamped when it's inserted, and it is removed
+when the current time passes @var{timeout} unit from the timestamp.
+The actual entry removal is done when the cache is accessed.
+
+By default, the Unix system time (seconds from Epoch) is used
+as a timestamp, and @var{timeout} is in seconds.  It may not be
+fine-grained enough if you add multiple entries in shorter intervals
+than seconds.   You can customize
+it by giving a thunk to @var{timestamper}; the thunk is called to
+obtain a timestamp, which can be any monotonically increasing real number.
+If yuo give @var{timestamper}, the unit of @var{timeout} value should
+be the same as whatever @var{timestamper} returns.
+@end defun
+
+@defun make-ttlr-cache timeout :key storage comparator timestamper
+A variation of TTL cache, but the entry's timestamp is updated
+(refreshed) whenever the entry is read.  Hence we call it TTL with refresh
+(TTLR).  But you can also think it as a variation of LRU cache with
+timeout.
+
+The unit of timeout, and the role of @var{timestamper} argument, are
+the same as @code{make-ttl-cache}.
+@end defun
+
+
+@subheading Common operations of caches
+
+The following APIs are for the users of a cache.
+
+@defun cache-lookup! cache key :optional default
+Look for an entry with @var{key} in @var{cache}, and returns its
+value if it exists.  If there's no entry, the procedure returns @var{default}
+if it is provided, or throws an error otherwise.
+
+Some types of cache algorithms update @var{cache} by this operation, hence
+the bang is in the name.
+@end defun
+
+@defun cache-through! cache key value-fn
+Look for an entry with @var{key} in @var{cache}, and returns its
+value if it exists.  If there's no entry, a procedure @var{value-fn}
+is called with @var{key} as the argument, and its return value
+is inserted into @var{cache} and also returned.
+@end defun
+
+@deffn {Generic function} cache-write! cache key value
+This inserts association of @var{key} and @var{value} into @var{cache}.
+If there's already an entry with @var{key}, it is overwritten.
+Otherwise a new entry is created.
+
+The same effect can be achieved by calling @code{cache-evict!} then
+@code{cache-through!}, but cache algorithms may provide efficient
+way through this method.
+@end deffn
+
+@deffn {Generic function} cache-evict! cache key
+Removes an entry with @var{key} from @var{cache}, if it exists.
+@end deffn
+
+@deffn {Generic function} cache-clear! cache
+Removes all entries from @var{cache}.
+@end deffn
+
+
+@subheading Implementing a cache algorithm
+
+Each cache algorithm must define a class inheriting @code{<cache>},
+and implement the following two essential methods.
+The higher-level API calls them.
+
+@deffn {Generic function} cache-check! cache key
+Looks for an entry with @var{key} in @var{cache}.
+If it exists, returns a pair of @var{key} and the associated value.
+Otherwise, returns @code{#f}.  It may update the cache,
+for example, the timestamp of the entry for being read.
+@end deffn
+
+@deffn {Generic function} cache-register! cache key value
+Add an entry with @var{key} and associated @var{value} into @var{cache}.
+This is called after @var{key} is confirmed not being in @var{cache}.
+@end deffn
+
+Additionally, the implementation should consider the following points.
+
+@itemize @bullet
+@item
+The initialize method must call @code{next-method} first, which sets up
+the @code{comparator} and @code{storage} slots.  You should check
+if @code{storage} has pre-filled entries, and if so, set up other
+internal structures appropriately.
+@item
+The default methods of @code{cache-evict!} and @code{cache-clear!} only
+takes care of the storage of the cache.  You should implement them
+if your auxiliary structure needs to be taken care of.
+@item
+The default method of @code{cache-write!} is just @code{cache-evict!}
+followed by @code{cache-register!}.  You may provide alternative method
+if you can do it more efficiently, which is often the case.
+@end itemize
+
+There are several procedures that help implementing cache subclasses:
+
+@defun cache-comparator cache
+@defunx cache-storage cache
+Returns the comparator and the storage of the cache, respectively.
+@end defun
+
+Typical caches may be constructed with a storage (dictionary) and
+a queue, where the storage maps keys to @code{(<n> . <value>)},
+and queues holds @code{(<key> . <n>)}, @code{<n>} being a number
+(timestamp, counter, etc.)  Here are some common operations work
+on this queue-and-dictionary scheme:
+
+@defun cache-populate-queue! queue storage
+You can call this in the @code{initialize} method to set up the
+queue.  This procedure walks storage to construct @code{(<key> . <n>)}
+pairs, sorts it in increasing order of @code{<n>}, and pushes them
+into the queue.
+@end defun
+
+@defun cache-compact-queue! queue storage
+The queue may contain multiple pairs with the same key.  Sometimes the
+queue gets to have too many duplicated entries (e.g. the same entry
+is read repeatedly).  This scans the queue and removes duplicated entries
+but the up-to-date one.  After this operation, the length of the queue
+and the number of entries in the storage should match.
+@end defun
+
+@defun cache-renumber-entries! queue storage
+This procedure renumbers @code{<n>}s in the queue and the storage
+starting from 0, without changing their order, and returns the
+maximum @code{<n>}.  The duplicated entries in the queue is removed
+as in @code{cache-compact-queue!}.
+
+When you're using monotonically increasing counter for @code{<n>} and
+you don't want @code{<n>} to get too big (i.e. bignums), you can
+call this procedure occasionally to keep @code{<n>}'s in reasonable
+range.
+@end defun
 
 
 @c ----------------------------------------------------------------------
