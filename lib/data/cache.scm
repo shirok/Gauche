@@ -31,7 +31,7 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
-;; This class takes care of various cache algorithm.
+;; This class takes care of various cache algorithms.
 ;; The cache works like a dictionary that you can associate value
 ;; to a key.  The entry may disappear silently, when it is expired
 ;; according to the cache policy.  This module is inspired by Clojure's
@@ -43,7 +43,7 @@
 ;;     Arguments varies depending on the alrogithm.
 ;;
 ;;  (cache-lookup! cache key [default]) => value              procedure
-;;  (cache-through! cache key value) => value                 procedure
+;;  (cache-through! cache key value-fn) => value              procedure
 ;;  (cache-evict! cache key) => void                             method
 ;;  (cache-clear! cache) => void                                 method
 ;;  (cache-write! cache key value) => void                       method
@@ -74,7 +74,7 @@
 ;;  states, it should override those methods.
 ;;
 ;;  The default method of cache-write! is evict! + register!.  In most
-;;  cases there exists better way.
+;;  cases there exists a better way.
 
 (define-module data.cache
   (use gauche.collection)
@@ -83,10 +83,15 @@
   (use data.heap)
   (use srfi-114)
   (export <cache>
+          ;; Protocol
           cache-storage cache-comparator
           cache-lookup! cache-through!
           cache-check! cache-register! cache-write!
           cache-evict! cache-clear!
+
+          ;; Some auxiliary procedures for implementors
+          cache-populate-queue! cache-compact-queue!
+          cache-renumber-entries! 
 
           ;; Concrete implementations
           make-fifo-cache
@@ -153,7 +158,7 @@
 ;; Queue must be an empty queue.  Fills queue according to the contents of
 ;; storage.  This is called from initialize, in order to set up a cache
 ;; with existing storage.  Returns maximum <n>.
-(define (%populate-queue! queue storage)
+(define (cache-populate-queue! queue storage)
   (let1 entries (dict->alist storage)  ; entries :: [(key n . val)]
     (fold (^[entry maxn]
             (enqueue! queue (cons (car entry) (cadr entry))) ; (key . n)
@@ -166,7 +171,7 @@
 ;; When the algorithm increments <n> monotonically, it can eventually fell
 ;; to bignum, but we don't want that.  This routine renumbers entries,
 ;; while removing duplicate keys in the queue.
-(define (%renumber-entries! queue storage)
+(define (cache-renumber-entries! queue storage)
   (let1 seen (make-hash-table (dict-comparator storage))
     (define cnt (- (size-of storage) 1))
     (dolist [kn (sort (dequeue-all! queue) > cdr)]
@@ -175,6 +180,19 @@
         (queue-push! queue (cons (car kn) cnt))
         (dict-update! storage (car kn) (^[nv] (cons cnt (cdr nv))))
         (dec! cnt)))))
+
+;; We allow duplicate keys in the queue, but we don't want the queue to
+;; get too long (e.g. Repeatedly hitting the same key in LRU cache would
+;; quickly pile up entries in the queue).  So occasionally we want to
+;; compact the queue, by removing the duplicate entries.
+;; This routine is quite similar to cache-renumber-entries! but we don't
+;; change <n>'s, so we don't need to mutate the storage.
+(define (cache-compact-queue! queue storage)
+  (let1 seen (make-hash-table (dict-comparator storage))
+    (dolist [kn (sort (dequeue-all! queue) > cdr)]
+      (unless (hash-table-exists? seen (car kn))
+        (hash-table-put! seen (car kn) #t)
+        (queue-push! queue kn)))))
 
 ;;;
 ;;; Cache implementations
@@ -200,7 +218,7 @@
 (define-method initialize ((c <fifo-cache>) initargs)
   (next-method)
   (set! (~ c'counter)
-        (+ (%populate-queue! (~ c'queue) (cache-storage c)))))
+        (+ 1 (cache-populate-queue! (~ c'queue) (cache-storage c)))))
 
 (define-method cache-check! ((cache <fifo-cache>) key)
   (and-let1 nv (dict-get (cache-storage cache) key #f)
@@ -223,16 +241,21 @@
     (%fifo-touch! cache queue key)))
 
 (define (%fifo-touch! cache queue key)
-  (let1 n (~ cache'counter)
+  (let ([n (~ cache'counter)]
+        [storage (cache-storage cache)])
     (enqueue! queue (cons key n))
-    (if (= n (greatest-fixnum))
-      (begin
-        (%renumber-entries! (~ cache'queue) (cache-storage cache))
-        (set! (~ cache'counter) (size-of (cache-storage cache))))
-      (set! (~ cache'counter) (+ n 1)))))
+    (cond [(= n (greatest-fixnum))
+           (cache-renumber-entries! queue storage)
+           (set! (~ cache'counter) (size-of storage))]
+          [(> (queue-length queue) (* 3 (size-of storage)))
+           (cache-compact-queue! queue storage)
+           (set! (~ cache'counter) (+ n 1))]
+          [else
+           (set! (~ cache'counter) (+ n 1))])))
 
 (define-method cache-register! ((cache <fifo-cache>) key value)
-  (%fifo-add! cache key value))
+  (%fifo-add! cache key value)
+  (cons key value))
 
 (define-method cache-write! ((cache <fifo-cache>) key value)
   (%fifo-add! cache key value))
@@ -255,7 +278,9 @@
         :capacity capacity))
 
 (define-method cache-check! ((cache <lru-cache>) key)
-  (and-let1 nv (dict-get (cache-storage cache) key #f)
+  (and-let* ([nv (dict-get (cache-storage cache) key #f)]
+             [nv2 (cons (~ cache'counter) (cdr nv))])
+    (dict-put! (cache-storage cache) key nv2)
     (%fifo-touch! cache (~ cache'queue) key)
     (cons key (cdr nv))))
   
@@ -276,7 +301,7 @@
 
 (define-method initialize ((c <ttl-cache>) initargs)
   (next-method)
-  (%populate-queue! (~ c'timestamps) (cache-storage c)))
+  (cache-populate-queue! (~ c'timestamps) (cache-storage c)))
 
 (define (%ttl-sweep! c)
   (let ([cutoff (- ((~ c'timestamper)) (~ c'ttl))]
@@ -338,4 +363,6 @@
              [t  (%ttl-timestamp c)])
     (set! (car tv) t)
     (enqueue! (~ c'timestamps) (cons key t))
+    (when (> (queue-length (~ c'timestamps)) (* 3 (size-of (cache-storage c))))
+      (cache-compact-queue! (~ c'timestamps) (cache-storage c)))
     (cons key (cdr tv))))

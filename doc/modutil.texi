@@ -11,6 +11,7 @@
 * A common job descriptor for control modules::  control.job
 * Thread pools::                control.thread-pool
 * Password hashing::            crypt.bcrypt
+* Cache::                       data.cache
 * Heap::                        data.heap
 * Queue::                       data.queue
 * Random data generators::      data.random
@@ -1519,7 +1520,7 @@ better to give some time for the thread to finish the executing jobs.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Password hashing, Heap, Thread pools, Library modules - Utilities
+@node Password hashing, Cache, Thread pools, Library modules - Utilities
 @section @code{crypt.bcrypt} - Password hashing
 @c NODE パスワードハッシュ, @code{crypt.bcrypt} - パスワードハッシュ
 
@@ -1651,7 +1652,102 @@ bcryptアルゴリズムでは少なくとも16バイトの長さが必要です
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Heap, Queue, Password hashing, Library modules - Utilities
+@node Cache, Heap, Password hashing, Library modules - Utilities
+@section @code{data.cache} - Cache
+@c NODE キャッシュ, @code{data.cache} - キャッシュ
+
+@deftp {Module} data.cache
+@mdindex data.cache
+A cache is similar to a dictionary, associating keys to values,
+but its entries may dissapear according to the policy of the cache
+algorithm.  This module defines
+a common protocol for cache datatypes, and also provides several
+typical cache implementations.
+@end deftp
+
+@subheading Examples
+
+Let's start from simple examples to get the idea.
+
+Suppose you want to read files frequently and you want to
+cache the frequently read files.  The following code defines
+a cached version of @code{file->string}:
+
+@example
+(use data.cache)
+(use file.util)
+
+(define file->string/cached
+  (let1 file-cache (make-lru-cache 10 :comparator string-comparator)
+    (^[path] (cache-through! file-cache path file->string))))
+@end example
+
+The procedure closes @code{file-cache}, which is LRU (Least recently used)
+cache that associates string pathnames to the file contents.
+The actual logic is @code{cache-through!}, which first consults the
+cache if it has an entry for the @code{path}.  If the cache has
+the entry, its value (the file content) is returned.  If not,
+it calls @var{file->string} with the @var{path} to fetch the file content,
+register it to the cache, and return it.  The capacity of cache is
+set to 10 (the first argument of @code{make-lru-cache}), so when the
+11th file is read, the least recently used file will be purged from the
+cache.
+
+The effect of cache isn't very visible from the above cache.  You
+can insert some print stubs to see the cache is actually in action:
+
+@example
+(define file->string/cached
+  (let1 file-cache (make-lru-cache 10 :comparator string-comparator)
+    (^[path]
+      (print #"file->string/cached called on ~path")
+      (cache-through! file-cache path
+                      (^[path]
+                        (print #"cache miss.  fetching ~path")
+                        (file->string path))))))
+@end example
+
+Caveat: A cache itself isn't MT-safe.  If you are using it in
+multithreaded programs, you have to wrap it with an atom
+(@xref{Synchronization primitives}):
+
+@example
+(use data.cache)
+(use file.util)
+(use gauche.threads)
+
+(define file->string/cached
+  (let1 file-cache (atom (make-lru-cache 10 :comparator string-comparator))
+    (^[path]
+      (atomic file-cache (cut cache-through! <> path file->string)))))
+@end example
+
+
+@subheading Common properties of caches
+
+A cache of any kind has a comparator and a storage.
+The comparator is used to compare keys; in the example above,
+we use @code{string-comparator} to compare string pathnames
+(@xref{Basic comparators}, for more about comparators).
+
+The storage is a dictionary that maps keys to internal
+structures of the cache.  By default, a hashtable is
+created automatically using the given comparator (or,
+if a comparator is omitted, using @code{default-comparator}).
+The comparator must have hash function.
+
+Alternatively, you can give a pre-filled dictionary
+(copied from another instance of the same kind of cache) 
+to start cache with some data already in it.  Note that
+what the cache keeps in the dictionary totally depends on the
+cache algorithm, so you can't just pass a random dictionary;
+it has to be created by the same kind of cache.
+If you pass in the storage, the comparator is taken from it.
+
+
+
+@c ----------------------------------------------------------------------
+@node Heap, Queue, Cache, Library modules - Utilities
 @section @code{data.heap} - Heap
 @c NODE ヒープ, @code{data.heap} - ヒープ
 
