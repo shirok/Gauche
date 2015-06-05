@@ -3188,11 +3188,11 @@ Gauche では @code{<class>} クラスおよびそのサブクラスのみがメ
 @c EN
 It is expanded into a form like this (you can see the exact form
 by looking at the definition of @code{define-class} macro in
-@file{`gauche-config --syslibdir`/gauche/object.scm}).
+@code{src/libobj.scm} of the source code tree.
 @c JP
 これを次のように展開します。
-(@file{`gauche-config --syslibdir`/gauche/object.scm} の @code{define-class}
-マクロの定義をみれば展開形式を見ることができます。)
+(完全な展開形を知りたければ、ソースツリーの@code{src/libobj.scm}
+にある@code{default-class}の定義を見てください。)
 @c COMMON
 @example
 (define @var{name}
@@ -3288,10 +3288,12 @@ and @code{:accessor} slot options in @var{slot-spec} are
 collected and registered to the corresponding generic functions.
 @c JP
 クラスの名前、スーパークラス、スロットの定義は初期化引数として
-ジェネリック関数 @code{make} に引き渡され、それ以外の引数は
-@code{define-class} に引き渡されます。初期化引数 @code{define-modules} は
-どのモジュールでそのクラスが定義されたかを覚えておくために引き渡されます。
-これはこのクラスの再定義のとき用です。
+ジェネリック関数 @code{make} に引き渡されます。また、
+@code{define-class} のスロット定義以降に渡されたキーワード-値リストも
+追加の初期化引数として @code{make} に渡されます。
+初期化引数 @code{define-modules} は
+どのモジュールでそのクラスが定義されたかを覚えておくためにのものです。
+これはこのクラスの再定義の時に使われます。
 
 スロットの仕様 @var{slot-specs} は内部メソッド @var{process-slot-definitions}
 (これは直接呼び出すことはできません)で処理され、スロット定義になります。
@@ -3319,18 +3321,21 @@ collected and registered to the corresponding generic functions.
 @c EN
 The base class of all metaclasses, @code{<class>}, has
 the following slots.  Note that these slots are for internal management,
-and users shouldn't change their values after
-the class is initialized.  It is recommended to obtain information
+and users can't change those information freely once the class is
+initialized.
+
+It is recommended to obtain information
 about a class by procedures described in @ref{Class object}, instead
 of directly accessing those slots.
 @c JP
 すべてのメタクラスのベースクラスである @code{<class>} は以下のような
 スロットを持っています。これらのスロットは内部的な管理のためにあるので
-クラスが初期化された後に、これらの値を変更すべきではないということに
-注意してください。クラスの情報を得るには、これらのスロットに直接
-アクセスするのではなく、@ref{Class object} にある手続きを使うことをおすすめ
-します。
+クラスが初期化された後に、これらの値を自由に変更することはできません。
+
+クラスの情報を得るには、これらのスロットに直接
+アクセスするのではなく、@ref{Class object} にある手続きを使うことをおすすめします。
 @c COMMON
+
 
 @defivar <class> name
 @c EN
@@ -3462,13 +3467,44 @@ Scheme 定義のクラスは、@code{scheme} というシンボルを持って�
 @end deftp
 
 @c EN
-@subsubheading The make method for @code{<class>}
+@subsubheading The initialize method for @code{<class>}
 @c JP
-@subsubheading @code{<class>} 用の make メソッド
+@subsubheading @code{<class>} 用の initialize メソッド
 @c COMMON
 
-@deffn {Method} make (class <class>) :rest initargs
+@deffn {Method} initialize (class <class>) :rest initargs
+The @code{define-class} macro expands into a call of
+@code{(make <class> @dots{})}, which allocates a class metaobject
+and calls @code{initialize} method.   This method takes care of
+computing inheritance order (class precedence list) and calculate slots,
+and set up various internal slots.  Then, at the very end of
+this method, it @emph{freezes} the essential class slots; they became
+immutable.
+
+Calculation of inheritance and slots are handle by generic
+fucntions.  If you define a metaclass, you can define methods
+for them to customize how those calculations are done.
+Class inheritance is calculated by @code{compute-cpl} defined below.
+Slot calculation is a bit involved, and explained in the 
+next subsection (@xref{Customizing slot access}).
+
+If your metaclass needs to initialize auxiliary slots, you can
+define your own @code{initialize} method, in which you call
+@code{next-method} first to set up the core part of the
+@code{<class>} structure, then you sets up metcalss-specific part.  
+One caveat is that, after @code{next-method} handes
+initialization of the core @code{<class>} part, you can no longer
+modify essential class slots.  If you need to tweak those slots,
+you can override @code{class-post-initialize} method, which
+is called right before the core class slots are frozen.
 @end deffn
+
+@deffn {Generic function} compute-cpl class
+@end deffn
+
+@deffn {Generic function} class-post-initialize class initargs
+@end deffn
+
 
 
 @node Customizing slot access, Method instantiation, Class instantiation, Metaobject protocol

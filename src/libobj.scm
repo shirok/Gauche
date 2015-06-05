@@ -302,15 +302,17 @@
             (find-metaclass (reverse! needed))))))
     ))
 
+;;;
 ;;; Method INITIALIZE (class <class>) initargs
-;;;  NB: we always add <object> to the direct supers, for C defined
-;;;  base classes may not be inheriting from it.
+;;;
+
 (define-method initialize ((class <class>) initargs)
   (next-method)
   (let* ([slots  (get-keyword :slots  initargs '())]
          [sup    (get-keyword :supers initargs '())]
-         [supers (append sup (list <object>))]
-         )
+         ;;  NB: we always add <object> to the direct supers, for C defined
+         ;;  base classes may not be inheriting from it.
+         [supers (append sup (list <object>))])
     ;; The order of initialization is somewhat important, since calculation
     ;; of values of some slots depends on the other slots.
     (slot-set! class 'direct-supers supers)
@@ -331,9 +333,15 @@
     ;; bookkeeping for class redefinition
     (slot-set! class 'initargs initargs)
     (dolist [super supers] (%add-direct-subclass! super class))
+    (class-post-initialize class initargs)
     ;; seal the class
     (%finish-class-initialization! class)
     ))
+
+;; This is a hook to tweak critical slots of class at initialization time.
+;; The core slots becomes immutable once class initialization is done,
+;; so any tweaks that requires to modify them needs to be implemented here.
+(define-method class-post-initialize ((class <class>) initargs) #f)
 
 (define (%make-accessor class slot module)
   (let* ([name      (slot-definition-name slot)]
@@ -831,6 +839,7 @@
                 class-name class-precedence-list class-direct-supers
                 class-direct-methods class-direct-subclasses
                 class-direct-slots class-slots
+                class-post-initialize
                 slot-definition-name slot-definition-options
                 slot-definition-option
                 slot-definition-allocation slot-definition-getter
