@@ -281,7 +281,7 @@
   (if (null? lol)
       (list '())
       (let ((l (car lol))
-            (rest (cartesian-product (cdr lol))))
+            (rest (cartesian-product-right (cdr lol))))
         (append-map!
          (lambda (sub-prod)
            (map (^x (cons x sub-prod)) l))

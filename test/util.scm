@@ -308,6 +308,9 @@
        (cartesian-product '((a b) (0 1) (0 1))))
 (test* "cartesian-product-right" '((a 0) (b 0) (c 0) (a 1) (b 1) (c 1))
        (cartesian-product-right '((a b c) (0 1))))
+(test* "cartesian-product-right" '((a 0 0) (b 0 0) (a 1 0) (b 1 0)
+                                   (a 0 1) (b 0 1) (a 1 1) (b 1 1))
+       (cartesian-product-right '((a b) (0 1) (0 1))))
 
 ;;-----------------------------------------------
 (test-section "util.dominator")
