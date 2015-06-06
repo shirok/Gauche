@@ -6178,15 +6178,28 @@ by @var{car-comparator} and their cdrs by @var{cdr-comparator}.
 @end defun
 
 @defun make-improper-list-comparator element-comparator
+This may be understood as recursive pair comparator; if objects
+to be compared are pairs, we recurse their cars then their cdrs.
+If objects to be compared are not pairs, we use @var{element-comparator}
+to compare them.
 @end defun
 
 @defun make-selecting-comparator comparator1 comparator2 @dots{}
+This creates a comparator that works any one of the given comparators;
+the objects to be compared are type-tested with each of the comparators
+in order, and the first comparator that accepts all objects will be used.
 @end defun
 
 @defun make-refining-comparator comparator1 comparator2 @dots{}
+This is similar to @code{make-selecting-comparator}, except that
+if the first comparator that accepts given objects to compare finds
+they are equal (or 0 by the comparison procedure), it tries other
+comparators down the list, if any.
 @end defun
 
 @defun make-reverse-comparator comparator
+Returns a comparator that just reverses the comparison order of
+@var{comparator}.
 @end defun
 
 @defun make-debug-comparator comparator
@@ -6195,26 +6208,30 @@ by @var{car-comparator} and their cdrs by @var{cdr-comparator}.
 @subsubheading Comparison procedure constructors
 
 @defun make-comparison< lt-pred
-@end defun
+@defunx make-comparison> gt-pred
+@defunx make-comparison<= le-pred
+@defunx make-comparison>= ge-pred
+@defunx make-comparison=/< eq-pred lt-pred
+@defunx make-comparison=/> eq-pred gt-pred
+Utility procedures to create a comparison procedure (the one returns
+-1, 0, or 1) from the given predicate.  For example, 
+@code{make-comparison<} can be defined as follows:
 
-@defun make-comparison> gt-pred
-@end defun
-
-@defun make-comparison<= le-pred
-@end defun
-
-@defun make-comparison>= ge-pred
-@end defun
-
-@defun make-comparison=/< eq-pred lt-pred
-@end defun
-
-@defun make-comparison=/> eq-pred gt-pred
+@example
+(define (make-comparison< pred)
+  (^[a b] (cond [(pred a b) -1]
+                [(pred b a) 1]
+                [else 0])))
+@end example
 @end defun
 
 @subsubheading Comparison syntax
 
 @defmac if3 expr less equal greater
+Three-way @code{if}: Evaluates @var{expr}, and then evaluates
+either one of @var{less}, @var{equal}, or @var{greater},
+depending on the value of @var{expr} is either less than zero,
+equal to zero, or greater than zero, respectively.
 @end defmac
 
 @defmac if=? expr consequent :optional alternate
