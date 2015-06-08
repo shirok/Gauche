@@ -20306,36 +20306,73 @@ converts it to a hexified string.
 
 @deftp {Module} util.dominator
 @mdindex util.dominator
+@c EN
 Dominator tree is an auxiliary structure for control flow graphs.
 It is frequently used in the flow analysis of compilers, but
 also useful for handling general directed graphs.
+@c JP
+支配木(dominator tree)は制御フローグラフで補助的に使われる構造です。
+コンパイラのフロー解析によく使われることが多いですが、一般の有向グラフでも有用です。
+@c COMMON
 @end deftp
 
 @defun calculate-dominators start upstreams downstreams node-comparator
+@c EN
 The four arguments represent a directed, possibly cyclic, graph.
 Here, we use @code{Node} to denote an abstract type of a node 
 of the graph.  It can be anything---the algorithm is oblivious on
 the actual type of nodes.
+@c JP
+4つの引数で有向グラフが表現されます。循環があっても構いません。
+以下ではグラフのノードが@code{Node}という型を持つとして説明します。
+実際にはノードの型は何であっても構いません。
+アルゴリズムはノードの実際の型とは無関係に動作します。
+@c COMMON
 
 @table @asis
 @item @var{start} @code{:: Node}
+@c EN
 The start node, or the enter node, of the graph.
+@c JP
+フローの起点となるノード。startノードとかenterノードとも呼ばれます。
+@c COMMON
 @item @var{upstreams} @code{:: Node -> (Node @dots{})}
+@c EN
 A procedure that takes a node, and returns its upstream
 (immediate ancestor) nodes.
+@c JP
+ノードを取り、その直接の上流ノードのリストを返す関数。
+@c COMMON
 @item @var{downstreams} @code{:: Node -> (Node @dots{})}
+@c EN
 A procedure that takes a node, and returns its downstream
 (immediate descendant) nodes.
+@c JP
+ノードを取り、その直接の下流ノードのリストを返す関数。
+@c COMMON
 @item @var{node-comparator}
+@c EN
 A comparator that is used to determine if two nodes are equal to each other.
 It doesn't need to have comparison procedure (we don't need to see
 which is smaller than the other), but it has to have hash function,
-for we use hashtables internally.
+for we use hashtables internally.  (@xref{Comparators}, for the details
+of comparators.)
+@c JP
+二つのノードが等しいかどうかを決定する比較器。大小比較関数を持っている必要はありませんが、
+アルゴリズム内部でハッシュテーブルを使うので、ハッシュ関数は持っている必要があります。
+比較器について詳しくは@ref{Comparators}を山椒してください。
+@c COMMON
 @end table
 
+@c EN
 The procedure returns a list of @code{(node1 node2)}, where
-@code{node2} is an immediate dominator of @code{node1}.n
+@code{node2} is an immediate dominator of @code{node1}.
+@c JP
+返り値は@code{(node1 node2)}を要素に持つリストです。ここで、
+@code{node2}は@code{node1}の直接支配ノード(immediate dominator)です。
+@c COMMON
 @end defun
+
 
 @c ----------------------------------------------------------------------
 @node Determine isomorphism, The longest common subsequence, Calculate dominator tree, Library modules - Utilities
