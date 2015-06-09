@@ -966,9 +966,9 @@
 (test* "fixnum? least-1"     #f (fixnum? (- (least-fixnum) 1)))
 
 (test* "greatest fixnum & width" (greatest-fixnum)
-       (- (ash 1 (fixnum-width)) 1))
+       (- (ash 1 (- (fixnum-width) 1)) 1))
 (test* "least fixnum & width" (least-fixnum)
-       (- (ash 1 (fixnum-width))))
+       (- (ash 1 (- (fixnum-width) 1))))
 
 ;;==================================================================
 ;; Arithmetics

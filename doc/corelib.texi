@@ -1892,8 +1892,8 @@ currently we only supports real number argument.
 [R6RS]
 @c EN
 These procedures return the width of fixnum (@var{w}),
-the greatest integer representable by fixnum (@var{2^w - 1}),
-and the least integer representable by fixnum (@var{- 2^w}),
+the greatest integer representable by fixnum (@var{2^(w-1) - 1}),
+and the least integer representable by fixnum (@var{- 2^(w-1)}),
 respectively.  You might want to care the fixnum range when
 you are writing a performance-critical section.
 
@@ -1901,13 +1901,20 @@ These names are defined in R6RS.  Common Lisp and ChezScheme have
 @code{most-positive-fixnum} and @code{most-negative-fixnum}.
 @c JP
 これらの手続きは、fixnumで表現できる数値の幅 (@var{w}とします)、
-fixnumで表現できる最大の整数値 (@var{2^w - 1})、および
-fixnumで表現できる最小の整数値 (@var{- 2^w}) を
+fixnumで表現できる最大の整数値 (@var{2^(w-1) - 1})、および
+fixnumで表現できる最小の整数値 (@var{- 2^(w-1)}) を
 それぞれ返します。性能が重要になる部分では数値がfixnumの範囲に収まるかどうかを
 気にかける必要があります。
 
 これらの名前はR6RSで定義されました。Common LispとChezSchemeには
 @code{most-positive-fixnum}および@code{most-negative-fixnum}があります。
+@c COMMON
+
+@c EN
+NB: Before 0.9.5, @code{fixnum-width} had a bug
+to returne one smaller than the supposed value.
+@c JP
+註: 0.9.5以前の@code{fixnum-width}には本来より1小さい値を返すバグがありました。
 @c COMMON
 @end defun
 

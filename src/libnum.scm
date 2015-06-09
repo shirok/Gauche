@@ -90,7 +90,7 @@
 
 (select-module gauche)
 ;; Names are from R6RS.
-(define-cproc fixnum-width ()    ::<int> (return SCM_SMALL_INT_SIZE))
+(define-cproc fixnum-width ()    ::<int> (return (+ SCM_SMALL_INT_SIZE 1)))
 (define-cproc least-fixnum ()    ::<long> (return SCM_SMALL_INT_MIN))
 (define-cproc greatest-fixnum () ::<long> (return SCM_SMALL_INT_MAX))
 
