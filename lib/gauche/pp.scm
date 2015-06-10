@@ -67,7 +67,6 @@
 
 (define rp-writer (make-parameter write))
 (define rp-dict   (make-parameter #f)) ;table to count shared structure
-(define rp-count  (make-parameter 0))  ;counter for srfi-38 notation
 
 (define *rp-width* 79)
 (define *rp-level* 7)
@@ -99,20 +98,22 @@
 
 ;; scan obj to find out shared structure and mark it in rp-dict.
 (define (scan-shared obj level len)
-  (cond [(hash-table-get (rp-dict) obj #f)
-         => (lambda (n)
-              (unless (number? n)
-                (hash-table-put! (rp-dict) obj
-                                 (rlet1 n (rp-count) (rp-count (+ n 1))))))]
-        [(or (> level *rp-level*) (> len *rp-length*) (simple-obj? obj))]
-        [else
-         (hash-table-put! (rp-dict) obj #t)
-         (cond [(pair? obj)
-                (scan-shared (car obj) (+ level 1) 0)
-                (scan-shared (cdr obj) level (+ len 1))]
-               [(vector? obj)
-                (do-ec (: i (min (vector-length obj) *rp-length*))
-                       (scan-shared (vector-ref obj i) (+ level 1) 0))])]))
+  (rlet1 dict (make-hash-table 'eq?)
+    (define counter 0)
+    (let rec ([obj obj] [level level] [len len])
+      (cond [(hash-table-get dict obj #f)
+             => (^n (unless (number? n)
+                      (hash-table-put! dict obj counter)
+                      (inc! counter)))]
+            [(or (> level *rp-level*) (> len *rp-length*) (simple-obj? obj))]
+            [else
+             (hash-table-put! dict obj #t)
+             (cond [(pair? obj)
+                    (rec (car obj) (+ level 1) 0)
+                    (rec (cdr obj) level (+ len 1))]
+                   [(vector? obj)
+                    (do-ec (: i (min (vector-length obj) *rp-length*))
+                           (rec (vector-ref obj i) (+ level 1) 0))])]))))
 
 (define (shared-obj? obj) (number? (hash-table-get (rp-dict) obj #f)))
 
@@ -124,10 +125,12 @@
 ;; break.   A layout-procedure may be called more than once on the same
 ;; object if the layout is "retried".
 ;;
-;; The layout function actually returns a "monad" that wraps the
-;; layout procedure.  The monad works as a state monad and carrying
-;; around a list of "seen" objects.  A seen object is a shared object
-;; and has been seen at least once.
+;; The layout function actually returns a state monad that wraps the
+;; layout procedure.  The monad carries around a list of "seen" objects.
+;; A seen object is a shared object and has been seen at least once.
+;; We need to keep track of it separately from the hashtable for the
+;; shared object, since the layout may be retried, so we can't use side
+;; effects to track the "seen" state.
 
 ;; type Layouter = Integer -> (Formatted, Integer)
 
@@ -258,9 +261,7 @@
 
 ;; Entry point of printer.
 (define (pprint obj)
-  (parameterize ([rp-dict (make-hash-table 'eq?)]
-                 [rp-count 0])
-    (scan-shared obj 0 0)
+  (parameterize ([rp-dict (scan-shared obj 0 0)])
     (let1 layouter (run (layout obj 0))
       (render (kick-layouter layouter) 0))))
 
