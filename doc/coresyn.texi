@@ -61,7 +61,7 @@ Gaucheで使える指示子の一覧については、下の@ref{Hash-bang token
 Gauche adopts the R6RS syntax that regards @code{[]} the same
 as @code{()}.  Both kind of parentheses are equivalent,
 but the kind of corresponding open and close parentheses match.
-Some seasoned Lisper may frown on them, it
+Some seasoned Lisper may frown on them, but it
 helps visually distinguish different roles of parentheses.
 
 A general convention is to use @code{[]} for groupings other than
@@ -149,7 +149,7 @@ As an extension of Gauche, a character @code{_} can be inserted
 in or around a sequence of digits in number literals, as far as
 the literal is explicitly prefixed (@code{#e}, @code{#x}, etc).
 Those @code{_}'s are just ignored.
-It is to help readability, e.g. @code{#b1100_1010_1111_1110}.
+It is to improve readability, e.g. @code{#b1100_1010_1111_1110}.
 @c JP
 @item 数値リテラル
 不正確な実数の整数部または小数部のいずれかが0の場合、それを省略することが
@@ -568,12 +568,12 @@ Switches the reader's case sensitivity;
 @item #!r6rs
 @c EN
 This token is introduced in R6RS and used to indicate the
-program is strictly conforms R6RS.  Gauche doesn't support R6RS, and
-currently it issues warning when it sees @code{#!r6rs} token, though
+program strictly conforms R6RS.  Gauche doesn't conform R6RS, but
+currently it just issues warning when it sees @code{#!r6rs} token, and
 it keeps reading on.
 @c JP
 このトークンはR6RSで導入され、プログラムがR6RSに準拠しているこ
-とを示します。GaucheはR6RSを完全にサポートしていませんが、今のところこのトー
+とを示します。GaucheはR6RSに準拠していませんが、今のところこのトー
 クンに出会っても警告を出すだけで読み込みは継続します。
 @c COMMON
 @item #!r7rs
