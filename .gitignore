@@ -103,6 +103,7 @@ ext/text/text--unicode.c
 ext/threads/gauche--threads.c
 ext/tls/axTLS/ssl/ssltest
 ext/tls/axTLS/ssl/test/ssltest.mod.c
+ext/tls/axtls_dirs
 ext/tls/rfc--tls.c
 ext/util/util--match.c
 ext/uvector/gauche/
