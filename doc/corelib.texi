@@ -4637,7 +4637,7 @@ Returns @code{#t} if @var{symbol} is an interned symbol,
 @code{#f} if it is an uninterned symbol.   An error is signaled
 if @var{symbol} is not a symbol.
 @c JP
-シンボル@var{symbol}がインターンされていらば@code{#t}を、
+シンボル@var{symbol}がインターンされていれば@code{#t}を、
 そうでなければ@code{#f}を返します。シンボルでないものが渡された場合はエラーとなります。
 @c COMMON
 @end defun
