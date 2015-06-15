@@ -897,6 +897,20 @@ conversion (@xref{Full string case conversion}).
 @defvarx complex-comparator
 @defvarx number-comparator
 [SRFI-114]
+Compare exact integers, integers, rational numbers, real numbers,
+complex numbers and general numbers, respectively.
+In Gauche @code{number-comparator} is the same as @code{complex-comparator}.
+
+The equality are determined by @code{=}.
+For exact integer, integer, rational and real comparators,
+the order is the numerical order.  Two complex numbers are
+compared first by their real components, and then their imaginary
+components only if the real components are the same.
+
+Note that those comparator rejects NaN.
+You need @code{make-inexact-real-comparator} in @code{srfi-114} module
+to compare NaNs with your own discretion. 
+@xref{Comparators}, for the details.
 @end defvar
 
 @defvar pair-comparator
@@ -905,10 +919,21 @@ conversion (@xref{Full string case conversion}).
 @defvarx uvector-comparator
 @defvarx bytevector-comparator
 [SRFI-114]
+The default comparators to compare pairs, lists, vectors, uniform
+vectors and bytevectors (which is synonym to @code{u8vector}).
+Their respective elements are compared with the default comparators.
+
+Note that lists are compared by dictionary order (@code{(1 2 3)} comes
+before @code{(1 3)}), while in vector-families
+shorter ones are ordered first (
+@code{#(1 3)} comes before @code{#(1 2 3)}).
 @end defvar
 
 @defun make-reverse-comparator cmpr
 [SRFI-114]
+Returns a comparator with the same type test predicate,
+equality procedure, and hash function as the given comparator,
+but the comparison procedure is flipped.
 @end defun
 
 @defun make-key-comparator cmpr test key
