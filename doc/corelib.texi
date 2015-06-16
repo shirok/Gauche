@@ -688,8 +688,13 @@ Gaucheでは重要なAPIだけを組み込みで用意しています。
 @c COMMON
 
 @deftp {Builtin Class} <comparator>
-A record that packages the following procedures:
+@c EN
+A record that bundles the following procedures:
+@c JP
+以下の手続きをひとまとめにするレコードです。
+@c COMMON
 
+@c EN
 @table @emph
 @item Type test predicate
 Checks if an object can be compared with this comparator.
@@ -703,46 +708,107 @@ than the second).
 @item Hash function
 Returns a hash value of the given object.
 @end table
+@c JP
+@table @emph
+@item 型検査述語
+オブジェクトがこの比較器によって扱えるかどうかを調べます。
+@item 等価述語
+二つのオブジェクトが等価かどうかを判定し、等価なら@code{#t}を、そうでなければ@code{#f}
+を返します。
+@item 比較手続き
+二つのオブジェクトの大小関係を判定し、
+最初のオブジェクトの方が小さければ-1を、
+二つが等しければ0を、
+最初のオブジェクトの方が大きければ1を返します。
+@item ハッシュ関数
+オブジェクトのハッシュ値を返します。
+@end table
+@c COMMON
 
+@c EN
 A comparator may not have a comparison procedure and/or
 a hash function.  You can check if a comarison procedure
 or a hash function is available in a given comparator
 by @code{comparator-comparison-procedure?} and
 @code{comparator-hash-function?}, respectively.
+@c JP
+比較器は、比較手続き、ハッシュ関数、あるいはその両方を欠いていることもあります。
+比較手続きとハッシュ関数が使えるかどうかは、それぞれ
+@code{comparator-comparison-procedure?}と
+@code{comparator-hash-function?}で調べることができます。
+@c COMMON
 
+@c EN
 Some built-in data types such as hashtables (@xref{Hashtables})
 and treemaps (@xref{Treemaps}), take a comparator in their constructors.
 The sort and merge procedures also accept comparators
 (@xref{Sorting and merging}).
+@c JP
+Gauche組み込みのデータ型は、コンストラクタで比較器を取ることができます
+(例:ハッシュテーブル(@ref{Hashtables}参照)、
+ツリーマップ(@ref{Treemaps}参照))。
+また、ソートとマージの手続きも比較器を受け取ることができます
+(@ref{Sorting and merging}参照。
+@c COMMON
 @end deftp
 
 @defun make-comparator type-test equal compare hash :optional name
 [SRFI-114+]
+@c EN
 Creates a new comparator form the given @var{type-test}, 
 @var{equal}, @var{compare} and @var{hash} functions, and returns it.
 
 See the description of @code{<comparator>} above for the role of
 those procedures.
+@c JP
+与えられた@var{type-test}、@var{equal}、@var{compare}、@var{hash}の
+各関数をまとめて、新たな比較器を作って返します。
 
+各関数の役割については上の@code{<comparator>}の説明を参照してください。
+@c COMMON
+
+@c EN
 Acutally, some arguments can be non-procedures, to use predefined
 procedures, for the convenience.  Even if non-procedure arguments
 are passed, the corresponding accessors (e.g.
 @code{comparator-type-test-procedure} for the @code{type-test}
 procedure) always return a procedure---either the given one
 or the predefined one.
+@c JP
+各引数は、手続きでなく真偽値を取ることもできます。その場合、既に定義された
+手続きが使えるので便利です。但し、引数に真偽値を渡した場合でも、
+アクセサは補われた手続きの方を返します。
+(例えば@code{type-test}引数に対応するアクセサは
+@code{comparator-type-test-procedure}ですが、これは常に手続きを返します。)
+@c COMMON
 
+@c EN
 The @var{type-test} argument must be either @code{#t} or
 a predicate taking one argument to test suitability of
 the object for comaring by the resulting comparator.
 If it is @code{#t}, 
 a procedure that always return @code{#t} is used.
+@c JP
+@code{type-test}引数は、@code{#t}もしくは1引数の手続きでなければなりません。
+手続きの場合、それは渡されたオブジェクトが比較器の他の手続きに渡せるかどうかを
+判定する述語です。@code{#t}の場合、どんなオブジェクトに対しても@code{#t}を
+返す手続きが補われます。
+@c COMMON
 
+@c EN
 The @var{equal} argument must be either @code{#t}, or
 a predicate taking two arguments to test equality.
 If it is @code{#t}, the @var{compare} argument must be a procedure,
 and the predefined equality procedure passes both arguments
 to it, and return true iff the compare procedure returns 0.
+@c JP
+@var{equal}引数は@code{#t}もしくは二つの引数を取りその等価性を判定する
+述語でなければなりません。@code{#t}が渡された場合、@var{compare}引数が
+手続きでなければならず、@var{compare}が0を返した場合に@var{#t}となるような
+手続きが等価述語として補われます。
+@c COMMON
 
+@c EN
 The @var{compare} argument must be either @code{#f}, or
 a procedure taking two arguments and returning either -1, 0, or
 1, depending on whether the first argument is less than, equal to,
@@ -750,7 +816,15 @@ or greater than the second argument.
 If it is @code{#f}, it indicates the comparator can't order objects
 (equality can still be tested, though).  The predefined procedure
 just throws an error.
+@c JP
+@var{compare}引数は@code{#f}か、二つの引数を取りそれらの大小関係を
+判定する手続きでなければなりません。手続きの場合、引数の最初の方が小さいか、
+両者が等しいか、最初の方が大きいか、に応じて-1, 0, 1をそれぞれ返さなければ
+なります。@code{#f}の場合、対象とするオブジェクトの集合に全順序関係がつけられない
+ことを表します。この場合、呼ばれたらエラーを投げる手続きが補われます。
+@c COMMON
 
+@c EN
 The @var{hash} argument must be either @code{#f}, or
 a procedure taking one argument and returning nonnegative exact
 integer.  SRFI-114 doesn't specify the range of the hash value,
@@ -758,10 +832,24 @@ but in Gauche, hashtable won't use greater than 32bits range,
 most likely much less bits, so you can limit to the result to
 fixnum range.  If @var{#f} is given, it indicates the comparator
 can't hash objects; the predefined procedure just throws an error.
+@c JP
+@var{hash}引数は@code{#f}か、一つの引数を取り非負の正確な整数をハッシュ値と
+して返す手続きでなければなりません。SRFI-114ではハッシュ値の値域は定めて
+いませんが、Gaucheではハッシュテーブルは最大でも下位から32ビットの値しか
+使わないので、ハッシュ関数もその範囲に値を絞って良いです。
+@code{#f}が渡された場合は、この比較器ではハッシュ値を取れないことを意味します。
+この場合、呼ばれたらエラーを投げる手続きが補われます。
+@c COMMON
 
+@c EN
 The fifth, optional argument @var{name}, is Gauche's extension.
 It can be any object but usually a symbol; it is only used when
 printing the comparator, to help debugging.
+@c JP
+最後の、省略可能な引数@var{name}はGaucheの拡張です。
+どんなオブジェクトでも構いませんが、通常はシンボルが渡されます。
+これは比較器を出力する時に使われるだけですが、デバッグには役に立ちます。
+@c COMMON
 @end defun
 
 @defun comparator? obj
