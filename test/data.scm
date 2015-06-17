@@ -69,6 +69,57 @@
                  (cache-check! c 'f))))
   )
 
+;; LRU cache
+(let* ([c (make-lru-cache 4)])
+  (test* "LRU empty" 'none (cache-lookup! c 'a 'none))
+  (test* "LRU fill" '((a . 4) (b . 2) (c . 3) (d . 5))
+         (begin
+           (cache-write! c 'a 1)
+           (cache-write! c 'b 2)
+           (cache-write! c 'c 3)
+           (cache-write! c 'a 4)
+           (cache-write! c 'd 5)
+           (list (cache-check! c 'a)
+                 (cache-check! c 'b)
+                 (cache-check! c 'c)
+                 (cache-check! c 'd))))
+  (test* "LRU spill" '((a . 4) #f #f (d . 5) (e . 8) (f . 9))
+         (begin
+           (cache-check! c 'a)
+           (cache-check! c 'd)
+           (cache-write! c 'e 8)
+           (cache-write! c 'f 9)
+           (list (cache-check! c 'a)
+                 (cache-check! c 'b)
+                 (cache-check! c 'c)
+                 (cache-check! c 'd)
+                 (cache-check! c 'e)
+                 (cache-check! c 'f))))
+  (test* "LRU evict" '(#f #f #f (d . 5) (e . 8) (f . 9))
+         (begin
+           (cache-evict! c 'a)
+           (list (cache-check! c 'a)
+                 (cache-check! c 'b)
+                 (cache-check! c 'c)
+                 (cache-check! c 'd)
+                 (cache-check! c 'e)
+                 (cache-check! c 'f))))
+  ;; To test renumber, we forcibly change the counter value - do not do this
+  ;; in the actual code!
+  (set! (~ c'counter) (- (greatest-fixnum) 1))
+  (test* "LRU renumber" '((a . 11) #f (c . 13) (d . 12) #f (f . 9))
+         (begin
+           (cache-write! c 'a '11)
+           (cache-write! c 'd '12)
+           (cache-write! c 'c '13)
+           (list (cache-check! c 'a)
+                 (cache-check! c 'b)
+                 (cache-check! c 'c)
+                 (cache-check! c 'd)
+                 (cache-check! c 'e)
+                 (cache-check! c 'f))))
+  )
+
 ;; TTL cache tester
 ;; Avoid tests from depending on timing, we mock timestamper.
 (let* ([t 0]

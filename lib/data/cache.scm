@@ -274,7 +274,7 @@
 (define-class <lru-cache> (<fifo-cache>) ())
 
 (define (make-lru-cache capacity :key (storage #f) (comparator #f))
-  (make <fifo-cache> :storage storage :comparator comparator
+  (make <lru-cache> :storage storage :comparator comparator
         :capacity capacity))
 
 (define-method cache-check! ((cache <lru-cache>) key)
