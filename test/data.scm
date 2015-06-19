@@ -261,6 +261,34 @@
                  (cache-lookup! c0 'c #f))))
   )
 
+;; counting cache
+(let ([c (make-counting-cache (make-fifo-cache 4))])
+  (test* "Counting cache, initial" '(:hits 0 :misses 0)
+         (cache-stats c))
+  (test* "Counting cache" '(:hits 3 :misses 6)
+         (begin
+           (cache-through! c 'a symbol->string)  ; miss
+           (cache-through! c 'b symbol->string)  ; miss
+           (cache-through! c 'c symbol->string)  ; miss
+           (cache-through! c 'd symbol->string)  ; miss
+           (cache-through! c 'e symbol->string)  ; miss, spills a
+           (cache-through! c 'd symbol->string)  ; hit
+           (cache-through! c 'c symbol->string)  ; hit
+           (cache-through! c 'b symbol->string)  ; hit
+           (cache-through! c 'a symbol->string)  ; miss, spills b
+           (cache-stats c)))
+  (test* "Counting cache" '(:hits 8 :misses 9)
+         (begin
+           (cache-through! c 'a symbol->string)  ; hit
+           (cache-through! c 'b symbol->string)  ; miss, spills c
+           (cache-through! c 'c symbol->string)  ; miss, spills d
+           (cache-through! c 'd symbol->string)  ; miss, spills e
+           (cache-through! c 'a symbol->string)  ; hit
+           (cache-through! c 'b symbol->string)  ; hit
+           (cache-through! c 'c symbol->string)  ; hit
+           (cache-through! c 'd symbol->string)  ; hit
+           (cache-stats c))))
+
 ;;;========================================================================
 (test-section "data.random")
 (use data.random)

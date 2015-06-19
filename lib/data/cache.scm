@@ -91,13 +91,14 @@
 
           ;; Some auxiliary procedures for implementors
           cache-populate-queue! cache-compact-queue!
-          cache-renumber-entries! 
+          cache-renumber-entries!
 
           ;; Concrete implementations
           make-fifo-cache
           make-ttl-cache
           make-ttlr-cache
-          make-lru-cache))
+          make-lru-cache
+          make-counting-cache cache-stats))
 (select-module data.cache)
 
 ;; storage and comparator 
@@ -366,3 +367,28 @@
     (when (> (queue-length (~ c'timestamps)) (* 3 (size-of (cache-storage c))))
       (cache-compact-queue! (~ c'timestamps) (cache-storage c)))
     (cons key (cdr tv))))
+
+;; Counting cache
+;; - This is a wrapper cache to count cache misses/hits
+
+(define-class <counting-cache> (<cache>)
+  ([inner-cache :init-keyword :inner-cache]
+   [hits  :init-value 0]
+   [misses :init-value 0]))
+
+(define (make-counting-cache inner-cache)
+  (make <counting-cache> :inner-cache inner-cache))
+
+(define-method cache-check! ((cache <counting-cache>) key)
+  (rlet1 r (cache-check! (~ cache'inner-cache) key)
+    (if r
+      (inc! (~ cache'hits))
+      (inc! (~ cache'misses)))))
+
+(define-method cache-register! ((cache <counting-cache>) key value)
+  (cache-register! (~ cache'inner-cache) key value))
+
+(define-method cache-stats ((cache <counting-cache>))
+  `(:hits ,(~ cache'hits) :misses ,(~ cache'misses)))
+
+    
