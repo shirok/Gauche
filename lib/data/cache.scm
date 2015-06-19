@@ -370,6 +370,9 @@
 
 ;; Counting cache
 ;; - This is a wrapper cache to count cache misses/hits
+;; NB: counting cache's storage directly points to inner-cache's storage.
+;; We assume that any modification on the storage is done via inner-cache's
+;; method, so that it won't cause inconsistency.
 
 (define-class <counting-cache> (<cache>)
   ([inner-cache :init-keyword :inner-cache]
@@ -377,7 +380,10 @@
    [misses :init-value 0]))
 
 (define (make-counting-cache inner-cache)
-  (make <counting-cache> :inner-cache inner-cache))
+  (make <counting-cache>
+    :inner-cache inner-cache
+    :storage (cache-storage inner-cache)
+    :comparator (cache-comparator inner-cache)))
 
 (define-method cache-check! ((cache <counting-cache>) key)
   (rlet1 r (cache-check! (~ cache'inner-cache) key)
@@ -388,7 +394,14 @@
 (define-method cache-register! ((cache <counting-cache>) key value)
   (cache-register! (~ cache'inner-cache) key value))
 
+(define-method cache-write! ((cache <counting-cache>) key value)
+  (cache-write! (~ cache'inner-cache) key value))
+
+(define-method cache-evict! ((cache <counting-cache>) key)
+  (cache-evict! (~ cache'inner-cache) key))
+
+(define-method cache-clear! ((cache <counting-cache>))
+  (cache-clear! (~ cache'inner-cache)))
+
 (define-method cache-stats ((cache <counting-cache>))
   `(:hits ,(~ cache'hits) :misses ,(~ cache'misses)))
-
-    
