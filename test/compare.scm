@@ -135,6 +135,35 @@
                 (sort (map cdr (hash-table-keys td)))))
   )
 
+(let ()
+  (define tc (make-tuple-comparator integer-comparator
+                                    (make-reverse-comparator real-comparator)
+                                    string-comparator))
+  (test* "tuple comparator - type-test" '(#t #f #f #f)
+         (list (comparator-test-type tc '(3 9.4 "abc"))
+               (comparator-test-type tc '(3.1 9.4 "abc"))
+               (comparator-test-type tc '(3 a "abc"))
+               (comparator-test-type tc '(3 8 abc))))
+  (test* "tuple comparator - equality" '(#t #f #f #f)
+         (list (comparator-equal? tc '(1 2/3 "abc") '(1 2/3 "abc"))
+               (comparator-equal? tc '(1 2/3 "abc") '(2 2/3 "abc"))
+               (comparator-equal? tc '(1 2/3 "abc") '(1 1/3 "abc"))
+               (comparator-equal? tc '(1 2/3 "abc") '(1 2/3 "qbc"))))
+  (test* "tuple comparator - compare" '(0 1 -1 -1 1 1 -1)
+         (list (comparator-compare tc '(1 2/3 "abc") '(1 2/3 "abc"))
+               (comparator-compare tc '(1 2/3 "abc") '(0 2/3 "abc"))
+               (comparator-compare tc '(0 2/3 "abc") '(1 2/3 "abc"))
+               (comparator-compare tc '(1 2/3 "abc") '(1 1/3 "abc"))
+               (comparator-compare tc '(1 1/3 "abc") '(1 2/3 "abc"))
+               (comparator-compare tc '(1 2/3 "abc") '(1 2/3 "aba"))
+               (comparator-compare tc '(1 2/3 "aba") '(1 2/3 "abc"))))
+  (test* "tuple comparator - hash"
+         (fold-right combine-hash-value
+                     (comparator-hash string-comparator "abc")
+                     (list (comparator-hash integer-comparator 1)
+                           (comparator-hash real-comparator 2/3)))
+         (comparator-hash tc '(1 2/3 "abc"))))
+
 ;; comparator with no comparison proc / no hash proc
 
 (test* "comparator requires at least either equality or comparison"

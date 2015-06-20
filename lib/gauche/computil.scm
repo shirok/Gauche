@@ -43,7 +43,10 @@
           real-comparator complex-comparator number-comparator
           pair-comparator list-comparator vector-comparator
           bytevector-comparator uvector-comparator
-          ))
+
+          make-reverse-comparator make-key-comparator
+          make-car-comparator make-cdr-comparator
+          make-tuple-comparator))
 (select-module gauche.computil)
 
 ;; Needed to have string-ci compare.
@@ -141,3 +144,35 @@
 
 (define (make-cdr-comparator comparator)
   (make-key-comparator comparator pair? cdr))
+
+(define (make-tuple-comparator comparator1 . comparators)
+  (let1 cprs (cons comparator1 comparators)
+    (let ([size (length cprs)]
+          [ts   (map comparator-type-test-procedure cprs)]
+          [eqs  (map comparator-equality-predicate cprs)]
+          [cmps (map comparator-comparison-procedure cprs)]
+          [hs   (map comparator-hash-function cprs)])
+      (define (tester ts xs)
+        (or (null? ts)
+            (and ((car ts) (car xs)) (tester (cdr ts) (cdr xs)))))
+      (define (equality eqs as bs)
+        (or (null? eqs)
+            (and ((car eqs) (car as) (car bs))
+                 (equality (cdr eqs) (cdr as) (cdr bs)))))
+      (define (refining-compare cmps as bs)
+        (let1 r ((car cmps) (car as) (car bs))
+          (if (or (null? (cdr cmps)) (not (= r 0)))
+            r
+            (refining-compare (cdr cmps) (cdr as) (cdr bs)))))
+      (define (hasher hs xs)
+        (let1 r ((car hs) (car xs))
+          (if (null? (cdr hs))
+            r
+            (combine-hash-value r (hasher (cdr hs) (cdr xs))))))
+      (make-comparator
+       (^x (and (eqv? (length+ x) size) (tester ts x)))
+       (^[a b] (equality eqs a b))
+       (and (every comparator-comparison-procedure? cprs)
+            (^[a b] (refining-compare cmps a b)))
+       (and (every comparator-hash-function? cprs)
+            (^x (hasher hs x)))))))

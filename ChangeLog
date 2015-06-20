@@ -1,3 +1,7 @@
+2015-06-19  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/computil.scm (make-tuple-comparator): Added.
+
 2015-06-09  Shiro Kawai  <shiro@acm.org>
 
 	* src/libnum.scm (fixnum-width): Fix - been misunderstood r6rs spec.

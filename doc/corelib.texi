@@ -1053,6 +1053,13 @@ Using @code{make-key-comparator}, these cam be written as follows:
 @end example
 @end defun
 
+@defun make-tuple-comparator cmpr1 cmpr2 @dots{}
+Creates a comparator that compares lists of the form @code{(x1 x2 @dots{})},
+where each element is compared with the corresponding comparator.
+For example, @code{(make-tuple-comparator c1 c2 c3)} will compare
+three-element list, whose first elements are compared by @var{c1},
+second elements by @var{c2} and third elements by @var{c3}.
+@end defun
 
 @c ----------------------------------------------------------------------
 @node Numbers, Booleans, Equality and comparison, Core library
