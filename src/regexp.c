@@ -96,7 +96,8 @@ enum {
     RE_ANY_RL,
     RE_TRY,                     /* followed by offset (2 bytes). try matching
                                    the following sequence, and if fails,
-                                   jump to offset. */
+                                   jump to offset.  This handles backtracking.
+                                */
     RE_SET,                     /* followed by charset #.  match any char in
                                    the charset. */
     RE_SET_RL,
@@ -138,22 +139,25 @@ enum {
                                  * offset (2 bytes). */
     /* The following instructions are not necessary to implement the basic
        engine, but used in the optimized code */
+    /* The *R instructions (and *R_RL counterparts) consumes all input that
+       matches, without backtracking.  */
     RE_SET1R,                   /* (1-byte set match repeat)
-                                   followed by charset #.  Consumes all input
-                                   that matches the given set. */
+                                   followed by charset #. */
     RE_SET1R_RL,
     RE_NSET1R,                  /* (1-byte negative set match repeat)
-                                   followed by charset #.  Consumes all input
-                                   that don't match the given set. */
+                                   followed by charset #. */
     RE_NSET1R_RL,
     RE_SETR,                    /* (set match repeat)
-                                   followed by charset #.  Consumes all input
-                                   that matches the given set. */
+                                   followed by charset #. */
     RE_SETR_RL,
     RE_NSETR,                   /* (negative set match repeat)
-                                   followed by charset #.  Consumes all input
-                                   that don't match the given set. */
+                                   followed by charset #. */
     RE_NSETR_RL,
+    RE_MATCH1R,                 /* (1-byte exact match repeat)
+                                   followed by a byte */
+    RE_MATCHR,                  /* (multiple byte exact match repeat)
+                                   followed by length, and bytes to match. */
+    RE_ANYR,                    /* (any char match repeat)  */
     RE_NUM_INSN
 };
 
@@ -1477,23 +1481,48 @@ static void rc3_rec(regcomp_ctx *ctx, ScmObj ast, int lastp)
         return;
     }
     if (SCM_EQ(type, SCM_SYM_REP_WHILE)) {
-        /* here we have an opportunity to generate an optimized code. */
+        /* here we have an opportunity to generate an optimized code.
+           for now, we only check elem is a single item case, but we can
+           do better. */
+        /* (rep-while m n . elem) */
         ScmObj m = SCM_CADR(ast), n = SCM_CAR(SCM_CDDR(ast));
         ScmObj elem = SCM_CDR(SCM_CDDR(ast));
         if (SCM_FALSEP(n) && SCM_PAIRP(elem) && SCM_NULLP(SCM_CDR(elem))) {
-            if (SCM_CHAR_SET_P(SCM_CAR(elem))) {
+            /* (rep-while m #f elem1) */
+            ScmObj elem1 = SCM_CAR(elem);
+            if (SCM_EQ(elem1, SCM_SYM_ANY) && !ctx->lookbehindp) {
                 rc3_seq_rep(ctx, elem, SCM_INT_VALUE(m), FALSE);
-                elem = SCM_CAR(elem);
-                EMIT4(!SCM_CHAR_SET_SMALLP(elem), RE_SETR, RE_SETR_RL, RE_SET1R, RE_SET1R_RL);
-                rc3_emit(ctx, rc3_charset_index(rx, elem));
+                rc3_emit(ctx, RE_ANYR);
                 return;
             }
-            if (SCM_PAIRP(elem)&&SCM_EQ(SCM_CAR(elem), SCM_SYM_COMP)) {
+            if (SCM_CHARP(elem1) && !ctx->lookbehindp) {
+                ScmChar ch = SCM_CHAR_VALUE(elem1);
                 rc3_seq_rep(ctx, elem, SCM_INT_VALUE(m), FALSE);
-                elem = SCM_CDR(elem);
-                SCM_ASSERT(SCM_CHAR_SET_P(elem));
+                int n = SCM_CHAR_NBYTES(ch);
+                if (n == 1) {
+                    rc3_emit(ctx, RE_MATCH1R);
+                    rc3_emit(ctx, (char)ch);
+                } else {
+                    char chbuf[SCM_CHAR_MAX_BYTES];
+                    SCM_CHAR_PUT(chbuf, ch);
+                    rc3_emit(ctx, RE_MATCHR);
+                    rc3_emit(ctx, (char)n);  /* we know it's never overflow */
+                    for (int i=0; i < n; i++) rc3_emit(ctx, chbuf[i]);
+                }
+                return;
+            }
+            if (SCM_CHAR_SET_P(elem1)) {
+                rc3_seq_rep(ctx, elem, SCM_INT_VALUE(m), FALSE);
+                EMIT4(!SCM_CHAR_SET_SMALLP(elem1), RE_SETR, RE_SETR_RL, RE_SET1R, RE_SET1R_RL);
+                rc3_emit(ctx, rc3_charset_index(rx, elem1));
+                return;
+            }
+            if (SCM_PAIRP(elem1)&&SCM_EQ(SCM_CAR(elem1), SCM_SYM_COMP)) {
+                rc3_seq_rep(ctx, elem, SCM_INT_VALUE(m), FALSE);
+                ScmObj cs = SCM_CDR(elem1);
+                SCM_ASSERT(SCM_CHAR_SET_P(cs));
                 EMIT4(!ctx->lookbehindp, RE_NSETR, RE_NSETR_RL, RE_NSET1R, RE_NSET1R_RL);
-                rc3_emit(ctx, rc3_charset_index(rx, elem));
+                rc3_emit(ctx, rc3_charset_index(rx, cs));
                 return;
             }
         }
@@ -2016,6 +2045,29 @@ void Scm_RegDump(ScmRegexp *rx)
                        codep-1, (code==RE_NSETR? "NSETR":"NSETR_RL"),
                        rx->code[codep],
                        rx->sets[rx->code[codep]]);
+            continue;
+        case RE_MATCH1R:
+            codep++;
+            Scm_Printf(SCM_CUROUT, "%4d  %s  0x%02x  '%c'\n",
+                       codep-1, "MATCH1R",
+                       rx->code[codep], rx->code[codep]);
+            continue;
+        case RE_MATCHR:
+            codep++;
+            {
+                u_int numchars = (u_int)rx->code[codep];
+                u_int i;
+                Scm_Printf(SCM_CUROUT, "%4d  %s(%3d) '",
+                           codep-1, "MATCHR",
+                           numchars);
+                for (i=0; i< numchars; i++)
+                    Scm_Printf(SCM_CUROUT, "%c", rx->code[++codep]);
+                Scm_Printf(SCM_CUROUT, "'\n");
+            }
+            continue;
+        case RE_ANYR:
+            Scm_Printf(SCM_CUROUT, "%4d  %s\n",
+                       codep, "ANYR");
             continue;
         case RE_CPAT:
             Scm_Printf(SCM_CUROUT, "%4d  CPAT %d %d\n",
@@ -2568,6 +2620,34 @@ static void rex_rec(const unsigned char *code,
                 SCM_CHAR_GET(bpos, ch);
                 if (Scm_CharSetContains(cset, ch)) break;
                 input = bpos;
+            }
+            continue;
+        case RE_MATCH1R:
+            for (;;) {
+                if (ctx->stop <= input) break;
+                if ((unsigned char)*input >= 128) break;
+                if (*code != (unsigned char)*input) break;
+                input++;
+            }
+            code++;
+            continue;
+        case RE_MATCHR:
+            param = *code++;
+            for (;;) {
+                if (ctx->stop <= input) break;
+                const unsigned char *str = code;
+                const unsigned char *ip = input;
+                for (unsigned int i = 0; i < param; i++) {
+                    if (*str++ != (unsigned char)*ip++) break;
+                }
+                input = ip;
+            }
+            code += param;
+            continue;
+        case RE_ANYR:
+            for (;;) {
+                if (ctx->stop <= input) break;
+                input += SCM_CHAR_NFOLLOWS(*input) + 1;
             }
             continue;
         case RE_CPAT: {

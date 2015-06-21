@@ -1,3 +1,13 @@
+2015-06-20  Shiro Kawai  <shiro@acm.org>
+
+	* src/regexp.c: Add RE_ANYR, RE_MATCH1R and RE_MATCHR to support
+	  the patterns like #/.+/ efficiently.  We should be able to
+	  avoid backtrakcking for all rep-while case, but if the repeated
+	  element has structure, we'll need another instruction ("if the
+	  next immediate element fails, reset input and continue") that
+	  requires some modification in VM (we have to save the input pos
+	  without consuming stack), so we'll put it off for future.
+
 2015-06-19  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/computil.scm (make-tuple-comparator): Added.
