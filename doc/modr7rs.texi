@@ -78,14 +78,14 @@ Gaucheの組み込み手続きを使える理由です。
 @c COMMON
 
 @c EN
-On the other hand, R7RS requires to be explicit about which namespace
-you're in, by @code{import} form, e.g. @code{(import (scheme base))}.
+On the other hand, R7RS requires to be explicit about which namespaces
+you'll be using, by @code{import} form, e.g. @code{(import (scheme base))}.
 Besides, R7RS library must be explicitly enclosed by @code{define-library} form.
-Before the firsut @code{import} form of a program, or outside of
+Before the first @code{import} form of a program, or outside of
 @code{define-library}, is beyond R7RS world---the standard definnes
 nothings about it.
 @c JP
-一方、R7RSでは@code{import}フォームによってどの名前空間に入るかを明示することが
+一方、R7RSでは@code{import}フォームによってどの名前空間を利用するか明示することが
 求められています(例: @code{(import (scheme base))})。
 また、R7RSライブラリはそれぞれ@code{define-library}フォームで囲う必要があります。
 プログラムの最初の@code{import}より前、あるいはライブラリの@code{define-library}の
@@ -479,8 +479,8 @@ Gaucheのモジュールシステム設計はSTkを継承していて、
 典型的には、ひとつのファイルがひとつのモジュールを定義していて、
 そのモジュールを使うにはまずファイルを@code{require}し、
 次にモジュールを@code{import}するということになります
-(これはGaucheでは頻繁に出てくる、@code{use}というマクロが定義されているくらいです)。
-けれども、ファイルのロードとモジュールのインポートが分かれていることは、
+(これはGaucheでは頻繁に出てくるので、@code{use}というマクロが定義されているくらいです)。
+ファイルのロードとモジュールのインポートが分かれていることは、
 たまに変わったハックが必要とされる時に役に立ちます。
 Gaucheの@code{import}については@ref{Using modules}を参照してください。
 @c COMMON
@@ -499,39 +499,77 @@ R7RSは実装に選択の余地を与えるため、モジュール(ライブラ
 
 @defspec import import-spec @dots{}
 [R7RS]
+@c EN
 Imports libraries specified by @var{import-spec}s.  What R7RS calls
 libraies are what Gauche calls modules; they're the same thing.
+@c JP
+@var{import-spec}で指定されるライブラリをインポートします。
+R7RSでいうライブラリは、Gaucheがモジュールと呼んできたものです。両者は同じものです。
+@c COMMON
 
-R7RS libraries are named by a list of symbols, such as @code{(scheme base)}.
+@c EN
+R7RS libraries are named by a list of symbols or integers, 
+e.g. @code{(scheme base)} or @code{(srfi 1)}.
 It is translated to Gauche's module name by joining the symbols
 by periods; so, R7RS @code{(scheme base)} is Gauche's @code{scheme.base}.
 Conversely, Gauche's @code{data.queue} is available as
 @code{(data queue)} in R7RS.  To use those two libraries,
 R7RS program needs this form at the beginning.
+@c JP
+R7RSライブラリの名前はシンボルか整数のリストで表されます。
+例: @code{(scheme base)}、@code{(srfi 1)}。
+この名前は、ピリオドを挟んでシンボル名をつなげることで、Gaucheのモジュール名へと
+変換されます。つまり、R7RSの@code{(scheme base)}はGaucheからは@code{scheme.base}
+モジュールとして扱えます。逆にGaucheの@code{data.queue}モジュールは
+R7RSからは@code{(data queue)}ライブラリとして扱えます。
+R7RSプログラムからこれら二つのライブラリを使うには、プログラムの最初に
+次のように記します。
+@c COMMON
 
 @example
 (import (scheme base) 
         (data queue))
 @end example
 
+@c EN
 It works just like Gauche's @code{use} forms; that is, if the named
 module doesn't exist in the current process, it loads the file; then
 the module's exported bindings become visible from the current module.
+@c JP
+これはGaucheで@code{use}フォームを使うのと同じです。つまり、もし
+その名前を持つモジュールが現在のプロセス内に無ければまずファイルをロードし、
+それからモジュールがexportしている束縛を現在のモジュールから見えるようにします。
+@c COMMON
 
 @example
 (use scheme.base)
 (use data.queue)
 @end example
 
+@c EN
 (You may wonder what if R7RS library uses symbols with periods in them.
 Frankly, we haven't decided yet.   It'll likely be that we use some
 escaping mechanism; for the time being you'd want to stick with
 alphanumeric characters and hyphens as possible.)
+@c JP
+(勘の良い読者な、R7RSのライブラリがピリオドを中に含むシンボルを名前に使っていたら
+どうなるのか疑問に思ったことでしょう。正直なところ、まだどうするか決めていません。
+多分、何らかのエスケープ機構を用意することになると思いますが、
+今のところ、できる限りモジュール名にはアルファベット、数字、ハイフンだけを
+使うようにしておいて下さい。)
+@c COMMON
 
+@c EN
 Just like Gauche's @code{use}, you can select which symbols to be
 imported (or not imported), rename specific symbols, or add
 prefix to all imported symbols.  The formal syntax
 of R7RS import syntax is as follows:
+@c JP
+R7RSの@code{import}フォームは、
+Gaucheの@code{use}と同様、どのシンボルをimportするか/しないかを指定したり、
+名前を変えてimportしたりプレフィクスを付加することができます。
+R7RSの@code{import}の正式な構文は次の通りです。
+@c COMMON
 
 @smallexample
 <import declaration> : (import <import-set> <import-set> ...)
