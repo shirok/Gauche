@@ -2634,7 +2634,7 @@ static void rex_rec(const unsigned char *code,
         case RE_MATCHR:
             param = *code++;
             for (;;) {
-                if (ctx->stop <= input + param) break;
+                if (ctx->stop < input + param) break;
                 const unsigned char *str = code;
                 const unsigned char *ip = input;
                 for (unsigned int i = 0; i < param; i++) {
