@@ -854,12 +854,17 @@ printing the comparator, to help debugging.
 
 @defun comparator? obj
 [SRFI-114]
+@c EN
 Returns true iff @var{obj} is a comparator.
+@c JP
+@var{obj}が比較器である場合に@code{#t}を、そうでなければ@code{#f}を返します。
+@c COMMON
 @end defun
 
 @defun comparator-comparison-procedure? cmpr
 @defunx comparator-hash-function? cmpr
 [SRFI-114]
+@c EN
 Returns true iff a comparator @var{cmpr} has provided comparison procedure
 and hash function, respectively.
 
@@ -867,6 +872,15 @@ Note that @code{comparator-comparison-procedure} and
 @code{comparator-hash-function} always returns a procedure, even
 no procedure is given when a comparator is created; in that case,
 returned procedures are just raises an error when called.
+@c JP
+比較器@var{cmpr}が、有効な比較手続きおよびハッシュ関数を持っている
+場合にそれぞれ@code{#t}を返します。
+
+比較器作成時に比較手続きやハッシュ関数が与えられなかった場合でも、
+@code{comparator-comparison-procedure}と@code{comparator-hash-function} 
+は常に手続きを返すことに注意してください。それらの手続きは呼ばれると単に
+エラーを報告します。
+@c COMMON
 @end defun
 
 @defun comparator-type-test-procedure cmpr
@@ -874,12 +888,19 @@ returned procedures are just raises an error when called.
 @defunx comparator-comparison-procedure cmpr
 @defunx comparator-hash-function cmpr
 [SRFI-114]
+@c EN
 Returns type test procedure, equality predicate, comparison procedure
 and hash function of comparator @var{cmpr}, respectively.
 
 These accessors always return procedures; if you give boolean
 values to @code{make-comparator},
 appropriate default procedures are returned.
+@c JP
+比較器の型検査述語、等価述語、比較手続きおよびハッシュ関数をそれぞれ返します。
+
+これらの手続きは常に手続きを返します。@code{make-comparator}で該当する
+引数に真偽値を渡した場合でも、デフォルトで補われる手続きが返されます。
+@c COMMON
 @end defun
 
 @defun comparator-test-type cmpr obj
@@ -888,9 +909,15 @@ appropriate default procedures are returned.
 @defunx comparator-compare cmpr a b
 @defunx comparator-hash cmpr obj
 [SRFI-114]
+@c EN
 Apply the comparator's procedures to the given arguments.
 The following eqivalence holds, but these are slightly compact,
 and in Gauche they are a bit more efficient.
+@c JP
+比較器の持つ手続きを引数に適用します。下に挙げる等価性が成り立っていますが、
+これらの手続きを使う方がややコンパクトに書けますし、
+Gaucheではわずかですがこれらの手続きの方が効率が良いです。
+@c COMMON
 
 @example
 (comparator-test-type cmpr obj)
@@ -913,6 +940,7 @@ and in Gauche they are a bit more efficient.
 
 @defvar default-comparator
 [SRFI-114]
+@c EN
 This variable bounds to a comparator that is used by default in
 many context.
 
@@ -923,9 +951,38 @@ not doesn't mean anything, but having some consistent order
 allows us to put Scheme objects in treemaps (@xref{Treemaps}) or heaps
 (@xref{Heap}).  The @code{default-comparator} gives this expedient
 ordering.
+@c JP
+この変数は、様々な場所でオブジェクトを比較する際のデフォルトとして使われる
+比較器に束縛されています。
 
-@code{Srfi-114} specifies the ordering of Scheme native objects.
-Gauche enhanced it to cover general objects.
+デフォルト比較器はほぼすべてのSchemeオブジェクト間の比較が出来ます。
+比較するSchemeオブジェクト同士の型が違っていても構いません。
+型の異なるSchemeオブジェクトの間の大小関係は、純粋に人為的なものです。
+@code{#t}が@code{#(a b c)}より大きいか小さいかということに特別な意味はありません。
+ただ、一貫する順序が決まっていれば、Schemeオブジェクトをtreemap (@ref{Treemaps}参照)
+やヒープ(@ref{Heap}参照)に保存することができます。
+@code{default-comparator}はこの便宜上の順序を与えてくれます。
+@c COMMON
+
+@c EN
+(NB: I say ``almost'' because, although @code{default-comparator}
+can order built-in objects, and objects with different types,
+the ordering of objects of the same user-defined type depends on
+how you define @code{object-compare} method (@xref{Comparison}).
+It's up to the user to make two objects of user-defined types be
+comparable or not.)
+@c JP
+(上で「ほぼすべて」と書いたのは、@code{default-comparator}は組み込みオブジェクト
+同士および異なる型のオブジェクト同士の比較はできますが、
+ユーザ定義型のオブジェクト同士の比較は@code{object-compare}メソッドの定義によるからです。
+ユーザ定義型のオブジェクト同士の比較が可能かどうかはその型の定義次第になります。
+@c COMMON
+
+@c EN
+@code{Srfi-114} specifies the ordering of Scheme native objects as follows.
+@c JP
+@code{srfi-114}はSchemeの基本オブジェクト間の順序を以下の通り定めています。
+@c COMMON
 
 @enumerate 
 @item
@@ -947,7 +1004,11 @@ Vectors.
 @item 
 Uniform vectors.
 @item
+@c EN
 All other objects.
+@c JP
+他のオブジェクトすべて
+@c COMMON
 @end enumerate
 @end defvar
 
