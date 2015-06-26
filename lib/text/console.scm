@@ -49,9 +49,11 @@
 (define-module text.console
   (use gauche.generator)
   (use gauche.sequence)
+  (use gauche.termios)
   (use util.match)
   (export <vt100>
 
+          call-with-console
           putch putstr getch chready?
           query-screen-size query-cursor-position move-cursor-to
           hide-cursor show-cursor
@@ -116,6 +118,11 @@
    (oport :init-keyword :oport :initform (standard-output-port))
    ;; private
    (current-attrs :init-form (make <char-attrs>))))
+
+(define-method call-with-console ((con <vt100>) proc)
+  (with-terminal-mode (~ con'iport) 'rare
+                      (^_ (proc con))
+                      (^[] (reset-terminal con))))
 
 (define-method putch ((con <vt100>) c)
   (display c (~ con'oport)) (flush (~ con'oport)))

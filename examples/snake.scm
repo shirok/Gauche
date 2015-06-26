@@ -20,10 +20,7 @@
           [(not (#/(vt100|xterm)/i (or (sys-getenv "TERM") "")))
            (exit 1 "TERM is not defined or unknown terminal.")]
           [else
-           (let1 con (make <vt100>)
-             ($ with-terminal-mode (current-input-port) 'rare
-                (^_ (game con))
-                (^[] (reset-terminal con))))])]))
+           (call-with-console (make <vt100>) game)])]))
 
 ;; snake : (<dir> <head> <tail> ...)
 ;; <head> : <pt>

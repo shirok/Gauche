@@ -1,3 +1,9 @@
+2015-06-25  Shiro Kawai  <shiro@acm.org>
+
+	* lib/text/console.scm: Add call-with-console to abstract console
+	  mode handling
+	* doc/modutil.texi: Document text.console.
+
 2015-06-20  Shiro Kawai  <shiro@acm.org>
 
 	* src/regexp.c: Add RE_ANYR, RE_MATCH1R and RE_MATCHR to support

@@ -49,6 +49,7 @@
 * SXML Query Language::         sxml.sxpath
 * Manipulating SXML structure::  sxml.tools
 * Serializing XML and HTML from SXML::  sxml.serializer
+* Text terminal control::       text.console
 * CSV tables::                  text.csv
 * Calculate difference of text streams::  text.diff
 * Localized messages::          text.gettext
@@ -17593,7 +17594,7 @@ SXML->HTML変換に対して特化され最適化されたバージョンのノ�
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Serializing XML and HTML from SXML, CSV tables, Manipulating SXML structure, Library modules - Utilities
+@node Serializing XML and HTML from SXML, Text terminal control, Manipulating SXML structure, Library modules - Utilities
 @section @code{sxml.serializer} -  Serializing XML and HTML from SXML
 @c NODE SXMLからXMLとXHTMLのシリアライゼーション, @code{sxml.serializer} - SXMLからXMLとXHTMLのシリアライゼーション
 
@@ -17916,7 +17917,101 @@ future versions of the library.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node CSV tables, Calculate difference of text streams, Serializing XML and HTML from SXML, Library modules - Utilities
+@node Text terminal control, CSV tables, Serializing XML and HTML from SXML, Library modules - Utilities
+@section @code{text.console} - Text terminal control
+@c NODE テキスト端末制御, @code{text.console} - テキスト端末制御
+
+@deftp {Module} text.console
+@mdindex text.console
+This module provides a simple interface for character terminal control.
+Currently we only support vt100 compatible terminals.  We plan to
+support Windows console as well.
+@end deftp
+
+@subheading Console classes
+
+@deftp {Class} <vt100>
+@clindex vt100
+Represents a vt100-compatible terminal.   An instance of this class
+can be passed to the ``console'' argument of the following generic
+functions.
+
+@defivar {<vt100>} iport
+Input port connected to the terminal.  The default value is
+the standard input port.
+@end defivar
+
+@defivar {<vt100>} oport
+Output port connected to the terminal.  The default value is
+the standard output port.
+@end defivar
+@end deftp
+
+@subheading Console control
+
+@deffn {Generic function} call-with-console console proc
+Take over the control of the console, and calls @var{proc} with
+@var{console} as the only argument.
+
+This generic function
+handles the required mode change of the console; e.g.
+for Unix-style terminals, this would set the terminal to raw mode.
+
+If @var{proc} raises an unhandled error, this generic function
+resets the terminal mode before returning.
+@end deffn
+
+@deffn {Generic function} putch console char
+Display a character at the current cursor position, and
+move the current cursor position.
+@end deffn
+
+@deffn {Generic function} putstr console string
+Display a string from the current cursor position, and
+move the current cursor position.
+@end deffn
+
+@deffn {Generic function} getch console
+Fetch one character from the console.  This blocks until
+any key is pressed.
+@end deffn
+
+@deffn {Generic function} chready? console
+@end deffn
+
+@deffn {Generic function} query-cursor-position console
+@end deffn
+
+@deffn {Generic function} move-cursor-to console row column
+@end deffn
+
+@deffn {Generic function} reset-terminal console
+@end deffn
+
+@deffn {Generic function} clear-screen console
+@end deffn
+
+@deffn {Generic function} clear-to-eol console
+@end deffn
+
+@deffn {Generic function} hide-cursor console
+@end deffn
+
+@deffn {Generic function} show-cursor console
+@end deffn
+
+@deffn {Generic function} query-screen-size console
+@end deffn
+
+@deffn {Generic function} set-character-attribute console spec
+@end deffn
+
+@deffn {Generic function} reset-character-attribute console
+@end deffn
+
+
+@c ----------------------------------------------------------------------
+@node CSV tables, Calculate difference of text streams, Text terminal control, Library modules - Utilities
 @section @code{text.csv} - CSV tables
 @c NODE CSVテーブル, @code{text.csv} - CSVテーブル
 
