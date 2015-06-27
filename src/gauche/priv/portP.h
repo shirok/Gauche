@@ -54,7 +54,7 @@ void Scm__SetupPortsForWindows(int has_console);
     (SCM_PORTP(port) && (SCM_PORT(port)->flags & SCM_PORT_WRITESS))
 
 #define PORT_RECURSIVE_P(port) \
-    SCM_WRITE_STATE_P(port->recursiveContext)
+    ((port)->writeState != NULL)
 
 #define PORT_LOCK_OWNER_P(port, vm) \
     ((port)->lockOwner == (vm))

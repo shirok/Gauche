@@ -147,7 +147,7 @@ struct ScmPortRec {
     ScmVM *lockOwner;           /* for port mutex; owner of the lock */
     int lockCount;              /* for port mutex; # of recursive locks */
 
-    ScmObj recursiveContext;    /* used internally */
+    ScmWriteState *writeState;  /* used internally */
 
     /* Input counters.  these doesn't take account of ungetting and
        seeking: Ungetting doesn't affect those counters (you can think

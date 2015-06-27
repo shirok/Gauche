@@ -458,7 +458,7 @@
           (errorf "Too many arguments given to format string ~s" fmtstr))))))
 
 (define (call-formatter shared? locking? formatter port args)
-  (cond [((with-module gauche.internal %port-recursive-context) port)
+  (cond [((with-module gauche.internal %port-write-state) port)
          ;; We're in middle of shared writing.
          ;; TODO: If we're in the walk pass, all we need to do is to recurse
          ;; into arguments of aggregate types, so we can make this more

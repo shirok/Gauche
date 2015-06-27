@@ -191,7 +191,7 @@ static ScmPort *make_port(ScmClass *klass, int dir, int type)
     (void)SCM_INTERNAL_FASTLOCK_INIT(port->lock);
     port->lockOwner = NULL;
     port->lockCount = 0;
-    port->recursiveContext = SCM_FALSE;
+    port->writeState = NULL;
     port->attrs = SCM_NIL;
     port->line = 1;
 

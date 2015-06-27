@@ -412,10 +412,14 @@
    (printer   (c "write_state_print")))
  )
 
-(define-cproc %port-recursive-context (port::<port>)
+(define-cproc %port-write-state (port::<port>)
   (setter (port::<port> obj) ::<void>
-          (set! (-> port recursiveContext) obj))
-  (return (-> port recursiveContext)))
+          (if (SCM_WRITE_STATE_P obj)
+            (set! (-> port writeState) (SCM_WRITE_STATE obj))
+            (set! (-> port writeState) NULL)))
+  (return (?: (-> port writeState)
+              (SCM_OBJ (-> port writeState))
+              SCM_FALSE)))
 
 (define-cproc %port-lock! (port::<port>) ::<void>
   (let* ([vm::ScmVM* (Scm_VM)])
@@ -440,17 +444,17 @@
   (unwind-protect
       (begin
         (%port-lock! port)
-        (when (%port-recursive-context port)
+        (when (%port-write-state port)
           (error "[internal] %with-2pass-setup called recursively on port:"
                  port))
-        (set! (%port-recursive-context port)
+        (set! (%port-write-state port)
               (make <write-state> :shared-table (make-hash-table 'eq?)))
         (set! (%port-walking? port) #t)
         (apply walker args)
         (set! (%port-walking? port) #f)
         (apply emitter args))
     (set! (%port-walking? port) #f)
-    (set! (%port-recursive-context port) #f)
+    (set! (%port-write-state port) #f)
     (%port-unlock! port)))
 
 ;;;
@@ -685,8 +689,8 @@
                    (and (SCM_VECTORP obj) (== (SCM_VECTOR_SIZE obj) 0))))))
 
 (define (write-walk obj port)
-  (if-let1 ctx (%port-recursive-context port)
-    (%write-walk-rec obj port (cdr ctx))))
+  (if-let1 s (%port-write-state port)
+    (%write-walk-rec obj port (-> s shared-table))))
 
 (define (%write-walk-rec obj port tab)
   (when (write-need-recurse? obj)
