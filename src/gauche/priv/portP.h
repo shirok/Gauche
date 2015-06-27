@@ -34,6 +34,8 @@
 #ifndef GAUCHE_PRIV_PORTP_H
 #define GAUCHE_PRIV_PORTP_H
 
+#include "gauche/priv/writerP.h"
+
 /*================================================================
  * Some private APIs
  */
@@ -52,7 +54,7 @@ void Scm__SetupPortsForWindows(int has_console);
     (SCM_PORTP(port) && (SCM_PORT(port)->flags & SCM_PORT_WRITESS))
 
 #define PORT_RECURSIVE_P(port) \
-    (SCM_PAIRP(port->recursiveContext) && SCM_HASH_TABLE_P(SCM_CDR(port->recursiveContext)))
+    SCM_WRITE_STATE_P(port->recursiveContext)
 
 #define PORT_LOCK_OWNER_P(port, vm) \
     ((port)->lockOwner == (vm))

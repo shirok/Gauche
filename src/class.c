@@ -3296,6 +3296,9 @@ void Scm__InitClass(void)
     CINIT(SCM_CLASS_WEAK_VECTOR,      "<weak-vector>");
     CINIT(SCM_CLASS_WEAK_HASH_TABLE,  "<weak-hash-table>");
 
+    /* write.c */
+    BINIT(SCM_CLASS_WRITE_STATE,      "<write-state>", NULL);
+
 #define GINIT(gf, nam) \
     Scm_InitBuiltinGeneric(gf, nam, mod);
 

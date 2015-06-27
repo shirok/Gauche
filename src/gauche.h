@@ -518,11 +518,12 @@ typedef struct ScmMacroRec     ScmMacro;
 typedef struct ScmPromiseRec   ScmPromise;
 typedef struct ScmRegexpRec    ScmRegexp;
 typedef struct ScmRegMatchRec  ScmRegMatch;
-typedef struct ScmWriteContextRec ScmWriteContext;
+typedef struct ScmWriteContextRec ScmWriteContext; /* see writerP.h */
+typedef struct ScmWriteStateRec ScmWriteState;     /* see wrtierP.h */
 typedef struct ScmAutoloadRec  ScmAutoload;
 typedef struct ScmComparatorRec ScmComparator;
-typedef struct ScmDLObjRec     ScmDLObj;         /* see load.c */
-typedef struct ScmReadContextRec ScmReadContext; /* see read.c */
+typedef struct ScmDLObjRec     ScmDLObj;           /* see load.c */
+typedef struct ScmReadContextRec ScmReadContext;   /* see read.c */
 
 typedef ScmObj ScmSubrProc(ScmObj *, int, void*);
 

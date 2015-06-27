@@ -34,11 +34,36 @@
 #ifndef GAUCHE_PRIV_WRITERP_H
 #define GAUCHE_PRIV_WRITERP_H
 
+/* WriteContext and WriteState
+
+   WriteContext affects write operation below the current subtree.
+   WriteState is created at the root of write-family call and carried
+   around during the entire write operation.
+
+   WriteState is and ScmObj and will be accessed from Scheme world as well.
+ */
+
 struct ScmWriteContextRec {
     short mode;                 /* print mode */
     short flags;                /* internal */
     int limit;                  /* used in WriteLimited */
 };
+
+#define SCM_WRITE_CONTEXT(obj)    ((ScmWriteContext*)(obj))
+
+struct ScmWriteStateRec {
+    SCM_HEADER;
+    ScmHashTable *sharedTable;  /* track shared structure.  can be NULL */
+    int sharedCounter;          /* counter to emit #n= and #n# */
+};
+
+SCM_CLASS_DECL(Scm_WriteStateClass);
+#define SCM_CLASS_WRITE_STATE  (&Scm_WriteStateClass)
+#define SCM_WRITE_STATE(obj)   ((ScmWriteState*)(obj))
+#define SCM_WRITE_STATE_P(obj) SCM_XTYPEP(obj, SCM_CLASS_WRITE_STATE)
+
+SCM_EXTERN ScmWriteState *Scm_MakeWriteState(ScmWriteState *proto);
+
 
 #define SCM_WRITE_MODE_MASK  0x03
 #define SCM_WRITE_CASE_MASK  0x0c
@@ -48,8 +73,5 @@ struct ScmWriteContextRec {
 
 SCM_EXTERN ScmObj Scm__WritePrimitive(ScmObj obj, ScmPort *port,
                                       ScmWriteContext *ctx);
-
-/* For now, let's keep ScmWrteContext class stuff private. */
-#define SCM_WRITE_CONTEXT(obj)    ((ScmWriteContext*)(obj))
 
 #endif /*GAUCHE_PRIV_WRITERP_H*/

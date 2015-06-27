@@ -1,3 +1,9 @@
+2015-06-26  Shiro Kawai  <shiro@acm.org>
+
+	* src/write.c, src/libio.scm, src/gauche/priv/writerP.h:
+	  Step 1 of improving writer.  Made recursive context into an
+	  instance of <write-state>.
+
 2015-06-25  Shiro Kawai  <shiro@acm.org>
 
 	* lib/text/console.scm: Add call-with-console to abstract console

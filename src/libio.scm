@@ -35,7 +35,9 @@
 
 (inline-stub
  (declcode (.include <gauche/vminsn.h>
+                     <gauche/class.h>
                      <gauche/priv/portP.h>
+                     <gauche/priv/writerP.h>
                      <stdlib.h>
                      <fcntl.h>)))
 
@@ -393,6 +395,23 @@
             (logand= (-> port flags) (lognot SCM_PORT_WRITESS))))
   PORT_WRITESS_P)
 
+(inline-stub
+ (define-cfn write_state_allocate (klass::ScmClass* initargs) :static
+   (return (SCM_OBJ (Scm_MakeWriteState NULL))))
+
+ (define-cfn write_state_print (obj port::ScmPort* ctx::ScmWriteContext*)
+   ::void :static
+   (Scm_Printf port "#<write-state %p>" obj))
+
+ (define-cclass <write-state>
+   "ScmWriteState*" "Scm_WriteStateClass"
+   ("Scm_TopClass")
+   ((shared-table   :type <hash-table>? :c-name "sharedTable")
+    (shared-counter :type <int> :c-name "sharedCounter"))
+   (allocator (c "write_state_allocate"))
+   (printer   (c "write_state_print")))
+ )
+
 (define-cproc %port-recursive-context (port::<port>)
   (setter (port::<port> obj) ::<void>
           (set! (-> port recursiveContext) obj))
@@ -424,7 +443,8 @@
         (when (%port-recursive-context port)
           (error "[internal] %with-2pass-setup called recursively on port:"
                  port))
-        (set! (%port-recursive-context port) (cons 0 (make-hash-table 'eq?)))
+        (set! (%port-recursive-context port)
+              (make <write-state> :shared-table (make-hash-table 'eq?)))
         (set! (%port-walking? port) #t)
         (apply walker args)
         (set! (%port-walking? port) #f)
