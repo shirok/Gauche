@@ -105,6 +105,8 @@
 ;;; Describe - describe object
 ;;;
 
+(define-method describe () (describe *1)) ; for convenience
+
 (define-method describe (object) ; default
   (describe-common object)
   (describe-slots object))

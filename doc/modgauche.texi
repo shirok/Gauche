@@ -5861,19 +5861,55 @@ Some examples:
 @end example
 @end defmac
 
-@deffn {Generic Function} describe obj
-@deffnx {Generic Function} d obj
+@deffn {Generic Function} describe :optional obj
+@deffnx {Generic Function} d :optional obj
 @c EN
 Prints the detail information about a Scheme object @var{obj}.
 The default method shows @var{obj}'s class, and if it has
 any slots, the list of slot names and their values.
 You can specialize this method for customized display.
+Some built-in types has specialized methods
+(see how an integer is described in the example below).
 @c JP
 Schemeオブジェクト@var{obj}の詳細情報を表示します。
 既定メソッドは@var{obj}のクラスを表示し、さらに@var{obj}がスロットを
 持っていればその名前と内容をリストします。
 このメソッドをスペシャライズすることによりクラス毎に表示をカスタマイズできます。
+いくつかの組み込み型は既にメソッドを持っています
+(下の例で整数がどのように表示されるか見てください)。
 @c COMMON
+
+@c EN
+If @var{obj} is omitted, the last evaluation result bound to @code{*1} in REPL
+is used.  (@xref{Working in REPL})
+@c JP
+@var{obj}が省略された場合は、@code{*1}に束縛されている、直前のREPLの結果が
+使われます。(@ref{Working in REPL}参照)
+@c COMMON
+
+@example
+gosh> (sys-stat "Makefile")
+#<<sys-stat> 0x1e7de60>
+gosh> (d)
+#<<sys-stat> 0x1e7de60> is an instance of class <sys-stat>
+slots:
+  type      : regular
+  perm      : 436
+  mode      : 33204
+  ino       : 3242280
+  dev       : 2097
+  rdev      : 0
+  nlink     : 1
+  uid       : 500
+  gid       : 500
+  size      : 19894
+  atime     : 1435379061
+  mtime     : 1432954340
+  ctime     : 1432954340
+gosh> (d 1432954340)
+1432954340 is an instance of class <integer>
+  (#x556925e4, ~ 1.4Gi, 2015-05-30T02:52:20Z as unix-time)
+@end example
 @end deffn
 
 @defun info symbol
