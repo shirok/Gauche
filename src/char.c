@@ -136,7 +136,7 @@ void Scm__InstallCharconvHooks(ScmChar (*u2c)(int), int (*c2u)(ScmChar))
     char2ucs_hook = c2u;
 }
 
-/* NB: These two variables are no longer used, but kept here for the
+/* TRANSIENT: These two variables are no longer used, but kept here for the
    ABI compatibility.  Remove them on 1.0 release. */
 ScmChar (*Scm_UcsToCharHook)(int ucs4) = NULL;
 int (*Scm_CharToUcsHook)(ScmChar ch) = NULL;

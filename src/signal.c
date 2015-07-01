@@ -804,10 +804,9 @@ sigset_t Scm_GetMasterSigmask(void)
 /*
  * Convenience routines hiding platform-dependent stuff
  *
- * NB: These used to be used in vm.c, but no longer.  As of 0.9.3 these
- * aren't used anywhere.  We keep these for a while just in case if
- * we find them useful in some day, but if no such case arises, we may
- * drop them eventually.
+ * TRANSIENT: These used to be used in vm.c, but no longer.  As of 0.9.3 these
+ * aren't used anywhere.  Scm_SysSigmask covers those functionalities,
+ * so we'll drop them by 1.0.
  */
 void Scm_GetSigmask(sigset_t *mask)
 {
