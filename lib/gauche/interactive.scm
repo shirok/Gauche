@@ -238,6 +238,16 @@
              (format #t "~a[~a]> " *repl-name* (module-name m)))
            (flush)))))
 
+;; toplevel reader to recognize ,command
+(define (%reader)
+  (let1 expr (read)
+    (if (and (pair? expr)      ; avoid depending on util.match yet
+             (eq? (car expr) 'unquote)
+             (pair? (cdr expr))
+             (null? (cddr expr)))
+      (handle-toplevel-command (cadr expr) (read-line))
+      expr)))
+
 ;; error printing will be handled by the original read-eval-print-loop
 (define (%evaluator expr env)
   (guard (e [else (%set-history-exception! e) (raise e)])
@@ -250,7 +260,8 @@
                                         (evaluator #f)
                                         (printer #f)
                                         (prompter #f))
-  (let ([evaluator (or evaluator %evaluator)]
+  (let ([reader (or reader %reader)]
+        [evaluator (or evaluator %evaluator)]
         [prompter (or prompter %prompter)])
     ((with-module gauche read-eval-print-loop)
      reader evaluator printer prompter)))
@@ -268,6 +279,9 @@
 
 ;; Autoload editor invoker
 (autoload gauche.interactive.ed ed ed-pick-file)
+
+;; Autoload toplevel command handler
+(autoload gauche.interactive.toplevel handle-toplevel-command)
 
 ;; See (describe <symbol>) above
 (autoload gauche.modutil describe-symbol-bindings)

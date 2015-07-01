@@ -1,3 +1,9 @@
+2015-06-30  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/interactive/toplevel.scm: Start adding Scheme48-style
+	  REPL toplevel commands.  Will play with this for a while to see
+	  how it works.
+
 2015-06-27  Shiro Kawai  <shiro@acm.org>
 
 	* src/write.c, src/libio.scm, src/gauche/port.h:
