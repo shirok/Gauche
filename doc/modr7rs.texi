@@ -386,6 +386,27 @@ want to do---changing @code{gauche} module can have unwanted side effects.)
 @c COMMON
 
 @c EN
+When you're working on R7RS code in file and load it into R7RS REPL
+(for example, if you're using Emacs Scheme mode, C-c C-l does the job),
+make sure the file is in proper shape as R7RS; that is, the file
+must start with appropriate @code{import} declarations, or 
+the file contains @code{define-library} form(s).  If you load
+file without those forms, it is loaded into Gauche's @code{user} module
+no matter what your REPL's current module is,
+and the definitions won't be visible from @code{r7rs.user} module
+by default.
+@c JP
+R7RSコードをファイルに書きだし、R7RS REPLにそのファイルをロードしてインタラクティブに
+開発を進めている場合 (例えばEmacsのSchemeモードなら、C-c C-lでファイルがロードできます)、
+そのファイルがR7RSとして正しい形式になっていることを確認してください。
+つまり、ファイルは@code{import}宣言で始まるか、@code{define-library}形式
+から構成されるものでなければなりません。それ以外の、単にSchemeコードが並べて
+書いてあるだけのファイルをロードした場合、
+それはREPLでの現在のモジュールが何であるかにかかわらずGaucheの@code{user}モジュールに
+読み込まれるので、@code{r7rs.user}モジュールからはデフォルトでは見えません。
+@c COMMON
+
+@c EN
 @subheading Switching from Gauche REPL
 @c JP
 @subheading Gauche REPLからのスイッチ
