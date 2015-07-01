@@ -103,7 +103,7 @@
    (^[args]
      (match args
        [() (print "Usage: ,a <word>") *no-value*]
-       [(word) (apropos (string->symbol word)) *no-value*])))
+       [(word) `(apropos ',(string->symbol word))])))
 
 ($ toplevel-command-add! 'd
    (^[args]
