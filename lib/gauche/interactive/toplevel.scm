@@ -55,25 +55,13 @@
 
 (autoload file.util home-directory expand-path)
 
-;; A thin layer to allow it work on both multithreaded and singlethreaded
-;; gauche.
-(cond-expand
- [gauche.threads
-  (begin
-    (define %atom atom)
-    (define %atomic atomic))]
- [else
-  (begin
-    (define %atom values)
-    (define (%atomic val proc) (proc val)))])
-
-(define *toplevel-commands* (%atom (make-hash-table 'eq?)))
+(define *toplevel-commands* (atom (make-hash-table 'eq?)))
 
 (define (toplevel-command-add! key handler)
-  (%atomic *toplevel-commands* (^t (hash-table-put! t key handler))))
+  (atomic *toplevel-commands* (^t (hash-table-put! t key handler))))
 
 (define (toplevel-command-lookup key)
-  (%atomic *toplevel-commands* (^t (hash-table-get t key #f))))
+  (atomic *toplevel-commands* (^t (hash-table-get t key #f))))
 
 ;; A handler return value that does nothing
 (define *no-value* `(,(with-module gauche values)))
