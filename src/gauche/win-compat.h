@@ -18,6 +18,10 @@
 #define WINVER 0x0500           /* we support Windows 2000 or later */
 #endif /*WINVER*/
 
+#if defined(UNICODE) && !defined(_UNICODE)
+#define _UNICODE                /* Windows needs both UNICODE and _UNICODE */
+#endif /* UNICODE && !_UNICODE */
+
 #include <winsock2.h>           /* MinGW needs this before windows.h */
 #include <windows.h>
 #include <shlwapi.h>
@@ -34,10 +38,6 @@ typedef unsigned int u_int;
 typedef unsigned long u_long;
 #define _BSDTYPES_DEFINED
 #endif /* _BSDTYPES_DEFINED */
-
-#ifndef _T
-#define _T(x) TEXT(x)   /* unicode macro */
-#endif /* _T */
 
 
 /*======================================================================
