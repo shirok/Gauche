@@ -1,3 +1,11 @@
+2015-07-02  Shiro Kawai  <shiro@acm.org>
+
+	* ext/tls: Inhibit building & running ssltest when --disable-threads,
+	  since the test program requires thread support.  Ideally, even
+	  we say --disable-threads, the test program should be able to
+	  use threads as long as the system has it; but that requires more
+	  trick in build process, so this is a temporary remedy.
+
 2015-06-30  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/interactive/toplevel.scm: Start adding Scheme48-style

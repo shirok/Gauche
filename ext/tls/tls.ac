@@ -26,17 +26,27 @@ case $enable_tls in
   axtls)   AC_DEFINE(GAUCHE_USE_AXTLS, 1, [Define if you use axTLS])
            GAUCHE_TLS_TYPE=axTLS
            GAUCHE_TLS_SWITCH_AXTLS=
+           # axtls test program requires thread support.  For the time being,
+           # we turn off test program if the thread support is turned off
+           # (which is not ideal).
+           if test "$GAUCHE_THREAD_TYPE" = 'none'; then
+             GAUCHE_TLS_SWITCH_AXTLS_TEST="#"
+           else
+             GAUCHE_TLS_SWITCH_AXTLS_TEST=
+           fi
            GAUCHE_TLS_SWITCH_NONE="#"
            ;;
 # openssl) AC_DEFINE(GAUCHE_USE_OPENSSL, 1, [Define if you use openssl])
 #          GAUCHE_TLS_TYPE=openssl;;
   *)       GAUCHE_TLS_TYPE=none
            GAUCHE_TLS_SWITCH_AXTLS="#"
+           GAUCHE_TLS_SWITCH_AXTLS_TEST="#"
            GAUCHE_TLS_SWITCH_NONE=
            ;;
 esac
 
 AC_SUBST(GAUCHE_TLS_SWITCH_AXTLS)
+AC_SUBST(GAUCHE_TLS_SWITCH_AXTLS_TEST)
 AC_SUBST(GAUCHE_TLS_SWITCH_NONE)
 
 dnl

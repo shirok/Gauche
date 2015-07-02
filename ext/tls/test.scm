@@ -8,9 +8,11 @@
 (test-module 'rfc.tls)
 
 (cond-expand
- [gauche.net.tls.axtls
+ ;; ssltest program needs thread support, so we don't build it if we don't
+ ;; have threads.
+ [(and gauche.net.tls.axtls gauche.sys.threads)
   ;; Run ssltest program for sanity-check of axTLS build.
-  ;; Some tests requires opensll command.  We've checked its availability
+  ;; Some tests requires openssl command.  We've checked its availability
   ;; in toplevel configure.
   (define (have-openssl-command?)
     (any #/S\["OPENSSL"\]=\"openssl\"/
