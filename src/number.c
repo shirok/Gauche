@@ -3624,6 +3624,8 @@ void Scm_NumberFormatInit(ScmNumberFormat* fmt)
 /* API */
 ScmObj Scm_NumberToString(ScmObj obj, int radix, u_long flags)
 {
+    if (radix < 2 || radix > SCM_RADIX_MAX)
+        Scm_Error("radix out of range: %d", radix);
     ScmPort *p = SCM_PORT(Scm_MakeOutputStringPort(TRUE));
     ScmNumberFormat fmt;
     Scm_NumberFormatInit(&fmt);
