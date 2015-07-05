@@ -2258,7 +2258,7 @@ UTC timeです。Gaucheの組み込みの@code{current-time}は常にこのタ�
 International Atomic Time.  This time is a bit larger than UTC, due to
 the leap seconds.
 @c JP
-International Atomic Time。この時間は閏秒を計算に入れており、
+International Atomic Time。この時間は閏秒による調整を受けないため、
 UTCより若干大きな値を取ります。
 @c COMMON
 @end defvr
