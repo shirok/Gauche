@@ -129,28 +129,50 @@
 ;; superfluous rows/columns and we need to make sense of them.
 ;; Here are some utilities to help them.
 
+;; Header spec is a string, a regexp or a predicate on a string.  It
+;; is used to find the column in a header row.
+(define (%header-spec->pred spec)
+  (cond [(string? spec) (^c (equal? spec c))]
+        [(regexp? spec) (^c (rxmatch spec c))]
+        [(applicable? spec <string>) spec]
+        [else (error "Invalid header slot spec.  Must be a string, an regexp or a predicate, but got:" spec)]))
+
 ;; API
 ;; Create a procedure that detects a row that contains the specified
 ;; slots.  Returns a permuter vector, which is a vector of integers,
 ;; where K-th element being I to mean the K-th slot value should be
 ;; taken from I-th column.
 ;;
+;; Header-slots is a list of slot spec, which can be either a string,
+;; a regexp, or a predicate that takes a string.
+;;
 ;; Example:
 ;; input data:  ("" "" "Year" "Country" "" "Population" "GDP")
 ;; header-slots: ("Country" "Year" "GDP" "Population")
 ;; result: #(3 2 6 5)
 (define (make-csv-header-parser header-slots)
-  (define tab (rlet1 t (make-hash-table 'equal?)
-                (do-ec (: s (index k) header-slots)
-                       (hash-table-put! t s k))))
-  (define num-slots (hash-table-num-entries tab))
+  (define num-slots (length header-slots))
+  (define header-finder   ; String -> Maybe Int
+    (if (every string? header-slots)
+      (let1 tab (make-hash-table 'equal?) ; Quick way
+        (do-ec (: s (index k) header-slots)
+               (hash-table-put! tab s k))
+        (^[column] (hash-table-get tab column #f)))
+      (let1 mappers (map-with-index
+                     (^[i spec]
+                       (let1 p (%header-spec->pred spec)
+                         (^[column] (and (p column) i))))
+                     header-slots)
+        (^[column] (any (^m (m column)) mappers)))))
   (^[row]
-    (and (= num-slots
-            (fold (^[c n] (+ n (if (hash-table-exists? tab c) 1 0))) 0 row))
-         (rlet1 permuter (make-vector num-slots)
-           (do-ec (: c (index i) row)
-                  (and-let1 k (hash-table-get tab c #f)
-                    (set! (~ permuter k) i)))))))
+    (and-let1 maps ($ filter identity
+                      (map-with-index (^[i c] (and-let1 k (header-finder c)
+                                                (cons k i)))
+                                      row))
+      (and (= num-slots (length maps))
+           (rlet1 permuter (make-vector num-slots)
+             (do-ec (: p maps)
+                    (set! (~ permuter (car p)) (cdr p))))))))
 
 ;; API
 ;; Create a procedure that converts one input row into a list of slot
@@ -160,16 +182,16 @@
 ;; not, #f is returned.
 ;;
 ;;   required-slots : (<spec> ...)
-;;   <spec> : slot-name | (slot-name predicate)
+;;   <spec> : slot-spec | (slot-spec predicate)
 ;;
-;; A single slot-name in <spec> means `(,slot-name ,(complement string-null?))
+;; A single slot-spec in <spec> means `(,slot-spec ,(complement string-null?))
 ;; If required-slots is omitted or (), a row is regarded as valid if
 ;; there's at least one non-null slots.
 (define (make-csv-record-parser header-slots permuter
                                 :optional (required-slots '()))
   (define (make-requirement-checker spec)
-    (let* ([slot (if (string? spec) spec (car spec))]
-           [pred (if (string? spec) (complement string-null?) (cadr spec))]
+    (let* ([slot (if (pair? spec) (car spec) spec)]
+           [pred (if (pair? spec) (cadr spec) (complement string-null?))]
            [ind (find-index (cut equal? slot <>) header-slots)])
       (unless ind
         (error "make-csv-record-parser: invalid slot name in required-slots:"

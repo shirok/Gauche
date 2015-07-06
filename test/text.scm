@@ -82,28 +82,43 @@
               ("" "" "1970" "Kingdom of Pascal" "" "3785" "" "" "GDP missing")
               ("" "" "" "" "" "" "" "" "")
               ("" "" "1962" "APL Republic" "" "1545" "342,335,151" "" ""))]
-      [header-slots '("Country" "Year" "GDP" "Population")])
-  (test* "make-csv-header-parser" '#(3 2 6 5)
-         (any (make-csv-header-parser header-slots) data))
+      [header-slots1  '("Country" "Year" "GDP" "Population")]
+      [header-slots2 '(#/country/i #/year/i #/gdp/i #/popu/i)])
+  (test* "make-csv-header-parser (strings)" '#(3 2 6 5)
+         (any (make-csv-header-parser header-slots1) data))
 
-  (test* "make-csv-record-parser"
+  (test* "make-csv-header-parser (regexps)" '#(3 2 6 5)
+         (any (make-csv-header-parser header-slots2) data))
+  
+  (test* "make-csv-record-parser (strings)"
          '(("Land of Lisp" "1958" "551,435,453" "39994")
            ("United States of Formula Translators" "1957" "4,343,225,434"
             "115333")
            ("People's Republic of COBOL" "1959" "3,357,551,143" "82524")
            ("APL Republic" "1962" "342,335,151" "1545"))
-         (filter-map (make-csv-record-parser header-slots '#(3 2 6 5)
+         (filter-map (make-csv-record-parser header-slots1 '#(3 2 6 5)
                                              '(("Year" #/^\d+$/)
                                                "Country" "Population" "GDP"))
                      data))
 
+  (test* "make-csv-record-parser (regexps)"
+         '(("Land of Lisp" "1958" "551,435,453" "39994")
+           ("United States of Formula Translators" "1957" "4,343,225,434"
+            "115333")
+           ("People's Republic of COBOL" "1959" "3,357,551,143" "82524")
+           ("APL Republic" "1962" "342,335,151" "1545"))
+         (filter-map (make-csv-record-parser header-slots2 '#(3 2 6 5)
+                                             '((#/year/i #/^\d+$/)
+                                               #/country/i #/popu/i #/gdp/i))
+                     data))
+  
   (test* "csv-rows->tuples (allow-gap? #f)"
          '(("Land of Lisp" "1958" "551,435,453" "39994")
            ("United States of Formula Translators" "1957" "4,343,225,434"
             "115333")
            ("People's Republic of COBOL" "1959" "3,357,551,143" "82524")
            ("Kingdom of Pascal" "1970" "" "3785"))
-         (csv-rows->tuples data header-slots))
+         (csv-rows->tuples data header-slots1))
 
   (test* "csv-rows->tuples (allow-gap? #t)"
          '(("Land of Lisp" "1958" "551,435,453" "39994")
@@ -112,7 +127,7 @@
            ("People's Republic of COBOL" "1959" "3,357,551,143" "82524")
            ("Kingdom of Pascal" "1970" "" "3785")
            ("APL Republic" "1962" "342,335,151" "1545"))
-         (csv-rows->tuples data header-slots :allow-gap? #t))
+         (csv-rows->tuples data header-slots1 :allow-gap? #t))
   )
 
 ;;-------------------------------------------------------------------

@@ -18093,27 +18093,82 @@ to prepare a file to be read by Windows programs.
 
 @subheading Middle-level API
 
-Occasionally, CVS files generated from spreadsheet contains
+Occasionally, CSV files generated from spreadsheet contains
 superfluous rows/columns and we need to make sense of them.
 Here are some utilities to help them.
 
-@defun make-csv-header-parser header-slots
-Create a procedure that detects a row that contains the specified
-slots.  Returns a permuter vector, which is a vector of integers,
-where K-th element being I to mean the K-th slot value should be
+A typical format of such spreadsheet-generated CSV file has
+the following properties:
+
+@enumerate
+@item
+There's a ``header row'' near the top; not necessarily the very
+first row, but certainly it comes before any real data.  It signifies
+the meaning of each column of the data.  
+There may be superfluous columns inserted just for cosmetics,
+and sometimes the order of columns are changed.  So we need some
+flexibility to interpret the input data.
+
+@item
+``Record rows'' follow the header row.  It contains actual data.
+There may be superfluous rows inserted just for cosmetics.
+Also, it's often the case that the end of data isn't marked clearly
+(you find large number of rows of empty strings, for example).
+@end enumerate
+
+The main purpose of middle-level CSV parser is to take the output
+of low-level parser, which is a list of lists of strings, and
+find the header row, and then convert the subsequent record rows
+into tuples according to the header row.  A tuple is just a list of
+strings, but ordered in the same way as the specified header spec.
+
+@defun make-csv-header-parser header-specs
+Create a procedure that checks if the input row matches the criteria
+of the header row, and if so, it returns a permuter vector that maps
+the input column number to the tuple positions.
+
+@var{Header-specs} is a list of header spec, each of which can be either
+a string, a regexp, or a predicate on a string.  If it's a string,
+a column that exactly matches the string is picked.  If it's a regexp,
+a column that matches the regexp is picked.  And if it's a predicate,
+as you might already guessed, a column that satisfies the predicate
+is picked.
+
+The permuter vector is a vector of integers,
+where K-th element being I means the K-th item of the tuple should be
 taken from I-th column.
 
-@example
-(define *input* '("" "" "Year" "Country" "" "Population" "GDP"))
+Let's see the example.  Suppose we know that the input contains
+the following row as the header row:
 
-((make-csv-header-parser '("Country" "Year" "GDP" "Population")) *input*)
+@example
+(define *input-row* '("" "" "Year" "Country" "" "Population" "GDP" "Notes"))
+@end example
+
+We want to detect that row, but we only needs
+Country, Year, GDP and Population columns, in that order.  So we create
+a header parser as follows:
+
+@example
+(define header-parser
+  (make-csv-header-parser '("Country" "Year" "GDP" "Population")))
+@end example
+
+Applying this header parser to the input data returns the permuter vector:
+
+@example
+(header-parser *input-row*)
  @result{} #(3 2 6 5)
 @end example
+
+It means, the first item of tuple (Country) is in the 3rd column of the input,
+the second item of tuple (Year) is in the 2nd column of the input,
+and so on.  This permuter vector can be used to parse record rows to
+get tuples.
 @end defun
 
 @defun make-csv-record-parser header-slots permuter :optional required-slots
-Create a procedure that converts one input row into a list of slot
-values, orderd in the same way as header-slots. 
+Create a procedure that converts one input row into a tuple.
 
 @var{Permuter} is the vector returned by @code{make-csv-header-parser}.
 
@@ -18123,18 +18178,22 @@ The structure of @var{required-slots} is as follows:
 
 @example
    <required-slots> : (<spec> ...)
-   <spec> : <slot-name> | (<slot-name> <predicate>)
-   <slot-name> : a string
-   <predicate> : a procedure
+   <spec> : <header-spec> | (<header-spec> <predicate>)
 @end example
 
-A single slot-name in @code{<spec>} means
-@code{`(,slot-name ,(complement string-null?))}.
-If @var{required-slots} is omitted or @code{()}, 
-a row is regarded as valid if there's at least one non-null slots.
+The @code{<header-spec>} compared to the elements of @var{header-slot}
+(by @code{equal?}) to figure out which columns to check.  A single
+@code{<header-spec>} in @code{<spec>} means that the column shouldn't be
+empty for a valid record row.  If @var{<spec>} is a list of
+@var{<header-spec>} and @code{<predicate>}, then the value of the
+column corresponds to the @var{<header-spec>} is passed to @var{<predicate>}
+to determine if it's a valid record row.
+
+If @var{required-slots} is omitted or an empty list, any row with
+at least one non-empty column to be included in the tuple.
 @end defun
 
-@defun csv-rows->tuples rows header-slots :key required-slots allow-gap?
+@defun csv-rows->tuples rows header-spec :key required-slots allow-gap?
 Convert input rows to a list of tuples (A tuple is a list of slot values)
 If no header is found, @code{#f} is returned.
 If @var{allow-gap?} is @code{#t}, it keeps reading rows until the end,
