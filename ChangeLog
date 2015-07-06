@@ -1,3 +1,9 @@
+2015-07-05  Shiro Kawai  <shiro@acm.org>
+
+	* lib/text/csv.scm: Add make-csv-header-parser, make-csv-record-parser,
+	  csv-rows->tuples.  NB: We removed <csv> definition, for it was
+	  never used.
+
 2015-07-02  Shiro Kawai  <shiro@acm.org>
 
 	* ext/tls: Inhibit building & running ssltest when --disable-threads,

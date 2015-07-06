@@ -18042,18 +18042,22 @@ CSV の表は、改行で区切られた @var{record} の連続で構成され�
 クォートされたフィールドに二重引用符を含めるには、2つの連続する
 二重引用符を使います。通常、フィールドの前後の空白は無視されます。
 @c COMMON
-@c example here
-
-@end deftp
 
 @c EN
-Right now, the following two low-level procedures are exported.
-A plan is to provide higher features, such as labelling fields
-and automatic conversions.
+Since use cases of CSV-like files vary, we provide layered API
+to be combined flexibly.
 @c JP
-現時点では、以下の2つの低レベルな手続きが提供されています。
-フィールドにラベル付けをしたり、自動的に変換するなどの
-より高レベルな機能の提供を計画しています。
+CSV様のファイルの使われ方は多様なので、このモジュールでは柔軟に組み合わせることが出来る
+多層的なAPIを提供します。
+@c COMMON
+@end deftp
+
+@subheading Low-level API
+
+@c EN
+The bottom layer of API is to convert text into list of lists and vice versa.
+@c JP
+一番下の層のAPIは、テキストとリストのリストとを相互変換するものです。
 @c COMMON
 
 @defun make-csv-reader separator :optional (quote-char #\")
@@ -18086,6 +18090,60 @@ to prepare a file to be read by Windows programs.
 プログラムでも読めるように、@code{"\r\n"} を渡すことができます。
 @c COMMON
 @end defun
+
+@subheading Middle-level API
+
+Occasionally, CVS files generated from spreadsheet contains
+superfluous rows/columns and we need to make sense of them.
+Here are some utilities to help them.
+
+@defun make-csv-header-parser header-slots
+Create a procedure that detects a row that contains the specified
+slots.  Returns a permuter vector, which is a vector of integers,
+where K-th element being I to mean the K-th slot value should be
+taken from I-th column.
+
+@example
+(define *input* '("" "" "Year" "Country" "" "Population" "GDP"))
+
+((make-csv-header-parser '("Country" "Year" "GDP" "Population")) *input*)
+ @result{} #(3 2 6 5)
+@end example
+@end defun
+
+@defun make-csv-record-parser header-slots permuter :optional required-slots
+Create a procedure that converts one input row into a list of slot
+values, orderd in the same way as header-slots. 
+
+@var{Permuter} is the vector returned by @code{make-csv-header-parser}.
+
+@var{Required-slots} determines if the input row is valid or not.
+If not, the created procedure returns @code{#f}.
+The structure of @var{required-slots} is as follows:
+
+@example
+   <required-slots> : (<spec> ...)
+   <spec> : <slot-name> | (<slot-name> <predicate>)
+   <slot-name> : a string
+   <predicate> : a procedure
+@end example
+
+A single slot-name in @code{<spec>} means
+@code{`(,slot-name ,(complement string-null?))}.
+If @var{required-slots} is omitted or @code{()}, 
+a row is regarded as valid if there's at least one non-null slots.
+@end defun
+
+@defun csv-rows->tuples rows header-slots :key required-slots allow-gap?
+Convert input rows to a list of tuples (A tuple is a list of slot values)
+If no header is found, @code{#f} is returned.
+If @var{allow-gap?} is @code{#t}, it keeps reading rows until the end,
+skipping invalid rows.  If @var{allow-gap?} is @code{#f} (default), 
+it stops reading once it sees an invalid row after headers.
+
+Check out @code{test/text.scm} in the Gauche source tree for an example.
+@end defun
+
 
 @c ----------------------------------------------------------------------
 @node Calculate difference of text streams, Localized messages, CSV tables, Library modules - Utilities

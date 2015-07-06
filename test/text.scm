@@ -68,6 +68,53 @@
          (lambda (out)
            ((make-csv-writer #\,) out '()))))
 
+;; middle-level API
+
+(let ([data '(("" "" "" "" "" "" "" "" "")
+              ("Exported data" "" "" "" "" "" "" "" "")
+              ("" "" "" "" "" "" "" "" "")
+              ("" "" "Year" "Country" "" "Population" "GDP" "" "Note")
+              ("" "" "1958" "Land of Lisp" "" "39994" "551,435,453" "" "")
+              ("" "" "1957" "United States of Formula Translators" "" "115333"
+               "4,343,225,434" "" "Estimated")
+              ("" "" "1959" "People's Republic of COBOL" ""
+               "82524" "3,357,551,143" "" "")
+              ("" "" "1970" "Kingdom of Pascal" "" "3785" "" "" "GDP missing")
+              ("" "" "" "" "" "" "" "" "")
+              ("" "" "1962" "APL Republic" "" "1545" "342,335,151" "" ""))]
+      [header-slots '("Country" "Year" "GDP" "Population")])
+  (test* "make-csv-header-parser" '#(3 2 6 5)
+         (any (make-csv-header-parser header-slots) data))
+
+  (test* "make-csv-record-parser"
+         '(("Land of Lisp" "1958" "551,435,453" "39994")
+           ("United States of Formula Translators" "1957" "4,343,225,434"
+            "115333")
+           ("People's Republic of COBOL" "1959" "3,357,551,143" "82524")
+           ("APL Republic" "1962" "342,335,151" "1545"))
+         (filter-map (make-csv-record-parser header-slots '#(3 2 6 5)
+                                             '(("Year" #/^\d+$/)
+                                               "Country" "Population" "GDP"))
+                     data))
+
+  (test* "csv-rows->tuples (allow-gap? #f)"
+         '(("Land of Lisp" "1958" "551,435,453" "39994")
+           ("United States of Formula Translators" "1957" "4,343,225,434"
+            "115333")
+           ("People's Republic of COBOL" "1959" "3,357,551,143" "82524")
+           ("Kingdom of Pascal" "1970" "" "3785"))
+         (csv-rows->tuples data header-slots))
+
+  (test* "csv-rows->tuples (allow-gap? #t)"
+         '(("Land of Lisp" "1958" "551,435,453" "39994")
+           ("United States of Formula Translators" "1957" "4,343,225,434"
+            "115333")
+           ("People's Republic of COBOL" "1959" "3,357,551,143" "82524")
+           ("Kingdom of Pascal" "1970" "" "3785")
+           ("APL Republic" "1962" "342,335,151" "1545"))
+         (csv-rows->tuples data header-slots :allow-gap? #t))
+  )
+
 ;;-------------------------------------------------------------------
 (test-section "diff")
 (use text.diff)
