@@ -369,7 +369,7 @@ access.  String ports (see @ref{String ports}) provides more efficient,
 and elegant way.
 @c JP
 文字列を先頭から順に操作したり構築したりする場合にはインデックスによる
-アクセスはおこないません。文字列ポート(@ref{String ports}参照)はさらに
+アクセスは行いません。文字列ポート(@ref{String ports}参照)はさらに
 効率のよいエレガントな方法を提供しています。
 @c COMMON
 
