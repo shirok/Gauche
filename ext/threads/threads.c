@@ -236,7 +236,7 @@ ScmObj Scm_ThreadJoin(ScmVM *target, ScmObj timeout, ScmObj timeoutval)
     }
     return result;
 #else  /*!GAUCHE_HAS_THREADS*/
-    Scm_Error("not implemented!\n");
+    Scm_Error("not implemented!");
     return SCM_UNDEFINED;
 #endif /*!GAUCHE_HAS_THREADS*/
 }
@@ -320,7 +320,7 @@ ScmObj Scm_ThreadStop(ScmVM *target, ScmObj timeout, ScmObj timeoutval)
     if (timedout == SCM_INTERNAL_COND_TIMEDOUT) return timeoutval;
     return SCM_OBJ(target);
 #else  /*!GAUCHE_HAS_THREADS*/
-    Scm_Error("not implemented!\n");
+    Scm_Error("not implemented!");
     return SCM_UNDEFINED;
 #endif /*!GAUCHE_HAS_THREADS*/
 }
@@ -351,7 +351,7 @@ ScmObj Scm_ThreadCont(ScmVM *target)
                                     target, stopped_by_other);
     return SCM_OBJ(target);
 #else  /*!GAUCHE_HAS_THREADS*/
-    Scm_Error("not implemented!\n");
+    Scm_Error("not implemented!");
     return SCM_UNDEFINED;
 #endif /*!GAUCHE_HAS_THREADS*/
 }
@@ -378,7 +378,7 @@ ScmObj Scm_ThreadSleep(ScmObj timeout)
     SCM_INTERNAL_COND_DESTROY(dummyc);
     if (intr) Scm_SigCheck(Scm_VM());
 #else  /*!GAUCHE_HAS_THREADS*/
-    Scm_Error("not implemented!\n");
+    Scm_Error("not implemented!");
 #endif /*!GAUCHE_HAS_THREADS*/
     return SCM_UNDEFINED;
 }

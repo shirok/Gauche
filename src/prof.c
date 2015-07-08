@@ -139,7 +139,7 @@ void collect_samples(ScmVMProfiler *prof)
                                     prof->samples[i].func, SCM_UNBOUND);
         if (SCM_UNBOUNDP(e)) {
             /* NB: just for now */
-            Scm_Warn("profiler: uncounted object appeared in a sample: %p (%S)\n",
+            Scm_Warn("profiler: uncounted object appeared in a sample: %p (%S)",
                      prof->samples[i].func, prof->samples[i].func);
         } else {
             SCM_ASSERT(SCM_PAIRP(e));

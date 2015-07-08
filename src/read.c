@@ -1461,7 +1461,7 @@ ScmObj Scm_DefineReaderCtor(ScmObj symbol, ScmObj proc, ScmObj finisher,
                             ScmObj module /*reserved*/)
 {
     if (!SCM_PROCEDUREP(proc)) {
-        Scm_Error("procedure required, but got %S\n", proc);
+        Scm_Error("procedure required, but got %S", proc);
     }
     ScmObj pair = Scm_Cons(proc, finisher);
     (void)SCM_INTERNAL_MUTEX_LOCK(readCtorData.mutex);

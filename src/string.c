@@ -654,7 +654,7 @@ ScmObj Scm_StringAppend(ScmObj strs)
     SCM_FOR_EACH(cp, strs) {
         const ScmStringBody *b;
         if (!SCM_STRINGP(SCM_CAR(cp))) {
-            Scm_Error("string required, but got %S\n", SCM_CAR(cp));
+            Scm_Error("string required, but got %S", SCM_CAR(cp));
         }
         b = SCM_STRING_BODY(SCM_CAR(cp));
         size += SCM_STRING_BODY_SIZE(b);
@@ -714,7 +714,7 @@ ScmObj Scm_StringJoin(ScmObj strs, ScmString *delim, int grammer)
     SCM_FOR_EACH(cp, strs) {
         const ScmStringBody *b;
         if (!SCM_STRINGP(SCM_CAR(cp))) {
-            Scm_Error("string required, but got %S\n", SCM_CAR(cp));
+            Scm_Error("string required, but got %S", SCM_CAR(cp));
         }
         b = SCM_STRING_BODY(SCM_CAR(cp));
         size += SCM_STRING_BODY_SIZE(b);

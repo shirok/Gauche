@@ -411,7 +411,7 @@ static ScmObj rc1_lex(regcomp_ctx *ctx)
     case '\\':
         ch = Scm_GetcUnsafe(ctx->ipat);
         if (ch == SCM_CHAR_INVALID) {
-            Scm_Error("stray backslash at the end of pattern: %S\n",
+            Scm_Error("stray backslash at the end of pattern: %S",
                       ctx->pattern);
         }
         switch (ch) {
@@ -2110,7 +2110,7 @@ void Scm_RegDump(ScmRegexp *rx)
             codep++;
             continue;
         default:
-            Scm_Error("regexp screwed up\n");
+            Scm_Error("regexp screwed up");
         }
     }
 }
@@ -2758,7 +2758,7 @@ static void rex_rec(const unsigned char *code,
         }
         default:
             /* shouldn't be here */
-            Scm_Error("regexp implementation seems broken\n");
+            Scm_Error("regexp implementation seems broken");
         }
     }
 }
