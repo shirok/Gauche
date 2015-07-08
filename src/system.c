@@ -375,7 +375,7 @@ static void put_user_home(ScmDString *dst,
         pwd = getpwuid(geteuid());
         if (pwd == NULL) {
             Scm_SigCheck(Scm_VM());
-            Scm_SysError("couldn't get home directory.\n");
+            Scm_SysError("couldn't get home directory.");
         }
     } else {
         int namesiz = (int)(end - name);
@@ -383,7 +383,7 @@ static void put_user_home(ScmDString *dst,
         pwd = getpwnam(uname);
         if (pwd == NULL) {
             Scm_SigCheck(Scm_VM());
-            Scm_Error("couldn't get home directory of user \"%s\".\n", uname);
+            Scm_Error("couldn't get home directory of user \"%s\".", uname);
         }
     }
     int dirlen = (int)strlen(pwd->pw_dir);

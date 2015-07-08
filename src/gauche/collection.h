@@ -68,11 +68,11 @@ extern ScmClass *Scm__SequenceCPL[];
 #define SCM_CHECK_START_END(start, end, len)                            \
     do {                                                                \
         if ((start) < 0 || (start) > (len)) {                           \
-            Scm_Error("start argument out of range: %d\n", (start));    \
+            Scm_Error("start argument out of range: %d", (start));      \
         }                                                               \
         if ((end) < 0) (end) = (len);                                   \
         else if ((end) > (len)) {                                       \
-            Scm_Error("end argument out of range: %d\n", (end));        \
+            Scm_Error("end argument out of range: %d", (end));          \
         } else if ((end) < (start)) {                                   \
             Scm_Error("end argument (%d) must be greater than or "      \
                       "equal to the start argument (%d)",               \

@@ -1095,7 +1095,7 @@ ScmObj Scm_ResolveAutoload(ScmAutoload *adata, int flags)
            just in case we raise an error. */
         adata->locker = NULL;
         SCM_INTERNAL_COND_BROADCAST(adata->cv);
-        Scm_Error("Attempted to trigger the same autoload %S#%S recursively.  Maybe circular autoload dependency?\n",
+        Scm_Error("Attempted to trigger the same autoload %S#%S recursively.  Maybe circular autoload dependency?",
                   adata->module, adata->name);
     }
 

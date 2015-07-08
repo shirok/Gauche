@@ -646,7 +646,7 @@ static void write_ss(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 /*format is now in Scheme (libfmt.scm).*/
 void Scm_Format(ScmPort *out, ScmString *fmt, ScmObj args, int sharedp)
 {
-    Scm_Error("Scm_Format is obsoleted\n");
+    Scm_Error("Scm_Format is obsoleted");
 }
 
 /*
