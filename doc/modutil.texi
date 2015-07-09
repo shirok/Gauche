@@ -3713,16 +3713,47 @@ Returns a list of all keys and all values in @var{sv}, respectively.
 @subsection Sparse matrixes
 @c NODE 疎行列
 
+@c EN
 A sparse matrix is like a sparse vector, except it can be indexed
-by two integers.
+by two nonnegative integers.
+@c JP
+疎行列は要素が2つの非負整数でインデックスされること以外は疎なベクタと同じです。
+@c COMMON
 
+@c EN
+Note: This implementation of sparse matrixes aims at a reasonable
+space efficiency for sparse matrixes without knowing its structure
+beforehand (imagine, for example, a 2D map with some scattered landmarks).
+If what you want is a sparse matrix implementation for efficient numeric
+calculations, with certain particular structures,
+probably the access speed of this module isn't suitable.
+@c JP
+註：この疎行列の実装は、事前に構造が分かっていない疎な行列をそれなりに空間効率良く
+扱うことを目的としています(例えば、2Dのマップにランドマークを記録してゆく、
+といったイメージです)。もし探しているものが、数値計算用に特定の構造を持つ疎行列の
+実装でしたら、このモジュールは速度的に十分ではないでしょう。
+@c COMMON
+
+@c EN
 Currently, each index can have half of bits of
 @code{sparse-vector-max-index-bits}.  We'll remove
 this limitation in future.
+@c JP
+現在の実装では、それぞれのインデックスの最大ビット数が
+@code{sparse-vector-max-index-bits}の半分までという制限があります。
+将来はこの制限をなくす予定です。
+@c COMMON
 
 
 @deftp {Class} <sparse-matrix-base>
 @clindex sparse-matrix-base
+An abstract base class of sparse matrixes.  Inherits @code{<collection>}.
+
+Like sparse vectors, a sparse matrix can be of type that
+can store any Scheme objects, or that can store only
+certain types of numbers.
+
+All of these sparse matrix subtypes can be accessed by the same API.
 @end deftp
 
 @deftp {Class} <sparse-matrix>
@@ -3739,9 +3770,40 @@ this limitation in future.
 @clindex sparse-f16matrix
 @clindex sparse-f32matrix
 @clindex sparse-f64matrix
+The actual sparce matrix classes.  Inherits @code{<sparse-matrix-base>}.
+An instance of @code{<sparse-matrix>} can contain any Scheme objects.
+
+@var{TAG} either one of @code{s8}, @code{u8},
+@code{s16}, @code{u16}, @code{s32}, @code{u32},
+@code{s64}, @code{u64}, @code{f16}, @code{f32}, or @code{f64}.
+The range of values an instance of those classes can hold
+is the same as the corresponding @code{<@var{TAG}vector>} class
+in @code{gauche.uvector} (@xref{Uniform vectors}).  That is,
+@code{<sparse-u8matrix>} can have exact integer values
+between 0 and 255.
 @end deftp
 
-@defun make-sparse-matrix type :key default
+@defun make-sparse-matrix :optional type :key default
+Creates an empty sparse matrix.  The @var{type} argument can be
+@code{#f} (default), one of subclasses of @code{<sparse-matrix-base>},
+or a symbol of either one of @code{s8}, @code{u8},
+@code{s16}, @code{u16}, @code{s32}, @code{u32},
+@code{s64}, @code{u64}, @code{f16}, @code{f32}, or @code{f64}.
+
+If @var{type} is omitted or @code{#f}, a @code{<sparse-matrix>} is
+created.  If it is a class, an instance of the class is created
+(It is an error to pass a class that is not a subclass of
+@code{<sparse-matrix-base>}.)
+If it is a symbol, an instance of corresponding @code{<sparse-@var{TAG}matrix>}
+is created.
+
+You can specify the default value of the matrix by @var{default}
+keyword argument.   If given, the vector behaves as if it is filled
+with the default value (but the matrix iterator only picks
+the values explicitly set).
+
+Note that you have to give the optional argument as well
+to specify the keyword argument.
 @end defun
 
 @defun sparse-matrix-num-entries mat
