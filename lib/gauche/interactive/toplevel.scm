@@ -55,16 +55,37 @@
 
 (autoload file.util home-directory expand-path)
 
+;; toplevel-commands
+;; Map from symbol to (help-message proc)
 (define *toplevel-commands* (atom (make-hash-table 'eq?)))
 
-(define (toplevel-command-add! key handler)
-  (atomic *toplevel-commands* (^t (hash-table-put! t key handler))))
+(define (toplevel-command-add! key help handler)
+  (atomic *toplevel-commands* (^t (hash-table-put! t key `(,help ,handler)))))
 
 (define (toplevel-command-lookup key)
   (atomic *toplevel-commands* (^t (hash-table-get t key #f))))
 
+(define (toplevel-command-keys)
+  (atomic *toplevel-commands* hash-table-keys))
+
 ;; A handler return value that does nothing
 (define *no-value* `(,(with-module gauche values)))
+
+(define (toplevel-command-helper key)
+  (^[]
+    (if-let1 help&prc (toplevel-command-lookup key)
+      (print "Usage: " (car help&prc))
+      (print "Unknown toplevel command: " key))
+    *no-value*))
+
+(define-syntax define-toplevel-command
+  (er-macro-transformer
+   (^[f r c]
+     (match f
+       [(_ key help handler)
+        `(,(r'toplevel-command-add!) (,(r'quote) ,key) ,help
+          (,(r'let1) usage (,(r'toplevel-command-helper) (,(r'quote) ,key))
+           ,handler))]))))
 
 ;; API
 ;; Entry point - called by REPL reader.
@@ -74,45 +95,77 @@
 (define (handle-toplevel-command command line)
   (unless (symbol? command)
     (error "Invalid REPL toplevel command:" command))
-  (if-let1 handler (toplevel-command-lookup command)
+  (if-let1 help&handler (toplevel-command-lookup command)
     ;; Just for now - we'll employ more sophisticated parser later
     (let* ([argline (string-trim-both line)]
            [args (if (equal? argline "")
                    '()
                    (string-split (string-trim-both line) #/\s+/))])
-      (handler args))
+      ((cadr help&handler) args))
     (error "Unrecognized REPL toplevel command:" command)))
 
 ;;
 ;; Predefined commands
 ;;
 
-($ toplevel-command-add! 'a
-   (^[args]
-     (match args
-       [() (print "Usage: ,a <word>") *no-value*]
-       [(word) `(apropos ',(string->symbol word))])))
+(define-toplevel-command a
+  "a regexp [module-name]\n\
+ Apropos.  Show the names of global bindings that match the regexp.\n\
+ If module-name (symbol) is given, the search is limited in the named module."
+  (^[args]
+    (match args
+      [(word) `(apropos ,(string->regexp word))]
+      [(word mod) `(apropos ,(string->regexp word) ',(string->symbol mod))]
+      [_ (usage)])))
 
-($ toplevel-command-add! 'd
-   (^[args]
-     `(,(with-module gauche.interactive describe)
-       ,@(map read-from-string args))))
+(define-toplevel-command d
+  "d [object]\n\
+ Describe the object.\nWithout arguments, describe the last REPL result."
+  (^[args]
+    (match args
+      [() `(,(with-module gauche.interactive describe))]
+      [(obj) `(,(with-module gauche.interactive describe)
+               ,(read-from-string obj))]
+      [_ (usage)])))
 
-($ toplevel-command-add! 'pwd
-   (^[args]
-     (match args
-       [() (print (sys-getcwd)) *no-value*]
-       [_ (print "Usage: ,pwd") *no-value*])))
+(define-toplevel-command help
+  "help [command]\n\
+ Show the help message of the command.\n\
+ Without arguments, show the list of all toplevel commands."
+  (^[args]
+    (match args
+      [()
+       (print "You're in REPL (read-eval-print-loop) of Gauche shell.")
+       (print "Type a Scheme expression to evaluate.")
+       (print "A word preceeded with comma has special meaning.  Type ,help <cmd> to see the detailed help for <cmd>.")
+       (dolist [cmd (sort (toplevel-command-keys)) *no-value*]
+         (let1 h&h (toplevel-command-lookup cmd)
+           (format #t " ,~8a ~a\n" cmd
+                   (list-ref (call-with-input-string (car h&h)
+                               port->string-list)
+                             1 ""))))]
+      [(cmd) ((toplevel-command-helper (string->symbol cmd)))])))
 
-($ toplevel-command-add! 'cd
-   (^[args]
-     (let1 dir (match args
-                 [() (home-directory)]
-                 [(dir) (expand-path dir)]
-                 [_ #f])
-       (if dir
-         (begin (sys-chdir dir) dir)
-         (begin (print "Usage: ,cd [directory]") *no-value*)))))
+(define-toplevel-command pwd
+  "pwd\n\
+ Print working directory."
+  (^[args]
+    (match args
+      [() (print (sys-getcwd)) *no-value*]
+      [_ (usage)])))
+
+(define-toplevel-command cd
+  "cd [directory]\n\
+ Change the current directory.\n\
+ Without arguments, change to the home directory."
+  (^[args]
+    (let1 dir (match args
+                [() (home-directory)]
+                [(dir) (expand-path dir)]
+                [_ #f])
+      (if dir
+        (begin (sys-chdir dir) (sys-getcwd))
+        (usage)))))
 
        
    
