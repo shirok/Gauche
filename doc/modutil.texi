@@ -3807,47 +3807,104 @@ to specify the keyword argument.
 @end defun
 
 @defun sparse-matrix-num-entries mat
+Returns the number of entries explicitly set in a sparse matrix @var{mat}.
 @end defun
 
 @defun sparse-matrix-ref mat x y :optional fallback
+Returns an element indexed by (@var{x}, @var{y}) in a sparse matrix @var{mat}.
+If the indexed element isn't set, @var{fallback} is returned if provided;
+otherwise, if the matrix has the default value, it is returned; otherwise,
+an error is raised.
 @end defun
 
 @defun sparse-matrix-set! mat x y value
+Set @var{value} to the sparse matrix @var{mat} at the location
+(@var{x}, @var{y}).
 @end defun
 
 @defun sparse-matrix-exists? mat x y
+Returns @code{#t} iff the sparse matrix @var{mat} has a value at
+(@var{x}, @var{y}).
 @end defun
 
-@defun sparse-matrix-clear! mat x y
+@defun sparse-matrix-clear! mat
+Empties the sparse matrix @var{mat}.
 @end defun
 
 @defun sparse-matrix-delete! mat x y
+Remove the value at (@var{x}, @var{y}) from the sparse matrix @var{mat}.
 @end defun
 
 @defun sparse-matrix-copy mat
+Returns a fresh copy of @var{mat}.
 @end defun
 
 @defun sparse-matrix-update! mat x y proc :optional fallback
+Call @var{proc} with the value at (@var{x}, @var{y}) of the sparse matrix,
+and sets the result of @var{proc} as the new value of the location.
+
+The optional @var{fallback} argument works just like @code{sparse-matrix-ref};
+if provided, it is passed to @var{proc} in case the
+matrix doesn't have a value at (@var{x}, @var{y}).
+If @var{fallback} isn't provided and the matrix doesn't have a value
+at the location, the default value of the matrix is used if it has one.
+Otherwise, an error is signalled.
 @end defun
 
 @defun sparse-matrix-inc! mat x y delta :optional fallback
+@example
+(sparse-matrix-update! mat x y (cut + <> delta) fallback)
+@end example
 @end defun
 
 @defun sparse-matrix-push! mat x y val
+@example
+(sparse-matrix-update! mat x y (cut cons val <>) '())
+@end example
 @end defun
 
 @defun sparse-matrix-pop! mat x y
+@example
+(rlet1 r #f
+  (sparse-matrix-update! mat x y (^p (set! r (car p)) (cdr p))))
+@end example
 @end defun
 
 @defun sparse-matrix-fold mat proc seed
+Loop over values in the sparse matrix @var{mat}.  The procedure
+@var{proc} is called with four arguments, @var{x}, @var{y}, @var{val}
+and @var{seed}, for each index (@var{x}, @var{y}) which has the value
+@var{val}.  The initial value of @var{seed} is the one given to
+@code{sparse-matrix-fold}, and the result of @var{proc} is passed
+as the next seed value.  The last result of @var{proc} is returned
+from @code{sparse-matrix-fold}.
+
+The procedure @var{proc} is only called on the entries that's actually
+has a value, and the order of which the procedure is called is undefined.
 @end defun
 
 @defun sparse-matrix-map mat proc
-@defunx sparse-matrix-for-each mat proc
+@example
+(sparse-matrix-fold sv (^[x y v s] (cons (proc x y v) s)) '()))
+@end example
+@end defun
+
+@defun sparse-matrix-for-each mat proc
+@example
+(sparse-matrix-fold sv (^[x y v _] (proc x y v)) #f))
+@end example
 @end defun
 
 @defun sparse-matrix-keys mat
-@defunx sparse-matrix-values mat
+@example
+(sparse-matrix-fold sv (^[x y _ s] (cons (list x y) s)) '())
+@end example
+@end defun
+
+@defun sparse-matrix-values mat
+@example
+(sparse-matrix-fold sv (^[x y v s] (cons v s)) '())
+@end example
 @end defun
 
 @node Sparse tables,  , Sparse matrixes, Sparse data containers
