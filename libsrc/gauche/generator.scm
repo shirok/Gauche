@@ -45,7 +45,8 @@
           port->line-generator port->byte-generator
           x->generator generate
 
-          generator->list null-generator gcons* gappend gconcatenate gmerge
+          generator->list null-generator gcons* gappend gflatten
+          gconcatenate gmerge
           circular-generator gunfold giota grange
           gmap gmap-accum gfilter gfilter-map gstate-filter gbuffer-filter
           gtake gdrop gtake-while gdrop-while grxmatch gslices
@@ -314,6 +315,15 @@
                (if (eof-object? v)
                  (begin (set! g (%->gen (gen))) (loop))
                  v)))))))
+
+;; gflatten :: Generator [a] -> Generator a
+(define (gflatten gen)
+  (let ([gen (%->gen gen)]
+        [current '()])
+    (rec (g)
+      (cond [(eof-object? current) current]
+            [(pair? current) (pop! current)]
+            [else (set! current (gen)) (g)]))))
 
 ;; gmerge :: ((a, a)->Bool, Generator a, Generator a,...) -> Generator a
 (define gmerge

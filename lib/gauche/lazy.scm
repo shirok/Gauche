@@ -40,7 +40,7 @@
 (define-module gauche.lazy
   (use srfi-1)
   (use gauche.generator)
-  (export x->lseq lunfold lmap lmap-accum lappend lconcatenate
+  (export x->lseq lunfold lmap lmap-accum lappend lappend-map lconcatenate
           linterweave lfilter lfilter-map lstate-filter
           ltake ltake-while lrxmatch lslices))
 (select-module gauche.lazy)
@@ -105,6 +105,11 @@
                       elt))]
              [(null? lseqs) (eof-object)]
              [else (set! cur (x->generator (pop! lseqs))) (gen)])))))
+
+;; Could be (lconcatenate (lmap proc args ...)), but this one doesn't
+;; call proc on next item until the previous result is about to exhaust.
+(define (lappend-map proc arg . args)
+  (generator->lseq (gflatten (apply gmap proc arg args))))
 
 ;; (linterweave '(1 2 3 ...) '(a b c ...)) => (1 a 2 b 3 c ...)
 ;; Continues until all elements are exhausted.

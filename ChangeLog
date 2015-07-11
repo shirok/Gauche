@@ -1,3 +1,8 @@
+2015-07-10  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/lazy.scm: Add lappend-map
+	* libsrc/gauche/generator.scm: Add gflatten
+
 2015-07-05  Shiro Kawai  <shiro@acm.org>
 
 	* lib/text/csv.scm: Add make-csv-header-parser, make-csv-record-parser,

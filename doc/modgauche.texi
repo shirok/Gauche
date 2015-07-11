@@ -5305,6 +5305,47 @@ number of generators.
 @end example
 @end defun
 
+@defun gflatten gen
+@c EN
+The argument @var{gen} is a generator that yields lists.
+This procedure returns a generator that's yield each element of the lists
+one at a time.
+@c JP
+引数@var{gen}はリストを生成するジェネレータです。
+この手続きは、入力が生成するリストの各要素をひとつづつ生成するようなジェネレータを
+作成して返します。
+@c COMMON
+
+@example
+($ generator->list $ gflatten
+   $ list->generator `(,(iota 3) ,(iota 2)))
+ @result{} (0 1 2 0 1)
+@end example
+
+@c EN
+Note the subtle difference of this example and the example
+in @code{gconcatenate} above---@code{gconcatenate} takes
+a generator of generators, while @code{gflatten} takes
+a generator of lists.
+
+If we use Haskell-ish type notation, you can see the subtle differences
+of those similar procedures:
+@c JP
+この例と、上のの@code{gconcatenate}の例を比べてみてください。微妙な違いが
+あります。@code{gconcatenate}は、ジェネレータを生成するジェネレータを取りますが、
+@code{gflatten}はリストを生成するジェネレータを取ります。
+
+Haskell風の型表記を使うと、これら似た手続きの違いをわかりやすく整理することができるでしょう：
+@c COMMON
+
+@example
+gappend            :: (Generator a, Generator a, ...) -> Generator a
+(pa$ apply append) :: [(Generator a)] -> Generator a
+gconcatenate       :: Generator Generator a -> Generator a
+gflatten           :: Generator [a] -> Generator a
+@end example
+@end defun
+
 @defun gmerge less-than gen gen2 @dots{}
 @c EN
 Creates a generator that yields elements out of input generators,
@@ -6161,6 +6202,65 @@ a lazy sequence that is a concatenation of all the sequences in @var{seqs}.
 
 This differs from @code{(apply lappend seqs)}, for @code{lconcatenate}
 can handle infinite number of lazy @var{seqs}.
+@end defun
+
+@defun lappend-map proc seq1 seq @dots{}
+Lazy version of @code{append-map}.   This differs not only from
+@code{(apply lappend (lmap proc seq1 seq @dots{}))}, which would
+evaluate the result of @code{lmap} to the end before passing it to
+@code{lappend}, but also differ from
+@code{(lconcatenate (lmap proc seq1 seq @dots{}))} in the subtle way.
+
+Remember that Gauche's lazy sequence evaluates one element ahead?
+@code{lconcatenate} does that to the result of @code{lmap}.
+To see the effect, let's define a procedure with a debug print:
+
+@example
+(define (p x) #?=(list x x))
+@end example
+
+You can see that @code{(apply lappend (lmap ...))} wouldn't delay
+any of application of @code{p}:
+
+@example
+gosh> (car (apply lappend (lmap p '(1 2 3))))
+(car (apply lappend (lmap p '(1 2 3))))
+#?="(standard input)":4:(list x x)
+#?-    (1 1)
+#?="(standard input)":4:(list x x)
+#?-    (2 2)
+#?="(standard input)":4:(list x x)
+#?-    (3 3)
+1
+@end example
+
+How about @code{lconcatenate}?
+
+@example
+gosh> (car (lconcatenate (lmap p '(1 2 3))))
+(car (lconcatenate (lmap p '(1 2 3))))
+#?="(standard input)":4:(list x x)
+#?-    (1 1)
+#?="(standard input)":4:(list x x)
+#?-    (2 2)
+1
+@end example
+
+Oops, even though we need only the first element, and the first
+result of @code{lmap}, @code{(1 1)}, provides the second element, too,
+@code{p} is already applied to the second input.
+
+This is because the intermediate lazy list of the result of @code{lmap} is
+evaluated ``one element ahead''.   On the other hand, @code{lappend-map}
+doesn't have this problem.
+
+@example
+gosh> (car (lappend-map p '(1 2 3)))
+(car (lappend-map p '(1 2 3)))
+#?="(standard input)":4:(list x x)
+#?-    (1 1)
+1
+@end example
 @end defun
 
 @defun linterweave seq @dots{}

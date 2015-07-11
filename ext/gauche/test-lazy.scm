@@ -55,6 +55,10 @@
        ;; this yields an error if lmap works eagerly.
        (list-ref (lmap (^x (quotient 1 x)) '(1 2 3 4 0)) 2))
 
+(test* "lazyness - lappend-map" 0
+       ;; this yields an error if lappend-map works too eagerly.
+       (car (lappend-map (^x (if (= x 1) (error "boo!") (list x x))) '(0 1))))
+
 (test* "lazyness - lconcatenate" '(0 1 2 3 0 1 2 3 0 1)
        (letrec ([c (lcons* '(0 1 2 3) '(0 1 2 3) c)])
          (take (lconcatenate c) 10)))
