@@ -118,6 +118,9 @@ ScmWriteState *Scm_MakeWriteState(ScmWriteState *proto)
     SCM_SET_CLASS(z, SCM_CLASS_WRITE_STATE);
     z->sharedTable = NULL;
     z->sharedCounter = 0;
+    z->printLength = 0;
+    z->printDepth = 0;
+    z->currentDepth = 0;
     return z;
 }
 
@@ -472,7 +475,8 @@ static void write_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
     char numbuf[50];  /* enough to contain long number */
     ScmObj stack = SCM_NIL;
-    ScmHashTable *ht = (port->writeState? port->writeState->sharedTable : NULL);
+    ScmWriteState *st = port->writeState;
+    ScmHashTable *ht = (st? st->sharedTable : NULL);
     int stack_depth = 0;
 
 #define PUSH(elt)                                       \
