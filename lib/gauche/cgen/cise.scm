@@ -1066,6 +1066,17 @@
 
 (define-cise-macro = set!)              ;EXPERIMENTAL
 
+;; [cise expr] funcall fn-expr arg-expr ...
+;;   Generate fn-expr(arg-expr, ...)
+;;   Needed if fn-expr isn't a simple identifier.
+(define-cise-macro (funcall form env)
+  (let1 eenv (expr-env env)
+    (wrap-expr
+     `("(" ,(render-rec (cadr form) eenv) ")"
+       "(" ,@(intersperse "," (map (cut render-rec <> eenv) (cddr form)))
+       ")")
+     env)))
+
 ;;------------------------------------------------------------
 ;; Type-related expressions
 ;;

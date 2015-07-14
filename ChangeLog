@@ -1,3 +1,8 @@
+2015-07-13  shiro  <shiro@acm.org>
+
+	* lib/gauche/cgen/cise.scm (funcall): Add to allow the case
+	  when calling a function computed at runtime.
+
 2015-07-10  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/lazy.scm: Add lappend-map
