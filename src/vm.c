@@ -1365,11 +1365,10 @@ static ScmObj eval_restore_env(ScmObj *args, int argc, void *data)
 /* For now, we only supports a module as the evaluation environment */
 ScmObj Scm_VMEval(ScmObj expr, ScmObj e)
 {
-    ScmObj v = SCM_NIL;
     int restore_module = SCM_MODULEP(e);
     ScmVM *vm = theVM;
 
-    v = Scm_Compile(expr, e);
+    ScmObj v = Scm_Compile(expr, e);
     if (SCM_VM_COMPILER_FLAG_IS_SET(theVM, SCM_COMPILE_SHOWRESULT)) {
         Scm_CompiledCodeDump(SCM_COMPILED_CODE(v));
     }
@@ -1538,8 +1537,7 @@ static ScmObj user_eval_inner(ScmObj program, ScmWord *codevec)
 
 ScmObj Scm_EvalRec(ScmObj expr, ScmObj e)
 {
-    ScmObj v = SCM_NIL;
-    v = Scm_Compile(expr, e);
+    ScmObj v = Scm_Compile(expr, e);
     SCM_COMPILED_CODE(v)->name = SCM_SYM_INTERNAL_EVAL;
     if (SCM_VM_COMPILER_FLAG_IS_SET(theVM, SCM_COMPILE_SHOWRESULT)) {
         Scm_CompiledCodeDump(SCM_COMPILED_CODE(v));
@@ -2784,7 +2782,6 @@ static ScmObj get_debug_info(ScmCompiledCode *base, SCM_PCTYPE pc)
            search for info entry right before it. */
         if (SCM_INT_VALUE(SCM_CAR(p)) < off) {
             return SCM_CDR(p);
-            break;
         }
     }
     return SCM_FALSE;
