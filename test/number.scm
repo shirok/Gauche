@@ -1624,6 +1624,13 @@
 
 
 ;;------------------------------------------------------------------
+(test-section "absolute values")
+
+(test* "abs (minimum negative of 30-bit wide fixnum)" (expt 2 29) (abs (- (expt 2 29))))
+(test* "abs (minimum negative of 62-bit wide fixnum)" (expt 2 61) (abs (- (expt 2 61))))
+
+
+;;------------------------------------------------------------------
 (test-section "rounding")
 
 (define (round-tester value exactness cei flo tru rou)
