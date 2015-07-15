@@ -1464,7 +1464,13 @@ static ScmObj scm_abs(ScmObj obj, int vmp)
 {
     if (SCM_INTP(obj)) {
         long v = SCM_INT_VALUE(obj);
-        if (v < 0) obj = SCM_MAKE_INT(-v);
+        if (v < 0) {
+            if (v == SCM_SMALL_INT_MIN) {
+                obj = Scm_MakeBignumFromSI(-v);
+            } else {
+                obj = SCM_MAKE_INT(-v);
+            }
+        }
     } else if (SCM_BIGNUMP(obj)) {
         if (SCM_BIGNUM_SIGN(obj) < 0) {
             obj = Scm_BignumCopy(SCM_BIGNUM(obj));
