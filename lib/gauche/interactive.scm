@@ -246,7 +246,17 @@
              (pair? (cdr expr))
              (null? (cddr expr)))
       (handle-toplevel-command (cadr expr) (read-line))
-      expr)))
+      (begin
+        (%skip-trailing-ws)
+        expr))))
+
+(define (%skip-trailing-ws)
+  (if (byte-ready?)
+    (let1 b (peek-byte)
+      (cond [(memv b '(9 32)) (read-byte) (%skip-trailing-ws)]
+            [(eqv? b 10) (read-byte)]
+            [else #t]))
+    #t))
 
 ;; error printing will be handled by the original read-eval-print-loop
 (define (%evaluator expr env)
