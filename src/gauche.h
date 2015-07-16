@@ -311,7 +311,7 @@ SCM_EXTERN int Scm_EqualM(ScmObj x, ScmObj y, int mode);
 
 #define SCM_INTP(obj)        (SCM_TAG2(obj) == 1)
 #define SCM_INT_VALUE(obj)   (((signed long int)SCM_WORD(obj)) >> 2)
-#define SCM_MAKE_INT(obj)    SCM_OBJ(((intptr_t)(obj) << 2) + 1)
+#define SCM_MAKE_INT(obj)    SCM_OBJ(((uintptr_t)(obj) << 2) + 1)
 
 #define SCM_UINTP(obj)       (SCM_INTP(obj)&&((signed long int)SCM_WORD(obj)>=0))
 typedef long ScmSmallInt;    /* C integer type corresponds to Scheme fixnum
