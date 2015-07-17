@@ -1,3 +1,8 @@
+2015-07-17  Shiro Kawai  <shiro@acm.org>
+
+	* src/port.c (Scm_OpenFilePort): Fix an issue that port-tell doesn't
+	  return the size of the file write after opening it in append mode.
+
 2015-07-14  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/interactive.scm (%reader): In REPL, read ahead trailing

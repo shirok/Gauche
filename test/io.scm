@@ -573,6 +573,17 @@
                       [second (read-zstring p)])
                  (list first second)))))))
 
+(test* "seek (with appending output)" '(50 100)
+       (begin
+         (sys-unlink "test.o")
+         (with-output-to-file "test.o"
+           (cut display (make-string 50 #\a)))
+         (call-with-output-file "test.o"
+           (^p (let1 a (port-tell p)
+                 (display (make-string 50 #\b) p)
+                 (list a (port-tell p))))
+           :if-exists :append)))
+
 (sys-unlink "test.o")
 
 ;;-------------------------------------------------------------------

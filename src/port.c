@@ -1045,6 +1045,14 @@ ScmObj Scm_OpenFilePort(const char *path, int flags, int buffering, int perm)
 #endif /*GAUCHE_WINDOWS*/
     int fd = open(path, flags, perm);
     if (fd < 0) return SCM_FALSE;
+    /* In appending mode, we need to seek explicitly to the end to make
+       port-tell returns the size of the file.
+       We ignore the result of lseek here--it can fail if the opened file
+       is a character device, for example, and it's ok.   Any other serious
+       errors would be caught by later operations anyway.
+    */
+    if (flags & O_APPEND) (void)lseek(fd, 0, SEEK_END);
+    
     ScmPortBuffer bufrec;
     bufrec.mode = buffering;
     bufrec.buffer = NULL;
