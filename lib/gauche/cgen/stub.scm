@@ -802,7 +802,7 @@
                          (append (~ cproc'args) (~ cproc'keyword-args)))]
               [form (if (eq? (~ cproc'return-type) '<void>)
                       `((,s ,@args))
-                      `((result (,s ,@args))))]
+                      `((return (,s ,@args))))] ; this is the overridden "return" - see cgen-stub-cise-ambient above
               [rettype (if (pair? (~ cproc'return-type))
                          '<top>
                          (~ cproc'return-type))])
@@ -857,6 +857,7 @@
     (push-stmt! cproc "{")
     (push-stmt! cproc #`",(~ rettype'c-type) SCM_RESULT;")
     (push-stmt! cproc #`"SCM_RESULT = ,c-func-name(,(args));")
+    (push-stmt! cproc "goto SCM_STUB_RETURN;") ; avoid 'label not used' error
     (push-stmt! cproc "SCM_STUB_RETURN:") ; label
     (push-stmt! cproc (cgen-return-stmt (cgen-box-expr rettype "SCM_RESULT")))
     (push-stmt! cproc "}"))
@@ -869,6 +870,7 @@
             (typed-result *scm-type* expr)))]
        [('<void> [? check-expr expr])
         (push-stmt! cproc #`",expr(,(args));")
+        (push-stmt! cproc "goto SCM_STUB_RETURN;") ; avoid 'label not used' error
         (push-stmt! cproc "SCM_STUB_RETURN:") ; label
         (push-stmt! cproc "SCM_RETURN(SCM_UNDEFINED);")]
        [(typename [? check-expr expr])
@@ -894,6 +896,7 @@
       (push-stmt! cproc "{")
       (push-stmt! cproc #`",(~ rettype'c-type) SCM_RESULT;")
       (push-stmt! cproc #`" SCM_RESULT = (,expr);")
+      (push-stmt! cproc "goto SCM_STUB_RETURN;") ; avoid 'label not used' error
       (push-stmt! cproc "SCM_STUB_RETURN:") ; label
       (push-stmt! cproc (cgen-return-stmt (cgen-box-expr rettype "SCM_RESULT")))
       (push-stmt! cproc "}")))
@@ -940,6 +943,7 @@
     (push-stmt! cproc "{")
     (push-stmt! cproc #`",(~ rettype'c-type) SCM_RESULT;")
     (for-each expand-stmt stmts)
+    (push-stmt! cproc "goto SCM_STUB_RETURN;") ; avoid 'label not used' error
     (push-stmt! cproc "SCM_STUB_RETURN:") ; label
     (push-stmt! cproc (cgen-return-stmt (cgen-box-expr rettype "SCM_RESULT")))
     (push-stmt! cproc "}"))
@@ -957,6 +961,7 @@
                              (cgen-box-expr rettype #`"SCM_RESULT,i"))
                            rettypes)
            ",")
+        (push-stmt! cproc "goto SCM_STUB_RETURN;") ; avoid 'label not used' error
         (push-stmt! cproc "SCM_STUB_RETURN:") ; label
         (push-stmt! cproc
                     (case nrets
@@ -975,6 +980,7 @@
         (typed-result *scm-type* body)]
        ['<void>        ; no results
         (for-each expand-stmt body)
+        (push-stmt! cproc "goto SCM_STUB_RETURN;") ; avoid 'label not used' error
         (push-stmt! cproc "SCM_STUB_RETURN:") ; label
         (push-stmt! cproc "SCM_RETURN(SCM_UNDEFINED);")]
        [[? symbol? t]  ; single result
@@ -1012,15 +1018,13 @@
   ;; argument decl
   (for-each emit-arg-decl (~ cproc'args))
   (for-each emit-arg-decl (~ cproc'keyword-args))
-  (if (null? (~ cproc'keyword-args))
-    (p "  ScmObj SCM_SUBRARGS["(+ (length (~ cproc'args))
-                                  (~ cproc'num-optargs))"];")
-    (begin
-      (p "  ScmObj SCM_SUBRARGS["(+ (length (~ cproc'args))
-                                    (~ cproc'num-optargs)
-                                    -1)"];")
-      (p "  ScmObj SCM_OPTARGS = SCM_ARGREF(SCM_ARGCNT-1);")))
-  (p "  int SCM_i;")
+  (let1 arg-array-size (+ (length (~ cproc'args))
+                          (~ cproc'num-optargs)
+                          (if (null? (~ cproc'keyword-args)) 0 -1))
+    (unless (zero? arg-array-size)
+      (p "  ScmObj SCM_SUBRARGS["arg-array-size"];")))
+  (unless (null? (~ cproc'keyword-args))
+    (p "  ScmObj SCM_OPTARGS = SCM_ARGREF(SCM_ARGCNT-1);"))
   (p "  SCM_ENTER_SUBR(\""(~ cproc'scheme-name)"\");")
   ;; argument count check (for optargs)
   (when (and (> (~ cproc'num-optargs) 0)
@@ -1035,9 +1039,10 @@
   ;; argument assertions & unbox op.
   (let1 k (+ (length (~ cproc'args)) (~ cproc'num-optargs)
              (if (null? (~ cproc'keyword-args)) 0 -1))
-    (p "  for (SCM_i=0; SCM_i<"k"; SCM_i++) {")
-    (p "    SCM_SUBRARGS[SCM_i] = SCM_ARGREF(SCM_i);")
-    (p "  }"))
+    (unless (zero? k)
+      (p "  for (int SCM_i=0; SCM_i<"k"; SCM_i++) {")
+      (p "    SCM_SUBRARGS[SCM_i] = SCM_ARGREF(SCM_i);")
+      (p "  }")))
   (for-each emit-arg-unbox (~ cproc'args))
   (unless (null? (~ cproc'keyword-args))
     (emit-keyword-args-unbox cproc))
