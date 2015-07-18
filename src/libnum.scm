@@ -66,7 +66,7 @@
 (define-cproc positive? (obj) ::<boolean> :fast-flonum :constant
   (return (> (Scm_Sign obj) 0)))
 (define-cproc negative? (obj) ::<boolean> :fast-flonum :constant
-  (return (< (Scm_Sign obj) 0)))
+  (return (and (not (Scm_NanP obj)) (< (Scm_Sign obj) 0))))
 (define-cproc odd? (obj)  ::<boolean> :fast-flonum :constant Scm_OddP)
 (define-cproc even? (obj) ::<boolean> :fast-flonum :constant
   (return (not (Scm_OddP obj))))

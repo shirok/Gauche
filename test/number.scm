@@ -774,6 +774,7 @@
 (test* "zero?" #t (zero? 0+0i))
 (test* "zero?" #f (zero? 1.0))
 (test* "zero?" #f (zero? +5i))
+(test* "zero?" #f (zero? +nan.0))
 (test* "positive?" #t (positive? 1))
 (test* "positive?" #f (positive? -1))
 (test* "positive?" #t (positive? 1/7))
@@ -782,6 +783,7 @@
 (test* "positive?" #f (positive? -3.1416))
 (test* "positive?" #t (positive? 134539485343498539458394))
 (test* "positive?" #f (positive? -134539485343498539458394))
+(test* "positive?" #f (positive? +nan.0))
 (test* "negative?" #f (negative? 1))
 (test* "negative?" #t (negative? -1))
 (test* "negative?" #f (negative? 1/7))
@@ -790,6 +792,7 @@
 (test* "negative?" #t (negative? -3.1416))
 (test* "negative?" #f (negative? 134539485343498539458394))
 (test* "negative?" #t (negative? -134539485343498539458394))
+(test* "negative?" #f (negative? +nan.0))
 
 (let1 tester
     (lambda (name proc result)
