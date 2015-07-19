@@ -44,7 +44,7 @@
   
   (export make-random-data-state random-data-seed with-random-data-seed
 
-          integers$ integers-between$ fixnums chars$ booleans
+          integers$ integers-between$ fixnums chars$ samples$ booleans
           int8s uint8s int16s uint16s int32s uint32s int64s uint64s
           reals$ reals-between$ reals-normal$ reals-exponential$
           integers-geometric$ integers-poisson$
@@ -153,6 +153,13 @@
         (^[] (let1 p (%rand-int total)
                (receive (_ off) (tree-map-floor tab p)
                  (integer->char (+ p off)))))))))
+
+;; API. Choose one of the elements from collection randomly.
+;; NB: Not to be confused with samples-from below.
+(define (samples$ coll)
+  (let* ([vs (coerce-to <vector> coll)]
+         [index-gen (integers$ (vector-length vs))])
+    (^[] (vector-ref vs (index-gen)))))
 
 ;; API.  Extra clamp ensures fp errors won't cause out-of-range value.
 ;; NB: We clamp instead of rejecting the out-of-range value---since such

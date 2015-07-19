@@ -2953,6 +2953,29 @@ handy.
 @end example
 @end defun
 
+@defun samples$ collection
+@c EN
+Creates a generator that returns randomly chosen item in @var{collection}
+at a time.
+
+Do not confuse this with @code{samples-from} below, which is to combine
+multiple generators for sampling.
+@c JP
+コレクション@var{collection}から毎回ランダムにひとつ要素を選んで返すジェネレータを
+作成します。
+
+下で説明する@code{samples-from}と混同しないようにしてください。@code{samples-from}
+は複数のジェネレータを組み合わせてサンプリングするものです。
+@c COMMON
+
+@example
+(define coin-toss (samples$ '(head tail)))
+
+(generator->list coin-toss 5)
+ @result{} (head tail tail head tail)
+@end example
+@end defun
+
 @c EN
 @subheading Nonuniform distributions
 @c JP
@@ -3028,6 +3051,14 @@ calls it to get a value.
 (generator->list g 10)
  @result{} (207 107 #\m #\f 199 #\o #\b 57 #\j #\e)
 @end example
+
+@c EN
+NB: To create a generator that samples from a fixed collection of items,
+use @code{samples$} described above.
+@c JP
+註: 固定した要素の集まりからサンプルするジェネレータを作るには、
+上の方で説明した@code{samples$}を使ってください。
+@c COMMON
 @end defun
 
 @defun weighted-samples-from weight&gens
