@@ -32,7 +32,7 @@
      (define less?
        (cond [(comparator? cmp) (^[a b] (< (comparator-compare cmp a b) 0))]
              [(not cmp) (^[a b] (< (compare a b) 0))]
-             [(applicable? cmp <top> <top>) cmp]
+             [(applicable? cmp <bottom> <bottom>) cmp]
              [else (errorf "~a requires a comparator or a procedure that \
                             takes two-arguments, but got: ~s" this cmp)]))]))
 
