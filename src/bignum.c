@@ -186,9 +186,9 @@ ScmObj Scm_MakeBignumFromUIArray(int sign, const u_long *values, int size)
 
 ScmObj Scm_MakeBignumFromDouble(double val)
 {
-    if (val >= LONG_MIN && val <= LONG_MAX) {
+    if (LONG_MIN <= val
+        && val <= nextafter((double)LONG_MAX, 0.0))
         return Scm_MakeBignumFromSI((long)val);
-    }
 
     int exponent, sign;
     ScmObj mantissa = Scm_DecodeFlonum(val, &exponent, &sign);
