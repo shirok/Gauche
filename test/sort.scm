@@ -15,12 +15,22 @@
 
 (test-section "sort")
 
+(define-method integer>? ((x <integer>) (y <integer>))
+  (> x y))
+
+(define-method boolean<? ((x <boolean>) (y <boolean>))
+  (< (compare x y) 0))
+
 (test* "sorted?" #t (sorted? '(1 2 3 4 4 5)))
 (test* "sorted?" #f (sorted? '(1 2 3 4 3 5)))
 (test* "sorted? (less)" #t (sorted? '(5 4 3 3 2 1) >))
 (test* "sorted? (less)" #f (sorted? '(5 4 3 1 2 1) >))
+(test* "sorted? (less)" #t (sorted? '(5 4 3 3 2 1) integer>?))
+(test* "sorted? (less)" #f (sorted? '(5 4 3 1 2 1) integer>?))
 (test* "sorted? (cmpr)" #t (sorted? '(1 2 3 4 4 5) integer-comparator))
 (test* "sorted? (cmpr)" #f (sorted? '(1 2 3 5 4 2) integer-comparator))
+(test* "sorted? (key)" #t (sorted? '(1 3 1 2 4 2) boolean<? even?))
+(test* "sorted? (key)" #f (sorted? '(1 3 1 2 1 3) boolean<? even?))
 (test* "sorted? (key)" #t (sorted? '(1 3 1 2 4 2) boolean-comparator even?))
 (test* "sorted? (key)" #f (sorted? '(1 3 1 2 1 3) boolean-comparator even?))
 
@@ -97,6 +107,14 @@
  char-ci-comparator
  '((#\M #\a #\i #\P #\o #\n) (#\a #\i #\M #\n #\o #\P)))
 
+(sort-cmp
+ integer>?
+ '((0 1 2 3 4 5 6 7 8 9) (9 8 7 6 5 4 3 2 1 0)))
+
+(sort-cmp
+ boolean<?
+ '((#t #f #t #f #f) (#f #f #f #t #t)))
+
 ;; stability
 
 (sort-test "stable-sort stability"
@@ -145,5 +163,10 @@
 (sort-by-cmp
  char->integer >
  '((#\a #\Z #\3 #\q #\P) (#\q #\a #\Z #\P #\3)))
+
+(sort-by-cmp
+ even?
+ boolean<?
+ '((1 3 1 2 4 2) (1 3 1 2 4 2)))
 
 (test-end)
