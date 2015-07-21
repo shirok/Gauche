@@ -561,6 +561,12 @@
    (1/3 . 0.3333333333333333)
    ))
 
+;; Boundary conditions for exact->inexact
+(test* "exact (greatest-fixnum)" (+ (greatest-fixnum) 1) (exact (inexact (greatest-fixnum))))
+(test* "exact (least-fixnum)" (least-fixnum) (exact (inexact (least-fixnum))))
+(test* "exact (64bit long max)" (expt 2 63) (exact (- (expt 2.0 63) 1)))
+(test* "exact (64bit long min)" (- (expt 2 63)) (exact (- (expt 2.0 63))))
+
 ;; Boundary conditions for inexact->exact
 ;; Since inexact->exact returns a simplest rational within the flonum precision,
 ;; the roundtrip of exact -> inexact -> exact isn't necessary kept, but
@@ -1673,12 +1679,28 @@
 
 (test* "round->exact" 3 (round->exact 3.4) =)
 (test* "round->exact" 4 (round->exact 3.5) =)
+(test* "round->exact" (+ (greatest-fixnum) 1) (round->exact (inexact (greatest-fixnum))))
+(test* "round->exact" (least-fixnum) (round->exact (inexact (least-fixnum))))
+(test* "round->exact" (expt 2 63) (round->exact (- (expt 2.0 63) 1)))
+(test* "round->exact" (- (expt 2 63)) (round->exact (- (expt 2.0 63))))
 (test* "floor->exact" 3 (floor->exact 3.4) =)
 (test* "floor->exact" -4 (floor->exact -3.5) =)
+(test* "floor->exact" (+ (greatest-fixnum) 1) (floor->exact (inexact (greatest-fixnum))))
+(test* "floor->exact" (least-fixnum) (floor->exact (inexact (least-fixnum))))
+(test* "floor->exact" (expt 2 63) (floor->exact (- (expt 2.0 63) 1)))
+(test* "floor->exact" (- (expt 2 63)) (floor->exact (- (expt 2.0 63))))
 (test* "ceiling->exact" 4 (ceiling->exact 3.4) =)
 (test* "ceiling->exact" -3 (ceiling->exact -3.5) =)
+(test* "ceiling->exact" (+ (greatest-fixnum) 1) (ceiling->exact (inexact (greatest-fixnum))))
+(test* "ceiling->exact" (least-fixnum) (ceiling->exact (inexact (least-fixnum))))
+(test* "ceiling->exact" (expt 2 63) (ceiling->exact (- (expt 2.0 63) 1)))
+(test* "ceiling->exact" (- (expt 2 63)) (ceiling->exact (- (expt 2.0 63))))
 (test* "truncate->exact" 3 (truncate->exact 3.4) =)
 (test* "truncate->exact" -3 (truncate->exact -3.5) =)
+(test* "truncate->exact" (+ (greatest-fixnum) 1) (truncate->exact (inexact (greatest-fixnum))))
+(test* "truncate->exact" (least-fixnum) (truncate->exact (inexact (least-fixnum))))
+(test* "truncate->exact" (expt 2 63) (truncate->exact (- (expt 2.0 63) 1)))
+(test* "truncate->exact" (- (expt 2 63)) (truncate->exact (- (expt 2.0 63))))
 
 ;;------------------------------------------------------------------
 (test-section "clamping")
