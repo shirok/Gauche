@@ -503,6 +503,9 @@
 (test* "exact expt (ratinoal)" 5559060566555523/8589934592
        (expt 2/3 -33))
 
+(test* "expt (0 raised to a complex power)" 0 (expt 0 5+.0000312i))
+(test* "expt (0.0 raised to a complex power)" 0.0 (expt 0.0 5+.0000312i))
+
 (test* "expt (coercion to inexact)" 1.4142135623730951
        (expt 2 1/2)
        (lambda (x y) (nearly=? 10e7 x y))) ;; NB: pa$ will be tested later

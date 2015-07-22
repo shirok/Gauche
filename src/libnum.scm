@@ -487,8 +487,11 @@
         [(real? x)
          (cond [(real? y) (%expt x y)]
                [(number? y)
-                (* (%expt x (real-part y))
-                   (exp (* +i (imag-part y) (%log x))))]
+                (let1 ry (real-part y)
+                  (if (and (zero? x) (positive? ry))
+                      (if (exact? x) 0 0.0)
+                      (* (%expt x ry)
+                         (exp (* +i (imag-part y) (%log x))))))]
                [else (error "number required, but got" y)])]
         [(number? x) (exp (* y (log x)))]
         [else (error "number required, but got" x)]))
