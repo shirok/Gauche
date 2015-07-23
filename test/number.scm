@@ -1638,6 +1638,8 @@
 (test* "abs (minimum negative of 30-bit wide fixnum)" (expt 2 29) (abs (- (expt 2 29))))
 (test* "abs (minimum negative of 62-bit wide fixnum)" (expt 2 61) (abs (- (expt 2 61))))
 
+(test* "magnitude (exact real)" 1 (magnitude 1))
+
 
 ;;------------------------------------------------------------------
 (test-section "rounding")

@@ -805,5 +805,5 @@
         [(SCM_REALP z)  (return (Scm_VMReturnFlonum 0.0))]
         [else (return (Scm_VMReturnFlonum (SCM_COMPNUM_IMAG z)))]))
 
-(define-cproc magnitude (z) ::<double> :fast-flonum :constant Scm_Magnitude)
+(define-cproc magnitude (z) :fast-flonum :constant Scm_VMAbs)
 (define-cproc angle (z)     ::<double> :fast-flonum :constant Scm_Angle)
