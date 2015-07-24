@@ -124,11 +124,6 @@ static double roundeven(double);
     ScmObj a(ScmObj obj1, ScmObj obj2) { return kernel(obj1, obj2, FALSE); } \
     ScmObj b(ScmObj obj1, ScmObj obj2) { return kernel(obj1, obj2, TRUE); }
 
-/* An analogue of SCM_SMALL_INT_FITS */
-#define DOUBLE_SMALL_INT_FITS(d)                            \
-    (SCM_SMALL_INT_MIN <= (d)                               \
-     && (d) <= nextafter((double)SCM_SMALL_INT_MAX, 0.0))
-
 /*================================================================
  * Classes of Numeric Tower
  */
@@ -309,19 +304,37 @@ ScmObj Scm_MakeFlonum(double d)
     return SCM_MAKE_FLONUM_MEM(f);
 }
 
+ScmObj Scm_FlonumIntegerToExact(double d) /* d mustn't have fractional part */
+{
+#if SIZEOF_LONG >= 8
+    /* On 64bit machine, double can't exactly represent SCM_SMALL_INT_MIN and
+       SCM_SMALL_INT_MAX, and comparing d with them could pass through
+       out-of-range value, so we convert d to long first. */
+    if (LONG_MIN <= d && d <= LONG_MAX) {
+        long n = (long)d;
+        if (SCM_SMALL_INT_MIN <= n && n <= SCM_SMALL_INT_MAX) {
+            return SCM_MAKE_INT(n);
+        }
+    }
+    /* FALLTHROUGH */
+#else
+    /* On 32bit machine, double has enough precision to cover small int
+       range. */
+    if (SCM_SMALL_INT_MIN <= d && d <= SCM_SMALL_INT_MAX) {
+        return SCM_MAKE_INT((long)d);
+    }
+#endif
+    return Scm_MakeBignumFromDouble(d);
+}
+
 ScmObj Scm_MakeFlonumToNumber(double d, int exact)
 {
     if (exact && !SCM_IS_INF(d)) {
         /* see if d can be demoted to integer */
         double i, f;
         f = modf(d, &i);
-        if (f == 0.0) {
-            if (DOUBLE_SMALL_INT_FITS(i)) {
-                return SCM_MAKE_INT((long)i);
-            } else {
-                return Scm_MakeBignumFromDouble(i);
-            }
-        }
+        if (f == 0.0) return Scm_FlonumIntegerToExact(i);
+        /*FALLTHROUGH*/
     }
     return Scm_MakeFlonum(d);
 }
@@ -1624,12 +1637,7 @@ ScmObj Scm_Exact(ScmObj obj)
             Scm_Error("Exact infinity/nan is not supported: %S", obj);
         }
         if ((f = modf(d, &i)) == 0.0) {
-            /* integer */
-            if (DOUBLE_SMALL_INT_FITS(d)) {
-                obj = SCM_MAKE_INT((long)d);
-            } else {
-                obj = Scm_MakeBignumFromDouble(d);
-            }
+            obj = Scm_FlonumIntegerToExact(i);
         } else {
             /* We'd find out the simplest rational numebr within the precision
                of IEEE double floating point number.  The actual code is in
@@ -3149,11 +3157,7 @@ ScmObj Scm_RoundToExact(ScmObj num, int mode)
         case SCM_ROUND_ROUND: r = roundeven(v); break;
         default: Scm_Panic("something screwed up");
         }
-        if (DOUBLE_SMALL_INT_FITS(r)) {
-            return SCM_MAKE_INT((long)r);
-        } else {
-            return Scm_MakeBignumFromDouble(r);
-        }
+        return Scm_FlonumIntegerToExact(r);
     }
     if (SCM_INTEGERP(num)) return num;
     if (SCM_RATNUMP(num))  return Scm_Round(num, mode);
