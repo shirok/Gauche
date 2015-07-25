@@ -472,6 +472,13 @@
            (let1 c1 (peek-char)
              (port-seek (current-input-port) 0 SEEK_CUR)
              (list c1 (peek-char))))))
+(test* "seek (istr, with peek-byte)" '(#x61 #x62)
+       (with-input-from-string (rlet1 s (make-byte-string 2 #x61)
+                                 (string-byte-set! s 1 #x62))
+         (^()
+           (let1 b1 (peek-byte)
+             (port-seek (current-input-port) 1)
+             (list b1 (peek-byte))))))
 
 ;; NB: in the following four test, each ifile-ofile test is a pair
 ;;     (the ofile test depends on the previous state by ifile).  do not
@@ -572,6 +579,18 @@
                       [dummy (port-seek p 0)]
                       [second (read-zstring p)])
                  (list first second)))))))
+
+(test* "seek (ifile, with peek-byte)" '(#x61 #x62)
+       (begin
+         (sys-unlink "test.o")
+         (with-output-to-file "test.o"
+           (cut display (rlet1 s (make-byte-string 2 #x61)
+                          (string-byte-set! s 1 #x62))))
+         (call-with-input-file "test.o"
+           (^p
+             (let1 b1 (peek-byte p)
+               (port-seek p 1)
+               (list b1 (peek-byte p)))))))
 
 (test* "seek (with appending output)" '(50 100)
        (begin
