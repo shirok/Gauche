@@ -963,6 +963,7 @@ static off_t seek_istr(ScmPort *p, off_t o, int whence, int nomove)
             r = (off_t)(p->src.istr.current - p->src.istr.start);
         }
         p->ungotten = SCM_CHAR_INVALID;
+        p->scrcnt = 0;
     }
     return r;
 }
@@ -1019,6 +1020,7 @@ ScmObj Scm_PortSeekUnsafe(ScmPort *p, ScmObj off, int whence)
             }
             /* Invalidate ungotten char */
             p->ungotten = SCM_CHAR_INVALID;
+            p->scrcnt = 0;
         }
         break;
     case SCM_PORT_ISTR:
