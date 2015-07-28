@@ -434,8 +434,9 @@ ScmObj Scm__WritePrimitive(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
    overhaul to fix that.  However, just preventing blowup by lists
    and vectors is still useful.
 
-   The stack is a list, whose element can be (#t . list) or
-   (index . vector).  In the first case, the list part is the
+   The stack is a list, whose element can be (#t count . list) or
+   (index . vector).  In the first case, the count part keeps
+   track of how many siblings we already printed, and the list part is the
    rest of the list we should process after the current item is
    written out.  In the second case, we're processing the vector,
    and the next item we should process is pointed by index.
@@ -558,7 +559,7 @@ static void write_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 
             /* normal case */
             Scm_PutcUnsafe('(', port);
-            PUSH(Scm_Cons(SCM_TRUE, SCM_CDR(obj)));
+            PUSH(Scm_Cons(SCM_TRUE, Scm_Cons(SCM_MAKE_INT(1), SCM_CDR(obj))));
             obj = SCM_CAR(obj);
             goto write1;
         } else if (SCM_VECTORP(obj)) {
@@ -585,6 +586,9 @@ static void write_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
                 if (i == len) { /* we've done this vector */
                     Scm_PutcUnsafe(')', port);
                     POP();
+                } else if (st && st->printLength > 0 && st->printLength <= i) {
+                    Scm_PutzUnsafe(" ...)", -1, port);
+                    POP();
                 } else {
                     Scm_PutcUnsafe(' ', port);
                     obj = SCM_VECTOR_ELEMENT(v, i);
@@ -593,25 +597,34 @@ static void write_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
                 }
             } else {
                 /* we're processing a list */
-                ScmObj v = SCM_CDR(top);
+                SCM_ASSERT(SCM_PAIRP(SCM_CDR(top)));
+                long count = SCM_INT_VALUE(SCM_CADR(top));
+                ScmObj v = SCM_CDDR(top);
                 if (SCM_NULLP(v)) { /* we've done with this list */
                     Scm_PutcUnsafe(')', port);
                     POP();
                 } else if (!SCM_PAIRP(v)) {
                     Scm_PutzUnsafe(" . ", -1, port);
                     obj = v;
-                    SCM_SET_CDR(top, SCM_NIL);
+                    SCM_SET_CAR(SCM_CDR(top), SCM_MAKE_INT(count+1));
+                    SCM_SET_CDR(SCM_CDR(top), SCM_NIL);
                     goto write1;
+                } else if (st && st->printLength > 0 && st->printLength <= count) {
+                    /* print-length limit reached */
+                    Scm_PutzUnsafe(" ...)", -1, port);
+                    POP();
                 } else if (ht && !SCM_EQ(Scm_HashTableRef(ht, v, SCM_MAKE_INT(1)), SCM_MAKE_INT(1)))  {
                     /* cdr part is shared */
                     Scm_PutzUnsafe(" . ", -1, port);
                     obj = v;
-                    SCM_SET_CDR(top, SCM_NIL);
+                    SCM_SET_CAR(SCM_CDR(top), SCM_MAKE_INT(count+1));
+                    SCM_SET_CDR(SCM_CDR(top), SCM_NIL);
                     goto write1;
                 } else {
                     Scm_PutcUnsafe(' ', port);
                     obj = SCM_CAR(v);
-                    SCM_SET_CDR(top, SCM_CDR(v));
+                    SCM_SET_CAR(SCM_CDR(top), SCM_MAKE_INT(count+1));
+                    SCM_SET_CDR(SCM_CDR(top), SCM_CDR(v));
                     goto write1;
                 }
             }
