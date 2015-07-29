@@ -150,6 +150,11 @@ in or around a sequence of digits in number literals, as far as
 the literal is explicitly prefixed (@code{#e}, @code{#x}, etc).
 Those @code{_}'s are just ignored.
 It is to improve readability, e.g. @code{#b1100_1010_1111_1110}.
+
+Gauche also adopts Common-Lisp style radix prefixed numeric literals,
+e.g. @code{#3r120} (@code{120} in base-3, 15 in decimal).  Radix between
+2 and 36 are recognized; alphabetic letters @code{a-zA-Z}
+are used beyond decimal.
 @c JP
 @item 数値リテラル
 不正確な実数の整数部または小数部のいずれかが0の場合、それを省略することが
@@ -164,6 +169,10 @@ It is to improve readability, e.g. @code{#b1100_1010_1111_1110}.
 Gaucheの拡張機能として、プレフィクス(@code{#e}, @code{#x}等)つき数値リテラル中の
 数字の中に@code{_}を自由に挿入することができます。@code{_}は単に無視されます。
 桁を適切に区切って読みやすくするのに便利です(例: @code{#b1100_1010_1111_1110})。
+
+Gaucheはまた、Common Lisp風の基数を明示した数値リテラルも認識します。
+例えば3進数の120は@code{#3r120}と書けます(10進数で15)。2進数から36進数まで
+認識されます。10進数より上では@code{a-zA-Z}のアルファベットを使えます。
 @c COMMON
 
 @c EN
@@ -314,9 +323,11 @@ The table below lists sharp-syntaxes.
 @c COMMON
 @item @code{#0} @dots{} @code{#9}
 @c EN
- @tab [SRFI-38] Shared substructure definition and reference.
+ @tab @code{#@var{n}#}, @code{#@var{n}=}: [SRFI-38] Shared substructure definition and reference.@*
+@code{#@var{n}R}, @code{#@var{n}r}: Radix prefixed numeric literals.
 @c JP
- @tab [SRFI-38] 共有サブストラクチャの定義と参照。
+ @tab @code{#@var{n}#}, @code{#@var{n}=}: [SRFI-38] 共有サブストラクチャの定義と参照。@*
+@code{#@var{n}R}, @code{#@var{n}r}: 基数を明示した数値リテラル。
 @c COMMON
 @item @code{#:}
 @c EN
