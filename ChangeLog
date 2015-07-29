@@ -1,3 +1,7 @@
+2015-07-29  shiro  <shiro@acm.org>
+
+	* src/read.c (read_num_prefixed): Recognize CL-ish #<radix>r syntax.
+
 2015-07-26  Shiro Kawai <shiro@acm.org>
 
 	* src/portapi.c (seek_istr, Scm_PortSeek): Clear scrcnt when seek

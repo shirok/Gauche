@@ -56,7 +56,8 @@ static ScmObj read_char(ScmPort *port, ScmReadContext *ctx);
 static ScmObj read_word(ScmPort *port, ScmChar initial, ScmReadContext *ctx,
                         int temp_case_fold, int include_hash_sign);
 static ScmObj read_symbol(ScmPort *port, ScmChar initial, ScmReadContext *ctx);
-static ScmObj read_number(ScmPort *port, ScmChar initial, ScmReadContext *ctx);
+static ScmObj read_number(ScmPort *port, ScmChar initial,
+                          int defaultRadix, ScmReadContext *ctx);
 static ScmObj read_symbol_or_number(ScmPort *port, ScmChar initial, ScmReadContext *ctx);
 static ScmObj read_escaped_symbol(ScmPort *port, ScmChar delim, int interned,
                                   ScmReadContext *ctx);
@@ -67,7 +68,7 @@ static ScmObj read_sharp_comma(ScmPort *port, ScmReadContext *ctx);
 static ScmObj process_sharp_comma(ScmPort *port, ScmObj key, ScmObj args,
                                   ScmReadContext *ctx, int has_ref);
 static ScmObj read_shebang(ScmPort *port, ScmReadContext *ctx);
-static ScmObj read_reference(ScmPort *port, ScmChar ch, ScmReadContext *ctx);
+static ScmObj read_num_prefixed(ScmPort *port, ScmChar ch, ScmReadContext *ctx);
 static ScmObj read_sharp_word(ScmPort *port, char c, ScmReadContext *ctx);
 
 /* Table of 'read-time constructor' in SRFI-10 */
@@ -534,7 +535,7 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
             case 'b':; case 'B':; case 'd':; case 'D':;
             case 'e':; case 'E':; case 'i':; case 'I':;
                 Scm_UngetcUnsafe(c1, port);
-                return read_number(port, c, ctx);
+                return read_number(port, c, 10, ctx); /* let StringToNumber handle radix prefix */
             case '!':
                 /* #! is either a script shebang or a reader directive */
                 return read_shebang(port, ctx);
@@ -596,8 +597,8 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
             }
             case '0': case '1': case '2': case '3': case '4':
             case '5': case '6': case '7': case '8': case '9':
-                /* #N# or #N= form */
-                return read_reference(port, c1, ctx);
+                /* #N#, #N= or #Nr form */
+                return read_num_prefixed(port, c1, ctx);
             case '*': {
                 reject_in_r7(port, ctx, "#*");
                 /* #*"...." byte string
@@ -1257,10 +1258,11 @@ static ScmObj read_symbol(ScmPort *port, ScmChar initial, ScmReadContext *ctx)
     return Scm_Intern(s);
 }
 
-static ScmObj read_number(ScmPort *port, ScmChar initial, ScmReadContext *ctx)
+static ScmObj read_number(ScmPort *port, ScmChar initial,
+                          int defaultRadix, ScmReadContext *ctx)
 {
     ScmString *s = SCM_STRING(read_word(port, initial, ctx, FALSE, TRUE));
-    ScmObj num = Scm_StringToNumber(s, 10, 0);
+    ScmObj num = Scm_StringToNumber(s, defaultRadix, 0);
     if (num == SCM_FALSE)
         Scm_ReadError(port, "bad numeric format: %S", s);
     return num;
@@ -1387,13 +1389,13 @@ static ScmObj read_charset(ScmPort *port)
 }
 
 /*----------------------------------------------------------------
- * Back reference (#N# and #N=)
+ * Numeric prefixed (#N#, #N=, #Nr)
  */
 
-static ScmObj read_reference(ScmPort *port, ScmChar ch, ScmReadContext *ctx)
+static ScmObj read_num_prefixed(ScmPort *port, ScmChar ch, ScmReadContext *ctx)
 {
     ScmObj e = SCM_UNBOUND;
-    int refnum = Scm_DigitToInt(ch, 10, FALSE);
+    int prefix = Scm_DigitToInt(ch, 10, FALSE);
 
     for (;;) {
         ch = Scm_GetcUnsafe(port);
@@ -1401,51 +1403,65 @@ static ScmObj read_reference(ScmPort *port, ScmChar ch, ScmReadContext *ctx)
             Scm_ReadError(port, "unterminated reference form (#digits)");
         }
         if (SCM_CHAR_ASCII_P(ch) && isdigit(ch)) {
-            refnum = refnum*10+Scm_DigitToInt(ch, 10, FALSE);
-            if (refnum < 0) Scm_ReadError(port, "reference number overflow");
+            prefix = prefix*10+Scm_DigitToInt(ch, 10, FALSE);
+            if (prefix < 0) Scm_ReadError(port, "#-prefix number overflow");
             continue;
-        }
-        if (ch != '#' && ch != '=') {
-            Scm_ReadError(port, "invalid reference form (must be either #digits# or #digits=) : #%d%A", refnum, SCM_MAKE_CHAR(ch));
         }
         break;
     }
-    if (ch == '#') {
+    switch (ch) {
+    case '#':
         /* #digit# - back reference */
         if (ctx->table == NULL
             || SCM_UNBOUNDP(e = Scm_HashTableRef(ctx->table,
-                                                 Scm_MakeInteger(refnum),
+                                                 Scm_MakeInteger(prefix),
                                                  SCM_UNBOUND))) {
-            Scm_ReadError(port, "invalid reference number in #%d#", refnum);
+            Scm_ReadError(port, "invalid reference number in #%d#", prefix);
         }
         if (SCM_READ_REFERENCE_P(e) && SCM_READ_REFERENCE_REALIZED(e)) {
             return SCM_READ_REFERENCE(e)->value;
         } else {
             return e;
         }
-    } else {
+    case '=':
         /* #digit= - register */
-        ScmObj ref = Scm_MakeReadReference();
-
-        if (ctx->table == NULL) {
-            ctx->table =
-                SCM_HASH_TABLE(Scm_MakeHashTableSimple(SCM_HASH_EQV, 0));
+        {
+            ScmObj ref = Scm_MakeReadReference();
+            if (ctx->table == NULL) {
+                ctx->table =
+                    SCM_HASH_TABLE(Scm_MakeHashTableSimple(SCM_HASH_EQV, 0));
+            }
+            if (!SCM_UNBOUNDP(Scm_HashTableRef(ctx->table,
+                                               Scm_MakeInteger(prefix),
+                                               SCM_UNBOUND))) {
+                Scm_ReadError(port, "duplicate back-reference number in #%d=",
+                              prefix);
+            }
+            ref_register(ctx, ref, prefix);
+            ScmObj val = read_item(port, ctx);
+            if (ref == val) {
+                /* an edge case: #0=#0# */
+                Scm_ReadError(port, "indeterminate read reference: #%d=#%d#",
+                              prefix, prefix);
+            }
+            SCM_READ_REFERENCE(ref)->value = val;
+            return val;
         }
-        if (!SCM_UNBOUNDP(Scm_HashTableRef(ctx->table,
-                                           Scm_MakeInteger(refnum),
-                                           SCM_UNBOUND))) {
-            Scm_ReadError(port, "duplicate back-reference number in #%d=",
-                          refnum);
+    case 'r': case 'R':
+        /* #digitR - radix */
+        if (prefix < 2 || prefix > 36) {
+            Scm_ReadError(port, "Radix prefix out of range: radix in #<radix>R must be between 2 and 36 inclusive, but got: %d", prefix);
         }
-        ref_register(ctx, ref, refnum);
-        ScmObj val = read_item(port, ctx);
-        if (ref == val) {
-            /* an edge case: #0=#0# */
-            Scm_ReadError(port, "indeterminate read reference: #%d=#%d#",
-                          refnum, refnum);
+        int ch = Scm_GetcUnsafe(port);
+        ScmObj rval = SCM_UNDEFINED;
+        if (!(SCM_CHAR_ASCII_P(ch) && (isalnum(ch)))) {
+            Scm_ReadError(port, "Invalid radix-prefixed number: #%dr%C",
+                          prefix, ch);
         }
-        SCM_READ_REFERENCE(ref)->value = val;
-        return val;
+        return read_number(port, ch, prefix, ctx);
+    default:
+        Scm_ReadError(port, "invalid numeric prefix (#, =, r or R is expected) : #%d%A", prefix, SCM_MAKE_CHAR(ch));
+        return SCM_UNDEFINED;
     }
 }
 
