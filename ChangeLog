@@ -1,4 +1,8 @@
-2015-07-29  shiro  <shiro@acm.org>
+2015-07-30  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi-118.scm, src/srfis.scm: Added srfi-118.
+
+2015-07-29  Shiro Kawai  <shiro@acm.org>
 
 	* src/read.c (read_num_prefixed): Recognize CL-ish #<radix>r syntax.
 
@@ -35,7 +39,7 @@
 	  It's been a source of confusion that typing (read-char) or (read-line)
 	  on REPL read the trailing newline.
 
-2015-07-13  shiro  <shiro@acm.org>
+2015-07-13  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/cise.scm (funcall): Add to allow the case
 	  when calling a function computed at runtime.

@@ -2330,5 +2330,22 @@
   
 )))
 
+;;-----------------------------------------------------------------------
+(test-section "srfi-118")
+(use srfi-118)
+(test-module 'srfi-118)
+
+(test* "string-append!" "abcdef"
+       (rlet1 s (string-copy "ab")
+         (string-append! s "cd" #\e "f")))
+
+(test* "string-replace!" "abcXYZfgh"
+       (rlet1 s (string-copy "abcdefgh")
+         (string-replace! s 3 5 "XYZ")))
+
+(test* "string-replace!" "abcXYZfgh"
+       (rlet1 s (string-copy "abcdefgh")
+         (string-replace! s 3 5 "WXYZw" 1 4)))
+
 (test-end)
 

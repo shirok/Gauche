@@ -683,3 +683,13 @@ Some of the features are built-in (@xref{Basic comparators}).  Full srfi spec is
 
 比較器
 いくつかの機能は組み込みです(@ref{Basic comparators}参照)。srfiの完全な仕様はモジュール@code{srfi-114}でサポートされます(@ref{Comparators}参照)。
+
+
+srfi-118, srfi-118
+()
+
+Simple adjustable-size strings
+Supported by the module @code{srfi-118}.
+
+簡単な可変長文字列
+モジュール@code{srfi-118}でサポートされます。
