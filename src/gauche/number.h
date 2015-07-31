@@ -322,10 +322,22 @@ SCM_EXTERN double Scm_Angle(ScmObj z);
 SCM_EXTERN double Scm_RealPart(ScmObj z);
 SCM_EXTERN double Scm_ImagPart(ScmObj z);
 
-/* flags for ScmNumberFormat */
+/* Flags for ScmNumberFormat.  Scm_NumberToString and Scm_StringToNumber
+   also take those flags.  The [N] and [S] mark the meaning of the flag
+   in Scm_NumberToString and Scm_StringToNumber, respectively. */
 enum ScmNumberFormatFlags {
-    SCM_NUMBER_FORMAT_USE_UPPER = (1L<<0), /* use ABCDEF.. for base > 10 */
-    SCM_NUMBER_FORMAT_SHOW_PLUS = (1L<<1)  /* show '+' in positive number */
+    SCM_NUMBER_FORMAT_USE_UPPER = (1L<<0), /* use ABCDEF.. for base > 10
+                                              [N] same.
+                                              [S] ignored. */
+    SCM_NUMBER_FORMAT_SHOW_PLUS = (1L<<1), /* show '+' in positive number
+                                              [N] same.
+                                              [S] ignored. */
+    SCM_NUMBER_FORMAT_ALT_RADIX = (1L<<2)  /* alternative radix prefix handling
+                                              specifying non-default behavior
+                                              (the actual behavior differs
+                                              between N and S:
+                                              [N] always add radix prefix
+                                              [S] never allow radix prefix */
 };
 
 typedef struct ScmNumberFormatRec {

@@ -3568,6 +3568,24 @@ static void number_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 #define FLT_BUF 65  /* need to hold binary representation of the least fixnum */
 
 static size_t
+print_radix_prefix(ScmPort *port, u_long radix)
+{
+    char buf[FLT_BUF];
+    switch (radix) {
+    case 2:  Scm_Putz("#b", 2, port); return 2;
+    case 8:  Scm_Putz("#o", 2, port); return 2;
+    case 10: Scm_Putz("#d", 2, port); return 2;
+    case 16: Scm_Putz("#x", 2, port); return 2;
+    default:
+        {
+            int nc = snprintf(buf, sizeof(buf), "#%lur", radix);
+            Scm_Putz(buf, nc, port);
+            return nc;
+        }
+    }
+}
+
+static size_t
 print_number(ScmPort *port, ScmObj obj, u_long flags, ScmNumberFormat *fmt)
 {
     int use_upper = flags & SCM_NUMBER_FORMAT_USE_UPPER;
@@ -3575,6 +3593,10 @@ print_number(ScmPort *port, ScmObj obj, u_long flags, ScmNumberFormat *fmt)
     int radix = fmt->radix;
     int nchars = 0;
     char buf[FLT_BUF];
+
+    if ((flags & SCM_NUMBER_FORMAT_ALT_RADIX) && SCM_EXACTP(obj)) {
+        nchars += print_radix_prefix(port, radix);
+    }
 
     if (SCM_INTP(obj)) {
         long value = SCM_INT_VALUE(obj);
