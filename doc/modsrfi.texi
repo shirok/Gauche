@@ -37,6 +37,7 @@ of supported SRFIs.
 * Boxes::                       srfi-111
 * Sets and bags::               srfi-113
 * Comparators::                 srfi-114
+* Simple adjustable-size strings::  srfi-118
 @end menu
 
 
@@ -81,8 +82,8 @@ split-at split-at! iota
 @end deftp
 
 @menu
-* SRFI-1 List utilities::       
-* SRFI-1 Set operations::       
+* SRFI-1 List utilities::
+* SRFI-1 Set operations::
 @end menu
 
 @node SRFI-1 List utilities, SRFI-1 Set operations, List library, List library
@@ -979,20 +980,20 @@ Gaucheでは、一貫性のために``srfi-13''と名付けています。
 @end deftp
 
 @menu
-* SRFI-13 General conventions::  
-* SRFI-13 String predicates::   
-* SRFI-13 String Constructors::  
-* SRFI-13 String Selection::    
-* SRFI-13 String Comparison::   
-* SRFI-13 String Prefixes & Suffixes::  
-* SRFI-13 String searching::    
-* SRFI-13 String case mapping::  
-* SRFI-13 String reverse & append::  
-* SRFI-13 String mapping::      
-* SRFI-13 String rotation::     
-* SRFI-13 other string operations::  
-* SRFI-13 String filtering::    
-* SRFI-13 Low-level string procedures::  
+* SRFI-13 General conventions::
+* SRFI-13 String predicates::
+* SRFI-13 String Constructors::
+* SRFI-13 String Selection::
+* SRFI-13 String Comparison::
+* SRFI-13 String Prefixes & Suffixes::
+* SRFI-13 String searching::
+* SRFI-13 String case mapping::
+* SRFI-13 String reverse & append::
+* SRFI-13 String mapping::
+* SRFI-13 String rotation::
+* SRFI-13 other string operations::
+* SRFI-13 String filtering::
+* SRFI-13 Low-level string procedures::
 @end menu
 
 @node SRFI-13 General conventions, SRFI-13 String predicates, String library, String library
@@ -1835,12 +1836,12 @@ Gaucheでは@code{<char-set>}クラスは@code{<collection>}を継承し、
 @end deftp
 
 @menu
-* SRFI-14 Character-set constructors::  
-* SRFI-14 Character-set comparison::  
-* SRFI-14 Character-set iteration::  
-* SRFI-14 Character-set query::  
-* SRFI-14 Character-set algebra::  
-* SRFI-14 Predefined character-set::  
+* SRFI-14 Character-set constructors::
+* SRFI-14 Character-set comparison::
+* SRFI-14 Character-set iteration::
+* SRFI-14 Character-set query::
+* SRFI-14 Character-set algebra::
+* SRFI-14 Predefined character-set::
 @end menu
 
 @node SRFI-14 Character-set constructors, SRFI-14 Character-set comparison, Character-set library, Character-set library
@@ -2221,11 +2222,11 @@ Gaucheでは、timeオブジェクトは@code{<time>}クラスとして組み込
 @end deftp
 
 @menu
-* SRFI-19 Time types::          
-* SRFI-19 Time queries::        
-* SRFI-19 Time procedures::     
-* SRFI-19 Date::                
-* SRFI-19 Date reader and writer::  
+* SRFI-19 Time types::
+* SRFI-19 Time queries::
+* SRFI-19 Time procedures::
+* SRFI-19 Date::
+* SRFI-19 Date reader and writer::
 @end menu
 
 @node SRFI-19 Time types, SRFI-19 Time queries, Time data types and procedures, Time data types and procedures
@@ -5973,7 +5974,7 @@ They do provide hash functions.
 
 
 @c ----------------------------------------------------------------------
-@node Comparators,  , Sets and bags, Library modules - SRFIs
+@node Comparators, Simple adjustable-size strings, Sets and bags, Library modules - SRFIs
 @section @code{srfi-114} - Comparators
 @c NODE 比較器, @code{srfi-114} - 比較器
 
@@ -6279,6 +6280,62 @@ equal to zero, or greater than zero, respectively.
 
 @defun comparator-min comparator obj1 obj2 @dots{}
 @defunx comparator-max comparator obj1 obj2 @dots{}
+@end defun
+
+@c ----------------------------------------------------------------------
+@node Simple adjustable-size strings,  , Comparators, Library modules - SRFIs
+@section @code{srfi-118} - Simple adjustable-size strings
+@c NODE 簡単な可変長文字列, @code{srfi-118} - 簡単な可変長文字列
+
+@deftp {Module} srfi-118
+@mdindex srfi-118
+This SRFI defines two string mutating operations that can change
+the length of the string: @code{string-append!} and @code{string-replace!}.
+
+Note that, in Gauche, the body of strings is immutable; when you mutate
+a string, Gauche creates a fresh new string body and just switch a pointer
+in the original string to point the new string body.  So it is not a
+problem to implement this SRFI in Gauche, but it also means you won't
+get any performance benefit by using these operations.  Using immutable
+counterparts (@code{string-append} and @code{string-replace}) gives
+you the same performance.  (Be aware that the interface is slightly
+different from the immutable versions.)
+
+We provide this module only for the compatibility.  Gauche-specific
+programs should stay away from this module.  Particulary, avoid
+code like the example in SRFI-118 document (build a string by
+@code{append!}-ing small chunks at a time)---they're quadratic on Gauche.
+@end deftp
+
+@defun string-append! string values @dots{}
+The @var{string} argument must be a mutable string.
+Modify @var{string} by appending @var{values}, each of which is
+either a character or a string.
+
+@example
+(rlet1 a (string-copy "abc")
+  (string-append! a #\X "YZ"))
+ @result{} "abcXYZ"
+@end example
+@end defun
+
+@defun string-replace! dst dst-start dst-end src :optional src-start src-end
+The @var{dst} argument must be a mutable string.
+Replace @var{dst} between @var{dst-start} (inclusive) and
+@var{dst-end} (exclusive) with a string @var{src}.  The optional
+arguments @var{src-start} and @var{src-end} limits the region of
+@var{src} to be used.
+
+Be aware that the order of arguments differ from
+SRFI-13's @code{string-replace} (@xref{SRFI-13 other string operations});
+@code{string-replace!} resembles to @code{string-copy!} (also in SRFI-13),
+rather than @code{string-replace}.
+
+@example
+(rlet1 a (string-copy "abc")
+  (string-replace! a 1 2 "XYZ"))
+ @result{} "aXYZc"
+@end example
 @end defun
 
 
