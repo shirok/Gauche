@@ -1,3 +1,11 @@
+2015-08-01  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/writer.h: Introduced ScmWriteParameter to keep various
+	  write customization parameters - *print-level* etc. in CL.
+	* src/gauche/vm.h, src/vm.c: Keep the current ScmWriteParameter
+	  in VM.
+	* src/write.c: Refer to vm->writeParameters.
+
 2015-07-30  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi-118.scm, src/srfis.scm: Added srfi-118.

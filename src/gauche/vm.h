@@ -526,6 +526,10 @@ struct ScmVMRec {
 #if defined(GAUCHE_USE_WTHREADS)
     ScmWinCleanup *winCleanup; /* mimic pthread_cleanup_* */
 #endif /*defined(GAUCHE_USE_WTHREADS)*/
+
+    /* Current write parameter  */
+    /* This shoud be moved next to current io ports above on 1.0 */
+    ScmWriteParameter *writeParameters;
 };
 
 SCM_EXTERN ScmVM *Scm_NewVM(ScmVM *proto, ScmObj name);

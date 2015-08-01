@@ -55,9 +55,7 @@ struct ScmWriteStateRec {
     SCM_HEADER;
     ScmHashTable *sharedTable;  /* track shared structure.  can be NULL */
     int sharedCounter;          /* counter to emit #n= and #n# */
-    int printLength;            /* immutable during writing.  0 = no limit */
-    int printDepth;             /* immutable during writing.  0 = no limit */
-    int currentDepth;
+    int currentLevel;
 };
 
 SCM_CLASS_DECL(Scm_WriteStateClass);

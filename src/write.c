@@ -107,6 +107,23 @@ static void write_context_init(ScmWriteContext *ctx, int mode, int flags, int li
 }
 
 /*
+ * WriteParameter
+ */
+ScmWriteParameter *Scm_MakeWriteParameter(const ScmWriteParameter *proto)
+{
+    ScmWriteParameter *p = SCM_NEW(ScmWriteParameter);
+    if (proto) {
+        *p = *proto;
+    } else {
+        p->printLength = 0;
+        p->printLevel = 0;
+        p->printBase = 10;
+        p->printRadix = FALSE;
+    }
+    return p;
+}
+
+/*
  * WriteState
  */
 /* The class definition is in libio.scm  */
@@ -115,12 +132,11 @@ static void write_context_init(ScmWriteContext *ctx, int mode, int flags, int li
 ScmWriteState *Scm_MakeWriteState(ScmWriteState *proto)
 {
     ScmWriteState *z = SCM_NEW(ScmWriteState);
+    ScmVM *vm = Scm_VM();
     SCM_SET_CLASS(z, SCM_CLASS_WRITE_STATE);
     z->sharedTable = NULL;
     z->sharedCounter = 0;
-    z->printLength = 0;
-    z->printDepth = 0;
-    z->currentDepth = 0;
+    z->currentLevel = 0;
     return z;
 }
 
@@ -367,6 +383,8 @@ static size_t write_char(ScmChar ch, ScmPort *port, ScmWriteContext *ctx)
  */
 ScmObj Scm__WritePrimitive(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
+    ScmWriteParameter *wp = Scm_VM()->writeParameters;
+    
 #define CASE_ITAG_RET(obj, str)                 \
     case SCM_ITAG(obj):                         \
         Scm_PutzUnsafe(str, -1, port);          \
@@ -384,7 +402,8 @@ ScmObj Scm__WritePrimitive(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
             Scm_Panic("write: unknown itag object: %08x", SCM_WORD(obj));
         }
     }
-    else if (SCM_INTP(obj)) {
+    else if (SCM_INTP(obj) && wp->printBase == 10 && !wp->printRadix) {
+        /* Shortcut to avoid allocation */
         char buf[SPBUFSIZ];
         int k = snprintf(buf, SPBUFSIZ, "%ld", SCM_INT_VALUE(obj));
         Scm_PutzUnsafe(buf, -1, port);
@@ -395,7 +414,11 @@ ScmObj Scm__WritePrimitive(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
         return SCM_MAKE_INT(k);
     }
     else if (SCM_NUMBERP(obj)) {
-        return SCM_MAKE_INT(Scm_PrintNumber(port, obj, NULL));
+        ScmNumberFormat fmt;
+        Scm_NumberFormatInit(&fmt);
+        fmt.radix = wp->printBase;
+        if (wp->printRadix) fmt.flags |= SCM_NUMBER_FORMAT_ALT_RADIX;
+        return SCM_MAKE_INT(Scm_PrintNumber(port, obj, &fmt));
     }
     return SCM_FALSE;
 }
@@ -478,6 +501,7 @@ static void write_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
     ScmObj stack = SCM_NIL;
     ScmWriteState *st = port->writeState;
     ScmHashTable *ht = (st? st->sharedTable : NULL);
+    ScmWriteParameter *wp = Scm_VM()->writeParameters;
     int stack_depth = 0;
 
 #define PUSH(elt)                                       \
@@ -586,7 +610,7 @@ static void write_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
                 if (i == len) { /* we've done this vector */
                     Scm_PutcUnsafe(')', port);
                     POP();
-                } else if (st && st->printLength > 0 && st->printLength <= i) {
+                } else if (wp->printLength > 0 && wp->printLength <= i) {
                     Scm_PutzUnsafe(" ...)", -1, port);
                     POP();
                 } else {
@@ -609,7 +633,7 @@ static void write_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
                     SCM_SET_CAR(SCM_CDR(top), SCM_MAKE_INT(count+1));
                     SCM_SET_CDR(SCM_CDR(top), SCM_NIL);
                     goto write1;
-                } else if (st && st->printLength > 0 && st->printLength <= count) {
+                } else if (wp->printLength > 0 && wp->printLength <= count) {
                     /* print-length limit reached */
                     Scm_PutzUnsafe(" ...)", -1, port);
                     POP();

@@ -182,6 +182,9 @@ ScmVM *Scm_NewVM(ScmVM *proto, ScmObj name)
     v->curin  = proto? proto->curin  : SCM_PORT(Scm_Stdin());
     v->curout = proto? proto->curout : SCM_PORT(Scm_Stdout());
     v->curerr = proto? proto->curerr : SCM_PORT(Scm_Stderr());
+    v->writeParameters = (proto
+                          ? proto->writeParameters
+                          : Scm_MakeWriteParameter(NULL));
 
     Scm__VMParameterTableInit(&(v->parameters), proto);
 
