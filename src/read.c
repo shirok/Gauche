@@ -57,7 +57,8 @@ static ScmObj read_word(ScmPort *port, ScmChar initial, ScmReadContext *ctx,
                         int temp_case_fold, int include_hash_sign);
 static ScmObj read_symbol(ScmPort *port, ScmChar initial, ScmReadContext *ctx);
 static ScmObj read_number(ScmPort *port, ScmChar initial,
-                          int defaultRadix, ScmReadContext *ctx);
+                          int radix, /* #<radix>r case */
+                          ScmReadContext *ctx);
 static ScmObj read_symbol_or_number(ScmPort *port, ScmChar initial, ScmReadContext *ctx);
 static ScmObj read_escaped_symbol(ScmPort *port, ScmChar delim, int interned,
                                   ScmReadContext *ctx);
@@ -535,7 +536,7 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
             case 'b':; case 'B':; case 'd':; case 'D':;
             case 'e':; case 'E':; case 'i':; case 'I':;
                 Scm_UngetcUnsafe(c1, port);
-                return read_number(port, c, 10, ctx); /* let StringToNumber handle radix prefix */
+                return read_number(port, c, 0, ctx); /* let StringToNumber handle radix prefix */
             case '!':
                 /* #! is either a script shebang or a reader directive */
                 return read_shebang(port, ctx);
@@ -1258,13 +1259,21 @@ static ScmObj read_symbol(ScmPort *port, ScmChar initial, ScmReadContext *ctx)
     return Scm_Intern(s);
 }
 
-static ScmObj read_number(ScmPort *port, ScmChar initial,
-                          int defaultRadix, ScmReadContext *ctx)
+static ScmObj read_number(ScmPort *port, ScmChar initial, int radix,
+                          ScmReadContext *ctx)
 {
     ScmString *s = SCM_STRING(read_word(port, initial, ctx, FALSE, TRUE));
-    ScmObj num = Scm_StringToNumber(s, defaultRadix, 0);
-    if (num == SCM_FALSE)
-        Scm_ReadError(port, "bad numeric format: %S", s);
+    u_long flags = radix >=2 ? SCM_NUMBER_FORMAT_ALT_RADIX : 0;
+    int default_radix = radix >= 2? radix : 10;
+    ScmObj num = Scm_StringToNumber(s, default_radix, flags);
+    if (num == SCM_FALSE) {
+        if (radix >= 2) {
+            /* In this case, we've read #<radix>r syntax */
+            Scm_ReadError(port, "bad numeric format: \"#%dr%A\"", radix, s);
+        } else {
+            Scm_ReadError(port, "bad numeric format: %S", s);
+        }
+    }
     return num;
 }
 
@@ -1453,10 +1462,9 @@ static ScmObj read_num_prefixed(ScmPort *port, ScmChar ch, ScmReadContext *ctx)
             Scm_ReadError(port, "Radix prefix out of range: radix in #<radix>R must be between 2 and 36 inclusive, but got: %d", prefix);
         }
         int ch = Scm_GetcUnsafe(port);
-        ScmObj rval = SCM_UNDEFINED;
-        if (!(SCM_CHAR_ASCII_P(ch) && (isalnum(ch)))) {
-            Scm_ReadError(port, "Invalid radix-prefixed number: #%dr%C",
-                          prefix, ch);
+        if (ch == EOF) {
+            Scm_ReadError(port, "Premature end of radix-prefixed number: #%dr",
+                          prefix);
         }
         return read_number(port, ch, prefix, ctx);
     default:

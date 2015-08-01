@@ -4154,7 +4154,8 @@ static ScmObj read_real(const char **strp, int *lenp,
 }
 
 /* Entry point */
-static ScmObj read_number(const char *str, int len, int radix, int strict)
+static ScmObj read_number(const char *str, int len, int radix,
+                          int disallow_radix_prefix)
 {
     struct numread_packet ctx;
     int radix_seen = 0, exactness_seen = 0, sign_seen = 0;
@@ -4164,7 +4165,7 @@ static ScmObj read_number(const char *str, int len, int radix, int strict)
     ctx.exactness = NOEXACT;
     ctx.padread = FALSE;
     ctx.explicit = FALSE;
-    ctx.strict = strict;
+    ctx.strict = FALSE;
     ctx.throwerror = FALSE;
 
 #define CHK_EXACT_COMPLEX()                                                 \
@@ -4185,22 +4186,22 @@ static ScmObj read_number(const char *str, int len, int radix, int strict)
         str++;
         switch (*str++) {
         case 'x':; case 'X':;
-            if (radix_seen) return SCM_FALSE;
+            if (disallow_radix_prefix || radix_seen) return SCM_FALSE;
             ctx.radix = 16; radix_seen++;
             ctx.explicit = TRUE;
             continue;
         case 'o':; case 'O':;
-            if (radix_seen) return SCM_FALSE;
+            if (disallow_radix_prefix || radix_seen) return SCM_FALSE;
             ctx.radix = 8; radix_seen++;
             ctx.explicit = TRUE;
             continue;
         case 'b':; case 'B':;
-            if (radix_seen) return SCM_FALSE;
+            if (disallow_radix_prefix || radix_seen) return SCM_FALSE;
             ctx.radix = 2; radix_seen++;
             ctx.explicit = TRUE;
             continue;
         case 'd':; case 'D':;
-            if (radix_seen) return SCM_FALSE;
+            if (disallow_radix_prefix || radix_seen) return SCM_FALSE;
             ctx.radix = 10; radix_seen++;
             ctx.explicit = TRUE;
             continue;
@@ -4288,9 +4289,8 @@ static ScmObj numread_error(const char *msg, struct numread_packet *context)
     return SCM_FALSE;
 }
 
-/* FLAGS is not used now; kept for the backward compatibility and possible
-   future extension.  The signature used to be 'int strict' and may recieve
-   TRUE; if we ever use FLAGS before 1.0, mind the ABI compatibility. */
+/* FLAGS is enum  ScmNumberFormatFlags (see number.h).  Only some of the
+   flags are recognized for printing numbers. */
 ScmObj Scm_StringToNumber(ScmString *str, int radix, u_long flags)
 {
     u_int len, size;
@@ -4299,7 +4299,7 @@ ScmObj Scm_StringToNumber(ScmString *str, int radix, u_long flags)
         /* This can't be a proper number. */
         return SCM_FALSE;
     } else {
-        return read_number(p, size, radix, 0);
+        return read_number(p, size, radix, flags&SCM_NUMBER_FORMAT_ALT_RADIX);
     }
 }
 
