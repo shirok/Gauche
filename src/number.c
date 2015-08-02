@@ -563,7 +563,7 @@ double Scm__EncodeDouble(u_long mant1, u_long mant0, int exp, int signbit)
     return dd.d;
 }
 
-/* More uesr-friendly flonum construction.  This is inverse of DecodeFlonum,
+/* More user-friendly flonum construction.  This is inverse of DecodeFlonum,
    and returns the double representation of sign * mant * 2^exp.
    If exp is too small for normalized range, this returns denormalized number,
    and the bits that don't fit in the mantissa are just discarded.  (We don't
@@ -787,7 +787,7 @@ ScmObj Scm_MakeComplexPolar(double mag, double angle)
     else             return Scm_MakeCompnum(real, imag);
 }
 
-/* NB: This isn't called by Scheme's real-part; see stdlib.stub */
+/* NB: This isn't called by Scheme's real-part; see libnum.scm */
 double Scm_RealPart(ScmObj z)
 {
     if (SCM_REALP(z)) {
@@ -800,7 +800,7 @@ double Scm_RealPart(ScmObj z)
     return SCM_COMPNUM_REAL(z);
 }
 
-/* NB: This isn't called by Scheme's imag-part; see stdlib.stub */
+/* NB: This isn't called by Scheme's imag-part; see libnum.scm */
 double Scm_ImagPart(ScmObj z)
 {
     if (SCM_COMPNUMP(z)) {
@@ -812,6 +812,7 @@ double Scm_ImagPart(ScmObj z)
     return 0.0;
 }
 
+/* NB: This isn't called by Scheme's magnitude; see libnum.scm */
 double Scm_Magnitude(ScmObj z)
 {
     if (SCM_REALP(z)) {
@@ -1536,7 +1537,7 @@ int Scm_Sign(ScmObj obj)
         return Scm_Sign(SCM_RATNUM_NUMER(obj));
     }
     /* NB: zero? can accept a complex number, but it is processed in
-       the stub function.   see stdlib.stub */
+       the stub function.   see libnum.scm */
     Scm_Error("real number required, but got %S", obj);
     return 0; /* dummy */
 }
