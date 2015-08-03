@@ -115,8 +115,8 @@ ScmWriteParameter *Scm_MakeWriteParameter(const ScmWriteParameter *proto)
     if (proto) {
         *p = *proto;
     } else {
-        p->printLength = 0;
-        p->printLevel = 0;
+        p->printLength = -1;
+        p->printLevel = -1;
         p->printBase = 10;
         p->printRadix = FALSE;
     }
@@ -581,12 +581,25 @@ static void write_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
                 }
             }
 
+            if (wp->printLength == 0) {
+                /* in this case we don't print the elements at all, so we need
+                   to treat this specially. */
+                Scm_PutzUnsafe("(...)", -1, port);
+                goto next;
+            }
+
             /* normal case */
             Scm_PutcUnsafe('(', port);
             PUSH(Scm_Cons(SCM_TRUE, Scm_Cons(SCM_MAKE_INT(1), SCM_CDR(obj))));
             obj = SCM_CAR(obj);
             goto write1;
         } else if (SCM_VECTORP(obj)) {
+            if (wp->printLength == 0) {
+                /* in this case we don't print the elements at all, so we need
+                   to treat this specially. */
+                Scm_PutzUnsafe("#(...)", -1, port);
+                goto next;
+            }
             Scm_PutzUnsafe("#(", -1, port);
             PUSH(Scm_Cons(SCM_MAKE_INT(1), obj));
             obj = SCM_VECTOR_ELEMENT(obj, 0);
@@ -610,7 +623,7 @@ static void write_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
                 if (i == len) { /* we've done this vector */
                     Scm_PutcUnsafe(')', port);
                     POP();
-                } else if (wp->printLength > 0 && wp->printLength <= i) {
+                } else if (wp->printLength >= 0 && wp->printLength <= i) {
                     Scm_PutzUnsafe(" ...)", -1, port);
                     POP();
                 } else {
@@ -633,7 +646,7 @@ static void write_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
                     SCM_SET_CAR(SCM_CDR(top), SCM_MAKE_INT(count+1));
                     SCM_SET_CDR(SCM_CDR(top), SCM_NIL);
                     goto write1;
-                } else if (wp->printLength > 0 && wp->printLength <= count) {
+                } else if (wp->printLength >= 0 && wp->printLength <= count) {
                     /* print-length limit reached */
                     Scm_PutzUnsafe(" ...)", -1, port);
                     POP();

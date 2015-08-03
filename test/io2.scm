@@ -393,5 +393,42 @@
 
 (sys-unlink "test.o")
 (sys-unlink "test1.o")
-     
+
+;;===============================================================
+;; Write parameters
+;;
+
+(use gauche.parameter)
+
+(let* ([data (iota 5)]
+       [data2 (make-list 5 data)])
+  (test* "print-length" '("(0 1 2 3 4)"
+                          ("(0 1 2 3 4)"   "#(0 1 2 3 4)")
+                          ("(0 1 2 3 ...)" "#(0 1 2 3 ...)")
+                          ("(0 1 2 ...)"   "#(0 1 2 ...)")
+                          ("(0 1 2 3 4)"   "#(0 1 2 3 4)")
+                          ("(0 1 ...)"     "#(0 1 ...)")
+                          ("(0 ...)"       "#(0 ...)")
+                          ("(...)"         "#(...)"))
+         (let ([z (map (^n (parameterize ((print-length n))
+                             (list (write-to-string data)
+                                   (write-to-string (list->vector data)))))
+                       '(5 4 3 #f 2 1 0))])
+           ;; make sure print-lenght is recovered
+           (cons (write-to-string data)
+                 z)))
+  (test* "print-length (nested)"
+         '(("(...)"
+            "#(...)")
+           ("((0 ...) ...)"
+            "#(#(0 ...) ...)")
+           ("((0 1 ...) (0 1 ...) ...)"
+            "#(#(0 1 ...) #(0 1 ...) ...)")
+           ("((0 1 2 ...) (0 1 2 ...) (0 1 2 ...) ...)"
+            "#(#(0 1 2 ...) #(0 1 2 ...) #(0 1 2 ...) ...)"))
+         (map (^n (parameterize ((print-length n))
+                    (list (write-to-string data2)
+                          (write-to-string (list->vector (map list->vector data2))))))
+              (iota 4))))
+
 (test-end)

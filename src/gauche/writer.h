@@ -58,10 +58,10 @@ enum ScmWriteCaseFlags {
 
 /* Print parameters */
 struct ScmWriteParameterRec {
-    int printLength;
-    int printLevel;
+    int printLength;            /* -1 for no limit */
+    int printLevel;             /* -1 for no limit */
     int printBase;              /* 2-36 */
-    int printRadix;             /* boolean */
+    int printRadix;             /* boolean, #t to print radix for all numbers */
 };
 
 SCM_EXTERN ScmWriteParameter *Scm_MakeWriteParameter(const ScmWriteParameter *proto);
