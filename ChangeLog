@@ -1,3 +1,8 @@
+2015-08-03  Shiro Kawai  <shiro@acm.org>
+
+	* src/libio.scm (print-length, print-level, print-base, print-radix):
+	  Added.
+
 2015-08-01  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/writer.h: Introduced ScmWriteParameter to keep various

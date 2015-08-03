@@ -724,6 +724,49 @@
 
 (define-in-module gauche (print . args) (for-each display args) (newline))
 
+;;
+;; Write parameters
+;;  For performance reasons, we don't make them a srfi-39 parameters.
+;;
+
+(select-module gauche)
+
+(inline-stub
+ (define-cise-stmt handle-write-parameter
+   ;; use "newval" unhygienically
+   [(_ target extract check msg)
+    `(let* ([vm::ScmVM* (Scm_VM)]
+            [oldval::int (-> vm writeParameters ,target)])
+       (unless (SCM_UNBOUNDP newval)
+         (unless ,check
+           (Scm_Error ,msg newval))
+         (set! (-> vm writeParameters ,target) (,extract newval)))
+       (return oldval))]))
+
+(define-cproc print-length (:optional newval) ::<int>
+  (handle-write-parameter printLength SCM_INT_VALUE
+                          (and (SCM_INTP newval)
+                               (>= (SCM_INT_VALUE newval) 0))
+                          "Small nonnegative integer required, but got %S"))
+
+(define-cproc print-level (:optional newval) ::<int>
+  (handle-write-parameter printLevel SCM_INT_VALUE
+                          (and (SCM_INTP newval)
+                               (>= (SCM_INT_VALUE newval) 0))
+                          "Small nonnegative integer required, but got %S"))
+
+(define-cproc print-base (:optional newval) ::<int>
+  (handle-write-parameter printBase SCM_INT_VALUE
+                          (and (SCM_INTP newval)
+                               (>= (SCM_INT_VALUE newval) 2)
+                               (<= (SCM_INT_VALUE newval) 36))
+                          "Integer between 2 and 36 required, but got %S"))
+
+(define-cproc print-radix (:optional newval) ::<boolean>
+  (handle-write-parameter printRadix SCM_BOOL_VALUE
+                          (SCM_BOOLP newval)
+                          "Boolean value required, but got %S"))
+
 ;;;
 ;;; With-something
 ;;;
