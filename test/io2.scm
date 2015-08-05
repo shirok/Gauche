@@ -431,4 +431,53 @@
                           (write-to-string (list->vector (map list->vector data2))))))
               (iota 4))))
 
+;; example from CLHS
+(let* ([data '(1 (2 (3 (4 (5 (6))))))])
+  (test* "print-level"
+         '("#"
+           "(1 #)"
+           "(1 (2 #))"
+           "(1 (2 (3 #)))"
+           "(1 (2 (3 (4 #))))"
+           "(1 (2 (3 (4 (5 #)))))"
+           "(1 (2 (3 (4 (5 (6))))))"
+           "(1 (2 (3 (4 (5 (6))))))")
+         (map (^n (parameterize ((print-level n))
+                    (write-to-string data)))
+              (iota 8))))
+         
+(let* ([data '(a (b (c (d (e) (f) g) h) i) #(j (k #(l #(m) (n) o) p) q) r)])
+  (test* "print-level"
+         '("(a (b (c (d (e) (f) g) h) i) #(j (k #(l #(m) (n) o) p) q) r)"
+           "(a (b (c (d (e) (f) g) h) i) #(j (k #(l #(m) (n) o) p) q) r)"
+           "(a (b (c (d # # g) h) i) #(j (k #(l # # o) p) q) r)"
+           "(a (b (c # h) i) #(j (k # p) q) r)"
+           "(a (b # i) #(j # q) r)"
+           "(a # # r)"
+           "#")
+         (map (^n (parameterize ((print-level n))
+                    (write-to-string data)))
+              '(6 5 4 3 2 1 0))))
+
+;; another example from CLHS
+(let* ([level-length '((0 1) (1 1) (1 2) (1 3) (1 4) 
+                       (2 1) (2 2) (2 3) (3 2) (3 3) (3 4))]
+       [data '(if (member x y) (+ (car x) 3) '(foo . #(a b c d "Baz")))])
+  (test* "print-level & print-length"
+         '("0 1 -- #"
+           "1 1 -- (if ...)"
+           "1 2 -- (if # ...)"
+           "1 3 -- (if # # ...)"
+           "1 4 -- (if # # #)"
+           "2 1 -- (if ...)"
+           "2 2 -- (if (member x ...) ...)"
+           "2 3 -- (if (member x y) (+ # 3) ...)"
+           "3 2 -- (if (member x ...) ...)"
+           "3 3 -- (if (member x y) (+ (car x) 3) ...)"
+           "3 4 -- (if (member x y) (+ (car x) 3) '(foo . #(a b c d ...)))")
+         (map (^z (parameterize ((print-level (car z))
+                                 (print-length (cadr z)))
+                    (format "~d ~d -- ~s" (car z) (cadr z) data)))
+              level-length)))
+
 (test-end)

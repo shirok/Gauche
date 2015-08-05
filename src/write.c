@@ -502,7 +502,7 @@ static void write_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
     ScmWriteState *st = port->writeState;
     ScmHashTable *ht = (st? st->sharedTable : NULL);
     ScmWriteParameter *wp = Scm_VM()->writeParameters;
-    int stack_depth = 0;
+    int stack_depth = 0;        /* only used when !ht */
 
 #define PUSH(elt)                                       \
     do {                                                \
@@ -515,8 +515,20 @@ static void write_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 #define POP()                                   \
     do {                                        \
         stack = SCM_CDR(stack);                 \
-        if (ht) stack_depth--;                  \
+        if (!ht) stack_depth--;                 \
     } while (0)
+#define CHECK_LEVEL()                                                   \
+    do {                                                                \
+        if (st) {                                                       \
+            if (wp->printLevel >= 0 && st->currentLevel >= wp->printLevel) { \
+                Scm_PutcUnsafe('#', port);                              \
+                goto next;                                              \
+            } else {                                                    \
+                if (st) st->currentLevel++;                             \
+            }                                                           \
+        }                                                               \
+    } while (0)
+    
 
     for (;;) {
     write1:
@@ -538,6 +550,7 @@ static void write_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
             goto next;
         }
 
+        /* obj is heap allocated and we may use label notation. */
         if (ht) {
             ScmObj e = Scm_HashTableRef(ht, obj, SCM_MAKE_INT(1));
             long k = SCM_INT_VALUE(e);
@@ -558,6 +571,9 @@ static void write_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 
         /* Writes aggregates */
         if (SCM_PAIRP(obj)) {
+
+            CHECK_LEVEL();
+
             /* special case for quote etc.
                NB: we need to check if we've seen SCM_CDR(obj), otherwise we'll
                get infinite recursion for the case like (cdr '#1='#1#). */
@@ -585,6 +601,7 @@ static void write_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
                 /* in this case we don't print the elements at all, so we need
                    to treat this specially. */
                 Scm_PutzUnsafe("(...)", -1, port);
+                if (st) st->currentLevel--;
                 goto next;
             }
 
@@ -594,10 +611,14 @@ static void write_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
             obj = SCM_CAR(obj);
             goto write1;
         } else if (SCM_VECTORP(obj)) {
+
+            CHECK_LEVEL();
+
             if (wp->printLength == 0) {
                 /* in this case we don't print the elements at all, so we need
                    to treat this specially. */
                 Scm_PutzUnsafe("#(...)", -1, port);
+                if (st) st->currentLevel--;
                 goto next;
             }
             Scm_PutzUnsafe("#(", -1, port);
@@ -641,11 +662,24 @@ static void write_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
                     Scm_PutcUnsafe(')', port);
                     POP();
                 } else if (!SCM_PAIRP(v)) {
+                    /* Improper list.  We treat vectors specially,
+                       since a vector at this position shouldn't increment
+                       "level" - its content is regarded as the same level of
+                       the current list.
+                     */
                     Scm_PutzUnsafe(" . ", -1, port);
-                    obj = v;
-                    SCM_SET_CAR(SCM_CDR(top), SCM_MAKE_INT(count+1));
-                    SCM_SET_CDR(SCM_CDR(top), SCM_NIL);
-                    goto write1;
+                    if (SCM_VECTORP(v)) {
+                        if (st) st->currentLevel--;
+                        write_rec(v, port, ctx);
+                        if (st) st->currentLevel++;
+                        Scm_PutcUnsafe(')', port);
+                        POP();
+                    } else {
+                        obj = v;
+                        SCM_SET_CAR(SCM_CDR(top), SCM_MAKE_INT(count+1));
+                        SCM_SET_CDR(SCM_CDR(top), SCM_NIL);
+                        goto write1;
+                    }
                 } else if (wp->printLength >= 0 && wp->printLength <= count) {
                     /* print-length limit reached */
                     Scm_PutzUnsafe(" ...)", -1, port);
@@ -665,12 +699,14 @@ static void write_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
                     goto write1;
                 }
             }
+            if (st) st->currentLevel--;
         }
         break;
     }
 
 #undef PUSH
 #undef POP
+#undef CHECK_DEPTH
 }
 
 /* Write/ss main driver
