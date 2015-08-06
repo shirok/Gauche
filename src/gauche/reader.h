@@ -99,6 +99,10 @@ SCM_EXTERN ScmChar Scm_ReadXdigitsFromString(const char *buf,
 SCM_EXTERN ScmObj  Scm_ReadXdigitsFromPort(ScmPort *port, int key, ScmObj mode,
                                            int incompletep, ScmDString *buf);
 
+SCM_EXTERN long Scm_ReadDigitsAsLong(ScmPort *port, ScmChar ch,
+                                     ScmChar *next,
+                                     int *numread);
+
 /*
  * SRFI-10 hash-comma syntax
  */

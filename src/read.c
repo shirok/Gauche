@@ -845,6 +845,48 @@ ScmObj Scm_ReadXdigitsFromPort(ScmPort *port, int key, ScmObj mode,
     }
 }
 
+/* Another utility procedure.   Read sequence of digits from PORT and made it
+   long and return.  CH can be prefetched digit char; if you don't
+   have one, pass SCM_CHAR_INVALID.  The first nondigit char read
+   is stored in NEXT, and number of digits read is stored in NUMREAD.
+   If the number overflows LONG_MAX or there's no digits to be read,
+   returns -1 (you can check NUMREAD to see which is the case).
+   NB: This may throw an error if ch is neither a valid digit char
+   nor SCM_CHAR_INVALID. */
+long Scm_ReadDigitsAsLong(ScmPort *port, ScmChar ch,
+                          ScmChar *next, /*out*/
+                          int *numread /*out*/)
+{
+    u_long val = 0;
+    int nchars = 0;
+    if (ch != SCM_CHAR_INVALID) {
+        int v = Scm_DigitToInt(ch, 10, FALSE);
+        if (v < 0) {
+            /* This is for safety net.  The caller should filter out
+               this case. */
+            Scm_ReadError(port, "Digit char expected, but got %C", ch);
+        }
+        val = v;
+    }
+    for (;;) {
+        ch = Scm_Getc(port);
+        nchars++;
+        int v = Scm_DigitToInt(ch, 10, FALSE);
+        if (v < 0) {            /* EOF case is covered here */
+            *next = ch;
+            *numread = nchars;
+            return val;
+        }
+        if (val >= (LONG_MAX/10+1)) {
+            /* we'll overflow */
+            *next = ch;
+            *numread = nchars;
+            return -1;
+        }
+        val = val*10+v;
+    }
+    /* NOTREACHED */
+}
 
 /*----------------------------------------------------------------
  * List
@@ -1404,21 +1446,14 @@ static ScmObj read_charset(ScmPort *port)
 static ScmObj read_num_prefixed(ScmPort *port, ScmChar ch, ScmReadContext *ctx)
 {
     ScmObj e = SCM_UNBOUND;
-    int prefix = Scm_DigitToInt(ch, 10, FALSE);
+    ScmChar ch2;
+    int nread;
+    long prefix = Scm_ReadDigitsAsLong(port, ch, &ch2, &nread);
 
-    for (;;) {
-        ch = Scm_GetcUnsafe(port);
-        if (ch == EOF) {
-            Scm_ReadError(port, "unterminated reference form (#digits)");
-        }
-        if (SCM_CHAR_ASCII_P(ch) && isdigit(ch)) {
-            prefix = prefix*10+Scm_DigitToInt(ch, 10, FALSE);
-            if (prefix < 0) Scm_ReadError(port, "#-prefix number overflow");
-            continue;
-        }
-        break;
-    }
-    switch (ch) {
+    if (ch2 == EOF) Scm_ReadError(port, "unterminated reference form (#digits)");
+    if (prefix < 0) Scm_ReadError(port, "#-prefix number overflow");
+
+    switch (ch2) {
     case '#':
         /* #digit# - back reference */
         if (ctx->table == NULL
@@ -1469,7 +1504,7 @@ static ScmObj read_num_prefixed(ScmPort *port, ScmChar ch, ScmReadContext *ctx)
             return read_number(port, ch, prefix, ctx);
         }
     default:
-        Scm_ReadError(port, "invalid numeric prefix (#, =, r or R is expected) : #%d%A", prefix, SCM_MAKE_CHAR(ch));
+        Scm_ReadError(port, "invalid numeric prefix (#, =, r or R is expected) : #%d%A", prefix, SCM_MAKE_CHAR(ch2));
         return SCM_UNDEFINED;
     }
 }
