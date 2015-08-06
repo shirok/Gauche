@@ -399,24 +399,32 @@
 ;;
 
 (use gauche.parameter)
+(use gauche.uvector)
 
 (let* ([data (iota 5)]
        [data2 (make-list 5 data)])
   (test* "print-length" '("(0 1 2 3 4)"
-                          ("(0 1 2 3 4)"   "#(0 1 2 3 4)")
-                          ("(0 1 2 3 ...)" "#(0 1 2 3 ...)")
-                          ("(0 1 2 ...)"   "#(0 1 2 ...)")
-                          ("(0 1 2 3 4)"   "#(0 1 2 3 4)")
-                          ("(0 1 ...)"     "#(0 1 ...)")
-                          ("(0 ...)"       "#(0 ...)")
-                          ("(...)"         "#(...)"))
+                          ("(0 1 2 3 4)"   "#(0 1 2 3 4)"   "#u8(0 1 2 3 4)")
+                          ("(0 1 2 3 ...)" "#(0 1 2 3 ...)" "#u8(0 1 2 3 ...)")
+                          ("(0 1 2 ...)"   "#(0 1 2 ...)"   "#u8(0 1 2 ...)")
+                          ("(0 1 2 3 4)"   "#(0 1 2 3 4)"   "#u8(0 1 2 3 4)")
+                          ("(0 1 ...)"     "#(0 1 ...)"     "#u8(0 1 ...)")
+                          ("(0 ...)"       "#(0 ...)"       "#u8(0 ...)")
+                          ("(...)"         "#(...)"         "#u8(...)"))
          (let ([z (map (^n (parameterize ((print-length n))
                              (list (write-to-string data)
-                                   (write-to-string (list->vector data)))))
+                                   (write-to-string (list->vector data))
+                                   (write-to-string (list->u8vector data)))))
                        '(5 4 3 #f 2 1 0))])
            ;; make sure print-lenght is recovered
            (cons (write-to-string data)
                  z)))
+
+  (test* "print-length for zero-length aggregate"
+         '("()" "#()" "#u8()")
+         (map (^x (parameterize ((print-length 0)) (write-to-string x)))
+              '(() #() #u8())))
+  
   (test* "print-length (nested)"
          '(("(...)"
             "#(...)")
@@ -491,5 +499,7 @@
          (map (^n (parameterize ((print-level n))
                     (write-to-string data)))
               '(4 3 2 1 0))))
+
+
 
 (test-end)
