@@ -74,8 +74,9 @@ static int vector_compare(ScmObj x, ScmObj y, int equalp)
 }
 
 
-SCM_DEFINE_BUILTIN_CLASS(Scm_VectorClass, vector_print, vector_compare,
-                         NULL, NULL, SCM_CLASS_SEQUENCE_CPL);
+SCM_DEFINE_BUILTIN_CLASS_FLAGS(Scm_VectorClass, vector_print, vector_compare,
+                               NULL, NULL, SCM_CLASS_SEQUENCE_CPL,
+                               SCM_CLASS_AGGREGATE);
 
 static ScmVector *make_vector(ScmSmallInt size)
 {
@@ -206,10 +207,11 @@ SCM_DEFINE_BUILTIN_CLASS(Scm_UVectorClass, NULL, NULL, NULL, NULL,
 static void SCM_CPP_CAT3(print_,tag,vector)(ScmObj obj, ScmPort *out,   \
                                             ScmWriteContext *ctx);      \
 static int SCM_CPP_CAT3(compare_,tag,vector)(ScmObj x, ScmObj y, int equalp); \
-SCM_DEFINE_BUILTIN_CLASS(SCM_CPP_CAT3(Scm_,TAG,VectorClass),            \
-                         SCM_CPP_CAT3(print_,tag,vector),               \
-                         SCM_CPP_CAT3(compare_,tag,vector),             \
-                         NULL, NULL, uvector_cpl);
+SCM_DEFINE_BUILTIN_CLASS_FLAGS(SCM_CPP_CAT3(Scm_,TAG,VectorClass),      \
+                               SCM_CPP_CAT3(print_,tag,vector),         \
+                               SCM_CPP_CAT3(compare_,tag,vector),       \
+                               NULL, NULL, uvector_cpl,                 \
+                               SCM_CLASS_AGGREGATE);
 
 DEF_UVCLASS(S8, s8)
 DEF_UVCLASS(U8, u8)

@@ -722,8 +722,9 @@ typedef struct ScmClassStaticSlotSpecRec ScmClassStaticSlotSpec;
    SCM_CLASS_ABSTRACT 
        This class is defined in C, but doesn't allowed to create an
        instance by its own.  It is intended to be used as a mixin from
-       both C and Scheme-defined class.   This class shouldn't have
-       C members other than SCM_HEADER.   This class cannot be redefined.
+       both C and Scheme-defined class.   An instance of this class
+       shouldn't have C members other than SCM_HEADER.
+       This class cannot be redefined.
 
    SCM_CLASS_BASE
        This class is defined in C, and can be subclassed in Scheme.
@@ -775,10 +776,16 @@ enum {
        or class-slots becomes settable.
        We reset this flag at the end of class initialization, so that
        we can avoid the behavior of a class from being accidentally
-       chnaged.  The flag may be set during updating a class metaobject
+       changed.  The flag may be set during updating a class metaobject
        triggered by metaclass change (see lib/gauche/redefutil.scm).
      */
-    SCM_CLASS_MALLEABLE = 0x08
+    SCM_CLASS_MALLEABLE = 0x08,
+
+    /* This flag indicates the class is for the aggregate data type.
+       Currently the writer uses this info to determine when to stop
+       recursing (see print-level).  We may use this later for generic
+       data structure walker. */
+    SCM_CLASS_AGGREGATE = 0x10
 };
 
 #define SCM_CLASS_FLAGS(obj)        (SCM_CLASS(obj)->flags)
@@ -857,6 +864,7 @@ extern ScmClass *Scm_ObjectCPL[];
 
 /* Static definition of classes
  *   SCM_DEFINE_BUILTIN_CLASS
+ *   SCM_DEFINE_BUILTIN_CLASS_FLAGS
  *   SCM_DEFINE_BUILTIN_CLASS_SIMPLE
  *   SCM_DEFINE_ABSTRACT_CLASS
  *   SCM_DEFINE_BASE_CLASS
@@ -903,6 +911,11 @@ extern ScmClass *Scm_ObjectCPL[];
 #define SCM_DEFINE_BUILTIN_CLASS(cname, printer, compare, serialize, allocate, cpa) \
     SCM__DEFINE_CLASS_COMMON(cname, 0,                    \
                              SCM_CLASS_BUILTIN,           \
+                             printer, compare, serialize, allocate, cpa)
+
+#define SCM_DEFINE_BUILTIN_CLASS_FLAGS(cname, printer, compare, serialize, allocate, cpa, flags) \
+    SCM__DEFINE_CLASS_COMMON(cname, 0,                                  \
+                             SCM_CLASS_BUILTIN|(flags),                 \
                              printer, compare, serialize, allocate, cpa)
 
 /* Define built-in class statically -- simpler version */

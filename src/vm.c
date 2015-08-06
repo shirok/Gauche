@@ -2903,6 +2903,12 @@ struct GC_ms_entry *vm_stack_mark(GC_word *addr,
 }
 #endif /*USE_CUSTOM_STACK_MARKER*/
 
+/* Public accessor */
+ScmWriteParameter *Scm_VMWriteParameter(ScmVM *vm)
+{
+    return vm->writeParameters;
+}
+
 /*===============================================================
  * Initialization
  */

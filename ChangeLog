@@ -1,3 +1,14 @@
+2015-08-05  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche.h: Add a new flag SCM_CLASS_AGGREGATE to ScmClass,
+	  indicating it represents aggregate type.  A new macro
+	  SCM_DEFINE_BUILITIN_CLASS_FLAGS for declaring a class with extra
+	  flags.
+	* src/vector.c: Make vectors and uniform vectros SCM_CLASS_AGGREGATE.
+	* src/write.c (write_rec): Recognize SCM_CLASS_AGGERGATE flag for
+	  print-level check.
+	* src/gauche/vm.h, src/vm.c (Scm_VMWriteParameter): Accessor.
+
 2015-08-03  Shiro Kawai  <shiro@acm.org>
 
 	* src/libio.scm (print-length, print-level, print-base, print-radix):

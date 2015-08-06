@@ -383,7 +383,7 @@ static size_t write_char(ScmChar ch, ScmPort *port, ScmWriteContext *ctx)
  */
 ScmObj Scm__WritePrimitive(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
-    ScmWriteParameter *wp = Scm_VM()->writeParameters;
+    ScmWriteParameter *wp = Scm_VMWriteParameter(Scm_VM());
     
 #define CASE_ITAG_RET(obj, str)                 \
     case SCM_ITAG(obj):                         \
@@ -501,7 +501,7 @@ static void write_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
     ScmObj stack = SCM_NIL;
     ScmWriteState *st = port->writeState;
     ScmHashTable *ht = (st? st->sharedTable : NULL);
-    ScmWriteParameter *wp = Scm_VM()->writeParameters;
+    ScmWriteParameter *wp = Scm_VMWriteParameter(Scm_VM());
     int stack_depth = 0;        /* only used when !ht */
 
 #define PUSH(elt)                                       \
@@ -625,8 +625,12 @@ static void write_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
             PUSH(Scm_Cons(SCM_MAKE_INT(1), obj));
             obj = SCM_VECTOR_ELEMENT(obj, 0);
             goto write1;
+        } else if (Scm_ClassOf(obj)->flags & SCM_CLASS_AGGREGATE) {
+            CHECK_LEVEL();
+            write_general(obj, port, ctx);
+            if (st) st->currentLevel--;
+            goto next;
         } else {
-            /* string or user-defined object */
             write_general(obj, port, ctx);
             goto next;
         }
@@ -662,13 +666,13 @@ static void write_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
                     Scm_PutcUnsafe(')', port);
                     POP();
                 } else if (!SCM_PAIRP(v)) {
-                    /* Improper list.  We treat vectors specially,
-                       since a vector at this position shouldn't increment
+                    /* Improper list.  We treat aggregate types specially,
+                       since such object at this position shouldn't increment
                        "level" - its content is regarded as the same level of
                        the current list.
                      */
                     Scm_PutzUnsafe(" . ", -1, port);
-                    if (SCM_VECTORP(v)) {
+                    if (Scm_ClassOf(v)->flags & SCM_CLASS_AGGREGATE) {
                         if (st) st->currentLevel--;
                         write_rec(v, port, ctx);
                         if (st) st->currentLevel++;

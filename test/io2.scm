@@ -480,4 +480,16 @@
                     (format "~d ~d -- ~s" (car z) (cadr z) data)))
               level-length)))
 
+;; print-level and aggregate other than plain vector
+(let ([data '(a #u8(1 2 3) (b #u16(1 2 3) #(c #u32(1 2 3))))])
+  (test* "print-level with uvector"
+         '("(a #u8(1 2 3) (b #u16(1 2 3) #(c #u32(1 2 3))))"
+           "(a #u8(1 2 3) (b #u16(1 2 3) #(c #)))"
+           "(a #u8(1 2 3) (b # #))"
+           "(a # #)"
+           "#")
+         (map (^n (parameterize ((print-level n))
+                    (write-to-string data)))
+              '(4 3 2 1 0))))
+
 (test-end)

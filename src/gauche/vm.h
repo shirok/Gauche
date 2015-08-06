@@ -527,7 +527,7 @@ struct ScmVMRec {
     ScmWinCleanup *winCleanup; /* mimic pthread_cleanup_* */
 #endif /*defined(GAUCHE_USE_WTHREADS)*/
 
-    /* Current write parameter  */
+    /* Current write parameter.  Should be accessed via Scm_VMWriteParameter */
     /* This shoud be moved next to current io ports above on 1.0 */
     ScmWriteParameter *writeParameters;
 };
@@ -549,6 +549,7 @@ SCM_EXTERN ScmObj Scm_VMThrowException2(ScmVM *vm, ScmObj exc, u_long flags);
 SCM_EXTERN ScmObj Scm_VMGetSourceInfo(ScmCompiledCode *code, SCM_PCTYPE pc);
 SCM_EXTERN ScmObj Scm_VMGetBindInfo(ScmCompiledCode *code, SCM_PCTYPE pc);
 SCM_EXTERN void   Scm_VMSetResult(ScmObj obj);
+SCM_EXTERN ScmWriteParameter *Scm_VMWriteParameter(ScmVM *vm);
 
 SCM_CLASS_DECL(Scm_VMClass);
 #define SCM_CLASS_VM              (&Scm_VMClass)
