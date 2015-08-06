@@ -1461,7 +1461,7 @@ static ScmObj read_num_prefixed(ScmPort *port, ScmChar ch, ScmReadContext *ctx)
         if (prefix < 2 || prefix > 36) {
             Scm_ReadError(port, "Radix prefix out of range: radix in #<radix>R must be between 2 and 36 inclusive, but got: %d", prefix);
         }
-        int ch = Scm_GetcUnsafe(port);
+        ch = Scm_GetcUnsafe(port);
         if (ch == EOF) {
             Scm_ReadError(port, "Premature end of radix-prefixed number: #%dr",
                           prefix);
