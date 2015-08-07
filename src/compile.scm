@@ -1320,9 +1320,9 @@
      [($LREF)   (cond [(assq ($lref-lvar iform) mapping) => cdr]
                       [else iform])]
      [($LSET)   (cond [(assq ($lset-lvar iform) mapping) =>
-                       (^p (unless (has-tag? $GREF (cdr p))
+                       (^p (unless (has-tag? (cdr p) $GREF)
                              (error "[internal] subst-lvars: $LSET can only \
-                                     subst with $GREF but got: ~a" (cdr p)))
+                                     subst with $GREF but got:" (cdr p)))
                            ($gset ($gref-id (cdr p))
                                   (subst ($lset-expr iform) mapping dict)))]
                       [else iform])]
@@ -5946,26 +5946,6 @@
                     [else (pass1 r cenv)])))))
   (%mark-binding-inlinable! module name)
   name)    
-
-;;============================================================
-;; Macro support basis
-;;
-
-;; Primitive transformer takes the input form, macro-definition
-;; environment, and macro-use environment.
-;;
-;; (Sexpr, Env, Env) -> Sexpr
-;;
-;; The transformer should treat the envionments as opaque data.
-;; Currently it's just Cenv's, but we may change it later.
-
-;; Internal.  The syntax (primitive-macro-transformer xformer)
-;; would be expanded to a call to this procedure.
-(define (%make-primitive-transformer xformer def-env)
-  (%make-macro-transformer (cenv-exp-name def-env)
-                           (^[form use-env]
-                             (xformer form def-env use-env))))
-
 
 ;;============================================================
 ;; Macro support basis
