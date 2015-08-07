@@ -1381,6 +1381,66 @@
             (imap (cut subst <> mapping dict) ($*-args iform))))
   (subst iform mapping (make-hash-table 'eq?)))
 
+;; EXPERIMENTAL
+;; Convert IForm back to S-expr.
+;; This is used by macroexpand-all.  Note that pass2 can make IForm DG, and
+;; it's not generally possible to convert it back to S-expr.  You can only
+;; pass the IForm immediately after pass1.
+(define (iform->sexpr iform)
+  (define lvar-dict (make-hash-table 'eq?)) ;; lvar -> symbol
+  (define (get-lvar lvar)
+    (or (hash-table-get lvar-dict lvar #f)
+        (rlet1 s ($ string->symbol $ format "~a.~d" (lvar-name lvar)
+                    $ hash-table-num-entries lvar-dict)
+          (hash-table-put! lvar-dict lvar s))))
+  (define (rec iform)
+    (case/unquote
+     (iform-tag iform)
+     [($DEFINE) `(define ,($define-id iform) ,(rec ($define-expr iform)))]
+     [($LREF)   (get-lvar ($lref-lvar iform))]
+     [($LSET)   `(set! ,(get-lvar ($lset-lvar iform))
+                       ,(rec ($lset-expr iform)))]
+     [($GREF)   ($gref-id iform)]
+     [($GSET)   `(set! ,($gset-id iform) ,(rec ($gset-expr iform)))]
+     [($CONST)  `',($const-value iform)]
+     [($IF)     (if (has-tag? ($if-then iform) $IT)
+                  `(or ,(rec ($if-test iform))
+                       ,(rec ($if-else iform)))
+                  `(if ,(rec ($if-test iform))
+                     ,(rec ($if-then iform))
+                     ,(rec ($if-else iform))))]
+     [($LET)    (let ([is (map rec ($let-inits iform))]
+                      [vs (map get-lvar ($let-lvars iform))])
+                  `(letrec ,(map list vs is)
+                     ,(rec ($let-body iform))))]
+     [($RECEIVE) (let* ([vars (map get-lvar ($receive-lvars iform))]
+                        [binds (if (zero? ($receive-optarg iform))
+                                 vars
+                                 (apply list* vars))])
+                   `(receive ,vars ,(rec ($receive-expr iform))
+                      ,(rec ($receive-body iform))))]
+     [($LAMBDA)  (let* ([vars (map get-lvar ($lambda-lvars iform))]
+                        [formals (if (zero? ($lambda-optarg iform))
+                                   vars
+                                   (apply list* vars))])
+                   `(lambda ,vars ,(rec ($lambda-body iform))))]
+     [($SEQ)    `(begin ,@(map rec ($seq-body iform)))]
+     [($CALL)   `(,(rec ($call-proc iform)) ,@(map rec ($call-args iform)))]
+     [($ASM)    `(asm ,($asm-insn iform)
+                      ,@(map rec ($asm-args iform)))]
+     [($CONS)   `(cons ,(rec ($*-arg0 iform)) ,(rec ($*-arg1 iform)))]
+     [($APPEND) `(append ,(rec ($*-arg0 iform)) ,(rec ($*-arg1 iform)))]
+     [($MEMV)   `(memv ,(rec ($*-arg0 iform)) ,(rec ($*-arg1 iform)))]
+     [($EQ?)    `(eq? ,(rec ($*-arg0 iform)) ,(rec ($*-arg1 iform)))]
+     [($EQV?)   `(eqv? ,(rec ($*-arg0 iform)) ,(rec ($*-arg1 iform)))]
+     [($VECTOR) `(vector ,@(map rec ($*-args iform)))]
+     [($LIST)   `(list ,@(map rec ($*-args iform)))]
+     [($LIST*)  `(list* ,@(map rec ($*-args iform)))]
+     [($LIST->VECTOR) `(list->vector ,(rec ($*-arg0 iform)))]
+     [($IT)     '(it)] ;; TODO
+     [else (error "Cannot convert IForm:" (iform-tag-name (iform-tag iform)))]))
+  (rec iform))
+
 ;; Some inline stuff
 (define-inline (pass2-4 iform module) (pass4 (pass3 (pass2 iform) #f) module))
 
@@ -2106,6 +2166,27 @@
         (if (eq? e2 expr)
           expr
           (loop e2))))))
+
+;; EXPERIMENTAL
+;; Returns an S-expr all macros in which are expanded.
+;; The resulting form may not be equivalent to the input form, though,
+;; since we strip off identifier information so toplevel hygiene isn't
+;; kept.  (Local variables are renamed so they won't conflict with each
+;; other.)
+(define-in-module gauche (macroexpand-all form)
+  (let1 flags-save (vm-compiler-flag)
+    (unwind-protect
+        (begin
+          ;; TODO: We suppress global inline expansion, otherwise we'll see
+          ;; $ASM nodes.  NB: This also suppress expansion of define-inline'd
+          ;; procedures and compiler macros, which may not be desirable.
+          ;; We'll think of it later.
+          (vm-compiler-flag-set! SCM_COMPILE_NOINLINE_GLOBALS)
+          ($ unwrap-syntax $ iform->sexpr
+             $ pass1 form (make-bottom-cenv (vm-current-module))))
+      (begin
+        (vm-compiler-flag-clear! SCM_COMPILE_NOINLINE_GLOBALS)
+        (vm-compiler-flag-set! flags-save)))))
 
 (define-pass1-syntax (... form cenv) :null
   (error "invalid syntax:" form))
@@ -6264,6 +6345,8 @@
    (SCM_VM_COMPILER_FLAG_SET (Scm_VM) flag))
  (define-cproc vm-compiler-flag-clear! (flag::<uint>) ::<void>
    (SCM_VM_COMPILER_FLAG_CLEAR (Scm_VM) flag))
+ (define-cproc vm-compiler-flag () ::<uint>
+   (result (-> (Scm_VM) compilerFlags)))
 
  (define-cproc vm-compiler-flag-noinline-locals? () ::<boolean>
    (return (SCM_VM_COMPILER_FLAG_IS_SET (Scm_VM) SCM_COMPILE_NOINLINE_LOCALS)))
