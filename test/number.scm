@@ -63,7 +63,8 @@
 (test* "radix" '(43605 342391 718048024785
                  123456789 123456789987654321
                  1193046 3735928559 3735928559
-                 1049836114599 8455360875 -668)
+                 1049836114599 8455360875
+                 1049836114599 1049836114599 -668 668 -668)
        (list #b1010101001010101
              #o1234567
              #o12345677654321
@@ -74,7 +75,11 @@
              #xDeadBeef
              #36rdeadbeef
              #18RDeadBeef
-             #8r-1234))
+             #36r#edeadbeef
+             #e#36rdeadbeef
+             #8r-1234
+             #8r#e+1234
+             #e#8r-1234))
 
 (test* "exactness" #t (exact? #e10))
 (test* "exactness" #t (exact? #e10.0))
@@ -101,7 +106,10 @@
            (string->number "#e#i3")
            (string->number "#i#e5")
            (string->number "#x#o13")
-           (string->number "#e#b#i00101")))
+           (string->number "#e#b#i00101")
+           (string->number "#123r15")
+           (string->number "#x#12r15")
+           (string->number "#12r#x15")))
 
 (define (radix-tester radix)
   (list

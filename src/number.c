@@ -4228,7 +4228,7 @@ static ScmObj read_number(const char *str, int len, int radix,
             else {
                 int nread = 0;
                 long radix = Scm_ParseDigitsAsLong(--str, --len, 10, &nread);
-                if (radix < 0) return SCM_FALSE;
+                if (radix <= 1 || radix > 36) return SCM_FALSE;
                 str += nread; len -= nread;
                 if (len <= 0) return SCM_FALSE;
                 if (*str != 'r' && *str != 'R') return SCM_FALSE;
