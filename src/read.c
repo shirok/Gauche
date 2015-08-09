@@ -710,6 +710,7 @@ static ScmObj read_item(ScmPort *port, ScmReadContext *ctx)
 /*--------------------------------------------------------
  * Common routine to handle hex-digit escape \xNN etc.
  */
+/* TODO: Redesign these for clearer and simpler API. */
 
 /*
    Hex-escape sequence can appear in the following places:
@@ -853,14 +854,15 @@ ScmObj Scm_ReadXdigitsFromPort(ScmPort *port, int key, ScmObj mode,
    returns -1 (you can check NUMREAD to see which is the case).
    NB: This may throw an error if ch is neither a valid digit char
    nor SCM_CHAR_INVALID. */
-long Scm_ReadDigitsAsLong(ScmPort *port, ScmChar ch,
+/* NB: Call for refactoring, using Scm_ParseDigitsAsLong  */
+long Scm_ReadDigitsAsLong(ScmPort *port, ScmChar ch, int radix,
                           ScmChar *next, /*out*/
                           int *numread /*out*/)
 {
     u_long val = 0;
     int nchars = 0;
     if (ch != SCM_CHAR_INVALID) {
-        int v = Scm_DigitToInt(ch, 10, FALSE);
+        int v = Scm_DigitToInt(ch, radix, FALSE);
         if (v < 0) {
             /* This is for safety net.  The caller should filter out
                this case. */
@@ -871,21 +873,45 @@ long Scm_ReadDigitsAsLong(ScmPort *port, ScmChar ch,
     for (;;) {
         ch = Scm_Getc(port);
         nchars++;
-        int v = Scm_DigitToInt(ch, 10, FALSE);
+        int v = Scm_DigitToInt(ch, radix, FALSE);
         if (v < 0) {            /* EOF case is covered here */
             *next = ch;
             *numread = nchars;
             return val;
         }
-        if (val >= (LONG_MAX/10+1)) {
+        if (val >= (LONG_MAX/radix+1)) {
             /* we'll overflow */
             *next = ch;
             *numread = nchars;
             return -1;
         }
-        val = val*10+v;
+        val = val*radix+v;
     }
     /* NOTREACHED */
+}
+
+/* Read long digits from BUF up to LEN.  BUF must only contain single-byte
+   chars. */
+long Scm_ParseDigitsAsLong(const char *buf, size_t len, int radix,
+                           int *numread) /*out*/
+{
+    u_long val = 0;
+    int nchars = 0;
+    for (; nchars < len; nchars++, buf++) {
+        int v = Scm_DigitToInt((ScmChar)*buf, radix, FALSE);
+        if (v < 0) {
+            *numread = nchars;
+            return val;
+        }
+        if (val >= (LONG_MAX/radix+1)) {
+            /* we'll overflow */
+            *numread = nchars;
+            return -1;
+        }
+        val = val*radix+v;
+    }
+    *numread = nchars;
+    return (nchars == 0)? -1 : val;
 }
 
 /*----------------------------------------------------------------
@@ -1448,7 +1474,7 @@ static ScmObj read_num_prefixed(ScmPort *port, ScmChar ch, ScmReadContext *ctx)
     ScmObj e = SCM_UNBOUND;
     ScmChar ch2;
     int nread;
-    long prefix = Scm_ReadDigitsAsLong(port, ch, &ch2, &nread);
+    long prefix = Scm_ReadDigitsAsLong(port, ch, 10, &ch2, &nread);
 
     if (ch2 == EOF) Scm_ReadError(port, "unterminated reference form (#digits)");
     if (prefix < 0) Scm_ReadError(port, "#-prefix number overflow");

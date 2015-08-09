@@ -4182,7 +4182,7 @@ static ScmObj read_number(const char *str, int len, int radix,
     ctx.radix = radix;
 
     /* start from prefix part */
-    for (; len >= 0; len-=2) {
+    while (len >= 0) {
         if (*str != '#') break;
         str++;
         switch (*str++) {
@@ -4190,32 +4190,53 @@ static ScmObj read_number(const char *str, int len, int radix,
             if (disallow_radix_prefix || radix_seen) return SCM_FALSE;
             ctx.radix = 16; radix_seen++;
             ctx.explicit = TRUE;
+            len -= 2;
             continue;
         case 'o':; case 'O':;
             if (disallow_radix_prefix || radix_seen) return SCM_FALSE;
             ctx.radix = 8; radix_seen++;
             ctx.explicit = TRUE;
+            len -= 2;
             continue;
         case 'b':; case 'B':;
             if (disallow_radix_prefix || radix_seen) return SCM_FALSE;
             ctx.radix = 2; radix_seen++;
             ctx.explicit = TRUE;
+            len -= 2;
             continue;
         case 'd':; case 'D':;
             if (disallow_radix_prefix || radix_seen) return SCM_FALSE;
             ctx.radix = 10; radix_seen++;
             ctx.explicit = TRUE;
+            len -= 2;
             continue;
         case 'e':; case 'E':;
             if (exactness_seen) return SCM_FALSE;
             ctx.exactness = EXACT; exactness_seen++;
             ctx.explicit = TRUE;
+            len -= 2;
             continue;
         case 'i':; case 'I':;
             if (exactness_seen) return SCM_FALSE;
             ctx.exactness = INEXACT; exactness_seen++;
             ctx.explicit = TRUE;
+            len -= 2;
             continue;
+        case '0': case '1': case '2': case '3': case '4':
+        case '5': case '6': case '7': case '8': case '9':
+            if (disallow_radix_prefix || radix_seen) return SCM_FALSE;
+            else {
+                int nread = 0;
+                long radix = Scm_ParseDigitsAsLong(--str, --len, 10, &nread);
+                if (radix < 0) return SCM_FALSE;
+                str += nread; len -= nread;
+                if (len <= 0) return SCM_FALSE;
+                if (*str != 'r' && *str != 'R') return SCM_FALSE;
+                str++; len--;
+                ctx.radix = radix; radix_seen++;
+                ctx.explicit = TRUE;
+                continue;
+            }
         }
         return SCM_FALSE;
     }
