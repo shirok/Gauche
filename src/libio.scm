@@ -690,7 +690,7 @@
 
 (define (write-walk obj port)
   (if-let1 s (%port-write-state port)
-    (%write-walk-rec obj port (-> s shared-table))))
+    (%write-walk-rec obj port (~ s shared-table))))
 
 (define (%write-walk-rec obj port tab)
   (when (write-need-recurse? obj)
