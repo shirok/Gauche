@@ -270,7 +270,7 @@
       (ftp-error res)
       (rxmatch-let (#/\((.+?)\)/ res) (#f s)
         (let1 d (regexp-quote (substring s 0 1))
-          (rxmatch-let ((string->regexp #`",d,d,d([^,d]+),d") s) (#f port)
+          (rxmatch-let ((string->regexp #"~|d|~|d|~|d|([^~|d|]+)~|d|") s) (#f port)
             (let1 ds (make-client-socket
                       'inet
                       (sockaddr-addr (socket-address (ref conn 'socket)))

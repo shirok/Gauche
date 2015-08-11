@@ -99,7 +99,7 @@
 
 ;; default string to be used for user-agent.
 (define http-user-agent
-  (make-parameter #`"gauche.http/,(gauche-version)"))
+  (make-parameter #"gauche.http/~(gauche-version)"))
 
 ;; global proxy settings.  can be overridden by :proxy keyword
 ;; argument.
@@ -428,7 +428,7 @@
       (let* ([size (string-size body)]
              [hdrs `(("content-length" ,(x->string size))
                      ("mime-version" "1.0")
-                     ("content-type" ,#`"multipart/form-data; boundary=\",boundary\"")
+                     ("content-type" ,#"multipart/form-data; boundary=\"~|boundary|\"")
                      ,@(alist-delete "content-type" hdrs equal?))]
              [body-sink (header-sink hdrs)]
              [port (body-sink size)])
@@ -547,12 +547,12 @@
   (define (esc s) (uri-encode-string (x->string s) :encoding encoding))
   (define (query-1 n&v)
     (match n&v
-      [(name value) #`",(esc name)=,(esc value)"]
+      [(name value) #"~(esc name)=~(esc value)"]
       [_ (error "Invalid request-uri form:" params)]))
   (define (query) (string-concatenate (intersperse "&" (map query-1 params))))
   (cond [(not path) (query)]
         [(null? params) path]
-        [else #`",|path|?,(query)"]))
+        [else #"~|path|?~(query)"]))
 
 ;; multipart/form-data composition [RFC2388]
 ;; <params> : (<param> ...)
@@ -673,7 +673,7 @@
            (values body
                    `(:mime-version "1.0"
                      :content-type
-                     ,#`"multipart/form-data; boundary=,boundary"
+                     ,#"multipart/form-data; boundary=~boundary"
                      ,@(delete-keyword! :content-type extra-headers))))]
         [else (error "Invalid request-body format:" request-body)]))
 
@@ -756,7 +756,7 @@
 
 ;; send
 (define (send-request out method uri sender headers enc)
-  (define request-line #`",method ,uri HTTP/1.1\r\n")
+  (define request-line #"~method ~uri HTTP/1.1\r\n")
   (define request-headers
     ($ map (cut map (^s (if (keyword? s) (keyword->string s) (x->string s))) <>)
        $ slices headers 2))
@@ -887,7 +887,7 @@
   (and-let* ([user (~ conn 'auth-user)]
              [pass (or (~ conn 'auth-password) "")])
     `(:authorization ,($ format "Basic ~a"
-                         $ base64-encode-string #`",|user|:,|pass|"))))
+                         $ base64-encode-string #"~|user|:~|pass|"))))
 
 (define http-default-auth-handler
   (make-parameter http-basic-auth-handler))

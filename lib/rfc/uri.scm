@@ -392,7 +392,7 @@
         ct))
 
     (format "data:~a~a,~a" (compose-content-type content-type)
-            (if (eq? encoding 'uri) "" #`";,encoding")
+            (if (eq? encoding 'uri) "" #";~encoding")
             (ecase encoding
               [(uri) (encode-by-uri)]
               [(base64) (encode-by-base64)]))))

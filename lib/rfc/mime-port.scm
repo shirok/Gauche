@@ -54,7 +54,7 @@
 ;; either EOF or MIME boundary.  Basically it runs a DFA.
 (define (make-mime-port boundary srcport)
   (define q (make-queue))
-  (define --boundary (string->u8vector #`"--,boundary"))
+  (define --boundary (string->u8vector #"--~boundary"))
 
   (define port (make <mime-port>))
 
