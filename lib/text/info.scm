@@ -70,13 +70,13 @@
   (define (with-input-from-info thunk)
     (cond [(file-exists? file)
            (with-input-from-file file thunk)]
-          [(file-exists? #`",|file|.gz")
-           (call-with-input-file #`",|file|.gz"
+          [(file-exists? #"~|file|.gz")
+           (call-with-input-file #"~|file|.gz"
              (^p (let1 zp (open-inflating-port p :window-bits 31) ;force gzip format
                    (unwind-protect (with-input-from-port zp thunk)
                      (close-input-port zp)))))]
-          [(and bzip2 (file-exists? #`",|file|.bz2"))
-           (with-input-from-process #`",bzip2 -c -d ,|file|.bz2" thunk)]
+          [(and bzip2 (file-exists? #"~|file|.bz2"))
+           (with-input-from-process #"~bzip2 -c -d ~|file|.bz2" thunk)]
           [else (error "can't find info file" file)]))
   (with-input-from-info
    (lambda ()

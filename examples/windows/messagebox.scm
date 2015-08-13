@@ -18,6 +18,6 @@
              program-name (logior MB_YESNO MB_ICONQUESTION))
       (if (= r IDYES)
         (loop (+ count 1))
-        (sys-message-box #f #`"You counted up to ,|count|."
+        (sys-message-box #f #"You counted up to ~|count|."
                          program-name MB_OK))))
   0)

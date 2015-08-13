@@ -124,5 +124,5 @@
                "&"))
 
 (define (build-env env-table)
-  (hash-table-map env-table (^[k v] #`",|k|=,|v|")))
+  (hash-table-map env-table (^[k v] #"~|k|=~|v|")))
 

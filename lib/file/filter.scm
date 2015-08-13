@@ -90,7 +90,7 @@
     (cond [(string? temporary-file)
            (process-with-tempfile output temporary-file)]
           [(eq? temporary-file #t)
-           (process-with-tempfile output #`",(sys-basename output).tmp")]
+           (process-with-tempfile output #"~(sys-basename output).tmp")]
           [(not temporary-file)
            (guard (e [else (unless keep-output? (sys-unlink output))
                            (raise e)])

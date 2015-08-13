@@ -26,7 +26,7 @@
 
 (define (check-file path author email)
   (define check-rx
-    (string->regexp #`"[cC]opyright\\s*\\([cC]\\)\\s*(\\d+)(-\\d+)?\\s+(by\\s+)?,|author|"))
+    (string->regexp #"[cC]opyright\\s*\\([cC]\\)\\s*(\\d+)(-\\d+)?\\s+(by\\s+)?~|author|"))
   (define current-year (date-year (current-date)))
   (define (file->string-list+ path)
     (call-with-input-file path
@@ -39,8 +39,8 @@
            (start-year (x->integer (m 1)))
            (years (if (= start-year current-year)
                     start-year
-                    #`",|start-year|-,|current-year|")))
-      #`",(m 'before)Copyright (c) ,years  ,author  <,|email|>"))
+                    #"~|start-year|-~|current-year|")))
+      #"~(m 'before)Copyright (c) ~years  ~author  <~|email|>"))
   
   (and-let* ((input   (file->string-list+ path))
              (matched (find check-rx input)))

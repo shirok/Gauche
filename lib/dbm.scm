@@ -235,8 +235,8 @@
 ;; Returns #f if it couldn't retrieve the named dbm module.
 
 (define (dbm-type->class dbmtype)
-  (let ([module-name (string->symbol #`"dbm.,dbmtype")]
-        [class-name (string->symbol #`"<,|dbmtype|>")])
+  (let ([module-name (string->symbol #"dbm.~dbmtype")]
+        [class-name (string->symbol #"<~|dbmtype|>")])
     (and (library-exists? module-name :strict? #t)
          (guard (e [else #f])
            ((with-module gauche.internal %require)

@@ -440,7 +440,7 @@
   (let* ([yname (unwrap-syntax name)]
          [maker (cond
                  [(or (symbol? ctor-name) (identifier? ctor-name)) ctor-name]
-                 [(eq? ctor-name #t) (string->symbol #`"make-,yname")]
+                 [(eq? ctor-name #t) (string->symbol #"make-~yname")]
                  [(eq? ctor-name #f) #f]
                  ;; TODO: support inheritance like define-record-type
                  [else (error "invalid define-fstruct-type: ctor-name \
@@ -448,20 +448,20 @@
                               ctor-name)])]
          [pred  (cond
                  [(or (symbol? pred-name) (identifier? pred-name)) pred-name]
-                 [(eq? pred-name #t) (string->symbol #`",|yname|?")]
+                 [(eq? pred-name #t) (string->symbol #"~|yname|?")]
                  [(eq? pred-name #f) #f]
                  [else (error "invalid define-fstruct-type: pred-name \
                                must be a symbol or a boolean, but got:"
                               pred-name)])]
-         [initializer (string->symbol #`"init-,|yname|!")])
+         [initializer (string->symbol #"init-~|yname|!")])
     ;; Kludge to get hygienity
     (define (->id x) ((with-module gauche.internal make-identifier) x
                       (find-module 'binary.ftype) '()))
     (define (make-slot-procs sname type)
-      (let ([.ref  (string->symbol #`",|yname|-,|sname|")]
-            [.set! (string->symbol #`",|yname|-,|sname|-set!")]
-            [.get  (string->symbol #`"get-,|yname|-,|sname|")]
-            [.put! (string->symbol #`"put-,|yname|-,|sname|!")])
+      (let ([.ref  (string->symbol #"~|yname|-~|sname|")]
+            [.set! (string->symbol #"~|yname|-~|sname|-set!")]
+            [.get  (string->symbol #"get-~|yname|-~|sname|")]
+            [.put! (string->symbol #"put-~|yname|-~|sname|!")])
         `(begin
            (define (,.ref obj)
              (,(->id 'fobject-ref) obj ',sname))

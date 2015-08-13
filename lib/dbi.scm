@@ -205,9 +205,9 @@
 ;; Loads a concrete driver module, and returns an instance of
 ;; the driver.
 (define (dbi-make-driver driver-name)
-  (let* ([module (string->symbol #`"dbd.,driver-name")]
+  (let* ([module (string->symbol #"dbd.~driver-name")]
          [path   (module-name->path module)]
-         [class-name  (string->symbol #`"<,|driver-name|-driver>")])
+         [class-name  (string->symbol #"<~|driver-name|-driver>")])
     (or (and-let* ([ (library-exists? path :strict? #t) ]
                    [driver-class
                     (begin (eval `(require ,(path-sans-extension path))
@@ -274,9 +274,9 @@
                 [s (cond
                     [(not argval) "NULL"]
                     [(string? argval)
-                     #`"',(dbi-escape-sql conn argval)'"]
+                     #"'~(dbi-escape-sql conn argval)'"]
                     [(symbol? argval)
-                     #`"',(dbi-escape-sql conn (symbol->string argval))'"]
+                     #"'~(dbi-escape-sql conn (symbol->string argval))'"]
                     [(real? argval) (number->string argval)]
                     [else (error <dbi-parameter-error>
                                  "bad type of parameter for SQL:" argval)])])
@@ -317,7 +317,7 @@
                                     (user <string>)
                                     (pass <string>)
                                     (options <string>))
-  (dbi-connect #`"dbi:,(slot-ref d 'driver-name):,options"
+  (dbi-connect #"dbi:~(slot-ref d 'driver-name):~options"
                :username user :password pass))
 (define-method dbi-make-query ((c <dbi-connection>) . _)
   (make <dbi-query> :connection c))

@@ -394,11 +394,11 @@
   (let ([ct (or content-type
                 (and (not location) "text/html"))]
         [r '()])
-    (when status   (push! r #`"Status: ,status\r\n"))
-    (when ct       (push! r #`"Content-type: ,ct\r\n"))
-    (when location (push! r #`"Location: ,location\r\n"))
+    (when status   (push! r #"Status: ~status\r\n"))
+    (when ct       (push! r #"Content-type: ~ct\r\n"))
+    (when location (push! r #"Location: ~location\r\n"))
     (dolist [cookie cookies]
-      (push! r #`"Set-cookie: ,cookie\r\n"))
+      (push! r #"Set-cookie: ~cookie\r\n"))
     (dolist [p (slices rest 2)]
       (when (pair? (cdr p))
         (let1 hdrname (if (keyword? (car p)) (keyword->string (car p)) (car p))
