@@ -34,10 +34,10 @@
   (ecase target
     [(armv7 armv7s arm64)
      (build-path (devroot target)
-                 #`"SDKs/iPhoneOS.sdk")]
+                 "SDKs/iPhoneOS.sdk")]
     [(i386 x86_64)
      (build-path (devroot target)
-                 #`"SDKs/iPhoneSimulator.sdk")]))
+                 "SDKs/iPhoneSimulator.sdk")]))
 
 (define (environment-alist target)
   (let ([dev (devroot target)]
@@ -53,11 +53,11 @@
       ("AR"       . ,(process-output->string `("xcrun" "-find" "-sdk" ,sdk "ar")))
       ("NM"       . ,(build-path dev "usr/bin/nm"))
       ("RANLIB"   . ,(process-output->string `("xcrun" "-find" "-sdk" ,sdk "ranlib")))
-      ("CFLAGS"   . ,#`"-arch ,target -pipe -no-cpp-precomp -isysroot ,sdkdir -miphoneos-version-min=,*ios-deploy-target-version* -I,|sdkdir|/usr/include/ ,cflags-xtra")
-      ("LDFLAGS"  . ,#`"-L,|sdkdir|/usr/lib/"))))
+      ("CFLAGS"   . ,#"-arch ~target -pipe -no-cpp-precomp -isysroot ~sdkdir -miphoneos-version-min=~*ios-deploy-target-version* -I~|sdkdir|/usr/include/ ~cflags-xtra")
+      ("LDFLAGS"  . ,#"-L~|sdkdir|/usr/lib/"))))
 
 (define (build-1 target)
-  (let* ([envs (map (^p #`",(car p)=,(cdr p)") (environment-alist target))]
+  (let* ([envs (map (^p #"~(car p)=~(cdr p)") (environment-alist target))]
          [build (process-output->string "./config.guess")]
          [builddir (build-path *builddir* (x->string target))]
          [host (ecase target
@@ -68,8 +68,8 @@
                  [(x86_64)   "x86_64-apple-darwin12.4"])]
          [configure-cmd `("/usr/bin/env" ,@envs
                           "../../configure"
-                          ,#`"--build=,build"
-                          ,#`"--host=,host"
+                          ,#"--build=~build"
+                          ,#"--host=~host"
                           "--with-dbm=no")]
          [make-cmd      `("/usr/bin/env" ,@envs "make" "-j")]
          [static-cmd    `("/usr/bin/env" ,@envs "make" "static")])
@@ -87,7 +87,7 @@
 (define (run-lipo)
   (define (archive target)
     (build-path *builddir* (x->string target) "src"
-                #`"libgauche-static-,|*abi-version*|.a"))
+                #"libgauche-static-~|*abi-version*|.a"))
   (make-directory* *outdir*)
   (let* ([cmd `("xcrun" "-sdk" "iphoneos" "lipo"
                 "-arch" "armv7s" ,(archive 'armv7s)
@@ -97,7 +97,7 @@
                 "-arch" "x86_64" ,(archive 'x86_64)
                 "-create"
                 "-output" ,(build-path *outdir*
-                                       #`"libgauche-,|*abi-version*|.a"))]
+                                       #"libgauche-~|*abi-version*|.a"))]
          [p (run-process cmd :wait #t)])
     (unless (= (process-exit-status p) 0)
       (error "Process failed:" cmd))))
@@ -141,7 +141,7 @@
   (copy-file "src/Info.plist" (build-path *outdir* "Resources/Info.plist")))
 
 (define (wire-stuff)
-  (sys-symlink #`"libgauche-,|*abi-version*|.a"
+  (sys-symlink #"libgauche-~|*abi-version*|.a"
                (build-path *outdir* "Gauche-iOS-core")))
 
 (define (preparation)
@@ -172,11 +172,11 @@
 
 (define (mfvar-ref makefile var :optional default)
   (if-let1 line (with-input-from-file makefile
-                  (cute generator-find (string->regexp #`"^,|var|\\b")
+                  (cute generator-find (string->regexp #"^~|var|\\b")
                         read-line/continuation))
     (remove string-null?
             (string-split
-             (rxmatch->string (string->regexp #`"^,|var|\\s*=\\s*")
+             (rxmatch->string (string->regexp #"^~|var|\\s*=\\s*")
                               line 'after)
              #[\s+]))
     (if (undefined? default)

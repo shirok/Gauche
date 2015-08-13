@@ -88,7 +88,7 @@
 ;;     (define *foo-dispatch-table* (generate-dispatch-table foo))
 (define-macro (define/case proc dispatch-expr . clauses)
   (define (generate-handler key clause)
-    (let1 name (string->symbol #`",(car proc)/,key")
+    (let1 name (string->symbol #"~(car proc)/~key")
       `(define (,name ,@(cdr proc)) ,@clause)))
   (define (find-clause key)
     (if-let1 c (find (^c (memq key (car c))) clauses)
@@ -97,7 +97,7 @@
         (cdr c)
         (errorf "No dispatch clause for ~a found during expanding ~a"
                 key proc))))
-  (define dispatch-table (string->symbol #`"*,(car proc)-dispatch-table*"))
+  (define dispatch-table (string->symbol #"*~(car proc)-dispatch-table*"))
 
   `(begin
      (define-inline ,proc
@@ -105,7 +105,7 @@
      ,@(map (^t (generate-handler (car t) (find-clause (car t))))
             .intermediate-tags.)
      (define ,dispatch-table
-       (vector ,@(map (^t (string->symbol #`",(car proc)/,(car t)"))
+       (vector ,@(map (^t (string->symbol #"~(car proc)/~(car t)"))
                       .intermediate-tags.)))))
 
 ;; Inlining map.  Combined with closure optimization, we can avoid
@@ -159,7 +159,7 @@
 
 ;; Generate dispatch table
 (define-macro (generate-dispatch-table prefix)
-  `(vector ,@(map (lambda (p) (string->symbol #`",|prefix|/,(car p)"))
+  `(vector ,@(map (lambda (p) (string->symbol #"~|prefix|/~(car p)"))
                   .intermediate-tags.)))
 
 
@@ -228,8 +228,8 @@
          (if (null? s)
            (reverse r)
            (let* ([slot-name (if (pair? (car s)) (caar s) (car s))]
-                  [acc (string->symbol #`",|name|-,|slot-name|")]
-                  [mod (string->symbol #`",|name|-,|slot-name|-set!")])
+                  [acc (string->symbol #"~|name|-~|slot-name|")]
+                  [mod (string->symbol #"~|name|-~|slot-name|-set!")])
              (loop (cdr s)
                    (+ i 1)
                    (list*

@@ -43,18 +43,18 @@
                           (cons (format "Scm_ModuleNameToPath(SCM_SYMBOL(~a))"
                                         (cgen-cexpr sym))
                                 (format "SCM_SYMBOL(~a)" (cgen-cexpr sym)))))])
-      (cgen-init #`"  path = ,(car path&from);"
-                 #`"  import_from = ,(cdr path&from);")
+      (cgen-init #"  path = ~(car path&from);"
+                 #"  import_from = ~(cdr path&from);")
       (dolist [ent (caddr al)]
         (let1 str (cgen-literal (symbol->string (car ent)))
           (cgen-init
-           #`"  sym = SCM_SYMBOL(Scm_Intern(SCM_STRING(,(cgen-cexpr str)))); /* ,(cgen-safe-comment (car ent)) */"
-           #`"  al = Scm_MakeAutoload(SCM_CURRENT_MODULE(), sym, SCM_STRING(path), import_from);")
+           #"  sym = SCM_SYMBOL(Scm_Intern(SCM_STRING(~(cgen-cexpr str)))); /* ~(cgen-safe-comment (car ent)) */"
+           #"  al = Scm_MakeAutoload(SCM_CURRENT_MODULE(), sym, SCM_STRING(path), import_from);")
           (if (cdr ent) ;; macro?
             (cgen-init
-             #`"  Scm_Define(,|where|,, sym,, Scm_MakeMacroAutoload(sym,, SCM_AUTOLOAD(al)));")
+             #"  Scm_Define(~|where|, sym, Scm_MakeMacroAutoload(sym, SCM_AUTOLOAD(al)));")
             (cgen-init
-             #`"  Scm_Define(,|where|,, sym,, al);"))))
+             #"  Scm_Define(~|where|, sym, al);"))))
       ))
   ;; emit
   (cgen-emit-c (cgen-current-unit))

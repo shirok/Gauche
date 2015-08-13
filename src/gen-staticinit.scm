@@ -49,10 +49,10 @@
 ;; This returns ("") if the definition is empty.  get-scheme-paths counts on it.
 (define (mfvar-ref makefile var :optional default)
   (if-let1 line (with-input-from-file (build-path (top-builddir) makefile)
-                  (cute generator-find (string->regexp #`"^,|var|\\b")
+                  (cute generator-find (string->regexp #"^~|var|\\b")
                         read-line/continuation))
     (string-split
-     (rxmatch->string (string->regexp #`"^,|var|\\s*=\\s*") line 'after)
+     (rxmatch->string (string->regexp #"^~|var|\\s*=\\s*") line 'after)
      #[\s+])
     (if (undefined? default)
       (errorf "Cannot find ~a definition in ~a" var makefile)
@@ -73,7 +73,7 @@
 (define (initfn-name dso-name)
   ;; NB: This is in sync with name transformatin in cgen.precomp.
   (let1 n (string-tr dso-name "-+." "___")
-    #`"Scm_Init_,n"))
+    #"Scm_Init_~n"))
 
 (define (generate-staticinit)
   (do-ec [: subdir (mfvar-ref "ext/Makefile" "SUBDIRS")]
@@ -86,14 +86,14 @@
                        #t))]
          (let ([initfn (initfn-name dso)]
                [str    (cgen-literal dso)])
-           (cgen-decl #`"extern void ,initfn(void);")
+           (cgen-decl #"extern void ~initfn(void);")
            (cgen-init
-            #`"  {"
-            #`"    const char *initfn_names[] = { ,(cgen-safe-string (string-append \"_\" initfn)), NULL };"
-            #`"    void (*initfns[])(void) = { ,initfn, NULL };"
+            #"  {"
+            #"    const char *initfn_names[] = { ~(cgen-safe-string (string-append \"_\" initfn)), NULL };"
+            #"    void (*initfns[])(void) = { ~initfn, NULL };"
             
-            #`"    Scm_RegisterPrelinked(SCM_STRING(,(cgen-cexpr str)), initfn_names, initfns);"
-            #`"   }"))))
+            #"    Scm_RegisterPrelinked(SCM_STRING(~(cgen-cexpr str)), initfn_names, initfns);"
+            #"   }"))))
 
 ;;
 ;; Gather *.scm and *.sci files
@@ -188,7 +188,7 @@
                        :name "staticinit"
                        :init-prologue "void Scm_InitPrelinked() {\n"
                        :init-epilogue "}\n"))
-  (cgen-decl #`"#include <gauche.h>")
+  (cgen-decl "#include <gauche.h>")
   (cgen-decl "extern void Scm_RegisterPrelinked(ScmString*, const char *ns[], void (*fns[])(void));")
   (embed-scm)
   (generate-staticinit)

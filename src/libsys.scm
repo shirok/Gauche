@@ -93,7 +93,7 @@
 (define-macro (define-errno symbol)
   `(inline-stub
     (initcode
-     (.if ,#`"defined(,symbol)"
+     (.if ,#"defined(~symbol)"
           (begin
             (Scm_Define (Scm_GaucheModule)
                         (SCM_SYMBOL ',symbol) (SCM_MAKE_INT ,symbol))

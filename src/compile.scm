@@ -1812,7 +1812,7 @@
                [(:gauche) 'gauche]
                [(:internal) 'gauche.internal])]
         ;; a trick to assign comprehensive name to body:
-        [name (string->symbol #`"syntax/,(car formals)")])
+        [name (string->symbol #"syntax/~(car formals)")])
     `(let ((,name (^ ,(cdr formals) ,@body)))
        (%insert-syntax-binding (find-module ',mod) ',(car formals)
                                (make-syntax ',(car formals) ,name)))))
@@ -2001,7 +2001,7 @@
       [((and (lv . (? $const?)) p) . lv&inits)
        (push! subs p) (loop lv&inits)]
       [((lv . init) . lv&inits)
-       (let1 gvar (make-identifier (gensym #`",|name|$,(lvar-name lv).")
+       (let1 gvar (make-identifier (gensym #"~|name|$~(lvar-name lv).")
                                    (cenv-module cenv) '())
          (push! subs `(,lv . ,($gref gvar)))
          (push! gvars `(,gvar . ,(subst-lvars init subs)))
@@ -2932,7 +2932,7 @@
     (match args
       [() (%import-module current imported prefix)]
       [(':prefix p . rest)
-       (loop imported rest (if prefix (string->symbol #`",p,prefix") p))]
+       (loop imported rest (if prefix (string->symbol #"~|p|~prefix") p))]
       [(':only (ss ...) . rest)
        (let1 m (%make-wrapper-module imported prefix)
          (process-import:mapsym
@@ -3896,7 +3896,7 @@
           iform.)))))
 
 (define (pass3-dump iform count)
-  (format #t "~78,,,'=a\n" #`"pass3 #,count ")
+  (format #t "~78,,,'=a\n" #"pass3 #~count ")
   (pp-iform iform))
 
 ;;
@@ -4421,7 +4421,7 @@
           [result (gensym)]
           [setter (if (eq? accessor 'car)
                     'set-car!
-                    (string->symbol #`",|accessor|-set!"))])
+                    (string->symbol #"~|accessor|-set!"))])
       `(let* ([,orig (,accessor ,expr)]
               [,result (pass4/subst ,orig ,labels)])
          (unless (eq? ,orig ,result)
@@ -5616,7 +5616,7 @@
 ;; Defines builtin inliner for the existing SUBRs.
 ;; The binding of NAME must be visible from gauche.internal.
 (define-macro (define-builtin-inliner name proc)
-  (let1 debug-name (string->symbol #`"inliner/,name")
+  (let1 debug-name (string->symbol #"inliner/~name")
     `(let1 ,debug-name ,proc
        (set! (%procedure-inliner ,name) ,debug-name)
        (%mark-binding-inlinable! (find-module 'gauche.internal) ',name))))
