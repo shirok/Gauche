@@ -89,7 +89,7 @@
                       (or cppflags "") (or cflags "")))))))
 
 (define (do-compile cc cfile ofile cppflags cflags)
-  (run #`",cc -c ,cppflags ,(INCDIR) ,cflags ,CFLAGS -o ',ofile' ',cfile'"))
+  (run #"~cc -c ~cppflags ~(INCDIR) ~cflags ~CFLAGS -o '~ofile' '~cfile'"))
 
 (define (gauche-package-link sofile ofiles :key (ldflags #f)
                                                 (libs #f)

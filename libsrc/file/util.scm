@@ -854,7 +854,7 @@
                              (retry-interval 1)
                              (retry-limit 10)
                              (abandon-timeout 600)
-                             (secondary-lock-name #`",|lock-name|.2")
+                             (secondary-lock-name #"~|lock-name|.2")
                              (retry2-interval 1)
                              (retry2-limit 10)
                              (perms (if (eq? type 'directory)

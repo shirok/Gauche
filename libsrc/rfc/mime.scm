@@ -148,7 +148,7 @@
     (fold (^[pv column]
             (match pv
               [(p . v)
-               (let* ([z #`",(valid-name p)=,(quote-value (x->string v))"]
+               (let* ([z #"~(valid-name p)=~(quote-value (x->string v))"]
                       [len (+ (string-length z) column)])
                  (cond [(> len 78)
                         (display ";\r\n ") (display z) (string-length z)]
@@ -558,7 +558,7 @@
      (let* ([sval (x->string value)]
             [spvs (mime-compose-parameters pv #f
                    :start-column (+ (string-length name) (string-length sval) 2))])
-       `(,name ,(if (null? pv) sval #`",|sval|,|spvs|")))]
+       `(,name ,(if (null? pv) sval #"~|sval|~|spvs|")))]
     [(name value) h]))
 
 ;; current-input-port -> current-output-port

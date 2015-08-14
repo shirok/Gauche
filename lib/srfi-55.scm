@@ -32,7 +32,7 @@
   (define (require-srfi ids rest)
     (if (null? ids)
       (rec rest)
-      (let ((id (string->symbol #`"srfi-,(car ids)")))
+      (let ((id (string->symbol #"srfi-~(car ids)")))
         `(cond-expand (,id ,(require-srfi (cdr ids) rest))
                       (else
                        (use ,id) ;; count on the user providing srfi-N.scm

@@ -65,7 +65,7 @@
                   (match? (car pats) base)
                   (file-is-directory? path))
              (fold (^[subfile seed]
-                     (search (cdr pats) prefix #`",|file|/,|subfile|"
+                     (search (cdr pats) prefix #"~|file|/~|subfile|"
                              subfile seed))
                    seed (readdir path))]
             [(and (null? (cdr pats))

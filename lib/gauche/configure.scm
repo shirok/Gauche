@@ -548,7 +548,7 @@
           (let1 name (string->symbol (m 1))
             (or (dict-get substs name #f)
                 (begin (warn "@~a@ isn't substituted." name)
-                       #`"@,|name|@")))))))
+                       #"@~|name|@")))))))
   ;; We use '/' in the replaced pathname even on Windows; that's what
   ;; autoconf-generated configure does, and it's less likely to confuse
   ;; Unix-originated tools.
@@ -597,7 +597,7 @@
     (cf-subst 'exec_prefix "${prefix}"))
   
   (dolist [f files]
-    (let1 inf (build-path (cf$'srcdir) #`",|f|.in")
+    (let1 inf (build-path (cf$'srcdir) #"~|f|.in")
       (unless (file-is-readable? inf)
         (error "Cannot read input file ~s" inf))
       (unless (file-is-directory? (sys-dirname f))

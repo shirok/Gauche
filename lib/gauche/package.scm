@@ -178,7 +178,7 @@
 
 ;; API.  utility
 (define (find-gauche-package-description name :key (all-versions #f))
-  (and-let* ([path (find (string->regexp #`"/,|name|\\.gpd$")
+  (and-let* ([path (find (string->regexp #"/~|name|\\.gpd$")
                          (gauche-package-description-paths
                           :all-versions all-versions))])
     (path->gauche-package-description path)))

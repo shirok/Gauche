@@ -277,7 +277,7 @@
   (let1 val #f
     (lambda ()
       (or val
-          (rlet1 v (sys-normalize-pathname #`",(sys-tmpdir)/gauche"
+          (rlet1 v (sys-normalize-pathname #"~(sys-tmpdir)/gauche"
                                            :canonicalize #t)
             (set! val v))))))
 
