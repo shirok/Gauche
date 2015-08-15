@@ -107,11 +107,11 @@ static void write_context_init(ScmWriteContext *ctx, int mode, int flags, int li
 }
 
 /*
- * WriteParameter
+ * WriteControls
  */
-ScmWriteParameter *Scm_MakeWriteParameter(const ScmWriteParameter *proto)
+ScmWriteControls *Scm_MakeWriteControls(const ScmWriteControls *proto)
 {
-    ScmWriteParameter *p = SCM_NEW(ScmWriteParameter);
+    ScmWriteControls *p = SCM_NEW(ScmWriteControls);
     if (proto) {
         *p = *proto;
     } else {
@@ -383,7 +383,7 @@ static size_t write_char(ScmChar ch, ScmPort *port, ScmWriteContext *ctx)
  */
 ScmObj Scm__WritePrimitive(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
-    ScmWriteParameter *wp = Scm_VMWriteParameter(Scm_VM());
+    ScmWriteControls *wp = Scm_VMWriteControls(Scm_VM());
     
 #define CASE_ITAG_RET(obj, str)                 \
     case SCM_ITAG(obj):                         \
@@ -501,7 +501,7 @@ static void write_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
     ScmObj stack = SCM_NIL;
     ScmWriteState *st = port->writeState;
     ScmHashTable *ht = (st? st->sharedTable : NULL);
-    ScmWriteParameter *wp = Scm_VMWriteParameter(Scm_VM());
+    ScmWriteControls *wp = Scm_VMWriteControls(Scm_VM());
     int stack_depth = 0;        /* only used when !ht */
 
 #define PUSH(elt)                                       \

@@ -1,3 +1,8 @@
+2015-08-15  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche.h, src/gauche/writer.h: Renamed WriteParameter to
+	  WriteControls, to avoid confusion with srfi-39 parameters.
+
 2015-08-07  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm (macroexpand-all, iform->sexpr): Experimentally added.

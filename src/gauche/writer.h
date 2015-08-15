@@ -56,15 +56,15 @@ enum ScmWriteCaseFlags {
                                    capital letters */
 };
 
-/* Print parameters */
-struct ScmWriteParameterRec {
+/* Writer control parameters */
+struct ScmWriteControlsRec {
     int printLength;            /* -1 for no limit */
     int printLevel;             /* -1 for no limit */
     int printBase;              /* 2-36 */
     int printRadix;             /* boolean, #t to print radix for all numbers */
 };
 
-SCM_EXTERN ScmWriteParameter *Scm_MakeWriteParameter(const ScmWriteParameter *proto);
+SCM_EXTERN ScmWriteControls *Scm_MakeWriteControls(const ScmWriteControls *proto);
 
 SCM_EXTERN int Scm_WriteContextMode(const ScmWriteContext *ctx);
 SCM_EXTERN int Scm_WriteContextCase(const ScmWriteContext *ctx);
