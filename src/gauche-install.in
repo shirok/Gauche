@@ -90,7 +90,7 @@
   (if (file-exists? path)
     (unless (file-is-directory? path)
       (exit 1 "gauche-install: non-directory file gets in my way: ~s" path))
-    (do-it #`"creating directory ,path"
+    (do-it #"creating directory ~path"
            (guard (e [else (exit 1 "can't create directory: ~s"
                                  (ref e 'message))])
              (when (make-directory* path)
@@ -129,7 +129,7 @@
 ;; standard install
 (define (install src dest prelude mode owner group canonical?)
   (ensure-directory (sys-dirname dest))
-  (do-it #`"installing ,src to ,dest"
+  (do-it #"installing ~src to ~dest"
          (and (cp src dest prelude)
               (sys-chmod dest mode)
               (begin
@@ -173,7 +173,7 @@
 
     (parameterize ([verbose (or verb dry)]
                    [dry-run dry])
-      (when shebang (set! shebang #`"#!,shebang\n"))
+      (when shebang (set! shebang #"#!~shebang\n"))
       (cond
        [mkdir  (for-each (cut ensure-directory <> mode owner group) args)]
        [target (dolist [src args]

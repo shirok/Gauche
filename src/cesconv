@@ -6,6 +6,6 @@
 (define (main args)
   ;(warn "'cesconv' is obsoleted.  Use gauche-cesconv script instead.")
   (sys-system (string-join (cons "gauche-cesconv"
-                                 (map (lambda (s) #`"',s'") (cdr args)))
+                                 (map (^s #"'~s'") (cdr args)))
                            " "))
   0)

@@ -51,8 +51,8 @@
   (string-append "SCM_VM_" (string-tr (x->string name) "-" "_")))
 
 (define *preamble*
-  (list #`"/* Generated automatically from vminsn.scm */"
-        #`"/* DO NOT EDIT */"))
+  (list "/* Generated automatically from vminsn.scm */"
+        "/* DO NOT EDIT */"))
 
 (define *unit*
   (make <cgen-unit>
@@ -131,7 +131,7 @@
     (rxmatch-let (#/LREF(\d)?(\d)/ (x->string lrefx))
       (#f dep off)
       `(lref ,(x->integer dep) ,(x->integer off))))
-  (define (render cise) (cgen-body #`"{,(cise->string cise)}") #t)
+  (define (render cise) (cgen-body #"{~(cise->string cise)}") #t)
   (define (do-combined orig comb)
     (match comb
       [(base 'PUSH)
@@ -300,7 +300,7 @@
   (define entry-count 0)
 
   (dolist [s (sort-by states (cut ref <> 'entry-index) <)]
-    (cgen-body #`"/* State #,(~ s'index) ,(~ s'name) [,(~ s'entry-index)] */")
+    (cgen-body #"/* State #~(~ s'index) ~(~ s'name) [~(~ s'entry-index)] */")
     (dolist [t (~ s'transitions)]
       (match-let1 (op . args) (~ (cdr t)'command)
         (receive (action operand)
@@ -393,7 +393,7 @@
       (and-let* ([comb (~ insn'combined)])
         (define (wire suffix slot)
           (let* ([basename (string->symbol
-                            (rxmatch->string (string->regexp #`"^(.*)-,suffix")
+                            (rxmatch->string (string->regexp #"^(.*)-~suffix")
                                              (x->string (~ insn'name))))]
                  [baseinsn (find (^_ (eq? (~ _'name) basename)) insns)])
             (set! (~ baseinsn slot) insn)
@@ -415,7 +415,7 @@
       (cgen-extern "enum {")
       (cgen-body "#ifdef DEFINSN")
       (dolist [insn insns]
-        (cgen-extern #`"  ,(c-insn-name (~ insn'name)),,")
+        (cgen-extern #"  ~(c-insn-name (~ insn'name)),")
         (cgen-body (format "DEFINSN(~a, \"~a\", ~a, ~a, ~a)"
                            (c-insn-name (~ insn'name)) (~ insn'name)
                            (~ insn'num-params)

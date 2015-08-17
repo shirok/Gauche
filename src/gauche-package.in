@@ -234,7 +234,7 @@ Options:
            (let ((gpd (apply make <gauche-package-description>
                              :name (car args)
                              (reverse! r))))
-             (with-output-to-file #`",(car args).gpd"
+             (with-output-to-file #"~(car args).gpd"
                (cut write-gauche-package-description gpd)))]
           [(null? (cdr p))
            (exit 1 "gauche-package: make-gpd: parameter list not even")]
@@ -312,7 +312,7 @@ Options:
            (string-join (map (lambda (path)
                                (shell-escape-string (build-path path subdir)))
                              (string-split local #\:))
-                        #`" ,prefix" 'prefix)))
+                        #" ~prefix" 'prefix)))
     ;; preprocess parameters.
     ;; if parameter is not given, look at the named environment variable.
     (define (param given envname . additionals)
@@ -394,7 +394,7 @@ Options:
                             '("Makefile.in" "extension.c"
                               "extension.h" "extensionlib.stub"
                               "module.scm" "test.scm"))]
-          (let* ([src-path (build-path tmpl-dir #`"template.,file")]
+          (let* ([src-path (build-path tmpl-dir #"template.~file")]
                  [dst-name (regexp-replace*
                             file
                             #/extension/ extension-name
