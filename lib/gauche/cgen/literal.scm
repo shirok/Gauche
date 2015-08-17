@@ -687,13 +687,13 @@
   (rxmatch->string #/<(.\d+)vector>/ (symbol->string (class-name class)) 1))
 
 (define (uvector-class->c-name class)
-  #`"Scm_,(string-upcase (uvector-class->tag-name class))VectorClass")
+  #"Scm_~(string-upcase (uvector-class->tag-name class))VectorClass")
 
 (define (uvector-class->type-enum class)
   (global-variable-ref
    (find-module 'gauche)
    (string->symbol
-    #`"SCM_UVECTOR_,(string-upcase (uvector-class->tag-name class))")))
+    #"SCM_UVECTOR_~(string-upcase (uvector-class->tag-name class))")))
 
 (define (uvector-class->c-type-name class)
   (cond

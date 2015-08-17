@@ -194,7 +194,7 @@
                             :extra-optimization extra-optimization
                             :ext-initializer (and (equal? src main)
                                                   ext-initializer)
-                            :initializer-name #`"Scm_Init_,initname"))))]
+                            :initializer-name #"Scm_Init_~initname"))))]
     ))
 
 ;; Common stuff -- process single source
@@ -315,7 +315,7 @@
          [safe-name (string-tr base "-+" "__")])
     (rlet1 u (make <cgen-stub-unit>
                :name base :c-name-prefix safe-name
-               :preamble `(,#`"/* Generated automatically from ,|src|.  DO NOT EDIT */")
+               :preamble `(,#"/* Generated automatically from ~|src|.  DO NOT EDIT */")
                :init-prologue (format "~avoid Scm_Init_~a() {"
                                       (if ext-init? "SCM_EXTENSION_ENTRY " "")
                                       safe-name)
@@ -390,14 +390,14 @@
               (let* ([extname ($ path-sans-extension
                                  $ sys-basename $ port-name extm)]
                      [safe-extname (regexp-replace-all #/\W/ extname "_")])
-                (cgen-init #`"SCM_INIT_EXTENSION(,safe-extname);")))])
+                (cgen-init #"SCM_INIT_EXTENSION(~safe-extname);")))])
   (dolist [init subinits]
-    (cgen-decl #`"extern void Scm_Init_,init(void);"))
+    (cgen-decl #"extern void Scm_Init_~init(void);"))
   )
 
 (define (finalize subinits)
   (dolist [init subinits]
-    (cgen-init #`"  Scm_Init_,init();")))
+    (cgen-init #"  Scm_Init_~init();")))
 
 ;;================================================================
 ;; Compiler stuff

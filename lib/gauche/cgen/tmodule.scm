@@ -131,7 +131,7 @@
 ;; initialization at the runtime for precompiled sources of Gauche core.
 (define (%setup-builtin-tmodules)
   (define (builtin name c-api)
-    (make (current-tmodule-class) :name name :cname #`"SCM_OBJ(,c-api())"))
+    (make (current-tmodule-class) :name name :cname #"SCM_OBJ(~c-api())"))
   (builtin 'null            "Scm_NullModule")
   (builtin 'scheme          "Scm_SchemeModule")
   (builtin 'gauche          "Scm_GaucheModule")

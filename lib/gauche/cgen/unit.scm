@@ -86,7 +86,7 @@
 ;; API
 (define-method cgen-unit-c-file ((unit <cgen-unit>))
   (or (~ unit'c-file)
-      #`",(~ unit 'name).c"))
+      #"~(~ unit 'name).c"))
 
 ;; API
 (define-method cgen-unit-init-name ((unit <cgen-unit>))
@@ -174,20 +174,20 @@
   (define (rec c)
     (match c
       [(and (or (? string?) (? symbol?) (? integer?)) c) (x->string c)]
-      [('defined c) #`"defined(,(rec c))"]
-      [('not c)     #`"!(,(rec c))"]
+      [('defined c) #"defined(~(rec c))"]
+      [('not c)     #"!(~(rec c))"]
       [('and c ...) (n-ary "&&" c)]
       [('or c ...)  (n-ary "||" c)]
       [((and (or '+ '*) op) c ...) (n-ary op c)]
       [((and (or '- '/) op) c0 c1 ...)
-       (if (null? c1) #`",|op|(,(rec c0))" (n-ary op (cons c0 c1)))]
+       (if (null? c1) #"~|op|(~(rec c0))" (n-ary op (cons c0 c1)))]
       [((and (or '> '>= '== '< '<= '!= 'logand 'logior 'lognot '>> '<<) op) c0 c1)
        (binary op c0 c1)]
       [_ (error "Invalid C preprocessor condition expression:" condition)]))
   (define (n-ary op cs)
-    (string-concatenate (intersperse (x->string op) (map (^c #`"(,c)") cs))))
+    (string-concatenate (intersperse (x->string op) (map (^c #"(~c)") cs))))
   (define (binary op c0 c1)
-    #`"(,(rec c0),|op|(,(rec c1))")
+    #"(~(rec c0)~|op|(~(rec c1))")
   (rec condition))
 
 ;; fallback methods
@@ -282,7 +282,7 @@
   (print "#include "
          (if (string-prefix? "<" (~ node'path))
            (~ node'path)
-           #`"\",(~ node'path)\"")))
+           #"\"~(~ node'path)\"")))
 
 (define-method cgen-emit-xtrn ((node <cgen-include>))
   (include-common node))

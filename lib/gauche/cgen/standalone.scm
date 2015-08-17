@@ -75,6 +75,6 @@
         [incdirs (string-join `(,@xincdirs ,(gauche-config "-I")) " ")]
         [libdirs (string-join `(,@xlibdirs ,(gauche-config "-L")) " ")]
         [libs    (gauche-config "--static-libs")])
-    (let1 cmd #`",cc ,cflags ,incdirs -o ,outfile ,c-file ,libdirs ,libs"
+    (let1 cmd #"~cc ~cflags ~incdirs -o ~outfile ~c-file ~libdirs ~libs"
       (print cmd)
       (sys-system cmd))))

@@ -149,7 +149,7 @@
                  (basename (string->symbol (m 'before)))
                  (basetype (cgen-type-from-name basename)))
         (make <cgen-type> :name name :c-type (~ basetype'c-type)
-              :description #`",(~ basetype'description) or #f"
+              :description #"~(~ basetype'description) or #f"
               :c-predicate (~ basetype'c-predicate)
               :unboxer     (~ basetype'unboxer)
               :boxer       (~ basetype'boxer)
@@ -167,11 +167,11 @@
       (string-append "SCM_"
                      (string-tr (strip<> name) "a-z-" "A-Z_")
                      "_P")
-      #`"SCM_,(string-upcase (strip<> name))P"))
+      #"SCM_~(string-upcase (strip<> name))P"))
   (define (default-unbox name)
-    #`"SCM_,(string-tr (strip<> name) \"a-z-\" \"A-Z_\")")
+    #"SCM_~(string-tr (strip<> name) \"a-z-\" \"A-Z_\")")
   (define (default-box name)
-    #`"SCM_MAKE_,(string-tr (strip<> name) \"a-z-\" \"A-Z_\")")
+    #"SCM_MAKE_~(string-tr (strip<> name) \"a-z-\" \"A-Z_\")")
   (make <cgen-type>
     :name name :c-type c-type
     :description (or desc (x->string name))
@@ -267,19 +267,19 @@
 
 (define (cgen-box-expr type c-expr)
   (if (~ type'maybe)
-    #`"SCM_MAKE_MAYBE(,(~ type'boxer),, ,c-expr)"
-    #`",(~ type'boxer)(,c-expr)"))
+    #"SCM_MAKE_MAYBE(~(~ type'boxer), ~c-expr)"
+    #"~(~ type'boxer)(~c-expr)"))
 
 (define (cgen-unbox-expr type c-expr)
   (if (~ type'maybe)
-    #`"SCM_MAYBE(,(~ type'unboxer),, ,c-expr)"
-    #`",(~ type'unboxer)(,c-expr)"))
+    #"SCM_MAYBE(~(~ type'unboxer), ~c-expr)"
+    #"~(~ type'unboxer)(~c-expr)"))
 
 (define (cgen-pred-expr type c-expr)
   (if (~ type'maybe)
-    #`"SCM_MAYBE_P(,(~ type'c-predicate),, ,c-expr)"
-    #`",(~ type'c-predicate)(,c-expr)"))
+    #"SCM_MAYBE_P(~(~ type'c-predicate), ~c-expr)"
+    #"~(~ type'c-predicate)(~c-expr)"))
 
 (define (cgen-return-stmt expr)
-  #`"SCM_RETURN(,expr);")
+  #"SCM_RETURN(~expr);")
 
