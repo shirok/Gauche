@@ -58,13 +58,19 @@ enum ScmWriteCaseFlags {
 
 /* Writer control parameters */
 struct ScmWriteControlsRec {
+    SCM_HEADER;
     int printLength;            /* -1 for no limit */
     int printLevel;             /* -1 for no limit */
     int printBase;              /* 2-36 */
     int printRadix;             /* boolean, #t to print radix for all numbers */
 };
 
-SCM_EXTERN ScmWriteControls *Scm_MakeWriteControls(const ScmWriteControls *proto);
+SCM_EXTERN ScmWriteControls *Scm_MakeWriteControls(const ScmWriteControls *proto);SCM_EXTERN ScmWriteControls *Scm_DefaultWriteControls(void);
+SCM_CLASS_DECL(Scm_WriteControlsClass);
+#define SCM_CLASS_WRITE_CONTROLS  (&Scm_WriteControlsClass)
+#define SCM_WRITE_CONTROLS(obj)   ((ScmWriteControls*)(obj))
+#define SCM_WRITE_CONTROLS_P(obj) SCM_XTYPEP(obj, SCM_CLASS_WRITE_CONTROLS)
+
 
 SCM_EXTERN int Scm_WriteContextMode(const ScmWriteContext *ctx);
 SCM_EXTERN int Scm_WriteContextCase(const ScmWriteContext *ctx);

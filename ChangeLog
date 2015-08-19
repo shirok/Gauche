@@ -1,3 +1,9 @@
+2015-08-18  Shiro Kawai  <shiro@acm.org>
+
+	* src/libio.scm (Scm_WriteControls): Made it ScmObj.  We'll
+	  eventually drop global (dynamic) write control variables, so
+	  the tests are commented out.
+
 2015-08-15  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche.h, src/gauche/writer.h: Renamed WriteParameter to

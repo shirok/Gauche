@@ -33,6 +33,8 @@
 
 #define LIBGAUCHE_BODY
 #include "gauche.h"
+#include "gauche/class.h"
+#include "gauche/writer.h"
 #include "gauche/priv/builtin-syms.h"
 #include "gauche/priv/writerP.h"
 #include "gauche/priv/portP.h"
@@ -46,6 +48,8 @@ static void write_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx);
 static void write_object(ScmObj obj, ScmPort *out, ScmWriteContext *ctx);
 static ScmObj write_object_fallback(ScmObj *args, int nargs, ScmGeneric *gf);
 SCM_DEFINE_GENERIC(Scm_GenericWriteObject, write_object_fallback, NULL);
+
+static const ScmWriteControls *defaultWriteControls;
 
 /*============================================================
  * Writers
@@ -112,6 +116,7 @@ static void write_context_init(ScmWriteContext *ctx, int mode, int flags, int li
 ScmWriteControls *Scm_MakeWriteControls(const ScmWriteControls *proto)
 {
     ScmWriteControls *p = SCM_NEW(ScmWriteControls);
+    SCM_SET_CLASS(p, SCM_CLASS_WRITE_CONTROLS);
     if (proto) {
         *p = *proto;
     } else {
@@ -123,6 +128,11 @@ ScmWriteControls *Scm_MakeWriteControls(const ScmWriteControls *proto)
     return p;
 }
 
+ScmWriteControls* Scm_DefaultWriteControls(void)
+{
+    return defaultWriteControls;
+}
+
 /*
  * WriteState
  */
@@ -132,7 +142,6 @@ ScmWriteControls *Scm_MakeWriteControls(const ScmWriteControls *proto)
 ScmWriteState *Scm_MakeWriteState(ScmWriteState *proto)
 {
     ScmWriteState *z = SCM_NEW(ScmWriteState);
-    ScmVM *vm = Scm_VM();
     SCM_SET_CLASS(z, SCM_CLASS_WRITE_STATE);
     z->sharedTable = NULL;
     z->sharedCounter = 0;
@@ -1108,4 +1117,5 @@ void Scm__InitWrite(void)
 {
     Scm_InitBuiltinGeneric(&Scm_GenericWriteObject, "write-object",
                            Scm_GaucheModule());
+    defaultWriteControls = Scm_MakeWriteControls(NULL);
 }

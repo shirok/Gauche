@@ -398,107 +398,107 @@
 ;; Write parameters
 ;;
 
-(use gauche.parameter)
-(use gauche.uvector)
+;; (use gauche.parameter)
+;; (use gauche.uvector)
 
-(let* ([data (iota 5)]
-       [data2 (make-list 5 data)])
-  (test* "print-length" '("(0 1 2 3 4)"
-                          ("(0 1 2 3 4)"   "#(0 1 2 3 4)"   "#u8(0 1 2 3 4)")
-                          ("(0 1 2 3 ...)" "#(0 1 2 3 ...)" "#u8(0 1 2 3 ...)")
-                          ("(0 1 2 ...)"   "#(0 1 2 ...)"   "#u8(0 1 2 ...)")
-                          ("(0 1 2 3 4)"   "#(0 1 2 3 4)"   "#u8(0 1 2 3 4)")
-                          ("(0 1 ...)"     "#(0 1 ...)"     "#u8(0 1 ...)")
-                          ("(0 ...)"       "#(0 ...)"       "#u8(0 ...)")
-                          ("(...)"         "#(...)"         "#u8(...)"))
-         (let ([z (map (^n (parameterize ((print-length n))
-                             (list (write-to-string data)
-                                   (write-to-string (list->vector data))
-                                   (write-to-string (list->u8vector data)))))
-                       '(5 4 3 #f 2 1 0))])
-           ;; make sure print-lenght is recovered
-           (cons (write-to-string data)
-                 z)))
+;; (let* ([data (iota 5)]
+;;        [data2 (make-list 5 data)])
+;;   (test* "print-length" '("(0 1 2 3 4)"
+;;                           ("(0 1 2 3 4)"   "#(0 1 2 3 4)"   "#u8(0 1 2 3 4)")
+;;                           ("(0 1 2 3 ...)" "#(0 1 2 3 ...)" "#u8(0 1 2 3 ...)")
+;;                           ("(0 1 2 ...)"   "#(0 1 2 ...)"   "#u8(0 1 2 ...)")
+;;                           ("(0 1 2 3 4)"   "#(0 1 2 3 4)"   "#u8(0 1 2 3 4)")
+;;                           ("(0 1 ...)"     "#(0 1 ...)"     "#u8(0 1 ...)")
+;;                           ("(0 ...)"       "#(0 ...)"       "#u8(0 ...)")
+;;                           ("(...)"         "#(...)"         "#u8(...)"))
+;;          (let ([z (map (^n (parameterize ((print-length n))
+;;                              (list (write-to-string data)
+;;                                    (write-to-string (list->vector data))
+;;                                    (write-to-string (list->u8vector data)))))
+;;                        '(5 4 3 #f 2 1 0))])
+;;            ;; make sure print-lenght is recovered
+;;            (cons (write-to-string data)
+;;                  z)))
 
-  (test* "print-length for zero-length aggregate"
-         '("()" "#()" "#u8()")
-         (map (^x (parameterize ((print-length 0)) (write-to-string x)))
-              '(() #() #u8())))
+;;   (test* "print-length for zero-length aggregate"
+;;          '("()" "#()" "#u8()")
+;;          (map (^x (parameterize ((print-length 0)) (write-to-string x)))
+;;               '(() #() #u8())))
   
-  (test* "print-length (nested)"
-         '(("(...)"
-            "#(...)")
-           ("((0 ...) ...)"
-            "#(#(0 ...) ...)")
-           ("((0 1 ...) (0 1 ...) ...)"
-            "#(#(0 1 ...) #(0 1 ...) ...)")
-           ("((0 1 2 ...) (0 1 2 ...) (0 1 2 ...) ...)"
-            "#(#(0 1 2 ...) #(0 1 2 ...) #(0 1 2 ...) ...)"))
-         (map (^n (parameterize ((print-length n))
-                    (list (write-to-string data2)
-                          (write-to-string (list->vector (map list->vector data2))))))
-              (iota 4))))
+;;   (test* "print-length (nested)"
+;;          '(("(...)"
+;;             "#(...)")
+;;            ("((0 ...) ...)"
+;;             "#(#(0 ...) ...)")
+;;            ("((0 1 ...) (0 1 ...) ...)"
+;;             "#(#(0 1 ...) #(0 1 ...) ...)")
+;;            ("((0 1 2 ...) (0 1 2 ...) (0 1 2 ...) ...)"
+;;             "#(#(0 1 2 ...) #(0 1 2 ...) #(0 1 2 ...) ...)"))
+;;          (map (^n (parameterize ((print-length n))
+;;                     (list (write-to-string data2)
+;;                           (write-to-string (list->vector (map list->vector data2))))))
+;;               (iota 4))))
 
-;; example from CLHS
-(let* ([data '(1 (2 (3 (4 (5 (6))))))])
-  (test* "print-level"
-         '("#"
-           "(1 #)"
-           "(1 (2 #))"
-           "(1 (2 (3 #)))"
-           "(1 (2 (3 (4 #))))"
-           "(1 (2 (3 (4 (5 #)))))"
-           "(1 (2 (3 (4 (5 (6))))))"
-           "(1 (2 (3 (4 (5 (6))))))")
-         (map (^n (parameterize ((print-level n))
-                    (write-to-string data)))
-              (iota 8))))
+;; ;; example from CLHS
+;; (let* ([data '(1 (2 (3 (4 (5 (6))))))])
+;;   (test* "print-level"
+;;          '("#"
+;;            "(1 #)"
+;;            "(1 (2 #))"
+;;            "(1 (2 (3 #)))"
+;;            "(1 (2 (3 (4 #))))"
+;;            "(1 (2 (3 (4 (5 #)))))"
+;;            "(1 (2 (3 (4 (5 (6))))))"
+;;            "(1 (2 (3 (4 (5 (6))))))")
+;;          (map (^n (parameterize ((print-level n))
+;;                     (write-to-string data)))
+;;               (iota 8))))
          
-(let* ([data '(a (b (c (d (e) (f) g) h) i) #(j (k #(l #(m) (n) o) p) q) r)])
-  (test* "print-level"
-         '("(a (b (c (d (e) (f) g) h) i) #(j (k #(l #(m) (n) o) p) q) r)"
-           "(a (b (c (d (e) (f) g) h) i) #(j (k #(l #(m) (n) o) p) q) r)"
-           "(a (b (c (d # # g) h) i) #(j (k #(l # # o) p) q) r)"
-           "(a (b (c # h) i) #(j (k # p) q) r)"
-           "(a (b # i) #(j # q) r)"
-           "(a # # r)"
-           "#")
-         (map (^n (parameterize ((print-level n))
-                    (write-to-string data)))
-              '(6 5 4 3 2 1 0))))
+;; (let* ([data '(a (b (c (d (e) (f) g) h) i) #(j (k #(l #(m) (n) o) p) q) r)])
+;;   (test* "print-level"
+;;          '("(a (b (c (d (e) (f) g) h) i) #(j (k #(l #(m) (n) o) p) q) r)"
+;;            "(a (b (c (d (e) (f) g) h) i) #(j (k #(l #(m) (n) o) p) q) r)"
+;;            "(a (b (c (d # # g) h) i) #(j (k #(l # # o) p) q) r)"
+;;            "(a (b (c # h) i) #(j (k # p) q) r)"
+;;            "(a (b # i) #(j # q) r)"
+;;            "(a # # r)"
+;;            "#")
+;;          (map (^n (parameterize ((print-level n))
+;;                     (write-to-string data)))
+;;               '(6 5 4 3 2 1 0))))
 
-;; another example from CLHS
-(let* ([level-length '((0 1) (1 1) (1 2) (1 3) (1 4) 
-                       (2 1) (2 2) (2 3) (3 2) (3 3) (3 4))]
-       [data '(if (member x y) (+ (car x) 3) '(foo . #(a b c d "Baz")))])
-  (test* "print-level & print-length"
-         '("0 1 -- #"
-           "1 1 -- (if ...)"
-           "1 2 -- (if # ...)"
-           "1 3 -- (if # # ...)"
-           "1 4 -- (if # # #)"
-           "2 1 -- (if ...)"
-           "2 2 -- (if (member x ...) ...)"
-           "2 3 -- (if (member x y) (+ # 3) ...)"
-           "3 2 -- (if (member x ...) ...)"
-           "3 3 -- (if (member x y) (+ (car x) 3) ...)"
-           "3 4 -- (if (member x y) (+ (car x) 3) '(foo . #(a b c d ...)))")
-         (map (^z (parameterize ((print-level (car z))
-                                 (print-length (cadr z)))
-                    (format "~d ~d -- ~s" (car z) (cadr z) data)))
-              level-length)))
+;; ;; another example from CLHS
+;; (let* ([level-length '((0 1) (1 1) (1 2) (1 3) (1 4) 
+;;                        (2 1) (2 2) (2 3) (3 2) (3 3) (3 4))]
+;;        [data '(if (member x y) (+ (car x) 3) '(foo . #(a b c d "Baz")))])
+;;   (test* "print-level & print-length"
+;;          '("0 1 -- #"
+;;            "1 1 -- (if ...)"
+;;            "1 2 -- (if # ...)"
+;;            "1 3 -- (if # # ...)"
+;;            "1 4 -- (if # # #)"
+;;            "2 1 -- (if ...)"
+;;            "2 2 -- (if (member x ...) ...)"
+;;            "2 3 -- (if (member x y) (+ # 3) ...)"
+;;            "3 2 -- (if (member x ...) ...)"
+;;            "3 3 -- (if (member x y) (+ (car x) 3) ...)"
+;;            "3 4 -- (if (member x y) (+ (car x) 3) '(foo . #(a b c d ...)))")
+;;          (map (^z (parameterize ((print-level (car z))
+;;                                  (print-length (cadr z)))
+;;                     (format "~d ~d -- ~s" (car z) (cadr z) data)))
+;;               level-length)))
 
-;; print-level and aggregate other than plain vector
-(let ([data '(a #u8(1 2 3) (b #u16(1 2 3) #(c #u32(1 2 3))))])
-  (test* "print-level with uvector"
-         '("(a #u8(1 2 3) (b #u16(1 2 3) #(c #u32(1 2 3))))"
-           "(a #u8(1 2 3) (b #u16(1 2 3) #(c #)))"
-           "(a #u8(1 2 3) (b # #))"
-           "(a # #)"
-           "#")
-         (map (^n (parameterize ((print-level n))
-                    (write-to-string data)))
-              '(4 3 2 1 0))))
+;; ;; print-level and aggregate other than plain vector
+;; (let ([data '(a #u8(1 2 3) (b #u16(1 2 3) #(c #u32(1 2 3))))])
+;;   (test* "print-level with uvector"
+;;          '("(a #u8(1 2 3) (b #u16(1 2 3) #(c #u32(1 2 3))))"
+;;            "(a #u8(1 2 3) (b #u16(1 2 3) #(c #)))"
+;;            "(a #u8(1 2 3) (b # #))"
+;;            "(a # #)"
+;;            "#")
+;;          (map (^n (parameterize ((print-level n))
+;;                     (write-to-string data)))
+;;               '(4 3 2 1 0))))
 
 
 

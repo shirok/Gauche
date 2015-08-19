@@ -729,56 +729,70 @@
 ;;  For performance reasons, we don't make them a srfi-39 parameters.
 ;;
 
-(select-module gauche)
-
 (inline-stub
- (define-cise-stmt handle-write-controls
-   ;; use "newval" unhygienically
-   [(_ target unbox box check msg)
-    `(let* ([vm::ScmVM* (Scm_VM)]
-            [oldval::int (-> vm writeControls ,target)])
-       (unless (SCM_UNBOUNDP newval)
-         (unless ,check
-           (Scm_Error ,msg newval))
-         (set! (-> vm writeControls ,target) (,unbox newval)))
-       ,(if box
-          `(return (,box oldval))
-          '(return oldval)))])
- (define-cfn print-int-unbox (val) ::int :static
-   (if (SCM_INTP val)
-     (return (SCM_INT_VALUE val))
-     (return -1)))
- (define-cfn print-int-box (rawval::int) :static
-   (if (< rawval 0)
-     (return SCM_FALSE)
-     (return (SCM_MAKE_INT rawval))))
+ (define-cfn write_controls_allocate (klass::ScmClass* initargs) :static
+   (return (SCM_OBJ (Scm_MakeWriteControls NULL))))
+ 
+ (define-cclass <write-controls>
+   "ScmWriteControls*" "Scm_WriteControlsClass"
+   ("Scm_TopClass")
+   ((print-length :type <int>     :c-name "printLength")
+    (print-level  :type <int>     :c-name "printLevel")
+    (print-base   :type <int>     :c-name "printBase")
+    (print-radix  :type <boolean> :c-name "printRadix"))
+   (allocate (c "write_controls_allocate")))
  )
 
-(define-cproc print-length (:optional newval)
-  (handle-write-controls printLength print-int-unbox print-int-box
-                         (or (SCM_FALSEP newval)
-                             (and (SCM_INTP newval)
-                                  (>= (SCM_INT_VALUE newval) 0)))
-                         "Small nonnegative integer or #f required, but got %S"))
+;; (select-module gauche)
 
-(define-cproc print-level (:optional newval)
-  (handle-write-controls printLevel print-int-unbox print-int-box
-                         (or (SCM_FALSEP newval)
-                             (and (SCM_INTP newval)
-                                  (>= (SCM_INT_VALUE newval) 0)))
-                         "Small nonnegative integer or #f required, but got %S"))
+;; (inline-stub
+;;  (define-cise-stmt handle-write-controls
+;;    ;; use "newval" unhygienically
+;;    [(_ target unbox box check msg)
+;;     `(let* ([vm::ScmVM* (Scm_VM)]
+;;             [oldval::int (-> vm writeControls ,target)])
+;;        (unless (SCM_UNBOUNDP newval)
+;;          (unless ,check
+;;            (Scm_Error ,msg newval))
+;;          (set! (-> vm writeControls ,target) (,unbox newval)))
+;;        ,(if box
+;;           `(return (,box oldval))
+;;           '(return oldval)))])
+;;  (define-cfn print-int-unbox (val) ::int :static
+;;    (if (SCM_INTP val)
+;;      (return (SCM_INT_VALUE val))
+;;      (return -1)))
+;;  (define-cfn print-int-box (rawval::int) :static
+;;    (if (< rawval 0)
+;;      (return SCM_FALSE)
+;;      (return (SCM_MAKE_INT rawval))))
+;;  )
 
-(define-cproc print-base (:optional newval) ::<int>
-  (handle-write-controls printBase SCM_INT_VALUE #f
-                         (and (SCM_INTP newval)
-                              (>= (SCM_INT_VALUE newval) 2)
-                              (<= (SCM_INT_VALUE newval) 36))
-                         "Integer between 2 and 36 required, but got %S"))
+;; (define-cproc print-length (:optional newval)
+;;   (handle-write-controls printLength print-int-unbox print-int-box
+;;                          (or (SCM_FALSEP newval)
+;;                              (and (SCM_INTP newval)
+;;                                   (>= (SCM_INT_VALUE newval) 0)))
+;;                          "Small nonnegative integer or #f required, but got %S"))
 
-(define-cproc print-radix (:optional newval) ::<boolean>
-  (handle-write-controls printRadix SCM_BOOL_VALUE #f
-                         (SCM_BOOLP newval)
-                         "Boolean value required, but got %S"))
+;; (define-cproc print-level (:optional newval)
+;;   (handle-write-controls printLevel print-int-unbox print-int-box
+;;                          (or (SCM_FALSEP newval)
+;;                              (and (SCM_INTP newval)
+;;                                   (>= (SCM_INT_VALUE newval) 0)))
+;;                          "Small nonnegative integer or #f required, but got %S"))
+
+;; (define-cproc print-base (:optional newval) ::<int>
+;;   (handle-write-controls printBase SCM_INT_VALUE #f
+;;                          (and (SCM_INTP newval)
+;;                               (>= (SCM_INT_VALUE newval) 2)
+;;                               (<= (SCM_INT_VALUE newval) 36))
+;;                          "Integer between 2 and 36 required, but got %S"))
+
+;; (define-cproc print-radix (:optional newval) ::<boolean>
+;;   (handle-write-controls printRadix SCM_BOOL_VALUE #f
+;;                          (SCM_BOOLP newval)
+;;                          "Boolean value required, but got %S"))
 
 ;;;
 ;;; With-something
