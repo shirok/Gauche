@@ -817,6 +817,14 @@
           (loop (read-char))))
       (display "/" out))))
 
+(define-method write-object ((obj <write-controls>) port)
+  (format port "#<write-controls ~s>"
+          `(:print-length ,(~ obj'print-length)
+            :print-level  ,(~ obj'print-level)
+            :print-base   ,(~ obj'print-base)
+            :print-radix  ,(~ obj'print-radix))))
+
+
 ;;;
 ;;; Make exported symbol visible from outside
 ;;;

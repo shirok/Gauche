@@ -729,10 +729,14 @@
 ;;  For performance reasons, we don't make them a srfi-39 parameters.
 ;;
 
+(select-module gauche)
 (inline-stub
  (define-cfn write_controls_allocate (klass::ScmClass* initargs) :static
    (return (SCM_OBJ (Scm_MakeWriteControls NULL))))
- 
+
+ ;; TODO: We want to treat <write-controls> as immutable structure, but
+ ;; define-cclass doesn't yet handle a slot that's immutable but allowing
+ ;; initialized by init-keywords.
  (define-cclass <write-controls>
    "ScmWriteControls*" "Scm_WriteControlsClass"
    ("Scm_TopClass")
@@ -740,7 +744,8 @@
     (print-level  :type <int>     :c-name "printLevel")
     (print-base   :type <int>     :c-name "printBase")
     (print-radix  :type <boolean> :c-name "printRadix"))
-   (allocate (c "write_controls_allocate")))
+   (allocator (c "write_controls_allocate")))
+ ;; NB: Printer is defined in libobj.scm via write-object method
  )
 
 ;; (select-module gauche)
