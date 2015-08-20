@@ -182,9 +182,6 @@ ScmVM *Scm_NewVM(ScmVM *proto, ScmObj name)
     v->curin  = proto? proto->curin  : SCM_PORT(Scm_Stdin());
     v->curout = proto? proto->curout : SCM_PORT(Scm_Stdout());
     v->curerr = proto? proto->curerr : SCM_PORT(Scm_Stderr());
-    v->writeControls = (proto
-                        ? proto->writeControls
-                        : Scm_MakeWriteControls(NULL));
 
     Scm__VMParameterTableInit(&(v->parameters), proto);
 
@@ -2902,12 +2899,6 @@ struct GC_ms_entry *vm_stack_mark(GC_word *addr,
     return e;
 }
 #endif /*USE_CUSTOM_STACK_MARKER*/
-
-/* Public accessor */
-ScmWriteControls *Scm_VMWriteControls(ScmVM *vm)
-{
-    return vm->writeControls;
-}
 
 /*===============================================================
  * Initialization

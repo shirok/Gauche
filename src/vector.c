@@ -517,7 +517,8 @@ static void SCM_CPP_CAT3(print_,tag,vector)(ScmObj obj,                 \
                                             ScmPort *out,               \
                                             ScmWriteContext *ctx)       \
 {                                                                       \
-    ScmWriteControls *wp = Scm_VMWriteControls(Scm_VM());               \
+    const ScmWriteControls *wp =                                        \
+        Scm_GetWriteControls(ctx, out->writeState);                     \
     Scm_Printf(out, "#"#tag"(");                                        \
     for (int i=0; i<SCM_CPP_CAT3(SCM_,TAG,VECTOR_SIZE)(obj); i++) {     \
         T elt = SCM_CPP_CAT3(SCM_,TAG,VECTOR_ELEMENTS)(obj)[i];         \

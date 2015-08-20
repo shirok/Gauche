@@ -47,6 +47,7 @@ struct ScmWriteContextRec {
     short mode;                 /* print mode */
     short flags;                /* internal */
     int limit;                  /* used in WriteLimited */
+    const ScmWriteControls *controls;
 };
 
 #define SCM_WRITE_CONTEXT(obj)    ((ScmWriteContext*)(obj))
@@ -54,6 +55,8 @@ struct ScmWriteContextRec {
 struct ScmWriteStateRec {
     SCM_HEADER;
     ScmHashTable *sharedTable;  /* track shared structure.  can be NULL */
+    const ScmWriteControls *controls; /* saving writecontext->controls
+                                         for recursive call */
     int sharedCounter;          /* counter to emit #n= and #n# */
     int currentLevel;
 };

@@ -107,6 +107,7 @@ static void write_context_init(ScmWriteContext *ctx, int mode, int flags, int li
     if (SCM_WRITE_CASE(ctx) == 0) ctx->mode |= DEFAULT_CASE;
     ctx->flags = flags;
     ctx->limit = limit;
+    ctx->controls = NULL;
     if (limit > 0) ctx->flags |= WRITE_LIMITED;
 }
 
@@ -128,8 +129,16 @@ ScmWriteControls *Scm_MakeWriteControls(const ScmWriteControls *proto)
     return p;
 }
 
-ScmWriteControls* Scm_DefaultWriteControls(void)
+const ScmWriteControls *Scm_DefaultWriteControls(void)
 {
+    return defaultWriteControls;
+}
+
+const ScmWriteControls *Scm_GetWriteControls(ScmWriteContext *ctx,
+                                             ScmWriteState *st)
+{
+    if (ctx && ctx->controls) return ctx->controls;
+    if (st && st->controls) return st->controls;
     return defaultWriteControls;
 }
 
@@ -146,6 +155,7 @@ ScmWriteState *Scm_MakeWriteState(ScmWriteState *proto)
     z->sharedTable = NULL;
     z->sharedCounter = 0;
     z->currentLevel = 0;
+    z->controls = NULL;
     return z;
 }
 
@@ -392,7 +402,7 @@ static size_t write_char(ScmChar ch, ScmPort *port, ScmWriteContext *ctx)
  */
 ScmObj Scm__WritePrimitive(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
-    ScmWriteControls *wp = Scm_VMWriteControls(Scm_VM());
+    const ScmWriteControls *wp = Scm_GetWriteControls(ctx, port->writeState);
     
 #define CASE_ITAG_RET(obj, str)                 \
     case SCM_ITAG(obj):                         \
@@ -510,7 +520,7 @@ static void write_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
     ScmObj stack = SCM_NIL;
     ScmWriteState *st = port->writeState;
     ScmHashTable *ht = (st? st->sharedTable : NULL);
-    ScmWriteControls *wp = Scm_VMWriteControls(Scm_VM());
+    const ScmWriteControls *wp = Scm_GetWriteControls(ctx, st);
     int stack_depth = 0;        /* only used when !ht */
 
 #define PUSH(elt)                                       \
