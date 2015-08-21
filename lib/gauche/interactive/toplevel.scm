@@ -128,6 +128,14 @@
                ,(read-from-string obj))]
       [_ (usage)])))
 
+(define-toplevel-command history
+  "history\n\
+ Show REPL history."
+  (^[args]
+    (match args
+      [() `(,(with-module gauche *history))]
+      [_ (usage)])))
+
 (define-toplevel-command help
   "help [command]\n\
  Show the help message of the command.\n\
@@ -167,7 +175,15 @@
         (begin (sys-chdir dir) (sys-getcwd))
         (usage)))))
 
-       
-   
-    
 
+;; This can be better - to make it work on generic functions,
+;; show source location as well, etc.
+(define-toplevel-command s
+  "s procedure\n\
+ Show source code of the procedure if it's available."
+  (^[args]
+    (match args
+      [(word) `(or (,(with-module gauche source-code) ,(read-from-string word))
+                   (begin (print "No source code is available for: " ',word)
+                          (values)))]
+      [() (usage)])))
