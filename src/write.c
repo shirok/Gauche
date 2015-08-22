@@ -213,32 +213,42 @@ void Scm_WriteWithControls(ScmObj obj, ScmObj p, int mode,
     if (!SCM_OPORTP(p)) Scm_Error("output port required, but got %S", p);
 
     ScmPort *port = SCM_PORT(p);
-    ScmWriteContext ctx;
-    write_context_init(&ctx, mode, 0, 0);
     ScmVM *vm = Scm_VM();
 
     if (PORT_LOCK_OWNER_P(port, vm) && PORT_RECURSIVE_P(port)) {
-        /* Special treatment - if we're "display"-ing a string, we'll bypass
-           walk path even if we're in the middle of write/ss.  Using srfi-38
-           notation to show displayed strings doesn't make sense at all.
-         */
-        if (PORT_WALKER_P(port) &&
-            !((mode == SCM_WRITE_DISPLAY) && SCM_STRINGP(obj))) {
-            write_walk(obj, port);
+        /* We're in the recursive call, so we just recurse into write_walk
+           or write_rec, according to the phase.   NB: The controls passed
+           into the argument CTRL is ignored; the "root" control, passed
+           to the toplevel write API, will be used.  */
+        if (PORT_WALKER_P(port)) {
+            /* Special treatment - if we're "display"-ing a string, we'll
+               bypass walk path even if we're in the middle of write/ss.
+               Using srfi-38 notation to show displayed strings doesn't
+               make sense at all. */
+            if (!((mode == SCM_WRITE_DISPLAY) && SCM_STRINGP(obj))) {
+                write_walk(obj, port);
+            }
         } else {
+            ScmWriteContext ctx;
+            write_context_init(&ctx, mode, 0, 0);
             write_rec(obj, port, &ctx);
         }
-        return;
-    }
 
-    PORT_LOCK(port, vm);
-    if (WRITER_NEED_2PASS(&ctx)) {
-        PORT_SAFE_CALL(port, write_ss(obj, port, &ctx),
-                       cleanup_port_write_state(port));
     } else {
-        PORT_SAFE_CALL(port, write_rec(obj, port, &ctx), /*no cleanup*/);
+        /* We're in the toplevel call.*/
+        ScmWriteContext ctx;
+        write_context_init(&ctx, mode, 0, 0);
+        PORT_LOCK(port, vm);
+        if (WRITER_NEED_2PASS(&ctx)) {
+            ctx.controls = ctrl;
+            PORT_SAFE_CALL(port, write_ss(obj, port, &ctx),
+                           cleanup_port_write_state(port));
+        } else {
+            /* write-simple case.  CTRL is ignored. */
+            PORT_SAFE_CALL(port, write_rec(obj, port, &ctx), /*no cleanup*/);
+        }
+        PORT_UNLOCK(port);
     }
-    PORT_UNLOCK(port);
 }
 
 /*
@@ -754,6 +764,7 @@ static void write_ss(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
     if (SCM_WRITE_MODE(ctx)==SCM_WRITE_SHARED) port->flags |= SCM_PORT_WRITESS;
     ScmWriteState *s = Scm_MakeWriteState(NULL);
     s->sharedTable = SCM_HASH_TABLE(Scm_MakeHashTableSimple(SCM_HASH_EQ, 0));
+    s->controls = ctx->controls;
     port->writeState = s;
 
     write_walk(obj, port);
