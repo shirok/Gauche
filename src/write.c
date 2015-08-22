@@ -201,7 +201,7 @@ static void cleanup_port_write_state(ScmPort *port)
  */
 void Scm_Write(ScmObj obj, ScmObj p, int mode)
 {
-    Scm_WriteWithControls(obj, p, mode, Scm_DefaultWriteControls());
+    Scm_WriteWithControls(obj, p, mode, NULL);
 }
 
 /*
@@ -214,6 +214,7 @@ void Scm_WriteWithControls(ScmObj obj, ScmObj p, int mode,
 
     ScmPort *port = SCM_PORT(p);
     ScmVM *vm = Scm_VM();
+    if (ctrl == NULL) ctrl = Scm_DefaultWriteControls();
 
     if (PORT_LOCK_OWNER_P(port, vm) && PORT_RECURSIVE_P(port)) {
         /* We're in the recursive call, so we just recurse into write_walk

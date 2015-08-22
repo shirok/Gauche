@@ -1,6 +1,13 @@
+2015-08-21  Shiro Kawai  <shiro@acm.org>
+
+	* src/write.c (Scm_WriteWithControls): Added.  In retrospect, this
+	  should be named as Scm_Write(), for it's more generic.
+	* src/libio.scm (write, write-shared, display): Accept another optional
+	  argument for <write-controls>.
+
 2015-08-18  Shiro Kawai  <shiro@acm.org>
 
-	* src/libio.scm (Scm_WriteControls): Made it ScmObj.  We'll
+	* src/libio.scm (ScmWriteControls): Made it ScmObj.  We'll
 	  eventually drop global (dynamic) write control variables, so
 	  the tests are commented out.
 

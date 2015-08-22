@@ -627,24 +627,36 @@
 ;;; Output
 ;;;
 
+(inline-stub
+ (define-type <write-controls> "ScmWriteControls*" "write controls"
+   "SCM_WRITE_CONTROLS_P" "SCM_WRITE_CONTROLS" "")
+ )
+
 (select-module scheme)
 
-(define-cproc write (obj :optional (port::<output-port> (current-output-port)))
-  ::<void> (Scm_Write obj (SCM_OBJ port) SCM_WRITE_WRITE))
+(define-cproc write (obj :optional
+                         (port::<output-port> (current-output-port))
+                         (controls::<write-controls>? #f))
+  ::<void>
+  (Scm_WriteWithControls obj (SCM_OBJ port) SCM_WRITE_WRITE controls))
 
 (define-cproc write-simple (obj :optional (port::<output-port>
                                            (current-output-port)))
   ::<void>
   (Scm_Write obj (SCM_OBJ port) SCM_WRITE_SIMPLE))
 
-(define-cproc write-shared (obj :optional (port::<output-port>
-                                           (current-output-port)))
+(define-cproc write-shared (obj :optional
+                                (port::<output-port> (current-output-port))
+                                (controls::<write-controls>? #f))
   ::<void>
-  (Scm_Write obj (SCM_OBJ port) SCM_WRITE_SHARED))
+  (Scm_WriteWithControls obj (SCM_OBJ port) SCM_WRITE_SHARED controls))
 
 (define-cproc display
-  (obj :optional (port::<output-port> (current-output-port)))
-  ::<void> (Scm_Write obj (SCM_OBJ port) SCM_WRITE_DISPLAY))
+  (obj :optional
+       (port::<output-port> (current-output-port))
+       (controls::<write-controls>? #f))
+  ::<void>
+  (Scm_WriteWithControls obj (SCM_OBJ port) SCM_WRITE_DISPLAY controls))
 
 (define-cproc newline (:optional (port::<output-port> (current-output-port)))
   ::<void> (SCM_PUTC #\newline port))
@@ -740,10 +752,26 @@
  (define-cclass <write-controls>
    "ScmWriteControls*" "Scm_WriteControlsClass"
    ("Scm_TopClass")
-   ((print-length :type <int>     :c-name "printLength")
-    (print-level  :type <int>     :c-name "printLevel")
-    (print-base   :type <int>     :c-name "printBase")
-    (print-radix  :type <boolean> :c-name "printRadix"))
+   ((print-length :type <int>     :c-name "printLength"
+                  :getter "if (obj->printLength < 0) return SCM_FALSE; \
+                           else return SCM_MAKE_INT(obj->printLength);"
+                  :setter "if (SCM_INTP(value) && SCM_INT_VALUE(value) >= 0) \
+                             obj->printLength = SCM_INT_VALUE(value); \
+                           else obj->printLength = -1;")
+    (print-level  :type <int>     :c-name "printLevel"
+                  :getter "if (obj->printLevel < 0) return SCM_FALSE; \
+                           else return SCM_MAKE_INT(obj->printLevel);"
+                  :setter "if (SCM_INTP(value) && SCM_INT_VALUE(value) >= 0) \
+                             obj->printLevel = SCM_INT_VALUE(value); \
+                           else obj->printLevel = -1;")
+    (print-base   :type <int>     :c-name "printBase"
+                  :setter "if (SCM_INTP(value) && SCM_INT_VALUE(value) >= 2 \
+                               && SCM_INT_VALUE(value) <= 36) \
+                             obj->printBase = SCM_INT_VALUE(value); \
+                           else Scm_Error(\"print-base must be an integer \
+                                   between 2 and 36, but got: %S\", value);")
+    (print-radix  :type <boolean> :c-name "printRadix"
+                  :setter "obj->printRadix = !SCM_FALSEP(value);"))
    (allocator (c "write_controls_allocate")))
  ;; NB: Printer is defined in libobj.scm via write-object method
  )
