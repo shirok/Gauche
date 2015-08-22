@@ -79,6 +79,8 @@ SCM_EXTERN int Scm_WriteContextMode(const ScmWriteContext *ctx);
 SCM_EXTERN int Scm_WriteContextCase(const ScmWriteContext *ctx);
 
 SCM_EXTERN void Scm_Write(ScmObj obj, ScmObj port, int mode);
+SCM_EXTERN void Scm_WriteWithControls(ScmObj obj, ScmObj port, int mode,
+                                      const ScmWriteControls *ctrl);
 SCM_EXTERN int Scm_WriteCircular(ScmObj obj, ScmObj port, int mode, int width);
 SCM_EXTERN int Scm_WriteLimited(ScmObj obj, ScmObj port, int mode, int width);
 SCM_EXTERN void Scm_Format(ScmPort *port, ScmString *fmt, ScmObj args, int ss);

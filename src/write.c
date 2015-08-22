@@ -197,9 +197,18 @@ static void cleanup_port_write_state(ScmPort *port)
  */
 
 /*
- * Scm_Write - Standard Write.
+ * Scm_Write - Standard Write, convenience version.  Using default controls.
  */
 void Scm_Write(ScmObj obj, ScmObj p, int mode)
+{
+    Scm_WriteWithControls(obj, p, mode, Scm_DefaultWriteControls());
+}
+
+/*
+ * Scm_WriteWithControls - the general entry
+ */
+void Scm_WriteWithControls(ScmObj obj, ScmObj p, int mode,
+                           const ScmWriteControls *ctrl)
 {
     if (!SCM_OPORTP(p)) Scm_Error("output port required, but got %S", p);
 
