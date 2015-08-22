@@ -404,8 +404,7 @@
        [data2 (make-list 5 data)])
   (define (write-to-string/ctx obj . args)
     ($ write-to-string obj
-       (^x (write x (current-output-port)
-                  (apply make <write-controls> args)))))
+       (^x (write x (apply make <write-controls> args)))))
   
   (test* "print-length" '("(0 1 2 3 4)"
                           ("(0 1 2 3 4)"   "#(0 1 2 3 4)"   "#u8(0 1 2 3 4)")
@@ -470,31 +469,31 @@
            "(a (b # i) #(j # q) r)"
            "(a # # r)"
            "#")
-         (map (^n (write-to-string data (^x (write x (current-output-port)
-                                                   (make <write-controls>
-                                                     :print-level n)))))
+         (map (^n (write-to-string data (^x (write x (make <write-controls>
+                                                       :print-level n)
+                                                   (current-output-port)))))
               '(6 5 4 3 2 1 0))))
 
-;; ;; another example from CLHS
-;; (let* ([level-length '((0 1) (1 1) (1 2) (1 3) (1 4) 
-;;                        (2 1) (2 2) (2 3) (3 2) (3 3) (3 4))]
-;;        [data '(if (member x y) (+ (car x) 3) '(foo . #(a b c d "Baz")))])
-;;   (test* "print-level & print-length"
-;;          '("0 1 -- #"
-;;            "1 1 -- (if ...)"
-;;            "1 2 -- (if # ...)"
-;;            "1 3 -- (if # # ...)"
-;;            "1 4 -- (if # # #)"
-;;            "2 1 -- (if ...)"
-;;            "2 2 -- (if (member x ...) ...)"
-;;            "2 3 -- (if (member x y) (+ # 3) ...)"
-;;            "3 2 -- (if (member x ...) ...)"
-;;            "3 3 -- (if (member x y) (+ (car x) 3) ...)"
-;;            "3 4 -- (if (member x y) (+ (car x) 3) '(foo . #(a b c d ...)))")
-;;          (map (^z (parameterize ((print-level (car z))
-;;                                  (print-length (cadr z)))
-;;                     (format "~d ~d -- ~s" (car z) (cadr z) data)))
-;;               level-length)))
+;; another example from CLHS
+(let* ([level-length '((0 1) (1 1) (1 2) (1 3) (1 4) 
+                       (2 1) (2 2) (2 3) (3 2) (3 3) (3 4))]
+       [data '(if (member x y) (+ (car x) 3) '(foo . #(a b c d "Baz")))])
+  (test* "print-level & print-length"
+         '("0 1 -- #"
+           "1 1 -- (if ...)"
+           "1 2 -- (if # ...)"
+           "1 3 -- (if # # ...)"
+           "1 4 -- (if # # #)"
+           "2 1 -- (if ...)"
+           "2 2 -- (if (member x ...) ...)"
+           "2 3 -- (if (member x y) (+ # 3) ...)"
+           "3 2 -- (if (member x ...) ...)"
+           "3 3 -- (if (member x y) (+ (car x) 3) ...)"
+           "3 4 -- (if (member x y) (+ (car x) 3) '(foo . #(a b c d ...)))")
+         (map (^z (let1 c (make <write-controls>
+                            :print-level (car z) :print-length (cadr z))
+                    (format c "~d ~d -- ~s" (car z) (cadr z) data)))
+              level-length)))
 
 ;; print-level and aggregate other than plain vector
 (let ([data '(a #u8(1 2 3) (b #u16(1 2 3) #(c #u32(1 2 3))))])

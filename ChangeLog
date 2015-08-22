@@ -1,3 +1,10 @@
+2015-08-22  Shiro Kawai  <shiro@acm.org>
+
+	* src/libio.scm (write, write-shared, display): Allow flexible order
+	  of port and write-controls arguments.
+	* src/libfmt.scm (format): Allow write-controls to be passed as the
+	  argument.  (format [port/control1] [port/control2] fmtstr arg...).
+
 2015-08-21  Shiro Kawai  <shiro@acm.org>
 
 	* src/write.c (Scm_WriteWithControls): Added.  In retrospect, this

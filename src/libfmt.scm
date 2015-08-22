@@ -33,7 +33,8 @@
 
 (declare) ;; a dummy form to suppress generation of "sci" file
 
-(define-module gauche.format)
+(define-module gauche.format
+  (use util.match))
 (select-module gauche.format)
 
 ;; Parsing format string
@@ -227,7 +228,7 @@
 
 ;; Runtime
 ;; Formatters have canonical signature:
-;;   (Port, ArgPtr) -> ArgPtr
+;;   (ArgPtr, Port, Control) -> ArgPtr
 ;; ArgPtr is a structure to hold the argument list and the current position.
 
 ;; ArgPtr
@@ -288,11 +289,11 @@
 ;; TODO: strict check of invalid params/flags.
 
 (define (make-format-seq fmtstr formatters)
-  (^[port argptr] (dolist [f formatters] (f port argptr))))
+  (^[argptr port ctrl] (dolist [f formatters] (f argptr port ctrl))))
 
 ;; (with-format-params ((var default [check]) ...) body ...)
 ;; Implicitly refers 'params' and 'fmtstr'.
-;; Bounds 'port' and 'argptr' in body.
+;; Bounds 'port', 'argptr' and 'ctrl' in body.
 (define-macro (with-format-params binds . body)
   (define (gen-extract var default :optional (check #f))
     `(,var (if (eq? ,var 'empty) ,default ,var)))
@@ -319,17 +320,19 @@
        (let* ,binds2
          ,@checks
          (if (memq 'variable params)
-           (^[port argptr]
+           (^[argptr port ctrl]
              (let* ,vbinds
                ,@body))
-           (^[port argptr] ,@body))))))
+           (^[argptr port ctrl] ,@body))))))
            
 ;; ~S and ~A
-(define (make-format-expr fmtstr params flags print)
+(define (make-format-expr fmtstr params flags printer)
   (if (null? params)
-    (^[port argptr]
+    (^[argptr port ctrl]
       (let1 arg (fr-next-arg! fmtstr argptr)
-        (print arg port)))
+        (if ctrl
+          (printer arg port ctrl)
+          (printer arg port))))
     ($ with-format-params ([mincol 0]
                            [colinc 1]
                            [minpad 0]
@@ -340,7 +343,9 @@
              [arg (fr-next-arg! fmtstr argptr)])
          (when (and (> minpad 0) (has-@? flags))
            (dotimes [_ minpad] (write-char padchar sport)))
-         (print arg sport)
+         (if ctrl
+           (printer arg sport ctrl)
+           (printer arg sport))
          (when (and (> minpad 0) (not (has-@? flags)))
            (dotimes [_ minpad] (write-char padchar sport)))
          (let* ([s (get-output-string sport)]
@@ -363,7 +368,7 @@
 ;; ~D, ~B, ~O, ~X, ~nR
 (define (make-format-num fmtstr params flags radix upcase)
   (if (and (null? params) (no-flag? flags))
-    (^[port argptr]
+    (^[argptr port ctrl]
       (let1 arg (fr-next-arg! fmtstr argptr)
         (if (exact? arg)
           (display (number->string arg radix upcase) port)
@@ -411,7 +416,7 @@
 
 ;; ~R
 (define (make-format-r src flags upper)
-  (^[port argptr] (error "not implemented yet")))
+  (^[argptr port ctrl] (error "not implemented yet")))
            
 ;; ~*
 (define (make-format-jump fmtstr params flags)
@@ -424,26 +429,25 @@
 ;; Tree -> Formatter
 ;; src : source format string for error message
 (define (formatter-compile-rec src tree)
-  (cond [(string? tree) (^[p a] (display tree p))]
-        [(null? tree) (^[p a] #f)]
-        [else (case (car tree)
-                [(Seq) ($ make-format-seq src
-                          $ map (cut formatter-compile-rec src <>) (cdr tree))]
-                [(S)  (make-format-expr src (cddr tree) (cadr tree) write)]
-                [(A)  (make-format-expr src (cddr tree) (cadr tree) display)]
-                [(D)  (make-format-num src (cddr tree) (cadr tree) 10 #f)]
-                [(B)  (make-format-num src (cddr tree) (cadr tree) 2 #f)]
-                [(O)  (make-format-num src (cddr tree) (cadr tree) 8 #f)]
-                [(x)  (make-format-num src (cddr tree) (cadr tree) 16 #f)]
-                [(X)  (make-format-num src (cddr tree) (cadr tree) 16 #t)]
-                [(R r)
-                 (let ([params (cddr tree)] [upper (eq? (car tree) 'R)])
-                   (if (null? params)
-                     (make-format-r src (cadr tree) upper)
-                     (make-format-num src (cdr params) (cadr tree)
-                                      (car params) upper)))]
-                [(*)  (make-format-jump src (cddr tree) (cadr tree))]
-                [else (error "boo!")])]))
+  (match tree
+    [(? string?) (^[a p c] (display tree p))]
+    [(? null?)   (^[a p c] #f)]
+    [('Seq . rest) ($ make-format-seq src
+                      $ map (cut formatter-compile-rec src <>) rest)]
+    [('S fs . ps) (make-format-expr src ps fs write)]
+    [('A fs . ps) (make-format-expr src ps fs display)]
+    [('D fs . ps) (make-format-num src ps fs 10 #f)]
+    [('B fs . ps) (make-format-num src ps fs 2 #f)]
+    [('O fs . ps) (make-format-num src ps fs 8 #f)]
+    [('x fs . ps) (make-format-num src ps fs 16 #f)]
+    [('X fs . ps) (make-format-num src ps fs 16 #t)]
+    [((or 'R 'r) fs . ps)
+     (let ([upper (eq? (car tree) 'R)])
+       (if (null? ps)
+         (make-format-r src fs upper)
+         (make-format-num src (cdr ps) fs (car ps) upper)))]
+    [('* fs . ps) (make-format-jump src ps fs)]
+    [_ (error "boo!")]))
 
 ;; Toplevel compiler
 ;; Returns formatter procedure
@@ -451,41 +455,56 @@
 (define (formatter-compile fmtstr)
   (let1 fmt ($ formatter-compile-rec fmtstr $ formatter-parse
                $ formatter-lex fmtstr)
-    (^[port args]
+    (^[args port ctrl]
       (let1 argptr (fr-make-argptr args)
-        (fmt port argptr)
+        (fmt argptr port ctrl)
         (unless (fr-args-used? argptr)
           (errorf "Too many arguments given to format string ~s" fmtstr))))))
 
-(define (call-formatter shared? locking? formatter port args)
+(define (call-formatter shared? locking? formatter port ctrl args)
   (cond [((with-module gauche.internal %port-write-state) port)
          ;; We're in middle of shared writing.
          ;; TODO: If we're in the walk pass, all we need to do is to recurse
          ;; into arguments of aggregate types, so we can make this more
          ;; efficient than running the full formatter.
-         (formatter port args)]
+         (formatter args port ctrl)]
         [shared? ($ (with-module gauche.internal %with-2pass-setup) port
-                    formatter formatter port args)]
-        [locking? (with-port-locking port formatter port args)]
-        [else (formatter port args)]))
+                    formatter formatter args port ctrl)]
+        [locking? (with-port-locking port formatter args port ctrl)]
+        [else (formatter args port ctrl)]))
 
-(define (format-2 shared? out fmtstr args)
+(define (format-2 shared? out control fmtstr args)
   (let1 formatter (formatter-compile fmtstr)
     (case out
-      [(#t) (call-formatter shared? #t formatter (current-output-port) args)]
+      [(#t)
+       (call-formatter shared? #t formatter (current-output-port) control args)]
       [(#f) (let1 out (open-output-string)
-              (call-formatter shared? #f formatter out args)
+              (call-formatter shared? #f formatter out control args)
               (get-output-string out))]
-      [else (call-formatter shared? #t formatter out args)])))
+      [else (call-formatter shared? #t formatter out control args)])))
 
 ;; handle optional destination arg
-(define (format-1 shared? x args)
-  (cond [(string? x) (format-2 shared? #f x args)]
-        [(null? args) (error "format: too few arguments" (list x))]
-        [(not (string? (car args)))
-         (error "format: format string expected, but got" (car args))]
-        [else (format-2 shared? x (car args) (cdr args))]))
+(define (format-1 shared? args)
+  (let loop ([port 'unseen]
+             [control 'unseen]
+             [as args])
+    (cond [(null? as) (error "format: too few arguments" args)]
+          [(string? (car as))
+           (format-2 shared?
+                     (if (eq? port 'unseen) #f port)
+                     (if (eq? control 'unseen) #f control)
+                     (car as)
+                     (cdr as))]
+          [(or (port? (car as)) (boolean? (car as)))
+           (if (eq? port 'unseen)
+             (loop (car as) control (cdr as))
+             (error "format: multiple ports given" args))]
+          [(is-a? (car as) <write-controls>)
+           (if (eq? control 'unseen)
+             (loop port (car as) (cdr as))
+             (error "format: multiple controls given" args))]
+          [else (error "format: invalid argument" (car as))])))
 
 ;; API
-(define-in-module gauche (format x . args) (format-1 #f x args))
-(define-in-module gauche (format/ss x . args) (format-1 #t x args))
+(define-in-module gauche (format . args) (format-1 #f args))
+(define-in-module gauche (format/ss . args) (format-1 #t args))

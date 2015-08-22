@@ -630,33 +630,55 @@
 (inline-stub
  (define-type <write-controls> "ScmWriteControls*" "write controls"
    "SCM_WRITE_CONTROLS_P" "SCM_WRITE_CONTROLS" "")
- )
 
+ (define-cfn parse-write-optionals (opt1 opt2
+                                    pp::ScmPort**
+                                    pc::(const ScmWriteControls**))
+   ::void :static
+   (let* ([p::ScmPort* SCM_CUROUT]
+          [c::(const ScmWriteControls*) (Scm_DefaultWriteControls)])
+     (unless (SCM_UNBOUNDP opt1)
+       (cond [(SCM_PORTP opt1)
+              (set! p (SCM_PORT opt1))
+              (unless (SCM_UNBOUNDP opt2)
+                (if (SCM_WRITE_CONTROLS_P opt2)
+                  (set! c (SCM_WRITE_CONTROLS opt2))
+                  (Scm_Error "Expected write-controls, but got: %S" opt2)))]
+             [(SCM_WRITE_CONTROLS_P opt1)
+              (set! c (SCM_WRITE_CONTROLS opt1))
+              (unless (SCM_UNBOUNDP opt2)
+                (if (SCM_PORTP opt2)
+                  (set! p (SCM_PORT opt2))
+                  (Scm_Error "Expected port, but got: %S" opt2)))]
+             [else
+              (Scm_Error "Expected port or write-controls, but got: %S" opt1)]))
+     (set! (* pp) p)
+     (set! (* pc) c)))
+ )
 (select-module scheme)
 
-(define-cproc write (obj :optional
-                         (port::<output-port> (current-output-port))
-                         (controls::<write-controls>? #f))
+(define-cproc write (obj :optional port-or-control-1 port-or-control-2)
   ::<void>
-  (Scm_WriteWithControls obj (SCM_OBJ port) SCM_WRITE_WRITE controls))
+  (let* ([p::ScmPort*] [c::(const ScmWriteControls*)])
+    (parse-write-optionals port-or-control-1 port-or-control-2 (& p) (& c))
+    (Scm_WriteWithControls obj (SCM_OBJ p) SCM_WRITE_WRITE c)))
 
 (define-cproc write-simple (obj :optional (port::<output-port>
                                            (current-output-port)))
   ::<void>
   (Scm_Write obj (SCM_OBJ port) SCM_WRITE_SIMPLE))
 
-(define-cproc write-shared (obj :optional
-                                (port::<output-port> (current-output-port))
-                                (controls::<write-controls>? #f))
+(define-cproc write-shared (obj :optional port-or-control-1 port-or-control-2)
   ::<void>
-  (Scm_WriteWithControls obj (SCM_OBJ port) SCM_WRITE_SHARED controls))
+  (let* ([p::ScmPort*] [c::(const ScmWriteControls*)])
+    (parse-write-optionals port-or-control-1 port-or-control-2 (& p) (& c))
+    (Scm_WriteWithControls obj (SCM_OBJ p) SCM_WRITE_SHARED c)))
 
-(define-cproc display
-  (obj :optional
-       (port::<output-port> (current-output-port))
-       (controls::<write-controls>? #f))
+(define-cproc display (obj :optional port-or-control-1 port-or-control-2)
   ::<void>
-  (Scm_WriteWithControls obj (SCM_OBJ port) SCM_WRITE_DISPLAY controls))
+  (let* ([p::ScmPort*] [c::(const ScmWriteControls*)])
+    (parse-write-optionals port-or-control-1 port-or-control-2 (& p) (& c))
+    (Scm_WriteWithControls obj (SCM_OBJ p) SCM_WRITE_DISPLAY c)))
 
 (define-cproc newline (:optional (port::<output-port> (current-output-port)))
   ::<void> (SCM_PUTC #\newline port))
