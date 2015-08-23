@@ -35,6 +35,7 @@
   (use srfi-1)
   (use srfi-11)
   (use srfi-13)
+  (use srfi-14)
   (use srfi-42)
   (use gauche.sequence)
   (export make-csv-reader
@@ -95,17 +96,20 @@
     (start '())))
 
 ;; API
-(define (make-csv-writer separator :optional (newline "\n") (quote-char #\"))
+(define (make-csv-writer separator :optional
+                         (newline "\n") (quote-char #\")
+                         (special-char-set #[\;\s]))
   (let* ([quote-string (string quote-char)]
          [quote-escape (string-append quote-string quote-string)]
          [quote-rx (string->regexp (regexp-quote quote-string))]
          [separator-chars (if (string? separator)
                             (string->list separator)
                             (list separator))]
-         [special-chars
-          (apply char-set quote-char #\space #\newline #\return
-                 separator-chars)])
-
+         [newline-chars (if (string? newline)
+                          (string->list newline)
+                          (list newline))]
+         [special-chars (apply char-set-adjoin special-char-set quote-char
+                               (append newline-chars separator-chars))])
     (^[port fields]
       (define (write-a-field field)
         (if (string-index field special-chars)

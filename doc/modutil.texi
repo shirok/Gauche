@@ -18224,20 +18224,41 @@ If input reaches EOF, it returns EOF.
 @c COMMON
 @end defun
 
-@defun make-csv-writer separator :optional newline (quote-char #\")
+@defun make-csv-writer separator :optional newline (quote-char #\") special-char-set
 @c EN
 Returns a procedure with two arguments, output port and
 a list of fields.  When the procedure is called, it
 outputs a @var{separator}-separated fields with proper escapes,
-to the output port.   You can also specify the record delimiter
-string by @var{newline}; for example, you can pass @code{"\r\n"}
-to prepare a file to be read by Windows programs.
+to the output port.   Each field value must be a string.
+The separator argument can be a character or a string.
 @c JP
 出力ポートとフィールドのリストの2つの引数を取る手続きを返します。
 手続きが呼ばれると、@var{separator} で区切られたフィールドを
-正しくエスケープして出力ポートに出力します。レコードの区切り文字列を
-@var{newline} で指定することもできます。例えば、ファイルが Windows の
+正しくエスケープして出力ポートに出力します。各フィールドの値は文字列でなければなりません。
+@var{separator}は文字または文字列です。
+@c COMMON
+
+@c EN
+You can also specify the record delimiter
+string by @var{newline}; for example, you can pass @code{"\r\n"}
+to prepare a file to be read by Windows programs.
+@c JP
+レコードの区切り文字列を@var{newline} で指定することもできます。例えば、ファイルが Windows の
 プログラムでも読めるように、@code{"\r\n"} を渡すことができます。
+@c COMMON
+
+@c EN
+The output of field is quoted when it contains special characters---
+which automatically includes characters
+in @var{separator}, @var{quote-char} and @var{newline} argument,
+plus the characters in the char-set given to @var{special-char-set};
+its default is @code{#[;\s]}.
+@c JP
+フィールドの出力は、その中に特殊文字が含まれていた場合にクオートされます。
+@var{separator}, @var{quote-char}, @var{newline}に含まれる文字は
+自動的に特殊文字と認識されます。さらに
+@var{special-char-set}に文字セットを渡すと、それも特殊文字として扱われます。
+省略時は@code{#[;\s]}が使われます。
 @c COMMON
 @end defun
 

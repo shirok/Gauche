@@ -1,3 +1,9 @@
+2015-08-23  Shiro Kawai  <shiro@acm.org>
+
+	* lib/text/csv.scm (make-csv-writer): Add special-char-set argument
+	  to allow to include wider range of characters to cause the field
+	  quoted.
+
 2015-08-22  Shiro Kawai  <shiro@acm.org>
 
 	* src/libio.scm (write, write-shared, display): Allow flexible order
