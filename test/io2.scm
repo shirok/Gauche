@@ -509,4 +509,38 @@
                                                 :print-level n)))))
               '(4 3 2 1 0))))
 
+;; print-level and user-defined write method
+(define-class <foo> ()
+  ((content :init-keyword :content)))
+(define-method write-object ((obj <foo>) port)
+  (format port "#<foo ~s>" (~ obj'content)))
+(define-class <bar> ()
+  ((content :init-keyword :content)))
+(define-method write-object ((obj <bar>) port)
+  (display "#<bar " port)
+  (write (~ obj'content) port)
+  (display ">" port))
+
+(let ([data (list '(1 (2 (3 4)))
+                  (list 1
+                        (make <bar> :content
+                              (list 2 '(3 4))))
+                  (list 1
+                        (make <foo> :content
+                              (list 2 '(3 4))))
+                  (make <foo> :content (list '(2 (3 (4 5)))
+                                             (make <bar> :content
+                                                   '(2 (3 (4 5)))))))])
+  (test* "print-level via write-object"
+         '("((1 (2 (3 4))) (1 #<bar (2 (3 4))>) (1 #<foo (2 (3 4))>) #<foo ((2 (3 (4 5))) #<bar (2 (3 (4 5)))>)>)"
+           "((1 (2 (3 4))) (1 #<bar (2 (3 4))>) (1 #<foo (2 (3 4))>) #<foo ((2 (3 #)) #<bar (2 (3 #))>)>)"
+           "((1 (2 #)) (1 #<bar (2 #)>) (1 #<foo (2 #)>) #<foo ((2 #) #<bar (2 #)>)>)"
+           "((1 #) (1 #<bar #>) (1 #<foo #>) #<foo (# #<bar #>)>)"
+           "(# # # #<foo #>)"
+           "#")
+         (map (^n (write-to-string data
+                                   (^x (write x (make <write-controls>
+                                                  :print-level n)))))
+              '(5 4 3 2 1 0))))
+
 (test-end)
