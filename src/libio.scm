@@ -798,56 +798,24 @@
  ;; NB: Printer is defined in libobj.scm via write-object method
  )
 
-;; (select-module gauche)
+;; The :key and :rest combination is to catch invalid keyword error
+(define (make-write-controls :key print-length print-level
+                                  print-base print-radix
+                             :rest args)
+  (apply make <write-controls> args))
 
-;; (inline-stub
-;;  (define-cise-stmt handle-write-controls
-;;    ;; use "newval" unhygienically
-;;    [(_ target unbox box check msg)
-;;     `(let* ([vm::ScmVM* (Scm_VM)]
-;;             [oldval::int (-> vm writeControls ,target)])
-;;        (unless (SCM_UNBOUNDP newval)
-;;          (unless ,check
-;;            (Scm_Error ,msg newval))
-;;          (set! (-> vm writeControls ,target) (,unbox newval)))
-;;        ,(if box
-;;           `(return (,box oldval))
-;;           '(return oldval)))])
-;;  (define-cfn print-int-unbox (val) ::int :static
-;;    (if (SCM_INTP val)
-;;      (return (SCM_INT_VALUE val))
-;;      (return -1)))
-;;  (define-cfn print-int-box (rawval::int) :static
-;;    (if (< rawval 0)
-;;      (return SCM_FALSE)
-;;      (return (SCM_MAKE_INT rawval))))
-;;  )
-
-;; (define-cproc print-length (:optional newval)
-;;   (handle-write-controls printLength print-int-unbox print-int-box
-;;                          (or (SCM_FALSEP newval)
-;;                              (and (SCM_INTP newval)
-;;                                   (>= (SCM_INT_VALUE newval) 0)))
-;;                          "Small nonnegative integer or #f required, but got %S"))
-
-;; (define-cproc print-level (:optional newval)
-;;   (handle-write-controls printLevel print-int-unbox print-int-box
-;;                          (or (SCM_FALSEP newval)
-;;                              (and (SCM_INTP newval)
-;;                                   (>= (SCM_INT_VALUE newval) 0)))
-;;                          "Small nonnegative integer or #f required, but got %S"))
-
-;; (define-cproc print-base (:optional newval) ::<int>
-;;   (handle-write-controls printBase SCM_INT_VALUE #f
-;;                          (and (SCM_INTP newval)
-;;                               (>= (SCM_INT_VALUE newval) 2)
-;;                               (<= (SCM_INT_VALUE newval) 36))
-;;                          "Integer between 2 and 36 required, but got %S"))
-
-;; (define-cproc print-radix (:optional newval) ::<boolean>
-;;   (handle-write-controls printRadix SCM_BOOL_VALUE #f
-;;                          (SCM_BOOLP newval)
-;;                          "Boolean value required, but got %S"))
+(define (write-controls-copy wc :key print-length print-level
+                                     print-base print-radix)
+  (let-syntax [(select
+                (syntax-rules ()
+                  [(_ k) (if (undefined? k)
+                           (slot-ref wc 'k)
+                           k)]))]
+    (make <write-controls>
+      :print-length (select print-length)
+      :print-level  (select print-level)
+      :print-base   (select print-base)
+      :print-radix  (select print-radix))))
 
 ;;;
 ;;; With-something

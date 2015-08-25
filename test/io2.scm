@@ -404,7 +404,7 @@
        [data2 (make-list 5 data)])
   (define (write-to-string/ctx obj . args)
     ($ write-to-string obj
-       (^x (write x (apply make <write-controls> args)))))
+       (^x (write x (apply make-write-controls args)))))
   
   (test* "print-length" '("(0 1 2 3 4)"
                           ("(0 1 2 3 4)"   "#(0 1 2 3 4)"   "#u8(0 1 2 3 4)")
@@ -456,8 +456,8 @@
            "(1 (2 (3 (4 (5 (6))))))"
            "(1 (2 (3 (4 (5 (6))))))")
          (map (^n (write-to-string data (^x (write x (current-output-port)
-                                                   (make <write-controls>
-                                                     :print-level n)))))
+                                                   (make-write-controls
+                                                    :print-level n)))))
               (iota 8))))
          
 (let* ([data '(a (b (c (d (e) (f) g) h) i) #(j (k #(l #(m) (n) o) p) q) r)])
@@ -469,8 +469,8 @@
            "(a (b # i) #(j # q) r)"
            "(a # # r)"
            "#")
-         (map (^n (write-to-string data (^x (write x (make <write-controls>
-                                                       :print-level n)
+         (map (^n (write-to-string data (^x (write x (make-write-controls
+                                                      :print-level n)
                                                    (current-output-port)))))
               '(6 5 4 3 2 1 0))))
 
@@ -490,8 +490,8 @@
            "3 2 -- (if (member x ...) ...)"
            "3 3 -- (if (member x y) (+ (car x) 3) ...)"
            "3 4 -- (if (member x y) (+ (car x) 3) '(foo . #(a b c d ...)))")
-         (map (^z (let1 c (make <write-controls>
-                            :print-level (car z) :print-length (cadr z))
+         (map (^z (let1 c (make-write-controls
+                           :print-level (car z) :print-length (cadr z))
                     (format c "~d ~d -- ~s" (car z) (cadr z) data)))
               level-length)))
 
@@ -505,8 +505,8 @@
            "#")
          (map (^n (write-to-string data
                                    (^x (write x (current-output-port)
-                                              (make <write-controls>
-                                                :print-level n)))))
+                                              (make-write-controls
+                                               :print-level n)))))
               '(4 3 2 1 0))))
 
 ;; print-level and user-defined write method
@@ -539,8 +539,8 @@
            "(# # # #<foo #>)"
            "#")
          (map (^n (write-to-string data
-                                   (^x (write x (make <write-controls>
-                                                  :print-level n)))))
+                                   (^x (write x (make-write-controls
+                                                 :print-level n)))))
               '(5 4 3 2 1 0))))
 
 (test-end)
