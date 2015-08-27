@@ -247,13 +247,17 @@
              (null? (cddr expr)))
       (handle-toplevel-command (cadr expr) (read-line))
       (begin
-        (%skip-trailing-ws)
+        (unless (eof-object? expr)
+          (%skip-trailing-ws))
         expr))))
 
 (define (%skip-trailing-ws)
   (if (byte-ready?)
     (let1 b (peek-byte)
       (cond [(memv b '(9 32)) (read-byte) (%skip-trailing-ws)]
+            [(eqv? b 13)
+             (read-byte)
+             (when (and (byte-ready?) (eqv? (peek-byte) 10)) (read-byte))]
             [(eqv? b 10) (read-byte)]
             [else #t]))
     #t))
