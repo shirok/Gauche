@@ -3642,6 +3642,27 @@ if none of the previous feature requirement is fulfilled.
 @c COMMON
 
 @c EN
+If there's neither a satisfying clause nor @code{else} clause,
+@code{cond-expand} form throws an error.  It is to detect the case early
+that the platform doesn't have required features.   If the feature
+you're testing is optional, that is, your program works without the
+feature as well, add empty @code{else} clause as follows.
+@c JP
+条件を満たす節も@code{else}節も無かった場合、@code{cond-expand}は
+エラーを通知します。この仕様は、
+必要な機能を欠いている実行環境を早めに検出するためです。
+もしチェックする機能がオプショナル、つまりそれが無くてもプログラムの実行自体は
+可能であるというものであるなら、最後に空の@code{else}節を忘れないようにしてください。
+@c COMMON
+
+@example
+(cond-expand
+  [feature expr]  ; some optional feature
+  [else])
+@end example
+
+
+@c EN
 @var{feature-identifier} is a symbol that indicates a feature.
 If such a feature is supported in the current platform, it satisfies the
 @var{feature-requirement}.  You can do boolean combination
