@@ -17008,10 +17008,31 @@ an output port, and when omitted, the current output port is assumed.
 省略された場合が現在の出力ポートが使われます。
 @c COMMON
 
-@defun write obj :optional port
-@defunx write-shared obj :optional port
-@defunx write-simple obj :optional port
-[R7RS]
+@c EN
+Some procedures take @var{port/controls} argument, which can be either
+an output port or @code{<write-controls>} object.  For example, @code{write}
+takes up to two such optional arguments; that is, you can call it
+as @code{(write obj)}, @code{(write obj port)}, 
+@code{(write obj contorls)}, @code{(write obj port controls)}
+or @code{(write obj controls port)}.  When omitted, the port is assumed
+to be the current output port, and the controls is assumed to be the default
+controls.
+@c JP
+いくつかの手続きは@var{port/controls}引数を取ります。これは、出力ポート
+もしくは@code{<write-controls>}オブジェクトでなければなりません。例えば
+@code{write}は二つまでそういった引数を取ります。すなわち、@code{write}は
+以下のいずれの形式でも呼び出すことができます:
+@code{(write obj)}、@code{(write obj port)}、
+@code{(write obj contorls)}、@code{(write obj port controls)}、
+@code{(write obj controls port)}。
+省略された場合、ポートは現在の出力ポート、出力制御についてはデフォルトの出力制御が
+使われます。
+@c COMMON
+
+@defun write obj :optional port/controls1 port/controls2
+@defunx write-shared obj :optional port/controls1 port/controls2
+@defunx write-simple obj :optional port/controls1 port/controls2
+[R7RS+]
 @c EN
 The @code{write}-family procedures are used to write an
 external representation of Scheme object,
@@ -17127,7 +17148,7 @@ srfi-38によって@code{write-with-shared-structure}と@code{write/ss}が
 @end defun
 
 
-@defun display obj :optional port
+@defun display obj :optional port/controls1 port/controls2
 [R7RS]
 @c EN
 Produces a human-friendly representation of an object @var{obj} 
@@ -17198,7 +17219,10 @@ This is equivalent to @code{(write-char #\newline port)},
 
 
 
-@defun format port string arg @dots{}
+@defun format dest controls string arg @dots{}
+@defunx format controls dest string arg @dots{}
+@defunx format dest string arg @dots{}
+@defunx format controls string arg @dots{}
 @defunx format string arg @dots{}
 [SRFI-28+]
 @c EN
@@ -17214,19 +17238,39 @@ Basic format strings (@ref{srfi-28,[SRFI-28],SRFI-28}).
 @c COMMON
 
 @c EN
-@var{port} specifies the destination; if it is an output port, the
+The @var{dest} argument specifies the destination; if it is an output port, the
 formatted result is written to it; if it is @code{#t},
 the result is written to the current output port;
 if it is @code{#f}, the formatted result is returned as a string.
-@var{Port} can be omitted, as SRFI-28 @code{format};
-it has the same effects as giving @code{#f} to the @var{port}.
+@var{Dest} can be omitted, as SRFI-28 @code{format};
+it has the same effects as giving @code{#f} to the @var{dest}.
 @c JP
-@var{port}は出力先を指定します。それが出力ポートであれば、フォーマットされた
+@var{dest}引数は出力先を指定します。それが出力ポートであれば、フォーマットされた
 結果はそのポートに書き出されます。@var{port}が@code{#t}であれば、結果は
 現在の出力ポートに書き出されます。@var{port}が@code{#f}であれば、結果は
 文字列として@code{format}から返されます。
-@var{port}は省略することもできます。その場合は、@code{port}に@code{#f}
+@var{dest}は省略することもできます。その場合は、@code{dest}に@code{#f}
 を指定したのと同じ動作をします(SRFI-28の@code{format})。
+@c COMMON
+
+@c EN
+The @var{controls} argument is @code{<write-controls>} object
+(@xref{Output controls}), which affects the output of @code{~s} and
+@code{~a}.  This is Gauche's extension.
+@c JP
+@var{controls}引数は@code{<write-controls>}オブジェクトで、
+@code{~s}と@code{~a}の出力に影響を与えます
+(@ref{Output controls}参照)。これはGauche独自の拡張です。
+@c COMMON
+
+@c EN
+(The unusual function signature of @code{format}
+is for the convenience; both @var{dest}
+and @var{controls} are optional and they can appear in either order.)
+@c JP
+(@code{format}の関数シグネチャはちょっと変わっていますが、
+これは便利さを優先したためです。@var{port}と@var{controls}はどちらも省略可能で、
+またどの順序でも指定できます。)
 @c COMMON
 
 @c EN
