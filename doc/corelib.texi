@@ -16996,6 +16996,11 @@ If keyword arguments are given, those values override the
 original values.
 @end defun
 
+Note: The high-level output procedures can be recursively called
+via @code{write-object} method.  In that case, the write controls
+of the root output call will be automatically inherited to the
+recursive output calls to the same port.
+
 @node Object output, Formatting output, Output controls, Output
 @subsubsection Object output
 @c NODE オブジェクトの出力
