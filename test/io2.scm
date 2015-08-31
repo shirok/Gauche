@@ -543,4 +543,27 @@
                                                  :print-level n)))))
               '(5 4 3 2 1 0))))
 
+(define-class <baz> ()
+  ((content :init-keyword :content)))
+(define *baz-log* #f)
+(define-method write-object ((obj <baz>) port)
+  (display "#<baz " port)
+  ;; don't do this in real code; this is only for testing
+  (let1 wc (make-write-controls :print-base 16)
+    (write (~ obj'content) wc port)
+    (unless ((with-module gauche.internal %port-walking?) port)
+      (write (~ obj'content) wc *baz-log*)))
+  (display ">" port))
+
+(let ([data (list 10 20 (make <baz> :content '(30 40 50)))])
+  (test* "recursive write, control overrides"
+         '("(101 202 #<baz (1010 1111 1212)>)"
+           "(1e 28 32)")
+         (let ([p1 (open-output-string)]
+               [p2 (open-output-string)])
+           (set! *baz-log* p2)
+           (write data p1 (make-write-controls :print-base 3))
+           (list (get-output-string p1)
+                 (get-output-string p2)))))
+  
 (test-end)
