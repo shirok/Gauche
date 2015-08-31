@@ -106,7 +106,7 @@ static int vport_getb(ScmPort *p)
                to pushback multiple bytes. */
             Scm_UngetbUnsafe(buf[i], p);
         }
-        return buf[0];
+        return (unsigned char)buf[0];
     } else {
         ScmObj b = Scm_ApplyRec(data->getb_proc, SCM_NIL);
         if (!SCM_INTP(b)) return EOF;
