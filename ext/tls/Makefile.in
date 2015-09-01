@@ -29,11 +29,13 @@ AXTLS_OBJECTS = axTLS/ssl/asn1.$(OBJEXT)		\
 		axTLS/crypto/bigint.$(OBJEXT)		\
 		axTLS/crypto/crypto_misc.$(OBJEXT)	\
 		axTLS/crypto/hmac.$(OBJEXT)		\
-		axTLS/crypto/md2.$(OBJEXT)		\
 		axTLS/crypto/md5.$(OBJEXT)		\
 		axTLS/crypto/rc4.$(OBJEXT)		\
 		axTLS/crypto/rsa.$(OBJEXT)		\
-		axTLS/crypto/sha1.$(OBJEXT)
+		axTLS/crypto/sha1.$(OBJEXT)             \
+		axTLS/crypto/sha256.$(OBJEXT)           \
+		axTLS/crypto/sha384.$(OBJEXT)           \
+		axTLS/crypto/sha512.$(OBJEXT)
 
 @GAUCHE_TLS_SWITCH_AXTLS@EXTRA_OBJECTS = $(AXTLS_OBJECTS)
 @GAUCHE_TLS_SWITCH_NONE@EXTRA_OBJECTS =
@@ -75,7 +77,7 @@ $(SSLTEST): $(SSLTEST_OBJECTS) $(AXTLS_OBJECTS)
 # The 'system' macro hack is to suppress "ignoring result" warning
 $(SSLTEST_GENERATED) : axTLS/ssl/test/ssltest.c
 	rm -f $(SSLTEST_GENERATED)
-	@echo "void safe_system(const char*);" > $(SSLTEST_GENERATED)
+	@echo "int safe_system(const char*);" > $(SSLTEST_GENERATED)
 	@sed -e "s@\.\./ssl/@../../$(srcdir)/axTLS/ssl/@g" \
              -e "s/system/safe_system/g" \
              -e "s@openssl @sh ../../$(srcdir)/kick_openssl @g" \

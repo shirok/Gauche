@@ -1,5 +1,5 @@
-*** /home/shiro/src/axtls-code/ssl/tls1.h	Mon Oct 27 00:30:33 2014
---- axTLS/ssl/tls1.h	Sat Nov  8 20:06:21 2014
+*** a/axTLS/ssl/tls1.h	Wed Apr 29 19:41:49 2015
+--- b/axTLS/ssl/tls1.h	Mon Aug 31 17:24:22 2015
 ***************
 *** 41,47 ****
   #endif
@@ -17,10 +17,10 @@
   #include "os_int.h"
   #include "crypto.h"
   #include "crypto_misc.h"
-*** /home/shiro/src/axtls-code/ssl/test/ssltest.c	Fri Oct 31 00:47:35 2014
---- axTLS/ssl/test/ssltest.c	Sat Nov  8 20:08:44 2014
+*** a/axTLS/ssl/test/ssltest.c	Mon Mar  9 16:53:32 2015
+--- b/axTLS/ssl/test/ssltest.c	Mon Aug 31 17:26:51 2015
 ***************
-*** 758,776 ****
+*** 929,947 ****
   static int client_socket_init(uint16_t port)
   {
       struct sockaddr_in address;
@@ -40,7 +40,7 @@
       return client_fd;
   }
   
---- 758,780 ----
+--- 929,951 ----
   static int client_socket_init(uint16_t port)
   {
       struct sockaddr_in address;
@@ -65,8 +65,8 @@
   }
   
 ***************
-*** 1261,1266 ****
---- 1265,1271 ----
+*** 1432,1437 ****
+--- 1436,1442 ----
                   NULL, "abcd", DEFAULT_SVR_OPTION)))
           goto cleanup;
   
@@ -75,8 +75,8 @@
        * GNUTLS
        */
 ***************
-*** 1270,1275 ****
---- 1275,1281 ----
+*** 1441,1446 ****
+--- 1446,1452 ----
                       "../ssl/test/axTLS.key_1024",
                       NULL, NULL, DEFAULT_SVR_OPTION)))
           goto cleanup;
@@ -85,7 +85,7 @@
   
   cleanup:
 ***************
-*** 1537,1543 ****
+*** 1708,1714 ****
       if ((ret = SSL_client_test("Client renegotiation", 
                       &ssl_ctx, NULL, &sess_resume, 
                       DEFAULT_CLNT_OPTION, NULL, NULL, NULL)))
@@ -93,7 +93,7 @@
       sess_resume.do_reneg = 0;
   
       sess_resume.stop_server = 1;
---- 1543,1551 ----
+--- 1714,1722 ----
       if ((ret = SSL_client_test("Client renegotiation", 
                       &ssl_ctx, NULL, &sess_resume, 
                       DEFAULT_CLNT_OPTION, NULL, NULL, NULL)))
@@ -104,7 +104,7 @@
   
       sess_resume.stop_server = 1;
 ***************
-*** 1632,1644 ****
+*** 1803,1815 ****
   
       printf("SSL client test \"Invalid certificate type\" passed\n");
   
@@ -118,7 +118,7 @@
       ret = 0;
   
   cleanup:
---- 1640,1653 ----
+--- 1811,1824 ----
   
       printf("SSL client test \"Invalid certificate type\" passed\n");
   
@@ -134,8 +134,8 @@
   
   cleanup:
 ***************
-*** 2121,2126 ****
---- 2130,2139 ----
+*** 2297,2302 ****
+--- 2306,2315 ----
       int ret = 1;
       BI_CTX *bi_ctx;
       int fd;
@@ -147,8 +147,8 @@
   #ifdef WIN32
       WSADATA wsaData;
 ***************
-*** 2134,2139 ****
---- 2147,2158 ----
+*** 2310,2315 ****
+--- 2323,2334 ----
       dup2(fd, 2);
   #endif
   
@@ -162,10 +162,10 @@
   #if defined CONFIG_SSL_GENERATE_X509_CERT
       printf("Error: Must compile with default key/certificates\n");
 ***************
-*** 2215,2220 ****
---- 2234,2243 ----
+*** 2412,2417 ****
+--- 2431,2440 ----
   
-      system("sh ../ssl/test/killopenssl.sh");
+      SYSTEM("sh ../ssl/test/killopenssl.sh");
   
 +     /*<SK>*/
 +     if (have_openssl_p) {
@@ -175,20 +175,20 @@
           goto cleanup;
   
 ***************
-*** 2226,2231 ****
---- 2249,2258 ----
+*** 2423,2428 ****
+--- 2446,2455 ----
   
-      system("sh ../ssl/test/killopenssl.sh");
+      SYSTEM("sh ../ssl/test/killopenssl.sh");
   
-+     /*<SK>*/
-+     } /*have_openssl_p*/
-+     /*</SK>*/
-+ 
-      //if (header_issue())
-      //{
-      //    printf("Header tests failed\n"); TTY_FLUSH();
-*** /home/shiro/src/axtls-code/ssl/test/killopenssl.sh	Mon Oct 27 00:30:32 2014
---- axTLS/ssl/test/killopenssl.sh	Sat Nov  8 20:06:29 2014
++      /*<SK>*/
++      } /*have_openssl_p*/
++      /*</SK>*/
++  
+  //    if (header_issue())
+  //    {
+  //        printf("Header tests failed\n"); TTY_FLUSH();
+*** a/axTLS/ssl/test/killopenssl.sh	Mon Oct 27 00:30:32 2014
+--- b/axTLS/ssl/test/killopenssl.sh	Mon Aug 31 17:24:22 2015
 ***************
 *** 1,2 ****
   #!/bin/sh
@@ -197,8 +197,8 @@
   #!/bin/sh
 ! awk '{print $1}' "../ssl/openssl.pid" | xargs kill -9
 ! rm -f ../ssl/openssl.pid
-*** /home/shiro/src/axtls-code/ssl/test/killgnutls.sh	Mon Oct 27 00:30:32 2014
---- axTLS/ssl/test/killgnutls.sh	Sat Nov  8 20:06:29 2014
+*** a/axTLS/ssl/test/killgnutls.sh	Mon Oct 27 00:30:32 2014
+--- b/axTLS/ssl/test/killgnutls.sh	Mon Aug 31 17:24:22 2015
 ***************
 *** 1,2 ****
   #!/bin/sh
@@ -206,11 +206,11 @@
 --- 1,2 ----
   #!/bin/sh
 ! #ps -ef|grep gnutls-serv | /usr/bin/awk '{print $2}' |xargs kill -9
-*** /home/shiro/src/axtls-code/ssl/os_port.h	Mon Oct 27 00:30:33 2014
---- axTLS/ssl/os_port.h	Sat Nov  8 20:06:29 2014
+*** a/axTLS/ssl/os_port.h	Wed Apr 29 19:53:33 2015
+--- b/axTLS/ssl/os_port.h	Mon Aug 31 17:24:22 2015
 ***************
-*** 59,64 ****
---- 59,66 ----
+*** 60,65 ****
+--- 60,67 ----
   
   #ifdef WIN32
   
@@ -220,8 +220,8 @@
   #if defined(_WIN32_WCE)
   #include <basetsd.h>
 ***************
-*** 118,125 ****
---- 120,133 ----
+*** 119,126 ****
+--- 121,134 ----
   typedef int socklen_t;
   
   EXP_FUNC void STDCALL gettimeofday(struct timeval* t,void* timezone);
@@ -236,8 +236,8 @@
   
   #else   /* Not Win32 */
   
-*** /home/shiro/src/axtls-code/ssl/os_port.c	Mon Oct 27 00:30:33 2014
---- axTLS/ssl/os_port.c	Sat Nov  8 20:06:29 2014
+*** a/axTLS/ssl/os_port.c	Mon Oct 27 00:30:33 2014
+--- b/axTLS/ssl/os_port.c	Mon Aug 31 17:24:22 2015
 ***************
 *** 56,61 ****
 --- 56,62 ----
@@ -258,8 +258,8 @@
   #endif
   
   #undef malloc
-*** /home/shiro/src/axtls-code/crypto/os_int.h	Mon Oct 27 00:30:28 2014
---- axTLS/crypto/os_int.h	Sat Nov  8 20:06:34 2014
+*** a/axTLS/crypto/os_int.h	Sun Mar  8 18:32:51 2015
+--- b/axTLS/crypto/os_int.h	Mon Aug 31 17:24:22 2015
 ***************
 *** 41,47 ****
   extern "C" {
@@ -277,8 +277,8 @@
   typedef UINT8 uint8_t;
   typedef INT8 int8_t;
   typedef UINT16 uint16_t;
-*** /home/shiro/src/axtls-code/crypto/crypto_misc.c	Mon Oct 27 00:30:29 2014
---- axTLS/crypto/crypto_misc.c	Sat Nov  8 20:06:34 2014
+*** a/axTLS/crypto/crypto_misc.c	Mon Mar  9 17:06:08 2015
+--- b/axTLS/crypto/crypto_misc.c	Mon Aug 31 17:24:22 2015
 ***************
 *** 48,54 ****
   static HCRYPTPROV gCryptProv;
@@ -296,27 +296,20 @@
   /* change to processor registers as appropriate */
   #define ENTROPY_POOL_SIZE 32
   #define ENTROPY_COUNTER1 ((((uint64_t)tv.tv_sec)<<32) | tv.tv_usec)
-*** /home/shiro/src/axtls-code/crypto/crypto.h	Mon Oct 27 00:30:29 2014
---- axTLS/crypto/crypto.h	Sat Nov  8 20:06:34 2014
+*** a/axTLS/crypto/crypto.h	Wed Apr 29 19:41:49 2015
+--- b/axTLS/crypto/crypto.h	Mon Aug 31 17:49:48 2015
 ***************
-*** 39,45 ****
-  extern "C" {
-  #endif
-  
-! #include "config.h"
-  #include "bigint_impl.h"
-  #include "bigint.h"
-  
+*** 39,44 ****
 --- 39,45 ----
   extern "C" {
   #endif
   
-! #include "../config/config.h"
++ #include "../config/config.h"
   #include "bigint_impl.h"
   #include "bigint.h"
   
-*** /home/shiro/src/axtls-code/crypto/bigint_impl.h	Mon Oct 27 00:30:28 2014
---- axTLS/crypto/bigint_impl.h	Sat Nov  8 20:06:34 2014
+*** a/axTLS/crypto/bigint_impl.h	Mon Oct 27 00:30:28 2014
+--- b/axTLS/crypto/bigint_impl.h	Mon Aug 31 17:24:22 2015
 ***************
 *** 61,67 ****
   typedef uint32_t long_comp;     /**< A double precision component. */
@@ -334,8 +327,8 @@
   #define COMP_RADIX          4294967296i64         
   #define COMP_MAX            0xFFFFFFFFFFFFFFFFui64
   #else
-*** /home/shiro/src/axtls-code/config/config.h	Wed Dec 31 14:00:00 1969
---- axTLS/config/config.h	Sat Nov  8 20:10:24 2014
+*** a/axTLS/config/config.h	Wed Dec 31 14:00:00 1969
+--- b/axTLS/config/config.h	Mon Aug 31 17:24:22 2015
 ***************
 *** 0 ****
 --- 1,143 ----

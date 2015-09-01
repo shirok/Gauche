@@ -388,7 +388,7 @@ error:
  */
 int add_cert_auth(SSL_CTX *ssl_ctx, const uint8_t *buf, int len)
 {
-    int ret = SSL_OK; /* ignore errors for now */
+    int ret = X509_OK; /* ignore errors for now */
     int i = 0;
     CA_CERT_CTX *ca_cert_ctx;
 
@@ -410,9 +410,9 @@ int add_cert_auth(SSL_CTX *ssl_ctx, const uint8_t *buf, int len)
                     "compile-time configuration required\n", 
                     CONFIG_X509_MAX_CA_CERTS);
 #endif
+            ret = X509_MAX_CERTS;
             break;
         }
-
 
         /* ignore the return code */
         if (x509_new(buf, &offset, &ca_cert_ctx->cert[i]) == X509_OK)
@@ -1075,7 +1075,9 @@ int send_packet(SSL *ssl, uint8_t protocol, const uint8_t *in, int length)
             uint8_t iv_size = ssl->cipher_info->iv_size;
             uint8_t *t_buf = alloca(msg_length + iv_size);
             memcpy(t_buf + iv_size, ssl->bm_data, msg_length);
-            get_random(iv_size, t_buf);
+            if (get_random(iv_size, t_buf) < 0)
+                return SSL_NOT_OK;
+
             msg_length += iv_size;
             memcpy(ssl->bm_data, t_buf, msg_length);
         }
@@ -1346,13 +1348,14 @@ int basic_read(SSL *ssl, uint8_t **in_data)
             break;
 
         case PT_APP_PROTOCOL_DATA:
-            if (in_data)
+            if (in_data && ssl->hs_status == SSL_OK)
             {
                 *in_data = buf;   /* point to the work buffer */
                 (*in_data)[read_len] = 0;  /* null terminate just in case */
+                ret = read_len;
             }
-
-            ret = read_len;
+            else
+                ret = SSL_ERROR_INVALID_PROT_MSG;
             break;
 
         case PT_ALERT_PROTOCOL:

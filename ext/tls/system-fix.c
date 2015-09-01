@@ -6,14 +6,11 @@
  *
  * During the build, we preprocess ssltest.c to generate ssltest.mod.c,
  * and this file is included in the latter.
- *
- * Note that our system() doesn't return a value; ssltest.c doesn't check
- * the return value anyway.
  */
 
 #include <errno.h>
 
-void safe_system(const char *commands)
+int safe_system(const char *commands)
 {
 #if !defined(WIN32)
     pid_t pid;
@@ -28,12 +25,14 @@ void safe_system(const char *commands)
         if (waitpid(pid, &status, 0) < 0) {
             fprintf(stdout, "waitpid failed on pid %d (%s)\n", pid,
                     strerror(errno));
-            return;
+            return -1;
         }
         if (status != 0) {
             fprintf(stdout, "process exit with %d (command: %s)\n",
                     status, commands);
+            return -1;
         }
+        return 0;
     }
 #else  /*WIN32*/
     fprintf(stdout, "system: executing (%s)\n", commands);
@@ -42,6 +41,7 @@ void safe_system(const char *commands)
     if (system(commands)) do {} while (0);
     /* This is needed to give time for kick_openssl to invoke openssl. */
     Sleep(200);
+    return 0;
 #endif /*WIN32*/
 }
 

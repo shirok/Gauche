@@ -8,13 +8,15 @@ Suppose $(AXTLS) as the new axTLS source tree.
    $(AXTLS)/ssl/
    $(AXTLS)/crypto/
 
-(2) Apply the patch axtls.diff.  You man need to tweak some
+(2)  mkdir -p $(AXTLS)/config
+
+(3) Apply the patch axtls.diff.  You man need to tweak some
     files (esp. axTLS/config/config.h)
 
-     patch -p0 < axtls.diff
+     patch -p1 < axtls.diff
 
-(3) Compile and run tests.  Tweak the source if needed.
+(4) Compile and run tests.  Tweak the source if needed.
 
-(4) Regenerate axtls.diff by the following command:
+(5) Regenerate axtls.diff by the following command:
 
      gosh ./axtls-diff.scm $(AXTLS) > axtls.diff

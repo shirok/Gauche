@@ -1,3 +1,7 @@
+2015-08-31  Shiro Kawai  <shiro@acm.org>
+
+	* ext/tls: Upgraded to axTLS-1.5.3.
+
 2015-08-23  Shiro Kawai  <shiro@acm.org>
 
 	* lib/text/csv.scm (make-csv-writer): Add special-char-set argument
