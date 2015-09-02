@@ -6044,6 +6044,7 @@ for the compatibility.
 @subsubheading Auxiliary comparator constructors
 
 @defun make-inexact-real-comparator epsilon rounding nan-handling
+[SRFI-114]
 Returns a comparator for inexact real numbers, taking into
 account of errors and NaNs.
 
@@ -6101,6 +6102,7 @@ slightly smaller than @code{15/100}, and rounding with epsilon
 @defun make-list-comparator element-comparator
 @defunx make-vector-comparator element-comparator
 @defunx make-bytevector-comparator element-comparator
+[SRFI-114]
 Returns a new comparator that compares lists, vectors and
 bytevectors element-wise using @var{element-comparator},
 respectively.  These are more general versions of
@@ -6119,6 +6121,7 @@ so @code{#(1 3)} comes before @code{#(1 2 3)}.
 @end defun
 
 @defun make-listwise-comparator type-test element-comparator empty? head tail
+[SRFI-114]
 More general version of @code{make-list-comparator}.
 Returns a comparator that compares structures which can be
 traversed using three procedures, @var{empty?}, @var{head} and @var{tail}.
@@ -6151,6 +6154,7 @@ of two lazy streams (@xref{Stream library}).
 @end defun
 
 @defun make-vectorwise-comparator type-test element-comparator length ref
+[SRFI-114]
 More general version of @code{make-vector-comparator}.
 Returns a comparator that compares structures which can be
 traversed using two procedures, @var{length} and @var{ref}.
@@ -6174,11 +6178,13 @@ That is, the following equivalence holds:
 @end defun
 
 @defun make-pair-comparator car-comparator cdr-comparator
+[SRFI-114]
 Creates a comparator that compares pairs, with their cars
 by @var{car-comparator} and their cdrs by @var{cdr-comparator}.
 @end defun
 
 @defun make-improper-list-comparator element-comparator
+[SRFI-114]
 This may be understood as recursive pair comparator; if objects
 to be compared are pairs, we recurse their cars then their cdrs.
 If objects to be compared are not pairs, we use @var{element-comparator}
@@ -6186,12 +6192,14 @@ to compare them.
 @end defun
 
 @defun make-selecting-comparator comparator1 comparator2 @dots{}
+[SRFI-114]
 This creates a comparator that works any one of the given comparators;
 the objects to be compared are type-tested with each of the comparators
 in order, and the first comparator that accepts all objects will be used.
 @end defun
 
 @defun make-refining-comparator comparator1 comparator2 @dots{}
+[SRFI-114]
 This is similar to @code{make-selecting-comparator}, except that
 if the first comparator that accepts given objects to compare finds
 they are equal (or 0 by the comparison procedure), it tries other
@@ -6199,11 +6207,13 @@ comparators down the list, if any.
 @end defun
 
 @defun make-reverse-comparator comparator
+[SRFI-114]
 Returns a comparator that just reverses the comparison order of
 @var{comparator}.
 @end defun
 
 @defun make-debug-comparator comparator
+[SRFI-114]
 @end defun
 
 @subsubheading Comparison procedure constructors
@@ -6214,6 +6224,7 @@ Returns a comparator that just reverses the comparison order of
 @defunx make-comparison>= ge-pred
 @defunx make-comparison=/< eq-pred lt-pred
 @defunx make-comparison=/> eq-pred gt-pred
+[SRFI-114]
 Utility procedures to create a comparison procedure (the one returns
 -1, 0, or 1) from the given predicate.  For example, 
 @code{make-comparison<} can be defined as follows:
@@ -6229,6 +6240,7 @@ Utility procedures to create a comparison procedure (the one returns
 @subsubheading Comparison syntax
 
 @defmac if3 expr less equal greater
+[SRFI-114]
 Three-way @code{if}: Evaluates @var{expr}, and then evaluates
 either one of @var{less}, @var{equal}, or @var{greater},
 depending on the value of @var{expr} is either less than zero,
@@ -6241,6 +6253,16 @@ equal to zero, or greater than zero, respectively.
 @defmacx if<=? expr consequent :optional alternate
 @defmacx if>=? expr consequent :optional alternate
 @defmacx if-not=? expr consequent :optional alternate
+[SRFI-114]
+Conditional evaluation according to comparison expression @var{expr};
+that is, @code{if@var{OP}?} evaluates @var{consequent} if
+@code{(@var{OP} expr 0)} is true, otherwise it evaluates @var{alternate}
+when provided.
+
+@example
+(if<? (compare 10 20) 'yes)      @result{} yes
+(if>=? (compare 10 20) 'yes 'no) @result{} no
+@end example
 @end defmac
 
 @subsubheading Comparison predicates
@@ -6250,6 +6272,16 @@ equal to zero, or greater than zero, respectively.
 @defunx >? comparator obj1 obj2 obj3 @dots{}
 @defunx <=? comparator obj1 obj2 obj3 @dots{}
 @defunx >=? comparator obj1 obj2 obj3 @dots{}
+[SRFI-114]
+Transitive comparison using the given comparator.
+
+@example
+(<? default-comparator #f #t 'foo)  @result{} #t
+(<? default-comparator #f 0  'foo)  @result{} #f
+@end example
+
+(@xref{Basic comparators}, for the order of different types of objects by
+@code{default-comparator}).
 @end defun
 
 @subsubheading Comparison predicate constructors
@@ -6259,27 +6291,53 @@ equal to zero, or greater than zero, respectively.
 @defunx make>? comparator
 @defunx make<=? comparator
 @defunx make>=? comparator
+[SRFI-114]
+@example
+((make=? comparator) obj1 obj2 obj3 @dots{})
+  @equiv{} (=? comparator obj1 obj2 obj3 @dots{})
+@end example
 @end defun
 
 @subsubheading Interval comparison predicates
 
 
 @defun in-open-interval? [comparator] obj1 obj2 obj3
-@end defun
+@defunx in-closed-interval? [comparator] obj1 obj2 obj3
+@defunx in-open-closed-interval? [comparator] obj1 obj2 obj3
+@defunx in-closed-open-interval? [comparator] obj1 obj2 obj3
+[SRFI-114]
+Check if @var{obj1}, @var{obj2} and @var{obj3} has the following
+relationships:
 
-@defun in-closed-interval? [comparator] obj1 obj2 obj3
-@end defun
+@example
+(and (op1 obj1 obj2) (op2 obj2 obj3))
+@end example
 
-@defun in-open-closed-interval? [comparator] obj1 obj2 obj3
-@end defun
+Where each of @var{op1} and @var{op2} can be
+@code{(make<? comparator)} (if that end is @emph{open}),
+or @code{(make<=? comparator)} (if that end is @emph{closed}).
 
-@defun in-closed-open-interval? [comparator] obj1 obj2 obj3
+When @var{comparator} is omitted, the default comparator is used.
+
+@example
+(use srfi-42)
+(list-ec (: x 0 5) (list x (in-closed-open-interval? 1 x 3)))
+  @result{} ((0 #f) (1 #t) (2 #t) (3 #f) (4 #f))
+@end example
 @end defun
 
 @subsubheading Min/max comparison procedures
 
 @defun comparator-min comparator obj1 obj2 @dots{}
 @defunx comparator-max comparator obj1 obj2 @dots{}
+[SRFI-114]
+Find the object in @var{obj1} @var{obj2} @dots{} that is
+minimum or maximum compared by @var{comparator}.
+
+@example
+(comparator-min list-comparator '(a c b) '(a d) '(a c))
+  @result{} (a c)
+@end example
 @end defun
 
 @c ----------------------------------------------------------------------
