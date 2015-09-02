@@ -1,5 +1,5 @@
-*** a/axTLS/ssl/tls1.h	Wed Apr 29 19:41:49 2015
---- b/axTLS/ssl/tls1.h	Mon Aug 31 17:24:22 2015
+*** a/axTLS/ssl/tls1.h	2015-04-29 19:41:49.000000000 -1000
+--- b/axTLS/ssl/tls1.h	2015-09-01 17:49:28.000000000 -1000
 ***************
 *** 41,47 ****
   #endif
@@ -17,8 +17,8 @@
   #include "os_int.h"
   #include "crypto.h"
   #include "crypto_misc.h"
-*** a/axTLS/ssl/test/ssltest.c	Mon Mar  9 16:53:32 2015
---- b/axTLS/ssl/test/ssltest.c	Mon Aug 31 17:26:51 2015
+*** a/axTLS/ssl/test/ssltest.c	2015-03-09 16:53:32.000000000 -1000
+--- b/axTLS/ssl/test/ssltest.c	2015-09-01 17:49:28.000000000 -1000
 ***************
 *** 929,947 ****
   static int client_socket_init(uint16_t port)
@@ -187,8 +187,8 @@
   //    if (header_issue())
   //    {
   //        printf("Header tests failed\n"); TTY_FLUSH();
-*** a/axTLS/ssl/test/killopenssl.sh	Mon Oct 27 00:30:32 2014
---- b/axTLS/ssl/test/killopenssl.sh	Mon Aug 31 17:24:22 2015
+*** a/axTLS/ssl/test/killopenssl.sh	2014-10-27 00:30:32.000000000 -1000
+--- b/axTLS/ssl/test/killopenssl.sh	2013-05-15 00:28:28.000000000 -1000
 ***************
 *** 1,2 ****
   #!/bin/sh
@@ -197,8 +197,8 @@
   #!/bin/sh
 ! awk '{print $1}' "../ssl/openssl.pid" | xargs kill -9
 ! rm -f ../ssl/openssl.pid
-*** a/axTLS/ssl/test/killgnutls.sh	Mon Oct 27 00:30:32 2014
---- b/axTLS/ssl/test/killgnutls.sh	Mon Aug 31 17:24:22 2015
+*** a/axTLS/ssl/test/killgnutls.sh	2014-10-27 00:30:32.000000000 -1000
+--- b/axTLS/ssl/test/killgnutls.sh	2013-05-15 00:28:28.000000000 -1000
 ***************
 *** 1,2 ****
   #!/bin/sh
@@ -206,8 +206,8 @@
 --- 1,2 ----
   #!/bin/sh
 ! #ps -ef|grep gnutls-serv | /usr/bin/awk '{print $2}' |xargs kill -9
-*** a/axTLS/ssl/os_port.h	Wed Apr 29 19:53:33 2015
---- b/axTLS/ssl/os_port.h	Mon Aug 31 17:24:22 2015
+*** a/axTLS/ssl/os_port.h	2015-04-29 19:53:33.000000000 -1000
+--- b/axTLS/ssl/os_port.h	2015-09-01 20:23:25.000000000 -1000
 ***************
 *** 60,65 ****
 --- 60,67 ----
@@ -236,8 +236,44 @@
   
   #else   /* Not Win32 */
   
-*** a/axTLS/ssl/os_port.c	Mon Oct 27 00:30:33 2014
---- b/axTLS/ssl/os_port.c	Mon Aug 31 17:24:22 2015
+***************
+*** 136,148 ****
+  #include <sys/wait.h>
+  #include <netinet/in.h>
+  #include <arpa/inet.h>
+- #include <asm/byteorder.h>
+  
+  #define SOCKET_READ(A,B,C)      read(A,B,C)
+  #define SOCKET_WRITE(A,B,C)     write(A,B,C)
+  #define SOCKET_CLOSE(A)         if (A >= 0) close(A)
+  #define TTY_FLUSH()
+  
+  #ifndef be64toh
+  #define be64toh(x) __be64_to_cpu(x)
+  #endif
+--- 144,163 ----
+  #include <sys/wait.h>
+  #include <netinet/in.h>
+  #include <arpa/inet.h>
+  
+  #define SOCKET_READ(A,B,C)      read(A,B,C)
+  #define SOCKET_WRITE(A,B,C)     write(A,B,C)
+  #define SOCKET_CLOSE(A)         if (A >= 0) close(A)
+  #define TTY_FLUSH()
+  
++ /* OSX quirks */
++ #ifdef __APPLE__
++ #include <libkern/OSByteOrder.h>
++ #define be64toh(x) OSSwapBigToHostInt64(x)
++ #else  /*!__APPLE__*/
++ #include <asm/byteorder.h>
++ #endif /*!__APPLE__*/
++ 
+  #ifndef be64toh
+  #define be64toh(x) __be64_to_cpu(x)
+  #endif
+*** a/axTLS/ssl/os_port.c	2014-10-27 00:30:33.000000000 -1000
+--- b/axTLS/ssl/os_port.c	2014-12-06 01:21:10.000000000 -1000
 ***************
 *** 56,61 ****
 --- 56,62 ----
@@ -258,8 +294,8 @@
   #endif
   
   #undef malloc
-*** a/axTLS/crypto/os_int.h	Sun Mar  8 18:32:51 2015
---- b/axTLS/crypto/os_int.h	Mon Aug 31 17:24:22 2015
+*** a/axTLS/crypto/os_int.h	2015-03-08 18:32:51.000000000 -1000
+--- b/axTLS/crypto/os_int.h	2015-09-01 20:19:46.000000000 -1000
 ***************
 *** 41,47 ****
   extern "C" {
@@ -277,8 +313,22 @@
   typedef UINT8 uint8_t;
   typedef INT8 int8_t;
   typedef UINT16 uint16_t;
-*** a/axTLS/crypto/crypto_misc.c	Mon Mar  9 17:06:08 2015
---- b/axTLS/crypto/crypto_misc.c	Mon Aug 31 17:24:22 2015
+***************
+*** 56,62 ****
+--- 56,66 ----
+  #include <inttypes.h>
+  #else
+  #include <stdint.h>
++ #ifdef __APPLE__
++ #include <machine/endian.h>
++ #else
+  #include <endian.h>
++ #endif
+  #endif /* Not Solaris */
+  
+  #endif /* Not Win32 */
+*** a/axTLS/crypto/crypto_misc.c	2015-03-09 17:06:08.000000000 -1000
+--- b/axTLS/crypto/crypto_misc.c	2015-09-01 17:49:28.000000000 -1000
 ***************
 *** 48,54 ****
   static HCRYPTPROV gCryptProv;
@@ -296,8 +346,8 @@
   /* change to processor registers as appropriate */
   #define ENTROPY_POOL_SIZE 32
   #define ENTROPY_COUNTER1 ((((uint64_t)tv.tv_sec)<<32) | tv.tv_usec)
-*** a/axTLS/crypto/crypto.h	Wed Apr 29 19:41:49 2015
---- b/axTLS/crypto/crypto.h	Mon Aug 31 17:49:48 2015
+*** a/axTLS/crypto/crypto.h	2015-04-29 19:41:49.000000000 -1000
+--- b/axTLS/crypto/crypto.h	2015-09-01 17:49:28.000000000 -1000
 ***************
 *** 39,44 ****
 --- 39,45 ----
@@ -308,8 +358,8 @@
   #include "bigint_impl.h"
   #include "bigint.h"
   
-*** a/axTLS/crypto/bigint_impl.h	Mon Oct 27 00:30:28 2014
---- b/axTLS/crypto/bigint_impl.h	Mon Aug 31 17:24:22 2015
+*** a/axTLS/crypto/bigint_impl.h	2014-10-27 00:30:28.000000000 -1000
+--- b/axTLS/crypto/bigint_impl.h	2014-12-06 01:21:10.000000000 -1000
 ***************
 *** 61,67 ****
   typedef uint32_t long_comp;     /**< A double precision component. */
@@ -327,11 +377,11 @@
   #define COMP_RADIX          4294967296i64         
   #define COMP_MAX            0xFFFFFFFFFFFFFFFFui64
   #else
-*** a/axTLS/config/config.h	Wed Dec 31 14:00:00 1969
---- b/axTLS/config/config.h	Mon Aug 31 17:24:22 2015
+*** a/axTLS/config/config.h	1969-12-31 14:00:00.000000000 -1000
+--- b/axTLS/config/config.h	2015-09-01 20:22:33.000000000 -1000
 ***************
 *** 0 ****
---- 1,143 ----
+--- 1,149 ----
 + /*
 +  * In original axTLS, this file is automatically generated.
 +  * To include in Gauche, we hand-edited this file, so be careful
@@ -453,9 +503,15 @@
 + #define SHA1_Init         SHA1_Init__axtls
 + #define SHA1_Update       SHA1_Update__axtls
 + #define SHA1_Final        SHA1_Final__axtls
-+ #define MD2_Init          MD2_Init__axtls
-+ #define MD2_Update        MD2_Update__axtls
-+ #define MD2_final         MD2_Final__axtls
++ #define SHA256_Init       SHA256_Init__axtls
++ #define SHA256_Update     SHA256_Update__axtls
++ #define SHA256_Final      SHA256_Final__axtls
++ #define SHA384_Init       SHA384_Init__axtls
++ #define SHA384_Update     SHA384_Update__axtls
++ #define SHA384_Final      SHA384_Final__axtls
++ #define SHA512_Init       SHA512_Init__axtls
++ #define SHA512_Update     SHA512_Update__axtls
++ #define SHA512_Final      SHA512_Final__axtls
 + #define MD5_Init          MD5_Init__axtls
 + #define MD5_Update        MD5_Update__axtls
 + #define MD5_Final         MD5_Final__axtls

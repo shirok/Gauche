@@ -56,7 +56,11 @@ typedef INT64 int64_t;
 #include <inttypes.h>
 #else
 #include <stdint.h>
+#ifdef __APPLE__
+#include <machine/endian.h>
+#else
 #include <endian.h>
+#endif
 #endif /* Not Solaris */
 
 #endif /* Not Win32 */
