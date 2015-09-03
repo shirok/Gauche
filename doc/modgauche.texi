@@ -5481,25 +5481,51 @@ and yields only values that are greater than their previous value.
 @end defun
 
 @defun gbuffer-filter proc seed gen :optional tail-gen
+@c EN
 This procedure allows n-to-m mapping between elements in input and output---
-that is, you can take a look at serveral input elements to generate
+that is, you can take a look at several input elements to generate
 one or more output elements.
+@c JP
+この手続きは入力と出力がn対mで対応するようなフィルタを作ります。つまり、
+入力のいくつかを見て、それに応じて1個以上の出力を生成するようなフィルタです。
+@c COMMON
 
+@c EN
 The procedure @var{proc} receives the next input element and accumulated
 seed value.  It returns two values: A list of output values, and the next
 seed value.  If you need to look at more input to generate
 output, you can return an empty list as the first value.
+@c JP
+手続き@var{proc}は、次の入力およびシード値を受け取り、
+二つの値を返します:出力値のリスト、及び次のシード値です。
+出力を決定するためにもっと入力を読むことが必要なら、
+第一の返り値を()にします。
+@c COMMON
 
+@c EN
 If the input reaches the end, @var{tail-gen} is called with the
 current seed value; it should return a list of last output values.
 If omitted, the output ends when the output of the last call to @var{proc}
 is exhausted (the last seed value is discarded).
+@c JP
+入力が終端に達したら、手続き@var{tail-gen}が、その時点でのシード値を引数として
+呼び出されます。@var{tail-gen}は出力の終端となる値のリストを返します。
+@var{tail-gen}が省略された場合は、入力がなくなった時点で最後の@var{proc}が
+返した出力のリストが終端となります(最後のシード値は捨てられます)
+@c COMMON
 
+@c EN
 Suppose you have a text file.  Each line contains a command,
 but if the line ends with backslash, next line is treated as a
 continuation of the current line.  The following code creates
 a generator that returns @emph{logical} lines, that is,
 the lines after such line continuations are taken care of.
+@c JP
+例えば、テキストファイルがあり、各行にコマンドがかかれているとしましょう。
+ただし行がバックスラッシュで終わった場合、次の行へと継続しているものとみなします。
+以下のコードは、入力ファイルの各行を読むジェネレータから、
+@emph{論理行}(継続行をくっつけたもの)をひとつづつ返すジェネレータを生成します。
+@c COMMON
 
 @example
 (gbuffer-filter (^[v s]
@@ -5509,6 +5535,37 @@ the lines after such line continuations are taken care of.
                 '()
                 (file->line-generator "input-file.txt")
                 (^[s] `(,(string-concatenate-reverse s))))
+@end example
+@c COMMON
+
+@c EN
+Another example: The game Tetris determines the next 
+dropping piece (tetrimino) by the following algorithm: Take a
+bag of tetriminos with one for each kind (O, I, T, S, Z, L, J),
+permute it, and draw one by one; once the bag is empty, take another
+bag and repeat.  The algorithm can be implemented by a pipeline
+of generates as follows.  (Tetris is a registered trademark of
+The Tetris Company).
+@c JP
+もう一つの例: ゲームのテトリスは、次に落ちてくるピース (テトリミノ) を次の
+アルゴリズムで決めています: 各種類(O, I, T, S, Z, L, J)のテトリミノが
+一つづつ入った袋をとり、そこからランダムに一つづつ取り出す。袋が空になったら
+新たにテトリミノの袋をとり繰り返す。このアルゴリズムは次に示すとおり
+ジェネレータのパイプラインで実装できます。(テトリスはThe Tetris Companyの
+登録商標です)
+@c COMMON
+
+@example
+(use data.random) ; for permutations-of
+
+(define g
+  ($ gbuffer-filter (^[i _] (values i #f)) #f
+     $ permutations-of
+     $ (circular-generator '(O I T S Z L J))))
+
+(generator->list g 21)
+  @result{}
+  (L O Z T J S I J L Z T I O S T L Z S I J O)
 @end example
 @end defun
 
