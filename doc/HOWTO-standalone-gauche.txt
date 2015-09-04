@@ -58,9 +58,9 @@ and they are needed on the target platform.
 Since the result binary includes entire Gauche bundled libraries,
 it tends to be large (around 12MB on Linux/x86_64).
 
-
-This directory contains a sample script.  After building
-the static library, run make and you'll get sample-repl.
+The examples/standalone directory contains a sample script.
+After building the static library, run make there and you'll
+get sample-repl.
 
 
 [3. Using Gauche API from statically linked C applications]
