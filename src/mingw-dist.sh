@@ -3,7 +3,7 @@
 # You need MinGW and MSYS.  (You no longer need Cygwin.)
 # The compiled binary is installed in ../Gauche-mingw-dist.  You can just
 # zip it and distribute.
-# See mingw-memo.txt for the details.
+# See doc/HOWTO-mingw.txt for the details.
 
 # Set MINGWDIR if MinGW is installed in different place.
 mingwdir=${MINGWDIR:-/mingw}

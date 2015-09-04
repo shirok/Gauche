@@ -1,3 +1,7 @@
+2015-09-04  Shiro Kawai  <shiro@acm.org>
+
+	* doc/HOWTO-mingw.txt: Renamed from mingw-memo.txt
+
 2015-08-31  Shiro Kawai  <shiro@acm.org>
 
 	* ext/tls: Upgraded to axTLS-1.5.3.
