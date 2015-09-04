@@ -1,0 +1,58 @@
+A note on Windows/MinGW support
+
+Now you can compile Gauche to use MinGW runtime library
+(see http://www.mingw.org/ ), so that the produced binary can
+be easily distributed.
+
+Because of the difference of the underlying system, not all
+system-related procedures are available on MinGW port.
+The reference manual tells whether a particular procedure
+is supported on "Windows native"---meaning MinGW or WinVC version.
+
+[Compilation]
+
+To compile MinGW version from the source tarball, you need MSYS
+environment in order to run 'configure'.   (You don't need MSYS to
+run the compiled Gauche.)
+
+If you try to build from svn source, you also need a running
+Gauche. Grab one of the precompiled mingw binary, or first build
+and install Gauche from the tarball.
+
+The following MinGW libraries are also recommended, although
+you can build Gauche without them.   They don't come with MinGW
+itself.  You have to download the precompiled tarballs from
+the MinGW download site and untar them under c:\mingw (or
+the directory you installed MinGW.)
+
+- MinGW libiconv
+    Required to make gauche.charconv fully functional.
+    You need libiconv-dll, libiconv-dev, libcharset-dll.
+- MinGW zlib
+    Required to make rfc.zlib.
+    You need libz-dll and libz-dev.
+
+(Note: You'll find MSYS {libiconv,zlib} and MinGW {libiconv,zlib}
+on the dowlonad site; make sure you download MinGW version.)
+
+Gdbm doesn't work straightforwardly, since there's no official
+MinGW port of gdbm.  MSYS-gdbm does NOT work.  You may be
+able to compile gdbm from source on MinGW (you need some patches;
+look for them the Net.  It is also said that you have to configure
+it with --disable-shared.)  Once you have MinGW gdbm installed,
+Gauche's 'configure' will find it and builds dbm.gdbm etc,
+though some test errors result.
+
+[Installtaion and packaging]
+
+If you want to run the mingw version of Gauche on the same
+machine you compile it, probably it is easier to give
+--prefix=/mingw to 'configure'.
+
+If you want to copy compiled Gauche to the machine where
+mingw might not exist, you need to include mingw DLL
+(and zlib DLL if you compiled with zlib).  There's a
+convenience shell script in src/mingw-dist.sh.   Just run
+it on the top of the Gauche source directory, and it will
+create a directory ../Gauche-mingw-dist and installs compiled
+Gauche into it, with MinGW dlls.
