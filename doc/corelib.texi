@@ -1016,6 +1016,7 @@ All other objects.
 @defvarx eqv-comparator
 @defvarx equal-comparator
 [SRFI-114]
+@c EN
 Built-in comparators that uses @code{eq?}, @code{eqv?} and @code{equal?}
 for the equality predicate, respectively.  They accept any kind of
 Scheme objects.  Each has corresponding hash functions
@@ -1023,6 +1024,13 @@ Scheme objects.  Each has corresponding hash functions
 @code{eqv-hash} for @code{eqv-comparator} and
 @code{hash} for @code{equal-comparator}).
 None has comparison procedure, though.
+@c JP
+それぞれ、等価述語に@code{eq?}、@code{eqv?}、@code{equal?}を使う
+組み込みの比較器です。全てのSchemeオブジェクトを受け付けます。
+対応するハッシュ関数(@code{eq-comparator}は@code{eq-hash}、
+@code{eqv-comparator}は@code{eqv-hash}、@code{equal-comparator}は
+@code{hash})を備えています。比較手続きは持っていません。
+@c COMMON
 @end defvar
 
 @defvar boolean-comparator
@@ -1031,12 +1039,21 @@ None has comparison procedure, though.
 @defvarx string-comparator
 @defvarx string-ci-comparator
 [SRFI-114]
+@c EN
 Compare booleans, characters, and strings, respectively.
 The @code{*-ci-*} variants uses case-insensitive comparison.
 All have appropriate hash functions, too.
 
 The string case-insensitive comparison uses Unicode full-string case
 conversion (@xref{Full string case conversion}).
+@c JP
+それぞれ、真偽値、文字、文字列を比較する比較器です。
+@code{*-ci-*}がついている手続きは大文字小文字の区別をしません。
+全て、適切なハッシュ関数も備えています。
+
+文字列の大文字小文字の区別をしない比較は、Unicodeのfull-string case conversion
+に従います (@ref{Full string case conversion}参照)。
+@c COMMON
 @end defvar
 
 @defvar exact-integer-comparator
@@ -1046,6 +1063,7 @@ conversion (@xref{Full string case conversion}).
 @defvarx complex-comparator
 @defvarx number-comparator
 [SRFI-114]
+@c EN
 Compare exact integers, integers, rational numbers, real numbers,
 complex numbers and general numbers, respectively.
 In Gauche @code{number-comparator} is the same as @code{complex-comparator}.
@@ -1060,6 +1078,20 @@ Note that those comparator rejects NaN.
 You need @code{make-inexact-real-comparator} in @code{srfi-114} module
 to compare NaNs with your own discretion. 
 @xref{Comparators}, for the details.
+@c JP
+それぞれ、正確な整数、整数、有理数、実数、複素数、そして全ての数値を比較する比較器です。
+Gaucheでは@code{number-comparator}は@code{complex-comparator}と同じです。
+
+等価性は@code{=}により判定されます。
+正確な整数、整数、有理数および実数の比較器では、比較手続きは数値の大小に基づいて
+判定されます。複素数の比較においては、まず実部の大小が比べられ、実部が等しい場合に
+虚部の大小が比べられます。
+
+これらの比較器はNaNを扱いません。
+NaNを扱いたい場合は、@code{srfi-114}モジュールの@code{make-inexact-real-comparator}
+手続きを使って、NaNの比較方法を指定する必要があります。
+詳しくは@ref{Comparators}を参照してください。
+@c COMMON
 @end defvar
 
 @defvar pair-comparator
@@ -1068,6 +1100,7 @@ to compare NaNs with your own discretion.
 @defvarx uvector-comparator
 @defvarx bytevector-comparator
 [SRFI-114]
+@c EN
 The default comparators to compare pairs, lists, vectors, uniform
 vectors and bytevectors (which is synonym to @code{u8vector}).
 Their respective elements are compared with the default comparators.
@@ -1076,16 +1109,32 @@ Note that lists are compared by dictionary order (@code{(1 2 3)} comes
 before @code{(1 3)}), while in vector-families
 shorter ones are ordered first (
 @code{#(1 3)} comes before @code{#(1 2 3)}).
+@c JP
+ペア、リスト、ベクタ、ユニフォームベクタ、バイトベクタ(@code{u8vector}の別名)を
+それぞれ比較するための比較器です。
+各データ型の要素についてはデフォルトの比較器(@code{default-comparator)}が
+使われます。
+
+リストは辞書順で比較されますが(例:@code{(1 2 3)}は@code{(1 3)}より前)、
+ベクタの仲間はまず長さが短いものが先に来て、それから内容で比較されることに注意してください
+(@code{#(1 3)}は@code{#(1 2 3)}より前)。
+@c COMMON
 @end defvar
 
 @defun make-reverse-comparator cmpr
 [SRFI-114]
+@c EN
 Returns a comparator with the same type test predicate,
 equality procedure, and hash function as the given comparator,
 but the comparison procedure is flipped.
+@c JP
+与えられた比較器@var{cmpr}と同じ型検査述語、等価述語、ハッシュ関数を持ち、
+大小比較だけが逆になっているような比較器を返します。
+@c COMMON
 @end defun
 
 @defun make-key-comparator cmpr test key
+@c EN
 This isn't in srfi-114, but we found it convenient.
 Suppose you have some kind of structure, but you only need to look
 at one part of it to compare them.
@@ -1096,15 +1145,54 @@ constructed by applying @var{key} to the argument(s) then passing
 the result to the corresponding procedure of @var{cmpr}.  If @var{cmpr}
 lacks comparison procedure and/or hash function, so does the returned
 comparator.
+@c JP
+これはsrfi-114には含まれていませんが、便利なので用意しました。
+何らかの構造体があって、その比較に際してはその中の一つの要素を見るだけで良い、
+という場合に使える手続きです。
+
+比較器を作って返します。型検査述語には@var{test}が使われます。
+等価述語、比較手続き、ハッシュ関数については、それらの引数に@var{key}を適用して
+得られた値を、比較器@var{cmpr}の対応する手続きに渡すような手続きとなります。
+@var{cmpr}が比較手続きやハッシュ関数を欠いている場合は、
+返される比較器も同様に比較手続きやハッシュ関数を欠いたものとなります。
+@c COMMON
+
+@c EN
+In the following example, the tree-map @code{users} compares
+the given user records only by the @code{username} slots:
+@c JP
+次の例では、ツリーマップ@code{users}は
+userレコードの@code{username}スロットだけを見て比較を行います。
+@c COMMON
+
+@example
+(use gauche.record)
+
+(define-record-type user #t #t
+  username      ; string
+  password-hash ; string
+  comment)      ; string
+
+(define users   ; table of users, managed by tree-map
+  (make-tree-map
+    (make-key-comparator string-comparator user? user-username)))
+@end example
 @end defun
 
 @defun make-car-comparator cmpr
 @defunx make-cdr-comparator cmpr
 [SRFI-114]
+@c EN
 Returns comparators that accept pairs, and compare them with
-their car or cdr, respectively.
+their car or cdr by @var{cmpr}, respectively.
 
 Using @code{make-key-comparator}, these cam be written as follows:
+@c JP
+ペアを受け取り、その@code{car}のみまたは@code{cdr}のみを@var{cmpr}で
+比較するような比較器を返します。
+
+@code{make-key-comparator}を使えばこれらは以下の通りに書けます。
+@c COMMON
 @example
 (define (make-car-comparator cmpr)
   (make-key-comparator cmpr pair? car))
@@ -1115,11 +1203,19 @@ Using @code{make-key-comparator}, these cam be written as follows:
 @end defun
 
 @defun make-tuple-comparator cmpr1 cmpr2 @dots{}
+@c EN
 Creates a comparator that compares lists of the form @code{(x1 x2 @dots{})},
 where each element is compared with the corresponding comparator.
 For example, @code{(make-tuple-comparator c1 c2 c3)} will compare
 three-element list, whose first elements are compared by @var{c1},
 second elements by @var{c2} and third elements by @var{c3}.
+@c JP
+リスト@code{(x1 x2 @dots{})}の各要素をそれぞれ@var{cmpr1} @code{cmpr2} @dots{}
+で比較するような比較器を返します。
+例えば@code{(make-tuple-comparator c1 c2 c3)}が返すのは、
+3要素のリストを受け入れ、最初の要素が@var{c1}で、二番目の要素が@var{c2}で、
+最後の要素が@var{c3}で比較されるような比較器です。
+@c COMMON
 @end defun
 
 @c ----------------------------------------------------------------------
