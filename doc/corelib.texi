@@ -2002,6 +2002,18 @@ returns the closest even integer.
 @var{round}は@var{x}に最も近い整数を返します。@var{x}の
 小数部が0.5ぴったりだった場合は@var{round}は最も近い偶数を返します。
 @c COMMON
+
+@c EN
+Following Scheme's general rule, the result is inexact if @var{x} is an
+inexact number; e.g. @code{(round 2.3)} is @code{2.0}.  If you need
+an exact integer by rounding an inexact number, you have to use @code{exact}
+on the result, or use one of the following procedure (@code{(floor->exact} etc).
+@c JP
+Schemeの一般的な規則に従い、@var{x}が不正確数であれば結果も不正確となります。
+例えば@code{(round 2.3)}の結果は@code{2.0}です。
+もし、不正確な数を丸めて正確な整数を得たいのであれば、結果に@code{exact}を
+適用するか、以下に示す@code{floor->exact}などの手続きを使ってください。
+@c COMMON
 @end defun
 
 @defun floor->exact x
@@ -2010,9 +2022,9 @@ returns the closest even integer.
 @defunx round->exact x
 @c EN
 These are convenience procedures of the popular
-phrase @code{(inexact->exact (floor x))} etc.
+phrase @code{(exact (floor x))} etc.
 @c JP
-これらは、頻出する@code{(inexact->exact (floor x))} 等を簡潔に書くための
+これらは、頻出する@code{(exact (floor x))} 等を簡潔に書くための
 手続きです。
 @c COMMON
 @end defun
@@ -2026,7 +2038,7 @@ Returns
  @var{max} @r{if} @var{max} @code{<} @var{x}
 @end example
 If @var{min} or @var{max} is omitted or @code{#f}, it is regarded
-as @var{-infinity} or @var{+infinity}, respectively.
+as @code{-inf.0} or @code{+inf.0}, respectively.
 Returns an exact integer only if all the given numbers are exact integers.
 @c JP
 @example
@@ -2111,7 +2123,7 @@ is also an exact number.
 複素数@var{z}の平方根のひとつを返します。枝刈りの定義はCommon Lispと同じです。
 実数に対しては正の平方根を返します。
 
-@var{z} が正確な実数の平方である場合、戻り値は正確数となります。
+@var{z}が正確な実数の平方である場合、戻り値は正確数となります。
 @c COMMON
 
 @example
@@ -2289,6 +2301,7 @@ The API is taken from ChezScheme.
 
 このAPIはChezSchemeから取られました。
 @c COMMON
+
 @example
 (decode-float 3.1415926)
  @result{} #(7074237631354954 -51 1)
@@ -2350,6 +2363,7 @@ where @var{x} = @var{fraction} * 2^@var{exponent}, and
 (@var{x}が0であれば、@var{fraction}と@var{exponent}はともに0となります。)
 @code{ldexp}は@code{frexp}の逆関数で、@var{x} * 2^@var{n} を返します。
 @c COMMON
+
 @example
 (fmod 32.1 10.0)  @result{} 2.1
 (fmod 1.5 1.4)    @result{} 0.1
@@ -4548,10 +4562,12 @@ on top of already existing results.
 @end example
 
 @c EN
-The @var{tail} argument isn't in the traditional Scheme's @code{reverse}.
+The @var{tail} argument is Gauche's extension,
+and it isn't in the traditional Scheme's @code{reverse}.
 The rationale is the following correspondence:
 @c JP
-@var{tail}引数は伝統的なSchemeの@code{reverse}にはありませんが、
+@var{tail}引数はGauche独自の拡張で、
+伝統的なSchemeの@code{reverse}にはありませんが、
 次の対応を考えると、そう不自然なことではありません。
 @c COMMON
 
