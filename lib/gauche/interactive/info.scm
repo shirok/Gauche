@@ -86,7 +86,7 @@
     (set! *info* (open-info-file (find-info-file)))
     (dolist [p ($ info-parse-menu
                   $ info-get-node *info* "Function and Syntax Index")]
-      (hash-table-put! *info-index* (car p) (cdr p))))
+      (hash-table-put! *info-index* (car p) (cadr p))))
   (let1 nodename (hash-table-get *info-index* (x->string fn) #f)
     (unless nodename (errorf "no info document for ~a" fn))
     (viewer (ref (info-get-node *info* nodename) 'content)))

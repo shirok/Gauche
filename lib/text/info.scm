@@ -147,11 +147,13 @@
        (hash-table-put! (ref info 'node-table) node info-node))]
     [else #f]))
 
-;;; External API
-
+;; API
+;; Returns <info-file>
 (define (open-info-file file)
   (read-master-info-file file '()))
 
+;; API
+;; Returns <info-node>
 (define-method info-get-node ((info <info-file>) nodename)
   (if-let1 node (hash-table-get (ref info 'node-table) nodename #f)
     (cond [(is-a? node <info-node>) node]
@@ -162,6 +164,12 @@
            (hash-table-get (ref info 'node-table) nodename #f)])
     #f))
 
+;; API
+;; Search menu in the given node, and returns list of menu entries.
+;; Menu entry:
+;;    (<entry-name> <node-name> [<line-number>])
+;; Where <entry-name> is either a node name, function or macro name,
+;; module name, 
 (define-method info-parse-menu ((info <info-node>))
   (with-input-from-string (ref info 'content)
     (^[]
@@ -173,9 +181,11 @@
         (rxmatch-case line
           [test eof-object? (reverse! r)]
           [#/^\* (.+)::/ (#f node)
-                 (menu (read-line) (acons node node r))]
-          [#/^\* (.+):\s+(.+)\./ (#f index node)
-                 (menu (read-line) (acons index node r))]
+           (menu (read-line) `((,node ,node) ,@r))]
+          [#/^\* (.+):\s+(.+)\.(?:\s*\(line\s+(\d+)\))?/ (#f index node line)
+           (menu (read-line)
+                 (if line
+                   `((,index ,node ,(x->integer line)) ,@r)
+                   `((,index ,node) ,@r)))]
           [else (menu (read-line) r)]))
       (skip (read-line)))))
-
