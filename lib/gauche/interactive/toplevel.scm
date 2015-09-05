@@ -136,6 +136,14 @@
       [() `(,(with-module gauche *history))]
       [_ (usage)])))
 
+(define-toplevel-command info
+  "info name\n\
+ Show info page that includes an entry of NAME."
+  (^[args]
+    (match args
+      [(name) `(,(with-module gauche.interactive info) ',name)]
+      [_ (usage)])))
+
 (define-toplevel-command help
   "help [command]\n\
  Show the help message of the command.\n\
