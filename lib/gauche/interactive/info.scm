@@ -38,13 +38,13 @@
   (use file.util)
   (use gauche.process)
   (use gauche.config)
-  (export info)
+  (export info info-page)
   )
 (select-module gauche.interactive.info)
 
 (define *info-file* "gauche-refe.info")
 (define *info* #f)
-(define *info-index* (make-hash-table 'string=?))
+(define *info-index* (make-hash-table 'string=?)) ;entry => (node-name line-no)
 
 (define *pager* (or (sys-getenv "PAGER")
                     (find-file-in-paths "less")
@@ -81,14 +81,26 @@
         (errorf "couldn't find info file ~s in paths: ~s" *info-file* paths))
     ))
 
-(define (info fn)
+(define (get-node&line entry-name)
   (unless *info*
     (set! *info* (open-info-file (find-info-file)))
     (dolist [p ($ info-parse-menu
                   $ info-get-node *info* "Function and Syntax Index")]
-      (hash-table-put! *info-index* (car p) (cadr p))))
-  (let1 nodename (hash-table-get *info-index* (x->string fn) #f)
-    (unless nodename (errorf "no info document for ~a" fn))
+      (hash-table-put! *info-index* (car p) (cdr p))))
+  (or (hash-table-get *info-index* (x->string entry-name) #f)
+      (errorf "no info document for ~a" entry-name)))
+
+(define (info fn)
+  (let* ([node&line (get-node&line fn)]
+         [node (info-get-node *info* (car node&line))])
+    (viewer (if (null? (cdr node&line))
+              (~ node'content)
+              (info-extract-definition node (cadr node&line)))))
+  (values))
+
+(define (info-page fn)
+  (let* ([node&line (get-node&line fn)]
+         [nodename (car node&line)])
     (viewer (ref (info-get-node *info* nodename) 'content)))
   (values))
 

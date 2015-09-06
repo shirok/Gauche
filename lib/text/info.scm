@@ -40,6 +40,7 @@
   (use rfc.zlib)
   (export <info-file> <info-node>
           open-info-file info-get-node info-parse-menu
+          info-extract-definition
           )
   )
 (select-module text.info)
@@ -183,9 +184,42 @@
           [#/^\* (.+)::/ (#f node)
            (menu (read-line) `((,node ,node) ,@r))]
           [#/^\* (.+):\s+(.+)\.(?:\s*\(line\s+(\d+)\))?/ (#f index node line)
-           (menu (read-line)
-                 (if line
-                   `((,index ,node ,(x->integer line)) ,@r)
-                   `((,index ,node) ,@r)))]
+           (if line
+             (menu (read-line) `((,index ,node ,(x->integer line)) ,@r))
+             ;; The '(line \d+)' may be in the next line.
+             (let1 line2 (read-line)
+               (if-let1 m (and (string? line2)
+                               (#/^\s+\(line\s+(\d+)\)/ line2))
+                 (menu (read-line) `((,index ,node ,(x->integer (m 1))) ,@r))
+                 (menu line2 `((,index ,node) ,@r)))))]
           [else (menu (read-line) r)]))
       (skip (read-line)))))
+
+;; API
+;; Extract one definition from the node's content.  Assumes the definition
+;; begins from the specified line; then we go forward to find the end of
+;; the definition.  The end of definition is when we see the end of content,
+;; or we see a line begins with less than or equal to 3 whitespaces.
+;; (Except the 'defunx'-type multi entry)
+(define (info-extract-definition info-node start-line)
+  (with-string-io (~ info-node'content)
+    (^[]
+      ;; skip lines.  we already removed node header (3 lines), and we start
+      ;; counting from line 1, so we have to skip (- start-line 4) lines.
+      (dotimes [(- start-line 4)] (read-line))
+      ;; gather entry headers
+      (let entry ([line (read-line)])
+        (unless (eof-object? line)
+          (cond [(#/^ --/ line) (print line) (entry (read-line))]
+                [(#/^$/ line)] ;; no description
+                [(#/^ {6}/ line) ;; folded entry line
+                 (print line) (entry (read-line))]
+                [(#/^ {5}\S/ line) ;; start description
+                 (print line)
+                 (let desc ([line (read-line)])
+                   (unless (eof-object? line)
+                     (cond [(#/^$/ line) (print) (desc (read-line))]
+                           [(#/^ {4}/ line) (print line) (desc (read-line))]
+                           [else])))]))))))
+      
+  

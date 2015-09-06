@@ -36,7 +36,7 @@
 (define-module gauche.interactive
   (export apropos describe d read-eval-print-loop
           ;; autoloaded symbols follow
-          info reload ed
+          info info-page reload ed
           reload-modified-modules module-reload-rules reload-verbose)
   )
 (select-module gauche.interactive)
@@ -285,7 +285,7 @@
 ;;;
 
 ;; Autoload online info viewer
-(autoload gauche.interactive.info info)
+(autoload gauche.interactive.info info info-page)
 
 ;; Autoload module reloader
 (autoload gauche.reload reload reload-modified-modules

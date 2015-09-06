@@ -1,3 +1,14 @@
+2015-09-06  Shiro Kawai  <shiro@acm.org>
+
+	* lib/text/info.scm: Modified to parse '(line DDD)' part of the menu
+	  entries, so that we can jump to the entry inside a page.
+	  (info-extract-definition): New API to extract definition inside
+	  a node.
+	* lib/gauche/interactive/info.scm (info): Changed to show only the
+	  entry looked for.
+	  (info-page): This one shows entire info node, as the old info command
+	  did.
+
 2015-09-04  Shiro Kawai  <shiro@acm.org>
 
 	* doc/HOWTO-mingw.txt: Renamed from mingw-memo.txt
