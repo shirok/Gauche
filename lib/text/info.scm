@@ -202,13 +202,39 @@
 ;; or we see a line begins with less than or equal to 3 whitespaces.
 ;; (Except the 'defunx'-type multi entry)
 (define (info-extract-definition info-node start-line)
+
+  ;; Skip the lines before the entry.
+  ;; START-LINE counts from the beginning of the info doc; the first 3 lines
+  ;; are taken by the node header and the node's content doesn't include them.
+  ;; Also note that line count starts from 1.
+  ;;
+  ;; Caveat: If the entry header spans multiple lines because of large
+  ;; number of arguments, the texinfo menu's line number somehow points to the
+  ;; last line of the entry header.  For example, the entry of http-get
+  ;; begins with this:
+  ;;
+  ;;   -- Function: http-get server request-uri :key sink flusher
+  ;;        redirect-handler secure ...
+  ;;
+  ;; And the texinfo menu's line points to "redirect-handler secure ..." line
+  ;; instead of "-- Function: http-get" line.  So we have to check the lines
+  ;; to find out the last #/^ --/ line before START-LINE.
+  (define (skip-lines)
+    (let loop ([n (- start-line 4)]
+               [lines '()])
+      (if (= n 0)
+        (let1 line (read-line)
+          (unless (#/^ --/ line) (for-each print (reverse lines)))
+          line)
+        (let1 line (read-line)
+          (cond [(eof-object? line) line]  ;something's wrong, but tolerate.
+                [(#/^ --/ line) (loop (- n 1) (list line))]
+                [(#/^ {10}/ line) (loop (- n 1) (cons line lines))]
+                [else (loop (- n 1) '())])))))
+  
   (with-string-io (~ info-node'content)
     (^[]
-      ;; skip lines.  we already removed node header (3 lines), and we start
-      ;; counting from line 1, so we have to skip (- start-line 4) lines.
-      (dotimes [(- start-line 4)] (read-line))
-      ;; gather entry headers
-      (let entry ([line (read-line)])
+      (let entry ([line (skip-lines)])
         (unless (eof-object? line)
           (cond [(#/^ --/ line) (print line) (entry (read-line))]
                 [(#/^$/ line)] ;; no description
