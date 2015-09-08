@@ -73,7 +73,7 @@
  ;;
  "typedef struct QueueRec {"
  "  SCM_INSTANCE_HEADER;"
- "  u_int len;"
+ "  long len;"     ;; lazily calc'd.  -1 for 'to be calculated'
  "  ScmObj head;"
  "  ScmObj tail;"
  "} Queue;"
@@ -83,8 +83,13 @@
  "#define Q(obj)           ((Queue*)(obj))"
  "#define Q_HEAD(obj)      (Q(obj)->head)"
  "#define Q_TAIL(obj)      (Q(obj)->tail)"
- "#define Q_LENGTH(obj)    (Q(obj)->len)"
+ "#define Q_LENGTH(obj)    (Q(obj)->len)"  ; can be -1; should use %qlength().
  "#define Q_EMPTY_P(obj)   (SCM_NULLP(Q_HEAD(obj)))"
+
+ (define-cfn %qlength (q::Queue*) ::ulong  ; must be called with lock held
+   (when (< (Q_LENGTH q) 0)
+     (set! (Q_LENGTH q) (Scm_Length (Q_HEAD q))))
+   (return (cast ulong (Q_LENGTH q))))
 
  (define-cfn makeq (klass::ScmClass*)
    (let* ([z::Queue*
@@ -98,7 +103,7 @@
    "Queue*" "QueueClass" ()
    ((length :type <uint> :c-name "len" :setter #f))
    (allocator (return (makeq klass)))
-   (printer (Scm_Printf port "#<queue %d @%p>" (Q_LENGTH obj) obj)))
+   (printer (Scm_Printf port "#<queue %d @%p>" (%qlength (Q obj)) obj)))
 
  ;;
  ;; <mtqueue>
@@ -159,7 +164,7 @@
     (let* ([ml (Scm_GetKeyword ':max-length initargs SCM_FALSE)])
       (return (makemtq klass (?: (SCM_INTP ml) (SCM_INT_VALUE ml) -1)))))
    (printer
-    (Scm_Printf port "#<mt-queue %d @%p>" (Q_LENGTH obj) obj)))
+    (Scm_Printf port "#<mt-queue %d @%p>" (%qlength (Q obj)) obj)))
 
  ;; lock macros
  (define-cise-expr big-locked?
@@ -316,10 +321,10 @@
  (define-cise-expr mtq-overflows        ;true if adding CNT elts overflows Q.
    [(_ q cnt)
     `(and (>= (MTQ_MAXLEN ,q) 0)
-          (> (+ ,cnt (Q_LENGTH ,q)) (MTQ_MAXLEN ,q)))])
+          (> (+ ,cnt (%qlength (Q ,q))) (MTQ_MAXLEN ,q)))])
 
  ;; API
- (define-cproc queue-length (q::<queue>) ::<int> Q_LENGTH)
+ (define-cproc queue-length (q::<queue>) ::<int> %qlength)
  (define-cproc mtqueue-max-length (q::<mtqueue>)
    (return (?: (>= (MTQ_MAXLEN q) 0) (SCM_MAKE_INT (MTQ_MAXLEN q)) '#f)))
 
@@ -332,7 +337,7 @@
    (let* ([room::int -1])
      (with-mtq-light-lock q
        (when (>= (MTQ_MAXLEN q) 0)
-         (set! room (- (MTQ_MAXLEN q) (Q_LENGTH q)))))
+         (set! room (- (MTQ_MAXLEN q) (%qlength (Q q))))))
      (if (>= room 0)
        (return (SCM_MAKE_INT room))
        (return SCM_POSITIVE_INFINITY))))
@@ -377,7 +382,8 @@
 (inline-stub
  ;; internal enqueue - lock must be held.
  (define-cfn enqueue_int (q::Queue* cnt::u_int head tail) ::void
-   (set! (Q_LENGTH q) (+ (Q_LENGTH q) cnt))
+   (when (>= (Q_LENGTH q) 0)
+     (set! (Q_LENGTH q) (+ (Q_LENGTH q) cnt)))
    (cond [(Q_EMPTY_P q) (set! (Q_HEAD q) head (Q_TAIL q) tail)]
          [else          (SCM_SET_CDR (Q_TAIL q) head)
                         (set! (Q_TAIL q) tail)]))
@@ -448,8 +454,9 @@
  (define-cfn queue-push-int (q::Queue* cnt::u_int head tail) ::void
    (SCM_SET_CDR tail (Q_HEAD q))
    (set! (Q_HEAD q) head
-         (Q_TAIL q) (Scm_LastPair tail)
-         (Q_LENGTH q) (+ (Q_LENGTH q) cnt)))
+         (Q_TAIL q) (Scm_LastPair tail))
+   (when (>= (Q_LENGTH q) 0)
+     (set! (Q_LENGTH q) (+ (Q_LENGTH q) cnt))))
 
  (define-cproc queue-push! (q::<queue> obj :rest more-objs)
    (let* ([objs (Scm_Cons obj more-objs)] [head] [tail] [cnt::u_int])
@@ -501,7 +508,7 @@
                   (Q_HEAD q) (SCM_CDR h))
             (set! (SCM_CAR h) SCM_NIL
                   (SCM_CDR h) SCM_NIL) ; to be friendly to GC
-            (dec! (Q_LENGTH q))
+            (when (>= (Q_LENGTH q) 0) (dec! (Q_LENGTH q)))
             (return FALSE))]))
 
  (define-cproc dequeue! (q::<queue> :optional fallback)

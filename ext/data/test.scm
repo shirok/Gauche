@@ -26,10 +26,13 @@
            (enqueue! q 'd 'e 'f)
            (list (queue-front q) (queue-rear q))))
 
+  (test* #"~what queue-length" 6 (queue-length q))
+
   (test* #"~what dequeue!" 'a (dequeue! q))
   (test* #"~what dequeue!" 'b (dequeue! q))
   (test* #"~what queue-empty?" #f (queue-empty? q))
   (test* #"~what dequeue!" 'c (dequeue! q))
+  (test* #"~what queue-length" 3 (queue-length q))
   (test* #"~what dequeue!" 'd (dequeue! q))
   (test* #"~what dequeue!" 'e (dequeue! q))
   (test* #"~what dequeue!" 'f (dequeue! q))
