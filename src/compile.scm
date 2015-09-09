@@ -1387,13 +1387,13 @@
 ;; it's not generally possible to convert it back to S-expr.  You can only
 ;; pass the IForm immediately after pass1.
 (define (iform->sexpr iform)
-  (define lvar-dict (make-hash-table 'eq?)) ;; lvar -> variable
+  (define lvar-dict (make-hash-table 'eq?)) ;; lvar -> symbol
   (define (get-lvar lvar)
     (or (hash-table-get lvar-dict lvar #f)
-        (let1 name (lvar-name lvar)
-          (rlet1 s (if (identifier? name) name
-                       ($ string->symbol $ format "~a.~d" name
-                          $ hash-table-num-entries lvar-dict))
+        (let* ([name (lvar-name lvar)]
+               [name (if (identifier? name) (identifier-name name) name)])
+          (rlet1 s ($ string->symbol $ format "~a.~d" (lvar-name lvar)
+                      $ hash-table-num-entries lvar-dict)
             (hash-table-put! lvar-dict lvar s)))))
   (define (rec iform)
     (case/unquote
