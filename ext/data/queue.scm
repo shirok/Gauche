@@ -89,7 +89,7 @@
  (define-cfn %qlength (q::Queue*) ::u_long  ; must be called with lock held
    (when (< (Q_LENGTH q) 0)
      (set! (Q_LENGTH q) (Scm_Length (Q_HEAD q))))
-   (return (cast ulong (Q_LENGTH q))))
+   (return (cast u_long (Q_LENGTH q))))
 
  (define-cfn makeq (klass::ScmClass*)
    (let* ([z::Queue*
