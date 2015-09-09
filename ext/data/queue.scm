@@ -86,7 +86,7 @@
  "#define Q_LENGTH(obj)    (Q(obj)->len)"  ; can be -1; should use %qlength().
  "#define Q_EMPTY_P(obj)   (SCM_NULLP(Q_HEAD(obj)))"
 
- (define-cfn %qlength (q::Queue*) ::ulong  ; must be called with lock held
+ (define-cfn %qlength (q::Queue*) ::u_long  ; must be called with lock held
    (when (< (Q_LENGTH q) 0)
      (set! (Q_LENGTH q) (Scm_Length (Q_HEAD q))))
    (return (cast ulong (Q_LENGTH q))))
