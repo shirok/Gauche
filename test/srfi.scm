@@ -1716,31 +1716,9 @@
 (use srfi-113)
 (test-module 'srfi-113)
 
-;; We use test suite provided by srfi-113 reference implementation.
-;; The following is a quick adaptation of their test suite; the tests
-;; themselves are copied verbatim.
-(let1 current-test-comparator (make-parameter equal?)
-  (define-syntax gauche:parameterize parameterize)
-  (define gauche:test-error test-error)
-  (letrec-syntax
-      ([begin* (syntax-rules ()
-                 [(_ x) (let () x)]
-                 [(_ x . y) (let () x (begin* . y))])]
-       [test-group (syntax-rules () [(_ name . xs) (begin* . xs)])]
-       [test (syntax-rules ()
-               [(_ expected expr)
-                (test* 'expected expected expr (current-test-comparator))]
-               [(_ name expected expr)
-                (test* name expected expr (current-test-comparator))])]
-       [test-assert (syntax-rules ()
-                      [(_ expr) (test* 'expr #t (boolean expr))])]
-       [test-error (syntax-rules ()
-                     [(_ expr)
-                      (test* 'expr (gauche:test-error) expr)])]
-       [parameterize (syntax-rules ()
-                       [(_ bindings . xs)
-                        (gauche:parameterize bindings (begin* . xs))])]
-       )
+(use compat.chibi-test)
+
+(chibi-test
 
 (test-group "sets"
 (define (big x) (> x 5))
@@ -2328,7 +2306,7 @@
   (test-assert (not (=? default-comparator a aa)))
 ) ; end comparators
   
-)))
+)) ; end chibi-test
 
 ;;-----------------------------------------------------------------------
 (test-section "srfi-118")
