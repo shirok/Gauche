@@ -685,6 +685,17 @@ Some of the features are built-in (@xref{Basic comparators}).  Full srfi spec is
 いくつかの機能は組み込みです(@ref{Basic comparators}参照)。srfiの完全な仕様はモジュール@code{srfi-114}でサポートされます(@ref{Comparators}参照)。
 
 
+srfi-117, srfi-117
+()
+
+Queues based on lists.
+Supported by the module @code{srfi-117}, which is implemented on top
+of @code{data.queue}.
+
+リストを元にしたキュー。
+@code{data.queue}上に実装されたモジュール@code{srfi-117}でサポートされます。
+
+
 srfi-118, srfi-118
 ()
 

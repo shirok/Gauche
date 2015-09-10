@@ -1,5 +1,7 @@
 2015-09-09  Shiro Kawai  <shiro@acm.org>
 
+	* lib/srfi-117.scm: Added support of srfi-117.
+
 	* lib/compat/chibi-test.scm: Added to adopt srfi test suite easily.
 
 2015-09-06  Shiro Kawai  <shiro@acm.org>

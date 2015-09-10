@@ -280,17 +280,20 @@
                         -1))))
 
  ;; caller must hold lock
- (define-cproc %queue-set-content! (q::<queue> list) ::<void>
-   (let* ([len::int (Scm_Length list)])
-     (when (< len 0) (SCM_TYPE_ERROR list "proper list"))
-     (set! (Q_TAIL q) (?: (== len 0) SCM_NIL (Scm_LastPair list))
-           (Q_HEAD q) list
-           (Q_LENGTH q) len)))
+ (define-cproc %queue-set-content! (q::<queue> list last-pair) ::<void>
+   (if (SCM_PAIRP list)
+     (let* ([tail (?: (SCM_PAIRP last-pair) last-pair (Scm_LastPair list))])
+       (set! (Q_TAIL q) tail
+             (Q_HEAD q) list
+             (Q_LENGTH q) -1))
+     (set! (Q_TAIL q) SCM_NIL
+           (Q_HEAD q) SCM_NIL
+           (Q_LENGTH q) 0)))
  )
 
 (define (list->queue lis :optional (class <queue>) :rest initargs)
   (rlet1 q (apply make class initargs)
-    (%queue-set-content! q (list-copy lis))))
+    (%queue-set-content! q (list-copy lis) #f)))
 
 (define-method copy-queue ((q <queue>))
   (list->queue (queue->list q) (class-of q)))
@@ -343,7 +346,9 @@
        (return SCM_POSITIVE_INFINITY))))
 
  ;; caller must hold big lock
+ ;; %qtail isn't used in data.queue, but used by srfi-117
  (define-cproc %qhead (q::<queue>) (return (Q_HEAD q)))
+ (define-cproc %qtail (q::<queue>) (return (Q_TAIL q)))
 
  (define-cfn queue-peek-both-int (q::Queue* ph::ScmObj* pt::ScmObj*) ::int
    (when (Q_EMPTY_P q) (return FALSE))
@@ -494,7 +499,7 @@
                   (unless (eq? xs h)
                     (when (and mt? (%mtqueue-overflow? q (- (length xs) (length h))))
                       (error "queue is full" q))
-                    (%queue-set-content! q xs)
+                    (%queue-set-content! q xs #f)
                     (when mt? (%notify-readers q))))))
   q)
 
@@ -563,7 +568,7 @@
                            (when hit
                              (set! removed? #t)
                              (when mt? (%notify-writers q))
-                             (%queue-set-content! q (reverse! rs)))]
+                             (%queue-set-content! q (reverse! rs) #f))]
                           [(pred (car xs)) (loop rs (cdr xs) #t)]
                           [else (loop (cons (car xs) rs) (cdr xs) hit)]))))))
 
