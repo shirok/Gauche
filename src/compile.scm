@@ -1390,9 +1390,11 @@
   (define lvar-dict (make-hash-table 'eq?)) ;; lvar -> symbol
   (define (get-lvar lvar)
     (or (hash-table-get lvar-dict lvar #f)
-        (rlet1 s ($ string->symbol $ format "~a.~d" (lvar-name lvar)
-                    $ hash-table-num-entries lvar-dict)
-          (hash-table-put! lvar-dict lvar s))))
+        (let* ([name (lvar-name lvar)]
+               [name (if (identifier? name) (identifier-name name) name)])
+          (rlet1 s ($ string->symbol $ format "~a.~d" name
+                      $ hash-table-num-entries lvar-dict)
+            (hash-table-put! lvar-dict lvar s)))))
   (define (rec iform)
     (case/unquote
      (iform-tag iform)
