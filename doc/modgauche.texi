@@ -4255,7 +4255,7 @@ Returns @code{#f} if the left or right map of @var{bimap} has an entry of
 the key, @code{#t} otherwise.
 @end defun
 
-@defun bimap-put! bimap x y &key on-conflict
+@defun bimap-put! bimap x y :key on-conflict
 Put a relation (@var{x}, @var{y}) into the bimap.
 After this, @code{(bimap-left-get @var{x})} will return @var{y},
 and @code{(bimap-left-get @var{y})} will return @var{x}.

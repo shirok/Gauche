@@ -1612,7 +1612,7 @@ bcryptアルゴリズムは最大72オクテットまでのパスワードを使
 @c COMMON
 @end defun
 
-@defun bcrypt-gensalt &key prefix count entropy-source
+@defun bcrypt-gensalt :key prefix count entropy-source
 @c EN
 Returns a string that contains given parameters and suitable to
 pass to the @var{setting} argument of @code{bcrypt-hashpw}.
@@ -2297,7 +2297,7 @@ Creates and returns an empty simple queue.
 @c COMMON
 @end defun
 
-@defun make-mtqueue &key max-length
+@defun make-mtqueue :key max-length
 @c EN
 Creates and returns an empty mtqueue.  When an integer is given
 to the keyword argument @var{max-length}, it is used to
@@ -9562,7 +9562,7 @@ Calls @code{AllocConsole} and @code{FreeConsole}, respectively.
 @c @defun string->peg-stream string
 @c @end defun
 
-@c @defun port->peg-stream port &key (reader read-char)
+@c @defun port->peg-stream port :key (reader read-char)
 @c @end defun
 
 @c @defun list->peg-stream lis
@@ -12190,7 +12190,7 @@ RFC2183に定められたContent-Dispositionヘッダフィールドをパーズ
 
 
 @defun mime-parse-parameters :optional iport
-@defunx mime-compose-parameters params :optional oport &key start-column
+@defunx mime-compose-parameters params :optional oport :key start-column
 @c EN
 These are low-level utility procedures to parse and compose @emph{parameter}
 part of header fields (as appeared in RFC2045 Section 5.1 etc).
@@ -12798,8 +12798,8 @@ blocks, instead of all-in-one procedure.
 
 @subheading Message composer
 
-@defun mime-compose-message parts :optional port &key boundary
-@defunx mime-compose-message-string parts &key boundary
+@defun mime-compose-message parts :optional port :key boundary
+@defunx mime-compose-message-string parts :key boundary
 Composes a MIME multipart message.  @code{Mime-compose-message}
 emits the result to an output port @var{port}, whose default
 is the current output port.  @code{Mime-compose-message-string}
