@@ -691,16 +691,19 @@ srfi-117, srfi-117
 Queues based on lists.
 Supported by the module @code{srfi-117}, which is implemented on top
 of @code{data.queue}.
+(@xref{Queues based on lists})
 
 リストを元にしたキュー。
 @code{data.queue}上に実装されたモジュール@code{srfi-117}でサポートされます。
-
+(@ref{リストを元にしたキュー})
 
 srfi-118, srfi-118
 ()
 
 Simple adjustable-size strings
 Supported by the module @code{srfi-118}.
+(@xref{Simple adjustable-size strings})
 
 簡単な可変長文字列
 モジュール@code{srfi-118}でサポートされます。
+(@ref{Simple adjustable-size strings}参照)

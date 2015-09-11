@@ -37,6 +37,7 @@ of supported SRFIs.
 * Boxes::                       srfi-111
 * Sets and bags::               srfi-113
 * Comparators::                 srfi-114
+* Queues based on lists::       srfi-117
 * Simple adjustable-size strings::  srfi-118
 @end menu
 
@@ -82,8 +83,8 @@ split-at split-at! iota
 @end deftp
 
 @menu
-* SRFI-1 List utilities::
-* SRFI-1 Set operations::
+* SRFI-1 List utilities::       
+* SRFI-1 Set operations::       
 @end menu
 
 @node SRFI-1 List utilities, SRFI-1 Set operations, List library, List library
@@ -980,20 +981,20 @@ Gaucheでは、一貫性のために``srfi-13''と名付けています。
 @end deftp
 
 @menu
-* SRFI-13 General conventions::
-* SRFI-13 String predicates::
-* SRFI-13 String Constructors::
-* SRFI-13 String Selection::
-* SRFI-13 String Comparison::
-* SRFI-13 String Prefixes & Suffixes::
-* SRFI-13 String searching::
-* SRFI-13 String case mapping::
-* SRFI-13 String reverse & append::
-* SRFI-13 String mapping::
-* SRFI-13 String rotation::
-* SRFI-13 other string operations::
-* SRFI-13 String filtering::
-* SRFI-13 Low-level string procedures::
+* SRFI-13 General conventions::  
+* SRFI-13 String predicates::   
+* SRFI-13 String Constructors::  
+* SRFI-13 String Selection::    
+* SRFI-13 String Comparison::   
+* SRFI-13 String Prefixes & Suffixes::  
+* SRFI-13 String searching::    
+* SRFI-13 String case mapping::  
+* SRFI-13 String reverse & append::  
+* SRFI-13 String mapping::      
+* SRFI-13 String rotation::     
+* SRFI-13 other string operations::  
+* SRFI-13 String filtering::    
+* SRFI-13 Low-level string procedures::  
 @end menu
 
 @node SRFI-13 General conventions, SRFI-13 String predicates, String library, String library
@@ -1836,12 +1837,12 @@ Gaucheでは@code{<char-set>}クラスは@code{<collection>}を継承し、
 @end deftp
 
 @menu
-* SRFI-14 Character-set constructors::
-* SRFI-14 Character-set comparison::
-* SRFI-14 Character-set iteration::
-* SRFI-14 Character-set query::
-* SRFI-14 Character-set algebra::
-* SRFI-14 Predefined character-set::
+* SRFI-14 Character-set constructors::  
+* SRFI-14 Character-set comparison::  
+* SRFI-14 Character-set iteration::  
+* SRFI-14 Character-set query::  
+* SRFI-14 Character-set algebra::  
+* SRFI-14 Predefined character-set::  
 @end menu
 
 @node SRFI-14 Character-set constructors, SRFI-14 Character-set comparison, Character-set library, Character-set library
@@ -2222,11 +2223,11 @@ Gaucheでは、timeオブジェクトは@code{<time>}クラスとして組み込
 @end deftp
 
 @menu
-* SRFI-19 Time types::
-* SRFI-19 Time queries::
-* SRFI-19 Time procedures::
-* SRFI-19 Date::
-* SRFI-19 Date reader and writer::
+* SRFI-19 Time types::          
+* SRFI-19 Time queries::        
+* SRFI-19 Time procedures::     
+* SRFI-19 Date::                
+* SRFI-19 Date reader and writer::  
 @end menu
 
 @node SRFI-19 Time types, SRFI-19 Time queries, Time data types and procedures, Time data types and procedures
@@ -5974,7 +5975,7 @@ They do provide hash functions.
 
 
 @c ----------------------------------------------------------------------
-@node Comparators, Simple adjustable-size strings, Sets and bags, Library modules - SRFIs
+@node Comparators, Queues based on lists, Sets and bags, Library modules - SRFIs
 @section @code{srfi-114} - Comparators
 @c NODE 比較器, @code{srfi-114} - 比較器
 
@@ -6341,7 +6342,109 @@ minimum or maximum compared by @var{comparator}.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Simple adjustable-size strings,  , Comparators, Library modules - SRFIs
+@node Queues based on lists, Simple adjustable-size strings, Comparators, Library modules - SRFIs
+@section @code{srfi-117} - Queues based on lists
+@c NODE リストを元にしたキュー, @code{srfi-117} - リストを元にしたキュー
+
+@deftp {Module} srfi-117
+@mdindex srfi-117
+A library of simple queue based on lists.
+Gauche has a queue support in @code{data.queue} module, which also
+includes MT-safe queue (@xref{Queue}).  This library is implemented
+on top of @code{data.queue}'s @code{<queue>} object and mainly provided
+for portable code.
+
+Note: Some APIs of this srfi require to return internal pairs the queue
+uses.  The pair's car/cdr will be mutated by subsequent queue operation,
+and also any mutation done on the pair would cause inconsistency
+in the original queue.
+@end deftp
+
+@defun make-list-queue lis :optional last
+Creates and returns a list-queue whose initial content is @var{list} @dots{}.
+In Gauche, a list queue is just an instance of @code{<queue>} (@xref{Queue}).
+
+The cells in @var{lis} are owned by the queue; the caller shouldn't mutate
+it afterwords, nor assume its structure remains the same.
+
+The optional @var{last} argument must be the last pair of @var{lis}.
+If it is passed, @code{make-list-queue} will skip scanning @var{lis}
+and just hold a reference to @var{last} as the tail of the queue.
+@end defun
+
+@defun list-queue elt @dots{}
+Creates and returns a list-queue whose initial content is @var{elt} @dots{}.
+In Gauche, a list queue is just an instance of @code{<queue>} (@xref{Queue}).
+@end defun
+
+@defun list-queue-copy queue
+Returns a copy of a list-queue @var{queue}.
+@end defun
+
+@defun list-queue-unfold p f g seed :optional queue
+@end defun
+
+@defun list-queue-unfold-right p f g seed :optional queue
+@end defun
+
+@defun list-queue? queue
+Returns true iff @var{queue} is a list-queue.
+@end defun
+
+@defun list-queue-empty? queue
+@end defun
+
+@defun list-queue-front queue
+@end defun
+
+@defun list-queue-back queue
+@end defun
+
+@defun list-queue-list queue
+@end defun
+
+@defun list-queue-fist-last queue
+@end defun
+
+@defun list-queue-add-front! queue elt
+@end defun
+
+@defun list-queue-add-back! queue elt
+@end defun
+
+@defun list-queue-remove-front! queue
+@end defun
+
+@defun list-queue-remove-back! queue
+@end defun
+
+@defun list-queue-remove-all! queue
+@end defun
+
+@defun list-queue-set-list! queue lis :optional last
+@end defun
+
+@defun list-queue-append queue @dots{}
+@end defun
+
+@defun list-queue-append! queue @dots{}
+@end defun
+
+@defun list-queue-concatenate queues
+@end defun
+
+@defun list-queue-map proc queue
+@end defun
+
+@defun list-queue-map! proc queue
+@end defun
+
+@defun list-queue-for-each proc queue
+@end defun
+
+
+@c ----------------------------------------------------------------------
+@node Simple adjustable-size strings,  , Queues based on lists, Library modules - SRFIs
 @section @code{srfi-118} - Simple adjustable-size strings
 @c NODE 簡単な可変長文字列, @code{srfi-118} - 簡単な可変長文字列
 
