@@ -665,6 +665,16 @@ Supported by the module @code{srfi-111}.  @xref{Boxes}
 モジュール@code{srfi-111}でサポートされます。@ref{Boxes}参照。
 
 
+srfi-112, srfi-112
+()
+
+Environment inquiry
+Supported by the module @code{srfi-112}.
+
+環境の問い合わせ
+モジュール@code{srfi-112}でサポートされます。
+
+
 srfi-113, srfi-113
 ()
 

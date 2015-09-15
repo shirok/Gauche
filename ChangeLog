@@ -1,3 +1,7 @@
+2015-09-14  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi-112.scm: Added.
+
 2015-09-10  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm (iform->sexpr): Use identifier's name instead of
