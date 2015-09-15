@@ -670,9 +670,12 @@ srfi-112, srfi-112
 
 Environment inquiry
 Supported by the module @code{srfi-112}.
+@xref{Portable runtime environment inquiry}.
 
 環境の問い合わせ
 モジュール@code{srfi-112}でサポートされます。
+@ref{Portable runtime environment inquiry}参照。
+
 
 
 srfi-113, srfi-113

@@ -35,6 +35,7 @@ of supported SRFIs.
 * Accessing environment variables::  srfi-98
 * Basic socket interface::      srfi-106
 * Boxes::                       srfi-111
+* Portable runtime environment inquiry::  srfi-112
 * Sets and bags::               srfi-113
 * Comparators::                 srfi-114
 * Queues based on lists::       srfi-117
@@ -5377,7 +5378,7 @@ An error is signaled if other symbols are passed.
 
 
 @c ----------------------------------------------------------------------
-@node Boxes, Sets and bags, Basic socket interface, Library modules - SRFIs
+@node Boxes, Portable runtime environment inquiry, Basic socket interface, Library modules - SRFIs
 @section @code{srfi-111} - Boxes
 @c NODE ボックス, @code{srfi-111} - ボックス
 
@@ -5424,7 +5425,72 @@ Mutate @var{box}'s content with @var{val}.  Returns unspecified value.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Sets and bags, Comparators, Boxes, Library modules - SRFIs
+@node Portable runtime environment inquiry, Sets and bags, Boxes, Library modules - SRFIs
+@section @code{srfi-112} - Environment inquiry
+@c NODE ポータブルな実行環境の問い合わせ, @code{srfi-112} - 実行環境の問い合わせ
+
+@deftp {Module} srfi-112
+@mdindex srfi-112
+This srfi provides a portable way to obtain runtime information.
+@end deftp
+
+@defun implementation-name
+[SRFI-112]
+Returns a string @code{"Gauche"}.
+@end defun
+
+@defun implementation-version
+[SRFI-112]
+Returns a string of Gauche's version.  The same as @code{gauche-version}
+(@xref{Environment Inquiry}).
+@end defun
+
+@defun cpu-architecture
+[SRFI-112]
+Returns a string of CPU architecture info, such as @code{"x86_64"}.
+Same as the @code{machine} field of the return value of @code{sys-uname}
+(@xref{System inquiry}).
+@end defun
+
+@defun machine-name
+[SRFI-112]
+Returns the host name.  Same as the @code{nodename} field of
+the return value of @code{sys-uname}.
+(@xref{System inquiry}).
+@end defun
+
+@defun os-name
+[SRFI-112]
+Returns the OS name.  Same as the @code{sysname} field
+of the return value of @code{sys-uname}.
+@end defun
+
+@defun os-version
+[SRFI-112]
+Returns the OS version.  Same as the @code{release} field
+of the return value of @code{sys-uname}.
+@end defun
+
+Here's an example of output:
+
+@example
+gosh> (implementation-name)
+"Gauche"
+gosh> (implementation-version)
+"0.9.5"
+gosh> (cpu-architecture)
+"x86_64"
+gosh> (machine-name)
+"scherzo"
+gosh> (os-name)
+"Linux"
+gosh> (os-version)
+"3.2.0-89-generic"
+@end example
+
+
+@c ----------------------------------------------------------------------
+@node Sets and bags, Comparators, Portable runtime environment inquiry, Library modules - SRFIs
 @section @code{srfi-113} - Sets and bags
 @c NODE setとbag, @code{srfi-113} - setとbag
 
