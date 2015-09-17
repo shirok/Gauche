@@ -59,7 +59,7 @@ In the shortest form, it can be defined like this:
 
 @c JP
 この節では Gauche のオブジェクトシステムの基本的構造について手短かに
-説明します。Gauche のオブジェクトシステムは CLOS (Common-Listp Object System)
+説明します。Gauche のオブジェクトシステムは CLOS (Common-Lisp Object System)
 に強く影響されています。CLOS やそれにかかわりのある TinyCLOS、STklos、
 あるいは Guile のオブジェクトシステムの経験がある方は、この節を飛ばして、
 次の節にいってもよいでしょう。
