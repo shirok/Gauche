@@ -528,11 +528,11 @@ srfi-46
 
 Basic Syntax-rules Extensions
 Built-in.
-@xref{Hygienic Macros}.
+@xref{Hygienic macros}.
 
 基本的なsyntax-rulesの拡張
 組み込みです。
-@xref{Hygienic Macros}.
+@xref{Hygienic macros}.
 
 
 srfi-55, srfi-55
