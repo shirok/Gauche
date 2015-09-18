@@ -3,14 +3,6 @@
 @c NODE マクロ
 
 @c EN
-Gauche supports both R7RS hygienic macros and
-traditional macros.
-@c JP
-Gaucheでは、R7RSに定義される「健全な(hygienic)」マクロと
-伝統的なマクロの両方が使えます。
-@c COMMON
-
-@c EN
 Macro of Lisp-family language is very different feature from
 ones of other languages, such as C preprocessor macros.
 It allows you to extend the original language syntax.
@@ -25,30 +17,42 @@ Lisp系言語のマクロは、他の言語に見られるマクロ(例えばC�
 走らせたり、あるいは自分の問題解決に適した「ミニ言語」をデザインすることさえできます。
 @c COMMON
 
+Gauche supports hygienic macros, which allows to write safe macros
+by avoiding name collisions.  If you know traditional Lisp macros
+but new to hygienic macros, they might seem confusing at first.
+We have an introductory section (@ref{Why hygienic?}) for those who
+are not familiar with hygienic macros; if you know what they are,
+you can skip the section.
+
 @menu
-* Hygienic Macros::
-* Traditional Macros::
-* Macro expansion::
-* Macro utilities::
+* Why hygienic?::               
+* Hygienic macros::             
+* Traditional macros::          
+* Macro expansion::             
+* Macro utilities::             
 @end menu
 
-@node Hygienic Macros, Traditional Macros, Macros, Macros
-@section Hygienic Macros
-@c NODE 健全なマクロ
+@node Why hygienic?, Hygienic macros, Macros, Macros
+@section Why hygienic?
+@c NODE なぜ衛生的マクロか
 
-@c EN
+Lisp macro is a programmatic transformation of source code.
+A @emph{macro expander} is a procedure that takes a subtree of
+source code, and returns (possibly modified) source code.
+You can mark a part of the program 
+
+
+
+
+@node Hygienic macros, Traditional macros, Why hygienic?, Macros
+@section Hygienic macros
+@c NODE 衛生的マクロ
+
 R7RS hygienic macro is based on a special pattern language,
 and guaranteed that no "variable capture" occurs.
 "Variable capture" means that if you insert new variable
 bindings in the expanded form, the new bindings
 shadows the bindings in the form passed to the macro.
-@c JP
-R7RSの健全なマクロは特別なパターン言語に基づいていて、
-また「変数捕捉」が起こらないことが保証されています。
-「変数捕捉」とは、マクロが新しい変数束縛を導入した時に、その束縛が
-マクロに渡されたフォーム中の変数名と衝突して、その変数名の本来の束縛を隠して
-しまうことを言います。
-@c COMMON
 
 @defspec define-syntax name transformer-spec
 [R7RS]
@@ -65,8 +69,8 @@ R7RSの健全なマクロは特別なパターン言語に基づいていて、
 @end defspec
 
 
-@node Traditional Macros, Macro expansion, Hygienic Macros, Macros
-@section Traditional Macros
+@node Traditional macros, Macro expansion, Hygienic macros, Macros
+@section Traditional macros
 @c NODE 伝統的なマクロ
 
 @defspec define-macro name procedure
@@ -95,7 +99,7 @@ form, and compile it again.
 @c COMMON
 @end defspec
 
-@node Macro expansion, Macro utilities, Traditional Macros, Macros
+@node Macro expansion, Macro utilities, Traditional macros, Macros
 @section Macro expansion
 @c NODE マクロの展開
 
