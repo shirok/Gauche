@@ -66,6 +66,8 @@ struct ScmModuleRec {
     ScmObj prefix;              /* if symbol, all bindings in this module
                                    appear to have the prefix.  used in an
                                    anonymous wrapper modules. */
+    ScmObj info;                /* alist of metainfo; e.g.
+                                   (source-info . <string>) */
 };
 
 #define SCM_MODULE(obj)       ((ScmModule*)(obj))

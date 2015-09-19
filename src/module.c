@@ -106,22 +106,6 @@
  * to share a single hashtable for their internal bindings.
  */
 
-static void module_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
-{
-    if (SCM_MODULEP(SCM_MODULE(obj)->origin)) {
-        Scm_Printf(port, "#<module %A$%A @%p>",
-                   SCM_MODULE(obj)->name,
-                   SCM_MODULE(SCM_MODULE(obj)->origin)->name,
-                   obj);
-    } else {
-        Scm_Printf(port, "#<module %A>", SCM_MODULE(obj)->name);
-    }
-}
-
-SCM_DEFINE_BUILTIN_CLASS(Scm_ModuleClass,
-                         module_print, NULL, NULL, NULL,
-                         SCM_CLASS_COLLECTION_CPL);
-
 /* Global module table */
 static struct {
     ScmHashTable *table;    /* Maps name -> module. */
@@ -812,74 +796,6 @@ ScmObj Scm_PathToModuleName(ScmString *path)
 }
 
 /*----------------------------------------------------------------------
- * Module introspection
- */
-
-static ScmObj module_name(ScmObj m)
-{
-    return SCM_MODULE(m)->name;
-}
-
-static ScmObj module_imported(ScmObj m)
-{
-    return SCM_MODULE(m)->imported;
-}
-
-static ScmObj module_exported(ScmObj m)
-{
-    return Scm_ModuleExports(SCM_MODULE(m));
-}
-
-static ScmObj module_exportAll(ScmObj m)
-{
-    return SCM_MAKE_BOOL(SCM_MODULE(m)->exportAll);
-}
-
-static ScmObj module_parents(ScmObj m)
-{
-    return SCM_MODULE(m)->parents;
-}
-
-static ScmObj module_mpl(ScmObj m)
-{
-    return SCM_MODULE(m)->mpl;
-}
-
-static ScmObj module_depended(ScmObj m)
-{
-    return SCM_MODULE(m)->depended;
-}
-
-static ScmObj module_table(ScmObj m)
-{
-    return SCM_OBJ(SCM_MODULE(m)->internal);
-}
-
-static ScmObj module_origin(ScmObj m)
-{
-    return SCM_MODULE(m)->origin;
-}
-
-static ScmObj module_prefix(ScmObj m)
-{
-    return SCM_MODULE(m)->prefix;
-}
-
-static ScmClassStaticSlotSpec module_slots[] = {
-    SCM_CLASS_SLOT_SPEC("name", module_name, NULL),
-    SCM_CLASS_SLOT_SPEC("mpl", module_mpl, NULL),
-    SCM_CLASS_SLOT_SPEC("parents", module_parents, NULL),
-    SCM_CLASS_SLOT_SPEC("imports", module_imported, NULL),
-    SCM_CLASS_SLOT_SPEC("exports", module_exported, NULL),
-    SCM_CLASS_SLOT_SPEC("export-all", module_exportAll, NULL),
-    SCM_CLASS_SLOT_SPEC("table", module_table, NULL),
-    SCM_CLASS_SLOT_SPEC("depends", module_depended, NULL),
-    SCM_CLASS_SLOT_SPEC("origin", module_origin, NULL),
-    SCM_CLASS_SLOT_SPEC("prefix", module_prefix, NULL),
-    SCM_CLASS_SLOT_SPEC_END()
-};
-
-/*----------------------------------------------------------------------
  * Predefined modules and initialization
  */
 
@@ -978,13 +894,4 @@ void Scm__InitModule(void)
     for (modname = builtin_modules; *modname; modname++) {
         (void)SCM_FIND_MODULE(*modname, SCM_FIND_MODULE_CREATE);
     }
-}
-
-void Scm__InitModulePost(void)
-{
-    Scm_InitStaticClassWithMeta(&Scm_ModuleClass, "<module>", &gaucheModule,
-                                NULL, /* auto-generate meta */
-                                SCM_FALSE, /* calculate supers from cpl */
-                                module_slots,
-                                0);
 }

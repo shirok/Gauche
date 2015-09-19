@@ -64,7 +64,6 @@ static struct {
  */
 
 extern void Scm__InitModule(void);
-extern void Scm__InitModulePost(void);
 extern void Scm__InitSymbol(void);
 extern void Scm__InitNumber(void);
 extern void Scm__InitChar(void);
@@ -159,7 +158,6 @@ void Scm_Init(const char *signature)
     Scm__InitNumber();
     Scm__InitChar();
     Scm__InitClass();
-    Scm__InitModulePost();
     Scm__InitCollection();
     Scm__InitExceptions();
     Scm__InitProc();

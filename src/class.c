@@ -3235,7 +3235,7 @@ void Scm__InitClass(void)
     CINIT(SCM_CLASS_SYNTAX_RULES,     "<syntax-rules>");
 
     /* module.c */
-    /* Initialized in Scm__InitModulePost */
+    /* class initialized in libmod.scm */
 
     /* number.c */
     CINIT(SCM_CLASS_NUMBER,           "<number>");

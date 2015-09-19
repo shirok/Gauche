@@ -35,6 +35,7 @@
 
 (inline-stub
  (declcode (.include "gauche/vminsn.h")
+           (.include "gauche/class.h")
            (.include "gauche/priv/moduleP.h")))
 
 ;;;
@@ -185,6 +186,35 @@
 
 (define-cproc %import-modules (mod::<module> mods) ;deprecated
   Scm_ImportModules)
+
+(select-module gauche)
+(inline-stub
+ (define-cfn module-print (obj port::ScmPort* ctx::ScmWriteContext*)
+   ::void :static
+   (if (SCM_MODULEP (-> (SCM_MODULE obj) origin))
+     (Scm_Printf port "#<module %A$%A @%p>"
+                 (-> (SCM_MODULE obj) name)
+                 (-> (SCM_MODULE (-> (SCM_MODULE obj) origin)) name)
+                 obj)
+     (Scm_Printf port "#<module %A>" (-> (SCM_MODULE obj) name))))
+ 
+ (define-cclass <module>
+   "ScmModule*" "Scm_ModuleClass"
+   (c "SCM_CLASS_COLLECTION_CPL")
+   ((name :setter #f)
+    (mpl :setter #f)
+    (parents :setter #f)
+    (imports :c-name "imported" :setter #f)
+    (exports :c-spec "Scm_ModuleExports(obj)" :setter #f)
+    (export-all :type <boolean> :c-name "exportAll" :setter #f)
+    (table   :c-name "internal" :setter #f)
+    (depends :c-name "depended" :setter #f)
+    (origin :setter #f)
+    (prefix :setter #f)
+    (info))
+   (printer (c "module_print")))
+ 
+ )
 
 ;;;
 ;;; Universal import
