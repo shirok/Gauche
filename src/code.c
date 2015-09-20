@@ -65,14 +65,6 @@ ScmObj Scm_CompiledCodeFullName(ScmCompiledCode *cc)
     }
 }
 
-static void compiled_code_print(ScmObj obj, ScmPort *out, ScmWriteContext *c)
-{
-    Scm_Printf(out, "#<compiled-code %S@%p>",
-               Scm_CompiledCodeFullName(SCM_COMPILED_CODE(obj)), obj);
-}
-
-SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_CompiledCodeClass, compiled_code_print);
-
 static ScmCompiledCode *make_compiled_code(void)
 {
     ScmCompiledCode *cc = SCM_NEW(ScmCompiledCode);
@@ -834,7 +826,7 @@ void Scm_CompiledCodeEmit(ScmCompiledCode *cc,
 }
 
 /*----------------------------------------------------------------
- * CompiledCode - Scheme interface
+ * CompiledCode - introspection
  */
 
 /* Converts the code vector into a list.
@@ -887,65 +879,6 @@ ScmObj Scm_CompiledCodeToList(ScmCompiledCode *cc)
     }
     return h;
 }
-
-static ScmObj code_size_get(ScmObj cc)
-{
-    return SCM_MAKE_INT(SCM_COMPILED_CODE(cc)->codeSize);
-}
-
-static ScmObj code_maxstack_get(ScmObj cc)
-{
-    return SCM_MAKE_INT(SCM_COMPILED_CODE(cc)->maxstack);
-}
-
-static ScmObj code_info_get(ScmObj cc)
-{
-    return SCM_COMPILED_CODE(cc)->info;
-}
-
-static ScmObj code_arginfo_get(ScmObj cc)
-{
-    return SCM_COMPILED_CODE(cc)->argInfo;
-}
-
-static ScmObj code_reqargs_get(ScmObj cc)
-{
-    return SCM_MAKE_INT(SCM_COMPILED_CODE(cc)->requiredArgs);
-}
-
-static ScmObj code_optargs_get(ScmObj cc)
-{
-    return SCM_MAKE_INT(SCM_COMPILED_CODE(cc)->optionalArgs);
-}
-
-static ScmObj code_name_get(ScmObj cc)
-{
-    return SCM_COMPILED_CODE(cc)->name;
-}
-
-static ScmObj code_parent_get(ScmObj cc)
-{
-    return SCM_OBJ(SCM_COMPILED_CODE(cc)->parent);
-}
-
-static ScmObj code_iform_get(ScmObj cc)
-{
-    return SCM_OBJ(SCM_COMPILED_CODE(cc)->intermediateForm);
-}
-
-static ScmClassStaticSlotSpec code_slots[] = {
-    SCM_CLASS_SLOT_SPEC("parent", code_parent_get, NULL),
-    SCM_CLASS_SLOT_SPEC("arg-info", code_arginfo_get, NULL),
-    SCM_CLASS_SLOT_SPEC("info", code_info_get, NULL),
-    SCM_CLASS_SLOT_SPEC("required-args", code_reqargs_get, NULL),
-    SCM_CLASS_SLOT_SPEC("optional-args", code_optargs_get, NULL),
-    SCM_CLASS_SLOT_SPEC("name", code_name_get, NULL),
-    SCM_CLASS_SLOT_SPEC("full-name", Scm_CompiledCodeFullName, NULL),
-    SCM_CLASS_SLOT_SPEC("size", code_size_get, NULL),
-    SCM_CLASS_SLOT_SPEC("max-stack", code_maxstack_get, NULL),
-    SCM_CLASS_SLOT_SPEC("intermediate-form", code_iform_get, NULL),
-    SCM_CLASS_SLOT_SPEC_END()
-};
 
 /*===========================================================
  * VM Instruction introspection
@@ -1052,11 +985,3 @@ ScmWord Scm_VMInsnBuild(ScmObj obj)
     return 0;       /* dummy */
 }
 
-/*===========================================================
- * Initialization
- */
-void Scm__InitCode(void)
-{
-    Scm_InitStaticClass(SCM_CLASS_COMPILED_CODE, "<compiled-code>",
-                        Scm_GaucheModule(), code_slots, 0);
-}

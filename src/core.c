@@ -80,7 +80,6 @@ extern void Scm__InitRegexp(void);
 extern void Scm__InitRead(void);
 extern void Scm__InitSignal(void);
 extern void Scm__InitSystem(void);
-extern void Scm__InitCode(void);
 extern void Scm__InitVM(void);
 extern void Scm__InitAutoloads(void);
 extern void Scm__InitCollection(void);
@@ -163,7 +162,6 @@ void Scm_Init(const char *signature)
     Scm__InitProc();
     Scm__InitPort();
     Scm__InitWrite();
-    Scm__InitCode();
     Scm__InitMacro();
     Scm__InitLoad();
     Scm__InitRegexp();

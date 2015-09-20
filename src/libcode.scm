@@ -61,6 +61,7 @@
 (inline-stub
  (declcode
   (.include <gauche/code.h>
+            <gauche/class.h>
             <gauche/vminsn.h>))
 
  (define-cproc vm-dump-code (code::<compiled-code>) ::<void>
@@ -161,4 +162,25 @@
  ;; compiler runs. This should eventually be done in the gauche.internal side.
  (initcode
   (Scm_ImportModule (Scm_GaucheInternalModule) 'gauche.vm.code SCM_FALSE 0))
+ )
+
+(select-module gauche)
+(inline-stub
+  ;; <compiled-code> class is visible 
+ (define-cclass <compiled-code>
+   "ScmCompiledCode*" "Scm_CompiledCodeClass"
+   (c "SCM_CLASS_DEFAULT_CPL")
+   ((parent :setter #f)
+    (arg-info :c-name "argInfo" :setter #f)
+    (info :setter #f)
+    (required-args :type <fixnum> :c-name "requiredArgs" :setter #f)
+    (optional-args :type <fixnum> :c-name "optionalArgs" :setter #f)
+    (name :setter #f)
+    (full-name :c-spec "Scm_CompiledCodeFullName(obj)" :setter #f)
+    (size :type <fixnum> :c-name "codeSize" :setter #f)
+    (max-stack :type <fixnum> :c-name "maxstack" :setter #f)
+    (intermediate-form :c-name "intermediateForm" :setter #f))
+   (printer (Scm_Printf port "#<compiled-code %S@%p>"
+                        (Scm_CompiledCodeFullName (SCM_COMPILED_CODE obj))
+                        obj)))
  )
