@@ -1381,6 +1381,7 @@
 ;;   (<slot-spec> ...)
 ;;   [(allocator <proc-spec>)]
 ;;   [(printer   <proc-spec>)]
+;;   [(comparer  <proc-spec>)]
 ;;   [(direct-supers <string> ...)]
 ;;   )
 ;;
@@ -1426,6 +1427,7 @@
    (qualifiers :init-keyword :qualifiers)
    (allocator  :init-keyword :allocator :init-value #f)
    (printer    :init-keyword :printer   :init-value #f)
+   (comparer   :init-keyword :comparer  :init-value #f)
    (slot-spec  :init-keyword :slot-spec :init-value '())
    (direct-supers :init-keyword :direct-supers :init-value '())
    ))
@@ -1460,14 +1462,22 @@
        (check-arg list? slot-spec)
        (let* ([allocator (cond [(assq 'allocator more) => cadr] [else #f])]
               [printer   (cond [(assq 'printer more) => cadr] [else #f])]
+              [comparer  (cond [(assq 'comparer more) => cadr] [else #f])]
               [dsupers   (cond [(assq 'direct-supers more) => cdr] [else '()])]
               [cclass (make <cclass>
                         :scheme-name scm-name :c-type c-type :c-name c-name
                         :qualifiers quals
                         :cpa cpa :direct-supers dsupers
-                        :allocator allocator :printer printer)])
+                        :allocator allocator :printer printer
+                        :comparer comparer)])
          (set! (~ cclass'slot-spec) (process-cclass-slots cclass slot-spec))
          (cgen-add! cclass))])))
+
+(define-method c-allocator-name ((self <cclass>))
+  (let1 allocator (~ self'allocator)
+    (cond [(c-literal-expr allocator)]
+          [(not allocator) "NULL"]
+          [else #`",(~ self'c-name)_ALLOCATE"])))
 
 (define-method c-printer-name ((self <cclass>))
   (let1 printer (~ self'printer)
@@ -1475,11 +1485,11 @@
           [(not printer) "NULL"]
           [else #`",(~ self'c-name)_PRINT"])))
 
-(define-method c-allocator-name ((self <cclass>))
-  (let1 allocator (~ self'allocator)
-    (cond [(c-literal-expr allocator)]
-          [(not allocator) "NULL"]
-          [else #`",(~ self'c-name)_ALLOCATE"])))
+(define-method c-comparer-name ((self <cclass>))
+  (let1 comparer (~ self'comparer)
+    (cond [(c-literal-expr comparer)]
+          [(not comparer) "NULL"]
+          [else #`",(~ self'c-name)_COMPARE"])))
 
 (define-method c-slot-spec-name ((self <cclass>))
   (if (null? (~ self'slot-spec))
@@ -1508,14 +1518,20 @@
     (p (c-code (~ self'printer)))
     (p "}")
     (p ""))
+  (unless ((any-pred not c-literal?) (~ self'comparer))
+    (p "static int "(c-comparer-name self)"(ScmObj x, ScmObj y, int equalp)")
+    (p "{")
+    (p (c-code (~ self'comparer)))
+    (p "}")
+    (p ""))
   (emit-cpa self)
   (if (memv :base (~ self'qualifiers))
     (let1 c-type (string-trim-right (~ self'c-type))
       (unless (string-suffix? "*" c-type)
         (errorf <cgen-stub-error> "can't use C-type ~s as a base class; C-type must be a pointer type" c-type))
       (let1 c-instance-type (string-drop-right c-type 1)
-        (p "SCM_DEFINE_BASE_CLASS("(~ self'c-name)", "c-instance-type", "(c-printer-name self)", NULL, NULL, "(c-allocator-name self)", "(cpa-name self)");")))
-    (p "SCM_DEFINE_BUILTIN_CLASS("(~ self'c-name)", "(c-printer-name self)", NULL, NULL, "(c-allocator-name self)", "(cpa-name self)");"))
+        (p "SCM_DEFINE_BASE_CLASS("(~ self'c-name)", "c-instance-type", "(c-printer-name self)", "(c-comparer-name self)", NULL, "(c-allocator-name self)", "(cpa-name self)");")))
+    (p "SCM_DEFINE_BUILTIN_CLASS("(~ self'c-name)", "(c-printer-name self)", "(c-comparer-name self)", NULL, "(c-allocator-name self)", "(cpa-name self)");"))
   (p "")
   (when (pair? (~ self'slot-spec))
     (for-each emit-getter-n-setter (~ self'slot-spec))
