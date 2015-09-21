@@ -119,19 +119,22 @@
    ;; private
    (current-attrs :init-form (make <char-attrs>))))
 
-(define-method call-with-console ((con <vt100>) proc)
-  (with-terminal-mode (~ con'iport) 'rare
+(define-method call-with-console ((con <vt100>) proc :key (mode 'rare))
+  (with-terminal-mode (~ con'iport) mode
                       (^_ (proc con))
-                      (^[] (reset-terminal con))))
+                      (^[]
+                        (reset-character-attribute con)
+                        (show-cursor con))))
 
 (define-method putch ((con <vt100>) c)
   (display c (~ con'oport)) (flush (~ con'oport)))
 (define-method putstr ((con <vt100>) s)
   (display s (~ con'oport)) (flush (~ con'oport)))
-(define-method getch ((con <vt100>))
-  (read-char (~ con'iport)))
 (define-method chready? ((con <vt100>))
   (char-ready? (~ con'iport)))
+
+(define-method getch ((con <vt100>))
+  (read-char (~ con'iport)))
 
 (define-method query-cursor-position ((con <vt100>))
   (define (r) (getch con))

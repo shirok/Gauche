@@ -18076,6 +18076,14 @@ future versions of the library.
 This module provides a simple interface for character terminal control.
 Currently we only support vt100 compatible terminals.  We plan to
 support Windows console as well.
+
+This module don't depend on external library such as @code{curses},
+and it can do is limited; for example, you can't get an event
+when shift key alone is pressed.  For finer controls, you need
+some extension libraries.
+
+For an example of the features in this module, see 
+@file{snake.scm} in the examples directory of Gauche souce distribution.
 @end deftp
 
 @subheading Console classes
@@ -18099,16 +18107,20 @@ the standard output port.
 
 @subheading Console control
 
-@deffn {Generic function} call-with-console console proc
-Take over the control of the console, and calls @var{proc} with
-@var{console} as the only argument.
-
-This generic function
-handles the required mode change of the console; e.g.
-for Unix-style terminals, this would set the terminal to raw mode.
+@deffn {Generic function} call-with-console console proc :key mode
+Takes over the control of the console, and calls @var{proc} with
+@var{console} as the only argument.   The console is set to
+the @var{mode}, which must be a symbol @code{with-terminal-mode}
+accepts: @code{raw}, @code{rare} or @code{cooked}.  By default
+the console is set to @code{rare} mode, which turn off the echoing
+and passes most of keystrokes to the program, but it intercepts
+terminal controls (like @code{Ctrl-C} for interrupt and
+@code{Ctrl-Z} for suspend; the actual key depends on terminal
+settings, though.)
 
 If @var{proc} raises an unhandled error, this generic function
-resets the terminal mode before returning.
+resets the terminal mode before returning.  It does not clear
+the screen.
 @end deffn
 
 @deffn {Generic function} putch console char
@@ -18127,36 +18139,84 @@ any key is pressed.
 @end deffn
 
 @deffn {Generic function} chready? console
+Returns true if there's a key sequence to be read in the console's
+input.
 @end deffn
 
 @deffn {Generic function} query-cursor-position console
+Returns two values, the current cursor's x and y position.
+The top-left corner is (0,0).
 @end deffn
 
 @deffn {Generic function} move-cursor-to console row column
+Move cursor to the specified position.  The top-left corner is (0,0).
 @end deffn
 
 @deffn {Generic function} reset-terminal console
+Reset terminal.  Usually this sets the
+character attributes to the default,
+clears the screen, and moves the cursor to (0, 0).
 @end deffn
 
 @deffn {Generic function} clear-screen console
+Clear entire screen.
 @end deffn
 
 @deffn {Generic function} clear-to-eol console
+Clear characters from the current cursor position to the
+end of the line.
 @end deffn
 
 @deffn {Generic function} hide-cursor console
-@end deffn
-
-@deffn {Generic function} show-cursor console
+@deffnx {Generic function} show-cursor console
+Hide/show the cursor.
 @end deffn
 
 @deffn {Generic function} query-screen-size console
+Returns two values, the width and height of the screen.
 @end deffn
 
 @deffn {Generic function} set-character-attribute console spec
+Set the console so that the subsequent characters will be written
+with attributes specified by @var{spec}.
+
+The character attributes spec is a list in the following format:
+
+@example
+(<fgcolor> [<bgcolor> . <option> ...])
+@end example
+
+where:
+
+@example
+<fgcolor> : <color> | #f     ; #f means default
+<bgcolor> : <color> | #f
+<color>  : black | red | green | yellow | blue | magenta | cyan | white
+<option> : bright | reverse | underscore
+@end example
+
+For example, you can set characters to be written in red with 
+black background and underscore, you can call:
+
+@example
+(set-character-attribute con '(red black underscore))
+@end example
+
+That the options may seem rather limited in the age of
+full-color bitmap displays.  That's what it used to be, young lads.
 @end deffn
 
 @deffn {Generic function} reset-character-attribute console
+Reset character attributes to the default.
+@end deffn
+
+@deffn {Generic function} with-character-attribute console attrs thunk
+Sets the console's attributes to @var{attrs} and calls @var{thunk},
+then restores the attributes.  Even if @var{thunk} throws an error,
+attributes are restored.
+
+Note: You should be able to nest this, but currently nesting
+isn't working.
 @end deffn
 
 
