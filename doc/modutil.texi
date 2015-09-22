@@ -2558,6 +2558,37 @@ Gaucheでは@code{queue->list}は新しいリストをアロケートしてキ�
 @c COMMON
 @end defun
 
+@defun queue->internal-list queue
+@c EN
+Like @code{queue->list}, returns a list whose content is the items
+in the queue in order, but the returned list @emph{may} share the
+internal storage of @var{queue}.  The returned list can be modified
+by subsequent operations of @var{queue}, and any modification on the
+list can make @var{queue} inconsistent.
+
+Because of this danger, we don't allow @code{<mtqueue>} to be
+passed to this procedure; it would signal an error if you do so.
+
+If you just want to extract the accumulated result in @var{queue} without
+copying, consinder @code{dequeue-all!}, which is safe because it atomically
+resets the queue.  Use this procedure only when you absolutely need
+to access the contents of the queue without taking them out.
+@c JP
+@code{queue->list}と同じように、@var{queue}の内容をリストとして返しますが、
+そのリストは@var{queue}の内部構造と共有されているかもしれません。
+つまり、返されたリストは続く@var{queue}への操作によって変更される可能性があり、
+また返されたリストを変更すると@var{queue}の一貫性は失われるでしょう。
+
+この危険性のため、@code{<mtqueue>}をこの手続きに渡すことは禁じられています。
+もしそうしたらエラーとなります。
+
+@var{queue}に蓄積されたデータをコピーせずに取り出したいというだけなら、
+@code{dequeue-all!}を使ってください。それは取り出すのとキューを空にする
+操作をアトミックに行うので安全です。この手続きは、キューの中身を取り出すこと無く
+内部にアクセスしたいという場合にだけ使って下さい。
+@c COMMON
+@end defun
+
 @defun find-in-queue pred queue
 @c EN
 Returns the first item in @var{queue} that satisfies a

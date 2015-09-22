@@ -1,5 +1,8 @@
 2015-09-21  Shiro Kawai  <shiro@acm.org>
 
+	* ext/data/queue.scm (queue->internal-list): Add this one,
+	  corresponding to srfi-117's list-queue-list.
+
 	* lib/data/trie.scm (trie-exists?): Fix a bug that it returned #t
 	  even if the given key doesn't exist, but merely a prefix of
 	  other keys.

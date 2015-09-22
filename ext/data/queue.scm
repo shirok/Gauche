@@ -54,7 +54,7 @@
           queue-push! queue-push-unique! enqueue! enqueue-unique!
           queue-pop! dequeue! dequeue-all!
           queue-front queue-rear queue-length
-          queue->list list->queue
+          queue->list queue->internal-list list->queue
           find-in-queue remove-from-queue!
           any-in-queue every-in-queue
 
@@ -379,6 +379,15 @@
 (define (find-in-queue pred q)  (queue-op q (^_(find pred (%qhead q)))))
 (define (any-in-queue pred q)   (queue-op q (^_(any pred (%qhead q)))))
 (define (every-in-queue pred q) (queue-op q (^_(every pred (%qhead q)))))
+
+;; This returns internal list of the queue.  Many queue operation
+;; mutates the internal list, so it is not safe to hold onto the
+;; result value.  We specifically prohibit getting internal list of
+;; mtqueue for the safety.
+(define (queue->internal-list q)
+  (when (mtqueue? q)
+    (error "Can't get internal list of <mtqueue>:" q))
+  (%qhead q))
 
 ;;;
 ;;; Enqueue/dequeue

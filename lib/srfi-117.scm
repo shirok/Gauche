@@ -79,15 +79,7 @@
 (define (list-queue-empty? q) (queue-empty? q))
 (define (list-queue-front q) (queue-front q))
 (define (list-queue-back q) (queue-rear q))
-
-;; This returns internal list of the queue.  Many queue operation
-;; mutates the internal list, so it is not safe to hold onto the
-;; result value.  We specifically prohibit getting internal list of
-;; mtqueue for the safety.
-(define (list-queue-list q)
-  (when (mtqueue? q)
-    (error "Can't get internal list of <mtqueue>:" q))
-  ((with-module data.queue %qhead) q))
+(define (list-queue-list q) (queue->internal-list q))
 
 ;; This also returns internal structure.
 (define (list-queue-first-last q)
