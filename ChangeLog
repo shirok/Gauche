@@ -1,3 +1,8 @@
+2015-09-22  Shiro Kawai  <shiro@acm.org>
+
+	* ext/termios/termios.scm (with-terminal-mode): Turn off port buffering
+	  if raw or rare mode is specified.
+
 2015-09-21  Shiro Kawai  <shiro@acm.org>
 
 	* ext/data/queue.scm (queue->internal-list): Add this one,
@@ -8,6 +13,7 @@
 	  other keys.
 	  (trie-partial-key?): Added to check if the given seq is a prefix
 	  of existing keys.
+	  (make-trie): New optional argument, tab-empty?.
 
 2015-09-14  Shiro Kawai  <shiro@acm.org>
 

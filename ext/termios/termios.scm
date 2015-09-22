@@ -226,6 +226,7 @@
       [(sys-isatty port)
        (let ()
          (define saved-attr (sys-tcgetattr port))
+         (define saved-buffering (port-buffering port))
          (define new-attr
            (rlet1 attr (sys-termios-copy saved-attr)
              (case mode
@@ -266,9 +267,12 @@
                 (error "terminal mode needs to be one of cooked, rare or raw, \
                           but got:" mode)])))
          (define (set)
-           (sys-tcsetattr port TCSANOW new-attr))
+           (sys-tcsetattr port TCSANOW new-attr)
+           (when (memq mode '(raw rare))
+             (set! (port-buffering port) :none)))
          (define (reset)
            (sys-tcsetattr port TCSANOW saved-attr)
+           (set! (port-buffering port) saved-buffering)
            (when cleanup (cleanup)))
          (unwind-protect (begin (set) (proc port)) (reset)))]
       [else (proc port)])]))
