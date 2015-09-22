@@ -1,5 +1,8 @@
 2015-09-22  Shiro Kawai  <shiro@acm.org>
 
+	* lib/text/console.scm (getch): Support special keys by parsing
+	  vt100 input escape sequences.
+
 	* ext/data/queue.scm (queue-internal-list): This name is better.
 
 	* ext/termios/termios.scm (with-terminal-mode): Turn off port buffering

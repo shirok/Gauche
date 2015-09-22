@@ -50,7 +50,10 @@
   (use gauche.generator)
   (use gauche.sequence)
   (use gauche.termios)
+  (use data.trie)
+  (use data.queue)
   (use util.match)
+  (use srfi-42)
   (export <vt100>
 
           call-with-console
@@ -116,8 +119,12 @@
 (define-class <vt100> ()
   ((iport :init-keyword :iport :initform (standard-input-port))
    (oport :init-keyword :oport :initform (standard-output-port))
+   (input-delay :init-keyword :input-delay :init-value 1000); us, can be #f
    ;; private
-   (current-attrs :init-form (make <char-attrs>))))
+   (current-attrs :init-form (make <char-attrs>))
+   (input-buffer :init-form (make-queue))
+   (screen-size :init-value #f)   ; (width . height)
+   ))
 
 (define-method call-with-console ((con <vt100>) proc :key (mode 'rare))
   (with-terminal-mode (~ con'iport) mode
@@ -131,10 +138,82 @@
 (define-method putstr ((con <vt100>) s)
   (display s (~ con'oport)) (flush (~ con'oport)))
 (define-method chready? ((con <vt100>))
-  (char-ready? (~ con'iport)))
+  (or (not (queue-empty? (~ con'input-buffer)))
+      (char-ready? (~ con'iport))))
+
+;; We try to interpret input escape sequences as much as possible.
+;; To distinguish from real ESC key and the escape sequence, we time
+;; the input---if they comes immediately one after, we take it as a chunk.
+;; <vt100>'input-delay sets the timeout.
+
+;; Read a char; returns a char, or #f on timeout.  May return EOF.
+(define (%read-char/timeout con)
+  (receive (nfds rfds wfds xfds)
+      (sys-select! (sys-fdset (~ con'iport)) #f #f (~ con'input-delay))
+    (if (= nfds 0)
+      #f ; timeout
+      (read-char (~ con'iport)))))
+
+(define *input-escape-sequence*
+  '([(#\[ #\A)         . KEY_UP]
+    [(#\[ #\B)         . KEY_DOWN]
+    [(#\[ #\C)         . KEY_RIGHT]
+    [(#\[ #\D)         . KEY_LEFT]
+    [(#\O #\A)         . KEY_UP]  ; variation
+    [(#\O #\B)         . KEY_DOWN]
+    [(#\O #\C)         . KEY_RIGHT]
+    [(#\O #\D)         . KEY_LEFT]
+    [(#\[ #\F)         . KEY_END]
+    [(#\[ #\H)         . KEY_HOME]
+    [(#\[ #\2 #\~)     . KEY_INS]
+    [(#\[ #\3 #\~)     . KEY_DEL]
+    [(#\[ #\5 #\~)     . KEY_PGDN]
+    [(#\[ #\6 #\~)     . KEY_PGUP]
+    [(#\O #\P)         . KEY_F1]  ; original vt100
+    [(#\O #\Q)         . KEY_F2]
+    [(#\O #\R)         . KEY_F3]
+    [(#\O #\S)         . KEY_F4]
+    [(#\[ #\1 #\1 #\~) . KEY_F1]  ; some version of xterm
+    [(#\[ #\1 #\2 #\~) . KEY_F2]
+    [(#\[ #\1 #\3 #\~) . KEY_F3]
+    [(#\[ #\1 #\4 #\~) . KEY_F4]
+    [(#\[ #\1 #\5 #\~) . KEY_F5]
+    [(#\[ #\1 #\7 #\~) . KEY_F6]  ; vt220
+    [(#\[ #\1 #\8 #\~) . KEY_F7]
+    [(#\[ #\1 #\9 #\~) . KEY_F8]
+    [(#\[ #\2 #\0 #\~) . KEY_F9]
+    [(#\[ #\2 #\1 #\~) . KEY_F10]
+    [(#\[ #\2 #\3 #\~) . KEY_F11]
+    [(#\[ #\2 #\4 #\~) . KEY_F12]
+    ))
+
+(define *input-escape-sequence-trie*
+  (delay (rlet1 t (apply trie '() *input-escape-sequence*)
+           (do-ec (: n 128)
+                  (trie-put! t `(,(integer->char n))
+                             `(ALT ,(integer->char n)))))))
 
 (define-method getch ((con <vt100>))
-  (read-char (~ con'iport)))
+  (define tab (force *input-escape-sequence-trie*))
+  (define (fetch q)
+    (let1 ch (%read-char/timeout con)
+      (if (char? ch)
+        (begin (enqueue! q ch)
+               (if (trie-partial-key? tab (queue-internal-list q))
+                 (fetch q)
+                 (finish q)))
+        (finish q))))
+  (define (finish q)
+    (if (trie-exists? tab (queue-internal-list q))
+      (trie-get tab (dequeue-all! q))
+      #\escape))
+  (let1 q (~ con'input-buffer)
+    (if (queue-empty? q)
+      (let1 ch (read-char (~ con'iport))
+        (if (eqv? ch #\escape)
+          (fetch q)
+          ch))
+      (dequeue! q))))
 
 (define-method query-cursor-position ((con <vt100>))
   (define (r) (getch con))

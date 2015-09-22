@@ -110,7 +110,7 @@
       (cond [(or (collide-wall? field x y)
                  (collide-snake? snake x y))
              (render con field (update-snake snake dir hd #f) food)
-             (game-over con)]
+             (game-over con field)]
             [(find-food? snake dir food)
              (let1 snake. (update-snake snake dir hd #t)
                (run-game con field snake. (new-food field snake.) (+ score 1)))]
@@ -119,7 +119,12 @@
 
 (define (get-dir con) ;returns W, S, N, E or #f
   (and (chready? con)
-       (case (getch con) [(#\h) 'W] [(#\j) 'S] [(#\k) 'N] [(#\l) 'E] [else #f])))
+       (case (getch con)
+         [(#\h KEY_LEFT) 'W]
+         [(#\j KEY_DOWN) 'S]
+         [(#\k KEY_UP) 'N]
+         [(#\l KEY_RIGHT) 'E]
+         [else #f])))
 
 (define (render con field snake food)
   (clear-screen con)
@@ -147,9 +152,10 @@
     (move-cursor-to con y x)
     (putch con ch)))
 
-(define (game-over con)
-  (receive (row col) (query-screen-size con)
-    (move-cursor-to con (ash row -1) (- (ash col -1) 5))
+(define (game-over con field)
+  (let ([height (array-length field 0)]
+        [width  (array-length field 1)])
+    (move-cursor-to con (ash height -1) (- (ash width -1) 5))
     (set-character-attribute con '(white black reverse))
     (putstr con "Game over!")
     ;; Exit game with any keypress; however, we don't want to pick
@@ -157,5 +163,5 @@
     ;; whatever keys pressed during that, then wait for input.
     (sys-sleep 1)
     (while (chready? con) (getch con))
-    (getch con)))
-  
+    (getch con)
+    (reset-terminal con)))

@@ -18207,8 +18207,42 @@ move the current cursor position.
 @end deffn
 
 @deffn {Generic function} getch console
-Fetch one character from the console.  This blocks until
+Fetch a keypress from the console.  This blocks until
 any key is pressed.
+
+The return value may be one of the following values:
+
+@table @asis
+@item A character
+A key for the character is pressed.  It may be a control code
+if the control key is pressed with the key; that is, if the user
+presses Ctrl-A, @code{#\x01} will be returned.
+@item A symbol
+Indicates a special key; the following keys are supported:
+@code{KEY_UP}, @code{KEY_DOWN}, @code{KEY_LEFT}, @code{KEY_RIGHT},
+@code{KEY_HOME}, @code{KEY_END}, @code{KEY_INS}, @code{KEY_DEL},
+@code{KEY_PGDN}, @code{KEY_PGUP}, @code{KEY_F1}, @code{KEY_F2},
+@code{KEY_F3}, @code{KEY_F4}, @code{KEY_F5}, @code{KEY_F6},
+@code{KEY_F7}, @code{KEY_F8}, @code{KEY_F9}, @code{KEY_F10},
+@code{KEY_F11}, @code{KEY_F12}.
+(Note: DELETE key is usually mapped to @code{#\x7f}, but it depends on
+the terminal).
+@item A list of symbol @code{ALT} and a character.
+Indicates the character key is pressed with Alt key.  For example,
+if the user presses Alt-a, @code{(ALT #\a)} is returned (assuming
+CAPSLOCK is off).
+@item EOF
+Indicates the input is closed somehow.
+@end table
+
+Modifier keys except @code{ALT} are not treated separately but
+included in the returned keycode.  Assuming CAPSLOCK is off,
+if the user press @code{a}, @code{Shift}+@code{a}, and @code{Ctrl}+@code{a},
+the returned value is @code{#\a}, @code{#\A} and @code{#\x01}, respectively.
+@code{Ctrl}+@code{Shift}+@code{a} can't be distinguished from 
+@code{Ctrl}+@code{a}.  @code{ALT}+@code{a}, @code{ALT}+@code{Shift}+@code{a},
+and @code{ALT}+@code{Ctrl}+@code{a} will be @code{(ALT #\a)},
+@code{(ALT #\A)} and @code{(ALT #\x01)}, respectively.
 @end deffn
 
 @deffn {Generic function} chready? console
@@ -18247,6 +18281,10 @@ Hide/show the cursor.
 
 @deffn {Generic function} query-screen-size console
 Returns two values, the width and height of the screen.
+
+Note: This may affect what's shown in the console.
+It is recommended that you only call this before redrawing
+the entire screen and save the result.
 @end deffn
 
 @deffn {Generic function} set-character-attribute console spec
