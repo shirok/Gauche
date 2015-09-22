@@ -1,5 +1,7 @@
 2015-09-22  Shiro Kawai  <shiro@acm.org>
 
+	* ext/data/queue.scm (queue-internal-list): This name is better.
+
 	* ext/termios/termios.scm (with-terminal-mode): Turn off port buffering
 	  if raw or rare mode is specified.
 

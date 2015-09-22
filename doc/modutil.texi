@@ -2558,7 +2558,7 @@ Gaucheでは@code{queue->list}は新しいリストをアロケートしてキ�
 @c COMMON
 @end defun
 
-@defun queue->internal-list queue
+@defun queue-internal-list queue
 @c EN
 Like @code{queue->list}, returns a list whose content is the items
 in the queue in order, but the returned list @emph{may} share the
