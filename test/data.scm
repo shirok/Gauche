@@ -491,6 +491,12 @@
                   strs))
     (test* "trie: exists? more" #t
            (every (cut trie-exists? t1 <>) strs))
+    (test* "trie: exists? on partial key" #f
+           (every (cut trie-exists? t1 <>) '("k" "ka" "kan")))
+    (test* "trie: partial-key?"
+           '(("k" #t) ("kana" #t) ("kanawai koa" #f) ("" #t) ("zzz" #f))
+           (map (^k (list k (trie-partial-key? t1 k)))
+                '("k" "kana" "kanawai koa" "" "zzz")))
     (test* "trie: longest match" '(("kana" . 4)
                                    ("kana" . 4)
                                    ("kanawai" . 7)

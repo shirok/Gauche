@@ -1,3 +1,11 @@
+2015-09-21  Shiro Kawai  <shiro@acm.org>
+
+	* lib/data/trie.scm (trie-exists?): Fix a bug that it returned #t
+	  even if the given key doesn't exist, but merely a prefix of
+	  other keys.
+	  (trie-partial-key?): Added to check if the given seq is a prefix
+	  of existing keys.
+
 2015-09-14  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi-112.scm: Added.

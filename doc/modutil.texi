@@ -4107,13 +4107,13 @@ This class also implements the dictionary interface
 @c COMMON
 @end deftp
 
-@defun make-trie :optional tab-make tab-get tab-put! tab-fold
+@defun make-trie :optional tab-make tab-get tab-put! tab-fold tab-empty?
 @c EN
-Creates and returns an empty trie.  The optional four arguments
+Creates and returns an empty trie.  The optional arguments
 are procedures to customize how the nodes of the internal
 tree are managed.
 @c JP
-空のtrieを生成し返します。4つのオプション引数があり、これらは、
+空のtrieを生成し返します。オプション引数は、
 内部木のノードをどのようにマージするかをカスタマイズする手続きです。
 @c COMMON
 
@@ -4147,6 +4147,10 @@ Calls @var{proc} for every index and node in @var{tab}, while
 passing a seed value, whose initial value is @var{seed}.
 That is, @var{proc} has a type of @code{(index, node, seed) -> seed}.
 Should return the last result of @var{proc}.
+@item tab-empty? @var{tab}
+Returns @code{#t} if @var{tab} is empty, @var{#f} otherwise.
+You can omit or pass @code{#f} to this procedure; then we use
+@code{tab-fold} to check if @var{tab} is empty, which can be expensive.
 @end table
 @c JP
 @table @code
@@ -4165,6 +4169,10 @@ Should return the last result of @var{proc}.
 が順に渡されていきます。シード値の初期値は@var{seed}です。すなわち、
 @var{proc}の型は@code{(index, node, seed) -> seed} のような型というこ
 とになります。返り値は最後の@var{proc}の適用結果です。
+@item tab-empty? @var{tab}
+@var{tab}が空なら@code{#t}を、そうでなければ@code{#f}を返す手続きです。
+この手続きは省略するか@code{#f}を渡すことができます。その場合は空かどうかを
+チェックするのに@code{tab-fold}手続きが使われますが、少々重くなるかもしれません。
 @end table
 @c COMMON
 
@@ -4188,6 +4196,8 @@ tab-put!: (lambda (tab k v)
             tab)
 
 tab-fold: hash-table-fold
+
+tab-empty?: (lambda (tab) (zero? (hash-table-num-entries tab)))
 @end example
 
 @c EN
@@ -4206,7 +4216,8 @@ string keys with case-insensitive way:
              (if v
                (assoc-set! t k v char-ci=?)
                (alist-delete! k t char-ci=?)))
-           (lambda (t f s) (fold f s t)))
+           (lambda (t f s) (fold f s t))
+           null?)
 @end example
 
 @c EN
@@ -4285,7 +4296,38 @@ or returns @code{#f} otherwise.
 @var{trie}が@var{key}というキーのエントリを含む場合には@code{#t}を返し、
 さもなければ、@code{#f}を返します。
 @c COMMON
+
+@example
+(let1 t (trie '() '("foo" . ok))
+  (list (trie-exists? t "foo")
+        (trie-exists? t "fo")
+        (trie-exists? t "bar")))
+  @result{} '(#t #f #f)
+@end example
 @end defun
+
+@defun trie-partial-key? trie seq
+@c EN
+Returns @code{#t} if there's at least one key in @var{trie} that is
+not equal to @var{seq} but @var{seq} matches its prefix.   Note that
+@var{seq} may or may not a key of @var{trie}; see the example below.
+@c JP
+@var{trie}の中に少なくともひとつ、@var{seq}と同じではないが@var{seq}を
+プリフィクスとするようなキーがあれば@var{#t}を返します。
+@var{seq}と一致するキーが他にあるかないかは結果には影響を及ぼしません。
+下の例を見てください。
+@c COMMON
+
+@example
+(define t (trie '() '("foo" . ok) '("fo" . ok)))
+
+(trie-partial-key? t "f")    @result{} #t
+(trie-partial-key? t "fo")   @result{} #t
+(trie-partial-key? t "foo")  @result{} #f
+(trie-partial-key? t "bar")  @result{} #f
+@end example
+@end defun
+
 
 @defun trie-get trie key :optional fallback
 @c EN

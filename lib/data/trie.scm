@@ -43,7 +43,7 @@
   (use gauche.dictionary)
   (export <trie>
           make-trie trie trie-with-keys
-          trie? trie-num-entries trie-exists?
+          trie? trie-num-entries trie-exists? trie-partial-key?
           trie-get trie-put! trie-update! trie-delete!
           trie-common-prefix
           trie-common-prefix-keys
@@ -82,8 +82,13 @@
 ;;                  put a key&node pair into the table, or delete the
 ;;                  entry if node is #f.  returned table is used for
 ;;                  subsequent opration.
-;;   tab-fold    table, (key, node, seed -> seed), seed -> seed
+;;   tab-fold :: table, (key, node, seed -> seed), seed -> seed
 ;;                  iterator on the table entries.
+;;   tab-empty? :: table -> boolean         [ optional ]
+;;                  check if the table is empty or not.  may be used for
+;;                  efficient handling of certain apis.  when omitted,
+;;                  fold is used but that may need unnecessary walking
+;;                  over the table.
 
 (define-class <trie-meta> (<class>)
   ())
@@ -103,6 +108,8 @@
                            t))
    (tab-fold :init-keyword :tab-fold
              :init-value hash-table-fold)
+   (tab-empty? :init-keyword :tab-empty?
+               :init-value #f)
    )
   :metaclass <trie-meta>)
 
@@ -213,9 +220,30 @@
           (loop (g) next (or (%node-find-terminal next seq) last))
           last)))))
 
+;; internal: Trie, Node -> Boolean
+(define (%trie-node-empty? trie node)
+  (cond
+   [(slot-ref trie'tab-empty?) => (^[empty?] (empty? node))]
+   ;; some heuristics
+   [(and (hash-table? (%node-table node))
+         (eq? (slot-ref trie'tab-fold) hash-table-fold))
+    (zero? (hash-table-num-entries (%node-table node)))]
+   [(%node-table node) => (cut (slot-ref trie'tab-fold) <> (^[k n s] #t) #f)]
+   [else #t]))
+
 ;; Public APIs
 
-(define (trie-exists? trie seq) (boolean (%trie-get-node trie seq)))
+(define (trie-exists? trie seq)
+  (and-let1 node (%trie-get-node trie seq)
+    (boolean (%node-find-terminal node seq))))
+
+;; trie-partial-key? trie seq
+;;  returns #t if seq is a pure partial prefix of existing key, that is,
+;;  there's at least one entry with the key whose pure prefix is seq.
+;;  seq may be a key itself, but it doesn't count to a partial key.
+(define (trie-partial-key? trie seq)
+  (and-let1 node (%trie-get-node trie seq)
+    (not (%trie-node-empty? trie node))))
 
 (define (trie-get trie seq . opt)
   (or (and-let* ([node (%trie-get-node trie seq)]
