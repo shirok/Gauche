@@ -18176,6 +18176,14 @@ the standard input port.
 Output port connected to the terminal.  The default value is
 the standard output port.
 @end defivar
+
+@defivar {<vt100>} input-delay
+The terminal send back special keys encoded in an input escape sequence.
+In order to distinguish such keys from the actual ESC key, we time the
+input---if the subsequent input doesn't come within @code{input-delay}
+microseconds, we interpret the input as individual keystroke, rather
+than a part of an escape sequence.  The default value is @code{1000} (1ms).
+@end defivar
 @end deftp
 
 @subheading Console control

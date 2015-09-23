@@ -216,7 +216,7 @@
       (dequeue! q))))
 
 (define-method query-cursor-position ((con <vt100>))
-  (define (r) (getch con))
+  (define (r) (read-char (~ con'iport))) ; we bypass getch buffering
   (putstr con "\x1b;[6n")
   (unless (eqv? #\x1b (r)) (error "terminal error"))
   (unless (eqv? #\[   (r)) (error "terminal error"))
