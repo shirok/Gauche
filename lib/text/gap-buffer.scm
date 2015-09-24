@@ -41,9 +41,9 @@
 (define-module text.gap-buffer
   (use gauche.uvector)
   (use gauche.generator)
-  (export gap-buffer? gap-buffer-gap-start gap-buffer-gap-end
+  (export make-gap-buffer string->gap-buffer
+          gap-buffer? gap-buffer-gap-start gap-buffer-gap-end
           gap-buffer-capacity gap-buffer-content-length
-          string->gap-buffer
           gap-buffer-move!
           gap-buffer-insert!
           gap-buffer-delete!
@@ -97,6 +97,14 @@
       (errorf "position ~a from ~a is out of bound of the source"
               pos whence))
     (values gap-start (- buffer-len (- source-len gap-start)))))
+
+;; API
+(define (make-gap-buffer :key (initial-capacity 8))
+  (let1 len (expt 2 (integer-length (- initial-capacity 1))) ;make sure 2^n
+    (make <gap-buffer>
+      :buffer (make-u32vector len)
+      :gap-start 0
+      :gap-end len)))
 
 ;; API
 (define (string->gap-buffer string
