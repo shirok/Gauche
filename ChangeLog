@@ -1,3 +1,7 @@
+2015-09-23  Shiro Kawai  <shiro@acm.org>
+
+	* lib/data/ring-buffer.scm: Added.
+
 2015-09-22  Shiro Kawai  <shiro@acm.org>
 
 	* lib/text/console.scm (getch): Support special keys by parsing
