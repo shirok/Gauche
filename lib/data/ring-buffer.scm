@@ -39,7 +39,8 @@
   (export make-ring-buffer
           make-overflow-doubler
           ring-buffer?
-          ring-buffer-empty? ring-buffer-num-entries
+          ring-buffer-empty? ring-buffer-num-entries ring-buffer-capacity
+          ring-buffer-full?
           ring-buffer-front ring-buffer-back
           ring-buffer-add-front! ring-buffer-add-back!
           ring-buffer-remove-front! ring-buffer-remove-back!
@@ -129,6 +130,16 @@
 (define-inline (%rb-copy! dprocs dest dstart src sstart send)
   ((cddddr dprocs) dest dstart src sstart send))
 
+(define (%rb-copy-contents! rb newvec oldvec)
+  (let1 dprocs (%dprocs oldvec)
+    (let ([h (ring-buffer-head rb)]
+          [t (ring-buffer-tail rb)])
+      (if (<= t h)
+        (let1 c (ring-buffer-capacity rb)
+          (%rb-copy! dprocs newvec 0 oldvec h c)
+          (%rb-copy! dprocs newvec (- c h) oldvec 0 t))
+        (%rb-copy! dprocs newvec 0 oldvec h t)))))
+
 (define-inline (%rb-head-inc! rb dprocs storage delta)
   ($ ring-buffer-head-set! rb
      (%rb-mod-index dprocs (ring-buffer-storage rb)
@@ -143,21 +154,6 @@
 (define (overflow-error rb v) 'error)
 (define (overflow-overwrite rb v) 'overwrite)
 
-;; Auxiliary API
-;; Allocates a vector of the same class of STORAGE with the size NEWSIZE,
-;; copies the elements in STORAGE into the new vector, and returns the new
-;; vector.  RB itself isn't modified.
-(define (ring-buffer-realloc-storage rb storage newsize)
-  (let1 dprocs (%dprocs storage)
-    (rlet1 newvec (%rb-alloc dprocs newsize)
-      (let ([h (ring-buffer-head rb)]
-            [t (ring-buffer-tail rb)])
-        (if (<= t h)
-          (let1 c (ring-buffer-capacity rb)
-            (%rb-copy! dprocs newvec 0 storage h c)
-            (%rb-copy! dprocs newvec (- c h) storage 0 t))
-          (%rb-copy! dprocs newvec 0 storage h t))))))
-
 ;; API
 (define (make-overflow-doubler :key (max-increase +inf.0)
                                     (max-capacity +inf.0))
@@ -165,9 +161,9 @@
     (let1 size (ring-buffer-capacity rb)
       (cond [(>= size max-capacity) 'error]
             [(>= size max-increase)
-             (ring-buffer-realloc-storage rb v (+ size max-increase))]
+             (%rb-alloc (%dprocs v) (+ size max-increase))]
             [else
-             (ring-buffer-realloc-storage rb v (* size 2))]))))
+             (%rb-alloc (%dprocs v) (* size 2))]))))
 
 ;; API
 ;; make-ring-buffer
@@ -195,6 +191,10 @@
 ;; API
 (define (ring-buffer-empty? rb) (zero? (ring-buffer-num-entries rb)))
 
+;; API
+(define (ring-buffer-full? rb)
+  (= (ring-buffer-num-entries rb) (ring-buffer-capacity rb)))
+
 (define (%ensure-nonempty rb)
   (when (ring-buffer-empty? rb)
     (error "Ring buffer is empty:" rb)))
@@ -212,6 +212,7 @@
         [else
          (unless (or (vector? v) (uvector? v))
            (error "Ring buffer overflow handler returned invalid object:" v))
+         (%rb-copy-contents! rb v (ring-buffer-storage rb))
          (ring-buffer-head-set! rb 0)
          (ring-buffer-tail-set! rb (ring-buffer-num-entries rb))
          (ring-buffer-capacity-set! rb (size-of v))
@@ -285,3 +286,4 @@
          [dprocs (%dprocs s)])
     (%rb-set! dprocs s (%rb-mod-index dprocs s (+ (ring-buffer-head rb) n))
               val)))
+

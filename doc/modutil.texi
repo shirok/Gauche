@@ -15,6 +15,7 @@
 * Heap::                        data.heap
 * Queue::                       data.queue
 * Random data generators::      data.random
+* Ring buffer::                 data.ring-buffer
 * Sparse data containers::      data.sparse
 * Trie::                        data.trie
 * Database independent access layer::  dbi
@@ -2709,7 +2710,7 @@ without hitting timeout, they return @code{#t}.
 
 @c ----------------------------------------------------------------------
 
-@node Random data generators, Sparse data containers, Queue, Library modules - Utilities
+@node Random data generators, Ring buffer, Queue, Library modules - Utilities
 @section @code{data.random} - Random data generators
 @c NODE ランダムデータの生成, @code{data.random} - ランダムデータの生成
 
@@ -3329,7 +3330,139 @@ of nonnegative integers.
 @end deffn
 
 @c ----------------------------------------------------------------------
-@node Sparse data containers, Trie, Random data generators, Library modules - Utilities
+@node Ring buffer, Sparse data containers, Random data generators, Library modules - Utilities
+@section @code{data.ring-buffer} - Ring buffer
+@c NODE リングバッファ, @code{data.ring-buffer} - リングバッファ
+
+@deftp {Module} data.ring-buffer
+@mdindex data.ring-buffer
+A ring buffer is an array with two fill pointers; in a typical usage,
+a producer adds new data to one end while a consumer removes data
+from the other end; if fill pointer reachers at the end of the array,
+it wraps around to the beginning, hence the name.
+
+The ring buffer this module allows adding and removing elements
+from both ends, hence functionally it is a double-ended queue,
+or deque.  It also allows O(1) indexed access to the contents,
+and customized handling for the case when the buffer gets full.
+
+You can use an ordinary vector or a uniform vector as the backing
+storage of a ring buffer.
+@end deftp
+
+@defun make-ring-buffer :optional initial-storage :key overflow-handler
+Creates a ring buffer.  By default, a fresh vector is allocated
+for the backing storage.  You can pass a vector or a uvector to
+@var{initial-storage} to be used instead.
+
+The @var{overflow-handler} keyword argument specifies what to do when
+a new element is about to be added to the full buffer.
+It must be a procedure, or a symbol @code{error}
+or @code{overwrite}.
+
+If it is a procedure, it will be called with a ring buffer and
+a backing storage (vector or uvector) when it is filled.  The procedure
+must either (1) allocates and returns a larger vector/uvector of the same
+type of the passed backing storage, (2) returns a symbol @code{error},
+or (3) returns a symbol @code{overwrite}.  If it returns a vector/uvector,
+it will be used as the new backing storage.  If it returns @code{error},
+an error (``buffer is full'') is thrown.  If it returns @code{overwrite},
+the new element overwrites the existiing element.
+
+Passing a symbol @code{error} or @code{overwrite} to @var{overflow-handler}
+is a shorthand of passing a procedure that unconditionally returns
+@var{error} or @code{overwrite}, respectively.
+
+The default behavior on overflow is to double the size of backing
+storage.  You can use @code{make-overflow-doubler} below to create
+the customized overflow handler easily.
+@end defun
+
+@defun make-overflow-doubler :key max-increase max-capacity
+Returns a procedure suitable to be passed to the @var{overflow-handler}
+keyword argument of @code{make-ring-buffer}.
+
+The returned procedure takes a ring buffer and its backing storage,
+and behaves as follows.
+
+@itemize
+@item
+If the size of current backing storage is equal to or greater than
+@var{max-capacity}, returns @code{error}.
+@item
+Otherwise, if the size of current backing storage is equal to or
+greater than @var{max-increase}, allocates a vector/uvector of
+the same type of the current backing storage, with the size
+@code{(+ max-increase size-of-current-storage)}.
+@item
+Otherwise, allocates a vector/uvector of
+the same type of the current backing storage with the size
+@code{(* 2 size-of-current-storage)}.
+@end itemize
+
+The default value of @var{max-increase} and @var{max-capacity} is
+@code{+inf.0}.
+@end defun
+
+@defun ring-buffer-empty? rb
+Returns @code{#t} if the ring buffer @var{rb} is empty,
+@code{#f} if not.
+@end defun
+
+@defun ring-buffer-full? rb
+Returns @code{#t} if the ring buffer @var{rb} is full,
+@code{#f} if not.
+@end defun
+
+@defun ring-buffer-num-elements rb
+Returns the number of current elements in the ring buffer @var{rb}.
+@end defun
+
+@defun ring-buffer-capacity rb
+Returns the size of the current backing storage of the ring buffer @var{rb}.
+@end defun
+
+@defun ring-buffer-front rb
+@defunx ring-buffer-back rb
+Returns the element in the front or back of the ring buffer @var{rb},
+respectively.
+If the buffer is empty, an error is signaled.
+@end defun
+
+@defun ring-buffer-add-front! rb elt
+@defunx ring-buffer-add-back! rb elt
+Add an element to the front or back of the ring buffer @var{rb},
+respectively.
+@end defun
+
+@defun ring-buffer-remove-front! rb
+@defunx ring-buffer-remove-back! rb
+Remove an element from the front or back of the ring buffer @var{rb},
+and returns the removed element, respectively.
+If the buffer is empty, an error is signaled.
+@end defun
+
+@defun ring-buffer-ref rb index :optional fallback
+Returns @var{index}-th element in the ring buffer @var{rb}.
+The elements are counted from the front; thus, if a new element
+is added to the front, the indexes of existing elements will shift.
+
+If the index out of bounds of the existing content,
+@var{fallback} will be returned; if @var{fallback} is not
+provided, an error is signaled.
+@end defun
+
+@defun ring-buffer-set! rb index value
+Sets @var{index}-th element of the ring buffer @var{rb} to @var{value}.
+The elements are counted from the front; thus, if a new element
+is added to the front, the indexes of existing elements will shift.
+
+An error is signaled if the index is out of bounds.
+@end defun
+
+
+@c ----------------------------------------------------------------------
+@node Sparse data containers, Trie, Ring buffer, Library modules - Utilities
 @section @code{data.sparse} - Sparse data containers
 @c NODE 疎なデータコンテナ, @code{data.sparse} - 疎なデータコンテナ
 
