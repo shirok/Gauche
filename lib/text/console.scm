@@ -222,7 +222,8 @@
   (unless (eqv? #\[   (r)) (error "terminal error"))
   (rxmatch-case ($ list->string $ generator->list
                    $ gtake-while (^c (not (eqv? #\R c))) r)
-    [#/^(\d+)\;(\d+)$/ (_ row col) (values (x->integer row) (x->integer col))]
+    [#/^(\d+)\;(\d+)$/ (_ row col)
+     (values (- (x->integer row) 1) (- (x->integer col) 1))]
     [else (error "terminal error")]))
 
 ;; we're zero-origin as curses; vt100 takes 1-origin.
