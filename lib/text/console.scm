@@ -59,8 +59,8 @@
           call-with-console
           putch putstr getch chready?
           query-screen-size query-cursor-position move-cursor-to
-          hide-cursor show-cursor
-          reset-terminal clear-screen clear-to-eol
+          hide-cursor show-cursor cursor-down/scroll-up cursor-up/scroll-down
+          reset-terminal clear-screen clear-to-eol clear-to-eos
           set-character-attribute with-character-attribute))
 (select-module text.console)
 
@@ -233,16 +233,24 @@
 (define-method reset-terminal ((con <vt100>)) (putstr con "\x1b;c"))
 (define-method clear-screen ((con <vt100>)) (putstr con "\x1b;[2J"))
 (define-method clear-to-eol ((con <vt100>)) (putstr con "\x1b;[K"))
+(define-method clear-to-eos ((con <vt100>)) (putstr con "\x1b;[J"))
 
 (define-method hide-cursor ((con <vt100>)) (putstr con "\x1b;[?25l"))
 (define-method show-cursor ((con <vt100>)) (putstr con "\x1b;[?25h"))
+
+;; Move cursor; if cursor is already top or bottom, scroll.
+(define-method cursor-down/scroll-up ((con <vt100>))
+  (putstr con "\x1b;D"))
+(define-method cursor-up/scroll-down ((con <vt100>))
+  (putstr con "\x1b;M"))
 
 ;; No portable way to directly query it, so we take a kind of heuristic approach.
 (define-method query-screen-size ((con <vt100>))
   (define *max-dim* 2000)
   (putstr con "\x1b;[s") ; save cursor pos
   (move-cursor-to con *max-dim* *max-dim*)
-  (unwind-protect (query-cursor-position con)
+  (unwind-protect (receive (h w) (query-cursor-position con)
+                    (values (+ h 1) (+ w 1)))
     (putstr con "\x1b;[u"))) ;restore cursor pos
 
 (define-method set-character-attribute ((con <vt100>) spec)
