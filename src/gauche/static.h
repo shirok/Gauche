@@ -34,6 +34,8 @@
 #ifndef GAUCHE_STATIC_H
 #define GAUCHE_STATIC_H
 
+SCM_DECL_BEGIN
+
 SCM_EXTERN void Scm_InitPrelinked(void);
 
 /* A convenience initialization.  */
@@ -44,4 +46,7 @@ SCM_EXTERN void Scm_InitPrelinked(void);
         Scm_InitPrelinked();                    \
     } while (0)
     
+
+SCM_DECL_END
+
 #endif /*GAUCHE_STATIC_H*/
