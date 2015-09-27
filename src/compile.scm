@@ -5696,7 +5696,7 @@
             (receive (num tree) (check-numeric-constant x cenv)
               (if num
                 (or tree (,const num))
-                ($call form ($gref (ensure-identifier ',op cenv)) `(,tree))))]
+                (undefined)))]
            [(x y . more)
             (receive (xval xtree) (check-numeric-constant x cenv)
               (receive (yval ytree) (check-numeric-constant y cenv)
@@ -5730,7 +5730,7 @@
                 (,const (- num))
                 ,(if (eq? op '-)
                    '($asm form `(,NEGATE) (list tree))
-                   '($call form ($gref (ensure-identifier '-. cenv)) `(,tree)))))]
+                   (undefined))))]
            [(x y . more)
             (receive (xval xtree) (check-numeric-constant x cenv)
               (receive (yval ytree) (check-numeric-constant y cenv)
@@ -5760,7 +5760,7 @@
             (receive (num tree) (check-numeric-constant x cenv)
               (if (number? num)
                 (or tree (,const num))
-                ($call form ($gref (ensure-identifier ',op cenv)) `(,tree))))]
+                (undefined)))]
            [(x y . more)
             (receive (xval xtree) (check-numeric-constant x cenv)
               (receive (yval ytree) (check-numeric-constant y cenv)
@@ -5792,9 +5792,8 @@
                        ,(if (eq? insn 'NUMDIV2)
                           `(not (eqv? num 0)) ;exact zero
                           #t))
-                ($const (,op num)))
-                ($call form ($gref (ensure-identifier ',op cenv))
-                       `(,(or tree (,const num)))))]
+                ($const (,op num))
+                (undefined)))]
            [(x y . more)
             (receive (xval xtree) (check-numeric-constant x cenv)
               (receive (yval ytree) (check-numeric-constant y cenv)
@@ -5832,10 +5831,7 @@
            (cond [(and cnt-val n-val) ($const (ash n-val cnt-val))]
                  [(and cnt-val (integer-fits-insn-arg? cnt-val))
                   ($asm form `(,ASHI ,cnt-val) (list n-tree))]
-                 [else
-                  ($call form ($gref (ensure-identifier 'ash cenv))
-                         (list (or n-tree (pass1 n cenv))
-                               (or cnt-tree (pass1 cnt cenv))))])))]
+                 [else (undefined)])))]
       [else (undefined)])))
 
 ;; bitwise and, ior and xor.  we treat (op expr const) case specially.
@@ -5859,12 +5855,7 @@
       [(constval)   ($const constval)]
       [(constval x) ($asm form `(,opcode) (list ($const constval) x))]
       [(#f x y)     ($asm form `(,opcode) (list x y))]
-      ;; We fallback to ordinary procedure call in n-ary (n>2) case.
-      ;; We may unfold n-ary case to (op x (op y (op ...))) - need benchmark
-      ;; to see which is effective.
-      [(#f . args)  ($call form ($gref (ensure-identifier opname cenv)) args)]
-      [(constval . args) ($call form ($gref (ensure-identifier opname cenv))
-                                (cons ($const constval) args))])))
+      [_ (undefined)])))
 
 (define-builtin-inliner logand
   (builtin-inliner-bitwise 'logand logand LOGAND -1))

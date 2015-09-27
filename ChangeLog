@@ -1,3 +1,16 @@
+2015-09-26  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.scm (builtin-inliner): Fixed a bug that builtin
+	  inliners inserted global identifiers unhygienically.  It caused
+	  a problem when (1) a macro expands into a procedure call X with
+	  builtin inliner (2) the arguments are such that no optimization
+	  can be done, and (3) macro use scope has different global binding
+	  of the X.  See the added test in test/module.scm for the concrete
+	  case.
+	  The case we inserted global identifiers was when we couldn't do
+	  do any optimization, so we can just return #<undef> to make
+	  pass1/expand-inliner give up the optimization.
+
 2015-09-23  Shiro Kawai  <shiro@acm.org>
 
 	* lib/data/ring-buffer.scm: Added.

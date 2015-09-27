@@ -494,4 +494,28 @@
 (mplbug-test 'mplbug-user2 'b)
 (mplbug-test 'mplbug-user2 'x)
 
+;;-------------------------------------------------------------------
+;; Macro and builtin inliner
+;; https://twitter.com/tk_riple/status/647865265154326528
+
+(define-module builtin-inliner-bug-A
+  (export ash-1)
+  (define-inline ash-1 ash))
+(define-module builtin-inliner-bug-B
+  (import builtin-inliner-bug-A)
+  (export ash-2)
+  (define-syntax ash-2
+    (syntax-rules ()
+      [(_ a b) (ash-1 (+ a 1) (+ b 1))])))
+(define-module builtin-inliner-bug-C
+  (import builtin-inliner-bug-B)
+  (define ash +)
+  (define (ash-3 x y) (ash-2 x y)))
+
+(test* "builtin inliner bug" 64
+       ((with-module builtin-inliner-bug-C ash-3) 7 2))
+  
+
+
+
 (test-end)
