@@ -44,6 +44,7 @@
   (export make-gap-buffer string->gap-buffer
           gap-buffer? gap-buffer-gap-start gap-buffer-gap-end
           gap-buffer-capacity gap-buffer-content-length
+          gap-buffer-gap-at? gap-buffer-ref
           gap-buffer-move!
           gap-buffer-insert!
           gap-buffer-delete!
@@ -76,6 +77,39 @@
   (~ gbuf'gap-end))
 
 ;; API
+;; Trivial, but useful.
+(define (gap-buffer-gap-at? gbuf whence)
+  (case whence
+    [(beginning) (= (~ gbuf'gap-start) 0)]
+    [(end)       (= (~ gbuf'gap-end) (%gbuf-size gbuf))]
+    [else (error "either a symbol `beginning' or `end' requierd, \
+                  but got:" whence)]))
+
+;; API
+(define (gap-buffer-ref gbuf index :optional (fallback (undefined)))
+  (define (oob)
+    (if (undefined? fallback)
+      (error "index out of range:" index)
+      fallback))
+  (define (ret i) (integer->char (~ gbuf'buffer i)))
+  (cond [(< index 0) (oob)]
+        [(< index (~ gbuf'gap-start)) (ret index)]
+        [(< index (%gbuf-content-length gbuf))
+         (ret (+ index (- (~ gbuf'gap-end) (~ gbuf'gap-start))))]
+        [else (oob)]))
+
+;; API
+(define (gap-buffer-set! gbuf index char)
+  (cond [(< index 0) (error "index out of range:" index)]
+        [(< index (~ gbuf'gap-start))
+         (set! (~ gbuf'buffer index) (char->integer char))]
+        [(< index (%gbuf-content-length gbuf))
+         (set! (~ gbuf'buffer (+ index (- (~ gbuf'gap-end)
+                                          (~ gbuf'gap-start))))
+               (char->integer char))]
+        [else (error "index out of range:" index)]))
+
+;; API
 (define (gap-buffer-capacity gbuf)
   (check-arg gap-buffer? gbuf)
   (%gbuf-size gbuf))
@@ -88,10 +122,10 @@
 ;; Returns gap-start and gap-end index
 (define (%calculate-gap-position source-len buffer-len pos whence)
   (let1 gap-start (case whence
-                    [(begin) pos]
+                    [(beginning) pos]
                     [(end) (- source-len pos)]
                     [else
-                     (error "either a symbol `begin' or `end' required \
+                     (error "either a symbol `beginning' or `end' required, \
                              but got:" whence)])
     (unless (<= 0 gap-start source-len)
       (errorf "position ~a from ~a is out of bound of the source"
@@ -126,9 +160,9 @@
         :buffer buf :gap-start gap-start :gap-end gap-end))))
 
 ;; API
-(define (gap-buffer-move! gbuf pos :optional (whence 'start))
+(define (gap-buffer-move! gbuf pos :optional (whence 'beginning))
   (let ([abspos (case whence
-                  [(start) pos]
+                  [(beginning) pos]
                   [(current) (+ pos (~ gbuf 'gap-start))]
                   [(end) (+ pos (%gbuf-content-length gbuf))]
                   [else (errorf "position ~a from ~a is out of buffer"

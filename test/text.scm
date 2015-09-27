@@ -186,7 +186,7 @@ fuga
 (test* "constuct" "abcde___"
        (gap-buffer-visualize (string->gap-buffer "abcde")))
 (test* "constuct" "___abcde"
-       (gap-buffer-visualize (string->gap-buffer "abcde" 0 'begin)))
+       (gap-buffer-visualize (string->gap-buffer "abcde" 0 'beginning)))
 (test* "constuct" "bcd_"
        (gap-buffer-visualize (string->gap-buffer "abcde" 0 'end 1 4)))
   
