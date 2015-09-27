@@ -38,6 +38,7 @@
 
 /*[SK] refer to the Gauche's config */
 #include <gauche/config.h>
+#include "renaming.h"
 
 #ifdef HAVE_STDINT_H
 #include <stdint.h>

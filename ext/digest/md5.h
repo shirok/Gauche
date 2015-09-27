@@ -4,6 +4,7 @@
 #include <gauche.h>
 #include <gauche/extend.h>
 #include <sys/types.h>
+#include "renaming.h"
 
 #define MD5_HASHBYTES 16
 
