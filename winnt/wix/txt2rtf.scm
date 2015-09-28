@@ -28,4 +28,5 @@
                (loop line)]
               [else
                (format out "~a\\par\r\n" prev-line)
-               (loop line)])))))
+               (loop line)]))))
+  (display "}" out))
