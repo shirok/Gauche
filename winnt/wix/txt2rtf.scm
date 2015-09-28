@@ -14,7 +14,7 @@
   0)
 
 (define (doit in out)
-  (display "{\\rtf1\\ansi\\ansicpg1252\\deff0{\\fonttbl{\\f0\\fnil\\fcharset0 Arial Narrow;}}\r\n" out)
+  (display "{\\rtf1\\ansi\\ansicpg1252\\deff0{\\fonttbl{\\f0\\fnil\\fcharset0 Tahoma;}}\r\n" out)
   (display "\\viewkind4\\uc1\\pard\\lang1033\\f0\\fs20 " out)
   (let loop ([prev-line (read-line in)])
     (unless (eof-object? prev-line)
