@@ -39,9 +39,9 @@ or 'none' (No multibyte support)]),
   ])
 
 case $GAUCHE_CHAR_ENCODING in
-  eucjp) AC_DEFINE(GAUCHE_CHAR_ENCODING_EUC_JP);;
-  utf8)  AC_DEFINE(GAUCHE_CHAR_ENCODING_UTF_8);;
-  sjis)  AC_DEFINE(GAUCHE_CHAR_ENCODING_SJIS);;
+  eucjp) AC_DEFINE(GAUCHE_CHAR_ENCODING_EUC_JP, [], [Define if Gauche handles multi-byte character as EUC-JP]);;
+  utf8)  AC_DEFINE(GAUCHE_CHAR_ENCODING_UTF_8,  [], [Define if Gauche handles multi-byte character as UTF-8]);;
+  sjis)  AC_DEFINE(GAUCHE_CHAR_ENCODING_SJIS,   [], [Define if Gauche handles multi-byte character as Shift JIS]);;
 esac
 
 dnl ----------------------------------------------------------
@@ -193,8 +193,8 @@ case $GAUCHE_THREAD_TYPE in
     *-*-netbsd*)
       AC_MSG_WARN("Only on NetBSD 2.0 or later.")
       AC_DEFINE(GC_NETBSD_THREADS,1,[Define to use NetBSD threads])
-      AC_DEFINE(_REENTRANT)
-      AC_DEFINE(_PTHREADS)
+      AC_DEFINE(_REENTRANT, [], [Define to use reentrant libc])
+      AC_DEFINE(_PTHREADS,  [], [Define if thread support requires this symbol])
       THREADLIBS="-lpthread"
       THREADDLLIBS="-lpthread -lrt"
       GAUCHE_THREAD_TYPE=pthreads
@@ -276,7 +276,7 @@ dnl ===========================================================
 dnl Set up version-related macros
 GAUCHE_VERSION=$PACKAGE_VERSION
 AC_SUBST(GAUCHE_VERSION)
-AC_DEFINE_UNQUOTED(GAUCHE_VERSION, "$GAUCHE_VERSION")
+AC_DEFINE_UNQUOTED(GAUCHE_VERSION, "$GAUCHE_VERSION", [Gauche version string])
 
 changequote(<<, >>)dnl
 GAUCHE_VERSION_TRUNC=`echo $GAUCHE_VERSION | sed 's/[-_].*//'`
@@ -297,10 +297,10 @@ if test -z "$GAUCHE_ABI_VERSION"; then
   GAUCHE_ABI_VERSION="$GAUCHE_MAJOR_VERSION.$GAUCHE_MINOR_VERSION"
 fi
 AC_SUBST(GAUCHE_ABI_VERSION)
-AC_DEFINE_UNQUOTED(GAUCHE_ABI_VERSION, "$GAUCHE_ABI_VERSION")
+AC_DEFINE_UNQUOTED(GAUCHE_ABI_VERSION, "$GAUCHE_ABI_VERSION", [Gauche ABI version string])
 
 GAUCHE_SIGNATURE="$GAUCHE_ABI_VERSION,$GAUCHE_CHAR_ENCODING,$GAUCHE_THREAD_TYPE"
-AC_DEFINE_UNQUOTED(GAUCHE_SIGNATURE, "$GAUCHE_SIGNATURE")
+AC_DEFINE_UNQUOTED(GAUCHE_SIGNATURE, "$GAUCHE_SIGNATURE", [Gauche signature string])
 
 LIBGAUCHE=libgauche-$GAUCHE_ABI_VERSION
 AC_SUBST(LIBGAUCHE)
@@ -387,7 +387,7 @@ case $host in
   arm*)
     # ARM processor may use a special mixed endian for doubles.  It can
     # be switched by processor configuration.  So we check it at runtime.
-    AC_DEFINE(DOUBLE_ARMENDIAN,1) ;;
+    AC_DEFINE(DOUBLE_ARMENDIAN,1,[Define to use mixed endian ARM processor]) ;;
 esac
 
 dnl ===========================================================
@@ -726,7 +726,7 @@ AC_SUBST(EXT_LIBGAUCHE)
 AC_SUBST(EXT_UVECTOR)
 AC_SUBST(LIBGAUCHE_SO)
 AC_SUBST(GOSH_USE_SHLIB)
-AC_DEFINE_UNQUOTED(SHLIB_SO_SUFFIX, "$SHLIB_SO_SUFFIX")
+AC_DEFINE_UNQUOTED(SHLIB_SO_SUFFIX, "$SHLIB_SO_SUFFIX", [Shared library file suffix])
 AC_SUBST(LINK_HELPER)
 AC_SUBST(MAKEVERSLINK)
 AC_SUBST(CYGWIN_FIXDLL)

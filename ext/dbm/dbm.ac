@@ -64,7 +64,7 @@ if echo $DBMS | tr "," "\012" | grep ndbm; then
 NDBM_HEADER=""
 AC_CHECK_HEADER(ndbm.h, [
   NDBM_HEADER="ndbm.h"
-  AC_DEFINE(HAVE_NDBM_H, 1)
+  AC_DEFINE(HAVE_NDBM_H, 1, [Define 1 you have the <ndbm.h> header file.])
   AC_CHECK_FUNCS(dbm_open, [ NDBMLIB="" ], [
     AC_CHECK_LIB(ndbm, dbm_open, [ NDBMLIB="-lndbm" ], [
       AC_CHECK_LIB(dbm, dbm_open, [ NDBMLIB="-ldbm" ], [
@@ -80,7 +80,7 @@ AC_CHECK_HEADER(ndbm.h, [
 unset ac_cv_header_gdbm_ndbm_h;  dnl Ugly hack
 AC_CHECK_HEADER(gdbm/ndbm.h, [
   NDBM_HEADER="gdbm/ndbm.h"
-  AC_DEFINE(HAVE_GDBM_SLASH_NDBM_H, 1)
+  AC_DEFINE(HAVE_GDBM_SLASH_NDBM_H, 1, [Define 1 you have the <gdbm/ndbm.h> header file.])
   AC_CHECK_LIB(gdbm, dbm_open, [ NDBMLIB="-lgdbm" ], [
     AC_CHECK_LIB(gdbm_compat, dbm_open, [ NDBMLIB="-lgdbm -lgdbm_compat" ], [
       AC_MSG_NOTICE([ndbm header is found but its library isn't.  disabling ndbm.])
@@ -90,7 +90,7 @@ AC_CHECK_HEADER(gdbm/ndbm.h, [
 unset ac_cv_header_gdbm_ndbm_h;  dnl Ugly hack
 AC_CHECK_HEADER(gdbm-ndbm.h, [
   NDBM_HEADER="gdbm-ndbm.h"
-  AC_DEFINE(HAVE_GDBM_MINUS_NDBM_H, 1)
+  AC_DEFINE(HAVE_GDBM_MINUS_NDBM_H, 1, [Define 1 you have the <gdbm-ndbm.h> header file.])
   AC_CHECK_LIB(gdbm, dbm_open, [ NDBMLIB="-lgdbm" ], [
     AC_CHECK_LIB(gdbm_compat, dbm_open, [ NDBMLIB="-lgdbm -lgdbm_compat" ], [
       AC_MSG_NOTICE([ndbm header is found but its library isn't.  disabling ndbm.])
@@ -112,7 +112,7 @@ if echo $DBMS | tr "," "\012" | grep odbm; then
 ODBM_HEADER=""
 AC_CHECK_HEADER(dbm.h, [
   ODBM_HEADER="dbm.h"
-  AC_DEFINE(HAVE_DBM_H, 1)
+  AC_DEFINE(HAVE_DBM_H, 1, [Define 1 you have the <dbm.h> header file.])
   AC_CHECK_LIB(dbm, dbminit, [ ODBMLIB="-ldbm" ], [
     AC_CHECK_LIB(gdbm, dbminit, [ ODBMLIB="-lgdbm" ], [
       AC_CHECK_LIB(gdbm_compat, dbminit, [ ODBMLIB="-lgdbm -lgdbm_compat" ], [
@@ -124,7 +124,7 @@ AC_CHECK_HEADER(dbm.h, [
 unset ac_cv_header_gdbm_dbm_h;  dnl Ugly hack
 AC_CHECK_HEADER(gdbm/dbm.h, [
   ODBM_HEADER="gdbm/dbm.h"
-  AC_DEFINE(HAVE_GDBM_SLASH_DBM_H, 1)
+  AC_DEFINE(HAVE_GDBM_SLASH_DBM_H, 1, [Define 1 you have the <gdbm/dbm.h> header file.])
   AC_CHECK_LIB(gdbm, dbminit, [ ODBMLIB="-lgdbm" ], [
     AC_CHECK_LIB(gdbm_compat, dbminit, [ ODBMLIB="-lgdbm -lgdbm_compat" ], [
       AC_MSG_NOTICE([odbm header is found but its library isn't.  disabling odbm.])
@@ -134,7 +134,7 @@ AC_CHECK_HEADER(gdbm/dbm.h, [
 unset ac_cv_header_gdbm_dbm_h;  dnl Ugly hack
 AC_CHECK_HEADER(gdbm-dbm.h, [
   ODBM_HEADER="gdbm-dbm.h"
-  AC_DEFINE(HAVE_GDBM_MINUS_DBM_H, 1)
+  AC_DEFINE(HAVE_GDBM_MINUS_DBM_H, 1, [Define 1 you have the <gdbm-dbm.h> header file.])
   AC_CHECK_LIB(gdbm, dbminit, [ ODBMLIB="-lgdbm" ], [
     AC_CHECK_LIB(gdbm_compat, dbminit, [ ODBMLIB="-lgdbm -lgdbm_compat" ], [
       AC_MSG_NOTICE([odbm header is found but its library isn't.  disabling odbm.])
