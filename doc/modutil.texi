@@ -18415,9 +18415,28 @@ Clear characters from the current cursor position to the
 end of the line.
 @end deffn
 
+@deffn {Generic function} clear-to-eos console
+Clear characters from the current cursor position to the
+end of the screen.
+@end deffn
+
 @deffn {Generic function} hide-cursor console
 @deffnx {Generic function} show-cursor console
 Hide/show the cursor.
+@end deffn
+
+@deffn {Generic function} cursor-down/scroll-up console
+If the cursor is at the bottom line of the screen,
+scroll up the contents and clear the bottom line; the cursor stays
+the same position.  If the cursor is not at the bottom line of
+the screen, move the cursor down.
+@end deffn
+
+@deffn {Generic function} cursor-up/scroll-down console
+If the cursor is at the top line of the screen,
+scroll down the contents and clear the top line; the cursor stays
+the same position.  If the cursor is not at the top line of
+the screen, move the cursor up.
 @end deffn
 
 @deffn {Generic function} query-screen-size console
