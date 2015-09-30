@@ -3010,7 +3010,7 @@
 
 (define-pass1-syntax (include-ci form cenv) :gauche
   ($seq (map (^p (pass1 (car p) (cenv-swap-source cenv (cdr p))))
-             (pass1/expand-include (cdr form) cenv #f))))
+             (pass1/expand-include (cdr form) cenv #t))))
 
 ;; Returns  ((Sexpr . Filename) ...)
 (define (pass1/expand-include args cenv case-fold?)
