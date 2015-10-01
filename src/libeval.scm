@@ -400,7 +400,13 @@
 (define-cproc macro-transformer (mac::<macro>) Scm_MacroTransformer)
 
 (define (call-macro-expander mac expr cenv)
-  ((macro-transformer mac) expr cenv))
+  (let1 r ((macro-transformer mac) expr cenv)
+    (if (and (pair? r) (not (eq? expr r)))
+      (rlet1 p (if (extended-pair? r)
+                 r
+                 (extended-cons (car r) (cdr r)))
+        (pair-attribute-set! p 'macro-input expr))
+      r)))
 
 (define-cproc make-syntax (name::<symbol> proc)
   Scm_MakeSyntax)

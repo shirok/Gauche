@@ -1,3 +1,9 @@
+2015-09-30  Shiro Kawai  <shiro@acm.org>
+
+	* src/libeval.scm (call-macro-expander): EXPERIMENTAL: Add original
+	  source before macro expansion to the pair attribute of the expanded
+	  form.  Could be used for better error reporting.
+
 2015-09-26  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm (builtin-inliner): Fixed a bug that builtin
