@@ -903,69 +903,19 @@ ScmObj Scm_RaiseCondition(ScmObj condition_type, ...)
  *              frames of the handler itself.
  *   offset   - add this to the frame number.  Useful to show a middle part
  *              of frames only, by combining the skip parameter.
- *   format   - SCM_STACK_TRACE_FORMAT_* enum value.  EXPERIMENTAL.
+ *   format   - SCM_STACK_TRACE_FORMAT_* enum value.  No longer used.
  */
-
-#define STACK_DEPTH_LIMIT 30
-
-#define FMT_ORIG SCM_STACK_TRACE_FORMAT_ORIGINAL
-#define FMT_CC   SCM_STACK_TRACE_FORMAT_CC
-
-#define SHOW_EXPR(depth, expr) \
-    Scm_Printf(out, "%3d  %66.1S\n", (depth), Scm_UnwrapSyntax(expr));
-
 void Scm_ShowStackTrace(ScmPort *out, ScmObj stacklite,
                         int maxdepth, int skip, int offset, int format)
 {
-    ScmObj cp;
-    int depth = offset;
-
-    if (maxdepth == 0) maxdepth = STACK_DEPTH_LIMIT;
-
-    SCM_FOR_EACH(cp, stacklite) {
-        if (skip-- > 0) continue;
-        if (format == FMT_ORIG) {
-            SHOW_EXPR(depth++, SCM_CAR(cp));
-        }
-        if (SCM_PAIRP(SCM_CAR(cp))) {
-            ScmObj srci = Scm_PairAttrGet(SCM_PAIR(SCM_CAR(cp)),
-                                          SCM_SYM_SOURCE_INFO, SCM_FALSE);
-            if (SCM_PAIRP(srci) && SCM_PAIRP(SCM_CDR(srci))) {
-                switch (format) {
-                case FMT_ORIG:
-                    Scm_Printf(out, "        At line %S of %S\n",
-                               SCM_CADR(srci), SCM_CAR(srci));
-                    break;
-                case FMT_CC:
-                    Scm_Printf(out, "%A:%S:\n",
-                               SCM_CAR(srci), SCM_CADR(srci));
-                    break;
-                }
-            } else {
-                switch (format) {
-                case FMT_ORIG:
-                    Scm_Printf(out, "        [unknown location]\n");
-                    break;
-                case FMT_CC:
-                    Scm_Printf(out, "[unknown location]:\n");
-                    break;
-                }
-            }
-        } else {
-            Scm_Printf(out, "\n");
-        }
-        if (format == FMT_CC) {
-            SHOW_EXPR(depth++, SCM_CAR(cp));
-        }
-
-        if (maxdepth >= 0 && depth >= STACK_DEPTH_LIMIT) {
-            Scm_Printf(out, "... (more stack dump truncated)\n");
-            break;
-        }
-    }
+    static ScmObj show_stack_trace = SCM_UNDEFINED;
+    SCM_BIND_PROC(show_stack_trace,
+                  "%show-stack-trace",
+                  Scm_GaucheInternalModule());
+    Scm_ApplyRec5(show_stack_trace, stacklite, SCM_OBJ(out),
+                  SCM_MAKE_INT(maxdepth), SCM_MAKE_INT(skip),
+                  SCM_MAKE_INT(offset));
 }
-
-#undef SHOW_EXPR
 
 /* Dump stack trace.  Called from the default error reporter.
    Also intended to be called from the debugger, so we allow vm to be NULL
@@ -977,7 +927,7 @@ void Scm_DumpStackTrace(ScmVM *vm, ScmPort *port)
     ScmObj stack = Scm_VMGetStackLite(vm);
     SCM_PUTZ("Stack Trace:\n", -1, port);
     SCM_PUTZ("_______________________________________\n", -1, port);
-    Scm_ShowStackTrace(port, stack, 0, 0, 0, FMT_ORIG);
+    Scm_ShowStackTrace(port, stack, 0, 0, 0, 0);
     SCM_FLUSH(port);
 }
 

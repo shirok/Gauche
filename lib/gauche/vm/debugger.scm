@@ -39,6 +39,25 @@
           debug-print-pre debug-print-post))
 (select-module gauche.vm.debugger)
 
+;; Returns source file info attached to OBJ.  If there's no info
+;; attached, returns #f.
+;; The return value can be either (<filename> <line-no>) or
+;; (<filename> <line-no> <original-form>).  The latter happens when
+;; OBJ is a result of macro expansion, and <orginal-form> being
+;; the original source form.
+#;
+(define (debug-source-info obj)
+  (and-let1 sis ((with-module gauche.internal %source-info) obj)
+    (any (^[si] ;; si :: (<file> <line> <form>)
+           (and (car si) (cadr si)
+                (if (eq? (caddr si) obj)
+                  `(,(car si) ,(cadr si))
+                  si)))
+         (reverse sis))))
+
+;; TRANSIENT: We need this old definition for 0.9.5 release, since
+;; compiling 0.9.5 with pre-0.9.5 release needs to use this procedure,
+;; but it doesn't have gauche.internal#%source-info yet.
 (define (debug-source-info obj)
   (and-let* ([ (pair? obj) ]
              [info ((with-module gauche.internal pair-attribute-get)

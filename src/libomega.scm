@@ -66,15 +66,8 @@
 
 (define-method report-mixin-condition ((c <compile-error-mixin>) port)
   (let* ([expr (~ c'expr)]
-         ;; TODO: This is dupe of debug-source-info in gauche.vm.debugger,
-         ;; but we don't want to load it here.  Maybe we should make
-         ;; debug-source-info built-in in future.
-         [src-info (and-let* ([ (pair? expr ) ]
-                              [info ((with-module gauche.internal pair-attribute-get)
-                                     expr 'source-info)]
-                              [ (pair? info) ]
-                              [ (pair? (cdr info)) ])
-                     info)])
+         [src-info (find (^[si] (and (car si) (cadr si)))
+                         ((with-module gauche.internal %source-info) expr))])
     (if src-info
       (format port "    While compiling ~s at line ~d: ~,,,,105:s\n"
               (car src-info) (cadr src-info) expr)

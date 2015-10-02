@@ -555,14 +555,38 @@
   (:optional (vm::<thread> (c "SCM_OBJ(Scm_VM())")))
   (return (Scm_VMGetStackLite vm)))
 
-(define-cproc %vm-show-stack-trace (trace :key
-                                          (port::<port> (current-output-port))
-                                          (maxdepth::<int> 0)
-                                          (skip::<int> 0)
-                                          (offset::<int> 0))
-  ::<void>
-  (Scm_ShowStackTrace port trace maxdepth skip offset
-                      SCM_STACK_TRACE_FORMAT_ORIGINAL))
+(define (%vm-show-stack-trace trace :key
+                                    (port::<port> (current-output-port))
+                                    (maxdepth::<int> 0)
+                                    (skip::<int> 0)
+                                    (offset::<int> 0))
+  ((with-module gauche.internal %show-stack-trace)
+   trace port maxdepth skip offset))
+
+;; This is also called from C's Scm_ShowStackTrace
+;; TRACE is what vm-get-stack-trace-lite returns.
+;; Be careful not to depend on autoloaded functions.
+(select-module gauche.internal)
+(define (%show-stack-trace trace port maxdepth skip offset)
+  (let1 maxdepth (if (zero? maxdepth) 30 maxdepth) ; default depth
+    (do ([trace trace (cdr trace)]
+         [skip skip (- skip 1)]
+         [depth offset (+ depth 1)])
+        [(cond [(null? trace)]
+               [(and (> maxdepth 0) (> depth maxdepth))
+                (display "... (more stack dump truncated)\n" port)
+                #t]
+               [else #f])]
+      (unless (> skip 0)
+        (format port "~3d  ~,,,,65:s\n" depth (unwrap-syntax (car trace)))
+        (let1 sis (%source-info (car trace))
+          (if-let1 si (find (^[si] (and (car si) (cadr si))) (reverse sis))
+            (begin
+              (when (and (pair? (cddr si))
+                         (not (eq? (car trace) (caddr si))))
+                (format port "        expanded from ~,,,,60s\n" (caddr si)))
+              (format port "        at ~s:~d\n" (car si) (cadr si)))
+            (format port "        [unknown location]\n")))))))
 
 ;; API
 (select-module gauche.internal)
@@ -571,7 +595,22 @@
     (SCM_TYPE_ERROR handler "a procedure or #f"))
   (set! (-> vm customErrorReporter) handler))
 
-;; parameter internal API
+;; Debug helper internal API
+;; Returns ((<file1> <line1> <form1>) (<file2> <line2> <form2>) ...)
+;; Where <form1> is a result of macro expansion of <form2> etc.
+;; <fileN> and <lineN> can be #f if unknown.
+;; For public use, gauche.vm.debugger#debug-source-info is provided.
+(select-module gauche.internal)
+(define (%source-info obj)
+  (let loop ([obj obj] [r '()])
+    (if (pair? obj)
+      (let1 si (pair-attribute-get obj 'source-info '(#f #f))
+        (if-let1 mi (pair-attribute-get obj 'macro-input #f)
+          (loop mi `((,(car si) ,(cadr si) ,obj) ,@r))
+          (reverse r `((,(car si) ,(cadr si) ,obj)))))
+      '())))
+
+;; Parameter internal API
 ;; These will be called by the public API in gauche.parameter.  The protocol
 ;; is a bit weird, for the Scheme-level parameter has its own instance
 ;; definition distinct from C-level ScmParameterLoc.  Eventually it would

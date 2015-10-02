@@ -1,3 +1,17 @@
+2015-10-01  Shiro Kawai <shiro@acm.org>
+
+	* src/error.c (Scm_ShowStackTrace): Moved to Scheme.
+	* src/libeval.scm (%vm-show-stack-trace): Reimplement stack trace
+	  printing in Scheme (the actual work is done in %show-stack-trace).
+	  Addition: If the expression is the result of macro expansion, show
+	  the original source form as well, with its source location.
+
+	* src/libeval.scm (%source-info): Common internal API to extract
+	  source info.
+	* lib/gauche/vm/debugger.scm (debug-source-info): Rewrote to use
+	  %source-info.
+	* src/libomega.scm (report-mixin-condition): Ditto.
+
 2015-09-30  Shiro Kawai  <shiro@acm.org>
 
 	* src/libeval.scm (call-macro-expander): EXPERIMENTAL: Add original
