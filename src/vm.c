@@ -1509,10 +1509,12 @@ static ScmObj user_eval_inner(ScmObj program, ScmWord *codevec)
                 goto restart;
             } else if (vm->cstack->prev == NULL) {
                 /* This loop is the outermost C stack, and nobody will
-                   capture the error.  Usually this means we're running
-                   scripts.  We can safely exit here, for the dynamic
-                   stack is already rewound. */
-                exit(EX_SOFTWARE);
+                   capture the error.  This happens when the base C code
+                   calls Scm_EvalRec/ApplyRec, instead of Scm_Eval/Apply.
+                   We can't return, since there's no way to pass the
+                   error info.  We can only just exit.
+                */
+                Scm_Exit(EX_SOFTWARE);
             } else {
                 /* Jump again until C stack is recovered.  We sould pop
                    the extra continuation frame so that the VM stack
@@ -1634,7 +1636,6 @@ ScmObj Scm_ApplyRec5(ScmObj proc, ScmObj arg0, ScmObj arg1, ScmObj arg2,
     vm->vals[4] = arg4;
     return apply_rec(vm, proc, 5);
 }
-
 
 /*
  * Safe version of user-level Eval, Apply and Load.
@@ -2057,14 +2058,11 @@ void Scm_VMDefaultExceptionHandler(ScmObj e)
         }
     }
 
-    if (vm->cstack) {
-        vm->escapeReason = SCM_VM_ESCAPE_ERROR;
-        vm->escapeData[0] = ep;
-        vm->escapeData[1] = e;
-        siglongjmp(vm->cstack->jbuf, 1);
-    } else {
-        exit(EX_SOFTWARE);
-    }
+    SCM_ASSERT(vm->cstack);
+    vm->escapeReason = SCM_VM_ESCAPE_ERROR;
+    vm->escapeData[0] = ep;
+    vm->escapeData[1] = e;
+    siglongjmp(vm->cstack->jbuf, 1);
 }
 
 /* Call error reporter - either the custome one, or the default

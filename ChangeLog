@@ -1,3 +1,12 @@
+2015-10-02  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c (user_eval_inner): Use Scm_Exit instead of exit() to ensure
+	  flushing output buffers.  This code path is executed only when
+	  the C program calls Scm_EvalRec/ApplyRec directly without
+	  outer Scm_Eval/Apply.
+	  (Scm_VMDefaultExceptionHandler): vm->cstack shouldn't be NULL
+	  when this is called, so we use SCM_ASSERT instead of check and exit.
+
 2015-10-01  Shiro Kawai <shiro@acm.org>
 
 	* src/error.c (Scm_ShowStackTrace): Moved to Scheme.
