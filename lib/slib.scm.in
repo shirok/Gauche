@@ -287,12 +287,7 @@
 (define char-code-limit (+ *char-code-max* 1))
 
 ;;@ MOST-POSITIVE-FIXNUM is used in modular.scm
-(define most-positive-fixnum (let ()
-                              (define (%fixnum-find-max n)
-                                (if (fixnum? n)
-                                    (%fixnum-find-max (ash n 1))
-                                    (- n 1)))
-                              (%fixnum-find-max 1)))
+(define most-positive-fixnum (greatest-fixnum))
 
 ;;@ Return argument
 ;(define (identity x) x) ; Gauche has this.
