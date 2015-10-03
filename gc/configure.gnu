@@ -7,6 +7,11 @@
 #   'config.threads' so we just read it.
 #   config.threads is created in the build directory instead of $srcdir,
 #   so we directly refer it.
+#
+# "-DDONT_ADD_BYTE_AT_END", "--enable-large-config"
+#   [SK] this is _required_ to make Gauche work correctly.
 
 ${CONFIG_SHELL} ./configure "${@}" \
-		--enable-threads=$(cat ../config.threads)
+		--enable-threads=$(cat ../config.threads) \
+		--enable-large-config \
+		CPPFLAGS="${CPPFLAGS} -DDONT_ADD_BYTE_AT_END"
