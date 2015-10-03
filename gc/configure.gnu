@@ -8,5 +8,5 @@
 #   config.threads is created in the build directory instead of $srcdir,
 #   so we directly refer it.
 
-${CONFIG_SHELL} ./configure ${@} \
+${CONFIG_SHELL} ./configure "${@}" \
 		--enable-threads=$(cat ../config.threads)
