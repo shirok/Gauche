@@ -99,21 +99,28 @@ dnl   If you use AC_GAUCHE_FLAGS, this test is included.
 dnl   The main configure and gc's configure also use this.
 AC_DEFUN([AC_GAUCHE_OPTFLAGS],
          [
-case "$target" in
-  i686-*) I686OPT="-DUSE_I686_PREFETCH";;
-esac
-case "$CC" in
-  gcc*)  # some systems may have gcc-2.95, gcc-3, etc.
-    case "$target" in
-      *mingw*) ;;
-      *)     GCCOPT="-fomit-frame-pointer";;
-    esac
-    case "$target" in
-     i586-*) GCCOPT="$GCCOPT -march=i586";;
-     i686-*) GCCOPT="$GCCOPT -march=i686";;
-    esac
-    ;;
-esac
+AC_ARG_ENABLE([heuristic-optimization],
+	AS_HELP_STRING([--enable-heuristic-optimization],
+		[Sets some architecture specific optimization flags using heuristics (default: enable)]),
+	[USE_HEURISTIC_OPTIMIZATION=$enableval],
+	[USE_HEURISTIC_OPTIMIZATION=yes])
+if test "x$USE_HEURISTIC_OPTIMIZATION" = xyes ; then
+  case "$target" in
+    i686-*) I686OPT="-DUSE_I686_PREFETCH";;
+  esac
+  case "$CC" in
+    gcc*)  # some systems may have gcc-2.95, gcc-3, etc.
+      case "$target" in
+        *mingw*) ;;
+        *)     GCCOPT="-fomit-frame-pointer";;
+      esac
+      case "$target" in
+        i586-*) GCCOPT="$GCCOPT -march=i586";;
+        i686-*) GCCOPT="$GCCOPT -march=i686";;
+      esac
+      ;;
+  esac
+fi
 OPTFLAGS="$GCCOPT $I686OPT"
 AC_SUBST(OPTFLAGS)
 ])
