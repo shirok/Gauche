@@ -61,7 +61,9 @@
           query-screen-size query-cursor-position move-cursor-to
           hide-cursor show-cursor cursor-down/scroll-up cursor-up/scroll-down
           reset-terminal clear-screen clear-to-eol clear-to-eos
-          set-character-attribute with-character-attribute))
+          set-character-attribute with-character-attribute
+
+          make-default-console))
 (select-module text.console)
 
 ;; Portable character attributes - can be supported both on
@@ -282,5 +284,29 @@
         (thunk))
     (reset-character-attribute con)))
 
+;;;
+;;; Console class implementation - windows cosole
+;;;
 ;TODO:
 ;(define-class <windows-console> () ())
+
+
+;;;
+;;; Select appropriate console
+;;;
+
+;; Convenience API
+;; Inspect the runtime environment and returns a console object with
+;; appropriate setting.
+;; If it cannot find supported console type, an error is signalled,
+;; with a message describing why.
+;; We use some heuristics to recognize vt100 compatible terminals.
+(define (make-default-console)
+  (cond [(member (sys-getenv "TERM") '("vt100" "vt102" "vt220" "xterm" "rxvt"))
+         (make <vt100>)]
+        [(sys-getenv "TERM")
+         => (^t (error #"Unsupported terminal type: ~t"))]
+        [else
+         (error "TERM isn't set and don't know how to control the terminal.")]))
+
+  
