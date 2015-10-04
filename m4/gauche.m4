@@ -40,9 +40,8 @@ dnl   sys or site.
 AC_DEFUN([AC_GAUCHE_INSTALL_TYPE],
          [
 : ${INSTALL_TYPE=$1}
-if test "X$INSTALL_TYPE" != "Xsys" -a "X$INSTALL_TYPE" != "Xsite"; then
-  AC_MSG_ERROR([INSTALL_TYPE must be either 'sys' or 'site'])
-fi
+AS_IF([test "X$INSTALL_TYPE" != "Xsys" -a "X$INSTALL_TYPE" != "Xsite"],
+	[AC_MSG_ERROR([INSTALL_TYPE must be either 'sys' or 'site'])])
 AC_SUBST(INSTALL_TYPE)
 ])
 
@@ -54,26 +53,21 @@ CC="`$GAUCHE_CONFIG --cc`"
 AC_SUBST(CC)
 # adds default CFLAGS if it has not been set.
 ac_gauche_CFLAGS=${CFLAGS+set}
-if test -z "$ac_gauche_CFLAGS"; then
-  CFLAGS="`$GAUCHE_CONFIG --default-cflags`"
-fi
+AS_IF([test -z "$ac_gauche_CFLAGS"],
+	[CFLAGS="`$GAUCHE_CONFIG --default-cflags`"])
 # adds default OBJEXT if it has not been set.
 ac_gauche_OBJEXT=${OBJEXT+set}
-if test -z "$ac_gauche_OBJEXT"; then
-  OBJEXT="`$GAUCHE_CONFIG --object-suffix`"
-fi
+AS_IF([test -z "$ac_gauche_OBJEXT"],
+	[OBJEXT="`$GAUCHE_CONFIG --object-suffix`"])
 ac_gauche_EXEEXT=${EXEEXT+set}
-if test -z "$ac_gauche_EXEEXT"; then
-  EXEEXT="`$GAUCHE_CONFIG --executable-suffix`"
-fi
+AS_IF([test -z "$ac_gauche_EXEEXT"],
+	[EXEEXT="`$GAUCHE_CONFIG --executable-suffix`"])
 ac_gauche_SOEXT=${SOEXT+set}
-if test -z "$ac_gauche_SOEXT"; then
-  SOEXT="`$GAUCHE_CONFIG --so-suffix`"
-fi
+AS_IF([test -z "$ac_gauche_SOEXT"],
+	[SOEXT="`$GAUCHE_CONFIG --so-suffix`"])
 ac_gauche_DYLIBEXT=${DYLIBEXT+set}
-if test -z "$ac_gauche_DYLIBEXT"; then
-  DYLIBEXT="`$GAUCHE_CONFIG --dylib-suffix`"
-fi
+AS_IF([test -z "$ac_gauche_DYLIBEXT"],
+	[DYLIBEXT="`$GAUCHE_CONFIG --dylib-suffix`"])
 AC_SUBST(OBJEXT)
 AC_SUBST(EXEEXT)
 AC_SUBST(SOEXT)
@@ -103,23 +97,17 @@ AC_ARG_ENABLE([heuristic-optimization],
 		[Sets some architecture specific optimization flags using heuristics (default: enable)]),
 	[USE_HEURISTIC_OPTIMIZATION=$enableval],
 	[USE_HEURISTIC_OPTIMIZATION=yes])
-if test "x$USE_HEURISTIC_OPTIMIZATION" = xyes ; then
-  case "$target" in
-    i686-*) I686OPT="-DUSE_I686_PREFETCH";;
-  esac
-  case "$CC" in
-    gcc*)  # some systems may have gcc-2.95, gcc-3, etc.
-      case "$target" in
-        *mingw*) ;;
-        *)     GCCOPT="-fomit-frame-pointer";;
-      esac
-      case "$target" in
-        i586-*) GCCOPT="$GCCOPT -march=i586";;
-        i686-*) GCCOPT="$GCCOPT -march=i686";;
-      esac
-      ;;
-  esac
-fi
+AS_IF([test "x$USE_HEURISTIC_OPTIMIZATION" = xyes],[
+  AS_CASE(["$target"],
+	  [i686-*], [I686OPT="-DUSE_I686_PREFETCH"])
+  AS_CASE(["$CC"],
+	  [gcc*], [ dnl some systems may have gcc-2.95, gcc-3, etc.
+		  AS_CASE(["$target"],
+			  [*mingw*], [],
+				     [GCCOPT="-fomit-frame-pointer"])
+		  AS_CASE(["$target"],
+			  [i586-*], [GCCOPT="$GCCOPT -march=i586"],
+			  [i686-*], [GCCOPT="$GCCOPT -march=i686"])])])
 OPTFLAGS="$GCCOPT $I686OPT"
 AC_SUBST(OPTFLAGS)
 ])
@@ -129,7 +117,7 @@ dnl   Sets LDFLAGS and LIBS to generate shared library.
 dnl   This has to come after all the tests that require linking, or those test
 dnl   will fail because they can't generate stand-alone executable.
 AC_DEFUN([AC_GAUCHE_FIX_LIBS],
-         [
+	[
 LDFLAGS="$LDFLAGS `$GAUCHE_CONFIG --so-ldflags`"
 LIBS="$GAUCHE_LIB `$GAUCHE_CONFIG -l` $LIBS"
 AC_SUBST(LDFLAGS)
@@ -143,13 +131,11 @@ dnl   module's name, and has to match the name given to the SCM_INIT_EXTENSION
 dnl   macro in the extension initialization code.   If MODULE is omitted
 dnl   FILE is used as the module's name.
 AC_DEFUN([AC_GAUCHE_EXT_FIXUP],
-         [AC_CONFIG_COMMANDS("$1_head_n_tail",
-                             [
-if test "X$2" = X; then 
-  ac_gauche_ext_fixup_name=`echo $1 | tr -c "\012A-Za-z0-9" "_"`
-else
-  ac_gauche_ext_fixup_name="$2"
-fi
+	 [AC_CONFIG_COMMANDS("$1_head_n_tail",
+			     [
+AS_IF([test "X$2" = X],
+	[ac_gauche_ext_fixup_name=`echo $1 | tr -c "\012A-Za-z0-9" "_"`],
+	[ac_gauche_ext_fixup_name="$2"])
 AC_MSG_NOTICE(generating $1_head.c and $1_tail.c);
 echo "void *Scm__datastart_$ac_gauche_ext_fixup_name = (void*)&Scm__datastart_$ac_gauche_ext_fixup_name;" > $1_head.c
 echo "void *Scm__bssstart_$ac_gauche_ext_fixup_name;" >> $1_head.c
@@ -161,7 +147,7 @@ dnl AC_GAUCHE_MAKE_GPD
 dnl   Creates a Gauche package description file.
 dnl
 AC_DEFUN([AC_GAUCHE_MAKE_GPD],
-         [
+	 [
 GAUCHE_PACKAGE_CONFIGURE_ARGS="`echo ""$ac_configure_args"" | sed 's/[\\""\`\$]/\\\&/g'`"
 AC_MSG_NOTICE([creating ${PACKAGE_NAME}.gpd])
 $GAUCHE_PACKAGE make-gpd "$PACKAGE_NAME" \
