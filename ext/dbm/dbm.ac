@@ -49,7 +49,7 @@ dnl The ndbm case is so complicated because, besides it may be emulated
 dnl by gdbm, the ndbm functions could be in libndbm, libdbm, or even libc.
 
 dnl gdbm
-if echo $DBMS | tr "," "\012" | grep gdbm; then
+if echo $DBMS | tr "," "\012" | grep -q gdbm; then
 AC_CHECK_HEADERS(gdbm.h, [
   DBM_ARCHFILES=dbm--gdbm.$SHLIB_SO_SUFFIX
   DBM_SCMFILES=gdbm.sci
@@ -59,7 +59,7 @@ AC_CHECK_HEADERS(gdbm.h, [
 fi dnl end of (find "gdbm" DBMS)
 
 dnl ndbm
-if echo $DBMS | tr "," "\012" | grep ndbm; then
+if echo $DBMS | tr "," "\012" | grep -q ndbm; then
 
 NDBM_HEADER=""
 AC_CHECK_HEADER(ndbm.h, [
@@ -107,7 +107,7 @@ fi dnl end of (find "ndbm" DBMS)
 
 dnl odbm
 
-if echo $DBMS | tr "," "\012" | grep odbm; then
+if echo $DBMS | tr "," "\012" | grep -q odbm; then
 
 ODBM_HEADER=""
 AC_CHECK_HEADER(dbm.h, [
