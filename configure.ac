@@ -829,7 +829,8 @@ AC_CONFIG_SUBDIRS(gc)
 dnl ===========================================================
 dnl Create output files
 echo $GAUCHE_VERSION > VERSION
-AC_OUTPUT(Makefile
+AC_CONFIG_FILES([
+          Makefile
           src/Makefile src/genconfig src/makeverslink
           lib/Makefile lib/slib.scm
           doc/gosh.1 doc/gauche-config.1 doc/gauche-cesconv.1
@@ -863,7 +864,8 @@ AC_OUTPUT(Makefile
           ext/windows/Makefile
           examples/Makefile
           examples/standalone/Makefile
-         )
+         ])
+AC_OUTPUT
 
 dnl ===========================================================
 dnl Show some of the configuration results, for developer's
