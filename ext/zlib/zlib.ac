@@ -13,7 +13,7 @@ ZLIB_CPPFLAGS=
 ZLIB_LDFLAGS=
 
 AC_ARG_WITH(zlib,
-  AC_HELP_STRING([--with-zlib=PATH],
+  AS_HELP_STRING([--with-zlib=PATH],
                  [Use zlib library installed under PATH.
 The rfc.zlib module uses zlib if it is avilable.  If your system has zlib
 library in non-trivial location, specify this option.

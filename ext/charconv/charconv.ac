@@ -17,7 +17,7 @@ ICONV_CPPFLAGS=
 ICONV_LDFLAGS=
 
 AC_ARG_WITH(iconv,
-  AC_HELP_STRING([--with-iconv=PATH],
+  AS_HELP_STRING([--with-iconv=PATH],
                  [Use iconv library installed under PATH.
 Gauche's charconv module uses iconv if it is available.
 If your system has iconv library in non-trivial location,
@@ -34,7 +34,7 @@ If you don't want to use iconv for some reason, say --without-iconv. ]),
  ])
 
 AC_ARG_WITH(iconv-lib,
-  AC_HELP_STRING([--with-iconv-lib=LIB],
+  AS_HELP_STRING([--with-iconv-lib=LIB],
                  [If your system needs to use external library for iconv
 and whose name is not libiconv, specify it.
 For example, if you need -lconv to use iconv, say --with-iconv-lib=conv]),

@@ -18,7 +18,7 @@ dnl   otherwise.
 
 DBMS=gdbm,ndbm,odbm
 AC_ARG_WITH(dbm,
-  AC_HELP_STRING([--with-dbm=DBM,...],
+  AS_HELP_STRING([--with-dbm=DBM,...],
                  [Select which dbm libraries to be compiled.  You can specify 
 any combinations of gdbm, ndbm and odbm, or just 'no' to disable external
 dbm libraries.  Example: --with-dbm=ndbm,odbm

@@ -1,8 +1,10 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_PREREQ(2.54)
-AC_INIT(Gauche, 0.9.5_pre1, shiro@acm.org)
-AC_CANONICAL_SYSTEM
-AC_CONFIG_HEADER(src/gauche/config.h)
+AC_PREREQ([2.69])
+AC_INIT([Gauche],[0.9.5_pre1],[shiro@acm.org])
+AC_CANONICAL_BUILD
+AC_CANONICAL_HOST
+AC_CANONICAL_TARGET
+AC_CONFIG_HEADER([src/gauche/config.h])
 
 # ABI_VERSION is set to major.minor of Gauche version by default.
 # It can be overridden by uncommenting the following line.
@@ -18,7 +20,7 @@ dnl   enable-multibyte
 dnl
 GAUCHE_CHAR_ENCODING=utf8
 AC_ARG_ENABLE(multibyte,
-  AC_HELP_STRING([--enable-multibyte=ENCODING],
+  AS_HELP_STRING([--enable-multibyte=ENCODING],
                  [Use ENCODING as the internal multibyte string encoding.
 Following encodings are currently recognized:
 'euc-jp' (EUC-JP code), 'utf-8' (UTF-8), 'sjis' (Shift-JIS),
@@ -49,7 +51,7 @@ dnl  with-slib
 dnl
 SLIB_DIR=/usr/local/slib
 AC_ARG_WITH(slib,
-  AC_HELP_STRING([--with-slib=PATH],
+  AS_HELP_STRING([--with-slib=PATH],
                  [Configure Gauche's slib module to use Aubrey Jaffer's SLIB
 installed under PATH.  If PATH is not specified, or this option is omitted,
 Gauche still tries to find your slib installation from some typical places.]),
@@ -82,7 +84,7 @@ dnl ----------------------------------------------------------
 dnl  with-local=PATH:...
 dnl
 AC_ARG_WITH(local,
-  AC_HELP_STRING([--with-local=PATH:PATH...],
+  AS_HELP_STRING([--with-local=PATH:PATH...],
                  [For each PATH, add PATH/include to the include search
 paths and PATH/lib to the library search paths.  Useful if you have some
 libraries installed in non-standard places.  On MinGW/MSYS, use ';' as a
@@ -120,7 +122,7 @@ dnl
 try_rpath=yes
 rpath=
 AC_ARG_WITH(rpath,
-  AC_HELP_STRING([--with-rpath=PATH:PATH...],
+  AS_HELP_STRING([--with-rpath=PATH:PATH...],
                  [Use -rpath option while building dynamically loadable objects (experimental).]),
   [
     case $with_rpath in
@@ -135,7 +137,7 @@ dnl   enable-thread=TYPE
 dnl
 GAUCHE_THREAD_TYPE=default
 AC_ARG_ENABLE(threads,
-  AC_HELP_STRING([--enable-threads=TYPE],
+  AS_HELP_STRING([--enable-threads=TYPE],
                  [Choose thread type.  Possible values are: 'none' for not using threads, 'pthreads' to use pthreads, and 'default' to choose system's suitable one (if any). ]),
   [
     case $enableval in
@@ -260,7 +262,7 @@ dnl   enable-framework
 dnl
 ac_gauche_framework=no
 AC_ARG_ENABLE(framework,
-  AC_HELP_STRING([--enable-framework],
+  AS_HELP_STRING([--enable-framework],
                  [On MacOSX, build Gauche as a framework.  This flag has no effect on other platforms.]),
   [
     case $enableval in
