@@ -6,6 +6,8 @@ dnl      The 'gauche-package' program can generate template configure.ac
 dnl      that doesn't have any Gauche-specific macros.  We still keep
 dnl      this for backward compatibility, but will remove it after some time.
 
+#serial 1
+
 dnl AC_GAUCHE_INIT_EXT
 dnl   Sets some parameters about installed Gauche package. 
 dnl
