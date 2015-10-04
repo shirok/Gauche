@@ -5,6 +5,7 @@ AC_CANONICAL_BUILD
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
 AC_CONFIG_HEADER([src/gauche/config.h])
+AC_CONFIG_MACRO_DIRS([m4])
 
 # ABI_VERSION is set to major.minor of Gauche version by default.
 # It can be overridden by uncommenting the following line.
