@@ -359,10 +359,8 @@
 ;@
 (define (browse-url url)
   (define (try cmd end) (zero? (system (string-append cmd url end))))
-  (or (try "netscape-remote -remote 'openURL(" ")'")
-      (try "netscape -remote 'openURL(" ")'")
-      (try "netscape '" "'&")
-      (try "netscape '" "'")))
+  (or (try "xdg-open '" "' &")
+      (try "firefox '"  "' &")))
 
 ;;@ define these as appropriate for your system.
 (define slib:tab (integer->char 9))
