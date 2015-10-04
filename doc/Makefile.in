@@ -125,10 +125,10 @@ gauche-refj_toc.html : gauche-refj.texi
 	texi2html --init-file=$(srcdir)/ja-init.pl --split=section --number --document-language=ja gauche-refj.texi
 
 gauche-refj.dvi : gauche-refj.texi
-	texi2dvi gauche-refj.texi
+	TEX=uptex texi2dvi gauche-refj.texi
 
-gauche-refj.pdf : gauche-refj.texi
-	pdftex gauche-refj.texi
+gauche-refj.pdf : gauche-refj.dvi
+	dvipdfm gauche-refj.dvi
 
 gauche-refj.texi : $(TEXIS) extract
 	$(GOSH) $(srcdir)/extract -jp -o gauche-refj.texi $(srcdir)/gauche-ref.texi
@@ -160,7 +160,7 @@ gauche-deve.pdf : gauche-deve.texi
 
 clean:
 	rm -rf core *~ *.aux *.cl *.cls *.cp *.cps *.fn *.fns *.ky *.kys \
-               *.log *.md *.mds \
+               *.log *.lx *.lxs *.md *.mds \
 	       *.pg *.pgs *.toc *.tp *.tps *.vr *.vrs *.pdf *.dvi *.info* \
 	       $(EXTRACTED)
 
