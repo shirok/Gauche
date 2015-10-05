@@ -127,8 +127,8 @@ gauche-refj_toc.html : gauche-refj.texi
 gauche-refj.dvi : gauche-refj.texi
 	TEX=uptex texi2dvi gauche-refj.texi
 
-gauche-refj.pdf : gauche-refj.dvi
-	dvipdfm gauche-refj.dvi
+gauche-refj.pdf : gauche-refj.texi
+	TEX=uptex DVIPDF=dvipdfm texi2pdf --dvipdf gauche-refj.texi
 
 gauche-refj.texi : $(TEXIS) extract.scm
 	$(GOSH) $(srcdir)/extract.scm -jp -o gauche-refj.texi $(srcdir)/gauche-ref.texi
