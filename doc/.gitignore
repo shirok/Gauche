@@ -1,6 +1,21 @@
 /*.1
 /*.info*.gz
 
+/gauche-deve.aux
+/gauche-deve.cp
+/gauche-deve.fn
+/gauche-deve.fns
+/gauche-deve.html
+/gauche-deve.ky
+/gauche-deve.pdf
+/gauche-deve.pg
+/gauche-deve.texi
+/gauche-deve.toc
+/gauche-deve.tp
+/gauche-deve.tps
+/gauche-deve.vr
+/gauche-deve.vrs
+
 /gauche-ref[ej].texi
 /gauche-ref[ej].aux
 /gauche-ref[ej].cl
