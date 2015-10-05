@@ -5,15 +5,15 @@
 /srfis.texi
 
 /gauche-dev[ej].dvi
-/gauche-dev[ej].pdf
 /gauche-dev[ej].html
 /gauche-dev[ej].info*.gz
+/gauche-dev[ej].pdf
 
 /gauche-ref[ej].dvi
 /gauche-ref[ej].html
-/gauche-ref[ej].pdf
 /gauche-ref[ej]_*.html
 /gauche-ref[ej].info*.gz
+/gauche-ref[ej].pdf
 
 /gauche-dev[ej].t2d/
 /gauche-ref[ej].t2d/
