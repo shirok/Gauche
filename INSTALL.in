@@ -552,22 +552,16 @@ Machine-dependent information
 @c JP
 * Linux/Crusoe TM5800 - 最近のLinuxでは Crusoe TM5800がi686互換とされる
        ようになったようですが、gc中でi686特有のprefetch命令を使っているところ
-       でコンパイルに失敗するという報告がありました。とりあえずのfixは、
-       configure後にgc/Makefile中の
+       でコンパイルに失敗するという報告がありました。
+       以下のように環境依存の最適化を無効にして下さい。
 
-         -DUSE_I686_PREFETCH
-
-       という記述を消してからmakeして下さい。
-
+         ./configure --disable-heuristic-optimization
 @c EN
 * Linux/Crusoe TM5800 - It is reported that recent Linux kernel thinks
        TM5800 as i686-compatible, and compilation of Gauche fails at
-       gc where the i686's prefetch instruction is used.   A quick fix
-       is to edit gc/Makefile AFTER configure, to remove the following
-       flag:
+       gc where the i686's prefetch instruction is used.
+       If you want to this machine-dependent heuristic optimization,
+       run configure like this:
 
-         -DUSE_I686_PREFETCH
-
-       Then make it.
+         ./configure --disable-heuristic-optimization
 @c COMMON
-
