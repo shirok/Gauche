@@ -66,10 +66,10 @@ uninstall:
 	(cd $(mandir)/man1; rm -f $(MANPAGES))
 	(cd $(infodir); \
 	 if test -f gauche-refe.info -o -f gauche-refe.info.gz; \
-	   then rm -rf gauche-refe.*; \
+	   then rm -f gauche-refe.*; \
 	 fi; \
 	 if test -f gauche-refj.info -o -f gauche-refj.info.gz; \
-	   then rm -rf gauche-refj.*; \
+	   then rm -f gauche-refj.*; \
 	 fi)
 
 pre-package : texi
@@ -114,7 +114,7 @@ gauche-refe.texi : $(TEXIS) extract.scm
 gauche-refe.info.gz : gauche-refe.texi
 	if test X$(MAKEINFO) != X -a X$(GZIP_PROGRAM) != X; then \
 	  env LANG=C $(MAKEINFO) --no-warn gauche-refe.texi; \
-	  rm -rf gauche-refe.info*.gz; \
+	  rm -f gauche-refe.info*.gz; \
 	  $(GZIP_PROGRAM) gauche-refe.info gauche-refe.info-[0-9]*; \
 	fi
 
@@ -136,7 +136,7 @@ gauche-refj.texi : $(TEXIS) extract.scm
 gauche-refj.info.gz : gauche-refj.texi
 	if test X$(MAKEINFO) != X -a X$(GZIP_PROGRAM) != X; then \
 	  env LANG=C $(MAKEINFO) --no-warn gauche-refj.texi; \
-	  rm -rf gauche-refj.info*.gz; \
+	  rm -f gauche-refj.info*.gz; \
 	  $(GZIP_PROGRAM) gauche-refj.info gauche-refj.info-[0-9]*; \
 	fi
 
@@ -149,7 +149,7 @@ gauche-deve.html : gauche-deve.texi
 gauche-deve.info.gz : gauche-deve.texi
 	if test X$(MAKEINFO) != X -a X$(GZIP_PROGRAM) != X; then \
 	  env LANG=C $(MAKEINFO) --no-warn gauche-deve.texi; \
-	  rm -rf gauche-deve.info*.gz; \
+	  rm -f gauche-deve.info*.gz; \
 	  $(GZIP_PROGRAM) gauche-deve.info gauche-deve.info-[0-9]*; \
 	fi
 
@@ -159,13 +159,13 @@ gauche-deve.pdf : gauche-deve.texi
 	pdftex gauche-deve.texi
 
 clean:
-	rm -rf core *~ *.aux *.cl *.cls *.cp *.cps *.fn *.fns *.ky *.kys \
-               *.log *.lx *.lxs *.md *.mds \
-	       *.pg *.pgs *.toc *.tp *.tps *.vr *.vrs *.pdf *.dvi *.info* \
-	       $(EXTRACTED)
+	rm -f core *~ *.aux *.cl *.cls *.cp *.cps *.fn *.fns *.ky *.kys \
+	      *.log *.lx *.lxs *.md *.mds \
+	      *.pg *.pgs *.toc *.tp *.tps *.vr *.vrs *.pdf *.dvi *.info* \
+	      $(EXTRACTED)
 
 distclean : clean
-	rm -rf $(GENERATED)
+	rm -f $(GENERATED)
 
 maintainer-clean : clean
 	rm -f gauche-ref*.html gauche-ref*.dvi gauche-dev*.html gauche-dev*.dvi Makefile $(GENERATED)
