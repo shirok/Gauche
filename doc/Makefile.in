@@ -84,9 +84,9 @@ html : gauche-refe.html gauche-refj.html
 
 htmls : gauche-refe_toc.html gauche-refj_toc.html
 
-dvi : gauche-refe.dvi
+dvi : gauche-refe.dvi gauche-refj.dvi
 
-pdf : gauche-refe.pdf
+pdf : gauche-refe.pdf gauche-refj.pdf
 
 info : gauche-refe.info.gz gauche-refj.info.gz
 
