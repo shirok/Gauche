@@ -154,9 +154,7 @@ gauche-deve.info.gz : gauche-deve.texi
 	fi
 
 gauche-deve.pdf : gauche-deve.texi
-	pdftex gauche-deve.texi
-	texindex gauche-deve.??
-	pdftex gauche-deve.texi
+	texi2pdf gauche-deve.texi
 
 clean:
 	rm -f core *~ *.aux *.cl *.cls *.cp *.cps *.fn *.fns *.ky *.kys \
