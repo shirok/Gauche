@@ -42,9 +42,10 @@
   (use gauche.uvector)
   (use gauche.generator)
   (export make-gap-buffer string->gap-buffer
-          gap-buffer? gap-buffer-gap-start gap-buffer-gap-end
+          gap-buffer? gap-buffer-pos
           gap-buffer-capacity gap-buffer-content-length
           gap-buffer-gap-at? gap-buffer-ref
+          gap-buffer-gap-start gap-buffer-gap-end          
           gap-buffer-move!
           gap-buffer-insert!
           gap-buffer-delete!
@@ -70,6 +71,11 @@
 (define (gap-buffer-gap-start gbuf)
   (check-arg gap-buffer? gbuf)
   (~ gbuf'gap-start))
+
+;; API
+;; same as gap-buffer-gap-start, but this name emphasizes the function
+;; instead of internal workings.
+(define (gap-buffer-pos gbuf) (gap-buffer-gap-start gbuf))
 
 ;; API
 (define (gap-buffer-gap-end gbuf)
