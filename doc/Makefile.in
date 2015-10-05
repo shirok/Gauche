@@ -104,9 +104,7 @@ gauche-refe.dvi : gauche-refe.texi
 	texi2dvi gauche-refe.texi
 
 gauche-refe.pdf : gauche-refe.texi
-	pdftex gauche-refe.texi
-	texindex gauche-refe.??
-	pdftex gauche-refe.texi
+	texi2pdf gauche-refe.texi
 
 gauche-refe.texi : $(TEXIS) extract.scm
 	$(GOSH) $(srcdir)/extract.scm -en -o gauche-refe.texi $(srcdir)/gauche-ref.texi
