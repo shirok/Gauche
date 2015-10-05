@@ -157,6 +157,25 @@ gauche-deve.dvi: gauche-deve.texi
 gauche-deve.pdf : gauche-deve.texi
 	texi2pdf --tidy gauche-deve.texi
 
+gauche-devj.texi : gauche-dev.texi extract.scm
+	$(GOSH) $(srcdir)/extract.scm -jp -o gauche-devj.texi gauche-dev.texi
+
+gauche-devj.html : gauche-devj.texi
+	texi2html --init-file=$(srcdir)/ja-init.pl --number --document-language=ja gauche-devj.texi
+
+gauche-devj.info.gz : gauche-devj.texi
+	if test X$(MAKEINFO) != X -a X$(GZIP_PROGRAM) != X; then \
+	  env LANG=C $(MAKEINFO) --no-warn gauche-devj.texi; \
+	  rm -f gauche-devj.info*.gz; \
+	  $(GZIP_PROGRAM) gauche-devj.info gauche-devj.info-[0-9]*; \
+	fi
+
+gauche-devj.dvi: gauche-devj.texi
+	TEX=uptex texi2dvi --tidy gauche-devj.texi
+
+gauche-devj.pdf : gauche-devj.texi
+	TEX=uptex DVIPDF=dvipdfm texi2pdf --tidy --dvipdf gauche-devj.texi
+
 clean:
 	rm -f core *~ \
 	      *.pdf *.dvi *.info* \
