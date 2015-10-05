@@ -1,11 +1,13 @@
 /*.1
 /*.info*.gz
 
+/gauche-ref[ej].texi
+/srfis.texi
+
 /gauche-deve.aux
 /gauche-deve.cp
 /gauche-deve.fn
 /gauche-deve.fns
-/gauche-deve.html
 /gauche-deve.ky
 /gauche-deve.pdf
 /gauche-deve.pg
@@ -16,7 +18,8 @@
 /gauche-deve.vr
 /gauche-deve.vrs
 
-/gauche-ref[ej].texi
+/gauche-deve.html
+
 /gauche-ref[ej].aux
 /gauche-ref[ej].cl
 /gauche-ref[ej].cls
@@ -24,7 +27,6 @@
 /gauche-ref[ej].dvi
 /gauche-ref[ej].fn
 /gauche-ref[ej].fns
-/gauche-ref[ej].html
 /gauche-ref[ej].ky
 /gauche-ref[ej].lx
 /gauche-ref[ej].lxs
@@ -38,6 +40,5 @@
 /gauche-ref[ej].vr
 /gauche-ref[ej].vrs
 
+/gauche-ref[ej].html
 /gauche-ref[ej]_*.html
-
-/srfis.texi
