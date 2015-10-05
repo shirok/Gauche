@@ -148,7 +148,7 @@ gauche-deve.info.gz : gauche-deve.texi
 	if test X$(MAKEINFO) != X -a X$(GZIP_PROGRAM) != X; then \
 	  env LANG=C $(MAKEINFO) --no-warn gauche-deve.texi; \
 	  rm -f gauche-deve.info*.gz; \
-	  $(GZIP_PROGRAM) gauche-deve.info gauche-deve.info-[0-9]*; \
+	  $(GZIP_PROGRAM) gauche-deve.info ; \
 	fi
 
 gauche-deve.dvi: gauche-deve.texi
@@ -167,7 +167,7 @@ gauche-devj.info.gz : gauche-devj.texi
 	if test X$(MAKEINFO) != X -a X$(GZIP_PROGRAM) != X; then \
 	  env LANG=C $(MAKEINFO) --no-warn gauche-devj.texi; \
 	  rm -f gauche-devj.info*.gz; \
-	  $(GZIP_PROGRAM) gauche-devj.info gauche-devj.info-[0-9]*; \
+	  $(GZIP_PROGRAM) gauche-devj.info ; \
 	fi
 
 gauche-devj.dvi: gauche-devj.texi
