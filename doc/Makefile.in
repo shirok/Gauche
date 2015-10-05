@@ -108,8 +108,8 @@ gauche-refe.pdf : gauche-refe.texi
 	texindex gauche-refe.??
 	pdftex gauche-refe.texi
 
-gauche-refe.texi : $(TEXIS) extract
-	$(GOSH) $(srcdir)/extract -en -o gauche-refe.texi $(srcdir)/gauche-ref.texi
+gauche-refe.texi : $(TEXIS) extract.scm
+	$(GOSH) $(srcdir)/extract.scm -en -o gauche-refe.texi $(srcdir)/gauche-ref.texi
 
 gauche-refe.info.gz : gauche-refe.texi
 	if test X$(MAKEINFO) != X -a X$(GZIP_PROGRAM) != X; then \
@@ -130,8 +130,8 @@ gauche-refj.dvi : gauche-refj.texi
 gauche-refj.pdf : gauche-refj.dvi
 	dvipdfm gauche-refj.dvi
 
-gauche-refj.texi : $(TEXIS) extract
-	$(GOSH) $(srcdir)/extract -jp -o gauche-refj.texi $(srcdir)/gauche-ref.texi
+gauche-refj.texi : $(TEXIS) extract.scm
+	$(GOSH) $(srcdir)/extract.scm -jp -o gauche-refj.texi $(srcdir)/gauche-ref.texi
 
 gauche-refj.info.gz : gauche-refj.texi
 	if test X$(MAKEINFO) != X -a X$(GZIP_PROGRAM) != X; then \
@@ -140,8 +140,8 @@ gauche-refj.info.gz : gauche-refj.texi
 	  $(GZIP_PROGRAM) gauche-refj.info gauche-refj.info-[0-9]*; \
 	fi
 
-gauche-deve.texi : gauche-dev.texi extract
-	$(GOSH) $(srcdir)/extract -en -o gauche-deve.texi gauche-dev.texi
+gauche-deve.texi : gauche-dev.texi extract.scm
+	$(GOSH) $(srcdir)/extract.scm -en -o gauche-deve.texi gauche-dev.texi
 
 gauche-deve.html : gauche-deve.texi
 	texi2html --number gauche-deve.texi
