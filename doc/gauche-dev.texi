@@ -3383,7 +3383,7 @@ file
 @c ======================================================================
 @node Indices,  , Helper program reference, Top
 @appendix Indices
-@c NODE -A索引$)B
+@c NODE 索引
 
 @menu
 * Function and Macro Index::
