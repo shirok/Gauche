@@ -101,10 +101,10 @@ gauche-refe_toc.html : gauche-refe.texi
 	texi2html --split=section --number gauche-refe.texi
 
 gauche-refe.dvi : gauche-refe.texi
-	texi2dvi gauche-refe.texi
+	texi2dvi --tidy gauche-refe.texi
 
 gauche-refe.pdf : gauche-refe.texi
-	texi2pdf gauche-refe.texi
+	texi2pdf --tidy gauche-refe.texi
 
 gauche-refe.texi : $(TEXIS) extract.scm
 	$(GOSH) $(srcdir)/extract.scm -en -o gauche-refe.texi $(srcdir)/gauche-ref.texi
@@ -123,10 +123,10 @@ gauche-refj_toc.html : gauche-refj.texi
 	texi2html --init-file=$(srcdir)/ja-init.pl --split=section --number --document-language=ja gauche-refj.texi
 
 gauche-refj.dvi : gauche-refj.texi
-	TEX=uptex texi2dvi gauche-refj.texi
+	TEX=uptex texi2dvi --tidy gauche-refj.texi
 
 gauche-refj.pdf : gauche-refj.texi
-	TEX=uptex DVIPDF=dvipdfm texi2pdf --dvipdf gauche-refj.texi
+	TEX=uptex DVIPDF=dvipdfm texi2pdf --tidy --dvipdf gauche-refj.texi
 
 gauche-refj.texi : $(TEXIS) extract.scm
 	$(GOSH) $(srcdir)/extract.scm -jp -o gauche-refj.texi $(srcdir)/gauche-ref.texi
@@ -151,14 +151,17 @@ gauche-deve.info.gz : gauche-deve.texi
 	  $(GZIP_PROGRAM) gauche-deve.info gauche-deve.info-[0-9]*; \
 	fi
 
+gauche-deve.dvi: gauche-deve.texi
+	texi2dvi --tidy gauche-deve.texi
+
 gauche-deve.pdf : gauche-deve.texi
-	texi2pdf gauche-deve.texi
+	texi2pdf --tidy gauche-deve.texi
 
 clean:
-	rm -f core *~ *.aux *.cl *.cls *.cp *.cps *.fn *.fns *.ky *.kys \
-	      *.log *.lx *.lxs *.md *.mds \
-	      *.pg *.pgs *.toc *.tp *.tps *.vr *.vrs *.pdf *.dvi *.info* \
+	rm -f core *~ \
+	      *.pdf *.dvi *.info* \
 	      $(EXTRACTED)
+	rm -rf $(EXTRACTED:.texi=.t2d/)
 
 distclean : clean
 	rm -f $(GENERATED)
