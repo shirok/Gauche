@@ -50,6 +50,10 @@ infodir     = @infodir@
 
 DESTDIR =
 
+.PHONY: all install uninstall pre-package check test \
+	texi html htmls dvi pdf info \
+	clean distclean maintainer-clean
+
 all: info
 
 install: all
