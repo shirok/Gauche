@@ -1,18 +1,18 @@
 /*.1
 /*.info*.gz
 
-/gauche-deve.texi
+/gauche-dev[ej].texi
 /gauche-ref[ej].texi
 /srfis.texi
 
-/gauche-deve.dvi
-/gauche-deve.pdf
-/gauche-deve.html
+/gauche-dev[ej].dvi
+/gauche-dev[ej].pdf
+/gauche-dev[ej].html
 
 /gauche-ref[ej].dvi
 /gauche-ref[ej].html
 /gauche-ref[ej].pdf
 /gauche-ref[ej]_*.html
 
-/gauche-deve.t2d/
+/gauche-dev[ej].t2d/
 /gauche-ref[ej].t2d/
