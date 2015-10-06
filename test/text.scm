@@ -219,6 +219,9 @@ fuga
   (test* "delete"
          (test-error)
          (gap-buffer-visualize (gap-buffer-delete! gbuf 100)))
+  (test* "change"
+         "abcdef______________________________________1234567890123456789e"
+         (gap-buffer-visualize (gap-buffer-change! gbuf 5 "def")))
   )
 
 (let1 gbuf (string->gap-buffer "abcde")
@@ -230,6 +233,39 @@ fuga
   (test* "->string (gap at middle)" "abcde"
          (begin (gap-buffer-move! gbuf 3 'current)
                 (gap-buffer->string gbuf)))
+  )
+
+(let1 gbuf (gap-buffer-copy (string->gap-buffer "abcde"))
+  (test* "undo and redo"
+         '("abXYZcde" "abXYde" "aQRSYde" "abXYde" "abXYZcde"
+           "abcde" "aQRSYde" "abcde")
+         (let* ([u0 (begin (gap-buffer-move! gbuf 2)
+                           (gap-buffer-insert!/undo gbuf "XYZ"))]
+                [s0 (gap-buffer->string gbuf)] ; abXYZcde
+                [u1 (begin (gap-buffer-move! gbuf -1 'current)
+                           (gap-buffer-delete!/undo gbuf 2))]
+                [s1 (gap-buffer->string gbuf)] ; abXYde
+                [u2 (begin (gap-buffer-move! gbuf -3 'current)
+                           (gap-buffer-change!/undo gbuf 2 "QRS"))]
+                [s2 (gap-buffer->string gbuf)] ; aQRSYde
+                [r2 (begin (gap-buffer-move! gbuf 0)
+                           (u2 gbuf))]         ; undo change!
+                [s3 (gap-buffer->string gbuf)] ; abXYde
+                [r1 (u1 gbuf)]                 ; undo delete!
+                [s4 (gap-buffer->string gbuf)] ; abXYZcde
+                [r0 (begin (gap-buffer-move! gbuf -1 'end)
+                           (u0 gbuf))]         ; undo insert!
+                [s5 (gap-buffer->string gbuf)] ; abcde
+                [u0 (r0 gbuf)]                 ; redo insert!
+                [u1 (r1 gbuf)]                 ; redo delete!
+                [u2 (r2 gbuf)]                 ; redo change!
+                [s6 (gap-buffer->string gbuf)] ; aQRSYde
+                [s7 (begin (u2 gbuf)
+                           (u1 gbuf)
+                           (u0 gbuf)
+                           (gap-buffer->string gbuf))] ; abcde
+                )
+           (list s0 s1 s2 s3 s4 s5 s6 s7)))
   )
 
 ;;-------------------------------------------------------------------

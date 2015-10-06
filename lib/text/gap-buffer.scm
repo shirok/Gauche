@@ -41,16 +41,13 @@
 (define-module text.gap-buffer
   (use gauche.uvector)
   (use gauche.generator)
-  (export make-gap-buffer string->gap-buffer
-          gap-buffer? gap-buffer-pos
-          gap-buffer-capacity gap-buffer-content-length
-          gap-buffer-gap-at? gap-buffer-ref
-          gap-buffer-gap-start gap-buffer-gap-end          
-          gap-buffer-move!
-          gap-buffer-insert!
-          gap-buffer-delete!
-          gap-buffer->generator
-          gap-buffer->string)
+  (export make-gap-buffer string->gap-buffer gap-buffer-copy
+          gap-buffer? gap-buffer-capacity gap-buffer-content-length
+          gap-buffer-pos gap-buffer-gap-at? gap-buffer-ref
+          gap-buffer-gap-start gap-buffer-gap-end gap-buffer-move!
+          gap-buffer-insert! gap-buffer-delete! gap-buffer-change!
+          gap-buffer-insert!/undo gap-buffer-delete!/undo gap-buffer-change!/undo
+          gap-buffer->generator gap-buffer->string)
   )
 (select-module text.gap-buffer)
 
@@ -166,6 +163,13 @@
         :buffer buf :gap-start gap-start :gap-end gap-end))))
 
 ;; API
+(define (gap-buffer-copy gbuf)
+  (make <gap-buffer>
+    :buffer (u32vector-copy (~ gbuf'buffer))
+    :gap-start (~ gbuf'gap-start)
+    :gap-end (~ gbuf'gap-end)))
+
+;; API
 (define (gap-buffer-move! gbuf pos :optional (whence 'beginning))
   (let ([abspos (case whence
                   [(beginning) pos]
@@ -227,6 +231,67 @@
     gbuf))
 
 ;; API
+;; Delete SIZE from the current pos, then insert content.
+;; For the convenience.
+(define (gap-buffer-change! gbuf size content)
+  (gap-buffer-delete! gbuf size)
+  (gap-buffer-insert! gbuf content))
+
+;; The "Undo" APIs
+;; Returns an "undo" procedure, which is, when called, revert the change.
+;; The undo procedure takes a gap buffer, which must have the same content
+;; immediately after the original change is done (but the gap position and/or
+;; buffer size may differ.)  We let undo thunk takes a buffer, instead of
+;; closing the original buffer, so that one can copy the buffer and perform
+;; undo on only one of them.
+;; The undo procedure itself returns a redo procedure, which takes a buffer
+;; with the same content when the undo is done, and redo the change
+;; (in other words, undoing the undo).  The redo procedure itself returns
+;; the undo procedure again.
+
+;; Undo API
+(define (gap-buffer-insert!/undo gbuf content)
+  (let ([p (gap-buffer-pos gbuf)]
+        [s (if (char? content)
+             1
+             (string-length content))])
+    (gap-buffer-insert! gbuf content)
+    (rec (undo gbuf)
+      (gap-buffer-move! gbuf p)
+      (gap-buffer-delete! gbuf s)
+      (rec (redo gbuf)
+        (gap-buffer-move! gbuf p)
+        (gap-buffer-insert! gbuf content)
+        undo))))
+
+;; Undo API
+(define (gap-buffer-delete!/undo gbuf size)
+  (let* ([p (gap-buffer-pos gbuf)]
+         [s (gap-buffer->string gbuf p (+ p size))])
+    (gap-buffer-delete! gbuf size)
+    (rec (undo gbuf)
+      (gap-buffer-move! gbuf p)
+      (gap-buffer-insert! gbuf s)
+      (rec (redo gbuf)
+        (gap-buffer-move! gbuf p)
+        (gap-buffer-delete! gbuf size)
+        undo))))
+
+;; Undo API
+(define (gap-buffer-change!/undo gbuf size content)
+  (let* ([p (gap-buffer-pos gbuf)]
+         [s (gap-buffer->string gbuf p (+ p size))])
+    (gap-buffer-change! gbuf size content)
+    (let1 ins (- (gap-buffer-pos gbuf) p)
+      (rec (undo gbuf)
+        (gap-buffer-move! gbuf p)
+        (gap-buffer-change! gbuf ins s)
+        (rec (redo gbuf)
+          (gap-buffer-move! gbuf p)
+          (gap-buffer-change! gbuf size content)
+          undo)))))
+
+;; API
 ;; NB: For better performance, we don't consider the case when gbuf is
 ;; modified during traversal.
 (define (gap-buffer->generator gbuf :optional (start 0) (end (undefined)))
@@ -256,3 +321,4 @@
 (define (gap-buffer->string gbuf :optional (start 0) (end (undefined)))
   (let1 g (gap-buffer->generator gbuf start end)
     (with-output-to-string (^[] (generator-for-each display g)))))
+
