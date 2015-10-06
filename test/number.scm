@@ -580,7 +580,7 @@
 ;; If greatest-fixnum may be larger than the range the double can exactly
 ;; represent, we'll lose precision.
 (test* "exact (greatest-fixnum)"
-       (if (> (greatest-fixnum) #e2e53)
+       (if (> (greatest-fixnum) (expt 2 53))
          (+ (greatest-fixnum) 1)
          (greatest-fixnum))
        (exact (inexact (greatest-fixnum))))
@@ -1703,7 +1703,7 @@
 (test* "round->exact" 3 (round->exact 3.4) =)
 (test* "round->exact" 4 (round->exact 3.5) =)
 (test* "round->exact"
-       (if (> (greatest-fixnum) #e2e53) ; same as "exact (greatest-fixnum)"
+       (if (> (greatest-fixnum) (expt 2 53)) ; same as "exact (greatest-fixnum)"
          (+ (greatest-fixnum) 1)
          (greatest-fixnum))
        (round->exact (inexact (greatest-fixnum))))
@@ -1713,7 +1713,7 @@
 (test* "floor->exact" 3 (floor->exact 3.4) =)
 (test* "floor->exact" -4 (floor->exact -3.5) =)
 (test* "floor->exact"
-       (if (> (greatest-fixnum) #e2e53) ; same as "exact (greatest-fixnum)"
+       (if (> (greatest-fixnum) (expt 2 53)) ; same as "exact (greatest-fixnum)"
          (+ (greatest-fixnum) 1)
          (greatest-fixnum))
        (floor->exact (inexact (greatest-fixnum))))
@@ -1723,7 +1723,7 @@
 (test* "ceiling->exact" 4 (ceiling->exact 3.4) =)
 (test* "ceiling->exact" -3 (ceiling->exact -3.5) =)
 (test* "ceiling->exact"
-       (if (> (greatest-fixnum) #e2e53) ; same as "exact (greatest-fixnum)"
+       (if (> (greatest-fixnum) (expt 2 53)) ; same as "exact (greatest-fixnum)"
          (+ (greatest-fixnum) 1)
          (greatest-fixnum))
        (ceiling->exact (inexact (greatest-fixnum))))
@@ -1733,7 +1733,7 @@
 (test* "truncate->exact" 3 (truncate->exact 3.4) =)
 (test* "truncate->exact" -3 (truncate->exact -3.5) =)
 (test* "truncate->exact"
-       (if (> (greatest-fixnum) #e2e53) ; same as "exact (greatest-fixnum)"
+       (if (> (greatest-fixnum) (expt 2 53)) ; same as "exact (greatest-fixnum)"
          (+ (greatest-fixnum) 1)
          (greatest-fixnum))
        (truncate->exact (inexact (greatest-fixnum))))
