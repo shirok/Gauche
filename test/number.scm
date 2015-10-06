@@ -577,7 +577,13 @@
    ))
 
 ;; Boundary conditions for exact->inexact
-(test* "exact (greatest-fixnum)" (+ (greatest-fixnum) 1) (exact (inexact (greatest-fixnum))))
+;; If greatest-fixnum may be larger than the range the double can exactly
+;; represent, we'll lose precision.
+(test* "exact (greatest-fixnum)"
+       (if (> (greatest-fixnum) #e2e53)
+         (+ (greatest-fixnum) 1)
+         (greatest-fixnum))
+       (exact (inexact (greatest-fixnum))))
 (test* "exact (least-fixnum)" (least-fixnum) (exact (inexact (least-fixnum))))
 (test* "exact (64bit long max)" (expt 2 63) (exact (- (expt 2.0 63) 1)))
 (test* "exact (64bit long min)" (- (expt 2 63)) (exact (- (expt 2.0 63))))
@@ -1696,25 +1702,41 @@
 
 (test* "round->exact" 3 (round->exact 3.4) =)
 (test* "round->exact" 4 (round->exact 3.5) =)
-(test* "round->exact" (+ (greatest-fixnum) 1) (round->exact (inexact (greatest-fixnum))))
+(test* "round->exact"
+       (if (> (greatest-fixnum) #e2e53) ; same as "exact (greatest-fixnum)"
+         (+ (greatest-fixnum) 1)
+         (greatest-fixnum))
+       (round->exact (inexact (greatest-fixnum))))
 (test* "round->exact" (least-fixnum) (round->exact (inexact (least-fixnum))))
 (test* "round->exact" (expt 2 63) (round->exact (- (expt 2.0 63) 1)))
 (test* "round->exact" (- (expt 2 63)) (round->exact (- (expt 2.0 63))))
 (test* "floor->exact" 3 (floor->exact 3.4) =)
 (test* "floor->exact" -4 (floor->exact -3.5) =)
-(test* "floor->exact" (+ (greatest-fixnum) 1) (floor->exact (inexact (greatest-fixnum))))
+(test* "floor->exact"
+       (if (> (greatest-fixnum) #e2e53) ; same as "exact (greatest-fixnum)"
+         (+ (greatest-fixnum) 1)
+         (greatest-fixnum))
+       (floor->exact (inexact (greatest-fixnum))))
 (test* "floor->exact" (least-fixnum) (floor->exact (inexact (least-fixnum))))
 (test* "floor->exact" (expt 2 63) (floor->exact (- (expt 2.0 63) 1)))
 (test* "floor->exact" (- (expt 2 63)) (floor->exact (- (expt 2.0 63))))
 (test* "ceiling->exact" 4 (ceiling->exact 3.4) =)
 (test* "ceiling->exact" -3 (ceiling->exact -3.5) =)
-(test* "ceiling->exact" (+ (greatest-fixnum) 1) (ceiling->exact (inexact (greatest-fixnum))))
+(test* "ceiling->exact"
+       (if (> (greatest-fixnum) #e2e53) ; same as "exact (greatest-fixnum)"
+         (+ (greatest-fixnum) 1)
+         (greatest-fixnum))
+       (ceiling->exact (inexact (greatest-fixnum))))
 (test* "ceiling->exact" (least-fixnum) (ceiling->exact (inexact (least-fixnum))))
 (test* "ceiling->exact" (expt 2 63) (ceiling->exact (- (expt 2.0 63) 1)))
 (test* "ceiling->exact" (- (expt 2 63)) (ceiling->exact (- (expt 2.0 63))))
 (test* "truncate->exact" 3 (truncate->exact 3.4) =)
 (test* "truncate->exact" -3 (truncate->exact -3.5) =)
-(test* "truncate->exact" (+ (greatest-fixnum) 1) (truncate->exact (inexact (greatest-fixnum))))
+(test* "truncate->exact"
+       (if (> (greatest-fixnum) #e2e53) ; same as "exact (greatest-fixnum)"
+         (+ (greatest-fixnum) 1)
+         (greatest-fixnum))
+       (truncate->exact (inexact (greatest-fixnum))))
 (test* "truncate->exact" (least-fixnum) (truncate->exact (inexact (least-fixnum))))
 (test* "truncate->exact" (expt 2 63) (truncate->exact (- (expt 2.0 63) 1)))
 (test* "truncate->exact" (- (expt 2 63)) (truncate->exact (- (expt 2.0 63))))

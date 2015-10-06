@@ -187,7 +187,12 @@ ScmObj Scm_MakeBignumFromUIArray(int sign, const u_long *values, int size)
 ScmObj Scm_MakeBignumFromDouble(double val)
 {
     if (LONG_MIN <= val
-        && val <= nextafter((double)LONG_MAX, 0.0))
+#if SIZEOF_LONG == 4
+        && val <= LONG_MAX
+#else
+        && val <= nextafter((double)LONG_MAX, 0.0)
+#endif
+        )
         return Scm_MakeBignumFromSI((long)val);
 
     int exponent, sign;
