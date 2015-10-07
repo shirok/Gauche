@@ -815,12 +815,12 @@ dnl ===========================================================
 dnl Cross compiling
 if test ${cross_compiling} = no ; then
    # self compile
-   CROSS_COMPILING_yes="#"
+   CROSS_COMPILING_yes="@%:@"
    CROSS_COMPILING_no=
 else
    # cross compile
    CROSS_COMPILING_yes=
-   CROSS_COMPILING_no="#"
+   CROSS_COMPILING_no="@%:@"
 fi
 AC_SUBST(CROSS_COMPILING_yes)
 AC_SUBST(CROSS_COMPILING_no)
