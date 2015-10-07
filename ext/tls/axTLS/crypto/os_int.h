@@ -58,6 +58,8 @@ typedef INT64 int64_t;
 #include <stdint.h>
 #ifdef __APPLE__
 #include <machine/endian.h>
+#elif defined(__MINGW32__)
+#define be64toh(x) __builtin_bswap64(x)
 #else
 #include <endian.h>
 #endif
