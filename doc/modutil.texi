@@ -3493,7 +3493,7 @@ It is guaranteed that you can store a value with index at least
 up to @code{2^32-1}; the actual maximum bits of indexes can
 be queried by @code{sparse-vector-max-index-bits}.
 (We have a plan to remove the maximum bits limitation in future).
-@c JP 
+@c JP
 疎ベクタは非負整数のインデックスと値を関連付けます。
 整数でインデックスされるので名前に@emph{ベクタ}がついていますが、
 連続するメモリに置かれる配列ではなく、むしろ連想配列のようなものです。
