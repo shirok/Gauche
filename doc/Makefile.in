@@ -182,7 +182,9 @@ gauche-devj.pdf : gauche-devj.texi
 
 clean:
 	rm -f core *~ \
-	      *.pdf *.dvi *.info* \
+	      $(EXTRACTED:.texi=.pdf)   \
+	      $(EXTRACTED:.texi=.dvi)   \
+	      $(EXTRACTED:.texi=.info*) \
 	      $(EXTRACTED)
 	rm -rf $(EXTRACTED:.texi=.t2d/)
 
