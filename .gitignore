@@ -119,7 +119,6 @@ gc/bdw-gc.pc
 gc/cord/.deps
 gc/cord/.dirstamp
 gc/include/private/stamp-h1
-gc/libatomic_ops-1.2/
 gc/libatomic_ops/pkgconfig/atomic_ops-uninstalled.pc
 gc/libatomic_ops/pkgconfig/atomic_ops.pc
 gc/libatomic_ops/src/.deps/
