@@ -829,7 +829,9 @@ AC_CONFIG_SUBDIRS(gc)
 
 dnl ===========================================================
 dnl Create output files
-echo $GAUCHE_VERSION > VERSION
+AC_CONFIG_COMMANDS([VERSION],
+	[echo "${GAUCHE_VERSION}" > VERSION],
+	[GAUCHE_VERSION="${GAUCHE_VERSION}"])
 AC_CONFIG_FILES([
           Makefile
           src/Makefile src/genconfig src/makeverslink
