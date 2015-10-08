@@ -10,6 +10,11 @@
 #
 # "-DDONT_ADD_BYTE_AT_END", "--enable-large-config"
 #   [SK] this is _required_ to make Gauche work correctly.
+#
+# "--enable-handle-fork"
+#   [SK] this supposed to make GC in forked children work on OSX; it did
+#   work on OSX 10.7.3, but caused various failures on 10.7.4, so I disable
+#   it again.
 
 ${CONFIG_SHELL} ./configure "${@}" \
 		--enable-threads=$(cat ../config.threads) \

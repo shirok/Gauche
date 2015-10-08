@@ -821,10 +821,6 @@ if test "${enable_large_config}" = yes; then
     AC_DEFINE(LARGE_CONFIG, 1, [Define to optimize for large heaps or root sets.])
 fi
 
-dnl [SK] this supposed to make GC in forked children work on OSX; it did work
-dnl on OSX 10.7.3, but caused various failures on 10.7.4, so I disable it again.
-dnl AC_DEFINE(HANDLE_FORK)
-
 AC_ARG_ENABLE(handle-fork,
     [AC_HELP_STRING([--enable-handle-fork],
         [Attempt to ensure a usable collector after fork() in multi-threaded
