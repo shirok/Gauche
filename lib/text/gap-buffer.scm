@@ -41,12 +41,13 @@
 (define-module text.gap-buffer
   (use gauche.uvector)
   (use gauche.generator)
+  (use util.match)
   (export make-gap-buffer string->gap-buffer gap-buffer-copy
           gap-buffer? gap-buffer-capacity gap-buffer-content-length
           gap-buffer-pos gap-buffer-gap-at? gap-buffer-ref
           gap-buffer-gap-start gap-buffer-gap-end gap-buffer-move!
           gap-buffer-insert! gap-buffer-delete! gap-buffer-change!
-          gap-buffer-insert!/undo gap-buffer-delete!/undo gap-buffer-change!/undo
+          gap-buffer-edit!
           gap-buffer->generator gap-buffer->string)
   )
 (select-module text.gap-buffer)
@@ -237,59 +238,41 @@
   (gap-buffer-delete! gbuf size)
   (gap-buffer-insert! gbuf content))
 
-;; The "Undo" APIs
-;; Returns an "undo" procedure, which is, when called, revert the change.
-;; The undo procedure takes a gap buffer, which must have the same content
-;; immediately after the original change is done (but the gap position and/or
-;; buffer size may differ.)  We let undo thunk takes a buffer, instead of
-;; closing the original buffer, so that one can copy the buffer and perform
-;; undo on only one of them.
-;; The undo procedure itself returns a redo procedure, which takes a buffer
-;; with the same content when the undo is done, and redo the change
-;; (in other words, undoing the undo).  The redo procedure itself returns
-;; the undo procedure again.
-
-;; Undo API
-(define (gap-buffer-insert!/undo gbuf content)
-  (let ([p (gap-buffer-pos gbuf)]
-        [s (if (char? content)
-             1
-             (string-length content))])
-    (gap-buffer-insert! gbuf content)
-    (rec (undo gbuf)
-      (gap-buffer-move! gbuf p)
-      (gap-buffer-delete! gbuf s)
-      (rec (redo gbuf)
-        (gap-buffer-move! gbuf p)
-        (gap-buffer-insert! gbuf content)
-        undo))))
-
-;; Undo API
-(define (gap-buffer-delete!/undo gbuf size)
-  (let* ([p (gap-buffer-pos gbuf)]
-         [s (gap-buffer->string gbuf p (+ p size))])
-    (gap-buffer-delete! gbuf size)
-    (rec (undo gbuf)
-      (gap-buffer-move! gbuf p)
-      (gap-buffer-insert! gbuf s)
-      (rec (redo gbuf)
-        (gap-buffer-move! gbuf p)
-        (gap-buffer-delete! gbuf size)
-        undo))))
-
-;; Undo API
-(define (gap-buffer-change!/undo gbuf size content)
-  (let* ([p (gap-buffer-pos gbuf)]
-         [s (gap-buffer->string gbuf p (+ p size))])
-    (gap-buffer-change! gbuf size content)
-    (let1 ins (- (gap-buffer-pos gbuf) p)
-      (rec (undo gbuf)
-        (gap-buffer-move! gbuf p)
-        (gap-buffer-change! gbuf ins s)
-        (rec (redo gbuf)
-          (gap-buffer-move! gbuf p)
-          (gap-buffer-change! gbuf size content)
-          undo)))))
+;; API
+;; This is higher-level API, with undo feature.
+;;
+;; EDIT-COMMAND is one of the followings:
+;;
+;;  (i <pos> <string>)           Insert string at <pos>
+;;  (d <pos> <length>)           Delete <length> chars from <pos>
+;;  (c <pos> <length> <string>)  Substitute <length> chars from <pos>
+;;                               for <string>
+;;
+;; <pos> can be #f, in that case the current position is used.
+;;
+;; It returns another edit-command that undo the change when given to
+;; gap-buffer-edit!.
+(define (gap-buffer-edit! gbuf edit-command)
+  (define (mov! pos)
+    (when (and pos (not (= pos (gap-buffer-pos gbuf))))
+      (gap-buffer-move! gbuf pos))
+    (gap-buffer-pos gbuf))
+  (match edit-command
+    [('i pos str)
+     (let ([cpos (mov! pos)])
+       (gap-buffer-insert! gbuf str)
+       `(d ,cpos ,(string-length str)))]
+    [('d pos len) 
+     (let* ([cpos (mov! pos)]
+            [s (gap-buffer->string gbuf cpos (+ cpos len))])
+       (gap-buffer-delete! gbuf len)
+       `(i ,cpos ,s))]
+    [('c pos len str) 
+     (let* ([cpos (mov! pos)]
+            [s (gap-buffer->string gbuf cpos (+ cpos len))])
+       (gap-buffer-change! gbuf len str)
+       `(c ,cpos ,(string-length str) ,s))]
+    [_ (error "Invalid edit-command:" edit-command)]))
 
 ;; API
 ;; NB: For better performance, we don't consider the case when gbuf is
