@@ -40,7 +40,6 @@ src/test-vmstack
 src/test.log
 test.out
 test.record
-test/rfc.scm
 
 # Precomp and etc.
 .deps
