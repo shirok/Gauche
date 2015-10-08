@@ -1,3 +1,4 @@
+dnl -*- mode: autoconf -*-
 dnl Gauche-specific autoconf macros.
 dnl
 dnl  NB: As of 0.8.6, use of Gauche-specific macros is deprecated.
