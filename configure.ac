@@ -256,7 +256,9 @@ esac
 
 LIBS="$LIBS $THREADLIBS"
 dnl Save thread model to be inherited by gc/ subdir.
-echo $GAUCHE_THREAD_TYPE > config.threads
+AC_CONFIG_COMMANDS([config.threads],
+	[echo "${GAUCHE_THREAD_TYPE}" > config.threads],
+	[GAUCHE_THREAD_TYPE="${GAUCHE_THREAD_TYPE}"])
 
 dnl ----------------------------------------------------------
 dnl   enable-framework
