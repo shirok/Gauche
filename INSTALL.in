@@ -553,7 +553,7 @@ Machine-dependent information
 * Linux/Crusoe TM5800 - 最近のLinuxでは Crusoe TM5800がi686互換とされる
        ようになったようですが、gc中でi686特有のprefetch命令を使っているところ
        でコンパイルに失敗するという報告がありました。
-       以下のように環境依存の最適化を無効にして下さい。
+       この場合は以下のように環境依存の最適化を無効にして下さい。
 
          ./configure --disable-heuristic-optimization
 @c EN
