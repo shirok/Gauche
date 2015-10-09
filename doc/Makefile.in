@@ -50,6 +50,10 @@ infodir     = @infodir@
 
 DESTDIR =
 
+.PHONY: all install uninstall pre-package check test \
+	texi html htmls dvi pdf info \
+	clean distclean maintainer-clean
+
 all: info
 
 install: all
@@ -84,9 +88,9 @@ html : gauche-refe.html gauche-refj.html
 
 htmls : gauche-refe_toc.html gauche-refj_toc.html
 
-dvi : gauche-refe.dvi
+dvi : gauche-refe.dvi gauche-refj.dvi
 
-pdf : gauche-refe.pdf
+pdf : gauche-refe.pdf gauche-refj.pdf
 
 info : gauche-refe.info.gz gauche-refj.info.gz
 
@@ -101,12 +105,10 @@ gauche-refe_toc.html : gauche-refe.texi
 	texi2html --split=section --number gauche-refe.texi
 
 gauche-refe.dvi : gauche-refe.texi
-	texi2dvi gauche-refe.texi
+	texi2dvi --tidy gauche-refe.texi
 
 gauche-refe.pdf : gauche-refe.texi
-	pdftex gauche-refe.texi
-	texindex gauche-refe.??
-	pdftex gauche-refe.texi
+	texi2pdf --tidy gauche-refe.texi
 
 gauche-refe.texi : $(TEXIS) extract.scm
 	$(GOSH) $(srcdir)/extract.scm -en -o gauche-refe.texi $(srcdir)/gauche-ref.texi
@@ -125,10 +127,10 @@ gauche-refj_toc.html : gauche-refj.texi
 	texi2html --init-file=$(srcdir)/ja-init.pl --split=section --number --document-language=ja gauche-refj.texi
 
 gauche-refj.dvi : gauche-refj.texi
-	TEX=uptex texi2dvi gauche-refj.texi
+	TEX=uptex texi2dvi --tidy gauche-refj.texi
 
-gauche-refj.pdf : gauche-refj.dvi
-	dvipdfm gauche-refj.dvi
+gauche-refj.pdf : gauche-refj.texi
+	TEX=uptex DVIPDF=dvipdfm texi2pdf --tidy --dvipdf gauche-refj.texi
 
 gauche-refj.texi : $(TEXIS) extract.scm
 	$(GOSH) $(srcdir)/extract.scm -jp -o gauche-refj.texi $(srcdir)/gauche-ref.texi
@@ -150,19 +152,41 @@ gauche-deve.info.gz : gauche-deve.texi
 	if test X$(MAKEINFO) != X -a X$(GZIP_PROGRAM) != X; then \
 	  env LANG=C $(MAKEINFO) --no-warn gauche-deve.texi; \
 	  rm -f gauche-deve.info*.gz; \
-	  $(GZIP_PROGRAM) gauche-deve.info gauche-deve.info-[0-9]*; \
+	  $(GZIP_PROGRAM) gauche-deve.info ; \
 	fi
 
+gauche-deve.dvi: gauche-deve.texi
+	texi2dvi --tidy gauche-deve.texi
+
 gauche-deve.pdf : gauche-deve.texi
-	pdftex gauche-deve.texi
-	texindex gauche-deve.??
-	pdftex gauche-deve.texi
+	texi2pdf --tidy gauche-deve.texi
+
+gauche-devj.texi : gauche-dev.texi extract.scm
+	$(GOSH) $(srcdir)/extract.scm -jp -o gauche-devj.texi gauche-dev.texi
+
+gauche-devj.html : gauche-devj.texi
+	texi2html --init-file=$(srcdir)/ja-init.pl --number --document-language=ja gauche-devj.texi
+
+gauche-devj.info.gz : gauche-devj.texi
+	if test X$(MAKEINFO) != X -a X$(GZIP_PROGRAM) != X; then \
+	  env LANG=C $(MAKEINFO) --no-warn gauche-devj.texi; \
+	  rm -f gauche-devj.info*.gz; \
+	  $(GZIP_PROGRAM) gauche-devj.info ; \
+	fi
+
+gauche-devj.dvi: gauche-devj.texi
+	TEX=uptex texi2dvi --tidy gauche-devj.texi
+
+gauche-devj.pdf : gauche-devj.texi
+	TEX=uptex DVIPDF=dvipdfm texi2pdf --tidy --dvipdf gauche-devj.texi
 
 clean:
-	rm -f core *~ *.aux *.cl *.cls *.cp *.cps *.fn *.fns *.ky *.kys \
-	      *.log *.lx *.lxs *.md *.mds \
-	      *.pg *.pgs *.toc *.tp *.tps *.vr *.vrs *.pdf *.dvi *.info* \
+	rm -f core *~ \
+	      $(EXTRACTED:.texi=.pdf)   \
+	      $(EXTRACTED:.texi=.dvi)   \
+	      $(EXTRACTED:.texi=.info*) \
 	      $(EXTRACTED)
+	rm -rf $(EXTRACTED:.texi=.t2d/)
 
 distclean : clean
 	rm -f $(GENERATED)
