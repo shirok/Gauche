@@ -19,4 +19,5 @@
 ${CONFIG_SHELL} ./configure "${@}" \
 		--enable-threads=$(cat ../config.threads) \
 		--enable-large-config \
-		CPPFLAGS="${CPPFLAGS} -DDONT_ADD_BYTE_AT_END"
+		CPPFLAGS="${CPPFLAGS} -DDONT_ADD_BYTE_AT_END @LOCAL_INC@" \
+		LDFLAGS="${LDFLAGS} @LOCAL_LIB@"

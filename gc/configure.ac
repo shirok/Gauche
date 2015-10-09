@@ -123,19 +123,6 @@ AC_ARG_ENABLE(parallel-mark,
 AC_ARG_ENABLE(cplusplus,
     [AC_HELP_STRING([--enable-cplusplus], [install C++ support])])
 
-dnl [SK] propagate toplevel --with-local flag here.
-AC_ARG_WITH(local, [  --with-local=PATH:PATH...:  For each PATH, add PATH/include
-                          to the include search paths and PATH/lib to the
-                          library search paths.  Useful if you have some
-                          libraries installed in non-standard places. ], [
-  case $with_local in
-    yes|no|"") ;;  #no effect
-    *) paths=`echo $with_local | tr ':' ' '`
-       LOCAL_INC=`for p in $paths; do echo $ECHO_N "-I$p/include $ECHO_C"; done`
-       INCLUDES="$INCLUDES $LOCAL_INC"
-  esac
-])
-
 dnl Features which may be selected in the following thread-detection switch.
 AH_TEMPLATE([PARALLEL_MARK], [Define to enable parallel marking.])
 AH_TEMPLATE([THREAD_LOCAL_ALLOC],
