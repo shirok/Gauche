@@ -90,30 +90,23 @@ esac
 GC_CFLAGS=${gc_cflags}
 AC_SUBST(GC_CFLAGS)
 
-dnl [SK] Original Boehm GC checks gcc for the default thread support.
-dnl In our case we need the thread config in sync with the main Gauche
-dnl source tree.  The Gauche's configure leaves its thread settings in
-dnl 'config.threads' so we just read it.
-dnl config.threads is created in the build directory instead of $srcdir,
-dnl so we directly refer it.
-THREADS=`cat ../config.threads`
-dnl AC_ARG_ENABLE(threads,
-dnl   [AC_HELP_STRING([--enable-threads=TYPE], [choose threading package])],
-dnl   THREADS=$enableval,
-dnl   [ AC_MSG_CHECKING([for thread model used by GCC])
-dnl     THREADS=`$CC -v 2>&1 | sed -n 's/^Thread model: //p'`
-dnl     if test -z "$THREADS"; then
-dnl       THREADS=no
-dnl     fi
-dnl     if test "$THREADS" = "posix"; then
-dnl       case "$host" in
-dnl         *-*-mingw*)
-dnl           # Adjust thread model if cross-compiling for MinGW.
-dnl           THREADS=win32
-dnl           ;;
-dnl       esac
-dnl     fi
-dnl     AC_MSG_RESULT([$THREADS]) ])
+AC_ARG_ENABLE(threads,
+  [AC_HELP_STRING([--enable-threads=TYPE], [choose threading package])],
+  THREADS=$enableval,
+  [ AC_MSG_CHECKING([for thread model used by GCC])
+    THREADS=`$CC -v 2>&1 | sed -n 's/^Thread model: //p'`
+    if test -z "$THREADS"; then
+      THREADS=no
+    fi
+    if test "$THREADS" = "posix"; then
+      case "$host" in
+        *-*-mingw*)
+          # Adjust thread model if cross-compiling for MinGW.
+          THREADS=win32
+          ;;
+      esac
+    fi
+    AC_MSG_RESULT([$THREADS]) ])
 
 AC_ARG_ENABLE(parallel-mark,
    [AC_HELP_STRING([--enable-parallel-mark],
@@ -827,13 +820,6 @@ AC_ARG_ENABLE(large-config,
 if test "${enable_large_config}" = yes; then
     AC_DEFINE(LARGE_CONFIG, 1, [Define to optimize for large heaps or root sets.])
 fi
-
-dnl [SK] this is _required_ to make Gauche work correctly.
-CFLAGS="$CFLAGS -DDONT_ADD_BYTE_AT_END"
-AC_DEFINE(LARGE_CONFIG)
-dnl [SK] this supposed to make GC in forked children work on OSX; it did work
-dnl on OSX 10.7.3, but caused various failures on 10.7.4, so I disable it again.
-dnl AC_DEFINE(HANDLE_FORK)
 
 AC_ARG_ENABLE(handle-fork,
     [AC_HELP_STRING([--enable-handle-fork],

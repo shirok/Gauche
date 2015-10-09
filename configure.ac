@@ -1,8 +1,11 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_PREREQ(2.54)
-AC_INIT(Gauche, 0.9.5_pre1, shiro@acm.org)
-AC_CANONICAL_SYSTEM
-AC_CONFIG_HEADER(src/gauche/config.h)
+AC_PREREQ([2.69])
+AC_INIT([Gauche],[0.9.5_pre1],[shiro@acm.org])
+AC_CANONICAL_BUILD
+AC_CANONICAL_HOST
+AC_CANONICAL_TARGET
+AC_CONFIG_HEADER([src/gauche/config.h])
+AC_CONFIG_MACRO_DIRS([m4])
 
 # ABI_VERSION is set to major.minor of Gauche version by default.
 # It can be overridden by uncommenting the following line.
@@ -18,7 +21,7 @@ dnl   enable-multibyte
 dnl
 GAUCHE_CHAR_ENCODING=utf8
 AC_ARG_ENABLE(multibyte,
-  AC_HELP_STRING([--enable-multibyte=ENCODING],
+  AS_HELP_STRING([--enable-multibyte=ENCODING],
                  [Use ENCODING as the internal multibyte string encoding.
 Following encodings are currently recognized:
 'euc-jp' (EUC-JP code), 'utf-8' (UTF-8), 'sjis' (Shift-JIS),
@@ -39,9 +42,9 @@ or 'none' (No multibyte support)]),
   ])
 
 case $GAUCHE_CHAR_ENCODING in
-  eucjp) AC_DEFINE(GAUCHE_CHAR_ENCODING_EUC_JP);;
-  utf8)  AC_DEFINE(GAUCHE_CHAR_ENCODING_UTF_8);;
-  sjis)  AC_DEFINE(GAUCHE_CHAR_ENCODING_SJIS);;
+  eucjp) AC_DEFINE(GAUCHE_CHAR_ENCODING_EUC_JP, [], [Define if Gauche handles multi-byte character as EUC-JP]);;
+  utf8)  AC_DEFINE(GAUCHE_CHAR_ENCODING_UTF_8,  [], [Define if Gauche handles multi-byte character as UTF-8]);;
+  sjis)  AC_DEFINE(GAUCHE_CHAR_ENCODING_SJIS,   [], [Define if Gauche handles multi-byte character as Shift JIS]);;
 esac
 
 dnl ----------------------------------------------------------
@@ -49,7 +52,7 @@ dnl  with-slib
 dnl
 SLIB_DIR=/usr/local/slib
 AC_ARG_WITH(slib,
-  AC_HELP_STRING([--with-slib=PATH],
+  AS_HELP_STRING([--with-slib=PATH],
                  [Configure Gauche's slib module to use Aubrey Jaffer's SLIB
 installed under PATH.  If PATH is not specified, or this option is omitted,
 Gauche still tries to find your slib installation from some typical places.]),
@@ -82,7 +85,7 @@ dnl ----------------------------------------------------------
 dnl  with-local=PATH:...
 dnl
 AC_ARG_WITH(local,
-  AC_HELP_STRING([--with-local=PATH:PATH...],
+  AS_HELP_STRING([--with-local=PATH:PATH...],
                  [For each PATH, add PATH/include to the include search
 paths and PATH/lib to the library search paths.  Useful if you have some
 libraries installed in non-standard places.  On MinGW/MSYS, use ';' as a
@@ -120,7 +123,7 @@ dnl
 try_rpath=yes
 rpath=
 AC_ARG_WITH(rpath,
-  AC_HELP_STRING([--with-rpath=PATH:PATH...],
+  AS_HELP_STRING([--with-rpath=PATH:PATH...],
                  [Use -rpath option while building dynamically loadable objects (experimental).]),
   [
     case $with_rpath in
@@ -135,7 +138,7 @@ dnl   enable-thread=TYPE
 dnl
 GAUCHE_THREAD_TYPE=default
 AC_ARG_ENABLE(threads,
-  AC_HELP_STRING([--enable-threads=TYPE],
+  AS_HELP_STRING([--enable-threads=TYPE],
                  [Choose thread type.  Possible values are: 'none' for not using threads, 'pthreads' to use pthreads, and 'default' to choose system's suitable one (if any). ]),
   [
     case $enableval in
@@ -193,8 +196,8 @@ case $GAUCHE_THREAD_TYPE in
     *-*-netbsd*)
       AC_MSG_WARN("Only on NetBSD 2.0 or later.")
       AC_DEFINE(GC_NETBSD_THREADS,1,[Define to use NetBSD threads])
-      AC_DEFINE(_REENTRANT)
-      AC_DEFINE(_PTHREADS)
+      AC_DEFINE(_REENTRANT, [], [Define to use reentrant libc])
+      AC_DEFINE(_PTHREADS,  [], [Define if thread support requires this symbol])
       THREADLIBS="-lpthread"
       THREADDLLIBS="-lpthread -lrt"
       GAUCHE_THREAD_TYPE=pthreads
@@ -253,14 +256,16 @@ esac
 
 LIBS="$LIBS $THREADLIBS"
 dnl Save thread model to be inherited by gc/ subdir.
-echo $GAUCHE_THREAD_TYPE > config.threads
+AC_CONFIG_COMMANDS([config.threads],
+	[echo "${GAUCHE_THREAD_TYPE}" > config.threads],
+	[GAUCHE_THREAD_TYPE="${GAUCHE_THREAD_TYPE}"])
 
 dnl ----------------------------------------------------------
 dnl   enable-framework
 dnl
 ac_gauche_framework=no
 AC_ARG_ENABLE(framework,
-  AC_HELP_STRING([--enable-framework],
+  AS_HELP_STRING([--enable-framework],
                  [On MacOSX, build Gauche as a framework.  This flag has no effect on other platforms.]),
   [
     case $enableval in
@@ -276,7 +281,7 @@ dnl ===========================================================
 dnl Set up version-related macros
 GAUCHE_VERSION=$PACKAGE_VERSION
 AC_SUBST(GAUCHE_VERSION)
-AC_DEFINE_UNQUOTED(GAUCHE_VERSION, "$GAUCHE_VERSION")
+AC_DEFINE_UNQUOTED(GAUCHE_VERSION, "$GAUCHE_VERSION", [Gauche version string])
 
 changequote(<<, >>)dnl
 GAUCHE_VERSION_TRUNC=`echo $GAUCHE_VERSION | sed 's/[-_].*//'`
@@ -297,10 +302,10 @@ if test -z "$GAUCHE_ABI_VERSION"; then
   GAUCHE_ABI_VERSION="$GAUCHE_MAJOR_VERSION.$GAUCHE_MINOR_VERSION"
 fi
 AC_SUBST(GAUCHE_ABI_VERSION)
-AC_DEFINE_UNQUOTED(GAUCHE_ABI_VERSION, "$GAUCHE_ABI_VERSION")
+AC_DEFINE_UNQUOTED(GAUCHE_ABI_VERSION, "$GAUCHE_ABI_VERSION", [Gauche ABI version string])
 
 GAUCHE_SIGNATURE="$GAUCHE_ABI_VERSION,$GAUCHE_CHAR_ENCODING,$GAUCHE_THREAD_TYPE"
-AC_DEFINE_UNQUOTED(GAUCHE_SIGNATURE, "$GAUCHE_SIGNATURE")
+AC_DEFINE_UNQUOTED(GAUCHE_SIGNATURE, "$GAUCHE_SIGNATURE", [Gauche signature string])
 
 LIBGAUCHE=libgauche-$GAUCHE_ABI_VERSION
 AC_SUBST(LIBGAUCHE)
@@ -387,7 +392,7 @@ case $host in
   arm*)
     # ARM processor may use a special mixed endian for doubles.  It can
     # be switched by processor configuration.  So we check it at runtime.
-    AC_DEFINE(DOUBLE_ARMENDIAN,1) ;;
+    AC_DEFINE(DOUBLE_ARMENDIAN,1,[Define to use mixed endian ARM processor]) ;;
 esac
 
 dnl ===========================================================
@@ -726,7 +731,7 @@ AC_SUBST(EXT_LIBGAUCHE)
 AC_SUBST(EXT_UVECTOR)
 AC_SUBST(LIBGAUCHE_SO)
 AC_SUBST(GOSH_USE_SHLIB)
-AC_DEFINE_UNQUOTED(SHLIB_SO_SUFFIX, "$SHLIB_SO_SUFFIX")
+AC_DEFINE_UNQUOTED(SHLIB_SO_SUFFIX, "$SHLIB_SO_SUFFIX", [Shared library file suffix])
 AC_SUBST(LINK_HELPER)
 AC_SUBST(MAKEVERSLINK)
 AC_SUBST(CYGWIN_FIXDLL)
@@ -826,8 +831,11 @@ AC_CONFIG_SUBDIRS(gc)
 
 dnl ===========================================================
 dnl Create output files
-echo $GAUCHE_VERSION > VERSION
-AC_OUTPUT(Makefile
+AC_CONFIG_COMMANDS([VERSION],
+	[echo "${GAUCHE_VERSION}" > VERSION],
+	[GAUCHE_VERSION="${GAUCHE_VERSION}"])
+AC_CONFIG_FILES([
+          Makefile
           src/Makefile src/genconfig src/makeverslink
           lib/Makefile lib/slib.scm
           doc/gosh.1 doc/gauche-config.1 doc/gauche-cesconv.1
@@ -861,7 +869,8 @@ AC_OUTPUT(Makefile
           ext/windows/Makefile
           examples/Makefile
           examples/standalone/Makefile
-         )
+         ])
+AC_OUTPUT
 
 dnl ===========================================================
 dnl Show some of the configuration results, for developer's
