@@ -597,7 +597,7 @@ case $host in
     # [Shiro] Darwin 1.3 and later needs different flags
     CPPFLAGS="$CPPFLAGS -no-cpp-precomp"
     case $host_os in
-      darwin1.[[012]]) FLAT_NAMESPACE="" ;;
+      darwin1.@<:@012@:>@) FLAT_NAMESPACE="" ;;
       *)               FLAT_NAMESPACE="-flat_namespace" ;;
     esac
     case $host_os in
