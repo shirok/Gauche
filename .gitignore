@@ -7,7 +7,6 @@ config.log
 config.rpath
 config.status
 config.sub
-config.threads
 configure
 libtool
 autom4te.cache
