@@ -28,11 +28,10 @@ By default the configure script scans the system to find out available dbm
 libraries, so you don't need to specify this option.   This options is to
 exclude some dbm libraries that would be compiled otherwise.]),
   [
-    case $with_dbm in
-      no)  DBMS="" ;;
-      yes) ;; # Use the default
-      *)   DBMS="$with_dbm" ;;
-    esac
+    AS_CASE([$with_dbm],
+      [no],  [DBMS=""],
+      [yes], [], dnl Use the default
+	     [DBMS="$with_dbm"])
   ])
 
 dnl Check for various dbm libraries availability
@@ -49,17 +48,17 @@ dnl The ndbm case is so complicated because, besides it may be emulated
 dnl by gdbm, the ndbm functions could be in libndbm, libdbm, or even libc.
 
 dnl gdbm
-if echo $DBMS | tr "," "\012" | grep -q gdbm; then
+AS_IF([echo $DBMS | tr "," "\012" | grep -q gdbm], [
 AC_CHECK_HEADERS(gdbm.h, [
   DBM_ARCHFILES=dbm--gdbm.$SHLIB_SO_SUFFIX
   DBM_SCMFILES=gdbm.sci
   DBM_OBJECTS=' $(gdbm_OBJECTS)'
   AC_CHECK_LIB(gdbm, gdbm_open, [ GDBMLIB="-lgdbm" ])
 ])
-fi dnl end of (find "gdbm" DBMS)
+]) dnl end of (find "gdbm" DBMS)
 
 dnl ndbm
-if echo $DBMS | tr "," "\012" | grep -q ndbm; then
+AS_IF([echo $DBMS | tr "," "\012" | grep -q ndbm], [
 
 NDBM_HEADER=""
 AC_CHECK_HEADER(ndbm.h, [
@@ -97,17 +96,17 @@ AC_CHECK_HEADER(gdbm-ndbm.h, [
       NDBM_HEADER=""], [-lgdbm])
   ])
 ])])])
-if test "$NDBM_HEADER" != ""; then
+AS_IF([test "$NDBM_HEADER" != ""], [
   DBM_ARCHFILES="dbm--ndbm.$SHLIB_SO_SUFFIX $DBM_ARCHFILES"
   DBM_SCMFILES="ndbm.sci $DBM_SCMFILES"
   DBM_OBJECTS=' $(ndbm_OBJECTS)'$DBM_OBJECTS
-fi
+])
 
-fi dnl end of (find "ndbm" DBMS)
+]) dnl end of (find "ndbm" DBMS)
 
 dnl odbm
 
-if echo $DBMS | tr "," "\012" | grep -q odbm; then
+AS_IF([echo $DBMS | tr "," "\012" | grep -q odbm], [
 
 ODBM_HEADER=""
 AC_CHECK_HEADER(dbm.h, [
@@ -141,13 +140,13 @@ AC_CHECK_HEADER(gdbm-dbm.h, [
       ODBM_HEADER=""], [-lgdbm])
   ])
 ])])])
-if test "$ODBM_HEADER" != ""; then
+AS_IF([test "$ODBM_HEADER" != ""], [
   DBM_ARCHFILES="dbm--odbm.$SHLIB_SO_SUFFIX $DBM_ARCHFILES"
   DBM_SCMFILES="odbm.sci $DBM_SCMFILES"
   DBM_OBJECTS='$(odbm_OBJECTS)'$DBM_OBJECTS
-fi
+])
 
-fi dnl end of (find "odbm" DBMS)
+]) dnl end of (find "odbm" DBMS)
 
 AC_SUBST(DBM_ARCHFILES)
 AC_SUBST(DBM_SCMFILES)

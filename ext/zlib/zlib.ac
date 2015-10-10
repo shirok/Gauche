@@ -21,19 +21,18 @@ The include file is looked for in PATH/include,
 and the library file is looked for in PATH/lib.
 If you don't want to use zlib for some reason, say --without-zlib. ]),
   [
-  case $with_zlib in
-    no)  ac_cv_use_zlib=no;;
-    yes) ;;
-    *)   ZLIB_CPPFLAGS="-I$with_zlib/include";
-         ZLIB_LDFLAGS="-L$with_zlib/lib";;
-  esac
+  AS_CASE([$with_zlib],
+    [no],  [ac_cv_use_zlib=no],
+    [yes], [],
+	   [ZLIB_CPPFLAGS="-I$with_zlib/include"
+	    ZLIB_LDFLAGS="-L$with_zlib/lib"])
  ])
 
 dnl
 dnl Check zlib.h
 dnl
 
-if test "$ac_cv_use_zlib" != no; then
+AS_IF([test "$ac_cv_use_zlib" != no], [
   save_cppflags=$CPPFLAGS
   CPPFLAGS="$CPPFLAGS $ZLIB_CPPFLAGS"
   AC_CHECK_HEADER(zlib.h,
@@ -41,13 +40,13 @@ if test "$ac_cv_use_zlib" != no; then
      [AC_MSG_WARN("Can't find zlib.h so I turned off using zlib; you may want to use --with-zlib=PATH.")
       ac_cv_use_zlib=no])
   CPPFLAGS=$save_cppflags
-fi
+])
 
 dnl
 dnl Check libz.
 dnl
 
-if test "$ac_cv_use_zlib" = yes; then
+AS_IF([test "$ac_cv_use_zlib" = yes], [
   save_cflags="$CFLAGS"
   save_ldflags="$LDFLAGS"
   save_libs="$LIBS"
@@ -55,7 +54,7 @@ if test "$ac_cv_use_zlib" = yes; then
   LDFLAGS="$LDFLAGS $ZLIB_LDFLAGS"
   LIBS="$LIBS -lz"
   AC_LINK_IFELSE(
-    [AC_LANG_PROGRAM([#include <zlib.h>],
+    [AC_LANG_PROGRAM([@%:@include <zlib.h>],
                      [[const char *r = zlibVersion();]])],
     [ZLIB_LIB="-lz"],
     [AC_MSG_WARN("Can't find libz so I turned off using zlib; you may want to use --with-zlib=PATH")
@@ -63,9 +62,9 @@ if test "$ac_cv_use_zlib" = yes; then
   CFLAGS="$save_cflags"
   LDFLAGS="$save_ldflags"
   LIBS="$save_libs"
-fi
+])
 
-if test "$ac_cv_use_zlib" = yes; then
+AS_IF([test "$ac_cv_use_zlib" = yes], [
   AC_DEFINE(USE_ZLIB, [], [Define if uses zlib])
   ZLIB_ARCHFILES=rfc--zlib.$SHLIB_SO_SUFFIX
   AC_SUBST(ZLIB_ARCHFILES)
@@ -74,7 +73,7 @@ if test "$ac_cv_use_zlib" = yes; then
   ZLIB_OBJECTS="gauche-zlib.$OBJEXT rfc--zlib.$OBJEXT"
   AC_SUBST(ZLIB_OBJECTS)
   EXT_LIBS="$EXT_LIBS $ZLIB_LIB"
-fi
+])
 AC_SUBST(ZLIB_CPPFLAGS)
 AC_SUBST(ZLIB_LDFLAGS)
 

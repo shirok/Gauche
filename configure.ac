@@ -1,6 +1,6 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ([2.69])
-AC_INIT([Gauche],[0.9.5_pre1],[shiro@acm.org])
+AC_INIT([Gauche],[0.9.5_pre1],[shiro@acm.org],,[http://practical-scheme.net/gauche/])
 AC_CANONICAL_BUILD
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
@@ -256,9 +256,7 @@ esac
 
 LIBS="$LIBS $THREADLIBS"
 dnl Save thread model to be inherited by gc/ subdir.
-AC_CONFIG_COMMANDS([config.threads],
-	[echo "${GAUCHE_THREAD_TYPE}" > config.threads],
-	[GAUCHE_THREAD_TYPE="${GAUCHE_THREAD_TYPE}"])
+AC_SUBST(GAUCHE_THREAD_TYPE)
 
 dnl ----------------------------------------------------------
 dnl   enable-framework
@@ -283,9 +281,7 @@ GAUCHE_VERSION=$PACKAGE_VERSION
 AC_SUBST(GAUCHE_VERSION)
 AC_DEFINE_UNQUOTED(GAUCHE_VERSION, "$GAUCHE_VERSION", [Gauche version string])
 
-changequote(<<, >>)dnl
-GAUCHE_VERSION_TRUNC=`echo $GAUCHE_VERSION | sed 's/[-_].*//'`
-changequote([, ])dnl
+GAUCHE_VERSION_TRUNC=`echo $GAUCHE_VERSION | sed 's/@<:@-_@:>@.*//'`
 OLD_IFS=$IFS; IFS="."; set $GAUCHE_VERSION_TRUNC; IFS=$OLD_IFS
 GAUCHE_MAJOR_VERSION=$1
 GAUCHE_MINOR_VERSION=$2
@@ -599,7 +595,7 @@ case $host in
     # [Shiro] Darwin 1.3 and later needs different flags
     CPPFLAGS="$CPPFLAGS -no-cpp-precomp"
     case $host_os in
-      darwin1.[[012]]) FLAT_NAMESPACE="" ;;
+      darwin1.@<:@012@:>@) FLAT_NAMESPACE="" ;;
       *)               FLAT_NAMESPACE="-flat_namespace" ;;
     esac
     case $host_os in
@@ -815,12 +811,12 @@ dnl ===========================================================
 dnl Cross compiling
 if test ${cross_compiling} = no ; then
    # self compile
-   CROSS_COMPILING_yes="#"
+   CROSS_COMPILING_yes="@%:@"
    CROSS_COMPILING_no=
 else
    # cross compile
    CROSS_COMPILING_yes=
-   CROSS_COMPILING_no="#"
+   CROSS_COMPILING_no="@%:@"
 fi
 AC_SUBST(CROSS_COMPILING_yes)
 AC_SUBST(CROSS_COMPILING_no)
@@ -869,6 +865,7 @@ AC_CONFIG_FILES([
           ext/windows/Makefile
           examples/Makefile
           examples/standalone/Makefile
+          gc/configure.gnu
          ])
 AC_OUTPUT
 
