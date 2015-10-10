@@ -1258,11 +1258,6 @@
              ($result:f (- (cast double imm) (SCM_FLONUM_VALUE arg)))]
             [else           ($result (Scm_Sub (SCM_MAKE_INT imm) arg))]))))
 
-
-;(define-insn NUMQUOT     0 none)        ; quotient
-;(define-insn NUMMOD      0 none)        ; modulo
-;(define-insn NUMREM      0 none)        ; remainder
-
 (define-insn ASHI         1 none #f
   (let* ([cnt::ScmSmallInt (SCM_VM_INSN_ARG code)])
     ($w/argr arg ($result (Scm_Ash arg cnt)))))
@@ -1430,3 +1425,13 @@
   (begin
     (local_env_shift vm (SCM_VM_INSN_ARG code))
     NEXT))
+
+;; TRANSIENT: These are better to be with ASHI; we put here to keep
+;; binary compatibility.  Should be moved on 1.0 release.
+(define-insn NUMMODI      1 none #f
+  (let* ([divisor::ScmSmallInt (SCM_VM_INSN_ARG code)])
+    ($w/argr arg ($result (Scm_Modulo arg (SCM_MAKE_INT divisor) FALSE)))))
+(define-insn NUMREMI      1 none #f
+  (let* ([divisor::ScmSmallInt (SCM_VM_INSN_ARG code)])
+    ($w/argr arg ($result (Scm_Modulo arg (SCM_MAKE_INT divisor) TRUE)))))
+

@@ -5631,10 +5631,26 @@
 (define-inline (asm-arg2 form insn x y cenv)
   ($asm form insn (list (pass1 x cenv) (pass1 y cenv))))
 
+;; Generate two argument call of assembler insn INSN unconditionally
 (define (gen-inliner-arg2 insn)
   (^[form cenv]
     (match form
       [(_ x y) (asm-arg2 form (list insn) x y cenv)]
+      [else (undefined)])))
+
+;; If the form has two arg and the latter arg is a constant exact integer
+;; that fits insn arg, generate ***I type insn.  If both args are constant,
+;; replace the form with ($const (proc x y)).  Otherwise give up.
+(define (gen-inliner-argi insn proc)
+  (^[form cenv]
+    (match form
+      [(_ n cnt)
+       (receive (cnt-val cnt-tree) (check-numeric-constant cnt cenv)
+         (receive (n-val n-tree) (check-numeric-constant n cenv)
+           (cond [(and cnt-val n-val) ($const (proc n-val cnt-val))]
+                 [(and cnt-val (integer-fits-insn-arg? cnt-val))
+                  ($asm form `(,insn ,cnt-val) (list n-tree))]
+                 [else (undefined)])))]
       [else (undefined)])))
 
 (inline-stub
@@ -5822,17 +5838,9 @@
 (define-builtin-inliner >   (gen-inliner-arg2 NUMGT2))
 (define-builtin-inliner >=  (gen-inliner-arg2 NUMGE2))
 
-(define-builtin-inliner ash
-  (^[form cenv]
-    (match form
-      [(_ n cnt)
-       (receive (cnt-val cnt-tree) (check-numeric-constant cnt cenv)
-         (receive (n-val n-tree) (check-numeric-constant n cenv)
-           (cond [(and cnt-val n-val) ($const (ash n-val cnt-val))]
-                 [(and cnt-val (integer-fits-insn-arg? cnt-val))
-                  ($asm form `(,ASHI ,cnt-val) (list n-tree))]
-                 [else (undefined)])))]
-      [else (undefined)])))
+(define-builtin-inliner modulo (gen-inliner-argi NUMMODI modulo))
+(define-builtin-inliner remainder (gen-inliner-argi NUMREMI remainder))
+(define-builtin-inliner ash (gen-inliner-argi ASHI ash))
 
 ;; bitwise and, ior and xor.  we treat (op expr const) case specially.
 (define (builtin-inliner-bitwise opname op opcode unit)
