@@ -221,8 +221,9 @@
 
 (define-method query-cursor-position ((con <vt100>))
   (define (r) (read-char (~ con'iport))) ; we bypass getch buffering
+  (define q (~ con'input-buffer))
   (putstr con "\x1b;[6n")
-  (unless (eqv? #\x1b (r)) (error "terminal error"))
+  (until (r) (cut eqv? <> #\x1b) => ch (enqueue! q ch))
   (unless (eqv? #\[   (r)) (error "terminal error"))
   (rxmatch-case ($ list->string $ generator->list
                    $ gtake-while (^c (not (eqv? #\R c))) r)
