@@ -94,7 +94,7 @@ pdf : gauche-refe.pdf gauche-refj.pdf
 
 info : gauche-refe.info.gz gauche-refj.info.gz
 
-# special rule to regenerate srfis.tex in case srfis.scm is modified.
+# special rule to regenerate srfis.texi in case srfis.scm is modified.
 srfis.texi : $(top_builddir)/src/srfis.scm
 	cd $(top_builddir)/src; $(MAKE) libsrfis.scm
 
