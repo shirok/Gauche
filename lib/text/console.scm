@@ -57,7 +57,7 @@
   (export <vt100>
 
           call-with-console
-          putch putstr getch chready?
+          putch putstr getch chready? beep
           query-screen-size query-cursor-position move-cursor-to
           hide-cursor show-cursor cursor-down/scroll-up cursor-up/scroll-down
           reset-terminal clear-screen clear-to-eol clear-to-eos
@@ -142,6 +142,8 @@
 (define-method chready? ((con <vt100>))
   (or (not (queue-empty? (~ con'input-buffer)))
       (char-ready? (~ con'iport))))
+
+(define-method beep ((con <vt100>)) (putch con #\alarm))
 
 ;; We try to interpret input escape sequences as much as possible.
 ;; To distinguish from real ESC key and the escape sequence, we time
