@@ -357,7 +357,7 @@
                            'current)
          (let ([cur  (gap-buffer-ref buf (+ (gap-buffer-pos buf) 1))]
                [prev (gap-buffer-ref buf (gap-buffer-pos buf))])
-           (gap-buffer-edit! buf `(c 2 ,(string cur prev))))]))
+           (gap-buffer-edit! buf `(c #f 2 ,(string cur prev))))]))
 
 (define (yank ctx buf key)
   (and (> (ring-buffer-num-entries (~ ctx'kill-ring)) 0)
