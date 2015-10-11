@@ -1,3 +1,8 @@
+2015-10-10  Shiro Kawai  <shiro@acm.org>
+
+	* lib/text/line-edit.scm: Added.
+	* examples/line-editor.scm: Sample & test for text.line-edit
+
 2015-10-02  Shiro Kawai  <shiro@acm.org>
 
 	* src/vm.c (user_eval_inner): Use Scm_Exit instead of exit() to ensure
