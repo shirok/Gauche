@@ -1119,7 +1119,7 @@ before creating the procedure.
 @c EN
 Gauche provides a couple of different ways to write partial
 applications concisely; see the @code{$} macro below, and also
-the @code{pa$} procedure (@xref{Combinators})。
+the @code{pa$} procedure (@xref{Combinators}).
 @c JP
 Gaucheには他にも二つほど、部分適用を簡潔に書く方法があります。
 下の@code{$}マクロ、及び組み込み手続きを@code{pa$}です
