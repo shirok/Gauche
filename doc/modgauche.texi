@@ -53,7 +53,7 @@ The primitive API follows SRFI-25.
 Besides a generic srfi-25 array that can store any Scheme objects,
 this module also provides array classes that stores numeric objects
 efficiently, backed up by
-homogeneous numeric vectors (@xref{Uniform vectors}).
+homogeneous numeric vectors (@pxref{Uniform vectors}).
 An external representation of arrays, using SRFI-10 mechanism,
 is also provided.
 @c JP
@@ -2278,7 +2278,7 @@ Before diving into the details, it's easier to grasp
 some basic concepts.
 
 A @emph{CiSE fragment} is an S-expression that follows
-CiSE syntax (@xref{CiSE syntax}).  A CiSE fragment can be
+CiSE syntax (@pxref{CiSE syntax}).  A CiSE fragment can be
 translated to C code by @code{cise-render} to a C code fragment.
 Note that some translation may not be local, meaning it may
 want to emit forward declarations before other C code fragments.
@@ -2360,7 +2360,7 @@ and also it keeps track of forward declarations.
 This module provides a set of generic functions (GFs) that iterate over
 various collections.   The Scheme standard [R7RS] has some iterative
 primitives such as @code{map} and @code{for-each},
-and SRFI-1 (@xref{List library} adds a rich set of such functions,
+and SRFI-1 (@pxref{List library} adds a rich set of such functions,
 but they work only on lists.
 
 Using the method dispatch of the object system, this module
@@ -2467,7 +2467,7 @@ A collection.  Each element is a pair of a key and a value.
 @item <s8vector>, <u8vector>, @dots{} <f64vector>
 @c EN
 A sequence (methods defined in @code{srfi-4} module,
-@xref{Homogeneous vectors}).
+@pxref{Homogeneous vectors}).
 @c JP
 シーケンス。メソッドは@code{srfi-4}モジュール内で定義されます。
 @ref{Homogeneous vectors}参照。
@@ -2521,7 +2521,7 @@ as well as elements.
 
 @deffn {Generic function} fold proc knil coll coll2 @dots{}
 @c EN
-This is a natural extension of @var{fold} (@xref{Other list procedures}).
+This is a natural extension of @var{fold} (@pxref{Other list procedures}).
 @c JP
 @var{fold} (@ref{Other list procedures}参照) の自然な拡張です。
 @c COMMON
@@ -2645,7 +2645,7 @@ See also @code{map-accum} below.
 
 @deffn {Generic function} map proc coll coll2 @dots{}
 @c EN
-This extends the built-in @code{map} (@xref{Walking over lists}).
+This extends the built-in @code{map} (@pxref{Walking over lists}).
 Apply @var{proc} for each element in the collection @var{coll}, and
 returns a list of the results.
 @c JP
@@ -2703,7 +2703,7 @@ If you wonder why @code{(map char-upcase "abc")} doesn't return
 This works the same as @code{map}, except the result is returned
 in a collection of class @var{class}.   @code{Class} must be a
 collection class and have a builder interface
-(@xref{Fundamental iterator creators}).
+(@pxref{Fundamental iterator creators}).
 @c JP
 @code{map}と同じように動作しますが、結果はクラス@var{class}のインスタンスとして返されます。
 @var{class}はコレクションクラスでなければなりません。
@@ -2779,7 +2779,7 @@ reversed.
 
 @deffn {Generic function} for-each proc coll coll2 @dots{}
 @c EN
-Extension of built-in @code{for-each} (@xref{Walking over lists}).
+Extension of built-in @code{for-each} (@pxref{Walking over lists}).
 Applies @var{proc} for each elements in the collection(s).
 The result of @var{proc} is discarded.  The return value of
 @code{for-each} is undefined.
@@ -3100,7 +3100,7 @@ of the result is the same order in @var{coll}.
 
 @c EN
 See also @code{group-sequence} in @code{gauche.sequence}
-(@xref{Other operations over sequences}),
+(@pxref{Other operations over sequences}),
 which only groups adjacent elements.
 @c JP
 @code{gauche.sequence}の@code{group-sequence}も参照して下さい
@@ -4546,7 +4546,7 @@ to lock the same file more than once within the same process, it always
 succeeds.  But it's not a recursive lock, so the process loses
 any locks to the file as soon as any of such lock is released,
 or any of such file is closed.   It makes @code{fcntl} lock difficult
-to use in libraries.  See @code{with-lock-file} (@xref{Lock files}) for
+to use in libraries.  See @code{with-lock-file} (@pxref{Lock files}) for
 an alternative way to realize inter-process locks.
 @c JP
 @code{fcntl}によるロックは、プロセスごと、ファイルごとであることに注意してください。
@@ -4661,7 +4661,7 @@ A generator is very lightweight, and handy to implement simple
 on-demand calculations.  However, keep in mind that it is
 side-effecting construct; you can't safely backtrack, for example.
 For more functional on-demand calculation, you can use
-lazy sequences (@xref{Lazy sequences}), which is actually
+lazy sequences (@pxref{Lazy sequences}), which is actually
 built on top of generators.
 @c JP
 ジェネレータは、必要になったら計算を行うようなシステムを簡単に実現でき、
@@ -4760,11 +4760,11 @@ the converted list by 10; otherwise
 
 @defun giota :optional (count +inf.0) (start 0) (step 1)
 @c EN
-Like @code{iota} (@xref{List constructors}), creates a generator
+Like @code{iota} (@pxref{List constructors}), creates a generator
 of a series of @var{count} numbers, starting from @var{start}
 and increased by @var{step}.
 @c JP
-@code{iota} (@xref{List constructors})のような、@var{start}で始まり
+@code{iota} (@pxref{List constructors})のような、@var{start}で始まり
 @var{step}ずつ増加する、@var{count}個の級数のジェネレータを作成します。
 @c COMMON
 
@@ -4924,7 +4924,7 @@ at the last element, and reverse generators ends at the first element.
 @c EN
 These procedures take an exact integer and treat it as a sequence of
 boolean values (0 for false and 1 for true), as @code{integer->list} does
-(@xref{Integers as bits}).  @code{Bits->generator} takes bits from
+(@pxref{Integers as bits}).  @code{Bits->generator} takes bits from
 LSB, while @code{reverse-bits->generator} takes them from MSB.
 @c JP
 これらの手続きは正確な整数を引数に取り、
@@ -4947,7 +4947,7 @@ the range of bitfield, LSB being 0.  Unlike @code{list->generator} etc,
 @var{start} specifies the rightmost position (inclusive) and
 @var{end} specfies the leftmost position (exclusive).  It is consistent
 with other procedures that accesses bit fields in integers
-(@xref{Integers as bits}).
+(@pxref{Integers as bits}).
 @c JP
 省略可能引数@var{start}と@var{end}はビットフィールドの範囲を指定します
 (LSBが0)。@code{list->generator}等の同名の引数と違って、
@@ -5051,7 +5051,7 @@ of @code{file->generator} specialized by @code{read},
 
 @c EN
 Like @code{file->generator}, @var{open-args}
-are passed to @code{open-input-file} (@xref{File ports}).
+are passed to @code{open-input-file} (@pxref{File ports}).
 The file is closed when the generator is exhausted.
 @c JP
 @code{file->generator}同様、@var{open-args}はそのまま@code{open-input-file}に
@@ -5062,7 +5062,7 @@ The file is closed when the generator is exhausted.
 
 @defun gunfold p f g seed :optional tail-gen
 @c EN
-A generator constructor similar to @var{unfold} (@xref{SRFI-1 List utilities}).
+A generator constructor similar to @var{unfold} (@pxref{SRFI-1 List utilities}).
 @c JP
 @var{unfold}に似たジェネレータの構築子です (@ref{SRFI-1 List utilities}参照)。
 @c COMMON
@@ -5193,9 +5193,9 @@ it is @code{(glet* ([var expr]) body body2 @dots{})}.
 @defmac do-generator (var gexpr) body @dots{}
 @c EN
 This is a generator version of @code{dolist} and @code{dotimes}
-(@xref{Binding constructs}).
+(@pxref{Binding constructs}).
 @c JP
-これは、ジェネレータ版の@code{dolist}であり@code{dotimes}です(@xref{Binding constructs})。
+これは、ジェネレータ版の@code{dolist}であり@code{dotimes}です(@pxref{Binding constructs})。
 @c COMMON
 
 @c EN
@@ -5391,12 +5391,12 @@ terminates when any of the given generator is exhausted.
 @c COMMON
 
 @c EN
-NB: This differs from @code{generator-map} (@xref{Folding generated values})
+NB: This differs from @code{generator-map} (@pxref{Folding generated values})
 which consumes all
 values at once and returns the results as a list, while @code{gmap}
 returns a generator immediately without consuming input.
 @c JP
-注意: この手続きは、@code{generator-map} (@xref{Folding generated values}参照)
+注意: この手続きは、@code{generator-map} (@ref{Folding generated values}参照)
 とは違います。@code{generator-map}は一度に全ての値を消費し、結果をリストとして返しますが、
 @code{gmap}はすぐには入力を消費せずにジェネレータを返すのです。
 @c COMMON
@@ -5404,10 +5404,10 @@ returns a generator immediately without consuming input.
 
 @defun gmap-accum proc seed gen gen2 @dots{}
 @c EN
-A generator version of @code{map-accum} (@xref{Mapping over collection}),
+A generator version of @code{map-accum} (@pxref{Mapping over collection}),
 mapping with states.
 @c JP
-状態を持つマッピングを行う@code{map-accum} (@xref{Mapping over collection})のジェネレータ版
+状態を持つマッピングを行う@code{map-accum} (@pxref{Mapping over collection})のジェネレータ版
 です。
 @c COMMON
 
@@ -5573,7 +5573,7 @@ The Tetris Company).
 @defunx gdrop gen k
 @c EN
 The generator version of
-@code{take*} and @code{drop*} (@xref{List accessors and modifiers});
+@code{take*} and @code{drop*} (@pxref{List accessors and modifiers});
 @code{gtake} returns a generator that yields (at most) first @var{k} items
 of the source generator, while @code{gdrop} returns a generator
 that skips the first @var{k} items of the source generator.
@@ -5617,7 +5617,7 @@ from the input generator, you may want to use @code{gslices} below.
 @defunx gdrop-while pred gen
 @c EN
 The generator version of @code{take-while} and @code{drop-while}
-(@xref{List accessors and modifiers}).  The generator returned
+(@pxref{List accessors and modifiers}).  The generator returned
 from @code{gtake-while} yields items from the source generator
 as far as @var{pred} returns true for each.  The generator returned
 from @code{gdrop-while} first reads items from the source generator
@@ -5634,7 +5634,7 @@ while @var{pred} returns true for them, then start yielding items.
 
 @defun gslices gen k :optional (fill? #f) (padding #f)
 @c EN
-The generator version of @code{slices} (@xref{List accessors and modifiers}).
+The generator version of @code{slices} (@pxref{List accessors and modifiers}).
 This returns a generator, that yields a list of @var{k} items from
 the input generator @var{gen} at a time.
 @c JP
@@ -5979,7 +5979,7 @@ Schemeオブジェクト@var{obj}の詳細情報を表示します。
 
 @c EN
 If @var{obj} is omitted, the last evaluation result bound to @code{*1} in REPL
-is used.  (@xref{Working in REPL})
+is used.  (@pxref{Working in REPL})
 @c JP
 @var{obj}が省略された場合は、@code{*1}に束縛されている、直前のREPLの結果が
 使われます。(@ref{Working in REPL}参照)
@@ -6060,7 +6060,7 @@ to parse the info file.
 Invoke an external editor to open the named file, or the file containing
 the definition of the given procedure (if it can be known).  
 For the latter, it uses @code{source-location} procedure to find out
-the source code location (@xref{Debugging aid}).
+the source code location (@pxref{Debugging aid}).
 @c JP
 外部エディタを起動し、与えられた名前のファイル、もしくは与えられた手続きの定義がある
 ファイルを開きます。後者については、与えられた手続きを
@@ -6212,7 +6212,7 @@ routine of the REPL.
 @end defun
 
 @defun lunfold p f g seed :optional tail-gen
-A lazy version of @code{unfold} (@xref{SRFI-1 List utilities}).
+A lazy version of @code{unfold} (@pxref{SRFI-1 List utilities}).
 The arguments @var{p}, @var{f} and @var{g} are procedures,
 each of which take one argument, the current seed value.
 The predicate @var{p} determines when to stop, @var{f} creates
@@ -6243,7 +6243,7 @@ It must return two values, a result value and the next seed value.
 The result of @code{lmap-accum} is a lazy sequence consists
 of the first values returned by each invocation of @var{proc}.
 
-This is a lazy version of @code{map-accum} (@xref{Mapping over collection}),
+This is a lazy version of @code{map-accum} (@pxref{Mapping over collection}),
 but @code{lmap-accum} does not return the final seed value.  We only
 know the final seed value when we have the result sequence to the
 end, so it can't be calculated lazily.
@@ -6349,7 +6349,7 @@ Lazy version of @code{gstate-filter}.
 @defun ltake seq n :optional fill? padding
 @defunx ltake-while pred seq
 Lazy versions of @code{take*} and @code{take-while}
-(@xref{List accessors and modifiers}).   Note that
+(@pxref{List accessors and modifiers}).   Note that
 @code{ltake} works rather like @code{take*} than @code{take},
 that is, it won't complain if the input sequence has less than @var{n}
 elements.  Because of the lazy nature of @code{ltake}, it can't know
@@ -6362,7 +6362,7 @@ lazy sequence.
 
 @defun lrxmatch rx seq
 This is a lazy sequence version of @code{grxmatch}
-(@xref{Generator operations}).
+(@pxref{Generator operations}).
 
 The @var{seq} argument must be a sequence of characters.
 The return value is a lazy sequence of @var{<rxmatch>} objects,
@@ -6375,7 +6375,7 @@ is a string, @code{lrxmatch} buffers certain
 @end defun
 
 @defun lslices seq k :optional fill? padding
-Lazy version of @code{slices} (@xref{List accessors and modifiers}).
+Lazy version of @code{slices} (@pxref{List accessors and modifiers}).
 
 @example
 (lslices '(a b c d e f) 2)
@@ -6401,7 +6401,7 @@ read-eval-print loop (repl) concurrently.
 @c EN
 An obvious way to run multiple repls is to use threads;
 creating as many threads as sessions and calling
-@code{read-eval-print-loop} (@xref{Eval and repl}) from each thread.
+@code{read-eval-print-loop} (@pxref{Eval and repl}) from each thread.
 Nevertheless, sometimes single threaded implementation is preferred.
 For instance, you're using a library which is not MT-safe,
 or your application already uses select/poll-based dispatching mechanism.
@@ -6978,7 +6978,7 @@ Current 4-digit year.
 @item ~P
 @c EN
 The program name.  The default value is the basename of
-@code{(car (command-line))} (@xref{Command-line arguments}),
+@code{(car (command-line))} (@pxref{Command-line arguments}),
 but you can change it by the @code{program-name}
 slot described below.
 @c JP
@@ -7042,7 +7042,7 @@ the prefix slot.
 Specifies the way the log file should be locked.
 If the value of this slot is a symbol @code{fcntl},
 the log file is locked using
-fcntl() (@xref{Low-level file operations}).
+fcntl() (@pxref{Low-level file operations}).
 If the value is a symbol @code{file}, the log file is locked by
 creating auxiliary lock file, whose name is generated by appending ".lock"
 after the log file path.  The logging
@@ -7148,7 +7148,7 @@ the log drain temporary.
 @deffnx {Method} log-format (drain <log-drain>) (format <string>) arg @dots{}
 @c EN
 Formats a log message by @var{format} and @var{arg @dots{}}, by using
-@code{format} (@xref{Output}).    In the first form, the output goes
+@code{format} (@pxref{Output}).    In the first form, the output goes
 to the default destination.  In the second form, the output goes to
 the specfied drain.
 @c JP
@@ -7160,7 +7160,7 @@ the specfied drain.
 The file is opened and closed every time.  You can safely move
 the log file while your program that touches the log file is running.
 Also @code{log-format} acquires a write lock of the log file by
-@code{sys-fcntl} (@xref{Low-level file operations}).
+@code{sys-fcntl} (@pxref{Low-level file operations}).
 @c JP
 ファイルはこの手続きが呼ばれるたびにオープンされクローズされます。
 したがって、ログファイルに書き出すプログラムが走っている最中でも
@@ -7575,7 +7575,7 @@ IPv6が使えるかどうかを調べるには、
 
 @c EN
 Note: If you want to write a portable program using network,
-take a look at @code{srfi-106} (@xref{Basic socket interface}).
+take a look at @code{srfi-106} (@pxref{Basic socket interface}).
 @c JP
 ネットワークを使うポータブルなコードを書きたい場合は、
 @code{srfi-106}を見てください (@ref{Basic socket interface}参照)。
@@ -8584,7 +8584,7 @@ Returns number of octets sent.
 @c EN
 This procedure is not yet supported under the Windows native platform.
 You can use the feature identifier @code{gauche.os.windows} to check
-availability of this procedure (@xref{Platform-dependent features}).
+availability of this procedure (@pxref{Platform-dependent features}).
 @c JP
 この手続きはWindowsネイティブ環境では(まだ)サポートされません。
 これが使えるかどうかは、機能識別子@code{gauche.os.windows}を使って判定
@@ -8669,7 +8669,7 @@ msghdrを構築しようとします。@var{buf}で領域が不足する場合�
 @c EN
 This procedure is not yet supported under the Windows native platform.
 You can use the feature identifier @code{gauche.os.windows} to check
-availability of this procedure (@xref{Platform-dependent features}).
+availability of this procedure (@pxref{Platform-dependent features}).
 @c JP
 この手続きはWindowsネイティブ環境では(まだ)サポートされません。
 これが使えるかどうかは、機能識別子@code{gauche.os.windows}を使って判定
@@ -9596,7 +9596,7 @@ from both lists.
 @deffn {Method} parameter-pre-observers (p <parameter>)
 @deffnx {Method} parameter-post-observers (p <parameter>)
 @c EN
-Returns a hook object (@xref{Hooks}) that keeps
+Returns a hook object (@pxref{Hooks}) that keeps
 "before" or "after" observers, respectively.
 
 @emph{Note}: Although the parameter value itself is thread-local,
@@ -9624,7 +9624,7 @@ options with multiple option arguments.
 
 Actually, you have a few choices to parse command-line
 options in Gauche.
-SRFI-37 (@xref{A program argument processor}) provides
+SRFI-37 (@pxref{A program argument processor}) provides
 functional interface to parse POSIX/GNU compatible argument syntax.
 SLIB has @code{getopt}-compatible utility.
 Required features may differ from application to application,
@@ -10248,7 +10248,7 @@ library function names.  We thought giving them more descriptive names,
 but decided to keep them after all; when you talk about partial
 continuations you can't get away from those names.  If these names
 conflict to other names in your program, you can use @code{:prefix}
-import specifier (@xref{Using modules}), for example as follows:
+import specifier (@pxref{Using modules}), for example as follows:
 @c JP
 註: 部分継続はふたつのオペレータ、@code{reset}と@code{shift}を使います。
 これらは元の論文で導入された名前ですが、既に用語として定着した感があります。
@@ -10297,7 +10297,7 @@ This may be surprising if you don't know about the implicit delimited
 continuation.
 
 Other places the implicit delimited continuations are created
-are the handlers virtual ports (@xref{Virtual ports}),
+are the handlers virtual ports (@pxref{Virtual ports}),
 @code{object-apply} methods called from @code{write} and @code{display},
 and GUI callbacks such as the one registered by @code{glut-display-func}
 (See the document of Gauche-gl for the details), to name a few.
@@ -10646,7 +10646,7 @@ gosh> (iter2)
 @end example
 
 @c EN
-The @code{util.combinations} module (@xref{Combination library})
+The @code{util.combinations} module (@pxref{Combination library})
 provides a procedure that @emph{calls} a given procedure with
 every permutation of the given collection.  If you pass
 it to @code{inv}, you get a procedure that @emph{returns}
@@ -10797,7 +10797,7 @@ a symbol.
 
 @c EN
 Note: An alternative way to run external process is @code{sys-system},
-which takes a command line as a single string (@xref{Process management}).
+which takes a command line as a single string (@pxref{Process management}).
 The string is passed to the shell to be interpreted,
 so you can include redirections, or can pipe several commands.
 It would be handy for quick throwaway scripts.
@@ -10979,7 +10979,7 @@ Feeds @var{value} or @var{obj} to the input file
 descriptor @var{fd} of the child process.
 
 With @code{<<}, @var{value} must be either a string or a uniform
-vector (@xref{Uniform vectors}).  It is sent to the child process as is.
+vector (@pxref{Uniform vectors}).  It is sent to the child process as is.
 Using a uniform vector is good to pass binary content.
 
 With @code{<<<}, @var{obj} can be any Scheme object, and
@@ -10989,7 +10989,7 @@ the result of @code{(write-to-string obj)} is sent to the child process.
 入力とします。
 
 @code{<<}を使う場合、@var{value}は文字列かユニフォームベクタ
-(@xref{Uniform vectors})でなければなりません。その内容がそのまま
+(@pxref{Uniform vectors})でなければなりません。その内容がそのまま
 子プロセスの入力へと送られます。ユニフォームベクタはバイナリデータを渡すのに便利です。
 
 @code{<<<}を使う場合、@var{obj}には任意のSchemeオブジェクトを渡せます。
@@ -11302,7 +11302,7 @@ merely sets the signal mask of the local process (@code{ssh}).
 When a true value is given, the new process is detached from
 the parent's process group and belongs to its own group.
 It is useful when you run a daemon process.
-See @code{sys-fork-and-exec} (@xref{Process management}), for
+See @code{sys-fork-and-exec} (@pxref{Process management}), for
 the detailed description of @var{detached} argument.
 @c JP
 真の値が渡されると、作られるプロセスは親プロセスのプロセスグループから
@@ -11628,7 +11628,7 @@ use @code{sys-wait-exited?} or @code{sys-wait-signaled?} to
 see if it is terminated voluntarily or by a signal, and
 use @code{sys-wait-exit-status} or @code{sys-wait-termsig}
 to extract the exit code or the terminating signal
-(@xref{Process management}).
+(@pxref{Process management}).
 @c JP
 @code{process-wait}によって取得された@var{process}の終了ステータスを
 返します。@var{process}に対して@code{process-wait}を呼ぶ前にこの手続きを
@@ -12062,7 +12062,7 @@ create record types on-the-fly at runtime.
 @subsection Introduction
 
 Gauche provides a general way for users to define new types as new
-classes, using object system (@xref{Object system}), and indeed
+classes, using object system (@pxref{Object system}), and indeed
 record types are implemented as Gauche's classes.
 However, using record types instead of classes has several advantages.
 
@@ -12094,7 +12094,7 @@ See @ref{Pseudo record types}, for more details.
 
 The disadvantage of record types is that
 they don't obey Gauche's class redefinition
-protocol (@xref{Class redefinition}).
+protocol (@pxref{Class redefinition}).
 That is, if you redefine a record with the same name,
 it creates a new record type unrelated to the old one.
 The record instances created from the old definition
@@ -12620,7 +12620,7 @@ rules by @code{module-reload-rules}.
 
 @defun module-reload-rules :optional module-rules
 @c EN
-This is a parameter (@xref{Parameters}) that keeps
+This is a parameter (@pxref{Parameters}) that keeps
 the default module rules for @code{reload-modified-modules}.
 If called without arguments, returns the current module rules.
 If called with @var{module-rules}, sets the argument to the
@@ -12655,7 +12655,7 @@ If called with @var{flag}, it is set to the current verbosity flag.
 @mdindex gauche.selector
 @c EN
 This module provides a simple interface to dispatch I/O events to
-registered handlers, based on @code{sys-select} (@xref{I/O multiplexing}).
+registered handlers, based on @code{sys-select} (@pxref{I/O multiplexing}).
 @c JP
 このモジュールは、@code{sys-select} (@ref{I/Oの多重化}参照)に基づき、
 登録されたハンドラにI/Oイベントをディスパッチするためのシンプルな
@@ -12852,7 +12852,7 @@ and apply order-aware operations on the elements.
 @c COMMON
 
 @c EN
-This module inherits @code{gauche.collection} (@xref{Collection framework}).
+This module inherits @code{gauche.collection} (@pxref{Collection framework}).
 All the collection generic operations can be applied to a sequence as well.
 @c JP
 このモジュールは@code{gauche.collection}を継承しています
@@ -13097,7 +13097,7 @@ If no element in @var{seq} satisfies @var{pred}, @code{#f} is returned.
 @end example
 
 @c EN
-See also @code{list-index} in SRFI-1 (@xref{SRFI-1 List utilities}).
+See also @code{list-index} in SRFI-1 (@pxref{SRFI-1 List utilities}).
 @c JP
 SRFI-1 (@ref{SRFI-1 List utilities}参照)の@code{list-index}も見て下さい。
 @c COMMON
@@ -13199,7 +13199,7 @@ whose default is @code{eqv?}.
 This method is similar to Haskell's @code{group}.
 If you want to group elements that are not adjacent,
 use @code{group-collection}
-(@xref{Selection and searching in collection}).
+(@pxref{Selection and searching in collection}).
 @c JP
 このメソッドはHaskellの@code{group}と似ています。
 隣り合っていない要素もグループ化したい場合は、
@@ -13241,7 +13241,7 @@ procedure is applied (default @code{identity}), then compared with
 @c EN
 For strings, @code{srfi-13} has a specific function with
 related feature: @code{string-prefix-length}
-(@xref{SRFI-13 String Prefixes & Suffixes}).
+(@pxref{SRFI-13 String Prefixes & Suffixes}).
 @c JP
 文字列については、@code{srfi-13}に似た機能を持つ手続き
 @code{string-prefix-length}があります。
@@ -13372,7 +13372,7 @@ in which elements are randomly permuted.
 @end example
 
 @c EN
-This generic function uses @code{srfi-27} (@xref{Sources of random bits}).
+This generic function uses @code{srfi-27} (@pxref{Sources of random bits}).
 By default it uses @code{default-random-source}, but you can pass
 an alternative random source by the optional argument.
 @c JP
@@ -13427,7 +13427,7 @@ Like @code{shuffle}, but the result is stored back to @var{src}.
 This module provides syslog(3) system logger interface.
 
 For the common applications, you might find @code{gauche.logger} module
-easier to use (@xref{User-level logging}).  This module is for those
+easier to use (@pxref{User-level logging}).  This module is for those
 who need direct access to the syslog API.
 
 The procedures are only defined if the underlying system supports them.
@@ -13499,9 +13499,9 @@ these constants.
 [POSIX]
 @c EN
 Log the string @var{message}.  Unlike syslog(3), this procedure doesn't
-do formatting---you can use @code{format} (@xref{Output}) to create
+do formatting---you can use @code{format} (@pxref{Output}) to create
 a formatted message, or use higher-level routine @code{log-format}
-(@xref{User-level logging}).
+(@pxref{User-level logging}).
 
 An integer argument @var{priority} can be composed by @code{logior}-ing
 one of the @var{facility} constants described above and
@@ -13587,7 +13587,7 @@ On Windows native platforms, POSIX termios interface is not
 available.  It is too different from Windows console API to
 provide a meaningful emulation.  The low-level Windows console
 API is available in the @code{os.windows} module
-(@xref{Windows support}).   You can still use high-level
+(@pxref{Windows support}).   You can still use high-level
 terminal control procedures in this module.
 @c JP
 Windowsネイティブ環境ではPOSIX termiosインタフェースは使えません。
@@ -13666,7 +13666,7 @@ either a port object or a small integer representing system's file
 descriptor.  If @var{port} is not associated
 to the system terminal, an error is signaled.  (You can check if @var{port}
 has an associated terminal by @code{sys-isatty?}.
-@xref{Other file operations}).
+@pxref{Other file operations}).
 @c JP
 このセクションを通じて、引数 @var{port-or-fd} はポートオブジェクトか
 システムのファイルディスクリプタを表現する小さい整数かのどちらかです。
@@ -13882,9 +13882,9 @@ An optional argument @var{term} must be, if passed, a @code{<sys-termios>}
 object; it sets the slave pty's parameters.
 
 You can use @code{open-input-fd-port} and/or @code{open-output-fd-port}
-to create a port around the returned file descriptor (@xref{File ports}).
+to create a port around the returned file descriptor (@pxref{File ports}).
 To obtain pseudo tty's name, use @code{sys-ttyname}
-(@xref{Other file operations}).
+(@pxref{Other file operations}).
 
 This function is available only if the system supports @code{openpty(3)}.
 @c JP
@@ -14649,7 +14649,7 @@ supported, many thread-related procedures simply signals a
 @c EN
 If you want to switch code depending on whether pthreads are
 available or not, you can use a feature identifier @code{gauche.sys.threads}
-with @code{cond-expand} form (@xref{Feature conditional}).
+with @code{cond-expand} form (@pxref{Feature conditional}).
 
 @example
 (cond-expand
@@ -14838,7 +14838,7 @@ The recommended usage is the technique so called "thread pool",
 that you create a set of threads and keep them around for
 long time and dispatch jobs to them as needed.  Gauche provides
 a thread pool implementation in @code{control.thread-pool} module
-(@xref{Thread pools}).
+(@pxref{Thread pools}).
 @c JP
 推奨される使用方法は、いわゆる``スレッドプール''と呼ばれる
 テクニックです。つまり、スレッドの集合を作って長時間それを
@@ -15173,9 +15173,9 @@ You can provide the name of the thread by the optional argument @var{name}.
 
 @c EN
 The created thread inherits the signal mask of the calling thread
-(@xref{Signals and threads}), and has a copy of
+(@pxref{Signals and threads}), and has a copy of
 parameters of the calling thread at the time of creation
-(@xref{Parameters}).
+(@pxref{Parameters}).
 @c JP
 作成されたスレッドは、呼び出したスレッドのシグナルマスクを継承し
 (@ref{Signals and threads}参照)、また呼び出したスレッドの持つ
@@ -15283,7 +15283,7 @@ CPUにそれを処理させます。
 @c EN
 [SRFI-18], [SRFI-21]
 Suspends the calling thread for the period specified by @var{timeout},
-which must be either a @code{<time>} object (@xref{Time}) that
+which must be either a @code{<time>} object (@pxref{Time}) that
 specifies absolute point of time, or a real number that specifies
 relative point of time from the time this procedure is called
 in number of seconds.
@@ -15412,7 +15412,7 @@ if @var{timeout} is given.
 @c COMMON
 
 @c EN
-@var{Timeout} must be either a @code{<time>} object (@xref{Time})
+@var{Timeout} must be either a @code{<time>} object (@pxref{Time})
 that specifies absolute point of time, or a real number that specifies
 relative point of time from the time this procedure is called
 in number of seconds, or @code{#f} that indicates no timeout (default).
@@ -15622,7 +15622,7 @@ locked/not-owned state.
 @c EN
 If @var{mutex} is in unlocked/abandoned state, that is, some other
 thread has been terminated without unlocking it, this procedure
-signals 'abandoned mutex exception' (@xref{Thread exceptions})
+signals 'abandoned mutex exception' (@pxref{Thread exceptions})
 after changing the state of @var{mutex}.
 @c JP
 @var{mutex}がunlocked/abandoned(ロックされておらず放棄された状態)ならば、それはつまり、
@@ -15637,7 +15637,7 @@ If @var{mutex} is in locked state and
 @var{mutex} becomes unlocked.   If @var{timeout} is specified,
 @code{mutex-lock!} returns when the specified time reaches in
 case it couldn't obtain a lock.  You can give @var{timeout}
-an absolute point of time (by @code{<time>} object, @xref{Time}),
+an absolute point of time (by @code{<time>} object, @pxref{Time}),
 or a relative time (by a real number).
 @c JP
 @var{mutex}がlocked(ロックされた状態)で、@var{timeout}が省略されるか@code{#f}ならば、
@@ -15709,7 +15709,7 @@ The thread will be unblocked when other thread signals on
 @var{condition-variable} (see @code{condition-variable-signal!}
 and @code{condition-variable-broadcast!} below), or @var{timeout}
 reaches if it is supplied.  The @var{timeout} argument can be either
-a @code{<time>} object to represent an absolute time point (@xref{Time}),
+a @code{<time>} object to represent an absolute time point (@pxref{Time}),
 a real number to represent a relative time in seconds, or @code{#f} which
 means never.  The calling thread may be unblocked prematurely,
 so it should reacquire the lock of @var{mutex} and checks the
@@ -15961,7 +15961,7 @@ to block until they acquire a lock.
 
 Those arguments can be used to modify the behavior when
 the lock cannot be acquired in timely manner.
-@var{timeout} may be a @code{<time>} object (@xref{Time})
+@var{timeout} may be a @code{<time>} object (@pxref{Time})
 to specify an absolute point of time, or a real number
 to specify the relative time in seconds.  If timeout is
 expired, those procedures give up acquiring the lock,
@@ -16051,7 +16051,7 @@ variable number of arguments.
 @c EN
 Some types of exceptions may be thrown from thread-related procedures.
 These exceptions can be handled by Gauche's exception mechanism
-(@xref{Exceptions}).
+(@pxref{Exceptions}).
 @c JP
 例外のいくつかのタイプは、スレッド関連の手続きから投げられます。
 これらの例外は、Gaucheの例外メカニズム(@ref{Exceptions}参照)により
@@ -16233,8 +16233,8 @@ error port, much like the bourne shell's time command.
 @c COMMON
 
 @c EN
-The current version uses @code{sys-gettimeofday} (@xref{Time}) to
-calculate the elapsed time, and @code{sys-times} (@xref{System inquiry})
+The current version uses @code{sys-gettimeofday} (@pxref{Time}) to
+calculate the elapsed time, and @code{sys-times} (@pxref{System inquiry})
 to calculate user and system CPU times.  So the resolution of these numbers
 depends on these underlying system calls.  Usually the CPU
 time has 10ms resolution, while the elapsed time might have higher
@@ -16676,8 +16676,8 @@ Additional functions: copy procedures (@code{@var{TAG}vector-copy},
 (@code{@var{TAG}vector->vector} and @code{vector->@var{TAG}vector}),
 and some arithmetic functions (@code{@var{TAG}vector-add}, etc.)
 @item
-Implements the collection framework (@xref{Collection framework})
-and the sequence framework (@xref{Sequence framework}).  So the
+Implements the collection framework (@pxref{Collection framework})
+and the sequence framework (@pxref{Sequence framework}).  So the
 methods like @code{map}, @code{for-each}, @code{ref} or @code{subseq}
 can be used on the SRFI-4 vector types.
 @item
@@ -17032,7 +17032,7 @@ Returns the length of the @var{TAG}vector @var{vec}.
 Note that the generic function @code{size-of} can be used
 to obtain the length of @var{vec} as well,
 if you import @code{gauche.collection}
-(@xref{Collection framework}).
+(@pxref{Collection framework}).
 @c JP
 @var{TAG}vector @var{vec}の長さを返します。
 
@@ -18324,7 +18324,7 @@ if the input reaches EOF before @var{size} elements are read.
 
 @c EN
 If the @var{iport} is a buffered port with `modest' or `none'
-buffering mode (@xref{File ports}), @code{read-uvector} may return
+buffering mode (@pxref{File ports}), @code{read-uvector} may return
 before @var{size} elements are read, even if @var{iport}
 hasn't reached EOF.  The ports connected to a pipe or a network socket
 behave so by default.
@@ -18404,7 +18404,7 @@ EOFが、そうでなければ読まれた要素の数 (バイト数ではあり
 
 @c EN
 If the @var{iport} is a buffered port with `modest' or `none'
-buffering mode (@xref{File ports}), @code{read-uvector!} may return
+buffering mode (@pxref{File ports}), @code{read-uvector!} may return
 before all the elements in @var{vec} is filled, even if @var{iport}
 hasn't reached EOF.  The ports connected to a pipe or a network socket
 behave so by default.  If you know there will be enough data arriving and
@@ -18472,13 +18472,13 @@ If you write out a uniform vector except s8vector and u8vector, the
 care should be taken about the endianness, as in @code{read-uvector}.
 The optional argument @var{endian} specifies the output endian.
 When it is omitted, the value of the parameter @code{default-endian}
-is used (@xref{Endianness}).
+is used (@pxref{Endianness}).
 @c JP
 @code{s8vector}と@code{u8vector}以外のユニフォームベクタを与えた場合、
 @code{read-uvector}と同じようにエンディアンの影響を受けることに注意して
 下さい。省略可能引数@var{endian}によって出力のエンディアンを
 指定できます。省略した場合はパラメータ@code{default-endian}の値が
-使われます (@xref{Endianness}参照)。
+使われます (@ref{Endianness}参照)。
 @c COMMON
 @end defun
 
@@ -18971,7 +18971,7 @@ careful to write it.   See the note on finalization below.
 @c EN
 If set, the value must be a procedure that takes two arguments,
 offset and whence.  The meaning of them is the same as the arguments
-to @code{port-seek} (@xref{Common port operations}).
+to @code{port-seek} (@pxref{Common port operations}).
 The procedure must adjust the port's internal read pointer
 so that the next read begins from the new pointer.
 It should return the updated pointer (the byte offset from the
@@ -19590,8 +19590,8 @@ uvectorの型が@code{s8vector}や@code{u8vector}以外である場合、
 The following procedures allow you to use list of characters
 or octets as a source of an input port.  These are (a kind of)
 opposite of @code{port->list} family
-(@xref{Input utility functions}) or @code{port->char-lseq} famliy
-(@xref{Lazy sequences}).
+(@pxref{Input utility functions}) or @code{port->char-lseq} famliy
+(@pxref{Lazy sequences}).
 @c JP
 
 @c COMMON

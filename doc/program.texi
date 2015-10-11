@@ -134,7 +134,7 @@ You can specify this option more than once to use multiple modules.
 @c EN
 Load @var{file} before starting execution of @var{scheme-file} or entering
 the read-eval-print loop.   The file is loaded in the same way as
-@code{load} (@xref{Loading Scheme file}).
+@code{load} (@pxref{Loading Scheme file}).
 You can specify this option more than once to load multiple files.
 @c JP
 起動後、インタラクティブなread-eval-printループに入る前、もしくは@var{scheme-file}
@@ -160,7 +160,7 @@ This option can also be specified multiple times.
 Evaluate @var{scheme-expression}
 before starting execution of @var{scheme-file} or entering
 the read-eval-print loop.   Evaluation is done in the
-@var{interaction-environment} (@xref{Eval and repl}).
+@var{interaction-environment} (@pxref{Eval and repl}).
 You can specify this option more than once to evaluate multiple expressions.
 @c JP
 起動後、インタラクティブなread-eval-printループに入る前、もしくは@var{scheme-file}
@@ -365,7 +365,7 @@ imported for your convenience.
 how Gauche supports R7RS.
 
 (Note: The @code{-r7} option doesn't change reader lexiacl mode
-(@xref{Reader lexical mode}) to @code{strict-r7}.  That's because
+(@pxref{Reader lexical mode}) to @code{strict-r7}.  That's because
 using @code{strict-r7} mode by default prevents many Gauche code
 from being loaded.)
 @c JP
@@ -479,7 +479,7 @@ Gaucheが動的にロードするオブジェクトファイルを探す方法�
 @deftp {Environment variable} GAUCHE_AVAILABLE_PROCESSORS
 @c EN
 You can get the number of system's processors by
-@code{sys-available-processors} (@xref{Environment Inquiry});
+@code{sys-available-processors} (@pxref{Environment Inquiry});
 libraries/programs may use this info to optimize number of
 parallel threads.  But you might change that, for testing
 and benchmarking---e.g. a program automatically uses
@@ -624,7 +624,7 @@ or evaluate @code{(exit)}.
 
 @c EN
 In the interactive session, @code{gosh} loads @code{gauche.interactive}
-module (@xref{Interactive session}) for the
+module (@pxref{Interactive session}) for the
 convenience.  The module also loads a file @file{.gaucherc} under
 the user's home directory if it exists.
 You may put settings there that would help interactive debugging.
@@ -730,7 +730,7 @@ gosh> @i{(+ *2 3)}
 
 @c EN
 If the Scheme expression yields multiple values
-(@xref{Multiple values}), they are printed one by one.
+(@pxref{Multiple values}), they are printed one by one.
 @c JP
 Scheme式が複数の値を返した場合
 (@ref{Multiple values}参照)は、各値が順に表示されます。
@@ -1167,7 +1167,7 @@ extra parenthesis, and
 Gauche tries to provide low-level APIs close to what the underlying
 system provides, but sometimes they vary among systems.  For example,
 POSIX does not require @code{symlink}, so some systems may lack
-@code{sys-symlink} (@xref{Directory manipulation}).  Quite a few
+@code{sys-symlink} (@pxref{Directory manipulation}).  Quite a few
 unix-specific system functions are not available on Windows platform.
 @c JP
 GaucheではOSが提供するAPIに近い低レベルAPIを提供するようにしています。
@@ -1178,7 +1178,7 @@ UNIX系のシステム関数は少なからずWindowsでは使えません。
 
 @c EN
 To allow writing a portable program across those platforms, Gauche
-uses @code{cond-expand} (@xref{Feature conditional}) extensively.
+uses @code{cond-expand} (@pxref{Feature conditional}) extensively.
 A set of extended @emph{feature-identifier}s is provided to check
 availability of specific features.  For example, on systems that
 has @code{symlink}, a feature identifier @code{gauche.sys.symlink}
@@ -1328,7 +1328,7 @@ Or even conditionally "use" the modules:
 
 @c EN
 The traditional technique of testing a toplevel binding at runtime
-(using @code{global-variable-bound?}, @xref{Module introspection})
+(using @code{global-variable-bound?}, @pxref{Module introspection})
 does not work well, since the test is done in runtime, while
 the @code{use} form takes effect at compile time.  It is strongly
 recommended to use @code{cond-expand} whenever possible.

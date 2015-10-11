@@ -1488,7 +1488,7 @@ used in the Scheme world (except in some introspection features),
 and even in the C world you don't usually need to deal with them.
 To get/set the value of a global variable, you can use
 @code{Scm_GlobalVariableRef} and @code{Scm_Define}, respectively
-(@xref{Modules}).
+(@pxref{Modules}).
 
 @deftp {Scheme Object} ScmGloc
 Represents a gloc object.
@@ -2993,7 +2993,7 @@ it doesn't contain illegal byte sequences.  You may explicitly
 make it immutable and/or incomplete by giving
 string constructor flags (@code{SCM_STRING_IMMUTABLE}
 and/or @code{SCM_STRING_INCOMPLETE}) to the @var{flags} argument
-(@xref{Strings}).
+(@pxref{Strings}).
 @end deftypefun
 
 @deftypefun ScmObj Scm_GetOutputstring (ScmPort *@var{port}, int @var{flags})
@@ -3005,7 +3005,7 @@ it doesn't contain illegal byte sequences.  You may explicitly
 make it immutable and/or incomplete by giving
 string constructor flags (@code{SCM_STRING_IMMUTABLE}
 and/or @code{SCM_STRING_INCOMPLETE}) to the @var{flags} argument
-(@xref{Strings}).
+(@pxref{Strings}).
 @end deftypefun
 
 @deftypefun void Scm_ClosePort (ScmPort *@var{port})
@@ -3328,7 +3328,7 @@ are supported), or a path to the local file of gzip-compressed tarball
 of the package source.   If it is a URL, @code{gauche-package} downloads
 it first.  By default @code{gauche-package} uses the current working
 directory, but you can make it use specific directory by customizing
-@file{~/.gauche-package} (@xref{Customizing gauche-package}).
+@file{~/.gauche-package} (@pxref{Customizing gauche-package}).
 
 The following options are recognized by this opertaion.
 

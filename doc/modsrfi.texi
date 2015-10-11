@@ -791,14 +791,14 @@ Gauche は構築された Scheme のプログラムをそのまま実行しま�
 [SRFI-7]
 @c EN
 The @var{feature-id}'s are the same as @code{srfi-0}'s
-(@xref{Feature conditional}).
+(@pxref{Feature conditional}).
 It tells that the following code requires these @var{feature-id}'s.
 
 If a feature-id which is not supported in Gauche is given,
 an error is signaled.
 @c JP
 @var{feature-id} は @code{srfi-0} のものと同じです
-(@xref{Feature conditional})。
+(@pxref{Feature conditional})。
 あとに続くコードが @var{feature-id} を必要とすることを教えます。
 
 Gauche ではサポートされていない feature-id が与えられた場合には、
@@ -1523,7 +1523,7 @@ and @code{string-downcase} can be understood as follow:
 If you need full case mapping that handles the case when
 a character is mapped to more than one characters, use
 the procedures with the same name in @code{text.unicode} module
-(@xref{Full string case conversion}).
+(@pxref{Full string case conversion}).
 @c JP
 一文字がケース変換によって複数文字になるような場合も考慮したい場合は、
 @code{text.unicode}モジュールに定義されている同名の手続きを使ってください
@@ -1634,7 +1634,7 @@ On the other hand, @code{string-map!} modifies @var{s}.
 @defunx string-fold-right kons knil s :optional start end
 [SRFI-13]
 @c EN
-Like @var{fold} and @var{fold-right} (@xref{Walking over lists}),
+Like @var{fold} and @var{fold-right} (@pxref{Walking over lists}),
 but works on a string instead of a list.
 @c JP
 文字列に対して動作する@var{fold}や@var{fold-right} (@ref{Walking over lists}参照)
@@ -1718,9 +1718,9 @@ Splits the string @var{s} into a list of substrings,
 where each substring is a maximal non-empty contiguous
 sequence of characters from the character set @var{token-set}.
 The default of @var{token-set} is @code{char-set:graphic}
-(@xref{SRFI-14 Predefined character-set}).
+(@pxref{SRFI-14 Predefined character-set}).
 
-See also Gauche's built-in @code{string-split} (@xref{String utilities}),
+See also Gauche's built-in @code{string-split} (@pxref{String utilities}),
 which provides similar features but different criteria.
 @c JP
 [SRFI-13]
@@ -1848,7 +1848,7 @@ char-set-complement char-set-complement!
 In Gauche,
 the @code{<char-set>} class inherits @code{<collection>} and implements
 the collection protocol, so that the generic operations defined in
-@code{gauche.collection} can also be used (@xref{Collection framework}).
+@code{gauche.collection} can also be used (@pxref{Collection framework}).
 @c JP
 Gaucheでは@code{<char-set>}クラスは@code{<collection>}を継承し、
 コレクションプロトコルを実装しているので、@code{gauche.collection}モジュールで
@@ -2233,7 +2233,7 @@ conversion methods among them.
 
 @c EN
 On Gauche, time object is supported natively by @code{<time>} class
-(@xref{Time}).  Date object is supported by @code{<date>} class
+(@pxref{Time}).  Date object is supported by @code{<date>} class
 described below.
 @c JP
 Gaucheでは、timeオブジェクトは@code{<time>}クラスとして組み込みで
@@ -2267,7 +2267,7 @@ convenience.
 [SRFI-19]
 @c EN
 UTC time.  Gauche's built-in @code{current-time} always returns
-this type (@xref{Time}).
+this type (@pxref{Time}).
 @c JP
 UTC timeです。Gaucheの組み込みの@code{current-time}は常にこのタイプの時間を
 返します (@ref{Time}参照)。
@@ -2335,7 +2335,7 @@ In the current implementation, this is the same as @code{time-process}.
 @defun current-time :optional time-type
 [SRFI-19]
 @c EN
-Extends Gauche built-in @code{current-time} (@xref{Time}) to take
+Extends Gauche built-in @code{current-time} (@pxref{Time}) to take
 optional @var{time-type} argument to specify the desired time type.
 @var{time-type} must be one of the types described in @ref{SRFI-19 Time types}.
 @c JP
@@ -2349,7 +2349,7 @@ Gauche組み込みの@code{current-time} (@ref{Time}参照)を拡張して、
 [SRFI-19]
 @c EN
 Returns the current date as an instance of @code{<date>} class
-(@xref{SRFI-19 Date}).  If @var{tz-offset} is given, it must be
+(@pxref{SRFI-19 Date}).  If @var{tz-offset} is given, it must be
 an offset from UTC in number of seconds.  If @var{tz-offset} is
 not given, returns the date in local time zone.
 @c JP
@@ -3003,7 +3003,7 @@ character, such as @code{~@@a}.
 @c EN
 This module provides SRFI-27 pseudo random generator interface,
 using Mersenne Twister algorithm
-(@xref{Mersenne-Twister random number generator}) as the backbone.
+(@pxref{Mersenne-Twister random number generator}) as the backbone.
 @c JP
 このモジュールはメルセンヌツイスタアルゴリズム
 (@ref{Mersenne-Twister random number generator} 参照)
@@ -3176,7 +3176,7 @@ srfi-29's "bundle" API, but wants to keep Gauche's @code{format},
 use @code{srfi-29.bundle}.
 
 A localization feature is also provided by @code{text.gettext} module
-(@xref{Localized messages}),
+(@pxref{Localized messages}),
 which is a preferable way of message localization in Gauche.
 This module is provided mainly for porting code that uses
 srfi-29 features.
@@ -3199,7 +3199,7 @@ Gauche の @code{format} をそのままにしておきたいなら、@code{srfi
 を使って下さい。
 
 地域化機能は @code{text.gettext} モジュールによっても提供され
-(@xref{Localized messages})、Gauche でメッセージの地域化をするのなら
+(@pxref{Localized messages})、Gauche でメッセージの地域化をするのなら
 @code{text.gettext} を使うのが好ましい方法です。@code{srfi-29} モジュールは
 主として SRFI-29 の機能を使っているコードをポーティングするためにあります。
 @c COMMON
@@ -3347,7 +3347,7 @@ optional argument.  The referenced value isn't consumed,
 and won't affect the processing of subsequent directives.
 
 Although SRFI-28 spec is compatible to
-Gauche's native @code{format} (@xref{Output}),
+Gauche's native @code{format} (@pxref{Output}),
 this SRFI-29 extention isn't.
 Specifically, the @code{~N@@*} directive of Gauche's @code{format}
 changes the argument pointer to points @var{N}-th optional argument,
@@ -3368,7 +3368,7 @@ SRFI-29 は SRFI-28 の @code{format} 手続きの仕様(これは @code{~a}、
 指令の契機となります。参照された値が消費されることはありません。また、
 参照された値がその後につづく指令の処理に影響を与えることはありません。
 
-SRFI-28 の仕様は Gauche ネイティヴの @code{format} (@xref{Output}) と
+SRFI-28 の仕様は Gauche ネイティヴの @code{format} (@pxref{Output}) と
 互換性がありますが、この SRFI-29 の拡張には互換性がありません。
 具体的には、Gauche ネイティヴの @code{format} の @code{~N@@*} 指定は
 引数ポインタを @var{N}-番目のオプション引数を指すように変更します。
@@ -3396,7 +3396,7 @@ yet another procedure to process command-line
 arguments, defined in SRFI-37 (@ref{srfi-37,[SRFI-37],SRFI-37}).
 
 Unlike @code{gauche.parseopt}
-(@xref{Parsing command-line options}),
+(@pxref{Parsing command-line options}),
 @code{args-fold} provides functional interface, i.e.
 the user's states are explicitly passed via parser's argument and
 return values, and also follows POSIX and GNU getopt guidelines,
@@ -4181,7 +4181,7 @@ then this qualifier is used.
 @c EN
 Generates a series of characters, starting from @var{min} and
 ending at @var{max} (inclusive).  The characters are enumerated
-in the order defined by @code{char<=?} (@xref{Characters}).
+in the order defined by @code{char<=?} (@pxref{Characters}).
 @c JP
 文字@var{min}から@var{max}まで(両端含む)の文字を順に生成します。
 文字順は@code{char<=?}で比べられるのと同じ順になります (@ref{Characters}参照)。
@@ -4448,7 +4448,7 @@ of @var{kons} is returned from @code{vector-fold}.
 The iteration is strictly left to right.
 
 Note that the seed value precedes elements, which is opposite to
-@code{fold} (@xref{Mapping over collection}).  It's an unfortunate
+@code{fold} (@pxref{Mapping over collection}).  It's an unfortunate
 historical glitch; @code{vector-fold-left} would be more consistent
 name.
 @end defun
@@ -4740,7 +4740,7 @@ This srfi provides bit operations on integers, regarding them
 as 2's complement representation.
 
 Most of the functionalities in this module are already provided
-as builtin procedures (@xref{Bitwise operations}).  This srfi
+as builtin procedures (@pxref{Bitwise operations}).  This srfi
 defines popular aliases for many of those procedures, thus
 has better portability.  There are also several additional
 procedures than Gauche's builtin bitwise operations.
@@ -4750,22 +4750,22 @@ procedures than Gauche's builtin bitwise operations.
 
 @defun lognot n
 @defunx bitwise-not n
-Same as builtin @code{lognot} (@xref{Bitwise operations}).
+Same as builtin @code{lognot} (@pxref{Bitwise operations}).
 @end defun
 
 @defun logand n @dots{}
 @defunx bitwise-and n @dots{}
-Same as builtin @code{logand} (@xref{Bitwise operations}).
+Same as builtin @code{logand} (@pxref{Bitwise operations}).
 @end defun
 
 @defun logior n @dots{}
 @defunx bitwise-ior n @dots{}
-Same as builtin @code{logior} (@xref{Bitwise operations}).
+Same as builtin @code{logior} (@pxref{Bitwise operations}).
 @end defun
 
 @defun logxor n @dots{}
 @defunx bitwise-xor n @dots{}
-Same as builtin @code{logxor} (@xref{Bitwise operations}).
+Same as builtin @code{logxor} (@pxref{Bitwise operations}).
 @end defun
 
 @defun bitwise-if mask n0 n1
@@ -4781,18 +4781,18 @@ otherwise, the @var{n}-th bit of @var{n1}.
 
 @defun logtest mask n
 @defunx any-bits-set? mask n
-Same as builtin @code{logtest} (@xref{Bitwise operations}).
+Same as builtin @code{logtest} (@pxref{Bitwise operations}).
 @end defun
 
 @subsection Integer properties
 
 @defun logcount n
 @defunx bit-count n
-Same as builtin @code{logcount} (@xref{Bitwise operations}).
+Same as builtin @code{logcount} (@pxref{Bitwise operations}).
 @end defun
 
 @defun integer-length n
-Same as builtin @code{integer-length} (@xref{Bitwise operations}).
+Same as builtin @code{integer-length} (@pxref{Bitwise operations}).
 @end defun
 
 @defun log2-binary-factors n
@@ -4816,26 +4816,26 @@ hence the alias @code{first-set-bit}.
 
 @defun logbit? index n
 @defunx bit-set? index n
-Same as builtin @code{logbit?} (@xref{Bitwise operations}).
+Same as builtin @code{logbit?} (@pxref{Bitwise operations}).
 @end defun
 
 @defun copy-bit index n bit
-Same as builtin @code{copy-bit} (@xref{Bitwise operations}).
+Same as builtin @code{copy-bit} (@pxref{Bitwise operations}).
 @end defun
 
 @subsection Field of bits
 
 @defun bit-field n start end
-Same as builtin @code{bit-field} (@xref{Bitwise operations}).
+Same as builtin @code{bit-field} (@pxref{Bitwise operations}).
 @end defun
 
 @defun copy-bit-field to from start end
-Same as builtin @code{copy-bit-field} (@xref{Bitwise operations}).
+Same as builtin @code{copy-bit-field} (@pxref{Bitwise operations}).
 @end defun
 
 @defun ash n count
 @defunx arithmetic-shift n count
-Same as builtin @code{ash} (@xref{Bitwise operations}).
+Same as builtin @code{ash} (@pxref{Bitwise operations}).
 @end defun
 
 @defun rotate-bit-field n count start end
@@ -4899,7 +4899,7 @@ each value as a binary digit.  If @var{n} is nonnegative integer,
 @deftp {Module} srfi-69
 @mdindex srfi-69
 This module is a thin adaptor on Gauche's built-in hashtables
-(@xref{Hashtables}).  This is provided for the compatibility
+(@pxref{Hashtables}).  This is provided for the compatibility
 to the portable libraries; the hashtable object created by
 this module's @code{make-hash-table} is the same as the one
 created by Gauche's built-in, and you can pass the table to
@@ -5048,7 +5048,7 @@ is limited between 0 and @code{(- bound 1)}, inclusive.
 @defun string-hash obj :optional bound
 @defunx string-ci-hash obj :optional bound
 [SRFI-69]
-These are like @code{srfi-13}'s (@xref{String library}), except
+These are like @code{srfi-13}'s (@pxref{String library}), except
 these don't take @var{start} and @var{end} argument.
 @end defun
 
@@ -5067,7 +5067,7 @@ This is Gauche's @code{eq-hash}, except this one can take bound argument.
 @c EN
 This srfi defines a portable way to access the underlying system's
 environment variables.  Gauche supports such procedures built-in
-(@xref{Environment Inquiry}),
+(@pxref{Environment Inquiry}),
 but portable programs may want to use srfi API instead.
 @c JP
 このsrfiはシステムの環境変数にアクセスするポータブルな方法を定義しています。
@@ -5127,7 +5127,7 @@ the optional argument.
 A portable basic socket interface.
 
 Although comprehensive network API is provided by @code{gauche.net}
-(@xref{Networking}), it is Gauche-specific.  This srfi provides
+(@pxref{Networking}), it is Gauche-specific.  This srfi provides
 a small subset of socket operations, but it offers a portable way
 to create applications that needs simple networking.
 
@@ -5442,21 +5442,21 @@ Returns a string @code{"Gauche"}.
 @defun implementation-version
 [SRFI-112]
 Returns a string of Gauche's version.  The same as @code{gauche-version}
-(@xref{Environment Inquiry}).
+(@pxref{Environment Inquiry}).
 @end defun
 
 @defun cpu-architecture
 [SRFI-112]
 Returns a string of CPU architecture info, such as @code{"x86_64"}.
 Same as the @code{machine} field of the return value of @code{sys-uname}
-(@xref{System inquiry}).
+(@pxref{System inquiry}).
 @end defun
 
 @defun machine-name
 [SRFI-112]
 Returns the host name.  Same as the @code{nodename} field of
 the return value of @code{sys-uname}.
-(@xref{System inquiry}).
+(@pxref{System inquiry}).
 @end defun
 
 @defun os-name
@@ -6228,7 +6228,7 @@ That is, @code{make-list-comparator} can be written in
 
 This can be used to compare list-like structures.  For example,
 the following call returns a comparator that compares elements
-of two lazy streams (@xref{Stream library}).
+of two lazy streams (@pxref{Stream library}).
 
 @example
 (make-listwise-comparator stream?
@@ -6435,7 +6435,7 @@ minimum or maximum compared by @var{comparator}.
 @mdindex srfi-117
 A library of simple queue based on lists.
 Gauche has a queue support in @code{data.queue} module, which also
-includes MT-safe queue (@xref{Queue}).  This library is implemented
+includes MT-safe queue (@pxref{Queue}).  This library is implemented
 on top of @code{data.queue}'s @code{<queue>} object and mainly provided
 for portable code.
 
@@ -6452,7 +6452,7 @@ in the original queue.
 @defun make-list-queue lis :optional last
 [SRFI-117]
 Creates and returns a list-queue whose initial content is @var{list} @dots{}.
-In Gauche, a list queue is just an instance of @code{<queue>} (@xref{Queue}).
+In Gauche, a list queue is just an instance of @code{<queue>} (@pxref{Queue}).
 
 The cells in @var{lis} are owned by the queue; the caller shouldn't mutate
 it afterwords, nor assume its structure remains the same.
@@ -6465,7 +6465,7 @@ and just hold a reference to @var{last} as the tail of the queue.
 @defun list-queue elt @dots{}
 [SRFI-117]
 Creates and returns a list-queue whose initial content is @var{elt} @dots{}.
-In Gauche, a list queue is just an instance of @code{<queue>} (@xref{Queue}).
+In Gauche, a list queue is just an instance of @code{<queue>} (@pxref{Queue}).
 @end defun
 
 @defun list-queue-copy queue
@@ -6691,7 +6691,7 @@ arguments @var{src-start} and @var{src-end} limits the region of
 @var{src} to be used.
 
 Be aware that the order of arguments differ from
-SRFI-13's @code{string-replace} (@xref{SRFI-13 other string operations});
+SRFI-13's @code{string-replace} (@pxref{SRFI-13 other string operations});
 @code{string-replace!} resembles to @code{string-copy!} (also in SRFI-13),
 rather than @code{string-replace}.
 

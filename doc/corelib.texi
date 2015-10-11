@@ -182,9 +182,9 @@ Returns a class metaobject of @var{obj}.
 Note: In Gauche, you can redefine existing user-defined classes.
 If the new definition has different configuration of the instance,
 @code{class-of} on existing instance triggers instance updates;
-@xref{Class redefinition} for the details.  Using
+@pxref{Class redefinition} for the details.  Using
 @code{current-class-of} suppresses instance updates
-(@xref{Accessing instance}).
+(@pxref{Accessing instance}).
 @c JP
 註: Gaucheでは、ユーザ定義クラスを再定義することができます。
 新たな定義でインスタンスの構造が変更された場合、以前のクラスから作られた
@@ -442,7 +442,7 @@ are topologically equal, i.e., if one has a shared substructure,
 the other has a shared substructure in the same way.
 @code{Equal?} can't handle it; module @code{util.isomorph}
 provides a procedure @code{isomorphic?} which does the job
-(@xref{Determine isomorphism}).
+(@pxref{Determine isomorphism}).
 @c JP
 しばしば、ふたつの複合型オブジェクトに関して、両者がトポロジー的に等しいこと、
 すなわち一方が共有する部分構造を持っている場合にもう一方も同じように部分構造を
@@ -679,7 +679,7 @@ a record that bundles closely-related comparison procedures together.
 @c EN
 The APIs of comparators are defined in SRFI-114, which is rather
 large.  Gauche supports essential APIs in the core.  To access full
-set of APIs, use @code{srfi-114} module (@xref{Comparators}).
+set of APIs, use @code{srfi-114} module (@pxref{Comparators}).
 @c JP
 比較器のAPIはSRFI-114で定義されていますがかなり大きいので、
 Gaucheでは重要なAPIだけを組み込みで用意しています。
@@ -739,10 +739,10 @@ by @code{comparator-comparison-procedure?} and
 @c COMMON
 
 @c EN
-Some built-in data types such as hashtables (@xref{Hashtables})
-and treemaps (@xref{Treemaps}), take a comparator in their constructors.
+Some built-in data types such as hashtables (@pxref{Hashtables})
+and treemaps (@pxref{Treemaps}), take a comparator in their constructors.
 The sort and merge procedures also accept comparators
-(@xref{Sorting and merging}).
+(@pxref{Sorting and merging}).
 @c JP
 Gauche組み込みのデータ型は、コンストラクタで比較器を取ることができます
 (例:ハッシュテーブル(@ref{Hashtables}参照)、
@@ -948,8 +948,8 @@ It can compare most of Scheme objects, even between objects with
 different types.  The ordering of heterogeneous objects are
 purely artificial---whether @code{#t} is smaller than @code{#(a b c)} or
 not doesn't mean anything, but having some consistent order
-allows us to put Scheme objects in treemaps (@xref{Treemaps}) or heaps
-(@xref{Heap}).  The @code{default-comparator} gives this expedient
+allows us to put Scheme objects in treemaps (@pxref{Treemaps}) or heaps
+(@pxref{Heap}).  The @code{default-comparator} gives this expedient
 ordering.
 @c JP
 この変数は、様々な場所でオブジェクトを比較する際のデフォルトとして使われる
@@ -968,7 +968,7 @@ ordering.
 (NB: I say ``almost'' because, although @code{default-comparator}
 can order built-in objects, and objects with different types,
 the ordering of objects of the same user-defined type depends on
-how you define @code{object-compare} method (@xref{Comparison}).
+how you define @code{object-compare} method (@pxref{Comparison}).
 It's up to the user to make two objects of user-defined types be
 comparable or not.)
 @c JP
@@ -1045,7 +1045,7 @@ The @code{*-ci-*} variants uses case-insensitive comparison.
 All have appropriate hash functions, too.
 
 The string case-insensitive comparison uses Unicode full-string case
-conversion (@xref{Full string case conversion}).
+conversion (@pxref{Full string case conversion}).
 @c JP
 それぞれ、真偽値、文字、文字列を比較する比較器です。
 @code{*-ci-*}がついている手続きは大文字小文字の区別をしません。
@@ -2646,11 +2646,11 @@ GaucheはSLIBの元々の``logical''モジュールに合わせました。
 @c COMMON
 
 @c EN
-SRFI-60 (@xref{Integers as bits}) defines both names, and also
+SRFI-60 (@pxref{Integers as bits}) defines both names, and also
 some additional procedures.  If you're porting libraries written
 for other Scheme, you might want to check it.
 @c JP
-SRFI-60 (@xref{Integers as bits}) は両方の流儀の名前を定義しており、
+SRFI-60 (@pxref{Integers as bits}) は両方の流儀の名前を定義しており、
 さらにいくつかの追加の手続きも用意しています。他のScheme向けに書かれた
 コードをGaucheに移植する際には有用でしょう。
 @c COMMON
@@ -2906,9 +2906,9 @@ Schemeの世界では、数値がマシン上でどのように表現されて�
 
 @c EN
 Gauche's binary I/O procedures, such as in
-the @code{binary.io} module (@xref{Binary I/O}) and
+the @code{binary.io} module (@pxref{Binary I/O}) and
 @code{write-uvector}/@code{read-uvector!}
-(@xref{Uniform vectors}), take optional @var{endian} argument
+(@pxref{Uniform vectors}), take optional @var{endian} argument
 to specify the endianness.
 @c JP
 @code{binary.io}モジュール(@ref{Binary I/O}参照)や
@@ -2968,7 +2968,7 @@ use the parameter @code{default-endian}:
 
 @deffn {Parameter} default-endian
 @c EN
-This is a dynamic parameter (@xref{Parameters}) to specify
+This is a dynamic parameter (@pxref{Parameters}) to specify
 the endianness the binary I/O routines use when its @var{endian}
 argument is omitted.  The initial value of this parameter is
 the system's native endianness.
@@ -3093,7 +3093,7 @@ However, @code{#<undef>} may be used in certain
 occasions to indicate that a value is not provided for
 the variable.  For example, an optional procedure parameter
 without default value is bound to @code{#<undef>} if an
-actual argument is not given (@xref{Making Procedures}).
+actual argument is not given (@pxref{Making Procedures}).
 Note that it cannot be distinguished from the case
 a value is actually provided, and the value just happens
 to be @code{#<undef>}.  If you get an @code{#<undef>},
@@ -3402,7 +3402,7 @@ of inexact numbers.
 @c EN
 This creates a list eagerly.  If the list is short it is fast
 enough, but if you want to count tens of thousands of numbers,
-you may want to do so lazily.  See @code{liota} (@xref{Lazy sequences}).
+you may want to do so lazily.  See @code{liota} (@pxref{Lazy sequences}).
 @c JP
 この手続きはリストを最後まで作って返します。リストが短ければ
 十分速いですが、何万という数をリストにしたければ、遅延リストを使った方が
@@ -4002,7 +4002,7 @@ the list is exhausted.
 @end example
 
 @c EN
-Note that the @code{gauche.collection} module (@xref{Collection framework})
+Note that the @code{gauche.collection} module (@pxref{Collection framework})
 extends @code{map} to work on any type of collection.
 @c JP
 @code{gauche.collection}モジュール(@ref{Collection framework}参照)
@@ -4077,7 +4077,7 @@ cdrs of the current pairs.
 @c EN
 Note: The name @code{map*} is along the line of
 @code{list*}/@code{cons*} that can produce improper list
-(@xref{List constructors}, @xref{SRFI-1 List utilities}).
+(@xref{List constructors}, @pxref{SRFI-1 List utilities}).
 @c JP
 註: @code{map*}という名前は、正規でないリストを作り得る@code{list*}/@code{cons*}からの
 連想でつけられました
@@ -4099,7 +4099,7 @@ The results of @var{proc} are discarded.  The return value of
 @c COMMON
 
 @c EN
-Note that the @code{gauche.collection} module (@xref{Collection framework})
+Note that the @code{gauche.collection} module (@pxref{Collection framework})
 extends @code{for-each} to work on any type of collection.
 @c JP
 @code{gauche.collection}モジュール(@ref{Collection framework}参照)
@@ -4634,7 +4634,7 @@ instead of @code{equal?}.
 Returns @code{(cons (cons @var{obj1} @var{obj2}) @var{obj3})}.
 Useful to put an entry at the head of an associative list.
 
-(This procedure is defined in SRFI-1 as @code{alist-cons}; @xref{List library}).
+(This procedure is defined in SRFI-1 as @code{alist-cons}; @pxref{List library}).
 @c JP
 @code{(cons (cons @var{obj1} @var{obj2}) @var{obj3})} を返します。
 連想リストの先頭に新しいエントリを加えるのに便利です。
@@ -4878,7 +4878,7 @@ hex-escaped characters.
 @c EN
 If the interpreter is running in case-insensitive mode, this syntax
 can be used to include uppercase characters in a symbol
-(@xref{Case-sensitivity}).
+(@pxref{Case-sensitivity}).
 @c JP
 インタプリタが大文字小文字を区別しないモードで走っている場合は、
 大文字を含むシンボルを表記するときにも使えます (@ref{Case-sensitivity}参照)。
@@ -5642,7 +5642,7 @@ Unicode characters.)   If Gauche is compiled with encoding
 @code{euc-jp} or @code{sjis}, the meaning of @code{\xNN} beyond 
 ASCII range differs from 0.9.3.3 or before.
 
-If you set the reader mode to @code{legacy} (@xref{Reader lexical mode}),
+If you set the reader mode to @code{legacy} (@pxref{Reader lexical mode}),
 @code{#\xNN} is read as before, keeping the compatibility
 (but it isn't compatible to R7RS).  Alternatively,
 you can use @code{#\uNNNN}, or a character itself, to
@@ -5883,7 +5883,7 @@ same as @code{char->integer} and @code{integer->char}.
 
 When Gauche's internal encoding differs from UTF-8, these procedures
 implicitly loads @code{gauche.charconv} module to convert internal
-character code to UCS or vice versa (@xref{Character code conversion}).
+character code to UCS or vice versa (@pxref{Character code conversion}).
 If @var{char} doesn't have corresponding UCS codepoint,
 @code{char->ucs} returns @code{#f}.  If UCS codepoint @var{n} can't
 be represented in the internal character encoding, @code{ucs->char}
@@ -5950,7 +5950,7 @@ eszett (latin small letter sharp S, U+00df), which is
 is mapped to two capital S's in string context,
 but @code{char-upcase #\ß} returns #\ß.  To get a full mapping,
 use @code{string-upcase} etc. in @code{text.unicode} module
-(@xref{Full string case conversion}).
+(@pxref{Full string case conversion}).
 @c JP
 文字対文字のマッピングでは、一文字が複数文字に展開されるようなケースマッピングは
 扱いません。有名な例はeszett (latin small letter sharp S, U+00df)で、
@@ -6107,7 +6107,7 @@ Character set class.  Character set object represents a set of characters.
 Gauche provides built-in support of character set creation and
 a predicate that tests whether a character is in the set or not.
 
-The class implements the collection protocol (@xref{Collection framework}),
+The class implements the collection protocol (@pxref{Collection framework}),
 so that the standard collection methods provided in the 
 @code{gauche.collection} module can be used.
 
@@ -6115,7 +6115,7 @@ An instance of @code{<char-set>} is applicable to a character,
 and works as a membership predicate; see @code{char-set-contains?} below.
 
 Further operations, such as set algebra, is defined in SRFI-14
-module (@xref{Character-set library}).
+module (@pxref{Character-set library}).
 @c JP
 文字の集合を取り扱う、文字集合(キャラクタセット)のクラスです。
 Gaucheは文字集合オブジェクトのサポートと、
@@ -6712,7 +6712,7 @@ in Gauche, and should be avoided.   That kind of algorithms unnecessarily
 assumes underlying string allocation and representation mechanism,
 which Gauche doesn't follow.
 You can use an output string port for a string construction
-(@xref{String ports}).
+(@pxref{String ports}).
 Even creating a list of characters and
 using @code{list->string} is faster than using @code{make-string} and
 @code{string-set!}.
@@ -6924,7 +6924,7 @@ reference syntax in some languages).
 
 The old style of string interpolation syntax was taken from quasiquote
 syntax, because those two are conceptually 
-similar operations (@xref{Quasiquotation}).
+similar operations (@pxref{Quasiquotation}).
 However, since comma character is frequently used in string literals,
 it was rather awkward.
 
@@ -6934,12 +6934,12 @@ the following reasons.
 @itemize
 @item
 Traditionally, Lisp's string formatter @code{format} uses @code{~} to introduce
-format directives (@xref{Formatting output}).  Lispers are used to
+format directives (@pxref{Formatting output}).  Lispers are used to
 scan @code{~}'s in a string as variable portions.
 @item
 Gauche's @code{~} is a universal accessor, and the operator has a nuance
 of ``taking something out of it''
-(@xref{Universal accessor}).
+(@pxref{Universal accessor}).
 @item
 Clojure, a new Lisp dialect, adopted @code{~} as the unquote character in
 the quasiquote syntax, instead of commas.
@@ -7158,7 +7158,7 @@ German eszett:
 @c EN
 R7RS requires @code{string-ci}* procedures to use string case folding.
 Gauche provides R7RS-conformant case insensitive comparison procedures
-in @code{text.unicode} (@xref{Full string case conversion}).
+in @code{text.unicode} (@pxref{Full string case conversion}).
 If you write in R7RS, importing
 @code{(scheme char)} library, you'll use @code{text.unicode}'s
 @code{string-ci}* procedures.
@@ -7295,7 +7295,7 @@ See @code{substring} above for the condition that @var{start} and
 
 @c EN
 Node: R7RS's destructive version @code{string-copy!} is provided
-by @code{srfi-13} module (@xref{String library}).
+by @code{srfi-13} module (@pxref{String library}).
 @c JP
 註: R7RSの破壊的バージョン@code{string-copy!}は@code{srfi-13}モジュールで
 提供されます (@ref{String library}参照)。
@@ -7566,7 +7566,7 @@ as is.
 
 @c EN
 See also @code{string-tokenize} in
-(@xref{SRFI-13 other string operations}).
+(@pxref{SRFI-13 other string operations}).
 @c JP
 @code{string-tokenize} (@ref{SRFI-13 other string operations})
 も参照して下さい。
@@ -7600,7 +7600,7 @@ concatenating a string with other incomplete strings, for example.
 @c EN
 Incomplete strings should be regarded as an exceptional case.
 It used to be a way to handle byte strings, but now we have
-u8vector (@xref{Uniform vectors}) for that purpose.
+u8vector (@pxref{Uniform vectors}) for that purpose.
 In fact, we're planning to remove it in the future releases.
 @c JP
 不完全文字列は例外的な状況であるとみなすべきです。これまではバイト列処
@@ -8311,7 +8311,7 @@ in some other Scheme implementations.
 To apply the match repeatedly on the input string, or to match
 from the input stream (such as the data from the port),
 you may want to check @code{grxmatch} in @code{gauche.generator}
-(@xref{Generator operations}).
+(@pxref{Generator operations}).
 @c JP
 入力から複数のマッチを取り出したり、あるいはストリーム入力 (ポートから読み出すデータなど)
 にマッチをかけたい場合は、@code{gauche.generator}モジュールの@code{grxmatch}
@@ -8923,7 +8923,7 @@ one by one.  A @var{clause} may be one of the following pattern.
 @table @code
 @item (@var{re} (@var{var} @dots{}) @var{form} @dots{})
 @c EN
-@var{Re} must be a literal regexp object (@xref{Regular expressions}).
+@var{Re} must be a literal regexp object (@pxref{Regular expressions}).
 If the result of @var{string-expr} matches @var{re},
 the match result is bound to @var{var}s
 and @var{form}s are evaluated, and @code{rxmatch-case} returns
@@ -9234,11 +9234,11 @@ you can use various generic functions such as @code{map} and @code{fold}
 on it.   @xref{Collection framework}, and @xref{Sequence framework}.
 
 If you keep only a homogeneous numeric type, you may be able
-to use SRFI-4 homogeneous vectors (@xref{Homogeneous vectors}).
+to use SRFI-4 homogeneous vectors (@pxref{Homogeneous vectors}).
 
 R7RS defines bytevectors; in Gauche, they're just @code{u8vector}s
 in @code{gauche.uvector} module (r7rs modules defines aliases.
-@xref{R7RS base library}).
+@pxref{R7RS base library}).
 
 @xref{Vector library}, for additional operations on vectors.
 @c JP
@@ -9539,7 +9539,7 @@ function by @code{(map-to <vector> proc vec1 vec2 @dots{}}.
 
 @c EN
 Note: SRFI-43 also provides @code{vector-map}, but the API is slightly
-different (@xref{Vector library}).
+different (@pxref{Vector library}).
 SRFI-43's @code{vector-map} is equivalent to 
 @code{vector-map-with-index} below.
 @c JP
@@ -9604,7 +9604,7 @@ length of input vectors.
 
 @c EN
 Note: SRFI-43 provides @code{vector-map!} with slightly different API
-(@xref{Vector library}).
+(@pxref{Vector library}).
 It is equivalent to @code{vector-map-with-index!} below.
 @c JP
 註: SRFI-43は@code{vector-map!}を提供していますが、APIが少し異なります
@@ -9617,7 +9617,7 @@ SRFI-43の@code{vector-map!}は下に説明する@code{vector-map-with-index!}�
 @c EN
 Like @code{vector-map!}, but @var{proc} receives the current
 index as the first argument.  This is equivalent to SRFI-43's
-@code{vector-map!} (@xref{Vector library}).
+@code{vector-map!} (@pxref{Vector library}).
 @c JP
 @code{vector-map!}と似ていますが、@var{proc}の第1引数に
 現在のインデックスが渡されます。SRFI-43で@code{vector-map!}
@@ -9651,7 +9651,7 @@ calls @var{proc} with @var{i}-th elements of @var{vec1} @var{vec2}
 
 @c EN
 Note: SRFI-43 provides @code{vector-for-each} with slightly different
-API (@xref{Vector library}).  It is equivalent to 
+API (@pxref{Vector library}).  It is equivalent to
 @code{vector-for-each-with-index} described below.
 @c JP
 註: SRFI-43も@code{vector-for-each}を提供していますが、APIが少し異なります
@@ -9686,7 +9686,7 @@ This is equivalent to SRFI-43's @code{vector-for-each}.
 
 @c EN
 Gauche's native hashtable API is Gauche-specific.   For portable
-programs, you can use @code{srfi-69} (@xref{Basic hash tables})
+programs, you can use @code{srfi-69} (@pxref{Basic hash tables})
 for the time being.
 
 There will be a revised hashtable API as a part of R7RS-large,
@@ -9714,7 +9714,7 @@ Hash table class.  Inherits @code{<collection>} and @code{<dictionary>}.
 @c EN
 Creates a hash table.  The optional @var{comparator} argument
 specifies key equality and hash function.  It can be either a
-comparator (@xref{Basic comparators}), or one of the symbols 
+comparator (@pxref{Basic comparators}), or one of the symbols
 @code{eq?}, @code{eqv?}, @code{equal?} or @code{string=?}.
 If it is one of those symbols, @code{eq-comparator},
 @code{eqv-comparator}, @code{equal-comparator} and
@@ -10470,8 +10470,8 @@ gosh> (weak-vector-ref v 0)
 @c EN
 The weak vector class.  Inherits @code{<sequence>} and @code{<collection>},
 so you can use
-@code{gauche.collection} (@xref{Collection framework}) and
-@code{gauche.sequence} (@xref{Sequence framework}).
+@code{gauche.collection} (@pxref{Collection framework}) and
+@code{gauche.sequence} (@pxref{Sequence framework}).
 @c JP
 Weak ベクタのクラスです。@code{<sequence>}と@code{<collection>}を継承しているので、
 @code{gauche.collection} (@ref{Collection framework}参照) と
@@ -10546,12 +10546,12 @@ weak ベクタ @var{wvec}の@var{k}番目の要素を@var{obj}に変更します
 
 @c EN
 In Scheme, @emph{procedures} are fundamental blocks to build
-a program (@xref{Making Procedures}).
+a program (@pxref{Making Procedures}).
 A procedure represents a certain computation,
 possibly parameterized, and can be @emph{applied} to the actual
 arguments to execute the computation.  Scheme also provides
 the means to extract the continuation of the current computation
-and wraps it in a procedure (@xref{Continuations}).
+and wraps it in a procedure (@pxref{Continuations}).
 @c JP
 Schemeでは、プログラムを組み立てる最も基本となるブロックが@emph{手続き}です
 (@ref{Making Procedures}も参照)。
@@ -10627,7 +10627,7 @@ Gaucheが最初から手続きとして呼び出せるオブジェクトとし�
 
 @c EN
 Since you can make any type of objects applicable at any time
-(@xref{Applicable objects}), the fact that @code{procedure?} returned
+(@pxref{Applicable objects}), the fact that @code{procedure?} returned
 @code{#f} doesn't mean that the object cannot be applied.
 To check if an object can be applied or not, use @code{applicable?} below.
 @c JP
@@ -10683,7 +10683,7 @@ Gaucheに文句を言われることはありません。)
 @c EN
 This procedure takes applicable objects into account.  So, for example,
 @code{(applicable? #/a/ <string>)} returns @code{#t}, for the regular
-expressions are applicable to a string (@xref{Regular expressions}).
+expressions are applicable to a string (@pxref{Regular expressions}).
 @c JP
 この手続きは適用可能オブジェクトも考慮に入れます。
 従って、例えば@code{(applicable? #/a/ <string>)}は@code{#t}を返します。
@@ -10983,7 +10983,7 @@ Partial application versions of @code{apply}, @code{map} and @code{for-each}.
 @defunx assoc$ item
 @c EN
 Partial application versions of some srfi-1 procedures
-(@xref{List library}).
+(@pxref{List library}).
 @c JP
 SRFI-1(@ref{List library}参照)の手続に対応する部分適用版手続。
 @c COMMON
@@ -11132,7 +11132,7 @@ returns @code{#f} without calling further @var{pred}s.
 
 @c EN
 Gauche supports optional and keyword arguments in extended
-lambda syntax (@xref{Making Procedures}).  However, you can
+lambda syntax (@pxref{Making Procedures}).  However, you can
 also use the following macros to parse optional and keyword
 arguments, without relying Gauche's extension.
 @c JP
@@ -11932,7 +11932,7 @@ any one of the generators returns EOF.
 @defun generator-fold-right proc seed gen gen2 @dots{}
 @c EN
 Works like @code{fold-right} on the generated values by generator
-procedures @var{gen} @var{gen2} @dots{} (@xref{Walking over lists},
+procedures @var{gen} @var{gen2} @dots{} (@pxref{Walking over lists},
 for the details of @code{fold-right}).
 @c JP
 ジェネレータである手続き@var{gen} @var{gen2} @dots{}が生成する値に対して
@@ -12012,7 +12012,7 @@ are collected into a list and returned.
 
 @c EN
 The same effects can be achieved by combining @code{generator->list}
-and @code{gmap} (@xref{Generator operations}).  This procedure
+and @code{gmap} (@pxref{Generator operations}).  This procedure
 is provided for the backward compatibility.
 @c JP
 @code{generator->list}と@code{gmap}(@ref{Generator operations}参照)の組み合わせと
@@ -12180,7 +12180,7 @@ type of @code{force} is @code{Promise a -> a}).
 @c EN
 For the real-world example of use of @code{lazy},
 you may want to check the implementation of @code{util.stream}
-(@xref{Stream library}).
+(@pxref{Stream library}).
 @c JP
 @code{lazy}の実用的な使用例については@code{util.stream}
 (@ref{Stream library})の実装をチェックするといいでしょう。
@@ -12308,7 +12308,7 @@ Schemeの典型的な遅延ストリーム実装に比べて次のような違�
 When you construct a lazy sequence in an iterative lazy algorithm,
 only @code{cdr} side of the lazy pair is lazily evaluated;
 the @code{car} side is evaluated immediately.  On the other hand, with
-@code{stream-cons} in @code{util.stream} (@xref{Stream library}),
+@code{stream-cons} in @code{util.stream} (@pxref{Stream library}),
 both @code{car} and @code{cdr} sides won't be evaluated until
 it is absolutely needed.
 @c JP
@@ -12366,7 +12366,7 @@ an item at a time.  Returning EOF marks the end of the sequence
 (EOF itself isn't included in the sequence).
 For example, @code{read-char} can work as a generator.
 Gauche has a set of convenient utilities to deal with generators
-(@xref{Generators}).
+(@pxref{Generators}).
 @c JP
 ジェネレータ手続き@var{generator}から生成される値の列を、遅延シーケンスとして返します。
 ジェネレータ手続きは引数を取らない手続きで、呼ばれる度に次の値を返すようなものです。
@@ -12588,7 +12588,7 @@ you want to use @code{generator->lseq} whenever possible.
 @defmac lcons* x @dots{} tail
 @defmacx llist* x @dots{} tail
 @c EN
-A lazy version of @code{cons*} (@xref{List constructors}).
+A lazy version of @code{cons*} (@pxref{List constructors}).
 Both @code{lcons*} and @code{llist*} do the same thing; both
 names are provided for the symmetry to @code{cons*}/@code{list*}.
 @c JP
@@ -12650,7 +12650,7 @@ has inexact numbers.
 
 @defun liota :optional (count +inf.0) (start 0) (step 1)
 @c EN
-A lazy version of @code{iota} (@xref{List constructors}); returns
+A lazy version of @code{iota} (@pxref{List constructors}); returns
 a lazy sequence of @var{count} integers (default: positive infinity),
 starting from @var{start} (default: 0), stepping by @var{step} (default: 1).
 @c JP
@@ -12704,7 +12704,7 @@ and don't ever read from @var{port} directly.
 
 @c EN
 You can also convert input data into various lists by
-the following expressions (@xref{Input utility functions}).
+the following expressions (@pxref{Input utility functions}).
 Those procedures read the port eagerly until EOF and returns
 the whole data in a list, while @code{lseq} versions read
 the port lazily.
@@ -12752,7 +12752,7 @@ that creates lazy sequences.
 @c EN
 Let's consider calculating an infinite sequence of prime numbers.
 (Note: If you need prime numbers in your application, you don't
-need to write one; just use @code{math.prime}. @xref{Prime numbers}).
+need to write one; just use @code{math.prime}. @pxref{Prime numbers}).
 @c JP
 素数の無限列を計算してみましょう。(註:
 アプリケーションで素数が必要な場合は、わざわざ書かなくても
@@ -14904,7 +14904,7 @@ R7RSでは、@code{current-input-port}等の初期値はテキストポートで
 Some ports can be used to convert a data stream from one format
 to another; one of such applications is character code conversion
 ports, provided by @code{gauche.charconv} module
-(@xref{Character code conversion}, for details).
+(@pxref{Character code conversion}, for details).
 @c JP
 @item 変換
 ポートはまた、データストリームを変換するのにも使えます。例えば@code{gauche.charconv}
@@ -14915,10 +14915,10 @@ ports, provided by @code{gauche.charconv} module
 @c EN
 @item Extra features
 There are also a ports with special functionality.
-A coding-aware port (@xref{Coding-aware ports}) recognizes a special
+A coding-aware port (@pxref{Coding-aware ports}) recognizes a special
 "magic comment" in the file to know which character encoding the
 file is written.
-Virtual ports (@xref{Virtual ports}) allows you to program the
+Virtual ports (@pxref{Virtual ports}) allows you to program the
 behavior of the port in Scheme.
 @c JP
 @item 追加機能
@@ -15079,7 +15079,7 @@ Gaucheでは、これらのポートの初期値はテキスト入出力もバ�
 
 @c EN
 Values of the current ports can be temporarily changed by @code{parameterize}
-(@xref{Parameters}), though you might want the convenience procedures
+(@pxref{Parameters}), though you might want the convenience procedures
 such as @code{with-output-to-string} or @code{with-input-from-file}
 in typical cases.
 @c JP
@@ -15540,7 +15540,7 @@ No action is taken, and the function returns @code{#f}.
 This argument specifies the buffering mode.  The following values are
 allowed.
 The port's buffering mode can be get/set by @code{port-buffering}.
-(@xref{Common port operations}).
+(@pxref{Common port operations}).
 @c JP
 この引数はバッファリングモードを指定します。以下の値が設定できます。
 ポートのバッファリングモードは手続き@code{port-buffering}
@@ -15634,10 +15634,10 @@ is a string or a symbol that names a character encoding scheme (CES).
 
 For @code{open-input-file}, it can be a wildcard CES (e.g. @code{*jp})
 to guess the file's encoding heuristically
-(@xref{Autodetecting the encoding scheme}),
+(@pxref{Autodetecting the encoding scheme}),
 or @code{#t}, in which case we assume the input file itself has magic
 encoding comment and use @code{open-coding-aware-port}
-(@xref{Coding-aware ports}).
+(@pxref{Coding-aware ports}).
 
 If this argument is given, Gauche automatically loads
 @code{gauche.charconv} module and converts the input/output characters
@@ -15665,7 +15665,7 @@ CESについて詳しくは@ref{Supported character encoding schemes}を参照�
 This argument may be used with the @var{encoding} argument to specify
 the buffer size of character encoding conversion.  It is passed as
 a @var{buffer-size} argument of the conversion port constructors
-(@xref{Conversion ports}).
+(@pxref{Conversion ports}).
 
 Usually you don't need to give this argument; but if you need to guess
 the input file encoding, larger buffer size may work better since guessing
@@ -15714,7 +15714,7 @@ you can implement various actions:
 
 @c EN
 To check the existence of a file without opening it,
-use @code{sys-access} or @code{file-exists?} (@xref{File stats}).
+use @code{sys-access} or @code{file-exists?} (@pxref{File stats}).
 @c JP
 ファイルをオープンせずにその存在をチェックするには、
 @code{sys-access}か@code{file-exists?}を使って下さい (@ref{File stats}参照)。
@@ -15848,7 +15848,7 @@ Note that if a continuation captured outside @code{call-with-input-file}
 et al. is invoked inside @var{proc}, the port is not closed.
 It is possible that the control returns later into the @var{proc},
 if a continuation is captured in it (e.g. coroutines).
-The low-level exceptions (@xref{Handling exceptions})
+The low-level exceptions (@pxref{Handling exceptions})
 also doesn't ensure closing the port.
 @c JP
 @code{call-with-input-file}の外で捕捉された継続を@var{proc}内で呼んだ場合には
@@ -16373,7 +16373,7 @@ EOFを返します。
 @defun read-block nbytes :optional iport
 @c EN
 This procedure is deprecated - use @code{read-uvector} instead
-(@xref{Uvector block I/O}).
+(@pxref{Uvector block I/O}).
 @c JP
 この手続きは非推奨になりました。@code{read-uvector}を使ってください
 (@ref{Uvector block I/O}参照)。
@@ -16429,7 +16429,7 @@ but the entire data is not available immediately.
 @c EN
 If you want to write a chunk of bytes to a port,
 you can use either @code{display} if the data is in string,
-or @code{write-uvector} in @code{gauche.uvector} (@xref{Uvector block I/O})
+or @code{write-uvector} in @code{gauche.uvector} (@pxref{Uvector block I/O})
 if the data is in uniform vector.
 @c JP
 データブロックをポートに書き出すには、データが文字列で表現されている
@@ -16758,7 +16758,7 @@ table @result{} #<hash-table eq? 0x80f9398>
 @end example
 
 @c EN
-Combined with @code{write-object} method (@xref{Output}),
+Combined with @code{write-object} method (@pxref{Output}),
 it is easy to make a user-defined class written in the form
 it can be read back:
 @c JP
@@ -17372,7 +17372,7 @@ it has the same effects as giving @code{#f} to the @var{dest}.
 
 @c EN
 The @var{controls} argument is @code{<write-controls>} object
-(@xref{Output controls}), which affects the output of @code{~s} and
+(@pxref{Output controls}), which affects the output of @code{~s} and
 @code{~a}.  This is Gauche's extension.
 @c JP
 @var{controls}引数は@code{<write-controls>}オブジェクトで、
@@ -17794,7 +17794,7 @@ the keyword argument @var{error-if-not-found} is @code{#f}, in
 which case @code{load} returns @code{#f}.
 
 By default, @code{load} uses a coding-aware port
-(@xref{Coding-aware ports}) so that the "@code{coding:}" magic
+(@pxref{Coding-aware ports}) so that the "@code{coding:}" magic
 comment at the beginning of the source file is effective.
 (See @ref{Multibyte scripts}, for the details of
 the coding magic comment).  If a true value is given to the
@@ -17814,7 +17814,7 @@ Gauche's @code{load} is upper-compatible to R5RS @code{load}, but
 R7RS @code{load} differs in optional arguments; @pxref{R7RS load}.
 
 If you want to load a library file, it's better to use `@code{use}'
-(@xref{Defining and selecting modules}), or `@code{require}' described below.
+(@pxref{Defining and selecting modules}), or `@code{require}' described below.
 @xref{Compilation}, for difference between @code{load} and @code{require}.
 @c JP
 @var{file}をロードします。すなわち、@var{file}に書かれたScheme式を順次読み込んで
@@ -17937,7 +17937,7 @@ path list for dynamic loading correctly.   Suppose you have
 your Scheme module in @code{/home/yours/lib}, and that requires
 a dynamic loadable library.  You can put the library under
 @code{/home/yours/lib/@var{ARCH}/}, where @var{ARCH} is
-the value @code{(gauche-architecture)} returns (@xref{Environment Inquiry}).
+the value @code{(gauche-architecture)} returns (@pxref{Environment Inquiry}).
 Then you can have compiled libraries for multiple platforms and
 Gauche can still find the right library.
 @c JP
@@ -18094,7 +18094,7 @@ Subsequent request of the same feature doesn't need to load the file.
 @c COMMON
 
 @c EN
-In Gauche, the @code{use} syntax (@xref{Using modules}) hides
+In Gauche, the @code{use} syntax (@pxref{Using modules}) hides
 the require mechanism under the hood so you hardly need to see
 these forms.  These are provided just in case if you want to
 do some non-trivial management of libraries and thus want to
@@ -18113,7 +18113,7 @@ If @var{feature} is not loaded, load it.  @var{Feature} must be a string,
 and it is taken as a file name (without suffix) to be loaded.
 This loading takes place at compile time.
 
-If you load SLIB module, @code{require} is extended.  @xref{SLIB} for
+If you load SLIB module, @code{require} is extended.  @pxref{SLIB} for
 details.
 @c JP
 @var{feature}がまだロードされていなければロードします。@var{feature}は文字列で
@@ -18208,7 +18208,7 @@ that you are changing @file{X.scm} very frequently during
 development and you want @code{(require "X")} always causes loading
 the file.  Don't forget to remove @code{(provide #f)} when you release
 the file, though.  Besides, for interactive reloading, consider
-using @code{gauche.reload} (@xref{Reloading modules}) instead.
+using @code{gauche.reload} (@pxref{Reloading modules}) instead.
 @c JP
 featureを全く@code{provide}しない。
 @var{feature}引数に@code{#f}を渡すことで、何のfeatureも@code{provide}することなく
@@ -18594,7 +18594,7 @@ any sequence (an instance of @code{<sequence>}).
 @item
 @c EN
 You can use both comparison procedures
-and comparators (@xref{Basic comparators}) to specify the order.
+and comparators (@pxref{Basic comparators}) to specify the order.
 @c JP
 順序を指定するのに、比較関数も比較器(@ref{Basic comparators}参照)も
 使うことができます。
@@ -18693,9 +18693,9 @@ SRFI-95は安定性を要求しますが、同時に@var{cmp}が与えられる�
 @c EN
 If you want to keep a sorted set of objects to which you
 add objects one at at time, you can also use treemaps
-(@xref{Treemaps}).  If you only need to find out 
+(@pxref{Treemaps}).  If you only need to find out 
 a few maximum or minimum elements instead of sorting
-all the elements, heaps can be used (@xref{Heap}).
+all the elements, heaps can be used (@pxref{Heap}).
 @c JP
 なお、オブジェクトをひとつづつ集合に追加しつつ、常にソートされた
 状態に保ちたい場合は、treemapの使用を考えても良いでしょう (@ref{Treemaps}参照)。
@@ -18891,7 +18891,7 @@ Gaucheは(@code{main}から返る以外に)自分自身を終了させる方法�
 Terminates the current process with the exit code @var{code}.
 @var{Code} must be zero or positive exact integer.
 When a string is given to @var{fmtstr}, it is passed to
-@code{format} (@xref{Output}), with the rest arguments @var{args},
+@code{format} (@pxref{Output}), with the rest arguments @var{args},
 to produce a message to the standard error port
 (@emph{not} the current error port; see @ref{Common port operations}).
 @c JP
@@ -18991,7 +18991,7 @@ handling case.)
 Your application code can then capture the exception.
 You can use @code{parameterize}
 to swap @code{exit-handler} dynamically
-and thread-safely (@xref{Parameters}).
+and thread-safely (@pxref{Parameters}).
 @c JP
 @code{exit-handler}のメカニズムはアプリケーションが終了処理をフックすることを
 可能にします。ただし、単純なクリーンアップ処理のためのものではありません
@@ -19075,7 +19075,7 @@ three arguments, or @code{#f}.
 The value of exit handler is thread-specific, and the default value
 is inherited from the value of the current exit handler of the parent
 thread.  @code{exit-handler} can be used as if it's a parameter
-in the @code{parameterize} macro (@xref{Parameters}).
+in the @code{parameterize} macro (@pxref{Parameters}).
 @c JP
 引数なしで呼ばれた場合、現在のexit handlerの値を返します。
 引数つきで呼ばれた場合は、@var{new-handler}を現在のexit handlerの
@@ -19125,13 +19125,13 @@ POSIXのabort()を呼びます。通常、現在のプロセスは終了され�
 @c EN
 The recommended way to get command-line arguments passed to a
 Scheme script is the argument to the @code{main} procedure
-(@xref{Writing Scheme scripts}).  For the convenience,
+(@pxref{Writing Scheme scripts}).  For the convenience,
 there are a few ways to access to the command-line arguments
 globally.
 @c JP
 Schemeスクリプトに渡されたコマンドライン引数を受け取るには、
 @var{main}関数の引数を使うのが推奨される方法です
-(@xref{Writing Scheme scripts})。
+(@pxref{Writing Scheme scripts})。
 ただ、簡便のために、どこからでもコマンドライン引数にアクセスできる
 インターフェースもいくつか用意してあります。
 @c COMMON
@@ -19184,7 +19184,7 @@ Gaucheが埋め込み言語として使われた場合、このパラメータ�
 When called with one argument, a list of string, it will become the
 new value of the parameter.  You can use @code{parameterize} to
 switch the value of @code{command-line} dynamically
-(@xref{Parameters}).  Note that R7RS only defines zero-argument
+(@pxref{Parameters}).  Note that R7RS only defines zero-argument
 @code{command-line}.
 @c JP
 一つの引数で呼び出すこともできます。その場合、引数は文字列のリストでなければなりません。
@@ -19363,7 +19363,7 @@ to @code{sys-putenv} afterwards won't affect the environment.
 @c EN
 These procedures are only available when a feature identifier
 @code{gauche.sys.setenv} exists.  Use @code{cond-expand}
-(@xref{Feature conditional}) to check their availability.
+(@pxref{Feature conditional}) to check their availability.
 @c JP
 これらの手続きは機能識別子@code{gauche.sys.setenv}がある場合のみ使えます。
 下の例のように@code{cond-expand}で使えるかどうかチェックしてください
@@ -19396,7 +19396,7 @@ environment.
 
 These procedures are only available when a feature identifier
 @code{gauche.sys.unsetenv} exists.  Use @code{cond-expand}
-(@xref{Feature conditional}) to check their availability.
+(@pxref{Feature conditional}) to check their availability.
 @c JP
 @code{sys-unsetenv}は環境変数@var{name}を、また
 @code{sys-clearenv}は全ての環境変数をプロセスの実行環境から取り除きます。
@@ -19419,7 +19419,7 @@ These procedures are only available when a feature identifier
 
 
 @c EN
-SRFI-98 (@xref{Accessing environment variables}) also defines
+SRFI-98 (@pxref{Accessing environment variables}) also defines
 a subset of above procedures to access to the environment variables.
 Portable programs may want to use them instead.
 @c JP
@@ -19777,7 +19777,7 @@ any single character.
 @c EN
 Specifies a character set.  Matches any one of the set.
 The syntax of @i{chars} is the same as Gauche's character set
-syntax (@xref{Character set}).  For the compatibility of the
+syntax (@pxref{Character set}).  For the compatibility of the
 traditional glob, the @code{!} character can be used to complement
 the character set, e.g. @code{[!abc]} is the same as @code{[^abc]}.
 @c JP
@@ -19951,7 +19951,7 @@ An error is signaled otherwise.
 @c EN
 There are similar procedures, @code{delete-file}/@code{remove-file}
 in @code{file.util} module, while they raises an error when the
-named pathname doesn't exist (@xref{File operations}).
+named pathname doesn't exist (@pxref{File operations}).
 @c JP
 @code{file.util}モジュールに似た手続き@code{delete-file}/@code{remove-file}が
 ありますが、そちらはファイルが存在しない場合にエラーを投げます
@@ -20204,7 +20204,7 @@ On both platforms, the returned pathname may not exist, or
 may not be writable by the calling process.
 
 In general, user programs and libraries are recommended to use
-@code{temporary-directory} (@xref{Directory utilities}) instead;
+@code{temporary-directory} (@pxref{Directory utilities}) instead;
 @code{sys-tmpdir} should be used only
 if you now the raw value the platform provides.
 @c JP
@@ -20518,7 +20518,7 @@ If either of them is -1, the corresponding ownership is not changed.
 Change the file's access time and modification time to @var{atime}
 and @var{mtime}, respectively.   If @var{atime} and/or @var{mtime}
 are omitted or @code{#f}, they are set to the current time.
-See also @code{touch-file} (@xref{File operations}).
+See also @code{touch-file} (@pxref{File operations}).
 @c JP
 ファイルのアクセスタイムと変更タイムを@var{atime}と@var{mtime}が示す
 値にセットします。@var{atime}と@var{mtime}が省略された場合もしくは
@@ -20535,7 +20535,7 @@ See also @code{touch-file} (@xref{File operations}).
 [POSIX]
 @c EN
 An interface to @code{chdir(2)}.
-See also @code{current-directory} (@xref{Directory utilities}).
+See also @code{current-directory} (@pxref{Directory utilities}).
 @c JP
 @code{chdir(2)}へのインタフェースです。
 @code{current-directory}(@ref{Directory utilities})も参照して下さい。
@@ -20818,7 +20818,7 @@ function signals an error.
 This routine is only for the code that needs to check password
 against the system's password database.
 If you are building user database on your own, you @emph{must} use
-@code{crypt.bcrypt} module (@xref{Password hashing}) instead of
+@code{crypt.bcrypt} module (@pxref{Password hashing}) instead of
 this routine.
 @c JP
 これは、@code{crypt(3)}へのインターフェースです。@var{key}と@var{salt}は
@@ -21446,7 +21446,7 @@ is @code{#f}, the specified signals(s) will be ignored.
 @c COMMON
 
 @c EN
-If @var{handler} is @code{#<undef>} (@xref{Undefined values}),
+If @var{handler} is @code{#<undef>} (@pxref{Undefined values}),
 it indicates Gauche to leave the current OS's signal handler as it is.
 This value isn't as much use in @code{set-signal-handler!} as
 in @code{get-signal-handler}: If @code{#<undef>} is passed
@@ -21840,7 +21840,7 @@ thread that can receive it.
 
 @c EN
 In Gauche, all threads created by @code{make-thread}
-(@xref{Thread procedures}) blocks all the signals by default
+(@pxref{Thread procedures}) blocks all the signals by default
 (except the reserved ones).   This lets all the signals
 to be directed to the primordial (main) thread.
 @c JP
@@ -21931,8 +21931,8 @@ Returns the domain name.  If the system doesn't have getdomainname(),
 [POSIX] Returns the current working directory by a string.
 If the current working directory couldn't be obtained from the system,
 an error is signaled.   See also @code{sys-chdir}
- (@xref{Other file operations}), @code{current-directory}
-(@xref{Directory utilities}).
+ (@pxref{Other file operations}), @code{current-directory}
+(@pxref{Directory utilities}).
 @c JP
 [POSIX] 現在の作業ディレクトリを文字列で返します。
 システムから現在の作業ディレクトリが得られない場合は、エラーが通知されます。
@@ -21948,7 +21948,7 @@ an error is signaled.   See also @code{sys-chdir}
 current process, respectively.
 Use @code{sys-gid->group-name} or @code{sys-getgrgid} to obtain
 the group's name and other information associated to the returned
-group id (@xref{Unix groups and users}).
+group id (@pxref{Unix groups and users}).
 @c JP
 [POSIX] 現在のプロセスの実グループIDと実効グループIDをそれぞれ整数で返します。
 返されたグループIDからグループ名その他の情報を得るには
@@ -21972,7 +21972,7 @@ group id (@xref{Unix groups and users}).
 current process, respectively.
 Use @code{sys-uid->user-name} or @code{sys-getpwuid} to obtain
 the user's name and other information associated to the returned
-user id (@xref{Unix groups and users}).
+user id (@pxref{Unix groups and users}).
 @c JP
 [POSIX] 現在のプロセスの実ユーザIDと実効ユーザIDをそれぞれ整数で返します。
 返されたユーザIDからユーザ名その他の情報を得るには
@@ -22471,7 +22471,7 @@ The @code{<time>} object also represents a point of time.
 @c EN
 Indicates time type.  @code{time-utc} is the default, and that
 represents the number of seconds since Unix Epoch.
-SRFI-19 (@xref{Time data types and procedures}) adds more types.
+SRFI-19 (@pxref{Time data types and procedures}) adds more types.
 @c JP
 timeの型を表します。デフォルトは@code{time-utc}で、Unixエポックからの
 秒数を表します。SRFI-19(@ref{Time data types and procedures}参照)
@@ -22741,7 +22741,7 @@ calling thread's signal mask and become a process that blocks all signals,
 which is not very convenient in most cases.
 @c JP
 @var{sigmask}キーワード引数には、@code{<sys-sigset>}のインスタンスか
-@code{#f}を渡すことができます (シグナルマスクについては@xref{Signal}を
+@code{#f}を渡すことができます (シグナルマスクについては@ref{Signal}を
 参照して下さい)。@code{<sys-sigset>}のインスタンスを渡した場合、
 この関数を呼び出したスレッドのシグナルマスクが、@code{exec(2)}を呼ぶ
 直前にそれによって置き換えられます。
@@ -23371,7 +23371,7 @@ so you shouldn't mix @code{sys-sleep} and @code{sys-alarm}.
 @c EN
 Suspends the calling thread until the specified number of nanoseconds elapses.
 The argument @var{nanoseconds} can be
-a @code{<time>} object (@xref{Time}), or a real number.
+a @code{<time>} object (@pxref{Time}), or a real number.
 
 The system's @code{nanosleep(2)} could return before the specified interval
 if the calling thread receives a signal; in that case,
@@ -23466,7 +23466,7 @@ The intention of these functions are to provide an off-the-stock handy
 random number generator (RNG) for applications that doesn't
 sensitive to the quality and/or speed of RNG.  For serious statistics
 analysis, use Mersenne Twister RNG in @code{math.mt-random}
-module (@xref{Mersenne-Twister random number generator}).
+module (@pxref{Mersenne-Twister random number generator}).
 @c JP
 これらの関数の意図は、乱数ジェネレータ(RNG; random number generator)の
 品質や速度を気にしないアプリケーションに、簡便なRNGを提供することです。

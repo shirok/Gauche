@@ -118,7 +118,7 @@ specifying the byte order of the binary input.
 It must be either one of symbols @code{big-endian}, @code{little-endian},
 or @code{arm-little-endian}.
 If the endian argument is omitted, the current value of the builtin
-parameter @code{default-endian} is used (@xref{Endianness}).
+parameter @code{default-endian} is used (@pxref{Endianness}).
 (For 8-bit I/O procedures like @code{read-u8} the endian
 argument has no effect, but is accepted for consistency).
 @c JP
@@ -1209,7 +1209,7 @@ If @var{timeout} is given and not @code{#f}, it must be
 a valid timeout spec (a @code{<time>} object that represents
 an absolute time point, or a real number that represents a
 relative time in seconds.)  The meaning of @var{timeout} is
-the same as in @code{mutex-unlock!} (@xref{Synchronization primitives}).
+the same as in @code{mutex-unlock!} (@pxref{Synchronization primitives}).
 Once the timeout reaches, @code{job-wait} returns no matter
 how the job's status is, and returns the value specified
 to @var{timeout-val}, which defaults to @code{#f}.
@@ -1218,7 +1218,7 @@ to @var{timeout-val}, which defaults to @code{#f}.
 タイムアウトのスペックとして有効なもの(時間の絶対値を表す
 @code{<time>}か、現時点からの相対的な秒数を表す実数)で
 なければなりません。@var{timeout}の意味は、@code{mutex-unlock!}
-(@xref{Synchronization primitives})のそれと同じです。
+(@pxref{Synchronization primitives})のそれと同じです。
 タイムアウトすると、そのジョブの状態が何であれ、
 @code{job-wait}は引数@var{timeout-val}として指定された
 値を返します。デフォルト値は@code{#f}です。
@@ -1366,7 +1366,7 @@ accepting new jobs, or @code{#f} otherwise.
 @defun add-job! pool thunk :optional (need-result #f) (timeout #f)
 @c EN
 Add a @var{thunk} to be executed in the thread pool @var{pool}.
-Returns a @code{job} record (@xref{A common job descriptor for control modules}).
+Returns a @code{job} record (@pxref{A common job descriptor for control modules}).
 @c JP
 @var{thunk}がスレッドプール@var{pool}のスレッドにより実行されるように設定します。
 @code{job}レコードを返します。
@@ -1713,7 +1713,7 @@ can insert some print stubs to see the cache is actually in action:
 
 Caveat: A cache itself isn't MT-safe.  If you are using it in
 multithreaded programs, you have to wrap it with an atom
-(@xref{Synchronization primitives}):
+(@pxref{Synchronization primitives}):
 
 @example
 (use data.cache)
@@ -1924,7 +1924,7 @@ range.
 @c EN
 A heap is a data container that allows efficient retrieval of
 the minimum or maximum entry.  Unlike a @code{<tree-map>}
-(@xref{Treemaps}), which always keeps all entries in order,
+(@pxref{Treemaps}), which always keeps all entries in order,
 a heap only cares the minimum or the maximum of the current set;
 the other entries are only partially ordered, and reordered
 when the minimu/maximum entry is removed.  Hence it is more
@@ -1950,7 +1950,7 @@ Pushing a new value and popping the minimum/maximum value are both O(log n).
 It also stores its values in a flat vector, a lot more compact
 than a general tree structure that needs a few pointers per node.
 By default it uses a sparse vector for the backing storage, allowing
-virtually unlimited capacity (@xref{Sparse vectors}).
+virtually unlimited capacity (@pxref{Sparse vectors}).
 But you can use an ordinal vector
 or a uniform vector as a backing storage instead.
 @c JP
@@ -1968,7 +1968,7 @@ or a uniform vector as a backing storage instead.
 @c EN
 A binary heap isn't MT-safe structure; you must put it in atom
 or use mutexes if multiple threads can access to it
-(@xref{Synchronization primitives}).
+(@pxref{Synchronization primitives}).
 @c JP
 バイナリヒープはスレッドセーフではありません。複数のスレッドでアクセスする
 可能性がある場合は、atomに入れるか、mutexを適切に使ってください(@ref{Synchronization primitives}参照)。
@@ -1986,7 +1986,7 @@ comparators.
 
 The @var{storage} keyword argument gives alternative
 backing storage.  It must be either a vector, a uniform vector,
-or an instance of a sparse vector (@xref{Sparse vectors}).
+or an instance of a sparse vector (@pxref{Sparse vectors}).
 The default is an instance of @code{<sparse-vector>}.
 If you pass a vector or a uniform vector, it determines
 the maximum number of elements the heap can hold.
@@ -2595,7 +2595,7 @@ to access the contents of the queue without taking them out.
 @c EN
 Returns the first item in @var{queue} that satisfies a
 predicate @var{pred}.  The order of arguments follows
-@code{find} (@xref{Other list procedures}).
+@code{find} (@pxref{Other list procedures}).
 @c JP
 キュー内の要素のうち述語@var{pred}を満たす最初の要素を返します。
 引数の順序は@code{find}に揃えました (@ref{Other list procedures}参照)。
@@ -2637,7 +2637,7 @@ SRFI-1の@code{every}のように、@var{queue}中の各要素に
 Removes all items in the queue that satisfies @var{pred}.
 Returns @code{#t} if any item is removed.  Otherwise returns @code{#f}.
 The order of arguments follows
-@code{remove} in SRFI-1 (@xref{SRFI-1 List utilities}).
+@code{remove} in SRFI-1 (@pxref{SRFI-1 List utilities}).
 @c JP
 キューから、述語@var{pred}を満たす要素を全て取り除きます。
 要素が削除された場合は@code{#t}が、そうでなければ@code{#f}が返されます。
@@ -2676,7 +2676,7 @@ condition is met.
 The optional @var{timeout} argument specifies the timeout condition.
 If it is @code{#f}, those procedures wait indefinitely.
 If it is a real number, they wait at least the given number of
-seconds.  If it is a @code{<time>} object (@xref{Time}),
+seconds.  If it is a @code{<time>} object (@pxref{Time}),
 they wait until the absolute point of time the argument specifies.
 
 In case the call is blocked then timed out, the value of
@@ -2787,7 +2787,7 @@ with @var{seed-value}.
 @c EN
 Note: This procedure doesn't have parameter interface (alter the global
 value by giving the new value as an argument), since it doesn't work
-like a parameter (@xref{Parameters}).
+like a parameter (@pxref{Parameters}).
 You can get the random seed value, but you can't
 get the current random state itself---if you restore the
 random seed value again, the internal state is reset, instead
@@ -3164,7 +3164,7 @@ whose i-th element is generated from the i-th argument.
 Returns a generator that yields a random permutations of @var{seq}.
 
 The type of @var{seq} should be a sequence with a builder
-(@xref{Sequence framework}).  The type of generated objects
+(@pxref{Sequence framework}).  The type of generated objects
 will be the same as @var{seq}.
 @c JP
 シーケンス@var{seq}の要素をランダムに並べ替えたシーケンスを生成する
@@ -3190,7 +3190,7 @@ Returns a generator that yields a sequence of @var{size} elements
 randomly picked from @var{seq}.
 
 The type of @var{seq} should be a sequence with a builder
-(@xref{Sequence framework}).  The type of generated objects
+(@pxref{Sequence framework}).  The type of generated objects
 will be the same as @var{seq}.
 @c JP
 シーケンス@var{seq}からランダムに@var{size}個の要素を取り出して
@@ -3650,8 +3650,8 @@ types of numbers (like @code{<s8vector>} etc.).
 All of these sparse vectors can be accessed by the same API.
 
 Sparse vectors also implements the Collection API
-(@xref{Collection framework}) and the Dictionary API
-(@xref{Dictionary framework}).
+(@pxref{Collection framework}) and the Dictionary API
+(@pxref{Dictionary framework}).
 @c JP
 疎なベクタの抽象ベースクラスです。@code{<dictionary>}と@code{<collection>}を
 継承しています。@code{<sequence>}は継承していないことに注意してください。
@@ -3691,7 +3691,7 @@ An instance of @code{<sparse-vector>} can contain any Scheme objects.
 @code{s64}, @code{u64}, @code{f16}, @code{f32}, or @code{f64}.
 The range of values an instance of those classes can hold
 is the same as the corresponding @code{<@var{TAG}vector>} class
-in @code{gauche.uvector} (@xref{Uniform vectors}).  That is,
+in @code{gauche.uvector} (@pxref{Uniform vectors}).  That is,
 @code{<sparse-u8vector>} can have exact integer values
 between 0 and 255.
 @c JP
@@ -3868,7 +3868,7 @@ the result value within the range.
 Convenience routines to fetch-and-update an entry of
 a sparse vector.  Works just like @code{hash-table-update!},
 @code{hash-table-push!} and @code{hash-table-pop!};
-(@xref{Hashtables}).
+(@pxref{Hashtables}).
 @end defun
 
 
@@ -3975,7 +3975,7 @@ An instance of @code{<sparse-matrix>} can contain any Scheme objects.
 @code{s64}, @code{u64}, @code{f16}, @code{f32}, or @code{f64}.
 The range of values an instance of those classes can hold
 is the same as the corresponding @code{<@var{TAG}vector>} class
-in @code{gauche.uvector} (@xref{Uniform vectors}).  That is,
+in @code{gauche.uvector} (@pxref{Uniform vectors}).  That is,
 @code{<sparse-u8matrix>} can have exact integer values
 between 0 and 255.
 @end deftp
@@ -4122,9 +4122,9 @@ As the table gets larger the difference becomes smaller.)
 @defun make-sparse-table comparator
 Creates and returns an empty sparse table.
 The @var{comparator} argument specifies how to compare and hash keys;
-it must be either a comparator (@xref{Basic comparators}),
+it must be either a comparator (@pxref{Basic comparators}),
 or one of the symbols @code{eq?}, @code{eqv?}, @code{equal?} and
-@code{string=?}, like hash tables (@xref{Hashtables}).   If it is a symbol,
+@code{string=?}, like hash tables (@pxref{Hashtables}).   If it is a symbol,
 @code{eq-comparator}, @code{eqv-comparator}, @code{equal-comparator} or
 @code{string-comparator} are used, respectively.
 @end defun
@@ -4227,12 +4227,12 @@ The following example may give you the idea.
 
 @c EN
 Tries are frequently used with string keys, but you are not
-limited to do so; any sequence (@xref{Sequence framework}) can be
+limited to do so; any sequence (@pxref{Sequence framework}) can be
 a key.  If the types of keys differ, they are treated as different
 keys:
 @c JP
 Trieでは文字列キーを使うことが多いですが、それに限定される必要はありま
-せん。あらゆるシーケンス(@xref{Sequence framework})をキーにすることが
+せん。あらゆるシーケンス(@pxref{Sequence framework})をキーにすることが
 できます。キーの型が違えば、別のキーとして扱われます。
 @c COMMON
 
@@ -4243,7 +4243,7 @@ Trieでは文字列キーを使うことが多いですが、それに限定さ�
 @c EN
 Trie inherits @code{<collection>} and implements collection framework
 including the builder. So you can apply generic collection
-operations on a trie (@xref{Collection framework}).
+operations on a trie (@pxref{Collection framework}).
 When iterated, each element of a trie appears as a pair of a key
 and a value.
 @c JP
@@ -4266,7 +4266,7 @@ Trieクラス。パブリックなスロットはありません。trieを操作
 
 @c EN
 This class also implements the dictionary interface
-(@xref{Generic functions for dictionaries}).
+(@pxref{Generic functions for dictionaries}).
 @c JP
 このクラスはまた、ディクショナリインタフェースを実装しています
 (@ref{Generic functions for dictionaries}参照)。
@@ -4910,7 +4910,7 @@ the prepared query doesn't match the ones in the prepared statement.
 Besides these errors, if a driver relies on @code{dbi} to
 parse the prepared SQL statement, @code{<sql-parse-error>} may
 be thrown if an invalid SQL statement is passed to @code{dbi-prepare}.
-(@xref{SQL parsing and construction}).
+(@pxref{SQL parsing and construction}).
 @c JP
 上の3つのエラー以外に、@code{dbi}がプリペアドSQL文を構文解析するのにド
 ライバを利用す場合、不正なSQL文が@code{dbi-prepare}に渡されると、
@@ -5817,28 +5817,28 @@ Gauche defines only what the system provides.
 @table @code
 @item dbm.fsdbm
 @c EN
-file-system dbm (@xref{File-system dbm}).
+file-system dbm (@pxref{File-system dbm}).
 @c JP
 ファイルシステムdbm (@ref{File-system dbm}参照).
 @c COMMON
 
 @item dbm.gdbm
 @c EN
-GDBM library (@xref{GDBM interface}).
+GDBM library (@pxref{GDBM interface}).
 @c JP
 GDBMライブラリ (@ref{GDBM interface}参照).
 @c COMMON
 
 @item dbm.ndbm
 @c EN
-NDBM library (@xref{NDBM interface}).
+NDBM library (@pxref{NDBM interface}).
 @c JP
 NDBMライブラリ (@ref{NDBM interface}参照).
 @c COMMON
 
 @item dbm.odbm
 @c EN
-DBM library  (@xref{Original DBM interface}).
+DBM library  (@pxref{Original DBM interface}).
 @c JP
 DBMライブラリ  (@ref{Original DBM interface}参照).
 @c COMMON
@@ -5898,7 +5898,7 @@ and @ref{Dictionary framework}, respectively).
 @clindex dbm
 @c EN
 An abstract class for dbm-style database.    Inherits
-@code{<dictionary>} (@xref{Dictionary framework}).
+@code{<dictionary>} (@pxref{Dictionary framework}).
 Defindes the common
 database operations.   This class has the following instance slots.
 They must be set before the database is actually opened by
@@ -6359,7 +6359,7 @@ The @var{outfile} argument names the output file.  If omitted,
 the output is written out to stdout.  The @var{type} argument
 specifies the implementation type of the dbm database; e.g.
 @code{gdbm} or @code{fsdbm}.  The program calls
-@code{dbm-type->class} (@xref{Opening and closing a dbm database})
+@code{dbm-type->class} (@pxref{Opening and closing a dbm database})
 on the @var{type} argument to load the necessary dbm implementation.
 
 The dumped format is simply a series of S-expressions,
@@ -6557,12 +6557,12 @@ This module is only installed when your system already has GDBM
 @end deftp
 
 @c EN
-Besides the unified DBM interface (@xref{Generic DBM interface}),
+Besides the unified DBM interface (@pxref{Generic DBM interface}),
 this module provides the following low-level functions that provides
 direct access to the gdbm API.  See gdbm manual for details of these
 APIs.
 @c JP
-統合された DBM インターフェース (@xref{Generic DBM interface}) の
+統合された DBM インターフェース (@pxref{Generic DBM interface}) の
 他に、このモジュールでは GDBM API への直接のアクセスを提供する以下の
 低レベルな手続きを提供しています。これらの API の詳細については GDBM の
 マニュアルを見て下さい。
@@ -6690,12 +6690,12 @@ This module is only installed when your system already has NDBM.
 @end deftp
 
 @c EN
-Besides the unified DBM interface (@xref{Generic DBM interface}),
+Besides the unified DBM interface (@pxref{Generic DBM interface}),
 this module provides the following low-level functions that provides
 direct access to the ndbm API.  See ndbm manual for details of these
 APIs.
 @c JP
-統合された DBM インターフェース (@xref{Generic DBM interface}) の
+統合された DBM インターフェース (@pxref{Generic DBM interface}) の
 他に、このモジュールでは NDBM API への直接のアクセスを提供する以下の
 低レベルな手続きを提供しています。これらの API の詳細については NDBM の
 マニュアルを見て下さい。
@@ -6765,12 +6765,12 @@ you'll get an error.
 @end deftp
 
 @c EN
-Besides the unified DBM interface (@xref{Generic DBM interface}),
+Besides the unified DBM interface (@pxref{Generic DBM interface}),
 this module provides the following low-level functions that provides
 direct access to the dbm API.  See dbm manual for details of these
 APIs.
 @c JP
-統合された DBM インターフェース (@xref{Generic DBM interface}) の
+統合された DBM インターフェース (@pxref{Generic DBM interface}) の
 他に、このモジュールでは DBM API への直接のアクセスを提供する以下の
 低レベルな手続きを提供しています。これらの API の詳細については DBM の
 マニュアルを見て下さい。
@@ -7121,7 +7121,7 @@ Windowsネイティブ環境では、この関数はカレントユーザに対�
 @c EN
 A parameter that keeps the name of the directory that can be used
 to create a temporary files.   The default value is
-the one returned from @code{sys-tmpdir} (@xref{Pathnames}).
+the one returned from @code{sys-tmpdir} (@pxref{Pathnames}).
 The difference of @code{sys-tmpdir} is that, since this is a parameter,
 it can be overridden by application during execution.
 Libraries are recommended to use this instead of @code{sys-tmpdir}
@@ -7686,7 +7686,7 @@ and whether it satisfies @var{pred} are checked.
 
 The default value of @var{paths} is taken from the environment variable
 @code{PATH}, and the default value of @var{pred} is @code{file-is-executable?}
-(@xref{File attribute utilities}).  That is, @code{find-file-in-paths}
+(@pxref{File attribute utilities}).  That is, @code{find-file-in-paths}
 searches the named executable file in the command search paths
 by default.
 @c JP
@@ -7770,7 +7770,7 @@ to the calling process.
 @c EN
 These functions return the attribute of file/directory specified by
 @var{path}.  The attribute name corresponds to the slot name of
-@code{<sys-stat>} class (@xref{File stats}).
+@code{<sys-stat>} class (@pxref{File stats}).
 If the named path doesn't exist, @code{#f} is returned.
 
 If @var{path} is a symbolic link, these functions queries the
@@ -7877,7 +7877,7 @@ so each argument can be either one of the followings.
 @item
 String pathname.   The mtime of the specified path is used.
 @item
-@code{<sys-stat>} object (@xref{File stats}).
+@code{<sys-stat>} object (@pxref{File stats}).
 The mtime is taken from the stat structure.
 @item
 @code{<time>} object.  The time is used as the mtime.
@@ -7893,7 +7893,7 @@ used as mtime.
 @item
 文字列のパス名。そのパス名で示されるファイルから変更時間が取られます。
 @item
-@code{<sys-stat>}オブジェクト (@xref{File stats})。
+@code{<sys-stat>}オブジェクト (@pxref{File stats})。
 stat構造体から変更時間が取られます。
 @item
 @code{<time>}オブジェクト。その示す時間が変更時間と考えられます。
@@ -7965,7 +7965,7 @@ Note: @code{touch-files} processes one file at a time, so the timestamp
 of each file may not be exactly the same.
 
 These procedures are built on top of the system call
-@code{sys-utime} (@xref{File stats}).
+@code{sys-utime} (@pxref{File stats}).
 @c JP
 @var{path}もしくはリスト@var{paths}中の各パスの
 タイムスタンプを現在の時刻に更新します。
@@ -8191,7 +8191,7 @@ does not exist, is a directory, or cannot be deleted with other
 reasons such as permissions.
 R7RS defines @code{delete-file}.
 
-Compare with @code{sys-unlink} (@xref{Directory manipulation}),
+Compare with @code{sys-unlink} (@pxref{Directory manipulation}),
 which doesn't raise an error when the named file doesn't exist.
 @c JP
 指定された名前のファイルを消去します。ファイルが存在しなかったり、ディレクトリであったり、
@@ -8230,7 +8230,7 @@ If the path doesn't exist, it is simply ignored.
 Convenience procedures to read from a file @var{filename}.
 They first open the named file, then call @code{port->string},
 @code{port->list}, @code{port->string-list} and @code{port->sexp-list}
-on the opened file, respectively.  (@xref{Input utility functions}).
+on the opened file, respectively.  (@pxref{Input utility functions}).
 The file is closed if all the content is read or an error is
 signaled during reading.
 @c JP
@@ -8519,7 +8519,7 @@ Mersenne Twister RNGの状態をカプセル化するクラスです。
 @c EN
 Sets random seed value @var{seed} to the Mersenne Twister RNG @var{mt}.
 @var{Seed} can be an arbitrary positive exact integer,
-or arbitrary length of u32vector (@xref{Homogeneous vectors}).
+or arbitrary length of u32vector (@pxref{Homogeneous vectors}).
 If it is an integer, the lower 32bits are used for initialization.
 If it is a u32vector, up to 624 elements are used for initialization.
 @c JP
@@ -8978,7 +8978,7 @@ so it may take very long if @var{n} contains large prime factors.
 This module is only available on Windows-native Gauche, and
 provides Windows-specific procedures.
 You can check @code{gauche.os.windows} feature with
- @code{cond-expand} macro (@xref{Feature conditional})
+ @code{cond-expand} macro (@pxref{Feature conditional})
 to conditionalize windows-specific code.
 
 @example
@@ -10180,7 +10180,7 @@ field bodies don't have any characters except non-NUL US-ASCII
 characters.  If you want to include characters outside of that
 range, you should convert them in the way allowed by the
 protocol, e.g. MIME.  The @code{rfc.mime} module
-(@xref{MIME message handling}) provides a convenience procedure
+(@pxref{MIME message handling}) provides a convenience procedure
 @code{mime-encode-text} for such purpose.
 Again, this procedure cannot do the encoding automatically,
 since the way the field
@@ -10543,7 +10543,7 @@ True if the client uses passive connection.c
 
 @defivar {<ftp-connection>} log-drain
 @c EN
-This slot must hold a @code{<log-drain>} instance (@xref{User-level logging})
+This slot must hold a @code{<log-drain>} instance (@pxref{User-level logging})
 or @code{#f}.  If it has a @code{<log-drain>} instance, ftp communication
 logs are put to it.
 @c JP
@@ -10838,7 +10838,7 @@ code.  Use @code{ftp-mtime} below to obtain a parsed result.
 @c EN
 Queries the modification time of the remote file specified by @var{path},
 and returns the result in a @code{<date>} object
-(@xref{Time data types and procedures}).
+(@pxref{Time data types and procedures}).
 If a true value is given to @code{local-time?}, the returned date is
 in local time.  Otherwise, the returned date is in UTC.
 @c JP
@@ -10996,9 +10996,9 @@ Keeps state information of HMAC algorithm.
 Key and the hashing algorithm should be given at the construction
 time, using @code{:key} and @code{:hasher} keyword-arguments respectively.
 You can pass any class object that implements message digest
-interface (@xref{Message digester framework}),
-such as @code{<md5>} (@xref{MD5 message digest})
-or @code{<sha256>} (@xref{SHA message digest}).
+interface (@pxref{Message digester framework}),
+such as @code{<md5>} (@pxref{MD5 message digest})
+or @code{<sha256>} (@pxref{SHA message digest}).
 
 Example:
 @c JP
@@ -11032,7 +11032,7 @@ which must be represented by a (possibly incomplete) string.
 Finalizes the internal state of @var{hmac} and returns the
 hashed string in incomplete string.
 You can use @code{digest-hexify}
-(@xref{Message digester framework}) to obtain "hexified"
+(@pxref{Message digester framework}) to obtain "hexified"
 result.
 Once finalized, you can't call @code{hmac-update!} or @code{hmac-final!}
 on @var{hmac}.
@@ -11760,7 +11760,7 @@ This module provides some basic utilities to parse raw IP packets.
 
 @c EN
 The @var{packet} argument in the following functions must be
-any type of uniform vector (@xref{Uniform vectors}), containing
+any type of uniform vector (@pxref{Uniform vectors}), containing
 a raw IP packet including its IP header.
 Those functions work for both IPv4 and IPv6 packets; however,
 reading from a raw IPv6 socket returns a packet without IPv6 header,
@@ -12210,7 +12210,7 @@ JSON配列
 This module implements MD5 message digest algorithm, defined in
 RFC 1321 (@ref{rfc1321, [RFC1321], RFC1321}).
 The module extends util.digest
-(@xref{Message digester framework}).
+(@pxref{Message digester framework}).
 @c JP
 このモジュールは、RFC 1321(@ref{rfc1321, [RFC1321], RFC1321}参照)で
 定義されている、MD5メッセージダイジェストアルゴリズムを実装しています。
@@ -12294,7 +12294,7 @@ This module mainly focuses on providing low-level building-block procedures,
 on top of which application-specific modules are to be built.
 For example, @code{rfc.http} uses this module to compose
 @code{multipart/form-data} message for the body of POST requests
-(@xref{HTTP}).
+(@pxref{HTTP}).
 @c JP
 このモジュールは主としてビルディングブロックとなる低レベルの手続きに
 フォーカスしており、アプリケーション特有のモジュールがこの上に
@@ -12305,7 +12305,7 @@ For example, @code{rfc.http} uses this module to compose
 
 @c EN
 This module is supposed to be used with @code{rfc.822} module
-(@xref{RFC822 message parsing}).
+(@pxref{RFC822 message parsing}).
 @c JP
 このモジュールは、@code{rfc.822}モジュールと一緒に使うことを
 想定しています(@ref{RFC822 message parsing}参照)。
@@ -12931,7 +12931,7 @@ written out to an output port @var{outp}.
 
 This procedure does not handle charset conversion.
 The caller must use CES conversion port as @var{outp}
-(@xref{Character code conversion}) if desired.
+(@pxref{Character code conversion}) if desired.
 @c JP
 この手続きは、@var{xport}からEOFに達するまで読み込み、
 @var{part-info}の@code{transfer-encoding}も見て、
@@ -13201,7 +13201,7 @@ SHA-384 and SHA-512 (the latter four are sometimes referred
 as SHA-2 collectively).
 
 The module extends util.digest
-(@xref{Message digester framework}).
+(@pxref{Message digester framework}).
 @c JP
 このモジュールは、RFC 4634で定義されている
 US Secure Hash Algorithmを実装しています。
@@ -13570,7 +13570,7 @@ The data is a string if the content type is @code{text/*}, and
 a u8vector otherwise.
 
 The content-type is parsed by @code{mime-parse-content-type}
-(@xref{MIME message handling}).  The result format is a list as follows:
+(@pxref{MIME message handling}).  The result format is a list as follows:
 @c JP
 Data URI文字列@var{uri}をパーズします。@code{data:}スキームは有っても無くても
 構いません。渡されたuriがdata uriとして無効な文字列であればエラーが投げられます。
@@ -18721,7 +18721,7 @@ Check out @code{test/text.scm} in the Gauche source tree for an example.
 @mdindex text.diff
 @c EN
 This module calculates the difference of two text streams or strings,
-using @code{util.lcs} (@xref{The longest common subsequence}).
+using @code{util.lcs} (@pxref{The longest common subsequence}).
 @c JP
 このモジュールでは、@code{util.lcs} (@ref{The longest common subsequence}参照)を
 使って、2つのテキストストリーム、あるいは2つの文字列の相違点を計算します。
@@ -18864,7 +18864,7 @@ It supports multiple locale/domain simultaneously.
 @c COMMON
 
 @c EN
-SRFI-29 (@xref{Localization}) provides another means of message
+SRFI-29 (@pxref{Localization}) provides another means of message
 localization.  A portable program may wish to use srfi-29, but
 generally @code{text.gettext} is recommended in Gauche scripts
 because of its flexibility and compatibility to existing message files.
@@ -19267,7 +19267,7 @@ tr       tt         ul         var
 The result of these functions is a tree of text segments,
 which can be written out to a port by @code{write-tree} or
 can be converted to a string by @code{tree->string}
-(@xref{Lazy text construction}).
+(@pxref{Lazy text construction}).
 
 You can specify attributes of the element by using a keyword-value
 notation before the actual content.
@@ -19581,7 +19581,7 @@ when it returns a true value.
 
 @defun read-string n :optional port
 @c EN
-This is like built-in @code{read-string} (@xref{Reading data}),
+This is like built-in @code{read-string} (@pxref{Reading data}),
 except that this returns @code{""} when the input already reached EOF.
 
 Provided for the compatibility for the code that depends Oleg's library.
@@ -20500,7 +20500,7 @@ Optional @var{start} and/or @var{end} argument(s) will limit the
 range of the input.
 
 If Gauche's native encoding is utf8, 
-@code{u8vector->string} (@xref{Uvector conversion operations})
+@code{u8vector->string} (@pxref{Uvector conversion operations})
 will do the job faster; but this routine can be used regardless
 of Gauche's native encoding, and it raises an error if @var{u8vector}
 contains octet sequences illegal as utf8.
@@ -20513,7 +20513,7 @@ Optional @var{start} and/or @var{end} argument(s) will limit the
 range of the input.
 
 If Gauche's native encoding is utf8, 
-@code{string->u8vector} (@xref{Uvector conversion operations})
+@code{string->u8vector} (@pxref{Uvector conversion operations})
 will do the job faster; but this routine can be used regardless
 of Gauche's native encoding.
 @end defun
@@ -20671,7 +20671,7 @@ Then the created generator works as follows:
 Converts given @var{string} to upper case, using language-independent
 full case folding defined by Unicode standard.
 They differ from srfi-13's procedures
-with the same names (@xref{SRFI-13 String case mapping}),
+with the same names (@pxref{SRFI-13 String case mapping}),
 which simply uses character-by-character case mapping.
 Notably, the length of resulting string may differ from the source string,
 and some conversions are sensitive to whether the character is at the
@@ -20715,7 +20715,7 @@ codepoints instead.  Returns a sequence of the same type of the input.
 Case-insensitive string comparison, using full-string case conversion.
 
 Note that Gauche has builtin @code{string-ci=?} etc., which use
-character-wise case folding (@xref{String Comparison}).  These are
+character-wise case folding (@pxref{String Comparison}).  These are
 different procedures.
 
 @example
@@ -20912,8 +20912,8 @@ Returns a cartesian product of sets in @var{list-of-sets}.
 @mdindex util.digest
 @c EN
 This module provides a base class and common interface for
-message digest algorithms, such as MD5 (@xref{MD5 message digest})
-and SHA (@xref{SHA message digest}).
+message digest algorithms, such as MD5 (@pxref{MD5 message digest})
+and SHA (@pxref{SHA message digest}).
 @c JP
 このモジュールは、MD5 (@ref{MD5 message digest}参照)や
 SHA (@ref{SHA message digest}参照)などの、メッセージ
@@ -21825,7 +21825,7 @@ Wright のコードには、@code{struct} はありませんが、PLT Scheme の
 This is an adaptation of the original feature that can match structures.
 It is useful to match a simple instance that you know the order of
 slots; for example, a simple record created by @code{define-record-type}
-(@xref{Record types}) would be easy to match by positioned values.
+(@pxref{Record types}) would be easy to match by positioned values.
 @c JP
 これはオリジナルの機能を構造(structure)にもマッチするように調整した
 ものです。スロットの順番が予め分るような単純なインスタンスをマッチする
@@ -22043,7 +22043,7 @@ quasipatternの例です。最初の式では、パターンのうち@code{value
 
 @c EN
 As of version 0.8.10, a balanced-tree object is built-in as @code{<tree-map>}
-(@xref{Treemaps}), which uses red-black tree internally.  It is recommended
+(@pxref{Treemaps}), which uses red-black tree internally.  It is recommended
 for applications to use @code{<tree-map>} instead of @code{<rbtree>}.
 This module is only kept for backward compatibility.
 @c JP
@@ -22077,7 +22077,7 @@ must have total order.
 
 @c EN
 API of @code{util.rbtree} is similar to the hash table API
-(@xref{Hashtables}), so the user can use a red black tree
+(@pxref{Hashtables}), so the user can use a red black tree
 as if it is a hashtable, with its entries are ordered
 by the keys.
 @c JP
@@ -23406,7 +23406,7 @@ of connections, where each connection is the form
 that means a node @code{<node>} is connected to other nodes
 @code{<downstream>} etc.   @code{<node>} can be arbitrary
 object, as far as it can be compared by the procedure @var{eqproc},
-which is @var{eqv?} by default (@xref{Equality}).
+which is @var{eqv?} by default (@pxref{Equality}).
 Returns a list of @code{<node>}s sorted topologically.
 
 If the graph contains circular reference, an error is signaled.
@@ -23437,9 +23437,9 @@ If the graph contains circular reference, an error is signaled.
 Provides a few basic functions useful to write a CGI script.
 
 In order to write CGI script easily, you may want to use
-other modules, such as @code{rfc.uri} (@xref{URI parsing and construction}),
-@code{text.html-lite} (@xref{Simple HTML document construction}) and
-@code{text.tree} (@xref{Lazy text construction}).
+other modules, such as @code{rfc.uri} (@pxref{URI parsing and construction}),
+@code{text.html-lite} (@pxref{Simple HTML document construction}) and
+@code{text.tree} (@pxref{Lazy text construction}).
 
 Note: it seems that there is no active formal specification for CGI.
 See @uref{http://w3c.org/CGI/} for more information.
@@ -23665,7 +23665,7 @@ is @code{#f} if @var{list} is false, or @code{()} otherwise.
 
 @defun cgi-header :key status content-type location cookies
 @c EN
-Creates a text tree (@xref{Lazy text construction}) for the
+Creates a text tree (@pxref{Lazy text construction}) for the
 HTTP header of the reply message.  The most simple form is
 like this:
 @c JP
@@ -23681,7 +23681,7 @@ HTTPリプライメッセージのヘッダを、テキストツリー形式(@re
 You can specify alternative content-type by the keyword argument
 @var{content-type}.   If you want to set cookies to the client,
 specify a list of cookie strings to the keyword argument @var{cookies}.
-You can use @code{construct-cookie-string} (@xref{HTTP cookie handling})
+You can use @code{construct-cookie-string} (@pxref{HTTP cookie handling})
 to build such a list of cookie strings.
 @c JP
 キーワード引数@var{content-type}によってContent typeを指定できます。
@@ -23718,7 +23718,7 @@ The default value is Gauche's native encoding.
 If the parameter is set other than the native encoding, @code{cgi-main}
 converts the output
 encoding by @code{gauche.charconv} module
-(@xref{Character code conversion}).
+(@pxref{Character code conversion}).
 @c JP
 このパラメータの値は次に説明する@code{cgi-main}が出力するデータの
 文字符合化法(CES)を指定します。デフォルトの値はGaucheのネイティブエンコーディング
@@ -23753,7 +23753,7 @@ CGIスクリプトのための便利なラッパー手続きです。
 
 @c EN
 @var{proc} has to return a tree of strings
-(@xref{Lazy text construction}), including the HTTP header.
+(@pxref{Lazy text construction}), including the HTTP header.
 @code{cgi-main} outputs the returned tree to the current output port
 by @code{write-tree}, then returns zero.
 @c JP
@@ -23767,7 +23767,7 @@ by @code{write-tree}, then returns zero.
 If an error is signaled in @var{proc}, it is caught and an HTML
 page reporting the error is generated.  You can customize the
 error page by providing a procedure to the @var{on-error} keyword argument.
-The procedure takes an @code{<condition>} object (@xref{Conditions}),
+The procedure takes an @code{<condition>} object (@pxref{Conditions}),
 and has to return a tree of string for the error reporting HTML
 page, including an HTTP header.
 @c JP
@@ -24339,7 +24339,7 @@ to @code{call-with-cgi-script} as they are.
 The output of the script is parsed by
 @code{run-cgi-script->header&body}.
 First, the RFC2822 header fields are parsed by
-@code{rfc822-read-headers} (@xref{RFC822 message parsing}).
+@code{rfc822-read-headers} (@pxref{RFC822 message parsing}).
 Then, the @var{reader} is called with an input port which
 is piped to the script's output.
 @c JP
@@ -24367,7 +24367,7 @@ and the return value of @var{reader}.
 @defun run-cgi-script->sxml script :key environment parameters
 @c EN
 This is a procedure that uses @code{ssax:xml->sxml}
-(@xref{Functional XML parser}) as the @var{reader}
+(@pxref{Functional XML parser}) as the @var{reader}
 in @code{run-cgi-script->header&body}.
 Useful when you're testing a cgi script that produces
 well-formed HTML and/or XML document.
@@ -24385,7 +24385,7 @@ CGIスクリプトをテストする場合に便利です。
 @c EN
 These procedures use @code{port->string}
 and @code{port->string-list}
-(@xref{Input utility functions}) as the @var{reader}
+(@pxref{Input utility functions}) as the @var{reader}
 in @code{run-cgi-script->header&body}, respectively.
 @c JP
 これらの手続きは、@code{run-cgi-script->header&body}の

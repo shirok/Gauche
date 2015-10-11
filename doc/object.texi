@@ -3486,7 +3486,7 @@ fucntions.  If you define a metaclass, you can define methods
 for them to customize how those calculations are done.
 Class inheritance is calculated by @code{compute-cpl} defined below.
 Slot calculation is a bit involved, and explained in the 
-next subsection (@xref{Customizing slot access}).
+next subsection (@pxref{Customizing slot access}).
 
 If your metaclass needs to initialize auxiliary slots, you can
 define your own @code{initialize} method, in which you call
