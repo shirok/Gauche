@@ -47,6 +47,7 @@
           gap-buffer-pos gap-buffer-gap-at? gap-buffer-ref
           gap-buffer-gap-start gap-buffer-gap-end gap-buffer-move!
           gap-buffer-insert! gap-buffer-delete! gap-buffer-change!
+          gap-buffer-clear!
           gap-buffer-edit!
           gap-buffer->generator gap-buffer->string)
   )
@@ -230,6 +231,11 @@
       (error "deletion size too big:" size))
     (set! (~ gbuf'gap-end) newend)
     gbuf))
+
+;; API
+(define (gap-buffer-clear! gbuf)
+  (set! (~ gbuf'gap-start) 0)
+  (set! (~ gbuf'gap-end) (%gbuf-size gbuf)))
 
 ;; API
 ;; Delete SIZE from the current pos, then insert content.
