@@ -13,6 +13,7 @@ GENERATED = Makefile $(MANPAGES)
 @CROSS_COMPILING_no@GOSH = $(top_builddir)/src/gosh -q -ftest
 @CROSS_COMPILING_yes@GOSH = gosh -q
 INSTALL = @INSTALL@
+INSTALL_DATA = @INSTALL_DATA@
 MKINSTDIR = $(top_srcdir)/mkinstalldirs
 MAKEINFO = @MAKEINFO@
 GZIP_PROGRAM = @GZIP_PROGRAM@
@@ -58,11 +59,11 @@ all: info
 
 install: all
 	if test ! -d $(DESTDIR)$(mandir)/man1; then $(MKINSTDIR) $(DESTDIR)$(mandir)/man1; fi
-	$(INSTALL) -m 444 $(MANPAGES) $(DESTDIR)$(mandir)/man1
+	$(INSTALL_DATA) $(MANPAGES) $(DESTDIR)$(mandir)/man1
 	if test ! -d $(DESTDIR)$(infodir); then $(MKINSTDIR) $(DESTDIR)$(infodir); fi
 	if test -f gauche-refe.info.gz -o -f gauche-refj.info.gz; then \
 	  for info in *.info*; do \
-	    $(INSTALL) -m 444 $$info $(DESTDIR)$(infodir)/; \
+	    $(INSTALL_DATA) $$info $(DESTDIR)$(infodir)/; \
 	  done; \
 	fi
 
