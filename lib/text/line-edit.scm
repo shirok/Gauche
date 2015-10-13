@@ -43,6 +43,7 @@
 (select-module text.line-edit)
 
 (define *kill-ring-size* 60)
+(define *history-size* 200)
 
 (define-class <line-edit-context> ()
   ((console :init-keyword :console :init-form (make-default-console))
@@ -52,6 +53,10 @@
    (initpos-x)
    (screen-height)
    (screen-width)
+
+   ;; Kill and yank
+   ;; Kill ring survives across sessions.  Last-yank-* is reset after
+   ;; every command except yank and yank-pop.
    (kill-ring :init-form (make-ring-buffer
                           (make-vector *kill-ring-size*)
                           :overflow-handler 'overwrite))
@@ -59,10 +64,25 @@
                               ; last op wasn't yank.
    (last-yank-pos :init-value 0) ; index into buffer where last yank is put.
    (last-yank-size :init-value 0)
-   (undo-stack :init-form (make-queue)) ; see the comment at the bottom
-   (redo-queue :init-form (make-queue)) ; ditto
-   (history :init-value '()) ; newer history pushed onto this
-   (history-pos :init-value 0) ; the current history point; C-p/n moves this
+
+   ;; Undo
+   ;; See the comment at the bottom.  In the normal state, redo-queue is
+   ;; empty and undo-stack has the stack of edit commands to undo the changes.
+   ;; Redo-queue is non-empty when we're in the middle of undo sequence.
+   (undo-stack :init-form (make-queue))
+   (redo-queue :init-form (make-queue))
+
+   ;; History
+   ;; Global history is kept in the ring buffer, index 0 being the most recent.
+   ;; History-pos is the index to the last recalled history; -1 indicates
+   ;; we're editing the fresh line instead of the one recalled from history.
+   ;; The history-transient is a hashtable indexed by history-pos and holds
+   ;; the line and undo-stack; see below.
+   (history :init-form (make-ring-buffer
+                        (make-vector *history-size*)
+                        :overflow-handler 'overwrite))
+   (history-pos :init-value -1)
+   (history-transient :init-value #f)
    ))
 
 ;; Entry point API
@@ -227,28 +247,56 @@
   (dequeue-all! (~ ctx'redo-queue))
   (dequeue-all! (~ ctx'undo-stack)))
 
+(define (set-undo-info! ctx undo-list)
+  (reset-undo-info! ctx)
+  (unless (null? undo-list)
+    (apply enqueue! (~ ctx'undo-stack) undo-list)))
+
 ;;
 ;; History
 ;;
 
+;; Enter the current buffer contents as the history, and discard any
+;; transient info.  Returns the current buffer content.
 (define (commit-history ctx buffer)
   (rlet1 str (gap-buffer->string buffer)
-    (push! (~ ctx'history) str)
-    (set! (~ ctx'history-pos) 0)))
+    (ring-buffer-add-front! (~ ctx'history) str)
+    (set! (~ ctx'history-pos) -1)
+    (set! (~ ctx'history-transient) #f)))
 
+;; (~ ctx'history-transient) is a hashtable, indexed by history position
+;; (-1 being the fresh line), and its value is a pair of string and
+;; undo stack.  When history is recalled and edited, and then the user
+;; moves history position, we save the edited line and its undo stack
+;; in this table.  When the user comes back to the history position,
+;; we present the saved one.
+;; Note that when the user recalls history for the first time of the session,
+;; we save the fresh line and its undo info in the transient table
+;; as the history position -1.
+(define (ensure-history-transient ctx)
+  (or (~ ctx'history-transient)
+      (rlet1 tab (make-hash-table 'eqv?)
+        (set! (~ ctx'history-transient) tab))))
+
+;; Save the current editing line to the transient table if necessary
+(define (save-history-transient ctx buffer)
+  (break-undo-sequence! ctx) ; flush redo queue
+  (when (or (= (~ ctx'history-pos) -1)
+            (not (queue-empty? (~ ctx'undo-stack))))
+    (hash-table-put! (ensure-history-transient ctx)
+                     (~ ctx'history-pos)
+                     (cons (gap-buffer->string buffer)
+                           (dequeue-all! (~ ctx'undo-stack))))))
+
+;; returns (<string> . <undo-list>)
 (define (get-history ctx)
-  (list-ref (~ ctx'history) (~ ctx'history-pos) ""))
+  (let1 tab (ensure-history-transient ctx)
+    (or (hash-table-get tab (~ ctx'history-pos) #f)
+        (cons (ring-buffer-ref (~ ctx'history) (~ ctx'history-pos) "")
+              '()))))
 
-(define (get-prev-history ctx)
-  (begin0 (get-history ctx)
-    (set! (~ ctx'history-pos)
-          (min (+ (~ ctx'history-pos) 1) (length (~ ctx'history))))))
-
-(define (get-next-history ctx)
-  (if (zero? (~ ctx'history-pos))
-    ""
-    (begin (set! (~ ctx'history-pos) (- (~ ctx'history-pos) 1))
-           (get-history ctx))))
+(define (history-pos ctx) (~ ctx'history-pos))
+(define (history-size ctx) (ring-buffer-num-entries (~ ctx'history)))
 
 ;;
 ;; Kill rings
@@ -338,14 +386,30 @@
   (init-screen-params ctx)
   #t)
 
+;; NB: This command may modify undo queue
 (define (prev-history ctx buf key)
-  (let1 s (get-prev-history ctx)
-    (gap-buffer-edit! buf `(c 0 ,(gap-buffer-content-length buf) ,s))))
+  (and (< (history-pos ctx) (- (history-size ctx) 1))
+       (begin
+         (save-history-transient ctx buf)
+         (inc! (~ ctx'history-pos))
+         (let1 p (get-history ctx)
+           (set-undo-info! ctx (cdr p))
+           (gap-buffer-clear! buf)
+           (gap-buffer-insert! buf (car p))
+           #t))))
 
+;; NB: This command may modify undo queue
 (define (next-history ctx buf key)
-  (let1 s (get-next-history ctx)
-    (gap-buffer-edit! buf `(c 0 ,(gap-buffer-content-length buf) ,s))))
-
+  (and (> (history-pos ctx) -1)
+       (begin
+         (save-history-transient ctx buf)
+         (dec! (~ ctx'history-pos))
+         (let1 p (get-history ctx)
+           (set-undo-info! ctx (cdr p))
+           (gap-buffer-clear! buf)
+           (gap-buffer-insert! buf (car p))
+           #t))))
+       
 (define (transpose-chars ctx buf key)
   (cond [(gap-buffer-gap-at? buf 'beginning) #f]
         [(= (gap-buffer-content-length buf) 1) ; special case

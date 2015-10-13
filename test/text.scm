@@ -568,6 +568,12 @@ fuga
        (sql-tokenize "?,?,:foo, :bar , ?"))
 
 ;;-------------------------------------------------------------------
+(test-section "line-edit")
+(use text.line-edit)
+(test-module 'text.line-edit)
+
+
+;;-------------------------------------------------------------------
 (test-section "tree")
 (use text.tree)
 (test-module 'text.tree)

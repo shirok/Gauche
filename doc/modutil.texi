@@ -3341,7 +3341,7 @@ a producer adds new data to one end while a consumer removes data
 from the other end; if fill pointer reachers at the end of the array,
 it wraps around to the beginning, hence the name.
 
-The ring buffer this module allows adding and removing elements
+The ring buffer of this module allows adding and removing elements
 from both ends, hence functionally it is a double-ended queue,
 or deque.  It also allows O(1) indexed access to the contents,
 and customized handling for the case when the buffer gets full.
@@ -3367,7 +3367,8 @@ type of the passed backing storage, (2) returns a symbol @code{error},
 or (3) returns a symbol @code{overwrite}.  If it returns a vector/uvector,
 it will be used as the new backing storage.  If it returns @code{error},
 an error (``buffer is full'') is thrown.  If it returns @code{overwrite},
-the new element overwrites the existiing element.
+the new element overwrites the existiing element (as if one element
+from the other end is popped and discarded.)
 
 Passing a symbol @code{error} or @code{overwrite} to @var{overflow-handler}
 is a shorthand of passing a procedure that unconditionally returns
