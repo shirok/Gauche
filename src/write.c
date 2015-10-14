@@ -36,6 +36,7 @@
 #include "gauche/class.h"
 #include "gauche/writer.h"
 #include "gauche/priv/builtin-syms.h"
+#include "gauche/priv/macroP.h" /* PVREF stuff.  Will go in future */
 #include "gauche/priv/writerP.h"
 #include "gauche/priv/portP.h"
 #include "gauche/char_attr.h"
@@ -458,6 +459,15 @@ ScmObj Scm__WritePrimitive(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
         fmt.radix = wp->printBase;
         if (wp->printRadix) fmt.flags |= SCM_NUMBER_FORMAT_ALT_RADIX;
         return SCM_MAKE_INT(Scm_PrintNumber(port, obj, &fmt));
+    }
+    /* PVREF only appears in pattern temlate in the current macro expander.
+       It will be go away once we rewrite the expander. */
+    else if (SCM_PVREF_P(obj)) {
+        char buf[SPBUFSIZ];
+        int k = snprintf(buf, SPBUFSIZ, "#<pvar %ld.%ld>",
+                         SCM_PVREF_LEVEL(obj), SCM_PVREF_COUNT(obj));
+        Scm_PutzUnsafe(buf, -1, port);
+        return SCM_MAKE_INT(k);
     }
     return SCM_FALSE;
 }
