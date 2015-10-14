@@ -1,3 +1,9 @@
+2015-10-14  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c (Scm__VMInsnOffsets): Make the offset of insn handlers
+	  available without conditional compilation, for easier micro
+	  profiling.
+
 2015-10-10  Shiro Kawai  <shiro@acm.org>
 
 	* lib/text/line-edit.scm: Added.

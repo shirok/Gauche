@@ -88,6 +88,11 @@ static ScmCompiledCode internal_apply_compiled_code =
                                         SCM_NIL, SCM_FALSE,
                                         SCM_FALSE, SCM_FALSE);
 
+/* This saves offset of each instruction handler, initialized by
+   the first call to run_loop.  The info can be used for detailed
+   profiling. */
+static unsigned long vminsn_offsets[SCM_VM_NUM_INSNS] = { 0, };
+
 /*
  * The VM.
  *
@@ -854,22 +859,17 @@ static void run_loop()
     };
 #endif /* __GNUC__ */
 
-    /* The following code dumps the address of labels of each instruction
-       handler.  Useful for tuning if used with machine instruction-level
-       profiler. */
-#if 0
-    static int init = 0;
-    if (!init) {
+    /* Records the offset of each instruction handler from run_loop entry
+       address.  They can be retrieved by gauche.internal#%vm-get-insn-offsets.
+       Useful for tuning if used with machine instruction-level profiler. */
+    if (vminsn_offsets[0] == 0) {
+        /* No need to lock, for this is only executed when run_loop runs for
+           the first time, which is in Scm_Init(). */
         for (int i=0; i<SCM_VM_NUM_INSNS; i++) {
-            fprintf(stderr, "%3d %-15s %p (+%04x, %5d)\n",
-                    i, Scm_VMInsnName(i),
-                    dispatch_table[i],
-                    (char*)dispatch_table[i] - (char*)run_loop,
-                    (char*)dispatch_table[i] - (char*)run_loop);
+            vminsn_offsets[i] =
+                (unsigned long)((char*)dispatch_table[i] - (char*)run_loop);
         }
-        init = TRUE;
     }
-#endif
 
     for (;;) {
         DISPATCH;
@@ -2897,6 +2897,16 @@ struct GC_ms_entry *vm_stack_mark(GC_word *addr,
     return e;
 }
 #endif /*USE_CUSTOM_STACK_MARKER*/
+
+ScmObj Scm__VMInsnOffsets()
+{
+    ScmObj v = Scm_MakeVector(SCM_VM_NUM_INSNS, SCM_FALSE);
+    for (int i = 0; i < SCM_VM_NUM_INSNS; i++) {
+        SCM_VECTOR_ELEMENT(v, i) = Scm_MakeIntegerU(vminsn_offsets[i]);
+    }
+    return v;
+}
+
 
 /*===============================================================
  * Initialization

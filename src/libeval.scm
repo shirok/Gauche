@@ -563,6 +563,9 @@
   ((with-module gauche.internal %show-stack-trace)
    trace port maxdepth skip offset))
 
+(select-module gauche.internal)
+(define-cproc %vm-get-insn-offsets () Scm__VMInsnOffsets)
+
 ;; This is also called from C's Scm_ShowStackTrace
 ;; TRACE is what vm-get-stack-trace-lite returns.
 ;; Be careful not to depend on autoloaded functions.
