@@ -312,7 +312,7 @@ AC_SUBST(LINKGAUCHE)
 
 dnl put the args to the configure in gauche-config script for later use.
 dnl the use of ac_configure_args depends on autoconf 2.52.
-GAUCHE_CONFIGURE_ARGS="`echo ""$ac_configure_args"" | sed 's/@<:@\\""\`\$@:>@/\\\&/g'`"
+GAUCHE_CONFIGURE_ARGS=`echo "$ac_configure_args" | sed 's/@<:@\\"\`\$@:>@/\\\\&/g'`
 AC_SUBST(GAUCHE_CONFIGURE_ARGS)
 
 dnl ==========================================================
