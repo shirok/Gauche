@@ -74,6 +74,7 @@
 * Topological sort::            util.toposort
 * CGI Utility::                 www.cgi
 * CGI testing::                 www.cgi.test
+* CSS parsing and construction::  www.css
 @end menu
 
 @c ----------------------------------------------------------------------
@@ -24201,7 +24202,7 @@ pathname).
 
 
 @c ----------------------------------------------------------------------
-@node CGI testing,  , CGI Utility, Library modules - Utilities
+@node CGI testing, CSS parsing and construction, CGI Utility, Library modules - Utilities
 @section @code{www.cgi.test} - CGI testing
 @c NODE CGIのテスト, @code{www.cgi.test} - CGIのテスト
 
@@ -24404,6 +24405,91 @@ An example:
                              :parameters '((command . "view")
                                            (page . 1234)))
 @end example
+
+
+@c ----------------------------------------------------------------------
+@node CSS parsing and construction,  , CGI testing, Library modules - Utilities
+@section @code{www.css} - CSS parsing and construction
+@c NODE CSSのパーズと構築, @code{www.css} - CSSのパーズと構築
+
+@deftp {Module} www.css
+This module provides tools to convert between S-expression and CSS.
+
+The S-expression CSS (sxcss) is a convenient way to manipulate
+CSS in Scheme.
+@end deftp
+
+@subheading CSS in S-expression
+
+@example
+<sxcss>      : @{<style-rule> | <at-rule>@} ...
+
+<style-rule> : (style-rule <pattern> <declaration> ...)
+             | (style-decls <declaration> ...)
+
+<pattern>   : <selector> | (or <selector> ...)
+<seletor>   : <simple-selector>
+            | <chained-selector>
+<chained-selector> : (<simple-selector> . (<op>? . <chained-selector>))
+<op>        : > | + | ~
+<simple-selector> : <element-name>
+            | (<element-name> <option> ...)
+<option>    : (id <name>)                           ; E#id
+            | (class <ident>)                       ; E.class
+            | (has <ident>)                         ; E[attrib]
+            | (= <ident> <attrib-value>)            ; E[attrib=val]
+            | (~= <ident> <attrib-value>)           ; E[attrib~=val]
+            | (:= <ident> <attrib-value>)           ; E[attrib|=val]
+            | (*= <ident> <attrib-value>)           ; E[attrib*=val]
+            | (^= <ident> <attrib-value>)           ; E[attrib^=val]
+            | ($= <ident> <attrib-value>)           ; E[attrib$=val]
+            | (:not <negation-arg>)                 ; E:not(s)
+            | (: <ident>)                           ; E:pseudo-class
+            | (: (<fn> <ident> ...))                ; E:pseudl-class(arg)
+            | (:: <ident>)                          ; E::pseudo-element
+<element-name> : <ident> | *
+<attrib-value> : <ident> | <string>
+<negation-arg> | <element-name> | * | <option>  ; except <negation-arg>
+
+<declaration>  : (<ident> <expr> <expr2> ... <important>?)
+<important> : !important
+<expr>      : <term>
+            | (/ <term> <term> ...)
+            | (or <term> <term> ...)
+            | #(<term> <term> ...)             ; juxtaposition
+<term>      : <quantity> | (- <quantity>) | (+ <quantity>)
+            | <string> | <ident> | <url> | <hexcolor> | <function>
+<quantity>  : <number>
+            | (<number> %)
+            | (<number> <ident>)
+<url>       | (url <string>)
+<hexcolor>  | (color <string>)  ; <string> must be hexdigits
+<function>  | (<fn> <arg> ...)
+<arg>       | <term> | #(<term> ...) | (/ <term> <term> ...)
+
+<at-rule>    : <at-media-rule> | <at-import-rule>
+                   ; NB: Other at-rules are not supported yet
+<at-media-rule>  : (@@media (<symbol> ...) <style-rule> ...)
+<at-import-rule> : (@@import <string> (<symbol> ...))
+@end example
+
+NB: Negation op is @code{:not} instead of @code{not}, 
+since @code{(not <negation-arg>)}
+would be ambiguous from the simple node named "not" with one option.
+
+@subheading Constructing CSS
+
+@defun construct-css sxcss :optional oport
+@end defun
+
+@subheading Parsing CSS
+
+@defun css-parse-file file :key encoding
+@end defun
+
+@defun css-parse-selector-string str
+@end defun
+
 
 
 @c Local variables:
