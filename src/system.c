@@ -2324,7 +2324,7 @@ void Scm_SetEnv(const char *name, const char *value, int overwrite)
         }
     }
     (void)SCM_INTERNAL_MUTEX_UNLOCK(env_mutex);
-    if (r < 0) {
+    if (result < 0) {
         free (nameval);
         Scm_SysError("putenv failed on '%s=%s'", name, value);
     }
