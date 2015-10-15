@@ -464,7 +464,7 @@ ScmObj Scm__WritePrimitive(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
        It will be go away once we rewrite the expander. */
     else if (SCM_PVREF_P(obj)) {
         char buf[SPBUFSIZ];
-        int k = snprintf(buf, SPBUFSIZ, "#<pvar %ld.%ld>",
+        int k = snprintf(buf, SPBUFSIZ, "#<pvar %" PRIdPTR ".%" PRIdPTR ">",
                          SCM_PVREF_LEVEL(obj), SCM_PVREF_COUNT(obj));
         Scm_PutzUnsafe(buf, -1, port);
         return SCM_MAKE_INT(k);
