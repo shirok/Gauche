@@ -1219,9 +1219,9 @@ void Scm__InitLoad(void)
     SCM_APPEND1(init_dynload_path, t, Scm_ArchitectureDirectory());
 
     ScmObj init_load_suffixes = t = SCM_NIL;
+    SCM_APPEND1(init_load_suffixes, t, SCM_MAKE_STR(".sld")); /* R7RS library */
     SCM_APPEND1(init_load_suffixes, t, SCM_MAKE_STR(".sci"));
     SCM_APPEND1(init_load_suffixes, t, SCM_MAKE_STR(".scm"));
-    SCM_APPEND1(init_load_suffixes, t, SCM_MAKE_STR(".sld")); /* R7RS library */
 
     (void)SCM_INTERNAL_MUTEX_INIT(ldinfo.path_mutex);
     (void)SCM_INTERNAL_MUTEX_INIT(ldinfo.prov_mutex);

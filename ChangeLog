@@ -1,3 +1,12 @@
+2015-10-15  Shiro Kawai  <shiro@acm.org>
+
+	* src/load.c (Scm__InitLoad): Give *.sld higher precedence to
+	  *.sci and *.scm, for it seems the consensus among r7rs.
+	  NB: This could pose a problem that if we already have Gauche-optimized
+	  library then the user installs r7rs library, the former may be
+	  ignored.  In that case, however, we might ask r7rs one to include
+	  cond-expand to load Gauche-specific one.
+
 2015-10-14  Shiro Kawai  <shiro@acm.org>
 
 	* src/vm.c (Scm__VMInsnOffsets): Make the offset of insn handlers
