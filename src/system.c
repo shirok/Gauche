@@ -2308,7 +2308,7 @@ void Scm_SetEnv(const char *name, const char *value, int overwrite)
     ScmObj sname = Scm_MakeString(name, -1, -1, SCM_STRING_COPYING);
 
     int result = 0;
-    chat *prev_mem = NULL;
+    char *prev_mem = NULL;
     
     (void)SCM_INTERNAL_MUTEX_LOCK(env_mutex);
     if (overwrite || getenv(name) == NULL) {
