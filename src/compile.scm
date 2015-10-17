@@ -308,33 +308,25 @@
  ;;     - We assume 'lookupAs' and the car of each frame are small non-negative
  ;;       integers, so we directly compare them without unboxing them.
  (define-cfn env-lookup-int (name lookup-as module::ScmModule* frames) :static
-   ;; First, we look up the identifier directly
-   (when (SCM_IDENTIFIERP name)
-     (dopairs [fp1 frames]
-       (when (> (SCM_CAAR fp1) lookup-as) ; see PERFORMANCE KLUDGE above
-         (continue))
-       ;; inline assq here to squeeze performance.
-       (dolist [vp (SCM_CDAR fp1)]
-         (when (SCM_EQ name (SCM_CAR vp)) (return (SCM_CDR vp))))))
-   ;; Now we 'strip' the identifier's wrapping
-   (let* ([name-ident?::int (SCM_IDENTIFIERP name)]
-          [env (?: name-ident?
-                   (-> (SCM_IDENTIFIER name) env)
-                   frames)]
-          [true-name (?: name-ident?
-                         (SCM_OBJ (-> (SCM_IDENTIFIER name) name))
-                         name)])
-     (dopairs [fp env]
-       (when (> (SCM_CAAR fp) lookup-as) ; see PERFORMANCE KLUDGE above
-         (continue))
-       ;; inline assq here to squeeze performance.
-       (dolist [vp (SCM_CDAR fp)]
-         (when (SCM_EQ true-name (SCM_CAR vp)) (return (SCM_CDR vp)))))
-     (if (SCM_SYMBOLP name)
-       (return (Scm_MakeIdentifier name module '()))
-       (begin
-         (SCM_ASSERT (SCM_IDENTIFIERP name))
-         (return name)))))
+   (let* ([y name])
+     (while 1
+       (dopairs [fp1 frames]
+         (when (> (SCM_CAAR fp1) lookup-as) ; see PERFORMANCE KLUDGE above
+           (continue))
+         ;; inline assq here to squeeze performance.
+         (dolist [vp (SCM_CDAR fp1)]
+           (when (SCM_EQ y (SCM_CAR vp)) (return (SCM_CDR vp)))))
+       ;; No match.  We strip identifieir wrapping and retry
+       (if (SCM_IDENTIFIERP y)
+         (set! frames (-> (SCM_IDENTIFIER y) env)
+               y (-> (SCM_IDENTIFIER y) name))
+         (break))))
+   ;; No local bindings.  Return an identifier.
+   (if (SCM_SYMBOLP name)
+     (return (Scm_MakeIdentifier name module '()))
+     (begin
+       (SCM_ASSERT (SCM_IDENTIFIERP name))
+       (return name))))
 
  ;; Internal API - used while macro expansion
  (define-cproc env-lookup (name module frames)
@@ -2469,7 +2461,7 @@
              ($cons obj ($const op) xx))))]
       [(? pair?)       (quasi* obj level)]
       [(? vector?)     (quasi-vector obj level)]
-      [(? identifier?) ($const (identifier-name obj))] ;; unwrap syntax
+      [(? identifier?) ($const (unwrap-syntax obj))]
       [() ($const-nil)]
       [_  ($const obj)]))
 
@@ -6220,7 +6212,7 @@
   (and (variable? var)
        (let1 v (cenv-lookup-variable cenv var)
          (and (identifier? v)
-              (eq? (identifier-name v) sym)
+              (eq? (unwrap-syntax v) sym)
               (null? (identifier-env v))))))
 
 (define (everyc proc lis c)             ;avoid closure allocation

@@ -386,9 +386,11 @@
 
 (define (arity-invalid? gref numargs closure)
   (and-let* ([ numargs ]
+             ;; TODO: What if GREF is nested identifier?
              [proc (global-variable-ref
-                    (slot-ref gref 'module)
-                    (slot-ref gref 'name))]
+                    (slot-ref gref'module)
+                    (unwrap-syntax gref)
+                    #f)]
              ;; We exclude <generic> with no methods.  Such "placeholder"
              ;; generic function may be used in the base module, expecting
              ;; the other module adds methods to it.
@@ -399,11 +401,9 @@
           numargs)))
 
 (define (dangling-gref? ident closure)
-  (and (not ((with-module gauche.internal find-binding)
-             (slot-ref ident 'module)
-             (slot-ref ident 'name)
-             #f))
-       (cons (slot-ref ident 'name) (slot-ref closure 'info))))
+  (let1 name (unwrap-syntax ident)
+    (and (not ((with-module gauche.internal id->bound-gloc) ident))
+         (cons name (slot-ref closure 'info)))))
 
 ;; Logging and bookkeeping -----------------------------------------
 (define (test-section msg)

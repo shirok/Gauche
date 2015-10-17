@@ -339,8 +339,17 @@ static int isEllipsis(PatternContext *ctx, ScmObj obj)
 {
     if (SCM_FALSEP(ctx->ellipsis)) return FALSE;
     if (SCM_IDENTIFIERP(obj)) {
-        if (!SCM_NULLP(SCM_IDENTIFIER(obj)->env)) return FALSE;
-        return SCM_EQ(ctx->ellipsis, SCM_OBJ(SCM_IDENTIFIER(obj)->name));
+        if (SCM_IDENTIFIERP(ctx->ellipsis)) {
+            static ScmObj free_identifier_eq_proc = SCM_UNDEFINED;
+            SCM_BIND_PROC(free_identifier_eq_proc, "free-identifier=?",
+                          Scm_GaucheInternalModule());
+            if (!SCM_NULLP(SCM_IDENTIFIER(obj)->env)) return FALSE;
+            return !SCM_FALSEP(Scm_ApplyRec2(free_identifier_eq_proc,
+                                             ctx->ellipsis, obj));
+        } else {
+            return SCM_EQ(ctx->ellipsis,
+                          SCM_OBJ(Scm_UnwrapIdentifier(SCM_IDENTIFIER(obj))));
+        }
     } else {
         return SCM_EQ(ctx->ellipsis, obj);
     }
@@ -718,13 +727,16 @@ static inline void match_insert(ScmObj pvref, ScmObj matched, MatchVar *mvec)
 static inline int match_identifier(ScmIdentifier *id, ScmObj obj, ScmObj env)
 {
     if (SCM_SYMBOLP(obj)) {
-        return (SCM_EQ(id->name, obj)
+        return (SCM_EQ(SCM_OBJ(Scm_UnwrapIdentifier(id)), obj)
                 && Scm_IdentifierBindingEqv(id, SCM_SYMBOL(obj), env));
     }
     if (SCM_IDENTIFIERP(obj)) {
-        /*TODO: module?*/
-        return (id->name == SCM_IDENTIFIER(obj)->name
-                && id->env == SCM_IDENTIFIER(obj)->env);
+        /* free-identifier=? is defined in Scheme (libmod.scm)  */
+        static ScmObj free_identifier_eq_proc = SCM_UNDEFINED;
+        SCM_BIND_PROC(free_identifier_eq_proc, "free-identifier=?",
+                      Scm_GaucheInternalModule());
+        return !SCM_FALSEP(Scm_ApplyRec2(free_identifier_eq_proc,
+                                         SCM_OBJ(id), obj));
     }
     return FALSE;
 }

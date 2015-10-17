@@ -1,3 +1,12 @@
+2015-10-16  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.scm (env-lookup-int), src/compaux.c (Scm_CopyIdentifier):
+	  One step toward fixing macro-defining-macros.  Now identifier can
+	  be wrapped with multiple layers, e.g. identifier->name may be
+	  another identifier.
+	  NB: We may still have places where identifier->name is assumed to
+	  be symbol; we need to fix as we find them.
+
 2015-10-15  Shiro Kawai  <shiro@acm.org>
 
 	* src/load.c (Scm__InitLoad): Give *.sld higher precedence to

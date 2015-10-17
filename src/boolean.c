@@ -176,8 +176,10 @@ int Scm_EqualP(ScmObj x, ScmObj y)
        we don't want to check idnetifier-ness every time.
     */
     if (SCM_IDENTIFIERP(x) || SCM_IDENTIFIERP(y)) {
-        if (SCM_IDENTIFIERP(x)) x = SCM_OBJ(SCM_IDENTIFIER(x)->name);
-        if (SCM_IDENTIFIERP(y)) y = SCM_OBJ(SCM_IDENTIFIER(y)->name);
+        if (SCM_IDENTIFIERP(x))
+            x = SCM_OBJ(Scm_UnwrapIdentifier(SCM_IDENTIFIER(x)));
+        if (SCM_IDENTIFIERP(y))
+            y = SCM_OBJ(Scm_UnwrapIdentifier(SCM_IDENTIFIER(y)));
         return SCM_EQ(x, y);
     }
     /* End of EXPERIMENTAL code */

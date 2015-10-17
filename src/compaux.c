@@ -157,7 +157,10 @@ static ScmObj get_binding_frame(ScmObj var, ScmObj env)
     SCM_FOR_EACH(frame, env) {
         if (!SCM_PAIRP(SCM_CAR(frame))) continue;
         SCM_FOR_EACH(fp, SCM_CDAR(frame)) {
-            if (SCM_CAAR(fp) == var) return frame;
+            if (SCM_CAAR(fp) == var) {
+                SCM_ASSERT(SCM_LISTP(frame));
+                return frame;
+            }
         }
     }
     return SCM_NIL;
@@ -206,7 +209,7 @@ ScmObj Scm_CopyIdentifier(ScmIdentifier *orig)
 {
     ScmIdentifier *id = SCM_NEW(ScmIdentifier);
     SCM_SET_CLASS(id, SCM_CLASS_IDENTIFIER);
-    id->name = orig->name;
+    id->name = orig;
     id->module = orig->module;
     id->env = orig->env;
     return SCM_OBJ(id);
@@ -265,7 +268,7 @@ static ScmClassStaticSlotSpec identifier_slots[] = {
 /* Convert all identifiers in form into a symbol.
    This keeps linear history to avoid entering infinite loop if
    the given form is circular; but it doens't recover the shared
-   substricture. */
+   substructure. */
 static ScmObj unwrap_rec(ScmObj form, ScmObj history)
 {
     if (!SCM_PTRP(form)) return form;
