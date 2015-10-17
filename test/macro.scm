@@ -1020,6 +1020,19 @@
               (global-variable-ref (find-module 'defFoo-test) 'foo-toplevel #f)
               (get-foo))))
 
+;; recursive reference in macro-defined-macro
+;; https://gist.github.com/ktakashi/03ae059f804a723a9589
+(define-syntax assocm
+  (syntax-rules ()
+    ((_ key (alist ...))
+     (letrec-syntax ((fooj (syntax-rules (key)
+			    ((_ (key . e) res (... ...)) '(key . e))
+			    ((_ (a . d) res (... ...)) (fooj res (... ...))))))
+       (fooj alist ...)))))
+
+(test "recursive reference in macro-defined-macro" '(c . d)
+      (lambda () (assocm c ((a . b) (b . d) (c . d) (d . d)))))
+
 ;;----------------------------------------------------------------------
 ;; identifier comparison
 

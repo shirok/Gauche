@@ -307,6 +307,7 @@
  ;;     - We assume the frame structure is well-formed, so skip some tests.
  ;;     - We assume 'lookupAs' and the car of each frame are small non-negative
  ;;       integers, so we directly compare them without unboxing them.
+ ;;
  (define-cfn env-lookup-int (name lookup-as module::ScmModule* frames) :static
    (let* ([y name])
      (while 1
@@ -316,10 +317,12 @@
          ;; inline assq here to squeeze performance.
          (dolist [vp (SCM_CDAR fp1)]
            (when (SCM_EQ y (SCM_CAR vp)) (return (SCM_CDR vp)))))
-       ;; No match.  We strip identifieir wrapping and retry
+       ;; No match.  We strip identifier wrapping and retry
        (if (SCM_IDENTIFIERP y)
-         (set! frames (-> (SCM_IDENTIFIER y) env)
-               y (-> (SCM_IDENTIFIER y) name))
+         (let* ([inner (-> (SCM_IDENTIFIER y) name)])
+           (unless (SCM_IDENTIFIERP inner)
+             (set! frames (-> (SCM_IDENTIFIER y) env)))
+           (set! y inner))
          (break))))
    ;; No local bindings.  Return an identifier.
    (if (SCM_SYMBOLP name)

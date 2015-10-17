@@ -906,7 +906,7 @@ static ScmObj realize_template_rec(ScmObj template,
         return Scm_ListToVector(h, 0, -1);
     }
     if (SCM_IDENTIFIERP(template)) {
-        /* we copy the identifier, so that the symbol bindings introduced
+        /* we wrap the identifier, so that the symbol bindings introduced
            by recursive macro call won't interfere each other.
            (e.g. the macro definitions of "letrec" and "do" shown in R5RS
            use the fact that the symbol "newtemp" introduced in each
@@ -914,7 +914,7 @@ static ScmObj realize_template_rec(ScmObj template,
         ScmObj p = Scm_Assq(template, *idlist);
         if (SCM_PAIRP(p)) return SCM_CDR(p);
         else {
-            ScmObj id = Scm_CopyIdentifier(SCM_IDENTIFIER(template));
+            ScmObj id = Scm_WrapIdentifier(SCM_IDENTIFIER(template));
             *idlist = Scm_Acons(template, id, *idlist);
             return id;
         }

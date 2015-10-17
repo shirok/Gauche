@@ -191,7 +191,7 @@ SCM_CLASS_DECL(Scm_IdentifierClass);
 
 SCM_EXTERN ScmObj Scm_MakeIdentifier(ScmObj name, ScmModule *mod,
                                      ScmObj env);
-SCM_EXTERN ScmObj Scm_CopyIdentifier(ScmIdentifier *id);
+SCM_EXTERN ScmObj Scm_WrapIdentifier(ScmIdentifier *id);
 SCM_EXTERN int    Scm_IdentifierBindingEqv(ScmIdentifier *id, ScmSymbol *sym,
                                            ScmObj env);
 SCM_EXTERN int    Scm_FreeVariableEqv(ScmObj var, ScmObj sym, ScmObj env);

@@ -205,7 +205,7 @@ int Scm_IdentifierBindingEqv(ScmIdentifier *id, ScmSymbol *sym, ScmObj env)
     return (bf == id->env);
 }
 
-ScmObj Scm_CopyIdentifier(ScmIdentifier *orig)
+ScmObj Scm_WrapIdentifier(ScmIdentifier *orig)
 {
     ScmIdentifier *id = SCM_NEW(ScmIdentifier);
     SCM_SET_CLASS(id, SCM_CLASS_IDENTIFIER);
