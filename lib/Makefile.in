@@ -23,6 +23,7 @@ host        = @host@
 GAUCHE_DATA_DIR = $(datadir)/gauche-@GAUCHE_ABI_VERSION@
 SCM_INSTALL_DIR = $(GAUCHE_DATA_DIR)/@GAUCHE_VERSION@/lib
 INSTALL         = @INSTALL@
+INSTALL_DATA    = @INSTALL_DATA@
 MKINSTDIR       = $(top_srcdir)/mkinstalldirs
 SLIB_DIR        = @SLIB_DIR@
 
@@ -113,10 +114,10 @@ install:
 	  $(MKINSTDIR) $(DESTDIR)$(SCM_INSTALL_DIR)/$$d; \
 	done
 	for p in $(SCMFILES); do \
-	  $(INSTALL) -m 444 $$p $(DESTDIR)$(SCM_INSTALL_DIR)/$$p; \
+	  $(INSTALL_DATA) $$p $(DESTDIR)$(SCM_INSTALL_DIR)/$$p; \
 	done
 	if test -f slibcat; then \
-	  $(INSTALL) -m 444 slibcat $(DESTDIR)$(SCM_INSTALL_DIR)/slibcat; \
+	  $(INSTALL_DATA) slibcat $(DESTDIR)$(SCM_INSTALL_DIR)/slibcat; \
 	fi
 
 uninstall:
