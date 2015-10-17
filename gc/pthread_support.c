@@ -443,12 +443,6 @@ start_mark_threads(void)
     sigdelset(&set, GC_get_suspend_signal()    ); /* used by GC to stop the world    */
     sigdelset(&set, GC_get_thr_restart_signal()); /* used by GC to restart the world */
 
-#if defined(GC_LINUX_THREADS)
-    /* some signals are used in the system */
-    sigdelset(&set, SIGRTMIN - 2); /* used in NPTL */
-    sigdelset(&set, SIGRTMIN - 1); /* used in NPTL */
-#endif /*GC_LINUX_THREADS*/
-
     if (pthread_sigmask(SIG_BLOCK, &set, &oldset) < 0) {
       WARN("pthread_sigmask failed, errno = %" WARN_PRIdPTR "\n", errno);
     }
