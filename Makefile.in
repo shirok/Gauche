@@ -28,7 +28,7 @@ DESTDIR =
 GOSH = gosh
 LN_S = @LN_S@
 
-CONFIG_GENERATED = Makefile config.cache config.log config.status config.threads \
+CONFIG_GENERATED = Makefile config.cache config.log config.status \
 	           libtool configure.lineno autom4* gc/autom4*
 AUTOCONF_GENERATED = $(CONFIG_GENERATED) configure
 
