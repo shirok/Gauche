@@ -1,7 +1,11 @@
 2015-10-17  Shiro Kawai  <shiro@acm.org>
 
+	* src/macro.c (match_identifier): Further fix to make sure using
+	  free-identifier=? to compare literals.  See the added test in
+	  test/macro.scm.  This fix is grossly inefficient and should be
+	  optimized soon.
 	* src/compile.scm (env-lookup-int): Further fix on macro-defining
-	  macros. See the added test in tests/macro.scm.
+	  macros. See the added test in test/macro.scm.
 
 2015-10-16  Shiro Kawai  <shiro@acm.org>
 

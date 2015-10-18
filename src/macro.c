@@ -647,7 +647,7 @@ static void print_matchvec(MatchVar *mvec, int numPvars, ScmPort *port)
 }
 #endif
 
-static int match_synrule(ScmObj form, ScmObj pattern, ScmObj env,
+static int match_synrule(ScmObj form, ScmObj pattern, ScmObj mod, ScmObj env,
                          MatchVar *mvec);
 
 #define SPROUT  Scm_Cons(SCM_NIL, SCM_NIL)
@@ -724,11 +724,16 @@ static inline void match_insert(ScmObj pvref, ScmObj matched, MatchVar *mvec)
 }
 
 /* see if literal identifier ID in the pattern matches the given object */
-static inline int match_identifier(ScmIdentifier *id, ScmObj obj, ScmObj env)
+static inline int match_identifier(ScmIdentifier *id, ScmObj obj,
+                                   ScmObj mod, ScmObj env)
 {
     if (SCM_SYMBOLP(obj)) {
-        return (SCM_EQ(SCM_OBJ(Scm_UnwrapIdentifier(id)), obj)
-                && Scm_IdentifierBindingEqv(id, SCM_SYMBOL(obj), env));
+        /* This is temporary: We don't want to allocate identifier for
+           every bare symbol we want to match.  But this is the shortcut
+           to do the right thing (using free-identifier=? to comapre literals.
+           Let's think optimization later. */
+        SCM_ASSERT(SCM_MODULEP(mod));
+        obj = Scm_MakeIdentifier(obj, SCM_MODULE(mod), env);
     }
     if (SCM_IDENTIFIERP(obj)) {
         /* free-identifier=? is defined in Scheme (libmod.scm)  */
@@ -742,7 +747,8 @@ static inline int match_identifier(ScmIdentifier *id, ScmObj obj, ScmObj env)
 }
 
 static inline int match_subpattern(ScmObj form, ScmSyntaxPattern *pat,
-                                   ScmObj rest, ScmObj env, MatchVar *mvec)
+                                   ScmObj rest, ScmObj mod, ScmObj env,
+                                   MatchVar *mvec)
 {
     /* TODO: If pat->numFollowingItems == 0, we don't need to calculate
        length beforehand.  Some optimization opportunity. */
@@ -754,19 +760,19 @@ static inline int match_subpattern(ScmObj form, ScmSyntaxPattern *pat,
 
     enter_subpattern(pat, mvec);
     while (limit > 0) {
-        if (!match_synrule(SCM_CAR(form), pat->pattern, env, mvec))
+        if (!match_synrule(SCM_CAR(form), pat->pattern, mod, env, mvec))
             return FALSE;
         form = SCM_CDR(form);
         limit--;
     }
     exit_subpattern(pat, mvec);
-    return match_synrule(form, rest, env, mvec);
+    return match_synrule(form, rest, mod, env, mvec);
 }
 
 /* See if form matches pattern.  If match, add matched syntax variable
    bindings to match vector and return TRUE; otherwise, return FALSE
 */
-static int match_synrule(ScmObj form, ScmObj pattern, ScmObj env,
+static int match_synrule(ScmObj form, ScmObj pattern, ScmObj mod, ScmObj env,
                          MatchVar *mvec)
 {
     if (PVREF_P(pattern)) {
@@ -774,11 +780,11 @@ static int match_synrule(ScmObj form, ScmObj pattern, ScmObj env,
         return TRUE;
     }
     if (SCM_IDENTIFIERP(pattern)) {
-        return match_identifier(SCM_IDENTIFIER(pattern), form, env);
+        return match_identifier(SCM_IDENTIFIER(pattern), form, mod, env);
     }
     if (SCM_SYNTAX_PATTERN_P(pattern)) {
         return match_subpattern(form, SCM_SYNTAX_PATTERN(pattern),
-                                SCM_NIL, env, mvec);
+                                SCM_NIL, mod, env, mvec);
     }
     if (SCM_PAIRP(pattern)) {
         while (SCM_PAIRP(pattern)) {
@@ -786,18 +792,18 @@ static int match_synrule(ScmObj form, ScmObj pattern, ScmObj env,
             if (SCM_SYNTAX_PATTERN_P(elt)) {
                 return match_subpattern(form, SCM_SYNTAX_PATTERN(elt),
                                         SCM_CDR(pattern),
-                                        env, mvec);
+                                        mod, env, mvec);
             } else if (!SCM_PAIRP(form)) {
                 return FALSE;
             } else {
-                if (!match_synrule(SCM_CAR(form), elt, env, mvec))
+                if (!match_synrule(SCM_CAR(form), elt, mod, env, mvec))
                     return FALSE;
                 pattern = SCM_CDR(pattern);
                 form = SCM_CDR(form);
             }
         }
         if (!SCM_NULLP(pattern))
-            return match_synrule(form, pattern, env, mvec);
+            return match_synrule(form, pattern, mod, env, mvec);
         else
             return SCM_NULLP(form);
     }
@@ -820,7 +826,7 @@ static int match_synrule(ScmObj form, ScmObj pattern, ScmObj env,
         for (int i=0; i < elli; i++) {
             if (!match_synrule(SCM_VECTOR_ELEMENT(form, i),
                                SCM_VECTOR_ELEMENT(pattern, i),
-                               env, mvec))
+                               mod, env, mvec))
                 return FALSE;
         }
         if (elli < flen) {
@@ -828,7 +834,7 @@ static int match_synrule(ScmObj form, ScmObj pattern, ScmObj env,
             ScmObj prest = Scm_VectorToList(SCM_VECTOR(pattern), elli+1, plen);
             ScmObj frest = Scm_VectorToList(SCM_VECTOR(form), elli, flen);
             return match_subpattern(frest, SCM_SYNTAX_PATTERN(pat),
-                                    prest, env, mvec);
+                                    prest, mod, env, mvec);
         } else {
             return TRUE;
         }
@@ -937,7 +943,7 @@ static ScmObj realize_template(ScmSyntaxRuleBranch *branch,
     return realize_template_rec(branch->template, mvec, 0, indices, &idlist, &exlev);
 }
 
-static ScmObj synrule_expand(ScmObj form, ScmObj env, ScmSyntaxRules *sr)
+static ScmObj synrule_expand(ScmObj form, ScmObj mod, ScmObj env, ScmSyntaxRules *sr)
 {
     MatchVar *mvec = alloc_matchvec(sr->maxNumPvars);
 
@@ -949,7 +955,7 @@ static ScmObj synrule_expand(ScmObj form, ScmObj env, ScmSyntaxRules *sr)
         Scm_Printf(SCM_CUROUT, "pattern #%d: %S\n", i, sr->rules[i].pattern);
 #endif
         init_matchvec(mvec, sr->rules[i].numPvars);
-        if (match_synrule(SCM_CDR(form), sr->rules[i].pattern, env, mvec)) {
+        if (match_synrule(SCM_CDR(form), sr->rules[i].pattern, mod, env, mvec)) {
 #ifdef DEBUG_SYNRULE
             Scm_Printf(SCM_CUROUT, "success #%d:\n", i);
             print_matchvec(mvec, sr->rules[i].numPvars, SCM_CUROUT);
@@ -971,9 +977,10 @@ static ScmObj synrule_transform(ScmObj *argv, int argc, void *data)
     ScmObj form = argv[0];
     ScmObj cenv = argv[1];
     SCM_ASSERT(SCM_VECTORP(cenv));
-    ScmObj frames = SCM_VECTOR_ELEMENT(cenv, 1);
+    ScmObj module = SCM_VECTOR_ELEMENT(cenv, 0); /* macro use env */
+    ScmObj frames = SCM_VECTOR_ELEMENT(cenv, 1); /* macro use env */
     ScmSyntaxRules *sr = (ScmSyntaxRules *)data;
-    return synrule_expand(form, frames, sr);
+    return synrule_expand(form, module, frames, sr);
 }
 
 /* NB: a stub for the new compiler (TEMPORARY) */

@@ -345,8 +345,15 @@
        [(or (lvar? b2) (macro? b2)) #f]
        [else (let ([g1 (id->bound-gloc id1)]
                    [g2 (id->bound-gloc id2)])
-               (or (and (not g1) (not g2)) ;both are free
-                   (eq? g1 g2)))])))
+               ;; If both has bound in toplevel, they must refer to the
+               ;; same binding, hence (eq? g1 g2).  The name may differ,
+               ;; because of renaming on export/import.
+               ;; If at least either one is unbound, we just compare their
+               ;; names.
+               (if (and g1 g2)
+                 (eq? g1 g2)
+                 (eq? (unwrap-syntax id1)
+                      (unwrap-syntax id2))))])))
   (and (identifier? id1)
        (identifier? id2)
        (or (eq? id1 id2)

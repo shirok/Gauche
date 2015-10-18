@@ -1033,6 +1033,30 @@
 (test "recursive reference in macro-defined-macro" '(c . d)
       (lambda () (assocm c ((a . b) (b . d) (c . d) (d . d)))))
 
+;; literal identifier comparison with renamed identifier
+;; https://gist.github.com/ktakashi/fa4ee23da88151536619
+(define-module literal-id-test-sub
+  (export car))
+
+(define-module literal-id-test
+  (use gauche.test)
+  (import (literal-id-test-sub :rename ((car car-alias))))
+
+  (define-syntax free-identifier=??
+    (syntax-rules ()
+      ((_ a b)
+       (let-syntax ((foo (syntax-rules (a)
+                           ((_ a) #t)
+                           ((_ _) #f))))
+         (foo b)))))
+
+  (test "literal identifier comparison a a" #t
+        (lambda () (free-identifier=?? a a)))
+  (test "literal identifier comparison b a" #f
+        (lambda () (free-identifier=?? b a)))
+  (test "literal identifier comparison car car-alias" #t
+        (lambda () (free-identifier=?? car car-alias))))
+
 ;;----------------------------------------------------------------------
 ;; identifier comparison
 
