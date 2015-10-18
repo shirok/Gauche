@@ -723,8 +723,8 @@
                          '%ys))))
        (mgm-bar xs ())))))
 
-'(test "macro-generating-macro scope" '(x y)
-      (lambda () (mgm-foo (x y))))
+(test "macro-generating-macro scope" '(z y x)
+      (lambda () (mgm-foo (x y z))))
 
 ;;----------------------------------------------------------------------
 ;; macro and internal define
@@ -932,15 +932,15 @@
     ((mdm-foo3 y)
      (letrec-syntax ((o? (syntax-rules ()
                            ((o? ()) #f)
-                           ((o? (x . xs)) (not (e? xs)))))
+                           ((o? (x . xs)) (e? xs))))
                      (e? (syntax-rules ()
                            ((e? ()) #t)
-                           ((e? (x . xs)) (not (o? xs))))))
-       (%macroexpand (e? y))))))
+                           ((e? (x . xs)) (o? xs)))))
+       (e? y)))))
 
 ;; this doesn't work for now, due to the bug of macro expander
-'(test "define-syntax - letrec-syntax" #t
-      (lambda () (mdm-foo3 (a))))
+(test "define-syntax - letrec-syntax" #t
+      (lambda () (mdm-foo3 (a b c d))))
 
 ;; Examples from "Two pitfalls in programming nested R5RS macros"
 ;; by Oleg Kiselyov
