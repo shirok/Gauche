@@ -39,7 +39,7 @@ Gaucheは、次に説明する少しの例外を除き、オプショナルな�
 @c EN
 Gauche has a keyword object, expressed as a name prefixed by a colon
 (e.g. @code{:key}).  It evaluates to itself, and used extensively when
-passing so-called keyword arguments (@xref{Making Procedures}).
+passing so-called keyword arguments (@pxref{Making Procedures}).
 
 R7RS requires names starting with colon to be read as a symbol.
 In the current version of Gauche, keywords aren't symbols; they are
@@ -173,7 +173,7 @@ Consequently the algorithm like pre-allocating a string by
 becomes @emph{extremely} inefficient in Gauche.  Don't do it.
 (It doesn't work with mulitbyte strings anyway).
 Sequential access of string is much more efficient
-using @emph{string ports} (@xref{String ports}).
+using @emph{string ports} (@pxref{String ports}).
 @c JP
 したがって、@code{make-string}である大きさの文字列をあらかじめアロケート
 しておき、@code{string-set!}で順に埋めて行くようなアルゴリズムは
@@ -184,8 +184,8 @@ Gaucheでは非常に効率が悪くなります。そのようなアルゴリ�
 @c COMMON
 
 @c EN
-String search primitives such as @code{string-scan} (@xref{String utilities})
-and regular expression matcher (@xref{Regular expressions})
+String search primitives such as @code{string-scan} (@pxref{String utilities})
+and regular expression matcher (@pxref{Regular expressions})
 can return a matched string directly, without
 using index access at all.
 @c JP
@@ -200,7 +200,7 @@ Gauche.
 At runtime, a procedure @code{gauche-character-encoding}
 can be used to query the internal encoding.  At compile time,
 you can use a feature identifier to check the internal encoding.
-(@xref{Platform-dependent features}.)
+(@pxref{Platform-dependent features}.)
 Currently, the following
 internal encodings are supported.
 @c JP
@@ -420,10 +420,10 @@ Gaucheはプログラムを読み込む時に、トークン@code{#!fold-case}�
 @c EN
 @item Use @code{-fcase-fold} command-line argument
 Alternatively, you can give a command-line argument @code{-fcase-fold}
-to the @code{gosh} command (@xref{Invoking Gosh}).
+to the @code{gosh} command (@pxref{Invoking Gosh}).
 In this mode, the reader folds uppercase characters in symbols to lowercase
 ones.  If a symbol name contains uppercase characters, it is written
-out using |-escape (@xref{Symbols}).
+out using |-escape (@pxref{Symbols}).
 @c JP
 @item @code{-fcase-fold}コマンドライン引数を使う
 また、@code{gosh}インタプリタの起動時に@code{-fcase-fold}コマンドライン引数を
@@ -817,7 +817,7 @@ On the other hand, since @code{require} and @code{use} is recognized
 by the compiler, the specified file is loaded even if the form
 is in the conditional expression.   If you really need to load
 a file on certain condition, use @code{load} or do dispatch in macro
-(e.g. @code{cond-expand} form (@xref{Feature conditional}).)
+(e.g. @code{cond-expand} form (@pxref{Feature conditional}).)
 @c JP
 @item require はコンパイル時に評価される
 上記の裏返しですが、@code{require}と@code{use}はコンパイル時に

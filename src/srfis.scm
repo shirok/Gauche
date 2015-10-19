@@ -309,7 +309,7 @@ srfi-19, srfi-19
 ()
 
 Time Data Types and Procedures.
-Time data type is Gauche built-in (@xref{Time}).
+Time data type is Gauche built-in (@pxref{Time}).
 Complete set of SRFI-19 is supported by the module @code{srfi-19}.
 @xref{Time data types and procedures}.
 
@@ -583,9 +583,9 @@ srfi-69
 ()
 
 Basic hash tables
-Supported by the module @code{srfi-69} (@xref{Basic hash tables}).
+Supported by the module @code{srfi-69} (@pxref{Basic hash tables}).
 Note that Gauche provides
-built-in hashtable support (@xref{Hashtables}).
+built-in hashtable support (@pxref{Hashtables}).
 They just use different names in some procedures.
 
 基本的なハッシュテーブル
@@ -599,7 +599,7 @@ srfi-78
 
 Lightweight testing
 Supported by the module @code{srfi-78}.
-Since Gauche already has its own test framework (@xref{Unit testing}),
+Since Gauche already has its own test framework (@pxref{Unit testing}),
 this is mainly for third-party modules that adopt srfi-78 for testing.
 
 軽いテストフレームワーク
@@ -659,7 +659,7 @@ srfi-111, srfi-111
 (box box? unbox set-box!)
 
 Boxes
-Supported by the module @code{srfi-111}.  @xref{Boxes}
+Supported by the module @code{srfi-111}.  @xref{Boxes}.
 
 ボックス
 モジュール@code{srfi-111}でサポートされます。@ref{Boxes}参照。
@@ -692,7 +692,7 @@ srfi-114, srfi-114
 ()
 
 Comparators
-Some of the features are built-in (@xref{Basic comparators}).  Full srfi spec is supported by the module @code{srfi-114} (@xref{Comparators}).
+Some of the features are built-in (@pxref{Basic comparators}).  Full srfi spec is supported by the module @code{srfi-114} (@pxref{Comparators}).
 
 比較器
 いくつかの機能は組み込みです(@ref{Basic comparators}参照)。srfiの完全な仕様はモジュール@code{srfi-114}でサポートされます(@ref{Comparators}参照)。
@@ -704,7 +704,7 @@ srfi-117, srfi-117
 Queues based on lists.
 Supported by the module @code{srfi-117}, which is implemented on top
 of @code{data.queue}.
-(@xref{Queues based on lists})
+(@pxref{Queues based on lists})
 
 リストを元にしたキュー。
 @code{data.queue}上に実装されたモジュール@code{srfi-117}でサポートされます。
@@ -715,7 +715,7 @@ srfi-118, srfi-118
 
 Simple adjustable-size strings
 Supported by the module @code{srfi-118}.
-(@xref{Simple adjustable-size strings})
+(@pxref{Simple adjustable-size strings})
 
 簡単な可変長文字列
 モジュール@code{srfi-118}でサポートされます。

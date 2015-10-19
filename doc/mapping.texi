@@ -200,8 +200,8 @@ No equivalent procedure.
 @c COMMON
 @item []
 @c EN
-R7RS @code{vector-ref} (@xref{Vectors}) is something close.
-Or you can use Gauche's generic function @code{ref} (@xref{Sequence framework})
+R7RS @code{vector-ref} (@pxref{Vectors}) is something close.
+Or you can use Gauche's generic function @code{ref} (@pxref{Sequence framework})
 for arbitrary sequences.
 @c JP
 R7RS の @code{vector-ref} (@ref{Vectors}参照) が近いものです。あるいは、
@@ -554,7 +554,7 @@ Use @code{read-char} or @code{read-byte}.  @xref{Input}.
 @c COMMON
 @item fgetpos
 @c EN
-Use Gauche's @code{port-tell} (@xref{Common port operations})
+Use Gauche's @code{port-tell} (@pxref{Common port operations})
 @c JP
 Gauche の @code{port-tell} を使いましょう。(@ref{Common port operations}参照。)
 @c COMMON
@@ -676,13 +676,13 @@ and/or regular expression stuff (@ref{Regular expressions}).
 @c COMMON
 @item fseek
 @c EN
-Use Gauche's @code{port-seek} (@xref{Common port operations})
+Use Gauche's @code{port-seek} (@pxref{Common port operations})
 @c JP
 Gauche の @code{port-seek}(@ref{Common port operations}参照)を使いましょう。
 @c COMMON
 @item fsetpos
 @c EN
-Use Gauche's @code{port-seek} (@xref{Common port operations})
+Use Gauche's @code{port-seek} (@pxref{Common port operations})
 @c JP
 Gauche の @code{port-seek}(@ref{Common port operations}参照)を使いましょう。
 @c COMMON
@@ -694,9 +694,9 @@ Gauche の @code{sys-stat}。@ref{File stats} 参照。
 @c COMMON
 @item ftell
 @c EN
-Use Gauche's @code{port-tell} (@xref{Common port operations})
+Use Gauche's @code{port-tell} (@pxref{Common port operations})
 @c JP
-Gauche の @code{port-tell}(@xref{Common port operations}参照)を使いましょう。
+Gauche の @code{port-tell}(@ref{Common port operations}参照)を使いましょう。
 @c COMMON
 @item fwrite
 @c EN
@@ -704,7 +704,7 @@ Not directly supported.
 To write binary numbers, see @ref{Binary I/O}.
 If you want to write a chunk of bytes,
 you can simply use @code{display} or @code{write-uvector}
-(@xref{Uvector block I/O}).
+(@pxref{Uvector block I/O}).
 @c JP
 直接はサポートされていません。
 バイナリの数値を書き出すのなら、@ref{Binary I/O}参照のこと。
@@ -1007,7 +1007,7 @@ R7RS の @code{call/cc} が類似(上位)のメカニズムを提供していま
 @c COMMON
 @item lseek
 @c EN
-Use Gauche's @code{port-seek} (@xref{Common port operations})
+Use Gauche's @code{port-seek} (@pxref{Common port operations})
 @c JP
 Gauche の @code{port-seek} (@ref{Common port operations}参照) を使いましょう。
 @c COMMON
@@ -1186,7 +1186,7 @@ as @code{sys-random}.  @xref{Miscellaneous system calls}.
 @c EN
 Not supported directly, but you may be able to use
 @code{read-uvector} or
-@code{read-uvector!} (@xref{Uvector block I/O}).
+@code{read-uvector!} (@pxref{Uvector block I/O}).
 @c JP
 直接はサポートされていませんが、
 @code{read-uvector} あるいは
@@ -1432,9 +1432,9 @@ R7RS の @code{sqrt}。@ref{Arithmetics}参照。
 @item srand
 @c EN
 Not supported directly, but on most platforms a better RNG is available
-as @code{sys-srandom} (@xref{Miscellaneous system calls}).
+as @code{sys-srandom} (@pxref{Miscellaneous system calls}).
 The @code{math.mt-random} module provides much superior RNG
-(@xref{Mersenne-Twister random number generator}).
+(@pxref{Mersenne-Twister random number generator}).
 @c JP
 直接はサポートされていませんが、多くのプラットフォーム上で、@code{sys-random}
 のような、よりよい RNG が利用可能です。@ref{Miscellaneous system calls} 参照。
@@ -1665,7 +1665,7 @@ R7RS の @code{tan} および Gauche の @code{tanh}。@ref{Arithmetics}参照�
 Corresponding functions are: @code{sys-tcdrain}, @code{sys-tcflow},
 @code{sys-tcflush}, @code{sys-tcgetattr}, @code{sys-tcgetpgrp},
 @code{sys-tcsendbreak}, @code{sys-tcsetattr}, @code{sys-tcsetpgrp}.
-@xref{Terminal control}
+@xref{Terminal control}.
 @c JP
 対応する関数はそれぞれ、@code{sys-tcdrain}、@code{sys-tcflow}、
 @code{sys-tcflush}、@code{sys-tcgetattr}、@code{sys-tcgetpgrp}、
@@ -1800,10 +1800,10 @@ Gauche はマルチバイト文字列を内部的に処理します。それゆ�
 @c COMMON
 @item write
 @c EN
-R7RS @code{display} (@xref{Output}).
-Or @code{write-uvector} (@xref{Uvector block I/O}).
+R7RS @code{display} (@pxref{Output}).
+Or @code{write-uvector} (@pxref{Uvector block I/O}).
 @c JP
-R7RS の @code{display} (@xref{Output})。
+R7RS の @code{display} (@pxref{Output})。
 あるいは @code{write-uvector} (@ref{Uvector block I/O}参照)。
 @c COMMON
 @end table

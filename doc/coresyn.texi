@@ -43,7 +43,7 @@ the reader.  R7RS defines two of such directives---@code{#!fold-case}
 and @code{#!no-fold-case}, which switches whether symbols
 are read in case-folding or non-case-folding mode, respectively.
 
-@xref{Hash-bang token} below, for all the directives
+@pxref{Hash-bang token} below, for all the directives
 Gauche has.
 @c JP
 @item hash-bang指示子
@@ -116,7 +116,7 @@ R7RSではこの構文を採用せず、@code{[]}は言語拡張用に取って�
 
 @c EN
 @item Symbol names
-Symbol names are case sensitive by default (@xref{Case-sensitivity}).
+Symbol names are case sensitive by default (@pxref{Case-sensitivity}).
 Symbol name can begin with digits, '@code{+}' or '@code{-}', as long as
 the entire token doesn't consist valid number syntax.
 Other weird characters can be included in a symbol name by surrounding
@@ -805,7 +805,7 @@ The @var{variable} names the formal argument, which is bound to
 the value of the actual argument if given, or the value of
 the expression @var{init-expr} otherwise.   If @var{optspec} is just
 a variable, and the actual argument is not given to it, then
-@var{variable} will be bound to @code{#<undef>} (@xref{Undefined values}).
+@var{variable} will be bound to @code{#<undef>} (@pxref{Undefined values}).
 
 The expression @var{init-expr} is only evaluated if the actual
 argument for @var{variable} is not given.  The scope in which
@@ -1119,7 +1119,7 @@ before creating the procedure.
 @c EN
 Gauche provides a couple of different ways to write partial
 applications concisely; see the @code{$} macro below, and also
-the @code{pa$} procedure (@xref{Combinators})。
+the @code{pa$} procedure (@pxref{Combinators}).
 @c JP
 Gaucheには他にも二つほど、部分適用を簡潔に書く方法があります。
 下の@code{$}マクロ、及び組み込み手続きを@code{pa$}です
@@ -1481,7 +1481,7 @@ order.   I adopted this order since it is consistent with other
 destructive operations.  Perl's @code{push} function takes the same
 argument order, but it appends @var{item} at the end of the array
 (Perl's @code{unshift} is closer to @code{push!}).
-You can use a queue (@xref{Queue}) if you need a behavior of Perl's
+You can use a queue (@pxref{Queue}) if you need a behavior of Perl's
 @code{push}.
 @c JP
 註：Common Lispの@code{push}マクロは引数を逆の順番で取ります。
@@ -1692,7 +1692,7 @@ may be an ``else clause,'' which has the form
 
 First, @var{key} is evaluated and its result is compared against each
 @var{datum}.  If the result of evaluating @var{key} is equivalent
-(using @code{eqv?}, @xref{Equality}), to a @var{datum},
+(using @code{eqv?}, @pxref{Equality}), to a @var{datum},
 then the expressions in the corresponding clause are evaluated
 sequentially, and the result(s) of the last expression in the
 @var{clause} is(are) returned from the case expression.
@@ -2144,7 +2144,7 @@ Note that, in multithreaded environment,
 the change of the value of @var{var}s are visible from
 all the threads.   This form is provided mainly for
 the porting convenience.   Use parameter objects instead
-(@xref{Parameters}) for thread-local dynamic state.
+(@pxref{Parameters}) for thread-local dynamic state.
 @c JP
 動的スコープの変数をエミュレートするマクロです。
 @var{var}は@code{fluid-let}フォームを含むスコープで定義されている
@@ -2201,7 +2201,7 @@ then @var{body} @dots{} are evaluated.
 @c EN
 See also @code{call-with-values} in @ref{Multiple values}
 which is the procedural equivalent of @code{receive}.
-You can use @code{define-values} (@xref{Definitions}) to
+You can use @code{define-values} (@pxref{Definitions}) to
 bind multiple values to variables simultaneously.
 Also @code{let-values} and @code{let*-values}
 in SRFI-11 (@ref{Let-values}) provides
@@ -3179,7 +3179,7 @@ Gaucheは特にエラーを出しません。
 @c COMMON
 
 @c EN
-Note that @code{begin} (@xref{Sequencing}) doesn't introduce a new scope.
+Note that @code{begin} (@pxref{Sequencing}) doesn't introduce a new scope.
 @code{Define}s in the @code{begin} act as if @code{begin} and surrounding
 parenthesis are not there.  Thus these two forms are equivalent.
 @c JP
@@ -3337,7 +3337,7 @@ The second form is merely a syntactic sugar of:
 @c EN
 Note: to find out if a symbol has definition (global binding) in
 the current module, you can use @code{global-variable-bound?}
-(@xref{Module introspection}).
+(@pxref{Module introspection}).
 @c JP
 註: シンボルが現在のモジュール中で定義されているか(グローバルな束縛を持つか)
 を調べるには、@code{global-variable-bound?}が使えます
@@ -3358,7 +3358,7 @@ contents as if the forms are placed in the includer's source file,
 surrounded by @code{begin}.  The @code{include} form reads files
 as is, while @code{include-ci} reads files in case-insensitive
 way, as if @code{#!fold-case} is specified in the beginning of the
-file (@xref{Case-sensitivity}).
+file (@pxref{Case-sensitivity}).
 @c JP
 @var{filename} @dots{}で指定されるファイルをコンパイル時に読み、
 その内容が@code{begin}で囲まれてインクルードフォームの位置に替わりに
@@ -3371,7 +3371,7 @@ file (@xref{Case-sensitivity}).
 
 @c EN
 The coding magic comment in each file is honored while reading
-that file (@xref{Multibyte scripts}).
+that file (@pxref{Multibyte scripts}).
 @c JP
 読み込まれるファイルに文字エンコーディングを指定するコメントがあればそれは
 そのファイルを読んでいる間有効になります(@ref{Multibyte scripts}参照)。
@@ -3839,7 +3839,7 @@ OSがIPv6サポートをオフにしている場合、IPv6機能を使おうと�
 @itemx gauhce.sys.wthreads
 @c EN
 If the runtime supports multithreading, @code{gauche.sys.threads} is
-defined (@xref{Threads}).  Multithreading is based on either POSIX pthreads
+defined (@pxref{Threads}).  Multithreading is based on either POSIX pthreads
 or Windows threads.  The former defines @code{gauche.sys.pthreads},
 and the latter defines @code{gauche.sys.wthreads}.
 @c JP
@@ -3989,7 +3989,7 @@ and affects the resolution of global variable reference.
 @c EN
 Unlike CommonLisp's packages, which map names to symbols,
 in Gauche symbols are @code{eq?} in principle if two have the
-same name (except uninterened symbols; @xref{Symbols}).
+same name (except uninterened symbols; @pxref{Symbols}).
 However, Gauche's symbol doesn't have a 'value'
 slot in it.  From a given symbol, a module finds its binding that
 keeps a value.
@@ -4830,7 +4830,7 @@ However, there are some cases that dynamically created modules
 are useful, especially the program itself is dynamically created.
 You can pass a module to @code{eval} to compile and
 evaluate such dynamically created
-programs in it (@xref{Eval and repl}).
+programs in it (@pxref{Eval and repl}).
 @c JP
 モジュールを実行時に動的に生成することは、通常のスクリプトでは
 あまり必要とはされません。既に書かれたプログラムの解釈においては、
@@ -4870,7 +4870,7 @@ and are garbage collected when nobody keeps reference to it.
 
 @c EN
 R7RS provides another way to create a transient module
-with @code{environment} procedure.  @xref{R7RS eval} for the
+with @code{environment} procedure.  @pxref{R7RS eval} for the
 details.
 @c JP
 R7RSでは、@code{environment}手続きによって一時的なモジュールを
@@ -4925,7 +4925,7 @@ It is an error to pass a non-module object.
 Returns the information of module inheritance.
 @code{Module-parents} returns the modules @var{module} directly inherits
 from.  @code{Module-precedence-list} returns the module precedence
-list of @var{module} (@xref{Module inheritance}).
+list of @var{module} (@pxref{Module inheritance}).
 @c JP
 モジュールの継承に関する情報を返します。
 @code{module-parents}は@var{module}が直接継承しているモジュールのリストを
@@ -5085,7 +5085,7 @@ all the bindings of @code{gauche} module is imported.
 When Gauche is running with @code{GAUCHE_KEYWORD_IS_SYMBOL} mode
 keywords (symbols beginning with @code{:}) is automatically bound
 to itself in this module. 
-(@xref{Keywords}, for the details.)
+(@pxref{Keywords}, for the details.)
 
 If you use the default module inheritance,
 you don't need to use this module, since

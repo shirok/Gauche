@@ -141,7 +141,7 @@ These procedures can be used to expand globally defined macros.
 @defmacx syntax-errorf fmt arg @dots{}
 @c EN
 Signal an error.  They are same as
-@code{error} and @code{errorf} (@xref{Signaling exceptions}),
+@code{error} and @code{errorf} (@pxref{Signaling exceptions}),
 except that the error is signaled at macro-expansion time
 (i.e. compile time) rather than run time.
 

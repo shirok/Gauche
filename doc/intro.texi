@@ -356,7 +356,7 @@ protocol and used to manipulate the dynamic environment.
 @item Generic application
 @c EN
 @tab In Gauche, you can ``apply'' a non-procedure object to arguments
-as if it is a procedure (@xref{Applicable objects}, for the details).
+as if it is a procedure (@pxref{Applicable objects}, for the details).
 This entry explains the behavior of an object applied to arguments.
 @c JP
 @tab Gaucheでは、手続きでないオブジェクトをあたかの手続きのように

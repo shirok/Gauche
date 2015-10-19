@@ -4,7 +4,7 @@
 
 @c EN
 Gauche predates R7RS, and for the convenice, Gauche makes quite a few
-procedures as built-in (@xref{Core library}).  Although the set of
+procedures as built-in (@pxref{Core library}).  Although the set of
 Gauche's core features are mostly superset of R7RS, some functions
 and syntaxes have different names and/or interface from R7RS.
 
@@ -231,7 +231,7 @@ Gaucheをインストールした時に@code{srfi/1.scm}等のアダプタライ
 @c EN
 A tip: To use Gauche's built-in features (the bindings that are
 available by default in Gauche code) from R7RS code, import
-@code{(gauche base)} library (@xref{Importing gauche built-ins}):
+@code{(gauche base)} library (@pxref{Importing gauche built-ins}):
 @c JP
 ヒント: Gaucheの組み込みの機能 (Gaucheコードでは最初から使える束縛) を
 R7RSコードから使いたい場合は、@code{(gauche base)}ライブラリをimportしてください
@@ -779,7 +779,7 @@ These are equivalent to @code{gauche.uvector}'s
 @code{u8vector}, @code{u8vector?},
 @code{make-u8vector}, @code{u8vector-length}, @code{u8vector-ref},
 @code{u8vector-set!}, @code{u8vector-copy}, @code{u8vector-copy!}, and
-@code{u8vector-append}, respectively.  (@xref{Uniform vectors}).
+@code{u8vector-append}, respectively.  (@pxref{Uniform vectors}).
 @end defun
 
 These two procedures are the same as the ones in @code{text.unicode}
@@ -796,7 +796,7 @@ utf8->string string->utf8
 [R7RS]
 These take different arguments from 
 @code{string-map} and @code{string-for-each} in SRFI-13
-(@xref{SRFI-13 String mapping}), so provided only in @code{scheme.base} module
+(@pxref{SRFI-13 String mapping}), so provided only in @code{scheme.base} module
 to avoid confusion.
 @end defun
 
@@ -895,7 +895,7 @@ An alias to @code{flush}.
 @defun features
 [R7RS]
 Returns a list of symbols of supported feature identifiers,
-recognized by @code{cond-expand} (@xref{Feature conditional}).
+recognized by @code{cond-expand} (@pxref{Feature conditional}).
 @end defun
 
 
@@ -1121,7 +1121,7 @@ delay force promise?
 @defspec delay-force promise
 [R7RS]
 This is the same as @code{lazy}.
-@xref{Delay force and lazy} for the discussion about when this
+@pxref{Delay force and lazy} for the discussion about when this
 form should be used.
 @end defspec
 
@@ -1267,7 +1267,7 @@ Just be aware the difference, or you'll be surprised if you
 pass the return value of @code{current-second} to the UTC time
 formatter such as @code{sys-strftime}, or compare it with
 the file timestams which uses the unix time.  You can convert
-between TAI and UTC using srfi-19 (@xref{SRFI-19 Date}).
+between TAI and UTC using srfi-19 (@pxref{SRFI-19 Date}).
 @end defun
 
 @defun current-jiffy

@@ -594,9 +594,9 @@ Gaucheコアはプリミティブな@code{fork}および@code{exec}のインタ�
 @c EN
 Gauche has preemptive threads on most Unix platforms including OSX.
 Check out @ref{Threads} for the basic thread support, including
-primitive mutexes.  The @code{data.queue} module (@xref{Queue})
+primitive mutexes.  The @code{data.queue} module (@pxref{Queue})
 provides thread-safe queue that can also be handy for synchronization.
-Thread pool is available in @code{control.thread-pool} (@xref{Thread pools}).
+Thread pool is available in @code{control.thread-pool} (@pxref{Thread pools}).
 @c JP
 GaucheはOSXを含む多くのUnixプラットフォームでプリエンプティブなスレッドを
 サポートしています。低レベルの排他制御を含む基本的なスレッドのサポートについては
