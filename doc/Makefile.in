@@ -12,10 +12,10 @@ EXTRACTED = gauche-refe.texi gauche-refj.texi \
 GENERATED = Makefile $(MANPAGES)
 @CROSS_COMPILING_no@GOSH = $(top_builddir)/src/gosh -q -ftest
 @CROSS_COMPILING_yes@GOSH = gosh -q
-INSTALL = @INSTALL@
+INSTALL      = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
-MKINSTDIR = $(top_srcdir)/mkinstalldirs
-MAKEINFO = @MAKEINFO@
+MKINSTDIR    = $(top_srcdir)/mkinstalldirs
+MAKEINFO     = @MAKEINFO@
 GZIP_PROGRAM = @GZIP_PROGRAM@
 
 TEXIS = concepts.texi      \
