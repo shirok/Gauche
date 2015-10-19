@@ -1767,14 +1767,14 @@
 ;; returns a module specified by THING.
 (define (ensure-module thing name create?)
   (let1 mod (cond [(symbol? thing) (find-module thing)]
-                  [(identifier? thing) (find-module (slot-ref thing 'name))]
+                  [(identifier? thing) (find-module (unwrap-syntax thing))]
                   [(module? thing) thing]
                   [else
                    (errorf "~a requires a module name or a module, but got: ~s"
                            name thing)])
     (or mod
         (if create?
-          (make-module (if (identifier? thing) (slot-ref thing 'name) thing))
+          (make-module (if (identifier? thing) (unwrap-syntax thing) thing))
           (errorf "~a: no such module: ~s" name thing)))))
 
 ;; IFORM must be a $LAMBDA node.  This expands the application of IFORM
@@ -6121,7 +6121,7 @@
 
 (define (variable-name arg)
   (cond [(symbol? arg) arg]
-        [(identifier? arg) (slot-ref arg 'name)]
+        [(identifier? arg) (unwrap-syntax arg)]
         [(lvar? arg) (lvar-name arg)]
         [else (error "variable required, but got:" arg)]))
 

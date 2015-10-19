@@ -544,7 +544,7 @@
              (cadr (~ toplevel-code 2))))) ; define flags
 
 (define (emit-toplevel-definition inner-code id flags)
-  (let ([sym  (cgen-literal (~ id'name))]
+  (let ([sym  (cgen-literal (unwrap-syntax id))]
         ;; NB: Currently, the main tmodule has no name.  It's better to give
         ;; it a proper name.  Then the following Scm_CurrentModule hack
         ;; will be unnecessary.
@@ -558,7 +558,7 @@
                        (if mod (tmodule-cname mod) "Scm_CurrentModule()")
                        (if mod (cgen-safe-comment (~ mod'name)) "")
                        (cgen-cexpr sym)
-                       (cgen-safe-comment (~ id'name))
+                       (cgen-safe-comment (unwrap-syntax id))
                        (cgen-cexpr code)
                        (case flags
                          [(2) 'SCM_BINDING_CONST]
@@ -870,7 +870,7 @@
       (error "identifier with compiler environment can't be compiled" value))
     (make <cgen-scheme-identifier> :value value
           :c-name (cgen-allocate-static-datum)
-          :id-name (cgen-literal (~ value'name))
+          :id-name (cgen-literal (unwrap-syntax value))
           :mod-name (cond [(module-name-fix (~ value'module))
                            => cgen-literal]
                           [(current-tmodule) => (^m (cgen-literal (~ m'name)))]

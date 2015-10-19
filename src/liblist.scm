@@ -79,7 +79,8 @@
      (begin
        (define-inline (name x) (a (b x)))
        (define-in-module scheme name name)
-       (set! (setter name) (^[x v] (set! (a (b x)) v)))))))
+       (set! (setter name) (^[x v] (set! (a (b x)) v)))
+       ))))
 
 (%define-cxr caaar  car  caar)
 (%define-cxr caadr  car  cadr)

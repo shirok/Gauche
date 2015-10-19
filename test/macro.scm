@@ -938,7 +938,6 @@
                            ((e? (x . xs)) (o? xs)))))
        (e? y)))))
 
-;; this doesn't work for now, due to the bug of macro expander
 (test "define-syntax - letrec-syntax" #t
       (lambda () (mdm-foo3 (a b c d))))
 
