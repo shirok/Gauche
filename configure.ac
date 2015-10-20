@@ -126,11 +126,10 @@ AC_ARG_WITH(rpath,
   AS_HELP_STRING([--with-rpath=PATH:PATH...],
                  [Use -rpath option while building dynamically loadable objects (experimental).]),
   [
-    case $with_rpath in
-      yes) ;;
-      no)  try_rpath=no;;
-      *) rpath="`echo $with_rpath | sed -e 's/^/-Wl,-rpath=/' -e 's/:/ -Wl,-rpath=/g'`";;
-    esac
+    AS_CASE([$with_rpath],
+      [yes], [],
+      [no],  [try_rpath=no],
+             [rpath="`echo $with_rpath | sed -e 's/^/-Wl,-rpath=/' -e 's/:/ -Wl,-rpath=/g'`"])
   ])
 
 dnl ----------------------------------------------------------
