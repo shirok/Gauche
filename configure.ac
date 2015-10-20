@@ -736,7 +736,7 @@ dnl Check to see if the linker takes --rpath flag via -Wl.
 RPATH_FLAG=
 if test "$try_rpath" = "yes"; then
   cflags_save="$CFLAGS"
-  CFLAGS="$CFLAGS -Wl,--rpath -Wl,/"
+  CFLAGS="$CFLAGS -Wl,--rpath=/"
   AC_CACHE_CHECK([linker takes --rpath flag], ac_cv_linker_rpath_flag, [
     AC_LINK_IFELSE([AC_LANG_SOURCE([int main(void) {return 0;}])],
                    ac_cv_linker_rpath_flag=yes,
@@ -744,16 +744,16 @@ if test "$try_rpath" = "yes"; then
     ])
   CFLAGS="$cflags_save"
   if test "$ac_cv_linker_rpath_flag" = "yes"; then
-    RPATH_FLAG='-Wl,--rpath -Wl,'
+    RPATH_FLAG='-Wl,--rpath='
   else
     # solaris' ld uses -R instead of --rpath
-    CFLAGS="$CFLAGS -Wl,-R -Wl,/"
+    CFLAGS="$CFLAGS -Wl,-R,/"
     AC_LINK_IFELSE([AC_LANG_SOURCE([int main(void) {return 0;}])],
                    ac_cv_linker_rpath_flag=yes,
                    ac_cv_linker_rpath_flag=no)
     CFLAGS="$cflags_save"
     if test "$ac_cv_linker_rpath_flag" = "yes"; then
-      RPATH_FLAG='-Wl,-R -Wl,'
+      RPATH_FLAG='-Wl,-R,'
     fi
   fi
   if test "$RPATH_FLAG" != ""; then
