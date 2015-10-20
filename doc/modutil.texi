@@ -7247,7 +7247,7 @@ Returns the result of the last seed value.
 評価し、結果を返します。
 @item
 @var{path}がディレクトリであった場合、まず
-@var{(@var{lister} @var{path} @var{seed})} を評価します。
+@code{(@var{lister} @var{path} @var{seed})} を評価します。
 手続き@var{lister}は2つの値、パス名のリストと次のseedとなる値を
 返さなければなりません。
 続いて、@code{directory-fold}が各パス名に対して再帰的に呼ばれます。
@@ -11368,7 +11368,7 @@ and do not appear in the request headers.
 以下のキーワード引数は手続きによって解釈され、リクエストヘッダには現れません。
 @c COMMON
 
-@table @var
+@table @code
 @item request-encoding
 @c EN
 When a list is given to the @var{request-uri} or @var{body} arguments,
@@ -17851,7 +17851,7 @@ of strings, characters and executed thunks,
 and ignores @code{#f} and '@code{()}.
 
 If all the meaningful fragments are strings, then
-@var{(apply string-append ... )}
+@code{(apply string-append ... )}
 to a result of this function will return its string-value.
 
 It may be considered as a variant of Oleg Kiselyov's
@@ -17867,7 +17867,7 @@ fragmentsは、文字列、文字、数値、手続き、@code{#f}、他のフ�
 @code{#f}と'@code{()}を無視します。
 
 全ての意味のあるフラグメントは文字列で、
-この関数の結果に@var{(apply string-append ... )}を
+この関数の結果に@code{(apply string-append ... )}を
 適用すると、そのstring-valueを返します。
 
 これは、Oleg Kiselyovの@code{SRV:send-reply}の変種であるとみなすことが

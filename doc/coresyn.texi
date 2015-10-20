@@ -1441,14 +1441,15 @@ Gaucheでは、一般化された@code{set!}と同じセマンティクスを持
 @c EN
 Conses @var{item}
 and the value of @var{place}, then sets the result to @var{place}.
-@var{place} is either a variable or a form @var{(proc arg @dots{})},
+@var{place} is either a variable or a form
+@code{(@var{proc} @var{arg} @dots{})},
 as the second argument of @code{set!}.   The result of this form
 is undefined.
 @c JP
 @var{item}と@var{place}の値をコンスし、その結果を再び@var{place}にセットします。
 @var{place}は@code{set!}と同様に、
-変数か@var{(proc arg @dots{})}という形式でなければなりません。このマクロの戻り値は
-未定義です。
+変数か@code{(@var{proc} @var{arg} @dots{})}という形式でなければなりません。
+このマクロの戻り値は未定義です。
 @c COMMON
 
 @example
@@ -2013,8 +2014,8 @@ Each @var{binding} should be one of the following form:
 @c JP
 各@var{binding}は以下のいずれかの形式でなければなりません。
 @c COMMON
-@table @var
-@item (variable expression)
+@table @code
+@item (@var{variable} @var{expression})
 @c EN
 The @var{expression} is evaluated; if it yields true value, the value
 is bound to @var{variable}, then proceed to the next binding.  If
@@ -2026,7 +2027,7 @@ yieds @code{#f}, stops evaluation and returns @code{#f} from @code{and-let*}.
 @var{body} @dots{}が評価されます。もし@var{expression}が@code{#f}を返したら、
 評価を打ち切り、@code{and-let*}から@code{#f}を返します。
 @c COMMON
-@item (expression)
+@item (@var{expression}x)
 @c EN
 In this form, @var{variable} is omitted.  @var{Expression} is evaluated
 and the result is used just to determine whether we continue or
@@ -2035,7 +2036,7 @@ stop further evaluation.
 この形式では@var{variable}が省略されています。@var{Expression}が評価され、
 その結果は評価を続行するか打ち切るかを判断するためにのみ使われます。
 @c COMMON
-@item bound-variable
+@item @var{bound-variable}
 @c EN
 In this form, @var{bound-variable} should be an identifier denoting
 a bound variable.  If its value is not @code{#f}, we continue

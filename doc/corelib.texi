@@ -2202,8 +2202,8 @@ currently we only supports real number argument.
 [R6RS]
 @c EN
 These procedures return the width of fixnum (@var{w}),
-the greatest integer representable by fixnum (@var{2^(w-1) - 1}),
-and the least integer representable by fixnum (@var{- 2^(w-1)}),
+the greatest integer representable by fixnum (@code{2^(@var{w}-1) - 1}),
+and the least integer representable by fixnum (@code{- 2^(@var{w}-1)}),
 respectively.  You might want to care the fixnum range when
 you are writing a performance-critical section.
 
@@ -2211,8 +2211,8 @@ These names are defined in R6RS.  Common Lisp and ChezScheme have
 @code{most-positive-fixnum} and @code{most-negative-fixnum}.
 @c JP
 これらの手続きは、fixnumで表現できる数値の幅 (@var{w}とします)、
-fixnumで表現できる最大の整数値 (@var{2^(w-1) - 1})、および
-fixnumで表現できる最小の整数値 (@var{- 2^(w-1)}) を
+fixnumで表現できる最大の整数値 (@code{2^(@var{w}-1) - 1})、および
+fixnumで表現できる最小の整数値 (@code{- 2^(@var{w}-1)}) を
 それぞれ返します。性能が重要になる部分では数値がfixnumの範囲に収まるかどうかを
 気にかける必要があります。
 
@@ -21186,7 +21186,7 @@ Windowsネイティブ環境では、@code{sys-kill}は@var{pid}に正整数か
 There's no Scheme equivalence for @code{raise()}, but you can use
 @code{(sys-kill (sys-getpid) @var{sig})}.
 @c JP
-POSIXの@var{raise()}に対応するScheme関数はありませんが、
+POSIXの@code{raise()}に対応するScheme関数はありませんが、
 @code{(sys-kill (sys-getpid) @var{sig})} で同じことができます。
 @c COMMON
 
@@ -22057,13 +22057,13 @@ If @var{pid} is zero, the current process is used.
 
 @c EN
 Note that @code{getpgid()} call is not in POSIX.  If the system
-doesn't have @var{getpgid()}, @var{sys-getpgid} still works if
+doesn't have @code{getpgid()}, @code{sys-getpgid} still works if
 @var{pid} is zero (it just calls @code{sys-getpgrp}), but signals
 an error if @var{pid} is not zero.
 @c JP
 @code{getpgid()}はPOSIXではないことに注意して下さい。
-システムに@var{getpgid()}がない場合、@var{pid}が0ならば
-@var{sys-getpgid}がまだ動作しますが(それは単に@code{sys-getpgrp}を呼びます)
+システムに@code{getpgid()}がない場合、@var{pid}が0ならば
+@code{sys-getpgid}がまだ動作しますが(それは単に@code{sys-getpgrp}を呼びます)
 、@var{pid}が0でない場合はエラーが通知されます。
 @c COMMON
 @end defun

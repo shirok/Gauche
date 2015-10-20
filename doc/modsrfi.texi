@@ -1039,14 +1039,14 @@ The following argument names imply their types.
 @c JP
 以下の引数名はその型を暗に表しています。
 @c COMMON
-@table @var
-@item s, s1, s2
+@table @asis
+@item @var{s}, @var{s1}, @var{s2}
 @c EN
 Those arguments must be strings.
 @c JP
 これらの引数は文字列でなければなりません。
 @c COMMON
-@item char/char-set/pred
+@item @var{char/char-set/pred}
 @c EN
 This argument can be a character, a character-set object,
 or a predicate that takes a single character and returns a boolean value.
@@ -1067,7 +1067,7 @@ means such application to the character yields true value.
 とは、その文字への前述のような適用が真値を返すという意味になります。
 @c COMMON
 
-@item start, end
+@item @var{start}, @var{end}
 @c EN
 Lots of SRFI-13 functions takes these two optional arguments, which
 limit the area of input string from @var{start}-th character
@@ -1089,9 +1089,9 @@ SRFI-13の関数の多くは、その操作が実行される対象入力文字�
 @end table
 
 @c EN
-@item `shared' variant
+@item @code{shared} variant
 @c JP
-@item `shared'バージョン
+@item @code{shared}バージョン
 @c EN
 Some functions have variants with ``/shared'' attached to its name.
 SRFI-13 defines those functions to allow to share the part of input
@@ -1112,9 +1112,9 @@ Gaucheは、共有文字列という概念を持っていませんし、
 @c COMMON
 
 @c EN
-@item `right' variant
+@item @code{right} variant
 @c JP
-@item `right'バージョン
+@item @code{right}バージョン
 @c EN
 Most functions works from left to right of the input string.
 Some functions have variants with ``-right'' to its name,

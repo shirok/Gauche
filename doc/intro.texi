@@ -374,15 +374,15 @@ may appear:
 引数リストの中には次のような表記が現れることがあります。
 @c COMMON
 
-@table @var
+@table @code
 @item arg @dots{}
 @c EN
 Indicates zero or more arguments.
 @c JP
 ゼロ個以上の可変個の引数。
 @c COMMON
-@item :optional x y z
-@itemx :optional (x x-default) (y y-default) z
+@item :optional @var{x} @var{y} @var{z}
+@itemx :optional (@var{x} @var{x-default}) (@var{y} @var{y-default}) @var{z}
 @c EN
 Indicates it may take up to three optional arguments.
 The second form specifies default values to @var{x} and @var{y}.
@@ -394,8 +394,8 @@ for the definition of complete argument list syntax.
 この形式の引数表記は、Schemeに対するGaucheの独自拡張です。
 完全な仕様については@ref{Making Procedures}を参照してください。
 @c COMMON
-@item :key x y z
-@itemx :key (x x-default) (y y-default) z
+@item :key @var{x} @var{y} @var{z}
+@itemx :key (@var{x} @var{x-default}) (@var{y} @var{y-default}) @var{z}
 @c EN
 Indicates it may take keyword arguments @var{x}, @var{y} and @var{z.}
 The second form shows the default values for @var{x} and @var{y}.
@@ -408,7 +408,7 @@ for the definition of complete argument list syntax.
 この形式の引数表記も、Schemeに対するGaucheの独自拡張です。
 完全な仕様については@ref{Making Procedures}を参照してください。
 @c COMMON
-@item :rest args
+@item :rest @var{args}
 @c EN
 Indicates it may take rest arguments.
 This is also Gauche's enhancement to Scheme; see @ref{Making Procedures}

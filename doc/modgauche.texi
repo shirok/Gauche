@@ -2568,16 +2568,16 @@ see @ref{Mapping over sequences}.
 @c EN
 You can fold more than one collection, although it doesn't make
 much sense unless all of the collections are sequences.
-Suppose @var{E(k, i)} for @var{i}-th element
+Suppose @code{@var{E}(@var{k}, @var{i})} for @var{i}-th element
 of @var{k}-th collection.  @var{proc} is called as
 @c JP
 複数のコレクションを@code{fold}に渡すこともできます (但し、その全てがシーケンスで
 なければあまり意味のある操作では無いでしょう)。
-@var{k}番目のコレクションの@var{i}番目の要素を@var{E(k, i)}とするとき、
+@var{k}番目のコレクションの@var{i}番目の要素を@code{@var{E}(@var{k}, @var{i})}とするとき、
 @var{proc}は以下のように呼ばれます。
 @c COMMON
 @example
-(@var{proc} @var{E(0,i)} @var{E(1,i)} @dots{} @var{E(K-1,i)} @var{Ri-1})
+(@var{proc} @var{E}(0,i) @var{E}(1,i) @dots{} @var{E}(K-1,i) @var{Ri-1})
 @end example
 
 @c EN
@@ -4109,7 +4109,7 @@ or the entry isn't a a pair, the table isn't modified, and
 @var{fallback} is returned if given, or an error is raised.
 @c JP
 @code{(dict-get dict key)}がペア@var{p}であれば、
-そのエントリの値が@var{(cdr p)}で置き換えられ、@var{(car p)}の値が
+そのエントリの値が@code{(cdr p)}で置き換えられ、@code{(car p)}の値が
 戻り値となります。@var{key}に該当するエントリが無かったり、ペアで無かった場合は
 ディクショナリは変更されず、@var{fallback}があればそれが戻り値となり、
 無ければエラーが報告されます。
