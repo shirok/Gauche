@@ -129,7 +129,7 @@ AC_ARG_WITH(rpath,
     AS_CASE([$with_rpath],
       [yes], [],
       [no],  [try_rpath=no],
-             [rpath="`echo $with_rpath | sed -e 's/^/-Wl,-rpath=/' -e 's/:/ -Wl,-rpath=/g'`"])
+             [rpath="`echo $with_rpath | sed -e 's/^/-Wl,-rpath=/' -e 's/:/,-rpath=/g'`"])
   ])
 
 dnl ----------------------------------------------------------
