@@ -194,6 +194,16 @@
                             (scope-1 x)
                             x))))))))))
 
+;; passing form rename procedure
+(let ([a 1] [b 2])
+  (let-syntax ([foo (er-macro-transformer
+                     (lambda (f r c)
+                       (r '(cons (list a b) `#(,a ,b)))))])
+    (let ([a -1] [b -2] [list *])
+      (test* "list arg for rename procedure"
+             '((1 2) . #(1 2))
+             (foo)))))
+
 ;; with-renaming
 ;; Note: currently with-renaming dependns on util.match, too.
 (let ((unquote list)

@@ -6042,16 +6042,35 @@
   (%make-macro-transformer (cenv-exp-name def-env)
                            (^[form use-env] (xformer form def-env use-env))))
 
-;; er-renamer :: (Sym-or-id, [Id]) -> (Id, [Id])
-;; Renamer creates an identifier out of bare symbol.  The identifier is
-;; unique per macro invocation.  We keep an alist of sym & created ids
-;; during one macro invocation to guarantee that eq?-ness of the renamed
-;; identifiers.
-(define (er-renamer sym dict module env)
-  (if-let1 id (assq-ref dict sym)
-    (values id dict)
-    (let1 id (make-identifier sym module env)
-      (values id (acons sym id dict)))))
+;; er-renamer :: (Form, [Id]) -> (Form, [Id])
+;; Where symbol or identifiers in the Form will be replaced with
+;; fresh identifiers.   If Form has more than one occurence of a
+;; specific symbol-or-id, the resulting Form has the same (eq?)
+;; identifier for those occurrences.
+(define (er-renamer form dict module env)
+  (cond
+   [(variable? form)
+    (if-let1 id (assq-ref dict form)
+      (values id dict)
+      (let1 id (make-identifier form module env)
+        (values id (acons form id dict))))]
+   [(pair? form)
+    (receive (a dict) (er-renamer (car form) dict module env)
+      (receive (d dict) (er-renamer (cdr form) dict module env)
+        (if (and (eq? a (car form)) (eq? d (cdr form)))
+          (values form dict)
+          (values (cons a d) dict))))]
+   [(vector? form)
+    (let loop ([i 0] [vec #f] [dict dict])
+      (if (= i (vector-length form))
+        (values (or vec form) dict)
+        (receive (e dict) (er-renamer (vector-ref form i) dict module env)
+          (if (eq? e (vector-ref form i))
+            (loop (+ i 1) vec dict)
+            (let1 vec (or vec (vector-copy form))
+              (vector-set! vec i e)
+              (loop (+ i 1) vec dict))))))]
+   [else (values form dict)]))
 
 ;; er-comparer :: (Sym-or-id, Sym-or-id, Env, Env) -> Bool
 (define (er-comparer a b uenv cenv)
