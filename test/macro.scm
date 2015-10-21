@@ -205,7 +205,7 @@
              (foo)))))
 
 ;; with-renaming
-;; Note: currently with-renaming dependns on util.match, too.
+;; Note: currently with-renaming depends on util.match, too.
 (let ((unquote list)
       (x 1)
       (y 2))
