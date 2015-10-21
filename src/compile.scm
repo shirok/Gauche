@@ -6050,13 +6050,7 @@
 (define (er-renamer sym dict module env)
   (if-let1 id (assq-ref dict sym)
     (values id dict)
-    (let1 id (make-identifier
-              (cond [(identifier? sym) (identifier-name sym)]
-                    [(symbol? sym) sym]
-                    ;; TODO: better error message
-                    [else (error "Rename received non-symbol argument:" sym)])
-              module
-              env)
+    (let1 id (make-identifier sym module env)
       (values id (acons sym id dict)))))
 
 ;; er-comparer :: (Sym-or-id, Sym-or-id, Env, Env) -> Bool

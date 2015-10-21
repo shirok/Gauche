@@ -156,6 +156,44 @@
       (test* "er-macro introducing local bindings" 4
              (foo x)))))
 
+;; er-macro and nested identifier
+;; cf. http://saito.hatenablog.jp/entry/2014/11/18/233209
+(define (er-test-traverse proc obj)
+  (let loop ((obj obj))
+    (cond [(or (symbol? obj) (identifier? obj))    (proc obj)]
+          [(pair? obj)   (cons (loop (car obj)) (loop (cdr obj)))]
+          [(vector? obj) (vector-map loop obj)]
+          [else obj])))
+
+(define-syntax er-test-let/scope
+  (er-macro-transformer
+   (lambda (form rename _)
+     (let ([scope (cadr form)]
+           [body (cddr form)])
+       `(let-syntax ((,scope
+                      (,(rename 'er-macro-transformer)
+                       (,(rename 'lambda) (f r _)
+                        (,(rename 'let) ((form2 (,(rename 'cdr) f)))
+                         (,(rename 'cons)
+                          ',(rename 'begin)
+                          (,(rename 'er-test-traverse) r form2)))))))
+          ,@body)))))
+
+(test "er-macro and nested identifier"
+      '(2 2 3 4)
+      (lambda ()
+        (let ([x 1])
+          (er-test-let/scope scope-1
+            (let ([x 2])
+              (er-test-let/scope scope-2
+                (let ([x 3])
+                  (er-test-let/scope scope-1
+                    (let ([x 4])
+                      (list (scope-2 (scope-1 x))
+                            (scope-2 x)
+                            (scope-1 x)
+                            x))))))))))
+
 ;; with-renaming
 ;; Note: currently with-renaming dependns on util.match, too.
 (let ((unquote list)
