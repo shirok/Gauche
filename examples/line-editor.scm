@@ -6,6 +6,7 @@
 
 (use text.console)
 (use text.line-edit)
+(use gauche.listener :only (complete-sexp?))
 
 (define (main args)
   (let* ([con (guard (e [else (exit 1 (~ e'message))])
@@ -13,7 +14,8 @@
          [count 0]
          [ctx (make <line-edit-context>
                 :console con
-                :prompt (^[] (format #t "[~d]$ " count)))])
+                :prompt (^[] (format #t "[~d]$ " count))
+                :input-continues (^s (not (complete-sexp? s))))])
     (let loop ()
       (let1 line (read-line/edit ctx)
         (newline)

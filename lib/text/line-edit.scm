@@ -45,10 +45,28 @@
 (define *kill-ring-size* 60)
 (define *history-size* 200)
 
+;; <line-edit-context>
+;; Initializable slots:
+;;   console - <console> object to use.  if omitted, make-default-console
+;;             is called (see text.console)
+;;   prompt  - a string or a thunk that returns a string.
+;;   keymap  - a hashtable to keycode -> command.  not much useful now,
+;;             for we haven't exported commands.
+;;   input-continues - if this is #f, commit-or-newline always
+;;             commit the line---that read-line/edit strictly works as
+;;             line editor.  Otherwise, this should be a procedure that
+;;             takes the current buffer content as a string, and should
+;;             return #f if the input is complete, or #t otherwise.
+;;             If the procedure returns #t, commit-or-newline inserts a
+;;             newline to the buffer and enters multiline edit mode.
+
 (define-class <line-edit-context> ()
   ((console :init-keyword :console :init-form (make-default-console))
    (prompt  :init-keyword :prompt :init-value "")
-   (keymap  :init-form (default-keymap))
+   (keymap  :init-keyword :keymap :init-form (default-keymap))
+   (input-continues :init-keyword :input-continues :init-form #f)
+
+   ;; Following slots are private.
    (initpos-y)
    (initpos-x)
    (screen-height)
@@ -161,7 +179,6 @@
 
 ;; Check some parameters of screen.
 (define (init-screen-params ctx)
-  ;(enable-scroll (~ ctx'console))
   (receive (y x) (query-cursor-position (~ ctx'console))
     (set! (~ ctx'initpos-y) y)
     (set! (~ ctx'initpos-x) x))
@@ -169,11 +186,38 @@
     (set! (~ ctx'screen-height) h)
     (set! (~ ctx'screen-width) w)))
 
-;; Show prompt
+;; Show prompt.  Returns the current column.
 (define (show-prompt ctx)
   (let* ([p (~ ctx'prompt)]
          [s (if (applicable? p) (with-output-to-string p) (x->string p))])
     (putstr (~ ctx'console) s)))
+
+;; Show secondary prompt
+;; TODO: make this customizable
+(define (show-secondary-prompt ctx)
+  (when (> (~ ctx'initpos-x) 0)
+    (putstr (~ ctx'console) (make-string (~ ctx'initpos-x) #\.))))
+
+;; TODO: Mind char-width.
+;; Calculate cursor location of the buffer position, considering
+;; tab expansion & newlines.
+;; Returns y and x.  assuming we know cursor is inside screen.
+(define (current-buffer-cursor-position ctx buffer)
+  (let ([g (gap-buffer->generator buffer)]
+        [width (~ ctx'screen-width)]
+        [start-y (~ ctx'initpos-y)]
+        [start-x (~ ctx'initpos-x)]
+        [buffer-pos (gap-buffer-pos buffer)])
+    (let loop ([n 0] ; character count
+               [y start-y]
+               [x start-x])
+      (cond [(= n buffer-pos) (values y x)]
+            [(= x width) (loop n (+ y 1) 0)]
+            [else
+             (case (g)
+               [(#\tab) (loop (+ n 1) y (* (quotient (+ x 8) 8) 8))]
+               [(#\newline) (loop (+ n 1) (+ y 1) (~ ctx'initpos-x))]
+               [else (loop (+ n 1) y (+ x 1))])]))))  
 
 ;; TODO: Mind char-width.
 (define (redisplay ctx buffer)
@@ -185,17 +229,6 @@
                           (values (make-list (- nextcol col) #\space) nextcol))
                         (values (list ch) (+ col 1))))
                     start-column g))
-  ;; calculate character position, with tab expansion
-  (define (pos/tab g start-column pos)
-    (let loop ([n 0]
-               [col start-column])
-      (if (= n pos)
-        col
-        (let1 ch (g)
-          (loop (+ n 1)
-                (if (eqv? ch #\tab)
-                  (* (quotient (+ col 8) 8) 8)
-                  (+ col 1)))))))
 
   (let ([con (~ ctx'console)]
         [y   (~ ctx'initpos-y)]
@@ -217,12 +250,17 @@
           (putch con ch)
           (move-cursor-to con y 1)
           (loop y 1)]
-         [else (putch con ch) (loop y (+ x 1))])))
-    (let1 pos (pos/tab (gap-buffer->generator buffer) x
-                       (gap-buffer-pos buffer))
-      (move-cursor-to con
-                      (+ (~ ctx'initpos-y) (quotient pos w))
-                      (modulo pos w)))))
+         [(eqv? ch #\newline) ; works as if CR+LF
+          (if (= y (- h 1))
+            (begin (dec! (~ ctx'initpos-y))
+                   (cursor-down/scroll-up con))
+            (inc! y))
+          (move-cursor-to con y 0)
+          (show-secondary-prompt ctx)
+          (loop y (~ ctx'initpos-x))]
+         [else (putch con ch) (loop y (+ x 1))]))))
+  (receive (cy cx) (current-buffer-cursor-position ctx buffer)
+    (move-cursor-to (~ ctx'console) cy cx)))
 
 ;;
 ;; Key combinations
@@ -323,6 +361,41 @@
     (begin (inc! (~ ctx'last-yank))
            (get-yank-line ctx))))
 
+;;
+;; Some buffer utilities
+;;
+
+(define (buffer-current-line&col buf)
+  (generator-fold (^[ch p]
+                    (match-let1 (row . col) p
+                      (if (eqv? ch #\newline)
+                        (cons (+ row 1) 0)
+                        (cons row (+ col 1)))))
+                  '(0 . 0)
+                  (gap-buffer->generator buf 0 (gap-buffer-pos buf))))
+
+;; returns the # of newline chars in buffer
+(define (buffer-num-lines buf)
+  (generator-fold (^[ch cnt] (if (eqv? ch #\newline) (+ cnt 1) cnt))
+                  0 (gap-buffer->generator buf)))
+
+;; Tries to set the buffer position in line & column.  If the line
+;; isn't wide enough, set the position at the end of the line.
+(define (buffer-set-line&col! buf line col)
+  (define nchars (gap-buffer-content-length buf))
+  (let skip-lines ([pos 0] [lin 0])
+    (cond [(= nchars pos) (gap-buffer-move! buf pos)]
+          [(= lin line)
+           (let skip-chars ([pos pos] [chr 0])
+             (if (or (= nchars pos)
+                     (eqv? (gap-buffer-ref buf pos) #\newline)
+                     (= chr col))
+               (gap-buffer-move! buf pos)
+               (skip-chars (+ pos 1) (+ chr 1))))]
+          [(eqv? (gap-buffer-ref buf pos) #\newline)
+           (skip-lines (+ pos 1) (+ lin 1))]
+          [else (skip-lines (+ pos 1) lin)])))
+
 ;;;
 ;;; Commands
 ;;;
@@ -337,6 +410,12 @@
 
 (define (commit-input ctx buf key)
   'commit)
+
+(define (commit-or-newline ctx buf key)
+  (or (and-let* ([pred (~ ctx'input-continues)]
+                 [ (pred (gap-buffer->string buf)) ])
+        (gap-buffer-edit! buf '(i #f "\n")))
+      'commit))
 
 (define (delete-char ctx buf key)
   (and (not (gap-buffer-gap-at? buf 'end))
@@ -409,6 +488,19 @@
            (gap-buffer-clear! buf)
            (gap-buffer-insert! buf (car p))
            #t))))
+
+(define (prev-line-or-history ctx buf key)
+  (match-let1 (lines . col) (buffer-current-line&col buf)
+    (if (zero? lines)
+      (prev-history ctx buf key)
+      (begin (buffer-set-line&col! buf (- lines 1) col) #t))))
+
+(define (next-line-or-history ctx buf key)
+  (match-let1 (lines . col) (buffer-current-line&col buf)
+    (if (= lines (buffer-num-lines buf))
+      (next-history ctx buf key)
+      (begin (buffer-set-line&col! buf (+ lines 1) col) #t))))
+  
        
 (define (transpose-chars ctx buf key)
   (cond [(gap-buffer-gap-at? buf 'beginning) #f]
@@ -470,13 +562,13 @@
               `(,(ctrl #\g) . ,keyboard-quit)
               `(,(ctrl #\h) . ,delete-backward-char)
               `(,(ctrl #\i) . ,self-insert-command) ; tab
-              `(,(ctrl #\j) . ,commit-input)        ; newline
+              `(,(ctrl #\j) . ,commit-or-newline)   ; newline
               `(,(ctrl #\k) . ,kill-line)
               `(,(ctrl #\l) . ,refresh-display)
-              `(,(ctrl #\m) . ,commit-input)     ; return
-              `(,(ctrl #\n) . ,next-history)
+              `(,(ctrl #\m) . ,commit-or-newline) ; return
+              `(,(ctrl #\n) . ,next-line-or-history)
               `(,(ctrl #\o) . ,undefined-command); todo
-              `(,(ctrl #\p) . ,prev-history)
+              `(,(ctrl #\p) . ,prev-line-or-history)
               `(,(ctrl #\q) . ,undefined-command); todo
               `(,(ctrl #\r) . ,undefined-command); todo
               `(,(ctrl #\s) . ,undefined-command); todo
@@ -574,9 +666,9 @@
               `(,(alt #\k) . ,undefined-command)
               `(,(alt #\l) . ,undefined-command)
               `(,(alt #\m) . ,undefined-command)
-              `(,(alt #\n) . ,undefined-command)
+              `(,(alt #\n) . ,next-history)
               `(,(alt #\o) . ,undefined-command)
-              `(,(alt #\p) . ,undefined-command)
+              `(,(alt #\p) . ,prev-history)
               `(,(alt #\q) . ,undefined-command)
               `(,(alt #\r) . ,undefined-command)
               `(,(alt #\s) . ,undefined-command)
@@ -629,8 +721,8 @@
               `(,(alt (ctrl #\^)) . ,undefined-command)
               `(,(alt (ctrl #\_)) . ,undefined-command)
 
-              `(KEY_UP    . ,prev-history)
-              `(KEY_DOWN  . ,next-history)
+              `(KEY_UP    . ,prev-line-or-history)
+              `(KEY_DOWN  . ,next-line-or-history)
               `(KEY_LEFT  . ,backward-char)
               `(KEY_RIGHT . ,forward-char)
               `(KEY_INS   . ,undefined-command)
