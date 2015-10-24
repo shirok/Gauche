@@ -140,7 +140,8 @@
           debug-print-width debug-source-info
           debug-print-pre debug-print-post debug-funcall-pre)
 
-(autoload gauche.vm.profiler profiler-show profiler-show-load-stats)
+(autoload gauche.vm.profiler
+          profiler-show profiler-show-load-stats with-profiler)
 
 (autoload srfi-0  (:macro cond-expand))
 (autoload srfi-7  (:macro program))

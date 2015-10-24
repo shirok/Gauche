@@ -1,3 +1,7 @@
+2015-10-23  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/vm/profiler.scm (with-profiler): Added.
+
 2015-10-21  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm (er-renamer): Allow ER's rename procedure

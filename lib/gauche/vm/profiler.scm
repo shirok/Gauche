@@ -36,7 +36,7 @@
   (use util.match)
   (extend gauche.internal)
   (export profiler-show profiler-get-result
-          profiler-show-load-stats)
+          profiler-show-load-stats with-profiler)
   )
 (select-module gauche.vm.profiler)
 
@@ -114,6 +114,16 @@
                   (sort-by results cdr >))
         (return #f))
       (start (reverse stats)))))
+
+;; Convenience API
+(define (with-profiler thunk)
+  (receive vals (dynamic-wind
+                  profiler-start
+                  thunk
+                  profiler-stop)
+    (profiler-show)
+    (profiler-reset)
+    (apply values vals)))
 
 ;;;==========================================================
 ;;; Internal routines
