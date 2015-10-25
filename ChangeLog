@@ -1,5 +1,10 @@
 2015-10-25  Shiro Kawai  <shiro@acm.org>
 
+	* src/libvec.scm (%uvector-ref): We unboxed k twice, breaking the
+	  whole procedure.  It never surfaced, because the way we used
+	  %uvector-ref has always been expanded into UVEC-REF instruction
+	  by the compiler so the procedure has never been called.
+
 	* lib/data/ftree-map.scm: Added.
 
 2015-10-24  Shiro Kawai  <shiro@acm.org>

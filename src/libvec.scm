@@ -123,7 +123,7 @@
   :constant
   (unless (== (Scm_UVectorType (SCM_CLASS_OF v)) t)
     (Scm_TypeError "vec" (Scm_UVectorTypeName t) (SCM_OBJ v)))
-  (return (Scm_VMUVectorRef v t (SCM_INT_VALUE k) fallback)))
+  (return (Scm_VMUVectorRef v t k fallback)))
 
 (select-module gauche)
 (inline-stub
