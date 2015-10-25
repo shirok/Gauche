@@ -1,3 +1,7 @@
+2015-10-25  Shiro Kawai  <shiro@acm.org>
+
+	* lib/data/ftree-map.scm: Added.
+
 2015-10-24  Shiro Kawai  <shiro@acm.org>
 
 	* lib/www/css.scm (parse-css, parse-css-file): INCOMPATIBLE CHANGE:

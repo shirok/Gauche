@@ -290,6 +290,44 @@
            (cache-stats c))))
 
 ;;;========================================================================
+(test-section "data.ftree-map")
+(use data.ftree-map)
+(use gauche.sequence)
+(use gauche.dictionary)
+(test-module 'data.ftree-map)
+
+(let* ([z (make-ftree-map)]
+       [z (begin (test* "empty" #t (ftree-map-empty? z))
+                 (do ([i 0 (+ i 1)]
+                      [z z (let1 n (modulo (* i 61) 128)
+                             (ftree-map-put z n (integer->char n)))])
+                     [(= i 128) z]
+                   ))]
+       [z (begin (test* "exists?" #t
+                        (every (cut ftree-map-exists? z <>) (iota 128)))
+                 (test* "exists?" #f
+                        (ftree-map-exists? z -1))
+                 (test* "get" #t
+                        (every (^n (eqv? (ftree-map-get z n)
+                                         (integer->char n)))
+                               (iota 128)))
+                 (test* "get" (test-error) (ftree-map-get z -1))
+                 (test* "get" 'z (ftree-map-get z -1 'z))
+                 (test* "collection"
+                        (map (^n (cons n (integer->char n))) (iota 128))
+                        (map identity z))
+                 (test* "dictionary"
+                        (reverse (map (^n (cons n (integer->char n))) (iota 128)))
+                        (dict-fold z acons '()))
+                 (test* "dictionary"
+                        (map (^n (cons n (integer->char n))) (iota 128))
+                        (dict-fold-right z acons '()))
+                 (ftree-map-put z 0 'meow))])
+  (test* "replace" 'meow (ftree-map-get z 0))
+  )
+
+
+;;;========================================================================
 (test-section "data.random")
 (use data.random)
 (test-module 'data.random)
