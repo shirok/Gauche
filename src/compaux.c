@@ -209,7 +209,7 @@ ScmObj Scm_WrapIdentifier(ScmIdentifier *orig)
 {
     ScmIdentifier *id = SCM_NEW(ScmIdentifier);
     SCM_SET_CLASS(id, SCM_CLASS_IDENTIFIER);
-    id->name = orig;
+    id->name = SCM_OBJ(orig);
     id->module = orig->module;
     id->env = orig->env;
     return SCM_OBJ(id);
