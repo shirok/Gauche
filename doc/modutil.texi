@@ -24415,19 +24415,99 @@ An example:
 @deftp {Module} www.css
 This module provides tools to convert between S-expression and CSS.
 
-The S-expression CSS (sxcss) is a convenient way to manipulate
+The S-expression CSS (SxCSS) is a convenient way to manipulate
 CSS in Scheme.
 @end deftp
 
-@subheading CSS in S-expression
+For example, the following CSS and SxCSS are equivalent, and
+can be converted back and forth:
+
+CSS:
+@example
+body @{ padding-left: 11em;
+       font-family: Georgia, "Times New Roman", Times, serif;
+       color: purple;
+       background-color: #d8da3d @}
+ul.navbar li @{ background: white;
+               margin: 0.5em 0;
+               padding: 0.3em;
+               border-right: 1em solid black @}
+ul#spec > a @{ text-decoration: none @}
+a:visited @{ color: purple !important @}
+@end example
+
+SxCSS:
+@example
+((style-rule body
+   (padding-left (11 em))
+   (font-family (:or Georgia "Times New Roman" Times serif))
+   (color purple)
+   (background-color (color "d8da3d")))
+ (style-rule ((ul (class navbar)) li)
+   (background white)
+   (margin #((0.5 em) 0))
+   (padding (0.3 em))
+   (border-right #((1 em) solid black)))
+ (style-rule ((ul (id spec)) > a) (text-decoration none))
+ (style-rule (a (: visited)) (color purple !important)))
+@end example
+
+See the ``CSS in S-expression'' section below for the complete
+specification.
+
+@subheading Constructing CSS
+
+@defun construct-css sxcss :optional oport
+Take SxCSS and writes out CSS to the given port, defaulted to
+the current output port.
+@end defun
+
+@subheading Parsing CSS
+
+@defun parse-css :optional iport
+Read CSS from the given port, defaulted to the current input port,
+and returns SxCSS.
+
+When it encounters unparsable CSS (either a malformed CSS, or
+unsupported syntax), it emits a warning message, ignore the
+unparsable part and tries to continue reading the rest.
+
+NB: Currently we don't handle @code{@@charset} directive; we assume
+the text is already in the port's encoding.  We may support
+it in future versions.
+@end defun
+
+@defun parse-css-file file :key encoding
+Read the CSS text from the given file and parse it using
+@code{parse-css}.  Again, we don't handle @code{@@charset} directive
+yet, and you have to pass @code{encoding} argument if
+the CSS text isn't in the Gauche's native character encoding.
+@end defun
+
+@defun parse-css-selector-string str
+This parses the selector part of the CSS.
 
 @example
-<sxcss>      : @{<style-rule> | <at-rule>@} ...
+(parse-css-selector-string "ul li.item span#foo")
+  @result{} (ul (li (class item)) (span (id foo)))
+
+(parse-css-selector-string "h1,h2")
+  @result{} (:or h1 h2)
+@end example
+@end defun
+
+
+@subheading CSS in S-expression
+
+The following is the complete rules of SxCSS syntax.
+
+@example
+<sxcss>      : (@{<style-rule> | <at-rule>@} ...)
 
 <style-rule> : (style-rule <pattern> <declaration> ...)
              | (style-decls <declaration> ...)
 
-<pattern>   : <selector> | (or <selector> ...)
+<pattern>   : <selector> | (:or <selector> ...)
 <seletor>   : <simple-selector>
             | <chained-selector>
 <chained-selector> : (<simple-selector> . (<op>? . <chained-selector>))
@@ -24455,7 +24535,7 @@ CSS in Scheme.
 <important> : !important
 <expr>      : <term>
             | (/ <term> <term> ...)
-            | (or <term> <term> ...)
+            | (:or <term> <term> ...)
             | #(<term> <term> ...)             ; juxtaposition
 <term>      : <quantity> | (- <quantity>) | (+ <quantity>)
             | <string> | <ident> | <url> | <hexcolor> | <function>
@@ -24477,20 +24557,10 @@ NB: Negation op is @code{:not} instead of @code{not},
 since @code{(not <negation-arg>)}
 would be ambiguous from the simple node named "not" with one option.
 
-@subheading Constructing CSS
-
-@defun construct-css sxcss :optional oport
-@end defun
-
-@subheading Parsing CSS
-
-@defun css-parse-file file :key encoding
-@end defun
-
-@defun css-parse-selector-string str
-@end defun
-
-
+NB: @code{style-decls} selector rule is currently won't appear in
+the @code{parse-css} output; it can be used in SxCSS to make
+@code{construct-css} render declarations only, which can be
+used in the @code{style} attribute of the document, for example.
 
 @c Local variables:
 @c mode: texinfo

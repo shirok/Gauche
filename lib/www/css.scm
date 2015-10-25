@@ -42,8 +42,8 @@
   (use srfi-1)
   (use srfi-13)
   (export construct-css simple-selector?
-          css-parse-file
-          css-parse-selector-string)
+          parse-css parse-css-file
+          parse-css-selector-string)
   )
 (select-module www.css)
 
@@ -55,7 +55,7 @@
 ;;;  <style-rule> : (style-rule <pattern> <declaration> ...)
 ;;;               | (style-decls <declaration> ...)
 ;;;
-;;;  <pattern>   : <selector> | (or <selector> ...)
+;;;  <pattern>   : <selector> | (:or <selector> ...)
 ;;;  <seletor>   : <simple-selector>
 ;;;              | <chained-selector>
 ;;;  <chained-selector> : (<simple-selector> . (<op>? . <chained-selector>))
@@ -83,7 +83,7 @@
 ;;;  <important> : !important
 ;;;  <expr>      : <term>
 ;;;              | (/ <term> <term> ...)
-;;;              | (or <term> <term> ...)
+;;;              | (:or <term> <term> ...)
 ;;;              | #(<term> <term> ...)             ; juxtaposition
 ;;;  <term>      : <quantity> | (- <quantity>) | (+ <quantity>)
 ;;;              | <string> | <ident> | <url> | <hexcolor> | <function>
@@ -143,7 +143,7 @@
       "}\n"))
   (define (render-pattern pattern)
     (match pattern
-      [('or selector ...) (intersperse "," (map render-selector selector))]
+      [(':or selector ...) (intersperse "," (map render-selector selector))]
       [_ (render-selector pattern)]))
   (define (render-selector selector)
     (if-let1 s (simple-selector? selector)
@@ -198,7 +198,7 @@
   (define (render-expr expr)
     (match expr
       [('/ term ...)  (intersperse "/" (map render-term term))]
-      [('or term ...) (intersperse "," (map render-expr term))]
+      [(':or term ...) (intersperse "," (map render-expr term))]
       [#(term ...) (intersperse " " (map render-expr term))]
       [term (render-term term)]))
   (define (render-term term)
@@ -635,7 +635,7 @@
 (define %selector-group  ;; section 5
   ($lift (^[sels] (cond [(null? sels) #f]
                         [(null? (cdr sels)) (car sels)]
-                        [else (cons 'or sels)]))
+                        [else (cons ':or sels)]))
          ($sep-by ($lift (^[_ seq _] (if (null? (cdr seq)) (car seq) seq))
                          %WS* %selector-seq %WS*)
                   ($tok 'COMMA))))
@@ -692,7 +692,7 @@
   ($lift (^[vs] (match vs [(x) x] [xs (list->vector xs)]))
          ($many ($/ ($lift (^[a _ b] `(/ ,a ,b))
                            %term ($delim #\/) %term)
-                    ($lift (^[v vs] (if (null? vs) v (cons* 'or v vs)))
+                    ($lift (^[v vs] (if (null? vs) v (cons* ':or v vs)))
                            %term ($many ($seq ($tok 'COMMA) %term)))))))
 
 (define *juxta-properties*
@@ -704,7 +704,7 @@
   (if (memq property *juxta-properties*)
     %juxtaposed-exprs
     ($do [exprs %comma-separated-exprs]
-         ($return (match exprs [(x) x] [(xs ...) `(or ,@xs)])))))
+         ($return (match exprs [(x) x] [(xs ...) `(:or ,@xs)])))))
 
 ;; val :: (property-name . tokens)
 (define (parse-declaration val)
@@ -807,11 +807,14 @@
 
 ;; API
 ;; TODO: Handle @charset
-(define (css-parse-file file :key (encoding #f))
-  (call-with-input-file file
-    (^p ($ parse-stylesheet
-           $ css-tokenize $ generator->lseq $ port->char-generator p))
-    :encoding (or encoding (gauche-character-encoding))))
+(define (parse-css-file file :key (encoding #f))
+  (call-with-input-file file parse-css
+                        :encoding (or encoding (gauche-character-encoding))))
+
+;; API
+(define (parse-css :optional (port (current-input-port)))
+  ($ parse-stylesheet
+     $ css-tokenize $ generator->lseq $ port->char-generator port))
 
 ;; API
 ;; A utility function to parse only selector part.
@@ -819,7 +822,7 @@
 ;; processed as %qualified-rule.
 ;; Returns #f if input is unparsable.  It is ok that input has extra
 ;; blocks; they're ignored.
-(define (css-parse-selector-string s)
+(define (parse-css-selector-string s)
   (receive (r v s) ($ %selector-only $ css-tokenize $ x->lseq s)
     (and (parse-success? r)
          (parse-selectors v))))

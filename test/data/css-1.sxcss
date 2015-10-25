@@ -1,7 +1,7 @@
 (
  (style-rule body
              (padding-left (11 em))
-             (font-family (or Georgia "Times New Roman" Times serif))
+             (font-family (:or Georgia "Times New Roman" Times serif))
              (color purple)
              (background-color (color "d8da3d")))
  (style-rule (ul (class navbar))
@@ -13,7 +13,7 @@
              (left (1 em))
              (width (9 em)))
  (style-rule h1
-             (font-family (or Helvetica Geneva Arial SunSans-Regular sans-serif)))
+             (font-family (:or Helvetica Geneva Arial SunSans-Regular sans-serif)))
  (style-rule ((ul (class navbar)) li)
              (background white)
              (margin #((0.5 em) 0))

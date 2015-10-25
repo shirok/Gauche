@@ -1,3 +1,10 @@
+2015-10-24  Shiro Kawai  <shiro@acm.org>
+
+	* lib/www/css.scm (parse-css, parse-css-file): INCOMPATIBLE CHANGE:
+	  Changed the name from css-parse-file for the consistency.
+	  Also, use `:or'instead of `or' in SxCSS, for the bare symbol
+	  could be ambiguous when we have an element named `or'.
+
 2015-10-23  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/vm/profiler.scm (with-profiler): Added.

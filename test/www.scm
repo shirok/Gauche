@@ -372,7 +372,7 @@ Content-Disposition: form-data; name=bbb
   (dolist [infile (glob "../test/data/css-*.css")]
     (test* #"css parser ~infile"
            (call-with-input-file (path-swap-extension infile "sxcss") read)
-           (css-parse-file infile)
+           (parse-css-file infile)
            equal?)))
 
 (run-css-parser-test)
