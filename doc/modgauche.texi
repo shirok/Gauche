@@ -17153,6 +17153,37 @@ if you import @code{gauche.collection}.
 @end example
 @end deftp
 
+@defun uvector-ref vec k :optional fallback
+@c EN
+Generic version of @code{@var{TAG}vector-ref}.
+It can take any kind of uniform vector to @var{vec},
+and returns its @var{k}-th element.
+If the index @var{k} is out of the valid range, an error is signaled
+unless an optional argument @var{fallback} is given; in that case,
+@var{fallback} is returned.
+
+This is handy to write a generic code that works on any kind of
+uniform vector, but this is slower than the specific versions.
+Gauche's compiler recognizes the specific versions of referencer and
+generate very efficient code for them, while this generic version
+becomes a normal procedure call.   In inner-loop it can make a big
+difference.
+@c JP
+@code{@var{TAG}vector-ref}の汎用バージョンです。
+@var{vec}にどんな種類のユニフォームベクタを取ることができ、
+その@var{k}番めの要素を返します。
+@var{k}が有効な範囲外であった場合、通常はエラーが通知されますが、
+省略可能な引数@var{fallback}が与えられている場合はそれが返されます。
+
+この手続きは様々な種類のユニフォームベクタに対して動作するような一般的なコードを
+書く際にとても便利ですが、それぞれの種類のユニフォームベクタ専用の
+アクセサに比べると遅いです。Gaucheのコンパイラは@code{@var{TAG}vector-ref}の
+呼び出しを認識して非常に効率の良いコードを出すのに対し、
+この手続きは通常の手続き呼び出しになるからです。内部のループ内で呼び出す場合、
+これは大きな差になるかもしれません。
+@c COMMON
+@end defun
+
 @deftp {Function} @var{TAG}vector-set! @r{@var{vec} @var{k} @var{n} :optional @var{clamp}}
 @findex s8vector-set!
 @findex u8vector-set!

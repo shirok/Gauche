@@ -90,10 +90,21 @@
 (set-reference-inliner f32vector-ref 9)
 (set-reference-inliner f64vector-ref 10)
 
-
 ;;;
 ;;; Generic procedures
 ;;;
+
+(define uvector-ref
+  (let1 uvector-type-constant
+      (map-with-index (^[i c] (cons c i))
+                      (list <s8vector> <u8vector> <s16vector> <u16vector>
+                            <s32vector> <u32vector> <s64vector> <u64vector>
+                            <f16vector> <f32vector> <f64vector>))
+    (^[uvec k :optional fallback]
+      (let1 t (assq-ref uvector-type-constant (class-of uvec))
+        (if (undefined? fallback)
+          (%uvector-ref uvec t k)
+          (%uvector-ref uvec t k fallback))))))
 
 ;; uvector-alias
 (inline-stub

@@ -107,7 +107,8 @@
         [seq (iota (length numlist))])
     (for-each (^[n i] (set vec i n)) numlist seq)
     (and (equal? expvec vec)
-         (equal? numlist (map (^i (ref vec i)) seq)))))
+         (equal? numlist (map (^i (ref vec i)) seq))
+         (equal? numlist (map (^i (uvector-ref vec i)) seq)))))
 
 (test* "s8vector-ref|set!" #t
        (uvrefset-tester make-s8vector s8vector-ref s8vector-set!
