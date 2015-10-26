@@ -12,15 +12,14 @@ dnl AC_CANONICAL_SYSTEM
 
 dnl Replace @LOCAL_PATHS@ by --with-local option.
 AC_ARG_WITH(local,
-  AC_HELP_STRING([--with-local=PATH:PATH...],
+  AS_HELP_STRING([--with-local=PATH:PATH...],
                  [For each PATH, add PATH/include to the include search
 paths and PATH/lib to the library search paths.  Useful if you have some
 libraries installed in non-standard places. ]),
   [
-    case $with_local in
-      yes|no|"") ;;  #no effect
-      *) LOCAL_PATHS=$with_local ;;
-    esac
+    AS_CASE([$with_local],
+      [yes|no|""], [],  dnl no effect
+                   [LOCAL_PATHS=$with_local])
   ])
 AC_SUBST(LOCAL_PATHS)
 
