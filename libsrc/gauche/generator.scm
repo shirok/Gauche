@@ -35,8 +35,6 @@
   (use srfi-1)
   (use gauche.sequence)
   (use gauche.partcont)
-  (use gauche.uvector)
-  (use util.match)
   (export list->generator vector->generator reverse-vector->generator
           string->generator uvector->generator
           bits->generator reverse-bits->generator
@@ -69,6 +67,9 @@
 (define-syntax %begin0
   (syntax-rules ()
     [(_ exp body ...) (rlet1 tmp exp body ...)]))
+
+;; Avoid circular dependency during build
+(autoload gauche.uvector uvector-ref)
 
 ;;;
 ;;; Converters and constructors

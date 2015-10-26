@@ -4883,12 +4883,12 @@ reverse order.
 @end example
 
 @c EN
-By default the generator is exhausted once all items are retrieved;
+The generator is exhausted once all items are retrieved;
 the optional @var{start} and @var{end} arguments can limit the range
 the generator walks across; @var{start} specifies the left bound
 and @var{end} specifies the right bound.
 @c JP
-デフォルトでは、いったん全ての要素を取り出してしまえば
+いったん全ての要素を取り出してしまえば
 そのジェネレータは空になります;省略可能引数@var{start}と@var{end}で
 ジェネレータがたどる範囲を制限することができます;@var{start}で
 左の境界を、@var{end}で右の境界を指定します。
