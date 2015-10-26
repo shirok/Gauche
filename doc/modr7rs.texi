@@ -3,7 +3,7 @@
 @c NODE ライブラリモジュール - R7RS統合
 
 @c EN
-Gauche predates R7RS, and for the convenice, Gauche makes quite a few
+Gauche predates R7RS, and for the convenience, Gauche makes quite a few
 procedures as built-in (@pxref{Core library}).  Although the set of
 Gauche's core features are mostly superset of R7RS, some functions
 and syntaxes have different names and/or interface from R7RS.
@@ -82,7 +82,7 @@ On the other hand, R7RS requires to be explicit about which namespaces
 you'll be using, by @code{import} form, e.g. @code{(import (scheme base))}.
 Besides, R7RS library must be explicitly enclosed by @code{define-library} form.
 Before the first @code{import} form of a program, or outside of
-@code{define-library}, is beyond R7RS world---the standard definnes
+@code{define-library}, is beyond R7RS world---the standard defines
 nothings about it.
 @c JP
 一方、R7RSでは@code{import}フォームによってどの名前空間を利用するか明示することが
@@ -222,7 +222,7 @@ srfi-1とsrfi-13を使うには、次のようにします。
 
 @c EN
 (It's not that Gauche treat @code{srfi} name specially; installation
-of Gauche includes adaptor libraries such as @file{srfi/1.scm}.)
+of Gauche includes adapter libraries such as @file{srfi/1.scm}.)
 @c JP
 (これが動くのは、Gaucheが@code{srfi}という名前を特別扱いしているのではなく、
 Gaucheをインストールした時に@code{srfi/1.scm}等のアダプタライブラリが作られているからです)
@@ -489,7 +489,7 @@ done by separate primitives, @code{require}.  In most cases one file
 defines one module, and using that module means @code{require} it then
 @code{import} it (it's so common that Gauche has a macro for it---@code{use}).
 However, separating those two sometimes comes handy when you need
-some untrivial hacks.  @xref{Using modules}, for the details of
+some nontrivial hacks.  @xref{Using modules}, for the details of
 Gauche's @code{import}.
 @c JP
 Gaucheのモジュールシステム設計はSTkを継承していて、
@@ -522,7 +522,7 @@ R7RSは実装に選択の余地を与えるため、モジュール(ライブラ
 [R7RS]
 @c EN
 Imports libraries specified by @var{import-spec}s.  What R7RS calls
-libraies are what Gauche calls modules; they're the same thing.
+libraries are what Gauche calls modules; they're the same thing.
 @c JP
 @var{import-spec}で指定されるライブラリをインポートします。
 R7RSでいうライブラリは、Gaucheがモジュールと呼んできたものです。両者は同じものです。
@@ -613,7 +613,7 @@ R7RSの@code{import}の正式な構文は次の通りです。
 @section R7RS library form
 @c NODE R7RSライブラリ形式
 
-@defmac define-library library-name libral-decl @dots{}
+@defmac define-library library-name library-decl @dots{}
 [R7RS]
 Defines a library @var{library-name}, which is a list of 
 symbols or base-10 integer:
@@ -623,7 +623,7 @@ symbols or base-10 integer:
                   <identifier-or-base-10-integer> ...)
 @end smallexample
 
-Library decralations can be export declataions, import declartaions,
+Library declarations can be export declarations, import declarations,
 @code{begin}-list of Scheme code,
 include forms, or @code{cond-expand} forms.
 
@@ -747,14 +747,14 @@ values call-with-values dynamic-wind
 @example
 raise error
 @end example
-@item Enviornments and evaluation
+@item Environments and evaluation
 @example
 scheme-report-environment null-environment
 @end example
 @item Input and output
 @example
 input-port? output-port? port? current-input-port current-output-port
-current-error-port close-port close-input-port close-ouptut-port
+current-error-port close-port close-input-port close-output-port
 open-input-string open-output-string get-output-string
 read-char peek-char read-line eof-object? eof-object char-ready?
 newline write-char
@@ -1137,7 +1137,7 @@ This procedure is important on implementations where
 @code{force} only takes a promise, and portable code should
 use this procedure to yield a value that can be passed to @code{force}.
 
-If you write Gauche-speicific code, however, @code{force} can take
+If you write Gauche-specific code, however, @code{force} can take
 non-promise values, so you don't need this.
 @end defun
 
@@ -1155,7 +1155,7 @@ those bindings are available by @code{(import (scheme load))}.
 
 @defun load file :optional env
 [R7RS]
-R7RS @code{load} takes enviornment as an optional argument,
+R7RS @code{load} takes environment as an optional argument,
 while Gauche @code{load} takes it as a keyword argument
 (among other keyword arguments).  @xref{Loading Scheme file}.
 
@@ -1245,7 +1245,7 @@ those bindings are available by @code{(import (scheme time))}.
 @defun current-second
 [R7RS]
 Returns a real number represents the number of seconds since
-the midgnight of Jan. 1, 1970 TAI (which is 23:59:52, Dec 31, 1969 UTC, that
+the midnight of Jan. 1, 1970 TAI (which is 23:59:52, Dec 31, 1969 UTC, that
 is, -8 seconds before Unix Epoch.)  Number of leap seconds were
 inserted since then, and as of 2014, UTC is 35 seconds behind TAI.  That means
 the number returned is 27 seconds larger than the unix time,
@@ -1266,7 +1266,7 @@ from the unix time.
 Just be aware the difference, or you'll be surprised if you
 pass the return value of @code{current-second} to the UTC time
 formatter such as @code{sys-strftime}, or compare it with
-the file timestams which uses the unix time.  You can convert
+the file timestamps which uses the unix time.  You can convert
 between TAI and UTC using srfi-19 (@pxref{SRFI-19 Date}).
 @end defun
 
@@ -1293,7 +1293,7 @@ the current jiffy value easily becomes bignums, taking time
 to allocate and operate, beating the purpose of benchmarking.
 With the current choice, we have 53,867 seconds before we spill
 into bignum.   On 64bit architectures we have enough bits
-not to worry about bignums, with nanosecond reslution.
+not to worry about bignums, with nanosecond resolution.
 
 If you want to do more finer benchmarks on 32bit machines,
 you need to roll your own with @code{sys-clock-gettime-monotonic} or
