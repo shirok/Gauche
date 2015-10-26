@@ -35,9 +35,10 @@
   (use srfi-1)
   (use gauche.sequence)
   (use gauche.partcont)
+  (use gauche.uvector)
   (use util.match)
   (export list->generator vector->generator reverse-vector->generator
-          string->generator
+          string->generator uvector->generator
           bits->generator reverse-bits->generator
           file->generator file->sexp-generator file->char-generator
           file->line-generator file->byte-generator
@@ -96,6 +97,11 @@
   (let1 p (open-input-string
            ((with-module gauche.internal %maybe-substring) str start end))
     (^[] (read-char p))))
+
+(define (uvector->generator uvec :optional (start #f) (end #f))
+  (let ([i (or start 0)]
+        [len (or end (uvector-length uvec))])
+    (^[] (if (>= i len) (eof-object) (%begin0 (uvector-ref uvec i) (inc! i))))))
 
 (define (bits->generator n :optional (start #f) (end #f))
   (let* ([limit (or end (integer-length n))]

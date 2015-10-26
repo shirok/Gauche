@@ -4859,6 +4859,7 @@ it to @code{g}.
 @defunx vector->generator vec :optional start end
 @defunx reverse-vector->generator vec :optional start end
 @defunx string->generator str :optioanl start end
+@defunx uvector->venerator uvec :optional start end
 @c EN
 Returns a generator that yields each item in the given argument.
 A generator returned from @code{reverse-*} procedures runs in
@@ -4877,6 +4878,8 @@ reverse order.
   @result{} (5 4 3 2 1)
 (generator->list (string->generator "abcde"))
   @result{} (#\a #\b #\c #\d #\e)
+(generator->list (uvector->generator '#u8(1 2 3 4 5)))
+  @result{} (1 2 3 4 5)
 @end example
 
 @c EN
