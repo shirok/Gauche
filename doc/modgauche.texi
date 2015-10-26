@@ -4859,7 +4859,7 @@ it to @code{g}.
 @defunx vector->generator vec :optional start end
 @defunx reverse-vector->generator vec :optional start end
 @defunx string->generator str :optioanl start end
-@defunx uvector->venerator uvec :optional start end
+@defunx uvector->generator uvec :optional start end
 @c EN
 Returns a generator that yields each item in the given argument.
 A generator returned from @code{reverse-*} procedures runs in
