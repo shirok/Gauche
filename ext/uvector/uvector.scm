@@ -94,17 +94,33 @@
 ;;; Generic procedures
 ;;;
 
+;; generic ref and set! is slower but sometimes handy
+(define uvector-set!
+  (let1 setters
+      (list (cons <u8vector> u8vector-set!) (cons <s8vector> s8vector-set!)
+            (cons <u16vector> u16vector-set!) (cons <s16vector> s16vector-set!)
+            (cons <u32vector> u32vector-set!) (cons <s32vector> s32vector-set!)
+            (cons <u64vector> u64vector-set!) (cons <s64vector> s64vector-set!)
+            (cons <f16vector> f16vector-set!) (cons <f32vector> f32vector-set!)
+            (cons <f64vector> f64vector-set!))
+    (^[uvec k val]
+      ((or (assq-ref setters (class-of uvec))
+           (error "uvector required, but got:" uvec))
+       uvec k val))))
+
 (define uvector-ref
   (let1 uvector-type-constant
       (map-with-index (^[i c] (cons c i))
                       (list <s8vector> <u8vector> <s16vector> <u16vector>
                             <s32vector> <u32vector> <s64vector> <u64vector>
                             <f16vector> <f32vector> <f64vector>))
-    (^[uvec k :optional fallback]
-      (let1 t (assq-ref uvector-type-constant (class-of uvec))
-        (if (undefined? fallback)
-          (%uvector-ref uvec t k)
-          (%uvector-ref uvec t k fallback))))))
+    (getter-with-setter
+     (^[uvec k :optional fallback]
+       (let1 t (assq-ref uvector-type-constant (class-of uvec))
+         (if (undefined? fallback)
+           (%uvector-ref uvec t k)
+           (%uvector-ref uvec t k fallback))))
+     uvector-set!)))
 
 ;; uvector-alias
 (inline-stub

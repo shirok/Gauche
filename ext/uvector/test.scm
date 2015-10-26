@@ -108,7 +108,12 @@
     (for-each (^[n i] (set vec i n)) numlist seq)
     (and (equal? expvec vec)
          (equal? numlist (map (^i (ref vec i)) seq))
-         (equal? numlist (map (^i (uvector-ref vec i)) seq)))))
+         (equal? numlist (map (^i (uvector-ref vec i)) seq))
+         (begin (uvector-set! vec 0 (ref expvec 1))
+                (equal? (ref expvec 1) (ref vec 0)))
+         (begin (set! (uvector-ref vec 1) (ref expvec 2))
+                (equal? (ref expvec 2) (ref vec 1))))))
+
 
 (test* "s8vector-ref|set!" #t
        (uvrefset-tester make-s8vector s8vector-ref s8vector-set!

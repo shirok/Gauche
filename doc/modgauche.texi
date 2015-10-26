@@ -17168,6 +17168,8 @@ Gauche's compiler recognizes the specific versions of referencer and
 generate very efficient code for them, while this generic version
 becomes a normal procedure call.   In inner-loop it can make a big
 difference.
+
+@code{(setter uvector-ref)} is @code{uvector-set!}.
 @c JP
 @code{@var{TAG}vector-ref}の汎用バージョンです。
 @var{vec}にどんな種類のユニフォームベクタを取ることができ、
@@ -17181,6 +17183,8 @@ difference.
 呼び出しを認識して非常に効率の良いコードを出すのに対し、
 この手続きは通常の手続き呼び出しになるからです。内部のループ内で呼び出す場合、
 これは大きな差になるかもしれません。
+
+なお、@code{(setter uvector-ref)}は@code{uvector-set!}です。
 @c COMMON
 @end defun
 
@@ -17225,6 +17229,18 @@ if you import @code{gauche.collection}.
  @result{} #s32vector(-439 4 8933)
 @end example
 @end deftp
+
+@defun uvector-set! vec k val
+@c EN
+Generic version of @code{@var{TAG}vector-set!}.  It can handle any
+kind of uniform vectors, but a bit slower than the specific versions.
+@c JP
+@code{@var{TAG}vector-set!}の汎用バージョンです。全ての種類の
+ユニフォームベクタを扱えますが、特定のユニフォームベクタ用のセッターを
+使うよりやや遅いです。
+@c COMMON
+@end defun
+
 
 @deftp {Function} @var{TAG}vector-fill! @r{@var{vec} @var{fill} :optional @var{start} @var{end}}
 @findex s8vector-fill!

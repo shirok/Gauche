@@ -1,7 +1,7 @@
 2015-10-25  Shiro Kawai  <shiro@acm.org>
 
-	* ext/uvector/uvector.scm (uvector-ref): Added generic accessor
-	  for the convenience.
+	* ext/uvector/uvector.scm (uvector-ref, uvector-set!): Added generic
+	  accessor and mutator for the convenience.
 
 	* src/libvec.scm (%uvector-ref): We unboxed k twice, breaking the
 	  whole procedure.  It never surfaced, because the way we used
