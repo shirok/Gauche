@@ -47,16 +47,10 @@
     |         +- <read-error> ; srfi-36
     |         +- <io-error>   ; srfi-36
     |              +- <port-error> ; srfi-36
-    |              |    +- <io-read-error>   ; srfi-36
-    |              |    +- <io-write-error>  ; srfi-36
-    |              |    +- <io-closed-error> ; srfi-36
-    |              |    +- <io-unit-error>
-    |              +- <filename-error> ; srfi-36 (*)
-    |                   +- <malformed-filename-error>  ; srfi-36 (*)
-    |                   +- <file-protection-error>     ; srfi-36 (*)
-    |                   |    +- <file-is-read-only-error> ; srfi-36 (*)
-    |                   +- <file-already-exists-error> ; srfi-36 (*)
-    |                   +- <no-such-file-error>        ; srfi-36 (*)
+    |                   +- <io-read-error>   ; srfi-36
+    |                   +- <io-write-error>  ; srfi-36
+    |                   +- <io-closed-error> ; srfi-36
+    |                   +- <io-unit-error>
     +- <thread-exception> ; srfi-18
     |    +- <join-timeout-exception>      ; srfi-18
     |    +- <abandoned-mutex-exception>   ; srfi-18
@@ -65,12 +59,18 @@
     +- <mixin-condition>
          +- <load-condition-mixin> ; compounded to an error during loading
          +- <compile-error-mixin>  ; compounded to an error during compiling
-
- (*) - not implemented yet
+         +- <io-filename-error>    ; srfi-36; compounded to <system-error> (*)
+             +- <io-malformed-filename-error>     ; ditto (*)
+             +- <io-protection-error>             ; ditto (*)
+             |    +- <io-file-is-read-only-error> ; ditto (*)
+             +- <io-file-already-exists-error>    ; ditto (*)
+             +- <io-no-such-file-error>           ; ditto (*)
 
  SRFI-35 does not make distinction between primary inheritance and mixin
  inheritance; the <condition-mixin> subtree is Gauche's convention.  The
  default error reporting routine treats mixins specially.
+
+ (*) Those classes are defined, but not yet used.
 */
 
 /*---------------------------------------------------
