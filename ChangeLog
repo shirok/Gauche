@@ -1,3 +1,12 @@
+2015-10-26  Shiro Kawai  <shiro@acm.org>
+
+	* src/module.c (Scm_MakeBinding): Only auto-export interned symbols
+	  when module has exportAll flag set.  The compiler may insert
+	  toplevel bindings as the result of lambda lifting, but they should
+	  not be exported.  They have uninterned symbols as name, so they'll
+	  never match, anyway (unless you programatically extract the
+	  uninterned symbols).
+
 2015-10-25  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/gauche/generator.scm (uvector->generator): Added.

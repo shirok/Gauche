@@ -405,7 +405,7 @@ ScmGloc *Scm_MakeBinding(ScmModule *module, ScmSymbol *symbol,
         g = SCM_GLOC(Scm_MakeGloc(symbol, module));
         Scm_HashTableSet(module->internal, SCM_OBJ(symbol), SCM_OBJ(g), 0);
         /* If module is marked 'export-all', export this binding by default */
-        if (module->exportAll) {
+        if (module->exportAll && SCM_SYMBOL_INTERNED(symbol)) {
             Scm_HashTableSet(module->external, SCM_OBJ(symbol), SCM_OBJ(g), 0);
         }
     }
