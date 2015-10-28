@@ -1,3 +1,11 @@
+2015-10-28  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/gauche/generator.scm (gtake, gtake*): INCOMPATIBLE CHANGE:
+	  Changed optional argument spec of gtake - now it's in sync with
+	  oncoming srfi-121.  For the existing code, we provide gtake*.
+	  The name is better to indicate the consistency with take*.
+	  (gremove, gdelete, gdelete-neighbor-dups): Added for srfi-121.
+
 2015-10-26  Shiro Kawai  <shiro@acm.org>
 
 	* src/module.c (Scm_MakeBinding): Only auto-export interned symbols

@@ -250,7 +250,11 @@
                 (cut take* <> 3)
                 '(1 2 3 4 5 6) '(1 2))
 
-(test-list-like (cut gtake <> 3 #t 'a)
+(test-list-like (cut gtake* <> 3 #t 'a)
+                (cut take* <> 3 #t 'a)
+                '(1 2 3 4 5 6) '(1 2))
+
+(test-list-like (cut gtake <> 3 'a)
                 (cut take* <> 3 #t 'a)
                 '(1 2 3 4 5 6) '(1 2))
 
@@ -308,6 +312,13 @@
                          '(3 1 4 1 5 9 2 6 5 3 5 8 9 7 9 3 2 3 8))
                         (^[s] `(,(reverse s))))))
 
+(test* "gdelete-neighbor-dups"
+       "Misisipi"
+       (list->string (generator->list (gdelete-neighbor-dups "Mississippi"))))
+(test* "gdelete-neighbor-dups"
+       '()
+       (generator->list (gdelete-neighbor-dups '())))
+
 (test* "grxmatch (string)" '("ab" "cde" "fgh" "jkl")
        (map rxmatch-substring
             (generator->list (grxmatch #/\w{2,}/ " ab x y.cde\nfgh/j/jkl "))))
@@ -363,4 +374,3 @@
 
 
 (test-end)
-

@@ -47,8 +47,9 @@
           generator->list null-generator gcons* gappend gflatten
           gconcatenate gmerge
           circular-generator gunfold giota grange
-          gmap gmap-accum gfilter gfilter-map gstate-filter gbuffer-filter
-          gtake gdrop gtake-while gdrop-while grxmatch gslices
+          gmap gmap-accum gfilter gremove gdelete gdelete-neighbor-dups
+          gfilter-map gstate-filter gbuffer-filter
+          gtake gtake* gdrop gtake-while gdrop-while grxmatch gslices
           glet* glet1 do-generator
           ))
 (select-module gauche.generator)
@@ -384,12 +385,15 @@
                 v_))))]))
 
 ;; gfilter :: (a -> Bool, Generator a) -> Generator a
+;; gremove :: (a -> Bool, Generator a) -> Generator a
 (define (gfilter pred gen)
   (let1 gen (%->gen gen)
     (^[] (let loop ([v (gen)])
            (cond [(eof-object? v) v]
                  [(pred v) v]
                  [else (loop (gen))])))))
+
+(define (gremove pred gen) (gfilter (complement pred) gen))
 
 ;; gfilter-map :: (a -> b, Generator a) -> Generator b
 (define gfilter-map
@@ -436,9 +440,41 @@
                         (set! buffered vals)
                         (loop))))]))))
 
+;; gdelete :: (a, Generator a) -> Generator a
+;;          | (a, Generator a, (a,a)->Bool) -> Generator a
+(define (gdelete item gen :optional (= equal?))
+  (let1 gen (%->gen gen)
+    (rec (loop)
+      (let1 v (gen)
+        (cond [(eof-object? v) v]
+              [(= item v) (loop)]
+              [else v])))))
+
+;; gdelete-neighbor-dups :: Generator a -> Generator a
+;;                       |  (Generator a, (a, a)->Bool) -> Generator a
+(define (gdelete-neighbor-dups gen :optional (= equal?))
+  (let ([gen (%->gen gen)]
+        [first-time #t]
+        [prev #f])
+    (rec (loop)
+      (let1 v (gen)
+        (cond [first-time (set! prev v) (set! first-time #f) (loop)]
+              [(or (eof-object? v)
+                   (not (= prev v)))
+               (rlet1 r prev (set! prev v))]
+              [else (loop)])))))
+
 ;; gtake :: (Generator a, Int) -> Generator a
 ;; gdrop :: (Generator a, Int) -> Generator a
-(define (gtake gen n :optional (fill? #f) (padding #f))
+
+;; NB: The signature of gtake used to be:
+;;   gtake gen n :optional (fill? #f) (padding #f)
+;; It is changed to be in sync with srfi-121
+;;   gtake gen n :optional fill
+;; We keep the old signature under the name gtake*, for it's
+;; consistent with take*.
+
+(define (gtake* gen n :optional (fill? #f) (padding #f))
   (let ([k 0] [end #f] [gen (%->gen gen)])
     (if fill?
       (^[] (if (< k n)
@@ -447,6 +483,15 @@
                (if (eof-object? v) padding v))
              (eof-object)))
       (^[] (if (< k n) (begin (inc! k) (gen)) (eof-object))))))
+(define gtake
+  (case-lambda
+    [(gen n) (gtake* gen n)]
+    [(gen n fill) (gtake* gen n #t fill)]
+    [(gen n fill? padding)
+     ;; For the backward compatibility
+     ;; TODO: Eventually we'll warn the user in this usage, and then
+     ;; fade this out.
+     (gtake* gen n fill? padding)]))
 (define (gdrop gen n)
   (let ([k 0] [gen (%->gen gen)])
     (^[] (when (< k n) (dotimes [i n] (inc! k) (gen))) (gen))))
