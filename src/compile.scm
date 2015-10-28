@@ -4245,7 +4245,7 @@
 ;;
 ;; Pass4 is done in three steps.
 ;; The first step, pass4/scan, recursively descends the IForm and determine
-;; a set of free variables for each $LAMBDA nodes.k  It returns a list of
+;; a set of free variables for each $LAMBDA nodes.
 ;; The second step, pass4/lift, takes a set of $LAMBDA nodes in the IForm
 ;; and finds which $LAMBDA nodes can be lifted.
 ;; The third step, pass4/subst, walks the IForm again, and replaces the
