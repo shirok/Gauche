@@ -5431,13 +5431,63 @@ and the next seed.
 @end defun
 
 @defun gfilter pred gen
+@defunx gremove pred gen
 @c EN
-Returns a generator that yield the items from the source generator,
-except those who makes @var{pred} answers false.
+Returns a generator that yields the items from the source generator
+@var{gen}, except those who makes @var{pred} answers false (@code{gfilter})
+or those who makes @var{pred} answers a true value (@code{gremove})
 @c JP
-ソースジェネレータが生成する値のうち、@var{pred}がfalseを返すもの以外の
-値を生成するジェネレータを返します。
+ソースジェネレータ@var{gen}が生成する値のうち、
+@var{pred}がfalseを返すもの(@code{gfilter}の場合)、
+または@var{pred}が真の値を返すもの(@code{gremove}の場合)を
+除いた値を生成するジェネレータを返します。
 @c COMMON
+
+@example
+(generator->list (gfilter odd? (grange 0)) 6)
+ @result{} (1 3 5 7 9 11)
+(generator->list (gremove odd? (grange 0)) 6)
+ @result{} (0 2 4 6 8 10)
+@end example
+@end defun
+
+@defun gdelete item gen :optional =
+@c EN
+Return a generator that yields the items from the source generator
+@var{gen}, except those are the same as @var{item}.  The comparison
+is done by the procedure passed to @var{=}, which defaults to @code{equal?}.
+@c JP
+ソースジェネレータ@var{gen}が生成する値のうち、@var{item}と等しいものを
+取り除いた値を生成するジェネレータを返します。
+比較は省略可能引数@var{=}に渡す手続きで行われ、省略時には@code{equal?}が使われます。
+@c COMMON
+
+@example
+;; Note: This example relies on auto-coercing list to generator.
+;; SRFI-121 requires list->generator for the second argument.
+(generator->list (gdelete 3 '(1 2 3 4 3 2 1)))
+  @result{}  (1 2 4 2 1)
+@end example
+@end defun
+
+@defun gdelete-neighbor-dups gen :optional =
+@c EN
+Returns a generator that yields the items from the source generator
+@var{gen}, but the consecutive items of the same value is omitted.
+The comparison
+is done by the procedure passed to @var{=}, which defaults to @code{equal?}.
+@c JP
+ソースジェネレータ@var{gen}が生成する値を生成するジェネレータを返します。
+但し、連続して等しいものはそのうち1つだけが生成されます。
+比較は省略可能引数@var{=}に渡す手続きで行われ、省略時には@code{equal?}が使われます。
+@c COMMON
+
+@example
+;; Note: This example relies on auto-coercing list to generator.
+;; SRFI-121 requires string->generator for the second argument.
+(generator->list (gdelete-neighbor-dups "mississippi"))
+  @result{} (#\m #\i #\s #\i #\s #\i #\p #\i)
+@end example
 @end defun
 
 @defun gfilter-map proc gen gen2 @dots{}
@@ -5572,47 +5622,84 @@ The Tetris Company).
 @end example
 @end defun
 
-@defun gtake gen k :optional (fill? #f) (padding #f)
+@defun gtake gen k :optional padding
 @defunx gdrop gen k
 @c EN
-The generator version of
-@code{take*} and @code{drop*} (@pxref{List accessors and modifiers});
-@code{gtake} returns a generator that yields (at most) first @var{k} items
-of the source generator, while @code{gdrop} returns a generator
-that skips the first @var{k} items of the source generator.
+Returns a generator that takes or drops initial @var{k} elements
+from the source generator @var{gen}.
 @c JP
-ジェネレータ版の@code{take*}と@code{drop*} (@ref{List accessors and modifiers}参照)です;
-@code{gtake}は、ソースジェネレータが生成する値を最初から(最大で)@var{k}個
-生成するジェネレータを返します。逆に@code{gdrop}はソースジェネレータが生成
-する値の最初の@var{k}個をスキップするジェネレータを返します。
+それぞれ、ソースジェネレータ@var{gen}が生成する値のうち最初から@var{k}個の値を生成する、
+および最初から@var{k}個の値を除いた次の値から生成するようなジェネレータを
+作成して返します。
 @c COMMON
 
 @c EN
 Those won't complain if the source generator is exhausted before generating
 @var{k} items.  By default, the generator returned by @code{gtake}
-terminates as the source ends, but if you give a true value to @code{fill?},
-then the returned generator does yield @var{k} items, using the
-@var{padding} value to fill the rest.
+terminates as the source ends, but if you give the optional @var{padding}
+argument, then the returned generator does yield @var{k} items, using the
+value given to @var{padding} to fill the rest.
 @c JP
 これらの手続きはソースジェネレータが@var{k}個の値を生成する前に尽きたとしても、
 何も文句を言いません。デフォルトでは、@code{gtake}が返すジェネレータはソース
-ジェネレータが終端に達した時点で終了します。しかし、@code{fill?}に真を与えた
-場合は、返り値のジェネレータは@var{k}個の値を返し、足りない分は@var{padding}
-の値を生成します。
+ジェネレータが終端に達した時点で終了します。しかし、省略可能引数@code{padding}を与えた
+場合、返されるジェネレータは足りない分を@code{padding}で補うことで
+常に@var{k}個の値を生成します。
 @c COMMON
 
 @c EN
-Note: If you pass true to @var{fill?}, @code{gtake} always returns a generator
+Note: If you pass @var{padding}, @code{gtake} always returns a generator
 that generates exactly @var{k} elements even the input generator is already
 exhausted---there's no general way to know whether you've reached
 the end of the input.  If you need to take @var{k} items repeatedly
 from the input generator, you may want to use @code{gslices} below.
 @c JP
-註: @var{fill?}引数に真の値を渡した場合、たとえ入力ジェネレータが終端に達していたとしても
+註: @var{fill}引数を渡した場合、たとえ入力ジェネレータが終端に達していたとしても
 @code{gtake}が返すジェネレータは@var{k}個の値を生成します。つまりその場合、
 入力が使い尽くされたかどうかを判定する汎用的な方法はありません。
 「入力が尽きるまで@var{k}個の要素を次々に取り出したい」という場合は
 下に説明する@code{gslices}の方が使い勝手が良いかもしれません。
+@c COMMON
+
+@c EN
+Note for the compatibility: Until 0.9.4, @code{gtake} takes two optional
+arguments, @var{fill?} and @var{padding}.  That is consistent with
+Gauche's builtin @code{take*}, but incompatible to srfi-121's @code{gtake}.
+We think srfi-121's interface is more compact and intuitive, so we
+renamed the original one to @code{gtake*} (emphasizing
+the similarity to @code{take*}), and made @code{gtake} compatible to
+srfi-121.
+To ease transition, the current @code{gtake} allows two optional arguments
+(four in total),
+in which case we assume the caller wants to call @code{gtake*}; so
+the code that gives two optional arguments to @code{gtake} would work in
+both pre-0.9.4 and 0.9.5.
+@c JP
+互換性への註: 0.9.4までは、@code{gtake}は@var{fill?}と@var{padding}の
+ふたつの省略可能引数を取りました。これはもともとGauche組み込み@code{take*}に合わせて
+いたのですが、srfi-121に採用された@code{gtake}とは非互換になりました。
+srfi-121の方が簡潔で直感的なので、0.9.5からは元の@code{gtake}を(@code{take*}との
+類似性を強調して)@code{gtake*}とリネームし、@code{gtake}はsrfi-121に合わせることと
+しました。
+移行をスムースにするため、@code{gtake}は二つの省略可能引数(合計4つの引数)を取ることを
+許します。その場合、@code{gtake*}が呼ばれたのと同じ動作になります。
+従って、@code{gtake}に4引数を渡している従来のコードは、0.9.5以前でも以降でも
+動作します。
+@c COMMON
+@end defun
+
+@defun gtake* gen k :optional fill? padding
+@c EN
+A variation of @code{gtake}; instead of single optional @var{padding}
+argument, this takes two optional arguments just like @code{take*}
+(@xref{List accessors and modifiers}).  Up to 0.9.4 this version
+is called @code{gtake}.  This is provided for the backward compatibility.
+@c JP
+@code{gtake}のバリエーションで、一つの省略可能引数@var{padding}のかわりに、
+@code{take*}と同じように二つの省略可能引数を取ります
+(@ref{List accessors and modifiers}参照)。
+0.9.4まではこれが@code{gtake}と呼ばれていました。
+互換性のために名前を変えて残してあります。
 @c COMMON
 @end defun
 
