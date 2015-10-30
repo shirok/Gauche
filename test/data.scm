@@ -324,6 +324,13 @@
                         (dict-fold-right z acons '()))
                  (ftree-map-put z 0 'meow))])
   (test* "replace" 'meow (ftree-map-get z 0))
+  (test* "min/max" `((0 . meow) (127 . ,(integer->char 127)))
+         (list (ftree-map-min z)
+               (ftree-map-max z)))
+  (test* "min/max" `(#f #f)
+         (let1 z (make-ftree-map)
+           (list (ftree-map-min z)
+                 (ftree-map-max z))))
   )
 
 

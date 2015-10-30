@@ -43,7 +43,8 @@
   (use srfi-114)
   (export make-ftree-map ftree-map?
           ftree-map-empty?
-          ftree-map-exists? ftree-map-get ftree-map-put)
+          ftree-map-exists? ftree-map-get ftree-map-put
+          ftree-map-min ftree-map-max)
   )
 (select-module data.ftree-map)
 
@@ -131,6 +132,22 @@
   (make <ftree-map>
     :comparator (~ ftree'comparator)
     :tree (insert key val (~ ftree'tree) (~ ftree'comparator))))
+
+;; API
+(define (ftree-map-min ftree)
+  (define (descend tree)
+    (match-let1 ($ T _ a p b) tree
+      (if (E? a) p (descend a))))
+  (let1 t (~ ftree'tree)
+    (and (not (E? t)) (descend t))))
+
+;; API
+(define (ftree-map-max ftree)
+  (define (descend tree)
+    (match-let1 ($ T _ a p b) tree
+      (if (E? b) p (descend b))))
+  (let1 t (~ ftree'tree)
+    (and (not (E? t)) (descend t))))
 
 ;; Fundamental iterators
 (define (%ftree-map-fold ftree proc seed)
