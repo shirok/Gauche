@@ -305,11 +305,10 @@
 ;; with a message describing why.
 ;; We use some heuristics to recognize vt100 compatible terminals.
 (define (make-default-console)
-  (cond [(member (sys-getenv "TERM") '("vt100" "vt102" "vt220" "xterm" "rxvt"))
+  (cond [(and-let1 t (sys-getenv "TERM")
+           (any (cut <> t) '(#/^vt10[02]$/ #/^vt220$/ #/^xterm.*/ #/^rxvt$/)))
          (make <vt100>)]
         [(sys-getenv "TERM")
          => (^t (error #"Unsupported terminal type: ~t"))]
         [else
          (error "TERM isn't set and don't know how to control the terminal.")]))
-
-  
