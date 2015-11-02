@@ -47,6 +47,7 @@
 (define-module gauche.interactive.toplevel
   (use gauche.interactive)
   (use gauche.threads)
+  (use gauche.generator)
   (use srfi-13)
   (use util.match)
   (export handle-toplevel-command)
@@ -96,12 +97,7 @@
   (unless (symbol? command)
     (error "Invalid REPL toplevel command:" command))
   (if-let1 help&handler (toplevel-command-lookup command)
-    ;; Just for now - we'll employ more sophisticated parser later
-    (let* ([argline (string-trim-both line)]
-           [args (if (equal? argline "")
-                   '()
-                   (string-split (string-trim-both line) #/\s+/))])
-      ((cadr help&handler) args))
+    ((cadr help&handler) (generator->list (cute read (open-input-string line))))
     (error "Unrecognized REPL toplevel command:" command)))
 
 ;;
@@ -113,9 +109,12 @@
  Apropos.  Show the names of global bindings that match the regexp.\n\
  If module-name (symbol) is given, the search is limited in the named module."
   (^[args]
+    (define (->regexp x)
+      (cond [(regexp? x) x]
+            [else (string->regexp (x->string x))]))
     (match args
-      [(word) `(apropos ,(string->regexp word))]
-      [(word mod) `(apropos ,(string->regexp word) ',(string->symbol mod))]
+      [(word) `(apropos ,(->regexp word))]
+      [(word mod) `(apropos ,(->regexp word) ',mod)]
       [_ (usage)])))
 
 (define-toplevel-command d
@@ -124,8 +123,7 @@
   (^[args]
     (match args
       [() `(,(with-module gauche.interactive describe))]
-      [(obj) `(,(with-module gauche.interactive describe)
-               ,(read-from-string obj))]
+      [(obj) `(,(with-module gauche.interactive describe) ,obj)]
       [_ (usage)])))
 
 (define-toplevel-command history
@@ -160,7 +158,7 @@
                    (list-ref (call-with-input-string (car h&h)
                                port->string-list)
                              1 ""))))]
-      [(cmd) ((toplevel-command-helper (string->symbol cmd)))])))
+      [(cmd) ((toplevel-command-helper cmd))])))
 
 (define-toplevel-command pwd
   "pwd\n\
@@ -177,7 +175,7 @@
   (^[args]
     (let1 dir (match args
                 [() (home-directory)]
-                [(dir) (expand-path dir)]
+                [(dir) (expand-path (x->string dir))]
                 [_ #f])
       (if dir
         (begin (sys-chdir dir) (sys-getcwd))
@@ -191,7 +189,7 @@
  Show source code of the procedure if it's available."
   (^[args]
     (match args
-      [(word) `(or (,(with-module gauche source-code) ,(read-from-string word))
+      [(word) `(or (,(with-module gauche source-code) ,word)
                    (begin (print "No source code is available for: " ',word)
                           (values)))]
       [() (usage)])))
