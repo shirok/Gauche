@@ -340,11 +340,15 @@
 
 (define-cproc %log (x) ::<number> :fast-flonum :constant
   (unless (SCM_REALP x) (SCM_TYPE_ERROR x "real number"))
+  (when (Scm_InfiniteP x)
+    (if (> (Scm_Sign x) 0)
+      (return SCM_POSITIVE_INFINITY)
+      (return (Scm_MakeComplex SCM_DBL_POSITIVE_INFINITY M_PI))))
   (let* ([d::double (Scm_GetDouble x)]
          [shift::double 0.0])
-    (when (or (== d SCM_DBL_POSITIVE_INFINITY)  ; isinf() may not be available
+    (when (or (== d SCM_DBL_POSITIVE_INFINITY)  ; SCM_IS_INF isn't visible...
               (== d SCM_DBL_NEGATIVE_INFINITY))
-      (SCM_ASSERT (SCM_BIGNUMP x))
+      (SCM_ASSERT (SCM_BIGNUMP x))  ; the arg is too big to represent in double
       (let* ([z::ScmBits* (cast ScmBits* (-> (SCM_BIGNUM x) values))]
              [scale::long (Scm_BitsHighest1 z 0 (* (SCM_BIGNUM_SIZE x) SCM_WORD_BITS))])
         (set! shift (* scale (log 2.0)))

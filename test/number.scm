@@ -2205,6 +2205,10 @@
   (log-tester (- (expt 7 7715)))
   )
 
+;; log on infinities
+(test* "log on infinities" '(+inf.0 +inf.0+3.141592653589793i)
+       (list (log +inf.0) (log -inf.0)))
+
 ;;------------------------------------------------------------------
 (test-section "sinpi, cospi, tanpi")
 
