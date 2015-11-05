@@ -72,6 +72,11 @@
    (screen-height)
    (screen-width)
 
+   ;; Selection
+   ;; selection is between marker-pos and the current cursor pos.
+   ;; maker-pos == #f means no selection.
+   (marker-pos :init-value #f)
+
    ;; Kill and yank
    ;; Kill ring survives across sessions.  Last-yank-* is reset after
    ;; every command except yank and yank-pop.
@@ -126,8 +131,11 @@
        ;;   undone - the command undid the change.  we record the fact,
        ;;            for the consecutive undo behaves differently than
        ;;            other commands.
+       ;;   move   - the command only moved cursor pos.  requires redisplay,
+       ;;            but we keep selection.
        ;;   #t     - the command changed something so we need to redisplay,
-       ;;            but the buffer contents is intact.
+       ;;            but the buffer contents is intact.  the selection is
+       ;;            cleared.
        ;;   <edit-command> - the commad changed the buffer contents,
        ;;        and the return value is an edit command to undo the
        ;;        change.
@@ -146,12 +154,14 @@
             [(char? h)
              (reset-last-yank! ctx)
              (break-undo-sequence! ctx)
+             (clear-mark! ctx buffer)
              (push-undo! ctx (self-insert-command ctx buffer h))
              (loop #t)]
             [(procedure? h)
              (match (h ctx buffer ch)
                [(? boolean? b)
                 (reset-last-yank! ctx)
+                (clear-mark! ctx buffer)
                 (break-undo-sequence! ctx)
                 (loop b)]
                [(? eof-object?)
@@ -160,17 +170,20 @@
                   (eof-object))]
                ['commit (commit-history ctx buffer)]
                ['undone (reset-last-yank! ctx)
+                        (clear-mark! ctx buffer)
                         (loop #t)] ; don't break undo sequence
-               ['#t     (reset-last-yank! ctx)
+               ['move   (reset-last-yank! ctx)
                         (break-undo-sequence! ctx)
                         (loop #t)]
                [('yanked edit-command)
                 (break-undo-sequence! ctx)
+                (clear-mark! ctx buffer)
                 (push-undo! ctx edit-command)
                 (loop #t)]
                [(? list? edit-command)
                 (reset-last-yank! ctx)
                 (break-undo-sequence! ctx)
+                (clear-mark! ctx buffer)
                 (push-undo! ctx edit-command)
                 (loop #t)]
                [x (error "[internal] invalid return value from a command:" x)])]
@@ -221,44 +234,59 @@
 
 ;; TODO: Mind char-width.
 (define (redisplay ctx buffer)
-  ;; character generator with tab expansion
+  ;; generator that handles tab expansion
+  ;; generate (<char> . <pos>) where <pos> is the input position, or
+  ;; #f if <char> is expanded.
   (define (gen/tab g start-column)
-    (gbuffer-filter (^[ch col]
-                      (if (eqv? ch #\tab)
-                        (let1 nextcol (* (quotient (+ col 8) 8) 8)
-                          (values (make-list (- nextcol col) #\space) nextcol))
-                        (values (list ch) (+ col 1))))
-                    start-column g))
+    (gbuffer-filter (^[ch col&pos]
+                      (match-let1 (col . pos) col&pos
+                        (if (eqv? ch #\tab)
+                          (let1 nextcol (* (quotient (+ col 8) 8) 8)
+                            (values (cons (cons #\space pos)
+                                          (make-list (- nextcol col 1)
+                                                     (cons #\space #f)))
+                                    (cons nextcol (+ pos 1))))
+                          (values (list (cons ch pos))
+                                  (cons (+ col 1) (+ pos 1))))))
+                    (cons start-column 0) g))
 
   (let ([con (~ ctx'console)]
         [y   (~ ctx'initpos-y)]
         [x   (~ ctx'initpos-x)]
         [w   (~ ctx'screen-width)]
-        [h   (~ ctx'screen-height)])
+        [h   (~ ctx'screen-height)]
+        [sel (selected-range ctx buffer)])
     (define g (gen/tab (gap-buffer->generator buffer) x))
     (move-cursor-to con y x)
     (clear-to-eos con)
+    (reset-character-attribute con)
     (let loop ([y y] [x x])
-      (glet1 ch (g)
-        (cond
-         [(= x w)
-          (if (= y (- h 1))
-            (begin (dec! (~ ctx'initpos-y))
-                   (cursor-down/scroll-up con))
-            (inc! y))
-          (move-cursor-to con y 0)
-          (putch con ch)
-          (move-cursor-to con y 1)
-          (loop y 1)]
-         [(eqv? ch #\newline) ; works as if CR+LF
-          (if (= y (- h 1))
-            (begin (dec! (~ ctx'initpos-y))
-                   (cursor-down/scroll-up con))
-            (inc! y))
-          (move-cursor-to con y 0)
-          (show-secondary-prompt ctx)
-          (loop y (~ ctx'initpos-x))]
-         [else (putch con ch) (loop y (+ x 1))]))))
+      (glet1 ch&pos (g)
+        (match-let1 (ch . pos) ch&pos
+          (when sel
+            (cond [(eqv? pos (car sel))
+                   (set-character-attribute con '(#f #f bright))]
+                  [(eqv? pos (cdr sel))
+                   (reset-character-attribute con)]))
+          (cond
+           [(= x w)
+            (if (= y (- h 1))
+              (begin (dec! (~ ctx'initpos-y))
+                     (cursor-down/scroll-up con))
+              (inc! y))
+            (move-cursor-to con y 0)
+            (putch con ch)
+            (move-cursor-to con y 1)
+            (loop y 1)]
+           [(eqv? ch #\newline) ; works as if CR+LF
+            (if (= y (- h 1))
+              (begin (dec! (~ ctx'initpos-y))
+                     (cursor-down/scroll-up con))
+              (inc! y))
+            (move-cursor-to con y 0)
+            (show-secondary-prompt ctx)
+            (loop y (~ ctx'initpos-x))]
+           [else (putch con ch) (loop y (+ x 1))])))))
   (receive (cy cx) (current-buffer-cursor-position ctx buffer)
     (move-cursor-to (~ ctx'console) cy cx)))
 
@@ -269,6 +297,20 @@
 (define (ctrl k)
   (integer->char (- (logand (char->integer k) (lognot #x20)) #x40)))
 (define (alt k) `(ALT ,k))
+
+;;
+;; Selection
+;;
+
+(define (set-mark! ctx buffer)
+  (set! (~ ctx'marker-pos) (gap-buffer-pos buffer)))
+
+(define (clear-mark! ctx buffer) (set! (~ ctx'marker-pos) #f))
+
+(define (selected-range ctx buffer) ; returns (start . end), end exclusive
+  (and-let1 s (~ ctx'marker-pos)
+    (let1 p (gap-buffer-pos buffer)
+      (if (< p s) (cons p s) (cons s p)))))
 
 ;;
 ;; Undo stuff
@@ -434,22 +476,26 @@
 (define (backward-char ctx buf key)
   (and (not (gap-buffer-gap-at? buf 'beginning))
        (begin (gap-buffer-move! buf -1 'current)
-              #t)))
+              'move)))
 
 (define (forward-char ctx buf key)
   (and (not (gap-buffer-gap-at? buf 'end))
        (begin (gap-buffer-move! buf 1 'current)
-              #t)))
+              'move)))
 
 (define (move-beginning-of-line ctx buf key)
   (and (not (gap-buffer-gap-at? buf 'beginning))
        (begin (gap-buffer-move! buf 0 'beginning)
-              #t)))
+              'move)))
 
 (define (move-end-of-line ctx buf key)
   (and (not (gap-buffer-gap-at? buf 'end))
        (begin (gap-buffer-move! buf 0 'end)
-              #t)))
+              'move)))
+
+(define (set-mark-command ctx buf key)
+  (set-mark! ctx buf)
+  'move)
 
 (define (kill-line ctx buf key) ; todo: kill-ring
   (and (not (gap-buffer-gap-at? buf 'end))
@@ -506,7 +552,7 @@
   (cond [(gap-buffer-gap-at? buf 'beginning) #f]
         [(= (gap-buffer-content-length buf) 1) ; special case
          (gap-buffer-move! buf 0)
-         #t]
+         'move]
         [else
          (gap-buffer-move! buf
                            (if (gap-buffer-gap-at? buf 'end) -2 -1)
@@ -552,7 +598,7 @@
 
 (define (default-keymap)
   (hash-table 'equal?
-              `(,(ctrl #\space) . ,undefined-command) ; should be set-mark
+              `(,(ctrl #\@) . ,set-mark-command)
               `(,(ctrl #\a) . ,move-beginning-of-line)
               `(,(ctrl #\b) . ,backward-char)
               `(,(ctrl #\c) . ,undefined-command)
