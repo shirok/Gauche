@@ -61,7 +61,8 @@
           query-screen-size query-cursor-position move-cursor-to
           hide-cursor show-cursor cursor-down/scroll-up cursor-up/scroll-down
           reset-terminal clear-screen clear-to-eol clear-to-eos
-          set-character-attribute with-character-attribute
+          set-character-attribute reset-character-attribute
+          with-character-attribute
 
           make-default-console))
 (select-module text.console)
