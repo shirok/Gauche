@@ -515,6 +515,13 @@
        (save-kill-ring ctx (caddr e)))]
     [_ #t]))
 
+(define (kill-ring-save ctx buf key)
+  (match (selected-range ctx buf)
+    [(start . end)
+     (save-kill-ring ctx (gap-buffer->string buf start end))
+     #t] ; this clears selection
+    [_ #t]))
+
 (define (refresh-display ctx buf key)
   (reset-terminal (~ ctx'console))
   (show-prompt ctx)
@@ -731,7 +738,7 @@
               `(,(alt #\t) . ,undefined-command)
               `(,(alt #\u) . ,undefined-command)
               `(,(alt #\v) . ,undefined-command)
-              `(,(alt #\w) . ,undefined-command)
+              `(,(alt #\w) . ,kill-ring-save)
               `(,(alt #\x) . ,undefined-command)
               `(,(alt #\y) . ,yank-pop)
               `(,(alt #\z) . ,undefined-command)
