@@ -497,13 +497,23 @@
   (set-mark! ctx buf)
   'move)
 
-(define (kill-line ctx buf key) ; todo: kill-ring
+(define (kill-line ctx buf key)
   (and (not (gap-buffer-gap-at? buf 'end))
        (let* ([len (- (gap-buffer-content-length buf) (gap-buffer-pos buf))]
               [e (gap-buffer-edit! buf `(d #f ,len))])
          ;; e contiains (i <pos> <killed-string>)
          (save-kill-ring ctx (caddr e))
          e)))
+
+(define (kill-region ctx buf key)
+  (match (selected-range ctx buf)
+    [(start . end)
+     ;; NB: the cursor is either on start or on end.  either way,
+     ;; after operation the cursor's be at start.
+     (rlet1 e (gap-buffer-edit! buf `(d ,start ,(- end start)))
+       ;; e contiains (i <pos> <killed-string>)
+       (save-kill-ring ctx (caddr e)))]
+    [_ #t]))
 
 (define (refresh-display ctx buf key)
   (reset-terminal (~ ctx'console))
@@ -621,7 +631,7 @@
               `(,(ctrl #\t) . ,transpose-chars)
               `(,(ctrl #\u) . ,undefined-command); todo
               `(,(ctrl #\v) . ,undefined-command); todo
-              `(,(ctrl #\w) . ,undefined-command); todo
+              `(,(ctrl #\w) . ,kill-region)
               `(,(ctrl #\x) . ,undefined-command); todo
               `(,(ctrl #\y) . ,yank)
               `(,(ctrl #\z) . ,undefined-command); todo
