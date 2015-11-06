@@ -263,9 +263,9 @@
     (let loop ([y y] [x x])
       (glet1 ch&pos (g)
         (match-let1 (ch . pos) ch&pos
-          (when sel
+          (when (and sel (not (eqv? (car sel) (cdr sel))))
             (cond [(eqv? pos (car sel))
-                   (set-character-attribute con '(#f #f bright))]
+                   (set-character-attribute con '(#f #f bright underscore))]
                   [(eqv? pos (cdr sel))
                    (reset-character-attribute con)]))
           (cond
