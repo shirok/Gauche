@@ -65,6 +65,10 @@
 (define-cproc set-box! (b::<box> v) ::<void> (SCM_BOX_SET b v))
 (export box box? unbox set-box!)
 
+;; Debug label
+(select-module gauche)
+(define-cproc debug-label (obj) (result (Scm_Sprintf "@%lx" obj)))
+
 ;; Foreign pointer (may be in libsys.scm?)
 
 (select-module gauche)

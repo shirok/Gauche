@@ -23623,6 +23623,32 @@ them.
 @c COMMON
 @end defun
 
+@defun debug-label obj
+@c EN
+This returns a string that is quasi-unique to an object @var{obj}.
+``Quasi-unique'' means the label is unique to the @var{obj}---
+the same (@code{eq?}) objs returns the same string, and
+if two objs return different string they aren't @code{eq?} to each other---
+@emph{until next GC occurs}.
+
+This is mostly for printing out anonymous objects that doesn't
+have any other good way to distinguish each other.
+Note that uniqueness isn't guaranteed
+across GCs, you shouldn't use the returned value as the key to identify
+the objects.
+@c JP
+この手続きは、@var{obj}についてほぼユニークな文字列を返します。
+「ほぼ」ユニークというのは、
+@emph{次のGCが起きるまでは}、オブジェクトが同じ文字列を返したら@code{eq?}であり、
+また@code{eq?}でないオブジェクト同士は異なる文字列を返すということです。
+
+この文字列は、他に区別の手段がないような無名オブジェクトを印字する時に
+使われることを想定しています。GCをまたいだ唯一性は保証されないので、
+この手続きが返す文字列をオブジェクトを同定するキーとして使ってはいけません。
+@c COMMON
+@end defun
+
+
 @node Profiler API,  , Debugging aid, Development helper API
 @subsection Profiler API
 @c NODE プロファイラAPI

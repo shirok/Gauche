@@ -1,3 +1,8 @@
+2015-11-06  Shiro Kawai  <shiro@acm.org>
+
+	* src/libmisc.scm (debug-label): Added.  Useful to print out
+	  anonymous objects.
+
 2015-11-03  Shiro Kawai  <shiro@acm.org>
 
 	* src/libnum.scm (%log): Explicitly handle the cases when input
