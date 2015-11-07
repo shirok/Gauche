@@ -12864,7 +12864,7 @@ Or count how many prime numbers there are below 1000000:
 @end example
 
 @c EN
-Note: If you're familiar with a lazy functional approach, this example
+Note: If you're familiar with the lazy functional approach, this example
 may look strange.  Why do we use side-effecting generators
 while we can define a sequence of prime numbers in
 pure functional way, as follows?
@@ -12906,7 +12906,7 @@ The use of @code{lcons} and co-recursion in @code{primes-from}
 is a typical idiom in functional programming.  It's perfectly ok
 to do so in Gauche; except that the generator version is @emph{much} faster
 (when you take first 5000 primes, generator version ran 17 times faster
-than co-recursion version in the author's machine).
+than co-recursion version on the author's machine).
 @c JP
 @code{primes-from}での@code{lcons}を使った余再帰は、
 関数型プログラミングでの典型的なイディオムです。もちろん、
