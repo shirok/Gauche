@@ -11712,34 +11712,34 @@ APIはPLT Schemeから取りました。
 @end defmac
 
 
-@defun dynamic-wind before thunk after
+@defun dynamic-wind before body after
 [R7RS]
 @c EN
-@var{Before}, @var{thunk} and @var{after} are all procedures with
+@var{Before}, @var{body} and @var{after} are all procedures with
 no arguments.
-In normal situation, @code{dynamic-wind} calls @var{before}, then @var{thunk},
-then @var{after}, then returns whatever value(s) @var{thunk} returned.
+In normal situation, @code{dynamic-wind} calls @var{before}, then @var{body},
+then @var{after}, then returns whatever value(s) @var{body} returned.
 
-If a control flow goes out from @var{thunk} by invoking a continuation
+If a control flow goes out from @var{body} by invoking a continuation
 captured outside of the dynamic scope of @code{dynamic-wind}
-(for example, an error is signaled in @var{thunk}),
+(for example, an error is signaled in @var{body}),
 @var{after} is called.
 
-If a control flow goes into @var{thunk} by invoking a continuation
-captured inside @var{thunk} from outside of the dynamic
+If a control flow goes into @var{body} by invoking a continuation
+captured inside @var{body} from outside of the dynamic
 scope of @code{dynamic-wind}, @var{before} is called.
 @c JP
-@var{before}、@var{thunk}および@var{after} は引数を取らない手続きです。
-@code{dynamic-wind}はまず@var{before}を呼び出し、続いて@var{thunk}を呼び出し、
-続いて@var{after}を呼び出します。そして@var{thunk}が返した値を返します。
+@var{before}、@var{body}および@var{after} は引数を取らない手続きです。
+@code{dynamic-wind}はまず@var{before}を呼び出し、続いて@var{body}を呼び出し、
+続いて@var{after}を呼び出します。そして@var{body}が返した値を返します。
 
 もし@code{dynamic-wind}のダイナミックスコープの外で捕捉された継続が
-@var{thunk}の中で呼ばれることにより制御が@var{thunk}から飛び出した場合、
-(@var{thunk}の中でエラーが起こった場合などが考えられます)、
+@var{body}の中で呼ばれることにより制御が@var{body}から飛び出した場合、
+(@var{body}の中でエラーが起こった場合などが考えられます)、
 @var{after}が呼ばれます。
 
-もし、@var{thunk}の中で捕捉された継続が@var{dynamic-wind}のダイナミックスコープの
-外で呼ばれることにより制御が@var{thunk}の中へ飛び込んだ場合、
+もし、@var{body}の中で捕捉された継続が@var{dynamic-wind}のダイナミックスコープの
+外で呼ばれることにより制御が@var{body}の中へ飛び込んだ場合、
 @var{before}が呼ばれます。
 @c COMMON
 @example
@@ -11756,6 +11756,39 @@ scope of @code{dynamic-wind}, @var{before} is called.
       (reverse paths)))
  @result{} (connect talk1 disconnect connect talk2 disconnect)
 @end example
+
+@c EN
+Note: Since @var{after} is guaranteed to be called when
+an error causes @var{body} to abort, it may appear tempting
+to use @code{dynamic-wind} to use resource clean-up, just like
+@code{try-catch} construct in Java.  It's @emph{not} for that.
+Since the control may return to @var{body}, the situation
+@code{dynamic-wind} handles should be considered more like
+a context switch.
+
+For resource clean-up, you can use exception handling mechanism
+such as @code{guard} and @code{unwind-protect} (@pxref{Handling exceptions}),
+which is built on top of @code{dynamic-wind}.
+
+As a rule of thumb, @var{after} should do things that can be
+reverted by @var{before}, such as manipulationg error handler stack
+(instead of actually handling errors).
+@c JP
+註：エラーにより@var{body}が中断された時に必ず@var{after}が呼ばれることから、
+@code{dynamic-wind}を例えばJavaの@code{try-catch}構文のように考えて
+リソースの後処理などに使いたくなるかもしれません。
+しかし@code{dynamic-wind}はそのためのものでは@emph{ありません}。
+一旦離れた制御が@var{body}に再び戻ってくる可能性があるので、
+@code{dynamic-wind}が管理するのはむしろコンテキストスイッチに近い状況です。
+
+リソースの後処理には、@code{guard}や@code{unwind-protect}などの例外処理
+が使えます(@ref{Handling exceptions}参照)。
+それらは@code{dynamic-wind}を使って構築されています。
+
+基本的な指針として、@var{after}は常に@var{before}によって効果を戻せる
+処理だけを行うべきです。例えば、(エラーを直接処理するのではなく)
+エラーハンドラスタックを操作する、といった具合に。
+@c COMMON
 @end defun
 
 
