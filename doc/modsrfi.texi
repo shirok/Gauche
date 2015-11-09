@@ -1367,6 +1367,13 @@ special case folding such as German eszett.
 @defunx string> s1 s2 :optional start1 end1 start2 end2
 @defunx string>= s1 s2 :optional start1 end1 start2 end2
 [SRFI-13]
+Compare two strings @var{s1} and @var{s2}.  Optional arguments
+can limit the portion of strings to be compared.
+Comparison is done by character-wise.
+
+Note: The builtin procedures @code{string=?} etc. can also be
+used for character-wise string comparison, but they take
+arguments differently.  @xref{String Comparison}.
 @end defun
 
 @defun string-ci= s1 s2 :optional start1 end1 start2 end2
@@ -1376,11 +1383,28 @@ special case folding such as German eszett.
 @defunx string-ci> s1 s2 :optional start1 end1 start2 end2
 @defunx string-ci>= s1 s2 :optional start1 end1 start2 end2
 [SRFI-13]
+Compare two strings @var{s1} and @var{s2} in case-insensitive way.
+Optional arguments can limit the portion of strings to be compared.
+Case folding and comparison is done by character-wise.
+
+Note: We have two other sets of string comparison operations,
+both are named as @code{string-ci=?} etc.
+The builtin version (@pxref{String Comparison}) does character-wise
+comparison.  The one in @code{text.unicode} uses full-string
+case conversion (@pxref{Full string case conversion}).
+R7RS version is the latter.
 @end defun
 
 @defun string-hash s :optional bound start end
 @defunx string-hash-ci s :optional bound start end
 [SRFI-13]
+Calculates hash value of a string @var{s}.  For @code{string-hash-ci},
+character-wise case folding is done before calculating the hash value.
+
+If the optional @var{bound} argument is given, it must be a positive
+integer, and the return value is limited below it.
+The optional @var{start} and @var{end} arguments allows
+using that portion for calculation.
 @end defun
 
 @node SRFI-13 String Prefixes & Suffixes, SRFI-13 String searching, SRFI-13 String Comparison, String library
