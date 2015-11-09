@@ -23696,11 +23696,13 @@ See @ref{Using profiler} for the explanation of the profiler.
 @c COMMON
 
 @c EN
-Note that the profiler doesn't work correctly yet in multi-threaded
-program.
+Note that the profiler isn't guaranteed to work correctly yet in
+multi-threaded program, since the interaction between @code{setitimer}
+and threads are platform-dependent.
 @c JP
-注意：現時点ではプロファイラはマルチスレッドプログラムでは正しく動作し
-ません。
+注意：現時点ではプロファイラはマルチスレッドプログラムでは正しく動作する
+保証はありません。@code{setitimer}とスレッドの相互作用が
+プラットフォーム依存だからです。
 @c COMMON
 
 @defun profiler-start
@@ -23763,6 +23765,29 @@ rows to be shown.  If it is @code{#f}, all the data is shown.
 この値が @code{#f} であればすべてのデータが表示されます。
 @c COMMON
 @end defun
+
+@defun with-profiler thunk
+@c EN
+A convenience procedure.
+Call @var{thunk} with the sampling profiler running,
+and show the result to the current output port afterwards.
+Returns value(s) thunk yields.
+The profiler is reset after the result is shown.
+
+You can't nest this construct; the innermost @code{with-profiler}
+will reset the profiler, invalidates any outer @code{with-profier}.
+@c JP
+手軽にプロファイリングするための手続きです。
+プロファイラをonにして@var{thunk}を呼び出し、結果をcurrent output port
+に出力します。@var{thunk}の戻り値が式の戻り値となります。
+結果表示後、プロファイラはリセットされます。
+
+この手続きをネストすることはできません。最も内側の@code{with-profiler}が
+結果をリセットしてしまうので、外側の@code{with-profiler}に全ての情報が渡らないからです。
+@c COMMON
+@end defun
+
+
 
 @c Local variables:
 @c mode: texinfo
