@@ -720,3 +720,14 @@ Supported by the module @code{srfi-118}.
 簡単な可変長文字列
 モジュール@code{srfi-118}でサポートされます。
 (@ref{Simple adjustable-size strings}参照)
+
+
+srfi-121, gauche.generator
+()
+
+Generators.  Gauche's @code{gauche.generator} is
+superset of srfi-121
+(@pxref{Generators}).
+
+ジェネレータ。Gaucheの@code{gauche.generator}がsrfi-121の
+スーパーセットになっています。(@ref{Generators}参照)

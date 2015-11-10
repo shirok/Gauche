@@ -1,3 +1,9 @@
+2015-11-09  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/gauche/generator.scm: Added the rest of srfi-121. Now
+	  it's a superset of srfi-121.  (NB: Since srfi-121 hasn't been
+	  finalized, we may change this according to how the srfi goes.)
+
 2015-11-06  Shiro Kawai  <shiro@acm.org>
 
 	* src/libmisc.scm (debug-label): Added.  Useful to print out

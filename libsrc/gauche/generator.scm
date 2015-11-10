@@ -44,13 +44,25 @@
           port->line-generator port->byte-generator
           x->generator generate
 
-          generator->list null-generator gcons* gappend gflatten
+          generator->list generator->reverse-list
+          generator->vector generator->vector!
+          generator->string
+          generator-any generator-every generator-unfold
+          generator-length generator-count
+
+          null-generator gcons* gappend gflatten
           gconcatenate gmerge
-          circular-generator gunfold giota grange
+          circular-generator gunfold giota grange gindex gselect
           gmap gmap-accum gfilter gremove gdelete gdelete-neighbor-dups
           gfilter-map gstate-filter gbuffer-filter
           gtake gtake* gdrop gtake-while gdrop-while grxmatch gslices
           glet* glet1 do-generator
+
+          ;; srfi-121 compatibility
+          make-generator make-iota-generator make-range-generator
+          make-coroutine-generator bytevector->generator
+          make-bits-generator make-port-generator
+          make-for-each-generator make-unfold-generator gcombine
           ))
 (select-module gauche.generator)
 
@@ -70,7 +82,7 @@
     [(_ exp body ...) (rlet1 tmp exp body ...)]))
 
 ;; Avoid circular dependency during build
-(autoload gauche.uvector uvector-ref)
+(autoload gauche.uvector uvector-ref u8vector?)
 
 ;;;
 ;;; Converters and constructors
@@ -181,21 +193,6 @@
           gens
           (cons (%->gen (car gens)) tail)))))
   (if (null? gens) '() (rec gens)))
-
-(define (generator->list gen :optional (n #f))
-  (if (integer? n)
-    (let loop ([k 0] [r '()])
-      (if (>= k n)
-        (reverse r)
-        (let1 v (gen)
-          (if (eof-object? v)
-            (reverse r)
-            (loop (+ k 1) (cons v r))))))
-    (let loop ([r '()])
-      (let1 v (gen)
-        (if (eof-object? v)
-          (reverse r)
-          (loop (cons v r)))))))
 
 ;; Other constructors
 (define (circular-generator . args)
@@ -577,6 +574,130 @@
                  [(= len k) elts]
                  [fill? (append elts (make-list (- k len) padding))]
                  [else elts])))))
+
+(define (gindex vgen igen) ;srfi-121
+  (define (skip n)
+    (glet1 v (vgen)
+      (if (zero? n) v (skip (- n 1)))))
+  (let1 prev -1
+    (^[] (if prev
+           (glet1 i (igen)
+             (when (<= i prev)
+               (error "gindex: index isn't monotonically increasing"))
+             (rlet1 v (skip (- i prev 1))
+               (if (eof-object? v)
+                 (set! prev #f)
+                 (set! prev i))))))))
+
+(define (gselect vgen bgen) ;srfi-121
+  (rec (g)
+    (glet1 b (bgen)
+      (glet1 v (vgen)
+        (if b v (g))))))
+
+
+;;;
+;;; Consumers
+;;;
+
+;; NB: The following consumers are in autoloaded lib/gauche/procedure.scm
+;; for historical reasons:
+;; generator-fold generator-fold-right
+;; genergenerator-for-each generator-map generator-find 
+
+(define (%generator->list gen reverse? n)
+  (if (integer? n)
+    (let loop ([k 0] [r '()])
+      (if (>= k n)
+        (if reverse? r (reverse r))
+        (let1 v (gen)
+          (if (eof-object? v)
+            (reverse r)
+            (loop (+ k 1) (cons v r))))))
+    (let loop ([r '()])
+      (let1 v (gen)
+        (if (eof-object? v)
+          (if reverse? r (reverse r))
+          (loop (cons v r)))))))
+
+(define (generator->list gen :optional (n #f))
+  (%generator->list gen #f n))
+(define (generator->reverse-list gen :optional (n #f))
+  (%generator->list gen #t n))
+
+(define (generator->vector gen :optional (n #f))
+  ;; Since we don't know exact length even n is given, this simple solution
+  ;; would probaly the best (We can cut some corner by (1) counting
+  ;; elements along retrieving, and (2) accumulate in reverse list, then
+  ;; fill the vector in reverse order.  But I wonder if it's worth.)
+  (list->vector (generator->list gen n)))
+
+(define (generator->vector! vec at gen)
+  (let1 len (vector-length vec)
+    (when (< at len)
+      (do ([k at (+ k 1)]
+           [v (gen) (gen)])
+          [(or (eof-object? v) (= k len)) (- k at)]
+        (vector-set! vec k v)))))
+
+(define (generator->string gen :optional (n #f))
+  (with-output-to-string
+    (^[]
+      (if (integer? n)
+        (let loop ([k 0])
+          (when (< k n)
+            (glet1 v (gen)
+              (unless (char? v)
+                (error "generator->string got non char item:" v))
+              (write-char v))
+            (loop (+ k 1))))
+        (do-generator [v gen]
+          (unless (char? v)
+            (error "generator->string got non char item:" v))
+          (write-char v))))))
+
+(define (generator-any pred gen)
+  (let loop ([v (gen)])
+    (cond [(eof-object? v) #f]
+          [(pred v)]
+          [else (loop (gen))])))
+
+(define (generator-every pred gen)
+  (let loop ([v (gen)] [last #t])
+    (if (eof-object? v)
+      last
+      (if-let1 r (pred v)
+        (loop (gen) r)
+        #f))))
+
+(define (generator-length gen)
+  (rlet1 n 0
+    (do-generator [_ gen] (inc! n))))
+
+(define (generator-count pred gen)
+  (rlet1 n 0
+    (do-generator [v gen] (when (pred v) (inc! n)))))
+  
+(define (generator-unfold gen unfold . args)
+  (apply unfold eof-object? identity (^_ (gen)) args))
+
+;; srfi-121 compatibility aliases
+;; NB: We're not sure if we should put them here, or split them to
+;; srfi-121 module.  They're
+
+(define (make-generator . args) (list->generator args))
+(define (make-iota-generator count . args) (apply giota count args))
+(define (make-range-generator start . args) (apply grange start args))
+(define (make-coroutine-generator proc) (generate proc))
+(define (bytevector->generator bv :optional (start 0) (end (uvector-length bv)))
+  (unless (u8vector? bv) (error "u8vector required, but got:" bv))
+  (uvector->generator bv start end))
+(define (make-bits-generator n) (bits->generator n))
+(define (make-port-generator p :optional (reader read-line)) (cut (reader p)))
+(define (make-for-each-generator for-each coll)
+  (generate (^[yield] (for-each yield coll))))
+(define (make-unfold-generator p f g seed) (gunfold p f g seed))
+(define (gcombine proc seed gen . gens) (apply gmap-accum proc seed gen gens))
 
 ;; TODO:
 ;;  (gen-ec (: i ...) ...)
