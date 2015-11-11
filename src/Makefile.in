@@ -211,8 +211,10 @@ libgauche_OBJECTS = \
 	libsys.$(OBJEXT) libvec.$(OBJEXT)
 libgauche_LDFLAGS = $(SONAME_FLAG) @SHLIB_DYLIB_LDFLAGS@
 
-libgc_OBJECTS = `ls -1 $(top_builddir)/gc/.libs/*.$(OBJEXT)` \
-                `ls -1 $(top_builddir)/gc/libatomic_ops/src/.libs/*.$(OBJEXT)`
+libgc_pic_OBJECTS = $(top_builddir)/gc/.libs/*.$(OBJEXT)
+libgc_pic_LIBRARY = libgc_pic.a
+libatomic_ops_pic_OBJECTS = $(top_builddir)/gc/libatomic_ops/src/.libs/*.$(OBJEXT)
+libatomic_ops_pic_LIBRARY = libatomic_ops_pic.a
 
 HEADERS = gauche.h $(INSTALL_SUBHEADERS) $(PRIVATE_HEADERS)
 
@@ -236,7 +238,7 @@ test-extra$(EXEEXT) : $(LIBGAUCHE).$(SOEXT) $(test_extra_OBJECTS)
 # NB: relink target is only relevant where rpath matter.  notably, we don't
 # need to relink gosh-noconsole.exe (windows no-console version).
 relink :
-	$(RELINK) $(libgauche_LDFLAGS) $(LIBGAUCHE).$(SOEXT) $(libgauche_OBJECTS) $(libgc_OBJECTS) $(LIBS)
+	$(RELINK) $(libgauche_LDFLAGS) $(LIBGAUCHE).$(SOEXT) $(libgauche_OBJECTS) $(libgc_pic_LIBRARY) $(libatomic_ops_pic_LIBRARY) $(LIBS)
 	$(RELINK) $(gosh_LDFLAGS) -o gosh$(EXEEXT)  $(gosh_OBJECTS) $(gosh_LDADD) $(LIBS)
 	$(RELINK) -o gauche-config$(EXEEXT) gauche-config.$(OBJEXT) $(LIBS)
 
@@ -290,7 +292,13 @@ libextra.c : libextra.scm $(PRECOMP_DEPENDENCY)
 libmod.c   : libmod.scm $(PRECOMP_DEPENDENCY)
 	$(BUILD_GOSH) $(PRECOMP) --keep-private-macro=use $(srcdir)/libmod.scm
 
+$(libgc_pic_LIBRARY): $(GCLIB) $(libgc_pic_OBJECTS)
+	rm -f $@
+	$(AR) -rc $@ $(libgc_pic_OBJECTS)
 
+$(libatomic_ops_pic_LIBRARY): $(GCLIB) $(libatomic_ops_pic_OBJECTS)
+	rm -f $@
+	$(AR) -rc $@ $(libatomic_ops_pic_OBJECTS)
 
 
 # char_attr.c and ext/text/unicode_attr.h are automatically generated
@@ -328,8 +336,8 @@ load.$(OBJEXT) : dl_dlopen.c dl_dummy.c dl_win.c dl_darwin.c
 
 paths.$(OBJEXT) : getdir_win.c getdir_dummy.c getdir_darwin.c paths_arch.c
 
-$(LIBGAUCHE).$(SOEXT) : $(libgauche_OBJECTS) $(GCLIB)
-	$(LINK) $(libgauche_LDFLAGS) $(LIBGAUCHE).$(SOEXT) $(libgauche_OBJECTS) $(libgc_OBJECTS) $(LIBS)
+$(LIBGAUCHE).$(SOEXT) : $(libgauche_OBJECTS) $(libgc_pic_LIBRARY) $(libatomic_ops_pic_LIBRARY)
+	$(LINK) $(libgauche_LDFLAGS) $(LIBGAUCHE).$(SOEXT) $(libgauche_OBJECTS) $(libgc_pic_LIBRARY) $(libatomic_ops_pic_LIBRARY) $(LIBS)
 	$(POSTBUILD)
 
 gauche-config$(EXEEXT) : gauche-config.$(OBJEXT)
@@ -372,7 +380,7 @@ gauche-cesconv : gauche-cesconv.in
 static : $(LIBGAUCHE_STATIC).a
 
 $(LIBGAUCHE_STATIC).a : all staticinit.$(OBJEXT)
-	$(AR) cr $(LIBGAUCHE_STATIC).a $(libgauche_OBJECTS) $(libgc_OBJECTS) staticinit.$(OBJEXT) `cd $(top_builddir)/ext; $(MAKE) -s list-objects`
+	$(AR) -rc $(LIBGAUCHE_STATIC).a $(libgauche_OBJECTS) $(libgc_pic_OBJECTS) $(libatomic_ops_pic_OBJECTS) staticinit.$(OBJEXT) `cd $(top_builddir)/ext; $(MAKE) -s list-objects`
 
 staticinit.c : all gen-staticinit.scm
 	$(BUILD_GOSH) $(srcdir)/gen-staticinit.scm $(top_srcdir) $(top_builddir)
