@@ -1,5 +1,7 @@
 #!/bin/sh
 
+# configure script for "gc/"
+
 # "--enable-threads=..."
 #   [SK] Original Boehm GC checks gcc for the default thread support.
 #   In our case we need the thread config in sync with the main Gauche
