@@ -380,7 +380,8 @@ gauche-cesconv : gauche-cesconv.in
 static : $(LIBGAUCHE_STATIC).a
 
 $(LIBGAUCHE_STATIC).a : all staticinit.$(OBJEXT)
-	$(AR) -rc $(LIBGAUCHE_STATIC).a $(libgauche_OBJECTS) $(libgc_pic_OBJECTS) $(libatomic_ops_pic_OBJECTS) staticinit.$(OBJEXT) `cd $(top_builddir)/ext; $(MAKE) -s list-objects`
+	rm -f $@
+	$(AR) -rc $@ $(libgauche_OBJECTS) $(libgc_pic_OBJECTS) $(libatomic_ops_pic_OBJECTS) staticinit.$(OBJEXT) `cd $(top_builddir)/ext; $(MAKE) -s list-objects`
 
 staticinit.c : all gen-staticinit.scm
 	$(BUILD_GOSH) $(srcdir)/gen-staticinit.scm $(top_srcdir) $(top_builddir)
