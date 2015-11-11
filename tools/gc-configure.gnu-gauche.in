@@ -13,7 +13,7 @@
 #   work on OSX 10.7.3, but caused various failures on 10.7.4, so I disable
 #   it again.
 
-${CONFIG_SHELL} ./configure "${@}" \
+${CONFIG_SHELL} "@top_srcdir@/gc/configure" "${@}" \
 		--enable-threads="@GAUCHE_THREAD_TYPE@" \
 		--enable-large-config \
 		CPPFLAGS="${CPPFLAGS} -DDONT_ADD_BYTE_AT_END @LOCAL_INC@" \

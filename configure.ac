@@ -865,7 +865,7 @@ AC_CONFIG_FILES([
           ext/windows/Makefile
           examples/Makefile
           examples/standalone/Makefile
-          gc/configure.gnu:tools/gc-configure.gnu.in
+          gc/configure.gnu-gauche:tools/gc-configure.gnu-gauche.in
          ])
 AC_OUTPUT
 
