@@ -421,21 +421,20 @@ AC_CHECK_HEADERS(crt_externs.h)
 
 dnl ===========================================================
 dnl Checks processor type, for processor-specific stuff
-case $host in
-  i?86-apple-darwin*)
+AS_CASE([$host],
+  [i?86-apple-darwin*], [
     AC_CHECK_DEFINED(i386,
-      AC_DEFINE(SCM_TARGET_I386,1,[Define to use i386 optimizations])) ;;
-  i?86-*)
-    AC_DEFINE(SCM_TARGET_I386,1,[Define to use i386 optimizations]) ;;
-  x86_64-*)
-    AC_DEFINE(SCM_TARGET_X86_64,1,[Define to use x86_64 optimizations]) ;;
-  alpha*)
-    CFLAGS="$CFLAGS -mieee" ;;
-  arm*)
-    # ARM processor may use a special mixed endian for doubles.  It can
-    # be switched by processor configuration.  So we check it at runtime.
-    AC_DEFINE(DOUBLE_ARMENDIAN,1,[Define to use mixed endian ARM processor]) ;;
-esac
+      AC_DEFINE(SCM_TARGET_I386,1,[Define to use i386 optimizations]))],
+  [i?86-*], [
+    AC_DEFINE(SCM_TARGET_I386,1,[Define to use i386 optimizations])],
+  [x86_64-*], [
+    AC_DEFINE(SCM_TARGET_X86_64,1,[Define to use x86_64 optimizations])],
+  [alpha*], [
+    CFLAGS="$CFLAGS -mieee"],
+  [arm*], [
+    dnl ARM processor may use a special mixed endian for doubles.  It can
+    dnl be switched by processor configuration.  So we check it at runtime.
+    AC_DEFINE(DOUBLE_ARMENDIAN,1,[Define to use mixed endian ARM processor])])
 
 dnl ===========================================================
 dnl Checks for typedefs, structures, and compiler characteristics.
