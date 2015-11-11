@@ -55,9 +55,11 @@ LDFLAGS  = @LDFLAGS@
 
 
 # These are set by configure
+ATOMIC_OPS_CFLAGS = @ATOMIC_OPS_CFLAGS@
+ATOMIC_OPS_LIBS   = @ATOMIC_OPS_LIBS@
 DEFS     = @DEFS@
 OPTFLAGS = @OPTFLAGS@
-INCLUDES = -I$(srcdir) -I. -I$(srcdir)/../gc/include -I../gc/include -I$(srcdir)/../gc/libatomic_ops/src -I../gc/libatomic_ops/src @LOCAL_INC@
+INCLUDES = -I$(srcdir) -I. -I$(srcdir)/../gc/include -I../gc/include $(ATOMIC_OPS_CFLAGS) @LOCAL_INC@
 OBJEXT   = @OBJEXT@
 EXEEXT   = @EXEEXT@
 LIBGAUCHE = @LIBGAUCHE@
@@ -213,8 +215,11 @@ libgauche_LDFLAGS = $(SONAME_FLAG) @SHLIB_DYLIB_LDFLAGS@
 
 libgc_pic_OBJECTS = $(top_builddir)/gc/.libs/*.$(OBJEXT)
 libgc_pic_LIBRARY = libgc_pic.a
+
 libatomic_ops_pic_OBJECTS = $(top_builddir)/gc/libatomic_ops/src/.libs/*.$(OBJEXT)
-libatomic_ops_pic_LIBRARY = libatomic_ops_pic.a
+@USE_INTERNAL_LIBATOMIC_OPS_TRUE@libatomic_ops_pic_LIBRARY = libatomic_ops_pic.a
+@USE_INTERNAL_LIBATOMIC_OPS_FALSE@libatomic_ops_pic_LIBRARY =
+GC_ATOMIC_OPS_LIBS = $(libatomic_ops_pic_LIBRARY) $(ATOMIC_OPS_LIBS)
 
 HEADERS = gauche.h $(INSTALL_SUBHEADERS) $(PRIVATE_HEADERS)
 
@@ -238,7 +243,7 @@ test-extra$(EXEEXT) : $(LIBGAUCHE).$(SOEXT) $(test_extra_OBJECTS)
 # NB: relink target is only relevant where rpath matter.  notably, we don't
 # need to relink gosh-noconsole.exe (windows no-console version).
 relink :
-	$(RELINK) $(libgauche_LDFLAGS) $(LIBGAUCHE).$(SOEXT) $(libgauche_OBJECTS) $(libgc_pic_LIBRARY) $(libatomic_ops_pic_LIBRARY) $(LIBS)
+	$(RELINK) $(libgauche_LDFLAGS) $(LIBGAUCHE).$(SOEXT) $(libgauche_OBJECTS) $(libgc_pic_LIBRARY) $(GC_ATOMIC_OPS_LIBS) $(LIBS)
 	$(RELINK) $(gosh_LDFLAGS) -o gosh$(EXEEXT)  $(gosh_OBJECTS) $(gosh_LDADD) $(LIBS)
 	$(RELINK) -o gauche-config$(EXEEXT) gauche-config.$(OBJEXT) $(LIBS)
 
@@ -337,7 +342,7 @@ load.$(OBJEXT) : dl_dlopen.c dl_dummy.c dl_win.c dl_darwin.c
 paths.$(OBJEXT) : getdir_win.c getdir_dummy.c getdir_darwin.c paths_arch.c
 
 $(LIBGAUCHE).$(SOEXT) : $(libgauche_OBJECTS) $(libgc_pic_LIBRARY) $(libatomic_ops_pic_LIBRARY)
-	$(LINK) $(libgauche_LDFLAGS) $(LIBGAUCHE).$(SOEXT) $(libgauche_OBJECTS) $(libgc_pic_LIBRARY) $(libatomic_ops_pic_LIBRARY) $(LIBS)
+	$(LINK) $(libgauche_LDFLAGS) $(LIBGAUCHE).$(SOEXT) $(libgauche_OBJECTS) $(libgc_pic_LIBRARY) $(GC_ATOMIC_OPS_LIBS) $(LIBS)
 	$(POSTBUILD)
 
 gauche-config$(EXEEXT) : gauche-config.$(OBJEXT)
