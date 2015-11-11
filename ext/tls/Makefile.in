@@ -77,11 +77,11 @@ $(SSLTEST): $(SSLTEST_OBJECTS) $(AXTLS_OBJECTS)
 # The 'system' macro hack is to suppress "ignoring result" warning
 $(SSLTEST_GENERATED) : axTLS/ssl/test/ssltest.c
 	rm -f $(SSLTEST_GENERATED)
-	@echo "int safe_system(const char*);" > $(SSLTEST_GENERATED)
-	@sed -e "s@\.\./ssl/@$$(readlink -f $(srcdir))/axTLS/ssl/@g" \
-             -e "s/system/safe_system/g" \
-             -e "s@openssl @sh $$(readlink -f $(srcdir))/kick_openssl @g" \
-             $(srcdir)/axTLS/ssl/test/ssltest.c >> $(SSLTEST_GENERATED)
-	@cat $(srcdir)/system-fix.c >> $(SSLTEST_GENERATED)
+	echo "int safe_system(const char*);" > $(SSLTEST_GENERATED)
+	sed -e "s@\.\./ssl/@$$(readlink -f $(srcdir))/axTLS/ssl/@g" \
+	    -e "s/system/safe_system/g" \
+	    -e "s@openssl @sh $$(readlink -f $(srcdir))/kick_openssl @g" \
+	    $(srcdir)/axTLS/ssl/test/ssltest.c >> $(SSLTEST_GENERATED)
+	cat $(srcdir)/system-fix.c >> $(SSLTEST_GENERATED)
 
 install : install-std
