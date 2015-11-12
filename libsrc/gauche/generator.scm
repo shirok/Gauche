@@ -576,24 +576,28 @@
                  [else elts])))))
 
 (define (gindex vgen igen) ;srfi-121
-  (define (skip n)
-    (glet1 v (vgen)
-      (if (zero? n) v (skip (- n 1)))))
-  (let1 prev -1
-    (^[] (if prev
-           (glet1 i (igen)
-             (when (<= i prev)
-               (error "gindex: index isn't monotonically increasing"))
-             (rlet1 v (skip (- i prev 1))
-               (if (eof-object? v)
-                 (set! prev #f)
-                 (set! prev i))))))))
+  (let ([vgen (%->gen vgen)]
+        [igen (%->gen igen)])
+    (define (skip n)
+      (glet1 v (vgen)
+        (if (zero? n) v (skip (- n 1)))))
+    (let1 prev -1
+      (^[] (if prev
+             (glet1 i (igen)
+               (when (<= i prev)
+                 (error "gindex: index isn't monotonically increasing"))
+               (rlet1 v (skip (- i prev 1))
+                 (if (eof-object? v)
+                   (set! prev #f)
+                   (set! prev i)))))))))
 
 (define (gselect vgen bgen) ;srfi-121
-  (rec (g)
-    (glet1 b (bgen)
-      (glet1 v (vgen)
-        (if b v (g))))))
+  (let ([vgen (%->gen vgen)]
+        [bgen (%->gen bgen)])
+    (rec (g)
+      (glet1 b (bgen)
+        (glet1 v (vgen)
+          (if b v (g)))))))
 
 
 ;;;

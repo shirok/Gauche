@@ -4654,6 +4654,18 @@ generators.  This module provides them.
 このようなジェネレータに共通して使えるユーティリティがあると便利です。
 このモジュールはそのために作られました。
 @c COMMON
+
+@c EN
+Srfi-121 (Generators) is a subset of this module.
+Since @code{gauche.generator} predates srfi-121, we have different
+names for some procedures; for the compatibility, we provide
+both names.
+@c JP
+Srfi-121 (Generators) はこのモジュールのサブセットです。
+@code{gauche.generator}はsrfi-121より前からあったので、
+いくつかの手続きについては異なる名前を使っていました。互換性のため、
+それらの手続きは両方の名前を定義しています。
+@c COMMON
 @end deftp
 
 @c EN
@@ -4672,20 +4684,33 @@ built on top of generators.
 @c COMMON
 
 @c EN
-You can construct and combine various generators with this module.
-Eventually, your code need to consume the generated value.
-There are several built-in procedures for that; see
-@ref{Folding generated values}.
+The typical pattern of using generator is as follows: First you
+create a source or sources of the values, 
+using one of generator constructors
+(@pxref{Generator constructors}) or rolling your own one.  You
+may connect generator operators that modifies the stream of
+generated items as you wish (@pxref{Generator operations}).
+Eventually you need to extract actual values from the geneator
+to consume; there are utitlity procedures provided
+(@pxref{Generator consumers}).  Overall, you create a pipeline
+(or DAG) of generators that works as lazy value-propagation network.
 @c JP
-このモジュールを使うと、様々なジェネレータを作って組み合わせることができます。
-いずれ、コードのどこかでそういったジェネレータの生成する値を消費することが必要な
-わけですが、そのために使えるいくつかの組み込み手続きがあります。
-@ref{Folding generated values}を参照してください。
+ジェネレータの典型的な使い方は次の通りです。まず値の源となる
+ジェネレータを作ります。これはジェネレータの生成手続きを使っても良いですし
+(@ref{Generator constructors}参照)、自分で一から定義しても良いでしょう。
+次に、生成される値を流れの途中で加工するジェネレータ操作手続きを
+必要に応じて繋いでゆきます(@ref{Generator operations}参照)。
+最終的には、ジェネレータから具体的な値を取り出して消費する必要があります。
+そのために便利なジェネレータ消費手続きも用意してあります
+@ref{Generator consumers}参照)。このように、ジェネレータ手続きを組み合わせた
+パイプライン(あるいは有向非循環グラフ)を作ることで、怠惰な値伝搬ネットワークを
+実現できます。
 @c COMMON
 
 @menu
 * Generator constructors::      
 * Generator operations::        
+* Generator consumers::         
 @end menu
 
 @node Generator constructors, Generator operations, Generators, Generators
@@ -4720,12 +4745,12 @@ EOF for the subsequent calls.
 The result of generator constructors is merely a procedure,
 and printing it doesn't show much.  In the examples in this section
 we use @code{generator->list} to convert the generator to the list.
-See @ref{Generator operations} for the description of @code{generator->list}.
+See @ref{Generator consumers} for the description of @code{generator->list}.
 @c JP
 ジェネレータ構築子が返すのは単なる手続きであり、そのまま印字しても
 中身が何かはわかりません。この節の例では、@code{generator->list}を使って
 ジェネレータをリストに変換しています。@code{generator->list}の説明は、
-@ref{Generator operations}を参照してください。
+@ref{Generator consumers}を参照してください。
 @c COMMON
 
 @defun null-generator
@@ -4787,7 +4812,6 @@ yields exact numbers; otherwise it yields inexact numbers.
 (generator->list (giota +inf.0 1.0 2.0) 5)
   @result{} (1.0 3.0 5.0 7.0 9.0)
 @end example
-
 @end defun
 
 @defun grange start :optional (end +inf.0) (step 1)
@@ -4860,13 +4884,22 @@ it to @code{g}.
 @defunx reverse-vector->generator vec :optional start end
 @defunx string->generator str :optioanl start end
 @defunx uvector->generator uvec :optional start end
+@defunx bytevector->generator u8vector :optional start end
+[SRFI-121+]
 @c EN
 Returns a generator that yields each item in the given argument.
 A generator returned from @code{reverse-*} procedures runs in
 reverse order.
+Srfi-121 defines these except @code{uvector->generator}, which can
+take any type of uniform vectors.  The srfi-121 version,
+@code{bytevector->generator}, limits the argument to @code{u8vector}.
 @c JP
-実引数の各要素を生成するジェネレータを返します。@code{reverse-*}は、逆順
-で値を生成するジェネレータを返します。
+実引数の各要素を生成するジェネレータを返します。
+@code{reverse-*}は、逆順で値を生成します。
+srfi-121は@code{uvector->generator}以外の手続きを定義しています。
+@code{uvector->generator}は全ての種類のユニフォームベクタを取ることができます。
+一方、srfi-121も定義する@code{bytevector->generator}は@code{u8vector}だけを
+対象とします。
 @c COMMON
 
 @example
@@ -5106,134 +5139,117 @@ generate, and use @var{g} to update the seed value.
 @end example
 @end defun
 
-@node Generator operations,  , Generator constructors, Generators
-@subsection Generator operations
-@c NODE ジェネレータの操作
+@subsubheading SRFI-121 compatible procedures
 
+@defun make-generator item @dots{}
+[SRFI-121]
 @c EN
-@xref{Folding generated values}, for @code{generator-fold},
-@code{generator-fold-right}, @code{generator-for-each},
-@code{generator-map}, and @code{generator-find}.
+Returns a generator that generates @var{item} @dots{}.
 @c JP
-@code{generator-fold}、@code{generator-fold-right}、 @code{generator-for-each}、
-@code{generator-map}、@code{generator-find}については、
-@ref{Folding generated values}を参照してください。
-@c COMMON
-
-@defun generator->list generator :optional k
-@c EN
-Reads items from @var{generator} and returns a list of them.
-By default, this reads until the generator is exhausted.  If
-an optional argument @var{k} is given, it must be a nonnegative
-integer, and the list ends either @var{k} items are read,
-or the generator is exhausted.
-@c JP
-@var{generator}から項目を読み取り、それらを要素とするリストを返します。
-デフォルトでは、ジェネレータを使い切るまで読み取ります。省略可能
-引数@var{k}を与える場合、それは非負整数でなければならず、結果のリスト
-は、@var{k}個の項目を読み取るか、ジェネレータを使い切ったところで終わり
-となります。
-@c COMMON
-
-@c EN
-Be careful not to pass an infinite generator to this without
-specifying @var{k}---this procedure won't return but hogs
-all the memory before crash.
-@c JP
-無限ジェネレータを渡す時は必ず@var{k}を指定しましょう。
-さもなくば、この手続きは制御を返さず、全てのメモリを食い尽して
-クラッシュするでしょう。
+@var{item} @dots{} を返すジェネレータを作成します。
 @c COMMON
 @end defun
 
-@defmac glet* (binding @dots{}) body body2 @dots{}
+@defun make-iota-generator count :optional start step
+[SRFI-121]
 @c EN
-This captures a monadic pattern frequently appears in the generator
-code.  It is in a similar spirit of @code{and-let*}, but returns
-as soon as the evaluating expression returns EOF, instead of @code{#f}
-as @code{and-let*} does.
+Same as @code{giota}, except that the @var{count} argument is
+required.
 @c JP
-これは、ジェネレータコードに頻繁に現れるモナド的なパターンを表現
-するものです。@code{and-let*}の発想に似ていますが、@code{#f}のかわりにEOFを
-返す式を評価すると直ちに返ります。
+@code{giota}とほぼ同じですが、@var{count}引数は必須です。
 @c COMMON
+@end defun
 
+@defun make-range-generator start :optional end stop
+[SRFI-121]
 @c EN
-The @var{binding} part can be either @code{(var expr)} or @code{( expr )}.
-The actual definition will explain this syntax clearly.
+Same as @code{grange}.
 @c JP
-@var{binding}部分は@code{(var expr)}か@code{( expr )}の形をとります。
-実際の定義を見れば、この構文が明解に理解できるでしょう。
+@code{grange}と同じです。
 @c COMMON
+@end defun
 
-@example
-(define-syntax glet*
-  (syntax-rules ()
-    [(_ () body body2 ...) (begin body body2 ...)]
-    [(_ ([var gen-expr] more-bindings ...) . body)
-     (let1 var gen-expr
-       (if (eof-object? var)
-         var
-         (glet* (more-bindings ...) . body)))]
-    [(_ ([ gen-expr ] more-bindings ...) . body)
-     (let1 var gen-expr
-       (if (eof-object? var)
-         var
-         (glet* (more-bindings ...) . body)))]))
-@end example
-@end defmac
-
-@defmac glet1 var expr body body2 @dots{}
+@defun make-coroutine-generator proc
+[SRFI-121]
 @c EN
-This is to @code{glet*} as @code{let1} is to @code{let*}.  In other words,
-it is @code{(glet* ([var expr]) body body2 @dots{})}.
+Same as @code{generate}.
 @c JP
-これと@code{glet*}の関係は、@code{let1}と@code{let*}のそれと同じです。言葉を
-変えれば、これは@code{(glet* ([var expr]) body body2 @dots{})}と同じです。
+@code{generate}と同じです。
 @c COMMON
-@end defmac
+@end defun
 
-@defmac do-generator (var gexpr) body @dots{}
+
+@defun make-bits-generator n
+[SRFI-121]
 @c EN
-This is a generator version of @code{dolist} and @code{dotimes}
-(@pxref{Binding constructs}).
+@code{(make-bits-generator n)} is the same as @code{(bits->generator n)}.
+This doesn't take optional start/end arguments, though.
+Srfi-121 doesn't have corresponding procedure for @code{reverse-bits->generator}.
 @c JP
-これは、ジェネレータ版の@code{dolist}であり@code{dotimes}です(@pxref{Binding constructs})。
+@code{(make-bits-generator n)}は@code{(bits->generator n)}と同じです。
+省略可能なstart/end引数は取りません。
+@code{reverse-bits->generator}に相当する手続きはsrfi-121にはありません。
 @c COMMON
+@end defun
 
+@defun make-port-generator input-port :optional reader
+[SRFI-121]
 @c EN
-@var{Gexpr} is an expression that yields a generator.  It is
-evaluated once.  The resulting generator is called repeatedly
-until it returns EOF.  Every time the generator is called,
-@var{body} @dots{} are evaluated in the scope
-where @var{var} is bound to the value yielded from the generator.
+This is a generalized version of @code{port->line-generator} etc.
+The result generator calls @var{reader} (defaulted to @code{read-line})
+on @var{input-port} every time an item is requested.
 @c JP
-@var{gexpr}はジェネレータを生成する式であり、一度だけ評価されます。
-結果となるジェネレータはEOFを返すまで繰り返し呼ばれます。ジェネレータ
-が呼ばれる毎に、ジェネレータが生成する値に束縛される@var{var}の
-スコープ内で@var{body} @dots{}が評価されます。
+これは@code{port->line-generator}等を一般化した手続きです。
+返されるジェネレータは、値を要求される度に@var{input-port}を引数にして@var{reader}を
+呼び出しその結果を返します。@var{reader}のデフォルトは@code{read-line}です。
 @c COMMON
+@end defun
 
+@defun make-for-each-generator for-each obj
+[SRFI-121]
 @c EN
-Like @code{dolist} and @code{dotimes}, this macro exists for
-side-effects.  You can write the same thing with @code{for-each} families,
-but sometimes this macro makes the imperative code more readable:
+Given collection @var{obj} and walker @var{for-each}, creates a
+generator that retrieves one item at a time from the collection.
+Trivially defined as follows:
 @c JP
-@code{dolist}や@code{dotimes}がそうであるように、このマクロも副作用のため
-のものです。同じことは@code{for-each}族を使っても書けますが、このマクロを
-使って命令的に記述したコードの方が読みやすいこともあるのです。
 @c COMMON
 
 @example
-(do-generator [line (file->line-generator "filename")]
-@c EN
-  ;; do some side-effecting stuff with line
-@c JP
-  ;; lineを使って何か副作用のある作業をする
-@c COMMON
-  )
+(define (make-for-each-generator for-each coll)
+  (generate (^[yield] (for-each yield coll))))
 @end example
-@end defmac
+
+@c EN
+If @var{obj} is mutated before the returned generator walks all the values,
+the behavior depends on how the @var{for-each} procedure handles the
+situation; it may or may not be safe.  In general it's better to avoid
+mutation until the generator returns EOF.  Once the generator is exhausted,
+though, it is safe to mutate @code{obj}.
+@c JP
+作られたジェネレータが全ての値を取り出す前に@var{obj}が変更された場合の振る舞いは、
+渡された@var{for-each}手続きがそのケースをどのように処理するかに依存します。
+それは安全かもしれないし、安全でないかもしれません。一般的に、ジェネレータが
+EOFを返す前に@var{obj}を変更することは避けるのが賢明です。
+ジェネレータがEOFを返した後に@var{obj}を変更するのは安全です。
+@c COMMON
+@end defun
+
+@defun make-unfold-generator stop? mapper successor seed
+[SRFI-121]
+@c EN
+This is the same as @code{gunfold}, except it doesn't take
+optional @var{tail-gen} argument.
+@c JP
+省略可能な@var{tail-gen}引数を取らないことを除けば、
+@code{gunfold}と同じです。
+@c COMMON
+@end defun
+
+
+@node Generator operations, Generator consumers, Generator constructors, Generators
+@subsection Generator operations
+@c NODE ジェネレータの操作
+
 
 @c EN
 The following procedures take generators (noted as @var{gen} and
@@ -5241,15 +5257,24 @@ The following procedures take generators (noted as @var{gen} and
 also accept any collection to @var{gen} and @var{gen2} parameters;
 if a collection is passed where a generator is expected,
 it is implicitly coerced into a generator.
+
+(NB: This is Gauche's extension.  For portable srfi-121 programs,
+you shouldn't rely on this behavior; instead, explicitly convert
+collections to generators.)
 @c JP
 以下に挙げる手続きは、どれもジェネレータ(@var{gen}や@var{gen2}と記述されて
 います)を受け取ってジェネレータを返します。便宜上、これらの手続きは
 @var{gen}や@var{gen2}としてコレクションも受けつけます;ジェネレータが
 想定されているところにコレクションが渡されると、暗黙のうちにジェネレータ
 へと変換されるのです。
+
+(註：これはGauche独自の拡張です。ポータブルなsrfi-121プログラムは、
+この振る舞いに依存してはいけません。明示的にコレクションをジェネレータに
+変換してください。)
 @c COMMON
 
 @defun gcons* item @dots{} gen
+[SRFI-121]
 @c EN
 Returns a generator that adds @var{item}s in front of @var{gen}.
 @c JP
@@ -5263,6 +5288,7 @@ Returns a generator that adds @var{item}s in front of @var{gen}.
 @end defun
 
 @defun gappend gen @dots{}
+[SRFI-121]
 @c EN
 Returns a generator that yields the items from the first given
 generator, and once it is exhausted, use the second generator, and so on.
@@ -5408,7 +5434,7 @@ returns a generator immediately without consuming input.
 @defun gmap-accum proc seed gen gen2 @dots{}
 @c EN
 A generator version of @code{map-accum} (@pxref{Mapping over collection}),
-mapping with states.
+mapping with states. 
 @c JP
 状態を持つマッピングを行う@code{map-accum} (@pxref{Mapping over collection})のジェネレータ版
 です。
@@ -5428,10 +5454,26 @@ and the next seed.
 @var{seed}は現在のシード値です。この手続きは2つの値を返さなければい
 けません。生成する値と、次のシード値です。
 @c COMMON
+
+@c EN
+NB: This is called @code{gcombine} in srfi-121.
+@c JP
+註：これはsrfi-121の@code{gcombine}と同じものです。
+@c COMMON
+@end defun
+
+@defun gcombine proc seed gen gen2 @dots{}
+[SRFI-121]
+@c EN
+An alias of @code{gmap-accum}, provided for the compatibility of srfi-121.
+@c JP
+@code{gmap-accum}の別名です。srfi-121との互換性のため提供されています。
+@c COMMON
 @end defun
 
 @defun gfilter pred gen
 @defunx gremove pred gen
+[SRFI-121]
 @c EN
 Returns a generator that yields the items from the source generator
 @var{gen}, except those who makes @var{pred} answers false (@code{gfilter})
@@ -5452,6 +5494,7 @@ or those who makes @var{pred} answers a true value (@code{gremove})
 @end defun
 
 @defun gdelete item gen :optional =
+[SRFI-121]
 @c EN
 Return a generator that yields the items from the source generator
 @var{gen}, except those are the same as @var{item}.  The comparison
@@ -5471,6 +5514,7 @@ is done by the procedure passed to @var{=}, which defaults to @code{equal?}.
 @end defun
 
 @defun gdelete-neighbor-dups gen :optional =
+[SRFI-121]
 @c EN
 Returns a generator that yields the items from the source generator
 @var{gen}, but the consecutive items of the same value is omitted.
@@ -5624,6 +5668,7 @@ The Tetris Company).
 
 @defun gtake gen k :optional padding
 @defunx gdrop gen k
+[SRFI-121]
 @c EN
 Returns a generator that takes or drops initial @var{k} elements
 from the source generator @var{gen}.
@@ -5705,6 +5750,7 @@ is called @code{gtake}.  This is provided for the backward compatibility.
 
 @defun gtake-while pred gen
 @defunx gdrop-while pred gen
+[SRFI-121]
 @c EN
 The generator version of @code{take-while} and @code{drop-while}
 (@pxref{List accessors and modifiers}).  The generator returned
@@ -5818,6 +5864,292 @@ but merely the rest of strings within the buffer.
 は、マッチ後の``入力の残り全部''を表現しません。単にバッファの中にある文字列の
 残りになります。
 @c COMMON
+@end defun
+
+@defun gindex vgen igen
+[SRFI-121]
+@c EN
+Both arguments are generators.  The @var{igen} generator must
+yield monotonically increasing series of exact nonnegative integers.
+
+Returns a generator that generates items from @var{vgen}
+indexed by the numbers from @var{igen}, exhausted when either
+source generator is exhausted.
+
+An error is thrown when @var{igen} yields a value that doesn't
+conform the condition.
+@c JP
+引数はどちらもジェネレータです。@var{igen}は単調増加する正確な非負整数を
+生成しなければなりません。
+
+@var{vgen}から生成される値のうち、@var{igen}からの数字をインデックスとする
+値のみを取り出して返すようなジェネレータを作成して返します。
+どちらかの入力ジェネレータが終端に達したら、返されるジェネレータも終端に達します。
+
+@var{igen}が条件を満たさない値を生成した場合はその時点でエラーが投げられます。
+@c COMMON
+
+@example
+;; This example takes advantage of Gauche's auto-coercing
+;; list to generator.  For portable srfi-121 programs,
+;; you need list->generator for each argument:
+(generator->list (gindex '(a b c d e) '(0 2 3)))
+  @result{} (a c d)
+@end example
+@end defun
+
+@defun gselect vgen bgen
+[SRFI-121]
+@c EN
+Both arguments are generators.  Creates and returns a
+generator that yields a value from @var{vgen} but only
+the corresponding value from @var{bgen} is true.
+
+The returned generator is exhausted when one of the
+source generators is exhausted.
+@c JP
+引数はどちらもジェネレータです。@var{vgen}からの要素のうち、
+対応する@var{bgen}の要素が真の値であるものだけを選んで返す
+ようなジェネレータを作成して返します。
+
+ソースジェネレータの一つが終端に達した時に、作成された
+ジェネレータも終端に達します。
+@c COMMON
+
+@example
+;; This example takes advantage of Gauche's auto-coercing
+;; list to generator.  For portable srfi-121 programs,
+;; you need list->generator for each argument:
+(generator->list (gselect '(a b c d e) '(#t #t #f #t #f)))
+  @result{} (a b d)
+@end example
+
+@c EN
+Combined with a bitgenerator, you can use @code{gselect}
+to extract items using bitmask:
+@c JP
+ビットジェネレータと一緒に使うと、@code{gselect}でビットマスク
+により要素を抽出することができます。
+@c COMMON
+
+@example
+(generator->list (gselect '(a b c d e)
+                           (reverse-bits->generator #x1a)))
+  @result{} (a b d)
+@end example
+@end defun
+
+
+
+@node Generator consumers,  , Generator operations, Generators
+@subsection Generator consumers
+@c NODE ジェネレータの消費
+
+@c EN
+Some generator consumers are built-in.
+@xref{Folding generated values}, for @code{generator-fold},
+@code{generator-fold-right}, @code{generator-for-each},
+@code{generator-map}, and @code{generator-find}.
+@c JP
+いくつかのジェネレータ消費手続きは組み込みになっています。
+@code{generator-fold}、@code{generator-fold-right}、 @code{generator-for-each}、
+@code{generator-map}、@code{generator-find}については、
+@ref{Folding generated values}を参照してください。
+@c COMMON
+
+@defun generator->list generator :optional k
+@defunx generator->reverse-list generator :optional k
+[SRFI-121]
+@c EN
+Reads items from @var{generator} and returns a list of them
+(or a reverse list, in case of @code{generator->reverse-list}).
+By default, this reads until the generator is exhausted.  If
+an optional argument @var{k} is given, it must be a nonnegative
+integer, and the list ends either @var{k} items are read,
+or the generator is exhausted.
+@c JP
+@var{generator}から項目を読み取り、それらを要素とするリストを返します
+(@code{generator->reverse-list}では要素が逆順になります)。
+デフォルトでは、ジェネレータを使い切るまで読み取ります。省略可能
+引数@var{k}を与える場合、それは非負整数でなければならず、結果のリスト
+は、@var{k}個の項目を読み取るか、ジェネレータを使い切ったところで終わり
+となります。
+@c COMMON
+
+@c EN
+Be careful not to pass an infinite generator to this without
+specifying @var{k}---this procedure won't return but hogs
+all the memory before crash.
+@c JP
+無限ジェネレータを渡す時は必ず@var{k}を指定しましょう。
+さもなくば、この手続きは制御を返さず、全てのメモリを食い尽して
+クラッシュするでしょう。
+@c COMMON
+@end defun
+
+@defun generator->vector gen :optional k
+@defunx generator->string gen :optional k
+[SRFI-121]
+@c EN
+Extracts items from the generator @var{gen} up to @var{k} items
+or until it exhausts, and create a fresh
+vector or string from the extracted items.
+
+For @code{generator->string}, @var{gen} must yield a character, or
+an error is reported.
+@c JP
+@var{gen}から、@var{k}要素もしくは@var{gen}が終端に達するまで要素を読み出し、
+それらの要素からなるベクタまたは文字列を作って返します。
+
+@code{generator->string}の場合、@var{gen}が文字以外のものを生成したら
+エラーが報告されます。
+@c COMMON
+@end defun
+
+@defun generator->vector! vector at gen
+[SRFI-121]
+@c EN
+Fill @var{vector} from index @var{at} with the value yielded
+from @var{gen}.  It terminates when @var{gen} is exhausted or the index
+reaches at the end of the vector.  Returns the number of items
+generated.
+@c JP
+@var{vector}を、インデックス@var{at}から、@var{gen}が生成する値によって
+埋めてゆきます。@var{gen}が終端に達するか、ベクタの最後まで埋められた時点で
+終了し、生成された要素の個数が返されます。
+@c COMMON
+
+@example
+(define v (vector 'a 'b 'c 'd 'e))
+
+(generator->vector! v 2 (giota))
+  @result{} 3
+
+v @result{} #(a b 0 1 2)
+@end example
+@end defun
+
+@defmac glet* (binding @dots{}) body body2 @dots{}
+@c EN
+This captures a monadic pattern frequently appears in the generator
+code.  It is in a similar spirit of @code{and-let*}, but returns
+as soon as the evaluating expression returns EOF, instead of @code{#f}
+as @code{and-let*} does.
+@c JP
+これは、ジェネレータコードに頻繁に現れるモナド的なパターンを表現
+するものです。@code{and-let*}の発想に似ていますが、@code{#f}のかわりにEOFを
+返す式を評価すると直ちに返ります。
+@c COMMON
+
+@c EN
+The @var{binding} part can be either @code{(var expr)} or @code{( expr )}.
+The actual definition will explain this syntax clearly.
+@c JP
+@var{binding}部分は@code{(var expr)}か@code{( expr )}の形をとります。
+実際の定義を見れば、この構文が明解に理解できるでしょう。
+@c COMMON
+
+@example
+(define-syntax glet*
+  (syntax-rules ()
+    [(_ () body body2 ...) (begin body body2 ...)]
+    [(_ ([var gen-expr] more-bindings ...) . body)
+     (let1 var gen-expr
+       (if (eof-object? var)
+         var
+         (glet* (more-bindings ...) . body)))]
+    [(_ ([ gen-expr ] more-bindings ...) . body)
+     (let1 var gen-expr
+       (if (eof-object? var)
+         var
+         (glet* (more-bindings ...) . body)))]))
+@end example
+@end defmac
+
+@defmac glet1 var expr body body2 @dots{}
+@c EN
+This is to @code{glet*} as @code{let1} is to @code{let*}.  In other words,
+it is @code{(glet* ([var expr]) body body2 @dots{})}.
+@c JP
+これと@code{glet*}の関係は、@code{let1}と@code{let*}のそれと同じです。言葉を
+変えれば、これは@code{(glet* ([var expr]) body body2 @dots{})}と同じです。
+@c COMMON
+@end defmac
+
+@defmac do-generator (var gexpr) body @dots{}
+@c EN
+This is a generator version of @code{dolist} and @code{dotimes}
+(@pxref{Binding constructs}).
+@c JP
+これは、ジェネレータ版の@code{dolist}であり@code{dotimes}です(@ref{Binding constructs}参照)。
+@c COMMON
+
+@c EN
+@var{Gexpr} is an expression that yields a generator.  It is
+evaluated once.  The resulting generator is called repeatedly
+until it returns EOF.  Every time the generator is called,
+@var{body} @dots{} are evaluated in the scope
+where @var{var} is bound to the value yielded from the generator.
+@c JP
+@var{gexpr}はジェネレータを生成する式であり、一度だけ評価されます。
+結果となるジェネレータはEOFを返すまで繰り返し呼ばれます。ジェネレータ
+が呼ばれる毎に、ジェネレータが生成する値に束縛される@var{var}の
+スコープ内で@var{body} @dots{}が評価されます。
+@c COMMON
+
+@c EN
+Like @code{dolist} and @code{dotimes}, this macro exists for
+side-effects.  You can write the same thing with @code{for-each} families,
+but sometimes this macro makes the imperative code more readable:
+@c JP
+@code{dolist}や@code{dotimes}がそうであるように、このマクロも副作用のため
+のものです。同じことは@code{for-each}族を使っても書けますが、このマクロを
+使って命令的に記述したコードの方が読みやすいこともあるのです。
+@c COMMON
+
+@example
+(do-generator [line (file->line-generator "filename")]
+@c EN
+  ;; do some side-effecting stuff with line
+@c JP
+  ;; lineを使って何か副作用のある作業をする
+@c COMMON
+  )
+@end example
+@end defmac
+
+@defun generator-any pred gen
+@defunx generator-every pred gen
+[SRFI-121]
+Like @code{any} and @code{every} (@pxref{Walking over lists}), but
+works on a generator.
+@end defun
+
+@defun generator-length gen
+[SRFI-121]
+@c EN
+Returns the number of items in a generator @var{gen}.
+As a side effect, @var{gen} is exhausted.
+@c JP
+@var{gen}が生成する要素の個数を返します。副作用として
+@var{gen}は使い尽くされます。
+@c COMMON
+@end defun
+
+@defun generator-count pred gen
+[SRFI-121]
+@c EN
+Returns the number of items in a generator @var{gen}
+that satisfies @var{pred}.
+As a side effect, @var{gen} is exhausted.
+@c JP
+@var{gen}が生成する要素ののうち、@var{pred}を満たすものの個数を返します。
+副作用として@var{gen}は使い尽くされます。
+@c COMMON
+@end defun
+
+@defun generator-unfold gen unfold arg @dots{}
+[SRFI-121]
 @end defun
 
 
