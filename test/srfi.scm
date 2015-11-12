@@ -2527,7 +2527,10 @@
   (test-group "generators/consumers"
     ;; no test for plain generator->list (used throughout)
     (test '(1 2 3) (generator->list (make-generator 1 2 3 4 5) 3))
+    (test '(1 2 3 4 5) (generator->list (make-generator 1 2 3 4 5) 6))
     (test '(5 4 3 2 1) (generator->reverse-list (make-generator 1 2 3 4 5)))
+    (test '(3 2 1) (generator->reverse-list (make-generator 1 2 3 4 5) 3))
+    (test '(5 4 3 2 1) (generator->reverse-list (make-generator 1 2 3 4 5) 6))
     (test '#(1 2 3 4 5) (generator->vector (make-generator 1 2 3 4 5)))
     (test '#(1 2 3) (generator->vector (make-generator 1 2 3 4 5) 3))
     (define v '#(1 2 0 0 0))

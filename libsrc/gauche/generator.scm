@@ -616,7 +616,7 @@
         (if reverse? r (reverse r))
         (let1 v (gen)
           (if (eof-object? v)
-            (reverse r)
+            (if reverse? r (reverse r))
             (loop (+ k 1) (cons v r))))))
     (let loop ([r '()])
       (let1 v (gen)
