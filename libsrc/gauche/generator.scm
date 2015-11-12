@@ -589,7 +589,8 @@
                (rlet1 v (skip (- i prev 1))
                  (if (eof-object? v)
                    (set! prev #f)
-                   (set! prev i)))))))))
+                   (set! prev i))))
+             (eof-object))))))
 
 (define (gselect vgen bgen) ;srfi-121
   (let ([vgen (%->gen vgen)]
