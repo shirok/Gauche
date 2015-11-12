@@ -136,6 +136,8 @@ dnl ----------------------------------------------------------
 dnl   with-libatomic-ops[=yes|no|check]
 dnl
 dnl This code comes from "gc/configure.ac", and must be sync with that.
+dnl NB: Don't forget to update path name from "libatomic_ops" to
+dnl "gc/libatomic_ops".
 dnl
 # Do we want to use an external libatomic_ops?  By default use it if it's
 # found.
