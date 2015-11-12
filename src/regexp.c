@@ -2636,11 +2636,11 @@ static void rex_rec(const unsigned char *code,
             for (;;) {
                 if (ctx->stop < input + param) break;
                 const unsigned char *str = code;
-                const unsigned char *ip = input;
+                const unsigned char *ip = (const unsigned char*)input;
                 for (unsigned int i = 0; i < param; i++) {
                     if (*str++ != (unsigned char)*ip++) goto matchr_out;
                 }
-                input = ip;
+                input = (const char *)ip;
             }
         matchr_out:
             code += param;
