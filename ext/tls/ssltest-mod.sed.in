@@ -1,0 +1,24 @@
+# "axTLS/ssl/test/ssltest.c" modification script
+
+# add header and "safe_system()" prototype
+1 {
+  i /* This is generated file. Don't edit! */
+  i
+  i int safe_system(const char*);
+  i
+}
+
+# replace path name
+s|\.\./ssl/|@abs_srcdir@/axTLS/ssl/|g
+s|openssl |@abs_srcdir@/kick_openssl |g
+
+# replace to "safe_system()"
+s/system/safe_system/g
+
+# add "safe_system()" to last
+$ {
+  a
+  a /* @srcdir@/system-fix.c */
+  a
+  r @srcdir@/system-fix.c
+}

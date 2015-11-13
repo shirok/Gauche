@@ -903,6 +903,7 @@ AC_CONFIG_FILES([
           ext/sxml/Makefile
           ext/syslog/Makefile
           ext/tls/Makefile
+	  ext/tls/ssltest-mod.sed
           ext/termios/Makefile
           ext/text/Makefile
           ext/threads/Makefile
