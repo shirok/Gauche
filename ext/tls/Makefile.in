@@ -49,7 +49,7 @@ SSLTEST_OBJECTS = axTLS/ssl/test/ssltest.mod.$(OBJEXT)
 
 # abs_srcdir is used to refer to the $(srcdir) from subdirectories;
 # needed for SSLTEST_GENERATED
-abs_srcdir = `pwd`/$(srcdir)
+abs_srcdir = @abs_srcdir@
 
 @GAUCHE_TLS_SWITCH_AXTLS_TEST@EXTRA_TEST_BIN = $(SSLTEST)
 
