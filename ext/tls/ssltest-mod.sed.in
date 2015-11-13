@@ -15,10 +15,8 @@ s|openssl |@abs_srcdir@/kick_openssl |g
 # replace to "safe_system()"
 s/system/safe_system/g
 
-# add "safe_system()" to last
+# include "safe_system()" code
 $ {
   a
-  a /* @srcdir@/system-fix.c */
-  a
-  r @srcdir@/system-fix.c
+  a #include "@abs_srcdir@/system-fix.c"
 }
