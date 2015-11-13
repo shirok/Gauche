@@ -61,7 +61,7 @@
   (letrec ([->string
             ;; to make it work regardless of keyword-symbol integration
             (^x (cond [(keyword? x) #":~(keyword->string x)"]
-                      [(identifier? x) (identifier-name x)]
+                      [(identifier? x) (symbol->string (identifier->symbol x))]
                       [else (x->string x)]))]
            [do-append
             (^[objs interned?]
@@ -142,7 +142,7 @@
 (define-cproc identifier? (obj) ::<boolean> :constant
   (inliner IDENTIFIERP) SCM_IDENTIFIERP)
 (define-cproc identifier->symbol (obj::<identifier>) :constant
-  (return (SCM_OBJ (-> (SCM_IDENTIFIER obj) name))))
+  (return (SCM_OBJ (Scm_UnwrapIdentifier obj))))
 
 (select-module gauche.internal)
 (define-cproc make-identifier (name mod::<module> env::<list>)

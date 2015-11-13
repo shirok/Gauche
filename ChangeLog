@@ -1,3 +1,10 @@
+2015-11-13  Shiro Kawai  <shiro@acm.org>
+
+	* src/libsym.scm (identifier->symbol): Call Scm_UnwrapIdentifier to
+	  make sure it returns the symbol.  Note that identifier-name can
+	  still return an identifier, for it just unwraps outermost identifier.
+	  (symbol-append): Fix for the case args have a nested identifier.
+
 2015-11-09  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/gauche/generator.scm: Added the rest of srfi-121. Now
