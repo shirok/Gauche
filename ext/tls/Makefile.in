@@ -47,6 +47,10 @@ SSLTEST = axTLS/ssl/ssltest$(EXEEXT)
 SSLTEST_GENERATED = axTLS/ssl/test/ssltest.mod.c
 SSLTEST_OBJECTS = axTLS/ssl/test/ssltest.mod.$(OBJEXT)
 
+# abs_srcdir is used to refer to the $(srcdir) from subdirectories;
+# needed for SSLTEST_GENERATED
+abs_srcdir = `pwd`/$(srcdir)
+
 @GAUCHE_TLS_SWITCH_AXTLS_TEST@EXTRA_TEST_BIN = $(SSLTEST)
 
 @GAUCHE_TLS_SWITCH_AXTLS@EXTRA_DIRS_TARGET = axtls_dirs
@@ -78,9 +82,9 @@ $(SSLTEST): $(SSLTEST_OBJECTS) $(AXTLS_OBJECTS)
 $(SSLTEST_GENERATED) : axTLS/ssl/test/ssltest.c
 	rm -f $(SSLTEST_GENERATED)
 	echo "int safe_system(const char*);" > $(SSLTEST_GENERATED)
-	sed -e "s@\.\./ssl/@$$(readlink -f $(srcdir))/axTLS/ssl/@g" \
+	sed -e "s@\.\./ssl/@$(abs_srcdir)/axTLS/ssl/@g" \
 	    -e "s/system/safe_system/g" \
-	    -e "s@openssl @sh $$(readlink -f $(srcdir))/kick_openssl @g" \
+	    -e "s@openssl @$(abs_srcdir)/kick_openssl @g" \
 	    $(srcdir)/axTLS/ssl/test/ssltest.c >> $(SSLTEST_GENERATED)
 	cat $(srcdir)/system-fix.c >> $(SSLTEST_GENERATED)
 
