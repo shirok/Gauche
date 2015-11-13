@@ -914,6 +914,7 @@
 (numcmp-test "flonum vs fixnum ne" #f 3140.0 314)
 (numcmp-test "flonum vs bignum eq" #t (expt 2.0 64) (expt 2 64))
 (numcmp-test "flonum vs bignum ne" #f (expt 2.0 64) (expt 2 63))
+(numcmp-test "flonum (inf) vs bignum ne" #f +inf.0 (expt 2 64))
 (numcmp-test "ratnum vs fixnum ne" #f 13/2 6)
 (numcmp-test "ratnum vs ratnum eq" #t 3/5 3/5)
 (numcmp-test "ratnum vs ratnum 1 ne" #f 3/5 4/7)
@@ -923,6 +924,8 @@
 (numcmp-test "ratnum vs flonum eq" #t 3/8 0.375)
 (numcmp-test "ratnum vs flonum ne" #f 8/9 0.6)
 (numcmp-test "ratnum vs bignum ne" #f (/ (+ (expt 2 64) 1) 2) (expt 2 63))
+
+(test* "numcmp -inf vs bignum" #t (apply > (list (expt 2 64) -inf.0)))
 
 ;; This tests variable number of arguments.  The current stub code accepts
 ;; up to 4 args in stack and the rest by list, so we want to test the

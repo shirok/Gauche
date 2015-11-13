@@ -2935,6 +2935,10 @@ int Scm_NumCmp(ScmObj arg0, ScmObj arg1)
             return 0;
         }
         if (SCM_BIGNUMP(arg1) || SCM_RATNUMP(arg1)) {
+            /* NaN is already excluded.  We filter out obvious. */
+            if (SCM_IS_INF(SCM_FLONUM_VALUE(arg0))) {
+                return Scm_Sign(arg0);
+            }
             /* R7RS requires transitivity in '=', so we can't coerce
                arg1 to inexact; we'd rather convert arg0 to exact.
                NB: Thus we'll have a case that (= x y) => #f but
