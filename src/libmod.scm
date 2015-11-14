@@ -93,7 +93,7 @@
                     name)])))
   (with-input-from-string
    (cond [(symbol? name) (symbol->string name)]
-         [(identifier? name) (symbol->string (identifier-name name))]
+         [(identifier? name) (symbol->string (identifier->symbol name))]
          [else (error "symbol or identifier expected, but got:" name)])
    (^[] (let loop ([c (read-char)] [p '()] [ps '()])
           (cond

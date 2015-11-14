@@ -1897,7 +1897,7 @@
     [_ (error "syntax-error:" oform)]))
 
 (define (%rename-toplevel-identifier! identifier)
-  (slot-set! identifier 'name (gensym #"~(identifier-name identifier)."))
+  (slot-set! identifier 'name (gensym #"~(identifier->symbol identifier)."))
   identifier)
 
 ;; Inlinable procedure.
