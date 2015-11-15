@@ -349,10 +349,11 @@
 ;; undo stack.  When history is recalled and edited, and then the user
 ;; moves history position, we save the edited line and its undo stack
 ;; in this table.  When the user comes back to the history position,
-;; we present the saved one.
+;; we present the saved one instead of the actual history.
 ;; Note that when the user recalls history for the first time of the session,
 ;; we save the fresh line and its undo info in the transient table
 ;; as the history position -1.
+;; The table is reset when the user commits the input.
 (define (ensure-history-transient ctx)
   (or (~ ctx'history-transient)
       (rlet1 tab (make-hash-table 'eqv?)
