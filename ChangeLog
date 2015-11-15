@@ -1,3 +1,8 @@
+2015-11-15  Shiro Kawai  <shiro@acm.org>
+
+	* lib/lang/asm/x86.scm: Salvaged from experiment_jit branch.  Nothing
+	  serious yet, but may be useful to play around machine instructions.
+
 2015-11-13  Shiro Kawai  <shiro@acm.org>
 
 	* src/libsym.scm (identifier->symbol): Call Scm_UnwrapIdentifier to
