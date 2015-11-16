@@ -117,9 +117,22 @@
   (let* ([len::long (Scm_Length list)])
     (when (< len 0) (Scm_Error "bad list: %S" list))
     (return len)))
-(define-cproc length<=? (list k::<fixnum>) ::<boolean> :constant
-  (dolist [_ list] (when (<= (post-- k) 0) (return FALSE)))
-  (return TRUE))
+(define-cproc length<=? (list k::<integer>) ::<boolean> :constant
+  (if (SCM_INTP k)
+    (let* ([n::int (SCM_INT_VALUE k)])
+      (dolist [_ list] (when (<= (post-- n) 0) (return FALSE)))
+      (return (<= 0 n)))
+    (return TRUE)))  ; k is bignum. it is impossible to have that long list.
+(define-cproc length=? (list k::<integer>) ::<boolean> :constant
+  (if (SCM_INTP k)
+    (let* ([n::int (SCM_INT_VALUE k)])
+      (dolist [_ list] (when (<= (post-- n) 0) (return FALSE)))
+      (return (== 0 n)))
+    (return FALSE)))
+(define (length<? list k) (length<=? list (- k 1)))
+(define (length>? list k) (not (length<=? list k)))
+(define (length>=? list k) (not (length<? list k)))
+                  
 
 (define-cproc append (:rest lists) (inliner APPEND) Scm_Append)
 (define-cproc reverse (list::<list> :optional (tail ())) Scm_Reverse2)

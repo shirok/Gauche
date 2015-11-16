@@ -1,3 +1,9 @@
+2015-11-16  Shiro Kawai  <shiro@acm.org>
+
+	* src/liblist.scm (length<=?): Fix bug when x is empty list.
+	  Also added all variations of comparison family: length=?,
+	  length<?, length>? and length>=?.
+
 2015-11-15  Shiro Kawai  <shiro@acm.org>
 
 	* lib/lang/asm/x86.scm: Salvaged from experiment_jit branch.  Nothing

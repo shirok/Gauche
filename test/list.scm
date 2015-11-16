@@ -36,6 +36,42 @@
 (test* "iota" '(1.0 1.5 2.0 2.5 3.0) (iota 5 1 0.5))
 
 ;;--------------------------------------------------------------------------
+(test-section "length")
+
+(let ()
+  (define (test-length data k)
+    (test* #"length~|data| vs ~k"
+           '(#t
+             #t #t #f
+             #t #f #f
+             #f #t #f
+             #f #f #t
+             #f #t #t)
+           (list (if (list? data)
+                   (= (length data) k)
+                   #t)
+                 (length<=? data (+ k 1))
+                 (length<=? data k)
+                 (length<=? data (- k 1))
+                 (length<? data (+ k 1))
+                 (length<? data k)
+                 (length<? data (- k 1))
+                 (length=? data (+ k 1))
+                 (length=? data k)
+                 (length=? data (- k 1))
+                 (length>? data (+ k 1))
+                 (length>? data k)
+                 (length>? data (- k 1))
+                 (length>=? data (+ k 1))
+                 (length>=? data k)
+                 (length>=? data (- k 1)))))
+  (test-length '() 0)
+  (test-length 'a 0)
+  (test-length '(a) 1)
+  (test-length '(a . b) 1)
+  (test-length '(a b c d e) 5))
+
+;;--------------------------------------------------------------------------
 (test-section "append and reverse")
 
 (test* "append" '(1 2 3 4 5) (append '(1 2 3) '() '(4 5)))
