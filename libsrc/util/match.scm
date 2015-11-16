@@ -152,6 +152,12 @@
 ;;; procedure in gauche.internal.  If you're reading this code out of
 ;;; curiousity, DO NOT USE IT in your code.  The identifier stuff may be
 ;;; changed greatly when I implement proper low-level hygienic stuff.
+;;;
+;;; The plan is that we revise the code to use er-macro in a couple of
+;;; releases (we need to release er-macro support first, for util.match
+;;; is used to build HEAD version of source so in this module we can only
+;;; depend on the features available in the current release of Gauche.
+;;;
 
 (define (%match-id sym)
   ((with-module gauche.internal make-identifier) sym (current-module) '()))
