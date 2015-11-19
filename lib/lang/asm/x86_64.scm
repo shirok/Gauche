@@ -1,5 +1,5 @@
 ;;;
-;;; x86 minimum assembler
+;;; x86_64 minimum assembler
 ;;;
 ;;;   Copyright (c) 2015  Shiro Kawai  <shiro@acm.org>
 ;;;
@@ -37,7 +37,7 @@
 ;; TODO: Eventually we might want to split machine-independent front-end
 ;; to lang.asm.  The API will very likely change then.
 
-(define-module lang.asm.x86
+(define-module lang.asm.x86_64
   (use gauche.uvector)
   (use gauche.sequence)
   (use gauche.parameter)
@@ -47,7 +47,7 @@
   (use util.match)
   (export-all)                          ;for now
   )
-(select-module lang.asm.x86)
+(select-module lang.asm.x86_64)
 
 ;; Instruction notation
 ;;   (opcode)
