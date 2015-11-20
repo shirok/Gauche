@@ -1,3 +1,7 @@
+2015-11-20  Shiro Kawai  <shiro@acm.org>
+
+	* src/load.c: Replaced dso_list for dso_table.
+
 2015-11-18  Shiro Kawai  <shiro@acm.org>
 
 	* lib/lang/asm/x86_64.scm: Renamed from x86.scm

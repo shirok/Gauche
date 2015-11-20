@@ -75,7 +75,7 @@ static struct {
     
     /* Dynamic linking */
     ScmObj dso_suffixes;
-    ScmObj dso_list;              /* List of dynamically loaded objects. */
+    ScmHashTable *dso_table;      /* Hashtable path -> <dlobj> */
     ScmObj dso_prelinked;         /* List of 'prelinked' DSOs, that is, they
                                      are already linked but pretened to be
                                      DSOs.  dynamic-load won't do anything.
@@ -396,7 +396,7 @@ void Scm_DeleteLoadPathHook(ScmObj proc)
 /* The implementation of dynamic loader is a bit complicated in the presense
    of multiple threads and multiple initialization routines.
 
-   We keep struct dlobj_rec record for each DYNAMIC-LOADed files (keyed
+   We keep ScmDLObj record for each DYNAMIC-LOADed files (keyed
    by pathname including suffix) to track the state of loading.  The thread
    must lock the structure first to operate on the particluar DSO.
 
@@ -466,20 +466,17 @@ static ScmDLObj *make_dlobj(const char *path)
 /* Find dlobj with path, creating one if there aren't, and returns it. */
 static ScmDLObj *find_dlobj(const char *path)
 {
-    ScmDLObj *z = NULL;
     ScmObj p;
+    ScmObj spath = SCM_MAKE_STR_COPYING(path);
+    ScmDLObj *z = NULL;
+
     (void)SCM_INTERNAL_MUTEX_LOCK(ldinfo.dso_mutex);
-    SCM_FOR_EACH(p, ldinfo.dso_list) {
-        ScmDLObj *d = SCM_DLOBJ(SCM_CAR(p));
-        SCM_ASSERT(SCM_DLOBJP(d));
-        if (strcmp(d->path, path) == 0) {
-            z = d;
-            break;
-        }
-    }
-    if (z == NULL) {
+    p = Scm_HashTableRef(ldinfo.dso_table, spath, SCM_FALSE);
+    if (SCM_DLOBJP(p)) {
+        z = SCM_DLOBJ(p);
+    } else {
         z = make_dlobj(path);
-        ldinfo.dso_list = Scm_Cons(SCM_OBJ(z), ldinfo.dso_list);
+        Scm_HashTableSet(ldinfo.dso_table, spath, SCM_OBJ(z), 0);
     }
     (void)SCM_INTERNAL_MUTEX_UNLOCK(ldinfo.dso_mutex);
     return z;
@@ -755,8 +752,13 @@ static ScmClassStaticSlotSpec dlobj_slots[] = {
 ScmObj Scm_DLObjs()
 {
     ScmObj z = SCM_NIL;
+    ScmHashIter iter;
+    ScmDictEntry *e;
     (void)SCM_INTERNAL_MUTEX_LOCK(ldinfo.dso_mutex);
-    z = Scm_CopyList(ldinfo.dso_list);
+    Scm_HashIterInit(&iter, SCM_HASH_TABLE_CORE(ldinfo.dso_table));
+    while ((e = Scm_HashIterNext(&iter)) != NULL) {
+        z = Scm_Cons(SCM_OBJ(SCM_DICT_VALUE(e)), z);
+    }
     (void)SCM_INTERNAL_MUTEX_UNLOCK(ldinfo.dso_mutex);
     return z;
 }
@@ -1252,7 +1254,7 @@ void Scm__InitLoad(void)
     ldinfo.waiting = SCM_NIL;
     ldinfo.dso_suffixes = SCM_LIST2(SCM_MAKE_STR(".la"),
                                     SCM_MAKE_STR("." SHLIB_SO_SUFFIX));
-    ldinfo.dso_list = SCM_NIL;
+    ldinfo.dso_table = SCM_HASH_TABLE(Scm_MakeHashTableSimple(SCM_HASH_STRING,0));
     ldinfo.dso_prelinked = SCM_NIL;
 
 #define PARAM_INIT(var, name, val) Scm_DefinePrimitiveParameter(m, name, val, &ldinfo.var)
