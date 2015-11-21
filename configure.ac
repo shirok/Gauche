@@ -903,6 +903,7 @@ AC_CONFIG_FILES([
           ext/sxml/Makefile
           ext/syslog/Makefile
           ext/tls/Makefile
+	  ext/tls/kick_openssl.sh
 	  ext/tls/ssltest-mod.sed
           ext/termios/Makefile
           ext/text/Makefile
@@ -916,7 +917,9 @@ AC_CONFIG_FILES([
           examples/Makefile
           examples/standalone/Makefile
           gc/configure.gnu-gauche:tools/gc-configure.gnu-gauche.in
-         ])
+         ],[
+	  chmod u+x ext/tls/kick_openssl.sh
+	 ])
 AC_OUTPUT
 
 dnl ===========================================================

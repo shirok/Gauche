@@ -10,7 +10,7 @@
 
 # replace path name
 s|\.\./ssl/|@abs_srcdir@/axTLS/ssl/|g
-s|openssl |@abs_srcdir@/kick_openssl |g
+s|openssl |@abs_builddir@/kick_openssl.sh |g
 
 # replace to "safe_system()"
 s/system/safe_system/g

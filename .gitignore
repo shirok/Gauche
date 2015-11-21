@@ -104,6 +104,7 @@ test.record
 /ext/tls/axTLS/ssl/ssltest
 /ext/tls/axTLS/ssl/test/ssltest.mod.c
 /ext/tls/axtls_dirs
+/ext/tls/kick_openssl.sh
 /ext/tls/rfc--tls.c
 /ext/tls/ssltest-mod.sed
 /ext/util/util--match.c
