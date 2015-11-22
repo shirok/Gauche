@@ -81,8 +81,8 @@
   ((fgcolor :init-keyword :fgcolor :init-value #f)
    (bgcolor :init-keyword :bgcolor :init-value #f)
    (bright  :init-keyword :bright  :init-value #f)
-   (reverse :init-keyword :bright  :init-value #f)
-   (underscore :init-keyword :bright  :init-value #f)))
+   (reverse :init-keyword :reverse :init-value #f)
+   (underscore :init-keyword :underscore :init-value #f)))
 
 (define (parse-char-attrs spec :optional (storage #f))
   (define (check-color color)
