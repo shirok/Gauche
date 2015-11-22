@@ -1,3 +1,9 @@
+2015-11-21  Shiro Kawai  <shiro@acm.org>
+
+	* src/number.c (read_real): Fix the case of reading zero with big
+	  exponent, e.g. 0e325.  Also make sure to return negative infinity
+	  for something as -1e-10000.
+
 2015-11-20  Shiro Kawai  <shiro@acm.org>
 
 	* src/load.c: Replaced dso_list for dso_table.

@@ -4102,8 +4102,8 @@ static ScmObj read_real(const char **strp, int *lenp,
             return numread_error("(such an exact number is out of implementation limitation)",
                                  ctx);
         }
-        if (exp_minusp) {
-            return Scm_MakeFlonum(0.0);
+        if (exp_minusp || SCM_EQ(fraction, SCM_MAKE_INT(0))) {
+            return Scm_MakeFlonum(minusp? -0.0:0.0);
         } else {
             return minusp? SCM_NEGATIVE_INFINITY : SCM_POSITIVE_INFINITY;
         }

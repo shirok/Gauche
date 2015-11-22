@@ -311,6 +311,11 @@
 (test* "flonum reader (minimum normalized number)" #t
        (= (expt 2.0 (- 52 1074))
           (string->number "2.2250738585072012e-308")))
+
+;; Bugs reported
+(test* "flonum reader (zero with big exponent)" '(#t #t)
+       (list (= 0.0 (string->number "0e324"))
+             (= 0.0 (string->number "0e325"))))
        
 ;; We used to allow 1#1 to be read as a symbol.  As of 0.9.4, it is an error.
 (test* "padding" '(10.0 #t) (flonum-test "1#"))
