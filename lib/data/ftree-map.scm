@@ -43,7 +43,7 @@
   (use srfi-114)
   (export make-ftree-map ftree-map?
           ftree-map-empty?
-          ftree-map-exists? ftree-map-get ftree-map-put
+          ftree-map-exists? ftree-map-get ftree-map-put ftree-map-delete
           ftree-map-min ftree-map-max)
   )
 (select-module data.ftree-map)
@@ -85,6 +85,30 @@
              (balance color a p (ins b))))))
   (match-let1 ($ T _ a p b) (ins tree)
     (make-T 'B a p b)))
+
+(define (delete key tree cmpr)
+  (define (del-min tree)
+    (match tree
+      [($ T color #f p #f) (values p #f)]
+      [($ T color #f p b)  (values p b)]
+      [($ T color a p b)   (receive (min-p a.) (del-min tree)
+                             (values min-p (balance color a. p b)))]))
+  (define (del tree)
+    (if (E? tree)
+      tree
+      (match-let1 ($ T color a p b) tree
+        (if3 (comparator-compare cmpr key (car p))
+             (balance color (del a) p b)
+             (if a
+               (if b
+                 (receive (min-p b.) (del-min b)
+                   (balance color a min-p b.))
+                 a)
+               b)
+             (balance color a p (del b))))))
+  (match (del tree)
+    [#f  #f] ;empty
+    [($ T _ a p b) (make-T 'B a p b)]))
 
 ;;
 ;; External interface
@@ -132,6 +156,12 @@
   (make <ftree-map>
     :comparator (~ ftree'comparator)
     :tree (insert key val (~ ftree'tree) (~ ftree'comparator))))
+
+;; API
+(define (ftree-map-delete ftree key)
+  (make <ftree-map>
+    :comparator (~ ftree'comparator)
+    :tree (delete key (~ ftree'tree) (~ ftree'comparator))))
 
 ;; API
 (define (ftree-map-min ftree)
