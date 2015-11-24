@@ -717,7 +717,7 @@ case $host in
     ;;
   *mingw*)
     # Kludge: We add -static-libgcc flag when creating dll, in order to avoid
-    # inroducing dependency to libgcc_s_dw2-1.dll.
+    # introducing dependency to libgcc_s_dw2-1.dll.
     SHLIB_SO_CFLAGS=""
     SHLIB_SO_LDFLAGS='-Wl,--export-all-symbols -Wl,--enable-auto-import -Wl,--enable-runtime-pseudo-reloc -static-libgcc -shared -o'
     SHLIB_SO_SUFFIX="dll"
