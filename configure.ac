@@ -133,6 +133,56 @@ AC_ARG_WITH(rpath,
   ])
 
 dnl ----------------------------------------------------------
+dnl   with-libatomic-ops[=yes|no|check]
+dnl
+dnl This code comes from "gc/configure.ac", and must be sync with that.
+dnl NB: Don't forget to update path name from "libatomic_ops" to
+dnl "gc/libatomic_ops".
+dnl
+# Do we want to use an external libatomic_ops?  By default use it if it's
+# found.
+AC_ARG_WITH([libatomic-ops],
+    [AS_HELP_STRING([--with-libatomic-ops[=yes|no|check]],
+                    [Use a external libatomic_ops? (default: check)])],
+    [], [with_libatomic_ops=check])
+
+# Check for an external libatomic_ops if the answer was yes or check.  If not
+# found, fail on yes, and convert check to no.
+# Note: "syntax error near unexpected token ATOMIC_OPS" reported by configure
+# means Autotools pkg.m4 file was not found during aclocal.m4 generation.
+missing_libatomic_ops=false
+AS_IF([test x"$with_libatomic_ops" != xno],
+  [ PKG_CHECK_MODULES([ATOMIC_OPS], [atomic_ops], [],
+                      [ missing_libatomic_ops=true ]) ])
+AS_IF([test x$missing_libatomic_ops = xtrue ],
+      [ AS_IF([test x"$with_libatomic_ops" != xcheck],
+              [ AC_MSG_ERROR([An external libatomic_ops was not found]) ])
+        with_libatomic_ops=no ])
+
+# If we have neither an external or an internal version, offer a useful hint
+# and exit.
+AS_IF([test x"$with_libatomic_ops" = xno -a ! -e "$srcdir/gc/libatomic_ops"],
+  [ AC_MSG_ERROR([libatomic_ops is required.  You can either install it on
+                  your system, or fetch and unpack a recent version into the
+                  source directory and link or rename it to libatomic_ops.]) ])
+
+# Finally, emit the definitions for bundled or external AO.
+AC_MSG_CHECKING([which libatomic_ops to use])
+AS_IF([test x"$with_libatomic_ops" != xno],
+  [ AC_MSG_RESULT([external]) ],
+  [ AC_MSG_RESULT([internal])
+    ATOMIC_OPS_CFLAGS='-I$(top_builddir)/gc/libatomic_ops/src -I$(top_srcdir)/gc/libatomic_ops/src'
+    ATOMIC_OPS_LIBS=""
+    AC_SUBST([ATOMIC_OPS_CFLAGS])
+    AC_CONFIG_SUBDIRS([libatomic_ops])
+  ])
+AM_CONDITIONAL([USE_INTERNAL_LIBATOMIC_OPS],
+    [test x$with_libatomic_ops = xno -a x"$THREADS" != xnone])
+AM_CONDITIONAL([NEED_ATOMIC_OPS_ASM],
+    [test x$with_libatomic_ops = xno -a x$need_atomic_ops_asm = xtrue])
+
+
+dnl ----------------------------------------------------------
 dnl   enable-thread=TYPE
 dnl
 GAUCHE_THREAD_TYPE=default
