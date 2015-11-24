@@ -91,7 +91,7 @@
     (match tree
       [($ T color #f p #f) (values p #f)]
       [($ T color #f p b)  (values p b)]
-      [($ T color a p b)   (receive (min-p a.) (del-min tree)
+      [($ T color a p b)   (receive (min-p a.) (del-min a)
                              (values min-p (balance color a. p b)))]))
   (define (del tree)
     (if (E? tree)
