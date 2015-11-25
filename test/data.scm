@@ -331,6 +331,35 @@
          (let1 z (make-ftree-map)
            (list (ftree-map-min z)
                  (ftree-map-max z))))
+  (let ()
+    ;; If we give p which is coprime to 128, the series
+    ;; (modulo (* k p) 128) where k = [0..127] will walk all the
+    ;; numbers between [0..127].  We delete the elements in that order
+    ;; and check if it works.
+    (define (delete-test p)
+      (test* #"ftree-map-delete (~p)"
+             ;; result is a list of
+             ;; (index num-elements exists-before-delete exists-after-delete)
+             (map (^k (list k (- 127 k) #t #f)) (iota 128))
+             (let loop ([ns (iota 128)] [z z] [r '()])
+               (if (null? ns)
+                 (reverse r)
+                 (let* ([k (modulo (* (car ns) p) 128)]
+                        [b (ftree-map-exists? z k)]
+                        [z (ftree-map-delete z k)])
+                   (loop (cdr ns)
+                         z
+                         (cons (list (car ns)
+                                     (dict-fold z (^[k v c](+ c 1)) 0)
+                                     b
+                                     (ftree-map-exists? z k))
+                               r)))))))
+    (delete-test 1)  ; in-order deletion
+    (delete-test 13)
+    (delete-test 31)
+    (delete-test 61)
+    (delete-test 127) ; (almost) reverse-order deletion
+    )
   )
 
 
