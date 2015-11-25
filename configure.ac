@@ -27,25 +27,22 @@ Following encodings are currently recognized:
 'euc-jp' (EUC-JP code), 'utf-8' (UTF-8), 'sjis' (Shift-JIS),
 or 'none' (No multibyte support)]),
   [
-   case $enable_multibyte in
-     euc-jp|eucjp)      GAUCHE_CHAR_ENCODING=eucjp;;
-     utf-8|utf8|yes)    GAUCHE_CHAR_ENCODING=utf8;;
-     sjis|shift-jis)    GAUCHE_CHAR_ENCODING=sjis;;
-     no|none)           GAUCHE_CHAR_ENCODING=none;;
-     *) AC_MSG_ERROR([unrecognized encoding option: '$enable_multibyte'; type ./configure --help for available options], 1)
-        ;;
-   esac
+   AS_CASE([$enable_multibyte],
+     [euc-jp|eucjp],   [GAUCHE_CHAR_ENCODING=eucjp],
+     [utf-8|utf8|yes], [GAUCHE_CHAR_ENCODING=utf8],
+     [sjis|shift-jis], [GAUCHE_CHAR_ENCODING=sjis],
+     [no|none],        [GAUCHE_CHAR_ENCODING=none],
+                       [AC_MSG_ERROR([unrecognized encoding option: '$enable_multibyte'; type ./configure --help for available options], 1)])
   ],
   [
     GAUCHE_CHAR_ENCODING=utf8
     ac_configure_args="$ac_configure_args '--enable-multibyte=utf-8'"
   ])
 
-case $GAUCHE_CHAR_ENCODING in
-  eucjp) AC_DEFINE(GAUCHE_CHAR_ENCODING_EUC_JP, [], [Define if Gauche handles multi-byte character as EUC-JP]);;
-  utf8)  AC_DEFINE(GAUCHE_CHAR_ENCODING_UTF_8,  [], [Define if Gauche handles multi-byte character as UTF-8]);;
-  sjis)  AC_DEFINE(GAUCHE_CHAR_ENCODING_SJIS,   [], [Define if Gauche handles multi-byte character as Shift JIS]);;
-esac
+AS_CASE([$GAUCHE_CHAR_ENCODING],
+  [eucjp], [AC_DEFINE(GAUCHE_CHAR_ENCODING_EUC_JP, [], [Define if Gauche handles multi-byte character as EUC-JP])],
+  [utf8],  [AC_DEFINE(GAUCHE_CHAR_ENCODING_UTF_8,  [], [Define if Gauche handles multi-byte character as UTF-8])],
+  [sjis],  [AC_DEFINE(GAUCHE_CHAR_ENCODING_SJIS,   [], [Define if Gauche handles multi-byte character as Shift JIS])])
 
 dnl ----------------------------------------------------------
 dnl  with-slib
