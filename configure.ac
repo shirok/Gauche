@@ -54,28 +54,27 @@ AC_ARG_WITH(slib,
 installed under PATH.  If PATH is not specified, or this option is omitted,
 Gauche still tries to find your slib installation from some typical places.]),
   [
-    case $with_slib in
-      no)  search_slib=no;;
-      yes) search_slib=yes;;
-      *)   search_slib=no; SLIB_DIR=$with_slib;;
-    esac
+    AS_CASE([$with_slib],
+      [no],  [search_slib=no],
+      [yes], [search_slib=yes],
+	     [search_slib=no; SLIB_DIR=$with_slib])
   ], [ search_slib=yes ])
 
-if test $search_slib = "yes"; then
+AS_IF([test $search_slib = "yes"], [
   AC_MSG_CHECKING(slib)
   slib_found=no
   for dir in /usr/share/slib /usr/local/slib /usr/local/lib/slib /usr/local/share/slib /usr/src/slib /opt/share/slib; do
-    if test -f $dir/require.scm; then
+    AS_IF([test -f $dir/require.scm], [
        SLIB_DIR=$dir
        AC_MSG_RESULT($SLIB_DIR)
        slib_found=yes
        break
-    fi
+    ])
   done
-  if test $slib_found = "no"; then
+  AS_IF([test $slib_found = "no"], [
     AC_MSG_RESULT([not found, using fallback $SLIB_DIR])
-  fi
-fi
+  ])
+])
 AC_SUBST(SLIB_DIR)
 
 dnl ----------------------------------------------------------
