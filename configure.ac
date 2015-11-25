@@ -32,8 +32,8 @@ or 'none' (No multibyte support)]),
      utf-8|utf8|yes)    GAUCHE_CHAR_ENCODING=utf8;;
      sjis|shift-jis)    GAUCHE_CHAR_ENCODING=sjis;;
      no|none)           GAUCHE_CHAR_ENCODING=none;;
-     *) echo "unrecognized encoding option: '$enable_multibyte'; type ./configure --help for available options"
-        exit 1;;
+     *) AC_MSG_ERROR([unrecognized encoding option: '$enable_multibyte'; type ./configure --help for available options], 1)
+        ;;
    esac
   ],
   [
