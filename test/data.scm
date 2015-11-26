@@ -290,29 +290,29 @@
            (cache-stats c))))
 
 ;;;========================================================================
-(test-section "data.ftree-map")
-(use data.ftree-map)
+(test-section "data.immutable-map")
+(use data.immutable-map)
 (use gauche.sequence)
 (use gauche.dictionary)
-(test-module 'data.ftree-map)
+(test-module 'data.immutable-map)
 
-(let* ([z (make-ftree-map)]
-       [z (begin (test* "empty" #t (ftree-map-empty? z))
+(let* ([z (make-immutable-map)]
+       [z (begin (test* "empty" #t (immutable-map-empty? z))
                  (do ([i 0 (+ i 1)]
                       [z z (let1 n (modulo (* i 61) 128)
-                             (ftree-map-put z n (integer->char n)))])
+                             (immutable-map-put z n (integer->char n)))])
                      [(= i 128) z]
                    ))]
        [z (begin (test* "exists?" #t
-                        (every (cut ftree-map-exists? z <>) (iota 128)))
+                        (every (cut immutable-map-exists? z <>) (iota 128)))
                  (test* "exists?" #f
-                        (ftree-map-exists? z -1))
+                        (immutable-map-exists? z -1))
                  (test* "get" #t
-                        (every (^n (eqv? (ftree-map-get z n)
+                        (every (^n (eqv? (immutable-map-get z n)
                                          (integer->char n)))
                                (iota 128)))
-                 (test* "get" (test-error) (ftree-map-get z -1))
-                 (test* "get" 'z (ftree-map-get z -1 'z))
+                 (test* "get" (test-error) (immutable-map-get z -1))
+                 (test* "get" 'z (immutable-map-get z -1 'z))
                  (test* "collection"
                         (map (^n (cons n (integer->char n))) (iota 128))
                         (map identity z))
@@ -322,22 +322,22 @@
                  (test* "dictionary"
                         (map (^n (cons n (integer->char n))) (iota 128))
                         (dict-fold-right z acons '()))
-                 (ftree-map-put z 0 'meow))])
-  (test* "replace" 'meow (ftree-map-get z 0))
+                 (immutable-map-put z 0 'meow))])
+  (test* "replace" 'meow (immutable-map-get z 0))
   (test* "min/max" `((0 . meow) (127 . ,(integer->char 127)))
-         (list (ftree-map-min z)
-               (ftree-map-max z)))
+         (list (immutable-map-min z)
+               (immutable-map-max z)))
   (test* "min/max" `(#f #f)
-         (let1 z (make-ftree-map)
-           (list (ftree-map-min z)
-                 (ftree-map-max z))))
+         (let1 z (make-immutable-map)
+           (list (immutable-map-min z)
+                 (immutable-map-max z))))
   (let ()
     ;; If we give p which is coprime to 128, the series
     ;; (modulo (* k p) 128) where k = [0..127] will walk all the
     ;; numbers between [0..127].  We delete the elements in that order
     ;; and check if it works.
     (define (delete-test p)
-      (test* #"ftree-map-delete (~p)"
+      (test* #"immutable-map-delete (~p)"
              ;; result is a list of
              ;; (index num-elements exists-before-delete exists-after-delete)
              (map (^k (list k (- 127 k) #t #f)) (iota 128))
@@ -345,14 +345,14 @@
                (if (null? ns)
                  (reverse r)
                  (let* ([k (modulo (* (car ns) p) 128)]
-                        [b (ftree-map-exists? z k)]
-                        [z (ftree-map-delete z k)])
+                        [b (immutable-map-exists? z k)]
+                        [z (immutable-map-delete z k)])
                    (loop (cdr ns)
                          z
                          (cons (list (car ns)
                                      (dict-fold z (^[k v c](+ c 1)) 0)
                                      b
-                                     (ftree-map-exists? z k))
+                                     (immutable-map-exists? z k))
                                r)))))))
     (delete-test 1)  ; in-order deletion
     (delete-test 13)

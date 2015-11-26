@@ -1,5 +1,5 @@
 ;;;
-;;; data.ftree-map - functional tree map
+;;; data.immutable-map - immutable tree map
 ;;;
 ;;;   Copyright (c) 2015  Shiro Kawai  <shiro@acm.org>
 ;;;
@@ -34,19 +34,20 @@
 ;; This implements functional red-black tree
 ;; as described in Chris Okasaki's Purely Functional Data Structures.
 
-(define-module data.ftree-map
+(define-module data.immutable-map
   (use gauche.sequence)
   (use gauche.dictionary)
   (use gauche.record)
   (use data.queue)
   (use util.match)
   (use srfi-114)
-  (export make-ftree-map ftree-map?
-          ftree-map-empty?
-          ftree-map-exists? ftree-map-get ftree-map-put ftree-map-delete
-          ftree-map-min ftree-map-max)
+  (export make-immutable-map immutable-map?
+          immutable-map-empty?
+          immutable-map-exists? immutable-map-get immutable-map-put
+          immutable-map-delete
+          immutable-map-min immutable-map-max)
   )
-(select-module data.ftree-map)
+(select-module data.immutable-map)
 
 ;;
 ;; Internal implementation
@@ -113,23 +114,23 @@
 ;;
 ;; External interface
 ;;
-(define-class <ftree-map> (<ordered-dictionary>)
+(define-class <immutable-map> (<ordered-dictionary>)
   ((comparator :init-keyword :comparator)
    (tree :init-keyword :tree :init-form #f)))
 
 ;; API
-(define (ftree-map? x) (is-a? x <ftree-map>))
+(define (immutable-map? x) (is-a? x <immutable-map>))
 
 ;; API
-(define make-ftree-map
+(define make-immutable-map
   (case-lambda
-    [() (make-ftree-map default-comparator)]
+    [() (make-immutable-map default-comparator)]
     [(cmpr)
      (unless (comparator? cmpr)
        (error "comparator required, but got:" cmpr))
-     (make <ftree-map> :comparator cmpr)]
+     (make <immutable-map> :comparator cmpr)]
     [(key=? key<?)
-     (make-ftree-map (make-comparator #t key=?
+     (make-immutable-map (make-comparator #t key=?
                                       (^[a b]
                                         (cond [(key=? a b) 0]
                                               [(key<? a b) -1]
@@ -137,34 +138,34 @@
                                       #f))]))
 
 ;; API
-(define (ftree-map-empty? ftree) (E? (~ ftree'tree)))
+(define (immutable-map-empty? ftree) (E? (~ ftree'tree)))
 
 ;; API
-(define (ftree-map-exists? ftree key)
+(define (immutable-map-exists? ftree key)
   (boolean (get key (~ ftree'tree) (~ ftree'comparator))))
 
 ;; API
-(define (ftree-map-get ftree key :optional default)
+(define (immutable-map-get ftree key :optional default)
   (if-let1 p (get key (~ ftree'tree) (~ ftree'comparator))
     (cdr p)
     (if (undefined? default)
-      (errorf "No such key in a ftree-map ~s: ~s" ftree key)
+      (errorf "No such key in a immutable-map ~s: ~s" ftree key)
       default)))
 
 ;; API
-(define (ftree-map-put ftree key val)
-  (make <ftree-map>
+(define (immutable-map-put ftree key val)
+  (make <immutable-map>
     :comparator (~ ftree'comparator)
     :tree (insert key val (~ ftree'tree) (~ ftree'comparator))))
 
 ;; API
-(define (ftree-map-delete ftree key)
-  (make <ftree-map>
+(define (immutable-map-delete ftree key)
+  (make <immutable-map>
     :comparator (~ ftree'comparator)
     :tree (delete key (~ ftree'tree) (~ ftree'comparator))))
 
 ;; API
-(define (ftree-map-min ftree)
+(define (immutable-map-min ftree)
   (define (descend tree)
     (match-let1 ($ T _ a p b) tree
       (if (E? a) p (descend a))))
@@ -172,7 +173,7 @@
     (and (not (E? t)) (descend t))))
 
 ;; API
-(define (ftree-map-max ftree)
+(define (immutable-map-max ftree)
   (define (descend tree)
     (match-let1 ($ T _ a p b) tree
       (if (E? b) p (descend b))))
@@ -180,7 +181,7 @@
     (and (not (E? t)) (descend t))))
 
 ;; Fundamental iterators
-(define (%ftree-map-fold ftree proc seed)
+(define (%immutable-map-fold ftree proc seed)
   (define (rec tree seed)
     (if (E? tree)
       seed
@@ -188,7 +189,7 @@
         (rec b (proc p (rec a seed))))))
   (rec (~ ftree'tree) seed))
 
-(define (%ftree-map-fold-right ftree proc seed)
+(define (%immutable-map-fold-right ftree proc seed)
   (define (rec tree seed)
     (if (E? tree)
       seed
@@ -197,8 +198,8 @@
   (rec (~ ftree'tree) seed))
 
 ;; Collection framework
-(define-method call-with-iterator ((coll <ftree-map>) proc :allow-other-keys)
-  (if (ftree-map-empty? coll)
+(define-method call-with-iterator ((coll <immutable-map>) proc :allow-other-keys)
+  (if (immutable-map-empty? coll)
     (proc (^[] #t) (^[] #t))
     (let1 q (make-queue)  ; only contains T
       (enqueue! q (~ coll'tree))
@@ -215,19 +216,19 @@
 
 ;; Dictionary interface
 ;; As a dictionary, it behaves as immutable dictionary.
-(define-method dict-get ((ftree <ftree-map>) key :optional default)
-  (ftree-map-get ftree key default))
+(define-method dict-get ((ftree <immutable-map>) key :optional default)
+  (immutable-map-get ftree key default))
 
-(define-method dict-put! ((ftree <ftree-map>) key value)
-  (errorf "ftree-map is immutable:" ftree))
+(define-method dict-put! ((ftree <immutable-map>) key value)
+  (errorf "immutable-map is immutable:" ftree))
 
-(define-method dict-comparator ((ftree <ftree-map>))
+(define-method dict-comparator ((ftree <immutable-map>))
   (~ ftree'comparator))
 
-(define-method dict-fold ((ftree <ftree-map>) proc seed)
-  (%ftree-map-fold ftree (^[p s] (proc (car p) (cdr p) s)) seed))
+(define-method dict-fold ((ftree <immutable-map>) proc seed)
+  (%immutable-map-fold ftree (^[p s] (proc (car p) (cdr p) s)) seed))
 
-(define-method dict-fold-right ((ftree <ftree-map>) proc seed)
-  (%ftree-map-fold-right ftree (^[p s] (proc (car p) (cdr p) s)) seed))
+(define-method dict-fold-right ((ftree <immutable-map>) proc seed)
+  (%immutable-map-fold-right ftree (^[p s] (proc (car p) (cdr p) s)) seed))
 
 
