@@ -51,13 +51,13 @@
 
 ;; The core feature of gauche.configure is the ability to generate files
 ;; (e.g. Makefile) from templates (e.g. Makefile.in) with replacing
-;; parameters.  We follow autoconf convension, so the replacement variables
+;; parameters.  We follow autoconf convention, so the replacement variables
 ;; in a template is written like @VAR@.
 
 ;; The API is roughly corresponds to autoconf's AC_* macros, while we use
 ;; 'cf-' suffix instead.
 
-;; NB: cf-define currently only suppors substitution DEFS; it doesn't
+;; NB: cf-define currently only suppors substituting DEFS; it doesn't
 ;; handle config.h.
 
 (define-module gauche.configure
