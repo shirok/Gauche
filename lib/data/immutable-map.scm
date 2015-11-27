@@ -41,8 +41,8 @@
   (use data.queue)
   (use util.match)
   (use srfi-114)
-  (export make-immutable-map immutable-map?
-          immutable-map-empty?
+  (export make-immutable-map alist->immutable-map tree-map->immutable-map
+          immutable-map? immutable-map-empty?
           immutable-map-exists? immutable-map-get immutable-map-put
           immutable-map-delete
           immutable-map-min immutable-map-max)
@@ -87,6 +87,13 @@
   (match-let1 ($ T _ a p b) (ins tree)
     (make-T 'B a p b)))
 
+(define (populate tree alist cmpr)
+  ((rec (f tree alist)
+     (if (null? alist)
+       tree
+       (f (insert (caar alist) (cdar alist) tree cmpr) (cdr alist))))
+   tree alist))
+
 (define (delete key tree cmpr)
   (define (del-min tree)
     (match tree
@@ -111,12 +118,23 @@
     [#f  #f] ;empty
     [($ T _ a p b) (make-T 'B a p b)]))
 
+;; aux fn
+(define (%key-proc->comparator key=? key<?)
+  (make-comparator #t key=?
+                   (^[a b] (cond [(key=? a b) 0]
+                                 [(key<? a b) -1]
+                                 [else 1]))
+                   #f))
+
 ;;
 ;; External interface
 ;;
+(define-class <immutable-map-meta> (<class>) ())
+
 (define-class <immutable-map> (<ordered-dictionary>)
   ((comparator :init-keyword :comparator)
-   (tree :init-keyword :tree :init-form #f)))
+   (tree :init-keyword :tree :init-form #f))
+  :metaclass <immutable-map-meta>)
 
 ;; API
 (define (immutable-map? x) (is-a? x <immutable-map>))
@@ -129,73 +147,84 @@
      (unless (comparator? cmpr)
        (error "comparator required, but got:" cmpr))
      (make <immutable-map> :comparator cmpr)]
-    [(key=? key<?)
-     (make-immutable-map (make-comparator #t key=?
-                                      (^[a b]
-                                        (cond [(key=? a b) 0]
-                                              [(key<? a b) -1]
-                                              [else 1]))
-                                      #f))]))
+    [(key=? key<?) (make-immutable-map (%key-proc->comparator key=? key<?))])) 
 
 ;; API
-(define (immutable-map-empty? ftree) (E? (~ ftree'tree)))
+(define alist->immutable-map
+  (case-lambda
+    [(alist) (alist->immutable-map alist default-comparator)]
+    [(alist cmpr)
+     (unless (comparator? cmpr)
+       (error "comparator required, but got:" cmpr))
+     (make <immutable-map>
+       :comparator cmpr :tree (populate #f alist cmpr))]
+    [(alist key=? key<?)
+     (alist->immutable-map alist (%key-proc->comparator key=? key<?))]))
 
 ;; API
-(define (immutable-map-exists? ftree key)
-  (boolean (get key (~ ftree'tree) (~ ftree'comparator))))
+(define (tree-map->immutable-map tree-map)
+  (alist->immutable-map (tree-map->alist tree-map)
+                        (tree-map-comparator tree-map)))
 
 ;; API
-(define (immutable-map-get ftree key :optional default)
-  (if-let1 p (get key (~ ftree'tree) (~ ftree'comparator))
+(define (immutable-map-empty? immap) (E? (~ immap'tree)))
+
+;; API
+(define (immutable-map-exists? immap key)
+  (boolean (get key (~ immap'tree) (~ immap'comparator))))
+
+;; API
+(define (immutable-map-get immap key :optional default)
+  (if-let1 p (get key (~ immap'tree) (~ immap'comparator))
     (cdr p)
     (if (undefined? default)
-      (errorf "No such key in a immutable-map ~s: ~s" ftree key)
+      (errorf "No such key in a immutable-map ~s: ~s" immap key)
       default)))
 
 ;; API
-(define (immutable-map-put ftree key val)
+(define (immutable-map-put immap key val)
   (make <immutable-map>
-    :comparator (~ ftree'comparator)
-    :tree (insert key val (~ ftree'tree) (~ ftree'comparator))))
+    :comparator (~ immap'comparator)
+    :tree (insert key val (~ immap'tree) (~ immap'comparator))))
 
 ;; API
-(define (immutable-map-delete ftree key)
+(define (immutable-map-delete immap key)
   (make <immutable-map>
-    :comparator (~ ftree'comparator)
-    :tree (delete key (~ ftree'tree) (~ ftree'comparator))))
+    :comparator (~ immap'comparator)
+    :tree (delete key (~ immap'tree) (~ immap'comparator))))
 
 ;; API
-(define (immutable-map-min ftree)
+(define (immutable-map-min immap)
   (define (descend tree)
     (match-let1 ($ T _ a p b) tree
       (if (E? a) p (descend a))))
-  (let1 t (~ ftree'tree)
+  (let1 t (~ immap'tree)
     (and (not (E? t)) (descend t))))
 
 ;; API
-(define (immutable-map-max ftree)
+(define (immutable-map-max immap)
   (define (descend tree)
     (match-let1 ($ T _ a p b) tree
       (if (E? b) p (descend b))))
-  (let1 t (~ ftree'tree)
+  (let1 t (~ immap'tree)
     (and (not (E? t)) (descend t))))
 
 ;; Fundamental iterators
-(define (%immutable-map-fold ftree proc seed)
+(define (%immutable-map-fold immap proc seed)
   (define (rec tree seed)
     (if (E? tree)
       seed
       (match-let1 ($ T _ a p b) tree
         (rec b (proc p (rec a seed))))))
-  (rec (~ ftree'tree) seed))
+  (rec (~ immap'tree) seed))
 
-(define (%immutable-map-fold-right ftree proc seed)
+(define (%immutable-map-fold-right immap proc seed)
   (define (rec tree seed)
     (if (E? tree)
       seed
       (match-let1 ($ T _ a p b) tree
         (rec a (proc p (rec b seed))))))
-  (rec (~ ftree'tree) seed))
+  (rec (~ immap'tree) seed))
 
 ;; Collection framework
 (define-method call-with-iterator ((coll <immutable-map>) proc :allow-other-keys)
@@ -214,21 +243,25 @@
                          (queue-push! q a)
                          (next)))))))))
 
+;; A couple of conversion methods for the efficiency
+(define-method coerce-to ((c <immutable-map-meta>) (src <list>))
+  (alist->immutable-map src))
+(define-method coerce-to ((c <immutable-map-meta>) (src <tree-map>))
+  (tree-map->immutable-map src))
+
 ;; Dictionary interface
 ;; As a dictionary, it behaves as immutable dictionary.
-(define-method dict-get ((ftree <immutable-map>) key :optional default)
-  (immutable-map-get ftree key default))
+(define-method dict-get ((immap <immutable-map>) key :optional default)
+  (immutable-map-get immap key default))
 
-(define-method dict-put! ((ftree <immutable-map>) key value)
-  (errorf "immutable-map is immutable:" ftree))
+(define-method dict-put! ((immap <immutable-map>) key value)
+  (errorf "immutable-map is immutable:" immap))
 
-(define-method dict-comparator ((ftree <immutable-map>))
-  (~ ftree'comparator))
+(define-method dict-comparator ((immap <immutable-map>))
+  (~ immap'comparator))
 
-(define-method dict-fold ((ftree <immutable-map>) proc seed)
-  (%immutable-map-fold ftree (^[p s] (proc (car p) (cdr p) s)) seed))
+(define-method dict-fold ((immap <immutable-map>) proc seed)
+  (%immutable-map-fold immap (^[p s] (proc (car p) (cdr p) s)) seed))
 
-(define-method dict-fold-right ((ftree <immutable-map>) proc seed)
-  (%immutable-map-fold-right ftree (^[p s] (proc (car p) (cdr p) s)) seed))
-
-
+(define-method dict-fold-right ((immap <immutable-map>) proc seed)
+  (%immutable-map-fold-right immap (^[p s] (proc (car p) (cdr p) s)) seed))

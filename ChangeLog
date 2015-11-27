@@ -1,3 +1,7 @@
+2015-11-26  Shiro Kawai  <shiro@acm.org>
+
+	* lib/dict/immutable-map.scm: Renamed from ftree-map.scm.
+
 2015-11-21  Shiro Kawai  <shiro@acm.org>
 
 	* src/number.c (read_real): Fix the case of reading zero with big

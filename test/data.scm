@@ -360,8 +360,12 @@
     (delete-test 61)
     (delete-test 127) ; (almost) reverse-order deletion
     )
-  )
 
+  (let1 data (map (^[i] (cons (integer->char i) i)) (iota 128))
+    (test* #"immutable-map and alist conversions"
+           data
+           (dict->alist (alist->immutable-map data char-comparator))))
+  )
 
 ;;;========================================================================
 (test-section "data.random")
