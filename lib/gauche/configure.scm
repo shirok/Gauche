@@ -306,7 +306,7 @@
     ;; process VAR=VAL
     (dolist [arg rest]
       (rxmatch-case arg
-        [#/^([-\w]+)=([-\w]*)$/ (_ var val)
+        [#/^([-\w]+)=(.*)$/ (_ var val)
          (cf-subst (string->symbol var) val)]
         [else (print "Invalid argument: " arg)
               (print "Type `./configure --help' for usage.")
