@@ -593,6 +593,7 @@
                       (receive (type has-init? init)
                           (match spec
                             [()         (values 'ScmObj #f #f)]
+                            [('::)      (errorf "invalid variable decl in let* form: (~s ~s)" var spec)]
                             [(init)     (values 'ScmObj #t init)]
                             [(':: type) (values type #f #f)]
                             [(':: type init) (values type #t init)])
@@ -1192,6 +1193,7 @@
   (define (scan in r)
     (match in
       [() (reverse r)]
+      [([? keyword? xx] . rest) (err xx)]
       [([? symbol? var] ':: type . rest)
        (scan rest `((,var :: ,type) ,@r))]
       [([? symbol? var] . rest)

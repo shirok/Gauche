@@ -1,3 +1,8 @@
+2015-11-28  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cgen/cise.scm: Catch invalid syntax even under
+	  keyword-symbol integration.
+
 2015-11-26  Shiro Kawai  <shiro@acm.org>
 
 	* lib/dict/immutable-map.scm: Renamed from ftree-map.scm.
