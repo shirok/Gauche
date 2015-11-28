@@ -41,7 +41,8 @@
   (use data.queue)
   (use util.match)
   (use srfi-114)
-  (export make-immutable-map alist->immutable-map tree-map->immutable-map
+  (export <immutable-map> <immutable-map-meta>
+          make-immutable-map alist->immutable-map tree-map->immutable-map
           immutable-map? immutable-map-empty?
           immutable-map-exists? immutable-map-get immutable-map-put
           immutable-map-delete
@@ -242,6 +243,13 @@
                   (begin (queue-push! q (make-T c #f p b))
                          (queue-push! q a)
                          (next)))))))))
+
+(define-method call-with-builder ((class <immutable-map-meta>) proc
+                                  :key (comparator default-comparator)
+                                  :allow-other-keys)
+  (define alist '())
+  (proc (^p (push! alist p))
+        (^[] (alist->immutable-map alist comparator))))
 
 ;; A couple of conversion methods for the efficiency
 (define-method coerce-to ((c <immutable-map-meta>) (src <list>))
