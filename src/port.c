@@ -340,14 +340,34 @@ int Scm_FdReady(int fd, int dir)
         return SCM_FD_READY;
     } else {
         HANDLE h = (HANDLE)_get_osfhandle(fd);
-        DWORD avail;
         if (h == INVALID_HANDLE_VALUE) return SCM_FD_READY;
-        if (PeekNamedPipe(h, NULL, 0, NULL, &avail, NULL) == 0) {
-            /* We assume the port isn't an end of a pipe. */
-            return SCM_FD_UNKNOWN;
+
+        /* pipe */
+        DWORD avail;
+        if (PeekNamedPipe(h, NULL, 0, NULL, &avail, NULL) != 0) {
+            if (avail == 0) return SCM_FD_WOULDBLOCK;
+            else return SCM_FD_READY;
         }
-        if (avail == 0) return SCM_FD_WOULDBLOCK;
-        else return SCM_FD_READY;
+
+        /* socket */
+        int optval;
+        int optlen;
+        optlen = sizeof(optval);
+        if (getsockopt((SOCKET)h, SOL_SOCKET, SO_TYPE, (char*)&optval, &optlen) != SOCKET_ERROR) {
+            fd_set fds;
+            int r;
+            struct timeval tm;
+            FD_ZERO(&fds);
+            FD_SET(h, &fds);
+            tm.tv_sec = tm.tv_usec = 0;
+            SCM_SYSCALL(r, select((int)h+1, &fds, NULL, NULL, &tm));
+            if (r < 0) Scm_SysError("select failed");
+            if (r > 0) return SCM_FD_READY;
+            else       return SCM_FD_WOULDBLOCK;
+        }
+
+        /* other */
+        return SCM_FD_UNKNOWN;
     }
 #else  /*!HAVE_SELECT && !GAUCHE_WINDOWS */
     return SCM_FD_UNKNOWN;

@@ -484,27 +484,20 @@
                (close-input-port in) (close-output-port out)
                (list f1 f2 f3))))))
 
-;; Kludge: MinGW32 seems not to support :none, :line buffering,
-;; so we flush and close the output pipe before reading from it.
-
 (test* "pipe and read-block(none)" 2
        (receive (in out) (sys-pipe :buffering :none)
          (display "ab" out)
-         (cond-expand (gauche.os.windows (close-output-port out)) (else))
          (let1 r (string-size (read-block 1000 in))
            (close-input-port in)
-           (cond-expand ((not gauche.os.windows) (close-output-port out))
-                        (else))
+           (close-output-port out)
            r)))
 
 (test* "pipe and read-block(line)" 2
        (receive (in out) (sys-pipe :buffering :line)
          (display "a\n" out)
-         (cond-expand (gauche.os.windows (close-output-port out)) (else))
          (let1 r (string-size (read-block 1000 in))
            (close-input-port in)
-           (cond-expand ((not gauche.os.windows) (close-output-port out))
-                        (else))
+           (close-output-port out)
            r)))
 
 ;;-------------------------------------------------------------------

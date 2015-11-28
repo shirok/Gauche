@@ -650,17 +650,23 @@ static ScmObj get_syserrmsg(int en)
     syserr = SCM_MAKE_STR_COPYING(strerror(en));
 #else  /*GAUCHE_WINDOWS*/
     if (en < 0) {
-      LPTSTR msgbuf;
+      ScmObj ostr = Scm_MakeOutputStringPort(TRUE);
+      LPTSTR msgbuf = NULL;
       const char *xmsgbuf;
-      FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER|FORMAT_MESSAGE_FROM_SYSTEM,
-                    NULL,
-                    -en,
-                    0,
-                    (LPTSTR)&msgbuf,
-                    0, NULL);
-      xmsgbuf = SCM_WCS2MBS(msgbuf);
-      syserr = SCM_MAKE_STR_COPYING(xmsgbuf);
+      if (FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
+                        FORMAT_MESSAGE_FROM_SYSTEM |
+                        FORMAT_MESSAGE_IGNORE_INSERTS,
+                        NULL,
+                        -en,
+                        MAKELANGID(LANG_ENGLISH, SUBLANG_DEFAULT),
+                        (LPTSTR)&msgbuf,
+                        0, NULL)) {
+        xmsgbuf = SCM_WCS2MBS(msgbuf);
+        SCM_PUTZ(xmsgbuf, -1, ostr);
+      }
       LocalFree(msgbuf);
+      Scm_Printf(SCM_PORT(ostr), "(error code = %d)", -en);
+      syserr = Scm_GetOutputString(SCM_PORT(ostr), 0);
     } else {
       syserr = SCM_MAKE_STR_COPYING(strerror(en));
     }
@@ -685,9 +691,9 @@ static int get_errno(void)
 void Scm_SysError(const char *msg, ...)
 {
     ScmObj e;
-    va_list args;
-    ScmVM *vm = Scm_VM();
     int en = get_errno();
+    ScmVM *vm = Scm_VM();
+    va_list args;
     ScmObj syserr = get_syserrmsg(en);
 
 #if defined(GAUCHE_WINDOWS)
@@ -739,9 +745,9 @@ void Scm_TypeError(const char *what, const char *expected, ScmObj got)
 void Scm_PortError(ScmPort *port, int reason, const char *msg, ...)
 {
     ScmObj e;
+    int en = get_errno();
     ScmVM *vm = Scm_VM();
     va_list args;
-    int en = get_errno();
 
     SCM_UNWIND_PROTECT {
         ScmObj ostr = Scm_MakeOutputStringPort(TRUE);
