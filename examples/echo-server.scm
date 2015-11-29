@@ -2,17 +2,18 @@
 
 (use gauche.net)
 (use gauche.selector)
+(use gauche.uvector)
 
 (define (echo-server port)
   (let ((selector (make <selector>))
         (servers  (make-server-sockets #f port :reuse-addr? #t)))
 
     (define (echo client input output)
-      (let ((str (read-block 4096 input)))
+      (let ((str (read-uvector <u8vector> 4096 input)))
         (if (eof-object? str)
-            (begin (selector-delete! selector input #f #f)
+            (begin (selector-delete! selector (socket-fd client) #f #f)
                    (socket-close client))
-            (begin (display str output)
+            (begin (write-uvector str output)
                    (flush output)))))
 
     (for-each
@@ -20,10 +21,11 @@
 
        (define (accept-handler sock flag)
          (let* ((client (socket-accept server))
+                (input  (socket-input-port client :buffering :none))
                 (output (socket-output-port client)))
            (selector-add! selector
-                          (socket-input-port client :buffered? #f)
-                          (lambda (input flag)
+                          (socket-fd client)
+                          (lambda (sock flag)
                             (echo client input output))
                           '(r))))
 

@@ -50,6 +50,9 @@ static void socket_finalize(ScmObj obj, void *data)
        be GC-ed and finalized, so we don't flush them here.
        Clearing them would help them to be collected earlier, though. */
     if (!(SOCKET_CLOSED(sock->fd))) {
+#if defined(GAUCHE_WINDOWS)
+        if (sock->cfd >= 0) { close(sock->cfd); sock->cfd = -1; }
+#endif /*GAUCHE_WINDOWS*/
         closeSocket(sock->fd);
         sock->fd = INVALID_SOCKET;
         sock->status = SCM_SOCKET_STATUS_CLOSED;
@@ -98,7 +101,7 @@ ScmSocket *make_socket(Socket fd, int type)
     s->name = NULL;
     s->type = type;
 #if defined(GAUCHE_WINDOWS)
-    s->infd = s->outfd = -1;
+    s->cfd = -1;
 #endif /*GAUCHE_WINDOWS*/
     Scm_RegisterFinalizer(SCM_OBJ(s), socket_finalize, NULL);
     return s;
@@ -153,8 +156,7 @@ ScmObj Scm_SocketClose(ScmSocket *s)
         s->outPort = NULL;
     }
 #if defined(GAUCHE_WINDOWS)
-    if (s->infd >= 0)  { close(s->infd);  s->infd = -1 ; }
-    if (s->outfd >= 0) { close(s->outfd); s->outfd = -1 ; }
+    if (s->cfd >= 0) { close(s->cfd); s->cfd = -1; }
 #endif /*GAUCHE_WINDOWS*/
     closeSocket(s->fd);
     s->fd = INVALID_SOCKET;
@@ -180,8 +182,11 @@ ScmObj Scm_SocketInputPort(ScmSocket *sock, int buffering)
 #ifndef GAUCHE_WINDOWS
         infd = sock->fd;
 #else  /*GAUCHE_WINDOWS*/
-        /* infd will be closed when this socket is closed. */
-        sock->infd = infd = _open_osfhandle(sock->fd, O_RDONLY);
+        /* cfd will be closed when this socket is closed. */
+        if (sock->cfd < 0) {
+            sock->cfd = _open_osfhandle(sock->fd, 0);
+        }
+        infd = sock->cfd;
 #endif /*GAUCHE_WINDOWS*/
         if (infd == INVALID_SOCKET) sockport_err(sock, "input");
 
@@ -207,8 +212,11 @@ ScmObj Scm_SocketOutputPort(ScmSocket *sock, int buffering)
 #ifndef GAUCHE_WINDOWS
         outfd = sock->fd;
 #else  /*GAUCHE_WINDOWS*/
-        /* outfd will be closed when this socket is closed. */
-        sock->outfd = outfd = _open_osfhandle(sock->fd, 0);
+        /* cfd will be closed when this socket is closed. */
+        if (sock->cfd < 0) {
+            sock->cfd = _open_osfhandle(sock->fd, 0);
+        }
+        outfd = sock->cfd;
 #endif /*GAUCHE_WINDOWS*/
         if (outfd == INVALID_SOCKET) sockport_err(sock, "output");
 
