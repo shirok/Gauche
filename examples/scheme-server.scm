@@ -23,7 +23,7 @@
                 (input  (socket-input-port client :buffering :none))
                 (output (socket-output-port client))
                 (finalize (lambda ()
-                            (selector-delete! selector input #f #f)
+                            (selector-delete! selector (socket-fd client) #f #f)
                             (socket-close client)
                             (format #t "client #~a disconnected\n" id)))
                 (listener (make <listener>
@@ -37,7 +37,7 @@
            (format #t "client #~a from ~a\n" cid (socket-address client))
            (inc! cid)
            (listener-show-prompt listener)
-           (selector-add! selector input (lambda _ (handler)) '(r))))
+           (selector-add! selector (socket-fd client) (lambda _ (handler)) '(r))))
 
        (selector-add! selector
                       (socket-fd server)
