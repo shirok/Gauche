@@ -178,8 +178,9 @@
           (^[] (get-output-string s)))))
 
 (define-method call-with-builder ((class <hash-table-meta>) proc
-                                  :key (type 'eq?) :allow-other-keys)
-  (let1 h (make-hash-table type)
+                                  :key (comparator #f) (type #f)
+                                  :allow-other-keys)
+  (let1 h (make-hash-table (or type comparator 'eq?))
     (proc (^[item]
             (unless (pair? item)
               (error "pair required to build a hashtable, but got" item))
@@ -187,9 +188,12 @@
           (^[] h))))
 
 (define-method call-with-builder ((class <tree-map-meta>) proc
-                                  :key (key=? =) (key<? <)
+                                  :key (comparator default-comparator)
+                                       (key=? #f) (key<? #f)
                                   :allow-other-keys)
-  (let1 tree (make-tree-map key=? key<?)
+  (let1 tree (if (and key=? key<?)
+               (make-tree-map key=? key<?)
+               (make-tree-map comparator))
     (proc (^[item]
             (unless (pair? item)
               (error "pair required to build a tree-map, but got" item))
