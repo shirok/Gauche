@@ -10,6 +10,8 @@
 #ifndef GAUCHE_WIN_COMPAT_H
 #define GAUCHE_WIN_COMPAT_H
 
+extern "C" {
+
 /* A common symbol, used throughout the Gauche source */
 #define GAUCHE_WINDOWS 1
 
@@ -247,5 +249,7 @@ struct flock {
 #define F_RDLCK  0
 #define F_WRLCK  1
 #define F_UNLCK  2
+
+} /* end extern "C" */
 
 #endif /* GAUCHE_WIN_COMPAT_H */
