@@ -12,7 +12,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif /*! __cplusplus */
+#endif /* __cplusplus */
 
 /* A common symbol, used throughout the Gauche source */
 #define GAUCHE_WINDOWS 1
@@ -254,6 +254,6 @@ struct flock {
 
 #ifdef __cplusplus
 } /* end extern "C" */
-#endif /*! __cplusplus */
+#endif /* __cplusplus */
 
 #endif /* GAUCHE_WIN_COMPAT_H */
