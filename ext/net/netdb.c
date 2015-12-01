@@ -502,7 +502,11 @@ ScmObj Scm_GetAddrinfo(const char *nodename,
     struct addrinfo *res0;
 
     int r = getaddrinfo(nodename, servname, hints, &res0);
+#if !defined(GAUCHE_WINDOWS)
     if (r) Scm_Error("getaddrinfo failed: %s", gai_strerror(r));
+#else  /*GAUCHE_WINDOWS*/
+    if (r) Scm_SysError("getaddrinfo failed");
+#endif /*GAUCHE_WINDOWS*/
 
     for (struct addrinfo *res = res0; res != NULL; res = res->ai_next) {
         SCM_APPEND1(h, t, SCM_OBJ(make_addrinfo(res)));
@@ -517,7 +521,11 @@ ScmObj Scm_GetNameinfo(ScmSockAddr *addr, int flags)
 
     int r = getnameinfo(&addr->addr, addr->addrlen,
                     host, sizeof(host), serv, sizeof(serv), flags);
+#if !defined(GAUCHE_WINDOWS)
     if (r) Scm_Error("getnameinfo failed: %s", gai_strerror(r));
+#else  /*GAUCHE_WINDOWS*/
+    if (r) Scm_SysError("getnameinfo failed");
+#endif /*GAUCHE_WINDOWS*/
     return Scm_Values2(SCM_MAKE_STR_COPYING(host), SCM_MAKE_STR_COPYING(serv));
 }
 

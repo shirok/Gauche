@@ -50,7 +50,7 @@ else
   distdir=`pwd`/../Gauche-mingw-dist/Gauche
 fi
 rm -rf $distdir
-./configure --enable-multibyte=utf8 --prefix=$distdir
+./configure --prefix=$distdir --enable-multibyte=utf8 --enable-ipv6=no
 make
 
 if [ $? -ne 0 ]; then
