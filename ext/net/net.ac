@@ -24,13 +24,21 @@ dnl Checks availability of ipv6 support
 dnl
 AS_IF([test $enable_ipv6 = yes], [
   AC_CACHE_CHECK([for IPv6], ac_cv_ipv6, [
-  AC_TRY_COMPILE([
+    AS_CASE(["$target"],
+      [*mingw*], AC_TRY_COMPILE([
+@%:@include <winsock2.h>
+@%:@include <ws2tcpip.h>], [
+  socket(AF_INET6, SOCK_STREAM, 0);
+                 ], ac_cv_ipv6=yes, ac_cv_ipv6=no),
+                 AC_TRY_COMPILE([
 @%:@ifdef HAVE_SYS_TYPES_H
 @%:@include <sys/types.h>
 @%:@endif
 @%:@include <sys/socket.h>], [
   socket(AF_INET6, SOCK_STREAM, 0);
-  ], ac_cv_ipv6=yes, ac_cv_ipv6=no)])
+                 ], ac_cv_ipv6=yes, ac_cv_ipv6=no)
+    )
+  ])
   AS_IF([test "$ac_cv_ipv6" = yes], [
     AC_DEFINE(HAVE_IPV6,1,[Define if you have IPv6 support])
   ])

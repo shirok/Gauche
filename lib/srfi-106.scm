@@ -45,16 +45,14 @@
 
 (define-constant *ai-canonname*   net:AI_CANONNAME)
 (define-constant *ai-numerichost* net:AI_NUMERICHOST)
-;; NB: AI_V4MAPPED may not be defined even ipv6 is available (e.g. NetBSD)
-;; This is a kludge.
+;; NB: AI_V4MAPPED, AI_ALL and AI_ADDRCONFIG may not be defined
+;;     even if ipv6 is available (e.g. NetBSD, MinGW32).
 (define-constant *ai-v4mapped*
   (global-variable-ref 'gauche.net 'AI_V4MAPPED 0))
 (define-constant *ai-all*
   (global-variable-ref 'gauche.net 'AI_ALL 0))
 (define-constant *ai-addrconfig*
-  (cond-expand
-   [gauche.net.ipv6 net:AI_ADDRCONFIG]
-   [else 0]))
+  (global-variable-ref 'gauche.net 'AI_ADDRCONFIG 0))
 
 (define-macro (address-info . names)
   (define (lookup name)
@@ -79,10 +77,9 @@
 (define-constant *msg-none*       0)
 (define-constant *msg-peek*       net:MSG_PEEK)
 (define-constant *msg-oob*        net:MSG_OOB)
+;; NB: MSG_WAITALL may not be defined (e.g. MinGW32).
 (define-constant *msg-waitall*
-  (cond-expand
-   [gauche.net.ipv6 net:MSG_WAITALL]
-   [else 0]))
+  (global-variable-ref 'gauche.net 'MSG_WAITALL 0))
 
 (define-macro (message-type . names)
   (define (lookup name)

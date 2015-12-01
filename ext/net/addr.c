@@ -291,7 +291,11 @@ static ScmObj sockaddr_in6_allocate(ScmClass *klass, ScmObj initargs)
         hints.ai_family = AF_INET6;
         hints.ai_socktype = SOCK_STREAM;
         int r = getaddrinfo(hname, NULL, &hints, &res);
-        if (r) Scm_Error("getaddrinfo: %s", gai_strerror(r));
+#if !defined(GAUCHE_WINDOWS)
+        if (r) Scm_Error("getaddrinfo failed: %s", gai_strerror(r));
+#else  /*GAUCHE_WINDOWS*/
+        if (r) Scm_SysError("getaddrinfo failed");
+#endif /*GAUCHE_WINDOWS*/
         addr->addr.sin6_addr = ((struct sockaddr_in6*)res->ai_addr)->sin6_addr;
         freeaddrinfo(res);
     } else if (host == key_any) {
