@@ -2229,7 +2229,19 @@ of items in the mtqueue reaches a specified limit.
 Using these procedures allows the program to use an mtqueue
 as a @emph{channel}.
 
-The simple queue API is a superset of SLIB's queue implementation.
+The simple queue API is a superset of SLIB's queue implementation,
+which supports not only @code{enqueue!} (add item to the end of the sequence)
+and @code{dequeue!} (take item from the front of the sequence), but also
+@code{queue-push!} (add item to the front of the sequence), so that
+it can be used as a stack as well.
+
+If you also want to take item from the end of the sequence in O(1),
+you need a deque (double-ended queue).
+@xref{Ring buffer}, which works as an efficient (both speed and space)
+dequeue on top of vectors.
+
+See also SRFI-117 (@ref{Queues based on lists}), which defines a
+portable API for list-based queue.
 @c JP
 キュー(FIFO)機能を提供します。
 極めて軽量ですがスレッドセーフでないシンプルなキューと、
@@ -2244,6 +2256,17 @@ The simple queue API is a superset of SLIB's queue implementation.
 いわゆる「チャネル」としてキューを使うことができます。
 
 シンプルキューのAPIはSLIBのキュー実装の上位互換になっています。
+要素を並びの末尾に追加する@code{enqueue!}と、要素を並びの先頭から取り除く
+@code{dequeue!}だけでなく、要素を並びの先頭に追加する@code{queue-push!}も
+提供されているので、スタックとしても使えます。
+
+要素を並びの末尾からO(1)で取り除くAPIも欲しい場合は、
+deque (double-ended queue)が必要です。@code{data.ring-buffer}モジュール
+は、ベクタの上に実装された(空間的にも時間的にも)効率の良いdequeを提供しています
+(@ref{Ring buffer}参照)。
+
+また、SRFI-117はポータブルなリストベースのキューのAPIを提供しています
+(@ref{Queues based on lists})。
 @c COMMON
 @end deftp
 
@@ -3496,12 +3519,14 @@ or @code{overwrite}.
 
 If it is a procedure, it will be called with a ring buffer and
 a backing storage (vector or uvector) when it is filled.  The procedure
-must either (1) allocates and returns a larger vector/uvector of the same
-type of the passed backing storage, (2) returns a symbol @code{error},
-or (3) returns a symbol @code{overwrite}.  If it returns a vector/uvector,
-it will be used as the new backing storage.  If it returns @code{error},
+must either (1) allocate and return a larger vector/uvector of the same
+type of the passed backing storage, (2) return a symbol @code{error},
+or (3) return a symbol @code{overwrite}.  If it returns a vector/uvector,
+it will be used as the new backing storage.  The returned vector doesn't need
+to be initialized; the ring buffer routine takes care of it.
+If it returns @code{error},
 an error (``buffer is full'') is thrown.  If it returns @code{overwrite},
-the new element overwrites the existiing element (as if one element
+the new element overwrites the existing element (as if one element
 from the other end is popped and discarded.)
 
 Passing a symbol @code{error} or @code{overwrite} to @var{overflow-handler}
