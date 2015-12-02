@@ -54,23 +54,23 @@
 ;; Internal implementation
 ;;
 
-(define-record-type T #t #t color left elem right)
+(define-record-type (T (pseudo-rtd <vector>)) #t #t color left elem right)
 ;; NB: We just use #f as E node.
 (define (E? x) (not x))
 
 (define balance
   (match-lambda*
-    [(or ('B ($ T 'R ($ T 'R a x b) y c) z d)
-         ('B ($ T 'R a x ($ T 'R b y c)) z d)
-         ('B a x ($ T 'R ($ T 'R b y c) z d))
-         ('B a x ($ T 'R b y ($ T 'R c z d))))
+    [(or ('B #('R #('R a x b) y c) z d)
+         ('B #('R a x #('R b y c)) z d)
+         ('B a x #('R #('R b y c) z d))
+         ('B a x #('R b y #('R c z d))))
      (make-T 'R (make-T 'B a x b) y (make-T 'B c z d))]
     [(color a x b)
      (make-T color a x b)]))
 
 (define (get key tree cmpr)
   (and (T? tree)
-       (match-let1 ($ T _ a p b) tree
+       (match-let1 #(_ a p b) tree
          (if3 (comparator-compare cmpr key (car p))
               (get key a cmpr)
               p
@@ -80,12 +80,12 @@
   (define (ins tree)
     (if (E? tree)
       (make-T 'R #f (cons key val) #f)
-      (match-let1 ($ T color a p b) tree
+      (match-let1 #(color a p b) tree
         (if3 (comparator-compare cmpr key (car p))
              (balance color (ins a) p b)
              (make-T color a (cons key val) b)
              (balance color a p (ins b))))))
-  (match-let1 ($ T _ a p b) (ins tree)
+  (match-let1 #(_ a p b) (ins tree)
     (make-T 'B a p b)))
 
 (define (populate tree alist cmpr)
@@ -98,14 +98,14 @@
 (define (delete key tree cmpr)
   (define (del-min tree)
     (match tree
-      [($ T color #f p #f) (values p #f)]
-      [($ T color #f p b)  (values p b)]
-      [($ T color a p b)   (receive (min-p a.) (del-min a)
-                             (values min-p (balance color a. p b)))]))
+      [#(color #f p #f) (values p #f)]
+      [#(color #f p b)  (values p b)]
+      [#(color a p b)   (receive (min-p a.) (del-min a)
+                          (values min-p (balance color a. p b)))]))
   (define (del tree)
     (if (E? tree)
       tree
-      (match-let1 ($ T color a p b) tree
+      (match-let1 #(color a p b) tree
         (if3 (comparator-compare cmpr key (car p))
              (balance color (del a) p b)
              (if a
@@ -117,7 +117,7 @@
              (balance color a p (del b))))))
   (match (del tree)
     [#f  #f] ;empty
-    [($ T _ a p b) (make-T 'B a p b)]))
+    [#(_ a p b) (make-T 'B a p b)]))
 
 ;; aux fn
 (define (%key-proc->comparator key=? key<?)
@@ -197,7 +197,7 @@
 ;; API
 (define (immutable-map-min immap)
   (define (descend tree)
-    (match-let1 ($ T _ a p b) tree
+    (match-let1 #(_ a p b) tree
       (if (E? a) p (descend a))))
   (let1 t (~ immap'tree)
     (and (not (E? t)) (descend t))))
@@ -205,7 +205,7 @@
 ;; API
 (define (immutable-map-max immap)
   (define (descend tree)
-    (match-let1 ($ T _ a p b) tree
+    (match-let1 #(_ a p b) tree
       (if (E? b) p (descend b))))
   (let1 t (~ immap'tree)
     (and (not (E? t)) (descend t))))
@@ -215,7 +215,7 @@
   (define (rec tree seed)
     (if (E? tree)
       seed
-      (match-let1 ($ T _ a p b) tree
+      (match-let1 #(_ a p b) tree
         (rec b (proc p (rec a seed))))))
   (rec (~ immap'tree) seed))
 
@@ -223,7 +223,7 @@
   (define (rec tree seed)
     (if (E? tree)
       seed
-      (match-let1 ($ T _ a p b) tree
+      (match-let1 #(_ a p b) tree
         (rec a (proc p (rec b seed))))))
   (rec (~ immap'tree) seed))
 
@@ -235,7 +235,7 @@
       (enqueue! q (~ coll'tree))
       (proc (^[] (queue-empty? q))
             (rec (next)
-              (match-let1 ($ T c a p b) (dequeue! q)
+              (match-let1 #(c a p b) (dequeue! q)
                 (if (E? a)
                   (if (E? b)
                     p
