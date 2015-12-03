@@ -9,7 +9,7 @@ On Unix platforms
 -----------------
 
 In order to build Gauche from the git sources, instead of from
-the distribution, you need to have autoconf 2.54 or higher.
+the distribution, you need to have autoconf 2.69 or higher.
 The author using autoconf 2.69.
 
 You also need to have the *latest* release of Gauche installed
