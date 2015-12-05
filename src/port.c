@@ -1800,24 +1800,109 @@ void Scm__InitPort(void)
 static ScmInternalMutex win_console_mutex;
 static int win_console_created = FALSE;
 
-static int trapper_flusher(ScmPort *p, int cnt, int forcep)
+static int trapper_filler(ScmPort *p, int cnt)
 {
+    static int initialized = FALSE;
+    int fd;
+
     SCM_INTERNAL_MUTEX_LOCK(win_console_mutex);
     if (!win_console_created) {
-        AllocConsole();
-        freopen("CONIN$",  "rb", stdin);
-        freopen("CONOUT$", "wb", stdout);
-        freopen("CONOUT$", "wb", stderr);
-        _dup2(_fileno(stdin),  0);
-        _dup2(_fileno(stdout), 1);
-        _dup2(_fileno(stderr), 2);
-        SCM_PORT(scm_stdout)->src.buf.flusher = file_flusher;
-        SCM_PORT(scm_stderr)->src.buf.flusher = file_flusher;
         win_console_created = TRUE;
+        AllocConsole();
+    }
+    if (!initialized) {
+        initialized = TRUE;
+        /* NB: Double fault will be caught in the error handling
+           mechanism, so we don't need to worry it here. */
+        if ((fd = open("CONIN$", O_RDONLY | O_BINARY)) < 0) Scm_SysError("couldn't open CONIN$");
+        if (_dup2(fd, 0) < 0) Scm_SysError("dup2(0)  failed");
+        close(fd);
     }
     SCM_INTERNAL_MUTEX_UNLOCK(win_console_mutex);
 
-    return p->src.buf.flusher(p, cnt, forcep);
+    return file_filler(p, cnt);
+}
+
+static int trapper_flusher1(ScmPort *p, int cnt, int forcep)
+{
+    static int initialized = FALSE;
+    int fd;
+
+    SCM_INTERNAL_MUTEX_LOCK(win_console_mutex);
+    if (!win_console_created) {
+        win_console_created = TRUE;
+        AllocConsole();
+    }
+    if (!initialized) {
+        initialized = TRUE;
+        /* NB: Double fault will be caught in the error handling
+           mechanism, so we don't need to worry it here. */
+        if ((fd = open("CONOUT$", O_WRONLY | O_BINARY)) < 0) Scm_SysError("couldn't open CONOUT$");
+        if (_dup2(fd, 1) < 0) Scm_SysError("dup2(1)  failed");
+        close(fd);
+    }
+    SCM_INTERNAL_MUTEX_UNLOCK(win_console_mutex);
+
+    return file_flusher(p, cnt, forcep);
+}
+
+static int trapper_flusher2(ScmPort *p, int cnt, int forcep)
+{
+    static int initialized = FALSE;
+    int fd;
+
+    SCM_INTERNAL_MUTEX_LOCK(win_console_mutex);
+    if (!win_console_created) {
+        win_console_created = TRUE;
+        AllocConsole();
+    }
+    if (!initialized) {
+        initialized = TRUE;
+        /* NB: Double fault will be caught in the error handling
+           mechanism, so we don't need to worry it here. */
+        if ((fd = open("CONOUT$", O_WRONLY | O_BINARY)) < 0) Scm_SysError("couldn't open CONOUT$");
+        if (_dup2(fd, 2) < 0) Scm_SysError("dup2(2)  failed");
+        close(fd);
+    }
+    SCM_INTERNAL_MUTEX_UNLOCK(win_console_mutex);
+
+    return file_flusher(p, cnt, forcep);
+}
+
+static ScmObj make_trapper_port(ScmObj name, int direction,
+                         int fd, int bufmode, int ownerp)
+{
+    ScmPortBuffer bufrec;
+
+    bufrec.buffer = NULL;
+    bufrec.size = 0;
+    bufrec.mode = bufmode;
+    if (fd == 0) {
+        bufrec.filler = trapper_filler;
+    } else {
+        bufrec.filler = file_filler;
+    }
+    if (fd == 1) {
+        bufrec.flusher = trapper_flusher1;
+    } else if (fd == 2) {
+        bufrec.flusher = trapper_flusher2;
+    } else {
+        bufrec.flusher = file_flusher;
+    }
+    bufrec.closer = file_closer;
+    bufrec.ready = file_ready;
+    bufrec.filenum = file_filenum;
+    bufrec.data = (void*)(intptr_t)fd;
+
+    /* Check if the given fd is seekable, and set seeker if so. */
+    if (lseek(fd, 0, SEEK_CUR) < 0) {
+        bufrec.seeker = NULL;
+    } else {
+        bufrec.seeker = file_seeker;
+    }
+
+    ScmObj p = Scm_MakeBufferedPort(SCM_CLASS_PORT, name, direction, ownerp,
+                                    &bufrec);
 }
 
 /* This is supposed to be called from application main(), before any
@@ -1826,11 +1911,40 @@ void Scm__SetupPortsForWindows(int has_console)
 {
     if (!has_console) {
         static int initialized = FALSE;
+        static ScmObj orig_stdin  = SCM_FALSE;
+        static ScmObj orig_stdout = SCM_FALSE;
+        static ScmObj orig_stderr = SCM_FALSE;
         if (!initialized) {
             initialized = TRUE;
             SCM_INTERNAL_MUTEX_INIT(win_console_mutex);
-            SCM_PORT(scm_stdout)->src.buf.flusher = trapper_flusher;
-            SCM_PORT(scm_stderr)->src.buf.flusher = trapper_flusher;
+            /* Original scm_stdout and scm_stderr holds ports that are
+               connected to fd=0 and fd=1, respectively.  Losing reference
+               to those ports will eventually lead to close those fds (when
+               those ports are GC-ed), causing complications in the code
+               that assumes fds 0, 1 and 2 are reserved.  To make things
+               easier, we just save the original ports. */
+            orig_stdin  = scm_stdin;
+            orig_stdout = scm_stdout;
+            orig_stderr = scm_stderr;
+            scm_stdin  = make_trapper_port(SCM_MAKE_STR("(standard input)"),
+                                           SCM_PORT_INPUT, 0,
+                                           SCM_PORT_BUFFER_FULL, TRUE);
+            /* By default, stdout and stderr are SIGPIPE sensitive */
+            scm_stdout = make_trapper_port(SCM_MAKE_STR("(standard output)"),
+                                           SCM_PORT_OUTPUT, 1,
+                                           ((isatty(1)
+                                             ? SCM_PORT_BUFFER_LINE
+                                             : SCM_PORT_BUFFER_FULL)
+                                            | SCM_PORT_BUFFER_SIGPIPE_SENSITIVE),
+                                           TRUE);
+            scm_stderr = make_trapper_port(SCM_MAKE_STR("(standard error output)"),
+                                           SCM_PORT_OUTPUT, 2,
+                                           (SCM_PORT_BUFFER_NONE
+                                            | SCM_PORT_BUFFER_SIGPIPE_SENSITIVE),
+                                           TRUE);
+            Scm_VM()->curin  = SCM_PORT(scm_stdin);
+            Scm_VM()->curout = SCM_PORT(scm_stdout);
+            Scm_VM()->curerr = SCM_PORT(scm_stderr);
         }
     }
 }
