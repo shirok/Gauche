@@ -1800,77 +1800,48 @@ void Scm__InitPort(void)
 static ScmInternalMutex win_console_mutex;
 static int win_console_created = FALSE;
 
-static int trapper_filler(ScmPort *p, int cnt)
-{
-    static int initialized = FALSE;
-    int fd;
+static void prepare_console_and_stdio(const char *devname, int oflag, int fd, int *initialized) {
+    int temp_fd;
 
     SCM_INTERNAL_MUTEX_LOCK(win_console_mutex);
     if (!win_console_created) {
         win_console_created = TRUE;
         AllocConsole();
     }
-    if (!initialized) {
-        initialized = TRUE;
+    if (!(*initialized)) {
+        *initialized = TRUE;
         /* NB: Double fault will be caught in the error handling
            mechanism, so we don't need to worry it here. */
-        if ((fd = open("CONIN$", O_RDONLY | O_BINARY)) < 0) Scm_SysError("couldn't open CONIN$");
-        if (_dup2(fd, 0) < 0) Scm_SysError("dup2(0)  failed");
-        close(fd);
+        if ((temp_fd = open(devname, oflag)) < 0) Scm_SysError("couldn't open %s", devname);
+        if (_dup2(temp_fd, fd) < 0) Scm_SysError("dup2(%d)  failed", fd);
+        close(temp_fd);
     }
     SCM_INTERNAL_MUTEX_UNLOCK(win_console_mutex);
+}
 
+static int trapper_filler(ScmPort *p, int cnt)
+{
+    static int initialized = FALSE;
+    prepare_console_and_stdio("CONIN$",  O_RDONLY | O_BINARY, 0, &initialized);
     return file_filler(p, cnt);
 }
 
 static int trapper_flusher1(ScmPort *p, int cnt, int forcep)
 {
     static int initialized = FALSE;
-    int fd;
-
-    SCM_INTERNAL_MUTEX_LOCK(win_console_mutex);
-    if (!win_console_created) {
-        win_console_created = TRUE;
-        AllocConsole();
-    }
-    if (!initialized) {
-        initialized = TRUE;
-        /* NB: Double fault will be caught in the error handling
-           mechanism, so we don't need to worry it here. */
-        if ((fd = open("CONOUT$", O_WRONLY | O_BINARY)) < 0) Scm_SysError("couldn't open CONOUT$");
-        if (_dup2(fd, 1) < 0) Scm_SysError("dup2(1)  failed");
-        close(fd);
-    }
-    SCM_INTERNAL_MUTEX_UNLOCK(win_console_mutex);
-
+    prepare_console_and_stdio("CONOUT$", O_WRONLY | O_BINARY, 1, &initialized);
     return file_flusher(p, cnt, forcep);
 }
 
 static int trapper_flusher2(ScmPort *p, int cnt, int forcep)
 {
     static int initialized = FALSE;
-    int fd;
-
-    SCM_INTERNAL_MUTEX_LOCK(win_console_mutex);
-    if (!win_console_created) {
-        win_console_created = TRUE;
-        AllocConsole();
-    }
-    if (!initialized) {
-        initialized = TRUE;
-        /* NB: Double fault will be caught in the error handling
-           mechanism, so we don't need to worry it here. */
-        if ((fd = open("CONOUT$", O_WRONLY | O_BINARY)) < 0) Scm_SysError("couldn't open CONOUT$");
-        if (_dup2(fd, 2) < 0) Scm_SysError("dup2(2)  failed");
-        close(fd);
-    }
-    SCM_INTERNAL_MUTEX_UNLOCK(win_console_mutex);
-
+    prepare_console_and_stdio("CONOUT$", O_WRONLY | O_BINARY, 2, &initialized);
     return file_flusher(p, cnt, forcep);
 }
 
 static ScmObj make_trapper_port(ScmObj name, int direction,
-                         int fd, int bufmode, int ownerp)
+                                int fd, int bufmode, int ownerp)
 {
     ScmPortBuffer bufrec;
 
