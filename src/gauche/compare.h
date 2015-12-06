@@ -55,11 +55,16 @@ struct ScmComparatorRec {
    accessors to return a dummy procedure, we keep the info in flags.
 
    SCM_COMPARATOR_ANY_TYPE is a small optimization to bypass type test
-   if possible. */
+   if possible.
+
+   SCM_COMPARATOR_USE_COMPARISON is to record the fact that #t is passed
+   to the equality-test.  The fact is only used to compare comparators.
+*/
 enum ScmComparatorFlags {
     SCM_COMPARATOR_NO_ORDER = (1L<<0), /* 'compare' proc unavailable */
     SCM_COMPARATOR_NO_HASH  = (1L<<1), /* 'hash' proc unavailable */
-    SCM_COMPARATOR_ANY_TYPE = (1L<<2)  /* type-test always returns #t */
+    SCM_COMPARATOR_ANY_TYPE = (1L<<2), /* type-test always returns #t */
+    SCM_COMPARATOR_USE_COMPARISON = (1L<<3)  /* equality use comarison */
 };
 
 SCM_CLASS_DECL(Scm_ComparatorClass);

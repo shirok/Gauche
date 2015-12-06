@@ -86,6 +86,20 @@
                    (with-module gauche.internal %hash-string)
                    'string-comparator))
 
+;; comparators can be compared by equal? (Gauche extension)
+(define-method object-equal? ((x <comparator>) (y <comparator>))
+  (and (eqv? (~ x'type-test) (~ y'type-test))
+       (or (and ((with-module gauche.internal comparator-equality-use-comparison?) x)
+                ((with-module gauche.internal comparator-equality-use-comparison?) y))
+           (eqv? (~ x'equality-test) (~ y'equality-test)))
+       (or (and (not (comparator-comparison-procedure? x))
+                (not (comparator-comparison-procedure? y)))
+           (eqv? (~ x'comparison) (~ y'comparison)))
+       (or (and (not (comparator-hash-function? x))
+                (not (comparator-hash-function? y)))
+           (eqv? (~ x'hash) (~ y'hash)))
+       (equal? (slot-ref x 'name) (slot-ref y 'name))))
+
 ;;; TEMPORARY for 0.9.x series
 ;;; Remove this after 1.0 release!!!
 ;;;

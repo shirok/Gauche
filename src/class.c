@@ -1944,10 +1944,10 @@ static int object_compare(ScmObj x, ScmObj y, int equalp)
 {
     ScmObj r;
     if (equalp) {
-        r = Scm_ApplyRec(SCM_OBJ(&Scm_GenericObjectEqualP), SCM_LIST2(x, y));
+        r = Scm_ApplyRec2(SCM_OBJ(&Scm_GenericObjectEqualP), x, y);
         return (SCM_FALSEP(r)? -1 : 0);
     } else {
-        r = Scm_ApplyRec(SCM_OBJ(&Scm_GenericObjectCompare), SCM_LIST2(x, y));
+        r = Scm_ApplyRec2(SCM_OBJ(&Scm_GenericObjectCompare), x, y);
         if (SCM_INTP(r)) {
             int ri = SCM_INT_VALUE(r);
             if (ri < 0) return -1;

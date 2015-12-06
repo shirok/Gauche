@@ -161,6 +161,7 @@ SCM_EXTERN ScmObj Scm__InternalClassName(ScmClass *klass);
 SCM_EXTERN ScmGeneric Scm_GenericApplyGeneric;
 SCM_EXTERN ScmGeneric Scm_GenericObjectHash;
 SCM_EXTERN ScmGeneric Scm_GenericObjectApply;
+SCM_EXTERN ScmGeneric Scm_GenericObjectEqualP;
 SCM_EXTERN ScmGeneric Scm_GenericObjectSetter;
 SCM_EXTERN ScmGeneric Scm_GenericChangeClass;
 

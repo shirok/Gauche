@@ -33,6 +33,9 @@
 
 (select-module gauche.internal)
 
+(inline-stub
+ (declcode (.include "gauche/class.h")))
+
 ;;;
 ;;; Comparator (a la srfi-114)
 ;;;
@@ -42,10 +45,11 @@
 
 (define-cproc %make-comparator (type-test equality-test comparison-proc hash
                                 name no-compare::<boolean> no-hash::<boolean>
-                                any-type::<boolean>)
+                                any-type::<boolean> use-cmp::<boolean>)
   (let* ([flags::u_long (logior (?: no-compare SCM_COMPARATOR_NO_ORDER 0)
                                 (?: no-hash SCM_COMPARATOR_NO_HASH 0)
-                                (?: any-type SCM_COMPARATOR_ANY_TYPE 0))])
+                                (?: any-type SCM_COMPARATOR_ANY_TYPE 0)
+                                (?: use-cmp SCM_COMPARATOR_USE_COMPARISON 0))])
     (return
      (Scm_MakeComparator type-test equality-test comparison-proc hash
                          name flags))))
@@ -77,7 +81,8 @@
                       [else (error "make-comparator needs a procedure or #f as hash, but got:" hash)])])
       (%make-comparator type eq cmp hsh name
                         (not comparison-proc) (not hash)
-                        (eq? type default-type-test)))))
+                        (eq? type default-type-test)
+                        (eq? equality-test #t)))))
     
 
 (select-module gauche)
@@ -95,6 +100,32 @@
   (return (-> c compareFn)))
 (define-cproc comparator-hash-function (c::<comparator>) :constant
   (return (-> c hashFn)))
+
+(select-module gauche.internal)
+(define-cproc comparator-equality-use-comparison? (c::<comparator>) ::<boolean>
+  (return (logand (-> c flags) SCM_COMPARATOR_USE_COMPARISON)))
+
+;; Expose as a class
+(select-module gauche)
+(inline-stub
+ (define-cclass <comparator>
+   "ScmComparator*" "Scm_ComparatorClass"
+   (c "SCM_CLASS_DEFAULT_CPL")
+   ((name          :setter #f)
+    (type-test     :c-name "typeFn" :setter #f)
+    (equality-test :c-name "eqFn" :setter #f)
+    (comparison    :c-name "compareFn" :setter #f)
+    (hash          :c-name "hashFn" :setter #f))
+   (printer (let* ([c::ScmComparator* (SCM_COMPARATOR obj)])
+              (if (SCM_FALSEP (-> c name))
+                (Scm_Printf port "#<comparator %p>" c)
+                (Scm_Printf port "#<comparator %S>" (-> c name)))))
+   (comparer (if equalp
+               (let* ([r (Scm_ApplyRec2 (SCM_OBJ (& Scm_GenericObjectEqualP))
+                                        x y)])
+                 (return (?: (SCM_FALSEP r) 1 0)))
+               (Scm_Error "%S and %S can't be ordered" x y)))
+   ))
 
 ;; We implement these in C for performance.
 ;; TODO: We might be able to do shortcut in comparator-equal? by recognizing

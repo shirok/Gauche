@@ -186,6 +186,43 @@
 (test* "hash fallback behavior" (test-error)
        ((comparator-hash-procedure (make-comparator #t eq? #f #f)) 'a))
 
+;; comparing comparators
+;; this is undefined in srfi-114; we compare the slots.
+(test* "comparing comparator 1" #t
+       (equal? (make-comparator #t eq? #f #f)
+               (make-comparator #t eq? #f #f)))
+(test* "comparing comparator 2" #f
+       (equal? (make-comparator #t eq? #f #f)
+               (make-comparator #t eqv? #f #f)))
+(test* "comparing comparator 3" #t
+       (equal? (make-comparator #t #t compare #f)
+               (make-comparator #t #t compare #f)))
+(test* "comparing comparator 4" #f
+       (equal? (make-comparator #t #t compare #f)
+               (make-comparator #t #t compare hash)))
+(test* "comparing comparator 5" #t
+       (let ([chk (^x (or (char? x) (string? x)))]
+             [cmp (^[a b] (cond [(char? a)
+                                 (if (char? b)
+                                   (compare a b)
+                                   -1)]
+                                [(string? a)
+                                 (if (string? b)
+                                   1
+                                   (compare a b))]
+                                [else 0]))] ; dummy
+             [hash (^x (if (char? x) (eqv-hash x) (hash x)))])
+         (equal? (make-comparator chk equal? cmp hash)
+                 (make-comparator chk equal? cmp hash))))
+(test* "comparing comparator 6" #t
+       (equal? (make-comparator #t equal? #f #f 'yo)
+               (make-comparator #t equal? #f #f 'yo)))
+(test* "comparing comparator 7" #f
+       (equal? (make-comparator #t equal? #f #f)
+               (make-comparator #t equal? #f #f 'yo)))
+(test* "comparing comparator 8" #f
+       (equal? (make-comparator #t equal? #f #f 'bo)
+               (make-comparator #t equal? #f #f 'yo)))
 
 (test-end)
 

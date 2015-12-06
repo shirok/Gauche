@@ -40,58 +40,6 @@
  * Comparator
  */
 
-static void comparator_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
-{
-    ScmComparator *c = SCM_COMPARATOR(obj);
-    if (SCM_FALSEP(c->name)) {
-        Scm_Printf(port, "#<comparator %p>", c);
-    } else {
-        Scm_Printf(port, "#<comparator %S>", c->name);
-    }
-}
-
-static int comparator_compare(ScmObj a, ScmObj b, int equalp) 
-{
-    if (!equalp) Scm_Error("can't compare comparators: %S and %S", a, b);
-    SCM_ASSERT(SCM_COMPARATORP(a) && SCM_COMPARATORP(b));
-    ScmComparator *ca = SCM_COMPARATOR(a);
-    ScmComparator *cb = SCM_COMPARATOR(b);
-    if (Scm_EqualP(ca->typeFn, cb->typeFn)
-        && Scm_EqualP(ca->eqFn, cb->eqFn)
-        && Scm_EqualP(ca->compareFn, cb->compareFn)
-        && Scm_EqualP(ca->hashFn, cb->hashFn)
-        && Scm_EqualP(ca->name, cb->name)) {
-        return 0;
-    } else {
-        return 1;
-    }
-}
-
-SCM_DEFINE_BUILTIN_CLASS(Scm_ComparatorClass, comparator_print,
-                         comparator_compare, NULL, NULL,
-                         SCM_CLASS_DEFAULT_CPL);
-
-#define DEFINE_COMPARATOR_ACCESSOR(field) \
-    static ScmObj SCM_CPP_CAT(comparator_, field)(ScmObj c)             \
-    {                                                                   \
-        return SCM_COMPARATOR(c)->field;                                \
-    }
-
-DEFINE_COMPARATOR_ACCESSOR(name)
-DEFINE_COMPARATOR_ACCESSOR(typeFn)
-DEFINE_COMPARATOR_ACCESSOR(eqFn)
-DEFINE_COMPARATOR_ACCESSOR(compareFn)
-DEFINE_COMPARATOR_ACCESSOR(hashFn)
-
-static ScmClassStaticSlotSpec comparator_slots[] = {
-    SCM_CLASS_SLOT_SPEC("name", comparator_name, NULL),
-    SCM_CLASS_SLOT_SPEC("type-test", comparator_typeFn, NULL),
-    SCM_CLASS_SLOT_SPEC("equality-test", comparator_eqFn, NULL),
-    SCM_CLASS_SLOT_SPEC("comparison", comparator_compareFn, NULL),
-    SCM_CLASS_SLOT_SPEC("hash", comparator_hashFn, NULL),
-    SCM_CLASS_SLOT_SPEC_END()
-};
-
 /* Unlike Scheme's make-comparator, TYPE, EQ, COMPARE and HASH arguments
    all must be a procedure.  */
 ScmObj Scm_MakeComparator(ScmObj type, ScmObj eq,
@@ -426,7 +374,6 @@ ScmObj Scm_SortListX(ScmObj objs, ScmObj fn)
 
 void Scm__InitComparator()
 {
-    ScmModule *mod = Scm_GaucheModule();
-    Scm_InitStaticClass(SCM_CLASS_COMPARATOR, "<comparator>", mod,
-                        comparator_slots, 0);
+    /* code that requires initialization has been moved to
+       libcmp.scm and libomega.scm */
 }
