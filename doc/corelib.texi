@@ -861,6 +861,43 @@ Returns true iff @var{obj} is a comparator.
 @c COMMON
 @end defun
 
+@deffn {Method} object-equal? (a <comparator>) (b <comparator>)
+@c EN
+Comparing two comparators by @code{equal?} compares their contents,
+via this method.  Even @var{a} and @var{b} are comparators created
+separately, they can be @code{equal?} if all of their slots are
+the same.
+
+This is Gauche's extension.  SRFI-114 says nothing about
+equality of comparators, but it is sometimes useful if you can compare
+two.
+@c JP
+二つの比較器が等価かどうかを@code{equal?}で調べた場合、
+比較はこのメソッドを介して、各スロットが等価かどうかで判定されます。
+比較器@var{a}と@var{b}が別々に作られたものであっても、各スロットの内容が
+等価であれば@code{equal?}とみなされます。
+
+これはGaucheの拡張です。SRFI-114は比較器同士の等価性については何も定義していません。
+けれども、時には等価判定が便利なことがあります。
+@c COMMON
+
+@example
+(equal? (make-comparator #t equal? #f hash 'foo)
+        (make-comparator #t equal? #f hash 'foo))
+  @result{} #t
+
+@c EN
+;; The following may be #t or #f, depending on how the anonymous
+;; procedure is allocated.
+@c JP
+;; 次の式は、無名手続きがどのようにアロケートされるかによって、#tにも#fにも
+;; なり得る。
+@c COMMON
+(equal? (make-comparator (^x x) eq? #f #f)
+        (make-comparator (^x x) eq? #f #f))
+@end example
+@end deffn
+
 @defun comparator-comparison-procedure? cmpr
 @defunx comparator-hash-function? cmpr
 [SRFI-114]
