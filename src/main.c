@@ -373,10 +373,13 @@ static int init_console(void)
     char buf[100];
     int in_fd, out_fd;
 #define ERR(msg) do {sprintf(buf, msg, strerror(errno));goto fail;} while(0)
-
-    if ((in_fd = open("NUL", O_RDONLY)) < 0) ERR("couldn't open NUL: %s");
-    if ((out_fd = open("NUL", O_WRONLY))< 0) ERR("couldn't open NUL: %s");
-    if (_dup2(in_fd, 0) < 0)  ERR("dup2(0) failed (%s)");
+    /* If we don't have console, we'll start off with stdio to be redirected
+       to NUL; but whenever Scheme program tries to do I/O from/to
+       standard Scheme ports, we open the console and reconnect the
+       ports. */
+    if ((in_fd  = open("NUL", O_RDONLY)) < 0) ERR("couldn't open NUL: %s");
+    if ((out_fd = open("NUL", O_WRONLY)) < 0) ERR("couldn't open NUL: %s");
+    if (_dup2(in_fd,  0) < 0) ERR("dup2(0) failed (%s)");
     if (_dup2(out_fd, 1) < 0) ERR("dup2(1) failed (%s)");
     if (_dup2(out_fd, 2) < 0) ERR("dup2(2) failed (%s)");
     close(in_fd);
@@ -647,7 +650,9 @@ int main(int ac, char **av)
 
     /* Following is the main dish. */
     if (scriptfile != NULL) exit_code = execute_script(scriptfile, args);
+#if !defined(GAUCHE_WINDOWS_NOCONSOLE)
     else                    enter_repl();
+#endif /*!defined(GAUCHE_WINDOWS_NOCONSOLE)*/
 
     /* All is done.  */
     Scm_Exit(exit_code);
