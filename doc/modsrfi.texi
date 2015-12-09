@@ -1675,18 +1675,63 @@ but works on a string instead of a list.
 
 @defun string-unfold p f g seed :optional base make-final
 [SRFI-13]
+A fundamental string builder.  The @var{p}, @var{f} and @var{g} are
+procedures, taking the current seed value.  The stop predicate @var{p}
+determines when to stop: If it returns a true value, string building
+stops.  The mapping function @var{f} returns a character
+from the current seed value.  The next seed function @var{g} returns
+a next seed value from the current seed value.  The @var{seed} argument
+gives the initial seed value.
+
+@example
+(string-unfold (^n (= n 10))
+               (^n (integer->char (+ n 48)))
+               (^n (+ n 1))
+               0)
+  @result{} "0123456789"
+@end example
+
+The optional argument @var{base} is, when given, prepended to the
+result string.  Another optional argument @var{make-final}
+is a procedure that takes the last return value of @var{g} and
+returns a string that becomes the suffix of the result string.
+
+@example
+(string-unfold (^n (= n 10))
+               (^n (integer->char (+ n 48)))
+               (^n (+ n 1))
+               0 "foo" x->string)
+  @result{} "foo012345678910"
+@end example
 @end defun
 
 @defun string-unfold-right p f g seed :optional base make-final
 [SRFI-13]
+Another fundamental string builder.  The meanings of arguments
+are the same as @samp{string-unfold}.  The only difference is
+that the string is build right-to-left.  The optional @var{base},
+if given, becomes the suffix of result, and the result of
+@var{make-final} becomes the prefix.
+
+@example
+(string-unfold-right (^n (= n 10))
+                     (^n (integer->char (+ n 48)))
+                     (^n (+ n 1))
+                     0 "foo" x->string)
+  @result{} "109876543210foo"
+@end example
 @end defun
 
 @defun string-for-each proc s :optional start end
 [SRFI-13]
+Apply @var{proc} on each character of string @var{s},
+from left to right.  Optional @var{start} and @var{end} arguments
+limit the range of the input string.
 @end defun
 
 @defun string-for-each-index proc s :optional start end
 [SRFI-13]
+Call @var{proc} on each index of the string @var{s}.
 @end defun
 
 @node SRFI-13 String rotation, SRFI-13 other string operations, SRFI-13 String mapping, String library
@@ -1732,7 +1777,6 @@ Effectively, this is the same as the following code.
                (substring s2 start2 end2)
                (substring s1 end1 (string-length s1)))
 @end example
-
 @end defun
 
 @defun string-tokenize s :optional token-set start end
