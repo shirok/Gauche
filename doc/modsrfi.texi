@@ -1740,6 +1740,19 @@ Call @var{proc} on each index of the string @var{s}.
 
 @defun xsubstring s from :optional to start end
 [SRFI-13]
+Takes a substring of inifinite repetition of string @var{s}
+between index @var{from} (inclusive) and index @var{to} (exclusive).
+
+For example, if @var{s} is @code{"abcde"}, we repeat it
+infinitely to both sides.  So @var{5n}-th character for integer @var{n}
+is always @code{#\a}, which extends negative @var{n} as well.
+
+@example
+(xsubstring "abcde" 2 10)
+  @result{} "cdeabcde"
+(xsubstring "abcde" -9 -2)
+  @result{} "bcdeabc"
+@end example
 @end defun
 
 @defun string-xcopy! target tstart s sfrom :optional sto start end

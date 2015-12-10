@@ -559,6 +559,12 @@
        (xsubstring "abc"
                    30000000000000000000000000000000
                    30000000000000000000000000000007))
+(test* "xsubstring" "abcde"
+       (xsubstring "abcde" -10 -5))
+(test* "xsubstring" "eabcdea"
+       (xsubstring "abcde" -11 -4))
+(test* "xsubstring" "eabcdeabcdeabc"
+       (xsubstring "abcde" -11 3))
 (test* "xsubstring" "defdefd"
        (xsubstring "abcdefg" 0 7 3 6))
 (test* "xsubstring" ""

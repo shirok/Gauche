@@ -739,41 +739,37 @@
 (define (xsubstring s from :optional to start end)
   (check-arg string? s)
   (check-arg (^x (and (integer? x) (exact? x))) from)
-  (let* ((str (%maybe-substring s start end))
-         (len (string-length str))
-         (from-rank (quotient from len))
-         (from-mod  (modulo from len))
-         (dest (open-output-string)))
-    (cond ((undefined? to)
-           (set! from from-mod)
-           (set! to (+ from len)))
-          ((not (and (integer? to) (exact? to)))
-           (error "argument out of domain:" to))
-          ((= len 0)
-           (error "zero length source string is not allowed"))
-          ((< to from)
-           (errorf "argument out of range (from, to): (~s, ~s)" from to))
-          (else
-           (set! from from-mod)
-           (set! to (- to (* from-rank len)))))
-    (let ((sp (make-string-pointer str from)))
-      (let loop ((count from)
-                 (ch (string-pointer-next! sp)))
-        (cond ((>= count to) (get-output-string dest))
-              ((eof-object? ch)
-               (string-pointer-set! sp 0)
-               (write-char (string-pointer-next! sp) dest)
-               (loop (+ count 1) (string-pointer-next! sp)))
-              (else
-               (write-char ch dest)
-               (loop (+ count 1) (string-pointer-next! sp)))))
-      )
-    ))
+  (let* ([str (%maybe-substring s start end)]
+         [len (string-length str)]
+         [dest (open-output-string)])
+    ;; Fill TO if it's not provided; also check the validity.
+    (cond [(undefined? to) (set! to (+ from len))]
+          [(not (and (integer? to) (exact? to)))
+           (error "argument out of domain:" to)]
+          [(= len 0)
+           (error "zero length source string is not allowed")]
+          [(< to from)
+           (errorf "argument out of range (from, to): (~s, ~s)" from to)])
+    ;; Adjust the range
+    (let* ([from. (modulo from len)]
+           [to. (- to (- from from.))])
+      (let1 sp (make-string-pointer str from.)
+        (let loop ([count from.]
+                   [ch (string-pointer-next! sp)])
+          (cond [(>= count to.) (get-output-string dest)]
+                [(eof-object? ch)
+                 (string-pointer-set! sp 0)
+                 (write-char (string-pointer-next! sp) dest)
+                 (loop (+ count 1) (string-pointer-next! sp))]
+                [else
+                 (write-char ch dest)
+                 (loop (+ count 1) (string-pointer-next! sp))]))
+        ))))
 
 (define (string-xcopy! target tstart s sfrom . args)
   (check-arg string? target)
   (check-arg (^x (and (integer? x) (exact? x))) tstart)
-  (let ((result (apply xsubstring s sfrom args)))
+  (let1 result (apply xsubstring s sfrom args)
     (string-copy! target tstart result)))
 
 ;;;
@@ -789,24 +785,24 @@
 
 (define (string-tokenize s :optional (token-set #[\S]) start end)
   (check-arg string? s)
-  (letrec ((src (open-input-string (%maybe-substring s start end)))
-           (in-word (lambda (ch dst r)
-                      (cond ((eof-object? ch)
-                             (reverse! (cons (get-output-string dst) r)))
-                            ((char-set-contains? token-set ch)
+  (letrec ([src (open-input-string (%maybe-substring s start end))]
+           [in-word (^[ch dst r]
+                      (cond [(eof-object? ch)
+                             (reverse! (cons (get-output-string dst) r))]
+                            [(char-set-contains? token-set ch)
                              (write-char ch dst)
-                             (in-word (read-char src) dst r))
-                            (else
+                             (in-word (read-char src) dst r)]
+                            [else
                              (out-word (read-char src)
-                                       (cons (get-output-string dst) r))))))
-           (out-word (lambda (ch r)
-                       (cond ((eof-object? ch) (reverse! r))
-                             ((char-set-contains? token-set ch)
+                                       (cons (get-output-string dst) r))]))]
+           [out-word (^[ch r]
+                       (cond [(eof-object? ch) (reverse! r)]
+                             [(char-set-contains? token-set ch)
                               (let ((dst (open-output-string)))
                                 (write-char ch dst)
-                                (in-word (read-char src) dst r)))
-                             (else
-                              (out-word (read-char src) r))))))
+                                (in-word (read-char src) dst r))]
+                             [else
+                              (out-word (read-char src) r)]))])
     (out-word (read-char src) '())))
 
 ;;;

@@ -1,3 +1,7 @@
+2015-12-09  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/srfi-13.scm (xsubstring): Fixed a bug when from is negative.
+
 2015-12-08  Shiro Kawai  <shiro@acm.org>
 
 	* src/port.c (Scm__SetupPortsForWindows): Set up trapper ports
