@@ -4128,7 +4128,7 @@ cdrs of the current pairs.
 
 @example
 (map* + vector '(1 2 3 4) '(1 2 . 3))
-  @result{} (3 6 . #((3 4) 3))
+  @result{} (2 4 . #((3 4) 3))
 @end example
 
 @c EN
