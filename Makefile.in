@@ -29,7 +29,8 @@ GOSH = gosh
 LN_S = @LN_S@
 
 CONFIG_GENERATED = Makefile config.cache config.log config.status \
-	           libtool configure.lineno autom4* gc/autom4*
+	           libtool configure.lineno autom4* gc/autom4* \
+	           gc/configure.gnu-gauche
 AUTOCONF_GENERATED = $(CONFIG_GENERATED) configure
 
 TESTRECORD = ./test.record
@@ -126,7 +127,7 @@ maintainer-clean: clean
 	   (cd $(LIBATOMICDIR); $(MAKE) distclean; rm -f configure);\
 	fi
 	(cd winnt/wix; $(MAKE) clean)
-	rm -rf $(AUTOCONF_GENERATED) VERSION INSTALL INSTALL.ja DIST_EXCLUDE_X gc/configure
+	rm -rf $(AUTOCONF_GENERATED) VERSION INSTALL INSTALL.ja DIST_EXCLUDE_X gc/configure gc/configure.gnu
 
 # MacOSX Framework specific stuff
 framework: all
