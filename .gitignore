@@ -11,6 +11,7 @@ configure
 libtool
 autom4te.cache
 Makefile
+/gc/configure.gnu
 /gc/configure.gnu-gauche
 /gc/include/config.h
 /gc/libatomic_ops/src/config.h
