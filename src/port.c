@@ -1800,7 +1800,11 @@ void Scm__InitPort(void)
 static ScmInternalMutex win_console_mutex;
 static int win_console_created = FALSE;
 
-static void prepare_console_and_stdio(const char *devname, int oflag, int fd, int *initialized) {
+static void prepare_console_and_stdio(const char *devname, int flags,
+                                      DWORD nStdHandle, int fd, int *initialized)
+{
+    HANDLE h;
+    SECURITY_ATTRIBUTES sa;
     int temp_fd;
 
     SCM_INTERNAL_MUTEX_LOCK(win_console_mutex);
@@ -1812,8 +1816,20 @@ static void prepare_console_and_stdio(const char *devname, int oflag, int fd, in
         *initialized = TRUE;
         /* NB: Double fault will be caught in the error handling
            mechanism, so we don't need to worry it here. */
-        if ((temp_fd = open(devname, oflag)) < 0) Scm_SysError("couldn't open %s", devname);
-        if (_dup2(temp_fd, fd) < 0) Scm_SysError("dup2(%d)  failed", fd);
+        sa.nLength = sizeof(SECURITY_ATTRIBUTES);
+        sa.lpSecurityDescriptor = NULL;
+        sa.bInheritHandle = TRUE;
+        h = CreateFile(SCM_MBS2WCS(devname),
+                       GENERIC_READ | GENERIC_WRITE,
+                       FILE_SHARE_READ | FILE_SHARE_WRITE,
+                       &sa, OPEN_EXISTING, 0, NULL);
+        if (h == INVALID_HANDLE_VALUE)
+            Scm_SysError("CreateFile(%s) failed", devname);
+        if ((temp_fd = _open_osfhandle((intptr_t)h, flags)) < 0)
+            Scm_SysError("_open_osfhandle(%d) failed (fd = %d)", (int)h, fd);
+        if (_dup2(temp_fd, fd) < 0) Scm_SysError("dup2(%d) failed (osf_handle)", fd);
+        if (SetStdHandle(nStdHandle, (HANDLE)_get_osfhandle(fd)) == 0)
+            Scm_SysError("SetStdHandle(%d) failed (fd = %d)", (int)nStdHandle, fd);
         close(temp_fd);
     }
     SCM_INTERNAL_MUTEX_UNLOCK(win_console_mutex);
@@ -1822,21 +1838,24 @@ static void prepare_console_and_stdio(const char *devname, int oflag, int fd, in
 static int trapper_filler(ScmPort *p, int cnt)
 {
     static int initialized = FALSE;
-    prepare_console_and_stdio("CONIN$",  O_RDONLY | O_BINARY, 0, &initialized);
+    prepare_console_and_stdio("CONIN$",  _O_RDONLY | _O_BINARY,
+                              STD_INPUT_HANDLE,  0, &initialized);
     return file_filler(p, cnt);
 }
 
 static int trapper_flusher1(ScmPort *p, int cnt, int forcep)
 {
     static int initialized = FALSE;
-    prepare_console_and_stdio("CONOUT$", O_WRONLY | O_BINARY, 1, &initialized);
+    prepare_console_and_stdio("CONOUT$", _O_WRONLY | _O_BINARY,
+                              STD_OUTPUT_HANDLE, 1, &initialized);
     return file_flusher(p, cnt, forcep);
 }
 
 static int trapper_flusher2(ScmPort *p, int cnt, int forcep)
 {
     static int initialized = FALSE;
-    prepare_console_and_stdio("CONOUT$", O_WRONLY | O_BINARY, 2, &initialized);
+    prepare_console_and_stdio("CONOUT$", _O_WRONLY | _O_BINARY,
+                              STD_ERROR_HANDLE,  2, &initialized);
     return file_flusher(p, cnt, forcep);
 }
 
