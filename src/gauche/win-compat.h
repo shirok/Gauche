@@ -179,6 +179,7 @@ extern __declspec(dllimport) const char *Scm_WCS2MBS(const WCHAR *s);
 #define rename(o, n)       _wrename(Scm_MBS2WCS(o), Scm_MBS2WCS(n))
 #define rmdir(dir)         _wrmdir(Scm_MBS2WCS(dir))
 #define unlink(path)       _wunlink(Scm_MBS2WCS(path))
+#define system(path)       _wsystem(Scm_MBS2WCS(path))
 #endif /*UNICODE*/
 
 /*===================================================================
