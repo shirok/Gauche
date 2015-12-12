@@ -58,7 +58,7 @@ gauche--parameter.$(SOEXT) : $(gauche-parameter_OBJECTS)
 	$(MODLINK) gauche--parameter.$(SOEXT) $(gauche-parameter_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
 gauche--parameter.c parameter.sci : $(top_srcdir)/libsrc/gauche/parameter.scm
-	$(PRECOMP) -M=%parameterize -e -P -o gauche--parameter $(top_srcdir)/libsrc/gauche/parameter.scm
+	$(PRECOMP) -M=%parameterize,%parameterize-1 -e -P -o gauche--parameter $(top_srcdir)/libsrc/gauche/parameter.scm
 
 # gauche.hook
 gauche-hook_OBJECTS = gauche--hook.$(OBJEXT)

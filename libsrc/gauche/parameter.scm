@@ -116,6 +116,15 @@
     [(_ (binds ...) . body)
      (%parameterize () () () (binds ...) body)]))
 
+(define-syntax %parameterize-1
+  (syntax-rules ()
+    [(_ () body) (begin . body)]
+    [(_ ((P L S) . ts) body)
+     (dynamic-wind
+       (^() (set! S (P L)))
+       (^() (%parameterize-1 ts body))
+       (^() (set! L (%restore-parameter P S))))]))
+
 (define-syntax %parameterize
   (syntax-rules ()
     ;; temporaries
@@ -125,10 +134,7 @@
     ;;   S - keeps "saved" value outside of parameterize.
     [(_ (param ...) (val ...) ((P L S) ...) () body)
      (let ((P param) ... (L val) ... (S #f) ...)
-       (dynamic-wind
-        (^() (set! S (P L)) ...)
-        (^() . body)
-        (^() (set! L (%restore-parameter P S)) ...)))]
+       (%parameterize-1 ((P L S) ...) body))]
     [(_ (param ...) (val ...) (tmps ...)
         ((p v) . more) body)
      (%parameterize (param ... p) (val ... v) (tmps ... (P L S)) more body)]

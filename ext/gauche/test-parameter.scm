@@ -156,6 +156,16 @@
          (add-init (list (a) (b)))
          (reverse init)))
 
+;; A bug reported by Joo ChurlSoo.
+;; Up to 0.9.4, this returns '("10" "2") - the value of 'a' wasn't restored.
+(test* "Error in filter proc and rewinding"
+       '("1" "2")
+       (let ([a (make-parameter 1 number->string)]
+             [b (make-parameter 2 number->string)])
+         (guard [e (else (list (a) (b)))]
+           (parameterize ([a 10] [b 'bad])
+             'notreached))))
+
 ;; Note: ext/threads has extra tests for parameter/thread cooperation.
 
 (test-end)

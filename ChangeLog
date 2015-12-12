@@ -1,3 +1,16 @@
+2015-12-12  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/gauche/parameter.scm (parameterize): Fix a bug that failed
+	  to restore parameter values when aother parameter in the same
+	  parameterize throws an error from the filter proc.
+	  See the added test in ext/gauche/test-parameter.scm.
+	  NB: This fix is very inefficient when there are lots of
+	  parameters bound by a parameterize.  The better way is to split
+	  parameter object's operation of appling filter proc and setting
+	  new value.  That would require changing the protocol of
+	  non-<parameter> parameter-like thingies (a procedure that takes
+	  zero or one arguments), though.
+
 2015-12-09  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/srfi-13.scm (xsubstring): Fixed a bug when from is negative.
