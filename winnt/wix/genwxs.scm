@@ -254,7 +254,7 @@
                    (match-let1 (ctrl event value order content) param
                      `(Publish (@ (Dialog ,dlgname)
                                   (Control ,(x->string ctrl))
-                                  (Event ,(x->string event))
+                                  (,(if (eq? event '_BrowseProperty) 'Property 'Event) ,(x->string event))
                                   (Value ,(x->string value))
                                   ,@(cond-list
                                      [order `(Order ,(x->string order))]))
