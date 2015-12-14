@@ -2316,9 +2316,11 @@ void * os2_alloc(size_t bytes)
 
   GC_API void GC_CALL GC_win32_free_heap(void)
   {
+    int check_directive = 1;
 #   ifndef CYGWIN32
-      if (GLOBAL_ALLOC_TEST)
+      check_directive = (GLOBAL_ALLOC_TEST);
 #   endif
+    if (check_directive)
     {
       while (GC_n_heap_bases-- > 0) {
 #       ifdef CYGWIN32
