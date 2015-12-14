@@ -124,22 +124,22 @@ if [ "$testcode" = "yes" ]; then
   cd Gauche-$VERSION
   rm -f testcode.log
   echo "UTF-8 -----------------------------------------------------"
-  ./configure -C --enable-threads=pthreads --enable-multibyte=utf-8  >> testcode.log 2>&1
+  ./configure --enable-threads=pthreads --enable-multibyte=utf-8  >> testcode.log 2>&1
   make -s >> testcode.log 2>&1
   make -s test
   make -s distclean
   echo "EUC-JP ----------------------------------------------------"
-  ./configure -C --enable-threads=pthreads --enable-multibyte=euc-jp >> testcode.log 2>&1
+  ./configure --enable-threads=pthreads --enable-multibyte=euc-jp >> testcode.log 2>&1
   make -s >> testcode.log 2>&1
   make -s test
   make -s distclean
   echo "SJIS ------------------------------------------------------"
-  ./configure -C --enable-threads=pthreads --enable-multibyte=sjis   >> testcode.log 2>&1
+  ./configure --enable-threads=pthreads --enable-multibyte=sjis   >> testcode.log 2>&1
   make -s >> testcode.log 2>&1
   make -s test
   make -s distclean
   echo "NONE ------------------------------------------------------"
-  ./configure -C --enable-threads=pthreads --enable-multibyte=none   >> testcode.log 2>&1
+  ./configure --enable-threads=pthreads --enable-multibyte=none   >> testcode.log 2>&1
   make -s >> testcode.log 2>&1
   make -s test
 fi
