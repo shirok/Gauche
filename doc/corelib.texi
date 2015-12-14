@@ -11772,10 +11772,22 @@ APIはPLT Schemeから取りました。
 @defun dynamic-wind before body after
 [R7RS]
 @c EN
+This is a primitive to manage @emph{dynamic environment}.
+Dynamic environment is a set of states which are kept during execution
+of a certain expression.  For example, the current output ports
+are switched @emph{during} execution of @code{with-output-to-port}.
+They can be nested dynamically, as opposed to
+the lexical environment, in which nesting is determined statically
+from the program source.
+
 @var{Before}, @var{body} and @var{after} are all procedures with
 no arguments.
 In normal situation, @code{dynamic-wind} calls @var{before}, then @var{body},
 then @var{after}, then returns whatever value(s) @var{body} returned.
+
+The intention is that the @var{before} thunk sets up the dynamic
+environment for execution of @var{body}, and the @var{after} thunk
+restores it to the previous state.
 
 If a control flow goes out from @var{body} by invoking a continuation
 captured outside of the dynamic scope of @code{dynamic-wind}
@@ -11786,9 +11798,19 @@ If a control flow goes into @var{body} by invoking a continuation
 captured inside @var{body} from outside of the dynamic
 scope of @code{dynamic-wind}, @var{before} is called.
 @c JP
+これは@emph{動的環境}を管理するための基本手続きです。
+動的環境とは、ある式を実行している間、維持される状態のセットのことです。
+例えば「現在の出力ポート」というのは、@code{with-output-to-port}手続きの
+@emph{実行中}だけ切り替えることができます。
+動的環境は動的にネストできます。これは、プログラムのソースから静的に
+ネストが決定できる字句環境とは異なります。
+
 @var{before}、@var{body}および@var{after} は引数を取らない手続きです。
 @code{dynamic-wind}はまず@var{before}を呼び出し、続いて@var{body}を呼び出し、
 続いて@var{after}を呼び出します。そして@var{body}が返した値を返します。
+
+@var{before}手続きが@var{body}を実行するための動的環境を
+設定し、@var{after}手続きが動的環境を元に戻す、ということが意図されています。
 
 もし@code{dynamic-wind}のダイナミックスコープの外で捕捉された継続が
 @var{body}の中で呼ばれることにより制御が@var{body}から飛び出した場合、
