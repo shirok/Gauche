@@ -694,8 +694,6 @@ static ScmClassStaticSlotSpec boport_slots[] = {
  * Initialization
  */
 
-void Scm_Init_vportlib(ScmModule*);
-
 SCM_EXTENSION_ENTRY void Scm_Init_gauche__vport(void)
 {
     SCM_INIT_EXTENSION(gauche__vport);
@@ -711,6 +709,4 @@ SCM_EXTENSION_ENTRY void Scm_Init_gauche__vport(void)
                         "<buffered-output-port>", mod, boport_slots, 0);
 
     key_bufsize = SCM_MAKE_KEYWORD("buffer-size");
-
-    Scm_Init_vportlib(mod);
 }

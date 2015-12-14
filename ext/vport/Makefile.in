@@ -9,17 +9,15 @@ SCM_CATEGORY = gauche
 LIBFILES = gauche--vport.$(SOEXT)
 SCMFILES = vport.scm
 
-OBJECTS = vport.$(OBJEXT) vportlib.$(OBJEXT)
+OBJECTS = vport.$(OBJEXT)
 
 GENERATED = Makefile
-XCLEANFILES = vportlib.c
+XCLEANFILES =
 
 all : $(LIBFILES)
 
 gauche--vport.$(SOEXT) : $(OBJECTS)
 	$(MODLINK) gauche--vport.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
-
-vportlib.c : vportlib.stub
 
 install : install-std
 
