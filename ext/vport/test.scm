@@ -8,6 +8,7 @@
 (use gauche.vport)
 (use gauche.uvector)
 (use gauche.sequence)
+(use gauche.generator)
 (use srfi-1)
 (use srfi-13)
 (use file.util)
@@ -419,44 +420,62 @@
 ;;-----------------------------------------------------------
 (test-section "input-list-port")
 
-(let ()
-  (define (make-char-list-port)
-    (open-input-char-list (string->list "Aloha, honua.")))
-  (define (make-byte-list-port)
-    (open-input-byte-list (iota 10 48)))
+;; A common routine for input list port and input generator port
+;; make-char-input takes a string and returns a port
+;; make-byte-input takes start and end bytes and returns a port
+(define (test-input-seq-ports name
+                              make-char-input
+                              make-byte-input
+                              get-remaining)
+  (define (char-port) (make-char-input "Aloha, honua."))
+  (define (byte-port) (make-byte-input 10 48))
 
-  (test* "char-list, all" "Aloha, honua."
+  (test* #"char-~name, all" "Aloha, honua."
          (call-with-output-string
-           (cut copy-port (make-char-list-port) <>)))
-  (test* "char-list, remaining" "honua."
-         (let1 p (make-char-list-port)
+           (cut copy-port (char-port) <>)))
+  (test* #"char-~name, remaining" "honua."
+         (let1 p (char-port)
            (dotimes [n 7] (read-char p))
-           (list->string (get-remaining-input-list p))))
-  (test* "char-list, remaining, with push-back" "honua."
-         (let1 p (make-char-list-port)
+           (list->string (get-remaining p))))
+  (test* #"char-~name, remaining, with push-back" "honua."
+         (let1 p (char-port)
            (dotimes [n 7] (read-char p))
            (peek-char p)
-           (list->string (get-remaining-input-list p))))
+           (list->string (get-remaining p))))
 
-  (test* "byte-list, all" "0123456789"
-         (let1 p (make-byte-list-port)
+  (test* #"byte-~name, all" "0123456789"
+         (let1 p (byte-port)
            (with-output-to-string
              (cut generator-for-each (^b (write-char (integer->char b)))
                   (cut read-byte p)))))
-  (test* "byte-list, remaining" '(53 54 55 56 57)
-         (let1 p (make-byte-list-port)
+  (test* #"byte-~name, remaining" '(53 54 55 56 57)
+         (let1 p (byte-port)
            (dotimes [n 5] (read-byte p))
-           (get-remaining-input-list p)))
-  (test* "byte-list, push-back, remaining" '(53 54 55 56 57)
-         (let1 p (make-byte-list-port)
+           (get-remaining p)))
+  (test* #"byte-~name push-back, remaining" '(53 54 55 56 57)
+         (let1 p (byte-port)
            (dotimes [n 5] (read-byte p))
            (peek-byte p)
-           (get-remaining-input-list p)))
-  (test* "byte-list, push-back as char, remaining" '(53 54 55 56 57)
-         (let1 p (make-byte-list-port)
+           (get-remaining p)))
+  (test* #"byte-~name push-back as char, remaining" '(53 54 55 56 57)
+         (let1 p (byte-port)
            (dotimes [n 5] (read-byte p))
            (peek-char p)
-           (get-remaining-input-list p)))
+           (get-remaining p)))
   )
+
+(test-input-seq-ports "list"
+                      (^s (open-input-char-list (string->list s)))
+                      (^[s e] (open-input-byte-list (iota s e)))
+                      get-remaining-input-list)
+
+;;-----------------------------------------------------------
+(test-section "input-generator-port")
+
+(test-input-seq-ports "generator"
+                      (^s (open-input-char-generator (string->generator s)))
+                      (^[s e] (open-input-byte-generator (giota s e)))
+                      (^p (generator->list
+                           (get-remaining-input-generator p))))
 
 (test-end)

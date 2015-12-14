@@ -33,6 +33,7 @@
 
 (define-module gauche.vport
   (use gauche.uvector)
+  (use gauche.generator)
   (use util.match)
   (export <virtual-input-port>
           <virtual-output-port>
@@ -42,6 +43,8 @@
           open-output-uvector get-output-uvector
           open-input-limited-length-port
           open-input-char-list open-input-byte-list get-remaining-input-list
+          open-input-char-generator open-input-byte-generator
+          get-remaining-input-generator
           ))
 (select-module gauche.vport)
 
@@ -218,20 +221,57 @@
       (rlet1 b (pop! lis)
         (unless (and (integer? b) (<= 0 b 255))
           (error "input-byte-list: source contains other than bytes:" b)))))
-  (define (char->bytes c)
-    (let1 b (char->integer c)
-      (if (< b #x80)
-        (list b)
-        ;; this is inefficient, but we assume it's a rare path
-        (u8vector->list (string->u8vector (string c))))))
   (rlet1 p (make <virtual-input-port> :getb getb)
     (define (getlist)
       (let ([bb ((with-module gauche.internal %port-ungotten-bytes) p)]
             [cc ((with-module gauche.internal %port-ungotten-chars) p)])
-        (concatenate `(,@(map char->bytes cc) ,bb ,lis))))
+        (concatenate `(,@(map %char->bytes cc) ,bb ,lis))))
     (port-attribute-set! p 'get-input-list getlist)))
 
 (define (get-remaining-input-list p)
   (if-let1 getlist (port-attribute-ref p 'get-input-list)
     (getlist)
     '()))
+
+;; Common utility used to convert ungotten char to byte list
+(define (%char->bytes c)
+  (let1 b (char->integer c)
+    (if (< b #x80)
+      (list b)
+      ;; this is inefficient, but we assume it's a rare path
+      (u8vector->list (string->u8vector (string c))))))  
+
+
+;;=======================================================
+;; A port read from generators
+;;
+
+(define (open-input-char-generator gen)
+  (define (getc)
+    (rlet1 c (gen)
+      (unless (or (char? c) (eof-object? c))
+        (error "input-char-generator: source yields non-char value:" c))))
+  (rlet1 p (make <virtual-input-port> :getc getc)
+    (define (getlist)
+      (let1 cc ((with-module gauche.internal %port-ungotten-chars) p)
+        (%gprepend cc gen)))
+    (port-attribute-set! p 'get-input-generator getlist)))
+
+(define (open-input-byte-generator gen)
+  (define (getb)
+    (rlet1 b (gen)
+      (unless (or (eof-object? b) (and (integer? b) (<= 0 b 255)))
+        (error "input-byte-generator: source yields other than bytes:" b))))
+  (rlet1 p (make <virtual-input-port> :getb getb)
+    (define (getgen)
+      (let ([bb ((with-module gauche.internal %port-ungotten-bytes) p)]
+            [cc ((with-module gauche.internal %port-ungotten-chars) p)])
+        (%gprepend (append (append-map %char->bytes cc) bb) gen)))
+    (port-attribute-set! p 'get-input-generator getgen)))
+
+(define (get-remaining-input-generator p)
+  (if-let1 getgen (port-attribute-ref p 'get-input-generator)
+    (getgen)
+    eof-object))
+
+(define (%gprepend lis gen) (gunfold null? car cdr lis (^_ gen)))

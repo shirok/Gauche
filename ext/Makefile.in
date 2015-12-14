@@ -44,7 +44,9 @@ charconv net: gauche srfi
 
 text: uvector charconv
 
-threads bcrypt sxml vport mt-random digest zlib termios windows: uvector
+threads bcrypt sxml mt-random digest zlib termios windows: uvector
+
+vport: gauche uvector
 
 tls: vport
 

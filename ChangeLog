@@ -1,3 +1,7 @@
+2015-12-13  Shiro Kawai  <shiro@acm.org>
+
+	* ext/vport/vport.scm: Added input generator ports.
+
 2015-12-12  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/gauche/parameter.scm (parameterize): Fix a bug that failed
