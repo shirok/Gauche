@@ -666,6 +666,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_calloc_explicitly_typed(size_t n,
     register int descr_type;
     struct LeafDescriptor leaf;
     DCL_LOCK_STATE;
+    int gc_register = 1;
 
     descr_type = GC_make_array_descriptor((word)n, (word)lb, d,
                                           &simple_descr, &complex_descr, &leaf);
@@ -722,9 +723,10 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_calloc_explicitly_typed(size_t n,
        ((word *)op)[lw - 1] = (word)complex_descr;
        /* Make sure the descriptor is cleared once there is any danger  */
        /* it may have been collected.                                   */
-       if (GC_general_register_disappearing_link((void * *)((word *)op+lw-1),
-                                                 op) == GC_NO_MEMORY)
+       gc_register = (GC_general_register_disappearing_link((void * *)((word *)op+lw-1),
+                                                 op) == GC_NO_MEMORY);
 #    endif
+       if (gc_register)
        {
            /* Couldn't register it due to lack of memory.  Punt.        */
            /* This will probably fail too, but gives the recovery code  */
