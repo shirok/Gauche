@@ -51,7 +51,7 @@ SSLTEST_OBJECTS = axTLS/ssl/test/ssltest.mod.$(OBJEXT)
 
 @GAUCHE_TLS_SWITCH_AXTLS@EXTRA_DIRS_TARGET = axtls_dirs
 
-GENERATED = Makefile
+GENERATED = Makefile kick_openssl.sh ssltest-mod.scm
 XCLEANFILES = rfc--tls.c *.sci $(AXTLS_OBJECTS) $(SSLTEST_OBJECTS) $(SSLTEST_GENERATED) $(SSLTEST) ssltest.log axTLS/ssl/openssl.pid axtls_dirs
 
 @CROSS_COMPILING_no@all : $(LIBFILES) $(EXTRA_TEST_BIN)
