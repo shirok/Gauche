@@ -1,0 +1,32 @@
+;; -*- mode: scheme -*-
+;; "axTLS/ssl/test/ssltest.c" modification script
+;;
+;; Read input data from stdin, write modified data to stdout.
+
+(use file.filter)
+
+;; add header and "safe_system()" prototype
+(display
+"/* This is generated file. Don't edit! */
+
+int safe_system(const char*);
+
+")
+
+(file-filter-for-each
+ (lambda (line seed)
+  (format #t "~a\n"
+	  (regexp-replace-all* line
+			       ;; replace path name
+			       #/\.\.\/ssl\// "@abs_srcdir@/axTLS/ssl/"
+			       #/openssl /    "@abs_builddir@/kick_openssl.sh "
+
+			       ;; replace to "safe_system()"
+			       #/system/ "safe_system"
+			       ))))
+
+;; include "safe_system()" code
+(display
+"
+#include \"@abs_srcdir@/system-fix.c\"
+")
