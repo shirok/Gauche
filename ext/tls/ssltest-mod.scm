@@ -1,7 +1,17 @@
 ;; -*- mode: scheme -*-
 ;; "axTLS/ssl/test/ssltest.c" modification script
 ;;
-;; Read input data from stdin, write modified data to stdout.
+;; "axTLS/ssl/test/ssltest.c" heavily uses system(3) to run background process
+;; to communicate, but it doesn't always work on some platforms (e.g.
+;; OSX doesn't like calling system(3) from multiple threads).
+;; So we provide an alternative.
+;;
+;; During the build, we preprocess ssltest.c to generate ssltest.mod.c,
+;; and our alternative system(3) implementation is embedded in the latter.
+;;
+;; Usage:
+;;  Read input data from stdin, write modified data to stdout.
+;;  $ gosh ssltest-mod.scm "srcdir" "builddir" < ssltest.c > ssltest.mod.c
 
 (use file.util)
 (use file.filter)
