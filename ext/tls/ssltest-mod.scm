@@ -36,7 +36,7 @@
         #/openssl /    kicker-replace
         #/system/ "safe_system")))
 
-  (p "#include <error.h>"
+  (p "#include <errno.h>"
      "int safe_system(const char *commands)"
      "{"
      "#if !defined(WIN32)"
