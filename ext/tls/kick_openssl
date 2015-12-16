@@ -1,6 +1,0 @@
-#!/bin/sh
-# An wrapper of openssl.  Saves current pid into openssl.pid so that
-# it can be killed by killopenssl.sh.  (There can be a race, but
-# at worst we fail to miss some processes, so we let it happen.)
-echo "$$" openssl "$@" >> openssl.pid
-exec openssl "$@"

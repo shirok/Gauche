@@ -1,6 +1,8 @@
 srcdir       = @srcdir@
 top_builddir = @top_builddir@
 top_srcdir   = @top_srcdir@
+abs_srcdir   = @abs_srcdir@
+abs_builddir = @abs_builddir@
 
 include ../Makefile.ext
 
@@ -47,15 +49,11 @@ SSLTEST = axTLS/ssl/ssltest$(EXEEXT)
 SSLTEST_GENERATED = axTLS/ssl/test/ssltest.mod.c
 SSLTEST_OBJECTS = axTLS/ssl/test/ssltest.mod.$(OBJEXT)
 
-# abs_srcdir is used to refer to the $(srcdir) from subdirectories;
-# needed for SSLTEST_GENERATED
-abs_srcdir = `case '$(srcdir)' in /*) ;; *) pwd;; esac`/$(srcdir)
-
 @GAUCHE_TLS_SWITCH_AXTLS_TEST@EXTRA_TEST_BIN = $(SSLTEST)
 
 @GAUCHE_TLS_SWITCH_AXTLS@EXTRA_DIRS_TARGET = axtls_dirs
 
-GENERATED = Makefile
+GENERATED = Makefile kick_openssl.sh
 XCLEANFILES = rfc--tls.c *.sci $(AXTLS_OBJECTS) $(SSLTEST_OBJECTS) $(SSLTEST_GENERATED) $(SSLTEST) ssltest.log axTLS/ssl/openssl.pid axtls_dirs
 
 @CROSS_COMPILING_no@all : $(LIBFILES) $(EXTRA_TEST_BIN)
@@ -79,13 +77,7 @@ $(SSLTEST): $(SSLTEST_OBJECTS) $(AXTLS_OBJECTS)
 	$(CCLD) $(LOCAL_LFLAGS) $(XLDFLAGS) -o $(SSLTEST) $(SSLTEST_OBJECTS) $(AXTLS_OBJECTS) $(LIBS)
 
 # The 'system' macro hack is to suppress "ignoring result" warning
-$(SSLTEST_GENERATED) : axTLS/ssl/test/ssltest.c
-	rm -f $(SSLTEST_GENERATED)
-	echo "int safe_system(const char*);" > $(SSLTEST_GENERATED)
-	sed -e "s@\.\./ssl/@$(abs_srcdir)/axTLS/ssl/@g" \
-	    -e "s/system/safe_system/g" \
-	    -e "s@openssl @$(abs_srcdir)/kick_openssl @g" \
-	    $(srcdir)/axTLS/ssl/test/ssltest.c >> $(SSLTEST_GENERATED)
-	cat $(srcdir)/system-fix.c >> $(SSLTEST_GENERATED)
+$(SSLTEST_GENERATED) : axTLS/ssl/test/ssltest.c ssltest-mod.scm
+	$(GOSH) $(srcdir)/ssltest-mod.scm "$(abs_srcdir)" "$(abs_builddir)" < $(srcdir)/axTLS/ssl/test/ssltest.c > $@
 
 install : install-std
