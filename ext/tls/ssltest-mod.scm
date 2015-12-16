@@ -20,7 +20,7 @@
 (define (p . args) (for-each print args))
 
 (define (usage)
-  (p #"Usage: ,*program-name* $srcdir $builddir < ssltest.c > ssltest.mod.c  "
+  (p #"Usage: ,*program-name* $srcdir $builddir < ssltest.c > ssltest.mod.c"
      "  Transforms axTLS's ssltest.c to the suitable form."
      "  Give absolute pathname of $srcdir and $builddir.")
   (exit 1))
