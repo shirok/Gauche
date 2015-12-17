@@ -31,10 +31,19 @@
     [_ (usage)]))
 
 (define (do-translate srcdir builddir)
+(cond-expand
+ [gauche.os.windows
+  (define srcpath (regexp-replace-all #/\\/ (build-path srcdir "axTLS/ssl") "/"))
+  (define kicker  (regexp-replace-all #/\\/ (build-path builddir "kick_openssl.sh") "/"))
+  (define srcpath-replace #"~|srcpath|/")
+  (define kicker-replace #"sh ~kicker ")
+  ]
+ [else
   (define srcpath (build-path srcdir "axTLS/ssl"))
   (define kicker  (build-path builddir "kick_openssl.sh"))
   (define srcpath-replace #"~|srcpath|/")
   (define kicker-replace #"~kicker ")
+  ])
   
   (p "/* This is generated file. Don't edit! */"
      "static int safe_system(const char *);")
