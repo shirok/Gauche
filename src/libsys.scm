@@ -407,6 +407,7 @@
          (return (SCM_MAKE_STR_COPYING s)))))
 
 (define-cproc sys-mkstemp (template::<string>) Scm_SysMkstemp)
+(define-cproc sys-mkdtemp (template::<string>) Scm_SysMkdtemp)
 
 ;; ctermid
 (define-cproc sys-ctermid () ::<const-cstring>

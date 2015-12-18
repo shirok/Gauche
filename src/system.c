@@ -733,6 +733,59 @@ ScmObj Scm_SysMkstemp(ScmString *templat)
                            sname));
 }
 
+/* Make mkdtemp() work even if the system doesn't have one. */
+static void Scm_Mkdtemp(char *templat)
+{
+#if defined(HAVE_MKDTEMP)
+    char *p = NULL;
+    SCM_SYSCALL(p, mkdtemp(templat));
+    if (p == NULL) Scm_SysError("mkdtemp failed");
+#else   /*!defined(HAVE_MKDTEMP)*/
+    /* Emulate mkdtemp. */
+    int siz = (int)strlen(templat);
+    if (siz < 6) {
+        Scm_Error("mkdtemp - invalid template: %s", templat);
+    }
+#define MKDTEMP_MAX_TRIALS 65535   /* avoid infinite loop */
+    {
+        u_long seed = (u_long)time(NULL);
+        int numtry, r;
+        char suffix[7];
+        for (numtry=0; numtry<MKDTEMP_MAX_TRIALS; numtry++) {
+            snprintf(suffix, 7, "%06lx", (seed>>8)&0xffffff);
+            memcpy(templat+siz-6, suffix, 7);
+#if defined(GAUCHE_WINDOWS)
+            SCM_SYSCALL(r, mkdir(templat));
+#else  /* !GAUCHE_WINDOWS */
+            SCM_SYSCALL(r, mkdir(templat, 0700));
+#endif /* !GAUCHE_WINDOWS */
+            if (r >= 0) break;
+            seed *= 2654435761UL;
+        }
+        if (numtry == MKDTEMP_MAX_TRIALS) {
+            Scm_Error("mkdtemp failed");
+        }
+    }
+#endif /*!defined(HAVE_MKDTEMP)*/
+}
+
+
+ScmObj Scm_SysMkdtemp(ScmString *templat)
+{
+#define MKDTEMP_PATH_MAX 1025  /* Geez, remove me */
+    char name[MKDTEMP_PATH_MAX];
+    u_int siz;
+    const char *t = Scm_GetStringContent(templat, &siz, NULL, NULL);
+    if (siz >= MKDTEMP_PATH_MAX-6) {
+        Scm_Error("pathname too long: %S", templat);
+    }
+    memcpy(name, t, siz);
+    memcpy(name + siz, "XXXXXX", 6);
+    name[siz+6] = '\0';
+    Scm_Mkdtemp(name);
+    return SCM_MAKE_STR_COPYING(name);
+}
+
 /*===============================================================
  * Stat (sys/stat.h)
  */
