@@ -374,6 +374,15 @@
   ]
  [else])
 
+;; sys-mkdtemp
+(test* "sys-mkdtemp" '(#t #f #f #f)
+       (let1 dirs (map (^_ (sys-mkdtemp "test.dir")) (iota 3))
+         (begin0 (list (every file-is-directory? dirs)
+                       (equal? (car dirs) (cadr dirs))
+                       (equal? (cadr dirs) (caddr dirs))
+                       (equal? (caddr dirs) (car dirs)))
+                 (for-each sys-rmdir dirs))))
+
 ;;-------------------------------------------------------------------
 (test-section "time")
 
