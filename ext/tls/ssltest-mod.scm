@@ -44,10 +44,10 @@
   (define srcpath-replace #"~|srcpath|/")
   (define kicker-replace #"~kicker ")
   ])
-  
+
   (p "/* This is generated file. Don't edit! */"
      "static int safe_system(const char *);")
-  
+
   (file-filter-for-each
    (^[line seed]
      ($ format #t "~a\n" $ regexp-replace-all* line
@@ -71,16 +71,16 @@
      "      fprintf(stdout, \"waitpid failed on pid %d (%s)\\n\", pid,"
      "              strerror(errno));"
      "      return -1;"
+     "    }"
+     "    if (status != 0) {"
+     "       fprintf(stdout, \"process exit with %d (command: %s)\\n\","
+     "               status, commands);"
+     "       return -1;"
+     "    }"
+     "    return 0;"
      "  }"
-     "  if (status != 0) {"
-     "     fprintf(stdout, \"process exit with %d (command: %s)\\n\","
-     "             status, commands);"
-     "     return -1;"
-     "  }"
-     "  return 0;"
-     "}"
      "#else  /*WIN32*/"
-     "fprintf(stdout, \"system: executing (%s)\\n\", commands);"
+     "  fprintf(stdout, \"system: executing (%s)\\n\", commands);"
      "  /* We know system() works on MinGW.  Just pretend that we honor the"
      "     return value of system() so that the compiler won't complain.  */"
      "  if (system(commands)) do {} while (0);"
