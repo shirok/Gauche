@@ -44,10 +44,10 @@
   (define srcpath-replace #"~|srcpath|/")
   (define kicker-replace #"~kicker ")
   ])
-  
+
   (p "/* This is generated file. Don't edit! */"
      "static int safe_system(const char *);")
-  
+
   (file-filter-for-each
    (^[line seed]
      ($ format #t "~a\n" $ regexp-replace-all* line
