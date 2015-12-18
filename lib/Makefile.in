@@ -104,7 +104,7 @@ SCMFILES = srfi-0.scm \
        text/csv.scm text/parse.scm text/tree.scm text/sql.scm \
        text/html-lite.scm text/info.scm text/diff.scm \
        text/progress.scm text/console.scm text/gap-buffer.scm \
-       text/line-edit.scm \
+       text/line-edit.scm text/unicode/ucd.scm \
        www/cgi.scm www/cgi-test.scm www/cgi/test.scm www/css.scm
 
 all:

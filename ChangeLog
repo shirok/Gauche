@@ -1,3 +1,8 @@
+2015-12-18  Shiro Kawai <shiro@acm.org>
+
+	* src/gen-unicode.scm, lib/text/unicode/ucd.scm: Move
+	  general UCD-related code to a separate module.
+
 2015-12-13  Shiro Kawai  <shiro@acm.org>
 
 	* ext/vport/vport.scm: Added input generator ports.

@@ -589,4 +589,9 @@ fuga
        (if (symbol? :b) "A:b" "Ab") ; transient during symbol-keyword integration
        (tree->string '(|A| . :b)))
 
+;;-------------------------------------------------------------------
+(test-section "unicode.ucd")
+(use text.unicode.ucd)
+(test-module 'text.unicode.ucd)
+
 (test-end)
