@@ -11,7 +11,7 @@
 ;;
 ;; Usage:
 ;;  Read input data from stdin, write modified data to stdout.
-;;  $ gosh ssltest-mod.scm "srcdir" "builddir" < ssltest.c > ssltest.mod.c
+;;  $ gosh ssltest-mod.scm SRCDIR BUILDDIR < ssltest.c > ssltest.mod.c
 
 (use file.util)
 (use file.filter)
