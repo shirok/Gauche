@@ -33,16 +33,16 @@
 (define (do-translate srcdir builddir)
   (cond-expand
     [gauche.os.windows
-     (define srcpath (regexp-replace-all #/\\/ (build-path srcdir "axTLS/ssl") "/"))
+     (define srcpath (regexp-replace-all #/\\/ (build-path srcdir   "axTLS/ssl")       "/"))
      (define kicker  (regexp-replace-all #/\\/ (build-path builddir "kick_openssl.sh") "/"))
      (define srcpath-replace #"~|srcpath|/")
-     (define kicker-replace #"sh ~kicker ")
+     (define kicker-replace  #"sh ~kicker ")
      ]
     [else
-     (define srcpath (build-path srcdir "axTLS/ssl"))
+     (define srcpath (build-path srcdir   "axTLS/ssl"))
      (define kicker  (build-path builddir "kick_openssl.sh"))
      (define srcpath-replace #"~|srcpath|/")
-     (define kicker-replace #"~kicker ")
+     (define kicker-replace  #"~kicker ")
      ])
 
   (p "/* This is generated file. Don't edit! */"
@@ -53,7 +53,7 @@
      ($ format #t "~a\n" $ regexp-replace-all* line
         #/\.\.\/ssl\// srcpath-replace
         #/openssl /    kicker-replace
-        #/system/ "safe_system")))
+        #/system/      "safe_system")))
 
   (p "#include <errno.h>"
      "int safe_system(const char *commands)"
