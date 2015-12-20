@@ -121,16 +121,25 @@
 ;;    http://www.unicode.org/Public/UNIDATA/auxiliary/SentenceBreakProperty.txt
 ;;
 ;;    An entry is 8-bit, indicating the character's Word_Break and
-;;    Grapheme_Break properties.
+;;    Grapheme_Break properties.  In ext/unicode_attr.h, they are
+;;    prefixed with WB_ and GB_, respectively.
+;;    Note that WB_CR, WB_LF, WB_Single_Quote, WB_Double_Quote,
+;;    GB_CR and GB_LF values are *not* stored in the table.  Each
+;;    property value is assigned to single character and we check
+;;    them separately.
 ;;
 ;;    bit7-4:  Word_Break property
-;;              0    CR
-;;              1    LF
-;;              2    Newline
-;;              3    Extend
-;;              4    Format
-;;              5    Katakana
+;;             10    CR     (not stored in the table)
+;;             11    LF     (not stored in the table)
+;;              0    Newline
+;;              1    Extend
+;;              2    Regional_Indicator
+;;              3    Format
+;;              4    Katakana
+;;              5    Hebrew_Letter
 ;;              6    ALetter
+;;             12    Single_Quote (not stored in the table)
+;;             13    Double_Quote (not stored in the table)
 ;;              7    MidLetter
 ;;              8    MidNum
 ;;              9    MidNumLet
@@ -138,18 +147,19 @@
 ;;              b    ExtendNumLet
 ;;              c    Other
 ;;    bit3-0:  Graphene_Break property
-;;              0    CR
-;;              1    LF
-;;              2    Control
-;;              3    Extend
-;;              4    Prepend
-;;              5    SpacingMark
-;;              6    L
-;;              7    V
-;;              8    T
-;;              9    LV
-;;              a    LVT
-;;              b    Other
+;;             10    CR (not stored in the table)
+;;             11    LF (not stored in the table)
+;;              0    Control
+;;              1    Extend
+;;              2    Regional_Indicator
+;;              3    Prepend
+;;              4    SpacingMark
+;;              5    L
+;;              6    V
+;;              7    T
+;;              8    LV
+;;              9    LVT
+;;              a    Other
 ;;
 ;;   Codepoints below U+20000 are looked up by two-staged tables.
 ;;   First, look up this table with (codepoint >> 8).
@@ -457,8 +467,14 @@
       (if (not e)
         (format #t "    BREAK_ENTRY(GB_Other, WB_Other),\n")
         (format #t "    BREAK_ENTRY(GB_~a, WB_~a),\n"
-                (ucd-break-property-grapheme e)
-                (ucd-break-property-word e)))))
+                (let1 gp (ucd-break-property-grapheme e)
+                  (if (memq gp '(CR LF))
+                    'Other
+                    gp))
+                (let1 wp (ucd-break-property-word e)
+                  (if (memq wp '(CR LF Single_Quote Double_Quote))
+                    'Other
+                    wp))))))
 
   ;; returns subtable-number
   (define (gen-subtable start-code)
@@ -472,16 +488,21 @@
 
   ;; Generate table of symbols
   (define (gen-symbol-table constants prefix)
-    (for-each-with-index (^(i c) (format #t "#define ~a_~a ~a\n" prefix c i))
-                         constants)
+    (receive (normals specials) (break not constants)
+      (for-each-with-index (^(i c) (format #t "#define ~a_~a ~a\n" prefix c i))
+                           normals)
+      (for-each-with-index (^(i c) (format #t "#define ~a_~a ~a\n" prefix c
+                                           (+ 16 i)))
+                           (cdr specials)))
     (format #t "static void init_~a_symbols(ScmModule *mod) {\n" prefix)
-    (for-each-with-index (^(i c)
-                           (format #t
-                                   "Scm_DefineConst(mod, \
-                                       SCM_SYMBOL(SCM_INTERN(\"~a_~a\")),\
-                                       SCM_MAKE_INT(~a));\n"
-                                   prefix c i))
-                         constants)
+    (for-each (^c
+               (and c
+                    (format #t
+                            "Scm_DefineConst(mod, \
+                          SCM_SYMBOL(SCM_INTERN(\"~a_~a\")),\
+                          SCM_MAKE_INT(~a_~a));\n"
+                            prefix c prefix c)))
+              constants)
     (print "}"))
 
   (print)

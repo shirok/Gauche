@@ -156,11 +156,13 @@
     Sm Sc Sk So Zs Zl Zp Cc Cf Cs Co Cn))
 
 (define (ucd-grapheme-break-categories)
-  '(CR LF Control Extend Prepend SpacingMark L V T LV LVT Other))
+  '(Control Extend Regional_Indicator Prepend SpacingMark
+    L V T LV LVT Other #f CR LF))
 
 (define (ucd-word-break-categories)
-  '(CR LF Newline Extend Format Katakana ALetter MidLetter MidNum MidNumLet
-    Numeric ExtendNumLet Other))
+  '(Newline Extend Regional_Indicator Format Katakana Hebrew_Letter ALetter
+    MidLetter MidNum MidNumLet Numeric ExtendNumLet Other
+    #f CR LF Single_Quote Double_Quote))
 
 ;;
 ;; CES encoding conversions.  We need to deal with 
@@ -275,8 +277,10 @@
     (additional-case-entries (build-path datadir "PropList.txt") db)
     (assign-case-mapping db)
     (grapheme-break-property
+     (ucd-grapheme-break-categories)
      (build-path datadir "auxiliary/GraphemeBreakProperty.txt") db)
     (word-break-property
+     (ucd-word-break-categories)
      (build-path datadir "auxiliary/WordBreakProperty.txt") db)
     db))
 
@@ -432,16 +436,21 @@
         (rlet1 e (make-ucd-break-property)
           (dict-put! table code e)))))
 
-(define ((break-property accessor) file db)
+(define ((break-property accessor) symbols file db)
+  (define (check str)
+    (rlet1 sym (string->symbol str)
+      (unless (memq sym symbols)
+        (errorf "Unrecognized break property `~a'.  This must be a newer \
+                 version of UnicodeData.  The code needs to be updated." sym))))
   (define (handle line)
     (rxmatch-case line
       [#/^([0-9a-fA-F]{4,6})\.\.([0-9a-fA-F]{4,6})\s+\;\s+(\w+)/ (_ ss ee cc)
        (do-ec (: c (parse-code ss) (+ (parse-code ee) 1))
               (let1 e (get-ucd-break-property db c)
-                (set! (accessor e) (string->symbol cc))))]
+                (set! (accessor e) (check cc))))]
       [#/^([0-9a-fA-F]{4,6})\s+\;\s+(\w+)/ (_ ss cc)
        (let1 e (get-ucd-break-property db (parse-code ss))
-         (set! (accessor e) (string->symbol cc)))]))
+         (set! (accessor e) (check cc)))]))
   (with-input-from-file file
     (cut generator-for-each handle read-line)))
 

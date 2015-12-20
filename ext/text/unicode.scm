@@ -35,6 +35,7 @@
   (use gauche.uvector)
   (use gauche.sequence)
   (use gauche.generator)
+  (use gauche.dictionary)
   (use util.match)
   (use data.queue)
   (use srfi-42)
@@ -411,7 +412,9 @@
  (define-cproc gb-property (scode) ::<int>
    (let* ([ch::int])
      (get-arg ch scode)
-     (cond [(< ch #x20000)
+     (cond [(== ch #x0a) (return GB_LF)]
+           [(== ch #x0d) (return GB_CR)]
+           [(< ch #x20000)
             (let* ([k::u_char (aref break_table (>> ch 8))])
               (if (== k 255)
                 (return GB_Other)
@@ -424,8 +427,12 @@
 
  (define-cproc wb-property (scode) ::<int>
    (let* ([ch::int])
-     (get-arg ch scode)
-     (cond [(< ch #x20000)
+     (get-arg ch scode) 
+     (cond [(== ch #x0a) (return WB_LF)]
+           [(== ch #x0d) (return WB_CR)]
+           ;[(== ch #x22) (return WB_Double_Quote)]
+           ;[(== ch #x27) (return WB_Single_Quote)]
+           [(< ch #x20000)
             (let* ([k::u_char (aref break_table (>> ch 8))])
               (if (== k 255)
                 (return WB_Other)
@@ -506,175 +513,192 @@
       (generator->list (cluster-reader-maker gen identity)))))
 
 ;;=========================================================================
+;; State transition compiler
+;;
+;; From the state transition description, generates a nested vector.
+;; The outer vector is indexed by state.  The inner vector is indexed
+;; by input.  The element of inner vector is a pair of
+;; (<output> . <next-state-index>)
+;;
+;; Each description is in the form of (state-name arc ...)
+;; where arc is (input -> output next-state-name)
+;; and input may be a symbol, (or input ...), or :else.
+;;
+;; For the concise transition description, the compiler takes
+;; default-next-state alist, which maps :else clause of the description
+;; to the next state.
+;;
+;; The input-index-map argument is a map to look up input index from
+;; the input symbol.
+
+(define (compile-state-transition-description state-desc default-next-state
+                                              input-index-map)
+  (define (expand-or alist)
+    (append-map (^p (match p
+                      [(('or xs ...) . y) (map (^x (cons x y)) xs)]
+                      [_ (list p)]))
+                alist))
+  (let ([default-next-state* (expand-or default-next-state)]
+        [input-index-size 
+         (+ (dict-fold input-index-map (^[k v s] (max v s)) 0) 1)]
+        [state-size (length state-desc)]
+        [states (map (^s (cons (car s) (expand-or (cdr s)))) state-desc)]
+        [state-index (map-with-index (^[i st] (cons (car st) i)) state-desc)])
+    (define (next-arc state input-symbol) ; returns Maybe (output . next)
+      (match (assq input-symbol (cdr state))
+        [(_ '-> output next) (cons output next)]
+        [#f (match (assq :else (cdr state))
+              [(_ '-> output ':default)
+               (if-let1 default (assq-ref default-next-state* input-symbol)
+                 (cons output default)
+                 (cons output (assq-ref default-next-state* :else)))]
+              [(_ '-> output next) (cons output next)]
+              [_ #f])]
+        [_ #f]))
+    (define (build-inner-vec state)
+      (rlet1 v (make-vector input-index-size '(#f . #f))
+        ($ dict-for-each input-index-map
+           (^[input-symbol index]
+             (match (next-arc state input-symbol)
+               [(output . next-state-name)
+                (set! (~ v index)
+                      (cons output (assq-ref state-index next-state-name)))]
+               [_ (errorf "Can't find transition from state ~s with input ~s"
+                          (car state) input-symbol)])))))
+    (list->vector (map build-inner-vec states))))
+
+;;=========================================================================
 ;; Word breaker state transition tables
 ;;
-;; The Rule WB6 and WB12 requires another character lookahead.  However,
+;; The Rule WB6, WB7b and WB12 requires another character lookahead.  However,
 ;; with WB4, we'll need unlimited lookahead.  To keep the state machine
-;; simple, we handle WB6 and WB12 specially.
+;; simple, we handle those transition specially.
+
 ;; Each state is a vector indexed by Word Break Property.  Each entry
 ;; is a pair, whose car is a flag, and whose cdr is the next state.
 ;; The flag may be #t (break), #f (not break), wb6 (special lookahead for
 ;; WB6) or wb12 (special lookahead for WB12).
 
+(define *word-break-default-next-states*
+  '((CR                 . :cr)
+    ((or Newline LF)    . :newline-lf)
+    (Regional_Indicator . :regional-indicator)
+    (Katakana           . :katakana)
+    (Hebrew_Letter      . :hebrew-letter)
+    (ALetter            . :a-letter)
+    (Numeric            . :numeric)
+    (ExtendNumLet       . :extend-num-let)
+    (:else              . :other)))
+
+(define *word-break-states*
+  '(;; Initial state (sot)
+    ;; From WB1, we always break.
+    (:sot
+     ((or Newline LF)     -> #t :newline-lf)
+     (CR                  -> #t :cr)
+     ((or Extend Format)  -> #t :sep-extend-format)
+     (:else               -> #t :default))
+    ;; CR (WB3, WB3a) - break except followed by LF.
+    (:cr
+     (LF                  -> #f :newline-lf)
+     ((or Extend Format)  -> #t :sep-extend-format)
+     (:else               -> #t :default))
+    ;; Newline|LF  (WB3, WB3a)
+    (:newline-lf
+     ((or Extend Format)  -> #t :sep-extend-format)
+     (:else               -> #t :default))
+    ;; Sep + (Extend|Format)*  (WB4)
+    (:sep-extend-format
+     ((or Extend Format)  -> #f :sep-extend-format)
+     (:else               -> #t :default))
+    ;; ALetter
+    (:a-letter
+     ((or Extend Format)  -> #f :a-letter)       ; WB4
+     (ALetter             -> #f :a-letter)       ; WB5
+     (Hebrew_Letter       -> #f :hebrew-letter)  ; WB5
+     ((or MidLetter MidNumLet Single_Quote) -> wb6 :a-letter+mid) ; WB6
+     (Numeric             -> #f :numeric)        ; WB9
+     (ExtendNumLet        -> #f :extend-num-let) ; WB13a
+     (:else               -> #t :default))
+    ;; ALetter + (MidLetter|MidNumLetQ)
+    (:a-letter+mid
+     ((or Extend Format)  -> #f :a-letter+mid)   ; WB4
+     (ALetter             -> #f :a-letter)       ; WB7
+     (Hebrew_Letter       -> #f :hebrew-letter)  ; WB7
+     (:else               -> #t :default))
+    ;; Hebrew_Letter
+    ;; NB: WB7a is actually covered by WB6.
+    (:hebrew-letter
+     ((or Extend Format)  -> #f :hebrew-letter)  ; WB4
+     (ALetter             -> #f :a-letter)       ; WB5
+     (Hebrew_Letter       -> #f :hebrew-letter)  ; WB5
+     (Single_Quote        -> #f :a-letter+mid)   ; WB7a
+     ((or MidLetter MidNumLet Single_Quote) -> wb6 :a-letter+mid) ; WB6
+     (Double_Quote        -> wb7b :hebrew-letter+dq) ; WB7b
+     (Numeric             -> #f :numeric)        ; WB9
+     (ExtendNumLet        -> #f :extend-num-let) ; WB13a
+     (:else               -> #t :default))
+    ;; Hebrew_Letter + Double_Quote
+    (:hebrew-letter+dq
+     ((or Extend Format)  -> #f :hebrew-letter+dq) ; WB4
+     (Hebrew_Letter       -> #f :hebrew-letter)    ; WB7c
+     (:else               -> #t :default))
+    (:numeric
+     ((or Extend Format)  -> #f :numeric)        ; WB4
+     (Numeric             -> #f :numeric)        ; WB8
+     (ALetter             -> #f :a-letter)       ; WB10
+     (Hebrew_Letter       -> #f :hebrew-letter)  ; WB10
+     ((or MidLetter MidNumLet Single_Quote) -> wb12 :numeric+mid) ; WB12
+     (ExtendNumLet        -> #f :extend-num-let) ; WB13a
+     (:else               -> #t :default))
+    (:numeric+mid
+     ((or Extend Format)  -> #f :numeric+mid)    ; WB4
+     (Numeric             -> #f :numeric)        ; WB11
+     (:else               -> #t :default))
+    (:katakana
+     ((or Extend Format)  -> #f :katakana)       ; WB4
+     (Katakana            -> #f :katakana)       ; WB13
+     (:else               -> #t :default))
+    (:extend-num-let
+     ((or Extend Format)  -> #f :extend-num-let) ; WB4
+     (ExtendNumLet        -> #f :extend-num-let) ; WB13a
+     (ALetter             -> #f :a-letter)       ; WB13b
+     (Hebrew_Letter       -> #f :hebrew-letter)  ; WB13b
+     (Numeric             -> #f :numeric)        ; WB13b
+     (Katakana            -> #f :katakana)       ; WB13b
+     (:else               -> #t :default))
+    (:regional-indicator
+     ((or Extend Format)  -> #f :regional-indicator) ; WB4
+     (Regional_Indicator  -> #f :regional-indicator) ; WB13c
+     (:else               -> #t :default))
+    (:other
+     (:else               -> #t :default))       ; WB14
+    ))
+  
 (define *word-break-fa*
-  '#(;; 0 - Initial state (sot)
-     #((#t   .  1)                      ; CR (WB1)
-       (#t   .  2)                      ; LF (WB1)
-       (#t   .  2)                      ; Newline (WB1)
-       (#t   .  3)                      ; Extend (WB1)
-       (#t   .  3)                      ; Format (WB1)
-       (#t   .  8)                      ; Katakana (WB1)
-       (#t   .  4)                      ; ALetter (WB1)
-       (#t   . 10)                      ; MidLetter (WB1)
-       (#t   . 10)                      ; MidNum (WB1)
-       (#t   . 10)                      ; MidNumLet (WB1)
-       (#t   .  6)                      ; Numeric (WB1)
-       (#t   .  9)                      ; ExtendNumLet (WB1)
-       (#t   . 10))                     ; Other (WB1)
-     ;; 1 - CR
-     #((#t   .  1)                      ; CR (WB3a)
-       (#f   .  2)                      ; LF (WB3)
-       (#t   .  2)                      ; Newline (WB3a)
-       (#t   .  3)                      ; Extend (WB3a)
-       (#t   .  3)                      ; Format (WB3a)
-       (#t   .  8)                      ; Katakana (WB3a)
-       (#t   .  4)                      ; ALetter (WB3a)
-       (#t   . 10)                      ; MidLetter (WB3a)
-       (#t   . 10)                      ; MidNum (WB3a)
-       (#t   . 10)                      ; MidNumLet (WB3a)
-       (#t   .  6)                      ; Numeric (WB3a)
-       (#t   .  9)                      ; ExtendNumLet (WB3a)
-       (#t   . 10))                     ; Other (WB3a)
-     ;; 2 - LF and Newline
-     #((#t   .  1)                      ; CR (WB3a)
-       (#t   .  2)                      ; LF (WB3a)
-       (#t   .  2)                      ; Newline (WB3a)
-       (#t   .  3)                      ; Extend (WB3a)
-       (#t   .  3)                      ; Format (WB3a)
-       (#t   .  8)                      ; Katakana (WB3a)
-       (#t   .  4)                      ; ALetter (WB3a)
-       (#t   . 10)                      ; MidLetter (WB3a)
-       (#t   . 10)                      ; MidNum (WB3a)
-       (#t   . 10)                      ; MidNumLet (WB3a)
-       (#t   .  6)                      ; Numeric (WB3a)
-       (#t   .  9)                      ; ExtendNumLet (WB3a)
-       (#t   . 10))                     ; Other (WB3a)
-     ;; 3 - Sep + (Extend|Format)
-     ;;  This rule is not explicit in Word Boundary Rules, but we need it to
-     ;;  handle the case that sequence of (Extend|Format) right after sot, lf,
-     ;;  and newline elements.
-     #((#t   .  1)                      ; CR (WB3b)
-       (#t   .  2)                      ; LF (WB3b)
-       (#t   .  2)                      ; Newline (WB3b)
-       (#f   .  3)                      ; Extend (WB4)
-       (#f   .  3)                      ; Format (WB4)
-       (#t   .  8)                      ; Katakana
-       (#t   .  4)                      ; ALetter
-       (#t   . 10)                      ; MidLetter
-       (#t   . 10)                      ; MidNum
-       (#t   . 10)                      ; MidNumLet
-       (#t   .  6)                      ; Numeric
-       (#t   .  9)                      ; ExtendNumLet
-       (#t   . 10))                     ; Other
-     ;; 4 - ALetter
-     #((#t   .  1)                      ; CR (WB3b)
-       (#t   .  2)                      ; LF (WB3b)
-       (#t   .  2)                      ; Newline (WB3b)
-       (#f   .  4)                      ; Extend (WB4)
-       (#f   .  4)                      ; Format (WB4)
-       (#t   .  8)                      ; Katakana
-       (#f   .  4)                      ; ALetter (WB5)
-       (wb6  .  5)                      ; MidLetter (WB6)
-       (#t   . 10)                      ; MidNum
-       (wb6  .  5)                      ; MidNumLet (WB6)
-       (#f   .  6)                      ; Numeric (WB9)
-       (#f   .  9)                      ; ExtendNumLet (WB13a)
-       (#t   . 10))                     ; Other
-     ;; 5 - ALetter + (MidLetter|MidNumLet)
-     #((#t   .  1)                      ; CR (WB3b)
-       (#t   .  2)                      ; LF (WB3b)
-       (#t   .  2)                      ; Newline (WB3b)
-       (#f   .  5)                      ; Extend (WB4)
-       (#f   .  5)                      ; Format (WB4)
-       (#t   .  8)                      ; Katakana
-       (#f   .  4)                      ; ALetter (WB7)
-       (#t   . 10)                      ; MidLetter
-       (#t   . 10)                      ; MidNum
-       (#t   . 10)                      ; MidNumLet
-       (#t   .  6)                      ; Numeric
-       (#t   .  9)                      ; ExtendNumLet
-       (#t   . 10))                     ; Other
-     ;; 6 - Numeric
-     #((#t   .  1)                      ; CR (WB3b)
-       (#t   .  2)                      ; LF (WB3b)
-       (#t   .  2)                      ; Newline (WB3b)
-       (#f   .  6)                      ; Extend (WB4)
-       (#f   .  6)                      ; Format (WB4)
-       (#t   .  8)                      ; Katakana
-       (#f   .  4)                      ; ALetter (WB10)
-       (#t   . 10)                      ; MidLetter
-       (wb12 .  7)                      ; MidNum (WB12)
-       (wb12 .  7)                      ; MidNumLet (WB12)
-       (#f   .  6)                      ; Numeric (WB8)
-       (#f   .  9)                      ; ExtendNumLet (WB13a)
-       (#t   . 10))                     ; Other
-     ;; 7 - Numeric + (MidNum|MidNumLet)
-     #((#t   .  1)                      ; CR (WB3b)
-       (#t   .  2)                      ; LF (WB3b)
-       (#t   .  2)                      ; Newline (WB3b)
-       (#f   .  7)                      ; Extend (WB4)
-       (#f   .  7)                      ; Format (WB4)
-       (#t   .  8)                      ; Katakana
-       (#t   .  4)                      ; ALetter
-       (#t   . 10)                      ; MidLetter
-       (#t   . 10)                      ; MidNum
-       (#t   . 10)                      ; MidNumLet
-       (#f   .  6)                      ; Numeric (WB11)
-       (#t   .  9)                      ; ExtendNumLet
-       (#t   . 10))                     ; Other
-     ;; 8 - Katakana
-     #((#t   .  1)                      ; CR (WB3b)
-       (#t   .  2)                      ; LF (WB3b)
-       (#t   .  2)                      ; Newline (WB3b)
-       (#f   .  8)                      ; Extend (WB4)
-       (#f   .  8)                      ; Format (WB4)
-       (#f   .  8)                      ; Katakana (WB13)
-       (#t   .  4)                      ; ALetter
-       (#t   . 10)                      ; MidLetter
-       (#t   . 10)                      ; MidNum
-       (#t   . 10)                      ; MidNumLet
-       (#t   .  6)                      ; Numeric
-       (#f   .  9)                      ; ExtendNumLet (WB13a)
-       (#t   . 10))                     ; Other
-     ;; 9 - ExtendNumLet
-     #((#t   .  1)                      ; CR (WB3b)
-       (#t   .  2)                      ; LF (WB3b)
-       (#t   .  2)                      ; Newline (WB3b)
-       (#f   .  9)                      ; Extend (WB4)
-       (#f   .  9)                      ; Format (WB4)
-       (#f   .  8)                      ; Katakana (WB13b)
-       (#f   .  4)                      ; ALetter (WB13b)
-       (#t   . 10)                      ; MidLetter
-       (#t   . 10)                      ; MidNum
-       (#t   . 10)                      ; MidNumLet
-       (#f   .  6)                      ; Numeric (WB13b)
-       (#f   .  9)                      ; ExtendNumLet (WB13a)
-       (#t   . 10))                     ; Other
-     ;; 10 - Other
-     #((#t   .  1)                      ; CR (WB3b)
-       (#t   .  2)                      ; LF (WB3b)
-       (#t   .  2)                      ; Newline (WB3b)
-       (#f   . 10)                      ; Extend (WB4)
-       (#f   . 10)                      ; Format (WB4)
-       (#t   .  8)                      ; Katakana
-       (#t   .  4)                      ; ALetter
-       (#t   . 10)                      ; MidLetter
-       (#t   . 10)                      ; MidNum
-       (#t   . 10)                      ; MidNumLet
-       (#t   .  6)                      ; Numeric
-       (#t   .  9)                      ; ExtendNumLet
-       (#t   . 10))                     ; Other
-     ))
+  (compile-state-transition-description *word-break-states*
+                                        *word-break-default-next-states*
+                                        ;; NB: This mapping should be provided
+                                        ;; by text.unicode.ucd, but we hack it
+                                        ;; up for now.
+                                        (hash-table 'eq?
+                                                    '(Newline . 0)
+                                                    '(Extend . 1)
+                                                    '(Regional_Indicator . 2)
+                                                    '(Format . 3)
+                                                    '(Katakana . 4)
+                                                    '(Hebrew_Letter . 5)
+                                                    '(ALetter . 6)
+                                                    '(MidLetter . 7)
+                                                    '(MidNum . 8)
+                                                    '(MidNumLet . 9)
+                                                    '(Numeric . 10)
+                                                    '(ExtendNumLet . 11)
+                                                    '(Other . 12)
+                                                    '(CR . 16)
+                                                    '(LF . 17)
+                                                    '(Single_Quote . 18)
+                                                    '(Double_Quote . 19))))
 
 ;; API
 ;; Returns a generator procedure.  Every time it is called, it returns
@@ -693,11 +717,15 @@
         (let1 p (vector-ref current-state (wb-property ch))
           (set! current-state (vector-ref *word-break-fa* (cdr p)))
           (cond [(boolean? (car p)) (values ch (car p))]
-                [(eq? (car p) 'wb6) (wb-lookahead generator q ch WB_ALetter)]
-                [(eq? (car p) 'wb12)(wb-lookahead generator q ch WB_Numeric)]
+                [(eq? (car p) 'wb6)
+                 (wb-lookahead generator q ch `(,WB_ALetter ,WB_Hebrew_Letter))]
+                [(eq? (car p) 'wb12)
+                 (wb-lookahead generator q ch `(,WB_Numeric))]
+                [(eq? (car p) 'wb7b)
+                 (wb-lookahead generator q ch `(,WB_Hebrew_Letter))]
                 [else (error "[internal] bad state:" p)]))))))
 
-(define (wb-lookahead generator q ch next-prop)
+(define (wb-lookahead generator q ch next-props)
   ;; q must be empty here, but we check just in case.
   (unless (queue-empty? q) (error "[internal] wb6 or wb12 incorrect state"))
   (let loop ([ch2 (generator)])
@@ -705,7 +733,7 @@
       (values ch #t)
       (let1 prop (wb-property ch2)
         (enqueue! q ch2)
-        (cond [(eqv? prop next-prop) (values ch #f)]
+        (cond [(memv prop next-props) (values ch #f)]
               [(eqv? prop WB_Extend) (loop (generator))]
               [(eqv? prop WB_Format) (loop (generator))]
               [else (values ch #t)])))))
@@ -722,164 +750,73 @@
 ;; Each state is a vector, input is grapheme-cluster-break property,
 ;; and entry is a cons of boolean value (#t - break, #f - not break),
 ;; and the next state vector index.
+
+(define *grapheme-break-default-next-states*
+  '((CR                 . :cr)
+    (LF                 . :control-lf)
+    (Control            . :control-lf)
+    (L                  . :l)
+    ((or LV V)          . :lv-v)
+    ((or LVT T)         . :lvt-t)
+    (Regional_Indicator . :regional-indicator)
+    (Prepend            . :prepend)
+    (:else              . :other)))
+
+(define *grapheme-break-states*
+  '(;; Initial state - sot
+    (:sot
+     (:else              -> #t :default))   ; GB1
+    (:cr
+     (LF                 -> #f :control-lf) ; GB3
+     (Control            -> #t :control-lf) ; GB4
+     (:else              -> #t :default))   ; GB4
+    (:control-lf
+     (:else              -> #t :default))   ; GB4
+    (:l
+     (L                  -> #f :l)          ; GB6
+     ((or V LV)          -> #f :lv-v)       ; GB6
+     (LVT                -> #f :lvt-t)      ; GB6
+     (:else              -> #t :default))
+    (:lv-v
+     (V                  -> #f :lv-v)       ; GB7
+     (T                  -> #f :lvt-t)      ; GB7
+     (:else              -> #t :default))
+    (:lvt-t
+     (T                  -> #f :lvt-t)      ; GB8
+     (:else              -> #t :default))
+    (:regional-indicator
+     (Regional_Indicator -> #f :regional-indicator) ; GB8a
+     (:else              -> #t :default))
+    (:prepend
+     (CR                 -> #t :cr)         ; GB5
+     ((or Control LF)    -> #t :control-lf) ; GB5
+     (:else              -> #f :default))   ; GB9b
+    (:other
+     (Extend             -> #f :other)      ; GB9
+     (SpacingMark        -> #f :other)      ; GB9a
+     (:else              -> #t :default))   ; GB10
+    ))
+
 (define *grapheme-break-fa*
-  '#(;; 0 initial state - sot
-     #((#t .  1)                        ;CR (GB1)
-       (#t .  2)                        ;LF (GB1)
-       (#t .  2)                        ;Control (GB1)
-       (#t .  3)                        ;Extend (GB1)
-       (#t .  4)                        ;Prepend (GB1)
-       (#t .  5)                        ;SpacingMark (GB1)
-       (#t .  6)                        ;L (GB1)
-       (#t .  7)                        ;V (GB1)
-       (#t .  8)                        ;T (GB1)
-       (#t .  9)                        ;LV (GB1)
-       (#t . 10)                        ;LVT (GB1)
-       (#t . 11))                       ;Other (GB1)
-     ;; 1 CR
-     #((#t .  1)                        ;CR (GB4)
-       (#f .  2)                        ;LF (GB3)
-       (#t .  2)                        ;Control (GB4, GB5)
-       (#t .  3)                        ;Extend (GB4)
-       (#t .  4)                        ;Prepend (GB4)
-       (#t .  5)                        ;SpacingMark (GB4)
-       (#t .  6)                        ;L (GB4)
-       (#t .  7)                        ;V (GB4)
-       (#t .  8)                        ;T (GB4)
-       (#t .  9)                        ;LV (GB4)
-       (#t . 10)                        ;LVT (GB4)
-       (#t . 11))                       ;Other (GB4)
-     ;; 2 LF, Control
-     #((#t .  1)                        ;CR (GB4)
-       (#t .  2)                        ;LF (GB4, GB5)
-       (#t .  2)                        ;Control (GB4, GB5)
-       (#t .  3)                        ;Extend (GB4)
-       (#t .  4)                        ;Prepend (GB4)
-       (#t .  5)                        ;SpacingMark (GB4)
-       (#t .  6)                        ;L (GB4)
-       (#t .  7)                        ;V (GB4)
-       (#t .  8)                        ;T (GB4)
-       (#t .  9)                        ;LV (GB4)
-       (#t . 10)                        ;LVT (GB4)
-       (#t . 11))                       ;Other (GB4)
-     ;; 3 Extend
-     #((#t .  1)                        ;CR (GB5)
-       (#t .  2)                        ;LF (GB5)
-       (#t .  2)                        ;Control (GB5)
-       (#f .  3)                        ;Extend (GB9)
-       (#t .  4)                        ;Prepend (GB10)
-       (#f .  5)                        ;SpacingMark (GB9a)
-       (#t .  6)                        ;L (GB10)
-       (#t .  7)                        ;V (GB10)
-       (#t .  8)                        ;T (GB10)
-       (#t .  9)                        ;LV (GB10)
-       (#t . 10)                        ;LVT (GB10)
-       (#t . 11))                       ;Other (GB10)
-     ;; 4 Prepend
-     #((#t .  1)                        ;CR (GB5)
-       (#t .  2)                        ;LF (GB5)
-       (#t .  2)                        ;Control (GB5)
-       (#f .  3)                        ;Extend (GB9, GB9b)
-       (#f .  4)                        ;Prepend (GB9b)
-       (#f .  5)                        ;SpacingMark (GB9a, GB9b)
-       (#f .  6)                        ;L (GB9b)
-       (#f .  7)                        ;V (GB9b)
-       (#f .  8)                        ;T (GB9b)
-       (#f .  9)                        ;LV (GB9b)
-       (#f . 10)                        ;LVT (GB9b)
-       (#f . 11))                       ;Other (GB9b)
-     ;; 5 SpacingMark
-     #((#t .  1)                        ;CR (GB5)
-       (#t .  2)                        ;LF (GB5)
-       (#t .  2)                        ;Control (GB5)
-       (#f .  3)                        ;Extend (GB9)
-       (#t .  4)                        ;Prepend (GB10)
-       (#f .  5)                        ;SpacingMark (GB9a)
-       (#t .  6)                        ;L (GB10)
-       (#t .  7)                        ;V (GB10)
-       (#t .  8)                        ;T (GB10)
-       (#t .  9)                        ;LV (GB10)
-       (#t . 10)                        ;LVT (GB10)
-       (#t . 11))                       ;Other (GB10)
-     ;; 6 Hangul L
-     #((#t .  1)                        ;CR (GB5)
-       (#t .  2)                        ;LF (GB5)
-       (#t .  2)                        ;Control (GB5)
-       (#f .  3)                        ;Extend (GB9)
-       (#t .  4)                        ;Prepend (GB10)
-       (#f .  5)                        ;SpacingMark (GB9a)
-       (#f .  6)                        ;L (GB6)
-       (#f .  7)                        ;V (GB6)
-       (#t .  8)                        ;T (GB10)
-       (#f .  9)                        ;LV (GB6)
-       (#f . 10)                        ;LVT (GB6)
-       (#t . 11))                       ;Other (GB10)
-     ;; 7 Hangul V
-     #((#t .  1)                        ;CR (GB5)
-       (#t .  2)                        ;LF (GB5)
-       (#t .  2)                        ;Control (GB5)
-       (#f .  3)                        ;Extend (GB9)
-       (#t .  4)                        ;Prepend (GB10)
-       (#f .  5)                        ;SpacingMark (GB9a)
-       (#t .  6)                        ;L (GB10)
-       (#f .  7)                        ;V (GB7)
-       (#f .  8)                        ;T (GB7)
-       (#t .  9)                        ;LV (GB10)
-       (#t . 10)                        ;LVT (GB10)
-       (#t . 11))                       ;Other (GB10)
-     ;; 8 Hangul T
-     #((#t .  1)                        ;CR (GB5)
-       (#t .  2)                        ;LF (GB5)
-       (#t .  2)                        ;Control (GB5)
-       (#f .  3)                        ;Extend (GB9)
-       (#t .  4)                        ;Prepend (GB10)
-       (#f .  5)                        ;SpacingMark (GB9a)
-       (#t .  6)                        ;L (GB10)
-       (#t .  7)                        ;V (GB10)
-       (#f .  8)                        ;T (GB8)
-       (#t .  9)                        ;LV (GB10)
-       (#t . 10)                        ;LVT (GB10)
-       (#t . 11))                       ;Other (GB10)
-     ;; 9 Hangul LV
-     #((#t .  1)                        ;CR (GB5)
-       (#t .  2)                        ;LF (GB5)
-       (#t .  2)                        ;Control (GB5)
-       (#f .  3)                        ;Extend (GB9)
-       (#t .  4)                        ;Prepend (GB10)
-       (#f .  5)                        ;SpacingMark (GB9a)
-       (#t .  6)                        ;L (GB10)
-       (#f .  7)                        ;V (GB7)
-       (#f .  8)                        ;T (GB7)
-       (#t .  9)                        ;LV (GB10)
-       (#t . 10)                        ;LVT (GB10)
-       (#t . 11))                       ;Other (GB10)
-     ;; 10 Hangul LVT
-     #((#t .  1)                        ;CR (GB5)
-       (#t .  2)                        ;LF (GB5)
-       (#t .  2)                        ;Control (GB5)
-       (#f .  3)                        ;Extend (GB9)
-       (#t .  4)                        ;Prepend (GB10)
-       (#f .  5)                        ;SpacingMark (GB9a)
-       (#t .  6)                        ;L (GB10)
-       (#t .  7)                        ;V (GB10)
-       (#f .  8)                        ;T (GB8)
-       (#t .  9)                        ;LV (GB10)
-       (#t . 10)                        ;LVT (GB10)
-       (#t . 11))                       ;Other (GB10)
-     ;; 11 Other
-     #((#t .  1)                        ;CR (GB5)
-       (#t .  2)                        ;LF (GB5)
-       (#t .  2)                        ;Control (GB5)
-       (#f .  3)                        ;Extend (GB9)
-       (#t .  4)                        ;Prepend (GB10)
-       (#f .  5)                        ;SpacingMark (GB9a)
-       (#t .  6)                        ;L (GB10)
-       (#t .  7)                        ;V (GB10)
-       (#t .  8)                        ;T (GB10)
-       (#t .  9)                        ;LV (GB10)
-       (#t . 10)                        ;LVT (GB10)
-       (#t . 11))                       ;Other (GB10)
-     ))
+  (compile-state-transition-description *grapheme-break-states*
+                                        *grapheme-break-default-next-states*
+                                        ;; NB: This mapping should be provided
+                                        ;; by text.unicode.ucd, but we hack it
+                                        ;; up for now.
+                                        (hash-table 'eq?
+                                                    '(Control . 0)
+                                                    '(Extend . 1)
+                                                    '(Regional_Indicator . 2)
+                                                    '(Prepend . 3)
+                                                    '(SpacingMark . 4)
+                                                    '(L . 5)
+                                                    '(V . 6)
+                                                    '(T . 7)
+                                                    '(LV . 8)
+                                                    '(LVT . 9)
+                                                    '(Other . 10)
+                                                    '(CR . 16)
+                                                    '(LF . 17))))
 
 ;; API
 ;; Returns a generator, that returns two values, a character and

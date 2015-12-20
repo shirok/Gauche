@@ -1,38 +1,40 @@
 /* Generated automatically from Unicode character database */
 /* and src/gen-unicode.scm script.  Do not edit.           */
 
-#define GB_CR 0
-#define GB_LF 1
-#define GB_Control 2
-#define GB_Extend 3
-#define GB_Prepend 4
-#define GB_SpacingMark 5
-#define GB_L 6
-#define GB_V 7
-#define GB_T 8
-#define GB_LV 9
-#define GB_LVT 10
-#define GB_Other 11
+#define GB_Control 0
+#define GB_Extend 1
+#define GB_Regional_Indicator 2
+#define GB_Prepend 3
+#define GB_SpacingMark 4
+#define GB_L 5
+#define GB_V 6
+#define GB_T 7
+#define GB_LV 8
+#define GB_LVT 9
+#define GB_Other 10
+#define GB_CR 16
+#define GB_LF 17
 static void init_GB_symbols(ScmModule *mod) {
-Scm_DefineConst(mod, SCM_SYMBOL(SCM_INTERN("GB_CR")),SCM_MAKE_INT(0));
-Scm_DefineConst(mod, SCM_SYMBOL(SCM_INTERN("GB_LF")),SCM_MAKE_INT(1));
-Scm_DefineConst(mod, SCM_SYMBOL(SCM_INTERN("GB_Control")),SCM_MAKE_INT(2));
-Scm_DefineConst(mod, SCM_SYMBOL(SCM_INTERN("GB_Extend")),SCM_MAKE_INT(3));
-Scm_DefineConst(mod, SCM_SYMBOL(SCM_INTERN("GB_Prepend")),SCM_MAKE_INT(4));
-Scm_DefineConst(mod, SCM_SYMBOL(SCM_INTERN("GB_SpacingMark")),SCM_MAKE_INT(5));
-Scm_DefineConst(mod, SCM_SYMBOL(SCM_INTERN("GB_L")),SCM_MAKE_INT(6));
-Scm_DefineConst(mod, SCM_SYMBOL(SCM_INTERN("GB_V")),SCM_MAKE_INT(7));
-Scm_DefineConst(mod, SCM_SYMBOL(SCM_INTERN("GB_T")),SCM_MAKE_INT(8));
-Scm_DefineConst(mod, SCM_SYMBOL(SCM_INTERN("GB_LV")),SCM_MAKE_INT(9));
-Scm_DefineConst(mod, SCM_SYMBOL(SCM_INTERN("GB_LVT")),SCM_MAKE_INT(10));
-Scm_DefineConst(mod, SCM_SYMBOL(SCM_INTERN("GB_Other")),SCM_MAKE_INT(11));
+Scm_DefineConst(mod, SCM_SYMBOL(SCM_INTERN("GB_Control")),SCM_MAKE_INT(GB_Control));
+Scm_DefineConst(mod, SCM_SYMBOL(SCM_INTERN("GB_Extend")),SCM_MAKE_INT(GB_Extend));
+Scm_DefineConst(mod, SCM_SYMBOL(SCM_INTERN("GB_Regional_Indicator")),SCM_MAKE_INT(GB_Regional_Indicator));
+Scm_DefineConst(mod, SCM_SYMBOL(SCM_INTERN("GB_Prepend")),SCM_MAKE_INT(GB_Prepend));
+Scm_DefineConst(mod, SCM_SYMBOL(SCM_INTERN("GB_SpacingMark")),SCM_MAKE_INT(GB_SpacingMark));
+Scm_DefineConst(mod, SCM_SYMBOL(SCM_INTERN("GB_L")),SCM_MAKE_INT(GB_L));
+Scm_DefineConst(mod, SCM_SYMBOL(SCM_INTERN("GB_V")),SCM_MAKE_INT(GB_V));
+Scm_DefineConst(mod, SCM_SYMBOL(SCM_INTERN("GB_T")),SCM_MAKE_INT(GB_T));
+Scm_DefineConst(mod, SCM_SYMBOL(SCM_INTERN("GB_LV")),SCM_MAKE_INT(GB_LV));
+Scm_DefineConst(mod, SCM_SYMBOL(SCM_INTERN("GB_LVT")),SCM_MAKE_INT(GB_LVT));
+Scm_DefineConst(mod, SCM_SYMBOL(SCM_INTERN("GB_Other")),SCM_MAKE_INT(GB_Other));
+Scm_DefineConst(mod, SCM_SYMBOL(SCM_INTERN("GB_CR")),SCM_MAKE_INT(GB_CR));
+Scm_DefineConst(mod, SCM_SYMBOL(SCM_INTERN("GB_LF")),SCM_MAKE_INT(GB_LF));
 }
-#define WB_CR 0
-#define WB_LF 1
-#define WB_Newline 2
-#define WB_Extend 3
-#define WB_Format 4
-#define WB_Katakana 5
+#define WB_Newline 0
+#define WB_Extend 1
+#define WB_Regional_Indicator 2
+#define WB_Format 3
+#define WB_Katakana 4
+#define WB_Hebrew_Letter 5
 #define WB_ALetter 6
 #define WB_MidLetter 7
 #define WB_MidNum 8
@@ -40,20 +42,28 @@ Scm_DefineConst(mod, SCM_SYMBOL(SCM_INTERN("GB_Other")),SCM_MAKE_INT(11));
 #define WB_Numeric 10
 #define WB_ExtendNumLet 11
 #define WB_Other 12
+#define WB_CR 16
+#define WB_LF 17
+#define WB_Single_Quote 18
+#define WB_Double_Quote 19
 static void init_WB_symbols(ScmModule *mod) {
-Scm_DefineConst(mod, SCM_SYMBOL(SCM_INTERN("WB_CR")),SCM_MAKE_INT(0));
-Scm_DefineConst(mod, SCM_SYMBOL(SCM_INTERN("WB_LF")),SCM_MAKE_INT(1));
-Scm_DefineConst(mod, SCM_SYMBOL(SCM_INTERN("WB_Newline")),SCM_MAKE_INT(2));
-Scm_DefineConst(mod, SCM_SYMBOL(SCM_INTERN("WB_Extend")),SCM_MAKE_INT(3));
-Scm_DefineConst(mod, SCM_SYMBOL(SCM_INTERN("WB_Format")),SCM_MAKE_INT(4));
-Scm_DefineConst(mod, SCM_SYMBOL(SCM_INTERN("WB_Katakana")),SCM_MAKE_INT(5));
-Scm_DefineConst(mod, SCM_SYMBOL(SCM_INTERN("WB_ALetter")),SCM_MAKE_INT(6));
-Scm_DefineConst(mod, SCM_SYMBOL(SCM_INTERN("WB_MidLetter")),SCM_MAKE_INT(7));
-Scm_DefineConst(mod, SCM_SYMBOL(SCM_INTERN("WB_MidNum")),SCM_MAKE_INT(8));
-Scm_DefineConst(mod, SCM_SYMBOL(SCM_INTERN("WB_MidNumLet")),SCM_MAKE_INT(9));
-Scm_DefineConst(mod, SCM_SYMBOL(SCM_INTERN("WB_Numeric")),SCM_MAKE_INT(10));
-Scm_DefineConst(mod, SCM_SYMBOL(SCM_INTERN("WB_ExtendNumLet")),SCM_MAKE_INT(11));
-Scm_DefineConst(mod, SCM_SYMBOL(SCM_INTERN("WB_Other")),SCM_MAKE_INT(12));
+Scm_DefineConst(mod, SCM_SYMBOL(SCM_INTERN("WB_Newline")),SCM_MAKE_INT(WB_Newline));
+Scm_DefineConst(mod, SCM_SYMBOL(SCM_INTERN("WB_Extend")),SCM_MAKE_INT(WB_Extend));
+Scm_DefineConst(mod, SCM_SYMBOL(SCM_INTERN("WB_Regional_Indicator")),SCM_MAKE_INT(WB_Regional_Indicator));
+Scm_DefineConst(mod, SCM_SYMBOL(SCM_INTERN("WB_Format")),SCM_MAKE_INT(WB_Format));
+Scm_DefineConst(mod, SCM_SYMBOL(SCM_INTERN("WB_Katakana")),SCM_MAKE_INT(WB_Katakana));
+Scm_DefineConst(mod, SCM_SYMBOL(SCM_INTERN("WB_Hebrew_Letter")),SCM_MAKE_INT(WB_Hebrew_Letter));
+Scm_DefineConst(mod, SCM_SYMBOL(SCM_INTERN("WB_ALetter")),SCM_MAKE_INT(WB_ALetter));
+Scm_DefineConst(mod, SCM_SYMBOL(SCM_INTERN("WB_MidLetter")),SCM_MAKE_INT(WB_MidLetter));
+Scm_DefineConst(mod, SCM_SYMBOL(SCM_INTERN("WB_MidNum")),SCM_MAKE_INT(WB_MidNum));
+Scm_DefineConst(mod, SCM_SYMBOL(SCM_INTERN("WB_MidNumLet")),SCM_MAKE_INT(WB_MidNumLet));
+Scm_DefineConst(mod, SCM_SYMBOL(SCM_INTERN("WB_Numeric")),SCM_MAKE_INT(WB_Numeric));
+Scm_DefineConst(mod, SCM_SYMBOL(SCM_INTERN("WB_ExtendNumLet")),SCM_MAKE_INT(WB_ExtendNumLet));
+Scm_DefineConst(mod, SCM_SYMBOL(SCM_INTERN("WB_Other")),SCM_MAKE_INT(WB_Other));
+Scm_DefineConst(mod, SCM_SYMBOL(SCM_INTERN("WB_CR")),SCM_MAKE_INT(WB_CR));
+Scm_DefineConst(mod, SCM_SYMBOL(SCM_INTERN("WB_LF")),SCM_MAKE_INT(WB_LF));
+Scm_DefineConst(mod, SCM_SYMBOL(SCM_INTERN("WB_Single_Quote")),SCM_MAKE_INT(WB_Single_Quote));
+Scm_DefineConst(mod, SCM_SYMBOL(SCM_INTERN("WB_Double_Quote")),SCM_MAKE_INT(WB_Double_Quote));
 }
 
 #define BREAK_ENTRY(g, w)  (((g)<<4)|(w))
@@ -70,10 +80,10 @@ static unsigned char break_subtable[][256] = {
     BREAK_ENTRY(GB_Control, WB_Other),
     BREAK_ENTRY(GB_Control, WB_Other),
     BREAK_ENTRY(GB_Control, WB_Other),
-    BREAK_ENTRY(GB_LF, WB_LF),
+    BREAK_ENTRY(GB_Other, WB_Other),
     BREAK_ENTRY(GB_Control, WB_Newline),
     BREAK_ENTRY(GB_Control, WB_Newline),
-    BREAK_ENTRY(GB_CR, WB_CR),
+    BREAK_ENTRY(GB_Other, WB_Other),
     BREAK_ENTRY(GB_Control, WB_Other),
     BREAK_ENTRY(GB_Control, WB_Other),
     BREAK_ENTRY(GB_Control, WB_Other),
