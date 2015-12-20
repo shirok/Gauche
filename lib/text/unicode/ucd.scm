@@ -44,8 +44,8 @@
           ucd-break-property-word
 
           ucd-general-categories
-          ucd-grapheme-break-categories
-          ucd-word-break-categories
+          ucd-grapheme-break-properties
+          ucd-word-break-properties
 
           eucjp->ucd-entry sjis->ucd-entry
           )
@@ -155,17 +155,23 @@
   '(Lu Ll Lt Lm Lo Mn Mc Me Nd Nl No Pc Pd Ps Pe Pi Pf Po
     Sm Sc Sk So Zs Zl Zp Cc Cf Cs Co Cn))
 
-(define (ucd-grapheme-break-categories)
+;; Break properties.  NB: In order to squeeze grapheme and word break
+;; properties into a single byte, we treat GB_CR, GB_LF, WB_CR, WB_LF,
+;; WB_Single_Quote and WB_Double_Quote specially; they have precisely
+;; one character each, so the lookup procedure recognizes those characters
+;; directly instead of table lookup.  We don't store those properties
+;; in the table.  The '#f' in the list marks boundary of these propetries.
+(define (ucd-grapheme-break-properties)
   '(Control Extend Regional_Indicator Prepend SpacingMark
     L V T LV LVT Other #f CR LF))
 
-(define (ucd-word-break-categories)
+(define (ucd-word-break-properties)
   '(Newline Extend Regional_Indicator Format Katakana Hebrew_Letter ALetter
     MidLetter MidNum MidNumLet Numeric ExtendNumLet Other
     #f CR LF Single_Quote Double_Quote))
 
 ;;
-;; CES encoding conversions.  We need to deal with 
+;; CES encoding conversions.
 ;;
 
 ;; We don't have utf8->ucs4 yet in 0.9.1, so we need to roll our own.
@@ -277,10 +283,10 @@
     (additional-case-entries (build-path datadir "PropList.txt") db)
     (assign-case-mapping db)
     (grapheme-break-property
-     (ucd-grapheme-break-categories)
+     (ucd-grapheme-break-properties)
      (build-path datadir "auxiliary/GraphemeBreakProperty.txt") db)
     (word-break-property
-     (ucd-word-break-categories)
+     (ucd-word-break-properties)
      (build-path datadir "auxiliary/WordBreakProperty.txt") db)
     db))
 

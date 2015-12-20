@@ -506,8 +506,8 @@
     (print "}"))
 
   (print)
-  (gen-symbol-table (ucd-grapheme-break-categories) "GB")
-  (gen-symbol-table (ucd-word-break-categories) "WB")
+  (gen-symbol-table (ucd-grapheme-break-properties) "GB")
+  (gen-symbol-table (ucd-word-break-properties) "WB")
   (print)
   (print "#define BREAK_ENTRY(g, w)  (((g)<<4)|(w))")
   (print)
