@@ -28,6 +28,26 @@ check_version () {
   VERSION=`cat VERSION`
 }
 
+# Workaround for the older version of autoconf on MinGW32.
+change_configure_ac () {
+  grep "AC_PREREQ(\[2.69\])" $1 > /dev/null
+  if [ $? -eq 0 ]; then
+    echo "Change $1"
+    cp $1 $2
+    sed -e "s/AC_PREREQ(\[2.69\])/AC_PREREQ(\[2.68\])/" $2 > $1
+  fi
+}
+mingw_autoconf_workaround () {
+  case "`uname -s`" in
+    MINGW32*)
+      AUTOCONF_VERSION=`autoconf --version | grep -o -m 1 "[0-9.]*[0-9]"`
+      if [ "$AUTOCONF_VERSION" = "2.68" ]; then
+        change_configure_ac configure.ac configure_mingw_bak.ac
+        change_configure_ac ext/template.configure.ac ext/template.configure_mingw_bak.ac
+      fi
+      ;;
+  esac
+}
 
 while [ $# -gt 0 ]; do
   case $1 in
@@ -50,6 +70,7 @@ done
 if [ "$gen" = "yes" ]; then
   rm -rf configure gc/configure gc/configure.gnu
   cp tools/gc-configure.gnu gc/configure.gnu
+  mingw_autoconf_workaround
   autoconf
   (cd gc; autoconf)
   (cd gc/libatomic_ops; autoconf)
