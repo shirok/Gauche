@@ -31,7 +31,7 @@ make distclean
 # Make final archive file
 #
 cd ${t}
-tar -c --exclude-from=${g_dir}/DIST_EXCLUDE -f ${name}.tar ${name}
+tar -c --exclude-from=${g_dir}/DIST_EXCLUDE --owner=root --group=root --sort=name -f ${name}.tar ${name}
 gzip -9 ${name}.tar
 cp ${name}.tar.gz ${topdir}/../${name}.tgz
 
