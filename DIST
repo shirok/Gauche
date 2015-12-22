@@ -48,7 +48,7 @@ while [ $# -gt 0 ]; do
 done
 
 if [ "$gen" = "yes" ]; then
-  rm -rf configure gc/configure gc/configure.gnu
+  rm -f configure gc/configure gc/configure.gnu
   cp tools/gc-configure.gnu gc/configure.gnu
   autoconf
   (cd gc; autoconf)
