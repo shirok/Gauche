@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_PREREQ([2.69])
+AC_PREREQ([2.68])
 AC_INIT([Gauche],[0.9.5_pre1],[shiro@acm.org],,[http://practical-scheme.net/gauche/])
 AC_CANONICAL_BUILD
 AC_CANONICAL_HOST

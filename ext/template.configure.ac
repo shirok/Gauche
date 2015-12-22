@@ -3,7 +3,7 @@ dnl Configuring @@package@@
 dnl  process this file with autoconf to generate 'configure'.
 dnl
 
-AC_PREREQ([2.69])
+AC_PREREQ([2.68])
 AC_INIT(@@package@@, 1.0, shiro@acm.org)
 dnl If you want to use the system name (OS, architecture, etc) in the
 dnl configure, uncomment the following lines.  In such a case, you need
