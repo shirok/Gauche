@@ -43,6 +43,11 @@ typedef unsigned long u_long;
 #define _BSDTYPES_DEFINED
 #endif /* _BSDTYPES_DEFINED */
 
+/* Mingw-w64 only defines sigset_t when _POSIX is defined. */
+#if defined(__MINGW64__) && !defined(_POSIX)
+typedef _sigset_t sigset_t;
+#endif  /*defined(__MINGW64__) && !defined(_POSIX)*/
+
 
 /*======================================================================
  * Time calculation
@@ -196,9 +201,12 @@ int fork(void);
 int kill(pid_t pid, int signal);
 int pipe(int fd[]);
 char *ttyname(int desc);
+unsigned int alarm(unsigned int seconds);
+
+#ifndef __MINGW64__
 int truncate(const char *path, off_t len);
 int ftruncate(int fd, off_t len);
-unsigned int alarm(unsigned int seconds);
+#endif
 
 #define WNOHANG   (1L<<0)
 #define WUNTRACED (1L<<1)
