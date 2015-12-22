@@ -17,7 +17,7 @@ maintainer_clean () {
     fi
   done
 
-  find . -name '*~' -exec rm {} \;
+  find . -path '*/.git' -prune -o -type f -name '*~' -exec rm -- {} +
 
   rm -f DIST_EXCLUDE_X
   cat DIST_EXCLUDE > DIST_EXCLUDE_X
