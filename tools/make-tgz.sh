@@ -2,6 +2,11 @@
 #
 # Build distribution archive
 #
+# Usage:
+#  $ sh tools/make-tgz.sh
+#
+#  Output file will save to ../Gauche-${VERSION}.tgz
+#
 
 set -e
 
