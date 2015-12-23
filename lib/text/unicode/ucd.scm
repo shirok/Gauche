@@ -16,6 +16,7 @@
   (use gauche.dictionary)
   (use gauche.uvector)
   (use gauche.charconv)
+  (use gauche.generator)
   (use srfi-13)
   (use srfi-42)
   (use util.match)
@@ -24,6 +25,8 @@
   (export ucd-parse-files
           ucd-get-entry ucd-get-category-ranges ucd-get-break-property
           ucd-map-entries
+
+          ucd-dump-db
 
           ucd-entry ucd-entry-category
           ucd-entry-case-info ucd-entry-special-case-info
@@ -463,5 +466,91 @@
 (define grapheme-break-property (break-property ucd-break-property-grapheme))
 (define word-break-property     (break-property ucd-break-property-word))
 
+;;;
+;;;  Dumping and restoring database
+;;;
+
+;; Dump format should be regarded as internal - we may change it at any
+;; tiem as we like.
+
+;; For now, we dump it in three parts, correspoinding to the unichar-db
+;; slots.  To suppress the size of the dump, we use simple run-length
+;; compressing at the S-expr level.
+;;
+;; 1. The low codepoint table part
+;;
+;;  <table-dump> : (<ucd-entry> ...)   ; in the order of codepoint value
+;;  <ucd-entry>  : #f      ; unassigned
+;;               | (<category> [<case-map>] [A] [L] [U] [<digit>])
+;;               | (rep1 <count>) ; repeat previous entry for <count> times
+;;               | (rep2 <count>) ; repeat previous two entries for <count>
+;;  <cateogyr>   : <symbol>  ; general category symbol
+;;  <case-map>   | ( {upper|lower} <offset> )   ; for simple-case-map
+;;               | (<code> <simple-map-info> <extended-map-info>)
+;;  <simple-map-info> : #f
+;;                    | (<maybe-offset> <maybe-offset> <maybe-offset>)
+;;  <extended-map-info> : #f
+;;                      | ((<code> ...) (<code> ...) (<code> ...))
+;;
+;; 2. The upper category ranges
+;;
+;;  <upper-category-dump> : ((<start-code> <end-code> <category>) ...)
+;;
+;; 3. Break properties
+;;
+;;  <break-property-dump> : TBD
 
 
+(define (ucd-dump-db db)
+  (define (convert-case-map cm)
+    (cond [(ucd-simple-case-map? cm)
+           `(,(ucd-simple-case-map-case cm)
+             ,(ucd-simple-case-map-offset cm))]
+          [(ucd-extended-case-map? cm)
+           `(,(ucd-extended-case-map-code cm)
+             ,(ucd-extended-case-map-simple-map cm)
+             ,(ucd-extended-case-map-special-map cm))]
+          [else #f]))
+  (define (format-ucd-entry e)
+    (and e
+         `(,(ucd-entry-category e)
+           ,@(cond-list
+              [(convert-case-map (ucd-entry-case-map e))]
+              [(ucd-entry-alphabetic e) 'A]
+              [(ucd-entry-uppercase e) 'U]
+              [(ucd-entry-lowercase e) 'L]
+              [(ucd-entry-digit-value e)]))))
+  ;; Run-length compressor.  
+  (define (compress in seed)
+    (match seed
+      [#f                  ; initial state
+       (values '() `(,in 0))]
+      [(i0 c)              ; may be repeating 1 item
+       (cond [(equal? in i0) (values '() `(,i0 ,(+ c 1)))] ;repeat
+             [(zero? c) (values '() `(,i0 ,in 0))] ; may be repeating 2
+             [(= c 1) (values `(,i0 ,i0) `(,in 0))]
+             [else (values `(,i0 (rep1 ,c)) `(,in 0))])]
+      [(i0 i1 c)
+       (cond [(equal? in i0) (values '() `(,i0 ,i1 ,c 1))] ; may be repeating 2
+             [(equal? in i1)
+              (if (zero? c)
+                (values `(,i0) `(,i1 1))
+                (values `(,i0 ,i1 (rep2 ,c)) `(,in 0)))]
+             [(zero? c) (values `(,i0) `(,i1 ,in 0))]
+             [else (values `(,i0 ,i1 (rep2 ,c)) `(,in 0))])]
+      [(i0 i1 c 1) ; we saw previous input == i0
+       (cond [(equal? in i1) (values '() `(,i0 ,i1 ,(+ c 1)))] ; repeating
+             [(equal? in i0) ; we saw [i0 i1 i0 i0]
+              (if (zero? c)
+                (values `(,i0 ,i1) `(,i0 1))
+                (values `(,i0 ,i1 (rep2 ,c)) `(,i0 1)))]
+             [(zero? c) (values `(,i0) `(,i1 ,in 0))]
+             [else (values `(,i0 ,i1 (rep2 ,c)) `(i0 ,in 0))])]
+      ))
+
+  (print "(")
+  (let1 tab (unichar-db-table db)
+    ($ generator-for-each print
+       $ gbuffer-filter compress #f
+       $ gmap (^c (format-ucd-entry (dict-get tab c #f))) $ giota #x20000))
+  (print ")"))
