@@ -708,6 +708,19 @@ static void emulate_mkxtemp(char *name, char *templat,
 }
 #endif /* !defined(HAVE_MKXTEMP) || !defined(HAVE_MKDTEMP) */
 
+#define MKXTEMP_PATH_MAX 1025  /* Geez, remove me */
+static void build_template(ScmString *templat, char *name)
+{
+    u_int siz;
+    const char *t = Scm_GetStringContent(templat, &siz, NULL, NULL);
+    if (siz >= MKXTEMP_PATH_MAX-6) {
+        Scm_Error("pathname too long: %S", templat);
+    }
+    memcpy(name, t, siz);
+    memcpy(name + siz, "XXXXXX", 6);
+    name[siz+6] = '\0';
+}
+
 #if !defined(HAVE_MKSTEMP)
 static int create_tmpfile(char *templat, void *arg)
 {
@@ -741,16 +754,8 @@ int Scm_Mkstemp(char *templat)
 
 ScmObj Scm_SysMkstemp(ScmString *templat)
 {
-#define MKSTEMP_PATH_MAX 1025  /* Geez, remove me */
-    char name[MKSTEMP_PATH_MAX];
-    u_int siz;
-    const char *t = Scm_GetStringContent(templat, &siz, NULL, NULL);
-    if (siz >= MKSTEMP_PATH_MAX-6) {
-        Scm_Error("pathname too long: %S", templat);
-    }
-    memcpy(name, t, siz);
-    memcpy(name + siz, "XXXXXX", 6);
-    name[siz+6] = '\0';
+    char name[MKXTEMP_PATH_MAX];
+    build_template(templat, name);
     int fd = Scm_Mkstemp(name);
     ScmObj sname = SCM_MAKE_STR_COPYING(name);
     SCM_RETURN(Scm_Values2(Scm_MakePortWithFd(sname, SCM_PORT_OUTPUT, fd,
@@ -774,16 +779,8 @@ static int create_tmpdir(char *templat, void *arg)
 
 ScmObj Scm_SysMkdtemp(ScmString *templat)
 {
-#define MKDTEMP_PATH_MAX 1025  /* Geez, remove me */
-    char name[MKDTEMP_PATH_MAX];
-    u_int siz;
-    const char *t = Scm_GetStringContent(templat, &siz, NULL, NULL);
-    if (siz >= MKDTEMP_PATH_MAX-6) {
-        Scm_Error("pathname too long: %S", templat);
-    }
-    memcpy(name, t, siz);
-    memcpy(name + siz, "XXXXXX", 6);
-    name[siz+6] = '\0';
+    char name[MKXTEMP_PATH_MAX];
+    build_template(templat, name);
 
 #if defined(HAVE_MKDTEMP)
     {
