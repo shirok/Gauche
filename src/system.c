@@ -675,7 +675,7 @@ ScmObj Scm_DirName(ScmString *filename)
 #undef SEPARATOR
 
 
-#if !defined(HAVE_MKXTEMP) || defined(HAVE_MKDTEMP)
+#if !defined(HAVE_MKXTEMP) || !defined(HAVE_MKDTEMP)
 /*
  * Helper function to emulate mkstemp or mkdtemp.  FUNC returns 0 on
  * success and non-zero otherwize.  NAME is a name of operation
