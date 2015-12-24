@@ -674,6 +674,69 @@ ScmObj Scm_DirName(ScmString *filename)
 #undef ROOTDIR
 #undef SEPARATOR
 
+
+#if !defined(HAVE_MKXTEMP) || !defined(HAVE_MKDTEMP)
+/*
+ * Helper function to emulate mkstemp or mkdtemp.  FUNC returns 0 on
+ * success and non-zero otherwize.  NAME is a name of operation
+ * performed by FUNC.  ARG is caller supplied data passed to FUNC.
+ */
+static void emulate_mkxtemp(char *name, char *templat,
+                            int (*func)(char *, void *), void *arg)
+{
+    /* Emulate mkxtemp. */
+    int siz = (int)strlen(templat);
+    if (siz < 6) {
+        Scm_Error("%s - invalid template: %s", name, templat);
+    }
+#define MKXTEMP_MAX_TRIALS 65535   /* avoid infinite loop */
+    {
+        u_long seed = (u_long)time(NULL);
+        int numtry, rv;
+        char suffix[7];
+        for (numtry=0; numtry<MKXTEMP_MAX_TRIALS; numtry++) {
+            snprintf(suffix, 7, "%06lx", (seed>>8)&0xffffff);
+            memcpy(templat+siz-6, suffix, 7);
+            rv = (*func)(templat, arg);
+            if (rv == 0) break;
+            seed *= 2654435761UL;
+        }
+        if (numtry == MKXTEMP_MAX_TRIALS) {
+            Scm_Error("%s failed", name);
+        }
+    }
+}
+#endif /* !defined(HAVE_MKXTEMP) || !defined(HAVE_MKDTEMP) */
+
+#define MKXTEMP_PATH_MAX 1025  /* Geez, remove me */
+static void build_template(ScmString *templat, char *name)
+{
+    u_int siz;
+    const char *t = Scm_GetStringContent(templat, &siz, NULL, NULL);
+    if (siz >= MKXTEMP_PATH_MAX-6) {
+        Scm_Error("pathname too long: %S", templat);
+    }
+    memcpy(name, t, siz);
+    memcpy(name + siz, "XXXXXX", 6);
+    name[siz+6] = '\0';
+}
+
+#if !defined(HAVE_MKSTEMP)
+static int create_tmpfile(char *templat, void *arg)
+{
+    int *fdp = (int *)arg;
+    int flags;
+
+#if defined(GAUCHE_WINDOWS)
+    flags = O_CREAT|O_EXCL|O_WRONLY|O_BINARY;
+#else  /* !GAUCHE_WINDOWS */
+    flags = O_CREAT|O_EXCL|O_WRONLY;
+#endif /* !GAUCHE_WINDOWS */
+    SCM_SYSCALL(*fdp, open(templat, flags, 0600));
+    return *fdp < 0;
+}
+#endif
+
 /* Make mkstemp() work even if the system doesn't have one. */
 int Scm_Mkstemp(char *templat)
 {
@@ -683,32 +746,7 @@ int Scm_Mkstemp(char *templat)
     if (fd < 0) Scm_SysError("mkstemp failed");
     return fd;
 #else   /*!defined(HAVE_MKSTEMP)*/
-    /* Emulate mkstemp. */
-    int siz = (int)strlen(templat);
-    if (siz < 6) {
-        Scm_Error("mkstemp - invalid template: %s", templat);
-    }
-#define MKSTEMP_MAX_TRIALS 65535   /* avoid infinite loop */
-    {
-        u_long seed = (u_long)time(NULL);
-        int numtry, flags;
-        char suffix[7];
-#if defined(GAUCHE_WINDOWS)
-        flags = O_CREAT|O_EXCL|O_WRONLY|O_BINARY;
-#else  /* !GAUCHE_WINDOWS */
-        flags = O_CREAT|O_EXCL|O_WRONLY;
-#endif /* !GAUCHE_WINDOWS */
-        for (numtry=0; numtry<MKSTEMP_MAX_TRIALS; numtry++) {
-            snprintf(suffix, 7, "%06lx", (seed>>8)&0xffffff);
-            memcpy(templat+siz-6, suffix, 7);
-            SCM_SYSCALL(fd, open(templat, flags, 0600));
-            if (fd >= 0) break;
-            seed *= 2654435761UL;
-        }
-        if (numtry == MKSTEMP_MAX_TRIALS) {
-            Scm_Error("mkstemp failed");
-        }
-    }
+    emulate_mkxtemp("mkstemp", templat, create_tmpfile, &fd);
     return fd;
 #endif /*!defined(HAVE_MKSTEMP)*/
 }
@@ -716,21 +754,45 @@ int Scm_Mkstemp(char *templat)
 
 ScmObj Scm_SysMkstemp(ScmString *templat)
 {
-#define MKSTEMP_PATH_MAX 1025  /* Geez, remove me */
-    char name[MKSTEMP_PATH_MAX];
-    u_int siz;
-    const char *t = Scm_GetStringContent(templat, &siz, NULL, NULL);
-    if (siz >= MKSTEMP_PATH_MAX-6) {
-        Scm_Error("pathname too long: %S", templat);
-    }
-    memcpy(name, t, siz);
-    memcpy(name + siz, "XXXXXX", 6);
-    name[siz+6] = '\0';
+    char name[MKXTEMP_PATH_MAX];
+    build_template(templat, name);
     int fd = Scm_Mkstemp(name);
     ScmObj sname = SCM_MAKE_STR_COPYING(name);
     SCM_RETURN(Scm_Values2(Scm_MakePortWithFd(sname, SCM_PORT_OUTPUT, fd,
                                               SCM_PORT_BUFFER_FULL, TRUE),
                            sname));
+}
+
+#if !defined(HAVE_MKDTEMP)
+static int create_tmpdir(char *templat, void *arg)
+{
+    int r;
+
+#if defined(GAUCHE_WINDOWS)
+    SCM_SYSCALL(r, mkdir(templat));
+#else  /* !GAUCHE_WINDOWS */
+    SCM_SYSCALL(r, mkdir(templat, 0700));
+#endif /* !GAUCHE_WINDOWS */
+    return r < 0;
+}
+#endif
+
+ScmObj Scm_SysMkdtemp(ScmString *templat)
+{
+    char name[MKXTEMP_PATH_MAX];
+    build_template(templat, name);
+
+#if defined(HAVE_MKDTEMP)
+    {
+      char *p = NULL;
+      SCM_SYSCALL(p, mkdtemp(name));
+      if (p == NULL) Scm_SysError("mkdtemp failed");
+    }
+#else   /*!defined(HAVE_MKDTEMP)*/
+    emulate_mkxtemp("mkdtemp", name, create_tmpdir, NULL);
+#endif /*!defined(HAVE_MKDTEMP)*/
+
+    return SCM_MAKE_STR_COPYING(name);
 }
 
 /*===============================================================

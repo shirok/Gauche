@@ -20037,6 +20037,20 @@ The file is opened for writing, and its permission is set to 600.
 @c COMMON
 @end defun
 
+@defun sys-mkdtemp template
+@c EN
+Creates a directory that has unique name, and returns the name.
+@var{template} is used as the prefix of the directory.  Unlike Unix's
+mkdtemp, you don't need padding characters.  The directory's
+permission is set to 700.
+@c JP
+ユニークな名前を持つディレクトリを作成し、その名前を返します。
+@var{template}はディレクトリ名のプレフィックスに使われます。
+Unixのmkdtempと違って、パディングキャラクタをつける必要はありません。
+ディレクトリのパーミッションは700にセットされます。
+@c COMMON
+@end defun
+
 @defun sys-link existing new
 [POSIX]
 @c EN

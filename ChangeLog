@@ -1,3 +1,8 @@
+2015-12-24  Shiro Kawai  <shiro@acm.org>
+
+	* src/system.c, src/libsys.scm (sys-mkdtemp): Added mkdtemp support.
+	  Patch from enami.
+
 2015-12-22  Shiro Kawai  <shiro@acm.org>
 
 	* configure.ac: AC_PREREQ(2.69) -> AC_PREREQ(2.68), since mingw32
