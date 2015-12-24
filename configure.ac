@@ -27,25 +27,22 @@ Following encodings are currently recognized:
 'euc-jp' (EUC-JP code), 'utf-8' (UTF-8), 'sjis' (Shift-JIS),
 or 'none' (No multibyte support)]),
   [
-   case $enable_multibyte in
-     euc-jp|eucjp)      GAUCHE_CHAR_ENCODING=eucjp;;
-     utf-8|utf8|yes)    GAUCHE_CHAR_ENCODING=utf8;;
-     sjis|shift-jis)    GAUCHE_CHAR_ENCODING=sjis;;
-     no|none)           GAUCHE_CHAR_ENCODING=none;;
-     *) echo "unrecognized encoding option: '$enable_multibyte'; type ./configure --help for available options"
-        exit 1;;
-   esac
+   AS_CASE([$enable_multibyte],
+     [euc-jp|eucjp],   [GAUCHE_CHAR_ENCODING=eucjp],
+     [utf-8|utf8|yes], [GAUCHE_CHAR_ENCODING=utf8],
+     [sjis|shift-jis], [GAUCHE_CHAR_ENCODING=sjis],
+     [no|none],        [GAUCHE_CHAR_ENCODING=none],
+                       [AC_MSG_ERROR([unrecognized encoding option: '$enable_multibyte'; type ./configure --help for available options], 1)])
   ],
   [
     GAUCHE_CHAR_ENCODING=utf8
     ac_configure_args="$ac_configure_args '--enable-multibyte=utf-8'"
   ])
 
-case $GAUCHE_CHAR_ENCODING in
-  eucjp) AC_DEFINE(GAUCHE_CHAR_ENCODING_EUC_JP, [], [Define if Gauche handles multi-byte character as EUC-JP]);;
-  utf8)  AC_DEFINE(GAUCHE_CHAR_ENCODING_UTF_8,  [], [Define if Gauche handles multi-byte character as UTF-8]);;
-  sjis)  AC_DEFINE(GAUCHE_CHAR_ENCODING_SJIS,   [], [Define if Gauche handles multi-byte character as Shift JIS]);;
-esac
+AS_CASE([$GAUCHE_CHAR_ENCODING],
+  [eucjp], [AC_DEFINE(GAUCHE_CHAR_ENCODING_EUC_JP, [], [Define if Gauche handles multi-byte character as EUC-JP])],
+  [utf8],  [AC_DEFINE(GAUCHE_CHAR_ENCODING_UTF_8,  [], [Define if Gauche handles multi-byte character as UTF-8])],
+  [sjis],  [AC_DEFINE(GAUCHE_CHAR_ENCODING_SJIS,   [], [Define if Gauche handles multi-byte character as Shift JIS])])
 
 dnl ----------------------------------------------------------
 dnl  with-slib
@@ -57,28 +54,27 @@ AC_ARG_WITH(slib,
 installed under PATH.  If PATH is not specified, or this option is omitted,
 Gauche still tries to find your slib installation from some typical places.]),
   [
-    case $with_slib in
-      no)  search_slib=no;;
-      yes) search_slib=yes;;
-      *)   search_slib=no; SLIB_DIR=$with_slib;;
-    esac
+    AS_CASE([$with_slib],
+      [no],  [search_slib=no],
+      [yes], [search_slib=yes],
+	     [search_slib=no; SLIB_DIR=$with_slib])
   ], [ search_slib=yes ])
 
-if test $search_slib = "yes"; then
+AS_IF([test $search_slib = "yes"], [
   AC_MSG_CHECKING(slib)
   slib_found=no
   for dir in /usr/share/slib /usr/local/slib /usr/local/lib/slib /usr/local/share/slib /usr/src/slib /opt/share/slib; do
-    if test -f $dir/require.scm; then
+    AS_IF([test -f $dir/require.scm], [
        SLIB_DIR=$dir
        AC_MSG_RESULT($SLIB_DIR)
        slib_found=yes
        break
-    fi
+    ])
   done
-  if test $slib_found = "no"; then
+  AS_IF([test $slib_found = "no"], [
     AC_MSG_RESULT([not found, using fallback $SLIB_DIR])
-  fi
-fi
+  ])
+])
 AC_SUBST(SLIB_DIR)
 
 dnl ----------------------------------------------------------
@@ -424,21 +420,20 @@ AC_CHECK_HEADERS(crt_externs.h)
 
 dnl ===========================================================
 dnl Checks processor type, for processor-specific stuff
-case $host in
-  i?86-apple-darwin*)
+AS_CASE([$host],
+  [i?86-apple-darwin*], [
     AC_CHECK_DEFINED(i386,
-      AC_DEFINE(SCM_TARGET_I386,1,[Define to use i386 optimizations])) ;;
-  i?86-*)
-    AC_DEFINE(SCM_TARGET_I386,1,[Define to use i386 optimizations]) ;;
-  x86_64-*)
-    AC_DEFINE(SCM_TARGET_X86_64,1,[Define to use x86_64 optimizations]) ;;
-  alpha*)
-    CFLAGS="$CFLAGS -mieee" ;;
-  arm*)
-    # ARM processor may use a special mixed endian for doubles.  It can
-    # be switched by processor configuration.  So we check it at runtime.
-    AC_DEFINE(DOUBLE_ARMENDIAN,1,[Define to use mixed endian ARM processor]) ;;
-esac
+      AC_DEFINE(SCM_TARGET_I386,1,[Define to use i386 optimizations]))],
+  [i?86-*], [
+    AC_DEFINE(SCM_TARGET_I386,1,[Define to use i386 optimizations])],
+  [x86_64-*], [
+    AC_DEFINE(SCM_TARGET_X86_64,1,[Define to use x86_64 optimizations])],
+  [alpha*], [
+    CFLAGS="$CFLAGS -mieee"],
+  [arm*], [
+    dnl ARM processor may use a special mixed endian for doubles.  It can
+    dnl be switched by processor configuration.  So we check it at runtime.
+    AC_DEFINE(DOUBLE_ARMENDIAN,1,[Define to use mixed endian ARM processor])])
 
 dnl ===========================================================
 dnl Checks for typedefs, structures, and compiler characteristics.
