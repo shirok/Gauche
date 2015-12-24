@@ -674,6 +674,56 @@ ScmObj Scm_DirName(ScmString *filename)
 #undef ROOTDIR
 #undef SEPARATOR
 
+
+#if !defined(HAVE_MKXTEMP) || defined(HAVE_MKDTEMP)
+/*
+ * Helper function to emulate mkstemp or mkdtemp.  FUNC returns 0 on
+ * success and non-zero otherwize.  NAME is a name of operation
+ * performed by FUNC.  ARG is caller supplied data passed to FUNC.
+ */
+static void Scm_EmulateMkxtemp(char *name, char *templat,
+                               int (*func)(char *, void *), void *arg)
+{
+    /* Emulate mkxtemp. */
+    int siz = (int)strlen(templat);
+    if (siz < 6) {
+        Scm_Error("%s - invalid template: %s", name, templat);
+    }
+#define MKXTEMP_MAX_TRIALS 65535   /* avoid infinite loop */
+    {
+        u_long seed = (u_long)time(NULL);
+        int numtry, rv;
+        char suffix[7];
+        for (numtry=0; numtry<MKXTEMP_MAX_TRIALS; numtry++) {
+            snprintf(suffix, 7, "%06lx", (seed>>8)&0xffffff);
+            memcpy(templat+siz-6, suffix, 7);
+            rv = (*func)(templat, arg);
+            if (rv == 0) break;
+            seed *= 2654435761UL;
+        }
+        if (numtry == MKXTEMP_MAX_TRIALS) {
+            Scm_Error("%s failed", name);
+        }
+    }
+}
+#endif /* !defined(HAVE_MKXTEMP) || defined(HAVE_MKDTEMP) */
+
+#if !defined(HAVE_MKSTEMP)
+static int Scm_CreateTempFile(char *templat, void *arg)
+{
+    int *fdp = (int *)arg;
+    int flags;
+
+#if defined(GAUCHE_WINDOWS)
+    flags = O_CREAT|O_EXCL|O_WRONLY|O_BINARY;
+#else  /* !GAUCHE_WINDOWS */
+    flags = O_CREAT|O_EXCL|O_WRONLY;
+#endif /* !GAUCHE_WINDOWS */
+    SCM_SYSCALL(*fdp, open(templat, flags, 0600));
+    return *fdp < 0;
+}
+#endif
+
 /* Make mkstemp() work even if the system doesn't have one. */
 int Scm_Mkstemp(char *templat)
 {
@@ -683,32 +733,7 @@ int Scm_Mkstemp(char *templat)
     if (fd < 0) Scm_SysError("mkstemp failed");
     return fd;
 #else   /*!defined(HAVE_MKSTEMP)*/
-    /* Emulate mkstemp. */
-    int siz = (int)strlen(templat);
-    if (siz < 6) {
-        Scm_Error("mkstemp - invalid template: %s", templat);
-    }
-#define MKSTEMP_MAX_TRIALS 65535   /* avoid infinite loop */
-    {
-        u_long seed = (u_long)time(NULL);
-        int numtry, flags;
-        char suffix[7];
-#if defined(GAUCHE_WINDOWS)
-        flags = O_CREAT|O_EXCL|O_WRONLY|O_BINARY;
-#else  /* !GAUCHE_WINDOWS */
-        flags = O_CREAT|O_EXCL|O_WRONLY;
-#endif /* !GAUCHE_WINDOWS */
-        for (numtry=0; numtry<MKSTEMP_MAX_TRIALS; numtry++) {
-            snprintf(suffix, 7, "%06lx", (seed>>8)&0xffffff);
-            memcpy(templat+siz-6, suffix, 7);
-            SCM_SYSCALL(fd, open(templat, flags, 0600));
-            if (fd >= 0) break;
-            seed *= 2654435761UL;
-        }
-        if (numtry == MKSTEMP_MAX_TRIALS) {
-            Scm_Error("mkstemp failed");
-        }
-    }
+    Scm_EmulateMkxtemp("mkstemp", templat, Scm_CreateTempFile, &fd);
     return fd;
 #endif /*!defined(HAVE_MKSTEMP)*/
 }
@@ -733,6 +758,20 @@ ScmObj Scm_SysMkstemp(ScmString *templat)
                            sname));
 }
 
+#if !defined(HAVE_MKDTEMP)
+static int Scm_CreateTempDir(char *templat, void *arg)
+{
+    int r;
+
+#if defined(GAUCHE_WINDOWS)
+    SCM_SYSCALL(r, mkdir(templat));
+#else  /* !GAUCHE_WINDOWS */
+    SCM_SYSCALL(r, mkdir(templat, 0700));
+#endif /* !GAUCHE_WINDOWS */
+    return r < 0;
+}
+#endif
+
 /* Make mkdtemp() work even if the system doesn't have one. */
 static void Scm_Mkdtemp(char *templat)
 {
@@ -741,31 +780,7 @@ static void Scm_Mkdtemp(char *templat)
     SCM_SYSCALL(p, mkdtemp(templat));
     if (p == NULL) Scm_SysError("mkdtemp failed");
 #else   /*!defined(HAVE_MKDTEMP)*/
-    /* Emulate mkdtemp. */
-    int siz = (int)strlen(templat);
-    if (siz < 6) {
-        Scm_Error("mkdtemp - invalid template: %s", templat);
-    }
-#define MKDTEMP_MAX_TRIALS 65535   /* avoid infinite loop */
-    {
-        u_long seed = (u_long)time(NULL);
-        int numtry, r;
-        char suffix[7];
-        for (numtry=0; numtry<MKDTEMP_MAX_TRIALS; numtry++) {
-            snprintf(suffix, 7, "%06lx", (seed>>8)&0xffffff);
-            memcpy(templat+siz-6, suffix, 7);
-#if defined(GAUCHE_WINDOWS)
-            SCM_SYSCALL(r, mkdir(templat));
-#else  /* !GAUCHE_WINDOWS */
-            SCM_SYSCALL(r, mkdir(templat, 0700));
-#endif /* !GAUCHE_WINDOWS */
-            if (r >= 0) break;
-            seed *= 2654435761UL;
-        }
-        if (numtry == MKDTEMP_MAX_TRIALS) {
-            Scm_Error("mkdtemp failed");
-        }
-    }
+    Scm_EmulateMkxtemp("mkdtemp", templat, Scm_CreateTempDir, NULL);
 #endif /*!defined(HAVE_MKDTEMP)*/
 }
 
