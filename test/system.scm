@@ -374,13 +374,28 @@
   ]
  [else])
 
-;; sys-mkdtemp
-(test* "sys-mkdtemp" '(#t #t)
-       (let1 dirs (map (^_ (sys-mkdtemp "test.dir")) (iota 3))
-         (begin0 (list (every file-is-directory? dirs)
-                       (let1 sorted (sort dirs)
+;; sys-mkstemp/sys-mkdtemp
+(let ()
+  ;; Check if multiple temporary files or directories are created.
+  (define (test-mkxtemp name creator tester remover)
+    (test* name '(#t #t)
+       (let1 temps (map creator (iota 3))
+         (begin0 (list (every tester temps)
+                       (let1 sorted (sort temps)
                          (every (complement equal?) sorted (cdr sorted))))
-           (for-each sys-rmdir dirs))))
+           (for-each remover temps)))))
+
+  (test-mkxtemp "sys-mkstemp"
+                (^_ (receive (p n) (sys-mkstemp "test.o")
+                      (close-output-port p)
+                      n))
+                file-is-regular?
+                sys-unlink)
+
+  (test-mkxtemp "sys-mkdtemp"
+                (^_ (sys-mkdtemp "test.dir"))
+                file-is-directory?
+                sys-rmdir))
 
 ;;-------------------------------------------------------------------
 (test-section "time")
