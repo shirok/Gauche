@@ -681,8 +681,8 @@ ScmObj Scm_DirName(ScmString *filename)
  * success and non-zero otherwize.  NAME is a name of operation
  * performed by FUNC.  ARG is caller supplied data passed to FUNC.
  */
-static void Scm_EmulateMkxtemp(char *name, char *templat,
-                               int (*func)(char *, void *), void *arg)
+static void emulate_mkxtemp(char *name, char *templat,
+                            int (*func)(char *, void *), void *arg)
 {
     /* Emulate mkxtemp. */
     int siz = (int)strlen(templat);
@@ -706,10 +706,10 @@ static void Scm_EmulateMkxtemp(char *name, char *templat,
         }
     }
 }
-#endif /* !defined(HAVE_MKXTEMP) || defined(HAVE_MKDTEMP) */
+#endif /* !defined(HAVE_MKXTEMP) || !defined(HAVE_MKDTEMP) */
 
 #if !defined(HAVE_MKSTEMP)
-static int Scm_CreateTempFile(char *templat, void *arg)
+static int create_tmpfile(char *templat, void *arg)
 {
     int *fdp = (int *)arg;
     int flags;
@@ -733,7 +733,7 @@ int Scm_Mkstemp(char *templat)
     if (fd < 0) Scm_SysError("mkstemp failed");
     return fd;
 #else   /*!defined(HAVE_MKSTEMP)*/
-    Scm_EmulateMkxtemp("mkstemp", templat, Scm_CreateTempFile, &fd);
+    emulate_mkxtemp("mkstemp", templat, create_tmpfile, &fd);
     return fd;
 #endif /*!defined(HAVE_MKSTEMP)*/
 }
@@ -759,7 +759,7 @@ ScmObj Scm_SysMkstemp(ScmString *templat)
 }
 
 #if !defined(HAVE_MKDTEMP)
-static int Scm_CreateTempDir(char *templat, void *arg)
+static int create_tmpdir(char *templat, void *arg)
 {
     int r;
 
@@ -780,7 +780,7 @@ static void Scm_Mkdtemp(char *templat)
     SCM_SYSCALL(p, mkdtemp(templat));
     if (p == NULL) Scm_SysError("mkdtemp failed");
 #else   /*!defined(HAVE_MKDTEMP)*/
-    Scm_EmulateMkxtemp("mkdtemp", templat, Scm_CreateTempDir, NULL);
+    emulate_mkxtemp("mkdtemp", templat, create_tmpdir, NULL);
 #endif /*!defined(HAVE_MKDTEMP)*/
 }
 
