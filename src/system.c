@@ -772,19 +772,6 @@ static int create_tmpdir(char *templat, void *arg)
 }
 #endif
 
-/* Make mkdtemp() work even if the system doesn't have one. */
-static void Scm_Mkdtemp(char *templat)
-{
-#if defined(HAVE_MKDTEMP)
-    char *p = NULL;
-    SCM_SYSCALL(p, mkdtemp(templat));
-    if (p == NULL) Scm_SysError("mkdtemp failed");
-#else   /*!defined(HAVE_MKDTEMP)*/
-    emulate_mkxtemp("mkdtemp", templat, create_tmpdir, NULL);
-#endif /*!defined(HAVE_MKDTEMP)*/
-}
-
-
 ScmObj Scm_SysMkdtemp(ScmString *templat)
 {
 #define MKDTEMP_PATH_MAX 1025  /* Geez, remove me */
@@ -797,7 +784,17 @@ ScmObj Scm_SysMkdtemp(ScmString *templat)
     memcpy(name, t, siz);
     memcpy(name + siz, "XXXXXX", 6);
     name[siz+6] = '\0';
-    Scm_Mkdtemp(name);
+
+#if defined(HAVE_MKDTEMP)
+    {
+      char *p = NULL;
+      SCM_SYSCALL(p, mkdtemp(name));
+      if (p == NULL) Scm_SysError("mkdtemp failed");
+    }
+#else   /*!defined(HAVE_MKDTEMP)*/
+    emulate_mkxtemp("mkdtemp", name, create_tmpdir, NULL);
+#endif /*!defined(HAVE_MKDTEMP)*/
+
     return SCM_MAKE_STR_COPYING(name);
 }
 
