@@ -544,8 +544,8 @@
               (if (zero? c)
                 (values `(,i0 ,i1) `(,i0 1))
                 (values `(,i0 ,i1 (rep2 ,c)) `(,i0 1)))]
-             [(zero? c) (values `(,i0) `(,i1 ,in 0))]
-             [else (values `(,i0 ,i1 (rep2 ,c)) `(i0 ,in 0))])]
+             [(zero? c) (values `(,i0 ,i1) `(,i0 ,in 0))]
+             [else (values `(,i0 ,i1 (rep2 ,c)) `(,i0 ,in 0))])]
       ))
 
   (print "(")
