@@ -675,7 +675,7 @@ ScmObj Scm_DirName(ScmString *filename)
 #undef SEPARATOR
 
 
-#if !defined(HAVE_MKXTEMP) || !defined(HAVE_MKDTEMP)
+#if !defined(HAVE_MKSTEMP) || !defined(HAVE_MKDTEMP)
 /*
  * Helper function to emulate mkstemp or mkdtemp.  FUNC returns 0 on
  * success and non-zero otherwize.  NAME is a name of operation
@@ -706,7 +706,7 @@ static void emulate_mkxtemp(char *name, char *templat,
         }
     }
 }
-#endif /* !defined(HAVE_MKXTEMP) || !defined(HAVE_MKDTEMP) */
+#endif /* !defined(HAVE_MKSTEMP) || !defined(HAVE_MKDTEMP) */
 
 #define MKXTEMP_PATH_MAX 1025  /* Geez, remove me */
 static void build_template(ScmString *templat, char *name)
