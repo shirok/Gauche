@@ -202,6 +202,7 @@
     (warn-legacy               SCM_SYM_WARN_LEGACY)
     (strict-r7                 SCM_SYM_STRICT_R7)
     (debug-funcall             SCM_SYM_DEBUG_FUNCALL)
+    (reader-lexical-mode       SCM_SYM_READER_LEXICAL_MODE)
     ))
 
 

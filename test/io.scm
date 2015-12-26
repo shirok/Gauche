@@ -138,14 +138,15 @@
   (test* "port-attributes" '((my-attribute . ok)
                              (my-attribute2 . 103)
                              (my-attribute3 . 12))
-         (sort (port-attributes p)
-               string<?
-               ($ symbol->string $ car $)))
+         (alist-delete 'reader-lexical-mode
+                       (sort (port-attributes p)
+                             string<?
+                             ($ symbol->string $ car $))))
   (test* "port-attribute-delete!" '((my-attribute3 . 13))
          (begin
            (port-attribute-delete! p 'my-attribute)
            (port-attribute-delete! p 'my-attribute2)
-           (port-attributes p)))
+           (alist-delete 'reader-lexical-mode (port-attributes p))))
   )
 
 ;;-------------------------------------------------------------------

@@ -35,6 +35,7 @@
 #include "gauche.h"
 #include "gauche/class.h"
 #include "gauche/priv/portP.h"
+#include "gauche/priv/builtin-syms.h"
 
 #include <string.h>
 #include <fcntl.h>
@@ -196,6 +197,10 @@ static ScmPort *make_port(ScmClass *klass, int dir, int type)
     port->line = 1;
 
     Scm_RegisterFinalizer(SCM_OBJ(port), port_finalize, NULL);
+
+    /* Default reader lexical mode */
+    Scm_PortAttrSetUnsafe(port, SCM_SYM_READER_LEXICAL_MODE,
+                          Scm_ReaderLexicalMode());
 
     return port;
 }
@@ -623,6 +628,33 @@ void Scm_SetPortCaseFolding(ScmPort *port, int folding)
     } else {
         SCM_PORT_FLAGS(port) &= ~SCM_PORT_CASE_FOLD;
     }
+}
+
+/* Port's reader lexical mode is set at port creation, taken from
+   readerLexicalMode parameter.  It may be altered by reader directive
+   such as #!r7rs.
+   The possible value is the same as the global reader lexical mode,
+   i.e.  one of the symbols legacy, warn-legacy, permissive or strict-r7.
+*/
+ScmObj Scm_GetPortReaderLexicalMode(ScmPort *port)
+{
+    /* We let it throw an error if there's no reader-lexical-mode attr.
+       It must be set in the constructor. */
+    return Scm_PortAttrGet(port, SCM_SYM_READER_LEXICAL_MODE, SCM_UNBOUND);
+}
+
+void Scm_SetPortReaderLexicalMode(ScmPort *port, ScmObj mode)
+{
+    /*The check is duplicatd in Scm_SetReaderLexicalMode; refactoring needed.*/
+    if (!(SCM_EQ(mode, SCM_SYM_LEGACY)
+          || SCM_EQ(mode, SCM_SYM_WARN_LEGACY)
+          || SCM_EQ(mode, SCM_SYM_PERMISSIVE)
+          || SCM_EQ(mode, SCM_SYM_STRICT_R7))) {
+        Scm_Error("reader-lexical-mode must be one of the following symbols:"
+                  " legacy, warn-legacy, permissive, strict-r7, but got %S",
+                  mode);
+    }
+    Scm_PortAttrSet(port, SCM_SYM_READER_LEXICAL_MODE, mode);
 }
 
 /* flushes the buffer, to make a room of cnt bytes.

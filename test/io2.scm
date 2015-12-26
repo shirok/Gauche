@@ -390,6 +390,11 @@
        (test-reader-lexical-mode-directive "#!r7rs" "\"\\x30;z\""))
 (test* "#!r7rs directive" (test-error <read-error>)
        (test-reader-lexical-mode-directive "#!r7rs" "\"\\x30\""))
+(test* "#!r7rs directive effect remains local to the port"
+       '("0z" "0z")
+       (let* ([a (read-from-string "#!r7rs \"\\x30;z\"")]
+              [b (read-from-string "\"\\x30z\"")])
+         (list a b)))
 
 (sys-unlink "test.o")
 (sys-unlink "test1.o")

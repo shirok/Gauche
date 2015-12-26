@@ -1,3 +1,11 @@
+2015-12-25  Shiro Kawai  <shiro@acm.org>
+
+	* src/port.c (Scm_{Get|Set}PortReaderLexicalMode): Save port-local
+	  reader lexical mode in port attr.  Directives such as #!r7rs
+	  should only affect port-local mode, not the global parameter.
+	* src/read.c: Changed references to Scm_ReaderLexicalMode() to
+	  Scm_GetPortReaderLexicalMode().
+
 2015-12-24  Shiro Kawai  <shiro@acm.org>
 
 	* src/system.c, src/libsys.scm (sys-mkdtemp): Added mkdtemp support.

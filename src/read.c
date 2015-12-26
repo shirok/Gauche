@@ -227,7 +227,10 @@ int Scm_ReadContextLiteralImmutable(ScmReadContext *ctx)
 }
 
 /*
- * Reader lexical mode
+ * Global reader lexical mode
+ * NB: This sets up the default reader lexical mode in the dynamic
+ * environment.  It affects the port's reader lexical mode, which in turn
+ * affects the actual reader mode.
  */
 ScmObj Scm_SetReaderLexicalMode(ScmObj mode)
 {
@@ -503,7 +506,7 @@ static int skipws(ScmPort *port, ScmReadContext *ctx)
 
 static void reject_in_r7(ScmPort *port, ScmReadContext *ctx, const char *token)
 {
-    if (SCM_EQ(Scm_ReaderLexicalMode(), SCM_SYM_STRICT_R7)) {
+    if (SCM_EQ(Scm_GetPortReaderLexicalMode(port), SCM_SYM_STRICT_R7)) {
         Scm_ReadError(port,
                       "lexical syntax %s isn't allowed in strict R7RS mode",
                       token);
@@ -635,7 +638,7 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
     case '`': return read_quoted(port, SCM_SYM_QUASIQUOTE, ctx);
     case ':':
         /* Would be removed once we make keywords a subtype of symbols. */
-        if (SCM_EQ(Scm_ReaderLexicalMode(), SCM_SYM_STRICT_R7)) {
+        if (SCM_EQ(Scm_GetPortReaderLexicalMode(port), SCM_SYM_STRICT_R7)) {
             return read_symbol(port, c, ctx);
         } else {
             return read_keyword(port, ctx);
@@ -1039,7 +1042,8 @@ static ScmObj read_quoted(ScmPort *port, ScmObj quoter, ScmReadContext *ctx)
 static void read_string_xdigits(ScmPort *port, int key,
                                 int incompletep, ScmDString *buf)
 {
-    ScmObj bad = Scm_ReadXdigitsFromPort(port, key, Scm_ReaderLexicalMode(),
+    ScmObj bad = Scm_ReadXdigitsFromPort(port, key,
+                                         Scm_GetPortReaderLexicalMode(port),
                                          incompletep, buf);
     if (SCM_STRINGP(bad)) {
         /* skip chars to the end of string, so that the reader will read
@@ -1103,7 +1107,8 @@ static ScmObj read_string(ScmPort *port, int incompletep,
                 break;
             }
             case 'u': case 'U': {
-                if (SCM_EQ(Scm_ReaderLexicalMode(), SCM_SYM_STRICT_R7)) {
+                if (SCM_EQ(Scm_GetPortReaderLexicalMode(port),
+                           SCM_SYM_STRICT_R7)) {
                     Scm_ReadError(port, "\\%c in string literal isn't allowed "
                                   "in strinct-r7rs mode", c);
                 }
@@ -1211,7 +1216,7 @@ static ScmObj read_char(ScmPort *port, ScmReadContext *ctx)
         /* need to read word to see if it is a character name */
         name = SCM_STRING(read_word(port, c, ctx, TRUE, FALSE));
 
-        if (SCM_EQ(Scm_ReaderLexicalMode(), SCM_SYM_STRICT_R7)) {
+        if (SCM_EQ(Scm_GetPortReaderLexicalMode(port), SCM_SYM_STRICT_R7)) {
             ScmChar following = Scm_GetcUnsafe(port);
             if (!char_is_delimiter(following)) {
                 Scm_Error("Character literal isn't delimited: #\\%s%C ...",
@@ -1232,7 +1237,7 @@ static ScmObj read_char(ScmPort *port, ScmReadContext *ctx)
             goto unknown;
         }
 
-        ScmObj lexmode = Scm_ReaderLexicalMode();
+        ScmObj lexmode = Scm_GetPortReaderLexicalMode(port);
 
         /* handle #\x1f etc. */
         if (cname[0] == 'x' && isxdigit(cname[1])) {
@@ -1373,7 +1378,7 @@ static ScmObj read_escaped_symbol(ScmPort *port, ScmChar delim, int interned,
 {
     ScmDString ds;
     Scm_DStringInit(&ds);
-    ScmObj xmode = Scm_ReaderLexicalMode();
+    ScmObj xmode = Scm_GetPortReaderLexicalMode(port);
 
     for (;;) {
         int c = Scm_GetcUnsafe(port);
@@ -1761,7 +1766,7 @@ static ScmObj read_sharp_word_1(ScmPort *port, char ch, ScmReadContext *ctx)
 
 static ScmObj read_sharp_word(ScmPort *port, char ch, ScmReadContext *ctx)
 {
-    if (SCM_EQ(Scm_ReaderLexicalMode(), SCM_SYM_LEGACY)) {
+    if (SCM_EQ(Scm_GetPortReaderLexicalMode(port), SCM_SYM_LEGACY)) {
         return read_sharp_word_legacy(port, ch, ctx);
     } else {
         return read_sharp_word_1(port, ch, ctx);

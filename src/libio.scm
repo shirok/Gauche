@@ -956,10 +956,14 @@
     (values)))
 
 (define-reader-directive 'gauche-legacy
-  (^[sym port ctx] (reader-lexical-mode 'legacy) (values)))
+  (^[sym port ctx]
+    (port-attribute-set! port 'reader-lexical-mode 'legacy)
+    (values)))
 
 (define-reader-directive 'r7rs
-  (^[sym port ctx] (reader-lexical-mode 'strict-r7) (values)))
+  (^[sym port ctx]
+    (port-attribute-set! port 'reader-lexical-mode 'strict-r7)
+    (values)))
 
 ;; HIGHLY EXPERIMENTAL
 (define-reader-directive 'c-expr
