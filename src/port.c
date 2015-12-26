@@ -52,6 +52,10 @@
 #define SCM_PORT_BUFFER_SIGPIPE_SENSITIVE_P(obj) \
     (SCM_PORT(obj)->src.buf.mode & SCM_PORT_BUFFER_SIGPIPE_SENSITIVE)
 
+/* Parameter location for the global reader lexical mode, from which
+   ports inherit. */
+static ScmParameterLoc readerLexicalMode;
+
 /*================================================================
  * Class stuff
  */
@@ -655,6 +659,27 @@ void Scm_SetPortReaderLexicalMode(ScmPort *port, ScmObj mode)
                   mode);
     }
     Scm_PortAttrSet(port, SCM_SYM_READER_LEXICAL_MODE, mode);
+}
+
+/* global reader lexical mode. */
+ScmObj Scm_SetReaderLexicalMode(ScmObj mode)
+{
+    if (!(SCM_EQ(mode, SCM_SYM_LEGACY)
+          || SCM_EQ(mode, SCM_SYM_WARN_LEGACY)
+          || SCM_EQ(mode, SCM_SYM_PERMISSIVE)
+          || SCM_EQ(mode, SCM_SYM_STRICT_R7))) {
+        Scm_Error("reader-lexical-mode must be one of the following symbols:"
+                  " legacy, warn-legacy, permissive, strict-r7, but got %S",
+                  mode);
+    }
+    ScmObj prev_mode = Scm_ParameterRef(Scm_VM(), &readerLexicalMode);
+    Scm_ParameterSet(Scm_VM(), &readerLexicalMode, mode);
+    return prev_mode;
+}
+
+ScmObj Scm_ReaderLexicalMode()
+{
+    return Scm_ParameterRef(Scm_VM(), &readerLexicalMode);
 }
 
 /* flushes the buffer, to make a room of cnt bytes.
@@ -1779,6 +1804,11 @@ void Scm__InitPort(void)
                         Scm_GaucheModule(), port_slots, 0);
     Scm_InitStaticClass(&Scm_CodingAwarePortClass, "<coding-aware-port>",
                         Scm_GaucheModule(), port_slots, 0);
+
+    /* This must be done before *any* port is created. */
+    Scm_DefinePrimitiveParameter(Scm_GaucheModule(), "reader-lexical-mode",
+                                 SCM_OBJ(SCM_SYM_PERMISSIVE),
+                                 &readerLexicalMode);
 
     scm_stdin  = Scm_MakePortWithFd(SCM_MAKE_STR("(standard input)"),
                                     SCM_PORT_INPUT, 0,

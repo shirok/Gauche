@@ -52,6 +52,14 @@ SCM_EXTERN ScmReadContext *Scm_SetCurrentReadContext(ScmReadContext *ctx);
     warn-legacy
     strict-r7
    This is kept in a parameter, so it's thread-local.
+
+   NB: The actual implementation is in port.c, because ports require
+   this working at initialization, but reader is initialized after ports.
+   It is debatable which module these should belong to.  Reader *always*
+   reference port's reader lexical mode, and the global reader lexical
+   mode parameter is only used to initialize individual ports.  So these
+   can be in port's API.  But in that case, we may want other name
+   (e.g. DefaultReaderLexicalMode).
  */
 SCM_EXTERN ScmObj Scm_ReaderLexicalMode(void);
 /* returns previous setting */

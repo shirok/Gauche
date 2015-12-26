@@ -87,9 +87,6 @@ static struct {
 /* Parameter location for default reader mode */
 ScmParameterLoc defaultReadContext;
 
-/* Parameter location for the current reader lexical mode */
-ScmParameterLoc readerLexicalMode;
-
 /*----------------------------------------------------------------
  * Entry points
  *   Note: Entire read operation are done while locking the input port.
@@ -224,32 +221,6 @@ SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_ReadContextClass, read_context_print);
 int Scm_ReadContextLiteralImmutable(ScmReadContext *ctx)
 {
     return (ctx->flags & RCTX_LITERAL_IMMUTABLE);
-}
-
-/*
- * Global reader lexical mode
- * NB: This sets up the default reader lexical mode in the dynamic
- * environment.  It affects the port's reader lexical mode, which in turn
- * affects the actual reader mode.
- */
-ScmObj Scm_SetReaderLexicalMode(ScmObj mode)
-{
-    if (!(SCM_EQ(mode, SCM_SYM_LEGACY)
-          || SCM_EQ(mode, SCM_SYM_WARN_LEGACY)
-          || SCM_EQ(mode, SCM_SYM_PERMISSIVE)
-          || SCM_EQ(mode, SCM_SYM_STRICT_R7))) {
-        Scm_Error("reader-lexical-mode must be one of the following symbols:"
-                  " legacy, warn-legacy, permissive, strict-r7, but got %S",
-                  mode);
-    }
-    ScmObj prev_mode = Scm_ParameterRef(Scm_VM(), &readerLexicalMode);
-    Scm_ParameterSet(Scm_VM(), &readerLexicalMode, mode);
-    return prev_mode;
-}
-
-ScmObj Scm_ReaderLexicalMode()
-{
-    return Scm_ParameterRef(Scm_VM(), &readerLexicalMode);
 }
 
 /*----------------------------------------------------------------
@@ -1801,6 +1772,4 @@ void Scm__InitRead(void)
 
     Scm_InitParameterLoc(Scm_VM(), &defaultReadContext,
                          SCM_OBJ(make_read_context(NULL)));
-    Scm_InitParameterLoc(Scm_VM(), &readerLexicalMode,
-                         SCM_OBJ(SCM_SYM_PERMISSIVE));
 }
