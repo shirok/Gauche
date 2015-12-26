@@ -522,6 +522,12 @@
        (read (open-input-string "\"0123 \\   \n   4567\"")))
 (test* "line continuation" "0123-4567"
        (read (open-input-string "\"0123\\\n \\  \n -4567\"")))
+(test* "line continuation" "abcd"
+       (read (open-input-string "\"abcd\\\n\"")))
+(test* "line continuation" "abcd2"
+       (read (open-input-string "\"abcd2\\\r\n \"")))
+(test* "line continuation" "abcd3"
+       (read (open-input-string "\"abcd3\\\r\t\"")))
 (test* "line continuation (invalid)" (test-error)
        (read (open-input-string "\"1234\\ x\"")))
 

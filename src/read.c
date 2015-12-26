@@ -1080,6 +1080,7 @@ static ScmObj read_string(ScmPort *port, int incompletep,
         FETCH(c);
         switch (c) {
         case EOF: goto eof_exit;
+        doublequote:
         case '"': {
             int flags = ((incompletep? SCM_STRING_INCOMPLETE : 0)
                          | SCM_STRING_IMMUTABLE);
@@ -1116,7 +1117,7 @@ static ScmObj read_string(ScmPort *port, int incompletep,
             case '\t': {
                 for (;;) {
                     FETCH(c);
-                    if (c == EOF) goto eof_exit;
+                    if (c == EOF)  goto eof_exit;
                     if (c == '\r') goto cont_cr;
                     if (c == '\n') goto cont_lf;
                     if (!INTRALINE_WS(c)) goto cont_err;
@@ -1127,6 +1128,7 @@ static ScmObj read_string(ScmPort *port, int incompletep,
             case '\r': {
                 FETCH(c);
                 if (c == EOF)  goto eof_exit;
+                if (c == '"')  goto doublequote;
                 if (c == '\\') goto backslash;
                 if (c != '\n' && !INTRALINE_WS(c)) {
                     ACCUMULATE(c);
@@ -1138,7 +1140,8 @@ static ScmObj read_string(ScmPort *port, int incompletep,
             case '\n': {
                 for (;;) {
                     FETCH(c);
-                    if (c == EOF) goto eof_exit;
+                    if (c == EOF)  goto eof_exit;
+                    if (c == '"')  goto doublequote;
                     if (c == '\\') goto backslash;
                     if (!INTRALINE_WS(c)) {
                         ACCUMULATE(c);
