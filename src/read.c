@@ -1055,12 +1055,7 @@ static ScmObj read_string(ScmPort *port, int incompletep,
         FETCH(c);
         switch (c) {
         case EOF: goto eof_exit;
-        doublequote:
-        case '"': {
-            int flags = ((incompletep? SCM_STRING_INCOMPLETE : 0)
-                         | SCM_STRING_IMMUTABLE);
-            return Scm_DStringGet(&ds, flags);
-        }
+        case '"': goto finish;
         backslash:
         case '\\': {
             FETCH(c);
@@ -1104,7 +1099,7 @@ static ScmObj read_string(ScmPort *port, int incompletep,
             case '\r': {
                 FETCH(c);
                 if (c == EOF)  goto eof_exit;
-                if (c == '"')  goto doublequote;
+                if (c == '"')  goto finish;
                 if (c == '\\') goto backslash;
                 if (c != '\n' && !INTRALINE_WS(c)) {
                     ACCUMULATE(c);
@@ -1117,7 +1112,7 @@ static ScmObj read_string(ScmPort *port, int incompletep,
                 for (;;) {
                     FETCH(c);
                     if (c == EOF)  goto eof_exit;
-                    if (c == '"')  goto doublequote;
+                    if (c == '"')  goto finish;
                     if (c == '\\') goto backslash;
                     if (!INTRALINE_WS(c)) {
                         ACCUMULATE(c);
@@ -1141,8 +1136,9 @@ static ScmObj read_string(ScmPort *port, int incompletep,
  cont_err:
     Scm_ReadError(port, "Invalid line continuation sequence in a string literal: %S...",
                   Scm_DStringGet(&ds, 0));
-    /* NOTREACHED */
-    return SCM_FALSE;
+ finish:;
+    int flags = ((incompletep? SCM_STRING_INCOMPLETE:0) | SCM_STRING_IMMUTABLE);
+    return Scm_DStringGet(&ds, flags);
 }
 
 /*----------------------------------------------------------------
