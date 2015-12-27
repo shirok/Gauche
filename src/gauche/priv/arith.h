@@ -62,7 +62,12 @@
 #define HI(word)           (((word) >> HALF_BITS)&LOMASK)
 
 /* Include processor-specific macros */
-#if defined(SCM_TARGET_I386)
+/* NB: MinGW64 gcc uses SIZEOF_LONG == 4 even on x86_64, and caused some
+   argument register mismatch in the asm code in arith_x86_64.h.
+   Ideally we should fix the macro caller to use variables with proper
+   width of integer.  But for the time being, we use i386 asm code
+   on MinGW64/x86_64 for quick workaround. */
+#if defined(SCM_TARGET_I386) || (defined(SCM_TARGET_X86_64) && SIZEOF_LONG == 4)
 #include "arith_i386.h"
 #elif defined(SCM_TARGET_X86_64)
 #include "arith_x86_64.h"

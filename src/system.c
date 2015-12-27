@@ -2810,6 +2810,8 @@ static int win_truncate(HANDLE file, off_t len)
     return 0;
 }
 
+#ifndef __MINGW64__             /* MinGW64 has these */
+
 int truncate(const char *path, off_t len)
 {
     HANDLE file;
@@ -2839,6 +2841,8 @@ int ftruncate(int fd, off_t len)
     if (r < 0) return -1;
     return 0;
 }
+
+#endif /* __MINGW64__ */
 
 unsigned int alarm(unsigned int seconds)
 {
