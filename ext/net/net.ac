@@ -259,9 +259,9 @@ dnl Check for socklen_t
 dnl Windows/MinGW is special and we know the answer, so we just don't
 dnl bother checking it.
 AS_CASE(["$target"],
-  [*mingw32*], [LIBS="$LIBS -lws2_32"
-	        EXT_LIBS="$EXT_LIBS -lws2_32"],
-	       [AX_TYPE_SOCKLEN_T])
+  [*mingw*], [LIBS="$LIBS -lws2_32"
+              EXT_LIBS="$EXT_LIBS -lws2_32"],
+  [AX_TYPE_SOCKLEN_T])
 
 dnl Local variables:
 dnl mode: autoconf
