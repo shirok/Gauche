@@ -510,7 +510,7 @@ AC_SUBST(ALTERNATIVE_GOSH)
 
 AC_FUNC_ALLOCA
 AC_CHECK_FUNCS(isnan isinf trunc rint tgamma lgamma)
-AC_CHECK_FUNCS(symlink readlink lchown mkdtemp mkstemp realpath nanosleep usleep)
+AC_CHECK_FUNCS(symlink readlink lchown realpath nanosleep usleep)
 AC_CHECK_FUNCS(random srandom lrand48 srand48)
 AC_CHECK_FUNCS(putenv setenv unsetenv clearenv getpgid setgroups)
 AC_CHECK_FUNCS(gethostname sethostname getdomainname setdomainname)
@@ -518,6 +518,19 @@ AC_CHECK_FUNCS(gettimeofday getloadavg clock_gettime clock_getres)
 AC_CHECK_FUNCS(syslog setlogmask)
 AC_CHECK_FUNCS(sigwait)
 AC_CHECK_FUNCS(fpsetprec)
+
+dnl KLUDGE: As of Dec 2015, Mingw-w64  provides mkstemp() but it opens
+dnl the file with _O_TEMPORARY flag, so the file gets automatically deleted
+dnl when its opened file descriptors are all closed.  It is incompatible
+dnl for typical behavior and we avoid using it.  This kludge should be
+dnl removed once mingw-w64 fixes mkstemp.  (We include mkdtemp here as
+dnl well, just because it's nice to see them togeter.  Mingw-w64 doesn't
+dnl have mkdtemp yet, so it doesn't matter wheter we include it or not.)
+case "$host" in
+  *mingw*) ;;
+  *)
+   AC_CHECK_FUNCS(mkdtemp mkstemp);;
+esac
 
 dnl Check for select().  HP-UX and MinGW doesn't like the way configure tests
 dnl select() existence and we know they have one, so we skip the test on them.
