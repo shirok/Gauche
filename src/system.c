@@ -1779,7 +1779,7 @@ ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap,
         }
         /* TODO: We should probably use Windows API to handle various
            options consistently with fork-and-exec case above. */
-        execvp(program, (const char *const*)argv);
+        execvp(program, (char *const*)argv);
         Scm_Panic("exec failed: %s: %s", program, strerror(errno));
     }
     return SCM_FALSE; /* dummy */

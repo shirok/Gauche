@@ -369,7 +369,8 @@ int Scm_FdReady(int fd, int dir)
             FD_ZERO(&fds);
             FD_SET(h, &fds);
             tm.tv_sec = tm.tv_usec = 0;
-            SCM_SYSCALL(r, select((int)h+1, &fds, NULL, NULL, &tm));
+            /* NB: The first argument of select() is ignored on Windows */
+            SCM_SYSCALL(r, select(0, &fds, NULL, NULL, &tm));
             if (r < 0) Scm_SysError("select failed");
             if (r > 0) return SCM_FD_READY;
             else       return SCM_FD_WOULDBLOCK;
@@ -1888,7 +1889,7 @@ static void prepare_console_and_stdio(const char *devname, int flags,
         if (h == INVALID_HANDLE_VALUE)
             Scm_SysError("CreateFile(%s) failed", devname);
         if ((temp_fd = _open_osfhandle((intptr_t)h, flags)) < 0)
-            Scm_SysError("_open_osfhandle(%d) failed (fd = %d)", (int)h, fd);
+            Scm_SysError("_open_osfhandle(%d) failed (fd = %p)", h, fd);
         if (_dup2(temp_fd, fd) < 0) Scm_SysError("dup2(%d) failed (osf_handle)", fd);
         if (SetStdHandle(nStdHandle, (HANDLE)_get_osfhandle(fd)) == 0)
             Scm_SysError("SetStdHandle(%d) failed (fd = %d)", (int)nStdHandle, fd);
