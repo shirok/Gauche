@@ -271,7 +271,7 @@ case $GAUCHE_THREAD_TYPE in
       THREADLIBS="-lpthread"
       GAUCHE_THREAD_TYPE=pthreads
       ;;
-    *-*-mingw32*)
+    *-*-mingw*)
       if test $GAUCHE_THREAD_TYPE = "pthreads"; then
         AC_MSG_ERROR([pthread can't be used on Windows.  Use --enable-threads=win32 to enable threads])
       else
