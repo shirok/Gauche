@@ -537,15 +537,19 @@
        
 (define-cproc sparse-matrix-update! (sv::<sparse-matrix> x y proc
                                                          :optional fallback)
-   (let* ([i::u_long (index-combine-2d x y NULL)]
+  ;; NB: We use j to pass the index to continuation proc, for it will be
+  ;; cast to/fro pointer, and sizeof(u_long) may be smaller than the size
+  ;; of the pointer.
+  (let* ([i::u_long (index-combine-2d x y NULL)]
+         [j::uintptr_t i]
          [v (SparseVectorRef sv i fallback)])
     (when (SCM_UNBOUNDP v)
       (when (SCM_UNDEFINEDP (-> sv defaultValue))
         (Scm_Error "%S doesn't hav an entry at (%S %S)" sv x y))
       (set! v (-> sv defaultValue)))
     (let1/cps r (Scm_VMApply1 proc v)
-      [sv::SparseVector* i::u_long]
-      (SparseVectorSet sv i r)
+      [sv::SparseVector* j::uintptr_t]
+      (SparseVectorSet sv (cast u_long j) r)
       (return SCM_UNDEFINED))))
 
 (define-cproc sparse-matrix-push! (sv::<sparse-matrix> x y val) ::<void>
