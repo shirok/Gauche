@@ -17,6 +17,8 @@ Makefile
 /gc/libatomic_ops/src/config.h
 /lib/gauche/config.scm
 /src/gauche/config.h
+/src/gauche/priv/configP.h
+/src/gauche/priv/configP.h.in
 
 # Compiler-generated files
 *.o

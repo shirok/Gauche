@@ -455,7 +455,8 @@ GENERATED = compile.c autoloads.c builtin-syms.c \
 	    libeval.c libexc.c libfmt.c libio.c liblazy.c liblist.c libmisc.c \
 	    libmod.c libnum.c libobj.c libproc.c librx.c libstr.c \
 	    libsrfis.c libsym.c libsys.c libvec.c libomega.c libextra.c
-CONFIG_GENERATED = Makefile genconfig makeverslink gauche/config.h
+CONFIG_GENERATED = Makefile genconfig makeverslink gauche/config.h \
+		   gauche/priv/configP.h.in gauche/priv/configP.h
 
 clean :
 	rm -rf core core.[0-9]* gosh$(EXEEXT) gauche-config$(EXEEXT) \
