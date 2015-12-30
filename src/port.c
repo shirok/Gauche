@@ -1912,7 +1912,7 @@ static void prepare_console_and_stdio(const char *devname, int flags,
         break;                  /* Dummy */
     case ERR_OPEN_OSFHANDLE:
         CloseHandle(h);
-        Scm_SysError("_open_osfhandle failed (fd = %p)", fd);
+        Scm_SysError("_open_osfhandle failed (fd = %d)", fd);
         break;                  /* Dummy */
     case ERR_DUP2:
         CloseHandle(h);
