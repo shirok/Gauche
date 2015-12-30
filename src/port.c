@@ -1864,11 +1864,17 @@ static ScmInternalMutex win_console_mutex;
 static int win_console_created = FALSE;
 
 static void prepare_console_and_stdio(const char *devname, int flags,
-                                      DWORD nStdHandle, int fd, int *initialized)
+                                      DWORD nStdHandle, int fd,
+                                      int *initialized)
 {
     HANDLE h;
     SECURITY_ATTRIBUTES sa;
-    int temp_fd;
+    int temp_fd = -1;
+    int err = 0;
+#define ERR_CREATEFILE 1
+#define ERR_OPEN_OSFHANDLE 2
+#define ERR_DUP2 3
+#define ERR_SETSTDHANDLE 4
 
     SCM_INTERNAL_MUTEX_LOCK(win_console_mutex);
     if (!win_console_created) {
@@ -1876,7 +1882,6 @@ static void prepare_console_and_stdio(const char *devname, int flags,
         AllocConsole();
     }
     if (!(*initialized)) {
-        *initialized = TRUE;
         /* NB: Double fault will be caught in the error handling
            mechanism, so we don't need to worry it here. */
         sa.nLength = sizeof(SECURITY_ATTRIBUTES);
@@ -1886,16 +1891,43 @@ static void prepare_console_and_stdio(const char *devname, int flags,
                        GENERIC_READ | GENERIC_WRITE,
                        FILE_SHARE_READ | FILE_SHARE_WRITE,
                        &sa, OPEN_EXISTING, 0, NULL);
-        if (h == INVALID_HANDLE_VALUE)
-            Scm_SysError("CreateFile(%s) failed", devname);
-        if ((temp_fd = _open_osfhandle((intptr_t)h, flags)) < 0)
-            Scm_SysError("_open_osfhandle(%d) failed (fd = %p)", h, fd);
-        if (_dup2(temp_fd, fd) < 0) Scm_SysError("dup2(%d) failed (osf_handle)", fd);
-        if (SetStdHandle(nStdHandle, (HANDLE)_get_osfhandle(fd)) == 0)
-            Scm_SysError("SetStdHandle(%d) failed (fd = %d)", (int)nStdHandle, fd);
-        close(temp_fd);
+        if (h == INVALID_HANDLE_VALUE) {
+            err = ERR_CREATEFILE;
+        } else if ((temp_fd = _open_osfhandle((intptr_t)h, flags)) < 0) {
+            err = ERR_OPEN_OSFHANDLE;
+        } else if (_dup2(temp_fd, fd) < 0) {
+            err = ERR_DUP2;
+        } else if (SetStdHandle(nStdHandle, (HANDLE)_get_osfhandle(fd)) == 0) {
+            err = ERR_SETSTDHANDLE;
+        } else {
+            *initialized = TRUE;
+        }
     }
     SCM_INTERNAL_MUTEX_UNLOCK(win_console_mutex);
+
+    if (temp_fd >= 0) close(temp_fd);
+    switch (err) {
+    case ERR_CREATEFILE:
+        Scm_SysError("CreateFile(%s) failed", devname);
+        break;                  /* Dummy */
+    case ERR_OPEN_OSFHANDLE:
+        Scm_SysError("_open_osfhandle(%d) failed (fd = %p)", h, fd);
+        CloseHandle(h);
+        break;                  /* Dummy */
+    case ERR_DUP2:
+        Scm_SysError("dup2(%d) failed (osf_handle)", fd);
+        CloseHandle(h);
+        break;                  /* Dummy */
+    case ERR_SETSTDHANDLE:
+        Scm_SysError("SetStdHandle(%d) failed (fd = %d)", (int)nStdHandle, fd);
+        CloseHandle(h);
+        break;                  /* Dummy */
+    }
+
+#undef ERR_CREATEFILE
+#undef ERR_OPEN_OSFHANDLE
+#undef ERR_DUP2
+#undef ERR_SETSTDHANDLE
 }
 
 static int trapper_filler(ScmPort *p, int cnt)
