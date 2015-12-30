@@ -1911,16 +1911,16 @@ static void prepare_console_and_stdio(const char *devname, int flags,
         Scm_SysError("CreateFile(%s) failed", devname);
         break;                  /* Dummy */
     case ERR_OPEN_OSFHANDLE:
-        Scm_SysError("_open_osfhandle(%d) failed (fd = %p)", h, fd);
         CloseHandle(h);
+        Scm_SysError("_open_osfhandle failed (fd = %p)", fd);
         break;                  /* Dummy */
     case ERR_DUP2:
-        Scm_SysError("dup2(%d) failed (osf_handle)", fd);
         CloseHandle(h);
+        Scm_SysError("dup2(%d) failed (osf_handle)", fd);
         break;                  /* Dummy */
     case ERR_SETSTDHANDLE:
-        Scm_SysError("SetStdHandle(%d) failed (fd = %d)", (int)nStdHandle, fd);
         CloseHandle(h);
+        Scm_SysError("SetStdHandle(%d) failed (fd = %d)", (int)nStdHandle, fd);
         break;                  /* Dummy */
     }
 
