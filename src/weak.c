@@ -98,7 +98,7 @@ ScmObj Scm_WeakVectorRef(ScmWeakVector *v, ScmSmallInt index, ScmObj fallback)
 {
     if (index < 0 || index >= v->size) {
         if (SCM_UNBOUNDP(fallback)) {
-            Scm_Error("argument out of range: %d", index);
+            Scm_Error("argument out of range: %ld", index);
         } else {
             return fallback;
         }
@@ -115,7 +115,7 @@ ScmObj Scm_WeakVectorRef(ScmWeakVector *v, ScmSmallInt index, ScmObj fallback)
 ScmObj Scm_WeakVectorSet(ScmWeakVector *v, ScmSmallInt index, ScmObj value)
 {
     if (index < 0 || index >= v->size) {
-        Scm_Error("argument out of range: %d", index);
+        Scm_Error("argument out of range: %ld", index);
     }
     ScmObj *p = (ScmObj*)v->pointers;
 

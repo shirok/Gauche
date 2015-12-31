@@ -1189,7 +1189,7 @@ static ScmObj read_char(ScmPort *port, ScmReadContext *ctx)
         if (SCM_EQ(Scm_GetPortReaderLexicalMode(port), SCM_SYM_STRICT_R7)) {
             ScmChar following = Scm_GetcUnsafe(port);
             if (!char_is_delimiter(following)) {
-                Scm_Error("Character literal isn't delimited: #\\%s%C ...",
+                Scm_Error("Character literal isn't delimited: #\\%A%C ...",
                           name, following);
             }
             Scm_UngetcUnsafe(following, port);

@@ -200,7 +200,7 @@ ScmObj Scm_MakeString(const char *str, ScmSmallInt size, ScmSmallInt len,
 
 ScmObj Scm_MakeFillString(ScmSmallInt len, ScmChar fill)
 {
-    if (len < 0) Scm_Error("length out of range: %d", len);
+    if (len < 0) Scm_Error("length out of range: %ld", len);
     ScmSmallInt csize = SCM_CHAR_NBYTES(fill);
     CHECK_SIZE(csize*len);
     char *ptr = SCM_NEW_ATOMIC2(char *, csize*len+1);
@@ -521,7 +521,7 @@ ScmChar Scm_StringRef(ScmString *str, ScmSmallInt pos, int range_error)
     }
     if (pos < 0 || pos >= len) {
         if (range_error) {
-            Scm_Error("argument out of range: %d", pos);
+            Scm_Error("argument out of range: %ld", pos);
         } else {
             return SCM_CHAR_INVALID;
         }
@@ -545,7 +545,7 @@ int Scm_StringByteRef(ScmString *str, ScmSmallInt offset, int range_error)
     const ScmStringBody *b = SCM_STRING_BODY(str);
     if (offset < 0 || offset >= SCM_STRING_BODY_SIZE(b)) {
         if (range_error) {
-            Scm_Error("argument out of range: %d", offset);
+            Scm_Error("argument out of range: %ld", offset);
         } else {
             return -1;
         }
@@ -562,7 +562,7 @@ int Scm_StringByteRef(ScmString *str, ScmSmallInt offset, int range_error)
 const char *Scm_StringBodyPosition(const ScmStringBody *b, ScmSmallInt offset)
 {
     if (offset < 0 || offset > SCM_STRING_BODY_LENGTH(b)) {
-        Scm_Error("argument out of range: %d", offset);
+        Scm_Error("argument out of range: %ld", offset);
     }
     if (SCM_STRING_BODY_INCOMPLETE_P(b)) {
         return (SCM_STRING_BODY_START(b)+offset);
@@ -1555,7 +1555,7 @@ ScmObj Scm_StringPointerCopy(ScmStringPointer *sp1)
 void Scm_StringPointerDump(ScmStringPointer *sp1)
 {
     Scm_Printf(SCM_CUROUT,
-               "<sp addr: %p len: %d size: %d start: %p index: %d cur: %d>\n",
+               "<sp addr: %p len: %d size: %d start: %p index: %d cur: %p>\n",
                sp1, sp1->length, sp1->size, sp1->start, sp1->index,
                sp1->current);
 }

@@ -167,7 +167,7 @@ ScmObj Scm_VectorCopy(ScmVector *vec,
     ScmVector *v = NULL;
     if (end < 0) end = len;
     if (end < start) {
-        Scm_Error("vector-copy: start (%d) is greater than end (%d)",
+        Scm_Error("vector-copy: start (%ld) is greater than end (%ld)",
                   start, end);
     } else if (end == start) {
         v = make_vector(0);

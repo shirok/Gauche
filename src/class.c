@@ -1253,7 +1253,7 @@ static inline ScmObj scheme_slot_ref(ScmObj obj, ScmSmallInt number)
 {
     ScmClass *k = Scm_ClassOf(obj);
     if (number < 0 || number >= k->numInstanceSlots)
-        Scm_Error("instance slot index %d out of bounds for %S", number, obj);
+        Scm_Error("instance slot index %ld out of bounds for %S", number, obj);
     return SCM_INSTANCE_SLOTS(obj)[number];
 }
 
@@ -1261,7 +1261,7 @@ static inline void scheme_slot_set(ScmObj obj, ScmSmallInt number, ScmObj val)
 {
     ScmClass *k = Scm_ClassOf(obj);
     if (number < 0 || number >= k->numInstanceSlots)
-        Scm_Error("instance slot index %d out of bounds for %S", number, obj);
+        Scm_Error("instance slot index %ld out of bounds for %S", number, obj);
     SCM_INSTANCE_SLOTS(obj)[number] = val;
 }
 
