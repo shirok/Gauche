@@ -220,7 +220,7 @@ static void charset_print_ch(ScmPort *out, ScmChar ch, int firstp)
 {
     if (ch != 0 && ch < 0x80
         && (strchr("[]-\\", ch) != NULL || (ch == '^' && firstp))) {
-        Scm_Printf(out, "\\%c", ch);
+        Scm_Printf(out, "\\%C", ch);
     } else {
         switch (Scm_CharGeneralCategory(ch)) {
         case SCM_CHAR_CATEGORY_Mn:

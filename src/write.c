@@ -900,7 +900,7 @@ static ScmObj vprintf_pass1(ScmPort *out, const char *fmt, va_list ap)
                 }
             case 'C':
                 {
-                    int c = va_arg(ap, int);
+                    ScmChar c = va_arg(ap, ScmChar);
                     SCM_APPEND1(h, t, Scm_MakeInteger(c));
                     break;
                 }
