@@ -1989,9 +1989,9 @@ void Scm__SetupPortsForWindows(int has_console)
 {
     if (!has_console) {
         static int initialized = FALSE;
-        static ScmObj orig_stdin  = SCM_FALSE;
-        static ScmObj orig_stdout = SCM_FALSE;
-        static ScmObj orig_stderr = SCM_FALSE;
+        static volatile ScmObj orig_stdin  = SCM_FALSE;
+        static volatile ScmObj orig_stdout = SCM_FALSE;
+        static volatile ScmObj orig_stderr = SCM_FALSE;
         if (!initialized) {
             initialized = TRUE;
             SCM_INTERNAL_MUTEX_INIT(win_console_mutex);
