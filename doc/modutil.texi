@@ -19508,12 +19508,13 @@ We intentionally avoid inserting newlines after the closing
 tag, since @emph{it depends on the surrounding context whether
 the newline is significant or not}.  We may be able to insert newlines
 after the elements directly below a @code{<head>} element,
-for example, but we cannot in a @code{<p>} element.
+for example, but we cannot in a @code{<p>} element, without
+affecting the content.
 @c JP
 終了ダグの後に改行をいれないのは意図的なものです。@emph{改行が意味をも
 つかどうかは外側の文脈に依存するからです}。たとえば、@code{<head>}要素
-の直下にある要素の後に改行をいれることはできますが、@code{<p>}要素のな
-かにあればできません。
+の直下にある要素の後に改行を入れてもテキストの内容には影響を与えませんが、
+@code{<p>}要素中で改行を入れるとそれは内容の一部となってしまいます。
 @c COMMON
 
 @c EN
@@ -19636,7 +19637,7 @@ the EOF condition is regarded as an error.
 @item
 文字、文字セット、シンボル @code{*eof*} の任意の組み合わせのリスト。
 @end itemize
-[That denotes a set of characters.] シンボル @code{*eof*} が含まれる場合、
+これらにより文字の集合が表現されます。シンボル @code{*eof*} が含まれる場合、
 EOF の条件もまた含まれます。@code{*eof*} が含まれない場合、EOF の条件は
 エラーとして扱われます。
 @c COMMON
