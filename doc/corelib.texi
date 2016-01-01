@@ -17161,13 +17161,24 @@ To flush the output buffer: @code{flush}, @code{flush-all-ports}.
 @subsubsection Output controls
 @c NODE 出力制御
 
+@c EN
 You can control several aspects of Lisp structure output via
 @code{<write-controls>} object.  The object output routines
 (e.g. @code{write, display}) and the high-level output routines
 (e.g. @code{format}) can take optional write-controls.
+@c JP
+Lisp構造の出力形式は、
+@code{<write-controls>}オブジェクトによって制御することができます。
+Lispオブジェクトを出力するルーチン(@code{write, display}等)や、
+高レベル出力手続き(@code{format}等)は出力制御オブジェクトを取ることができます。
+@c COMMON
 
+@c EN
 The following example may give you some ideas on what
 write controls can do:
+@c JP
+以下の例で、出力制御の様子がわかると思います。
+@c COMMON
 
 @example
 (write '(1 10 100 1000)
@@ -17179,51 +17190,104 @@ write controls can do:
  @r{prints} (0 1 2 3 4 ...)
 @end example
 
+@c EN
 The @code{make-write-controls} procedure returns a write-controls object,
 which has the following slots (those slot names are taken from Common Lisp's
 print control variables):
+@c JP
+@code{make-write-controls}手続きは出力制御オブジェクトを作って返します。
+出力制御オブジェクトは以下のスロットを持ちます
+(これらのスロット名はCommon Lispの対応するプリント制御変数から取られました)。
+@c COMMON
 
 @table @code
 @item print-length
+@c EN
 If this slot has a nonnegative integer, it determines the maximum number
 of items displayed for lists and vectors (including uniform vectors).
 If the sequence has more elements than the limit, @code{...} is printed
 in place.  If this slot is @code{#f} (default), sequence will be written
 out fully.
+@c JP
+このスロットが非負整数の場合、それはリストとベクタ(ユニフォームベクタを含む)の
+要素が表示される最大数を指定します。もしリストやベクタがその最大数より
+多くの要素を持っている場合、残りの要素は表示されず、代わりに
+@code{...}が表示されます。このスロットが@code{#f}(デフォルト)であれば、
+すべての要素が表示されます。
+@c COMMON
 
 @item print-level
+@c EN
 If this slot has a nonnegative integer, it determines the maximum depth
 of the structure (lists and vectors) to be displayed.  If the structure
 has deeper node, it will be printed as @code{#}.
 If this slot is @code{#f} (default), no depth limit is enforced.
+@c JP
+このスロットが非負整数の場合、それは構造体(リストとベクタ)が表示される
+最大の深さを指定します。もし構造体がより深いノードを持っている場合、
+そのノードの代わりに@code{#}が表示されます。
+このスロットが@code{#f}(デフォルト)であれば、すべての要素が表示されます。
+@c COMMON
 
 @item print-base
+@c EN
 This slot must have an integer between 2 and 36, inclusive, and specifies
 the radix used to print exact numbers.  The default value is 10.
+@c JP
+このスロットは2以上36以下の整数でなければならず、
+正確な整数を印字する基数を指定します。デフォルトは10です。
+@c COMMON
 
 @item print-radix
+@c EN
 This slot must have a boolean value.  If it is true, radix prefix
 is always printed before exact numbers.  The default value is @code{#f}.
+@c JP
+このスロットは真偽値を持ちます。真であれば、
+正確な整数の前に常に基数プレフィクスが表示されます。
+デフォルトは@code{#f}です。
+@c COMMON
 @end table
 
+@c EN
 A write-controls object is immutable.  If you need a controls object
 with a slight variation of an existing controls object, 
 use @code{write-controls-copy}.
+@c JP
+出力制御オブジェクトは変更不可です。もし既に存在する制御オブジェクトを
+少し変えたものが欲しければ、@code{write-controls-copy}が使えます。
+@c COMMON
 
 @defun make-write-controls :key print-length print-level print-base print-radix
+@c EN
 Returns a write-controls object.
+@c JP
+出力制御オブジェクトを返します。
+@c COMMON
 @end defun
 
 @defun write-controls-copy controls :key print-length print-level print-base print-radix
+@c EN
 Returns a copy of another write-controls object @var{controls}.
 If keyword arguments are given, those values override the
 original values.
+@c JP
+出力制御オブジェクト@var{controls}のコピーを返します。もしキーワード引数が
+与えられれば、その要素が置き換えられます。
+@c COMMON
 @end defun
 
+@c EN
 Note: The high-level output procedures can be recursively called
 via @code{write-object} method.  In that case, the write controls
 of the root output call will be automatically inherited to the
 recursive output calls to the same port.
+@c JP
+高レベル出力手続きは@code{write-object}メソッドを経由して再帰的に
+呼ばれる可能性があります。その場合、大元の出力手続き呼び出しに渡された
+出力制御オブジェクトが、同じポートに対して出力する再帰的に呼ばれる
+出力手続きへと自動的に引き継がれます。
+@c COMMON
 
 @node Object output, Formatting output, Output controls, Output
 @subsubsection Object output
