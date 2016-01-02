@@ -38,8 +38,80 @@ you can skip the section.
 
 Lisp macro is a programmatic transformation of source code.
 A @emph{macro expander} is a procedure that takes a subtree of
-source code, and returns (possibly modified) source code.
-You can mark a part of the program 
+source code, and returns reconstructed source code.
+
+The traditional Lisp macros takes the input source code as
+an S-expresssion, and returns the output as another S-expression.
+Gauche supports that type of macro, too, with @code{define-macro} form.
+Here's the simple definition of @code{when} with the traditional macro.
+
+@example
+(define-macro (when test . body)
+  `(if ,test (begin ,@@body)))
+@end example
+
+For example,
+if the macro is used as @code{(when (zero? x) (print "zero") 'zero)},
+the above macro transformer rewrites it to
+@code{(if (zero? x) (begin (print "zero") 'zero))}.  So far, so good.
+
+But what if the @code{when} macro is used in an environment
+where the names @code{begin} or @code{if} is bound?
+
+@example
+(let ([begin list])
+  (when (zero? x) (print "zero") 'zero))
+@end example
+
+The expanded result would be as follows:
+
+@example
+(let ([begin list])
+  (if (zero? x) (begin (print "zero") 'zero)))
+@end example
+
+This obviously won't work as the macro writer intended.
+
+This is a form of @emph{variable capture}.  Note that, when Lisp
+people usually talk about variable capture of macros, it often means
+another form of capture, where the temporary variables introduced
+by a macro would unintentionally capture the variables passed to
+the macro.   That kind of variable capture can be avoided easily
+by naming the temporary variables something that never conflict,
+using @code{gensym}.
+
+On the other hand, the kind of variable capture in the above example
+can't be avoided by @code{gensym}, because @code{(let ([begin list]) ...)}
+part isn't under macro writer's control.  As a macro writer, you can
+do nothing to prevent the conflict for sure, just hoping the
+macro user won't do such a thing.  Sure, rebinding @code{begin} is
+a crazy idea that nobody perhaps wants to do, but it can happen on
+@emph{any} global variable, even the ones you define for your library.
+
+Various Lisp dialects have tried to address this issue in different
+ways.  Common Lisp somewhat relies on the common sense of the
+programmer---you can use separate packages to reduce the chance
+of accidental conflict but can't make the chance zero.
+(The Common Lisp spec says it is undefined if you locally rebind
+names of CL standard symbols; but it doesn't prevent you from locally
+rebinding symbols that are provided by user libraries.)
+
+Clojure introduced a way to directly refer to the toplevel variables
+by a namespace prefix, so it can bypass whatever local bindings of
+the same name (also, it has a sophisticated quasiquote form that
+automatically renames free variables to refer to the toplevel ones).
+It is clever, except that it won't work with the local macros: With
+local macros, you need a way to distinguish different local bindings
+of the same name, as we see in the later examples.  Clojure's way
+can only distinguish between local and toplevel bindings.
+It's ok for Clojure, for it doesn't have local macros.  
+But in Scheme, we value uniform and orthogonal axioms---if functions
+can be defined locally with lexical scope, why not macros?
+
+
+
+
+
 
 
 
