@@ -38,9 +38,9 @@ you can skip the section.
 
 Lisp macro is a programmatic transformation of source code.
 A @emph{macro expander} is a procedure that takes a subtree of
-source code, and returns reconstructed source code.
+source code, and returns a reconstructed tree of source code.
 
-The traditional Lisp macros takes the input source code as
+The traditional Lisp macros take the input source code as
 an S-expresssion, and returns the output as another S-expression.
 Gauche supports that type of macro, too, with @code{define-macro} form.
 Here's the simple definition of @code{when} with the traditional macro.
@@ -73,8 +73,8 @@ The expanded result would be as follows:
 This obviously won't work as the macro writer intended.
 
 This is a form of @emph{variable capture}.  Note that, when Lisp
-people usually talk about variable capture of macros, it often means
-another form of capture, where the temporary variables introduced
+people talk about variable capture of macros, it often means
+another form of capture, where the temporary variables inserted
 by a macro would unintentionally capture the variables passed to
 the macro.   That kind of variable capture can be avoided easily
 by naming the temporary variables something that never conflict,
@@ -100,14 +100,80 @@ Clojure introduced a way to directly refer to the toplevel variables
 by a namespace prefix, so it can bypass whatever local bindings of
 the same name (also, it has a sophisticated quasiquote form that
 automatically renames free variables to refer to the toplevel ones).
-It is clever, except that it won't work with the local macros: With
+It works, as far as there are no local macros.  With
 local macros, you need a way to distinguish different local bindings
 of the same name, as we see in the later examples.  Clojure's way
 can only distinguish between local and toplevel bindings.
-It's ok for Clojure, for it doesn't have local macros.  
-But in Scheme, we value uniform and orthogonal axioms---if functions
+It's ok for Clojure which doesn't have local macros,
+but in Scheme, we prefer uniform and orthogonal axioms---if functions
 can be defined locally with lexical scope, why not macros?
 
+Let's look at the local macro with lexical scopes.  For the sake of
+explanation, suppose we have
+@emph{hypothetical} local macro binding form, @code{let-macro},
+that binds a local identifiers to a macro transformer
+(we don't actually have @code{let-macro}; what we have is
+@code{let-syntax} and @code{letrec-syntax}, which have slightly
+different way to call macro transformers.)
+
+@example
+(let ([f (^x (* x x))])
+  (let-macro ([m (^[expr1 expr2] `(+ (f ,expr1) (f ,expr2)))])
+    (let ([f (^x (+ x x))])
+      (m 3 4))))    ; [1]
+@end example
+
+The local identifier @var{m} is bound to a macro transformer
+that takes two expressions, and returns a form.
+So, the @code{(m 3 4)} form [1] would be expanded into
+@code{(+ (f 3) (f 4))}.  Let's rewrite the above expression
+with the expanded form.  (After expansion, we no longer
+need @code{let-macro} form, so we don't include it.)
+
+@example
+(let ([f (^x (* x x))])
+  (let ([f (^x (+ x x))])
+    (+ (f 3) (f 4))))  ; [2]
+@end example
+
+Now, the question.  Which binding @code{f} in the expanded form [2]
+should refer?  If we literally interpret the expansion,
+it would refer to the inner binding @code{(^x (+ x x))}.
+However, Scheme uniformly adopts lexical scoping---if the binding of
+@code{m} were ordinaly @code{let}, the @code{f} in it would have referred
+to the outer binding @code{(^x (* x x))}, no matter where @code{m} is
+actually used.
+
+In order to keep the consistency, we need some way to ``mark''
+the names inserted by the macro expander @code{m}---which are
+@code{f} and @code{+}---so that we can distinguish two @code{f}'s
+(we can also mark @code{+} as free, which would refer to the toplevel
+binding.)
+
+For example, if we would rewrite the entire form and @emph{renames}
+corresponding local identifiers as follows:
+
+@example
+(let ([f_1 (^x (* x x))])
+  (let-macro ([m (^[expr1 expr2] `(+ (f_1 ,expr1) (f_1 ,expr2)))])
+    (let ([f_2 (^x (+ x x))])
+      (m 3 4))))
+@end example
+
+Then the naive expansion would correctly preserve scopes; that is,
+expansion of @code{m} refers @code{f_1}, which wouldn't conflict
+with inner name @code{f_2}:
+
+@example
+(let ([f_1 (^x (* x x))])
+  (let ([f_2 (^x (+ x x))])
+    (+ (f_1 3) (f_1 4))))
+@end example
+
+This is the same way as lambda calculus treats lexical bindings
+with higher order functions.
+
+This is, basically, what hygienic macro is about (well, almost).
 
 
 
