@@ -41,7 +41,7 @@ A @emph{macro transformer} is a procedure that takes a subtree of
 source code, and returns a reconstructed tree of source code.
 
 The traditional Lisp macros take the input source code as
-an S-expresssion, and returns the output as another S-expression.
+an S-expression, and returns the output as another S-expression.
 Gauche supports that type of macro, too, with @code{define-macro} form.
 Here's the simple definition of @code{when} with the traditional macro.
 
@@ -83,7 +83,7 @@ using @code{gensym}.
 On the other hand, the kind of variable capture in the above example
 can't be avoided by @code{gensym}, because @code{(let ([begin list]) ...)}
 part isn't under macro writer's control.  As a macro writer, you can
-do nothing to prevent the conflict for sure, just hoping the
+do nothing to prevent the conflict, just hoping the
 macro user won't do such a thing.  Sure, rebinding @code{begin} is
 a crazy idea that nobody perhaps wants to do, but it can happen on
 @emph{any} global variable, even the ones you define for your library.
@@ -108,13 +108,14 @@ It's ok for Clojure which doesn't have local macros,
 but in Scheme, we prefer uniform and orthogonal axioms---if functions
 can be defined locally with lexical scope, why not macros?
 
-Let's look at the local macro with lexical scopes.  For the sake of
+Let's look at the local macro with lexical scope.  For the sake of
 explanation, suppose we have
 @emph{hypothetical} local macro binding form, @code{let-macro},
-that binds a local identifiers to a macro transformer
-(we don't actually have @code{let-macro}; what we have is
+that binds a local identifiers to a macro transformer.
+(We don't actually have @code{let-macro}; what we have is
 @code{let-syntax} and @code{letrec-syntax}, which have slightly
-different way to call macro transformers.)
+different way to call macro transformers.  But here @code{let-macro} may
+be easier to understand as it is similar to @code{define-macro}.)
 
 @example
 (let ([f (^x (* x x))])
@@ -140,7 +141,7 @@ Now, the question.  Which binding @code{f} in the expanded form [2]
 should refer?  If we literally interpret the expansion,
 it would refer to the inner binding @code{(^x (+ x x))}.
 However, Scheme uniformly adopts lexical scoping---if the binding of
-@code{m} were ordinaly @code{let}, the @code{f} in it would have referred
+@code{m} were ordinary @code{let}, the @code{f} in it would have referred
 to the outer binding @code{(^x (* x x))}, no matter where @code{m} is
 actually used.
 
@@ -190,8 +191,9 @@ avoid that type of capture, too.  Let's see the following example:
     (m (f 3))))
 @end example
 
-The local macro inserts binding of @code{f}.  While the macro use 
-@code{(m (f 3))} refers to @code{f}, which should be the outer @code{f},
+The local macro inserts binding of @code{f} into the expansion.  
+The macro use also @code{(m (f 3))} refers to @code{f},
+which should be the outer @code{f},
 since the macro use is lexically outside of the @code{let} inserted
 by the macro.
 
@@ -237,19 +239,19 @@ regardless of any local bindings that surround the use of the macro.
 @end quotation
 
 It may not be obvious @emph{how} to realize those properties, and
-the existing hygineic macro mechanisms (e.g. @code{syntax-rules}) hide
+the existing hygienic macro mechanisms (e.g. @code{syntax-rules}) hide
 the ``how'' part.  That's probably one of the reason some people
 feel hygienic macros are difficult to grasp.  It's like
 continuations---its description is concise but at first
 you have no idea how it works; then, through experience,
-you become familialized yourself to it, and then you reread
-the original description and underdstand it says exactly what it is.
+you become familiarized yourself to it, and then you reread
+the original description and understand it says exactly what it is.
 
 This introduction may not answer @emph{how} the hygienic macro
 realizes those properties, but I hope it showed @emph{what} it does
 and @emph{why} it is needed.  In the following chapters we introduce
 a couple of hygienic macro mechanisms Gauche supports, with examples,
-so that you can familialize yourself to the concept.
+so that you can familiarize yourself to the concept.
 
 
 @node Hygienic macros, Traditional macros, Why hygienic?, Macros
