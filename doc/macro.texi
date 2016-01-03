@@ -258,14 +258,34 @@ so that you can familiarize yourself to the concept.
 @section Hygienic macros
 @c NODE 衛生的マクロ
 
-R7RS hygienic macro is based on a special pattern language,
-and guaranteed that no "variable capture" occurs.
-"Variable capture" means that if you insert new variable
-bindings in the expanded form, the new bindings
-shadows the bindings in the form passed to the macro.
+@subheading Macro bindings
+
+The following forms establish bindings of @var{name} and
+a macro transformer created by @var{transformer-spec}.  The
+binding introduced by these forms shadows
+a binding of @var{name} established in outer scope, if there's any.
+
+For toplevel bindings, it will shadow bindings of @var{name} imported
+or inherited from other modules (@pxref{Modules}).
+(Note: This toplevel shadowing behavior is Gauche's extension;
+in R7RS, it is an error to redefine imported bindings, so the portable
+code should avoid it.)
+
+The effect is undefined if you bind the same name more than once
+in the same scope.
+
+The @var{transformer-spec} can be either one of @code{syntax-rules}
+form, @code{er-macro-transformer} form, or another macro keyword
+or syntactic keyword.
+
 
 @defspec define-syntax name transformer-spec
 [R7RS]
+If this form appears in toplevel, it binds toplevel @var{name} to
+a macro transformer defined by @var{transformer-spec}.
+If this form appears in the @emph{declaration} part of
+body of @code{lambda}, @code{let} and other similar forms,
+it binds @var{name} locally within that body.
 @end defspec
 
 @defspec let-syntax ((name transformer-spec) @dots{}) body
@@ -273,9 +293,16 @@ shadows the bindings in the form passed to the macro.
 [R7RS]
 @end defspec
 
+
+@subheading Transformer specs
+
+
 @defspec syntax-rules (literal @dots{}) clause1 clause2 @dots{}
 @defspecx syntax-rules ellipsis (literal @dots{}) clause1 clause2 @dots{}
 [R7RS]
+@end defspec
+
+@defspec er-macro-transformer procedure-expr
 @end defspec
 
 
