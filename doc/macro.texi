@@ -37,7 +37,7 @@ you can skip the section.
 @c NODE なぜ衛生的マクロか
 
 Lisp macro is a programmatic transformation of source code.
-A @emph{macro expander} is a procedure that takes a subtree of
+A @emph{macro transformer} is a procedure that takes a subtree of
 source code, and returns a reconstructed tree of source code.
 
 The traditional Lisp macros take the input source code as
@@ -145,7 +145,7 @@ to the outer binding @code{(^x (* x x))}, no matter where @code{m} is
 actually used.
 
 In order to keep the consistency, we need some way to ``mark''
-the names inserted by the macro expander @code{m}---which are
+the names inserted by the macro transformer @code{m}---which are
 @code{f} and @code{+}---so that we can distinguish two @code{f}'s
 (we can also mark @code{+} as free, which would refer to the toplevel
 binding.)
@@ -170,16 +170,86 @@ with inner name @code{f_2}:
     (+ (f_1 3) (f_1 4))))
 @end example
 
-This is the same way as lambda calculus treats lexical bindings
-with higher order functions.
+(You may notice that this is similar to lambda calculus treating
+lexical bindings with higher order functions.)
 
-This is, basically, what hygienic macro is about (well, almost).
+The above example deal with avoiding @code{f} referred from the
+macro @emph{definition} (which is, in fact, @code{f_1}) from being
+shadowed
+by the binding of @code{f} at the macro @emph{use} (which is @code{f_2}).
 
+Another type of variable capture (the one most often talked about,
+and can be avoided by @code{gensym})
+is that a variable in macro use site is shadowed by the binding introduced
+by a macro definition.  We can apply the same renaming strategy to
+avoid that type of capture, too.  Let's see the following example:
 
+@example
+(let ([f (^x (* x x))])
+  (let-macro ([m (^[expr1] (let ([f (^x (+ x x))]) (f expr1)))])
+    (m (f 3))))
+@end example
 
+The local macro inserts binding of @code{f}.  While the macro use 
+@code{(m (f 3))} refers to @code{f}, which should be the outer @code{f},
+since the macro use is lexically outside of the @code{let} inserted
+by the macro.
 
+We could rename @code{f}'s according to its lexical scope:
 
+@example
+(let ([f_1 (^x (* x x))])
+  (let-macro ([m (^[expr1] (let ([f_2 (^x (+ x x))]) (f_2 expr1)))])
+    (m (f_1 3))))
+@end example
 
+Then expansion unambiguously distinguish two @code{f}'s.
+
+@example
+(let ([f_1 (^x (* x x))])
+  (let ([f_2 (^x (+ x x))])
+    (f_2 (f_1 3))))
+@end example
+
+This is, in principle, what hygienic macro is about (well, almost).
+In reality, we don't rename everything in batch.
+One caveat is in the latter example---we statically renamed
+@code{f} to @code{f_2}, but it is possible that the macro
+recursively calls itself, and we have to distinguish @code{f}'s 
+introduced in every individual expansion of @code{m}.
+So macro expansion and renaming should work together.
+
+There are multiple strategies to implement it, and the
+Scheme standard doesn't want to bind implementations to single
+specific strategy.  The standard only states the properties
+the macro system satisfies, in two concise paragraphs:
+
+@quotation
+If a macro transformer inserts a binding for an
+identifier (variable or keyword), the identifier will in effect be
+renamed throughout its scope to avoid conflicts with
+other identifiers.
+
+If a macro transformer inserts a free reference to an
+identifier, the reference refers to the binding that was
+visible where the transformer was specified,
+regardless of any local bindings that surround the use of the macro.
+@end quotation
+
+It may not be obvious @emph{how} to realize those properties, and
+the existing hygineic macro mechanisms (e.g. @code{syntax-rules}) hide
+the ``how'' part.  That's probably one of the reason some people
+feel hygienic macros are difficult to grasp.  It's like
+continuations---its description is concise but at first
+you have no idea how it works; then, through experience,
+you become familialized yourself to it, and then you reread
+the original description and underdstand it says exactly what it is.
+
+This introduction may not answer @emph{how} the hygienic macro
+realizes those properties, but I hope it showed @emph{what} it does
+and @emph{why} it is needed.  In the following chapters we introduce
+a couple of hygienic macro mechanisms Gauche supports, with examples,
+so that you can familialize yourself to the concept.
 
 
 @node Hygienic macros, Traditional macros, Why hygienic?, Macros
@@ -285,7 +355,7 @@ except that the error is signaled at macro-expansion time
 
 They are useful to tell the user the wrong usage of macro in
 the comprehensive way, instead of the cryptic error from the macro
-expander.   Because of the purpose, @var{arg} @dots{} are first
+transformer.   Because of the purpose, @var{arg} @dots{} are first
 passed to @code{unwrap-syntax} described below, to strip off
 the internal syntactic binding informations.
 @c JP
@@ -317,7 +387,7 @@ the internal syntactic binding informations.
 @defun unwrap-syntax form
 @c EN
 Removes internal syntactic information from @var{form}.
-In order to implement a hygienic macro, macro expander replaces
+In order to implement a hygienic macro, macro transformer replaces
 symbols in the macro form for identifiers, which captures the
 syntactic environment where they are defined.  Although it is
 necessary information for the compiler, it is rather confusing
