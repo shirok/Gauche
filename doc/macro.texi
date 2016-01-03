@@ -192,7 +192,7 @@ avoid that type of capture, too.  Let's see the following example:
 @end example
 
 The local macro inserts binding of @code{f} into the expansion.  
-The macro use also @code{(m (f 3))} refers to @code{f},
+The macro use @code{(m (f 3))} also contains a reference to @code{f},
 which should be the outer @code{f},
 since the macro use is lexically outside of the @code{let} inserted
 by the macro.
@@ -224,7 +224,7 @@ So macro expansion and renaming should work together.
 There are multiple strategies to implement it, and the
 Scheme standard doesn't want to bind implementations to single
 specific strategy.  The standard only states the properties
-the macro system satisfies, in two concise paragraphs:
+the macro system should satisfy, in two concise sentences:
 
 @quotation
 If a macro transformer inserts a binding for an
