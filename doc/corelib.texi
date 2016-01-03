@@ -13353,7 +13353,7 @@ Schemeの @code{raise} はその呼び出し元へ戻ることができます。
 @c COMMON
 
 @c EN
-Note: R7RS adopted slightly different semantics; it splited
+Note: R7RS adopted slightly different semantics; it splits
 @code{raise} and @code{raise-continuable}, the former is for
 noncontinuable exception (if the exception handler returns,
 it raises another error), and the latter is for continuable
