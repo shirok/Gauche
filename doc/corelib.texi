@@ -5978,8 +5978,8 @@ case mapping whenever possible.  If the native encoding doesn't support
 the mapped character defined in Unicode, the operation becomes no-op.
 If the native encoding is 'none', we treat the characters as if they
 are Latin-1 (ISO-8859-1) characters.  So, upcasing Latin-1 character
-small y with diaresis (U+00ff) maps to capital y with diaresis
-(U+039c) if the internal encoding is utf-8, but it is no-op if
+small y with diaresis (U+00ff) maps to capital y with diaeresis
+(U+0178) if the internal encoding is utf-8, but it is no-op if
 the internal encoding is none.
 
 R7RS doesn't have @code{char-titlecase}; other three procedures are
@@ -5993,7 +5993,7 @@ Unicodeに従って変換する先の文字が内部エンコーディングで�
 場合は、変換は行いません。内部エンコーディングが'none'の場合は、
 文字をLatin-1 (ISO-8859-1) であるとみなします。Latin-1の
 small y with diaresis (U+00ff) をupcaseすると、
-内部エンコーディングがutf-8の場合はcapital y with diaresis (U+039c)にマップされますが、
+内部エンコーディングがutf-8の場合はcapital y with diaeresis (U+0178)にマップされますが、
 内部エンコーディングがnoneであれば元の文字がそのまま返されます。
 
 R7RSは@code{char-titlecase}を定義していません。それ以外の3つの手続きは
