@@ -5192,19 +5192,6 @@ Srfi-121 doesn't have corresponding procedure for @code{reverse-bits->generator}
 @c COMMON
 @end defun
 
-@defun make-port-generator input-port :optional reader
-[SRFI-121]
-@c EN
-This is a generalized version of @code{port->line-generator} etc.
-The result generator calls @var{reader} (defaulted to @code{read-line})
-on @var{input-port} every time an item is requested.
-@c JP
-これは@code{port->line-generator}等を一般化した手続きです。
-返されるジェネレータは、値を要求される度に@var{input-port}を引数にして@var{reader}を
-呼び出しその結果を返します。@var{reader}のデフォルトは@code{read-line}です。
-@c COMMON
-@end defun
-
 @defun make-for-each-generator for-each obj
 [SRFI-121]
 @c EN
@@ -6123,17 +6110,6 @@ but sometimes this macro makes the imperative code more readable:
 [SRFI-121]
 Like @code{any} and @code{every} (@pxref{Walking over lists}), but
 works on a generator.
-@end defun
-
-@defun generator-length gen
-[SRFI-121]
-@c EN
-Returns the number of items in a generator @var{gen}.
-As a side effect, @var{gen} is exhausted.
-@c JP
-@var{gen}が生成する要素の個数を返します。副作用として
-@var{gen}は使い尽くされます。
-@c COMMON
 @end defun
 
 @defun generator-count pred gen

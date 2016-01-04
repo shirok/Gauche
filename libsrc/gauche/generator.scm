@@ -48,7 +48,7 @@
           generator->vector generator->vector!
           generator->string
           generator-any generator-every generator-unfold
-          generator-length generator-count
+          generator-count
 
           null-generator gcons* gappend gflatten
           gconcatenate gmerge
@@ -61,7 +61,7 @@
           ;; srfi-121 compatibility
           make-generator make-iota-generator make-range-generator
           make-coroutine-generator bytevector->generator
-          make-bits-generator make-port-generator
+          make-bits-generator
           make-for-each-generator make-unfold-generator gcombine
           ))
 (select-module gauche.generator)
@@ -675,10 +675,6 @@
         (loop (gen) r)
         #f))))
 
-(define (generator-length gen)
-  (rlet1 n 0
-    (do-generator [_ gen] (inc! n))))
-
 (define (generator-count pred gen)
   (rlet1 n 0
     (do-generator [v gen] (when (pred v) (inc! n)))))
@@ -688,7 +684,7 @@
 
 ;; srfi-121 compatibility aliases
 ;; NB: We're not sure if we should put them here, or split them to
-;; srfi-121 module.  They're
+;; srfi-121 module.
 
 (define (make-generator . args) (list->generator args))
 (define (make-iota-generator count . args) (apply giota count args))
@@ -698,7 +694,6 @@
   (unless (u8vector? bv) (error "u8vector required, but got:" bv))
   (uvector->generator bv start end))
 (define (make-bits-generator n) (bits->generator n))
-(define (make-port-generator p :optional (reader read-line)) (cut (reader p)))
 (define (make-for-each-generator for-each coll)
   (generate (^[yield] (for-each yield coll))))
 (define (make-unfold-generator p f g seed) (gunfold p f g seed))

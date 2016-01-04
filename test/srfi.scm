@@ -2549,7 +2549,6 @@
       (make-generator 1) (make-generator 2) (make-generator 3))
     (test 6 n)
     (test 3 (generator-find (lambda (x) (> x 2)) (make-range-generator 1 5)))
-    (test 4 (generator-length (make-range-generator 1 5)))
     (test 2 (generator-count odd? (make-range-generator 1 5)))
     (define g (make-range-generator 2 5))
     (test #t (generator-any odd? g))
