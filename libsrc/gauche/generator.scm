@@ -59,7 +59,7 @@
           glet* glet1 do-generator
 
           ;; srfi-121 compatibility
-          make-generator make-iota-generator make-range-generator
+          generator make-iota-generator make-range-generator
           make-coroutine-generator bytevector->generator
           make-bits-generator
           make-for-each-generator make-unfold-generator gcombine
@@ -686,7 +686,7 @@
 ;; NB: We're not sure if we should put them here, or split them to
 ;; srfi-121 module.
 
-(define (make-generator . args) (list->generator args))
+(define (generator . args) (list->generator args))
 (define (make-iota-generator count . args) (apply giota count args))
 (define (make-range-generator start . args) (apply grange start args))
 (define (make-coroutine-generator proc) (generate proc))
