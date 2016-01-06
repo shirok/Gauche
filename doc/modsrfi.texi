@@ -3119,7 +3119,7 @@ or @code{random-source-pseudo-randomize!} on @code{default-random-source}.
 デフォルトの乱数発生源を用いて、0 より大きく、1 未満の実数乱数を返します。
 この手続きの乱数のシードを設定するには @code{default-random-source} に対して
 @code{random-source-randomize!} あるいは、
-or @code{random-source-pseudo-randomize!} を用います。
+@code{random-source-pseudo-randomize!} を用います。
 @c COMMON
 @end defun
 
