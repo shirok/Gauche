@@ -26,7 +26,7 @@
           ucd-get-entry ucd-get-category-ranges ucd-get-break-property
           ucd-map-entries
 
-          ucd-dump-db
+          ucd-save-db ucd-load-db
 
           ucd-entry ucd-entry-category
           ucd-entry-case-info ucd-entry-special-case-info
@@ -480,11 +480,11 @@
 ;; 1. The low codepoint table part
 ;;
 ;;  <table-dump> : (<ucd-entry> ...)   ; in the order of codepoint value
-;;  <ucd-entry>  : #f      ; unassigned
+;;  <ucd-entry>  : <basic-entry>, #f      ; unassigned
+;;               | (rep <count> <basic-entry> <basic-entry> ...)
+;;  <basic-entry> : #f ; unassigned
 ;;               | (<category> [<case-map>] [A] [L] [U] [<digit>])
-;;               | (rep1 <count>) ; repeat previous entry for <count> times
-;;               | (rep2 <count>) ; repeat previous two entries for <count>
-;;  <cateogyr>   : <symbol>  ; general category symbol
+;;  <category>   : <symbol>  ; general category symbol
 ;;  <case-map>   | ( {upper|lower} <offset> )   ; for simple-case-map
 ;;               | (<code> <simple-map-info> <extended-map-info>)
 ;;  <simple-map-info> : #f
@@ -501,7 +501,7 @@
 ;;  <break-property-dump> : TBD
 
 
-(define (ucd-dump-db db)
+(define (ucd-save-db db)
   (define (convert-case-map cm)
     (cond [(ucd-simple-case-map? cm)
            `(,(ucd-simple-case-map-case cm)
@@ -526,31 +526,73 @@
       [#f                  ; initial state
        (values '() `(,in 0))]
       [(i0 c)              ; may be repeating 1 item
-       (cond [(equal? in i0) (values '() `(,i0 ,(+ c 1)))] ;repeat
-             [(zero? c) (values '() `(,i0 ,in 0))] ; may be repeating 2
-             [(= c 1) (values `(,i0 ,i0) `(,in 0))]
-             [else (values `(,i0 (rep1 ,c)) `(,in 0))])]
+       ;; (cond [(equal? in i0) (values '() `(,i0 ,(+ c 1)))] ;repeat
+       ;;       [(zero? c) (values '() `(,i0 ,in 0))] ; may be repeating 2
+       ;;       [(= c 1) (values `(,i0 ,i0) `(,in 0))]
+       ;;       [else (values `((rep ,c ,i0)) `(,in 0))])
+       (values `(,i0) `(,in 0))
+       ]
       [(i0 i1 c)
        (cond [(equal? in i0) (values '() `(,i0 ,i1 ,c 1))] ; may be repeating 2
              [(equal? in i1)
               (if (zero? c)
                 (values `(,i0) `(,i1 1))
-                (values `(,i0 ,i1 (rep2 ,c)) `(,in 0)))]
+                (values `((rep ,c ,i0 ,i1)) `(,in 0)))]
              [(zero? c) (values `(,i0) `(,i1 ,in 0))]
-             [else (values `(,i0 ,i1 (rep2 ,c)) `(,in 0))])]
+             [else (values `((rep ,c ,i0 ,i1)) `(,in 0))])]
       [(i0 i1 c 1) ; we saw previous input == i0
        (cond [(equal? in i1) (values '() `(,i0 ,i1 ,(+ c 1)))] ; repeating
              [(equal? in i0) ; we saw [i0 i1 i0 i0]
               (if (zero? c)
                 (values `(,i0 ,i1) `(,i0 1))
-                (values `(,i0 ,i1 (rep2 ,c)) `(,i0 1)))]
+                (values `((rep ,c ,i0 ,i1)) `(,i0 1)))]
              [(zero? c) (values `(,i0 ,i1) `(,i0 ,in 0))]
-             [else (values `(,i0 ,i1 (rep2 ,c)) `(,i0 ,in 0))])]
+             [else (values `((rep ,c ,i0 ,i1)) `(,i0 ,in 0))])]
       ))
 
   (print "(")
   (let1 tab (unichar-db-table db)
     ($ generator-for-each print
-       $ gbuffer-filter compress #f
+       $ (cut gbuffer-filter compress #f <> identity)
        $ gmap (^c (format-ucd-entry (dict-get tab c #f))) $ giota #x20000))
+  ;; TODO: upper category ranges and break properties
   (print ")"))
+
+(define (ucd-load-db port)
+  (rlet1 db (make-unichar-db)
+
+    (define (restore-ucd-entry! forms)
+      (let loop ([i 0] [forms forms])
+        (when (< i #x20000)
+          (match forms
+            [(('rep 1 e) . r) (loop i `(,e ,@r))]
+            [(('rep n e) . r) (loop i `(,e (rep ,(- n 1) ,e) ,@r))]
+            [(('rep 1 e0 e1) . r) (loop i `(,e0 ,e1 ,@r))]
+            [(('rep n e0 e1) . r) (loop i `(,e0 ,e1 (rep ,(- n 1) ,e0 ,e1) ,@r))]
+            [(#f . r) (loop (+ i 1) r)]
+            [(e . r) (add-entry! e i) (loop (+ i 1) r)]))))
+
+    (define (recover-case-map e)
+      (match e
+        [#f #f]
+        [(case offset) (make-ucd-simple-case-map case offset)]
+        [(code simple ext) (make-ucd-extended-case-map code simple ext)]))
+
+    (define (add-entry! e code)
+      (receive (category case-map flags)
+          (match e
+            [(c) (values c #f '())]
+            [(c (? pair? m) . flags) (values c m flags)]
+            [(c . flags) (values c #f flags)])
+        (hash-table-put! (unichar-db-table db)
+                         code
+                         (%make-ucd-entry category #f #f
+                                          (recover-case-map case-map)
+                                          (boolean (memq 'A flags))
+                                          (boolean (memq 'U flags))
+                                          (boolean (memq 'L flags))
+                                          (find number? flags)))))
+
+    (restore-ucd-entry! (read port))
+    ;; TODO: upper category ranges and break properties
+    ))
