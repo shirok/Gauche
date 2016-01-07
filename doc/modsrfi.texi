@@ -3129,7 +3129,8 @@ or @code{random-source-pseudo-randomize!} on @code{default-random-source}.
 Keeps the default random source that is used by @code{random-integer}
 and @code{random-real}.
 @c JP
-@code{random-integer} が利用するデフォルトの乱数発生源を保持しています。
+@code{random-integer} および @code{random-real} が利用するデフォルトの
+乱数発生源を保持しています。
 @c COMMON
 @end defvar
 
@@ -3223,6 +3224,9 @@ generates will be quantized by the given @var{unit}, where
 @c JP
 呼出しのたびに乱数発生源 @var{s} から 0 より大きく 1 未満の実数乱数を
 返す、無引数の手続きを返します。
+@var{unit} が与えられた場合、返された手続きが生成する実数乱数は
+@var{unit} 単位に量子化されます。@var{unit} は、 0 より大きく 1 未満で
+なければなりません。
 @c COMMON
 @end defun
 
