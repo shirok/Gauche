@@ -24,6 +24,8 @@ Makefile
 *.la
 *.so
 *.sci
+*.dll
+*.exe
 stamp-h1
 /src/libatomic_ops_pic.a
 /src/libgauche-*.so*
