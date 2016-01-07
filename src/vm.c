@@ -2827,7 +2827,7 @@ void Scm_VMDump(ScmVM *vm)
     ScmEscapePoint *ep = vm->escapePoint;
 
     Scm_Printf(out, "VM %p -----------------------------------------------------------\n", vm);
-    Scm_Printf(out, "   pc: %08x ", vm->pc);
+    Scm_Printf(out, "   pc: %p ", vm->pc);
     Scm_Printf(out, "(%08x)\n", *vm->pc);
     Scm_Printf(out, "   sp: %p  base: %p  [%p-%p]\n", vm->sp, vm->stackBase,
                vm->stack, vm->stackEnd);

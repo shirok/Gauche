@@ -257,7 +257,7 @@ ScmObj Scm_CopyList(ScmObj list)
 ScmObj Scm_MakeList(ScmSmallInt len, ScmObj fill)
 {
     if (len < 0) {
-        Scm_Error("make-list: negative length given: %d", len);
+        Scm_Error("make-list: negative length given: %ld", len);
     }
     ScmObj start = SCM_NIL, last = SCM_NIL;
     while (len--) {

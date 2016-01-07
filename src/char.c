@@ -220,7 +220,7 @@ static void charset_print_ch(ScmPort *out, ScmChar ch, int firstp)
 {
     if (ch != 0 && ch < 0x80
         && (strchr("[]-\\", ch) != NULL || (ch == '^' && firstp))) {
-        Scm_Printf(out, "\\%c", ch);
+        Scm_Printf(out, "\\%C", ch);
     } else {
         switch (Scm_CharGeneralCategory(ch)) {
         case SCM_CHAR_CATEGORY_Mn:
@@ -231,8 +231,8 @@ static void charset_print_ch(ScmPort *out, ScmChar ch, int firstp)
         case SCM_CHAR_CATEGORY_Cs:
         case SCM_CHAR_CATEGORY_Co:
         case SCM_CHAR_CATEGORY_Cn:
-            if (ch < 0x10000) Scm_Printf(out, "\\u%04x", ch);
-            else              Scm_Printf(out, "\\U%08x", ch);
+            if (ch < 0x10000) Scm_Printf(out, "\\u%04lx", ch);
+            else              Scm_Printf(out, "\\U%08lx", ch);
             break;
         default:
             Scm_Putc(ch, out);
@@ -276,7 +276,7 @@ static void charset_print(ScmObj obj, ScmPort *out, ScmWriteContext *ctx)
             charset_print_ch(out, (int)e->value, FALSE);
         }
     }
-    Scm_Printf(out, "]", obj);
+    Scm_Printf(out, "]");
 }
 
 /*-----------------------------------------------------------------
