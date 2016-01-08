@@ -83,7 +83,7 @@
           mime-compose-parameters
           mime-parse-content-type)
 (autoload rfc.tls
-          make-tls tls-connect tls-input-port tls-output-port tls-close)
+          make-tls tls-destroy tls-connect tls-input-port tls-output-port tls-close)
 
 (autoload file.util file-size find-file-in-paths null-device)
 
