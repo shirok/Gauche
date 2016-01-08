@@ -44,9 +44,9 @@ typedef unsigned long u_long;
 #endif /* _BSDTYPES_DEFINED */
 
 /* Mingw-w64 only defines sigset_t when _POSIX is defined. */
-#if defined(__MINGW64__) && !defined(_POSIX)
+#if defined(__MINGW64_VERSION_MAJOR) && !defined(_POSIX)
 typedef _sigset_t sigset_t;
-#endif  /*defined(__MINGW64__) && !defined(_POSIX)*/
+#endif  /*defined(__MINGW64_VERSION_MAJOR) && !defined(_POSIX)*/
 
 
 /*======================================================================
@@ -203,7 +203,7 @@ int pipe(int fd[]);
 char *ttyname(int desc);
 unsigned int alarm(unsigned int seconds);
 
-#ifndef __MINGW64__
+#ifndef __MINGW64_VERSION_MAJOR
 int truncate(const char *path, off_t len);
 int ftruncate(int fd, off_t len);
 #endif

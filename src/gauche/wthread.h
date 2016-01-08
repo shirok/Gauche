@@ -127,7 +127,11 @@ typedef struct ScmInternalCondRec {
 #define SCM_INTERNAL_COND_INTR              2
 
 /* alternative timespec.  the definition is in system.h  */
+#if defined(__MINGW64_VERSION_MAJOR)
+#define ScmTimeSpecRec timespec
+#else  /*!defined(__MINGW64_VERSION_MAJOR)*/
 struct ScmTimeSpecRec;
+#endif /*!defined(__MINGW64_VERSION_MAJOR)*/
 
 SCM_EXTERN void Scm__InternalCondInit(ScmInternalCond *cond);
 SCM_EXTERN int  Scm__InternalCondSignal(ScmInternalCond *cond);
@@ -136,6 +140,10 @@ SCM_EXTERN int  Scm__InternalCondWait(ScmInternalCond *cond,
                                       ScmInternalMutex *mutex,
                                       struct ScmTimeSpecRec *pts);
 SCM_EXTERN void Scm__InternalCondDestroy(ScmInternalCond *cond);
+
+#if defined(__MINGW64_VERSION_MAJOR_)
+#undef ScmTimeSpecRec
+#endif /*defined(__MINGW64_VERSION_MAJOR)*/
 
 /* We don't provide fast lock */
 typedef HANDLE ScmInternalFastlock;

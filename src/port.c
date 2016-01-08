@@ -367,7 +367,7 @@ int Scm_FdReady(int fd, int dir)
             int r;
             struct timeval tm;
             FD_ZERO(&fds);
-            FD_SET(h, &fds);
+            FD_SET((SOCKET)h, &fds);
             tm.tv_sec = tm.tv_usec = 0;
             /* NB: The first argument of select() is ignored on Windows */
             SCM_SYSCALL(r, select(0, &fds, NULL, NULL, &tm));

@@ -1779,7 +1779,11 @@ ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap,
         }
         /* TODO: We should probably use Windows API to handle various
            options consistently with fork-and-exec case above. */
+#if defined(__MINGW64_VERSION_MAJOR)
         execvp(program, (char *const*)argv);
+#else  /* !defined(__MINGW64_VERSION_MAJOR) */
+        execvp(program, (const char *const*)argv);
+#endif /* !defined(__MINGW64_VERSION_MAJOR) */
         Scm_Panic("exec failed: %s: %s", program, strerror(errno));
     }
     return SCM_FALSE; /* dummy */
@@ -2810,7 +2814,7 @@ static int win_truncate(HANDLE file, off_t len)
     return 0;
 }
 
-#ifndef __MINGW64__             /* MinGW64 has these */
+#ifndef __MINGW64_VERSION_MAJOR /* MinGW64 has these */
 
 int truncate(const char *path, off_t len)
 {
@@ -2842,7 +2846,7 @@ int ftruncate(int fd, off_t len)
     return 0;
 }
 
-#endif /* __MINGW64__ */
+#endif /* __MINGW64_VERSION_MAJOR */
 
 unsigned int alarm(unsigned int seconds)
 {
