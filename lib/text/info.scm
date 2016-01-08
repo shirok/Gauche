@@ -220,15 +220,15 @@
   ;; instead of "-- Function: http-get" line.  So we have to check the lines
   ;; to find out the last #/^ --/ line before START-LINE.
   (define (skip-lines)
-    (let loop ([n (- start-line 4)]
+    (let loop ([n (- start-line 3)]
                [lines '()])
-      (if (= n 0)
+      (if (<= n 0)
         (let1 line (read-line)
-          (unless (#/^ --/ line) (for-each print (reverse lines)))
+          (for-each print (reverse lines))
           line)
         (let1 line (read-line)
           (cond [(eof-object? line) line]  ;something's wrong, but tolerate.
-                [(#/^ --/ line) (loop (- n 1) (list line))]
+                [(#/^ --/ line) (loop (- n 1) (cons line lines))]
                 [(#/^ {10}/ line) (loop (- n 1) (cons line lines))]
                 [else (loop (- n 1) '())])))))
   
