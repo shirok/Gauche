@@ -147,16 +147,16 @@ SCM_EXTERN ScmObj Scm_Int64SecondsToTime(ScmInt64 sec);
 SCM_EXTERN ScmObj Scm_RealSecondsToTime(double sec);
 SCM_EXTERN ScmObj Scm_TimeToSeconds(ScmTime *t);
 
-/* struct timespec compatibility handling.  Mingw 3.21, at least, has
+/* struct timespec compatibility handling.  MinGW32 runtime v3.21, at least, has
    incompatible struct timespec. */
-#if defined(HAVE_STRUCT_TIMESPEC) && !defined(GAUCHE_WINDOWS)
+#if defined(HAVE_STRUCT_TIMESPEC) && (!defined(GAUCHE_WINDOWS) || defined(__MINGW64_VERSION_MAJOR))
 typedef struct timespec ScmTimeSpec;
-#else
+#else  /*!(defined(HAVE_STRUCT_TIMESPEC) && (!defined(GAUCHE_WINDOWS) || defined(__MINGW64_VERSION_MAJOR)))*/
 typedef struct ScmTimeSpecRec {
     time_t tv_sec;
     long   tv_nsec;
 } ScmTimeSpec;
-#endif /*!HAVE_STRUCT_TIMESPEC && GAUCHE_WINDOWS*/
+#endif /*!(defined(HAVE_STRUCT_TIMESPEC) && (!defined(GAUCHE_WINDOWS) || defined(__MINGW64_VERSION_MAJOR)))*/
 
 SCM_EXTERN ScmTimeSpec *Scm_GetTimeSpec(ScmObj t, ScmTimeSpec *spec);
 

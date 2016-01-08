@@ -6,7 +6,17 @@
 # See doc/HOWTO-mingw.txt for the details.
 
 # Set MINGWDIR if MinGW is installed in different place.
-mingwdir=${MINGWDIR:-/mingw}
+case "$MSYSTEM" in
+  MINGW64)
+    mingwdir=${MINGWDIR:-/mingw64}
+    ;;
+  MINGW32)
+    mingwdir=${MINGWDIR:-/mingw32}
+    ;;
+  *)
+    mingwdir=${MINGWDIR:-/mingw}
+    ;;
+esac
 
 # Process Options:
 while [ "$#" -gt 0 ]; do
@@ -50,7 +60,9 @@ else
   distdir=`pwd`/../Gauche-mingw-dist/Gauche
 fi
 rm -rf $distdir
-./configure --prefix=$distdir --enable-multibyte=utf8 --enable-ipv6=no
+./configure --prefix=$distdir --enable-threads=win32 \
+            --enable-multibyte=utf8 --enable-ipv6=no \
+            --with-dbm=ndbm,odbm
 make
 
 if [ $? -ne 0 ]; then
@@ -63,12 +75,23 @@ make install
 (cd src; make install-mingw)
 make install-examples
 rm -rf $distdir/lib/libgauche.dll*
-cp $mingwdir/bin/mingwm10.dll $distdir/bin
-for dll in libcharset-1.dll libiconv-2.dll libz-1.dll; do
-  if [ -f $mingwdir/bin/$dll ]; then
-    cp $mingwdir/bin/$dll $distdir/bin
-  fi
-done
+case "$MSYSTEM" in
+  MINGW64|MINGW32)
+    for dll in libwinpthread-1.dll libcharset-1.dll libiconv-2.dll zlib1.dll libz-1.dll; do
+      if [ -f $mingwdir/bin/$dll ]; then
+        cp $mingwdir/bin/$dll $distdir/bin
+      fi
+    done
+    ;;
+  *)
+    cp $mingwdir/bin/mingwm10.dll $distdir/bin
+    for dll in libcharset-1.dll libiconv-2.dll zlib1.dll libz-1.dll; do
+      if [ -f $mingwdir/bin/$dll ]; then
+        cp $mingwdir/bin/$dll $distdir/bin
+      fi
+    done
+    ;;
+esac
 
 # Build GL
 if [ "$WITH_GL" = "yes" ]; then
