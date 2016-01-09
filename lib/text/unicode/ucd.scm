@@ -100,6 +100,14 @@
   (%make-unichar-db (make-hash-table 'eqv?) (make-tree-map = <)
                     (make-tree-map = <)))
 
+;; equal? method is mainly for testing
+(define-method object-equal? ((a unichar-db) (b unichar-db))
+  (and (let ([ta (unichar-db-table a)] [tb (unichar-db-table b)])
+         (and (= (hash-table-num-entries ta) (hash-table-num-entries tb))
+              (every (^k (equal? (hash-table-get ta k) (hash-table-get tb k)))
+                     (hash-table-keys ta))))
+       ))
+
 (define-record-type ucd-entry %make-ucd-entry #f
   (category)
   (case-info)          ; (upper lower title) codepoints
@@ -112,10 +120,22 @@
   (digit-value)        ; 0..9 for Nd chars, #f otherwise
   )
 
+(define-method object-equal? ((a ucd-entry) (b ucd-entry))
+  (and (eq? (ucd-entry-category a) (ucd-entry-category b))
+       (equal? (ucd-entry-case-map a) (ucd-entry-case-map b))
+       (eq? (ucd-entry-alphabetic a) (ucd-entry-alphabetic b))
+       (eq? (ucd-entry-uppercase a) (ucd-entry-uppercase b))
+       (eq? (ucd-entry-lowercase a) (ucd-entry-lowercase b))
+       (eq? (ucd-entry-digit-value a) (ucd-entry-digit-value b))))
+
 (define-record-type ucd-break-property %make-ucd-break-property #f
   (grapheme)           ; Grapheme_Break category
   (word)               ; Word_Break category
   )
+
+(define-method object-equal? ((a ucd-break-property) (b ucd-break-property))
+  (and (eq? (ucd-break-property-grapheme a) (ucd-break-property-grapheme b))
+       (eq? (ucd-break-property-word a) (ucd-break-property-word b))))
 
 (define (make-ucd-entry category case-info digit-value)
   (%make-ucd-entry category case-info #f #f #f #f #f digit-value))
@@ -148,10 +168,24 @@
   case      ; upper or lower, for this character itself (title==upper)
   offset)   ; offset to convert to the opposite case
 
+(define-method object-equal? ((a ucd-simple-case-map)
+                              (b ucd-simple-case-map))
+  (and (eq? (ucd-simple-case-map-case a) (ucd-simple-case-map-case b))
+       (eqv? (ucd-simple-case-map-offset a) (ucd-simple-case-map-offset b))))
+
 (define-record-type ucd-extended-case-map #t #t
   code                 ; original code
   simple-map           ; (upper-off lower-off title-off) or #f
   special-map)         ; ((upper ... ) (lower ...) (title ...)) or #f
+
+(define-method object-equal? ((a ucd-extended-case-map)
+                              (b ucd-extended-case-map))
+  (and (eqv? (ucd-extended-case-map-code a)
+             (ucd-extended-case-map-code b))
+       (equal? (ucd-extended-case-map-simple-map a)
+               (ucd-extended-case-map-simple-map b))
+       (equal? (ucd-extended-case-map-special-map a)
+               (ucd-extended-case-map-special-map b))))
 
 ;; This order must match with the enum in src/gauche/char_attr.h
 (define (ucd-general-categories)
@@ -526,35 +560,41 @@
       [#f                  ; initial state
        (values '() `(,in 0))]
       [(i0 c)              ; may be repeating 1 item
-       ;; (cond [(equal? in i0) (values '() `(,i0 ,(+ c 1)))] ;repeat
-       ;;       [(zero? c) (values '() `(,i0 ,in 0))] ; may be repeating 2
-       ;;       [(= c 1) (values `(,i0 ,i0) `(,in 0))]
-       ;;       [else (values `((rep ,c ,i0)) `(,in 0))])
-       (values `(,i0) `(,in 0))
-       ]
+       (cond [(equal? in i0) (values '() `(,i0 ,(+ c 1)))] ;repeat
+             [(zero? c) (values '() `(,i0 ,in 0))] ; may be repeating 2
+             [else (values `((rep ,(+ c 1) ,i0)) `(,in 0))])]
       [(i0 i1 c)
        (cond [(equal? in i0) (values '() `(,i0 ,i1 ,c 1))] ; may be repeating 2
              [(equal? in i1)
               (if (zero? c)
                 (values `(,i0) `(,i1 1))
-                (values `((rep ,c ,i0 ,i1)) `(,in 0)))]
+                (values `((rep ,(+ c 1) ,i0 ,i1)) `(,in 0)))]
              [(zero? c) (values `(,i0) `(,i1 ,in 0))]
-             [else (values `((rep ,c ,i0 ,i1)) `(,in 0))])]
+             [else (values `((rep ,(+ c 1) ,i0 ,i1)) `(,in 0))])]
       [(i0 i1 c 1) ; we saw previous input == i0
        (cond [(equal? in i1) (values '() `(,i0 ,i1 ,(+ c 1)))] ; repeating
              [(equal? in i0) ; we saw [i0 i1 i0 i0]
               (if (zero? c)
                 (values `(,i0 ,i1) `(,i0 1))
-                (values `((rep ,c ,i0 ,i1)) `(,i0 1)))]
+                (values `((rep ,(+ c 1) ,i0 ,i1)) `(,i0 1)))]
              [(zero? c) (values `(,i0 ,i1) `(,i0 ,in 0))]
-             [else (values `((rep ,c ,i0 ,i1)) `(,i0 ,in 0))])]
+             [else (values `((rep ,(+ c 1) ,i0 ,i1)) `(,i0 ,in 0))])]
       ))
+  (define (finish seed)
+    (match seed
+      [#f '()]
+      [(i0 0) `(,i0)]
+      [(i0 c) `((rep ,(+ c 1) ,i0))]
+      [(i0 i1 0) `(,i0 ,i1)]
+      [(i0 i1 c) `((rep ,(+ c 1) ,i0 ,i1))]
+      [(i0 i1 c 1) `((rep ,(+ c 1) ,i0 ,i1) ,i0)]))
 
   (print "(")
   (let1 tab (unichar-db-table db)
     ($ generator-for-each print
-       $ (cut gbuffer-filter compress #f <> identity)
-       $ gmap (^c (format-ucd-entry (dict-get tab c #f))) $ giota #x20000))
+       $ (cut gbuffer-filter compress #f <> finish)
+       $ gmap (^c (format-ucd-entry (dict-get tab c #f)))
+       $ giota $ + 1 $ apply max $ hash-table-keys tab))
   ;; TODO: upper category ranges and break properties
   (print ")"))
 
@@ -563,14 +603,14 @@
 
     (define (restore-ucd-entry! forms)
       (let loop ([i 0] [forms forms])
-        (when (< i #x20000)
-          (match forms
-            [(('rep 1 e) . r) (loop i `(,e ,@r))]
-            [(('rep n e) . r) (loop i `(,e (rep ,(- n 1) ,e) ,@r))]
-            [(('rep 1 e0 e1) . r) (loop i `(,e0 ,e1 ,@r))]
-            [(('rep n e0 e1) . r) (loop i `(,e0 ,e1 (rep ,(- n 1) ,e0 ,e1) ,@r))]
-            [(#f . r) (loop (+ i 1) r)]
-            [(e . r) (add-entry! e i) (loop (+ i 1) r)]))))
+        (match forms
+          [() #f]
+          [(('rep 1 e) . r) (loop i `(,e ,@r))]
+          [(('rep n e) . r) (loop i `(,e (rep ,(- n 1) ,e) ,@r))]
+          [(('rep 1 e0 e1) . r) (loop i `(,e0 ,e1 ,@r))]
+          [(('rep n e0 e1) . r) (loop i `(,e0 ,e1 (rep ,(- n 1) ,e0 ,e1) ,@r))]
+          [(#f . r) (loop (+ i 1) r)]
+          [(e . r) (add-entry! e i) (loop (+ i 1) r)])))
 
     (define (recover-case-map e)
       (match e
