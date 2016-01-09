@@ -2,6 +2,8 @@
 # TODO: once we implement scsh-ish process utility, rewrite
 # this as Gauche script!
 
+set -e
+
 TGZ_DEST="$HOME/src/practical-scheme.net/vault/"
 MAN_DEST="$HOME/src/practical-scheme.net/gauche/man/"
 DOC_DEST="$HOME/src/test"

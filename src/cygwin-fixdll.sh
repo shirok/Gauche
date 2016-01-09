@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -e
+
 # Run on cygwin under $(topdir) to create a list of dlls to be rebased.
 # The user is expected to run:
 #  $ /bin/rebaseall -v -T dlls.txt

@@ -3,6 +3,8 @@
 # than srcdir.  The first argument is srcdir, and the second is the
 # value of LN_S set by AC_PROG_LN_S.
 
+set -e
+
 if [ $# -ne 2 ]; then
   echo 'Usage: wirebuildlibs "$top_srcdir" "$LN_S"'
   echo 'Run this script in top_builddir to create links necessary to run'

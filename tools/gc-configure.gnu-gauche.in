@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -e
+
 # This is invoked by the main configure script, via gc/configure.gnu,
 # which allows us to intercept the call to gc/configure to override
 # some options.
