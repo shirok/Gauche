@@ -222,7 +222,8 @@
       ))
   `(begin
      ,@(if constructor
-         `(,(make-constructor))
+         `((declare (keep-private-macro ,constructor))
+           ,(make-constructor))
          '())
      ,@(let loop ((s slot-defs) (i (if tag 1 0)) (r '()))
          (if (null? s)
@@ -237,6 +238,7 @@
                        `(vector-ref ,obj ,,i))
                     `(define-macro (,mod obj val)
                        `(vector-set! ,obj ,,i ,val))
+                    `(declare (keep-private-macro ,acc ,mod))
                     r))))))
   )
 

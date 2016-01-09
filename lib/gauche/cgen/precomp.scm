@@ -450,7 +450,6 @@
 (define-global-pred =export-if-defined? export-if-defined)
 (define-global-pred =provide?         provide)
 (define-global-pred =lambda?          lambda)
-(define-global-pred =declare?         declare)
 
 ;; A parameter that holds the list of 'omitted' #<compiled-code> - for
 ;; example, the cliche of (CLOSURE #<compiled-code> DEFINE #<identifier> RET)
@@ -501,15 +500,6 @@
       [((? =export-all?)) (compile-module-exports #t)]
       [((? =export-if-defined?) . _) (write-ext-module form) seed]
       [((? =provide?) arg) (write-ext-module form) seed]
-      ;; TODO - we need more general framework supporting various declarations.
-      ;; for the time being, this ad-hoc solution suffice our needs.
-      [((? =declare?) decls ...)
-       (dolist [x decls]
-         (match x
-           [('keep-private-macro . macros)
-            (private-macros-to-keep (append (private-macros-to-keep) macros))]
-           [other (error "Unknown declaration:" other)]))
-       seed]
       ;; Finally, ordinary expressions.
       [else
        (let* ([compiled-code (compile-in-current-tmodule form)]
@@ -619,6 +609,10 @@
       ((with-module gauche.cgen.precomp handle-define-syntax) f))
     (define-macro (define-macro . f)
       ((with-module gauche.cgen.precomp handle-define-macro) f))
+    ;; TODO - we need more general framework supporting various declarations.
+    ;; for the time being, this ad-hoc solution suffice our needs.
+    (define-macro (declare . f)
+      ((with-module gauche.cgen.precomp handle-declare) f))
     ;; A special directive not to precompile; the given forms are
     ;; emitted to *.sci file as they are.  It is useful if you delay
     ;; macro-expansion until the load time (e.g. cond-expand).  The
@@ -692,6 +686,22 @@
 
 (define (handle-without-compiling forms)
   (for-each write-ext-module forms))
+
+;; Handle declaration.
+;; At this moment, we only recognize (keep-private-macro name ...) form
+;; Caveat:
+;;  - The decalation must be seen before define-macro
+;;  - The name is treated unhygienic and global, no matter where it appears.
+;; It should really be a metadata of macro binding and must be folded
+;; into define-macro form.  The keep-private-macro trick should strictly
+;; be considered temporary hack.
+(define (handle-declare decls)
+  (dolist [x decls]
+    (match x
+      [('keep-private-macro . macros)
+       (private-macros-to-keep (append (private-macros-to-keep) macros))]
+      [other (error "Unknown declaration:" other)]))
+  (undefined))
 
 ;; check to see if the symbol is exported
 (define (symbol-exported? sym)
