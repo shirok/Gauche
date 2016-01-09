@@ -5141,7 +5141,7 @@ generate, and use @var{g} to update the seed value.
 
 @subsubheading SRFI-121 compatible procedures
 
-@defun make-generator item @dots{}
+@defun generator item @dots{}
 [SRFI-121]
 @c EN
 Returns a generator that generates @var{item} @dots{}.
