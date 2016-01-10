@@ -718,5 +718,5 @@
   (define (entry->gen entry)
     (match entry
       [('rep c . items) (gflatten (gmap (^_ items) (giota c)))]
-      [item (generator item)]))
+      [item (list->generator (list item))]))
   ($ gconcatenate $ gmap entry->gen input-gen))
