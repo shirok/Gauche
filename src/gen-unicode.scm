@@ -6,12 +6,27 @@
 ;;;
 
 ;; Reads Unicode data tables and generates various source files.
-;; The directory containing Unicode character database files must
-;; be provided.
 
-;; This script generates those files:
+;; This script can serve two operations.
+;;
+;; (1) Generate unicode-data.scm from Unicode character database
+;;   It is only necessary when new version of Unicode is published,
+;;   and the resulting unicode-data.scm is checked in to the source
+;;   tree so that other developers don't need UCD.
+;;
+;;    gosh ./gen-unicode.scm --import <unicode-database-directory> unicode-data.scm
+;;
+;; (2) Generate source files from unicode-data.scm
+;;   To reduce runtime overhead, unicode properties are saved in binary
+;;   tables, within the following two generated source files:
+;;
 ;;   char_attr.c                - General category and case mappings.
 ;;   ../ext/text/unicode_attr.h - Grapheme break, word break, normalization.
+;;
+;;   This is done when you build from git source tree.
+;;
+;;    gosh ./gen-unicode.scm --compile unicode-data.scm
+;;
 
 (use srfi-13)
 (use srfi-42)
@@ -187,10 +202,19 @@
 
 (define (main args)
   (match (cdr args)
-    [(dir)
-     (generate-tables (ucd-parse-files dir))]
+    [("--import" dir ucdfile)
+     (unless (file-is-directory? dir)
+       (exit 1 "Directory required, but got: ~a" dir))
+     (with-output-to-file ucdfile
+       (cut ucd-save-db (ucd-parse-files dir)))]
+    [("--compile" ucdfile)
+     (unless (file-exists? ucdfile)
+       (exit 1 "Couldn't open unicode data file: ~a" ucdfile))
+     (generate-tables (call-with-input-file ucdfile ucd-load-db))]
     [else
-     (exit 1 "Usage: ~a <data-file-directory>" (car args))])
+     (exit 1 "Usage:\n\
+              gen-unicode.scm --import <unicode-database-dir>\n\
+              gen-unicode.scm --compile <unicode-data.scm>")])
   0)
 
 ;;;
@@ -199,17 +223,17 @@
 
 (define (generate-tables db)
   (with-output-to-file "char_attr.c"
-    (^() (preamble)
+    (^() (preamble db)
       (generate-category-tables db)
       (generate-case-tables db)
       (generate-digit-value-tables db)))
   (with-output-to-file "../ext/text/unicode_attr.h"
-    (^() (preamble)
+    (^() (preamble db)
       (generate-break-tables db))))
 
-(define (preamble)
+(define (preamble db)
   (print "/* Generated automatically from Unicode character database */")
-  (print "/* and src/gen-unicode.scm script.  Do not edit.           */")
+  (print #"/* Unicode version ~(ucd-version db).  Do not edit. */")
   )
 
 ;; NB: The caracter category tables are generated for each supported

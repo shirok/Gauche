@@ -307,9 +307,11 @@ $(libatomic_ops_pic_LIBRARY): $(GCLIB) $(libatomic_ops_pic_OBJECTS)
 
 
 # char_attr.c and ext/text/unicode_attr.h are automatically generated
-# by gen-unicode.scm, from Unicode character database.  They need to
-# be regenerated only when a new Unicode standard is published.  So we
-# check in the generated sources and do not force regeneration in every
+# by gen-unicode.scm, from unicode-data.scm.
+#
+# Unicode-data.scm itself is generated from Unicode character database.
+# It needs to be regenerated only when a new Unicode standard is published.
+# So we check in the generated data and do not force regeneration in every
 # build.
 # If you need to regenerate them, run
 #    make UNICODEDATA=/path/to/UnicodeData char-data
@@ -317,13 +319,12 @@ $(libatomic_ops_pic_LIBRARY): $(GCLIB) $(libatomic_ops_pic_OBJECTS)
 # If you're not sure which files are needed, just run something like
 #    make UNICODEDATA=/ char-data
 # and the script will tell you the required files.
-char_attr.c : gen-unicode.scm
-	@echo "Note: char_attr.c may be out of date.  You may want to run 'make UNICODEDATA=/path/to/UnicodeData char-data' to regenerate it."
-	touch char_attr.c
+char_attr.c : unicode-data.scm
+	$(BUILD_GOSH) ./gen-unicode.scm --compile unicode-data.scm
 
 char-data : gen-unicode.scm
 	@if test "$(UNICODEDATA)" = ""; then echo "Set UNICODEDATA to the path to the UnicodeData directory."; exit 1; fi
-	$(BUILD_GOSH) ./gen-unicode.scm $(UNICODEDATA)
+	$(BUILD_GOSH) ./gen-unicode.scm --import $(UNICODEDATA) unicode-data.scm
 
 char.$(OBJEXT) : char.c char_attr.c
 
@@ -450,6 +451,7 @@ install-check :
 GENERATED = compile.c autoloads.c builtin-syms.c \
 	    gauche/priv/builtin-syms.h vminsn.c gauche/vminsn.h \
             ../lib/gauche/vm/insn.scm \
+	    char_attr.c ../ext/text/unicode_attr.h \
 	    libsrfis.scm ../doc/srfis.texi \
 	    libalpha.c libbool.c libchar.c libcode.c libcmp.c libdict.c \
 	    libeval.c libexc.c libfmt.c libio.c liblazy.c liblist.c libmisc.c \
