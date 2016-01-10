@@ -28,6 +28,7 @@
 ;;    gosh ./gen-unicode.scm --compile unicode-data.scm
 ;;
 
+(use srfi-1)
 (use srfi-13)
 (use srfi-42)
 (use text.csv)
