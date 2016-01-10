@@ -1,3 +1,15 @@
+2016-01-10  Shiro Kawai  <shiro@acm.org>
+
+	* lib/text/unicode/ucd.scm, src/gen-unicode.scm: Changed the build
+	  flow so that, instead of pre-generating char_attr.c etc., we
+	  keep unicode-data.scm in the source tree, which is generated
+	  from Unicode character database files; char_attr.c is generated
+	  during build (from source tree).
+	* src/unicode-data.scm: Added.  Pre-converted data from Unicode
+	  character database.
+	* src/char_attr.c, ext/text/unicode_attr.h: Removed from the source
+	  tree; they are regenerated during clean build.
+
 2016-01-09  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/precomp.scm (declare): Moved handling code from
