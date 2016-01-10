@@ -102,6 +102,7 @@ test.record
 /ext/text/text--gettext.c
 /ext/text/text--tr.c
 /ext/text/text--unicode.c
+/ext/text/unicode_attr.h
 /ext/threads/gauche--threads.c
 /ext/tls/axTLS/ssl/ssltest
 /ext/tls/axTLS/ssl/test/ssltest.mod.c
@@ -151,6 +152,7 @@ test.record
 /lib/sxml/
 /src/autoloads.c
 /src/builtin-syms.c
+/src/char_attr.c
 /src/compile.c
 /src/gauche-cesconv
 /src/gauche-config
