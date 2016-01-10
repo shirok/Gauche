@@ -1386,7 +1386,7 @@
   (define (get-lvar lvar)
     (or (hash-table-get lvar-dict lvar #f)
         (let* ([name (lvar-name lvar)]
-               [name (if (identifier? name) (identifier-name name) name)])
+               [name (if (identifier? name) (identifier->symbol name) name)])
           (rlet1 s ($ string->symbol $ format "~a.~d" name
                       $ hash-table-num-entries lvar-dict)
             (hash-table-put! lvar-dict lvar s)))))
