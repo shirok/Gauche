@@ -99,24 +99,20 @@
   )
 
 (define (make-unichar-db)
-  (%make-unichar-db #f (make-hash-table 'eqv?) (make-tree-map = <)
-                    (make-tree-map = <)))
+  (%make-unichar-db #f
+                    (make-hash-table 'eqv?)
+                    (make-hash-table 'eqv?)
+                    (make-hash-table 'eqv?)))
 
 ;; equal? method is mainly for testing
 (define-method object-equal? ((a unichar-db) (b unichar-db))
-  (and (let ([ta (unichar-db-table a)] [tb (unichar-db-table b)])
-         (and (= (hash-table-num-entries ta) (hash-table-num-entries tb))
-              (every (^k (equal? (hash-table-get ta k) (hash-table-get tb k)))
-                     (hash-table-keys ta))))
-       (let ([ra (unichar-db-ranges a)] [rb (unichar-db-ranges b)])
-         (and (= (tree-map-num-entries ra) (tree-map-num-entries rb))
-              (every (^k (equal? (tree-map-get ra k) (tree-map-get rb k)))
-                     (tree-map-keys ra))))
-       (let ([ba (unichar-db-break-table a)] [bb (unichar-db-break-table b)])
-         (and (= (tree-map-num-entries ba) (tree-map-num-entries bb))
-              (every (^k (equal? (tree-map-get ba k) (tree-map-get bb k)))
-                     (tree-map-keys ba))))
-       ))
+  (define (dict-equal? ta tb)
+    (and (= (size-of ta) (size-of tb))
+         (every (^k (equal? (dict-get ta k) (dict-get tb k)))
+                (dict-keys ta))))
+  (and (dict-equal? (unichar-db-table a) (unichar-db-table b))
+       (dict-equal? (unichar-db-ranges a) (unichar-db-ranges b))
+       (dict-equal? (unichar-db-break-table a) (unichar-db-break-table b))))
 
 (define-record-type ucd-entry %make-ucd-entry #f
   (category)
@@ -167,7 +163,7 @@
 ;; API
 ;; ((<start-codepoint> . <category-symbol>) ...)
 (define (ucd-get-category-ranges db)
-  (coerce-to <list> (unichar-db-ranges db)))
+  (sort (coerce-to <list> (unichar-db-ranges db)) < car))
 
 ;; API
 ;; return break property
@@ -606,12 +602,14 @@
     ($ generator-for-each print
        $ rle-compressing-generator
        $ gmap (^c (format-ucd-entry (dict-get tab c #f)))
-       $ giota $ + 1 $ apply max $ hash-table-keys tab))
+       $ giota $ + 1 $ apply max $ dict-keys tab))
   (print ")")
 
   (print ";; unichar-db-high-ranges")
   (print "(")
-  (dict-for-each (unichar-db-ranges db) (^[k v] (print (list k v))))
+  (let1 tab (unichar-db-ranges db)
+    (dolist [k (sort (dict-keys tab))]
+      (print (list k (dict-get tab k)))))
   (print ")")
 
   (print ";; unichar-db-break-table")
@@ -620,7 +618,7 @@
     ($ generator-for-each print
        $ rle-compressing-generator
        $ gmap (^c (format-break-property-entry (dict-get tab c #f)))
-       $ giota $ + 1 $ car $ tree-map-max tab))
+       $ giota $ + 1 $ apply max $ dict-keys tab))
   (print ")")
   )
 
@@ -719,4 +717,15 @@
     (match entry
       [('rep c . items) (gflatten (gmap (^_ items) (giota c)))]
       [item (list->generator (list item))]))
+
+  ;; TRANSIENT: gflatten is in gauche.generator, but it was added after
+  ;; 0.9.4 release and we need our own definition in order to build
+  ;; 0.9.5 with 0.9.4.  Remove this after 0.9.5 release.
+  (define (gflatten gen)
+    (let ([current '()])
+      (rec (g)
+        (cond [(eof-object? current) current]
+              [(pair? current) (pop! current)]
+              [else (set! current (gen)) (g)]))))
+  
   ($ gconcatenate $ gmap entry->gen input-gen))
