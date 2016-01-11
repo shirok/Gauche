@@ -430,8 +430,8 @@
      (get-arg ch scode) 
      (cond [(== ch #x0a) (return WB_LF)]
            [(== ch #x0d) (return WB_CR)]
-           ;[(== ch #x22) (return WB_Double_Quote)]
-           ;[(== ch #x27) (return WB_Single_Quote)]
+           [(== ch #x22) (return WB_Double_Quote)]
+           [(== ch #x27) (return WB_Single_Quote)]
            [(< ch #x20000)
             (let* ([k::u_char (aref break_table (>> ch 8))])
               (if (== k 255)

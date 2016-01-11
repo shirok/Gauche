@@ -1,3 +1,7 @@
+2016-01-11  Shiro Kawai  <shiro@acm.org>
+
+	* src/unicode-data.scm: Updated to Unicode 8.0.0
+
 2016-01-10  Shiro Kawai  <shiro@acm.org>
 
 	* lib/text/unicode/ucd.scm, src/gen-unicode.scm: Changed the build
