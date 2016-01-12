@@ -7,8 +7,10 @@
 (use file.util)
 (use gauche.process)
 (use util.match)
+(use gauche.parseopt)
 
 (define *wix-ns* "http://schemas.microsoft.com/wix/2006/wi")
+(define *program-files-folder* "ProgramFilesFolder")
 
 (define (wix-template version file-tree)
   `(Wix
@@ -45,7 +47,7 @@
      (Directory
       (@ (Id "TARGETDIR") (Name "SourceDir"))
       (Directory
-       (@ (Id "ProgramFilesFolder"))
+       (@ (Id ,*program-files-folder*))
        ;; Files under Gauche/ directory tree
        (Directory
         (@ (Id "INSTALLDIR") (Name "Gauche"))
@@ -289,7 +291,7 @@
 ;; Currently we rely on the 'heat.exe' that comes with Wix SDK.
 (define (gen-file-tree)
   (let1 tmpfile "file-tree.xml"
-    (run-process `("heat" "dir" "Gauche" "-nologo" "-sfrag" "-gg" "-o" ,tmpfile)
+    (run-process `("heat" "dir" "Gauche" "-nologo" "-sfrag" "-gg" "-sreg" "-o" ,tmpfile)
                  :wait #t)
     (let1 sxml (call-with-input-file tmpfile
                  (^p (read-char p) ; skip BOM
@@ -313,7 +315,15 @@
                     (*default* . ,list))))
 
 (define (main args)
-  (match args
-    [(_ outfile) (generate (get-version) (gen-file-tree) outfile)]
-    [_ (exit 0 "Usage: ~a <outfile>" (car args))])
-  0)
+  (define (usage) (exit 1 #"Usage: ~*program-name* [--arch=x64] <outfile>"))
+  (let-args (cdr args)
+      ([arch "a|arch=s"]
+       [else (opt . _) (display #"Unknown option: ~opt\n" (current-error-port)) (usage)]
+       . args)
+    (match args
+      [(outfile)
+       (if (equal? arch "x64")
+         (set! *program-files-folder* "ProgramFiles64Folder"))
+       (generate (get-version) (gen-file-tree) outfile)]
+      [_ (usage)])
+    0))
