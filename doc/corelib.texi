@@ -13753,9 +13753,9 @@ handler is evaluated before the dynamic environment are unwound.
  @result{} (pre post caught)
 
 (guard (e [else (print 'OUTER) #f])
-  (with-output-to-string ()
-    (print 'INNER)
-    (error "foo")))
+  (with-output-to-string (lambda ()
+                           (print 'INNER)
+                           (error "foo"))))
 @c EN
  @result{} prints OUTER to the current output port of guard,
       not to the string port.
@@ -13778,7 +13778,7 @@ everything goes ok, and if anything goes wrong in @code{start-motor}
 or @code{drill-a-hole}, @code{stop-motor} is still called
 before the exception escapes @code{unwind-protect}.
 @c JP
-@var{body}を実行してから@var{cleanup}を実行し、@var{body}の結果を返す。
+@var{body}を実行してから@var{cleanup}を実行し、@var{body}の結果を返します。
 @var{body}内で例外が挙がった場合、その例外が@code{unwind-protect}フォー
 ムを抜ける前に、@var{cleanup}が実行されます。たとえば、以下のコードで
 はなにも問題が起きなければ、@code{start-motor}、@code{drill-a-hole}、
