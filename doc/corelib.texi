@@ -13117,11 +13117,10 @@ looks like this:
 @c COMMON
 
 @example
-(guard (exc
-        [(condition-has-type? exc <read-error>)
-         (format #t "read error!")
-         'read-error]
-        [else 'other-error])
+(guard (exc [(condition-has-type? exc <read-error>)
+             (format #t "read error!")
+             'read-error]
+            [else 'other-error])
   (read-from-string "(abc"))
 @end example
 
@@ -13194,9 +13193,10 @@ SRFI-35 で定義されていますが、これはちょっと冗長です。Gau
 @c COMMON
 
 @example
-(guard (exc
-        [(<read-error> exc) (format #t "read error!") 'read-error]
-        [else 'other-error])
+(guard (exc [(<read-error> exc)
+             (format #t "read error!")
+             'read-error]
+            [else 'other-error])
   (read-from-string "(abc")))
 @end example
 
@@ -13231,10 +13231,8 @@ by outer level.
 @c COMMON
 
 @example
-(guard (exc
-        [(<read-error> exc) (handle-read-error)]
-        [(<system-error> exc) (handle-system-error)]
-        )
+(guard (exc [(<read-error> exc) (handle-read-error)]
+            [(<system-error> exc) (handle-system-error)])
   body @dots{})
 @end example
 
@@ -13276,8 +13274,7 @@ as this:
 @c COMMON
 
 @example
-(guard (exc
-        [(integer? exc) 'raised])
+(guard (exc [(integer? exc) 'raised])
   (raise 3))
 @end example
 
@@ -13753,9 +13750,10 @@ handler is evaluated before the dynamic environment are unwound.
  @result{} (pre post caught)
 
 (guard (e [else (print 'OUTER) #f])
-  (with-output-to-string (lambda ()
-                           (print 'INNER)
-                           (error "foo"))))
+  (with-output-to-string
+   (lambda ()
+    (print 'INNER)
+    (error "foo"))))
 @c EN
  @result{} prints OUTER to the current output port of guard,
       not to the string port.
@@ -13766,11 +13764,11 @@ handler is evaluated before the dynamic environment are unwound.
 @end example
 @end defmac
 
-@defmac unwind-protect body cleanup
+@defmac unwind-protect expr cleanup @dots{}
 @c EN
-Executes @var{body}, then executes @var{cleanup}, and
-returns the result(s) of @var{body}.  If an exception is raised
-within @var{body}, @var{cleanup} is executed before the
+Executes @var{expr}, then executes @var{cleanup}s, and
+returns the result(s) of @var{expr}.  If an exception is raised
+within @var{expr}, @var{cleanup}s are executed before the
 exception escapes from the @code{unwind-protect} form.
 For example, the following code calls @code{start-motor},
 @code{drill-a-hole}, and @code{stop-motor} in order if
@@ -13778,9 +13776,9 @@ everything goes ok, and if anything goes wrong in @code{start-motor}
 or @code{drill-a-hole}, @code{stop-motor} is still called
 before the exception escapes @code{unwind-protect}.
 @c JP
-@var{body}を実行してから@var{cleanup}を実行し、@var{body}の結果を返します。
-@var{body}内で例外が挙がった場合、その例外が@code{unwind-protect}フォー
-ムを抜ける前に、@var{cleanup}が実行されます。たとえば、以下のコードで
+@var{expr}を実行してから@var{cleanup} @dots{}を実行し、@var{expr}の結果を返します。
+@var{expr}内で例外が挙がった場合、その例外が@code{unwind-protect}フォー
+ムを抜ける前に、@var{cleanup} @dots{}が実行されます。たとえば、以下のコードで
 はなにも問題が起きなければ、@code{start-motor}、@code{drill-a-hole}、
 @code{stop-motor}が、この順で呼ばれます。何か不具合が
 @code{start-motor}あるいは@code{drill-a-hole}で起った場合でも、例外が
@@ -13795,7 +13793,7 @@ before the exception escapes @code{unwind-protect}.
 @end example
 
 @c EN
-The @var{cleanup} form is evaluated in the same dynamic environment
+The @var{cleanup} forms are evaluated in the same dynamic environment
 as @code{unwind-protect}.
 If an exception is thrown within @var{cleanup}, it will be
 handled outside of the @code{unwind-protect} form.
@@ -13815,7 +13813,7 @@ current i/o ports, parameters, etc.
 called whenever any of those control flow transition occurs.
 On the other hand, @code{unwind-protect} only cares about
 the Gauche's exception system.  @code{unwind-protect}'s @var{cleanup}
-is called only when @var{body} exits normally or
+is called only when @var{expr} exits normally or
 throws Gauche's exception.
 In the above example, if control escapes from @code{drill-a-hole}
 by calling a continuation captured outside of @code{unwind-protect},
@@ -13830,7 +13828,7 @@ system is implemented by @code{call/cc}, for example.
 @code{dynamic-wind}の@var{before}および@var{after}のサンクは
 対応する制御フローの遷移が起きたときに必ず呼ばれます。
 一方、@code{unwind-protect}はGaucheの例外システムの面倒しか見ません。
-@code{unwind-protect}の@var{cleanup}は@var{body}が正常終了するか
+@code{unwind-protect}の@var{cleanup}は@var{expr}が正常終了するか
 Gaucheの例外を投げたときにのみ呼びだされます。上述の例で、@code{unwind-protect}の外側で
 補足された継続が呼ばれ、制御が@code{drill-a-hole}を抜けると、
 @var{cleanup}は呼ばれません。制御が再び@code{drill-a-hole}に戻る可能性
