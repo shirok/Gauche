@@ -33,7 +33,7 @@
         (print #"echo \"$$\" \"~|openssl-cmd|\" >> openssl.pid")
         (print #"exec \"~|openssl-cmd|\" \"$@\"")))
     (sys-chmod "kick_openssl.sh" #o755))
-  
+
   (test* "ssltest" 0
          (process-exit-status
           (run-process `(./ssltest
