@@ -13751,9 +13751,9 @@ handler is evaluated before the dynamic environment are unwound.
 
 (guard (e [else (print 'OUTER) #f])
   (with-output-to-string
-   (lambda ()
-    (print 'INNER)
-    (error "foo"))))
+    (lambda ()
+      (print 'INNER)
+      (error "foo"))))
 @c EN
  @result{} prints OUTER to the current output port of guard,
       not to the string port.
