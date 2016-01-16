@@ -1981,6 +1981,7 @@ static ScmObj make_trapper_port(ScmObj name, int direction,
     bufrec.seeker = NULL;
     ScmObj p = Scm_MakeBufferedPort(SCM_CLASS_PORT, name, direction, TRUE,
                                     &bufrec);
+    return p;
 }
 
 /* This is supposed to be called from application main(), before any
