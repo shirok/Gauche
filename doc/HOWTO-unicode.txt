@@ -1,0 +1,90 @@
+HOWTO: Updating character attributes to the latest Unicode standard
+
+Gauche uses some of character attributes defined in Unicode
+standard.  They are extraced from files provided as Unicode
+Character Database (UCD), but we have it in packed format for
+the space efficiency.
+
+We use two stage build process for it:
+
+
+             [UCD data files]
+                    |
+                    |
+              make char-data
+                    |
+                    v
+           [src/unicode-data.scm]
+                    |
+                    |
+                   make 
+                    |
+                    v
+             [src/char_attr.c]
+         [ext/text/unicode_attr.h]
+
+
+The first step reads UCD data files and generates src/unicode-data.scm,
+which only includes necessary information.
+This is only needed to be done when Unicode is updated; so we don't
+require developers to do it.  We check in src/unicode-data.scm to
+the repo.
+
+The second step is run when you build Gauche from the repository
+source tree.  When creating tarball, though, we pre-generate
+the final char_attr.c and unicode_attr.h so that those who build
+from the tarball won't need preinstalled gosh.
+
+The rest of this document explains when you need to regenerate
+src/unicode-data.scm.
+
+
+Preparing UCD data files
+------------------------
+
+You need to obtain the following files from the Unicode site
+( http://www.unicode.org/Public/UCD/latest/ucd/ )
+
+    UnicodeData.txt
+    SpecialCasing.txt
+    PropList.txt
+    auxiliary/GraphemeBreakProperty.txt
+    auxiliary/WordBreakProperty.txt
+
+Save those files in some directory (we call it $UNICODEDIR).
+Note that you need to keep subdirectory (auxiliary/).
+
+The list of files may grow in future versions of Gauche.
+
+
+Review the changes
+------------------
+
+Property values may be added in the newer Unicode version,
+so check src/gauche/char_attr.h and the beginning of
+src/gen-unicode.scm to see if we need to update.  We take advantage
+of property value distribution over codepoints for space-efficient
+encoding (e.g. using flat tables on some ranges and binary trees
+on others).   You may need to tweak the code if new range of
+characters are added.
+
+Check changes in TR29 ( http://www.unicode.org/reports/tr29/ ).
+The state-transition table is hardcoded in ext/text/unicode.scm
+(they can't be extracted from UCD files).  Any change in TR29
+must be manually reflected to the code.
+
+
+Generate unicode-data.scm
+-------------------------
+
+There's a make rule for that.
+
+    $ cd src
+    $ make UNICODEDIR=$UNICODEDIR char-data
+
+And it's done!
+
+
+
+
+
