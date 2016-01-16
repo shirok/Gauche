@@ -43,7 +43,7 @@ dnl Check for libraries
 dnl Add your macro calls to check required libraries, if you have any.
 
 dnl Creating gpd (gauche package description) file
-GAUCHE_PACKAGE_CONFIGURE_ARGS="`echo ""$ac_configure_args"" | sed 's/[\\""\`\$]/\\\&/g'`"
+GAUCHE_PACKAGE_CONFIGURE_ARGS=`echo "$ac_configure_args" | sed 's/@<:@\\"\`\$@:>@/\\\\&/g'`
 AC_MSG_NOTICE([creating ${PACKAGE_NAME}.gpd])
 "$GAUCHE_PACKAGE" make-gpd "$PACKAGE_NAME" \
   -version "$PACKAGE_VERSION" \
