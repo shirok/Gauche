@@ -1,86 +1,86 @@
-;;; -*- coding: euc-jp -*-
+;;; -*- coding: utf-8 -*-
 ;;; This is just a joke.
 
-(define-syntax ¦Ë
+(define-syntax Î»
   (syntax-rules () ((_ args body ...) (lambda args body ...))))
 
-(define-syntax ÄêµÁ
-  (syntax-rules (¤Ï)
+(define-syntax å®šç¾©
+  (syntax-rules (ã¯)
     ((_ (f . args) body ...)
      (define (f . args) body ...))
     ((_ var val)
      (define var val))
-    ((_ var ¤Ï val)
+    ((_ var ã¯ val)
      (define var val))))
 
-(define-syntax ¤â¤·
-  (syntax-rules (¤Ê¤é¤Ğ ¤Ç¤Ê¤±¤ì¤Ğ)
-    ((_ test ¤Ê¤é¤Ğ then)
+(define-syntax ã‚‚ã—
+  (syntax-rules (ãªã‚‰ã° ã§ãªã‘ã‚Œã°)
+    ((_ test ãªã‚‰ã° then)
      (if test then))
-    ((_ test ¤Ê¤é¤Ğ then ¤Ç¤Ê¤±¤ì¤Ğ else)
+    ((_ test ãªã‚‰ã° then ã§ãªã‘ã‚Œã° else)
      (if test then else))
-    ((_ test ¤Ç¤Ê¤±¤ì¤Ğ else)
+    ((_ test ã§ãªã‘ã‚Œã° else)
      (unless test else))
     ((_ test then)
      (if test then))
     ((_ test then else)
      (if test then else))))
 
-(define-syntax ÂåÆş
-  (syntax-rules (¤Ø)
-    ((_ var ¤Ø val)
+(define-syntax ä»£å…¥
+  (syntax-rules (ã¸)
+    ((_ var ã¸ val)
      (set! var val))
     ((_ var val)
      (set! var val))))
 
-(define-syntax ¶É½êÄêµÁ
-  (syntax-rules (¤Ï)
-    ((_ ((var ¤Ï val) ...) body ...)
+(define-syntax å±€æ‰€å®šç¾©
+  (syntax-rules (ã¯)
+    ((_ ((var ã¯ val) ...) body ...)
      (let ((var val) ...) body ...))
     ((_ ((var val) ...) body ...)
      (let ((var val) ...) body ...))
     ))
 
-(define-syntax ½ç¼¡¶É½êÄêµÁ
-  (syntax-rules (¤Ï)
-    ((_ ((var ¤Ï val) ...) body ...)
+(define-syntax é †æ¬¡å±€æ‰€å®šç¾©
+  (syntax-rules (ã¯)
+    ((_ ((var ã¯ val) ...) body ...)
      (let* ((var val) ...) body ...))
     ((_ ((var val) ...) body ...)
      (let* ((var val) ...) body ...))
     ))
     
-(define-syntax ºÆµ¢¶É½êÄêµÁ
-  (syntax-rules (¤Ï)
-    ((_ ((var ¤Ï val) ...) body ...)
+(define-syntax å†å¸°å±€æ‰€å®šç¾©
+  (syntax-rules (ã¯)
+    ((_ ((var ã¯ val) ...) body ...)
      (letrec ((var val) ...) body ...))
     ((_ ((var val) ...) body ...)
      (letrec ((var val) ...) body ...))
     ))
     
 
-(define ¡ã <)
-(define ¡å <=)
-(define ¡á =)
-(define ¡ä >)
-(define ¡æ >=)
+(define ï¼œ <)
+(define â‰¦ <=)
+(define ï¼ =)
+(define ï¼ >)
+(define â‰§ >=)
 
-(define ¡Ü +)
-(define ¡İ -)
-(define ¡ß *)
-(define ¡à /)
+(define ï¼‹ +)
+(define âˆ’ -)
+(define Ã— *)
+(define Ã· /)
 
-(define Ê¸»úÎó¢ª¥ê¥¹¥È string->list)
-(define µÕ¥ê¥¹¥È reverse)
+(define æ–‡å­—åˆ—â†’ãƒªã‚¹ãƒˆ string->list)
+(define é€†ãƒªã‚¹ãƒˆ reverse)
 
 ;;-----------------------------------------------
 ;; examples
 
-(ÄêµÁ ³¬¾è ¤Ï
-   (¦Ë (n) (¤â¤· (¡å n 2) ¤Ê¤é¤Ğ n ¤Ç¤Ê¤±¤ì¤Ğ (¡ß n (³¬¾è (¡İ n 1))))))
+(å®šç¾© éšä¹— ã¯
+   (Î» (n) (ã‚‚ã— (â‰¦ n 2) ãªã‚‰ã° n ã§ãªã‘ã‚Œã° (Ã— n (éšä¹— (âˆ’ n 1))))))
 
-(ÄêµÁ ²óÊ¸¤«? ¤Ï
-   (¦Ë (Ê¸»úÎó)
-     (½ç¼¡¶É½êÄêµÁ ((Ê¸»ú¥ê¥¹¥È ¤Ï (Ê¸»úÎó¢ª¥ê¥¹¥È Ê¸»úÎó))
-                   (µÕÊ¸»ú¥ê¥¹¥È ¤Ï (µÕ¥ê¥¹¥È Ê¸»ú¥ê¥¹¥È)))
-       (equal? µÕÊ¸»ú¥ê¥¹¥È Ê¸»ú¥ê¥¹¥È))))
+(å®šç¾© å›æ–‡ã‹? ã¯
+   (Î» (æ–‡å­—åˆ—)
+     (é †æ¬¡å±€æ‰€å®šç¾© ((æ–‡å­—ãƒªã‚¹ãƒˆ ã¯ (æ–‡å­—åˆ—â†’ãƒªã‚¹ãƒˆ æ–‡å­—åˆ—))
+                   (é€†æ–‡å­—ãƒªã‚¹ãƒˆ ã¯ (é€†ãƒªã‚¹ãƒˆ æ–‡å­—ãƒªã‚¹ãƒˆ)))
+       (equal? é€†æ–‡å­—ãƒªã‚¹ãƒˆ æ–‡å­—ãƒªã‚¹ãƒˆ))))
 
