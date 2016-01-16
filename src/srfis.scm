@@ -38,7 +38,8 @@
 ;; gather paragraphs separated by emtpy line(s)
 (define (split-by-empty-line lines)
   (let loop ([lines lines] [s '()] [t '()])
-    (cond [(null? lines) (if (null? t) (reverse s) (reverse (cons t s)))]
+    (cond [(null? lines)
+           (if (null? t) (reverse s) (reverse (cons (reverse t) s)))]
           [(#/^\s*$/ (car lines))
            (if (null? t)
              (loop (cdr lines) s '())
@@ -706,9 +707,9 @@ Supported by the module @code{srfi-117}, which is implemented on top
 of @code{data.queue}.
 (@pxref{Queues based on lists})
 
-リストを元にしたキュー。
+リストを元にしたキュー
 @code{data.queue}上に実装されたモジュール@code{srfi-117}でサポートされます。
-(@ref{リストを元にしたキュー})
+(@ref{リストを元にしたキュー}参照)
 
 srfi-118, srfi-118
 ()
@@ -725,9 +726,10 @@ Supported by the module @code{srfi-118}.
 srfi-121, gauche.generator
 ()
 
-Generators.  Gauche's @code{gauche.generator} is
-superset of srfi-121
+Generators
+Gauche's @code{gauche.generator} is superset of srfi-121
 (@pxref{Generators}).
 
-ジェネレータ。Gaucheの@code{gauche.generator}がsrfi-121の
-スーパーセットになっています。(@ref{Generators}参照)
+ジェネレータ
+Gaucheの@code{gauche.generator}がsrfi-121のスーパーセットになっています。
+(@ref{Generators}参照)
