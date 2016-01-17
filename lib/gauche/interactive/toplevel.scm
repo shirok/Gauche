@@ -136,7 +136,8 @@
 
 (define-toplevel-command info
   "info name\n\
- Show info page that includes an entry of NAME."
+ Show info page that includes an entry of NAME.\n\
+ NAME can be a name of a function, syntax or macro."
   (^[args]
     (match args
       [(name) `(,(with-module gauche.interactive info) ',name)]
@@ -151,7 +152,9 @@
       [()
        (print "You're in REPL (read-eval-print-loop) of Gauche shell.")
        (print "Type a Scheme expression to evaluate.")
-       (print "A word preceeded with comma has special meaning.  Type ,help <cmd> to see the detailed help for <cmd>.")
+       (print "A word preceeded with comma has special meaning.  Type ,help <cmd> ")
+       (print "to see the detailed help for <cmd>.")
+       (print)
        (dolist [cmd (sort (toplevel-command-keys)) *no-value*]
          (let1 h&h (toplevel-command-lookup cmd)
            (format #t " ,~8a ~a\n" cmd

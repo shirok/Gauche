@@ -306,6 +306,9 @@
   (when (sys-access dotfile F_OK)
     (load dotfile :environment (find-module 'user))))
 
+;; This might help first time users
+(define-in-module user help "Type ,help (comma and help) for help")
+
 ;; If gosh is invoked with R7RS mode, import r7rs-small libraries
 ;; into user module for the convenience.
 (when (global-variable-ref (find-module 'user) '*r7rs-mode* #f)
@@ -316,3 +319,4 @@
                  (scheme repl) (scheme time) (scheme write)
                  (only (gauche base) *1 *1+ *2 *2+ *3 *3+ *e *history))
         (find-module 'r7rs.user)))
+
