@@ -705,8 +705,8 @@ static int get_errno(void)
 
 void Scm_SysError(const char *msg, ...)
 {
+    int en = get_errno();       /* must take this before Scm_VM() */
     ScmVM *vm = Scm_VM();
-    int en = get_errno();
     ScmObj syserr = get_syserrmsg(en);
     SCM_ERROR_DOUBLE_FAULT_CHECK(vm);
 
@@ -749,7 +749,7 @@ void Scm_TypeError(const char *what, const char *expected, ScmObj got)
  */
 void Scm_PortError(ScmPort *port, int reason, const char *msg, ...)
 {
-    int en = get_errno();
+    int en = get_errno();       /* must take this before Scm_VM() */
     ScmVM *vm = Scm_VM();
     SCM_ERROR_DOUBLE_FAULT_CHECK(vm);
 
