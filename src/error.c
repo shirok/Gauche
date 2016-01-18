@@ -609,32 +609,47 @@ ScmObj Scm_ConditionTypeName(ScmObj c)
  *   seem to use over 2^31 for the time being).
  */
 
+/* Double fault check
+ * In order to aviod infinite loop when error throwing routine
+ * throws an error, we use vm flag SCM_ERROR_BEING_HANDLED to
+ * check that.  Ideally a common single API should handle it,   
+ * but for the time being, we add the check at the beginning
+ * of Scm_*Error APIs.
+ * The SCM_ERROR_BEING_HANDLED flag is cleared in Scm_VMThrowException2().
+ */
+#define SCM_ERROR_DOUBLE_FAULT_CHECK(vm)                                \
+    do {                                                                \
+        if (SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_ERROR_BEING_HANDLED)) {  \
+            ScmObj e =                                                  \
+                Scm_MakeError(SCM_MAKE_STR("Error occurred in error handler")); \
+            Scm_VMThrowException2(vm, e, SCM_RAISE_NON_CONTINUABLE);    \
+        }                                                               \
+        SCM_VM_RUNTIME_FLAG_SET(vm, SCM_ERROR_BEING_HANDLED);           \
+    } while (0)
+
+/* Common part to format error message passed as varargs.  
+ * ostr must be declared as ScmObj, and msg must be the last
+ * arg of function before '...'.
+ */
+#define SCM_ERROR_MESSAGE_FORMAT(ostr, msg)             \
+    do {                                                \
+        ostr = Scm_MakeOutputStringPort(TRUE);          \
+        va_list args__;                                 \
+        va_start(args__, msg);                          \
+        Scm_Vprintf(SCM_PORT(ostr), msg, args__, TRUE); \
+        va_end(args__);                                 \
+    } while (0)
+
 /*
  * C-like interface
  */
-
 void Scm_Error(const char *msg, ...)
 {
-    ScmObj e;
     ScmVM *vm = Scm_VM();
-    va_list args;
-
-    if (SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_ERROR_BEING_HANDLED)) {
-        e = Scm_MakeError(SCM_MAKE_STR("Error occurred in error handler"));
-        Scm_VMThrowException2(vm, e, SCM_RAISE_NON_CONTINUABLE);
-    }
-    SCM_VM_RUNTIME_FLAG_SET(vm, SCM_ERROR_BEING_HANDLED);
-
-    SCM_UNWIND_PROTECT {
-        va_start(args, msg);
-        e = Scm_MakeError(Scm_Vsprintf(msg, args, TRUE));
-        va_end(args);
-    }
-    SCM_WHEN_ERROR {
-        /* TODO: should check continuation? */
-        e = Scm_MakeError(SCM_MAKE_STR("Error occurred in error handler"));
-    }
-    SCM_END_PROTECT;
+    SCM_ERROR_DOUBLE_FAULT_CHECK(vm);
+    ScmObj ostr;
+    SCM_ERROR_MESSAGE_FORMAT(ostr, msg);
+    ScmObj e = Scm_MakeError(Scm_GetOutputString(SCM_PORT(ostr), 0));
     Scm_VMThrowException2(vm, e, SCM_RAISE_NON_CONTINUABLE);
     Scm_Panic("Scm_Error: Scm_VMThrowException returned.  something wrong.");
 }
@@ -690,11 +705,10 @@ static int get_errno(void)
 
 void Scm_SysError(const char *msg, ...)
 {
-    ScmObj e;
-    int en = get_errno();
     ScmVM *vm = Scm_VM();
-    va_list args;
+    int en = get_errno();
     ScmObj syserr = get_syserrmsg(en);
+    SCM_ERROR_DOUBLE_FAULT_CHECK(vm);
 
 #if defined(GAUCHE_WINDOWS)
     /* Reset the error code, so that we can find which is the actual
@@ -704,20 +718,11 @@ void Scm_SysError(const char *msg, ...)
     SetLastError(0);
 #endif /*GAUCHE_WINDOWS*/
 
-    SCM_UNWIND_PROTECT {
-        ScmObj ostr = Scm_MakeOutputStringPort(TRUE);
-        va_start(args, msg);
-        Scm_Vprintf(SCM_PORT(ostr), msg, args, TRUE);
-        va_end(args);
-        SCM_PUTZ(": ", -1, ostr);
-        SCM_PUTS(syserr, ostr);
-        e = Scm_MakeSystemError(Scm_GetOutputString(SCM_PORT(ostr), 0), en);
-    }
-    SCM_WHEN_ERROR {
-        /* TODO: should check continuation */
-        e = Scm_MakeError(SCM_MAKE_STR("Error occurred in error handler"));
-    }
-    SCM_END_PROTECT;
+    ScmObj ostr;
+    SCM_ERROR_MESSAGE_FORMAT(ostr, msg);
+    SCM_PUTZ(": ", -1, ostr);
+    SCM_PUTS(syserr, ostr);
+    ScmObj e = Scm_MakeSystemError(Scm_GetOutputString(SCM_PORT(ostr), 0), en);
     Scm_VMThrowException2(vm, e, SCM_RAISE_NON_CONTINUABLE);
     Scm_Panic("Scm_Error: Scm_VMThrowException returned.  something wrong.");
 }
@@ -744,52 +749,42 @@ void Scm_TypeError(const char *what, const char *expected, ScmObj got)
  */
 void Scm_PortError(ScmPort *port, int reason, const char *msg, ...)
 {
-    ScmObj e;
     int en = get_errno();
     ScmVM *vm = Scm_VM();
-    va_list args;
+    SCM_ERROR_DOUBLE_FAULT_CHECK(vm);
 
-    SCM_UNWIND_PROTECT {
-        ScmObj ostr = Scm_MakeOutputStringPort(TRUE);
-        va_start(args, msg);
-        Scm_Vprintf(SCM_PORT(ostr), msg, args, TRUE);
-        va_end(args);
-        if (en != 0) {
-            ScmObj syserr = get_syserrmsg(en);
-            SCM_PUTZ(": ", -1, ostr);
-            SCM_PUTS(syserr, ostr);
-        }
-        ScmObj smsg = Scm_GetOutputString(SCM_PORT(ostr), 0);
-        ScmClass *peclass;
-
-        switch (reason) {
-        case SCM_PORT_ERROR_INPUT:
-            peclass = SCM_CLASS_IO_READ_ERROR; break;
-        case SCM_PORT_ERROR_OUTPUT:
-            peclass = SCM_CLASS_IO_WRITE_ERROR; break;
-        case SCM_PORT_ERROR_CLOSED:
-            peclass = SCM_CLASS_IO_CLOSED_ERROR; break;
-        case SCM_PORT_ERROR_UNIT:
-            peclass = SCM_CLASS_IO_UNIT_ERROR; break;
-        default:
-            peclass = SCM_CLASS_PORT_ERROR; break;
-        }
-        ScmObj pe = porterror_allocate(peclass, SCM_NIL);
-        SCM_ERROR(pe)->message = SCM_LIST2(smsg, smsg);
-        SCM_PORT_ERROR(pe)->port = port;
-
-        if (en != 0) {
-            e = Scm_MakeCompoundCondition(SCM_LIST2(Scm_MakeSystemError(smsg, en),
-                                                    pe));
-        } else {
-            e = pe;
-        }
+    ScmObj ostr;
+    SCM_ERROR_MESSAGE_FORMAT(ostr, msg);
+    if (en != 0) {
+        ScmObj syserr = get_syserrmsg(en);
+        SCM_PUTZ(": ", -1, ostr);
+        SCM_PUTS(syserr, ostr);
     }
-    SCM_WHEN_ERROR {
-        /* TODO: should check continuation */
-        e = Scm_MakeError(SCM_MAKE_STR("Error occurred in error handler"));
+    ScmObj smsg = Scm_GetOutputString(SCM_PORT(ostr), 0);
+
+    ScmClass *peclass;
+    switch (reason) {
+    case SCM_PORT_ERROR_INPUT:
+        peclass = SCM_CLASS_IO_READ_ERROR; break;
+    case SCM_PORT_ERROR_OUTPUT:
+        peclass = SCM_CLASS_IO_WRITE_ERROR; break;
+    case SCM_PORT_ERROR_CLOSED:
+        peclass = SCM_CLASS_IO_CLOSED_ERROR; break;
+    case SCM_PORT_ERROR_UNIT:
+        peclass = SCM_CLASS_IO_UNIT_ERROR; break;
+    default:
+        peclass = SCM_CLASS_PORT_ERROR; break;
     }
-    SCM_END_PROTECT;
+
+    ScmObj pe = porterror_allocate(peclass, SCM_NIL);
+    SCM_ERROR(pe)->message = SCM_LIST2(smsg, smsg);
+    SCM_PORT_ERROR(pe)->port = port;
+
+    ScmObj e = pe;
+    if (en != 0) {
+        e = Scm_MakeCompoundCondition(SCM_LIST2(Scm_MakeSystemError(smsg, en),
+                                                pe));
+    }
     Scm_VMThrowException2(vm, e, SCM_RAISE_NON_CONTINUABLE);
     Scm_Panic("Scm_Error: Scm_VMThrowException returned.  something wrong.");
 }
