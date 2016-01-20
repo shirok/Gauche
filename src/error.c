@@ -720,6 +720,8 @@ static int get_errno(void)
     errno = 0;                  /* NB: MSDN says we should use _set_errno,
                                    but MinGW doesn't seem to have it yet. */
     SetLastError(0);
+
+    return en;
 #endif /*GAUCHE_WINDOWS*/
 }
 
