@@ -640,6 +640,18 @@ ScmObj Scm_ConditionTypeName(ScmObj c)
         va_end(args__);                                 \
     } while (0)
 
+/* Like SCM_ERROR_MESSAGE_FORMAT, but we also append system error message.
+ * Need to pass errno, which should be fetched by get_errno() *before*
+ * calling Scm_VM().
+ */
+#define SCM_SYSERROR_MESSAGE_FORMAT(ostr, msg, en)      \
+    do {                                                \
+        SCM_ERROR_MESSAGE_FORMAT(ostr, msg);            \
+        ScmObj syserr = get_syserrmsg(en);              \
+        SCM_PUTZ(": ", -1, ostr);                       \
+        SCM_PUTS(syserr, ostr);                         \
+    } while (0)
+
 /*
  * C-like interface
  */
@@ -694,12 +706,20 @@ static int get_errno(void)
 #if !defined(GAUCHE_WINDOWS)
     return errno;
 #else  /*GAUCHE_WINDOWS*/
+    int en;
+    
     if (errno == 0) {
-      return -(int)GetLastError();
+        en = -(int)GetLastError();
     } else {
-      return errno;             /* NB: MSDN says we should use _get_errno,
+        en = errno;             /* NB: MSDN says we should use _get_errno,
                                    but MinGW doesn't seem to have it yet.*/
     }
+
+    /* Reset the error code, so that we can find which is the actual
+       error code in the next occasion. */
+    errno = 0;                  /* NB: MSDN says we should use _set_errno,
+                                   but MinGW doesn't seem to have it yet. */
+    SetLastError(0);
 #endif /*GAUCHE_WINDOWS*/
 }
 
@@ -707,21 +727,10 @@ void Scm_SysError(const char *msg, ...)
 {
     int en = get_errno();       /* must take this before Scm_VM() */
     ScmVM *vm = Scm_VM();
-    ScmObj syserr = get_syserrmsg(en);
     SCM_ERROR_DOUBLE_FAULT_CHECK(vm);
 
-#if defined(GAUCHE_WINDOWS)
-    /* Reset the error code, so that we can find which is the actual
-       error code in the next occasion. */
-    errno = 0;                  /* NB: MSDN says we should use _set_errno,
-                                   but MinGW doesn't seem to have it yet. */
-    SetLastError(0);
-#endif /*GAUCHE_WINDOWS*/
-
     ScmObj ostr;
-    SCM_ERROR_MESSAGE_FORMAT(ostr, msg);
-    SCM_PUTZ(": ", -1, ostr);
-    SCM_PUTS(syserr, ostr);
+    SCM_SYSERROR_MESSAGE_FORMAT(ostr, msg, en);
     ScmObj e = Scm_MakeSystemError(Scm_GetOutputString(SCM_PORT(ostr), 0), en);
     Scm_VMThrowException2(vm, e, SCM_RAISE_NON_CONTINUABLE);
     Scm_Panic("Scm_Error: Scm_VMThrowException returned.  something wrong.");
@@ -754,12 +763,8 @@ void Scm_PortError(ScmPort *port, int reason, const char *msg, ...)
     SCM_ERROR_DOUBLE_FAULT_CHECK(vm);
 
     ScmObj ostr;
-    SCM_ERROR_MESSAGE_FORMAT(ostr, msg);
-    if (en != 0) {
-        ScmObj syserr = get_syserrmsg(en);
-        SCM_PUTZ(": ", -1, ostr);
-        SCM_PUTS(syserr, ostr);
-    }
+    if (en != 0) SCM_SYSERROR_MESSAGE_FORMAT(ostr, msg, en);
+    else         SCM_ERROR_MESSAGE_FORMAT(ostr, msg);
     ScmObj smsg = Scm_GetOutputString(SCM_PORT(ostr), 0);
 
     ScmClass *peclass;
