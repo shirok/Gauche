@@ -48,7 +48,7 @@
     ((_ ((var val) ...) body ...)
      (let* ((var val) ...) body ...))
     ))
-    
+
 (define-syntax 再帰局所定義
   (syntax-rules (は)
     ((_ ((var は val) ...) body ...)
@@ -56,7 +56,7 @@
     ((_ ((var val) ...) body ...)
      (letrec ((var val) ...) body ...))
     ))
-    
+
 
 (define ＜ <)
 (define ≦ <=)
