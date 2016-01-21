@@ -1,3 +1,9 @@
+2016-01-21  Shiro Kawai  <shiro@acm.org>
+
+	* lib/compat/chibi-test.scm: Handle 'include' form inside
+	  chibi-test specially, so that we can say
+	  (chibi-test (include "test-file-written-for-chibi.scm")).
+
 2016-01-11  Shiro Kawai  <shiro@acm.org>
 
 	* src/unicode-data.scm: Updated to Unicode 8.0.0
