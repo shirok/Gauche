@@ -1,3 +1,9 @@
+2016-01-22  Shiro Kawai  <shiro@acm.org>
+
+	* src/class.c (Scm_DefaultAllocateProc): Renamed from
+	  Scm_ObjectAllocate to avoid confusion.  See the comment
+	  in src/gauche/class.h.
+
 2016-01-21  Shiro Kawai  <shiro@acm.org>
 
 	* lib/compat/chibi-test.scm: Handle 'include' form inside

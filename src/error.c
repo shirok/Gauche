@@ -75,14 +75,14 @@ static ScmClass *condition_cpl[] = {
 };
 
 SCM_DEFINE_BASE_CLASS(Scm_ConditionClass, ScmInstance,
-                      NULL, NULL, NULL,
-                      Scm_ObjectAllocate, SCM_CLASS_DEFAULT_CPL);
+                      NULL, NULL, NULL, 
+                      Scm_DefaultAllocateProc, SCM_CLASS_DEFAULT_CPL);
 SCM_DEFINE_BASE_CLASS(Scm_MessageConditionClass, ScmMessageCondition,
                       message_print, NULL, NULL,
                       message_allocate, condition_cpl);
 SCM_DEFINE_BASE_CLASS(Scm_SeriousConditionClass, ScmSeriousCondition,
                       NULL, NULL, NULL,
-                      Scm_ObjectAllocate, condition_cpl);
+                      Scm_DefaultAllocateProc, condition_cpl);
 
 static void message_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {

@@ -92,8 +92,7 @@
    (return (cast u_long (Q_LENGTH q))))
 
  (define-cfn makeq (klass::ScmClass*)
-   (let* ([z::Queue*
-           (cast Queue* (Scm_AllocateInstance klass (sizeof Queue)))])
+   (let* ([z::Queue* (SCM_ALLOCATE Queue klass)])
      (SCM_SET_CLASS z klass)
      (set! (Q_LENGTH z) 0 (Q_HEAD z) SCM_NIL (Q_TAIL z) SCM_NIL)
      (return (SCM_OBJ z))))
@@ -133,8 +132,7 @@
 
 
  (define-cfn makemtq (klass::ScmClass* maxlen::int)
-   (let* ([z::MtQueue*
-           (cast MtQueue* (Scm_AllocateInstance klass (sizeof MtQueue)))])
+   (let* ([z::MtQueue* (SCM_ALLOCATE MtQueue klass)])
      (SCM_SET_CLASS z klass)
      (set! (Q_LENGTH z) 0 (Q_HEAD z) SCM_NIL (Q_TAIL z) SCM_NIL
            (MTQ_MAXLEN z) maxlen

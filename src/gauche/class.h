@@ -99,13 +99,33 @@ SCM_CLASS_DECL(Scm_AccessorMethodClass);
 #define SCM_ACCESSOR_METHOD(obj)     ((ScmAccessorMethod*)obj)
 #define SCM_ACCESSOR_METHOD_P(obj)   SCM_ISA(obj, SCM_CLASS_SLOT_ACCESSOR)
 
+/* Instance allocation API
+ *   Because of some historical context, the API names are somewhat
+ *   confusing.  We have several layer of 'allocate' API.
+ *
+ *   (1) Scheme 'allocate' generic function
+ *     This is a higher layer.  It takes a class and a plist of initargs.
+ *     It uses internal dispatch mechanism to call proper concrete
+ *     allocate function, then sets up slots to the sane values.
+ *
+ *   (2) Scm_DefaultAllocateProc, and static *_allocate functions
+ *     These are the 'methods' stored in ScmClass->allocate, and does
+ *     specific allocation and setup for the class.
+ *     Usually calls SCM_ALLOCATE in it.
+ *
+ *   (3) SCM_ALLOCATE, Scm_AllocateInstance
+ *     The bottom layer.  Allocates memory, and if it's for Scheme
+ *     instances, allocates slot vector as well.
+ */
+
+
 /* cliche in allocate method */
 #define SCM_ALLOCATE(klassname, klass) \
     ((klassname*)Scm_AllocateInstance(klass, sizeof(klassname)))
 
 /* some internal methods */
 
-SCM_EXTERN ScmObj Scm_ObjectAllocate(ScmClass *klass, ScmObj initargs);
+SCM_EXTERN ScmObj Scm_DefaultAllocateProc(ScmClass *klass, ScmObj initargs);
 SCM_EXTERN ScmObj Scm_AllocateInstance(ScmClass *klass, int coresize);
 SCM_EXTERN ScmObj Scm__AllocateAndInitializeInstance(ScmClass *klass,
                                                      ScmObj *inits,
@@ -168,6 +188,9 @@ SCM_EXTERN ScmGeneric Scm_GenericChangeClass;
 SCM_EXTERN ScmObj Scm_UpdateDirectMethod(ScmMethod *m,
                                          ScmClass *oldk,
                                          ScmClass *newk);
+
+/* TRANSIENT: Obsoleted.  Use Scm_DefaultAllocateProc. */
+SCM_EXTERN ScmObj Scm_ObjectAllocate(ScmClass *klass, ScmObj initargs);
 
 SCM_DECL_END
 

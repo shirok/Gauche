@@ -103,7 +103,7 @@ SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_UndefinedObjectClass, NULL);
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_ForeignPointerClass, NULL);
 
 SCM_DEFINE_BASE_CLASS(Scm_ObjectClass, ScmInstance,
-                      NULL, NULL, NULL, Scm_ObjectAllocate,
+                      NULL, NULL, NULL, Scm_DefaultAllocateProc,
                       SCM_CLASS_DEFAULT_CPL);
 
 /* Basic metaobjects */
@@ -577,7 +577,7 @@ static void find_core_allocator(ScmClass *klass)
                       klass->name, *p);
         }
 
-        if ((*p)->allocate == Scm_ObjectAllocate) {
+        if ((*p)->allocate == Scm_DefaultAllocateProc) {
             /* Check if we certainly inherited <object> */
             object_inherited = TRUE;
             continue;
@@ -619,7 +619,7 @@ static void find_core_allocator(ScmClass *klass)
                   klass->name, klass->cpl);
     }
     if (!klass->allocate) {
-        klass->allocate = Scm_ObjectAllocate;
+        klass->allocate = Scm_DefaultAllocateProc;
         klass->coreSize = sizeof(ScmInstance);
     }
 }
@@ -1886,11 +1886,18 @@ static void slot_accessor_scheme_boundp_set(ScmSlotAccessor *sa, ScmObj p)
  * <object> class initialization
  */
 
-ScmObj Scm_ObjectAllocate(ScmClass *klass, ScmObj initargs)
+ScmObj Scm_DefaultAllocateProc(ScmClass *klass, ScmObj initargs)
 {
     ScmObj obj = Scm_AllocateInstance(klass, sizeof(ScmInstance));
     SCM_SET_CLASS(obj, klass);
     return SCM_OBJ(obj);
+}
+
+/* TRANSIENT: For the binary compatibility during 0.9 series.  Remove
+   this on 1.0 */
+ScmObj Scm_ObjectAllocate(ScmClass *klass, ScmObj initargs)
+{
+    return Scm_DefaultAllocateProc(klass, initargs);
 }
 
 /* (initialize <object> initargs) */
