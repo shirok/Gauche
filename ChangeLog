@@ -1,3 +1,7 @@
+2016-01-23  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/class.h, src/class.c: Add Scm_Allocate() API.
+
 2016-01-22  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/class.h, src/class.c: API clean up on allocation

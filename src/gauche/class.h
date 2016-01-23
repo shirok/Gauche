@@ -103,10 +103,13 @@ SCM_CLASS_DECL(Scm_AccessorMethodClass);
  *   Because of some historical context, the API names are somewhat
  *   confusing.  We have several layer of 'allocate' API.
  *
- *   (1) Scheme 'allocate' generic function
+ *   (1) Scheme 'allocate-instance' generic function and Scm_Allocate().
  *     This is a higher layer.  It takes a class and a plist of initargs.
  *     It uses internal dispatch mechanism to call proper concrete
  *     allocate function, then sets up slots to the sane values.
+ *     NB: C Scm_Allocate() only calls "base" method, i.e. the one
+ *     through ScmClass->allocate(), and may throw an error if no allocator
+ *     is set.  Scheme version may be dispatched to Scheme-defined method.
  *
  *   (2) static *_allocate functions
  *     These are the 'methods' stored in ScmClass->allocate, and does
@@ -126,6 +129,7 @@ SCM_CLASS_DECL(Scm_AccessorMethodClass);
 
 /* some internal methods */
 
+SCM_EXTERN ScmObj Scm_Allocate(ScmClass *klass, ScmObj initargs);
 SCM_EXTERN ScmObj Scm_NewInstance(ScmClass *klass, int coresize);
 SCM_EXTERN ScmObj Scm__AllocateAndInitializeInstance(ScmClass *klass,
                                                      ScmObj *inits,

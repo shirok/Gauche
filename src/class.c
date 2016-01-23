@@ -415,14 +415,18 @@ static void class_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 /*
  * (allocate-instance <class> initargs)
  */
-static ScmObj allocate(ScmNextMethod *nm, ScmObj *argv, int argc, void *d)
+ScmObj Scm_Allocate(ScmClass *c, ScmObj initargs)
 {
-    ScmClass *c = SCM_CLASS(argv[0]);
     if (c->allocate == NULL) {
         Scm_Error("built-in class can't be allocated via allocate-instance: %S",
                   SCM_OBJ(c));
     }
-    return c->allocate(c, argv[1]);
+    return c->allocate(c, initargs);
+}
+
+static ScmObj allocate(ScmNextMethod *nm, ScmObj *argv, int argc, void *d)
+{
+    return Scm_Allocate(SCM_CLASS(argv[0]), argv[1]);
 }
 
 static ScmClass *class_allocate_SPEC[] = {
