@@ -42,6 +42,7 @@
 #include <string.h>
 #include <ctype.h>
 
+static ScmObj condition_allocate(ScmClass *klass, ScmObj initargs);
 static void   message_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx);
 static ScmObj message_allocate(ScmClass *klass, ScmObj initargs);
 static ScmObj syserror_allocate(ScmClass *klass, ScmObj initargs);
@@ -76,13 +77,18 @@ static ScmClass *condition_cpl[] = {
 
 SCM_DEFINE_BASE_CLASS(Scm_ConditionClass, ScmInstance,
                       NULL, NULL, NULL, 
-                      Scm_DefaultAllocateProc, SCM_CLASS_DEFAULT_CPL);
+                      condition_allocate, SCM_CLASS_DEFAULT_CPL);
 SCM_DEFINE_BASE_CLASS(Scm_MessageConditionClass, ScmMessageCondition,
                       message_print, NULL, NULL,
                       message_allocate, condition_cpl);
 SCM_DEFINE_BASE_CLASS(Scm_SeriousConditionClass, ScmSeriousCondition,
                       NULL, NULL, NULL,
-                      Scm_DefaultAllocateProc, condition_cpl);
+                      condition_allocate, condition_cpl);
+
+static ScmObj condition_allocate(ScmClass *klass, ScmObj initargs)
+{
+    return SCM_OBJ(SCM_NEW_INSTANCE(ScmCondition, klass));
+}
 
 static void message_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
@@ -94,8 +100,7 @@ static void message_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 
 static ScmObj message_allocate(ScmClass *klass, ScmObj initargs)
 {
-    ScmError *e = SCM_ALLOCATE(ScmError, klass);
-    SCM_SET_CLASS(e, klass);
+    ScmError *e = SCM_NEW_INSTANCE(ScmError, klass);
     e->message = SCM_FALSE;     /* would be set by initialize */
     return SCM_OBJ(e);
 }
@@ -213,8 +218,7 @@ SCM_DEFINE_BASE_CLASS(Scm_IOUnitErrorClass, ScmIOUnitError,
 
 static ScmObj syserror_allocate(ScmClass *klass, ScmObj initargs)
 {
-    ScmSystemError *e = SCM_ALLOCATE(ScmSystemError, klass);
-    SCM_SET_CLASS(e, klass);
+    ScmSystemError *e = SCM_NEW_INSTANCE(ScmSystemError, klass);
     e->common.message = SCM_FALSE; /* set by initialize */
     e->error_number = 0;           /* set by initialize */
     return SCM_OBJ(e);
@@ -222,8 +226,8 @@ static ScmObj syserror_allocate(ScmClass *klass, ScmObj initargs)
 
 static ScmObj sigerror_allocate(ScmClass *klass, ScmObj initargs)
 {
-    ScmUnhandledSignalError *e = SCM_ALLOCATE(ScmUnhandledSignalError, klass);
-    SCM_SET_CLASS(e, klass);
+    ScmUnhandledSignalError *e = SCM_NEW_INSTANCE(ScmUnhandledSignalError,
+                                                  klass);
     e->common.message = SCM_FALSE; /* set by initialize */
     e->signal = 0;                 /* set by initialize */
     return SCM_OBJ(e);
@@ -231,8 +235,7 @@ static ScmObj sigerror_allocate(ScmClass *klass, ScmObj initargs)
 
 static ScmObj readerror_allocate(ScmClass *klass, ScmObj initargs)
 {
-    ScmReadError *e = SCM_ALLOCATE(ScmReadError, klass);
-    SCM_SET_CLASS(e, klass);
+    ScmReadError *e = SCM_NEW_INSTANCE(ScmReadError, klass);
     e->common.message = SCM_FALSE; /* set by initialize */
     e->port = NULL;                /* set by initialize */
     e->line = -1;                  /* set by initialize */
@@ -241,8 +244,7 @@ static ScmObj readerror_allocate(ScmClass *klass, ScmObj initargs)
 
 static ScmObj porterror_allocate(ScmClass *klass, ScmObj initargs)
 {
-    ScmPortError *e = SCM_ALLOCATE(ScmPortError, klass);
-    SCM_SET_CLASS(e, klass);
+    ScmPortError *e = SCM_NEW_INSTANCE(ScmPortError, klass);
     e->common.message = SCM_FALSE; /* set by initialize */
     e->port = NULL;                /* set by initialize */
     return SCM_OBJ(e);
@@ -385,8 +387,7 @@ SCM_DEFINE_BASE_CLASS(Scm_SeriousCompoundConditionClass, ScmCompoundCondition,
 
 static ScmObj compound_allocate(ScmClass *klass, ScmObj initargs)
 {
-    ScmCompoundCondition *e = SCM_ALLOCATE(ScmCompoundCondition, klass);
-    SCM_SET_CLASS(e, klass);
+    ScmCompoundCondition *e = SCM_NEW_INSTANCE(ScmCompoundCondition, klass);
     e->conditions = SCM_NIL;
     return SCM_OBJ(e);
 }

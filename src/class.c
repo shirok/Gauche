@@ -64,6 +64,7 @@ static void   initialize_builtin_cpl(ScmClass *klass, ScmObj supers);
 static ScmObj instance_class_redefinition(ScmObj obj, ScmClass *old);
 static ScmObj slot_set_using_accessor(ScmObj obj, ScmSlotAccessor *sa,
                                       ScmObj val);
+static ScmObj instance_allocate(ScmClass *klass, ScmObj initargs);
 
 static int object_compare(ScmObj x, ScmObj y, int equalp);
 
@@ -103,7 +104,7 @@ SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_UndefinedObjectClass, NULL);
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_ForeignPointerClass, NULL);
 
 SCM_DEFINE_BASE_CLASS(Scm_ObjectClass, ScmInstance,
-                      NULL, NULL, NULL, Scm_DefaultAllocateProc,
+                      NULL, NULL, NULL, instance_allocate,
                       SCM_CLASS_DEFAULT_CPL);
 
 /* Basic metaobjects */
@@ -372,8 +373,7 @@ ScmObj Scm__InternalClassName(ScmClass *klass)
 /* Allocate class structure.  klass is a metaclass. */
 static ScmObj class_allocate(ScmClass *klass, ScmObj initargs)
 {
-    ScmClass *instance = SCM_ALLOCATE(ScmClass, klass);
-    SCM_SET_CLASS(instance, klass);
+    ScmClass *instance = SCM_NEW_INSTANCE(ScmClass, klass);
     instance->allocate = NULL;  /* will be set when CPL is set */
     instance->print = NULL;
     instance->compare = object_compare;
@@ -577,7 +577,7 @@ static void find_core_allocator(ScmClass *klass)
                       klass->name, *p);
         }
 
-        if ((*p)->allocate == Scm_DefaultAllocateProc) {
+        if ((*p)->allocate == instance_allocate) {
             /* Check if we certainly inherited <object> */
             object_inherited = TRUE;
             continue;
@@ -619,7 +619,7 @@ static void find_core_allocator(ScmClass *klass)
                   klass->name, klass->cpl);
     }
     if (!klass->allocate) {
-        klass->allocate = Scm_DefaultAllocateProc;
+        klass->allocate = instance_allocate;
         klass->coreSize = sizeof(ScmInstance);
     }
 }
@@ -1176,7 +1176,7 @@ ScmObj Scm_VMTouchInstance(ScmObj obj)
    redefined simultaneously, it will be handled by the subsequent initialize
    method.
 */
-ScmObj Scm_AllocateInstance(ScmClass *klass, int coresize)
+ScmObj Scm_NewInstance(ScmClass *klass, int coresize)
 {
     ScmObj obj = SCM_NEW2(ScmObj, coresize);
 
@@ -1197,8 +1197,16 @@ ScmObj Scm_AllocateInstance(ScmClass *klass, int coresize)
         }
         SCM_INSTANCE(obj)->slots = slots;
     }
+    SCM_SET_CLASS(obj, klass);
     return obj;
 }
+
+/* TRANSIENT: For the binary compatibility.  Will go on 1.0. */
+ScmObj Scm_AllocateInstance(ScmClass *klass, int coresize)
+{
+    return Scm_NewInstance(klass, coresize);
+}
+
 
 /* A special procedure that shortcuts allocate-instance and initialize
  * slots directly.
@@ -1886,18 +1894,16 @@ static void slot_accessor_scheme_boundp_set(ScmSlotAccessor *sa, ScmObj p)
  * <object> class initialization
  */
 
-ScmObj Scm_DefaultAllocateProc(ScmClass *klass, ScmObj initargs)
+static ScmObj instance_allocate(ScmClass *klass, ScmObj initargs)
 {
-    ScmObj obj = Scm_AllocateInstance(klass, sizeof(ScmInstance));
-    SCM_SET_CLASS(obj, klass);
-    return SCM_OBJ(obj);
+    return SCM_OBJ(SCM_NEW_INSTANCE(ScmInstance, klass));
 }
 
 /* TRANSIENT: For the binary compatibility during 0.9 series.  Remove
    this on 1.0 */
 ScmObj Scm_ObjectAllocate(ScmClass *klass, ScmObj initargs)
 {
-    return Scm_DefaultAllocateProc(klass, initargs);
+    return instance_allocate(klass, initargs);
 }
 
 /* (initialize <object> initargs) */
@@ -1993,8 +1999,7 @@ static SCM_DEFINE_METHOD(object_equalp_rec,
 
 static ScmObj generic_allocate(ScmClass *klass, ScmObj initargs)
 {
-    ScmGeneric *gf = SCM_ALLOCATE(ScmGeneric, klass);
-    SCM_SET_CLASS(gf, klass);
+    ScmGeneric *gf = SCM_NEW_INSTANCE(ScmGeneric, klass);
     SCM_PROCEDURE_INIT(gf, 0, 0, SCM_PROC_GENERIC, SCM_FALSE);
     gf->methods = SCM_NIL;
     gf->fallback = Scm_NoNextMethod;
@@ -2284,8 +2289,7 @@ ScmObj Scm_SortMethods(ScmObj methods, ScmObj *argv, int argc)
 
 static ScmObj method_allocate(ScmClass *klass, ScmObj initargs)
 {
-    ScmMethod *instance = SCM_ALLOCATE(ScmMethod, klass);
-    SCM_SET_CLASS(instance, klass);
+    ScmMethod *instance = SCM_NEW_INSTANCE(ScmMethod, klass);
     SCM_PROCEDURE_INIT(instance, 0, 0, SCM_PROC_METHOD, SCM_FALSE);
     instance->generic = NULL;
     instance->specializers = NULL;

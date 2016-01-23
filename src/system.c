@@ -801,9 +801,7 @@ ScmObj Scm_SysMkdtemp(ScmString *templat)
 
 static ScmObj stat_allocate(ScmClass *klass, ScmObj initargs)
 {
-    ScmSysStat *s = SCM_ALLOCATE(ScmSysStat, klass);
-    SCM_SET_CLASS(s, SCM_CLASS_SYS_STAT);
-    return SCM_OBJ(s);
+    return SCM_OBJ(SCM_NEW_INSTANCE(ScmSysStat, klass));
 }
 
 SCM_DEFINE_BUILTIN_CLASS(Scm_SysStatClass,
@@ -891,8 +889,7 @@ static ScmClassStaticSlotSpec stat_slots[] = {
 
 static ScmObj time_allocate(ScmClass *klass, ScmObj initargs)
 {
-    ScmTime *t = SCM_ALLOCATE(ScmTime, klass);
-    SCM_SET_CLASS(t, SCM_CLASS_TIME);
+    ScmTime *t = SCM_NEW_INSTANCE(ScmTime, klass);
     t->type = SCM_SYM_TIME_UTC;
     SCM_SET_INT64_ZERO(t->sec);
     t->nsec = 0;
@@ -1222,9 +1219,7 @@ ScmTimeSpec *Scm_GetTimeSpec(ScmObj t, ScmTimeSpec *spec)
 
 static ScmObj tm_allocate(ScmClass *klass, ScmObj initargs)
 {
-    ScmSysTm *st = SCM_ALLOCATE(ScmSysTm, klass);
-    SCM_SET_CLASS(st, SCM_CLASS_SYS_TM);
-    return SCM_OBJ(st);
+    return SCM_OBJ(SCM_NEW_INSTANCE(ScmSysTm, klass));
 }
 
 static void tm_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
@@ -2144,8 +2139,7 @@ static int win_wait_for_handles(HANDLE *handles, int nhandles, int options,
 #ifdef HAVE_SELECT
 static ScmObj fdset_allocate(ScmClass *klass, ScmObj initargs)
 {
-    ScmSysFdset *set = SCM_ALLOCATE(ScmSysFdset, klass);
-    SCM_SET_CLASS(set, SCM_CLASS_SYS_FDSET);
+    ScmSysFdset *set = SCM_NEW_INSTANCE(ScmSysFdset, klass);
     set->maxfd = -1;
     FD_ZERO(&set->fdset);
     return SCM_OBJ(set);

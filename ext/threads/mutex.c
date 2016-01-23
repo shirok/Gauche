@@ -61,8 +61,7 @@ static void mutex_finalize(ScmObj obj, void* data)
 
 static ScmObj mutex_allocate(ScmClass *klass, ScmObj initargs)
 {
-    ScmMutex *mutex = SCM_ALLOCATE(ScmMutex, klass);
-    SCM_SET_CLASS(mutex, klass);
+    ScmMutex *mutex = SCM_NEW_INSTANCE(ScmMutex, klass);
     SCM_INTERNAL_MUTEX_INIT(mutex->mutex);
     SCM_INTERNAL_COND_INIT(mutex->cv);
     Scm_RegisterFinalizer(SCM_OBJ(mutex), mutex_finalize, NULL);
@@ -287,8 +286,7 @@ static void cv_finalize(ScmObj obj, void *data)
 
 static ScmObj cv_allocate(ScmClass *klass, ScmObj initargs)
 {
-    ScmConditionVariable *cv = SCM_ALLOCATE(ScmConditionVariable, klass);
-    SCM_SET_CLASS(cv, klass);
+    ScmConditionVariable *cv = SCM_NEW_INSTANCE(ScmConditionVariable, klass);
     SCM_INTERNAL_COND_INIT(cv->cv);
     Scm_RegisterFinalizer(SCM_OBJ(cv), cv_finalize, NULL);
     cv->name = SCM_FALSE;

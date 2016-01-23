@@ -1,8 +1,15 @@
 2016-01-22  Shiro Kawai  <shiro@acm.org>
 
-	* src/class.c (Scm_DefaultAllocateProc): Renamed from
-	  Scm_ObjectAllocate to avoid confusion.  See the comment
-	  in src/gauche/class.h.
+	* src/gauche/class.h, src/class.c: API clean up on allocation
+	  protocol.   Dropped Scm_ObjectAllocate, for it is trivial and
+	  it's rather confusing to have.  Renamed SCM_ALLOCATE and
+	  Scm_AllocateInstance for SCM_NEW_INSTANCE and Scm_NewInstance,
+	  to indicate they're lowest level of API (akin to SCM_NEW family)
+	  that handles very raw allocation (with minimal initialization).
+	  We also call SCM_SET_CLASS in Scm_NewInstance, for they should
+	  always go together anyway.  The old API is kept during 0.9.x
+	  series but will be removed on 1.0.  See the comment in
+	  class.h for the details.
 
 2016-01-21  Shiro Kawai  <shiro@acm.org>
 

@@ -220,8 +220,7 @@
    () ())
  
  (define-cfn load-condition-mixin-allocate (klass::ScmClass* initargs) :static
-   (let* ([c::ScmLoadConditionMixin* (SCM_ALLOCATE ScmLoadConditionMixin klass)])
-     (SCM_SET_CLASS c klass)
+   (let* ([c::ScmLoadConditionMixin* (SCM_NEW_INSTANCE ScmLoadConditionMixin klass)])
      (set! (-> c history) SCM_FALSE)
      (set! (-> c port) SCM_FALSE)
      (return (SCM_OBJ c))))
@@ -234,8 +233,7 @@
    (allocator (c "load_condition_mixin_allocate")))
 
  (define-cfn compile-error-mixin-allocate (klass::ScmClass* initargs) :static
-   (let* ([c::ScmCompileErrorMixin* (SCM_ALLOCATE ScmCompileErrorMixin klass)])
-     (SCM_SET_CLASS c klass)
+   (let* ([c::ScmCompileErrorMixin* (SCM_NEW_INSTANCE ScmCompileErrorMixin klass)])
      (set! (-> c expr) SCM_FALSE)
      (return (SCM_OBJ c))))
  
@@ -252,8 +250,7 @@
  ;; In C-level all filename mixin classes share one struct definition, and
  ;; one allocator.
  (define-cfn filename-error-mixin-allocate (klass::ScmClass* initargs) :static
-   (let* ([c::ScmFilenameErrorMixin* (SCM_ALLOCATE ScmFilenameErrorMixin klass)])
-     (SCM_SET_CLASS c klass)
+   (let* ([c::ScmFilenameErrorMixin* (SCM_NEW_INSTANCE ScmFilenameErrorMixin klass)])
      (set! (-> c filename) SCM_FALSE)
      (return (SCM_OBJ c))))
 

@@ -468,8 +468,7 @@ static ScmClassStaticSlotSpec servent_slots[] = {
 
 ScmObj addrinfo_allocate(ScmClass *klass, ScmObj initargs)
 {
-    ScmSysAddrinfo *info = SCM_ALLOCATE(ScmSysAddrinfo, klass);
-    SCM_SET_CLASS(info, klass);
+    ScmSysAddrinfo *info = SCM_NEW_INSTANCE(ScmSysAddrinfo, klass);
     info->canonname = NULL;
     info->addr = NULL;
     return SCM_OBJ(info);

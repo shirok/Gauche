@@ -179,8 +179,7 @@ static void port_finalize(ScmObj obj, void* data)
  */
 static ScmPort *make_port(ScmClass *klass, int dir, int type)
 {
-    ScmPort *port = SCM_ALLOCATE(ScmPort, klass);
-    SCM_SET_CLASS(port, klass);
+    ScmPort *port = SCM_NEW_INSTANCE(ScmPort, klass);
     port->direction = dir;
     port->type = type;
     port->scrcnt = 0;

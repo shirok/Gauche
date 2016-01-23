@@ -311,8 +311,7 @@ void sigset_print(ScmObj obj, ScmPort *out, ScmWriteContext *ctx)
 
 ScmObj sigset_allocate(ScmClass *klass, ScmObj initargs)
 {
-    ScmSysSigset *s = SCM_ALLOCATE(ScmSysSigset, klass);
-    SCM_SET_CLASS(s, klass);
+    ScmSysSigset *s = SCM_NEW_INSTANCE(ScmSysSigset, klass);
     sigemptyset(&s->set);
     return SCM_OBJ(s);
 }

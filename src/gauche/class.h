@@ -108,25 +108,25 @@ SCM_CLASS_DECL(Scm_AccessorMethodClass);
  *     It uses internal dispatch mechanism to call proper concrete
  *     allocate function, then sets up slots to the sane values.
  *
- *   (2) Scm_DefaultAllocateProc, and static *_allocate functions
+ *   (2) static *_allocate functions
  *     These are the 'methods' stored in ScmClass->allocate, and does
  *     specific allocation and setup for the class.
- *     Usually calls SCM_ALLOCATE in it.
+ *     Usually calls SCM_NEW_INSTANCE in it.
  *
- *   (3) SCM_ALLOCATE, Scm_AllocateInstance
+ *   (3) SCM_NEW_INSTANCE, Scm_NewInstance
  *     The bottom layer.  Allocates memory, and if it's for Scheme
  *     instances, allocates slot vector as well.
+ *     The code must always use the macro version SCM_NEW_INSTANCE.
  */
 
 
 /* cliche in allocate method */
-#define SCM_ALLOCATE(klassname, klass) \
-    ((klassname*)Scm_AllocateInstance(klass, sizeof(klassname)))
+#define SCM_NEW_INSTANCE(klassname, klass) \
+    ((klassname*)Scm_NewInstance(klass, sizeof(klassname)))
 
 /* some internal methods */
 
-SCM_EXTERN ScmObj Scm_DefaultAllocateProc(ScmClass *klass, ScmObj initargs);
-SCM_EXTERN ScmObj Scm_AllocateInstance(ScmClass *klass, int coresize);
+SCM_EXTERN ScmObj Scm_NewInstance(ScmClass *klass, int coresize);
 SCM_EXTERN ScmObj Scm__AllocateAndInitializeInstance(ScmClass *klass,
                                                      ScmObj *inits,
                                                      int numInits,
@@ -189,8 +189,12 @@ SCM_EXTERN ScmObj Scm_UpdateDirectMethod(ScmMethod *m,
                                          ScmClass *oldk,
                                          ScmClass *newk);
 
-/* TRANSIENT: Obsoleted.  Use Scm_DefaultAllocateProc. */
+/* TRANSIENT: Obsoleted. */
 SCM_EXTERN ScmObj Scm_ObjectAllocate(ScmClass *klass, ScmObj initargs);
+/* TRANSIENT: Obsoleted.  Use SCM_NEW_INSTANCE */
+#define SCM_ALLOCATE(klassname, klass)  SCM_NEW_INSTANCE(klassname, klass)
+/* TRANSIENT: Obsoleted.  Use Scm_NewInstance*/
+SCM_EXTERN ScmObj Scm_AllocateInstance(ScmClass *klass, int coresize);
 
 SCM_DECL_END
 

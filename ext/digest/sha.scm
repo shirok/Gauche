@@ -133,8 +133,7 @@
    ScmShaContext* "Scm_ShaContextClass" ()
    ()
    [allocator
-    (let* ([ctx :: ScmShaContext* (SCM_ALLOCATE ScmShaContext klass)])
-      (SCM_SET_CLASS ctx klass)
+    (let* ([ctx :: ScmShaContext* (SCM_NEW_INSTANCE ScmShaContext klass)])
       (return (SCM_OBJ ctx)))])
 
  (define-cproc %sha1-init (ctx::<sha-context>) ::<void>

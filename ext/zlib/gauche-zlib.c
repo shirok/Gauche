@@ -95,8 +95,7 @@ SCM_DEFINE_BASE_CLASS(Scm_ZlibVersionErrorClass, ScmZlibVersionError,
 
 static ScmObj zliberror_allocate(ScmClass *klass, ScmObj initargs)
 {
-    ScmZlibError *e = SCM_ALLOCATE(ScmZlibError, klass);
-    SCM_SET_CLASS(e, klass);
+    ScmZlibError *e = SCM_NEW_INSTANCE(ScmZlibError, klass);
     e->message = SCM_FALSE;
     return SCM_OBJ(e);
 }
@@ -169,8 +168,7 @@ void Scm_ZlibError(int error_code, const char *msg, ...)
 
 static ScmObj porterror_allocate(ScmClass *klass, ScmObj initargs)
 {
-    ScmPortError *e = SCM_ALLOCATE(ScmPortError, klass);
-    SCM_SET_CLASS(e, klass);
+    ScmPortError *e = SCM_NEW_INSTANCE(ScmPortError, klass);
     e->common.message = SCM_FALSE; /* set by initialize */
     e->port = NULL;                /* set by initialize */
     return SCM_OBJ(e);

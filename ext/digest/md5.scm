@@ -102,8 +102,7 @@
    ScmMd5Context* "Scm_Md5ContextClass" ()
    ()
    [allocator
-    (let* ([md5::ScmMd5Context* (SCM_ALLOCATE ScmMd5Context klass)])
-      (SCM_SET_CLASS md5 klass)
+    (let* ([md5::ScmMd5Context* (SCM_NEW_INSTANCE ScmMd5Context klass)])
       (MD5_Init (& (-> md5 ctx)))
       (return (SCM_OBJ md5)))])
 
