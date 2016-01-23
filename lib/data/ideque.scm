@@ -1,5 +1,5 @@
 ;;;
-;;; data.immutable-deque - immutable double-ended queue
+;;; data.ideque - immutable double-ended queue
 ;;;
 ;;;   Copyright (c) 2015  Shiro Kawai  <shiro@acm.org>
 ;;;
@@ -35,18 +35,18 @@
 ;; as described in Chris Okasaki's Purely Functional Data Structures.
 ;; It provides amortized O(1) operation
 
-(define-module data.immutable-deque
+(define-module data.ideque
   (use gauche.record)
   (use gauche.lazy)
   (use util.match)
-  (export <immutable-deque>
-          make-immutable-deque immutable-deque? immutable-deque-empty?
-          immutable-deque-cons immutable-deque-head immutable-deque-tail
-          immutable-deque-snoc immutable-deque-last immutable-deque-init
-          immutable-deque-reverse))
-(select-module data.immutable-deque)
+  (export <ideque>
+          make-ideque ideque? ideque-empty?
+          ideque-cons ideque-head ideque-tail
+          ideque-snoc ideque-last ideque-init
+          ideque-reverse))
+(select-module data.ideque)
 
-(define-record-type <immutable-deque> %make-dq immutable-deque?
+(define-record-type <ideque> %make-dq ideque?
   (lenf dq-lenf)  ; length of front chain
   (f    dq-f)     ; front chain
   (lenr dq-lenr)  ; length of rear chain
@@ -56,7 +56,7 @@
 (define-constant *empty* (%make-dq 0 '() 0 '()))
 
 ;; API
-(define (make-immutable-deque) *empty*)
+(define (make-ideque) *empty*)
 
 (define-constant C 3)
 
@@ -76,16 +76,16 @@
         [else (%make-dq lenf f lenr r)]))
 
 ;; API
-(define (immutable-deque-empty? dq)
+(define (ideque-empty? dq)
   (and (zero? (dq-lenf dq))
        (zero? (dq-lenr dq))))
 
 ;; API
-(define (immutable-deque-cons x dq)
+(define (ideque-cons x dq)
   (check (+ (dq-lenf dq) 1) (cons x (dq-f dq)) (dq-lenr dq) (dq-r dq)))
 
 ;; API
-(define (immutable-deque-head dq)
+(define (ideque-head dq)
   (if (zero? (dq-lenf dq))
     (if (zero? (dq-lenr dq))
       (error "Empty deque:" dq)
@@ -93,7 +93,7 @@
     (car (dq-f dq))))
 
 ;; API
-(define (immutable-deque-tail dq)
+(define (ideque-tail dq)
   (if (zero? (dq-lenf dq))
     (if (zero? (dq-lenr dq))
       (error "Empty deque:" dq)
@@ -101,11 +101,11 @@
     (check (- (dq-lenf dq) 1) (cdr (dq-f dq)) (dq-lenr dq) (dq-r dq))))
 
 ;; API
-(define (immutable-deque-snoc dq x)
+(define (ideque-snoc dq x)
   (check (dq-lenf dq) (dq-f dq) (+ (dq-lenr dq) 1) (cons x (dq-r dq))))
 
 ;; API
-(define (immutable-deque-last dq)
+(define (ideque-last dq)
   (if (zero? (dq-lenr dq))
     (if (zero? (dq-lenf dq))
       (error "Empty deque:" dq)
@@ -113,7 +113,7 @@
     (car (dq-r dq))))
 
 ;; API
-(define (immutable-deque-init dq)
+(define (ideque-init dq)
   (if (zero? (dq-lenr dq))
     (if (zero? (dq-lenf dq))
       (error "Empty deque:" dq)
@@ -121,8 +121,8 @@
     (check (dq-lenf dq) (dq-f dq) (- (dq-lenr dq) 1) (cdr (dq-r dq)))))
 
 ;; API
-(define (immutable-deque-reverse dq)
-  (if (immutable-deque-empty? dq)
+(define (ideque-reverse dq)
+  (if (ideque-empty? dq)
     *empty*
     (%make-dq (dq-lenr dq) (dq-r dq) (dq-lenf dq) (dq-f dq))))
 

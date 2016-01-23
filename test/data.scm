@@ -346,29 +346,29 @@
   )
 
 ;;;========================================================================
-(test-section "data.immutable-map")
-(use data.immutable-map)
+(test-section "data.imap")
+(use data.imap)
 (use gauche.sequence)
 (use gauche.dictionary)
-(test-module 'data.immutable-map)
+(test-module 'data.imap)
 
-(let* ([z (make-immutable-map)]
-       [z (begin (test* "empty" #t (immutable-map-empty? z))
+(let* ([z (make-imap)]
+       [z (begin (test* "empty" #t (imap-empty? z))
                  (do ([i 0 (+ i 1)]
                       [z z (let1 n (modulo (* i 61) 128)
-                             (immutable-map-put z n (integer->char n)))])
+                             (imap-put z n (integer->char n)))])
                      [(= i 128) z]
                    ))]
        [z (begin (test* "exists?" #t
-                        (every (cut immutable-map-exists? z <>) (iota 128)))
+                        (every (cut imap-exists? z <>) (iota 128)))
                  (test* "exists?" #f
-                        (immutable-map-exists? z -1))
+                        (imap-exists? z -1))
                  (test* "get" #t
-                        (every (^n (eqv? (immutable-map-get z n)
+                        (every (^n (eqv? (imap-get z n)
                                          (integer->char n)))
                                (iota 128)))
-                 (test* "get" (test-error) (immutable-map-get z -1))
-                 (test* "get" 'z (immutable-map-get z -1 'z))
+                 (test* "get" (test-error) (imap-get z -1))
+                 (test* "get" 'z (imap-get z -1 'z))
                  (test* "collection"
                         (map (^n (cons n (integer->char n))) (iota 128))
                         (map identity z))
@@ -378,22 +378,22 @@
                  (test* "dictionary"
                         (map (^n (cons n (integer->char n))) (iota 128))
                         (dict-fold-right z acons '()))
-                 (immutable-map-put z 0 'meow))])
-  (test* "replace" 'meow (immutable-map-get z 0))
+                 (imap-put z 0 'meow))])
+  (test* "replace" 'meow (imap-get z 0))
   (test* "min/max" `((0 . meow) (127 . ,(integer->char 127)))
-         (list (immutable-map-min z)
-               (immutable-map-max z)))
+         (list (imap-min z)
+               (imap-max z)))
   (test* "min/max" `(#f #f)
-         (let1 z (make-immutable-map)
-           (list (immutable-map-min z)
-                 (immutable-map-max z))))
+         (let1 z (make-imap)
+           (list (imap-min z)
+                 (imap-max z))))
   (let ()
     ;; If we give p which is coprime to 128, the series
     ;; (modulo (* k p) 128) where k = [0..127] will walk all the
     ;; numbers between [0..127].  We delete the elements in that order
     ;; and check if it works.
     (define (delete-test p)
-      (test* #"immutable-map-delete (~p)"
+      (test* #"imap-delete (~p)"
              ;; result is a list of
              ;; (index num-elements exists-before-delete exists-after-delete)
              (map (^k (list k (- 127 k) #t #f)) (iota 128))
@@ -401,14 +401,14 @@
                (if (null? ns)
                  (reverse r)
                  (let* ([k (modulo (* (car ns) p) 128)]
-                        [b (immutable-map-exists? z k)]
-                        [z (immutable-map-delete z k)])
+                        [b (imap-exists? z k)]
+                        [z (imap-delete z k)])
                    (loop (cdr ns)
                          z
                          (cons (list (car ns)
                                      (dict-fold z (^[k v c](+ c 1)) 0)
                                      b
-                                     (immutable-map-exists? z k))
+                                     (imap-exists? z k))
                                r)))))))
     (delete-test 1)  ; in-order deletion
     (delete-test 13)
@@ -418,9 +418,9 @@
     )
 
   (let1 data (map (^[i] (cons (integer->char i) i)) (iota 128))
-    (test* #"immutable-map and alist conversions"
+    (test* #"imap and alist conversions"
            data
-           (dict->alist (alist->immutable-map data char-comparator))))
+           (dict->alist (alist->imap data char-comparator))))
   )
 
 ;;;========================================================================

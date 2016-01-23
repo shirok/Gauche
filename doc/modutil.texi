@@ -14,7 +14,7 @@
 * Cache::                       data.cache
 * Heap::                        data.heap
 * Queue::                       data.queue
-* Immutable map::               data.immutable-map
+* Immutable map::               data.imap
 * Random data generators::      data.random
 * Ring buffer::                 data.ring-buffer
 * Sparse data containers::      data.sparse
@@ -2734,11 +2734,11 @@ without hitting timeout, they return @code{#t}.
 
 @c ----------------------------------------------------------------------
 @node Immutable map, Random data generators, Queue, Library modules - Utilities
-@section @code{data.immutable-map} - Immutable map
-@c NODE 変更不可なマップ, @code{data.immutable-map} - 変更不可なマップ
+@section @code{data.imap} - Immutable map
+@c NODE 変更不可なマップ, @code{data.imap} - 変更不可なマップ
 
-@deftp {Module} data.immutable-map
-@mdindex data.immutable-map
+@deftp {Module} data.imap
+@mdindex data.imap
 This module provides a immutable data structure with O(log n)
 access and update operations.  The current implementation is
 based on the functional red-black tree.
@@ -2747,25 +2747,25 @@ based on the functional red-black tree.
 Although lists and alists are useful for stack-like immutable
 operations, where you can add and remove items to the head of
 existing data without modifying them, they require O(n) access time
-and sometimes you need better one.  The @code{<immutable-map>} object
+and sometimes you need better one.  The @code{<imap>} object
 provides O(log n) access, in exchange of O(log n) insertion and
 deletion.
 
-@deftp {Class} <immutable-map-meta>
-Metaclass of @code{<immutable-map>}.
+@deftp {Class} <imap-meta>
+Metaclass of @code{<imap>}.
 @end deftp
 
-@deftp {Class} <immutable-map>
-Immutable map class.  An instance of @code{<immutable-map-meta>}.
+@deftp {Class} <imap>
+Immutable map class.  An instance of @code{<imap-meta>}.
 
 Inherits @code{<ordered-dictionary>}, conforms dictionary protocol
 (except mutating operators).  As a sequence, you can access key-value
 pairs in increasing order of keys.
 @end deftp
 
-@defun make-immutable-map
-@defunx make-immutable-map comparator
-@defunx make-immutable-map key=? key<?
+@defun make-imap
+@defunx make-imap comparator
+@defunx make-imap key=? key<?
 Creates a new empty immutable map.  Without arguments,
 @code{default-comparator} is used to compare keys.  To give a
 specific comparator, use the second form; the @var{comparator}
@@ -2777,13 +2777,13 @@ both must accept two keys.  This interface is consistent with
 @code{tree-map} (@pxref{Treemaps}).
 @end defun
 
-@defun alist->immutable-map alist
-@defunx alist->immutable-map alist comparator
-@defunx alist->immutable-map alist key=? key<?
+@defun alist->imap alist
+@defunx alist->imap alist comparator
+@defunx alist->imap alist key=? key<?
 Creates a new empty immutable map, populates it with
 key-value association list @var{alist}, and returns it.
 This may be a bit more efficient than creating an empty map with
-@code{make-immutable-map} and populates it with @code{immutable-map-put}
+@code{make-imap} and populates it with @code{imap-put}
 one by one.
 
 The @var{comparator} argument specifies how to compare the keys.
@@ -2795,70 +2795,70 @@ predicate @var{key=?} and less-than predicate @code{key<=?},
 both must accept two keys.
 
 @example
-(define m (alist->immutable-map '((a . 1) (b . 2))))
+(define m (alist->imap '((a . 1) (b . 2))))
 
-(immutable-map-get m 'a) @result{} 1
-(immutable-map-get m 'b) @result{} 2
+(imap-get m 'a) @result{} 1
+(imap-get m 'b) @result{} 2
 @end example
 @end defun
 
-@defun tree-map->immutable-map tree-map
+@defun tree-map->imap tree-map
 Returns a new immutable map with the same content (and the same comparator)
 as @var{tree-map}.
 @end defun
 
-@defun immutable-map? obj
+@defun imap? obj
 Returns @code{#t} if @var{obj} is an immutable map,
 @code{#f} otherwise.
 @end defun
 
-@defun immutable-map-empty? immap
+@defun imap-empty? immap
 Returns @code{#t} if an immutable map @var{immap} is empty,
 @code{#f} otherwise.
 @end defun
 
-@defun immutable-map-exists? immap key
+@defun imap-exists? immap key
 Returns @code{#t} if @var{key} exists in an immutable map @var{immap}.
 @end defun
 
-@defun immutable-map-get immap key :optional default
+@defun imap-get immap key :optional default
 Returns the value associated with @var{key} in an immutable map @var{immap}.
 If @var{immap} doesn't have @var{key}, @var{default} is returned
 when provided, otherwise an error is signalled.
 @end defun
 
-@defun immutable-map-put immap key val
+@defun imap-put immap key val
 Returns a new immutable map where association of @var{key} to @var{val}
 is added to (or replaced in) an immutable map @var{immap}.
 This operation is O(log n).
 
 @example
-(define m1 (alist->immutable-map '((a . 1) (b . 2))))
+(define m1 (alist->imap '((a . 1) (b . 2))))
 
-(define m2 (immutable-map-put m1 'a 3))
+(define m2 (imap-put m1 'a 3))
 
-(immutable-map-get m2 'a)  @result{} 3
-(immutable-map-get m1 'a)  @result{} 1  ; not affected
+(imap-get m2 'a)  @result{} 3
+(imap-get m1 'a)  @result{} 1  ; not affected
 @end example
 @end defun
 
-@defun immutable-map-delete immap key
+@defun imap-delete immap key
 Returns a new immutable map where @var{key} is removed from
 @var{immap}.   If @var{immap} doesn't have @var{key}, returned
 map has the same content as @var{immap}.
 
 @example
-(define m1 (alist->immutable-map '((a . 1) (b . 2))))
+(define m1 (alist->imap '((a . 1) (b . 2))))
 
-(define m2 (immutable-map-delete m1 'a))
+(define m2 (imap-delete m1 'a))
 
-(immutable-map-get m2 'a #f)  @result{} #f
-(immutable-map-get m1 'a)     @result{} 1  ; not affected
+(imap-get m2 'a #f)  @result{} #f
+(imap-get m1 'a)     @result{} 1  ; not affected
 @end example
 @end defun
 
-@defun immutable-map-min immap
-@defunx immutable-map-max immap
+@defun imap-min immap
+@defunx imap-max immap
 Returns a pair of key and value with the minimum or maximum
 key in @var{immap}, respectively.  If @var{immap} is empty,
 @code{#f} is returned.

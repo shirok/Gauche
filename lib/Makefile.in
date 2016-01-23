@@ -82,7 +82,7 @@ SCMFILES = srfi-0.scm \
        control/job.scm control/thread-pool.scm \
        dbi.scm dbd/null.scm dbm.scm dbm/fsdbm.scm dbm/dump dbm/restore \
        data/cache.scm data/heap.scm \
-       data/immutable-deque.scm data/immutable-map.scm data/random.scm \
+       data/ideque.scm data/imap.scm data/random.scm \
        data/ring-buffer.scm data/trie.scm \
        lang/asm/x86_64.scm \
        math/const.scm math/prime.scm \
