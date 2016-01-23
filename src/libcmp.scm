@@ -120,11 +120,12 @@
               (if (SCM_FALSEP (-> c name))
                 (Scm_Printf port "#<comparator %p>" c)
                 (Scm_Printf port "#<comparator %S>" (-> c name)))))
-   (comparer (if equalp
+   (comparer (begin
+               (unless equalp
+                 (Scm_Error "%S and %S can't be ordered" x y))
                (let* ([r (Scm_ApplyRec2 (SCM_OBJ (& Scm_GenericObjectEqualP))
                                         x y)])
-                 (return (?: (SCM_FALSEP r) 1 0)))
-               (Scm_Error "%S and %S can't be ordered" x y)))
+                 (return (?: (SCM_FALSEP r) 1 0)))))
    ))
 
 ;; We implement these in C for performance.
