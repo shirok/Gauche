@@ -290,57 +290,57 @@
            (cache-stats c))))
 
 ;;;========================================================================
-(test-section "data.immutable-deque")
-(use data.immutable-deque)
-(test-module 'data.immutable-deque)
+(test-section "data.ideque")
+(use data.ideque)
+(test-module 'data.ideque)
 
 (let ()
   (define (deque->list dq)
-    (if (immutable-deque-empty? dq)
+    (if (ideque-empty? dq)
       '()
-      (cons (immutable-deque-head dq)
-            (deque->list (immutable-deque-tail dq)))))
-  (let* ([z (make-immutable-deque)]
-         [z (begin (test* "empty" #t (immutable-deque-empty? z))
+      (cons (ideque-head dq)
+            (deque->list (ideque-tail dq)))))
+  (let* ([z (make-ideque)]
+         [z (begin (test* "empty" #t (ideque-empty? z))
                    (test* "empty - head" (test-error)
-                          (immutable-deque-head z))
+                          (ideque-head z))
                    (test* "empty - tail" (test-error)
-                          (immutable-deque-tail z))
+                          (ideque-tail z))
                    (test* "empty - last" (test-error)
-                          (immutable-deque-last z))
+                          (ideque-last z))
                    (test* "empty - init" (test-error)
-                          (immutable-deque-init z))
-                   (immutable-deque-cons 'a z))]
+                          (ideque-init z))
+                   (ideque-cons 'a z))]
          [z (begin (test* "cons" '((a) a #t a #t)
                           (list (deque->list z)
-                                (immutable-deque-head z)
-                                (immutable-deque-empty?
-                                 (immutable-deque-tail z))
-                                (immutable-deque-last z)
-                                (immutable-deque-empty?
-                                 (immutable-deque-init z))))
-                   (immutable-deque-snoc z 'b))]
+                                (ideque-head z)
+                                (ideque-empty?
+                                 (ideque-tail z))
+                                (ideque-last z)
+                                (ideque-empty?
+                                 (ideque-init z))))
+                   (ideque-snoc z 'b))]
          [z (begin (test* "snoc" '((a b) a #f b b #f a)
                           (list (deque->list z)
-                                (immutable-deque-head z)
-                                (immutable-deque-empty?
-                                 (immutable-deque-tail z))
-                                (immutable-deque-head
-                                 (immutable-deque-tail z))
-                                (immutable-deque-last z)
-                                (immutable-deque-empty?
-                                 (immutable-deque-init z))
-                                (immutable-deque-last
-                                 (immutable-deque-init z))))
-                   (immutable-deque-cons 'c z))]
-         [z (immutable-deque-cons 'd z)]
-         [z (immutable-deque-cons 'e z)]
-         [z (immutable-deque-cons 'f z)]
-         [z (immutable-deque-cons 'g z)]
+                                (ideque-head z)
+                                (ideque-empty?
+                                 (ideque-tail z))
+                                (ideque-head
+                                 (ideque-tail z))
+                                (ideque-last z)
+                                (ideque-empty?
+                                 (ideque-init z))
+                                (ideque-last
+                                 (ideque-init z))))
+                   (ideque-cons 'c z))]
+         [z (ideque-cons 'd z)]
+         [z (ideque-cons 'e z)]
+         [z (ideque-cons 'f z)]
+         [z (ideque-cons 'g z)]
          [z (begin (test* "cons, multi" '((g f e d c a b)
                                           (b a c d e f g))
                           (list (deque->list z)
-                                (deque->list (immutable-deque-reverse z)))))]
+                                (deque->list (ideque-reverse z)))))]
          )
     #t)
   )
