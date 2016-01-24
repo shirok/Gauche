@@ -46,4 +46,4 @@
 (require "r7rs")
 (select-module r7rs.user)
 (import (adaptor))
-(include "r7rs-tests.scm")
+(include "include/r7rs-tests.scm")
