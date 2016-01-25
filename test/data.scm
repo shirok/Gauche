@@ -293,57 +293,11 @@
 (test-section "data.ideque")
 (use data.ideque)
 (test-module 'data.ideque)
+(use compat.chibi-test)
 
-(let ()
-  (define (deque->list dq)
-    (if (ideque-empty? dq)
-      '()
-      (cons (ideque-head dq)
-            (deque->list (ideque-tail dq)))))
-  (let* ([z (make-ideque)]
-         [z (begin (test* "empty" #t (ideque-empty? z))
-                   (test* "empty - head" (test-error)
-                          (ideque-head z))
-                   (test* "empty - tail" (test-error)
-                          (ideque-tail z))
-                   (test* "empty - last" (test-error)
-                          (ideque-last z))
-                   (test* "empty - init" (test-error)
-                          (ideque-init z))
-                   (ideque-cons 'a z))]
-         [z (begin (test* "cons" '((a) a #t a #t)
-                          (list (deque->list z)
-                                (ideque-head z)
-                                (ideque-empty?
-                                 (ideque-tail z))
-                                (ideque-last z)
-                                (ideque-empty?
-                                 (ideque-init z))))
-                   (ideque-snoc z 'b))]
-         [z (begin (test* "snoc" '((a b) a #f b b #f a)
-                          (list (deque->list z)
-                                (ideque-head z)
-                                (ideque-empty?
-                                 (ideque-tail z))
-                                (ideque-head
-                                 (ideque-tail z))
-                                (ideque-last z)
-                                (ideque-empty?
-                                 (ideque-init z))
-                                (ideque-last
-                                 (ideque-init z))))
-                   (ideque-cons 'c z))]
-         [z (ideque-cons 'd z)]
-         [z (ideque-cons 'e z)]
-         [z (ideque-cons 'f z)]
-         [z (ideque-cons 'g z)]
-         [z (begin (test* "cons, multi" '((g f e d c a b)
-                                          (b a c d e f g))
-                          (list (deque->list z)
-                                (deque->list (ideque-reverse z)))))]
-         )
-    #t)
-  )
+(chibi-test
+ (include "include/ideque-tests"))
+
 
 ;;;========================================================================
 (test-section "data.imap")
