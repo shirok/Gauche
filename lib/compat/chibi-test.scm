@@ -12,43 +12,61 @@
 (define-syntax gauche:parameterize parameterize)
 (define gauche:test-error test-error)
 
+;; chibi allows internal defines to interleave expressions.  Gauche can't
+;; do that, so we translate the whole body of chibi-test into
+;; nested lets.
+
+;; we also cheat the scope - we want to replace macros such as
+;; test, include and parameterize, but we want them to be effective
+;; only inside chibi-test.
+
 (define-syntax chibi-test
-  (syntax-rules (test-group test test-assert test-error include parameterize)
-    [(_ (test-group name . forms) . rest)
-     (begin (chibi-test . forms)
-            (chibi-test . rest))]
-    [(_ (test expected expr) . rest)
-     (begin (test* 'expected expected expr (current-test-comparator))
-            (chibi-test . rest))]
-    [(_ (test name expected expr) . rest)
-     (begin (test* name expected expr (current-test-comparator))
-            (chibi-test . rest))]
-    [(_ (test-assert expr) . rest)
-     (begin (test* 'expr #t (boolean expr))
-            (chibi-test . rest))]
-    [(_ (test-error expr) . rest)
-     (begin (test* 'expr (gauche:test-error) expr)
-            (chibi-test . rest))]
-    [(_ (parameterize bindings . forms) . rest)
-     (begin (gauche:parameterize bindings (chibi-test . forms))
-            (chibi-test . rest))]
-    [(_ (include file) . rest)
-     ;; NB: We need to expand include by ourselves, for we must splice
-     ;; test-* forms in the included file.
-     (chibi-test:include file rest)]
-    [(_ form . rest)
-     (let () form (chibi-test . rest))]
-    [(_) (begin)]))
+  (er-macro-transformer
+   (^[f r c]
+     `(let-syntax
+          ([parameterize
+            (syntax-rules ()
+              [(_ bindings . fs)
+               (,(r'gauche:parameterize) bindings
+                (,(r'chibi-test:expand) fs))])]
+           [include
+            (syntax-rules ()
+              [(_ file) (,(r'chibi-test:include) file)])]
+           [test
+            (syntax-rules ()
+              [(_ name expected expr)
+               (,(r'test*) name expected expr (current-test-comparator))]
+              [(_ expected expr)
+               (,(r'test*) 'expr expected expr (current-test-comparator))])]
+           [test-group
+            (syntax-rules ()
+              [(_ name . fs)
+               (begin
+                 (,(r'test-section) name)
+                 (,(r'chibi-test:expand) fs))])]
+           [test-assert
+            (syntax-rules ()
+              [(_ expr)
+               (,(r'test*) 'expr #t (,(r'boolean) expr))])]
+           [test-error
+            (syntax-rules ()
+              [(_ expr)
+               (,(r'test*) 'expr (,(r'gauche:test-error)) expr)])])
+       (,(r'chibi-test:expand) ,(cdr f))))))
+
+(define-syntax chibi-test:expand
+  (syntax-rules ()
+    [(_ ()) (begin)]
+    [(_ (form)) form]
+    [(_ (form . forms))
+     (let () form (chibi-test:expand forms))]))
 
 (define-syntax chibi-test:include
   (er-macro-transformer
    (^[f r c]
-     (let ([file (cadr f)]
-           [rest (caddr f)])
+     (let ([file (cadr f)])
        (let1 iport ((with-module gauche.internal pass1/open-include-file)
                     file (current-load-path))
          (unwind-protect
-             `(,(r 'chibi-test)
-               ,@(port->sexp-list iport)
-               ,@rest)
+             `(,(r 'chibi-test:expand) ,(port->sexp-list iport))
            (close-port iport)))))))
