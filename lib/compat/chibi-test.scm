@@ -29,6 +29,11 @@
               [(_ bindings . fs)
                (,(r'gauche:parameterize) bindings
                 (,(r'chibi-test:expand) fs))])]
+           [use
+            ;; NB: We ignore 'use' in the chibi test file; necessary modules
+            ;; are supposed to be already used in the includer.
+            (syntax-rules ()
+              [(_ . args) (begin)])]
            [include
             (syntax-rules ()
               [(_ file) (,(r'chibi-test:include) file)])]
@@ -51,7 +56,13 @@
            [test-error
             (syntax-rules ()
               [(_ expr)
-               (,(r'test*) 'expr (,(r'gauche:test-error)) expr)])])
+               (,(r'test*) 'expr (,(r'gauche:test-error)) expr)])]
+           [test-exit
+            ;; ignore test-exit, for it is inside chibi-test and we don't
+            ;; want to exit.
+            (syntax-rules ()
+              [(_ . args) (begin)])]
+           )
        (,(r'chibi-test:expand) ,(cdr f))))))
 
 (define-syntax chibi-test:expand
