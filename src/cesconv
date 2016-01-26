@@ -1,4 +1,4 @@
-;;-*-Scheme-*-
+;;-*- mode: scheme -*-
 ;;
 
 ;; Kept for backward compatibility.  Will be gone soon.
