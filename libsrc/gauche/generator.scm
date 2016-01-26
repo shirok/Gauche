@@ -680,7 +680,7 @@
     (do-generator [v gen] (when (pred v) (inc! n)))))
   
 (define (generator-unfold gen unfold . args)
-  (apply unfold eof-object? identity (^_ (gen)) args))
+  (apply unfold eof-object? identity (^_ (gen)) (gen) args))
 
 ;; srfi-121 compatibility aliases
 ;; NB: We're not sure if we should put them here, or split them to
