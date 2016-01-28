@@ -701,12 +701,17 @@
   (shutdown-secure-agent conn))
 
 (define (start-socket-connection conn)
-  (let1 server (or (~ conn'proxy) (~ conn'server))
+  ;; If address is given ipv6 format such as "[::1]:port", we have to
+  ;; use "::1" part as the hostname, excluding [].
+  (define (parse-address addr)
+    (rxmatch-case addr
+      [#/^\[([a-fA-F\d:]+)\](?::(\d+))?$/ (_ host port) (values host port)]
+      [#/^([^:]+)(?::(\d+))?$/ (_ host port) (values host port)]))
+  (receive (host port) (parse-address (or (~ conn'proxy) (~ conn'server)))
     (set! (~ conn'socket)
-          (cond [(#/([^:]+):(\d+)/ server)
-                 => (^m (make-client-socket (m 1) (x->integer (m 2))))]
-                [else
-                 (make-client-socket server (if (~ conn'secure) 443 80))]))))
+          (make-client-socket host (if port
+                                     (x->integer port)
+                                    (if (~ conn'secure) 443 80))))))
 
 (define (shutdown-socket-connection conn)
   (when (~ conn'socket)

@@ -1,3 +1,8 @@
+2016-01-28  Shiro Kawai  <shiro@acm.org>
+
+	* lib/rfc/http.scm (start-socket-connection): properly handle
+	  ipv6-style server address spec, e.g. "[::1]:8888".
+
 2016-01-23  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/class.h, src/class.c: Add Scm_Allocate() API.
