@@ -639,11 +639,10 @@
 
 (define (generator->vector! vec at gen)
   (let1 len (vector-length vec)
-    (when (< at len)
-      (do ([k at (+ k 1)]
-           [v (gen) (gen)])
-          [(or (eof-object? v) (= k len)) (- k at)]
-        (vector-set! vec k v)))))
+    (let loop ([k at])
+      (let1 v (if (>= k len) (eof-object) (gen))
+        (cond [(eof-object? v) (- k at)]
+              [else (vector-set! vec k v) (loop (+ k 1))])))))
 
 (define (generator->string gen :optional (n #f))
   (with-output-to-string
