@@ -1756,5 +1756,13 @@
   (chibi-test
    (include "include/generators-test")))
 
+(test* "generator->vector!" '(3 #(1 2 3) 4 0)
+       (let ((g (list->generator '(1 2 3 4 5)))
+             (v (make-vector 3)))
+         (list (generator->vector! v 0 g)
+               v
+               (g)
+               (generator->vector! v 3 g))))
+
 (test-end)
 
