@@ -9,7 +9,7 @@ mqueue library, to write a Gauche binding for it.
 The following files are needed for our extension:
 
   Makefile.in
-  configure.in
+  configure.ac
   mqueue_glue.cpp    - a bridge (glue) between C++ library and Gauche
   mqueue_glue.h      - ditto
   mqueue_lib.stub    - Scheme binding definition
