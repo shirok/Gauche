@@ -5,6 +5,8 @@
 #  ./DIST tgz  : creates a tarball.
 # Assumes gnu tar.
 
+set -e
+
 MODULE=mqueue-cpp
 
 while [ $# -gt 0 ]; do

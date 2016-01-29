@@ -5,6 +5,8 @@
 #  ./DIST tgz  : creates a tarball.
 # Assumes gnu tar.
 
+set -e
+
 MODULE=spigot2
 
 while [ $# -gt 0 ]; do
