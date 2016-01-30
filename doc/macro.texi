@@ -17,12 +17,20 @@ Lisp系言語のマクロは、他の言語に見られるマクロ(例えばC�
 走らせたり、あるいは自分の問題解決に適した「ミニ言語」をデザインすることさえできます。
 @c COMMON
 
+@c EN
 Gauche supports hygienic macros, which allows to write safe macros
 by avoiding name collisions.  If you know traditional Lisp macros
 but new to hygienic macros, they might seem confusing at first.
 We have an introductory section (@ref{Why hygienic?}) for those who
 are not familiar with hygienic macros; if you know what they are,
 you can skip the section.
+@c JP
+Gaucheは、名前の衝突を避ける安全なマクロを簡単に書ける、「衛生的な(hygienic)」
+マクロをサポートします。これは、従来のLispマクロは知っているけれど衛生的なマクロを
+始めて見る人には、やや難解に見えるかもしれません。
+衛生的マクロに馴染みが無い読者向けに、紹介の節を用意しました(@ref{Why hygienic?})。
+既に衛生的マクロを知っている読者はその節は読み飛ばして構いません。
+@c COMMON
 
 @menu
 * Why hygienic?::               
@@ -36,42 +44,76 @@ you can skip the section.
 @section Why hygienic?
 @c NODE なぜ衛生的マクロか
 
+@c EN
 Lisp macro is a programmatic transformation of source code.
 A @emph{macro transformer} is a procedure that takes a subtree of
 source code, and returns a reconstructed tree of source code.
+@c JP
+Lispのマクロは、ソースコードをプログラムによって変換するものです。
+@emph{マクロ変換器(macro transformer)}が、ソースコードの部分木を受け取り、
+加工したソースコードの部分木を返します。
+@c COMMON
 
+@c EN
 The traditional Lisp macros take the input source code as
 an S-expression, and returns the output as another S-expression.
 Gauche supports that type of macro, too, with @code{define-macro} form.
 Here's the simple definition of @code{when} with the traditional macro.
+@c JP
+伝統的なLispマクロでは、入力となるソースコードも、出力されるコードも、単なるS式でした。
+Gaucheはそのタイプのマクロも@code{define-macro}形式でサポートしています。
+例えば、@code{when}は伝統的マクロで次のとおり書けます。
+@c COMMON
 
 @example
 (define-macro (when test . body)
   `(if ,test (begin ,@@body)))
 @end example
 
+@c EN
 For example,
 if the macro is used as @code{(when (zero? x) (print "zero") 'zero)},
 the above macro transformer rewrites it to
 @code{(if (zero? x) (begin (print "zero") 'zero))}.  So far, so good.
+@c JP
+このマクロが@code{(when (zero? x) (print "zero") 'zero)}のように使われたとすれば、
+上記の変換器はそれを@code{(if (zero? x) (begin (print "zero") 'zero))}と
+書き換えます。一見問題なさそうですね。
+@c COMMON
 
+@c EN
 But what if the @code{when} macro is used in an environment
-where the names @code{begin} or @code{if} is bound?
+where the names @code{begin} or @code{if} is bound to nonstandard values?
+@c JP
+けれども、@code{begin}や@code{if}が通常とは違う意味で束縛されている環境で
+@code{when}が使われたらどうなるでしょう。
+@c COMMON
 
 @example
 (let ([begin list])
   (when (zero? x) (print "zero") 'zero))
 @end example
 
+@c EN
 The expanded result would be as follows:
+@c JP
+展開結果は次の通りになります。
+@c COMMON
 
 @example
 (let ([begin list])
   (if (zero? x) (begin (print "zero") 'zero)))
 @end example
 
-This obviously won't work as the macro writer intended.
+@c EN
+This obviously won't work as the macro writer intended, since
+@code{begin} in the expanded code refers to the locally bound name.
+@c JP
+これでは意図した通りには動きません。展開された結果の中の@code{begin}が
+ローカル変数と解釈されてしまいます。
+@c COMMON
 
+@c EN
 This is a form of @emph{variable capture}.  Note that, when Lisp
 people talk about variable capture of macros, it often means
 another form of capture, where the temporary variables inserted
@@ -79,7 +121,15 @@ by a macro would unintentionally capture the variables passed to
 the macro.   That kind of variable capture can be avoided easily
 by naming the temporary variables something that never conflict,
 using @code{gensym}.
+@c JP
+これは@emph{変数捕捉}の一形態です。Lispのマクロによる変数捕捉というと、
+別の形態、すなわちマクロにより導入される一時変数がマクロに渡された式内の
+変数を意図せずに捕捉してしまうことが話題に上ることが多いのですが、
+そちらは@code{gensym}を使って一時変数を決して衝突しない名前にすることで
+簡単に回避できます。
+@c COMMON
 
+@c EN
 On the other hand, the kind of variable capture in the above example
 can't be avoided by @code{gensym}, because @code{(let ([begin list]) ...)}
 part isn't under macro writer's control.  As a macro writer, you can
@@ -87,15 +137,36 @@ do nothing to prevent the conflict, just hoping the
 macro user won't do such a thing.  Sure, rebinding @code{begin} is
 a crazy idea that nobody perhaps wants to do, but it can happen on
 @emph{any} global variable, even the ones you define for your library.
+@c JP
+しかし上の例のような変数捕捉は@code{gensym}では回避できません。外側の
+@code{(let ([begin list]) ...)}の部分はマクロを書く人には制御できない
+からです。マクロ作成者が、この衝突を避けるために出来ることは何もありません。
+せいぜい、マクロ使用者がそんな使い方をしないように祈るだけです。
+もちろん、@code{begin}を再束縛するなんて誰もやろうとは思わないかもしれませんが、
+同様の衝突はあなたのライブラリが提供するものも含めあらゆるグローバル変数について
+起こり得るのです。
+@c COMMON
 
+@c EN
 Various Lisp dialects have tried to address this issue in different
 ways.  Common Lisp somewhat relies on the common sense of the
 programmer---you can use separate packages to reduce the chance
-of accidental conflict but can't make the chance zero.
+of accidental conflict but can't prevent the user from binding
+the name in the same package.
 (The Common Lisp spec says it is undefined if you locally rebind
 names of CL standard symbols; but it doesn't prevent you from locally
 rebinding symbols that are provided by user libraries.)
+@c JP
+異なるLisp方言はそれぞれ異なる方法でこの問題に対処してきました。
+Common Lispは、ある意味プログラマの常識に頼ります。マクロ作成者は
+ライブラリのパッケージを分けることで、偶然名前が衝突してしまう危険性を
+減らせますが、マクロ使用者が同じパッケージの名前を再束縛することを防げるわけではなりません。
+(Common Lispの仕様ではCL標準のシンボルをローカルに再束縛した場合の
+動作は未定義とされていますが、ユーザが提供するライブラリについては
+何も決められていません。)
+@c COMMON
 
+@c EN
 Clojure introduced a way to directly refer to the toplevel variables
 by a namespace prefix, so it can bypass whatever local bindings of
 the same name (also, it has a sophisticated quasiquote form that
@@ -107,7 +178,20 @@ can only distinguish between local and toplevel bindings.
 It's ok for Clojure which doesn't have local macros,
 but in Scheme, we prefer uniform and orthogonal axioms---if functions
 can be defined locally with lexical scope, why not macros?
+@c JP
+Clojureは、名前空間プレフィクスによって直接トップレベル変数を参照する方法を
+導入したので、同名のローカル変数束縛をバイパスして意図するトップレベル変数を確実に
+参照できます (また、Clojureのquasiquoteは高機能で、自由変数を自動的に
+プレフィクスつきのトップレベル変数へと変換してくれます。)
+この方法はローカルマクロが存在しない限りはうまくいきます。
+ローカルマクロがあると、後の例で見るように、複数の同名のローカル変数束縛を
+区別する必要が出てきます。Clojureの方法はローカル変数束縛とトップレベル変数束縛を
+区別できるだけです。Clojureにはローカルマクロが無いのでそれでよいのですが、
+Schemeは一様で直交する定理を重視するので、レキシカルスコープを持つローカル関数があるなら、
+レキシカルスコープを持つローカルマクロもやっぱり欲しいわけです。
+@c COMMON
 
+@c EN
 Let's look at the local macro with lexical scope.  For the sake of
 explanation, suppose we have
 @emph{hypothetical} local macro binding form, @code{let-macro},
@@ -116,6 +200,14 @@ that binds a local identifiers to a macro transformer.
 @code{let-syntax} and @code{letrec-syntax}, which have slightly
 different way to call macro transformers.  But here @code{let-macro} may
 be easier to understand as it is similar to @code{define-macro}.)
+@c JP
+レキシカルスコープを持つローカルマクロを見てみましょう。説明のために、
+ローカルなマクロ束縛を書ける@code{let-macro}という形式があると仮定します。
+(実際には@code{let-macro}形式はありません。マクロ変換器の指定方法が
+やや異なる@code{let-syntax}と@code{letrec-syntax}という形式があります。
+ただ、ここでは@code{define-macro}と似たような形で例を示す方がわかりやすいので、
+そのような@code{let-macro}があるものとして説明します。)
+@c COMMON
 
 @example
 (let ([f (^x (* x x))])
@@ -124,12 +216,20 @@ be easier to understand as it is similar to @code{define-macro}.)
       (m 3 4))))    ; [1]
 @end example
 
+@c EN
 The local identifier @var{m} is bound to a macro transformer
-that takes two expressions, and returns a form.
+that takes two expressions, and returns an S-expression.
 So, the @code{(m 3 4)} form [1] would be expanded into
 @code{(+ (f 3) (f 4))}.  Let's rewrite the above expression
 with the expanded form.  (After expansion, we no longer
 need @code{let-macro} form, so we don't include it.)
+@c JP
+ローカルな識別子@var{m}は、二つの式を引数として取り、S式を返すマクロ変換器に
+束縛されます。従って、[1]の@code{(m 3 4)}は
+@code{(+ (f 3) (f 4))}へと展開されます。上の式を展開結果を使って
+書き直してみます (展開後は@code{let-macro}フォームはもはや必要ないので
+展開結果には含めていません)。
+@c COMMON
 
 @example
 (let ([f (^x (* x x))])
@@ -137,6 +237,7 @@ need @code{let-macro} form, so we don't include it.)
     (+ (f 3) (f 4))))  ; [2]
 @end example
 
+@c EN
 Now, the question.  Which binding @code{f} in the expanded form [2]
 should refer?  If we literally interpret the expansion,
 it would refer to the inner binding @code{(^x (+ x x))}.
@@ -144,15 +245,35 @@ However, Scheme uniformly adopts lexical scoping---if the binding of
 @code{m} were ordinary @code{let}, the @code{f} in it would have referred
 to the outer binding @code{(^x (* x x))}, no matter where @code{m} is
 actually used.
+@c JP
+さてここで問題です。展開結果に現れた[2]のフォーム内の@code{f}は、どちらの
+@code{f}を参照すべきでしょう。上の式を文字通り解釈するなら、
+より内側にある@code{(^x (+ x x))}への束縛となります。
+けれどもSchemeは一様にレキシカルスコープを採用しています。もし@code{m}の
+束縛が通常の@code{let}であれば、そこで使われる@code{f}は、@code{m}がどこで
+使われようとも、@code{(^x (* x x))}に束縛された外側の@code{f}を参照していたはずです。
+@c COMMON
 
+@c EN
 In order to keep the consistency, we need some way to ``mark''
 the names inserted by the macro transformer @code{m}---which are
 @code{f} and @code{+}---so that we can distinguish two @code{f}'s
 (we can also mark @code{+} as free, which would refer to the toplevel
 binding.)
+@c JP
+一貫性を保つためには、マクロ変換器@code{m}により挿入される名前(@code{f}と@code{+})に
+「印」をつけて、二つの@code{f}を区別する必要があります。
+(また、挿入される@code{+}にも自由変数であるという印をつけ、常にトップレベル束縛を
+参照できるようにします。)
+@c COMMON
 
+@c EN
 For example, if we would rewrite the entire form and @emph{renames}
 corresponding local identifiers as follows:
+@c JP
+例えば、フォーム全体を書き直して、対応するローカル変数がユニークな名前を持つように
+@emph{リネーム}したらどうでしょう:
+@c COMMON
 
 @example
 (let ([f_1 (^x (* x x))])
@@ -161,9 +282,14 @@ corresponding local identifiers as follows:
       (m 3 4))))
 @end example
 
+@c EN
 Then the naive expansion would correctly preserve scopes; that is,
 expansion of @code{m} refers @code{f_1}, which wouldn't conflict
 with inner name @code{f_2}:
+@c JP
+こうしておけばナイーブな展開でもスコープが正しく保たれます。つまり、
+@code{m}の展開結果に現れる@code{f_1}は内側の@code{f_2}と衝突しません。
+@c COMMON
 
 @example
 (let ([f_1 (^x (* x x))])
@@ -171,41 +297,74 @@ with inner name @code{f_2}:
     (+ (f_1 3) (f_1 4))))
 @end example
 
+@c EN
 (You may notice that this is similar to lambda calculus treating
 lexical bindings with higher order functions.)
+@c JP
+(ラムダ計算において、レキシカルスコープを保ったまま高階関数を扱う際に
+似たようなリネーム戦略を見たことがあるかもしれません)
+@c COMMON
 
+@c EN
 The above example deal with avoiding @code{f} referred from the
 macro @emph{definition} (which is, in fact, @code{f_1}) from being
 shadowed
 by the binding of @code{f} at the macro @emph{use} (which is @code{f_2}).
+@c JP
+上の例ではマクロの@emph{定義時}に現れる@code{f}(リネーム後は@code{f_1})が
+マクロの@emph{使用時}に現れる@code{f} (リネーム後は@code{f_2}) によって
+シャドウされることを避ける話でした。
+@c COMMON
 
+@c EN
 Another type of variable capture (the one most often talked about,
 and can be avoided by @code{gensym})
 is that a variable in macro use site is shadowed by the binding introduced
 by a macro definition.  We can apply the same renaming strategy to
 avoid that type of capture, too.  Let's see the following example:
+@c JP
+一方、もう一つのタイプの変数捕捉 (より頻繁に話題に上る、@code{gensym}で回避できる捕捉) 
+は、マクロ使用時の変数がマクロ定義時に導入される束縛によりシャドウされてしまう
+という問題です。これについても、同じリネーム戦略が使えます。
+次の例を見てみましょう。
+@c COMMON
 
 @example
 (let ([f (^x (* x x))])
-  (let-macro ([m (^[expr1] (let ([f (^x (+ x x))]) (f expr1)))])
+  (let-macro ([m (^[expr1] `(let ([f (^x (+ x x))]) (f ,expr1)))])
     (m (f 3))))
 @end example
 
+@c EN
 The local macro inserts binding of @code{f} into the expansion.  
 The macro use @code{(m (f 3))} also contains a reference to @code{f},
 which should be the outer @code{f},
 since the macro use is lexically outside of the @code{let} inserted
 by the macro.
+@c JP
+ローカルマクロは@code{f}の束縛を導入しています。
+一方、マクロの使用時@code{(m (f 3))}に、@code{f}への参照が含まれています。
+後者の@code{f}は外側の@code{f}を指すべきです。なぜならマクロを使っている
+フォームは字句上、マクロ定義の@code{let}の外側にあるからです。
+@c COMMON
 
+@c EN
 We could rename @code{f}'s according to its lexical scope:
+@c JP
+@code{f}をレキシカルスコープによってリネームすれば次のようになるでしょう。
+@c COMMON
 
 @example
 (let ([f_1 (^x (* x x))])
-  (let-macro ([m (^[expr1] (let ([f_2 (^x (+ x x))]) (f_2 expr1)))])
+  (let-macro ([m (^[expr1] `(let ([f_2 (^x (+ x x))]) (f_2 ,expr1)))])
     (m (f_1 3))))
 @end example
 
+@c EN
 Then expansion unambiguously distinguish two @code{f}'s.
+@c JP
+これだと展開しても二つの@code{f}はきちんと区別されます。
+@c COMMON
 
 @example
 (let ([f_1 (^x (* x x))])
@@ -213,6 +372,7 @@ Then expansion unambiguously distinguish two @code{f}'s.
     (f_2 (f_1 3))))
 @end example
 
+@c EN
 This is, in principle, what hygienic macro is about (well, almost).
 In reality, we don't rename everything in batch.
 One caveat is in the latter example---we statically renamed
@@ -220,25 +380,54 @@ One caveat is in the latter example---we statically renamed
 recursively calls itself, and we have to distinguish @code{f}'s 
 introduced in every individual expansion of @code{m}.
 So macro expansion and renaming should work together.
+@c JP
+以上が、衛生的マクロの原理です (まあ、だいたいは)。
+ただし、実際の実装では、すべてを一気にリネームすることはありません。
+後者の例のようなケースで注意すべき点があります。後者の例では静的に
+@code{f}を@code{f_2}にリネームしましたが、より複雑な場合にマクロ展開器が
+再帰的に自分を呼ぶことがあり、その場合にはマクロの展開ごとに挿入される@code{f}を
+別のものとして扱う必要があります。
+従って、マクロの展開とリネームは協調して動作しなければなりません。
+@c COMMON
 
+@c EN
 There are multiple strategies to implement it, and the
 Scheme standard doesn't want to bind implementations to single
 specific strategy.  The standard only states the properties
 the macro system should satisfy, in two concise sentences:
+@c JP
+それを実装する戦略はいくつか考えられます。そして、Scheme標準は実装を
+どれかひとつの戦略に縛ってしまうことを良しとしません。
+結果的に、標準はマクロシステムが満たすべき性質を、二つの簡潔な
+分で示すに止まります：
+@c COMMON
 
 @quotation
+@c EN
 If a macro transformer inserts a binding for an
 identifier (variable or keyword), the identifier will in effect be
 renamed throughout its scope to avoid conflicts with
 other identifiers.
+@c JP
+マクロ展開器が識別子(変数かキーワード)の束縛を挿入した場合、
+識別子はそのスコープ内で実効的にリネームされ、
+他の識別子との衝突を避けられる。
+@c COMMON
 
+@c EN
 If a macro transformer inserts a free reference to an
 identifier, the reference refers to the binding that was
 visible where the transformer was specified,
 regardless of any local bindings that surround the use of the macro.
+@c JP
+マクロ展開器が識別子の自由参照を挿入した場合、その識別子は展開器が定義された場所から
+見える束縛を参照し、マクロが使われる場所を囲むローカル束縛には影響されない。
+@c COMMON
 @end quotation
 
-It may not be obvious @emph{how} to realize those properties, and
+@c EN
+Just from reading this,
+it may not be obvious @emph{how} to realize those properties, and
 the existing hygienic macro mechanisms (e.g. @code{syntax-rules}) hide
 the ``how'' part.  That's probably one of the reason some people
 feel hygienic macros are difficult to grasp.  It's like
@@ -246,12 +435,31 @@ continuations---its description is concise but at first
 you have no idea how it works; then, through experience,
 you become familiarized yourself to it, and then you reread
 the original description and understand it says exactly what it is.
+@c JP
+これを読んだだけでは、これらの性質を@emph{いかにして}実現するかは
+すぐにはわからないかもしれません。そして既存の衛生的マクロ(@code{syntax-rules}など)は
+この@emph{いかにして}の部分を隠しています。それが、
+衛生的マクロをとっつきにくく思う理由の一つかもしれません。
+これはある意味、継続に似ています。継続の仕様はごく簡潔に述べられていて、
+最初に読んだときにはどう動くかさっぱりわからないかもしれません。
+しかし経験を積んで使うのに慣れた後でもう一度元の説明を読むと、
+必要十分なことが書いてあるとわかるのです。
+@c COMMON
 
+@c EN
 This introduction may not answer @emph{how} the hygienic macro
 realizes those properties, but I hope it showed @emph{what} it does
 and @emph{why} it is needed.  In the following chapters we introduce
 a couple of hygienic macro mechanisms Gauche supports, with examples,
 so that you can familiarize yourself to the concept.
+@c JP
+この節では@emph{いかにして}衛生的マクロがこれらの性質を
+実現しているかについての詳細には触れませんでしたが、
+衛生的マクロが@emph{何を}して、@emph{何のために}必要かについて
+ある程度示せたのではないかと思います。
+以降の節では、Gaucheがサポートする衛生的マクロシステムについて
+例を交え紹介してゆきます。
+@c COMMON
 
 
 @node Hygienic macros, Traditional macros, Why hygienic?, Macros
