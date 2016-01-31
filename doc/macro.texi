@@ -572,6 +572,53 @@ This specifies a macro transformer by pattern matching.
 @end defspec
 
 @defmac with-renaming renamer form
+It works like quasiquote, except that the symbols and identifiers
+that appear in the ``literal'' portion of @var{form} (i.e. outside
+of @code{unquote} and @code{unquote-splicing}) are replaced
+by the result of applying @var{rename} on themselves.
+
+For example, a form:
+@example
+(with-renaming r (a ,b c "d"))
+@end example
+would be equivalent to write:
+@example
+(list (r 'a) b (r 'c) "d")
+@end example
+
+This is not specifically tied to macros; the @var{renamer} can
+be any procedure that takes one symbol or identifier argument:
+
+@example
+(with-renaming (^[x] (symbol-append 'x: x)) (+ a ,(+ 1 2) 5))
+  @result{} (x:+ x:a 3 5)
+@end example
+
+However, it comes pretty handy to construct the result form
+in ER macros.  Compare the following two:
+
+@example
+(use util.match)
+
+;; using with-renaming
+(define-syntax swap
+  (er-macro-transformer
+    (^[f r c]
+      (match f
+        [(_ a b) (with-renaming r
+                   (let ((tmp ,a))
+                     (set! ,a ,b)
+                     (set! ,b tmp)))]))))
+
+;; not using with-renaming
+(define-syntax swap
+  (er-macro-transformer
+    (^[f r c]
+      (match f
+        [(_ a b) `((r'let) (((r'tmp) ,a))
+                     ((r'set!) ,a ,b)
+                     ((r'set!) ,b (r'tmp)))]))))
+@end example
 @end defmac
 
 
