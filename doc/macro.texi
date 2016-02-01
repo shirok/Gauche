@@ -600,7 +600,7 @@ in ER macros.  Compare the following two:
 @example
 (use util.match)
 
-;; using with-renaming
+;; using quasirename
 (define-syntax swap
   (er-macro-transformer
     (^[f r c]
@@ -610,7 +610,7 @@ in ER macros.  Compare the following two:
                      (set! ,a ,b)
                      (set! ,b tmp)))]))))
 
-;; not using with-renaming
+;; not using quasirename
 (define-syntax swap
   (er-macro-transformer
     (^[f r c]
