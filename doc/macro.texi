@@ -571,7 +571,7 @@ This specifies a macro transformer by pattern matching.
 @defspec er-macro-transformer procedure-expr
 @end defspec
 
-@defmac with-renaming renamer form
+@defmac quasirename renamer form
 It works like quasiquote, except that the symbols and identifiers
 that appear in the ``literal'' portion of @var{form} (i.e. outside
 of @code{unquote} and @code{unquote-splicing}) are replaced
@@ -579,7 +579,7 @@ by the result of applying @var{rename} on themselves.
 
 For example, a form:
 @example
-(with-renaming r (a ,b c "d"))
+(quasirename r (a ,b c "d"))
 @end example
 would be equivalent to write:
 @example
@@ -590,7 +590,7 @@ This is not specifically tied to macros; the @var{renamer} can
 be any procedure that takes one symbol or identifier argument:
 
 @example
-(with-renaming (^[x] (symbol-append 'x: x)) (+ a ,(+ 1 2) 5))
+(quasirename (^[x] (symbol-append 'x: x)) (+ a ,(+ 1 2) 5))
   @result{} (x:+ x:a 3 5)
 @end example
 
@@ -605,7 +605,7 @@ in ER macros.  Compare the following two:
   (er-macro-transformer
     (^[f r c]
       (match f
-        [(_ a b) (with-renaming r
+        [(_ a b) (quasirename r
                    (let ((tmp ,a))
                      (set! ,a ,b)
                      (set! ,b tmp)))]))))

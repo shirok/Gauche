@@ -112,7 +112,7 @@
           (:macro er-macro-transformer))
 
 (autoload gauche.macroutil
-          (:macro with-renaming))
+          (:macro quasirename))
 
 (autoload gauche.regexp
           (:macro rxmatch-let rxmatch-if rxmatch-cond rxmatch-case)

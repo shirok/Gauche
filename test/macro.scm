@@ -204,8 +204,8 @@
              '((1 2) . #(1 2))
              (foo)))))
 
-;; with-renaming
-;; Note: currently with-renaming depends on util.match, too.
+;; quasirename
+;; Note: currently quasirename depends on util.match, too.
 (let ((unquote list)
       (x 1)
       (y 2))
@@ -213,12 +213,12 @@
                      (^[f r c]
                        (let ([a (cadr f)]
                              [b (caddr f)])
-                         (with-renaming r
+                         (quasirename r
                            (list x ,a y ,b '#(x ,a y ,b))))))])
     (let ((list vector)
           (x 10)
           (y 20))
-      (test* "er-macro and with-renaming"
+      (test* "er-macro and quasirename"
              '(1 3 2 4 #(x 3 y 4))
              (foo 3 4)))))
 
