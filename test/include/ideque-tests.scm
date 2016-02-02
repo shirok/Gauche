@@ -1,10 +1,6 @@
 (test-group "ideque"
 
 (test-group "ideque/constructors"
- (test-assert (ideque? (ideque)))
- (test-assert (not (ideque? 1)))
- (test-assert (ideque-empty? (ideque)))
- (test-assert (not (ideque-empty? (ideque 1))))
  (test '() (ideque->list (ideque)))
  (test '() (ideque->list (list->ideque '())))
  (test '(1 2 3) (ideque->list (ideque 1 2 3)))
@@ -13,11 +9,32 @@
        (ideque->list (ideque-unfold zero? values (lambda (n) (- n 1)) 10)))
  (test '(1 2 3 4 5 6 7 8 9 10)
        (ideque->list (ideque-unfold-right zero? values (lambda (n) (- n 1)) 10)))
+ (test '(0 2 4 6 8 10)
+       (ideque->list (ideque-tabulate 6 (lambda (n) (* n 2)))))
+ 
  ;; corner cases
  (test '() (ideque->list
             (ideque-unfold (lambda (n) #t) values (lambda (n) (+ n 1)) 0)))
  (test '() (ideque->list
             (ideque-unfold-right (lambda (n) #t) values (lambda (n) (+ n 1)) 0)))
+ (test '() (ideque->list (ideque-tabulate 0 values)))
+ )
+
+(test-group "ideque/predicates"
+ (test-assert (ideque? (ideque)))
+ (test-assert (not (ideque? 1)))
+ (test-assert (ideque-empty? (ideque)))
+ (test-assert (not (ideque-empty? (ideque 1))))
+ (test-assert (ideque= eq?))
+ (test-assert (ideque= eq? (ideque 1)))
+ (test-assert (ideque= char-ci=? (ideque #\a #\b) (ideque #\A #\B)))
+ (test-assert (ideque= char-ci=? (ideque) (ideque)))
+ (test-assert (not (ideque= char-ci=? (ideque #\a #\b) (ideque #\A #\B #\c))))
+ (test-assert (not (ideque= char-ci=? (ideque #\a #\b) (ideque #\A))))
+ (test-assert (ideque= char-ci=? (ideque) (ideque) (ideque)))
+ (test-assert (ideque= char-ci=? (ideque #\a #\b) (ideque #\A #\B) (ideque #\a #\B)))
+ (test-assert (not (ideque= char-ci=? (ideque #\a #\b) (ideque #\A) (ideque #\a #\B))))
+ (test-assert (not (ideque= char-ci=? (ideque #\a #\b) (ideque #\A #\B) (ideque #\A #\B #\c))))
  )
 
 (test-group "ideque/queue-operations"
@@ -52,6 +69,10 @@
  (test-error (ideque->list (ideque-take (ideque 1 2 3 4 5 6 7) 10)))
  (test-error (ideque->list (ideque-take-right (ideque 1 2 3 4 5 6 7) 10)))
  (test-error (ideque-split-at (ideque 1 2 3 4 5 6 7) 10))
+
+ (test '(3 2 1) (map (lambda (n) (ideque-ref (ideque 3 2 1) n)) '(0 1 2)))
+ (test-error (ideque-ref (ideque 3 2 1) -1))
+ (test-error (ideque-ref (ideque 3 2 1) 3))
  )
 
 (test-group "ideque/whole-ideque"
@@ -68,6 +89,7 @@
  (test '(5 4 3 2 1) (ideque->list (ideque-reverse (ideque 1 2 3 4 5))))
  (test 0 (ideque-count odd? (ideque)))
  (test 3 (ideque-count odd? (ideque 1 2 3 4 5)))
+ (test 2 (ideque-count < (ideque 1 2 3 4 5) (ideque 1 3 2 1 6)))
  (test-assert (ideque-empty? (ideque-zip)))
  (test '((1 a) (2 b) (3 c))
        (ideque->list (ideque-zip (ideque 1 2 3) (ideque 'a 'b 'c 'd 'e))))
@@ -87,6 +109,15 @@
                                  (ideque 1 2 3 4 5)
                                  (ideque 'a 'b 'c 'd 'e)
                                  (ideque 'x 'y 'z))))
+ (test '(-1 -3 5 -8)
+       (ideque->list (ideque-filter-map (lambda (x) (and (number? x) (- x)))
+                                        (ideque 1 3 'a -5 8))))
+ (test '(9 7)
+       (ideque->list (ideque-filter-map (lambda xs (and (every real? xs)
+                                                        (apply max xs)))
+                                        (ideque 1 3 3 5 8 'a)
+                                        (ideque 5 'b 9 3 'c -8)
+                                        (ideque 2+i 2 8 7 2 5))))
  (test '(5 4 3 2 1)
        (let ((r '()))
          (ideque-for-each (lambda (n) (set! r (cons n r)))
@@ -125,8 +156,10 @@
 (test-group "ideque/searching"
  (test 3 (ideque-find number? (ideque 'a 3 'b 'c 4 'd) (lambda () 'boo)))
  (test 'boo (ideque-find number? (ideque 'a 'b 'c 'd) (lambda () 'boo)))
+ (test #f (ideque-find number? (ideque 'a 'b 'c 'd)))
  (test 4 (ideque-find-right number? (ideque 'a 3 'b 'c 4 'd) (lambda () 'boo)))
  (test 'boo (ideque-find-right number? (ideque 'a 'b 'c 'd) (lambda () 'boo)))
+ (test #f (ideque-find-right number? (ideque 'a 'b 'c 'd)))
  (test '(1 3 2)
        (ideque->list (ideque-take-while (lambda (n) (< n 5))
                                         (ideque 1 3 2 5 8 4 6 3 4 2))))
@@ -163,15 +196,30 @@
                      (ideque 'a 3 'b 'c 4 'd 'e)))
  (test #f (ideque-any (lambda (x) (and (number? x) x))
                       (ideque 'a 'b 'c 'd 'e)))
+ (test '(4 7 9)
+       (ideque-any (lambda args (and (apply < args) args))
+                   (ideque 1 2 3 4 5)
+                   (ideque 3 4 8 7 2)
+                   (ideque 2 1 6 9 4)))
  (test 9 (ideque-every (lambda (x) (and (number? x) x))
                        (ideque 1 5 3 2 9)))
  (test #f (ideque-every (lambda (x) (and (number? x) x))
                         (ideque 1 5 'a 2 9)))
+ (test '(5 6 7)
+       (ideque-every (lambda args (and (apply < args) args))
+                     (ideque 1 2 3 4 5)
+                     (ideque 3 4 8 7 6)
+                     (ideque 4 5 9 8 7)))
  ;; check if we won't see further once we found the result
  (test 1 (ideque-any (lambda (x) (and (odd? x) x))
                      (ideque 2 1 'a 'b 'c 'd)))
  (test #f (ideque-every (lambda (x) (and (odd? x) x))
                         (ideque 1 2 'a 'b 'c 'd)))
+
+ (test '(1 2 3) (generator->list (ideque->generator (ideque 1 2 3))))
+ (test '() (generator->list (ideque->generator (ideque))))
+ (test '(1 2 3) (ideque->list (generator->ideque (generator 1 2 3))))
+ (test '() (ideque->list (generator->ideque (generator))))
  )
 
 ) ;; end test-group "ideque"

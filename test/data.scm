@@ -292,6 +292,7 @@
 ;;;========================================================================
 (test-section "data.ideque")
 (use data.ideque)
+(use gauche.generator)
 (test-module 'data.ideque)
 (use compat.chibi-test)
 

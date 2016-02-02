@@ -38,20 +38,23 @@
 
 (define-module data.ideque
   (use gauche.record)
+  (use gauche.generator)
   (use gauche.lazy)
   (use util.match)
   (use srfi-1)
   (export <ideque>
-          make-ideque ideque ideque? ideque-empty?
-          ideque-unfold ideque-unfold-right
+          make-ideque ideque ideque? ideque-empty? ideque=
+          ideque-unfold ideque-unfold-right ideque-tabulate
           list->ideque ideque->list ideque-reverse
+          generator->ideque ideque->generator
+          ideque-ref
           ideque-front ideque-add-front ideque-remove-front
           ideque-back  ideque-add-back  ideque-remove-back
           ideque-take ideque-take-right ideque-drop ideque-drop-right
           ideque-split-at
           ideque-length ideque-append ideque-count ideque-zip
           ideque-map ideque-for-each ideque-fold ideque-fold-right
-          ideque-append-map
+          ideque-filter-map ideque-append-map
           ideque-filter ideque-remove ideque-partition
           ideque-find ideque-find-right
           ideque-take-while ideque-take-while-right
@@ -88,6 +91,16 @@
   (list->ideque (unfold-right p f g seed)))
 ;; alternatively:
 ;; (ideque-reverse (list->ideque (unfold p f g seed)))
+
+;; API [srfi-134]
+(define (ideque-tabulate size init)
+  (let ([lenf (quotient size 2)]
+        [lenr (quotient (+ size 1) 2)])
+    (%make-dq lenf (list-tabulate lenf init)
+              lenr (unfold (cut = <> lenr)
+                           (^n (init (- size n 1)))
+                           (cut + <> 1)
+                           0))))
 
 (define-constant C 3)
 
@@ -165,6 +178,44 @@
 ;; Other operations
 ;;
 
+;; API [srfi-134]
+(define ideque=
+  (case-lambda
+    [(elt=) #t]
+    [(elt= ideque) (check-arg ideque? ideque) #t]
+    [(elt= dq1 dq2)
+     ;; we optimize two-arg case
+     (check-arg ideque? dq1)
+     (check-arg ideque? dq2)
+     (or (eq? dq1 dq2)
+         (let ([len1 (+ (dq-lenf dq1) (dq-lenr dq1))]
+               [len2 (+ (dq-lenf dq2) (dq-lenr dq2))])
+           (and (= len1 len2)
+                (receive (x t1 t2) (list-prefix= elt= (dq-f dq1) (dq-f dq2))
+                  (and x
+                       (receive (y r1 r2) (list-prefix= elt= (dq-r dq1) (dq-r dq2))
+                         (and y
+                              (if (null? t1)
+                                (list= elt= t2 (reverse r1))
+                                (list= elt= t1 (reverse r2))))))))))]
+    [(elt= . dqs)
+     (apply list= elt= (map ideque->list dqs))]))
+
+;; Compare two lists up to whichever shorter one.
+;; Returns the compare result and the tails of uncompared lists.
+(define (list-prefix= elt= a b)
+  (let loop ([a a] [b b])
+    (cond [(or (null? a) (null? b)) (values #t a b)]
+          [(elt= (car a) (car b)) (loop (cdr a) (cdr b))]
+          [else (values #f a b)])))
+
+;; API [srfi-134]
+(define (ideque-ref dq n)
+  (let1 len (+ (dq-lenf dq) (dq-lenr dq))
+    (cond [(or (< n 0) (>= n len)) (error "Index out of range:" n)]
+          [(< n (dq-lenf dq)) (list-ref (dq-f dq) n)]
+          [else (list-ref (dq-r dq) (- len n 1))])))
+
 (define (%ideque-take dq n)             ; n is within the range
   (match-let1 ($ <ideque> lenf f lenr r) dq
     (if (<= n lenf)
@@ -219,8 +270,10 @@
   (list->ideque (concatenate (map ideque->list dqs))))
 
 ;; API [srfi-134]
-(define (ideque-count pred dq)
-  (+ (count pred (dq-f dq)) (count pred (dq-r dq))))
+(define ideque-count
+  (case-lambda
+    [(pred dq) (+ (count pred (dq-f dq)) (count pred (dq-r dq)))]
+    [(pred . dqs) (apply count pred (map ideque->list dqs))]))
 
 ;; API [srfi-134]
 (define (ideque-zip . dqs)
@@ -234,6 +287,15 @@
     [(proc dq) (%make-dq (dq-lenf dq) (map proc (dq-f dq))
                          (dq-lenr dq) (map proc (dq-r dq)))]
     [(proc . dqs) (list->ideque (apply map proc (map ideque->list dqs)))]))
+
+;; API [srfi-134]
+(define ideque-filter-map
+  (case-lambda
+    [(proc dq) (let ([f (filter-map proc (dq-f dq))]
+                     [r (filter-map proc (dq-r dq))])
+                 (check (length f) f (length r) r))]
+    [(proc . dqs)
+     (list->ideque (apply filter-map proc (map ideque->list dqs)))]))
 
 ;; API [srfi-134]
 (define ideque-for-each
@@ -294,11 +356,11 @@
           (failure))))))
 
 ;; API [srfi-134]
-(define (ideque-find pred dq failure)
+(define (ideque-find pred dq :optional (failure (^[] #f)))
   (%search pred (dq-f dq) (dq-r dq) failure))
 
 ;; API [srfi-134]
-(define (ideque-find-right pred dq failure)
+(define (ideque-find-right pred dq :optional (failure (^[] #f)))
   (%search pred (dq-r dq) (dq-f dq) failure))
 
 ;; API [srfi-134]
@@ -339,15 +401,34 @@
 (define (ideque-break pred dq) (%idq-span-break break pred dq))
 
 ;; API [srfi-134]
-(define (ideque-any pred dq)
-  (or (any pred (dq-f dq)) (any pred (reverse (dq-r dq)))))
+(define ideque-any
+  (case-lambda
+    [(pred dq) (if (null? (dq-r dq))
+                 (any pred (dq-f dq))
+                 (or (any pred (dq-f dq)) (any pred (reverse (dq-r dq)))))]
+    [(pred . dqs) (apply any pred (map ideque->list dqs))]))
 
 ;; API [srfi-134]
-(define (ideque-every pred dq)
-  (and (every pred (dq-f dq)) (every pred (reverse (dq-r dq)))))
+(define ideque-every
+  (case-lambda
+    [(pred dq) (if (null? (dq-r dq))
+                 (every pred (dq-f dq))
+                 (and (every pred (dq-f dq)) (every pred (reverse (dq-r dq)))))]
+    [(pred . dqs) (apply every pred (map ideque->list dqs))]))
 
 ;; API [srfi-134]
 (define (ideque->list dq) (append (dq-f dq) (reverse (dq-r dq))))
 
 ;; API [srfi-134]
 (define (list->ideque lis) (check (length lis) lis 0 '()))
+
+;; API [srfi-134]
+(define (ideque->generator dq)
+  (^[] (if (ideque-empty? dq)
+         (eof-object)
+         (rlet1 v (ideque-front dq)
+           (set! dq (ideque-remove-front dq))))))
+
+;; API [srfi-134]
+(define (generator->ideque gen)
+  (list->ideque (generator->list gen)))
