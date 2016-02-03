@@ -1,6 +1,7 @@
 #!/bin/sh
 # Helper script to handle building libgauche.sl on HP-UX
 # Assumes $TARGETLIB is set by the caller.
+set -e
 CCLD=$1
 shift
 $CCLD -Wl,+s,+b,${TARGETLIB} "$@"

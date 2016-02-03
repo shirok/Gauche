@@ -30,6 +30,7 @@
     (with-output-to-file "kick_openssl.sh"
       (^[]
         (print "#!/bin/sh")
+        (print "set -e")
         (print #"echo \"$$\" \"~|openssl-cmd|\" >> openssl.pid")
         (print #"exec \"~|openssl-cmd|\" \"$@\"")))
     (sys-chmod "kick_openssl.sh" #o755))

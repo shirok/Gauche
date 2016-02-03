@@ -5,6 +5,8 @@
 #
 # Usage: mklibcat PATH-TO-GOSH
 
+set -e
+
 GOSH=$1
 
 $GOSH -ftest -uslib  \

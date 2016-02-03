@@ -5,6 +5,8 @@
 # zip it and distribute.
 # See doc/HOWTO-mingw.txt for the details.
 
+set -e
+
 # Set MINGWDIR if MinGW is installed in different place.
 case "$MSYSTEM" in
   MINGW64)

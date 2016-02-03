@@ -4,6 +4,8 @@
 # scripts (e.g. gauche-install) to exe files.
 #
 
+set -e
+
 target=$1
 
 cat <<EOF
