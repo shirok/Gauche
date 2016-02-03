@@ -101,7 +101,7 @@ ScmObj Scm_MakeSubr(ScmSubrProc *func,
 
 /*
  * A dummy function which does nothing.   Convenient to pass to other
- * fhunctions which requires a thunk.
+ * functions which requires a thunk.
  */
 static ScmObj theNullProc = SCM_NIL;
 
