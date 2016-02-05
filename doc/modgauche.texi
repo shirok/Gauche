@@ -14945,34 +14945,104 @@ env GAUCHE_TEST_REPORT_ERROR=1 gosh mytest.scm
 @end defvar
 
 @c EN
-@subheading Testing modules
+@subheading Quasi-static checks
 @c JP
-@subheading モジュールのテスト
+@subheading 準静的検査
+@c COMMON
+
+@c EN
+Scheme is dynamically typed, which is convenient for incremental
+and experimental development on REPL, but it tends to delay error detection
+until the code is actually run.  It is very annoying that you run your
+program for a while only to see it barfs on simple typo of variable name.
+@c JP
+Schemeは動的型付けで、これはREPLでインクリメンタルあるいは実験的な開発を
+するには便利なのですが、コードが実際に走るまでエラーに気づかないということになりがちです。
+しばらく走らせた後で変数名のタイポで止まってしまうと腹立ちますよね。
+@c COMMON
+
+@c EN
+Gauche addresses this issue by checking certain types of errors
+at the test phase.  It isn't purely a static check (we need to load
+a module or a script, which evaluates toplevel expressions), nor
+exhaustive (we can't catch inconsistencies that span over multiple
+modules or about information that can be added at runtime).  Nevertheless
+it can often catch some common mistakes, such as incorrect variable names
+or calling procedures with wrong number of arguments.
+@c JP
+Gaucheでは、こういった種類のエラーをテスト時に検査する方法を用意しています。
+これは完全に静的な検査ではありません(対象のモジュールやスクリプトをロードするので、
+トップレベル式は実行されてしまいます)し、網羅的でもありません
+(複数のモジュールを見たり、実行時に追加される情報に依存するものは検査できません)。
+それでも、変数名の間違いや引数の個数の誤りなどよくあるミスはこの検査で大抵見つけることが
+できます。
+@c COMMON
+
+@c EN
+The two procedures, @code{test-module} and @code{test-script}, 
+load the named module and the script files respectively (which compiles
+the Scheme code to VM instructions), then scan the compiled VM code
+to perform the following tests:
+@c JP
+@code{test-module}と@code{test-script}手続きはそれぞれ、
+指定されたモジュールもしくはスクリプトをロードし (その過程でSchemeコードは
+VM命令列へとコンパイルされます)、次にコンパイルされたVMコードを走査して
+以下のテストを行います。
+@c COMMON
+
+@enumerate
+@item
+@c EN
+See if the global variables referenced within functions are all defined
+(either in the module, or in one of imported modules).
+@c JP
+関数内から参照されているグローバル変数は(該当モジュール内、もしくはインポートしたモジュールで)
+全て定義されているか
+@c COMMON
+
+@item
+@c EN
+If a global variable is used as a function, see if the number of arguments
+given to it is consistent to the actual function.
+@c JP
+グローバル変数が関数として使われているなら、その引数の数が
+関数の定義と合致しているか。
+@c COMMON
+
+@item
+@c EN
+See if the symbols set as autoload in the code can be resolved.
+@c JP
+autoloadに設定されている変数が実際にロードできるか。
+@c COMMON
+
+@item
+@c EN
+While testing module, see if the symbols declared in the export list
+are acutally defined.
+@c JP
+モジュールをテストしている場合、exportされているシンボルが
+定義されているか。
+@c COMMON
+@end enumerate
+
+@c EN
+The check is somewhat heuristic and we may miss some errors and/or
+can have false positives.  For false positives, you can enumerate
+symbols to be excluded from the test.
+@c JP
+今のところ検査はヒューリスティックで、エラーを見逃すこともあれば、
+エラーでないものをエラーと報告してしまう可能性もあります。後者については、
+偽陽性となるシンボルを列挙して検査から外すようにできます。
 @c COMMON
 
 @defun test-module module :key allow-undefined bypass-arity-check
 @c EN
+Loads the module and runs the quasi-static consistency check.
 @var{Module} must be a symbol module name or a module.
-This procedure performs some heuristic consistency check of
-the given module: (1) whether symbols set as autoload
-in @var{module} can actually be loaded, (2) whether
-the symbols declared in export list is actually defined
-in the module, (3) whether the global variable referenced
-within functions are all defined, and (4) if a global variable
-is used as a function, whether the number of arguments given to it
-is consistent to the actual function.
-Although not perfect,
-this test can catch some careless misses.
 @c JP
+モジュールをロードし、準静的な一貫性チェックを行います。
 @var{Module}はモジュール名のシンボルかモジュールでなければなりません。
-この手続きはモジュール@var{module}に関していくつかの経験的な一貫性チェックを
-行います：(1) autoloadに設定されたシンボルがちゃんとロードできるか、
-(2) exportにリストされたシンボルがモジュール内で定義されているか、
-(3) 関数中で参照されているグローバル変数が全て定義されたものであるか、
-(4) グローバル変数が関数として呼ばれている場合、渡されている引数の個数が
-関数の定義に沿ったものであるか。
-この手続きは完璧ではないものの、
-ケアレスミスを発見することができます。
 @c COMMON
 
 @c EN
@@ -15015,6 +15085,49 @@ keyword arguments.
 @c COMMON
 @end defun
 
+@defun test-script filename :key allow-undefined bypass-arity-check
+@c EN
+Loads the script named by @var{filename}
+into a fresh anonymous module and runs the quasi-static
+consistency check.
+@var{Filename} must be a string that names the script file.
+@c JP
+@var{filename}で指定されるスクリプトを新しい無名モジュールにロードし、
+準静的な一貫性チェックを行います。
+@var{filename}はスクリプトファイル名を指定する文字列でなければなりません。
+@c COMMON
+
+@c EN
+The meaning of keyword arguments is the same as @code{test-module}.
+@c JP
+キーワード引数の意味は@code{test-module}と同じです。
+@c COMMON
+
+@c EN
+Note that the toplevel forms in @var{filename} are evaluated, so scripts that
+relies on the actions of toplevel forms could cause unwanted side-effects.
+This check works best for the scripts written in @code{srfi-22} convention,
+that is, calling actions from @code{main} procedure instead of toplevel
+forms.  R7RS scripts relies on actions in toplevel forms and can't be
+tested with this procedure.
+@c JP
+@var{filename}中のトップレベルフォームは評価されるので、
+トップレベルフォームのアクションに依存したスクリプトは望ましくない副作用を生じるでしょう。
+この検査は、スクリプトが@code{srfi-22}形式、
+つまりアクションを@code{main}手続きから呼ぶようになっているとうまくいきます。
+R7RSスクリプトはトップレベルフォームのアクションに頼らざるを得ないので
+この手続きではうまく検査できません。
+@c COMMON
+
+@c EN
+Scripts that relies on being loaded into @code{user} module also
+won't work well with this check, which loads the forms into anonymous
+module.
+@c JP
+スクリプトが@code{user}モジュールにロードされることに依存して書かれている場合も、
+この手続きではうまくいきません。
+@c COMMON
+@end defun
 
 @c ----------------------------------------------------------------------
 @node Threads, Measure timings, Unit testing, Library modules - Gauche extensions
