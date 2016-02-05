@@ -83,7 +83,8 @@
 
 (define-module gauche.test
   (export test test* test-start test-end test-section test-log
-          test-module test-error test-one-of test-none-of
+          test-module test-script
+          test-error test-one-of test-none-of
           test-check test-record-file test-summary-check
           *test-error* *test-report-error* test-error? prim-test))
 (select-module gauche.test)
@@ -269,73 +270,86 @@
                    (error "test-module requires module or symbol, but got"
                           module)])
     (format #t "testing bindings in ~a ... " mod) (flush)
-    (let ([bad-autoload '()]
-          [bad-export '()]
-          [bad-gref '()]
-          [bad-arity '()]
-          [report '()])
-      ;; 1. Check if there's no dangling autoloads.
-      (hash-table-for-each (module-table mod)
-                           (lambda (sym val)
-                             (guard (_ (else (push! bad-autoload sym)))
-                               (global-variable-ref mod sym))))
-      ;; 2. Check if all exported symbols are properly defined.
-      (when (pair? (module-exports mod))
-        (for-each (lambda (sym)
-                    (guard (_ [else (push! bad-export sym)])
-                      (global-variable-ref mod sym)))
-                  (module-exports mod)))
-      ;; 3. Check if all global references are resolvable, and if it is
-      ;; called, gets valid number of arguments.
-      (for-each
-       (lambda (closure)
-         (for-each (lambda (arg)
-                     (let ([gref (car arg)]
-                           [numargs (cadr arg)])
-                       (cond [(memq (slot-ref gref 'name) allow-undefined)]
-                             [(dangling-gref? gref closure)
-                              => (lambda (bad) (push! bad-gref bad))]
-                             [(memq (slot-ref gref 'name) bypass-arity-check)]
-                             [(arity-invalid? gref numargs closure)
-                              => (lambda (bad) (push! bad-arity bad))])))
-                   (closure-grefs closure)))
-       (toplevel-closures mod))
-      ;; report discrepancies
-      (unless (null? bad-autoload)
-        (push! report (format "found dangling autoloads: ~a" bad-autoload)))
-      (unless (null? bad-export)
-        (unless (null? report) (push! report " AND "))
-        (push! report
-               (format "symbols exported but not defined: ~a" bad-export)))
-      (unless (null? bad-gref)
-        (unless (null? report) (push! report " AND "))
-        (push! report
-               (format "symbols referenced but not defined: ~a"
-                       (string-join (map (lambda (z)
-                                           (format "~a(~a)" (car z) (cdr z)))
-                                         bad-gref)
-                                    ", "))))
-      (unless (null? bad-arity)
-        (unless (null? report) (push! report " AND "))
-        (push! report
-               (format "procedures received wrong number of argument: ~a"
-                       (string-join (map (lambda (z)
-                                           (format "~a(~a) got ~a"
-                                                   (car z) (cadr z) (caddr z)))
-                                         bad-arity)
-                                    ", "))))
-      (cond
-       [(null? report) (test-pass++) (format #t "ok\n")]
-       [else
-        (test-fail++)
-        (let ([s (apply string-append report)])
-          (format #t "ERROR: ~a\n" s)
-          (set! *discrepancy-list*
-                (cons (list (format #f "bindings in module ~a" (module-name mod))
-                            '() s)
-                      *discrepancy-list*)))])
-      )
+    (test-module-common mod module allow-undefined bypass-arity-check)))
+
+;; Check toplevel bindings of a script file.  Script files usually don't
+;; have their own modules.  For this test, we load the script file into
+;; an anonymous module then use test-module on it.  
+(define (test-script file :key (allow-undefined '()) (bypass-arity-check '()))
+  (test-count++)
+  (let1 m (make-module #f)
+    (format #t "testing bindings in script ~a ... " file) (flush)
+    (load file :environment m)
+    (test-module-common m file allow-undefined bypass-arity-check)))
+
+;; Common op for test-module and test-script.  Returns 
+(define (test-module-common mod name allow-undefined bypass-arity-check)
+  (let ([bad-autoload '()]
+        [bad-export '()]
+        [bad-gref '()]
+        [bad-arity '()]
+        [report '()])
+    ;; 1. Check if there's no dangling autoloads.
+    (hash-table-for-each (module-table mod)
+                         (lambda (sym val)
+                           (guard (_ (else (push! bad-autoload sym)))
+                             (global-variable-ref mod sym))))
+    ;; 2. Check if all exported symbols are properly defined.
+    (when (pair? (module-exports mod))
+      (for-each (lambda (sym)
+                  (guard (_ [else (push! bad-export sym)])
+                    (global-variable-ref mod sym)))
+                (module-exports mod)))
+    ;; 3. Check if all global references are resolvable, and if it is
+    ;; called, gets valid number of arguments.
+    (for-each
+     (lambda (closure)
+       (for-each (lambda (arg)
+                   (let ([gref (car arg)]
+                         [numargs (cadr arg)])
+                     (cond [(memq (slot-ref gref 'name) allow-undefined)]
+                           [(dangling-gref? gref closure)
+                            => (lambda (bad) (push! bad-gref bad))]
+                           [(memq (slot-ref gref 'name) bypass-arity-check)]
+                           [(arity-invalid? gref numargs closure)
+                            => (lambda (bad) (push! bad-arity bad))])))
+                 (closure-grefs closure)))
+     (toplevel-closures mod))
+    ;; report discrepancies
+    (unless (null? bad-autoload)
+      (push! report (format "found dangling autoloads: ~a" bad-autoload)))
+    (unless (null? bad-export)
+      (unless (null? report) (push! report " AND "))
+      (push! report
+             (format "symbols exported but not defined: ~a" bad-export)))
+    (unless (null? bad-gref)
+      (unless (null? report) (push! report " AND "))
+      (push! report
+             (format "symbols referenced but not defined: ~a"
+                     (string-join (map (lambda (z)
+                                         (format "~a(~a)" (car z) (cdr z)))
+                                       bad-gref)
+                                  ", "))))
+    (unless (null? bad-arity)
+      (unless (null? report) (push! report " AND "))
+      (push! report
+             (format "procedures received wrong number of argument: ~a"
+                     (string-join (map (lambda (z)
+                                         (format "~a(~a) got ~a"
+                                                 (car z) (cadr z) (caddr z)))
+                                       bad-arity)
+                                  ", "))))
+    (cond
+     [(null? report) (test-pass++) (format #t "ok\n")]
+     [else
+      (test-fail++)
+      (let ([s (apply string-append report)])
+        (format #t "ERROR: ~a\n" s)
+        (set! *discrepancy-list*
+              (cons (list (format #f "bindings in ~a" name) '() s)
+                    *discrepancy-list*)))])
     ))
+
 
 ;; Auxiliary funcs to catch dangling grefs.  We use the fact that
 ;; an identifier embedded within the vm code is almost always an

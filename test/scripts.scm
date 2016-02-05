@@ -205,11 +205,14 @@
 ;;=======================================================================
 (test-section "gauche-install")
 
+(define *gauche-install-script*
+  (build-path (or (sys-getenv "top_srcdir") "..") "src" "gauche-install.in"))
+
+(test-script *gauche-install-script*)
+
 (define (run-install . args)
-  (let1 gauche-install
-      (build-path (or (sys-getenv "top_srcdir") "..") "src" "gauche-install.in")
-    (run-process `("./gosh" "-ftest" ,gauche-install ,@args)
-                 :output *nulldev* :wait #t)))
+  (run-process `("./gosh" "-ftest" ,*gauche-install-script* ,@args)
+               :output *nulldev* :wait #t))
 
 (remove-files "test.o" "test1.o")
 
@@ -291,6 +294,9 @@
 
 ;;=======================================================================
 (test-section "gauche-package")
+
+(test-script
+ (build-path (or (sys-getenv "top_srcdir") "..") "src" "gauche-package.in"))
 
 (remove-files "test.o")
 (make-directory* "test.o")
