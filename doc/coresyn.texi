@@ -60,7 +60,7 @@ Gaucheで使える指示子の一覧については、下の@ref{Hash-bang token
 @lxindex [
 Gauche adopts the R6RS syntax that regards @code{[]} the same
 as @code{()}.  Both kind of parentheses are equivalent,
-but the kind of corresponding open and close parentheses match.
+but the kind of corresponding open and close parentheses must match.
 Some seasoned Lisper may frown on them, but it
 helps visually distinguish different roles of parentheses.
 
@@ -95,7 +95,7 @@ It is purely optional, so you don't need to use them if you don't like them.
 R7RS doesn't adopt this syntax and leaves @code{[]} for extensions,
 so it is safe to stick to @code{()} in portable R7RS programs.
 (If the reader is in @code{strict-r7} mode, an error is signalled
-when @code{[]} is used.)
+when @code{[]} is used.  @xref{Reader lexical mode}, for the details.)
 
 Scheme-specific modes of some editors (e.g. Quack on Emacs) allows
 you to type just @code{)} and inserts either @code{]} or @code{)}
@@ -106,7 +106,7 @@ using such modes if you use this convention.
 R7RSではこの構文を採用せず、@code{[]}は言語拡張用に取ってあるので、
 ポータブルなR7RSプログラムを書く場合は@code{()}だけを使うのが良いでしょう。
 (リーダが@code{strict-r7}モードの時は、@code{[]}が使われていたら
-エラーが通知されます)
+エラーが通知されます。詳しくは@ref{Reader lexical mode}参照。)
 
 エディタのSchemeモードの中には、@code{)}をタイプするとそれがどちらの
 種類の括弧を閉じるかに応じて自動的に@code{]}か@code{)}を選んで挿入してくれる
@@ -1192,9 +1192,9 @@ the whole expression becomes a procedure expecting the last argument(s).
 @end example
 
 @c EN
-The more functional the code gets, the more you
+The more functional the code becomes, the more you
 tempted to write it as a chain of nested function calls.
-The Scheme syntax can get awkward in such code.  Close
+Scheme's syntax can get awkward in such code.  Close
 parentheses tend to clutter at the end of expressions.
 Inner applications tends to pushed toward right columns
 with the standard indentation rules.  Compare the
@@ -2113,7 +2113,7 @@ another macro.
 @c COMMON
 
 @example
-(and-let var test
+(and-let1 var test
   exp1
   exp2 @dots{})
 
