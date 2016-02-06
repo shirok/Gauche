@@ -15327,8 +15327,8 @@ Gaucheでは、スレッドを使う一番の目的は、他の方法で表現�
 
 @c EN
 For each Gauche's thread, an individual VM is allocated
-and it is run by the dedicated POSIX thread.  Thus there
-is not much overhead in context switch than the native
+and it is run by the dedicated POSIX thread.  Thus the
+cost of context switch is the same as the native
 thread, but the creation of threads costs much higher than,
 say, lightweight threads built on top of call/cc.
 So Gauche's preemptive threads are @emph{not} designed for
@@ -15337,7 +15337,7 @@ for fine-grained calculation.
 @c JP
 それぞれのGaucheのスレッドには、個別の仮想マシンが割り当てられ、
 専用のPOSIXスレッドにより実行されます。したがって、コンテキスト
-スイッチのオーバヘッドは、ネイティブスレッドとほとんど変わりません。
+スイッチのオーバヘッドは、ネイティブスレッドと同等です。
 しかし、スレッドの生成は、例えばcall/ccによる軽量スレッドよりは
 ずっとコストのかかる処理です。
 このように、Gaucheのプリエンプティブなスレッドは、
@@ -15434,18 +15434,34 @@ are not only but one of the ways to realize those features.
 @subsubheading スレッドボディ内で捕捉されないエラー
 @c COMMON
 
+@c EN
 When you run a single-thread program that raises an unexpected (unhandled)
 error, Gauche prints an error message and a stack trace by default.
 So sometimes it perplexes programmers when a thread doesn't print
 anything when it dies because of an unhandled error.
+@c JP
+シングルスレッドのプログラムが予期せぬ(捕捉されない)エラーを起こした場合、
+デフォルトではGaucheはエラーメッセージとスタックトレースを表示します。
+ところが、スレッドで捕捉されないエラーが生じスレッドが終了しても、
+何も表示されません。
+@c COMMON
 
+@c EN
 What's happneing is this: An unhandled error in a thread body would
 cause the thread to terminate, and the error itself will propagate
 to the thread who's expecting the result of the terminated thread.
 So, you get the error (wrapped by @code{<uncaught-exception>})
 when you call @code{thread-join!} on a thread which is terminated
 because of an unhandled error.  The behavior is defined in SRFI-18.
+@c JP
+それはこういうわけです。スレッド本体でエラーが起き、それがスレッド中で処理されなければ、
+スレッドは終了し、エラー自体はそのスレッドの終了を待つスレッドへと伝達される仕組みだからです。
+エラーで終了したスレッドに対して@code{thread-join!}を呼んだ時点で、
+元のエラーを@code{<uncaught-exception>}でラップしたエラーが投げられます。
+この動作はSRFI-18で規定されています。
+@c COMMON
 
+@c EN
 If you fire a thread for one-shot calculation, expecting to receive
 the result by @code{thread-join!}, then this is reasonable---you can
 handle the error situation in the ``parent'' thread.  However,
@@ -15454,11 +15470,26 @@ not expect to retrieve its result via @code{thread-join!}, this becomes
 a pitfall; the thread may die unexpectedly but you wouldn't know it.
 (If such a thread is garbage-collected, a warning is printed.
 However you wouldn't know when that happens so you can't count on it.)
+@c JP
+新たなスレッドを一時的な計算のために走らせて、その結果を@code{thread-join!}で
+受け取るという使い方なら、この動作は便利です。「親スレッド」でまとめてエラーを
+捕捉できるからです。けれどもスレッドをずっとループさせてジョブを次々と処理する、といった
+用法では@code{thread-join!}は呼ばれるとは限らず、この仕様は落とし穴になり得ます。
+スレッドがエラーで死んだのに気づかないかもしれないからです。
+(エラーで終了したスレッドが@code{thread-join!}されることなくGC対象になった場合は
+警告が出力されます。しかし、GCがどのタイミングで起きるかはわかりません。)
+@c COMMON
 
-The rule of thumb is that you always wrap the body of such thread
+@c EN
+For such threads, you should always wrap the body of such thread
 with @code{guard}, and handles the error explicitly.  You can call
 @code{report-error} to display the default error message and a stack
 trace.
+@c JP
+そういう使い方をするスレッドについては、本体を常に@code{guard}で包んで
+エラーを明示的に処理すべきです。例えばエラーメッセージとスタックトレースを出したければ
+@code{report-error}を呼びます。
+@c COMMON
 
 @example
 (thread-start!
@@ -15466,12 +15497,23 @@ trace.
                      ... thread body ...))))
 @end example
 
+@c EN
 @xref{Thread exceptions}, for the details of thread exception handling.
+@c JP
+スレッドでの例外の処理について詳しくは@ref{Thread exceptions}を参照してください。
+@c COMMON
 
+@c EN
 Note: As of 0.9.5, Gauche has a known bug that the tail call of
 error handling clauses of @code{guard} doesn't become a proper
 tail call.   So, the following code, which should run safely
 in Scheme, could eat up a stack:
+@c JP
+註: 0.9.5の時点では、@code{guard}のエラーハンドラ節が
+末尾コンテクストで呼ばれないというバグがあります。
+例えば次のコードはSchemeでは本来スタックを消費せずにループするはずですが、
+現在のGaucheではスタックを徐々に食いつぶしてしまいます。
+@c COMMON
 
 @example
 (thread-start!
@@ -15480,8 +15522,12 @@ in Scheme, could eat up a stack:
                        ... thread body ...)))))
 @end example
 
+@c EN
 For the time being, you can lift the call to loop outside of
 @code{guard} as workaround.
+@c JP
+当面は回避策として、@code{loop}の呼び出しを@code{guard}の外側に出してください。
+@c COMMON
 
 @example
 (thread-start!
