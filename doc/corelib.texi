@@ -4977,7 +4977,7 @@ is the same (@code{eq?}) to which.
 @c COMMON
 
 @example
-(let1 s '#:foo) (list s s))
+(let1 s '#:foo (list s s))
   @result{} @r{prints} (#0=#:foo #0#)
 
 (let ((s '#:foo) (t '#:foo)) (list s t s t))

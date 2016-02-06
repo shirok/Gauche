@@ -1817,6 +1817,7 @@ After running this code you'll get @code{my-cfile.c} and
 @code{my-cfile.h} in the current directory.
 
 @example
+(use gauche.parameter)
 (use gauche.cgen)
 
 (define *unit* (make <cgen-unit> :name "my-cfile"))
