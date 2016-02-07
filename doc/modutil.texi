@@ -8154,9 +8154,11 @@ argument @var{if-exists};
 @item :error
 (Default) Signals an error when @var{dst} exists.
 @item :supersede
-Replaces @var{dst} to the copy of @code{src}.
+Replaces @var{dst} to the copy of @var{src}.
 @item :backup
 Keeps @var{dst} by renaming it.
+@item :append
+Append the @var{src}'s content to the end of @var{dst}.
 @item #f
 Doesn't copy and returns @code{#f} when @var{dst} exists.
 @end table
@@ -8169,9 +8171,11 @@ Doesn't copy and returns @code{#f} when @var{dst} exists.
 @item :error
 (デフォルト) @var{dst}が存在していたらエラーを通知する。
 @item :supersede
-@var{dst}を@code{src}のコピーで置き換える。
+@var{dst}を@var{src}のコピーで置き換える。
 @item :backup
 @var{dst}の名前を変えてキープする。
+@item :append
+@var{dst}の末尾に@var{src}の内容を追加する。
 @item #f
 @var{dst}が存在していたらコピーをせず@code{#f}を返す。
 @end table

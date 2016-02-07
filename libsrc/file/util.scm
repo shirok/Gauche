@@ -636,7 +636,7 @@
   (for-each (cut touch-file <> :time time :type type :create create) pathnames))
 
 ;; copy-file
-;;  if-exists     - :error :supersede :backup #f
+;;  if-exists     - :error :supersede :backup :append #f
 ;;  follow-link?  - follow symlinks (default #t)
 ;;  backup-suffix
 ;;  safe
@@ -673,23 +673,18 @@
       (and (not (file-is-symlink? path)) (sys-chmod path mode)))
     (define (open-destination)
       (if safe
-        (cond
-         [(and (eq? if-exists :error) (file-exists? dst))
-          (error "destination file exists" dst)]
-         [(and (not if-exists) (file-exists? dst)) #f]
-         [else
-          (set!-values (outport tmpfile) (sys-mkstemp dst)) #t])
-        (cond
-         [(eq? if-exists :error)
-          (set! outport (open-output-file dst :if-exists :error)) #t]
-         [(not if-exists)
-          (set! outport (open-output-file dst :if-exists #f)) outport]
-         [(eq? if-exists :backup)
-          (when (file-exists? dst) (sys-rename dst backfile))
-          (set! outport (open-output-file dst)) #t]
-         [else
-          (set! outport (open-output-file dst :if-exists :supersede)) #t])
-        ))
+        (cond [(and (eq? if-exists :error) (file-exists? dst))
+               (error "destination file exists" dst)]
+              [(and (not if-exists) (file-exists? dst)) #f]
+              [else
+               (set!-values (outport tmpfile) (sys-mkstemp dst)) #t])
+        (ecase if-exists
+          [(#f) (set! outport (open-output-file dst :if-exists #f)) outport]
+          [(:backup)
+           (when (file-exists? dst) (sys-rename dst backfile))
+           (set! outport (open-output-file dst)) #t]
+          [(:supersede :append :error)
+           (set! outport (open-output-file dst :if-exists if-exists)) #t])))
     (define (get-times stat)
       (map (cut slot-ref stat <>) '(atime mtime)))
     (define (do-symlink)
@@ -700,8 +695,8 @@
       (when keeptime (set! times (get-times (sys-lstat src))))
       (if (file-exists? dst)
         (case if-exists
-          [(:error) (error <system-error> :errno EEXIST
-                           "destination file exists" dst)]
+          [(:error :append) (error <system-error> :errno EEXIST
+                                   "destination file exists" dst)]
           [(#f) #f]
           [(:backup) (sys-rename dst backfile) (doit)]
           [else      (sys-unlink dst) (doit)])
@@ -719,8 +714,8 @@
           (commit))))
 
     ;; body of copy-file
-    (unless (memq if-exists '(#f :error :supersede :backup))
-      (error "argument for :if-exists must be either :error, :supersede, :backup or #f, but got" if-exists))
+    (unless (memq if-exists '(#f :error :supersede :backup :append))
+      (error "argument for :if-exists must be either :error, :supersede, :backup, :append or #f, but got" if-exists))
     (when (and (file-exists? src) (file-exists? dst)
                ((if follow-link? file-eqv? file-eq?) src dst))
       (errorf "source ~s and destination ~s are the same file" src dst))
