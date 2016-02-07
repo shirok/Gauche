@@ -35,6 +35,7 @@
   (use srfi-13)
   (use srfi-42)
   (use util.match)
+  (use file.util)
   (use gauche.parameter)
   (use gauche.sequence)
   (export <cgen-unit> cgen-current-unit
@@ -117,16 +118,27 @@
     (for-each walker (reverse (~ unit'toplevels)))))
 
 ;; API
+;; We emit .h file either
+;;  - cgen-unit-h-file is explicitly set
+;;  - unit has something to emit in 'extern' part
+;; The latter condition can only be determined if we actually run cgen-emit
+;; method and see the output.  
 (define-method cgen-emit-h ((unit <cgen-unit>))
-  (and-let* ([h-file (cgen-unit-h-file unit)])
+  (let1 h-file (or (cgen-unit-h-file unit)
+                   (path-swap-extension (cgen-unit-c-file unit) "h"))
     (cgen-with-output-file h-file
-      (^[]
-        (cond [(~ unit'preamble) => emit-raw])
-        (cgen-emit-part unit 'extern)))))
+      (^[tmpfile h-file]
+        (when (or (cgen-unit-h-file unit)
+                  (> (file-size tmpfile) 0))
+          (with-output-to-file h-file
+            (^[] (cond [(~ unit'preamble) => emit-raw])))
+          (copy-file tmpfile h-file :if-exists :append))
+        (sys-unlink tmpfile))
+      (^[] (cgen-emit-part unit 'extern)))))
 
 ;; API
 (define-method cgen-emit-c ((unit <cgen-unit>))
-  (cgen-with-output-file (cgen-unit-c-file unit)
+  (cgen-with-output-file (cgen-unit-c-file unit) sys-rename
     (^[]
       (cond [(~ unit'preamble) => emit-raw])
       (cgen-emit-part unit 'decl)
@@ -314,7 +326,9 @@
 ;; Utilities
 ;;
 
-(define (cgen-with-output-file file thunk)
+;; Call thunk while binding current-output-port to a temp file,
+;; then calls (finisher tmpfile file).
+(define (cgen-with-output-file file finisher thunk)
   (receive (port tmpfile) (sys-mkstemp file)
     (guard (e [else
                (close-output-port port)
@@ -322,7 +336,7 @@
                (raise e)])
       (with-output-to-port port thunk)
       (close-output-port port)
-      (sys-rename tmpfile file))))
+      (finisher tmpfile file))))
 
 (define (emit-raw code)
   (if (list? code)
