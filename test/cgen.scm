@@ -45,42 +45,6 @@ some_trick();
          (begin0 (file->string "tmp.o.c")
            (sys-unlink "tmp.o.c"))))
 
-;; Test generation of .h file
-(let ()
-  (define (t msg hfile thunk)
-    (define (cleanup)
-      (sys-unlink "tmp.o.c")
-      (sys-unlink "tmp.o.h")
-      (when hfile (sys-unlink hfile)))
-    (cleanup)
-    (unwind-protect
-        (test* #"cgen.unit .h generation (~msg)" (boolean hfile)
-               (begin (thunk)
-                      (if hfile
-                        (and (file-exists? hfile)
-                             (> (file-size hfile) 0))
-                        (file-exists? "tmp.o.h"))))
-      (cleanup)))
-
-  (t "none" #f
-     (^[] (parameterize ([cgen-current-unit (make <cgen-unit> :name "tmp.o")])
-            (cgen-decl "hoohoo")
-            (cgen-emit-c (cgen-current-unit))
-            (cgen-emit-h (cgen-current-unit)))))
-  (t "explicit" "tmp.h"
-     (^[] (parameterize ([cgen-current-unit (make <cgen-unit>
-                                              :name "tmp.o" :h-file "tmp.h")])
-            (cgen-decl "hoohoo")
-            (cgen-emit-c (cgen-current-unit))
-            (cgen-emit-h (cgen-current-unit)))))
-  (t "implicit" "tmp.o.h"
-     (^[] (parameterize ([cgen-current-unit (make <cgen-unit> :name "tmp.o")])
-            (cgen-decl "hoohoo")
-            (cgen-extern "heehee")
-            (cgen-emit-c (cgen-current-unit))
-            (cgen-emit-h (cgen-current-unit)))))
-  )
-
 ;;====================================================================
 (test-section "gauche.cgen.literal")
 (use gauche.cgen.type)

@@ -1,9 +1,7 @@
 2016-02-07  Shiro Kawai  <shiro@acm.org>
 
-	* lib/gauche/cgen/unit.scm (cgen-emit-h): Support implicit .h file
-	  generation - even if h-file name isn't given explicitly, we generate
-	  .h file if we ever emit something into it.  This is originally
-	  intended behavior but haven't implemented.
+	* lib/gauche/cgen/unit.scm (cgen-emit-h): Always generate .h file
+	  even h-file slot of the unit is #f.
 
 2016-02-06  Shiro Kawai  <shiro@acm.org>
 
