@@ -8224,12 +8224,19 @@ By default, @code{copy-file} starts copying to @var{dst} directly.
 However, if the keyword argument @var{safe} is a true value,
 it copies the file to a temporary file in the same directory of @var{dst},
 then renames it to @var{dst} when copy is completed.
+(When @var{safe} is true and @var{if-exists} is @code{:append},
+we first copy the content of @var{dst} to a temporary file if @var{dst}
+exists, appends the content of @var{src}, then renames the result to @var{dst}).
 If copy is interrupted for some reason, the filesystem is "rolled back"
 properly.
+
 @c JP
 デフォルトでは@code{copy-file}は直接@var{dst}にコピーを行いますが、
 キーワード引数@var{safe}に真の値が与えられた場合は、@var{dst}と同じディレクトリ
 内の一時ファイルにまずコピーし、それが完了した時点で@var{dst}へとリネームします。
+(@var{safe}が真でかつ@var{if-exists}が@code{:append}であった場合は、
+@var{dst}があればまずその内容を一時ファイルにコピーし、そこに@var{src}の内容を
+追加し、最後にそれを@var{dst}へリネームします。)
 コピーが何らかの理由で中断された場合、ファイルシステムはコピー前の状態へと
 「ロールバック」されます。
 @c COMMON

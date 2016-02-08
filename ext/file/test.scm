@@ -463,19 +463,24 @@
             (file-equal? "test.out/test1.o" "test.out/test.copy")
             (file-equal? "test.out/test5.o" "test.out/test.copy~")))
 
-(test* "copy-file (:if-exists :append)" #t
-       (let1 preamble "********************************\n"
-         (sys-unlink "test.out/test.copy")
-         (sys-unlink "test.out/test.copy2")
-         (with-output-to-file "test.out/test.copy"
-           (^[] (display preamble)))
-         (copy-file "test.out/test1.o" "test.out/test.copy"
-                    :if-exists :append)
-         (with-output-to-file "test.out/test.copy2"
-           (^[] (display preamble)
-             (call-with-input-file "test.out/test1.o"
-               (^[in] (copy-port in (current-output-port))))))
-         (file-equal? "test.out/test.copy" "test.out/test.copy2")))
+(let ()
+  (define (check-copy-file-append . args)
+    (let1 preamble "********************************\n"
+      (sys-unlink "test.out/test.copy")
+      (sys-unlink "test.out/test.copy2")
+      (with-output-to-file "test.out/test.copy"
+        (^[] (display preamble)))
+      (apply copy-file "test.out/test1.o" "test.out/test.copy"
+             :if-exists :append args)
+      (with-output-to-file "test.out/test.copy2"
+        (^[] (display preamble)
+          (call-with-input-file "test.out/test1.o"
+            (^[in] (copy-port in (current-output-port))))))
+      (file-equal? "test.out/test.copy" "test.out/test.copy2")))
+  (test* "copy-file (:if-exists :append)" #t
+         (check-copy-file-append))
+  (test* "copy-file (:if-exists :append :safe #t)" #t
+         (check-copy-file-append :safe #t)))
 
 (sys-unlink "test.out/test.copy")
 (sys-unlink "test.out/test.copy2")

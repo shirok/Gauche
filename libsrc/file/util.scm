@@ -676,6 +676,10 @@
         (cond [(and (eq? if-exists :error) (file-exists? dst))
                (error "destination file exists" dst)]
               [(and (not if-exists) (file-exists? dst)) #f]
+              [(and (eq? if-exists :append) (file-exists? dst))
+               (set!-values (outport tmpfile) (sys-mkstemp dst))
+               (call-with-input-file dst (cut copy-port <> outport))
+               #t]
               [else
                (set!-values (outport tmpfile) (sys-mkstemp dst)) #t])
         (ecase if-exists
