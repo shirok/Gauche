@@ -15541,6 +15541,14 @@ Otherwise, @var{size} specifies the number of bytes.
 最大量を指定します。@var{unit}がシンボル@code{char}の場合は@var{size}は
 コピーされる文字数を、そうでない場合はバイト数を指定します。
 @c COMMON
+
+@c EN
+Returns number of characters copied when @var{unit} is a symbol
+@code{char}.  Otherwise, returns number of bytes copied.
+@c JP
+@var{unit}がシンボル@code{char}の場合はコピーされた文字数を返し、
+そうでない場合はコピーされたバイト数を返します。
+@c COMMON
 @end defun
 
 @node File ports, String ports, Common port operations, Input and output
