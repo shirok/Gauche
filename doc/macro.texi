@@ -682,6 +682,45 @@ These procedures can be used to expand globally defined macros.
 @c COMMON
 @end defun
 
+@defun macroexpand-all form
+Fully expand macros inside @var{form}.  The result only contains
+function calls and Gauche's built-in syntax.
+The @code{form} is assumed to be a toplevel form within the current module.
+(@xref{Module semantics}, for the concept of the current module.
+It can be tricky, for sometimes the current module differ
+between compile-time and run-time.)
+
+Any local variables introduced in @var{form} is renamed to avoid collision.
+Since each local variable has unique name, all @code{let} forms become
+@code{letrec} forms (we can safely replace @code{let} with @code{letrec}
+if no bindings introduced by @code{let} shadows outer bindings.)
+
+NB: If a macro in @var{form} inserts a reference to a global variable
+which belongs to other module, the information is lost in the current
+implementation.  There are a few ways to address this issue; we may
+leave such reference as an identifier object, convert it to
+@code{with-module} form, or introduce a special syntax to represent
+such case.  It's undecided currently, so do not rely too much on
+the current behavior.  For the time being, it's best to use this
+feature only for interactive macro testing.
+
+@example
+(macroexpand-all
+ '(letrec-syntax
+      [(when-not (syntax-rules ()
+                   [(_ test . body) (if test #f (begin . body))]))]
+    (let ([if list])
+      (define x (expt foo))
+      (let1 x 3
+        (when-not (bar) (if x))))))
+ @result{} (letrec ((if.0 list)) 
+     (letrec ((x.1 (expt foo)))
+       (letrec ((x.2 '3)) 
+        (if (bar) '#f (if.0 x.2)))))
+@end example
+@end defun
+
+
 @defspec %macroexpand form
 @defspecx %macroexpand-1 form
 @end defspec
@@ -726,7 +765,6 @@ the internal syntactic binding informations.
 (my-macro 1 2 3 4)
   @result{} @r{error: "malformed my-macro: (mymacro 1 2 3 4)"}
 @end example
-
 @end defmac
 
 @defun unwrap-syntax form
