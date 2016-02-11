@@ -142,35 +142,55 @@
 (define-cfn generic-hashtable-hash (h::(const ScmHashCore*) key::intptr_t)
   ::u_long :static
   (let* ([c::ScmComparator* (cast ScmComparator* (-> h data))]
+         [v::ScmObj (Scm_ApplyRec1 (-> c hashFn) (SCM_OBJ key))])
+    (unless (or (SCM_INTP v) (SCM_BIGNUMP v))
+      (Scm_Error "Comparator %S's hash function should return \
+                  an exact integer, but got: %S" c v))
+    (return (Scm_GetIntegerUMod v))))
+
+(define-cfn generic-hashtable-hash-typecheck (h::(const ScmHashCore*)
+                                              key::intptr_t)
+  ::u_long :static
+  (let* ([c::ScmComparator* (cast ScmComparator* (-> h data))]
          [t::ScmObj (Scm_ApplyRec1 (-> c typeFn) (SCM_OBJ key))])
     (when (SCM_FALSEP t)
       (Scm_Error "Invalid key for hashtable: %S" (SCM_OBJ key)))
-    (let* ([v::ScmObj (Scm_ApplyRec1 (-> c hashFn) (SCM_OBJ key))])
-      (unless (or (SCM_INTP v) (SCM_BIGNUMP v))
-        (Scm_Error "Comparator %S's hash function should return \
-                    an exact integer, but got: %S" c v))
-      (return (Scm_GetIntegerUMod v)))))
+    (return (generic-hashtable-hash h key))))
 
 (define-cfn generic-hashtable-eq (h::(const ScmHashCore*)
                                   a::intptr_t b::intptr_t)
   ::int :static
   (let* ([c::ScmComparator* (cast ScmComparator* (-> h data))]
+         [e::ScmObj (Scm_ApplyRec2 (-> c eqFn) (SCM_OBJ a) (SCM_OBJ b))])
+    (return (not (SCM_FALSEP e)))))
+
+(define-cfn generic-hashtable-eq-typecheck (h::(const ScmHashCore*)
+                                            a::intptr_t b::intptr_t)
+  ::int :static
+  (let* ([c::ScmComparator* (cast ScmComparator* (-> h data))]
          [t::ScmObj (Scm_ApplyRec1 (-> c typeFn) (SCM_OBJ a))])
     ;; NB: a is the key given from outside, and b is the key that's already
     ;; in the table, so we only need to check a.
+    ;; TODO: Currently we may perform typecheck of a multiple times if
+    ;; we have more than one items with the same hash value in the table;
+    ;; optimization required.
     (when (SCM_FALSEP t)
       (Scm_Error "Invalid key for hashtable: %S" (SCM_OBJ a)))
-    (let* ([e::ScmObj (Scm_ApplyRec2 (-> c eqFn) (SCM_OBJ a) (SCM_OBJ b))])
-      (return (not (SCM_FALSEP e))))))
+    (return (generic-hashtable-eq h a b))))
 )
 
 (define-cproc %make-hash-table-from-comparator (comparator::<comparator>
                                                 init-size::<int>
                                                 has-type-check::<boolean>)
-  (return (Scm_MakeHashTableFull generic-hashtable-hash
-                                 generic-hashtable-eq
-                                 init-size
-                                 comparator)))
+  (if has-type-check
+    (return (Scm_MakeHashTableFull generic-hashtable-hash-typecheck
+                                   generic-hashtable-eq-typecheck
+                                   init-size
+                                   comparator))
+    (return (Scm_MakeHashTableFull generic-hashtable-hash
+                                   generic-hashtable-eq
+                                   init-size
+                                   comparator))))
 
 ;; Comparator argument can be <comparator> or one of the symbols
 ;; eq?, eqv?, equal? or string=?.
@@ -198,8 +218,8 @@
                  but got:" comparator))
        ($ %make-hash-table-from-comparator
           comparator init-size
-          (eq? (comparator-type-test-procedure comparator)
-               (with-module gauche.internal default-type-test)))])]))
+          (not (eq? (comparator-type-test-procedure comparator)
+                    (with-module gauche.internal default-type-test))))])]))
 
 (define-cproc hash-table-type (hash::<hash-table>)
   (get-hash-type (-> hash type)))
