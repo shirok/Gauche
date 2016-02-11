@@ -7,7 +7,7 @@ _after installing Gauche_.  See below.
 The sources include:
 
   DIST           - a helper script to create a distribution tarball.
-  configure.in   - source of "configure" script
+  configure.ac   - source of "configure" script
   Makefile.in    - template makefile
   spigot.h       - common declaration within the spigot module
   spigot.c       - main logic 
