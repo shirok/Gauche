@@ -57,7 +57,7 @@
   (export <vt100>
 
           call-with-console
-          putch putstr getch chready? beep
+          putch putstr getch get-raw-chars chready? beep
           query-screen-size query-cursor-position move-cursor-to
           hide-cursor show-cursor cursor-down/scroll-up cursor-up/scroll-down
           reset-terminal clear-screen clear-to-eol clear-to-eos
@@ -219,6 +219,15 @@
           (fetch q)
           ch))
       (dequeue! q))))
+
+(define-method get-raw-chars ((con <vt100>))  ; no translation
+  (let1 q (~ con'input-buffer)
+    (when (queue-empty? q) (enqueue! q (read-char (~ con'iport))))
+    (let loop ()
+      (let1 ch (%read-char/timeout con)
+        (if (char? ch)
+          (begin (enqueue! q ch) (loop))
+          (dequeue-all! q))))))
 
 (define-method query-cursor-position ((con <vt100>))
   (define (r) (read-char (~ con'iport))) ; we bypass getch buffering

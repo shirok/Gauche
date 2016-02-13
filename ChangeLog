@@ -1,3 +1,9 @@
+2016-02-12  Shiro Kawai  <shiro@acm.org>
+
+	* examples/get-raw-chars.scm: Added.  Useful to check what kind of
+	  key sequence is sent by the terminal.
+	* lib/text/console.scm (get-raw-chars): Added.
+
 2016-02-07  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/unit.scm (cgen-emit-h): Always generate .h file
