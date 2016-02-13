@@ -8,6 +8,3 @@
                                  (make-default-console))
                                get-raw-chars))
   0)
-
-
-

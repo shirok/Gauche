@@ -21,9 +21,3 @@
 ;; try
 ;(ltake fibs 20)
 ;(ltake fibs 200)
-
-
-
-
-  
-
