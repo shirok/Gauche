@@ -8,8 +8,9 @@ mqueue library, to write a Gauche binding for it.
 
 The following files are needed for our extension:
 
-  Makefile.in
-  configure.ac
+  DIST               - a helper script to create a distribution tarball.
+  Makefile.in        - template makefile
+  configure.ac       - source of "configure" script
   mqueue_glue.cpp    - a bridge (glue) between C++ library and Gauche
   mqueue_glue.h      - ditto
   mqueue_lib.stub    - Scheme binding definition
