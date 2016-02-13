@@ -39,25 +39,25 @@
 (test-hashpw "$2b$05$/OK.fbVrR/bpIqNJ5ianF.Sa7shbm4.OzKpvFnX1pQLmQW96oUlCq"
 	     #*"\xa3;")
 (test-hashpw "$2x$05$/OK.fbVrR/bpIqNJ5ianF.o./n25XVfn6oAPaUvHe.Csk4zRfsYPi"
-	     (string-append #*"1\xa3;" "345"))
+	     #*"1\xa3;345")
 (test-hashpw "$2x$05$/OK.fbVrR/bpIqNJ5ianF.o./n25XVfn6oAPaUvHe.Csk4zRfsYPi"
-	     (string-append #*"\xff;\xa3;" "345"))
+	     #*"\xff;\xa3;345")
 (test-hashpw "$2x$05$/OK.fbVrR/bpIqNJ5ianF.o./n25XVfn6oAPaUvHe.Csk4zRfsYPi"
-	     (string-append #*"\xff;\xa3;" "34" #*"\xff;\xff;\xff;\xa3;" "345"))
+	     #*"\xff;\xa3;34\xff;\xff;\xff;\xa3;345")
 (test-hashpw "$2y$05$/OK.fbVrR/bpIqNJ5ianF.o./n25XVfn6oAPaUvHe.Csk4zRfsYPi"
-	     (string-append #*"\xff;\xa3;" "34" #*"\xff;\xff;\xff;\xa3;" "345"))
+	     #*"\xff;\xa3;34\xff;\xff;\xff;\xa3;345")
 (test-hashpw "$2a$05$/OK.fbVrR/bpIqNJ5ianF.ZC1JEJ8Z4gPfpe1JOr/oyPXTWl9EFd."
-	     (string-append #*"\xff;\xa3;" "34" #*"\xff;\xff;\xff;\xa3;" "345"))
+	     #*"\xff;\xa3;34\xff;\xff;\xff;\xa3;345")
 (test-hashpw "$2y$05$/OK.fbVrR/bpIqNJ5ianF.nRht2l/HRhr6zmCp9vYUvvsqynflf9e"
-	     (string-append #*"\xff;\xa3;" "345"))
+	     #*"\xff;\xa3;345")
 (test-hashpw "$2a$05$/OK.fbVrR/bpIqNJ5ianF.nRht2l/HRhr6zmCp9vYUvvsqynflf9e"
-	     (string-append #*"\xff;\xa3;" "345"))
+	     #*"\xff;\xa3;345")
 (test-hashpw "$2a$05$/OK.fbVrR/bpIqNJ5ianF.6IflQkJytoRVc1yuaNtHfiuq.FRlSIS"
-	     (string-append #*"\xa3;" "ab"))
+	     #*"\xa3;ab")
 (test-hashpw "$2x$05$/OK.fbVrR/bpIqNJ5ianF.6IflQkJytoRVc1yuaNtHfiuq.FRlSIS"
-	     (string-append #*"\xa3;" "ab"))
+	     #*"\xa3;ab")
 (test-hashpw "$2y$05$/OK.fbVrR/bpIqNJ5ianF.6IflQkJytoRVc1yuaNtHfiuq.FRlSIS"
-	     (string-append #*"\xa3;" "ab"))
+	     #*"\xa3;ab")
 (test-hashpw "$2x$05$6bNw2HLQYeqHYyBfLMsv/OiwqTymGIGzFsA4hOTWebfehXHNprcAS"
 	     #*"\xd1;\x91;")
 (test-hashpw "$2x$05$6bNw2HLQYeqHYyBfLMsv/O9LIGgn8OMzuDoHfof8AQimSGfcSWxnS"
