@@ -1,6 +1,6 @@
 ;;;
 ;;; aobench - Ambient Occlusion Benchmark
-;;; Based on the code by Shoyo Fujita
+;;; Based on the code by Syoyo Fujita
 ;;; https://github.com/syoyo/aobench
 ;;;
 
