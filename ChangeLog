@@ -1,3 +1,7 @@
+2016-02-13  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi-131.scm: Added.
+
 2016-02-12  Shiro Kawai  <shiro@acm.org>
 
 	* examples/get-raw-chars.scm: Added.  Useful to check what kind of

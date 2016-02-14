@@ -733,3 +733,15 @@ Gauche's @code{gauche.generator} is superset of srfi-121
 ジェネレータ
 Gaucheの@code{gauche.generator}がsrfi-121のスーパーセットになっています。
 (@ref{Generators}参照)
+
+
+srfi-131, gauche.record
+()
+
+ERR5RS Record Syntax (reduced)
+This srfi is a pure subset of srfi-99, and @code{gauche.record}'s
+@code{define-record-type} covers it.  @xref{Record types}.
+
+ERR5RSレコード構文 (簡易版)
+このsrfiはsrfi-99のサブセットで、@code{gauche.record}の
+@code{define-record-type}でカバーされます。@ref{Record types}参照。
