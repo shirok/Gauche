@@ -309,7 +309,8 @@
    (oport  :init-form (standard-output-port))
    (keybuf :init-form (make-queue))
    (ihandle)
-   (ohandle)))
+   (ohandle)
+   ))
 
 ;; The actual method definitions depend on os.windows
 (cond-expand

@@ -76,9 +76,9 @@
    eqv-comparator))
 
 (define-method putch ((con <windows-console>) c)
-  (display c (~ con'oport)) (flush (~ con'oport)))
+  (sys-write-console (~ con'ohandle) (string c)))
 (define-method putstr ((con <windows-console>) s)
-  (display s (~ con'oport)) (flush (~ con'oport)))
+  (sys-write-console (~ con'ohandle) s))
 
 ;; some keyboard event constants
 (define-constant KEY_EVENT 1)

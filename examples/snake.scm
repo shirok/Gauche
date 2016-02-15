@@ -10,17 +10,10 @@
 (use text.console)
 
 (define (main args)
-  (cond-expand
-   [gauche.os.windows
-    (exit 1 "Windows support is coming - stay tuned!")]
-   [else
-    (cond [(not (and (sys-isatty (current-input-port))
-                     (sys-isatty (current-output-port))))
-           (exit 1 "You need to run this program on terminal.")]
-          [(not (#/(vt100|xterm)/i (or (sys-getenv "TERM") "")))
-           (exit 1 "TERM is not defined or unknown terminal.")]
-          [else
-           (call-with-console (make <vt100>) game)])]))
+  (call-with-console (guard (e [else (exit 1 (~ e'message))])
+                       (make-default-console))
+                     game)
+  0)
 
 ;; snake : (<dir> <head> <tail> ...)
 ;; <head> : <pt>
@@ -32,14 +25,20 @@
 (define (snake-head snake) (car (snake-body snake)))
 (define (snake-tail snake) (cdr (snake-body snake)))
 
+;; NB: For the time being, we avoid writing the wall to the last row;
+;; Writing on the bottom-right corner causes the screen to scroll in
+;; <windows-console>.  We can avoid it by SetConsoleMode but currently we're
+;; not sure how to handle it in the console abstraction layer (we don't want
+;; the wrap-to-next-line behavior off by default).
 (define (game con)
   (hide-cursor con)
   (clear-screen con)
   (random-source-randomize! default-random-source)
   (receive (row col) (query-screen-size con)
-    (let* ([field (new-field row col)]
+    (let* ([field (new-field (- row 1) col)]
            [snake (new-snake field)])
-      (run-game con field snake (new-food field snake) 0))))
+      (render-field con field)
+      (run-game con field snake #f (new-food field snake) 0))))
 
 (define (collide-wall? field x y) (array-ref field y x))
 
@@ -91,8 +90,8 @@
 (define (find-food? snake dir food)
   (equal? food (next-point (snake-head snake) dir)))
 
-(define (run-game con field snake food score)
-  (render con field snake food)
+(define (run-game con field snake prev-snake food score)
+  (render con field snake prev-snake food)
   ;; trick - since height of character is larger than width, if we use the
   ;; same interval, it would look like the snake runs faster in N-S direction
   ;; than E-W direction.
@@ -109,43 +108,50 @@
     (match-let1 (and (x . y) hd) (next-point (snake-head snake) dir)
       (cond [(or (collide-wall? field x y)
                  (collide-snake? snake x y))
-             (render con field (update-snake snake dir hd #f) food)
+             (render con field (update-snake snake dir hd #f) snake food)
              (game-over con field)]
             [(find-food? snake dir food)
              (let1 snake. (update-snake snake dir hd #t)
-               (run-game con field snake. (new-food field snake.) (+ score 1)))]
+               (run-game con field snake. snake 
+                         (new-food field snake.) (+ score 1)))]
             [else
-             (run-game con field (update-snake snake dir hd #f) food score)]))))
+             (run-game con field (update-snake snake dir hd #f) snake
+                       food score)]))))
 
 (define (get-dir con) ;returns W, S, N, E or #f
   (and (chready? con)
        (case (getch con)
-         [(#\h KEY_LEFT) 'W]
-         [(#\j KEY_DOWN) 'S]
-         [(#\k KEY_UP) 'N]
+         [(#\h KEY_LEFT)  'W]
+         [(#\j KEY_DOWN)  'S]
+         [(#\k KEY_UP)    'N]
          [(#\l KEY_RIGHT) 'E]
          [else #f])))
 
-(define (render con field snake food)
-  (clear-screen con)
-  (set-character-attribute con '(cyan blue))
-  (render-field con field)
+(define (render con field snake prev-snake food)
   (set-character-attribute con '(green black bright))
-  (render-snake con snake)
+  (render-snake con snake prev-snake)
   (set-character-attribute con '(magenta black bright))
   (render-point con food #\o))
 
 (define (render-field con field)
+  (set-character-attribute con '(cyan blue))
   ($ array-for-each-index field
      (^[y x]
        (when (array-ref field y x)
          (move-cursor-to con y x)
          (putch con #\#)))))
 
-(define (render-snake con snake)
+(define (render-snake con snake prev-snake)
+  ;; We only need to draw difference of snake and prev-snake.
+  ;; NB: prev-snake can be #f for the initial state.
   (render-point con (snake-head snake) #\@)
-  (dolist [pt (snake-tail snake)]
-    (render-point con pt #\*)))
+  (if prev-snake
+    (begin
+      (when (= (length (snake-body snake)) (length (snake-body prev-snake)))
+        (render-point con (last (snake-tail prev-snake)) #\space))
+      (render-point con (snake-head prev-snake) #\*))
+    (dolist [pt (snake-tail snake)]
+      (render-point con pt #\*))))
 
 (define (render-point con pt ch)
   (match-let1 (x . y) pt
