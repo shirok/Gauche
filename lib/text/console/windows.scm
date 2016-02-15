@@ -265,7 +265,7 @@
   (define (get-optional-code opt)
     (case opt
       [(bright)     I]
-      [else         0]))  ; reverse and underscore not supported
+      [else         0]))  ; underscore not supported
   (define (get-color-attr fc bc)
     (logior (if (logtest fc B) FOREGROUND_BLUE 0)
             (if (logtest fc G) FOREGROUND_GREEN 0)
@@ -277,11 +277,14 @@
             (if (logtest bc I) BACKGROUND_INTENSITY 0)))
   (define hdl (~ con'ohandle))
   (match-let1 (fgcolor bgcolor . opts) spec
-    (let ([fc (get-color-code fgcolor (logior R G B))]
-          [bc (get-color-code bgcolor (logior R G B I))])
-      (dolist [opt opts]
-        (set! fc (logior fc (get-optional-code opt))))
-      (sys-set-console-text-attribute hdl (get-color-attr fc bc)))))
+    (receive (fg bg) (if (memq 'reverse opts)
+                       (values bgcolor fgcolor)
+                       (values fgcolor bgcolor))
+      (let ([fc (get-color-code fg (logior R G B))]
+            [bc (get-color-code bg 0)])
+        (dolist [opt opts]
+          (set! fc (logior fc (get-optional-code opt))))
+        (sys-set-console-text-attribute hdl (get-color-attr fc bc))))))
 
 (define-method reset-character-attribute ((con <windows-console>))
   (sys-set-console-text-attribute (~ con'ohandle) *win-default-cattr*))
