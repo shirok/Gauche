@@ -91,7 +91,7 @@
   (equal? food (next-point (snake-head snake) dir)))
 
 (define (run-game con field snake prev-snake food score)
-  (render con field snake prev-snake food)
+  (render con field snake prev-snake food score)
   ;; trick - since height of character is larger than width, if we use the
   ;; same interval, it would look like the snake runs faster in N-S direction
   ;; than E-W direction.
@@ -108,7 +108,7 @@
     (match-let1 (and (x . y) hd) (next-point (snake-head snake) dir)
       (cond [(or (collide-wall? field x y)
                  (collide-snake? snake x y))
-             (render con field (update-snake snake dir hd #f) snake food)
+             (render con field (update-snake snake dir hd #f) snake food score)
              (game-over con field)]
             [(find-food? snake dir food)
              (let1 snake. (update-snake snake dir hd #t)
@@ -127,13 +127,20 @@
          [(#\l KEY_RIGHT) 'E]
          [else #f])))
 
-(define (render con field snake prev-snake food)
+(define (render con field snake prev-snake food score)
   (set-character-attribute con '(green black bright))
   (render-snake con snake prev-snake)
   (set-character-attribute con '(magenta black bright))
-  (render-point con food #\o))
+  (render-point con food #\o)
+  (set-character-attribute con '(white black))
+  (move-cursor-to con
+                  (array-length field 0) ;the bottom row
+                  5)
+  (putstr con (format "S C O R E : ~3d" score)))
 
 (define (render-field con field)
+  (set-character-attribute con '(black black))
+  (clear-screen con)
   (set-character-attribute con '(cyan blue))
   ($ array-for-each-index field
      (^[y x]
