@@ -195,7 +195,7 @@
          [y     (slot-ref cinfo'cursor-position.y)]
          [sbw   (slot-ref cinfo'size.x)])
     (let1 n (- sbw x)
-      (sys-fill-console-output-attribute hdl n *win-default-cattr* x y)
+      (sys-fill-console-output-attribute hdl *win-default-cattr* n x y)
       (sys-write-console-output-character hdl (make-string n #\space) x y))))
 
 (define-method clear-to-eos ((con <windows-console>))
@@ -207,7 +207,7 @@
          [sb    (slot-ref cinfo'window.bottom)]
          [sbw   (slot-ref cinfo'size.x)])
     (let1 n (+ (* (- sb y) sbw) (- x) sr 1)
-      (sys-fill-console-output-attribute hdl n *win-default-cattr* x y)
+      (sys-fill-console-output-attribute hdl *win-default-cattr* n x y)
       (sys-write-console-output-character hdl (make-string n #\space) x y))))
 
 (define-method hide-cursor ((con <windows-console>))
