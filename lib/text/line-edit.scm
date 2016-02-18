@@ -257,7 +257,9 @@
         [h   (~ ctx'screen-height)]
         [sel (selected-range ctx buffer)])
     (define g (gen/tab (gap-buffer->generator buffer) x))
-    (move-cursor-to con y x)
+    ;; NB: If multiline chunk exceeds screen height, we skip the region
+    ;; where y becomes negative.
+    (move-cursor-to con (max y 0) x)
     (clear-to-eos con)
     (reset-character-attribute con)
     (let loop ([y y] [x x])
@@ -274,19 +276,22 @@
               (begin (dec! (~ ctx'initpos-y))
                      (cursor-down/scroll-up con))
               (inc! y))
-            (move-cursor-to con y 0)
-            (putch con ch)
-            (move-cursor-to con y 1)
+            (when (>= y 0)
+              (move-cursor-to con y 0)
+              (putch con ch)
+              (move-cursor-to con y 1))
             (loop y 1)]
            [(eqv? ch #\newline) ; works as if CR+LF
             (if (= y (- h 1))
               (begin (dec! (~ ctx'initpos-y))
                      (cursor-down/scroll-up con))
               (inc! y))
-            (move-cursor-to con y 0)
-            (show-secondary-prompt ctx)
+            (when (>= y 0)
+              (move-cursor-to con y 0)
+              (show-secondary-prompt ctx))
             (loop y (~ ctx'initpos-x))]
-           [else (putch con ch) (loop y (+ x 1))])))))
+           [else (when (>= y 0) (putch con ch))
+                 (loop y (+ x 1))])))))
   (receive (cy cx) (current-buffer-cursor-position ctx buffer)
     (move-cursor-to (~ ctx'console) cy cx)))
 
