@@ -7136,7 +7136,7 @@ actions.  The default value is @code{#f} (always replace the output).
 @end table
 @end defun
 
-@defun file-filter-for-each proc seed :key reader input output temporary-file keep-output? rename-hook
+@defun file-filter-fold proc seed :key reader input output temporary-file keep-output? rename-hook
 @c EN
 A convenience wrapper of @code{file-filter}.
 Call @var{proc} for each item read from input

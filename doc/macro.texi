@@ -399,7 +399,7 @@ the macro system should satisfy, in two concise sentences:
 それを実装する戦略はいくつか考えられます。そして、Scheme標準は実装を
 どれかひとつの戦略に縛ってしまうことを良しとしません。
 結果的に、標準はマクロシステムが満たすべき性質を、二つの簡潔な
-分で示すに止まります：
+文で示すに止まります：
 @c COMMON
 
 @quotation
