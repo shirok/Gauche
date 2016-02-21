@@ -2739,17 +2739,35 @@ without hitting timeout, they return @code{#t}.
 
 @deftp {Module} data.imap
 @mdindex data.imap
+@c EN
 This module provides a immutable data structure with O(log n)
-access and update operations.  The current implementation is
+access and update operations (here, update means to return a
+new structure with requested changes).
+The current implementation is
 based on the functional red-black tree.
+@c JP
+このモジュールは、O(log n)でアクセスと更新が可能な、変更不可のデータ構造を
+提供します(ここでの「更新」とは、要求された変更を取り込んだ新たな構造を
+作って返すことです)。
+現在の実装は関数的な赤黒木に基づいています。
+@c COMMON
 @end deftp
 
+@c EN
 Although lists and alists are useful for stack-like immutable
 operations, where you can add and remove items to the head of
 existing data without modifying them, they require O(n) access time
 and sometimes you need better one.  The @code{<imap>} object
 provides O(log n) access, in exchange of O(log n) insertion and
 deletion.
+@c JP
+リストや連想リストは、スタック風の変更不可なデータ構造として使えます。
+つまり既存のデータ構造自体に変更を加えることなく、その先頭に要素を追加したり、
+先頭から要素を取り除いたりできるということです。一方で、リストや連想リストは
+任意の要素にアクセスするにはO(n)の時間を必要としますが、もっと速いアクセスが必要な
+場合もあります。@code{<imap>}オブジェクトはO(log n)のアクセスを可能にします。
+そのかわり、要素の追加や削除にもO(log n)を必要とします。
+@c COMMON
 
 @deftp {Class} <imap-meta>
 Metaclass of @code{<imap>}.
