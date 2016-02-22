@@ -21,6 +21,3 @@
      (lambda ()
        (slot-set! attr 'lflag lflag)
        (sys-tcsetattr port TCSANOW attr)))))
-
-
-
