@@ -9499,11 +9499,9 @@ limit the range of the source.
 
 @c COMMON
 @example
-(vector->list '#(1 2 3 4 5))     @result{} (1 2 3 4 5)
-(list->vector '(1 2 3 4 5))      @result{} #(1 2 3 4 5)
-(vector->list '#(1 2 3 4 5) 2 4) @result{} (3 4)
-(list->vector (circular-list 'a 'b 'c) 1 6)
-  @result{} #(b c a b c)
+(vector->string '#(#\a #\b #\c #\d #\e))     @result{} "abcde"
+(string->vector "abcde")                     @result{} #(#\a #\b #\c #\d #\e)
+(vector->string '#(#\a #\b #\c #\d #\e) 2 4) @result{} ("cd")
 @end example
 
 @c EN
