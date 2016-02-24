@@ -37,7 +37,8 @@
 
 SCM_DECL_BEGIN
 
-/* srfi-114 comparator */
+/* srfi-114/srfi-128 comparator */
+/* TRANSIENT: Move orderFn up on 1.0 release */
 struct ScmComparatorRec {
     SCM_HEADER;
     ScmObj name;                /* debugging aid */
@@ -46,25 +47,44 @@ struct ScmComparatorRec {
     ScmObj compareFn;           /* proc */
     ScmObj hashFn;              /* proc */
     u_long flags;
+    ScmObj orderFn;             /* proc */
 };
 
-/* comparators can be constructed with #f for comareFn and/or hashFn.
-   srfi-114 requires accessor functions to those slots returns dummy
-   procedures that raises an error.  We still need to be able to tell
-   these slots have valid procedures.  Instead of storing #f and tweak
-   accessors to return a dummy procedure, we keep the info in flags.
+/* Difference between srfi-114 and srfi-128:
+   srfi-114 uses (compare a b) => -1 (a<b), 0 (a=b) or 1 (a>b)
+   srfi-128 uses (order a b)   => #t (a<b) or #f (a>=b)
+   We can emulate one by the other, but emulation has some overhead.
+   So we allow both, and try to use whichever provided to the
+   constructor.  (We do emulate if comparator-comparison-procedure
+   is called on srfi-128-constructed comparator, etc.)
 
-   SCM_COMPARATOR_ANY_TYPE is a small optimization to bypass type test
-   if possible.
+   Flags:
 
-   SCM_COMPARATOR_USE_COMPARISON is to record the fact that #t is passed
-   to the equality-test.  The fact is only used to compare comparators.
+   SCM_COMPARATOR_NO_ORDER - The comparator can't order.
+     (neither compare fn nor order fn is given to the constructor;
+      note that compareFn and orderFn members have dummy procedure
+      in that case).
+
+   SCM_COMPARATOR_NO_HASH - The comparator can't hash.
+     (hash fn is not given to the constructor; note that hashFn member
+      has dummy procedure)
+
+   SCM_COMPARATOR_ANY_TYPE - The comparator can accept any Scheme object.
+     A small optimization to skip type tests.   
+
+   SCM_COMPARATOR_USE_COMPARISON - Records the fact that #t is passed
+     to the equality-test in srfi-114 style constructor.  We use compareFn
+     for the equality check.
+
+   SCM_COMPARATOR_SRFI_128 - Indicates this is srfi-128-style comparator,
+     so using orderFn is preferred to compareFn.
 */
 enum ScmComparatorFlags {
     SCM_COMPARATOR_NO_ORDER = (1L<<0), /* 'compare' proc unavailable */
     SCM_COMPARATOR_NO_HASH  = (1L<<1), /* 'hash' proc unavailable */
     SCM_COMPARATOR_ANY_TYPE = (1L<<2), /* type-test always returns #t */
-    SCM_COMPARATOR_USE_COMPARISON = (1L<<3)  /* equality use comarison */
+    SCM_COMPARATOR_USE_COMPARISON = (1L<<3), /* equality use comarison */
+    SCM_COMPARATOR_SRFI_128 = (1L<<4)  /* srfi-128 style comparator */
 };
 
 SCM_CLASS_DECL(Scm_ComparatorClass);
