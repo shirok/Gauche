@@ -153,11 +153,25 @@
 
 ;; Read a char; returns a char, or #f on timeout.  May return EOF.
 (define (%read-char/timeout con)
-  (receive (nfds rfds wfds xfds)
-      (sys-select! (sys-fdset (~ con'iport)) #f #f (~ con'input-delay))
-    (if (= nfds 0)
-      #f ; timeout
-      (read-char (~ con'iport)))))
+  (cond-expand
+   [gauche.os.windows
+    (cond
+     ((char-ready? (~ con'iport))
+      (read-char (~ con'iport)))
+     (else
+      (sys-nanosleep (* (~ con'input-delay) 1000))
+      (if (char-ready? (~ con'iport))
+        (read-char (~ con'iport))
+        #f)))
+    ]
+   [else
+    (receive (nfds rfds wfds xfds)
+        (sys-select! (sys-fdset (~ con'iport)) #f #f (~ con'input-delay))
+      (if (= nfds 0)
+        #f ; timeout
+        (read-char (~ con'iport))))
+    ]
+  ))
 
 (define *input-escape-sequence*
   '([(#\[ #\A)         . KEY_UP]
