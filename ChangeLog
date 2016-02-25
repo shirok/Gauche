@@ -1,3 +1,8 @@
+2016-02-24  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cgen/stub.scm: Add .cproc cise macro, which retrieves
+	  ScmObj of c-defined procedure in the same cgen unit.
+
 2016-02-13  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi-131.scm: Added.

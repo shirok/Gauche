@@ -641,6 +641,19 @@
 
 (define-method c-stub-name ((cproc <cproc>)) #`",(~ cproc'c-name)__STUB")
 
+;; Get stub name of the named cproc in the current unit.
+(define (cproc-stub-c-name scheme-name)
+  (if-let1 cproc (find (^p (eq? (~ p'scheme-name) scheme-name))
+                       (get-stubs <cproc>))
+    (c-stub-name cproc)
+    (error "cproc-stub-c-name: No such cproc: " scheme-name)))
+
+;; In cise, you can use .cproc macro to get cproc stub as ScmObj.
+(define-cise-expr .cproc
+  [(_ name)
+   (unless (symbol? name) (error ".cproc requires a symbol, but got:" name))
+   `(SCM_OBJ (& (C: ,(cproc-stub-c-name name))))])
+
 ;; create arg object.  used in cproc and cmethod
 (define (make-arg class argname count . rest)
   (define (grok-argname argname)
