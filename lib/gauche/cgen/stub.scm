@@ -539,6 +539,7 @@
    (return-type       :initform #f :init-keyword :return-type)
       ;; return type given by ::<type>.
    (decls             :initform '())
+      ;; reverse list of C declaration that should come before body stmts.
    (stmts             :initform '())
       ;; reverse list of C stmt lines.
    (c++-handlers      :initform '())
@@ -558,6 +559,7 @@
 
 (define (get-arg cproc arg) (find (^x (eq? arg (~ x'name))) (~ cproc'args)))
 (define (push-stmt! cproc stmt) (push! (~ cproc'stmts) stmt))
+(define (push-decl! cproc decl) (push! (~ cproc'decls) decl))
 
 (define-generic c-stub-name )
 
@@ -1063,6 +1065,7 @@
   (unless (null? (~ cproc'c++-handlers))
     (p "try {"))
   (p "  {")
+  (for-each p (reverse (~ cproc'decls)))
   (for-each p (reverse (~ cproc'stmts)))
   (p "  }")
   (unless (null? (~ cproc'c++-handlers))
@@ -1331,6 +1334,7 @@
   (for-each emit-arg-unbox (~ method'args))
   ;; body
   (p "  {")
+  (for-each p (reverse (~ method'decls)))
   (for-each p (reverse (~ method'stmts)))
   (p "  }")
   (p "}")
