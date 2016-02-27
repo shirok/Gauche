@@ -564,6 +564,10 @@
 (define-generic c-stub-name )
 
 ;; API
+;; This parameter holds <procstub> during processing the body.
+(define current-procstub (make-parameter #f))
+
+;; API
 ;; We use customized cise context while generating stubs
 (define (cgen-stub-cise-ambient :optional (orig-ambient (cise-ambient)))
   (rlet1 ctx (cise-ambient-copy orig-ambient '())
@@ -587,7 +591,8 @@
 (define-syntax with-cise-ambient
   (syntax-rules ()
     [(_ procstub body ...)
-     (parameterize ([cise-ambient (cgen-stub-cise-ambient (cise-ambient))])
+     (parameterize ([cise-ambient (cgen-stub-cise-ambient (cise-ambient))]
+                    [current-procstub procstub])
        body ...
        (push! (~ procstub'forward-decls)
               (cise-ambient-decl-strings (cise-ambient))))]))
@@ -655,6 +660,54 @@
   [(_ name)
    (unless (symbol? name) (error ".cproc requires a symbol, but got:" name))
    `(SCM_OBJ (& (C: ,(cproc-stub-c-name name))))])
+
+;; Allow to call Scheme procedure from <procstub> body.
+;;
+;;  (.funcall/rec scheme-proc-name arg ...)
+;;  => static ScmObj tmp = SCM_UNDEFINED;
+;;     SCM_BIND_PROC(tmp, "scheme-proc-name", current_module);
+;;     Scm_ApplyRec(tmp, args);
+;;
+;;  (.funcall/cps scheme-proc-name arg ...)
+;;  => static ScmObj tmp = SCM_UNDEFINED;
+;;     SCM_BIND_PROC(tmp, "scheme-proc-name", current_module);
+;;     Scm_VMApplyRec(tmp, args);
+
+(define (%insert-funcall-decls who scheme-proc-name) ;returns tmp var name
+  (if-let1 cproc (current-procstub)
+    (rlet1 tmpvar (gensym "proc")
+      (let1 ctmpvar (cgen-safe-name (symbol->string tmpvar))
+        (push-decl! cproc #"static ScmObj ~ctmpvar = SCM_UNDEFINED;")
+        (push-decl! cproc #"SCM_BIND_PROC(~ctmpvar, \
+                             \"~scheme-proc-name\", \
+                             SCM_MODULE(~(tmodule-cname (current-tmodule))));")))
+    (errorf "~a form is not in define-cproc" who)))
+
+(define-cise-expr .funcall/rec
+  [(_ scheme-proc-name arg ...)
+   (let1 tmpvar (%insert-funcall-decls '.funcall/rec scheme-proc-name)
+     (match arg
+       [()           `(Scm_ApplyRec0 ,tmpvar)]
+       [(a)          `(Scm_ApplyRec1 ,tmpvar ,a)]
+       [(a b)        `(Scm_ApplyRec2 ,tmpvar ,a ,b)]
+       [(a b c)      `(Scm_ApplyRec3 ,tmpvar ,a ,b ,c)]
+       [(a b c d)    `(Scm_ApplyRec4 ,tmpvar ,a ,b ,c ,d)]
+       [(a b c d e)  `(Scm_ApplyRec5 ,tmpvar ,a ,b ,c ,d ,e)]
+       ;; TODO: for more than 5 args, emit list generation code
+       ))])
+
+(define-cise-expr .funcall/cps
+  [(_ scheme-proc-name arg ...)
+   (let1 tmpvar (%insert-funcall-decls '.funcall/cps scheme-proc-name)
+     (match arg
+       [()           `(Scm_VMApply0 ,tmpvar)]
+       [(a)          `(Scm_VMApply1 ,tmpvar ,a)]
+       [(a b)        `(Scm_VMApply2 ,tmpvar ,a ,b)]
+       [(a b c)      `(Scm_VMApply3 ,tmpvar ,a ,b ,c)]
+       [(a b c d)    `(Scm_VMApply4 ,tmpvar ,a ,b ,c ,d)]
+       [(a b c d e)  `(Scm_VMApply5 ,tmpvar ,a ,b ,c ,d ,e)]
+       ;; TODO: for more than 5 args, emit list generation code
+       ))])
 
 ;; create arg object.  used in cproc and cmethod
 (define (make-arg class argname count . rest)

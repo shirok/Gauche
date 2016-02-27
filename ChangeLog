@@ -1,3 +1,8 @@
+2016-02-26  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cgen/stub.scm: Add .funcall/rec and .funcall/cps to
+	  call Scheme function from cproc body easily.
+
 2016-02-24  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/stub.scm: Add .cproc cise macro, which retrieves
