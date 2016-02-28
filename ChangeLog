@@ -1,3 +1,8 @@
+2016-02-27  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cgen/stub.scm (.funcall/rec, .funcall/cps): Allow to
+	  specify the module from which the procedure is looked for.
+
 2016-02-26  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/stub.scm: Add .funcall/rec and .funcall/cps to
