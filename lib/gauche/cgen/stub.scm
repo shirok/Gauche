@@ -715,7 +715,7 @@
   [(_ (module-name scheme-proc-name) arg ...)
    (let1 tmpvar (%insert-funcall-decls '.funcall/cps
                                        scheme-proc-name module-name)
-     (%expand-funcall-apply 'Scm_ApplyRec tmpvar arg))]
+     (%expand-funcall-apply 'Scm_VMApply tmpvar arg))]
   [(_ scheme-proc-name arg ...)
    (let1 tmpvar (%insert-funcall-decls '.funcall/cps scheme-proc-name #f)
      (%expand-funcall-apply 'Scm_VMApply tmpvar arg))])
