@@ -42,7 +42,7 @@
   (export cise-render cise-render-to-string cise-render-rec
           cise-translate
           cise-ambient cise-default-ambient cise-ambient-copy
-          cise-ambient-decl-strings
+          cise-push-static-decl! cise-ambient-decl-strings
           cise-register-macro!
           cise-lookup-macro
           cise-emit-source-line
@@ -69,11 +69,14 @@
    (macros :init-keyword :macros :init-form (make-hash-table 'eq?))
    ;; Stree for forward declarations.  Some macros, such as define-cfn,
    ;; insert this.  This must be emitted at toplevel, so local
-   ;; transformation functinos such as cise-render DOES NOT emit
+   ;; transformation functions such as cise-render DOES NOT emit
    ;; the code put here.  Cise-translate does.   If the caller only calls
    ;; local transformation functions and need to expand macros that
    ;; generates static-decls, the caller has to call emit-static-decls
    ;; at the point where toplevel code is allowed.
+   ;; NB: If you're translating entire unit (e.g. dealing with stubs)
+   ;; you should use cgen-unit features direcly to register toplevel
+   ;; code.  This is to keep transient info mainly used by cise-translate.
    (static-decls  :init-keyword :static-decls  :init-value '())))
 
 ;; The default ambient - this should be only modified during loading of
@@ -151,14 +154,16 @@
 
 ;;=============================================================
 ;; Global decls
-;;
+;; NB: See the note in cise-ambient definition above.
+;; Usually you don't need to use these---just use cise-unit API instead.
 
-(define (push-static-decl! stree :optional (ambient (cise-ambient)))
+(define (cise-push-static-decl! stree :optional (ambient (cise-ambient)))
   (push! (~ ambient'static-decls) stree))
 
 (define (emit-static-decls port :optional (ambient (cise-ambient)))
   (dolist [stree (reverse (~ ambient'static-decls))]
-    (render-finalize stree port)))
+    (render-finalize stree port))
+  (set! (~ ambient'static-decls) '()))
 
 ;; external API
 (define (cise-ambient-decl-strings ambient)
@@ -460,7 +465,7 @@
     (string->symbol (string-drop (keyword->string s) 1)))
 
   (define (record-static name quals args ret-type)
-    (push-static-decl!
+    (cise-push-static-decl!
      `(,(source-info form env)
        ,@(gen-qualifiers quals) " "
        ,ret-type" ",(cise-render-identifier name)
@@ -541,9 +546,13 @@
        ;; to alter 'return' macro.  But we need the original 'return'
        ;; macro in order to expand define-cfn.  We need better mechanism
        ;; to handle it smoothly.
-       (let1 amb (cise-default-ambient)
+       (let1 amb (cise-ambient-copy)
+         (cise-register-macro! 'return
+                               (cise-lookup-macro 'return
+                                                  (cise-default-ambient))
+                               amb)
          (parameterize ([cise-ambient amb])
-           (push-static-decl!
+           (cise-push-static-decl!
             (cise-render-to-string
              `(define-cfn ,tmp-cc (,rvar ,data :: void**) :static
                 (let* ,(map-with-index
@@ -553,7 +562,7 @@
                         closed)
                   ,@body))
              'toplevel)))
-         (for-each push-static-decl! (reverse (~ amb'static-decls))))
+         (for-each cise-push-static-decl! (reverse (~ amb'static-decls))))
          
        `(let* ([,data :: (.array void* (,(length closed)))])
           ,@(map-with-index
@@ -771,6 +780,9 @@
 
 ;; [cise stmt] return EXPR
 ;;   Return statement.
+;;   NB: While processing cproc body in stubs, return macro is overwritten
+;;   to handle multiple value returns.  See cgen-stub-cise-ambient
+;;   in stub.scm.
 (define-cise-macro (return form env)
   (ensure-stmt-ctx form env)
   (match form
