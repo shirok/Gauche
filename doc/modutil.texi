@@ -3511,18 +3511,39 @@ of nonnegative integers.
 
 @deftp {Module} data.ring-buffer
 @mdindex data.ring-buffer
+@c EN
 A ring buffer is an array with two fill pointers; in a typical usage,
 a producer adds new data to one end while a consumer removes data
 from the other end; if fill pointer reachers at the end of the array,
 it wraps around to the beginning, hence the name.
+@c JP
+リングバッファは、両端を指す二つのポインタを持つ配列と考えられます。良くある使い方は、
+生産者が配列の一方の端にデータを追加してゆき、消費者がもう一方の端から
+データを取り出してゆくというものです。もし端を示すポインタが配列の
+終端に達したら、それはもう一方の端につながっているように振る舞います。
+「リング」バッファと呼ばれるのはそのためです。
+@c COMMON
 
+@c EN
 The ring buffer of this module allows adding and removing elements
 from both ends, hence functionally it is a double-ended queue,
 or deque.  It also allows O(1) indexed access to the contents,
 and customized handling for the case when the buffer gets full.
+@c JP
+このモジュールの提供するリングバッファは、どちらの端にもデータを追加し、
+どちらの端からもデータを取り出すことができます。したがって機能的には
+両端キュー(double-ended queue, deque)の一種とも考えられます。
+また、O(1)で要素にアクセス可能で、
+さらにバッファが一杯になった時の振る舞いをカスタマイズできます。
+@c COMMON
 
+@c EN
 You can use an ordinary vector or a uniform vector as the backing
 storage of a ring buffer.
+@c JP
+リングバッファがデータを格納するバッキングストレージとして、
+通常のベクタかユニフォームベクタを使えます。
+@c COMMON
 @end deftp
 
 @defun make-ring-buffer :optional initial-storage :key overflow-handler
