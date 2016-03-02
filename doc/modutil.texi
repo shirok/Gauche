@@ -3547,15 +3547,34 @@ storage of a ring buffer.
 @end deftp
 
 @defun make-ring-buffer :optional initial-storage :key overflow-handler
+@c EN
 Creates a ring buffer.  By default, a fresh vector is allocated
 for the backing storage.  You can pass a vector or a uvector to
-@var{initial-storage} to be used instead.
+@var{initial-storage} to be used instead.  The passed storage must
+be mutable, and will
+be modified by the ring buffer; the caller shouldn't modify it,
+nor make assumption about its content.
+@c JP
+リングバッファを作成します。デフォルトでは、データ格納のための領域として
+新たなベクタがアロケートされます。かわりに、呼び出し側でベクタかユニフォームベクタ
+を用意して@var{initial-storage}に渡すこともできます。その場合、
+渡すベクタやユニフォームベクタは変更可能でなければなりません。以降、
+リングバッファがそのベクタを変更するので、呼び出し側でベクタを変更
+したりベクタの内容が保存されることを期待してはいけません。
+@c COMMON
 
+@c EN
 The @var{overflow-handler} keyword argument specifies what to do when
 a new element is about to be added to the full buffer.
 It must be a procedure, or a symbol @code{error}
 or @code{overwrite}.
+@c JP
+@var{overflow-handler}キーワード引数は、バッファがフルの状態で
+新たな要素が追加されようとした時の振る舞いを指定します。
+引数は手続きか、シンボル@code{error}か@code{overwrite}のいずれかでなければなりません。
+@c COMMON
 
+@c EN
 If it is a procedure, it will be called with a ring buffer and
 a backing storage (vector or uvector) when it is filled.  The procedure
 must either (1) allocate and return a larger vector/uvector of the same
@@ -3567,40 +3586,98 @@ If it returns @code{error},
 an error (``buffer is full'') is thrown.  If it returns @code{overwrite},
 the new element overwrites the existing element (as if one element
 from the other end is popped and discarded.)
+@c JP
+引数が手続きの場合、リングバッファと(一杯になった)バッキングストレージ
+が引数として渡されます。この手続きは以下の3つのアクションのうちひとつを
+実行しなければなりません。(1)渡されたバッキングストレージ(ベクタか
+ユニフォームベクタ)と同じ型で、より大きなベクタまたはユニフォームベクタをアロケートして
+返す。(2)シンボル@code{error}を返す。(3)シンボル@code{overwrite}を返す。
+手続きがベクタもしくはユニフォームベクタを返した場合は、それが
+新たなバッキングストレージとして使われます。
+返すベクタの内容を設定する必要はありません。リングバッファが適切に内容のコピーや
+必要な初期化を行います。手続きが@code{error}を返した場合は、
+``buffer is full''のエラーが投げられます。
+手続きが@code{overwrite}を返した場合は、
+新たな要素で古い要素を上書きします(つまり、
+あたかも別の端から1要素がポップされて捨てられ、その後で新たな要素が
+追加されたかのように振る舞います)。
+@c COMMON
 
+@c EN
 Passing a symbol @code{error} or @code{overwrite} to @var{overflow-handler}
 is a shorthand of passing a procedure that unconditionally returns
 @var{error} or @code{overwrite}, respectively.
+@c JP
+@var{overflow-handler}引数にシンボル@code{error}か@code{overwrite}
+を渡した場合は、あたかもそれらのシンボルを無条件に返すoverflow handlerが
+指定されたかのように振る舞います。
+@c COMMON
 
+@c EN
 The default behavior on overflow is to double the size of backing
 storage.  You can use @code{make-overflow-doubler} below to create
 the customized overflow handler easily.
+@c JP
+@var{overflow-handler}が指定されない場合のデフォルトの動作は、
+元のバッキングストレージの倍の容量をアロケートして返すことです。
+下の@code{make-overflow-doubler}を使うと、カスタマイズした
+オーバフローハンドラを簡単に作ることができます。
+@c COMMON
 @end defun
 
 @defun make-overflow-doubler :key max-increase max-capacity
+@c EN
 Returns a procedure suitable to be passed to the @var{overflow-handler}
 keyword argument of @code{make-ring-buffer}.
 
 The returned procedure takes a ring buffer and its backing storage,
 and behaves as follows.
+@c JP
+@code{make-ring-buffer}の@var{overflow-handler}キーワード引数に
+渡せる手続きを作って返します。
+
+返される手続きは、リングバッファとバッキングストレージを引数に取り、
+以下のとおり振る舞います。
+@c COMMON
 
 @itemize
 @item
+@c EN
 If the size of current backing storage is equal to or greater than
 @var{max-capacity}, returns @code{error}.
+@c JP
+現在のバッキングストレージの大きさが@var{max-capacity}以上であれば、
+@code{error}を返す。
+@c COMMON
 @item
+@c EN
 Otherwise, if the size of current backing storage is equal to or
 greater than @var{max-increase}, allocates a vector/uvector of
 the same type of the current backing storage, with the size
 @code{(+ max-increase size-of-current-storage)}.
+@c JP
+そうではなく、現在のバッキングストレージの大きさが@var{max-increase}以上で
+あれば、@code{(+ max-increase 現在の大きさ)}の大きさを持つ
+ベクタもしくはユニフォームベクタをアロケートして返す。
+@c COMMON
 @item
+@c EN
 Otherwise, allocates a vector/uvector of
 the same type of the current backing storage with the size
 @code{(* 2 size-of-current-storage)}.
+@c JP
+そうでない場合は、@code{(* 2 現在の大きさ)} の大きさを持つ
+ベクタもしくはユニフォームベクタをアロケートして返す。
+@c COMMON
 @end itemize
 
+@c EN
 The default value of @var{max-increase} and @var{max-capacity} is
 @code{+inf.0}.
+@c JP
+@var{max-increase}と@var{max-capacity}のデフォルト値はどちらも
+@code{+inf.0}です。
+@c COMMON
 @end defun
 
 @defun ring-buffer-empty? rb
