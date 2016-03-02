@@ -1,8 +1,11 @@
 ;;;
 ;;; aobench - Ambient Occlusion Benchmark
-;;; Based on the code by Shoyo Fujita
-;;; https://code.google.com/p/aobench/
+;;; Based on the code by Syoyo Fujita
+;;; https://github.com/syoyo/aobench
 ;;;
+
+;; More discussion about this code is here:
+;; http://practical-scheme.net/wiliki/wiliki.cgi?Gauche%3AAOBench
 
 ;; Copyright 2009-2014, Syoyo Fujita
 ;; All rights reserved.
