@@ -65,6 +65,11 @@
    (prompt  :init-keyword :prompt :init-value "")
    (keymap  :init-keyword :keymap :init-form (default-keymap))
    (input-continues :init-keyword :input-continues :init-form #f)
+   ;; for wide characters support
+   (wide-char-disp-width :init-keyword :wide-char-disp-width :init-value 2)
+   (wide-char-pos-width  :init-keyword :wide-char-pos-width  :init-value 2)
+   (surrogate-char-disp-width :init-keyword :surrogate-char-disp-width :init-value 2)
+   (surrogate-char-pos-width  :init-keyword :surrogate-char-pos-width  :init-value 2)
 
    ;; Following slots are private.
    (initpos-y)
@@ -109,16 +114,28 @@
    ))
 
 ;; Entry point API
-(define (read-line/edit ctx)
+;(define (read-line/edit ctx)
+(define (read-line/edit ctx :optional (use-call-with-console #t))
   (reset-undo-info! ctx)
   (reset-last-yank! ctx)
-  ($ call-with-console (~ ctx'console)
+  (if use-call-with-console
+    (call-with-console (~ ctx'console) (%read-line/edit-sub ctx))
+    ((%read-line/edit-sub ctx) (~ ctx'console))))
+
+(define (%read-line/edit-sub ctx)
      (^[con]
        (define buffer (make-gap-buffer))
        (define (eofread)
          (if (> (gap-buffer-content-length buffer) 0)
            (commit-history ctx buffer)
            (eof-object)))
+
+       ;; For windows ime bug:
+       ;;   We have to make a space on the last line of console,
+       ;;   because windows ime overwrites the last line and causes
+       ;;   an abnormal termination of cmd.exe.
+       (last-scroll con)
+
        (show-prompt ctx)
        (init-screen-params ctx)
        ;; Main loop.  Get a key and invoke associated command.
@@ -146,7 +163,12 @@
        ;; we treat as if it is associated to the self-insert-command.
        ;; Given the large character set, it is a reasonable compromise.
        (let loop ([redisp #f])
-         (when redisp (redisplay ctx buffer))
+         (when redisp
+
+           ;; for speed-up of pasting a text
+           ;(redisplay ctx buffer))
+           (if (not (chready? con)) (redisplay ctx buffer)))
+
          (let* ([ch (getch con)]
                 [h (hash-table-get (~ ctx'keymap) ch ch)])
            (cond
@@ -168,7 +190,17 @@
                 (if (> (gap-buffer-content-length buffer) 0)
                   (commit-history ctx buffer)
                   (eof-object))]
-               ['commit (commit-history ctx buffer)]
+
+               ;; To aboid overwriting input lines:
+               ;;   When multiple input lines are commited and a cursor
+               ;;   is on the first line, the echo back will overwites
+               ;;   the input lines.
+               ;;   So we redisplay the input lines and move a cursor
+               ;;   to the last line.
+               ;['commit (commit-history ctx buffer)]
+               ['commit (redisplay ctx buffer #t)
+                        (commit-history ctx buffer)]
+
                ['undone (reset-last-yank! ctx)
                         (clear-mark! ctx buffer)
                         (loop #t)] ; don't break undo sequence
@@ -188,7 +220,7 @@
                 (loop #t)]
                [x (error "[internal] invalid return value from a command:" x)])]
             [else
-             (error "[internal] do not know how to handle key:" h)]))))))
+             (error "[internal] do not know how to handle key:" h)])))))
 
 ;; Check some parameters of screen.
 (define (init-screen-params ctx)
@@ -211,89 +243,175 @@
   (when (> (~ ctx'initpos-x) 0)
     (putstr (~ ctx'console) (make-string (~ ctx'initpos-x) #\.))))
 
-;; TODO: Mind char-width.
-;; Calculate cursor location of the buffer position, considering
-;; tab expansion & newlines.
-;; Returns y and x.  assuming we know cursor is inside screen.
-(define (current-buffer-cursor-position ctx buffer)
-  (let ([g (gap-buffer->generator buffer)]
-        [width (~ ctx'screen-width)]
-        [start-y (~ ctx'initpos-y)]
-        [start-x (~ ctx'initpos-x)]
-        [buffer-pos (gap-buffer-pos buffer)])
-    (let loop ([n 0] ; character count
-               [y start-y]
-               [x start-x])
-      (cond [(= n buffer-pos) (values y x)]
-            [(= x width) (loop n (+ y 1) 0)]
-            [else
-             (case (g)
-               [(#\tab) (loop (+ n 1) y (* (quotient (+ x 8) 8) 8))]
-               [(#\newline) (loop (+ n 1) (+ y 1) (~ ctx'initpos-x))]
-               [else (loop (+ n 1) y (+ x 1))])]))))  
+;; TODO: Mind char-width correctly.
+;(define (redisplay ctx buffer)
+(define (redisplay ctx buffer :optional (pos-to-end-flag #f))
+  (define (get-tab-width x) (- 8 (modulo x 8)))
+  (define (get-char-width ch x wide-char-width surrogate-char-width)
+    (let1 chcode (char->integer ch)
+      (cond
+       [(eqv? ch #\tab)
+        (get-tab-width x)]
+       [(and (>= chcode 0) (<= chcode #x7f))
+        1]
+       [(>= chcode #x10000)
+        (cond-expand
+         [gauche.ces.utf8
+          surrogate-char-width]
+         [else
+          wide-char-width])]
+       [else
+        wide-char-width])))
 
-;; TODO: Mind char-width.
-(define (redisplay ctx buffer)
-  ;; generator that handles tab expansion
-  ;; generate (<char> . <pos>) where <pos> is the input position, or
-  ;; #f if <char> is expanded.
-  (define (gen/tab g start-column)
-    (gbuffer-filter (^[ch col&pos]
-                      (match-let1 (col . pos) col&pos
-                        (if (eqv? ch #\tab)
-                          (let1 nextcol (* (quotient (+ col 8) 8) 8)
-                            (values (cons (cons #\space pos)
-                                          (make-list (- nextcol col 1)
-                                                     (cons #\space #f)))
-                                    (cons nextcol (+ pos 1))))
-                          (values (list (cons ch pos))
-                                  (cons (+ col 1) (+ pos 1))))))
-                    (cons start-column 0) g))
+(cond-expand
+ [gauche.os.windows
+  (define windows-console-flag 
+    (eq? (class-name (class-of (~ ctx'console))) '<windows-console>))]
+ [else
+  (define windows-console-flag #f)])
 
-  (let ([con (~ ctx'console)]
-        [y   (~ ctx'initpos-y)]
-        [x   (~ ctx'initpos-x)]
-        [w   (~ ctx'screen-width)]
-        [h   (~ ctx'screen-height)]
-        [sel (selected-range ctx buffer)])
-    (define g (gen/tab (gap-buffer->generator buffer) x))
-    ;; NB: If multiline chunk exceeds screen height, we skip the region
-    ;; where y becomes negative.
-    (move-cursor-to con (max y 0) x)
-    (clear-to-eos con)
+  ;; check a initial position
+  (if (< (~ ctx'initpos-y) 0)
+    (set! (~ ctx'initpos-y) 0))
+
+  (let* ([con (~ ctx'console)]
+         [y   (~ ctx'initpos-y)]
+         [x   (~ ctx'initpos-x)]
+         [w   (~ ctx'screen-width)]
+         [h   (~ ctx'screen-height)]
+         [sel (selected-range ctx buffer)]
+         [disp-x x]
+         [pos-x  x]
+         [pos-y  y]
+         [pos-set-flag #f]
+         [pos (gap-buffer-pos buffer)]
+         [g   (gap-buffer->generator buffer)]
+         [maxy   #f]
+         [line-wrapping
+          (lambda (disp-x1 w :optional (full-column-flag #f))
+            (when (>= disp-x1 w)
+              (set! x      0)
+              (set! disp-x 0)
+              (move-cursor-to con y x)
+
+              (cond
+               [windows-console-flag
+
+                ;; For windows ime bug:
+                ;;   If a full column wrapping is done when windows ime is on,
+                ;;   one more line scroll-up may occur.
+                ;;   So we must deal with this problem.
+                (last-scroll con full-column-flag)
+
+                ;; Console buffer scroll-up:
+                ;;   The cursor position may be changed.
+                (cursor-down/scroll-up con)
+                (receive (y2 x2) (query-cursor-position con)
+                  (set! (~ ctx'initpos-y) (+ (~ ctx'initpos-y) (- y2 y 1)))
+                  (if pos-set-flag (set! pos-y (max (+ pos-y (- y2 y 1)) 0)))
+                  (set! y y2))
+
+                ;; For windows ime bug:
+                ;;   We have to make a space on the last line of console,
+                ;;   because windows ime overwrites the last line and causes
+                ;;   an abnormal termination of cmd.exe.
+                (last-scroll con full-column-flag)
+                (receive (y2 x2) (query-cursor-position con)
+                  (set! (~ ctx'initpos-y) (+ (~ ctx'initpos-y) (- y2 y)))
+                  (if pos-set-flag (set! pos-y (max (+ pos-y (- y2 y)) 0)))
+                  (set! y y2))
+
+                ]
+               [else
+
+                ;; Console buffer scroll-up:
+                ;;   The cursor position may be changed.
+                (when (or (or (not maxy) (<= y maxy)) pos-to-end-flag)
+                  (cursor-down/scroll-up con)
+                  (cond
+                   [(>= y (- h 1))
+                    (dec! (~ ctx'initpos-y))
+                    (if pos-set-flag (dec! pos-y))]
+                   [else
+                    (inc! y)]))
+
+                ;; check a cursor position for clipping a display area
+                (if (and (<= pos-y 0) pos-set-flag)
+                  (set! maxy (- h 2)))
+
+                ])
+              ))])
+
     (reset-character-attribute con)
-    (let loop ([y y] [x x])
-      (glet1 ch&pos (g)
-        (match-let1 (ch . pos) ch&pos
-          (when (and sel (not (eqv? (car sel) (cdr sel))))
-            (cond [(eqv? pos (car sel))
-                   (set-character-attribute con '(#f #f bright underscore))]
-                  [(eqv? pos (cdr sel))
-                   (reset-character-attribute con)]))
+    (move-cursor-to con y 0)
+    (show-prompt ctx)
+    (clear-to-eos con)
+    (let loop ([n 1])
+      (glet1 ch (g)
+
+        ;; set a region color
+        (when (and (and sel (not (eqv? (car sel) (cdr sel)))) (not pos-to-end-flag))
+          (cond [(eqv? (- n 1) (car sel))
+                 (set-character-attribute con '(#f #f bright underscore))]
+                [(eqv? (- n 1) (cdr sel))
+                 (reset-character-attribute con)]))
+
+        ;; print a character
+        (case ch
+          [(#\newline)]
+          [(#\tab)
+           (let1 tw (get-tab-width disp-x)
+             (if (>= (+ disp-x tw) w)
+               (set! tw (- w disp-x)))
+             (when (or (and (>= y 0) (or (not maxy) (<= y maxy))) pos-to-end-flag)
+               (move-cursor-to con y x)
+               (putstr con (make-string tw #\space))))]
+          [else
+           (line-wrapping (+ disp-x (get-char-width ch
+                                                    disp-x
+                                                    (~ ctx'wide-char-disp-width)
+                                                    (~ ctx'surrogate-char-disp-width)))
+                          (+ w 1))
+           (when (or (and (>= y 0) (or (not maxy) (<= y maxy))) pos-to-end-flag)
+             (move-cursor-to con y x)
+             (putch con ch))])
+
+        ;; line wrapping
+        (set! x      (+ x      (get-char-width ch
+                                               x
+                                               (~ ctx'wide-char-pos-width)
+                                               (~ ctx'surrogate-char-pos-width))))
+        (set! disp-x (+ disp-x (get-char-width ch
+                                               disp-x
+                                               (~ ctx'wide-char-disp-width)
+                                               (~ ctx'surrogate-char-disp-width))))
+        (case ch
+          [(#\newline)
+           (line-wrapping w w)
+           (when (or (and (>= y 0) (or (not maxy) (<= y maxy))) pos-to-end-flag)
+             (show-secondary-prompt ctx))
+           (set! x (~ ctx'initpos-x))
+           (set! disp-x x)]
+          [else
+           (line-wrapping disp-x w #t)])
+
+        ;; set a cursor position
+        (if (not pos-set-flag)
           (cond
-           [(= x w)
-            (if (= y (- h 1))
-              (begin (dec! (~ ctx'initpos-y))
-                     (cursor-down/scroll-up con))
-              (inc! y))
-            (when (>= y 0)
-              (move-cursor-to con y 0)
-              (putch con ch)
-              (move-cursor-to con y 1))
-            (loop y 1)]
-           [(eqv? ch #\newline) ; works as if CR+LF
-            (if (= y (- h 1))
-              (begin (dec! (~ ctx'initpos-y))
-                     (cursor-down/scroll-up con))
-              (inc! y))
-            (when (>= y 0)
-              (move-cursor-to con y 0)
-              (show-secondary-prompt ctx))
-            (loop y (~ ctx'initpos-x))]
-           [else (when (>= y 0) (putch con ch))
-                 (loop y (+ x 1))])))))
-  (receive (cy cx) (current-buffer-cursor-position ctx buffer)
-    (move-cursor-to (~ ctx'console) cy cx)))
+           [(= pos 0)
+            (set! pos-set-flag #t)
+            (set! pos-x (~ ctx'initpos-x))
+            (set! pos-y y)]
+           [(= pos n)
+            (set! pos-set-flag #t)
+            (set! pos-x x)
+            (set! pos-y y)]))
+
+        (loop (+ n 1))))
+    (when (and pos-set-flag pos-to-end-flag)
+      (set! pos-x x)
+      (set! pos-y y))
+    (move-cursor-to con pos-y pos-x)))
 
 ;;
 ;; Key combinations
@@ -480,24 +598,24 @@
          (gap-buffer-edit! buf `(d ,p-1 1)))))
 
 (define (backward-char ctx buf key)
-  (and (not (gap-buffer-gap-at? buf 'beginning))
-       (begin (gap-buffer-move! buf -1 'current)
-              'move)))
+  (if (not (gap-buffer-gap-at? buf 'beginning))
+    (gap-buffer-move! buf -1 'current))
+  'move)
 
 (define (forward-char ctx buf key)
-  (and (not (gap-buffer-gap-at? buf 'end))
-       (begin (gap-buffer-move! buf 1 'current)
-              'move)))
+  (if (not (gap-buffer-gap-at? buf 'end))
+    (gap-buffer-move! buf 1 'current))
+  'move)
 
 (define (move-beginning-of-line ctx buf key)
-  (and (not (gap-buffer-gap-at? buf 'beginning))
-       (begin (gap-buffer-move! buf 0 'beginning)
-              'move)))
+  (if (not (gap-buffer-gap-at? buf 'beginning))
+    (gap-buffer-move! buf 0 'beginning))
+  'move)
 
 (define (move-end-of-line ctx buf key)
-  (and (not (gap-buffer-gap-at? buf 'end))
-       (begin (gap-buffer-move! buf 0 'end)
-              'move)))
+  (if (not (gap-buffer-gap-at? buf 'end))
+    (gap-buffer-move! buf 0 'end))
+  'move)
 
 (define (set-mark-command ctx buf key)
   (set-mark! ctx buf)
@@ -530,6 +648,7 @@
 
 (define (refresh-display ctx buf key)
   (reset-terminal (~ ctx'console))
+  (move-cursor-to (~ ctx'console) 0 0)
   (show-prompt ctx)
   (init-screen-params ctx)
   #t)
@@ -619,6 +738,9 @@
   (beep (~ ctx'console))
   #f)
 
+(define (nop-command ctx buf key)
+  #f)
+
 (define (default-keymap)
   (hash-table 'equal?
               `(,(ctrl #\@) . ,set-mark-command)
@@ -654,6 +776,7 @@
               `(,(ctrl #\^) . ,undefined-command)
               `(,(ctrl #\_) . ,undo)
 
+              `(,(alt #\null) . ,nop-command) ; for windows (ime on/off)
               `(,(alt #\space) . ,undefined-command) ; should be set-mark
               `(,(alt #\!) . ,undefined-command)
               `(,(alt #\") . ,undefined-command)
@@ -796,6 +919,8 @@
               `(KEY_RIGHT . ,forward-char)
               `(KEY_INS   . ,undefined-command)
               `(KEY_DEL   . ,delete-char)
+              `(KEY_HOME  . ,undefined-command)
+              `(KEY_END   . ,undefined-command)
               `(KEY_PGDN  . ,undefined-command)
               `(KEY_PGUP  . ,undefined-command)
               `(KEY_F1    . ,undefined-command)

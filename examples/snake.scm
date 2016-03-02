@@ -2,6 +2,7 @@
 ;; snake game - sample for raw console manipulation
 ;;
 
+(display #\cr)(flush) ; allocate console for windows
 (use gauche.termios)
 (use gauche.parameter)
 (use gauche.array)

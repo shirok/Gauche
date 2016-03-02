@@ -63,6 +63,7 @@
           reset-terminal clear-screen clear-to-eol clear-to-eos
           set-character-attribute reset-character-attribute
           with-character-attribute
+          last-scroll ; for windows ime bug
 
           make-default-console))
 (select-module text.console)
@@ -153,11 +154,26 @@
 
 ;; Read a char; returns a char, or #f on timeout.  May return EOF.
 (define (%read-char/timeout con)
-  (receive (nfds rfds wfds xfds)
-      (sys-select! (sys-fdset (~ con'iport)) #f #f (~ con'input-delay))
-    (if (= nfds 0)
-      #f ; timeout
-      (read-char (~ con'iport)))))
+  (cond-expand
+   [gauche.os.windows
+    (cond
+     [(or (char-ready? (~ con'iport)) (not (~ con'input-delay)))
+      (read-char (~ con'iport))]
+     [else
+      (let1 ch #f
+        (do ((i 0 (+ i 1)))
+            ((>= i 10) ch)
+          (sys-nanosleep (* (~ con'input-delay) 1000))
+          (when (char-ready? (~ con'iport))
+            (set! ch (read-char (~ con'iport)))
+            (set! i 10))
+          ))])]
+   [else
+    (receive (nfds rfds wfds xfds)
+        (sys-select! (sys-fdset (~ con'iport)) #f #f (~ con'input-delay))
+      (if (= nfds 0)
+        #f ; timeout
+        (read-char (~ con'iport))))]))
 
 (define *input-escape-sequence*
   '([(#\[ #\A)         . KEY_UP]
@@ -211,7 +227,7 @@
   (define (finish q)
     (if (trie-exists? tab (queue-internal-list q))
       (trie-get tab (dequeue-all! q))
-      #\escape))
+      (begin (dequeue-all! q) #\escape)))
   (let1 q (~ con'input-buffer)
     (if (queue-empty? q)
       (let1 ch (read-char (~ con'iport))
@@ -222,7 +238,9 @@
 
 (define-method get-raw-chars ((con <vt100>))  ; no translation
   (let1 q (~ con'input-buffer)
-    (when (queue-empty? q) (enqueue! q (read-char (~ con'iport))))
+    ;(when (queue-empty? q) (enqueue! q (read-char (~ con'iport))))
+    (dequeue-all! q)
+    (enqueue! q (read-char (~ con'iport)))
     (let loop ()
       (let1 ch (%read-char/timeout con)
         (if (char? ch)
@@ -230,14 +248,30 @@
           (dequeue-all! q))))))
 
 (define-method query-cursor-position ((con <vt100>))
-  (define (r) (read-char (~ con'iport))) ; we bypass getch buffering
   (define q (~ con'input-buffer))
+  (define q2 (make-queue)) ; query-cursor-buffer
+  (define (fetch q2)
+    ;(let1 ch (%read-char/timeout con)
+    (let1 ch (read-char (~ con'iport))
+      (cond
+       [(eqv? ch #\escape)
+        (dequeue-all! q2) ; drop other escape sequences
+        (fetch q2)]
+       [(eqv? ch #\R)
+        (enqueue! q2 ch)]
+       [(char? ch)
+        (enqueue! q2 ch)
+        (fetch q2)])))
   (putstr con "\x1b;[6n")
-  (until (r) (cut eqv? <> #\x1b) => ch (enqueue! q ch))
-  (unless (eqv? #\[   (r)) (error "terminal error"))
-  (rxmatch-case ($ list->string $ generator->list
-                   $ gtake-while (^c (not (eqv? #\R c))) r)
-    [#/^(\d+)\;(\d+)$/ (_ row col)
+  (let loop ((ch (read-char (~ con'iport))))
+    (cond
+     [(eqv? ch #\escape)
+      (fetch q2)]
+     [(char? ch)
+      (enqueue! q ch) ; queuing other characters
+      (loop (read-char (~ con'iport)))]))
+  (rxmatch-case (list->string (queue->list q2))
+    [#/\[(\d+)\;(\d+)R/ (_ row col)
      (values (- (x->integer row) 1) (- (x->integer col) 1))]
     [else (error "terminal error")]))
 
@@ -297,6 +331,10 @@
         (thunk))
     (reset-character-attribute con)))
 
+;; For windows ime bug:
+;;   This is a dummy method.
+(define-method last-scroll ((con <vt100>) :optional (full-column-flag #f)))
+
 ;;;
 ;;; Console class implementation - windows cosole
 ;;;
@@ -306,10 +344,10 @@
 ;; use ordinary conditionals).
 (define-class <windows-console> ()
   (;; all slots are private
-   (oport  :init-form (standard-output-port))
    (keybuf :init-form (make-queue))
    (ihandle)
    (ohandle)
+   (high-surrogate)
    ))
 
 ;; The actual method definitions depend on os.windows
@@ -336,11 +374,25 @@
 ;; with a message describing why.
 ;; We use some heuristics to recognize vt100 compatible terminals.
 (define (make-default-console)
-  (cond [(and-let1 t (sys-getenv "TERM")
+  (cond [(has-windows-console?) (make <windows-console>)]
+        [(and-let1 t (sys-getenv "TERM")
            (*vt100-compatible-terminals* t))
          (make <vt100>)]
-        [(has-windows-console?) (make <windows-console>)]
         [(sys-getenv "TERM")
          => (^t (error #"Unsupported terminal type: ~t"))]
         [else
+<<<<<<< 413d79eb9a71405b0e6ee5fb8d91f8394b1c9d4c
          (error "TERM isn't set and we don't know how to control the terminal.")]))
+=======
+         (error "TERM isn't set and don't know how to control the terminal.")]))
+
+(cond-expand
+ [gauche.os.windows
+  ;; Heuristics - check if we have a console, and it's not MSYS one.
+  (define (has-windows-console?)
+    ;; MSVCRT's isatty always returns 0 for Mintty without winpty.
+    (not (and (sys-getenv "MSYSCON") 
+              (not (sys-isatty (standard-input-port))))))]
+ [else
+  (define (has-windows-console?) #f)])
+>>>>>>> Windows support enhancement (text.console, text.line-edit and termios)
