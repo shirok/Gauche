@@ -165,7 +165,9 @@
 (without-precompiling
 
  (cond-expand
-  [gauche.os.windows (use os.windows)]
+  [gauche.os.windows
+   (use os.windows)
+   (use file.util)]
   [else])
 
  ;; NB: on windows, this only works with iport==#f.
@@ -219,8 +221,44 @@
  (define (with-terminal-mode port mode proc :optional (cleanup #f))
    (cond-expand
     [gauche.os.windows
-     ;; WRITEME
-     (proc port)]
+     (cond
+      ;; MSVCRT's isatty always returns 0 for Mintty.
+      ;[(and (sys-isatty port) (equal? (sys-getenv "MSYSCON") "mintty.exe"))
+      [(equal? (sys-getenv "MSYSCON") "mintty.exe")
+       (let ()
+         (define saved-attr
+           (rlet1 ret ""
+             (receive (out tempfile)
+                 (sys-mkstemp (build-path (temporary-directory) "gauche_stty"))
+               (unwind-protect
+                (begin
+                  (close-output-port out)
+                  (sys-system (string-append "stty -g > "
+                                             (regexp-replace-all #/\\/ tempfile "/")))
+                  (set! ret (with-input-from-file tempfile read-line)))
+                (sys-unlink tempfile)))))
+         (define saved-buffering (port-buffering port))
+         (define new-attr
+           (case mode
+             [(raw)
+              "-echo -icanon -iexten -isig"]
+             [(rare)
+              "-echo -icanon -iexten  isig"]
+             [(cooked)
+              " echo  icanon  iexten  isig"]
+             [else
+              (error "terminal mode needs to be one of cooked, rare or raw, \
+                        but got:" mode)]))
+         (define (set)
+           (sys-system (string-append "stty " new-attr))
+           (when (memq mode '(raw rare))
+             (set! (port-buffering port) :none)))
+         (define (reset)
+           (sys-system (string-append "stty " saved-attr))
+           (set! (port-buffering port) saved-buffering)
+           (when cleanup (cleanup)))
+         (unwind-protect (begin (set) (proc port)) (reset)))]
+      [else (proc port)])]
     [else
      (cond
       [(sys-isatty port)
