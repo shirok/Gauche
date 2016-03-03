@@ -3681,44 +3681,79 @@ The default value of @var{max-increase} and @var{max-capacity} is
 @end defun
 
 @defun ring-buffer-empty? rb
+@c EN
 Returns @code{#t} if the ring buffer @var{rb} is empty,
 @code{#f} if not.
+@c JP
+リングバッファ@var{rb}が空なら@code{#t}を、そうでなければ@code{#f}を返します。
+@c COMMON
 @end defun
 
 @defun ring-buffer-full? rb
+@c EN
 Returns @code{#t} if the ring buffer @var{rb} is full,
 @code{#f} if not.
+@c JP
+リングバッファ@var{rb}がフルなら@code{#t}を、そうでなければ@code{#f}を返します。
+@c COMMON
 @end defun
 
 @defun ring-buffer-num-elements rb
+@c EN
 Returns the number of current elements in the ring buffer @var{rb}.
+@c JP
+リングバッファ@var{rb}が格納している要素数を返します。
+@c COMMON
 @end defun
 
 @defun ring-buffer-capacity rb
+@c EN
 Returns the size of the current backing storage of the ring buffer @var{rb}.
+@c JP
+リングバッファの現在のバッキングストレージの容量(格納可能な要素数)を返します。
+@c COMMON
 @end defun
 
 @defun ring-buffer-front rb
 @defunx ring-buffer-back rb
+@c EN
 Returns the element in the front or back of the ring buffer @var{rb},
 respectively.
 If the buffer is empty, an error is signaled.
+@c JP
+リングバッファ@var{rb}の先頭あるいは末尾の要素をそれぞれ返します。
+バッファが空の場合はエラーが投げられます。
+@c COMMON
 @end defun
 
 @defun ring-buffer-add-front! rb elt
 @defunx ring-buffer-add-back! rb elt
+@c EN
 Add an element to the front or back of the ring buffer @var{rb},
-respectively.
+respectively.  If @var{rb} is full, the behavior is determined by
+the buffer's overflow handler, as described in @code{make-ring-buffer}.
+@c JP
+リングバッファ@var{rb}の先頭もしくは末尾にそれぞれ要素を追加します。
+@var{rb}がフルの場合の振る舞いは、バッファのオーバーフローハンドラによって
+決定されます。詳しくは@code{make-ring-buffer}のエントリを参照してください。
+@c COMMON
 @end defun
 
 @defun ring-buffer-remove-front! rb
 @defunx ring-buffer-remove-back! rb
+@c EN
 Remove an element from the front or back of the ring buffer @var{rb},
 and returns the removed element, respectively.
 If the buffer is empty, an error is signaled.
+@c JP
+リングバッファ@var{rb}の先頭もしくは末尾から要素をひとつ取り、取った要素を
+返します。
+バッファが空の場合はエラーが投げられます。
+@c COMMON
 @end defun
 
 @defun ring-buffer-ref rb index :optional fallback
+@c EN
 Returns @var{index}-th element in the ring buffer @var{rb}.
 The elements are counted from the front; thus, if a new element
 is added to the front, the indexes of existing elements will shift.
@@ -3726,14 +3761,30 @@ is added to the front, the indexes of existing elements will shift.
 If the index out of bounds of the existing content,
 @var{fallback} will be returned; if @var{fallback} is not
 provided, an error is signaled.
+@c JP
+リングバッファ@var{rb}の@var{index}番目の要素を返します。
+要素は先頭から数えられます。したがって、新たな要素が先頭に付け加えられた場合、
+既存の要素のインデックスはひとつづつずれます。
+
+@var{index}が@var{rb}の持つ要素の範囲外の場合、@var{fallback}が与えられていれば
+それを返し、そうでなければエラーが投げられます。
+@c COMMON
 @end defun
 
 @defun ring-buffer-set! rb index value
+@c EN
 Sets @var{index}-th element of the ring buffer @var{rb} to @var{value}.
 The elements are counted from the front; thus, if a new element
 is added to the front, the indexes of existing elements will shift.
 
 An error is signaled if the index is out of bounds.
+@c JP
+リングバッファ@var{rb}の@var{index}番目の要素に@var{value}をセットします。
+要素は先頭から数えられます。したがって、新たな要素が先頭に付け加えられた場合、
+既存の要素のインデックスはひとつづつずれます。
+
+@var{index}が@var{rb}の持つ要素の範囲外の場合はエラーが投げられます。
+@c COMMON
 @end defun
 
 
