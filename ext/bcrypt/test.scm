@@ -88,7 +88,7 @@
 	     "")
 
 (define (test-wrong-hash reason hash)
-  (test* (format #f "bcrypt-hashpw wrong hash setting: ~a" reason)
+  (test* #"bcrypt-hashpw wrong hash setting: ~reason"
 	 (test-error)
 	 (bcrypt-hashpw "" hash)))
 
