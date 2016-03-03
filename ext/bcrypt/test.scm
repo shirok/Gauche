@@ -87,6 +87,13 @@
 (test-hashpw "$2a$05$CCCCCCCCCCCCCCCCCCCCC.7uG0VCzI2bS7j6ymqJi9CdcdxiRTWNy"
 	     "")
 
+(test* "bcrypt-hashpw wrong hash setting" (test-error) (bcrypt-hashpw "" "$2a$03$CCCCCCCCCCCCCCCCCCCCC."))
+(test* "bcrypt-hashpw wrong hash setting" (test-error) (bcrypt-hashpw "" "$2a$32$CCCCCCCCCCCCCCCCCCCCC."))
+(test* "bcrypt-hashpw wrong hash setting" (test-error) (bcrypt-hashpw "" "$2c$05$CCCCCCCCCCCCCCCCCCCCC."))
+(test* "bcrypt-hashpw wrong hash setting" (test-error) (bcrypt-hashpw "" "$2z$05$CCCCCCCCCCCCCCCCCCCCC."))
+(test* "bcrypt-hashpw wrong hash setting" (test-error) (bcrypt-hashpw "" "$2`$05$CCCCCCCCCCCCCCCCCCCCC."))
+(test* "bcrypt-hashpw wrong hash setting" (test-error) (bcrypt-hashpw "" "$2{$05$CCCCCCCCCCCCCCCCCCCCC."))
+
 (test* "bcrypt-gensalt" "$2a$12$"
        (string-take (bcrypt-gensalt :count 12) 7))
 
