@@ -87,17 +87,23 @@
 (test-hashpw "$2a$05$CCCCCCCCCCCCCCCCCCCCC.7uG0VCzI2bS7j6ymqJi9CdcdxiRTWNy"
 	     "")
 
-(define (test-wrong-hash hash)
-  (test* "bcrypt-hashpw wrong hash setting"
+(define (test-wrong-hash reason hash)
+  (test* (format #f "bcrypt-hashpw wrong hash setting: ~a" reason)
 	 (test-error)
 	 (bcrypt-hashpw "" hash)))
 
-(test-wrong-hash "$2a$03$CCCCCCCCCCCCCCCCCCCCC.")
-(test-wrong-hash "$2a$32$CCCCCCCCCCCCCCCCCCCCC.")
-(test-wrong-hash "$2c$05$CCCCCCCCCCCCCCCCCCCCC.")
-(test-wrong-hash "$2z$05$CCCCCCCCCCCCCCCCCCCCC.")
-(test-wrong-hash "$2`$05$CCCCCCCCCCCCCCCCCCCCC.")
-(test-wrong-hash "$2{$05$CCCCCCCCCCCCCCCCCCCCC.")
+(test-wrong-hash "iteration count is smaller than 4"
+		 "$2a$03$CCCCCCCCCCCCCCCCCCCCC.")
+(test-wrong-hash "iteration count is larger than 31" ;; can be up to 99, but currently limited to 31
+		 "$2a$32$CCCCCCCCCCCCCCCCCCCCC.")
+(test-wrong-hash "method 'c' is not implemented yet"
+		 "$2c$05$CCCCCCCCCCCCCCCCCCCCC.")
+(test-wrong-hash "method 'z' is not implemented yet"
+		 "$2z$05$CCCCCCCCCCCCCCCCCCCCC.")
+(test-wrong-hash "method is smaller than 'a'"
+		 "$2`$05$CCCCCCCCCCCCCCCCCCCCC.")
+(test-wrong-hash "method is larger than 'z'"
+		 "$2{$05$CCCCCCCCCCCCCCCCCCCCC.")
 
 (test* "bcrypt-gensalt" "$2a$12$"
        (string-take (bcrypt-gensalt :count 12) 7))
