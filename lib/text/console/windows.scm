@@ -46,7 +46,7 @@
   (set! (~ con'ohandle) (sys-get-std-handle STD_OUTPUT_HANDLE))
   (set! (~ con'high-surrogate) 0))
 
-(define-method call-with-console ((con <windows-console>) proc)
+(define-method call-with-console ((con <windows-console>) proc :key (mode 'dummy))
   (unwind-protect (proc con)
     (reset-terminal con)))
 

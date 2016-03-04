@@ -133,7 +133,7 @@
        ;; For windows ime bug:
        ;;   We have to make a space on the last line of console,
        ;;   because windows ime overwrites the last line and causes
-       ;;   an abnormal termination of cmd.exe.
+       ;;   a system error.
        (last-scroll con)
 
        (show-prompt ctx)
@@ -193,7 +193,7 @@
 
                ;; To aboid overwriting input lines:
                ;;   When multiple input lines are commited and a cursor
-               ;;   is on the first line, the echo back will overwites
+               ;;   is on the first line, the echo back will overwite
                ;;   the input lines.
                ;;   So we redisplay the input lines and move a cursor
                ;;   to the last line.
@@ -263,12 +263,8 @@
        [else
         wide-char-width])))
 
-(cond-expand
- [gauche.os.windows
-  (define windows-console-flag 
-    (eq? (class-name (class-of (~ ctx'console))) '<windows-console>))]
- [else
-  (define windows-console-flag #f)])
+  (define use-windows-console?
+    (eq? (class-name (class-of (~ ctx'console))) '<windows-console>))
 
   ;; check a initial position
   (if (< (~ ctx'initpos-y) 0)
@@ -287,60 +283,61 @@
          [pos (gap-buffer-pos buffer)]
          [g   (gap-buffer->generator buffer)]
          [maxy   #f]
-         [line-wrapping
-          (lambda (disp-x1 w :optional (full-column-flag #f))
-            (when (>= disp-x1 w)
-              (set! x      0)
-              (set! disp-x 0)
-              (move-cursor-to con y x)
+         [sel-flag #f])
 
-              (cond
-               [windows-console-flag
+    (define (line-wrapping disp-x1 w :optional (full-column-flag #f))
+      (when (>= disp-x1 w)
+        (set! x      0)
+        (set! disp-x 0)
+        (move-cursor-to con y x)
 
-                ;; For windows ime bug:
-                ;;   If a full column wrapping is done when windows ime is on,
-                ;;   one more line scroll-up may occur.
-                ;;   So we must deal with this problem.
-                (last-scroll con full-column-flag)
+        (cond
+         [use-windows-console?
 
-                ;; Console buffer scroll-up:
-                ;;   The cursor position may be changed.
-                (cursor-down/scroll-up con)
-                (receive (y2 x2) (query-cursor-position con)
-                  (set! (~ ctx'initpos-y) (+ (~ ctx'initpos-y) (- y2 y 1)))
-                  (if pos-set-flag (set! pos-y (max (+ pos-y (- y2 y 1)) 0)))
-                  (set! y y2))
+          ;; For windows ime bug:
+          ;;   If a full column wrapping is done when windows ime is on,
+          ;;   one more line scroll-up may occur.
+          ;;   So we must deal with this problem.
+          (last-scroll con full-column-flag)
 
-                ;; For windows ime bug:
-                ;;   We have to make a space on the last line of console,
-                ;;   because windows ime overwrites the last line and causes
-                ;;   an abnormal termination of cmd.exe.
-                (last-scroll con full-column-flag)
-                (receive (y2 x2) (query-cursor-position con)
-                  (set! (~ ctx'initpos-y) (+ (~ ctx'initpos-y) (- y2 y)))
-                  (if pos-set-flag (set! pos-y (max (+ pos-y (- y2 y)) 0)))
-                  (set! y y2))
+          ;; Console buffer scroll-up:
+          ;;   The cursor position may be changed.
+          (cursor-down/scroll-up con)
+          (receive (y2 x2) (query-cursor-position con)
+            (set! (~ ctx'initpos-y) (+ (~ ctx'initpos-y) (- y2 y 1)))
+            (if pos-set-flag (set! pos-y (max (+ pos-y (- y2 y 1)) 0)))
+            (set! y y2))
 
-                ]
-               [else
+          ;; For windows ime bug:
+          ;;   We have to make a space on the last line of console,
+          ;;   because windows ime overwrites the last line and causes
+          ;;   a system error.
+          (last-scroll con full-column-flag)
+          (receive (y2 x2) (query-cursor-position con)
+            (set! (~ ctx'initpos-y) (+ (~ ctx'initpos-y) (- y2 y)))
+            (if pos-set-flag (set! pos-y (max (+ pos-y (- y2 y)) 0)))
+            (set! y y2))
 
-                ;; Console buffer scroll-up:
-                ;;   The cursor position may be changed.
-                (when (or (or (not maxy) (<= y maxy)) pos-to-end-flag)
-                  (cursor-down/scroll-up con)
-                  (cond
-                   [(>= y (- h 1))
-                    (dec! (~ ctx'initpos-y))
-                    (if pos-set-flag (dec! pos-y))]
-                   [else
-                    (inc! y)]))
+          ]
+         [else
 
-                ;; check a cursor position for clipping a display area
-                (if (and (<= pos-y 0) pos-set-flag)
-                  (set! maxy (- h 2)))
+          ;; Console buffer scroll-up:
+          ;;   The cursor position may be changed.
+          (when (or (or (not maxy) (<= y maxy)) pos-to-end-flag)
+            (cursor-down/scroll-up con)
+            (cond
+             [(>= y (- h 1))
+              (dec! (~ ctx'initpos-y))
+              (if pos-set-flag (dec! pos-y))]
+             [else
+              (inc! y)]))
 
-                ])
-              ))])
+          ;; check a cursor position for clipping a display area
+          (if (and (<= pos-y 0) pos-set-flag)
+            (set! maxy (- h 2)))
+
+          ])
+        ))
 
     (reset-character-attribute con)
     (move-cursor-to con y 0)
@@ -350,10 +347,12 @@
       (glet1 ch (g)
 
         ;; set a region color
-        (when (and (and sel (not (eqv? (car sel) (cdr sel)))) (not pos-to-end-flag))
+        (when (and sel (not (eqv? (car sel) (cdr sel))) (not pos-to-end-flag))
           (cond [(eqv? (- n 1) (car sel))
+                 (set! sel-flag #t)
                  (set-character-attribute con '(#f #f bright underscore))]
                 [(eqv? (- n 1) (cdr sel))
+                 (set! sel-flag #f)
                  (reset-character-attribute con)]))
 
         ;; print a character
@@ -389,7 +388,9 @@
           [(#\newline)
            (line-wrapping w w)
            (when (or (and (>= y 0) (or (not maxy) (<= y maxy))) pos-to-end-flag)
-             (show-secondary-prompt ctx))
+             (if sel-flag (reset-character-attribute con))
+             (show-secondary-prompt ctx)
+             (if sel-flag (set-character-attribute con '(#f #f bright underscore))))
            (set! x (~ ctx'initpos-x))
            (set! disp-x x)]
           [else
@@ -408,7 +409,7 @@
             (set! pos-y y)]))
 
         (loop (+ n 1))))
-    (when (and pos-set-flag pos-to-end-flag)
+    (when pos-to-end-flag
       (set! pos-x x)
       (set! pos-y y))
     (move-cursor-to con pos-y pos-x)))
@@ -681,13 +682,13 @@
   (match-let1 (lines . col) (buffer-current-line&col buf)
     (if (zero? lines)
       (prev-history ctx buf key)
-      (begin (buffer-set-line&col! buf (- lines 1) col) #t))))
+      (begin (buffer-set-line&col! buf (- lines 1) col) 'move))))
 
 (define (next-line-or-history ctx buf key)
   (match-let1 (lines . col) (buffer-current-line&col buf)
     (if (= lines (buffer-num-lines buf))
       (next-history ctx buf key)
-      (begin (buffer-set-line&col! buf (+ lines 1) col) #t))))
+      (begin (buffer-set-line&col! buf (+ lines 1) col) 'move))))
   
        
 (define (transpose-chars ctx buf key)
