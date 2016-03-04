@@ -93,7 +93,7 @@ SCM_CLASS_DECL(Scm_ComparatorClass);
 #define SCM_COMPARATORP(obj)   SCM_XTYPEP(obj, SCM_CLASS_COMPARATOR)
 
 SCM_EXTERN ScmObj  Scm_MakeComparator(ScmObj type, ScmObj eq,
-                                      ScmObj compare, ScmObj hash,
+                                      ScmObj compare_or_order, ScmObj hash,
                                       ScmObj name, u_long flags);
 
 /* Other genreic utilities */

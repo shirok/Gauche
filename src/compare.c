@@ -40,10 +40,13 @@
  * Comparator
  */
 
-/* Unlike Scheme's make-comparator, TYPE, EQ, COMPARE and HASH arguments
-   all must be a procedure.  */
+/* TYPE and EQ are always a procedure.
+   COMPARE_OR_ORDER is compareFn for srfi-114, orderFn for srfi-128,
+   distinguished by SCM_COMPARATOR_SRFI_128 flag.  It can be #f.
+   HASH can be #f.
+*/
 ScmObj Scm_MakeComparator(ScmObj type, ScmObj eq,
-                          ScmObj compare, ScmObj hash,
+                          ScmObj compare_or_order, ScmObj hash,
                           ScmObj name, u_long flags)
 {
     ScmComparator *c = SCM_NEW(ScmComparator);
@@ -51,7 +54,13 @@ ScmObj Scm_MakeComparator(ScmObj type, ScmObj eq,
     c->name = name;
     c->typeFn = type;
     c->eqFn = eq;
-    c->compareFn = compare;
+    if (flags & SCM_COMPARATOR_SRFI_128) {
+        c->compareFn = SCM_FALSE;
+        c->orderFn = compare_or_order;
+    } else {
+        c->compareFn = compare_or_order;
+        c->orderFn = SCM_FALSE;
+    }
     c->hashFn = hash;
     c->flags = flags;
     return SCM_OBJ(c);
