@@ -1532,10 +1532,18 @@ better to give some time for the thread to finish the executing jobs.
 @mdindex crypt.bcrypt
 @c EN
 This module implements a password hashing algorithm using blowfish,
-and compatible to OpenBSD's bcrypt algorithm (version 2a).
+and compatible to OpenBSD's bcrypt algorithm (version 2a, 2b).
 @c JP
 このモジュールは、blowfishを使ったパスワードハッシュアルゴリズムを実装します。
-OpenBSDのbcryptアルゴリズム(version 2a)と互換です。
+OpenBSDのbcryptアルゴリズム(version 2a, 2b)と互換です。
+@c COMMON
+
+@c EN
+Don't use version ``2a'' for new code. It's vulnerable.
+Use version ``2b''.
+@c JP
+version 2a は脆弱性が発見されているので、新規のコードでは使用しないで
+ください。代わりに version 2b を使用して下さい。
 @c COMMON
 
 @c EN
@@ -1621,8 +1629,9 @@ Returns a string that contains given parameters and suitable to
 pass to the @var{setting} argument of @code{bcrypt-hashpw}.
 
 The @var{prefix} argument specifies the version/scheme of
-password hashing.  Currently only @code{$2a$} is supported,
+password hashing.  Currently @code{$2a$} and @code{$2b$} are supported,
 which means the blowfish algorithm compatible to bcrypt.
+But @code{$2a$} is vulnerable. Use @code{$2b$} for new code.
 
 The @var{count} arugment specifies the amount of iterations;
 the larger the value is, the more time is required to calculate
@@ -1640,7 +1649,10 @@ a random bytes.  For bcrypt algorithm it must be at least 16 octet long.
 @code{bcrypt-hashpw}の@var{setting}引数に使える文字列を返します。
 
 @var{prefix}引数はハッシュ関数およびそのバージョンを指定する文字列です。
-現在のところ、@code{bcrypt}互換である@code{$2a$}のみがサポートされています。
+現在のところ、@code{bcrypt}互換である@code{$2a$}と@code{$2b$}がサポート
+されています。
+ただし、@code{$2a$}には脆弱性が発見されていますので、
+新規のコードには@code{$2b$}を使用して下さい。
 
 @var{count}引数はハッシュの繰り返し回数に関係します。大きな値を指定すれば、
 ハッシュ値の計算により長い時間がかかります。パスワードハッシュにおいては、
