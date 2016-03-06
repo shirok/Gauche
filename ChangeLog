@@ -1,3 +1,9 @@
+2016-03-06  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cgen/stub.scm: Generate stub record in 'decl' part
+	  instead of after the function body, so that the cproc body
+	  can refer to the decl body.
+
 2016-03-05  Shiro Kawai  <shiro@acm.org>
 
 	* ext/bcrypt: Update bcrypt implementation to crypt_blowfish 1.3,

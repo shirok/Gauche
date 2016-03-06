@@ -1091,6 +1091,35 @@
 (define-method cgen-emit-decl ((proc <procstub>))
   (dolist [s (~ proc'forward-decls)] (p s)))
 
+(define-method cgen-emit-decl ((cproc <cproc>))
+  (next-method)
+  ;; We emit forward definitions of C function names and stub record definitions
+  ;; first, so that the funciton body can refer to the stub record.
+  (p "static ScmObj "(~ cproc'c-name)"(ScmObj*, int, void*);")
+  (let1 flags (~ cproc'flags)
+    (format #t "static SCM_DEFINE_SUBR~a(" (if (null? flags) "" "X"))
+    (format #t "~a, ~a, ~a,"
+            (c-stub-name cproc)                       ; cvar
+            (~ cproc'num-reqargs)                     ; req
+            (cond [(zero? (~ cproc'num-optargs)) 0]
+                  [(not (null? (~ cproc'keyword-args))) 1]
+                  [(~ cproc'have-rest-arg?) (~ cproc'num-optargs)]
+                  [else (+ (~ cproc'num-optargs) 1)])); opt
+    (unless (null? flags)                             ; cst
+      (if (memq :constant flags) (display "1, ") (display "0, ")))
+    (format #t "SCM_FALSE,")                          ; info - to be set in init
+    (unless (null? flags)                             ; flags
+      (if (memq :fast-flonum flags)
+        (display "SCM_SUBR_IMMEDIATE_ARG, ")
+        (display "0, ")))
+    (format #t "~a, ~a, NULL);\n"
+            (~ cproc'c-name)                          ; func
+            (cond [(~ cproc'inline-insn)
+                   => (^i (format "SCM_MAKE_INT(SCM_VM_~a)"
+                                  (string-tr (x->string i) "-" "_")))]
+                  [else "NULL"])))                    ; inliner
+  (p))
+
 (define-method cgen-emit-body ((cproc <cproc>))
   (p "static ScmObj "(~ cproc'c-name)"(ScmObj *SCM_FP, int SCM_ARGCNT, void *data_)")
   (p "{")
@@ -1140,30 +1169,6 @@
       (p "}")))
   ;; closing the function
   (p "}")
-  (p)
-  ;; emit stub record
-  (let1 flags (~ cproc'flags)
-    (format #t "static SCM_DEFINE_SUBR~a(" (if (null? flags) "" "X"))
-    (format #t "~a, ~a, ~a,"
-            (c-stub-name cproc)                       ; cvar
-            (~ cproc'num-reqargs)                     ; req
-            (cond [(zero? (~ cproc'num-optargs)) 0]
-                  [(not (null? (~ cproc'keyword-args))) 1]
-                  [(~ cproc'have-rest-arg?) (~ cproc'num-optargs)]
-                  [else (+ (~ cproc'num-optargs) 1)])); opt
-    (unless (null? flags)                             ; cst
-      (if (memq :constant flags) (display "1, ") (display "0, ")))
-    (format #t "SCM_FALSE,")                          ; info - to be set in init
-    (unless (null? flags)                             ; flags
-      (if (memq :fast-flonum flags)
-        (display "SCM_SUBR_IMMEDIATE_ARG, ")
-        (display "0, ")))
-    (format #t "~a, ~a, NULL);\n"
-            (~ cproc'c-name)                          ; func
-            (cond [(~ cproc'inline-insn)
-                   => (^i (format "SCM_MAKE_INT(SCM_VM_~a)"
-                                  (string-tr (x->string i) "-" "_")))]
-                  [else "NULL"])))                    ; inliner
   (p))
 
 (define-method cgen-emit-init ((cproc <cproc>))

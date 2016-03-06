@@ -33,6 +33,14 @@
 
 (declare) ;; a dummy form to suppress generation of "sci" file
 
+;; preparing inline stub code
+(inline-stub
+ (declcode "#include <gauche/class.h>"
+           "#include <gauche/vminsn.h>")
+ (define-type <slot-accessor> "ScmSlotAccessor*")
+ (define-type <method> "ScmMethod*")
+ )
+
 ;; This module is not meant to be `use'd.   It is just to hide
 ;; auxiliary procedures from the rest of the system.  The necessary
 ;; bindings are injected into 'gauche' module at the initialization time.
@@ -65,14 +73,6 @@
                       :specializers (list <class>)
                       :lambda-list '(class . initargs)
                       :body body)))
-
-;; preparing inline stub code
-(inline-stub
- "#include <gauche/class.h>"
- "#include <gauche/vminsn.h>"
- (define-type <slot-accessor> "ScmSlotAccessor*")
- (define-type <method> "ScmMethod*")
- )
 
 ;;----------------------------------------------------------------
 ;; Generic function
