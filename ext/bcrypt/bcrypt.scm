@@ -43,7 +43,7 @@
 (define (bcrypt-hashpw pass :optional (setting #f))
   (crypt-ra pass (or setting (bcrypt-gensalt))))
 
-(define (bcrypt-gensalt :key (prefix "$2a$") (count 10) (entropy-source #f))
+(define (bcrypt-gensalt :key (prefix "$2b$") (count 10) (entropy-source #f))
   (crypt-gensalt-ra prefix count (or entropy-source (get-entropy))))
 
 (define-constant +esize+ 16)

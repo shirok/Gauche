@@ -1632,6 +1632,7 @@ The @var{prefix} argument specifies the version/scheme of
 password hashing.  Currently @code{$2a$} and @code{$2b$} are supported,
 which means the blowfish algorithm compatible to bcrypt.
 But @code{$2a$} is vulnerable. Use @code{$2b$} for new code.
+If you omit @var{prefix}, use @code{$2b$} for default value.
 
 The @var{count} arugment specifies the amount of iterations;
 the larger the value is, the more time is required to calculate
@@ -1653,6 +1654,7 @@ a random bytes.  For bcrypt algorithm it must be at least 16 octet long.
 されています。
 ただし、@code{$2a$}には脆弱性が発見されていますので、
 新規のコードには@code{$2b$}を使用して下さい。
+@var{perfix}引数を省略した場合は@code{$2b$}が用いられます。
 
 @var{count}引数はハッシュの繰り返し回数に関係します。大きな値を指定すれば、
 ハッシュ値の計算により長い時間がかかります。パスワードハッシュにおいては、

@@ -105,7 +105,27 @@
 (test-wrong-hash "method is larger than 'z'"
 		 "$2{$05$CCCCCCCCCCCCCCCCCCCCC.")
 
-(test* "bcrypt-gensalt" "$2a$12$"
+(test* "bcrypt-gensalt" "$2b$10$"
+       (string-take (bcrypt-gensalt) 7))
+(test* "bcrypt-gensalt" "$2b$12$"
        (string-take (bcrypt-gensalt :count 12) 7))
+(test* "bcrypt-gensalt 'a'" "$2a$12$"
+       (string-take (bcrypt-gensalt :prefix "$2a$" :count 12) 7))
+(test* "bcrypt-gensalt 'b'" "$2b$12$"
+       (string-take (bcrypt-gensalt :prefix "$2b$" :count 12) 7))
+
+(test* "bcrypt-gensalt count smaller than 4" (test-error)
+       (bcrypt-gensalt :count 3))
+(test* "bcrypt-gensalt count larger than 31" (test-error)
+       (bcrypt-gensalt :count 32))
+
+(test* "bcrypt-gensalt not implemented prefix 'c'" (test-error)
+       (bcrypt-gensalt :prefix "$2c$"))
+(test* "bcrypt-gensalt not implemented prefix 'z'" (test-error)
+       (bcrypt-gensalt :prefix "$2z$"))
+(test* "bcrypt-gensalt prefix smaller than 'a' (`)" (test-error)
+       (bcrypt-gensalt :prefix "$2`$"))
+(test* "bcrypt-gensalt prefix larger than 'z' ({)" (test-error)
+       (bcrypt-gensalt :prefix "$2{$"))
 
 (test-end)
