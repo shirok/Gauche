@@ -154,29 +154,21 @@
         (cond-expand
          [gauche.ces.utf8
           ;; process a surrogate pair
-          (cond
-           [(= (logand ch #xfc00) #xd800)
-            (set! (~ con 'high-surrogate) ch)]
-           [else
-            (cond
-             [(= (logand ch #xfc00) #xdc00)
-              (cond
-               [(not (= (~ con 'high-surrogate) 0))
-                (set! ch (+ #x10000
-                            (* (- (~ con 'high-surrogate) #xd800) #x400)
-                            (- ch #xdc00)))
-                (enqueue-keybuffer ch vk ctls)
-                (set! (~ con 'high-surrogate) 0)]
-               [else
-                ;; drop a data
-                (set! (~ con 'high-surrogate) 0)])]
-             [else
-              (enqueue-keybuffer ch vk ctls)
-              (set! (~ con 'high-surrogate) 0)])])
-          ]
+          (case (logand ch #xfc00)
+            [(#xd800) ; high surrogate
+             (set! (~ con 'high-surrogate) ch)]
+            [(#xdc00) ; low surrogate
+             (unless (= (~ con 'high-surrogate) 0)
+               (set! ch (+ #x10000
+                           (* (- (~ con 'high-surrogate) #xd800) #x400)
+                           (- ch #xdc00)))
+               (enqueue-keybuffer ch vk ctls)
+               (set! (~ con 'high-surrogate) 0))]
+            [else
+             (enqueue-keybuffer ch vk ctls)
+             (set! (~ con 'high-surrogate) 0)])]
          [else
-          (enqueue-keybuffer ch vk ctls)
-          ])
+          (enqueue-keybuffer ch vk ctls)])
         ))))
 
 ;; Default - gray foreground, black background
@@ -189,7 +181,7 @@
     (%getch-sub con))
   (dequeue! (~ con 'keybuf)))
 
-(define-method get-raw-chars  ((con <windows-console>))
+(define-method get-raw-chars ((con <windows-console>))
   (define q (make-queue))
   (while (queue-empty? q)
     (sys-nanosleep #e10e6) ; 10msec
@@ -270,14 +262,19 @@
       (cond
        [(>= y1 (- sbh 1))
         ;; For windows ime bug:
-        ;;   If a full column wrapping is done when windows ime is on,
-        ;;   one more line scroll-up may occur.
-        ;;   So we don't use a newline character in this case.
-        (if full-column-flag
-          (sys-write-console hdl (make-string sbw #\space))
-          ;; The space character before a newline character is important
-          ;; in order to avoid a system error!
-          (sys-write-console hdl (format " \n")))
+        ;;   When windows ime is on, writing a newline character
+        ;;   to the last line causes a system error.
+        ;;   So we must deal with this error.
+        (guard (e [(<system-error> e)
+                   ;; When windows ime is on, a full column wrapping
+                   ;; causes one more line scroll-up.
+                   ;; So we don't write a newline character in this case.
+                   (if (not full-column-flag)
+                     ;; When windows ime is on, the space character
+                     ;; before a newline character is important
+                     ;; in order to avoid a system error.
+                     (sys-write-console hdl " \n"))])
+          (sys-write-console hdl "\n"))
         ;(move-cursor-to con (- sbh 2) x1)
         (receive (y2 x2) (query-cursor-position con)
           (move-cursor-to con (- y2 1) x1))

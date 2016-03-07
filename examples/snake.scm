@@ -3,8 +3,6 @@
 ;;
 
 (display #\cr)(flush) ; allocate console for windows
-(use gauche.termios)
-(use gauche.parameter)
 (use gauche.array)
 (use util.match)
 (use srfi-27)

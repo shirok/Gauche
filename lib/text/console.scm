@@ -374,25 +374,12 @@
 ;; with a message describing why.
 ;; We use some heuristics to recognize vt100 compatible terminals.
 (define (make-default-console)
-  (cond [(has-windows-console?) (make <windows-console>)]
+  (cond [((with-module gauche.termios has-windows-console?))
+         (make <windows-console>)]
         [(and-let1 t (sys-getenv "TERM")
            (*vt100-compatible-terminals* t))
          (make <vt100>)]
         [(sys-getenv "TERM")
          => (^t (error #"Unsupported terminal type: ~t"))]
         [else
-<<<<<<< 413d79eb9a71405b0e6ee5fb8d91f8394b1c9d4c
          (error "TERM isn't set and we don't know how to control the terminal.")]))
-=======
-         (error "TERM isn't set and don't know how to control the terminal.")]))
-
-(cond-expand
- [gauche.os.windows
-  ;; Heuristics - check if we have a console, and it's not MSYS one.
-  (define (has-windows-console?)
-    ;; MSVCRT's isatty always returns 0 for Mintty without winpty.
-    (not (and (sys-getenv "MSYSCON") 
-              (not (sys-isatty (standard-input-port))))))]
- [else
-  (define (has-windows-console?) #f)])
->>>>>>> Windows support enhancement (text.console, text.line-edit and termios)

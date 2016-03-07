@@ -277,11 +277,11 @@
          [h   (~ ctx'screen-height)]
          [sel (selected-range ctx buffer)]
          [disp-x x]
+         [g   (gap-buffer->generator buffer)]
+         [pos (gap-buffer-pos buffer)]
          [pos-x  x]
          [pos-y  y]
-         [pos-set-flag #f]
-         [pos (gap-buffer-pos buffer)]
-         [g   (gap-buffer->generator buffer)]
+         [pos-set-flag (= pos 0)]
          [maxy   #f]
          [sel-flag #f])
 
@@ -295,8 +295,8 @@
          [use-windows-console?
 
           ;; For windows ime bug:
-          ;;   If a full column wrapping is done when windows ime is on,
-          ;;   one more line scroll-up may occur.
+          ;;   When windows ime is on, a full column wrapping
+          ;;   causes one more line scroll-up.
           ;;   So we must deal with this problem.
           (last-scroll con full-column-flag)
 
@@ -333,7 +333,7 @@
               (inc! y)]))
 
           ;; check a cursor position for clipping a display area
-          (if (and (<= pos-y 0) pos-set-flag)
+          (if (and pos-set-flag (<= pos-y 0))
             (set! maxy (- h 2)))
 
           ])
@@ -343,15 +343,15 @@
     (move-cursor-to con y 0)
     (show-prompt ctx)
     (clear-to-eos con)
-    (let loop ([n 1])
+    (let loop ([n 0])
       (glet1 ch (g)
 
         ;; set a region color
         (when (and sel (not (eqv? (car sel) (cdr sel))) (not pos-to-end-flag))
-          (cond [(eqv? (- n 1) (car sel))
+          (cond [(eqv? n (car sel))
                  (set! sel-flag #t)
                  (set-character-attribute con '(#f #f bright underscore))]
-                [(eqv? (- n 1) (cdr sel))
+                [(eqv? n (cdr sel))
                  (set! sel-flag #f)
                  (reset-character-attribute con)]))
 
@@ -397,16 +397,10 @@
            (line-wrapping disp-x w #t)])
 
         ;; set a cursor position
-        (if (not pos-set-flag)
-          (cond
-           [(= pos 0)
-            (set! pos-set-flag #t)
-            (set! pos-x (~ ctx'initpos-x))
-            (set! pos-y y)]
-           [(= pos n)
-            (set! pos-set-flag #t)
-            (set! pos-x x)
-            (set! pos-y y)]))
+        (when (and (not pos-set-flag) (= pos (+ n 1)))
+          (set! pos-set-flag #t)
+          (set! pos-x x)
+          (set! pos-y y))
 
         (loop (+ n 1))))
     (when pos-to-end-flag
