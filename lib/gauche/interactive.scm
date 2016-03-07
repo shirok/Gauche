@@ -252,13 +252,13 @@
         expr))))
 
 (define (%skip-trailing-ws)
-  (if (byte-ready?)
-    (let1 b (peek-byte)
-      (cond [(memv b '(9 32)) (read-byte) (%skip-trailing-ws)]
-            [(eqv? b 13)
-             (read-byte)
-             (when (and (byte-ready?) (eqv? (peek-byte) 10)) (read-byte))]
-            [(eqv? b 10) (read-byte)]
+  (if (char-ready?)
+    (let1 c (peek-char)
+      (cond [(memv c '(#\tab #\space)) (read-char) (%skip-trailing-ws)]
+            [(eqv? c #\return)
+             (read-char)
+             (when (and (char-ready?) (eqv? (peek-char) #\newline)) (read-char))]
+            [(eqv? c #\newline) (read-char)]
             [else #t]))
     #t))
 
