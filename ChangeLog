@@ -1,3 +1,8 @@
+2016-03-07  Shiro Kawai  <shiro@acm.org>
+
+	* src/portapi.c (getc_scratch): Fix: peek-byte could break the
+	  following read-char when input contains invalid byte sequence.
+
 2016-03-06  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/stub.scm: Generate stub record in 'decl' part

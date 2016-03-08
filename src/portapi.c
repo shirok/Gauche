@@ -573,6 +573,15 @@ static int getc_scratch_unsafe(ScmPort *p)
     }
     int ch;
     SCM_CHAR_GET(tbuf, ch);
+    if (ch == SCM_CHAR_INVALID) {
+        /* This can happen if the input contains invalid byte sequence.
+           We return the stray byte (which would eventually result
+           an incomplete string when accumulated), while keeping the
+           remaining bytes in the scrach buffer. */
+        ch = (ScmChar)(tbuf[0] & 0xff);
+        memcpy(p->scratch, tbuf+1, nb);
+        p->scrcnt = nb;
+    }
     return ch;
 }
 
