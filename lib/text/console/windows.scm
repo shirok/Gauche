@@ -48,7 +48,8 @@
 
 (define-method call-with-console ((con <windows-console>) proc :key (mode 'dummy))
   (unwind-protect (proc con)
-    (reset-terminal con)))
+    (reset-character-attribute con)
+    (show-cursor con)))
 
 (define *win-virtual-key-table*
   (alist->hash-table
@@ -206,6 +207,7 @@
   (sys-set-console-cursor-position (~ con'ohandle) x y))
 
 (define-method reset-terminal ((con <windows-console>))
+  (clear-screen con)
   (reset-character-attribute con)
   (show-cursor con))
 
