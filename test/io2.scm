@@ -570,5 +570,38 @@
            (write data p1 (make-write-controls :print-base 3))
            (list (get-output-string p1)
                  (get-output-string p2)))))
-  
+
+;;===============================================================
+;; peek-byte - read-char
+;;
+
+(use gauche.charconv)
+
+(cond-expand
+ [gauche.ces.none]
+ [else
+  (let ()
+    ;; This test checks peek-byte won't disturb subsequent read-char
+    ;; even the input contains illegal byte sequence.
+    ;; related: https://github.com/shirok/Gauche/pull/177
+    (define (read1 p) (read-char p))
+    (define (read2 p) (let1 c (read-char p) `(,c ,(read-char p))))
+    (define (peek1 p) (peek-char p) (read1 p))
+    (define (peek2 p) (peek-char p) (read2 p))
+    (define (fetch s reader ces)
+      (call-with-input-string (ces-convert s #f ces) reader))
+    
+    (define (t ces)
+      (test* #"peek-char - read-char (~ces)"
+             (fetch "\u3042" read1 ces) (fetch "\u3042" peek1 ces))
+      (test* #"peek-char - read-char^2 (~ces)"
+             (fetch "\u3042" read2 ces) (fetch "\u3042" peek2 ces))
+      (test* #"peek-char - read-char^2 (~ces)"
+             (fetch "\u3042\u3044" read2 ces)
+             (fetch "\u3042\u3044" peek2 ces)))
+
+    (t 'sjis)
+    (t 'utf8)
+    (t 'eucjp))])
+
 (test-end)
