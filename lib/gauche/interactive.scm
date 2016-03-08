@@ -252,6 +252,7 @@
         expr))))
 
 (define (%skip-trailing-ws)
+  ;; We use byte i/o here to avoid blocking.
   (if (byte-ready?)
     (let1 b (peek-byte)
       (cond [(memv b '(9 32)) (read-byte) (%skip-trailing-ws)]
