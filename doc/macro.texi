@@ -241,30 +241,54 @@ need @code{let-macro} form, so we don't include it.)
 Now, the question.  Which binding @code{f} in the expanded form [2]
 should refer?  If we literally interpret the expansion,
 it would refer to the inner binding @code{(^x (+ x x))}.
-However, Scheme uniformly adopts lexical scoping---if the binding of
-@code{m} were ordinary @code{let}, the @code{f} in it would have referred
-to the outer binding @code{(^x (* x x))}, no matter where @code{m} is
-actually used.
+However, following the Scheme's scoping principle, the outer
+code should be fully understood regardless of innter code:
 @c JP
 さてここで問題です。展開結果に現れた[2]のフォーム内の@code{f}は、どちらの
 @code{f}を参照すべきでしょう。上の式を文字通り解釈するなら、
 より内側にある@code{(^x (+ x x))}への束縛となります。
-けれどもSchemeは一様にレキシカルスコープを採用しています。もし@code{m}の
-束縛が通常の@code{let}であれば、そこで使われる@code{f}は、@code{m}がどこで
-使われようとも、@code{(^x (* x x))}に束縛された外側の@code{f}を参照していたはずです。
+けれども、Schemeのスコープ規則にしたがえば、
+外側のコードは、内側にどんなコードが来るかに関わらず意味が決まって欲しいわけです。
+@c COMMON
+
+@example
+(let ([f (^x (* x x))])
+  (let-macro ([m (^[expr1 expr2] `(+ (f ,expr1) (f ,expr2)))])
+@c EN
+    ;; The code here isn't expected to accidentally alter
+    ;; the behavior defined outside.
+@c JP
+    ;; ここに書かれたコードがうっかり外側のコードに影響を与えてしまう
+    ;; のは避けたい。
+@c COMMON
+    ))
+@end example
+
+@c EN
+The macro writer may not know the inner @code{let} shadows
+the binding of @code{f} (the inner forms may be @code{include}d,
+or may be changed by other person who didn't fully realize
+the macro expansion needs to refer outer @code{f}).
+@c JP
+マクロ作成者は内側の@code{let}が@code{f}をシャドウしてしまうことを
+知らないかもしれません(内側のフォームは他のコードを@code{include}している
+かもしれませんし、また他の人が、ローカルマクロが外側の@code{f}を参照することに
+気づかずに内側のコードを変更してしまうかもしれません。)
 @c COMMON
 
 @c EN
-In order to keep the consistency, we need some way to ``mark''
+To ensure the local macro to work regardless of what's placed
+inside @code{let-macro}, we need a sure way to refer the outer
+@code{f} in the result of macro expansion.  The basic idea is
+to ``mark''
 the names inserted by the macro transformer @code{m}---which are
-@code{f} and @code{+}---so that we can distinguish two @code{f}'s
-(we can also mark @code{+} as free, which would refer to the toplevel
-binding.)
+@code{f} and @code{+}---so that we can distinguish two @code{f}'s.
 @c JP
-一貫性を保つためには、マクロ変換器@code{m}により挿入される名前(@code{f}と@code{+})に
-「印」をつけて、二つの@code{f}を区別する必要があります。
-(また、挿入される@code{+}にも自由変数であるという印をつけ、常にトップレベル束縛を
-参照できるようにします。)
+@code{let-macro}の中に置かれるコードが何であれローカルマクロが動作するためには、
+マクロの展開結果から「外側の@code{f}」を確実に参照する方法が必要です。
+基本的なアイディアは、
+マクロ変換器@code{m}により挿入される名前(@code{f}と@code{+})に
+「印」をつけて、二つの@code{f}を区別するというものです。
 @c COMMON
 
 @c EN
