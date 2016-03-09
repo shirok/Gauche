@@ -5,9 +5,9 @@ It also includes Kirill Lisovsky and Dmitry Lizorkin's sxpath implementation.
   http://ssax.sourceforge.net/
 
  Documents:
-  http://pobox.com/~oleg/ftp/Scheme/SXML-short-paper.html
-  http://pobox.com/~oleg/ftp/Scheme/SXML.html
-  http://pobox.com/~oleg/ftp/Scheme/xml.html
+  http://okmij.org/ftp/Scheme/SXML-short-paper.html
+  http://okmij.org/ftp/Scheme/SXML.html
+  http://okmij.org/ftp/Scheme/xml.html
 
 The directory src/ contains the original source code.  Running 'make'
 translates them to Gauche-specialized versions.  Ideally, you can
