@@ -404,6 +404,9 @@ start_mark_threads(void)
 {
     int i;
     pthread_attr_t attr;
+#   ifndef NO_MARKER_SPECIAL_SIGMASK
+      sigset_t set, oldset;
+#   endif
 
     GC_ASSERT(I_DONT_HOLD_LOCK());
 #   ifdef CAN_HANDLE_FORK
@@ -433,20 +436,30 @@ start_mark_threads(void)
         }
       }
 #   endif /* HPUX || GC_DGUX386_THREADS */
-    /* [SK] Kludge: Mask signals that should be handled by Gauche threads.
-       Eventually, the actual mask should be in sync with the one given to
-       Scm_SetMasterSigmask().  Ideally we need a public API of bdwgc that
-       allows the application to set up the apprpriate mask. */
-    sigset_t set, oldset;
-    sigfillset(&set);
 
-    sigdelset(&set, GC_get_suspend_signal()    ); /* used by GC to stop the world    */
-    sigdelset(&set, GC_get_thr_restart_signal()); /* used by GC to restart the world */
+#   ifndef NO_MARKER_SPECIAL_SIGMASK
+      /* Apply special signal mask to GC marker threads, and don't drop */
+      /* user defined signals by GC marker threads.                     */
+      if (sigfillset(&set) != 0)
+        ABORT("sigfillset failed");
 
-    if (pthread_sigmask(SIG_BLOCK, &set, &oldset) < 0) {
-      WARN("pthread_sigmask failed, errno = %" WARN_PRIdPTR "\n", errno);
-    }
-    /* [/SK] */
+#     if !defined(GC_DARWIN_THREADS) && !defined(GC_OPENBSD_UTHREADS) \
+         && !defined(NACL)
+        /* These are used by GC to stop and restart the world.  */
+        if (sigdelset(&set, GC_get_suspend_signal()) != 0
+            || sigdelset(&set, GC_get_thr_restart_signal()) != 0)
+          ABORT("sigdelset failed");
+#     endif
+
+      if (pthread_sigmask(SIG_BLOCK, &set, &oldset) < 0) {
+        WARN("pthread_sigmask set failed, no markers started,"
+             " errno = %" WARN_PRIdPTR "\n", errno);
+        GC_markers_m1 = 0;
+        (void)pthread_attr_destroy(&attr);
+        return;
+      }
+#   endif /* !NO_MARKER_SPECIAL_SIGMASK */
+
     for (i = 0; i < available_markers_m1; ++i) {
       if (0 != REAL_FUNC(pthread_create)(GC_mark_threads + i, &attr,
                               GC_mark_thread, (void *)(word)i)) {
@@ -456,12 +469,16 @@ start_mark_threads(void)
         break;
       }
     }
-    /* [SK] */
-    if (pthread_sigmask(SIG_SETMASK, &oldset, NULL) < 0) {
-      WARN("pthread_sigmask failed, errno = %" WARN_PRIdPTR "\n", errno);
-    }
-    /* [/SK] */
     GC_markers_m1 = i;
+
+#   ifndef NO_MARKER_SPECIAL_SIGMASK
+      /* Restore previous signal mask.  */
+      if (pthread_sigmask(SIG_SETMASK, &oldset, NULL) < 0) {
+        WARN("pthread_sigmask restore failed, errno = %" WARN_PRIdPTR "\n",
+             errno);
+      }
+#   endif
+
     pthread_attr_destroy(&attr);
     GC_COND_LOG_PRINTF("Started %d mark helper threads\n", GC_markers_m1);
 }
