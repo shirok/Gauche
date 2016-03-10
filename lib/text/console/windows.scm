@@ -101,11 +101,11 @@
       (unless (null? irlist)
         (sys-read-console-input hdl)
         (dolist [ir irlist]
-          (if (= (slot-ref ir 'event-type) KEY_EVENT)
-            (let* ([kdown (if (slot-ref ir 'key.down) 1 0)]
-                   [ch    (slot-ref ir 'key.unicode-char)]
-                   [vk    (slot-ref ir 'key.virtual-key-code)]
-                   [ctls  (slot-ref ir 'key.control-key-state)])
+          (if (= (slot-ref ir'event-type) KEY_EVENT)
+            (let* ([kdown (if (slot-ref ir'key.down) 1 0)]
+                   [ch    (slot-ref ir'key.unicode-char)]
+                   [vk    (slot-ref ir'key.virtual-key-code)]
+                   [ctls  (slot-ref ir'key.control-key-state)])
               (enqueue! kslist (list kdown ch vk ctls))
               )))
         (loop (sys-peek-console-input hdl))))
@@ -140,15 +140,15 @@
   (define (enqueue-keybuffer ch vk ctls)
     (cond
      [(hash-table-get *win-virtual-key-table* vk #f)
-      => (cut enqueue! (~ con 'keybuf) <>)]
+      => (cut enqueue! (~ con'keybuf) <>)]
      [(and (logtest ctls ALT_PRESSED) (logtest ctls CTRL_PRESSED))
-      (enqueue! (~ con 'keybuf) `(ALT ,(get-ctrl-char vk)))]
+      (enqueue! (~ con'keybuf) `(ALT ,(get-ctrl-char vk)))]
      [(logtest ctls ALT_PRESSED)
-      (enqueue! (~ con 'keybuf) `(ALT ,(integer->char ch)))]
+      (enqueue! (~ con'keybuf) `(ALT ,(integer->char ch)))]
      [(logtest ctls CTRL_PRESSED)
-      (enqueue! (~ con 'keybuf) (get-ctrl-char vk))]
+      (enqueue! (~ con'keybuf) (get-ctrl-char vk))]
      [else
-      (enqueue! (~ con 'keybuf) (integer->char ch))]))
+      (enqueue! (~ con'keybuf) (integer->char ch))]))
   (dolist [ks (win-keystate (~ con'ihandle))]
     (match-let1 (kdown ch vk ctls) ks
       (if (and (= kdown 1) (not (memv vk ignorevk)))
@@ -157,17 +157,17 @@
           ;; process a surrogate pair
           (case (logand ch #xfc00)
             [(#xd800) ; high surrogate
-             (set! (~ con 'high-surrogate) ch)]
+             (set! (~ con'high-surrogate) ch)]
             [(#xdc00) ; low surrogate
-             (unless (= (~ con 'high-surrogate) 0)
+             (unless (= (~ con'high-surrogate) 0)
                (set! ch (+ #x10000
-                           (* (- (~ con 'high-surrogate) #xd800) #x400)
+                           (* (- (~ con'high-surrogate) #xd800) #x400)
                            (- ch #xdc00)))
                (enqueue-keybuffer ch vk ctls)
-               (set! (~ con 'high-surrogate) 0))]
+               (set! (~ con'high-surrogate) 0))]
             [else
              (enqueue-keybuffer ch vk ctls)
-             (set! (~ con 'high-surrogate) 0)])]
+             (set! (~ con'high-surrogate) 0)])]
          [else
           (enqueue-keybuffer ch vk ctls)])
         ))))
@@ -177,10 +177,10 @@
   (logior FOREGROUND_BLUE FOREGROUND_GREEN FOREGROUND_RED))
 
 (define-method getch ((con <windows-console>))
-  (while (queue-empty? (~ con 'keybuf))
+  (while (queue-empty? (~ con'keybuf))
     (sys-nanosleep #e10e6) ; 10msec
     (%getch-sub con))
-  (dequeue! (~ con 'keybuf)))
+  (dequeue! (~ con'keybuf)))
 
 (define-method get-raw-chars ((con <windows-console>))
   (define q (make-queue))
@@ -195,13 +195,13 @@
 
 (define-method chready? ((con <windows-console>))
   (%getch-sub con)
-  (not (queue-empty? (~ con 'keybuf))))
+  (not (queue-empty? (~ con'keybuf))))
 
 (define-method query-cursor-position ((con <windows-console>))
   (let* ([hdl   (~ con'ohandle)]
          [cinfo (sys-get-console-screen-buffer-info hdl)])
-    (values (slot-ref cinfo 'cursor-position.y)
-            (slot-ref cinfo 'cursor-position.x))))
+    (values (slot-ref cinfo'cursor-position.y)
+            (slot-ref cinfo'cursor-position.x))))
 
 (define-method move-cursor-to ((con <windows-console>) y x)
   (sys-set-console-cursor-position (~ con'ohandle) x y))
@@ -214,8 +214,8 @@
 (define-method clear-screen ((con <windows-console>))
   (let* ([hdl   (~ con'ohandle)]
          [cinfo (sys-get-console-screen-buffer-info hdl)]
-         [sbw   (slot-ref cinfo 'size.x)]
-         [sbh   (slot-ref cinfo 'size.y)])
+         [sbw   (slot-ref cinfo'size.x)]
+         [sbh   (slot-ref cinfo'size.y)])
     (let1 n (* sbw sbh)
       (sys-fill-console-output-attribute hdl *win-default-cattr* n 0 0)
       (sys-fill-console-output-character hdl #\space n 0 0))
@@ -258,8 +258,8 @@
 (define-method last-scroll ((con <windows-console>) :optional (full-column-flag #f))
   (let* ([hdl   (~ con'ohandle)]
          [cinfo (sys-get-console-screen-buffer-info hdl)]
-         [sbw   (slot-ref cinfo 'size.x)]
-         [sbh   (slot-ref cinfo 'size.y)])
+         [sbw   (slot-ref cinfo'size.x)]
+         [sbh   (slot-ref cinfo'size.y)])
     (receive (y1 x1) (query-cursor-position con)
       (cond
        [(>= y1 (- sbh 1))
