@@ -148,7 +148,9 @@
    (when "defined(HAVE_FORKPTY)"
      (define-cproc sys-forkpty (:optional term) Scm_Forkpty)
      (define-cproc sys-forkpty-and-exec (program::<string> args::<list>
-                                                           :key (iomap ()) term (sigmask::<sys-sigset>? #f))
+                                         :key (iomap ()) 
+                                              term 
+                                              (sigmask::<sys-sigset>? #f))
        Scm_ForkptyAndExec)
      (initcode "Scm_AddFeature(\"gauche.sys.forkpty\", NULL);")
      )
@@ -168,16 +170,42 @@
   [gauche.os.windows (use os.windows)]
   [else])
 
- ;; NB: on windows, this only works with iport==#f.
+ (cond-expand
+  [gauche.os.windows
+   ;; Heuristics - check if we have a console, and it's not MSYS one.
+   (define (has-windows-console?)
+     ;; MSVCRT's isatty always returns 0 for mintty on MSYS
+     ;; (except for using winpty).
+     (or (not (sys-getenv "MSYSCON"))
+         (sys-isatty (standard-input-port))
+         (sys-isatty (standard-output-port))
+         (sys-isatty (standard-error-port))))
+   ;; For mintty on MSYS - we don't want to depend on cygwin's dll,
+   ;; but if we're running on MSYS, we're likely to have stty.
+   ;; NB: It's better if we could use gauche.process and directly read
+   ;; from pipe, but at the time it isn't working yet.
+   (define (msys-get-stty)
+     ;; NB: We don't use build-path to avoid depending file.util
+     (receive (out tempfile) (sys-mkstemp #"~(sys-tmpdir)/gauche-stty")
+       (unwind-protect
+           (begin
+             (close-output-port out)
+             (sys-system #"stty -g > ~tempfile")
+             (with-input-from-file tempfile read-line))
+         (sys-unlink tempfile))))]
+  [else ; not gauche.os.windows
+   (define (has-windows-console?) #f)])
+
  (define (without-echoing iport proc)
-   (cond [(not iport) ;; open tty
-          (call-with-input-file
-              (cond-expand [gauche.os.windows "CON"] [else "/dev/tty"])
-            (cut without-echoing <> proc))]
-         [(sys-isatty iport)
-          (let ()
-            (cond-expand
-             [gauche.os.windows
+   (cond-expand
+    [gauche.os.windows
+     (cond [(not iport)
+            (if (has-windows-console?)
+              (call-with-input-file "CON"
+                (cut without-echoing <> proc))
+              (without-echoing (standard-input-port) proc))] ;CON not avail.
+           [(sys-isatty iport) ;NB: mintty yields #f here
+            (let ()
               (define ihandle (sys-get-std-handle STD_INPUT_HANDLE))
               (define orig-mode (sys-get-console-mode ihandle))
               (define (echo-off)
@@ -185,21 +213,35 @@
                                       (logand orig-mode
                                               (lognot ENABLE_ECHO_INPUT))))
               (define (echo-on)
-                (sys-set-console-mode ihandle orig-mode))]
-             [else
-              (begin
-                (define attr (sys-tcgetattr iport))
-                (define lflag-save (ref attr'lflag))
-                (define (echo-off)
-                  (set! (ref attr'lflag)
-                        (logand (ref attr'lflag)
-                                (lognot (logior ECHO ICANON ISIG))))
-                  (sys-tcsetattr iport TCSANOW attr))
-                (define (echo-on)
-                  (set! (ref attr'lflag) lflag-save)
-                  (sys-tcsetattr iport TCSANOW attr)))])
-            (unwind-protect (begin (echo-off) (proc iport)) (echo-on)))]
-         [else (proc iport)]))
+                (sys-set-console-mode ihandle orig-mode))
+              (unwind-protect (begin (echo-off) (proc iport)) (echo-on)))]
+           [(not (has-windows-console?))
+            ;; We're dealing with mintty
+            (let ()
+              (define saved-attr (msys-get-stty))
+              (define (echo-off) (sys-system "stty -echo  icanon  iexten  isig"))
+              (define (echo-on)  (sys-system #"stty ~saved-attr"))
+              (unwind-protect (begin (echo-off) (proc iport)) (echo-on)))]
+           [else (proc iport)])]
+    [else ; not gauche.os.windows
+     (cond [(not iport) ;; open tty
+            (call-with-input-file "/dev/tty"
+              (cut without-echoing <> proc))]
+           [(sys-isatty iport)
+            (let ()
+              (define attr (sys-tcgetattr iport))
+              (define lflag-save (ref attr'lflag))
+              (define (echo-off)
+                (set! (ref attr'lflag)
+                      (logior ICANON IEXTEN ISIG
+                              (logand (ref attr'lflag)
+                                      (lognot ECHO))))
+                (sys-tcsetattr iport TCSANOW attr))
+              (define (echo-on)
+                (set! (ref attr'lflag) lflag-save)
+                (sys-tcsetattr iport TCSANOW attr))
+              (unwind-protect (begin (echo-off) (proc iport)) (echo-on)))]
+           [else (proc iport)])]))
 
  #|
  ;; sample
@@ -215,15 +257,36 @@
  ;; what's changed is actually a device connected to the port.  There can
  ;; be more than one port connected to the same device, and I/O thru those
  ;; ports would also be affected.
- ;; TODO: What to do with Windows console?
+ ;; NB: Windows console doesn't go well with this API, so we do nothing;
+ ;; see text.console for abstraction of Windows console.
  (define (with-terminal-mode port mode proc :optional (cleanup #f))
    (cond-expand
     [gauche.os.windows
-     ;; WRITEME
-     (proc port)]
-    [else
-     (cond
-      [(sys-isatty port)
+     (if (has-windows-console?)
+       (proc port) ; for windows console
+       (let ()     ; for mintty on MSYS
+         (define saved-attr (msys-get-stty))
+         (define saved-buffering (port-buffering port))
+         (define new-attr
+           (case mode
+             [(raw)    "-echo -icanon -iexten -isig"]
+             [(rare)   "-echo -icanon -iexten  isig"]
+             [(cooked) " echo  icanon  iexten  isig"]
+             [else
+              (error "terminal mode needs to be one of cooked, rare or raw, \
+                      but got:" mode)]))
+         (define (set)
+           (sys-system #"stty ~new-attr")
+           (when (memq mode '(raw rare))
+             (set! (port-buffering port) :none)))
+         (define (reset)
+           (sys-system #"stty ~saved-attr")
+           (set! (port-buffering port) saved-buffering)
+           (when cleanup (cleanup)))
+         (unwind-protect (begin (set) (proc port)) (reset))))]
+    [else ; not gauche.os.windows
+     (if (not (sys-isatty port))
+       (proc port)
        (let ()
          (define saved-attr (sys-tcgetattr port))
          (define saved-buffering (port-buffering port))
@@ -274,6 +337,6 @@
            (sys-tcsetattr port TCSANOW saved-attr)
            (set! (port-buffering port) saved-buffering)
            (when cleanup (cleanup)))
-         (unwind-protect (begin (set) (proc port)) (reset)))]
-      [else (proc port)])]))
+         (unwind-protect (begin (set) (proc port)) (reset))))]))
+ 
  ) ; without-precompiling

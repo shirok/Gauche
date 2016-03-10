@@ -343,14 +343,4 @@
         [(sys-getenv "TERM")
          => (^t (error #"Unsupported terminal type: ~t"))]
         [else
-         (error "TERM isn't set and don't know how to control the terminal.")]))
-
-(cond-expand
- [gauche.os.windows
-  ;; Heuristics - check if we have a console, and it's not MSYS one.
-  (define (has-windows-console?)
-    (and (guard (e [else #f])
-           (sys-get-console-title))
-         (not (sys-getenv "MSYSCON"))))]
- [else
-  (define (has-windows-console?) #f)])
+         (error "TERM isn't set and we don't know how to control the terminal.")]))
