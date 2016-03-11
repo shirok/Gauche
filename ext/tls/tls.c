@@ -108,6 +108,17 @@ ScmObj Scm_TLSClose(ScmTLS* t)
     return SCM_TRUE;
 }
 
+ScmObj Scm_TLSLoadObject(ScmTLS* t, ScmObj obj_type,
+                         const char *filename, const char *password)
+{
+#if defined(GAUCHE_USE_AXTLS)
+    uint32_t type = Scm_GetIntegerU32Clamp(obj_type, SCM_CLAMP_ERROR, NULL);
+    if (ssl_obj_load(t->ctx, type, filename, password) == SSL_OK)
+        return SCM_TRUE;
+#endif /*GAUCHE_USE_AXTLS*/
+    return SCM_FALSE;
+}
+
 ScmObj Scm_TLSConnect(ScmTLS* t, int fd)
 {
 #if defined(GAUCHE_USE_AXTLS)
