@@ -35,7 +35,8 @@
 
 (define-module rfc.tls
   (use gauche.vport)
-  (export <tls> make-tls tls-destroy tls-connect tls-close tls-read tls-write
+  (export <tls> make-tls tls-destroy tls-connect tls-accept tls-close
+          tls-read tls-write
           tls-input-port tls-output-port
 
           SSL_SERVER_VERIFY_LATER SSL_CLIENT_AUTHENTICATION
@@ -67,6 +68,7 @@
      (return (Scm_MakeTLS f num-sessions))))
  (define-cproc tls-destroy (tls::<tls>) Scm_TLSDestroy)
  (define-cproc %tls-connect (tls::<tls> fd::<long>) Scm_TLSConnect)
+ (define-cproc %tls-accept (tls::<tls> fd::<long>) Scm_TLSAccept)
  (define-cproc %tls-close (tls::<tls>) Scm_TLSClose)
  (define-cproc tls-read (tls::<tls>) Scm_TLSRead)
  (define-cproc tls-write (tls::<tls> msg) Scm_TLSWrite)
@@ -83,6 +85,13 @@
 ;; API
 (define (tls-connect tls fd)
   (%tls-connect tls fd) ;; done before ports in case of connect failure.
+  (tls-input-port-set! tls (make-tls-input-port tls))
+  (tls-output-port-set! tls (make-tls-output-port tls))
+  tls)
+
+;; API
+(define (tls-accept tls fd)
+  (%tls-accept tls fd) ;; done before ports in case of connect failure.
   (tls-input-port-set! tls (make-tls-input-port tls))
   (tls-output-port-set! tls (make-tls-output-port tls))
   tls)

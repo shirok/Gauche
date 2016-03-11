@@ -74,6 +74,7 @@ SCM_CLASS_DECL(Scm_TLSClass);
 extern ScmObj Scm_MakeTLS(uint32_t options, int num_sessions);
 extern ScmObj Scm_TLSDestroy(ScmTLS* t);
 extern ScmObj Scm_TLSConnect(ScmTLS* t, int fd);
+extern ScmObj Scm_TLSAccept(ScmTLS* t, int fd);
 extern ScmObj Scm_TLSClose(ScmTLS* t);
 
 /*

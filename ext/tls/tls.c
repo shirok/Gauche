@@ -122,6 +122,16 @@ ScmObj Scm_TLSConnect(ScmTLS* t, int fd)
     return SCM_OBJ(t);
 }
 
+ScmObj Scm_TLSAccept(ScmTLS* t, int fd)
+{
+#if defined(GAUCHE_USE_AXTLS)
+    context_check(t, "accept");
+    if (t->conn) Scm_SysError("attempt to connect already-connected TLS %S", t);
+    t->conn = ssl_server_new(t->ctx, fd);
+#endif /*GAUCHE_USE_AXTLS*/
+    return SCM_OBJ(t);
+}
+
 ScmObj Scm_TLSRead(ScmTLS* t)
 {
 #if defined(GAUCHE_USE_AXTLS)
