@@ -35,12 +35,15 @@
 
 (define-module rfc.tls
   (use gauche.vport)
-  (export <tls> make-tls tls-destroy tls-connect tls-close tls-read tls-write
+  (export <tls> make-tls tls-destroy tls-connect tls-accept tls-close
+          tls-load-object tls-read tls-write
           tls-input-port tls-output-port
 
           SSL_SERVER_VERIFY_LATER SSL_CLIENT_AUTHENTICATION
           SSL_DISPLAY_BYTES SSL_DISPLAY_STATES SSL_DISPLAY_CERTS
-          SSL_DISPLAY_RSA SSL_CONNECT_IN_PARTS)
+          SSL_DISPLAY_RSA SSL_CONNECT_IN_PARTS SSL_NO_DEFAULT_KEY
+          SSL_OBJ_X509_CERT SSL_OBJ_X509_CACERT SSL_OBJ_RSA_KEY
+          SSL_OBJ_PKCS8 SSL_OBJ_PKCS12)
   )
 (select-module rfc.tls)
 
@@ -51,11 +54,17 @@
 
  (define-enum SSL_SERVER_VERIFY_LATER)
  (define-enum SSL_CLIENT_AUTHENTICATION)
+ (define-enum SSL_NO_DEFAULT_KEY)
  (define-enum SSL_DISPLAY_BYTES)
  (define-enum SSL_DISPLAY_STATES)
  (define-enum SSL_DISPLAY_CERTS)
  (define-enum SSL_DISPLAY_RSA)
  (define-enum SSL_CONNECT_IN_PARTS)
+ (define-enum SSL_OBJ_X509_CERT)
+ (define-enum SSL_OBJ_X509_CACERT)
+ (define-enum SSL_OBJ_RSA_KEY)
+ (define-enum SSL_OBJ_PKCS8)
+ (define-enum SSL_OBJ_PKCS12)
  
  (define-cproc make-tls (:optional flags (num-sessions::<int> 0))
    ;; NB: By default, we don't support certificate validation/trust.
@@ -65,8 +74,11 @@
      (when (SCM_INTEGERP flags)
        (set! f (Scm_GetIntegerU32Clamp flags SCM_CLAMP_ERROR NULL)))
      (return (Scm_MakeTLS f num-sessions))))
+ (define-cproc tls-load-object (tls::<tls> obj-type filename::<const-cstring>
+                                           :optional (password::<const-cstring>? #f)) Scm_TLSLoadObject)
  (define-cproc tls-destroy (tls::<tls>) Scm_TLSDestroy)
  (define-cproc %tls-connect (tls::<tls> fd::<long>) Scm_TLSConnect)
+ (define-cproc %tls-accept (tls::<tls> fd::<long>) Scm_TLSAccept)
  (define-cproc %tls-close (tls::<tls>) Scm_TLSClose)
  (define-cproc tls-read (tls::<tls>) Scm_TLSRead)
  (define-cproc tls-write (tls::<tls> msg) Scm_TLSWrite)
@@ -83,6 +95,13 @@
 ;; API
 (define (tls-connect tls fd)
   (%tls-connect tls fd) ;; done before ports in case of connect failure.
+  (tls-input-port-set! tls (make-tls-input-port tls))
+  (tls-output-port-set! tls (make-tls-output-port tls))
+  tls)
+
+;; API
+(define (tls-accept tls fd)
+  (%tls-accept tls fd) ;; done before ports in case of connect failure.
   (tls-input-port-set! tls (make-tls-input-port tls))
   (tls-output-port-set! tls (make-tls-output-port tls))
   tls)

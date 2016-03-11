@@ -108,6 +108,17 @@ ScmObj Scm_TLSClose(ScmTLS* t)
     return SCM_TRUE;
 }
 
+ScmObj Scm_TLSLoadObject(ScmTLS* t, ScmObj obj_type,
+                         const char *filename, const char *password)
+{
+#if defined(GAUCHE_USE_AXTLS)
+    uint32_t type = Scm_GetIntegerU32Clamp(obj_type, SCM_CLAMP_ERROR, NULL);
+    if (ssl_obj_load(t->ctx, type, filename, password) == SSL_OK)
+        return SCM_TRUE;
+#endif /*GAUCHE_USE_AXTLS*/
+    return SCM_FALSE;
+}
+
 ScmObj Scm_TLSConnect(ScmTLS* t, int fd)
 {
 #if defined(GAUCHE_USE_AXTLS)
@@ -118,6 +129,16 @@ ScmObj Scm_TLSConnect(ScmTLS* t, int fd)
     if (r != SSL_OK) {
         Scm_Error("TLS handshake failed: %d", r);
     }
+#endif /*GAUCHE_USE_AXTLS*/
+    return SCM_OBJ(t);
+}
+
+ScmObj Scm_TLSAccept(ScmTLS* t, int fd)
+{
+#if defined(GAUCHE_USE_AXTLS)
+    context_check(t, "accept");
+    if (t->conn) Scm_SysError("attempt to connect already-connected TLS %S", t);
+    t->conn = ssl_server_new(t->ctx, fd);
 #endif /*GAUCHE_USE_AXTLS*/
     return SCM_OBJ(t);
 }

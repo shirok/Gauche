@@ -52,6 +52,11 @@
 #define SSL_DISPLAY_CERTS                       0x00200000
 #define SSL_DISPLAY_RSA                         0x00400000
 #define SSL_CONNECT_IN_PARTS                    0x00800000
+#define SSL_OBJ_X509_CERT                       1
+#define SSL_OBJ_X509_CACERT                     2
+#define SSL_OBJ_RSA_KEY                         3
+#define SSL_OBJ_PKCS8                           4
+#define SSL_OBJ_PKCS12                          5
 #endif /*!GAUCHE_USE_AXTLS*/
 
 SCM_DECL_BEGIN
@@ -73,7 +78,11 @@ SCM_CLASS_DECL(Scm_TLSClass);
 
 extern ScmObj Scm_MakeTLS(uint32_t options, int num_sessions);
 extern ScmObj Scm_TLSDestroy(ScmTLS* t);
+extern ScmObj Scm_TLSLoadObject(ScmTLS* t, ScmObj obj_type,
+                                const char *filename,
+                                const char *password);
 extern ScmObj Scm_TLSConnect(ScmTLS* t, int fd);
+extern ScmObj Scm_TLSAccept(ScmTLS* t, int fd);
 extern ScmObj Scm_TLSClose(ScmTLS* t);
 
 /*
