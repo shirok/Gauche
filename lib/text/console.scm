@@ -63,6 +63,7 @@
           reset-terminal clear-screen clear-to-eol clear-to-eos
           set-character-attribute reset-character-attribute
           with-character-attribute
+          ensure-bottom-room
 
           make-default-console))
 (select-module text.console)
@@ -153,11 +154,24 @@
 
 ;; Read a char; returns a char, or #f on timeout.  May return EOF.
 (define (%read-char/timeout con)
-  (receive (nfds rfds wfds xfds)
-      (sys-select! (sys-fdset (~ con'iport)) #f #f (~ con'input-delay))
-    (if (= nfds 0)
-      #f ; timeout
-      (read-char (~ con'iport)))))
+  (cond-expand
+   [gauche.os.windows
+    ;; This code is used with mintty on MSYS
+    (if (or (char-ready? (~ con'iport)) (not (~ con'input-delay)))
+      (read-char (~ con'iport))
+      (let loop ([retry 0])
+        (if (= retry 10)
+          #f ; timeout
+          (begin (sys-nanosleep (* (~ con'input-delay) 100))
+                 (if (char-ready? (~ con'iport))
+                   (read-char (~ con'iport))
+                   (loop (+ retry 1)))))))]
+   [else
+    (receive (nfds rfds wfds xfds)
+        (sys-select! (sys-fdset (~ con'iport)) #f #f (~ con'input-delay))
+      (if (= nfds 0)
+        #f ; timeout
+        (read-char (~ con'iport))))]))
 
 (define *input-escape-sequence*
   '([(#\[ #\A)         . KEY_UP]
@@ -211,7 +225,7 @@
   (define (finish q)
     (if (trie-exists? tab (queue-internal-list q))
       (trie-get tab (dequeue-all! q))
-      #\escape))
+      (begin (dequeue-all! q) #\escape)))
   (let1 q (~ con'input-buffer)
     (if (queue-empty? q)
       (let1 ch (read-char (~ con'iport))
@@ -231,15 +245,29 @@
 
 (define-method query-cursor-position ((con <vt100>))
   (define (r) (read-char (~ con'iport))) ; we bypass getch buffering
-  (define q (~ con'input-buffer))
+  ;; Read an esc seq terminted by #\R and return it as a char list
+  ;; (excluding leading ESC).  Buffer any other seq in the console's
+  ;; input buffer.
+  (define (get-ESC-R)
+    (let loop ([ch (r)] [chars '()])
+      (cond [(eqv? ch #\escape)
+             ;; buffer previous escape sequence
+             (apply enqueue! (~ con'input-buffer) #\escape (reverse chars))
+             (loop (r) '())]
+            [(eqv? ch #\R) ; we got it
+             (reverse (cons ch chars))]
+            [(char? ch) (loop (r) (cons ch chars))]
+            [else
+             (apply enqueue! (~ con'input-buffer) #\escape (reverse chars))
+             (e)])))
+  (define (e) (error "terminal error when receiving cursor position"))
+    
   (putstr con "\x1b;[6n")
   (until (r) (cut eqv? <> #\x1b) => ch (enqueue! q ch))
-  (unless (eqv? #\[   (r)) (error "terminal error"))
-  (rxmatch-case ($ list->string $ generator->list
-                   $ gtake-while (^c (not (eqv? #\R c))) r)
-    [#/^(\d+)\;(\d+)$/ (_ row col)
+  (rxmatch-case (list->string (get-ESC-R))
+    [#/^\[(\d+)\;(\d+)R$/ (_ row col)
      (values (- (x->integer row) 1) (- (x->integer col) 1))]
-    [else (error "terminal error")]))
+    [else (e)]))
 
 ;; we're zero-origin as curses; vt100 takes 1-origin.
 (define-method move-cursor-to ((con <vt100>) y x)
@@ -297,6 +325,11 @@
         (thunk))
     (reset-character-attribute con)))
 
+;; This method is for workaround of windows IME bug.  For vt100,
+;; we don't need to do anything.  See console/windows.scm for the details.
+(define-method ensure-bottom-room ((con <vt100>) :optional full-column-flag)
+  #f)
+
 ;;;
 ;;; Console class implementation - windows cosole
 ;;;
@@ -306,10 +339,10 @@
 ;; use ordinary conditionals).
 (define-class <windows-console> ()
   (;; all slots are private
-   (oport  :init-form (standard-output-port))
    (keybuf :init-form (make-queue))
    (ihandle)
    (ohandle)
+   (high-surrogate)
    ))
 
 ;; The actual method definitions depend on os.windows
@@ -336,10 +369,10 @@
 ;; with a message describing why.
 ;; We use some heuristics to recognize vt100 compatible terminals.
 (define (make-default-console)
-  (cond [(and-let1 t (sys-getenv "TERM")
+  (cond [(has-windows-console?) (make <windows-console>)]
+        [(and-let1 t (sys-getenv "TERM")
            (*vt100-compatible-terminals* t))
          (make <vt100>)]
-        [(has-windows-console?) (make <windows-console>)]
         [(sys-getenv "TERM")
          => (^t (error #"Unsupported terminal type: ~t"))]
         [else
