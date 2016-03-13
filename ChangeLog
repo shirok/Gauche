@@ -1,10 +1,31 @@
+2016-03-12  Shiro Kawai  <shiro@acm.org>
+
+	* lib/text/console.scm (%read-char/timeout): Support mintty/MSYS.
+	  (getch): clear the input buffer before finishing.
+	  (query-cursor-position): Queue any ESC sequence to input buffer
+	  when it is not a cursor position report.
+	  (ensure-bottom-room): Rename from last-scroll to indicate
+	  what it does, and export this.
+	* lib/text/console/windows.scm (%getch-sub): Handle surrogate pairs.
+	  (get-raw-chars): Added.
+	  (clear-screen, clear-to-eos): Clear to the end of buffer instead
+	  of just on-screen area.  Because of IME, it's difficult to properly
+	  determine on-screen area size.
+	  (ensure-bottom-room): Rename from last-scroll, and add workaround
+	  of full-width case.
+
+2016-03-11  Shiro Kawai  <shiro@acm.org>
+
+	* ext/tls/*: Add basic server-side certificate support.  Patch
+	  from pclouds.  See https://github.com/shirok/Gauche/pull/180
+
 2016-03-10  Shiro Kawai  <shiro@acm.org>
 
 	* ext/termios/termios.scm: Support mintty on MSYS - the communication
 	  between mingw process and mintty isn't direct (it goes through
 	  MSYS runtime) so we need to rely on external stty command.
 	  See the comment in msys-get-stty.  Originally done by
-	  Hamayama ( https://github.com/shirokGauche/pull/173 ), and
+	  Hamayama ( https://github.com/shirok/Gauche/pull/173 ), and
 	  we incorporated with some style adjustements.
 	* lib/text/console.scm: has-windows-console? is moved to
 	  gauche.termios.

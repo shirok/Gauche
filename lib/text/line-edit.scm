@@ -134,7 +134,7 @@
        ;;   We have to make a space on the last line of console,
        ;;   because windows ime overwrites the last line and causes
        ;;   a system error.
-       (last-scroll con)
+       (ensure-bottom-room con)
 
        (show-prompt ctx)
        (init-screen-params ctx)
@@ -300,7 +300,7 @@
           ;;   When windows ime is on, a full column wrapping
           ;;   causes one more line scroll-up.
           ;;   So we must deal with this problem.
-          (last-scroll con full-column-flag)
+          (ensure-bottom-room con full-column-flag)
 
           ;; Console buffer scroll-up:
           ;;   The cursor position may be changed.
@@ -314,7 +314,7 @@
           ;;   We have to make a space on the last line of console,
           ;;   because windows ime overwrites the last line and causes
           ;;   a system error.
-          (last-scroll con full-column-flag)
+          (ensure-bottom-room con full-column-flag)
           (receive (y2 x2) (query-cursor-position con)
             (set! (~ ctx'initpos-y) (+ (~ ctx'initpos-y) (- y2 y)))
             (if pos-set-flag (set! pos-y (max (+ pos-y (- y2 y)) 0)))

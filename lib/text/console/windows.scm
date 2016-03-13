@@ -46,7 +46,8 @@
   (set! (~ con'ohandle) (sys-get-std-handle STD_OUTPUT_HANDLE))
   (set! (~ con'high-surrogate) 0))
 
-(define-method call-with-console ((con <windows-console>) proc :key (mode 'dummy))
+(define-method call-with-console ((con <windows-console>) proc 
+                                  :allow-other-keys)
   (unwind-protect (proc con)
     (reset-character-attribute con)
     (show-cursor con)))
@@ -127,7 +128,7 @@
                      #xa5 ; VK_RMENU
                      ))
   (define (get-ctrl-char vk)
-    (cond [(and (>= vk #x41) (<= vk #x5a)) ; #\A-#\Z
+    (cond [(<= #x41 vk #x5a) ; #\A-#\Z
            (integer->char (- (logand vk (lognot #x20)) #x40))]
           [else (case vk
                   [(192) #\x00] ; #\@
@@ -188,7 +189,7 @@
     (sys-nanosleep #e10e6) ; 10msec
     (dolist [ks (win-keystate (~ con'ihandle))]
       (match-let1 (kdown ch vk ctls) ks
-        (if (= kdown 1)
+        (when (= kdown 1)
           (enqueue! q (list (integer->char ch) vk (logand ctls #x1f))))
         )))
   (dequeue-all! q))
@@ -236,11 +237,8 @@
          [cinfo (sys-get-console-screen-buffer-info hdl)]
          [x     (slot-ref cinfo'cursor-position.x)]
          [y     (slot-ref cinfo'cursor-position.y)]
-         ;[sr    (slot-ref cinfo'window.right)]
-         ;[sb    (slot-ref cinfo'window.bottom)]
          [sbw   (slot-ref cinfo'size.x)]
          [sbh   (slot-ref cinfo'size.y)])
-    ;(let1 n (+ (* (- sb y) sbw) (- x) sr 1)
     (let1 n (* sbw (- sbh y))
       (sys-fill-console-output-attribute hdl *win-default-cattr* n x y)
       (sys-fill-console-output-character hdl #\space n x y))))
@@ -255,18 +253,18 @@
     (receive (sz v) (sys-get-console-cursor-info hdl)
       (sys-set-console-cursor-info hdl sz #t))))
 
-(define-method last-scroll ((con <windows-console>) :optional (full-column-flag #f))
+;; If the cursor is on the last line, scroll up and make a room
+;; at the bottom.  This is to workaround windows IME bug:
+;; When windows ime is on, writing a newline character
+;; to the last line causes a system error.
+(define-method ensure-bottom-room ((con <windows-console>)
+                                   :optional (full-column-flag #f))
   (let* ([hdl   (~ con'ohandle)]
          [cinfo (sys-get-console-screen-buffer-info hdl)]
          [sbw   (slot-ref cinfo'size.x)]
          [sbh   (slot-ref cinfo'size.y)])
     (receive (y1 x1) (query-cursor-position con)
-      (cond
-       [(>= y1 (- sbh 1))
-        ;; For windows ime bug:
-        ;;   When windows ime is on, writing a newline character
-        ;;   to the last line causes a system error.
-        ;;   So we must deal with this error.
+      (when (>= y1 (- sbh 1))
         (guard (e [(<system-error> e)
                    ;; When windows ime is on, a full column wrapping
                    ;; causes one more line scroll-up.
@@ -277,13 +275,12 @@
                      ;; in order to avoid a system error.
                      (sys-write-console hdl " \n"))])
           (sys-write-console hdl "\n"))
-        ;(move-cursor-to con (- sbh 2) x1)
         (receive (y2 x2) (query-cursor-position con)
           (move-cursor-to con (- y2 1) x1))
-        ]))))
+        ))))
 
 (define-method cursor-down/scroll-up ((con <windows-console>))
-  (last-scroll con)
+  (ensure-bottom-room con)
   (receive (y x) (query-cursor-position con)
     (move-cursor-to con (+ y 1) x)))
 

@@ -63,7 +63,7 @@
           reset-terminal clear-screen clear-to-eol clear-to-eos
           set-character-attribute reset-character-attribute
           with-character-attribute
-          last-scroll ; for windows ime bug
+          ensure-bottom-room
 
           make-default-console))
 (select-module text.console)
@@ -156,18 +156,16 @@
 (define (%read-char/timeout con)
   (cond-expand
    [gauche.os.windows
-    (cond
-     [(or (char-ready? (~ con'iport)) (not (~ con'input-delay)))
-      (read-char (~ con'iport))]
-     [else
-      (let1 ch #f
-        (do ((i 0 (+ i 1)))
-            ((>= i 10) ch)
-          (sys-nanosleep (* (~ con'input-delay) 1000))
-          (when (char-ready? (~ con'iport))
-            (set! ch (read-char (~ con'iport)))
-            (set! i 10))
-          ))])]
+    ;; This code is used with mintty on MSYS
+    (if (or (char-ready? (~ con'iport)) (not (~ con'input-delay)))
+      (read-char (~ con'iport))
+      (let loop ([retry 0])
+        (if (= retry 10)
+          #f ; timeout
+          (begin (sys-nanosleep (* (~ con'input-delay) 100))
+                 (if (char-ready? (~ con'iport))
+                   (read-char (~ con'iport))
+                   (loop (+ retry 1)))))))]
    [else
     (receive (nfds rfds wfds xfds)
         (sys-select! (sys-fdset (~ con'iport)) #f #f (~ con'input-delay))
@@ -238,9 +236,7 @@
 
 (define-method get-raw-chars ((con <vt100>))  ; no translation
   (let1 q (~ con'input-buffer)
-    ;(when (queue-empty? q) (enqueue! q (read-char (~ con'iport))))
-    (dequeue-all! q)
-    (enqueue! q (read-char (~ con'iport)))
+    (when (queue-empty? q) (enqueue! q (read-char (~ con'iport))))
     (let loop ()
       (let1 ch (%read-char/timeout con)
         (if (char? ch)
@@ -248,32 +244,30 @@
           (dequeue-all! q))))))
 
 (define-method query-cursor-position ((con <vt100>))
-  (define q (~ con'input-buffer))
-  (define q2 (make-queue)) ; query-cursor-buffer
-  (define (fetch q2)
-    ;(let1 ch (%read-char/timeout con)
-    (let1 ch (read-char (~ con'iport))
-      (cond
-       [(eqv? ch #\escape)
-        (dequeue-all! q2) ; drop other escape sequences
-        (fetch q2)]
-       [(eqv? ch #\R)
-        (enqueue! q2 ch)]
-       [(char? ch)
-        (enqueue! q2 ch)
-        (fetch q2)])))
+  (define (r) (read-char (~ con'iport))) ; we bypass getch buffering
+  ;; Read an esc seq terminted by #\R and return it as a char list
+  ;; (excluding leading ESC).  Buffer any other seq in the console's
+  ;; input buffer.
+  (define (get-ESC-R)
+    (let loop ([ch (r)] [chars '()])
+      (cond [(eqv? ch #\escape)
+             ;; buffer previous escape sequence
+             (apply enqueue! (~ con'input-buffer) #\escape (reverse chars))
+             (loop (r) '())]
+            [(eqv? ch #\R) ; we got it
+             (reverse (cons ch chars))]
+            [(char? ch) (loop (r) (cons ch chars))]
+            [else
+             (apply enqueue! (~ con'input-buffer) #\escape (reverse chars))
+             (e)])))
+  (define (e) (error "terminal error when receiving cursor position"))
+    
   (putstr con "\x1b;[6n")
-  (let loop ((ch (read-char (~ con'iport))))
-    (cond
-     [(eqv? ch #\escape)
-      (fetch q2)]
-     [(char? ch)
-      (enqueue! q ch) ; queuing other characters
-      (loop (read-char (~ con'iport)))]))
-  (rxmatch-case (list->string (queue->list q2))
-    [#/\[(\d+)\;(\d+)R/ (_ row col)
+  (until (r) (cut eqv? <> #\x1b) => ch (enqueue! (~ con'input-buffer) ch))
+  (rxmatch-case (list->string (get-ESC-R))
+    [#/^\[(\d+)\;(\d+)R$/ (_ row col)
      (values (- (x->integer row) 1) (- (x->integer col) 1))]
-    [else (error "terminal error")]))
+    [else (e)]))
 
 ;; we're zero-origin as curses; vt100 takes 1-origin.
 (define-method move-cursor-to ((con <vt100>) y x)
@@ -331,9 +325,10 @@
         (thunk))
     (reset-character-attribute con)))
 
-;; For windows ime bug:
-;;   This is a dummy method.
-(define-method last-scroll ((con <vt100>) :optional (full-column-flag #f)))
+;; This method is for workaround of windows IME bug.  For vt100,
+;; we don't need to do anything.  See console/windows.scm for the details.
+(define-method ensure-bottom-room ((con <vt100>) :optional full-column-flag)
+  #f)
 
 ;;;
 ;;; Console class implementation - windows cosole
@@ -374,8 +369,7 @@
 ;; with a message describing why.
 ;; We use some heuristics to recognize vt100 compatible terminals.
 (define (make-default-console)
-  (cond [((with-module gauche.termios has-windows-console?))
-         (make <windows-console>)]
+  (cond [(has-windows-console?) (make <windows-console>)]
         [(and-let1 t (sys-getenv "TERM")
            (*vt100-compatible-terminals* t))
          (make <vt100>)]
