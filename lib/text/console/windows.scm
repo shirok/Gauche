@@ -128,8 +128,7 @@
                      #xa5 ; VK_RMENU
                      ))
   (define (get-ctrl-char vk)
-    (cond [(or (and (>= vk #x41) (<= vk #x5a)) ; #\A-#\Z
-               (= vk 32))  ; #\space
+    (cond [(<= #x41 vk #x5a) ; #\A-#\Z
            (integer->char (- (logand vk (lognot #x20)) #x40))]
           [else (case vk
                   [(192) #\x00] ; #\@
