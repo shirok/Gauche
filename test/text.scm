@@ -6,6 +6,11 @@
 (test-start "text utilities")
 
 ;;-------------------------------------------------------------------
+(test-section "console")
+(use text.console)
+(test-module 'text.console)
+
+;;-------------------------------------------------------------------
 (test-section "csv")
 (use text.csv)
 (test-module 'text.csv)
