@@ -173,7 +173,13 @@
                 (if (> (gap-buffer-content-length buffer) 0)
                   (commit-history ctx buffer)
                   (eof-object))]
-               ['commit (commit-history ctx buffer)]
+               ['commit
+                ;; We move the cursor to the last of input and redisplay,
+                ;; so that the output of the client program won't overwrite
+                ;; the existing input.
+                (gap-buffer-move! buffer 0 'end)
+                (redisplay ctx buffer)
+                (commit-history ctx buffer)]
                ['undone (reset-last-yank! ctx)
                         (clear-mark! ctx buffer)
                         (loop #t)] ; don't break undo sequence
