@@ -146,8 +146,12 @@
        ;; we treat as if it is associated to the self-insert-command.
        ;; Given the large character set, it is a reasonable compromise.
        (let loop ([redisp #f])
-         (when redisp (redisplay ctx buffer))
-         (let* ([ch (getch con)]
+         ;; NB: If next char is ready, don't bother to redisplay and
+         ;; just carry over redisp flag.
+         (let* ([redisp (if (and redisp (not (chready? con)))
+                          (begin (redisplay ctx buffer) #f)
+                          redisp)]
+                [ch (getch con)]
                 [h (hash-table-get (~ ctx'keymap) ch ch)])
            (cond
             [(eof-object? h) (eofread)]
@@ -163,7 +167,7 @@
                 (reset-last-yank! ctx)
                 (clear-mark! ctx buffer)
                 (break-undo-sequence! ctx)
-                (loop b)]
+                (loop (or b redisp))]
                [(? eof-object?)
                 (if (> (gap-buffer-content-length buffer) 0)
                   (commit-history ctx buffer)
@@ -530,6 +534,7 @@
 
 (define (refresh-display ctx buf key)
   (reset-terminal (~ ctx'console))
+  (move-cursor-to (~ ctx'console) 0 0) ;redundant, but mintty has problem without this
   (show-prompt ctx)
   (init-screen-params ctx)
   #t)
