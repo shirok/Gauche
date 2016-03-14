@@ -119,6 +119,7 @@
          (if (> (gap-buffer-content-length buffer) 0)
            (commit-history ctx buffer)
            (eof-object)))
+       (ensure-bottom-room (~ ctx'console)) ; workaround for windows IME glitch
        (show-prompt ctx)
        (init-screen-params ctx)
        ;; Main loop.  Get a key and invoke associated command.
