@@ -311,7 +311,7 @@ gosh> (y-of a-point)
 
 @c EN
 The full list of available slot options is described in
-@ref{Defining class}.  At a first grance,
+@ref{Defining class}.  At a first glance,
 the declarations of such slot options may look verbose.
 The system might have provide a static way to define
 init-keywords or accessor names automatically; however,
@@ -952,7 +952,7 @@ PostScriptビューワで結果を見てください。
 
 @c COMMON
 @example
-(with-output-to-file "oointro.ps" shape-sampe)
+(with-output-to-file "oointro.ps" shape-sample)
 @end example
 
 @c ----------------------------------------------------------------------
