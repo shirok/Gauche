@@ -1063,6 +1063,7 @@ Specifies an allocation type of this slot, which specifies how the
 value for this slot is stored.  The following keyword values are
 recognized by the standard class.  A programmer can define his own
 metaclass to extend the class to recognize other allocation types.
+
 @table @code
 @item :instance
 A slot is allocated for each instance, so that every instance can have
