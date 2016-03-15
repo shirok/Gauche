@@ -124,7 +124,17 @@
        (init-screen-params ctx)
        ;; Main loop.  Get a key and invoke associated command.
        ;; The command may return one of the following values.
-       ;;   #f     - nothing visible is done
+       ;;   visible - the command changed something visible so we need to 
+       ;;            redisplay, but we don't need to save the change in
+       ;;            the actual buffer.
+       ;;            The selection is cleared.
+       ;;   unchanged - no change visually and internally; we break
+       ;;            undo sequence and reset last yank, but not clear
+       ;;            selection.
+       ;;            This occurs, for example, backward-char at the
+       ;;            beginning of the input.
+       ;;   moved  - the command only moved cursor pos.  requires redisplay,
+       ;;            but we keep selection.
        ;;   #<eof> - end of input - either input port is closed, or
        ;;            the user typed EOT char when the buffer is empty.
        ;;   commit - record the current buffer to the history, and
@@ -132,11 +142,6 @@
        ;;   undone - the command undid the change.  we record the fact,
        ;;            for the consecutive undo behaves differently than
        ;;            other commands.
-       ;;   move   - the command only moved cursor pos.  requires redisplay,
-       ;;            but we keep selection.
-       ;;   #t     - the command changed something so we need to redisplay,
-       ;;            but the buffer contents is intact.  the selection is
-       ;;            cleared.
        ;;   <edit-command> - the commad changed the buffer contents,
        ;;        and the return value is an edit command to undo the
        ;;        change.
@@ -164,15 +169,20 @@
              (loop #t)]
             [(procedure? h)
              (match (h ctx buffer ch)
-               [(? boolean? b)
-                (reset-last-yank! ctx)
-                (clear-mark! ctx buffer)
-                (break-undo-sequence! ctx)
-                (loop (or b redisp))]
                [(? eof-object?)
                 (if (> (gap-buffer-content-length buffer) 0)
                   (commit-history ctx buffer)
                   (eof-object))]
+               ['visible   (reset-last-yank! ctx)
+                           (clear-mark! ctx buffer)
+                           (break-undo-sequence! ctx)
+                           (loop #t)]
+               ['unchanged (reset-last-yank! ctx)
+                           (break-undo-sequence! ctx)
+                           (loop redisp)]
+               ['moved     (reset-last-yank! ctx)
+                           (break-undo-sequence! ctx)
+                           (loop #t)]
                ['commit
                 ;; We move the cursor to the last of input and redisplay,
                 ;; so that the output of the client program won't overwrite
@@ -183,9 +193,6 @@
                ['undone (reset-last-yank! ctx)
                         (clear-mark! ctx buffer)
                         (loop #t)] ; don't break undo sequence
-               ['move   (reset-last-yank! ctx)
-                        (break-undo-sequence! ctx)
-                        (loop #t)]
                [('yanked edit-command)
                 (break-undo-sequence! ctx)
                 (clear-mark! ctx buffer)
@@ -477,8 +484,9 @@
       'commit))
 
 (define (delete-char ctx buf key)
-  (and (not (gap-buffer-gap-at? buf 'end))
-       (gap-buffer-edit! buf '(d #f 1))))
+  (if (not (gap-buffer-gap-at? buf 'end))
+    (gap-buffer-edit! buf '(d #f 1))
+    'unchanged))
 
 (define (eot-or-delete-char ctx buf key)
   (if (zero? (gap-buffer-content-length buf))
@@ -486,41 +494,47 @@
     (delete-char ctx buf key)))
 
 (define (delete-backward-char ctx buf key)
-  (and (not (gap-buffer-gap-at? buf 'beginning))
-       (let1 p-1 (- (gap-buffer-pos buf) 1)
-         (gap-buffer-edit! buf `(d ,p-1 1)))))
+  (if (not (gap-buffer-gap-at? buf 'beginning))
+    (let1 p-1 (- (gap-buffer-pos buf) 1)
+      (gap-buffer-edit! buf `(d ,p-1 1)))
+    'unchanged))
 
 (define (backward-char ctx buf key)
-  (and (not (gap-buffer-gap-at? buf 'beginning))
-       (begin (gap-buffer-move! buf -1 'current)
-              'move)))
+  (if (not (gap-buffer-gap-at? buf 'beginning))
+    (begin (gap-buffer-move! buf -1 'current)
+           'moved)
+    'unchanged))
 
 (define (forward-char ctx buf key)
-  (and (not (gap-buffer-gap-at? buf 'end))
-       (begin (gap-buffer-move! buf 1 'current)
-              'move)))
+  (if (not (gap-buffer-gap-at? buf 'end))
+    (begin (gap-buffer-move! buf 1 'current)
+           'moved)
+    'unchanged))
 
 (define (move-beginning-of-line ctx buf key)
-  (and (not (gap-buffer-gap-at? buf 'beginning))
-       (begin (gap-buffer-move! buf 0 'beginning)
-              'move)))
+  (if (not (gap-buffer-gap-at? buf 'beginning))
+    (begin (gap-buffer-move! buf 0 'beginning)
+           'moved)
+    'unchanged))
 
 (define (move-end-of-line ctx buf key)
-  (and (not (gap-buffer-gap-at? buf 'end))
-       (begin (gap-buffer-move! buf 0 'end)
-              'move)))
+  (if (not (gap-buffer-gap-at? buf 'end))
+    (begin (gap-buffer-move! buf 0 'end)
+           'moved)
+    'unchanged))
 
 (define (set-mark-command ctx buf key)
   (set-mark! ctx buf)
-  'move)
+  'moved)
 
 (define (kill-line ctx buf key)
-  (and (not (gap-buffer-gap-at? buf 'end))
-       (let* ([len (- (gap-buffer-content-length buf) (gap-buffer-pos buf))]
-              [e (gap-buffer-edit! buf `(d #f ,len))])
-         ;; e contiains (i <pos> <killed-string>)
-         (save-kill-ring ctx (caddr e))
-         e)))
+  (if (not (gap-buffer-gap-at? buf 'end))
+    (let* ([len (- (gap-buffer-content-length buf) (gap-buffer-pos buf))]
+           [e (gap-buffer-edit! buf `(d #f ,len))])
+      ;; e contiains (i <pos> <killed-string>)
+      (save-kill-ring ctx (caddr e))
+      e)
+    'unchanged))
 
 (define (kill-region ctx buf key)
   (match (selected-range ctx buf)
@@ -530,64 +544,66 @@
      (rlet1 e (gap-buffer-edit! buf `(d ,start ,(- end start)))
        ;; e contiains (i <pos> <killed-string>)
        (save-kill-ring ctx (caddr e)))]
-    [_ #t]))
+    [_ 'unchanged]))
 
 (define (kill-ring-save ctx buf key)
   (match (selected-range ctx buf)
     [(start . end)
      (save-kill-ring ctx (gap-buffer->string buf start end))
-     #t] ; this clears selection
-    [_ #t]))
+     'visible] ; this clears selection
+    [_ 'unchanged]))
 
 (define (refresh-display ctx buf key)
   (reset-terminal (~ ctx'console))
   (move-cursor-to (~ ctx'console) 0 0) ;redundant, but mintty has problem without this
   (show-prompt ctx)
   (init-screen-params ctx)
-  #t)
+  'visible)
 
 ;; NB: This command may modify undo queue
 (define (prev-history ctx buf key)
-  (and (< (history-pos ctx) (- (history-size ctx) 1))
-       (begin
-         (save-history-transient ctx buf)
-         (inc! (~ ctx'history-pos))
-         (let1 p (get-history ctx)
-           (set-undo-info! ctx (cdr p))
-           (gap-buffer-clear! buf)
-           (gap-buffer-insert! buf (car p))
-           #t))))
+  (if (< (history-pos ctx) (- (history-size ctx) 1))
+    (begin
+      (save-history-transient ctx buf)
+      (inc! (~ ctx'history-pos))
+      (let1 p (get-history ctx)
+        (set-undo-info! ctx (cdr p))
+        (gap-buffer-clear! buf)
+        (gap-buffer-insert! buf (car p))
+        'visible))
+    'unchanged))
 
 ;; NB: This command may modify undo queue
 (define (next-history ctx buf key)
-  (and (> (history-pos ctx) -1)
-       (begin
-         (save-history-transient ctx buf)
-         (dec! (~ ctx'history-pos))
-         (let1 p (get-history ctx)
-           (set-undo-info! ctx (cdr p))
-           (gap-buffer-clear! buf)
-           (gap-buffer-insert! buf (car p))
-           #t))))
+  (if (> (history-pos ctx) -1)
+    (begin
+      (save-history-transient ctx buf)
+      (dec! (~ ctx'history-pos))
+      (let1 p (get-history ctx)
+        (set-undo-info! ctx (cdr p))
+        (gap-buffer-clear! buf)
+        (gap-buffer-insert! buf (car p))
+        'visible))
+    'unchanged))
 
 (define (prev-line-or-history ctx buf key)
   (match-let1 (lines . col) (buffer-current-line&col buf)
     (if (zero? lines)
       (prev-history ctx buf key)
-      (begin (buffer-set-line&col! buf (- lines 1) col) #t))))
+      (begin (buffer-set-line&col! buf (- lines 1) col) 'moved))))
 
 (define (next-line-or-history ctx buf key)
   (match-let1 (lines . col) (buffer-current-line&col buf)
     (if (= lines (buffer-num-lines buf))
       (next-history ctx buf key)
-      (begin (buffer-set-line&col! buf (+ lines 1) col) #t))))
+      (begin (buffer-set-line&col! buf (+ lines 1) col) 'moved))))
   
        
 (define (transpose-chars ctx buf key)
-  (cond [(gap-buffer-gap-at? buf 'beginning) #f]
+  (cond [(gap-buffer-gap-at? buf 'beginning) 'unchanged]
         [(= (gap-buffer-content-length buf) 1) ; special case
          (gap-buffer-move! buf 0)
-         'move]
+         'moved]
         [else
          (gap-buffer-move! buf
                            (if (gap-buffer-gap-at? buf 'end) -2 -1)
@@ -597,39 +613,42 @@
            (gap-buffer-edit! buf `(c #f 2 ,(string cur prev))))]))
 
 (define (yank ctx buf key)
-  (and (> (ring-buffer-num-entries (~ ctx'kill-ring)) 0)
-       (begin
-         (set! (~ ctx'last-yank) 0)
-         (set! (~ ctx'last-yank-pos) (gap-buffer-gap-start buf))
-         (let1 yanked-text (get-yank-line ctx)
-           (set! (~ ctx'last-yank-size) (string-length yanked-text))
-           `(yanked ,(gap-buffer-edit! buf `(i #f ,yanked-text)))))))
+  (if (> (ring-buffer-num-entries (~ ctx'kill-ring)) 0)
+    (begin
+      (set! (~ ctx'last-yank) 0)
+      (set! (~ ctx'last-yank-pos) (gap-buffer-gap-start buf))
+      (let1 yanked-text (get-yank-line ctx)
+        (set! (~ ctx'last-yank-size) (string-length yanked-text))
+        `(yanked ,(gap-buffer-edit! buf `(i #f ,yanked-text)))))
+    'unchanged))
 
 (define (yank-pop ctx buf key)
-  (and (> (ring-buffer-num-entries (~ ctx'kill-ring)) 0)
-       (>= (~ ctx'last-yank) 0)
-       (let* ([text (pop-yank-line ctx)]
-              [pos  (~ ctx'last-yank-pos)]
-              [len  (~ ctx'last-yank-size)]
-              [edit (gap-buffer-edit! buf `(c ,pos ,len ,text))])
-         (set! (~ ctx'last-yank-size) (string-length text))
-         `(yanked ,edit))))
+  (if (and (> (ring-buffer-num-entries (~ ctx'kill-ring)) 0)
+           (>= (~ ctx'last-yank) 0))
+    (let* ([text (pop-yank-line ctx)]
+           [pos  (~ ctx'last-yank-pos)]
+           [len  (~ ctx'last-yank-size)]
+           [edit (gap-buffer-edit! buf `(c ,pos ,len ,text))])
+      (set! (~ ctx'last-yank-size) (string-length text))
+      `(yanked ,edit))
+    'unchanged))
 
 (define (undo ctx buf key)
-  (and (not (queue-empty? (~ ctx'undo-stack)))
-       (let* ([undo-command (queue-pop! (~ ctx'undo-stack))]
-              [redo-command (gap-buffer-edit! buf undo-command)])
-         (queue-push! (~ ctx'redo-queue) undo-command)
-         (enqueue! (~ ctx'redo-queue) redo-command)
-         'undone)))
+  (if (not (queue-empty? (~ ctx'undo-stack)))
+    (let* ([undo-command (queue-pop! (~ ctx'undo-stack))]
+           [redo-command (gap-buffer-edit! buf undo-command)])
+      (queue-push! (~ ctx'redo-queue) undo-command)
+      (enqueue! (~ ctx'redo-queue) redo-command)
+      'undone)
+    'unchanged))
 
 (define (keyboard-quit ctx buf key)
   (beep (~ ctx'console))
-  #t)
+  'visible)
 
 (define (undefined-command ctx buf key)
   (beep (~ ctx'console))
-  #f)
+  'visible)
 
 (define (default-keymap)
   (hash-table 'equal?
