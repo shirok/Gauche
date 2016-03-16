@@ -1,3 +1,9 @@
+2016-03-16  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/process.scm: Reject if the same symbol is used more
+	  than once as the pipe name in redirects.
+	  https://github.com/shirok/Gauche/issues/182
+
 2016-03-12  Shiro Kawai  <shiro@acm.org>
 
 	* lib/text/console.scm (%read-char/timeout): Support mintty/MSYS.

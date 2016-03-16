@@ -206,7 +206,20 @@
         ,@(if in  `((< 0 ,(if (eq? in  :pipe) 'stdin  in))) '())
         ,@(if out `((> 1 ,(if (eq? out :pipe) 'stdout out))) '())
         ,@(if err `((> 2 ,(if (eq? err :pipe) 'stderr err))) '()))
-    (for-each %check-redirects redirs)))
+    ;; Reject if the same pipe appears more than once in the reirect list.
+    ;; We do allow the same file appears more than once; e.g. redirecting
+    ;; both 1 and 2 to "/dev/null".
+    (fold (^[redir seen]
+            (unless (= (length redir) 3)
+              (error "Bad redirection spec:" redir))
+            (let1 source-sink (caddr redir)
+              (if (symbol? source-sink)
+                (if (memq source-sink seen)
+                  (errorf "Pipe name `~s' appears more than once in the \
+                           redirection source or target" source-sink)
+                  (cons source-sink seen))
+                seen)))
+          '() redirs)))
 
 (define (%check-redirects arg)
   (unless (and (pair? arg) (pair? (cdr arg)) (pair? (cddr arg))
