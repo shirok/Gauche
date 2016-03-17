@@ -35,6 +35,14 @@
 ;; data structures such as hashtables would make use of them.
 ;; This module provides complete set of srfi-114
 
+;; TODO: Importing srfi-114 shadows make-comparator, but many procedures
+;; here are generally useful.  We might want to split those procs
+;; in separate module so that they can be used without worring
+;; different make-comparator APIs.
+;; TODO: Comparator combinators are written for srfi-114 and assumes
+;; the given comparator has comparison proc.  We might be able to optimize
+;; it by checking if the passed one is srfi-128.
+
 (define-module srfi-114
   (use gauche.uvector)
   (export comparator?                   ;builtin
@@ -50,7 +58,7 @@
 
           default-comparator            ;builtin
           
-          make-comparator               ;builtin
+          (rename make-comparator/compare make-comparator) ;builtin
           make-car-comparator make-cdr-comparator ; builtin
           
           make-inexact-real-comparator make-vector-comparator
@@ -129,17 +137,17 @@
        (if (applicable? nan-handling <real>)
          (^[which num] (nan-handling num))
          (error "make-inexact-comparator requires `nan-handling' argument to be either a procedure taking one real number, or one of the symbols 'min or 'max, but got:" nan-handling))]))
-  (make-comparator real?
-                   #t
-                   (^[a b]
-                     (if (nan? a)
-                       (if (nan? b)
-                         0
-                         (nan-handler 'a b))
-                       (if (nan? b)
-                         (nan-handler 'b a)
-                         (compare (scaler a) (scaler b)))))
-                   (^[a] (if (nan? a) 0 (eqv-hash (scaler a))))))
+  (make-comparator/compare real?
+                           #t
+                           (^[a b]
+                             (if (nan? a)
+                               (if (nan? b)
+                                 0
+                                 (nan-handler 'a b))
+                               (if (nan? b)
+                                 (nan-handler 'b a)
+                                 (compare (scaler a) (scaler b)))))
+                           (^[a] (if (nan? a) 0 (eqv-hash (scaler a))))))
 
 ;;;
 ;;; Comparator transformers
@@ -164,14 +172,14 @@
         (loop (combine-hash-value (elt-hash (car x)) v) (cdr x))))))
 
 (define (make-listwise-comparator test elt-comparator null? car cdr)
-  (make-comparator test #t
-                   (%gen-listwise-compare
-                    (comparator-comparison-procedure elt-comparator)
-                    null? car cdr)
-                   (and (comparator-hash-function? elt-comparator)
-                        (%gen-listwise-hash
-                         (comparator-hash-function elt-comparator)
-                         null? car cdr))))
+  (make-comparator/compare test #t
+                           (%gen-listwise-compare
+                            (comparator-comparison-procedure elt-comparator)
+                            null? car cdr)
+                           (and (comparator-hash-function? elt-comparator)
+                                (%gen-listwise-hash
+                                 (comparator-hash-function elt-comparator)
+                                 null? car cdr))))
 
 (define (make-list-comparator element-comparator)
   (make-listwise-comparator list? element-comparator null? car cdr))
@@ -199,14 +207,14 @@
       (loop (combine-hash-value (elt-hash (ref x i)) v) (- i 1))))))
 
 (define (make-vectorwise-comparator test elt-comparator len ref)
-  (make-comparator test #t
-                   (%gen-vectorwise-compare
-                    (comparator-comparison-procedure elt-comparator)
-                    len ref)
-                   (and (comparator-hash-function? elt-comparator)
-                        (%gen-vectorwise-hash
-                         (comparator-hash-function elt-comparator)
-                         len ref))))
+  (make-comparator/compare test #t
+                           (%gen-vectorwise-compare
+                            (comparator-comparison-procedure elt-comparator)
+                            len ref)
+                           (and (comparator-hash-function? elt-comparator)
+                                (%gen-vectorwise-hash
+                                 (comparator-hash-function elt-comparator)
+                                 len ref))))
 
 (define (make-vector-comparator elt-comparator)
   (make-vectorwise-comparator vector? elt-comparator vector-length vector-ref))
@@ -216,58 +224,49 @@
                               u8vector-length u8vector-ref))
 
 (define (make-pair-comparator car-comparator cdr-comparator)
-  (make-comparator (^x (and (pair? x)
-                            (comparator-test-type car-comparator (car x))
-                            (comparator-test-type cdr-comparator (cdr x))))
-                   (^[a b]
-                     (and (comparator-equal? car-comparator (car a) (car b))
-                          (comparator-equal? cdr-comparator (cdr a) (cdr b))))
-                   (and (comparator-comparison-procedure? car-comparator)
-                        (comparator-comparison-procedure? cdr-comparator)
-                        (^[a b]
-                          (let1 r (comparator-compare car-comparator
-                                                      (car a) (car b))
-                            (if (= r 0)
-                              (comparator-compare cdr-comparator (cdr a) (cdr b))
-                              r))))
-                   (and (comparator-hash-function? car-comparator)
-                        (comparator-hash-function? cdr-comparator)
-                        (^x
-                         ($ combine-hash-value
-                            (comparator-hash car-comparator (car x))
-                            (comparator-hash cdr-comparator (cdr x)))))))
+  (make-comparator/compare
+   (^x (and (pair? x)
+            (comparator-test-type car-comparator (car x))
+            (comparator-test-type cdr-comparator (cdr x))))
+   (^[a b] (and (comparator-equal? car-comparator (car a) (car b))
+                (comparator-equal? cdr-comparator (cdr a) (cdr b))))
+   (and (comparator-comparison-procedure? car-comparator)
+        (comparator-comparison-procedure? cdr-comparator)
+        (^[a b] (let1 r (comparator-compare car-comparator
+                                            (car a) (car b))
+                  (if (= r 0)
+                    (comparator-compare cdr-comparator (cdr a) (cdr b))
+                    r))))
+   (and (comparator-hash-function? car-comparator)
+        (comparator-hash-function? cdr-comparator)
+        (^x (combine-hash-value (comparator-hash car-comparator (car x))
+                                (comparator-hash cdr-comparator (cdr x)))))))
 
 (define (make-improper-list-comparator elt-comparator)
-  (make-comparator #t
-                   (^[a b]
-                     (cond [(null? a) (null? b)]
-                           [(pair? a)
-                            (and (pair? b)
-                                 (comparator-equal? elt-comparator
-                                                    (car a) (car b))
-                                 (comparator-equal? elt-comparator
-                                                    (cdr a) (cdr b)))]
-                           [else (comparator-equal? elt-comparator a b)]))
-                   (and (comparator-comparison-procedure? elt-comparator)
-                        (^[a b]
-                          (cond [(null? a) (if (null? b) 0 -1)]
-                                [(pair? a)
-                                 (if (pair? b)
-                                   (let1 r (comparator-compare elt-comparator
-                                                               (car a) (car b))
-                                     (if (= r 0)
-                                       (comparator-compare elt-comparator
-                                                           (cdr a) (cdr b))
-                                       r))
-                                   -1)]
-                                [else (comparator-compare elt-comparator a b)])))
-                   (and (comparator-hash-function? elt-comparator)
-                        (^x
-                         (if (pair? x)
-                           (combine-hash-value
-                            (comparator-hash elt-comparator (car x))
-                            (comparator-hash elt-comparator (cdr x)))
-                           (comparator-hash elt-comparator x))))))
+  ($ make-comparator/compare #t
+     (^[a b] (cond [(null? a) (null? b)]
+                   [(pair? a)
+                    (and (pair? b)
+                         (comparator-equal? elt-comparator (car a) (car b))
+                         (comparator-equal? elt-comparator (cdr a) (cdr b)))]
+                   [else (comparator-equal? elt-comparator a b)]))
+     (and (comparator-comparison-procedure? elt-comparator)
+          (^[a b] (cond [(null? a) (if (null? b) 0 -1)]
+                        [(pair? a)
+                         (if (pair? b)
+                           (let1 r (comparator-compare elt-comparator
+                                                       (car a) (car b))
+                             (if (= r 0)
+                               (comparator-compare elt-comparator
+                                                   (cdr a) (cdr b))
+                               r))
+                           -1)]
+                        [else (comparator-compare elt-comparator a b)])))
+     (and (comparator-hash-function? elt-comparator)
+          (^x (if (pair? x)
+                (combine-hash-value (comparator-hash elt-comparator (car x))
+                                    (comparator-hash elt-comparator (cdr x)))
+                (comparator-hash elt-comparator x))))))
 
 (define (make-selecting-comparator cmp . cmps)
   (define (selector x) ; returns a comparator
@@ -282,17 +281,16 @@
              cmp]
             [(null? cmps) #f]
             [else (loop (car cmps) (cdr cmps))])))
-  (make-comparator (^x (boolean (selector x)))
-                   (^[a b]
-                     (and-let* ([cmp (selector2 a b)])
-                       (comparator-equal? cmp a b)))
-                   (^[a b]
-                     (if-let1 cmp (selector2 a b)
-                       (comparator-compare cmp a b)
-                       (error "argument isn't comparable")))
-                   (^x (if-let1 cmp (selector x)
-                         (comparator-hash cmp x)
-                         (error "argument isn't hashable:" x)))))
+  (make-comparator/compare
+   (^x (boolean (selector x)))
+   (^[a b] (and-let* ([cmp (selector2 a b)])
+             (comparator-equal? cmp a b)))
+   (^[a b] (if-let1 cmp (selector2 a b)
+             (comparator-compare cmp a b)
+             (error "argument isn't comparable")))
+   (^x (if-let1 cmp (selector x)
+         (comparator-hash cmp x)
+         (error "argument isn't hashable:" x)))))
           
 (define (make-refining-comparator cmp . cmps)    
   (define (selector x) ; returns a comparator
@@ -307,33 +305,32 @@
                   (comparator-test-type (car cmps) b))
              (values (car cmps) (cdr cmps))]
             [else (loop (cdr cmps))])))
-  (make-comparator (^x (boolean (selector x)))
-                   (^[a b]
-                     (receive (cmp _) (selector2 a b (cons cmp cmps))
-                       (if cmp
-                         (comparator-equal? cmp a b)
-                         #f)))
-                   (^[a b]
-                     (let loop ([cmps (cons cmp cmps)]
-                                [r #f])
-                       (receive (cmp cmps) (selector2 a b cmps)
-                         (if cmp
-                           (let1 r (comparator-compare cmp a b)
-                             (if (= r 0)
-                               (loop cmps r)
-                               r))
-                           (or r (error "argument isn't comparable"))))))
-                   (^x (if-let1 cmp (selector x)
-                         (comparator-hash cmp x)
-                         (error "argument isn't hashable:" x)))))
+  (make-comparator/compare
+   (^x (boolean (selector x)))
+   (^[a b] (receive (cmp _) (selector2 a b (cons cmp cmps))
+             (if cmp
+               (comparator-equal? cmp a b)
+               #f)))
+   (^[a b] (let loop ([cmps (cons cmp cmps)]
+                      [r #f])
+             (receive (cmp cmps) (selector2 a b cmps)
+               (if cmp
+                 (let1 r (comparator-compare cmp a b)
+                   (if (= r 0)
+                     (loop cmps r)
+                     r))
+                 (or r (error "argument isn't comparable"))))))
+   (^x (if-let1 cmp (selector x)
+         (comparator-hash cmp x)
+         (error "argument isn't hashable:" x)))))
 
 (define (make-reverse-comparator cmp)
-  (make-comparator (comparator-type-test-procedure cmp)
-                   (comparator-equality-predicate cmp)
-                   (and (comparator-comparison-procedure? cmp)
-                        (^[a b] (- (comparator-compare cmp a b))))
-                   (and (comparator-hash-function? cmp)
-                        (comparator-hash-function cmp))))
+  (make-comparator/compare (comparator-type-test-procedure cmp)
+                           (comparator-equality-predicate cmp)
+                           (and (comparator-comparison-procedure? cmp)
+                                (^[a b] (- (comparator-compare cmp a b))))
+                           (and (comparator-hash-function? cmp)
+                                (comparator-hash-function cmp))))
 
 (define (make-debug-comparator cmp)
   cmp)                                  ;WRITEME

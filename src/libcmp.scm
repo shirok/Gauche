@@ -37,69 +37,159 @@
  (declcode (.include "gauche/class.h")))
 
 ;;;
-;;; Comparator (a la srfi-114)
+;;; Comparator (a la srfi-114/128)
 ;;;
+
+;; Our built-in comparator is compatible to *both* srfi-114 and srfi-128;
+;; we automatically "fill-in" the difference (comparison-proc vs ordering-pred)
+;; as needed.  The only incompatibility is the constructor---both srfi
+;; uses the same name but the mearning of arguments differ.  We provide
+;; srfi-114 constructor under different name (make-comparator/compare).
+;;
+;; Because of this on-demand filling, the internal accessors are a
+;; bit complicated; it is justified by the simple api with low overhead
+;; (we don't calculate until needed).
 
 (select-module gauche.internal)
 (define (default-type-test _) #t)
 
-(define-cproc %make-comparator (type-test equality-test comparison-proc hash
-                                name no-compare::<boolean> no-hash::<boolean>
-                                any-type::<boolean> use-cmp::<boolean>)
-  (let* ([flags::u_long (logior (?: no-compare SCM_COMPARATOR_NO_ORDER 0)
-                                (?: no-hash SCM_COMPARATOR_NO_HASH 0)
+(define-cproc %make-comparator (type-test equality-test
+                                comparison-proc ; or order-proc
+                                hash name 
+                                any-type::<boolean> use-cmp::<boolean>
+                                srfi-128::<boolean>)
+  (let* ([flags::u_long (logior (?: srfi-128 SCM_COMPARATOR_SRFI_128 0)
+                                (?: (SCM_EQ comparison-proc SCM_FALSE)
+                                    SCM_COMPARATOR_NO_ORDER 0)
+                                (?: (SCM_EQ hash SCM_FALSE)
+                                    SCM_COMPARATOR_NO_HASH 0)
                                 (?: any-type SCM_COMPARATOR_ANY_TYPE 0)
                                 (?: use-cmp SCM_COMPARATOR_USE_COMPARISON 0))])
     (return
      (Scm_MakeComparator type-test equality-test comparison-proc hash
                          name flags))))
 
+;; Argument checkers for consturctors.
+;; We use <bottom> for applicability check except type-test, since
+;; those procs are only required to handle objects that passes type-test.
+(define (ensure-type-test type-test)
+  (cond [(eq? type-test #t) default-type-test]
+        [(applicable? type-test <top>) type-test]
+        [else (error "make-comparator needs a one-argument procedure or #t as type-test, but got:" type-test)]))
+(define (ensure-equality-test equality-test comparison-proc)
+  (cond [(eq? equality-test #t)
+         (if (applicable? comparison-proc <bottom> <bottom>)
+           (^[a b] (= (comparison-proc a b) 0))
+           (error "make-comparator needs a procedure as comparison-proc if equality-test is #t, but got:" comparison-proc))]
+        [(applicable? equality-test <bottom> <bottom>) equality-test]
+        [else (error "make-comparator needs a procedure or #t as equality-test, but got:" equality-test)]))
+(define (ensure-hash-func hash)
+  (cond [(or (eq? hash #f) (applicable? hash <bottom>)) hash]
+        [else (error "make-comparator needs a procedure or #f as hash, but got:" hash)])) 
+
+;; API - srfi-114 constructor
+(define-in-module gauche (make-comparator/compare type-test equality-test
+                                                  comparison-proc hash
+                                                  :optional (name #f))
+  (let1 type (ensure-type-test type-test)
+    (%make-comparator type
+                      (ensure-equality-test equality-test comparison-proc)
+                      (if (or (eq? comparison-proc #f)
+                              (applicable? comparison-proc <bottom> <bottom>))
+                        comparison-proc
+                        (error "make-comparator/compare needs a procedure \
+                                or #f as comparison-proc, but got:"
+                               comparison-proc))
+                      (ensure-hash-func hash)
+                      name
+                      (eq? type default-type-test)
+                      (eq? equality-test #t)
+                      #f)))
+
+;; API - srfi-128 constructor
 (define-in-module gauche (make-comparator type-test equality-test
-                                          comparison-proc hash
+                                          ordering-pred hash
                                           :optional (name #f))
-  (rec self  ; referred by error proc
-    ;; We use <bottom> for applicability check except type-test, since
-    ;; those procs are only required to handle objects that passes type-test.
-    (let ([type (cond [(eq? type-test #t) default-type-test]
-                      [(applicable? type-test <top>) type-test]
-                      [else (error "make-comparator needs a one-argument procedure or #t as type-test, but got:" type-test)])]
-          [eq   (cond
-                 [(eq? equality-test #t)
-                  (if (applicable? comparison-proc <bottom> <bottom>)
-                    (^[a b] (= (comparison-proc a b) 0))
-                    (error "make-comparator needs a procedure as comparison-proc if equality-test is #t, but got:" comparison-proc))]
-                 [(applicable? equality-test <bottom> <bottom>) equality-test]
-                 [else (error "make-comparator needs a procedure or #t as equality-test, but got:" equality-test)])]
-          [cmp  (cond [(eq? comparison-proc #f)
-                       (^[a b] (errorf "can't compare objects by ~s: ~s vs ~s" self a b))]
-                      [(applicable? comparison-proc <bottom> <bottom>)
-                       comparison-proc]
-                      [else (error "make-comparator needs a procedure or #f as comparison-proc, but got:" comparison-proc)])]
-          [hsh  (cond [(eq? hash #f)
-                       (^[a] (errorf "~s doesn't have a hash function"))]
-                      [(applicable? hash <bottom>) hash]
-                      [else (error "make-comparator needs a procedure or #f as hash, but got:" hash)])])
-      (%make-comparator type eq cmp hsh name
-                        (not comparison-proc) (not hash)
-                        (eq? type default-type-test)
-                        (eq? equality-test #t)))))
-    
+  (let1 type (ensure-type-test type-test)
+    (%make-comparator type
+                      (ensure-equality-test equality-test #f)
+                      (if (or (eq? ordering-pred #f)
+                              (applicable? ordering-pred <bottom> <bottom>))
+                        ordering-pred
+                        (error "make-comparator needs a procedure or #f as \
+                                ordering-pred, but got:" ordering-pred))
+                      (ensure-hash-func hash)
+                      name
+                      (eq? type default-type-test)
+                      (eq? equality-test #t)
+                      #t)))
+
+(define (%make-fallback-compare comparator)
+  (if (eq? (comparator-flavor comparator) 'ordering)
+    (let ([eq  (comparator-equality-predicate comparator)]
+          [ord (comparator-ordering-predicate comparator)])
+      (^[a b]
+        (cond [(ord a b) -1] ;check this first.  may signal an error.
+              [(eq  a b) 0]
+              [else 1])))
+    (^[a b] (error "can't compare objects by ~s: ~s vs ~s" comparator a b))))
+(define (%make-fallback-order comparator)
+  (if (eq? (comparator-flavor comparator) 'comparison)
+    (let ([cmp (comparator-comparison-procedure comparator)])
+      (^[a b] (< (cmp a b) 0)))
+    (^[a b] (error "can't order objects by ~s: ~s vs ~s" comparator a b))))
+(define (%make-fallback-hash comparator)
+  (^_ (error "~ doesn't have hash function" comparator)))
 
 (select-module gauche)
 (define-cproc comparator? (obj) ::<boolean> SCM_COMPARATORP)
+(define-cproc comparator-flavor (c::<comparator>) :constant
+  (if (logand (-> c flags) SCM_COMPARATOR_SRFI_128)
+    (return 'ordering)
+    (return 'comparison)))
+
+;; srfi-114
 (define-cproc comparator-comparison-procedure? (c::<comparator>) ::<boolean>
   (return (not (logand (-> c flags) SCM_COMPARATOR_NO_ORDER))))
 (define-cproc comparator-hash-function? (c::<comparator>) ::<boolean>
   (return (not (logand (-> c flags) SCM_COMPARATOR_NO_HASH))))
-
 (define-cproc comparator-type-test-procedure (c::<comparator>) :constant
   (return (-> c typeFn)))
+
+;; srfi-128
+(define comparator-ordered? comparator-comparison-procedure?)
+(define comparator-hashable? comparator-hash-function?)
+(define comparator-type-test-predicate comparator-type-test-procedure)
+
 (define-cproc comparator-equality-predicate (c::<comparator>) :constant
   (return (-> c eqFn)))
 (define-cproc comparator-comparison-procedure (c::<comparator>) :constant
-  (return (-> c compareFn)))
+  (let* ([cmp (-> c compareFn)])
+    (if (SCM_FALSEP cmp)
+      (let1/cps fallback (.funcall/cps (gauche.internal %make-fallback-compare)
+                                       (SCM_OBJ c))
+        [c]
+        (set! (-> (SCM_COMPARATOR c) compareFn) fallback)
+        (return fallback))
+      (return cmp))))
+(define-cproc comparator-ordering-predicate (c::<comparator>) :constant
+  (let* ([order (-> c orderFn)])
+    (if (SCM_FALSEP order)
+      (let1/cps fallback (.funcall/cps (gauche.internal %make-fallback-order)
+                                       (SCM_OBJ c))
+        [c]
+        (set! (-> (SCM_COMPARATOR c) orderFn) fallback)
+        (return fallback))
+      (return order))))
 (define-cproc comparator-hash-function (c::<comparator>) :constant
-  (return (-> c hashFn)))
+  (let* ([hash (-> c hashFn)])
+    (if (SCM_FALSEP hash)
+      (let1/cps fallback (.funcall/cps (gauche.internal %make-fallback-hash)
+                                       (SCM_OBJ c))
+        [c]
+        (set! (-> (SCM_COMPARATOR c) hashFn) fallback)
+        (return fallback))
+      (return hash))))
 
 (select-module gauche.internal)
 (define-cproc comparator-equality-use-comparison? (c::<comparator>) ::<boolean>
@@ -145,15 +235,6 @@
         (Scm_Error "Comparator %S cannot accept object %S" c obj))
       (return SCM_TRUE))))
 
-(define-cproc comparator-hash (c::<comparator> x) :constant
-  (if (logand (-> c flags) SCM_COMPARATOR_ANY_TYPE)
-    (return (Scm_VMApply1 (-> c hashFn) x))
-    (let1/cps result (Scm_VMApply1 (-> c typeFn) x)
-      [c::ScmComparator* x]
-      (when (SCM_FALSEP result)
-        (Scm_Error "Comparator %S cannot accept object %S" c x))
-      (return (Scm_VMApply1 (-> c hashFn) x)))))
-
 (define-cproc comparator-equal? (c::<comparator> a b) :constant
   (if (logand (-> c flags) SCM_COMPARATOR_ANY_TYPE)
     (return (Scm_VMApply2 (-> c eqFn) a b))
@@ -167,9 +248,21 @@
           (Scm_Error "Comparator %S cannot accept object %S" c b))
         (return (Scm_VMApply2 (-> c eqFn) a b))))))
                         
+;; TODO: We can avoid using Scm_ComparatorHashFunction and
+;; Scm_ComparatorComparisonProcedure that may call Scm_ApplyRec.
+
+(define-cproc comparator-hash (c::<comparator> x) :constant
+  (if (logand (-> c flags) SCM_COMPARATOR_ANY_TYPE)
+    (return (Scm_VMApply1 (Scm_ComparatorHashFunction c) x))
+    (let1/cps result (Scm_VMApply1 (-> c typeFn) x)
+      [c::ScmComparator* x]
+      (when (SCM_FALSEP result)
+        (Scm_Error "Comparator %S cannot accept object %S" c x))
+      (return (Scm_VMApply1 (Scm_ComparatorHashFunction c) x)))))
+
 (define-cproc comparator-compare (c::<comparator> a b) :constant
   (if (logand (-> c flags) SCM_COMPARATOR_ANY_TYPE)
-    (return (Scm_VMApply2 (-> c compareFn) a b))
+    (return (Scm_VMApply2 (Scm_ComparatorComparisonProcedure c) a b))
     (let1/cps r (Scm_VMApply1 (-> c typeFn) a)
       [c::ScmComparator* a b]
       (when (SCM_FALSEP r)
@@ -178,7 +271,7 @@
         [c::ScmComparator* a b]
         (when (SCM_FALSEP r)
           (Scm_Error "Comparator %S cannot accept object %S" c b))
-        (return (Scm_VMApply2 (-> c compareFn) a b))))))
+        (return (Scm_VMApply2 (Scm_ComparatorComparisonProcedure c) a b))))))
 
 ;;;
 ;;; Generic comparison

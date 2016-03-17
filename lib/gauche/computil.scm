@@ -59,64 +59,64 @@
 ;; any object can be made comparable thru object-compare, so we just accept
 ;; any object for default-comparator.
 (define default-comparator
-  (make-comparator #t #t compare hash 'default-comparator))
+  (make-comparator/compare #t #t compare hash 'default-comparator))
 
 ;; eq-comparator, eqv-comparator, equal-comparator - in libomega.scm
 
 (define boolean-comparator
-  (make-comparator boolean? eqv? compare eq-hash 'boolean-comparator))
+  (make-comparator/compare boolean? eqv? compare eq-hash 'boolean-comparator))
 (define char-comparator
-  (make-comparator char? eqv? compare eqv-hash 'char-comparator))
+  (make-comparator/compare char? eqv? compare eqv-hash 'char-comparator))
 (define char-ci-comparator
-  ($ make-comparator char? char-ci=? 
+  ($ make-comparator/compare char? char-ci=? 
      (^[a b] (compare (char-foldcase a) (char-foldcase b)))
      eqv-hash 'char-ci-comparator))
 
 ;; string-comparator - in libomega.scm
 
 (define string-ci-comparator
-  ($ make-comparator string? string-ci=?
+  ($ make-comparator/compare string? string-ci=?
      (^[a b] (compare (string-foldcase a) (string-foldcase b)))
      (^s ((with-module gauche.internal %hash-string) (string-foldcase s)))
      'string-ci-comparator))
 (define symbol-comparator
-  (make-comparator symbol? eq? compare eq-hash 'symbol-comparator))
+  (make-comparator/compare symbol? eq? compare eq-hash 'symbol-comparator))
 
 ;; Number comparators
 ;; For integer-comparator hash, we need 1 and 1.0 to yield the same
 ;; hash value.  Any inexact integer can be mapped to exact integer,
 ;; so we convert the former to the latter to hash.
 (define exact-integer-comparator
-  (make-comparator exact-integer? eqv? compare eqv-hash
-                   'exact-integer-comparator))
+  (make-comparator/compare exact-integer? eqv? compare eqv-hash
+                           'exact-integer-comparator))
 (define integer-comparator
-  (make-comparator integer? = compare (^n (eqv-hash (exact n)))
-                   'integer-comparator))
+  (make-comparator/compare integer? = compare (^n (eqv-hash (exact n)))
+                           'integer-comparator))
 (define rational-comparator
-  (make-comparator rational? = compare eqv-hash 'rational-comparator))
+  (make-comparator/compare rational? = compare eqv-hash 'rational-comparator))
 (define real-comparator
-  (make-comparator a-real-number? = compare eqv-hash 'real-comparator))
+  (make-comparator/compare a-real-number? = compare eqv-hash 'real-comparator))
 (define complex-comparator
-  (make-comparator a-number? = compare eqv-hash 'complex-comparator))
+  (make-comparator/compare a-number? = compare eqv-hash 'complex-comparator))
 (define number-comparator complex-comparator)
 
 (define pair-comparator
-  (make-comparator pair? #t compare hash 'pair-comparator))
+  (make-comparator/compare pair? #t compare hash 'pair-comparator))
 (define list-comparator
-  (make-comparator list? #t compare hash 'list-comparator))
+  (make-comparator/compare list? #t compare hash 'list-comparator))
 (define vector-comparator
-  (make-comparator vector? #t compare hash 'vector-comparator))
+  (make-comparator/compare vector? #t compare hash 'vector-comparator))
 (define uvector-comparator
-  (make-comparator uvector? equal? compare hash 'uvector-comparator))
+  (make-comparator/compare uvector? equal? compare hash 'uvector-comparator))
 (define bytevector-comparator
-  (make-comparator (cut is-a? <> <u8vector>) equal? compare hash
-                   'bytevector-comparator))
+  (make-comparator/compare (cut is-a? <> <u8vector>) equal? compare hash
+                           'bytevector-comparator))
 
 (define (make-reverse-comparator comparator)
   (unless (comparator-comparison-procedure? comparator)
     (error "make-reverse-comparator requires a comparator with comparison \
             procedure, but got:" comparator))
-  (make-comparator
+  (make-comparator/compare
    (comparator-type-test-procedure comparator)
    (comparator-equality-predicate comparator)
    (let1 cmp (comparator-comparison-procedure comparator)
@@ -131,7 +131,7 @@
         [eq  (comparator-equality-predicate comparator)]
         [cmp (comparator-comparison-procedure comparator)]
         [hsh (comparator-hash-function comparator)])
-    (make-comparator 
+    (make-comparator/compare 
      (^x (and (test x) (ts (key x))))
      (^[a b] (eq (key a) (key b)))
      (and (comparator-comparison-procedure? comparator)
@@ -169,7 +169,7 @@
           (if (null? (cdr hs))
             r
             (combine-hash-value r (hasher (cdr hs) (cdr xs))))))
-      (make-comparator
+      (make-comparator/compare
        (^x (and (eqv? (length+ x) size) (tester ts x)))
        (^[a b] (equality eqs a b))
        (and (every comparator-comparison-procedure? cprs)

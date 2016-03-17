@@ -76,15 +76,15 @@
 ;; Built-in comparators.  These are here instead of libcmp.scm, for
 ;; hash functions need to be defined before this.
 (define eq-comparator
-  (make-comparator #t eq? eq-compare eq-hash 'eq-comparator))
+  (make-comparator/compare #t eq? eq-compare eq-hash 'eq-comparator))
 (define eqv-comparator
-  (make-comparator #t eqv? #f eq-hash 'eqv-comparator))
+  (make-comparator/compare #t eqv? #f eq-hash 'eqv-comparator))
 (define equal-comparator
-  (make-comparator #t equal? #f hash 'equal-comparator))
+  (make-comparator/compare #t equal? #f hash 'equal-comparator))
 (define string-comparator
-  (make-comparator string? string=? compare
-                   (with-module gauche.internal %hash-string)
-                   'string-comparator))
+  (make-comparator/compare string? string=? compare
+                           (with-module gauche.internal %hash-string)
+                           'string-comparator))
 
 ;; comparators can be compared by equal? (Gauche extension)
 (define-method object-equal? ((x <comparator>) (y <comparator>))

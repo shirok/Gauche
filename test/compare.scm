@@ -168,38 +168,38 @@
 
 (test* "comparator requires at least either equality or comparison"
        (test-error)
-       (make-comparator #t #t #f #f))
+       (make-comparator/compare #t #t #f #f))
 (test* "comparator equality fallback behavior" #t
-       ((comparator-equality-predicate (make-comparator #t #t (^[a b] 0) #f))
+       ((comparator-equality-predicate (make-comparator/compare #t #t (^[a b] 0) #f))
         1 2))
 (test* "has comparison proc" #t
-       (comparator-comparison-procedure? (make-comparator #t eq? compare #f)))
+       (comparator-comparison-procedure? (make-comparator/compare #t eq? compare #f)))
 (test* "no comparison proc" #f
-       (comparator-comparison-procedure? (make-comparator #t eq? #f #f)))
+       (comparator-comparison-procedure? (make-comparator/compare #t eq? #f #f)))
 (test* "comparator fallback behavior" (test-error)
-       ((comparator-comparison-procedure (make-comparator #t eq? #f #f))
+       ((comparator-comparison-procedure (make-comparator/compare #t eq? #f #f))
         'a 'b))
 (test* "has hash function" #t
-       (comparator-hash-function? (make-comparator #t eq? #f hash)))
+       (comparator-hash-function? (make-comparator/compare #t eq? #f hash)))
 (test* "no hash function" #f
-       (comparator-hash-function? (make-comparator #t eq? #f #f)))
+       (comparator-hash-function? (make-comparator/compare #t eq? #f #f)))
 (test* "hash fallback behavior" (test-error)
-       ((comparator-hash-procedure (make-comparator #t eq? #f #f)) 'a))
+       ((comparator-hash-procedure (make-comparator/compare #t eq? #f #f)) 'a))
 
 ;; comparing comparators
 ;; this is undefined in srfi-114; we compare the slots.
 (test* "comparing comparator 1" #t
-       (equal? (make-comparator #t eq? #f #f)
-               (make-comparator #t eq? #f #f)))
+       (equal? (make-comparator/compare #t eq? #f #f)
+               (make-comparator/compare #t eq? #f #f)))
 (test* "comparing comparator 2" #f
-       (equal? (make-comparator #t eq? #f #f)
-               (make-comparator #t eqv? #f #f)))
+       (equal? (make-comparator/compare #t eq? #f #f)
+               (make-comparator/compare #t eqv? #f #f)))
 (test* "comparing comparator 3" #t
-       (equal? (make-comparator #t #t compare #f)
-               (make-comparator #t #t compare #f)))
+       (equal? (make-comparator/compare #t #t compare #f)
+               (make-comparator/compare #t #t compare #f)))
 (test* "comparing comparator 4" #f
-       (equal? (make-comparator #t #t compare #f)
-               (make-comparator #t #t compare hash)))
+       (equal? (make-comparator/compare #t #t compare #f)
+               (make-comparator/compare #t #t compare hash)))
 (test* "comparing comparator 5" #t
        (let ([chk (^x (or (char? x) (string? x)))]
              [cmp (^[a b] (cond [(char? a)
@@ -212,17 +212,17 @@
                                    (compare a b))]
                                 [else 0]))] ; dummy
              [hash (^x (if (char? x) (eqv-hash x) (hash x)))])
-         (equal? (make-comparator chk equal? cmp hash)
-                 (make-comparator chk equal? cmp hash))))
+         (equal? (make-comparator/compare chk equal? cmp hash)
+                 (make-comparator/compare chk equal? cmp hash))))
 (test* "comparing comparator 6" #t
-       (equal? (make-comparator #t equal? #f #f 'yo)
-               (make-comparator #t equal? #f #f 'yo)))
+       (equal? (make-comparator/compare #t equal? #f #f 'yo)
+               (make-comparator/compare #t equal? #f #f 'yo)))
 (test* "comparing comparator 7" #f
-       (equal? (make-comparator #t equal? #f #f)
-               (make-comparator #t equal? #f #f 'yo)))
+       (equal? (make-comparator/compare #t equal? #f #f)
+               (make-comparator/compare #t equal? #f #f 'yo)))
 (test* "comparing comparator 8" #f
-       (equal? (make-comparator #t equal? #f #f 'bo)
-               (make-comparator #t equal? #f #f 'yo)))
+       (equal? (make-comparator/compare #t equal? #f #f 'bo)
+               (make-comparator/compare #t equal? #f #f 'yo)))
 
 (test-end)
 

@@ -431,10 +431,10 @@
            (tree-map-pop-min! tree)
            (tree-map-num-entries tree))))
 
-(let* ([comparator (make-comparator string? #t
-                                    (^[a b] (compare (string->number a)
-                                                     (string->number b)))
-                                    #f)]
+(let* ([comparator (make-comparator/compare string? #t
+                                            (^[a b] (compare (string->number a)
+                                                             (string->number b)))
+                                            #f)]
        [tmap (make-tree-map comparator)])
   (test* "custom comparator" '(("00" . a) ("1" . b) ("10" . c))
          (begin

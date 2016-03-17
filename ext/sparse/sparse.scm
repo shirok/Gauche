@@ -359,9 +359,9 @@
 
 ;; sparse vector comparator is just a singleton.
 (define *sparse-vector-comparator* 
-  (make-comparator (^x (and (exact? x) (integer? x) (>= x 0)))
-                   eqv? compare eqv-hash
-                   'sparse-vector-comparator))
+  (make-comparator/compare (^x (and (exact? x) (integer? x) (>= x 0)))
+                           eqv? compare eqv-hash
+                           'sparse-vector-comparator))
 
 (define-method dict-comparator ((spvec <sparse-vector-base>))
   *sparse-vector-comparator*)
