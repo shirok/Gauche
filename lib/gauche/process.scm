@@ -210,8 +210,7 @@
     ;; We do allow the same file appears more than once; e.g. redirecting
     ;; both 1 and 2 to "/dev/null".
     (fold (^[redir seen]
-            (unless (= (length redir) 3)
-              (error "Bad redirection spec:" redir))
+            (%check-redirects redir)
             (let1 source-sink (caddr redir)
               (if (symbol? source-sink)
                 (if (memq source-sink seen)
