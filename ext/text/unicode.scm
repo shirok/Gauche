@@ -479,7 +479,8 @@
      (^[str]
        (with-input-from-string str
          (cut generator->list
-              (cluster-reader-maker (generator-map char->ucs read-char)
+              (cluster-reader-maker (^[] (let1 ch (read-char)
+                                           (if (char? ch) (char->ucs ch) ch)))
                                     (^[cs] (map-to <string> ucs->char cs))))))]
     ))
 
@@ -976,7 +977,8 @@
                     (^[] (doer read-char (^[cs alt] (map display cs)) #t))))]
     [else
      (^[str doer] (with-string-io str
-                    (^[] (doer (generator-map char->ucs read-char)
+                    (^[] (doer (^[] (let1 ch (read-char)
+                                      (if (char? ch) (char->ucs ch) ch)))
                                (^[cs alt]
                                  (let1 cs_ (map ucs->char cs)
                                    (if (every char? cs_)

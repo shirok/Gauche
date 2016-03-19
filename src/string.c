@@ -1360,7 +1360,11 @@ static inline void string_putc(ScmChar ch, ScmPort *port, int bytemode)
         if (ch < ' ' || ch == 0x7f || (bytemode && ch >= 0x80)) {
             /* TODO: Should we provide 'legacy-compatible writer mode,
                which does not use ';' terminator? */
+#if defined(GAUCHE_CHAR_ENCODING_EUC_JP) || defined(GAUCHE_CHAR_ENCODING_SJIS)
+            snprintf(buf, 6, "\\x%02x", (unsigned char)ch);
+#else
             snprintf(buf, 6, "\\x%02x;", (unsigned char)ch);
+#endif
             SCM_PUTZ(buf, -1, port);
         } else {
             SCM_PUTC(ch, port);
