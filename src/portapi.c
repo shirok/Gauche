@@ -357,8 +357,38 @@ ScmChar Scm_PeekcUnsafe(ScmPort *p)
     LOCK(p);
     ScmChar ch = p->ungotten;
     if (ch == SCM_CHAR_INVALID) {
+
+        /* to avoid the deletion of an invalid character */
+/*
         ch = Scm_GetcUnsafe(p);
         p->ungotten = ch;
+*/
+        Scm_PeekbUnsafe(p);
+        if (p->scrcnt > 0) {
+            char tbuf[SCM_CHAR_MAX_BYTES];
+            int nb = SCM_CHAR_NFOLLOWS(p->scratch[0]);
+            int curr = p->scrcnt;
+
+            memcpy(tbuf, p->scratch, curr);
+            p->scrcnt = 0;
+            for (int i=curr; i<=nb; i++) {
+                int r = EOF;
+                SAFE_CALL(p, r = Scm_Getb(p));
+                if (r == EOF) {
+                    UNLOCK(p);
+                    Scm_PortError(p, SCM_PORT_ERROR_INPUT,
+                                  "encountered EOF in middle of a multibyte character from port %S", p);
+                }
+                tbuf[i] = (char)r;
+            }
+            SCM_CHAR_GET(tbuf, ch);
+            if (ch == SCM_CHAR_INVALID) {
+                memcpy(p->scratch, tbuf, nb + 1);
+                p->scrcnt = nb + 1;
+            } else {
+                p->ungotten = ch;
+            }
+        }
     }
     UNLOCK(p);
     return ch;
@@ -573,14 +603,11 @@ static int getc_scratch_unsafe(ScmPort *p)
     }
     int ch;
     SCM_CHAR_GET(tbuf, ch);
-    if (ch == SCM_CHAR_INVALID) {
+    if (ch == SCM_CHAR_INVALID && nb == 0) {
         /* This can happen if the input contains invalid byte sequence.
            We return the stray byte (which would eventually result
-           an incomplete string when accumulated), while keeping the
-           remaining bytes in the scrach buffer. */
+           an incomplete string when accumulated). */
         ch = (ScmChar)(tbuf[0] & 0xff);
-        memcpy(p->scratch, tbuf+1, nb);
-        p->scrcnt = nb;
     }
     return ch;
 }
