@@ -1,3 +1,9 @@
+2016-03-18  Shiro Kawai  <shiro@acm.org>
+
+	* src/module.c, src/libmod.scm (%seal-module!): Add the 'sealed' flag
+	  in ScmModule.  Sealed modules won't allow to create or modify
+	  its bindings, nor to newly import modules.
+
 2016-03-17  Shiro Kawai  <shiro@acm.org>
 
 	* src/libcmp.scm, src/compare.c: Integrating srfi-128.

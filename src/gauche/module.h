@@ -68,6 +68,7 @@ struct ScmModuleRec {
                                    anonymous wrapper modules. */
     ScmObj info;                /* alist of metainfo; e.g.
                                    (source-info . <string>) */
+    int    sealed;              /* if true, no modification is allowed */
 };
 
 #define SCM_MODULE(obj)       ((ScmModule*)(obj))
@@ -120,6 +121,8 @@ SCM_EXTERN ScmModule *Scm_FindModule(ScmSymbol *name, int flags);
 SCM_EXTERN ScmObj Scm_AllModules(void);
 SCM_EXTERN void   Scm_SelectModule(ScmModule *mod);
 SCM_EXTERN ScmObj Scm_ModuleExports(ScmModule *mod);
+
+SCM_EXTERN void   Scm_ModuleSeal(ScmModule *mod);
 
 /* Flags for Scm_FindModule
    NB: Scm_FindModule's second arg has been changed since 0.8.6;
