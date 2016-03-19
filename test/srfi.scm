@@ -461,7 +461,7 @@
 (cond-expand
  ;; Only test in utf-8, for the literal notation is interpreted differently
  ;; in other encodings.
- [gauche.ces-utf-8
+ [gauche.ces.utf8
   (test* "char-set-delete!" #[\x81\x83\x84\x86]
          (char-set-delete! (->char-set '(#\x81 #\x82 #\x83 #\x84 #\x85 #\x86 #\x87))
                            #\x82 #\x87 #\x85)
@@ -485,7 +485,7 @@
 (cond-expand
  ;; Only test in utf-8, for the literal notation is interpreted differently
  ;; in other encodings.
- [gauche.ces.utf-8
+ [gauche.ces.utf8
   (test* "char-set-union!" #[\x81-\x89]
          (char-set-union! (->char-set '(#\x81 #\x83 #\x84 #\x86 #\x87))
                           (->char-set '(#\x82 #\x85 #\x86 #\x88 #\x89)))
