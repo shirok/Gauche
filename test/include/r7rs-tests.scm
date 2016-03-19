@@ -996,7 +996,7 @@
 (test #f (char-lower-case? #\3))
 
 (cond-expand
- [gauche.ces.utf-8
+ [gauche.ces.utf8
 (test #t (char-alphabetic? #\Λ))
 (test #f (char-alphabetic? #\x0E50))
 (test #t (char-upper-case? #\Λ))
@@ -1012,7 +1012,7 @@
 (test 3 (digit-value #\3))
 (test 9 (digit-value #\9))
 (cond-expand
- [gauche.ces.utf-8
+ [gauche.ces.utf8
 (test 4 (digit-value #\x0664))
 (test 0 (digit-value #\x0AE6))
 ][else])
@@ -1137,7 +1137,7 @@
 
 ;; cyrillic
 (cond-expand
- [gauche.ces.utf-8
+ [gauche.ces.utf8
 (test "ΑΒΓ" (string-upcase "αβγ"))
 (test "ΑΒΓ" (string-upcase "ΑΒΓ"))
 (test "αβγ" (string-downcase "αβγ"))
@@ -1148,7 +1148,7 @@
 
 ;; special cases
 (cond-expand
- [gauche.ces.utf-8
+ [gauche.ces.utf8
 (test "SSA" (string-upcase "ßa"))
 (test "ßa" (string-downcase "ßa"))
 (test "ssa" (string-downcase "SSA"))
@@ -1160,7 +1160,7 @@
 
 ;; context-sensitive (final sigma)
 (cond-expand
- [gauche.ces.utf-8
+ [gauche.ces.utf8
 (test "ΓΛΏΣΣΑ" (string-upcase "γλώσσα"))
 (test "γλώσσα" (string-downcase "ΓΛΏΣΣΑ"))
 (test "γλώσσα" (string-foldcase "ΓΛΏΣΣΑ"))
@@ -1810,7 +1810,7 @@
 (test #x7F (char->integer (read (open-input-string "#\\delete"))))
 (test #x1B (char->integer (read (open-input-string "#\\escape"))))
 (cond-expand
- [gauche.ces.utf-8
+ [gauche.ces.utf8
 (test #x03BB (char->integer (read (open-input-string "#\\λ"))))
 (test #x03BB (char->integer (read (open-input-string "#\\x03BB"))))
 ][else])
@@ -1833,7 +1833,7 @@
 (test "line 1continued\n" (read (open-input-string "\"line 1\\ \t \n \t continued\n\"")))
 (test "line 1\n\nline 3\n" (read (open-input-string "\"line 1\\ \t \n \t \n\nline 3\n\"")))
 (cond-expand
- [gauche.ces.utf-8
+ [gauche.ces.utf8
 (test #x03BB (char->integer (string-ref (read (open-input-string "\"\\x03BB;\"")) 0)))
 ][else])
 
