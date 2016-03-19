@@ -594,14 +594,18 @@
     (define (t ces)
       (test* #"peek-char - read-char (~ces)"
              (fetch "\u3042" read1 ces) (fetch "\u3042" peek1 ces))
-      (test* #"peek-char - read-char^2 (~ces)"
+      (test* #"peek-char - read-char^2 (~ces) case 1"
              (fetch "\u3042" read2 ces) (fetch "\u3042" peek2 ces))
-      (test* #"peek-char - read-char^2 (~ces)"
+      (test* #"peek-char - read-char^2 (~ces) case 2"
              (fetch "\u3042\u3044" read2 ces)
              (fetch "\u3042\u3044" peek2 ces)))
 
-    (t 'sjis)
-    (t 'utf8)
-    (t 'eucjp))])
+    ;; NB: If internal encoding is sjis or eucjp, we skip utf8 tests
+    ;; for they raise "encountered EOF in the middle of multibyte character"
+    ;; error.
+    (cond-expand
+     [gauche.ces.utf8 (for-each t '(utf8 sjis eucjp))]
+     [(or gauche.ces.sjis gauche.ces.eucjp) (for-each t '(sjis eucjp))]
+     [else]))])
 
 (test-end)
