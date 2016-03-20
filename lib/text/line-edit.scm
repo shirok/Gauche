@@ -133,6 +133,7 @@
        ;;            selection.
        ;;            This occurs, for example, backward-char at the
        ;;            beginning of the input.
+       ;;   nop    - totally ignore the key input.
        ;;   moved  - the command only moved cursor pos.  requires redisplay,
        ;;            but we keep selection.
        ;;   #<eof> - end of input - either input port is closed, or
@@ -173,6 +174,7 @@
                 (if (> (gap-buffer-content-length buffer) 0)
                   (commit-history ctx buffer)
                   (eof-object))]
+               ['nop       (loop redisp)]
                ['visible   (reset-last-yank! ctx)
                            (clear-mark! ctx buffer)
                            (break-undo-sequence! ctx)
@@ -649,6 +651,9 @@
 (define (undefined-command ctx buf key)
   (beep (~ ctx'console))
   'visible)
+
+(define (nop-command ctx buf key)
+  'nop)
 
 (define (default-keymap)
   (hash-table 'equal?
