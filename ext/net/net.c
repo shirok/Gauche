@@ -674,6 +674,12 @@ ScmObj Scm_SocketIoctl(ScmSocket *s, int request, ScmObj data)
                           SIOCGIFFLAGS, "SIOCGIFFLAGS");
         return Scm_MakeInteger(ifreq_pkt.ifr_flags);
 #endif
+#if defined(SIOCGIFMTU)
+    case SIOCGIFMTU:
+        ioctl_by_ifr_name(s->fd, &ifreq_pkt, data,
+                          SIOCGIFMTU, "SIOCGIFMTU");
+        return Scm_MakeInteger(ifreq_pkt.ifr_mtu);
+#endif
     default:
         Scm_Error("unsupported ioctl operation: %d", request);
     }
