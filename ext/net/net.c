@@ -653,11 +653,26 @@ static void ioctl_by_ifr_name(int fd, struct ifreq *ifr, ScmObj data,
 ScmObj Scm_SocketIoctl(ScmSocket *s, int request, ScmObj data)
 {
 #if HAVE_STRUCT_IFREQ
+    int r;
     struct ifreq ifreq_pkt;
 
     CLOSE_CHECK(s->fd, "ioctl on", s);
     memset(&ifreq_pkt, 0, sizeof(ifreq_pkt));
     switch (request) {
+#if defined(SIOCGIFNAME)
+    case SIOCGIFNAME:
+        if (!SCM_UINTEGERP(data))
+            Scm_TypeError("SIOCGIFNAME ioctl argument" , "unsigned integer", data);
+#if HAVE_STRUCT_IFREQ_IFR_IFINDEX
+        ifreq_pkt.ifr_ifindex = Scm_GetIntegerU(data);
+#elif HAVE_STRUCT_IFREQ_IFR_INDEX
+        ifr_ifindex.ifr_index = Scm_GetIntegerU(data);
+#endif /*HAVE_STRUCT_IFREQ_IFR_INDEX*/
+        SCM_SYSCALL(r, ioctl(s->fd, SIOCGIFNAME, &ifreq_pkt));
+        if (r < 0)
+            Scm_SysError("ioctl(SIOCGIFNAME) failed");
+        return Scm_MakeString(ifreq_pkt.ifr_name, -1, -1, SCM_STRING_COPYING);
+#endif
 #if defined(SIOCGIFINDEX)
     case SIOCGIFINDEX:
         ioctl_by_ifr_name(s->fd, &ifreq_pkt, data,
