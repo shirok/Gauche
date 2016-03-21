@@ -638,14 +638,14 @@ ScmObj Scm_SocketGetOpt(ScmSocket *s, int level, int option, int rsize)
 static void ioctl_by_ifr_name(int fd, struct ifreq *ifr, ScmObj data,
 			      int req, const char *req_name)
 {
-    int r;
-    if (!SCM_STRINGP(data))
+    if (!SCM_STRINGP(data)) {
         Scm_Error("string expected for %s ioctl argument, but got %s",
                   req_name, data);
+    }
     strncpy(ifr->ifr_name, Scm_GetStringConst(SCM_STRING(data)), IFNAMSIZ-1);
+    int r;
     SCM_SYSCALL(r, ioctl(fd, req, ifr));
-    if (r < 0)
-        Scm_SysError("ioctl(%s) failed", req_name);
+    if (r < 0) Scm_SysError("ioctl(%s) failed", req_name);
 }
 #endif
 
@@ -663,7 +663,7 @@ ScmObj Scm_SocketIoctl(ScmSocket *s, int request, ScmObj data)
     case SIOCGIFNAME:
         if (!SCM_UINTEGERP(data))
             Scm_TypeError("SIOCGIFNAME ioctl argument" , "unsigned integer", data);
-#if HAVE_STRUCT_IFREQ_IFR_IFINDEX
+#if   HAVE_STRUCT_IFREQ_IFR_IFINDEX
         ifreq_pkt.ifr_ifindex = Scm_GetIntegerU(data);
 #elif HAVE_STRUCT_IFREQ_IFR_INDEX
         ifr_ifindex.ifr_index = Scm_GetIntegerU(data);
@@ -672,7 +672,7 @@ ScmObj Scm_SocketIoctl(ScmSocket *s, int request, ScmObj data)
         if (r < 0)
             Scm_SysError("ioctl(SIOCGIFNAME) failed");
         return Scm_MakeString(ifreq_pkt.ifr_name, -1, -1, SCM_STRING_COPYING);
-#endif
+#endif /*SIOCGIFNAME*/
 #if defined(SIOCGIFINDEX)
     case SIOCGIFINDEX:
         ioctl_by_ifr_name(s->fd, &ifreq_pkt, data,
@@ -688,7 +688,7 @@ ScmObj Scm_SocketIoctl(ScmSocket *s, int request, ScmObj data)
         ioctl_by_ifr_name(s->fd, &ifreq_pkt, data,
                           SIOCGIFFLAGS, "SIOCGIFFLAGS");
         return Scm_MakeInteger(ifreq_pkt.ifr_flags);
-#endif
+#endif /*SIOCGIFFLAGS*/
 #if defined(SIOCGIFADDR)
     case SIOCGIFADDR:
         ioctl_by_ifr_name(s->fd, &ifreq_pkt, data,
@@ -696,7 +696,7 @@ ScmObj Scm_SocketIoctl(ScmSocket *s, int request, ScmObj data)
         return Scm_MakeSockAddr(NULL,
                                 &ifreq_pkt.ifr_addr,
                                 sizeof(ifreq_pkt.ifr_addr));
-#endif
+#endif /*SIOCGIFADDR*/
 #if defined(SIOCGIFDSTADDR)
     case SIOCGIFDSTADDR:
         ioctl_by_ifr_name(s->fd, &ifreq_pkt, data,
@@ -704,7 +704,7 @@ ScmObj Scm_SocketIoctl(ScmSocket *s, int request, ScmObj data)
         return Scm_MakeSockAddr(NULL,
                                 &ifreq_pkt.ifr_dstaddr,
                                 sizeof(ifreq_pkt.ifr_dstaddr));
-#endif
+#endif  /*SIOCGIFDSTADDR*/
 #if defined(SIOCGIFBRDADDR)
     case SIOCGIFBRDADDR:
         ioctl_by_ifr_name(s->fd, &ifreq_pkt, data,
@@ -712,7 +712,7 @@ ScmObj Scm_SocketIoctl(ScmSocket *s, int request, ScmObj data)
         return Scm_MakeSockAddr(NULL,
                                 &ifreq_pkt.ifr_broadaddr,
                                 sizeof(ifreq_pkt.ifr_broadaddr));
-#endif
+#endif  /*SIOCGIFBRDADDR*/
 #if defined(SIOCGIFNETMASK)
     case SIOCGIFNETMASK:
         ioctl_by_ifr_name(s->fd, &ifreq_pkt, data,
@@ -720,13 +720,13 @@ ScmObj Scm_SocketIoctl(ScmSocket *s, int request, ScmObj data)
         return Scm_MakeSockAddr(NULL,
                                 &ifreq_pkt.ifr_netmask,
                                 sizeof(ifreq_pkt.ifr_netmask));
-#endif
+#endif  /*SIOCGIFNETMASK*/
 #if defined(SIOCGIFMTU)
     case SIOCGIFMTU:
         ioctl_by_ifr_name(s->fd, &ifreq_pkt, data,
                           SIOCGIFMTU, "SIOCGIFMTU");
         return Scm_MakeInteger(ifreq_pkt.ifr_mtu);
-#endif
+#endif  /*SIOCGIFMTU*/
     default:
         Scm_Error("unsupported ioctl operation: %d", request);
     }
