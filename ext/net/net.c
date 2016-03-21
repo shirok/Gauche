@@ -690,6 +690,14 @@ ScmObj Scm_SocketIoctl(ScmSocket *s, int request, ScmObj data)
                                 &ifreq_pkt.ifr_dstaddr,
                                 sizeof(ifreq_pkt.ifr_dstaddr));
 #endif
+#if defined(SIOCGIFBRDADDR)
+    case SIOCGIFBRDADDR:
+        ioctl_by_ifr_name(s->fd, &ifreq_pkt, data,
+                          SIOCGIFBRDADDR, "SIOCGIFBRDADDR");
+        return Scm_MakeSockAddr(NULL,
+                                &ifreq_pkt.ifr_broadaddr,
+                                sizeof(ifreq_pkt.ifr_broadaddr));
+#endif
 #if defined(SIOCGIFMTU)
     case SIOCGIFMTU:
         ioctl_by_ifr_name(s->fd, &ifreq_pkt, data,
