@@ -9556,6 +9556,47 @@ the result vector.
 @end example
 @end defun
 
+@defun vector-copy! target tstart source :optional sstart send
+[R7RS][SRFI-43]
+@c EN
+Copies the content of @var{source} vector into the @var{target} vector
+starting from @var{tstart} in the target.  The @var{target} vector
+must be mutable.
+Optional @var{sstart} and @var{send} limits the range of source
+vector.
+@c JP
+ベクタ@var{source}の内容をベクタ@var{target}のインデックス@var{tstart}以降に
+コピーします。@var{target}は変更可能でなければなりません。
+省略可能な@var{sstart}と@var{send}引数はコピー元ベクタの範囲を限定します。
+@c COMMON
+
+@example
+(rlet1 v (vector 'a 'b 'c 'd 'e)
+  (vector-copy! v 2 '#(1 2)))
+  @result{} #(a b 1 2 e)
+(rlet1 v (vector 'a 'b 'c 'd 'e)
+  (vector-copy! v 2 '#(1 2 3 4) 1 3))
+  @result{} #(a b 2 3 e)
+@end example
+
+@c EN
+An error is raised if the portion to be copied is greater than
+the room in the target (that is, between @var{tstart} to the end).
+@c JP
+コピーされるデータが、コピー先の領域(@var{tstart}から末尾まで)より
+大きい場合はエラーが報告されます。
+@c COMMON
+
+@c EN
+It is ok to pass the same vector to @var{target} and @var{source};
+it always works even if the regions of source and destination are
+overlapping.
+@c JP
+@var{target}と@var{source}に同じベクタを渡しても構いません。
+コピー元とコピー先の領域に重なりがある場合でもこの手続きは使えます。
+@c COMMON
+@end defun
+
 @defun vector-map proc vec1 vec2 @dots{}
 [R7RS]
 @c EN

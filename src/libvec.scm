@@ -87,6 +87,37 @@
   (v::<vector> :optional (start::<fixnum> 0) (end::<fixnum> -1) fill)
   Scm_VectorCopy)
 
+(define-cproc vector-copy!
+  (t::<vector> tstart::<fixnum> s::<vector>
+               :optional (sstart::<fixnum> 0) (send::<fixnum> -1)) ::<void>
+  (let* ([tsize::long (SCM_VECTOR_SIZE t)])
+    (when (< send 0) (set! send (SCM_VECTOR_SIZE s)))
+    (unless (and (<= 0 tstart) (<= tstart tsize))
+      (Scm_Error "tstart out of range: %ld" tstart))
+    (unless (and (<= 0 sstart) (<= sstart (SCM_VECTOR_SIZE s)))
+      (Scm_Error "sstart out of range: %ld" sstart))
+    (unless (and (<= 0 send) (<= send (SCM_VECTOR_SIZE s)))
+      (Scm_Error "send out of range: %ld" sstart))
+    (unless (<= (+ tstart (- send sstart)) tsize)
+      (Scm_Error "source vector overruns the target vector: %20.0S [%ld,%ld]"
+                 s sstart send))
+    (unless (<= sstart send)
+      (Scm_Error "send (%ld) must be greater than or equal to sstart (%ld)"
+                 send sstart))
+    (if (<= tstart sstart)
+      (let* ([i::ScmSmallInt sstart] [j::ScmSmallInt tstart])
+        (for [() (and (< i send) (< j tsize)) (begin (post++ i) (post++ j))]
+             (set! (SCM_VECTOR_ELEMENT t j) (SCM_VECTOR_ELEMENT s i))))
+      (let* ([i::ScmSmallInt send]
+             [j::ScmSmallInt (+ tstart (- send sstart))])
+        (when (>= j tsize)
+          (set! i (- i (- j tsize)))
+          (set! j tsize))
+        (for [(begin (post-- i) (post-- j))
+              (and (>= i sstart) (>= j tstart))
+              (begin (post-- i) (post-- j))]
+             (set! (SCM_VECTOR_ELEMENT t j) (SCM_VECTOR_ELEMENT s i)))))))
+
 (define (vector->string v :optional (start 0) (end -1)) ;;R7RS
   (list->string (vector->list v start end))) ; TODO: can be more efficient
 (define (string->vector s :optional (start 0) (end -1)) ;;R7RS

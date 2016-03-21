@@ -4414,12 +4414,19 @@ It terminates when any one of @var{generator} is exhausted.
 @mdindex srfi-43
 @c EN
 This module provides library functions for vectors.
-Some of srfi-43 procedures are built-in; see @ref{Vectors}.
+Note that the following srfi-43 procedures are built-in;
+@pxref{Vectors}, for their descriptions.
 @c JP
 このモジュールはベクタ用のライブラリ関数を提供します。
-SRFI-43のいくつかの関数は組み込みになっています。@ref{Vectors}を見てく
-ださい。
+SRFI-43の手続きのうち、以下のものは組み込みになっています。
+これらのドキュメントについては@ref{Vectors}を参照してください。
 @c COMMON
+
+@example
+make-vector     vector?         vector-ref      vector-set!
+vector-length   vector-fill!    vector-copy     vector-copy!
+vector->list    list->vector    reverse-list->vector
+@end example
 @end deftp
 
 @c EN
@@ -4686,25 +4693,6 @@ the range of operation.
   @result{} #(d c b a e)
 @end example
 
-@end defun
-
-@defun vector-copy! target tstart source :optional sstart send
-[SRFI-43]
-Copies the content of @var{source} vector intto the @var{target} vector
-starting from @var{tstart} in the target.  The @var{target} vector
-must be immutable.
-Optional @var{sstart} and @var{send} limits the range of source
-vector.
-
-@example
-(rlet1 v (vector 'a 'b 'c 'd 'e)
-  (vector-copy! v 2 '#(1 2)))
-  @result{} #(a b 1 2 e)
-@end example
-
-It is ok to pass the same vector to @var{target} and @var{source};
-it always works even if the regions of source and destination are
-overlapping.
 @end defun
 
 @defun vector-reverse-copy! target tstart source :optional sstart send

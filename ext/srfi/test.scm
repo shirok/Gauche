@@ -874,23 +874,7 @@
 (assert-error "vector-unfold-right 3"
               (vector-unfold-right values -1))
 
-(assert-equal "vector-copy 0"
-              (vector-copy '#(a b c d e f g h i))
-              '#(a b c d e f g h i))
-(assert-equal "vector-copy 1"
-              (vector-copy '#(a b c d e f g h i) 6)
-              '#(g h i))
-(assert-equal "vector-copy 2"
-              (vector-copy '#(a b c d e f g h i) 3 6)
-              '#(d e f))
-(assert-equal "vector-copy 3"
-              (vector-copy '#(a b c d e f g h i) 6 12 'x)
-              '#(g h i x x x))
-(assert-equal "vector-copy 4"
-              (vector-copy '#(a b c d e f g h i) 6 6)
-              '#())
-(assert-error "vector-copy 5"
-              (vector-copy '#(a b c d e f g h i) 4 2))
+;; vector-copy - now built-in
 
 (assert-equal "vector-reverse-copy 0"
               (vector-reverse-copy '#(a b c d e))
@@ -1289,41 +1273,7 @@
 (assert-error "vector-reverse! e2" (vector-reverse! (vector 'a 'b) -1 1))
 (assert-error "vector-reverse! e3" (vector-reverse! (vector) 0 0))
 
-(assert-equal "vector-copy! 0"
-              (rlet1 v (vector 'a 'b 'c 'd 'e)
-                (vector-copy! v 0 '#(1 2 3)))
-              '#(1 2 3 d e))
-(assert-equal "vector-copy! 1"
-              (rlet1 v (vector 'a 'b 'c 'd 'e)
-                (vector-copy! v 2 '#(1 2 3)))
-              '#(a b 1 2 3))
-(assert-equal "vector-copy! 2"
-              (rlet1 v (vector 'a 'b 'c 'd 'e)
-                (vector-copy! v 2 '#(1 2 3) 1))
-              '#(a b 2 3 e))
-(assert-equal "vector-copy! 3"
-              (rlet1 v (vector 'a 'b 'c 'd 'e)
-                (vector-copy! v 2 '#(1 2 3 4 5) 2 5))
-              '#(a b 3 4 5))
-(assert-equal "vector-copy! 4"
-              (rlet1 v (vector 'a 'b 'c 'd 'e)
-                (vector-copy! v 2 '#(1 2 3) 1 1))
-              '#(a b c d e))
-(assert-equal "vector-copy! self0"
-              (rlet1 v (vector 'a 'b 'c 'd 'e)
-                (vector-copy! v 0 v 1 3))
-              '#(b c c d e))
-(assert-equal "vector-copy! self1"
-              (rlet1 v (vector 'a 'b 'c 'd 'e)
-                (vector-copy! v 2 v 1 4))
-              '#(a b b c d))
-(assert-equal "vector-copy! self2"
-              (rlet1 v (vector 'a 'b 'c 'd 'e)
-                (vector-copy! v 0 v 0))
-              '#(a b c d e))
-(assert-error "vector-copy! e0" (vector-copy! (vector 1 2) 3 '#(1 2 3)))
-(assert-error "vector-copy! e1" (vector-copy! (vector 1 2) 0 '#(1 2 3)))
-(assert-error "vector-copy! e2" (vector-copy! (vector 1 2) 1 '#(1 2 3) 1))
+;; vector-copy! - now built-in
 
 (assert-equal "vector-reverse-copy! 0"
               (rlet1 v (vector 'a 'b 'c 'd 'e)

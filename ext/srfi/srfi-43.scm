@@ -246,21 +246,21 @@
 ;;;     assembly can give you for this.
 ;;; I already lambda-lift it by hand, but you should be able to make it
 ;;; even better than that.
-(define %vector-copy!
-  (letrec ([loop/l->r (^[target source send i j]
-                        (when (< i send)
-                          (vector-set! target j (vector-ref source i))
-                          (loop/l->r target source send (+ i 1) (+ j 1))))]
-           [loop/r->l (^[target source sstart i j]
-                        (when (>= i sstart)
-                          (vector-set! target j (vector-ref source i))
-                          (loop/r->l target source sstart (- i 1) (- j 1))))])
-    (^[target tstart source sstart send]
-      (if (> sstart tstart)             ; Make sure we don't copy over
-                                        ;   ourselves.
-        (loop/l->r target source send sstart tstart)
-        (loop/r->l target source sstart (- send 1)
-                   (+ -1 tstart send (- sstart)))))))
+(define %vector-copy! vector-copy!) ; using builtin
+  ;; (letrec ([loop/l->r (^[target source send i j]
+  ;;                       (when (< i send)
+  ;;                         (vector-set! target j (vector-ref source i))
+  ;;                         (loop/l->r target source send (+ i 1) (+ j 1))))]
+  ;;          [loop/r->l (^[target source sstart i j]
+  ;;                       (when (>= i sstart)
+  ;;                         (vector-set! target j (vector-ref source i))
+  ;;                         (loop/r->l target source sstart (- i 1) (- j 1))))])
+  ;;   (^[target tstart source sstart send]
+  ;;     (if (> sstart tstart)             ; Make sure we don't copy over
+  ;;                                       ;   ourselves.
+  ;;       (loop/l->r target source send sstart tstart)
+  ;;       (loop/r->l target source sstart (- send 1)
+  ;;                  (+ -1 tstart send (- sstart)))))))
 
 ;;; (%VECTOR-REVERSE-COPY! <target> <tstart> <source> <sstart> <send>)
 ;;;   Copy elements from SSTART to SEND from SOURCE to TARGET, in the
@@ -919,36 +919,37 @@
 ;;;       -> unspecified
 ;;;   Copy the values in the locations in [SSTART,SEND) from SOURCE to
 ;;;   to TARGET, starting at TSTART in TARGET.
-(define (vector-copy! target tstart source . maybe-sstart+send)
-  (let* ([target (check-type vector? target vector-copy!)]
-         [tstart (check-index target tstart vector-copy!)])
-    (let-vector-start+end vector-copy! source maybe-sstart+send
-                          (sstart send)
-      (let* ([source-length (vector-length source)]
-             [lose (^[argument]
-                     (error "vector range out of bounds"
-                            argument
-                            `(while calling ,vector-copy!)
-                            `(target was ,target)
-                            `(target-length was ,(vector-length target))
-                            `(tstart was ,tstart)
-                            `(source was ,source)
-                            `(source-length was ,source-length)
-                            `(sstart was ,sstart)
-                            `(send   was ,send)))])
-        (cond [(< sstart 0)
-               (lose '(sstart < 0))]
-              [(< send 0)
-               (lose '(send < 0))]
-              [(> sstart send)
-               (lose '(sstart > send))]
-              [(>= sstart source-length)
-               (lose '(sstart >= source-length))]
-              [(> send source-length)
-               (lose '(send > source-length))]
-              [else
-               (%vector-copy! target tstart
-                              source sstart send)])))))
+;;; [SK] Gauche native
+;; (define (vector-copy! target tstart source . maybe-sstart+send)
+;;   (let* ([target (check-type vector? target vector-copy!)]
+;;          [tstart (check-index target tstart vector-copy!)])
+;;     (let-vector-start+end vector-copy! source maybe-sstart+send
+;;                           (sstart send)
+;;       (let* ([source-length (vector-length source)]
+;;              [lose (^[argument]
+;;                      (error "vector range out of bounds"
+;;                             argument
+;;                             `(while calling ,vector-copy!)
+;;                             `(target was ,target)
+;;                             `(target-length was ,(vector-length target))
+;;                             `(tstart was ,tstart)
+;;                             `(source was ,source)
+;;                             `(source-length was ,source-length)
+;;                             `(sstart was ,sstart)
+;;                             `(send   was ,send)))])
+;;         (cond [(< sstart 0)
+;;                (lose '(sstart < 0))]
+;;               [(< send 0)
+;;                (lose '(send < 0))]
+;;               [(> sstart send)
+;;                (lose '(sstart > send))]
+;;               [(>= sstart source-length)
+;;                (lose '(sstart >= source-length))]
+;;               [(> send source-length)
+;;                (lose '(send > source-length))]
+;;               [else
+;;                (%vector-copy! target tstart
+;;                               source sstart send)])))))
 
 ;;; (VECTOR-REVERSE-COPY! <target> <tstart> <source> [<sstart> <send>])
 (define (vector-reverse-copy! target tstart source . maybe-sstart+send)
