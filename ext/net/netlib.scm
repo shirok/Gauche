@@ -333,6 +333,8 @@
 (define-enum-conditionally SIOCGIFNAME)
 (define-enum-conditionally SIOCSIFNAME)
 (define-enum-conditionally SIOCGIFINDEX)
+(define-enum-conditionally SIOCGIFADDR)
+(define-enum-conditionally SIOCSIFADDR)
 (define-enum-conditionally SIOCGIFFLAGS)
 (define-enum-conditionally SIOCSIFFLAGS)
 (define-enum-conditionally SIOCGIFMETRIC)

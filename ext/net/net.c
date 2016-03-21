@@ -674,6 +674,14 @@ ScmObj Scm_SocketIoctl(ScmSocket *s, int request, ScmObj data)
                           SIOCGIFFLAGS, "SIOCGIFFLAGS");
         return Scm_MakeInteger(ifreq_pkt.ifr_flags);
 #endif
+#if defined(SIOCGIFADDR)
+    case SIOCGIFADDR:
+        ioctl_by_ifr_name(s->fd, &ifreq_pkt, data,
+                          SIOCGIFADDR, "SIOCGIFADDR");
+        return Scm_MakeSockAddr(NULL,
+                                &ifreq_pkt.ifr_addr,
+                                sizeof(ifreq_pkt.ifr_addr));
+#endif
 #if defined(SIOCGIFMTU)
     case SIOCGIFMTU:
         ioctl_by_ifr_name(s->fd, &ifreq_pkt, data,
