@@ -698,6 +698,14 @@ ScmObj Scm_SocketIoctl(ScmSocket *s, int request, ScmObj data)
                                 &ifreq_pkt.ifr_broadaddr,
                                 sizeof(ifreq_pkt.ifr_broadaddr));
 #endif
+#if defined(SIOCGIFNETMASK)
+    case SIOCGIFNETMASK:
+        ioctl_by_ifr_name(s->fd, &ifreq_pkt, data,
+                          SIOCGIFNETMASK, "SIOCGIFNETMASK");
+        return Scm_MakeSockAddr(NULL,
+                                &ifreq_pkt.ifr_netmask,
+                                sizeof(ifreq_pkt.ifr_netmask));
+#endif
 #if defined(SIOCGIFMTU)
     case SIOCGIFMTU:
         ioctl_by_ifr_name(s->fd, &ifreq_pkt, data,

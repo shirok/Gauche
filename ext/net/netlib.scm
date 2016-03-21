@@ -339,6 +339,8 @@
 (define-enum-conditionally SIOCSIFDSTADDR)
 (define-enum-conditionally SIOCGIFBRDADDR)
 (define-enum-conditionally SIOCSIFBRDADDR)
+(define-enum-conditionally SIOCGIFNETMASK)
+(define-enum-conditionally SIOCSIFNETMASK)
 (define-enum-conditionally SIOCGIFFLAGS)
 (define-enum-conditionally SIOCSIFFLAGS)
 (define-enum-conditionally SIOCGIFMETRIC)
