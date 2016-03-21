@@ -147,6 +147,7 @@ static void init_module(ScmModule *m, ScmObj name, ScmHashTable *internal)
     }
     m->external = SCM_HASH_TABLE(Scm_MakeHashTableSimple(SCM_HASH_EQ, 0));
     m->origin = m->prefix = SCM_FALSE;
+    m->sealed = FALSE;
 }
 
 /* Internal */
@@ -384,6 +385,11 @@ ScmObj Scm_GlobalVariableRef(ScmModule *module,
 ScmGloc *Scm_MakeBinding(ScmModule *module, ScmSymbol *symbol,
                          ScmObj value, int flags)
 {
+    if (module->sealed) {
+        Scm_Error("Attempted to create a binding (%S) in a sealed module: %S",
+                  SCM_OBJ(symbol), SCM_OBJ(module));
+    }
+    
     ScmGloc *g;
     ScmObj oldval = SCM_UNDEFINED;
     int prev_kind = 0;
@@ -451,6 +457,10 @@ ScmObj Scm_DefineConst(ScmModule *module, ScmSymbol *symbol, ScmObj value)
  */
 void Scm_HideBinding(ScmModule *module, ScmSymbol *symbol)
 {
+    if (module->sealed) {
+        Scm_Error("Attempted to modify bindings (%S) in a sealed module: %S",
+                  SCM_OBJ(symbol), SCM_OBJ(module));
+    }
     int err_exists = FALSE;
 
     (void)SCM_INTERNAL_MUTEX_LOCK(modules.mutex);
@@ -497,6 +507,11 @@ void Scm_HideBinding(ScmModule *module, ScmSymbol *symbol)
 int Scm_AliasBinding(ScmModule *target, ScmSymbol *targetName,
                      ScmModule *origin, ScmSymbol *originName)
 {
+    if (target->sealed) {
+        Scm_Error("Attempted to modify bindings (%S) in a sealed module: %S",
+                  SCM_OBJ(targetName), SCM_OBJ(target));
+    }
+
     ScmGloc *g = Scm_FindBinding(origin, originName, SCM_BINDING_EXTERNAL);
     if (g == NULL) return FALSE;
     SCM_INTERNAL_MUTEX_SAFE_LOCK_BEGIN(modules.mutex);
@@ -514,6 +529,11 @@ ScmObj Scm_ImportModule(ScmModule *module,
                         ScmObj prefix,
                         u_long flags) /* reserved for future use */
 {
+    if (module->sealed) {
+        Scm_Error("Attempted to import %S into a sealed module: %S",
+                  imported, SCM_OBJ(module));
+    }
+
     ScmModule *imp = NULL;
     if (SCM_MODULEP(imported)) {
         imp = SCM_MODULE(imported);
@@ -710,8 +730,11 @@ ScmObj Scm_ModuleExports(ScmModule *module)
 
 ScmObj Scm_ExtendModule(ScmModule *module, ScmObj supers)
 {
+    if (module->sealed) {
+        Scm_Error("Attempt to extend a sealed module: %S", SCM_OBJ(module));
+    }
+    
     ScmObj seqh = SCM_NIL, seqt = SCM_NIL;
-
     ScmObj sp;
     SCM_FOR_EACH(sp, supers) {
         if (!SCM_MODULEP(SCM_CAR(sp))) {
@@ -728,6 +751,18 @@ ScmObj Scm_ExtendModule(ScmModule *module, ScmObj supers)
     }
     module->mpl = Scm_Cons(SCM_OBJ(module), mpl);
     return module->mpl;
+}
+
+/*----------------------------------------------------------------------
+ * Module sealing
+ */
+
+/* NB: In general it is a bad idea to "unseal" module, so we only
+   provide an API to make module sealed.  However, unsealing might
+   be useful for debugging.  */
+void Scm_ModuleSeal(ScmModule *module)
+{
+    module->sealed = TRUE;
 }
 
 /*----------------------------------------------------------------------

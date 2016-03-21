@@ -142,7 +142,8 @@
 (define-cfn generic-hashtable-hash (h::(const ScmHashCore*) key::intptr_t)
   ::u_long :static
   (let* ([c::ScmComparator* (cast ScmComparator* (-> h data))]
-         [v::ScmObj (Scm_ApplyRec1 (-> c hashFn) (SCM_OBJ key))])
+         [v::ScmObj (Scm_ApplyRec1 (Scm_ComparatorHashFunction c)
+                                   (SCM_OBJ key))])
     (unless (or (SCM_INTP v) (SCM_BIGNUMP v))
       (Scm_Error "Comparator %S's hash function should return \
                   an exact integer, but got: %S" c v))
@@ -321,7 +322,8 @@
    ::int :static
    (let* ([cmpr (SCM_OBJ (-> core data))])
      (SCM_ASSERT (and cmpr (SCM_COMPARATORP cmpr)))
-     (let* ([r (Scm_ApplyRec2 (-> (SCM_COMPARATOR cmpr) compareFn)
+     (let* ([r (Scm_ApplyRec2 (Scm_ComparatorComparisonProcedure
+                               (SCM_COMPARATOR cmpr))
                               (SCM_OBJ x) (SCM_OBJ y))])
        (unless (SCM_INTP r)
          (Scm_Error "compare procedure of tree-map's comparator %S returned \

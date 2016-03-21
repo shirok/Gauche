@@ -92,9 +92,12 @@ SCM_CLASS_DECL(Scm_ComparatorClass);
 #define SCM_COMPARATOR(obj)    ((ScmComparator*)(obj))
 #define SCM_COMPARATORP(obj)   SCM_XTYPEP(obj, SCM_CLASS_COMPARATOR)
 
-SCM_EXTERN ScmObj  Scm_MakeComparator(ScmObj type, ScmObj eq,
-                                      ScmObj compare_or_order, ScmObj hash,
-                                      ScmObj name, u_long flags);
+SCM_EXTERN ScmObj Scm_MakeComparator(ScmObj type, ScmObj eq,
+                                     ScmObj compare_or_order, ScmObj hash,
+                                     ScmObj name, u_long flags);
+SCM_EXTERN ScmObj Scm_ComparatorComparisonProcedure(ScmComparator *);
+SCM_EXTERN ScmObj Scm_ComparatorOrderingPredicate(ScmComparator *);
+SCM_EXTERN ScmObj Scm_ComparatorHashFunction(ScmComparator *);
 
 /* Other genreic utilities */
 SCM_EXTERN int    Scm_Compare(ScmObj x, ScmObj y);

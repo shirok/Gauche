@@ -1,3 +1,37 @@
+2016-03-20  Shiro Kawai  <shiro@acm.org>
+
+	* src/comple.scm (when, unless): Require at least one expr in the
+	  body.  Allowing empty when/unless is only marginally useful (maybe
+	  some macros can be written more concisely) but it might be better
+	  to be strict to catch errors.
+
+2016-03-18  Shiro Kawai  <shiro@acm.org>
+
+	* src/module.c, src/libmod.scm (%seal-module!): Add the 'sealed' flag
+	  in ScmModule.  Sealed modules won't allow to create or modify
+	  its bindings, nor to newly import modules.
+
+2016-03-17  Shiro Kawai  <shiro@acm.org>
+
+	* src/libcmp.scm, src/compare.c: Integrating srfi-128.
+	  INCOMPATIBLE-CHANGE: Built-in make-comparator is now compatible to
+	  srfi-128.  Srfi-114 compatible constructor is renamed to
+	  make-comparator/compare.
+	  It is no longer safe to directly refer to comparator->compareFn
+	  and comparator->hashFn in C code; they may be filled lazily.
+	  You should call Scm_ComparatorComparisonProcedure() and
+	  Scm_ComparatorHashFunction() respectively.
+	* various files: Changes according to above; mostly just replacing
+	  make-comparator to make-comparator/compare.  Later we may refine
+	  the code so that we can use make-comparator whenever it's more
+	  efficient.
+
+2016-03-16  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/process.scm: Reject if the same symbol is used more
+	  than once as the pipe name in redirects.
+	  https://github.com/shirok/Gauche/issues/182
+
 2016-03-12  Shiro Kawai  <shiro@acm.org>
 
 	* lib/text/console.scm (%read-char/timeout): Support mintty/MSYS.

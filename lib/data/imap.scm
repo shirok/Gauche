@@ -121,11 +121,7 @@
 
 ;; aux fn
 (define (%key-proc->comparator key=? key<?)
-  (make-comparator #t key=?
-                   (^[a b] (cond [(key=? a b) 0]
-                                 [(key<? a b) -1]
-                                 [else 1]))
-                   #f))
+  (make-comparator #t key=? key<? #f))
 
 ;;
 ;; External interface

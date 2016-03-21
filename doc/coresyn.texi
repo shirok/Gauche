@@ -1832,17 +1832,17 @@ last expression is returned. If there are no expressions then
 @end example
 @end defspec
 
-@defspec when test body @dots{}
-@defspecx unless test body @dots{}
+@defspec when test expr1 expr2 @dots{}
+@defspecx unless test expr1 expr2 @dots{}
 [R7RS]
 @c EN
 Evaluates @var{test}.  If it yields true value (or false in case of
-@code{unless}), @var{body} @dots{} are evaluated sequentially, and
-the result(s) of the last evaluation is(are) returned.  Otherwise, undefined
-value is returned.
+@code{unless}), @var{expr1} and @var{expr2} @dots{} are evaluated
+sequentially, and the result(s) of the last evaluation is(are) returned.
+Otherwise, undefined value is returned.
 @c JP
 まず@var{test}が評価されます。それが真の値(@code{unless}の場合は偽の値)を返した場合、
-引続き@var{body}が順に評価され、最後の@var{body}の評価値が返されます。
+引続き@var{expr1}および@var{expr2} @dots{}が順に評価され、最後の評価値が返されます。
 そうでなければ、未定義の値が返されます。
 @c COMMON
 @end defspec

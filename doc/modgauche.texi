@@ -11497,6 +11497,41 @@ output as child's stdout (which may be redirected by another @var{iospec}).
 @end table
 
 @c EN
+Note: You can't use the same name (symbol) more than once for
+the pipe of source or sink.  For example, the following code
+signals an error:
+@c JP
+註: 入力元や出力先にパイプを使う場合、同じ名前(シンボル)を複数の入出力に
+指定することはできません。例えば次のコードはエラーとなります。
+@c COMMON
+@example
+(run-process '(command) :redirects '((> 1 out) (> 2 out))) ; error!
+@end example
+@c EN
+You can use @code{>&} to ``merge'' the output to one sink,
+or @code{<&} to ``split'' the input from one source, instead:
+@c JP
+複数の出力を一つの出力先にマージするには@code{>&}を、
+一つの入力元を複数の入力で読み込みには@code{<&}を使ってください。
+@c COMMON
+@example
+(run-process '(command) :redirects '((> 1 out) (>& 2 1)))
+@end example
+@c EN
+It is allowed to give the same file name more than once,
+just like the Unix shell.  However, note that the file is
+opened individually for each file descriptor, so simply 
+writing to them may not produce desired result (for regular
+files, most likely that one output would overwrite another).
+@c JP
+同じファイル名を複数の入出力に指定することは、Unixのシェル同様、可能です。
+ただしその場合、ファイルはそれぞれの入出力ごとに別々にオープンされる
+ことに注意してください。例えば同じファイルを複数の出力からオープンして
+書き込んだ場合、求める結果が得られないかもしれません(通常のファイルであれば、
+一方の出力がもう一方の出力を上書きしてしまうでしょう)。
+@c COMMON
+
+@c EN
 Note: I/O redirections are processed @emph{at once}, unlike the way
 unix shell does.  For example, both of the following expression
 works the same way, that is, they redirect

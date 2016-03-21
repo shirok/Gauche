@@ -451,7 +451,7 @@
   (do-test (iota 15) default-comparator)
   (do-test (iota 253) default-comparator)
   (do-test (reverse (iota 33))
-           (make-comparator number? #t (^[a b] (- (compare a b))) #f))
+           (make-comparator/compare number? #t (^[a b] (- (compare a b))) #f))
   (do-test '(#\a #\b #\c #\d #\e) default-comparator)
   )
 

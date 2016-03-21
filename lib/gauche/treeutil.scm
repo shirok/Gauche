@@ -51,11 +51,8 @@
            (error "make-tree-map needs a comparator with comparison \
                   procedure, but got:" cmp))
          (%make-tree-map cmp))
-       (%make-tree-map (make-comparator #t #t cmp #f)))]
-    [(=? <?)
-     (%make-tree-map
-      ($ make-comparator #t =?
-         (^[x y](cond [(=? x y) 0] [(<? x y) -1] [else 1])) #f))]))
+       (%make-tree-map (make-comparator/compare #t #t cmp #f)))]
+    [(=? <?) (%make-tree-map (make-comparator #t =? <? #f))]))
 
 (define (tree-map-empty? tm) (zero? (tree-map-num-entries tm)))
 

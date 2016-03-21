@@ -114,33 +114,33 @@
    ))
 
 ;; Entry point API
-;(define (read-line/edit ctx)
-(define (read-line/edit ctx :optional (use-call-with-console #t))
+(define (read-line/edit ctx)
   (reset-undo-info! ctx)
   (reset-last-yank! ctx)
-  (if use-call-with-console
-    (call-with-console (~ ctx'console) (%read-line/edit-sub ctx))
-    ((%read-line/edit-sub ctx) (~ ctx'console))))
-
-(define (%read-line/edit-sub ctx)
+  ($ call-with-console (~ ctx'console)
      (^[con]
        (define buffer (make-gap-buffer))
        (define (eofread)
          (if (> (gap-buffer-content-length buffer) 0)
            (commit-history ctx buffer)
            (eof-object)))
-
-       ;; For windows ime bug:
-       ;;   We have to make a space on the last line of console,
-       ;;   because windows ime overwrites the last line and causes
-       ;;   a system error.
-       (ensure-bottom-room con)
-
+       (ensure-bottom-room (~ ctx'console)) ; workaround for windows IME glitch
        (show-prompt ctx)
        (init-screen-params ctx)
        ;; Main loop.  Get a key and invoke associated command.
        ;; The command may return one of the following values.
-       ;;   #f     - nothing visible is done
+       ;;   visible - the command changed something visible so we need to 
+       ;;            redisplay, but we don't need to save the change in
+       ;;            the actual buffer.
+       ;;            The selection is cleared.
+       ;;   unchanged - no change visually and internally; we break
+       ;;            undo sequence and reset last yank, but not clear
+       ;;            selection.
+       ;;            This occurs, for example, backward-char at the
+       ;;            beginning of the input.
+       ;;   nop    - totally ignore the key input.
+       ;;   moved  - the command only moved cursor pos.  requires redisplay,
+       ;;            but we keep selection.
        ;;   #<eof> - end of input - either input port is closed, or
        ;;            the user typed EOT char when the buffer is empty.
        ;;   commit - record the current buffer to the history, and
@@ -148,11 +148,6 @@
        ;;   undone - the command undid the change.  we record the fact,
        ;;            for the consecutive undo behaves differently than
        ;;            other commands.
-       ;;   move   - the command only moved cursor pos.  requires redisplay,
-       ;;            but we keep selection.
-       ;;   #t     - the command changed something so we need to redisplay,
-       ;;            but the buffer contents is intact.  the selection is
-       ;;            cleared.
        ;;   <edit-command> - the commad changed the buffer contents,
        ;;        and the return value is an edit command to undo the
        ;;        change.
@@ -163,13 +158,12 @@
        ;; we treat as if it is associated to the self-insert-command.
        ;; Given the large character set, it is a reasonable compromise.
        (let loop ([redisp #f])
-         (when redisp
-
-           ;; for speed-up of pasting a text
-           ;(redisplay ctx buffer))
-           (if (not (chready? con)) (redisplay ctx buffer)))
-
-         (let* ([ch (getch con)]
+         ;; NB: If next char is ready, don't bother to redisplay and
+         ;; just carry over redisp flag.
+         (let* ([redisp (if (and redisp (not (chready? con)))
+                          (begin (redisplay ctx buffer) #f)
+                          redisp)]
+                [ch (getch con)]
                 [h (hash-table-get (~ ctx'keymap) ch ch)])
            (cond
             [(eof-object? h) (eofread)]
@@ -181,32 +175,31 @@
              (loop #t)]
             [(procedure? h)
              (match (h ctx buffer ch)
-               [(? boolean? b)
-                (reset-last-yank! ctx)
-                (clear-mark! ctx buffer)
-                (break-undo-sequence! ctx)
-                (loop b)]
                [(? eof-object?)
                 (if (> (gap-buffer-content-length buffer) 0)
                   (commit-history ctx buffer)
                   (eof-object))]
-
-               ;; To aboid overwriting input lines:
-               ;;   When multiple input lines are commited and a cursor
-               ;;   is on the first line, the echo back will overwite
-               ;;   the input lines.
-               ;;   So we redisplay the input lines and move a cursor
-               ;;   to the last line.
-               ;['commit (commit-history ctx buffer)]
-               ['commit (redisplay ctx buffer #t)
-                        (commit-history ctx buffer)]
-
+               ['nop       (loop redisp)]
+               ['visible   (reset-last-yank! ctx)
+                           (clear-mark! ctx buffer)
+                           (break-undo-sequence! ctx)
+                           (loop #t)]
+               ['unchanged (reset-last-yank! ctx)
+                           (break-undo-sequence! ctx)
+                           (loop redisp)]
+               ['moved     (reset-last-yank! ctx)
+                           (break-undo-sequence! ctx)
+                           (loop #t)]
+               ['commit
+                ;; We move the cursor to the last of input and redisplay,
+                ;; so that the output of the client program won't overwrite
+                ;; the existing input.
+                (gap-buffer-move! buffer 0 'end)
+                (redisplay ctx buffer)
+                (commit-history ctx buffer)]
                ['undone (reset-last-yank! ctx)
                         (clear-mark! ctx buffer)
                         (loop #t)] ; don't break undo sequence
-               ['move   (reset-last-yank! ctx)
-                        (break-undo-sequence! ctx)
-                        (loop #t)]
                [('yanked edit-command)
                 (break-undo-sequence! ctx)
                 (clear-mark! ctx buffer)
@@ -220,7 +213,7 @@
                 (loop #t)]
                [x (error "[internal] invalid return value from a command:" x)])]
             [else
-             (error "[internal] do not know how to handle key:" h)])))))
+             (error "[internal] do not know how to handle key:" h)]))))))
 
 ;; Check some parameters of screen.
 (define (init-screen-params ctx)
@@ -244,8 +237,7 @@
     (putstr (~ ctx'console) (make-string (~ ctx'initpos-x) #\.))))
 
 ;; TODO: Mind char-width correctly.
-;(define (redisplay ctx buffer)
-(define (redisplay ctx buffer :optional (pos-to-end-flag #f))
+(define (redisplay ctx buffer)
   (define (get-tab-width x) (- 8 (modulo x 8)))
   (define (get-char-width ch x wide-char-width surrogate-char-width)
     (let1 chcode (char->integer ch)
@@ -281,11 +273,11 @@
          [pos-set-flag (= pos 0)]
          [maxy   #f]
          [sel-flag #f]
-         [windows-console-flag (eq? (class-name (class-of (~ ctx'console)))
+         [windows-console-flag (eq? (class-name (class-of con))
                                     '<windows-console>)])
 
     (define (display-area?)
-      (and (>= y 0) (or (not maxy) (<= y maxy) pos-to-end-flag)))
+      (and (>= y 0) (or (not maxy) (<= y maxy))))
 
     (define (line-wrapping disp-x1 w :optional (full-column-flag #f))
       (when (>= disp-x1 w)
@@ -302,8 +294,7 @@
           ;;   So we must deal with this problem.
           (ensure-bottom-room con full-column-flag)
 
-          ;; Console buffer scroll-up:
-          ;;   The cursor position may be changed.
+          ;; move cursor to the next line.
           (cursor-down/scroll-up con)
           (receive (y2 x2) (query-cursor-position con)
             (set! (~ ctx'initpos-y) (+ (~ ctx'initpos-y) (- y2 y 1)))
@@ -311,7 +302,7 @@
             (set! y y2))
 
           ;; For windows ime bug:
-          ;;   We have to make a space on the last line of console,
+          ;;   We have to make a room on the last line of console,
           ;;   because windows ime overwrites the last line and causes
           ;;   a system error.
           (ensure-bottom-room con full-column-flag)
@@ -323,8 +314,7 @@
           ]
          [else
 
-          ;; Console buffer scroll-up:
-          ;;   The cursor position may be changed.
+          ;; move cursor to the next line.
           (when (display-area?)
             (cursor-down/scroll-up con)
             (cond
@@ -349,7 +339,7 @@
       (glet1 ch (g)
 
         ;; set a region color
-        (when (and sel (not (eqv? (car sel) (cdr sel))) (not pos-to-end-flag))
+        (when (and sel (not (eqv? (car sel) (cdr sel))))
           (cond [(eqv? n (car sel))
                  (set! sel-flag #t)
                  (set-character-attribute con '(#f #f bright underscore))]
@@ -406,9 +396,6 @@
           (set! pos-y y))
 
         (loop (+ n 1))))
-    (when pos-to-end-flag
-      (set! pos-x x)
-      (set! pos-y y))
     (move-cursor-to con pos-y pos-x)))
 
 ;;
@@ -582,8 +569,9 @@
       'commit))
 
 (define (delete-char ctx buf key)
-  (and (not (gap-buffer-gap-at? buf 'end))
-       (gap-buffer-edit! buf '(d #f 1))))
+  (if (not (gap-buffer-gap-at? buf 'end))
+    (gap-buffer-edit! buf '(d #f 1))
+    'unchanged))
 
 (define (eot-or-delete-char ctx buf key)
   (if (zero? (gap-buffer-content-length buf))
@@ -591,41 +579,47 @@
     (delete-char ctx buf key)))
 
 (define (delete-backward-char ctx buf key)
-  (and (not (gap-buffer-gap-at? buf 'beginning))
-       (let1 p-1 (- (gap-buffer-pos buf) 1)
-         (gap-buffer-edit! buf `(d ,p-1 1)))))
+  (if (not (gap-buffer-gap-at? buf 'beginning))
+    (let1 p-1 (- (gap-buffer-pos buf) 1)
+      (gap-buffer-edit! buf `(d ,p-1 1)))
+    'unchanged))
 
 (define (backward-char ctx buf key)
   (if (not (gap-buffer-gap-at? buf 'beginning))
-    (gap-buffer-move! buf -1 'current))
-  'move)
+    (begin (gap-buffer-move! buf -1 'current)
+           'moved)
+    'unchanged))
 
 (define (forward-char ctx buf key)
   (if (not (gap-buffer-gap-at? buf 'end))
-    (gap-buffer-move! buf 1 'current))
-  'move)
+    (begin (gap-buffer-move! buf 1 'current)
+           'moved)
+    'unchanged))
 
 (define (move-beginning-of-line ctx buf key)
   (if (not (gap-buffer-gap-at? buf 'beginning))
-    (gap-buffer-move! buf 0 'beginning))
-  'move)
+    (begin (gap-buffer-move! buf 0 'beginning)
+           'moved)
+    'unchanged))
 
 (define (move-end-of-line ctx buf key)
   (if (not (gap-buffer-gap-at? buf 'end))
-    (gap-buffer-move! buf 0 'end))
-  'move)
+    (begin (gap-buffer-move! buf 0 'end)
+           'moved)
+    'unchanged))
 
 (define (set-mark-command ctx buf key)
   (set-mark! ctx buf)
-  'move)
+  'moved)
 
 (define (kill-line ctx buf key)
-  (and (not (gap-buffer-gap-at? buf 'end))
-       (let* ([len (- (gap-buffer-content-length buf) (gap-buffer-pos buf))]
-              [e (gap-buffer-edit! buf `(d #f ,len))])
-         ;; e contiains (i <pos> <killed-string>)
-         (save-kill-ring ctx (caddr e))
-         e)))
+  (if (not (gap-buffer-gap-at? buf 'end))
+    (let* ([len (- (gap-buffer-content-length buf) (gap-buffer-pos buf))]
+           [e (gap-buffer-edit! buf `(d #f ,len))])
+      ;; e contiains (i <pos> <killed-string>)
+      (save-kill-ring ctx (caddr e))
+      e)
+    'unchanged))
 
 (define (kill-region ctx buf key)
   (match (selected-range ctx buf)
@@ -635,64 +629,66 @@
      (rlet1 e (gap-buffer-edit! buf `(d ,start ,(- end start)))
        ;; e contiains (i <pos> <killed-string>)
        (save-kill-ring ctx (caddr e)))]
-    [_ #t]))
+    [_ 'unchanged]))
 
 (define (kill-ring-save ctx buf key)
   (match (selected-range ctx buf)
     [(start . end)
      (save-kill-ring ctx (gap-buffer->string buf start end))
-     #t] ; this clears selection
-    [_ #t]))
+     'visible] ; this clears selection
+    [_ 'unchanged]))
 
 (define (refresh-display ctx buf key)
   (reset-terminal (~ ctx'console))
-  (move-cursor-to (~ ctx'console) 0 0)
+  (move-cursor-to (~ ctx'console) 0 0) ;redundant, but mintty has problem without this
   (show-prompt ctx)
   (init-screen-params ctx)
-  #t)
+  'visible)
 
 ;; NB: This command may modify undo queue
 (define (prev-history ctx buf key)
-  (and (< (history-pos ctx) (- (history-size ctx) 1))
-       (begin
-         (save-history-transient ctx buf)
-         (inc! (~ ctx'history-pos))
-         (let1 p (get-history ctx)
-           (set-undo-info! ctx (cdr p))
-           (gap-buffer-clear! buf)
-           (gap-buffer-insert! buf (car p))
-           #t))))
+  (if (< (history-pos ctx) (- (history-size ctx) 1))
+    (begin
+      (save-history-transient ctx buf)
+      (inc! (~ ctx'history-pos))
+      (let1 p (get-history ctx)
+        (set-undo-info! ctx (cdr p))
+        (gap-buffer-clear! buf)
+        (gap-buffer-insert! buf (car p))
+        'visible))
+    'unchanged))
 
 ;; NB: This command may modify undo queue
 (define (next-history ctx buf key)
-  (and (> (history-pos ctx) -1)
-       (begin
-         (save-history-transient ctx buf)
-         (dec! (~ ctx'history-pos))
-         (let1 p (get-history ctx)
-           (set-undo-info! ctx (cdr p))
-           (gap-buffer-clear! buf)
-           (gap-buffer-insert! buf (car p))
-           #t))))
+  (if (> (history-pos ctx) -1)
+    (begin
+      (save-history-transient ctx buf)
+      (dec! (~ ctx'history-pos))
+      (let1 p (get-history ctx)
+        (set-undo-info! ctx (cdr p))
+        (gap-buffer-clear! buf)
+        (gap-buffer-insert! buf (car p))
+        'visible))
+    'unchanged))
 
 (define (prev-line-or-history ctx buf key)
   (match-let1 (lines . col) (buffer-current-line&col buf)
     (if (zero? lines)
       (prev-history ctx buf key)
-      (begin (buffer-set-line&col! buf (- lines 1) col) 'move))))
+      (begin (buffer-set-line&col! buf (- lines 1) col) 'moved))))
 
 (define (next-line-or-history ctx buf key)
   (match-let1 (lines . col) (buffer-current-line&col buf)
     (if (= lines (buffer-num-lines buf))
       (next-history ctx buf key)
-      (begin (buffer-set-line&col! buf (+ lines 1) col) 'move))))
+      (begin (buffer-set-line&col! buf (+ lines 1) col) 'moved))))
   
        
 (define (transpose-chars ctx buf key)
-  (cond [(gap-buffer-gap-at? buf 'beginning) #f]
+  (cond [(gap-buffer-gap-at? buf 'beginning) 'unchanged]
         [(= (gap-buffer-content-length buf) 1) ; special case
          (gap-buffer-move! buf 0)
-         'move]
+         'moved]
         [else
          (gap-buffer-move! buf
                            (if (gap-buffer-gap-at? buf 'end) -2 -1)
@@ -702,42 +698,45 @@
            (gap-buffer-edit! buf `(c #f 2 ,(string cur prev))))]))
 
 (define (yank ctx buf key)
-  (and (> (ring-buffer-num-entries (~ ctx'kill-ring)) 0)
-       (begin
-         (set! (~ ctx'last-yank) 0)
-         (set! (~ ctx'last-yank-pos) (gap-buffer-gap-start buf))
-         (let1 yanked-text (get-yank-line ctx)
-           (set! (~ ctx'last-yank-size) (string-length yanked-text))
-           `(yanked ,(gap-buffer-edit! buf `(i #f ,yanked-text)))))))
+  (if (> (ring-buffer-num-entries (~ ctx'kill-ring)) 0)
+    (begin
+      (set! (~ ctx'last-yank) 0)
+      (set! (~ ctx'last-yank-pos) (gap-buffer-gap-start buf))
+      (let1 yanked-text (get-yank-line ctx)
+        (set! (~ ctx'last-yank-size) (string-length yanked-text))
+        `(yanked ,(gap-buffer-edit! buf `(i #f ,yanked-text)))))
+    'unchanged))
 
 (define (yank-pop ctx buf key)
-  (and (> (ring-buffer-num-entries (~ ctx'kill-ring)) 0)
-       (>= (~ ctx'last-yank) 0)
-       (let* ([text (pop-yank-line ctx)]
-              [pos  (~ ctx'last-yank-pos)]
-              [len  (~ ctx'last-yank-size)]
-              [edit (gap-buffer-edit! buf `(c ,pos ,len ,text))])
-         (set! (~ ctx'last-yank-size) (string-length text))
-         `(yanked ,edit))))
+  (if (and (> (ring-buffer-num-entries (~ ctx'kill-ring)) 0)
+           (>= (~ ctx'last-yank) 0))
+    (let* ([text (pop-yank-line ctx)]
+           [pos  (~ ctx'last-yank-pos)]
+           [len  (~ ctx'last-yank-size)]
+           [edit (gap-buffer-edit! buf `(c ,pos ,len ,text))])
+      (set! (~ ctx'last-yank-size) (string-length text))
+      `(yanked ,edit))
+    'unchanged))
 
 (define (undo ctx buf key)
-  (and (not (queue-empty? (~ ctx'undo-stack)))
-       (let* ([undo-command (queue-pop! (~ ctx'undo-stack))]
-              [redo-command (gap-buffer-edit! buf undo-command)])
-         (queue-push! (~ ctx'redo-queue) undo-command)
-         (enqueue! (~ ctx'redo-queue) redo-command)
-         'undone)))
+  (if (not (queue-empty? (~ ctx'undo-stack)))
+    (let* ([undo-command (queue-pop! (~ ctx'undo-stack))]
+           [redo-command (gap-buffer-edit! buf undo-command)])
+      (queue-push! (~ ctx'redo-queue) undo-command)
+      (enqueue! (~ ctx'redo-queue) redo-command)
+      'undone)
+    'unchanged))
 
 (define (keyboard-quit ctx buf key)
   (beep (~ ctx'console))
-  #t)
+  'visible)
 
 (define (undefined-command ctx buf key)
   (beep (~ ctx'console))
-  #f)
+  'visible)
 
 (define (nop-command ctx buf key)
-  #f)
+  'nop)
 
 (define (default-keymap)
   (hash-table 'equal?

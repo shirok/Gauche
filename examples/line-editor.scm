@@ -4,7 +4,6 @@
 
 ;; Just reads a line at a time and echoes back.
 
-(display #\cr)(flush) ; allocate console for windows
 (use text.console)
 (use text.line-edit)
 (use gauche.listener :only (complete-sexp?))
@@ -17,11 +16,9 @@
                 :console con
                 :prompt (^[] (format #t "[~d]$ " count))
                 :input-continues (^s (not (complete-sexp? s))))])
-    ($ call-with-console con
-       (^[con]
-         (let loop ()
-           (let1 line (read-line/edit ctx #f)
-             (newline)
-             (print line)
-             (inc! count)
-             (loop)))))))
+    (let loop ()
+      (let1 line (read-line/edit ctx)
+        (newline)
+        (print line)
+        (inc! count)
+        (loop)))))

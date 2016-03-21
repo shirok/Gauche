@@ -187,6 +187,10 @@
 (define-cproc %import-modules (mod::<module> mods) ;deprecated
   Scm_ImportModules)
 
+;; sealing module.  not public (yet)
+(define-cproc %seal-module! (mod::<module>) ::<void>
+  Scm_ModuleSeal)
+
 (select-module gauche)
 (inline-stub
  (define-cfn module-print (obj port::ScmPort* ctx::ScmWriteContext*)
