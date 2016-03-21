@@ -1,3 +1,10 @@
+2016-03-20  Shiro Kawai  <shiro@acm.org>
+
+	* src/comple.scm (when, unless): Require at least one expr in the
+	  body.  Allowing empty when/unless is only marginally useful (maybe
+	  some macros can be written more concisely) but it might be better
+	  to be strict to catch errors.
+
 2016-03-18  Shiro Kawai  <shiro@acm.org>
 
 	* src/module.c, src/libmod.scm (%seal-module!): Add the 'sealed' flag
