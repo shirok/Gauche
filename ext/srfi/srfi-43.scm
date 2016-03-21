@@ -477,8 +477,9 @@
 ;;; (VECTOR-APPEND <vector> ...) -> vector
 ;;;   Append VECTOR ... into a newly allocated vector and return that
 ;;;   new vector.
-(define (vector-append . vectors)
-  (vector-concatenate:aux vectors vector-append))
+;;; [SK] built-in
+;(define (vector-append . vectors)
+;  (vector-concatenate:aux vectors vector-append))
 
 ;;; (VECTOR-CONCATENATE <vector-list>) -> vector
 ;;;   Concatenate the vectors in VECTOR-LIST.  This is equivalent to
@@ -488,42 +489,41 @@
 ;;;   a function to is too long.
 ;;;
 ;;; Actually, they're both implemented in terms of an internal routine.
-(define (vector-concatenate vector-list)
-  (vector-concatenate:aux vector-list vector-concatenate))
+(define (vector-concatenate vector-list) (apply vector-append vector-list))
 
 ;;; Auxiliary for VECTOR-APPEND and VECTOR-CONCATENATE
-(define vector-concatenate:aux
-  (letrec ([compute-length
-            (^[vectors len callee]
-              (if (null? vectors)
-                len
-                (let1 vec (check-type vector? (car vectors) callee)
-                  (compute-length (cdr vectors)
-                                  (+ (vector-length vec) len)
-                                  callee))))]
-           [concatenate!
-            (^[vectors target to]
-              (if (null? vectors)
-                target
-                (let* ([vec1 (car vectors)]
-                       [len (vector-length vec1)])
-                  (%vector-copy! target to vec1 0 len)
-                  (concatenate! (cdr vectors) target
-                                (+ to len)))))])
-    (^[vectors callee]
-      (cond [(null? vectors)            ;+++
-             (make-vector 0)]
-            [(null? (cdr vectors))      ;+++
-             ;; Blech, we still have to allocate a new one.
-             (let* ([vec (check-type vector? (car vectors) callee)]
-                    [len (vector-length vec)]
-                    [new (make-vector len)])
-               (%vector-copy! new 0 vec 0 len)
-               new)]
-            [else
-             (rlet1 new-vector
-                 (make-vector (compute-length vectors 0 callee))
-               (concatenate! vectors new-vector 0))]))))
+;; (define vector-concatenate:aux
+;;   (letrec ([compute-length
+;;             (^[vectors len callee]
+;;               (if (null? vectors)
+;;                 len
+;;                 (let1 vec (check-type vector? (car vectors) callee)
+;;                   (compute-length (cdr vectors)
+;;                                   (+ (vector-length vec) len)
+;;                                   callee))))]
+;;            [concatenate!
+;;             (^[vectors target to]
+;;               (if (null? vectors)
+;;                 target
+;;                 (let* ([vec1 (car vectors)]
+;;                        [len (vector-length vec1)])
+;;                   (%vector-copy! target to vec1 0 len)
+;;                   (concatenate! (cdr vectors) target
+;;                                 (+ to len)))))])
+;;     (^[vectors callee]
+;;       (cond [(null? vectors)            ;+++
+;;              (make-vector 0)]
+;;             [(null? (cdr vectors))      ;+++
+;;              ;; Blech, we still have to allocate a new one.
+;;              (let* ([vec (check-type vector? (car vectors) callee)]
+;;                     [len (vector-length vec)]
+;;                     [new (make-vector len)])
+;;                (%vector-copy! new 0 vec 0 len)
+;;                new)]
+;;             [else
+;;              (rlet1 new-vector
+;;                  (make-vector (compute-length vectors 0 callee))
+;;                (concatenate! vectors new-vector 0))]))))
 
 
 ;;; --------------------

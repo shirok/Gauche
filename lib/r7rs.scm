@@ -278,7 +278,6 @@
   ;; vector? make-vector vector vector-length vector-ref vector-set!
   ;; vector->list list->vector vector->string string->vector
   ;; vector-copy vector-copy! vector-append vector-fill!
-  (define+ vector-append srfi-43)
 
   ;; 6.9 Bytevectors
   (define-inline bytevector         u8vector)

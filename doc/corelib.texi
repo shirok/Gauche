@@ -9597,6 +9597,21 @@ overlapping.
 @c COMMON
 @end defun
 
+@defun vector-append vec @dots{}
+[R7RS], [SRFI-43]
+@c EN
+Returns a newly allocated vector whose contents are concatenation
+of elements of @var{vec} in order.
+@c JP
+ベクタ@var{vec}を順に継ぎ足した内容を持つベクタを新たに作成して返します。
+@c COMMON
+
+@example
+(vector-append '#(1 2 3) '#(a b)) @result{} #(1 2 3 a b)
+(vector-append) @result{} #()
+@end example
+@end defun
+
 @defun vector-map proc vec1 vec2 @dots{}
 [R7RS]
 @c EN

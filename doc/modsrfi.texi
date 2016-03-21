@@ -4425,7 +4425,7 @@ SRFI-43の手続きのうち、以下のものは組み込みになっていま�
 @example
 make-vector     vector?         vector-ref      vector-set!
 vector-length   vector-fill!    vector-copy     vector-copy!
-vector->list    list->vector    reverse-list->vector
+vector-append   vector->list    list->vector    reverse-list->vector
 @end example
 @end deftp
 
@@ -4481,12 +4481,6 @@ the range of the input.
 (vector-reverse-copy '#(a b c d e) 1 4)
  @result{} #(d c b)
 @end example
-@end defun
-
-@defun vector-append vec @dots{}
-[SRFI-43]
-Returns a newly allocated vector whose contents are concatenation
-of elements of @var{vec} in order.
 @end defun
 
 @defun vector-concatenate list-of-vectors

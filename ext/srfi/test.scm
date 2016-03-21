@@ -889,21 +889,7 @@
               (vector-reverse-copy '#(a b c d e) 2 1))
 
 
-(assert-equal "vector-append 0"
-              (vector-append '#(x) '#(y))
-              '#(x y))
-(assert-equal "vector-append 1"
-              (let ((v '#(x y)))
-                (vector-append v v v))
-              '#(x y x y x y))
-(assert-equal "vector-append 2"
-              (vector-append '#(x) '#() '#(y))
-              '#(x y))
-(assert-equal "vector-append 3"
-              (vector-append)
-              '#())
-(assert-error "vector-append 4"
-              (vector-append '#() 'b 'c))
+;; vector-append - now built-in
 
 (assert-equal "vector-concatenate 0"
               (vector-concatenate '(#(a b) #(c d)))
@@ -913,6 +899,7 @@
               '#())
 (assert-error "vector-concatenate 2"
               (vector-concatenate '(#(a b) c)))
+
 
 ;;;
 ;;; Predicates

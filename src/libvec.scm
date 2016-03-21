@@ -118,6 +118,21 @@
               (begin (post-- i) (post-- j))]
              (set! (SCM_VECTOR_ELEMENT t j) (SCM_VECTOR_ELEMENT s i)))))))
 
+(define-cproc vector-append (:rest vecs)
+  (let* ([len::long 0])
+    (dolist [v vecs]
+      (unless (SCM_VECTORP v)
+        (Scm_Error "vector required, but got: %S" v))
+      (set! len (+ len (SCM_VECTOR_SIZE v))))
+    (let* ([dst (Scm_MakeVector len SCM_UNDEFINED)]
+           [j::long 0])
+      (dolist [v vecs]
+        (let* ([k::long (SCM_VECTOR_SIZE v)])
+          (memcpy (+ (SCM_VECTOR_ELEMENTS dst) j) (SCM_VECTOR_ELEMENTS v)
+                  (* k (sizeof ScmWord)))
+          (set! j (+ j k))))
+      (return dst))))
+
 (define (vector->string v :optional (start 0) (end -1)) ;;R7RS
   (list->string (vector->list v start end))) ; TODO: can be more efficient
 (define (string->vector s :optional (start 0) (end -1)) ;;R7RS

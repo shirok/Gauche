@@ -84,6 +84,16 @@
 (test* "vector-copy! e1" (test-error) (vector-copy! (vector 1 2) 0 '#(1 2 3)))
 (test* "vector-copy! e2" (test-error) (vector-copy! (vector 1 2) 1 '#(1 2 3) 1))
 
+(test* "vector-append 0" '#(x y)
+              (vector-append '#(x) '#(y)))
+(test* "vector-append 1" '#(x y x y x y)
+              (let ((v '#(x y)))
+                (vector-append v v v)))
+(test* "vector-append 2" '#(x y)
+              (vector-append '#(x) '#() '#(y)))
+(test* "vector-append 3" '#()
+              (vector-append))
+(test* "vector-append 4" (test-error) (vector-append '#() 'b 'c))
 
 (test-end)
 
