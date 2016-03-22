@@ -342,6 +342,9 @@
 /* Define to 1 if `ifr_index' is a member of `struct ifreq'. */
 #undef HAVE_STRUCT_IFREQ_IFR_INDEX
 
+/* Define to 1 if `ifr_netmask' is a member of `struct ifreq'. */
+#undef HAVE_STRUCT_IFREQ_IFR_NETMASK
+
 /* Define to 1 if `pw_class' is a member of `struct passwd'. */
 #undef HAVE_STRUCT_PASSWD_PW_CLASS
 
