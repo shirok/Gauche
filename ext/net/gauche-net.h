@@ -271,7 +271,7 @@ extern ScmObj Scm_SocketSetOpt(ScmSocket *s, int level,
                                int option, ScmObj value);
 extern ScmObj Scm_SocketGetOpt(ScmSocket *s, int level,
                                int option, int resulttype);
-extern ScmObj Scm_SocketIoctl(ScmSocket *s, int requiest, ScmObj data);
+extern ScmObj Scm_SocketIoctl(ScmSocket *s, u_long requiest, ScmObj data);
 
 /*==================================================================
  * Netdb interface
