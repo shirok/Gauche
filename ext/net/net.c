@@ -636,7 +636,7 @@ ScmObj Scm_SocketGetOpt(ScmSocket *s, int level, int option, int rsize)
 
 #if HAVE_STRUCT_IFREQ
 static void ioctl_by_ifr_name(int fd, struct ifreq *ifr, ScmObj data,
-			      int req, const char *req_name)
+                              unsigned long req, const char *req_name)
 {
     if (!SCM_STRINGP(data)) {
         Scm_Error("string expected for %s ioctl argument, but got %s",
@@ -717,9 +717,15 @@ ScmObj Scm_SocketIoctl(ScmSocket *s, int request, ScmObj data)
     case SIOCGIFNETMASK:
         ioctl_by_ifr_name(s->fd, &ifreq_pkt, data,
                           SIOCGIFNETMASK, "SIOCGIFNETMASK");
+#if defined(HAVE_STRUCT_IFREQ_IFR_NETMASK)
         return Scm_MakeSockAddr(NULL,
                                 &ifreq_pkt.ifr_netmask,
                                 sizeof(ifreq_pkt.ifr_netmask));
+#else
+        return Scm_MakeSockAddr(NULL,
+                                &ifreq_pkt.ifr_addr,
+                                sizeof(ifreq_pkt.ifr_addr));
+#endif /*HAVE_STRUCT_IFREQ_IFR_NETMASK*/
 #endif  /*SIOCGIFNETMASK*/
 #if defined(SIOCGIFMTU)
     case SIOCGIFMTU:

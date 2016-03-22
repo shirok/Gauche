@@ -74,7 +74,8 @@ dnl
 dnl Checks if sturct ifreq has ifr_ifindex and/or ifr_index field
 dnl
 AC_CHECK_MEMBERS([struct ifreq.ifr_ifindex,
-                  struct ifreq.ifr_index],,,[
+                  struct ifreq.ifr_index,
+                  struct ifreq.ifr_netmask],,,[
 @%:@ifdef HAVE_SYS_TYPES_H
 @%:@include <sys/types.h>
 @%:@endif
