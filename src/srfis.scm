@@ -745,3 +745,14 @@ This srfi is a pure subset of srfi-99, and @code{gauche.record}'s
 ERR5RSレコード構文 (簡易版)
 このsrfiはsrfi-99のサブセットで、@code{gauche.record}の
 @code{define-record-type}でカバーされます。@ref{Record types}参照。
+
+
+srfi-133
+()
+
+Vector library (R7RS-compatible)
+Supported by the module @code{srfi-133}.
+
+ベクタライブラリ (R7RS互換)
+モジュール@code{srfi-133}でサポートされます。
+

@@ -1,3 +1,8 @@
+2016-03-22  Shiro Kawai  <shiro@acm.org>
+
+	* ext/srfi/srfi-133.scm: Added srfi-133 support.  The common part
+	  of srfi-133 and r7rs is now fully covered by built-in.
+
 2016-03-20  Shiro Kawai  <shiro@acm.org>
 
 	* src/comple.scm (when, unless): Require at least one expr in the

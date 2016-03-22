@@ -1386,4 +1386,17 @@
 (assert-error "reverse-list->vector e2"
               (reverse-list->vector '(0 1 2 3) 2 1))
 
+;;
+;; Test srfi-133
+;;
+
+(test-section "srfi-133")
+
+(use compat.chibi-test)
+(use srfi-133)
+(use srfi-11)
+
+(chibi-test
+ (include "vectors-test.scm"))
+
 (test-end)
