@@ -666,7 +666,7 @@ ScmObj Scm_SocketIoctl(ScmSocket *s, int request, ScmObj data)
 #if   HAVE_STRUCT_IFREQ_IFR_IFINDEX
         ifreq_pkt.ifr_ifindex = Scm_GetIntegerU(data);
 #elif HAVE_STRUCT_IFREQ_IFR_INDEX
-        ifr_ifindex.ifr_index = Scm_GetIntegerU(data);
+        ifreq_pkt.ifr_index = Scm_GetIntegerU(data);
 #endif /*HAVE_STRUCT_IFREQ_IFR_INDEX*/
         SCM_SYSCALL(r, ioctl(s->fd, SIOCGIFNAME, &ifreq_pkt));
         if (r < 0)
