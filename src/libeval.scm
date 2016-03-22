@@ -556,10 +556,10 @@
   (return (Scm_VMGetStackLite vm)))
 
 (define (%vm-show-stack-trace trace :key
-                                    (port::<port> (current-output-port))
-                                    (maxdepth::<int> 0)
-                                    (skip::<int> 0)
-                                    (offset::<int> 0))
+                                    (port (current-output-port))
+                                    (maxdepth 0)
+                                    (skip 0)
+                                    (offset 0))
   ((with-module gauche.internal %show-stack-trace)
    trace port maxdepth skip offset))
 
