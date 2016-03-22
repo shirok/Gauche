@@ -680,7 +680,7 @@ ScmObj Scm_SocketIoctl(ScmSocket *s, int request, ScmObj data)
 #if HAVE_STRUCT_IFREQ_IFR_IFINDEX
         return Scm_MakeInteger(ifreq_pkt.ifr_ifindex);
 #elif HAVE_STRUCT_IFREQ_IFR_INDEX
-       return Scm_MakeInteger(ifreq_pkt.ifr_index);
+        return Scm_MakeInteger(ifreq_pkt.ifr_index);
 #endif /*HAVE_STRUCT_IFREQ_IFR_INDEX*/
 #endif /*SIOCGIFINDEX*/
 #if defined(SIOCGIFFLAGS)
