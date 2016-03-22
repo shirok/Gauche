@@ -60,7 +60,7 @@ typedef INT64 int64_t;
 #include <machine/endian.h>
 #elif defined(__MINGW32__)
 #define be64toh(x) __builtin_bswap64(x)
-#elif defined(__NetBSD__)
+#elif defined(__NetBSD__) || defined(__FreeBSD__)
 #include <sys/endian.h>
 #else
 #include <endian.h>
