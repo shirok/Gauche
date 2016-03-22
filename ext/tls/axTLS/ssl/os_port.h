@@ -156,7 +156,7 @@ EXP_FUNC int STDCALL getdomainname(char *buf, int buf_size);
 #ifdef __APPLE__
 #include <libkern/OSByteOrder.h>
 #define be64toh(x) OSSwapBigToHostInt64(x)
-#elif defined(__NetBSD__)
+#elif defined(__NetBSD__) || defined(__FreeBSD__)
 #include <sys/endian.h>
 #else  /*!__APPLE__ && !__NetBSD__ */
 #include <asm/byteorder.h>
