@@ -97,7 +97,7 @@
     (unless (and (<= 0 sstart) (<= sstart (SCM_VECTOR_SIZE s)))
       (Scm_Error "sstart out of range: %ld" sstart))
     (unless (and (<= 0 send) (<= send (SCM_VECTOR_SIZE s)))
-      (Scm_Error "send out of range: %ld" sstart))
+      (Scm_Error "send out of range: %ld" send))
     (unless (<= (+ tstart (- send sstart)) tsize)
       (Scm_Error "source vector overruns the target vector: %20.0S [%ld,%ld]"
                  s sstart send))
