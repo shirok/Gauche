@@ -70,13 +70,13 @@ Gauche as an embedded scripting language.
 
 Gauche's C API is designed for efficiency, consistency,
 simplicity and safety, roughly in this order of precedence.
-That is, simplicity and safety are sometimes compromized
+That is, simplicity and safety are sometimes compromised
 by efficiency.  For example, sometimes you have to choose
 from similar APIs to achieve a goal, where each API is designed
 to be efficient for a particular case.  The API also assumes
 the caller takes care not to break internal structure; there's
 no much safety net that protects you from shooting your foot.
-(By saying "safety is compromized" I don't mean @file{libgauche}
+(By saying "safety is compromised" I don't mean @file{libgauche}
 has security holes; I mean it assumes the programmer knows what
 he's doing.)
 
@@ -94,7 +94,7 @@ of the whole process.
 
 The following chapter, @ref{Fundamental concepts}, describes
 the design behind the API.  We strongly recommend you to
-understand this chapetr before trying to use Gauche C API
+understand this chapter before trying to use Gauche C API
 seriously.  As we mentioned above, it is very easy to break
 something without knowing those concepts.
 
@@ -119,7 +119,7 @@ we try to present working code for each example, so that you
 can actually play with it.  We recommend you to read through
 all examples, for we introduce new concepts in each step.
 
-We deal with the advanced topics that arises in the practical
+We deal with the advanced topics that arise in the practical
 situation in @ref{Real-life examples}.
 
 The prerequisites for building Gauche extension, besides
@@ -186,14 +186,14 @@ You have to list C functions you want to make it visible from
 Scheme world.  Because of its nature, this file looks like
 a mixture of Scheme code and C code fragments.
 
-When the package is compiled, Gauche's helper scripts generates
-a C file from a stub file, and compiles it with other glue code
+When the package is compiled, Gauche's helper scripts generate
+a C file from a stub file, and compile it with other glue code
 to generate a dynamically loadable object code, called DLL
 (dynamically loadable library) or SO (shared object), depending
 on the platform.
 
 @item Module file (@file{trivail.scm})
-This file typically defines Gauche modules and set exported
+This file typically defines Gauche modules and sets exported
 symbols, and dynamically loads the compiled object code.
 You may put auxiliary Scheme code in it.
 
@@ -303,9 +303,9 @@ Finally, you can install the extension by @code{make install}.
 @end example
 
 By default, the files are installed in the site-specific area
-reserved within the intalled Gauche.
+reserved within the installed Gauche.
 If you want to change the install location, you can do the
-same as typical autoconfiscated softwares; e.g. giving
+same as typical autoconfigured softwares; e.g. giving
 @code{--prefix} option to the @code{configure} script,
 or
 
@@ -526,7 +526,7 @@ Exits the process with @var{code} as the exit code.
 Calling @code{Scm_Exit} is the easiest way to terminate Gauche
 application safely.   It runs pending dynamic handlers,
 registered cleanup handlers (see below), flushes output ports,
-then call @code{exit(2)} to exit.
+then calls @code{exit(2)} to exit.
 
 Directly calling @code{exit(2)} would skip all those cleanup
 process.
@@ -547,7 +547,7 @@ it becomes no-op from the second time and after.
 
 @deftypefun void Scm_Panic (const char *@var{msg}, @dots{})
 The @var{msg} and other arguments are treated like @code{printf(3)}.
-Formats and displays the formatted messate, then exits the process
+Formats and displays the formatted message, then exits the process
 by calling @code{_exit(2)} with exit code 1.  No cleanup is done.
 
 This is called when a serious defect is detected in the Gauche
@@ -555,7 +555,7 @@ runtime and cannot continue normal operation in any way.
 @end deftypefun
 
 @deftypefun void Scm_Abort (const char *@var{msg})
-Writes @var{msg} to file desctipor 2, and exits the process
+Writes @var{msg} to file descriptor 2, and exits the process
 by calling @code{_exit(2)} with exit code 1.  No cleanup is done.
 
 This is the last resort of emergency exit, where you cannot
@@ -570,7 +570,7 @@ is shut down.  The registered functions are called by
 order of their registration.
 
 @deftypefun {void *} Scm_AddCleanupHandler (void (*@var{h})(void *), void *@var{d})
-Adds a function @var{h} to the clanup handler chain, with an opaque
+Adds a function @var{h} to the cleanup handler chain, with an opaque
 data pointer @var{d}.  At the cleanup time, @var{h} is called
 with @var{d} as the single argument.
 
@@ -580,7 +580,7 @@ Returns an opaque handle, which can be passed to DeleteCleanupHandler.
 @deftypefun void Scm_DeleteCleanupHandler (void *@var{handle})
 Delete cleanup handler.  The @var{handle} argument should be an opaque pointer
 returned from @code{Scm_AddCleanupHandler}.  (But it won't complain if
-other pointer is given; it just do nothing.)
+other pointer is given; it just does nothing.)
 @end deftypefun
 
 @node Memory allocation and GC, Booleans, Initialization and cleanup, C API reference
@@ -669,7 +669,7 @@ Scheme's @code{#t} and @code{#f}.
 @deftypefnx {Macro} int SCM_FALSEP (ScmObj @var{obj})
 Predicates to check whether the given @var{obj} is @code{SCM_TRUE} or
 @code{SCM_FALSE}, respectively.   Note that @code{!SCM_FALSEP(obj)}
-is different from @code{SCM_TRUEP(obj)}.  Since Scheme treats anthing
+is different from @code{SCM_TRUEP(obj)}.  Since Scheme treats anything
 other than @code{#f} as a true value, usually what you need is
 @code{SCM_FALSEP}.  You use @code{SCM_TRUEP} only iff you want
 to make sure the object is @code{#t}.
@@ -692,7 +692,7 @@ and @code{SCM_TRUE} for any other values.
 @end deftypefn
 
 @deftypefn {Macro} int SCM_EQ (ScmObj @var{x}, ScmObj @var{y})
-Compare two Scheme objects are the same, in the sense of
+Compares two Scheme objects are the same, in the sense of
 Scheme's @code{eq?}.   You should always use this macro
 instead of comparing two Scheme objects by @code{==}.
 @end deftypefn
@@ -748,7 +748,7 @@ are almost always passed as @code{ScmObj}, except special occasions.
 In Scheme level you usually don't need to think much
 about different types of numbers, for Gauche automatically
 converts them as needed.   There are C routines that accept
-generic Scheme numbers like Scheme, but time to time
+generic Scheme numbers like Scheme, but from time to time
 you need to check the actual type of the number and cast it
 from @code{ScmObj} to the actual structure.
 
@@ -1580,7 +1580,7 @@ Scm_MakeKeyword(SCM_STRING(SCM_MAKE_STR_IMMUTABLE(name)))
 @end deftypefn
 
 @deftypefn {Macro} ScmObj SCM_GET_KEYWORD (const char *@var{name}, ScmObj @var{list}, ScmObj @var{fallback})
-A convenience macro to search a value maked by a keyword whose name
+A convenience macro to search a value marked by a keyword whose name
 is specified by C string @var{name}.
 Implemented as follows:
 @example
@@ -1601,7 +1601,7 @@ which complicates implementation.
 You can assume that within the range of ASCII characters, C's @code{char}
 and @code{ScmChar} have the same value; that is, you can safely cast
 C's ASCII character to @code{ScmChar}.
-If Gauche is compilied with utf-8 as internal character encoding,
+If Gauche is compiled with utf-8 as internal character encoding,
 the value of @code{ScmChar} always matches unicode codepoint value.
 
 Note that @code{ScmChar} is @emph{not} the representation of Scheme
@@ -1675,8 +1675,8 @@ more than once in the expanded form.
 
 As of 0.8.8, @code{SCM_CHAR_UPPER_P}, @code{SCM_CHAR_LOWER_P},
 @code{SCM_CHAR_UPCASE} and @code{SCM_CHAR_DOWNCASE}
-only work on ASCII characters properly.  For any other characters,
-the predicates return @code{FALSE}, and the convertes
+only work properly on ASCII characters.  For any other characters,
+the predicates return @code{FALSE}, and the converters
 return the passed value as is.
 It'll be extended to support larger character
 ranges according to Unicode character attributes.
@@ -1793,7 +1793,7 @@ can be mutated while another thread is accessing it.  It is a problem for
 us, since string mutation can change the size (in bytes) of the string
 because of multibyte characters.  If you obtain the size, then accesses
 the string content using the size, you don't want the size of the
-content to be changed inbetween.
+content to be changed in between.
 (This is not so much a problem for the implementations that use an
 array of fixed-size characters, since mutation is localized to a
 single character at a time.)
