@@ -23869,6 +23869,17 @@ To show all the information, set @code{#f} to this parameter.
 @c COMMON
 @end deffn
 
+@defmac debug-funcall (PROC ARG ...)
+
+This macro prints the value of arguments right before calling
+@code{PROC} and the result(s) of the call afterwards.
+
+The special reader syntax @code{#?,@var{expr}} is expanded into
+@code{(debug-funcall @var{expr})}.  See @ref{Debugging}, for the
+details.
+
+@end defmac
+
 @defun debug-source-info obj
 @c EN
 Retrieves source information attached to @var{obj}.
