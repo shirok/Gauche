@@ -417,7 +417,7 @@
 
 ;; TAIL-CALL(NARGS)
 ;;  Call procedure in val0.  Same as CALL except this discards the
-;;  caller's arugment frame and shift the callee's argument frame.
+;;  caller's argument frame and shift the callee's argument frame.
 ;;
 (define-insn TAIL-CALL 1 none #f
   (begin (DISCARD-ENV) ($goto-insn CALL)))
@@ -815,7 +815,7 @@
 (define-insn LREF21 0 none #f ($lrefNN 2 1))
 (define-insn LREF30 0 none #f ($lrefNN 3 0))
 
-;; combined instrction
+;; combined instruction
 (define-insn LREF-PUSH   2 none  (LREF PUSH))
 (define-insn LREF0-PUSH  0 none  (LREF0 PUSH))
 (define-insn LREF1-PUSH  0 none  (LREF1 PUSH))
@@ -859,7 +859,7 @@
 (define-insn PROMISE  0 none #f
   ($result (Scm_MakePromise FALSE VAL0)))
 
-;; VALUES_APPLY(nargs) <args>
+;; VALUES-APPLY(nargs) <args>
 ;;  This instruction only appears in the code generated dynamically
 ;;  by Scm_Apply(Rec).  This is used to pass the application information
 ;;  across the boundary frame (see user_eval_inner() in vm.c).
