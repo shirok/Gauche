@@ -93,10 +93,8 @@
 ;;;       needed.  For every $LAMBDA node we find free local variables;
 ;;;       the lvars introduced outside of the $LAMBDA.  The result is set
 ;;;       in $lambda-free-lvars slot.  Then we determine $LAMBDA nodes
-;;;       that does not need to form a closure.  They are assigned to
-;;;       fresh global identifier ($lambda-lifted-var is set to it).
-;;;       References to this $lambda node through local variables are
-;;;       substituted to the reference of this global identifier.
+;;;       that does not need to form a closure.  We introduce a toplevel
+;;;       letrec that binds those lifted lambdas.
 ;;;
 ;;;   Pass 5 (Code generation):
 ;;;     - Traverses IForm and generate VM instructions.
@@ -4244,12 +4242,34 @@
 ;; extra arguments may exceed the gain by not allocating the closure.
 ;;
 ;; Pass4 is done in three steps.
-;; The first step, pass4/scan, recursively descends the IForm and determine
-;; a set of free variables for each $LAMBDA nodes.
-;; The second step, pass4/lift, takes a set of $LAMBDA nodes in the IForm
-;; and finds which $LAMBDA nodes can be lifted.
-;; The third step, pass4/subst, walks the IForm again, and replaces the
-;; occurence of $LAMBDA nodes to be lifted for $LREFs.
+;;
+;; - The first step, pass4/scan, recursively descends the IForm and determine
+;;   a set of free variables for each $LAMBDA nodes.  It also collects lambda
+;;   nodes inside the iform into label-dic-info.
+;;   In this pass, we mark the toplevel lambda node by setting
+;;   $lambda-lifted-var to #t.  All other lambda nodes have #f at this moment.
+;;
+;; - The second step, pass4/lift, takes a set of $LAMBDA nodes in the IForm
+;;   and finds which $LAMBDA nodes can be lifted.  When lifted, we set
+;;   its $lambda-lifted-var with the variable that bound to the lifted lambda.
+;;
+;; - The third step, pass4/subst, walks the IForm again, and replaces the
+;;   occurence of $LAMBDA nodes to be lifted for $LREFs.  Then wraps the
+;;   entire iform with $LET to save the lifted lambdas.
+;;
+;; This pass introduces CL-like toplevel environment, e.g.
+;;
+;;   ($let rec (<lvar> ...)
+;;             (($lambda ...) ...)   ; lifted lambdas
+;;     ($define ...)                 ; toplevel definition
+;;     )
+;;
+;; This works, since we already dissolved internal defines, and the $DEFINE
+;; we have is all toplevel defines, and the toplevel variable to be bound
+;; is already resolved to the identifier.
+;; NB: Whether we use 'rec' or not in this outermost lambda doesn't matter,
+;; for we directly refer to <lvar>s.  We just use 'rec' to remind it is
+;; conceptually a letrec.
 
 (define-inline (pass4/add-lvar lvar bound free)
   (if (or (memq lvar bound) (memq lvar free)) free (cons lvar free)))
@@ -4269,7 +4289,10 @@
             (if (null? lifted)
               iform                       ;shortcut
               (let1 iform. (pass4/subst iform (make-label-dic '()))
-                ($seq `(,@(map pass4/lifted-define lifted) ,iform.))))))))))
+                ($let #f 'rec
+                      (map (^[x] ($lambda-lifted-var x)) lifted)
+                      lifted
+                      iform.)))))))))
 
 (define (pass4/lifted-define lambda-node)
   ($define ($lambda-src lambda-node) '(const)
@@ -4392,7 +4415,7 @@
     (rlet1 results '()
       (let loop ([lms lambda-nodes])
         (cond [(null? lms)]
-              [($lambda-lifted-var (car lms))
+              [($lambda-lifted-var (car lms)) ; this is toplevel node
                ($lambda-lifted-var-set! (car lms) #f)
                (loop (cdr lms))]
               [else
@@ -4402,11 +4425,11 @@
                            (and (null? (cdr fvs))
                                 (lvar-immutable? (car fvs))
                                 (eq? (lvar-initval (car fvs)) lm)))
-                   (let1 gvar (make-identifier (gensym) module '())
+                   (let1 lvar (make-lvar (gensym))
                      ($lambda-name-set! lm (list top-name
                                                  (or ($lambda-name lm)
-                                                     (identifier-name gvar))))
-                     ($lambda-lifted-var-set! lm gvar)
+                                                     (lvar-name lvar))))
+                     ($lambda-lifted-var-set! lm lvar)
                      (push! results lm)))
                  (loop (cdr lms)))])))))
 
@@ -4443,11 +4466,10 @@
                             [init (lvar-initval ($lref-lvar iform))]
                             [ (vector? init) ]
                             [ (has-tag? init $LAMBDA) ]
-                            [id ($lambda-lifted-var init)])
+                            [lifted ($lambda-lifted-var init)])
                    (lvar-ref--! ($lref-lvar iform))
-                   ;; Modifies $LREF to $GREF
-                   (vector-set! iform 0 $GREF)
-                   ($gref-id-set! iform id)
+                   ($lref-lvar-set! iform lifted)
+                   (lvar-ref++! lifted)
                    iform)
                  iform)]
   [($LSET)   (pass4/subst! ($lset-expr iform) labels)]
@@ -4460,8 +4482,8 @@
   [($RECEIVE)(pass4/subst! ($receive-expr iform) labels)
              (pass4/subst! ($receive-body iform) labels)]
   [($LAMBDA) (pass4/subst! ($lambda-body iform) labels)
-             (or (and-let* ([id ($lambda-lifted-var iform)])
-                   ($gref id))
+             (or (and-let* ([lifted ($lambda-lifted-var iform)])
+                   ($lref lifted))
                  iform)]
   [($LABEL)  (unless (label-seen? labels iform)
                (label-push! labels iform)

@@ -1,3 +1,9 @@
+2016-03-23  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.scm (pass4): Use local environment instead of inserting
+	  new global identifiers for lifted lambdas.   Inserting new global ids
+	  has an issue of where module the global binding should be inserted.
+
 2016-03-22  Shiro Kawai  <shiro@acm.org>
 
 	* ext/srfi/srfi-133.scm: Added srfi-133 support.  The common part
