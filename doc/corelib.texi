@@ -19150,6 +19150,7 @@ Cの標準ライブラリとGaucheの手続きとの対応が示してありま�
 * Time::                        
 * Process management::          
 * I/O multiplexing::            
+* Garbage Collection::          
 * Miscellaneous system calls::  
 @end menu
 
@@ -23374,7 +23375,7 @@ Windowsプロセスハンドル@var{handle}が示すプロセスの、整数のp
 @end defun
 
 
-@node I/O multiplexing, Miscellaneous system calls, Process management, System interface
+@node I/O multiplexing, Garbage Collection, Process management, System interface
 @subsection I/O multiplexing
 @c NODE I/Oの多重化
 
@@ -23555,7 +23556,25 @@ doesn't modify its arguments.
 @end defun
 
 
-@node Miscellaneous system calls,  , I/O multiplexing, System interface
+@node Garbage Collection, Miscellaneous system calls, I/O multiplexing, System interface
+@subsection Garbage Collection
+
+@defun gc
+
+The garbage collector runs implicitly whenever it is necessary.
+However, you can run it explicitly with this function.
+
+@end defun
+
+@defun gc-stat
+
+Returns a list of lists, each inner list contains a keyword and
+related statistics. Current statistics include @code{:total-heap-size},
+@code{:free-bytes}, @code{:bytes-since-gc} and @code{:total-bytes}.
+
+@end defun
+
+@node Miscellaneous system calls,  , Garbage Collection, System interface
 @subsection Miscellaneous system calls
 @c NODE その他のシステムコール
 
@@ -23849,6 +23868,17 @@ To show all the information, set @code{#f} to this parameter.
 さい。
 @c COMMON
 @end deffn
+
+@defmac debug-funcall (PROC ARG ...)
+
+This macro prints the value of arguments right before calling
+@code{PROC} and the result(s) of the call afterwards.
+
+The special reader syntax @code{#?,@var{expr}} is expanded into
+@code{(debug-funcall @var{expr})}.  See @ref{Debugging}, for the
+details.
+
+@end defmac
 
 @defun debug-source-info obj
 @c EN
