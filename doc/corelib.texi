@@ -18371,6 +18371,55 @@ file.  We call this @emph{autoprovide} feature.
 @var{feature}が自動的にprovideされます。これを
 @emph{autoprovide}機能と呼んでいます。
 @c COMMON
+
+@c EN
+Note that @code{require} first sets the current module to
+an immutable module called @code{gauche.require-base}
+and then load the file.  The files
+loaded by @code{require} usually have @code{define-module}/@code{select-module}
+or @code{define-library} for the first thing, so you rarely notice the
+@code{gauche.require-base} module.  However, if the loaded file
+has toplevel defines or imports (@code{use}'s) without specifying
+a module, you'll get an error like the following:
+@c JP
+@code{require}は、ファイルをロードする前に現在のモジュールを
+@code{gauche.require-base}という変更不可なモジュールにセットします。
+@code{require}されるファイルは通常、最初に@code{define-module}/@code{select-module}
+か@code{define-library}フォームを持つので、この@code{gauche.require-base}モジュール
+を目にすることはほとんど無いでしょう。
+ただ、もしロードされたファイルがモジュールを指定すること無くトップレベルの
+変数を定義したり他のモジュールを@code{import}(@code{use})しようとした場合、
+次のようなエラーとなります。
+@c COMMON
+
+@example
+*** ERROR: Attempted to create a binding (a) in a sealed
+module: #<module gauche.require-base>
+@end example
+
+@c EN
+Rationale: Generally it's difficult to guarantee 
+when the specified file is loaded by @code{require} (because some other
+module may already have required it).  If we just used the caller's current
+module, there would be a couple of issues: The form @code{define-module} or
+@code{define-library} may not be visible from the current module, and
+you can't guarantee if the toplevel defines without specifying modules
+in the loaded file inserts the caller's current module, since they may
+have been loaded into a different module.
+It is just a bad idea to insert
+toplevel definitions or to import other modules without specifying which
+module you put them in.  So we made them an error.
+@c JP
+理由: @code{require}されているファイルがどのタイミングで読まれるかを
+正確にコントロールするのは難しいです(他のモジュールが既にrequireしているかも
+しれないので)。もし呼び出し側の現在のモジュールをそのまま使った場合、二つの
+問題が生じ得ます。(1)呼び出し側の現在のモジュールから、
+@code{define-module}や@code{define-library}が見えているとは限りません。
+(2)モジュールを指定しないトップレベル定義が呼び出し側の現在のモジュールに
+定義を追加することは保証されません(既に別のモジュールへと読みこまれているかもしれません)。
+モジュールを指定しないトップレベル定義やimportを持つファイルをrequireすることは、
+単に悪いアイディアです。したがってそういう事例はエラーとすることにしました。
+@c COMMON
 @end defspec
 
 @defun provide feature

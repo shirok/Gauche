@@ -1,5 +1,14 @@
 2016-03-23  Shiro Kawai  <shiro@acm.org>
 
+	* src/load.c (Scm_Require): 'require' now loads a file into
+	  a sealed module #<module gauche.require-base>.  This guarantees
+	  the forms like define-module or define-library to be visible
+	  from the loaded file, and also catches when the loaded file
+	  inadvertently inserts toplevel bindings without specifying
+	  a module.
+	  Note: This change may triggers an error in existing code.  Such
+	  code has just "happened to work"; they should be fixed.
+
 	* src/compile.scm (pass4): Use local environment instead of inserting
 	  new global identifiers for lifted lambdas.   Inserting new global ids
 	  has an issue of where module the global binding should be inserted.

@@ -66,15 +66,17 @@
 (test "reload after error"
       1
       (^[]
-        (with-error-handler
-         (^e #t)
-         (^[] (eval '(require "test.o/d") (interaction-environment))))
-        (with-output-to-file "test.o/d.scm"
-          (^[]
-            (write '(define z 1))
-            (write '(provide "tset.o/d"))))
-        (eval '(require "test.o/d") (interaction-environment))
-        (eval 'z (interaction-environment))))
+        (let ((m (make-module 'reload-after-error)))
+          (with-error-handler
+              (^e #t)
+            (^[] (eval '(require "test.o/d") (interaction-environment))))
+          (with-output-to-file "test.o/d.scm"
+            (^[]
+              (write '(select-module reload-after-error))
+              (write '(define z 1))
+              (write '(provide "tset.o/d"))))
+          (eval '(require "test.o/d") (interaction-environment))
+          (eval 'z m))))
 
 ;; :environment arg -------------------------------------
 (test-section "load environment")
