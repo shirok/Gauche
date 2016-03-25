@@ -1,3 +1,7 @@
+2016-03-24  Shiro Kawai <shiro@acm.org>
+
+	* ext/data/queue.scm (mtqueue-num-waiting-readers): Added.
+
 2016-03-23  Shiro Kawai  <shiro@acm.org>
 
 	* src/load.c (Scm_Require): 'require' now loads a file into

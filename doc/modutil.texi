@@ -2418,6 +2418,38 @@ to mtqueue with finite max-length.
 @c COMMON
 @end defun
 
+@defun mtqueue-num-waiting-readers mtqueue
+@c EN
+Returns the number of threads waiting on the mtqueue to read
+at this moment. 
+The return value is always a nonnegative exact integer.
+
+Note that the value might change between this procedure's returning
+the value and your checking it, if some other thread inserts
+an element into the queue.  To use the value reliably, you need
+another mutex to restrict putting items in the queue.
+@c JP
+@var{mtqueue}からの読み出しで待っているスレッドの数を返します。
+返り値は常に非負の正確な整数です。
+
+この手続きが値を返してからその値を使うまでの間に、別のスレッドが
+キューに要素を挿入したら、待っているスレッドの数は変わってしまうことに
+注意してください。この手続きの返り値を安全に使うには、
+キューに値を挿入する部分を別に排他制御する必要があります。
+@c COMMON
+
+@example
+(define q (make-mtqueue))
+
+(thread-start! (make-thread (^[] (dequeue/wait! q))))
+
+(mtqueue-num-waiting-readers q) @result{} 1
+
+(enqueue! q 'a)
+
+(mtqueue-num-waiting-readers q) @result{} 0
+@end example
+@end defun
 
 @defun copy-queue queue
 @c EN
