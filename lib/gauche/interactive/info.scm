@@ -43,9 +43,28 @@
 (select-module gauche.interactive.info)
 
 (define *info-file* "gauche-refe.info")
-(define *info* #f)
-(define *info-index* (make-hash-table 'string=?)) ;entry => (node-name line-no)
 
+(define-class <repl-info> () ;; a signleton
+  ((info  :init-keyword :info)   ;; <info>
+   (index :init-keyword :index)  ;; hashtable name -> (node-name line-no)
+   ))
+
+(define get-info
+  (let1 repl-info
+      (delay
+        (let ([info  (open-info-file (find-info-file))]
+              [index (make-hash-table 'string=?)])
+          (dolist [index-page '("Function and Syntax Index" "Module Index")]
+            (dolist [p ($ info-parse-menu $ info-get-node info index-page)]
+              (hash-table-put! index (car p) (cdr p))))
+          ;; class index doesn't have surrounding '<>', but we want to search
+          ;; with them.
+          (dolist [p ($ info-parse-menu $ info-get-node info "Class Index")]
+            (hash-table-put! index #"<~(car p)>" (cdr p)))
+          (make <repl-info>
+            :info info :index index)))
+    (^[] (force repl-info))))
+  
 (define *pager* (or (sys-getenv "PAGER")
                     (find-file-in-paths "less")
                     (find-file-in-paths "more")))
@@ -62,7 +81,6 @@
          (display s (process-input p)))
        (close-output-port (process-input p))
        (process-wait p)))))
-
 
 (define (get-info-paths)
   (let* ([syspath (cond [(sys-getenv "INFOPATH") => (cut string-split <> #\:)]
@@ -82,26 +100,21 @@
     ))
 
 (define (get-node&line entry-name)
-  (unless *info*
-    (set! *info* (open-info-file (find-info-file)))
-    (dolist [p ($ info-parse-menu
-                  $ info-get-node *info* "Function and Syntax Index")]
-      (hash-table-put! *info-index* (car p) (cdr p))))
-  (or (hash-table-get *info-index* (x->string entry-name) #f)
+  (or (hash-table-get (~ (get-info)'index) (x->string entry-name) #f)
       (errorf "no info document for ~a" entry-name)))
 
+;; API
 (define (info fn)
   (let* ([node&line (get-node&line fn)]
-         [node (info-get-node *info* (car node&line))])
+         [node (info-get-node (~ (get-info)'info) (car node&line))])
     (viewer (if (null? (cdr node&line))
               (~ node'content)
               (info-extract-definition node (cadr node&line)))))
   (values))
 
+;; API
 (define (info-page fn)
   (let* ([node&line (get-node&line fn)]
          [nodename (car node&line)])
-    (viewer (ref (info-get-node *info* nodename) 'content)))
+    (viewer (ref (info-get-node (~ (get-info)'info) nodename) 'content)))
   (values))
-
-
