@@ -5333,10 +5333,34 @@ one at a time.
 作成して返します。
 @c COMMON
 
+@c EN
+Example: The game Tetris determines the next 
+dropping piece (tetrimino) by the following algorithm: Take a
+bag of tetriminos with one for each kind (O, I, T, S, Z, L, J),
+permute it, and draw one by one; once the bag is empty, take another
+bag and repeat.  The algorithm can be implemented by a pipeline
+of generates as follows.  (Tetris is a registered trademark of
+The Tetris Company).
+@c JP
+例: ゲームのテトリスは、次に落ちてくるピース (テトリミノ) を次の
+アルゴリズムで決めています: 各種類(O, I, T, S, Z, L, J)のテトリミノが
+一つづつ入った袋をとり、そこからランダムに一つづつ取り出す。袋が空になったら
+新たにテトリミノの袋をとり繰り返す。このアルゴリズムは次に示すとおり
+ジェネレータのパイプラインで実装できます。(テトリスはThe Tetris Companyの
+登録商標です)
+@c COMMON
+
 @example
-($ generator->list $ gflatten
-   $ list->generator `(,(iota 3) ,(iota 2)))
- @result{} (0 1 2 0 1)
+(use gauche.generator)
+(use data.random) ; for permutations-of
+
+(define g
+  ($ gflatten $ permutations-of
+     $ (circular-generator '(O I T S Z L J))))
+
+(generator->list g 21)
+  @result{}
+  (L O Z T J S I J L Z T I O S T L Z S I J O)
 @end example
 
 @c EN
@@ -5620,37 +5644,6 @@ the lines after such line continuations are taken care of.
                 '()
                 (file->line-generator "input-file.txt")
                 (^[s] `(,(string-concatenate-reverse s))))
-@end example
-@c COMMON
-
-@c EN
-Another example: The game Tetris determines the next 
-dropping piece (tetrimino) by the following algorithm: Take a
-bag of tetriminos with one for each kind (O, I, T, S, Z, L, J),
-permute it, and draw one by one; once the bag is empty, take another
-bag and repeat.  The algorithm can be implemented by a pipeline
-of generates as follows.  (Tetris is a registered trademark of
-The Tetris Company).
-@c JP
-もう一つの例: ゲームのテトリスは、次に落ちてくるピース (テトリミノ) を次の
-アルゴリズムで決めています: 各種類(O, I, T, S, Z, L, J)のテトリミノが
-一つづつ入った袋をとり、そこからランダムに一つづつ取り出す。袋が空になったら
-新たにテトリミノの袋をとり繰り返す。このアルゴリズムは次に示すとおり
-ジェネレータのパイプラインで実装できます。(テトリスはThe Tetris Companyの
-登録商標です)
-@c COMMON
-
-@example
-(use data.random) ; for permutations-of
-
-(define g
-  ($ gbuffer-filter (^[i _] (values i #f)) #f
-     $ permutations-of
-     $ (circular-generator '(O I T S Z L J))))
-
-(generator->list g 21)
-  @result{}
-  (L O Z T J S I J L Z T I O S T L Z S I J O)
 @end example
 @end defun
 
