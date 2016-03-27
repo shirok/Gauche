@@ -1258,7 +1258,6 @@
 (assert-error "vector-reverse! e0" (vector-reverse! (vector 'a 'b) 0 3))
 (assert-error "vector-reverse! e1" (vector-reverse! (vector 'a 'b) 2 1))
 (assert-error "vector-reverse! e2" (vector-reverse! (vector 'a 'b) -1 1))
-(assert-error "vector-reverse! e3" (vector-reverse! (vector) 0 0))
 
 ;; vector-copy! - now built-in
 
