@@ -505,11 +505,11 @@ srfi-43, srfi-43
 
 Vector library
 Supported by the module @code{srfi-43}.
-@xref{Vector library}.
+@xref{Vector library (Legacy)}.
 
 ベクタライブラリ
 モジュール@code{srfi-43}でサポートされます。
-@ref{Vector library}参照。
+@ref{Vector library (Legacy)}参照。
 
 
 srfi-45
@@ -751,8 +751,8 @@ srfi-133
 ()
 
 Vector library (R7RS-compatible)
-Supported by the module @code{srfi-133}.
+Supported by the module @code{srfi-133}.  @xref{Vector library}.
 
 ベクタライブラリ (R7RS互換)
-モジュール@code{srfi-133}でサポートされます。
+モジュール@code{srfi-133}でサポートされます。 @ref{Vector library}参照。
 

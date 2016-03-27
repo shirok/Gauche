@@ -9427,20 +9427,20 @@ a setter method of @code{ref}.
 
 @defun vector->list vector :optional start end
 @defunx list->vector list :optional start end
-[R7RS+][SRFI-43+]
+[R7RS+][SRFI-133+]
 @c EN
 Converts a vector to a list, or vice versa.
 
 The optional @var{start} and @var{end} arguments
 limit the range of the source.
-(R7RS doesn't define @var{start} and @var{end} arguments
+(R7RS and SRFI-133 don't define @var{start} and @var{end} arguments
 for @code{list->vector}.)
 @c JP
 ベクタをリストに変換したり、その逆を行う手続きです。
 
 省略可能な引数@var{start}と@var{end}を与えることにより、
 値を取り出す範囲を制限することができます。
-(R7RSの@code{list->vector}は@var{start}と@var{end}引数を規定していません。)
+(R7RSおよびSRFI-133の@code{list->vector}は@var{start}と@var{end}引数を規定していません。)
 @c COMMON
 @example
 (vector->list '#(1 2 3 4 5))     @result{} (1 2 3 4 5)
@@ -9462,7 +9462,7 @@ With @var{gauche.collection} module, you can use
 @end defun
 
 @defun reverse-list->vector list :optional start end
-[SRFI-43]
+[SRFI-133]
 @c EN
 Without optional arguments, it returns the same thing as
 @code{(list->vector (reverse list))}, but does not
@@ -9516,7 +9516,7 @@ With @var{gauche.collection} module, you can use
 @end defun
 
 @defun vector-fill! vector fill :optional start end
-[R7RS][SRFI-43]
+[R7RS][SRFI-133]
 @c EN
 Sets all elements in a vector @var{vector} to @var{fill}.
 
@@ -9535,7 +9535,7 @@ zero, and @var{end} defaults to the length of @var{vector}.
 @end defun
 
 @defun vector-copy vector :optional start end fill
-[R7RS][SRFI-43]
+[R7RS][SRFI-133]
 @c EN
 Copies a vector @var{vector}.  Optional @var{start} and @var{end}
 arguments can be used to limit the range of @var{vector} to be copied.
@@ -9557,7 +9557,7 @@ the result vector.
 @end defun
 
 @defun vector-copy! target tstart source :optional sstart send
-[R7RS][SRFI-43]
+[R7RS][SRFI-133]
 @c EN
 Copies the content of @var{source} vector into the @var{target} vector
 starting from @var{tstart} in the target.  The @var{target} vector
@@ -9598,7 +9598,7 @@ overlapping.
 @end defun
 
 @defun vector-append vec @dots{}
-[R7RS], [SRFI-43]
+[R7RS][SRFI-133]
 @c EN
 Returns a newly allocated vector whose contents are concatenation
 of elements of @var{vec} in order.
@@ -9613,7 +9613,7 @@ of elements of @var{vec} in order.
 @end defun
 
 @defun vector-map proc vec1 vec2 @dots{}
-[R7RS]
+[R7RS][SRFI-133]
 @c EN
 Returns a new vector, @var{i}-th of which is calculated
 by applying @var{proc} on the list of each @var{i}-th element
@@ -9647,17 +9647,6 @@ function by @code{(map-to <vector> proc vec1 vec2 @dots{}}.
 註: @code{gauche.collection}をuseして
 @code{(map-to <vector> proc vec1 vec2 @dots{}} としても同じ機能は得られます。
 @c COMMON
-
-@c EN
-Note: SRFI-43 also provides @code{vector-map}, but the API is slightly
-different (@pxref{Vector library}).
-SRFI-43's @code{vector-map} is equivalent to 
-@code{vector-map-with-index} below.
-@c JP
-註: SRFI-43も@code{vector-map}という手続きを提供していますが、
-APIが若干異なります(@ref{Vector library}参照)。
-SRFI-43の@code{vector-map}は下の@code{vector-map-with-index}と同じです。
-@c COMMON
 @end defun
 
 @defun vector-map-with-index proc vec1 vec2 @dots{}
@@ -9675,9 +9664,10 @@ as the first argument.
 @end example
 
 @c EN
-This is what SRFI-43 calls @code{vector-map}.
+This is what SRFI-43 calls @code{vector-map}.  @xref{Vector library (Legacy)}.
 @c JP
 これがSRFI-43で@code{vector-map}と呼ばれている手続きです。
+@ref{Vector library (Legacy)}参照。
 @c COMMON
 
 @c EN
@@ -9691,6 +9681,7 @@ function by @code{(map-to-with-index <vector> proc vec1 vec2 @dots{}}.
 @end defun
 
 @defun vector-map! proc vec1 vec2 @dots{}
+[SRFI-133]
 @c EN
 For each index @var{i}, calls @var{proc} with @var{i}-th index
 of @var{vec1} @var{vec2} @dots{}, and set the result back to
@@ -9712,27 +9703,17 @@ length of input vectors.
   (vector-map! + v '#(10 20)))
   @result{} #(11 22 3 4)
 @end example
-
-@c EN
-Note: SRFI-43 provides @code{vector-map!} with slightly different API
-(@pxref{Vector library}).
-It is equivalent to @code{vector-map-with-index!} below.
-@c JP
-註: SRFI-43は@code{vector-map!}を提供していますが、APIが少し異なります
-(@ref{Vector library}参照)。
-SRFI-43の@code{vector-map!}は下に説明する@code{vector-map-with-index!}と同じです。
-@c COMMON
 @end defun
 
 @defun vector-map-with-index! proc vec1 vec2 @dots{}
 @c EN
 Like @code{vector-map!}, but @var{proc} receives the current
 index as the first argument.  This is equivalent to SRFI-43's
-@code{vector-map!} (@pxref{Vector library}).
+@code{vector-map!} (@pxref{Vector library (Legacy)}).
 @c JP
 @code{vector-map!}と似ていますが、@var{proc}の第1引数に
 現在のインデックスが渡されます。SRFI-43で@code{vector-map!}
-と定義されているものと同じ動作です (@ref{Vector library}参照)。
+と定義されているものと同じ動作です (@ref{Vector library (Legacy)}参照)。
 @c COMMON
 
 @example
@@ -9744,7 +9725,7 @@ index as the first argument.  This is equivalent to SRFI-43's
 @end defun
 
 @defun vector-for-each proc vec1 vec2 @dots{}
-[R7RS]
+[R7RS][SRFI-133]
 @c EN
 For all @var{i} below the minimum length of input vectors,
 calls @var{proc} with @var{i}-th elements of @var{vec1} @var{vec2}
@@ -9759,17 +9740,6 @@ calls @var{proc} with @var{i}-th elements of @var{vec1} @var{vec2}
 (vector-for-each print '#(a b c))
  @result{} @r{prints @code{a}, @code{b} and @code{c}}.
 @end example
-
-@c EN
-Note: SRFI-43 provides @code{vector-for-each} with slightly different
-API (@pxref{Vector library}).  It is equivalent to
-@code{vector-for-each-with-index} described below.
-@c JP
-註: SRFI-43も@code{vector-for-each}を提供していますが、APIが少し異なります
-(@ref{Vector library}参照)。
-SRFI-43の@code{vector-for-each}は
-下に説明する@code{vector-for-each-with-index}と同じです。
-@c COMMON
 @end defun
 
 @defun vector-for-each-with-index proc vec1 vec2 @dots{}
@@ -9778,17 +9748,15 @@ Like @code{vector-for-each}, but @var{proc} receives the current index
 in the first argument.
 
 This is equivalent to SRFI-43's @code{vector-for-each}.
+@xref{Vector library (Legacy)}.
 @c JP
 @code{vector-for-each}と似ていますが、@var{proc}の第1引数に
 現在のインデックスが渡されます。
 
 この手続きはSRFI-43の@var{vector-for-each}と等価です。
+@ref{Vector library (Legacy)}参照。
 @c COMMON
 @end defun
-
-
-
-
 
 @c ----------------------------------------------------------------------
 @node Hashtables, Treemaps, Vectors, Core library
@@ -23558,20 +23526,40 @@ doesn't modify its arguments.
 
 @node Garbage Collection, Miscellaneous system calls, I/O multiplexing, System interface
 @subsection Garbage Collection
+@c NODE ガベージコレクション
+
+@c EN
+The garbage collector runs implicitly whenever it is necessary,
+and you don't usually need to worry about it.  However, in case
+if you do need to worry, here are a few procedures you can use.
+@c JP
+ガベージコレクタは必要になった時に自動的に走るので、普段気にする必要はないでしょう。
+けれどももし気にする必要が出てきた時は、いくつか使える手続きがあります。
+@c COMMON
 
 @defun gc
-
-The garbage collector runs implicitly whenever it is necessary.
-However, you can run it explicitly with this function.
-
+@c EN
+Trigger a full GC.  It may be useful if you want to reduce
+interference of GC in certain parts of code by calling this
+immediately before that.
+@c JP
+フルGCを起動します。GCの影響をなるべく排除したいコードがある場合、
+その直前にこの手続きを呼ぶことで影響を減らせるかもしれません。
+@c COMMON
 @end defun
 
 @defun gc-stat
-
+@c EN
 Returns a list of lists, each inner list contains a keyword and
 related statistics. Current statistics include @code{:total-heap-size},
 @code{:free-bytes}, @code{:bytes-since-gc} and @code{:total-bytes}.
-
+@c JP
+GCに関する統計情報を返します。返り値はリストのリストで、
+内側のリストはキーワードと対応する数値からなります。
+現在、返されるキーワードは
+@code{:total-heap-size}、
+@code{:free-bytes}、@code{:bytes-since-gc}、@code{:total-bytes}です。
+@c COMMON
 @end defun
 
 @node Miscellaneous system calls,  , Garbage Collection, System interface
