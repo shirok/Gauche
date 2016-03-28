@@ -1118,10 +1118,18 @@
   [(_ stuff) (list (x->string stuff))])
 
 (define-cise-expr result
+  [(_) (error "cise: result form needs at least one value'")]
   [(_ e) `(set! SCM_RESULT ,e)]
   [(_ e0 e1) `(set! SCM_RESULT0 ,e0 SCM_RESULT1 ,e1)]
   [(_ e0 e1 e2) `(set! SCM_RESULT0 ,e0 SCM_RESULT1 ,e1 SCM_RESULT2 ,e2)]
-  )
+  [(_ x ...) `(set! ,@(reverse (cdr (fold
+                                     (lambda (elt counter/result)
+                                       (let* ([counter (car counter/result)]
+                                              [result (cdr counter/result)]
+                                              [sym (string->symbol #"SCM_RESULT~counter")])
+                                         `(,(+ counter 1) ,elt ,sym . ,result)))
+                                     '(0)
+                                     x))))])
 
 (define-cise-expr list
   [(_)           '("SCM_NIL")]
