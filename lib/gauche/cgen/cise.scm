@@ -1118,10 +1118,15 @@
   [(_ stuff) (list (x->string stuff))])
 
 (define-cise-expr result
+  [(_) (error "cise: result form needs at least one value'")]
   [(_ e) `(set! SCM_RESULT ,e)]
   [(_ e0 e1) `(set! SCM_RESULT0 ,e0 SCM_RESULT1 ,e1)]
   [(_ e0 e1 e2) `(set! SCM_RESULT0 ,e0 SCM_RESULT1 ,e1 SCM_RESULT2 ,e2)]
-  )
+  [(_ xs ...) `(set!
+                ,@(concatenate
+                   (map-with-index
+                    (^[i x] `(,(string->symbol #"SCM_RESULT~i") ,x))
+                    xs)))])
 
 (define-cise-expr list
   [(_)           '("SCM_NIL")]
