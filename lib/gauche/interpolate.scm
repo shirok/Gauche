@@ -93,7 +93,4 @@
                (^[] (accum (read-char) (open-output-string))))
     (cond [(null? args) ""]
           [(null? (cdr args)) (car args)]
-          [else (cons 'string-append
-                      (with-input-from-string str
-                        (^[] (accum (read-char) (open-output-string)))))])))
-
+          [else (cons 'string-append args)])))
