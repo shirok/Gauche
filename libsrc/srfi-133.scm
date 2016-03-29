@@ -156,7 +156,7 @@
     (unless (<= 0 s len) (error "start index out of range:" s))
     (unless (<= 0 e len) (error "end index out of range:" e))
     (unless (<= s e)
-      (error "start index (~s) is greater than end index (~s)" s e))
+      (errorf "start index (~s) is greater than end index (~s)" s e))
     (apply %vector-unfold! f rvec s e seeds)))
 
 (define (vector-unfold-right! f rvec s e . seeds)
@@ -166,7 +166,7 @@
     (unless (<= 0 s len) (error "start index out of range:" s))
     (unless (<= 0 e len) (error "end index out of range:" e))
     (unless (<= s e)
-      (error "start index (~s) is greater than end index (~s)" s e))
+      (errorf "start index (~s) is greater than end index (~s)" s e))
     (apply %vector-unfold-right! f rvec s e seeds)))
 
 (define (%vector-reverse-copy! target tstart source sstart send)
