@@ -1,5 +1,8 @@
 2016-03-28  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/interpolate.scm (%string-interpolate): Slight
+	  optimization to avoid unnecessary string-append.
+
 	* lib/gauche/cgen/cise.scm (result): Allow more than three values.
 	  Patch from pclouds.
 
