@@ -38,6 +38,7 @@
 #include "gauche/priv/builtin-syms.h"
 #include "gauche/priv/readerP.h"
 #include "gauche/priv/portP.h"
+#include "gauche/priv/moduleP.h"
 
 #include <ctype.h>
 #include <fcntl.h>
@@ -84,19 +85,6 @@ static struct {
                                      but we may change this design in future.
                                   */
     ScmInternalMutex dso_mutex;
-
-    /* An immutable module to which 'require' loads code.
-       We need a base module where 'define-module' and 'define-library' are
-       visible in order for requiring modules using them to work, so
-       loading into the current module won't cut it.  However, we don't
-       want to use a specific mutable module (such as #<module gauche>) as
-       a base, since if the required module has toplevel defines without
-       switching the module, it will modify the base module.
-       By using immutable module as a base, we can reject the latter case;
-       requiring a code that inserts toplevel binding without specifying
-       a module is simply a bad idea and shouldn't be allowed.
-     */
-    ScmModule *require_base;
 } ldinfo = { (ScmGloc*)&ldinfo, };  /* trick to put ldinfo in .data section */
 
 /* keywords used for load and load-from-port surbs */
@@ -857,7 +845,7 @@ static int do_require(ScmObj, int, ScmModule *, ScmLoadPacket *);
  */
 int Scm_Require(ScmObj feature, int flags, ScmLoadPacket *packet)
 {
-    return do_require(feature, flags, ldinfo.require_base, packet);
+    return do_require(feature, flags, Scm__RequireBaseModule(), packet);
 }
 
 int do_require(ScmObj feature, int flags, ScmModule *base_mod,
@@ -1270,11 +1258,6 @@ void Scm__InitLoad(void)
                                     SCM_MAKE_STR("." SHLIB_SO_SUFFIX));
     ldinfo.dso_table = SCM_HASH_TABLE(Scm_MakeHashTableSimple(SCM_HASH_STRING,0));
     ldinfo.dso_prelinked = SCM_NIL;
-
-    ldinfo.require_base =
-        SCM_MODULE(Scm_MakeModule(SCM_SYMBOL(SCM_INTERN("gauche.require-base")),
-                                  FALSE));
-    Scm_ModuleSeal(ldinfo.require_base);
 
 #define PARAM_INIT(var, name, val) Scm_DefinePrimitiveParameter(m, name, val, &ldinfo.var)
     PARAM_INIT(load_history, "current-load-history", SCM_NIL);
