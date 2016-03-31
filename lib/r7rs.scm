@@ -295,17 +295,23 @@
   ;; 6.10 Control features
   ;; procedure? apply map
   ;; call-with-current-continuation call/cc values call-with-values dynamic-wind
-  (define (string-map proc str . more-strs) ; TODO: can be more efficient
+  (define+ vector-map gauche)
+  (define+ vector-for-each gauche)
+  ;; NB: we have string-map and string-for-each here, for they're different
+  ;; from srfi-13 api.  Also they must be restart-safe.  The current one
+  ;; is quick hack without thinking efficiency.  We think empoying
+  ;; immutable string pointers would be better solution.  In some day...
+  (define (string-map proc str . more-strs)
     (if-let1 a (find (^s (not (string? s))) (cons str more-strs))
       (error "non-string argument passed to string-map:" a)
-      (apply (with-module gauche.sequence map-to) <string> proc str more-strs)))
-  (define+ vector-map gauche)
-  (define+ for-each gauche)
-  (define (string-for-each proc str . more-strs) ; TODO: can be more efficient
+      (if (null? more-strs)
+        (list->string (map proc (string->list str)))
+        (list->string (apply map proc (map string->list (cons str more-strs)))))))  (define (string-for-each proc str . more-strs)
     (if-let1 a (find (^s (not (string? s))) (cons str more-strs))
       (error "non-string argument passed to string-for-each:" a)
-      (apply (with-module gauche.sequence for-each) proc str more-strs)))
-  (define+ vector-for-each gauche)
+      (if (null? more-strs)
+        (for-each proc (string->list str))
+        (apply for-each proc (map string->list (cons str more-strs))))))
 
   ;; 6.11 Exceptions
   ;; error - built-in
