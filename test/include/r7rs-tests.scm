@@ -176,6 +176,31 @@
               (y x))
              y))
 
+;; By Jussi Piitulainen <jpiitula@ling.helsinki.fi>
+;; and John Cowan <cowan@mercury.ccil.org>:
+;; http://lists.scheme-reports.org/pipermail/scheme-reports/2013-December/003876.html
+(define (means ton)
+  (letrec*
+     ((mean
+        (lambda (f g)
+          (f (/ (sum g ton) n))))
+      (sum
+        (lambda (g ton)
+          (if (null? ton)
+            (+)
+            (if (number? ton)
+                (g ton)
+                (+ (sum g (car ton))
+                   (sum g (cdr ton)))))))
+      (n (sum (lambda (x) 1) ton)))
+    (values (mean values values)
+            (mean exp log)
+            (mean / /))))
+(let*-values (((a b c) (means '(8 5 99 1 22))))
+  (test 27 a)
+  (test 9.728 b)
+  (test 1800/497 c))
+
 (let*-values (((root rem) (exact-integer-sqrt 32)))
   (test 35 (* root rem)))
 
@@ -197,6 +222,10 @@
 
 (test '(1630477228166597776 1772969445592542976)
     (let*-values (((root rem) (exact-integer-sqrt (expt 2 121))))
+      (list root rem)))
+
+(test '(31622776601683793319 62545769258890964239)
+    (let*-values (((root rem) (exact-integer-sqrt (expt 10 39))))
       (list root rem)))
 
 (let*-values (((root rem) (exact-integer-sqrt (expt 2 140))))
@@ -277,6 +306,17 @@
                       (force p)))))
   (test 6 (force p))
   (test 6 (begin (set! x 10) (force p))))
+
+(test #t (promise? (delay (+ 2 2))))
+(test #t (promise? (make-promise (+ 2 2))))
+(test #t
+    (let ((x (delay (+ 2 2))))
+      (force x)
+      (promise? x)))
+(test #t
+    (let ((x (make-promise (+ 2 2))))
+      (force x)
+      (promise? x)))
 
 (define radix
   (make-parameter
@@ -369,17 +409,103 @@
            (if y)
            y))))
 
-(define-syntax be-like-begin
+(define-syntax be-like-begin1
   (syntax-rules ()
-    ((be-like-begin name)
+    ((be-like-begin1 name)
      (define-syntax name
        (syntax-rules ()
          ((name expr (... ...))
           (begin expr (... ...))))))))
-(be-like-begin sequence)
-(test 4 (sequence 1 2 3 4))
+(be-like-begin1 sequence1)
+(test 3 (sequence1 0 1 2 3))
+
+(define-syntax be-like-begin2
+  (syntax-rules ()
+    ((be-like-begin2 name)
+     (define-syntax name
+       (... (syntax-rules ()
+              ((name expr ...)
+               (begin expr ...))))))))
+(be-like-begin2 sequence2)
+(test 4 (sequence2 1 2 3 4))
+
+(define-syntax be-like-begin3
+  (syntax-rules ()
+    ((be-like-begin3 name)
+     (define-syntax name
+       (syntax-rules dots ()
+         ((name expr dots)
+          (begin expr dots)))))))
+(be-like-begin3 sequence3)
+(test 5 (sequence3 2 3 4 5))
+
+;; Syntax pattern with ellipsis in middle of proper list.
+(define-syntax part-2
+  (syntax-rules ()
+    ((_ a b (m n) ... x y)
+     (vector (list a b) (list m ...) (list n ...) (list x y)))
+    ((_ . rest) 'error)))
+(test '#((10 43) (31 41 51) (32 42 52) (63 77))
+    (part-2 10 (+ 21 22) (31 32) (41 42) (51 52) (+ 61 2) 77))
+;; Syntax pattern with ellipsis in middle of improper list.
+(define-syntax part-2x
+  (syntax-rules ()
+    ((_ a b (m n) ... x y . rest)
+     (vector (list a b) (list m ...) (list n ...) (list x y)
+             (cons "rest:" 'rest)))
+    ((_ . rest) 'error)))
+(test '#((10 43) (31 41 51) (32 42 52) (63 77) ("rest:"))
+    (part-2x 10 (+ 21 22) (31 32) (41 42) (51 52) (+ 61 2) 77))
+(cond-expand
+ [gauche] ; I'm not sure we should support this
+ [else
+  (test '#((10 43) (31 41 51) (32 42 52) (63 77) ("rest:" . "tail"))
+        (part-2x 10 (+ 21 22) (31 32) (41 42) (51 52) (+ 61 2) 77 . "tail"))
+  ])
+
+(cond-expand
+ [gauche] ; this is Gauche's bug
+ [else
+;; underscore
+(define-syntax count-to-2
+  (syntax-rules ()
+    ((_) 0)
+    ((_ _) 1)
+    ((_ _ _) 2)
+    ((_ . _) 'many)))
+(test '(2 0 many)
+    (list (count-to-2 a b) (count-to-2) (count-to-2 a b c d)))
+
+(define-syntax count-to-2_
+  (syntax-rules (_)
+    ((_) 0)
+    ((_ _) 1)
+    ((_ _ _) 2)
+    ((x . y) 'fail)))
+(test '(2 0 fail fail)
+    (list (count-to-2_ _ _) (count-to-2_)
+          (count-to-2_ a b) (count-to-2_ a b c d)))
+])
+
+(define-syntax jabberwocky
+  (syntax-rules ()
+    ((_ hatter)
+     (begin
+       (define march-hare 42)
+       (define-syntax hatter
+         (syntax-rules ()
+           ((_) march-hare)))))))
+(jabberwocky mad-hatter)
+(test 42 (mad-hatter))
 
 (test 'ok (let ((=> #f)) (cond (#t => 'ok))))
+
+(let ()
+  (define x 1)
+  (let-syntax ()
+    (define x 2)
+    #f)
+  (test 1 x))
 
 (test-end)
 
@@ -562,6 +688,7 @@
 (test #f (<= 1 2 1))
 (test #t (>= 2 1 1))
 (test #f (>= 1 2 1))
+(test '(#t #f) (list (<= 1 1 2) (<= 2 1 3)))
 
 ;; From R7RS 6.2.6 Numerical operations:
 ;;
@@ -710,25 +837,25 @@
 (test 1/3 (rationalize (exact .3) 1/10))
 (test #i1/3 (rationalize .3 1/10))
 
-(test 1.0 (exp 0))
+(test 1.0 (inexact (exp 0))) ;; may return exact number
 (test 20.0855369231877 (exp 3))
 
-(test 0.0 (log 1))
+(test 0.0 (inexact (log 1))) ;; may return exact number
 (test 1.0 (log (exp 1)))
 (test 42.0 (log (exp 42)))
 (test 2.0 (log 100 10))
 (test 12.0 (log 4096 2))
 
-(test 0.0 (sin 0))
+(test 0.0 (inexact (sin 0))) ;; may return exact number
 (test 1.0 (sin 1.5707963267949))
-(test 1.0 (cos 0))
+(test 1.0 (inexact (cos 0))) ;; may return exact number
 (test -1.0 (cos 3.14159265358979))
-(test 0.0 (tan 0))
+(test 0.0 (inexact (tan 0))) ;; may return exact number
 (test 1.5574077246549 (tan 1))
 
-(test 0.0 (asin 0))
+(test 0.0 (inexact (asin 0))) ;; may return exact number
 (test 1.5707963267949 (asin 1))
-(test 0.0 (acos 1))
+(test 0.0 (inexact (acos 1))) ;; may return exact number
 (test 3.14159265358979 (acos -1))
 
 (test 0.0 (atan 0.0 1.0))
@@ -1066,6 +1193,11 @@
 
 (test "a-c" (let ((str (string #\a #\b #\c))) (string-set! str 1 #\-) str))
 
+(test (string #\a #\x1F700 #\c)
+    (let ((s (string #\a #\b #\c)))
+      (string-set! s 1 #\x1F700)
+      s))
+
 (test #t (string=? "" ""))
 (test #t (string=? "abc" "abc" "abc"))
 (test #f (string=? "" "abc"))
@@ -1153,8 +1285,8 @@
 (test "ßa" (string-downcase "ßa"))
 (test "ssa" (string-downcase "SSA"))
 (test "İ" (string-upcase "İ"))
-(test "i̇" (string-downcase "İ"))
-(test "i̇" (string-foldcase "İ"))
+(test "i\x0307;" (string-downcase "İ"))
+(test "i\x0307;" (string-foldcase "İ"))
 (test "J̌" (string-upcase "ǰ"))
 ][else])
 
@@ -1165,9 +1297,11 @@
 (test "γλώσσα" (string-downcase "ΓΛΏΣΣΑ"))
 (test "γλώσσα" (string-foldcase "ΓΛΏΣΣΑ"))
 (test "ΜΈΛΟΣ" (string-upcase "μέλος"))
-(test "μέλος" (string-downcase "ΜΈΛΟΣ"))
+(test #t (and (member (string-downcase "ΜΈΛΟΣ") '("μέλος" "μέλοσ")) #t))
 (test "μέλοσ" (string-foldcase "ΜΈΛΟΣ"))
-(test "μέλος ενός" (string-downcase "ΜΈΛΟΣ ΕΝΌΣ"))
+(test #t (and (member (string-downcase "ΜΈΛΟΣ ΕΝΌΣ")
+                      '("μέλος ενός" "μέλοσ ενόσ"))
+              #t))
 ][else])
 
 (test "" (substring "" 0 0))
@@ -1556,6 +1690,130 @@
 (test #t
     (read-error? (guard (exn (else exn)) (read (open-input-string ")")))))
 
+(define something-went-wrong #f)
+(define (test-exception-handler-1 v)
+  (call-with-current-continuation
+   (lambda (k)
+     (with-exception-handler
+      (lambda (x)
+        (set! something-went-wrong (list "condition: " x))
+        (k 'exception))
+      (lambda ()
+        (+ 1 (if (> v 0) (+ v 100) (raise 'an-error))))))))
+(test 106 (test-exception-handler-1 5))
+(test #f something-went-wrong)
+(test 'exception (test-exception-handler-1 -1))
+(test '("condition: " an-error) something-went-wrong)
+
+(set! something-went-wrong #f)
+(define (test-exception-handler-2 v)
+  (guard (ex (else 'caught-another-exception))
+    (with-exception-handler
+     (lambda (x)
+       (set! something-went-wrong #t)
+       (list "exception:" x))
+     (lambda ()
+       (+ 1 (if (> v 0) (+ v 100) (raise 'an-error)))))))
+(test 106 (test-exception-handler-2 5))
+(test #f something-went-wrong)
+(test 'caught-another-exception (test-exception-handler-2 -1))
+(test #t something-went-wrong)
+
+;; Based on an example from R6RS-lib section 7.1 Exceptions.
+;; R7RS section 6.11 Exceptions has a simplified version.
+(let* ((out (open-output-string))
+       (value (with-exception-handler
+               (lambda (con)
+                 (cond
+                  ((not (list? con))
+                   (raise con))
+                  ((list? con)
+                   (display (car con) out))
+                  (else
+                   (display "a warning has been issued" out)))
+                 42)
+               (lambda ()
+                 (+ (raise-continuable
+                     (list "should be a number"))
+                    23)))))
+  (test "should be a number" (get-output-string out))
+  (test 65 value))
+
+;; From SRFI-34 "Examples" section - #3
+(define (test-exception-handler-3 v out)
+  (guard (condition
+          (else
+           (display "condition: " out)
+           (write condition out)
+           (display #\! out)
+           'exception))
+         (+ 1 (if (= v 0) (raise 'an-error) (/ 10 v)))))
+(let* ((out (open-output-string))
+       (value (test-exception-handler-3 0 out)))
+  (test 'exception value)
+  (test "condition: an-error!" (get-output-string out)))
+
+(define (test-exception-handler-4 v out)
+  (call-with-current-continuation
+   (lambda (k)
+     (with-exception-handler
+      (lambda (x)
+        (display "reraised " out)
+        (write x out) (display #\! out)
+        (k 'zero))
+      (lambda ()
+        (guard (condition
+                ((positive? condition)
+                 'positive)
+                ((negative? condition)
+                 'negative))
+          (raise v)))))))
+
+(cond-expand
+ [gauche] ; this is Gauche's bug
+ [else
+;; From SRFI-34 "Examples" section - #5
+(let* ((out (open-output-string))
+       (value (test-exception-handler-4 1 out)))
+  (test "" (get-output-string out))
+  (test 'positive value))
+;; From SRFI-34 "Examples" section - #6
+(let* ((out (open-output-string))
+       (value (test-exception-handler-4 -1 out)))
+  (test "" (get-output-string out))
+  (test 'negative value))
+;; From SRFI-34 "Examples" section - #7
+(let* ((out (open-output-string))
+       (value (test-exception-handler-4 0 out)))
+  (test "reraised 0!" (get-output-string out))
+  (test 'zero value))
+])
+
+;; From SRFI-34 "Examples" section - #8
+(test 42
+    (guard (condition
+            ((assq 'a condition) => cdr)
+            ((assq 'b condition)))
+      (raise (list (cons 'a 42)))))
+
+;; From SRFI-34 "Examples" section - #9
+(test '(b . 23)
+    (guard (condition
+            ((assq 'a condition) => cdr)
+            ((assq 'b condition)))
+      (raise (list (cons 'b 23)))))
+
+(test 'caught-d
+    (guard (condition
+            ((assq 'c condition) 'caught-c)
+            ((assq 'd condition) 'caught-d))
+      (list
+       (sqrt 8)
+       (guard (condition
+               ((assq 'a condition) => cdr)
+               ((assq 'b condition)))
+         (raise (list (cons 'd 24)))))))
+
 (test-end)
 
 (test-begin "6.12 Environments and evaluation")
@@ -1567,8 +1825,10 @@
       (f + 10)))
 
 (test 1024 (eval '(expt 2 10) (environment '(scheme base))))
-(test 0.0 (eval '(sin 0) (environment '(scheme inexact))))
-(test 1024.0 (eval '(+ (expt 2 10) (sin 0))
+;; (sin 0) may return exact number
+(test 0.0 (inexact (eval '(sin 0) (environment '(scheme inexact)))))
+;; ditto
+(test 1024.0 (eval '(+ (expt 2 10) (inexact (sin 0)))
                    (environment '(scheme base) '(scheme inexact))))
 
 (test-end)
@@ -1605,6 +1865,16 @@
       (close-port out)
       (output-port-open? out)))
 
+(test 'error
+    (let ((in (open-input-string "abc")))
+      (close-input-port in)
+      (guard (exn (else 'error)) (read-char in))))
+
+(test 'error
+    (let ((out (open-output-string)))
+      (close-output-port out)
+      (guard (exn (else 'error)) (write-char #\c out))))
+
 (test #t (eof-object? (eof-object)))
 (test #t (eof-object? (read (open-input-string ""))))
 (test #t (char-ready? (open-input-string "42")))
@@ -1620,6 +1890,19 @@
 (test #t (eof-object? (read-string 3 (open-input-string ""))))
 (test "abc" (read-string 3 (open-input-string "abcd")))
 (test "abc" (read-string 3 (open-input-string "abc\ndef\n")))
+
+(let ((in (open-input-string (string #\x10F700 #\x10F701 #\x10F702))))
+  (let* ((c1 (read-char in))
+         (c2 (read-char in))
+         (c3 (read-char in)))
+    (test #\x10F700 c1)
+    (test #\x10F701 c2)
+    (test #\x10F702 c3)))
+
+(test (string #\x10F700)
+    (let ((out (open-output-string)))
+      (write-char #\x10F700 out)
+      (get-output-string out)))
 
 (test "abc"
     (let ((out (open-output-string)))
@@ -1638,10 +1921,10 @@
       (display #\c out)
       (get-output-string out)))
 
-(test "\n"
-    (let ((out (open-output-string)))
-      (newline out)
-      (get-output-string out)))
+(test #t
+      (let* ((out (open-output-string))
+             (r (begin (newline out) (get-output-string out))))
+        (or (equal? r "\n") (equal? r "\r\n"))))
 
 (test "abc def"
     (let ((out (open-output-string)))
@@ -1798,6 +2081,28 @@
 (test 'def (read (open-input-string "#| abc |# def")))
 (test 'ghi (read (open-input-string "#| abc #| def |# |# ghi")))
 (test 'ghi (read (open-input-string "#; ; abc\n def ghi")))
+(test '(abs -16) (read (open-input-string "(#;sqrt abs -16)")))
+(test '(a d) (read (open-input-string "(a #; #;b c d)")))
+(test '(a e) (read (open-input-string "(a #;(b #;c d) e)")))
+(test '(a . c) (read (open-input-string "(a . #;b c)")))
+(cond-expand
+ [gauche] ; this is Gauche's bug
+ [else
+(test '(a . b) (read (open-input-string "(a . b #;c)")))
+])
+
+(define (test-read-error str)
+  (test-assert str
+      (guard (exn (else #t))
+        (read (open-input-string str))
+        #f)))
+
+(test-read-error "(#;a . b)")
+(test-read-error "(a . #;b)")
+(test-read-error "(a #;. b)")
+(test-read-error "(#;x #;y . z)")
+(test-read-error "(#; #;x #;y . z)")
+(test-read-error "(#; #;x . z)")
 
 (test #\a (read (open-input-string "#\\a")))
 (test #\space (read (open-input-string "#\\space")))
@@ -1836,6 +2141,30 @@
  [gauche.ces.utf8
 (test #x03BB (char->integer (string-ref (read (open-input-string "\"\\x03BB;\"")) 0)))
 ][else])
+
+(define-syntax test-write-syntax
+  (syntax-rules ()
+    ((test-write-syntax expect-str obj-expr)
+     (let ((out (open-output-string)))
+       (write obj-expr out)
+       (test expect-str (get-output-string out))))))
+
+(test-write-syntax "|.|" '|.|)
+(test-write-syntax "|a b|" '|a b|)
+(test-write-syntax "|,a|" '|,a|)
+(test-write-syntax "|\"|" '|\"|)
+(test-write-syntax "a" '|a|)
+;; (test-write-syntax "a.b" '|a.b|)
+(test-write-syntax "|2|" '|2|)
+(test-write-syntax "|+3|" '|+3|)
+(test-write-syntax "|-.4|" '|-.4|)
+(test-write-syntax "|+i|" '|+i|)
+(test-write-syntax "|-i|" '|-i|)
+(test-write-syntax "|+inf.0|" '|+inf.0|)
+(test-write-syntax "|-inf.0|" '|-inf.0|)
+(test-write-syntax "|+nan.0|" '|+nan.0|)
+(test-write-syntax "|+NaN.0|" '|+NaN.0|)
+(test-write-syntax "|+NaN.0abc|" '|+NaN.0abc|)
 
 (test-end)
 
