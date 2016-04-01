@@ -36,8 +36,10 @@
   (use srfi-13)
   (use text.info)
   (use file.util)
+  (use util.match)
   (use gauche.process)
   (use gauche.config)
+  (use gauche.sequence)
   (export info info-page)
   )
 (select-module gauche.interactive.info)
@@ -46,7 +48,7 @@
 
 (define-class <repl-info> () ;; a signleton
   ((info  :init-keyword :info)   ;; <info>
-   (index :init-keyword :index)  ;; hashtable name -> (node-name line-no)
+   (index :init-keyword :index)  ;; hashtable name -> [(node-name line-no)]
    ))
 
 (define get-info
@@ -56,14 +58,19 @@
               [index (make-hash-table 'string=?)])
           (dolist [index-page '("Function and Syntax Index" "Module Index")]
             (dolist [p ($ info-parse-menu $ info-get-node info index-page)]
-              (hash-table-put! index (car p) (cdr p))))
+              (hash-table-push! index (entry-name (car p)) (cdr p))))
           ;; class index doesn't have surrounding '<>', but we want to search
           ;; with them.
           (dolist [p ($ info-parse-menu $ info-get-node info "Class Index")]
-            (hash-table-put! index #"<~(car p)>" (cdr p)))
+            (hash-table-push! index #"<~(car p)>" (cdr p)))
           (make <repl-info>
             :info info :index index)))
     (^[] (force repl-info))))
+
+;; When there are more than one entry with the same name, texinfo appends
+;; " <n>" in the index entry.  This strips that.
+(define (entry-name e)
+  (if-let1 m (#/ <\d+>$/ e) (rxmatch-before m) e))
   
 (define *pager* (or (sys-getenv "PAGER")
                     (find-file-in-paths "less")
@@ -100,21 +107,42 @@
     ))
 
 (define (get-node&line entry-name)
-  (or (hash-table-get (~ (get-info)'index) (x->string entry-name) #f)
-      (errorf "no info document for ~a" entry-name)))
+  (reverse
+   (or (hash-table-get (~ (get-info)'index) (x->string entry-name) #f)
+       (error "no info document for " entry-name))))
 
-;; API
-(define (info fn)
-  (let* ([node&line (get-node&line fn)]
-         [node (info-get-node (~ (get-info)'info) (car node&line))])
-    (viewer (if (null? (cdr node&line))
-              (~ node'content)
-              (info-extract-definition node (cadr node&line)))))
+(define (lookup&show key show)
+  (match (get-node&line key)
+    [(e) (show e)]
+    [(es ...)
+     (print "There are multiple entries for " key ":")
+     (for-each-with-index (^[i e] (format #t "~2d. ~s\n" (+ i 1) (car e))) es)
+     (let loop ()
+       (format #t "Select number, or q to cancel [1]: ") (flush)
+       (rxmatch-case (read-line)
+         [test eof-object? #f]
+         [#/^\s*$/ (_) (show (car es))]  ; the first entry by default
+         [#/^\s*(\d+)\s*$/ (_ N)
+          (let1 n (- (x->integer N) 1)
+            (if (and (<= 0 n) (< n (length es)))
+              (show (list-ref es n))
+              (loop)))]
+         [#/^\s*q\s*$/ (_) #f]
+         [else (loop)]))])
   (values))
 
 ;; API
-(define (info-page fn)
-  (let* ([node&line (get-node&line fn)]
-         [nodename (car node&line)])
-    (viewer (ref (info-get-node (~ (get-info)'info) nodename) 'content)))
-  (values))
+(define (info key)
+  ($ lookup&show key
+     (^[node&line]
+       (let1 node (info-get-node (~ (get-info)'info) (car node&line))
+         (viewer (if (null? (cdr node&line))
+                   (~ node'content)
+                   (info-extract-definition node (cadr node&line))))))))
+
+;; API
+(define (info-page key)
+  ($ lookup&show key
+     (^[node&line]
+       (viewer (~ (info-get-node (~ (get-info)'info) (car node&line))
+                  'content)))))
