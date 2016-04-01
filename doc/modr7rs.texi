@@ -61,8 +61,8 @@ R7RSプログラムとライブラリは特定の形式で書かれるので
 @c EN
 When you start Gauche, either in REPL or as a script, you're in
 @code{user} module, which @emph{inherits} @code{gauche} module.
-Likewise, when you load a library, the initial module is @code{gauche} module
-(until you call @code{select-module}).
+Likewise, when you read a library, the initial module inherits
+@code{gauche} module (until you call @code{select-module}).
 That's why you can access all the built-in procedures of Gauche
 without saying @code{(use something)}.  (@xref{Module inheritance}, for
 the details about inheriting modules).
@@ -70,8 +70,8 @@ the details about inheriting modules).
 Gaucheを起動した直後は、それがREPLであってもスクリプトファイルの実行であっても、
 トップレベルは@code{user}モジュールになっています。@code{user}モジュールは
 @code{gauche}モジュールを@emph{継承}しています。
-また、ライブラリをロードする際にも、(@code{select-module}が呼ばれるまでは)
-トップレベルは@code{gauche}モジュールになっています。
+また、ライブラリを読み込む際にも、(@code{select-module}が呼ばれるまでは)
+トップレベルは@code{gauche}を継承したモジュールになっています。
 これが、@code{(use something)}等といちいち書かないでも
 Gaucheの組み込み手続きを使える理由です。
 (モジュールの継承については@ref{Module inheritance}を参照してください)。

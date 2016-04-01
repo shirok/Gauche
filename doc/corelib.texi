@@ -2209,9 +2209,20 @@ where @var{z1} and @var{z2} are complex numbers.
 @defun expt-mod base exponent mod
 @c EN
 Calculates @code{(modulo (expt base exponent) mod)} efficiently.
+
+The next example shows the last 10 digits of a mersenne prime
+M_74207281 (2^74207281 - 1)
 @c JP
 @code{(modulo (expt base exponent) mod)} を効率よく計算します。
+
+次の例は、メルセンヌ素数M_74207281 (2^74207281 - 1) の最後の10桁を
+求めます。
 @c COMMON
+
+@example
+(- (expt-mod 2 74207281 #e1e10) 1)
+ @result{} 1086436351
+@end example
 @end defun
 
 
