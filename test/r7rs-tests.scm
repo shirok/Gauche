@@ -1,4 +1,6 @@
-;; wrapper of r7rs  -*- coding: utf-8 -*-
+;;
+;; This defines a compatibility module, then include Chibi's r7rs-tests to run.
+;;
 
 ;; fake (chibi test) used in r7rs-tests
 (define-module chibi.test
