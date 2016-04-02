@@ -1,3 +1,7 @@
+2016-04-02  Shiro Kawai  <shiro@acm.org>
+
+	* lib/util/levenshtein.scm: Added.
+
 2016-03-28  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/interpolate.scm (%string-interpolate): Slight
