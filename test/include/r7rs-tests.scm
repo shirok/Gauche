@@ -2085,11 +2085,7 @@
 (test '(a d) (read (open-input-string "(a #; #;b c d)")))
 (test '(a e) (read (open-input-string "(a #;(b #;c d) e)")))
 (test '(a . c) (read (open-input-string "(a . #;b c)")))
-(cond-expand
- [gauche] ; this is Gauche's bug
- [else
 (test '(a . b) (read (open-input-string "(a . b #;c)")))
-])
 
 (define (test-read-error str)
   (test-assert str
