@@ -17952,7 +17952,7 @@ overlapping.
 and @var{source}, and just copies contents of @var{source} to @var{target}.
 Both vectors had to be the same type and same length.  The API is revised
 to the current form to make it parallel with @code{string-copy!} (SRFI-13)
-and @code{vector-copy!} (SRFI-43).  The old interface is still supported
+and @code{vector-copy!} (SRFI-133).  The old interface is still supported
 for the backward compatibility, but it is deprecated and will be gone
 in the future releases.
 @c JP
@@ -17960,7 +17960,7 @@ in the future releases.
 @var{source} のみを引数としてとり、@var{source} の内容を @var{target} へ
 コピーするためだけに使われました。両方のベクタは同じ型で、同じ長さでなけ
 ればなりませんでした。この API は @code{string-copy!} (SRFI-13) および
-@code{vector-copy!} (SRFI-43)にあわせて現在の形式に改訂されています。
+@code{vector-copy!} (SRFI-133)にあわせて現在の形式に改訂されています。
 旧来のインタフェースもバックワードコンパチビリティのためにサポートされて
 いますが、これは廃止予定で、将来のリリースではサポートされなくなります。
 @c COMMON

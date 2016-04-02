@@ -1995,9 +1995,9 @@ or use mutexes if multiple threads can access to it
 Creates and returns a new binary heap.
 
 The @var{comparator} keyword argument specifies how to compare the
-entries.  It must have comparison procedure.  The default is
-@code{default-comparator}.  @xref{Basic comparators}, for the details of
-comparators.
+entries.  It must have comparison procedure or ordering predicate.
+The default is @code{default-comparator}.
+@xref{Basic comparators}, for the details of comparators.
 
 The @var{storage} keyword argument gives alternative
 backing storage.  It must be either a vector, a uniform vector,
@@ -2114,10 +2114,11 @@ Returns @code{#t} if the heap is empty, @code{#f} otherwise.
 
 @defun binary-heap-push! heap item
 @c EN
-Insert @var{item} into the @var{heap}.  If the heap is already full,
-an error is raised.
+Insert @var{item} into the @var{heap}.  This is O(log n) operation.
+If the heap is already full, an error is raised.
 @c JP
-@var{item}を@var{heap}に挿入します。ヒープが既に一杯であった場合はエラーが通知されます。
+@var{item}を@var{heap}に挿入します。O(log n)の操作です。
+ヒープが既に一杯であった場合はエラーが通知されます。
 @c COMMON
 @end defun
 
@@ -2125,12 +2126,13 @@ an error is raised.
 @defunx binary-heap-find-max heap :optional fallback
 @c EN
 Returns the minimum and maximum entry of the heap, respectively.
-The heap will be unmodified.
+The heap will be unmodified.  This is O(1) operation.
 
 If the heap is empty, @var{fallback} is returned when it is provided,
 or an error is signaled.
 @c JP
-それぞれヒープ中の最小および最大の要素を返します。ヒープ自体は変更されません。
+それぞれヒープ中の最小および最大の要素を返します。O(1)の操作です。
+ヒープ自体は変更されません。
 
 ヒープが空の場合、@var{fallback}が与えられればそれが返され、
 そうでなければエラーが通知されます。
@@ -2141,9 +2143,11 @@ or an error is signaled.
 @defunx binary-heap-pop-max! heap
 @c EN
 Removes the minimum and maximum entry of the heap and returns it,
-respectively.  If the heap is empty, an error is signaled.
+respectively.  O(log n) operation.
+If the heap is empty, an error is signaled.
 @c JP
 それぞれヒープから最小および最大の要素を取り除き、取り除いた要素を返します。
+O(log n)の操作です。
 ヒープが空ならエラーが通知されます。
 @c COMMON
 @end defun
@@ -2189,32 +2193,32 @@ using heap property maintaining procedure only once per function call.
 Returns an item in the heap that satisfies @var{pred}.
 If there are more than one item that satisfy @var{pred},
 any one of them can be returned.  If no item satisfy @var{pred},
-@code{#f} is returned.
+@code{#f} is returned.  This is O(n) operation.
 @c JP
 ヒープの中で、述語@var{pred}を満たす要素を返します。@var{pred}を満たす要素が
 複数ある場合にどれが返るかは不定です。@var{pred}を満たす要素が無ければ
-@code{#f}が返ります。
+@code{#f}が返ります。O(n)の操作です。
 @c COMMON
 @end defun
 
 @defun binary-heap-remove! heap pred
 @c EN
-Remove all items in the heap that satisfy @var{pred}.
+Remove all items in the heap that satisfy @var{pred}.  This is O(n) operation.
 @c JP
-@var{pred}を満たす要素を全てヒープから取り除きます。
+@var{pred}を満たす要素を全てヒープから取り除きます。O(n)の操作です。
 @c COMMON
 @end defun
 
 @defun binary-heap-delete! heap item
 @c EN
 Delete all items in the heap that are equal to @var{item},
-in terms of the heap's comparator and key procedure.
+in terms of the heap's comparator and key procedure.  This is O(n) operation.
 
 Note that the key procedure is applied to @var{item} as well
 before comparison.
 @c JP
 @var{item}に等しい要素を全てヒープから取り除きます。「等しい」の判定には
-ヒープの比較器およびキー手続きが使われます。
+ヒープの比較器およびキー手続きが使われます。O(n)の操作です。
 
 キー手続きは、比較の前に@var{item}にも適用されます。
 @c COMMON
