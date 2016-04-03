@@ -26,18 +26,23 @@
       ("rcik"
        ("rick"                      2   1   1)
        ("irkc"                      4   4   3))
+      ("string-filter"
+       ("stirng-filter"             2   1   1)
+       ("stirng-filtre"             4   2   2)
+       ("string-filtrze"            3   3   2))
       )
   (define (test-algo name distances result-selector)
     (dolist [set datasets]
       (test* #"~|name| distance with \"~(car set)\""
              (map result-selector (cdr set))
              (distances (car set) (map car (cdr set)))))
-    (dolist [set datasets]
-      (test* #"~|name| distance with \"~(car set)\", cutoff 2"
-             (map (^x (let1 r (result-selector x)
-                        (and (<= r 2) r)))
-                  (cdr set))
-             (distances (car set) (map car (cdr set)) :cutoff 2))))
+    (dolist [c '(0 1 2 3)]
+      (dolist [set datasets]
+        (test* #"~|name| distance with \"~(car set)\", cutoff ~c"
+               (map (^x (let1 r (result-selector x)
+                          (and (<= r c) r)))
+                    (cdr set))
+               (distances (car set) (map car (cdr set)) :cutoff c)))))
 
   (test-algo "Levenshtein" l-distances cadr)
   (test-algo "Restricted edit" re-distances caddr)

@@ -119,10 +119,6 @@
        (^[j b]
          (let ([row-0 (car rows)]
                [row-1 (cadr rows)])
-           (when check
-             (if (= alen 0)
-               (check (- j 1))
-               (check (min (- j 1) (vector-ref row-1 1)))))
            (vector-set! row-0 0 (+ j 1))
            (for-each-with-index
             (^[i a]
@@ -130,7 +126,9 @@
                            (+ (vector-ref row-1 (+ i 1)) 1)
                            (+ (vector-ref row-1 i) (if (elt= a b) 0 1)))
                 (vector-set! row-0 (+ i 1) d)))
-            A))
+            A)
+           (when check
+             (check (find-min row-0))))
          (pop! rows))
        B)
       (rlet1 r (vector-ref (cadr rows) alen)
@@ -179,10 +177,6 @@
        (^[j b]
          (let ([row-0 (car rows)]
                [row-1 (cadr rows)])
-           (when check
-             (if (= alen 0)
-               (check (- j 1))
-               (check (min (- j 1) (vector-ref row-1 2)))))
            (vector-set! row-0 0 (+ alen blen))
            (vector-set! row-0 1 (+ j 1))
            (for-each-with-index
@@ -197,7 +191,9 @@
                                     (if (elt= a b) 0 1)))
                           d)])
                 (vector-set! row-0 (+ i 2) d)))
-            A))
+            A)
+           (when check
+             (check (min (find-min row-0) (find-min row-1)))))
          (pop! rows)
          (pop! rows))
        B)
