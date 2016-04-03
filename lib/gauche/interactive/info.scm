@@ -37,6 +37,7 @@
   (use text.info)
   (use file.util)
   (use util.match)
+  (use util.levenshtein)
   (use gauche.process)
   (use gauche.config)
   (use gauche.sequence)
@@ -106,13 +107,29 @@
         (errorf "couldn't find info file ~s in paths: ~s" *info-file* paths))
     ))
 
+(define (handle-ambiguous-name entry-name)
+  (let* ([keys (map x->string (hash-table-keys (~ (get-info)'index)))]
+         [c    (min 2 (- (string-length (x->string entry-name)) 1))]
+         [candidates ($ filter-map (^[word dist] (and dist word))
+                        keys
+                        (re-distances (x->string entry-name) keys :cutoff c))])
+    (if (null? candidates)
+      (print "No info document for " entry-name)
+      (begin
+        (print "There is no entry for " entry-name ".")
+        (print "Did you mean:")
+        (dolist [w candidates]
+          (print "  " w))))
+    '()))
+
 (define (get-node&line entry-name)
   (reverse
    (or (hash-table-get (~ (get-info)'index) (x->string entry-name) #f)
-       (error "no info document for " entry-name))))
+       (handle-ambiguous-name entry-name))))
 
 (define (lookup&show key show)
   (match (get-node&line key)
+    [()  #f]  ; no candidates; message already shown
     [(e) (show e)]
     [(es ...)
      (print "There are multiple entries for " key ":")

@@ -140,6 +140,7 @@
  NAME can be a name of a function, syntax or macro."
   (^[args]
     (match args
+      [((? keyword? name)) `(,(with-module gauche.interactive info) ,#":~name")]
       [(name) `(,(with-module gauche.interactive info) ',name)]
       [_ (usage)])))
 
