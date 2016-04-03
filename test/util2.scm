@@ -30,6 +30,10 @@
        ("stirng-filter"             2   1   1)
        ("stirng-filtre"             4   2   2)
        ("string-filtrze"            3   3   2))
+      ("a cat"
+       ("a cat"                     0   0   0)
+       ("an act"                    3   2   2)
+       ("a abct"                    3   3   2))
       )
   (define (test-algo name distances result-selector)
     (dolist [set datasets]

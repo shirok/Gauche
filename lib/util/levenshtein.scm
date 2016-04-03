@@ -111,6 +111,9 @@
 ;; Basic Levenshtein
 (define (l-base A Bs elt= cutoff)
   (let* ([alen (size-of A)]
+         [A    (if (length>=? Bs 3)
+                 (coerce-to <list> A)
+                 A)]
          [rows (circular-list (make-vector (+ alen 1))
                               (make-vector (+ alen 1)))])
     (define (run B check)
@@ -118,17 +121,18 @@
       (for-each-with-index
        (^[j b]
          (let ([row-0 (car rows)]
-               [row-1 (cadr rows)])
+               [row-1 (cadr rows)]
+               [dmin (+ j 1)])
            (vector-set! row-0 0 (+ j 1))
            (for-each-with-index
             (^[i a]
               (let1 d (min (+ (vector-ref row-0 i)       1)
                            (+ (vector-ref row-1 (+ i 1)) 1)
                            (+ (vector-ref row-1 i) (if (elt= a b) 0 1)))
-                (vector-set! row-0 (+ i 1) d)))
+                (vector-set! row-0 (+ i 1) d)
+                (when (< d dmin) (set! dmin d))))
             A)
-           (when check
-             (check (find-min row-0))))
+           (when check (check dmin)))
          (pop! rows))
        B)
       (rlet1 r (vector-ref (cadr rows) alen)
@@ -163,6 +167,9 @@
 
 (define (re-base A Bs elt= cutoff)
   (let* ([alen (size-of A)]
+         [A    (if (length>=? Bs 3)
+                 (coerce-to <vector> A)
+                 A)]
          [aref (cute (referencer A) A <>)]
          [rows (circular-list (make-vector (+ alen 2))
                               (make-vector (+ alen 2))
@@ -170,13 +177,15 @@
     (define (run B check)
       (define blen (size-of B))
       (define bref (cute (referencer B) B <>))
+      (define dmin-1 0)
       (vector-fill! (caddr rows) (+ alen blen))
       (vector-unfold! (^i (if (zero? i) (+ alen blen) (- i 1)))
                       (cadr rows) 0 (+ alen 2))
       (for-each-with-index
        (^[j b]
          (let ([row-0 (car rows)]
-               [row-1 (cadr rows)])
+               [row-1 (cadr rows)]
+               [dmin-0 (+ j 1)])
            (vector-set! row-0 0 (+ alen blen))
            (vector-set! row-0 1 (+ j 1))
            (for-each-with-index
@@ -190,10 +199,11 @@
                           (min d (+ (vector-ref (caddr rows) i)
                                     (if (elt= a b) 0 1)))
                           d)])
+                (when (< d dmin-0) (set! dmin-0 d))
                 (vector-set! row-0 (+ i 2) d)))
             A)
-           (when check
-             (check (min (find-min row-0) (find-min row-1)))))
+           (when check (check (min dmin-0 dmin-1)))
+           (set! dmin-1 dmin-0))
          (pop! rows)
          (pop! rows))
        B)
@@ -226,6 +236,9 @@
 
 (define (dl-base A Bs elt= cutoff)
   (let* ([alen (size-of A)]
+         [A    (if (length>=? Bs 3)
+                 (coerce-to <list> A)
+                 A)]
          [rows (let* ([maxb (apply max (map size-of Bs))]
                       [rows (vector-tabulate (+ maxb 2)
                                              (^_ (make-vector (+ alen 2))))])
