@@ -50,6 +50,7 @@
   (use gauche.generator)
   (use srfi-13)
   (use util.match)
+  (use data.trie)
   (export handle-toplevel-command)
   )
 (select-module gauche.interactive.toplevel)
@@ -58,25 +59,34 @@
 
 ;; toplevel-commands
 ;; Map from symbol to (help-message proc)
-(define *toplevel-commands* (atom (make-hash-table 'eq?)))
+(define *toplevel-commands* (atom (make-trie)))
 
 (define (toplevel-command-add! key help handler)
-  (atomic *toplevel-commands* (^t (hash-table-put! t key `(,help ,handler)))))
+  (atomic *toplevel-commands* (^t (trie-put! t (x->string key) `(,help ,handler)))))
 
+;; Returns [(key help handler)]
 (define (toplevel-command-lookup key)
-  (atomic *toplevel-commands* (^t (hash-table-get t key #f))))
+  (atomic *toplevel-commands* (^t (sort (trie-common-prefix t (x->string key))
+                                        string<?
+                                        car))))
 
 (define (toplevel-command-keys)
-  (atomic *toplevel-commands* hash-table-keys))
+  (atomic *toplevel-commands* trie-keys))
 
 ;; A handler return value that does nothing
 (define *no-value* `(,(with-module gauche values)))
 
+(define (ambiguous-command given possibilities)
+  (print #"Ambiguous toplevel command: ~|given|")
+  (print "Did you mean:")
+  (dolist [p possibilities] (print #"  ~p")))
+
 (define (toplevel-command-helper key)
   (^[]
-    (if-let1 help&prc (toplevel-command-lookup key)
-      (print "Usage: " (car help&prc))
-      (print "Unknown toplevel command: " key))
+    (match (toplevel-command-lookup key)
+      [()    (print "Unknown toplevel command: " key)]
+      [((cmd help handler)) (print "Usage: " help)]
+      [((cmd help handler) ...) (ambiguous-command key cmd)])
     *no-value*))
 
 (define-syntax define-toplevel-command
@@ -96,17 +106,20 @@
 (define (handle-toplevel-command command line)
   (unless (symbol? command)
     (error "Invalid REPL toplevel command:" command))
-  (if-let1 help&handler (toplevel-command-lookup command)
-    ((cadr help&handler) (generator->list (cute read (open-input-string line))))
-    (error "Unrecognized REPL toplevel command:" command)))
+  (match (toplevel-command-lookup command)
+    [() (print #"Unrecognized REPL toplevel command: ~command")
+     (print "Type ,help for the list of available commands.") *no-value*]
+    [((cmd help handler))
+     (handler (generator->list (cute read (open-input-string line))))]
+    [((cmd help handler) ...) (ambiguous-command command cmd) *no-value*]))
 
 ;;
 ;; Predefined commands
 ;;
 
-(define-toplevel-command a
-  "a regexp [module-name]\n\
- Apropos.  Show the names of global bindings that match the regexp.\n\
+(define-toplevel-command apropos
+  "apropos regexp [module-name]\n\
+ Show the names of global bindings that match the regexp.\n\
  If module-name (symbol) is given, the search is limited in the named module."
   (^[args]
     (define (->regexp x)
@@ -117,8 +130,8 @@
       [(word mod) `(apropos ,(->regexp word) ',mod)]
       [_ (usage)])))
 
-(define-toplevel-command d
-  "d [object]\n\
+(define-toplevel-command describe
+  "describe [object]\n\
  Describe the object.\nWithout arguments, describe the last REPL result."
   (^[args]
     (match args
@@ -155,14 +168,16 @@
        (print "Type a Scheme expression to evaluate.")
        (print "A word preceeded with comma has special meaning.  Type ,help <cmd> ")
        (print "to see the detailed help for <cmd>.")
+       (print "Commands can be abbreviated as far as it is not ambiguous.")
        (print)
        (dolist [cmd (sort (toplevel-command-keys)) *no-value*]
-         (let1 h&h (toplevel-command-lookup cmd)
+         (let1 cmd-list (toplevel-command-lookup cmd)
            (format #t " ,~8a ~a\n" cmd
-                   (list-ref (call-with-input-string (car h&h)
+                   (list-ref (call-with-input-string (list-ref (car cmd-list) 1)
                                port->string-list)
                              1 ""))))]
-      [(cmd) ((toplevel-command-helper cmd))])))
+      [(cmd) ((toplevel-command-helper cmd)) *no-value*]
+      [_ (usage)])))
 
 (define-toplevel-command pwd
   "pwd\n\
@@ -188,12 +203,12 @@
 
 ;; This can be better - to make it work on generic functions,
 ;; show source location as well, etc.
-(define-toplevel-command s
-  "s procedure\n\
+(define-toplevel-command source
+  "source procedure\n\
  Show source code of the procedure if it's available."
   (^[args]
     (match args
       [(word) `(or (,(with-module gauche source-code) ,word)
                    (begin (print "No source code is available for: " ',word)
                           (values)))]
-      [() (usage)])))
+      [_ (usage)])))
