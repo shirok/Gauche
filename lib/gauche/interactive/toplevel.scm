@@ -48,6 +48,7 @@
   (use gauche.interactive)
   (use gauche.threads)
   (use gauche.generator)
+  (use gauche.sequence)
   (use srfi-13)
   (use util.match)
   (use data.trie)
@@ -62,16 +63,24 @@
 (define *toplevel-commands* (atom (make-trie)))
 
 (define (toplevel-command-add! key help handler)
-  (atomic *toplevel-commands* (^t (trie-put! t (x->string key) `(,help ,handler)))))
+  ($ atomic *toplevel-commands*
+     (^t (trie-put! t (x->string key) `(,help ,handler)))))
 
 ;; Returns [(key help handler)]
 (define (toplevel-command-lookup key)
-  (atomic *toplevel-commands* (^t (sort (trie-common-prefix t (x->string key))
-                                        string<?
-                                        car))))
+  (let1 k (x->string key)
+    ($ atomic *toplevel-commands*
+       (^t (if-let1 h&h (trie-get t k #f)
+             `((,k . ,h&h))
+             (sort (trie-common-prefix t k) string<? car))))))
 
+;; Returns [((key ...) help-string)]
 (define (toplevel-command-keys)
-  (atomic *toplevel-commands* trie-keys))
+  ($ atomic *toplevel-commands*
+     (^t ($ map (^[grp] (cons (map car grp) (cdar grp)))
+            $ group-collection
+            ($ map (^p (cons (car p) (cadr p))) $ trie->list t)
+            :key cdr))))
 
 ;; A handler return value that does nothing
 (define *no-value* `(,(with-module gauche values)))
@@ -93,10 +102,15 @@
   (er-macro-transformer
    (^[f r c]
      (match f
-       [(_ key help handler)
-        `(,(r'toplevel-command-add!) (,(r'quote) ,key) ,help
-          (,(r'let1) usage (,(r'toplevel-command-helper) (,(r'quote) ,key))
-           ,handler))]))))
+       [(_ keys help handler)
+        (let1 keys (if (list? keys) keys (list keys))
+          `(,(r'begin)
+            ,@(map (^[key]
+                     `(,(r'toplevel-command-add!) (,(r'quote) ,key) ,help
+                       (,(r'let1) usage (,(r'toplevel-command-helper)
+                                         (,(r'quote) ,key))
+                        ,handler)))
+                   keys)))]))))
 
 ;; API
 ;; Entry point - called by REPL reader.
@@ -117,8 +131,8 @@
 ;; Predefined commands
 ;;
 
-(define-toplevel-command apropos
-  "apropos regexp [module-name]\n\
+(define-toplevel-command (apropos a)
+  "a|apropos regexp [module-name]\n\
  Show the names of global bindings that match the regexp.\n\
  If module-name (symbol) is given, the search is limited in the named module."
   (^[args]
@@ -130,8 +144,8 @@
       [(word mod) `(apropos ,(->regexp word) ',mod)]
       [_ (usage)])))
 
-(define-toplevel-command describe
-  "describe [object]\n\
+(define-toplevel-command (describe d)
+  "d|describe [object]\n\
  Describe the object.\nWithout arguments, describe the last REPL result."
   (^[args]
     (match args
@@ -147,18 +161,19 @@
       [() `(,(with-module gauche *history))]
       [_ (usage)])))
 
-(define-toplevel-command info
-  "info name\n\
- Show info page that includes an entry of NAME.\n\
- NAME can be a name of a function, syntax or macro."
+(define-toplevel-command (info doc)
+  "doc|info name\n\
+ Show info document for an entry of NAME.\n\
+ NAME can be a name of a function, syntax, macro, module, or class."
   (^[args]
+    (define (->name x) ; to preserve ':' of keyword
+      (if (keyword? x) #":~x" (x->string x)))
     (match args
-      [((? keyword? name)) `(,(with-module gauche.interactive info) ,#":~name")]
-      [(name) `(,(with-module gauche.interactive info) ',name)]
+      [(name) `(,(with-module gauche.interactive info) ,(->name name))]
       [_ (usage)])))
 
-(define-toplevel-command help
-  "help [command]\n\
+(define-toplevel-command (help h)
+  "h|help [command]\n\
  Show the help message of the command.\n\
  Without arguments, show the list of all toplevel commands."
   (^[args]
@@ -170,12 +185,21 @@
        (print "to see the detailed help for <cmd>.")
        (print "Commands can be abbreviated as far as it is not ambiguous.")
        (print)
-       (dolist [cmd (sort (toplevel-command-keys)) *no-value*]
-         (let1 cmd-list (toplevel-command-lookup cmd)
-           (format #t " ,~8a ~a\n" cmd
-                   (list-ref (call-with-input-string (list-ref (car cmd-list) 1)
-                               port->string-list)
-                             1 ""))))]
+       (dolist [cmd&help
+                (sort (map (^p ($ cons
+                                  (string-join (sort (map x->string (car p)))
+                                               "|")
+                                  (cdr p)))
+                           (toplevel-command-keys))
+                      string<? car)]
+         (format #t (if (> (string-length (car cmd&help)) 10)
+                      " ,~10a\n           ~a\n"
+                      " ,~10a ~a\n")
+                 (car cmd&help)
+                 (list-ref (call-with-input-string (cdr cmd&help)
+                             port->string-list)
+                           1 "")))
+       *no-value*]
       [(cmd) ((toplevel-command-helper cmd)) *no-value*]
       [_ (usage)])))
 
