@@ -127,9 +127,9 @@ the basic compiler chain, are the followings.  We assume
 these are installed in your system.
 @itemize @bullet
 @item
-Gauche 0.8.8 or later
+Gauche 0.9.5 or later
 @item
-GNU autoconf 2.54 or later
+A compiler suite compatible to the one used to build @file{libgauche}.
 @end itemize
 
 @menu
@@ -161,8 +161,8 @@ package name to the command-line argument (here we pick @code{trivial}).
 ls: trivial: No such file or directory
 % @b{gauche-package generate trivial}
 % @b{ls trivial}
-DIST	     configure.ac  trivial.c  trivial.scm
-Makefile.in  test.scm	   trivial.h  triviallib.stub
+Makefile.in  test.scm	trivial.h    triviallib.stub
+configure    trivial.c	trivial.scm
 @end example
 
 The @code{gauche-package} command creates a directory @file{trivial},
@@ -192,19 +192,49 @@ to generate a dynamically loadable object code, called DLL
 (dynamically loadable library) or SO (shared object), depending
 on the platform.
 
+(Note: We're in middle of the process of retiring @file{*.stub} file;
+instead, you'll be able to mix Scheme and C code in @file{*.scm} file
+that will be compiled into DSO.  The extensions bundled with the Gauche
+distribution, and several Gauche extensions, have already been switched;
+you can take a peek and maybe start trying it.  The detailed specification
+of this @emph{precompilation}, or ahead-of-time compilation, is still
+fluid and may be changed in incompatible way, though.)
+
 @item Module file (@file{trivail.scm})
 This file typically defines Gauche modules and sets exported
 symbols, and dynamically loads the compiled object code.
 You may put auxiliary Scheme code in it.
 
-@item Files to build the package (@file{configure.ac}, @file{Makefile.in}, @file{DIST})
-Gauche relies on GNU @code{autoconf} and @code{make} to build
-the package, that is, the package user can use the simple
-@code{./configure}, @code{make} and @code{make install} sequence
-to build and install the package.
+@item Makefile template (@file{Makefile.in})
+Gauche relies on the traditional build workflow---you run @file{configure}
+script to generate @file{Makefile} that is tailored for your system.
+Sticking to good old @code{make} makes it easy to incorporate
+third party libraries.
 
-@file{DIST} is a small shell script that automates creating
-a distribution tarball.
+@item Configure script (@file{configure})
+This is a script that generates @file{Makefile} from @file{Makefile.in}.
+Edit this if you need other files to be tailored, or need to test
+other features on the platform.
+
+We used to use GNU @code{autoconf} to generate @file{configure},
+but we're moving away from it.  GNU @code{autoconf} is a fine tool
+with lots of practical knowledge had put into development, but its
+premise is that you have limited set of tools on the platform where
+you compile the software, and that limitation makes the pipeline
+complicated.
+
+When you build Gauche extension, we already know you have Gauche
+installed, so we can use Gauche's features to do configuration
+work instead of relying on shell and other limited set of command-line
+tools.  It is especially handy since we no longer need an extra
+pass to generate @file{configure} from @file{configure.ac}.  With
+the power of Gauche you can write @file{configure} file directly,
+and you can check it in to VCS.  The users won't need @code{autoconf}
+to build from the (unpreprocessed) source tree.
+
+We try to match the interface of @file{configure} script to
+@code{autoconf}-generated ones; it accepts most of the standard
+options such as @code{--prefix}.
 
 @item Unit test (@file{test.scm})
 It is strongly encouraged to include unit test in your package,
@@ -216,24 +246,12 @@ can run the test by @code{make check}.
 @subsection Building, testing and installing the trivial module
 
 These auto-generated files are already buildable.
-First, you need to run @file{autoconf} to generate a @file{configure}
-script.
-
-@example
-% @b{cd trivial}
-% @b{autoconf}
-% @b{ls}
-DIST	     autom4te.cache  configure.ac  trivial.c  trivial.scm
-Makefile.in  configure	     test.scm	   trivial.h  triviallib.stub
-@end example
-
-The directory @file{autom4te.cache} is a temporary structure used
-by autoconf.  You can safely remove it if it bothers you.
-
-Once @file{configure} script is generated, you can run it to
+First, you need to
+run the @file{configure} script to
 generate @file{Makefile}, then run @code{make}.
 
 @example
+% @b{cd trivial}
 % @b{./configure}
 checking for gosh... /usr/bin/gosh
 checking for gauche-config... /usr/bin/gauche-config
@@ -241,17 +259,13 @@ checking for gauche-package... /usr/bin/gauche-package
 checking for gauche-install... /usr/bin/gauche-install
 checking for gauche-cesconv... /usr/bin/gauche-cesconv
 configure: creating trivial.gpd
-configure: creating ./config.status
-config.status: creating Makefile
 % @b{make}
 /usr/bin/gauche-package compile --verbose trivial trivial.c triviallib.stub
 @i{(... message truncated ...)}
 % @b{ls}
-DIST		config.log     trivial.c    trivial.so	    triviallib.o
-Makefile	config.status  trivial.gpd  trivial_head.c  triviallib.stub
-Makefile.in	configure      trivial.h    trivial_head.o
-VERSION		configure.ac   trivial.o    trivial_tail.c
-autom4te.cache	test.scm       trivial.scm  trivial_tail.o
+Makefile     config.log  trivial.c    trivial.o    triviallib.o
+Makefile.in  configure	 trivial.gpd  trivial.scm  triviallib.stub
+VERSION      test.scm	 trivial.h    trivial.so
 @end example
 
 The build process creates @file{trivial.so}, the dynamically loadable
