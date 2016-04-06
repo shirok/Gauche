@@ -1417,11 +1417,11 @@
         [(<top> <top> <top> <top> <top> <top>) => #t]
         [(<top> <top> <top> <top> <top> <top> <top>) => #t])
 
+;; NB: The result may change if loaded module adds new method to 'ref'.
 (atest* ref [() => #f] [(<boolean>) => #f] [(<boolean> <top>) => #f]
         [(<top>) => #f] [(<top> <symbol>) => #t] [(<top> <symbol> <top>) => #t]
         [(<vector>) => #f] [(<vector> <integer>) => #t]
-        [(<vector> <integer> <integer>) => #f]
-        [(<vector> <integer> <top>) => #f])
+        [(<vector> <vector> <integer> <integer>) => #f])
 
 (atest* #/a/ [() => #f] [(<string>) => #t] [(<integer>) => #f])
 

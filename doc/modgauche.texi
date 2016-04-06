@@ -7739,10 +7739,14 @@ and further attempt of creation returns the same instance.
 The slots of the instance are initialized at the first invocation
 of @code{make}.  Initargs of @code{make} are effective only in the
 fist invocation, and ignored in the subsequent invocation.
+
+The call of initialization in @code{make} is thread-safe.
 @c JP
 インスタンスのスロットは最初の @code{make} の呼び出し時に
 初期化されます。@code{make}への初期引数は最初の呼び出しのときに
 だけ効果があり、それ以降の呼び出しでは無視されます。
+
+初期化ルーチンの呼び出しはスレッドセーフです。
 @c COMMON
 @end deftp
 
