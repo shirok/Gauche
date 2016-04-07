@@ -422,8 +422,8 @@ for the definition of complete argument list syntax.
 
 @c EN
 The description of the entry follows the entry line.
-If the specification of the entry comes from some standard or
-implementation, its origin is noted in the bracket at the beginning
+If the specification of the entry comes from some standard,
+its origin is noted in the bracket at the beginning
 of the description.  The following origins are noted:
 @c JP
 説明が項目の行に続きます。もし項目が特定の標準に準拠している場合は、
@@ -439,7 +439,7 @@ of the description.  The following origins are noted:
 @itemx [R5RS+]
 @c EN
 The entry works as specified in R7RS, R6RS or R5RS, respectively.
-If a plus sign is appended such as "[R7RS+]", the entry has additional
+If a plus sign is appended such as "[R7RS+]", the entry has extended
 functionality.
 
 Since R7RS is mostly upward-compatible to R5RS, and has a lot
@@ -448,7 +448,7 @@ it is not a part of R7RS.
 @c JP
 この項目はそれぞれR7RS, R6RS, R5RSで定義されるように動作します。
 "[R7RS+]"のようにプラス記号がついている場合は、
-R7RSの仕様に上位互換な形で追加の機能が実装されていることを示します。
+R7RSの仕様に上位互換な形で機能が追加されていることを示します。
 
 R7RSはほぼR5RSの上位互換であり、R6RSとも多くの機能を共有しているので、
 R5RS、R6RSの表示はそれらがR7RSに含まれていない場合のみ記されます。
