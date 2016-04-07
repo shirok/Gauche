@@ -861,15 +861,16 @@ You're in REPL (read-eval-print-loop) of Gauche shell.
 Type a Scheme expression to evaluate.
 A word preceeded with comma has special meaning.  Type ,help <cmd> 
 to see the detailed help for <cmd>.
+Commands can be abbreviated as far as it is not ambiguous.
 
- ,a        Apropos.  Show the names of global bindings that match the regexp.
- ,cd       Change the current directory.
- ,d        Describe the object.
- ,help     Show the help message of the command.
- ,history  Show REPL history.
- ,info     Show info page that includes an entry of NAME.
- ,pwd      Print working directory.
- ,s        Show source code of the procedure if it's available.
+ ,a|apropos  Show the names of global bindings that match the regexp.
+ ,cd         Change the current directory.
+ ,doc|info   Show info document for an entry of NAME.
+ ,d|describe Describe the object.
+ ,history    Show REPL history.
+ ,h|help     Show the help message of the command.
+ ,pwd        Print working directory.
+ ,source     Show source code of the procedure if it's available.
 @end example
 
 @c EN
@@ -882,16 +883,17 @@ To see the help of each individual commands, give the command name
 
 @example
 gosh> ,help d
-Usage: d [object]
+Usage: d|describe [object]
 Describe the object.
 Without arguments, describe the last REPL result.
 @end example
 
 @c EN
-The @code{,d} top-level command describes the given Scheme object
+The @code{,d} (or @code{,describe}) top-level command describes
+the given Scheme object
 or the last result if no object is given.  Let's try some:
 @c JP
-@code{,d} トップレベルコマンドは与えられたSchemeオブジェクト、
+@code{,d} (あるいは@code{,describe})トップレベルコマンドは与えられたSchemeオブジェクト、
 または何もオブジェクトが与えられなければ直前の結果のオブジェクトについて、
 その説明を表示します。ちょっと試してみましょう。
 @c COMMON
@@ -988,13 +990,13 @@ slots:
 
 @c EN
 Let's see a couple of other top-level commands.  The @code{,info}
-command shows the manual entry of the given procedure, syntax,
+command shows the manual entry of the given procedure, variable, syntax,
 module or a class.  (The text is searched from the installed
 info document of Gauche.  If you get an error, check if the
 info document is properly installed.)
 @c JP
 他のトップレベルコマンドも見てみましょう。@code{,info}コマンドは
-手続き、構文、モジュールもしくはクラス名が与えられると、そのドキュメントを
+手続き、変数、構文、モジュールもしくはクラス名が与えられると、そのドキュメントを
 表示します。(テキストはシステムにインストールされたGaucheのinfoドキュメントから
 検索されます。もしエラーが出た場合は、infoドキュメントが正しくインストール
 されているかどうか確認してください。)
@@ -1032,10 +1034,10 @@ gosh> ,info <list>
 @end example
 
 @c EN
-The @code{,a} command (stands for @code{apropos}) shows the global identifiers
+The @code{,a} command (or @code{,apropos}) shows the global identifiers
 matches the given name or regexp:
 @c JP
-@code{,a}コマンド (@code{apropos}の略) は、与えられた名前や正規表現に
+@code{,a} (または@code{,apropos}) は、与えられた名前や正規表現に
 マッチするグローバルな識別子を表示します。
 @c COMMON
 
