@@ -98,12 +98,21 @@
       [((cmd help handler) ...) (ambiguous-command key cmd)])
     *no-value*))
 
+;; (define-toplevel-command cmds helpmsg handler)
+;;  cmds    - a symbol, or a list of symbols.
+;;  helpmsg - one line help message, followed by multiline detailed description.
+;;            command name(s) is/are automatically prepended at the beginning
+;;            so no need to be included.
+;;  handler - a procedure to be called.  with one parameter - a list of
+;;            command arguments.
 (define-syntax define-toplevel-command
   (er-macro-transformer
    (^[f r c]
      (match f
        [(_ keys help handler)
-        (let1 keys (if (list? keys) keys (list keys))
+        (let* ([keys (if (list? keys) keys (list keys))]
+               [help (string-append (string-join (map x->string keys) "|")
+                                    help)])
           `(,(r'begin)
             ,@(map (^[key]
                      `(,(r'toplevel-command-add!) (,(r'quote) ,key) ,help
@@ -132,7 +141,7 @@
 ;;
 
 (define-toplevel-command (apropos a)
-  "a|apropos regexp [module-name]\n\
+  " regexp [module-name]\n\
  Show the names of global bindings that match the regexp.\n\
  If module-name (symbol) is given, the search is limited in the named module."
   (^[args]
@@ -145,7 +154,7 @@
       [_ (usage)])))
 
 (define-toplevel-command (describe d)
-  "d|describe [object]\n\
+  " [object]\n\
  Describe the object.\nWithout arguments, describe the last REPL result."
   (^[args]
     (match args
@@ -154,7 +163,7 @@
       [_ (usage)])))
 
 (define-toplevel-command history
-  "history\n\
+  "\n\
  Show REPL history."
   (^[args]
     (match args
@@ -162,7 +171,7 @@
       [_ (usage)])))
 
 (define-toplevel-command (info doc)
-  "doc|info name\n\
+  " name\n\
  Show info document for an entry of NAME.\n\
  NAME can be a name of a function, syntax, macro, module, or class."
   (^[args]
@@ -173,7 +182,7 @@
       [_ (usage)])))
 
 (define-toplevel-command (help h)
-  "h|help [command]\n\
+  " [command]\n\
  Show the help message of the command.\n\
  Without arguments, show the list of all toplevel commands."
   (^[args]
@@ -204,7 +213,7 @@
       [_ (usage)])))
 
 (define-toplevel-command pwd
-  "pwd\n\
+  "\n\
  Print working directory."
   (^[args]
     (match args
@@ -212,7 +221,7 @@
       [_ (usage)])))
 
 (define-toplevel-command cd
-  "cd [directory]\n\
+  " [directory]\n\
  Change the current directory.\n\
  Without arguments, change to the home directory."
   (^[args]
@@ -228,7 +237,7 @@
 ;; This can be better - to make it work on generic functions,
 ;; show source location as well, etc.
 (define-toplevel-command source
-  "source procedure\n\
+  " procedure\n\
  Show source code of the procedure if it's available."
   (^[args]
     (match args
