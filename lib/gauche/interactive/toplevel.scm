@@ -177,6 +177,11 @@
  Show the help message of the command.\n\
  Without arguments, show the list of all toplevel commands."
   (^[args]
+    (define (get-cmd&help help-string)
+      (let* ((ls   (call-with-input-string help-string port->string-lseq))
+             (cmd  (or (rxmatch->string #/^\S*/ (list-ref ls 0 "")) ""))
+             (help (list-ref ls 1 "")))
+        (cons cmd help)))
     (match args
       [()
        (print "You're in REPL (read-eval-print-loop) of Gauche shell.")
@@ -186,19 +191,14 @@
        (print "Commands can be abbreviated as far as it is not ambiguous.")
        (print)
        (dolist [cmd&help
-                (sort (map (^p ($ cons
-                                  (string-join (sort (map x->string (car p)))
-                                               "|")
-                                  (cdr p)))
+                (sort (map (^p (get-cmd&help (cdr p)))
                            (toplevel-command-keys))
                       string<? car)]
          (format #t (if (> (string-length (car cmd&help)) 10)
-                      " ,~10a\n           ~a\n"
+                      " ,~10a\n             ~a\n"
                       " ,~10a ~a\n")
                  (car cmd&help)
-                 (list-ref (call-with-input-string (cdr cmd&help)
-                             port->string-list)
-                           1 "")))
+                 (cdr cmd&help)))
        *no-value*]
       [(cmd) ((toplevel-command-helper cmd)) *no-value*]
       [_ (usage)])))
