@@ -57,7 +57,9 @@
       (delay
         (let ([info  (open-info-file (find-info-file))]
               [index (make-hash-table 'string=?)])
-          (dolist [index-page '("Function and Syntax Index" "Module Index")]
+          (dolist [index-page '("Function and Syntax Index"
+                                "Module Index"
+                                "Variable Index")]
             (dolist [p ($ info-parse-menu $ info-get-node info index-page)]
               (hash-table-push! index (entry-name (car p)) (cdr p))))
           ;; class index doesn't have surrounding '<>', but we want to search
