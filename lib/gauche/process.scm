@@ -544,12 +544,15 @@
 ;; Shell utility
 ;;
 
-(define (shell-escape-string str)
-  (cond-expand
-   [gauche.os.windows
+(define (shell-escape-string str :optional (flavor
+                                            (cond-expand
+                                             [gauche.os.windows 'windows]
+                                             [else 'posix])))
+  (ecase flavor
+   [(windows)
     ;; This is supported in src/libsys.scm.  See the comment in it.
     (%sys-escape-windows-command-line str)]
-   [else
+   [(posix)
     ;; We follow standard unix shell convention: if STR contains special
     ;; chars, we quote the entire STR by single-quotes.  If STR contains
     ;; a single quote, we replace it with '"'"'.

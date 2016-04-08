@@ -488,28 +488,28 @@
              (s (call-with-input-file "test.o" port->string-list)))
          (equal? r s)))
 
-(cond-expand
- [gauche.os.windows
-  (test* "shell-escape-string" "\"\"" (shell-escape-string ""))
-  (test* "shell-escape-string" "abc" (shell-escape-string "abc"))
-  (test* "shell-escape-string" "\"a b c\"" (shell-escape-string "a b c"))
-  (test* "shell-escape-string" "\"a \"\"b\"\" c\""
-         (shell-escape-string "a \"b\" c"))
-  ]
- [else
-  (test* "shell-escape-string" "''" (shell-escape-string ""))
-  (test* "shell-escape-string" "abc" (shell-escape-string "abc"))
-  (test* "shell-escape-string" "'a b c'" (shell-escape-string "a b c"))
-  (test* "shell-escape-string" "'$abc'" (shell-escape-string "$abc"))
-  (test* "shell-escape-string" "'[abc]'" (shell-escape-string "[abc]"))
-  (test* "shell-escape-string" "'\\abc'" (shell-escape-string "\\abc"))
-  (test* "shell-escape-string" "'>abc'" (shell-escape-string ">abc"))
-  (test* "shell-escape-string" "'<abc'" (shell-escape-string "<abc"))
-  (test* "shell-escape-string" "'a\"b\"c'" (shell-escape-string "a\"b\"c"))
-  (test* "shell-escape-string" "'a(b)c'" (shell-escape-string "a(b)c"))
-  (test* "shell-escape-string" "'a{b}c'" (shell-escape-string "a{b}c"))
-  (test* "shell-escape-string" "'a'\"'\"'c'" (shell-escape-string "a'c"))
-  ])
+(let ()
+  (define (t input expected flavor)
+    (test* #"shell-escape-string - ~input" expected
+           (shell-escape-string input flavor)))
+
+  (t ""          "\"\""              'windows)
+  (t "abc"       "abc"               'windows)
+  (t "a b c"     "\"a b c\""         'windows)
+  (t "a \"b\" c" "\"a \"\"b\"\" c\"" 'windows)
+  (t ""          "''"                'posix)
+  (t "abc"       "abc"               'posix)
+  (t "a b c"     "'a b c'"           'posix)
+  (t "$abc"      "'$abc'"            'posix)
+  (t "[abc]"     "'[abc]'"           'posix)
+  (t "\\abc"     "'\\abc'"           'posix)
+  (t ">abc"      "'>abc'"            'posix)
+  (t "<abc"      "'<abc'"            'posix)
+  (t "a\"b\"c"   "'a\"b\"c'"         'posix)
+  (t "a(b)c"     "'a(b)c'"           'posix)
+  (t "a{b}c"     "'a{b}c'"           'posix)
+  (t "a'c"       "'a'\"'\"'c'"       'posix)
+  )
 
 (rmrf "testc.o")
 
