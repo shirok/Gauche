@@ -90,13 +90,19 @@
  (test 0 (ideque-count odd? (ideque)))
  (test 3 (ideque-count odd? (ideque 1 2 3 4 5)))
  (test 2 (ideque-count < (ideque 1 2 3 4 5) (ideque 1 3 2 1 6)))
- (test-assert (ideque-empty? (ideque-zip)))
  (test '((1 a) (2 b) (3 c))
        (ideque->list (ideque-zip (ideque 1 2 3) (ideque 'a 'b 'c 'd 'e))))
  (test '((1 a x) (2 b y) (3 c z))
        (ideque->list (ideque-zip (ideque 1 2 3 4 5)
                                  (ideque 'a 'b 'c 'd 'e)
                                  (ideque 'x 'y 'z))))
+ (test '(a b r c d)
+       (ideque->list (ideque-delete-duplicates
+                      (ideque 'a 'b 'r 'a 'c 'a 'd 'a 'b 'r 'a))))
+ (test '(#\a #\B #\r #\C #\d)
+       (ideque->list (ideque-delete-duplicates
+                      (ideque #\a #\B #\r #\A #\C #\a #\d #\A #\b #\R #\a)
+                      char-ci=?)))
  )
 
 (test-group "ideque/mapping"
