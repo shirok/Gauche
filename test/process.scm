@@ -488,6 +488,8 @@
              (s (call-with-input-file "test.o" port->string-list)))
          (equal? r s)))
 
+(rmrf "testc.o")
+
 (let ()
   (define (t input expected flavor)
     (test* #"shell-escape-string - ~input" expected
@@ -496,7 +498,8 @@
   (t ""          "\"\""              'windows)
   (t "abc"       "abc"               'windows)
   (t "a b c"     "\"a b c\""         'windows)
-  (t "a \"b\" c" "\"a \"\"b\"\" c\"" 'windows)
+  (t "a \"b\" c" "\"a \\\"b\\\" c\"" 'windows)
+  (t "a\\ \\\""  "\"a\\ \\\\\\\"\""  'windows)
   (t ""          "''"                'posix)
   (t "abc"       "abc"               'posix)
   (t "a b c"     "'a b c'"           'posix)
@@ -510,8 +513,6 @@
   (t "a{b}c"     "'a{b}c'"           'posix)
   (t "a'c"       "'a'\"'\"'c'"       'posix)
   )
-
-(rmrf "testc.o")
 
 ;;-------------------------------
 (test-section "unwind-protect upon exit")
