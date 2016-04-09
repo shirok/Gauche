@@ -1423,10 +1423,11 @@
   (cond [(not (string? s))
          (%sys-escape-windows-command-line (write-to-string s))]
         [(equal? s "") "\"\""]
-        [(null? (cdr (string-split s #[\s\"]))) s]
-        [else ($ string-append "\""
-                 ($ regexp-replace-all #/(\\*)\"/ s
-                    (^m ($ string-append
-                           (make-string (+ (* 2 (string-length (m 1))) 1) #\\)
-                           "\"")))
-                 "\"")]))
+        [(#/[&<>\[\]{}^=\;!\'+,`~\s]/ s)
+         ($ string-append "\""
+            ($ regexp-replace-all #/(\\*)\"/ s
+               (^m ($ string-append
+                      (make-string (+ (* 2 (string-length (m 1))) 1) #\\)
+                      "\"")))
+            "\"")]
+        [else s]))
