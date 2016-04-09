@@ -37,8 +37,8 @@
 ;; as an object on top of basic system interface.
 
 (define-module gauche.process
+  (use gauche.generator)
   (use srfi-1)
-  (use srfi-2)
   (use srfi-13)
   (use srfi-14)
   (export <process> <process-abnormal-exit>
@@ -54,7 +54,7 @@
           call-with-process-io
           process-output->string    process-output->string-list
           ;; shell utilities
-          shell-escape-string
+          shell-escape-string shell-tokenize-string
           ))
 (select-module gauche.process)
 
@@ -557,10 +557,135 @@
     ;; chars, we quote the entire STR by single-quotes.  If STR contains
     ;; a single quote, we replace it with '"'"'.
     (cond [(string-null? str) "''"]
-          [(string-index str #[\s\\\"\'*?$<>!\[\](){}])
+          [(string-index str #[\s\\\"\'`*?$<>!\[\](){}])
            (string-append "'" (regexp-replace-all #/'/ str "'\"'\"'") "'")]
           [else str])]))
 
+;; Aux procedure to tokenize command-line string into command name and
+;; arglist.   We don't deal with shell metacharacters; just recognize
+;; quotes.  For the time being, we reject any unquoted shell metacharacters.
+;; POSIX shell syntax:
+;; http://pubs.opengroup.org/onlinepubs/009695399/utilities/xcu_chap02.html
+;; About wicked MS shell syntax, see the comment of
+;; %sys-escape-windows-command-line in src/libsys.scm.
+;; NB: We don't expect STR to be too long, so just recurse.
+(define (shell-tokenize-string str :optional (flavor
+                                              (cond-expand
+                                               [gauche.os.windows 'windows]
+                                               [else 'posix])))
+  (define (skip-ws)
+    (let loop ([c (peek-char)])
+      (when (and (char? c) (char-whitespace? c))
+        (begin (read-char) (loop (peek-char))))))
+  (define (err fmt . args)
+    (apply errorf #"Bad shell syntax - ~fmt" args))
+  (define (err-meta c)
+    (err "shell metacharacter ~s not allowed, in ~s" c str))
+  (define (err-backslash)
+    (err "stray backslash in ~s" str))
+
+  (define (tokenize-posix)
+    (with-input-from-string str
+      (^[]
+        (define (read-next)
+          (let1 c (read-char)
+            (cond [(eof-object? c) '()]
+                  [(char-whitespace? c) (skip-ws) '()]
+                  [(eqv? c #\') (read-sq)]
+                  [(eqv? c #\") (read-dq)]
+                  [(eqv? c #\\) (read-escaped)]
+                  [(#[|&\;<>()$`] c) (err-meta c)]
+                  [else (read-unquoted c)])))
+        (define (read-escaped)
+          (let1 c (read-char)
+            (if (eof-object? c)
+              (err-backslash)
+              (read-unquoted c))))
+        (define (read-unquoted c0)
+          (let1 c (peek-char)
+            (cond [(eof-object? c) (list c0)]
+                  [(char-whitespace? c) (skip-ws) (list c0)]
+                  [(eqv? c #\') (cons c0 (read-sq))]
+                  [(eqv? c #\") (cons c0 (read-dq))]
+                  [(eqv? c #\\) (read-char) (cons c0 (read-escaped))]
+                  [(#[|&\;<>()$`] c) (err-meta c)]
+                  [else (read-char) (cons c0 (read-unquoted c))])))
+        (define (read-sq) 
+          (let loop ([c (read-char)] [cs '()]) 
+            (cond [(eof-object? c) (err "unclosed single quote: ~s" str)]
+                  [(eqv? c #\') (reverse cs (read-next))]
+                  [else (loop (read-char) (cons c cs))])))
+        (define (read-dq)
+          (let loop ([c (read-char)] [cs '()]) 
+            (cond [(eof-object? c) (err "unclosed double quote: ~s" str)]
+                  [(eqv? c #\") (reverse cs (read-next))]
+                  [(eqv? c #\\) (let1 c (read-char) ; section 2.2.3
+                                  (cond [(eof-object? c) (err-backslash)]
+                                        [(#[$`\"\\\n] c)
+                                         (loop (read-char) (cons c cs))]
+                                        [else
+                                         (loop (read-char) (cons* c #\\ cs))]))]
+                  [(#[$`] c) (err-meta c)]
+                  [else (loop (read-char) (cons c cs))])))
+
+        ;; body
+        (skip-ws)
+        (let loop ([words '()])
+          (if (eof-object? (peek-char))
+            (reverse words)
+            (loop (cons (list->string (read-next)) words)))))))
+
+  (define (tokenize-windows-cmd)
+    (with-input-from-string str
+      (^[]
+        (define (read-next)
+          (let1 c (read-char)
+            (cond [(eof-object? c) '()]
+                  [(char-whitespace? c) (skip-ws) '()]
+                  [(eqv? c #\") (read-quoted)]
+                  [else (read-unquoted c)])))
+        (define (read-unquoted c)
+          (let loop ([c c] [cs '()])
+            (cond [(eof-object? c) (reverse cs)]
+                  [(char-whitespace? c) (skip-ws) (reverse cs)]
+                  [(eqv? c #\\) (let1 cs (read-backslash cs)
+                                  (loop (read-char) cs))]
+                  [(eqv? c #\") (reverse cs (read-quoted))]
+                  [else (loop (read-char) (cons c cs))])))
+        (define (read-quoted)
+          (let loop ([c (read-char)] [cs '()])
+            (cond [(eof-object? c) (reverse cs)] ;implicitly closed
+                  [(eqv? c #\\) (let1 cs (read-backslash cs)
+                                  (loop (read-char) cs))]
+                  [(eqv? c #\") (read-after-closing cs)]
+                  [else (loop (read-char) (cons c cs))])))
+        (define (read-backslash cs)
+          (let loop ([n 1] [cs cs])
+            (let1 c (peek-char)
+              (cond [(eqv? c #\\) (read-char) (loop (+ n 1) cs)]
+                    [(eqv? c #\")
+                     (if (even? n)
+                       (append (make-list (ash n -1) #\\) cs)
+                       (cons (read-char)
+                             (append (make-list (ash n -1) #\\) cs)))]
+                    [else (append (make-list n #\\) cs)]))))
+        (define (read-after-closing cs)
+          (let1 c (peek-char)
+            (if (eqv? c #\") ; this is treated as literal dq
+              (begin (read-char)
+                     (reverse (cons c cs) (read-next)))
+              (reverse cs (read-next)))))
+        ;; body
+        (skip-ws)
+        (let loop ([words '()])
+          (if (eof-object? (peek-char))
+            (reverse words)
+            (loop (cons (list->string (read-next)) words)))))))
+
+  (ecase flavor
+    [(windows) (tokenize-windows-cmd)]
+    [(posix) (tokenize-posix)]))
+  
 ;;----------------------------------------------------------------------
 ;; Internal utilities for process ports
 ;;
