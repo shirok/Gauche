@@ -709,13 +709,20 @@ ScmObj Scm_PairAttr(ScmPair *pair)
     }
 }
 
-ScmObj Scm_ExtendedCons(ScmObj car, ScmObj cdr)
+ScmObj Scm_MakeExtendedPair(ScmObj car, ScmObj cdr, ScmObj attrs)
 {
     ScmExtendedPair *xp = SCM_NEW(ScmExtendedPair);
     xp->car = car;
     xp->cdr = cdr;
-    xp->attributes = SCM_NIL;
+    xp->attributes = attrs;
     return SCM_OBJ(xp);
+}
+
+/* The common scenario is to use ExtendedCons in place of Cons,
+   then add attributes later.  So we provide this.  */
+ScmObj Scm_ExtendedCons(ScmObj car, ScmObj cdr)
+{
+    return Scm_MakeExtendedPair(car, cdr, SCM_NIL);
 }
 
 ScmObj Scm_PairAttrGet(ScmPair *pair, ScmObj key, ScmObj fallback)
