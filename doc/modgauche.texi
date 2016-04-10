@@ -12418,32 +12418,102 @@ to which keyword arguments are passed.
 
 @end defun
 
-@defun shell-escape-string arg
+@defun shell-escape-string str :optional flavor
 @c EN
-If @var{arg} contains characters that affects shell's command-line
-argument parsing, escape @var{arg} to avoid shell's interpretation.
-Otherwise, returns @var{arg} itself.
+If @var{str} contains characters that affects shell's command-line
+argument parsing, escape @var{str} to avoid shell's interpretation.
+Otherwise, returns @var{str} itself.
+
+The optional @var{flavor} argument takes a symbol to
+specify the platform; currently @code{windows} and
+@code{posix} can be specified.  The way shell handles
+the escape and quotation differ a lot between these platforms;
+the @code{windows} flavor uses MSVC runtime argument parsing behavior,
+while the @code{posix} flavor assumes IEEE Std 1003.1.
+When omitted, the default
+value is chosen according to the running platform.
+(Note: Cygwin is regarded as @code{posix}.)
 
 Use this procedure when you need to build a command-line string by yourself.
 (If you pass a command-line argument list, instead of a single
 command-line string, you don't need to escape them since we
 bypass the shell.)
-
-On Windows native build, this procedure is compatible to
-the argument parsing convention of Windows standard C runtime.
 @c JP
-@var{arg}がシェルのコマンドライン引数解析に影響を与える文字を含んでいる場合、
+@var{str}がシェルのコマンドライン引数解析に影響を与える文字を含んでいる場合、
 それらがシェルによって解釈されないようにエスケープされた文字列を返します。
-そうでなければ@var{arg}自体を返します。
+そうでなければ@var{str}自体を返します。
+
+省略可能な@var{flavor}引数はシンボルを取り、プラットフォームを指定します。
+現在は@code{windows}か@code{posix}が指定可能です。シェルが
+エスケープやクオートを処理する方法がこの二つのプラットフォームで大きく
+異なるからです。@code{windows}フレーバーの場合はMVCSランタイムの
+引数パージングに合わせ、@code{posxi}フレーバーの場合はIEEE Std 1003.1に
+合わせます。
+省略された場合は、プロセスが走っているプラットフォームが
+デフォルトの値となります。(Cygwinは@code{posix}とみなされます。)
 
 自分でコマンドライン文字列を組み立てる必要がある場合に使ってください。
 (単一のコマンドライン文字列でなく、コマンドライン引数のリストを渡す場合は
 エスケープの必要はありません。引数はシェルを通さずに子プロセスに渡される
 からです。)
-
-Windowsネイティブビルドの場合、この手続きはWindowsの標準Cランタイムの
-引数解析に合わせてあります。
 @c COMMON
+@end defun
+
+@defun shell-tokenize-string str :optional flavor
+@c EN
+Split a string @var{str} into arguments as the shell does.
+@c JP
+シェルがやるように、文字列@var{str}を引数リストに分割します。
+@c COMMOM
+
+@example
+(shell-tokenize-string "grep -n -e \"foo bar\" log")
+ @result{} ("grep" "-n" "-e" "foo bar" "log")
+@end example
+
+@c EN
+The optional @var{flavor} arguments can be a symbol either 
+@code{windows} or @code{posix} to specify the syntax.
+If it's @code{windows}, we follow MSVC runtime command-line
+argument parser behavior.  If it's @code{posix}, we follow
+IEEE Std 1003.1 Shell Command Language.  When omitted,
+the default value is chosen according to the running platform.
+(Note: Cygwin is regarded as @code{posix}.)
+@c JP
+省略可能な@var{flavor}引数はシンボル@code{windows}か@code{posix}を取り、
+構文を指定します。@code{windows}の場合はMVCSランタイムの
+引数パージングに合わせ、@code{posxi}フレーバーの場合はIEEE Std 1003.1
+Shell Command Languageに合わせます。
+省略された場合は、プロセスが走っているプラットフォームが
+デフォルトの値となります。(Cygwinは@code{posix}とみなされます。)
+@c COMMON
+
+@c EN
+This procedure does not handle fancier shell features such
+as variable substitution.  If it encounters a metacharacter
+that requires such interpretation, an error is signaled.
+In other words, metacharacters must be properly quoted
+in @var{str}.
+@c JP
+この手続きはシェルの変数置換のような高度な機能は持っていません。
+もしそういった解釈が必要なメタ文字に出会った場合はエラーが投げられます。
+言い換えれば、メタ文字は@var{str}の中で全て適切にクオートされている
+必要があります。
+@c COMMON
+
+@example
+(shell-tokenize-string "echo $foo" 'posix)
+  @result{} @r{signals error}
+
+(shell-tokenize-string "echo \"$foo\"" 'posix)
+  @result{} @r{still signals error}
+
+(shell-tokenize-string "echo '$foo'" 'posix)
+  @result{} ("echo" "$foo")
+
+(shell-tokenize-string "echo \\$foo" 'posix)
+  @result{} ("echo" "$foo")
+@end example
 @end defun
 
 @c ----------------------------------------------------------------------
