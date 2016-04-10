@@ -88,10 +88,13 @@
           cf-config-headers cf-output cf-show-substs
           cf-check-prog cf-path-prog cf-check-tool
           cf-prog-cxx
+
+          cf-check-header cf-check-headers cf-includes-default
           
           cf-lang <c-language>
           cf-lang-program cf-lang-io-program cf-lang-call
-          cf-try-compile cf-try-compile-and-link))
+          cf-try-compile cf-try-compile-and-link
+          ))
 (select-module gauche.configure)
 
 ;; A package
@@ -133,14 +136,17 @@
   (apply format #t console-fmt args)
   (apply log-format log-fmt args))
 
+(define (safe-variable-name s)
+  (string-tr (string-upcase s) "A-Z0-9" "_*" :complement #t))
+
 ;; constants for formatting help strings.  see cf-help-string.
 (define-constant *usage-description-indent* 26)
 (define-constant *usage-item-indent* 2)
 (define-constant *usage-fill-column* 79)
 
-;;
-;; Basic APIs
-;; 
+;;;
+;;; Basic APIs
+;;; 
 
 ;; API
 ;; Like AC_MSG_*
@@ -839,7 +845,7 @@
   (rlet1 result ($ run-compiler-with-content
                    (cf-lang-link-m (cf-lang))
                    (cf-lang-null-program-m (cf-lang)))
-    (cf-msg-result "~a" (if result "yes" "no"))))
+    (cf-msg-result (if result "yes" "no"))))
 
 ;; Feature Test API
 ;; Find c++ compiler.  Actually, we need the one that generates compatible
@@ -928,3 +934,66 @@
 (define (cf-check-tool sym prog-or-progs
                        :key (default #f) (paths #f) (filter #f) :rest keys)
   (apply cf-check-prog sym prog-or-progs keys))
+
+;;;
+;;; Tests - headers
+;;;
+
+;; API
+;; Returns a string tree
+(define cf-includes-default
+  (let1 defaults '("#include <stdio.h>\n"
+                   "#ifdef HAVE_SYS_TYPES_H\n"
+                   "# include <sys/types.h>\n"
+                   "#endif\n"
+                   "#ifdef HAVE_SYS_STAT_H\n"
+                   "# include <sys/stat.h>\n"
+                   "#endif\n"
+                   "#ifdef STDC_HEADERS\n"
+                   "# include <stdlib.h>\n"
+                   "# include <stddef.h>\n"
+                   "#else\n"
+                   "# ifdef HAVE_STDLIB_H\n"
+                   "#  include <stdlib.h>\n"
+                   "# endif\n"
+                   "#endif\n"
+                   "#ifdef HAVE_STRING_H\n"
+                   "# if !defined STDC_HEADERS && defined HAVE_MEMORY_H\n"
+                   "#  include <memory.h>\n"
+                   "# endif\n"
+                   "# include <string.h>\n"
+                   "#endif\n"
+                   "#ifdef HAVE_STRINGS_H\n"
+                   "# include <strings.h>\n"
+                   "#endif\n"
+                   "#ifdef HAVE_INTTYPES_H\n"
+                   "# include <inttypes.h>\n"
+                   "#endif\n"
+                   "#ifdef HAVE_STDINT_H\n"
+                   "# include <stdint.h>\n"
+                   "#endif\n"
+                   "#ifdef HAVE_UNISTD_H\n"
+                   "# include <unistd.h>\n"
+                   "#endif\n")
+    (case-lambda
+      [() defaults]
+      [(newval) (set! defaults newval) defaults])))
+
+;; Feature Test API
+;; Like AC_CHECK_HEADER.
+;; Returns #t on success, #f on failure.
+(define (cf-check-header header-file :key (includes #f))
+  (cf-msg-checking "~a usability" header-file)
+  (rlet1 result (cf-try-compile (or includes (cf-includes-default)) "")
+    (cf-msg-result (if result "yes" "no"))))
+
+;; Feature Test API
+;; Like AC_CHECK_HEADERS.  Besides the check, it defines HAVE_<header-file>
+;; definition.
+(define (cf-check-headers header-files
+                          :key (includes #f) (if-found #f) (if-not-found #f))
+  (dolist [h header-files]
+    (if (cf-check-header h :includes includes)
+      (begin (cf-define #"HAVE_~(safe-variable-name h)")
+             (when if-found (if-found h)))
+      (when if-not-found (if-not-found h)))))

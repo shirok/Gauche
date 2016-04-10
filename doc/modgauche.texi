@@ -3708,8 +3708,6 @@ an abridged version of sample configure script:
 
 ;; Tests & other parameter settings
 (cf-path-prog 'GOSH "gosh")
-(cf-subst 'SOEXT (gauche-config "--so-suffix"))
-(cf-subst 'OBJEXT (gauche-config "--object-suffix"))
 
 ;; Output
 (cf-make-gpd)
@@ -3734,7 +3732,7 @@ Tests and other parameter settings (optional): Check system
 characteristics and sets up substitution parameters and/or
 C preprocessor definitions.
 @item
-Output generation
+Output generation.  Call @code{cf-output} to process files.
 @end enumerate
 
 Most @code{cf-*} API corresponds to autoconf's @code{AC_*} or
@@ -3812,6 +3810,9 @@ including custom arguments.
 @defun cf-have-subst? symbol
 @end defun
 
+@defun cf-arg-var symbol
+@end defun
+
 @defun cf-ref symbol :optional default
 @end defun
 
@@ -3824,12 +3825,24 @@ including custom arguments.
 @subsubheading 定義済みテスト
 @c COMMON
 
-
 @defun cf-check-prog sym prog-or-progs :key value default paths filter
 @end defun
 
 @defun cf-path-prog sym prog-or-progs :key value default paths filter
 @end defun
+
+@defun cf-prog-cxx
+@end defun
+
+@defun cf-check-header header :key includes
+@end defun
+
+@defun cf-check-headers headers :key includes if-found if-not-found
+@end defun
+
+@defun cf-includes-default :optional newvalue
+@end defun
+
 
 @c EN
 @subsubheading Output
