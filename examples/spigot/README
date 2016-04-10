@@ -6,8 +6,7 @@ _after installing Gauche_.  See below.
 
 The sources include:
 
-  DIST           - a helper script to create a distribution tarball.
-  configure.ac   - source of "configure" script
+  configure      - configure script
   Makefile.in    - template makefile
   spigot.h       - common declaration within the spigot module
   spigot.c       - main logic 
@@ -24,20 +23,8 @@ by "gauche-package" script:
 It is a good way to start writing a fresh extension; but now
 we already have the sources, so let's move on.
 
-As a developer, you have to start from generating "configure"
-script by autoconf.   You need autoconf version 2.54 or later.
-This command creates "configure" from configure.in.
-
-  % ./DIST gen
-
-It actually just calls autoconf.  (Note: in Gauche 0.8.5 or
-before, you needed to give an option to autoconf so that it
-understands Gauche-specific macros.  Now the standard configure.in
-does not contain any Gauche-specific macros, so you don't need
-the option anymore.)
-
-Once configure is generated, you can create Makefile by
-running configure script.
+To build the extension, you have to generate Makefile by
+running the configure script.
 
   % ./configure
 
@@ -50,11 +37,3 @@ in the Gauche's standard location.
   % make
   % make check
   % make install
-
-To create a distributable package, use DIST script:
-
-  % ./DIST tgz
-
-It creates a tarball "spigot-1.0.tgz" in the parent directory.
-
-

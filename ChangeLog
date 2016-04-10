@@ -1,5 +1,8 @@
 2016-04-09  Shiro Kawai  <shiro@acm.org>
 
+	* examples/spigot, examples/mqueue-cpp: Switched to use
+	  gauche.configure instead of autoconf.
+
 	* lib/gauche/configure.scm: Add framework to run compiler tests.
 	  New apis: cf-arg-var, cf-check-tool, cf-prog-cxx, cf-lang,
 	  cf-lang-program, cf-lang-io-program, cf-lang-call,

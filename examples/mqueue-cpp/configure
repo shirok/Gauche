@@ -1,5 +1,5 @@
 #!/usr/bin/env gosh
-;; Configuring @@package@@
+;; Configuring mqueue-cpp
 ;; Run ./configure (or gosh ./configure) to generate Makefiles.
 
 (use gauche.configure)
@@ -20,7 +20,7 @@
 
 ;; Initialize configure.  This creates the global context, parses
 ;; command-line args and sets up default values.
-(cf-init "@@package@@" "1.0" "nobody@example.org")
+(cf-init "mqueue-cpp" "1.0" "nobody@example.org")
 
 ;; Set up gauche related commands.  The commands are set by scanning
 ;; PATH.  You can override them by "GOSH=/my/gosh ./configure" etc.
@@ -32,6 +32,12 @@
 (cf-path-prog 'GAUCHE_PACKAGE  "gauche-package")
 (cf-path-prog 'GAUCHE_INSTALL  "gauche-install")
 (cf-path-prog 'GAUCHE_CESCONV  "gauche-cesconv")
+
+;; We need the name of C++ compiler.  Actually the C++ compile must
+;; be compatible with the C compiler used to build Gauche, but I
+;; don't know how to guarantee that; here we just assume system's
+;; C++ compiler is compatible with the cc used for Gauche.
+(cf-prog-cxx)
 
 (cf-subst 'default_prefix (gauche-config "--prefix"))
  

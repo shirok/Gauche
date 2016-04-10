@@ -1,5 +1,5 @@
 #!/usr/bin/env gosh
-;; Configuring @@package@@
+;; Configuring spigot
 ;; Run ./configure (or gosh ./configure) to generate Makefiles.
 
 (use gauche.configure)
@@ -20,7 +20,7 @@
 
 ;; Initialize configure.  This creates the global context, parses
 ;; command-line args and sets up default values.
-(cf-init "@@package@@" "1.0" "nobody@example.org")
+(cf-init "spigot" "1.0" "nobody@example.org")
 
 ;; Set up gauche related commands.  The commands are set by scanning
 ;; PATH.  You can override them by "GOSH=/my/gosh ./configure" etc.

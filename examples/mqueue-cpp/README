@@ -8,9 +8,8 @@ mqueue library, to write a Gauche binding for it.
 
 The following files are needed for our extension:
 
-  DIST               - a helper script to create a distribution tarball.
   Makefile.in        - template makefile
-  configure.ac       - source of "configure" script
+  configure          - "configure" script
   mqueue_glue.cpp    - a bridge (glue) between C++ library and Gauche
   mqueue_glue.h      - ditto
   mqueue_lib.stub    - Scheme binding definition
@@ -26,33 +25,25 @@ I renamed the generated mqueue_cpp.h, mqueue_cpp.c, mqueue_cpplib.stub
 to more descriptive names, mqueue_glue.h, mqueue_glue.cpp,
 and mqueue_lib.stub, respectively.
 
+The generated files don't know about C++, so you have to tweak configure
+and Makefile.in to enable C++.
 
-[Build process]
-
-In order to compile in C++, you have to tweak configure.in and
-Makefile.in.
-
-The default extension build process obtains C compiler name
-from gauche-config, which knows what C compiler was used to build
-Gauche.  Unfortunately it knows nothing about C++, so we manually
-have to tell the build process about it.
-
-In this example, I added AC_PROG_CXX macro in configure.in to find
-out system's C++ compiler.
+1. Add (cf-prog-cxx) in `configure'.  This tries to figure out how
+   to call C++ compiler, and sets up a substitution variable CXX.
 
     NOTE: the C++ compiler has to be 'compatible' with the C
     compiler used to build Gauche, e.g. it must accept the
     same set of command-line options to generate a shared
     library.  Gcc and g++ are such compatible ones.
 
-In Makefile.in, I added the following line to receive the C++
-compiler name configure.in finds.
+2. In Makefile.in, added the following line to receive the C++
+   compiler name configure.in finds.
 
     CXX      = @CXX@
 
-Then, when builing mqueue_cpp.so, I give --cc=$(CXX) option to
-the gauche-package script to have it use the C++ compiler instead
-of the default C compiler.
+3. Also in Makefile.in, when builing mqueue_cpp.so, give --cc=$(CXX)
+   option to the gauche-package script to have it use the C++ compiler
+   instead of the default C compiler.
 
     mqueue_cpp.$(SOEXT): $(mqueue_SRCS) $(mqueue_HDRS)
         $(GAUCHE_PACKAGE) compile --cc=$(CXX) --verbose mqueue_cpp $(mqueue_SRCS)

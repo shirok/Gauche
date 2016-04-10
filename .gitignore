@@ -7,13 +7,15 @@ config.log
 config.rpath
 config.status
 config.sub
-configure
+/configure
 libtool
 autom4te.cache
 Makefile
+/gc/configure
 /gc/configure.gnu
 /gc/configure.gnu-gauche
 /gc/include/config.h
+/gc/libatomic_ops/configure
 /gc/libatomic_ops/src/config.h
 /lib/gauche/config.scm
 /src/gauche/config.h
