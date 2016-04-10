@@ -69,11 +69,14 @@
   (use gauche.cgen)
   (use gauche.package)
   (use gauche.process)
+  (use gauche.mop.singleton)
   (use util.match)
   (use file.filter)
   (use file.util)
   (use text.tr)
+  (use text.tree)
   (use srfi-13)
+  (use srfi-113) ; sets & bags
   (extend gauche.config)
   (export cf-init
           cf-arg-enable cf-arg-with cf-feature-ref cf-package-ref
@@ -81,9 +84,14 @@
           cf-msg-checking cf-msg-result cf-msg-warn cf-msg-error
           cf-echo
           cf-make-gpd
-          cf-define cf-subst cf-have-subst? cf-ref cf$
+          cf-define cf-subst cf-arg-var cf-have-subst? cf-ref cf$
           cf-config-headers cf-output cf-show-substs
-          cf-check-prog cf-path-prog))
+          cf-check-prog cf-path-prog cf-check-tool
+          cf-prog-cxx
+          
+          cf-lang <c-language>
+          cf-lang-program cf-lang-io-program cf-lang-call
+          cf-try-compile cf-try-compile-and-link))
 (select-module gauche.configure)
 
 ;; A package
@@ -94,9 +102,11 @@
    (url        :init-keyword :url :init-value #f)
    (string     :init-keyword :string)    ; package_string
    (tarname    :init-keyword :tarname)
+   (tool-prefix :init-form #f)           ; cross compilation tool prefix
    (config.h   :init-form '())           ; list of (config-header . source)
    (defs       :init-form (make-hash-table 'eq?)) ;cf-define'd thingy
    (substs     :init-form (make-hash-table 'eq?)) ;cf-subst'ed thingy
+   (precious   :init-form (set eq-comparator))    ;vars overridable by env
    (features   :init-form (make-hash-table 'eq?)) ;enabled features by cmdarg
    (packages   :init-form (make-hash-table 'eq?)) ;optional packages
    ))
@@ -179,6 +189,7 @@
      :url url
      :string (format "~a ~a" package-name version)
      :tarname (cgen-safe-name-friendly (string-downcase package-name))))
+  (cf-lang (instance-of <c-language>))
   (initialize-default-definitions)
   (parse-command-line-arguments)
   (check-directory-names)
@@ -224,6 +235,24 @@
 
   (cf-subst 'cross_compiling "no")
   (cf-subst 'subdirs "")
+
+  ;; NB: Autoconf uses AC_PROG_CC to set up CC.  However, we need
+  ;; to use the same C compiler with which Gauche was compiled, so
+  ;; so we set it as the default.  We also allow env overrides for
+  ;; some common variables.  (In autoconf, AC_PROG_CC issues AC_ARG_VAR
+  ;; for them).
+  (cf-subst 'CC       (gauche-config "--cc"))
+  (cf-arg-var 'CPP)
+  (cf-arg-var 'CPPFALGS)
+  (cf-arg-var 'CC)
+  (cf-arg-var 'CFLAGS)
+  (cf-arg-var 'LDFLAGS)
+  (cf-arg-var 'LIBS)
+  ;; NB: Autoconf detemines these through tests, but we already
+  ;; know them at the time Gauche is configured.
+  (cf-subst 'SOEXT  (gauche-config "--so-suffix"))
+  (cf-subst 'OBJEXT (gauche-config "--object-suffix"))
+  (cf-subst 'EXEEXT (gauche-config "--executable-suffix"))
   )
 
 (define (parse-command-line-arguments)
@@ -418,6 +447,10 @@
   ;; TODO: explanation of VAR=VAL
   (exit 1))
 
+;;;
+;;; Variables and substitutions
+;;;
+
 ;; API
 (define (cf-define symbol :optional (value 1))
   (dict-put! (~ (ensure-package)'defs) symbol value))
@@ -433,6 +466,21 @@
   (dict-exists? (~ (ensure-package)'substs) symbol))
 
 ;; API
+;; Make the named variable overridable by the environment variable.
+;; The term "precious" comes from autoconf implementation.
+;; At this moment, we don't save the help string.  cf-arg-var is
+;; called after cf-init and we can't include help message (the limitation
+;; of one-pass processing.)
+(define (cf-arg-var symbol)
+  (update! (~ (ensure-package)'precious) (cut set-adjoin! <> symbol))
+  (and-let1 v (sys-getenv (x->string symbol))
+    (cf-subst symbol v)))
+
+(define (var-precious? symbol)
+  (set-contains? (~ (ensure-package)'precious) symbol))
+
+;; API
+;; Lookup the current value of the given variable.
 (define (cf-ref symbol :optional (default (undefined)))
   (rlet1 v (dict-get (~ (ensure-package)'substs) symbol default)
     (when (undefined? v)
@@ -441,6 +489,10 @@
 ;; API
 ;; Like cf-ref, but returns empty string if undefined.
 (define (cf$ symbol) (cf-ref symbol ""))
+
+;;;
+;;; Argument processing
+;;;
 
 ;; --with-PACKAGE and --enable-FEATURE processing
 ;; They're recoginzed by cf-init.
@@ -515,6 +567,10 @@
               (fill description))
       (format "~va~a\n~va~a\n" *usage-item-indent* " " item
               (- *usage-description-indent* 1) " " (fill description)))))
+
+;;;
+;;; Output
+;;;
 
 ;; API
 (define (cf-config-headers header-or-headers)
@@ -636,9 +692,177 @@
              :configure ($ string-join $ cons "./configure"
                            $ map shell-escape-string $ cdr $ command-line))))))
 
+;;;
+;;; Target languages
+;;;
+
+;; Various language-specific operations are defined as methods on
+;; the language signleton object inheriting <cf-language>.
+;; Methods a named with -m suffix to distinguish from cf- API, which
+;; is a usual procedure dispatches according to the current
+;; language.
+(define-class <cf-language> ()
+  ((name :init-keyword :name :init-value "(none)"))
+  :metaclass <singleton-meta>)
+
+;; API
+;; Parameter cf-lang holds a singleton instance of the current langauge.
+(define cf-lang (make-parameter (make <cf-language>)))
+
+(define (cf-lang-ext) (cf-lang-ext-m (cf-lang)))
+
+;; API
+;; cf-lang-program <prologue> <body>
+;; Returns a string tree that consists a stand-alone program for the
+;; current language.  <prologue> and <body> both are string tree.
+(define (cf-lang-program prologue body)
+  (cf-lang-program-m (cf-lang) prologue body))
+(define-method cf-lang-program-m ((lang <cf-language>) prologue body)
+  (error "No language is selected."))
+
+;; API
+;; cf-lang-io-program
+;; Returns a string tree of a program that creates "conftest.out"
+;; in the current language.
+(define (cf-lang-io-program)
+  (cf-lang-io-program-m (cf-lang)))
+(define-method cf-lang-io-program-m ((lang <cf-language>))
+  (error "No language is selected."))
+
+;; API
+;; cf-lang-call
+(define (cf-lang-call prologue func-name)
+  (cf-lang-call-m (cf-lang) prologue func-name))
+(define-method cf-lang-call-m ((lang <cf-language>) prologue func-name)
+  (error "No language is selected."))
+
 ;;
-;; Tests - programs
+;; C
 ;;
+(define-class <c-language> (<cf-language>) ((name :init-value "C")))
+
+(define-method cf-lang-ext-m ((lang <c-language>)) "c")
+(define-method cf-lang-cpp-m ((lang <c-language>))
+  #"~(cf$'CPP) ~(cf$'CPPFLAGS)")
+(define-method cf-lang-compile-m ((lang <c-language>))
+  #"~(cf$'CC) -c ~(cf$'CFLAGS) ~(cf$'CPPFLAGS) conftest.~(cf-lang-ext-m lang)")
+(define-method cf-lang-link-m ((lang <c-language>))
+  #"~(cf$'CC) -o conftest~(cf$'EXEEXT) ~(cf$'CFLAGS) ~(cf$'CPPFLAGS) ~(cf$'LDFLAGS) conftest.~(cf-lang-ext-m lang) ~(cf$'LIBS)")
+(define-method cf-lang-null-program-m ((lang <c-language>))
+  (cf-lang-program-m lang "" ""))
+
+(define-method cf-lang-program-m ((lang <c-language>) prologue body)
+  `(,prologue
+    "\nint main(){\n"
+    ,body
+    "\n; return 0;\n}\n"))
+
+(define-method cf-lang-io-program-m ((lang <c-language>))
+  (cf-lang-program-m lang "#include <stdio.h>\n"
+                     '("FILE *f = fopen(\"conftest.out\", \"w\");\n"
+                       "return ferror(f) || fclose(f) != 0;")))
+
+(define-method cf-lang-call-m ((lang <c-language>) prologue body)
+  ($ cf-lang-program-m lang
+     (if (equal? func-name "main")
+       `(,prologue
+         "\n#ifdef __cplusplus\nextern \"C\"\n#endif\nchar main();\n")
+       prologue)
+     `("return" ,func-name "();\n")))
+
+;; C++
+(define-class <c++-language> (<c-language>) ((name :init-value "C++")))
+(define-method cf-lang-ext-m ((lang <c++-language>)) "c")
+(define-method cf-lang-cpp-m ((lang <c++-language>))
+  #"~(cf$'CXXCPP) ~(cf$'CPPFLAGS)")
+(define-method cf-lang-compile-m ((lang <c++-language>))
+  #"~(cf$'CXX) -c ~(cf$'CXXFLAGS) ~(cf$'CPPFLAGS) conftest.~(cf-lang-ext-m lang)")
+(define-method cf-lang-link-m ((lang <c++-language>))
+  #"~(cf$'CXX) -o conftest~(cf$'EXEEXT) ~(cf$'CXXFLAGS) ~(cf$'CPPFLAGS) ~(cf$'LDFLAGS) conftest.~(cf-lang-ext-m lang) ~(cf$'LIBS)")
+
+
+;;;
+;;; Tests - compilation
+;;;
+
+;; Dump CONTENT to a file conftext.$(cf-lang-ext) and run COMMAND.
+;; The output and error goes to config.log.  Returns #t on success,
+;; #f on failure.  Make sure to clean temporary files.
+(define (run-compiler-with-content command content)
+  (define (clean)
+    (remove-files (glob "conftest.err*")
+                  #"conftest.~(cf-lang-ext)"
+                  #"conftest~(cf$'EXEEXT)"))
+  (define cmd
+    (if (string? command)
+      (shell-tokenize-string command)
+      command))
+  (unwind-protect
+      (receive (errout erroutfile) (sys-mkstemp "conftest.err.")
+        (log-format "configure: ~s" cmd)
+        (with-output-to-file #"conftest.~(cf-lang-ext)"
+          (^[] (write-tree content)))
+        (let1 st ($ process-exit-status
+                    (run-process cmd :wait #t
+                                 :redirects `((> 1 ,errout) (> 2 ,errout))))
+          (close-port errout)
+          ($ generator-for-each (cut log-format "~a" <>)
+             $ file->line-generator erroutfile)
+          (log-format "configure: $? = ~s" (sys-wait-exit-status st))
+          (unless (zero? st)
+            (log-format "configure: failed program was:")
+            ($ generator-for-each (cut log-format "| ~a" <>)
+               $ file->line-generator #"conftest.~(cf-lang-ext)"))
+          (zero? st)))
+    (clean)))
+
+;; API
+;; Try compile BODY as the current language.
+;; Returns #t on success, #f on failure.
+(define (cf-try-compile prologue body)
+  ($ run-compiler-with-content
+     (cf-lang-compile-m (cf-lang))
+     (cf-lang-program prologue body)))
+
+;; API
+;; Try compile and link BODY as the current language.
+;; Returns #t on success, #f on failure.
+(define (cf-try-compile-and-link prologue body)
+  ($ run-compiler-with-content
+     (cf-lang-link-m (cf-lang))
+     (cf-lang-program prologue body)))
+
+;; Try to produce executable from
+;; This emits message---must be called in feature test api
+(define (compiler-can-produce-executable?)
+  (cf-msg-checking "whether the ~a compiler works" (~ (cf-lang)'name))
+  (rlet1 result ($ run-compiler-with-content
+                   (cf-lang-link-m (cf-lang))
+                   (cf-lang-null-program-m (cf-lang)))
+    (cf-msg-result "~a" (if result "yes" "no"))))
+
+;; Feature Test API
+;; Find c++ compiler.  Actually, we need the one that generates compatible
+;; binary with which Gauche was compiled, but there's no reliable way
+;; (except building an extension and trying to load into Gauche, but that's
+;; a bit too much.)
+(define (cf-prog-cxx :optional (compilers '("g++" "c++" "gpp" "aCC" "CC"
+                                            "cxx" "cc++" "cl.exe" "FCC"
+                                            "KCC" "RCC" "xlC_r" "xlC")))
+  (cf-arg-var 'CXX)
+  (cf-arg-var 'CXXFLAGS)
+  (cf-arg-var 'CCC)
+  (or (cf-ref 'CXX #f)
+      (and-let1 ccc (cf-ref 'CCC #f)
+        (cf-subst 'CXX ccc)
+        #t)
+      (cf-check-tool 'CXX compilers :default "g++"))
+  (parameterize ([cf-lang (instance-of <c++-language>)])
+    (compiler-can-produce-executable?)))
+
+;;;
+;;; Tests - programs
+;;;
 
 ;; API
 ;; Common feature for AC_CHECK_PROG, AC_PATH_PROG etc.
@@ -668,7 +892,7 @@
                       [else (finder prog)]))
        progs))
 
-;; API
+;; Feature Test API
 ;; cf-check-prog works like AC_CHECK_PROG and AC_CHECK_PROGS.
 ;; If SYM is already cf-subst'd, we don't do anything.
 (define (cf-check-prog sym prog-or-progs
@@ -683,7 +907,7 @@
       (begin (cf-msg-result "no")
              (and default (cf-subst sym default))))))
 
-;; API
+;; Feature Test API
 ;; cf-path-prog works like AC_PATH_PROG and AC_PATH_PROGS.
 (define (cf-path-prog sym prog-or-progs
                       :key (value #f) (default #f) (paths #f) (filter #f))
@@ -697,3 +921,10 @@
       (begin (cf-msg-result "no")
              (and default (cf-subst sym default))))))
 
+;; Feature Test API *COMPATIBILITY*
+;; This is used in place of cf-check-prog when cross compilation needs to
+;; taken care of.  At this moment we don't support cross compilation yet,
+;; so we just call cf-check-prog.
+(define (cf-check-tool sym prog-or-progs
+                       :key (default #f) (paths #f) (filter #f) :rest keys)
+  (apply cf-check-prog sym prog-or-progs keys))

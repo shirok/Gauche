@@ -1,5 +1,10 @@
 2016-04-09  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/configure.scm: Add framework to run compiler tests.
+	  New apis: cf-arg-var, cf-check-tool, cf-prog-cxx, cf-lang,
+	  cf-lang-program, cf-lang-io-program, cf-lang-call,
+	  cf-try-compile, cf-try-compile-and-link.
+
 	* lib/gauche/process.scm (shell-tokenize-string): Added.
 
 2016-04-08  Shiro Kawai  <shiro@acm.org>
