@@ -5,6 +5,11 @@
 	  <cgen-scheme-code> literal (gauche/cgen/precomp.scm).  Since
 	  0.9.5 must be compiled by 0.9.4, we'll defer changing `source-code'
 	  etc until after 0.9.5 release.
+	* lib/gauche/cgen/literal.scm: Add support of serializing
+	  extended pair.  NB: We don't automatically serialize extended-pair,
+	  for pair attributes may contain unnecessary info.  Instead,
+	  a special proxy object is provided that would be serialized as
+	  an extended pair.
 
 2016-04-10  Shiro Kawai  <shiro@acm.org>
 
