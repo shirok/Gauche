@@ -1,5 +1,9 @@
 2016-04-11  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/cgen/precomp.scm, lib/gauche/cgen/stub.scm: Save
+	  source info of precompiled SUBRs and closures.  They can be
+	  useful during development.
+
 	* src/libcode.c (compiled-code-definition): Added.  This will be
 	  the basis of source-code (gauche/procedure.scm) and
 	  <cgen-scheme-code> literal (gauche/cgen/precomp.scm).  Since

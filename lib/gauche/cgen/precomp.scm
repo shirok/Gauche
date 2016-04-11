@@ -303,6 +303,7 @@
   (with-module gauche.internal vm-eval-situation))
 (define global-eq?? (with-module gauche.internal global-eq??))
 (define make-identifier (with-module gauche.internal make-identifier))
+(define pair-attribute-get (with-module gauche.internal pair-attribute-get))
 
 (define-constant SCM_VM_COMPILING 2) ;; must match with vm.h
 
@@ -540,16 +541,21 @@
         ;; will be unnecessary.
         [mod  (and-let* ([n (module-name (~ id'module))])
                 (find-tmodule n))]
-        [code (cgen-literal inner-code)])
+        [code (cgen-literal inner-code)]
+        [tmp (gensym)])
+    (cgen-init (format "  ScmObj ~a = Scm_MakeClosure(~a, NULL);\n"
+                       tmp (cgen-cexpr code)))
+    (cgen-init (format "  SCM_PROCEDURE_INFO(~a) = ~a;\n"
+                       tmp (cgen-cexpr (~ code'info))))
     (cgen-init (format "  Scm_MakeBinding(SCM_MODULE(~a) /* ~a */, \
                                           SCM_SYMBOL(~a) /* ~a */, \
-                                          Scm_MakeClosure(~a, NULL),\
+                                          ~a,\
                                           ~a);\n"
                        (if mod (tmodule-cname mod) "Scm_CurrentModule()")
                        (if mod (cgen-safe-comment (~ mod'name)) "")
                        (cgen-cexpr sym)
                        (cgen-safe-comment (unwrap-syntax id))
-                       (cgen-cexpr code)
+                       tmp
                        (case flags
                          [(2) 'SCM_BINDING_CONST]
                          [(4) 'SCM_BINDING_INLINABLE]
@@ -581,6 +587,11 @@
 ;; The current approach still has an issue when the compiled source
 ;; overrides these special forms.  Such sources should be very unusual,
 ;; so we don't support them for the time being.
+;;
+;; TODO: Reconstructing define-cproc etc. would lose the source information
+;; attached to the original form.  We can't fix it right now, for define-macro
+;; doesn't provide access to the original form.  Maybe after we replace
+;; it with er-macro-expander...
 
 (define *special-handlers*
   '((define-macro (current-module)
@@ -712,11 +723,16 @@
 ;; Compiler-specific literal handling definitions
 ;;
 (define-cgen-literal <cgen-scheme-code> <compiled-code>
-  ((code-name   :init-keyword :code-name)
-   (code-vector-c-name :init-keyword :code-vector-c-name)
-   (literals    :init-keyword :literals)
-   (arg-info    :init-keyword :arg-info)
+  ([code-name   :init-keyword :code-name]
+   [code-vector-c-name :init-keyword :code-vector-c-name]
+   [literals    :init-keyword :literals]
+   [arg-info    :init-keyword :arg-info]
+   [info        :init-keyword :info] ; <cgen-scheme-extended-pair>
    )
+  ;; NB: info has literal of extended pair such that
+  ;; (<procedure-name> . <arg-info>), with source-info attributes.
+  ;; It isn't emitted directly to the static data of ScmCompiledCode.
+  ;; Instead, it is used by emit-toplevel-definition.
   (make (value)
     (let* ([code (if (run-extra-optimization-passes)
                    (optimize-compiled-code value)
@@ -725,7 +741,23 @@
            [lv  (extract-literals cv)]
            [cvn (allocate-code-vector cv lv (~ code'full-name))]
            [code-name (cgen-literal (~ code'name))]
-           [arg-info (cgen-literal (unwrap-syntax (~ code'arg-info)))]
+           [arg-info-raw (unwrap-syntax (~ code'arg-info))]
+           [arg-info (cgen-literal arg-info-raw)]
+           ;; TRANSIENT: This part is dupe from compiled-code-definition.
+           ;; Replace it after 0.9.5 release.
+           [src-info (and-let* ([def (assq-ref (~ code'info) 'definition)]
+                                [src (assq-ref def 'source-info)]
+                                [src. (let loop ([src src])
+                                        (if-let1 orig (pair-attribute-get
+                                                       src 'original #f)
+                                          (loop orig)
+                                          src))])
+                       (pair-attribute-get src. 'source-info #f))]
+           [info (cgen-literal
+                  (if src-info
+                    ($ make-serializable-extended-pair (~ code'name)
+                       arg-info-raw `((source-info . ,src-info)))
+                    (cons (~ code'name) arg-info-raw)))]
            [inliner (check-packed-inliner code)])
       (define (init-thunk)
         (format #t "    SCM_COMPILED_CODE_CONST_INITIALIZER(  /* ~a */\n"
@@ -756,6 +788,7 @@
             :code-vector-c-name cvn
             :code-name code-name
             :arg-info arg-info
+            :info info
             :literals lv)))
   (init (self)
     (unless (cgen-literal-static? (~ self'code-name))

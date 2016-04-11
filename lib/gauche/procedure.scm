@@ -170,9 +170,27 @@
       (check a))))
 
 ;; source-code -------------------------------------------------
-;; Take the source code from a closure.
+;; Take the source code and location from a procedure.
+;;
+;; Where is source code saved?
+;;  (~ <compiled-code>'info) -> definition -> source-info
+;;  In case if the source is a result of macro expansion, the original
+;;  source is attached in the 'original pair attribute of the source
+;;  code.  The `source-code' procedure traces the very origin of the source.
+;;  Note that precompiled closure doesn't have `definition' info, hence
+;;  source code is not available.
+;;
+;; Where is source location saved?
+;;  For SUBRs and precompiled closures: The stub generator and precompiler
+;;  sets the procedure signature to the (~ <procedure>'info) slot.  The
+;;  signature has 'source-info attribute attached.
+;;  Other closures: They still have signature in 'info, but no source-info
+;;  is attached.  Instead you should take the source code and then look
+;;  at its source-info.
 
 (define (source-code proc)
+  ;; TRANSIENT: Replace this with compiled-code-definition after
+  ;; 0.9.5 release.
   (and-let* ([ (closure? proc) ]
              [def (assq-ref (~ (closure-code proc)'info) 'definition)]
              [src (assq-ref def 'source-info)])
@@ -183,9 +201,12 @@
         src))))
 
 (define (source-location proc)
-  (and-let* ([src (source-code proc)]
-             [ (pair? src) ])
-    ((with-module gauche.internal pair-attribute-get) src 'source-info #f)))
+  (define (extract x)
+    (and (pair? x)
+         ($ (with-module gauche.internal pair-attribute-get)
+            x 'source-info #f)))
+  (or (extract (~ proc'info))
+      (extract (source-code proc))))
 
 ;; disassembler ------------------------------------------------
 ;; I'm not sure whether this should be here or not, but fot the time being...
