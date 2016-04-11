@@ -1,3 +1,11 @@
+2016-04-11  Shiro Kawai  <shiro@acm.org>
+
+	* src/libcode.c (compiled-code-definition): Added.  This will be
+	  the basis of source-code (gauche/procedure.scm) and
+	  <cgen-scheme-code> literal (gauche/cgen/precomp.scm).  Since
+	  0.9.5 must be compiled by 0.9.4, we'll defer changing `source-code'
+	  etc until after 0.9.5 release.
+
 2016-04-10  Shiro Kawai  <shiro@acm.org>
 
 	* src/list.c (Scm_MakeExtendedPair): Added.

@@ -164,6 +164,16 @@
   (Scm_ImportModule (Scm_GaucheInternalModule) 'gauche.vm.code SCM_FALSE 0))
  )
 
+;; Extract the original definition (source) of the code.
+(select-module gauche.internal)
+(define (compiled-code-definition code)
+  (and-let* ([def (assq-ref (~ code'info) 'definition)]
+             [src (assq-ref def 'source-info)])
+    (let loop ([src src])
+      (if-let1 orig (pair-attribute-get src 'original #f)
+        (loop orig)
+        src))))
+
 (select-module gauche)
 (inline-stub
   ;; <compiled-code> class is visible 
