@@ -40,36 +40,70 @@ we categorize libraries by their purposes.
 @c COMMON
 
 @c EN
-The following three chapters describe bundled modules,
+The following four chapters describe bundled modules,
 grouped by their names.
+
+@itemize
+@item
 @ref{Library modules - Gauche extensions} contains a description of
 @code{gauche.*} modules, which are more or less considered
 the core features of Gauche but separated since less frequently used.
 (Some modules are rather ad-hoc, but here for historical reasons).
+
+@item
+@ref{Library modules - R7RS integration} explains how Gauche
+integrates R7RS into exising Gauche structures.  If you want to
+write R7RS-compliant portable programs, you definitely want to
+check the first two sections of this chapter.  What follows is
+the description of R7RS modules.  Since Gauche supports most of
+R7RS core procedures in either built-in or existing modules,
+most R7RS modules are for the compatibility.
+
+@item
 @ref{Library modules - SRFIs} describes the modules which
 provide SRFI functionalities.  They have the names beginning
 with @code{srfi-}.
 Note that some of SRFI features are built in Gauche core and
 not listed here.  @xref{Standard conformance}, for the entire list
 of supported SRFIs.
+
+@item
 @ref{Library modules - Utilities} describes other modules
 ---including database interface, filesystem utilities,
 network protocol utilities, and more.
+@end itemize
+
 @c JP
-この章に続く3つの章で、各ライブラリについて詳細に記述します。
+この章に続く4つの章で、各ライブラリについて詳細に記述します。
 各章は名前でグループ化されています。
+
+@itemize
+@item
 @ref{Library modules - Gauche extensions}では@code{gauche.*}という
 名前を持つモジュールを説明します。これらはある意味Gaucheの基本的な
 機能なのですが、使われる頻度が少ないために別モジュールになったというものです。
 (いくつかのモジュールはもっと付加的なものですが、歴史的理由からここにあります)。
+
+@item
+@ref{Library modules - R7RS integration}ではR7RSが既存のGaucheの
+構造にどのように統合されているかについて説明します。R7RS準拠のポータブルな
+プログラムを書く場合は、この章の最初の2節にはぜひ目を通してください。
+その後には、R7RSで定義されているモジュールの説明が続きますが、R7RSの
+手続きはほとんどGaucheの組み込みか他のモジュールで提供されているので、
+これらのR7RSモジュールは互換性のためにあります。
+
+@item
 @ref{Library modules - SRFIs}ではSRFIの機能を提供するモジュールを
 扱います。@code{srfi-}で始まる名前を持ちます。
 いくつかのSRFIについてはGaucheのコアに組み込みになっているため、
 この章には現れないことに注意してください。サポートされているSRFIの
 完全なリストについては@ref{Standard conformance}を見て下さい。
+
+@item
 @ref{Library modules - Utilities}では残りのモジュールに
 ついて説明します。データベースインタフェース、ファイルシステム、
 ネットワークプロトコル、その他様々なライブラリがあります。
+@end itemize
 @c COMMON
 
 @c EN
@@ -201,6 +235,9 @@ set of values.  @xref{Collection framework}.
 @emph{Sequence} - Generic functions applicable for ordered set
 of values.  @xref{Sequence framework}.
 @item
+@emph{Dictionary} - Generic functions to handle dictionary, that is,
+a mapping from keys to values.  @xref{Dictionary framework}.
+@item
 @emph{Relation} - Generic functions to handle relations
 (in a sense of Codd's definition).  @xref{Relation framework}.
 @item
@@ -216,6 +253,9 @@ to construct and traverse collections/sequences in concise code.
 @item
 @emph{シーケンス} - 順序付けられたデータの集合に対するジェネリック関数。
 @ref{Sequence framework}参照。
+@item
+@emph{ディクショナリ} - 辞書、つまりキーから値への写像に対するジェネリック関数。
+@ref{Dictionary framework}参照。
 @item
 @emph{リレーション} - (Coddの定義による)リレーションを処理するためのジェ
 ネリック関数。@ref{Relation framework}参照。
@@ -264,8 +304,22 @@ and @ref{Character-set library}.
 For very large hash tables (millions of entries),
 @ref{Sparse tables} may provide better memory footprint.
 @item
-@emph{Queue} - both fast and thread-safe queues are provided in
-@ref{Queue}.
+@emph{Balanced tree} - If you need to order keys in a dictionary,
+you can use treemaps.  See @ref{Treemaps}.
+@item
+@emph{Immutable map} - Sometimes immutable dictionary is handy.  Internally
+it implements a functional balanced tree.  See @ref{Immutable map}.
+@item
+@emph{Queue} - Both fast and thread-safe queues are provided in
+@ref{Queue}.  Thread-safe queues can also be used as synchronized
+messaging channel.
+@item
+@emph{Heap} - See @ref{Heap}.
+@item
+@emph{Ring buffer} - Space-efficient ring buffer.  See @ref{Ring buffer}.
+@item
+@emph{Cache} - Various cache algorithm implementations.
+See @ref{Cache}.
 @item
 @emph{Record} - a simple data structure.  Although Gauche's object
 system can be used to define arbitrary data structures, you might
@@ -274,9 +328,6 @@ for they are more portable and potentially more efficient.
 @item
 @emph{Stream} - you can implement cool lazy algorithms with it.
 See @ref{Stream library}.
-@item
-@emph{Balanced tree} - Red-black tree implementation is available.
-See @ref{Treemaps}.
 @item
 @emph{Trie} - Another tree structure for efficient common-prefix
 search.  See @ref{Trie}.
@@ -316,7 +367,21 @@ For generic RDBMS interface, see @ref{Database independent access layer}.
 非常に大きなハッシュテーブル(数百万エントリ)の場合、
 @ref{Sparse tables}の方がメモリ効率が良い可能性もあります。
 @item
+@emph{平衡木} - 辞書のキーに順序づけが必要な場合はツリーマップがが利用できます。
+@ref{Treemaps}参照。
+@item
+@emph{不変なマップ} - しばしは、変更不可能な辞書が便利な場面があります。
+内部では関数的な平衡木として実装されています。@ref{Immutable map}参照。
+@item
 @emph{キュー} - 高速なキュー、およびスレッドセーフなキューが@ref{Queue}で用意されています。
+スレッドセーフキューはまた、同期的なメッセージチャネルとしても使えます。
+@item
+@emph{ヒープ} - @ref{Heap}参照。
+@item
+@emph{リングバッファ} - 空間効率の良いリングバッファです。@ref{Ring buffer}参照。
+@item
+@emph{キャッシュ} - 様々なキャッシュアルゴリズムの実装です。
+@ref{Cache}参照。
 @item
 @emph{レコード} - 単純なデータ構造。Gaucheのオブジェクトシステムをつかっ
 て任意のデータ構造を定義できますが、@ref{Record types}および
@@ -325,8 +390,6 @@ For generic RDBMS interface, see @ref{Database independent access layer}.
 @item
 @emph{ストリーム} - これを使うと遅延アルゴリズムをスマートに実装できま
 す。@ref{Stream library}参照。
-@item
-@emph{平衡木} - 赤黒木が利用できます。@ref{Red black tree}参照。
 @item
 @emph{トライ} - 共通接頭辞検索用の効率のよい木構造です。@ref{Trie}参照。
 @item
