@@ -96,13 +96,6 @@
        (ideque->list (ideque-zip (ideque 1 2 3 4 5)
                                  (ideque 'a 'b 'c 'd 'e)
                                  (ideque 'x 'y 'z))))
- (test '(a b r c d)
-       (ideque->list (ideque-delete-duplicates
-                      (ideque 'a 'b 'r 'a 'c 'a 'd 'a 'b 'r 'a))))
- (test '(#\a #\B #\r #\C #\d)
-       (ideque->list (ideque-delete-duplicates
-                      (ideque #\a #\B #\r #\A #\C #\a #\d #\A #\b #\R #\a)
-                      char-ci=?)))
  )
 
 (test-group "ideque/mapping"

@@ -56,7 +56,6 @@
           ideque-map ideque-for-each ideque-fold ideque-fold-right
           ideque-filter-map ideque-append-map
           ideque-filter ideque-remove ideque-partition
-          ideque-delete-duplicates
           ideque-find ideque-find-right
           ideque-take-while ideque-take-while-right
           ideque-drop-while ideque-drop-while-right
@@ -275,18 +274,6 @@
   (case-lambda
     [(pred dq) (+ (count pred (dq-f dq)) (count pred (dq-r dq)))]
     [(pred . dqs) (apply count pred (map ideque->list dqs))]))
-
-;; API [srfi-134]
-(define (ideque-delete-duplicates dq :optional (elt= equal?))
-  (match-let1 ($ <ideque> lenf f lenr r) dq
-    (let* ([f (delete-duplicates f elt=)]
-           [r (let loop ([r r] [x '()] [seen f])
-                (cond [(null? r) (reverse x)]
-                      [(member (car r) seen elt=) (loop (cdr r) x seen)]
-                      [else (loop (cdr r)
-                                  (cons (car r) x)
-                                  (cons (car r) seen))]))])
-      (check (length f) f (length r) r))))
 
 ;; API [srfi-134]
 (define (ideque-zip dq . dqs)
