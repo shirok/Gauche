@@ -44,6 +44,9 @@
           pair-comparator list-comparator vector-comparator
           bytevector-comparator uvector-comparator
 
+          make-default-comparator make-eq-comparator
+          make-eqv-comparator make-equal-comparator
+
           make-pair-comparator make-list-comparator
 
           make-reverse-comparator make-key-comparator
@@ -63,7 +66,13 @@
 (define default-comparator
   (make-comparator/compare #t #t compare hash 'default-comparator))
 
+(define (make-default-comparator) default-comparator) ;srfi-128
+
 ;; eq-comparator, eqv-comparator, equal-comparator - in libomega.scm
+
+(define (make-eq-comparator) eq-comparator)      ; srfi-128
+(define (make-eqv-comparator) eqv-comparator)    ; srfi-128
+(define (make-equal-comparator) equal-comparator); srfi-128
 
 (define boolean-comparator
   (make-comparator/compare boolean? eqv? compare eq-hash 'boolean-comparator))
