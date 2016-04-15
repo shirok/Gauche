@@ -172,7 +172,8 @@
           pair-comparator list-comparator vector-comparator
           bytevector-comparator uvector-comparator
           make-reverse-comparator make-key-comparator make-tuple-comparator
-          make-car-comparator make-cdr-comparator)
+          make-car-comparator make-cdr-comparator make-pair-comparator
+          make-list-comparator make-vector-comparator)
 
 (autoload gauche.fileutil
           glob glob-fold sys-glob glob-component->regexp make-glob-fs-fold

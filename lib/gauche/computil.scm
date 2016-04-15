@@ -44,6 +44,8 @@
           pair-comparator list-comparator vector-comparator
           bytevector-comparator uvector-comparator
 
+          make-pair-comparator make-list-comparator
+
           make-reverse-comparator make-key-comparator
           make-car-comparator make-cdr-comparator
           make-tuple-comparator))
@@ -111,6 +113,92 @@
 (define bytevector-comparator
   (make-comparator/compare (cut is-a? <> <u8vector>) equal? compare hash
                            'bytevector-comparator))
+
+(define (make-pair-comparator car-comparator cdr-comparator)
+  (make-comparator/compare
+   (^x (and (pair? x)
+            (comparator-test-type car-comparator (car x))
+            (comparator-test-type cdr-comparator (cdr x))))
+   (^[a b] (and (comparator-equal? car-comparator (car a) (car b))
+                (comparator-equal? cdr-comparator (cdr a) (cdr b))))
+   (and (comparator-comparison-procedure? car-comparator)
+        (comparator-comparison-procedure? cdr-comparator)
+        (^[a b] (let1 r (comparator-compare car-comparator
+                                            (car a) (car b))
+                  (if (= r 0)
+                    (comparator-compare cdr-comparator (cdr a) (cdr b))
+                    r))))
+   (and (comparator-hash-function? car-comparator)
+        (comparator-hash-function? cdr-comparator)
+        (^x (combine-hash-value (comparator-hash car-comparator (car x))
+                                (comparator-hash cdr-comparator (cdr x)))))))
+
+;; NB: There's lots of room for optimization.
+
+(define (%gen-listwise-compare elt-compare null? car cdr)
+  (rec (f a b)
+    (if (null? a)
+      (if (null? b) 0 -1)
+      (if (null? b)
+        1
+        (let1 r (elt-compare (car a) (car b))
+          (if (= r 0) (f (cdr a) (cdr b)) r))))))
+
+(define (%gen-listwise-hash elt-hash null? car cdr)
+  (^[x]
+    (let loop ([v 10037] [x x])
+      (if (null? x)
+        v
+        (loop (combine-hash-value (elt-hash (car x)) v) (cdr x))))))
+
+(define (make-list-comparator elt-comparator
+                              :optional (test list?)
+                                        (empty? null?)
+                                        (head car)
+                                        (tail cdr))
+  (make-comparator/compare test #t
+                           (%gen-listwise-compare
+                            (comparator-comparison-procedure elt-comparator)
+                            empty? head tail)
+                           (and (comparator-hash-function? elt-comparator)
+                                (%gen-listwise-hash
+                                 (comparator-hash-function elt-comparator)
+                                 empty? head tail))))
+
+(define (%gen-vectorwise-compare elt-compare len ref)
+  (^[a b]
+    (let ([alen (len a)]
+          [blen (len b)])
+      (cond [(< alen blen) -1]
+            [(> alen blen) 1]
+            [else
+             (let loop ([i 0])
+               (if (= i alen)
+                 0
+                 (let1 r (elt-compare (ref a i) (ref b i))
+                   (if (= r 0)
+                     (loop (+ i 1))
+                     r))))]))))
+
+(define (%gen-vectorwise-hash elt-hash len ref)
+  (^[x]
+    (let loop ([v 10037] [i (- (len x) 1)])
+    (if (< i 0)
+      v
+      (loop (combine-hash-value (elt-hash (ref x i)) v) (- i 1))))))
+
+(define (make-vector-comparator elt-comparator
+                                :optional (test vector?)
+                                          (len vector-length)
+                                          (ref vector-ref))
+  (make-comparator/compare test #t
+                           (%gen-vectorwise-compare
+                            (comparator-comparison-procedure elt-comparator)
+                            len ref)
+                           (and (comparator-hash-function? elt-comparator)
+                                (%gen-vectorwise-hash
+                                 (comparator-hash-function elt-comparator)
+                                 len ref))))
 
 (define (make-reverse-comparator comparator)
   (unless (comparator-comparison-procedure? comparator)
