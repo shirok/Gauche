@@ -19384,16 +19384,31 @@ relnum を比較する。
 "1" < "1.0" < "1.1" < "1.1.1" < "1.1.2" < "1.2" < "1.11"
 "1.2.3" < "1.2.3-1" < "1.2.4"
 "1.2.3" < "1.2.3a" < "1.2.3b"
-"1.2_rc0" < "1.2_rc1" < "1.2" < "1.2-pl1" < "1.2-pl2"
+"1.2_" < "1.2_rc0" < "1.2_rc1" < "1.2" < "1.2-pl1" < "1.2-pl2"
 "1.1-patch112" < "1.2_alpha"
 @end example
 
 @c EN
 The reason of having @code{<pre-subrelease>} is to allow
 "release candidate" or "pre-release" version.
+
+A trick: If you want ``version 1.2 release version or later'', you
+can say @code{(version<=? "1.2" v)}.  This excludes prerelease
+versions such as @code{1.2_pre3}.
+If you want ``verison 1.2 prelease version or later'', 
+you can say @code{(version<=? "1.2_" v)}, which includes
+@code{1.2_pre1} etc., but excludes anything below, such as
+@code{1.1.99999}.
 @c JP
 @code{<pre-subrelease>} があるのは、「リリース候補」あるいは
 「プリリリース」のバージョンをつかえるようにするためです。
+
+ヒント: 「1.2正式リリースもしくはそれ以降」をチェックした場合は
+@code{(version<=? "1.2" v)} とします。これは、
+@code{1.2_pre3}といったプレリリース版を除外します。一方、
+「プレリリース版も含めて1.2もしくはそれ以降」としたい場合は
+@code{(version<=? "1.2_" v)}と書けます。これは、
+@code{1.2_pre1}等は含み、それ以前の例えば@code{1.1.99999}等は除外します。
 @c COMMON
 @end deftp
 
