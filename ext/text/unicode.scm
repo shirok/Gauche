@@ -483,33 +483,9 @@
                                     (^[cs] (map-to <string> ucs->char cs))))))]
     ))
 
-(define (get-sequence-generator seq)
-  (let-syntax ([make-dispatcher
-                (syntax-rules ()
-                  [(_ (pred ref) ...)
-                   (cond [(pred seq)
-                          (let ([len (size-of seq)]
-                                [i 0])
-                            (^[] (if (= i len)
-                                   eof
-                                   (begin0 (ref seq i) (inc! i)))))]
-                         ...)])])
-    (if (list? seq)
-      (let1 q (list->queue seq)
-        (cut dequeue! q eof))
-      (make-dispatcher
-       [vector?    vector-ref]
-       [u8vector?  u8vector-ref]
-       [s8vector?  s8vector-ref]
-       [u16vector? u16vector-ref]
-       [s16vector? s16vector-ref]
-       [u32vector? u32vector-ref]
-       [s32vector? s32vector-ref]
-       [identity   ref]))))
-
 (define (make-sequence-splitter cluster-reader-maker)
   (^[seq]
-    (let1 gen (get-sequence-generator seq)
+    (let1 gen (x->generator seq)
       (generator->list (cluster-reader-maker gen identity)))))
 
 ;;=========================================================================
@@ -986,7 +962,7 @@
 
 (define (codepoints-xcase seq doer)
   (with-builder ((class-of seq) add! get)
-    (doer (get-sequence-generator seq) (^(cs alt) (for-each add! cs)) #f)
+    (doer (x->generator seq) (^(cs alt) (for-each add! cs)) #f)
     (get)))
 
 ;; APIs
