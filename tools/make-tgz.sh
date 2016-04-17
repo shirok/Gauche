@@ -15,7 +15,7 @@ topdir=$(pwd)
 VERSION=$(cat VERSION)
 name="Gauche-${VERSION}"
 
-t=$(mktemp -d)
+t=$(mktemp --directory)
 g_dir="${t}/${name}"
 
 #
