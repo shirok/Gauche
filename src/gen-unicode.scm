@@ -21,7 +21,7 @@
 ;;   tables, within the following two generated source files:
 ;;
 ;;   char_attr.c                - General category and case mappings.
-;;   ../ext/text/unicode_attr.h - Grapheme break, word break, normalization.
+;;   gauche/priv/unicode_attr.h - Grapheme break, word break, normalization.
 ;;
 ;;   This is done when you build from git source tree.
 ;;
@@ -137,7 +137,7 @@
 ;;    http://www.unicode.org/Public/UNIDATA/auxiliary/SentenceBreakProperty.txt
 ;;
 ;;    An entry is 8-bit, indicating the character's Word_Break and
-;;    Grapheme_Break properties.  In ext/unicode_attr.h, they are
+;;    Grapheme_Break properties.  In unicode_attr.h, they are
 ;;    prefixed with WB_ and GB_, respectively.
 ;;    Note that WB_CR, WB_LF, WB_Single_Quote, WB_Double_Quote,
 ;;    GB_CR and GB_LF values are *not* stored in the table.  Each
@@ -228,7 +228,7 @@
       (generate-category-tables db)
       (generate-case-tables db)
       (generate-digit-value-tables db)))
-  (with-output-to-file "../ext/text/unicode_attr.h"
+  (with-output-to-file "gauche/priv/unicode_attr.h"
     (^() (preamble db)
       (generate-break-tables db))))
 

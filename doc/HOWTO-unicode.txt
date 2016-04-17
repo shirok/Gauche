@@ -21,7 +21,7 @@ We use two stage build process for it:
                     |
                     v
              [src/char_attr.c]
-         [ext/text/unicode_attr.h]
+      [src/gauche/priv/unicode_attr.h]
 
 
 The first step reads UCD data files and generates src/unicode-data.scm,

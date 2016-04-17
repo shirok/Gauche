@@ -306,7 +306,7 @@ $(libatomic_ops_pic_LIBRARY): $(GCLIB) $(libatomic_ops_pic_OBJECTS)
 	$(AR) -rc $@ $(libatomic_ops_pic_OBJECTS)
 
 
-# char_attr.c and ext/text/unicode_attr.h are automatically generated
+# char_attr.c and gauche/priv/unicode_attr.h are automatically generated
 # by gen-unicode.scm, from unicode-data.scm.
 #
 # Unicode-data.scm itself is generated from Unicode character database.
@@ -451,7 +451,7 @@ install-check :
 GENERATED = compile.c autoloads.c builtin-syms.c \
 	    gauche/priv/builtin-syms.h vminsn.c gauche/vminsn.h \
             ../lib/gauche/vm/insn.scm \
-	    char_attr.c ../ext/text/unicode_attr.h \
+	    char_attr.c gauche/priv/unicode_attr.h \
 	    libsrfis.scm ../doc/srfis.texi \
 	    libalpha.c libbool.c libchar.c libcode.c libcmp.c libdict.c \
 	    libeval.c libexc.c libfmt.c libio.c liblazy.c liblist.c libmisc.c \

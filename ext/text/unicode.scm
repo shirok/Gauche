@@ -390,7 +390,7 @@
 ;;
 
 (inline-stub
- "#include \"unicode_attr.h\""
+ "#include \"gauche/priv/unicode_attr.h\""
 
  (initcode "init_GB_symbols(Scm_CurrentModule());")
  (initcode "init_WB_symbols(Scm_CurrentModule());")
