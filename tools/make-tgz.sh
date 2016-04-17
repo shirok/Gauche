@@ -21,7 +21,7 @@ g_dir="${t}/${name}"
 #
 # Build distribution source tree
 #
-git archive --prefix="${name}/" HEAD | tar -x --directory="${t}"
+git archive --prefix="${name}/" HEAD | tar --extract --directory="${t}"
 
 #
 # Build generated files
@@ -36,7 +36,7 @@ make distclean
 # Make final archive file
 #
 cd "${t}"
-tar -c --exclude-from="${g_dir}/DIST_EXCLUDE" --owner=root --group=root --sort=name -f "${name}.tar" "${name}"
+tar --create --exclude-from="${g_dir}/DIST_EXCLUDE" --owner=root --group=root --sort=name --file="${name}.tar" "${name}"
 gzip -9 "${name}.tar"
 cp "${name}.tar.gz" "${topdir}/../${name}.tgz"
 
