@@ -36,9 +36,7 @@ make distclean
 # Make final archive file
 #
 cd "${t}"
-tar --create --exclude-from="${g_dir}/DIST_EXCLUDE" --owner=root --group=root --sort=name --file="${name}.tar" "${name}"
-gzip -9 "${name}.tar"
-cp "${name}.tar.gz" "${topdir}/../${name}.tgz"
+GZIP="-9" tar --create --exclude-from="${g_dir}/DIST_EXCLUDE" --owner=root --group=root --sort=name --gzip --file="${topdir}/../${name}.tgz" "${name}"
 
 #
 # Cleanup
