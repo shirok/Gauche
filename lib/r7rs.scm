@@ -163,7 +163,7 @@
   (use gauche.uvector)
   (use gauche.record)
   (use gauche.parameter)
-  (use text.unicode)
+  (use gauche.unicode)
   (use srfi-11)
   (use srfi-13)
 
@@ -289,8 +289,8 @@
   (define-inline bytevector-copy    u8vector-copy)
   (define-inline bytevector-copy!   u8vector-copy!)
   (define-inline bytevector-append  u8vector-append)
-  (define+ utf8->string  text.unicode)
-  (define+ string->utf8  text.unicode)
+  (define+ utf8->string  gauche.unicode)
+  (define+ string->utf8  gauche.unicode)
 
   ;; 6.10 Control features
   ;; procedure? apply map
@@ -394,7 +394,7 @@
   (provide "scheme/case-lambda"))
 
 (define-module scheme.char
-  (use text.unicode)
+  (use gauche.unicode)
   (import r7rs.aux)
   (export char-alphabetic? char-ci<=? char-ci<?
           char-ci=? char-ci>=? char-ci>?
@@ -407,14 +407,14 @@
           string-ci>? string-downcase
           string-foldcase string-upcase)
   (define (digit-value c) (digit->integer c 10 #t))
-  (define+ string-ci=?  text.unicode)   ; not gauche's.
-  (define+ string-ci<?  text.unicode)   ; not gauche's.
-  (define+ string-ci>?  text.unicode)   ; not gauche's.
-  (define+ string-ci<=? text.unicode)   ; not gauche's.
-  (define+ string-ci>=? text.unicode)   ; not gauche's.
-  (define+ string-upcase text.unicode)   ; not srfi-13's.
-  (define+ string-downcase text.unicode) ; not srfi-13's.
-  (define+ string-foldcase text.unicode) ; not srfi-13's.
+  (define+ string-ci=?  gauche.unicode)   ; not gauche's.
+  (define+ string-ci<?  gauche.unicode)   ; not gauche's.
+  (define+ string-ci>?  gauche.unicode)   ; not gauche's.
+  (define+ string-ci<=? gauche.unicode)   ; not gauche's.
+  (define+ string-ci>=? gauche.unicode)   ; not gauche's.
+  (define+ string-upcase gauche.unicode)   ; not srfi-13's.
+  (define+ string-downcase gauche.unicode) ; not srfi-13's.
+  (define+ string-foldcase gauche.unicode) ; not srfi-13's.
   (provide "scheme/char"))
 
 (define-module scheme.complex

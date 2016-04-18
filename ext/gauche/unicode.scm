@@ -1,5 +1,5 @@
 ;;;
-;;; text.unicode - Various Unicode-specific operations
+;;; gauche.unicode - Various Unicode-specific operations
 ;;;
 ;;;   Copyright (c) 2011-2015  Shiro Kawai  <shiro@acm.org>
 ;;;
@@ -31,7 +31,7 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
-(define-module text.unicode
+(define-module gauche.unicode
   (use gauche.uvector)
   (use gauche.sequence)
   (use gauche.generator)
@@ -55,7 +55,7 @@
           string-ci=? string-ci<? string-ci<=? string-ci>? string-ci>=?
           )
   )
-(select-module text.unicode)
+(select-module gauche.unicode)
 
 (autoload gauche.charconv ces-convert)
 
