@@ -6,6 +6,7 @@ _after installing Gauche_.  See below.
 
 The sources include:
 
+  package.scm    - package metainformation
   configure      - configure script
   Makefile.in    - template makefile
   spigot.h       - common declaration within the spigot module

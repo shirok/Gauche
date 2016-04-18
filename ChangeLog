@@ -1,3 +1,18 @@
+2016-04-18  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/package.scm: Enhanced <gauche-package-description> to
+	  keep metainformaton provided by the package author.  The package
+	  auther can put package.scm in the top dir, which provides metainfo;
+	  cf-init can now read package.scm (package name and version can be
+	  taken from it) and cf-make-gpd emits gpd file that combines
+	  package.scm and build-time info.
+	* lib/gauche/configure.scm (cf-init, cf-make-pkg): Adapted the flow
+	  using package.scm.
+	* ext/template.package.scm: Template package.scm
+	* examples/spigot: Adopt package.scm
+	* src/gauche-package.in: 'gauche-package generate' copies package.scm
+	  template.
+
 2016-04-17  Shiro Kawai  <shiro@acm.org>
 
 	* ext/text/unicode.scm -> ext/gauche/unicode.scm: Changed text.unicode

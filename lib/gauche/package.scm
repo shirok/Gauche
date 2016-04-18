@@ -34,19 +34,18 @@
 ;; *EXPERIMENTAL*
 ;; The spec might be changed in future.  Do not count on the current version.
 ;;
-;; This module maintains information about the Gauche "packages" installed
-;; in the system.  A Gauche package is a collection of files such as
-;; Scheme library files, DSO files, scripts, etc. to add a specific
-;; feature to Gauche.  Examples of packages are Gauche-gl and Gauche-gtk.
+;; This module handles package meta-information.
 ;;
-;; Information of a package foo is kept in a package description file.
-;; It is put in "$(SCM_INSTALL_DIR)/.packages/foo.gpd", where SCM_INSTALL_DIR
+;; Module source can have package.scm in the toplevel directory of
+;; the source.  It contains define-gauche-package form, that defines
+;; dependencies, where to find source, etc.
+;;
+;; When the package is built, the configure script will generate
+;; a Gauche package description file, which combines the information
+;; in package.scm and the build information.  It is installed as
+;; "$(SCM_INSTALL_DIR)/.packages/$(PACKAGE).gpd", where SCM_INSTALL_DIR
 ;; is the directory where Scheme library files of foo are installed.
 ;; (The suffix .gpd stands for "Gauche package description").
-;;
-;; The package description file contains a bunch of S-exprs that records
-;; how the package was built, what it provides and depends on,
-;; and which files it owns.
 ;;
 ;; Note that this module doesn't handle build and installation process.
 ;; This module just provides a means to create and access the package
@@ -54,22 +53,56 @@
 ;; installation, and gauche.package.fetch module will handle downloading
 ;; package tarballs, and so on.
 ;;
-;; [Package description file]
-;;   For the time being, it contains just one S-expression.
+;; package.scm and *.gpd file contains a single define-gauche-package
+;; form.  It takes the name of the package, followed by keyword-value
+;; style attribute specifications.  Attributes marked by '*' can
+;; be specified zero or more times; '?' can be zero or one time.
+;; The order of attributes doesn't matter, except that the order of
+;; the same attribute is preserved (e.g. if package.scm has
+;; :author "foo" :author "bar", they appear in the same order in
+;; the package's installed gpd file.)
 ;;
 ;;   (define-gauche-package NAME
-;;     :version VERSION
-;;     ...)
+;;     :version VERSION                     ; version of this module
+;;     :require ((PACKAGE VERSION-SPEC)...) ; dependency
+;;     :maintainers (STRING ...)            ;
+;;     :authors (STRING ...)
+;;     :licenses (STRING ...)
+;;     :homepage URI-STRING
+;;     :repository URI-STRING
+;;     :descriptions (STRING ...)
+;;
+;;     ;; The following attributes are added when *.gpd file is generated.
+;;     :gauche-version VERSION            ; Gauche version used to build
+;;     :configure STRING                  ; configure option given
+;;
+;;     ;; In the *.gpd file, the attributes marked with '*' above
+;;     ;; are consolidated to the following plural attributes.
+;;     
+;;     )
 ;;
 ;;   NAME _must_ match the filename sans suffix.
 ;;
+;;   VERSION-SPEC can be:
+;;      VERSION
+;;      (OP VERSION)           ; OP : = < <= > >=
+;;      (and VERSION-SPEC ...)
+;;      (or VERSION-SPEC ...)
+;;      (not VERSION-SPEC)
+;;
+;;   The syntax of VERSION and its order follows gauche.version module.
+
+;; NB: We intentionally use long names for the APIs, since this module isn't
+;; for general public consumption.
 
 (define-module gauche.package
   (use gauche.collection)
   (use gauche.version)
   (use gauche.lazy)
   (use file.util)
+  (use util.match)
   (export <gauche-package-description>
+          make-gauche-package-description
           path->gauche-package-description
           gauche-package-description-paths
           write-gauche-package-description
@@ -83,34 +116,83 @@
 
 ;; API
 (define-class <gauche-package-description> ()
-  (;; package name, e.g. "Gauche-gtk"
-   (name           :init-keyword :name)
-   ;; package version, e.g. "0.4.1"
-   (version        :init-keyword :version
-                   :init-value "0.0")
-   ;; gauche version with which this package was built
-   (gauche-version :init-keyword :gauche-version
-                   :init-value (gauche-version))
-   ;; configure command line with which this package was built
-   (configure      :init-keyword :configure
-                   :init-value #f)
+  ((name           :init-keyword :name)
+   (version        :init-keyword :version)
+   (description    :init-keyword :description)
+   (require        :init-keyword :require)
+   (maintainers    :init-keyword :maintainers)
+   (authors        :init-keyword :authors)
+   (licenses       :init-keyword :licenses)
+   (homepage       :init-keyword :homepage)
+   (repository     :init-keyword :repository)
+   ;; The slots filled by cf-make-gpd
+   (gauche-version :init-keyword :gauche-version)
+   (configure      :init-keyword :configure)
    ))
+
+;; API
+;; Invalid key will be rejected by Gauche argument mechanism
+(define (make-gauche-package-description name
+                                         :key (version "0.0")
+                                              (description #f)
+                                              (require '())
+                                              (maintainers '())
+                                              (authors '())
+                                              (licenses '())
+                                              (homepage #f)
+                                              (repository #f)
+                                              (gauche-version (gauche-version))
+                                              (configure #f))
+  (check-require-syntax require)
+  (check-string-list 'maintainers maintainers)
+  (check-string-list 'authors authors)
+  (check-string-list 'licenses licenses)
+  (check-maybe-string 'homepage homepage)
+  (check-maybe-string 'repository repository)
+  (check-maybe-string 'description description)
+  (make <gauche-package-description>
+    :name name :version version :require require :maintainers maintainers
+    :authors authors :licenses licenses :homepage homepage
+    :repository repository :description description
+    :gauche-version gauche-version :configure configure))
+
+(define (check-maybe-string key val)
+  (unless (or (string? val) (not val))
+    (errorf "String or #f is required for ~a, but got: ~s" key val)))
+
+(define (check-string-list key val)
+  (unless (every string? val)
+    (errorf "String list is required for ~a, but got: ~s" key val)))
+
+(define (check-require-syntax req)
+  (define (valid-version-require? vers)
+    (match vers
+      [(? string?) #t]
+      [((or '= '< '<= '> '>=) (? string?)) #t]
+      [('not v) (valid-version-require? v)]
+      [((or 'and 'or) v ...) (every valid-version-require? v)]
+      [else #f]))
+  (define (check-require-1 clause)
+    (match clause
+      [((? string?) v)
+       (unless (valid-version-require? v)
+         (error "Invalid version spec in require clause:" clause))]
+      [else (error "Invalid require clause:" clause)]))
+  (match req
+    [(x ...) (for-each check-require-1 x)]
+    [else (error "Invalid require form:" req)]))
 
 ;; API
 (define (path->gauche-package-description path)
   (guard (e [(or (<io-error> e) (<read-error> e))
              (errorf "couldn't read the package description ~s: ~a"
                      path (ref e 'message))])
-    (call-with-input-file path
-      (^[in]
-        (let1 f (read in)
-          (if (and (list? f)
-                   (>= (length f) 2)
-                   (eq? (car f) 'define-gauche-package)
-                   (string? (cadr f)))
-            (apply make <gauche-package-description>
-                   :name (cadr f) (cddr f))
-            (error "malformed define-gauche-package")))))))
+    (match (file->sexp-list path)
+      [(('define-gauche-package (? string? name) . attrs))
+       (apply make-gauche-package-description name attrs)]
+      [_ (errorf "malformed gauche package description file. \
+                  It must contain a define-gauche-package form and \
+                  nothing else: ~a" path)])))
 
 ;; API
 (define-method write-gauche-package-description

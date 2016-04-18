@@ -103,6 +103,7 @@
    (version    :init-keyword :version)
    (bug-report :init-keyword :bug-report :init-value #f) ; email addr
    (url        :init-keyword :url :init-value #f)
+   (gpd        :init-keyword :gpd)       ; <gauche-package-description>
    (string     :init-keyword :string)    ; package_string
    (tarname    :init-keyword :tarname)
    (tool-prefix :init-form #f)           ; cross compilation tool prefix
@@ -180,26 +181,58 @@
     [_ `(,tee-msg "~a\n" "Message: ~a" (list (string-join (list ,@args))))]))
 
 ;; API
-;; Like AC_INIT
-(define (cf-init package-name version :optional (bug-report "") (url ""))
-  (check-arg string? package-name)
-  (check-arg string? version)
-  (sys-unlink "config.log")
-  (log-open "config.log" :prefix "")
-  (log-format "Configuring ~a ~a" package-name version)
-  (current-package
-   (make <package>
-     :name package-name
-     :version version
-     :bug-report bug-report
-     :url url
-     :string (format "~a ~a" package-name version)
-     :tarname (cgen-safe-name-friendly (string-downcase package-name))))
-  (cf-lang (instance-of <c-language>))
-  (initialize-default-definitions)
-  (parse-command-line-arguments)
-  (check-directory-names)
-  (process-args))
+;; Like AC_INIT; package-name and version can be omitted if the package
+;; has "package.scm".
+(define (cf-init :optional (package-name #f) (version #f)
+                           (bug-report "") (url ""))
+  (let* ([gpd (and-let* ([srcdir (current-load-path)]
+                         [pfile (build-path (sys-dirname srcdir) "package.scm")]
+                         [ (file-exists? pfile) ])
+                (path->gauche-package-description pfile))]
+         [package-name (if gpd
+                         (if package-name
+                           (if (equal? package-name (~ gpd'name))
+                             package-name
+                             (errorf "Package name in package.scm (~s) and \
+                                      cf-init (~s) don't match"
+                                     (~ gpd'name) package-name))
+                           (~ gpd'name))
+                         (or package-name
+                             (error "Missing package name in cf-init \
+                                     (required when package.scm is not present)")))]
+         [version (if gpd
+                    (if version
+                      (if (equal? version (~ gpd'version))
+                        version
+                        (errorf "Version in package.scm (~s) and \
+                                 cf-init (~s) don't match"
+                                (~ gpd'version) version))
+                      (~ gpd'version))
+                    (or version
+                        (error "Missing version in cf-init \
+                               (required when package.scm is not present)")))])
+    (check-arg string? package-name)
+    (check-arg string? version)
+    (sys-unlink "config.log")
+    (log-open "config.log" :prefix "")
+    (log-format "Configuring ~a ~a" package-name version)
+    (current-package
+     (make <package>
+       :name package-name
+       :version version
+       :bug-report bug-report
+       :url url
+       :gpd (or gpd
+                ($ make-gauche-package-description package-name
+                   :version version :homepage url
+                   :maintainers (list bug-report)))
+       :string (format "~a ~a" package-name version)
+       :tarname (cgen-safe-name-friendly (string-downcase package-name))))
+    (cf-lang (instance-of <c-language>))
+    (initialize-default-definitions)
+    (parse-command-line-arguments)
+    (check-directory-names)
+    (process-args)))
 
 (define (initialize-default-definitions)
   (define p (current-package))
@@ -688,15 +721,14 @@
 ;; API
 ;; Create .gpd file.  This is Gauche-specific.
 (define (cf-make-gpd)
-  (let1 gpd-file #"~(cf$ 'PACKAGE_NAME).gpd"
+  (let ([gpd-file #"~(cf$ 'PACKAGE_NAME).gpd"]
+        [gpd (~ (ensure-package)'gpd)])
     (cf-echo #"creating ~gpd-file")
+    (set! (~ gpd'configure)
+          ($ string-join $ cons "./configure"
+             $ map shell-escape-string $ cdr $ command-line))
     (with-output-to-file gpd-file
-      (cut write-gauche-package-description
-           (make <gauche-package-description>
-             :name (cf$ 'PACKAGE_NAME)
-             :version (cf$ 'PACKAGE_VERSION)
-             :configure ($ string-join $ cons "./configure"
-                           $ map shell-escape-string $ cdr $ command-line))))))
+      (cut write-gauche-package-description gpd))))
 
 ;;;
 ;;; Target languages

@@ -391,7 +391,7 @@ Options:
              [scm-subdir (sys-dirname (module-name->path module-name))])
         (make-directory* (simplify-path (build-path package-name scm-subdir)))
         (dolist [file (cons (if autoconf "configure.ac" "configure")
-                            '("Makefile.in" "extension.c"
+                            '("package.scm" "Makefile.in" "extension.c"
                               "extension.h" "extensionlib.stub"
                               "module.scm" "test.scm"))]
           (let* ([src-path (build-path tmpl-dir #"template.~file")]
