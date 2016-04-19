@@ -782,7 +782,7 @@ These are equivalent to @code{gauche.uvector}'s
 @code{u8vector-append}, respectively.  (@pxref{Uniform vectors}).
 @end defun
 
-These two procedures are the same as the ones in @code{text.unicode}
+These two procedures are the same as the ones in @code{gauche.unicode}
 module (@pxref{Unicode transfer encodings}):
 
 @example
@@ -936,7 +936,7 @@ char-upcase char-upper-case?  char-whitespace?
 @end example
 
 The following procedures are the same as the ones provided
-in @code{text.unicode} module (@pxref{Full string case conversion}).
+in @code{gauche.unicode} module (@pxref{Full string case conversion}).
 They use full case folding by Unicode standard (e.g. taking into
 account of German eszett).
 

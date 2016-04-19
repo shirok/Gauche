@@ -939,12 +939,22 @@ Gaucheの開発の過程で、いくつかのモジュールは名前が変わ�
 モジュールが含まれています。
 @c COMMON
 
+@deftp {Module} text.unicode
+@mdindex text.unicode
+@c EN
+Renamed to @code{gauche.unicode}.  @xref{Unicode utilities}.
+@c JP
+@code{gauche.unicode}へと名前変更。@ref{Unicode utilities}参照。
+@c COMMON
+@end deftp
+
+
 @deftp {Module} util.list
 @mdindex util.list
 @c EN
-Dissolved into the core.
+Dissolved into the core.  No longer needed.
 @c JP
-コアに吸収。
+コアに吸収されました。もう必要ありません。
 @c COMMON
 @end deftp
 
@@ -954,6 +964,98 @@ Dissolved into the core.
 Renamed to @code{data.queue}.  @xref{Queue}.
 @c JP
 @code{data.queue}へと名前変更。@ref{Queue}参照。
+@c COMMON
+@end deftp
+
+@deftp {Module} util.rbtree
+@mdindex util.rbtree
+@clindex rbtree
+@findex make-rbtree
+@findex rbtree?
+@findex rbtree-copy
+@findex rbtree-empty?
+@findex rbtree-num-entries
+@findex rbtree-exists?
+@findex rbtree-get
+@findex rbtree-put!
+@findex rbtree-delete!
+@findex rbtree-update!
+@findex rbtree-push!
+@findex rbtree-pop!
+@findex rbtree-min
+@findex rbtree-max
+@findex rbtree-extract-min!
+@findex rbtree-extract-max!
+@findex rbtree-fold
+@findex rbtree-fold-right
+@findex rbtree-keys
+@findex rbtree-values
+@findex rbtree->alist
+@findex alist->rbtree
+@c EN
+Incorporated into the core as built-in object @code{<tree-map>}.
+@xref{Treemaps}.
+@c JP
+コアに吸収され、組み込みオブジェクト@code{<tree-map>}になりました。
+@ref{Treemaps}参照。
+@c COMMON
+
+@c EN
+The following procedures are aliases of the ones with replacing
+@code{rbtree} for @code{tree-map}, e.g. @code{rbtree-get} is
+the same as @code{tree-map-get}.
+@c JP
+以下の手続きは、@code{rbtree}を@code{tree-map}に変えた手続きの別名と
+なっています。例えば@code{rbtree-get}は@code{tree-map-get}と同じです。
+@c COMMON
+
+@example
+make-rbtree       rbtree?           rbtree-get        rbtree-put!
+rbtree-delete!    rbtree-exists?    rbtree-empty?     rbtree-update!
+rbtree-push!      rbtree-pop!       rbtree-num-entries rbtree->alist
+alist->rbtree     rbtree-keys       rbtree-values     rbtree-copy
+rbtree-fold       rbtree-fold-right
+@end example
+
+@c EN
+The following procedures are similar to @code{tree-map-min},
+@code{tree-map-max}, @code{tree-map-pop-min!} and @code{tree-map-pop-max!},
+respectively, except that the @code{rbtree-*} version takes an optional
+default argument and returns it when the tree is empty, and raise an
+error if no default argument is provided and tree is empty.  (The tree-map
+version just returns @code{#f} for the empty tree.)
+@c JP
+以下の手続きはそれぞれ@code{tree-map-min}、@code{tree-map-max}、
+@code{tree-map-pop-min!}、@code{tree-map-pop-max!}とほぼ同じですが、
+省略可能なデフォルト引数を取り、tree-mapが空の時にそれを返す点が異なります。
+デフォルト引数が与えられなければ空のtree-mapに対してはエラーを投げます。
+(@code{tree-map-min}等は、tree-mapが空の場合には@code{#f}を返します)。
+@c COMMON
+
+@example
+rbtree-min           rbtree-max
+rbtree-extract-min!  rbtree-extract-max!
+@end example
+
+@c EN
+The following procedure doesn't have corresponding API in tree-map.
+It checks internal consistency of the given tree-map.
+@c JP
+以下の手続きはtree-mapに相当する手続きを持ちません。これは与えられたtree-mapの
+内部整合性を検査する手続きです。
+@c COMMON
+
+@example
+rbtree-check
+@end example
+@end deftp
+
+@deftp {Module} util.trie
+@mdindex util.trie
+@c EN
+Renamed to @code{data.trie}.  @xref{Trie}.
+@c JP
+@code{data.trie}へと名前変更。@ref{Trie}参照。
 @c COMMON
 @end deftp
 

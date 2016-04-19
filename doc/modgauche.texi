@@ -36,6 +36,7 @@
 * Unit testing::                gauche.test
 * Threads::                     gauche.threads
 * Measure timings::             gauche.time
+* Unicode utilities::           gauche.unicode
 * Uniform vectors::             gauche.uvector
 * Comparing version numbers::   gauche.version
 * Virtual ports::               gauche.vport
@@ -16855,7 +16856,7 @@ SRFI-18との互換性のために提供されています。
 
 
 @c ----------------------------------------------------------------------
-@node Measure timings, Uniform vectors, Threads, Library modules - Gauche extensions
+@node Measure timings, Unicode utilities, Threads, Library modules - Gauche extensions
 @section @code{gauche.time} - Measure timings
 @c NODE 時間の計測, @code{gauche.time} - 時間の計測
 
@@ -17324,9 +17325,393 @@ spend in process-A and process-B inside a loop.
   )
 @end example
 
+@c ----------------------------------------------------------------------
+@node Unicode utilities, Uniform vectors, Measure timings, Library modules - Gauche extensions
+@section @code{gauche.unicode} - Unicode utilities
+@c NODE Unicodeユーティリティ, @code{gauche.unicode} - Unicodeユーティリティ
+
+@deftp {Module} gauche.unicode
+@mdindex gauche.unicode
+@c EN
+This module provides various operations on a sequence of Unicode codepoints.
+
+Gauche can be compiled with a native encoding other than Unicode,
+and the full Unicode-compatible behavior on characters and strings may
+not be available on such systems.  So we provide most operations in two
+flavors: Operations on characters and strings, or operations on
+codepoints represented as a sequence of integers.
+@c JP
+このモジュールは、Unicodeのコードポイントの列に対する様々な操作を提供します。
+
+Gaucheはコンパイル時に、内部文字エンコーディングとしてUnicode以外も選べます。
+その場合、文字列に対して完全にUnicode互換の動作を提供できない場合があります。
+そこで、本モジュールの多くの操作は、文字列を対象にするものと、
+コードポイントの数値のシーケンスを対象にするものの両方で提供されます。
+@c COMMON
+
+@c EN
+If Gauche is compiled with its native encoding being @code{none},
+@code{euc-jp} or @code{sjis}, character-and-string operations
+are likely to be partial functions of the operations defined
+in Unicode standard.  That is, if the operation can yield a
+character that are not supported in the native encoding, it
+may be remapped to an alternative character.  Each manual entry
+explains the detailed behavior.
+@c JP
+Gaucheの内部エンコーディングが@code{none}、
+@code{euc-jp}、@code{sjis}の場合は、
+文字および文字列に対する操作はUnicode標準で定義されたものと完全には一致しないでしょう。
+操作の結果が、内部エンコーディングでは定義されていない文字になった場合、
+それは代替文字に置き換えられます。各関数のエントリで詳しく説明してあります。
+@c COMMON
+
+@c EN
+The codepoint operations are independent from Gauche's native
+encoding and supports full spec as defined in Unicode standard.
+If Gauche is compiled with the @code{utf-8} native encoding,
+the operations are essentially the same as character-and-string flavors
+when you convert codepoints and characters by @code{char->integer} and
+@code{integer->char}.  The codepoint operations are handy when
+you need to support the algorithms described in Unicode standard
+fully, no matter what the running Gauche's native encoding is.
+@c JP
+コードポイントの列に対する操作はGaucheの内部文字エンコーディングとは
+無関係であり、Unicode標準の定義が完全にサポートされます。
+Gaucheが@code{utf-8}でコンパイルされている場合、コードポイント列に
+対する操作は、文字列に対する操作と (各要素を@code{char->integer}および
+@code{integer->char}で変換すること以外は)一致します。
+コードポイント列に対する操作はGaucheの内部文字エンコーディングにかかわらず
+ポータブルなアルゴリズムを必要とする場合に便利です。
+@c COMMON
+@end deftp
+
+@menu
+* Unicode transfer encodings::  
+* Unicode text segmentation::   
+* Full string case conversion::  
+@end menu
+
+@node Unicode transfer encodings, Unicode text segmentation, Unicode utilities, Unicode utilities
+@subsection Unicode transfer encodings
+
+The procedures in this group operate on codepoints represented as integers.
+In the following descriptions, `octets' refers to an integer
+between 0 to 255, inclusive.
+
+They take optional @var{strictness} argument.  It specifies
+what to do when the procedure encounters a datum outside
+of the defined domain.  Its value can be either one of the
+following symbols:
+
+@table @code
+@item strict
+Raises an error when the procedure encounters such input.
+This is the default behavior.
+@item permissive
+Whenever possible, treat the date as if it is a valid value.
+For example, codepoint value beyond @code{#x10ffff} is invalid
+in Unicode standard, but it may be useful for some other purpose
+that just want to use UTF-8 as an encoding scheme of binary data.
+@item ignore
+Whenver possible, treat the invalid input as if they do not exist.
+@end table
+
+The procedure may still raise an error in @code{permissive} or
+@code{ignore} strictness mode, if there can't be a sensible
+way to handle the input data.
+
+@defun ucs4->utf8 codepoint :optional strictness
+Takes an integer codepoint and returns a list of octets that
+encodes the input in UTF-8.
+
+@example
+(ucs4->utf8 #x3bb)  @result{} (206 187)
+(ucs4->utf8 #x3042) @result{} (227 129 130)
+@end example
+
+If @var{strictness} is @code{strict} (default), input codepoint
+between @code{#xd800} to @code{#xdfff}, and beyond @code{#x110000},
+are rejected.  If @var{strictness} is @code{permissive}, it accepts
+input between @code{0} and @code{#x7fffffff}, inclusive; it may produce
+5 or 6 octets if the input is large (as the original UTF-8 definition).
+If @var{strictness} is @code{ignore}, it returns an empty list
+for invalid codepoints.
+@end defun
+
+@defun utf8-length octet :optional strictness
+Takes @var{octet} as the first octet of UTF-8 sequence, and
+returns the number of total octets requried to decode
+the codepoint.
+
+If @var{strictness} is @code{strict} (default), this
+procedure returns either 1, 2, 3 or 4.   An error is
+thrown if @var{octet} cannot be a leading octet of
+a proper UTF-8 encoded Unicode codepoint.
+
+If @var{strictness} is @code{permissive}, this procedure
+may return an integer between 0 and 6, inclusive.
+It allows the codepoint range @code{#x110000} to
+@code{#x7fffffff} as the original utf-8 spec, so
+the maximum number of octets can be up to 6.
+If the input is in the range between @code{#xc0}
+and @code{#xdf}, inclusive, this procedure returns
+1--it's up to the application how to treat these illegal
+octets.  For other values, it returns @code{0}.
+
+If @var{strictness} is @var{ignore}, this procedure
+returns @code{0} when it would raise an error if
+@var{strictness} is @code{strict}.  Other than that,
+it works the same as the default case.
+@end defun
+
+@defun utf8->ucs4 octet-list :optional strictness
+Takes a list of octets, and decodes it as a utf-8 sequence.
+Returns two values: The decoded ucs4 codepoint, and the
+rest of the input list.
+
+An invalid utf8 sequence causes an error if @var{strictness}
+is @code{strict}, or skipped if it is @code{ignore}.
+If @var{strictness} is @code{permissive}, the procedure accepts
+the original utf-8 sequence which can produce surrogated pair
+range (between @code{#xd800} and @code{#dfff}) and the range
+between @code{#x110000} to @code{#x7fffffff}.  The invalid
+octet sequence is still an error with @code{permissive} mode.
+@end defun
+
+@defun utf8->string u8vector :optional start end
+[R7RS]
+Converts a sequence of utf8 octets in @var{u8vector} to a string.
+Optional @var{start} and/or @var{end} argument(s) will limit the
+range of the input.
+
+If Gauche's native encoding is utf8, 
+@code{u8vector->string} (@pxref{Uvector conversion operations})
+will do the job faster; but this routine can be used regardless
+of Gauche's native encoding, and it raises an error if @var{u8vector}
+contains octet sequences illegal as utf8.
+@end defun
+
+@defun string->utf8 string :optional start end
+[R7RS]
+Converts a string to a u8vector of utf8 octets.
+Optional @var{start} and/or @var{end} argument(s) will limit the
+range of the input.
+
+If Gauche's native encoding is utf8, 
+@code{string->u8vector} (@pxref{Uvector conversion operations})
+will do the job faster; but this routine can be used regardless
+of Gauche's native encoding.
+@end defun
+
+@defun ucs4->utf16 codepoint :optional strictness
+Takes an integer codepont and returns a list of integers
+that encodes the input in UTF-16.  The output is either
+one integer or two integers, and each integer is in the
+range between 0 and 65535 (inclusive).
+
+If @var{strictness} is @code{strict} (default), input codepoint
+between @code{#xd800} to @code{#xdfff}, and beyond @code{#x110000},
+are rejected.  If @var{strictness} is @code{permissive}, it accepts
+high surrogates and low surrogates, in which case the result is
+single element list of input.  If @var{strictness} is @code{ignore},
+an empty list is returned for an invalid codepoint (including surrogates).
+@end defun
+
+@defun utf16-length code :optional strictness
+@var{Code} must be an integer between 0 and 65535, inclusive.
+Returns 1 if @var{code} is BMP character codepoint, or
+2 if @var{code} is high surrogate codepoint.
+
+If @var{strictness} is @code{strict} (default), an error is
+signalled if @var{code} is a low surrogate, or it is out of range.
+If @var{strictness} is @code{permissive}, 1 is returned
+for low surrogates, but an error is signalled for out of range arguments.
+If @var{strictness} is @code{ignore}, 0 is returned
+for low surrogates and out of range arguments.
+@end defun
+
+@defun utf16->ucs4 code-list :optional strictness
+Takes a list of integers and decodes it as a utf-16 sequence.
+Returns two values: The decoded ucs4 codepoint, and the rest of
+input list.
+
+If @var{strictness} is @code{strict} (default), an invalid utf-16
+sequence and out-of-range integer raise an error.  If @var{strictness}
+is @code{permissive}, an out-of-range integer causes an error, but
+a lone surrogate is allowed and returned as is.  If @var{strictness}
+is @code{ignore}, lone surrogates and out-of-range integers are just
+ignored.
+@end defun
+
+@node Unicode text segmentation, Full string case conversion, Unicode transfer encodings, Unicode utilities
+@subsection Unicode text segmentation
+
+These procedures implements grapheme-cluster and
+word breaking algorithms defined in UAX #29: Unicode Text Segmentation.
+
+@defun string->words string
+@defunx codepoints->words sequence
+From given string or codepoint sequence (a @code{<sequence>}
+object containing list of codepoints), returns a list of
+words.  Each cluster is represented as a string, or
+a sequence of the same type as input, respectively.
+
+@example
+(string->words "That's it.")
+ @result{} ("That's" " " "it" ".")
+(codepoints->words '(84 104 97 116 39 115 32 105 116 46)
+ @result{} ((84 104 97 116 39 115) (32) (105 116) (46))
+@end example
+
+In the second example, the list is a list of codepoints
+of characters in "That's it."
+@end defun
+
+
+@defun string->grapheme-clusters string
+@defunx codepoints->grapheme-clusters sequence
+From given string or codepoint sequence (a @code{<sequence>}
+object containing list of codepoints), returns a list of
+grapheme clusters.  Each cluster is represented as a string,
+or a sequence of the same type as input, respectively.
+@end defun
+
+
+The following procedures are low-level building blocks
+to build the above @code{string->words} etc.
+A @var{generator} argument is a procedure
+with no arguments, and returns a value (or some values) at at time
+for every call, until it returns EOF.
+
+@defun make-word-breaker generator
+@defunx make-grapheme-cluster-breaker generator
+From given @var{generator} is a generator of characters or codepoints,
+returns a generator that returns two values: The first value is the
+character or codepoint generated from the original generator, and the
+second value is a boolean flag, which is @code{#t} if a word
+or a grapheme cluster
+breaks before the character/codepoint, and @code{#f} otherwise.
+
+Suppose a generator @var{g} returns characters in a string
+@code{That's it.}, one at a time.  Then the created generator
+will work as follows:
+
+@example
+(define brk (make-word-breaker g))
+(brk)  @result{}  #\T     and #t
+(brk)  @result{}  #\h     and #f
+(brk)  @result{}  #\a     and #f
+(brk)  @result{}  #\t     and #f
+(brk)  @result{}  #\'     and #f
+(brk)  @result{}  #\s     and #f
+(brk)  @result{}  #\space and #t
+(brk)  @result{}  #\i     and #t
+(brk)  @result{}  #\t     and #f
+(brk)  @result{}  #\.     and #t
+(brk)  @result{}  #<eof>  and #t
+@end example
+
+It shows the word breaks at those character boundaries shown
+by the caret @code{^} below (for clearity, I use @code{_} to indicate
+the space).
+
+@example
+  T h a t ' s _ i t .
+ ^           ^ ^   ^ ^
+@end example
+@end defun
+
+@defun make-word-reader generator return
+@defunx make-grapheme-cluster-reader generator return
+The input @var{generator} is a generator of characters or codepoints,
+and @var{return} is a procedure that takes a list of characters or
+codepoints, and returns an object.   These procedures creates a
+generator that returns an object at at time, each consists of a
+word or a grapheme cluster, respectively.
+
+Suppose a generator @var{g} returns characters in a string
+@code{That's it.}, one at a time, again.
+Then the created generator works as follows:
+
+@example
+(define brk (make-word-reader g list->string))
+(brk)  @result{}  "That's"
+(brk)  @result{}  " "
+(brk)  @result{}  "it"
+(brk)  @result{}  "."
+(brk)  @result{}  #<eof>
+@end example
+
+@end defun
+
+
+@node Full string case conversion,  , Unicode text segmentation, Unicode utilities
+@subsection Full string case conversion
+
+@defun string-upcase string
+@defunx string-downcase string
+@defunx string-titlecase string
+@defunx string-foldcase string
+[R6RS][R7RS]
+Converts given @var{string} to upper case, using language-independent
+full case folding defined by Unicode standard.
+They differ from srfi-13's procedures
+with the same names (@pxref{SRFI-13 String case mapping}),
+which simply uses character-by-character case mapping.
+Notably, the length of resulting string may differ from the source string,
+and some conversions are sensitive to whether the character is at the
+word boundary or not.  The word boundaries are determined according
+to UAX #29 text segmentation rules.
+
+@example
+(string-upcase "straße")
+ @result{} "STRASSE"
+(string-downcase "ΧΑΟΣΧΑΟΣ.ΧΑΟΣ. Σ.")
+ @result{} "χαοσχαοσ.χαος. σ."
+(string-titlecase "You're talking about R6RS, right?")
+ @result{} "You're Talking About R6rs, Right?"
+(string-foldcase "straße")
+ @result{} "strasse"
+(string-foldcase "ΧΑΟΣΣ")
+ @result{} "χαοσσ"
+@end example
+
+@end defun
+
+@defun codepoints-upcase sequence
+@defunx codepoints-downcase sequence
+@defunx codepoints-titlecase sequence
+@defunx codepoints-foldcase sequence
+Like @code{string-upcase} etc, but these work on a sequence of
+codepoints instead.  Returns a sequence of the same type of the input.
+
+@example
+(codepoints-upcase '#(115 116 114 97 223 101))
+ @result{} #(83 84 82 65 83 83 69)
+@end example
+@end defun
+
+@defun string-ci=? string1 string2 string3 @dots{}
+@defunx string-ci<? string1 string2 string3 @dots{}
+@defunx string-ci<=? string1 string2 string3 @dots{}
+@defunx string-ci>? string1 string2 string3 @dots{}
+@defunx string-ci>=? string1 string2 string3 @dots{}
+[R7RS]
+Case-insensitive string comparison, using full-string case conversion.
+
+Note that Gauche has builtin @code{string-ci=?} etc., which use
+character-wise case folding (@pxref{String Comparison}).  These are
+different procedures.
+
+@example
+(string-ci=? "\u00df" "SS") @result{} #t
+@end example
+@end defun
+
+
 
 @c ----------------------------------------------------------------------
-@node Uniform vectors, Comparing version numbers, Measure timings, Library modules - Gauche extensions
+@node Uniform vectors, Comparing version numbers, Unicode utilities, Library modules - Gauche extensions
 @section @code{gauche.uvector} - Uniform vectors
 @c NODE ユニフォームベクタ, @code{gauche.uvector} - ユニフォームベクタ
 

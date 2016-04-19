@@ -1391,7 +1391,7 @@ Case folding and comparison is done by character-wise.
 Note: We have two other sets of string comparison operations,
 both are named as @code{string-ci=?} etc.
 The builtin version (@pxref{String Comparison}) does character-wise
-comparison.  The one in @code{text.unicode} uses full-string
+comparison.  The one in @code{gauche.unicode} uses full-string
 case conversion (@pxref{Full string case conversion}).
 R7RS version is the latter.
 @end defun
@@ -1547,11 +1547,11 @@ and @code{string-downcase} can be understood as follow:
 @c EN
 If you need full case mapping that handles the case when
 a character is mapped to more than one characters, use
-the procedures with the same name in @code{text.unicode} module
+the procedures with the same name in @code{gauche.unicode} module
 (@pxref{Full string case conversion}).
 @c JP
 一文字がケース変換によって複数文字になるような場合も考慮したい場合は、
-@code{text.unicode}モジュールに定義されている同名の手続きを使ってください
+@code{gauche.unicode}モジュールに定義されている同名の手続きを使ってください
 (@ref{Full string case conversion}参照)。
 @c COMMON
 
