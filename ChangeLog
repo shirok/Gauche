@@ -1,5 +1,8 @@
 2016-04-18  Shiro Kawai  <shiro@acm.org>
 
+	* lib/rfc/uri.scm (uri-decompose-authority): Handle IPv6 address
+	  as host part, e.g. "[::1]:8080".
+
 	* lib/gauche/package.scm: Enhanced <gauche-package-description> to
 	  keep metainformaton provided by the package author.  The package
 	  auther can put package.scm in the top dir, which provides metainfo;

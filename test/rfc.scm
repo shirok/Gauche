@@ -326,6 +326,12 @@
        (receive r (uri-decompose-authority "www.example.com:8080") r))
 (test* "uri-decompose-authority" '("foo:bar" "www.example.com" #f)
        (receive r (uri-decompose-authority "foo:bar@www.example.com") r))
+(test* "uri-decompose-authority" '(#f "::1" #f)
+       (receive r (uri-decompose-authority "[::1]") r))
+(test* "uri-decompose-authority" '(#f "::1" "8080")
+       (receive r (uri-decompose-authority "[::1]:8080") r))
+(test* "uri-decompose-authority" '("foo:bar" "::1" #f)
+       (receive r (uri-decompose-authority "foo:bar@[::1]") r))
 
 (test* "uri-parse" '("https" "shiro" "www.example.com" 443 "/login" "abc" "def")
        (receive r (uri-parse "https://shiro@www.example.com:443/login?abc#def")

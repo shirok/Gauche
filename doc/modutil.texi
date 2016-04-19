@@ -13985,6 +13985,8 @@ It returns @var{userinfo}, @var{host} and @var{port}.
 @example
 (uri-decompose-authority "yyy.jp:8080")
   @result{} #f@r{,} "yyy.jp" @r{and} "8080"
+(uri-decompose-authority "[::1]:8080")  ;@r{(IPv6 host address)}
+  @result{} #f@r{,} "::1" @r{and} "8080"
 (uri-decompose-authority "mylogin@@yyy.jp")
   @result{} "mylogin"@r{,} "yyy.jp" @r{and} #f
 @end example
