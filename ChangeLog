@@ -1,3 +1,8 @@
+2016-04-19  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/version.scm (valid-version-spec?, version-satisfy?):
+	  Added.
+
 2016-04-18  Shiro Kawai  <shiro@acm.org>
 
 	* lib/rfc/uri.scm (uri-decompose-authority): Handle IPv6 address

@@ -19795,6 +19795,40 @@ you can say @code{(version<=? "1.2_" v)}, which includes
 @code{(version<=? "1.2_" v)}と書けます。これは、
 @code{1.2_pre1}等は含み、それ以前の例えば@code{1.1.99999}等は除外します。
 @c COMMON
+
+@c EN
+It is common if you want to specify acceptable versions with
+combination of conditions, e.g. ``version 1.3 or later, except
+version 1.4.1'' or ``greater than version 1.1 and below 1.5''.
+A @emph{version spec} is an S-expression to represent that condition.
+You can use @code{version-satisfy?} to check if given version
+satisfies the spec.
+@c JP
+許容できるバージョンを条件の組み合わせで指定したいことはよくあります。
+例えば「バージョン1.3以降、ただし1.4.1を除く」とか、
+「バージョン1.1以上で、1.5より前」等。
+バージョン指定 (version spec) は、S式でバージョンに関する条件を表現する手段です。
+@code{version-satisfy?}手続きで、バージョンがバージョン指定を満たしている
+かどうかチェックできます。
+@c COMMON
+
+@c EN
+The syntax of version spec is as follows.
+@c JP
+バージョン指定の構文は以下の通りです。
+@c COMMON
+
+@example
+<version-spec> : <version>
+               | (<op> <version>)
+               | (and <version-spec> ...)
+               | (or <version-spec> ...)
+               | (not <version-spec>)
+
+<version> : version string
+<op>      : = | < | <= | > | >=
+@end example
+
 @end deftp
 
 @defun version=? ver1 ver2
@@ -19842,6 +19876,42 @@ prior to @var{rel2}, @var{rel1} is the same as @var{rel2}, or
 -1、0、1 を返します。
 @c COMMON
 @end defun
+
+@c EN
+The following procedures are to check if a given version
+satisfies a version specification.
+@c JP
+以下の手続きは、与えられたバージョンがバージョン指定を満たすかどうかを
+検査するためのものです。
+@c COMMON
+
+@defun valid-version-spec? spec
+@c EN
+This is a syntax checker.  Returns @code{#t} if @var{spec} is
+a valid version specfication, @code{#f} otherwise.
+See @code{gauche.version} module description for the definition of
+version specification.
+@c JP
+構文チェッカです。@var{spec}がバージョン指定として正当なフォームであれば
+@code{#t}を、そうでなければ@code{#f}を返します。
+バージョン指定フォームについてはモジュール@code{gauche.version}の記述を参照してください。
+@c COMMON
+@end defun
+
+@defun version-satisfy? spec version
+@c EN
+Returns @code{#t} if @var{version} satisfies
+a version specfication @var{spec}, @code{#f} otherwise.
+See @code{gauche.version} module description for the definition of
+version specification.
+@c JP
+バージョン番号@var{version}がバージョン指定@var{spec}を満たせば@code{#t}を、
+そうでなければ@code{#f}を返します。
+バージョン指定フォームについてはモジュール@code{gauche.version}の記述を参照してください。
+@c COMMON
+@end defun
+
+
 
 @c ----------------------------------------------------------------------
 @node Virtual ports,  , Comparing version numbers, Library modules - Gauche extensions

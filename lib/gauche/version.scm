@@ -81,9 +81,11 @@
 (define-module gauche.version
   (use srfi-11)                         ;let-values
   (use srfi-13)
+  (use util.match)
   (export relnum-compare
           version-compare
-          version=? version<? version<=? version>? version>=?)
+          version=? version<? version<=? version>? version>=?
+          valid-version-spec? version-satisfy?)
   )
 (select-module gauche.version)
 
@@ -138,4 +140,36 @@
 (define (version>? a b)  (>  (version-compare a b) 0))
 (define (version>=? a b) (>= (version-compare a b) 0))
 
+;; Version condition is an S expression that can represent compound
+;; condition about the version.  We use it for gauche.package versioning,
+;; but we put it here so that the same logic can be reused by other
+;; applications.
+;;
+;;   VERSION-SPEC can be:
+;;      VERSION
+;;      (OP VERSION)           ; OP : = < <= > >=
+;;      (and VERSION-SPEC ...)
+;;      (or VERSION-SPEC ...)
+;;      (not VERSION-SPEC)
 
+;; syntax checker
+(define (valid-version-spec? spec)
+  (match spec
+    [(? string?) #t]  ; TODO: Check version string syntax
+    [((or '= '< '<= '> '>=) (? string?)) #t]
+    [('not v) (valid-version-spec? v)]
+    [((or 'and 'or) v ...) (every valid-version-spec? v)]
+    [else #f]))
+
+;; check if given version satisfies spec
+(define (version-satisfy? spec version)
+  (match spec
+    [(? string?) (version=? spec version)]
+    [('= v)      (version=? version v)]
+    [('< v)      (version<? version v)]
+    [('<= v)     (version<=? version v)]
+    [('> v)      (version>? version v)]
+    [('>= v)     (version>=? version v)]
+    [('and req ...) (every (cut version-satisfy? <> version) req)]
+    [('or req ...)  (any (cut version-satisfy? <> version) req)]
+    [('not req)  (not (version-satisfy? req version))]))
