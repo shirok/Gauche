@@ -82,15 +82,7 @@
 ;;     )
 ;;
 ;;   NAME _must_ match the filename sans suffix.
-;;
-;;   VERSION-SPEC can be:
-;;      VERSION
-;;      (OP VERSION)           ; OP : = < <= > >=
-;;      (and VERSION-SPEC ...)
-;;      (or VERSION-SPEC ...)
-;;      (not VERSION-SPEC)
-;;
-;;   The syntax of VERSION and its order follows gauche.version module.
+;;   VERSION-SPEC is as specified in gauche.version
 
 ;; NB: We intentionally use long names for the APIs, since this module isn't
 ;; for general public consumption.
@@ -165,17 +157,10 @@
     (errorf "String list is required for ~a, but got: ~s" key val)))
 
 (define (check-require-syntax req)
-  (define (valid-version-require? vers)
-    (match vers
-      [(? string?) #t]
-      [((or '= '< '<= '> '>=) (? string?)) #t]
-      [('not v) (valid-version-require? v)]
-      [((or 'and 'or) v ...) (every valid-version-require? v)]
-      [else #f]))
   (define (check-require-1 clause)
     (match clause
       [((? string?) v)
-       (unless (valid-version-require? v)
+       (unless (valid-version-spec? v)
          (error "Invalid version spec in require clause:" clause))]
       [else (error "Invalid require clause:" clause)]))
   (match req
