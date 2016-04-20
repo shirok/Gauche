@@ -69,6 +69,7 @@
   (use gauche.cgen)
   (use gauche.package)
   (use gauche.process)
+  (use gauche.version)
   (use gauche.mop.singleton)
   (use util.match)
   (use file.filter)
@@ -232,13 +233,14 @@
     (initialize-default-definitions)
     (parse-command-line-arguments)
     (check-directory-names)
-    (process-args)))
+    (process-args)
+    (check-requirements)))
 
 (define (initialize-default-definitions)
   (define p (current-package))
   (cf-subst 'PACKAGE_NAME    (~ p'name))
   (cf-subst 'PACKAGE_TARNAME (string-tr (string-downcase (~ p'name))
-                                         "a-z0-9_-" "_*" :complement #t))
+                                        "a-z0-9_-" "_*" :complement #t))
   (cf-subst 'PACKAGE_VERSION (~ p'version))
   (cf-subst 'PACKAGE_STRING (~ p'string))
   (cf-subst 'PACKAGE_BUGREPORT (~ p'bug-report))
@@ -416,6 +418,38 @@
            (arg-if-given val)
            (arg-if-not-given)))]
       [_ #f])))
+
+(define (check-requirements)
+  ;; Returns (<ok> <found-version>)
+  (define (check-1 package spec)
+    (if-let1 vers (if (equal? package "Gauche")
+                    (gauche-version)
+                    (and-let1 gpd (find-gauche-package-description package)
+                      (~ gpd'version)))
+      (if (version-satisfy? spec vers)
+        `(#t ,vers)
+        `(#f ,vers))
+      '(#f #f)))
+  (define (check-all reqs)
+    (dolist [req reqs]
+      (match (apply check-1 req)
+        [(#t vers)
+         (log-format "package ~a, required to be ~s... found ~s, ok."
+                     (car req) (cadr req) vers)]
+        [(#f #f)
+         (cf-msg-error "Unfulfilled dependency of package ~a: \
+                        required to be ~s, but not found."
+                       (car req) (cadr req))]
+        [(#f vers)
+         (cf-msg-error "Unfulfilled dependency of package ~a: \
+                        required to be ~s, but only found ~s."
+                       (car req) (cadr req) vers)])))
+  
+  (and-let* ([reqs (~ (current-package)'gpd'require)]
+             [ (not (null? reqs)) ])
+    (cf-msg-checking "package dependencies")
+    (check-all reqs)
+    (cf-msg-result "ok")))
 
 (define (usage)
   (define p print)
