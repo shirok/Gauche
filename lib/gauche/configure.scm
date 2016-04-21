@@ -185,11 +185,17 @@
 ;; Like AC_INIT; package-name and version can be omitted if the package
 ;; has "package.scm".
 (define (cf-init :optional (package-name #f) (version #f)
-                           (bug-report "") (url ""))
+                           (bug-report #f) (url #f))
   (let* ([gpd (and-let* ([srcdir (current-load-path)]
                          [pfile (build-path (sys-dirname srcdir) "package.scm")]
                          [ (file-exists? pfile) ])
                 (path->gauche-package-description pfile))]
+         ;; We need to support old way (package info given to cf-init) and
+         ;; new way (package info taken from package.scm).  If both are
+         ;; given, they must much, for the inconsistency would likely be
+         ;; an overlook during transition.  bug-report and url is needed
+         ;; for the compatibility with autoconf (PACKAGE_BUGREPORT and
+         ;; PACKAGE_URL substitution variable).
          [package-name (if gpd
                          (if package-name
                            (if (equal? package-name (~ gpd'name))
@@ -211,7 +217,31 @@
                       (~ gpd'version))
                     (or version
                         (error "Missing version in cf-init \
-                               (required when package.scm is not present)")))])
+                               (required when package.scm is not present)")))]
+         [bug-report (if gpd
+                       (let1 ms (~ gpd'maintainers)
+                         (if bug-report
+                           (begin
+                             (unless (or (null? ms)
+                                         (and (null? (cdr ms))
+                                              (equal? (car ms) bug-report)))
+                               (errorf "Maintainer in package.scm ~s and \
+                                        cf-init bug-report argument ~s don't \
+                                        match" ms bug-report))
+                             bug-report)
+                           (if (null? ms) #f (car ms))))
+                       bug-report)]
+         [url (if gpd
+                (let1 x (~ gpd'homepage)
+                  (if url
+                    (begin (unless (equal? url x)
+                             (errorf "Homepage in package.scm ~s and \
+                                      cf-init url argument ~s don't match"
+                                     x url))
+                           url)
+                    x))
+                url)]
+         )
     (check-arg string? package-name)
     (check-arg string? version)
     (sys-unlink "config.log")
