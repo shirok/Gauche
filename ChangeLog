@@ -1,3 +1,10 @@
+2016-04-22  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c, src/gauche/vm.h: Add vmid slot to Scm_VM for numeric id
+	  of each VM.  It is intended to ease debugging multithreaded
+	  programs (e.g. attach numeric id for messages).  It's not to
+	  be used as a handle for a thread.
+
 2016-04-20  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/configure.scm (cf-init): Check dependent module version

@@ -523,6 +523,7 @@
    ()
    ((name)
     (specific)
+    (vmid :type <ulong>)
     )
    (printer
     (let* ([vm::ScmVM* (SCM_VM obj)]
@@ -533,7 +534,8 @@
         [(SCM_VM_STOPPED)    (set! state "stopped")]
         [(SCM_VM_TERMINATED) (set! state "terminated")]
         [else                (set! state "(unknown state")])
-      (Scm_Printf port "#<thread %S %s %p>" (-> vm name) state vm)))
+      (Scm_Printf port "#<thread %S (%lu) %s %p>"
+                  (-> vm name) (-> vm vmid) state vm)))
    )
  )
 ;; API
