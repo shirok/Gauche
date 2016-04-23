@@ -1,3 +1,8 @@
+2016-04-23  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/gauche/parameter.scm (%parameterize-1): Fix a bug that
+	  appears when the converter isn't idempotent.
+
 2016-04-22  Shiro Kawai  <shiro@acm.org>
 
 	* src/vm.c, src/gauche/vm.h: Add vmid slot to Scm_VM for numeric id

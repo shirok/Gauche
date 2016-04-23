@@ -121,9 +121,11 @@
     [(_ () body) (begin . body)]
     [(_ ((P L S) . ts) body)
      (dynamic-wind
-       (^() (set! S (P L)))
+       (^() (if (pair? S)
+              (set-cdr! S (%restore-parameter P L))
+              (set! S (list (P L)))))
        (^() (%parameterize-1 ts body))
-       (^() (set! L (%restore-parameter P S))))]))
+       (^() (set! L (%restore-parameter P (car S)))))]))
 
 (define-syntax %parameterize
   (syntax-rules ()
