@@ -1,5 +1,8 @@
 2016-04-23  Shiro Kawai  <shiro@acm.org>
 
+	* lib/srfi-113.scm (sob-hash): Fix - hash function must not rely
+	  on the visiting order of hash-table-for-each.
+
 	* libsrc/gauche/parameter.scm (%parameterize-1): Fix a bug that
 	  appears when the converter isn't idempotent.
 
