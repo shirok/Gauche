@@ -1,3 +1,8 @@
+2016-04-26  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/gauche/parameter.scm (parameterize): Further cleanup.
+	  Avoid nested dynamic-wind.  Removed auxiliary macros.
+
 2016-04-23  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi-113.scm (sob-hash): Fix - hash function must not rely

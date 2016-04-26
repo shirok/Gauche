@@ -113,35 +113,30 @@
 
 (define-syntax parameterize
   (syntax-rules ()
-    [(_ (binds ...) . body)
-     (%parameterize () () () (binds ...) body)]))
-
-(define-syntax %parameterize-1
-  (syntax-rules ()
-    [(_ () body) (begin . body)]
-    [(_ ((P L S) . ts) body)
-     (dynamic-wind
-       (^() (if (pair? S)
-              (set-cdr! S (%restore-parameter P L))
-              (set! S (list (P L)))))
-       (^() (%parameterize-1 ts body))
-       (^() (set! L (%restore-parameter P (car S)))))]))
-
-(define-syntax %parameterize
-  (syntax-rules ()
-    ;; temporaries
-    ;;   P - keeps the parameter object, for the variable param may be
-    ;;       reassigned during execution of body.
-    ;;   L - keeps "local" value during dynamic enviornment of body.
-    ;;   S - keeps "saved" value outside of parameterize.
-    [(_ (param ...) (val ...) ((P L S) ...) () body)
-     (let ((P param) ... (L val) ... (S #f) ...)
-       (%parameterize-1 ((P L S) ...) body))]
-    [(_ (param ...) (val ...) (tmps ...)
-        ((p v) . more) body)
-     (%parameterize (param ... p) (val ... v) (tmps ... (P L S)) more body)]
-    [(_ params vals tmps other body)
-     (syntax-error "malformed binding list for parameterize" other)]))
+    [(_ () . body) (begin . body)]
+    [(_ ((param val)) . body)
+     (let ([P param] [V val] [restarted #f])
+       (dynamic-wind
+         (^[] (if restarted
+                (set! V (%restore-parameter P V))
+                (set! V (P V))))
+         (^[] . body)
+         (^[] (set! restarted #t)
+              (set! V (%restore-parameter P V)))))]
+    [(_ ((param val) ...) . body)
+     (let ([P (list param ...)]
+           [S '()]                      ;saved values
+           [restarted #f])
+       (dynamic-wind
+         (^[] (if restarted
+                (set! S (map (^[p v] (%restore-parameter p v)) P S))
+                (set! S (map (^[p] (p)) P))))
+         (^[] (unless restarted
+                (set! S (map (^[p v] (p v)) P (list val ...))))
+           . body)
+         (^[] (set! restarted #t)
+              (set! S (map (^[p v] (%restore-parameter p v)) P S)))))]
+    [(_ . x) (syntax-rules "Invalid parameterize form:" (parameterize . x))]))
 
 ;; hooks
 
