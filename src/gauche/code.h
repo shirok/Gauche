@@ -61,9 +61,9 @@ struct ScmCompiledCodeRec {
     ScmObj name;                /* If this is the body of a closure, holds
                                    its name.  Otherwise #f. */
     ScmObj info;                /* debug info.  alist of instruction offset
-                                   and info. (*5) */
+                                   and info. (*3) */
     ScmObj argInfo;             /* If this code is the body of the closure,
-                                   keeps a list of args.  #f otherwise. (*3) */
+                                   keeps its formal list.  #f otherwise. */
     ScmObj parent;              /* ScmCompiledCode if this code is compiled
                                    within other code chunk.  #f otherwise. */
     ScmObj intermediateForm;    /* A packed IForm of the body (see compile.scm
@@ -83,12 +83,11 @@ struct ScmCompiledCodeRec {
  *   *2) For the C-dumped code, the code vector is located in a static data
  *       area, subject to GC scanning.  In that case, the constants pointer
  *       is NULL.
- *   *3) This info isn't set for the time being.
- *   *4) This IForm is a direct result of Pass1, i.e. non-optimized form.
- *       Pass2 scans it when IForm is inlined into the caller site.
- *   *5) ((<offset> <info> ...) ...)
+ *   *3) ((<offset> <info> ...) ...)
  *       At this moment, only used <info> is (source-info . <source>).
  *       For the debug info of the entire closure, <offset> is 'definition.
+ *   *4) This IForm is a direct result of Pass1, i.e. non-optimized form.
+ *       Pass2 scans it when IForm is inlined into the caller site.
  */
 
 SCM_CLASS_DECL(Scm_CompiledCodeClass);
