@@ -23,6 +23,7 @@
 * Singleton::                   gauche.mop.singleton
 * Slot with validator::         gauche.mop.validator
 * Networking::                  gauche.net
+* Package metainformation::     gauche.package
 * Parameters::                  gauche.parameter
 * Parsing command-line options::  gauche.parseopt
 * Partial continuations::       gauche.partcont
@@ -3705,7 +3706,7 @@ an abridged version of sample configure script:
              (^[] (cf-subst 'LOCAL_PATHS "")))
 
 ;; Initialization
-(cf-init "mylib" "1.0" "nobody@@example.org")
+(cf-init)
 
 ;; Tests & other parameter settings
 (cf-path-prog 'GOSH "gosh")
@@ -3728,6 +3729,7 @@ and/or @code{--enable-FEATURE} options you want to handle.
 @item
 Initialization.  Call to @code{cf-init} sets up global context and
 parses command-line arguments passed to @code{configure}.
+It also process package metainformation in @file{package.scm}, if it exists.
 @item
 Tests and other parameter settings (optional): Check system
 characteristics and sets up substitution parameters and/or
@@ -3750,7 +3752,43 @@ including custom arguments.
 @subsubheading 初期化
 @c COMMON
 
-@defun cf-init package-name package-version maintainer-email
+@defun cf-init :optional package-name package-version maintainer-email homepage-url
+Initialize the configure system.  This must be called once in the
+configure script, before any feature-test procedures.
+
+First, it checks if a file named @file{package.scm} is
+in the same directory as the configure script,
+and reads the Gauche package description from it.  The package description
+contains package name, version, dependencies, etc.
+@xref{Package metainformation}, for the details.
+
+It then parse the command-line arguments, sets up the configure
+environment, and (if @file{package.scm} defines dependencies) check
+if the system has required packages.
+
+The optional arguments are only supported for the backward compatibility
+if you don't have @file{package.scm}, you need at least 
+to provide @var{package-name} and @var{package-version} to tell
+what package you're configuring.  They are used as the value
+of configure variable @code{PACKAGE_NAME} and @code{PACKAGE_VERSION}.
+The other optional arguments, @var{maintainer-email} and 
+@var{homepage-url}, are used to initialize @code{PACKAGE_BUGREPORT} and
+@code{PACKAGE_URL}.  These arguments are compatible to autoconf's
+@code{AC_INIT} macro.
+
+We recommend to always use @file{package.scm} and omit all the optional
+arguments, because it allows you to maintain the package metainformation
+in one place.  When @file{package.scm} is read, @code{PACKAGE_BUGREPORT}
+is initialized by the first entry of @code{maintainers} slot of
+the package description, and @code{PACKAGE_URL} is initialized
+by its @code{homepage} slot.
+@xref{Package metainformation}, for description of slots of the package
+description.
+
+Note that if there's @file{package.scm} @emph{and} you provide
+the optional arguments, they must match, or @code{cf-init} raises an
+error.  It is to catch an error during transition in which you forgot
+to update either one.
 @end defun
 
 @c EN
@@ -7915,7 +7953,7 @@ only a couple of dozen lines of code.
 @end deftp
 
 @c ----------------------------------------------------------------------
-@node Networking, Parameters, Slot with validator, Library modules - Gauche extensions
+@node Networking, Package metainformation, Slot with validator, Library modules - Gauche extensions
 @section @code{gauche.net} - Networking
 @c NODE ネットワーキング, @code{gauche.net} - ネットワーキング
 
@@ -9769,7 +9807,18 @@ netdbインタフェースのScheme APIは必要な箇所ではこれらの関�
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Parameters, Parsing command-line options, Networking, Library modules - Gauche extensions
+@node Package metainformation, Parameters, Networking, Library modules - Gauche extensions
+@section @code{gauche.package} - Package metainformation
+@c NODE パッケージメタ情報, @code{gauche.package} - パッケージメタ情報
+
+@deftp {Module} gauche.package
+@mdindex gauche.package
+
+@end deftp
+
+
+@c ----------------------------------------------------------------------
+@node Parameters, Parsing command-line options, Package metainformation, Library modules - Gauche extensions
 @section @code{gauche.parameter} - Parameters
 @c NODE パラメータ, @code{gauche.parameter} - パラメータ
 
