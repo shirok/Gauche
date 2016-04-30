@@ -3415,6 +3415,7 @@ static void print_double(char *buf, int buflen, double val, int plus_sign,
         ScmObj r, s, mm;
         int exp, sign;
         int mp2 = FALSE, fixup = FALSE;
+        int fracdigs = 0;         /* count digits below the decimal point */
 
         IEXPT10_INIT();
         if (val < 0) val = -val;
@@ -3495,20 +3496,26 @@ static void print_double(char *buf, int buflen, double val, int plus_sign,
             *buf++ = '0'; buflen--;
             *buf++ = '.', buflen--;
             for (int digs=point;digs<0 && buflen>5;digs++) {
-                *buf++ = '0'; buflen--;
+                *buf++ = '0'; buflen--; fracdigs++;
             }
         }
 
         /* generate the digits */
         int digs;
-        for (digs=1;buflen>5;digs++) {
+        for (digs=1;buflen>5;digs++, fracdigs++) {
             ScmObj r10 = Scm_Mul(r, SCM_MAKE_INT(10));
             ScmObj q = Scm_Quotient(r10, s, &r);
-            mm = Scm_Mul(mm, SCM_MAKE_INT(10));
-            ScmObj mp = (mp2? Scm_Ash(mm, 1) : mm);
+            ScmObj mp;
 
-            /* Scm_Printf(SCM_CURERR, "q=%S, r=%S, mp=%S, mm=%S\n",
-               q, r, mp, mm);*/
+            if (fracdigs == precision) {
+                mm = mp = Scm_Ash(s, -1);
+            } else {
+                mm = Scm_Mul(mm, SCM_MAKE_INT(10));
+                mp = (mp2? Scm_Ash(mm, 1) : mm);
+            }
+
+            /*Scm_Printf(SCM_CURERR, "q=%S, r=%S, s=%S mp=%S, mm=%S\n",
+              q, r, s, mp, mm);*/
 
             SCM_ASSERT(SCM_INTP(q));
             int tc1, tc2;
