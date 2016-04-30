@@ -9813,8 +9813,50 @@ netdbインタフェースのScheme APIは必要な箇所ではこれらの関�
 
 @deftp {Module} gauche.package
 @mdindex gauche.package
+Gauche manages extra libraries and extension modules as @emph{packages}.
 
+Each package source tree has @file{package.scm} on top directory, which
+contains @code{define-gauche-package} form that provides metainformation
+about the package---the package name, veirson, author, dependencies, etc.
+
+When the package is installed, the standard installation process copies
+that information, with additional information such as the version of
+Gauche used to build the package, into @file{.packages} subdirectory
+of the library installation path, with the name @file{PACKAGENAME.gpd},
+where @code{PACKAGENAME} is the name of the package.
+
+We collectively call @file{package.scm} and @file{*.gpd} as
+@emph{package description file}.
+
+This module provides utility procedures to read and write package 
+description files, and search installed @file{*.gpd} files.
 @end deftp
+
+@subheading @code{define-gauche-package} form
+
+@subheading @code{configure} script and @code{*.gpd} file generation
+
+@subheading Utility procedures
+
+@defun <gauche-package-description>
+@end defun
+
+@defun path->gauche-package-description filename
+@end defun
+
+@defun write-gauche-package-description description :optional oport
+@end defun
+
+@defun make-gauche-package-description
+@end defun
+
+@defun gauche-package-description-paths :key all-versions
+@end defun
+
+@defun find-gauche-package-description name :key all-versions
+@end defun
+
+
 
 
 @c ----------------------------------------------------------------------
