@@ -70,7 +70,7 @@
 ;;     :licenses (STRING ...)
 ;;     :homepage URI-STRING
 ;;     :repository URI-STRING
-;;     :descriptions (STRING ...)
+;;     :description STRING
 ;;
 ;;     ;; The following attributes are added when *.gpd file is generated.
 ;;     :gauche-version VERSION            ; Gauche version used to build
@@ -107,19 +107,23 @@
 ;;;
 
 ;; API
+;; NB: All slots are supposed to be initialized with init-keyword, by
+;; make-gauche-package-description.  We provide init-values only for
+;; the backward compatibility with the configure scripts written for
+;; 0.9.4.
 (define-class <gauche-package-description> ()
-  ((name           :init-keyword :name)
-   (version        :init-keyword :version)
-   (description    :init-keyword :description)
-   (require        :init-keyword :require)
-   (maintainers    :init-keyword :maintainers)
-   (authors        :init-keyword :authors)
-   (licenses       :init-keyword :licenses)
-   (homepage       :init-keyword :homepage)
-   (repository     :init-keyword :repository)
+  ((name           :init-keyword :name        :init-value #f)
+   (version        :init-keyword :version     :init-value #f)
+   (description    :init-keyword :description :init-value #f)
+   (require        :init-keyword :require     :init-value '())
+   (maintainers    :init-keyword :maintainers :init-value '())
+   (authors        :init-keyword :authors     :init-value '())
+   (licenses       :init-keyword :licenses    :init-value '())
+   (homepage       :init-keyword :homepage    :init-value #f)
+   (repository     :init-keyword :repository  :init-value #f)
    ;; The slots filled by cf-make-gpd
-   (gauche-version :init-keyword :gauche-version)
-   (configure      :init-keyword :configure)
+   (gauche-version :init-keyword :gauche-version :init-form (gauche-version))
+   (configure      :init-keyword :configure   :init-value #f)
    ))
 
 ;; API
