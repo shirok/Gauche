@@ -1634,12 +1634,21 @@ the @code{open-*-conversion-port}.
 @section @code{gauche.cgen} - Generating C code
 @c NODE Cコードの生成, @code{gauche.cgen} - Cコードの生成
 
+@c EN
 Significant part of Gauche is written in Gauche or S-expression
 based DSL.  During the building process, they are converted
 into C sources and then compiled by C compiler.
 The @code{gauche.cgen} module and its submodules expose
 the functionality Gauche build process is using to the general use.
+@c JP
+Gauche本体の多くの部分は、Gauche自身、もしくはS式ベースのDSLで書かれています。
+これらのコードはビルド中にCソースに変換され、Cコンパイラで
+コンパイルされます。
+@code{gauche.cgen}モジュールおよびそのサブモジュールは、
+Gaucheビルドプロセスが使っているこの機能を一般にも使えるように公開するものです。
+@c COMMON
 
+@c EN
 Required features for a C code generator differ greatly among
 applications, and too much scaffolding could be a constraint
 for the module users.  So, instead of providing a single
@@ -1648,18 +1657,41 @@ so that you can combine necessary features freely.  In fact,
 some of Gauche build process only use @code{gauche.cgen.unit}
 and @code{gauche.cgen.literal} (see @file{src/builtin-syms.scm},
 for example).
+@c JP
+Cコードジェネレータに要求される機能はアプリケーションによって多種多様であり、
+あまりがちがちに枠組みを固定してしまうと却って使い辛くなるでしょう。
+そこで、ひとつの固定したフレームワークではなく、
+ゆるく連携するいくつかのモジュールを提供し、ユーザが必要な機能を自由に
+組み合わせて使えるようにしてあります。実際、Gaucheのビルド時に走る
+プロセスの中には、@code{gauche.cgen.unit}や@code{gauche.cgen.literal}だけしか
+使わないものもあります(例えば@file{src/builtin-syms.scm}を見てください)。
+@c COMMON
 
 @deftp {Module} gauche.cgen
 @mdindex gauche.cgen
+@c EN
 This is a convenience module that extends
 @code{gauche.cgen.unit}, @code{gauche.cgen.literal},
 @code{gauche.cgen.type} and @code{gauche.cgen.cise} together.
+@c JP
+このモジュールは、簡便のために
+@code{gauche.cgen.unit}、@code{gauche.cgen.literal}、
+@code{gauche.cgen.type}、@code{gauche.cgen.cise}を
+extendしたものです。
+@c COMMON
 @end deftp
 
+@c EN
 Usually you can just use @code{gauche.cgen} and don't need
 to think about individual submodules.
 The following subsections are organized by submodules
 only for the convenience of explanation.
+@c JP
+大抵の場合、@code{gauche.cgen}をuseしておけば、個々のサブモジュールについて
+考える必要はありません。
+以降のセクションは主に説明のしやすさのために、サブモジュールごとに
+分けて記述してあります。
+@c COMMON
 
 @menu
 * Generating C source files::   gauche.cgen.unit
@@ -1669,6 +1701,7 @@ only for the convenience of explanation.
 @end menu
 
 @node Generating C source files, Generating Scheme literals, Generating C code, Generating C code
+@c NODE Cソースファイルを生成する
 @subsection Generating C source files
 
 One of the tricky issues about generating C source is that
@@ -2001,6 +2034,7 @@ code fragment only to the designated part.
 
 
 @node Generating Scheme literals, Conversions between Scheme and C, Generating C source files, Generating C code
+@c NODE Schemeリテラルを生成する
 @subsection Generating Scheme literals
 
 Sometimes you want to refer to a Scheme constant value in C code.
@@ -2077,6 +2111,7 @@ behavior for new types.  The API isn't fixed yet, though.)
 
 
 @node Conversions between Scheme and C, C in S expression, Generating Scheme literals, Generating C code
+@c NODE SchemeとCの間の変換
 @subsection Conversions between Scheme and C
 
 In the C world, any Scheme object is uniformly of type @code{ScmObj}.
@@ -2238,6 +2273,7 @@ typechecks the @var{c-expr} according to the @var{cgen-type}.
 
 
 @node C in S expression,  , Conversions between Scheme and C, Generating C code
+@c NODE S式で書くC, CiSE - S式で書くC
 @subsection CiSE - C in S expression
 
 Some low-level routines in Gauche are implemented in C, but they're
