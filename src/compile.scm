@@ -5043,17 +5043,17 @@
 (define (pass5/lambda iform ccb renv)
   (let* ([inliner (let1 v ($lambda-flag iform)
                    (and (vector? v) v))]
-         [ccb (make-compiled-code-builder ($lambda-reqargs iform)
-                                          ($lambda-optarg iform)
-                                          ($lambda-name iform)
-                                          ;; TODO: For the time being, if we
-                                          ;; don't have arg-info, we show
-                                          ;; (proc . _).  We can do better, tho.
-                                          (or (and-let* ([p ($lambda-src iform)])
-                                                (pair-attribute-get p 'arg-info #f))
-                                              '_)
-                                          ccb  ; parent
-                                          inliner)])
+         [ccb ($ make-compiled-code-builder
+                 ($lambda-reqargs iform)
+                 ($lambda-optarg iform)
+                 ($lambda-name iform)
+                 ;; TODO: For the time being, if we don't have arg-info,
+                 ;; we show (proc . _).  We can do better, tho.
+                 (or (and-let* ([p ($lambda-src iform)])
+                       (pair-attribute-get p 'arg-info #f))
+                     '_)
+                 ccb  ; parent
+                 inliner)])
     (and-let* ([src ($lambda-src iform)])
       (compiled-code-push-info! ccb `(definition (source-info . ,src))))
     ;; If any of procedure parameters are set!, we should box it

@@ -1,3 +1,14 @@
+2016-05-02  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/code.h, src/code.c: Change the info kept in
+	  ScmCompiledCode->argInfo; see the comment of code.h for the details.
+	  (1) We include the procedure name in the <signature> part.  We've
+	  calculated it every time in Scm_MakeClosure before, which is a
+	  waste.
+	  (2) Allow to hold more information than arguments in argInfo; a
+	  plan is to keep unused args so that it could be used for further
+	  optimization, but that part hasn't been written.
+
 2016-04-26  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/gauche/parameter.scm (parameterize): Further cleanup.

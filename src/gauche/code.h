@@ -63,14 +63,15 @@ struct ScmCompiledCodeRec {
     ScmObj info;                /* debug info.  alist of instruction offset
                                    and info. (*3) */
     ScmObj argInfo;             /* If this code is the body of the closure,
-                                   keeps its formal list.  #f otherwise. */
+                                   keeps info about formal arguments (*4).
+                                   #f otherwise. */
     ScmObj parent;              /* ScmCompiledCode if this code is compiled
                                    within other code chunk.  #f otherwise. */
     ScmObj intermediateForm;    /* A packed IForm of the body (see compile.scm
                                    for the details of IForm).  It is used
                                    to inline this procedure.  Only set if
                                    the procedure is defined with define-inline.
-                                   #f otherwise. (*4) */
+                                   #f otherwise. (*5) */
     void *builder;              /* An opaque data used during consturcting
                                    the code vector.  Usually NULL. */
 };
@@ -86,7 +87,16 @@ struct ScmCompiledCodeRec {
  *   *3) ((<offset> <info> ...) ...)
  *       At this moment, only used <info> is (source-info . <source>).
  *       For the debug info of the entire closure, <offset> is 'definition.
- *   *4) This IForm is a direct result of Pass1, i.e. non-optimized form.
+ *   *4) (<signature>) or (<signature> (<unused-arg> ...))
+ *       <signature> is (<procedure-name> <formal> ...)
+ *       <procedure-name> may be just a symbol, or a list (in case of internal
+ *       function).  There's no precise definition for the format yet---it's
+ *       for debug information.  See Scm_CompiledCodeFullName().
+ *       <formal> ... is the formal argument list, as appears in the original
+ *       lambda form, including :key, :optional etc.
+ *       <unused-arg> is an argument (symbol) which is not used in the procedure
+ *       body---it can be used for optimization.
+ *   *5) This IForm is a direct result of Pass1, i.e. non-optimized form.
  *       Pass2 scans it when IForm is inlined into the caller site.
  */
 

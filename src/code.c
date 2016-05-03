@@ -136,7 +136,7 @@ void Scm_CompiledCodeDump(ScmCompiledCode *cc)
     print_header("main_code", SCM_MAKE_STR(""), cc);
     do {
         ScmWord *p = cc->code;
-        Scm_Printf(SCM_CUROUT, "args: %S\n", cc->argInfo);
+        Scm_Printf(SCM_CUROUT, "argInfo: %S\n", cc->argInfo);
         for (int i=0; i < cc->codeSize; i++) {
             ScmWord insn = p[i];
             ScmPort *out = SCM_PORT(Scm_MakeOutputStringPort(TRUE));
@@ -526,9 +526,9 @@ ScmObj Scm_MakeCompiledCodeBuilder(int reqargs, int optargs,
     cc->requiredArgs = reqargs;
     cc->optionalArgs = optargs;
     cc->name = name;
-    cc->argInfo = arginfo;
     cc->parent = parent;
     cc->intermediateForm = intForm;
+    cc->argInfo = SCM_LIST1(Scm_Cons(Scm_CompiledCodeFullName(cc), arginfo));
     return SCM_OBJ(cc);
 }
 

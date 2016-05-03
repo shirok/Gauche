@@ -729,8 +729,8 @@
    [arg-info    :init-keyword :arg-info]
    [info        :init-keyword :info] ; <cgen-scheme-extended-pair>
    )
-  ;; NB: info has literal of extended pair such that
-  ;; (<procedure-name> . <arg-info>), with source-info attributes.
+  ;; NB: info will have a literal of extended pair such that
+  ;; (<procedure-name> . <formals>), with source-info attributes.
   ;; It isn't emitted directly to the static data of ScmCompiledCode.
   ;; Instead, it is used by emit-toplevel-definition.
   (make (value)
@@ -742,7 +742,10 @@
            [cvn (allocate-code-vector cv lv (~ code'full-name))]
            [code-name (cgen-literal (~ code'name))]
            [arg-info-raw (unwrap-syntax (~ code'arg-info))]
-           [arg-info (cgen-literal arg-info-raw)]
+           [formals-raw (if (and (pair? arg-info-raw) (pair? (car arg-info-raw)))
+                          (cdar arg-info-raw)
+                          #f)]
+           [arg-info-literal (cgen-literal arg-info-raw)]
            ;; TRANSIENT: This part is dupe from compiled-code-definition.
            ;; Replace it after 0.9.5 release.
            [src-info (and-let* ([def (assq-ref (~ code'info) 'definition)]
@@ -756,8 +759,8 @@
            [info (cgen-literal
                   (if src-info
                     ($ make-serializable-extended-pair (~ code'name)
-                       arg-info-raw `((source-info . ,src-info)))
-                    (cons (~ code'name) arg-info-raw)))]
+                       formals-raw `((source-info . ,src-info)))
+                    (cons (~ code'name) formals-raw)))]
            [inliner (check-packed-inliner code)])
       (define (init-thunk)
         (format #t "    SCM_COMPILED_CODE_CONST_INITIALIZER(  /* ~a */\n"
@@ -771,8 +774,8 @@
                 (if (cgen-literal-static? code-name)
                   (cgen-cexpr code-name)
                   "SCM_FALSE")
-                (if (cgen-literal-static? arg-info)
-                  (cgen-cexpr arg-info)
+                (if (cgen-literal-static? arg-info-literal)
+                  (cgen-cexpr arg-info-literal)
                   "SCM_FALSE"))
         (format #t "            ~a, ~a)"
                 (let1 parent-code (~ code'parent)
@@ -787,7 +790,7 @@
                                                 init-thunk)
             :code-vector-c-name cvn
             :code-name code-name
-            :arg-info arg-info
+            :arg-info arg-info-literal
             :info info
             :literals lv)))
   (init (self)
