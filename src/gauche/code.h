@@ -60,8 +60,8 @@ struct ScmCompiledCodeRec {
                                    that takes rest arg.  Otherwise 0. */
     ScmObj name;                /* If this is the body of a closure, holds
                                    its name.  Otherwise #f. */
-    ScmObj info;                /* debug info.  alist of instruction offset
-                                   and info. (*3) */
+    ScmObj debugInfo;           /* debug info.  alist of instruction offset
+                                   and misc info. (*3) */
     ScmObj argInfo;             /* If this code is the body of the closure,
                                    keeps info about formal arguments (*4).
                                    #f otherwise. */
@@ -111,10 +111,10 @@ SCM_CLASS_DECL(Scm_CompiledCodeClass);
 #define SCM_COMPILED_CODE_OPTIONAL_ARGS(obj) \
     (SCM_COMPILED_CODE(obj)->optionalArgs)
 
-#define SCM_COMPILED_CODE_CONST_INITIALIZER(code, codesize, maxstack, reqargs, optargs, name, info, arginfo, parent, iform) \
+#define SCM_COMPILED_CODE_CONST_INITIALIZER(code, codesize, maxstack, reqargs, optargs, name, debuginfo, arginfo, parent, iform) \
     { { SCM_CLASS_STATIC_TAG(Scm_CompiledCodeClass) },   \
       (code), NULL, (codesize), 0, (maxstack),           \
-      (reqargs), (optargs), (name), (info), (arginfo),   \
+      (reqargs), (optargs), (name), (debuginfo), (arginfo),   \
       (parent), (iform) }
 
 SCM_EXTERN void   Scm_CompiledCodeCopyX(ScmCompiledCode *dest,

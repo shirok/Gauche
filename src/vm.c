@@ -2782,7 +2782,7 @@ static ScmObj get_debug_info(ScmCompiledCode *base, SCM_PCTYPE pc)
     }
     int off = (int)(pc - base->code);
     ScmObj ip;
-    SCM_FOR_EACH(ip, base->info) {
+    SCM_FOR_EACH(ip, base->debugInfo) {
         ScmObj p = SCM_CAR(ip);
         if (!SCM_PAIRP(p) || !SCM_INTP(SCM_CAR(p))) continue;
         /* PC points to the next instruction,

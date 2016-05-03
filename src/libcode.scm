@@ -167,7 +167,7 @@
 ;; Extract the original definition (source) of the code.
 (select-module gauche.internal)
 (define (compiled-code-definition code)
-  (and-let* ([def (assq-ref (~ code'info) 'definition)]
+  (and-let* ([def (assq-ref (~ code'debug-info) 'definition)]
              [src (assq-ref def 'source-info)])
     (let loop ([src src])
       (if-let1 orig (pair-attribute-get src 'original #f)
@@ -182,14 +182,16 @@
    (c "SCM_CLASS_DEFAULT_CPL")
    ((parent :setter #f)
     (arg-info :c-name "argInfo" :setter #f)
-    (info :setter #f)
+    (debug-info :c-name "debugInfo" :setter #f)
     (required-args :type <fixnum> :c-name "requiredArgs" :setter #f)
     (optional-args :type <fixnum> :c-name "optionalArgs" :setter #f)
     (name :setter #f)
     (full-name :c-spec "Scm_CompiledCodeFullName(obj)" :setter #f)
     (size :type <fixnum> :c-name "codeSize" :setter #f)
     (max-stack :type <fixnum> :c-name "maxstack" :setter #f)
-    (intermediate-form :c-name "intermediateForm" :setter #f))
+    (intermediate-form :c-name "intermediateForm" :setter #f)
+    ;; TRANSIENT: For the backward compatibility - will be gone soon
+    (info :c-name "debugInfo" :setter #f))
    (printer (Scm_Printf port "#<compiled-code %S@%p>"
                         (Scm_CompiledCodeFullName (SCM_COMPILED_CODE obj))
                         obj)))
