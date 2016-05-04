@@ -73,7 +73,7 @@ static ScmCompiledCode *make_compiled_code(void)
     cc->constants = NULL;
     cc->maxstack = -1;
     cc->debugInfo = SCM_NIL;
-    cc->argInfo = SCM_FALSE;
+    cc->signatureInfo = SCM_FALSE;
     cc->name = SCM_FALSE;
     cc->parent = SCM_FALSE;
     cc->builder = NULL;
@@ -136,7 +136,7 @@ void Scm_CompiledCodeDump(ScmCompiledCode *cc)
     print_header("main_code", SCM_MAKE_STR(""), cc);
     do {
         ScmWord *p = cc->code;
-        Scm_Printf(SCM_CUROUT, "argInfo: %S\n", cc->argInfo);
+        Scm_Printf(SCM_CUROUT, "signatureInfo: %S\n", cc->signatureInfo);
         for (int i=0; i < cc->codeSize; i++) {
             ScmWord insn = p[i];
             ScmPort *out = SCM_PORT(Scm_MakeOutputStringPort(TRUE));
@@ -528,7 +528,8 @@ ScmObj Scm_MakeCompiledCodeBuilder(int reqargs, int optargs,
     cc->name = name;
     cc->parent = parent;
     cc->intermediateForm = intForm;
-    cc->argInfo = SCM_LIST1(Scm_Cons(Scm_CompiledCodeFullName(cc), arginfo));
+    cc->signatureInfo = SCM_LIST1(Scm_Cons(Scm_CompiledCodeFullName(cc),
+                                           arginfo));
     return SCM_OBJ(cc);
 }
 

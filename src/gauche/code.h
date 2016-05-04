@@ -60,11 +60,12 @@ struct ScmCompiledCodeRec {
                                    that takes rest arg.  Otherwise 0. */
     ScmObj name;                /* If this is the body of a closure, holds
                                    its name.  Otherwise #f. */
-    ScmObj debugInfo;           /* debug info.  alist of instruction offset
-                                   and misc info. (*3) */
-    ScmObj argInfo;             /* If this code is the body of the closure,
-                                   keeps info about formal arguments (*4).
-                                   #f otherwise. */
+    ScmObj debugInfo;           /* debug info, that associates instructions
+                                   and source code / other metainfo.  May be
+                                   () if no info is avaialble. (*3) */
+    ScmObj signatureInfo;       /* signature info, a metainfo related to the
+                                   interface of this closure.   Maybe #f
+                                   if no info is available. (*4) */
     ScmObj parent;              /* ScmCompiledCode if this code is compiled
                                    within other code chunk.  #f otherwise. */
     ScmObj intermediateForm;    /* A packed IForm of the body (see compile.scm
@@ -85,20 +86,27 @@ struct ScmCompiledCodeRec {
  *       area, subject to GC scanning.  In that case, the constants pointer
  *       is NULL.
  *   *3) ((<offset> <info> ...) ...)
+ *       <offset> is either an instruction offset or 'definition (for the
+ *       entire closure).
  *       At this moment, only used <info> is (source-info . <source>).
- *       For the debug info of the entire closure, <offset> is 'definition.
- *   *4) (<signature>) or (<signature> (<unused-arg> ...))
+ *   *4) (<signature> <info> ...)
  *       <signature> is (<procedure-name> <formal> ...)
  *       <procedure-name> may be just a symbol, or a list (in case of internal
  *       function).  There's no precise definition for the format yet---it's
  *       for debug information.  See Scm_CompiledCodeFullName().
  *       <formal> ... is the formal argument list, as appears in the original
  *       lambda form, including :key, :optional etc.
- *       <unused-arg> is an argument (symbol) which is not used in the procedure
- *       body---it can be used for optimization.
+ *       At this moment we don't use <info> ... yet; the plan is to put
+ *       metainfo about closure interface, e.g. types.
  *   *5) This IForm is a direct result of Pass1, i.e. non-optimized form.
  *       Pass2 scans it when IForm is inlined into the caller site.
  */
+
+/* TRANSIENT: ***WARNING - NAMESPACE POLLUTION*** Certain versions of
+   0.9.5_pre1 precompiler emits C code that refers to the old name
+   ScmCompiledCode.argInfo.  This is a dirty workaround to allow compiling
+   such precompiled code.   Make sure to remove this after 0.9.5 release.  */
+#define argInfo  signatureInfo
 
 SCM_CLASS_DECL(Scm_CompiledCodeClass);
 #define SCM_CLASS_COMPILED_CODE   (&Scm_CompiledCodeClass)

@@ -741,6 +741,9 @@
            [lv  (extract-literals cv)]
            [cvn (allocate-code-vector cv lv (~ code'full-name))]
            [code-name (cgen-literal (~ code'name))]
+           ;; TRANSIENT: The slot is now renamed to 'signature-info, but
+           ;; this code should run in 0.9.4 as well, so we leave 'arg-info
+           ;; until 0.9.5 release.
            [arg-info-raw (unwrap-syntax (~ code'arg-info))]
            [formals-raw (if (and (pair? arg-info-raw) (pair? (car arg-info-raw)))
                           (cdar arg-info-raw)
@@ -893,7 +896,7 @@
                              cvn index (cgen-cexpr lit))))
      lv)
     (unless (cgen-literal-static? ai)
-      (format #t "  SCM_COMPILED_CODE(~a)->argInfo = SCM_OBJ(~a);\n"
+      (format #t "  SCM_COMPILED_CODE(~a)->signatureInfo = SCM_OBJ(~a);\n"
               (cgen-cexpr code) (cgen-cexpr ai)))))
 
 ;; If the compiled-code has packed IForm for inliner, translate it for

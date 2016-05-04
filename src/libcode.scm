@@ -181,7 +181,7 @@
    "ScmCompiledCode*" "Scm_CompiledCodeClass"
    (c "SCM_CLASS_DEFAULT_CPL")
    ((parent :setter #f)
-    (arg-info :c-name "argInfo" :setter #f)
+    (signature-info :c-name "signatureInfo" :setter #f)
     (debug-info :c-name "debugInfo" :setter #f)
     (required-args :type <fixnum> :c-name "requiredArgs" :setter #f)
     (optional-args :type <fixnum> :c-name "optionalArgs" :setter #f)
@@ -191,7 +191,8 @@
     (max-stack :type <fixnum> :c-name "maxstack" :setter #f)
     (intermediate-form :c-name "intermediateForm" :setter #f)
     ;; TRANSIENT: For the backward compatibility - will be gone soon
-    (info :c-name "debugInfo" :setter #f))
+    (info :c-name "debugInfo" :setter #f)
+    (arg-info :c-name "signatureInfo" :setter #f))
    (printer (Scm_Printf port "#<compiled-code %S@%p>"
                         (Scm_CompiledCodeFullName (SCM_COMPILED_CODE obj))
                         obj)))

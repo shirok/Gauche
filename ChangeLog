@@ -1,14 +1,15 @@
 2016-05-03  Shiro Kawai  <shiro@acm.org>
 
-	* src/gauche/code.h, src/libcode.scm: Rename 'info' slot of
-	  <compiled-code> to 'debug-info' to show what kind of information
-	  it has (there are too many 'info' slots!).  Technically this is
-	  C source-level incompatible change (code that refers to
-	  ScmCompiledCode.info must be changed) but we hope third party
-	  code won't touch such internal info (crossing fingers).
-	  The Scheme slot name is also renamed, but we leave old name as
-	  an alias, in order to allow precompiler work with 0.9.4.  We'll
-	  drop the old name sometime after releaseing 0.9.5.
+	* src/gauche/code.h, src/libcode.scm: Rename 'info' and 'arg-info'
+	  slots of <compiled-code> to 'debug-info' and 'signature-info',
+	  respectively, to clarify the roles of those slots. (mere 'info'
+	  doesn't mean much!)  Technically this is C source-level
+	  incompatible change (code that refers to those slots must be
+	  changed) but we hope third party code won't touch such internal
+	  info (crossing fingers).
+	  The Scheme slot names are also renamed, but we leave old names as
+	  aliases, in order to allow precompiler work with 0.9.4.  We'll
+	  drop the old names sometime after releaseing 0.9.5.
 
 2016-05-02  Shiro Kawai  <shiro@acm.org>
 
