@@ -119,10 +119,10 @@ SCM_CLASS_DECL(Scm_CompiledCodeClass);
 #define SCM_COMPILED_CODE_OPTIONAL_ARGS(obj) \
     (SCM_COMPILED_CODE(obj)->optionalArgs)
 
-#define SCM_COMPILED_CODE_CONST_INITIALIZER(code, codesize, maxstack, reqargs, optargs, name, debuginfo, arginfo, parent, iform) \
+#define SCM_COMPILED_CODE_CONST_INITIALIZER(code, codesize, maxstack, reqargs, optargs, name, debuginfo, signatureinfo, parent, iform) \
     { { SCM_CLASS_STATIC_TAG(Scm_CompiledCodeClass) },   \
       (code), NULL, (codesize), 0, (maxstack),           \
-      (reqargs), (optargs), (name), (debuginfo), (arginfo),   \
+      (reqargs), (optargs), (name), (debuginfo), (signatureinfo),   \
       (parent), (iform) }
 
 SCM_EXTERN void   Scm_CompiledCodeCopyX(ScmCompiledCode *dest,
@@ -131,32 +131,6 @@ SCM_EXTERN void   Scm_CompiledCodeDump(ScmCompiledCode *cc);
 SCM_EXTERN ScmObj Scm_CompiledCodeToList(ScmCompiledCode *cc);
 SCM_EXTERN ScmObj Scm_CompiledCodeFullName(ScmCompiledCode *cc);
 SCM_EXTERN void   Scm_VMExecuteToplevels(ScmCompiledCode *cv[]);
-
-/* Builder API */
-SCM_EXTERN ScmObj Scm_MakeCompiledCodeBuilder(int reqargs, int optargs,
-                                              ScmObj name, ScmObj arginfo,
-                                              ScmObj parent, ScmObj intForm);
-SCM_EXTERN ScmObj Scm_CompiledCodeCurrentInsn(ScmCompiledCode *cc);
-SCM_EXTERN void   Scm_CompiledCodeReplaceInsn(ScmCompiledCode *cc,
-                                              ScmObj insn,
-                                              ScmObj operand,
-                                              ScmObj info);
-SCM_EXTERN void   Scm_CompiledCodeFlushInsn(ScmCompiledCode *cc);
-SCM_EXTERN void   Scm_CompiledCodePutInsn(ScmCompiledCode *cc,
-                                          ScmObj insn,
-                                          ScmObj operand,
-                                          ScmObj info);
-SCM_EXTERN ScmObj Scm_CompiledCodeNewLabel(ScmCompiledCode *cc);
-SCM_EXTERN void   Scm_CompiledCodeSetLabel(ScmCompiledCode *cc, ScmObj label);
-SCM_EXTERN void   Scm_CompiledCodePushInfo(ScmCompiledCode *cc, ScmObj info);
-SCM_EXTERN void   Scm_CompiledCodeFinishBuilder(ScmCompiledCode *cc,
-                                                int maxstack);
-SCM_EXTERN void   Scm_CompiledCodeEmit(ScmCompiledCode *cc,
-                                       int code,
-                                       int arg0,
-                                       int arg1,
-                                       ScmObj operand,
-                                       ScmObj info);
 
 /*
  * VM instructions

@@ -61,6 +61,7 @@
 (inline-stub
  (declcode
   (.include <gauche/code.h>
+            <gauche/priv/codeP.h>
             <gauche/class.h>
             <gauche/vminsn.h>))
 

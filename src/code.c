@@ -36,6 +36,7 @@
 #include "gauche/class.h"
 #include "gauche/code.h"
 #include "gauche/vminsn.h"
+#include "gauche/priv/codeP.h"
 #include "gauche/priv/builtin-syms.h"
 
 /*===============================================================
