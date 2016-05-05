@@ -1,3 +1,16 @@
+2016-05-05  shiro  <shiro@acm.org>
+
+	* src/gauche/priv/codeP.h: Make C API of code buliding stuff
+	  private, and also changed the signature of
+	  Scm_MakeCompiledCodeBuilder (crossing fingers).  These C API
+	  should only be called from code.c and libcode.scm; other internal
+	  parts should depend on Scheme API.
+	* src/compile.scm (pass5/lambda),
+	  src/libcode.scm (compiled-code-attach-source-info!):
+	  Fill signature-info by the signature with extended pair, having
+	  source code location info.  With this, the source code location
+	  info is carried over to (~ <closure>'info) by Scm_MakeClosure.
+
 2016-05-03  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/code.h, src/libcode.scm: Rename 'info' and 'arg-info'

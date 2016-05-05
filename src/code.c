@@ -519,8 +519,7 @@ static void cc_builder_jumpopt(ScmCompiledCode *cc)
 /* Creates and returns a new empty compiled-code object for building
    new code chunk. */
 ScmObj Scm_MakeCompiledCodeBuilder(int reqargs, int optargs,
-                                   ScmObj name, ScmObj arginfo,
-                                   ScmObj parent, ScmObj intForm)
+                                   ScmObj name, ScmObj parent, ScmObj intForm)
 {
     ScmCompiledCode *cc = make_compiled_code();
     cc->builder = make_cc_builder();
@@ -529,8 +528,6 @@ ScmObj Scm_MakeCompiledCodeBuilder(int reqargs, int optargs,
     cc->name = name;
     cc->parent = parent;
     cc->intermediateForm = intForm;
-    cc->signatureInfo = SCM_LIST1(Scm_Cons(Scm_CompiledCodeFullName(cc),
-                                           arginfo));
     return SCM_OBJ(cc);
 }
 

@@ -77,7 +77,7 @@
    Scm_VMInsnNameToCode)
 
  (define-cproc make-compiled-code-builder (reqargs::<uint16> optargs::<uint16>
-                                           name arginfo parent intform)
+                                           name parent intform)
    Scm_MakeCompiledCodeBuilder)
 
  ;; CompiledCodeEmit is performance critical.  To reduce the overhead of
@@ -166,14 +166,40 @@
  )
 
 ;; Extract the original definition (source) of the code.
+;; If the source is the result of macro expansion, the 'definition
+;; attr of debug-info contains the final expansion, but its 'original
+;; pair attribute keeps one macro step before.  %original-source traces
+;; back to the root of the source.
+(define (%original-source src) ; internal
+  (and (pair? src)
+       (let loop ([src src])
+         (if-let1 orig ((with-module gauche.internal pair-attribute-get)
+                        src 'original #f)
+           (loop orig)
+           src))))
+
 (select-module gauche.internal)
+;; Standard way to extract source code from <compiled-code>
 (define (compiled-code-definition code)
-  (and-let* ([def (assq-ref (~ code'debug-info) 'definition)]
-             [src (assq-ref def 'source-info)])
-    (let loop ([src src])
-      (if-let1 orig (pair-attribute-get src 'original #f)
-        (loop orig)
-        src))))
+  (and-let1 def (assq-ref (~ code'debug-info) 'definition)
+    ((with-module gauche.vm.code %original-source)
+     (assq-ref def 'source-info))))
+
+;; Called from pass5 of the compiler.  SRC is $lambda-src of the iform
+;; (could be #f)  Does two things:
+;;  - Push the entire source into debug-info
+;;  - Create extended pair of signature, with source location info attached
+;;    as 'source-info pair attribute, and store it into signature-info.
+(define (compiled-code-attach-source-info! code src)
+  (if src
+    (let ([orig ((with-module gauche.vm.code %original-source) src)]
+          [sig (extended-cons (~ code'full-name)
+                              (pair-attribute-get src 'arg-info '_))])
+      (if-let1 si (pair-attribute-get orig 'source-info #f)
+        (pair-attribute-set! sig 'source-info si))
+      (compiled-code-push-info! code `(definition (source-info . ,src)))
+      (slot-set! code 'signature-info (list sig)))
+    (slot-set! code 'signature-info (list (cons (~ code'full-name) '_)))))
 
 (select-module gauche)
 (inline-stub
@@ -182,7 +208,7 @@
    "ScmCompiledCode*" "Scm_CompiledCodeClass"
    (c "SCM_CLASS_DEFAULT_CPL")
    ((parent :setter #f)
-    (signature-info :c-name "signatureInfo" :setter #f)
+    (signature-info :c-name "signatureInfo")
     (debug-info :c-name "debugInfo" :setter #f)
     (required-args :type <fixnum> :c-name "requiredArgs" :setter #f)
     (optional-args :type <fixnum> :c-name "optionalArgs" :setter #f)

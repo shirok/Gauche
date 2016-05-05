@@ -1458,7 +1458,7 @@
                ($ raise $ make-compound-condition e
                   $ make <compile-error-mixin> :expr program)])
       (pass5 (pass2-4 (pass1 program cenv) (cenv-module cenv))
-             (make-compiled-code-builder 0 0 '%toplevel #f #f #f)
+             (make-compiled-code-builder 0 0 '%toplevel #f #f)
              '() 'tail))))
 
 ;; stub for future extension
@@ -1482,7 +1482,7 @@
 (define (compile-p5 program :optional (env (vm-current-module)))
   (let1 cenv (make-bottom-cenv env)
     (vm-dump-code (pass5 (pass2-4 (pass1 program cenv) (cenv-module cenv))
-                         (make-compiled-code-builder 0 0 '%toplevel #f #f #f)
+                         (make-compiled-code-builder 0 0 '%toplevel #f #f)
                          '() 'tail))))
 
 ;;===============================================================
@@ -5043,19 +5043,13 @@
 (define (pass5/lambda iform ccb renv)
   (let* ([inliner (let1 v ($lambda-flag iform)
                    (and (vector? v) v))]
-         [ccb ($ make-compiled-code-builder
-                 ($lambda-reqargs iform)
-                 ($lambda-optarg iform)
-                 ($lambda-name iform)
-                 ;; TODO: For the time being, if we don't have arg-info,
-                 ;; we show (proc . _).  We can do better, tho.
-                 (or (and-let* ([p ($lambda-src iform)])
-                       (pair-attribute-get p 'arg-info #f))
-                     '_)
-                 ccb  ; parent
-                 inliner)])
-    (and-let* ([src ($lambda-src iform)])
-      (compiled-code-push-info! ccb `(definition (source-info . ,src))))
+         [ccb (make-compiled-code-builder ($lambda-reqargs iform)
+                                          ($lambda-optarg iform)
+                                          ($lambda-name iform)
+                                          ccb  ; parent
+                                          inliner)])
+    (compiled-code-attach-source-info! ccb ($lambda-src iform))
+    
     ;; If any of procedure parameters are set!, we should box it
     ;; upon entering the procedure.
     (let loop ([lvs ($lambda-lvars iform)]
