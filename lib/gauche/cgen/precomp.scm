@@ -545,8 +545,6 @@
         [tmp (gensym)])
     (cgen-init (format "  ScmObj ~a = Scm_MakeClosure(~a, NULL);\n"
                        tmp (cgen-cexpr code)))
-    (cgen-init (format "  SCM_PROCEDURE_INFO(~a) = ~a;\n"
-                       tmp (cgen-cexpr (~ code'info))))
     (cgen-init (format "  Scm_MakeBinding(SCM_MODULE(~a) /* ~a */, \
                                           SCM_SYMBOL(~a) /* ~a */, \
                                           ~a,\
@@ -723,16 +721,11 @@
 ;; Compiler-specific literal handling definitions
 ;;
 (define-cgen-literal <cgen-scheme-code> <compiled-code>
-  ([code-name   :init-keyword :code-name]
+  ([code-name          :init-keyword :code-name]
    [code-vector-c-name :init-keyword :code-vector-c-name]
-   [literals    :init-keyword :literals]
-   [arg-info    :init-keyword :arg-info]
-   [info        :init-keyword :info] ; <cgen-scheme-extended-pair>
+   [literals           :init-keyword :literals]
+   [signature-info     :init-keyword :signature-info]
    )
-  ;; NB: info will have a literal of extended pair such that
-  ;; (<procedure-name> . <formals>), with source-info attributes.
-  ;; It isn't emitted directly to the static data of ScmCompiledCode.
-  ;; Instead, it is used by emit-toplevel-definition.
   (make (value)
     (let* ([code (if (run-extra-optimization-passes)
                    (optimize-compiled-code value)
@@ -741,29 +734,7 @@
            [lv  (extract-literals cv)]
            [cvn (allocate-code-vector cv lv (~ code'full-name))]
            [code-name (cgen-literal (~ code'name))]
-           ;; TRANSIENT: The slot is now renamed to 'signature-info, but
-           ;; this code should run in 0.9.4 as well, so we leave 'arg-info
-           ;; until 0.9.5 release.
-           [arg-info-raw (unwrap-syntax (~ code'arg-info))]
-           [formals-raw (if (and (pair? arg-info-raw) (pair? (car arg-info-raw)))
-                          (cdar arg-info-raw)
-                          #f)]
-           [arg-info-literal (cgen-literal arg-info-raw)]
-           ;; TRANSIENT: This part is dupe from compiled-code-definition.
-           ;; Replace it after 0.9.5 release.
-           [src-info (and-let* ([def (assq-ref (~ code'info) 'definition)]
-                                [src (assq-ref def 'source-info)]
-                                [src. (let loop ([src src])
-                                        (if-let1 orig (pair-attribute-get
-                                                       src 'original #f)
-                                          (loop orig)
-                                          src))])
-                       (pair-attribute-get src. 'source-info #f))]
-           [info (cgen-literal
-                  (if src-info
-                    ($ make-serializable-extended-pair (~ code'name)
-                       formals-raw `((source-info . ,src-info)))
-                    (cons (~ code'name) formals-raw)))]
+           [signature-info (cgen-literal (serializable-signature-info code))]
            [inliner (check-packed-inliner code)])
       (define (init-thunk)
         (format #t "    SCM_COMPILED_CODE_CONST_INITIALIZER(  /* ~a */\n"
@@ -777,8 +748,8 @@
                 (if (cgen-literal-static? code-name)
                   (cgen-cexpr code-name)
                   "SCM_FALSE")
-                (if (cgen-literal-static? arg-info-literal)
-                  (cgen-cexpr arg-info-literal)
+                (if (cgen-literal-static? signature-info)
+                  (cgen-cexpr signature-info)
                   "SCM_FALSE"))
         (format #t "            ~a, ~a)"
                 (let1 parent-code (~ code'parent)
@@ -793,17 +764,36 @@
                                                 init-thunk)
             :code-vector-c-name cvn
             :code-name code-name
-            :arg-info arg-info-literal
-            :info info
+            :signature-info signature-info
             :literals lv)))
   (init (self)
     (unless (cgen-literal-static? (~ self'code-name))
       (print "  SCM_COMPILED_CODE("(~ self'c-name)")->name = "
              (cgen-cexpr (~ self'code-name))";"
              "/* "(cgen-safe-comment (~ self'value'full-name))" */"))
+    (unless (cgen-literal-static? (~ self'signature-info))
+      (print "  SCM_COMPILED_CODE("(~ self'c-name)")->signatureInfo = "
+             (cgen-cexpr (~ self'signature-info)) ";"))
     (fill-code self))
   (static (self) #t)
   )
+
+;; Construct serializable signature info.  cgen-literal doesn't emit
+;; ExtendedPair as it is, and we need to use <serialiable-extended-pair>.
+;; See literal.scm.
+(define (serializable-signature-info code)
+  ;; TRANSIENT: This code needs to run with 0.9.4 as well, so we use old
+  ;; slot name 'arg-info'.  Replace it to 'signature-info' after 0.9.5
+  ;; release.
+  (and-let* ([sig (~ code'arg-info)])
+    (if-let1 si (and (pair? sig)
+                     (pair? (car sig))
+                     (pair-attribute-get (car sig) 'source-info #f))
+      (cons (make-serializable-extended-pair (unwrap-syntax (caar sig))
+                                             (unwrap-syntax (cdar sig))
+                                             `((source-info . ,si)))
+            (unwrap-syntax (cdr sig)))
+      (unwrap-syntax sig))))
 
 ;; Returns a list of the same length of CODE, which includes the
 ;; <cgen-literal>s corresponding to the literal values in CODE.
@@ -886,18 +876,18 @@
 
   (loop cv lv 0 #f))
 
-(define (fill-code code)
-  (let ([cvn  (~ code'code-vector-c-name)]
-        [lv   (~ code'literals)]
-        [ai   (~ code'arg-info)])
+(define (fill-code code-literal)
+  (let ([cvn  (~ code-literal'code-vector-c-name)]
+        [lv   (~ code-literal'literals)]
+        [si   (~ code-literal'signature-info)])
     (for-each-with-index
      (^[index lit] (when (and lit (not (cgen-literal-static? lit)))
                      (format #t "  ((ScmWord*)~a)[~a] = SCM_WORD(~a);\n"
                              cvn index (cgen-cexpr lit))))
      lv)
-    (unless (cgen-literal-static? ai)
+    (unless (cgen-literal-static? si)
       (format #t "  SCM_COMPILED_CODE(~a)->signatureInfo = SCM_OBJ(~a);\n"
-              (cgen-cexpr code) (cgen-cexpr ai)))))
+              (cgen-cexpr code-literal) (cgen-cexpr si)))))
 
 ;; If the compiled-code has packed IForm for inliner, translate it for
 ;; the target VM insns and returns the packed IForm.
