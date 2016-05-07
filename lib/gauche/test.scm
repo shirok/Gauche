@@ -279,6 +279,10 @@
   (test-count++)
   (let1 m (make-module #f)
     (format #t "testing bindings in script ~a ... " file) (flush)
+    ;; *program-name* and *argv* are defined in #<module user> by gosh,
+    ;; but we'll load the script in a temporary module, so we fake them.
+    (eval `(define *program-name* ',file) m)
+    (eval `(define *argv* '()) m)
     (load file :environment m)
     (test-module-common m file allow-undefined bypass-arity-check)))
 
