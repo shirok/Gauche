@@ -1,4 +1,9 @@
-2016-05-05  shiro  <shiro@acm.org>
+2016-05-08  Shiro Kawai  <shiro@acm.org>
+
+	* src/portapi.c (Scm_PortSeek): Take ungotten char / scratch buffer
+	  into account of port offset.  Based on the patch from Koguro.
+
+2016-05-05  Shiro Kawia  <shiro@acm.org>
 
 	* src/gauche/priv/codeP.h: Make C API of code buliding stuff
 	  private, and also changed the signature of

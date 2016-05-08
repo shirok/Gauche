@@ -951,12 +951,40 @@ int Scm_CharReadyUnsafe(ScmPort *p)
  * PortSeek
  */
 
+/* For the sake of seek/tell, we treat scratch buffer and ungotten char
+   (collectively we call them pending bytes here) as if it's a cache---
+   that is, we assume their content always mirrors the real content of
+   the underlying data.
+
+   If port_pending_bytes() > 0, the "external" current position visible
+   from outside, and the "internal" current position that points into
+   the underlying data, differ.  We discard the pending bytes and adjust
+   the target offset, if the target offset is relative to the current
+   position (SEEK_CUR).
+
+   One optimization, though; if whence == SEEK_CUR and offset = 0, we don't
+   need to move anything.  It's just to get the current offset.  For this
+   case, instead of adjusting offset, we adjust the result.
+*/
+
+#ifndef PORT_PENDING_BYTES       /* common part */
+#define PORT_PENDING_BYTES port_pending_bytes
+static off_t port_pending_bytes(ScmPort *p)
+{
+    off_t unread_bytes = p->scrcnt;
+    if (p->ungotten != SCM_CHAR_INVALID) {
+        unread_bytes += SCM_CHAR_NBYTES(p->ungotten);
+    }
+    return unread_bytes;
+}
+#endif /*PORT_PENDING_BYTES*/
+
 #ifndef SEEK_ISTR               /* common part */
 #define SEEK_ISTR seek_istr
-static off_t seek_istr(ScmPort *p, off_t o, int whence, int nomove)
+static off_t seek_istr(ScmPort *p, off_t o, int whence, int is_telling)
 {
     off_t r;
-    if (nomove) {
+    if (is_telling) {
         r = (off_t)(p->src.istr.current - p->src.istr.start);
     } else {
         long z = (long)o;
@@ -984,15 +1012,37 @@ ScmObj Scm_PortSeek(ScmPort *p, ScmObj off, int whence)
 ScmObj Scm_PortSeekUnsafe(ScmPort *p, ScmObj off, int whence)
 #endif
 {
-    off_t r = (off_t)-1, o = Scm_IntegerToOffset(off);
-    int nomove = (whence == SEEK_CUR && o == 0);
     VMDECL;
     SHORTCUT(p, return Scm_PortSeekUnsafe(p, off, whence));
     if (SCM_PORT_CLOSED_P(p)) {
         Scm_PortError(p, SCM_PORT_ERROR_CLOSED,
                       "attempt to seek on closed port: %S", p);
     }
+
+    off_t r = (off_t)-1;
+    off_t o = Scm_IntegerToOffset(off);
+    int is_telling = (whence == SEEK_CUR && o == 0);
+
     LOCK(p);
+
+    off_t pending = port_pending_bytes(p);
+    if (whence == SEEK_CUR && !is_telling) {
+        if (o < pending) {
+            /* In the ideal world this won't happen, but some unexpected
+               combination of internal port operations may cause this
+               situation.  There's no "right" way to handle this---we just
+               discard the content of the scratch buffer. */
+            pending = 0;
+        } else {
+            o -= pending;
+        }
+    }
+    if (!is_telling) {
+        /* Unless we're telling, we discard pending bytes. */
+        p->scrcnt = 0;
+        p->ungotten = SCM_CHAR_INVALID;
+    }
+
     switch (SCM_PORT_TYPE(p)) {
     case SCM_PORT_FILE:
         /* NB: we might be able to skip calling seeker if we keep the
@@ -1002,7 +1052,7 @@ ScmObj Scm_PortSeekUnsafe(ScmPort *p, ScmObj off, int whence)
            In such case we need to keep whether the last call of buffer
            handling routine was input or output. */
         if (!p->src.buf.seeker) break;
-        if (nomove) {
+        if (is_telling) {
             SAFE_CALL(p, r = p->src.buf.seeker(p, 0, SEEK_CUR));
             if (SCM_PORT_DIR(p)&SCM_PORT_INPUT) {
                 r -= (off_t)(p->src.buf.end - p->src.buf.current);
@@ -1027,16 +1077,13 @@ ScmObj Scm_PortSeekUnsafe(ScmPort *p, ScmObj off, int whence)
                 SAFE_CALL(p, bufport_flush(p, 0, TRUE));
                 SAFE_CALL(p, r = p->src.buf.seeker(p, o, whence));
             }
-            /* Invalidate ungotten char */
-            p->ungotten = SCM_CHAR_INVALID;
-            p->scrcnt = 0;
         }
         break;
     case SCM_PORT_ISTR:
-        r = SEEK_ISTR(p, o, whence, nomove);
+        r = SEEK_ISTR(p, o, whence, is_telling);
         break;
     case SCM_PORT_OSTR:
-        if (nomove) {
+        if (is_telling) {
             r = (off_t)Scm_DStringSize(&(p->src.ostr));
         } else {
             /* Not supported yet */
@@ -1051,7 +1098,10 @@ ScmObj Scm_PortSeekUnsafe(ScmPort *p, ScmObj off, int whence)
     }
     UNLOCK(p);
     if (r == (off_t)-1) return SCM_FALSE;
-    else return Scm_OffsetToInteger(r);
+
+    if (is_telling) r -= pending;
+    
+    return Scm_OffsetToInteger(r);
 }
 
 /*=================================================================
