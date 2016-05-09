@@ -97,6 +97,7 @@ uninstall:
 	cd src; $(MAKE) uninstall
 	cd ext; $(MAKE) uninstall
 	cd lib; $(MAKE) uninstall
+	cd doc; $(MAKE) uninstall
 	rm -f $(GAUCHE_ACLOCAL_DIR)/aclocal.m4
 	rm -f $(datadir)/aclocal/gauche.m4
 

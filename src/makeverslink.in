@@ -16,7 +16,29 @@ set -e
 case "$TARGETLIB" in
   "@*")
     exit 0;;
+  "")
+    echo "TAGRETLIB must be set"
+    exit 1;;
 esac
+
+mode=create
+case "$1" in
+  -d )
+    mode=delete
+    shift;;
+  -* )
+    mode=help
+    shift;;
+esac
+
+if test \( $# != 1 \) -o $mode = "help"; then
+  echo "Usage: makeverslink [-d] LIBGAUCHE"
+  echo "LIBGAUCHE is the name of Gauche DSO, e.g. libgauche-0.9.so"
+  echo "Environment variable TARGETLIB and DESTDIR must be set"
+  echo "If -d option is given, remove links instead of creating"
+  exit 0
+fi
+
 
 LIBGAUCHE=$1
 
@@ -27,25 +49,31 @@ LIB_V=$LIBGAUCHE.0
 LIB_COMPAT=libgauche.so
 
 cd $DESTDIR$TARGETLIB
-# avoid re-running mkverslink.
-if test -f $LIB_VVV -a -L $LIBGAUCHE; then exit; fi
-rm -f $LIB_VVV
-mv $LIBGAUCHE $LIB_VVV
-ln -s $LIB_VVV $LIBGAUCHE
-rm -f $LIB_V
-ln -s $LIB_VVV $LIB_V
+case "$mode" in
+  create)
+    # avoid re-running mkverslink.
+    if test -f $LIB_VVV -a -L $LIBGAUCHE; then exit; fi
+    rm -f $LIB_VVV
+    mv $LIBGAUCHE $LIB_VVV
+    ln -s $LIB_VVV $LIBGAUCHE
+    rm -f $LIB_V
+    ln -s $LIB_VVV $LIB_V
 
-if [ -f $LIB_COMPAT ]; then
-  rm -f $LIB_COMPAT
-  ln -s $LIBGAUCHE $LIB_COMPAT
-fi
-if [ -f $LIB_COMPAT.0 ]; then
-  rm -f $LIB_COMPAT.0
-  ln -s $LIB_V $LIB_COMPAT.0
-fi
-if [ -f $LIB_COMPAT.0.9.0 ]; then
-  rm -f $LIB_COMPAT.0.9.0
-  ln -s $LIB_VVV $LIB_COMPAT.0.9.0
-fi
-
+    if [ -f $LIB_COMPAT ]; then
+      rm -f $LIB_COMPAT
+      ln -s $LIBGAUCHE $LIB_COMPAT
+    fi
+    if [ -f $LIB_COMPAT.0 ]; then
+      rm -f $LIB_COMPAT.0
+      ln -s $LIB_V $LIB_COMPAT.0
+    fi
+    if [ -f $LIB_COMPAT.0.9.0 ]; then
+      rm -f $LIB_COMPAT.0.9.0
+      ln -s $LIB_VVV $LIB_COMPAT.0.9.0
+    fi
+    ;;
+  delete)
+    rm -f $LIB_VVV $LIB_V $LIBGAUCHE $LIB_COMPAT $LIB_COMPAT.0 $LIB_COMPAT.0.9.0
+    ;;
+esac
 
