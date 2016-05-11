@@ -109,6 +109,8 @@
    ))
 
 ;; Entry point API
+;; NB: For the consistency with read-line, the returned string won't include
+;; the final newline.
 (define (read-line/edit ctx)
   (reset-undo-info! ctx)
   (reset-last-yank! ctx)
@@ -191,6 +193,7 @@
                 ;; the existing input.
                 (gap-buffer-move! buffer 0 'end)
                 (redisplay ctx buffer)
+                (putstr (~ ctx'console) "\r\n")
                 (commit-history ctx buffer)]
                ['undone (reset-last-yank! ctx)
                         (clear-mark! ctx buffer)
