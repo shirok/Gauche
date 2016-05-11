@@ -482,6 +482,17 @@
                         (port-seek  (current-input-port) 1 SEEK_CUR)
                         (read-char))))
              (list c0 pos c1)))))
+(test* "seek (istr, with peek-char, negative offset)" '(#\c 2 #\b)
+       (with-input-from-string "abc"
+         (^()
+           (read-char)
+           (read-char)
+           (let* ((c0 (peek-char))
+                  (pos (port-tell (current-input-port)))
+                  (c1 (begin
+                        (port-seek  (current-input-port) -1 SEEK_CUR)
+                        (read-char))))
+             (list c0 pos c1)))))
 (test* "seek (istr, with peek-byte)" '(#x61 #x62)
        (with-input-from-string (rlet1 s (make-byte-string 2 #x61)
                                  (string-byte-set! s 1 #x62))

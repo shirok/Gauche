@@ -1026,21 +1026,12 @@ ScmObj Scm_PortSeekUnsafe(ScmPort *p, ScmObj off, int whence)
     LOCK(p);
 
     off_t pending = port_pending_bytes(p);
-    if (whence == SEEK_CUR && !is_telling) {
-        if (o < pending) {
-            /* In the ideal world this won't happen, but some unexpected
-               combination of internal port operations may cause this
-               situation.  There's no "right" way to handle this---we just
-               discard the content of the scratch buffer. */
-            pending = 0;
-        } else {
-            o -= pending;
-        }
-    }
     if (!is_telling) {
         /* Unless we're telling, we discard pending bytes. */
         p->scrcnt = 0;
         p->ungotten = SCM_CHAR_INVALID;
+        /* ... and adjust offset, when it's relative. */
+        if (whence == SEEK_CUR) o -= pending;
     }
 
     switch (SCM_PORT_TYPE(p)) {
