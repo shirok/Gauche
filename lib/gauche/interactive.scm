@@ -194,6 +194,8 @@
 ;;; Enhanced REPL
 ;;;
 
+(autoload gauche.interactive.editable-reader make-editable-reader)
+
 ;; Evaluation history.
 ;; Kludge: We want the history variables to be visible not only in
 ;; #<module user> but in most other modules, so that the user can switch
@@ -230,26 +232,44 @@
 
 (define *repl-name* "gosh")
 
-(define %prompter
+(define default-prompt-string
   (let1 user-module (find-module 'user)
-    (^[] (let1 m ((with-module gauche.internal vm-current-module))
-           (if (eq? m user-module)
-             (format #t "~a> " *repl-name*)
-             (format #t "~a[~a]> " *repl-name* (module-name m)))
-           (flush)))))
+    (^[:optional (delim ">")]
+      (let1 m ((with-module gauche.internal vm-current-module))
+        (if (eq? m user-module)
+          (format "~a~a " *repl-name* delim)
+          (format "~a[~a]~a " *repl-name* (module-name m) delim))))))
 
-;; toplevel reader to recognize ,command
-(define (%reader)
-  (let1 expr (read)
-    (if (and (pair? expr)      ; avoid depending on util.match yet
-             (eq? (car expr) 'unquote)
-             (pair? (cdr expr))
-             (null? (cddr expr)))
-      (handle-toplevel-command (cadr expr) (read-line))
-      (begin
-        (unless (eof-object? expr)
-          (%skip-trailing-ws))
-        expr))))
+;; Returns a reader procedure that can handle toplevel command
+(define (make-repl-reader read read-line)
+  (^[]
+    (let1 expr (read)
+      (if (and (pair? expr)      ; avoid depending on util.match yet
+               (eq? (car expr) 'unquote)
+               (pair? (cdr expr))
+               (null? (cddr expr)))
+        (handle-toplevel-command (cadr expr) (read-line))
+        (begin
+          (unless (eof-object? expr)
+            (%skip-trailing-ws))
+          expr)))))
+
+;; EXPERIMENTAL: Environment GAUCHE_READ_EDIT enables editing mode.
+;; Note that, at this moment, text.line-edit isn't complete; it doesn't
+;; handle multibyte characters nor the multiline expressions bigger
+;; than the screen height.  Once we complete text.line-edit, we make
+;; the feature available through command-line options of gosh.
+
+(define-values (%prompter %reader)
+  (receive (r rl)
+      (if (sys-getenv "GAUCHE_READ_EDIT")
+        (make-editable-reader (^[] (default-prompt-string "$")))
+        (values #f #f))
+    (if (and r rl)
+      (values (^[] #f)
+              (make-repl-reader r rl))
+      (values (^[] (display (default-prompt-string)) (flush))
+              (make-repl-reader read read-line)))))
 
 (define (%skip-trailing-ws)
   ;; We use byte i/o here to avoid blocking.

@@ -1,3 +1,16 @@
+2016-05-11  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/interactive.scm,
+	  lib/gauche/interactive/editable-reader.scm: EXPERIMENTAL: Enable
+	  line-editing input when the environment variable GAUCHE_READ_EDIT
+	  is set and the terminal is known to be capable of editing.
+	  If you see a prompt "gosh$ ", read-edit is enabled.
+	  Note: The editing capability depends on text.line-edit, and we
+	  still have a few unresolved issues---the display breaks when
+	  multiline input goes beyond the screen height, and multibyte
+	  characters aren't handled correctly, to name a few.  This mode
+	  is to ease debugging of the feature and not for general use yet.
+
 2016-05-08  Shiro Kawai  <shiro@acm.org>
 
 	* src/portapi.c (Scm_PortSeek): Take ungotten char / scratch buffer
