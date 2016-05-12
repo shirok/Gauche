@@ -18714,11 +18714,11 @@ future versions of the library.
 @deftp {Module} text.console
 @mdindex text.console
 This module provides a simple interface for character terminal control.
-Currently we only support vt100 compatible terminals.  We plan to
-support Windows console as well.
+Currently we support vt100 compatible terminals and Windows
+console.
 
-This module don't depend on external library such as @code{curses},
-and it can do is limited; for example, you can't get an event
+This module doesn't depend on external library such as @code{curses},
+and what it can do is limited; for example, you can't get an event
 when shift key alone is pressed.  For finer controls, you need
 some extension libraries.
 
@@ -18726,7 +18726,7 @@ For an example of the features in this module, see
 @file{snake.scm} in the examples directory of Gauche souce distribution.
 @end deftp
 
-@subheading Console classes
+@subheading Console objects
 
 @deftp {Class} <vt100>
 @clindex vt100
@@ -18752,6 +18752,49 @@ microseconds, we interpret the input as individual keystroke, rather
 than a part of an escape sequence.  The default value is @code{1000} (1ms).
 @end defivar
 @end deftp
+
+@deftp {Class} <windows-console>
+@clindex windows-console
+Represents Windows console.  This class is defined on all platforms,
+but its useful methods are only available on Windows-native runtime.
+
+It doesn't have public slots.
+@end deftp
+
+The application has to check the runtime to see what kind of console
+is available.  A suggested flow is as follows.
+@itemize
+@item 
+If @code{has-windows-console?} returns true, create @code{<windows-console>}
+instance.
+You don't need @code{cond-expand}; @code{has-windows-console?} returns
+@code{#f} on non-Windows platforms.
+@item 
+Check the environment variable @code{TERM}.  If it is set and
+satisfies @code{vt100-compatible?}, you can create
+@code{<vt100>} instance.
+@item
+Otherwise, console isn't available.
+@end itemize
+
+The following procedure packages this flow.
+
+@defun make-default-console :key if-not-available
+Determines a suitable console class of the running process and
+returns its instance.
+
+If no suitable console is available, the behavior depends on the
+@var{if-not-available} keyword argument.  If it is @code{:error},
+which is default, an error is signalled.  If it is @code{#f},
+the procedure returns @code{#f}. 
+@end defun
+
+@defun vt100-compatible? string
+Given the string value of the environment variable @code{TERM},
+returns @code{#t} if the terminal can be handled by @code{<vt100>} console,
+@code{#f} otherwise.
+@end defun
+
 
 @subheading Console control
 

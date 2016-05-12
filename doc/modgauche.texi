@@ -14615,8 +14615,6 @@ the slave pty.
 @subsection Common high-level terminal control
 @c NODE 共通の高レベル端末制御
 
-Currently we only have one high-level API.  We may add more as needed.
-
 @defun without-echoing iport proc
 If @var{iport} is an input port connected to a terminal,
 sets the terminal mode non-echoing and call @var{proc} with
@@ -14641,6 +14639,16 @@ Note: Because of an implementation issue, on Windows native
 platforms this procedure always changes console mode
 of the standard input handle when @code{iport} is either
 @code{#f} or a terminal input port.
+@end defun
+
+@defun has-windows-console?
+Returns @code{#t} iff the running Gauche is Windows-native and
+the process has attached console.  On POSIX platforms this
+procedure always returns @code{#f}.
+
+The reason that @code{cond-expand} isn't enough is that on Windows
+the program may start without console, but you can attach console
+afterwards.  @xref{Windows console API}, for the details.
 @end defun
 
 
