@@ -51,8 +51,7 @@
 ;; NB: Currently we assume we use default console.  Might be useful
 ;; to allow other console (e.g. over pty).
 (define (make-editable-reader get-prompt-string)
-  (if-let1 console (guard (e [else #f])
-                     (make-default-console))
+  (if-let1 console (make-default-console :if-not-available #f)
     (let ([ctx (make <line-edit-context>
                  :console console
                  :prompt (^[] (putstr console (get-prompt-string)))
