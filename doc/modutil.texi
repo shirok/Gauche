@@ -2819,29 +2819,53 @@ deletion.
 @c COMMON
 
 @deftp {Class} <imap-meta>
+@c EN
 Metaclass of @code{<imap>}.
+@c JP
+@code{<imap>}のメタクラスです。
+@c COMMON
 @end deftp
 
 @deftp {Class} <imap>
+@c EN
 Immutable map class.  An instance of @code{<imap-meta>}.
 
 Inherits @code{<ordered-dictionary>}, conforms dictionary protocol
-(except mutating operators).  As a sequence, you can access key-value
+except mutating operators (@pxref{Dictionary framework}).
+As a sequence, you can access key-value
 pairs in increasing order of keys.
+@c JP
+変更不可なマップのクラスです。@code{<imap-meta>}をメタクラスとします。
+
+@code{<ordered-dictionary>}を継承し、変更操作を除くディクショナリプロトコル
+を実装します(@ref{Dictionary framework}参照)。
+シーケンスとしてアクセスした場合は、キーと値のペアをキーの昇順に取り出すことができます。
+@c COMMON
 @end deftp
 
 @defun make-imap
 @defunx make-imap comparator
 @defunx make-imap key=? key<?
+@c EN
 Creates a new empty immutable map.  Without arguments,
 @code{default-comparator} is used to compare keys.  To give a
 specific comparator, use the second form; the @var{comparator}
 argument should have comparison procedure.
 For the details of comparators, @pxref{Comparators}.
 The third form creates a key comparator from a equality
-predicate @var{key=?} and less-than predicate @code{key<=?},
+predicate @var{key=?} and less-than predicate @code{key<?},
 both must accept two keys.  This interface is consistent with
 @code{tree-map} (@pxref{Treemaps}).
+@c JP
+空の変更不可なマップを新たに作って返します。
+引数無しの場合は、キーの比較には@code{default-comparator}が使われます。
+キーの比較方法を指定したい場合は、比較手続きを持つ比較器@var{comparator}を
+引数に渡してください。比較器については@ref{Comparators}を参照。
+3番目の呼び出し形式は、キーの等価性を調べる述語@var{key=?}と
+大小比較の述語@var{key<?}から比較器を作ります。どちらの述語も
+ふたつの引数をとらなければなりません。このインタフェースは
+@code{tree-map}との一貫性のためにサポートされています (@ref{Treemaps}参照)。
+@c COMMON
 @end defun
 
 @defun alist->imap alist
