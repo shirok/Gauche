@@ -467,14 +467,67 @@
            (skip-lines (+ pos 1) (+ lin 1))]
           [else (skip-lines (+ pos 1) lin)])))
 
+;; Scan open paren from START, and when found, search matching close
+;; paren.  When found, call found-fn with to indexes, the
+;; location of open paren and close paren.
+;; Returns (values <index-of-close-paren> <found-fn-result>).
+;; We'd scan recursively, but once found-fn returns a true value,
+;; we stop scanning and return those values to the top.
+(define (buffer-scan-matching-parens buf start end found-fn)
+  (define parens '((#\( . #\)) (#\[ . #\]) (#\{ . #\})))
+  (define (scan i open-pos closer)
+    (if (= i end)
+      (values #f #f)
+      (let1 ch (gap-buffer-ref buf i)
+        (cond [(eqv? ch closer) (values i (found-fn open-pos i closer))]
+              [(eqv? ch #\\) (if (= i (- end 1))
+                               (values #f #f)
+                               (scan (+ i 2) open-pos closer))]
+              [(eqv? ch #\") (in-string (+ i 1) #\" open-pos closer)]
+              [(eqv? ch #\#)
+               (if (= i (- end 1))
+                 (values #f #f)
+                 (case (gap-buffer-ref buf (+ i 1))
+                   [(#\" #\/) => (^c (in-string (+ i 2) c open-pos closer))]
+                   [else (scan (+ i 1) open-pos closer)]))]
+              [(assq-ref parens ch) =>
+               (^[closer2]
+                 (receive (close-pos result) (scan (+ i 1) i closer2)
+                   (cond [result (values close-pos result)]
+                         [close-pos (scan (+ close-pos 1) open-pos closer)]
+                         [else (values #f #f)])))]
+              [else (scan (+ i 1) open-pos closer)]))))
+  (define (in-string i delim open-pos closer)
+    (if (= i end)
+      (values #f #f)
+      (let1 ch (gap-buffer-ref buf i)
+        (cond [(eqv? ch delim) (scan (+ i 1) open-pos closer)]
+              [(eqv? ch #\\) (if (= i (- end 1))
+                               (values #f #f)
+                               (in-string (+ i 2) delim open-pos closer))]
+              [else (in-string (+ i 1) delim open-pos closer)]))))
+  (scan start #f #f))
+
+;; Given closing paren position, find matching opening paren.
+;; START limits the search region (search performed between START and
+;; CURRENT-POS).  The character at current-pos is used as the closer.
+;; Returns an index of matching opening paren, or #f.
+(define (buffer-find-matching-paren buf start current-pos)
+  (receive (close-pos open-pos)
+      ($ buffer-scan-matching-parens buf start (+ current-pos 1)
+         (^[open-pos close-pos closer]
+           (and (eq? close-pos current-pos) ; found
+                open-pos)))
+    open-pos))
+
 ;;;
 ;;; Commands
 ;;;
 
 ;; A command is a procedure that takes <line-edit-context>, <gap-buffer>,
 ;; and <key>.
-;; Return value must be one of #f, #t, #<eof>, commit, undone, or
-;; <edit-command>.  See the read-line/edit above for the details.
+;; Return value indicates the action to be taken by the main editor
+;; loop.  See the read-line/edit above for the details.
 
 (define (self-insert-command ctx buf key)
   (gap-buffer-edit! buf `(i #f ,(x->string key))))
