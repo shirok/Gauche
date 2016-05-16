@@ -186,7 +186,10 @@
           sys-stat->type sys-tm->alist)
 
 (autoload gauche.hashutil hash-table hash-table-fold
-                          hash-table-for-each hash-table-map)
+                          hash-table-for-each hash-table-map
+                          boolean-hash char-hash char-ci-hash
+                          string-hash string-ci-hash
+                          symbol-hash number-hash)
 
 (autoload gauche.treeutil make-tree-map tree-map-empty?
                           tree-map-min tree-map-max

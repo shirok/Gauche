@@ -32,8 +32,9 @@
 ;;;
 
 (define-module gauche.hashutil
-  (export hash-table hash-table-for-each hash-table-map hash-table-fold)
-  )
+  (export hash-table hash-table-for-each hash-table-map hash-table-fold
+          boolean-hash char-hash char-ci-hash string-hash string-ci-hash
+          symbol-hash number-hash))
 (select-module gauche.hashutil)
 
 (define (hash-table cmpr . kvs)
@@ -69,3 +70,34 @@
           r
           (loop (kons k v r)))))))
 
+;; We delegate most hash calculation to the built-in 'hash'.  These
+;; functions are mostly for the compatibility of srfi-128.
+
+(define (boolean-hash obj)
+  (check-arg boolean? obj)
+  (hash obj))
+
+(define (char-hash obj)
+  (check-arg char? obj)
+  (hash obj))
+
+(define (char-ci-hash obj)
+  (check-arg char? obj)
+  (hash (char-foldcase obj)))
+
+(define (string-hash obj)
+  ((with-module gauche.internal %hash-string) obj))
+
+(autoload gauche.unicode string-foldcase)
+
+(define (string-ci-hash obj)
+  (check-arg string? obj)
+  ((with-module gauche.internal %hash-string) (string-foldcase obj)))
+
+(define (symbol-hash obj)
+  (check-arg symbol? obj)
+  (hash obj))
+
+(define (number-hash obj)
+  (check-arg number? obj)
+  (hash obj))
