@@ -532,6 +532,10 @@
 (define (self-insert-command ctx buf key)
   (gap-buffer-edit! buf `(i #f ,(x->string key))))
 
+(define (quoted-insert ctx buf key)
+  (let1 ch (getch (~ ctx'console)) ; TODO: octal digits input
+    (gap-buffer-edit! buf `(i #f ,(x->string ch)))))
+
 (define (commit-input ctx buf key)
   'commit)
 
@@ -730,7 +734,7 @@
               `(,(ctrl #\n) . ,next-line-or-history)
               `(,(ctrl #\o) . ,undefined-command); todo
               `(,(ctrl #\p) . ,prev-line-or-history)
-              `(,(ctrl #\q) . ,undefined-command); todo
+              `(,(ctrl #\q) . ,quoted-insert)
               `(,(ctrl #\r) . ,undefined-command); todo
               `(,(ctrl #\s) . ,undefined-command); todo
               `(,(ctrl #\t) . ,transpose-chars)
