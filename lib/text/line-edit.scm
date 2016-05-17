@@ -278,21 +278,19 @@
         [x   (~ ctx'initpos-x)]
         [w   (~ ctx'screen-width)]
         [h   (~ ctx'screen-height)]
-        [sel (selected-range ctx buffer)])
+        [sel (selected-range ctx buffer)]
+        [oparen (buffer-find-matching-paren-on-cursor buffer)])
     (define g (gen/tab (gap-buffer->generator buffer) x))
     ;; NB: If multiline chunk exceeds screen height, we skip the region
     ;; where y becomes negative.
     (move-cursor-to con (max y 0) x)
     (clear-to-eos con)
     (reset-character-attribute con)
-    (let loop ([y y] [x x])
+    (let loop ([y y] [x x] [attr '(#f #f)])
       (glet1 ch&pos (g)
         (match-let1 (ch . pos) ch&pos
-          (when (and sel (not (eqv? (car sel) (cdr sel))))
-            (cond [(eqv? pos (car sel))
-                   (set-character-attribute con '(#f #f bright underscore))]
-                  [(eqv? pos (cdr sel))
-                   (reset-character-attribute con)]))
+          (define newattr (current-char-attr pos sel oparen))
+          (switch-char-attr-when-needed con attr newattr)
           (cond
            [(= x w)
             (if (= y (- h 1))
@@ -303,7 +301,7 @@
               (move-cursor-to con y 0)
               (putch con ch)
               (move-cursor-to con y 1))
-            (loop y 1)]
+            (loop y 1 newattr)]
            [(eqv? ch #\newline) ; works as if CR+LF
             (if (= y (- h 1))
               (begin (dec! (~ ctx'initpos-y))
@@ -312,11 +310,23 @@
             (when (>= y 0)
               (move-cursor-to con y 0)
               (show-secondary-prompt ctx))
-            (loop y (~ ctx'initpos-x))]
+            (loop y (~ ctx'initpos-x) newattr)]
            [else (when (>= y 0) (putch con ch))
-                 (loop y (+ x 1))])))))
+                 (loop y (+ x 1) newattr)])))))
   (receive (cy cx) (current-buffer-cursor-position ctx buffer)
     (move-cursor-to (~ ctx'console) cy cx)))
+
+(define (current-char-attr pos sel oparen)
+  (cond-list
+   [#t @ '(#f #f)]
+   [(and sel (<= (car sel) pos) (< pos (cdr sel))) @ '(bright underscore)]
+   [(eqv? pos oparen) 'reverse]))
+
+(define (switch-char-attr-when-needed con oldattr newattr)
+  (unless (equal? oldattr newattr)
+    (if (equal? newattr '(#f #f))
+      (reset-character-attribute con)
+      (set-character-attribute con newattr))))
 
 ;;
 ;; Key combinations
@@ -519,6 +529,13 @@
            (and (eq? close-pos current-pos) ; found
                 open-pos)))
     open-pos))
+
+;; Similar to above, but take the current cursor pos of the buffer.
+(define (buffer-find-matching-paren-on-cursor buf)
+  (and (not (gap-buffer-gap-at? buf 'end))
+       (memv (gap-buffer-ref buf (gap-buffer-pos buf))
+             '(#\) #\] #\}))
+       (buffer-find-matching-paren buf 0 (gap-buffer-pos buf))))
 
 ;;;
 ;;; Commands
