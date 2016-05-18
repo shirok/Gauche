@@ -132,14 +132,14 @@
         (cond [(ord a b) -1] ;check this first.  may signal an error.
               [(eq  a b) 0]
               [else 1])))
-    (^[a b] (error "can't compare objects by ~s: ~s vs ~s" comparator a b))))
+    (^[a b] (errorf "can't compare objects by ~s: ~s vs ~s" comparator a b))))
 (define (%make-fallback-order comparator)
   (if (eq? (comparator-flavor comparator) 'comparison)
     (let ([cmp (comparator-comparison-procedure comparator)])
       (^[a b] (< (cmp a b) 0)))
-    (^[a b] (error "can't order objects by ~s: ~s vs ~s" comparator a b))))
+    (^[a b] (errorf "can't order objects by ~s: ~s vs ~s" comparator a b))))
 (define (%make-fallback-hash comparator)
-  (^_ (error "~ doesn't have hash function" comparator)))
+  (^_ (errorf "~s doesn't have hash function" comparator)))
 
 (select-module gauche)
 (define-cproc comparator? (obj) ::<boolean> SCM_COMPARATORP)
