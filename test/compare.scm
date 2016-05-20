@@ -224,6 +224,60 @@
        (equal? (make-comparator/compare #t equal? #f #f 'bo)
                (make-comparator/compare #t equal? #f #f 'yo)))
 
+;; srfi-128 comparator utilities
+(let ()
+  (define (t rcmp xss)
+    (test* "=?"
+           (map (^[xs] (apply = xs)) xss)
+           (map (^[xs] (apply =? rcmp xs)) xss))
+    (test* "<?"
+           (map (^[xs] (apply > xs)) xss)
+           (map (^[xs] (apply <? rcmp xs)) xss))
+    (test* "<=?"
+           (map (^[xs] (apply >= xs)) xss)
+           (map (^[xs] (apply <=? rcmp xs)) xss))
+    (test* ">?"
+           (map (^[xs] (apply < xs)) xss)
+           (map (^[xs] (apply >? rcmp xs)) xss))
+    (test* ">=?"
+           (map (^[xs] (apply <= xs)) xss)
+           (map (^[xs] (apply >=? rcmp xs)) xss)))
+
+  (dolist [rcmp (list
+                 (make-comparator #t = > #f)
+                 (make-comparator/compare #t = (^[a b] (compare b a)) #f))]
+    (t rcmp '((1 1)
+              (0 1)
+              (1 0)
+              (1 1 1)
+              (0 1 1)
+              (0 1 0)
+              (1 1 0)
+              (1 2 3)
+              (2 1 3)
+              (3 1 2)
+              (3 2 1)
+              (1 1 2 4 7 8 9)
+              (0 1 2 4 7 8 9)
+              (9 8 4 3 2 1 0)
+              (9 8 4 4 2 1 1))))
+  )
+
+(let ()
+  (define (t maybe-compar lt eq gt)
+    (test* `(comparator-if<=> ,maybe-compar ,@lt) 'lt (cif maybe-compar lt))
+    (test* `(comparator-if<=> ,maybe-compar ,@eq) 'eq (cif maybe-compar eq))
+    (test* `(comparator-if<=> ,maybe-compar ,@gt) 'gt (cif maybe-compar gt)))
+  (define (cif maybe-compar args)
+    (if maybe-compar
+      (comparator-if<=> maybe-compar (car args) (cadr args) 'lt 'eq 'gt)
+      (comparator-if<=> (car args) (cadr args) 'lt 'eq 'gt)))
+  (t (make-comparator #t = > #f) '(1 0) '(1 1) '(0 1))
+  (t (make-comparator/compare #t = (^[a b] (compare b a)) #f)
+     '(1 0) '(1 1) '(0 1))
+  (t #f '(0 1) '(1 1) '(1 0))
+  )
+
 (test-end)
 
 

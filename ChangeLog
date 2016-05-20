@@ -1,3 +1,9 @@
+2016-05-20  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/hashutil.scm, lib/gauche/computil.scm,
+	  src/autoloads.scm:
+	  Added srfi-128 APIs
+
 2016-05-16  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/hashutil.scm, src/autoloads.scm:

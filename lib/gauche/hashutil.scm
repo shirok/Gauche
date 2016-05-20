@@ -34,7 +34,8 @@
 (define-module gauche.hashutil
   (export hash-table hash-table-for-each hash-table-map hash-table-fold
           boolean-hash char-hash char-ci-hash string-hash string-ci-hash
-          symbol-hash number-hash))
+          symbol-hash number-hash default-hash
+          hash-bound hash-salt))
 (select-module gauche.hashutil)
 
 (define (hash-table cmpr . kvs)
@@ -101,3 +102,10 @@
 (define (number-hash obj)
   (check-arg number? obj)
   (hash obj))
+
+(define default-hash hash)
+
+;; These are placeholder to conform srfi-128.  We'll change the
+;; internals to honor hash-salt eventually.
+(define (hash-bound) (greatest-fixnum))
+(define (hash-salt)  0)
