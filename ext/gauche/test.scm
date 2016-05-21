@@ -5,3 +5,4 @@
 (include "test-record.scm")
 (include "test-generator.scm")
 (include "test-lazy.scm")
+(include "test-unicode.scm")

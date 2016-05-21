@@ -57,8 +57,7 @@
 (select-module gauche.computil)
 
 ;; Needed to have string-ci compare.
-;; TODO: We don't want to depend on text.unincode here, though.
-(autoload text.unicode string-ci=? string-foldcase)
+(autoload gauche.unicode string-ci=? string-foldcase)
 
 (define (a-number? x) (and (number? x) (not (nan? x))))
 (define (a-real-number? x) (and (real? x) (not (nan? x))))
