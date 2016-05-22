@@ -53,7 +53,7 @@
           make-car-comparator make-cdr-comparator
           make-tuple-comparator
 
-          =? <? <=? >? >? comparator-if<=>))
+          =? <? <=? >? >=? comparator-if<=>))
 (select-module gauche.computil)
 
 ;; Needed to have string-ci compare.
