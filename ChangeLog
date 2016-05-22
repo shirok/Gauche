@@ -1,3 +1,9 @@
+2016-05-21  Shiro Kawai  <shiro@acm.org>
+
+	* src/main.c (enter_repl): Better error reporting for an error
+	  thrown during loading gauche.interactive.  It helps
+	  troubleshooting bugs in gauche.interactive and/or .gaucherc.
+
 2016-05-20  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/hashutil.scm, lib/gauche/computil.scm,
