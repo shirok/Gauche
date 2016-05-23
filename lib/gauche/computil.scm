@@ -33,7 +33,6 @@
 
 ;; Provides some essential comparator objects & procedures.
 ;; Autoloaded.
-;; Complete comparator API will be provided by srfi-114 module.
 
 (define-module gauche.computil
   (export default-comparator
@@ -71,8 +70,16 @@
 
 ;; eq-comparator, eqv-comparator, equal-comparator - in libomega.scm
 
-(define (make-eq-comparator) eq-comparator)      ; srfi-128
-(define (make-eqv-comparator) eqv-comparator)    ; srfi-128
+;; NB: srfi-128 specifies the comparators returned by make-eq-comparator
+;; and make-eqv-comparator must use default-hash.  So they can be a lot
+;; more inefficient than eq-comparator and eqv-comparator, and they can't
+;; be used to hash mutable objects based on their identity.
+(define make-eq-comparator            ; srfi-128
+  (let1 c (make-comparator/compare #t eq? eq-compare hash) ; singleton
+    (^[] c)))
+(define make-eqv-comparator           ; srfi-128
+  (let1 c (make-comparator/compare #t eqv? #f hash) ; singleton
+    (^[] c)))
 (define (make-equal-comparator) equal-comparator); srfi-128
 
 (define boolean-comparator
