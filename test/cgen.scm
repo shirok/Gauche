@@ -359,6 +359,18 @@ some_trick();
        (test-error)
        (cise-render-to-string '(< a b) 'toplevel))
 
+;; result
+(parameterize ([cise-emit-source-line #f])
+  (define (c form exp)
+    (test* (format "cise transform: ~a" form) exp
+           (cise-render-to-string form 'stmt)))
+  (define err (test-error))
+  (c '(result) err)
+  (c '(result e) "SCM_RESULT=(e);")
+  (c '(result e0 e1) "SCM_RESULT0=(e0),SCM_RESULT1=(e1);")
+  (c '(result e0 e1 e2) "SCM_RESULT0=(e0),SCM_RESULT1=(e1),SCM_RESULT2=(e2);")
+  (c '(result e0 e1 e2 e3) "SCM_RESULT0=(e0),SCM_RESULT1=(e1),SCM_RESULT2=(e2),SCM_RESULT3=(e3);"))
+
 ;;====================================================================
 (test-section "gauche.cgen.stub")
 (use gauche.cgen.stub)

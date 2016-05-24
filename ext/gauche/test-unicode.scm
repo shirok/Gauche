@@ -1,14 +1,14 @@
 ;;-*- coding:utf-8 -*-
-;; testing text.unicode
+;; testing gauche.unicode
 ;;
 
 (use gauche.test)
 (use util.match)
 (use gauche.sequence)
-(test-start "text.unicode")
+(test-start "gauche.unicode")
 
-(use text.unicode)
-(test-module 'text.unicode)
+(use gauche.unicode)
+(test-module 'gauche.unicode)
 
 (test-section "transfer encodings")
 

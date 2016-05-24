@@ -508,10 +508,12 @@ struct ScmVMRec {
                                    it per thread.
                                  */
 
+    /* TRANSIENT: For the ABI compatibility.  Remove on 1.0 */
+    ScmObj dummy0;
+    ScmObj dummy1;
+    ScmObj dummy2;
+
     /* Program information */
-    ScmObj dummy0;              /* for the ABI compatibility.  remove on 1.0. */
-    ScmObj dummy1;              /* ditto */
-    ScmObj dummy2;              /* ditto */
     int    evalSituation;       /* eval situation (related to eval-when) */
 
     /* Signal information */
@@ -526,6 +528,11 @@ struct ScmVMRec {
 #if defined(GAUCHE_USE_WTHREADS)
     ScmWinCleanup *winCleanup; /* mimic pthread_cleanup_* */
 #endif /*defined(GAUCHE_USE_WTHREADS)*/
+
+    u_long vmid;                /* Numerical ID, mainly for debugging aid.
+                                   Can be recycled, so don't use this to
+                                   identify thread programtically.
+                                   Set by vm_register. */
 };
 
 SCM_EXTERN ScmVM *Scm_NewVM(ScmVM *proto, ScmObj name);

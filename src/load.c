@@ -38,6 +38,7 @@
 #include "gauche/priv/builtin-syms.h"
 #include "gauche/priv/readerP.h"
 #include "gauche/priv/portP.h"
+#include "gauche/priv/moduleP.h"
 
 #include <ctype.h>
 #include <fcntl.h>
@@ -830,20 +831,21 @@ static int do_require(ScmObj, int, ScmModule *, ScmLoadPacket *);
    is loaded at this time or it has already been loaded.  With the same
    reason, it doesn't make much sense to use the current module.
 
-   Until 0.9.4 we didn't actually force 'require' to use #<module gauche>
-   as the base module.  Most of the time, 'require' is called in a module
-   that inherits gauche, so the problem didn't appear.  However, if one
-   requires a file from a module that doesn't inherit gauche, most likely
-   accidentally, he sees confusing errors---because "define-module" form
-   isn't recognized!
+   On 0.9.4 we always set the base module to #<module gauche> to do require,
+   so that we can guarantee the forms like define-module or define-library
+   to be visible from the loaded module (if we use the caller's current
+   module it is not guaranteed.)  However, it had an unexpected side
+   effect: If the loaded module inserts toplevel definitions or imports
+   other modules without first setting its own module, it actually
+   modifies #<module gauche>.
 
-   As of 0.9.4 we fix the base module to #<module gauche> when require is
-   called.   Note that autoload needs different requirements, so we have
-   a subroutine do_require that takes the desired base module.
+   As of 0.9.5, we use an immutable module #<module gauche.require-base>
+   as the base module.  Since it is immutable, any toplevel definitions
+   or imports without first switching modules are rejected.
  */
 int Scm_Require(ScmObj feature, int flags, ScmLoadPacket *packet)
 {
-    return do_require(feature, flags, Scm_GaucheModule(), packet);
+    return do_require(feature, flags, Scm__RequireBaseModule(), packet);
 }
 
 int do_require(ScmObj feature, int flags, ScmModule *base_mod,

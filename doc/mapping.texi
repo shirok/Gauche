@@ -65,9 +65,14 @@ No equivalent procedure.
 @c COMMON
 @item /
 @c EN
-R7RS arithmetic procedure @code{/}.   @xref{Arithmetics}.
+In C, it has two different meanings depending on the types
+of operands.  For real division, use @code{/}.
+For integer quotient, use @code{quotient}.
+@xref{Arithmetics}.
 @c JP
-R7RS の算術演算手続き @code{/}。@ref{Arithmetics}参照。
+Cでは引数の型によって二つの異なる意味を持つオペレータです。
+実数の除算には@code{/}を、整数除算の商を求めるには@code{quotient}を使います。
+@ref{Arithmetics}参照。
 @c COMMON
 @item /=
 @c EN
@@ -313,10 +318,10 @@ You can use @code{string->number}.  @xref{Numerical conversions}.
 @c COMMON
 @item bsearch
 @c EN
-You can use SRFI-43's @code{vector-binary-search}.
+You can use SRFI-133's @code{vector-binary-search}.
 @xref{Vector library}.
 @c JP
-SRFI-43の@code{vector-binary-search}が使えます。
+SRFI-133の@code{vector-binary-search}が使えます。
 @ref{Vector library}参照。
 @c COMMON
 @item calloc
@@ -530,9 +535,13 @@ Gauche の @code{open-input-fd-port} あるいは @code{open-output-fd-port}。
 @c COMMON
 @item feof
 @c EN
-Not supported yet.
+No equivalent operation, but you can check if an input port
+have reached to the end by @code{peek-char} or @code{peek-byte}.
+@xref{Reading data}.
 @c JP
-未サポート。
+同等の操作はありませんが、入力ポートがEOFに達したどうか調べるには
+@code{peek-char}や@code{peek-byte}が使えます。
+@ref{Reading data}参照。
 @c COMMON
 @item ferror
 @c EN
@@ -1686,9 +1695,11 @@ Gauche の @code{sys-times}。@ref{System inquiry}参照。
 @c COMMON
 @item tmpfile
 @c EN
-Not exactly supported.
+Not exactly supported.  See @code{sys-mkstemp} instead.
+@xref{Directory manipulation}.
 @c JP
-厳密には、サポートしません。
+厳密には、サポートしません。@code{sys-mkstemp}を見てください。
+@ref{Directory manipulation}参照。
 @c COMMON
 @item tmpnam
 @c EN

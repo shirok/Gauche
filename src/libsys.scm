@@ -1378,19 +1378,56 @@
 ;; windows command line string from given argument list.   It would be
 ;; clumsy to implement this in C, so we provide this here to be shared
 ;; by Scm_Exec() and shell-escape-string.
-;; NB:  There seems no reliable way to escape command line arguments on
-;; windows, since the parsing is up to every application.  However,
-;; the standard C runtime seems to obey that (a) whitespaces can be
-;; embedded if the argument is surrounded by double quotes, and (b)
-;; within double-quotes, consecutive two double-quotes are replaced
-;; for one double-quote.
-;; NB: The second condition would be clearer if we use string-index, but
-;; it is in srfi-13.  string-split, otoh, is built-in.  The overhead of
-;; using string-split here would be negligible.
+;;
+;; NB:  There is no reliable way to escape command line arguments on
+;; windows, since the parsing is up to every application.  However, most
+;; applications rely on MSVC runtime library and we also follow it here.
+;; Unfortunately, the official document lacks crucial details, and even
+;; the described specification is twisted, as if the one who designed
+;; it had a bad day and wanted to punish future programmers---or maybe
+;; he wanted to punish MS so that future programmers would curse the
+;; company forever.
+;;
+;; Anyway, the official document is here:
+;;  https://msdn.microsoft.com/en-us/library/a1y7w461.aspx
+;; and what it doesn't tell is that a double-quote immediately following a
+;; *closing* double-quote becomes a literal double-quote.  (A double-quote
+;; following an opening double-quote is just a closing double quote.)
+;; Also, if the command line ends while within quoted span, a closing quote
+;; is assumed.
+;;
+;;    ""     = open, close = empty string
+;;    """    = open, close, and literal = single #\"
+;;    """"   = open, close, literal, open (+ assumed close) = single #\"
+;;    """""  = open, close, literal, open, close = single #\"
+;;    """""" = open, close, literal, open, close, literal = two #\"s
+;;
+;; The rule of backslash is also tricky, though this is documented.
+;;
+;;   - If 2n backslashes immediately followed by #\", it becomes
+;;     n backslashes and we parse #\" normally in the context.
+;;   - If 2n+1 backslashes immediately followed by #\", it becomes
+;;     n backslahses and a literal #\".
+;;   - Otherwise, every backslash is literal.
+;;
+;; For example, simply escaping <"> to <\"> won't work, since if the
+;; original double-quote is preceded by a backslash, resulting sequence
+;; becomes <\\">, which is interpreted as single backslash and
+;; delimiting (not literal) double-quote.
+;; However, if we also escape every <\> to <\\>, it would be incorrect if
+;; it isn't followed by double-quote.
+;; The correct way is to get {N consecutive backslashes + double-quote},
+;; then replace it to {2N+1 consecutive backslashes + double-quote}.
+;;
 (define (%sys-escape-windows-command-line s)
   (cond [(not (string? s))
          (%sys-escape-windows-command-line (write-to-string s))]
         [(equal? s "") "\"\""]
-        [(null? (cdr (string-split s #[\s\"]))) s]
-        [else (string-append "\"" (regexp-replace-all #/\"/ s "\"\"") "\"")]))
-
+        [(#/[&<>\[\]{}^=\;!\'+,`~\s]/ s)
+         ($ string-append "\""
+            ($ regexp-replace-all #/(\\*)\"/ s
+               (^m ($ string-append
+                      (make-string (+ (* 2 (string-length (m 1))) 1) #\\)
+                      "\"")))
+            "\"")]
+        [else s]))

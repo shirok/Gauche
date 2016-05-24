@@ -65,7 +65,7 @@
           with-character-attribute
           ensure-bottom-room
 
-          make-default-console))
+          make-default-console vt100-compatible?))
 (select-module text.console)
 
 ;; Portable character attributes - can be supported both on
@@ -363,17 +363,28 @@
   #/^(vt10[02]|vt220|xterm.*|rxvt.*|screen)$/)
 
 ;; Convenience API
+(define (vt100-compatible? term)
+  (boolean (*vt100-compatible-terminals* term)))
+
+;; Convenience API
 ;; Inspect the runtime environment and returns a console object with
 ;; appropriate setting.
 ;; If it cannot find supported console type, an error is signalled,
 ;; with a message describing why.
 ;; We use some heuristics to recognize vt100 compatible terminals.
-(define (make-default-console)
-  (cond [(has-windows-console?) (make <windows-console>)]
+(define (make-default-console :key (if-not-available :error))
+  (define (e s)
+    (if (eq? if-not-available :error)
+      (error s)
+      #f))
+  (cond [(not (memv if-not-available '(#f :error)))
+         (error "if-not-available argument must be either #f or :error, \
+                 but got:" if-not-available)]
+        [(has-windows-console?) (make <windows-console>)]
         [(and-let1 t (sys-getenv "TERM")
-           (*vt100-compatible-terminals* t))
+           (vt100-compatible? t))
          (make <vt100>)]
         [(sys-getenv "TERM")
-         => (^t (error #"Unsupported terminal type: ~t"))]
+         => (^t (e #"Unsupported terminal type: ~t"))]
         [else
-         (error "TERM isn't set and we don't know how to control the terminal.")]))
+         (e "TERM isn't set and we don't know how to control the terminal.")]))

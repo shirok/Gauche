@@ -110,8 +110,12 @@
         (print "Load statistics:")
         (print "Time(us)    File")
         (print "--------+-------------------------------------------------------------------")
-        (for-each (^p (format #t "~8d ~a\n" (cdr p) (car p)))
-                  (sort-by results cdr >))
+        (let1 total (fold (^[p sum]
+                            (format #t "~8d ~a\n" (cdr p) (car p))
+                            (+ sum (cdr p)))
+                          0 (sort-by results cdr >))
+          (print "--------+-------------------------------------------------------------------")
+          (format #t "~8d Total\n" total))
         (return #f))
       (start (reverse stats)))))
 

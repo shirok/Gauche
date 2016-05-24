@@ -88,8 +88,8 @@
 (define (uri-decompose-authority authority)
   (cond
    [(and (string? authority)
-         (#/^(?:(.*?)@)?([^:]*)(?::(\d*))?$/ authority))
-    => (^m (values (m 1) (m 2) (m 3)))]
+         (#/^(?:(?<userinfo>.*?)@)?(?:(?<host>[^:]*)|(?:\[(?<v6host>[a-fA-F\d:]+)\]))(?::(?<port>\d*))?$/ authority))
+    => (^m (values (m 'userinfo) (or (m 'v6host) (m 'host)) (m 'port)))]
    [else (values #f #f #f)]))
 
 ;; A common cliche (suggested by Kouhei Sutou)

@@ -53,7 +53,8 @@
           ideque-take ideque-take-right ideque-drop ideque-drop-right
           ideque-split-at
           ideque-length ideque-append ideque-count ideque-zip
-          ideque-map ideque-for-each ideque-fold ideque-fold-right
+          ideque-map ideque-for-each ideque-for-each-right
+          ideque-fold ideque-fold-right
           ideque-filter-map ideque-append-map
           ideque-filter ideque-remove ideque-partition
           ideque-find ideque-find-right
@@ -276,10 +277,8 @@
     [(pred . dqs) (apply count pred (map ideque->list dqs))]))
 
 ;; API [srfi-134]
-(define (ideque-zip . dqs)
-  (if (null? dqs) ; allowed?
-    (make-ideque)
-    (apply ideque-map list dqs)))
+(define (ideque-zip dq . dqs)
+  (apply ideque-map list dq dqs))
 
 ;; API [srfi-134]
 (define ideque-map
@@ -302,6 +301,15 @@
   (case-lambda
     [(proc dq) (for-each proc (dq-f dq)) (for-each proc (reverse (dq-r dq)))]
     [(proc . dqs) (apply for-each proc (map ideque->list dqs))]))
+
+;; API [srfi-134]
+(define ideque-for-each-right
+  (case-lambda
+    [(proc dq) (for-each proc (dq-r dq)) (for-each proc (reverse (dq-f dq)))]
+    [(proc . dqs)
+     (apply for-each proc (map (lambda (dq)
+                                 (ideque->list (ideque-reverse dq)))
+                               dqs))]))
 
 ;; API [srfi-134]
 (define ideque-fold

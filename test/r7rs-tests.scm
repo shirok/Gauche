@@ -1,9 +1,12 @@
-;; wrapper of r7rs  -*- coding: utf-8 -*-
+;;
+;; This defines a compatibility module, then include Chibi's r7rs-tests to run.
+;;
 
 ;; fake (chibi test) used in r7rs-tests
 (define-module chibi.test
   (use gauche.test)
-  (export test-begin test-end test-values (rename x:test test))
+  (export test-begin test-end test-values test-assert
+          (rename x:test test))
 
   (define *nest-count* 0)
 
@@ -26,8 +29,13 @@
                (if (and (inexact? a) (inexact? b)
                         (finite? a) (finite? b)
                         (not (zero? a)))
-                 (< (abs (- a b)) (* 10e-14 (abs (+ a b))))
+                 (< (abs (- a b)) (* 10e-7 (abs (+ a b))))
                  (test-check a b))))]))
+
+  (define-syntax test-assert
+    (syntax-rules ()
+      [(_ str expr)
+       (test str #t (lambda () (boolean expr)))]))
 
   (define-syntax test-values
     (syntax-rules ()

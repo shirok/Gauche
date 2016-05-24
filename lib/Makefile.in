@@ -46,7 +46,8 @@ SCMFILES = srfi-0.scm \
        srfi-37.scm srfi-39.scm srfi-42.scm srfi-55.scm srfi-60.scm \
        srfi-69.scm srfi-78.scm srfi-98.scm srfi-99.scm \
        srfi-106.scm srfi-112.scm srfi-113.scm \
-       srfi-114.scm srfi-117.scm srfi-118.scm srfi-121.scm srfi-131.scm \
+       srfi-114.scm srfi-117.scm srfi-118.scm srfi-121.scm srfi-128.scm \
+       srfi-131.scm \
        srfi/*.scm \
        slib.scm	 \
        gauche/test.scm gauche/test/generative.scm gauche/time.scm \
@@ -63,6 +64,7 @@ SCMFILES = srfi-0.scm \
        gauche/serializer.scm gauche/serializer/aserializer.scm \
        gauche/parseopt.scm gauche/interactive.scm gauche/interactive/info.scm \
        gauche/interactive/ed.scm gauche/interactive/toplevel.scm \
+       gauche/interactive/editable-reader.scm \
        gauche/selector.scm gauche/logger.scm \
        gauche/common-macros.scm gauche/singleton.scm gauche/validator.scm \
        gauche/version.scm gauche/partcont.scm gauche/lazy.scm gauche/base.scm \
@@ -90,7 +92,7 @@ SCMFILES = srfi-0.scm \
        util/isomorph.scm util/toposort.scm util/tree.scm util/queue.scm \
        util/digest.scm util/combinations.scm util/lcs.scm util/list.scm \
        util/record.scm util/relation.scm util/stream.scm util/trie.scm \
-       util/rbtree.scm util/sparse.scm util/dominator.scm \
+       util/rbtree.scm util/sparse.scm util/dominator.scm util/levenshtein.scm \
        compat/chibi-test.scm compat/jfilter.scm compat/stk.scm \
        compat/norational.scm \
        file/filter.scm \
@@ -105,7 +107,8 @@ SCMFILES = srfi-0.scm \
        text/csv.scm text/parse.scm text/tree.scm text/sql.scm \
        text/html-lite.scm text/info.scm text/diff.scm \
        text/progress.scm text/console.scm text/console/windows.scm \
-       text/gap-buffer.scm text/line-edit.scm text/unicode/ucd.scm \
+       text/gap-buffer.scm text/line-edit.scm \
+       text/unicode.scm text/unicode/ucd.scm \
        www/cgi.scm www/cgi-test.scm www/cgi/test.scm www/css.scm
 
 all:

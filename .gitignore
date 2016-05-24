@@ -7,13 +7,15 @@ config.log
 config.rpath
 config.status
 config.sub
-configure
+/configure
 libtool
 autom4te.cache
 Makefile
+/gc/configure
 /gc/configure.gnu
 /gc/configure.gnu-gauche
 /gc/include/config.h
+/gc/libatomic_ops/configure
 /gc/libatomic_ops/src/config.h
 /lib/gauche/config.scm
 /src/gauche/config.h
@@ -76,6 +78,7 @@ test.record
 /ext/gauche/gauche--sequence.c
 /ext/gauche/gauche--record.c
 /ext/gauche/gauche--generator.c
+/ext/gauche/gauche--unicode.c
 /ext/mt-random/math--mt-random.c
 /ext/net/netaux.c
 /ext/net/netlib.c
@@ -87,6 +90,7 @@ test.record
 /ext/srfi/srfi-13.c
 /ext/srfi/srfi-19.c
 /ext/srfi/srfi-43.c
+/ext/srfi/srfi-133.c
 /ext/sxml/sxml--serializer.c
 /ext/sxml/sxml--ssax.c
 /ext/sxml/sxml--sxpath.c
@@ -101,8 +105,6 @@ test.record
 /ext/termios/gauche--termios.c
 /ext/text/text--gettext.c
 /ext/text/text--tr.c
-/ext/text/text--unicode.c
-/ext/text/unicode_attr.h
 /ext/threads/gauche--threads.c
 /ext/tls/axTLS/ssl/ssltest
 /ext/tls/axTLS/ssl/test/ssltest.mod.c
@@ -161,6 +163,7 @@ test.record
 /src/gauche-package
 /src/gauche/config_threads.h
 /src/gauche/priv/builtin-syms.h
+/src/gauche/priv/unicode_attr.h
 /src/gauche/vminsn.h
 /src/genconfig
 /src/libalpha.c

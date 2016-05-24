@@ -45,7 +45,7 @@
 
 (define-module srfi-114
   (use gauche.uvector)
-  (export comparator?                   ;builtin
+  (export comparator?                   ;builtin (srfi-128)
           comparator-comparison-procedure? ;builtin
           comparator-hash-function?        ;builtin
 
@@ -61,10 +61,13 @@
           (rename make-comparator/compare make-comparator) ;builtin
           make-car-comparator make-cdr-comparator ; builtin
           
-          make-inexact-real-comparator make-vector-comparator
-          make-bytevector-comparator make-list-comparator
+          make-inexact-real-comparator
+          make-vector-comparator ; builtin
+          make-bytevector-comparator
+          make-list-comparator ; builtin
           make-vectorwise-comparator make-listwise-comparator
-          make-pair-comparator make-improper-list-comparator
+          make-pair-comparator ; builtin
+          make-improper-list-comparator
           make-selecting-comparator make-refining-comparator
           make-reverse-comparator make-debug-comparator
 
@@ -153,94 +156,15 @@
 ;;; Comparator transformers
 ;;;
 
-;; NB: There's lots of room for optimization.
-
-(define (%gen-listwise-compare elt-compare null? car cdr)
-  (rec (f a b)
-    (if (null? a)
-      (if (null? b) 0 -1)
-      (if (null? b)
-        1
-        (let1 r (elt-compare (car a) (car b))
-          (if (= r 0) (f (cdr a) (cdr b)) r))))))
-
-(define (%gen-listwise-hash elt-hash null? car cdr)
-  (^[x]
-    (let loop ([v 10037] [x x])
-      (if (null? x)
-        v
-        (loop (combine-hash-value (elt-hash (car x)) v) (cdr x))))))
-
 (define (make-listwise-comparator test elt-comparator null? car cdr)
-  (make-comparator/compare test #t
-                           (%gen-listwise-compare
-                            (comparator-comparison-procedure elt-comparator)
-                            null? car cdr)
-                           (and (comparator-hash-function? elt-comparator)
-                                (%gen-listwise-hash
-                                 (comparator-hash-function elt-comparator)
-                                 null? car cdr))))
-
-(define (make-list-comparator element-comparator)
-  (make-listwise-comparator list? element-comparator null? car cdr))
-
-(define (%gen-vectorwise-compare elt-compare len ref)
-  (^[a b]
-    (let ([alen (len a)]
-          [blen (len b)])
-      (cond [(< alen blen) -1]
-            [(> alen blen) 1]
-            [else
-             (let loop ([i 0])
-               (if (= i alen)
-                 0
-                 (let1 r (elt-compare (ref a i) (ref b i))
-                   (if (= r 0)
-                     (loop (+ i 1))
-                     r))))]))))
-
-(define (%gen-vectorwise-hash elt-hash len ref)
-  (^[x]
-    (let loop ([v 10037] [i (- (len x) 1)])
-    (if (< i 0)
-      v
-      (loop (combine-hash-value (elt-hash (ref x i)) v) (- i 1))))))
+  (make-list-comparator elt-comparator test null? car cdr)) ; srfi-128
 
 (define (make-vectorwise-comparator test elt-comparator len ref)
-  (make-comparator/compare test #t
-                           (%gen-vectorwise-compare
-                            (comparator-comparison-procedure elt-comparator)
-                            len ref)
-                           (and (comparator-hash-function? elt-comparator)
-                                (%gen-vectorwise-hash
-                                 (comparator-hash-function elt-comparator)
-                                 len ref))))
+  (make-vector-comparator elt-comparator test len ref)) ; srfi-128
 
-(define (make-vector-comparator elt-comparator)
-  (make-vectorwise-comparator vector? elt-comparator vector-length vector-ref))
-                              
 (define (make-bytevector-comparator elt-comparator)
   (make-vectorwise-comparator u8vector? elt-comparator
                               u8vector-length u8vector-ref))
-
-(define (make-pair-comparator car-comparator cdr-comparator)
-  (make-comparator/compare
-   (^x (and (pair? x)
-            (comparator-test-type car-comparator (car x))
-            (comparator-test-type cdr-comparator (cdr x))))
-   (^[a b] (and (comparator-equal? car-comparator (car a) (car b))
-                (comparator-equal? cdr-comparator (cdr a) (cdr b))))
-   (and (comparator-comparison-procedure? car-comparator)
-        (comparator-comparison-procedure? cdr-comparator)
-        (^[a b] (let1 r (comparator-compare car-comparator
-                                            (car a) (car b))
-                  (if (= r 0)
-                    (comparator-compare cdr-comparator (cdr a) (cdr b))
-                    r))))
-   (and (comparator-hash-function? car-comparator)
-        (comparator-hash-function? cdr-comparator)
-        (^x (combine-hash-value (comparator-hash car-comparator (car x))
-                                (comparator-hash cdr-comparator (cdr x)))))))
 
 (define (make-improper-list-comparator elt-comparator)
   ($ make-comparator/compare #t

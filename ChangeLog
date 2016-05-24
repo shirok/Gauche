@@ -1,3 +1,226 @@
+2016-05-21  Shiro Kawai  <shiro@acm.org>
+
+	* src/main.c (enter_repl): Better error reporting for an error
+	  thrown during loading gauche.interactive.  It helps
+	  troubleshooting bugs in gauche.interactive and/or .gaucherc.
+
+2016-05-20  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/hashutil.scm, lib/gauche/computil.scm,
+	  src/autoloads.scm:
+	  Added srfi-128 APIs
+
+2016-05-16  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/hashutil.scm, src/autoloads.scm:
+	  Added srfi-128 type-specific hash functions.
+
+2016-05-11  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/interactive.scm,
+	  lib/gauche/interactive/editable-reader.scm: EXPERIMENTAL: Enable
+	  line-editing input when the environment variable GAUCHE_READ_EDIT
+	  is set and the terminal is known to be capable of editing.
+	  If you see a prompt "gosh$ ", read-edit is enabled.
+	  Note: The editing capability depends on text.line-edit, and we
+	  still have a few unresolved issues---the display breaks when
+	  multiline input goes beyond the screen height, and multibyte
+	  characters aren't handled correctly, to name a few.  This mode
+	  is to ease debugging of the feature and not for general use yet.
+
+2016-05-08  Shiro Kawai  <shiro@acm.org>
+
+	* src/portapi.c (Scm_PortSeek): Take ungotten char / scratch buffer
+	  into account of port offset.  Based on the patch from Koguro.
+
+2016-05-05  Shiro Kawia  <shiro@acm.org>
+
+	* src/gauche/priv/codeP.h: Make C API of code buliding stuff
+	  private, and also changed the signature of
+	  Scm_MakeCompiledCodeBuilder (crossing fingers).  These C API
+	  should only be called from code.c and libcode.scm; other internal
+	  parts should depend on Scheme API.
+	* src/compile.scm (pass5/lambda),
+	  src/libcode.scm (compiled-code-attach-source-info!):
+	  Fill signature-info by the signature with extended pair, having
+	  source code location info.  With this, the source code location
+	  info is carried over to (~ <closure>'info) by Scm_MakeClosure.
+
+2016-05-03  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/code.h, src/libcode.scm: Rename 'info' and 'arg-info'
+	  slots of <compiled-code> to 'debug-info' and 'signature-info',
+	  respectively, to clarify the roles of those slots. (mere 'info'
+	  doesn't mean much!)  Technically this is C source-level
+	  incompatible change (code that refers to those slots must be
+	  changed) but we hope third party code won't touch such internal
+	  info (crossing fingers).
+	  The Scheme slot names are also renamed, but we leave old names as
+	  aliases, in order to allow precompiler work with 0.9.4.  We'll
+	  drop the old names sometime after releaseing 0.9.5.
+
+2016-05-02  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/code.h, src/code.c: Change the info kept in
+	  ScmCompiledCode->argInfo; see the comment of code.h for the details.
+	  (1) We include the procedure name in the <signature> part.  We've
+	  calculated it every time in Scm_MakeClosure before, which is a
+	  waste.
+	  (2) Allow to hold more information than arguments in argInfo; a
+	  plan is to keep unused args so that it could be used for further
+	  optimization, but that part hasn't been written.
+
+2016-04-26  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/gauche/parameter.scm (parameterize): Further cleanup.
+	  Avoid nested dynamic-wind.  Removed auxiliary macros.
+
+2016-04-23  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi-113.scm (sob-hash): Fix - hash function must not rely
+	  on the visiting order of hash-table-for-each.
+
+	* libsrc/gauche/parameter.scm (%parameterize-1): Fix a bug that
+	  appears when the converter isn't idempotent.
+
+2016-04-22  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c, src/gauche/vm.h: Add vmid slot to Scm_VM for numeric id
+	  of each VM.  It is intended to ease debugging multithreaded
+	  programs (e.g. attach numeric id for messages).  It's not to
+	  be used as a handle for a thread.
+
+2016-04-20  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/configure.scm (cf-init): Check dependent module version
+	  requirements, if given in package.scm.
+
+2016-04-19  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/version.scm (valid-version-spec?, version-satisfy?):
+	  Added.
+
+2016-04-18  Shiro Kawai  <shiro@acm.org>
+
+	* lib/rfc/uri.scm (uri-decompose-authority): Handle IPv6 address
+	  as host part, e.g. "[::1]:8080".
+
+	* lib/gauche/package.scm: Enhanced <gauche-package-description> to
+	  keep metainformaton provided by the package author.  The package
+	  auther can put package.scm in the top dir, which provides metainfo;
+	  cf-init can now read package.scm (package name and version can be
+	  taken from it) and cf-make-gpd emits gpd file that combines
+	  package.scm and build-time info.
+	* lib/gauche/configure.scm (cf-init, cf-make-pkg): Adapted the flow
+	  using package.scm.
+	* ext/template.package.scm: Template package.scm
+	* examples/spigot: Adopt package.scm
+	* src/gauche-package.in: 'gauche-package generate' copies package.scm
+	  template.
+
+2016-04-17  Shiro Kawai  <shiro@acm.org>
+
+	* ext/text/unicode.scm -> ext/gauche/unicode.scm: Changed text.unicode
+	  to gauche.unicode, for r7rs string case folding depends on it.
+	  R7rs-compatible srfis that deal with string case folding also
+	  require r7rs string-ci behavior.
+
+2016-04-11  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cgen/precomp.scm, lib/gauche/cgen/stub.scm: Save
+	  source info of precompiled SUBRs and closures.  They can be
+	  useful during development.
+
+	* src/libcode.c (compiled-code-definition): Added.  This will be
+	  the basis of source-code (gauche/procedure.scm) and
+	  <cgen-scheme-code> literal (gauche/cgen/precomp.scm).  Since
+	  0.9.5 must be compiled by 0.9.4, we'll defer changing `source-code'
+	  etc until after 0.9.5 release.
+	* lib/gauche/cgen/literal.scm: Add support of serializing
+	  extended pair.  NB: We don't automatically serialize extended-pair,
+	  for pair attributes may contain unnecessary info.  Instead,
+	  a special proxy object is provided that would be serialized as
+	  an extended pair.
+
+2016-04-10  Shiro Kawai  <shiro@acm.org>
+
+	* src/list.c (Scm_MakeExtendedPair): Added.
+
+2016-04-09  Shiro Kawai  <shiro@acm.org>
+
+	* examples/spigot, examples/mqueue-cpp: Switched to use
+	  gauche.configure instead of autoconf.
+
+	* lib/gauche/configure.scm: Add framework to run compiler tests.
+	  New apis: cf-arg-var, cf-check-tool, cf-prog-cxx, cf-lang,
+	  cf-lang-program, cf-lang-io-program, cf-lang-call,
+	  cf-try-compile, cf-try-compile-and-link.
+
+	* lib/gauche/process.scm (shell-tokenize-string): Added.
+
+2016-04-08  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/process.scm (shell-escape-string): Add optional flavor
+	  argument to allow cross-platform processing.
+
+	* src/libsys.scm (%sys-escape-windows-command-line): Fixed to follow
+	  msvc runtime behavior more closely.
+
+2016-04-06  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/mop/singleton.scm: Made it thread-safe.
+
+2016-04-04  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/interactive/toplevel.scm: Allow abbreviation of
+	  toplevel commands.  Based on a patch from Hamayama.
+
+2016-04-02  Shiro Kawai  <shiro@acm.org>
+
+	* lib/util/levenshtein.scm: Added.
+
+2016-03-28  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/interpolate.scm (%string-interpolate): Slight
+	  optimization to avoid unnecessary string-append.
+
+	* lib/gauche/cgen/cise.scm (result): Allow more than three values.
+	  Patch from pclouds.
+
+2016-03-26  Shiro Kawai  <shiro@acm.org>
+
+	* ext/srfi/srfi-133.scm -> libsrc/srfi-133.scm: moved
+	* ext/srfi/srfi-43.scm: Rewrote on top of srfi-133.
+
+2016-03-25  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/interactive/info.scm: Include module and class names
+	  for the lookup entry.  Make the initial table set-up thread safe.
+
+2016-03-24  Shiro Kawai <shiro@acm.org>
+
+	* ext/data/queue.scm (mtqueue-num-waiting-readers): Added.
+
+2016-03-23  Shiro Kawai  <shiro@acm.org>
+
+	* src/load.c (Scm_Require): 'require' now loads a file into
+	  a sealed module #<module gauche.require-base>.  This guarantees
+	  the forms like define-module or define-library to be visible
+	  from the loaded file, and also catches when the loaded file
+	  inadvertently inserts toplevel bindings without specifying
+	  a module.
+	  Note: This change may triggers an error in existing code.  Such
+	  code has just "happened to work"; they should be fixed.
+
+	* src/compile.scm (pass4): Use local environment instead of inserting
+	  new global identifiers for lifted lambdas.   Inserting new global ids
+	  has an issue of where module the global binding should be inserted.
+
+2016-03-22  Shiro Kawai  <shiro@acm.org>
+
+	* ext/srfi/srfi-133.scm: Added srfi-133 support.  The common part
+	  of srfi-133 and r7rs is now fully covered by built-in.
+
 2016-03-20  Shiro Kawai  <shiro@acm.org>
 
 	* src/comple.scm (when, unless): Require at least one expr in the

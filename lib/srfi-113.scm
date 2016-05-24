@@ -1344,10 +1344,9 @@
 
 ;; Hash over sobs
 (define (sob-hash sob)
-  (let* ((ht (sob-hash-table sob))
-         (hash (comparator-hash-function (sob-comparator sob))))
+  (let ((hash (comparator-hash-function (sob-comparator sob))))
     (sob-fold
-      (lambda (element result) (+ (hash element) (* result 33)))
+      (lambda (element result) (logxor (hash element) result))
       5381
       sob)))
 

@@ -27,8 +27,7 @@ HEADERS   =
 
 TARGET    = $(ARCHFILES)
 GENERATED = 
-CONFIG_GENERATED = Makefile config.cache config.log config.status \
-		   configure.lineno autom4te*.cache $(PACKAGE).gpd
+CONFIG_GENERATED = Makefile config.log $(PACKAGE).gpd
 
 HEADER_INSTALL_DIR  = "$(DESTDIR)`$(GAUCHE_CONFIG) --siteincdir`"
 SCM_INSTALL_DIR     = "$(DESTDIR)`$(GAUCHE_CONFIG) --sitelibdir`"
@@ -59,5 +58,4 @@ distclean : clean
 	rm -rf $(CONFIG_GENERATED)
 
 maintainer-clean : clean
-	rm -rf $(CONFIG_GENERATED) configure
-
+	rm -rf $(CONFIG_GENERATED) VERSION

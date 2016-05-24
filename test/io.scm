@@ -473,6 +473,26 @@
            (let1 c1 (peek-char)
              (port-seek (current-input-port) 0 SEEK_CUR)
              (list c1 (peek-char))))))
+(test* "seek (istr, with peek-char)" '(#\a 0 #\b)
+       (with-input-from-string "ab"
+         (^()
+           (let* ((c0 (peek-char))
+                  (pos (port-tell (current-input-port)))
+                  (c1 (begin
+                        (port-seek  (current-input-port) 1 SEEK_CUR)
+                        (read-char))))
+             (list c0 pos c1)))))
+(test* "seek (istr, with peek-char, negative offset)" '(#\c 2 #\b)
+       (with-input-from-string "abc"
+         (^()
+           (read-char)
+           (read-char)
+           (let* ((c0 (peek-char))
+                  (pos (port-tell (current-input-port)))
+                  (c1 (begin
+                        (port-seek  (current-input-port) -1 SEEK_CUR)
+                        (read-char))))
+             (list c0 pos c1)))))
 (test* "seek (istr, with peek-byte)" '(#x61 #x62)
        (with-input-from-string (rlet1 s (make-byte-string 2 #x61)
                                  (string-byte-set! s 1 #x62))
@@ -480,6 +500,14 @@
            (let1 b1 (peek-byte)
              (port-seek (current-input-port) 1)
              (list b1 (peek-byte))))))
+(test* "seek (istr, with peek-byte)" '(#x61 0 #x62)
+       (with-input-from-string (rlet1 s (make-byte-string 2 #x61)
+                                 (string-byte-set! s 1 #x62))
+         (^()
+           (let* ([b1 (peek-byte)]
+                  [pos (port-tell (current-input-port))])
+             (port-seek (current-input-port) 1 SEEK_CUR)
+             (list b1 pos (peek-byte))))))
 
 ;; NB: in the following four test, each ifile-ofile test is a pair
 ;;     (the ofile test depends on the previous state by ifile).  do not

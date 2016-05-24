@@ -166,6 +166,20 @@
            (parameterize ([a 10] [b 'bad])
              'notreached))))
 
+;; Another tricky one
+(test* "Non-idempotent converter and restart"
+       '(-2 -2 -3 -3)
+       (let ([a (make-parameter 1 -)]
+             [cc #f]
+             [r '()])
+         (let1 x (parameterize ([a 2])
+                   (set! cc (call/cc identity))
+                   (when (= (length r) 2) (a 3))
+                   (a))
+           (push! r x)
+           (when (< (length r) 4) (cc cc))
+           (reverse r))))
+
 ;; Note: ext/threads has extra tests for parameter/thread cooperation.
 
 (test-end)

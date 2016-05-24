@@ -3505,6 +3505,22 @@ the reader, so those effect is contained in the file even with
 による大文字小文字指定はリーダによって処理されるので、
 効果は@code{include}されるファイルの中に留まります。)
 @c COMMON
+@item
+@c EN
+It is forbidden to the file loaded by @code{require} to insert
+a toplevel binding without specifying a module.  In other words,
+the file you require should generally use @code{define-module},
+@code{select-module} or @code{define-library}.
+@xref{Require and provide}, for further discussion.
+On the other hand, @code{include} has no such restrictions.
+@c JP
+@code{require}からロードするファイルが、モジュールを指定せずにトップレベル
+束縛を挿入することは禁じられています。別の言い方をすれば、
+@code{require}するファイルは一般的に@code{define-module}や@code{select-module}、
+あるいは@code{define-library}を使う必要があるということです。
+詳しい議論は@ref{Require and provide}を参照してください。
+一方で、@code{include}にはそういった制限はありません。
+@c COMMON
 @end itemize
 
 @item @code{load}
@@ -4362,7 +4378,7 @@ where @var{name} and @var{exported-name} are symbols.
 @item @var{name}
 The binding with @var{name} is exported.
 @item (rename @var{name} @var{exported-name})
-The binding with @var{naem} is exported under an alias @var{exported-name}.
+The binding with @var{name} is exported under an alias @var{exported-name}.
 @end table
 
 @var{spec}
@@ -4625,6 +4641,25 @@ In future, there may be some mechanism to customize this mapping.
 @end example
 となります。これはあまりScheme風ではありませんが、便利ではあります。
 将来、このマッピングルールをカスタマイズする機構が導入されるかもしれません。
+@c COMMON
+
+@c EN
+The file to be @code{use}'d must have explict module selection
+to have any toplevel definitions
+(usually via @code{define-module}/@code{select-module} pair
+or @code{define-library}).  If you get an error saying
+``Attempted to create a binding in a sealed module:
+module: #<module gauche.require-base>'', that's because the file
+lacks module selection.  @xref{Require and provide}, for further
+discussion.
+@c JP
+@code{use}されるファイルがトップレベル定義を持つ場合、ファイル内でモジュールが
+明示されてることが必要です (通常は@code{define-module}/@code{select-module}
+や@code{define-library}が使われます)。
+もし、``Attempted to create a binding in a sealed module:
+module: #<module gauche.require-base>''というエラーが出たら、
+@code{use}したファイルがモジュール指定を持っていないということです。
+詳しくは@ref{Require and provide}を参照してください。
 @c COMMON
 @end defmac
 

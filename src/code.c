@@ -36,6 +36,7 @@
 #include "gauche/class.h"
 #include "gauche/code.h"
 #include "gauche/vminsn.h"
+#include "gauche/priv/codeP.h"
 #include "gauche/priv/builtin-syms.h"
 
 /*===============================================================
@@ -72,8 +73,8 @@ static ScmCompiledCode *make_compiled_code(void)
     cc->code = NULL;
     cc->constants = NULL;
     cc->maxstack = -1;
-    cc->info = SCM_NIL;
-    cc->argInfo = SCM_FALSE;
+    cc->debugInfo = SCM_NIL;
+    cc->signatureInfo = SCM_FALSE;
     cc->name = SCM_FALSE;
     cc->parent = SCM_FALSE;
     cc->builder = NULL;
@@ -136,11 +137,11 @@ void Scm_CompiledCodeDump(ScmCompiledCode *cc)
     print_header("main_code", SCM_MAKE_STR(""), cc);
     do {
         ScmWord *p = cc->code;
-        Scm_Printf(SCM_CUROUT, "args: %S\n", cc->argInfo);
+        Scm_Printf(SCM_CUROUT, "signatureInfo: %S\n", cc->signatureInfo);
         for (int i=0; i < cc->codeSize; i++) {
             ScmWord insn = p[i];
             ScmPort *out = SCM_PORT(Scm_MakeOutputStringPort(TRUE));
-            ScmObj info = Scm_Assq(SCM_MAKE_INT(i), cc->info);
+            ScmObj info = Scm_Assq(SCM_MAKE_INT(i), cc->debugInfo);
             u_int code = SCM_VM_INSN_CODE(insn);
             const char *insn_name = Scm_VMInsnName(code);
 
@@ -332,7 +333,7 @@ typedef struct cc_builder_rec {
     ScmObj labelDefs;           /* alist of (name . offset) */
     ScmObj labelRefs;           /* alist of (name . offset-to-fill) */
     int labelCount;             /* counter to generate unique labels */
-    ScmObj info;                /* alist of (offset (source-info obj)) */
+    ScmObj debugInfo;           /* alist of (offset (source-info obj)) */
 } cc_builder;
 
 /* Indicates that there's no pending instruction. */
@@ -369,7 +370,7 @@ static cc_builder *make_cc_builder(void)
     b->currentState = -1;
     b->labelDefs = b->labelRefs = SCM_NIL;
     b->labelCount = 0;
-    b->info = SCM_NIL;
+    b->debugInfo = SCM_NIL;
     return b;
 }
 
@@ -396,10 +397,10 @@ static void cc_builder_add_constant(cc_builder *b, ScmObj obj)
 static void cc_builder_add_info(cc_builder *b)
 {
     if (SCM_FALSEP(b->currentInfo)) return;
-    b->info = Scm_Acons(SCM_MAKE_INT(b->currentIndex),
-                        SCM_LIST1(Scm_Cons(SCM_SYM_SOURCE_INFO,
-                                           b->currentInfo)),
-                        b->info);
+    b->debugInfo = Scm_Acons(SCM_MAKE_INT(b->currentIndex),
+                             SCM_LIST1(Scm_Cons(SCM_SYM_SOURCE_INFO,
+                                                b->currentInfo)),
+                             b->debugInfo);
     b->currentInfo = SCM_FALSE;
 }
 
@@ -518,15 +519,13 @@ static void cc_builder_jumpopt(ScmCompiledCode *cc)
 /* Creates and returns a new empty compiled-code object for building
    new code chunk. */
 ScmObj Scm_MakeCompiledCodeBuilder(int reqargs, int optargs,
-                                   ScmObj name, ScmObj arginfo,
-                                   ScmObj parent, ScmObj intForm)
+                                   ScmObj name, ScmObj parent, ScmObj intForm)
 {
     ScmCompiledCode *cc = make_compiled_code();
     cc->builder = make_cc_builder();
     cc->requiredArgs = reqargs;
     cc->optionalArgs = optargs;
     cc->name = name;
-    cc->argInfo = arginfo;
     cc->parent = parent;
     cc->intermediateForm = intForm;
     return SCM_OBJ(cc);
@@ -567,7 +566,7 @@ void Scm_CompiledCodePushInfo(ScmCompiledCode *cc, ScmObj info)
 {
     cc_builder *b;
     CC_BUILDER_GET(b, cc);
-    b->info = Scm_Cons(info, b->info);
+    b->debugInfo = Scm_Cons(info, b->debugInfo);
 }
 
 /* Pack the code accumulated in the builder into a code vector.
@@ -628,7 +627,7 @@ void Scm_CompiledCodeFinishBuilder(ScmCompiledCode *cc, int maxstack)
     cc_builder_jumpopt(cc);
 
     /* record debug info */
-    cc->info = b->info;
+    cc->debugInfo = b->debugInfo;
 
     /* set max stack depth */
     cc->maxstack = maxstack;

@@ -69,11 +69,15 @@
   (use gauche.cgen)
   (use gauche.package)
   (use gauche.process)
+  (use gauche.version)
+  (use gauche.mop.singleton)
   (use util.match)
   (use file.filter)
   (use file.util)
   (use text.tr)
+  (use text.tree)
   (use srfi-13)
+  (use srfi-113) ; sets & bags
   (extend gauche.config)
   (export cf-init
           cf-arg-enable cf-arg-with cf-feature-ref cf-package-ref
@@ -81,9 +85,17 @@
           cf-msg-checking cf-msg-result cf-msg-warn cf-msg-error
           cf-echo
           cf-make-gpd
-          cf-define cf-subst cf-have-subst? cf-ref cf$
+          cf-define cf-subst cf-arg-var cf-have-subst? cf-ref cf$
           cf-config-headers cf-output cf-show-substs
-          cf-check-prog cf-path-prog))
+          cf-check-prog cf-path-prog cf-check-tool
+          cf-prog-cxx
+
+          cf-check-header cf-check-headers cf-includes-default
+          
+          cf-lang <c-language>
+          cf-lang-program cf-lang-io-program cf-lang-call
+          cf-try-compile cf-try-compile-and-link
+          ))
 (select-module gauche.configure)
 
 ;; A package
@@ -92,11 +104,14 @@
    (version    :init-keyword :version)
    (bug-report :init-keyword :bug-report :init-value #f) ; email addr
    (url        :init-keyword :url :init-value #f)
+   (gpd        :init-keyword :gpd)       ; <gauche-package-description>
    (string     :init-keyword :string)    ; package_string
    (tarname    :init-keyword :tarname)
+   (tool-prefix :init-form #f)           ; cross compilation tool prefix
    (config.h   :init-form '())           ; list of (config-header . source)
    (defs       :init-form (make-hash-table 'eq?)) ;cf-define'd thingy
    (substs     :init-form (make-hash-table 'eq?)) ;cf-subst'ed thingy
+   (precious   :init-form (set eq-comparator))    ;vars overridable by env
    (features   :init-form (make-hash-table 'eq?)) ;enabled features by cmdarg
    (packages   :init-form (make-hash-table 'eq?)) ;optional packages
    ))
@@ -123,14 +138,17 @@
   (apply format #t console-fmt args)
   (apply log-format log-fmt args))
 
+(define (safe-variable-name s)
+  (string-tr (string-upcase s) "A-Z0-9" "_*" :complement #t))
+
 ;; constants for formatting help strings.  see cf-help-string.
 (define-constant *usage-description-indent* 26)
 (define-constant *usage-item-indent* 2)
 (define-constant *usage-fill-column* 79)
 
-;;
-;; Basic APIs
-;; 
+;;;
+;;; Basic APIs
+;;; 
 
 ;; API
 ;; Like AC_MSG_*
@@ -164,31 +182,95 @@
     [_ `(,tee-msg "~a\n" "Message: ~a" (list (string-join (list ,@args))))]))
 
 ;; API
-;; Like AC_INIT
-(define (cf-init package-name version :optional (bug-report "") (url ""))
-  (check-arg string? package-name)
-  (check-arg string? version)
-  (sys-unlink "config.log")
-  (log-open "config.log" :prefix "")
-  (log-format "Configuring ~a ~a" package-name version)
-  (current-package
-   (make <package>
-     :name package-name
-     :version version
-     :bug-report bug-report
-     :url url
-     :string (format "~a ~a" package-name version)
-     :tarname (cgen-safe-name-friendly (string-downcase package-name))))
-  (initialize-default-definitions)
-  (parse-command-line-arguments)
-  (check-directory-names)
-  (process-args))
+;; Like AC_INIT; package-name and version can be omitted if the package
+;; has "package.scm".
+(define (cf-init :optional (package-name #f) (version #f)
+                           (bug-report #f) (url #f))
+  (let* ([gpd (and-let* ([srcdir (current-load-path)]
+                         [pfile (build-path (sys-dirname srcdir) "package.scm")]
+                         [ (file-exists? pfile) ])
+                (path->gauche-package-description pfile))]
+         ;; We need to support old way (package info given to cf-init) and
+         ;; new way (package info taken from package.scm).  If both are
+         ;; given, they must much, for the inconsistency would likely be
+         ;; an overlook during transition.  bug-report and url is needed
+         ;; for the compatibility with autoconf (PACKAGE_BUGREPORT and
+         ;; PACKAGE_URL substitution variable).
+         [package-name (if gpd
+                         (if package-name
+                           (if (equal? package-name (~ gpd'name))
+                             package-name
+                             (errorf "Package name in package.scm (~s) and \
+                                      cf-init (~s) don't match"
+                                     (~ gpd'name) package-name))
+                           (~ gpd'name))
+                         (or package-name
+                             (error "Missing package name in cf-init \
+                                     (required when package.scm is not present)")))]
+         [version (if gpd
+                    (if version
+                      (if (equal? version (~ gpd'version))
+                        version
+                        (errorf "Version in package.scm (~s) and \
+                                 cf-init (~s) don't match"
+                                (~ gpd'version) version))
+                      (~ gpd'version))
+                    (or version
+                        (error "Missing version in cf-init \
+                               (required when package.scm is not present)")))]
+         [bug-report (if gpd
+                       (let1 ms (~ gpd'maintainers)
+                         (if bug-report
+                           (begin
+                             (unless (or (null? ms)
+                                         (and (null? (cdr ms))
+                                              (equal? (car ms) bug-report)))
+                               (errorf "Maintainer in package.scm ~s and \
+                                        cf-init bug-report argument ~s don't \
+                                        match" ms bug-report))
+                             bug-report)
+                           (if (null? ms) #f (car ms))))
+                       bug-report)]
+         [url (if gpd
+                (let1 x (~ gpd'homepage)
+                  (if url
+                    (begin (unless (equal? url x)
+                             (errorf "Homepage in package.scm ~s and \
+                                      cf-init url argument ~s don't match"
+                                     x url))
+                           url)
+                    x))
+                url)]
+         )
+    (check-arg string? package-name)
+    (check-arg string? version)
+    (sys-unlink "config.log")
+    (log-open "config.log" :prefix "")
+    (log-format "Configuring ~a ~a" package-name version)
+    (current-package
+     (make <package>
+       :name package-name
+       :version version
+       :bug-report bug-report
+       :url url
+       :gpd (or gpd
+                ($ make-gauche-package-description package-name
+                   :version version :homepage url
+                   :maintainers (list bug-report)))
+       :string (format "~a ~a" package-name version)
+       :tarname (cgen-safe-name-friendly (string-downcase package-name))))
+    (cf-lang (instance-of <c-language>))
+    (initialize-default-definitions)
+    (parse-command-line-arguments)
+    (check-directory-names)
+    (process-args)
+    (check-requirements)))
 
 (define (initialize-default-definitions)
   (define p (current-package))
   (cf-subst 'PACKAGE_NAME    (~ p'name))
   (cf-subst 'PACKAGE_TARNAME (string-tr (string-downcase (~ p'name))
-                                         "a-z0-9_-" "_*" :complement #t))
+                                        "a-z0-9_-" "_*" :complement #t))
   (cf-subst 'PACKAGE_VERSION (~ p'version))
   (cf-subst 'PACKAGE_STRING (~ p'string))
   (cf-subst 'PACKAGE_BUGREPORT (~ p'bug-report))
@@ -224,6 +306,24 @@
 
   (cf-subst 'cross_compiling "no")
   (cf-subst 'subdirs "")
+
+  ;; NB: Autoconf uses AC_PROG_CC to set up CC.  However, we need
+  ;; to use the same C compiler with which Gauche was compiled, so
+  ;; so we set it as the default.  We also allow env overrides for
+  ;; some common variables.  (In autoconf, AC_PROG_CC issues AC_ARG_VAR
+  ;; for them).
+  (cf-subst 'CC       (gauche-config "--cc"))
+  (cf-arg-var 'CPP)
+  (cf-arg-var 'CPPFALGS)
+  (cf-arg-var 'CC)
+  (cf-arg-var 'CFLAGS)
+  (cf-arg-var 'LDFLAGS)
+  (cf-arg-var 'LIBS)
+  ;; NB: Autoconf detemines these through tests, but we already
+  ;; know them at the time Gauche is configured.
+  (cf-subst 'SOEXT  (gauche-config "--so-suffix"))
+  (cf-subst 'OBJEXT (gauche-config "--object-suffix"))
+  (cf-subst 'EXEEXT (gauche-config "--executable-suffix"))
   )
 
 (define (parse-command-line-arguments)
@@ -349,6 +449,38 @@
            (arg-if-not-given)))]
       [_ #f])))
 
+(define (check-requirements)
+  ;; Returns (<ok> <found-version>)
+  (define (check-1 package spec)
+    (if-let1 vers (if (equal? package "Gauche")
+                    (gauche-version)
+                    (and-let1 gpd (find-gauche-package-description package)
+                      (~ gpd'version)))
+      (if (version-satisfy? spec vers)
+        `(#t ,vers)
+        `(#f ,vers))
+      '(#f #f)))
+  (define (check-all reqs)
+    (dolist [req reqs]
+      (match (apply check-1 req)
+        [(#t vers)
+         (log-format "package ~a, required to be ~s... found ~s, ok."
+                     (car req) (cadr req) vers)]
+        [(#f #f)
+         (cf-msg-error "Unfulfilled dependency of package ~a: \
+                        required to be ~s, but not found."
+                       (car req) (cadr req))]
+        [(#f vers)
+         (cf-msg-error "Unfulfilled dependency of package ~a: \
+                        required to be ~s, but only found ~s."
+                       (car req) (cadr req) vers)])))
+  
+  (and-let* ([reqs (~ (current-package)'gpd'require)]
+             [ (not (null? reqs)) ])
+    (cf-msg-checking "package dependencies")
+    (check-all reqs)
+    (cf-msg-result "ok")))
+
 (define (usage)
   (define p print)
   (define (opt a b) (display (cf-help-string a b)))
@@ -418,6 +550,10 @@
   ;; TODO: explanation of VAR=VAL
   (exit 1))
 
+;;;
+;;; Variables and substitutions
+;;;
+
 ;; API
 (define (cf-define symbol :optional (value 1))
   (dict-put! (~ (ensure-package)'defs) symbol value))
@@ -433,6 +569,21 @@
   (dict-exists? (~ (ensure-package)'substs) symbol))
 
 ;; API
+;; Make the named variable overridable by the environment variable.
+;; The term "precious" comes from autoconf implementation.
+;; At this moment, we don't save the help string.  cf-arg-var is
+;; called after cf-init and we can't include help message (the limitation
+;; of one-pass processing.)
+(define (cf-arg-var symbol)
+  (update! (~ (ensure-package)'precious) (cut set-adjoin! <> symbol))
+  (and-let1 v (sys-getenv (x->string symbol))
+    (cf-subst symbol v)))
+
+(define (var-precious? symbol)
+  (set-contains? (~ (ensure-package)'precious) symbol))
+
+;; API
+;; Lookup the current value of the given variable.
 (define (cf-ref symbol :optional (default (undefined)))
   (rlet1 v (dict-get (~ (ensure-package)'substs) symbol default)
     (when (undefined? v)
@@ -441,6 +592,10 @@
 ;; API
 ;; Like cf-ref, but returns empty string if undefined.
 (define (cf$ symbol) (cf-ref symbol ""))
+
+;;;
+;;; Argument processing
+;;;
 
 ;; --with-PACKAGE and --enable-FEATURE processing
 ;; They're recoginzed by cf-init.
@@ -515,6 +670,10 @@
               (fill description))
       (format "~va~a\n~va~a\n" *usage-item-indent* " " item
               (- *usage-description-indent* 1) " " (fill description)))))
+
+;;;
+;;; Output
+;;;
 
 ;; API
 (define (cf-config-headers header-or-headers)
@@ -626,19 +785,186 @@
 ;; API
 ;; Create .gpd file.  This is Gauche-specific.
 (define (cf-make-gpd)
-  (let1 gpd-file #"~(cf$ 'PACKAGE_NAME).gpd"
+  (let ([gpd-file #"~(cf$ 'PACKAGE_NAME).gpd"]
+        [gpd (~ (ensure-package)'gpd)])
     (cf-echo #"creating ~gpd-file")
+    (set! (~ gpd'configure)
+          ($ string-join $ cons "./configure"
+             $ map shell-escape-string $ cdr $ command-line))
     (with-output-to-file gpd-file
-      (cut write-gauche-package-description
-           (make <gauche-package-description>
-             :name (cf$ 'PACKAGE_NAME)
-             :version (cf$ 'PACKAGE_VERSION)
-             :configure ($ string-join $ cons "./configure"
-                           $ map shell-escape-string $ cdr $ command-line))))))
+      (cut write-gauche-package-description gpd))))
+
+;;;
+;;; Target languages
+;;;
+
+;; Various language-specific operations are defined as methods on
+;; the language signleton object inheriting <cf-language>.
+;; Methods a named with -m suffix to distinguish from cf- API, which
+;; is a usual procedure dispatches according to the current
+;; language.
+(define-class <cf-language> ()
+  ((name :init-keyword :name :init-value "(none)"))
+  :metaclass <singleton-meta>)
+
+;; API
+;; Parameter cf-lang holds a singleton instance of the current langauge.
+(define cf-lang (make-parameter (make <cf-language>)))
+
+(define (cf-lang-ext) (cf-lang-ext-m (cf-lang)))
+
+;; API
+;; cf-lang-program <prologue> <body>
+;; Returns a string tree that consists a stand-alone program for the
+;; current language.  <prologue> and <body> both are string tree.
+(define (cf-lang-program prologue body)
+  (cf-lang-program-m (cf-lang) prologue body))
+(define-method cf-lang-program-m ((lang <cf-language>) prologue body)
+  (error "No language is selected."))
+
+;; API
+;; cf-lang-io-program
+;; Returns a string tree of a program that creates "conftest.out"
+;; in the current language.
+(define (cf-lang-io-program)
+  (cf-lang-io-program-m (cf-lang)))
+(define-method cf-lang-io-program-m ((lang <cf-language>))
+  (error "No language is selected."))
+
+;; API
+;; cf-lang-call
+(define (cf-lang-call prologue func-name)
+  (cf-lang-call-m (cf-lang) prologue func-name))
+(define-method cf-lang-call-m ((lang <cf-language>) prologue func-name)
+  (error "No language is selected."))
 
 ;;
-;; Tests - programs
+;; C
 ;;
+(define-class <c-language> (<cf-language>) ((name :init-value "C")))
+
+(define-method cf-lang-ext-m ((lang <c-language>)) "c")
+(define-method cf-lang-cpp-m ((lang <c-language>))
+  #"~(cf$'CPP) ~(cf$'CPPFLAGS)")
+(define-method cf-lang-compile-m ((lang <c-language>))
+  #"~(cf$'CC) -c ~(cf$'CFLAGS) ~(cf$'CPPFLAGS) conftest.~(cf-lang-ext-m lang)")
+(define-method cf-lang-link-m ((lang <c-language>))
+  #"~(cf$'CC) -o conftest~(cf$'EXEEXT) ~(cf$'CFLAGS) ~(cf$'CPPFLAGS) ~(cf$'LDFLAGS) conftest.~(cf-lang-ext-m lang) ~(cf$'LIBS)")
+(define-method cf-lang-null-program-m ((lang <c-language>))
+  (cf-lang-program-m lang "" ""))
+
+(define-method cf-lang-program-m ((lang <c-language>) prologue body)
+  `(,prologue
+    "\nint main(){\n"
+    ,body
+    "\n; return 0;\n}\n"))
+
+(define-method cf-lang-io-program-m ((lang <c-language>))
+  (cf-lang-program-m lang "#include <stdio.h>\n"
+                     '("FILE *f = fopen(\"conftest.out\", \"w\");\n"
+                       "return ferror(f) || fclose(f) != 0;")))
+
+(define-method cf-lang-call-m ((lang <c-language>) prologue body)
+  ($ cf-lang-program-m lang
+     (if (equal? func-name "main")
+       `(,prologue
+         "\n#ifdef __cplusplus\nextern \"C\"\n#endif\nchar main();\n")
+       prologue)
+     `("return" ,func-name "();\n")))
+
+;; C++
+(define-class <c++-language> (<c-language>) ((name :init-value "C++")))
+(define-method cf-lang-ext-m ((lang <c++-language>)) "c")
+(define-method cf-lang-cpp-m ((lang <c++-language>))
+  #"~(cf$'CXXCPP) ~(cf$'CPPFLAGS)")
+(define-method cf-lang-compile-m ((lang <c++-language>))
+  #"~(cf$'CXX) -c ~(cf$'CXXFLAGS) ~(cf$'CPPFLAGS) conftest.~(cf-lang-ext-m lang)")
+(define-method cf-lang-link-m ((lang <c++-language>))
+  #"~(cf$'CXX) -o conftest~(cf$'EXEEXT) ~(cf$'CXXFLAGS) ~(cf$'CPPFLAGS) ~(cf$'LDFLAGS) conftest.~(cf-lang-ext-m lang) ~(cf$'LIBS)")
+
+
+;;;
+;;; Tests - compilation
+;;;
+
+;; Dump CONTENT to a file conftext.$(cf-lang-ext) and run COMMAND.
+;; The output and error goes to config.log.  Returns #t on success,
+;; #f on failure.  Make sure to clean temporary files.
+(define (run-compiler-with-content command content)
+  (define (clean)
+    (remove-files (glob "conftest.err*")
+                  #"conftest.~(cf-lang-ext)"
+                  #"conftest~(cf$'EXEEXT)"))
+  (define cmd
+    (if (string? command)
+      (shell-tokenize-string command)
+      command))
+  (unwind-protect
+      (receive (errout erroutfile) (sys-mkstemp "conftest.err.")
+        (log-format "configure: ~s" cmd)
+        (with-output-to-file #"conftest.~(cf-lang-ext)"
+          (^[] (write-tree content)))
+        (let1 st ($ process-exit-status
+                    (run-process cmd :wait #t
+                                 :redirects `((> 1 ,errout) (> 2 ,errout))))
+          (close-port errout)
+          ($ generator-for-each (cut log-format "~a" <>)
+             $ file->line-generator erroutfile)
+          (log-format "configure: $? = ~s" (sys-wait-exit-status st))
+          (unless (zero? st)
+            (log-format "configure: failed program was:")
+            ($ generator-for-each (cut log-format "| ~a" <>)
+               $ file->line-generator #"conftest.~(cf-lang-ext)"))
+          (zero? st)))
+    (clean)))
+
+;; API
+;; Try compile BODY as the current language.
+;; Returns #t on success, #f on failure.
+(define (cf-try-compile prologue body)
+  ($ run-compiler-with-content
+     (cf-lang-compile-m (cf-lang))
+     (cf-lang-program prologue body)))
+
+;; API
+;; Try compile and link BODY as the current language.
+;; Returns #t on success, #f on failure.
+(define (cf-try-compile-and-link prologue body)
+  ($ run-compiler-with-content
+     (cf-lang-link-m (cf-lang))
+     (cf-lang-program prologue body)))
+
+;; Try to produce executable from
+;; This emits message---must be called in feature test api
+(define (compiler-can-produce-executable?)
+  (cf-msg-checking "whether the ~a compiler works" (~ (cf-lang)'name))
+  (rlet1 result ($ run-compiler-with-content
+                   (cf-lang-link-m (cf-lang))
+                   (cf-lang-null-program-m (cf-lang)))
+    (cf-msg-result (if result "yes" "no"))))
+
+;; Feature Test API
+;; Find c++ compiler.  Actually, we need the one that generates compatible
+;; binary with which Gauche was compiled, but there's no reliable way
+;; (except building an extension and trying to load into Gauche, but that's
+;; a bit too much.)
+(define (cf-prog-cxx :optional (compilers '("g++" "c++" "gpp" "aCC" "CC"
+                                            "cxx" "cc++" "cl.exe" "FCC"
+                                            "KCC" "RCC" "xlC_r" "xlC")))
+  (cf-arg-var 'CXX)
+  (cf-arg-var 'CXXFLAGS)
+  (cf-arg-var 'CCC)
+  (or (cf-ref 'CXX #f)
+      (and-let1 ccc (cf-ref 'CCC #f)
+        (cf-subst 'CXX ccc)
+        #t)
+      (cf-check-tool 'CXX compilers :default "g++"))
+  (parameterize ([cf-lang (instance-of <c++-language>)])
+    (compiler-can-produce-executable?)))
+
+;;;
+;;; Tests - programs
+;;;
 
 ;; API
 ;; Common feature for AC_CHECK_PROG, AC_PATH_PROG etc.
@@ -668,7 +994,7 @@
                       [else (finder prog)]))
        progs))
 
-;; API
+;; Feature Test API
 ;; cf-check-prog works like AC_CHECK_PROG and AC_CHECK_PROGS.
 ;; If SYM is already cf-subst'd, we don't do anything.
 (define (cf-check-prog sym prog-or-progs
@@ -683,7 +1009,7 @@
       (begin (cf-msg-result "no")
              (and default (cf-subst sym default))))))
 
-;; API
+;; Feature Test API
 ;; cf-path-prog works like AC_PATH_PROG and AC_PATH_PROGS.
 (define (cf-path-prog sym prog-or-progs
                       :key (value #f) (default #f) (paths #f) (filter #f))
@@ -697,3 +1023,73 @@
       (begin (cf-msg-result "no")
              (and default (cf-subst sym default))))))
 
+;; Feature Test API *COMPATIBILITY*
+;; This is used in place of cf-check-prog when cross compilation needs to
+;; taken care of.  At this moment we don't support cross compilation yet,
+;; so we just call cf-check-prog.
+(define (cf-check-tool sym prog-or-progs
+                       :key (default #f) (paths #f) (filter #f) :rest keys)
+  (apply cf-check-prog sym prog-or-progs keys))
+
+;;;
+;;; Tests - headers
+;;;
+
+;; API
+;; Returns a string tree
+(define cf-includes-default
+  (let1 defaults '("#include <stdio.h>\n"
+                   "#ifdef HAVE_SYS_TYPES_H\n"
+                   "# include <sys/types.h>\n"
+                   "#endif\n"
+                   "#ifdef HAVE_SYS_STAT_H\n"
+                   "# include <sys/stat.h>\n"
+                   "#endif\n"
+                   "#ifdef STDC_HEADERS\n"
+                   "# include <stdlib.h>\n"
+                   "# include <stddef.h>\n"
+                   "#else\n"
+                   "# ifdef HAVE_STDLIB_H\n"
+                   "#  include <stdlib.h>\n"
+                   "# endif\n"
+                   "#endif\n"
+                   "#ifdef HAVE_STRING_H\n"
+                   "# if !defined STDC_HEADERS && defined HAVE_MEMORY_H\n"
+                   "#  include <memory.h>\n"
+                   "# endif\n"
+                   "# include <string.h>\n"
+                   "#endif\n"
+                   "#ifdef HAVE_STRINGS_H\n"
+                   "# include <strings.h>\n"
+                   "#endif\n"
+                   "#ifdef HAVE_INTTYPES_H\n"
+                   "# include <inttypes.h>\n"
+                   "#endif\n"
+                   "#ifdef HAVE_STDINT_H\n"
+                   "# include <stdint.h>\n"
+                   "#endif\n"
+                   "#ifdef HAVE_UNISTD_H\n"
+                   "# include <unistd.h>\n"
+                   "#endif\n")
+    (case-lambda
+      [() defaults]
+      [(newval) (set! defaults newval) defaults])))
+
+;; Feature Test API
+;; Like AC_CHECK_HEADER.
+;; Returns #t on success, #f on failure.
+(define (cf-check-header header-file :key (includes #f))
+  (cf-msg-checking "~a usability" header-file)
+  (rlet1 result (cf-try-compile (or includes (cf-includes-default)) "")
+    (cf-msg-result (if result "yes" "no"))))
+
+;; Feature Test API
+;; Like AC_CHECK_HEADERS.  Besides the check, it defines HAVE_<header-file>
+;; definition.
+(define (cf-check-headers header-files
+                          :key (includes #f) (if-found #f) (if-not-found #f))
+  (dolist [h header-files]
+    (if (cf-check-header h :includes includes)
+      (begin (cf-define #"HAVE_~(safe-variable-name h)")
+             (when if-found (if-found h)))
+      (when if-not-found (if-not-found h)))))

@@ -402,7 +402,7 @@
     (CHECK-STACK reqstack)
     NEXT))
 
-;; CALL(NARGS)
+;; CALL(nargs)
 ;;  Call procedure in val0.  The continuation of this call is already
 ;;  pushed by PRE-CALL, so this instruction is always the end of a graph.
 ;;
@@ -415,9 +415,9 @@
     ($define APPLY_CALL)
     ($include "./vmcall.c")))
 
-;; TAIL-CALL(NARGS)
+;; TAIL-CALL(nargs)
 ;;  Call procedure in val0.  Same as CALL except this discards the
-;;  caller's arugment frame and shift the callee's argument frame.
+;;  caller's argument frame and shift the callee's argument frame.
 ;;
 (define-insn TAIL-CALL 1 none #f
   (begin (DISCARD-ENV) ($goto-insn CALL)))
@@ -467,7 +467,7 @@
     INCR-PC
     ($result (Scm_MakeClosure body (get_env vm)))))
 
-;; LOCAL-ENV(NLOCALS)
+;; LOCAL-ENV(nlocals)
 ;;  Create a new environment frame from the current arg frame.
 ;;  Used for let.
 (define-insn LOCAL-ENV  1 none #f
@@ -519,7 +519,7 @@
 (define-insn POP-LOCAL-ENV 0 none #f
   (begin (set! ENV (-> ENV up)) NEXT))
 
-;; LOCAL-ENV-JUMP(DEPTH) <addr>
+;; LOCAL-ENV-JUMP(depth) <addr>
 ;;  Combination of LOCAL-ENV-SHIFT + JUMP.
 ;;  We can use this when none of the new environment needs boxing.
 (define-insn LOCAL-ENV-JUMP 1 addr #f
@@ -529,8 +529,8 @@
     CHECK-INTR
     NEXT))
 
-;; LOCAL-ENV-CALL(DEPTH)
-;; LOCAL-ENV-TAIL-CALL(DEPTH)
+;; LOCAL-ENV-CALL(depth)
+;; LOCAL-ENV-TAIL-CALL(depth)
 ;;  This instruction appears when local function call is optimized.
 ;;  VAL0 has a closure to call, and the stack already has the arguments.
 ;;
@@ -815,7 +815,7 @@
 (define-insn LREF21 0 none #f ($lrefNN 2 1))
 (define-insn LREF30 0 none #f ($lrefNN 3 0))
 
-;; combined instrction
+;; combined instruction
 (define-insn LREF-PUSH   2 none  (LREF PUSH))
 (define-insn LREF0-PUSH  0 none  (LREF0 PUSH))
 (define-insn LREF1-PUSH  0 none  (LREF1 PUSH))
@@ -859,7 +859,7 @@
 (define-insn PROMISE  0 none #f
   ($result (Scm_MakePromise FALSE VAL0)))
 
-;; VALUES_APPLY(nargs) <args>
+;; VALUES-APPLY(nargs) <args>
 ;;  This instruction only appears in the code generated dynamically
 ;;  by Scm_Apply(Rec).  This is used to pass the application information
 ;;  across the boundary frame (see user_eval_inner() in vm.c).
@@ -1417,7 +1417,7 @@
 
 (define-insn LREF-UNBOX 2 none (LREF UNBOX) #f :fold-lref)
 
-;; LOCAL-ENV-SHIFT(DEPTH)
+;; LOCAL-ENV-SHIFT(depth)
 ;;  This instruction appears when local function call is optimized.
 ;;  The stack already has NLOCALS values.  We discard DEPTH env frames,
 ;;  and creates a new local env from the stack value.

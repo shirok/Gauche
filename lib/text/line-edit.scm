@@ -114,6 +114,8 @@
    ))
 
 ;; Entry point API
+;; NB: For the consistency with read-line, the returned string won't include
+;; the final newline.
 (define (read-line/edit ctx)
   (reset-undo-info! ctx)
   (reset-last-yank! ctx)
@@ -196,6 +198,7 @@
                 ;; the existing input.
                 (gap-buffer-move! buffer 0 'end)
                 (redisplay ctx buffer)
+                (putstr (~ ctx'console) "\r\n")
                 (commit-history ctx buffer)]
                ['undone (reset-last-yank! ctx)
                         (clear-mark! ctx buffer)
@@ -265,6 +268,9 @@
          [w   (~ ctx'screen-width)]
          [h   (~ ctx'screen-height)]
          [sel (selected-range ctx buffer)]
+         [oparen (buffer-find-matching-paren-on-cursor buffer)]
+         [oldattr '(#f #f)]
+         [newattr '(#f #f)]
          [disp-x x]
          [g   (gap-buffer->generator buffer)]
          [pos (gap-buffer-pos buffer)]
@@ -272,7 +278,6 @@
          [pos-y  y]
          [pos-set-flag (= pos 0)]
          [maxy   #f]
-         [sel-flag #f]
          [windows-console-flag (eq? (class-name (class-of con))
                                     '<windows-console>)])
 
@@ -338,14 +343,10 @@
     (let loop ([n 0])
       (glet1 ch (g)
 
-        ;; set a region color
-        (when (and sel (not (eqv? (car sel) (cdr sel))))
-          (cond [(eqv? n (car sel))
-                 (set! sel-flag #t)
-                 (set-character-attribute con '(#f #f bright underscore))]
-                [(eqv? n (cdr sel))
-                 (set! sel-flag #f)
-                 (reset-character-attribute con)]))
+        ;; set a character attribute
+        (set! oldattr newattr)
+        (set! newattr (current-char-attr n sel oparen))
+        (switch-char-attr-when-needed con oldattr newattr)
 
         ;; display a character
         (case ch
@@ -381,9 +382,9 @@
           [(#\newline)
            (line-wrapping w w)
            (when (display-area?)
-             (if sel-flag (reset-character-attribute con))
+             (switch-char-attr-when-needed con newattr '(#f #f))
              (show-secondary-prompt ctx)
-             (if sel-flag (set-character-attribute con '(#f #f bright underscore))))
+             (switch-char-attr-when-needed con '(#f #f) newattr))
            (set! x (~ ctx'initpos-x))
            (set! disp-x x)]
           [else
@@ -397,6 +398,18 @@
 
         (loop (+ n 1))))
     (move-cursor-to con pos-y pos-x)))
+
+(define (current-char-attr pos sel oparen)
+  (cond-list
+   [#t @ '(#f #f)]
+   [(and sel (<= (car sel) pos) (< pos (cdr sel))) @ '(bright underscore)]
+   [(eqv? pos oparen) 'reverse]))
+
+(define (switch-char-attr-when-needed con oldattr newattr)
+  (unless (equal? oldattr newattr)
+    (if (equal? newattr '(#f #f))
+      (reset-character-attribute con)
+      (set-character-attribute con newattr))))
 
 ;;
 ;; Key combinations
@@ -547,17 +560,81 @@
            (skip-lines (+ pos 1) (+ lin 1))]
           [else (skip-lines (+ pos 1) lin)])))
 
+;; Scan open paren from START, and when found, search matching close
+;; paren.  When found, call found-fn with to indexes, the
+;; location of open paren and close paren.
+;; Returns (values <index-of-close-paren> <found-fn-result>).
+;; We'd scan recursively, but once found-fn returns a true value,
+;; we stop scanning and return those values to the top.
+(define (buffer-scan-matching-parens buf start end found-fn)
+  (define parens '((#\( . #\)) (#\[ . #\]) (#\{ . #\})))
+  (define (scan i open-pos closer)
+    (if (= i end)
+      (values #f #f)
+      (let1 ch (gap-buffer-ref buf i)
+        (cond [(eqv? ch closer) (values i (found-fn open-pos i closer))]
+              [(eqv? ch #\\) (if (= i (- end 1))
+                               (values #f #f)
+                               (scan (+ i 2) open-pos closer))]
+              [(eqv? ch #\") (in-string (+ i 1) #\" open-pos closer)]
+              [(eqv? ch #\#)
+               (if (= i (- end 1))
+                 (values #f #f)
+                 (case (gap-buffer-ref buf (+ i 1))
+                   [(#\" #\/) => (^c (in-string (+ i 2) c open-pos closer))]
+                   [else (scan (+ i 1) open-pos closer)]))]
+              [(assq-ref parens ch) =>
+               (^[closer2]
+                 (receive (close-pos result) (scan (+ i 1) i closer2)
+                   (cond [result (values close-pos result)]
+                         [close-pos (scan (+ close-pos 1) open-pos closer)]
+                         [else (values #f #f)])))]
+              [else (scan (+ i 1) open-pos closer)]))))
+  (define (in-string i delim open-pos closer)
+    (if (= i end)
+      (values #f #f)
+      (let1 ch (gap-buffer-ref buf i)
+        (cond [(eqv? ch delim) (scan (+ i 1) open-pos closer)]
+              [(eqv? ch #\\) (if (= i (- end 1))
+                               (values #f #f)
+                               (in-string (+ i 2) delim open-pos closer))]
+              [else (in-string (+ i 1) delim open-pos closer)]))))
+  (scan start #f #f))
+
+;; Given closing paren position, find matching opening paren.
+;; START limits the search region (search performed between START and
+;; CURRENT-POS).  The character at current-pos is used as the closer.
+;; Returns an index of matching opening paren, or #f.
+(define (buffer-find-matching-paren buf start current-pos)
+  (receive (close-pos open-pos)
+      ($ buffer-scan-matching-parens buf start (+ current-pos 1)
+         (^[open-pos close-pos closer]
+           (and (eq? close-pos current-pos) ; found
+                open-pos)))
+    open-pos))
+
+;; Similar to above, but take the current cursor pos of the buffer.
+(define (buffer-find-matching-paren-on-cursor buf)
+  (and (not (gap-buffer-gap-at? buf 'end))
+       (memv (gap-buffer-ref buf (gap-buffer-pos buf))
+             '(#\) #\] #\}))
+       (buffer-find-matching-paren buf 0 (gap-buffer-pos buf))))
+
 ;;;
 ;;; Commands
 ;;;
 
 ;; A command is a procedure that takes <line-edit-context>, <gap-buffer>,
 ;; and <key>.
-;; Return value must be one of #f, #t, #<eof>, commit, undone, or
-;; <edit-command>.  See the read-line/edit above for the details.
+;; Return value indicates the action to be taken by the main editor
+;; loop.  See the read-line/edit above for the details.
 
 (define (self-insert-command ctx buf key)
   (gap-buffer-edit! buf `(i #f ,(x->string key))))
+
+(define (quoted-insert ctx buf key)
+  (let1 ch (getch (~ ctx'console)) ; TODO: octal digits input
+    (gap-buffer-edit! buf `(i #f ,(x->string ch)))))
 
 (define (commit-input ctx buf key)
   'commit)
@@ -757,7 +834,7 @@
               `(,(ctrl #\n) . ,next-line-or-history)
               `(,(ctrl #\o) . ,undefined-command); todo
               `(,(ctrl #\p) . ,prev-line-or-history)
-              `(,(ctrl #\q) . ,undefined-command); todo
+              `(,(ctrl #\q) . ,quoted-insert)
               `(,(ctrl #\r) . ,undefined-command); todo
               `(,(ctrl #\s) . ,undefined-command); todo
               `(,(ctrl #\t) . ,transpose-chars)

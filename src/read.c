@@ -908,10 +908,12 @@ static ScmObj read_list_int(ScmPort *port, ScmChar closer,
             return start;
         }
 
-        if (dot_seen) goto baddot;
-
+        /* NB: We need to keep reading after we see the dotted pair, since
+           there can be a case like (a . b #;c), which is valid syntax.
+           We only reject when we see a next item after reading dotted pair. */
         ScmObj item;
         if (c == '.') {
+            if (dot_seen) goto baddot;
             int c2 = Scm_GetcUnsafe(port);
             if (c2 == closer) {
                 goto baddot;
@@ -932,7 +934,8 @@ static ScmObj read_list_int(ScmPort *port, ScmChar closer,
         } else {
             Scm_UngetcUnsafe(c, port);
             item = read_internal(port, ctx);
-            if (SCM_UNDEFINEDP(item)) continue;
+            if (SCM_UNDEFINEDP(item)) continue; /* it was just a comment */
+            if (dot_seen) goto baddot;
             if (SCM_READ_REFERENCE_P(item)) ref_seen = TRUE;
         }
         SCM_APPEND1(start, last, item);

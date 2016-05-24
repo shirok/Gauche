@@ -33,7 +33,6 @@
 
 ;; Provides some essential comparator objects & procedures.
 ;; Autoloaded.
-;; Complete comparator API will be provided by srfi-114 module.
 
 (define-module gauche.computil
   (export default-comparator
@@ -44,14 +43,20 @@
           pair-comparator list-comparator vector-comparator
           bytevector-comparator uvector-comparator
 
+          make-default-comparator make-eq-comparator
+          make-eqv-comparator make-equal-comparator
+
+          make-pair-comparator make-list-comparator
+
           make-reverse-comparator make-key-comparator
           make-car-comparator make-cdr-comparator
-          make-tuple-comparator))
+          make-tuple-comparator
+
+          =? <? <=? >? >=? comparator-if<=>))
 (select-module gauche.computil)
 
 ;; Needed to have string-ci compare.
-;; TODO: We don't want to depend on text.unincode here, though.
-(autoload text.unicode string-ci=? string-foldcase)
+(autoload gauche.unicode string-ci=? string-foldcase)
 
 (define (a-number? x) (and (number? x) (not (nan? x))))
 (define (a-real-number? x) (and (real? x) (not (nan? x))))
@@ -61,7 +66,21 @@
 (define default-comparator
   (make-comparator/compare #t #t compare hash 'default-comparator))
 
+(define (make-default-comparator) default-comparator) ;srfi-128
+
 ;; eq-comparator, eqv-comparator, equal-comparator - in libomega.scm
+
+;; NB: srfi-128 specifies the comparators returned by make-eq-comparator
+;; and make-eqv-comparator must use default-hash.  So they can be a lot
+;; more inefficient than eq-comparator and eqv-comparator, and they can't
+;; be used to hash mutable objects based on their identity.
+(define make-eq-comparator            ; srfi-128
+  (let1 c (make-comparator/compare #t eq? eq-compare hash) ; singleton
+    (^[] c)))
+(define make-eqv-comparator           ; srfi-128
+  (let1 c (make-comparator/compare #t eqv? #f hash) ; singleton
+    (^[] c)))
+(define (make-equal-comparator) equal-comparator); srfi-128
 
 (define boolean-comparator
   (make-comparator/compare boolean? eqv? compare eq-hash 'boolean-comparator))
@@ -111,6 +130,92 @@
 (define bytevector-comparator
   (make-comparator/compare (cut is-a? <> <u8vector>) equal? compare hash
                            'bytevector-comparator))
+
+(define (make-pair-comparator car-comparator cdr-comparator)
+  (make-comparator/compare
+   (^x (and (pair? x)
+            (comparator-test-type car-comparator (car x))
+            (comparator-test-type cdr-comparator (cdr x))))
+   (^[a b] (and (comparator-equal? car-comparator (car a) (car b))
+                (comparator-equal? cdr-comparator (cdr a) (cdr b))))
+   (and (comparator-comparison-procedure? car-comparator)
+        (comparator-comparison-procedure? cdr-comparator)
+        (^[a b] (let1 r (comparator-compare car-comparator
+                                            (car a) (car b))
+                  (if (= r 0)
+                    (comparator-compare cdr-comparator (cdr a) (cdr b))
+                    r))))
+   (and (comparator-hash-function? car-comparator)
+        (comparator-hash-function? cdr-comparator)
+        (^x (combine-hash-value (comparator-hash car-comparator (car x))
+                                (comparator-hash cdr-comparator (cdr x)))))))
+
+;; NB: There's lots of room for optimization.
+
+(define (%gen-listwise-compare elt-compare null? car cdr)
+  (rec (f a b)
+    (if (null? a)
+      (if (null? b) 0 -1)
+      (if (null? b)
+        1
+        (let1 r (elt-compare (car a) (car b))
+          (if (= r 0) (f (cdr a) (cdr b)) r))))))
+
+(define (%gen-listwise-hash elt-hash null? car cdr)
+  (^[x]
+    (let loop ([v 10037] [x x])
+      (if (null? x)
+        v
+        (loop (combine-hash-value (elt-hash (car x)) v) (cdr x))))))
+
+(define (make-list-comparator elt-comparator
+                              :optional (test list?)
+                                        (empty? null?)
+                                        (head car)
+                                        (tail cdr))
+  (make-comparator/compare test #t
+                           (%gen-listwise-compare
+                            (comparator-comparison-procedure elt-comparator)
+                            empty? head tail)
+                           (and (comparator-hash-function? elt-comparator)
+                                (%gen-listwise-hash
+                                 (comparator-hash-function elt-comparator)
+                                 empty? head tail))))
+
+(define (%gen-vectorwise-compare elt-compare len ref)
+  (^[a b]
+    (let ([alen (len a)]
+          [blen (len b)])
+      (cond [(< alen blen) -1]
+            [(> alen blen) 1]
+            [else
+             (let loop ([i 0])
+               (if (= i alen)
+                 0
+                 (let1 r (elt-compare (ref a i) (ref b i))
+                   (if (= r 0)
+                     (loop (+ i 1))
+                     r))))]))))
+
+(define (%gen-vectorwise-hash elt-hash len ref)
+  (^[x]
+    (let loop ([v 10037] [i (- (len x) 1)])
+    (if (< i 0)
+      v
+      (loop (combine-hash-value (elt-hash (ref x i)) v) (- i 1))))))
+
+(define (make-vector-comparator elt-comparator
+                                :optional (test vector?)
+                                          (len vector-length)
+                                          (ref vector-ref))
+  (make-comparator/compare test #t
+                           (%gen-vectorwise-compare
+                            (comparator-comparison-procedure elt-comparator)
+                            len ref)
+                           (and (comparator-hash-function? elt-comparator)
+                                (%gen-vectorwise-hash
+                                 (comparator-hash-function elt-comparator)
+                                 len ref))))
 
 (define (make-reverse-comparator comparator)
   (unless (comparator-comparison-procedure? comparator)
@@ -176,3 +281,81 @@
             (^[a b] (refining-compare cmps a b)))
        (and (every comparator-hash-function? cprs)
             (^x (hasher hs x)))))))
+
+(define-syntax n-ary
+  (syntax-rules ()
+    [(_ cmp a b args test)
+     (begin
+       (comparator-check-type cmp a)
+       (comparator-check-type cmp b)
+       (and test
+            (or (null? args)
+                (apply (rec (f a b . args)
+                         (comparator-check-type cmp b)
+                         (and test
+                              (or (null? args)
+                                  (apply f b args))))
+                       b args))))]))
+(define =?
+  (case-lambda
+    [(cmp a b) (comparator-equal? cmp a b)]
+    [(cmp a b . args)
+     (let1 ==? (comparator-equality-predicate cmp)
+       (n-ary cmp a b args (==? a b)))]))
+
+(define (<? cmp a b . args)
+  (case (comparator-flavor cmp)
+    [(ordering)
+     (let ([lt (comparator-ordering-predicate cmp)])
+       (n-ary cmp a b args (lt a b)))]
+    [(comparison)
+     (let ([<=> (comparator-comparison-procedure cmp)])
+       (n-ary cmp a b args (< (<=> a b) 0)))]))
+
+(define (<=? cmp a b . args)
+  (case (comparator-flavor cmp)
+    [(ordering)
+     (let ([eq (comparator-equality-predicate cmp)]
+           [lt (comparator-ordering-predicate cmp)])
+       (n-ary cmp a b args (or (eq a b) (lt a b))))]
+    [(comparison)
+     (let ([<=> (comparator-comparison-procedure cmp)])
+       (n-ary cmp a b args (<= (<=> a b) 0)))]))
+
+(define (>? cmp a b . args)
+  (case (comparator-flavor cmp)
+    [(ordering)
+     (let ([eq (comparator-equality-predicate cmp)]
+           [lt (comparator-ordering-predicate cmp)])
+       (n-ary cmp a b args (not (or (eq a b) (lt a b)))))]
+    [(comparison)
+     (let ([<=> (comparator-comparison-procedure cmp)])
+       (n-ary cmp a b args (> (<=> a b) 0)))]))
+
+(define (>=? cmp a b . args)
+  (case (comparator-flavor cmp)
+    [(ordering)
+     (let ([lt (comparator-ordering-predicate cmp)])
+       (n-ary cmp a b args (not (lt a b))))]
+    [(comparison)
+     (let ([<=> (comparator-comparison-procedure cmp)])
+       (n-ary cmp a b args (>= (<=> a b) 0)))]))
+
+(define-syntax comparator-if<=>
+  (syntax-rules ()
+    [(_ a b lt eq gt)
+     (comparator-if<=> default-comparator a b lt eq gt)]
+    [(_ cmp a b lt eq gt)
+     (case (comparator-flavor cmp)
+       [(ordering)
+        (let ([a. a] [b. b])
+          (if (<? cmp a. b.)
+            lt
+            (if (=? cmp a. b.)
+              eq
+              gt)))]
+       [(comparison)
+        (case (comparator-compare cmp a b)
+          [(-1) lt]
+          [(0)  eq]
+          [(1)  gt])])]))

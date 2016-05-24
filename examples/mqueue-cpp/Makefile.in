@@ -7,6 +7,9 @@ prefix      = @prefix@
 exec_prefix = @exec_prefix@
 bindir      = @bindir@
 libdir      = @libdir@
+datadir     = @datadir@
+datarootdir = @datarootdir@
+srcdir      = @srcdir@
 VPATH       = $(srcdir)
 
 # These may be overridden by make invocators
@@ -27,13 +30,12 @@ CXX      = @CXX@
 PACKAGE   = mqueue-cpp
 
 ARCHFILES = mqueue_cpp.$(SOEXT)
-SCMFILES  = example/mqueue-cpp.scm
+SCMFILES  = $(srcdir)/example/mqueue-cpp.scm
 HEADERS   = 
 
 TARGET    = $(ARCHFILES)
 GENERATED = 
-CONFIG_GENERATED = Makefile config.cache config.log config.status \
-		   configure.lineno autom4te*.cache $(PACKAGE).gpd
+CONFIG_GENERATED = Makefile config.log $(PACKAGE).gpd
 
 HEADER_INSTALL_DIR  = "$(DESTDIR)`$(GAUCHE_CONFIG) --siteincdir`"
 SCM_INSTALL_DIR     = "$(DESTDIR)`$(GAUCHE_CONFIG) --sitelibdir`"
@@ -71,5 +73,5 @@ distclean : clean
 	rm -rf $(CONFIG_GENERATED)
 
 maintainer-clean : clean
-	rm -rf $(CONFIG_GENERATED) configure VERSION
+	rm -rf $(CONFIG_GENERATED) VERSION
 

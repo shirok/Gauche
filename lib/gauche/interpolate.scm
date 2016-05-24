@@ -68,7 +68,9 @@
 
 (define (%string-interpolate str unquote-char)
   (define (accum c acc)
-    (cond [(eof-object? c) (list (get-output-string acc))]
+    (cond [(eof-object? c)
+           (let1 r (get-output-string acc)
+             (if (equal? r "") '() (list r)))]
           [(char=? c unquote-char)
            (let1 c2 (peek-char)
              (cond [(eof-object? c2) (write-char c acc) (accum c2 acc)]
@@ -76,7 +78,10 @@
                     (write-char (read-char) acc) (accum (read-char) acc)]
                    [(char-set-contains? #[\u0000-\u0020\),\;\\\]\}\u007f] c2)
                     (write-char c acc) (accum (read-char) acc)]
-                   [else (cons (get-output-string acc) (insert))]))]
+                   [else (let1 r (get-output-string acc)
+                           (if (equal? r "")
+                             (insert)
+                             (cons (get-output-string acc) (insert))))]))]
           [else (write-char c acc) (accum (read-char) acc)]))
   (define (insert)
     (let* ([item (guard (e [(<read-error> e)
@@ -84,7 +89,8 @@
                    (read))]
            [rest (accum (read-char) (open-output-string))])
       (cons `(x->string ,item) rest)))
-  (cons 'string-append
-        (with-input-from-string str
-          (^[] (accum (read-char) (open-output-string))))))
-
+  (let1 args (with-input-from-string str
+               (^[] (accum (read-char) (open-output-string))))
+    (cond [(null? args) ""]
+          [(null? (cdr args)) (car args)]
+          [else (cons 'string-append args)])))

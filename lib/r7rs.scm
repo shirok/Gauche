@@ -163,7 +163,7 @@
   (use gauche.uvector)
   (use gauche.record)
   (use gauche.parameter)
-  (use text.unicode)
+  (use gauche.unicode)
   (use srfi-11)
   (use srfi-13)
 
@@ -278,8 +278,6 @@
   ;; vector? make-vector vector vector-length vector-ref vector-set!
   ;; vector->list list->vector vector->string string->vector
   ;; vector-copy vector-copy! vector-append vector-fill!
-  (define+ vector-copy!  srfi-43)
-  (define+ vector-append srfi-43)
 
   ;; 6.9 Bytevectors
   (define-inline bytevector         u8vector)
@@ -291,23 +289,30 @@
   (define-inline bytevector-copy    u8vector-copy)
   (define-inline bytevector-copy!   u8vector-copy!)
   (define-inline bytevector-append  u8vector-append)
-  (define+ utf8->string  text.unicode)
-  (define+ string->utf8  text.unicode)
+  (define+ utf8->string  gauche.unicode)
+  (define+ string->utf8  gauche.unicode)
 
   ;; 6.10 Control features
   ;; procedure? apply map
   ;; call-with-current-continuation call/cc values call-with-values dynamic-wind
-  (define (string-map proc str . more-strs) ; TODO: can be more efficient
+  (define+ vector-map gauche)
+  (define+ vector-for-each gauche)
+  ;; NB: we have string-map and string-for-each here, for they're different
+  ;; from srfi-13 api.  Also they must be restart-safe.  The current one
+  ;; is quick hack without thinking efficiency.  We think empoying
+  ;; immutable string pointers would be better solution.  In some day...
+  (define (string-map proc str . more-strs)
     (if-let1 a (find (^s (not (string? s))) (cons str more-strs))
       (error "non-string argument passed to string-map:" a)
-      (apply (with-module gauche.sequence map-to) <string> proc str more-strs)))
-  (define+ vector-map gauche)
-  (define+ for-each gauche)
-  (define (string-for-each proc str . more-strs) ; TODO: can be more efficient
+      (if (null? more-strs)
+        (list->string (map proc (string->list str)))
+        (list->string (apply map proc (map string->list (cons str more-strs)))))))
+  (define (string-for-each proc str . more-strs)
     (if-let1 a (find (^s (not (string? s))) (cons str more-strs))
       (error "non-string argument passed to string-for-each:" a)
-      (apply (with-module gauche.sequence for-each) proc str more-strs)))
-  (define+ vector-for-each gauche)
+      (if (null? more-strs)
+        (for-each proc (string->list str))
+        (apply for-each proc (map string->list (cons str more-strs))))))
 
   ;; 6.11 Exceptions
   ;; error - built-in
@@ -389,7 +394,7 @@
   (provide "scheme/case-lambda"))
 
 (define-module scheme.char
-  (use text.unicode)
+  (use gauche.unicode)
   (import r7rs.aux)
   (export char-alphabetic? char-ci<=? char-ci<?
           char-ci=? char-ci>=? char-ci>?
@@ -402,14 +407,14 @@
           string-ci>? string-downcase
           string-foldcase string-upcase)
   (define (digit-value c) (digit->integer c 10 #t))
-  (define+ string-ci=?  text.unicode)   ; not gauche's.
-  (define+ string-ci<?  text.unicode)   ; not gauche's.
-  (define+ string-ci>?  text.unicode)   ; not gauche's.
-  (define+ string-ci<=? text.unicode)   ; not gauche's.
-  (define+ string-ci>=? text.unicode)   ; not gauche's.
-  (define+ string-upcase text.unicode)   ; not srfi-13's.
-  (define+ string-downcase text.unicode) ; not srfi-13's.
-  (define+ string-foldcase text.unicode) ; not srfi-13's.
+  (define+ string-ci=?  gauche.unicode)   ; not gauche's.
+  (define+ string-ci<?  gauche.unicode)   ; not gauche's.
+  (define+ string-ci>?  gauche.unicode)   ; not gauche's.
+  (define+ string-ci<=? gauche.unicode)   ; not gauche's.
+  (define+ string-ci>=? gauche.unicode)   ; not gauche's.
+  (define+ string-upcase gauche.unicode)   ; not srfi-13's.
+  (define+ string-downcase gauche.unicode) ; not srfi-13's.
+  (define+ string-foldcase gauche.unicode) ; not srfi-13's.
   (provide "scheme/char"))
 
 (define-module scheme.complex

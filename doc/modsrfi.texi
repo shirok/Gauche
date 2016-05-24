@@ -28,7 +28,7 @@ of supported SRFIs.
 * Localization::                srfi-29
 * A program argument processor::  srfi-37
 * Eager comprehensions::        srfi-42
-* Vector library::              srfi-43
+* Vector library (Legacy)::     srfi-43
 * Requiring extensions::        srfi-55
 * Integers as bits::            srfi-60
 * Basic hash tables::           srfi-69
@@ -40,6 +40,7 @@ of supported SRFIs.
 * Comparators::                 srfi-114
 * Queues based on lists::       srfi-117
 * Simple adjustable-size strings::  srfi-118
+* Vector library::              srfi-133
 @end menu
 
 
@@ -1390,7 +1391,7 @@ Case folding and comparison is done by character-wise.
 Note: We have two other sets of string comparison operations,
 both are named as @code{string-ci=?} etc.
 The builtin version (@pxref{String Comparison}) does character-wise
-comparison.  The one in @code{text.unicode} uses full-string
+comparison.  The one in @code{gauche.unicode} uses full-string
 case conversion (@pxref{Full string case conversion}).
 R7RS version is the latter.
 @end defun
@@ -1546,11 +1547,11 @@ and @code{string-downcase} can be understood as follow:
 @c EN
 If you need full case mapping that handles the case when
 a character is mapped to more than one characters, use
-the procedures with the same name in @code{text.unicode} module
+the procedures with the same name in @code{gauche.unicode} module
 (@pxref{Full string case conversion}).
 @c JP
 一文字がケース変換によって複数文字になるような場合も考慮したい場合は、
-@code{text.unicode}モジュールに定義されている同名の手続きを使ってください
+@code{gauche.unicode}モジュールに定義されている同名の手続きを使ってください
 (@ref{Full string case conversion}参照)。
 @c COMMON
 
@@ -3739,7 +3740,7 @@ A simple example:
 @end example
 
 @c ----------------------------------------------------------------------
-@node Eager comprehensions, Vector library, A program argument processor, Library modules - SRFIs
+@node Eager comprehensions, Vector library (Legacy), A program argument processor, Library modules - SRFIs
 @section @code{srfi-42} - Eager comprehensions
 @c NODE Eager comprehensions, @code{srfi-42} - 先行評価的内包表記
 
@@ -4406,141 +4407,62 @@ It terminates when any one of @var{generator} is exhausted.
 
 
 @c ----------------------------------------------------------------------
-@node Vector library, Requiring extensions, Eager comprehensions, Library modules - SRFIs
-@section @code{srfi-43} - Vector library
-@c NODE Vector library, @code{srfi-43} - ベクタライブラリ
+@node Vector library (Legacy), Requiring extensions, Eager comprehensions, Library modules - SRFIs
+@section @code{srfi-43} - Vector library (legacy)
+@c NODE ベクタライブラリ(旧式), @code{srfi-43} - ベクタライブラリ(旧式)
 
 @deftp {Module} srfi-43
 @mdindex srfi-43
 @c EN
-This module provides library functions for vectors.
-Some of srfi-43 procedures are built-in; see @ref{Vectors}.
+This module is effectively superseded by R7RS and @code{srfi-133}.  
+There are a few procedures that are not compatbile with R7RS and 
+@code{srfi-133}, and this module remains to support
+legacy code that depends on them.  
+
+@xref{Vectors}, and @pxref{Vector library}, for the ``modern'' versions
+of vector library.  New code should use them.
+
+The following procedures in srfi-43 are now built-in.
+@xref{Vectors}, for the description.
 @c JP
-このモジュールはベクタ用のライブラリ関数を提供します。
-SRFI-43のいくつかの関数は組み込みになっています。@ref{Vectors}を見てく
-ださい。
+@c COMMON
+
+@example
+make-vector     vector          vector?         vector-ref
+vector-set!     vector-length   vector-fill!    vector-copy
+vector-copy!    vector-append   vector->list    list->vector
+reverse-list->vector
+@end example
+
+@c EN
+The following procedures in srfi-43 are supported by srfi-113.
+@xref{Vector library}, for the description.
+@c JP
+@c COMMON
+
+@example
+vector-unfold         vector-unfold-right   vector-reverse-copy
+vector-reverse-copy!  vector-concatenate    vector-empty?
+vector=               vector-index          vector-index-right
+vector-skip           vector-skip-right     vector-binary-search
+vector-any            vector-every          vector-swap!    
+reverse-vector->list
+@end example
+
+@c EN
+We explain the procedures that are not listed above.
+@c JP
 @c COMMON
 @end deftp
 
-@c EN
-@subheading Vector constructors
-@c JP
-@subheading ベクタ構成子
-@c COMMON
-
-@defun vector-unfold f length seed @dots{}
-[SRFI-43]
-Creates a vector of length @var{length}, filling elements
-left to right by calling @var{f} repeatedly.  
-
-The procedure @var{f} must take as many arguments as
-one plus number of seed values, and must return the same number
-of values.  The first argument is the index.  The first return
-value is used for the element of the result vector, and the
-rest of return values are passed to the next call of @var{f}.
-
-@example
-(vector-unfold (^[i x] (values (cons i x) (* x 2))) 8 1)
- @result{} #((0 . 1) (1 . 2) (2 . 4) (3 . 8)
-    (4 . 16) (5 . 32) (6 . 64) (7 . 128))
-@end example
-@end defun
-
-@defun vector-unfold-right f length seed @dots{}
-[SRFI-43]
-Creates a vector of length @var{length}, filling elements
-right to left by calling @var{f} repeatedly.  
-
-The procedure @var{f} must take as many arguments as
-one plus number of seed values, and must return the same number
-of values.  The first argument is the index.  The first return
-value is used for the element of the result vector, and the
-rest of return values are passed to the next call of @var{f}.
-
-@example
-(vector-unfold-right (^[i x] (values (cons i x) (* x 2))) 8 1)
- @result{} #((0 . 128) (1 . 64) (2 . 32) (3 . 16)
-    (4 . 8) (5 . 4) (6 . 2) (7 . 1))
-@end example
-@end defun
-
-@defun vector-reverse-copy vec :optional start end
-[SRFI-43]
-Copies the vector @var{vec} with reversing its elements.
-Optional @var{start} and @var{end} arguments can limit
-the range of the input.
-
-@example
-(vector-reverse-copy '#(a b c d e) 1 4)
- @result{} #(d c b)
-@end example
-@end defun
-
-@defun vector-append vec @dots{}
-[SRFI-43]
-Returns a newly allocated vector whose contents are concatenation
-of elements of @var{vec} in order.
-@end defun
-
-@defun vector-concatenate list-of-vectors
-[SRFI-43]
-Acts like @code{(apply vector-append list-of-vectors)}, though
-this may be more efficient.
-@end defun
-
-@c EN
-@subheading Vector predicates
-@c JP
-@subheading ベクタ上の述語
-@c COMMON
-
-@defun vector-empty? vec
-[SRFI-43]
-Returns @code{#t} if @var{vec}'s length is zero, and
-@code{#f} if @var{vec}'s length is more than zero.
-Signals an error if @var{vec} is not a vector.
-@end defun
-
-@defun vector= elt= vec @dots{}
-[SRFI-43]
-Compares @var{vec}s element-wise, using given predicate @var{elt=}.
-Returns @code{#t} iff lengths of all the vectors are the same,
-and every corresponding elements are equal by @var{elt=}.
-@var{Elt=} is always called with two arguments and must
-return @code{#t} iff two are the same.
-@end defun
-
-@c EN
-@subheading Iteration over vectors
-@c JP
-@subheading ベクタ上の反復
-@c COMMON
-
 @defun vector-fold kons knil vec1 vec2 @dots{}
+@defunx vector-fold-right kons knil vec1 vec2 @dots{}
 [SRFI-43]
-@var{Kons} is a procedure that takes @var{n}+2 arguments, where
-@var{n} is the number of given vectors.  For each element of the
-given vectors, @var{kons} is called as
-@code{(@var{kons} @var{i} @var{seed} @var{e_1i} @var{e_2i} @dots{})},
-where @var{i} is the index, and @var{e_ni} is the @var{i}-th element
-of the vector @var{n}.  If the lengths of the vectors differ,
-iteration stops when the shortest vector is exhausted.
-
-The initial value of @var{seed} is @var{knil}, and the return value
-from @var{kons} is used as the next seed value.  The last return value
-of @var{kons} is returned from @code{vector-fold}.
-
-The iteration is strictly left to right.
-
-Note that the seed value precedes elements, which is opposite to
-@code{fold} (@pxref{Mapping over collection}).  It's an unfortunate
-historical glitch; @code{vector-fold-left} would be more consistent
-name.
-@end defun
-
-@defun vector-fold-right kons knil vec1 vec2 @dots{}
-[SRFI-43]
-Like @code{vector-fold}, but iterates right to left.
+Like @code{vector-fold} and @code{vector-fold-right}
+in @code{srfi-113}, but @var{kons}
+takes an extra argument, the current index, as its first argument.
+So @var{kons} must accept @var{n}+2 arguments, where
+@var{n} is the number of given vectors.
 @end defun
 
 @defun vector-map f vec1 vec2 @dots{}
@@ -4548,23 +4470,15 @@ Like @code{vector-fold}, but iterates right to left.
 @defunx vector-for-each f vec1 vec2 @dots{}
 @defunx vector-count f vec1 vec2 @dots{}
 [SRFI-43]
-The argument @var{f} is a procedure that takes @var{n}+1 arguments where
-@var{n} is the number of given vectors.   These procedures call @var{f}
-for each element of the given vectors as
-@code{(@var{f} @var{i} @var{e_1i} @var{e_2i} @dots{})},
-where @var{i} is the index, and @var{e_ni} is the @var{i}-th element
-of the vector @var{n}.   If the lengths of the vectors differ, iteration
-only covers the shortest vector.
+Like @code{vector-map} and @code{vector-for-each} of R7RS,
+and @code{vector-map!} and @code{vector-count} in @code{srfi-133},
+except @var{f} takes
+an extra argument, the current index, as its first argument.
 
-@code{vector-map} creates a fresh vector out of the result of applications
-of @var{f} and returns it.
-@code{vector-map!} reuses @var{vec1} to
-store the result and returns @var{vec1}; hence @var{vec1} must be mutable.
-
-@code{vector-for-each} is for side-effects.  It discards the result of
-@var{f}.
-
-@code{vector-count} counts the number of times @var{f} returned a true value.
+Gauche provides @code{vector-map-with-index},
+@code{vector-map-with-index!} and @code{vector-for-each-with-index}
+which are the same as @code{srfi-43}'s @code{vector-map}, @code{vector-map!}
+and @code{vector-for-each}, respectively.  @xref{Vectors}.
 
 @example
 (vector-map list '#(a b c))
@@ -4575,18 +4489,6 @@ store the result and returns @var{vec1}; hence @var{vec1} must be mutable.
  @result{} 3
 @end example
 
-Note: Gauche has builtin @code{vector-map}, @code{vector-map!} and
-@code{vector-for-each}, with slightly different API (no index is
-passed to @var{f}).  R7RS also defines @code{vector-map} and
-@code{vector-for-each} that doesn't pass index.  For new development,
-we recommend using R7RS/Gauche-native @code{vector-map} etc.
-If you want to use Gauche-native @code{vector-map} and @code{srfi-43}
-together, you can import @code{srfi-43} with 
-@code{:except (vector-map vector-map! vector-for-each)} option.
-Gauche provides builtin @code{vector-map-with-index} etc., which
-is the same as SRFI-43's @code{vector-map} etc.  @xref{Vectors},
-for the details.
-
 Note: The generic @code{map} and @code{for-each}
 in @code{gauche.collection} can be used
 on vectors, but the procedure is called without index, and the result
@@ -4596,150 +4498,8 @@ is returned as a list.
 See @ref{Collection framework} and @ref{Sequence framework}.
 @end defun
 
-@c EN
-@subheading Vector searching
-@c JP
-@subheading ベクタ上の検索
-@c COMMON
-
-@defun vector-index pred vec1 vec2 @dots{}
-@defunx vector-index-right pred vec1 vec2 @dots{}
-[SRFI-43]
-Returns the index of the first or the last elements in @var{vec1}
-@var{vec2} @dots{} that satisfy @var{pred}, respectively.
-Returns @code{#f} if no elements satisfy @var{pred}.
-In @code{vector-index}, comparison ends at the end of the shortest vector.
-For @code{vector-index-right}, all the vectors must have the same length.
-@end defun
-
-@defun vector-skip pred vec1 vec2 @dots{}
-@defunx vector-skip-right pred vec1 vec2 @dots{}
-[SRFI-43]
-Like @code{vector-index} and @code{vector-index-right}, except that
-the result of @var{pred} is negated.  That is, returns the index
-of the first or the last elements that don't satisfy @var{pred}.
-@end defun
-
-@defun vector-binary-search vec value cmp :optional start end
-[SRFI-43+]
-Look for @var{value} in a vector @var{vec}, and returns its
-index if it is found, or @code{#f} if it is not found.
-Comparison of @var{value} and an element in @var{vec} is
-done by a procedure @var{cmp}, which takes two arguments,
-and should return a negative integer if the first argument is less than the
-second, 0 if they are the same, and a positive integer if the first
-is greater than the second.
-
-Elements in @var{vec} must be ordered from smaller to greater
-w.r.t. @var{cmp}.  Using that fact, this procedure performs
-binary search instead of linear search.
-
-The optional arguments @var{start} and @var{end} are an
-extention to SRFI-43, and can be used to limit the range of the
-search in @var{start}-th element (inclusive) to
-@var{end}-th element (exclusive).
-@end defun
-
-@defun vector-any pred vec1 vec2 @dots{}
-[SRFI-43]
-Applies @var{pred} on each corresponding elements
-of @var{vec1} @var{vec2} @dots{} left to right, and
-as soon as @var{pred} returns non-@code{#f} value,
-the procedure stops iteration and returns the value.
-
-If no elements that satisfy @var{pred} are found, it returns @code{#f}.
-
-Vectors can have different lengths.  Iteration stops at the end
-of the shortest.
-@end defun
-
-@defun vector-every pred vec1 vec2 @dots{}
-[SRFI-43]
-Applies @var{pred} on each corresponding elements
-of @var{vec1} @var{vec2} @dots{} left to right.
-If all the elements (when the lengths of vectors differ, the
-first N elements where N is the length of the shortest) satisfy
-@var{pred}, returns the last result of @var{pred}.   Otherwise
-returns @code{#f}.
-@end defun
-
-@c EN
-@subheading Vector mutators
-@c JP
-@subheading ベクタの変更子
-@c COMMON
-
-@defun vector-swap! vec i j
-[SRFI-43]
-Swaps vector @var{vec}'s @code{i}-th and @code{j}-th elements.
-@end defun
-
-@defun vector-reverse! vec :optional start end
-[SRFI-43]
-Reverse the elements of @var{vec}.  Returns an undefined value.
-Optional @var{start} and @var{end} arguments can limit
-the range of operation.
-
-@example
-(rlet1 v (vector 'a 'b 'c 'd 'e)
-  (vector-reverse! v 0 4))
-  @result{} #(d c b a e)
-@end example
-
-@end defun
-
-@defun vector-copy! target tstart source :optional sstart send
-[SRFI-43]
-Copies the content of @var{source} vector intto the @var{target} vector
-starting from @var{tstart} in the target.  The @var{target} vector
-must be immutable.
-Optional @var{sstart} and @var{send} limits the range of source
-vector.
-
-@example
-(rlet1 v (vector 'a 'b 'c 'd 'e)
-  (vector-copy! v 2 '#(1 2)))
-  @result{} #(a b 1 2 e)
-@end example
-
-It is ok to pass the same vector to @var{target} and @var{source};
-it always works even if the regions of source and destination are
-overlapping.
-@end defun
-
-@defun vector-reverse-copy! target tstart source :optional sstart send
-[SRFI-43]
-Like @code{vector-copy!}, but reverses the order of elements from @var{start}.
-
-@example
-(rlet1 v (vector 'a 'b 'c 'd 'e)
-  (vector-reverse-copy! v 2 '#(1 2)))
-  @result{} #(a b 2 1 e)
-@end example
-
-It is ok to pass the same vector to @var{target} and @var{source};
-it always works even if the regions of source and destination are
-overlapping.
-@end defun
-
-@c EN
-@subheading Vector conversion
-@c JP
-@subheading ベクタの変換
-@c COMMON
-
-@defun reverse-vector->list vec :optional start end
-[SRFI-43]
-Same as @code{(reverse (vector->list vec start end))}, but more efficient.
-@end defun
-
-@defun reverse-list->vector list :optional start end
-[SRFI-43]
-Same as @code{(reverse (list->vector list start end))}, but more efficient.
-@end defun
-
 @c ----------------------------------------------------------------------
-@node Requiring extensions, Integers as bits, Vector library, Library modules - SRFIs
+@node Requiring extensions, Integers as bits, Vector library (Legacy), Library modules - SRFIs
 @section @code{srfi-55} - Requiring extensions
 @c NODE Requiring extensions, @code{srfi-55} - require の拡張
 
@@ -6856,7 +6616,7 @@ The results are discarded.
 
 
 @c ----------------------------------------------------------------------
-@node Simple adjustable-size strings,  , Queues based on lists, Library modules - SRFIs
+@node Simple adjustable-size strings, Vector library, Queues based on lists, Library modules - SRFIs
 @section @code{srfi-118} - Simple adjustable-size strings
 @c NODE 簡単な可変長文字列, @code{srfi-118} - 簡単な可変長文字列
 
@@ -6910,6 +6670,328 @@ rather than @code{string-replace}.
  @result{} "aXYZc"
 @end example
 @end defun
+
+@c ----------------------------------------------------------------------
+@node Vector library,  , Simple adjustable-size strings, Library modules - SRFIs
+@section @code{srfi-133} - Vector library
+@c NODE ベクタライブラリ, @code{srfi-133} - ベクタライブラリ
+
+@deftp {Module} srfi-133
+@mdindex srfi-133
+This module adds rich set of vector operations to the built-in / R7RS
+vector procedures.
+
+The following procedures are built-in.
+@xref{Vectors}, for the description.  We only explain
+the procedures that are not built-in.
+
+@example
+make-vector          vector               vector?
+vector-ref           vector-set!          vector-length
+vector-fill!         vector-copy          vector-copy!
+vector-append        vector->list         list->vector
+reverse-list->vector vector->string       string->vector
+vector-map           vector-map!          vector-for-each
+@end example
+
+This SRFI effectively supesedes @code{srfi-43}
+(@pxref{Vector library (Legacy)}).
+Note that the interface of following procedures in @code{srfi-43}
+are changed for the consistency:
+
+@example
+vector-map           vector-map!          vector-for-each
+vector-fold          vector-fold-right    vector-count
+@end example
+
+Some of the functionalities
+of @code{srfi-43} version is supported by built-in procedures
+(e.g. Built-in @code{vector-map-with-index} is the same as
+@code{srfi-43}'s @code{vector-map}).  So there's little point
+for new code to use @code{srfi-43}.
+@end deftp
+
+@c EN
+@subheading Vector constructors
+@c JP
+@subheading ベクタ構成子
+@c COMMON
+
+@defun vector-unfold f length seed @dots{}
+[SRFI-113]
+Creates a vector of length @var{length}, filling elements
+left to right by calling @var{f} repeatedly.  
+
+The procedure @var{f} must take as many arguments as
+one plus number of seed values, and must return the same number
+of values.  The first argument is the index.  The first return
+value is used for the element of the result vector, and the
+rest of return values are passed to the next call of @var{f}.
+
+@example
+(vector-unfold (^[i x] (values (cons i x) (* x 2))) 8 1)
+ @result{} #((0 . 1) (1 . 2) (2 . 4) (3 . 8)
+    (4 . 16) (5 . 32) (6 . 64) (7 . 128))
+@end example
+@end defun
+
+@defun vector-unfold-right f length seed @dots{}
+[SRFI-113]
+Creates a vector of length @var{length}, filling elements
+right to left by calling @var{f} repeatedly.  
+
+The procedure @var{f} must take as many arguments as
+one plus number of seed values, and must return the same number
+of values.  The first argument is the index.  The first return
+value is used for the element of the result vector, and the
+rest of return values are passed to the next call of @var{f}.
+
+@example
+(vector-unfold-right (^[i x] (values (cons i x) (* x 2))) 8 1)
+ @result{} #((0 . 128) (1 . 64) (2 . 32) (3 . 16)
+    (4 . 8) (5 . 4) (6 . 2) (7 . 1))
+@end example
+@end defun
+
+@defun vector-reverse-copy vec :optional start end
+[SRFI-113]
+Copies the vector @var{vec} with reversing its elements.
+Optional @var{start} and @var{end} arguments can limit
+the range of the input.
+
+@example
+(vector-reverse-copy '#(a b c d e) 1 4)
+ @result{} #(d c b)
+@end example
+@end defun
+
+@defun vector-concatenate list-of-vectors
+[SRFI-113]
+Same as @code{(apply vector-append list-of-vectors)}.
+@end defun
+
+@defun vector-append-subvectors spec @dots{}
+[SRFI-113]
+The number of arguments must be multiple of 3.  The argument list
+must be in the following format, where each @var{vecN} is
+a vector, and @code{startN} and @code{endN} are nonnegative integers:
+
+@example
+vec1 start1 end1 vec2 start2 end2 @dots{}
+@end example
+
+This procedure creates a new vector by concatenating subvectors
+specified by each triplet.  That is, it works as if it's the following
+code, except it avoids copying each subvector:
+
+@example
+(vector-append (vector-copy vec1 start1 end1)
+               (vector-copy vec2 start2 end2)
+               @dots{})
+@end example
+
+Here's an example:
+
+@example
+(vector-append-subvectors '#(a b c d e) 0 3
+                          '#(f g h i j) 2 5)
+  @result{} #(a b c h i j)
+@end example
+@end defun
+
+
+@c EN
+@subheading Vector predicates
+@c JP
+@subheading ベクタ上の述語
+@c COMMON
+
+@defun vector-empty? vec
+[SRFI-113]
+Returns @code{#t} if @var{vec}'s length is zero, and
+@code{#f} if @var{vec}'s length is more than zero.
+Signals an error if @var{vec} is not a vector.
+@end defun
+
+@defun vector= elt= vec @dots{}
+[SRFI-113]
+Compares @var{vec}s element-wise, using given predicate @var{elt=}.
+Returns @code{#t} iff lengths of all the vectors are the same,
+and every corresponding elements are equal by @var{elt=}.
+@var{Elt=} is always called with two arguments and must
+return @code{#t} iff two are the same.
+@end defun
+
+@c EN
+@subheading Vector iteration
+@c JP
+@subheading ベクタ上の繰り返し
+@c COMMON
+
+@defun vector-fold kons knil vec1 vec2 @dots{}
+[SRFI-113]
+@var{Kons} is a procedure that takes @var{n}+1 arguments, where
+@var{n} is the number of given vectors.  For each element of the
+given vectors, @var{kons} is called as
+@code{(@var{kons} @var{seed} @var{e_1i} @var{e_2i} @dots{})},
+where and @var{e_ni} is the @var{i}-th element
+of the vector @var{n}.  If the lengths of the vectors differ,
+iteration stops when the shortest vector is exhausted.
+
+The initial value of @var{seed} is @var{knil}, and the return value
+from @var{kons} is used as the next seed value.  The last return value
+of @var{kons} is returned from @code{vector-fold}.
+
+The iteration is strictly left to right.
+
+Note that the seed value precedes elements, which is opposite to
+@code{fold} (@pxref{Mapping over collection}).  It's an unfortunate
+historical glitch; @code{vector-fold-left} would be more consistent
+name.
+@end defun
+
+@defun vector-fold-right kons knil vec1 vec2 @dots{}
+[SRFI-113]
+@end defun
+
+@defun vector-count pred vec1 vec2 @dots{}
+[SRFI-113]
+@end defun
+
+@defun vector-cumulate f vec seed
+[SRFI-113]
+@end defun
+
+
+@c EN
+@subheading Vector searching
+@c JP
+@subheading ベクタ上の検索
+@c COMMON
+
+@defun vector-index pred vec1 vec2 @dots{}
+@defunx vector-index-right pred vec1 vec2 @dots{}
+[SRFI-113]
+Returns the index of the first or the last elements in @var{vec1}
+@var{vec2} @dots{} that satisfy @var{pred}, respectively.
+Returns @code{#f} if no elements satisfy @var{pred}.
+In @code{vector-index}, comparison ends at the end of the shortest vector.
+For @code{vector-index-right}, all the vectors must have the same length.
+@end defun
+
+@defun vector-skip pred vec1 vec2 @dots{}
+@defunx vector-skip-right pred vec1 vec2 @dots{}
+[SRFI-113]
+Like @code{vector-index} and @code{vector-index-right}, except that
+the result of @var{pred} is negated.  That is, returns the index
+of the first or the last elements that don't satisfy @var{pred}.
+@end defun
+
+@defun vector-binary-search vec value cmp :optional start end
+[SRFI-113+]
+Look for @var{value} in a vector @var{vec}, and returns its
+index if it is found, or @code{#f} if it is not found.
+Comparison of @var{value} and an element in @var{vec} is
+done by a procedure @var{cmp}, which takes two arguments,
+and should return a negative integer if the first argument is less than the
+second, 0 if they are the same, and a positive integer if the first
+is greater than the second.
+
+Elements in @var{vec} must be ordered from smaller to greater
+w.r.t. @var{cmp}.  Using that fact, this procedure performs
+binary search instead of linear search.
+
+The optional arguments @var{start} and @var{end} are an
+extention to SRFI-113, and can be used to limit the range of the
+search in @var{start}-th element (inclusive) to
+@var{end}-th element (exclusive).
+@end defun
+
+@defun vector-any pred vec1 vec2 @dots{}
+[SRFI-113]
+Applies @var{pred} on each corresponding elements
+of @var{vec1} @var{vec2} @dots{} left to right, and
+as soon as @var{pred} returns non-@code{#f} value,
+the procedure stops iteration and returns the value.
+
+If no elements that satisfy @var{pred} are found, it returns @code{#f}.
+
+Vectors can have different lengths.  Iteration stops at the end
+of the shortest.
+@end defun
+
+@defun vector-every pred vec1 vec2 @dots{}
+[SRFI-113]
+Applies @var{pred} on each corresponding elements
+of @var{vec1} @var{vec2} @dots{} left to right.
+If all the elements (when the lengths of vectors differ, the
+first N elements where N is the length of the shortest) satisfy
+@var{pred}, returns the last result of @var{pred}.   Otherwise
+returns @code{#f}.
+@end defun
+
+@defun vector-partition pred vec
+[SRFI-113]
+@end defun
+
+@c EN
+@subheading Vector mutators
+@c JP
+@subheading ベクタの変更子
+@c COMMON
+
+@defun vector-swap! vec i j
+[SRFI-113]
+Swaps vector @var{vec}'s @code{i}-th and @code{j}-th elements.
+@end defun
+
+@defun vector-reverse! vec :optional start end
+[SRFI-113]
+Reverse the elements of @var{vec}.  Returns an undefined value.
+Optional @var{start} and @var{end} arguments can limit
+the range of operation.
+
+@example
+(rlet1 v (vector 'a 'b 'c 'd 'e)
+  (vector-reverse! v 0 4))
+  @result{} #(d c b a e)
+@end example
+@end defun
+
+@defun vector-reverse-copy! target tstart source :optional sstart send
+[SRFI-113]
+Like @code{vector-copy!}, but reverses the order of elements from @var{start}.
+
+@example
+(rlet1 v (vector 'a 'b 'c 'd 'e)
+  (vector-reverse-copy! v 2 '#(1 2)))
+  @result{} #(a b 2 1 e)
+@end example
+
+It is ok to pass the same vector to @var{target} and @var{source};
+it always works even if the regions of source and destination are
+overlapping.
+@end defun
+
+@defun vector-unfold! f rvec start end seeds @dots{}
+@defunx vector-unfold-right! f rvec start end seeds @dots{}
+[SRFI-113]
+@end defun
+
+
+
+
+@c EN
+@subheading Vector conversion
+@c JP
+@subheading ベクタの変換
+@c COMMON
+
+@defun reverse-vector->list vec :optional start end
+[SRFI-113]
+Same as @code{(reverse (vector->list vec start end))}, but more efficient.
+@end defun
+
 
 
 @c Local variables:

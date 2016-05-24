@@ -50,6 +50,7 @@
   (export <queue> <mtqueue>
           make-queue make-mtqueue queue? mtqueue?
           queue-length mtqueue-max-length mtqueue-room
+          mtqueue-num-waiting-readers
           queue-empty? copy-queue
           queue-push! queue-push-unique! enqueue! enqueue-unique!
           queue-pop! dequeue! dequeue-all!
@@ -564,6 +565,15 @@
 
 (define queue-pop! dequeue!)
 (define queue-pop/wait! dequeue/wait!)
+
+;; Returns # of readers waiting on mtq.  Note that the value might
+;; change at any moment after returning this procedure, so for meaningful
+;; operation the caller need another mutex to prevent new items
+;; from being inserted into the mtq.
+(define-cproc mtqueue-num-waiting-readers (q::<mtqueue>) ::<int>
+  (let* ([n::int 0])
+    (with-mtq-light-lock q (set! n (MTQ_READER_SEM q)))
+    (return n)))
 
 (define (remove-from-queue! pred q)
   (rlet1 removed? #f

@@ -61,14 +61,13 @@
 * SQL parsing and construction::  text.sql
 * Transliterate characters::    text.tr
 * Lazy text construction::      text.tree
-* Unicode utilities::           text.unicode
 * Combination library::         util.combinations
 * Message digester framework::  util.digest
 * Calculate dominator tree::    util.dominator
 * Determine isomorphism::       util.isomorph
 * The longest common subsequence::  util.lcs
+* Levenshtein edit distance::   util.levenshtein
 * Pattern matching::            util.match
-* Red black tree::              util.rbtree
 * SLIB-compatible record type::  util.record
 * Relation framework::          util.relation
 * Stream library::              util.stream
@@ -1995,9 +1994,9 @@ or use mutexes if multiple threads can access to it
 Creates and returns a new binary heap.
 
 The @var{comparator} keyword argument specifies how to compare the
-entries.  It must have comparison procedure.  The default is
-@code{default-comparator}.  @xref{Basic comparators}, for the details of
-comparators.
+entries.  It must have comparison procedure or ordering predicate.
+The default is @code{default-comparator}.
+@xref{Basic comparators}, for the details of comparators.
 
 The @var{storage} keyword argument gives alternative
 backing storage.  It must be either a vector, a uniform vector,
@@ -2114,10 +2113,11 @@ Returns @code{#t} if the heap is empty, @code{#f} otherwise.
 
 @defun binary-heap-push! heap item
 @c EN
-Insert @var{item} into the @var{heap}.  If the heap is already full,
-an error is raised.
+Insert @var{item} into the @var{heap}.  This is O(log n) operation.
+If the heap is already full, an error is raised.
 @c JP
-@var{item}を@var{heap}に挿入します。ヒープが既に一杯であった場合はエラーが通知されます。
+@var{item}を@var{heap}に挿入します。O(log n)の操作です。
+ヒープが既に一杯であった場合はエラーが通知されます。
 @c COMMON
 @end defun
 
@@ -2125,12 +2125,13 @@ an error is raised.
 @defunx binary-heap-find-max heap :optional fallback
 @c EN
 Returns the minimum and maximum entry of the heap, respectively.
-The heap will be unmodified.
+The heap will be unmodified.  This is O(1) operation.
 
 If the heap is empty, @var{fallback} is returned when it is provided,
 or an error is signaled.
 @c JP
-それぞれヒープ中の最小および最大の要素を返します。ヒープ自体は変更されません。
+それぞれヒープ中の最小および最大の要素を返します。O(1)の操作です。
+ヒープ自体は変更されません。
 
 ヒープが空の場合、@var{fallback}が与えられればそれが返され、
 そうでなければエラーが通知されます。
@@ -2141,9 +2142,11 @@ or an error is signaled.
 @defunx binary-heap-pop-max! heap
 @c EN
 Removes the minimum and maximum entry of the heap and returns it,
-respectively.  If the heap is empty, an error is signaled.
+respectively.  O(log n) operation.
+If the heap is empty, an error is signaled.
 @c JP
 それぞれヒープから最小および最大の要素を取り除き、取り除いた要素を返します。
+O(log n)の操作です。
 ヒープが空ならエラーが通知されます。
 @c COMMON
 @end defun
@@ -2189,32 +2192,32 @@ using heap property maintaining procedure only once per function call.
 Returns an item in the heap that satisfies @var{pred}.
 If there are more than one item that satisfy @var{pred},
 any one of them can be returned.  If no item satisfy @var{pred},
-@code{#f} is returned.
+@code{#f} is returned.  This is O(n) operation.
 @c JP
 ヒープの中で、述語@var{pred}を満たす要素を返します。@var{pred}を満たす要素が
 複数ある場合にどれが返るかは不定です。@var{pred}を満たす要素が無ければ
-@code{#f}が返ります。
+@code{#f}が返ります。O(n)の操作です。
 @c COMMON
 @end defun
 
 @defun binary-heap-remove! heap pred
 @c EN
-Remove all items in the heap that satisfy @var{pred}.
+Remove all items in the heap that satisfy @var{pred}.  This is O(n) operation.
 @c JP
-@var{pred}を満たす要素を全てヒープから取り除きます。
+@var{pred}を満たす要素を全てヒープから取り除きます。O(n)の操作です。
 @c COMMON
 @end defun
 
 @defun binary-heap-delete! heap item
 @c EN
 Delete all items in the heap that are equal to @var{item},
-in terms of the heap's comparator and key procedure.
+in terms of the heap's comparator and key procedure.  This is O(n) operation.
 
 Note that the key procedure is applied to @var{item} as well
 before comparison.
 @c JP
 @var{item}に等しい要素を全てヒープから取り除きます。「等しい」の判定には
-ヒープの比較器およびキー手続きが使われます。
+ヒープの比較器およびキー手続きが使われます。O(n)の操作です。
 
 キー手続きは、比較の前に@var{item}にも適用されます。
 @c COMMON
@@ -2418,6 +2421,38 @@ to mtqueue with finite max-length.
 @c COMMON
 @end defun
 
+@defun mtqueue-num-waiting-readers mtqueue
+@c EN
+Returns the number of threads waiting on the mtqueue to read
+at this moment. 
+The return value is always a nonnegative exact integer.
+
+Note that the value might change between this procedure's returning
+the value and your checking it, if some other thread inserts
+an element into the queue.  To use the value reliably, you need
+another mutex to restrict putting items in the queue.
+@c JP
+@var{mtqueue}からの読み出しで待っているスレッドの数を返します。
+返り値は常に非負の正確な整数です。
+
+この手続きが値を返してからその値を使うまでの間に、別のスレッドが
+キューに要素を挿入したら、待っているスレッドの数は変わってしまうことに
+注意してください。この手続きの返り値を安全に使うには、
+キューに値を挿入する部分を別に排他制御する必要があります。
+@c COMMON
+
+@example
+(define q (make-mtqueue))
+
+(thread-start! (make-thread (^[] (dequeue/wait! q))))
+
+(mtqueue-num-waiting-readers q) @result{} 1
+
+(enqueue! q 'a)
+
+(mtqueue-num-waiting-readers q) @result{} 0
+@end example
+@end defun
 
 @defun copy-queue queue
 @c EN
@@ -2784,29 +2819,53 @@ deletion.
 @c COMMON
 
 @deftp {Class} <imap-meta>
+@c EN
 Metaclass of @code{<imap>}.
+@c JP
+@code{<imap>}のメタクラスです。
+@c COMMON
 @end deftp
 
 @deftp {Class} <imap>
+@c EN
 Immutable map class.  An instance of @code{<imap-meta>}.
 
 Inherits @code{<ordered-dictionary>}, conforms dictionary protocol
-(except mutating operators).  As a sequence, you can access key-value
+except mutating operators (@pxref{Dictionary framework}).
+As a sequence, you can access key-value
 pairs in increasing order of keys.
+@c JP
+変更不可なマップのクラスです。@code{<imap-meta>}をメタクラスとします。
+
+@code{<ordered-dictionary>}を継承し、変更操作を除くディクショナリプロトコル
+を実装します(@ref{Dictionary framework}参照)。
+シーケンスとしてアクセスした場合は、キーと値のペアをキーの昇順に取り出すことができます。
+@c COMMON
 @end deftp
 
 @defun make-imap
 @defunx make-imap comparator
 @defunx make-imap key=? key<?
+@c EN
 Creates a new empty immutable map.  Without arguments,
 @code{default-comparator} is used to compare keys.  To give a
 specific comparator, use the second form; the @var{comparator}
 argument should have comparison procedure.
 For the details of comparators, @pxref{Comparators}.
 The third form creates a key comparator from a equality
-predicate @var{key=?} and less-than predicate @code{key<=?},
+predicate @var{key=?} and less-than predicate @code{key<?},
 both must accept two keys.  This interface is consistent with
 @code{tree-map} (@pxref{Treemaps}).
+@c JP
+空の変更不可なマップを新たに作って返します。
+引数無しの場合は、キーの比較には@code{default-comparator}が使われます。
+キーの比較方法を指定したい場合は、比較手続きを持つ比較器@var{comparator}を
+引数に渡してください。比較器については@ref{Comparators}を参照。
+3番目の呼び出し形式は、キーの等価性を調べる述語@var{key=?}と
+大小比較の述語@var{key<?}から比較器を作ります。どちらの述語も
+ふたつの引数をとらなければなりません。このインタフェースは
+@code{tree-map}との一貫性のためにサポートされています (@ref{Treemaps}参照)。
+@c COMMON
 @end defun
 
 @defun alist->imap alist
@@ -13948,6 +14007,8 @@ It returns @var{userinfo}, @var{host} and @var{port}.
 @example
 (uri-decompose-authority "yyy.jp:8080")
   @result{} #f@r{,} "yyy.jp" @r{and} "8080"
+(uri-decompose-authority "[::1]:8080")  ;@r{(IPv6 host address)}
+  @result{} #f@r{,} "::1" @r{and} "8080"
 (uri-decompose-authority "mylogin@@yyy.jp")
   @result{} "mylogin"@r{,} "yyy.jp" @r{and} #f
 @end example
@@ -18677,11 +18738,11 @@ future versions of the library.
 @deftp {Module} text.console
 @mdindex text.console
 This module provides a simple interface for character terminal control.
-Currently we only support vt100 compatible terminals.  We plan to
-support Windows console as well.
+Currently we support vt100 compatible terminals and Windows
+console.
 
-This module don't depend on external library such as @code{curses},
-and it can do is limited; for example, you can't get an event
+This module doesn't depend on external library such as @code{curses},
+and what it can do is limited; for example, you can't get an event
 when shift key alone is pressed.  For finer controls, you need
 some extension libraries.
 
@@ -18689,7 +18750,7 @@ For an example of the features in this module, see
 @file{snake.scm} in the examples directory of Gauche souce distribution.
 @end deftp
 
-@subheading Console classes
+@subheading Console objects
 
 @deftp {Class} <vt100>
 @clindex vt100
@@ -18715,6 +18776,49 @@ microseconds, we interpret the input as individual keystroke, rather
 than a part of an escape sequence.  The default value is @code{1000} (1ms).
 @end defivar
 @end deftp
+
+@deftp {Class} <windows-console>
+@clindex windows-console
+Represents Windows console.  This class is defined on all platforms,
+but its useful methods are only available on Windows-native runtime.
+
+It doesn't have public slots.
+@end deftp
+
+The application has to check the runtime to see what kind of console
+is available.  A suggested flow is as follows.
+@itemize
+@item 
+If @code{has-windows-console?} returns true, create @code{<windows-console>}
+instance.
+You don't need @code{cond-expand}; @code{has-windows-console?} returns
+@code{#f} on non-Windows platforms.
+@item 
+Check the environment variable @code{TERM}.  If it is set and
+satisfies @code{vt100-compatible?}, you can create
+@code{<vt100>} instance.
+@item
+Otherwise, console isn't available.
+@end itemize
+
+The following procedure packages this flow.
+
+@defun make-default-console :key if-not-available
+Determines a suitable console class of the running process and
+returns its instance.
+
+If no suitable console is available, the behavior depends on the
+@var{if-not-available} keyword argument.  If it is @code{:error},
+which is default, an error is signalled.  If it is @code{#f},
+the procedure returns @code{#f}. 
+@end defun
+
+@defun vt100-compatible? string
+Given the string value of the environment variable @code{TERM},
+returns @code{#t} if the terminal can be handled by @code{<vt100>} console,
+@code{#f} otherwise.
+@end defun
+
 
 @subheading Console control
 
@@ -20643,7 +20747,7 @@ current-output-port at the time transliterator is called.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Lazy text construction, Unicode utilities, Transliterate characters, Library modules - Utilities
+@node Lazy text construction, Combination library, Transliterate characters, Library modules - Utilities
 @section @code{text.tree} - Lazy text construction
 @c NODE 怠惰なテキスト構築, @code{text.tree} - 怠惰なテキスト構築
 
@@ -20736,393 +20840,9 @@ an output string port, and returns the result string.
 @c COMMON
 @end defun
 
-@c ----------------------------------------------------------------------
-@node Unicode utilities, Combination library, Lazy text construction, Library modules - Utilities
-@section @code{text.unicode} - Unicode utilities
-@c NODE Unicodeユーティリティ, @code{text.unicode} - Unicodeユーティリティ
-
-@deftp {Module} text.unicode
-@mdindex text.unicode
-@c EN
-This module provides various operations on a sequence of Unicode codepoints.
-
-Gauche can be compiled with a native encoding other than Unicode,
-and the full Unicode-compatible behavior on characters and strings may
-not be available on such systems.  So we provide most operations in two
-flavors: Operations on characters and strings, or operations on
-codepoints represented as a sequence of integers.
-@c JP
-このモジュールは、Unicodeのコードポイントの列に対する様々な操作を提供します。
-
-Gaucheはコンパイル時に、内部文字エンコーディングとしてUnicode以外も選べます。
-その場合、文字列に対して完全にUnicode互換の動作を提供できない場合があります。
-そこで、本モジュールの多くの操作は、文字列を対象にするものと、
-コードポイントの数値のシーケンスを対象にするものの両方で提供されます。
-@c COMMON
-
-@c EN
-If Gauche is compiled with its native encoding being @code{none},
-@code{euc-jp} or @code{sjis}, character-and-string operations
-are likely to be partial functions of the operations defined
-in Unicode standard.  That is, if the operation can yield a
-character that are not supported in the native encoding, it
-may be remapped to an alternative character.  Each manual entry
-explains the detailed behavior.
-@c JP
-Gaucheの内部エンコーディングが@code{none}、
-@code{euc-jp}、@code{sjis}の場合は、
-文字および文字列に対する操作はUnicode標準で定義されたものと完全には一致しないでしょう。
-操作の結果が、内部エンコーディングでは定義されていない文字になった場合、
-それは代替文字に置き換えられます。各関数のエントリで詳しく説明してあります。
-@c COMMON
-
-@c EN
-The codepoint operations are independent from Gauche's native
-encoding and supports full spec as defined in Unicode standard.
-If Gauche is compiled with the @code{utf-8} native encoding,
-the operations are essentially the same as character-and-string flavors
-when you convert codepoints and characters by @code{char->integer} and
-@code{integer->char}.  The codepoint operations are handy when
-you need to support the algorithms described in Unicode standard
-fully, no matter what the running Gauche's native encoding is.
-@c JP
-コードポイントの列に対する操作はGaucheの内部文字エンコーディングとは
-無関係であり、Unicode標準の定義が完全にサポートされます。
-Gaucheが@code{utf-8}でコンパイルされている場合、コードポイント列に
-対する操作は、文字列に対する操作と (各要素を@code{char->integer}および
-@code{integer->char}で変換すること以外は)一致します。
-コードポイント列に対する操作はGaucheの内部文字エンコーディングにかかわらず
-ポータブルなアルゴリズムを必要とする場合に便利です。
-@c COMMON
-@end deftp
-
-@menu
-* Unicode transfer encodings::  
-* Unicode text segmentation::   
-* Full string case conversion::  
-@end menu
-
-@node Unicode transfer encodings, Unicode text segmentation, Unicode utilities, Unicode utilities
-@subsection Unicode transfer encodings
-
-The procedures in this group operate on codepoints represented as integers.
-In the following descriptions, `octets' refers to an integer
-between 0 to 255, inclusive.
-
-They take optional @var{strictness} argument.  It specifies
-what to do when the procedure encounters a datum outside
-of the defined domain.  Its value can be either one of the
-following symbols:
-
-@table @code
-@item strict
-Raises an error when the procedure encounters such input.
-This is the default behavior.
-@item permissive
-Whenever possible, treat the date as if it is a valid value.
-For example, codepoint value beyond @code{#x10ffff} is invalid
-in Unicode standard, but it may be useful for some other purpose
-that just want to use UTF-8 as an encoding scheme of binary data.
-@item ignore
-Whenver possible, treat the invalid input as if they do not exist.
-@end table
-
-The procedure may still raise an error in @code{permissive} or
-@code{ignore} strictness mode, if there can't be a sensible
-way to handle the input data.
-
-@defun ucs4->utf8 codepoint :optional strictness
-Takes an integer codepoint and returns a list of octets that
-encodes the input in UTF-8.
-
-@example
-(ucs4->utf8 #x3bb)  @result{} (206 187)
-(ucs4->utf8 #x3042) @result{} (227 129 130)
-@end example
-
-If @var{strictness} is @code{strict} (default), input codepoint
-between @code{#xd800} to @code{#xdfff}, and beyond @code{#x110000},
-are rejected.  If @var{strictness} is @code{permissive}, it accepts
-input between @code{0} and @code{#x7fffffff}, inclusive; it may produce
-5 or 6 octets if the input is large (as the original UTF-8 definition).
-If @var{strictness} is @code{ignore}, it returns an empty list
-for invalid codepoints.
-@end defun
-
-@defun utf8-length octet :optional strictness
-Takes @var{octet} as the first octet of UTF-8 sequence, and
-returns the number of total octets requried to decode
-the codepoint.
-
-If @var{strictness} is @code{strict} (default), this
-procedure returns either 1, 2, 3 or 4.   An error is
-thrown if @var{octet} cannot be a leading octet of
-a proper UTF-8 encoded Unicode codepoint.
-
-If @var{strictness} is @code{permissive}, this procedure
-may return an integer between 0 and 6, inclusive.
-It allows the codepoint range @code{#x110000} to
-@code{#x7fffffff} as the original utf-8 spec, so
-the maximum number of octets can be up to 6.
-If the input is in the range between @code{#xc0}
-and @code{#xdf}, inclusive, this procedure returns
-1--it's up to the application how to treat these illegal
-octets.  For other values, it returns @code{0}.
-
-If @var{strictness} is @var{ignore}, this procedure
-returns @code{0} when it would raise an error if
-@var{strictness} is @code{strict}.  Other than that,
-it works the same as the default case.
-@end defun
-
-@defun utf8->ucs4 octet-list :optional strictness
-Takes a list of octets, and decodes it as a utf-8 sequence.
-Returns two values: The decoded ucs4 codepoint, and the
-rest of the input list.
-
-An invalid utf8 sequence causes an error if @var{strictness}
-is @code{strict}, or skipped if it is @code{ignore}.
-If @var{strictness} is @code{permissive}, the procedure accepts
-the original utf-8 sequence which can produce surrogated pair
-range (between @code{#xd800} and @code{#dfff}) and the range
-between @code{#x110000} to @code{#x7fffffff}.  The invalid
-octet sequence is still an error with @code{permissive} mode.
-@end defun
-
-@defun utf8->string u8vector :optional start end
-[R7RS]
-Converts a sequence of utf8 octets in @var{u8vector} to a string.
-Optional @var{start} and/or @var{end} argument(s) will limit the
-range of the input.
-
-If Gauche's native encoding is utf8, 
-@code{u8vector->string} (@pxref{Uvector conversion operations})
-will do the job faster; but this routine can be used regardless
-of Gauche's native encoding, and it raises an error if @var{u8vector}
-contains octet sequences illegal as utf8.
-@end defun
-
-@defun string->utf8 string :optional start end
-[R7RS]
-Converts a string to a u8vector of utf8 octets.
-Optional @var{start} and/or @var{end} argument(s) will limit the
-range of the input.
-
-If Gauche's native encoding is utf8, 
-@code{string->u8vector} (@pxref{Uvector conversion operations})
-will do the job faster; but this routine can be used regardless
-of Gauche's native encoding.
-@end defun
-
-@defun ucs4->utf16 codepoint :optional strictness
-Takes an integer codepont and returns a list of integers
-that encodes the input in UTF-16.  The output is either
-one integer or two integers, and each integer is in the
-range between 0 and 65535 (inclusive).
-
-If @var{strictness} is @code{strict} (default), input codepoint
-between @code{#xd800} to @code{#xdfff}, and beyond @code{#x110000},
-are rejected.  If @var{strictness} is @code{permissive}, it accepts
-high surrogates and low surrogates, in which case the result is
-single element list of input.  If @var{strictness} is @code{ignore},
-an empty list is returned for an invalid codepoint (including surrogates).
-@end defun
-
-@defun utf16-length code :optional strictness
-@var{Code} must be an integer between 0 and 65535, inclusive.
-Returns 1 if @var{code} is BMP character codepoint, or
-2 if @var{code} is high surrogate codepoint.
-
-If @var{strictness} is @code{strict} (default), an error is
-signalled if @var{code} is a low surrogate, or it is out of range.
-If @var{strictness} is @code{permissive}, 1 is returned
-for low surrogates, but an error is signalled for out of range arguments.
-If @var{strictness} is @code{ignore}, 0 is returned
-for low surrogates and out of range arguments.
-@end defun
-
-@defun utf16->ucs4 code-list :optional strictness
-Takes a list of integers and decodes it as a utf-16 sequence.
-Returns two values: The decoded ucs4 codepoint, and the rest of
-input list.
-
-If @var{strictness} is @code{strict} (default), an invalid utf-16
-sequence and out-of-range integer raise an error.  If @var{strictness}
-is @code{permissive}, an out-of-range integer causes an error, but
-a lone surrogate is allowed and returned as is.  If @var{strictness}
-is @code{ignore}, lone surrogates and out-of-range integers are just
-ignored.
-@end defun
-
-@node Unicode text segmentation, Full string case conversion, Unicode transfer encodings, Unicode utilities
-@subsection Unicode text segmentation
-
-These procedures implements grapheme-cluster and
-word breaking algorithms defined in UAX #29: Unicode Text Segmentation.
-
-@defun string->words string
-@defunx codepoints->words sequence
-From given string or codepoint sequence (a @code{<sequence>}
-object containing list of codepoints), returns a list of
-words.  Each cluster is represented as a string, or
-a sequence of the same type as input, respectively.
-
-@example
-(string->words "That's it.")
- @result{} ("That's" " " "it" ".")
-(codepoints->words '(84 104 97 116 39 115 32 105 116 46)
- @result{} ((84 104 97 116 39 115) (32) (105 116) (46))
-@end example
-
-In the second example, the list is a list of codepoints
-of characters in "That's it."
-@end defun
-
-
-@defun string->grapheme-clusters string
-@defunx codepoints->grapheme-clusters sequence
-From given string or codepoint sequence (a @code{<sequence>}
-object containing list of codepoints), returns a list of
-grapheme clusters.  Each cluster is represented as a string,
-or a sequence of the same type as input, respectively.
-@end defun
-
-
-The following procedures are low-level building blocks
-to build the above @code{string->words} etc.
-A @var{generator} argument is a procedure
-with no arguments, and returns a value (or some values) at at time
-for every call, until it returns EOF.
-
-@defun make-word-breaker generator
-@defunx make-grapheme-cluster-breaker generator
-From given @var{generator} is a generator of characters or codepoints,
-returns a generator that returns two values: The first value is the
-character or codepoint generated from the original generator, and the
-second value is a boolean flag, which is @code{#t} if a word
-or a grapheme cluster
-breaks before the character/codepoint, and @code{#f} otherwise.
-
-Suppose a generator @var{g} returns characters in a string
-@code{That's it.}, one at a time.  Then the created generator
-will work as follows:
-
-@example
-(define brk (make-word-breaker g))
-(brk)  @result{}  #\T     and #t
-(brk)  @result{}  #\h     and #f
-(brk)  @result{}  #\a     and #f
-(brk)  @result{}  #\t     and #f
-(brk)  @result{}  #\'     and #f
-(brk)  @result{}  #\s     and #f
-(brk)  @result{}  #\space and #t
-(brk)  @result{}  #\i     and #t
-(brk)  @result{}  #\t     and #f
-(brk)  @result{}  #\.     and #t
-(brk)  @result{}  #<eof>  and #t
-@end example
-
-It shows the word breaks at those character boundaries shown
-by the caret @code{^} below (for clearity, I use @code{_} to indicate
-the space).
-
-@example
-  T h a t ' s _ i t .
- ^           ^ ^   ^ ^
-@end example
-@end defun
-
-@defun make-word-reader generator return
-@defunx make-grapheme-cluster-reader generator return
-The input @var{generator} is a generator of characters or codepoints,
-and @var{return} is a procedure that takes a list of characters or
-codepoints, and returns an object.   These procedures creates a
-generator that returns an object at at time, each consists of a
-word or a grapheme cluster, respectively.
-
-Suppose a generator @var{g} returns characters in a string
-@code{That's it.}, one at a time, again.
-Then the created generator works as follows:
-
-@example
-(define brk (make-word-reader g list->string))
-(brk)  @result{}  "That's"
-(brk)  @result{}  " "
-(brk)  @result{}  "it"
-(brk)  @result{}  "."
-(brk)  @result{}  #<eof>
-@end example
-
-@end defun
-
-
-@node Full string case conversion,  , Unicode text segmentation, Unicode utilities
-@subsection Full string case conversion
-
-@defun string-upcase string
-@defunx string-downcase string
-@defunx string-titlecase string
-@defunx string-foldcase string
-[R6RS][R7RS]
-Converts given @var{string} to upper case, using language-independent
-full case folding defined by Unicode standard.
-They differ from srfi-13's procedures
-with the same names (@pxref{SRFI-13 String case mapping}),
-which simply uses character-by-character case mapping.
-Notably, the length of resulting string may differ from the source string,
-and some conversions are sensitive to whether the character is at the
-word boundary or not.  The word boundaries are determined according
-to UAX #29 text segmentation rules.
-
-@example
-(string-upcase "straße")
- @result{} "STRASSE"
-(string-downcase "ΧΑΟΣΧΑΟΣ.ΧΑΟΣ. Σ.")
- @result{} "χαοσχαοσ.χαος. σ."
-(string-titlecase "You're talking about R6RS, right?")
- @result{} "You're Talking About R6rs, Right?"
-(string-foldcase "straße")
- @result{} "strasse"
-(string-foldcase "ΧΑΟΣΣ")
- @result{} "χαοσσ"
-@end example
-
-@end defun
-
-@defun codepoints-upcase sequence
-@defunx codepoints-downcase sequence
-@defunx codepoints-titlecase sequence
-@defunx codepoints-foldcase sequence
-Like @code{string-upcase} etc, but these work on a sequence of
-codepoints instead.  Returns a sequence of the same type of the input.
-
-@example
-(codepoints-upcase '#(115 116 114 97 223 101))
- @result{} #(83 84 82 65 83 83 69)
-@end example
-@end defun
-
-@defun string-ci=? string1 string2 string3 @dots{}
-@defunx string-ci<? string1 string2 string3 @dots{}
-@defunx string-ci<=? string1 string2 string3 @dots{}
-@defunx string-ci>? string1 string2 string3 @dots{}
-@defunx string-ci>=? string1 string2 string3 @dots{}
-[R7RS]
-Case-insensitive string comparison, using full-string case conversion.
-
-Note that Gauche has builtin @code{string-ci=?} etc., which use
-character-wise case folding (@pxref{String Comparison}).  These are
-different procedures.
-
-@example
-(string-ci=? "\u00df" "SS") @result{} #t
-@end example
-@end defun
-
-
 
 @c ----------------------------------------------------------------------
-@node Combination library, Message digester framework, Unicode utilities, Library modules - Utilities
+@node Combination library, Message digester framework, Lazy text construction, Library modules - Utilities
 @section @code{util.combinations} - Combination library
 @c NODE 組み合わせ, @code{util.combinations} - 組み合わせ
 
@@ -21557,7 +21277,7 @@ equal (in the sense of @code{equal?}).
 @end deffn
 
 @c ----------------------------------------------------------------------
-@node The longest common subsequence, Pattern matching, Determine isomorphism, Library modules - Utilities
+@node The longest common subsequence, Levenshtein edit distance, Determine isomorphism, Library modules - Utilities
 @section @code{util.lcs} - The longest common subsequence
 @c NODE 最長共通サブシーケンス, @code{util.lcs} - 最長共通サブシーケンス
 
@@ -21757,7 +21477,126 @@ returns.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Pattern matching, Red black tree, The longest common subsequence, Library modules - Utilities
+@node Levenshtein edit distance, Pattern matching, The longest common subsequence, Library modules - Utilities
+@section @code{util.levenshtein} - Levenshtein edit distance
+@c NODE Levenshtein編集距離, @code{util.levenshtein} - Levenshtein編集距離
+
+@deftp {Module} util.levenshtein
+@mdindex util.levenshtein
+@c EN
+This module provides procedures to calculate edit distance between
+two sequences.  Edit distance is the minimum number of edit operations
+required to match one sequence to another.
+Three algorithms are implemented:
+@c JP
+このモジュールは二つのシーケンスの間の編集距離を計算する手続きを提供します。
+編集距離とは、ひとつのシーケンスからもうひとつのシーケンスへと変更する
+編集操作の数です。3つのアルゴリズムが実装されています。
+@c COMMON
+
+@table @asis
+@item Levenshtein distance
+@c EN
+Count deletion of one element, insertion of one element,
+and susbstitution of one element.
+@c JP
+1要素の削除、1要素の追加、1要素の置き換えそれぞれを1操作と数えます。
+@c COMMON
+@item Damerau-Levenshtein distance
+@c EN
+Besides deletion, insertion and substitution, we allow transposition
+of adjacent elements.
+@c JP
+削除、追加、置き換えに加え、隣合った要素の入れ替えも1操作と数えます。
+@c COMMON
+@item Restricted edit distance
+@c EN
+Also called optimal string alignment distance.  Like Damerau-Levenshtein,
+but once transposition is applied, no further editing on those characters
+are allowed.
+@c JP
+Optimal string alignmentとも呼ばれます。Damerau-Levenshteinと似ていますが、
+隣合った要素の入れ替えを行った場合、それらの要素は以降の編集を受けません。
+@c COMMON
+@end table
+
+@c EN
+These algorithms are often used to compare strings, but the procedures
+in this module can handle any type of sequence (@pxref{Sequence framework}).
+@c JP
+これらのアルゴリズムは文字列に対して使われることが多いですが、
+このモジュールの手続きはシーケンスになら何でも使えます
+(@ref{Sequence framework}参照)。
+@c COMMON
+@end deftp
+
+@defun l-distance seq-A seq-B :key elt= cutoff
+@defunx l-distances seq-A seq-Bs :key elt= cutoff
+@defunx re-distance seq-A seq-B :key elt= cutoff
+@defunx re-distances seq-A seq-Bs :key elt= cutoff
+@defunx dl-distance seq-A seq-B :key elt= cutoff
+@defunx dl-distances seq-A seq-Bs :key elt= cutoff
+Calculates Levenshtein distance (@code{l-*}), restricted edit
+distance (@code{re-*}) and Damerau-Levenshtein distance (@code{dl-*})
+between sequences, respectively.  Each algorithm comes in two 
+flavors: The singular form @code{*-distance} takes two sequences,
+@code{seq-A} and @code{seq-B}, and calculates distance between them.
+The plural form @code{*-distances} takes a sequence @code{seq-A}
+and a list of sequences @code{seq-Bs}, and calculates distances
+between @code{seq-A} and each in @var{seq-Bs}.
+
+If you need to calculate distances from single sequence to many
+sequences, using the plural version is much faster than repeatedly
+calling the singular version, for the plural version can reuse internal
+data structures and save allocation and setup time.
+
+Sequences can be any object that satisfy @code{<sequence>} protocol
+(@pxref{Sequence framework}).
+
+The keyword argument @var{elt=} is used to compare elements from
+the sequences.  Its default is @code{eqv?}.
+
+The keyword argument @var{cutoff} must be, if given, a nonnegative
+exact integer.  Once the possible minimum distance between two sequences
+becomes greater than this number, the algorithm stops and gives @code{#f}
+as the result, and moves on to the next calculation.
+This is useful when you run the algorithm on large set of sequences
+and you only need to look for the pairs closer than the certain limit.
+
+In our implementation, Levenshtein is the fastest, Damerau-Levenshtein
+is the slowest and Restricted edit is somewhere inbetween.  If you don't
+need to take into account of transpositions, use Levenshtein; it counts
+2 for @code{cat} -> @code{act}, while other algorithms yield 1 for it.
+If you need to consider transpositions, choose either
+@code{re-} or @code{dl-}.  The catch in @code{re-} is that it does not
+satisfy triangular equality, i.e. for given three sequences X, Y and Z,
+(Damerau-)Levenshtein distance L always satisfy
+L(X;Z) <= L(X;Y) + L(Y;Z), but restricted edit distance doesn't
+guarantee that.
+
+@example
+(l-distance "cat" "act")  @result{} 2
+(l-distances "cat" '("Cathy" "scathe" "stack")
+  :elt= char-ci=?)
+  @result{} (2 3 4)
+
+(re-distance "cat" "act") @result{} 1
+
+(re-distances "pepper"
+  '("peter" "piper" "picked" "peck" "pickled" "peppers")
+  :cutoff 4)
+  @result{} (2 2 4 4 #f 1)
+
+(dl-distance '(a b c d e) '(c d a b e)) @result{} 4
+@end example
+
+Note: If you pass list of sequences to the second argument
+of the singular version by accident, you won't get an error
+because a list is also a sequence.
+@end defun
+
+@c ----------------------------------------------------------------------
+@node Pattern matching, SLIB-compatible record type, Levenshtein edit distance, Library modules - Utilities
 @section @code{util.match} - Pattern matching
 @c NODE パターンマッチング, @code{util.match} - パターンマッチング
 
@@ -22433,317 +22272,7 @@ quasipatternの例です。最初の式では、パターンのうち@code{value
 
 
 @c ----------------------------------------------------------------------
-@node Red black tree, SLIB-compatible record type, Pattern matching, Library modules - Utilities
-@section @code{util.rbtree} - Red black tree
-@c NODE 赤黒木, @code{util.rbtree} - 赤黒木
-
-@c EN
-As of version 0.8.10, a balanced-tree object is built-in as @code{<tree-map>}
-(@pxref{Treemaps}), which uses red-black tree internally.  It is recommended
-for applications to use @code{<tree-map>} instead of @code{<rbtree>}.
-This module is only kept for backward compatibility.
-@c JP
-バージョン0.8.10から、バランス木オブジェクトは@code{<tree-map>}として
-組込みになっています (@ref{Treemaps}参照)。内部的には赤黒木が使われています。
-アプリケーションは@code{<rbtree>}ではなく@code{<tree-map>}を使うことが
-推奨されます。このモジュールは互換性のために残されています。
-@c COMMON
-
-@deftp {Module} util.rbtree
-@mdindex util.rbtree
-@c EN
-This module provides procedures to handle red black trees.
-@c JP
-このモジュールは、赤黒木 (red-black tree、2色木)を扱う手続きを提供します。
-@c COMMON
-
-@c EN
-Red black tree is a kind of balanced binary tree.
-For a tree with @var{n} nodes, the basic operations
-such as searching, inserting, deleting, obtaining minimum
-and maximum element, and sequential access, can be done in
-O(log @var{n}).  The keys used for red black trees
-must have total order.
-@c JP
-赤黒木は平衡な(バランスの取れた) 2分木の一種です。nノードからなる木
-に対する基本的な操作(要素の探索、挿入、削除、最初および最大の要素の
-取得、要素の順次アクセス)は、O(log n)で行われます。赤黒木に追加する
-要素のキーは、要素間に全順序関係が定義されていなければなりません。
-@c COMMON
-
-@c EN
-API of @code{util.rbtree} is similar to the hash table API
-(@pxref{Hashtables}), so the user can use a red black tree
-as if it is a hashtable, with its entries are ordered
-by the keys.
-@c JP
-util.rbtreeのAPIはハッシュテーブルのAPIに似せて作られており、ユーザ
-は赤黒木を、キーの大小で順序付けられたハッシュテーブルのように扱う
-ことができます (@ref{Hashtables}参照)。
-@c COMMON
-@end deftp
-
-@deftp {Class} <rbtree>
-@clindex rbtree
-@c EN
-A class for red black trees.  Inherits @code{<sequence>},
-so that you can apply sequence APIs on a red black tree.
-When treated as a sequence, each element is a pair of
-a key and a value.
-@c JP
-赤黒木のクラスです。@code{<sequence>}を継承しているので、
-@code{gauche.sequence}で定義されるAPIを使うことができます。
-シーケンスとして扱うときの各要素は、キーと値のペアです。
-@c COMMON
-@end deftp
-
-@defun make-rbtree key=? key<?
-@c EN
-Creates and returns an instance of @code{<rbtree>}.
-The arguments @var{key=?} and @var{key<?} are both
-procedures that take two arguments, which are the keys.
-The @code{key=?} procedure should return @code{#t} if
-two arguments are equivalent, or @code{#f} otherwise.
-The @code{key<?} procedure should return @code{#t} if
-the first argument is strictly less than the second argument,
-or @code{#f} otherwise.
-@c JP
-@code{<rbtree>}オブジェクトを作成して返します。@var{key=?}、@var{key<?}はそれぞれ引
-数を2つ受け取り真偽値を返す手続きであり、要素のキーが渡されます。
-@var{key=?}は、2つの引数a, b が同値の場合に真を、それ以外の場合に@code{#f}を
-返す手続きです。@var{key<?}は、@code{a < b}が成り立つ場合に真を、それ以外の
-場合に@code{#f}を返す手続きです。
-@c COMMON
-@end defun
-
-@defun rbtree-copy rbtree
-@c EN
-Copies and returns a red black tree @var{rbtree}.  Modification
-on the returned tree doesn't affect the original tree.
-@c JP
-赤黒木@var{rbtree}のコピーを作り、それを返します。返された赤黒木に対す
-る破壊的操作は、元の赤黒木に影響を与えません。
-@c COMMON
-@end defun
-
-@defun rbtree-empty? rbtree
-@c EN
-Returns @code{#t} if @var{rbtree} doesn't have any elements,
-or @code{#f} otherwise.
-@c JP
-赤黒木@var{rbtree}が要素を持たないなら@code{#t}を、そうでなければ@code{#f}を
-返します。
-@c COMMON
-@end defun
-
-@defun rbtree-num-entries rbtree
-@c EN
-Returns the number of elements in @var{rbtree}.
-@c JP
-赤黒木@var{rbtree}内の要素の個数を返します。
-@c COMMON
-@end defun
-
-@defun rbtree-exists? rbtree key
-@c EN
-Returns @code{#t} if @var{rbtree} has an entry with @var{key},
-or @code{#f} otherwise.
-@c JP
-赤黒木@var{rbtree}にキー@var{key}を持つエントリがあれば@code{#t}を、
-そうでなければ@code{#f}を返します。
-@c COMMON
-@end defun
-
-@defun rbtree-get rbtree key :optional fallback
-@c EN
-Looks for @var{key} in @var{rbtree}.  If the entry is found,
-returns a value corresponding to the key.  Otherwise, returns
-@var{fallback} if it is provided, or signals an error.
-@c JP
-キー@var{key}を赤黒木@var{rbtree}から探します。見つかれば@var{key}に対応する値を返
-します。キーが見つからなかった場合、@var{fallback}が与えられていればそれ
-を返し、そうでなければエラーを報告します。
-@c COMMON
-@end defun
-
-@defun rbtree-put! rbtree key value
-@c EN
-Inserts an entry with a @var{key} and corresponding @var{value}
-into @var{rbtree}.  If there already exists an entry with a
-key which is equivalent (under @var{key=?}), the entry is modified
-to have @var{value}.
-@c JP
-キー@var{key}と対応する値@var{value}を赤黒木@var{rbtree}に挿入します。もし、@var{key}と、
-@var{key=?}における意味で同じキーがすでに存在する場合、キーに対応する値
-は新たな値に置き換えられます。
-@c COMMON
-@end defun
-
-@defun rbtree-delete! rbtree key
-@c EN
-Deletes an entry with @var{key} from @var{rbtree} if such an entry
-exists, and returns @code{#t}.
-If @var{rbtree} doesn't have such an entry, @code{#f} is returned.
-@c JP
-赤黒木@var{rbtree}からキー@var{key}を持つエントリを削除します。@var{key}を持つエン
-トリが実際に存在して削除された場合は@code{#t}を、エントリが存在しなかっ
-た場合は@code{#f}を返します。
-@c COMMON
-@end defun
-
-@defun rbtree-update! rbtree key proc :optional fallback
-@c EN
-A generalized version of @code{rbtree-push!} etc.
-It works like the following code, except that searching
-for the key is done only once.
-@c JP
-@code{rbtree-push!}等のより一般的なバージョンです。赤黒木の探索が一度
-しか行われないことを除いては、基本的に次のように動作します。
-@c COMMON
-@example
-(let ((tmp (proc (rbtree-get @var{rbtree} @var{key} @var{fallback}))))
-  (rbtree-put! @var{rbtree} @var{key} tmp)
-  tmp)
-@end example
-@end defun
-
-@defun rbtree-push! rbtree key value
-@c EN
-Looks for an entry with @var{key} in @var{rbtree}.  If it exists,
-the procedure conses @var{value} to the original value and makes
-it as a new value.
-Otherwise, the procedure creates a new entry for the @var{key}
-and makes @code{(list @var{value})} its value.
-@c JP
-赤黒木@var{rbtree}中の、キー@var{key}に対応する値に@var{value}をコンスし、それを@var{key}
-に対する新たな値とします。もし@var{key}に対応する値がまだ無ければ、新た
-なエントリが作成され、@code{(list @var{value})}がその値となります。
-@c COMMON
-@end defun
-
-@defun rbtree-pop! rbtree key :optional fallback
-@c EN
-Looks for an entry with @var{key} in @var{rbtree}.  If it exists
-and its value is a pair, then the procedure updates
-its value with @code{cdr} of the original value, and returns
-@code{car} of the original entry.   If such an entry does not
-exist, or has a non-pair value, the procedure doesn't
-modify @var{rbtree} and returns @var{fallback} if it is given,
-otherwise reports an error.
-@c JP
-赤黒木@var{rbtree}中のキー@var{key}に対応する値が存在し、かつペアであった場合
-に、そのエントリの値を元の値のcdrで置き換え、元の値のcarを返します。
-@var{key}に対応する値が存在しないかペアではなかった場合、赤黒木@var{rbtree}は
-変更されず、@var{fallback}が与えられていればそれが返され、与えられていな
-ければエラーが報告されます。
-@c COMMON
-@end defun
-
-@defun rbtree-min rbtree :optional fallback
-@defunx rbtree-max rbtree :optional fallback
-@c EN
-Returns a pair of a key and its value with the minimum
-or maximum key, respectively.   If @var{rbtree} is empty,
-returns @var{fallback} if it is given, otherwise reports
-an error.
-@c JP
-それぞれ、赤黒木@var{rbtree}に含まれる最小および最大のキーを探索し、その
-キーと値のペアを返します。赤黒木@var{rbtree}が空だった場合は、@var{fallback}が
-指定されていればそれを返し、そうでなければエラーを報告します。
-@c COMMON
-@end defun
-
-@defun rbtree-extract-min! rbtree :optional fallback
-@defunx rbtree-extract-max! rbtree :optional fallback
-@c EN
-Looks for an entry with minimum or maximum key, respectively,
-then deletes the entry from @var{rbtree} and returns
-a pair of the key and its value of the original entry.
-If @var{rbtree} is empty,
-returns @var{fallback} if it is given, otherwise reports
-an error.
-@c JP
-それぞれ、赤黒木@var{rbtree}に含まれる最小および最大のキーを探索し、そ
-のエントリを赤黒木@var{rbtree}から削除したうえで、そのキーと値のペアを
-返します。赤黒木@var{rbtree}が空だった場合は、@var{fallback}が指定されていれば
-それを返し、そうでなければエラーを報告します。
-@c COMMON
-@end defun
-
-@defun rbtree-fold rbtree proc seed
-@defunx rbtree-fold-right rbtree proc seed
-@c EN
-Iterate over elements in @var{rbtree}, applying
-@var{proc} which has a type @code{(key, value, seed) -> seed}.
-The difference of @code{rbtree-fold} and @code{rbtree-fold-right}
-is the same as @code{fold} and @code{fold-right}---that is,
-the associative order of applying @code{proc}.
-@c JP
-@var{rbtree}の各要素に対し、@code{(key, value, seed) -> seed} の型を持つ
-@var{proc}を適用してゆきます。
-@code{rbtree-fold}と@code{rbtree-fold-right}の違いは
-@code{fold}の@code{fold-right}違いと同じ、すなわち
-結合の方向にあります。
-@c COMMON
-@example
-rbtree-fold:
-  (proc Kn Vn (proc Kn-1 Vn-1 ... (proc K0 V0 seed)))
-
-rbtree-fold-right
-  (proc K0 V0 (proc K1 V1 ... (proc Kn Vn seed)))
-@end example
-
-@c EN
-Some examples:
-@c JP
-例:
-@c COMMON
-@example
-(define tree (alist->rbtree '((3 . a) (7 . b) (5 . c)) = <))
-
-(rbtree-fold tree list* '())
-   @result{} (7 b 5 c 3 a)
-(rbtree-fold-right tree list* '())
-   @result{} (3 a 5 c 7 b)
-@end example
-@end defun
-
-@defun rbtree-keys rbtree
-@defunx rbtree-values rbtree
-@c EN
-Returns a list of all keys and all values, respectively.
-The keys and values are in ascending order of the keys.
-@c JP
-それぞれ、赤黒木@var{rbtree}内の全てのキーまたは値をリストにして返しま
-す。返されるリストの要素はキーの昇順に並んでいます。
-@c COMMON
-@end defun
-
-@defun rbtree->alist rbtree
-@c EN
-Returns a list of pairs of keys and values for all entries.
-The pairs are in ascending order of the keys.
-@c JP
-赤黒木@var{rbtree}含まれる要素を連想リストにして返します。返される連
-想リストのキーは昇順に並んでいます。
-@c COMMON
-@end defun
-
-@defun alist->rbtree alist key=? key<?
-@c EN
-Creates a new red black tree with @var{key=?} and @var{key<?},
-then populates it with @var{alist}, each pair in which are
-interpreted as a cons of a key and its value.  Returns the
-created red black tree.
-@c JP
-@var{key=?}, @var{key<?} によって新たな赤黒木を作成し、
-連想リスト@var{alist}に含まれる要素を追加し、その木を返します。
-@c COMMON
-@end defun
-
-
-@c ----------------------------------------------------------------------
-@node SLIB-compatible record type, Relation framework, Red black tree, Library modules - Utilities
+@node SLIB-compatible record type, Relation framework, Pattern matching, Library modules - Utilities
 @section @code{util.record} - SLIB-compatible record type
 @c NODE SLIB-互換のレコード型, @code{util.record} - SLIB-互換のレコード型
 

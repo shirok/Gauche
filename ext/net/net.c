@@ -636,7 +636,7 @@ ScmObj Scm_SocketGetOpt(ScmSocket *s, int level, int option, int rsize)
 
 #if HAVE_STRUCT_IFREQ
 static void ioctl_by_ifr_name(int fd, struct ifreq *ifr, ScmObj data,
-			      int req, const char *req_name)
+                              unsigned long req, const char *req_name)
 {
     if (!SCM_STRINGP(data)) {
         Scm_Error("string expected for %s ioctl argument, but got %s",
@@ -650,7 +650,7 @@ static void ioctl_by_ifr_name(int fd, struct ifreq *ifr, ScmObj data,
 #endif
 
 /* Low-level ioctl. */
-ScmObj Scm_SocketIoctl(ScmSocket *s, int request, ScmObj data)
+ScmObj Scm_SocketIoctl(ScmSocket *s, u_long request, ScmObj data)
 {
 #if HAVE_STRUCT_IFREQ
     int r;
@@ -666,7 +666,7 @@ ScmObj Scm_SocketIoctl(ScmSocket *s, int request, ScmObj data)
 #if   HAVE_STRUCT_IFREQ_IFR_IFINDEX
         ifreq_pkt.ifr_ifindex = Scm_GetIntegerU(data);
 #elif HAVE_STRUCT_IFREQ_IFR_INDEX
-        ifr_ifindex.ifr_index = Scm_GetIntegerU(data);
+        ifreq_pkt.ifr_index = Scm_GetIntegerU(data);
 #endif /*HAVE_STRUCT_IFREQ_IFR_INDEX*/
         SCM_SYSCALL(r, ioctl(s->fd, SIOCGIFNAME, &ifreq_pkt));
         if (r < 0)
@@ -680,7 +680,7 @@ ScmObj Scm_SocketIoctl(ScmSocket *s, int request, ScmObj data)
 #if HAVE_STRUCT_IFREQ_IFR_IFINDEX
         return Scm_MakeInteger(ifreq_pkt.ifr_ifindex);
 #elif HAVE_STRUCT_IFREQ_IFR_INDEX
-       return Scm_MakeInteger(ifreq_pkt.ifr_index);
+        return Scm_MakeInteger(ifreq_pkt.ifr_index);
 #endif /*HAVE_STRUCT_IFREQ_IFR_INDEX*/
 #endif /*SIOCGIFINDEX*/
 #if defined(SIOCGIFFLAGS)
@@ -717,9 +717,15 @@ ScmObj Scm_SocketIoctl(ScmSocket *s, int request, ScmObj data)
     case SIOCGIFNETMASK:
         ioctl_by_ifr_name(s->fd, &ifreq_pkt, data,
                           SIOCGIFNETMASK, "SIOCGIFNETMASK");
+#if defined(HAVE_STRUCT_IFREQ_IFR_NETMASK)
         return Scm_MakeSockAddr(NULL,
                                 &ifreq_pkt.ifr_netmask,
                                 sizeof(ifreq_pkt.ifr_netmask));
+#else
+        return Scm_MakeSockAddr(NULL,
+                                &ifreq_pkt.ifr_addr,
+                                sizeof(ifreq_pkt.ifr_addr));
+#endif /*HAVE_STRUCT_IFREQ_IFR_NETMASK*/
 #endif  /*SIOCGIFNETMASK*/
 #if defined(SIOCGIFMTU)
     case SIOCGIFMTU:

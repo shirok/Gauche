@@ -171,8 +171,12 @@
           real-comparator complex-comparator number-comparator
           pair-comparator list-comparator vector-comparator
           bytevector-comparator uvector-comparator
+          make-default-comparator make-eq-comparator
+          make-eqv-comparator make-equal-comparator
           make-reverse-comparator make-key-comparator make-tuple-comparator
-          make-car-comparator make-cdr-comparator)
+          make-car-comparator make-cdr-comparator make-pair-comparator
+          make-list-comparator make-vector-comparator
+          =? <? <=? >? >=? (:macro comparator-if<=>))
 
 (autoload gauche.fileutil
           glob glob-fold sys-glob glob-component->regexp make-glob-fs-fold
@@ -183,7 +187,11 @@
           sys-stat->type sys-tm->alist)
 
 (autoload gauche.hashutil hash-table hash-table-fold
-                          hash-table-for-each hash-table-map)
+                          hash-table-for-each hash-table-map
+                          boolean-hash char-hash char-ci-hash
+                          string-hash string-ci-hash
+                          symbol-hash number-hash default-hash
+                          hash-bound hash-salt)
 
 (autoload gauche.treeutil make-tree-map tree-map-empty?
                           tree-map-min tree-map-max

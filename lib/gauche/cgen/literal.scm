@@ -44,6 +44,8 @@
           define-cgen-literal cgen-literal
           cgen-allocate-static-datum
 
+          make-serializable-extended-pair
+
           ;; Deprecated - use cgen-safe-string
           c-safe-string-literal
           )
@@ -603,6 +605,10 @@
 
 ;; pair ---------------------------------------------------------
 
+;; NB: We don't serialize extended pairs automatically.  Pair attributes
+;; can contain arbitrary information, some of which may be transient, and
+;; serializing everything isn't usually what you want.
+
 (define-cgen-literal <cgen-scheme-pair> <pair>
   ((car :init-keyword :car)
    (cdr :init-keyword :cdr))
@@ -621,6 +627,40 @@
       (unless (cgen-literal-static? (~ self'cdr))
         (format #t "  SCM_SET_CDR(~a, ~a);\n" cname (cgen-cexpr (~ self'cdr))))
       ))
+  )
+
+;; If you do need to serialize extended pair, replace it
+;; with <serializable-extended-pair>, and set its attr slot
+;; only with necessary info.
+
+(define-class <serializable-extended-pair> ()
+  ((car :init-keyword :car)
+   (cdr :init-keyword :cdr)
+   (attrs :init-keyword :attrs :init-value '())))
+
+;; This always create serializable extended pair, even PAIR is just an
+;; ordinary pair, so that you can call pair-attribute-set! afterwards.
+(define (make-serializable-extended-pair ca cd attrs)
+  (make <serializable-extended-pair> :car ca :cdr cd :attrs attrs))
+
+(define-cgen-literal <cgen-scheme-extended-pair> <serializable-extended-pair>
+  ((car :init-keyword :car)
+   (cdr :init-keyword :cdr)
+   (attrs :init-keyword :attrs))
+  (make (value)
+    (let* ([ca (cgen-literal (~ value'car))]
+           [cd (cgen-literal (~ value'cdr))]
+           [attrs (cgen-literal (~ value'attrs))])
+      (make <cgen-scheme-extended-pair>
+        :value value :car ca :cdr cd :attrs attrs
+        :c-name (cgen-allocate-static-datum))))
+  (static (self) #f)
+  (init (self)
+    (print "  " (cgen-c-name self)
+           " = Scm_MakeExtendedPair("
+           (cgen-cexpr (~ self'car)) ", "
+           (cgen-cexpr (~ self'cdr)) ", "
+           (cgen-cexpr (~ self'attrs)) ");"))
   )
 
 ;; vector -------------------------------------------------------

@@ -36,6 +36,7 @@
 
 SCM_EXTERN ScmModule *Scm__KeywordModule(void);
 SCM_EXTERN ScmModule *Scm__GaucheKeywordModule(void);
+SCM_EXTERN ScmModule *Scm__RequireBaseModule(void);
 
 SCM_EXTERN ScmObj Scm__MakeWrapperModule(ScmModule *origin, ScmObj prefix);
 

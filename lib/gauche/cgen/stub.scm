@@ -289,12 +289,15 @@
    (handler :init-keyword :handler)))
 
 (define-macro (define-form-parser name args . body)
-  `(make <form-parser> :name ',name :args ',args :handler (^ ,args ,@body)))
+  `(make <form-parser> :name ',name :args ',args
+         :handler (^ (&whole ,@args) ,@body)))
 
 (define-method invoke ((self <form-parser>) form)
   (define (badform)
     (errorf <cgen-stub-error> "stub: malformed ~a: ~s" (~ self'name) form))
   (apply (~ self'handler)
+         ;; the first (implicit) argument is form itself, bound to &whole
+         form
          ;; need to check if given form matches args
          (let loop ([llist (~ self'args)]
                     [form  (cdr form)])
@@ -553,6 +556,8 @@
    (forward-decls     :initform '())
       ;; list of strings for code that must be emitted before the
       ;; procedure definition
+   (source-info       :initform #f :init-keyword :source-info)
+      ;; (file . line-no), if known.
    (info              :initform #f)
       ;; cgen-literal of ScmObj to be set in the 'info' slot of ScmProcedure.
    ))
@@ -636,6 +641,15 @@
                       :proc-name (make-literal (x->string scheme-name))
                       :return-type rettype :flags flags
                       :args args
+                      ;; Heuristics - Ideally &whole has source info, but
+                      ;; precomp may have reconstructed the form and the
+                      ;; original source info may be lost.  We try to find
+                      ;; relevant info from a few subforms.
+                      ;; Once we fix precomp, we can just say
+                      ;; (debug-source-info &whole).
+                      :source-info (or (debug-source-info &whole)
+                                       (debug-source-info (cdr &whole))
+                                       (debug-source-info (caddr &whole)))
                       :keyword-args keyargs
                       :num-reqargs nreqs
                       :num-optargs nopts
@@ -1075,14 +1089,18 @@
          [kargs (filter (cut is-a? <> <keyword-arg>) (~ proc'args))]
          [rarg  (filter (cut is-a? <> <rest-arg>) (~ proc'args))]
          [aarg  (filter (cut is-a? <> <optarray-arg>) (~ proc'args))]
-         [info  `(,(~ proc'scheme-name)
-                  ,@(map arginfo qargs)
-                  ,@(cond-list
-                     [(pair? oargs) @ `(:optional ,@(map arginfo oargs))]
-                     [(pair? kargs) @ `(:key ,@(map arginfo kargs))]
-                     [(pair? rarg) @ `(:rest ,(arginfo (car rarg)))]
-                     [(pair? aarg) @ `(:optarray ,(arginfo (car aarg)))]))])
-    (set! (~ proc'info) (make-literal info))))
+         [all-args `(,@(map arginfo qargs)
+                     ,@(cond-list
+                        [(pair? oargs) @ `(:optional ,@(map arginfo oargs))]
+                        [(pair? kargs) @ `(:key ,@(map arginfo kargs))]
+                        [(pair? rarg) @ `(:rest ,(arginfo (car rarg)))]
+                        [(pair? aarg) @ `(:optarray ,(arginfo (car aarg)))]))])
+    (set! (~ proc'info)
+          (make-literal
+           (if (~ proc'source-info)
+             ($ make-serializable-extended-pair (~ proc'scheme-name) all-args
+                `((source-info . ,(~ proc'source-info))))
+             (cons (~ proc'scheme-name) all-args))))))
 
 ;;;
 ;;; Emitting code
@@ -1346,6 +1364,10 @@
                      :specializers specializers
                      :num-reqargs numargs
                      :args args
+                     ;; NB: See define-cproc about this.
+                     :source-info (or (debug-source-info &whole)
+                                      (debug-source-info (cdr &whole))
+                                      (debug-source-info (caddr &whole)))
                      :have-rest-arg? have-optarg?
                      )
         (let loop ([body body])

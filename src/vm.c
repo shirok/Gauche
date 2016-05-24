@@ -112,6 +112,9 @@ static ScmInternalMutex vm_table_mutex;
 static void vm_register(ScmVM *vm);
 static void vm_unregister(ScmVM *vm);
 
+static u_long vm_numeric_id = 0;    /* used for Scm_VM->vmid */
+static ScmInternalMutex vm_id_mutex;
+
 #ifdef GAUCHE_USE_PTHREADS
 static pthread_key_t vm_key;
 #define theVM   ((ScmVM*)pthread_getspecific(vm_key))
@@ -249,6 +252,10 @@ ScmVM *Scm_NewVM(ScmVM *proto, ScmObj name)
     v->winCleanup = NULL;
 #endif /*defined(GAUCHE_USE_WTHREADS)*/
 
+    (void)SCM_INTERNAL_MUTEX_LOCK(vm_id_mutex);
+    v->vmid = vm_numeric_id++;
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(vm_id_mutex);
+
     Scm_RegisterFinalizer(SCM_OBJ(v), vm_finalize, NULL);
     return v;
 }
@@ -368,8 +375,8 @@ static void vm_finalize(ScmObj obj, void *data)
     ScmObj re = vm->resultException;
 
     if (SCM_UNCAUGHT_EXCEPTION_P(re)) {
-        Scm_Warn("A thread %S died a lonely death with uncaught exception %S.",
-                 vm->name, SCM_THREAD_EXCEPTION(re)->data);
+        Scm_Warn("A thread %S (%lu) died a lonely death with uncaught exception %S.",
+                 vm->name, vm->vmid, SCM_THREAD_EXCEPTION(re)->data);
     }
 #ifdef GAUCHE_USE_WTHREADS
     if (vm->thread != INVALID_HANDLE_VALUE) {
@@ -2775,7 +2782,7 @@ static ScmObj get_debug_info(ScmCompiledCode *base, SCM_PCTYPE pc)
     }
     int off = (int)(pc - base->code);
     ScmObj ip;
-    SCM_FOR_EACH(ip, base->info) {
+    SCM_FOR_EACH(ip, base->debugInfo) {
         ScmObj p = SCM_CAR(ip);
         if (!SCM_PAIRP(p) || !SCM_INTP(SCM_CAR(p))) continue;
         /* PC points to the next instruction,
@@ -2926,6 +2933,7 @@ void Scm__InitVM(void)
 
     Scm_HashCoreInitSimple(&vm_table, SCM_HASH_EQ, 8, NULL);
     SCM_INTERNAL_MUTEX_INIT(vm_table_mutex);
+    SCM_INTERNAL_MUTEX_INIT(vm_id_mutex);
 
     /* Create root VM */
     rootVM = Scm_NewVM(NULL, SCM_MAKE_STR_IMMUTABLE("root"));

@@ -32,20 +32,18 @@
 ;;;
 
 (define-module gauche.mop.singleton
+  (use gauche.threads)
   (export <singleton-meta> <singleton-mixin> instance-of))
 (select-module gauche.mop.singleton)
 
 (define-class <singleton-meta> (<class>)
-  (%the-singleton-instance)
+  ((%the-singleton-instance :init-form (atom #f)))
   )
 
-;; TODO: MT safeness
 (define-method make ((class <singleton-meta>) . initargs)
-  (if (slot-bound? class '%the-singleton-instance)
-      (slot-ref class '%the-singleton-instance)
-      (let ((ins (next-method)))
-        (slot-set! class '%the-singleton-instance ins)
-        ins)))
+  (atomic-update!
+   (slot-ref class '%the-singleton-instance)
+   (^[x] (or x (next-method)))))
 
 (define-method instance-of ((class <singleton-meta>) . initargs)
   (apply make class initargs))

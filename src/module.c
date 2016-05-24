@@ -106,6 +106,19 @@
  * to share a single hashtable for their internal bindings.
  */
 
+/* Note on gauche.require-base module
+   It is an immutable module to which 'require' loads code.
+   We need a base module where 'define-module' and 'define-library' are
+   visible in order for requiring modules using them to work, so
+   loading into the current module won't cut it.  However, we don't
+   want to use a specific mutable module (such as #<module gauche>) as
+   a base, since if the required module has toplevel defines without
+   switching the module, it will modify the base module.
+   By using immutable module as a base, we can reject the latter case;
+   requiring a code that inserts toplevel binding without specifying
+   a module is simply a bad idea and shouldn't be allowed.
+ */
+
 /* Global module table */
 static struct {
     ScmHashTable *table;    /* Maps name -> module. */
@@ -125,6 +138,7 @@ DEFINE_STATIC_MODULE(gfModule);       /* #<module gauche.gf> */
 DEFINE_STATIC_MODULE(userModule);     /* #<module user> */
 DEFINE_STATIC_MODULE(keywordModule);  /* #<module keyword> */
 DEFINE_STATIC_MODULE(gkeywordModule); /* #<module gauche.keyword> */
+DEFINE_STATIC_MODULE(reqbaseModule);  /* #<module gauche.require-base> */
 
 static ScmObj defaultParents = SCM_NIL; /* will be initialized */
 static ScmObj defaultMpl =     SCM_NIL; /* will be initialized */
@@ -215,6 +229,30 @@ ScmObj Scm__MakeWrapperModule(ScmModule *origin, ScmObj prefix)
     }
     m->origin = SCM_OBJ(origin);
     return SCM_OBJ(m);
+}
+
+/* Common code to report error on sealed module.
+   One common error is to try to 'use' or 'require' a file that doesn't
+   have module definitions in it.  The default error message in that case
+   is perplexing, so we use more helpful message in that case.
+ */
+static void err_sealed(ScmObj source, ScmModule *target)
+{
+    const char *what = "";
+    if (SCM_MODULEP(source)) what = "import a module";
+    else                     what = "create a binding";
+    
+    if (target == Scm__RequireBaseModule()) {
+        Scm_Error("Attempted to %s (%S) into gauche.require-base. "
+                  "This may be caused by trying to 'use' or 'require' a file"
+                  " in which no module is defined.  Make sure the file has"
+                  " define-module/select-module or define-library at the"
+                  " beginning.",
+                  what, source, SCM_OBJ(target));
+    } else {
+        Scm_Error("Attempted to %s (%S) in a sealed module: %S",
+                  what, source, SCM_OBJ(target));
+    }
 }
 
 /*----------------------------------------------------------------------
@@ -385,10 +423,7 @@ ScmObj Scm_GlobalVariableRef(ScmModule *module,
 ScmGloc *Scm_MakeBinding(ScmModule *module, ScmSymbol *symbol,
                          ScmObj value, int flags)
 {
-    if (module->sealed) {
-        Scm_Error("Attempted to create a binding (%S) in a sealed module: %S",
-                  SCM_OBJ(symbol), SCM_OBJ(module));
-    }
+    if (module->sealed) err_sealed(SCM_OBJ(symbol), module);
     
     ScmGloc *g;
     ScmObj oldval = SCM_UNDEFINED;
@@ -457,10 +492,8 @@ ScmObj Scm_DefineConst(ScmModule *module, ScmSymbol *symbol, ScmObj value)
  */
 void Scm_HideBinding(ScmModule *module, ScmSymbol *symbol)
 {
-    if (module->sealed) {
-        Scm_Error("Attempted to modify bindings (%S) in a sealed module: %S",
-                  SCM_OBJ(symbol), SCM_OBJ(module));
-    }
+    if (module->sealed) err_sealed(SCM_OBJ(symbol), module);
+
     int err_exists = FALSE;
 
     (void)SCM_INTERNAL_MUTEX_LOCK(modules.mutex);
@@ -507,10 +540,7 @@ void Scm_HideBinding(ScmModule *module, ScmSymbol *symbol)
 int Scm_AliasBinding(ScmModule *target, ScmSymbol *targetName,
                      ScmModule *origin, ScmSymbol *originName)
 {
-    if (target->sealed) {
-        Scm_Error("Attempted to modify bindings (%S) in a sealed module: %S",
-                  SCM_OBJ(targetName), SCM_OBJ(target));
-    }
+    if (target->sealed) err_sealed(SCM_OBJ(targetName), target);
 
     ScmGloc *g = Scm_FindBinding(origin, originName, SCM_BINDING_EXTERNAL);
     if (g == NULL) return FALSE;
@@ -529,10 +559,7 @@ ScmObj Scm_ImportModule(ScmModule *module,
                         ScmObj prefix,
                         u_long flags) /* reserved for future use */
 {
-    if (module->sealed) {
-        Scm_Error("Attempted to import %S into a sealed module: %S",
-                  imported, SCM_OBJ(module));
-    }
+    if (module->sealed) err_sealed(SCM_OBJ(imported), module);
 
     ScmModule *imp = NULL;
     if (SCM_MODULEP(imported)) {
@@ -869,6 +896,11 @@ ScmModule *Scm__GaucheKeywordModule(void) /* internal */
     return &gkeywordModule;
 }
 
+ScmModule *Scm__RequireBaseModule(void) /* internal */
+{
+    return &reqbaseModule;
+}
+
 ScmModule *Scm_CurrentModule(void)
 {
     return Scm_VM()->module;
@@ -919,6 +951,8 @@ void Scm__InitModule(void)
     /* other modules */
     mpl = defaultMpl;
     INIT_MOD(internalModule, SCM_SYM_GAUCHE_INTERNAL, mpl, NULL);
+    INIT_MOD(reqbaseModule, SCM_INTERN("gauche.require-base"), mpl, NULL);
+    Scm_ModuleSeal(&reqbaseModule);
 
     mpl = keywordModule.mpl;
     INIT_MOD(gkeywordModule, SCM_INTERN("gauche.keyword"), mpl,

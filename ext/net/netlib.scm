@@ -327,8 +327,8 @@
 ;; network device access
 ;; this is pretty much Linux-specific.
 
-(define-cproc socket-ioctl (sock::<socket> request::<int> data)
-  Scm_SocketIoctl)
+(define-cproc socket-ioctl (sock::<socket> request::<integer> data)
+  (return (Scm_SocketIoctl sock (Scm_GetIntegerU request) data)))
 
 (define-enum-conditionally SIOCGIFNAME)
 (define-enum-conditionally SIOCSIFNAME)

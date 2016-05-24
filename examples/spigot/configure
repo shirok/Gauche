@@ -1,0 +1,49 @@
+#!/usr/bin/env gosh
+;; Configuring spigot
+;; Run ./configure (or gosh ./configure) to generate Makefiles.
+
+(use gauche.configure)
+
+;; Define extra --with-PACKAGE and --enable-FEATURE options.
+;; These should come before cf-init so that cf-init can construct
+;; proper usage string.
+(cf-arg-with 'local
+             (cf-help-string
+              "--with-local=PATH:PATH..."
+              "For each PATH, add PATH/include to the include search
+  paths and PATH/lib to the library search paths.  Useful if you have some
+  libraries installed in non-standard places. ")
+             (^[with-local]
+               (unless (member with-local '("yes" "no" ""))
+                 (cf-subst 'LOCAL_PATHS with-local)))
+             (^[] (cf-subst 'LOCAL_PATHS "")))
+
+;; Initialize configure.  This creates the global context, parses
+;; command-line args and sets up default values.
+(cf-init)
+
+;; Set up gauche related commands.  The commands are set by scanning
+;; PATH.  You can override them by "GOSH=/my/gosh ./configure" etc.
+;; These variables may contain spaces in the pathnames (especially on
+;; Windows); Makefile.ins and other files that refer to those variables
+;; have to quote them properly.
+(cf-path-prog 'GOSH            "gosh")
+(cf-path-prog 'GAUCHE_CONFIG   "gauche-config")
+(cf-path-prog 'GAUCHE_PACKAGE  "gauche-package")
+(cf-path-prog 'GAUCHE_INSTALL  "gauche-install")
+(cf-path-prog 'GAUCHE_CESCONV  "gauche-cesconv")
+
+(cf-subst 'default_prefix (gauche-config "--prefix"))
+ 
+(cf-subst 'GAUCHE_PKGINCDIR  (gauche-config "--pkgincdir"))
+(cf-subst 'GAUCHE_PKGLIBDIR  (gauche-config "--pkglibdir"))
+(cf-subst 'GAUCHE_PKGARCHDIR (gauche-config "--pkgarchdir"))
+
+;; Output
+(cf-make-gpd)
+(cf-echo (cf$ 'PACKAGE_VERSION) > "VERSION")
+(cf-output "Makefile")
+
+;; Local variables:
+;; mode: scheme
+;; end:

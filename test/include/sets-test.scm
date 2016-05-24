@@ -239,8 +239,8 @@
   (test-assert (set-any? inexact? nums))
   (define sos
     (set set-comparator
-      (set eqv-comparator 1 2)
-      (set eqv-comparator 1 2)))
+      (set equal-comparator '(2 . 1) '(1 . 1) '(0 . 2) '(0 . 0))
+      (set equal-comparator '(2 . 1) '(1 . 1) '(0 . 0) '(0 . 2))))
   (test 1 (set-size sos))
 ) ; end sets/lowlevel
 

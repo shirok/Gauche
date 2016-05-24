@@ -1157,6 +1157,7 @@ SCM_EXTERN ScmObj Scm_MonotonicMerge1(ScmObj sequences);
 SCM_EXTERN ScmObj Scm_Union(ScmObj list1, ScmObj list2);
 SCM_EXTERN ScmObj Scm_Intersection(ScmObj list1, ScmObj list2);
 
+SCM_EXTERN ScmObj Scm_MakeExtendedPair(ScmObj car, ScmObj cdr, ScmObj attrs);
 SCM_EXTERN ScmObj Scm_ExtendedCons(ScmObj car, ScmObj cdr);
 SCM_EXTERN ScmObj Scm_PairAttr(ScmPair *pair);
 SCM_EXTERN ScmObj Scm_PairAttrGet(ScmPair *pair, ScmObj key, ScmObj fallback);

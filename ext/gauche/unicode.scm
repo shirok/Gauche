@@ -1,5 +1,5 @@
 ;;;
-;;; text.unicode - Various Unicode-specific operations
+;;; gauche.unicode - Various Unicode-specific operations
 ;;;
 ;;;   Copyright (c) 2011-2015  Shiro Kawai  <shiro@acm.org>
 ;;;
@@ -31,14 +31,12 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
-(define-module text.unicode
+(define-module gauche.unicode
   (use gauche.uvector)
   (use gauche.sequence)
   (use gauche.generator)
   (use gauche.dictionary)
   (use util.match)
-  (use data.queue)
-  (use srfi-42)
   (export ucs4->utf8  utf8-length  utf8->ucs4
           ucs4->utf16 utf16-length utf16->ucs4
           utf8->string string->utf8
@@ -57,7 +55,7 @@
           string-ci=? string-ci<? string-ci<=? string-ci>? string-ci>=?
           )
   )
-(select-module text.unicode)
+(select-module gauche.unicode)
 
 (autoload gauche.charconv ces-convert)
 
@@ -392,7 +390,7 @@
 ;;
 
 (inline-stub
- "#include \"unicode_attr.h\""
+ "#include \"gauche/priv/unicode_attr.h\""
 
  (initcode "init_GB_symbols(Scm_CurrentModule());")
  (initcode "init_WB_symbols(Scm_CurrentModule());")
@@ -483,33 +481,9 @@
                                     (^[cs] (map-to <string> ucs->char cs))))))]
     ))
 
-(define (get-sequence-generator seq)
-  (let-syntax ([make-dispatcher
-                (syntax-rules ()
-                  [(_ (pred ref) ...)
-                   (cond [(pred seq)
-                          (let ([len (size-of seq)]
-                                [i 0])
-                            (^[] (if (= i len)
-                                   eof
-                                   (begin0 (ref seq i) (inc! i)))))]
-                         ...)])])
-    (if (list? seq)
-      (let1 q (list->queue seq)
-        (cut dequeue! q eof))
-      (make-dispatcher
-       [vector?    vector-ref]
-       [u8vector?  u8vector-ref]
-       [s8vector?  s8vector-ref]
-       [u16vector? u16vector-ref]
-       [s16vector? s16vector-ref]
-       [u32vector? u32vector-ref]
-       [s32vector? s32vector-ref]
-       [identity   ref]))))
-
 (define (make-sequence-splitter cluster-reader-maker)
   (^[seq]
-    (let1 gen (get-sequence-generator seq)
+    (let1 gen (x->generator seq)
       (generator->list (cluster-reader-maker gen identity)))))
 
 ;;=========================================================================
@@ -700,6 +674,17 @@
                                                     '(Single_Quote . 18)
                                                     '(Double_Quote . 19))))
 
+;; Simple queue to avoid depending data.queue
+(define (makeq) (cons '() '()))
+(define (q-empty? q) (null? (car q)))
+(define (enq! q item) (let1 p (list item)
+                        (if (q-empty? q)
+                          (begin (set-car! q p) (set-cdr! q p))
+                          (begin (set-cdr! (cdr q) p) (set-cdr! q p)))))
+(define (deq! q) (if (q-empty? q)
+                   (error "[internal] queue is empty")
+                   (rlet1 p (caar q) (set-car! q (cdar q)))))
+
 ;; API
 ;; Returns a generator procedure.  Every time it is called, it returns
 ;; two values - a character/codepoint, taken from the generator,
@@ -709,9 +694,9 @@
 ;; The end of the input is indicated by #<eof>.
 (define (make-word-breaker generator)
   (define current-state (vector-ref *word-break-fa* 0))
-  (define q (make-queue))  ;characters looked ahead.
+  (define q (makeq))  ;characters looked ahead.
   (^[]
-    (let1 ch (if (queue-empty? q) (generator) (dequeue! q))
+    (let1 ch (if (q-empty? q) (generator) (deq! q))
       (if (eof-object? ch)
         (values ch #t) ; WB2
         (let1 p (vector-ref current-state (wb-property ch))
@@ -727,12 +712,12 @@
 
 (define (wb-lookahead generator q ch next-props)
   ;; q must be empty here, but we check just in case.
-  (unless (queue-empty? q) (error "[internal] wb6 or wb12 incorrect state"))
+  (unless (q-empty? q) (error "[internal] wb6 or wb12 incorrect state"))
   (let loop ([ch2 (generator)])
     (if (eof-object? ch2)
       (values ch #t)
       (let1 prop (wb-property ch2)
-        (enqueue! q ch2)
+        (enq! q ch2)
         (cond [(memv prop next-props) (values ch #f)]
               [(eqv? prop WB_Extend) (loop (generator))]
               [(eqv? prop WB_Format) (loop (generator))]
@@ -906,7 +891,7 @@
 
 (define (%tr ch buf kind sink char?)
   (let1 cnt (%char-xcase-extended ch buf kind char?)
-    (sink (list-ec (: i cnt) (vector-ref buf i)) ch)))
+    (sink (map (cut vector-ref buf <>) (iota cnt)) ch)))
 
 (define (%upcase generator sink char?)
   (let1 buf (make-vector SCM_CHAR_FULL_CASE_MAPPING_SIZE)
@@ -964,9 +949,8 @@
       (let loop ([ch ch] [prev-break? break?])
         (unless (eof-object? ch)
           (receive (next break?) (breaker)
-            (do-ec
-             (: i (%char-xcase-extended ch buf1 CHAR_UPCASE char?))
-             (%tr (vector-ref buf1 i) buf2 CHAR_DOWNCASE sink char?))
+            (dotimes [i (%char-xcase-extended ch buf1 CHAR_UPCASE char?)]
+              (%tr (vector-ref buf1 i) buf2 CHAR_DOWNCASE sink char?))
             (loop next break?)))))))
 
 (define string-xcase
@@ -986,7 +970,7 @@
 
 (define (codepoints-xcase seq doer)
   (with-builder ((class-of seq) add! get)
-    (doer (get-sequence-generator seq) (^(cs alt) (for-each add! cs)) #f)
+    (doer (x->generator seq) (^(cs alt) (for-each add! cs)) #f)
     (get)))
 
 ;; APIs

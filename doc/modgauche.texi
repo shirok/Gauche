@@ -23,6 +23,7 @@
 * Singleton::                   gauche.mop.singleton
 * Slot with validator::         gauche.mop.validator
 * Networking::                  gauche.net
+* Package metainformation::     gauche.package
 * Parameters::                  gauche.parameter
 * Parsing command-line options::  gauche.parseopt
 * Partial continuations::       gauche.partcont
@@ -36,6 +37,7 @@
 * Unit testing::                gauche.test
 * Threads::                     gauche.threads
 * Measure timings::             gauche.time
+* Unicode utilities::           gauche.unicode
 * Uniform vectors::             gauche.uvector
 * Comparing version numbers::   gauche.version
 * Virtual ports::               gauche.vport
@@ -1632,12 +1634,21 @@ the @code{open-*-conversion-port}.
 @section @code{gauche.cgen} - Generating C code
 @c NODE Cコードの生成, @code{gauche.cgen} - Cコードの生成
 
+@c EN
 Significant part of Gauche is written in Gauche or S-expression
 based DSL.  During the building process, they are converted
 into C sources and then compiled by C compiler.
 The @code{gauche.cgen} module and its submodules expose
 the functionality Gauche build process is using to the general use.
+@c JP
+Gauche本体の多くの部分は、Gauche自身、もしくはS式ベースのDSLで書かれています。
+これらのコードはビルド中にCソースに変換され、Cコンパイラで
+コンパイルされます。
+@code{gauche.cgen}モジュールおよびそのサブモジュールは、
+Gaucheビルドプロセスが使っているこの機能を一般にも使えるように公開するものです。
+@c COMMON
 
+@c EN
 Required features for a C code generator differ greatly among
 applications, and too much scaffolding could be a constraint
 for the module users.  So, instead of providing a single
@@ -1646,18 +1657,41 @@ so that you can combine necessary features freely.  In fact,
 some of Gauche build process only use @code{gauche.cgen.unit}
 and @code{gauche.cgen.literal} (see @file{src/builtin-syms.scm},
 for example).
+@c JP
+Cコードジェネレータに要求される機能はアプリケーションによって多種多様であり、
+あまりがちがちに枠組みを固定してしまうと却って使い辛くなるでしょう。
+そこで、ひとつの固定したフレームワークではなく、
+ゆるく連携するいくつかのモジュールを提供し、ユーザが必要な機能を自由に
+組み合わせて使えるようにしてあります。実際、Gaucheのビルド時に走る
+プロセスの中には、@code{gauche.cgen.unit}や@code{gauche.cgen.literal}だけしか
+使わないものもあります(例えば@file{src/builtin-syms.scm}を見てください)。
+@c COMMON
 
 @deftp {Module} gauche.cgen
 @mdindex gauche.cgen
+@c EN
 This is a convenience module that extends
 @code{gauche.cgen.unit}, @code{gauche.cgen.literal},
 @code{gauche.cgen.type} and @code{gauche.cgen.cise} together.
+@c JP
+このモジュールは、簡便のために
+@code{gauche.cgen.unit}、@code{gauche.cgen.literal}、
+@code{gauche.cgen.type}、@code{gauche.cgen.cise}を
+extendしたものです。
+@c COMMON
 @end deftp
 
+@c EN
 Usually you can just use @code{gauche.cgen} and don't need
 to think about individual submodules.
 The following subsections are organized by submodules
 only for the convenience of explanation.
+@c JP
+大抵の場合、@code{gauche.cgen}をuseしておけば、個々のサブモジュールについて
+考える必要はありません。
+以降のセクションは主に説明のしやすさのために、サブモジュールごとに
+分けて記述してあります。
+@c COMMON
 
 @menu
 * Generating C source files::   gauche.cgen.unit
@@ -1667,6 +1701,7 @@ only for the convenience of explanation.
 @end menu
 
 @node Generating C source files, Generating Scheme literals, Generating C code, Generating C code
+@c NODE Cソースファイルを生成する
 @subsection Generating C source files
 
 One of the tricky issues about generating C source is that
@@ -1999,6 +2034,7 @@ code fragment only to the designated part.
 
 
 @node Generating Scheme literals, Conversions between Scheme and C, Generating C source files, Generating C code
+@c NODE Schemeリテラルを生成する
 @subsection Generating Scheme literals
 
 Sometimes you want to refer to a Scheme constant value in C code.
@@ -2075,6 +2111,7 @@ behavior for new types.  The API isn't fixed yet, though.)
 
 
 @node Conversions between Scheme and C, C in S expression, Generating Scheme literals, Generating C code
+@c NODE SchemeとCの間の変換
 @subsection Conversions between Scheme and C
 
 In the C world, any Scheme object is uniformly of type @code{ScmObj}.
@@ -2236,6 +2273,7 @@ typechecks the @var{c-expr} according to the @var{cgen-type}.
 
 
 @node C in S expression,  , Conversions between Scheme and C, Generating C code
+@c NODE S式で書くC, CiSE - S式で書くC
 @subsection CiSE - C in S expression
 
 Some low-level routines in Gauche are implemented in C, but they're
@@ -3704,12 +3742,10 @@ an abridged version of sample configure script:
              (^[] (cf-subst 'LOCAL_PATHS "")))
 
 ;; Initialization
-(cf-init "mylib" "1.0" "nobody@@example.org")
+(cf-init)
 
 ;; Tests & other parameter settings
 (cf-path-prog 'GOSH "gosh")
-(cf-subst 'SOEXT (gauche-config "--so-suffix"))
-(cf-subst 'OBJEXT (gauche-config "--object-suffix"))
 
 ;; Output
 (cf-make-gpd)
@@ -3729,12 +3765,13 @@ and/or @code{--enable-FEATURE} options you want to handle.
 @item
 Initialization.  Call to @code{cf-init} sets up global context and
 parses command-line arguments passed to @code{configure}.
+It also process package metainformation in @file{package.scm}, if it exists.
 @item
 Tests and other parameter settings (optional): Check system
 characteristics and sets up substitution parameters and/or
 C preprocessor definitions.
 @item
-Output generation
+Output generation.  Call @code{cf-output} to process files.
 @end enumerate
 
 Most @code{cf-*} API corresponds to autoconf's @code{AC_*} or
@@ -3751,7 +3788,43 @@ including custom arguments.
 @subsubheading 初期化
 @c COMMON
 
-@defun cf-init package-name package-version maintainer-email
+@defun cf-init :optional package-name package-version maintainer-email homepage-url
+Initialize the configure system.  This must be called once in the
+configure script, before any feature-test procedures.
+
+First, it checks if a file named @file{package.scm} is
+in the same directory as the configure script,
+and reads the Gauche package description from it.  The package description
+contains package name, version, dependencies, etc.
+@xref{Package metainformation}, for the details.
+
+It then parse the command-line arguments, sets up the configure
+environment, and (if @file{package.scm} defines dependencies) check
+if the system has required packages.
+
+The optional arguments are only supported for the backward compatibility
+if you don't have @file{package.scm}, you need at least 
+to provide @var{package-name} and @var{package-version} to tell
+what package you're configuring.  They are used as the value
+of configure variable @code{PACKAGE_NAME} and @code{PACKAGE_VERSION}.
+The other optional arguments, @var{maintainer-email} and 
+@var{homepage-url}, are used to initialize @code{PACKAGE_BUGREPORT} and
+@code{PACKAGE_URL}.  These arguments are compatible to autoconf's
+@code{AC_INIT} macro.
+
+We recommend to always use @file{package.scm} and omit all the optional
+arguments, because it allows you to maintain the package metainformation
+in one place.  When @file{package.scm} is read, @code{PACKAGE_BUGREPORT}
+is initialized by the first entry of @code{maintainers} slot of
+the package description, and @code{PACKAGE_URL} is initialized
+by its @code{homepage} slot.
+@xref{Package metainformation}, for description of slots of the package
+description.
+
+Note that if there's @file{package.scm} @emph{and} you provide
+the optional arguments, they must match, or @code{cf-init} raises an
+error.  It is to catch an error during transition in which you forgot
+to update either one.
 @end defun
 
 @c EN
@@ -3812,6 +3885,9 @@ including custom arguments.
 @defun cf-have-subst? symbol
 @end defun
 
+@defun cf-arg-var symbol
+@end defun
+
 @defun cf-ref symbol :optional default
 @end defun
 
@@ -3824,12 +3900,24 @@ including custom arguments.
 @subsubheading 定義済みテスト
 @c COMMON
 
-
 @defun cf-check-prog sym prog-or-progs :key value default paths filter
 @end defun
 
 @defun cf-path-prog sym prog-or-progs :key value default paths filter
 @end defun
+
+@defun cf-prog-cxx
+@end defun
+
+@defun cf-check-header header :key includes
+@end defun
+
+@defun cf-check-headers headers :key includes if-found if-not-found
+@end defun
+
+@defun cf-includes-default :optional newvalue
+@end defun
+
 
 @c EN
 @subsubheading Output
@@ -5333,10 +5421,34 @@ one at a time.
 作成して返します。
 @c COMMON
 
+@c EN
+Example: The game Tetris determines the next 
+dropping piece (tetrimino) by the following algorithm: Take a
+bag of tetriminos with one for each kind (O, I, T, S, Z, L, J),
+permute it, and draw one by one; once the bag is empty, take another
+bag and repeat.  The algorithm can be implemented by a pipeline
+of generates as follows.  (Tetris is a registered trademark of
+The Tetris Company).
+@c JP
+例: ゲームのテトリスは、次に落ちてくるピース (テトリミノ) を次の
+アルゴリズムで決めています: 各種類(O, I, T, S, Z, L, J)のテトリミノが
+一つづつ入った袋をとり、そこからランダムに一つづつ取り出す。袋が空になったら
+新たにテトリミノの袋をとり繰り返す。このアルゴリズムは次に示すとおり
+ジェネレータのパイプラインで実装できます。(テトリスはThe Tetris Companyの
+登録商標です)
+@c COMMON
+
 @example
-($ generator->list $ gflatten
-   $ list->generator `(,(iota 3) ,(iota 2)))
- @result{} (0 1 2 0 1)
+(use gauche.generator)
+(use data.random) ; for permutations-of
+
+(define g
+  ($ gflatten $ permutations-of
+     $ (circular-generator '(O I T S Z L J))))
+
+(generator->list g 21)
+  @result{}
+  (L O Z T J S I J L Z T I O S T L Z S I J O)
 @end example
 
 @c EN
@@ -5620,37 +5732,6 @@ the lines after such line continuations are taken care of.
                 '()
                 (file->line-generator "input-file.txt")
                 (^[s] `(,(string-concatenate-reverse s))))
-@end example
-@c COMMON
-
-@c EN
-Another example: The game Tetris determines the next 
-dropping piece (tetrimino) by the following algorithm: Take a
-bag of tetriminos with one for each kind (O, I, T, S, Z, L, J),
-permute it, and draw one by one; once the bag is empty, take another
-bag and repeat.  The algorithm can be implemented by a pipeline
-of generates as follows.  (Tetris is a registered trademark of
-The Tetris Company).
-@c JP
-もう一つの例: ゲームのテトリスは、次に落ちてくるピース (テトリミノ) を次の
-アルゴリズムで決めています: 各種類(O, I, T, S, Z, L, J)のテトリミノが
-一つづつ入った袋をとり、そこからランダムに一つづつ取り出す。袋が空になったら
-新たにテトリミノの袋をとり繰り返す。このアルゴリズムは次に示すとおり
-ジェネレータのパイプラインで実装できます。(テトリスはThe Tetris Companyの
-登録商標です)
-@c COMMON
-
-@example
-(use data.random) ; for permutations-of
-
-(define g
-  ($ gbuffer-filter (^[i _] (values i #f)) #f
-     $ permutations-of
-     $ (circular-generator '(O I T S Z L J))))
-
-(generator->list g 21)
-  @result{}
-  (L O Z T J S I J L Z T I O S T L Z S I J O)
 @end example
 @end defun
 
@@ -7746,10 +7827,14 @@ and further attempt of creation returns the same instance.
 The slots of the instance are initialized at the first invocation
 of @code{make}.  Initargs of @code{make} are effective only in the
 fist invocation, and ignored in the subsequent invocation.
+
+The call of initialization in @code{make} is thread-safe.
 @c JP
 インスタンスのスロットは最初の @code{make} の呼び出し時に
 初期化されます。@code{make}への初期引数は最初の呼び出しのときに
 だけ効果があり、それ以降の呼び出しでは無視されます。
+
+初期化ルーチンの呼び出しはスレッドセーフです。
 @c COMMON
 @end deftp
 
@@ -7904,7 +7989,7 @@ only a couple of dozen lines of code.
 @end deftp
 
 @c ----------------------------------------------------------------------
-@node Networking, Parameters, Slot with validator, Library modules - Gauche extensions
+@node Networking, Package metainformation, Slot with validator, Library modules - Gauche extensions
 @section @code{gauche.net} - Networking
 @c NODE ネットワーキング, @code{gauche.net} - ネットワーキング
 
@@ -9758,7 +9843,60 @@ netdbインタフェースのScheme APIは必要な箇所ではこれらの関�
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Parameters, Parsing command-line options, Networking, Library modules - Gauche extensions
+@node Package metainformation, Parameters, Networking, Library modules - Gauche extensions
+@section @code{gauche.package} - Package metainformation
+@c NODE パッケージメタ情報, @code{gauche.package} - パッケージメタ情報
+
+@deftp {Module} gauche.package
+@mdindex gauche.package
+Gauche manages extra libraries and extension modules as @emph{packages}.
+
+Each package source tree has @file{package.scm} on top directory, which
+contains @code{define-gauche-package} form that provides metainformation
+about the package---the package name, veirson, author, dependencies, etc.
+
+When the package is installed, the standard installation process copies
+that information, with additional information such as the version of
+Gauche used to build the package, into @file{.packages} subdirectory
+of the library installation path, with the name @file{PACKAGENAME.gpd},
+where @code{PACKAGENAME} is the name of the package.
+
+We collectively call @file{package.scm} and @file{*.gpd} as
+@emph{package description file}.
+
+This module provides utility procedures to read and write package 
+description files, and search installed @file{*.gpd} files.
+@end deftp
+
+@subheading @code{define-gauche-package} form
+
+@subheading @code{configure} script and @code{*.gpd} file generation
+
+@subheading Utility procedures
+
+@defun <gauche-package-description>
+@end defun
+
+@defun path->gauche-package-description filename
+@end defun
+
+@defun write-gauche-package-description description :optional oport
+@end defun
+
+@defun make-gauche-package-description
+@end defun
+
+@defun gauche-package-description-paths :key all-versions
+@end defun
+
+@defun find-gauche-package-description name :key all-versions
+@end defun
+
+
+
+
+@c ----------------------------------------------------------------------
+@node Parameters, Parsing command-line options, Package metainformation, Library modules - Gauche extensions
 @section @code{gauche.parameter} - Parameters
 @c NODE パラメータ, @code{gauche.parameter} - パラメータ
 
@@ -12421,32 +12559,102 @@ to which keyword arguments are passed.
 
 @end defun
 
-@defun shell-escape-string arg
+@defun shell-escape-string str :optional flavor
 @c EN
-If @var{arg} contains characters that affects shell's command-line
-argument parsing, escape @var{arg} to avoid shell's interpretation.
-Otherwise, returns @var{arg} itself.
+If @var{str} contains characters that affects shell's command-line
+argument parsing, escape @var{str} to avoid shell's interpretation.
+Otherwise, returns @var{str} itself.
+
+The optional @var{flavor} argument takes a symbol to
+specify the platform; currently @code{windows} and
+@code{posix} can be specified.  The way shell handles
+the escape and quotation differ a lot between these platforms;
+the @code{windows} flavor uses MSVC runtime argument parsing behavior,
+while the @code{posix} flavor assumes IEEE Std 1003.1.
+When omitted, the default
+value is chosen according to the running platform.
+(Note: Cygwin is regarded as @code{posix}.)
 
 Use this procedure when you need to build a command-line string by yourself.
 (If you pass a command-line argument list, instead of a single
 command-line string, you don't need to escape them since we
 bypass the shell.)
-
-On Windows native build, this procedure is compatible to
-the argument parsing convention of Windows standard C runtime.
 @c JP
-@var{arg}がシェルのコマンドライン引数解析に影響を与える文字を含んでいる場合、
+@var{str}がシェルのコマンドライン引数解析に影響を与える文字を含んでいる場合、
 それらがシェルによって解釈されないようにエスケープされた文字列を返します。
-そうでなければ@var{arg}自体を返します。
+そうでなければ@var{str}自体を返します。
+
+省略可能な@var{flavor}引数はシンボルを取り、プラットフォームを指定します。
+現在は@code{windows}か@code{posix}が指定可能です。シェルが
+エスケープやクオートを処理する方法がこの二つのプラットフォームで大きく
+異なるからです。@code{windows}フレーバーの場合はMVCSランタイムの
+引数パージングに合わせ、@code{posxi}フレーバーの場合はIEEE Std 1003.1に
+合わせます。
+省略された場合は、プロセスが走っているプラットフォームが
+デフォルトの値となります。(Cygwinは@code{posix}とみなされます。)
 
 自分でコマンドライン文字列を組み立てる必要がある場合に使ってください。
 (単一のコマンドライン文字列でなく、コマンドライン引数のリストを渡す場合は
 エスケープの必要はありません。引数はシェルを通さずに子プロセスに渡される
 からです。)
-
-Windowsネイティブビルドの場合、この手続きはWindowsの標準Cランタイムの
-引数解析に合わせてあります。
 @c COMMON
+@end defun
+
+@defun shell-tokenize-string str :optional flavor
+@c EN
+Split a string @var{str} into arguments as the shell does.
+@c JP
+シェルがやるように、文字列@var{str}を引数リストに分割します。
+@c COMMOM
+
+@example
+(shell-tokenize-string "grep -n -e \"foo bar\" log")
+ @result{} ("grep" "-n" "-e" "foo bar" "log")
+@end example
+
+@c EN
+The optional @var{flavor} arguments can be a symbol either 
+@code{windows} or @code{posix} to specify the syntax.
+If it's @code{windows}, we follow MSVC runtime command-line
+argument parser behavior.  If it's @code{posix}, we follow
+IEEE Std 1003.1 Shell Command Language.  When omitted,
+the default value is chosen according to the running platform.
+(Note: Cygwin is regarded as @code{posix}.)
+@c JP
+省略可能な@var{flavor}引数はシンボル@code{windows}か@code{posix}を取り、
+構文を指定します。@code{windows}の場合はMVCSランタイムの
+引数パージングに合わせ、@code{posxi}フレーバーの場合はIEEE Std 1003.1
+Shell Command Languageに合わせます。
+省略された場合は、プロセスが走っているプラットフォームが
+デフォルトの値となります。(Cygwinは@code{posix}とみなされます。)
+@c COMMON
+
+@c EN
+This procedure does not handle fancier shell features such
+as variable substitution.  If it encounters a metacharacter
+that requires such interpretation, an error is signaled.
+In other words, metacharacters must be properly quoted
+in @var{str}.
+@c JP
+この手続きはシェルの変数置換のような高度な機能は持っていません。
+もしそういった解釈が必要なメタ文字に出会った場合はエラーが投げられます。
+言い換えれば、メタ文字は@var{str}の中で全て適切にクオートされている
+必要があります。
+@c COMMON
+
+@example
+(shell-tokenize-string "echo $foo" 'posix)
+  @result{} @r{signals error}
+
+(shell-tokenize-string "echo \"$foo\"" 'posix)
+  @result{} @r{still signals error}
+
+(shell-tokenize-string "echo '$foo'" 'posix)
+  @result{} ("echo" "$foo")
+
+(shell-tokenize-string "echo \\$foo" 'posix)
+  @result{} ("echo" "$foo")
+@end example
 @end defun
 
 @c ----------------------------------------------------------------------
@@ -14407,8 +14615,6 @@ the slave pty.
 @subsection Common high-level terminal control
 @c NODE 共通の高レベル端末制御
 
-Currently we only have one high-level API.  We may add more as needed.
-
 @defun without-echoing iport proc
 If @var{iport} is an input port connected to a terminal,
 sets the terminal mode non-echoing and call @var{proc} with
@@ -14433,6 +14639,16 @@ Note: Because of an implementation issue, on Windows native
 platforms this procedure always changes console mode
 of the standard input handle when @code{iport} is either
 @code{#f} or a terminal input port.
+@end defun
+
+@defun has-windows-console?
+Returns @code{#t} iff the running Gauche is Windows-native and
+the process has attached console.  On POSIX platforms this
+procedure always returns @code{#f}.
+
+The reason that @code{cond-expand} isn't enough is that on Windows
+the program may start without console, but you can attach console
+afterwards.  @xref{Windows console API}, for the details.
 @end defun
 
 
@@ -16775,7 +16991,7 @@ SRFI-18との互換性のために提供されています。
 
 
 @c ----------------------------------------------------------------------
-@node Measure timings, Uniform vectors, Threads, Library modules - Gauche extensions
+@node Measure timings, Unicode utilities, Threads, Library modules - Gauche extensions
 @section @code{gauche.time} - Measure timings
 @c NODE 時間の計測, @code{gauche.time} - 時間の計測
 
@@ -17244,9 +17460,393 @@ spend in process-A and process-B inside a loop.
   )
 @end example
 
+@c ----------------------------------------------------------------------
+@node Unicode utilities, Uniform vectors, Measure timings, Library modules - Gauche extensions
+@section @code{gauche.unicode} - Unicode utilities
+@c NODE Unicodeユーティリティ, @code{gauche.unicode} - Unicodeユーティリティ
+
+@deftp {Module} gauche.unicode
+@mdindex gauche.unicode
+@c EN
+This module provides various operations on a sequence of Unicode codepoints.
+
+Gauche can be compiled with a native encoding other than Unicode,
+and the full Unicode-compatible behavior on characters and strings may
+not be available on such systems.  So we provide most operations in two
+flavors: Operations on characters and strings, or operations on
+codepoints represented as a sequence of integers.
+@c JP
+このモジュールは、Unicodeのコードポイントの列に対する様々な操作を提供します。
+
+Gaucheはコンパイル時に、内部文字エンコーディングとしてUnicode以外も選べます。
+その場合、文字列に対して完全にUnicode互換の動作を提供できない場合があります。
+そこで、本モジュールの多くの操作は、文字列を対象にするものと、
+コードポイントの数値のシーケンスを対象にするものの両方で提供されます。
+@c COMMON
+
+@c EN
+If Gauche is compiled with its native encoding being @code{none},
+@code{euc-jp} or @code{sjis}, character-and-string operations
+are likely to be partial functions of the operations defined
+in Unicode standard.  That is, if the operation can yield a
+character that are not supported in the native encoding, it
+may be remapped to an alternative character.  Each manual entry
+explains the detailed behavior.
+@c JP
+Gaucheの内部エンコーディングが@code{none}、
+@code{euc-jp}、@code{sjis}の場合は、
+文字および文字列に対する操作はUnicode標準で定義されたものと完全には一致しないでしょう。
+操作の結果が、内部エンコーディングでは定義されていない文字になった場合、
+それは代替文字に置き換えられます。各関数のエントリで詳しく説明してあります。
+@c COMMON
+
+@c EN
+The codepoint operations are independent from Gauche's native
+encoding and supports full spec as defined in Unicode standard.
+If Gauche is compiled with the @code{utf-8} native encoding,
+the operations are essentially the same as character-and-string flavors
+when you convert codepoints and characters by @code{char->integer} and
+@code{integer->char}.  The codepoint operations are handy when
+you need to support the algorithms described in Unicode standard
+fully, no matter what the running Gauche's native encoding is.
+@c JP
+コードポイントの列に対する操作はGaucheの内部文字エンコーディングとは
+無関係であり、Unicode標準の定義が完全にサポートされます。
+Gaucheが@code{utf-8}でコンパイルされている場合、コードポイント列に
+対する操作は、文字列に対する操作と (各要素を@code{char->integer}および
+@code{integer->char}で変換すること以外は)一致します。
+コードポイント列に対する操作はGaucheの内部文字エンコーディングにかかわらず
+ポータブルなアルゴリズムを必要とする場合に便利です。
+@c COMMON
+@end deftp
+
+@menu
+* Unicode transfer encodings::  
+* Unicode text segmentation::   
+* Full string case conversion::  
+@end menu
+
+@node Unicode transfer encodings, Unicode text segmentation, Unicode utilities, Unicode utilities
+@subsection Unicode transfer encodings
+
+The procedures in this group operate on codepoints represented as integers.
+In the following descriptions, `octets' refers to an integer
+between 0 to 255, inclusive.
+
+They take optional @var{strictness} argument.  It specifies
+what to do when the procedure encounters a datum outside
+of the defined domain.  Its value can be either one of the
+following symbols:
+
+@table @code
+@item strict
+Raises an error when the procedure encounters such input.
+This is the default behavior.
+@item permissive
+Whenever possible, treat the date as if it is a valid value.
+For example, codepoint value beyond @code{#x10ffff} is invalid
+in Unicode standard, but it may be useful for some other purpose
+that just want to use UTF-8 as an encoding scheme of binary data.
+@item ignore
+Whenver possible, treat the invalid input as if they do not exist.
+@end table
+
+The procedure may still raise an error in @code{permissive} or
+@code{ignore} strictness mode, if there can't be a sensible
+way to handle the input data.
+
+@defun ucs4->utf8 codepoint :optional strictness
+Takes an integer codepoint and returns a list of octets that
+encodes the input in UTF-8.
+
+@example
+(ucs4->utf8 #x3bb)  @result{} (206 187)
+(ucs4->utf8 #x3042) @result{} (227 129 130)
+@end example
+
+If @var{strictness} is @code{strict} (default), input codepoint
+between @code{#xd800} to @code{#xdfff}, and beyond @code{#x110000},
+are rejected.  If @var{strictness} is @code{permissive}, it accepts
+input between @code{0} and @code{#x7fffffff}, inclusive; it may produce
+5 or 6 octets if the input is large (as the original UTF-8 definition).
+If @var{strictness} is @code{ignore}, it returns an empty list
+for invalid codepoints.
+@end defun
+
+@defun utf8-length octet :optional strictness
+Takes @var{octet} as the first octet of UTF-8 sequence, and
+returns the number of total octets requried to decode
+the codepoint.
+
+If @var{strictness} is @code{strict} (default), this
+procedure returns either 1, 2, 3 or 4.   An error is
+thrown if @var{octet} cannot be a leading octet of
+a proper UTF-8 encoded Unicode codepoint.
+
+If @var{strictness} is @code{permissive}, this procedure
+may return an integer between 0 and 6, inclusive.
+It allows the codepoint range @code{#x110000} to
+@code{#x7fffffff} as the original utf-8 spec, so
+the maximum number of octets can be up to 6.
+If the input is in the range between @code{#xc0}
+and @code{#xdf}, inclusive, this procedure returns
+1--it's up to the application how to treat these illegal
+octets.  For other values, it returns @code{0}.
+
+If @var{strictness} is @var{ignore}, this procedure
+returns @code{0} when it would raise an error if
+@var{strictness} is @code{strict}.  Other than that,
+it works the same as the default case.
+@end defun
+
+@defun utf8->ucs4 octet-list :optional strictness
+Takes a list of octets, and decodes it as a utf-8 sequence.
+Returns two values: The decoded ucs4 codepoint, and the
+rest of the input list.
+
+An invalid utf8 sequence causes an error if @var{strictness}
+is @code{strict}, or skipped if it is @code{ignore}.
+If @var{strictness} is @code{permissive}, the procedure accepts
+the original utf-8 sequence which can produce surrogated pair
+range (between @code{#xd800} and @code{#dfff}) and the range
+between @code{#x110000} to @code{#x7fffffff}.  The invalid
+octet sequence is still an error with @code{permissive} mode.
+@end defun
+
+@defun utf8->string u8vector :optional start end
+[R7RS]
+Converts a sequence of utf8 octets in @var{u8vector} to a string.
+Optional @var{start} and/or @var{end} argument(s) will limit the
+range of the input.
+
+If Gauche's native encoding is utf8, 
+@code{u8vector->string} (@pxref{Uvector conversion operations})
+will do the job faster; but this routine can be used regardless
+of Gauche's native encoding, and it raises an error if @var{u8vector}
+contains octet sequences illegal as utf8.
+@end defun
+
+@defun string->utf8 string :optional start end
+[R7RS]
+Converts a string to a u8vector of utf8 octets.
+Optional @var{start} and/or @var{end} argument(s) will limit the
+range of the input.
+
+If Gauche's native encoding is utf8, 
+@code{string->u8vector} (@pxref{Uvector conversion operations})
+will do the job faster; but this routine can be used regardless
+of Gauche's native encoding.
+@end defun
+
+@defun ucs4->utf16 codepoint :optional strictness
+Takes an integer codepont and returns a list of integers
+that encodes the input in UTF-16.  The output is either
+one integer or two integers, and each integer is in the
+range between 0 and 65535 (inclusive).
+
+If @var{strictness} is @code{strict} (default), input codepoint
+between @code{#xd800} to @code{#xdfff}, and beyond @code{#x110000},
+are rejected.  If @var{strictness} is @code{permissive}, it accepts
+high surrogates and low surrogates, in which case the result is
+single element list of input.  If @var{strictness} is @code{ignore},
+an empty list is returned for an invalid codepoint (including surrogates).
+@end defun
+
+@defun utf16-length code :optional strictness
+@var{Code} must be an integer between 0 and 65535, inclusive.
+Returns 1 if @var{code} is BMP character codepoint, or
+2 if @var{code} is high surrogate codepoint.
+
+If @var{strictness} is @code{strict} (default), an error is
+signalled if @var{code} is a low surrogate, or it is out of range.
+If @var{strictness} is @code{permissive}, 1 is returned
+for low surrogates, but an error is signalled for out of range arguments.
+If @var{strictness} is @code{ignore}, 0 is returned
+for low surrogates and out of range arguments.
+@end defun
+
+@defun utf16->ucs4 code-list :optional strictness
+Takes a list of integers and decodes it as a utf-16 sequence.
+Returns two values: The decoded ucs4 codepoint, and the rest of
+input list.
+
+If @var{strictness} is @code{strict} (default), an invalid utf-16
+sequence and out-of-range integer raise an error.  If @var{strictness}
+is @code{permissive}, an out-of-range integer causes an error, but
+a lone surrogate is allowed and returned as is.  If @var{strictness}
+is @code{ignore}, lone surrogates and out-of-range integers are just
+ignored.
+@end defun
+
+@node Unicode text segmentation, Full string case conversion, Unicode transfer encodings, Unicode utilities
+@subsection Unicode text segmentation
+
+These procedures implements grapheme-cluster and
+word breaking algorithms defined in UAX #29: Unicode Text Segmentation.
+
+@defun string->words string
+@defunx codepoints->words sequence
+From given string or codepoint sequence (a @code{<sequence>}
+object containing list of codepoints), returns a list of
+words.  Each cluster is represented as a string, or
+a sequence of the same type as input, respectively.
+
+@example
+(string->words "That's it.")
+ @result{} ("That's" " " "it" ".")
+(codepoints->words '(84 104 97 116 39 115 32 105 116 46)
+ @result{} ((84 104 97 116 39 115) (32) (105 116) (46))
+@end example
+
+In the second example, the list is a list of codepoints
+of characters in "That's it."
+@end defun
+
+
+@defun string->grapheme-clusters string
+@defunx codepoints->grapheme-clusters sequence
+From given string or codepoint sequence (a @code{<sequence>}
+object containing list of codepoints), returns a list of
+grapheme clusters.  Each cluster is represented as a string,
+or a sequence of the same type as input, respectively.
+@end defun
+
+
+The following procedures are low-level building blocks
+to build the above @code{string->words} etc.
+A @var{generator} argument is a procedure
+with no arguments, and returns a value (or some values) at at time
+for every call, until it returns EOF.
+
+@defun make-word-breaker generator
+@defunx make-grapheme-cluster-breaker generator
+From given @var{generator} is a generator of characters or codepoints,
+returns a generator that returns two values: The first value is the
+character or codepoint generated from the original generator, and the
+second value is a boolean flag, which is @code{#t} if a word
+or a grapheme cluster
+breaks before the character/codepoint, and @code{#f} otherwise.
+
+Suppose a generator @var{g} returns characters in a string
+@code{That's it.}, one at a time.  Then the created generator
+will work as follows:
+
+@example
+(define brk (make-word-breaker g))
+(brk)  @result{}  #\T     and #t
+(brk)  @result{}  #\h     and #f
+(brk)  @result{}  #\a     and #f
+(brk)  @result{}  #\t     and #f
+(brk)  @result{}  #\'     and #f
+(brk)  @result{}  #\s     and #f
+(brk)  @result{}  #\space and #t
+(brk)  @result{}  #\i     and #t
+(brk)  @result{}  #\t     and #f
+(brk)  @result{}  #\.     and #t
+(brk)  @result{}  #<eof>  and #t
+@end example
+
+It shows the word breaks at those character boundaries shown
+by the caret @code{^} below (for clearity, I use @code{_} to indicate
+the space).
+
+@example
+  T h a t ' s _ i t .
+ ^           ^ ^   ^ ^
+@end example
+@end defun
+
+@defun make-word-reader generator return
+@defunx make-grapheme-cluster-reader generator return
+The input @var{generator} is a generator of characters or codepoints,
+and @var{return} is a procedure that takes a list of characters or
+codepoints, and returns an object.   These procedures creates a
+generator that returns an object at at time, each consists of a
+word or a grapheme cluster, respectively.
+
+Suppose a generator @var{g} returns characters in a string
+@code{That's it.}, one at a time, again.
+Then the created generator works as follows:
+
+@example
+(define brk (make-word-reader g list->string))
+(brk)  @result{}  "That's"
+(brk)  @result{}  " "
+(brk)  @result{}  "it"
+(brk)  @result{}  "."
+(brk)  @result{}  #<eof>
+@end example
+
+@end defun
+
+
+@node Full string case conversion,  , Unicode text segmentation, Unicode utilities
+@subsection Full string case conversion
+
+@defun string-upcase string
+@defunx string-downcase string
+@defunx string-titlecase string
+@defunx string-foldcase string
+[R6RS][R7RS]
+Converts given @var{string} to upper case, using language-independent
+full case folding defined by Unicode standard.
+They differ from srfi-13's procedures
+with the same names (@pxref{SRFI-13 String case mapping}),
+which simply uses character-by-character case mapping.
+Notably, the length of resulting string may differ from the source string,
+and some conversions are sensitive to whether the character is at the
+word boundary or not.  The word boundaries are determined according
+to UAX #29 text segmentation rules.
+
+@example
+(string-upcase "straße")
+ @result{} "STRASSE"
+(string-downcase "ΧΑΟΣΧΑΟΣ.ΧΑΟΣ. Σ.")
+ @result{} "χαοσχαοσ.χαος. σ."
+(string-titlecase "You're talking about R6RS, right?")
+ @result{} "You're Talking About R6rs, Right?"
+(string-foldcase "straße")
+ @result{} "strasse"
+(string-foldcase "ΧΑΟΣΣ")
+ @result{} "χαοσσ"
+@end example
+
+@end defun
+
+@defun codepoints-upcase sequence
+@defunx codepoints-downcase sequence
+@defunx codepoints-titlecase sequence
+@defunx codepoints-foldcase sequence
+Like @code{string-upcase} etc, but these work on a sequence of
+codepoints instead.  Returns a sequence of the same type of the input.
+
+@example
+(codepoints-upcase '#(115 116 114 97 223 101))
+ @result{} #(83 84 82 65 83 83 69)
+@end example
+@end defun
+
+@defun string-ci=? string1 string2 string3 @dots{}
+@defunx string-ci<? string1 string2 string3 @dots{}
+@defunx string-ci<=? string1 string2 string3 @dots{}
+@defunx string-ci>? string1 string2 string3 @dots{}
+@defunx string-ci>=? string1 string2 string3 @dots{}
+[R7RS]
+Case-insensitive string comparison, using full-string case conversion.
+
+Note that Gauche has builtin @code{string-ci=?} etc., which use
+character-wise case folding (@pxref{String Comparison}).  These are
+different procedures.
+
+@example
+(string-ci=? "\u00df" "SS") @result{} #t
+@end example
+@end defun
+
+
 
 @c ----------------------------------------------------------------------
-@node Uniform vectors, Comparing version numbers, Measure timings, Library modules - Gauche extensions
+@node Uniform vectors, Comparing version numbers, Unicode utilities, Library modules - Gauche extensions
 @section @code{gauche.uvector} - Uniform vectors
 @c NODE ユニフォームベクタ, @code{gauche.uvector} - ユニフォームベクタ
 
@@ -17959,7 +18559,7 @@ overlapping.
 and @var{source}, and just copies contents of @var{source} to @var{target}.
 Both vectors had to be the same type and same length.  The API is revised
 to the current form to make it parallel with @code{string-copy!} (SRFI-13)
-and @code{vector-copy!} (SRFI-43).  The old interface is still supported
+and @code{vector-copy!} (SRFI-133).  The old interface is still supported
 for the backward compatibility, but it is deprecated and will be gone
 in the future releases.
 @c JP
@@ -17967,7 +18567,7 @@ in the future releases.
 @var{source} のみを引数としてとり、@var{source} の内容を @var{target} へ
 コピーするためだけに使われました。両方のベクタは同じ型で、同じ長さでなけ
 ればなりませんでした。この API は @code{string-copy!} (SRFI-13) および
-@code{vector-copy!} (SRFI-43)にあわせて現在の形式に改訂されています。
+@code{vector-copy!} (SRFI-133)にあわせて現在の形式に改訂されています。
 旧来のインタフェースもバックワードコンパチビリティのためにサポートされて
 いますが、これは廃止予定で、将来のリリースではサポートされなくなります。
 @c COMMON
@@ -19304,17 +19904,66 @@ relnum を比較する。
 "1" < "1.0" < "1.1" < "1.1.1" < "1.1.2" < "1.2" < "1.11"
 "1.2.3" < "1.2.3-1" < "1.2.4"
 "1.2.3" < "1.2.3a" < "1.2.3b"
-"1.2_rc0" < "1.2_rc1" < "1.2" < "1.2-pl1" < "1.2-pl2"
+"1.2_" < "1.2_rc0" < "1.2_rc1" < "1.2" < "1.2-pl1" < "1.2-pl2"
 "1.1-patch112" < "1.2_alpha"
 @end example
 
 @c EN
 The reason of having @code{<pre-subrelease>} is to allow
 "release candidate" or "pre-release" version.
+
+A trick: If you want ``version 1.2 release version or later'', you
+can say @code{(version<=? "1.2" v)}.  This excludes prerelease
+versions such as @code{1.2_pre3}.
+If you want ``verison 1.2 prelease version or later'', 
+you can say @code{(version<=? "1.2_" v)}, which includes
+@code{1.2_pre1} etc., but excludes anything below, such as
+@code{1.1.99999}.
 @c JP
 @code{<pre-subrelease>} があるのは、「リリース候補」あるいは
 「プリリリース」のバージョンをつかえるようにするためです。
+
+ヒント: 「1.2正式リリースもしくはそれ以降」をチェックした場合は
+@code{(version<=? "1.2" v)} とします。これは、
+@code{1.2_pre3}といったプレリリース版を除外します。一方、
+「プレリリース版も含めて1.2もしくはそれ以降」としたい場合は
+@code{(version<=? "1.2_" v)}と書けます。これは、
+@code{1.2_pre1}等は含み、それ以前の例えば@code{1.1.99999}等は除外します。
 @c COMMON
+
+@c EN
+It is common if you want to specify acceptable versions with
+combination of conditions, e.g. ``version 1.3 or later, except
+version 1.4.1'' or ``greater than version 1.1 and below 1.5''.
+A @emph{version spec} is an S-expression to represent that condition.
+You can use @code{version-satisfy?} to check if given version
+satisfies the spec.
+@c JP
+許容できるバージョンを条件の組み合わせで指定したいことはよくあります。
+例えば「バージョン1.3以降、ただし1.4.1を除く」とか、
+「バージョン1.1以上で、1.5より前」等。
+バージョン指定 (version spec) は、S式でバージョンに関する条件を表現する手段です。
+@code{version-satisfy?}手続きで、バージョンがバージョン指定を満たしている
+かどうかチェックできます。
+@c COMMON
+
+@c EN
+The syntax of version spec is as follows.
+@c JP
+バージョン指定の構文は以下の通りです。
+@c COMMON
+
+@example
+<version-spec> : <version>
+               | (<op> <version>)
+               | (and <version-spec> ...)
+               | (or <version-spec> ...)
+               | (not <version-spec>)
+
+<version> : version string
+<op>      : = | < | <= | > | >=
+@end example
+
 @end deftp
 
 @defun version=? ver1 ver2
@@ -19362,6 +20011,42 @@ prior to @var{rel2}, @var{rel1} is the same as @var{rel2}, or
 -1、0、1 を返します。
 @c COMMON
 @end defun
+
+@c EN
+The following procedures are to check if a given version
+satisfies a version specification.
+@c JP
+以下の手続きは、与えられたバージョンがバージョン指定を満たすかどうかを
+検査するためのものです。
+@c COMMON
+
+@defun valid-version-spec? spec
+@c EN
+This is a syntax checker.  Returns @code{#t} if @var{spec} is
+a valid version specfication, @code{#f} otherwise.
+See @code{gauche.version} module description for the definition of
+version specification.
+@c JP
+構文チェッカです。@var{spec}がバージョン指定として正当なフォームであれば
+@code{#t}を、そうでなければ@code{#f}を返します。
+バージョン指定フォームについてはモジュール@code{gauche.version}の記述を参照してください。
+@c COMMON
+@end defun
+
+@defun version-satisfy? spec version
+@c EN
+Returns @code{#t} if @var{version} satisfies
+a version specfication @var{spec}, @code{#f} otherwise.
+See @code{gauche.version} module description for the definition of
+version specification.
+@c JP
+バージョン番号@var{version}がバージョン指定@var{spec}を満たせば@code{#t}を、
+そうでなければ@code{#f}を返します。
+バージョン指定フォームについてはモジュール@code{gauche.version}の記述を参照してください。
+@c COMMON
+@end defun
+
+
 
 @c ----------------------------------------------------------------------
 @node Virtual ports,  , Comparing version numbers, Library modules - Gauche extensions

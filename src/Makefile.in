@@ -81,8 +81,9 @@ LINK      = TARGETLIB=`pwd` $(CCLD) $(CFLAGS) $(RPATH_TMP) -L. $(LDFLAGS)
 RELINK    = TARGETLIB=$(TARGETLIB) $(CCLD) $(CFLAGS) $(RPATH_REAL) -L. $(LDFLAGS)
 INSTALL      = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
-POSTBUILD   = TARGETLIB=`pwd` $(MAKEVERSLINK) $(LIBGAUCHE).$(SOEXT)
+POSTBUILD   = TARGETLIB=`pwd` DESTDIR= $(MAKEVERSLINK) $(LIBGAUCHE).$(SOEXT)
 POSTINSTALL = TARGETLIB="$(TARGETLIB)" DESTDIR="$(DESTDIR)" $(MAKEVERSLINK) $(LIBGAUCHE).$(SOEXT)
+PREUNINSTALL = TARGETLIB="$(TARGETLIB)" DESTDIR="$(DESTDIR)" $(MAKEVERSLINK) -d $(LIBGAUCHE).$(SOEXT)
 
 PRECOMP   = $(srcdir)/precomp -D LIBGAUCHE_BODY
 
@@ -166,8 +167,9 @@ GENERATED_SCRIPTS = gauche-install gauche-package gauche-cesconv
 
 PRIVATE_HEADERS = gauche/priv/arith.h gauche/priv/arith_i386.h \
 	          gauche/priv/arith_x86_64.h \
-	          gauche/priv/builtin-syms.h gauche/priv/macroP.h \
-	          gauche/priv/moduleP.h gauche/priv/portP.h \
+	          gauche/priv/builtin-syms.h gauche/priv/codeP.h \
+	          gauche/priv/macroP.h gauche/priv/moduleP.h \
+	          gauche/priv/portP.h \
 	          gauche/priv/readerP.h gauche/priv/writerP.h
 
 # MinGW specific
@@ -306,7 +308,7 @@ $(libatomic_ops_pic_LIBRARY): $(GCLIB) $(libatomic_ops_pic_OBJECTS)
 	$(AR) -rc $@ $(libatomic_ops_pic_OBJECTS)
 
 
-# char_attr.c and ext/text/unicode_attr.h are automatically generated
+# char_attr.c and gauche/priv/unicode_attr.h are automatically generated
 # by gen-unicode.scm, from unicode-data.scm.
 #
 # Unicode-data.scm itself is generated from Unicode character database.
@@ -451,7 +453,7 @@ install-check :
 GENERATED = compile.c autoloads.c builtin-syms.c \
 	    gauche/priv/builtin-syms.h vminsn.c gauche/vminsn.h \
             ../lib/gauche/vm/insn.scm \
-	    char_attr.c ../ext/text/unicode_attr.h \
+	    char_attr.c gauche/priv/unicode_attr.h \
 	    libsrfis.scm ../doc/srfis.texi \
 	    libalpha.c libbool.c libchar.c libcode.c libcmp.c libdict.c \
 	    libeval.c libexc.c libfmt.c libio.c liblazy.c liblist.c libmisc.c \
@@ -514,6 +516,7 @@ install-core : install-relink
 	$(POSTINSTALL)
 
 uninstall :
+	$(PREUNINSTALL)
 	for f in $(INSTALL_BINS); do rm -f $(BIN_INSTALL_DIR)/$$f; done
 	for f in $(INSTALL_LIBS); do rm -f $(LIB_INSTALL_DIR)/$$f; done
 	rm -rf $(GAUCHE_ARCH_DIR)/@GAUCHE_VERSION@ $(GAUCHE_DATA_DIR)/@GAUCHE_VERSION@ $(GAUCHE_ARCH_DIR)/site/@GAUCHE_VERSION@

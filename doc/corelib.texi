@@ -2209,9 +2209,20 @@ where @var{z1} and @var{z2} are complex numbers.
 @defun expt-mod base exponent mod
 @c EN
 Calculates @code{(modulo (expt base exponent) mod)} efficiently.
+
+The next example shows the last 10 digits of a mersenne prime
+M_74207281 (2^74207281 - 1)
 @c JP
 @code{(modulo (expt base exponent) mod)} を効率よく計算します。
+
+次の例は、メルセンヌ素数M_74207281 (2^74207281 - 1) の最後の10桁を
+求めます。
 @c COMMON
+
+@example
+(- (expt-mod 2 74207281 #e1e10) 1)
+ @result{} 1086436351
+@end example
 @end defun
 
 
@@ -6006,14 +6017,14 @@ that may map to more than one characters; a notable example is
 eszett (latin small letter sharp S, U+00df), which is
 is mapped to two capital S's in string context,
 but @code{char-upcase #\ß} returns #\ß.  To get a full mapping,
-use @code{string-upcase} etc. in @code{text.unicode} module
+use @code{string-upcase} etc. in @code{gauche.unicode} module
 (@pxref{Full string case conversion}).
 @c JP
 文字対文字のマッピングでは、一文字が複数文字に展開されるようなケースマッピングは
 扱いません。有名な例はeszett (latin small letter sharp S, U+00df)で、
 文字列のコンテキストでは二つの大文字のSへとマップされますが、
 @code{char-upcase #\ß} は単に #\ß を返します。
-完全なマッピングが必要なら、@code{text.unicode}モジュールの
+完全なマッピングが必要なら、@code{gauche.unicode}モジュールの
 @code{string-upcase}等が利用できます
 (@ref{Full string case conversion}参照)。
 @c COMMON
@@ -7215,16 +7226,16 @@ German eszett:
 @c EN
 R7RS requires @code{string-ci}* procedures to use string case folding.
 Gauche provides R7RS-conformant case insensitive comparison procedures
-in @code{text.unicode} (@pxref{Full string case conversion}).
+in @code{gauche.unicode} (@pxref{Full string case conversion}).
 If you write in R7RS, importing
-@code{(scheme char)} library, you'll use @code{text.unicode}'s
+@code{(scheme char)} library, you'll use @code{gauche.unicode}'s
 @code{string-ci}* procedures.
 @c JP
 R7RSでは、@code{string-ci}*手続きは文字列としての大文字小文字変換を要求しています。
 Gaucheは、R7RSに準拠した大文字小文字の違いを無視する比較手続きを
-@code{text.unicode}モジュールに用意しています(@ref{Full string case conversion}参照)。
+@code{gauche.unicode}モジュールに用意しています(@ref{Full string case conversion}参照)。
 R7RSでプログラミングする際に@code{(scheme char)}をインポートした場合は、
-@code{text.unicode}モジュールの@code{string-ci=?}などが使われます。
+@code{gauche.unicode}モジュールの@code{string-ci=?}などが使われます。
 @c COMMON
 @end defun
 
@@ -9427,20 +9438,20 @@ a setter method of @code{ref}.
 
 @defun vector->list vector :optional start end
 @defunx list->vector list :optional start end
-[R7RS+][SRFI-43+]
+[R7RS+][SRFI-133+]
 @c EN
 Converts a vector to a list, or vice versa.
 
 The optional @var{start} and @var{end} arguments
 limit the range of the source.
-(R7RS doesn't define @var{start} and @var{end} arguments
+(R7RS and SRFI-133 don't define @var{start} and @var{end} arguments
 for @code{list->vector}.)
 @c JP
 ベクタをリストに変換したり、その逆を行う手続きです。
 
 省略可能な引数@var{start}と@var{end}を与えることにより、
 値を取り出す範囲を制限することができます。
-(R7RSの@code{list->vector}は@var{start}と@var{end}引数を規定していません。)
+(R7RSおよびSRFI-133の@code{list->vector}は@var{start}と@var{end}引数を規定していません。)
 @c COMMON
 @example
 (vector->list '#(1 2 3 4 5))     @result{} (1 2 3 4 5)
@@ -9462,7 +9473,7 @@ With @var{gauche.collection} module, you can use
 @end defun
 
 @defun reverse-list->vector list :optional start end
-[SRFI-43]
+[SRFI-133]
 @c EN
 Without optional arguments, it returns the same thing as
 @code{(list->vector (reverse list))}, but does not
@@ -9516,7 +9527,7 @@ With @var{gauche.collection} module, you can use
 @end defun
 
 @defun vector-fill! vector fill :optional start end
-[R7RS][SRFI-43]
+[R7RS][SRFI-133]
 @c EN
 Sets all elements in a vector @var{vector} to @var{fill}.
 
@@ -9535,7 +9546,7 @@ zero, and @var{end} defaults to the length of @var{vector}.
 @end defun
 
 @defun vector-copy vector :optional start end fill
-[R7RS][SRFI-43]
+[R7RS][SRFI-133]
 @c EN
 Copies a vector @var{vector}.  Optional @var{start} and @var{end}
 arguments can be used to limit the range of @var{vector} to be copied.
@@ -9556,8 +9567,64 @@ the result vector.
 @end example
 @end defun
 
+@defun vector-copy! target tstart source :optional sstart send
+[R7RS][SRFI-133]
+@c EN
+Copies the content of @var{source} vector into the @var{target} vector
+starting from @var{tstart} in the target.  The @var{target} vector
+must be mutable.
+Optional @var{sstart} and @var{send} limits the range of source
+vector.
+@c JP
+ベクタ@var{source}の内容をベクタ@var{target}のインデックス@var{tstart}以降に
+コピーします。@var{target}は変更可能でなければなりません。
+省略可能な@var{sstart}と@var{send}引数はコピー元ベクタの範囲を限定します。
+@c COMMON
+
+@example
+(rlet1 v (vector 'a 'b 'c 'd 'e)
+  (vector-copy! v 2 '#(1 2)))
+  @result{} #(a b 1 2 e)
+(rlet1 v (vector 'a 'b 'c 'd 'e)
+  (vector-copy! v 2 '#(1 2 3 4) 1 3))
+  @result{} #(a b 2 3 e)
+@end example
+
+@c EN
+An error is raised if the portion to be copied is greater than
+the room in the target (that is, between @var{tstart} to the end).
+@c JP
+コピーされるデータが、コピー先の領域(@var{tstart}から末尾まで)より
+大きい場合はエラーが報告されます。
+@c COMMON
+
+@c EN
+It is ok to pass the same vector to @var{target} and @var{source};
+it always works even if the regions of source and destination are
+overlapping.
+@c JP
+@var{target}と@var{source}に同じベクタを渡しても構いません。
+コピー元とコピー先の領域に重なりがある場合でもこの手続きは使えます。
+@c COMMON
+@end defun
+
+@defun vector-append vec @dots{}
+[R7RS][SRFI-133]
+@c EN
+Returns a newly allocated vector whose contents are concatenation
+of elements of @var{vec} in order.
+@c JP
+ベクタ@var{vec}を順に継ぎ足した内容を持つベクタを新たに作成して返します。
+@c COMMON
+
+@example
+(vector-append '#(1 2 3) '#(a b)) @result{} #(1 2 3 a b)
+(vector-append) @result{} #()
+@end example
+@end defun
+
 @defun vector-map proc vec1 vec2 @dots{}
-[R7RS]
+[R7RS][SRFI-133]
 @c EN
 Returns a new vector, @var{i}-th of which is calculated
 by applying @var{proc} on the list of each @var{i}-th element
@@ -9591,17 +9658,6 @@ function by @code{(map-to <vector> proc vec1 vec2 @dots{}}.
 註: @code{gauche.collection}をuseして
 @code{(map-to <vector> proc vec1 vec2 @dots{}} としても同じ機能は得られます。
 @c COMMON
-
-@c EN
-Note: SRFI-43 also provides @code{vector-map}, but the API is slightly
-different (@pxref{Vector library}).
-SRFI-43's @code{vector-map} is equivalent to 
-@code{vector-map-with-index} below.
-@c JP
-註: SRFI-43も@code{vector-map}という手続きを提供していますが、
-APIが若干異なります(@ref{Vector library}参照)。
-SRFI-43の@code{vector-map}は下の@code{vector-map-with-index}と同じです。
-@c COMMON
 @end defun
 
 @defun vector-map-with-index proc vec1 vec2 @dots{}
@@ -9619,9 +9675,10 @@ as the first argument.
 @end example
 
 @c EN
-This is what SRFI-43 calls @code{vector-map}.
+This is what SRFI-43 calls @code{vector-map}.  @xref{Vector library (Legacy)}.
 @c JP
 これがSRFI-43で@code{vector-map}と呼ばれている手続きです。
+@ref{Vector library (Legacy)}参照。
 @c COMMON
 
 @c EN
@@ -9635,6 +9692,7 @@ function by @code{(map-to-with-index <vector> proc vec1 vec2 @dots{}}.
 @end defun
 
 @defun vector-map! proc vec1 vec2 @dots{}
+[SRFI-133]
 @c EN
 For each index @var{i}, calls @var{proc} with @var{i}-th index
 of @var{vec1} @var{vec2} @dots{}, and set the result back to
@@ -9656,27 +9714,17 @@ length of input vectors.
   (vector-map! + v '#(10 20)))
   @result{} #(11 22 3 4)
 @end example
-
-@c EN
-Note: SRFI-43 provides @code{vector-map!} with slightly different API
-(@pxref{Vector library}).
-It is equivalent to @code{vector-map-with-index!} below.
-@c JP
-註: SRFI-43は@code{vector-map!}を提供していますが、APIが少し異なります
-(@ref{Vector library}参照)。
-SRFI-43の@code{vector-map!}は下に説明する@code{vector-map-with-index!}と同じです。
-@c COMMON
 @end defun
 
 @defun vector-map-with-index! proc vec1 vec2 @dots{}
 @c EN
 Like @code{vector-map!}, but @var{proc} receives the current
 index as the first argument.  This is equivalent to SRFI-43's
-@code{vector-map!} (@pxref{Vector library}).
+@code{vector-map!} (@pxref{Vector library (Legacy)}).
 @c JP
 @code{vector-map!}と似ていますが、@var{proc}の第1引数に
 現在のインデックスが渡されます。SRFI-43で@code{vector-map!}
-と定義されているものと同じ動作です (@ref{Vector library}参照)。
+と定義されているものと同じ動作です (@ref{Vector library (Legacy)}参照)。
 @c COMMON
 
 @example
@@ -9688,7 +9736,7 @@ index as the first argument.  This is equivalent to SRFI-43's
 @end defun
 
 @defun vector-for-each proc vec1 vec2 @dots{}
-[R7RS]
+[R7RS][SRFI-133]
 @c EN
 For all @var{i} below the minimum length of input vectors,
 calls @var{proc} with @var{i}-th elements of @var{vec1} @var{vec2}
@@ -9703,17 +9751,6 @@ calls @var{proc} with @var{i}-th elements of @var{vec1} @var{vec2}
 (vector-for-each print '#(a b c))
  @result{} @r{prints @code{a}, @code{b} and @code{c}}.
 @end example
-
-@c EN
-Note: SRFI-43 provides @code{vector-for-each} with slightly different
-API (@pxref{Vector library}).  It is equivalent to
-@code{vector-for-each-with-index} described below.
-@c JP
-註: SRFI-43も@code{vector-for-each}を提供していますが、APIが少し異なります
-(@ref{Vector library}参照)。
-SRFI-43の@code{vector-for-each}は
-下に説明する@code{vector-for-each-with-index}と同じです。
-@c COMMON
 @end defun
 
 @defun vector-for-each-with-index proc vec1 vec2 @dots{}
@@ -9722,17 +9759,15 @@ Like @code{vector-for-each}, but @var{proc} receives the current index
 in the first argument.
 
 This is equivalent to SRFI-43's @code{vector-for-each}.
+@xref{Vector library (Legacy)}.
 @c JP
 @code{vector-for-each}と似ていますが、@var{proc}の第1引数に
 現在のインデックスが渡されます。
 
 この手続きはSRFI-43の@var{vector-for-each}と等価です。
+@ref{Vector library (Legacy)}参照。
 @c COMMON
 @end defun
-
-
-
-
 
 @c ----------------------------------------------------------------------
 @node Hashtables, Treemaps, Vectors, Core library
@@ -18315,6 +18350,55 @@ file.  We call this @emph{autoprovide} feature.
 @var{feature}が自動的にprovideされます。これを
 @emph{autoprovide}機能と呼んでいます。
 @c COMMON
+
+@c EN
+Note that @code{require} first sets the current module to
+an immutable module called @code{gauche.require-base}
+and then load the file.  The files
+loaded by @code{require} usually have @code{define-module}/@code{select-module}
+or @code{define-library} for the first thing, so you rarely notice the
+@code{gauche.require-base} module.  However, if the loaded file
+has toplevel defines or imports (@code{use}'s) without specifying
+a module, you'll get an error like the following:
+@c JP
+@code{require}は、ファイルをロードする前に現在のモジュールを
+@code{gauche.require-base}という変更不可なモジュールにセットします。
+@code{require}されるファイルは通常、最初に@code{define-module}/@code{select-module}
+か@code{define-library}フォームを持つので、この@code{gauche.require-base}モジュール
+を目にすることはほとんど無いでしょう。
+ただ、もしロードされたファイルがモジュールを指定すること無くトップレベルの
+変数を定義したり他のモジュールを@code{import}(@code{use})しようとした場合、
+次のようなエラーとなります。
+@c COMMON
+
+@example
+*** ERROR: Attempted to create a binding (a) in a sealed
+module: #<module gauche.require-base>
+@end example
+
+@c EN
+Rationale: Generally it's difficult to guarantee 
+when the specified file is loaded by @code{require} (because some other
+module may already have required it).  If we just used the caller's current
+module, there would be a couple of issues: The form @code{define-module} or
+@code{define-library} may not be visible from the current module, and
+you can't guarantee if the toplevel defines without specifying modules
+in the loaded file inserts the caller's current module, since they may
+have been loaded into a different module.
+It is just a bad idea to insert
+toplevel definitions or to import other modules without specifying which
+module you put them in.  So we made them an error.
+@c JP
+理由: @code{require}されているファイルがどのタイミングで読まれるかを
+正確にコントロールするのは難しいです(他のモジュールが既にrequireしているかも
+しれないので)。もし呼び出し側の現在のモジュールをそのまま使った場合、二つの
+問題が生じ得ます。(1)呼び出し側の現在のモジュールから、
+@code{define-module}や@code{define-library}が見えているとは限りません。
+(2)モジュールを指定しないトップレベル定義が呼び出し側の現在のモジュールに
+定義を追加することは保証されません(既に別のモジュールへと読みこまれているかもしれません)。
+モジュールを指定しないトップレベル定義やimportを持つファイルをrequireすることは、
+単に悪いアイディアです。したがってそういう事例はエラーとすることにしました。
+@c COMMON
 @end defspec
 
 @defun provide feature
@@ -19045,6 +19129,7 @@ Cの標準ライブラリとGaucheの手続きとの対応が示してありま�
 * Time::                        
 * Process management::          
 * I/O multiplexing::            
+* Garbage Collection::          
 * Miscellaneous system calls::  
 @end menu
 
@@ -23269,7 +23354,7 @@ Windowsプロセスハンドル@var{handle}が示すプロセスの、整数のp
 @end defun
 
 
-@node I/O multiplexing, Miscellaneous system calls, Process management, System interface
+@node I/O multiplexing, Garbage Collection, Process management, System interface
 @subsection I/O multiplexing
 @c NODE I/Oの多重化
 
@@ -23450,7 +23535,45 @@ doesn't modify its arguments.
 @end defun
 
 
-@node Miscellaneous system calls,  , I/O multiplexing, System interface
+@node Garbage Collection, Miscellaneous system calls, I/O multiplexing, System interface
+@subsection Garbage Collection
+@c NODE ガベージコレクション
+
+@c EN
+The garbage collector runs implicitly whenever it is necessary,
+and you don't usually need to worry about it.  However, in case
+if you do need to worry, here are a few procedures you can use.
+@c JP
+ガベージコレクタは必要になった時に自動的に走るので、普段気にする必要はないでしょう。
+けれどももし気にする必要が出てきた時は、いくつか使える手続きがあります。
+@c COMMON
+
+@defun gc
+@c EN
+Trigger a full GC.  It may be useful if you want to reduce
+interference of GC in certain parts of code by calling this
+immediately before that.
+@c JP
+フルGCを起動します。GCの影響をなるべく排除したいコードがある場合、
+その直前にこの手続きを呼ぶことで影響を減らせるかもしれません。
+@c COMMON
+@end defun
+
+@defun gc-stat
+@c EN
+Returns a list of lists, each inner list contains a keyword and
+related statistics. Current statistics include @code{:total-heap-size},
+@code{:free-bytes}, @code{:bytes-since-gc} and @code{:total-bytes}.
+@c JP
+GCに関する統計情報を返します。返り値はリストのリストで、
+内側のリストはキーワードと対応する数値からなります。
+現在、返されるキーワードは
+@code{:total-heap-size}、
+@code{:free-bytes}、@code{:bytes-since-gc}、@code{:total-bytes}です。
+@c COMMON
+@end defun
+
+@node Miscellaneous system calls,  , Garbage Collection, System interface
 @subsection Miscellaneous system calls
 @c NODE その他のシステムコール
 
@@ -23744,6 +23867,17 @@ To show all the information, set @code{#f} to this parameter.
 さい。
 @c COMMON
 @end deffn
+
+@defmac debug-funcall (PROC ARG ...)
+
+This macro prints the value of arguments right before calling
+@code{PROC} and the result(s) of the call afterwards.
+
+The special reader syntax @code{#?,@var{expr}} is expanded into
+@code{(debug-funcall @var{expr})}.  See @ref{Debugging}, for the
+details.
+
+@end defmac
 
 @defun debug-source-info obj
 @c EN
