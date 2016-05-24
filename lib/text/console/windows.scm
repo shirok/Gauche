@@ -327,14 +327,13 @@
             (if (logtest bc I) BACKGROUND_INTENSITY 0)))
   (define hdl (~ con'ohandle))
   (match-let1 (fgcolor bgcolor . opts) spec
-    (receive (fg bg) (if (memq 'reverse opts)
-                       (values bgcolor fgcolor)
-                       (values fgcolor bgcolor))
-      (let ([fc (get-color-code fg (logior R G B))]
-            [bc (get-color-code bg 0)])
-        (dolist [opt opts]
-          (set! fc (logior fc (get-optional-code opt))))
-        (sys-set-console-text-attribute hdl (get-color-attr fc bc))))))
+    (let ([fc (get-color-code fgcolor (logior R G B))]
+          [bc (get-color-code bgcolor 0)])
+      (dolist [opt opts]
+        (set! fc (logior fc (get-optional-code opt))))
+      (if (memq 'reverse opts)
+        (set!-values (fc bc) (values bc fc)))
+      (sys-set-console-text-attribute hdl (get-color-attr fc bc)))))
 
 (define-method reset-character-attribute ((con <windows-console>))
   (sys-set-console-text-attribute (~ con'ohandle) *win-default-cattr*))
