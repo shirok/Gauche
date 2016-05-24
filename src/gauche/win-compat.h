@@ -172,7 +172,8 @@ extern __declspec(dllimport) const char *Scm_WCS2MBS(const WCHAR *s);
 
 /* Replace some system calls with wide-char counterparts
    NB: Windows' mkdir() and _wmkdir() takes one argument.
-   NB: stat() needs special treatment; MinGW defines its own macro.
+   NB: Substituing stat with _wstat64 must be in sync with
+       the usage of struct _stat64 in ScmSysStatRec (see system.h)
  */
 #if defined(UNICODE)
 #define open(path, ...)    _wopen(Scm_MBS2WCS(path), __VA_ARGS__)
@@ -185,6 +186,8 @@ extern __declspec(dllimport) const char *Scm_WCS2MBS(const WCHAR *s);
 #define rmdir(dir)         _wrmdir(Scm_MBS2WCS(dir))
 #define unlink(path)       _wunlink(Scm_MBS2WCS(path))
 #define system(path)       _wsystem(Scm_MBS2WCS(path))
+#undef stat
+#define stat(path, buf)    _wstat64(Scm_MBS2WCS(path), buf)
 #endif /*UNICODE*/
 
 /*===================================================================

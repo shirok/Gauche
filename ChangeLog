@@ -1,3 +1,10 @@
+2016-05-24  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/system.h (ScmStat): Switch definition of struct stat
+	  on GAUCHE_WINDOWS.
+	* src/gauche/win-compat.h (stat): Use _wstat64() for stat(), to
+	  handle filenames with multibyte characters.
+
 2016-05-21  Shiro Kawai  <shiro@acm.org>
 
 	* src/main.c (enter_repl): Better error reporting for an error
