@@ -241,7 +241,7 @@
           (format "~a[~a]~a " *repl-name* (module-name m) delim))))))
 
 ;; Returns a reader procedure that can handle toplevel command
-(define (make-repl-reader read read-line)
+(define (make-repl-reader read read-line port)
   (^[]
     (let1 expr (read)
       (if (and (pair? expr)      ; avoid depending on util.match yet
@@ -251,7 +251,9 @@
         (handle-toplevel-command (cadr expr) (read-line))
         (begin
           (unless (eof-object? expr)
-            (%skip-trailing-ws))
+            (if port
+              (with-input-from-port port %skip-trailing-ws)
+              (%skip-trailing-ws)))
           expr)))))
 
 ;; EXPERIMENTAL: Environment GAUCHE_READ_EDIT enables editing mode.
@@ -261,15 +263,15 @@
 ;; the feature available through command-line options of gosh.
 
 (define-values (%prompter %reader)
-  (receive (r rl)
+  (receive (r rl p)
       (if (sys-getenv "GAUCHE_READ_EDIT")
         (make-editable-reader (^[] (default-prompt-string "$")))
-        (values #f #f))
-    (if (and r rl)
+        (values #f #f #f))
+    (if (and r rl p)
       (values (^[] #f)
-              (make-repl-reader r rl))
+              (make-repl-reader r rl p))
       (values (^[] (display (default-prompt-string)) (flush))
-              (make-repl-reader read read-line)))))
+              (make-repl-reader read read-line #f)))))
 
 (define (%skip-trailing-ws)
   ;; We use byte i/o here to avoid blocking.

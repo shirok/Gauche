@@ -69,8 +69,9 @@
                     (try))))
               x))))
       (values (read-1 read)
-              (read-1 read-line)))
-    (values #f #f)))                    ;no default console
+              (read-1 read-line)
+              buffer))
+    (values #f #f #f)))                     ; no default console
 
 ;; We have to handle both toplevel command (begins with comma, ends with
 ;; newline) and the complete sexp.
