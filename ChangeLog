@@ -1,3 +1,8 @@
+2016-05-25  Shiro Kawai  <shiro@acm.org>
+
+	* src/number.c (read_number): EXPERIMENTAL: Recognize 'pi' suffix
+	  in polar complex notation, e.g. 2@1pi => -2.0.
+
 2016-05-24  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/system.h (ScmStat): Switch definition of struct stat

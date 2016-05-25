@@ -787,6 +787,14 @@ ScmObj Scm_MakeComplexPolar(double mag, double angle)
     else             return Scm_MakeCompnum(real, imag);
 }
 
+ScmObj Scm_MakeComplexPolarPI(double mag, double pi_angle)
+{
+    double real = mag * Scm_CosPi(pi_angle);
+    double imag = mag * Scm_SinPi(pi_angle);
+    if (imag == 0.0) return Scm_MakeFlonum(real);
+    else             return Scm_MakeCompnum(real, imag);
+}
+
 /* NB: This isn't called by Scheme's real-part; see libnum.scm */
 double Scm_RealPart(ScmObj z)
 {
@@ -3720,7 +3728,7 @@ size_t Scm_PrintDouble(ScmPort *port, double d, ScmNumberFormat *fmt)
  *  <radix>  : <empty> | '#b' | '#o' | '#d' | '#x'
  *  <exactness> : <empty> | '#e' | '#i'
  *  <complex> : <real>
- *            | <real> '@' <real>
+ *            | <real> '@' <real> ['p' 'i']
  *            | <real> '+' <ureal> 'i'
  *            | <real> '-' <ureal> 'i'
  *            | <real> '+' 'i'
@@ -4275,11 +4283,16 @@ static ScmObj read_number(const char *str, int len, int radix,
         } else {
             str++; len--;
             ScmObj angle = read_real(&str, &len, &ctx);
-            if (SCM_FALSEP(angle) || len != 0) return SCM_FALSE;
+            if (SCM_FALSEP(angle)) return SCM_FALSE;
+            /* Gauche extension: X@Ypi */
+            int pi_angle = (len == 2 && str[0] == 'p' && str[1] == 'i');
+            if (!pi_angle && len != 0) return SCM_FALSE;
             CHK_EXACT_COMPLEX();
             double dmag = Scm_GetDouble(realpart);
             double dangle = Scm_GetDouble(angle);
-            return Scm_MakeComplexPolar(dmag, dangle);
+            return (pi_angle
+                    ? Scm_MakeComplexPolarPI(dmag, dangle)
+                    : Scm_MakeComplexPolar(dmag, dangle));
         }
     case '+':
     case '-':
