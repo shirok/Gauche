@@ -602,7 +602,7 @@ int main(int ac, char **av)
     /* prepare *program-name* and *argv* */
     if (argind < argc) {
         /* We have a script file specified. */
-        struct stat statbuf;
+        ScmStat statbuf;
 
         /* if the script name is given in relative pathname, see if
            it exists from the current directory.  if not, leave it

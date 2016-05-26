@@ -93,9 +93,15 @@ SCM_EXTERN ScmObj Scm_DirName(ScmString *filename);
 SCM_EXTERN ScmObj Scm_BaseName(ScmString *filename);
 
 /* struct stat */
+#ifdef GAUCHE_WINDOWS
+typedef struct _stat64 ScmStat;
+#else  /*!GAUCHE_WINDOWS*/
+typedef struct stat ScmStat;
+#endif /*!GAUCHE_WINDOWS*/
+
 typedef struct ScmSysStatRec {
     SCM_HEADER;
-    struct stat statrec;
+    ScmStat statrec;
 } ScmSysStat;
 
 SCM_CLASS_DECL(Scm_SysStatClass);

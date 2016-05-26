@@ -672,7 +672,7 @@
 (inline-stub
  (define-cise-stmt file-check-common
    [(_ checker)
-    `(let* ([r::int] [s::(struct stat)]
+    `(let* ([r::int] [s::ScmStat]
             [p::(const char*) (check-trailing-separator path)])
        (SCM_SYSCALL r (access p F_OK))
        (if (== r 0)

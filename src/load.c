@@ -307,7 +307,7 @@ static ScmObj add_list_item(ScmObj orig, ScmObj item, int afterp)
 ScmObj Scm_AddLoadPath(const char *cpath, int afterp)
 {
     ScmObj spath = SCM_MAKE_STR_COPYING(cpath);
-    struct stat statbuf;
+    ScmStat statbuf;
 
     /* check dynload path */
     ScmObj dpath = Scm_StringAppendC(SCM_STRING(spath), "/", 1, 1);
