@@ -242,21 +242,28 @@
 ;; TODO: Mind char-width correctly.
 (define (redisplay ctx buffer)
   (define (get-tab-width x) (- 8 (modulo x 8)))
-  (define (get-char-width ch x wide-char-width surrogate-char-width)
-    (let1 chcode (char->integer ch)
-      (cond
-       [(eqv? ch #\tab)
-        (get-tab-width x)]
-       [(and (>= chcode 0) (<= chcode #x7f))
-        1]
-       [(>= chcode #x10000)
-        (cond-expand
-         [gauche.ces.utf8
-          surrogate-char-width]
+  (define (make-get-char-width-proc wide-char-width surrogate-char-width)
+    (^[ch x]
+      (let1 chcode (char->integer ch)
+        (cond
+         [(eqv? ch #\tab)
+          (get-tab-width x)]
+         [(and (>= chcode 0) (<= chcode #x7f))
+          1]
+         [(>= chcode #x10000)
+          (cond-expand
+           [gauche.ces.utf8
+            surrogate-char-width]
+           [else
+            wide-char-width])]
          [else
-          wide-char-width])]
-       [else
-        wide-char-width])))
+          wide-char-width]))))
+  (define get-char-pos-width
+    (make-get-char-width-proc (~ ctx'wide-char-pos-width)
+                              (~ ctx'surrogate-char-pos-width)))
+  (define get-char-disp-width
+    (make-get-char-width-proc (~ ctx'wide-char-disp-width)
+                              (~ ctx'surrogate-char-disp-width)))
 
   ;; check a initial position
   (if (< (~ ctx'initpos-y) 0)
@@ -277,9 +284,7 @@
          [pos-x  x]
          [pos-y  y]
          [pos-set-flag (= pos 0)]
-         [maxy   #f]
-         [windows-console-flag (eq? (class-name (class-of con))
-                                    '<windows-console>)])
+         [maxy   #f])
 
     (define (display-area?)
       (and (>= y 0) (or (not maxy) (<= y maxy))))
@@ -288,53 +293,26 @@
       (when (>= disp-x1 w)
         (set! x      0)
         (set! disp-x 0)
-        (move-cursor-to con y x)
-
         (cond
-         [windows-console-flag
+         [(display-area?)
+          (move-cursor-to con y 0)
 
-          ;; For windows ime bug:
-          ;;   When windows ime is on, a full column wrapping
-          ;;   causes one more line scroll-up.
-          ;;   So we must deal with this problem.
-          (ensure-bottom-room con full-column-flag)
-
-          ;; move cursor to the next line.
-          (cursor-down/scroll-up con)
-          (receive (y2 x2) (query-cursor-position con)
-            (set! (~ ctx'initpos-y) (+ (~ ctx'initpos-y) (- y2 y 1)))
-            (if pos-set-flag (set! pos-y (max (+ pos-y (- y2 y 1)) 0)))
-            (set! y y2))
-
-          ;; For windows ime bug:
-          ;;   We have to make a room on the last line of console,
-          ;;   because windows ime overwrites the last line and causes
-          ;;   a system error.
-          (ensure-bottom-room con full-column-flag)
-          (receive (y2 x2) (query-cursor-position con)
-            (set! (~ ctx'initpos-y) (+ (~ ctx'initpos-y) (- y2 y)))
-            (if pos-set-flag (set! pos-y (max (+ pos-y (- y2 y)) 0)))
-            (set! y y2))
+          ;; move cursor to the next line
+          (let1 dy (cursor-down/scroll-up con y h full-column-flag)
+            (set! y (+ y dy))
+            (set! (~ ctx'initpos-y) (+ (~ ctx'initpos-y) (- dy 1)))
+            (when pos-set-flag
+              (set! pos-y (+ pos-y (- dy 1)))
+              ;; check a cursor position for clipping a display area
+              (when (<= pos-y 0)
+                (set! pos-y 0)
+                (set! maxy  (- h 2)))
+              ))
 
           ]
          [else
-
-          ;; move cursor to the next line.
-          (when (display-area?)
-            (cursor-down/scroll-up con)
-            (cond
-             [(>= y (- h 1))
-              (dec! (~ ctx'initpos-y))
-              (if pos-set-flag (dec! pos-y))]
-             [else
-              (inc! y)]))
-
-          ;; check a cursor position for clipping a display area
-          (if (and pos-set-flag (<= pos-y 0))
-            (set! maxy (- h 2)))
-
-          ])
-        ))
+          (inc! y)
+          ])))
 
     (reset-character-attribute con)
     (move-cursor-to con y 0)
@@ -343,10 +321,10 @@
     (let loop ([n 0])
       (glet1 ch (g)
 
-        ;; set a character attribute
-        (set! oldattr newattr)
+        ;; set character attributes
         (set! newattr (current-char-attr n sel oparen))
         (switch-char-attr-when-needed con oldattr newattr)
+        (set! oldattr newattr)
 
         ;; display a character
         (case ch
@@ -360,24 +338,14 @@
                (putstr con (make-string tw #\space))))]
           [else
            ;; a wide character wrapping before displaying it
-           (line-wrapping (+ disp-x (get-char-width ch
-                                                    disp-x
-                                                    (~ ctx'wide-char-disp-width)
-                                                    (~ ctx'surrogate-char-disp-width)))
-                          (+ w 1))
+           (line-wrapping (+ disp-x (get-char-disp-width ch disp-x)) (+ w 1))
            (when (display-area?)
              (move-cursor-to con y x)
              (putch con ch))])
 
         ;; line wrapping
-        (set! x      (+ x      (get-char-width ch
-                                               x
-                                               (~ ctx'wide-char-pos-width)
-                                               (~ ctx'surrogate-char-pos-width))))
-        (set! disp-x (+ disp-x (get-char-width ch
-                                               disp-x
-                                               (~ ctx'wide-char-disp-width)
-                                               (~ ctx'surrogate-char-disp-width))))
+        (set! x      (+ x      (get-char-pos-width  ch x)))
+        (set! disp-x (+ disp-x (get-char-disp-width ch disp-x)))
         (case ch
           [(#\newline)
            (line-wrapping w w)
