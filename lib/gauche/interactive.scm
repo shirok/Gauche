@@ -251,18 +251,6 @@
         (handle-toplevel-command (cadr expr) (read-line))
         expr))))
 
-(define (%skip-trailing-ws)
-  ;; We use byte i/o here to avoid blocking.
-  (if (byte-ready?)
-    (let1 b (peek-byte)
-      (cond [(memv b '(9 32)) (read-byte) (%skip-trailing-ws)]
-            [(eqv? b 13)
-             (read-byte)
-             (when (and (byte-ready?) (eqv? (peek-byte) 10)) (read-byte))]
-            [(eqv? b 10) (read-byte)]
-            [else #t]))
-    #t))
-
 ;; EXPERIMENTAL: Environment GAUCHE_READ_EDIT enables editing mode.
 ;; Note that, at this moment, text.line-edit isn't complete; it doesn't
 ;; handle multibyte characters nor the multiline expressions bigger
