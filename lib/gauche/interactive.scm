@@ -240,19 +240,28 @@
           (format "~a~a " *repl-name* delim)
           (format "~a[~a]~a " *repl-name* (module-name m) delim))))))
 
-;; Returns a reader procedure that can handle toplevel command
-(define (make-repl-reader read read-line)
+;; Returns a reader procedure that can handle toplevel command.
+(define (make-repl-reader read/skipping-trailing-ws read-line)
   (^[]
-    (let1 expr (read)
+    (let1 expr (read/skipping-trailing-ws)
       (if (and (pair? expr)      ; avoid depending on util.match yet
                (eq? (car expr) 'unquote)
                (pair? (cdr expr))
                (null? (cddr expr)))
         (handle-toplevel-command (cadr expr) (read-line))
-        (begin
-          (unless (eof-object? expr)
-            (%skip-trailing-ws))
-          expr)))))
+        expr))))
+
+(define (%skip-trailing-ws)
+  ;; We use byte i/o here to avoid blocking.
+  (if (byte-ready?)
+    (let1 b (peek-byte)
+      (cond [(memv b '(9 32)) (read-byte) (%skip-trailing-ws)]
+            [(eqv? b 13)
+             (read-byte)
+             (when (and (byte-ready?) (eqv? (peek-byte) 10)) (read-byte))]
+            [(eqv? b 10) (read-byte)]
+            [else #t]))
+    #t))
 
 ;; EXPERIMENTAL: Environment GAUCHE_READ_EDIT enables editing mode.
 ;; Note that, at this moment, text.line-edit isn't complete; it doesn't
@@ -269,19 +278,8 @@
       (values (^[] #f)
               (make-repl-reader r rl))
       (values (^[] (display (default-prompt-string)) (flush))
-              (make-repl-reader read read-line)))))
-
-(define (%skip-trailing-ws)
-  ;; We use byte i/o here to avoid blocking.
-  (if (byte-ready?)
-    (let1 b (peek-byte)
-      (cond [(memv b '(9 32)) (read-byte) (%skip-trailing-ws)]
-            [(eqv? b 13)
-             (read-byte)
-             (when (and (byte-ready?) (eqv? (peek-byte) 10)) (read-byte))]
-            [(eqv? b 10) (read-byte)]
-            [else #t]))
-    #t))
+              (make-repl-reader read-consuming-trailing-whitespaces
+                                read-line)))))
 
 ;; error printing will be handled by the original read-eval-print-loop
 (define (%evaluator expr env)

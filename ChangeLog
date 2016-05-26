@@ -1,3 +1,12 @@
+2016-05-26  Shiro Kawai  <shiro@acm.org>
+
+	* src/libio.scm (read-consuming-trailing-whitespaces): Useful
+	  extension of 'read' for REPL.
+	* lib/gauche/interactive.scm,
+	  lib/gauche/interactive/editable-reader.scm: Dropped
+	  %skip-trailing-ws and use r-c-t-w above, for the previous code
+	  won't work when we're not reading from the current input port.
+
 2016-05-25  Shiro Kawai  <shiro@acm.org>
 
 	* src/number.c (read_number): EXPERIMENTAL: Recognize 'pi' suffix

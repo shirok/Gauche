@@ -48,6 +48,8 @@
 ;; the 'read-line' part will only be called to fetch the rest part of
 ;; toplevel commands.
 ;; May return (valuse #f #f) if it can't open the console.
+;; NB: The 'read' procedure returned should consume trailing whitespaces.
+;; See make-repl-reader in gauche.interactive.
 ;; NB: Currently we assume we use default console.  Might be useful
 ;; to allow other console (e.g. over pty).
 (define (make-editable-reader get-prompt-string)
@@ -68,7 +70,7 @@
                     (set! buffer (open-input-string (string-append input "\n")))
                     (try))))
               x))))
-      (values (read-1 read)
+      (values (read-1 read-consuming-trailing-whitespaces)
               (read-1 read-line)))
     (values #f #f)))                    ;no default console
 
