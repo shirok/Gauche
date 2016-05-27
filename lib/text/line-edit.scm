@@ -330,10 +330,8 @@
         (case ch
           [(#\newline)]
           [(#\tab)
-           (let1 tw (get-tab-width disp-x)
-             (if (>= (+ disp-x tw) w)
-               (set! tw (- w disp-x)))
-             (when (display-area?)
+           (when (display-area?)
+             (let1 tw (min (get-tab-width disp-x) (- w disp-x))
                (move-cursor-to con y x)
                (putstr con (make-string tw #\space))))]
           [else
@@ -353,13 +351,13 @@
              (switch-char-attr-when-needed con newattr '(#f #f))
              (show-secondary-prompt ctx)
              (switch-char-attr-when-needed con '(#f #f) newattr))
-           (set! x (~ ctx'initpos-x))
+           (set! x      (~ ctx'initpos-x))
            (set! disp-x x)]
           [else
            (line-wrapping disp-x w #t)])
 
         ;; set a cursor position
-        (when (and (not pos-set-flag) (= pos (+ n 1)))
+        (when (= pos (+ n 1))
           (set! pos-set-flag #t)
           (set! pos-x x)
           (set! pos-y y))
