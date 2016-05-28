@@ -44,11 +44,25 @@
 (test* "symbol reader uninterned" "foo"
        (let1 s (read-from-string "#:foo")
          (and (symbol? s) (not (eq? 'foo s)) (symbol->string s))))
+(test* "symbol reader uninterned" "+"
+       (let1 s (read-from-string "#:+")
+         (and (symbol? s) (not (eq? '+ s)) (symbol->string s))))
+(test* "symbol reader uninterned" "-a"
+       (let1 s (read-from-string "#:-a")
+         (and (symbol? s) (not (eq? '-a s)) (symbol->string s))))
 (test* "symbol reader uninterned" "foo bar"
        (let1 s (read-from-string "#:|foo bar|")
          (and (symbol? s) (not (eq? '|foo bar| s)) (symbol->string s))))
 (test* "symbol reader uninterned" #f
        (eq? (read-from-string "#:foo") (read-from-string "#:foo")))
+(test* "symbol reader uninterned invalid" (test-error)
+       (read-from-string "#:"))
+(test* "symbol reader uninterned invalid" (test-error)
+       (read-from-string "#: yoo"))
+(test* "symbol reader uninterned invalid" (test-error)
+       (read-from-string "#:1234"))
+(test* "symbol reader uninterned invalid" (test-error)
+       (read-from-string "#:+inf.0"))
 
 (test* "symbol writer uninterned" "#:foo"
        (write-to-string (string->uninterned-symbol "foo")))

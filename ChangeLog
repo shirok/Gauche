@@ -1,3 +1,10 @@
+2016-05-27  Shiro Kawai  <shiro@acm.org>
+
+	* src/read.c: Fix erroneous read behavior such as
+	  (read-from-string "#:") => #:|| and
+	  (read-from-string "#: foo") => #:| foo|.  We now reject if '#!'
+	  and '#:' aren't immediately followed by a valid symbol.
+
 2016-05-26  Shiro Kawai  <shiro@acm.org>
 
 	* src/libio.scm (read-consuming-trailing-whitespaces): Useful

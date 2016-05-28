@@ -21,6 +21,8 @@
        (read-from-string "#! /usr/bin/gosh -i\n5"))
 (test* "script hash-bang" (eof-object)
        (read-from-string "#! /usr/bin/gosh -i"))
+(test* "script hash-bang error1" (test-error)
+       (read-from-string "#!"))
 
 (test* "#!fold-case" '(hello world)
        (read-from-string "#!fold-case (Hello World)"))
@@ -29,16 +31,21 @@
 (test* "#!no-fold-case" '(hello World)
        (read-from-string "(#!fold-case Hello #!no-fold-case World)"))
 
+(define-reader-directive 'usr/bin/gosh (lambda _ (values)))
+
 (test* "customized hash-bang" -i
-       (let ()
-         (define-reader-directive 'usr/bin/gosh (lambda _ (values)))
-         (read-from-string "#!usr/bin/gosh -i\n8")))
+       (read-from-string "#!usr/bin/gosh -i\n8"))
+
+(define-reader-directive 'true!  (lambda _ #t))
+(define-reader-directive 'false! (lambda _ #f))
 
 (test* "customized hash-bang" '(#t #f)
-       (let ()
-         (define-reader-directive 'true  (lambda _ #t))
-         (define-reader-directive 'false (lambda _ #f))
-         (read-from-string "#!/usr/bin/gosh -i\n(#!true #!false)")))
+       (read-from-string "#!/usr/bin/gosh -i\n(#!true! #!false!)"))
+
+(test* "customized hash-bang error1" (test-error)
+       (read-from-string "#!/usr/bin/gosh -i\n#! true!"))
+(test* "customized hash-bang error2" (test-error)
+       (read-from-string "#!/usr/bin/gosh -i\n#!#:true!"))
 
 ;;===============================================================
 ;; SRFI-10 Reader constructor (#,)
