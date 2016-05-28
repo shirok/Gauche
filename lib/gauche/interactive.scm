@@ -241,15 +241,22 @@
           (format "~a[~a]~a " *repl-name* (module-name m) delim))))))
 
 ;; Returns a reader procedure that can handle toplevel command.
-(define (make-repl-reader read/skipping-trailing-ws read-line)
+;; READ - reads one sexpr from the REPL input
+;; READ-LINE - read to the EOL from REPL input and returns a string.
+;;             The newline char is read but not included in the string.
+;; SKIPPER - consumes trailing whitespaces from REPL input until either
+;;           first newline is read, or encounters non-whitespace character.
+(define (make-repl-reader read read-line skipper)
   (^[]
-    (let1 expr (read/skipping-trailing-ws)
+    (let1 expr (read)
       (if (and (pair? expr)      ; avoid depending on util.match yet
                (eq? (car expr) 'unquote)
                (pair? (cdr expr))
                (null? (cddr expr)))
         (handle-toplevel-command (cadr expr) (read-line))
-        expr))))
+        (begin
+          (unless (eof-object? expr) (skipper))
+          expr)))))
 
 ;; EXPERIMENTAL: Environment GAUCHE_READ_EDIT enables editing mode.
 ;; Note that, at this moment, text.line-edit isn't complete; it doesn't
@@ -266,8 +273,8 @@
       (values (^[] #f)
               (make-repl-reader r rl))
       (values (^[] (display (default-prompt-string)) (flush))
-              (make-repl-reader read-consuming-trailing-whitespaces
-                                read-line)))))
+              (make-repl-reader read read-line
+                                consume-trailing-whitespaces)))))
 
 ;; error printing will be handled by the original read-eval-print-loop
 (define (%evaluator expr env)

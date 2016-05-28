@@ -521,8 +521,8 @@
             (get-output-string o))
           (begin (write-char c o) (loop (+ i 1))))))))
 
-;; Like read, but consumes trailing whitespaces including the
-;; first EOL.  This is mainly intended for interactive REPL,
+;; Consume trailing whiespaces up to (including) first EOL.
+;; This is mainly intended for interactive REPL,
 ;; where the input is buffered by line.  We want to ignore the
 ;; trailing newline, so that when the user type (read-line) RET,
 ;; we consume that RET and start reading from the fresh line.
@@ -532,20 +532,17 @@
 ;; between a multibyte character.
 ;; Note that the 'whitespaces' here only inlucdes #\tab, #\space,
 ;; #\return and #\newline.
-(define (read-consuming-trailing-whitespaces
-         :optional (port (current-input-port)))
-  (rlet1 v (read port)
-    (unless (eof-object? v)
-      (let loop ()
-        (when (byte-ready? port)
-          (let1 b (peek-byte port)
-            (cond [(memv b '(9 32)) (read-byte port) (loop)] ;tab, space
-                  [(eqv? b 13)                               ;cr or crlf
-                   (read-byte port)
-                   (when (and (byte-ready? port)
-                              (eqv? (peek-byte port) 10))
-                     (read-byte port))]
-                  [(eqv? b 10) (read-byte port)])))))))      ;lf
+(define (consume-trailing-whitespaces :optional (port (current-input-port)))
+  (let loop ()
+    (when (byte-ready? port)
+      (let1 b (peek-byte port)
+        (cond [(memv b '(9 32)) (read-byte port) (loop)] ;tab, space
+              [(eqv? b 13)                               ;cr or crlf
+               (read-byte port)
+               (when (and (byte-ready? port)
+                          (eqv? (peek-byte port) 10))
+                 (read-byte port))]
+              [(eqv? b 10) (read-byte port)])))))        ;lf
 
 ;; DEPRECATED - read-uvector should be used
 (define-cproc read-block (bytes::<fixnum>

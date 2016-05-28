@@ -71,7 +71,8 @@
                     (try))))
               x))))
       (values (read-1 read-consuming-trailing-whitespaces)
-              (read-1 read-line)))
+              (read-1 read-line)
+              (^[] (consume-trailing-whitespaces buffer))))
     (values #f #f)))                    ;no default console
 
 ;; We have to handle both toplevel command (begins with comma, ends with

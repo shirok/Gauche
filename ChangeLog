@@ -1,5 +1,12 @@
 2016-05-27  Shiro Kawai  <shiro@acm.org>
 
+	* src/libio.scm, lib/gauche/interactive.scm:
+	  Drop read-consuming-trailing-whitespaces,
+	  for it turned out it can't be used meaningfully.  For toplevel
+	  commands we have to call read-line after the first word,
+	  so the first word reader must not consume trailing newline
+	  immediately.  We create consume-trailing-whitespaces instead.
+
 	* src/read.c: Fix erroneous read behavior such as
 	  (read-from-string "#:") => #:|| and
 	  (read-from-string "#: foo") => #:| foo|.  We now reject if '#!'
