@@ -265,13 +265,13 @@
 ;; the feature available through command-line options of gosh.
 
 (define-values (%prompter %reader)
-  (receive (r rl)
+  (receive (r rl skipper)
       (if (sys-getenv "GAUCHE_READ_EDIT")
         (make-editable-reader (^[] (default-prompt-string "$")))
-        (values #f #f))
-    (if (and r rl)
+        (values #f #f #f))
+    (if (and r rl skipper)
       (values (^[] #f)
-              (make-repl-reader r rl))
+              (make-repl-reader r rl skipper))
       (values (^[] (display (default-prompt-string)) (flush))
               (make-repl-reader read read-line
                                 consume-trailing-whitespaces)))))

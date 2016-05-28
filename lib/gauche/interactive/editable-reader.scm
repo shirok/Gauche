@@ -70,7 +70,7 @@
                     (set! buffer (open-input-string (string-append input "\n")))
                     (try))))
               x))))
-      (values (read-1 read-consuming-trailing-whitespaces)
+      (values (read-1 read)
               (read-1 read-line)
               (^[] (consume-trailing-whitespaces buffer))))
     (values #f #f)))                    ;no default console
