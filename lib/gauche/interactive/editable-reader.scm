@@ -43,13 +43,9 @@
 
 ;; Internal API, to be used by gauche.interactive.
 ;; Because of toplevel commands, we can't just provide alternative 'read'
-;; procedure.  Instead, this returns two procedures, one is for 'read'
-;; and another is for 'read-line'.  They are used in very specific way---
-;; the 'read-line' part will only be called to fetch the rest part of
-;; toplevel commands.
-;; May return (valuse #f #f) if it can't open the console.
-;; NB: The 'read' procedure returned should consume trailing whitespaces.
-;; See make-repl-reader in gauche.interactive.
+;; procedure.  Instead, this returns three procedures, one for 'read',
+;; one for 'read-line', and another for skipping traililng whitespaces.
+;  They are suitable to be passed to make-repl-reader.
 ;; NB: Currently we assume we use default console.  Might be useful
 ;; to allow other console (e.g. over pty).
 (define (make-editable-reader get-prompt-string)
@@ -73,7 +69,7 @@
       (values (read-1 read)
               (read-1 read-line)
               (^[] (consume-trailing-whitespaces buffer))))
-    (values #f #f)))                    ;no default console
+    (values #f #f #f)))                    ;no default console
 
 ;; We have to handle both toplevel command (begins with comma, ends with
 ;; newline) and the complete sexp.

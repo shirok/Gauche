@@ -5,4 +5,5 @@ optimize.scm
 control.scm
 debug.scm
 scripts.scm
+interactive.scm
 r7rs-tests.scm
