@@ -3647,41 +3647,85 @@ without any argument from the shell, to find out the valid options.
 
 @deftp {Module} gauche.configure
 @mdindex gauche.configure
-This is a utility library to write @file{configure} script, an alternative
-of autoconf-generated @file{configure} shell script.
+@c EN
+This is a utility library to write a @file{configure} script.
 It is used to check the system properties and generates build files
 (usually @file{Makefile}) from templates.
+@c JP
+このモジュールは@file{configure}スクリプトを書くためのユーティリティライブラリです。
+@file{configure}スクリプトはシステムの属性をチェックして、
+ビルド用のファイル(通常は@file{makefile})をテンプレートから生成します。
+@c COMMON
 
-The primary purpose is to replace @file{configure} scripts
+@c EN
+The primary purpose is to replace autoconf-generated 
+@file{configure} shell scripts
 in Gauche extension pakcages.
+@c JP
+主な目的は、Gauche拡張パッケージにおいて、autoconfが生成する
+@file{configure}シェルスクリプトを置き換えることです。
+@c COMMON
 
+@c EN
 The advantage of using autoconf is that it generates
 a script that runs on most vanilla unix, for it only uses minimal 
 shell features and basic unix commands.   
 However, when you configure Gauche extension,
 you sure have Gauche already, so you don't need to limit
 yourself with minimal environment.
+@c JP
+autoconfを使う利点は、生成されるスクリプトが最小限のシェル機能と基本的なunixコマンドにしか
+依存しないため、ほとんど何も入れないunix上でも実行できることです。
+けれども、Gauche拡張パッケージをビルドする時には、
+既にGaucheはインストールされているわけですから、これを使わない手はありません。
+@c COMMON
 
-Writing a @file{configure} script in Gauche means developers
+@c EN
+Writing a @file{configure} script directly in Gauche means developers
 don't need an extra step to generate @file{configure} before
 distribution.  They can directly check in @file{configure} in
 the source repo, and anybody who pulls the source tree can
 run @file{configure} at once without having autoconf.
+@c JP
+@file{configure}スクリプトがGaucheで直接書ければ、配布前に
+@file{configure}スクリプトを生成するという余分な手間が省けます。
+@file{configure}スクリプト自体をリポジトリにチェックインしておけますし、
+誰でもソースツリーをチェックアウトしたら(autoconfを使わずに)すぐに
+@file{configure}を実行できます。
+@c COMMON
 
+@c EN
 Currently, @code{gauche.configure} only covers small subset of
 autoconf, though, so if you need to write complex tests
 you may have to switch back to autoconf.  We'll add tests
 as needed.
+@c JP
+ただ、今のところ@code{gauhce.confiugre}はautoconfの機能の小さなサブセット
+しかカバーしないので、複雑な機能テストが必要ならautoconfに戻らなければ
+ならない場合もあります。必要に応じて機能テストを足して行く予定です。
+@c COMMON
 @end deftp
 
+@c EN
 The core feature of @code{gauche.configure} is the ability to generate files
 (e.g. @file{Makefile}) from templates (e.g. @file{Makefile.in}) with replacing
 parameters.  We follow autoconf convension, so the replacement parameters
 in a template is written like @code{@@VAR@@}.  You should be able
 to reuse @file{Makefile.in} used for autoconf without changing them.
+@c JP
+@code{gauche.configure}のコアとなる機能は、テンプレート(例: @file{Makefile.in})
+から、@code{@@VAR@@}のように書かれたパラメータを置換して
+ファイル(例: @file{Makefile})を生成することです。
+autoconf用に書いた@file{Makefile.in}はそのまま流用できるはずです。
+@c COMMON
 
+@c EN
 The API corresponds to autoconf's @code{AC_*} macros, while we use
-@code{cf-} suffix instead.
+@code{cf-} prefix instead.
+@c JP
+autoconfの@code{AC_*}マクロに対応する機能は、プレフィクスを@code{cf-}に置き換えた
+名前で提供されています。
+@c COMMON
 
 @menu
 * Structure of configure script::  
