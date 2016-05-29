@@ -63,7 +63,7 @@ GNU GENERAL PUBLIC LICENSE
 Version 2, June 1991
 
 
-Copyright of lib/srfi-1.scm -------------------------------------------------
+Copyright of libsrc/srfi-1.scm ----------------------------------------------
 
 ;;; Copyright (c) 1998, 1999 by Olin Shivers. You may do as you please with
 ;;; this code as long as you do not remove this copyright notice or
