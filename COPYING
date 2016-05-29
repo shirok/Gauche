@@ -57,6 +57,12 @@ Copyright of gc/* -----------------------------------------------------------
     modified is included with the above copyright notice.
 
 
+Copyright of gc/libatomic_ops/* ---------------------------------------------
+
+GNU GENERAL PUBLIC LICENSE
+Version 2, June 1991
+
+
 Copyright of lib/srfi-1.scm -------------------------------------------------
 
 ;;; Copyright (c) 1998, 1999 by Olin Shivers. You may do as you please with
