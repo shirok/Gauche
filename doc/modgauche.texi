@@ -3736,19 +3736,36 @@ autoconfの@code{AC_*}マクロに対応する機能は、プレフィクスを@
 @subsection Structure of configure script and build files
 @c NODE configureスクリプトの構成とビルドファイル
 
-A @file{configure} script is a script that tests
+@c EN
+A @file{configure} script tests
 running system's properties to determine values of
 parameters, then read one or more template build files,
 and write out one output build file for each, replacing
 parameters for the assigned values.
+@c JP
+@file{configure}スクリプトは、それを実行しているシステムの特性を調べて
+パラメータの値を決定し、ビルドファイルのテンプレート中のパラメータを
+置換してビルドファイルを生成します。
+@c COMMON
 
+@c EN
 By convention, a template file has a suffix @code{.in}, and
 the corresponding output file is named without the suffix.
 For example, @code{Makefile.in} is a template that generates
 @code{Makefile}.
+@c JP
+通常、テンプレートファイルにはサフィックス@code{.in}がつけられ、
+対応する出力ファイルはそのサフィックスが除かれたものになります。
+例えば@code{Makefile.in}は@code{Makefile}を生成するテンプレートです。
+@c COMMON
 
+@c EN
 Templates may contain parameters, noted @code{@@PARAMETER_NAME@@}.
 This is a fragment of a typical Makefile template:
+@c JP
+テンプレートファイル中には@code{@@PARAMETER_NAME@@}という形式の
+パラメータを含めることができます。以下は典型的なMakefileのテンプレートです。
+@c COMMON
 
 @example
 GAUCHE_PACKAGE = "@@GAUCHE_PACKAGE@@"
@@ -3760,14 +3777,26 @@ foo.$(SOEXT): $(foo_SRCS)
           --local=$(LOCAL_PATHS) --verbose foo $(foo_SRCS)
 @end example
 
+@c EN
 When processed by @code{configure}, @code{@@GAUCHE_PACKAGE@@},
 @code{@@SOEXT@@} and @code{@@LOCAL_PATHS@@} are replaced
 with appropriate values.   If you know autoconf, you are already
 familiar with this.
+@c JP
+@code{configure}がこのテンプレートを処理する際に、@code{@@GAUCHE_PACKAGE@@}、
+@code{@@SOEXT@@}、@code{@@LOCAL_PATHS@@}はそれぞれ適切な値に
+置換されます。autoconfを知っている読者には馴染み深い動作でしょう。
+@c COMMON
 
+@c EN
 The Gauche configure script is structurally similar to autoconf's
 @code{configure.in}, but you can use full power of Scheme.  Here's
 an abridged version of sample configure script:
+@c JP
+Gaucheのconfigureスクリプトはautoconfの@code{configure.in}と
+似たような構造をとりますが、フルセットのSchemeの力を使うことができます。
+ごく簡単なconfigureスクリプトを示します。
+@c COMMON
 
 @example
 #!/usr/bin/env gosh
@@ -3797,31 +3826,66 @@ an abridged version of sample configure script:
 (cf-output "Makefile")
 @end example
 
+@c EN
 Instead of writing the calls to @code{cf-*} APIs in the toplevel
 as shown above, you can organize operations in procedures if you like.
 No matter how you organize them,
 you have to execute the following four steps in the script:
+@c JP
+@code{cf-*} APIの呼び出しを、このようにトップレベルに書くかわりに、
+関数としてまとめることもできます。コードのまとめかたは自由ですが、
+実際にスクリプトが実行される際に、以下のステップを踏む必要があります。
+@c COMMON
 
 @enumerate
 @item
+@c EN
 Extra argument declarations (optional): Declare @code{--with-PACKAGE}
-and/or @code{--enable-FEATURE} options you want to handle.
+and/or @code{--enable-FEATURE} options you want to handle, by
+@code{cf-with-arg} and @code{cf-enable-arg}, respectively.
+@c JP
+追加の引数の宣言(省略可): @code{--with-PACKAGE}や@code{--enable-FEATURE}で
+処理すべきオプションを、そえぞれ@code{cf-with-arg}と@code{cf-enable-arg}で
+宣言します。
+@c COMMON
 @item
+@c EN
 Initialization.  Call to @code{cf-init} sets up global context and
 parses command-line arguments passed to @code{configure}.
 It also process package metainformation in @file{package.scm}, if it exists.
+@c JP
+初期化。@code{cf-init}を呼ぶと、グローバルなコンテキストが設定され、
+@code{configure}に与えられた引数がパーズされます。また、
+@file{package.scm}が存在していれば、そこからパッケージメタ情報が読み込まれます。
+@c COMMON
 @item
+@c EN
 Tests and other parameter settings (optional): Check system
 characteristics and sets up substitution parameters and/or
 C preprocessor definitions.
+@c JP
+テストとパラメータの設定 (省略可): システムの特性を調べ、
+置換すべきパラメータやCプリプロセッサ定義の値を設定します。
+@c COMMON
 @item
-Output generation.  Call @code{cf-output} to process files.
+@c EN
+Output generation.  Call @code{cf-output} to process template files.
+@c JP
+出力の生成。@code{cf-output}を呼び出し、テンプレートファイルを処理します。
+@c COMMON
 @end enumerate
 
+@c EN
 Most @code{cf-*} API corresponds to autoconf's @code{AC_*} or
 @code{AS_*} macros.   We need argument declarations
 before @code{cf-init} so that it can generate help message
-including custom arguments.
+including custom arguments in one pass.
+@c JP
+多くの@code{cf-*} APIは、autoconfの@code{AC_*}もしくは@code{AS_*}マクロに
+対応しています。引数の宣言が@code{cf-init}より前になされなければならないのは、
+1パスで@code{cf-init}がカスタム引数の説明を含んだヘルプメッセージを
+生成する必要があるからです。
+@c COMMON
 
 @node Configure API,  , Structure of configure script, Generating build files
 @subsection Configure API
@@ -3833,19 +3897,38 @@ including custom arguments.
 @c COMMON
 
 @defun cf-init :optional package-name package-version maintainer-email homepage-url
+@c EN
 Initialize the configure system.  This must be called once in the
 configure script, before any feature-test procedures.
+@c JP
+configureシステムを初期化します。これはconfigureスクリプト中で、
+全ての機能テスト手続きに先立って必ず1回呼ばれなければなりません。
+@c COMNON
 
+@c EN
 First, it checks if a file named @file{package.scm} is
 in the same directory as the configure script,
 and reads the Gauche package description from it.  The package description
 contains package name, version, dependencies, etc.
 @xref{Package metainformation}, for the details.
+@c JP
+まずこの手続きは、configureスクリプトと同じディレクトリに@file{package.scm}という
+ファイルがあるかどうか調べ、あればGaucheパッケージ記述をそこから読み込みます。
+パッケージ記述には、パッケージ名、バージョン、依存関係などがかかれています。
+詳しくは@ref{Package metainformation}を参照してください。
+@c COMMON
 
+@c EN
 It then parse the command-line arguments, sets up the configure
 environment, and (if @file{package.scm} defines dependencies) check
 if the system has required packages.
+@c JP
+次にこの手続きはコマンドライン引数をパーズし、configureの環境を設定し、
+(もし@file{package.scm}が依存関係を定義していれば)必要なパッケージが
+既にあるかどうかもチェックします。
+@c COMMON
 
+@c EN
 The optional arguments are only supported for the backward compatibility
 if you don't have @file{package.scm}, you need at least 
 to provide @var{package-name} and @var{package-version} to tell
@@ -3855,7 +3938,16 @@ The other optional arguments, @var{maintainer-email} and
 @var{homepage-url}, are used to initialize @code{PACKAGE_BUGREPORT} and
 @code{PACKAGE_URL}.  These arguments are compatible to autoconf's
 @code{AC_INIT} macro.
+@c JP
+省略可能引数は以前のバージョンとの互換性のためのものです。@file{package.scm}が
+無い場合、少なくとも@var{package-name}と@var{package-version}を与える
+必要があります。これらはconfigure変数の@code{PACKAGE_NAME}と@code{PACKAGE_VERSION}
+を置換するのに使われます。他の引数@var{maintainer-email}と
+@var{homepage-url}は@code{PACKAGE_BUGREPORT}と@code{PACKAGE_URL}に
+使われます。これらの引数はautoconfの@code{AC_INIT}マクロと互換です。
+@c COMMON
 
+@c EN
 We recommend to always use @file{package.scm} and omit all the optional
 arguments, because it allows you to maintain the package metainformation
 in one place.  When @file{package.scm} is read, @code{PACKAGE_BUGREPORT}
@@ -3864,11 +3956,26 @@ the package description, and @code{PACKAGE_URL} is initialized
 by its @code{homepage} slot.
 @xref{Package metainformation}, for description of slots of the package
 description.
+@c JP
+推奨される呼び出し方法は、@file{package.scm}を用意し、@code{cf-init}には
+引数を渡さないことです。そうすれば、パッケージのメタ情報を一ヶ所(@file{package.scm})で
+管理できます。@file{package.scm}が読まれた場合、@code{PACKAGE_BUGREPORT}は
+パッケージ記述の@code{maintainers}の最初のエントリで、また
+@code{PACKAGE_URL}はパッケージ記述の@code{homepage}で初期化されます。
+パッケージ記述についての詳細は@ref{Package metainformation}を見てください。
+@c COMMON
 
+@c EN
 Note that if there's @file{package.scm} @emph{and} you provide
 the optional arguments, they must match, or @code{cf-init} raises an
 error.  It is to catch an error during transition in which you forgot
 to update either one.
+@c JP
+もし@file{package.scm}が存在し、かつ@code{cf-init}に引数が与えられた場合、
+それぞれ対応する情報は一致していなければなりません。一致していなかった場合、
+@code{cf-init}はエラーを投げます。これは、@file{package.scm}への移行の途中で、
+どちらかの情報をアップデートし忘れたケースを捕まえるためです。
+@c COMMON
 @end defun
 
 @c EN
@@ -3961,6 +4068,31 @@ to update either one.
 
 @defun cf-includes-default :optional newvalue
 @end defun
+
+@c EN
+@subsubheading Running compiler
+@c JP
+@subsubheading コンパイラを走らせる
+@c COMMON
+
+@deffn {Parameter} cf-lang
+@end deffn
+
+@defun cf-lang-program prologue body
+@end defun
+
+@defun cf-lang-io-program
+@end defun
+
+@defun cf-lang-call prologue func-name
+@end defun
+
+@defun cf-try-compile prologue body
+@end defun
+
+@defun cf-try-compile-and-link prologue body
+@end defun
+
 
 
 @c EN
