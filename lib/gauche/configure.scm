@@ -163,7 +163,7 @@
   (exit 1))
 
 ;; API
-;; Convenience routie for substitute of shell's echo
+;; Convenience routine for substitute of shell's echo
 ;; e.g.  (cf-echo "something" > "FILE")
 ;; or    (cf-echo "something" >> "FILE")
 ;; The destination, '>' or '>>' followed by a filename, must be at the end

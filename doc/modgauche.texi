@@ -3992,6 +3992,8 @@ autoconf macros are @code{AC_ARG_ENABLE} and @code{AC_ARG_WITH}.
 
 Those procedures must be executed before calling @code{cf-init}.
 
+The @var{feature} and @var{package} arguments must be a symbol.
+
 A feature selection argument is in a form of either
 @code{--enable-@var{feature}=@var{val}}, 
 @code{--enable-@var{feature}}, or @code{--disable-@var{feature}}.
@@ -4012,6 +4014,12 @@ or @var{package} to the global tables, with the value @var{val}.
 Those global tables can be accessed with @code{cf-feature-ref} and
 @code{cf-package-ref} procedures below.
 
+The @var{help-string} argument must be a string and
+is used as is to list the help
+of the option in part of usage message displayed by
+@code{configure --help}.  You can use @code{cf-help-string} below
+to create a help string that fits nicely in the usage message.
+
 If optional @var{proc-if-given} argument is given, it must be a procedure
 that accepts one argument, @var{val}.  It is called when @code{cf-init}
 finds one of those arguments.
@@ -4022,14 +4030,30 @@ doesn't find any of those arguments.
 @end defun
 
 @defun cf-help-string item description
-@end defun
+Return a string formatted suitable to show as an option's help message.
+The result can be passed to @var{help-string} argument of
+@code{cf-arg-enable} and @code{cf-arg-with}. 
+This corresponds to autoconf's @code{AS_HELP_STRING}.
 
-@defun cf-package-ref name
+Call it as follows, and it'll indent and fill the description nicely.
+
+@example
+(cf-help-string "--option=ARG" "Give ARG as the value of option")
+@end example
 @end defun
 
 @defun cf-feature-ref name
-@end defun
+@defunx cf-package-ref name
+Lookup a symbol @var{name} from the global feature table and the
+global package table, respectively.
+These can be called after @code{cf-init}.
 
+For example, if you've called @code{cf-arg-enable} with @code{foofeature},
+and the user has invoked the @code{configure} script with
+@code{--with-foofeature=full}, then @code{(cf-feature-ref 'foofeature)}
+returns @code{"full"}.   If the user hasn't given the command-line
+argument, @code{#f} is returned.
+@end defun
 
 @c EN
 @subsubheading Messages
@@ -4037,19 +4061,79 @@ doesn't find any of those arguments.
 @subsubheading メッセージ
 @c COMMON
 
+The @code{cf-init} procedure opens the default log drain
+that goes to @code{config.log}, and you can use @code{log-format}
+to write to it (@xref{User-level logging}, for the details of logging).
+
+However, to have consistent message format conveniently, the following
+procedures are provided.  They emits the message both to log files and 
+the current output port (in slightly different formats so that the
+console messages align nicely visually.)
+
 @defun cf-msg-checking fmt arg @dots{}
+Writes out ``checking XXX...'' message.  The @var{fmt} and @var{arg} @dots{}
+arguments are passed to @code{format} to produce the ``XXX'' part.
+
+For the current output port, this does not emit the trailing newline,
+expecting @code{cf-msg-result} will be called subsequently.
+
+Here's an excerpt of the source that uses @code{cf-msg-checking}
+and @code{cf-msg-result}:
+@example
+(define (compiler-can-produce-executable?)
+  (cf-msg-checking "whether the ~a compiler works" (~ (cf-lang)'name))
+  (rlet1 result ($ run-compiler-with-content
+                   (cf-lang-link-m (cf-lang))
+                   (cf-lang-null-program-m (cf-lang)))
+    (cf-msg-result (if result "yes" "no"))))
+@end example
+
+This produces a console output like this:
+@example
+checking whether the C compiler works... yes
+@end example
+while the log file records more info:
+@example
+checking: whether the C compiler works
+... whatever logging message from run-compiler-with-content ...
+result: yes
+@end example
+
+This corresponds to autoconf's @code{AC_MSG_CHECKING}.
 @end defun
 
 @defun cf-msg-result fmt arg @dots{}
+The @var{fmt} and @var{arg} @dots{} are passed to @code{format}, and
+the formatted message and newline is written out.
+For the log file, it records ``result: XXX'' where XXX is the
+formatted message.  Supposed to be used with @code{cf-msg-checking}.
+
+This corresponds to autoconf's @code{AC_MSG_RESULT}.
 @end defun
 
 @defun cf-msg-warn fmt arg @dots{}
-@end defun
-
-@defun cf-msg-error fmt arg @dots{}
+@defunx cf-msg-error fmt arg @dots{}
+Produces ``Warning: XXX'' and
+``Error: XXX'' messages, respectively.
+The @var{fmt} and @var{arg} @dots{} are passed to @code{format} to
+generate XXX part.  These corresponds to
+autoconf's @code{AC_MSG_WARN} and @code{AC_MSG_ERROR}.
 @end defun
 
 @defun cf-echo arg @dots{} [> file][>> file]
+Convenience routine to replace shell's @code{echo} command.
+
+If the argument list ends with @code{> @var{file}} or
+@code{>> @var{file}}, where @var{file} is a string file name,
+then this works just like shell's @code{echo}; that is,
+@var{arg}s except the last two are written to @var{file}, space
+separated, newline terminated.  Using @code{>} supersedes
+@var{file}, while @code{>>} appends to it.
+
+If the argument list doesn't end with those redirection message,
+it writes out the argument to both the current output port
+and the log file, space separated, newline terminated.
+For the log file, the message is prefixed with ``Message:''.
 @end defun
 
 @c EN
@@ -4058,22 +4142,60 @@ doesn't find any of those arguments.
 @subsubheading パラメータと定義
 @c COMMON
 
+The configure script maintains two global tables, definition tables
+and substitution tables.  Definition tables is used for C preprocessor
+definitions, and substitution tables are used for @code{@@PARAMETER@@}
+substitutions.
+
 @defun cf-define symbol :optional value
+Registers C preprocessor definition of @var{symbol} with @var{value}.
+@var{Value} can be any Scheme objects, but it is emitted to a command
+line (in @code{-DSYMBOL=VALUE} form) or in @file{config.h}
+(in @code{#define SYMBOL VALUE} form) using @code{display}, so
+you want to avoid including funny characters.  If @var{value} is
+omitted, @code{1} is assumed.
+
+This corresponds to autoconf's @code{AC_DEFINE}.
 @end defun
 
 @defun cf-subst symbol value
+Registers substitution parameter @var{symbol} with @var{value}.
+@var{Value} can be any Scheme objects; it's @code{display} representation
+is used to substitute @var{@@SYMBOL@@} in the template.
+
+This corresponds to autoconf's @code{AC_SUBST}, but we require
+the value (while autoconf can refer to the shell variable value as default).
 @end defun
 
 @defun cf-have-subst? symbol
+Returns true iff @code{symbol} has a substitution registered by
+@code{cf-subst}.
 @end defun
 
 @defun cf-arg-var symbol
+Lookup the environment variable @code{symbol} and if it is found,
+use its value as the substitution value.  For example,
+if you call @code{(cf-arg-var 'MYCFLAGS)}, then the user
+can provide the value of @code{@@MYCFLAGS@@} as
+@code{MYCFLAGS=-g ./configure}.
+
+This corresponds to autoconf's @code{AC_ARG_VAR}, but we lack the ability
+of setting the help string.  That's because @code{cf-arg-var} must
+be run after @code{cf-init}, but the help message is constructed
+within @code{cf-init}.
 @end defun
 
 @defun cf-ref symbol :optional default
+This looks up the value of the substitution parameter @var{symbol}.
+If there's no such substitution parameter registered,
+it returns @var{default} when it's provided, otherwise
+throws an error.
 @end defun
 
 @defun cf$ symbol
+Looks up the value of the substitution parameter @var{cf-ref},
+but it returns empty string if it's unregistered.  Useful
+to use within string interpolation, e.g. @code{#"gosh ~(cf$ GOSHFLAGS)"}.
 @end defun
 
 @c EN
