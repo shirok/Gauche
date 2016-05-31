@@ -155,6 +155,24 @@ Gauche also adopts Common-Lisp style radix prefixed numeric literals,
 e.g. @code{#3r120} (@code{120} in base-3, 15 in decimal).  Radix between
 2 and 36 are recognized; alphabetic letters @code{a-zA-Z}
 are used beyond decimal.
+
+For the polar notation of complex numbers, Gauche allows the suffix @code{pi}
+to denote the phase by multiples of pi.  The Scheme syntax use radians for
+the phase, but you can only approximate pi with the floating point numbers,
+so it can't represent round numbers except zero angle.
+@example
+gosh> 2@@3.141592653589793
+-2.0+2.4492935982947064e-16i
+@end example
+With the @code{pi} suffix, you can get a round numbers.
+@example
+gosh> 2@@1pi
+-2.0
+gosh> 2@@0.5pi
+0.0+2.0i
+gosh> 2@@-0.5pi
+0.0-2.0i
+@end example
 @c JP
 @item 数値リテラル
 不正確な実数の整数部または小数部のいずれかが0の場合、それを省略することが
@@ -173,6 +191,24 @@ Gaucheの拡張機能として、プレフィクス(@code{#e}, @code{#x}等)つ�
 Gaucheはまた、Common Lisp風の基数を明示した数値リテラルも認識します。
 例えば3進数の120は@code{#3r120}と書けます(10進数で15)。2進数から36進数まで
 認識されます。10進数より上では@code{a-zA-Z}のアルファベットを使えます。
+
+複素数の極座標記法において、Gaucheではサフィックス@code{pi}をつけることにより
+偏角をπの係数で表すことができます。Schemeの構文では偏角はラジアンですが、
+πは浮動小数点数では近似値でしか扱えないので、偏角ゼロ以外で切りの良い数値を
+表現することができません。
+@example
+gosh> 2@@3.141592653589793
+-2.0+2.4492935982947064e-16i
+@end example
+@code{pi}サフィックスを使うと切りの良い数値が書けます。
+@example
+gosh> 2@@1pi
+-2.0
+gosh> 2@@0.5pi
+0.0+2.0i
+gosh> 2@@-0.5pi
+0.0-2.0i
+@end example
 @c COMMON
 
 @c EN
