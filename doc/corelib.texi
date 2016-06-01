@@ -281,21 +281,28 @@ Schemeには等価性を判定する汎用的な述語が3つあります。
 [R7RS]
 @c EN
 This is the fastest and finest predicate.
-Returns @code{#t} if @var{obj1} and @var{obj2} are allocated objects of
-the same types, and denote the same location.  Returns @code{#t}
-if both objects are @code{#f}, @code{#t}, or @code{()}.
-You can think @var{eq?} as a pointer comparison.
-Note that the result is unspecified in Scheme standard when
-both objects are characters or numbers.
+Returns @code{#t} if @var{obj1} and @var{obj2} are identical
+objects---that is, if they represents the same object on memory
+or in a register.  Notably, you can compare two symbols with
+@code{eq?} to check if they are the same or not.
+You can think @var{eq?} as a pointer comparison for
+any heap-allocated objects.
+
+Booleans can be compared with @code{eq?}, but you can't
+compare characters and numbers reliably---objects with the same
+numerical value may or may not @code{eq?} to each other.
+If you identity comparison needs to include those objects,
+use @code{eqv?} below.
 @c JP
 最も高速で、細かい区別ができる述語です。
-@var{obj1}と@var{obj2}がアロケートされる同じ型のオブジェクトで、
-かつ両者がメモリ上の全く同じ場所を占めるオブジェクトを指している場合に
-@code{#t}を返します。また、@var{obj1}と@var{obj2}がともに
-@code{#f}, @code{#t}あるいは@code{()}である場合も@code{#t}を返します。
-ポインタ比較と考えても良いでしょう。
-@var{obj1}と@var{obj2}がともに文字、あるいは数値であった場合の振るまいは
-Schemeの標準では定められていません。
+@var{obj1}と@var{obj2}が同一(identical)のオブジェクト、
+すなわち、メモリ上の同じオブジェクトを表している場合に@code{#t}を返します。
+特に、二つのシンボルが同一かどうかを比較するのに@code{eq?}が使えます。
+ヒープアロケートされるオブジェクトに対しては、ポインタ比較と考えても良いでしょう。
+
+真偽値も@code{eq?}で比較できますが、文字と数値はたとえ値が同じオブジェクトであっても
+互いに@code{eq?}になるかどうかはわかりません。
+同一性比較で文字や数値も扱う必要がある場合は、下の@var{eqv?}を使いましょう。
 @c COMMON
 
 @example
