@@ -705,13 +705,17 @@
   ;; use "::1" part as the hostname, excluding [].
   (define (parse-address addr)
     (rxmatch-case addr
-      [#/^\[([a-fA-F\d:]+)\](?::(\d+))?$/ (_ host port) (values host port)]
-      [#/^([^:]+)(?::(\d+))?$/ (_ host port) (values host port)]))
-  (receive (host port) (parse-address (or (~ conn'proxy) (~ conn'server)))
+      [#/^unix:(\/.*)$/ (_ path) (values #f #f path)] ;unix domain
+      [#/^\[([a-fA-F\d:]+)\](?::(\d+))?$/ (_ host port) (values host port #f)]
+      [#/^([^:]+)(?::(\d+))?$/ (_ host port) (values host port #f)]
+      [else (error "Unrecognized http server address:" addr)]))
+  (receive (host port path) (parse-address (or (~ conn'proxy) (~ conn'server)))
     (set! (~ conn'socket)
-          (make-client-socket host (if port
-                                     (x->integer port)
-                                    (if (~ conn'secure) 443 80))))))
+          (if path
+            (make-client-socket 'unix path)
+            (make-client-socket host (if port
+                                       (x->integer port)
+                                       (if (~ conn'secure) 443 80)))))))
 
 (define (shutdown-socket-connection conn)
   (when (~ conn'socket)
