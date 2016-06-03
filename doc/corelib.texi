@@ -23707,7 +23707,7 @@ amount of time.
 
 The reason that we retries by default is that Gauche's GC may use
 signals to synchronize between threads.   If GC is invoked by one thread
-While another thread is sleeping on @code{nanosleep(2)}, it may return
+while another thread is sleeping on @code{nanosleep(2)}, it may return
 prematurely.  It could happen often if other threads allocate a lot,
 which could make @code{sys-nanosleep} unreliable.
 
@@ -23808,10 +23808,18 @@ Bound to a positive integer that @code{sys-random} may return.
 @end defvar
 
 @defun sys-get-osfhandle port-or-fd
-[Windows] This procedure is only available on Windows native platforms.
+[Windows] 
+@c EN
+This procedure is only available on Windows native platforms.
 Returns a Windows file handle associated to the given port or
 integer file descriptor.   Throws an error if the given argument
 does not have associated file handle.
+@c JP
+この手続きはWindowsネイティブ版だけにあります。
+与えられたポートまたは整数のファイルディスクリプタに対応する
+Windowsファイルハンドルを返します。引数がファイルハンドルに
+対応していなかった場合はエラーが投げられます。
+@c COMMON
 @end defun
 
 
