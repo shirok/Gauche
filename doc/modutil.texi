@@ -11597,12 +11597,23 @@ RFC2616による自動リダイレクトが許されている場合は、
 @strong{Required arguments:}
 The @var{server} argument specifies http server name in a string.
 A server name can be optionally followed by colon and a port number.
+You can use IP address, too; for IPv6, you have to surround the
+address in brackets.
+
+Additionally, you can specify @code{"unix:/path"} where @code{/path}
+is the absolute path to the unix domain socket; this allows to connect
+to httpd listening on unix domain sockets.
 @c JP
 @strong{必須の引数:}
 @var{server}引数では、文字列でHTTPサーバ名を指定します。
 サーバ名は、オプションでコロンに続いてポート番号を付加できます。
+IPアドレスも使えます。IPv6アドレスは角括弧で囲んでください。
+
+また、@code{"unix:/path"}という形式でUnixドメインソケットに接続することもできます。
+@code{/path}部分にはソケットへの絶対パスを指定します。
 @c COMMON
-Examples: @code{"w3c.org"}, @code{"mycompany.com:8080"}.
+Examples: @code{"w3c.org"}, @code{"mycompany.com:8080"}, 
+@code{"192.168.0.1:8000"}, @code{"[::1]:8000"}
 
 @c EN
 The @var{request-uri} argument can be a string or a list.
