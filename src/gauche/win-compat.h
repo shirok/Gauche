@@ -173,7 +173,7 @@ extern __declspec(dllimport) const char *Scm_WCS2MBS(const WCHAR *s);
 /* Replace some system calls with wide-char counterparts
    NB: Windows' mkdir() and _wmkdir() takes one argument.
    NB: Substituing stat with _wstat64 must be in sync with
-       the usage of struct _stat64 in ScmSysStatRec (see system.h)
+       the usage of struct __stat64 in ScmSysStatRec (see system.h)
  */
 #if defined(UNICODE)
 #define open(path, ...)    _wopen(Scm_MBS2WCS(path), __VA_ARGS__)
@@ -186,9 +186,36 @@ extern __declspec(dllimport) const char *Scm_WCS2MBS(const WCHAR *s);
 #define rmdir(dir)         _wrmdir(Scm_MBS2WCS(dir))
 #define unlink(path)       _wunlink(Scm_MBS2WCS(path))
 #define system(path)       _wsystem(Scm_MBS2WCS(path))
-#undef stat
-#define stat(path, buf)    _wstat64(Scm_MBS2WCS(path), buf)
 #endif /*UNICODE*/
+
+#undef stat
+#undef fstat
+#if defined(UNICODE)
+#define stat(path, buf)    _wstat64(Scm_MBS2WCS(path), buf)
+#else  /* !UNICODE */
+#define stat(path, buf)    _stat64(path, buf)
+#endif /* !UNICODE */
+#define fstat(fd, buf)     _fstat64(fd, buf)
+
+/* for MinGW32 */
+#if defined(__MINGW32__) && !defined(__MINGW64_VERSION_MAJOR)
+struct __stat64 {
+    _dev_t st_dev;
+    _ino_t st_ino;
+    unsigned short st_mode;
+    short st_nlink;
+    short st_uid;
+    short st_gid;
+    _dev_t st_rdev;
+    __int64 st_size;
+    __time64_t st_atime;
+    __time64_t st_mtime;
+    __time64_t st_ctime;
+};
+_CRTIMP int __cdecl _stat64(const char*, struct __stat64*);
+_CRTIMP int __cdecl _wstat64(const wchar_t*, struct __stat64*);
+_CRTIMP int __cdecl _fstat64(int, struct __stat64*);
+#endif /* defined(__MINGW32__) && !defined(__MINGW64_VERSION_MAJOR) */
 
 /*===================================================================
  * Miscellaneous POSIX stuff
