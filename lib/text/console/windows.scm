@@ -177,10 +177,14 @@
 (define *win-default-cattr*
   (logior FOREGROUND_BLUE FOREGROUND_GREEN FOREGROUND_RED))
 
-(define-method getch ((con <windows-console>))
-  (while (queue-empty? (~ con'keybuf))
-    (sys-nanosleep #e10e6) ; 10msec
-    (%getch-sub con))
+(define-method getch ((con <windows-console>) :optional (timeout #f))
+  (let loop ((t 0))
+    (when (and (queue-empty? (~ con'keybuf))
+               (or (not timeout)
+                   (< t timeout)))
+      (sys-nanosleep #e10e6) ; 10msec
+      (%getch-sub con)
+      (loop (+ t 10)))) ; 10msec
   (dequeue! (~ con'keybuf)))
 
 (define-method get-raw-chars ((con <windows-console>))

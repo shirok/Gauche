@@ -153,22 +153,23 @@
 ;; <vt100>'input-delay sets the timeout.
 
 ;; Read a char; returns a char, or #f on timeout.  May return EOF.
-(define (%read-char/timeout con)
+;; The timeout argument is in ms.
+(define (%read-char/timeout con :optional (timeout (~ con'input-delay)))
   (cond-expand
    [gauche.os.windows
     ;; This code is used with mintty on MSYS
-    (if (or (char-ready? (~ con'iport)) (not (~ con'input-delay)))
+    (if (or (char-ready? (~ con'iport)) (not timeout))
       (read-char (~ con'iport))
       (let loop ([retry 0])
         (if (= retry 10)
           #f ; timeout
-          (begin (sys-nanosleep (* (~ con'input-delay) 100))
+          (begin (sys-nanosleep (* timeout 100))
                  (if (char-ready? (~ con'iport))
                    (read-char (~ con'iport))
                    (loop (+ retry 1)))))))]
    [else
     (receive (nfds rfds wfds xfds)
-        (sys-select! (sys-fdset (~ con'iport)) #f #f (~ con'input-delay))
+        (sys-select! (sys-fdset (~ con'iport)) #f #f timeout)
       (if (= nfds 0)
         #f ; timeout
         (read-char (~ con'iport))))]))
@@ -212,7 +213,7 @@
                   (trie-put! t `(,(integer->char n))
                              `(ALT ,(integer->char n)))))))
 
-(define-method getch ((con <vt100>))
+(define-method getch ((con <vt100>) :optional (timeout #f))
   (define tab (force *input-escape-sequence-trie*))
   (define (fetch q)
     (let1 ch (%read-char/timeout con)
@@ -228,10 +229,12 @@
       (begin (dequeue-all! q) #\escape)))
   (let1 q (~ con'input-buffer)
     (if (queue-empty? q)
-      (let1 ch (read-char (~ con'iport))
-        (if (eqv? ch #\escape)
-          (fetch q)
-          ch))
+      (let1 ch (if timeout
+                 (%read-char (~ con'iport) timeout)
+                 (read-char (~ con'iport)))
+        (cond [(eqv? ch #\escape) (fetch q)]
+              [(not ch) #f]             ;timeout
+              [else ch]))
       (dequeue! q))))
 
 (define-method get-raw-chars ((con <vt100>))  ; no translation
