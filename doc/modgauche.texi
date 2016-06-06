@@ -4205,12 +4205,92 @@ to use within string interpolation, e.g. @code{#"gosh ~(cf$ GOSHFLAGS)"}.
 @c COMMON
 
 @defun cf-check-prog sym prog-or-progs :key value default paths filter
-@end defun
+@defunx cf-path-prog sym prog-or-progs :key value default paths filter
+Check if a named executable program exists in search paths, and if it
+exists, sets the substitution parameter @var{sym} to the name
+of the found program.  The name to search is specified by @var{prog-or-progs},
+which is either a string or a list of strings.
 
-@defun cf-path-prog sym prog-or-progs :key value default paths filter
+The difference of @code{cf-check-prog} and @code{cf-path-prog} is that
+@code{cf-check-prog} uses the basename of the found program, while
+@code{cf-path-prog} uses its full path.  These corresponds to
+autoconf's @code{AC_CHECK_PROG}, @code{AC_CHECK_PROGS}, 
+@code{AC_PATH_PROG} and @code{AC_PATH_PROGS}.
+
+For example, the following
+feature test searches either one of @code{cc}, @code{gcc}, @code{tcc}
+or @code{pcc} in @code{PATH} and sets the substitution parameter @code{MY_CC}
+to the name of the found one.
+
+@example
+(cf-check-prog 'MY_CC '("cc" "gcc" "tcc" "pcc"))
+@end example
+
+If multiple program names is given, the search is done in the following
+order: First, we search for the first item (@code{cc}, in the above
+example) for each of paths, then the second, etc.  For example,
+if we have @code{/usr/local/bin:/usr/bin:/bin} in @code{PATH} and
+we have @code{/usr/local/bin/tcc} and @code{/usr/bin/gcc}, the above
+feature test sets @code{MY_CC} to @code{"gcc"}.  If you use @code{cf-path-prog}
+instead, @code{MY_CC} gets @code{"/usr/bin/gcc"}.
+
+If no program is found, @var{sym} is set to the keyword argument
+@var{default} if it is given, otherwise @var{sym} is left unset.
+
+If the @var{value} keyword argument is given, its value is
+used instead of the found program name to be set to @var{sym}.
+
+The list of search paths is taken from @code{PATH} environment
+variable.  You can override the list by the @var{paths} keyword
+argument, which must be a list of directory names.  It may contain
+nonexistent directory names, which are siently skipped.
+
+The @var{filter} keyword argument, if given, must be a predicate
+that takes full pathname of the executable program.  It is called
+when the procedure finds matching executable; the @var{filter} procedure
+may reject it by returning @code{#f}, in which case the procedure
+keeps searching.
+
+Note: If the substitution parameter @var{sym} is already set
+at the time these procedure is called, these procedures do nothing.
+Combined with @code{cf-arg-var}, it allows the configure script caller
+to override the feature test.  For example, suppose you have the
+following in the @code{configure} script:
+
+@example
+(cf-arg-var 'GREP)
+(cf-path-prog 'GREP '("egrep" "fgrep" "grep"))
+@end example
+
+A user can override the test by calling @code{configure} like this:
+
+@example
+$ ./configure GREP=mygrep
+@end example
+
 @end defun
 
 @defun cf-prog-cxx
+A convenience feature test to find C++ compiler.  This searches
+popular names of C++ compilers from the search paths, sets the
+substitution parameter @code{CXX} to the compiler's name,
+then tries to compile a small
+program with it to see it can generate an executable.
+
+This corresponds to autoconf's @code{AC_PROG_CXX}.
+
+@code{CXX} is @code{cf-arg-var}'ed in this procedure.  If a user
+provide the value when he calls @code{configure}, the searching
+is skipped, but the check of generating an executable is still
+performed.
+
+If the substitution parameter @code{CXXFLAGS} is set, its value
+is used to check if the compiler can generate an executable.
+@code{CXXFLAGS} is @code{cf-arg-var}'ed in this procedure.
+
+This procedure also emulates autoconf's @code{AC_PROG_CXX} behavior---
+if @code{CXX} is not set, but @code{CCC} is set, then we set
+@code{CXX} by the value of @code{CCC} and skip searching.
 @end defun
 
 @defun cf-check-header header :key includes
