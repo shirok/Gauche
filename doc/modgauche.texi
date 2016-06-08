@@ -4294,12 +4294,79 @@ if @code{CXX} is not set, but @code{CCC} is set, then we set
 @end defun
 
 @defun cf-check-header header :key includes
+Check if a header file @var{header} exists and usable, by
+compiling a source program of the current language
+that includes the named header
+file.  This is intended to be used as a predicate---returns @code{#t}
+if the header is usable, @code{#f} if not.
+This corresponds to autoconf's @code{AC_CHECK_HEADER}.
+
+If @var{header} requires other headers being included or
+preprocessor symbosl defined before it,
+you can pass a list of strings to be emitted before the check
+in the @var{includes} keyword arguments.  The given strings 
+are just concatenated and used as a C program fragment.
+The default value is provided by @code{cf-includes-default}.
+
+The following example sets C preprocessor symbol @code{HAVE_CRYPT_H} to
+1 if @file{crypt.h} is available.  (Note: For this kind of common task,
+you can use @code{cf-check-headers} below.  The advantage of using
+@code{cf-check-header} is that you can write other actions in Scheme
+depending on the result.)
+
+@example
+(when (cf-check-header "crypt.h")
+  (cf-define "HAVE_CRYPT_H" 1))
+@end example
 @end defun
 
 @defun cf-check-headers headers :key includes if-found if-not-found
+Codify a common pattern of checking the availability of headers and
+sets C preprocessor definitions.
+This corresponds to autoconf's @code{AC_CHECK_HEADERS}.
+
+See this example:
+
+@example
+(cf-check-headers '("unistd.h" "stdint.h" "inttypes.h" "rpc/types.h"))
+@end example
+
+This checks availability of each of listed headers,
+and sets C preprocessor definition @code{HAVE_UNISTD_H},
+@code{HAVE_STDINT_H}, @code{HAVE_INTTYPES_H} and 
+@code{HAVE_RPC_TYPES_H} to 1 if the corresponding header
+file is available.
+
+A list of strings given to @var{includes} are emitted to the
+C source file before the inclusion of the testing header.  You can
+give necessary headers and/or C preprocessor definitions there;
+if omitted, @code{cf-includes-default} provides
+the default list of such headers.
+
+The keyword argument @var{if-found} and @var{if-not-found} are
+procedures to be called when a header is found to be available or
+to be unavailable, respectively.  The procedure receives the name
+of the header.
+
+The name of the C preprocessor definition is derived from the
+header name by upcasing it and replacing non-alphanumeric characters
+for @code{_}.  Note that this substitution is not injective:
+Both @file{gdbm/ndbm.h} and @file{gdbm-ndbm.h} yield
+@code{GDBM_NDBM_H}.  If you need to distinguish such files
+you have to use @code{cf-check-header}.
 @end defun
 
-@defun cf-includes-default :optional newvalue
+@defun cf-includes-default
+Returns a list of strings that are included in the check program by
+default.  It is actually a combination of C preprocessor @code{#ifdef}s
+and @code{#include}s, and would probably be better to be called
+@code{cf-prologue-default} or something, but the corresponding
+autoconf macro is @code{AC_INCLUDES_DEFAULT} so we stick to this name.
+
+Usually you don't need to call this explicitly.  Not giving the
+@code{includes} argument to @code{cf-check-header} and
+@code{cf-check-headers} will make @code{cf-includes-default}
+called implicitly.
 @end defun
 
 @c EN
