@@ -60,6 +60,8 @@
 ;; NB: cf-define currently only suppors substituting DEFS; it doesn't
 ;; handle config.h.
 
+;; TODO: Caching of test results
+
 (define-module gauche.configure
   (use gauche.parameter)
   (use gauche.generator)
@@ -256,7 +258,7 @@
        :gpd (or gpd
                 ($ make-gauche-package-description package-name
                    :version version :homepage url
-                   :maintainers (list bug-report)))
+                   :maintainers (if bug-report (list bug-report) '())))
        :string (format "~a ~a" package-name version)
        :tarname (cgen-safe-name-friendly (string-downcase package-name))))
     (cf-lang (instance-of <c-language>))
@@ -1037,51 +1039,63 @@
 
 ;; API
 ;; Returns a string tree
+;; Unlike AC_INCLUDES_DEFAULT, we don't accept argument.  The
+;; behavior of AC_INCLUDES_DEFAULT is convenient for m4 macros,
+;; but makes little sense for Scheme.
 (define cf-includes-default
-  (let1 defaults '("#include <stdio.h>\n"
-                   "#ifdef HAVE_SYS_TYPES_H\n"
-                   "# include <sys/types.h>\n"
-                   "#endif\n"
-                   "#ifdef HAVE_SYS_STAT_H\n"
-                   "# include <sys/stat.h>\n"
-                   "#endif\n"
-                   "#ifdef STDC_HEADERS\n"
-                   "# include <stdlib.h>\n"
-                   "# include <stddef.h>\n"
-                   "#else\n"
-                   "# ifdef HAVE_STDLIB_H\n"
-                   "#  include <stdlib.h>\n"
-                   "# endif\n"
-                   "#endif\n"
-                   "#ifdef HAVE_STRING_H\n"
-                   "# if !defined STDC_HEADERS && defined HAVE_MEMORY_H\n"
-                   "#  include <memory.h>\n"
-                   "# endif\n"
-                   "# include <string.h>\n"
-                   "#endif\n"
-                   "#ifdef HAVE_STRINGS_H\n"
-                   "# include <strings.h>\n"
-                   "#endif\n"
-                   "#ifdef HAVE_INTTYPES_H\n"
-                   "# include <inttypes.h>\n"
-                   "#endif\n"
-                   "#ifdef HAVE_STDINT_H\n"
-                   "# include <stdint.h>\n"
-                   "#endif\n"
-                   "#ifdef HAVE_UNISTD_H\n"
-                   "# include <unistd.h>\n"
-                   "#endif\n")
-    (case-lambda
-      [() defaults]
-      [(newval) (set! defaults newval) defaults])))
+  (let* ([defaults '("#include <stdio.h>\n"
+                     "#ifdef HAVE_SYS_TYPES_H\n"
+                     "# include <sys/types.h>\n"
+                     "#endif\n"
+                     "#ifdef HAVE_SYS_STAT_H\n"
+                     "# include <sys/stat.h>\n"
+                     "#endif\n"
+                     "#ifdef STDC_HEADERS\n"
+                     "# include <stdlib.h>\n"
+                     "# include <stddef.h>\n"
+                     "#else\n"
+                     "# ifdef HAVE_STDLIB_H\n"
+                     "#  include <stdlib.h>\n"
+                     "# endif\n"
+                     "#endif\n"
+                     "#ifdef HAVE_STRING_H\n"
+                     "# if !defined STDC_HEADERS && defined HAVE_MEMORY_H\n"
+                     "#  include <memory.h>\n"
+                     "# endif\n"
+                     "# include <string.h>\n"
+                     "#endif\n"
+                     "#ifdef HAVE_STRINGS_H\n"
+                     "# include <strings.h>\n"
+                     "#endif\n"
+                     "#ifdef HAVE_INTTYPES_H\n"
+                     "# include <inttypes.h>\n"
+                     "#endif\n"
+                     "#ifdef HAVE_STDINT_H\n"
+                     "# include <stdint.h>\n"
+                     "#endif\n"
+                     "#ifdef HAVE_UNISTD_H\n"
+                     "# include <unistd.h>\n"
+                     "#endif\n")]
+         [requires (delay
+                     (begin (cf-check-headers '("sys/types.h" "sys/stat.h"
+                                                "stdlib.h" "string.h" "memory.h"
+                                                "strings.h" "inttypes.h"
+                                                "stdint.h" "unistd.h")
+                                              :includes defaults)
+                            defaults))])
+    (^[] (force requires))))
 
 ;; Feature Test API
 ;; Like AC_CHECK_HEADER.
 ;; Returns #t on success, #f on failure.
 (define (cf-check-header header-file :key (includes #f))
-  (cf-msg-checking "~a usability" header-file)
-  (rlet1 result (cf-try-compile (or includes (cf-includes-default)) "")
-    (cf-msg-result (if result "yes" "no"))))
+  (let1 includes (or includes (cf-includes-default))
+    (cf-msg-checking "~a usability" header-file)
+    (rlet1 result (cf-try-compile (list includes
+                                        "/* Testing compilability */"
+                                        #"#include <~|header-file|>\n")
+                                  "")
+      (cf-msg-result (if result "yes" "no")))))
 
 ;; Feature Test API
 ;; Like AC_CHECK_HEADERS.  Besides the check, it defines HAVE_<header-file>
