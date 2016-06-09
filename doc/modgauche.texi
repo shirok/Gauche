@@ -4375,13 +4375,44 @@ called implicitly.
 @subsubheading コンパイラを走らせる
 @c COMMON
 
+The @code{gauche.configure} module provides a generic mechanism
+to construct a small test program, compile it, and run it.
+Currently we only support @code{C} and @code{C++}; we'll add support
+for other languages as needed.
+
 @deffn {Parameter} cf-lang
 @end deffn
 
 @defun cf-lang-program prologue body
+Returns a string tree that consists a stand-alone program for
+the current language.  @var{Prologue} and @var{body} must be a
+string tree.  @var{Prologue} comes at the beginning of
+the source, and @var{body} is included in the part of the program
+that's executed.  If the current language is C, the code fragment:
+
+@example
+(use text.tree)
+(write-tree (cf-lang-program "#include <stdio.h>\n" "printf(\"()\");\n"))
+@end example
+
+would produce something like this:
+
+@example
+#include <stdio.h>
+
+int main(){
+printf("()");
+
+; return 0;
+}
+@end example
 @end defun
 
 @defun cf-lang-io-program
+This is a convenience routine.  It returns a string tree
+of a program in the current language, that creates a file 
+named @file{conftest.out}, then exits with zero status on
+success, or nonzero status on failure.
 @end defun
 
 @defun cf-lang-call prologue func-name
