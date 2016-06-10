@@ -4400,11 +4400,11 @@ would produce something like this:
 @example
 #include <stdio.h>
 
-int main(){
+int main()@{
 printf("()");
 
 ; return 0;
-}
+@}
 @end example
 @end defun
 
