@@ -49,6 +49,7 @@ test.out
 test.record
 
 # Precomp and etc.
+/DIST_EXCLUDE_X
 /INSTALL
 /INSTALL.ja
 .deps
