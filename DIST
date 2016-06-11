@@ -53,8 +53,7 @@ if [ "$gen" = "yes" ]; then
   rm -f configure gc/configure gc/configure.gnu
   cp tools/gc-configure.gnu gc/configure.gnu
   autoconf
-  (cd gc; autoconf)
-  (cd gc/libatomic_ops; autoconf)
+  (cd gc; ./autogen.sh)
 fi
 
 if [ "$tgz" = "yes" ]; then
