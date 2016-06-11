@@ -12,7 +12,7 @@ set -e
 
 topdir=$(pwd)
 
-VERSION=$(cat VERSION)
+VERSION=$(grep AC_INIT configure.ac | cut --delimiter=, --fields=2 | tr --delete "[]")
 name="Gauche-${VERSION}"
 
 t=$(mktemp --directory)
