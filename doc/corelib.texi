@@ -654,9 +654,86 @@ For the hashing of primitive objects are done in @code{hash}.
 
 ;; user-defined hash function
 (define-method object-hash ((a <myclass>))
-  (hash (list (ref a 'x) (ref a 'y))))
+  (combine-hash-value (hash (ref a 'x))
+                      (eq-hash (ref a 'y))))
 @end example
 @end deffn
+
+@defun combine-hash-value ha hb
+@c EN
+Returns a hash value which is a combination of two hash
+values, @var{ha} and @var{hb}.  The guaranteed invariance
+is that if @code{(= ha1 ha2)} and @code{(= hb1 hb2)}
+then @code{(= (combine-hash-value ha1 hb1) (combine-hash-value ha2 hb2))}.
+This is useful to write user-defined @code{object-hash} method.
+@c JP
+二つのハッシュ値@var{ha}と@var{hb}を組み合わせたハッシュ値を返します。
+次の性質が保証されます：@code{(= ha1 ha2)} かつ @code{(= hb1 hb2)}
+ならば @code{(= (combine-hash-value ha1 hb1) (combine-hash-value ha2 hb2))}。
+これはユーザ定義の@code{object-hash}メソッドを書くのに便利です。
+@c COMMON
+@end defun
+
+@defun boolean-hash bool
+@defunx char-hash char
+@defunx char-ci-hash char
+@defunx string-hash str
+@defunx string-ci-hash str
+@defunx symbol-hash sym
+@defunx number-hash num
+[SRFI-128]
+@c EN
+These are hash functions for specific type of objects.
+In Gauche, these procedures are just a wrapper of @code{hash}
+with type checks (and case folding when relevant).  These are
+mainly provided to conform srfi-128; in your code you might
+just want to use @code{hash} (or @code{eq-hash}/@code{eqv-hash},
+depending on the equality predicate).
+@c JP
+これらは特定の型のオブジェクト専用のハッシュ関数です。
+Gaucheでは、これらの関数は単に引数の型チェックをして(必要なら大文字小文字の
+区別をなくした後)、組み込みの@code{hash}を呼び出しているだけです。
+これらはsrfi-128で定義されているために提供されていますが、
+特にポータビリティが必要でなければ@code{hash}(あるいは、等価述語によっては@code{eq-hash}や
+@code{eqv-hash})を呼んでしまう方が簡単だし高速です。
+@c COMMON
+
+@c EN
+The case-folding versions, @code{char-ci-hash} and
+@code{string-ci-hash}, calls @code{char-foldcase} and
+@code{string-foldcase} respectively, on the argument before
+passing it to @code{hash}.
+(@xref{Characters}, for @code{char-foldcase}.
+@xref{Full string case conversion}, for @code{string-foldcase}).
+@c JP
+大文字小文字を区別しない、@code{char-ci-hash}および@code{string-ci-hash}は、
+引数にそれぞれ@code{char-foldcase}と@code{string-foldcase}を適用してから
+@code{hash}に渡します。
+(@code{char-foldcase}については@ref{Characters}を、
+@code{string-foldcase}については@ref{Full string case conversion}を
+参照してください。)
+@c COMMON
+@end defun
+
+@defun default-hash obj
+[SRFI-128]
+@end defun
+
+@defmac hash-bound
+@defmacx hash-salt
+[SRFI-128]
+Both evaluates to an exact nonnegative numbers.  
+
+User-defined hash function can limit the range of the result between
+0 and @code{(hash-bound)}, respectively, without worrying to lose
+quality of hash function.
+
+User-defined hash function can also take into acconut of the
+value @code{(hash-salt)} into hash calculation; the salt value may
+differ between runs of the Scheme processes, or even between
+hash table instances.  It is to avoid collision attack.
+@end defmac
+
 
 @node Basic comparators,  , Hashing, Equality and comparison
 @subsection Basic comparators
@@ -684,19 +761,23 @@ a record that bundles closely-related comparison procedures together.
 @c COMMON
 
 @c EN
-The APIs of comparators are defined in SRFI-114, which is rather
-large.  Gauche supports essential APIs in the core.  To access full
-set of APIs, use @code{srfi-114} module (@pxref{Comparators}).
+There are two SRFIs that define comparators.   The current one
+is SRFI-128, and we recommend new code to use it.  Gauche has all of
+SRFI-128 procedures built-in.  The older, and rather complex one is SRFI-114;
+Gauche also supports it mainly for the backward compatibility.
+Importantly, Gauche's native @code{<comparator>} object is compatible
+to both SRFI-128 and SRFI-114 comparators.
 @c JP
-比較器のAPIはSRFI-114で定義されていますがかなり大きいので、
-Gaucheでは重要なAPIだけを組み込みで用意しています。
-全てのAPIを使うには@code{srfi-114}を@code{use}してください
-(@ref{Comparators}参照)。
+比較器を定義したSRFIは二つあります。現在の最新はSRFI-128で、新規コードは
+そちらを使うべきです。GaucheはSRFI-128のAPIを全て組み込みで提供します。
+古く、より複雑なのがSRFI-114で、Gaucheはそちらは主に後方互換性のために
+サポートしています。重要なのは、Gaucheの組み込みの@code{<comparator>}オブジェクトは
+SRFI-128の比較器としてもSRFI-114の比較器としても使えるということです。
 @c COMMON
 
 @deftp {Builtin Class} <comparator>
 @c EN
-A record that bundles the following procedures:
+A comparator record that bundles the following procedures:
 @c JP
 以下の手続きをひとまとめにするレコードです。
 @c COMMON
@@ -758,6 +839,7 @@ Gauche組み込みのデータ型は、コンストラクタで比較器を取�
 (@ref{Sorting and merging}参照。
 @c COMMON
 @end deftp
+
 
 @defun make-comparator type-test equal compare hash :optional name
 [SRFI-114+]
