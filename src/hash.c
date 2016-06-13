@@ -63,6 +63,32 @@ typedef Entry *SearchProc(ScmHashCore *core, intptr_t key, ScmDictOp op);
 static unsigned int round2up(unsigned int val);
 
 /*============================================================
+ * Hash salt
+ */
+
+/* The salt value is nonnegative fixnum.  For the time being, we initialize
+   the default salt value for each run of the process; we might do
+   per-hashtable salt in future.
+
+   Internally we use parameter slot to keep the hash salt value, but
+   we provide dedicated C API to access it to avoid overhead of parameter
+   mechanism.
+*/
+
+static ScmParameterLoc hash_salt; /* initialized by Scm__InitHash() */
+
+ScmSmallInt Scm_HashSaltRef()
+{
+    return SCM_INT_VALUE(Scm_ParameterRef(Scm_VM(), &hash_salt));
+}
+
+ScmSmallInt Scm_HashSaltSet(ScmSmallInt newval) /* returns old value */
+{
+    return SCM_INT_VALUE(Scm_ParameterSet(Scm_VM(), &hash_salt,
+                                          SCM_MAKE_INT(newval)));
+}
+
+/*============================================================
  * Hash functions
  */
 
@@ -860,6 +886,22 @@ static unsigned int round2up(unsigned int val)
         SCM_ASSERT(n > 1);      /* check overflow */
     }
     return n;
+}
+
+/*====================================================================
+ * Initialization
+ */
+
+void Scm__InitHash()
+{
+    struct timeval t;
+    if (gettimeofday(&t, NULL) < 0) {
+        Scm_Panic("gettimeofday failed");
+    }
+    u_long salt = ((u_long)getpid() * ((u_long)t.tv_sec^(u_long)t.tv_usec));
+    ADDRESS_HASH(salt, salt);
+    salt &= SCM_SMALL_INT_MAX;
+    Scm_InitParameterLoc(Scm_VM(), &hash_salt, Scm_MakeIntegerU(salt));
 }
 
 /*====================================================================

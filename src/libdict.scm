@@ -125,6 +125,8 @@
        )])
  )
 
+(define-cproc hash-salt () ::<fixnum> Scm_HashSaltRef)
+
 (define-cproc eq-hash (obj)  ::<ulong> :fast-flonum Scm_EqHash)
 (define-cproc eqv-hash (obj) ::<ulong> :fast-flonum Scm_EqvHash)
 (define-cproc hash (obj)     ::<ulong> :fast-flonum Scm_Hash)

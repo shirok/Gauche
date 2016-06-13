@@ -1,3 +1,9 @@
+2016-06-13  Shiro Kawai  <shiro@acm.org>
+
+	* src/hash.c (Scm_HashSaltRef, Scm_HashSaltSet),
+	  src/libdict.scm (hash-salt): Built-in support of hash salt (not yet
+	  used, but this is the starting point.)
+
 2016-05-27  Shiro Kawai  <shiro@acm.org>
 
 	* src/libio.scm, lib/gauche/interactive.scm:

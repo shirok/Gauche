@@ -105,7 +105,5 @@
 
 (define default-hash hash)
 
-;; These are placeholder to conform srfi-128.  We'll change the
-;; internals to honor hash-salt eventually.
+;; This is a placeholder to conform srfi-128.
 (define (hash-bound) (greatest-fixnum))
-(define (hash-salt)  0)
