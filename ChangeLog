@@ -1,5 +1,7 @@
 2016-06-13  Shiro Kawai  <shiro@acm.org>
 
+	* src/liblazy.scm (lrange): Fix handling zero and negative steps.
+
 	* src/hash.c (Scm_HashSaltRef, Scm_HashSaltSet),
 	  src/libdict.scm (hash-salt): Built-in support of hash salt (not yet
 	  used, but this is the starting point.)
