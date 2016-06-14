@@ -60,7 +60,8 @@ typedef struct EntryRec {
 
 typedef Entry *SearchProc(ScmHashCore *core, intptr_t key, ScmDictOp op);
 
-static unsigned int round2up(unsigned int val);
+static u_int round2up(unsigned int val);
+static u_long legacy_number_hash(ScmObj obj);
 
 /*============================================================
  * Hash salt
@@ -143,6 +144,20 @@ u_long Scm_EqHash(ScmObj obj)
     return hashval&HASHMASK;
 }
 
+static u_long flonum_hash(double d)
+{
+    int exp, sign;
+    ScmObj mantissa = Scm_DecodeFlonum(d, &exp, &sign);
+    u_long xh;
+    SMALL_INT_HASH(xh, exp*sign);
+    /* NB: If d is not finite (inf or nan), mantissa is boolean.  We just
+       give it to Scm_EqvHash to cover that case, too.
+       Different bitpatterns of NaN may produce different hash value (since
+       exp and sign differ), but they won't be eqv? anyway, so we don't care.
+    */
+    return COMBINE(Scm_EqvHash(mantissa), xh);
+}
+
 u_long Scm_EqvHash(ScmObj obj)
 {
     u_long hashval;
@@ -157,17 +172,17 @@ u_long Scm_EqvHash(ScmObj obj)
             }
             SMALL_INT_HASH(hashval, u);
         } else if (SCM_FLONUMP(obj)) {
-            /* TODO: I'm not sure this is a good hash. */
-            hashval = (u_long)(SCM_FLONUM_VALUE(obj)*2654435761UL);
+            hashval = flonum_hash(SCM_FLONUM_VALUE(obj));
         } else if (SCM_RATNUMP(obj)) {
-            /* Ratnum must be normalized, so we can simply combine
+            /* Ratnum must already be normalized, so we can simply combine
                hashvals of numerator and denominator. */
             u_long h1 = Scm_EqvHash(SCM_RATNUM_NUMER(obj));
             u_long h2 = Scm_EqvHash(SCM_RATNUM_DENOM(obj));
             hashval = COMBINE(h1, h2);
         } else {
-            /* TODO: I'm not sure this is a good hash. */
-            hashval = (u_long)((SCM_COMPNUM_REAL(obj)+SCM_COMPNUM_IMAG(obj))*2654435761UL);
+            SCM_ASSERT(SCM_COMPNUMP(obj));
+            hashval = COMBINE(flonum_hash(SCM_COMPNUM_REAL(obj)),
+                              flonum_hash(SCM_COMPNUM_IMAG(obj)));
         }
     } else {
         ADDRESS_HASH(hashval, obj);
@@ -175,7 +190,24 @@ u_long Scm_EqvHash(ScmObj obj)
     return hashval&HASHMASK;
 }
 
-/* General hash function */
+/* 'Portable' general hash function.
+   
+   This satisfies forall x, y: equal(x,y) => hash(x) = hash(y),
+   and it is guaranteed that the hash value won't change for the same objects
+   (roughly, indistinguishable in their external representation)
+   accross the runs of the program.  That is, the value can be used
+   in persistent store.
+
+   We've been using this for equal?-hash-table before 0.9.5.
+   However, the above guarantee is incompatible with protection from
+   hash-flooding attack.  The portability guarantee also constrains us
+   to improve hash algorithm.  So we decided to split the 'portable' hash
+   and the default hash that is used for equal?-hash-table.
+
+   We're still in transition.  Scm_Hash is kept for portable hash function,
+   but eventually we'll rename it to Scm_PortableHash().
+   NB: We'll also make this aware of hash salt value, but one step at a time...
+ */
 u_long Scm_Hash(ScmObj obj)
 {
     u_long hashval;
@@ -183,7 +215,7 @@ u_long Scm_Hash(ScmObj obj)
         SMALL_INT_HASH(hashval, (u_long)SCM_WORD(obj));
         return hashval;
     } else if (SCM_NUMBERP(obj)) {
-        return Scm_EqvHash(obj);
+        return legacy_number_hash(obj);
     } else if (SCM_STRINGP(obj)) {
         goto string_hash;
     } else if (SCM_PAIRP(obj)) {
@@ -992,3 +1024,36 @@ ScmObj Scm_MakeHashTable(ScmHashProc *hashfn,
     return SCM_UNDEFINED;
 #endif
 }
+
+/* Old hash function for numeric objects.  This is terrible for flonums,
+   and we only keep it in order to maintain portable hash value generated
+   by legacy hash function. */
+static u_long legacy_number_hash(ScmObj obj)
+{
+    u_long hashval;
+    SCM_ASSERT(SCM_NUMBERP(obj));
+    if (SCM_INTP(obj)) {
+        SMALL_INT_HASH(hashval, SCM_INT_VALUE(obj));
+    } else if (SCM_BIGNUMP(obj)) {
+        u_int i;
+        u_long u = 0;
+        for (i=0; i<SCM_BIGNUM_SIZE(obj); i++) {
+            u += SCM_BIGNUM(obj)->values[i];
+        }
+        SMALL_INT_HASH(hashval, u);
+    } else if (SCM_FLONUMP(obj)) {
+        /* This is bad.  Unfortunatly we can't chagne it. */
+        hashval = (u_long)(SCM_FLONUM_VALUE(obj)*2654435761UL);
+    } else if (SCM_RATNUMP(obj)) {
+        /* Ratnum must already be normalized, so we can simply combine
+           hashvals of numerator and denominator. */
+        u_long h1 = legacy_number_hash(SCM_RATNUM_NUMER(obj));
+        u_long h2 = legacy_number_hash(SCM_RATNUM_DENOM(obj));
+        hashval = COMBINE(h1, h2);
+    } else {
+        /* This is bad.  Unfortunatly we can't chagne it. */
+        hashval = (u_long)((SCM_COMPNUM_REAL(obj)+SCM_COMPNUM_IMAG(obj))*2654435761UL);
+    }
+    return hashval&HASHMASK;
+}
+

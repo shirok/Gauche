@@ -129,7 +129,8 @@
 
 (define-cproc eq-hash (obj)  ::<ulong> :fast-flonum Scm_EqHash)
 (define-cproc eqv-hash (obj) ::<ulong> :fast-flonum Scm_EqvHash)
-(define-cproc hash (obj)     ::<ulong> :fast-flonum Scm_Hash)
+(define-cproc hash (obj)     ::<ulong> :fast-flonum Scm_Hash) ;TRANSIENT
+(define-cproc portable-hash (obj) ::<ulong> :fast-flonum Scm_Hash)
 (define-cproc combine-hash-value (a::<ulong> b::<ulong>) ::<ulong>
   Scm_CombineHashValue)
 

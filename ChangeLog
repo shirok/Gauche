@@ -1,3 +1,11 @@
+2016-06-14  Shiro Kawai  <shiro@acm.org>
+
+	* src/hash.c (Scm_EqvHash): Improve hash value of flonums.
+	  (Scm_Hash): Decouple from Scm_EqvHash to use original code for
+	  number hash, in order to maintain backward compatibility.
+	* src/libdict.scm (portable-hash): Added - better name to indicate
+	  portable hash value.
+
 2016-06-13  Shiro Kawai  <shiro@acm.org>
 
 	* src/liblazy.scm (lrange): Fix handling zero and negative steps.
