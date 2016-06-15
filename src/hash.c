@@ -62,6 +62,7 @@ typedef Entry *SearchProc(ScmHashCore *core, intptr_t key, ScmDictOp op);
 
 static u_int round2up(unsigned int val);
 static u_long legacy_number_hash(ScmObj obj);
+static u_long legacy_string_hash(ScmString *str);
 
 /*============================================================
  * Hash salt
@@ -106,15 +107,6 @@ ScmSmallInt Scm_HashSaltSet(ScmSmallInt newval) /* returns old value */
  * hashing of integers and addresses.  So, in HASH2INDEX function,
  * I take both lower bits and higher bits.
  */
-
-#define STRING_HASH(hv, chars, size)                                    \
-    do {                                                                \
-        int i_ = (size);                                                \
-        (hv) = 0;                                                       \
-        while (i_-- > 0) {                                              \
-            (hv) = ((hv)<<5) - (hv) + ((unsigned char)*chars++);        \
-        }                                                               \
-    } while (0)
 
 /* Integer and address. */
 /* Integer and address hash is a variation of "multiplicative hashing"
@@ -258,20 +250,12 @@ u_long Scm_Hash(ScmObj obj)
         return 0;               /* dummy */
     }
   string_hash:
-    {
-        const ScmStringBody *b = SCM_STRING_BODY(obj);
-        const char *p = SCM_STRING_BODY_START(b);
-        STRING_HASH(hashval, p, SCM_STRING_BODY_SIZE(b));
-        return hashval;
-    }
+    return legacy_string_hash(SCM_STRING(obj));
 }
 
 u_long Scm_HashString(ScmString *str, u_long modulo)
 {
-    u_long hashval;
-    const ScmStringBody *b = SCM_STRING_BODY(str);
-    const char *p = SCM_STRING_BODY_START(b);
-    STRING_HASH(hashval, p, SCM_STRING_BODY_SIZE(b));
+    u_long hashval = legacy_string_hash(str);
     if (modulo == 0) return hashval;
     else return (hashval % modulo);
 }
@@ -462,14 +446,12 @@ static Entry *string_access(ScmHashCore *table, intptr_t k, ScmDictOp op)
     if (!SCM_STRINGP(key)) {
         Scm_Error("Got non-string key %S to the string hashtable.", key);
     }
-    const ScmStringBody *keyb = SCM_STRING_BODY(key);
-    const char *s = SCM_STRING_BODY_START(keyb);
-    int size = SCM_STRING_BODY_SIZE(keyb);
-    u_long hashval;
-    STRING_HASH(hashval, s, size);
+    u_long hashval = legacy_string_hash(SCM_STRING(key));
     u_long index = HASH2INDEX(table->numBuckets, table->numBucketsLog2, hashval);
     Entry **buckets = (Entry**)table->buckets;
 
+    const ScmStringBody *keyb = SCM_STRING_BODY(key);
+    long size = SCM_STRING_BODY_SIZE(keyb);
     for (Entry *e = buckets[index], *p = NULL; e; p = e, e = e->next) {
         ScmObj ee = SCM_OBJ(e->key);
         const ScmStringBody *eeb = SCM_STRING_BODY(ee);
@@ -485,11 +467,7 @@ static Entry *string_access(ScmHashCore *table, intptr_t k, ScmDictOp op)
 
 static u_long string_hash(const ScmHashCore *table, intptr_t key)
 {
-    u_long hashval;
-    const ScmStringBody *b = SCM_STRING_BODY(key);
-    const char *p = SCM_STRING_BODY_START(b);
-    STRING_HASH(hashval, p, SCM_STRING_BODY_SIZE(b));
-    return hashval;
+    return legacy_string_hash(SCM_STRING(key));
 }
 
 static int string_cmp(const ScmHashCore *table, intptr_t k1, intptr_t k2)
@@ -1057,3 +1035,17 @@ static u_long legacy_number_hash(ScmObj obj)
     return hashval&HASHMASK;
 }
 
+/* Old hash function for strings.  This isn't very good hash function either,
+   and it's difficult to adopt salting.   So we only use this where
+   backward compatibility is needed. */
+static u_long legacy_string_hash(ScmString *str)
+{
+    const ScmStringBody *b = SCM_STRING_BODY(str);
+    const char *p = SCM_STRING_BODY_START(b);
+    long k = SCM_STRING_BODY_SIZE(b);
+    u_long hv = 0;
+    while (k-- > 0) {
+        hv = (hv<<5) - (hv) + ((unsigned char)*p++);
+    }
+    return hv&HASHMASK;
+}
