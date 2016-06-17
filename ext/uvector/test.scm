@@ -1552,6 +1552,12 @@
        (u32vector->string '#u32(64 65 66 67 68) 0 5))
 (test* "u32vector->string (OOB)" (test-error)
        (u32vector->string '#u32(64 65 66 67 68) 0 8))
+(test* "u32vector->string (terminator)" "@AB"
+       (u32vector->string '#u32(64 65 66 0 67 68) 0 -1 0))
+(test* "u32vector->string (terminator)" "@AB\0CD"
+       (u32vector->string '#u32(64 65 66 0 67 68) 0 -1 1))
+(test* "u32vector->string (terminator)" "@AB\0C"
+       (u32vector->string '#u32(64 65 66 0 67 68) 0 -1 68))
 
 (test* "string->s32vector" '#s32(64 65 66 67 68)
        (string->s32vector "@ABCD"))
@@ -1574,6 +1580,12 @@
        (s32vector->string '#s32(64 65 66 67 68) 0 5))
 (test* "s32vector->string (OOB)" (test-error)
        (s32vector->string '#s32(64 65 66 67 68) 0 8))
+(test* "s32vector->string (terminator)" "@AB"
+       (s32vector->string '#s32(64 65 66 0 67 68) 0 -1 0))
+(test* "s32vector->string (terminator)" "@AB\0CD"
+       (s32vector->string '#s32(64 65 66 0 67 68) 0 -1 1))
+(test* "s32vector->string (terminator)" "@AB\0C"
+       (s32vector->string '#s32(64 65 66 0 67 68) 0 -1 68))
 
 ;; test for multibyte chars
 (cond-expand

@@ -19588,8 +19588,8 @@ considered.
 @c COMMON
 @end defun
 
-@defun s32vector->string vec :optional start end
-@defunx u32vector->string vec :optional start end
+@defun s32vector->string vec :optional start end terminator
+@defunx u32vector->string vec :optional start end terminator
 @c EN
 Without @var{start} and @var{end}, these procedures work like this:
 @c JP
@@ -19606,6 +19606,22 @@ the range of conversion between them.
 省略可能な範囲引数@var{start}、@var{end}は、
 @var{vec}中の変換されるべき範囲を指定します。
 @c COMMON
+
+@c EN
+The optional @var{terminator} argument must be an exact
+integer or @code{#f} (default).  If an integer is given,
+and the integer is fonud in the input,
+the output string terminates right before it.
+@c JP
+省略可能引数@var{terminator}は、正確な整数か@code{#f}でなければ
+なりません (@code{#f}がデフォルト)。正確な整数が与えられ、
+入力にその数値が見つかった場合は、出力の文字列はその直前で
+打ちきられます。
+@c COMMON
+
+@example
+(u32vector->string '#u32(65 66 0 67 68) 0 5 0) @result{} "AB"
+@end example
 @end defun
 
 @defun uvector-alias uvector-class vec :optional start end

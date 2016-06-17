@@ -460,25 +460,31 @@
                                              (end::<fixnum> -1))
    (return (string->wordvector! (SCM_UVECTOR v) tstart s start end)))
 
- (define-cfn wordvector->string (v::ScmUVector* start::int end::int) :static
+ (define-cfn wordvector->string (v::ScmUVector* start::int end::int term)
+   :static
    (let* ([len::int (SCM_UVECTOR_SIZE v)]
           [s (Scm_MakeOutputStringPort FALSE)])
      (SCM_CHECK_START_END start end len)
      (let* ([eltp::ScmInt32* (cast ScmInt32* (SCM_UVECTOR_ELEMENTS v))])
        (while (< start end)
          (let* ([ch::ScmChar (cast ScmChar (aref eltp (post++ start)))])
+           (when (and (SCM_INTP term)
+                      (== (SCM_INT_VALUE term) ch))
+             (break))
            (Scm_PutcUnsafe ch (SCM_PORT s)))))
      (return (Scm_GetOutputStringUnsafe (SCM_PORT s) 0))))
 
  (define-cproc s32vector->string (v::<s32vector>
                                   :optional (start::<fixnum> 0)
-                                            (end::<fixnum> -1))
-   (return (wordvector->string (SCM_UVECTOR v) start end)))
+                                            (end::<fixnum> -1)
+                                            (terminator #f))
+   (return (wordvector->string (SCM_UVECTOR v) start end terminator)))
 
  (define-cproc u32vector->string (v::<u32vector>
                                   :optional (start::<fixnum> 0)
-                                            (end::<fixnum> -1))
-   (return (wordvector->string (SCM_UVECTOR v) start end)))
+                                            (end::<fixnum> -1)
+                                            (terminator #f))
+   (return (wordvector->string (SCM_UVECTOR v) start end terminator)))
  )
 
 ;; for the bakcward compatibility
