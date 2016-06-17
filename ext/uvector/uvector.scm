@@ -361,7 +361,8 @@
                                   (end::<fixnum> -1))
    (return (string->bytevector! (SCM_UVECTOR v) tstart s start end)))
 
- (define-cfn bytevector->string (v::ScmUVector* start::int end::int) :static
+ (define-cfn bytevector->string (v::ScmUVector* start::int end::int term)
+   :static
    (let* ([len::int (SCM_UVECTOR_SIZE v)])
      ;; We automatically avoid copying the string contents when the
      ;; following conditions are met:
@@ -384,18 +385,28 @@
                                            (<= (- end start) (/ len 5)))))
                             0
                             SCM_STRING_COPYING)])
+       (when (SCM_INTP term)
+         (let* ([terminator::u_int (logand #xff (SCM_INT_VALUE term))]
+                [i::int])
+           (for [(set! i start) (< i end) (post++ i)]
+             (when (== terminator
+                       (aref (cast u_char* (SCM_UVECTOR_ELEMENTS v)) i))
+               (set! end i)
+               (break)))))
        (return (Scm_MakeString (+ (cast char* (SCM_UVECTOR_ELEMENTS v)) start)
                                (- end start) -1 flags)))))
 
  (define-cproc s8vector->string (v::<s8vector>
                                  :optional (start::<fixnum> 0)
-                                           (end::<fixnum> -1))
-   (return (bytevector->string (SCM_UVECTOR v) start end)))
+                                           (end::<fixnum> -1)
+                                           (terminator::<integer>? #f))
+   (return (bytevector->string (SCM_UVECTOR v) start end terminator)))
 
  (define-cproc u8vector->string (v::<u8vector>
                                  :optional (start::<fixnum> 0)
-                                           (end::<fixnum> -1))
-   (return (bytevector->string (SCM_UVECTOR v) start end)))
+                                           (end::<fixnum> -1)
+                                           (terminator::<integer>? #f))
+   (return (bytevector->string (SCM_UVECTOR v) start end terminator)))
 
  (define-cfn string->wordvector
    (klass::ScmClass* s::ScmString* start::int end::int) :static

@@ -1,3 +1,10 @@
+2016-06-16  Shiro Kawai  <shiro@acm.org>
+
+	* ext/uvector/uvector.scm (s8vector->string, u8vector->string):
+	  Add 'terminator' optional argument, which recognizes terminating
+	  character as the end of string.  Convenient to extract
+	  NUL-terminated string from fixed size buffer, for example.
+
 2016-06-14  Shiro Kawai  <shiro@acm.org>
 
 	* src/hash.c (Scm_EqvHash): Improve hash value of flonums.
