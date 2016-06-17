@@ -399,13 +399,13 @@
  (define-cproc s8vector->string (v::<s8vector>
                                  :optional (start::<fixnum> 0)
                                            (end::<fixnum> -1)
-                                           (terminator::<integer>? #f))
+                                           (terminator #f))
    (return (bytevector->string (SCM_UVECTOR v) start end terminator)))
 
  (define-cproc u8vector->string (v::<u8vector>
                                  :optional (start::<fixnum> 0)
                                            (end::<fixnum> -1)
-                                           (terminator::<integer>? #f))
+                                           (terminator #f))
    (return (bytevector->string (SCM_UVECTOR v) start end terminator)))
 
  (define-cfn string->wordvector
