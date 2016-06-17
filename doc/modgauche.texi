@@ -19505,12 +19505,23 @@ Returns @var{target}.
 
 @end defun
 
-@defun s8vector->string vec :optional start end
-@defunx u8vector->string vec :optional start end
+@defun s8vector->string vec :optional start end terminator
+@defunx u8vector->string vec :optional start end terminator
 @c EN
 Converts a byte sequence in s8vector or u8vector to a string that
 has the same byte sequence.  Optional range arguments @var{start} and
 @var{end} specifies the byte position in @var{vec} to be converted.
+
+The optional @var{terminator} argument can be an exact integer or
+@code{#f} (default).  If it is an exact integer, and it appears
+in @var{vec}, the string terminates right before it.
+For example, you can give 0 as @var{terminator}
+to read a NUL-terminated string from a buffer.
+
+@example
+(u8vector->string '#u8(65 66 0 67 68) 0 5)   @result{} "AB\0CD"
+(u8vector->string '#u8(65 66 0 67 68) 0 5 0) @result{} "AB"
+@end example
 
 Note that these procedure may result an incomplete string if
 @var{vec} contains a byte sequence invalid as the internal encoding
@@ -19519,6 +19530,16 @@ of the string.
 与えられたs8vectorもしくはu8vector @var{vec}のバイト列と同じ内部バイト列を
 持つ文字列を作成して返します。省略可能な範囲引数@var{start}、@var{end}は、
 @var{vec}中の変換されるべき範囲をバイト位置で指定します。
+
+省略可能引数@var{terminator}は正確な整数か@code{#f}でなければなりません
+(@code{#f}がデフォルト)。正確な整数が与えられた場合、@var{vec}の中に
+その数値が現れれば、その直前までが結果の文字列となります。
+例えば0を与えることで、バッファからNUL終端された文字列を読むことができます。
+
+@example
+(u8vector->string '#u8(65 66 0 67 68) 0 5)   @result{} "AB\0CD"
+(u8vector->string '#u8(65 66 0 67 68) 0 5 0) @result{} "AB"
+@end example
 
 @var{vec}中のバイト列が文字列の内部表現として不正な値を持っていた場合は、
 不完全な文字列が返されます。

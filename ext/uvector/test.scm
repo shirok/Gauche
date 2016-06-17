@@ -1463,6 +1463,15 @@
 (test* "u8vector->string (OOB)" (test-error)
        (u8vector->string '#u8(64 65 66 67 68) 0 8))
 
+(test* "u8vector->string (terminator, 0)" "@ABCD"
+       (u8vector->string '#u8(64 65 66 67 68 0 69 70) 0 8 0))
+(test* "u8vector->string (terminator, 0)" "@ABCD\x00;EF"
+       (u8vector->string '#u8(64 65 66 67 68 0 69 70) 0 8 1))
+(test* "u8vector->string (terminator, 0)" "@AB"
+       (u8vector->string '#u8(64 65 66 67 68 0 69 70) 0 8 67))
+(test* "u8vector->string (terminator, 0)" "BCD"
+       (u8vector->string '#u8(64 65 66 67 68 0 69 70) 2 8 0))
+
 (test* "string->s8vector" '#s8(64 65 66 67 68)
        (string->s8vector "@ABCD"))
 (test* "string->s8vector (start)" '#s8(66 67 68)
@@ -1506,6 +1515,13 @@
        (s8vector->string '#s8(64 65 66 67 68) 0 5))
 (test* "s8vector->string (OOB)" (test-error)
        (s8vector->string '#s8(64 65 66 67 68) 0 8))
+
+(test* "s8vector->string (terminator,0)" "@ABCD"
+       (s8vector->string '#s8(64 65 66 67 68 0 69 70) 0 8 0))
+(test* "s8vector->string (terminator,1)" "@ABCD\x00;EF"
+       (s8vector->string '#s8(64 65 66 67 68 0 69 70) 0 8 1))
+(test* "s8vector->string (terminator,-1)" "@ABCD"
+       (s8vector->string '#s8(64 65 66 67 68 -1 69 70) 0 8 -1))
 
 (test* "string->u32vector" '#u32(64 65 66 67 68)
        (string->u32vector "@ABCD"))
