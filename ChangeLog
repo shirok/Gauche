@@ -1,3 +1,7 @@
+2016-06-17  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/mop/bound-slot.scm: Experimentally added.
+
 2016-06-16  Shiro Kawai  <shiro@acm.org>
 
 	* ext/uvector/uvector.scm (s8vector->string, u8vector->string):

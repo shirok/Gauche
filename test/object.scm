@@ -890,6 +890,22 @@
        (map (cut slot-ref *docu-sub* <>) '(a b c x y z)))
 
 ;;----------------------------------------------------------------
+(test-section "metaclass/bound-slot")
+
+(use gauche.mop.bound-slot)
+(test-module 'gauche.mop.bound-slot)
+
+(define-class <bound-slot-A> (<bound-slot-mixin>)
+  ((a :init-keyword :a)
+   (b :init-keyword :b :init-value 1)))
+
+(test* "<bound-slot-A> check" (test-error)
+       (make <bound-slot-A>))
+
+(test* "<bound-slot-A> check" #t
+       (is-a? (make <bound-slot-A> :a 3) <bound-slot-A>))
+
+;;----------------------------------------------------------------
 (test-section "metaclass/singleton")
 
 (use gauche.mop.singleton)
