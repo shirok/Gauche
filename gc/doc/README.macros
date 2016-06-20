@@ -107,10 +107,6 @@ SUNOS5SIGS      Solaris-like signal handling.  This is probably misnamed,
 PCR     Set if the collector is being built as part of the Xerox Portable
   Common Runtime.
 
-USE_COMPILER_TLS  Assume the existence of __thread-style thread-local storage.
-  Set automatically for thread-local allocation with the HP/UX vendor
-  compiler.  Usable with gcc on sufficiently up-to-date ELF platforms.
-
 IMPORTANT: Any of the _THREADS options must normally also be defined in
   the client before including gc.h.  This redefines thread primitives to
   invoke the GC_ versions instead.  Alternatively, linker-based symbol
@@ -149,7 +145,7 @@ GC_DGUX386_THREADS      Enables support for DB/UX on I386 threads.
 GC_WIN32_THREADS        Enables support for Win32 threads.  That makes sense
   for this Makefile only under Cygwin.
 
-GC_WIN32_PTHREADS       Enables support for Ming32 pthreads.  This cannot be
+GC_WIN32_PTHREADS       Enables support for pthreads-win32.  This cannot be
   enabled automatically by GC_THREADS, which would assume Win32 native
   threads.
 

@@ -59,8 +59,8 @@
 
 typedef void (* oom_fn)(void);
 
-# define OUT_OF_MEMORY {  if (CORD_oom_fn != (oom_fn) 0) (*CORD_oom_fn)(); \
-              ABORT("Out of memory\n"); }
+# define OUT_OF_MEMORY { if (CORD_oom_fn != (oom_fn) 0) (*CORD_oom_fn)(); \
+                         ABORT("Out of memory"); }
 # define ABORT(msg) { fprintf(stderr, "%s\n", msg); abort(); }
 
 #if __GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 4)
@@ -136,15 +136,17 @@ int CORD_batched_fill_proc(const char * s, void * client_data)
 }
 
 /* Fill buf with len characters starting at i.  */
-/* Assumes len characters are available.        */
-void CORD_fill_buf(CORD x, size_t i, size_t len, char * buf)
+/* Assumes len characters are available in buf. */
+/* Return 1 if buf is filled fully (and len is  */
+/* non-zero), 0 otherwise.                      */
+int CORD_fill_buf(CORD x, size_t i, size_t len, char * buf)
 {
     CORD_fill_data fd;
 
     fd.len = len;
     fd.buf = buf;
     fd.count = 0;
-    (void)CORD_iter5(x, i, CORD_fill_proc, CORD_batched_fill_proc, &fd);
+    return CORD_iter5(x, i, CORD_fill_proc, CORD_batched_fill_proc, &fd);
 }
 
 int CORD_cmp(CORD x, CORD y)
@@ -241,7 +243,8 @@ char * CORD_to_char_star(CORD x)
     char * result = GC_MALLOC_ATOMIC(len + 1);
 
     if (result == 0) OUT_OF_MEMORY;
-    CORD_fill_buf(x, 0, len, result);
+    if (len > 0 && CORD_fill_buf(x, 0, len, result) != 1)
+      ABORT("CORD_fill_buf malfunction");
     result[len] = '\0';
     return(result);
 }
@@ -428,6 +431,7 @@ void CORD_ec_flush_buf(CORD_ec x)
 
     if (len == 0) return;
     s = GC_MALLOC_ATOMIC(len+1);
+    if (NULL == s) OUT_OF_MEMORY;
     memcpy(s, x[0].ec_buf, len);
     s[len] = '\0';
     x[0].ec_cord = CORD_cat_char_star(x[0].ec_cord, s, len);
@@ -442,13 +446,12 @@ void CORD_ec_append_cord(CORD_ec x, CORD s)
 
 char CORD_nul_func(size_t i CORD_ATTR_UNUSED, void * client_data)
 {
-    return((char)(unsigned long)client_data);
+    return (char)(GC_word)client_data;
 }
-
 
 CORD CORD_chars(char c, size_t i)
 {
-    return(CORD_from_fn(CORD_nul_func, (void *)(unsigned long)c, i));
+    return CORD_from_fn(CORD_nul_func, (void *)(GC_word)(unsigned char)c, i);
 }
 
 CORD CORD_from_file_eager(FILE * f)

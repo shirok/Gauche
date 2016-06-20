@@ -58,7 +58,7 @@
 #endif
 
 #if defined(GC_WIN32_PTHREADS) && !defined(GC_WIN32_THREADS)
-  /* Using pthreads-w32 library. */
+  /* Using pthreads-win32 library.  */
 # define GC_WIN32_THREADS
 #endif
 
@@ -202,8 +202,8 @@
 
 # elif defined(__GNUC__)
     /* Only matters if used in conjunction with -fvisibility=hidden option. */
-#   if defined(GC_BUILD) && (__GNUC__ >= 4 \
-                             || defined(GC_VISIBILITY_HIDDEN_SET))
+#   if defined(GC_BUILD) && !defined(GC_NO_VISIBILITY) \
+            && (__GNUC__ >= 4 || defined(GC_VISIBILITY_HIDDEN_SET))
 #     define GC_API extern __attribute__((__visibility__("default")))
 #   endif
 # endif

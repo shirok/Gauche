@@ -232,7 +232,7 @@ STATIC void GC_init_size_map(void)
     /* This avoids problems at lower levels.            */
       GC_size_map[0] = 1;
     for (i = 1; i <= GRANULES_TO_BYTES(TINY_FREELISTS-1) - EXTRA_BYTES; i++) {
-        GC_size_map[i] = ROUNDED_UP_GRANULES(i);
+        GC_size_map[i] = (unsigned)ROUNDED_UP_GRANULES(i);
 #       ifndef _MSC_VER
           GC_ASSERT(GC_size_map[i] < TINY_FREELISTS);
           /* Seems to tickle bug in VC++ 2008 for AMD64 */
@@ -853,9 +853,14 @@ GC_API void GC_CALL GC_init(void)
 #     ifdef SN_TARGET_PS3
         {
           pthread_mutexattr_t mattr;
-          pthread_mutexattr_init(&mattr);
-          pthread_mutex_init(&GC_allocate_ml, &mattr);
-          pthread_mutexattr_destroy(&mattr);
+
+          if (0 != pthread_mutexattr_init(&mattr)) {
+            ABORT("pthread_mutexattr_init failed");
+          }
+          if (0 != pthread_mutex_init(&GC_allocate_ml, &mattr)) {
+            ABORT("pthread_mutex_init failed");
+          }
+          (void)pthread_mutexattr_destroy(&mattr);
         }
 #     endif
 #   endif /* THREADS */
@@ -1492,8 +1497,8 @@ GC_API void GC_CALL GC_enable_incremental(void)
 
 #define BUFSZ 1024
 
-#ifdef NO_VSNPRINTF
-  /* In case this function is missing (e.g., in DJGPP v2.0.3).  */
+#if defined(DJGPP) || defined(__STRICT_ANSI__)
+  /* vsnprintf is missing in DJGPP (v2.0.3) */
 # define GC_VSNPRINTF(buf, bufsz, format, args) vsprintf(buf, format, args)
 #elif defined(_MSC_VER)
 # ifdef MSWINCE
@@ -1607,7 +1612,7 @@ GC_API void GC_CALLBACK GC_ignore_warn_proc(char *msg, GC_word arg)
 GC_API void GC_CALL GC_set_warn_proc(GC_warn_proc p)
 {
     DCL_LOCK_STATE;
-    GC_ASSERT(p != 0);
+    GC_ASSERT(NONNULL_ARG_NOT_NULL(p));
 #   ifdef GC_WIN32_THREADS
 #     ifdef CYGWIN32
         /* Need explicit GC_INIT call */
@@ -1695,7 +1700,7 @@ GC_API GC_warn_proc GC_CALL GC_get_warn_proc(void)
   GC_API void GC_CALL GC_set_abort_func(GC_abort_func fn)
   {
       DCL_LOCK_STATE;
-      GC_ASSERT(fn != 0);
+      GC_ASSERT(NONNULL_ARG_NOT_NULL(fn));
       LOCK();
       GC_on_abort = fn;
       UNLOCK();
@@ -1985,7 +1990,7 @@ GC_API GC_word GC_CALL GC_get_gc_no(void)
 
 GC_API void GC_CALL GC_set_oom_fn(GC_oom_func fn)
 {
-    GC_ASSERT(fn != 0);
+    GC_ASSERT(NONNULL_ARG_NOT_NULL(fn));
     DCL_LOCK_STATE;
     LOCK();
     GC_oom_fn = fn;

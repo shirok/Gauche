@@ -7,7 +7,7 @@
 
 !IF "$(CFG)" == ""
 CFG=gctest - Win32 Release
-!MESSAGE No configuration specified.  Defaulting to cord - Win32 Debug.
+!MESSAGE No configuration specified.  Defaulting to gctest - Win32 Release.
 !ENDIF
 
 !IF "$(CFG)" != "gc - Win32 Release" && "$(CFG)" != "gc - Win32 Debug" &&\
@@ -110,8 +110,9 @@ CLEAN :
 	-@erase ".\Release\typd_mlc.sbr"
 	-@erase ".\Release\win32_threads.obj"
 	-@erase ".\Release\win32_threads.sbr"
-	-@erase ".\Release\msvc_dbg.obj"
-	-@erase ".\Release\msvc_dbg.sbr"
+	-@erase ".\Release\msvc_dbg.copied.obj"
+	-@erase ".\Release\msvc_dbg.copied.sbr"
+	-@erase ".\msvc_dbg.copied.c"
 
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
@@ -119,10 +120,10 @@ CLEAN :
 CPP=cl.exe
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /c
 # ADD CPP /nologo /MD /W3 /GX /O2 /I include /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "ALL_INTERIOR_POINTERS" /D "GC_THREADS" /FR /YX /c
-CPP_PROJ=/nologo /MD /W3 /GX /O2 /I include /D "NDEBUG" /D\
- "WIN32" /D "_WINDOWS" /D "ALL_INTERIOR_POINTERS" /D "GC_THREADS" \
- /FR"$(INTDIR)/" /Fp"$(INTDIR)/gc.pch" \
- /I./libatomic_ops/src /YX /Fo"$(INTDIR)/" /c
+CPP_PROJ=/nologo /MD /W3 /EHsc /O2 /I include /D "NDEBUG" /D "WIN32"\
+ /D "_WINDOWS" /D "ALL_INTERIOR_POINTERS" /D "GC_THREADS" /D "_CRT_SECURE_NO_DEPRECATE"\
+ /FR"$(INTDIR)/" /Fp"$(INTDIR)/gc.pch"\
+ /I./libatomic_ops/src /Fo"$(INTDIR)/" /c
 CPP_OBJS=.\Release/
 CPP_SBRS=.\Release/
 
@@ -155,31 +156,31 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 BSC32_FLAGS=/nologo /o"$(OUTDIR)/gc.bsc"
-BSC32_SBRS= \
-	".\Release\allchblk.sbr" \
-	".\Release\alloc.sbr" \
-	".\Release\blacklst.sbr" \
-	".\Release\checksums.sbr" \
-	".\Release\dbg_mlc.sbr" \
-	".\Release\dyn_load.sbr" \
-	".\Release\finalize.sbr" \
-	".\Release\fnlz_mlc.sbr" \
-	".\Release\gc_cpp.sbr" \
-	".\Release\headers.sbr" \
-	".\Release\mach_dep.sbr" \
-	".\Release\malloc.sbr" \
-	".\Release\mallocx.sbr" \
-	".\Release\mark.sbr" \
-	".\Release\mark_rts.sbr" \
-	".\Release\misc.sbr" \
-	".\Release\new_hblk.sbr" \
-	".\Release\obj_map.sbr" \
-	".\Release\os_dep.sbr" \
-	".\Release\ptr_chck.sbr" \
-	".\Release\reclaim.sbr" \
-	".\Release\stubborn.sbr" \
-	".\Release\typd_mlc.sbr" \
-	".\Release\msvc_dbg.sbr" \
+BSC32_SBRS=\
+	".\Release\allchblk.sbr"\
+	".\Release\alloc.sbr"\
+	".\Release\blacklst.sbr"\
+	".\Release\checksums.sbr"\
+	".\Release\dbg_mlc.sbr"\
+	".\Release\dyn_load.sbr"\
+	".\Release\finalize.sbr"\
+	".\Release\fnlz_mlc.sbr"\
+	".\Release\gc_cpp.sbr"\
+	".\Release\headers.sbr"\
+	".\Release\mach_dep.sbr"\
+	".\Release\malloc.sbr"\
+	".\Release\mallocx.sbr"\
+	".\Release\mark.sbr"\
+	".\Release\mark_rts.sbr"\
+	".\Release\misc.sbr"\
+	".\Release\new_hblk.sbr"\
+	".\Release\obj_map.sbr"\
+	".\Release\os_dep.sbr"\
+	".\Release\ptr_chck.sbr"\
+	".\Release\reclaim.sbr"\
+	".\Release\stubborn.sbr"\
+	".\Release\typd_mlc.sbr"\
+	".\Release\msvc_dbg.copied.sbr"\
 	".\Release\win32_threads.sbr"
 
 ".\Release\gc.bsc" : "$(OUTDIR)" $(BSC32_SBRS)
@@ -195,31 +196,31 @@ LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
  odbccp32.lib /nologo /subsystem:windows /dll /incremental:no\
  /pdb:"$(OUTDIR)/gc.pdb" /machine:I386 /out:"$(OUTDIR)/gc.dll"\
  /implib:"$(OUTDIR)/gc.lib"
-LINK32_OBJS= \
-	".\Release\allchblk.obj" \
-	".\Release\alloc.obj" \
-	".\Release\blacklst.obj" \
-	".\Release\checksums.obj" \
-	".\Release\dbg_mlc.obj" \
-	".\Release\dyn_load.obj" \
-	".\Release\finalize.obj" \
-	".\Release\fnlz_mlc.obj" \
-	".\Release\gc_cpp.obj" \
-	".\Release\headers.obj" \
-	".\Release\mach_dep.obj" \
-	".\Release\malloc.obj" \
-	".\Release\mallocx.obj" \
-	".\Release\mark.obj" \
-	".\Release\mark_rts.obj" \
-	".\Release\misc.obj" \
-	".\Release\new_hblk.obj" \
-	".\Release\obj_map.obj" \
-	".\Release\os_dep.obj" \
-	".\Release\ptr_chck.obj" \
-	".\Release\reclaim.obj" \
-	".\Release\stubborn.obj" \
-	".\Release\typd_mlc.obj" \
-	".\Release\msvc_dbg.obj" \
+LINK32_OBJS=\
+	".\Release\allchblk.obj"\
+	".\Release\alloc.obj"\
+	".\Release\blacklst.obj"\
+	".\Release\checksums.obj"\
+	".\Release\dbg_mlc.obj"\
+	".\Release\dyn_load.obj"\
+	".\Release\finalize.obj"\
+	".\Release\fnlz_mlc.obj"\
+	".\Release\gc_cpp.obj"\
+	".\Release\headers.obj"\
+	".\Release\mach_dep.obj"\
+	".\Release\malloc.obj"\
+	".\Release\mallocx.obj"\
+	".\Release\mark.obj"\
+	".\Release\mark_rts.obj"\
+	".\Release\misc.obj"\
+	".\Release\new_hblk.obj"\
+	".\Release\obj_map.obj"\
+	".\Release\os_dep.obj"\
+	".\Release\ptr_chck.obj"\
+	".\Release\reclaim.obj"\
+	".\Release\stubborn.obj"\
+	".\Release\typd_mlc.obj"\
+	".\Release\msvc_dbg.copied.obj"\
 	".\Release\win32_threads.obj"
 
 ".\Release\gc.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
@@ -301,8 +302,9 @@ CLEAN :
 	-@erase ".\Debug\vc40.pdb"
 	-@erase ".\Debug\win32_threads.obj"
 	-@erase ".\Debug\win32_threads.sbr"
-	-@erase ".\Debug\msvc_dbg.obj"
-	-@erase ".\Debug\msvc_dbg.sbr"
+	-@erase ".\Debug\msvc_dbg.copied.obj"
+	-@erase ".\Debug\msvc_dbg.copied.sbr"
+	-@erase ".\msvc_dbg.copied.c"
 
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
@@ -310,10 +312,10 @@ CLEAN :
 CPP=cl.exe
 # ADD BASE CPP /nologo /MTd /W3 /Gm /GX /Zi /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /YX /c
 # ADD CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /I include /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "ALL_INTERIOR_POINTERS" /D "GC_THREADS" /FR /YX /c
-CPP_PROJ=/nologo /MDd /W3 /Gm /GX /Zi /Od /I include /D "_DEBUG"\
- /D "WIN32" /D "_WINDOWS" /D "ALL_INTERIOR_POINTERS" \
- /D "GC_ASSERTIONS" /D "GC_THREADS" \
- /FR"$(INTDIR)/" /Fp"$(INTDIR)/gc.pch" /YX /Fo"$(INTDIR)/"\
+CPP_PROJ=/nologo /MDd /W3 /Gm /EHsc /Zi /Od /I include /D "_DEBUG"\
+ /D "WIN32" /D "_WINDOWS" /D "ALL_INTERIOR_POINTERS"\
+ /D "GC_ASSERTIONS" /D "GC_THREADS" /D "_CRT_SECURE_NO_DEPRECATE"\
+ /FR"$(INTDIR)/" /Fp"$(INTDIR)/gc.pch" /Fo"$(INTDIR)/"\
  /I./libatomic_ops/src /Fd"$(INTDIR)/" /c
 CPP_OBJS=.\Debug/
 CPP_SBRS=.\Debug/
@@ -347,31 +349,31 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 BSC32_FLAGS=/nologo /o"$(OUTDIR)/gc.bsc"
-BSC32_SBRS= \
-	".\Debug\allchblk.sbr" \
-	".\Debug\alloc.sbr" \
-	".\Debug\blacklst.sbr" \
-	".\Debug\checksums.sbr" \
-	".\Debug\dbg_mlc.sbr" \
-	".\Debug\dyn_load.sbr" \
-	".\Debug\finalize.sbr" \
-	".\Debug\fnlz_mlc.sbr" \
-	".\Debug\gc_cpp.sbr" \
-	".\Debug\headers.sbr" \
-	".\Debug\mach_dep.sbr" \
-	".\Debug\malloc.sbr" \
-	".\Debug\mallocx.sbr" \
-	".\Debug\mark.sbr" \
-	".\Debug\mark_rts.sbr" \
-	".\Debug\misc.sbr" \
-	".\Debug\new_hblk.sbr" \
-	".\Debug\obj_map.sbr" \
-	".\Debug\os_dep.sbr" \
-	".\Debug\ptr_chck.sbr" \
-	".\Debug\reclaim.sbr" \
-	".\Debug\stubborn.sbr" \
-	".\Debug\typd_mlc.sbr" \
-	".\Debug\msvc_dbg.sbr" \
+BSC32_SBRS=\
+	".\Debug\allchblk.sbr"\
+	".\Debug\alloc.sbr"\
+	".\Debug\blacklst.sbr"\
+	".\Debug\checksums.sbr"\
+	".\Debug\dbg_mlc.sbr"\
+	".\Debug\dyn_load.sbr"\
+	".\Debug\finalize.sbr"\
+	".\Debug\fnlz_mlc.sbr"\
+	".\Debug\gc_cpp.sbr"\
+	".\Debug\headers.sbr"\
+	".\Debug\mach_dep.sbr"\
+	".\Debug\malloc.sbr"\
+	".\Debug\mallocx.sbr"\
+	".\Debug\mark.sbr"\
+	".\Debug\mark_rts.sbr"\
+	".\Debug\misc.sbr"\
+	".\Debug\new_hblk.sbr"\
+	".\Debug\obj_map.sbr"\
+	".\Debug\os_dep.sbr"\
+	".\Debug\ptr_chck.sbr"\
+	".\Debug\reclaim.sbr"\
+	".\Debug\stubborn.sbr"\
+	".\Debug\typd_mlc.sbr"\
+	".\Debug\msvc_dbg.copied.sbr"\
 	".\Debug\win32_threads.sbr"
 
 ".\Debug\gc.bsc" : "$(OUTDIR)" $(BSC32_SBRS)
@@ -387,31 +389,31 @@ LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
  odbccp32.lib /nologo /subsystem:windows /dll /incremental:no\
  /pdb:"$(OUTDIR)/gc.pdb" /map:"$(INTDIR)/gc.map" /debug /machine:I386\
  /out:"$(OUTDIR)/gc.dll" /implib:"$(OUTDIR)/gc.lib"
-LINK32_OBJS= \
-	".\Debug\allchblk.obj" \
-	".\Debug\alloc.obj" \
-	".\Debug\blacklst.obj" \
-	".\Debug\checksums.obj" \
-	".\Debug\dbg_mlc.obj" \
-	".\Debug\dyn_load.obj" \
-	".\Debug\finalize.obj" \
-	".\Debug\fnlz_mlc.obj" \
-	".\Debug\gc_cpp.obj" \
-	".\Debug\headers.obj" \
-	".\Debug\mach_dep.obj" \
-	".\Debug\malloc.obj" \
-	".\Debug\mallocx.obj" \
-	".\Debug\mark.obj" \
-	".\Debug\mark_rts.obj" \
-	".\Debug\misc.obj" \
-	".\Debug\new_hblk.obj" \
-	".\Debug\obj_map.obj" \
-	".\Debug\os_dep.obj" \
-	".\Debug\ptr_chck.obj" \
-	".\Debug\reclaim.obj" \
-	".\Debug\stubborn.obj" \
-	".\Debug\typd_mlc.obj" \
-	".\Debug\msvc_dbg.obj" \
+LINK32_OBJS=\
+	".\Debug\allchblk.obj"\
+	".\Debug\alloc.obj"\
+	".\Debug\blacklst.obj"\
+	".\Debug\checksums.obj"\
+	".\Debug\dbg_mlc.obj"\
+	".\Debug\dyn_load.obj"\
+	".\Debug\finalize.obj"\
+	".\Debug\fnlz_mlc.obj"\
+	".\Debug\gc_cpp.obj"\
+	".\Debug\headers.obj"\
+	".\Debug\mach_dep.obj"\
+	".\Debug\malloc.obj"\
+	".\Debug\mallocx.obj"\
+	".\Debug\mark.obj"\
+	".\Debug\mark_rts.obj"\
+	".\Debug\misc.obj"\
+	".\Debug\new_hblk.obj"\
+	".\Debug\obj_map.obj"\
+	".\Debug\os_dep.obj"\
+	".\Debug\ptr_chck.obj"\
+	".\Debug\reclaim.obj"\
+	".\Debug\stubborn.obj"\
+	".\Debug\typd_mlc.obj"\
+	".\Debug\msvc_dbg.copied.obj"\
 	".\Debug\win32_threads.obj"
 
 ".\Debug\gc.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
@@ -437,22 +439,23 @@ INTDIR=.\gctest\Release
 ALL : "gc - Win32 Release" ".\Release\gctest.exe"
 
 CLEAN :
-	-@erase ".\gctest\Release\test.obj"
+	-@erase ".\gctest\Release\test.copied.obj"
+	-@erase ".\test.copied.c"
 	-@erase ".\Release\gctest.exe"
 
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
 
-test.c : tests\test.c
-	copy tests\test.c test.c
+test.copied.c : tests\test.c
+	copy tests\test.c test.copied.c
 
 CPP=cl.exe
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /c
 # ADD CPP /nologo /MD /W3 /GX /O2 /I include /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "ALL_INTERIOR_POINTERS" /D "GC_THREADS" /YX /c
-CPP_PROJ=/nologo /MD /W3 /GX /O2 /I include /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D\
- "ALL_INTERIOR_POINTERS" /D "GC_THREADS" \
- /I./libatomic_ops/src /Fp"$(INTDIR)/gctest.pch" \
- /YX /Fo"$(INTDIR)/" /c
+CPP_PROJ=/nologo /MD /W3 /EHsc /O2 /I include /D "NDEBUG" /D "WIN32" /D "_WINDOWS"\
+ /D "ALL_INTERIOR_POINTERS" /D "GC_THREADS" /D "_CRT_SECURE_NO_DEPRECATE"\
+ /I./libatomic_ops/src /Fp"$(INTDIR)/gctest.pch"\
+ /Fo"$(INTDIR)/" /c
 CPP_OBJS=.\gctest\Release/
 CPP_SBRS=.\.
 
@@ -485,7 +488,7 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 BSC32_FLAGS=/nologo /o"$(OUTDIR)/gctest.bsc"
-BSC32_SBRS= \
+BSC32_SBRS=\
 
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /machine:I386
@@ -494,8 +497,8 @@ LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
  advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib\
  odbccp32.lib /nologo /subsystem:windows /incremental:no\
  /pdb:"$(OUTDIR)/gctest.pdb" /machine:I386 /out:"Release/gctest.exe"
-LINK32_OBJS= \
-	".\gctest\Release\test.obj" \
+LINK32_OBJS=\
+	".\gctest\Release\test.copied.obj"\
 	".\Release\gc.lib"
 
 ".\Release\gctest.exe" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
@@ -525,8 +528,9 @@ CLEAN :
 	-@erase ".\gctest\Debug\gctest.bsc"
 	-@erase ".\gctest\Debug\gctest.map"
 	-@erase ".\gctest\Debug\gctest.pdb"
-	-@erase ".\gctest\Debug\test.obj"
-	-@erase ".\gctest\Debug\test.sbr"
+	-@erase ".\gctest\Debug\test.copied.obj"
+	-@erase ".\gctest\Debug\test.copied.sbr"
+	-@erase ".\test.copied.c"
 	-@erase ".\gctest\Debug\vc40.idb"
 	-@erase ".\gctest\Debug\vc40.pdb"
 
@@ -536,9 +540,9 @@ CLEAN :
 CPP=cl.exe
 # ADD BASE CPP /nologo /W3 /Gm /GX /Zi /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /YX /c
 # ADD CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "ALL_INTERIOR_POINTERS" /D "GC_THREADS" /FR /YX /c
-CPP_PROJ=/nologo /MDd /W3 /Gm /GX /Zi /Od /I include /D "_DEBUG" /D "WIN32" /D "_WINDOWS"\
- /D "ALL_INTERIOR_POINTERS" /D "GC_THREADS" /FR"$(INTDIR)/"\
- /I./libatomic_ops/src /Fp"$(INTDIR)/gctest.pch" /YX /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c
+CPP_PROJ=/nologo /MDd /W3 /Gm /EHsc /Zi /Od /I include /D "_DEBUG" /D "WIN32" /D "_WINDOWS"\
+ /D "ALL_INTERIOR_POINTERS" /D "GC_THREADS" /D "_CRT_SECURE_NO_DEPRECATE" /FR"$(INTDIR)/"\
+ /I./libatomic_ops/src /Fp"$(INTDIR)/gctest.pch" /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c
 CPP_OBJS=.\gctest\Debug/
 CPP_SBRS=.\gctest\Debug/
 
@@ -571,8 +575,8 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 BSC32_FLAGS=/nologo /o"$(OUTDIR)/gctest.bsc"
-BSC32_SBRS= \
-	".\gctest\Debug\test.sbr"
+BSC32_SBRS=\
+	".\gctest\Debug\test.copied.sbr"
 
 ".\gctest\Debug\gctest.bsc" : "$(OUTDIR)" $(BSC32_SBRS)
     $(BSC32) @<<
@@ -587,9 +591,9 @@ LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
  odbccp32.lib /nologo /subsystem:windows /incremental:no\
  /pdb:"$(OUTDIR)/gctest.pdb" /map:"$(INTDIR)/gctest.map" /debug /machine:I386\
  /out:"Debug/gctest.exe"
-LINK32_OBJS= \
-	".\Debug\gc.lib" \
-	".\gctest\Debug\test.obj"
+LINK32_OBJS=\
+	".\Debug\gc.lib"\
+	".\gctest\Debug\test.copied.obj"
 
 ".\Debug\gctest.exe" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
     $(LINK32) @<<
@@ -627,8 +631,8 @@ CLEAN :
 CPP=cl.exe
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /c
 # ADD CPP /nologo /MD /W3 /GX /O2 /I "." /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "ALL_INTERIOR_POINTERS" /YX /c
-CPP_PROJ=/nologo /MD /W3 /GX /O2 /I "." /I include /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D\
- /I./libatomic_ops/src "ALL_INTERIOR_POINTERS" /Fp"$(INTDIR)/cord.pch" /YX /Fo"$(INTDIR)/" /c
+CPP_PROJ=/nologo /MD /W3 /EHsc /O2 /I "." /I include /D "NDEBUG" /D "WIN32" /D "_WINDOWS"\
+ /D "ALL_INTERIOR_POINTERS" /I./libatomic_ops/src /Fp"$(INTDIR)/cord.pch" /Fo"$(INTDIR)/" /c
 CPP_OBJS=.\cord\Release/
 CPP_SBRS=.\.
 
@@ -662,7 +666,7 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 BSC32_FLAGS=/nologo /o"$(OUTDIR)/cord.bsc"
-BSC32_SBRS= \
+BSC32_SBRS=\
 
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /machine:I386
@@ -671,12 +675,12 @@ LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
  advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib\
  odbccp32.lib /nologo /subsystem:windows /incremental:no /pdb:"$(OUTDIR)/de.pdb"\
  /machine:I386 /out:"Release/de.exe"
-LINK32_OBJS= \
-	".\cord\Release\cordbscs.obj" \
-	".\cord\Release\cordxtra.obj" \
-	".\cord\Release\de.obj" \
-	".\cord\Release\de_win.obj" \
-	".\cord\Release\de_win.res" \
+LINK32_OBJS=\
+	".\cord\Release\cordbscs.obj"\
+	".\cord\Release\cordxtra.obj"\
+	".\cord\Release\de.obj"\
+	".\cord\Release\de_win.obj"\
+	".\cord\Release\de_win.res"\
 	".\Release\gc.lib"
 
 ".\Release\de.exe" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
@@ -719,8 +723,8 @@ CLEAN :
 CPP=cl.exe
 # ADD BASE CPP /nologo /W3 /Gm /GX /Zi /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /YX /c
 # ADD CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /I "." /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "ALL_INTERIOR_POINTERS" /YX /c
-CPP_PROJ=/nologo /MDd /W3 /Gm /GX /Zi /Od /I "." /I include /D "_DEBUG" /D "WIN32" /D\
- "_WINDOWS" /D "ALL_INTERIOR_POINTERS" /Fp"$(INTDIR)/cord.pch" /YX\
+CPP_PROJ=/nologo /MDd /W3 /Gm /EHsc /Zi /Od /I "." /I include /D "_DEBUG" /D "WIN32" /D "_WINDOWS"\
+ /D "ALL_INTERIOR_POINTERS" /Fp"$(INTDIR)/cord.pch"\
  /I./libatomic_ops/src /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c
 CPP_OBJS=.\cord\Debug/
 CPP_SBRS=.\.
@@ -755,7 +759,7 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 BSC32_FLAGS=/nologo /o"$(OUTDIR)/cord.bsc"
-BSC32_SBRS= \
+BSC32_SBRS=\
 
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /debug /machine:I386
@@ -764,12 +768,12 @@ LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
  advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib\
  odbccp32.lib /nologo /subsystem:windows /incremental:yes\
  /pdb:"$(OUTDIR)/de.pdb" /debug /machine:I386 /out:"Debug/de.exe"
-LINK32_OBJS= \
-	".\cord\Debug\cordbscs.obj" \
-	".\cord\Debug\cordxtra.obj" \
-	".\cord\Debug\de.obj" \
-	".\cord\Debug\de_win.obj" \
-	".\cord\Debug\de_win.res" \
+LINK32_OBJS=\
+	".\cord\Debug\cordbscs.obj"\
+	".\cord\Debug\cordxtra.obj"\
+	".\cord\Debug\de.obj"\
+	".\cord\Debug\de_win.obj"\
+	".\cord\Debug\de_win.res"\
 	".\Debug\gc.lib"
 
 ".\Debug\de.exe" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
@@ -1945,6 +1949,9 @@ NODEP_CPP_WIN32=\
 
 SOURCE=.\extra\msvc_dbg.c
 
+msvc_dbg.copied.c : extra\msvc_dbg.c
+	copy extra\msvc_dbg.c msvc_dbg.copied.c
+
 !IF  "$(CFG)" == "gc - Win32 Release"
 
 DEP_CPP_WIN32=\
@@ -1961,9 +1968,9 @@ NODEP_CPP_WIN32=\
 	".\th\PCR_ThCtl.h"\
 
 
-".\Release\msvc_dbg.obj" : $(SOURCE) $(DEP_CPP_WIN32) "$(INTDIR)"
+".\Release\msvc_dbg.copied.obj" : $(SOURCE) $(DEP_CPP_WIN32) "$(INTDIR)"
 
-".\Release\msvc_dbg.sbr" : $(SOURCE) $(DEP_CPP_WIN32) "$(INTDIR)"
+".\Release\msvc_dbg.copied.sbr" : $(SOURCE) $(DEP_CPP_WIN32) "$(INTDIR)"
 
 
 !ELSEIF  "$(CFG)" == "gc - Win32 Debug"
@@ -1982,9 +1989,9 @@ NODEP_CPP_WIN32=\
 	".\th\PCR_ThCtl.h"\
 
 
-".\Debug\msvc_dbg.obj" : $(SOURCE) $(DEP_CPP_WIN32) "$(INTDIR)"
+".\Debug\msvc_dbg.copied.obj" : $(SOURCE) $(DEP_CPP_WIN32) "$(INTDIR)"
 
-".\Debug\msvc_dbg.sbr" : $(SOURCE) $(DEP_CPP_WIN32) "$(INTDIR)"
+".\Debug\msvc_dbg.copied.sbr" : $(SOURCE) $(DEP_CPP_WIN32) "$(INTDIR)"
 
 
 !ENDIF
@@ -2090,15 +2097,15 @@ NODEP_CPP_TEST_=\
 !IF  "$(CFG)" == "gctest - Win32 Release"
 
 
-".\gctest\Release\test.obj" : $(SOURCE) $(DEP_CPP_TEST_) "$(INTDIR)"
+".\gctest\Release\test.copied.obj" : $(SOURCE) $(DEP_CPP_TEST_) "$(INTDIR)"
 
 
 !ELSEIF  "$(CFG)" == "gctest - Win32 Debug"
 
 
-".\gctest\Debug\test.obj" : $(SOURCE) $(DEP_CPP_TEST_) "$(INTDIR)"
+".\gctest\Debug\test.copied.obj" : $(SOURCE) $(DEP_CPP_TEST_) "$(INTDIR)"
 
-".\gctest\Debug\test.sbr" : $(SOURCE) $(DEP_CPP_TEST_) "$(INTDIR)"
+".\gctest\Debug\test.copied.sbr" : $(SOURCE) $(DEP_CPP_TEST_) "$(INTDIR)"
 
 
 !ENDIF

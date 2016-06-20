@@ -35,6 +35,7 @@ test_malloc_LDADD = $(THREADDLLIBS) \
         $(top_builddir)/src/libatomic_ops.la
 
 test_atomic_include.h: test_atomic_include.template
+	mkdir -p `dirname $@`
 	sed -e s:XX::g $? > $@
 	sed -e s:XX:_release:g $? >> $@
 	sed -e s:XX:_acquire:g $? >> $@
@@ -45,6 +46,7 @@ test_atomic_include.h: test_atomic_include.template
 	sed -e s:XX:_acquire_read:g $? >> $@
 
 list_atomic.c: list_atomic.template
+	mkdir -p `dirname $@`
 	echo "#include \"atomic_ops.h\"" > $@
 	sed -e s:XSIZE_::g -e s:XCTYPE:AO_t:g -e s:XX::g $? >> $@
 	sed -e s:XSIZE_::g -e s:XCTYPE:AO_t:g -e s:XX:_release:g $? >> $@
@@ -93,6 +95,7 @@ list_atomic.c: list_atomic.template
 	sed -e s:XSIZE:double:g -e s:XCTYPE:AO_double_t:g -e s:XX:_dd_acquire_read:g $? >> $@
 
 list_atomic.i: list_atomic.c
+	mkdir -p `dirname $@`
 	$(COMPILE) $? -E > $@
 
 # Verify list_atomic.c syntax:

@@ -19,8 +19,6 @@
 
 #include "../all_aligned_atomic_load_store.h"
 
-#include "../loadstore/acquire_release_volatile.h"
-
 #include "../test_and_set_t_is_ao_t.h"
 
 /* Data dependence does not imply read ordering.  */
@@ -129,7 +127,7 @@ AO_test_and_set(volatile AO_TS_t *addr)
         "1: "
         AO_MIPS_LL("%0, %1")
         "       bne     %0, %4, 2f  \n"
-        "        move   %0, %3      \n"
+        "       move    %0, %3      \n"
         AO_MIPS_SC("%0, %1")
         "       .set pop            \n"
         "       beqz    %0, 1b      \n"

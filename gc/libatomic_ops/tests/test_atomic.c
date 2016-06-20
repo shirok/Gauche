@@ -148,7 +148,7 @@ void * test_and_set_thr(void * id)
       if (locked_counter != 1)
         {
           fprintf(stderr, "Test and set failure 1, counter = %ld, id = %d\n",
-                  locked_counter, (int)(AO_PTRDIFF_T)id);
+                  (long)locked_counter, (int)(AO_PTRDIFF_T)id);
           abort();
         }
       locked_counter *= 2;
@@ -158,7 +158,7 @@ void * test_and_set_thr(void * id)
       if (locked_counter != 1)
         {
           fprintf(stderr, "Test and set failure 2, counter = %ld, id = %d\n",
-                  locked_counter, (int)(AO_PTRDIFF_T)id);
+                  (long)locked_counter, (int)(AO_PTRDIFF_T)id);
           abort();
         }
       --locked_counter;

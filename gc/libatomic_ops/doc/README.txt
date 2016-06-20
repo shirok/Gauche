@@ -204,13 +204,6 @@ macro expansions of all implemented operations on the platform:
 
 make list_atomic.i
 
-Future directions:
-
-It currently appears that something roughly analogous to this is very likely
-to become part of the C++0x standard.  That effort has pointed out a number
-of issues that we expect to address there.  Since some of the solutions
-really require compiler support, they may not be completely addressed here.
-
 Known issues include:
 
 We should be more precise in defining the semantics of the ordering

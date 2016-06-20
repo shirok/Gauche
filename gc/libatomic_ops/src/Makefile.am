@@ -12,6 +12,7 @@ libatomic_ops_la_LDFLAGS = -version-info 1:3:0 -no-undefined
 
 libatomic_ops_gpl_la_SOURCES = atomic_ops_stack.c atomic_ops_malloc.c
 libatomic_ops_gpl_la_LDFLAGS = -version-info 1:3:0 -no-undefined
+libatomic_ops_gpl_la_LIBADD = libatomic_ops.la
 
 EXTRA_DIST = Makefile.msft atomic_ops/sysdeps/README \
         atomic_ops/generalize-arithm.template \
@@ -102,6 +103,7 @@ nobase_private_HEADERS = atomic_ops/ao_version.h \
           atomic_ops/sysdeps/sunc/x86.h
 
 atomic_ops/generalize-small.h: atomic_ops/generalize-small.template
+	mkdir -p `dirname $@`
 	sed -e s:XSIZE:char:g -e s:XCTYPE:unsigned/**/char:g $? > $@
 	sed -e s:XSIZE:short:g -e s:XCTYPE:unsigned/**/short:g $? >> $@
 	sed -e s:XSIZE:int:g -e s:XCTYPE:unsigned:g $? >> $@
@@ -109,12 +111,14 @@ atomic_ops/generalize-small.h: atomic_ops/generalize-small.template
 	sed -e s:XSIZE:double:g -e s:XCTYPE:AO_double_t:g $? >> $@
 
 atomic_ops/generalize-arithm.h: atomic_ops/generalize-arithm.template
+	mkdir -p `dirname $@`
 	sed -e s:XSIZE:char:g -e s:XCTYPE:unsigned/**/char:g $? > $@
 	sed -e s:XSIZE:short:g -e s:XCTYPE:unsigned/**/short:g $? >> $@
 	sed -e s:XSIZE:int:g -e s:XCTYPE:unsigned:g $? >> $@
 	sed -e s:XSIZE_::g -e s:XCTYPE:AO_t:g $? >> $@
 
 atomic_ops/sysdeps/ao_t_is_int.h: atomic_ops/sysdeps/ao_t_is_int.template
+	mkdir -p `dirname $@`
 	sed -e s:_XBAR::g $? > $@
 	sed -e s:XBAR:full:g $? >> $@
 	sed -e s:XBAR:acquire:g $? >> $@
@@ -124,6 +128,7 @@ atomic_ops/sysdeps/ao_t_is_int.h: atomic_ops/sysdeps/ao_t_is_int.template
 
 atomic_ops/sysdeps/gcc/generic-arithm.h: \
         atomic_ops/sysdeps/gcc/generic-arithm.template
+	mkdir -p `dirname $@`
 	sed -e s:_XBAR::g -e s:XGCCBAR:RELAXED:g \
 		-e s:XSIZE:char:g -e s:XCTYPE:unsigned/**/char:g $? > $@
 	sed -e s:_XBAR::g -e s:XGCCBAR:RELAXED:g \
@@ -159,6 +164,7 @@ atomic_ops/sysdeps/gcc/generic-arithm.h: \
 
 atomic_ops/sysdeps/gcc/generic-small.h: \
         atomic_ops/sysdeps/gcc/generic-small.template
+	mkdir -p `dirname $@`
 	sed -e s:XSIZE:char:g -e s:XCTYPE:unsigned/**/char:g $? > $@
 	sed -e s:XSIZE:short:g -e s:XCTYPE:unsigned/**/short:g $? >> $@
 	sed -e s:XSIZE:int:g -e s:XCTYPE:unsigned:g $? >> $@
@@ -166,6 +172,7 @@ atomic_ops/sysdeps/gcc/generic-small.h: \
 
 atomic_ops/sysdeps/loadstore/ordered_loads_only.h: \
         atomic_ops/sysdeps/loadstore/ordered_loads_only.template
+	mkdir -p `dirname $@`
 	sed -e s:XSIZE:char:g -e s:XCTYPE:unsigned/**/char:g $? > $@
 	sed -e s:XSIZE:short:g -e s:XCTYPE:unsigned/**/short:g $? >> $@
 	sed -e s:XSIZE:int:g -e s:XCTYPE:unsigned:g $? >> $@
@@ -174,6 +181,7 @@ atomic_ops/sysdeps/loadstore/ordered_loads_only.h: \
 
 atomic_ops/sysdeps/loadstore/ordered_stores_only.h: \
         atomic_ops/sysdeps/loadstore/ordered_stores_only.template
+	mkdir -p `dirname $@`
 	sed -e s:XSIZE:char:g -e s:XCTYPE:unsigned/**/char:g $? > $@
 	sed -e s:XSIZE:short:g -e s:XCTYPE:unsigned/**/short:g $? >> $@
 	sed -e s:XSIZE:int:g -e s:XCTYPE:unsigned:g $? >> $@
@@ -182,48 +190,60 @@ atomic_ops/sysdeps/loadstore/ordered_stores_only.h: \
 
 atomic_ops/sysdeps/loadstore/acquire_release_volatile.h: \
         atomic_ops/sysdeps/loadstore/acquire_release_volatile.template
+	mkdir -p `dirname $@`
 	sed -e s:XSIZE_::g -e s:XCTYPE:AO_t:g $? > $@
 
 atomic_ops/sysdeps/loadstore/char_acquire_release_volatile.h: \
         atomic_ops/sysdeps/loadstore/acquire_release_volatile.template
+	mkdir -p `dirname $@`
 	sed -e s:XSIZE:char:g -e s:XCTYPE:unsigned/**/char:g $? > $@
 
 atomic_ops/sysdeps/loadstore/int_acquire_release_volatile.h: \
         atomic_ops/sysdeps/loadstore/acquire_release_volatile.template
+	mkdir -p `dirname $@`
 	sed -e s:XSIZE:int:g -e s:XCTYPE:unsigned:g $? > $@
 
 atomic_ops/sysdeps/loadstore/short_acquire_release_volatile.h: \
         atomic_ops/sysdeps/loadstore/acquire_release_volatile.template
+	mkdir -p `dirname $@`
 	sed -e s:XSIZE:short:g -e s:XCTYPE:unsigned/**/short:g $? > $@
 
 atomic_ops/sysdeps/loadstore/atomic_load.h: \
         atomic_ops/sysdeps/loadstore/atomic_load.template
+	mkdir -p `dirname $@`
 	sed -e s:XSIZE_::g -e s:XCTYPE:AO_t:g $? > $@
 
 atomic_ops/sysdeps/loadstore/char_atomic_load.h: \
         atomic_ops/sysdeps/loadstore/atomic_load.template
+	mkdir -p `dirname $@`
 	sed -e s:XSIZE:char:g -e s:XCTYPE:unsigned/**/char:g $? > $@
 
 atomic_ops/sysdeps/loadstore/int_atomic_load.h: \
         atomic_ops/sysdeps/loadstore/atomic_load.template
+	mkdir -p `dirname $@`
 	sed -e s:XSIZE:int:g -e s:XCTYPE:unsigned:g $? > $@
 
 atomic_ops/sysdeps/loadstore/short_atomic_load.h: \
         atomic_ops/sysdeps/loadstore/atomic_load.template
+	mkdir -p `dirname $@`
 	sed -e s:XSIZE:short:g -e s:XCTYPE:unsigned/**/short:g $? > $@
 
 atomic_ops/sysdeps/loadstore/atomic_store.h: \
         atomic_ops/sysdeps/loadstore/atomic_store.template
+	mkdir -p `dirname $@`
 	sed -e s:XSIZE_::g -e s:XCTYPE:AO_t:g $? > $@
 
 atomic_ops/sysdeps/loadstore/char_atomic_store.h: \
         atomic_ops/sysdeps/loadstore/atomic_store.template
+	mkdir -p `dirname $@`
 	sed -e s:XSIZE:char:g -e s:XCTYPE:unsigned/**/char:g $? > $@
 
 atomic_ops/sysdeps/loadstore/int_atomic_store.h: \
         atomic_ops/sysdeps/loadstore/atomic_store.template
+	mkdir -p `dirname $@`
 	sed -e s:XSIZE:int:g -e s:XCTYPE:unsigned:g $? > $@
 
 atomic_ops/sysdeps/loadstore/short_atomic_store.h: \
         atomic_ops/sysdeps/loadstore/atomic_store.template
+	mkdir -p `dirname $@`
 	sed -e s:XSIZE:short:g -e s:XCTYPE:unsigned/**/short:g $? > $@

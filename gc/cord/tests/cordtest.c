@@ -21,7 +21,7 @@
 /* that real clients shouldn't rely on.                 */
 
 # define ABORT(string) \
-    { int x = 0; fprintf(stderr, "FAILED: %s\n", string); x = 1 / x; abort(); }
+    { fprintf(stderr, "FAILED: %s\n", string); abort(); }
 
 int count;
 
@@ -128,7 +128,7 @@ void test_extras(void)
     register int i;
     CORD y = "abcdefghijklmnopqrstuvwxyz0123456789";
     CORD x = "{}";
-    CORD w, z;
+    CORD u, w, z;
     FILE *f;
     FILE *f1a, *f1b, *f2;
 
@@ -180,7 +180,9 @@ void test_extras(void)
         ABORT("file substr wrong");
     if (strcmp(CORD_to_char_star(CORD_substr(w, 1000*36, 36)), y) != 0)
         ABORT("char * file substr wrong");
-    if (strcmp(CORD_substr(w, 1000*36, 2), "ab") != 0)
+    u = CORD_substr(w, 1000*36, 2);
+    if (!u) ABORT("CORD_substr returned NULL");
+    if (strcmp(u, "ab") != 0)
         ABORT("short file substr wrong");
     if (CORD_str(x,1,"9a") != 35) ABORT("CORD_str failed 1");
     if (CORD_str(x,0,"9abcdefghijk") != 35) ABORT("CORD_str failed 2");
@@ -197,12 +199,27 @@ void test_extras(void)
     if (remove(FNAME1) != 0) {
         /* On some systems, e.g. OS2, this may fail if f1 is still open. */
         /* But we cannot call fclose as it might lead to double close.   */
-        fprintf(stderr, "WARNING: remove(FNAME1) failed\n");
+        fprintf(stderr, "WARNING: remove failed: " FNAME1 "\n");
     }
     if (remove(FNAME2) != 0) {
-        fprintf(stderr, "WARNING: remove(FNAME2) failed\n");
+        fprintf(stderr, "WARNING: remove failed: " FNAME2 "\n");
     }
 }
+
+#if defined(__DJGPP__) || defined(__STRICT_ANSI__)
+  /* snprintf is missing in DJGPP (v2.0.3) */
+#else
+# if defined(_MSC_VER)
+#   if defined(_WIN32_WCE)
+      /* _snprintf is deprecated in WinCE */
+#     define GC_SNPRINTF StringCchPrintfA
+#   else
+#     define GC_SNPRINTF _snprintf
+#   endif
+# else
+#   define GC_SNPRINTF snprintf
+# endif
+#endif
 
 void test_printf(void)
 {
@@ -226,8 +243,12 @@ void test_printf(void)
     x = CORD_cat(x,x);
     if (CORD_sprintf(&result, "->%-120.78r!\n", x) != 124)
         ABORT("CORD_sprintf failed 3");
-    (void)snprintf(result2, sizeof(result2), "->%-120.78s!\n",
-                   CORD_to_char_star(x));
+#   ifdef GC_SNPRINTF
+        (void)GC_SNPRINTF(result2, sizeof(result2), "->%-120.78s!\n",
+                          CORD_to_char_star(x));
+#   else
+        (void)sprintf(result2, "->%-120.78s!\n", CORD_to_char_star(x));
+#   endif
     result2[sizeof(result2) - 1] = '\0';
     if (CORD_cmp(result, result2) != 0)ABORT("CORD_sprintf goofed 5");
 }

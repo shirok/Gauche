@@ -40,6 +40,7 @@ Andreas Tobler <a.tobler@schweiz.org>
 Andrei Polushin <polushin@gmail.com>
 Andrej Cedilnik <acedil1@csee.umbc.edu>
 Andrew Begel <abegel@eecs.berkeley.edu>
+Andrew Buss <abuss@ucsd.edu>
 Andrew Gray <andrew.gray@anu.edu.au>
 Andrew Haley <aph@redhat.com>
 Andrew Horton <andrew.j.horton@gmail.com>
@@ -80,6 +81,7 @@ Bruce Mitchener <bruce.mitchener@gmail.com>
 Bruno Haible <bruno@clisp.org>
 Bryce McKinlay <mckinlay@redhat.com>
 Burkhard Linke <blinke@cebitec.uni-bielefeld.de>
+Carlos J. Puga Medina <cpm@fbsd.es>
 Cesar Eduardo Barros <cesarb@nitnet.com.br>
 Charles Fiterman <cef@geode.geodesic.com>
 Charles Mills <boson@cyberspace.org>
@@ -115,6 +117,7 @@ David Mossberger
 David Peroutka <djp@volny.cz>
 David Pickens <dsp@rci.rutgers.edu>
 David Stes <stes@d5e02b1d.kabel.telenet.be>
+David Van Horn <dvanhorn@ccs.neu.edu>
 Davide Angelocola <davide.angelocola@tiscali.it>
 Dick Porter <dick@acm.org>
 Dietmar Planitzer <dave.pl@ping.at>
@@ -124,6 +127,7 @@ Djamel Magri <djamel.magri@googlemail.com>
 Doug Kaufman <dkaufman@rahul.net>
 Doug Moen <doug@moens.org>
 Douglas Steel <doug@wg.icl.co.uk>
+Eli Barzilay <eli@racket-lang.org>
 Elijah Taylor <elijahtaylor@google.com>
 Elvenlord Elrond <elrond@samba-tng.org>
 Emmanual Stumpf
@@ -164,6 +168,7 @@ Jacob Navia <jacob.navia@jacob.remcomp.fr>
 Jakub Jelinek <jakub@redhat.com>
 James Clark <jjc@jclark.com>
 James Dominy
+Jan Alexander Steffens <jan.steffens@gmail.com>
 Jan Wielemaker <J.Wielemaker@cs.vu.nl>
 Jani Kajala <jani@sumea.com>
 Jean-Baptiste Nivois
@@ -320,10 +325,12 @@ Sven Hartrumpf <Sven.Hartrumpf@fernuni-hagen.de>
 Sven Verdoolaege <skimo@kotnet.org>
 Takis Psarogiannakopoulos <takis@xfree86.org>
 Tatsuya Bizenn <bizenn@visha.org>
+Terrell Russell <terrellrussell@gmail.com>
 Thiemo Seufer <ths@networkno.de>
 Thomas Funke <thf@zelator.in-berlin.de>
 Thomas Klausner <tk@giga.or.at>
 Thomas Maier <Thomas.Maier@uni-kassel.de>
+Thomas Schwinge <thomas@codesourcery.com>
 Thorsten Glaser <tg@debian.org>
 Tilman Vogel <Tilman.Vogel@web.de>
 Tim Bingham <tjb@zko.dec.com>
@@ -351,6 +358,7 @@ Xi Wang <xi.wang@gmail.com>
 Xiaokun Zhu <xiaokun@aero.gla.ac.uk>
 Yann Dirson <dirson@debian.org>
 Yannis Bres <Yannis@bres.name>
+Yuki Okumura <mjt@cltn.org>
 Yusuke Suzuki <utatane.tea@gmail.com>
 Yvan Roux <yvan.roux@linaro.org>
 Zach Saw <zach.saw@gmail.com>

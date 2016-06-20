@@ -1,6 +1,6 @@
 # Boehm-Demers-Weiser Garbage Collector
 
-This is version 7.4.2 of a conservative garbage collector for C and C++.
+This is version 7.4.4 of a conservative garbage collector for C and C++.
 
 You might find a more recent version
 [here](http://www.hboehm.info/gc/), or
@@ -524,7 +524,7 @@ whether it's already been done (or whether we tried and discarded it).
  * Copyright (c) 1996-1999 by Silicon Graphics.  All rights reserved.
  * Copyright (c) 1999-2011 by Hewlett-Packard Development Company.
 
-The file linux_threads.c is also
+The files pthread_stop_world.c and pthread_support.c are also
 
  * Copyright (c) 1998 by Fergus Henderson.  All rights reserved.
 

@@ -26,7 +26,7 @@ typedef void (* finalization_mark_proc)(ptr_t /* finalizable_obj_ptr */);
 #define HASH3(addr,size,log_size) \
         ((((word)(addr) >> 3) ^ ((word)(addr) >> (3 + (log_size)))) \
          & ((size) - 1))
-#define HASH2(addr,log_size) HASH3(addr, 1 << (log_size), log_size)
+#define HASH2(addr,log_size) HASH3(addr, (word)1 << (log_size), log_size)
 
 struct hash_chain_entry {
     word hidden_key;
@@ -104,7 +104,7 @@ STATIC void GC_grow_table(struct hash_chain_entry ***table,
     register struct hash_chain_entry *p;
     signed_word log_old_size = *log_size_ptr;
     signed_word log_new_size = log_old_size + 1;
-    word old_size = ((log_old_size == -1)? 0: (1 << log_old_size));
+    word old_size = log_old_size == -1 ? 0 : (word)1 << log_old_size;
     word new_size = (word)1 << log_new_size;
     /* FIXME: Power of 2 size often gets rounded up to one more page. */
     struct hash_chain_entry **new_table = (struct hash_chain_entry **)
@@ -211,7 +211,7 @@ STATIC int GC_register_disappearing_link_inner(
 GC_API int GC_CALL GC_general_register_disappearing_link(void * * link,
                                                          const void * obj)
 {
-    if (((word)link & (ALIGNMENT-1)) != 0 || NULL == link)
+    if (((word)link & (ALIGNMENT-1)) != 0 || !NONNULL_ARG_NOT_NULL(link))
         ABORT("Bad arg to GC_general_register_disappearing_link");
     return GC_register_disappearing_link_inner(&GC_dl_hashtbl, link, obj);
 }
@@ -266,7 +266,7 @@ GC_API int GC_CALL GC_unregister_disappearing_link(void * * link)
 #ifndef GC_LONG_REFS_NOT_NEEDED
   GC_API int GC_CALL GC_register_long_link(void * * link, const void * obj)
   {
-    if (((word)link & (ALIGNMENT-1)) != 0 || NULL == link)
+    if (((word)link & (ALIGNMENT-1)) != 0 || !NONNULL_ARG_NOT_NULL(link))
         ABORT("Bad arg to GC_register_long_link");
     return GC_register_disappearing_link_inner(&GC_ll_hashtbl, link, obj);
   }
@@ -345,7 +345,8 @@ GC_API int GC_CALL GC_unregister_disappearing_link(void * * link)
     int result;
     DCL_LOCK_STATE;
 
-    if (((word)new_link & (ALIGNMENT-1)) != 0 || new_link == NULL)
+    if (((word)new_link & (ALIGNMENT-1)) != 0
+        || !NONNULL_ARG_NOT_NULL(new_link))
       ABORT("Bad new_link arg to GC_move_disappearing_link");
     if (((word)link & (ALIGNMENT-1)) != 0)
       return GC_NOT_FOUND; /* Nothing to do. */
@@ -362,8 +363,9 @@ GC_API int GC_CALL GC_unregister_disappearing_link(void * * link)
       int result;
       DCL_LOCK_STATE;
 
-      if (((word)new_link & (ALIGNMENT-1)) != 0 || new_link == NULL)
-        ABORT("Bad new_link arg to GC_move_disappearing_link");
+      if (((word)new_link & (ALIGNMENT-1)) != 0
+          || !NONNULL_ARG_NOT_NULL(new_link))
+        ABORT("Bad new_link arg to GC_move_long_link");
       if (((word)link & (ALIGNMENT-1)) != 0)
         return GC_NOT_FOUND; /* Nothing to do. */
 
@@ -596,7 +598,7 @@ GC_API void GC_CALL GC_register_finalizer_unreachable(void * obj,
     struct disappearing_link *curr_dl;
     ptr_t real_ptr, real_link;
     size_t dl_size = dl_hashtbl->log_size == -1 ? 0 :
-                                1 << dl_hashtbl->log_size;
+                                (size_t)1 << dl_hashtbl->log_size;
     size_t i;
 
     for (i = 0; i < dl_size; i++) {
@@ -612,7 +614,8 @@ GC_API void GC_CALL GC_register_finalizer_unreachable(void * obj,
   void GC_dump_finalization(void)
   {
     struct finalizable_object * curr_fo;
-    size_t fo_size = log_fo_table_size == -1 ? 0 : 1 << log_fo_table_size;
+    size_t fo_size = log_fo_table_size == -1 ? 0 :
+                                (size_t)1 << log_fo_table_size;
     ptr_t real_ptr;
     size_t i;
 
@@ -672,7 +675,7 @@ GC_API void GC_CALL GC_register_finalizer_unreachable(void * obj,
   { \
     size_t i; \
     size_t dl_size = dl_hashtbl->log_size == -1 ? 0 : \
-                                1 << dl_hashtbl->log_size; \
+                                (size_t)1 << dl_hashtbl->log_size; \
     for (i = 0; i < dl_size; i++) { \
       curr_dl = dl_hashtbl -> head[i]; \
       prev_dl = NULL; \
@@ -739,7 +742,8 @@ GC_INNER void GC_finalize(void)
     struct finalizable_object * curr_fo, * prev_fo, * next_fo;
     ptr_t real_ptr;
     size_t i;
-    size_t fo_size = log_fo_table_size == -1 ? 0 : 1 << log_fo_table_size;
+    size_t fo_size = log_fo_table_size == -1 ? 0 :
+                                (size_t)1 << log_fo_table_size;
 
 #   ifndef SMALL_CONFIG
       /* Save current GC_[dl/ll]_entries value for stats printing */

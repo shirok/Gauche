@@ -104,7 +104,7 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
   /* located in the "extra" folder).                                    */
 # if defined(GC_DLL) && defined(__GNUC__) && !defined(MSWIN32) \
         && !defined(MSWINCE) && !defined(CYGWIN32)
-#   if __GNUC__ >= 4
+#   if (__GNUC__ >= 4) && !defined(GC_NO_VISIBILITY)
       /* See the corresponding GC_API definition. */
 #     define GC_INNER __attribute__((__visibility__("hidden")))
 #   else
@@ -160,7 +160,7 @@ typedef char * ptr_t;   /* A generic pointer to which we can add        */
 #ifndef GC_API_OSCALL
   /* This is used to identify GC routines called by name from OS.       */
 # if defined(__GNUC__)
-#   if __GNUC__ >= 4
+#   if (__GNUC__ >= 4) && !defined(GC_NO_VISIBILITY)
       /* Same as GC_API if GC_DLL.      */
 #     define GC_API_OSCALL extern __attribute__((__visibility__("default")))
 #   else
@@ -587,6 +587,10 @@ GC_EXTERN GC_warn_proc GC_current_warn_proc;
 #     define GC_MACH_THREAD_STATE       x86_THREAD_STATE64
 #     define GC_MACH_THREAD_STATE_COUNT x86_THREAD_STATE64_COUNT
 #   endif
+# elif defined(ARM32)
+#   define GC_THREAD_STATE_T            arm_thread_state_t
+#   define GC_MACH_THREAD_STATE         ARM_THREAD_STATE
+#   define GC_MACH_THREAD_STATE_COUNT   ARM_THREAD_STATE_COUNT
 # else
 #   if defined(ARM32)
 #     define GC_THREAD_STATE_T                  arm_thread_state_t
@@ -740,10 +744,9 @@ GC_EXTERN GC_warn_proc GC_current_warn_proc;
 # define HBLKSIZE ((size_t)CPP_HBLKSIZE)
 
 
-/*  max size objects supported by freelist (larger objects are  */
+/*  Max size objects supported by freelist (larger objects are  */
 /*  allocated directly with allchblk(), by rounding to the next */
-/*  multiple of HBLKSIZE.                                       */
-
+/*  multiple of HBLKSIZE).                                      */
 #define CPP_MAXOBJBYTES (CPP_HBLKSIZE/2)
 #define MAXOBJBYTES ((size_t)CPP_MAXOBJBYTES)
 #define CPP_MAXOBJWORDS BYTES_TO_WORDS(CPP_MAXOBJBYTES)
@@ -929,7 +932,7 @@ struct hblkhdr {
 #     define LARGE_INV_SZ (1 << 16)
 #   else
       unsigned char hb_large_block;
-      short * hb_map;           /* Essentially a table of remainders    */
+      unsigned short * hb_map;  /* Essentially a table of remainders    */
                                 /* mod BYTES_TO_GRANULES(hb_sz), except */
                                 /* for large blocks.  See GC_obj_map.   */
 #   endif
@@ -1193,7 +1196,7 @@ struct _GC_arrays {
                           /* free list for immutable objects    */
 # ifdef MARK_BIT_PER_GRANULE
 #   define GC_obj_map GC_arrays._obj_map
-    short * _obj_map[MAXOBJGRANULES+1];
+    unsigned short * _obj_map[MAXOBJGRANULES + 1];
                        /* If not NULL, then a pointer to a map of valid */
                        /* object addresses.                             */
                        /* _obj_map[sz_in_granules][i] is                */
@@ -1323,13 +1326,13 @@ GC_API_PRIV GC_FAR struct _GC_arrays GC_arrays;
 #define MAXOBJKINDS 16
 
 GC_EXTERN struct obj_kind {
-   void **ok_freelist;  /* Array of free listheaders for this kind of object */
-                        /* Point either to GC_arrays or to storage allocated */
-                        /* with GC_scratch_alloc.                            */
+   void **ok_freelist;  /* Array of free list headers for this kind of  */
+                        /* object.  Point either to GC_arrays or to     */
+                        /* storage allocated with GC_scratch_alloc.     */
    struct hblk **ok_reclaim_list;
-                        /* List headers for lists of blocks waiting to be */
-                        /* swept.                                         */
-                        /* Indexed by object size in granules.            */
+                        /* List headers for lists of blocks waiting to  */
+                        /* be swept.  Indexed by object size in         */
+                        /* granules.                                    */
    word ok_descriptor;  /* Descriptor template for objects in this      */
                         /* block.                                       */
    GC_bool ok_relocate_descr;
@@ -1832,12 +1835,15 @@ GC_INNER void GC_collect_a_little_inner(int n);
 GC_INNER void * GC_generic_malloc_inner(size_t lb, int k);
                                 /* Allocate an object of the given      */
                                 /* kind but assuming lock already held. */
-GC_INNER void * GC_generic_malloc_inner_ignore_off_page(size_t lb, int k);
+#if defined(DBG_HDRS_ALL) || defined(GC_GCJ_SUPPORT) \
+    || !defined(GC_NO_FINALIZATION)
+  GC_INNER void * GC_generic_malloc_inner_ignore_off_page(size_t lb, int k);
                                 /* Allocate an object, where            */
                                 /* the client guarantees that there     */
                                 /* will always be a pointer to the      */
                                 /* beginning of the object while the    */
                                 /* object is live.                      */
+#endif
 
 GC_INNER ptr_t GC_allocobj(size_t sz, int kind);
                                 /* Make the indicated                   */
@@ -2336,6 +2342,14 @@ GC_INNER ptr_t GC_store_debug_info(ptr_t p, word sz, const char *str,
 # define GC_STATIC_ASSERT(expr) (void)sizeof(char[(expr)? 1 : -1])
 #endif
 
+/* Runtime check for an argument declared as non-null is actually not null. */
+#if defined(__GNUC__) && __GNUC__ >= 4
+  /* Workaround tautological-pointer-compare Clang warning.     */
+# define NONNULL_ARG_NOT_NULL(arg) (*(volatile void **)&(arg) != NULL)
+#else
+# define NONNULL_ARG_NOT_NULL(arg) (NULL != (arg))
+#endif
+
 #define COND_DUMP_CHECKS \
           do { \
             GC_ASSERT(GC_compute_large_free_bytes() == GC_large_free_bytes); \
@@ -2372,6 +2386,7 @@ GC_INNER ptr_t GC_store_debug_info(ptr_t p, word sz, const char *str,
   /* GC_notify_all_builder() is called when GC_fl_builder_count         */
   /* reaches 0.                                                         */
 
+  GC_INNER void GC_wait_for_markers_init(void);
   GC_INNER void GC_acquire_mark_lock(void);
   GC_INNER void GC_release_mark_lock(void);
   GC_INNER void GC_notify_all_builder(void);

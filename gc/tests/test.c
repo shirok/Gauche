@@ -155,7 +155,7 @@ int realloc_count = 0;
 
   void GC_amiga_free_all_mem(void);
   void Amiga_Fail(void){GC_amiga_free_all_mem();abort();}
-# define FAIL (void)Amiga_Fail()
+# define FAIL Amiga_Fail()
   void *GC_amiga_gctest_malloc_explicitly_typed(size_t lb, GC_descr d){
     void *ret=GC_malloc_explicitly_typed(lb,d);
     if(ret==NULL){
@@ -188,7 +188,7 @@ int realloc_count = 0;
 #else /* !AMIGA_FASTALLOC */
 
 # if defined(PCR) || defined(LINT2)
-#   define FAIL (void)abort()
+#   define FAIL abort()
 # else
 #   define FAIL ABORT("Test failed")
 # endif
@@ -412,6 +412,10 @@ sexpr uncollectable_ints(int low, int up)
 
 void check_ints(sexpr list, int low, int up)
 {
+    if (is_nil(list)) {
+        GC_printf("list is nil\n");
+        FAIL;
+    }
     if (SEXPR_TO_INT(car(car(list))) != low) {
         GC_printf(
            "List reversal produced incorrect list - collector is broken\n");
@@ -1222,6 +1226,7 @@ void run_one_test(void)
         FAIL;
       }
       z = GC_malloc(8);
+      CHECK_OUT_OF_MEMORY(z);
       GC_PTR_STORE(z, x);
       if (*z != x) {
         GC_printf("GC_PTR_STORE failed: %p != %p\n", (void *)(*z), (void *)x);
@@ -1499,7 +1504,7 @@ void check_heap_stats(void)
                   (unsigned long)GC_get_total_bytes());
     GC_printf("Final heap size is %lu bytes\n",
                   (unsigned long)GC_get_heap_size());
-    if (GC_get_total_bytes() < n_tests *
+    if (GC_get_total_bytes() < (size_t)n_tests *
 #   ifdef VERY_SMALL_CONFIG
         2700000
 #   else
@@ -1852,11 +1857,17 @@ int main(void)
 #   endif
     GC_COND_INIT();
 
-    pthread_attr_init(&attr);
+    if ((code = pthread_attr_init(&attr)) != 0) {
+      GC_printf("pthread_attr_init failed, error=%d\n", code);
+      FAIL;
+    }
 #   if defined(GC_IRIX_THREADS) || defined(GC_FREEBSD_THREADS) \
         || defined(GC_DARWIN_THREADS) || defined(GC_AIX_THREADS) \
         || defined(GC_OPENBSD_THREADS)
-        pthread_attr_setstacksize(&attr, 1000000);
+        if ((code = pthread_attr_setstacksize(&attr, 1000 * 1024)) != 0) {
+          GC_printf("pthread_attr_setstacksize failed, error=%d\n", code);
+          FAIL;
+        }
 #   endif
     n_tests = 0;
 #   if (defined(MPROTECT_VDB)) && !defined(REDIRECT_MALLOC) \
@@ -1894,7 +1905,7 @@ int main(void)
     }
     check_heap_stats();
     (void)fflush(stdout);
-    pthread_attr_destroy(&attr);
+    (void)pthread_attr_destroy(&attr);
 #   ifdef PTW32_STATIC_LIB
         pthread_win32_thread_detach_np ();
         pthread_win32_process_detach_np ();
