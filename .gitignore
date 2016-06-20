@@ -2,17 +2,13 @@
 *~
 
 # Automake and Autoconf
-/compile
 config.guess
 config.log
 config.rpath
 config.status
 config.sub
 /configure
-/depcomp
 libtool
-/ltmain.sh
-/missing
 autom4te.cache
 Makefile
 /gc/configure
@@ -23,7 +19,6 @@ Makefile
 /gc/libatomic_ops/src/config.h
 /lib/gauche/config.scm
 /src/gauche/config.h
-/test-driver
 
 # Compiler-generated files
 *.o
