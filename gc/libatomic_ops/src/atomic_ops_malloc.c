@@ -224,16 +224,18 @@ static void add_chunk_as(void * chunk, unsigned log_sz)
   }
 }
 
-static const int msbs[16] = {0, 1, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4};
+static const unsigned char msbs[16] = {
+  0, 1, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4
+};
 
 /* Return the position of the most significant set bit in the   */
 /* argument.                                                    */
 /* We follow the conventions of ffs(), i.e. the least           */
 /* significant bit is number one.                               */
-static int msb(size_t s)
+static unsigned msb(size_t s)
 {
-  int result = 0;
-  int v;
+  unsigned result = 0;
+  unsigned v;
   if ((s & 0xff) != s) {
     /* The following is a tricky code ought to be equivalent to         */
     /* "(v = s >> 32) != 0" but suppresses warnings on 32-bit arch's.   */
@@ -266,7 +268,7 @@ void *
 AO_malloc(size_t sz)
 {
   AO_t *result;
-  int log_sz;
+  unsigned log_sz;
 
   if (sz > CHUNK_SIZE)
     return AO_malloc_large(sz);

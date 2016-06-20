@@ -42,6 +42,14 @@
 # define GC_ASSERT(expr) /* empty */
 #endif
 
+#ifndef GC_PREFETCH_FOR_WRITE
+# define GC_PREFETCH_FOR_WRITE(x) (void)0
+#endif
+
+/* Object kinds; must match PTRFREE, NORMAL in gc_priv.h.       */
+#define GC_I_PTRFREE 0
+#define GC_I_NORMAL 1
+
 /* Store a pointer to a list of newly allocated objects of kind k and   */
 /* size lb in *result.  The caller must make sure that *result is       */
 /* traced even if objects are ptrfree.                                  */
@@ -76,14 +84,25 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t /* lb */, int /* k */,
         void *my_entry=*my_fl; \
         void *next; \
     \
-        while (GC_EXPECT((GC_word)my_entry \
-                        <= (num_direct) + GC_TINY_FREELISTS + 1, 0)) { \
+        for (;;) { \
+            if (GC_EXPECT((GC_word)my_entry \
+                          > (num_direct) + GC_TINY_FREELISTS + 1, 1)) { \
+                next = *(void **)(my_entry); \
+                result = (void *)my_entry; \
+                *my_fl = next; \
+                init; \
+                GC_PREFETCH_FOR_WRITE(next); \
+                GC_ASSERT(GC_size(result) >= (granules)*GC_GRANULE_BYTES); \
+                GC_ASSERT((kind) == GC_I_PTRFREE \
+                          || ((GC_word *)result)[1] == 0); \
+                break; \
+            } \
             /* Entry contains counter or NULL */ \
-            if ((GC_word)my_entry - 1 < (num_direct)) { \
+            if ((GC_word)my_entry <= (num_direct) && my_entry != 0) { \
                 /* Small counter value, not NULL */ \
                 *my_fl = (char *)my_entry + (granules) + 1; \
                 result = (default_expr); \
-                goto out; \
+                break; \
             } else { \
                 /* Large counter or NULL */ \
                 GC_generic_malloc_many(((granules) == 0? GC_GRANULE_BYTES : \
@@ -92,18 +111,10 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t /* lb */, int /* k */,
                 my_entry = *my_fl; \
                 if (my_entry == 0) { \
                     result = (*GC_get_oom_fn())((granules)*GC_GRANULE_BYTES); \
-                    goto out; \
+                    break; \
                 } \
             } \
         } \
-        next = *(void **)(my_entry); \
-        result = (void *)my_entry; \
-        *my_fl = next; \
-        init; \
-        PREFETCH_FOR_WRITE(next); \
-        GC_ASSERT(GC_size(result) >= (granules)*GC_GRANULE_BYTES); \
-        GC_ASSERT((kind) == PTRFREE || ((GC_word *)result)[1] == 0); \
-      out: ; \
     } \
   } while (0)
 
@@ -120,16 +131,16 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t /* lb */, int /* k */,
 # define GC_MALLOC_WORDS(result,n,tiny_fl) \
   do { \
     size_t grans = GC_WORDS_TO_WHOLE_GRANULES(n); \
-    GC_FAST_MALLOC_GRANS(result, grans, tiny_fl, 0, \
-                         NORMAL, GC_malloc(grans*GC_GRANULE_BYTES), \
+    GC_FAST_MALLOC_GRANS(result, grans, tiny_fl, 0, GC_I_NORMAL, \
+                         GC_malloc(grans * GC_GRANULE_BYTES), \
                          *(void **)(result) = 0); \
   } while (0)
 
 # define GC_MALLOC_ATOMIC_WORDS(result,n,tiny_fl) \
   do { \
     size_t grans = GC_WORDS_TO_WHOLE_GRANULES(n); \
-    GC_FAST_MALLOC_GRANS(result, grans, tiny_fl, 0, \
-                         PTRFREE, GC_malloc_atomic(grans*GC_GRANULE_BYTES), \
+    GC_FAST_MALLOC_GRANS(result, grans, tiny_fl, 0, GC_I_PTRFREE, \
+                         GC_malloc_atomic(grans * GC_GRANULE_BYTES), \
                          (void)0 /* no initialization */); \
   } while (0)
 
@@ -137,8 +148,8 @@ GC_API void GC_CALL GC_generic_malloc_many(size_t /* lb */, int /* k */,
 # define GC_CONS(result, first, second, tiny_fl) \
   do { \
     size_t grans = GC_WORDS_TO_WHOLE_GRANULES(2); \
-    GC_FAST_MALLOC_GRANS(result, grans, tiny_fl, 0, \
-                         NORMAL, GC_malloc(grans*GC_GRANULE_BYTES), \
+    GC_FAST_MALLOC_GRANS(result, grans, tiny_fl, 0, GC_I_NORMAL, \
+                         GC_malloc(grans * GC_GRANULE_BYTES), \
                          *(void **)(result) = (void *)(first)); \
     ((void **)(result))[1] = (void *)(second); \
   } while (0)

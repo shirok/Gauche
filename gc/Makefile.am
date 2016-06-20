@@ -100,8 +100,8 @@ libgc_la_LIBADD = @addobjs@ $(THREADDLLIBS) $(UNWINDLIBS) $(ATOMIC_OPS_LIBS)
 libgc_la_DEPENDENCIES = @addobjs@
 libgc_la_LDFLAGS = $(extra_ldflags_libgc) -version-info 1:3:0 -no-undefined
 
-EXTRA_libgc_la_SOURCES = src/ia64_save_regs_in_stack.s src/sparc_mach_dep.S \
-    src/sparc_netbsd_mach_dep.s src/sparc_sunos4_mach_dep.s
+EXTRA_libgc_la_SOURCES = ia64_save_regs_in_stack.s sparc_mach_dep.S \
+    sparc_netbsd_mach_dep.s sparc_sunos4_mach_dep.s
 
 
 # C++ Interface
@@ -141,14 +141,12 @@ AM_CFLAGS = @GC_CFLAGS@
 ## FIXME: we shouldn't have to do this, but automake forces us to.
 ## We use -Wp,-P to strip #line directives.  Irix `as' chokes on
 ## these.
-if COMPILER_XLC
-  ## XLC neither requires nor tolerates the unnecessary assembler goop
+if ASM_WITH_CPP_UNSUPPORTED
   ASM_CPP_OPTIONS =
 else
-  ## We use -Wp,-P to strip #line directives.  Irix `as' chokes on
-  ## these.
   ASM_CPP_OPTIONS = -Wp,-P -x assembler-with-cpp
 endif
+
 .s.lo:
 	$(LTCOMPILE) $(ASM_CPP_OPTIONS) -c $<
 
@@ -167,7 +165,7 @@ CCASFLAGS += $(DEFS)
 
 # documentation which is not installed
 #
-EXTRA_DIST += README.QUICK TODO
+EXTRA_DIST += README.QUICK
 
 # other makefiles
 # :GOTCHA: deliberately we do not include 'Makefile'

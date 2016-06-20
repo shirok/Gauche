@@ -97,7 +97,7 @@
 # endif
 # if defined(__aarch64__)
 #    define AARCH64
-#    if !defined(LINUX) && !defined(DARWIN)
+#    if !defined(LINUX)
 #      define NOSYS
 #      define mach_type_known
 #    endif
@@ -366,10 +366,6 @@
 #    define mach_type_known
 #   elif defined(__arm__)
 #    define ARM32
-#    define mach_type_known
-#    define DARWIN_DONT_PARSE_STACK
-#   elif defined(__aarch64__)
-#    define AARCH64
 #    define mach_type_known
 #    define DARWIN_DONT_PARSE_STACK
 #   endif
@@ -727,7 +723,7 @@
  * An architecture may define PREFETCH(x) to preload the cache with *x.
  * This defaults to GCC built-in operation (or a no-op for other compilers).
  *
- * PREFETCH_FOR_WRITE(x) is used if *x is about to be written.
+ * GC_PREFETCH_FOR_WRITE(x) is used if *x is about to be written.
  *
  * An architecture may also define CLEAR_DOUBLE(x) to be a fast way to
  * clear the two words at GC_malloc-aligned address x.  By default,
@@ -907,12 +903,12 @@
 #     define USE_MMAP_ANON
 #     define MPROTECT_VDB
 #     include <unistd.h>
-#     define GETPAGESIZE() getpagesize()
+#     define GETPAGESIZE() (unsigned)getpagesize()
 #     if defined(USE_PPC_PREFETCH) && defined(__GNUC__)
         /* The performance impact of prefetches is untested */
 #       define PREFETCH(x) \
           __asm__ __volatile__ ("dcbt 0,%0" : : "r" ((const void *) (x)))
-#       define PREFETCH_FOR_WRITE(x) \
+#       define GC_PREFETCH_FOR_WRITE(x) \
           __asm__ __volatile__ ("dcbtst 0,%0" : : "r" ((const void *) (x)))
 #     endif
       /* There seems to be some issues with trylock hanging on darwin.  */
@@ -1088,7 +1084,7 @@
 #         define HEURISTIC2
 #       endif
 #       include <unistd.h>
-#       define GETPAGESIZE()  sysconf(_SC_PAGESIZE)
+#       define GETPAGESIZE() (unsigned)sysconf(_SC_PAGESIZE)
                 /* getpagesize() appeared to be missing from at least one */
                 /* Solaris 5.4 installation.  Weird.                      */
 #       define DYNAMIC_LOADING
@@ -1189,7 +1185,7 @@
 #   ifdef BEOS
 #     define OS_TYPE "BEOS"
 #     include <OS.h>
-#     define GETPAGESIZE() B_PAGE_SIZE
+#     define GETPAGESIZE() (unsigned)B_PAGE_SIZE
       extern int etext[];
 #     define DATASTART ((ptr_t)((((word) (etext)) + 0xfff) & ~0xfff))
 #   endif
@@ -1255,7 +1251,7 @@
 #       define STACK_GROWS_DOWN
 #       define HEURISTIC2
 #       include <unistd.h>
-#       define GETPAGESIZE()  sysconf(_SC_PAGESIZE)
+#       define GETPAGESIZE() (unsigned)sysconf(_SC_PAGESIZE)
 #       define DYNAMIC_LOADING
 #       ifndef USE_MMAP
 #         define USE_MMAP
@@ -1350,7 +1346,7 @@
 #         ifdef FORCE_WRITE_PREFETCH
             /* Using prefetches for write seems to have a slight negative    */
             /* impact on performance, at least for a PIII/500.               */
-#           define PREFETCH_FOR_WRITE(x) \
+#           define GC_PREFETCH_FOR_WRITE(x) \
               __asm__ __volatile__ ("prefetcht0 %0" : : "m"(*(char *)(x)))
 #         else
 #           define NO_PREFETCH_FOR_WRITE
@@ -1358,8 +1354,13 @@
 #       elif defined(USE_3DNOW_PREFETCH)
 #         define PREFETCH(x) \
             __asm__ __volatile__ ("prefetch %0" : : "m"(*(char *)(x)))
-#         define PREFETCH_FOR_WRITE(x) \
+#         define GC_PREFETCH_FOR_WRITE(x) \
             __asm__ __volatile__ ("prefetchw %0" : : "m"(*(char *)(x)))
+#       endif
+#       if defined(__GLIBC__)
+          /* Workaround lock elision implementation for some glibc.     */
+#         define GLIBC_2_19_TSX_BUG
+#         include <gnu/libc-version.h> /* for gnu_get_libc_version() */
 #       endif
 #   endif
 #   ifdef CYGWIN32
@@ -1503,6 +1504,10 @@
 #     define DATAEND ((ptr_t) (_end))
 /* #     define MPROTECT_VDB  Not quite working yet? */
 #     define DYNAMIC_LOADING
+#     ifndef USE_MMAP
+#       define USE_MMAP
+#     endif
+#     define USE_MMAP_ANON
 #   endif
 #   ifdef DARWIN
 #     define OS_TYPE "DARWIN"
@@ -1519,7 +1524,7 @@
 #     define USE_MMAP_ANON
 #     define MPROTECT_VDB
 #     include <unistd.h>
-#     define GETPAGESIZE() getpagesize()
+#     define GETPAGESIZE() (unsigned)getpagesize()
       /* There seems to be some issues with trylock hanging on darwin.  */
       /* This should be looked into some more.                          */
 #     define NO_PTHREAD_TRYLOCK
@@ -1698,7 +1703,7 @@
 #     endif
 #     define DYNAMIC_LOADING
 #     include <unistd.h>
-#     define GETPAGESIZE() sysconf(_SC_PAGE_SIZE)
+#     define GETPAGESIZE() (unsigned)sysconf(_SC_PAGE_SIZE)
 #     ifndef __GNUC__
 #       define PREFETCH(x)  do { \
                               register long addr = (long)(x); \
@@ -1845,7 +1850,7 @@
 #       define HPUX_STACKBOTTOM
 #       define DYNAMIC_LOADING
 #       include <unistd.h>
-#       define GETPAGESIZE() sysconf(_SC_PAGE_SIZE)
+#       define GETPAGESIZE() (unsigned)sysconf(_SC_PAGE_SIZE)
         /* The following was empirically determined, and is probably    */
         /* not very robust.                                             */
         /* Note that the backing store base seems to be at a nice       */
@@ -1888,14 +1893,14 @@
 #         ifndef __INTEL_COMPILER
 #           define PREFETCH(x) \
               __asm__ ("        lfetch  [%0]": : "r"(x))
-#           define PREFETCH_FOR_WRITE(x) \
+#           define GC_PREFETCH_FOR_WRITE(x) \
               __asm__ ("        lfetch.excl     [%0]": : "r"(x))
 #           define CLEAR_DOUBLE(x) \
               __asm__ ("        stf.spill       [%0]=f0": : "r"((void *)(x)))
 #         else
 #           include <ia64intrin.h>
 #           define PREFETCH(x) __lfetch(__lfhint_none, (x))
-#           define PREFETCH_FOR_WRITE(x) __lfetch(__lfhint_nta, (x))
+#           define GC_PREFETCH_FOR_WRITE(x) __lfetch(__lfhint_nta, (x))
 #           define CLEAR_DOUBLE(x) __stf_spill((void *)(x), 0)
 #         endif /* __INTEL_COMPILER */
 #       endif
@@ -2002,29 +2007,6 @@
       extern char _end[];
 #     define DATAEND ((ptr_t)(&_end))
 #   endif
-#   ifdef DARWIN
-      /* iOS */
-#     define OS_TYPE "DARWIN"
-#     ifndef GC_DONT_REGISTER_MAIN_STATIC_DATA
-#       define DYNAMIC_LOADING
-#     endif
-#     define DATASTART ((ptr_t) get_etext())
-#     define DATAEND   ((ptr_t) get_end())
-#     define STACKBOTTOM ((ptr_t) 0x16fdfffff)
-#     ifndef USE_MMAP
-#       define USE_MMAP
-#     endif
-#     define USE_MMAP_ANON
-#     define MPROTECT_VDB
-#     include <unistd.h>
-#     define GETPAGESIZE() getpagesize()
-      /* FIXME: There seems to be some issues with trylock hanging on   */
-      /* darwin. This should be looked into some more.                  */
-#     define NO_PTHREAD_TRYLOCK
-#     ifndef NO_DYLD_BIND_FULLY_IMAGE
-#       define NO_DYLD_BIND_FULLY_IMAGE
-#     endif
-#   endif
 #   ifdef NOSYS
       /* __data_start is usually defined in the target linker script.   */
       extern int __data_start[];
@@ -2110,7 +2092,7 @@
 #     define USE_MMAP_ANON
 #     define MPROTECT_VDB
 #     include <unistd.h>
-#     define GETPAGESIZE() getpagesize()
+#     define GETPAGESIZE() (unsigned)getpagesize()
       /* FIXME: There seems to be some issues with trylock hanging on   */
       /* darwin. This should be looked into some more.                  */
 #     define NO_PTHREAD_TRYLOCK
@@ -2284,6 +2266,11 @@
           /* FIXME: This seems to be fixed in GLibc v2.14.              */
 #         define GETCONTEXT_FPU_EXCMASK_BUG
 #       endif
+#       if defined(__GLIBC__)
+          /* Workaround lock elision implementation for some glibc.     */
+#         define GLIBC_2_19_TSX_BUG
+#         include <gnu/libc-version.h> /* for gnu_get_libc_version() */
+#       endif
 #   endif
 #   ifdef DARWIN
 #     define OS_TYPE "DARWIN"
@@ -2300,7 +2287,7 @@
 #     define USE_MMAP_ANON
 #     define MPROTECT_VDB
 #     include <unistd.h>
-#     define GETPAGESIZE() getpagesize()
+#     define GETPAGESIZE() (unsigned)getpagesize()
       /* There seems to be some issues with trylock hanging on darwin.  */
       /* This should be looked into some more.                          */
 #     define NO_PTHREAD_TRYLOCK
@@ -2490,6 +2477,16 @@
 # define DATAEND (ptr_t)(end)
 #endif
 
+/* Workaround for Android NDK clang 3.5+ (as of NDK r10e) which does    */
+/* not provide correct _end symbol.  Unfortunately, alternate __end__   */
+/* symbol is provided only by NDK "bfd" linker.                         */
+#if defined(PLATFORM_ANDROID) && defined(__clang__)
+# undef DATAEND
+# pragma weak __end__
+  extern int __end__[];
+# define DATAEND (__end__ != 0 ? (ptr_t)__end__ : (ptr_t)_end)
+#endif
+
 #if defined(PLATFORM_ANDROID) && !defined(THREADS) \
     && !defined(USE_GET_STACKBASE_FOR_MAIN)
   /* Always use pthread_attr_getstack on Android ("-lpthread" option is  */
@@ -2500,7 +2497,7 @@
 
 #if (defined(SVR4) || defined(PLATFORM_ANDROID)) && !defined(GETPAGESIZE)
 # include <unistd.h>
-# define GETPAGESIZE()  sysconf(_SC_PAGESIZE)
+# define GETPAGESIZE() (unsigned)sysconf(_SC_PAGESIZE)
 #endif
 
 #ifndef GETPAGESIZE
@@ -2508,7 +2505,7 @@
      || defined(NETBSD) || defined(FREEBSD) || defined(HPUX)
 #   include <unistd.h>
 # endif
-# define GETPAGESIZE() getpagesize()
+# define GETPAGESIZE() (unsigned)getpagesize()
 #endif
 
 #if defined(SOLARIS) || defined(DRSNX) || defined(UTS4)
@@ -2670,11 +2667,11 @@
 # endif
 #endif
 
-#ifndef PREFETCH_FOR_WRITE
+#ifndef GC_PREFETCH_FOR_WRITE
 # if defined(__GNUC__) && __GNUC__ >= 3 && !defined(NO_PREFETCH_FOR_WRITE)
-#   define PREFETCH_FOR_WRITE(x) __builtin_prefetch((x), 1)
+#   define GC_PREFETCH_FOR_WRITE(x) __builtin_prefetch((x), 1)
 # else
-#   define PREFETCH_FOR_WRITE(x) (void)0
+#   define GC_PREFETCH_FOR_WRITE(x) (void)0
 # endif
 #endif
 

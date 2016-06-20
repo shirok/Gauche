@@ -1,8 +1,24 @@
 
+== [7.4.4] 2016-05-24 ==
+
+* Eliminate 'signed-to-unsigned value extension' compiler warning in malloc.
+* Eliminate 'variable set but not used' Cppcheck warnings in test_stack.
+* Fix GCC 5.x compatibility for AArch64 double-wide primitives.
+* Fix makefile preventing AO_pause undefined in libatomic_ops_gpl.
+* Fix missing casts to match printf format specifier in test_atomic.
+* Fix missing output folder on making auto-generated test files (Automake).
+* Fix typo in configure.ac (in description of AO_ASM_X64_AVAILABLE).
+* Minor fix of code alignment in mips AO_compare_and_swap.
+* Remove TODO file.
+* Restore contribution info in ChangeLog for authors not listed in git log.
+Also, includes 7.2g changes.
+
+
 == [7.4.2] 2014-05-02 ==
 
 * Fix a typo in doc/README.txt (remove redundant "an" article).
 * Update emails/links due to project site transition.
+Also, includes 7.2f changes.
 
 
 == [7.4.0] 2013-11-17 ==
@@ -105,6 +121,7 @@
 * Use __atomic GCC built-in to implement generic double-wide CAS.
 * Use built-in __sync CAS for double-CAS if AO_USE_SYNC_CAS_BUILTIN for x86.
 * Workaround GCC 4.4.3 warning reported for 'val' of list_atomic.c (tests).
+Also, includes 7.2e changes.
 
 
 == [7.3alpha2] 2012-05-11 ==
@@ -137,6 +154,16 @@
 * Show extra compiler warnings (GCC only).
 * Turn off AO primitives inlining if AO_NO_INLINE defined.
 * Use __builtin_expect in CAS failure loop condition checks (GCC only).
+Also, includes 7.2 changes.
+
+
+== [7.2g] 2016-05-23 ==
+
+* Add disclaimer to README to favor C11/C++14 atomics over libatomic_ops use.
+* Regenerate configure files using official libtool release (v2.4.2).
+* Remove inclusion of acquire_release_volatile.h on MIPS.
+* Remove obsolete information from README about C++0x standard future.
+* Update links due to project site transition.
 
 
 == [7.2f] 2014-05-02 ==
@@ -277,7 +304,7 @@
 
 == [7.0] 2007-06-28 ==
 
-* Add 64-bit version of AO_load_acquire for PowerPC.
+* Add 64-bit version of AO_load_acquire for PowerPC (by Luca Barbato).
 * Add support of x86 and x86_64 for MS VC.
 * Do not assume that "mfence" is always present (x86.h).
 * Fix ARM AO_test_and_set_full.
@@ -307,18 +334,22 @@
 
 == [1.0] 2005-03-21 ==
 
-* Fix various bugs.
 * Add atomic_ops primitives for different sized data.
 * Add compare_double_and_swap_double and compare_and_swap_double.
+* Add gcc/cris.h (originally comes from Hans-Peter Nilsson).
+* Add gcc/m68k.h (contributed by Tony Mantler).
+* Add gcc/powerpc.h (with help of Maged Michael, Doug Lea, Roger Hoover).
 * Add initial support for atomic_ops for VC++/Windows/X86 and HP/UX.
 * Add minimal support for the Sun SPARC compiler.
 * Add support for platforms that require out-of-line assembly code.
 * Add support of int-wide operations on platforms with int-sized pointers.
 * Added libatomic_ops_gpl library with support for lock-free stack and malloc.
-* Attempt to support PowerPC.
 * Change atomic_ops include file structure.
 * Change most platforms to use byte-wide test-and-set locations.
+* Define AO_CLEAR, __ldcw[_align] macros in gcc/hppa.h (by Carlos O'Donell).
+* Fix various bugs.
 * Install under "atomic_ops" instead of "ao".
 * Remove compiler_barrier workaround for gcc 3.4+.
 * Renamed various types to end in _t.
+* Replace AO_HAVE_NOP_FULL with AO_HAVE_nop_full (by Ranko Zivojnovic).
 * Use autoconf, automake.

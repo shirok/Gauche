@@ -18,9 +18,6 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- *
- * Most of this code originally comes from Hans-Peter Nilsson.  It is included
- * here with his permission.
  */
 
 /* FIXME: seems to be untested.         */

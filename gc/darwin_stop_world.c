@@ -21,10 +21,6 @@
 
 #if defined(GC_DARWIN_THREADS)
 
-#include <sys/sysctl.h>
-#include <mach/machine.h>
-#include <CoreFoundation/CoreFoundation.h>
-
 /* From "Inside Mac OS X - Mach-O Runtime Architecture" published by Apple
    Page 49:
    "The space beneath the stack pointer, where a new stack frame would normally
@@ -112,19 +108,13 @@ GC_API void GC_CALL GC_use_threads_discovery(void)
 # if defined(GC_NO_THREADS_DISCOVERY) || defined(DARWIN_DONT_PARSE_STACK)
     ABORT("Darwin task-threads-based stop and push unsupported");
 # else
-#   ifndef GC_ALWAYS_MULTITHREADED
-      GC_ASSERT(!GC_need_to_lock);
-#   endif
+    GC_ASSERT(!GC_need_to_lock);
 #   ifndef GC_DISCOVER_TASK_THREADS
       GC_query_task_threads = TRUE;
 #   endif
     GC_init_parallel(); /* just to be consistent with Win32 one */
 # endif
 }
-
-#ifndef kCFCoreFoundationVersionNumber_iOS_8_0
-# define kCFCoreFoundationVersionNumber_iOS_8_0 1140.1
-#endif
 
 /* Evaluates the stack range for a given thread.  Returns the lower     */
 /* bound and sets *phi to the upper one.                                */
@@ -150,41 +140,13 @@ STATIC ptr_t GC_stack_range_for(ptr_t *phi, thread_act_t thread, GC_thread p,
     /* everywhere.  Hence we use our own version.  Alternatively,   */
     /* we could use THREAD_STATE_MAX (but seems to be not optimal). */
     kern_return_t kern_result;
+    mach_msg_type_number_t thread_state_count = GC_MACH_THREAD_STATE_COUNT;
     GC_THREAD_STATE_T state;
 
-#   if defined(ARM32) && defined(ARM_THREAD_STATE32)
-      /* Use ARM_UNIFIED_THREAD_STATE on iOS8+ 32-bit targets and on    */
-      /* 64-bit H/W (iOS7+ 32-bit mode).                                */
-      size_t size;
-      static cpu_type_t cputype = 0;
-
-      if (cputype == 0) {
-        sysctlbyname("hw.cputype", &cputype, &size, NULL, 0);
-      }
-      if (cputype == CPU_TYPE_ARM64
-          || kCFCoreFoundationVersionNumber
-             >= kCFCoreFoundationVersionNumber_iOS_8_0) {
-        arm_unified_thread_state_t unified_state;
-        mach_msg_type_number_t unified_thread_state_count
-                                        = ARM_UNIFIED_THREAD_STATE_COUNT;
-
-        kern_result = thread_get_state(thread, ARM_UNIFIED_THREAD_STATE,
-                                       (natural_t *)&unified_state,
-                                       &unified_thread_state_count);
-        if (unified_state.ash.flavor != ARM_THREAD_STATE32) {
-          ABORT("unified_state flavor should be ARM_THREAD_STATE32");
-        }
-        state = unified_state.ts_32;
-      } else
-#   endif
-    /* else */ {
-      mach_msg_type_number_t thread_state_count = GC_MACH_THREAD_STATE_COUNT;
-
-      /* Get the thread state (registers, etc) */
-      kern_result = thread_get_state(thread, GC_MACH_THREAD_STATE,
-                                     (natural_t *)&state,
-                                     &thread_state_count);
-    }
+    /* Get the thread state (registers, etc) */
+    kern_result = thread_get_state(thread, GC_MACH_THREAD_STATE,
+                                   (natural_t *)&state,
+                                   &thread_state_count);
 #   ifdef DEBUG_THREADS
       GC_log_printf("thread_get_state returns value = %d\n", kern_result);
 #   endif
@@ -264,34 +226,27 @@ STATIC ptr_t GC_stack_range_for(ptr_t *phi, thread_act_t thread, GC_thread p,
       GC_push_one(state.THREAD_FLD(r31));
 
 #   elif defined(ARM32)
-      lo = (void *)state.THREAD_FLD(sp);
+      lo = (void *)state.__sp;
 #     ifndef DARWIN_DONT_PARSE_STACK
-        *phi = GC_FindTopOfStack(state.THREAD_FLD(sp));
+        *phi = GC_FindTopOfStack(state.__sp);
 #     endif
-      {
-        int j;
-        for (j = 0; j <= 12; j++) {
-          GC_push_one(state.THREAD_FLD(r[j]));
-        }
-      }
-      /* "pc" and "sp" are skipped */
-      GC_push_one(state.THREAD_FLD(lr));
-      GC_push_one(state.THREAD_FLD(cpsr));
-
-#   elif defined(AARCH64)
-      lo = (void *)state.THREAD_FLD(sp);
-#     ifndef DARWIN_DONT_PARSE_STACK
-        *phi = GC_FindTopOfStack(state.THREAD_FLD(sp));
-#     endif
-      {
-        int j;
-        for (j = 0; j <= 28; j++) {
-          GC_push_one(state.THREAD_FLD(x[j]));
-        }
-      }
-      /* "cpsr", "pc" and "sp" are skipped */
-      GC_push_one(state.THREAD_FLD(fp));
-      GC_push_one(state.THREAD_FLD(lr));
+      GC_push_one(state.__r[0]);
+      GC_push_one(state.__r[1]);
+      GC_push_one(state.__r[2]);
+      GC_push_one(state.__r[3]);
+      GC_push_one(state.__r[4]);
+      GC_push_one(state.__r[5]);
+      GC_push_one(state.__r[6]);
+      GC_push_one(state.__r[7]);
+      GC_push_one(state.__r[8]);
+      GC_push_one(state.__r[9]);
+      GC_push_one(state.__r[10]);
+      GC_push_one(state.__r[11]);
+      GC_push_one(state.__r[12]);
+      /* GC_push_one(state.__sp); */
+      GC_push_one(state.__lr);
+      /* GC_push_one(state.__pc); */
+      GC_push_one(state.__cpsr);
 
 #   else
 #     error FIXME for non-x86 || ppc || arm architectures

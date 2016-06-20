@@ -29,7 +29,7 @@
 #endif
 
 /* TODO: Adjust version check on fixing double-wide AO support in GCC. */
-#if __GNUC__ == 4
+#if __GNUC__ >= 4
 
   AO_INLINE AO_double_t
   AO_double_load(const volatile AO_double_t *addr)
@@ -194,6 +194,6 @@
     return !result;
   }
 # define AO_HAVE_double_compare_and_swap_full
-#endif /* __GNUC__ == 4 */
+#endif /* __GNUC__ >= 4 */
 
 #include "generic.h"

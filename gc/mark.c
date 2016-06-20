@@ -48,25 +48,26 @@ GC_INNER unsigned GC_n_mark_procs = GC_RESERVED_MARK_PROCS;
 /* It's done here, since we need to deal with mark descriptors.         */
 GC_INNER struct obj_kind GC_obj_kinds[MAXOBJKINDS] = {
 /* PTRFREE */ { &GC_aobjfreelist[0], 0 /* filled in dynamically */,
-                0 | GC_DS_LENGTH, FALSE, FALSE
+                /* 0 | */ GC_DS_LENGTH, FALSE, FALSE
                 /*, */ OK_DISCLAIM_INITZ },
 /* NORMAL  */ { &GC_objfreelist[0], 0,
-                0 | GC_DS_LENGTH,  /* Adjusted in GC_init for EXTRA_BYTES */
+                /* 0 | */ GC_DS_LENGTH,
+                                /* adjusted in GC_init for EXTRA_BYTES  */
                 TRUE /* add length to descr */, TRUE
                 /*, */ OK_DISCLAIM_INITZ },
 /* UNCOLLECTABLE */
               { &GC_uobjfreelist[0], 0,
-                0 | GC_DS_LENGTH, TRUE /* add length to descr */, TRUE
+                /* 0 | */ GC_DS_LENGTH, TRUE /* add length to descr */, TRUE
                 /*, */ OK_DISCLAIM_INITZ },
 # ifdef ATOMIC_UNCOLLECTABLE
    /* AUNCOLLECTABLE */
               { &GC_auobjfreelist[0], 0,
-                0 | GC_DS_LENGTH, FALSE /* add length to descr */, FALSE
+                /* 0 | */ GC_DS_LENGTH, FALSE /* add length to descr */, FALSE
                 /*, */ OK_DISCLAIM_INITZ },
 # endif
 # ifdef STUBBORN_ALLOC
 /*STUBBORN*/ { (void **)&GC_sobjfreelist[0], 0,
-                0 | GC_DS_LENGTH, TRUE /* add length to descr */, TRUE
+                /* 0 | */ GC_DS_LENGTH, TRUE /* add length to descr */, TRUE
                 /*, */ OK_DISCLAIM_INITZ },
 # endif
 };
@@ -608,9 +609,9 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
                             mse *mark_stack_limit)
 {
   signed_word credit = HBLKSIZE;  /* Remaining credit for marking work  */
-  ptr_t current_p;      /* Pointer to current candidate ptr.    */
-  word current; /* Candidate pointer.                           */
-  ptr_t limit;  /* (Incl) limit of current candidate range.     */
+  ptr_t current_p;      /* Pointer to current candidate ptr.            */
+  word current;         /* Candidate pointer.                           */
+  ptr_t limit = 0;      /* (Incl) limit of current candidate range.     */
   word descr;
   ptr_t greatest_ha = GC_greatest_plausible_heap_addr;
   ptr_t least_ha = GC_least_plausible_heap_addr;
@@ -637,6 +638,7 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
     if (descr & ((~(WORDS_TO_BYTES(SPLIT_RANGE_WORDS) - 1)) | GC_DS_TAGS)) {
       word tag = descr & GC_DS_TAGS;
 
+      GC_STATIC_ASSERT(GC_DS_TAGS == 0x3);
       switch(tag) {
         case GC_DS_LENGTH:
           /* Large length.                                              */
@@ -757,6 +759,28 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
                 mark_stack_top--;
                 continue;
             }
+            if ((GC_word)(type_descr) >= (GC_word)GC_least_plausible_heap_addr
+                    && (GC_word)(type_descr)
+                        <= (GC_word)GC_greatest_plausible_heap_addr) {
+                /* type_descr looks like a pointer into the heap.       */
+                /* It could still be the link pointer in a free list    */
+                /* though.  That's not a problem as long as the offset  */
+                /* of the actual descriptor in the pointed to object is */
+                /* within the same object.  In that case it will either */
+                /* point at the next free object in the list (if offset */
+                /* is 0) or be zeroed (which we check for below,        */
+                /* descr == 0).  If the offset is larger than the       */
+                /* objects in the block type_descr points to it cannot  */
+                /* be a proper pointer.                                 */
+                word offset = ~(descr + (GC_INDIR_PER_OBJ_BIAS
+                                         - GC_DS_PER_OBJECT - 1));
+                hdr *hhdr;
+                GET_HDR(type_descr, hhdr);
+                if (NULL == hhdr || hhdr->hb_sz - sizeof(word) < offset) {
+                    mark_stack_top--;
+                    continue;
+                }
+            }
             descr = *(word *)(type_descr
                               - (descr + (GC_INDIR_PER_OBJ_BIAS
                                           - GC_DS_PER_OBJECT)));
@@ -768,9 +792,6 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
               continue;
           }
           goto retry;
-        default:
-          limit = 0; /* initialized to prevent warning. */
-          ABORT_RET("GC_mark_from: bad state");
       }
     } else /* Small object with length descriptor */ {
       mark_stack_top--;
@@ -888,6 +909,24 @@ GC_INNER word GC_mark_no = 0;
         /* we don't overflow half of it in a single call to             */
         /* GC_mark_from.                                                */
 
+/* Wait all markers to finish initialization (i.e. store        */
+/* marker_[b]sp, marker_mach_threads, GC_marker_Id).            */
+GC_INNER void GC_wait_for_markers_init(void)
+{
+  word count;
+
+  if (GC_markers_m1 == 0)
+    return;
+
+  /* Reuse marker lock and builders count to synchronize        */
+  /* marker threads startup.                                    */
+  GC_acquire_mark_lock();
+  GC_fl_builder_count += (word)GC_markers_m1;
+  count = GC_fl_builder_count;
+  GC_release_mark_lock();
+  if (count != 0)
+    GC_wait_for_reclaim();
+}
 
 /* Steal mark stack entries starting at mse low into mark stack local   */
 /* until we either steal mse high, or we have max entries.              */
@@ -953,8 +992,8 @@ STATIC void GC_return_mark_stack(mse * low, mse * high)
                              (AO_t)(my_top + stack_size));
                 /* Ensures visibility of previously written stack contents. */
     }
-    GC_notify_all_marker();
     GC_release_mark_lock();
+    GC_notify_all_marker();
 }
 
 /* Mark from the local mark stack.              */
@@ -1085,8 +1124,8 @@ STATIC void GC_mark_local(mse *local_mark_stack, int id)
                     if (0 == GC_helper_count) need_to_notify = TRUE;
                     GC_VERBOSE_LOG_PRINTF("Finished mark helper %lu\n",
                                           (unsigned long)id);
-                    if (need_to_notify) GC_notify_all_marker();
                     GC_release_mark_lock();
+                    if (need_to_notify) GC_notify_all_marker();
                     return;
                 }
                 /* else there's something on the stack again, or        */
@@ -1133,8 +1172,8 @@ STATIC void GC_do_parallel_mark(void)
     GC_active_count = 0;
     GC_helper_count = 1;
     GC_help_wanted = TRUE;
-    GC_notify_all_marker();
     GC_release_mark_lock();
+    GC_notify_all_marker();
         /* Wake up potential helpers.   */
     GC_mark_local(local_mark_stack, 0);
     GC_acquire_mark_lock();
@@ -1147,8 +1186,8 @@ STATIC void GC_do_parallel_mark(void)
     GC_VERBOSE_LOG_PRINTF("Finished marking for mark phase number %lu\n",
                           (unsigned long)GC_mark_no);
     GC_mark_no++;
-    GC_notify_all_marker();
     GC_release_mark_lock();
+    GC_notify_all_marker();
 }
 
 
@@ -1735,7 +1774,7 @@ STATIC void GC_push_marked(struct hblk *h, hdr *hhdr)
     mse * mark_stack_limit = GC_mark_stack_limit;
 
     /* Some quick shortcuts: */
-        if ((0 | GC_DS_LENGTH) == descr) return;
+        if ((/* 0 | */ GC_DS_LENGTH) == descr) return;
         if (GC_block_empty(hhdr)/* nothing marked */) return;
     GC_n_rescuing_pages++;
     GC_objects_are_marked = TRUE;
@@ -1793,7 +1832,7 @@ STATIC void GC_push_marked(struct hblk *h, hdr *hhdr)
     mse * GC_mark_stack_top_reg;
     mse * mark_stack_limit = GC_mark_stack_limit;
 
-    if ((0 | GC_DS_LENGTH) == descr)
+    if ((/* 0 | */ GC_DS_LENGTH) == descr)
         return;
 
     GC_n_rescuing_pages++;

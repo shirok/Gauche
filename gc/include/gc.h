@@ -481,7 +481,20 @@ GC_API size_t GC_CALL GC_size(const void * /* obj_addr */) GC_ATTR_NONNULL(1);
 /* The resulting object has the same kind as the original.              */
 /* If the argument is stubborn, the result will have changes enabled.   */
 /* It is an error to have changes enabled for the original object.      */
-/* Follows ANSI conventions for NULL old_object.                        */
+/* It does not change the content of the object from its beginning to   */
+/* the minimum of old size and new_size_in_bytes; the content above in  */
+/* case of object size growth is initialized to zero (not guaranteed    */
+/* for atomic object type).  The function follows ANSI conventions for  */
+/* NULL old_object (i.e., equivalent to GC_malloc regardless of new     */
+/* size).  If new size is zero (and old_object is non-NULL) then the    */
+/* call is equivalent to GC_free (and NULL is returned).  If old_object */
+/* is non-NULL, it must have been returned by an earlier call to        */
+/* GC_malloc* or GC_realloc.  In case of the allocation failure, the    */
+/* memory pointed by old_object is untouched (and not freed).           */
+/* If the returned pointer is not the same as old_object and both of    */
+/* them are non-NULL then old_object is freed.  Returns either NULL (in */
+/* case of the allocation failure or zero new size) or pointer to the   */
+/* allocated memory.                                                    */
 GC_API void * GC_CALL GC_realloc(void * /* old_object */,
                                  size_t /* new_size_in_bytes */)
                         /* 'realloc' attr */ GC_ATTR_ALLOC_SIZE(2);
@@ -1472,7 +1485,7 @@ GC_API void GC_CALL GC_register_has_static_roots_callback(
 
 #if defined(GC_WIN32_THREADS) \
     && (!defined(GC_PTHREADS) || defined(GC_BUILD) || defined(WINAPI))
-                /* Note: for Cygwin and win32-pthread, this is skipped  */
+                /* Note: for Cygwin and pthreads-win32, this is skipped */
                 /* unless windows.h is included before gc.h.            */
 
 # if !defined(GC_NO_THREAD_DECLS) || defined(GC_BUILD)
@@ -1596,18 +1609,20 @@ GC_API int GC_CALL GC_get_force_unmap_on_gcollect(void);
   /* Similarly gnu-win32 DLLs need explicit initialization from the     */
   /* main program, as does AIX.                                         */
 # ifdef __x86_64__
-  extern int __data_start__[], __data_end__[], __bss_start__[], __bss_end__[];
-#  define GC_DATASTART (__data_start__ < __bss_start__ ? \
-                        (void *)__data_start__ : (void *)__bss_start__)
-#  define GC_DATAEND (__data_end__ > __bss_end__ ? \
-                      (void *)__data_end__ : (void *)__bss_end__)
+    /* Cygwin/x64 does not add leading underscore to symbols anymore.   */
+    extern int __data_start__[], __data_end__[];
+    extern int __bss_start__[], __bss_end__[];
+#   define GC_DATASTART ((GC_word)__data_start__ < (GC_word)__bss_start__ \
+                         ? (void *)__data_start__ : (void *)__bss_start__)
+#   define GC_DATAEND ((GC_word)__data_end__ > (GC_word)__bss_end__ \
+                       ? (void *)__data_end__ : (void *)__bss_end__)
 # else
-  extern int _data_start__[], _data_end__[], _bss_start__[], _bss_end__[];
-#  define GC_DATASTART ((GC_word)_data_start__ < (GC_word)_bss_start__ ? \
-                        (void *)_data_start__ : (void *)_bss_start__)
-#  define GC_DATAEND ((GC_word)_data_end__ > (GC_word)_bss_end__ ? \
-                      (void *)_data_end__ : (void *)_bss_end__)
-# endif
+    extern int _data_start__[], _data_end__[], _bss_start__[], _bss_end__[];
+#   define GC_DATASTART ((GC_word)_data_start__ < (GC_word)_bss_start__ \
+                         ? (void *)_data_start__ : (void *)_bss_start__)
+#  define GC_DATAEND ((GC_word)_data_end__ > (GC_word)_bss_end__ \
+                      ? (void *)_data_end__ : (void *)_bss_end__)
+# endif /* !__x86_64__ */
 # define GC_INIT_CONF_ROOTS GC_add_roots(GC_DATASTART, GC_DATAEND); \
                                  GC_gcollect() /* For blacklisting. */
         /* Required at least if GC is in a DLL.  And doesn't hurt. */
@@ -1618,23 +1633,29 @@ GC_API int GC_CALL GC_get_force_unmap_on_gcollect(void);
 # define GC_INIT_CONF_ROOTS GC_add_roots(GC_DATASTART, GC_DATAEND)
 #elif (defined(PLATFORM_ANDROID) || defined(__ANDROID__)) \
       && !defined(GC_NOT_DLL)
-# pragma weak __data_start
-  extern int __data_start[], _end[];
 # pragma weak _etext
+# pragma weak __data_start
 # pragma weak __dso_handle
-  extern int _etext[], __dso_handle[];
-  /* Explicitly register caller static data roots (__data_start points  */
-  /* to the beginning typically but NDK "gold" linker could provide it  */
-  /* incorrectly, so the workaround is to check the value and use       */
-  /* __dso_handle as an alternative data start reference if provided).  */
-  /* It also works for Android/x86 target where __data_start is not     */
-  /* defined currently (regardless of linker used).                     */
+  extern int _etext[], __data_start[], __dso_handle[];
+# pragma weak __end__
+  extern int __end__[], _end[];
+  /* Explicitly register caller static data roots.  Workaround for      */
+  /* __data_start: NDK "gold" linker might miss it or place it          */
+  /* incorrectly, __dso_handle is an alternative data start reference.  */
+  /* Workaround for _end: NDK Clang 3.5+ does not place it at correct   */
+  /* offset (as of NDK r10e) but "bfd" linker provides __end__ symbol   */
+  /* that could be used instead.                                        */
 # define GC_INIT_CONF_ROOTS \
                 (void)((GC_word)__data_start < (GC_word)_etext \
-                        && (GC_word)_etext < (GC_word)__dso_handle ? \
-                            (GC_add_roots(__dso_handle, _end), 0) : \
-                       (GC_word)__data_start != 0 ? \
-                            (GC_add_roots(__data_start, _end), 0) : 0)
+                        && (GC_word)_etext < (GC_word)__dso_handle \
+                        ? (__end__ != 0 \
+                            ? (GC_add_roots(__dso_handle, __end__), 0) \
+                            : (GC_word)__dso_handle < (GC_word)_end \
+                            ? (GC_add_roots(__dso_handle, _end), 0) : 0) \
+                        : __data_start != 0 ? (__end__ != 0 \
+                            ? (GC_add_roots(__data_start, __end__), 0) \
+                            : (GC_word)__data_start < (GC_word)_end \
+                            ? (GC_add_roots(__data_start, _end), 0) : 0) : 0)
 #else
 # define GC_INIT_CONF_ROOTS /* empty */
 #endif

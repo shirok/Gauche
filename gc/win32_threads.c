@@ -1681,12 +1681,10 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
   /* GC_mark_thread() is the same as in pthread_support.c */
 # ifdef GC_PTHREADS_PARAMARK
     STATIC void * GC_mark_thread(void * id)
+# elif defined(MSWINCE)
+    STATIC DWORD WINAPI GC_mark_thread(LPVOID id)
 # else
-#   ifdef MSWINCE
-      STATIC DWORD WINAPI GC_mark_thread(LPVOID id)
-#   else
-      STATIC unsigned __stdcall GC_mark_thread(void * id)
-#   endif
+    STATIC unsigned __stdcall GC_mark_thread(void * id)
 # endif
   {
     word my_mark_no = 0;
@@ -1699,6 +1697,12 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
 #   if !defined(GC_PTHREADS_PARAMARK)
       GC_marker_Id[(word)id] = GetCurrentThreadId();
 #   endif
+
+    /* Inform start_mark_threads() about completion of marker data init. */
+    GC_acquire_mark_lock();
+    if (0 == --GC_fl_builder_count)
+      GC_notify_all_builder();
+    GC_release_mark_lock();
 
     for (;; ++my_mark_no) {
       if (my_mark_no - GC_mark_no > (word)2) {
@@ -1728,8 +1732,9 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
 # ifdef GC_PTHREADS_PARAMARK
 #   include <pthread.h>
 
-#   ifndef NUMERIC_THREAD_ID
-#     define NUMERIC_THREAD_ID(id) (unsigned long)GC_PTHREAD_PTRVAL(id)
+#   if defined(GC_ASSERTIONS) && !defined(NUMERIC_THREAD_ID)
+#     define NUMERIC_THREAD_ID(id) (unsigned long)(word)GC_PTHREAD_PTRVAL(id)
+      /* Id not guaranteed to be unique. */
 #   endif
 
     /* start_mark_threads is the same as in pthread_support.c except    */
@@ -1751,6 +1756,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
 #     endif
 
       GC_ASSERT(I_DONT_HOLD_LOCK());
+      GC_ASSERT(GC_fl_builder_count == 0);
 #     ifdef CAN_HANDLE_FORK
         if (available_markers_m1 <= 0 || GC_parallel) return;
                 /* Skip if parallel markers disabled or already started. */
@@ -1793,7 +1799,8 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
         }
 #     endif
 
-      pthread_attr_destroy(&attr);
+      (void)pthread_attr_destroy(&attr);
+      GC_wait_for_markers_init();
       GC_COND_LOG_PRINTF("Started %d mark helper threads\n", GC_markers_m1);
     }
 
@@ -1823,7 +1830,9 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
 
     GC_INNER void GC_acquire_mark_lock(void)
     {
-      GC_ASSERT(GC_mark_lock_holder != NUMERIC_THREAD_ID(pthread_self()));
+#     ifdef NUMERIC_THREAD_ID_UNIQUE
+        GC_ASSERT(GC_mark_lock_holder != NUMERIC_THREAD_ID(pthread_self()));
+#     endif
       if (pthread_mutex_lock(&mark_mutex) != 0) {
         ABORT("pthread_mutex_lock failed");
       }
@@ -1915,6 +1924,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
         unsigned thread_id;
 #     endif
 
+      GC_ASSERT(GC_fl_builder_count == 0);
       /* Initialize GC_marker_cv[] fully before starting the    */
       /* first helper thread.                                   */
       for (i = 0; i < GC_markers_m1; ++i) {
@@ -1961,6 +1971,7 @@ GC_INNER void GC_get_next_stack(char *start, char *limit,
         GC_markers_m1--;
         CloseHandle(GC_marker_cv[GC_markers_m1]);
       }
+      GC_wait_for_markers_init();
       GC_COND_LOG_PRINTF("Started %d mark helper threads\n", GC_markers_m1);
       if (i == 0) {
         CloseHandle(mark_cv);
@@ -2482,15 +2493,14 @@ GC_INNER void GC_thr_init(void)
 #   ifndef GC_WIN32_PTHREADS
       while ((t = GC_lookup_pthread(pthread_id)) == 0)
         Sleep(10);
-#   endif
-
-    result = pthread_join(pthread_id, retval);
-
-#   ifdef GC_WIN32_PTHREADS
-      /* win32_pthreads id are unique */
+      result = pthread_join(pthread_id, retval);
+#   else
+      result = pthread_join(pthread_id, retval);
+      /* pthreads-win32 id are unique (not recycled) */
       t = GC_lookup_pthread(pthread_id);
       if (NULL == t) ABORT("Thread not registered");
 #   endif
+
     LOCK();
     GC_delete_gc_thread_no_free(t);
     GC_INTERNAL_FREE(t);
@@ -2505,7 +2515,7 @@ GC_INNER void GC_thr_init(void)
   }
 
   /* Cygwin-pthreads calls CreateThread internally, but it's not easily */
-  /* interceptible by us..., so intercept pthread_create instead.       */
+  /* interceptable by us..., so intercept pthread_create instead.       */
   GC_API int GC_pthread_create(pthread_t *new_thread,
                                GC_PTHREAD_CREATE_CONST pthread_attr_t *attr,
                                void *(*start_routine)(void *), void *arg)

@@ -146,11 +146,12 @@ GC_INNER void * GC_generic_malloc_inner(size_t lb, int k)
     return op;
 }
 
-/* Allocate a composite object of size n bytes.  The caller guarantees  */
-/* that pointers past the first page are not relevant.  Caller holds    */
-/* allocation lock.                                                     */
-GC_INNER void * GC_generic_malloc_inner_ignore_off_page(size_t lb, int k)
-{
+#if defined(DBG_HDRS_ALL) || defined(GC_GCJ_SUPPORT) \
+    || !defined(GC_NO_FINALIZATION)
+  /* Allocate a composite object of size n bytes.  The caller           */
+  /* guarantees that pointers past the first page are not relevant.     */
+  GC_INNER void * GC_generic_malloc_inner_ignore_off_page(size_t lb, int k)
+  {
     word lb_adjusted;
     void * op;
 
@@ -160,7 +161,8 @@ GC_INNER void * GC_generic_malloc_inner_ignore_off_page(size_t lb, int k)
     op = GC_alloc_large_and_clear(lb_adjusted, k, IGNORE_OFF_PAGE);
     GC_bytes_allocd += lb_adjusted;
     return op;
-}
+  }
+#endif
 
 #ifdef GC_COLLECT_AT_MALLOC
   /* Parameter to force GC at every malloc of size greater or equal to  */
@@ -309,7 +311,7 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_uncollectable(size_t lb)
             *opp = obj_link(op);
             obj_link(op) = 0;
             GC_bytes_allocd += GRANULES_TO_BYTES(lg);
-            /* Mark bit ws already set on free list.  It will be        */
+            /* Mark bit was already set on free list.  It will be       */
             /* cleared only temporarily during a collection, as a       */
             /* result of the normal free list mark bit clearing.        */
             GC_non_gc_bytes += GRANULES_TO_BYTES(lg);
