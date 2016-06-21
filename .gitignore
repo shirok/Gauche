@@ -4,11 +4,9 @@
 # Automake and Autoconf
 config.guess
 config.log
-config.rpath
 config.status
 config.sub
 /configure
-libtool
 autom4te.cache
 Makefile
 /gc/configure
