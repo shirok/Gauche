@@ -1,5 +1,9 @@
 2016-06-21  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/vm/debugger.scm: Add thread vmid to '#?=' output
+	  so that output from different threads can be distinguished
+	  easily.  The id is omitted for primordial thread.
+
 	* gc/*: Bumped up to gc-7.4.4.
 	  See https://github.com/shirok/Gauche/pull/210
 

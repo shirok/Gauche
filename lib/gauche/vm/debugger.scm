@@ -80,27 +80,35 @@
 
 ;; These are internal APIs, but we need to export them in order to
 ;; autoload gauche.vm.debug from precompiled code works.
+;; NB: We create a string by format then display, to avoid messages from
+;; different threads won't intermixed.
 (define (debug-print-pre form)
-  (cond [(debug-source-info form)
-         => (^[info]
-              (format (current-error-port) "#?=~s:~a:~,,,,v:s\n"
-                      (car info) (cadr info) (debug-print-width) form))]
-        [else
-         (format (current-error-port) "#?=~,,,,v:s\n"
-                 (debug-print-width) form)]))
+  (let1 thr-prefix (case (~ (current-thread)'vmid)
+                     [(0) ""]
+                     [else => (cut format "[~a]" <>)])
+    (display (if-let1 info (debug-source-info form)
+               (format "#?=~a~s:~a:~,,,,v:s\n" thr-prefix
+                       (car info) (cadr info) (debug-print-width) form)
+               (format "#?=~a~,,,,v:s\n" thr-prefix
+                       (debug-print-width) form))
+             (current-error-port))))
 
 (define (debug-print-post vals)
-  (if (null? vals)
-    (format (current-error-port) "#?-<void>\n")
-    (begin
-      (format (current-error-port) "#?-    ~,,,,v:s\n"
-              (debug-print-width) (car vals))
-      (for-each (^[elt]
-                  (format/ss (current-error-port)
-                             "#?+    ~,,,,v:s\n"
-                             (debug-print-width) elt))
-                (cdr vals))))
-  (apply values vals))
+  (let1 thr-prefix (case (~ (current-thread)'vmid)
+                     [(0) ""]
+                     [else => (cut format "[~a]" <>)])
+    (if (null? vals)
+      (display (format "#?-~a<void>\n" thr-prefix) (current-error-port))
+      (begin
+        (display (format "#?-~a    ~,,,,v:s\n" thr-prefix
+                         (debug-print-width) (car vals))
+                 (current-error-port))
+        (for-each (^[elt]
+                    (display (format/ss "#?+~a    ~,,,,v:s\n" thr-prefix
+                                        (debug-print-width) elt)
+                             (current-error-port)))
+                  (cdr vals))))
+    (apply values vals)))
 
 ;; debug-funcall
 ;; we need aux syntax definition, since we had to get hold of the original
