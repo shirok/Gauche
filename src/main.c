@@ -111,6 +111,8 @@ void usage(void)
             "                      don't inline local procedures.\n"
             "      no-inline-constants\n"
             "                      don't inline constants.\n"
+            "      no-lambda-lifting-pass\n"
+            "                      don't run lambda lifting pass.\n"
             "      no-post-inline-pass\n"
             "                      don't run post-inline optimization pass.\n"
             "      no-source-info  don't preserve source information for debugging\n"
