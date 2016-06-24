@@ -1016,7 +1016,14 @@ static u_long legacy_number_hash(ScmObj obj)
         u_int i;
         u_long u = 0;
         for (i=0; i<SCM_BIGNUM_SIZE(obj); i++) {
+#if SIZEOF_LONG == 4
             u += SCM_BIGNUM(obj)->values[i];
+#elif SIZEOF_LONG == 8
+            u += (SCM_BIGNUM(obj)->values[i] & ((1UL<<32) - 1))
+                + (SCM_BIGNUM(obj)->values[i] >> 32);
+#else
+#error "sizeof(long) > 8 platform unsupported"
+#endif
         }
         SMALL_INT_HASH(hashval, u);
     } else if (SCM_FLONUMP(obj)) {

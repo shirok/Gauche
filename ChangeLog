@@ -4,6 +4,10 @@
 	  by HASHMASK.  Shouldn't affect existing code as far as they're
 	  using lower <=32 bits, but the whole point of portable hash value
 	  is that it's portable, so it's better to ensure that.
+	  (legacy_number_hash): Fixed a bug that caused to produce different
+	  bignum hash value between 32bit long and 64bit long platforms.
+	  (This changes the portable hash value of bignums on 64bit platforms;
+	  crossing fingers that won't break things)
 
 2016-06-21  Shiro Kawai  <shiro@acm.org>
 
