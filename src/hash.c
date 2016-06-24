@@ -205,7 +205,7 @@ u_long Scm_Hash(ScmObj obj)
     u_long hashval;
     if (!SCM_PTRP(obj)) {
         SMALL_INT_HASH(hashval, (u_long)SCM_WORD(obj));
-        return hashval;
+        return hashval&HASHMASK;
     } else if (SCM_NUMBERP(obj)) {
         return legacy_number_hash(obj);
     } else if (SCM_STRINGP(obj)) {
@@ -219,7 +219,7 @@ u_long Scm_Hash(ScmObj obj)
         }
         h2 = Scm_Hash(cp);
         h = COMBINE(h, h2);
-        return h;
+        return h&HASHMASK;
     } else if (SCM_VECTORP(obj)) {
         int siz = SCM_VECTOR_SIZE(obj);
         u_long h = 0, h2;
@@ -227,7 +227,7 @@ u_long Scm_Hash(ScmObj obj)
             h2 = Scm_Hash(SCM_VECTOR_ELEMENT(obj, i));
             h = COMBINE(h, h2);
         }
-        return h;
+        return h&HASHMASK;
     } else if (SCM_SYMBOLP(obj)) {
         obj = SCM_OBJ(SCM_SYMBOL_NAME(obj));
         goto string_hash;
@@ -239,12 +239,12 @@ u_long Scm_Hash(ScmObj obj)
         ScmObj r = Scm_ApplyRec(SCM_OBJ(&Scm_GenericObjectHash),
                                 SCM_LIST1(obj));
         if (SCM_INTP(r)) {
-            return (u_long)SCM_INT_VALUE(r);
+            return ((u_long)SCM_INT_VALUE(r))&HASHMASK;
         }
         if (SCM_BIGNUMP(r)) {
             /* NB: Scm_GetUInteger clamps the result to [0, ULONG_MAX],
                but taking the LSW would give better distribution. */
-            return SCM_BIGNUM(r)->values[0];
+            return (SCM_BIGNUM(r)->values[0])&HASHMASK;
         }
         Scm_Error("object-hash returned non-integer: %S", r);
         return 0;               /* dummy */

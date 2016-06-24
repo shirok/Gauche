@@ -1,3 +1,10 @@
+2016-06-24  Shiro Kawai  <shiro@acm.org>
+
+	* src/hash.c (Scm_Hash): Make sure portable hash value is masked
+	  by HASHMASK.  Shouldn't affect existing code as far as they're
+	  using lower <=32 bits, but the whole point of portable hash value
+	  is that it's portable, so it's better to ensure that.
+
 2016-06-21  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/vm/debugger.scm: Add thread vmid to '#?=' output
