@@ -245,3 +245,25 @@
                    (begin (print "No source code is available for: " ',word)
                           (values)))]
       [_ (usage)])))
+
+(define-toplevel-command (use u)
+  " module [option ...]\n\
+ Use the specified module.  Same as (use module option ...).\n\
+ Allowed options:\n\
+   :only (symbol ...)\n\
+   :except (symbol ...)\n\
+   :prefix symbol\n\
+   :rename ((orig-name new-name) ...)\n\
+ For the details of options, type \",info import\" and select the first one."
+  (^[args]
+    (match args
+      [(module . rest)
+       ;; A kludge to get hygiene right; since use is a macro we can't do
+       ;; (with-module gauche use).  There should be a better way though,
+       ;; so don't copy this method elsewhere.
+       `(,((with-module gauche.internal make-identifier)
+           'use
+           (find-module 'gauche) '())
+         ,module ,@rest)]
+      [_ (usage)])))
+
