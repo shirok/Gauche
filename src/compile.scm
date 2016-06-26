@@ -1834,6 +1834,13 @@
 (define %make-er-transformer.        (global-id% '%make-er-transformer))
 (define %make-toplevel-cenv.         (global-id% '%make-toplevel-cenv))
 
+;; Returns an IForm for (values) - useful for define-pass1-syntax that does
+;; compile-time things and returns nothing.  The delay trick is to create
+;; iform only once.  The module to call pass1 doesn't matter, for we directly
+;; use identifier for gauche#values.
+(define $values0 (let1 iform (delay (pass1 `(,values.) (make-bottom-cenv)))
+                   (^[] (force iform))))
+
 ;; Definitions ........................................
 
 ;; Note on constant binding and inlinable binding:
@@ -2887,7 +2894,7 @@
      (let1 m (ensure-module module 'select-module #f)
        (vm-set-current-module m)
        (cenv-module-set! cenv m)
-       ($const-undef))]
+       ($values0))]
     [else (error "syntax-error: malformed select-module:" form)]))
 
 (define-pass1-syntax (current-module form cenv) :gauche
@@ -2897,13 +2904,13 @@
 
 (define-pass1-syntax (export form cenv) :gauche
   (%export-symbols (cenv-module cenv) (cdr form))
-  ($const-undef))
+  ($values0))
 
 (define-pass1-syntax (export-all form cenv) :gauche
   (unless (null? (cdr form))
     (error "syntax-error: malformed export-all:" form))
   (%export-all (cenv-module cenv))
-  ($const-undef))
+  ($values0))
 
 (define-pass1-syntax (import form cenv) :gauche
   (define (ensure m) (or (find-module m) (error "unknown module" m)))
@@ -2918,7 +2925,7 @@
                and (select-module r7rs.user) to enter the R7RS namespace.")]
       [(m . r) (process-import (cenv-module cenv) (ensure m) r)]
       [m       (process-import (cenv-module cenv) (ensure m) '())]))
-  ($const-undef))
+  ($values0))
 
 (define (process-import current imported args)
   (let loop ([imported imported]
@@ -2988,11 +2995,11 @@
                                     (find-module m))
                                   (error "undefined module" m)))
                         (cdr form)))
-  ($const-undef))
+  ($values0))
 
 (define-pass1-syntax (require form cenv) :gauche
   (match form
-    [(_ feature) (%require feature) ($const-undef)]
+    [(_ feature) (%require feature) ($values0)]
     [_ (error "syntax-error: malformed require:" form)]))
 
 ;; Include .............................................

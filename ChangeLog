@@ -1,3 +1,11 @@
+2016-06-25  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.scm (select-module, export, export-all, import)
+	  (extend, require): Evaluates to zero values instead of #<undef>.
+	  Better for REPL (less cluttering, no messing history).
+	  This is technically an incompatible change, but we assume nobody
+	  has ever used the return value of those forms.
+
 2016-06-24  Shiro Kawai  <shiro@acm.org>
 
 	* src/hash.c (Scm_Hash): Make sure portable hash value is masked
