@@ -46,7 +46,7 @@ do_regen () {
     maintainer_clean
     rm -f configure gc/configure gc/configure.gnu
     cp tools/gc-configure.gnu gc/configure.gnu
-    ./autoconf
+    autoconf
     (cd gc; ./autogen.sh)
 }
 
