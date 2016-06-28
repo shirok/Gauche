@@ -254,6 +254,36 @@
        (process-list))
 
 ;;-------------------------------
+(test-section "pipeline")
+
+(let ()
+  (with-output-to-file "test.o"
+    (^[] (for-each print '("banana" "habana" "tabata" "cabara"))))
+
+  (test* "pipelining 1" "banana\nhabana\n"
+         (let1 ps (run-process-pipeline '((cat "test.o")
+                                          (grep "bana"))
+                                        :output :pipe)
+           (begin0 (port->string (process-output (last ps)))
+             (for-each process-wait ps))))
+
+  (test* "pipelining 2" "tabata\ncabara\n"
+         (let1 ps (run-process-pipeline '((cat)
+                                          (grep -v "bana"))
+                                        :input "test.o" :output :pipe)
+           (begin0 (port->string (process-output (last ps)))
+             (for-each process-wait ps))))
+
+  (test* "pipelining 3" "banana\ncabara\n"
+         (let1 ps (run-process-pipeline '((cat)
+                                          (grep -v "ta")
+                                          (grep -v "ha"))
+                                        :input "test.o" :output :pipe)
+           (begin0 (port->string (process-output (last ps)))
+             (for-each process-wait ps))))  
+  )
+
+;;-------------------------------
 (test-section "process ports")
 
 (rmrf "test.o" "test1.o" "test2.o")

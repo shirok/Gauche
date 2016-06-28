@@ -1,3 +1,8 @@
+2016-06-27  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/process.scm (run-process-pipeline): Add an intermediate
+	  convenience API to run pipelined commands.
+
 2016-06-26  Shiro Kawai  <shiro@acm.org>
 
 	* gc/m4/*, gc/libatomic_ops/m4/*: Check-in libtool-related m4 files,

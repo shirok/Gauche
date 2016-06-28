@@ -47,6 +47,7 @@
           process-wait process-wait-any process-exit-status
           process-send-signal process-kill process-stop process-continue
           process-list
+          run-process-pipeline
           ;; process ports
           open-input-process-port   open-output-process-port
           call-with-input-process   call-with-output-process
@@ -457,6 +458,41 @@
   (cond-expand
    [gauche.os.windows (undefined)]
    [else (process-send-signal process SIGCONT)]))
+
+;;-----------------------------------------------------------------
+;; pipeline
+;;
+
+;; We might adopt scsh-like process forms eventually, but finding an
+;; optimal DSL takes time.  Meanwhile, this intermediate-level API
+;; would cover typical use case...
+(define (run-process-pipeline commands
+                              :key (input #f) (output #f) (error #f)
+                              (wait #f)
+                              (sigmask #f) (directory #f)
+                              (detached #f))
+  (when (null? commands)
+    (error "At least one command is required to run-command-pipeline"))
+  (and-let1 offending (any (^c (and (not (pair? c)) c)) commands)
+    (errorf "Command list contains non-list command line '~s': ~s"
+            offending commands))
+  (let* ([pipe-pairs (map (^_ (call-with-values sys-pipe cons))
+                          (cdr commands))]
+         [cmds (map (^[cmdline in out w]
+                      `(,cmdline :input ,in :output ,out :error ,error
+                                 :wait ,w :sigmask ,sigmask
+                                 :directory ,directory :detached ,detached))
+                    commands
+                    (cons input (map car pipe-pairs))
+                    (fold-right cons (list output) (map cdr pipe-pairs))
+                    `(,@(make-list (- (length commands) 1) #f) ,wait))]
+         ;; We have to close output pipe after spawning the process, for
+         ;; the process that reads from the pipe would wait until all the
+         ;; ends are closed.  We have to treat the last command separately,
+         ;; for we might :wait #t for it.
+         [ps (map (cut apply run-process <>) (drop-right cmds 1))])
+    (dolist [p pipe-pairs] (close-output-port (cdr p)))
+    (append ps (list (apply run-process (last cmds))))))
 
 ;;===================================================================
 ;; Process ports
