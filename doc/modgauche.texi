@@ -11744,11 +11744,12 @@ a convenient way to send/receive information to/from subprocesses.
 
 @menu
 * Running subprocess::          
+* Running multiple processes::  
 * Process object::              
 * Process ports::               
 @end menu
 
-@node Running subprocess, Process object, High Level Process Interface, High Level Process Interface
+@node Running subprocess, Running multiple processes, High Level Process Interface, High Level Process Interface
 @subsection Running subprocess
 
 @defun run-process cmd/args :key redirects input output error @
@@ -12437,7 +12438,64 @@ the remote machine and copies its content into the local file
 @end example
 @end deftp
 
-@node Process object, Process ports, Running subprocess, High Level Process Interface
+@node Running multiple processes, Process object, Running subprocess, High Level Process Interface
+@subsection Running multiple processes
+
+@defun run-process-pipeline commands :key input output error wait directory sigmask
+A convenience routine to run pipeline of processes at once.
+Example:
+
+@example
+(run-process-pipeline '((ls "src/")
+                        (grep "\\.c$")
+                        (wc -l)))
+@end example
+
+This is equivalent to shell command pipeline
+@code{ls src/ | grep '\.c$' | wc -l}, i.e. shows the
+number of C source files in the @file{src} subdirectory.
+
+The @var{commands} argument is a list of lists.  Each list
+must be @code{cmd/args} argument @code{run-process} can accept.
+At least one command must be specified.
+
+The specified commands are run concurrently, with the stdout of
+the first command is connected to the stdin of the second, and
+stdout of the second to the stdin of the third, and so on.
+The stdin of the first command is fed from the source specified
+by the @var{input} keyword argument, and the stdout of the last
+command is sent to the sink specified by the @var{output} keyword
+argument.  The default values of these are the calling process's
+stdin and stdout, respectively.  See @code{run-process}, for the
+possible values of these arguments.
+
+The stderr of all the processes are sent to the sink specified
+by the @var{error} keyword argument, which is defaulted by the
+calling process's stderr.
+
+The @var{wait} keyword argument specifies whether @code{run-process-pipeline}
+waits for the completion of the @emph{last} process.
+If a true value is given, @code{run-process-pipeline} won't return
+until the last process exits.  If it is @code{#f}, @code{run-process-pipeline}
+returns immediately after all the processes are spawned.
+
+The @var{directory} and @var{sigmask} keyword arguments are applied
+to all the processes; see @code{run-process} for the description
+of these arguments.
+
+The return value of @code{run-process-pipeline} is a list of
+@code{<process>} objects, in the order as given to @var{commands}
+arguments.
+
+Note that the exit status of processes won't be automatically taken
+(except for the last one, when @var{wait} is true), so the caller
+must call @code{process-wait} on those process objects to clean up
+the processes.
+@end defun
+
+
+
+@node Process object, Process ports, Running multiple processes, High Level Process Interface
 @subsection Process object
 
 @deftp {Class} <process>
