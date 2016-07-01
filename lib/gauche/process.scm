@@ -473,9 +473,9 @@
                               (detached #f))
   (when (null? commands)
     (error "At least one command is required to run-command-pipeline"))
-  (and-let1 offending (any (^c (and (not (pair? c)) c)) commands)
+  (and-let1 offending (any (^c (and (not (pair? c)) (list c))) commands)
     (errorf "Command list contains non-list command line '~s': ~s"
-            offending commands))
+            (car offending) commands))
   (let* ([pipe-pairs (map (^_ (call-with-values sys-pipe cons))
                           (cdr commands))]
          [cmds (map (^[cmdline in out w]
