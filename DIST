@@ -10,7 +10,6 @@ usage () {
     echo "Commands:"
     echo "  gen    Generate configure scripts"
     echo "  tgz    Generate distribution tarball"
-    echo "  regen  Regenerate autoconf-related auxiliary files"
     exit 0
 }
 
@@ -34,15 +33,6 @@ check_version () {
 }
 
 do_gen () {
-    maintainer_clean
-    rm -f configure gc/configure gc/configure.gnu
-    cp tools/gc-configure.gnu gc/configure.gnu
-    autoconf
-    (cd gc; autoconf)
-    (cd gc/libatomic_ops; autoconf)
-}
-
-do_regen () {
     maintainer_clean
     rm -f configure gc/configure gc/configure.gnu
     cp tools/gc-configure.gnu gc/configure.gnu
@@ -75,7 +65,6 @@ do_release () {
 
 case $1 in
     gen)   do_gen ;;
-    regen) do_regen ;;
     tgz)   do_tgz ;;
     release) do_release ;;
     *) usage ;;
