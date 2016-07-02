@@ -1,3 +1,8 @@
+2016-07-01  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi-134.scm: Finalized, so we document data.ideque and
+	  make srfi-134 alias of it.
+
 2016-06-27  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/process.scm (run-process-pipeline): Add an intermediate

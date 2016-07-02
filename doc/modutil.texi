@@ -13,8 +13,9 @@
 * Password hashing::            crypt.bcrypt
 * Cache::                       data.cache
 * Heap::                        data.heap
-* Queue::                       data.queue
+* Immutable deques::            data.ideque
 * Immutable map::               data.imap
+* Queue::                       data.queue
 * Random data generators::      data.random
 * Ring buffer::                 data.ring-buffer
 * Sparse data containers::      data.sparse
@@ -1929,7 +1930,7 @@ range.
 
 
 @c ----------------------------------------------------------------------
-@node Heap, Queue, Cache, Library modules - Utilities
+@node Heap, Immutable deques, Cache, Library modules - Utilities
 @section @code{data.heap} - Heap
 @c NODE ヒープ, @code{data.heap} - ヒープ
 
@@ -2224,7 +2225,344 @@ before comparison.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Queue, Immutable map, Heap, Library modules - Utilities
+@node Immutable deques, Immutable map, Heap, Library modules - Utilities
+@section @code{data.ideque} - Immutable deques
+@c NODE 変更不可な両端キュー, @code{data.ideque} - 変更不可な両端キュー
+
+@deftp {Module} data.ideque
+@mdindex data.ideque
+This module provides a functional double-ended queue (deque, 
+pronounced as ``deck''),
+with amortized O(1) access of queue operations on either end.
+
+It also serves as a convenient bidrectional list structures
+in a sense that operations from the end of the list is just as
+efficient as the ones from the front.
+
+Note: If you don't need immutability and wants space-efficient
+deque, you can also use @code{data.ring-buffer} as a deque
+(@pxref{Ring buffer}).
+@end deftp
+
+@defun make-ideque
+@end defun
+
+@defun ideque element @dots{}
+[SRFI-134]
+@end defun
+
+@defun ideque-unfold p f g seed
+[SRFI-134]
+@end defun
+
+@defun ideque-unfold-right p f g seed
+[SRFI-134]
+@end defun
+
+@defun ideque-tabulate size init
+[SRFI-134]
+@end defun
+
+@defun ideque-empty? idq
+[SRFI-134]
+@end defun
+
+@defun ideque-add-front idq x
+@defunx ideque-add-back idq x
+[SRFI-134]
+@end defun
+
+@defun ideque-front idq
+@defunx ideque-bakc idq
+[SRFI-134]
+@end defun
+
+@defun ideque-remove-front idq
+@defunx ideque-remove-back idq
+[SRFI-134]
+@end defun
+
+@defun ideque-reverse idq
+[SRFI-134]
+@end defun
+
+@defun ideque= idq idq2 @dots{}
+[SRFI-134]
+@end defun
+
+@defun ideque-ref idq n
+[SRFI-134]
+@end defun
+
+@defun ideque-take idq n
+@defunx ideque-take-right idq n
+[SRFI-134]
+@end defun
+
+@defun ideque-drop idq n
+@defunx ideque-drop-right idq n
+[SRFI-134]
+@end defun
+
+@defun ideque-split-at idq n
+[SRFI-134]
+@end defun
+
+@defun ideque-length idq
+[SRFI-134]
+@end defun
+
+@defun ideque-append idq @dots{}
+[SRFI-134]
+@end defun
+
+@defun ideque-zip idq idq2 @dots{}
+[SRFI-134]
+@end defun
+
+@defun ideque-map proc idq @dots{}
+[SRFI-134]
+@end defun
+
+@defun ideque-filter-map proc idq @dots{}
+[SRFI-134]
+@end defun
+
+@defun ideque-for-each proc idq @dots{}
+@defunx ideque-for-each-right proc idq @dots{}
+[SRFI-134]
+@end defun
+
+@defun ideque-fold proc knil idq @dots{}
+@defunx ideque-fold-right proc knil idq @dots{}
+[SRFI-134]
+@end defun
+
+@defun ideque-append-map proc idq @dots{}
+[SRFI-134]
+@end defun
+
+@defun ideque-filter pred idq
+@defunx ideque-remove pred idq
+[SRFI-134]
+@end defun
+
+@defun ideque-partition pred idq
+[SRFI-134]
+@end defun
+
+@defun ideque-find pred idq :optional failure
+@defunx ideque-find-right pred idq :optional failure
+[SRFI-134]
+@end defun
+
+@defun ideque-take-while pred idq
+@defunx ideque-take-while-right pred idq
+[SRFI-134]
+@end defun
+
+@defun ideque-drop-while pred idq
+@defunx ideque-drop-while-right pred idq
+[SRFI-134]
+@end defun
+
+@defun ideque-span pred idq
+@defunx ideque-break pred idq
+[SRFI-134]
+@end defun
+
+@defun ideque-any pred idq @dots{}
+@defunx ideque-every pred idq @dots{}
+[SRFI-134]
+@end defun
+
+@defun ideque->list idq
+@defunx list->ideque list
+[SRFI-134]
+@end defun
+
+@defun ideque->generator idq
+@defunx generator->ideque gen
+[SRFI-134]
+@end defun
+
+
+@c ----------------------------------------------------------------------
+@node Immutable map, Queue, Immutable deques, Library modules - Utilities
+@section @code{data.imap} - Immutable map
+@c NODE 変更不可なマップ, @code{data.imap} - 変更不可なマップ
+
+@deftp {Module} data.imap
+@mdindex data.imap
+@c EN
+This module provides a immutable data structure with O(log n)
+access and update operations (here, update means to return a
+new structure with requested changes).
+The current implementation is
+based on the functional red-black tree.
+@c JP
+このモジュールは、O(log n)でアクセスと更新が可能な、変更不可のデータ構造を
+提供します(ここでの「更新」とは、要求された変更を取り込んだ新たな構造を
+作って返すことです)。
+現在の実装は関数的な赤黒木に基づいています。
+@c COMMON
+@end deftp
+
+@c EN
+Although lists and alists are useful for stack-like immutable
+operations, where you can add and remove items to the head of
+existing data without modifying them, they require O(n) access time
+and sometimes you need better one.  The @code{<imap>} object
+provides O(log n) access, in exchange of O(log n) insertion and
+deletion.
+@c JP
+リストや連想リストは、スタック風の変更不可なデータ構造として使えます。
+つまり既存のデータ構造自体に変更を加えることなく、その先頭に要素を追加したり、
+先頭から要素を取り除いたりできるということです。一方で、リストや連想リストは
+任意の要素にアクセスするにはO(n)の時間を必要としますが、もっと速いアクセスが必要な
+場合もあります。@code{<imap>}オブジェクトはO(log n)のアクセスを可能にします。
+そのかわり、要素の追加や削除にもO(log n)を必要とします。
+@c COMMON
+
+@deftp {Class} <imap-meta>
+@c EN
+Metaclass of @code{<imap>}.
+@c JP
+@code{<imap>}のメタクラスです。
+@c COMMON
+@end deftp
+
+@deftp {Class} <imap>
+@c EN
+Immutable map class.  An instance of @code{<imap-meta>}.
+
+Inherits @code{<ordered-dictionary>}, conforms dictionary protocol
+except mutating operators (@pxref{Dictionary framework}).
+As a sequence, you can access key-value
+pairs in increasing order of keys.
+@c JP
+変更不可なマップのクラスです。@code{<imap-meta>}をメタクラスとします。
+
+@code{<ordered-dictionary>}を継承し、変更操作を除くディクショナリプロトコル
+を実装します(@ref{Dictionary framework}参照)。
+シーケンスとしてアクセスした場合は、キーと値のペアをキーの昇順に取り出すことができます。
+@c COMMON
+@end deftp
+
+@defun make-imap
+@defunx make-imap comparator
+@defunx make-imap key=? key<?
+@c EN
+Creates a new empty immutable map.  Without arguments,
+@code{default-comparator} is used to compare keys.  To give a
+specific comparator, use the second form; the @var{comparator}
+argument should have comparison procedure.
+For the details of comparators, @pxref{Comparators}.
+The third form creates a key comparator from a equality
+predicate @var{key=?} and less-than predicate @code{key<?},
+both must accept two keys.  This interface is consistent with
+@code{tree-map} (@pxref{Treemaps}).
+@c JP
+空の変更不可なマップを新たに作って返します。
+引数無しの場合は、キーの比較には@code{default-comparator}が使われます。
+キーの比較方法を指定したい場合は、比較手続きを持つ比較器@var{comparator}を
+引数に渡してください。比較器については@ref{Comparators}を参照。
+3番目の呼び出し形式は、キーの等価性を調べる述語@var{key=?}と
+大小比較の述語@var{key<?}から比較器を作ります。どちらの述語も
+ふたつの引数をとらなければなりません。このインタフェースは
+@code{tree-map}との一貫性のためにサポートされています (@ref{Treemaps}参照)。
+@c COMMON
+@end defun
+
+@defun alist->imap alist
+@defunx alist->imap alist comparator
+@defunx alist->imap alist key=? key<?
+Creates a new empty immutable map, populates it with
+key-value association list @var{alist}, and returns it.
+This may be a bit more efficient than creating an empty map with
+@code{make-imap} and populates it with @code{imap-put}
+one by one.
+
+The @var{comparator} argument specifies how to compare the keys.
+It must have comparison procedure.  If omitted, @code{default-comparator}
+is used.  @xref{Comparators}, for the details.
+
+The third form creates a key comparator from a equality
+predicate @var{key=?} and less-than predicate @code{key<=?},
+both must accept two keys.
+
+@example
+(define m (alist->imap '((a . 1) (b . 2))))
+
+(imap-get m 'a) @result{} 1
+(imap-get m 'b) @result{} 2
+@end example
+@end defun
+
+@defun tree-map->imap tree-map
+Returns a new immutable map with the same content (and the same comparator)
+as @var{tree-map}.
+@end defun
+
+@defun imap? obj
+Returns @code{#t} if @var{obj} is an immutable map,
+@code{#f} otherwise.
+@end defun
+
+@defun imap-empty? immap
+Returns @code{#t} if an immutable map @var{immap} is empty,
+@code{#f} otherwise.
+@end defun
+
+@defun imap-exists? immap key
+Returns @code{#t} if @var{key} exists in an immutable map @var{immap}.
+@end defun
+
+@defun imap-get immap key :optional default
+Returns the value associated with @var{key} in an immutable map @var{immap}.
+If @var{immap} doesn't have @var{key}, @var{default} is returned
+when provided, otherwise an error is signalled.
+@end defun
+
+@defun imap-put immap key val
+Returns a new immutable map where association of @var{key} to @var{val}
+is added to (or replaced in) an immutable map @var{immap}.
+This operation is O(log n).
+
+@example
+(define m1 (alist->imap '((a . 1) (b . 2))))
+
+(define m2 (imap-put m1 'a 3))
+
+(imap-get m2 'a)  @result{} 3
+(imap-get m1 'a)  @result{} 1  ; not affected
+@end example
+@end defun
+
+@defun imap-delete immap key
+Returns a new immutable map where @var{key} is removed from
+@var{immap}.   If @var{immap} doesn't have @var{key}, returned
+map has the same content as @var{immap}.
+
+@example
+(define m1 (alist->imap '((a . 1) (b . 2))))
+
+(define m2 (imap-delete m1 'a))
+
+(imap-get m2 'a #f)  @result{} #f
+(imap-get m1 'a)     @result{} 1  ; not affected
+@end example
+@end defun
+
+@defun imap-min immap
+@defunx imap-max immap
+Returns a pair of key and value with the minimum or maximum
+key in @var{immap}, respectively.  If @var{immap} is empty,
+@code{#f} is returned.
+@end defun
+
+@c ----------------------------------------------------------------------
+@node Queue, Random data generators, Immutable map, Library modules - Utilities
 @section @code{data.queue} - Queue
 @c NODE キュー, @code{data.queue} - キュー
 
@@ -2255,7 +2593,8 @@ it can be used as a stack as well.
 If you also want to take item from the end of the sequence in O(1),
 you need a deque (double-ended queue).
 @xref{Ring buffer}, which works as an efficient (both speed and space)
-dequeue on top of vectors.
+dequeue on top of vectors.  Or you can use immutable deques
+provided by @code{data.ideque} (@pxref{Immutable deques}).
 
 See also SRFI-117 (@ref{Queues based on lists}), which defines a
 portable API for list-based queue.
@@ -2280,7 +2619,8 @@ portable API for list-based queue.
 要素を並びの末尾からO(1)で取り除くAPIも欲しい場合は、
 deque (double-ended queue)が必要です。@code{data.ring-buffer}モジュール
 は、ベクタの上に実装された(空間的にも時間的にも)効率の良いdequeを提供しています
-(@ref{Ring buffer}参照)。
+(@ref{Ring buffer}参照)。また、変更不可な両端キュー@code{data.ideque}
+もあります(@ref{Immutable deques}参照)。
 
 また、SRFI-117はポータブルなリストベースのキューのAPIを提供しています
 (@ref{Queues based on lists})。
@@ -2781,184 +3121,10 @@ without hitting timeout, they return @code{#t}.
 @c COMMON
 @end defun
 
-@c ----------------------------------------------------------------------
-@node Immutable map, Random data generators, Queue, Library modules - Utilities
-@section @code{data.imap} - Immutable map
-@c NODE 変更不可なマップ, @code{data.imap} - 変更不可なマップ
-
-@deftp {Module} data.imap
-@mdindex data.imap
-@c EN
-This module provides a immutable data structure with O(log n)
-access and update operations (here, update means to return a
-new structure with requested changes).
-The current implementation is
-based on the functional red-black tree.
-@c JP
-このモジュールは、O(log n)でアクセスと更新が可能な、変更不可のデータ構造を
-提供します(ここでの「更新」とは、要求された変更を取り込んだ新たな構造を
-作って返すことです)。
-現在の実装は関数的な赤黒木に基づいています。
-@c COMMON
-@end deftp
-
-@c EN
-Although lists and alists are useful for stack-like immutable
-operations, where you can add and remove items to the head of
-existing data without modifying them, they require O(n) access time
-and sometimes you need better one.  The @code{<imap>} object
-provides O(log n) access, in exchange of O(log n) insertion and
-deletion.
-@c JP
-リストや連想リストは、スタック風の変更不可なデータ構造として使えます。
-つまり既存のデータ構造自体に変更を加えることなく、その先頭に要素を追加したり、
-先頭から要素を取り除いたりできるということです。一方で、リストや連想リストは
-任意の要素にアクセスするにはO(n)の時間を必要としますが、もっと速いアクセスが必要な
-場合もあります。@code{<imap>}オブジェクトはO(log n)のアクセスを可能にします。
-そのかわり、要素の追加や削除にもO(log n)を必要とします。
-@c COMMON
-
-@deftp {Class} <imap-meta>
-@c EN
-Metaclass of @code{<imap>}.
-@c JP
-@code{<imap>}のメタクラスです。
-@c COMMON
-@end deftp
-
-@deftp {Class} <imap>
-@c EN
-Immutable map class.  An instance of @code{<imap-meta>}.
-
-Inherits @code{<ordered-dictionary>}, conforms dictionary protocol
-except mutating operators (@pxref{Dictionary framework}).
-As a sequence, you can access key-value
-pairs in increasing order of keys.
-@c JP
-変更不可なマップのクラスです。@code{<imap-meta>}をメタクラスとします。
-
-@code{<ordered-dictionary>}を継承し、変更操作を除くディクショナリプロトコル
-を実装します(@ref{Dictionary framework}参照)。
-シーケンスとしてアクセスした場合は、キーと値のペアをキーの昇順に取り出すことができます。
-@c COMMON
-@end deftp
-
-@defun make-imap
-@defunx make-imap comparator
-@defunx make-imap key=? key<?
-@c EN
-Creates a new empty immutable map.  Without arguments,
-@code{default-comparator} is used to compare keys.  To give a
-specific comparator, use the second form; the @var{comparator}
-argument should have comparison procedure.
-For the details of comparators, @pxref{Comparators}.
-The third form creates a key comparator from a equality
-predicate @var{key=?} and less-than predicate @code{key<?},
-both must accept two keys.  This interface is consistent with
-@code{tree-map} (@pxref{Treemaps}).
-@c JP
-空の変更不可なマップを新たに作って返します。
-引数無しの場合は、キーの比較には@code{default-comparator}が使われます。
-キーの比較方法を指定したい場合は、比較手続きを持つ比較器@var{comparator}を
-引数に渡してください。比較器については@ref{Comparators}を参照。
-3番目の呼び出し形式は、キーの等価性を調べる述語@var{key=?}と
-大小比較の述語@var{key<?}から比較器を作ります。どちらの述語も
-ふたつの引数をとらなければなりません。このインタフェースは
-@code{tree-map}との一貫性のためにサポートされています (@ref{Treemaps}参照)。
-@c COMMON
-@end defun
-
-@defun alist->imap alist
-@defunx alist->imap alist comparator
-@defunx alist->imap alist key=? key<?
-Creates a new empty immutable map, populates it with
-key-value association list @var{alist}, and returns it.
-This may be a bit more efficient than creating an empty map with
-@code{make-imap} and populates it with @code{imap-put}
-one by one.
-
-The @var{comparator} argument specifies how to compare the keys.
-It must have comparison procedure.  If omitted, @code{default-comparator}
-is used.  @xref{Comparators}, for the details.
-
-The third form creates a key comparator from a equality
-predicate @var{key=?} and less-than predicate @code{key<=?},
-both must accept two keys.
-
-@example
-(define m (alist->imap '((a . 1) (b . 2))))
-
-(imap-get m 'a) @result{} 1
-(imap-get m 'b) @result{} 2
-@end example
-@end defun
-
-@defun tree-map->imap tree-map
-Returns a new immutable map with the same content (and the same comparator)
-as @var{tree-map}.
-@end defun
-
-@defun imap? obj
-Returns @code{#t} if @var{obj} is an immutable map,
-@code{#f} otherwise.
-@end defun
-
-@defun imap-empty? immap
-Returns @code{#t} if an immutable map @var{immap} is empty,
-@code{#f} otherwise.
-@end defun
-
-@defun imap-exists? immap key
-Returns @code{#t} if @var{key} exists in an immutable map @var{immap}.
-@end defun
-
-@defun imap-get immap key :optional default
-Returns the value associated with @var{key} in an immutable map @var{immap}.
-If @var{immap} doesn't have @var{key}, @var{default} is returned
-when provided, otherwise an error is signalled.
-@end defun
-
-@defun imap-put immap key val
-Returns a new immutable map where association of @var{key} to @var{val}
-is added to (or replaced in) an immutable map @var{immap}.
-This operation is O(log n).
-
-@example
-(define m1 (alist->imap '((a . 1) (b . 2))))
-
-(define m2 (imap-put m1 'a 3))
-
-(imap-get m2 'a)  @result{} 3
-(imap-get m1 'a)  @result{} 1  ; not affected
-@end example
-@end defun
-
-@defun imap-delete immap key
-Returns a new immutable map where @var{key} is removed from
-@var{immap}.   If @var{immap} doesn't have @var{key}, returned
-map has the same content as @var{immap}.
-
-@example
-(define m1 (alist->imap '((a . 1) (b . 2))))
-
-(define m2 (imap-delete m1 'a))
-
-(imap-get m2 'a #f)  @result{} #f
-(imap-get m1 'a)     @result{} 1  ; not affected
-@end example
-@end defun
-
-@defun imap-min immap
-@defunx imap-max immap
-Returns a pair of key and value with the minimum or maximum
-key in @var{immap}, respectively.  If @var{immap} is empty,
-@code{#f} is returned.
-@end defun
-
 
 
 @c ----------------------------------------------------------------------
-@node Random data generators, Ring buffer, Immutable map, Library modules - Utilities
+@node Random data generators, Ring buffer, Queue, Library modules - Utilities
 @section @code{data.random} - Random data generators
 @c NODE ランダムデータの生成, @code{data.random} - ランダムデータの生成
 

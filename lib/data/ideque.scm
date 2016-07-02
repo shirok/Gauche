@@ -34,7 +34,7 @@
 ;; This implements banker's deque
 ;; as described in Chris Okasaki's Purely Functional Data Structures.
 ;; It provides amortized O(1) operation.
-;; The API is adapted to draft srfi-134
+;; The API is adapted to srfi-134
 
 (define-module data.ideque
   (use gauche.record)

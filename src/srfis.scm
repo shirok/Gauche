@@ -756,3 +756,14 @@ Supported by the module @code{srfi-133}.  @xref{Vector library}.
 ベクタライブラリ (R7RS互換)
 モジュール@code{srfi-133}でサポートされます。 @ref{Vector library}参照。
 
+
+srfi-134
+()
+
+Immutable Deques
+The module @code{data.ideque} is compatible to srfi-134.
+@xref{Immutable deques}.
+
+変更不可な両端キュー
+モジュール@code{data.ideque}がsrfi-134と互換です。
+@ref{変更不可な両端キュー}参照。
