@@ -17,6 +17,16 @@ Makefile
 /gc/libatomic_ops/src/config.h
 /lib/gauche/config.scm
 /src/gauche/config.h
+libtool.m4
+ltoptions.m4
+ltsugar.m4
+ltversion.m4
+lt~obsolete.m4
+ltmain.sh
+compile
+missing
+test-driver
+depcomp
 
 # Compiler-generated files
 *.o
