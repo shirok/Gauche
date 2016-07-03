@@ -78,7 +78,11 @@
 ;;
 
 ;; API
-(define (make-ideque) *empty*)
+(define (make-ideque n :optional (init #f))
+  (let* ([lenf (quotient n 2)]
+         [lenr (- n lenf)])
+    (%make-dq lenf (make-list lenf init)
+              lenr (make-list lenr init))))
 
 ;; API [srfi-134]
 (define (ideque . args) (list->ideque args))

@@ -2244,11 +2244,18 @@ deque, you can also use @code{data.ring-buffer} as a deque
 (@pxref{Ring buffer}).
 @end deftp
 
-@defun make-ideque
+@defun make-ideque n :optional init
+Creates an ideque of length @var{n} with all the elements being
+@var{init}.  If @var{init} is omitted, @code{#f} is used.
+
+This is provided just for the symmetry with other container data
+structures; it's not in srfi-134, and the portable code can use
+@code{ideque-tabulate}.
 @end defun
 
 @defun ideque element @dots{}
 [SRFI-134]
+Returns an ideque with the given elements.
 @end defun
 
 @defun ideque-unfold p f g seed

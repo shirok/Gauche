@@ -299,6 +299,10 @@
 (chibi-test
  (include "include/ideque-tests"))
 
+;; non-srfi-134 api
+(test* "make-ideque" '(a a a a a)
+       (ideque->list (make-ideque 5 'a)))
+
 
 ;;;========================================================================
 (test-section "data.imap")

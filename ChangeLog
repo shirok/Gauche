@@ -1,3 +1,8 @@
+2016-07-02  Shiro Kawai  <shiro@acm.org>
+
+	* lib/data/ideque.scm (make-ideque): Changed API to be consistent
+	  with other container datatypes.
+
 2016-07-01  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi-134.scm: Finalized, so we document data.ideque and
