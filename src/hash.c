@@ -1085,8 +1085,8 @@ static u_long legacy_flonum_hash(double f)
         AO_nop_full();
         initialized = TRUE;
     }
-
-    if (d < minus_two_pow_63 || two_pow_63 < d) return 0;
+    /* This condition eliminates NaN as well. */
+    if (!(minus_two_pow_63 < d && d < two_pow_63)) return 0;
     if (-0.5 < d && d < 0.5) return 0;
                                  
     double dm = trunc(fmod(d, two_pow_32));
