@@ -1,3 +1,12 @@
+2016-07-03  Shiro Kawai  <shiro@acm.org>
+
+	* src/hash.c (legacy_flonum_hash): Legacy hash fn for flonums had
+	  stepped on the undefined behavior.  To keep portability and
+	  compatibility, we try to emulate existing behavior.  Note that
+	  there are already discrepancies between platforms; we can't achieve
+	  perfect backward compatibility.  But after this fix we'll at least
+	  eliminate platform dependency.
+
 2016-07-02  Shiro Kawai  <shiro@acm.org>
 
 	* lib/data/ideque.scm (make-ideque): Changed API to be consistent

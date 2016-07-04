@@ -32,6 +32,8 @@
  */
 
 #define LIBGAUCHE_BODY
+#include <math.h>
+#include "atomic_ops.h"
 #include "gauche.h"
 #include "gauche/class.h"
 
@@ -1003,6 +1005,8 @@ ScmObj Scm_MakeHashTable(ScmHashProc *hashfn,
 #endif
 }
 
+static u_long legacy_flonum_hash(double);
+
 /* Old hash function for numeric objects.  This is terrible for flonums,
    and we only keep it in order to maintain portable hash value generated
    by legacy hash function. */
@@ -1027,8 +1031,7 @@ static u_long legacy_number_hash(ScmObj obj)
         }
         SMALL_INT_HASH(hashval, u);
     } else if (SCM_FLONUMP(obj)) {
-        /* This is bad.  Unfortunatly we can't chagne it. */
-        hashval = (u_long)(SCM_FLONUM_VALUE(obj)*2654435761UL);
+        hashval = legacy_flonum_hash(SCM_FLONUM_VALUE(obj));
     } else if (SCM_RATNUMP(obj)) {
         /* Ratnum must already be normalized, so we can simply combine
            hashvals of numerator and denominator. */
@@ -1036,10 +1039,59 @@ static u_long legacy_number_hash(ScmObj obj)
         u_long h2 = legacy_number_hash(SCM_RATNUM_DENOM(obj));
         hashval = COMBINE(h1, h2);
     } else {
-        /* This is bad.  Unfortunatly we can't chagne it. */
-        hashval = (u_long)((SCM_COMPNUM_REAL(obj)+SCM_COMPNUM_IMAG(obj))*2654435761UL);
+        hashval =
+            legacy_flonum_hash(SCM_COMPNUM_REAL(obj)+SCM_COMPNUM_IMAG(obj));
     }
     return hashval&HASHMASK;
+}
+
+static u_long legacy_flonum_hash(double f)
+{
+    /* Originally the code was just (u_long)(f * 2654435761UL), but that's
+       UB when the multiplication yields out of range of u_long.  I don't
+       even remember why I adopted that for the hash function in the
+       first place, but we have to stick to existing hash values recorded
+       elsewhere.
+
+       On x86 with 8087-compatible FPU, (u_long)(d) behaves as follows.
+       If -2^63 < d < 2^63, the modulo of 2^32 is taken.  Otherwise
+       it yields 0.
+
+       On x86 with SSE, the out-of-range value yields #x8000_0000.
+
+       On x86_64, if -2^63 < d < 2^64, the modulo of 2^32 is taken.
+       Otherwise it yields #x8000_0000_0000_0000.
+
+       To achieve maximum compatibility with historical data, we
+       take the range of 8087, and the calculation is adjusted for
+       x86_64 behavior.  There can be a slight discrepancy from the
+       result of 8087 because of its internal 80bit calculation---for
+       example, 3.767278962604362e-10 * 2654435761 is just tiny little
+       bit less than 1.0 but with 64bit calculation it is rounded up
+       to 1.0.  With 80 bit and integer truncation the result is 0 but
+       with 64bit we get 1.
+     */
+    double d = f * 2654435761UL;
+    static double two_pow_63 = 0.0;
+    static double minus_two_pow_63 = 0.0;
+    static double two_pow_32 = 0.0;
+    static int initialized = FALSE;
+
+    if (!initialized) {
+        /* This is idempotent - no need to lock */
+        two_pow_63 = ldexp(1.0, 63);
+        minus_two_pow_63 = -ldexp(1.0, 63);
+        two_pow_32 = ldexp(1.0, 32);
+        AO_nop_full();
+        initialized = TRUE;
+    }
+
+    if (d < minus_two_pow_63 || two_pow_63 < d) return 0;
+    if (-0.5 < d && d < 0.5) return 0;
+                                 
+    double dm = trunc(fmod(d, two_pow_32));
+    if (dm < 0) dm += two_pow_32;
+    return (u_long)trunc(dm);
 }
 
 /* Old hash function for strings.  This isn't very good hash function either,
