@@ -101,15 +101,6 @@ ScmSmallInt Scm_HashSaltSet(ScmSmallInt newval) /* returns old value */
    (On 64 bit architecture, it's OK to calculate 64bit, but the
    upper bits are discarded by HASH2INDEX to maintain compatibility. */
 
-/* For String
- *
- * Usually, "shift+add" scheme for string hasing works well.  But
- * I found that it works well only if you take the lower bits.
- * Unfortunately, we need to take higher bits for multiplicative
- * hashing of integers and addresses.  So, in HASH2INDEX function,
- * I take both lower bits and higher bits.
- */
-
 /* Integer and address. */
 /* Integer and address hash is a variation of "multiplicative hashing"
    scheme described in Knuth, TAOCP, section 6.4.  The final shifting
@@ -130,6 +121,42 @@ ScmSmallInt Scm_HashSaltSet(ScmSmallInt newval) /* returns old value */
 
 /* Combining two hash values. */
 #define COMBINE(hv1, hv2)   ((hv1)*5+(hv2))
+
+/* For strings, we employ siphash.
+   We use public domain implementation by Sam Trenholme
+   http://samiam.org/blog/20131006.html
+ */
+#if SIZEOF_LONG == 4
+#include "dws32hash.h"
+#else
+#include "dwsiphash.h"
+#endif
+
+/* forward declaration to make these file-scope */
+static void DwSip_round(DwSH_WORD *v0, DwSH_WORD *v1,
+                        DwSH_WORD *v2, DwSH_WORD *v3);
+static void DwSip_ksetup(DwSH_WORD *k0, DwSH_WORD *k1,
+                         DwSH_WORD *v0, DwSH_WORD *v1,
+                         DwSH_WORD *v2, DwSH_WORD *v3, DwSH_WORD *fx);
+static DwSH_WORD DwSip_getword(uint32_t *offset, uint8_t *str, uint32_t len);
+static DwSH_WORD DwSip_hash(uint8_t *str, uint32_t len,
+                            DwSH_WORD k1, DwSH_WORD k2);
+
+#if SIZEOF_LONG == 4
+#include "dws32hash.c"
+#else
+#include "dwsiphash.c"
+#endif
+
+u_long Scm_HashString(ScmString *str, u_long modulo)
+{
+    ScmSmallInt salt = Scm_HashSaltRef();
+    const ScmStringBody *b = SCM_STRING_BODY(str);
+    u_long hashval = (u_long)DwSip_hash((uint8_t*)b->start, b->size,
+                                        (DwSH_WORD)salt, (DwSH_WORD)salt);
+    if (modulo == 0) return hashval&HASHMASK;
+    else return (hashval % modulo);
+}
 
 u_long Scm_EqHash(ScmObj obj)
 {
@@ -255,13 +282,6 @@ u_long Scm_Hash(ScmObj obj)
     return legacy_string_hash(SCM_STRING(obj));
 }
 
-u_long Scm_HashString(ScmString *str, u_long modulo)
-{
-    u_long hashval = legacy_string_hash(str);
-    if (modulo == 0) return hashval;
-    else return (hashval % modulo);
-}
-
 /* Expose COMBINE. */
 u_long Scm_CombineHashValue(u_long a, u_long b)
 {
@@ -272,6 +292,7 @@ u_long Scm_CombineHashValue(u_long a, u_long b)
 #endif /**/
     return c;
 }
+
 
 /*------------------------------------------------------------
  * Parameterization

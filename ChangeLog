@@ -1,3 +1,9 @@
+2016-07-04  Shiro Kawai  <shiro@acm.org>
+
+	* src/hash.c (Scm_HashString), src/dwsiphash.[ch], src/dws32hash.[ch]:
+	  Replaced default string hash function with siphash, and using
+	  per-processs random salt to prevent hash collision attack.
+
 2016-07-03  Shiro Kawai  <shiro@acm.org>
 
 	* src/hash.c (legacy_flonum_hash): Legacy hash fn for flonums had
