@@ -36,6 +36,7 @@ do_gen () {
     maintainer_clean
     rm -f configure gc/configure gc/configure.gnu
     cp tools/gc-configure.gnu gc/configure.gnu
+    libtoolize -q  # ensures ltmain.sh in the top_srcdir
     autoconf
     (cd gc; ./autogen.sh)
 }
