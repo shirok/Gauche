@@ -4,6 +4,7 @@ AC_INIT([libatomic_ops],[7.4.4],bdwgc@lists.opendylan.org)
 AC_PREREQ(2.61)
 AC_CANONICAL_TARGET([])
 AC_CONFIG_SRCDIR(src/atomic_ops.c)
+AC_CONFIG_AUX_DIR([.])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([foreign dist-bzip2 nostdinc])
 AM_MAINTAINER_MODE
