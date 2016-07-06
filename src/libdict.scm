@@ -125,14 +125,25 @@
        )])
  )
 
+(select-module gauche.internal)
+(define-cproc %current-recursive-hash (:optional obj) Scm_CurrentRecursiveHash)
+  
+(select-module gauche)
 (define-cproc hash-salt () ::<fixnum> Scm_HashSaltRef)
 
 (define-cproc eq-hash (obj)  ::<ulong> :fast-flonum Scm_EqHash)
 (define-cproc eqv-hash (obj) ::<ulong> :fast-flonum Scm_EqvHash)
-(define-cproc hash (obj)     ::<ulong> :fast-flonum Scm_Hash) ;TRANSIENT
-(define-cproc portable-hash (obj) ::<ulong> :fast-flonum Scm_Hash)
+(define-cproc legacy-hash (obj) ::<ulong> :fast-flonum Scm_Hash)
+(define-cproc portable-hash (obj salt::<fixnum>) ::<ulong>
+  :fast-flonum Scm_PortableHash)
+(define-cproc default-hash (obj) ::<fixnum> :fast-flonum Scm_DefaultHash)
 (define-cproc combine-hash-value (a::<ulong> b::<ulong>) ::<ulong>
   Scm_CombineHashValue)
+
+;; see object-hash in libomega.scm for the reason of this implementation
+(define (hash obj)
+  (let1 h ((with-module gauche.internal %current-recursive-hash))
+    (if h (h obj) (legacy-hash obj))))
 
 (define-cproc hash-table? (obj) ::<boolean> :fast-flonum SCM_HASH_TABLE_P)
 

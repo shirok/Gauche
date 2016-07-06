@@ -1,3 +1,18 @@
+2016-07-05  Shiro Kawai  <shiro@acm.org>
+
+	* src/hash.c, src/libdict.scm, src/libomega.scm:
+	  We make Scm_Hash() and 'hash' deprecated, and will
+	  keep it only for the backward compatibility.  Add 'portable-hash'
+	  for replacement, which takes explicit salt.  Also provide
+	  'default-hash', ala srfi-128, which honors hash-salt and is
+	  used for equal hashtable.
+	  The object-hash method now takes two arguments, an object to
+	  hash and the hash function to be recursively called when necessary.
+	  To avoid breaking the existing code of object-hash that takes
+	  one argument and recursively calls 'hash' procedure, we tweaked
+	  'hash' so that it dispatches to the appropriate hash function
+	  if it's called recursively.
+
 2016-07-04  Shiro Kawai  <shiro@acm.org>
 
 	* src/hash.c (Scm_HashString), src/dwsiphash.[ch], src/dws32hash.[ch]:

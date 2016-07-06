@@ -113,12 +113,18 @@ SCM_EXTERN ScmDictEntry *Scm_HashIterNext(ScmHashIter *iter);
  */
 SCM_EXTERN u_long Scm_EqHash(ScmObj obj);
 SCM_EXTERN u_long Scm_EqvHash(ScmObj obj);
-SCM_EXTERN u_long Scm_Hash(ScmObj obj);
 SCM_EXTERN u_long Scm_HashString(ScmString *str, u_long bound);
+SCM_EXTERN u_long Scm_PortableHash(ScmObj obj, u_long salt);
+SCM_EXTERN ScmSmallInt Scm_DefaultHash(ScmObj obj);
 SCM_EXTERN u_long Scm_CombineHashValue(u_long a, u_long b);
 
 SCM_EXTERN ScmSmallInt Scm_HashSaltRef(void);
 SCM_EXTERN ScmSmallInt Scm_HashSaltSet(ScmSmallInt);
+SCM_EXTERN ScmSmallInt Scm_PortableHashSalt(ScmObj newval);
+
+SCM_EXTERN ScmObj Scm_CurrentRecursiveHash(ScmObj);
+
+SCM_EXTERN u_long Scm_Hash(ScmObj obj); /* DEPRECATED */
 
 /*================================================================
  * ScmHashTable

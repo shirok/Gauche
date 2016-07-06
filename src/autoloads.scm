@@ -190,8 +190,7 @@
                           hash-table-for-each hash-table-map
                           boolean-hash char-hash char-ci-hash
                           string-hash string-ci-hash
-                          symbol-hash number-hash default-hash
-                          hash-bound)
+                          symbol-hash number-hash hash-bound)
 
 (autoload gauche.treeutil make-tree-map tree-map-empty?
                           tree-map-min tree-map-max

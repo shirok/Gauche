@@ -100,6 +100,53 @@
            (eqv? (~ x'hash) (~ y'hash)))
        (equal? (slot-ref x 'name) (slot-ref y 'name))))
 
+;; Recursive hash function
+;; This is here instead of in libdict.scm, for we need the rest of
+;; the runtime to be initialized.
+;;
+;; Equal-hash can be extended by defining object-hash method.  We used
+;; to have just one hash function of this type, 'hash', so the existing
+;; object-hash calls 'hash' whenever it needs to recurse.
+;;
+;; Now that we have mutliple hash functions that works as equal hash,
+;; we need a way for object-hash to recursively call the proper equal
+;; hash function.  Thus we pass the current hash function as the second
+;; argument of object-hash.
+;;
+;; However, we can't break the existing object-hash code that takes
+;; just one argument, an object to hash, and recursively calls 'hash'
+;; function.  So here's a trick we employed:
+;;
+;;   1. The 'hash' function actually dispatches to the current recursive
+;;      hash function.
+;;   2. The default of current recursive hash function is the
+;;      legacy-hash, for the compatibility.
+;;   3. During the execution of 'portable-hash' or 'default-hash',
+;;      we set the current recursive hash function to it so that
+;;      'hash' actually calls back to the proper hash function.
+;;
+
+(select-module gauche.internal)
+
+;; TODO: We may memoize hash&salt pair so that we can avoid
+;; closure allocation for every recursive call; the memoization also
+;; benefits bypassing dynamic-wind in object-hash.
+
+(define (%call-object-hash obj hash salt)
+  (object-hash obj (if salt (^o (hash o salt)) hash)))
+
+;; This is the fallback in case we have legacy one-argument object-hash.
+;; We don't need full-brown parameterize, for %current-recursive-hash
+;; isn't supposed to be changed other than this method.
+(define-method object-hash (obj hash)
+  (let1 h (%current-recursive-hash)
+    (if (eq? h hash)
+      (object-hash obj) ; shortcut
+      (dynamic-wind
+        (^[] (%current-recursive-hash hash))
+        (^[] (object-hash obj))
+        (^[] (%current-recursive-hash h))))))
+
 ;;; TEMPORARY for 0.9.x series
 ;;; Remove this after 1.0 release!!!
 ;;;

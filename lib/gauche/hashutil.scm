@@ -71,39 +71,39 @@
           r
           (loop (kons k v r)))))))
 
-;; We delegate most hash calculation to the built-in 'hash'.  These
-;; functions are mostly for the compatibility of srfi-128.
+;; We delegate most hash calculation to the built-in default-hash.
+;; These type-specific hash functions are mostly
+;;  for the compatibility of srfi-128.
 
 (define (boolean-hash obj)
   (check-arg boolean? obj)
-  (hash obj))
+  (default-hash obj))
 
 (define (char-hash obj)
   (check-arg char? obj)
-  (hash obj))
+  (default-hash obj))
 
 (define (char-ci-hash obj)
   (check-arg char? obj)
-  (hash (char-foldcase obj)))
+  (default-hash (char-foldcase obj)))
 
 (define (string-hash obj)
-  ((with-module gauche.internal %hash-string) obj))
+  (check-arg string? obj)
+  (default-hash obj))
 
 (autoload gauche.unicode string-foldcase)
 
 (define (string-ci-hash obj)
   (check-arg string? obj)
-  ((with-module gauche.internal %hash-string) (string-foldcase obj)))
+  (default-hash (string-foldcase obj)))
 
 (define (symbol-hash obj)
   (check-arg symbol? obj)
-  (hash obj))
+  (default-hash obj))
 
 (define (number-hash obj)
   (check-arg number? obj)
-  (hash obj))
-
-(define default-hash hash)
+  (default-hash obj))
 
 ;; This is a placeholder to conform srfi-128.
 (define (hash-bound) (greatest-fixnum))
