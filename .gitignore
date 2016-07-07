@@ -6,8 +6,12 @@ config.guess
 config.log
 config.status
 config.sub
+/compile
 /configure
+/depcomp
 /ltmain.sh
+/missing
+/test-driver
 autom4te.cache
 Makefile
 /gc/configure
