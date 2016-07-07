@@ -7,6 +7,7 @@ config.log
 config.status
 config.sub
 /configure
+/ltmain.sh
 autom4te.cache
 Makefile
 /gc/configure
@@ -16,6 +17,11 @@ Makefile
 /gc/libatomic_ops/configure
 /gc/libatomic_ops/src/config.h
 /lib/gauche/config.scm
+/m4/libtool.m4
+/m4/ltoptions.m4
+/m4/ltsugar.m4
+/m4/ltversion.m4
+/m4/lt~obsolete.m4
 /src/gauche/config.h
 
 # Compiler-generated files
