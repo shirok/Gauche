@@ -587,62 +587,156 @@ are not guaranteed to be @code{eq?} even if they are numerically equal.
 @c COMMON
 @end defun
 
-@defun hash obj
+@defun default-hash obj
+[SRFI-128+]
 @c EN
 This is a hash function suitable to be used with @code{equal?}.
-
-The hash value is an exact non-negative integer, and
-is independent from the runtime state
-of the machine (such as address of the data); so you can save
-the hash value to file and read it again with different process
-without losing validity of the hash value.
 
 If @var{obj} is either a number, a boolean, a character,
 a symbol, a keyword, a string, a list or a vector,
 internal hash function is used to calculate the hash value.
-If @var{obj} is other than that, @code{hash} calls
-a generic function @code{object-hash} to calculate the hash value.
+If @var{obj} is other than that,
+a generic function @code{object-hash} is called to calculate the hash value
+(see below).
+
+The hash value also depends on @code{hash-salt}, which differs
+for every run of the process.
 @c JP
 @code{equal?}と一緒に使うのに適したハッシュ関数です。
-
-この関数が返すハッシュ値は正確な非負整数で、
-(そのデータのアドレスというような)実行時の計算機の状態とは
-独立した値となります。それゆえ、その値をファイルに格納し、別のプロセスで読み込む
-といった用途に使えます。
 
 @var{obj} が、数値、真理値、文字、シンボル、キーワード、文字列、リスト、
 ベクタのいずれかならば、そのハッシュ値を求めるのには内部ハッシュ関数を
 使います。
 @var{obj} が、それ以外であれば、 @code{hash} は総称関数 @code{object-hash}
 を呼んで、そのハッシュ値を計算します。
+
+返されるハッシュ値は@code{hash-salt}の値にも依存します。@code{hash-salt}
+はプロセスが走る度に異なる値をとります。
 @c COMMON
 @end defun
 
-@deffn {Generic Function} object-hash obj
+@defun portable-hash obj salt
+@c EN
+Sometimes you need to calculate a hash value that's ``portable'',
+in a sense that the value won't change across multiple runs of
+the process, nor between different platforms.  Such hash value can
+be used with storing objects externally to share among processes.
+
+This procedure calculates a hash value of @var{obj} with such
+characteristics; the hash value is the same for the same
+object and the same salt value.
+Here ``same object'' roughly means having
+the same external representation.  Objects @code{equal?} to each
+other are same.  If you write out an object with @code{write},
+and read it back, they are also the same objects in this sense.
+
+This means objects without read/write invariance, such as
+ports, can't be handled with @code{portable-hash}.  It is caller's
+responsibility that @var{obj} won't contain such objects.
+
+The @code{salt} argument is a nonnegative fixnum and gives variations
+in the hash function.  You have to use the same salt to get consistent
+results.
+
+If @var{obj} is other than a number, a boolean, a character,
+a symbol, a keyword, a string, a list or a vector,
+this procedure calls 
+a generic function @code{object-hash} is called to calculate the hash value
+(see below).
+@c JP
+時に、「ポータブル」なハッシュ値が必要になることがあります。ここでポータブルとは、
+プロセスを何度実行しても、また異なるプラットフォームで実行しても、同じオブジェクト
+に対して常に同じ値となることです。そのようなハッシュ値は、
+プロセスの外に保存したり他のプロセスと共有するオブジェクトと一緒に使えます。
+
+この手続きは@var{obj}についてその性質を持つハッシュ値を計算して返します。
+つまり、同じオブジェクトと同じソルト値が渡されれば同じハッシュ値となる、ということです。
+ここで、「同じオブジェクト」とは、だいたい外部表現が同じになるものと
+考えて構いません。@code{equal?}であるもの同士は同じです。
+また、オブジェクトを@code{write}で書き出して@code{read}で読み込んだものは
+元のオブジェクトと同じになります。
+
+このことから、read/write不変性をもたないオブジェクトは@code{portable-hash}
+では扱えません。@var{obj}がそのようなオブジェクトを含まないことは
+呼び出し側で保証する必要があります。
+
+@code{salt}は非負のfixnumで、ハッシュ関数に変化をつけます。一貫した結果を
+得るには同じソルト値を使わなければなりません。
+
+@var{obj}が数値、真理値、文字、シンボル、キーワード、文字列、リスト、
+ベクタのいずれでもない場合、ハッシュ値を計算するのに
+総称関数 @code{object-hash}が呼ばれます。
+@c COMMON
+@end defun
+
+@defun legacy-hash obj
+Up to 0.9.4, Gauche had a hash function called @code{hash}
+that was used in both @code{equal?}-hashtable @emph{and}
+for the portable hash function.  It had a problem, though.
+
+@enumerate
+@item
+There's no way to salt the hash function, which makes the
+hashtables storing externally provided data vulnerable
+to collision attack.
+@item
+The hash function behaves poorly, especially on flonums.
+@item
+There are bugs in bignum and flonum hashing code that
+have produced different results on different architectures.
+@end enumerate
+
+Since there are existing hash values calculated with
+the old hash function, we preserve the behavior of the
+original @code{hash} function as @code{legacy-hash}
+(the @code{hash} function also behaves as @code{legacy-hash}
+by default, but it has tweaks; see below.)
+
+The new code that needs portable hash value should use
+@code{portable-hash} instead.
+@end defun
+
+@deffn {Generic Function} object-hash obj rec-hash
 @c EN
 By defining a method for this generic function, objects of
 user-defined types can have a hash value and can be used
-in @code{equal?} hash table.
+in a @code{equal?} hash table.
 
-The method has to return an exact non-negative integer, and
-has to follow the same constraints as of @code{hash}.
+The method has to return an exact non-negative integer,
+and must return the same value for two object which are @code{equal?}.
+Furthermore, the returned value must not rely on the platform
+or state of the process, if @var{obj} is a portable object
+(see @code{portable-hash} above for what is portable.)
 
 If the method needs to get hash value of @var{obj}'s elements,
-it has to call @code{hash} on them, not @code{object-hash}.
-For the hashing of primitive objects are done in @code{hash}.
+it has to call @code{rec-hash} on them.  It guarantees that
+the proper hash function is called recursively.  So you can
+count on @code{rec-hash} to calculate a portable hash value
+when @code{object-hash} itself is called from @code{portable-hash}.
+
+If @var{obj} has several elements,
+you can call @code{combine-hash-value} on the elements'
+hash values.
 @c JP
 この総称関数に対するメソッドを定義することにより、ユーザ定義された
 型のオブジェクトはハッシュ値を持つことができ、@code{equal?}型のハッシュ
-テーブルで利用することができるようになります。
+テーブルで利用できるようになります。
 
-メソッドは正確な非負整数を返さなければなりません。また、@code{hash} と
-同じ制約に従わなければなりません。
+メソッドは正確な非負整数を返さなければなりません。また、
+互いに@code{equal?}であるオブジェクト同士に対しては同じハッシュ値を
+返さなければなりません。
+さらに、@code{obj}がポータブル(「ポータブル」の意味については
+上の@code{portable-hash}の説明を参照)の場合には、
+ハッシュ値は実行中のプラットフォームやプロセスの状態に依存してはなりません。
 
 メソッドが @var{obj} の要素のハッシュ値を必要とする場合には、
-それらに対しては、@code{object-hash} ではなく、@code{hash} を
-呼ばなければなりません。プリミティブなオブジェクトのハッシュ計算は
-@code{hash} が行うからです。
+それらに対して、@var{rec-hash}を呼び出してください。そうすれば
+適切なハッシュ関数が再帰的に呼び出されます。例えば@code{object-hash}が
+@code{portable-hash}経由で呼び出されている場合、
+@var{rec-hash}を呼べば同じシード値でポータブルなハッシュ値が計算されます。
 
+@var{obj}がいくつかの要素を持っている場合、各要素のハッシュ値を
+まとめるには@code{combine-hash-value}を呼びます。
 @c COMMON
 @example
 (define-class <myclass> () (x y))
@@ -650,12 +744,12 @@ For the hashing of primitive objects are done in @code{hash}.
 ;; user-defined equality function
 (define-method object-equal? ((a <myclass>) (b <myclass>))
   (and (equal? (ref a 'x) (ref b 'x))
-       (eq?    (ref a 'y) (ref b 'y))))
+       (= (abs (ref a 'y)) (abs (ref b 'y)))))
 
 ;; user-defined hash function
-(define-method object-hash ((a <myclass>))
-  (combine-hash-value (hash (ref a 'x))
-                      (eq-hash (ref a 'y))))
+(define-method object-hash ((a <myclass>) rec-hash)
+  (combine-hash-value (req-hash (ref a 'x))
+                      (req-hash (abs (ref a 'y)))))
 @end example
 @end deffn
 
@@ -674,6 +768,60 @@ This is useful to write user-defined @code{object-hash} method.
 @c COMMON
 @end defun
 
+@defun hash obj
+@c EN
+This function is deprecated.
+
+Calculate a hash value of @code{obj} suitable for @code{equal?} hash.
+By default, it returns the same value as @code{legacy-hash}.  However,
+if this is called from @code{default-hash} or @code{portable-hash}
+(via @code{object-hash} method), it recurses to the calling hash
+function.
+
+The behavior is to keep the legacy code work.  Until 0.9.5,
+@code{hash} is the only hash function to be used for both portable
+hash and @code{equal?}-hash, and @code{object-hash} method takes single
+argument (an object to hash) and calls @code{hash} recursively whenever it
+needs to get a hash value of other objects pointed from the argument.
+
+As of 0.9.5 we have more than one hash functions that calls
+@code{object-hash}, so the method takes the hash function as
+the second argument to recurse.  However, we can't just break
+the legacy code; so there's a default method defined in
+@code{object-hash} which is invoked when no two-arg method
+is defined for the given object, and dispatches to one-arg method.
+As far as the legacy @code{object-hash}
+code calls @code{hash}, it calls proper function.
+The new code shouldn't rely on this behavior, and must use
+the second argument of @code{object-hash} instead.
+@c JP
+この関数は非推奨となりました。
+
+@code{equal?}ハッシュとして使える、@var{obj}のハッシュ値を返します。
+デフォルトでは、この関数は@code{legacy-hash}と同じ値を返します。
+しかし、この関数が@code{default-hash}か@code{portable-hash}から
+(@code{object-hash}を経由して)呼ばれた場合は、呼び出したハッシュ関数へと
+再帰します。
+
+この振る舞いは既存のコードを動かすためのものです。0.9.5より前は、
+@code{hash}が、ポータブルなハッシュ値にも@code{equal?}ハッシュテーブルにも
+使えるハッシュ値を計算する唯一の関数でした。@code{object-hash}メソッドは
+ハッシュ値を計算したいオブジェクトだけを引数に取り、もしそのオブジェクトが
+指す他のオブジェクトのハッシュ値が欲しいなら、@code{hash}を再帰呼び出ししていました。
+
+0.9.5から、@code{object-hash}はいくつかのハッシュ関数から呼び出されるようになり、
+第2引数に再帰すべきハッシュ関数を取るようになりました。
+けれども既存のコードを動かなくしてしまうわけにはいきません。そこで、
+@code{object-hash}のデフォルトメソッド(2引数でマッチするメソッドが
+無い場合に呼ばれるもの)が、1引数の@code{object-hash}を呼び出すように
+定義されています。既存の@code{object-hash}が@code{hash}を呼び出していれば、
+正しいハッシュ関数へと再帰するというわけです。
+新たに書くコードはこの振る舞いに依存してはいけません。
+2引数の@code{object-hash}メソッドを定義してください。
+@c COMMON
+@end defun
+
+
 @defun boolean-hash bool
 @defunx char-hash char
 @defunx char-ci-hash char
@@ -684,17 +832,18 @@ This is useful to write user-defined @code{object-hash} method.
 [SRFI-128]
 @c EN
 These are hash functions for specific type of objects.
-In Gauche, these procedures are just a wrapper of @code{hash}
+In Gauche, these procedures are just a wrapper of @code{default-hash}
 with type checks (and case folding when relevant).  These are
 mainly provided to conform srfi-128; in your code you might
-just want to use @code{hash} (or @code{eq-hash}/@code{eqv-hash},
+just want to use @code{default-hash} (or @code{eq-hash}/@code{eqv-hash},
 depending on the equality predicate).
 @c JP
 これらは特定の型のオブジェクト専用のハッシュ関数です。
 Gaucheでは、これらの関数は単に引数の型チェックをして(必要なら大文字小文字の
-区別をなくした後)、組み込みの@code{hash}を呼び出しているだけです。
+区別をなくした後)、組み込みの@code{default-hash}を呼び出しているだけです。
 これらはsrfi-128で定義されているために提供されていますが、
-特にポータビリティが必要でなければ@code{hash}(あるいは、等価述語によっては@code{eq-hash}や
+特にポータビリティが必要でなければ@code{defailt-hash}
+(あるいは、等価述語によっては@code{eq-hash}や
 @code{eqv-hash})を呼んでしまう方が簡単だし高速です。
 @c COMMON
 
@@ -713,10 +862,6 @@ passing it to @code{hash}.
 @code{string-foldcase}については@ref{Full string case conversion}を
 参照してください。)
 @c COMMON
-@end defun
-
-@defun default-hash obj
-[SRFI-128]
 @end defun
 
 @defmac hash-bound
@@ -12937,6 +13082,17 @@ and don't ever read from @var{port} directly.
 @c COMMON
 
 @c EN
+Note that the lazy sequence terminates when EOF is read from the port,
+but the port isn't closed.  The port should be managed in larger
+dynamic extent where the lazy sequence is used.
+@c JP
+遅延シーケンスはポートがEOFを返した時点で終端となりますが、
+ポート自体はクローズされないことに注意してください。ポートの管理は、
+遅延シーケンスを使う部分全体を囲むような大きな動的エクステントで
+行う必要があります。
+@c cOMMON
+
+@c EN
 You can also convert input data into various lists by
 the following expressions (@pxref{Input utility functions}).
 Those procedures read the port eagerly until EOF and returns
@@ -17116,10 +17272,12 @@ until EOF and returns the accumulated data as a string.
 @code{port->list} applies @var{reader} on @var{port} repeatedly, until
 @var{reader} returns an EOF, then returns the list of objects
 @var{reader} returned.
+Note that @var{port} isn't closed.
 @c JP
 @code{port->list}は手続き@var{reader}を@var{port}に繰り返し適用し、
 結果をリストに蓄積します。@var{reader}がEOFを返したら
 蓄積されたリストを返します。
+@var{port}自体はクローズされないことに注意してください。
 @c COMMON
 
 @c EN
