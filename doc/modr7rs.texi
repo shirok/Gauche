@@ -481,6 +481,37 @@ writing Scheme in this environment.
 @c NODE 3つのimport形式
 
 @c EN
+For historical reasons, Gauche has three @code{import} forms; the original
+Gauche's @code{import}, R7RS @code{import}, and the hybrid @code{import}.
+
+Usually it is clear that the code is written in traditional Gauche
+or in R7RS, and usage of @code{import} is typically idiomatic, so there's
+not much confusion in practice.  Only when you talk about @code{import}
+outside of code, you might need to specify which one you're talking.
+
+The hybrid @code{import} is what we described @code{user#import} in
+the previous section (@pxref{Traveling between two worlds back and forth}).
+It understands both of Gauche's @code{import} and
+R7RS @code{import}.
+So what you really need to know is the first two.
+@c JP
+歴史的な事情から、Gaucheには@code{import}形式が3つあります。
+もともとのGaucheの@code{import}、R7RSの@code{import}、
+そしてハイブリッドの@code{import}です。
+
+通常、コードを読み書きしている時は、それが伝統的なGaucheコードかR7RSコードかは
+明確ですし、また@code{import}の使われ方はだいたい決まっているので、
+現場で混乱が起きることはありません。ただ、コードの外で@code{import}について
+話す場合は、どの@code{import}のことかをはっきりさせるのが良いでしょう。
+
+ハイブリッドの@code{import}は前節で説明した@code{user#import}です
+(@ref{Traveling between two worlds back and forth}参照)。
+@code{user#import}は
+Gaucheの@code{import}とR7RSの@code{import}の両方の文法を理解できるので、
+実際に知る必要のあるのは最初の2つの形式です。
+@c COMMON
+
+@c EN
 Gauche's module system design is inherited from STk, and we've been
 used @code{import} for purely name-space level operation; that is,
 it assumes the module you import from already exists in memory.  
@@ -517,6 +548,23 @@ R7RSは実装に選択の余地を与えるため、モジュール(ライブラ
 必要ならば暗黙のうちに、透過的にファイルをロードすることが期待されています。
 つまり、R7RSの@code{import}はGaucheの@code{use}と意味的に同じと考えられます。
 @c COMMON
+
+@c EN
+The hybrid @code{import} only appears at the beginning of the Scheme
+scripts.  It finds out whether the script is in the traditional Gauche
+code or in the R7RS code.  @xref{Traveling between two worlds back and forth}, for the details.
+@c JP
+ハイブリッド@code{import}はSchemeスクリプトの最初にのみ現れて、
+実行されるスクリプトが伝統的なGaucheコードであるかR7RSコードであるかを
+判断します。詳細は@ref{Traveling between two worlds back and forth}を参照してください。
+@c COMMON
+
+@c EN
+Now we'll explain R7RS @code{import}:
+@c JP
+ではR7RSの@code{import}を説明します:
+@c COMMON
+
 
 @defspec import import-spec @dots{}
 [R7RS]
