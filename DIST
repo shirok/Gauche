@@ -36,7 +36,17 @@ do_gen () {
     maintainer_clean
     rm -f configure gc/configure gc/configure.gnu
     cp tools/gc-configure.gnu gc/configure.gnu
-    libtoolize -q --copy  # ensures ltmain.sh in the top_srcdir
+    if [ "$LIBTOOLIZE" = "" ] && [ "`uname`" == "Darwin" ]; then
+        if command -v "glibtoolize" > /dev/null; then
+            LIBTOOLIZE=glibtoolize
+        elif command -v "libtoolize" > /dev/null; then
+            LIBTOOLIZE=libtoolize
+        else
+            echo "DIST: line $LINENO: command libtoolize or glibtoolize not found"
+            exit 1
+        fi
+    fi
+    ${LIBTOOLIZE:-libtoolize} -q --copy  # ensures ltmain.sh in the top_srcdir
     autoconf
     (cd gc; ./autogen.sh)
 }
