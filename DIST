@@ -36,7 +36,7 @@ do_gen () {
     maintainer_clean
     rm -f configure gc/configure gc/configure.gnu
     cp tools/gc-configure.gnu gc/configure.gnu
-    if [ "$LIBTOOLIZE" = "" ] && [ "`uname`" == "Darwin" ]; then
+    if [ "$LIBTOOLIZE" = "" -a "`uname`" = "Darwin" ]; then
         if command -v "glibtoolize" > /dev/null; then
             LIBTOOLIZE=glibtoolize
         elif command -v "libtoolize" > /dev/null; then
