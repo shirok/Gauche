@@ -157,13 +157,32 @@ static u_long number_hash(ScmObj obj, u_long salt, int portable)
 {
     u_long hashval;
     if (SCM_INTP(obj)) {
-        SMALL_INT_HASH(hashval, SCM_INT_VALUE(obj));
+        /* On 64bit platform, if we have fixnum that is beyond the range
+           of 32bit fixnum, we have to calculate the hash value the same
+           way as 32bit bignum would do. */
+        long u = SCM_INT_VALUE(obj);
+        if (portable) {
+            if (u < 0) u = -u;  /* safe, for u is in fixnum range */
+#if SIZEOF_LONG == 8
+            u = ((u & ((1UL<<32) - 1)) + (u >> 32)) & ((1UL<<32)-1);
+#endif
+        }
+        SMALL_INT_HASH(hashval, u);
     } else if (SCM_BIGNUMP(obj)) {
         if (portable) {
-            hashval =
-                Scm__DwSipPortableHash((uint8_t*)SCM_BIGNUM(obj)->values,
-                                       sizeof(u_long)*SCM_BIGNUM_SIZE(obj),
-                                       salt, TRUE);
+            u_int i;
+            u_long u = 0;
+            for (i=0; i<SCM_BIGNUM_SIZE(obj); i++) {
+#if SIZEOF_LONG == 4
+                u += SCM_BIGNUM(obj)->values[i];
+#elif SIZEOF_LONG == 8
+                u += (SCM_BIGNUM(obj)->values[i] & ((1UL<<32) - 1))
+                    + (SCM_BIGNUM(obj)->values[i] >> 32);
+#else
+#error "sizeof(long) > 8 platform unsupported"
+#endif
+                SMALL_INT_HASH(hashval, u);
+            }
         } else {
             u_int i;
             u_long u = 0;
@@ -181,9 +200,6 @@ static u_long number_hash(ScmObj obj, u_long salt, int portable)
         u_long h2 = number_hash(SCM_RATNUM_DENOM(obj), salt, portable);
         hashval = COMBINE(h1, h2);
     } else {
-        if (!SCM_COMPNUMP(obj)) {
-            Scm_Printf(SCM_CURERR, ">>> %S\n", obj);
-        }
         SCM_ASSERT(SCM_COMPNUMP(obj));
         hashval = COMBINE(flonum_hash(SCM_COMPNUM_REAL(obj), salt, portable),
                           flonum_hash(SCM_COMPNUM_IMAG(obj), salt, portable));
@@ -222,12 +238,12 @@ static u_long internal_string_hash(ScmString *str, u_long salt, int portable)
 */
 static u_long equal_hash_common(ScmObj obj, u_long salt, int portable)
 {
-    if (!SCM_PTRP(obj)) {
+    if (SCM_NUMBERP(obj)) {
+        return number_hash(obj, salt, portable);
+    } else if (!SCM_PTRP(obj)) {
         u_long hashval;
         SMALL_INT_HASH(hashval, (u_long)SCM_WORD(obj));
         return hashval&PORTABLE_HASHMASK;
-    } else if (SCM_NUMBERP(obj)) {
-        return number_hash(obj, salt, portable);
     } else if (SCM_STRINGP(obj)) {
         return internal_string_hash(SCM_STRING(obj), salt, portable);
     } else if (SCM_PAIRP(obj)) {
