@@ -748,8 +748,8 @@ hash values.
 
 ;; user-defined hash function
 (define-method object-hash ((a <myclass>) rec-hash)
-  (combine-hash-value (req-hash (ref a 'x))
-                      (req-hash (abs (ref a 'y)))))
+  (combine-hash-value (rec-hash (ref a 'x))
+                      (rec-hash (abs (ref a 'y)))))
 @end example
 @end deffn
 
