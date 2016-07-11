@@ -11968,6 +11968,18 @@ are nonnegative integers referring to the file descriptor
 @emph{子プロセスにおける}ファイルディスクリプタを指定する非負の整数です。
 @c COMMON
 
+@c EN
+(Note: If you just want to run a command and get its output as a string
+take a look at @code{process-output->string} (@pxref{Process ports}).
+If you want to pipe multiple commands together,
+@pxref{Running multiple processes}.)
+@c JP
+(註：簡単にコマンドを走らせて結果を文字列で得たい場合は、
+@code{process-output->string}が使えます(@ref{Process ports}参照)。
+また、複数のコマンドをパイプでつなぎたい場合は
+@ref{Running multiple processes}を見てください。)
+@c COMMON
+
 @table @code
 @item (< @var{fd} @var{source})
 @c EN
