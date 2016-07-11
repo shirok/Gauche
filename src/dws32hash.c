@@ -1,6 +1,7 @@
 /* Public domain 2013 Sam Trenholme */
 
 #include "dws32hash.h"
+#include "gauche/priv/dws_adapter.h"
 
 /* Core sipHash round function, as per spec */
 void DwSip_round(DwSH_WORD *v0, DwSH_WORD *v1, DwSH_WORD *v2, DwSH_WORD *v3) {

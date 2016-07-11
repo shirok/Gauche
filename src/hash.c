@@ -123,29 +123,12 @@ ScmSmallInt Scm_HashSaltSet(ScmSmallInt newval) /* returns old value */
 
 /* For strings, we employ siphash.
    We use public domain implementation by Sam Trenholme
-   http://samiam.org/blog/20131006.html
+   http://samiam.org/blog/20131006.html.  It has a version suitable
+   for 32bit architecture, too.
+   See dws_adapter.h for the details.
  */
-#if SIZEOF_LONG == 4
-#include "dws32hash.h"
-#else
-#include "dwsiphash.h"
-#endif
-
-/* forward declaration to make these file-scope */
-static void DwSip_round(DwSH_WORD *v0, DwSH_WORD *v1,
-                        DwSH_WORD *v2, DwSH_WORD *v3);
-static void DwSip_ksetup(DwSH_WORD *k0, DwSH_WORD *k1,
-                         DwSH_WORD *v0, DwSH_WORD *v1,
-                         DwSH_WORD *v2, DwSH_WORD *v3, DwSH_WORD *fx);
-static DwSH_WORD DwSip_getword(uint32_t *offset, uint8_t *str, uint32_t len);
-static DwSH_WORD DwSip_hash(uint8_t *str, uint32_t len,
-                            DwSH_WORD k1, DwSH_WORD k2);
-
-#if SIZEOF_LONG == 4
-#include "dws32hash.c"
-#else
-#include "dwsiphash.c"
-#endif
+#define SCM_DWSIPHASH_INTERFACE
+#include "gauche/priv/dws_adapter.h"
 
 u_long Scm_EqHash(ScmObj obj)
 {
@@ -154,57 +137,81 @@ u_long Scm_EqHash(ScmObj obj)
     return hashval&HASHMASK;
 }
 
-static u_long flonum_hash(double d)
+static u_long number_hash(ScmObj obj, u_long salt, int portable);
+
+static u_long flonum_hash(double d, u_long salt, int portable)
 {
     int exp, sign;
     ScmObj mantissa = Scm_DecodeFlonum(d, &exp, &sign);
     u_long xh;
     SMALL_INT_HASH(xh, exp*sign);
-    /* NB: If d is not finite (inf or nan), mantissa is boolean.  We just
-       give it to Scm_EqvHash to cover that case, too.
-       Different bitpatterns of NaN may produce different hash value (since
-       exp and sign differ), but they won't be eqv? anyway, so we don't care.
-    */
-    return COMBINE(Scm_EqvHash(mantissa), xh);
+    if (SCM_NUMBERP(mantissa)) {
+        return COMBINE(number_hash(mantissa, salt, portable), xh);
+    } else {
+        /* d is not finite.  we just map +inf.0, -inf.0 and nan.0 to 0. */
+        return 0;
+    }
 }
 
-u_long Scm_EqvHash(ScmObj obj)
+static u_long number_hash(ScmObj obj, u_long salt, int portable)
 {
     u_long hashval;
-    if (SCM_NUMBERP(obj)) {
-        if (SCM_INTP(obj)) {
-            SMALL_INT_HASH(hashval, SCM_INT_VALUE(obj));
-        } else if (SCM_BIGNUMP(obj)) {
+    if (SCM_INTP(obj)) {
+        SMALL_INT_HASH(hashval, SCM_INT_VALUE(obj));
+    } else if (SCM_BIGNUMP(obj)) {
+        if (portable) {
+            hashval =
+                Scm__DwSipPortableHash((uint8_t*)SCM_BIGNUM(obj)->values,
+                                       sizeof(u_long)*SCM_BIGNUM_SIZE(obj),
+                                       salt, TRUE);
+        } else {
             u_int i;
             u_long u = 0;
             for (i=0; i<SCM_BIGNUM_SIZE(obj); i++) {
                 u += SCM_BIGNUM(obj)->values[i];
             }
             SMALL_INT_HASH(hashval, u);
-        } else if (SCM_FLONUMP(obj)) {
-            hashval = flonum_hash(SCM_FLONUM_VALUE(obj));
-        } else if (SCM_RATNUMP(obj)) {
-            /* Ratnum must already be normalized, so we can simply combine
-               hashvals of numerator and denominator. */
-            u_long h1 = Scm_EqvHash(SCM_RATNUM_NUMER(obj));
-            u_long h2 = Scm_EqvHash(SCM_RATNUM_DENOM(obj));
-            hashval = COMBINE(h1, h2);
-        } else {
-            SCM_ASSERT(SCM_COMPNUMP(obj));
-            hashval = COMBINE(flonum_hash(SCM_COMPNUM_REAL(obj)),
-                              flonum_hash(SCM_COMPNUM_IMAG(obj)));
         }
+    } else if (SCM_FLONUMP(obj)) {
+        hashval = flonum_hash(SCM_FLONUM_VALUE(obj), salt, portable);
+    } else if (SCM_RATNUMP(obj)) {
+        /* Ratnum must already be normalized, so we can simply combine
+           hashvals of numerator and denominator. */
+        u_long h1 = number_hash(SCM_RATNUM_NUMER(obj), salt, portable);
+        u_long h2 = number_hash(SCM_RATNUM_DENOM(obj), salt, portable);
+        hashval = COMBINE(h1, h2);
+    } else {
+        if (!SCM_COMPNUMP(obj)) {
+            Scm_Printf(SCM_CURERR, ">>> %S\n", obj);
+        }
+        SCM_ASSERT(SCM_COMPNUMP(obj));
+        hashval = COMBINE(flonum_hash(SCM_COMPNUM_REAL(obj), salt, portable),
+                          flonum_hash(SCM_COMPNUM_IMAG(obj), salt, portable));
+    }
+    return hashval & (portable ? PORTABLE_HASHMASK : HASHMASK);
+}
+
+u_long Scm_EqvHash(ScmObj obj)
+{
+    u_long hashval;
+    if (SCM_NUMBERP(obj)) {
+        hashval = number_hash(obj, 0, FALSE);
     } else {
         ADDRESS_HASH(hashval, obj);
     }
     return hashval&HASHMASK;
 }
 
-static u_long internal_string_hash(ScmString *str, u_long salt)
+static u_long internal_string_hash(ScmString *str, u_long salt, int portable)
 {
     const ScmStringBody *b = SCM_STRING_BODY(str);
-    return (u_long)DwSip_hash((uint8_t*)b->start, b->size,
-                              (DwSH_WORD)salt, (DwSH_WORD)salt);
+    if (portable) {
+        return (u_long)Scm__DwSipPortableHash((uint8_t*)b->start, b->size,
+                                              salt, salt);
+    } else {
+        return Scm__DwSipDefaultHash((uint8_t*)b->start, b->size,
+                                     salt, salt);
+    }
 }
 
 /* equal-hash, which satisfies
@@ -220,9 +227,9 @@ static u_long equal_hash_common(ScmObj obj, u_long salt, int portable)
         SMALL_INT_HASH(hashval, (u_long)SCM_WORD(obj));
         return hashval&PORTABLE_HASHMASK;
     } else if (SCM_NUMBERP(obj)) {
-        return Scm_EqvHash(obj);
+        return number_hash(obj, salt, portable);
     } else if (SCM_STRINGP(obj)) {
-        return internal_string_hash(SCM_STRING(obj), salt);
+        return internal_string_hash(SCM_STRING(obj), salt, portable);
     } else if (SCM_PAIRP(obj)) {
         u_long h = 0, h2;
         ScmObj cp;
@@ -242,7 +249,7 @@ static u_long equal_hash_common(ScmObj obj, u_long salt, int portable)
         return h;
     } else if (SCM_SYMBOLP(obj)) {
         if (portable) {
-            return internal_string_hash(SCM_SYMBOL_NAME(obj), salt);
+            return internal_string_hash(SCM_SYMBOL_NAME(obj), salt, TRUE);
         } else {
             u_long hashval;
             ADDRESS_HASH(hashval, obj);
@@ -252,7 +259,7 @@ static u_long equal_hash_common(ScmObj obj, u_long salt, int portable)
         /* TRANSIENT: fold this to above once symbol-keyword integration
            is completed. */
         if (portable) {
-            return internal_string_hash(SCM_KEYWORD_NAME(obj), salt);
+            return internal_string_hash(SCM_KEYWORD_NAME(obj), salt, TRUE);
         } else {
             u_long hashval;
             ADDRESS_HASH(hashval, obj);
@@ -323,7 +330,7 @@ ScmSmallInt Scm_DefaultHash(ScmObj obj)
    of srfi-13; just give 0 as modulo if you don't need it.  */
 u_long Scm_HashString(ScmString *str, u_long modulo)
 {
-    u_long hashval = internal_string_hash(str, Scm_HashSaltRef());
+    u_long hashval = internal_string_hash(str, Scm_HashSaltRef(), FALSE);
     if (modulo == 0) return hashval&HASHMASK;
     else return (hashval % modulo);
 }
