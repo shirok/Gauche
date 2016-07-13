@@ -873,7 +873,7 @@ User-defined hash function can limit the range of the result between
 0 and @code{(hash-bound)}, respectively, without worrying to lose
 quality of hash function.
 
-User-defined hash function can also take into acconut of the
+User-defined hash function can also take into account of the
 value @code{(hash-salt)} into hash calculation; the salt value may
 differ between runs of the Scheme processes, or even between
 hash table instances.  It is to avoid collision attack.
@@ -934,6 +934,9 @@ Checks if an object can be compared with this comparator.
 @item Equality predicate
 See if given two objects
 are equal to each other; returns a boolean value.
+@item Ordering predicate
+Compare given two objects, and returns true iff the first one is
+strictly precedes the second one.  That is, this is a less-than predicate.
 @item Comparison procedure
 Compare given two objects, and returns either -1 (the first one is less
 than the second), 0 (they are equal), or 1 (the first one is greater
@@ -948,6 +951,10 @@ Returns a hash value of the given object.
 @item 等価述語
 二つのオブジェクトが等価かどうかを判定し、等価なら@code{#t}を、そうでなければ@code{#f}
 を返します。
+@item 順序手続き
+二つのオブジェクトの大小関係を判定し、
+最初のオブジェクトが二つ目のオブジェクトより小さければ@code{#t}を、
+そうでなければ@code{#f}を返します。
 @item 比較手続き
 二つのオブジェクトの大小関係を判定し、
 最初のオブジェクトの方が小さければ-1を、
@@ -959,16 +966,35 @@ Returns a hash value of the given object.
 @c COMMON
 
 @c EN
-A comparator may not have a comparison procedure and/or
-a hash function.  You can check if a comparison procedure
-or a hash function is available in a given comparator
-by @code{comparator-comparison-procedure?} and
-@code{comparator-hash-function?}, respectively.
+SRFI-128 comparators use the ordering predicate, 
+while SRFI-114 comparators use the comparison procedure.
+Gauche's @code{<comparator>} supports both by automatically
+generating the missing one; that is, if you create a comparator
+with SRFI-128 interface, by giving an ordering predicate,
+Gauche automatically fills the comparison procedure, and
+if you create one with SRFI-114 interface by giving a comparison
+procedure, Gauche generates the ordering predicate.
 @c JP
-比較器は、比較手続き、ハッシュ関数、あるいはその両方を欠いていることもあります。
-比較手続きとハッシュ関数が使えるかどうかは、それぞれ
-@code{comparator-comparison-procedure?}と
-@code{comparator-hash-function?}で調べることができます。
+SRFI-128の比較器は順序手続きを使い、
+SRFI-114の比較器は比較手続きを使います。
+Gaucheの@code{<comparator>}は両方をサポートするために、
+自動的に欠けている手続きを補います。つまり、順序手続きを与えてSRFI-128のインタフェースで
+比較器を作った場合、Gaucheは自動的に比較手続きを生成しますし、
+比較手続きを与えてSRFI-114のインタフェースで比較器を作った場合は
+順序手続きが自動生成されます。
+@c COMMON
+
+@c EN
+A comparator may not have an ordering predicate / comparison procedure,
+and/or a hash function.  You can check if the comparator
+can be used for ordering or hashing by
+@code{comparator-ordered?} and
+@code{comparator-hashable?}, respectively.
+@c JP
+比較器は、順序/比較手続き、ハッシュ関数、あるいはその両方を欠いていることもあります。
+比較器が順序づけやハッシュに使えるかどうかは、それぞれ
+@code{comparator-ordered?}と
+@code{comparator-hashable?}で調べることができます。
 @c COMMON
 
 @c EN
@@ -986,19 +1012,33 @@ Gauche組み込みのデータ型は、コンストラクタで比較器を取�
 @end deftp
 
 
-@defun make-comparator type-test equal compare hash :optional name
-[SRFI-114+]
+@defun make-comparator type-test equal order hash :optional name
+[SRFI-128+]
 @c EN
 Creates a new comparator form the given @var{type-test}, 
-@var{equal}, @var{compare} and @var{hash} functions, and returns it.
+@var{equal}, @var{order} and @var{hash} functions, and returns it.
 
 See the description of @code{<comparator>} above for the role of
 those procedures.
 @c JP
-与えられた@var{type-test}、@var{equal}、@var{compare}、@var{hash}の
+与えられた@var{type-test}、@var{equal}、@var{order}、@var{hash}の
 各関数をまとめて、新たな比較器を作って返します。
 
 各関数の役割については上の@code{<comparator>}の説明を参照してください。
+@c COMMON
+
+@c EN
+Note: Both SRFI-128 and SRFI-114 defines @code{make-comparator},
+but where SRFI-128 takes @var{order} argument, SRFI-114 takes
+@var{compare} argument.  Since SRFI-128 is preferable, we adopt
+it for the built-in interface, and give a different name
+(@code{make-comparator/compare}) for SRFI-114 constructor.
+@c JP
+註: SRFI-128とSRFI-114は両方とも@code{make-comparator}を定義していますが、
+SRFI-128が@var{order}手続きを取るところでSRFI-114は@var{compare}手続きを
+取ります。SRFI-128の方が推奨されるので、Gaucheでは組み込みの@code{make-comparator}
+をSRFI-128に合わせ、SRFI-114の方は@code{make-comparator/compare}という
+名前にしてあります。
 @c COMMON
 
 @c EN
@@ -1030,47 +1070,34 @@ a procedure that always return @code{#t} is used.
 @c COMMON
 
 @c EN
-The @var{equal} argument must be either @code{#t}, or
+The @var{equal} argument must
 a predicate taking two arguments to test equality.
-If it is @code{#t}, the @var{compare} argument must be a procedure,
-and the predefined equality procedure passes both arguments
-to it, and return true iff the compare procedure returns 0.
 @c JP
-@var{equal}引数は@code{#t}もしくは二つの引数を取りその等価性を判定する
-述語でなければなりません。@code{#t}が渡された場合、@var{compare}引数が
-手続きでなければならず、@var{compare}が0を返した場合に@var{#t}となるような
-手続きが等価述語として補われます。
+@var{equal}引数は二つの引数を取りその等価性を判定する
+述語でなければなりません。
 @c COMMON
 
 @c EN
-The @var{compare} argument must be either @code{#f}, or
-a procedure taking two arguments and returning either -1, 0, or
-1, depending on whether the first argument is less than, equal to,
-or greater than the second argument.
-If it is @code{#f}, it indicates the comparator can't order objects
-(equality can still be tested, though).  The predefined procedure
-just throws an error.
+the @var{order} argument must be either @code{#f} or
+a procedure taking two arguments and returning a boolean value.
+It must return @code{#t} iff the first argument strictly precedes
+the second one.  If @code{#f} is passed, the comparator can not be
+used for ordering.
 @c JP
-@var{compare}引数は@code{#f}か、二つの引数を取りそれらの大小関係を
-判定する手続きでなければなりません。手続きの場合、引数の最初の方が小さいか、
-両者が等しいか、最初の方が大きいか、に応じて-1, 0, 1をそれぞれ返さなければ
-なります。@code{#f}の場合、対象とするオブジェクトの集合に全順序関係がつけられない
-ことを表します。この場合、呼ばれたらエラーを投げる手続きが補われます。
+@var{order}手続きは@code{#f}もしくは二つの引数を取り真偽値を返す手続きで
+なければなりません。手続きの場合、最初の引数が二番目の引数より厳密に手前に
+ある場合にのみ@code{#t}を返します。@code{#f}が渡された場合は、
+作られる比較器は順序づけには使えません。
 @c COMMON
 
 @c EN
 The @var{hash} argument must be either @code{#f}, or
 a procedure taking one argument and returning nonnegative exact
-integer.  SRFI-114 doesn't specify the range of the hash value,
-but in Gauche, hashtable won't use greater than 32bits range,
-most likely much less bits, so you can limit to the result to
-fixnum range.  If @var{#f} is given, it indicates the comparator
+integer.  If @var{#f} is given, it indicates the comparator
 can't hash objects; the predefined procedure just throws an error.
 @c JP
 @var{hash}引数は@code{#f}か、一つの引数を取り非負の正確な整数をハッシュ値と
-して返す手続きでなければなりません。SRFI-114ではハッシュ値の値域は定めて
-いませんが、Gaucheではハッシュテーブルは最大でも下位から32ビットの値しか
-使わないので、ハッシュ関数もその範囲に値を絞って良いです。
+して返す手続きでなければなりません。
 @code{#f}が渡された場合は、この比較器ではハッシュ値を取れないことを意味します。
 この場合、呼ばれたらエラーを投げる手続きが補われます。
 @c COMMON
@@ -1086,8 +1113,58 @@ printing the comparator, to help debugging.
 @c COMMON
 @end defun
 
+@defun make-comparator/compare type-test equal compare hash :optional name
+[SRFI-114+]
+@c EN
+This is SRFI-114 comparator constructor.  It is provided for the backward
+compatibility, and new code should use @code{make-comparator} as defined
+in SRFI-128.
+@c JP
+これはSRFI-114比較器のコンストラクタです。後方互換性のために提供されています。
+新たなコードはSRFI-128の@code{make-comparator}を使ってください。
+@c COMMON
+
+@c EN
+It's mostly the same as @code{make-constructor} above, except
+the following:
+@c JP
+以下の点を除き、上の@code{make-constructor}とほぼ同じです。
+@c COMMON
+
+@itemize
+@item
+@c EN
+The third argument (@var{compare}) is a comparison procedure
+instead of an ordering predicate.
+It must be either @code{#f}, or a procedure taking two arguments
+and returning either -1, 0, or 1, depending on whether the
+first argument is less than, equal to,
+or greater than the second argument.
+If it is @code{#f}, it indicates the comparator can't order objects.
+@c JP
+第3引数(@var{compare})には順序手続きのかわりに比較手続きを渡します。
+この引数は@code{#f}か、二つの引数を取りそれらの大小関係を
+判定する手続きでなければなりません。手続きの場合、引数の最初の方が小さいか、
+両者が等しいか、最初の方が大きいか、に応じて-1, 0, 1をそれぞれ返さなければ
+なります。@code{#f}の場合、対象とするオブジェクトの集合に全順序関係がつけられない
+ことを表します。
+@c COMMON
+@item
+@c EN
+You can pass @code{#t} to the @var{equal} argument when you give
+a comparison procedure.  In that case, equality is determined
+by calling the comparison procedure and see if the result is 0.
+@c JP
+比較手続きを与えた場合、@var{equal}手続きに@code{#t}を渡すことができます。
+その場合、等価性の判定は比較手続きが0を返すかどうかで行われます。
+@c COMMON
+@end itemize
+@end defun
+
+
+
 @defun comparator? obj
-[SRFI-114]
+[SRFI-128]
 @c EN
 Returns true iff @var{obj} is a comparator.
 @c JP
@@ -1102,7 +1179,7 @@ via this method.  Even @var{a} and @var{b} are comparators created
 separately, they can be @code{equal?} if all of their slots are
 the same.
 
-This is Gauche's extension.  SRFI-114 says nothing about
+This is Gauche's extension.  SRFI-128 says nothing about
 equality of comparators, but it is sometimes useful if you can compare
 two.
 @c JP
@@ -1111,7 +1188,7 @@ two.
 比較器@var{a}と@var{b}が別々に作られたものであっても、各スロットの内容が
 等価であれば@code{equal?}とみなされます。
 
-これはGaucheの拡張です。SRFI-114は比較器同士の等価性については何も定義していません。
+これはGaucheの拡張です。SRFI-128は比較器同士の等価性については何も定義していません。
 けれども、時には等価判定が便利なことがあります。
 @c COMMON
 
