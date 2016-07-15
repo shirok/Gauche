@@ -181,8 +181,8 @@ static u_long number_hash(ScmObj obj, u_long salt, int portable)
 #else
 #error "sizeof(long) > 8 platform unsupported"
 #endif
-                SMALL_INT_HASH(hashval, u);
             }
+            SMALL_INT_HASH(hashval, u);
         } else {
             u_int i;
             u_long u = 0;
