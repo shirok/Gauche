@@ -1114,13 +1114,20 @@ printing the comparator, to help debugging.
 @end defun
 
 @defun make-comparator/compare type-test equal compare hash :optional name
-[SRFI-114+]
 @c EN
-This is SRFI-114 comparator constructor.  It is provided for the backward
+This is SRFI-114 comparator constructor.  In SRFI-114, this is called
+@code{make-comparator}.  Avoiding name conflict, we renamed it.
+If you @code{(use srfi-114)} you get the original name @code{make-comparator}
+(and the built-in @code{make-comparator} is shadowed).
+This is provided for the backward
 compatibility, and new code should use @code{make-comparator} as defined
 in SRFI-128.
 @c JP
-これはSRFI-114比較器のコンストラクタです。後方互換性のために提供されています。
+これはSRFI-114比較器のコンストラクタです。SRFI-114ではこれが
+@code{make-comparator}と呼ばれていますが、名前の衝突を避けるために別の名前を用意しました。
+@code{(use srfi-114)}した場合は、SRFI-114のコンストラクタが元の名前
+で使えるようになります(組み込みの@code{make-comparator}がシャドウされます。)
+これは後方互換性のために提供されています。
 新たなコードはSRFI-128の@code{make-comparator}を使ってください。
 @c COMMON
 
@@ -1160,8 +1167,6 @@ by calling the comparison procedure and see if the result is 0.
 @c COMMON
 @end itemize
 @end defun
-
-
 
 @defun comparator? obj
 [SRFI-128]
@@ -1208,6 +1213,26 @@ two.
         (make-comparator (^x x) eq? #f #f))
 @end example
 @end deffn
+
+@defun comparator-flavor cmpr
+@c EN
+Returns a symbol @code{ordering} if @var{cmpr} is created with
+SRFI-128 constructor, and returns @code{comparison} if @var{cmpr}
+is created with SRFI-114 constructor.
+
+Usually applications don't need to distinguish these two kinds of
+comparators, for either kind of comparators can behave just as another
+kind.  This procedure is for some particular cases when one
+wants to optimize for the underlying comparator implementation.
+@c JP
+@var{cmpr}がsrfi-128コンストラクタで作られた場合はシンボル@code{ordering}を、
+srfi-114コンストラクタで作られた場合はシンボル@code{comparison}を返します。
+
+アプリケーションは通常両者を区別する必要はありません。一方の比較器は
+もう一方の比較器としても使うことができるからです。
+比較器の実装に特化した最適化をしたい場合にのみ、区別が必要です。
+@c COMMON
+@end defun
 
 @defun comparator-comparison-procedure? cmpr
 @defunx comparator-hash-function? cmpr
@@ -1483,7 +1508,6 @@ but the comparison procedure is flipped.
 
 @defun make-key-comparator cmpr test key
 @c EN
-This isn't in srfi-114, but we found it convenient.
 Suppose you have some kind of structure, but you only need to look
 at one part of it to compare them.
 
@@ -1494,7 +1518,6 @@ the result to the corresponding procedure of @var{cmpr}.  If @var{cmpr}
 lacks comparison procedure and/or hash function, so does the returned
 comparator.
 @c JP
-これはsrfi-114には含まれていませんが、便利なので用意しました。
 何らかの構造体があって、その比較に際してはその中の一つの要素を見るだけで良い、
 という場合に使える手続きです。
 
