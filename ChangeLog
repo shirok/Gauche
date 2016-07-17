@@ -1,3 +1,12 @@
+2016-07-17  shiro  <shiro@acm.org>
+
+	* src/libcmp.scm, lib/srfi-114.scm (comparator-comparison-procedure?)
+	  (comparator-hash-function?, comparator-type-test-procedure):
+	  Move some srfi-114-specific procedures from builtin to srfi-114.
+	  Code that relies on them being builtin must be changed to use
+	  srfi-128 procedures.  Various internal code has been fixed to
+	  use srfi-128 ones.
+
 2016-07-10  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/priv/dws_adapter.h: We need to stick 32bit siphash

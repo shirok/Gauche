@@ -47,9 +47,8 @@
     [(cmp)
      (if (comparator? cmp)
        (begin
-         (unless (comparator-comparison-procedure? cmp)
-           (error "make-tree-map needs a comparator with comparison \
-                  procedure, but got:" cmp))
+         (unless (comparator-ordered? cmp)
+           (error "make-tree-map needs an ordered comparator, but got:" cmp))
          (%make-tree-map cmp))
        (%make-tree-map (make-comparator/compare #t #t cmp #f)))]
     [(=? <?) (%make-tree-map (make-comparator #t =? <? #f))]))

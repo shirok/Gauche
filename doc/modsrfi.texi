@@ -5911,9 +5911,8 @@ They do provide hash functions.
 
 @deftp {Module} srfi-114
 @mdindex srfi-114
-Gauche has built-in support of srfi-114-compatible comparators,
-but the core only provides basic APIs.  This module provides
-full set of srfi-114 procedures.
+This module is provided for the compatibility of code using srfi-114.
+The new code should use srfi-128, which is fully built-in.
 @end deftp
 
 The following procedures are built-in.  @xref{Basic comparators}, for
@@ -5970,7 +5969,46 @@ for the compatibility.
 @code{comparator-equal?},
 @code{comparator-compare},
 @code{comparator-hash}
+
+@item Comparison predicates
+@code{=?},
+@code{<?},
+@code{<=?},
+@code{>?},
+@code{>=?}
 @end table
+
+@subsubheading Basic comparator interface
+
+@defun make-comparator type-test equal compare hash :optional name
+[SRFI-114+]
+This is SRFI-114 style comparator constructor.  The optional @var{name}
+argument is Gauche's extension.
+
+This is the same as built-in @code{make-comparator/compare}.
+@xref{Basic comparators}, for the details.
+
+Do not confuse this with built-in (SRFI-128) @code{make-comparator};
+if you @code{(use srfi-114)}, this one shadows the built-in one.
+
+Note that a comparator works for both SRFI-114 and SRFI-128 procedures,
+regardless of how it is constructed.
+@end defun
+
+@defun comparator-comparison-procedure? c
+@defunx comparator-hash-function? c
+[SRFI-114]
+Returns true iff a comparator @var{c} can be used to order objects
+or to hash them, respectively.  These are aliases of
+built-in @code{comparator-ordered?} and @code{comparator-hashable?}.
+@end defun
+
+@defun comparator-type-test-procedure c
+[SRFI-114]
+Returns type test predicate of a comparator @var{c}.
+This is an alias of bulit-in @code{comparator-type-test-predicate}.
+@end defun
+
 
 @subsubheading Auxiliary comparator constructors
 
@@ -6195,25 +6233,6 @@ when provided.
 (if>=? (compare 10 20) 'yes 'no) @result{} no
 @end example
 @end defmac
-
-@subsubheading Comparison predicates
-
-@defun =? comparator obj1 obj2 obj3 @dots{}
-@defunx <? comparator obj1 obj2 obj3 @dots{}
-@defunx >? comparator obj1 obj2 obj3 @dots{}
-@defunx <=? comparator obj1 obj2 obj3 @dots{}
-@defunx >=? comparator obj1 obj2 obj3 @dots{}
-[SRFI-114]
-Transitive comparison using the given comparator.
-
-@example
-(<? default-comparator #f #t 'foo)  @result{} #t
-(<? default-comparator #f 0  'foo)  @result{} #f
-@end example
-
-(@xref{Basic comparators}, for the order of different types of objects by
-@code{default-comparator}).
-@end defun
 
 @subsubheading Comparison predicate constructors
 

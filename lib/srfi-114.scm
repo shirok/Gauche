@@ -46,8 +46,8 @@
 (define-module srfi-114
   (use gauche.uvector)
   (export comparator?                   ;builtin (srfi-128)
-          comparator-comparison-procedure? ;builtin
-          comparator-hash-function?        ;builtin
+          comparator-comparison-procedure?
+          comparator-hash-function?
 
           boolean-comparator char-comparator char-ci-comparator
           string-comparator string-ci-comparator symbol-comparator
@@ -75,7 +75,7 @@
           eqv-comparator                ;builtin
           equal-comparator              ;builtin
 
-          comparator-type-test-procedure  ;builtin
+          comparator-type-test-procedure
           comparator-equality-predicate   ;builtin
           comparator-comparison-procedure ;builtin
           comparator-hash-function        ;builtin
@@ -91,7 +91,7 @@
 
           if3 if=? if<? if>? if<=? if>=? if-not=?
 
-          =? <? >? <=? >=?
+          =? <? >? <=? >=?              ;builtin
 
           make=? make<?  make>? make<=? make>=?
 
@@ -100,6 +100,17 @@
 
           comparator-min comparator-max))
 (select-module srfi-114)
+
+;;;
+;;; Predicates
+;;;
+(define (comparator-comparison-procedure? c)
+  (comparator-ordered? c))              ;srfi-128
+(define (comparator-hash-function? c)
+  (comparator-hashable? c))             ;srfi-128
+(define (comparator-type-test-procedure c)
+  (comparator-type-test-predicate c))   ;srfi-128
+
 
 ;;;
 ;;; Inexact comparator
@@ -329,12 +340,6 @@
 (define make>? (gen-make-x >))
 (define make<=? (gen-make-x <=))
 (define make>=? (gen-make-x >=))
-
-(define (=? cmp a b . args)  (apply (make=? cmp) a b args))
-(define (<? cmp a b . args)  (apply (make<? cmp) a b args))
-(define (>? cmp a b . args)  (apply (make>? cmp) a b args))
-(define (<=? cmp a b . args) (apply (make<=? cmp) a b args))
-(define (>=? cmp a b . args) (apply (make>=? cmp) a b args))
 
 (define in-open-interval?
   (case-lambda

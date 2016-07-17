@@ -173,16 +173,16 @@
        ((comparator-equality-predicate (make-comparator/compare #t #t (^[a b] 0) #f))
         1 2))
 (test* "has comparison proc" #t
-       (comparator-comparison-procedure? (make-comparator/compare #t eq? compare #f)))
+       (comparator-ordered? (make-comparator/compare #t eq? compare #f)))
 (test* "no comparison proc" #f
-       (comparator-comparison-procedure? (make-comparator/compare #t eq? #f #f)))
+       (comparator-ordered? (make-comparator/compare #t eq? #f #f)))
 (test* "comparator fallback behavior" (test-error)
        ((comparator-comparison-procedure (make-comparator/compare #t eq? #f #f))
         'a 'b))
 (test* "has hash function" #t
-       (comparator-hash-function? (make-comparator/compare #t eq? #f hash)))
+       (comparator-hashable? (make-comparator/compare #t eq? #f hash)))
 (test* "no hash function" #f
-       (comparator-hash-function? (make-comparator/compare #t eq? #f #f)))
+       (comparator-hashable? (make-comparator/compare #t eq? #f #f)))
 (test* "hash fallback behavior" (test-error)
        ((comparator-hash-procedure (make-comparator/compare #t eq? #f #f)) 'a))
 

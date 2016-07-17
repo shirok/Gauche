@@ -228,12 +228,12 @@
       [(eq? comparator string-comparator)
        (make-hash-table 'string=? init-size)]
       [else
-       (unless (comparator-hash-function? comparator)
+       (unless (comparator-hashable? comparator)
          (error "make-hash-table requires a comparator with hash function, \
                  but got:" comparator))
        ($ %make-hash-table-from-comparator
           comparator init-size
-          (not (eq? (comparator-type-test-procedure comparator)
+          (not (eq? (comparator-type-test-predicate comparator)
                     (with-module gauche.internal default-type-test))))])]))
 
 (define-cproc hash-table-type (hash::<hash-table>)

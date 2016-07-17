@@ -1234,51 +1234,106 @@ srfi-114コンストラクタで作られた場合はシンボル@code{compariso
 @c COMMON
 @end defun
 
-@defun comparator-comparison-procedure? cmpr
-@defunx comparator-hash-function? cmpr
-[SRFI-114]
+@defun comparator-ordered? cmpr
+@defunx comparator-hashable? cmpr
+[SRFI-128]
 @c EN
-Returns true iff a comparator @var{cmpr} has provided comparison procedure
-and hash function, respectively.
-
-Note that @code{comparator-comparison-procedure} and 
-@code{comparator-hash-function} always returns a procedure, even
-no procedure is given when a comparator is created; in that case,
-returned procedures are just raises an error when called.
+Returns true iff a comparator @var{cmpr} can be used to order
+objects, or to hash them, respectively.
 @c JP
-比較器@var{cmpr}が、有効な比較手続きおよびハッシュ関数を持っている
+比較器@var{cmpr}が、オブジェクトの順序づけあるいはハッシュに使える
 場合にそれぞれ@code{#t}を返します。
-
-比較器作成時に比較手続きやハッシュ関数が与えられなかった場合でも、
-@code{comparator-comparison-procedure}と@code{comparator-hash-function} 
-は常に手続きを返すことに注意してください。それらの手続きは呼ばれると単に
-エラーを報告します。
 @c COMMON
 @end defun
 
 @defun comparator-type-test-procedure cmpr
 @defunx comparator-equality-predicate cmpr
-@defunx comparator-comparison-procedure cmpr
+@defunx comparator-ordering-predicate cmpr
 @defunx comparator-hash-function cmpr
-[SRFI-114]
+[SRFI-128]
 @c EN
-Returns type test procedure, equality predicate, comparison procedure
+Returns type test procedure, equality predicate, ordering procedure
 and hash function of comparator @var{cmpr}, respectively.
 
-These accessors always return procedures; if you give boolean
-values to @code{make-comparator},
-appropriate default procedures are returned.
+These accessors always return procedures; if you give @code{#f}
+to the @var{order} or @var{hash} argument of the constructor,
+@code{comparator-ordering-predicate} and
+@code{comparator-hash-function} still return a procedure,
+which will just raise an error.
 @c JP
-比較器の型検査述語、等価述語、比較手続きおよびハッシュ関数をそれぞれ返します。
+比較器の型検査述語、等価述語、順序手続きおよびハッシュ関数をそれぞれ返します。
 
-これらの手続きは常に手続きを返します。@code{make-comparator}で該当する
-引数に真偽値を渡した場合でも、デフォルトで補われる手続きが返されます。
+これらの手続きは常に手続きを返します。@code{make-comparator}で
+@var{order}や@var{hash}に@code{#f}を渡した場合でも、エラーを投げるだけの
+手続きが返されます。
+@c COMMON
+@end defun
+
+@defun comparator-comparison-procedure cmpr
+[SRFI-114]
+@c EN
+This is a SRFI-114 procedure, but sometimes handy with
+SRFI-128 comparators.  Returns a procedure that takes two objects
+that satisfy the type predicates of @var{cmpr}.  The procedure
+returns either -1, 0 or 1, depending on whether the first object
+is less than, equal to, or greater than the second.  The comparator
+must be ordered, that is, it must have an ordering predicate
+(or a comparison procedure, if it is created by SRFI-114 consturctor).
+@c JP
+これはSRFI-114の手続きですが、SRFI-128比較器でも時々便利なことがあります。
+@var{cmpr}の型検査述語を満たす二つのオブジェクトを取り、-1、0、1のいずれかを
+返す手続きを返します。二つのオブジェクトのうち最初の方が小さければ-1が、
+等しければ0が、大きければ1が返されます。
+比較器は大小比較可能でなけばなりません(順序手続きが渡されるか、
+あるいはSRFI-114コンストラクタで比較手続きが渡されるか)。
 @c COMMON
 @end defun
 
 @defun comparator-test-type cmpr obj
 @defunx comparator-check-type cmpr obj
-@defunx comparator-equal? cmpr a b
+[SRFI-128]
+@c EN
+Test whether @var{obj} can be handled by a comparator @var{cmpr},
+by applying @var{cmpr}'s type test predicate.
+The former (@code{comparator-test-type}) returns a boolean
+values, while the latter (@code{comparator-check-type})
+signals an error when @var{obj} can't be handled.
+@c JP
+@var{obj}が比較器@var{cmpr}で扱えるオブジェクトかどうかを、
+@var{cmpr}の型検査述語を適用して調べます。
+@code{comparator-test-type}は結果の真偽値を返します。
+@code{comparator-check-type}は@var{obj}が扱えないオブジェクトである場合に
+エラーを投げます。
+@c COMMON
+@end defun
+
+@defun =? cmpr obj obj2 obj3 @dots{}
+@defunx <? cmpr obj obj2 obj3 @dots{}
+@defunx <=? cmpr obj obj2 obj3 @dots{}
+@defunx >? cmpr obj obj2 obj3 @dots{}
+@defunx >=? cmpr obj obj2 obj3 @dots{}
+[SRFI-128]
+@c EN
+Compare objects using a comparator @var{cmpr}.  All of
+@var{obj}, @var{obj2}, @var{obj3} @dots{} must satisfy
+the type predicate of @var{cmpr}.  When more than two objects
+are given, the order of comparison
+is undefined.
+
+In order to use @code{<?}, @code{<=?}, @code{>?} and @code{>=?},
+comparator must be ordered.
+@c JP
+比較器@code{cmpr}を使ってオブジェクトを比較します。
+@var{obj}, @var{obj2}, @var{obj3} @dots{}は全て@code{cmpr}の
+型検査述語を満たさなければなりません。
+3つ以上のオブジェクトが渡された場合、比較の順番は規定されていません。
+
+@code{<?}、@code{<=?}、@code{>?}、@code{>=?}を使うためには
+比較器は順序比較可能でなければなりません。
+@c COMMON
+@end defun
+
+@defun comparator-equal? cmpr a b
 @defunx comparator-compare cmpr a b
 @defunx comparator-hash cmpr obj
 [SRFI-114]

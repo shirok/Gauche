@@ -138,15 +138,15 @@
             (comparator-test-type cdr-comparator (cdr x))))
    (^[a b] (and (comparator-equal? car-comparator (car a) (car b))
                 (comparator-equal? cdr-comparator (cdr a) (cdr b))))
-   (and (comparator-comparison-procedure? car-comparator)
-        (comparator-comparison-procedure? cdr-comparator)
+   (and (comparator-ordered? car-comparator)
+        (comparator-ordered? cdr-comparator)
         (^[a b] (let1 r (comparator-compare car-comparator
                                             (car a) (car b))
                   (if (= r 0)
                     (comparator-compare cdr-comparator (cdr a) (cdr b))
                     r))))
-   (and (comparator-hash-function? car-comparator)
-        (comparator-hash-function? cdr-comparator)
+   (and (comparator-hashable? car-comparator)
+        (comparator-hashable? cdr-comparator)
         (^x (combine-hash-value (comparator-hash car-comparator (car x))
                                 (comparator-hash cdr-comparator (cdr x)))))))
 
@@ -177,7 +177,7 @@
                            (%gen-listwise-compare
                             (comparator-comparison-procedure elt-comparator)
                             empty? head tail)
-                           (and (comparator-hash-function? elt-comparator)
+                           (and (comparator-hashable? elt-comparator)
                                 (%gen-listwise-hash
                                  (comparator-hash-function elt-comparator)
                                  empty? head tail))))
@@ -212,36 +212,36 @@
                            (%gen-vectorwise-compare
                             (comparator-comparison-procedure elt-comparator)
                             len ref)
-                           (and (comparator-hash-function? elt-comparator)
+                           (and (comparator-hashable? elt-comparator)
                                 (%gen-vectorwise-hash
                                  (comparator-hash-function elt-comparator)
                                  len ref))))
 
 (define (make-reverse-comparator comparator)
-  (unless (comparator-comparison-procedure? comparator)
-    (error "make-reverse-comparator requires a comparator with comparison \
-            procedure, but got:" comparator))
+  (unless (comparator-ordered? comparator)
+    (error "make-reverse-comparator requires an ordered comparator, \
+            but got:" comparator))
   (make-comparator/compare
-   (comparator-type-test-procedure comparator)
+   (comparator-type-test-predicate comparator)
    (comparator-equality-predicate comparator)
    (let1 cmp (comparator-comparison-procedure comparator)
      (^[a b] (- (cmp a b))))
-   (and (comparator-hash-function? comparator)
+   (and (comparator-hashable? comparator)
         (comparator-hash-function comparator))))
 
 ;; This is not in srfi-114, but generally useful.
 ;; Compare with (accessor obj). 
 (define (make-key-comparator comparator test key)
-  (let ([ts  (comparator-type-test-procedure comparator)]
+  (let ([ts  (comparator-type-test-predicate comparator)]
         [eq  (comparator-equality-predicate comparator)]
         [cmp (comparator-comparison-procedure comparator)]
         [hsh (comparator-hash-function comparator)])
     (make-comparator/compare 
      (^x (and (test x) (ts (key x))))
      (^[a b] (eq (key a) (key b)))
-     (and (comparator-comparison-procedure? comparator)
+     (and (comparator-ordered? comparator)
           (^[a b] (cmp (key a) (key b))))
-     (and (comparator-hash-function? comparator)
+     (and (comparator-hashable? comparator)
           (^x (hsh (key x)))))))
 
 (define (make-car-comparator comparator)
@@ -253,7 +253,7 @@
 (define (make-tuple-comparator comparator1 . comparators)
   (let1 cprs (cons comparator1 comparators)
     (let ([size (length cprs)]
-          [ts   (map comparator-type-test-procedure cprs)]
+          [ts   (map comparator-type-test-predicate cprs)]
           [eqs  (map comparator-equality-predicate cprs)]
           [cmps (map comparator-comparison-procedure cprs)]
           [hs   (map comparator-hash-function cprs)])
@@ -277,9 +277,9 @@
       (make-comparator/compare
        (^x (and (eqv? (length+ x) size) (tester ts x)))
        (^[a b] (equality eqs a b))
-       (and (every comparator-comparison-procedure? cprs)
+       (and (every comparator-ordered? cprs)
             (^[a b] (refining-compare cmps a b)))
-       (and (every comparator-hash-function? cprs)
+       (and (every comparator-hashable? cprs)
             (^x (hasher hs x)))))))
 
 (define-syntax n-ary

@@ -148,21 +148,15 @@
     (return 'ordering)
     (return 'comparison)))
 
-;; srfi-114
-(define-cproc comparator-comparison-procedure? (c::<comparator>) ::<boolean>
+(define-cproc comparator-ordered? (c::<comparator>) ::<boolean>
   (return (not (logand (-> c flags) SCM_COMPARATOR_NO_ORDER))))
-(define-cproc comparator-hash-function? (c::<comparator>) ::<boolean>
+(define-cproc comparator-hashable? (c::<comparator>) ::<boolean>
   (return (not (logand (-> c flags) SCM_COMPARATOR_NO_HASH))))
-(define-cproc comparator-type-test-procedure (c::<comparator>) :constant
+(define-cproc comparator-type-test-predicate (c::<comparator>) :constant
   (return (-> c typeFn)))
-
-;; srfi-128
-(define comparator-ordered? comparator-comparison-procedure?)
-(define comparator-hashable? comparator-hash-function?)
-(define comparator-type-test-predicate comparator-type-test-procedure)
-
 (define-cproc comparator-equality-predicate (c::<comparator>) :constant
   (return (-> c eqFn)))
+
 (define-cproc comparator-comparison-procedure (c::<comparator>) :constant
   (let* ([cmp (-> c compareFn)])
     (if (SCM_FALSEP cmp)
@@ -204,6 +198,7 @@
    ((name          :setter #f)
     (type-test     :c-name "typeFn" :setter #f)
     (equality-test :c-name "eqFn" :setter #f)
+    (ordering      :c-name "orderFn" :setter #f)
     (comparison    :c-name "compareFn" :setter #f)
     (hash          :c-name "hashFn" :setter #f))
    (printer (let* ([c::ScmComparator* (SCM_COMPARATOR obj)])
