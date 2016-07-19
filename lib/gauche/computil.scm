@@ -136,8 +136,8 @@
    (^x (and (pair? x)
             (comparator-test-type car-comparator (car x))
             (comparator-test-type cdr-comparator (cdr x))))
-   (^[a b] (and (comparator-equal? car-comparator (car a) (car b))
-                (comparator-equal? cdr-comparator (cdr a) (cdr b))))
+   (^[a b] (and (=? car-comparator (car a) (car b))
+                (=? cdr-comparator (cdr a) (cdr b))))
    (and (comparator-ordered? car-comparator)
         (comparator-ordered? cdr-comparator)
         (^[a b] (let1 r (comparator-compare car-comparator
@@ -296,12 +296,9 @@
                               (or (null? args)
                                   (apply f b args))))
                        b args))))]))
-(define =?
-  (case-lambda
-    [(cmp a b) (comparator-equal? cmp a b)]
-    [(cmp a b . args)
-     (let1 ==? (comparator-equality-predicate cmp)
-       (n-ary cmp a b args (==? a b)))]))
+(define (=? cmp a b . args)
+  (let1 ==? (comparator-equality-predicate cmp)
+    (n-ary cmp a b args (==? a b))))
 
 (define (<? cmp a b . args)
   (case (comparator-flavor cmp)

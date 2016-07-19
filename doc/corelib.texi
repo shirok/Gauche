@@ -1333,41 +1333,47 @@ comparator must be ordered.
 @c COMMON
 @end defun
 
-@defun comparator-equal? cmpr a b
-@defunx comparator-compare cmpr a b
-@defunx comparator-hash cmpr obj
+@defun comparator-hash cmpr obj
+[SRFI-128]
+@c EN
+Returns a hash value of @var{obj} with the hash function of
+a comparator @var{cmpr}.  The comparator must be hashable,
+and @var{obj} must satisfy comparator's type test predicate.
+@c JP
+比較器@var{cmpr}のハッシュ関数を使って@var{obj}のハッシュ値を計算して返します。
+比較器はハッシュ計算可能でなければなりません。また、@var{obj}は
+比較器の型検査述語を満たさなければなりません。
+@c COMMON
+@end defun
+
+@defun comparator-compare cmpr a b
 [SRFI-114]
 @c EN
-Apply the comparator's procedures to the given arguments.
-The following equivalence holds, but these are slightly compact,
-and in Gauche they are a bit more efficient.
+Order two objects @var{a} and @var{b}
+using @var{cmpr}, and returns either one of 
+-1 (@var{a} is less than @var{b}),
+0 (@var{a} equals to @var{b}), or
+1 (@var{a} is greater than @var{b}).
+Objects must satisfy @var{cmpr}'s type test predicate.
+
+A simple comparison can be done by @code{<?} etc, but sometimes
+three-way comparison comes handy.  So we adopt this procedure
+from srfi-114.
 @c JP
-比較器の持つ手続きを引数に適用します。下に挙げる等価性が成り立っていますが、
-これらの手続きを使う方がややコンパクトに書けますし、
-Gaucheではわずかですがこれらの手続きの方が効率が良いです。
+ふたつのオブジェクト@var{a}と@var{b}の順序を調べ、
+@var{a}が先 (小さい) なら -1を、
+等しければ0を、
+@var{a}が後 (大きい) なら 1を返します。
+@var{a}と@var{b}はともに@var{cmpr}の型検査述語を満たさねばなりません。
+
+単純な比較なら@code{<?}等の手続きでできますが、
+時に3分岐の比較が便利なこともあります。そのため、srfi-114から
+この手続きを採用しました。
 @c COMMON
-
-@example
-(comparator-test-type cmpr obj)
-  @equiv{} ((comparator-type-test-procedure cmpr) obj))
-
-(comparator-check-type cmpr obj)
-  @equiv{} (or ((comparator-type-test-procedure cmpr) obj)
-      (error ...))
-
-(comparator-equal? cmpr a b)
-  @equiv{} ((comparator-equality-predicate cmpr) a b)
-
-(comparator-compare cmpr a b)
-  @equiv{} ((comparator-comparison-procedure cmpr) a b)
-
-(comparator-hash cmpr obj)
-  @equiv{} ((comparator-hash-function cmpr) obj)
-@end example
 @end defun
 
 @defvar default-comparator
-[SRFI-114]
+[SRFI-128]
 @c EN
 This variable bounds to a comparator that is used by default in
 many context.

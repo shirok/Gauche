@@ -82,7 +82,7 @@
 
           comparator-test-type          ;builtin
           comparator-check-type         ;builtin
-          comparator-equal?             ;builtin
+          comparator-equal?
           comparator-compare            ;builtin
           comparator-hash               ;builtin
 
@@ -110,7 +110,7 @@
   (comparator-hashable? c))             ;srfi-128
 (define (comparator-type-test-procedure c)
   (comparator-type-test-predicate c))   ;srfi-128
-
+(define (comparator-equal? c a b) (=? c a b))
 
 ;;;
 ;;; Inexact comparator

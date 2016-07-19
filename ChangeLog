@@ -1,3 +1,8 @@
+2016-07-19  shiro  <shiro@acm.org>
+
+	* src/libcmp.scm, lib/srfi-114.scm (comparator-equal?): Move
+	  this to srfi-114, for =? covers its usage.
+
 2016-07-17  shiro  <shiro@acm.org>
 
 	* src/libcmp.scm, lib/srfi-114.scm (comparator-comparison-procedure?)

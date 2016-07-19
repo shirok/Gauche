@@ -230,19 +230,6 @@
         (Scm_Error "Comparator %S cannot accept object %S" c obj))
       (return SCM_TRUE))))
 
-(define-cproc comparator-equal? (c::<comparator> a b) :constant
-  (if (logand (-> c flags) SCM_COMPARATOR_ANY_TYPE)
-    (return (Scm_VMApply2 (-> c eqFn) a b))
-    (let1/cps r (Scm_VMApply1 (-> c typeFn) a)
-      [c::ScmComparator* a b]
-      (when (SCM_FALSEP r)
-        (Scm_Error "Comparator %S cannot accept object %S" c a))
-      (let1/cps r (Scm_VMApply1 (-> c typeFn) b)
-        [c::ScmComparator* a b]
-        (when (SCM_FALSEP r)
-          (Scm_Error "Comparator %S cannot accept object %S" c b))
-        (return (Scm_VMApply2 (-> c eqFn) a b))))))
-                        
 ;; TODO: We can avoid using Scm_ComparatorHashFunction and
 ;; Scm_ComparatorComparisonProcedure that may call Scm_ApplyRec.
 

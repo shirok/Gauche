@@ -323,7 +323,7 @@
 (define (binary-heap-delete! hp item)
   (let ([cmp (~ hp'comparator)]
         [key (~ hp'key)])
-    (binary-heap-remove! hp (^e (comparator-equal? cmp (key item) (key e))))))
+    (binary-heap-remove! hp (^e (=? cmp (key item) (key e))))))
 
 ;; Internal procedures
 (define-inline (min-node? index) (odd? (integer-length index)))
