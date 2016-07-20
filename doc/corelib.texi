@@ -1373,7 +1373,6 @@ from srfi-114.
 @end defun
 
 @defvar default-comparator
-[SRFI-128]
 @c EN
 This variable bounds to a comparator that is used by default in
 many context.
@@ -1449,21 +1448,43 @@ All other objects.
 @defvar eq-comparator
 @defvarx eqv-comparator
 @defvarx equal-comparator
-[SRFI-114]
 @c EN
 Built-in comparators that uses @code{eq?}, @code{eqv?} and @code{equal?}
 for the equality predicate, respectively.  They accept any kind of
 Scheme objects.  Each has corresponding hash functions
 (i.e. @code{eq-hash} for @code{eq-comparator},
 @code{eqv-hash} for @code{eqv-comparator} and
-@code{hash} for @code{equal-comparator}).
-None has comparison procedure, though.
+@code{default-hash} for @code{equal-comparator}).
+Only @code{eq-comparator} is ordered, using @code{eq-compare} to
+order the objects
+(@pxref{Comparison}, for @code{eq-compare}).
 @c JP
 それぞれ、等価述語に@code{eq?}、@code{eqv?}、@code{equal?}を使う
 組み込みの比較器です。全てのSchemeオブジェクトを受け付けます。
 対応するハッシュ関数(@code{eq-comparator}は@code{eq-hash}、
 @code{eqv-comparator}は@code{eqv-hash}、@code{equal-comparator}は
-@code{hash})を備えています。比較手続きは持っていません。
+@code{hash})を備えています。
+@code{eq-comparator}のみ、@code{eq-compare}を使った順序づけが可能です
+(@code{eq-compare}については@ref{Comparison}参照)。
+@c COMMON
+
+@c EN
+Note that @code{eq-comparator} and @code{eqv-comparator} are not
+equivalent from what @code{make-eq-comparator} and @code{make-eqv-comparator}
+return, respectively.  The latter two are defined in SRFI-128 and
+specified to use @code{default-hash} for the hash function.  It is
+heavier than @code{eq-hash}/@code{eqv-hash}, and it can't be used
+for circular objects.  We provide @code{eq-comparator} and
+@code{eqv-comparator} in case you want to avoid limitations of
+@code{default-hash}.
+@c JP
+@code{eq-comparator}と@code{eqv-comparator}はそれぞれ、
+@code{make-eq-comparator} and @code{make-eqv-comparator}が返す比較器とは
+等価でないことに注意してください。後者の手続きはSRFI-128で規定されてますが、
+ハッシュ関数には@code{default-hash}を使うことが指定されています。
+@code{default-hash}は@code{eq-hash}や@code{eqv-hash}より重く、
+またループのある構造は扱えません。@code{default-hash}の制限を避けたい場合のために
+@code{eq-comparator}と@code{eqv-comparator}を用意しました。
 @c COMMON
 @end defvar
 
