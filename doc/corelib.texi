@@ -4,32 +4,32 @@
 
 @c ----------------------------------------------------------------------
 @menu
-* Types and classes::           
-* Equality and comparison::     
-* Numbers::                     
-* Booleans::                    
-* Undefined values::            
-* Pairs and Lists::             
-* Symbols::                     
-* Keywords::                    
-* Identifiers::                 
-* Characters::                  
-* Character set::               
-* Strings::                     
-* Regular expressions::         
-* Vectors::                     
-* Hashtables::                  
-* Treemaps::                    
-* Weak pointers::               
-* Procedures and continuations::  
-* Lazy evaluation::             
-* Exceptions::                  
-* Eval and repl::               
-* Input and output::            
-* Loading Programs::            
-* Sorting and merging::         
-* System interface::            
-* Development helper API::      
+* Types and classes::
+* Equality and comparison::
+* Numbers::
+* Booleans::
+* Undefined values::
+* Pairs and Lists::
+* Symbols::
+* Keywords::
+* Identifiers::
+* Characters::
+* Character set::
+* Strings::
+* Regular expressions::
+* Vectors::
+* Hashtables::
+* Treemaps::
+* Weak pointers::
+* Procedures and continuations::
+* Lazy evaluation::
+* Exceptions::
+* Eval and repl::
+* Input and output::
+* Loading Programs::
+* Sorting and merging::
+* System interface::
+* Development helper API::
 @end menu
 
 @node Types and classes, Equality and comparison, Core library, Core library
@@ -259,10 +259,10 @@ as well as the way to make your own.
 @c COMMON
 
 @menu
-* Equality::                    
-* Comparison::                  
-* Hashing::                     
-* Basic comparators::           
+* Equality::
+* Comparison::
+* Hashing::
+* Basic comparators::
 @end menu
 
 @node Equality, Comparison, Equality and comparison, Equality and comparison
@@ -920,6 +920,17 @@ to both SRFI-128 and SRFI-114 comparators.
 SRFI-128の比較器としてもSRFI-114の比較器としても使えるということです。
 @c COMMON
 
+@menu
+* Comparator class and constructors::
+* Comparator predicates and accessors::
+* Predefined comparators::
+* Combining comparators::
+@end menu
+
+@node Comparator class and constructors, Comparator predicates and accessors, Basic comparators, Basic comparators
+@subsubsection Comparator class and constructors
+@c NODE 比較器クラスとコンストラクタ
+
 @deftp {Builtin Class} <comparator>
 @c EN
 A comparator record that bundles the following procedures:
@@ -1010,7 +1021,6 @@ Gauche組み込みのデータ型は、コンストラクタで比較器を取�
 (@ref{Sorting and merging}参照。
 @c COMMON
 @end deftp
-
 
 @defun make-comparator type-test equal order hash :optional name
 [SRFI-128+]
@@ -1167,6 +1177,11 @@ by calling the comparison procedure and see if the result is 0.
 @c COMMON
 @end itemize
 @end defun
+
+@node Comparator predicates and accessors, Predefined comparators, Comparator class and constructors, Basic comparators
+@subsubsection Comparator predicates and accessors
+@c NODE 比較器にまつわる述語とアクセサ
+
 
 @defun comparator? obj
 [SRFI-128]
@@ -1372,7 +1387,12 @@ from srfi-114.
 @c COMMON
 @end defun
 
+@node Predefined comparators, Combining comparators, Comparator predicates and accessors, Basic comparators
+@subsubsection Predefined comparators
+@c NODE 用意されている比較器
+
 @defvar default-comparator
+[SRFI-114]
 @c EN
 This variable bounds to a comparator that is used by default in
 many context.
@@ -1412,9 +1432,12 @@ comparable or not.)
 @c COMMON
 
 @c EN
-@code{Srfi-114} specifies the ordering of Scheme native objects as follows.
+SRFI-128 doesn't define the ordering between objects of different types,
+but SRFI-114 does, and Gauche follows it.  It's the following order:
 @c JP
-@code{srfi-114}はSchemeの基本オブジェクト間の順序を以下の通り定めています。
+SRFI-128はデフォルト比較器が異なる型のオブジェクト同士の順序をどう決めるかは
+定義していませんが、SRFI-114は定義していて、Gaucheもそれに従っています。
+順序は以下のとおりです。
 @c COMMON
 
 @enumerate 
@@ -1448,6 +1471,7 @@ All other objects.
 @defvar eq-comparator
 @defvarx eqv-comparator
 @defvarx equal-comparator
+[SRFI-114]
 @c EN
 Built-in comparators that uses @code{eq?}, @code{eqv?} and @code{equal?}
 for the equality predicate, respectively.  They accept any kind of
@@ -1474,7 +1498,8 @@ equivalent from what @code{make-eq-comparator} and @code{make-eqv-comparator}
 return, respectively.  The latter two are defined in SRFI-128 and
 specified to use @code{default-hash} for the hash function.  It is
 heavier than @code{eq-hash}/@code{eqv-hash}, and it can't be used
-for circular objects.  We provide @code{eq-comparator} and
+for circular objects, nor for the mutable objects with which you want
+to hash them by identity.  We provide @code{eq-comparator} and
 @code{eqv-comparator} in case you want to avoid limitations of
 @code{default-hash}.
 @c JP
@@ -1483,7 +1508,9 @@ for circular objects.  We provide @code{eq-comparator} and
 等価でないことに注意してください。後者の手続きはSRFI-128で規定されてますが、
 ハッシュ関数には@code{default-hash}を使うことが指定されています。
 @code{default-hash}は@code{eq-hash}や@code{eqv-hash}より重く、
-またループのある構造は扱えません。@code{default-hash}の制限を避けたい場合のために
+ループのある構造は扱えず、また変更可能なオブジェクトの同一性のみに基づいてハッシュ値を
+計算するのには使えません。
+こういった@code{default-hash}の制限を避けたい場合のために
 @code{eq-comparator}と@code{eqv-comparator}を用意しました。
 @c COMMON
 @end defvar
@@ -1576,6 +1603,43 @@ shorter ones are ordered first (
 @c COMMON
 @end defvar
 
+@node Combining comparators,  , Predefined comparators, Basic comparators
+@subsubsection Combining comparators
+@c NODE 比較器を組み合わせる
+
+@defun make-default-comparator
+[SRFI-128]
+@c EN
+Returns a default comparator.  In Gauche, this returns the
+@code{default-comparator} object.
+@c JP
+デフォルト比較器を返します。Gaucheでは常に唯一の@code{default-comparator}が
+返されます。
+@c COMMON
+@end defun
+
+@defun make-eq-comparator
+@defunx make-eqv-comparator
+[SRFI-128]
+@c EN
+Returns comparators that use @code{eq?} and @code{eqv?} for its
+equality predicate, respectively.  Note that they use @code{default-hash}
+for hash functions, as specified by SRFI-128, which has a few drawbacks:
+You can't use it if you want to hash based on identity of mutable objects,
+it diverges on circular objects, and it is slow if applied on a large
+structures.  We recommend to use @code{eq-comparator} or
+@code{eqv-comparator} if possible (@pxref{Predefined comparators}).
+@c JP
+@code{eq?}および@code{eqv?}を等価述語に使う比較器をそれぞれ返します。
+これらの関数が返す比較器のハッシュには、@code{default-hash}を使うことが
+SRFI-128で規定されていますが、それにはいくつか欠点があります。
+変更可能なオブジェクトの同一性に基づいたハッシュ関数が欲しい場合は使えませんし、
+循環するオブジェクトでは発散します。大きな構造をハッシュしようとすると遅くなります。
+可能ならば、@code{eq-comparator}や@code{eqv-comparator}を
+使うことを推奨します(@ref{Predefined comparators})参照。)
+@c COMMON
+@end defun
+
 @defun make-reverse-comparator cmpr
 [SRFI-114]
 @c EN
@@ -1632,29 +1696,6 @@ userレコードの@code{username}スロットだけを見て比較を行いま�
 @end example
 @end defun
 
-@defun make-car-comparator cmpr
-@defunx make-cdr-comparator cmpr
-[SRFI-114]
-@c EN
-Returns comparators that accept pairs, and compare them with
-their car or cdr by @var{cmpr}, respectively.
-
-Using @code{make-key-comparator}, these cam be written as follows:
-@c JP
-ペアを受け取り、その@code{car}のみまたは@code{cdr}のみを@var{cmpr}で
-比較するような比較器を返します。
-
-@code{make-key-comparator}を使えばこれらは以下の通りに書けます。
-@c COMMON
-@example
-(define (make-car-comparator cmpr)
-  (make-key-comparator cmpr pair? car))
-
-(define (make-cdr-comparator cmpr)
-  (make-key-comparator cmpr pair? cdr))
-@end example
-@end defun
-
 @defun make-tuple-comparator cmpr1 cmpr2 @dots{}
 @c EN
 Creates a comparator that compares lists of the form @code{(x1 x2 @dots{})},
@@ -1707,13 +1748,13 @@ Gaucheは次のタイプの数値をサポートしています。
 @c COMMON
 
 @menu
-* Number classes::              
-* Numerical predicates::        
-* Numerical comparison::        
-* Arithmetics::                 
-* Numerical conversions::       
-* Bitwise operations::          
-* Endianness::                  
+* Number classes::
+* Numerical predicates::
+* Numerical comparison::
+* Arithmetics::
+* Numerical conversions::
+* Bitwise operations::
+* Endianness::
 @end menu
 
 @node Number classes, Numerical predicates, Numbers, Numbers
@@ -3626,13 +3667,13 @@ Gaucheのコアは全ての標準のリスト手続きと、多くのScheme実�
 @c COMMON
 
 @menu
-* Pair and null class::         
-* List predicates::             
-* List constructors::           
-* List accessors and modifiers::  
-* Walking over lists::          
-* Other list procedures::       
-* Association lists::           
+* Pair and null class::
+* List predicates::
+* List constructors::
+* List accessors and modifiers::
+* Walking over lists::
+* Other list procedures::
+* Association lists::
 @end menu
 
 @node Pair and null class, List predicates, Pairs and Lists, Pairs and Lists
@@ -5802,7 +5843,7 @@ the key and the following value is removed from @var{kv-list}.
 @end defun
 
 @menu
-* Keyword and symbol integration::  
+* Keyword and symbol integration::
 @end menu
 
 @node Keyword and symbol integration,  , Keywords, Keywords
@@ -6948,14 +6989,14 @@ SRFI-13については@ref{String library}を参照してください。
 @c COMMON
 
 @menu
-* String syntax::               
-* String Predicates::           
-* String Constructors::         
-* String interpolation::        
-* String Accessors & Modifiers::  
-* String Comparison::           
-* String utilities::            
-* Incomplete strings::          
+* String syntax::
+* String Predicates::
+* String Constructors::
+* String interpolation::
+* String Accessors & Modifiers::
+* String Comparison::
+* String utilities::
+* Incomplete strings::
 @end menu
 
 @node String syntax, String Predicates, Strings, Strings
@@ -8179,9 +8220,9 @@ Gaucheはまた、リテラル正規表現用の構文を備えています。
 @end example
 
 @menu
-* Regular expression syntax::   
-* Using regular expressions::   
-* Inspecting and assembling regular expressions::  
+* Regular expression syntax::
+* Using regular expressions::
+* Inspecting and assembling regular expressions::
 @end menu
 
 @node Regular expression syntax, Using regular expressions, Regular expressions, Regular expressions
@@ -11081,15 +11122,15 @@ Gaucheをセットアップすることができます。
 @c COMMON
 
 @menu
-* Procedure class and applicability::  
-* Universal accessor::          
-* Combinators::                 
-* Optional argument parsing::   
-* Procedure arity::             
-* Applicable objects::          
-* Continuations::               
-* Multiple values::             
-* Folding generated values::    
+* Procedure class and applicability::
+* Universal accessor::
+* Combinators::
+* Optional argument parsing::
+* Procedure arity::
+* Applicable objects::
+* Continuations::
+* Multiple values::
+* Folding generated values::
 @end menu
 
 @node Procedure class and applicability, Universal accessor, Procedures and continuations, Procedures and continuations
@@ -12658,8 +12699,8 @@ internally, its element isn't calculated until it is required.
 @c COMMON
 
 @menu
-* Delay force and lazy::        
-* Lazy sequences::              
+* Delay force and lazy::
+* Lazy sequences::
 @end menu
 
 
@@ -13548,10 +13589,10 @@ SRFI-35にならって@emph{コンディション(condition)}を使います。
 @c COMMON
 
 @menu
-* Exception handling overview::  
-* Signaling exceptions::        
-* Handling exceptions::         
-* Conditions::                  
+* Exception handling overview::
+* Signaling exceptions::
+* Handling exceptions::
+* Conditions::
 @end menu
 
 @node Exception handling overview, Signaling exceptions, Exceptions, Exceptions
@@ -15414,14 +15455,14 @@ and re-invoke them afterwards.
 @c NODE 入出力
 
 @menu
-* Ports::                       
-* Port and threads::            
-* Common port operations::      
-* File ports::                  
-* String ports::                
-* Coding-aware ports::          
-* Input::                       
-* Output::                      
+* Ports::
+* Port and threads::
+* Common port operations::
+* File ports::
+* String ports::
+* Coding-aware ports::
+* Input::
+* Output::
 @end menu
 
 @node Ports, Port and threads, Input and output, Input and output
@@ -16780,10 +16821,10 @@ an input port, and when omitted, the current input port is assumed.
 @c COMMON
 
 @menu
-* Reading data::                
-* Reader lexical mode::         
-* Read-time constructor::       
-* Input utility functions::     
+* Reading data::
+* Reader lexical mode::
+* Read-time constructor::
+* Input utility functions::
 @end menu
 
 @node Reading data, Reader lexical mode, Input, Input
@@ -17517,11 +17558,11 @@ We provide these only for the backward compatibility.
 @c NODE 出力
 
 @menu
-* Layers of output routines::   
-* Output controls::             
-* Object output::               
-* Formatting output::           
-* Low-level output::            
+* Layers of output routines::
+* Output controls::
+* Object output::
+* Formatting output::
+* Low-level output::
 @end menu
 
 @node Layers of output routines, Output controls, Output, Output
@@ -18408,11 +18449,11 @@ R7RSでは@code{flush-output-port}を採用しています。
 @c NODE プログラムのロード
 
 @menu
-* Loading Scheme file::         
-* Loading dynamic library::     
-* Require and provide::         
-* Autoload::                    
-* Operations on libraries::     
+* Loading Scheme file::
+* Loading dynamic library::
+* Require and provide::
+* Autoload::
+* Operations on libraries::
 @end menu
 
 @node Loading Scheme file, Loading dynamic library, Loading Programs, Loading Programs
@@ -19547,19 +19588,19 @@ Cの標準ライブラリとGaucheの手続きとの対応が示してありま�
 @c COMMON
 
 @menu
-* Program termination::         
-* Command-line arguments::      
-* Environment Inquiry::         
-* Filesystems::                 
-* Unix groups and users::       
-* Locale::                      
-* Signal::                      
-* System inquiry::              
-* Time::                        
-* Process management::          
-* I/O multiplexing::            
-* Garbage Collection::          
-* Miscellaneous system calls::  
+* Program termination::
+* Command-line arguments::
+* Environment Inquiry::
+* Filesystems::
+* Unix groups and users::
+* Locale::
+* Signal::
+* System inquiry::
+* Time::
+* Process management::
+* I/O multiplexing::
+* Garbage Collection::
+* Miscellaneous system calls::
 @end menu
 
 @node Program termination, Command-line arguments, System interface, System interface
@@ -20173,11 +20214,11 @@ on top of the procedures described here.
 @c COMMON
 
 @menu
-* Directories::                 
-* Directory manipulation::      
-* Pathnames::                   
-* File stats::                  
-* Other file operations::       
+* Directories::
+* Directory manipulation::
+* Pathnames::
+* File stats::
+* Other file operations::
 @end menu
 
 @node Directories, Directory manipulation, Filesystems, Filesystems
@@ -21663,11 +21704,11 @@ Windowsネイティブ環境では、@code{sys-kill}の限定的なサポート�
 @c COMMON
 
 @menu
-* Signals and signal sets::     
-* Sending signals::             
-* Handling signals::            
-* Masking and waiting signals::  
-* Signals and threads::         
+* Signals and signal sets::
+* Sending signals::
+* Handling signals::
+* Masking and waiting signals::
+* Signals and threads::
 @end menu
 
 @node Signals and signal sets, Sending signals, Signal, Signal
@@ -24258,8 +24299,8 @@ Gauche には開発者がプログラムを解析するための基本的な組�
 @c COMMON
 
 @menu
-* Debugging aid::               
-* Profiler API::                
+* Debugging aid::
+* Profiler API::
 @end menu
 
 @node Debugging aid, Profiler API, Development helper API, Development helper API

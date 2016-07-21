@@ -59,7 +59,7 @@
           default-comparator            ;builtin
           
           (rename make-comparator/compare make-comparator) ;builtin
-          make-car-comparator make-cdr-comparator ; builtin
+          make-car-comparator make-cdr-comparator
           
           make-inexact-real-comparator
           make-vector-comparator ; builtin
@@ -166,6 +166,12 @@
 ;;;
 ;;; Comparator transformers
 ;;;
+
+(define (make-car-comparator comparator)
+  (make-key-comparator comparator pair? car))
+
+(define (make-cdr-comparator comparator)
+  (make-key-comparator comparator pair? cdr))
 
 (define (make-listwise-comparator test elt-comparator null? car cdr)
   (make-list-comparator elt-comparator test null? car cdr)) ; srfi-128

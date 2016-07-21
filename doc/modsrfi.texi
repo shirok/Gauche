@@ -5922,8 +5922,6 @@ for the compatibility.
 @table @asis
 @item Predicates
 @code{comparator?},
-@code{comparator-comparison-procedure?},
-@code{comparator-hash-function?},
 
 @item Standard comparators
 @code{boolean-comparator},
@@ -5947,18 +5945,12 @@ for the compatibility.
 @item The default comparator
 @code{default-comparator}
 
-@item Comparator constructors
-@code{make-comparator},
-@code{make-car-comparator},
-@code{make-cdr-comparator}
-
 @item Wrapped equality predicates
 @code{eq-comparator},
 @code{eqv-comparator},
 @code{equal-comparator}
 
 @item Accessors
-@code{comparator-type-test-procedure},
 @code{comparator-equality-predicate},
 @code{comparator-comparison-procedure},
 @code{comparator-hash-function}
@@ -5966,7 +5958,6 @@ for the compatibility.
 @item Primitive applicators
 @code{comparator-test-type},
 @code{comparator-check-type},
-@code{comparator-equal?},
 @code{comparator-compare},
 @code{comparator-hash}
 
@@ -6007,6 +5998,16 @@ built-in @code{comparator-ordered?} and @code{comparator-hashable?}.
 [SRFI-114]
 Returns type test predicate of a comparator @var{c}.
 This is an alias of bulit-in @code{comparator-type-test-predicate}.
+@end defun
+
+@defun comparator-equal? c a b
+[SRFI-114]
+Checks equality of @var{a} and @var{b} using the equality predicate
+of a comparator @var{c}.  This can be also written in @code{=?}, which
+is bulit-in (@pxref{Comparator predicates and accessors}).
+@example
+(=? c a b)
+@end example
 @end defun
 
 
@@ -6066,6 +6067,31 @@ between the actual number and its notation.  For example,
 an inexact real number denoted as @code{0.15} is actually
 slightly smaller than @code{15/100}, and rounding with epsilon
 @code{0.1} would result @code{0.1}, not @code{0.2}.
+@end defun
+
+@defun make-car-comparator cmpr
+@defunx make-cdr-comparator cmpr
+[SRFI-114]
+@c EN
+Returns comparators that accept pairs, and compare them with
+their car or cdr by @var{cmpr}, respectively.
+
+Using @code{make-key-comparator}, these cam be written as follows
+(@pxref{Combining comparators}, for @code{make-key-comparator}).
+@c JP
+ペアを受け取り、その@code{car}のみまたは@code{cdr}のみを@var{cmpr}で
+比較するような比較器を返します。
+
+@code{make-key-comparator}を使えばこれらは以下の通りに書けます。
+(@code{make-key-comparator}については@ref{Combining comparators}を参照)。
+@c COMMON
+@example
+(define (make-car-comparator cmpr)
+  (make-key-comparator cmpr pair? car))
+
+(define (make-cdr-comparator cmpr)
+  (make-key-comparator cmpr pair? cdr))
+@end example
 @end defun
 
 @defun make-list-comparator element-comparator

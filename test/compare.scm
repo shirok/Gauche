@@ -116,26 +116,6 @@
                (compare bx ay))))
 
 (let ()
-  (define ca (make-car-comparator string-comparator))
-  (define cd (make-cdr-comparator integer-comparator))
-  (define ta (make-hash-table ca))
-  (define td (make-hash-table cd))
-  (define sa '("orange" "apple" "mango" "papaya"))
-  (define sd '(29 34 98 1001))
-  (define data (append-map (^a (map (^d (cons a d)) sd)) sa))
-
-  (test* "make-car-comparator" (sort sa)
-         (begin (dolist [x data]
-                  (hash-table-put! ta x #t))
-                (sort (map car (hash-table-keys ta)))))
-
-  (test* "make-cdr-comparator" (sort sd)
-         (begin (dolist [x data]
-                  (hash-table-put! td x #t))
-                (sort (map cdr (hash-table-keys td)))))
-  )
-
-(let ()
   (define tc (make-tuple-comparator integer-comparator
                                     (make-reverse-comparator real-comparator)
                                     string-comparator))

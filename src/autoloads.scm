@@ -174,7 +174,7 @@
           make-default-comparator make-eq-comparator
           make-eqv-comparator make-equal-comparator
           make-reverse-comparator make-key-comparator make-tuple-comparator
-          make-car-comparator make-cdr-comparator make-pair-comparator
+          make-pair-comparator
           make-list-comparator make-vector-comparator
           =? <? <=? >? >=? (:macro comparator-if<=>))
 

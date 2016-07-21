@@ -66,7 +66,7 @@
 (define default-comparator
   (make-comparator/compare #t #t compare hash 'default-comparator))
 
-(define (make-default-comparator) default-comparator) ;srfi-128
+(define-inline (make-default-comparator) default-comparator) ;srfi-128
 
 ;; eq-comparator, eqv-comparator, equal-comparator - in libomega.scm
 
@@ -82,6 +82,9 @@
     (^[] c)))
 (define (make-equal-comparator) equal-comparator); srfi-128
 
+;; srfi-114 type-specific comparators
+;; They are useful to build more complex comparators using aggegate
+;; comparator constructors.
 (define boolean-comparator
   (make-comparator/compare boolean? eqv? compare eq-hash 'boolean-comparator))
 (define char-comparator
@@ -90,9 +93,7 @@
   ($ make-comparator/compare char? char-ci=? 
      (^[a b] (compare (char-foldcase a) (char-foldcase b)))
      eqv-hash 'char-ci-comparator))
-
 ;; string-comparator - in libomega.scm
-
 (define string-ci-comparator
   ($ make-comparator/compare string? string-ci=?
      (^[a b] (compare (string-foldcase a) (string-foldcase b)))
@@ -243,12 +244,6 @@
           (^[a b] (cmp (key a) (key b))))
      (and (comparator-hashable? comparator)
           (^x (hsh (key x)))))))
-
-(define (make-car-comparator comparator)
-  (make-key-comparator comparator pair? car))
-
-(define (make-cdr-comparator comparator)
-  (make-key-comparator comparator pair? cdr))
 
 (define (make-tuple-comparator comparator1 . comparators)
   (let1 cprs (cons comparator1 comparators)

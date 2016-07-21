@@ -1,3 +1,8 @@
+2016-07-20  shiro  <shiro@acm.org>
+
+	* src/libcmp.scm, lib/srfi-114.scm (make-car-comparator)
+	  (make-cdr-comparator): Moved these to srfi-114.
+
 2016-07-19  shiro  <shiro@acm.org>
 
 	* src/libcmp.scm, lib/srfi-114.scm (comparator-equal?): Move

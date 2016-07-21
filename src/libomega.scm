@@ -75,6 +75,9 @@
 
 ;; Built-in comparators.  These are here instead of libcmp.scm, for
 ;; hash functions need to be defined before this.
+;; NB: These are in srfi-114 but not in srfi-128.  We provide them
+;; so that when they are used as the argument of make-hash-table,
+;; we can recognize so and use more efficient built-in hash types.
 (define eq-comparator
   (make-comparator/compare #t eq? eq-compare eq-hash 'eq-comparator))
 (define eqv-comparator
