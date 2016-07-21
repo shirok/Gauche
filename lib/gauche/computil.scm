@@ -152,15 +152,31 @@
                                 (comparator-hash cdr-comparator (cdr x)))))))
 
 ;; NB: There's lots of room for optimization.
-
-(define (%gen-listwise-compare elt-compare null? car cdr)
+(define (%list-fold proc null? same a<b b<a)
   (rec (f a b)
     (if (null? a)
-      (if (null? b) 0 -1)
       (if (null? b)
-        1
-        (let1 r (elt-compare (car a) (car b))
-          (if (= r 0) (f (cdr a) (cdr b)) r))))))
+        same
+        a<b)
+      (if (null? b)
+        b<a
+        (proc a b f)))))
+
+(define (%gen-listwise-order elt= elt< null? car cdr)
+  (%list-fold (^[a b f]
+                (cond [(elt< (car a) (car b)) #t]
+                      [(elt= (car a) (car b)) (f (cdr a) (cdr b))]
+                      [else #f]))
+              null? #f #t #f))
+
+(define (%gen-listwise-equal elt= null? car cdr)
+  (%list-fold (^[a b f] (if (elt= (car a) (car b)) (f (cdr a) (cdr b))))
+              null? #t #f #f))
+
+(define (%gen-listwise-compare elt-compare null? car cdr)
+  (%list-fold (^[a b f] (let1 r (elt-compare (car a) (car b))
+                          (if (= r 0) (f (cdr a) (cdr b)) r)))
+              null? 0 -1 1))
 
 (define (%gen-listwise-hash elt-hash null? car cdr)
   (^[x]
@@ -174,29 +190,56 @@
                                         (empty? null?)
                                         (head car)
                                         (tail cdr))
-  (make-comparator/compare test #t
-                           (%gen-listwise-compare
-                            (comparator-comparison-procedure elt-comparator)
-                            empty? head tail)
-                           (and (comparator-hashable? elt-comparator)
-                                (%gen-listwise-hash
-                                 (comparator-hash-function elt-comparator)
-                                 empty? head tail))))
+  (ecase (comparator-flavor elt-comparator)
+    [(ordered)
+     (let ([elt= (comparator-equality-predicate elt-comparator)]
+           [elt< (comparator-ordering-predicate elt-comparator)])
+       (make-comparator test (%gen-listwise-equal elt= empty? head tail)
+                        (%gen-listwise-order elt= elt< empty? head tail)
+                        (and (comparator-hashable? elt-comparator)
+                             (%gen-listwise-hash
+                              (comparator-hash-function elt-comparator)
+                              empty? head tail))))]
+    [(comparison)
+     (make-comparator/compare test #t
+                              (%gen-listwise-compare
+                               (comparator-comparison-procedure elt-comparator)
+                               empty? head tail)
+                              (and (comparator-hashable? elt-comparator)
+                                   (%gen-listwise-hash
+                                    (comparator-hash-function elt-comparator)
+                                    empty? head tail)))]))
 
-(define (%gen-vectorwise-compare elt-compare len ref)
+(define (%vector-fold proc len same a<b b<a)
   (^[a b]
     (let ([alen (len a)]
           [blen (len b)])
-      (cond [(< alen blen) -1]
-            [(> alen blen) 1]
-            [else
-             (let loop ([i 0])
-               (if (= i alen)
-                 0
-                 (let1 r (elt-compare (ref a i) (ref b i))
-                   (if (= r 0)
-                     (loop (+ i 1))
-                     r))))]))))
+      (cond [(< alen blen) a<b]
+            [(> alen blen) b<a]
+            [else (let loop ([i 0])
+                    (if (= i alen)
+                      same
+                      (proc a b i loop)))]))))
+
+(define (%gen-vectorwise-equal elt= len ref)
+  (%vector-fold (^[a b i loop]
+                  (and (elt= (ref a i) (ref b i)) (loop (+ i 1))))
+                len #t #f #f))
+
+(define (%gen-vectorwise-order elt= elt< len ref)
+  (%vector-fold (^[a b i loop]
+                  (let ([ea (ref a i)]
+                        [eb (ref b i)])
+                    (cond [(elt< ea eb) #t]
+                          [(elt= ea eb) (loop (+ i 1))]
+                          [else #f])))
+                len #f #t #f))
+
+(define (%gen-vectorwise-compare elt-compare len ref)
+  (%vector-fold (^[a b i loop]
+                  (let1 r (elt-compare (ref a i) (ref b i))
+                    (if (= r 0) (loop (+ i 1)) r)))
+                len 0 -1 1))
 
 (define (%gen-vectorwise-hash elt-hash len ref)
   (^[x]
@@ -209,14 +252,25 @@
                                 :optional (test vector?)
                                           (len vector-length)
                                           (ref vector-ref))
-  (make-comparator/compare test #t
-                           (%gen-vectorwise-compare
-                            (comparator-comparison-procedure elt-comparator)
-                            len ref)
-                           (and (comparator-hashable? elt-comparator)
-                                (%gen-vectorwise-hash
-                                 (comparator-hash-function elt-comparator)
-                                 len ref))))
+  (ecase (comparator-flavor elt-comparator)
+    [(ordered)
+     (let ([elt= (comparator-equality-predicate elt-comparator)]
+           [elt< (comparator-ordering-predicate elt-comparator)])
+       (make-comparator test (%gen-vectorwise-equal elt= len ref)
+                        (%gen-vectorwise-order elt= elt< len ref)
+                        (and (comparator-hashable? elt-comparator)
+                             (%gen-vectorwise-hash
+                              (comparator-hash-function elt-comparator)
+                              len ref))))]
+    [(comparison)
+     (make-comparator/compare test #t
+                              (%gen-vectorwise-compare
+                               (comparator-comparison-procedure elt-comparator)
+                               len ref)
+                              (and (comparator-hashable? elt-comparator)
+                                   (%gen-vectorwise-hash
+                                    (comparator-hash-function elt-comparator)
+                                    len ref)))]))
 
 (define (make-reverse-comparator comparator)
   (unless (comparator-ordered? comparator)
