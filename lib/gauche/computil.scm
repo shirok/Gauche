@@ -289,15 +289,24 @@
 (define (make-key-comparator comparator test key)
   (let ([ts  (comparator-type-test-predicate comparator)]
         [eq  (comparator-equality-predicate comparator)]
-        [cmp (comparator-comparison-procedure comparator)]
-        [hsh (comparator-hash-function comparator)])
-    (make-comparator/compare 
-     (^x (and (test x) (ts (key x))))
-     (^[a b] (eq (key a) (key b)))
-     (and (comparator-ordered? comparator)
-          (^[a b] (cmp (key a) (key b))))
-     (and (comparator-hashable? comparator)
-          (^x (hsh (key x)))))))
+        [hsh (and (comparator-hashable? comparator)
+                  (let1 h (comparator-hash-function comparator)
+                    (^x (h (key x)))))])
+    (define (newtest x) (and (test x) (ts (key x))))
+    (define (newequal a b) (eq (key a) (key b)))
+    (ecase (comparator-flavor comparator)
+      [(ordering)
+       (let1 lt (comparator-ordering-predicate comparator)
+         (make-comparator newtest newequal
+                          (and (comparator-ordered? comparator)
+                               (^[a b] (lt (key a) (key b))))
+                          hsh))]
+      [(comparison)
+       (let1 cmp (comparator-comparison-procedure comparator)
+         (make-comparator/compare newtest newequal
+                                  (and (comparator-ordered? comparator)
+                                       (^[a b] (cmp (key a) (key b))))
+                                  hsh))])))
 
 (define (make-tuple-comparator comparator1 . comparators)
   (let1 cprs (cons comparator1 comparators)
@@ -392,7 +401,7 @@
     [(_ a b lt eq gt)
      (comparator-if<=> default-comparator a b lt eq gt)]
     [(_ cmp a b lt eq gt)
-     (case (comparator-flavor cmp)
+     (ecase (comparator-flavor cmp)
        [(ordering)
         (let ([a. a] [b. b])
           (if (<? cmp a. b.)
