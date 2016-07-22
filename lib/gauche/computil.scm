@@ -45,6 +45,7 @@
 
           make-default-comparator make-eq-comparator
           make-eqv-comparator make-equal-comparator
+          comparator-register-default!
 
           make-pair-comparator make-list-comparator
 
@@ -61,12 +62,41 @@
 (define (a-number? x) (and (number? x) (not (nan? x))))
 (define (a-real-number? x) (and (real? x) (not (nan? x))))
 
-;; any object can be made comparable thru object-compare, so we just accept
-;; any object for default-comparator.
+;; SRFI-128 default-comparator
+
+;; It needs to be extendable through comparator-register-default!.  For now,
+;; we just chain registered comparators here.
+(define *custom-comparators* '())
+
+;; Any object can be made comparable thru object-compare, so we just accept
+;; any object in the fallback comparator.
 (define default-comparator
-  (make-comparator/compare #t #t compare hash 'default-comparator))
+  (let ()
+    (define fallback (make-comparator/compare #t #t compare default-hash))
+    (define (choose1 cmps a)
+      (cond [(null? cmps) fallback]
+            [(comparator-test-type (car cmps) a) (car cmps)]
+            [else (choose1 (cdr cmps) a)]))
+    (define (choose2 cmps a b)
+      (cond [(null? cmps) fallback]
+            [(and (comparator-test-type (car cmps) a)
+                  (comaprator-test-type (car cmps) b))
+             (car cmps)]
+            [else (choose2 (cdr cmps) a b)]))
+    (define (eql a b)
+      (=? (choose2 *custom-comparators* a b) a b))
+    (define (cmp a b)
+      (comparator-compare (choose2 *custom-comparators* a b) a b))
+    (define (hsh x)
+      (comparator-hash (choose1 *custom-comparators* x) x))
+    (make-comparator/compare #t eql cmp hsh 'default-comparator)))
 
 (define-inline (make-default-comparator) default-comparator) ;srfi-128
+
+(define (comparator-register-default! cmpr) ;srfi-128
+  (unless (is-a? cmpr <comparator>)
+    (error "Comparator required, but got:" cmpr))
+  (push! *custom-comparators* cmpr))
 
 ;; eq-comparator, eqv-comparator, equal-comparator - in libomega.scm
 

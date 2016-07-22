@@ -164,7 +164,7 @@
           vector-for-each-with-index reverse-list->vector)
 
 (autoload gauche.computil
-          default-comparator
+          default-comparator comparator-register-default!
           boolean-comparator char-comparator char-ci-comparator
           string-ci-comparator symbol-comparator
           exact-integer-comparator integer-comparator rational-comparator

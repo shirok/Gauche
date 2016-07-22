@@ -1,3 +1,8 @@
+2016-07-22  shiro  <shiro@acm.org>
+
+	* lib/gauche/computil.scm (comparator-register-default!): Implement
+	  srfi-128 mechanism of extending default comparator.
+
 2016-07-20  shiro  <shiro@acm.org>
 
 	* src/libcmp.scm, lib/srfi-114.scm (make-car-comparator)
