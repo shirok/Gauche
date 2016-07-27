@@ -10988,7 +10988,7 @@ program via the environment variable @code{HTTP_COOKIE}.
 
 If the cookie version is known, via ``Cookie2'' request header,
 the integer version must be passed to @var{version}.  Otherwise,
-@code{parse-cookie} figures out the version from @var{string}.
+@code{parse-cookie-string} figures out the version from @var{string}.
 
 The result has the following format.
 @c JP
@@ -10998,7 +10998,7 @@ The result has the following format.
 
 リクエスト・ヘッダ Cookie2 を通してクッキーのバージョンが分かる
 場合は、@var{version} へ整数のバージョンとして渡されなければなりません。
-そうでなければ、@code{parse-cookie} は @var{string} からバージョンを
+そうでなければ、@code{parse-cookie-string} は @var{string} からバージョンを
 取り出します。
 
 結果は以下のフォーマットを持ちます。
