@@ -1636,9 +1636,8 @@ by this procedure alters the behavior of the default comparator
 in the existing domain---it is only allowed to handle objects that
 aren't already handled by the system's original default comparator
 and other already registered comparators.  So, the only effect of
-adding new comparator should be 
-
-
+adding new comparator should make the default comparator
+work on objects that had been previously raised an error.
 @end defun
 
 @defun make-eq-comparator
