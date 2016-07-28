@@ -10521,6 +10521,13 @@ header list, which is returned by @code{rfc822-read-headers}.
 If the field with given name is in @var{header-list}, the procedure
 returns its value in a string.  Otherwise, if @var{default} is given,
 it is returned, and if not, @code{#f} is returned.
+
+This procedure can actually be used not only for the result of
+@code{rfc822-read-headers}, but for retrieving a value keyed
+by strings in a list-of-list structure: @code{((name value option ...) ...)}.
+For example, the return value of @code{parse-cookie-string}
+can be passed to @code{rfc-822-header-ref} 
+(@pxref{HTTP cookie handling}, for @code{parse-cookie-string}).
 @c JP
 @code{rfc822-read-headers} が返すパーズ済みのヘッダリストから
 特定のフィールドを得るためのユーティリティ手続きです。
@@ -10529,7 +10536,39 @@ it is returned, and if not, @code{#f} is returned.
 与えられた名前をもつフィールドが @var{header-list} 中にあれば、
 その値を文字列で返します。そうでない場合、もし @var{default} が
 与えられていればそれが返り、与えられていなければ @code{#f} が返されます。
+
+この手続きは@code{rfc822-read-headers}の結果だけでなく、
+文字列をキーにしたリストのリスト @code{((name value option ...) ...)}
+という構造からvalue部分を取り出すのに使えます。
+例えば@code{parse-cookie-string}の結果を@code{rfc-822-header-ref}に渡せます。
+(@code{parse-cookie-string}については@pxref{HTTP cookie handling}参照。)
 @c COMMON
+
+@example
+(rfc822-header-ref 
+  '(("from" "foo@@example.com") ("to" "bar@@example.com"))
+  "from")
+ @result{} "foo@@example.com"
+
+;; If no entry matches, #f is returned by default
+(rfc822-header-ref 
+  '(("from" "foo@@example.com") ("to" "bar@@example.com"))
+  "reply-to")
+ @result{} #f
+
+;; You can give the default value for no-match case
+(rfc822-header-ref 
+  '(("from" "foo@@example.com") ("to" "bar@@example.com"))
+  "reply-to" 'none)
+ @result{} none
+
+;; By giving the default value, you can distinguish
+;; the no-match case and there's actually an entry with value #f.
+(rfc822-header-ref 
+  '(("from" "foo@@example.com") ("reply-to" #f))
+  "reply-to" 'none)
+ @result{} #f
+@end example
 @end defun
 
 @c EN
@@ -11020,6 +11059,14 @@ as a form of keyword-value pair.
 (属性が NULL 値を持つ場合は、@code{""} となることに注意。)
 属性がパスやドメイン、ポート番号のオプションを持つ場合は、
 キーワード-値のペアの形式で与えられます。
+@c COMMON
+
+@c EN
+Note: To retrieve the value of a specific cookie conveniently, you can use
+@code{rfc822-header-ref} (@pxref{RFC822 message parsing}).
+@c JP
+註: 特定のクッキーの値を簡単に取り出すには
+@code{rfc822-header-ref}が使えます (@ref{RFC822 message parsing}参照)。
 @c COMMON
 @end defun
 

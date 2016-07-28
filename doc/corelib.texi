@@ -1618,6 +1618,29 @@ Returns a default comparator.  In Gauche, this returns the
 @c COMMON
 @end defun
 
+@defun comparator-register-default! comparator
+[SRFI-128]
+This is the SRFI-128 way for user programs to extend the behavior of
+the @code{default-comparator}
+(which is what @code{make-default-comparator} returns).
+
+Gauche keeps track of the global list of comparators registered
+via this procedure.  When @code{default-comparator} is used with
+some objects, first it scans the list to see if the objects satisfy
+the test predicate of each of the resitered comparator, and use the first
+comparator whose type predicate accepts the objects.
+
+You might frown at this procedure having a global side-effect.
+Well, SRFI-128 explicitly prohibits comparators registered
+by this procedure alters the behavior of the default comparator
+in the existing domain---it is only allowed to handle objects that
+aren't already handled by the system's original default comparator
+and other already registered comparators.  So, the only effect of
+adding new comparator should be 
+
+
+@end defun
+
 @defun make-eq-comparator
 @defunx make-eqv-comparator
 [SRFI-128]
