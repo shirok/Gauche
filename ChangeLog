@@ -1,3 +1,12 @@
+2016-07-29  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.scm: Allow internal define-inline; it's the same as
+	  internal define.  Since the compiler can figure out inlinable
+	  internal defininitions the programmer doesn't need to use
+	  internal define-inline, but it can appear as the result of
+	  macro expansion.  In fact, this fixes the bug that caused
+	  internal define-record-type being a compile error.
+
 2016-07-23  shiro  <shiro@acm.org>
 
 	* lib/util/unification.scm: Added.

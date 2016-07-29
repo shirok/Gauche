@@ -1661,7 +1661,11 @@
             [(syntax? head) ; when (let-syntax ((xif if)) (xif ...)) etc.
              (pass1/body-finish intdefs exprs cenv)]
             [(not (identifier? head)) (error "[internal] pass1/body" head)]
-            [(global-eq? head 'define cenv)
+            [(or (global-eq? head 'define cenv)
+                 (global-eq? head 'define-inline cenv))
+             ;; NB: We treat internal define-inline the same as internal
+             ;; define; inlining internal closures can be purely figured
+             ;; out by the compiler.
              (let1 def (match args
                          [((name . formals) . body)
                           `(,name (,lambda. ,formals ,@body) . ,src)]
