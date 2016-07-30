@@ -1,3 +1,11 @@
+2016-07-30  Shiro Kawai  <shiro@acm.org>
+
+	* src/class.c (Scm_GenericObjectEqualP, Scm_GenericObjectCompare):
+	  Use fallback routine of those gfs to handle the default case,
+	  instead of defining (<top> <top>) method.  It's cleaner, and we
+	  need to define (<top> <top>) method to handle
+	  comparator-register-default! later.
+
 2016-07-29  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm: Allow internal define-inline; it's the same as

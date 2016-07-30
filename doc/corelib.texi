@@ -505,9 +505,20 @@ a generic function @code{object-compare}.
 @c EN
 Specializing this generic function extends @code{compare} procedure
 for user-defined classes.
+
+This method must return either @code{-1} (@var{obj1} precedes @var{obj2}),
+@code{0} (@var{obj1} equals to @var{obj2}),
+@code{1} (@var{obj1} succeeds @var{obj2}),
+or @code{#f} (@var{obj1} and @var{obj2} cannot be ordered).
 @c JP
 このジェネリックファンクションを特殊化することで
 @code{compare}手続きをユーザ定義クラスに対して動作するように拡張できます。
+
+このメソッドは以下のいずれかの値を返さねばなりません。
+@code{-1} (@var{obj1}は@var{obj2}より前)、
+@code{0} (@var{obj1}と@var{obj2}は等しい)、
+@code{1} (@var{obj1}は@var{obj2}より後)、
+@code{#f} (@var{obj1}と@var{obj2}は順序づけできない)。
 @c COMMON
 @end deffn
 

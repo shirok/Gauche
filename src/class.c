@@ -66,7 +66,8 @@ static ScmObj slot_set_using_accessor(ScmObj obj, ScmSlotAccessor *sa,
                                       ScmObj val);
 static ScmObj instance_allocate(ScmClass *klass, ScmObj initargs);
 
-static int object_compare(ScmObj x, ScmObj y, int equalp);
+static int    object_compare(ScmObj x, ScmObj y, int equalp);
+static ScmObj fallback_compare(ScmObj *, int, ScmGeneric *);
 
 static ScmObj builtin_initialize(ScmObj *, int, ScmGeneric *);
 
@@ -147,8 +148,8 @@ SCM_DEFINE_GENERIC(Scm_GenericSlotUnbound, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericSlotRefUsingClass, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericSlotSetUsingClass, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericSlotBoundUsingClassP, Scm_NoNextMethod, NULL);
-SCM_DEFINE_GENERIC(Scm_GenericObjectEqualP, Scm_NoNextMethod, NULL);
-SCM_DEFINE_GENERIC(Scm_GenericObjectCompare, Scm_NoNextMethod, NULL);
+SCM_DEFINE_GENERIC(Scm_GenericObjectEqualP, fallback_compare, NULL);
+SCM_DEFINE_GENERIC(Scm_GenericObjectCompare, fallback_compare, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericObjectHash, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericObjectApply, Scm_InvalidApply, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericObjectSetter, Scm_InvalidApply, NULL);
@@ -1976,26 +1977,16 @@ static int object_compare(ScmObj x, ScmObj y, int equalp)
     }
 }
 
-/* Fallback methods */
-static ScmObj object_compare_default(ScmNextMethod *nm, ScmObj *argv,
-                                     int argc, void *data)
+/* Fallback of object-equal? and object-compare.
+   We return #f for fallback of object-compare, which means two objects
+   can't be ordered.
+ */
+static ScmObj fallback_compare(ScmObj *argv, int argc, ScmGeneric *gf)
 {
-    return SCM_FALSE;
+    if (argc == 2) return SCM_FALSE;
+    else return Scm_NoNextMethod(argv, argc, gf);
 }
 
-static ScmClass *object_compare_SPEC[] = {
-    SCM_CLASS_STATIC_PTR(Scm_TopClass), SCM_CLASS_STATIC_PTR(Scm_TopClass)
-};
-static SCM_DEFINE_METHOD(object_compare_rec,
-                         &Scm_GenericObjectCompare,
-                         2, 0,
-                         object_compare_SPEC,
-                         object_compare_default, NULL);
-static SCM_DEFINE_METHOD(object_equalp_rec,
-                         &Scm_GenericObjectEqualP,
-                         2, 0,
-                         object_compare_SPEC,
-                         object_compare_default, NULL);
 
 /*=====================================================================
  * Generic function
@@ -3358,6 +3349,4 @@ void Scm__InitClass(void)
     Scm_InitBuiltinMethod(&compute_applicable_methods_rec);
     Scm_InitBuiltinMethod(&generic_updatedirectmethod_rec);
     Scm_InitBuiltinMethod(&method_more_specific_p_rec);
-    Scm_InitBuiltinMethod(&object_equalp_rec);
-    Scm_InitBuiltinMethod(&object_compare_rec);
 }
