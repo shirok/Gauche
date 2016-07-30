@@ -21743,7 +21743,7 @@ of adjacent elements.
 @item Restricted edit distance
 @c EN
 Also called optimal string alignment distance.  Like Damerau-Levenshtein,
-but once transposition is applied, no further editing on those characters
+but once transposition is applied, no further editing on those elements
 are allowed.
 @c JP
 Optimal string alignmentとも呼ばれます。Damerau-Levenshteinと似ていますが、
@@ -21767,43 +21767,92 @@ in this module can handle any type of sequence (@pxref{Sequence framework}).
 @defunx re-distances seq-A seq-Bs :key elt= cutoff
 @defunx dl-distance seq-A seq-B :key elt= cutoff
 @defunx dl-distances seq-A seq-Bs :key elt= cutoff
+@c EN
 Calculates Levenshtein distance (@code{l-*}), restricted edit
 distance (@code{re-*}) and Damerau-Levenshtein distance (@code{dl-*})
 between sequences, respectively.  Each algorithm comes in two 
 flavors: The singular form @code{*-distance} takes two sequences,
-@code{seq-A} and @code{seq-B}, and calculates distance between them.
-The plural form @code{*-distances} takes a sequence @code{seq-A}
-and a list of sequences @code{seq-Bs}, and calculates distances
-between @code{seq-A} and each in @var{seq-Bs}.
+@var{seq-A} and @var{seq-B}, and calculates distance between them.
+The plural form @code{*-distances} takes a sequence @var{seq-A}
+and a list of sequences @var{seq-Bs}, and calculates distances
+between @var{seq-A} and each in @var{seq-Bs}.
+@c JP
+それぞれ、与えられたシーケンス間のLevenshtein距離(@code{l-*})、
+Restricted edit距離(@code{re-*})およびDamerau-Levenshtein距離(@code{dl-*})を
+計算します。アルゴリズム毎にふたつのAPIが提供されます。
+単数形の@code{*-distance}は、二つのシーケンス@var{seq-A}と@var{seq-B}を取り、
+両者の間の距離を計算します。
+複数形の@code{*-distances}は、一つのシーケンス@var{seq-A}と
+シーケンスのリスト@var{seq-Bs}をとり、@var{seq-Bs}の各シーケンスと
+@var{seq-A}との距離を計算します。
+@c COMMON
 
-If you need to calculate distances from single sequence to many
+@c EN
+If you need to calculate distances from a single sequence to many
 sequences, using the plural version is much faster than repeatedly
 calling the singular version, for the plural version can reuse internal
 data structures and save allocation and setup time.
+@c JP
+あるシーケンスの、多数のシーケンスとの間の距離を計算したいなら、
+単数形のAPIを繰り返し呼ぶより複数形のAPIを使う方が効率的です。
+複数形のAPIでは内部で使うデータ構造を再利用するので、
+重複するアロケーションと初期化の時間を節約できます。
+@c COMMON
 
-Sequences can be any object that satisfy @code{<sequence>} protocol
+@c EN
+Sequences can be any object that satisfy the @code{<sequence>} protocol
 (@pxref{Sequence framework}).
+@c JP
+シーケンスは、@code{<sequence>}プロトコルを満足するオブジェクトであれば
+何でも構いません (@ref{Sequence framework}参照)。
+@c COMMON
 
-The keyword argument @var{elt=} is used to compare elements from
+@c EN
+The keyword argument @var{elt=} is used to compare elements in
 the sequences.  Its default is @code{eqv?}.
+@c JP
+キーワード引数@var{elt=}はシーケンスの要素同士を比較するのに使われます。
+デフォルトは@code{eqv?}です。
+@c COMMON
 
+@c EN
 The keyword argument @var{cutoff} must be, if given, a nonnegative
 exact integer.  Once the possible minimum distance between two sequences
 becomes greater than this number, the algorithm stops and gives @code{#f}
 as the result, and moves on to the next calculation.
 This is useful when you run the algorithm on large set of sequences
 and you only need to look for the pairs closer than the certain limit.
+@c JP
+キーワード引数@var{cutoff}は非負の正確な整数でなければなりません。与えられた場合、
+二つのシーケンスの距離を比較していて、それが@var{cutoff}以上になることがわかったら、
+それ以上の計算を打ち切り@code{#f}を結果とします。
+これは、特にたくさんのシーケンスから、ごく限られた限度以下の距離を持つものを探す
+場合に便利です。
+@c COMMON
 
+@c EN
 In our implementation, Levenshtein is the fastest, Damerau-Levenshtein
 is the slowest and Restricted edit is somewhere inbetween.  If you don't
 need to take into account of transpositions, use Levenshtein; it counts
 2 for @code{cat} -> @code{act}, while other algorithms yield 1 for it.
 If you need to consider transpositions, choose either
 @code{re-} or @code{dl-}.  The catch in @code{re-} is that it does not
-satisfy triangular equality, i.e. for given three sequences X, Y and Z,
+satisfy triangular inequality, i.e. for given three sequences X, Y and Z,
 (Damerau-)Levenshtein distance L always satisfy
 L(X;Z) <= L(X;Y) + L(Y;Z), but restricted edit distance doesn't
 guarantee that.
+@c JP
+現在の実装ではだいたい、Levenshteinが最も速く、Damerau-Levenshteinが最も遅く、
+Restricted editがその中間です。置換を1操作と考える必要がなければ、
+Levenshteinを使うのが良いでしょう。@code{cat}から@code{act}は
+Levenshtein距離では2ですが他の距離では1です。
+置換を1操作とする必要があれば、@code{re-}か@code{dl-}を
+使うことになります。@code{re-}の落とし穴は、それが三角不等式を満たさないことです。
+つまり、3つのシーケンスX, Y, Zがある時、
+(Damerau-)Levenshtein距離Lは常に
+L(X;Z) <= L(X;Y) + L(Y;Z) を満たしますが、Restricted edit距離には
+その保証がありません。
+@c COMMON
 
 @example
 (l-distance "cat" "act")  @result{} 2
@@ -21821,9 +21870,14 @@ guarantee that.
 (dl-distance '(a b c d e) '(c d a b e)) @result{} 4
 @end example
 
+@c EN
 Note: If you pass list of sequences to the second argument
-of the singular version by accident, you won't get an error
+of the singular version by accident, you might not get an error immediately
 because a list is also a sequence.
+@c JP
+註: 単数形のAPIの第2引数にうっかりシーケンスのリストを渡してしまった場合でも、
+直ちにエラーになるとは限らないことに注意。リスト自体もシーケンスだからです。
+@c COMMON
 @end defun
 
 @c ----------------------------------------------------------------------
