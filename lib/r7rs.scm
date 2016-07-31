@@ -180,9 +180,7 @@
           char<?  char=?  char>=?  char>?  char?  close-input-port
           close-output-port close-port complex?  cond cond-expand cons
           current-error-port current-input-port current-output-port
-          (rename r7rs:define define)
-          define-record-type (rename r7rs:define-syntax define-syntax)
-          (rename r7rs:define-values define-values)
+          define define-record-type define-syntax define-values
           denominator do
           dynamic-wind else eof-object?  equal?  error error-object-message
           even?  exact-integer-sqrt exact?  features floor floor-remainder
@@ -232,11 +230,10 @@
   ;; let-synatx letrec-syntax syntax-rules syntax-error
 
   ;; 5.3 Variable definitions
-  (define-syntax r7rs:define define)
-  (define-syntax r7rs:define-values define-values)
+  ;; define define-values
 
   ;; 5.4 Syntax definitions
-  (define-syntax r7rs:define-syntax define-syntax)
+  ;; define-syntax
 
   ;; 5.5 Record type definitions
   ;; define-record-type
