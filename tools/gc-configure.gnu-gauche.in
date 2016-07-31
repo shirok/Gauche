@@ -7,15 +7,18 @@ set -e
 # some options.
 
 # "--enable-threads=..."
-#   [SK] Original Boehm GC checks gcc for the default thread support.
+#   Original Boehm GC checks gcc for the default thread support.
 #   In our case we need the thread config in sync with the main Gauche
 #   source tree.
 #
 # "-DDONT_ADD_BYTE_AT_END", "--enable-large-config"
-#   [SK] this is _required_ to make Gauche work correctly.
+#   This is _required_ to make Gauche work correctly.
+#
+# "--disable-gcj-support"
+#   This seems required on msys2+mingw-w64 platform.
 #
 # "--enable-handle-fork"
-#   [SK] this supposed to make GC in forked children work on OSX; it did
+#   This supposed to make GC in forked children work on OSX; it did
 #   work on OSX 10.7.3, but caused various failures on 10.7.4, so I disable
 #   it again.
 
@@ -23,5 +26,6 @@ set -e
 ${SHELL} "@srcdir@/configure" "${@}" \
     --enable-threads="@GAUCHE_THREAD_TYPE@" \
     --enable-large-config \
+    --disable-gcj-support \
     CPPFLAGS="${CPPFLAGS} -DDONT_ADD_BYTE_AT_END @LOCAL_INC@" \
     LDFLAGS="${LDFLAGS} @LOCAL_LIB@"
