@@ -174,10 +174,10 @@
            [argv (if host (%prepare-remote host argv directory) argv)]
            [dir  (if host #f directory)])
       (%check-directory dir)
-      (receive (iomap toclose ipipes opipes)
+      (receive (iomap toclose ipipes opipes tmpfiles)
           (if (pair? redirs)
             (%setup-iomap proc redirs)
-            (values #f '() '() '()))
+            (values #f '() '() '() '()))
         (set! (~ proc'in-pipes) ipipes)
         (set! (~ proc'out-pipes) opipes)
         (if fork
@@ -187,14 +187,15 @@
                                        :detached detached)
             (push! (ref proc 'processes) proc)
             (set!  (ref proc 'pid) pid)
-            (dolist (p toclose)
+            (dolist [p toclose]
               (if (input-port? p)
                 (close-input-port p)
                 (close-output-port p)))
             (when (and wait (not detached))
               ;; the following expr waits until the child exits
               (set! (ref proc 'status) (values-ref (sys-waitpid pid) 1))
-              (update! (ref proc 'processes) (cut delete proc <>)))
+              (update! (ref proc 'processes) (cut delete proc <>))
+              (for-each sys-unlink tmpfiles))
             proc)
           (sys-exec (car argv) argv
                     :iomap iomap :directory dir
@@ -303,6 +304,7 @@
   (define opipes '())   ;list of (name . port)
   (define iomap '())    ;list of (fd . port/fd)
   (define seen '())     ;list of seen fds
+  (define tmpfiles '()) ;list of temporary files
 
   (define (do-file dir fd arg)
     (let1 p (case dir
@@ -363,13 +365,20 @@
                                            [else (write-block arg o)])
                                    (close-output-port o)))])
            (cond-expand
-            [gauche.sys.pthreads
+            [gauche.sys.threads
              (receive (in out) (sys-pipe)
                (push! iomap `(,fd . ,in))
                (thread-start! (make-thread (cut write-arg out))))]
             [else
+             ;; If we can't use threads, we fall back to using temporary
+             ;; files.  It has some drawbacks: (1) If we 'exec'-ing
+             ;; (not forking), we don't have chance to remove them, and
+             ;; (2) On Windows we won't be able to remove temp file unless
+             ;; we wait the child process to complete.  We'll do our best
+             ;; anyway.
              (receive (out nam) (sys-mkstemp (%temp-path-prefix))
                (write-arg out)
+               (push! tmpfiles nam)
                (do-file '< fd nam))]))]
         [(<& >&) (push! todup r)] ;; process dups later
         [else (error "invalid redirection" dir)])))
@@ -383,7 +392,7 @@
   (unless (assv 1 iomap) (push! iomap '(1 . 1)))
   (unless (assv 2 iomap) (push! iomap '(2 . 2)))
 
-  (values iomap toclose ipipes opipes))
+  (values iomap toclose ipipes opipes tmpfiles))
 
 (define (%ensure-mask mask)
   (cond
