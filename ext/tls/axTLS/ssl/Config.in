@@ -190,21 +190,6 @@ config CONFIG_SSL_X509_ORGANIZATION_UNIT_NAME
 
         This field is optional.
 
-config CONFIG_SSL_ENABLE_V23_HANDSHAKE
-    bool "Enable v23 Handshake"
-    default n
-    help
-        Some browsers use the v23 handshake client hello message 
-        (an SSL2 format message which all SSL servers can understand). 
-        It may be used if SSL2 is enabled in the browser.
-
-        Since this feature takes a kB or so, this feature may be disabled - at
-        the risk of making it incompatible with some browsers (IE6 is ok,
-        Firefox 1.5 and below use it).
-
-        Disable if backwards compatibility is not an issue (i.e. the client is
-        always using TLS1.0)
-
 config CONFIG_SSL_HAS_PEM
     bool "Enable PEM"
     default n if !CONFIG_SSL_FULL_MODE

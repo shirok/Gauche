@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2014, Cameron Rich
+ * Copyright (c) 2007-2016, Cameron Rich
  * 
  * All rights reserved.
  * 
@@ -1151,14 +1151,11 @@ int SSL_server_tests(void)
     /* 
      * TLS1 client hello 
      */
-    if ((ret = SSL_server_test("TLSv1", "-cipher RC4-SHA -tls1", 
-                    NULL, NULL, NULL, NULL, NULL, DEFAULT_SVR_OPTION)))
-        goto cleanup;
 
     /*
      * AES128-SHA
      */
-    if ((ret = SSL_server_test("AES256-SHA", "-cipher AES128-SHA", 
+    if ((ret = SSL_server_test("AES128-SHA", "-cipher AES128-SHA", 
                     DEFAULT_CERT, NULL, DEFAULT_KEY, NULL, NULL,
                     DEFAULT_SVR_OPTION)))
         goto cleanup;
@@ -1172,27 +1169,11 @@ int SSL_server_tests(void)
         goto cleanup;
 
     /*
-     * RC4-SHA
-     */
-    if ((ret = SSL_server_test("RC4-SHA", "-cipher RC4-SHA", 
-                DEFAULT_CERT, NULL, DEFAULT_KEY, NULL, NULL,
-                DEFAULT_SVR_OPTION)))
-        goto cleanup;
-
-    /*
-     * RC4-MD5
-     */
-    if ((ret = SSL_server_test("RC4-MD5", "-cipher RC4-MD5", 
-                DEFAULT_CERT, NULL, DEFAULT_KEY, NULL, NULL,
-                DEFAULT_SVR_OPTION)))
-        goto cleanup;
-
-    /*
      * Session Reuse
      * all the session id's should match for session resumption.
      */
     if ((ret = SSL_server_test("Session Reuse", 
-                    "-cipher RC4-SHA -reconnect", 
+                    "-cipher AES128-SHA -reconnect", 
                     DEFAULT_CERT, NULL, DEFAULT_KEY, NULL, NULL,
                     DEFAULT_SVR_OPTION)))
         goto cleanup;
@@ -1201,7 +1182,7 @@ int SSL_server_tests(void)
      * 512 bit RSA key 
      */
     if ((ret = SSL_server_test("512 bit key", 
-                    "-cipher RC4-SHA", 
+                    "-cipher AES128-SHA", 
                     "../ssl/test/axTLS.x509_512.cer", NULL, 
                     "../ssl/test/axTLS.key_512",
                     NULL, NULL, DEFAULT_SVR_OPTION)))
@@ -1211,7 +1192,7 @@ int SSL_server_tests(void)
      * 1024 bit RSA key (check certificate chaining)
      */
     if ((ret = SSL_server_test("1024 bit key", 
-                    "-cipher RC4-SHA",
+                    "-cipher AES128-SHA",
                     "../ssl/test/axTLS.x509_1024.cer", NULL, 
                     "../ssl/test/axTLS.key_1024",
                     NULL, NULL, DEFAULT_SVR_OPTION)))
@@ -1221,7 +1202,7 @@ int SSL_server_tests(void)
      * 1042 bit RSA key (check certificate chaining)
      */
     if ((ret = SSL_server_test("1042 bit key", 
-                    "-cipher RC4-SHA",
+                    "-cipher AES128-SHA",
                     "../ssl/test/axTLS.x509_1042.cer", NULL, 
                     "../ssl/test/axTLS.key_1042",
                     NULL, NULL, DEFAULT_SVR_OPTION)))
@@ -1230,7 +1211,7 @@ int SSL_server_tests(void)
      * 2048 bit RSA key 
      */
     if ((ret = SSL_server_test("2048 bit key", 
-                    "-cipher RC4-SHA",
+                    "-cipher AES128-SHA",
                     "../ssl/test/axTLS.x509_2048.cer", NULL, 
                     "../ssl/test/axTLS.key_2048",
                     NULL, NULL, DEFAULT_SVR_OPTION)))
@@ -1240,7 +1221,7 @@ int SSL_server_tests(void)
      * 4096 bit RSA key 
      */
     if ((ret = SSL_server_test("4096 bit key", 
-                    "-cipher RC4-SHA",
+                    "-cipher AES128-SHA",
                     "../ssl/test/axTLS.x509_4096.cer", NULL, 
                     "../ssl/test/axTLS.key_4096",
                     NULL, NULL, DEFAULT_SVR_OPTION)))
@@ -1250,7 +1231,7 @@ int SSL_server_tests(void)
      * Client Verification
      */
     if ((ret = SSL_server_test("Client Verification", 
-                    "-cipher RC4-SHA -tls1 "
+                    "-cipher AES128-SHA -tls1 "
                     "-cert ../ssl/test/axTLS.x509_2048.pem "
                     "-key ../ssl/test/axTLS.key_2048.pem ",
                     NULL, NULL, NULL, 
@@ -1262,7 +1243,7 @@ int SSL_server_tests(void)
     if (stat("../ssl/test/axTLS.x509_bad_before.pem", &stat_buf) >= 0)
     {
         if ((ret = SSL_server_test("Error: Bad Before Cert", 
-                    "-cipher RC4-SHA -tls1 "
+                    "-cipher AES128-SHA -tls1 "
                     "-cert ../ssl/test/axTLS.x509_bad_before.pem "
                     "-key ../ssl/test/axTLS.key_512.pem ",
                     NULL, NULL, NULL, 
@@ -1277,7 +1258,7 @@ int SSL_server_tests(void)
 
     /* this test should fail */
     if ((ret = SSL_server_test("Error: Bad After Cert", 
-                    "-cipher RC4-SHA -tls1 "
+                    "-cipher AES128-SHA -tls1 "
                     "-cert ../ssl/test/axTLS.x509_bad_after.pem "
                     "-key ../ssl/test/axTLS.key_512.pem ",
                     NULL, NULL, NULL, 
@@ -1293,7 +1274,7 @@ int SSL_server_tests(void)
      * No trusted cert
      */
     if ((ret = SSL_server_test("Error: No trusted certificate", 
-                    "-cipher RC4-SHA -tls1 "
+                    "-cipher AES128-SHA -tls1 "
                     "-cert ../ssl/test/axTLS.x509_512.pem "
                     "-key ../ssl/test/axTLS.key_512.pem ",
                     NULL, NULL, NULL, 
@@ -1309,7 +1290,7 @@ int SSL_server_tests(void)
      * Self-signed (from the server)
      */
     if ((ret = SSL_server_test("Error: Self-signed certificate (from server)", 
-                    "-cipher RC4-SHA -tls1 "
+                    "-cipher AES128-SHA -tls1 "
                     "-cert ../ssl/test/axTLS.x509_512.pem "
                     "-key ../ssl/test/axTLS.key_512.pem "
                     "-CAfile ../ssl/test/axTLS.ca_x509.pem ",
@@ -1327,7 +1308,7 @@ int SSL_server_tests(void)
      * Self-signed (from the client)
      */
     if ((ret = SSL_server_test("Self-signed certificate (from client)", 
-                    "-cipher RC4-SHA -tls1 "
+                    "-cipher AES128-SHA -tls1 "
                     "-cert ../ssl/test/axTLS.x509_512.pem "
                     "-key ../ssl/test/axTLS.key_512.pem ",
                     NULL, NULL, NULL, 
@@ -1340,7 +1321,7 @@ int SSL_server_tests(void)
      * Key in PEM format
      */
     if ((ret = SSL_server_test("Key in PEM format",
-                    "-cipher RC4-SHA", 
+                    "-cipher AES128-SHA", 
                     "../ssl/test/axTLS.x509_512.cer", NULL, 
                     "../ssl/test/axTLS.key_512.pem", NULL,
                     NULL, DEFAULT_SVR_OPTION)))
@@ -1350,7 +1331,7 @@ int SSL_server_tests(void)
      * Cert in PEM format
      */
     if ((ret = SSL_server_test("Cert in PEM format", 
-                    "-cipher RC4-SHA", 
+                    "-cipher AES128-SHA", 
                     "../ssl/test/axTLS.x509_512.pem", NULL, 
                     "../ssl/test/axTLS.key_512.pem", NULL,
                     NULL, DEFAULT_SVR_OPTION)))
@@ -1360,7 +1341,7 @@ int SSL_server_tests(void)
      * Cert chain in PEM format
      */
     if ((ret = SSL_server_test("Cert chain in PEM format", 
-                    "-cipher RC4-SHA", 
+                    "-cipher AES128-SHA", 
                     "../ssl/test/axTLS.x509_device.pem", 
                     NULL, "../ssl/test/axTLS.device_key.pem",
                     "../ssl/test/axTLS.ca_x509.pem", NULL, DEFAULT_SVR_OPTION)))
@@ -1370,7 +1351,7 @@ int SSL_server_tests(void)
      * AES128 Encrypted key 
      */
     if ((ret = SSL_server_test("AES128 encrypted key", 
-                    "-cipher RC4-SHA", 
+                    "-cipher AES128-SHA", 
                     "../ssl/test/axTLS.x509_aes128.pem", NULL, 
                     "../ssl/test/axTLS.key_aes128.pem",
                     NULL, "abcd", DEFAULT_SVR_OPTION)))
@@ -1380,7 +1361,7 @@ int SSL_server_tests(void)
      * AES256 Encrypted key 
      */
     if ((ret = SSL_server_test("AES256 encrypted key", 
-                    "-cipher RC4-SHA", 
+                    "-cipher AES128-SHA", 
                     "../ssl/test/axTLS.x509_aes256.pem", NULL, 
                     "../ssl/test/axTLS.key_aes256.pem",
                     NULL, "abcd", DEFAULT_SVR_OPTION)))
@@ -1390,7 +1371,7 @@ int SSL_server_tests(void)
      * AES128 Encrypted invalid key 
      */
     if ((ret = SSL_server_test("AES128 encrypted invalid key", 
-                    "-cipher RC4-SHA", 
+                    "-cipher AES128-SHA", 
                     "../ssl/test/axTLS.x509_aes128.pem", NULL, 
                     "../ssl/test/axTLS.key_aes128.pem",
                     NULL, "xyz", DEFAULT_SVR_OPTION)) != SSL_ERROR_INVALID_KEY)
@@ -1402,7 +1383,7 @@ int SSL_server_tests(void)
     /*
      * PKCS#8 key (encrypted)
      */
-    if ((ret = SSL_server_test("pkcs#8 encrypted", "-cipher RC4-SHA", 
+    if ((ret = SSL_server_test("pkcs#8 encrypted", "-cipher AES128-SHA", 
                 DEFAULT_CERT, NULL, "../ssl/test/axTLS.encrypted.p8", 
                 NULL, "abcd", DEFAULT_SVR_OPTION)))
         goto cleanup;
@@ -1410,7 +1391,7 @@ int SSL_server_tests(void)
     /*
      * PKCS#8 key (unencrypted DER format)
      */
-    if ((ret = SSL_server_test("pkcs#8 DER unencrypted", "-cipher RC4-SHA", 
+    if ((ret = SSL_server_test("pkcs#8 DER unencrypted", "-cipher AES128-SHA", 
                 DEFAULT_CERT, NULL, "../ssl/test/axTLS.unencrypted.p8", 
                 NULL, NULL, DEFAULT_SVR_OPTION)))
         goto cleanup;
@@ -1418,7 +1399,7 @@ int SSL_server_tests(void)
     /*
      * PKCS#8 key (unencrypted PEM format)
      */
-    if ((ret = SSL_server_test("pkcs#8 PEM unencrypted", "-cipher RC4-SHA", 
+    if ((ret = SSL_server_test("pkcs#8 PEM unencrypted", "-cipher AES128-SHA", 
                 DEFAULT_CERT, NULL, "../ssl/test/axTLS.unencrypted_pem.p8", 
                 NULL, NULL, DEFAULT_SVR_OPTION)))
         goto cleanup;
@@ -1426,12 +1407,12 @@ int SSL_server_tests(void)
     /*
      * PKCS#12 key/certificate
      */
-    if ((ret = SSL_server_test("pkcs#12 with CA", "-cipher RC4-SHA", 
+    if ((ret = SSL_server_test("pkcs#12 with CA", "-cipher AES128-SHA", 
                 NULL, NULL, "../ssl/test/axTLS.withCA.p12", 
                 NULL, "abcd", DEFAULT_SVR_OPTION)))
         goto cleanup;
 
-    if ((ret = SSL_server_test("pkcs#12 no CA", "-cipher RC4-SHA", 
+    if ((ret = SSL_server_test("pkcs#12 no CA", "-cipher AES128-SHA", 
                 DEFAULT_CERT, NULL, "../ssl/test/axTLS.withoutCA.p12", 
                 NULL, "abcd", DEFAULT_SVR_OPTION)))
         goto cleanup;

@@ -57,41 +57,21 @@ static int send_raw_packet(SSL *ssl, uint8_t protocol);
  * The server will pick the cipher based on the order that the order that the
  * ciphers are listed. This order is defined at compile time.
  */
-#ifdef CONFIG_SSL_SKELETON_MODE
-const uint8_t ssl_prot_prefs[NUM_PROTOCOLS] = 
-{ SSL_RC4_128_SHA };
-#else
+#ifndef CONFIG_SSL_SKELETON_MODE
 static void session_free(SSL_SESSION *ssl_sessions[], int sess_index);
+#endif
 
 const uint8_t ssl_prot_prefs[NUM_PROTOCOLS] = 
-#ifdef CONFIG_SSL_PROT_LOW                  /* low security, fast speed */
-{ SSL_RC4_128_SHA, SSL_AES128_SHA, SSL_AES256_SHA, SSL_RC4_128_MD5 };
+#ifdef CONFIG_SSL_PROT_LOW                  /* same as medium for now */
+{ SSL_AES128_SHA, SSL_AES256_SHA };
 #elif CONFIG_SSL_PROT_MEDIUM                /* medium security, medium speed */
-{ SSL_AES128_SHA, SSL_AES256_SHA, SSL_RC4_128_SHA, SSL_RC4_128_MD5 };    
+{ SSL_AES128_SHA, SSL_AES256_SHA };    
 #else /* CONFIG_SSL_PROT_HIGH */            /* high security, low speed */
-{ SSL_AES256_SHA, SSL_AES128_SHA, SSL_RC4_128_SHA, SSL_RC4_128_MD5 };
+{ SSL_AES256_SHA, SSL_AES128_SHA };
 #endif
-#endif /* CONFIG_SSL_SKELETON_MODE */
-
 /**
  * The cipher map containing all the essentials for each cipher.
  */
-#ifdef CONFIG_SSL_SKELETON_MODE
-static const cipher_info_t cipher_info[NUM_PROTOCOLS] = 
-{
-    {   /* RC4-SHA */
-        SSL_RC4_128_SHA,                /* RC4-SHA */
-        16,                             /* key size */
-        0,                              /* iv size */ 
-        2*(SHA1_SIZE+16),               /* key block size */
-        0,                              /* no padding */
-        SHA1_SIZE,                      /* digest size */
-        hmac_sha1,                      /* hmac algorithm */
-        (crypt_func)RC4_crypt,          /* encrypt */
-        (crypt_func)RC4_crypt           /* decrypt */
-    },
-};
-#else
 static const cipher_info_t cipher_info[NUM_PROTOCOLS] = 
 {
     {   /* AES128-SHA */
@@ -116,34 +96,7 @@ static const cipher_info_t cipher_info[NUM_PROTOCOLS] =
         (crypt_func)AES_cbc_encrypt,    /* encrypt */
         (crypt_func)AES_cbc_decrypt     /* decrypt */
     },       
-    {   /* RC4-SHA */
-        SSL_RC4_128_SHA,                /* RC4-SHA */
-        16,                             /* key size */
-        0,                              /* iv size */ 
-        2*(SHA1_SIZE+16),               /* key block size */
-        0,                              /* no padding */
-        SHA1_SIZE,                      /* digest size */
-        hmac_sha1,                      /* hmac algorithm */
-        (crypt_func)RC4_crypt,          /* encrypt */
-        (crypt_func)RC4_crypt           /* decrypt */
-    },
-    /*
-     * This protocol is from SSLv2 days and is unlikely to be used - but was
-     * useful for testing different possible digest algorithms.
-     */
-    {   /* RC4-MD5 */
-        SSL_RC4_128_MD5,                /* RC4-MD5 */
-        16,                             /* key size */
-        0,                              /* iv size */ 
-        2*(MD5_SIZE+16),                /* key block size */
-        0,                              /* no padding */
-        MD5_SIZE,                       /* digest size */
-        hmac_md5,                       /* hmac algorithm */
-        (crypt_func)RC4_crypt,          /* encrypt */
-        (crypt_func)RC4_crypt           /* decrypt */
-    },
 };
-#endif
 
 static void prf(const uint8_t *sec, int sec_len, uint8_t *seed, int seed_len,
         uint8_t *out, int olen);
@@ -903,7 +856,6 @@ static void *crypt_new(SSL *ssl, uint8_t *key, uint8_t *iv, int is_decrypt)
 {
     switch (ssl->cipher)
     {
-#ifndef CONFIG_SSL_SKELETON_MODE
         case SSL_AES128_SHA:
             {
                 AES_CTX *aes_ctx = (AES_CTX *)malloc(sizeof(AES_CTX));
@@ -928,15 +880,6 @@ static void *crypt_new(SSL *ssl, uint8_t *key, uint8_t *iv, int is_decrypt)
                 }
 
                 return (void *)aes_ctx;
-            }
-
-        case SSL_RC4_128_MD5:
-#endif
-        case SSL_RC4_128_SHA:
-            {
-                RC4_CTX *rc4_ctx = (RC4_CTX *)malloc(sizeof(RC4_CTX));
-                RC4_setup(rc4_ctx, key, 16);
-                return (void *)rc4_ctx;
             }
     }
 
@@ -1156,7 +1099,6 @@ static int set_key_block(SSL *ssl, int is_write)
     memcpy(server_key, q, ciph_info->key_size);
     q += ciph_info->key_size;
 
-#ifndef CONFIG_SSL_SKELETON_MODE 
     if (ciph_info->iv_size)    /* RC4 has no IV, AES does */
     {
         memcpy(client_iv, q, ciph_info->iv_size);
@@ -1164,7 +1106,6 @@ static int set_key_block(SSL *ssl, int is_write)
         memcpy(server_iv, q, ciph_info->iv_size);
         q += ciph_info->iv_size;
     }
-#endif
 
     free(is_write ? ssl->encrypt_ctx : ssl->decrypt_ctx);
 
@@ -1240,31 +1181,10 @@ int basic_read(SSL *ssl, uint8_t **in_data)
         /* check for sslv2 "client hello" */
         if (buf[0] & 0x80 && buf[2] == 1)
         {
-#ifdef CONFIG_SSL_ENABLE_V23_HANDSHAKE
-            uint8_t version = (buf[3] << 4) + buf[4];
-            DISPLAY_BYTES(ssl, "ssl2 record", buf, 5);
-
-            /* should be v3.1 (TLSv1) or better  */
-            ssl->version = ssl->client_version = version;
-
-            if (version > SSL_PROTOCOL_VERSION_MAX)
-            {
-                /* use client's version */
-                ssl->version = SSL_PROTOCOL_VERSION_MAX;
-            }
-            else if (version < SSL_PROTOCOL_MIN_VERSION)  
-            {
-                ret = SSL_ERROR_INVALID_VERSION;
-                ssl_display_error(ret);
-                return ret;
-            }
-
-            add_packet(ssl, &buf[2], 3);
-            ret = process_sslv23_client_hello(ssl); 
-#else
-            printf("Error: no SSLv23 handshaking allowed\n"); TTY_FLUSH();
-            ret = SSL_ERROR_NOT_SUPPORTED;
+#ifdef CONFIG_SSL_FULL_MODE
+            printf("Error: no SSLv23 handshaking allowed\n");
 #endif
+            ret = SSL_ERROR_NOT_SUPPORTED;
             goto error; /* not an error - just get out of here */
         }
 
@@ -1448,8 +1368,6 @@ int send_change_cipher_spec(SSL *ssl)
     if (ret >= 0 && set_key_block(ssl, 1) < 0)
         ret = SSL_ERROR_INVALID_HANDSHAKE;
     
-    if (ssl->cipher_info)
-        SET_SSL_FLAG(SSL_TX_ENCRYPTED);
     if (ssl->cipher_info)
         SET_SSL_FLAG(SSL_TX_ENCRYPTED);
 
@@ -1722,8 +1640,8 @@ SSL_SESSION *ssl_session_update(int max_sessions, SSL_SESSION *ssl_sessions[],
 
     /* ok, we've used up all of our sessions. So blow the oldest session away */
     oldest_sess->conn_time = tm;
-    memset(oldest_sess->session_id, 0, sizeof(SSL_SESSION_ID_SIZE));
-    memset(oldest_sess->master_secret, 0, sizeof(SSL_SECRET_SIZE));
+    memset(oldest_sess->session_id, 0, SSL_SESSION_ID_SIZE);
+    memset(oldest_sess->master_secret, 0, SSL_SECRET_SIZE);
     SSL_CTX_UNLOCK(ssl->ssl_ctx->mutex);
     return oldest_sess;
 }
@@ -1853,31 +1771,96 @@ int process_certificate(SSL *ssl, X509_CTX **x509_ctx)
     int ret = SSL_OK;
     uint8_t *buf = &ssl->bm_data[ssl->dc->bm_proc_index];
     int pkt_size = ssl->bm_index;
-    int cert_size, offset = 5;
+    int cert_size, offset = 5, offset_start;
     int total_cert_size = (buf[offset]<<8) + buf[offset+1];
     int is_client = IS_SET_SSL_FLAG(SSL_IS_CLIENT);
-    X509_CTX **chain = x509_ctx;
+    X509_CTX *chain = 0;
+    X509_CTX **certs = 0;
+    int *cert_used = 0;
+    int num_certs = 0;
+    int i = 0;
     offset += 2;
 
     PARANOIA_CHECK(total_cert_size, offset);
 
+    // record the start point for the second pass
+    offset_start = offset;
+
+    // first pass - count the certificates
+    while (offset < total_cert_size)
+    {
+        offset++;       /* skip empty char */
+        cert_size = (buf[offset]<<8) + buf[offset+1];
+        offset += 2;
+        offset += cert_size;
+        num_certs++;
+    }
+
+    PARANOIA_CHECK(pkt_size, offset);
+
+    certs = (X509_CTX**) calloc(num_certs, sizeof(void*));
+    cert_used = (int*) calloc(num_certs, sizeof(int));
+    num_certs = 0;
+
+    // restore the offset from the saved value 
+    offset = offset_start;
+
+    // second pass - load the certificates
     while (offset < total_cert_size)
     {
         offset++;       /* skip empty char */
         cert_size = (buf[offset]<<8) + buf[offset+1];
         offset += 2;
         
-        if (x509_new(&buf[offset], NULL, chain))
+        if (x509_new(&buf[offset], NULL, certs+num_certs))
         {
             ret = SSL_ERROR_BAD_CERTIFICATE;
             goto error;
         }
 
-        chain = &((*chain)->next);
+        num_certs++;
         offset += cert_size;
     }
 
     PARANOIA_CHECK(pkt_size, offset);
+
+    // third pass - link certs together, assume server cert is the first
+    *x509_ctx = certs[0];
+    chain = certs[0];
+    cert_used[0] = 1;
+
+    // repeat until the end of the chain is found
+    while (1)
+    {
+        // look for CA cert
+        for( i = 1; i < num_certs; i++ )
+        {
+            if (certs[i] == chain) 
+                continue;
+            if (cert_used[i]) 
+                continue; // don't allow loops
+
+            if (asn1_compare_dn(chain->ca_cert_dn, certs[i]->cert_dn) == 0)
+            {
+                // CA cert found, add it to the chain
+                cert_used[i] = 1;
+                chain->next = certs[i];
+                chain = certs[i];
+                break;
+            }
+        }
+
+        // no CA cert found, reached the end of the chain
+        if (i >= num_certs) 
+            break;
+    }
+
+    // clean up any certs that aren't part of the chain
+    for (i = 1; i < num_certs; i++)
+    {
+        if (cert_used[i] == 0) 
+            x509_free(certs[i]);
+    }
 
     /* if we are client we can do the verify now or later */
     if (is_client && !IS_SET_SSL_FLAG(SSL_SERVER_VERIFY_LATER))
@@ -1888,6 +1871,13 @@ int process_certificate(SSL *ssl, X509_CTX **x509_ctx)
     ssl->next_state = is_client ? HS_SERVER_HELLO_DONE : HS_CLIENT_KEY_XCHG;
     ssl->dc->bm_proc_index += offset;
 error:
+    // clean up arrays
+    if (certs) 
+        free(certs);
+
+    if (cert_used) 
+        free(cert_used);
+
     return ret;
 }
 
@@ -1959,7 +1949,6 @@ void DISPLAY_STATE(SSL *ssl, int is_send, uint8_t state, int not_ok)
     }
 
     printf("%s\n", str);
-    TTY_FLUSH();
 }
 
 /**
@@ -2079,7 +2068,6 @@ EXP_FUNC void STDCALL ssl_display_error(int error_code)
     }
 
     printf("\n");
-    TTY_FLUSH();
 }
 
 /**
@@ -2140,7 +2128,6 @@ void DISPLAY_ALERT(SSL *ssl, int alert)
     }
 
     printf("\n");
-    TTY_FLUSH();
 }
 
 #endif /* CONFIG_SSL_FULL_MODE */

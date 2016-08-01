@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2014, Cameron Rich
+ * Copyright (c) 2007-2016, Cameron Rich
  * 
  * All rights reserved.
  * 
@@ -43,6 +43,7 @@ extern "C" {
 #include "version.h"
 #include "../config/config.h"
 #include "os_int.h"
+#include "os_port.h"
 #include "crypto.h"
 #include "crypto_misc.h"
 
@@ -79,11 +80,7 @@ extern "C" {
 #define RT_EXTRA                    1024
 #define BM_RECORD_OFFSET            5
 
-#ifdef CONFIG_SSL_SKELETON_MODE
-#define NUM_PROTOCOLS               1
-#else
-#define NUM_PROTOCOLS               4
-#endif
+#define NUM_PROTOCOLS               2
 
 #define PARANOIA_CHECK(A, B)        if (A < B) { \
     ret = SSL_ERROR_INVALID_HANDSHAKE; goto error; }

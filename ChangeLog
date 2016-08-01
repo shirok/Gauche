@@ -1,3 +1,7 @@
+2016-08-01  Shiro Kawai  <shiro@acm.org>
+
+	* ext/tls/axTLS: Update to axTLS-1.5.4.
+
 2016-07-30  Shiro Kawai  <shiro@acm.org>
 
 	* tools/gc-configure.gnu-gauche.in: Add --disable-gcj-support;
