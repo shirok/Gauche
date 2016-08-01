@@ -207,7 +207,7 @@
   #!/bin/sh
 ! #ps -ef|grep gnutls-serv | /usr/bin/awk '{print $2}' |xargs kill -9
 *** a/axTLS/ssl/os_port.h	Mon Jul  4 21:33:37 2016
---- b/axTLS/ssl/os_port.h	Mon Aug  1 04:10:38 2016
+--- b/axTLS/ssl/os_port.h	Mon Aug  1 12:58:59 2016
 ***************
 *** 60,65 ****
 --- 60,67 ----
@@ -220,12 +220,28 @@
   #if defined(_WIN32_WCE)
   #include <basetsd.h>
 ***************
-*** 119,126 ****
---- 121,134 ----
+*** 98,105 ****
+--- 100,111 ----
+  #define usleep(A)               Sleep(A/1000)
+  #define strdup(A)               _strdup(A)
+  #define chroot(A)               _chdir(A)
++ #ifndef chdir
+  #define chdir(A)                _chdir(A)
++ #endif
++ #ifndef alloca
+  #define alloca(A)               _alloca(A)
++ #endif
+  #ifndef lseek
+  #define lseek(A,B,C)            _lseek(A,B,C)
+  #endif
+***************
+*** 118,126 ****
+--- 124,138 ----
+  
   typedef int socklen_t;
   
-  EXP_FUNC void STDCALL gettimeofday(struct timeval* t,void* timezone);
 + #if !defined(__MINGW32__)
+  EXP_FUNC void STDCALL gettimeofday(struct timeval* t,void* timezone);
   EXP_FUNC int STDCALL strcasecmp(const char *s1, const char *s2);
   EXP_FUNC int STDCALL getdomainname(char *buf, int buf_size);
 + #endif /*!defined(__MINGW32__)*/
@@ -251,7 +267,7 @@
   #ifndef be64toh
   #define be64toh(x) __be64_to_cpu(x)
   #endif
---- 144,163 ----
+--- 148,167 ----
   #include <sys/wait.h>
   #include <netinet/in.h>
   #include <arpa/inet.h>

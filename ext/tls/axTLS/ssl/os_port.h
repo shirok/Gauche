@@ -100,8 +100,12 @@ extern "C" {
 #define usleep(A)               Sleep(A/1000)
 #define strdup(A)               _strdup(A)
 #define chroot(A)               _chdir(A)
+#ifndef chdir
 #define chdir(A)                _chdir(A)
+#endif
+#ifndef alloca
 #define alloca(A)               _alloca(A)
+#endif
 #ifndef lseek
 #define lseek(A,B,C)            _lseek(A,B,C)
 #endif
@@ -120,8 +124,8 @@ extern "C" {
 
 typedef int socklen_t;
 
-EXP_FUNC void STDCALL gettimeofday(struct timeval* t,void* timezone);
 #if !defined(__MINGW32__)
+EXP_FUNC void STDCALL gettimeofday(struct timeval* t,void* timezone);
 EXP_FUNC int STDCALL strcasecmp(const char *s1, const char *s2);
 EXP_FUNC int STDCALL getdomainname(char *buf, int buf_size);
 #endif /*!defined(__MINGW32__)*/
