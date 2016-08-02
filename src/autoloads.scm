@@ -164,15 +164,13 @@
           vector-for-each-with-index reverse-list->vector)
 
 (autoload gauche.computil
-          default-comparator comparator-register-default!
           boolean-comparator char-comparator char-ci-comparator
           string-ci-comparator symbol-comparator
           exact-integer-comparator integer-comparator rational-comparator
           real-comparator complex-comparator number-comparator
           pair-comparator list-comparator vector-comparator
           bytevector-comparator uvector-comparator
-          make-default-comparator make-eq-comparator
-          make-eqv-comparator make-equal-comparator
+          make-eq-comparator make-eqv-comparator
           make-reverse-comparator make-key-comparator make-tuple-comparator
           make-pair-comparator
           make-list-comparator make-vector-comparator

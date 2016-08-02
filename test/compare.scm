@@ -68,6 +68,8 @@
      ))
   )
 
+(test-section "object-compare")
+
 ;; comparing different types
 (define-class <other-type> () ())
 (define-method object-compare ((a <other-type>) (b <other-type>)) 0)
@@ -114,6 +116,8 @@
                (compare bx ax)
                (compare ay bx)
                (compare bx ay))))
+
+(test-section "builtin comparators")
 
 (let ()
   (define tc (make-tuple-comparator integer-comparator
@@ -204,7 +208,8 @@
        (equal? (make-comparator/compare #t equal? #f #f 'bo)
                (make-comparator/compare #t equal? #f #f 'yo)))
 
-;; srfi-128 comparator utilities
+(test-section "comparator utilities")
+
 (let ()
   (define (t rcmp xss)
     (test* "=?"
@@ -256,6 +261,43 @@
   (t (make-comparator/compare #t = (^[a b] (compare b a)) #f)
      '(1 0) '(1 1) '(0 1))
   (t #f '(0 1) '(1 1) '(1 0))
+  )
+
+(test-section "default comparator extension")
+
+(define-class <moo> () ((v :init-keyword :v)))
+
+(comparator-register-default!
+ (make-comparator (^x (is-a? x <moo>))
+                  (^[x y] (= (~ x'v) (~ y'v)))
+                  (^[x y] (< (~ x'v) (~ y'v)))
+                  (^x (default-hash (~ x'v)))))
+
+
+(let ([a (make <moo> :v 0)]
+      [b (make <moo> :v 10)]
+      [c (make <moo> :v 10)]
+      [d (make <moo> :v -10)])
+  (define pairs `((,a ,b) (,a ,c) (,a ,d) (,b ,c) (,b ,d) (,c ,d)))
+  (test* "extended default comparator comparison"
+         (map (^p (let ([a (car p)] [b (cadr p)])
+                    (list (= (~ a'v) (~ b'v))
+                          (< (~ a'v) (~ b'v))
+                          (<= (~ a'v) (~ b'v))
+                          (> (~ a'v) (~ b'v))
+                          (>= (~ a'v) (~ b'v)))))
+              pairs)
+         (map (^p (let ([a (car p)] [b (cadr p)])
+                    (list (=? default-comparator a b)
+                          (<? default-comparator a b)
+                          (<=? default-comparator a b)
+                          (>? default-comparator a b)
+                          (>=? default-comparator a b))))
+              pairs))
+
+  (test* "extended default comparator hash"
+         (map (^a (default-hash (~ a 'v))) (list a b c d))
+         (map (cut comparator-hash default-comparator <>) (list a b c d)))
   )
 
 (test-end)

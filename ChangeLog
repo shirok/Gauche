@@ -1,3 +1,19 @@
+2016-08-02  shiro  <shiro@acm.org>
+
+	* src/libcmp.scm, src/libomega.scm, lib/gauche/computil.scm:
+	  Changed default-comparator extension mechanism.  Instead of
+	  dispatching _before_ falling back to system default, we just
+	  use system default stuff (equal?, compare, default-hash) and
+	  dispatch to custom comparators via fallback methods
+	  (object-equal?, object-compare and object-hash).  This way
+	  we won't sacrifice performance of default-comparator for builtin
+	  types.  Caveat: (1) This mechanism relies on we catch the base
+	  case of object-equal? etc.; it breaks if anybody redefines
+	  (object-equal? <top> <top>), for example.  (2) You can't use
+	  _both_ Gauche's way (defining (object-compare <mytype> <mytype>)
+	  and srfi-128 way (registering a comparator for <mytype>); you have
+	  to choose one.
+
 2016-08-01  Shiro Kawai  <shiro@acm.org>
 
 	* ext/tls/axTLS: Update to axTLS-1.5.4.

@@ -49,6 +49,9 @@
 ;; Because of this on-demand filling, the internal accessors are a
 ;; bit complicated; it is justified by the simple api with low overhead
 ;; (we don't calculate until needed).
+;;
+;; Note: Some builtin comparator stuff are in libomega.scm, for they
+;; depends on other builtin mechanisms.
 
 (select-module gauche.internal)
 (define (default-type-test _) #t)
@@ -186,6 +189,7 @@
       (return hash))))
 
 (select-module gauche.internal)
+;; Used by (object-equal? <comparator> <comparator>), defined in libomega.scm
 (define-cproc comparator-equality-use-comparison? (c::<comparator>) ::<boolean>
   (return (logand (-> c flags) SCM_COMPARATOR_USE_COMPARISON)))
 

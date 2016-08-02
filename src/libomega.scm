@@ -87,6 +87,19 @@
 (define string-comparator
   (make-comparator/compare string? string=? compare
                            default-hash 'string-comparator))
+(define default-comparator
+  (make-comparator/compare #t equal? compare default-hash 'default-comparator))
+
+;; NB: srfi-128's make-eq-comparator and make-eqv-comparator will NOT
+;; return eq-comparator and eqv-comparator.  They're defined in computil.scm.
+(define-inline (make-equal-comparator) equal-comparator); srfi-128
+(define-inline (make-default-comparator) default-comparator) ;srfi-128
+
+(define (comparator-register-default! cmpr) ;srfi-128
+  (unless (is-a? cmpr <comparator>)
+    (error "Comparator required, but got:" cmpr))
+  (with-module gauche.internal
+    (push! *custom-comparators* cmpr)))
 
 ;; comparators can be compared by equal? (Gauche extension)
 (define-method object-equal? ((x <comparator>) (y <comparator>))
@@ -104,6 +117,37 @@
                 (not (comparator-hashable? y)))
            (eqv? (~ x'hash) (~ y'hash)))
        (equal? (slot-ref x 'name) (slot-ref y 'name))))
+
+;; Extend default-comparator by srfi-128 way
+;;
+;;  Our default-comparator already handles any type of objects,
+;;  and delegates customized behavior for object-equal?, object-compare
+;;  and object-hash.  So we set up the "catch-all" methods for
+;;  these and dispatches to the comparators registered by
+;;  comparator-register-default!.
+(select-module gauche.internal)
+(define *custom-comparators* '())
+
+(define (%choose-comparator-1 a)
+  (find (cut comparator-test-type <> a) *custom-comparators*))
+(define (%choose-comparator-2 a b)
+  (find (^c (and (comparator-test-type c a) (comparator-test-type c b)))
+        *custom-comparators*))
+
+(define-method object-equal? (a b)
+  (and-let1 c (%choose-comparator-2 a b)
+    (=? c a b)))
+(define-method object-compare (a b)
+  (if-let1 c (%choose-comparator-2 a b)
+    (comparator-compare c a b)
+    (errorf "Object ~s and ~s are not comparable" a b)))
+;; NB: We 'catch-all' on one-arg object-hash, for two arg object-hash will
+;; delegate to one-arg in order to maintain the backward compatibility.
+;; See below for two-arg object-has base method.
+(define-method object-hash (a)
+  (if-let1 c (%choose-comparator-1 a)
+    (comparator-hash c a)
+    (errorf "Object ~s is not hashable" a)))
 
 ;; Recursive hash function
 ;; This is here instead of in libdict.scm, for we need the rest of
