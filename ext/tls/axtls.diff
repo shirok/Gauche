@@ -1,5 +1,5 @@
-*** a/axTLS/ssl/tls1.h	Mon Jul  4 21:30:05 2016
---- b/axTLS/ssl/tls1.h	Mon Aug  1 04:10:38 2016
+*** a/axTLS/ssl/tls1.h	Tue Jul  5 16:30:04 2016
+--- b/axTLS/ssl/tls1.h	Tue Aug  2 15:54:50 2016
 ***************
 *** 41,47 ****
   #endif
@@ -17,8 +17,8 @@
   #include "os_int.h"
   #include "os_port.h"
   #include "crypto.h"
-*** a/axTLS/ssl/test/ssltest.c	Sun Jun 12 00:50:53 2016
---- b/axTLS/ssl/test/ssltest.c	Mon Aug  1 04:10:38 2016
+*** a/axTLS/ssl/test/ssltest.c	Sun Jun 12 19:50:52 2016
+--- b/axTLS/ssl/test/ssltest.c	Tue Aug  2 15:54:50 2016
 ***************
 *** 929,947 ****
   static int client_socket_init(uint16_t port)
@@ -187,8 +187,8 @@
   //    if (header_issue())
   //    {
   //        printf("Header tests failed\n"); TTY_FLUSH();
-*** a/axTLS/ssl/test/killopenssl.sh	Sun Jun 12 00:39:35 2016
---- b/axTLS/ssl/test/killopenssl.sh	Mon Aug  1 04:10:38 2016
+*** a/axTLS/ssl/test/killopenssl.sh	Sun Jun 12 19:39:34 2016
+--- b/axTLS/ssl/test/killopenssl.sh	Tue Aug  2 15:54:50 2016
 ***************
 *** 1,2 ****
   #!/bin/sh
@@ -197,8 +197,8 @@
   #!/bin/sh
 ! awk '{print $1}' "../ssl/openssl.pid" | xargs kill -9
 ! rm -f ../ssl/openssl.pid
-*** a/axTLS/ssl/test/killgnutls.sh	Sun Jun 12 00:39:35 2016
---- b/axTLS/ssl/test/killgnutls.sh	Mon Aug  1 04:10:38 2016
+*** a/axTLS/ssl/test/killgnutls.sh	Sun Jun 12 19:39:34 2016
+--- b/axTLS/ssl/test/killgnutls.sh	Tue Aug  2 15:54:50 2016
 ***************
 *** 1,2 ****
   #!/bin/sh
@@ -206,8 +206,25 @@
 --- 1,2 ----
   #!/bin/sh
 ! #ps -ef|grep gnutls-serv | /usr/bin/awk '{print $2}' |xargs kill -9
-*** a/axTLS/ssl/os_port.h	Mon Jul  4 21:33:37 2016
---- b/axTLS/ssl/os_port.h	Mon Aug  1 12:58:59 2016
+*** a/axTLS/ssl/os_port.h	Tue Jul  5 16:33:36 2016
+--- b/axTLS/ssl/os_port.h	Tue Aug  2 16:28:04 2016
+***************
+*** 42,48 ****
+  #endif
+  
+  #include "os_int.h"
+! #include "config.h"
+  #include <stdio.h>
+  
+  #if defined(WIN32)
+--- 42,48 ----
+  #endif
+  
+  #include "os_int.h"
+! #include "../config/config.h"
+  #include <stdio.h>
+  
+  #if defined(WIN32)
 ***************
 *** 60,65 ****
 --- 60,67 ----
@@ -236,7 +253,7 @@
   #endif
 ***************
 *** 118,126 ****
---- 124,138 ----
+--- 124,139 ----
   
   typedef int socklen_t;
   
@@ -248,6 +265,7 @@
 + 
 + #if defined(__MINGW32__)
 + #include <malloc.h>
++ #include <sys/time.h>
 + #endif /*defined(__MINGW32__)*/
   
   #else   /* Not Win32 */
@@ -267,7 +285,7 @@
   #ifndef be64toh
   #define be64toh(x) __be64_to_cpu(x)
   #endif
---- 148,167 ----
+--- 149,168 ----
   #include <sys/wait.h>
   #include <netinet/in.h>
   #include <arpa/inet.h>
@@ -288,17 +306,17 @@
   #ifndef be64toh
   #define be64toh(x) __be64_to_cpu(x)
   #endif
-*** a/axTLS/ssl/os_port.c	Tue Jul  5 09:31:16 2016
---- b/axTLS/ssl/os_port.c	Mon Aug  1 04:10:38 2016
+*** a/axTLS/ssl/os_port.c	Wed Jul  6 04:31:16 2016
+--- b/axTLS/ssl/os_port.c	Tue Aug  2 14:55:21 2016
 ***************
-*** 56,61 ****
---- 56,62 ----
-  #endif
-  }
+*** 40,45 ****
+--- 40,46 ----
+  #include "os_port.h"
   
+  #ifdef WIN32
 + #ifndef __MINGW32__
   /**
-   * strcasecmp() not in Win32
+   * gettimeofday() not in Win32 
    */
 ***************
 *** 88,92 ****
@@ -309,8 +327,8 @@
 + #endif /*__MINGW32__*/
   #endif
   
-*** a/axTLS/crypto/os_int.h	Tue Jul  5 09:55:29 2016
---- b/axTLS/crypto/os_int.h	Mon Aug  1 04:12:44 2016
+*** a/axTLS/crypto/os_int.h	Wed Jul  6 04:55:28 2016
+--- b/axTLS/crypto/os_int.h	Tue Aug  2 15:54:50 2016
 ***************
 *** 41,47 ****
   extern "C" {
@@ -346,8 +364,8 @@
   #endif /* Not Solaris */
   
   #endif /* Not Win32 */
-*** a/axTLS/crypto/crypto_misc.c	Tue Jul  5 09:49:47 2016
---- b/axTLS/crypto/crypto_misc.c	Mon Aug  1 04:10:38 2016
+*** a/axTLS/crypto/crypto_misc.c	Wed Jul  6 04:49:46 2016
+--- b/axTLS/crypto/crypto_misc.c	Tue Aug  2 15:54:50 2016
 ***************
 *** 48,54 ****
   static HCRYPTPROV gCryptProv;
@@ -365,8 +383,8 @@
   /* change to processor registers as appropriate */
   #define ENTROPY_POOL_SIZE 32
   #define ENTROPY_COUNTER1 ((((uint64_t)tv.tv_sec)<<32) | tv.tv_usec)
-*** a/axTLS/crypto/crypto.h	Sun Jun 12 00:39:34 2016
---- b/axTLS/crypto/crypto.h	Mon Aug  1 04:10:38 2016
+*** a/axTLS/crypto/crypto.h	Sun Jun 12 19:39:34 2016
+--- b/axTLS/crypto/crypto.h	Tue Aug  2 15:54:50 2016
 ***************
 *** 39,44 ****
 --- 39,45 ----
@@ -377,8 +395,8 @@
   #include "bigint_impl.h"
   #include "bigint.h"
   
-*** a/axTLS/crypto/bigint_impl.h	Sun Jun 12 00:39:34 2016
---- b/axTLS/crypto/bigint_impl.h	Mon Aug  1 04:10:38 2016
+*** a/axTLS/crypto/bigint_impl.h	Sun Jun 12 19:39:34 2016
+--- b/axTLS/crypto/bigint_impl.h	Tue Aug  2 15:54:50 2016
 ***************
 *** 61,67 ****
   typedef uint32_t long_comp;     /**< A double precision component. */
@@ -396,8 +414,8 @@
   #define COMP_RADIX          4294967296i64         
   #define COMP_MAX            0xFFFFFFFFFFFFFFFFui64
   #else
-*** a/axTLS/config/config.h	Wed Dec 31 14:00:00 1969
---- b/axTLS/config/config.h	Mon Aug  1 04:10:38 2016
+*** a/axTLS/config/config.h	Thu Jan  1 09:00:00 1970
+--- b/axTLS/config/config.h	Tue Aug  2 15:54:50 2016
 ***************
 *** 0 ****
 --- 1,149 ----
