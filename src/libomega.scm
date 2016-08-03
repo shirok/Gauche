@@ -135,8 +135,9 @@
         *custom-comparators*))
 
 (define-method object-equal? (a b)
-  (and-let1 c (%choose-comparator-2 a b)
-    (=? c a b)))
+  (if-let1 c (%choose-comparator-2 a b)
+    (=? c a b)
+    #f))
 (define-method object-compare (a b)
   (if-let1 c (%choose-comparator-2 a b)
     (comparator-compare c a b)
