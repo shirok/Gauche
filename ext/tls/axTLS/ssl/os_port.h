@@ -42,7 +42,7 @@ extern "C" {
 #endif
 
 #include "os_int.h"
-#include "config.h"
+#include "../config/config.h"
 #include <stdio.h>
 
 #if defined(WIN32)
@@ -132,6 +132,7 @@ EXP_FUNC int STDCALL getdomainname(char *buf, int buf_size);
 
 #if defined(__MINGW32__)
 #include <malloc.h>
+#include <sys/time.h>
 #endif /*defined(__MINGW32__)*/
 
 #else   /* Not Win32 */

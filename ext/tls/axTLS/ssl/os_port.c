@@ -40,6 +40,7 @@
 #include "os_port.h"
 
 #ifdef WIN32
+#ifndef __MINGW32__
 /**
  * gettimeofday() not in Win32 
  */
@@ -56,7 +57,6 @@ EXP_FUNC void STDCALL gettimeofday(struct timeval* t, void* timezone)
 #endif
 }
 
-#ifndef __MINGW32__
 /**
  * strcasecmp() not in Win32
  */
