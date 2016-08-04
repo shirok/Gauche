@@ -1274,7 +1274,7 @@ struct ScmProcedureRec {
     unsigned int required : 16;    /* # of required args */
     unsigned int optional : 8;     /* >=1 if it takes opt args. see below.*/
     unsigned int type     : 3;     /* ScmProcedureType */
-    unsigned int locked   : 1;     /* setter locked? */
+    unsigned int locked   : 1;     /* setter locked? (see below) */
     unsigned int currying : 1;     /* autocurrying */
     unsigned int constant : 1;     /* constant procedure. see below. */
     unsigned int reserved : 2;     /* unused yet. */
@@ -1282,6 +1282,15 @@ struct ScmProcedureRec {
     ScmObj setter;                 /* setter, if exists. */
     ScmObj inliner;                /* inliner information.  see below. */
 };
+
+/* About locked slot:
+   For <procedure> and <generic>, it shows whether the setter is locked.
+   For <method>, it shows whether the alteration of the method is disallowed,
+   i.e. one can't redefine a method with matching signature.
+   (These two roles are reflected to the two macors,
+   SCM_PROCEDURE_SETTER_LOCKED and SCM_PROCEDURE_METHOD_LOCKED)
+   TODO: When we change ABI, maybe split these roles to different flags.
+ */
 
 /* About optional slot:
    If this slot is non-zero, the procedure takes optional arguments.
@@ -1348,6 +1357,7 @@ enum ScmProcedureType {
 #define SCM_PROCEDURE_INFO(obj)     SCM_PROCEDURE(obj)->info
 #define SCM_PROCEDURE_SETTER(obj)   SCM_PROCEDURE(obj)->setter
 #define SCM_PROCEDURE_INLINER(obj)  SCM_PROCEDURE(obj)->inliner
+#define SCM_PROCEDURE_SETTER_LOCKED(obj) SCM_PROCEDURE(obj)->locked
 
 SCM_CLASS_DECL(Scm_ProcedureClass);
 #define SCM_CLASS_PROCEDURE    (&Scm_ProcedureClass)
@@ -1495,6 +1505,7 @@ SCM_CLASS_DECL(Scm_MethodClass);
 #define SCM_CLASS_METHOD           (&Scm_MethodClass)
 #define SCM_METHODP(obj)           SCM_ISA(obj, SCM_CLASS_METHOD)
 #define SCM_METHOD(obj)            ((ScmMethod*)obj)
+#define SCM_METHOD_LOCKED(obj)     SCM_METHOD(obj)->common.locked
 
 #define SCM_DEFINE_METHOD(cvar, gf, req, opt, specs, func, data)        \
     ScmMethod cvar = {                                                  \

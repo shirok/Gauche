@@ -297,7 +297,7 @@ ScmObj Scm_Map(ScmObj proc, ScmObj arg1, ScmObj args)
 
 ScmObj Scm_SetterSet(ScmProcedure *proc, ScmProcedure *setter, int lock)
 {
-    if (proc->locked) {
+    if (SCM_PROCEDURE_SETTER_LOCKED(proc)) {
         Scm_Error("can't change the locked setter of procedure %S", proc);
     }
     proc->setter = SCM_OBJ(setter);
@@ -357,7 +357,7 @@ static ScmObj proc_optcount(ScmProcedure *p)
 
 static ScmObj proc_locked(ScmProcedure *p)
 {
-    return SCM_MAKE_BOOL(p->locked);
+    return SCM_MAKE_BOOL(SCM_PROCEDURE_SETTER_LOCKED(p));
 }
 
 static ScmObj proc_currying(ScmProcedure *p)

@@ -1,3 +1,12 @@
+2016-08-04  Shiro Kawai  <shiro@acm.org>
+
+	* src/class.c, src/proc.c: EXPERIMENTAL: Use 'locked' flag of
+	  <method> for "method-locked".  Locked method prohibits redefining
+	  the methods with the same signature.  Intended to use methods
+	  important for correct behavior of the language runtime.
+	* src/compile.scm, src/libobj.scm (define-method): Allow method
+	  qualifiers; currently only ':locked' is recognized.
+
 2016-08-02  shiro  <shiro@acm.org>
 
 	* src/libcmp.scm, src/libomega.scm, lib/gauche/computil.scm:

@@ -161,6 +161,7 @@ static ScmObj key_slot_accessor  = SCM_FALSE;
 static ScmObj key_builtin        = SCM_FALSE;
 static ScmObj key_name           = SCM_FALSE;
 static ScmObj key_lambda_list    = SCM_FALSE;
+static ScmObj key_method_locked  = SCM_FALSE;
 static ScmObj key_generic        = SCM_FALSE;
 static ScmObj key_specializers   = SCM_FALSE;
 static ScmObj key_body           = SCM_FALSE;
@@ -2298,7 +2299,7 @@ static void method_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 }
 
 /*
- * (initialize <method> (&key lamdba-list generic specializers body))
+ * (initialize <method> (&key lamdba-list generic specializers body method-locked))
  *    Method initialization.   This needs to be hardcoded, since
  *    we can't call Scheme verison of initialize to initialize the
  *    "initialize" method (chicken-and-egg circularity).
@@ -2312,6 +2313,7 @@ static ScmObj method_initialize(ScmNextMethod *nm, ScmObj *argv, int argc,
     ScmObj generic = Scm_GetKeyword(key_generic, initargs, SCM_FALSE);
     ScmObj specs = Scm_GetKeyword(key_specializers, initargs, SCM_FALSE);
     ScmObj body = Scm_GetKeyword(key_body, initargs, SCM_FALSE);
+    ScmObj locked = Scm_GetKeyword(key_method_locked, initargs, SCM_FALSE);
     ScmObj lp, h, t;
     int speclen = 0, req = 0, opt = 0;
 
@@ -2343,6 +2345,8 @@ static ScmObj method_initialize(ScmNextMethod *nm, ScmObj *argv, int argc,
     m->func = NULL;
     m->data = SCM_CLOSURE(body)->code;
     m->env = SCM_CLOSURE(body)->env;
+
+    SCM_METHOD_LOCKED(m) = SCM_BOOL_VALUE(locked);
 
     /* NB: for comprehensive debugging & profiling information, we modify
        the 'name' field of the compiled code to contain
@@ -2384,6 +2388,11 @@ static ScmObj method_required(ScmMethod *m)
 static ScmObj method_optional(ScmMethod *m)
 {
     return SCM_MAKE_BOOL(m->common.optional);
+}
+
+static ScmObj method_locked(ScmMethod *m)
+{
+    return SCM_MAKE_BOOL(SCM_METHOD_LOCKED(m));
 }
 
 static ScmObj method_generic(ScmMethod *m)
@@ -2478,7 +2487,7 @@ ScmObj Scm_AddMethod(ScmGeneric *gf, ScmMethod *method)
                   " something wrong in MOP implementation?",
                   method, gf);
 
-    int replaced = FALSE, reqs = gf->maxReqargs;
+    int reqs = gf->maxReqargs;  /* # of maximum required args */
     method->generic = gf;
     /* pre-allocate cons pair to avoid triggering GC in the critical region */
     ScmObj pair = Scm_Cons(SCM_OBJ(method), gf->methods);
@@ -2486,7 +2495,10 @@ ScmObj Scm_AddMethod(ScmGeneric *gf, ScmMethod *method)
         reqs = SCM_PROCEDURE_REQUIRED(method);
     }
 
-    /* Check if a method with the same signature exists */
+    /* Check if a method with the same signature exists.
+       If so, we replace the method instead of adding it.  */
+    int replaced = FALSE;
+    ScmMethod *method_locked = NULL;
     (void)SCM_INTERNAL_MUTEX_LOCK(gf->lock);
     ScmObj mp;
     SCM_FOR_EACH(mp, gf->methods) {
@@ -2500,17 +2512,26 @@ ScmObj Scm_AddMethod(ScmGeneric *gf, ScmMethod *method)
                 if (sp1[i] != sp2[i]) break;
             }
             if (i == SCM_PROCEDURE_REQUIRED(method)) {
-                SCM_SET_CAR(mp, SCM_OBJ(method));
-                replaced = TRUE;
+                if (SCM_METHOD_LOCKED(mm)) {
+                    method_locked = mm;
+                } else {
+                    SCM_SET_CAR(mp, SCM_OBJ(method));
+                    replaced = TRUE;
+                }
                 break;
             }
         }
     }
-    if (!replaced) {
+    if (!replaced && (method_locked == NULL)) {
         gf->methods = pair;
         gf->maxReqargs = reqs;
     }
     (void)SCM_INTERNAL_MUTEX_UNLOCK(gf->lock);
+
+    if (method_locked != NULL) {
+        Scm_Error("Attempt to replace a locked method %S",
+                  SCM_OBJ(method_locked));
+    }
     return SCM_UNDEFINED;
 }
 
@@ -2926,6 +2947,7 @@ static ScmClassStaticSlotSpec generic_slots[] = {
 static ScmClassStaticSlotSpec method_slots[] = {
     SCM_CLASS_SLOT_SPEC("required", method_required, NULL),
     SCM_CLASS_SLOT_SPEC("optional", method_optional, NULL),
+    SCM_CLASS_SLOT_SPEC("method-locked", method_locked, NULL),
     SCM_CLASS_SLOT_SPEC("generic", method_generic, method_generic_set),
     SCM_CLASS_SLOT_SPEC("specializers", method_specializers, method_specializers_set),
     SCM_CLASS_SLOT_SPEC_END()
@@ -2934,6 +2956,7 @@ static ScmClassStaticSlotSpec method_slots[] = {
 static ScmClassStaticSlotSpec accessor_method_slots[] = {
     SCM_CLASS_SLOT_SPEC("required", method_required, NULL),
     SCM_CLASS_SLOT_SPEC("optional", method_optional, NULL),
+    SCM_CLASS_SLOT_SPEC("method-locked", method_locked, NULL),
     SCM_CLASS_SLOT_SPEC("generic", method_generic, method_generic_set),
     SCM_CLASS_SLOT_SPEC("specializers", method_specializers, method_specializers_set),
     SCM_CLASS_SLOT_SPEC("slot-accessor", accessor_method_slot_accessor, accessor_method_slot_accessor_set),
@@ -3173,6 +3196,7 @@ void Scm__InitClass(void)
     key_name = SCM_MAKE_KEYWORD("name");
     key_lambda_list = SCM_MAKE_KEYWORD("lambda-list");
     key_generic = SCM_MAKE_KEYWORD("generic");
+    key_method_locked = SCM_MAKE_KEYWORD("method-locked");
     key_specializers = SCM_MAKE_KEYWORD("specializers");
     key_body = SCM_MAKE_KEYWORD("body");
 

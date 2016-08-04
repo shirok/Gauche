@@ -3074,14 +3074,22 @@
     [_ (error "syntax-error: malformed define-generic:" form)]))
 
 (define-pass1-syntax (define-method form cenv) :gauche
+  (define (parse name rest quals)
+    (match rest
+      [((? keyword? q) . rest)
+       (parse name rest (cons q quals))]
+      [(specs . body)
+       (pass1 (with-module gauche.object
+                (%expand-define-method name quals specs body))
+              cenv)]
+      [_ (error "syntax-error: malformed define-method (empty body):" form)]))
+  ;; Should we limit define-method only at the toplevel?  Doing so
+  ;; is consistent with toplevel define and define-syntax.  Allowing
+  ;; define-method in non-toplevel is rather CL-ish and not like Scheme.
+  ;; (check-toplevel form cenv)
   (match form
-    [(_ name specs . body)
-     ;; Should we limit define-method only at the toplevel?  Doing so
-     ;; is consistent with toplevel define and define-syntax.  Allowing
-     ;; define-method in non-toplevel is rather CL-ish and not like Scheme.
-     ;(check-toplevel form cenv)
-     (pass1 (with-module gauche.object (%expand-define-method name specs body))
-            cenv)]
+    [(_ name . rest)
+     (parse name rest '())]
     [_ (error "syntax-error: malformed define-method:" form)]))
 
 (define-pass1-syntax (define-class form cenv) :gauche

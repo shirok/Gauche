@@ -112,10 +112,10 @@
 ;; Method
 ;;
 
-;(define-macro (define-method name specs . body)
-;  (%expand-define-macro name specs body))
+;(define-macro (define-method name [quals ...] specs . body)
+;  (%expand-define-macro name quals specs body))
 
-(define (%expand-define-method name specs body)
+(define (%expand-define-method name quals specs body)
   (define lambda. (%id'lambda))
   (define let. (%id'let))
   (define unless. (%id'unless))
@@ -128,6 +128,11 @@
   (define setter. (%id'setter))
   (define %ensure-generic-function. (%id'%ensure-generic-function))
   (define add-method!. (%id'add-method!))
+
+  ;; check qualifiers.  we only support :locked for now
+  (if-let1 bad (find (^q (not (memq q '(:locked)))) quals)
+    (error "syntax-error: unsupported method qualifier:" bad))
+
   ;; classify arguments to required, rest, and optionals
   ;;  ((a <x>) b (c <y>))   => r:((a <x>) b (c <y>)) r:#f o:#f
   ;;  ((a <x>) b . c)       => r:((a <x>) b) r:c o:#f
@@ -157,6 +162,7 @@
                                     :generic ,gf
                                     :specializers (,list. ,@specializers)
                                     :lambda-list (,quote. ,lambda-list)
+                                    :method-locked ,(boolean (memq :locked quals))
                                     :body ,real-body))
              ,@(if getter-name
                  `((,unless. (,has-setter?. ,getter-name)
