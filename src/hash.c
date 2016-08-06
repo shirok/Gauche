@@ -1195,7 +1195,7 @@ static u_long legacy_flonum_hash(double f)
        to 1.0.  With 80 bit and integer truncation the result is 0 but
        with 64bit we get 1.
      */
-    double d = f * 2654435761UL;
+    volatile double d = f * 2654435761UL;
     static double two_pow_63 = 0.0;
     static double minus_two_pow_63 = 0.0;
     static double two_pow_32 = 0.0;
