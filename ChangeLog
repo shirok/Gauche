@@ -1,5 +1,11 @@
 2016-08-05  Shiro Kawai  <shiro@acm.org>
 
+	* test/process.scm: In pipeline tests, emulate cat and grep commands
+	  so that the tests work on MinGW.
+
+	* src/system.c (win_prepare_handles): Ensure close handles that should,
+	  and not to close ones that shouldn't.
+
 	* src/port.c (file_closer): Check the return value of close(), and
 	  raise <system-error> if failed.  It may be annoying if you want
 	  to call close-port "just to be safe" on potentially broken port,

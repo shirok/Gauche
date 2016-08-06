@@ -65,7 +65,15 @@ extern char **environ;
 #else   /* GAUCHE_WINDOWS */
 #include <lm.h>
 #include <tlhelp32.h>
-static HANDLE *win_prepare_handles(int *fds);
+/* For windows redirection; win_prepare_handles creats and returns
+   win_redirects[3].  Each entry contains an inheritable handle for
+   the child process' stdin, stdout and stderr, respectively, and the flag
+   duped indicates whether the parent process must close the handle. */
+typedef struct win_redirects_rec {
+    HANDLE *h;
+    int duped;
+} win_redirects;
+static win_redirects *win_prepare_handles(int *fds);
 static int win_wait_for_handles(HANDLE *handles, int nhandles, int options,
                                 int *status /*out*/);
 #endif  /* GAUCHE_WINDOWS */
@@ -1726,7 +1734,7 @@ ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap,
 
     if (forkp) {
         TCHAR  program_path[MAX_PATH+1], *filepart;
-        HANDLE *hs = win_prepare_handles(fds);
+        win_redirects *hs = win_prepare_handles(fds);
         PROCESS_INFORMATION pi;
         DWORD creation_flags = 0;
 
@@ -1740,9 +1748,9 @@ ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap,
         GetStartupInfo(&si);
         if (hs != NULL) {
             si.dwFlags |= STARTF_USESTDHANDLES;
-            si.hStdInput  = hs[0];
-            si.hStdOutput = hs[1];
-            si.hStdError  = hs[2];
+            si.hStdInput  = hs[0].h;
+            si.hStdOutput = hs[1].h;
+            si.hStdError  = hs[2].h;
         }
 
         LPCTSTR curdir = NULL;
@@ -1762,6 +1770,16 @@ ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap,
                                curdir, /* current dir */
                                &si,  /* startup info */
                                &pi); /* process info */
+        if (hs != NULL) {
+            for (int i=0; i<3; i++) {
+                /* hs[i].h may be a handle duped in win_prepare_handles(). 
+                   We have to close it in parent process or they would be
+                   inherited to subsequent child process.  (The higher-level
+                   Scheme routine closes the open end of the pipe, but that
+                   won't affect the duped one. */
+                if (hs[i].duped) CloseHandle(hs[i].h);
+            }
+        }
         if (r == 0) Scm_SysError("spawning %s failed", program);
         CloseHandle(pi.hThread); /* we don't need it. */
         return win_process_register(Scm_MakeWinProcess(pi.hProcess));
@@ -1897,38 +1915,43 @@ void Scm_SysSwapFds(int *fds)
 }
 
 #if defined(GAUCHE_WINDOWS)
-static HANDLE *win_prepare_handles(int *fds)
+/* Fds is Scm_SysPrepareFdMap returns. */
+static win_redirects *win_prepare_handles(int *fds)
 {
     if (fds == NULL) return NULL;
 
     /* For the time being, we only consider stdin, stdout, and stderr. */
-    HANDLE *hs = SCM_NEW_ATOMIC_ARRAY(HANDLE, 3);
+    win_redirects *hs = SCM_NEW_ATOMIC_ARRAY(win_redirects, 3);
     int count = fds[0];
 
     for (int i=0; i<count; i++) {
         int to = fds[i+1], from = fds[i+1+count];
         if (to >= 0 && to < 3) {
             if (from >= 3) {
-                /* from_fd may be a pipe. */
+                /* FROM may be a pipe.  in that case, it will be closed
+                   in the higher-level, so we shouldn't give
+                   DUPLICATE_CLOSE_SOURCE here. */
                 HANDLE zh;
                 if (!DuplicateHandle(GetCurrentProcess(),
                                      (HANDLE)_get_osfhandle(from),
                                      GetCurrentProcess(),
                                      &zh,
                                      0, TRUE,
-                                     DUPLICATE_CLOSE_SOURCE
-                                     |DUPLICATE_SAME_ACCESS)) {
+                                     DUPLICATE_SAME_ACCESS)) {
                     Scm_SysError("DuplicateHandle failed");
                 }
-                hs[to] = zh;
+                hs[to].h = zh;
+                hs[to].duped = TRUE;
             } else {
-                hs[to] = (HANDLE)_get_osfhandle(from);
+                hs[to].h = (HANDLE)_get_osfhandle(from);
+                hs[to].duped = FALSE;
             }
         }
     }
     for (int i=0; i<3; i++) {
-        if (hs[i] == NULL) {
-            hs[i] = (HANDLE)_get_osfhandle(i);
+        if (hs[i].h == NULL) {
+            hs[i].h = (HANDLE)_get_osfhandle(i);
+            hs[i].duped = FALSE;
         }
     }
     return hs;
@@ -2766,7 +2789,7 @@ int pipe(int fd[])
 {
 #define PIPE_BUFFER_SIZE 512
     /* NB: We create pipe with NOINHERIT to avoid complication when spawning
-       child process.  Sys_Exec will dups the handle with inheritable flag
+       child process.  Scm_SysExec will dups the handle with inheritable flag
        for the children.  */
     int r = _pipe(fd, PIPE_BUFFER_SIZE, O_BINARY|O_NOINHERIT);
     return r;
