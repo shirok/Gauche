@@ -1908,21 +1908,14 @@ static HANDLE *win_prepare_handles(int *fds)
     for (int i=0; i<count; i++) {
         int to = fds[i+1], from = fds[i+1+count];
         if (to >= 0 && to < 3) {
+            hs[to] = (HANDLE)_get_osfhandle(from);
             if (from >= 3) {
                 /* from_fd may be a pipe. */
-                HANDLE zh;
-                if (!DuplicateHandle(GetCurrentProcess(),
-                                     (HANDLE)_get_osfhandle(from),
-                                     GetCurrentProcess(),
-                                     &zh,
-                                     0, TRUE,
-                                     DUPLICATE_CLOSE_SOURCE
-                                     |DUPLICATE_SAME_ACCESS)) {
-                    Scm_SysError("DuplicateHandle failed");
+                if (!SetHandleInformation(hs[to],
+                                          HANDLE_FLAG_INHERIT,
+                                          HANDLE_FLAG_INHERIT)) {
+                    Scm_SysError("SetHandleInformation failed");
                 }
-                hs[to] = zh;
-            } else {
-                hs[to] = (HANDLE)_get_osfhandle(from);
             }
         }
     }

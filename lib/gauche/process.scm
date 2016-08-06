@@ -499,8 +499,12 @@
          ;; the process that reads from the pipe would wait until all the
          ;; ends are closed.  We have to treat the last command separately,
          ;; for we might :wait #t for it.
-         [ps (map (cut apply run-process <>) (drop-right cmds 1))])
-    (dolist [p pipe-pairs] (close-output-port (cdr p)))
+         [ps (map (^[cmd out]
+                    (begin0
+                      (apply run-process cmd)
+                      (close-output-port out)))
+                  (drop-right cmds 1)
+                  (map cdr pipe-pairs))])
     (append ps (list (apply run-process (last cmds))))))
 
 ;;===================================================================

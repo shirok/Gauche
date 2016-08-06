@@ -42,11 +42,16 @@
                (for-each print (sys-readdir "."))
                0))
      (write '(define (grep args)
-               (let ([pat (string->regexp (car args))]
-                     [hit 1])
+               (let* ([opt-v (equal? (car args) "-v")]
+                      [pat (if opt-v (cadr args) (car args))]
+                      [hit 1])
                  (generator-for-each
                   (lambda (line)
-                    (when (rxmatch pat line) (set! hit 0) (print line)))
+                    (let1 m (rxmatch pat line)
+                      (when (or (and m (not opt-v))
+                                (and (not m) opt-v))
+                        (set! hit 0)
+                        (print line))))
                   read-line)
                  hit)))
      ))]
@@ -261,26 +266,26 @@
     (^[] (for-each print '("banana" "habana" "tabata" "cabara"))))
 
   (test* "pipelining 1" "banana\nhabana\n"
-         (let1 ps (run-process-pipeline '((cat "test.o")
-                                          (grep "bana"))
+         (let1 ps (run-process-pipeline `(,(cmd cat "test.o")
+                                          ,(cmd grep "bana"))
                                         :output :pipe)
            (begin0 (port->string (process-output (last ps)))
              (for-each process-wait ps))))
 
   (test* "pipelining 2" "tabata\ncabara\n"
-         (let1 ps (run-process-pipeline '((cat)
-                                          (grep -v "bana"))
+         (let1 ps (run-process-pipeline `(,(cmd cat)
+                                          ,(cmd grep "-v" "bana"))
                                         :input "test.o" :output :pipe)
            (begin0 (port->string (process-output (last ps)))
              (for-each process-wait ps))))
 
   (test* "pipelining 3" "banana\ncabara\n"
-         (let1 ps (run-process-pipeline '((cat)
-                                          (grep -v "ta")
-                                          (grep -v "ha"))
+         (let1 ps (run-process-pipeline `(,(cmd cat)
+                                          ,(cmd grep "-v" "ta")
+                                          ,(cmd grep "-v" "ha"))
                                         :input "test.o" :output :pipe)
            (begin0 (port->string (process-output (last ps)))
-             (for-each process-wait ps))))  
+             (for-each process-wait ps))))
   )
 
 ;;-------------------------------
