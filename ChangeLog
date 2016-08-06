@@ -1,3 +1,11 @@
+2016-08-05  Shiro Kawai  <shiro@acm.org>
+
+	* src/port.c (file_closer): Check the return value of close(), and
+	  raise <system-error> if failed.  It may be annoying if you want
+	  to call close-port "just to be safe" on potentially broken port,
+	  but checking the error here would catch a bug that would cause
+	  difficult-to-diagnose bug later.
+
 2016-08-04  Shiro Kawai  <shiro@acm.org>
 
 	* src/class.c, src/proc.c: EXPERIMENTAL: Use 'locked' flag of

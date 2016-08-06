@@ -143,6 +143,12 @@ SCM_DEFINE_BASE_CLASS(Scm_LimitedLengthPortClass,
 static void port_cleanup(ScmPort *port)
 {
     if (SCM_PORT_CLOSED_P(port)) return;
+
+    /* NB: Flush or close subroutine may raise an error and leave the port
+       not fully cleaned up.  For now, we leave the port 'non-closed' state,
+       so this part may be called again---it's up to the close routine to
+       handle the situation gracefully.
+    */
     switch (SCM_PORT_TYPE(port)) {
     case SCM_PORT_FILE:
         if (SCM_PORT_DIR(port) == SCM_PORT_OUTPUT) {
@@ -1083,8 +1089,15 @@ static int file_flusher(ScmPort *p, int cnt, int forcep)
 static void file_closer(ScmPort *p)
 {
     int fd = (int)(intptr_t)p->src.buf.data;
-    SCM_ASSERT(fd >= 0);
-    close(fd);
+    if (fd >= 0) {
+        /* If close() fails, the port's CLOSED flag isn't set and file_closer
+           may be called again (probably via finalizer).  We don't want to call
+           close() again and raise an error. */
+        p->src.buf.data = (void*)(intptr_t)-1;
+        if (close(fd) < 0) {
+            Scm_SysError("close() failed on %S", SCM_OBJ(p));
+        }
+    }
 }
 
 static int file_ready(ScmPort *p)
