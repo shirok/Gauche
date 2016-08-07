@@ -44,4 +44,4 @@ cp "${name}.tar.gz" "${topdir}/../${name}.tgz"
 # Cleanup
 #
 cd "${topdir}"
-rm -rf "${t}"
+rm --recursive --force "${t}"
