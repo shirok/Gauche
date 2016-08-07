@@ -482,23 +482,125 @@ result of sorting a list of objects including numbers.
 @c EN
 A general comparison procedure.  Returns -1 if @var{obj1} is less than
 @var{obj2}, 0 if @var{obj1} is equal to @var{obj2}, and 1 if @var{obj1}
-is greater than @var{obj2}.  Signals an error if @var{obj1} and @var{obj2}
-are incomparable.
-
-Some built-in types are handled by this procedure reflecting ``natural''
-order of comparison.  Other built-in types are generally
-uncomparable.  For Scheme-defined classes, this procedure calls
-a generic function @code{object-compare}.
+is greater than @var{obj2}. 
 @c JP
 一般的な比較手続きです。@var{obj1}が@var{obj2}より小さければ-1を、
-等しければ0を、大きければ1を返します。@var{obj1}と@var{obj2}が
-比較できない場合はエラーとなります。
-
-いくつかの組み込み型は「自然な」比較順を用いて比較されます。
-他の組み込み型は通常比較不可能です。Schemeで定義されたクラスについては、
-この手続きはジェネリックファンクション@code{object-compare}を
-呼び出します。
+等しければ0を、大きければ1を返します。
 @c COMMON
+
+@c EN
+If @var{obj1} and @var{obj2} are incomparable, an error is signalled.
+However, @code{compare} defines total order between most Scheme objects,
+so that you can use it on wide variety of objects.  The definition is
+upper-compatible to the order defined in @code{srfi-114}.
+@c JP
+@var{obj1}と@var{obj2}が比較できない場合はエラーとなりますが、
+@code{compare}は多くのSchemeオブジェクト間に全順序を定義しているので、
+様々なオブジェクトの比較に使うことができます。この全順序は、
+@code{srfi-114}で定義されているものの上位互換です。
+@c COMMON
+
+@c EN
+Some built-in types are handled by this procedure reflecting
+``natural'' order of comparison if any (e.g. real numbers are compared
+by numeric values, characters are compared by @code{char<} etc.)
+For convenience,
+it also defines superficial order between objects that doesn't have
+natural order; complex numbers are ordered first by their real part,
+then their imaginary part, for example.  That is,
+@code{1+i} comes before @code{2-i},
+which comes before @code{2}, which comes before @code{2+i}.
+@c JP
+組み込みオブジェクトのうち、自然な順序が定義されているものはそれに従って順序づけられます
+(例えば実数はその数値の大小で、文字は@code{char<}等を使って比較されます)。
+また便宜上、通常の意味で大小が定義されないオブジェクトについても
+ある程度表面的な順序が定義されます。例えば複素数は、まず実部の大小によって
+順序づけられ、次に虚部の大小によって順序づけられます。
+すなわち、@code{1+i}、@code{2-i}、@code{2}、@code{2+i}はこの順番に並びます。
+@c COMMON
+
+@c EN
+Boolean false comes before boolean true.
+@c JP
+@code{#f}は@code{#t}より前に来ます。
+@c COMMON
+
+@c EN
+Lists are ordered by dictionary order: Take the common prefix.
+If either one is @code{()} and the other is not, @code{()} comes first.
+If both tails are not empty, compare the heads of the tails.
+(This makes empty list the ``smallest'' of all lists).
+@c JP
+リストは辞書順で比較されます。すなわち、まず共通のプリフィクスを除きます。
+一方が@code{()}でもう一方がそうでなければ、@code{()}である方が先にきます。
+どちらの尾部も空でなければ、尾部の先頭要素同士を比べます。
+(この定義により、空リストは全てのリストの「最小」のものになります)。
+@c COMMON
+
+@c EN
+Vectors (including uniform vectors) are compared first by their
+lengths, and if they are the same, elements are compared from left to right.
+Note that it's different from lists and strings.
+@c JP
+(ユニフォームベクタを含む)ベクタは、まず長さで比較され、
+長さが同じ場合は要素同士が左から比較されます。
+リストや文字列とは異なることに注意。
+@c COMMON
+
+@example
+(compare '(1 2 3) '(1 3))
+  @result{} -1  ; (1 2 3) is smaller
+(compare '#(1 2 3) '#(1 3))
+  @result{} 1   ; #(1 3) is smaller
+(compare "123" "13")
+  @result{} -1  ; "123" is smaller
+@end example
+
+@c EN
+If two objects are of subclasses of @code{<object>}, 
+a generic function @code{object-compare} is called.
+@c JP
+二つのオブジェクトがともに@code{<object>}のサブクラスであれば、
+ジェネリックファンクション@code{object-compare}が呼ばれます。
+@c COMMON
+
+@c EN
+If two objects are of different types and at least one of them
+isn't @code{<object>}, then they are ordered by their types.
+@code{Srfi-114} defines the order of builtin types as follows:
+@c JP
+二つのオブジェクトが異なる型で、少なくとも一方が@code{<object>}でない時は、
+両者の型により順序が決まります。@code{srfi-114}は組み込み型について
+次の順序を定めています。
+@c COMMON
+
+@enumerate 
+@item
+Empty list.
+@item
+Pairs.
+@item
+Booleans.
+@item
+Characters.
+@item
+Strings.
+@item
+Symbols.
+@item
+Numbers.
+@item 
+Vectors.
+@item 
+Uniform vectors
+(u8 < s8 < u16 < s16 < u32 < s32 < u64 < s64 < f16 < f32 < f64)
+@item
+@c EN
+All other objects.
+@c JP
+他のオブジェクトすべて
+@c COMMON
+@end enumerate
 @end defun
 
 @deffn {Generic Function} object-compare obj1 obj2
@@ -681,30 +783,66 @@ a generic function @code{object-hash} is called to calculate the hash value
 @end defun
 
 @defun legacy-hash obj
+@c EN
 Up to 0.9.4, Gauche had a hash function called @code{hash}
 that was used in both @code{equal?}-hashtable @emph{and}
 for the portable hash function.  It had a problem, though.
+@c JP
+バージョン0.9.4まで、Gaucheでは@code{hash}と呼ばれるハッシュ関数が
+@code{equal?}ハッシュテーブル用のハッシュ計算と
+ポータブルなハッシュ値の計算の両方を兼ねていました。
+しかしそれには問題がありました。
+@c COMMON
 
 @enumerate
 @item
-There's no way to salt the hash function, which makes the
+@c EN
+There was no way to salt the hash function, which makes the
 hashtables storing externally provided data vulnerable
 to collision attack.
+@c JP
+ハッシュ関数にソルトを与えることができなかったため、
+外部からのデータによる衝突攻撃が可能だった
+@c COMMON
 @item
+@c EN
 The hash function behaves poorly, especially on flonums.
+@c JP
+ハッシュ関数自体があまり良くなかった(特に浮動小数点数)
+@c COMMON
 @item
+@c EN
 There are bugs in bignum and flonum hashing code that
 have produced different results on different architectures.
+@c JP
+多倍長整数と浮動小数点数のハッシュ値計算で、
+異なるアーキテクチャで異なる値を返してしまうバグがあった。
+@c COMMON
 @end enumerate
 
+@c EN
 Since there are existing hash values calculated with
 the old hash function, we preserve the behavior of the
-original @code{hash} function as @code{legacy-hash}
-(the @code{hash} function also behaves as @code{legacy-hash}
+original @code{hash} function as @code{legacy-hash}.
+Use this when you need to access old data.
+(The @code{hash} function also behaves as @code{legacy-hash}
 by default, but it has tweaks; see below.)
+@c JP
+既に@code{hash}で計算されたハッシュ値を利用しているデータがあるため、
+以前の@code{hash}で提供していたハッシュ関数を@code{legacy-hash}として
+保存することにしました。古いデータにアクセスする場合に使ってください。
+(@code{hash}関数自体もデフォルトでは
+@code{legacy-hash}と同様に振る舞いますが、ちょっとした仕掛けがあります。
+下の説明を参照)。
+@c COMMON
 
+@c EN
 The new code that needs portable hash value should use
 @code{portable-hash} instead.
+@c JP
+新たに書くコードでポータブルなハッシュ値が必要なら
+@code{portable-hash}を使ってください。
+@c COMMON
 @end defun
 
 @deffn {Generic Function} object-hash obj rec-hash
@@ -1409,74 +1547,53 @@ This variable bounds to a comparator that is used by default in
 many context.
 
 It can compare most of Scheme objects, even between objects with
-different types.  The ordering of heterogeneous objects are
-purely artificial---whether @code{#t} is smaller than @code{#(a b c)} or
-not doesn't mean anything, but having some consistent order
-allows us to put Scheme objects in treemaps (@pxref{Treemaps}) or heaps
-(@pxref{Heap}).  The @code{default-comparator} gives this expedient
-ordering.
+different types.  In fact, it is defined as follows:
 @c JP
 この変数は、様々な場所でオブジェクトを比較する際のデフォルトとして使われる
 比較器に束縛されています。
 
-デフォルト比較器はほぼすべてのSchemeオブジェクト間の比較が出来ます。
-比較するSchemeオブジェクト同士の型が違っていても構いません。
-型の異なるSchemeオブジェクトの間の大小関係は、純粋に人為的なものです。
-@code{#t}が@code{#(a b c)}より大きいか小さいかということに特別な意味はありません。
-ただ、一貫する順序が決まっていれば、Schemeオブジェクトをtreemap (@ref{Treemaps}参照)
-やヒープ(@ref{Heap}参照)に保存することができます。
-@code{default-comparator}はこの便宜上の順序を与えてくれます。
+デフォルト比較器は次のとおり定義されており、
+ほぼすべてのSchemeオブジェクト間の比較が出来ます。
+@c COMMON
+
+@example
+(define default-comparator
+  (make-comparator/compare #t equal? compare default-hash 'default-comparator))
+@end example
+
+@c EN
+As you see in the definition, equality, ordering and hashing are
+handled by @code{equal?}, @code{compare} and @code{default-hash},
+respectively.  They takes care of builtin objects, and
+also @code{equal?} and @code{compare} handle the case
+when two objects () are of different types.
+@c JP
+定義からわかるように、等価述語、比較手続き、そしてハッシュ計算はそれぞれ
+@code{equal?}、@code{compare}、@code{default-hash}で処理されます。
+組み込みオブジェクト、及び二つの異なる型の間の比較についてはそれらが処理します。
 @c COMMON
 
 @c EN
-(NB: I say ``almost'' because, although @code{default-comparator}
-can order built-in objects, and objects with different types,
-the ordering of objects of the same user-defined type depends on
-how you define @code{object-compare} method (@pxref{Comparison}).
-It's up to the user to make two objects of user-defined types be
-comparable or not.)
+For objects of user-defined classes,
+those procedures calls generic functions
+@code{object-equal?}, @code{object-compare} and @code{object-hash},
+respectively.   Defining methods for them automatically extended
+the domain of @code{default-comparator}.
 @c JP
-(上で「ほぼすべて」と書いたのは、@code{default-comparator}は組み込みオブジェクト
-同士および異なる型のオブジェクト同士の比較はできますが、
-ユーザ定義型のオブジェクト同士の比較は@code{object-compare}メソッドの定義によるからです。
-ユーザ定義型のオブジェクト同士の比較が可能かどうかはその型の定義次第になります。
+ユーザ定義クラスのオブジェクトについては、
+上記手続きがそれぞれジェネリック関数
+@code{object-equal?}、@code{object-compare}、@code{object-hash}を
+呼び出します。これらのメソッドを定義することにより、
+@code{default-comparator}の定義域も自動的に拡張されます。
 @c COMMON
 
 @c EN
-SRFI-128 doesn't define the ordering between objects of different types,
-but SRFI-114 does, and Gauche follows it.  It's the following order:
+@code{Srfi-128} defines another way to extend @code{default-comparator}.
+See @code{comparator-register-default!} below for the details.
 @c JP
-SRFI-128はデフォルト比較器が異なる型のオブジェクト同士の順序をどう決めるかは
-定義していませんが、SRFI-114は定義していて、Gaucheもそれに従っています。
-順序は以下のとおりです。
+@code{srfi-128}は、@code{default-comparator}を拡張する別の方法を定義しています。
+下の@code{comparator-register-default!}の項を参照してください。
 @c COMMON
-
-@enumerate 
-@item
-Empty list.
-@item
-Pairs.
-@item
-Booleans.
-@item
-Characters.
-@item
-Strings.
-@item
-Symbols.
-@item
-Numbers.
-@item 
-Vectors.
-@item 
-Uniform vectors.
-@item
-@c EN
-All other objects.
-@c JP
-他のオブジェクトすべて
-@c COMMON
-@end enumerate
 @end defvar
 
 @defvar eq-comparator
@@ -1635,11 +1752,15 @@ This is the SRFI-128 way for user programs to extend the behavior of
 the @code{default-comparator}
 (which is what @code{make-default-comparator} returns).
 
-Gauche keeps track of the global list of comparators registered
-via this procedure.  When @code{default-comparator} is used with
-some objects, first it scans the list to see if the objects satisfy
-the test predicate of each of the resitered comparator, and use the first
-comparator whose type predicate accepts the objects.
+Gauche let the generic functions @code{object-equal?}, @code{object-compare}
+and @code{object-hash} handle the registered comparators; methods for
+@code{<top>} are defined for these generic functions, which examine
+the registered comparators by applying each comparator's type test
+procedure to the argument(s), and if matching comparator is found,
+calls its equality predicate, comparison procedure or hash
+function, respectively.  Since the methods with @code{<top>} specializers
+match the last, if there's any methods defined for these generic
+functions they take precedence.
 
 You might frown at this procedure having a global side-effect.
 Well, SRFI-128 explicitly prohibits comparators registered
@@ -1649,6 +1770,14 @@ aren't already handled by the system's original default comparator
 and other already registered comparators.  So, the only effect of
 adding new comparator should make the default comparator
 work on objects that had been previously raised an error.
+
+In reality, it is impossible to enforce the condition.  If you
+register a comparator whose domain overlaps overlaps the domain
+the default comparator (and its extensions via Gauche's methods),
+the program becomes non-portable at that moment.  In the current version,
+the comparators registered by @code{comparator-register-default!} has
+the lowest precedence on the dispatch mechanism, but you shouldn't count
+on that.
 @end defun
 
 @defun make-eq-comparator
