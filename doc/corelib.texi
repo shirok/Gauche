@@ -1718,17 +1718,27 @@ Gaucheでは、@code{object-equal?}、@code{object-compare}、@code{object-hash}
 留意してください。詳しくは上の@code{defualt-comparator}の説明を参照のこと。
 @c COMMON
 
-In fact,
-Gauche let the generic functions @code{object-equal?}, @code{object-compare}
-and @code{object-hash} handle the registered comparators; methods for
-@code{<top>} are defined for these generic functions, which examine
-the registered comparators by applying each comparator's type test
-procedure to the argument(s), and if matching comparator is found,
-calls its equality predicate, comparison procedure or hash
-function, respectively.  Since the methods with @code{<top>} specializers
-match the last, if there's any methods defined for these generic
-functions they take precedence.
+@c EN
+In fact, Gauche uses those generic functions to
+handle the registered comparators; methods specialized for
+@code{<top>} are defined for these generic functions, which
+catches the case when @code{default-comparator} is applied
+on object(s) of user-defined classes that don't have specialized
+methods defined for those generic functions.
+The catching method examines registered comparators to find
+one that can handle passed argument(s), and if it finds one,
+use it.
+@c JP
+実際、Gaucheではこれらのジェネリックファンクションを使って、
+登録されたデフォルト比較器を処理しています。これらのジェネリックファンクションには、
+あらかじめ@code{<top>}に特殊化されたメソッドが定義されており、
+@code{default-comparator}がユーザ定義クラスのオブジェクトに使われ、
+かつそのクラスに特殊化されたメソッドが定義されていない場合を捕まえます。
+そして、登録された比較器から与えられた引数に適用可能なものを探し、
+見つかればそれを使います。
+@c COMMON
 
+@c EN
 You might frown at this procedure having a global side-effect.
 Well, SRFI-128 explicitly prohibits comparators registered
 by this procedure alters the behavior of the default comparator
@@ -1737,7 +1747,19 @@ aren't already handled by the system's original default comparator
 and other already registered comparators.  So, the only effect of
 adding new comparator should make the default comparator
 work on objects that had been previously raised an error.
+@c JP
+この手続きがグローバルな副作用を持つことに顔をしかめる人もいるかもしれません。
+SRFI-128では、デフォルトの比較器や登録された比較器が既にカバーしている定義域と
+重複する定義域を持つ比較器を登録することを禁じています。
+言い換えれば、@code{comparator-register-default!}で定義できるのは、
+デフォルトの比較器や既に登録された比較器が処理できないオブジェクトを扱う
+比較器だけです。従って、新たな比較器を登録することによる副作用は、
+それまで@code{default-comparator}が扱えなかったオブジェクトを
+扱えるようになるというだけで、既に扱えていたオブジェクトに対する
+@code{default-comparator}の動作が変わってしまうということはありません。
+@c COMMON
 
+@c EN
 In reality, it is impossible to enforce the condition.  If you
 register a comparator whose domain overlaps overlaps the domain
 the default comparator (and its extensions via Gauche's methods),
@@ -1745,8 +1767,14 @@ the program becomes non-portable at that moment.  In the current version,
 the comparators registered by @code{comparator-register-default!} has
 the lowest precedence on the dispatch mechanism, but you shouldn't count
 on that.
+@c JP
+尤も、現実にその条件を強制することは不可能です。
+もし、既にデフォルトの比較器の定義域(および、Gaucheのメソッドにより拡張された定義域)
+と重なるような定義域を持つ比較器を登録してしまったら、その時点でプログラムの
+移植性は損なわれます。現在のバージョンでは、@code{comparator-register-default!}
+で登録された比較器は最も低い優先度を持ちますが、その動作をあてにすべきではありません。
+@c COMMON
 @end defun
-
 
 @defvar eq-comparator
 @defvarx eqv-comparator
