@@ -367,8 +367,8 @@ If @var{obj1} and @var{obj2} are both aggregate types,
 @code{equal?} compares its elements recursively.
 Otherwise, @code{equal?} behaves the same as @code{eqv?}.
 
-If @var{obj1} and @var{obj2} are other than booleans, numbers,
-characters, pairs, strings and vectors, and the class of both
+If @var{obj1} and @var{obj2} are not @code{eqv?} to each other,
+not of builtin types, and the class of both
 objects are the same, @code{equal?} calls the generic
 function @code{object-equal?}.
 By defining the method, users can extend the behavior of @code{equal?}
@@ -378,8 +378,8 @@ for user-defined classes.
 @code{equal?}は再帰的に対応する要素同士を@code{equal?}で比較してゆきます。
 そうでなければ、@code{equal?}は@code{eqv?}と同じようにふるまいます。
 
-もし@code{obj1}と@var{obj2}が論理値、数値、文字、ペア、文字列、
-ベクタのいずれでもなく、かつ両者のクラスが等しい場合、@code{equal?}は
+もし@code{obj1}と@var{obj2}が互いに@code{eqv?}でなく、
+組み込み型でもなく、かつ両者のクラスが等しい場合、@code{equal?}は
 ジェネリックファンクション@code{object-equal?}を呼びます。
 @code{object-equal?}にメソッドを定義することにより、
 ユーザ定義のデータ型に対する@code{equal?}の振るまいを拡張することができます。
@@ -441,6 +441,46 @@ do not call @code{object-equal?} directly; call @code{equal?} on each element.
         (make <foo> :x 1 :y (make <foo> :x 3 :y 4)))
   @result{} #t
 @end example
+@end deffn
+
+@deffn {Method} object-equal? (obj1 <top>) (obj2 <top>)
+@c EN
+This method catches @code{equal?} between two objects of a user-defined
+classe, in case the user doesn't define a specialized method for the class.
+
+When called, it scans the registered default comparators that can handle
+both @var{obj1} and @var{obj2},
+and if it finds one, use the comparator's equality
+predicate to see if two arguments are equal to each other.  When no
+matching comparators are found, it just returns @code{#f}.
+@xref{Predefined comparators}, about the default comparators:
+Look for the entries of
+@code{default-comparator} and @code{comparator-register-default!}.
+
+Note: If you define @code{object-equal?} with exactly the same
+specializers of this method,
+you'll replace it and that breaks
+@code{default-comparator} operation.  Future versions of Gauche
+will prohibit such redefinition.  For now, be careful not to redefine
+it accidentally.
+@c JP
+このメソッドは、ユーザ定義クラスの2つのインスタンスが@code{equal?}であるかを
+調べる際に、そのクラスに特殊化したメソッドが無かった場合を捕まえるものです。
+
+このメソッドが呼ばれると、まず登録されたデフォルト比較器の中に@var{obj1}と
+@var{obj2}を共に処理できるものがあるかどうかを調べ、
+あればその比較器の等価述語を使って比較します。デフォルト比較器が引数を処理できなければ
+@code{#f}を返します。デフォルト比較器については
+@ref{Predefined comparators}を参照してください。特に
+@code{default-comparator}と@code{comparator-register-default!}の
+項目を見てください。
+
+註: もし、このメソッドと全く同じスペシャライザを
+指定して@var{object-equal?}メソッドを定義すると、それはこのメソッドを
+置き換えることになり、@code{default-comparator}の動作が壊れることになります。
+将来のGaucheのバージョンではそのような再定義は禁止される予定です。
+うっかりそういう再定義を行わないように気をつけてください。
+@c COMMON
 @end deffn
 
 @c EN
@@ -623,6 +663,50 @@ or @code{#f} (@var{obj1} and @var{obj2} cannot be ordered).
 @code{#f} (@var{obj1}と@var{obj2}は順序づけできない)。
 @c COMMON
 @end deffn
+
+@deffn {Method} object-compare (obj1 <top>) (obj2 <top>)
+@c EN
+This method catches @code{compare} between two objects of a 
+user-defined class, in case the user doesn't define a specialized
+method for the class.
+
+When called, it scans the registered default comparators that can
+handle both @var{obj1} and @var{obj2},
+and if it finds one, use the comparator's compare procedure
+to determine the order of @var{obj1} and @var{obj2}.
+When no matching comparators are found, it returns @code{#f}, meaning
+two objects can't be ordered.
+@xref{Predefined comparators}, about the default comparators:
+Look for the entries of
+@code{default-comparator} and @code{comparator-register-default!}.
+
+Note: If you define @code{object-compare} with exactly the same
+specializers of this method,
+you'll replace it and that breaks
+@code{default-comparator} operation.  Future versions of Gauche
+will prohibit such redefinition.  For now, be careful not to redefine
+it accidentally.
+@c JP
+このメソッドは、ユーザ定義クラスの2つのインスタンスを@code{compare}する
+際に、そのクラスに特殊化したメソッドが無かった場合を捕まえるものです。
+
+このメソッドが呼ばれると、まず登録されたデフォルト比較器の中に@var{obj1}と
+@var{obj2}を共に処理できるものがあるかどうかを調べ、
+あればその比較器の比較手続きを使って両者の順序を判定します。
+デフォルト比較器が引数を処理できなければ
+@code{#f}(「比較できない」)を返します。デフォルト比較器については
+@ref{Predefined comparators}を参照してください。特に
+@code{default-comparator}と@code{comparator-register-default!}の
+項目を見てください。
+
+註: もし、このメソッドと全く同じスペシャライザを
+指定して@var{object-compare}メソッドを定義すると、それはこのメソッドを
+置き換えることになり、@code{default-comparator}の動作が壊れることになります。
+将来のGaucheのバージョンではそのような再定義は禁止される予定です。
+うっかりそういう再定義を行わないように気をつけてください。
+@c COMMON
+@end deffn
+
 
 @defun eq-compare obj1 obj2
 @c EN
@@ -900,6 +984,23 @@ hash values.
   (combine-hash-value (rec-hash (ref a 'x))
                       (rec-hash (abs (ref a 'y)))))
 @end example
+@end deffn
+
+@deffn {Method} object-hash (obj <top>) rec-hash
+@deffnx {Method} object-hash (obj <top>)
+@c EN
+These two methods are defined by the system and ensures the
+backward compatibility and the behavior of @code{default-comparator}.
+Be careful not to replace these methods by defining the exactly same
+specializers.  In future versions of Gauche, attempts to replace
+these methods will raise an error.
+@c JP
+これら二つのメソッドはシステムで定義されており、
+後方互換性および@code{default-comparator}の正しい振る舞いを保証しています。
+全く同じスペシャライザを持つメソッドを定義することでこれらを置き換えてしまわないように
+注意してください。将来のバージョンでは、これらのメソッドを置き換えるのは
+エラーになる予定です。
+@c COMMON
 @end deffn
 
 @defun combine-hash-value ha hb
@@ -1596,6 +1697,57 @@ See @code{comparator-register-default!} below for the details.
 @c COMMON
 @end defvar
 
+@defun comparator-register-default! comparator
+[SRFI-128]
+@c EN
+This is the SRFI-128 way for user programs to extend the behavior of
+the @code{default-comparator}
+(which is what @code{make-default-comparator} returns).
+
+Note that, in Gauche, you can also extend default comparator's behavior
+by defining specialized methods for @code{object-equal?}, 
+@code{object-compare} and @code{object-hash}.
+See the description of @code{default-comparator} above, for the details.
+@c JP
+これは、@code{default-comparator}(@code{make-default-comparator}が
+返す比較器)の振る舞いをユーザプログラムが拡張できるようにする、
+SRFI-128が定める方法です。
+
+Gaucheでは、@code{object-equal?}、@code{object-compare}、@code{object-hash}に
+特殊化したメソッドを定義することでも、デフォルト比較器を拡張できることに
+留意してください。詳しくは上の@code{defualt-comparator}の説明を参照のこと。
+@c COMMON
+
+In fact,
+Gauche let the generic functions @code{object-equal?}, @code{object-compare}
+and @code{object-hash} handle the registered comparators; methods for
+@code{<top>} are defined for these generic functions, which examine
+the registered comparators by applying each comparator's type test
+procedure to the argument(s), and if matching comparator is found,
+calls its equality predicate, comparison procedure or hash
+function, respectively.  Since the methods with @code{<top>} specializers
+match the last, if there's any methods defined for these generic
+functions they take precedence.
+
+You might frown at this procedure having a global side-effect.
+Well, SRFI-128 explicitly prohibits comparators registered
+by this procedure alters the behavior of the default comparator
+in the existing domain---it is only allowed to handle objects that
+aren't already handled by the system's original default comparator
+and other already registered comparators.  So, the only effect of
+adding new comparator should make the default comparator
+work on objects that had been previously raised an error.
+
+In reality, it is impossible to enforce the condition.  If you
+register a comparator whose domain overlaps overlaps the domain
+the default comparator (and its extensions via Gauche's methods),
+the program becomes non-portable at that moment.  In the current version,
+the comparators registered by @code{comparator-register-default!} has
+the lowest precedence on the dispatch mechanism, but you shouldn't count
+on that.
+@end defun
+
+
 @defvar eq-comparator
 @defvarx eqv-comparator
 @defvarx equal-comparator
@@ -1633,8 +1785,8 @@ to hash them by identity.  We provide @code{eq-comparator} and
 @c JP
 @code{eq-comparator}と@code{eqv-comparator}はそれぞれ、
 @code{make-eq-comparator} and @code{make-eqv-comparator}が返す比較器とは
-等価でないことに注意してください。後者の手続きはSRFI-128で規定されてますが、
-ハッシュ関数には@code{default-hash}を使うことが指定されています。
+等価でないことに注意してください。後者の手続きはSRFI-128で規定されていますが、
+ハッシュ関数には@code{default-hash}を使うように指定されています。
 @code{default-hash}は@code{eq-hash}や@code{eqv-hash}より重く、
 ループのある構造は扱えず、また変更可能なオブジェクトの同一性のみに基づいてハッシュ値を
 計算するのには使えません。
@@ -1744,40 +1896,6 @@ Returns a default comparator.  In Gauche, this returns the
 デフォルト比較器を返します。Gaucheでは常に唯一の@code{default-comparator}が
 返されます。
 @c COMMON
-@end defun
-
-@defun comparator-register-default! comparator
-[SRFI-128]
-This is the SRFI-128 way for user programs to extend the behavior of
-the @code{default-comparator}
-(which is what @code{make-default-comparator} returns).
-
-Gauche let the generic functions @code{object-equal?}, @code{object-compare}
-and @code{object-hash} handle the registered comparators; methods for
-@code{<top>} are defined for these generic functions, which examine
-the registered comparators by applying each comparator's type test
-procedure to the argument(s), and if matching comparator is found,
-calls its equality predicate, comparison procedure or hash
-function, respectively.  Since the methods with @code{<top>} specializers
-match the last, if there's any methods defined for these generic
-functions they take precedence.
-
-You might frown at this procedure having a global side-effect.
-Well, SRFI-128 explicitly prohibits comparators registered
-by this procedure alters the behavior of the default comparator
-in the existing domain---it is only allowed to handle objects that
-aren't already handled by the system's original default comparator
-and other already registered comparators.  So, the only effect of
-adding new comparator should make the default comparator
-work on objects that had been previously raised an error.
-
-In reality, it is impossible to enforce the condition.  If you
-register a comparator whose domain overlaps overlaps the domain
-the default comparator (and its extensions via Gauche's methods),
-the program becomes non-portable at that moment.  In the current version,
-the comparators registered by @code{comparator-register-default!} has
-the lowest precedence on the dispatch mechanism, but you shouldn't count
-on that.
 @end defun
 
 @defun make-eq-comparator
