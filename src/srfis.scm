@@ -735,6 +735,16 @@ Gaucheの@code{gauche.generator}がsrfi-121のスーパーセットになって�
 (@ref{Generators}参照)
 
 
+srfi-128
+()
+
+Comparators (reduced)
+Built-in.  @xref{Basic comparators}, for the details.
+
+比較器 (縮小版)
+組み込みです。@ref{Basic comparators}参照。
+
+
 srfi-131, gauche.record
 ()
 
