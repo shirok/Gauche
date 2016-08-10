@@ -16,9 +16,15 @@ case "$MSYSTEM" in
     mingwdir=${MINGWDIR:-/mingw32}
     ;;
   *)
+    echo 'WARNING: $MSYSTEM is neither "MINGW32" or "MINGW64".'
     mingwdir=${MINGWDIR:-/mingw}
     ;;
 esac
+
+# Setting PATH to make sure the build process find right tools.
+# NB: We don't use CC=/path/to/gcc trick for ./configure, since
+# the gcc path embedded in gauche-config should be Windows path.
+PATH=$mingwdir/bin:$PATH
 
 # Process Options:
 while [ "$#" -gt 0 ]; do
@@ -107,6 +113,7 @@ fi
 # Build installer
 if [ "$INSTALLER" = "yes" ]; then
   (cd winnt/wix; make)
+  cp winnt/wix/Gauche-mingw-*.msi ..
 fi
 
 # 'zip' isn't included in MinGW.
