@@ -14368,6 +14368,168 @@ collections don't care the order of elements.
 
 @subsubheading Selection and searching
 
+@deffn {Generic function} sequence-contains haystack needle :key test
+@c EN
+Both @var{needle} and @var{haystack} must be sequences.
+Searches @var{needle} from @var{haystack} from the beginning of @var{haystack}.
+If @var{needle} is found, the index in @var{haystack} where it begins is
+returned.  Otherwise @code{#f} is returned.  The keyword argument
+@var{test} is used to compare elements; its defaule is @code{eqv?}.
+@c JP
+@var{needle}と@var{haystack}はシーケンスです。
+@var{haystack}の中で、@var{needle}に一致するシーケンスを左から探します。
+もし見つかれば、@var{haystack}中の@var{needle}が始まる場所のインデックスを、
+見つからなければ@code{#f}を返します。キーワード引数@var{test}は
+要素を比較するのに使われます。デフォルトは@code{eqv?}です。
+@c COMMON
+
+@example
+(sequence-contains '#(a b r a c a d a b r a) '#(b r a))
+  @result{} 1
+
+(sequence-contains '#(a b r a c a d a b r a) '#(c r a))
+  @result{} #f
+@end example
+
+@c EN
+This can be regarded as generalization of @code{string-contains} in srfi-13
+(@pxref{SRFI-13 String searching}).
+@c JP
+これは、srfi-13の@code{string-contains}を一般化したものとみることもできます
+(@ref{SRFI-13 String searching}参照)。
+@c COMMON
+@end deffn
+
+@defun break-list-by-sequence list needle :key test
+@defunx break-list-by-sequence! list needle :key test
+@c EN
+Searches a sequence @var{needle} from @var{list},
+and if found, breaks @var{list}
+to two parts---the prefix of @var{list} up to right befor @var{needle}
+begins, and the rest---and returns them.
+@var{List} must be a list, but @var{needle} can be any sequence.
+Elements are compared by @var{test}, defaulted to @code{eqv?}.
+@c JP
+シーケンス@var{needle}を@var{list}から探し、見つかれば@var{list}を
+@var{needle}の直前までとそれ以降に分割して二つの値として返します。
+@var{list}はリストでなければなりませんが、
+@var{needle}には任意のシーケンスを渡せます。
+各要素は@var{test}手続きで比較されます。デフォルトは@code{eqv?}です。
+@c COMMON
+
+@example
+(break-list-by-sequence '(a b r a c a d a b r a) '(c a d))
+  @result{} (a b r a) @r{and} (c a d a b r a)
+@end example
+
+@c EN
+If @var{needle} isn't found in @var{list}, it returns @var{list} itself
+and @code{()}.  This behavior is aligned to @code{span} and @code{break}
+(@pxref{SRFI-1 List utilities}), which split a list by predicate but
+returns the whole list if split condition isn't met.
+@c JP
+@var{needle}が@var{list}中に見つからなかった場合は、
+@var{list}そのものと@code{()}が返されます。
+これは@code{span}や@code{break}の動作に合わせてあります
+(@ref{SRFI-1 List utilities}参照)。
+これらの手続きは要素に対する述語でもってリストを分割しますが、
+分割条件が満たされなかった場合はリスト全体を返します。
+@c COMMON
+
+@example
+(break-list-by-sequence '(a b r a c a d a b r c a) '(c a z))
+  @result{} (a b r a c a d a b r c a) @r{and} ()
+@end example
+
+@c EN
+The linear update version @code{break-list-by-sequence!}
+modifies @var{list} to create the return value if necessary,
+so @var{list} must be mutable.  The caller must use the return
+value instead of relying on side-effects, though,
+for @var{list} may not be modified.
+@c JP
+@code{break-list-by-sequence!}はその場で更新するバージョンで、
+必要なら@var{list}を破壊的に変更して返り値を生成します。渡すリストは変更可能で
+なければなりません。@var{list}が変更されない場合もあるので、
+呼出側は副作用に頼らず常に返り値を利用する必要があります。
+@c COMMON
+@end defun
+
+@defun sequence->kmp-stepper needle :key test
+@c EN
+This is an internal routine to search subsequence (@var{needle}) inside
+larger sequence, using Knuth-Morris-Pratt (KMP) algorithm.
+It is used in @code{sequence-contains},
+@code{break-list-by-sequence} and @code{break-list-by-sequence!}.
+@c JP
+これは、KMPアルゴリズムを使って大きなシーケンス中から
+部分シーケンス@var{needle}を探すための内部ルーチンです。
+@code{sequence-contains}、
+@code{break-list-by-sequence}、
+@code{break-list-by-sequence!}の中で使われています。
+@c COMMON
+
+@c EN
+Returns a procedure that performs one step of KMP search.
+The procedure takes two arguments, an element @var{elt}
+and an index @var{k}.  It compares @var{elt} with
+@code{(~ needle k)}, and returns two values---the next index and
+a flag indicating the match is completed.  When the match is
+completed, the next index is equal to the length of @var{needle}.
+@c JP
+KMPアルゴリズムの1ステップを行う手続きを返します。
+返される手続きは二つの引数、要素@var{elt}とインデックス@var{k}を取り、
+@var{elt}と@code{(~ needle k)}を比較します。二つの値を返します：
+次に比較すべきインデックスと、マッチが終了したかどうかのフラグです。
+マッチが終了した場合、次のインデックスとして返される値は@var{needle}の
+長さと等しいです。
+@c COMMON
+
+@c EN
+As an edge case, if @var{needle} is an empty sequence,
+@code{sequence->kmp-stepper} returns @code{#f}.
+@c JP
+エッジケースとして、@var{needle}が空のシーケンスの場合、
+@code{sequence->kmp-stepper}は@code{#f}を返します。
+@c COMMON
+
+@c EN
+Elements are compared using @var{test}, which is defaulted to @code{eqv?}.
+@c JP
+要素は@var{test}で比較されます。デフォルトは@code{eqv?}です。
+@c COMMON
+
+@c EN
+The following is a skeleton of searcher using
+@code{sequence->kmp-stepper}.  Here we assume @var{haystack}
+is a list, and we just return whether the needle is
+found or not, or needle is empty; you might want to carry
+around other info in the loop (e.g. @code{sequence-contains}
+tracks the current index of @var{haystack} in order to
+return the found index.)
+@c JP
+以下に、@code{sequence->kmp-stepper}を使った探索コードの骨格を示します。
+この例では@var{haystack}はリストで、単に@var{needle}が見つかったかどうか
+(あるいは@var{needle}が空か)だけを返しています。
+実際の応用では、他の情報をループで持ち回ることになるでしょう
+(例えば@code{sequence-contains}では@var{haystack}中の
+インデックスをトラックして、見つかった場所を返しています。)
+@c COMMON
+
+@example
+(if-let1 stepper (sequence->kmp-stepper needle)
+  (let loop ([haystack haystack]
+             [k 0])
+    (if (null? haystack)
+      'not-found
+      (receive (k found) (stepper (car haystack) k) ; KMP step
+        (if found
+          'found
+          (loop (cdr kaystack) k)))))
+  'needle-is-empty)
+@end example
+@end defun
+
 @c EN
 Note that selection and searching methods for collections
 can also be applied to sequences.
