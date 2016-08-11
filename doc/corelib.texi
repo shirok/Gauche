@@ -5938,12 +5938,16 @@ See @ref{Making Procedures} for how Gauche supports keyword
 arguments, and @code{let-keywords} macro (@ref{Optional argument parsing})
 for parsing keyword-value list manually.
 
-Unlike Common Lisp, keywords and symbols are distinct types in
-the current version of Gauche by default.
-When you set the environment variable @code{GAUCHE_KEYWORD_IS_SYMBOL},
-however, keywords become a subtype of symbols;
-a keyword will be evaluated as an identifier, just like symbols,
+Unlike Common Lisp, keywords and symbols have been distinct types in
+Gauche.  Since it isn't conformant to R7RS, in which symbols can begin
+with @code{:}, we're moving on to integrate keywords and symbols---
+that is, a keyword will be evaluated as an identifier, just like symbols,
 but just happens to have itself as a value.
+
+The integration may break the backward compatibility, we haven't
+turned it on by default.
+When you set the environment variable @code{GAUCHE_KEYWORD_IS_SYMBOL},
+keywords become a subtype of symbols;
 
 Our plan is to make keywords as a subtype of symbols by default
 in near future.  So we urge developers to test their libraries and
@@ -5960,12 +5964,15 @@ Gaucheにおけるキーワード引数のサポートについては@ref{Making
 また独自にキーワード-値リストをパーズする方法については
 @code{let-keywords} マクロ(@ref{Optional argument parsing}) も参照して下さい。
 
-CommonLisp とは異なり、現在のGaucheではキーワードとシンボルは
-デフォルトで全く別の型として扱われます。ただし、
-環境変数@code{GAUCHE_KEYWORD_IS_SYMBOL}がセットされていると、
-キーワードはシンボルのサブタイプとなります。すなわち、
-キーワードもシンボルと同様通常の変数として評価されるのですが、
+CommonLisp とは異なり、Gaucheではキーワードとシンボルを別の型として扱ってきました。
+しかしこれはR7RSに違反しています。R7RSでは@code{:}で始まる識別子はシンボルとして
+読まれるからです。そこで、Gaucheでもキーワードをシンボルのサブタイプとすることにしました。
+すなわち、キーワードもシンボルと同様通常の変数として評価されるのですが、
 たまたまその値がそれ自身に束縛されているように見えるのです。
+
+この変更は後方互換性を壊す可能性があるので、現在はデフォルトでは有効になっていません。
+環境変数@code{GAUCHE_KEYWORD_IS_SYMBOL}をセットした状態で@code{gosh}を
+起動することにより、キーワードがシンボルとして扱われるようになります。
 
 この「キーワードはシンボルのサブタイプ」が近い将来デフォルトの動作になる予定です。
 開発者は、@code{GAUCHE_KEYWORD_IS_SYMBOL}をセットした状態で
