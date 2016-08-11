@@ -21,11 +21,14 @@ Other contributors (my apologies for any omissions):
 Adam Megacz <adam@megac.com>
 Adnan Ali
 Adrian Bunk <bunk@fs.tum.de>
+Adrian Pop <adrian.pop@liu.se>
 Akira Tagoh <tagoh@redhat.com>
 Alain Novak <alain.novak@hermes.si>
 Alan Dosser <dosser@src.dec.com>
 Alan J. Demers <ademers@cs.cornell.edu>
 Aleksey Demakov <ademakov@gmail.com>
+Alessandro Bruni <alessandro.bruni@gmail.com>
+Alex Ronne Petersen <alexrp@xamarin.com>
 Alexander Belchenko <bialix@ukr.net>
 Alexander Gavrilov <angavrilov@gmail.com>
 Alexander Herz <alexander.herz@mytum.de>
@@ -87,6 +90,7 @@ Charles Fiterman <cef@geode.geodesic.com>
 Charles Mills <boson@cyberspace.org>
 Chris Dodd <chrisd@reservoir.com>
 Chris Lingard <chris@highludworth.freeserve.co.uk>
+Chris Metcalf <cmetcalf@mellanox.com>
 Christian Joensson <christian.joensson@gmail.com>
 Christian Limpach <chris@pin.lu>
 Christian Thalinger <twisti@complang.tuwien.ac.at>
@@ -117,6 +121,7 @@ David Mossberger
 David Peroutka <djp@volny.cz>
 David Pickens <dsp@rci.rutgers.edu>
 David Stes <stes@d5e02b1d.kabel.telenet.be>
+David Terei <d@davidterei.com>
 David Van Horn <dvanhorn@ccs.neu.edu>
 Davide Angelocola <davide.angelocola@tiscali.it>
 Dick Porter <dick@acm.org>
@@ -139,6 +144,7 @@ Franklin Chen <chen@adi.com>
 Fred Gilham <gilham@csl.sri.com>
 Fred Stearns
 Friedrich Dominicus <friedrichdominicus@googlemail.com>
+Gabor Drescher <gabor.drescher@cs.fau.de>
 Gary Leavens <leavens@eecs.ucf.edu>
 Geoff Norton <grompf@sublimeintervention.com>
 George Talbot <Gtalbot@ansarisbio.com>
@@ -155,6 +161,7 @@ Henning Makholm <Henning@octoshape.com>
 Henrik Theiling <theiling@absint.com>
 Hironori Sakamoto <hsaka@mth.biglobe.ne.jp>
 Hiroshi Kawashima <kei@arch.sony.co.jp>
+Hiroshi Yokota <yokota@netlab.cs.tsukuba.ac.jp>
 Hubert Garavel <Hubert.Garavel@imag.fr>
 Iain Sandoe <developer@sandoe-acoustics.co.uk>
 Ian Piumarta <piumarta@prof.inria.fr>
@@ -186,6 +193,7 @@ Ji-Yong Chung
 Jie Liu <lj8175@gmail.com>
 Jim Marshall <jim.marshall@wbemsolutions.com>
 Jim Meyering <jim@meyering.net>
+Joao Abecasis <joao@abecasis.name>
 Joerg Sonnenberger <joerg@britannica.bec.de>
 Johannes Schmidt <jschmidt@avtrex.com>
 Johannes Totz <jtotz@ic.ac.uk>
@@ -195,6 +203,7 @@ John Ellis <ellis@xerox.parc.com>
 John Merryweather Cooper <jmerry@mono-cvs.ximian.com>
 Jon Moore <jonm@apache.org>
 Jonathan Bachrach <jonathan@harlequin.com>
+Jonathan Chambers <jonathan@unity3d.com>
 Jonathan Clark
 Jonathan Pryor <jpryor@novell.com>
 Juan Jose Garcia-Ripoll <juanjose.garciaripoll@googlemail.com>
@@ -202,12 +211,13 @@ Kai Tietz <ktietz70@googlemail.com>
 Kaz Kojima <kkojima@rr.iij4u.or.jp>
 Kazu Hirata <kazu@codesourcery.com>
 Kazuhiro Inaoka <inaoka.kazuhiro@renesas.com>
+Keith Seitz <keiths@redhat.com>
 Kenjiro Taura <tau@eidos.ic.i.u-tokyo.ac.jp>
 Kenneth Schalk <schalk@cadtls.hlo.dec.com>
 Kevin Kenny <kenny@m.cs.uiuc.edu>
 Kevin Tew <tewk@racket-lang.org>
 Kevin Warne <kevinw@direct.ca>
-Kjetil S. Matheussen <ksvalast@ifi.uio.no>
+Kjetil Matheussen <k.s.matheussen@notam02.no>
 Klaus Treichel <ktreichel@web.de>
 Knut Tvedten <knuttv@ifi.uio.no>
 Krister Walfridsson <cato@df.lth.se>
@@ -219,13 +229,16 @@ Laurent Morichetti <l_m@pacbell.net>
 Linas Vepstas <linasvepstas@gmail.com>
 Loren J. Rittle <rittle@latour.labs.mot.com>
 Louis Zhuang <louis.zhuang@acm.org>
+Lucas Meijer <lucas@unity3d.com>
 Ludovic Courtes <ludo@gnu.org>
 Maarten Thibaut <mthibaut@cisco.com>
+Manuel A. Fernandez Montecelo <manuel.montezelo@gmail.com>
 Manuel Serrano <serrano@cornas.inria.fr>
 Marc Recht <recht@netbsd.org>
 Marco Maggi <marco.maggi-ipsu@poste.it>
 Marcos Dione <Marcos_David.Dione@sophia.inria.fr>
 Marcus Herbert
+Marek Vasut <marex@denx.de>
 Margaret Fleck <mfleck@illinois.edu>
 Mark Boulter <mboulter@vnet.ibm.com>
 Mark Mitchell <mark@codesourcery.com>
@@ -241,10 +254,12 @@ Matthias Drochner <M.Drochner@fz-juelich.de>
 Maurizio Vairani <maurizio.vairani@cloverinformatica.it>
 Melissa O'Neill <oneill@cs.sfu.ca>
 Michael Arnoldus <chime@proinf.dk>
+Michael Fox <mfox@cavium.com>
 Michael Smith <msmith@spinnakernet.com>
 Michael Spertus <mps@geodesic.com>
 Michel Schinz <schinz@alphanet.ch>
 Miguel de Icaza <miguel@gnome.org>
+Mike Frysinger <vapier@gentoo.org>
 Mike Gran <spk121@yahoo.com>
 Mike McGaughey <mmcg@cs.monash.edu.au>
 Mike Stump <mrs@windriver.com>
@@ -265,6 +280,7 @@ Parag Patel <parag@netcom.com>
 Patrick Bridges <bridges@cs.arizona.edu>
 Patrick C. Beard <beard@netscape.com>
 Patrick Doyle <doylep@eecg.toronto.edu>
+Paul Bone <paul@bone.id.au>
 Paul Brook <paul@codesourcery.com>
 Paul Graham
 Paul Nash <paulnash@wildseed.com>
@@ -276,7 +292,7 @@ Peter Housel <housel@acm.org>
 Peter Monks <pmonks@iname.com>
 Peter Ross <pro@missioncriticalit.com>
 Peter Seebach <seebs@taniemarie.solon.com>
-Peter Wang <wangp@students.cs.mu.oz.au>
+Peter Wang <novalazy@gmail.com>
 Petr Krajca <krajcap@inf.upol.cz>
 Petr Salinger <Petr.Salinger@seznam.cz>
 Petter Urkedal <paurkedal@gmail.com>
@@ -302,6 +318,7 @@ Richard Henderson <rth@redhat.com>
 Richard Sandiford <rsandifo@nildram.co.uk>
 Rob Haack <rhaack@polaris.unm.edu>
 Robert Brazile <brazile@diamond.bbn.com>
+Rodrigo Kumpera <kumpera@gmail.com>
 Roger Sayle <roger@eyesopen.com>
 Roland McGrath <roland@redhat.com>
 Roman Hodek <Roman.Hodek@informatik.uni-erlangen.de>
@@ -329,6 +346,7 @@ Terrell Russell <terrellrussell@gmail.com>
 Thiemo Seufer <ths@networkno.de>
 Thomas Funke <thf@zelator.in-berlin.de>
 Thomas Klausner <tk@giga.or.at>
+Thomas Linder Puls <thomas_linder_puls@hotmail.com>
 Thomas Maier <Thomas.Maier@uni-kassel.de>
 Thomas Schwinge <thomas@codesourcery.com>
 Thorsten Glaser <tg@debian.org>

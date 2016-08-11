@@ -38,12 +38,13 @@ LD=ld
 srcdir= .
 VPATH= $(srcdir)
 
-# Atomic_ops installation directory.  If this doesn't exist, we create
-# it from the included libatomic_ops distribution.
+# Path to atomic_ops source.
 AO_SRC_DIR=$(srcdir)/libatomic_ops
-AO_INSTALL_DIR=$(srcdir)/libatomic_ops-install
 
-CFLAGS= -O -I$(srcdir)/include -I$(AO_INSTALL_DIR)/include -DATOMIC_UNCOLLECTABLE -DNO_EXECUTE_PERMISSION -DALL_INTERIOR_POINTERS
+CFLAGS_EXTRA=
+CFLAGS= -O -I$(srcdir)/include -I$(AO_SRC_DIR)/src \
+  -DGC_ATOMIC_UNCOLLECTABLE -DNO_EXECUTE_PERMISSION -DALL_INTERIOR_POINTERS \
+  $(CFLAGS_EXTRA)
 
 # To build the parallel collector on Linux, add to the above:
 # -DGC_LINUX_THREADS -DPARALLEL_MARK -DTHREAD_LOCAL_ALLOC
@@ -82,7 +83,7 @@ OBJS= alloc.o reclaim.o allchblk.o misc.o mach_dep.o os_dep.o mark_rts.o \
   malloc.o stubborn.o checksums.o pthread_support.o pthread_stop_world.o \
   darwin_stop_world.o typd_mlc.o ptr_chck.o mallocx.o gcj_mlc.o specific.o \
   gc_dlopen.o backgraph.o win32_threads.o pthread_start.o \
-  thread_local_alloc.o fnlz_mlc.o
+  thread_local_alloc.o fnlz_mlc.o atomic_ops.o atomic_ops_sysdeps.o
 
 CSRCS= reclaim.c allchblk.c misc.c alloc.c mach_dep.c os_dep.c mark_rts.c \
   headers.c mark.c obj_map.c pcr_interface.c blacklst.c finalize.c \
@@ -120,7 +121,7 @@ SRCS= $(CSRCS) \
 DOC_FILES= README.QUICK doc/README.Mac doc/README.OS2 \
   doc/README.amiga doc/README.cords doc/debugging.html \
   doc/finalization.html doc/porting.html doc/overview.html \
-  doc/README.dj doc/README.hp doc/README.linux doc/README.rs6000 \
+  doc/README.hp doc/README.linux doc/README.rs6000 \
   doc/README.sgi doc/README.solaris2 doc/README.uts \
   doc/README.symbian doc/README.win32 README.md AUTHORS doc/gc.man \
   doc/README.environment doc/tree.html doc/gcdescr.html \
@@ -141,11 +142,9 @@ GNU_BUILD_FILES= configure.ac Makefile.am configure install-sh Makefile.in \
   bdw-gc.pc.in compile
 
 OTHER_MAKEFILES= OS2_MAKEFILE NT_MAKEFILE gc.mak \
-  BCC_MAKEFILE EMX_MAKEFILE WCC_MAKEFILE Makefile.dj \
-  PCR-Makefile SMakefile.amiga \
+  BCC_MAKEFILE EMX_MAKEFILE WCC_MAKEFILE PCR-Makefile SMakefile.amiga \
   digimars.mak Makefile.direct NT_STATIC_THREADS_MAKEFILE \
-  NT_X64_STATIC_THREADS_MAKEFILE NT_X64_THREADS_MAKEFILE \
-  build_atomic_ops.sh build_atomic_ops.sh.cygwin
+  NT_X64_STATIC_THREADS_MAKEFILE NT_X64_THREADS_MAKEFILE
 
 OTHER_FILES= tools/setjmp_t.c tools/callprocs.sh extra/MacOS.c \
   extra/Mac_files/datastart.c extra/Mac_files/dataend.c \
@@ -169,7 +168,7 @@ CURSES= -lcurses -ltermlib
 # the SHELL environment variable.
 SHELL= /bin/sh
 
-SPECIALCFLAGS= -I$(srcdir)/include -I$(AO_INSTALL_DIR)/include
+SPECIALCFLAGS= -I$(srcdir)/include -I$(AO_SRC_DIR)/src
 # Alternative flags to the C compiler for mach_dep.c.
 # Mach_dep.c often doesn't like optimization, and it's
 # not time-critical anyway.
@@ -177,10 +176,11 @@ SPECIALCFLAGS= -I$(srcdir)/include -I$(AO_INSTALL_DIR)/include
 
 all: gc.a gctest
 
-# if AO_INSTALL_DIR doesn't exist, we assume that it is pointing to
-# the default location, and we need to build
-$(AO_INSTALL_DIR):
-	CC=$(CC) MAKE=$(MAKE) $(srcdir)/build_atomic_ops.sh
+atomic_ops.o: $(AO_SRC_DIR)/src/atomic_ops.c
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+atomic_ops_sysdeps.o: $(AO_SRC_DIR)/src/atomic_ops_sysdeps.S
+	$(CC) $(CFLAGS) -c -o $@ $<
 
 LEAKFLAGS= $(CFLAGS) -DFIND_LEAK
 
@@ -211,13 +211,7 @@ $(OBJS) tests/test.o dyn_load.o dyn_load_sunos53.o: \
   $(srcdir)/include/private/gc_hdrs.h $(srcdir)/include/private/gc_locks.h \
   $(srcdir)/include/gc.h $(srcdir)/include/gc_pthread_redirects.h \
   $(srcdir)/include/private/gcconfig.h $(srcdir)/include/gc_typed.h \
-  $(srcdir)/include/gc_config_macros.h Makefile $(AO_INSTALL_DIR)
-# The dependency on Makefile is needed.  Changing
-# options affects the size of GC_arrays,
-# invalidating all .o files that rely on gc_priv.h
-
-Makefile: Makefile.direct
-	cp Makefile.direct Makefile
+  $(srcdir)/include/gc_config_macros.h
 
 mark.o typd_mlc.o finalize.o ptr_chck.o: $(srcdir)/include/gc_mark.h \
 					 $(srcdir)/include/private/gc_pmark.h
@@ -238,7 +232,6 @@ tests:
 base_lib gc.a: $(OBJS) dyn_load.o $(UTILS)
 	echo > base_lib
 	rm -f dont_ar_1
-	cp $(AO_INSTALL_DIR)/lib/libatomic_ops.a gc.a
 	./if_mach SPARC SOLARIS touch dont_ar_1
 	./if_mach SPARC SOLARIS $(AR) rus gc.a $(OBJS) dyn_load.o
 	./if_mach M68K AMIGA touch dont_ar_1
@@ -257,7 +250,7 @@ cords: $(CORD_OBJS) cord/cordtest $(UTILS)
 	./if_not_there dont_ar_3 $(AR) ru gc.a $(CORD_OBJS)
 	./if_not_there dont_ar_3 $(RANLIB) gc.a || cat /dev/null
 
-gc_cpp.o: $(srcdir)/gc_cpp.cc $(srcdir)/include/gc_cpp.h $(srcdir)/include/gc.h Makefile
+gc_cpp.o: $(srcdir)/gc_cpp.cc $(srcdir)/include/gc_cpp.h $(srcdir)/include/gc.h
 	$(CXX) -c $(CXXFLAGS) $(srcdir)/gc_cpp.cc
 
 test_cpp: $(srcdir)/tests/test_cpp.cc $(srcdir)/include/gc_cpp.h gc_cpp.o $(srcdir)/include/gc.h \
@@ -288,7 +281,7 @@ dyn_load_sunos53.o: dyn_load.c
 
 # SunOS5 shared library version of the collector
 sunos5gc.so: $(OBJS) dyn_load_sunos53.o
-	$(CC) -G -o sunos5gc.so $(OBJS) dyn_load_sunos53.o $(AO_INSTALL_DIR)/lib/libatomic_ops.a -ldl
+	$(CC) -G -o sunos5gc.so $(OBJS) dyn_load_sunos53.o -ldl
 	ln sunos5gc.so libgc.so
 
 # Alpha/OSF shared library version of the collector
@@ -390,7 +383,7 @@ cord/de: $(srcdir)/cord/tests/de.c cord/cordbscs.o cord/cordxtra.o gc.a $(UTILS)
 if_mach: $(srcdir)/tools/if_mach.c $(srcdir)/include/private/gcconfig.h
 	$(HOSTCC) $(HOSTCFLAGS) -o if_mach $(srcdir)/tools/if_mach.c
 
-threadlibs: $(srcdir)/tools/threadlibs.c $(srcdir)/include/private/gcconfig.h Makefile
+threadlibs: $(srcdir)/tools/threadlibs.c $(srcdir)/include/private/gcconfig.h
 	$(HOSTCC) $(HOSTCFLAGS) -o threadlibs $(srcdir)/tools/threadlibs.c
 
 if_not_there: $(srcdir)/tools/if_not_there.c
@@ -412,10 +405,10 @@ gctest: tests/test.o gc.a $(UTILS)
 # If an optimized setjmp_test generates a segmentation fault,
 # odds are your compiler is broken.  Gctest may still work.
 # Try compiling setjmp_t.c unoptimized.
-setjmp_test: $(srcdir)/tools/setjmp_t.c $(srcdir)/include/gc.h $(UTILS) $(AO_INSTALL_DIR)
+setjmp_test: $(srcdir)/tools/setjmp_t.c $(srcdir)/include/gc.h $(UTILS)
 	$(CC) $(CFLAGS) -o setjmp_test $(srcdir)/tools/setjmp_t.c
 
-test:  KandRtest cord/cordtest
+test: KandRtest cord/cordtest
 	cord/cordtest
 
 # Those tests that work even with a K&R C compiler:
@@ -431,18 +424,9 @@ gcname: $(srcdir)/tools/gcname.c $(srcdir)/include/gc_version.h
 
 # We assume this is being done from source directory.
 dist gc.tar: $(SRCS) $(DOC_FILES) $(OTHER_FILES) add_gc_prefix gcname
-	cp Makefile.direct Makefile
-	cd $(AO_SRC_DIR); $(MAKE) dist
-	if test $(srcdir)/libatomic_ops = $(AO_SRC_DIR); \
-	then \
-	  mv $(AO_SRC_DIR) $(AO_SRC_DIR).bak ; \
-	  tar xvfz $(AO_SRC_DIR).bak/libatomic_ops.tar.gz ; \
-	else \
-	  tar xvfz $(AO_SRC_DIR)/libatomic_ops.tar.gz ; \
-	fi
 	rm -f `./gcname`
 	ln -s . `./gcname`
-	./add_gc_prefix $(SRCS) $(DOC_FILES) $(OTHER_FILES) libatomic_ops > /tmp/gc.tar-files
+	./add_gc_prefix $(SRCS) $(DOC_FILES) $(OTHER_FILES) > /tmp/gc.tar-files
 	tar cvfh gc.tar `cat /tmp/gc.tar-files`
 	cp gc.tar `./gcname`.tar
 	gzip `./gcname`.tar
