@@ -58,7 +58,7 @@
 #endif
 
 #if defined(GC_WIN32_PTHREADS) && !defined(GC_WIN32_THREADS)
-  /* Using pthreads-win32 library.  */
+  /* Using pthreads-win32 library (or other Win32 implementation).  */
 # define GC_WIN32_THREADS
 #endif
 
@@ -172,7 +172,7 @@
 #if defined(GC_DLL) && !defined(GC_API)
 
 # if defined(__MINGW32__) || defined(__CEGCC__)
-#   ifdef GC_BUILD
+#   if defined(GC_BUILD) || defined(__MINGW32_DELAY_LOAD__)
 #     define GC_API __declspec(dllexport)
 #   else
 #     define GC_API __declspec(dllimport)
@@ -287,7 +287,8 @@
 #   include <features.h>
 # endif
 # if (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 1 || __GLIBC__ > 2) \
-        && !defined(__ia64__) && !defined(__UCLIBC__) \
+        && !defined(__ia64__) \
+        && !defined(GC_MISSING_EXECINFO_H) \
         && !defined(GC_HAVE_BUILTIN_BACKTRACE)
 #   define GC_HAVE_BUILTIN_BACKTRACE
 # endif
