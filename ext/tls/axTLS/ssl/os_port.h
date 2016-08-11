@@ -155,13 +155,15 @@ EXP_FUNC int STDCALL getdomainname(char *buf, int buf_size);
 #define SOCKET_CLOSE(A)         if (A >= 0) close(A)
 #define TTY_FLUSH()
 
-/* OSX quirks */
-#ifdef __APPLE__
+/* get be64toh */
+#if    defined(__APPLE__)
 #include <libkern/OSByteOrder.h>
 #define be64toh(x) OSSwapBigToHostInt64(x)
-#else  /*!__APPLE__*/
+#elif  defined(__FreeBSD__) || defined(__NetBSD__)
+#include <sys/endian.h>
+#else  /*!__APPLE__ && !__FreeBSD__ && !__NetBSD__*/
 #include <asm/byteorder.h>
-#endif /*!__APPLE__*/
+#endif /*!__APPLE__ && !__FreeBSD__ && !__NetBSD__*/
 
 #ifndef be64toh
 #define be64toh(x) __be64_to_cpu(x)
