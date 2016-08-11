@@ -26,6 +26,13 @@ esac
 # the gcc path embedded in gauche-config should be Windows path.
 PATH=$mingwdir/bin:$PATH
 
+# We assume we run this script on 64bit platform.  For 32bit distribution,
+# though, we want the resulting gosh to run as if it's built on 32bit platform.
+case "$MSYSTEM" in
+  MINGW32)
+    buildopt=--build=i686-pc-mingw32
+esac
+
 # Process Options:
 while [ "$#" -gt 0 ]; do
   case $1 in
@@ -70,7 +77,7 @@ fi
 rm -rf $distdir
 ./configure --prefix=$distdir --enable-threads=win32 \
             --enable-multibyte=utf8 --enable-ipv6=no \
-            --with-dbm=ndbm,odbm
+            --with-dbm=ndbm,odbm $buildopt
 make
 
 if [ $? -ne 0 ]; then
