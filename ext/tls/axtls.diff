@@ -207,7 +207,7 @@
   #!/bin/sh
 ! #ps -ef|grep gnutls-serv | /usr/bin/awk '{print $2}' |xargs kill -9
 *** a/axTLS/ssl/os_port.h	Mon Jul  4 21:33:37 2016
---- b/axTLS/ssl/os_port.h	Thu Aug 11 11:41:45 2016
+--- b/axTLS/ssl/os_port.h	Fri Aug 12 01:00:04 2016
 ***************
 *** 42,48 ****
   #endif
@@ -299,11 +299,11 @@
 + #if    defined(__APPLE__)
 + #include <libkern/OSByteOrder.h>
 + #define be64toh(x) OSSwapBigToHostInt64(x)
-+ #elif  defined(__FreeBSD__) || defined(__NetBSD__)
++ #elif  defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
 + #include <sys/endian.h>
-+ #else  /*!__APPLE__ && !__FreeBSD__ && !__NetBSD__*/
++ #else  /*!__APPLE__ && !__FreeBSD__ && !__NetBSD__ && !__OpenBSD__*/
 + #include <asm/byteorder.h>
-+ #endif /*!__APPLE__ && !__FreeBSD__ && !__NetBSD__*/
++ #endif /*!__APPLE__ && !__FreeBSD__ && !__NetBSD__ && !__OpenBSD__*/
 + 
   #ifndef be64toh
   #define be64toh(x) __be64_to_cpu(x)
@@ -330,7 +330,7 @@
   #endif
   
 *** a/axTLS/crypto/os_int.h	Tue Jul  5 09:55:29 2016
---- b/axTLS/crypto/os_int.h	Mon Aug  1 04:12:44 2016
+--- b/axTLS/crypto/os_int.h	Fri Aug 12 01:08:17 2016
 ***************
 *** 41,47 ****
   extern "C" {
@@ -348,24 +348,6 @@
   typedef UINT8 uint8_t;
   typedef INT8 int8_t;
   typedef UINT16 uint16_t;
-***************
-*** 56,61 ****
---- 56,70 ----
-  #include <inttypes.h>
-  #else
-  #include <stdint.h>
-+ #ifdef __APPLE__
-+ #include <machine/endian.h>
-+ #elif defined(__MINGW32__)
-+ #define be64toh(x) __builtin_bswap64(x)
-+ #elif defined(__NetBSD__) || defined(__FreeBSD__)
-+ #include <sys/endian.h>
-+ #else
-+ #include <endian.h>
-+ #endif
-  #endif /* Not Solaris */
-  
-  #endif /* Not Win32 */
 *** a/axTLS/crypto/crypto_misc.c	Tue Jul  5 09:49:47 2016
 --- b/axTLS/crypto/crypto_misc.c	Mon Aug  1 04:10:38 2016
 ***************
