@@ -207,7 +207,7 @@
   #!/bin/sh
 ! #ps -ef|grep gnutls-serv | /usr/bin/awk '{print $2}' |xargs kill -9
 *** a/axTLS/ssl/os_port.h	Mon Jul  4 21:33:37 2016
---- b/axTLS/ssl/os_port.h	Fri Aug 12 01:39:42 2016
+--- b/axTLS/ssl/os_port.h	Fri Aug 12 01:45:17 2016
 ***************
 *** 42,48 ****
   #endif
@@ -253,7 +253,7 @@
   #endif
 ***************
 *** 118,126 ****
---- 124,139 ----
+--- 124,140 ----
   
   typedef int socklen_t;
   
@@ -266,6 +266,7 @@
 + #if defined(__MINGW32__)
 + #include <malloc.h>
 + #include <sys/time.h>
++ #define be64toh(x) __builtin_bswap64(x)
 + #endif /*defined(__MINGW32__)*/
   
   #else   /* Not Win32 */
@@ -285,7 +286,7 @@
   #ifndef be64toh
   #define be64toh(x) __be64_to_cpu(x)
   #endif
---- 149,172 ----
+--- 150,171 ----
   #include <sys/wait.h>
   #include <netinet/in.h>
   #include <arpa/inet.h>
@@ -301,8 +302,6 @@
 + #define be64toh(x) OSSwapBigToHostInt64(x)
 + #elif  defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
 + #include <sys/endian.h>
-+ #elif  defined(__MINGW32__)
-+ #define be64toh(x) __builtin_bswap64(x)
 + #else
 + #include <asm/byteorder.h>
 + #endif

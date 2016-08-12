@@ -133,6 +133,7 @@ EXP_FUNC int STDCALL getdomainname(char *buf, int buf_size);
 #if defined(__MINGW32__)
 #include <malloc.h>
 #include <sys/time.h>
+#define be64toh(x) __builtin_bswap64(x)
 #endif /*defined(__MINGW32__)*/
 
 #else   /* Not Win32 */
@@ -161,8 +162,6 @@ EXP_FUNC int STDCALL getdomainname(char *buf, int buf_size);
 #define be64toh(x) OSSwapBigToHostInt64(x)
 #elif  defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
 #include <sys/endian.h>
-#elif  defined(__MINGW32__)
-#define be64toh(x) __builtin_bswap64(x)
 #else
 #include <asm/byteorder.h>
 #endif
