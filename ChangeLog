@@ -1,3 +1,8 @@
+2016-08-11  Shiro Kawai  <shiro@acm.org>
+
+	* gc/: Updated to bdwgc 7.6.0 by qykth-git.
+	  https://github.com/shirok/Gauche/pull/224
+
 2016-08-05  Shiro Kawai  <shiro@acm.org>
 
 	* test/process.scm: In pipeline tests, emulate cat and grep commands
