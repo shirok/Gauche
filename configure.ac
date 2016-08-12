@@ -247,6 +247,12 @@ case $GAUCHE_THREAD_TYPE in
       THREADDLLIBS="-lpthread -lrt"
       GAUCHE_THREAD_TYPE=pthreads
       ;;
+    *-*-openbsd*)
+      AC_DEFINE(GC_OPENBSD_THREADS,1,[Define to use OpenBSD threads])
+      THREADLIBS="-lpthread"
+      THREADDLLIBS="-lpthread"
+      GAUCHE_THREAD_TYPE=pthreads
+      ;;      
     *-*-solaris*)
       AC_DEFINE(GC_SOLARIS_THREADS,1,[Define to use Solaris threads])
       AC_DEFINE(GC_SOLARIS_PTHREADS,1,[Define to use Solaris pthreads])
