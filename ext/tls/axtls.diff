@@ -207,7 +207,7 @@
   #!/bin/sh
 ! #ps -ef|grep gnutls-serv | /usr/bin/awk '{print $2}' |xargs kill -9
 *** a/axTLS/ssl/os_port.h	Mon Jul  4 21:33:37 2016
---- b/axTLS/ssl/os_port.h	Fri Aug 12 01:00:04 2016
+--- b/axTLS/ssl/os_port.h	Fri Aug 12 01:39:42 2016
 ***************
 *** 42,48 ****
   #endif
@@ -285,7 +285,7 @@
   #ifndef be64toh
   #define be64toh(x) __be64_to_cpu(x)
   #endif
---- 149,170 ----
+--- 149,172 ----
   #include <sys/wait.h>
   #include <netinet/in.h>
   #include <arpa/inet.h>
@@ -301,9 +301,11 @@
 + #define be64toh(x) OSSwapBigToHostInt64(x)
 + #elif  defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
 + #include <sys/endian.h>
-+ #else  /*!__APPLE__ && !__FreeBSD__ && !__NetBSD__ && !__OpenBSD__*/
++ #elif  defined(__MINGW32__)
++ #define be64toh(x) __builtin_bswap64(x)
++ #else
 + #include <asm/byteorder.h>
-+ #endif /*!__APPLE__ && !__FreeBSD__ && !__NetBSD__ && !__OpenBSD__*/
++ #endif
 + 
   #ifndef be64toh
   #define be64toh(x) __be64_to_cpu(x)

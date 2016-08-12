@@ -161,9 +161,11 @@ EXP_FUNC int STDCALL getdomainname(char *buf, int buf_size);
 #define be64toh(x) OSSwapBigToHostInt64(x)
 #elif  defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
 #include <sys/endian.h>
-#else  /*!__APPLE__ && !__FreeBSD__ && !__NetBSD__ && !__OpenBSD__*/
+#elif  defined(__MINGW32__)
+#define be64toh(x) __builtin_bswap64(x)
+#else
 #include <asm/byteorder.h>
-#endif /*!__APPLE__ && !__FreeBSD__ && !__NetBSD__ && !__OpenBSD__*/
+#endif
 
 #ifndef be64toh
 #define be64toh(x) __be64_to_cpu(x)
