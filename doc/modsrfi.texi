@@ -1343,22 +1343,63 @@ the substring of @var{s} is used as the source.
 @defun string-compare s1 s2 proc< proc= proc> :optional start1 end1 start2 end2
 @defunx string-compare-ci s1 s2 proc< proc= proc> :optional start1 end1 start2 end2
 [SRFI-13]
-Compares two strings @var{s1} and @var{s2} codepoint-wise.  When mismatch
-is first found, call either one of procedure @var{proc<}, @var{proc=} or
-@var{proc>}, depending on the mismatched codepoint, with the index
-in @var{s1} when mismatch occurs.  The optional arguments restricts
-the range of the input strings; however, the index passed to one 
-of the procedures is always an index from the beginning of @var{s1}.
+@c EN
+Compares two strings @var{s1} and @var{s2} codepoint-wise from left.
+When mismatch is found at the index @var{k} of @var{s1},
+calls @var{proc<} with @var{k} if @var{s1}'s codepoint is smaller than
+the corresponding @var{s2}'s, or calls @var{proc>} if @var{s1}'s one is
+greater than @var{s2}'s.  If two strings are the same, calls @var{proc=}
+with the index of the last compared position in @var{s1}.
+@c JP
+文字列@var{s1}と@var{s2}をコードポイント毎に左から比較します。
+不一致が@var{s1}のインデックス@var{k}で見つかった場合、対応する@var{s2}の
+コードポイントより@var{s1}のコードポイントの方が小さければ
+@var{proc<}を@var{k}を引数にして呼び出し、逆に大きければ
+@var{proc>}を@var{k}を引数にして呼び出します。
+二つの文字列が等しければ、@var{proc=}が、@var{s1}の比較された最後のインデックスを
+引数にして呼び出されます。
+@c COMMON
 
 @example
-(string-compare "abc" "abz"
+(string-compare "abcd" "abzd"
                 (^i `(< ,i)) (^i `(= ,i)) (^i `(> ,i)))
   @result{} (< 2)
+
+(string-compare "abcd" "abcd"
+                (^i `(< ,i)) (^i `(= ,i)) (^i `(> ,i)))
+  @result{} (= 3)
 @end example
 
-The case-insensitive variant, @var{string-compare-ci}, compares
+@c EN
+The optional arguments restricts
+the range of the input strings; however, the index passed to one 
+of the procedures is always an index from the beginning of @var{s1}.
+@c JP
+省略可能引数は入力の文字列の比較すべき範囲を制限します。
+但し、@var{proc<}、@var{proc=}、@var{proc>}に渡されるインデックスは
+常に@var{s1}の最初から数えたものになります。
+@c COMMON
+
+@example
+(string-compare "zzabcdyy" "abcz"
+   (^i `(< ,i)) (^i `(= ,i)) (^i `(> ,i)) 2 6 0 4)
+ @result{} (< 5)
+
+(string-compare "zzabcdyy" "abcz"
+   (^i `(< ,i)) (^i `(= ,i)) (^i `(> ,i)) 2 5 0 3)
+
+ @result{} (= 4)
+@end example
+
+@c EN
+The case-insensitive variant, @code{string-compare-ci}, compares
 each codepoint with character-wise case-folding.  It won't consider
 special case folding such as German eszett.
+@c JP
+@code{string-compare-ci}は大文字小文字を区別しない比較です。
+文字毎の大文字小文字変換を行って比較するので、文字列の長さが変わる
+大文字小文字変換のケース (ドイツ語のエスツェット等) は考慮されません。
+@c COMMON
 @end defun
 
 @defun string= s1 s2 :optional start1 end1 start2 end2
