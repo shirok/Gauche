@@ -482,7 +482,7 @@ fi
 # extra LD Flags which are required for targets
 case "${host}" in
   *-*-darwin*)
-    extra_ldflags_libgc="-Wl,-single_module -framework CoreFoundation"
+    extra_ldflags_libgc=-Wl,-single_module
     ;;
 esac
 AC_SUBST(extra_ldflags_libgc)
