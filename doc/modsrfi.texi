@@ -1409,6 +1409,7 @@ special case folding such as German eszett.
 @defunx string> s1 s2 :optional start1 end1 start2 end2
 @defunx string>= s1 s2 :optional start1 end1 start2 end2
 [SRFI-13]
+@c EN
 Compare two strings @var{s1} and @var{s2}.  Optional arguments
 can limit the portion of strings to be compared.
 Comparison is done by character-wise.
@@ -1416,6 +1417,14 @@ Comparison is done by character-wise.
 Note: The builtin procedures @code{string=?} etc. can also be
 used for character-wise string comparison, but they take
 arguments differently.  @xref{String Comparison}.
+@c JP
+二つの文字列@var{s1}と@var{s2}を比較します。省略可能引数で
+それぞれの文字列の一部のみを比較するように指定できます。
+比較は文字ごとに行われます。
+
+註: 組み込み手続きの@code{string=?}等も文字毎の比較に使えますが、
+引数の取り方が違います。@ref{String Comparison}参照。
+@c COMMON
 @end defun
 
 @defun string-ci= s1 s2 :optional start1 end1 start2 end2
@@ -1425,9 +1434,11 @@ arguments differently.  @xref{String Comparison}.
 @defunx string-ci> s1 s2 :optional start1 end1 start2 end2
 @defunx string-ci>= s1 s2 :optional start1 end1 start2 end2
 [SRFI-13]
+@c EN
 Compare two strings @var{s1} and @var{s2} in case-insensitive way.
 Optional arguments can limit the portion of strings to be compared.
-Case folding and comparison is done by character-wise.
+Case folding and comparison is done by character-wise, so they don't
+consider case folding that affects multiple characters.
 
 Note: We have two other sets of string comparison operations,
 both are named as @code{string-ci=?} etc.
@@ -1435,18 +1446,64 @@ The builtin version (@pxref{String Comparison}) does character-wise
 comparison.  The one in @code{gauche.unicode} uses full-string
 case conversion (@pxref{Full string case conversion}).
 R7RS version is the latter.
+@c JP
+二つの文字列@var{s1}と@var{s2}を、大文字小文字を区別せずに比較します。
+省略可能引数でそれぞれの文字列の一部のみを比較するように指定できます。
+大文字小文字の畳み込みと比較は文字ごとに行われます。複数の文字に
+影響を与えるような大文字小文字の畳み込みは考慮しません。
+
+註: Gaucheには他に2種類の大文字小文字を区別しない文字列比較手続き群があります。
+どちらも@code{string-ci=?}等のようにクエスチョンマーク付きの名前を持っています。
+Gauche組み込みのものは文字毎に大文字小文字を畳み込みます
+(@ref{String Comparison}参照)。一方、@code{gauche.unicode}にあるものは
+文字列としての畳み込みを行います(@ref{Full string case conversion}参照)。
+R7RS版は後者です。
+@c COMMON
 @end defun
 
 @defun string-hash s :optional bound start end
 @defunx string-hash-ci s :optional bound start end
 [SRFI-13]
+@c EN
+(Note: Gauche has builtin @code{string-hash} and @code{string-ci-hash}
+according to SRFI-128. @xref{Hashing}, for the details.
+SRFI-13's API is upper-compatible to SRFI-128's.  The underlying
+hash algorighm is the same as the builtin ones, so @code{string-hash}
+returns the same value as the builtin ones for the same string
+if optional arguments are omitted.
+On the other hand, the builtin @code{string-ci-hash} uses string case
+folding (e.g. German eszett and @code{SS} are the same), while
+SRFI-13's @code{string-hash-ci} uses character-wise case folding.
+Unless there's a strong reason, we recommend new code should use
+builtin SRFI-128 version instead of SRFI-13.)
+
 Calculates hash value of a string @var{s}.  For @code{string-hash-ci},
 character-wise case folding is done before calculating the hash value.
 
 If the optional @var{bound} argument is given, it must be a positive
-integer, and the return value is limited below it.
+exact integer, and the return value is limited below it.
 The optional @var{start} and @var{end} arguments allows
 using that portion for calculation.
+@c JP
+(註: Gaucheは、SRFI-128に準拠した@code{string-hash}と@code{string-ci-hash}を
+組み込みで持っています。詳しくは@ref{Hashing}参照。
+SRFI-13のAPIはSRFI-128の上位互換になっています。内部で使っているハッシュ
+アルゴリズムは一緒なので、省略可能引数を全て省略したSRFI-13の@code{string-hash}は、
+組み込みの@code{string-hash}と同じ値を返します。
+一方、組み込みの@code{string-ci-hash}は文字列として大文字小文字の畳み込みを
+行います(ドイツ語のエスツェットと@code{SS}は等しく扱われます)が、SRFI-13の
+@code{string-hash-ci}は文字毎に大文字小文字を畳み込むように定められているので、
+結果が異なる可能性があります。特に強い理由がなければ、新しいコードは
+組み込みのSRFI-128版を使うことをおすすめします。)
+
+文字列@var{s}のハッシュ値を計算して返します。@code{string-hash-ci}では
+ハッシュ値を計算する前に各文字について大文字小文字を畳み込みを行います。
+
+省略可能引数@var{bound}は、与えられたなら正の正確な整数でなければならず、
+返される値は0から@code{(- bound 1)}までの値に制限されます。
+@var{start}と@var{end}は、与えられれば@var{s}中の対象となる部分文字列を
+指定します。
+@c COMMON
 @end defun
 
 @node SRFI-13 String Prefixes & Suffixes, SRFI-13 String searching, SRFI-13 String Comparison, String library
