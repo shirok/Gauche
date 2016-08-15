@@ -1,3 +1,23 @@
+2016-08-14  Shiro Kawai  <shiro@acm.org>
+
+	* gc/libatomic_ops/configure.ac (AM_INIT_AUTOMAKE):
+	  Add no-dependencies option to avoid complication in distclean.
+	  Here's the story: Automake adds 'include' command in
+	  gc/libatomic_ops/src/Makefile to incorporate dependencies in
+	  .deps/*.Plo which are generated during running configure.
+	  On 'make distclean', the .deps directories are removed, but
+	  both gc/ and libatomic_ops/ tries to do so; if we run distclean
+	  in gc/ then in libatomic_ops/, the latter fails since Makefile
+	  cannot include .deps/*.Plo.  If we run distclean in libatomic_ops/
+	  first then gc/, the latter fails since somewhere in
+	  automake-generated rules needs to refer to libatomic_ops/src/.deps.
+	  If we only run distclean in gc/, it succeeds, but leaves Makefiles
+	  in libatomic_ops/ unerased.
+	  (Note: If you have system libatomic_ops, gc uses that and you
+	  won't see this problem.)
+	  It's too much trouble to fight with automake; turning off the
+	  dependency tracking avoids the trouble altogether.
+
 2016-08-11  Shiro Kawai  <shiro@acm.org>
 
 	* gc/: Updated to bdwgc 7.6.0 by qykth-git.
