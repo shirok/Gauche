@@ -45,6 +45,11 @@
   )
 (select-module gauche.uvector)
 
+;; gauche.vport is used by port->uvector.  Technically it's on top
+;; of uniform vector ports provided by gauche.vport, but logically
+;; it is expected to belong gauche.uvector.
+(autoload gauche.vport open-output-uvector get-output-uvector)
+
 (inline-stub
  "#include <math.h>"
  "#define EXTUVECTOR_EXPORTS"
@@ -490,6 +495,15 @@
 ;; for the bakcward compatibility
 (define read-block! read-uvector!)
 (define write-block write-uvector)
+
+;; for symmetry of port->string, etc.
+;; This actually uses uvector port in gauche.vport, but that's inner
+;; details users shouldn't need to care.
+;; TODO: Optional endian argument
+(define (port->uvector iport :optional (class <u8vector>))
+  (let1 p (open-output-uvector (make-uvector class 0) :extendable #t)
+    (copy-port iport p)
+    (get-output-uvector p :shared #t)))
 
 ;;-------------------------------------------------------------
 ;; Appending vectors

@@ -1,3 +1,7 @@
+2016-08-15  Shiro Kawai  <shiro@acm.org>
+
+	* ext/uvector/uvector.scm (port->uvector): Added.
+
 2016-08-14  Shiro Kawai  <shiro@acm.org>
 
 	* gc/libatomic_ops/configure.ac (AM_INIT_AUTOMAKE):

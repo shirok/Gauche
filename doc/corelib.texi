@@ -17835,10 +17835,15 @@ If the input contains an octet sequence that's not form a valid
 character in the Gauche's native character encoding,
 @code{port->string} and @code{port->string-list} may return
 incomplete string(s).
+If you want to deal with binary data, consider using
+@code{port->uvector} in @code{gauche.uvector} (@pxref{Uvector block I/O}).
 @c JP
 もし入力にGaucheの内部エンコーディングにおいて有効な文字をつくらない
 バイト列が含まれていた場合、@code{port->string}と@code{port->string-list}
 の返り値には不完全な文字列が含まれている可能性があります。
+入力をバイナリデータとして扱いたい場合は、
+@code{gauche.uvector}の@code{port->uvector}を使って下さい
+(@ref{Uvector block I/O}参照)。
 @c COMMON
 @end defun
 

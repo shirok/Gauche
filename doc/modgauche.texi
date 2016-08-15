@@ -20370,6 +20370,14 @@ s8vectorとu8vector以外のユニフォームベクタを与えた場合は
 @c COMMON
 
 @c EN
+If the size of the input data is unknown and you need to read everything
+until EOF, use @code{port->uvector} below.
+@c JP
+入力データの大きさが不明で、EOFまで全てを読み込みたい場合は、下の
+@code{port->uvector}を使ってください。
+@c COMMON
+
+@c EN
 R7RS has @code{read-bytevector}; it is the same as passing @code{<u8vector>}
 to @code{read-uvector}.
 @c JP
@@ -20464,6 +20472,29 @@ compatibility, but new code should use @code{read-uvector!}.
 @c COMMON
 @end defun
 
+@defun port->uvector iport :optional class
+@c EN
+Read data from the input port @var{iport} until EOF and store them
+into a uvector of @var{class}.  If @var{class} is omitted,
+@code{<u8vector>} is used.
+
+If you specify a class of uvector whose element is more than an octet,
+the input data is packed with platform's native byteorder.
+
+This procedure is parallel to @code{port->string} etc.
+(@pxref{Input utility functions}).
+@c JP
+入力ポート@var{iport}からEOFまでデータを読み込み、@var{class}クラスの
+ユニフォームベクタに格納して返します。@var{class}が省略された場合は
+@code{<u8vector>}が使われます。
+
+要素が1オクテット以上のユニフォームベクタのクラスを指定した場合、
+各要素はプラットフォームのネイティブバイトオーダーで埋められます。
+
+この手続きは組み込みの@code{port->string}等と対応しています
+(@ref{Input utility functions}参照)。
+@c COMMON
+@end defun
 
 @defun write-uvector vec :optional oport start end endian
 @c EN
