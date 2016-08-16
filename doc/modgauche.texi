@@ -21725,13 +21725,21 @@ opposite of @code{port->list} family
 (@pxref{Input utility functions}) or @code{port->char-lseq} famliy
 (@pxref{Lazy sequences}).
 @c JP
-
+以下の手続きは、文字またはオクテットのリストを入力ポートのソースとして利用するものです。
+ある意味、@code{port->list}系の手続き(@ref{Input utility functions}参照)や
+@code{port->char-lseq}系の手続き(@ref{Lazy sequences}参照)の逆であると
+言えます。
 @c COMMON
 
 @defun open-input-char-list char-list
 @defunx open-input-byte-list byte-list
+@c EN
 Creates and returns an input port that uses
 the given list of characters and bytes as the source.
+@c JP
+与えられた文字もしくはオクテットのリストをデータ源とする
+入力ポートを作って返します。
+@c COMMON
 
 @example
 (read (open-input-char-list '(#\a #\b)))
@@ -21740,6 +21748,7 @@ the given list of characters and bytes as the source.
 @end defun
 
 @defun get-remaining-input-list port
+@c EN
 If @var{port} is the one created by @code{open-input-char-list} 
 or @code{open-input-byte-list}, returns a list of remaining data
 that hasn't been read yet.  If the port already read everything,
@@ -21751,6 +21760,19 @@ the same port.  If you read or even peek a byte from a port
 created from a character list, the port buffers a character
 and disassembles it to bytes; the disassembled character
 may not be included in the remaining input list.
+@c JP
+@var{port}が@code{open-input-char-list}か@code{open-input-byte-list}で
+作られたものであった場合、ポート中のまだ読まれていない部分のリストを返します。
+既に全てのデータが読まれていたり、ポートが
+@code{open-input-char-list}か@code{open-input-byte-list}で作られたもので
+なかった場合は、空リストが返されます。
+
+注意: Gaucheは一つのポートからのバイナリ読み出しと文字読み出しを混ぜて使うことを
+許しています。文字のリストで作られたリストポートからバイトを読み出したり、
+あるいは@code{peek-byte}した場合、ひとつ文字がデータ源から取り出され、
+バイト列に分解されてポート内部の一時バッファに置かれます。
+その状態でこの手続きを呼び出した場合、バッファ内のバイト列は戻り値には含まれません。
+@c COMMON
 @end defun
 
 @c EN
@@ -21765,11 +21787,15 @@ or byte generators as a source of an input port.  These are (a kind of)
 opposite of @code{port->char-generator} family
 (@pxref{Generator constructors}).
 @c JP
-
+以下の手続きは、文字あるいはオクテットのジェネレータ
+入力ポートのソースとして利用するものです。
+ある意味、@code{port->char-generator}系の手続き
+(@ref{Generator constructors}参照)の逆であると言えます。
 @c COMMON
 
 @defun open-input-char-generator cgen
 @defunx open-input-byte-generator bgen
+@c EN
 Creates and returns an input port that uses
 the given generators as the source.  The @var{cgen} argument
 must be a generator that yields characters.  The @var{bgen} argument
@@ -21777,19 +21803,34 @@ must be a generator that yields bytes (exact integers between 0 and
 255, inclusive).
 An error will be raised if the given generator yields
 incorrect type of objects.
+@c JP
+与えられたジェネレータをデータ源とする入力ポートを作って
+返します。@var{cgen}は文字を生成するジェネレータ、
+@var{bgen}はバイト(オクテット、0から255の間の正確な整数)を
+生成するジェネレータでなけばなりません。
+ジェネレータが想定される値以外のものを返した場合はエラーが通知されます。
+@c COMMON
 
 @example
 (read (open-input-char-generator (string->generator "foo")))
  @result{} foo
 @end example
 
+@c EN
 Since the generators are objects relying on side effects,
 you shouldn't use @var{cgen} or @var{bgen} after you pass them
 to those procedures; if you use them afterwards, the result
 is undefined.
+@c JP
+ジェネレータは本質的に副作用に依存しているオブジェクトなので、
+この手続きに@var{cgen}や@var{bgen}を渡したら、その後で
+それらのジェネレータに触ってはなりません。
+もしそれらのジェネレータを使ってしまった場合、以降の動作は未定義となります。
+@c COMMON
 @end defun
 
 @defun get-remaining-input-generator port
+@c EN
 If @var{port} is the one created by @code{open-input-char-generator} 
 or @code{open-input-byte-generator}, returns a generator that
 yields the characters or bytes that haven't been read yet.
@@ -21801,6 +21842,18 @@ read from the input generator ports; they share internal states and
 mixing them will likely to cause unexpected behaviors.
 If side-effects safe behavior is desired, use lazy sequence and
 input list ports.
+@c JP
+@var{port}が@code{open-input-char-generator}か
+@code{open-input-byte-generator}で作られたものであった場合、
+残りのデータを生成するジェネレータを返します。
+ポートが既にデータを全て消費していた場合は、空のジェネレータが返されます。
+
+残りのデータを生成するジェネレータを取り出したら、
+ジェネレータポートからはも読み出してはなりません。
+内部状態を共有しているため、予期せぬ結果がもたらされることになるでしょう。
+副作用に頼らず安全な振る舞いが必要な場合は、遅延シーケンスと
+リストポートを使うのが良いでしょう。
+@c COMMON
 @end defun
 
 @c EN
