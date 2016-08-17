@@ -1357,10 +1357,10 @@ CommonLispの@code{setf}とは、setter手続きに渡される引数の順序�
 
 @example
 (define x 3)
-(set! x (list 1 2))  @result{} @r{undefined}
+(set! x (list 1 2))
 x                    @result{} (1 2)
 
-(set! (car x) 5)     @result{} @r{undefined}
+(set! (car x) 5)
 x                    @result{} (5 2)
 @end example
 @end defspec
@@ -1378,10 +1378,10 @@ the corresponding @var{var}.
 @example
 (define a 0)
 (define b 1)
-(set!-values (a b) (values 3 4)) @result{} @r{undefined}
+(set!-values (a b) (values 3 4))
 a @result{} 3
 b @result{} 4
-(set!-values (a b) (values b a)) @result{} @r{undefined}
+(set!-values (a b) (values b a))
 a @result{} 4
 b @result{} 3
 @end example
@@ -1490,10 +1490,10 @@ is undefined.
 
 @example
 (define x (list 2))
-(push! x 3) @result{} @r{undefined}
+(push! x 3)
 x @result{} (3 2)
 
-(push! (cdr x) 4) @result{} @r{undefined}
+(push! (cdr x) 4)
 x @result{} (3 4 2)
 @end example
 
@@ -1595,7 +1595,7 @@ which takes one argument and returns one value.   The original value of
 @c COMMON
 @example
 (define a (cons 2 3))
-(update! (car a) (lambda (v) (* v 3))) @result{} @r{undefined}
+(update! (car a) (lambda (v) (* v 3)))
 a @result{} (6 . 3)
 
 (update! (cdr a) (cut - <> 3))
