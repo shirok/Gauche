@@ -214,7 +214,8 @@
     (fold (^[redir seen]
             (%check-redirects redir)
             (let1 source-sink (caddr redir)
-              (if (symbol? source-sink)
+              (if (and (symbol? source-sink)
+                       (not (memq source-sink '(:null :pipe))))
                 (if (memq source-sink seen)
                   (errorf "Pipe name `~s' appears more than once in the \
                            redirection source or target" source-sink)
