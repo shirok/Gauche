@@ -966,7 +966,7 @@ hash values.
 それらに対して、@var{rec-hash}を呼び出してください。そうすれば
 適切なハッシュ関数が再帰的に呼び出されます。例えば@code{object-hash}が
 @code{portable-hash}経由で呼び出されている場合、
-@var{rec-hash}を呼べば同じシード値でポータブルなハッシュ値が計算されます。
+@var{rec-hash}を呼べば同じソルト値でポータブルなハッシュ値が計算されます。
 
 @var{obj}がいくつかの要素を持っている場合、各要素のハッシュ値を
 まとめるには@code{combine-hash-value}を呼びます。
@@ -1114,20 +1114,51 @@ passing it to @code{hash}.
 @c COMMON
 @end defun
 
-@defmac hash-bound
-@defmacx hash-salt
+@defun hash-bound
+@defunx hash-salt
 [SRFI-128]
-Both evaluates to an exact nonnegative numbers.  
+@c EN
+Both evaluates to an exact nonnegative integers.
 
-User-defined hash function can limit the range of the result between
+(Note: SRFI-128 defines these as macros, in order to allow
+implementatins optimize runtime overhead.  In Gauche we use
+procedures but the overhead is negligible.)
+
+User-defined hash functions can limit the range of the result between
 0 and @code{(hash-bound)}, respectively, without worrying to lose
-quality of hash function.
+quality of hash function.  (User-defined hash functions don't need
+to honor @code{(hash-bound)} at all; hashtables takes modulo when
+necessary.)
 
 User-defined hash function can also take into account of the
 value @code{(hash-salt)} into hash calculation; the salt value may
 differ between runs of the Scheme processes, or even between
 hash table instances.  It is to avoid collision attack.
-@end defmac
+Built-in hash functions already takes the salt value into account,
+so if your hash function is combining the hash values of
+primitive types, you don't need to worry about salt values.
+@c JP
+どちらも、正確な非負整数へと展開されます。
+
+(註: SRFI-128はこれらをマクロと定義しています。処理系が
+ランタイムオーバヘッドを避けられるようにするためです。
+Gaucheでは、呼び出しのオーバヘッドはそれほど問題にならないという
+立場から、どちらも手続きにしています。)
+
+ユーザ定義のハッシュ関数は、
+結果を0と@code{(hash-bound)}の間に限定してもハッシュの質を落とさないことが
+保証されます。(ユーザ定義のハッシュ関数は@code{(hash-bound)}を気にする
+必要はありません。ハッシュテーブルが必要な時にモジュロを取ります)。
+
+ユーザ定義のハッシュ関数はまた、@code{(hash-salt)}を計算に組み入れることが
+できます。展開されるソルト値は、Schemeプロセスの実行ごとに異なる値を
+取ったり、ハッシュテーブルごとに異なる値を取るかもしれません。
+これは、コリジョン攻撃を回避するためのものです。
+組み込みのハッシュ関数は既にソルト値を考慮しているので、
+ユーザ定義ハッシュ関数がプリミティブ型のハッシュ値を組み合わせるだけの
+場合は、ソルト値を気にする必要はありません。
+@c COMMON
+@end defun
 
 
 @node Basic comparators,  , Hashing, Equality and comparison

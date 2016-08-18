@@ -707,18 +707,35 @@ These procedures can be used to expand globally defined macros.
 @end defun
 
 @defun macroexpand-all form
+@c EN
 Fully expand macros inside @var{form}.  The result only contains
 function calls and Gauche's built-in syntax.
-The @code{form} is assumed to be a toplevel form within the current module.
+The @var{form} is assumed to be a toplevel form within the current module.
 (@xref{Module semantics}, for the concept of the current module.
 It can be tricky, for sometimes the current module differ
 between compile-time and run-time.)
+@c JP
+@var{form}中にあるマクロを全て展開します。結果の中に残るのは、
+関数呼び出しとGaucheの組み込み構文だけになります。
+@var{form}は現在のモジュール中のトップレベルにあるものと解釈されます
+(現在のモジュールについては@ref{Module semantics}を参照してください。
+この概念はちょっとややこしいです。コンパイル時と実行時で
+現在のモジュールが異なる場合があるからです。)
+@c COMMON
 
+@c EN
 Any local variables introduced in @var{form} is renamed to avoid collision.
 Since each local variable has unique name, all @code{let} forms become
 @code{letrec} forms (we can safely replace @code{let} with @code{letrec}
 if no bindings introduced by @code{let} shadows outer bindings.)
+@c JP
+@var{form}中で導入されるローカル変数は全て、衝突を避けるためにリネームされます。
+ローカル変数が全て固有の名前を持つようになるので、@code{let}フォームはすべて
+@code{letrec}で表されます(@code{let}による束縛が他の束縛をシャドウしないと
+わかっていれば、@code{let}を@code{letrec}に置き換えても意味は変わりません)。
+@c COMMON
 
+@c EN
 NB: If a macro in @var{form} inserts a reference to a global variable
 which belongs to other module, the information is lost in the current
 implementation.  There are a few ways to address this issue; we may
@@ -727,6 +744,17 @@ leave such reference as an identifier object, convert it to
 such case.  It's undecided currently, so do not rely too much on
 the current behavior.  For the time being, it's best to use this
 feature only for interactive macro testing.
+@c JP
+注意: もし@var{form}内で呼ばれているマクロが、他のモジュール中にあるグローバル
+変数への参照を挿入した場合、現在の実装ではその情報は失われてしまいます。
+いくつか、その問題を修正する方法は考えられるのですが(例えば他のモジュール中に
+グローバル変数参照は識別子オブジェクトのまま残しておくとか、
+@code{with-module}フォームに変換するとか、
+そういったケースのための特殊構文を導入するとか)、今のところどうするか
+決まっていません。なので、現在のふるまいにあまり依存しないようにしてください。
+今のところ、この手続きは、マクロの展開結果をインタラクティブに確かめる用途に
+限って使うのが安全です。
+@c COMMON
 
 @example
 (macroexpand-all
