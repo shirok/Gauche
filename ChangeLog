@@ -1,3 +1,11 @@
+2016-08-18  Shiro Kawai  <shiro@acm.org>
+
+	* src/hash.c (Scm_Hash, Scm_PortableHash): Take care of the effect
+	  of keyword-symbol integration.  If a keyword is a symbol, its name
+	  includes prefix ':', while if they're disjoint, keyword's name
+	  doesn't include ':'.  For portable hash, we include ':' in the
+	  calculation.  For legacy hash, we don't.
+
 2016-08-15  Shiro Kawai  <shiro@acm.org>
 
 	* ext/uvector/uvector.scm (port->uvector): Added.

@@ -263,19 +263,35 @@ static u_long equal_hash_common(ScmObj obj, u_long salt, int portable)
             h = COMBINE(h, h2);
         }
         return h;
-    } else if (SCM_SYMBOLP(obj)) {
+#if GAUCHE_KEEP_DISJOINT_KEYWORD_OPTION
+    } else if (SCM_KEYWORDP(obj)) {
         if (portable) {
-            return internal_string_hash(SCM_SYMBOL_NAME(obj), salt, TRUE);
+            if (SCM_SYMBOLP(obj)) {
+                /* GAUCHE_KEYWORD_IS_SYMBOL mode */
+                return internal_string_hash(SCM_KEYWORD_NAME(obj), salt, TRUE);
+            } else {
+                /* GAUCHE_KEYWORD_IS_DISJOINT mode.  SCM_KEYWORD_NAME does
+                   not include prefix ':'.  We should append it so that
+                   the hash value stays the same.  Appending string incurs
+                   allocation, but we expect this branch isn't taken often
+                   and eventually fade away. */
+                static ScmString *prefix = NULL;
+                if (prefix == NULL) {
+                    /* idempotent.  no MT hazard. */
+                    prefix = SCM_STRING(Scm_MakeString(":", 1, 1, 0));
+                }
+                ScmObj name = Scm_StringAppend2(prefix, SCM_KEYWORD_NAME(obj));
+                return internal_string_hash(SCM_STRING(name), salt, TRUE);
+            }
         } else {
             u_long hashval;
             ADDRESS_HASH(hashval, obj);
             return hashval;
         }
-    } else if (SCM_KEYWORDP(obj)) {
-        /* TRANSIENT: fold this to above once symbol-keyword integration
-           is completed. */
+#endif /*GAUCHE_KEEP_DISJOINT_KEYWORD_OPTION*/
+    } else if (SCM_SYMBOLP(obj)) {
         if (portable) {
-            return internal_string_hash(SCM_KEYWORD_NAME(obj), salt, TRUE);
+            return internal_string_hash(SCM_SYMBOL_NAME(obj), salt, TRUE);
         } else {
             u_long hashval;
             ADDRESS_HASH(hashval, obj);
@@ -1144,11 +1160,21 @@ u_long Scm_Hash(ScmObj obj)
             h = COMBINE(h, h2);
         }
         return h&PORTABLE_HASHMASK;
+    } else if (SCM_KEYWORDP(obj)) {
+        /* If we have keyword and symbol unified, KEYWORD_NAME includes
+           ':'.  Legacy hash didn't consider it. */
+#if GAUCHE_KEEP_DISJOINT_KEYWORD_OPTION
+        if (SCM_SYMBOLP(obj)) {
+            obj = Scm_Substring(SCM_KEYWORD_NAME(obj), 1, -1, FALSE);
+        } else {
+            obj = SCM_OBJ(SCM_KEYWORD_NAME(obj));
+        }
+#else  /*!GAUCHE_KEEP_DISJOINT_KEYWORD_OPTION*/
+        obj = Scm_Substring(SCM_KEYWORD_NAME(obj), 1, -1, FALSE);
+#endif /*!GAUCHE_KEEP_DISJOINT_KEYWORD_OPTION*/
+        goto string_hash;
     } else if (SCM_SYMBOLP(obj)) {
         obj = SCM_OBJ(SCM_SYMBOL_NAME(obj));
-        goto string_hash;
-    } else if (SCM_KEYWORDP(obj)) {
-        obj = SCM_OBJ(SCM_KEYWORD_NAME(obj));
         goto string_hash;
     } else {
         /* Call specialized object-hash method */
