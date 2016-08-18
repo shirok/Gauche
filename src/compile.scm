@@ -2590,7 +2590,7 @@
           [else
            (let1 g (gensym)
              (pass1/lambda form (append args g)
-                           (pass1/extended-lambda form g kargs body)
+                           (pass1/extended-lambda form cenv g kargs body)
                            cenv #f))])))
 
 (define-pass1-syntax (receive form cenv) :gauche
@@ -2618,37 +2618,39 @@
 
 ;; Handles extended lambda list.  garg is a gensymed var that receives
 ;; restarg.
-(define (pass1/extended-lambda form garg kargs body)
+(define (pass1/extended-lambda form cenv garg kargs body)
   (define (collect-args xs r)
     (match xs
       [() (values (reverse r) '())]
       [((? keyword-like?) . _) (values (reverse r) xs)]
       [(var . rest) (collect-args rest (cons var r))]))
-  (define (parse-kargs xs os ks r a)
+  (define (parse-kargs c xs os ks r a)
     (match xs
       [() (expand-opt os ks r a)]
-      [(':optional . xs)
-       (unless (null? os) (too-many :optional))
-       (receive (os xs) (collect-args xs '()) (parse-kargs xs os ks r a))]
-      [(':key . xs)
-       (unless (null? ks) (too-many :key))
-       (receive (ks xs) (collect-args xs '()) (parse-kargs xs os ks r a))]
-      [(':rest . xs)
-       (when r (too-many :rest))
-       (receive (rs xs) (collect-args xs '())
-         (match rs
-           [(r) (parse-kargs xs os ks r a)]
-           [_ (error ":rest keyword in the extended lambda list must be \
-                      followed by exactly one argument:" kargs)]))]
-      [(':allow-other-keys . xs)
-       (when a (too-many :allow-other-keys))
-       (receive (a xs) (collect-args xs '())
-         (match a
-           [()   (parse-kargs xs os ks r #t)]
-           [(av) (parse-kargs xs os ks r av)]
-           [_ (error ":allow-other-keys keyword in the extended lambda list \
-                      can be followed by zero or one argument:" kargs)]))]
-      [_ (error "invalid extended lambda list:" kargs)]))
+      [(k . xs)
+       (cond
+        [(global-keyword-eq? k :optional c)
+         (unless (null? os) (too-many :optional))
+         (receive (os xs) (collect-args xs '()) (parse-kargs c xs os ks r a))]
+        [(global-keyword-eq? k :key c)
+         (unless (null? ks) (too-many :key))
+         (receive (ks xs) (collect-args xs '()) (parse-kargs c xs os ks r a))]
+        [(global-keyword-eq? k :rest c)
+         (when r (too-many :rest))
+         (receive (rs xs) (collect-args xs '())
+           (match rs
+             [(r) (parse-kargs c xs os ks r a)]
+             [_ (error ":rest keyword in the extended lambda list must be \
+                        followed by exactly one argument:" kargs)]))]
+        [(global-keyword-eq? k :allow-other-keys c)
+         (when a (too-many :allow-other-keys))
+         (receive (a xs) (collect-args xs '())
+           (match a
+             [()   (parse-kargs c xs os ks r #t)]
+             [(av) (parse-kargs c xs os ks r av)]
+             [_ (error ":allow-other-keys keyword in the extended lambda list \
+                        can be followed by zero or one argument:" kargs)]))]
+        [else (error "invalid extended lambda list:" kargs)])]))
   (define (too-many key)
     (errorf "too many ~s keywords in the extended lambda list: ~s" key kargs))
   (define (expand-opt os ks r a)
@@ -2684,7 +2686,7 @@
            ,(if a (append args a) args)
            ,@body)))))
 
-  (parse-kargs kargs '() '() #f #f))
+  (parse-kargs cenv kargs '() '() #f #f))
 
 ;; case-lambda (srfi-16)
 ;;   we recognize it here so that we can do aggressive inlining.
@@ -6257,7 +6259,7 @@
 ;; TODO: We should also check iff k isn't bound to something else!
 (define (keyword-like? k)
   (or (keyword? k)
-      (and (identifier? k) (keyword? (identifier-name k)))))
+      (and (identifier? k) (keyword? (identifier->symbol k)))))
 
 (define (global-eq? var sym cenv)  ; like free-identifier=?, used in pass1.
   (and (variable? var)
@@ -6265,6 +6267,14 @@
          (and (identifier? v)
               (eq? (unwrap-syntax v) sym)
               (null? (identifier-env v))))))
+
+;; TRANSIENT: To compare keyword hygienically.  We need to treat keywords
+;; specially until we complete keyword-symbol integration.
+(define (global-keyword-eq? var key cenv)
+  (or (eq? var key)
+      (and (symbol? key)
+           (identifier? var)
+           (global-eq? var key cenv))))
 
 (define (everyc proc lis c)             ;avoid closure allocation
   (or (null? lis)

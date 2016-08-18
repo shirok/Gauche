@@ -1107,6 +1107,8 @@
 ;;----------------------------------------------------------------------
 ;; identifier comparison
 
+(test-section "identifier comparison")
+
 ;; This is EXPERIMENTAL: may be changed in later release.
 
 (define-syntax hoge (syntax-rules () ((hoge foo ...) (cdr b))))
@@ -1114,6 +1116,21 @@
       (lambda () (macroexpand '(hoge bar))))
 (test "comparison of identifiers" (macroexpand '(hoge bar))
       (lambda () (macroexpand '(hoge bar))))
+
+;;----------------------------------------------------------------------
+;; keyword and extended lambda list
+
+(test-section "keyword inserted by macro")
+
+(define-syntax define-extended-1
+  (syntax-rules ()
+    [(_ name)
+     (define (name a :key (b #f))
+       (list a b))]))
+
+(define-extended-1 foo)
+(test "macro expands to extended lambda list" '(1 2)
+      (lambda () (foo 1 :b 2)))
 
 ;;----------------------------------------------------------------------
 ;; common-macros

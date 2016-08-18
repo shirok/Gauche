@@ -1,5 +1,10 @@
 2016-08-18  Shiro Kawai  <shiro@acm.org>
 
+	* src/compile.scm (pass1/extended-lambda): Compare extended
+	  lambda-list keywords hygienically.  If GAUCHE_KEYWORD_IS_SYMBOL,
+	  keywords inserted by macros are wrapped by identifiers and
+	  we should compare it just like symbols inserted by macros.
+
 	* src/hash.c (Scm_Hash, Scm_PortableHash): Take care of the effect
 	  of keyword-symbol integration.  If a keyword is a symbol, its name
 	  includes prefix ':', while if they're disjoint, keyword's name
