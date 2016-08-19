@@ -1128,9 +1128,18 @@
      (define (name a :key (b #f))
        (list a b))]))
 
-(define-extended-1 foo)
+(define-extended-1 extended-1)
 (test "macro expands to extended lambda list" '(1 2)
-      (lambda () (foo 1 :b 2)))
+      (lambda () (extended-1 1 :b 2)))
+
+(define-syntax define-extended-2
+  (syntax-rules ()
+    [(_ name)
+     (define (name a :key ((:b boo) #f))
+       (list a boo))]))
+(define-extended-2 extended-2)
+(test "macro expands to extended lambda list" '(3 4)
+      (lambda () (extended-2 3 :b 4)))
 
 ;;----------------------------------------------------------------------
 ;; common-macros

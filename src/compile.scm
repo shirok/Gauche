@@ -2678,7 +2678,11 @@
       (let1 args (map (match-lambda
                         [[? symbol? o] o]
                         [[? identifier? o] o]
-                        [(([? keyword? key] o) init) `(,o ,key ,init)]
+                        [(([? keyword-like? key] o) init)
+                         (let1 k (if (identifier? key)
+                                   (identifier->symbol key)
+                                   key)
+                           `(,o ,k ,init))]
                         [(o init) `(,o ,init)]
                         [_ (error "illegal keyword argument spec in " kargs)])
                       ks)
