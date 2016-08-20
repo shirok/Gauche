@@ -1546,7 +1546,11 @@ static void do_server(server_t *svr)
     else
     {
         sprintf(openssl_buf, "openssl s_server " 
+#ifdef WIN32
+                "-accept %d -quiet %s", 
+#else
                 "-accept %d -quiet %s > /dev/null", 
+#endif
                 g_port, svr->openssl_option);
     }
 //printf("SERVER %s\n", openssl_buf);

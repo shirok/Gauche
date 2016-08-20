@@ -1,5 +1,6 @@
 (use gauche.test)
 (use gauche.process)
+(use gauche.version)
 (use file.util)
 
 (test-start "rfc.tls")
@@ -19,9 +20,30 @@
     (and-let1 m (any #/S\["OPENSSL"\]=\"(.+)\"/
                      (file->string-list "../../config.status"))
       (m 1)))
+  (define (no-openssl msg)
+    (warn #"~|msg|: some tests are skipped.\n")
+    (set! openssl-cmd #f))
 
   (sys-unlink "axTLS/ssl/openssl.pid")
   (sys-unlink "kick_openssl.sh")
+
+  (if (not openssl-cmd)
+    (no-openssl "openssl command not available")
+    ;; Check openssl version.  OSX ships with old openssl that's unusable.
+    ;; We skip this check on MinGW, for there's a complication of running
+    ;; msys openssl.exe command via gauche.process (which should be addressed
+    ;; sometime in future).  For now, we know MSYS2 has usable openssl.
+    (cond-expand
+     [(not gauche.os.windows)
+      (guard (e [(<process-abnormal-exit> e)
+                 (no-openssl "couldn't run openssl command")])
+        (if-let1 m ($ #/OpenSSL\s+([\d\.]+\w*)/
+                      $ process-output->string `(,openssl-cmd "version"))
+          (let1 vers (m 1)
+            (unless (version>=? vers "1.0.0")
+              (no-openssl #"openssl version is too old (~vers)")))
+          (no-openssl "couldn't get openssl version")))]
+     [else]))
 
   (when openssl-cmd
     ;; kick_openssl.sh is called from ssltest to run openssl command;
