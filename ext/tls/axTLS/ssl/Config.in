@@ -87,21 +87,24 @@ choice
 config CONFIG_SSL_PROT_LOW
     bool "Low"
     help
-        Chooses the cipher in the order of RC4-SHA, AES128-SHA, AES256-SHA.
+        Chooses the cipher in the order of AES128-SHA, AES128-SHA256, 
+        AES256-SHA256.
       
         This will use the fastest cipher(s) but at the expense of security.
 
 config CONFIG_SSL_PROT_MEDIUM
     bool "Medium"
     help
-        Chooses the cipher in the order of AES128-SHA, AES256-SHA, RC4-SHA.
+        Chooses the cipher in the order of AES128-SHA256, AES256-SHA256,
+        AES128-SHA
        
         This mode is a balance between speed and security and is the default.
 
 config CONFIG_SSL_PROT_HIGH
     bool "High"
     help
-        Chooses the cipher in the order of AES256-SHA, AES128-SHA, RC4-SHA.
+        Chooses the cipher in the order of AES256-SHA256, AES128-SHA256,
+        AES128-SHA.
         
         This will use the strongest cipher(s) at the cost of speed.
 
