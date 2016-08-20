@@ -2393,7 +2393,7 @@ int main(int argc, char *argv[])
     int ret = 1;
     BI_CTX *bi_ctx;
     int fd;
-    /*<SK> NB: String "openssl " will re replaced by the build script, so
+    /*<SK> NB: String "openssl " will be replaced by the build script, so
       avoid ending the variable name with "openssl". */
     int have_openssl_p = 0;
     /*</SK>*/

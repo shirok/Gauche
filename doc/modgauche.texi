@@ -3845,7 +3845,7 @@ and/or @code{--enable-FEATURE} options you want to handle, by
 @code{cf-with-arg} and @code{cf-enable-arg}, respectively.
 @c JP
 追加の引数の宣言(省略可): @code{--with-PACKAGE}や@code{--enable-FEATURE}で
-処理すべきオプションを、そえぞれ@code{cf-with-arg}と@code{cf-enable-arg}で
+処理すべきオプションを、それぞれ@code{cf-with-arg}と@code{cf-enable-arg}で
 宣言します。
 @c COMMON
 @item
@@ -20785,7 +20785,7 @@ strings as the defined version number, an error is signaled.
 @c JP
 ふたつのバージョン番号文字列 @var{ver1} と @var{ver2} の順序関係によって
 真偽値を返します。もし引数が、バージョン番号を定義するのに不正な文字列を
-含んでいたばあい、エラーが上ります。
+含んでいた場合、エラーが上ります。
 @c COMMON
 @end defun
 
