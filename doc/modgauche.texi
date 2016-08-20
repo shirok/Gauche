@@ -20602,7 +20602,7 @@ The version number here is defined by the following syntax.
            | <version> <pre-subrelease>
  <principal-release> : <relnum>
  <post-subrelease>   : [.-] <relnum>
- <pre-subrelease>    : _ <relnum>
+ <pre-subrelease>    : _ <relnum>?
  <relnum>            : [0-9A-Za-z]+
 @end example
 
@@ -20719,10 +20719,10 @@ relnum を比較する。
 The reason of having @code{<pre-subrelease>} is to allow
 "release candidate" or "pre-release" version.
 
-A trick: If you want ``version 1.2 release version or later'', you
+A trick: If you want ``version 1.2 release or later'', you
 can say @code{(version<=? "1.2" v)}.  This excludes prerelease
 versions such as @code{1.2_pre3}.
-If you want ``verison 1.2 prelease version or later'', 
+If you want ``verison 1.2 prelease or later'', 
 you can say @code{(version<=? "1.2_" v)}, which includes
 @code{1.2_pre1} etc., but excludes anything below, such as
 @code{1.1.99999}.
