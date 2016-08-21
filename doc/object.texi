@@ -3513,11 +3513,17 @@ is called right before the core class slots are frozen.
 @c NODE スロットアクセスのカスタマイズ
 
 
-@deffn {Generic Function} compute-slots
-@deffnx {Generic Function} compute-get-n-set
+@deffn {Generic Function} compute-slots class
+@deffnx {Generic Function} compute-get-n-set class slot-definition
+@c EN
 These two generic functions are responsible to determine
 what slots a class has, and how each slot is accessed.
+@c JP
+これらふたつのジェネリックファンクションによって、クラスの持つべきスロット、
+及び各スロットがどのようにアクセスされるかが決定されます。
+@c COMMON
 
+@c EN
 In the @code{initialize} method of a class,
 @code{compute-slots} is called after the class's
 @code{direct-supers}, @code{cpl} and @code{direct-slots} are set.
@@ -3525,6 +3531,16 @@ It must decide what slots the class should have, and what
 slot options each slot should have, based on those three piece
 of information.  The returned value should have the following
 form, and it is used as the value of the @code{slots} slot of the class.
+@c JP
+クラスの@code{initialize}メソッドは、クラスの
+@code{direct-supers}、@code{cpl}、@code{direct-slots}スロットを
+セットしてから、@code{compute-slots}メソッドを呼びます。
+このメソッドは既にセットされた3つのスロットの情報から、
+該当クラスの持つべきスロットと、
+各スロットのスロットオプションを決定します。
+メソッドの返り値は以下の形式のフォームで、これがクラスの@code{slots}スロットに
+セットされます。
+@c COMMON
 
 @example
 <slots> : (<slot-definition> ...)
@@ -3533,14 +3549,23 @@ form, and it is used as the value of the @code{slots} slot of the class.
 <slot-options> : keyword-value alternating list.
 @end example
 
+@c EN
 After the @code{slots} slot of the class is set by the returned
 value from @code{compute-slots},
 @code{compute-get-n-set} is called for each slot
 to calculate how to access and modify the slot.
 The class and the slot definition are the arguments.
 It must return either one of the followings:
+@c JP
+@code{compute-slots}の返り値によって@code{slots}スロットが設定されたら、
+次に各スロットについて@code{compute-get-n-set}が呼ばれます。
+このメソッドは、各スロットをどのようにアクセスするかを決定します。
+引数はクラスとスロット定義(上の@code{<slot-definition>})です。
+返り値は以下のいずれかでなけばなりません。
+@c COMMON
 
 @table @asis
+@c EN
 @item an integer @var{n}
 This slot becomes @var{n}-th instance slot.  This is the only way to
 allocate a slot per instance.
@@ -3554,6 +3579,21 @@ to call @code{next-method} to let the base method reserve an instance
 slot for you.
 
 See the examples below for modifying instance slot access behaviors.
+@c JP
+@item 整数@var{n}
+このスロットは@var{n}番目のインスタンススロットになります。
+インスタンスにスロットを割り当てる唯一の方法です。
+
+@var{compute-get-n-set}のベースメソッドは、それまでに割り当てられた
+インスタンススロットの数をクラスの@code{num-instance-slots}スロットに格納しています。
+他の特殊化されたメソッドでこのスロットの値を参照したり変更したりすることは
+避けてください(オブジェクトシステムの中身を知悉していて、そうすべき十分な理由が
+ある場合は別ですが。)
+通常の場合、単に@code{next-method}を呼び出せば、ベースメソッドが
+インスタンススロットを新たに割り当ててそのインデックスを返してくれます。
+
+インスタンススロットアクセスのふるまいを変更する、下に示す例も参照してください。
+@c COMMON
 
 @item a list @code{(@var{get-proc} @var{set-proc} @var{bound?-proc} @var{initializable})}
 The @var{get-proc}, @var{set-proc} and @var{bound?-proc} elements are procedures
