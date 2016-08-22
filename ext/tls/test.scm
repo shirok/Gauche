@@ -40,7 +40,7 @@
         (if-let1 m ($ #/OpenSSL\s+([\d\.]+\w*)/
                       $ process-output->string `(,openssl-cmd "version"))
           (let1 vers (m 1)
-            (unless (version>=? vers "1.0.0")
+            (unless (version>=? vers "1.0.1")
               (no-openssl #"openssl version is too old (~vers)")))
           (no-openssl "couldn't get openssl version")))]
      [else]))
