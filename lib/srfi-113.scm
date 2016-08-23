@@ -1014,13 +1014,15 @@
 
 ;; Note that there is no set-sum, as it is the same as set-union.
 
-(define (sob-union sob1 sob2 . sobs)
-  (let ((result (sob-empty-copy sob1)))
-    (dyadic-sob-union! result sob1 sob2)
-    (for-each
-      (lambda (sob) (dyadic-sob-union! result result sob))
-      sobs)
-    result))
+(define (sob-union sob1 . sobs)
+  (if (null? sobs)
+    sob1
+    (let ((result (sob-empty-copy sob1)))
+      (dyadic-sob-union! result sob1 (car sobs))
+      (for-each
+       (lambda (sob) (dyadic-sob-union! result result sob))
+       (cdr sobs))
+      result)))
 
 ;; For union, we take the max of the counts of each element found
 ;; in either sob and put that in the result.  On the pass through
@@ -1051,11 +1053,10 @@
   (check-all-bags bags)
   (apply sob-union bags))
 
-(define (sob-union! sob1 sob2 . sobs)
-  (dyadic-sob-union! sob1 sob1 sob2)
+(define (sob-union! sob1 . sobs)
   (for-each
-    (lambda (sob) (dyadic-sob-union! sob1 sob1 sob))
-    sobs)
+   (lambda (sob) (dyadic-sob-union! sob1 sob1 sob))
+   sobs)
   sob1)
 
 (define (set-union! . sets)
@@ -1066,13 +1067,15 @@
   (check-all-bags bags)
   (apply sob-union! bags))
 
-(define (sob-intersection sob1 sob2 . sobs)
-  (let ((result (sob-empty-copy sob1)))
-    (dyadic-sob-intersection! result sob1 sob2)
-    (for-each
-      (lambda (sob) (dyadic-sob-intersection! result result sob))
-      sobs)
-    (sob-cleanup! result)))
+(define (sob-intersection sob1 . sobs)
+  (if (null? sobs)
+    sob1
+    (let ((result (sob-empty-copy sob1)))
+      (dyadic-sob-intersection! result sob1 (car sobs))
+      (for-each
+       (lambda (sob) (dyadic-sob-intersection! result result sob))
+       (cdr sobs))
+      (sob-cleanup! result))))
 
 ;; For intersection, we compute the min of the counts of each element.
 ;; We only have to scan sob1.  We clean up the result when we are
@@ -1096,11 +1099,10 @@
   (check-all-bags bags)
   (apply sob-intersection bags))
 
-(define (sob-intersection! sob1 sob2 . sobs)
-  (dyadic-sob-intersection! sob1 sob1 sob2)
+(define (sob-intersection! sob1 . sobs)
   (for-each
-    (lambda (sob) (dyadic-sob-intersection! sob1 sob1 sob))
-    sobs)
+   (lambda (sob) (dyadic-sob-intersection! sob1 sob1 sob))
+   sobs)
   (sob-cleanup! sob1))
 
 (define (set-intersection! . sets)
@@ -1111,13 +1113,15 @@
   (check-all-bags bags)
   (apply sob-intersection! bags))
 
-(define (sob-difference sob1 sob2 . sobs)
-  (let ((result (sob-empty-copy sob1)))
-    (dyadic-sob-difference! result sob1 sob2)
-    (for-each
-      (lambda (sob) (dyadic-sob-difference! result result sob))
-      sobs)
-    (sob-cleanup! result)))
+(define (sob-difference sob1 . sobs)
+  (if (null? sobs)
+    sob1
+    (let ((result (sob-empty-copy sob1)))
+      (dyadic-sob-difference! result sob1 (car sobs))
+      (for-each
+       (lambda (sob) (dyadic-sob-difference! result result sob))
+       (cdr sobs))
+      (sob-cleanup! result))))
 
 ;; For difference, we use (big surprise) the numeric difference, bounded
 ;; by zero.  We only need to scan sob1, but we clean up the result in
@@ -1141,11 +1145,10 @@
   (check-all-bags bags)
   (apply sob-difference bags))
 
-(define (sob-difference! sob1 sob2 . sobs)
-  (dyadic-sob-difference! sob1 sob1 sob2)
+(define (sob-difference! sob1 . sobs)
   (for-each
-    (lambda (sob) (dyadic-sob-difference! sob1 sob1 sob))
-    sobs)
+   (lambda (sob) (dyadic-sob-difference! sob1 sob1 sob))
+   sobs)
   (sob-cleanup! sob1))
 
 (define (set-difference! . sets)
@@ -1156,13 +1159,15 @@
   (check-all-bags bags)
   (apply sob-difference! bags))
 
-(define (sob-sum sob1 sob2 . sobs)
-  (let ((result (sob-empty-copy sob1)))
-    (dyadic-sob-sum! result sob1 sob2)
-    (for-each
-      (lambda (sob) (dyadic-sob-sum! result result sob))
-      sobs)
-    result))
+(define (sob-sum sob1 . sobs)
+  (if (null? sobs)
+    sob1
+    (let ((result (sob-empty-copy sob1)))
+      (dyadic-sob-sum! result sob1 (car sobs))
+      (for-each
+       (lambda (sob) (dyadic-sob-sum! result result sob))
+       (cdr sobs))
+      result)))
 
 ;; Sum is just like union, except that we take the sum rather than the max.
 
@@ -1189,11 +1194,10 @@
   (check-all-bags bags)
   (apply sob-sum bags))
 
-(define (sob-sum! sob1 sob2 . sobs)
-  (dyadic-sob-sum! sob1 sob1 sob2)
+(define (sob-sum! sob1 . sobs)
   (for-each
-    (lambda (sob) (dyadic-sob-sum! sob1 sob1 sob))
-    sobs)
+   (lambda (sob) (dyadic-sob-sum! sob1 sob1 sob))
+   sobs)
   sob1)
 
 (define (bag-sum! . bags)
