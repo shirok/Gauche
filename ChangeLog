@@ -1,3 +1,8 @@
+2016-08-24  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi-113.scm: Fix collection framework implementation.  Bags
+	  must honor item count.
+
 2016-08-23  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi-113.scm: Fix single-argument case in set-union etc.

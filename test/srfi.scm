@@ -1740,6 +1740,16 @@
 (chibi-test
  (include "include/sets-test"))
 
+;; collection framework test
+;; (we use srfi-1 with prefix not to mess gauche.collection#fold etc.)
+(use srfi-1 :prefix srfi-1:)
+(test* "coerce-to" '(a b)
+       (coerce-to <list> (set eq-comparator 'a 'b 'a 'b))
+       (cut srfi-1:lset= eq? <> <>))
+(test* "coerce-to" '(a a b b)
+       (coerce-to <list> (bag eq-comparator 'a 'b 'a 'b))
+       (cut srfi-1:lset= eq? <> <>))
+
 ;;-----------------------------------------------------------------------
 (test-section "srfi-117")
 (use srfi-117)

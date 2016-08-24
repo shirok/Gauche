@@ -5439,16 +5439,50 @@ gosh> (os-version)
 
 @deftp {Module} srfi-113
 @mdindex srfi-113
+@c EN
 Sets and bags are unordered collection of Scheme values.
 A set doesn't count duplicates; if you add an item
 which is already in a set, you still have one item of the kind.
 A bag counts duplicates; if you add an item which
 is already in a bag, you have two items of the kind.
+@c JP
+セットとバッグは、Scheme値の順序づけのないコレクションです。
+セットは重複を考慮しません。既にセット中にある要素をさらに追加しても、
+その要素は依然として一つだけセット中にあると認識されます。
+一方、バッグは重複を数えます。既にバッグ中にひとつだけある要素と同じものを
+追加すると、バッグ中のその要素は二つと数えられます。
+@c COMMON
 
+@c EN
 To check whether the items are ``the same'', sets and bags
 takes a comparator at constrution time.  The comparator
-doesn't need to have a comparison procedure (we don't need
+doesn't need to have an ordering predicate (we don't need
 to order the elements) but has to have a hash function.
+@xref{Basic comparators}, for the details of comparators.
+@c JP
+要素が「同じ」であるかどうかの判定のため、セットとバッグは構築時に
+比較器を取ります。比較器は順序手続きを持っていなくても構いません
+(要素の順序づけは必要ありません)が、ハッシュ手続きは持っている必要があります。
+比較器について詳しくは@ref{Basic comparators}を参照してください。
+@c COMMON
+
+@c EN
+As a Gauche's extension, sets and bags implement collection protocol
+(@pxref{Collection framework}, for the details), and generic collection
+operations can be applied.
+@c JP
+Gauche独自拡張として、セットやバッグはコレクションプロトコルを実装しており、
+汎用のコレクション操作が適用できます
+(@ref{Collection framework}参照)。
+@c COMMON
+
+@example
+(coerce-to <list> (set eq-comparator 'a 'b 'a 'b))
+  @result{} (a b)      ; @r{order may differ}
+
+(coerce-to <list> (bag eq-comparator 'a 'b 'a 'b))
+  @result{} (a a b b)  ; @r{order may differ}
+@end example
 @end deftp
 
 @subheading Constructors

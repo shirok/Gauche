@@ -49,6 +49,7 @@
 (define-module srfi-113
   (use srfi-114)
   (use gauche.collection)
+  (use gauche.generator)
   (export set set-unfold
           set? set-contains? set-empty? set-disjoint?
           set-member set-element-comparator
@@ -120,9 +121,19 @@
 (define-method object-equal? ((a <bag>) (b <bag>)) (sob=? a b))
 
 (define-method call-with-iterator ((obj <sob>) proc :allow-other-keys)
-  (call-with-iterator (sob-hash-table obj)
-                      (^[end? next]
-                        (proc end? (^[] (car (next)))))))
+  ($ call-with-iterator (sob-hash-table obj)
+     (^[end? next]
+       (define current (if (end?) #f (next))) ; (<item> . <count>)
+       (define (over?) (or (not current) (and (end?) (zero? (cdr current)))))
+       (define (get) (and (pair? current)
+                          (if (zero? (cdr current))
+                            (and (not (end?))
+                                 (begin (set! current (next))
+                                        (dec! (cdr current))
+                                        (car current)))
+                            (begin (dec! (cdr current))
+                                   (car current)))))
+       (proc over? get))))
 
 ;; TODO: To impelment call-with-builder, we need some way to specify
 ;; comparator argument for the constructor.
