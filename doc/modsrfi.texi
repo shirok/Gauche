@@ -6723,30 +6723,54 @@ removed element.  Throws an error if @var{queue} is empty.
 This isn't guaranteed to be efficient; it is O(n)
 operation where n is the number of elements.
 In general, if you need this operation frequently, you should
-consider double-ended queue.
+consider double-ended queue.  (@xref{Immutable deques}, and also
+@pxref{Ring buffer}.)
 @c JP
 @var{queue}の末尾から要素をひとつ取り除き、その取り除かれた要素を返します。
 @var{queue}が空ならエラーを報告します。
 この手続きは、キューの持つ要素数nに対してO(n)の時間がかかります。
 もしこの操作を頻繁に必要とするなら、デック(deque, 両端キュー)を使うことを
-検討すべきでしょう。
+検討すべきでしょう。(@ref{Immutable deques}および
+@ref{Ring buffer}参照。)
 @c COMMON
 @end defun
 
 @defun list-queue-remove-all! queue
 [SRFI-117]
+@c EN
 Remove all the elements from @var{queue} and returns them as a list.
 The list isn't copied---this is O(1) operation.  This should be preferred
 over @code{list-queue-list}, for it's safer.
+In Gauhce, this is the same as @code{dequeue-all!} in @code{data.queue}.
+@c JP
+@var{queue}を空にして、入っていた全ての要素をリストで返します。
+リストはコピーされません。つまりO(1)の操作です。
+可能なら、@code{list-queue-list}よりはこちらを使う方が安全です。
+Gaucheでは、これは@code{data.queue}の@code{deque-all!}と同じです。
+@c COMMON
 @end defun
 
 @defun list-queue-set-list! queue lis :optional last
 [SRFI-117]
+@c EN
 Modify @var{queue} to have the elements in @var{lis} as its element.
 The original content of @var{queue} is discarded.  If the optional
 @var{last} argument is provided, it must be the last pair of @var{lis},
 and the procedure uses that instead of scanning @var{lis}, to achieve
 O(1) operation.
+
+After calling this, @var{lis} is owned by @var{queue} and it may
+be mutated.  The caller shouldn't change, or rely on @var{lis} afterwards.
+@c JP
+@var{queue}を変更して、@var{lis}の内容がキューの内容になるようにします。
+@var{queue}の元の内容は捨てられます。省略可能な@var{last}引数が渡される場合、
+それは@var{lis}の最後のペアでなければなりません。手続きは呼び出し元を信頼して、
+@var{lis}をスキャンせずに@var{last}を最後のペアと考えることで
+O(1)操作を実現しています。
+
+この手続きを呼び出した後では、@var{lis}は@var{queue}に所有され、破壊的変更を
+受けます。この後で@var{lis}の内容をあてにしたり変更したりしてはいけません。
+@c COMMON
 @end defun
 
 @defun list-queue-append queue @dots{}
