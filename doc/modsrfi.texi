@@ -1515,9 +1515,24 @@ SRFI-13のAPIはSRFI-128の上位互換になっています。内部で使っ�
 @defunx string-prefix-length-ci s1 s2 :optional start1 end1 start2 end2
 @defunx string-suffix-length-ci s1 s2 :optional start1 end1 start2 end2
 [SRFI-13]
+@c EN
 Returns the length of the longest common prefix/suffix of two strings,
 @var{s1} and @var{s2}.  The optional arguments restrict the range of
 search.  The @code{*-ci} variations use case foling character comparison.
+@c JP
+二つの文字列@var{s1}と@var{s2}の、共通するプレフィクスもしくはサフィックスの
+長さを返します。省略可能引数はそれぞれの文字列の探索範囲を限定します。
+@code{*-ci}版は文字ごとに、大文字小文字を区別しない比較を行います。
+@c COMMON
+
+@example
+(string-prefix-length "abacus" "abalone")   @result{} 3
+(string-prefix-length "machine" "umbrella") @result{} 0
+(string-suffix-length "peeking" "poking")   @result{} 4
+
+(string-prefix-length "obvious" "oblivious" 2 7 4 9)
+  @result{} 5
+@end example
 @end defun
 
 @defun string-prefix? s1 s2 :optional start1 end1 start2 end2
@@ -1525,6 +1540,23 @@ search.  The @code{*-ci} variations use case foling character comparison.
 @defunx string-prefix-ci? s1 s2 :optional start1 end1 start2 end2
 @defunx string-suffix-ci? s1 s2 :optional start1 end1 start2 end2
 [SRFI-13]
+@c EN
+Returns true iff @var{s2} is a prefix or suffix of @var{s1}, respectively.
+The optional arguments limit the range of @var{s1} and @var{s2} to look at.
+The @code{*-ci} variations use case foling character comparison.
+@c JP
+それぞれ、@var{s2}が@var{s1}のプレフィクスまたはサフィックスになっていた場合に
+@code{#t}を、それ以外の場合に@code{#f}を返します。
+省略可能引数はそれぞれの文字列の探索範囲を限定します。
+@code{*-ci}版は文字ごとに、大文字小文字を区別しない比較を行います。
+@c COMMON
+
+@example
+(string-prefix? "scheme" "sch")   @result{} #t
+(string-prefix? "scheme" "lisp")  @result{} #f
+
+(string-prefix? "mit-scheme" "scheme" 4) @result{} #t
+@end example
 @end defun
 
 @node SRFI-13 String searching, SRFI-13 String case mapping, SRFI-13 String Prefixes & Suffixes, String library
