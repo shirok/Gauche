@@ -525,7 +525,7 @@ Gauche's @code{import}.
 @c JP
 Gaucheのモジュールシステム設計はSTkを継承していて、
 @code{import}は純粋に名前空間の操作として使われています。
-つまり、既にメモり上に存在するモジュールをインポートするということです。
+つまり、既にメモリ上に存在するモジュールをインポートするということです。
 そのモジュールが定義されているファイルを、(必要なら)ロードするという
 操作は別のプリミティブ@code{require}により実現されます。
 典型的には、ひとつのファイルがひとつのモジュールを定義していて、
@@ -621,7 +621,7 @@ Frankly, we haven't decided yet.   It'll likely be that we use some
 escaping mechanism; for the time being you'd want to stick with
 alphanumeric characters and hyphens as possible.)
 @c JP
-(勘の良い読者な、R7RSのライブラリがピリオドを中に含むシンボルを名前に使っていたら
+(勘の良い読者は、R7RSのライブラリがピリオドを中に含むシンボルを名前に使っていたら
 どうなるのか疑問に思ったことでしょう。正直なところ、まだどうするか決めていません。
 多分、何らかのエスケープ機構を用意することになると思いますが、
 今のところ、できる限りモジュール名にはアルファベット、数字、ハイフンだけを
@@ -661,19 +661,65 @@ R7RSの@code{import}の正式な構文は次の通りです。
 @section R7RS library form
 @c NODE R7RSライブラリ形式
 
+@c EN
+R7RS libraries are defined by @code{define-library} form.
+
+In R7RS view, @code{define-library} form itself does not belong
+to a Scheme code---it exists outside of the Scheme world.
+It defines the boundary of
+R7RS Scheme; inside @code{define-library} there is R7RS world,
+but outside, it's not a business of R7RS.
+For example, you can't generate
+@code{define-library} by a macro, within R7RS specification.
+
+In Gauche, we implement R7RS world inside Gauche world;
+@code{define-library} itself is interpreted in the Gauche world.
+In fact, @code{define-library} @emph{is} a Gauche macro.
+However, if you're writing portable R7RS code, you should forget
+how @code{define-library} is implemented, and do not put anything
+outside of @code{define-library} form.
+@c JP
+R7RSのライブラリは@code{define-library}フォームで定義されます。
+
+R7RSの観点では@code{define-library}フォーム自体はSchemeコードではありません。
+それ自身はScheme世界の外にあります。@code{define-library}フォームが、
+R7RS Schemeの境界となるのです。その内側はR7RSの世界であり、
+その外側に関してR7RSは関知しません。例えば、R7RSの仕様の範囲内では、
+@code{define-library}フォーム自体をマクロで生成する、ということはできません。
+
+Gaucheでは、R7RSの世界をGaucheの世界の中に作っています。
+@code{define-library}自体はGauche世界で解釈されます。実際、
+@code{define-library}はGaucheのマクロとして実装されています。
+けれどもR7RSのコードを書く際には、@code{define-library}がどう実装されているかは
+気にする必要はありません。また、@code{define-library}の外側には
+何も書かないようにしてください。
+@c COMMON
+
 @defmac define-library library-name library-decl @dots{}
 [R7RS]
+@c EN
 Defines a library @var{library-name}, which is a list of 
 symbols or base-10 integer:
+@c JP
+@var{library-name}という名前を持つライブラリを定義します。
+@var{library-name}はシンボルもしくは10進整数のリストです。
+@c COMMON
 
 @smallexample
 <library-name> : (<identifier-or-base-10-integer>
                   <identifier-or-base-10-integer> ...)
 @end smallexample
 
-Library declarations can be export declarations, import declarations,
+@c EN
+Library declarations @var{library-decl} 
+can be export declarations, import declarations,
 @code{begin}-list of Scheme code,
 include forms, or @code{cond-expand} forms.
+@c JP
+ライブラリ宣言@var{library-decl}は、エクスポート宣言、
+インポート宣言、@code{begin}に囲まれたSchemeコード、
+インクルードフォーム、あるいは@code{cond-expand}フォームです。
+@c COMMON
 
 @smallexample
 <library-decl> : (export <export-spec> @dots{})
@@ -690,17 +736,37 @@ include forms, or @code{cond-expand} forms.
                               (else <library-decl> @dots{}))
 @end smallexample
 
+@c EN
 The @code{export} declaration is the same Gauche's @code{export}
 form; @pxref{Using modules}.
+@c JP
+@code{export}宣言はGaucheの@code{export}フォームと同じです。
+@ref{Using modules}参照。
+@c COMMON
 
+@c EN
 The @code{import} declaration is R7RS's @code{import} form,
 described in @ref{Three forms of import}.
+@c JP
+@code{import}宣言はR7RSの@code{import}フォームで、
+@ref{Three forms of import}で説明しています。
+@c COMMON
 
+@c EN
 The @code{include} and @code{include-ci} forms are the same as Gauche's;
 @pxref{Inclusions}.
+@c JP
+@code{include}と@code{include-ci}フォームはGaucheのそれと同じです。
+@ref{Inclusions}参照。
+@c COMMON
 
+@c EN
 The @code{cond-expand} form is also the same as Gauche's;
 @pxref{Feature conditional}.
+@c JP
+@code{cond-expand}フォームもGaucheのそれと同じです。
+@ref{Feature conditional}参照。
+@c COMMON
 @end defmac
 
 
@@ -883,7 +949,7 @@ This procedure checks error code of @code{<system-error>} and
 returns @code{#t} if the error is likely to be related to the filesystem.
 @end defun
 
-@subsection Input and output
+@subheading Input and output
 
 @defun textual-port? port
 @defunx binary-port? port
@@ -891,15 +957,21 @@ returns @code{#t} if the error is likely to be related to the filesystem.
 Gauche's port can handle both, so these are equivalent to @code{port?}.
 @end defun
 
-@defun input-port-open? port
-@defunx output-port-open? port
+@defun input-port-open? iport
+@defunx output-port-open? oport
 [R7RS]
+Checks whether @var{iport}/@var{oport} is an input/output port @emph{and}
+it is not closed.
 @end defun
 
-@defun open-input-bytevector bv
+@defun open-input-bytevector u8vector
 @defunx open-output-bytevector
 @defunx get-output-bytevector port
 [R7RS]
+These are basically the same as @code{open-input-uvector},
+@code{open-output-uvector} and @var{get-output-uvector}
+in @code{gauche.vport} (@pxref{Virtual ports}), except that
+R7RS procedures only deal with @code{<u8vector>}.
 @end defun
 
 @defun read-u8 :optional iport
@@ -923,6 +995,9 @@ An alias to @code{read-uvector!}.  @xref{Uvector block I/O}.
 
 @defun write-string string :optional oport start end
 [R7RS]
+If the optional @var{start} and @var{end} arguments are omitted,
+it is the same as @code{(display string oport)}.  The optional
+arguments restricts the range of @var{string} to be written.
 @end defun
 
 @defun write-u8
