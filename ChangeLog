@@ -1,3 +1,7 @@
+2016-08-28  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/macroutil.scm (quasirename): Handle unquote-splicing.
+
 2016-08-24  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi-113.scm: Fix collection framework implementation.  Bags

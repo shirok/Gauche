@@ -16,7 +16,12 @@
      (define (unquote? x)
        (and (or (symbol? x) (identifier? x))
             (c (r x) unquote.)))
+     (define unquote-splicing. (r'unquote-splicing))
+     (define (unquote-splicing? x)
+       (and (or (symbol? x) (identifier? x))
+            (c (r x) unquote-splicing.)))
      (define cons. (r'cons))
+     (define append. (r'append))
      (define vector. (r'vector))
      (define let. (r'let))
      (define tmp. (r'tmp))
@@ -25,6 +30,10 @@
         (define (rec ff)
           (match ff
             [((? unquote?) x) x]
+            [(((? unquote-splicing?) x) . y)
+             (if (null? y)
+               x
+               `(,append. ,x ,(rec y)))]
             [(x (? unquote?) y) `(,cons. ,(rec x) ,y)]
             [(x . y) `(,cons. ,(rec x) ,(rec y))]
             [(? symbol?) `(,tmp. ',ff)]

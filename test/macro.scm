@@ -212,14 +212,16 @@
   (let-syntax ([foo (er-macro-transformer
                      (^[f r c]
                        (let ([a (cadr f)]
-                             [b (caddr f)])
+                             [b (caddr f)]
+                             [all (cdr f)])
                          (quasirename r
-                           (list x ,a y ,b '#(x ,a y ,b))))))])
+                           (list x ,a y ,b ,@all
+                                 '#(x ,a y ,b) ,@(reverse all))))))])
     (let ((list vector)
           (x 10)
           (y 20))
       (test* "er-macro and quasirename"
-             '(1 3 2 4 #(x 3 y 4))
+             '(1 3 2 4 3 4 #(x 3 y 4) 4 3)
              (foo 3 4)))))
 
 ;;----------------------------------------------------------------------

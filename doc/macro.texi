@@ -593,6 +593,131 @@ This specifies a macro transformer by pattern matching.
 @subsection Explicit-renaming macro transformer
 
 @defspec er-macro-transformer procedure-expr
+Creates a macro transformer from the given @var{procedure-expr}.
+The created macro transformer has to be bound to the syntactic keyword
+by @code{define-syntax}, @code{let-syntax} or @code{letrec-syntax}.
+
+The @var{procedure-expr} must evaluate to a procedure that takes
+three arguments; @var{form}, @var{rename} and @var{compare}.
+
+The @var{form} argument receives the S-expression passed to
+the macro call.  The @var{procedure-expr} must return (likely modified)
+S-expression as the result of macro expansion.  This part is pretty much
+like the traditional lisp macro.  In fact, if you ignore @var{rename}
+and @var{compare}, the semantics is the same as the traditional
+(unhygienic) macro.  (Note the use of @code{match}; it is a good
+tool to decompose macro input):
+
+@example
+(use util.match)
+
+;; Unhygienic 'when-not' macro
+(define-syntax when-not
+  (er-macro-transformer
+    (^[form rename compare]
+      (match form
+        [(_ test expr1 expr ...)
+         `(if (not ,test) (begin ,expr1 ,@@expr))]
+        [_ (error "malformed when-not:" form)]))))
+
+(macroexpand '(when-not (foo) (print "a") 'boo))
+  @result{} (if (not (foo)) (begin (print "a") 'boo))
+@end example
+
+This is ok as long as you know you don't need hygiene---e.g. when
+you only use this macro locally in your code, knowning all the
+macro call site won't contain name conflicts.  However, if you
+provide your @code{when-not} macro for general use,
+you have to protect namespace pollution around the macro use:
+
+@example
+(let ((not values))
+  (when-not #t (print "This shouldn't be printed")))
+@end example
+
+The @var{rename} argument passed to @var{procedure-expr} is
+a procedure that takes a symbol (or, to be precise, a symbol or
+an identifier) and @emph{effectively renames} it to a unique 
+identifier that keeps identity in the macro definitition and
+won't be affected in the macor use environment.
+
+As a rule of thumb, you have to pass
+@emph{all new identifiers you insert into macro output} to the
+@var{rename} procedure to keep hygiene:
+
+@example
+(define-syntax when-not
+  (er-macro-transformer
+    (^[form rename compare]
+      (match form
+        [(_ test expr1 expr ...)
+         `(,(rename 'if) (,(rename 'not) ,test)
+            (,(rename 'begin) ,expr1 ,@@expr))]
+        [_ (error "malformed when-not:" form)]))))
+@end example
+
+This is cumbersome and makes it hard to read the macro, so Gauche
+provides an auxiliary macro @code{quasirename}, which works like
+@code{quasiquote} but renaming identifiers in the form.  See the
+entry of @code{quasiquote} below for the details.  You can write
+the hygienic @code{when-not} as follows:
+
+@example
+(define-syntax when-not
+  (er-macro-transformer
+    (^[form rename compare]
+      (match form
+        [(_ test expr1 expr ...)
+         (quasirename rename
+           (if (not ,test) (begin ,expr1 ,@@expr)))]
+        [_ (error "malformed when-not:" form)]))))
+@end example
+
+You can intentionally break hyginene by inserting a symbol
+without renmaing.  The following code implements
+@emph{anaphoric} @code{when}, meaning the result of the
+test expression is available in the @var{expr1} @var{exprs} @dots{}
+with the name @code{it}.  Since the binding of the identifier @code{it}
+is not exist in the macro use site, but rather injected into
+the macro use site by the macro expander, it is unhygienic.
+
+@example
+(define-syntax awhen
+  (er-macro-transformer
+    (^[form rename compare]
+      (match form
+        [(_ test expr1 expr ...)
+         `(,(rename 'let1) it ,test     ; 'it' is not renamed
+             (,(rename 'begin) ,expr1 ,@@expr))]))))
+@end example
+
+If you use @code{quasirename}, you can write @code{,'it} to prevent
+@code{it} from being renamed:
+
+@example
+(define-syntax awhen
+  (er-macro-transformer
+    (^[form rename compare]
+      (match form
+        [(_ test expr1 expr ...)
+         (quasirename rename
+           (let1 ,'it ,test
+             (begin ,expr1 ,@@expr)))]))))
+@end example
+
+Here's the example:
+
+@example
+(awhen (find odd? '(0 2 8 7 4))
+  (print "Found odd number:" it))
+ @result{} @r{prints} Found odd number:7
+@end example
+
+Finally, the @var{compare} argument to the @var{procedure-expr} is
+a procedure that takes two arguments, and returns @code{#t} iff
+both are identifiers, and either both are referring to the same binding
+or both are free.  It can be used to compare literal syntactic keyword
+(e.g. @code{else} in @code{cond} and @code{case} forms) hygienically.
 @end defspec
 
 @defmac quasirename renamer form
