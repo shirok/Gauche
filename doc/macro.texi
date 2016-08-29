@@ -601,7 +601,7 @@ The @var{procedure-expr} must evaluate to a procedure that takes
 three arguments; @var{form}, @var{rename} and @var{compare}.
 
 The @var{form} argument receives the S-expression passed to
-the macro call.  The @var{procedure-expr} must return (likely modified)
+the macro call.  The @var{procedure-expr} must return an
 S-expression as the result of macro expansion.  This part is pretty much
 like the traditional lisp macro.  In fact, if you ignore @var{rename}
 and @var{compare}, the semantics is the same as the traditional
@@ -638,8 +638,8 @@ you have to protect namespace pollution around the macro use:
 The @var{rename} argument passed to @var{procedure-expr} is
 a procedure that takes a symbol (or, to be precise, a symbol or
 an identifier) and @emph{effectively renames} it to a unique 
-identifier that keeps identity in the macro definitition and
-won't be affected in the macor use environment.
+identifier that keeps identity within the macro definition environment and
+won't be affected in the macro use environment.
 
 As a rule of thumb, you have to pass
 @emph{all new identifiers you insert into macro output} to the
@@ -678,7 +678,7 @@ without renmaing.  The following code implements
 @emph{anaphoric} @code{when}, meaning the result of the
 test expression is available in the @var{expr1} @var{exprs} @dots{}
 with the name @code{it}.  Since the binding of the identifier @code{it}
-is not exist in the macro use site, but rather injected into
+does not exist in the macro use site, but rather injected into
 the macro use site by the macro expander, it is unhygienic.
 
 @example
@@ -705,7 +705,7 @@ If you use @code{quasirename}, you can write @code{,'it} to prevent
              (begin ,expr1 ,@@expr)))]))))
 @end example
 
-Here's the example:
+Here's an example:
 
 @example
 (awhen (find odd? '(0 2 8 7 4))
