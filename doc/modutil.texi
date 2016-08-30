@@ -73,6 +73,7 @@
 * Relation framework::          util.relation
 * Stream library::              util.stream
 * Topological sort::            util.toposort
+* Unification::                 util.unification
 * CGI Utility::                 www.cgi
 * CGI testing::                 www.cgi.test
 * CSS parsing and construction::  www.css
@@ -23593,7 +23594,7 @@ inserted between elements of @var{stream}.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Topological sort, CGI Utility, Stream library, Library modules - Utilities
+@node Topological sort, Unification, Stream library, Library modules - Utilities
 @section @code{util.toposort} - Topological sort
 @c NODE トポロジカルソート, @code{util.toposort} - トポロジカルソート
 
@@ -23637,7 +23638,128 @@ If the graph contains circular reference, an error is signaled.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node CGI Utility, CGI testing, Topological sort, Library modules - Utilities
+@node Unification, CGI Utility, Topological sort, Library modules - Utilities
+@section @code{util.unifiation} - Unification
+@c NODE ユニフィケーション, @code{util.unification} - ユニフィケーション
+
+@deftp {Module} util.unification
+@mdindex util.unification
+@c EN
+Implements unification algorithm.
+@c JP
+ユニフィケーションのアルゴリズムを実装します。
+@c COMMON
+
+@c EN
+The base API operates on abstract trees, while it is
+agnostic to the actual representation of the tree.
+The caller passes comparators and operators along the trees
+to unify.
+@c JP
+基本APIは、抽象的な木に対して動作しますが、木が実際にどう実装されているかは
+関知しません。
+呼び出し側は、ユニファイする木といっしょに、比較器や操作手続きを渡します。
+@c COMMON
+
+@c EN
+We assume the abstract tree has the following structure:
+@c JP
+抽象的な木は、次の構造を持っていると考えます。
+@c COMMON
+
+@example
+Tree : Variable | Value | Tuple
+Tuple : @{ Tree ... @}
+@end example
+
+@c EN
+Here, @code{@{...@}} just represents a sequence of trees.
+@c JP
+ここで、@code{@{...@}}は単に木の並びを表します。
+@c COMMON
+
+@c EN
+A variable can be bound to a tree.  A value can only match itself.
+@c JP
+Variableは木に束縛されます。Valueはそれ自身とのみマッチします。
+@c COMMON
+
+To operate on this tree, we need the following procedures,
+which the API takes as arguments:
+
+@table @asis
+@item Variable comparator: @code{var-cmpr}
+A comparator to see if an item is a variable, and also
+check equality of two variables.  It must be hashable.
+@item Value comparator: @code{val-cmpr}
+A comparator to see if an item is a value, and also
+check equality of two variables.
+@item Tuple folder: @code{tuple-fold}
+A procedure @code{(tuple-folde proc seed tuple1 [tuple2])}. 
+This procedure should work like @code{fold} (@pxref{Walking over lists})
+over the elements in the tuple(s).  It is only called with
+either one or two tuples.
+@item Tuple constructor: @code{make-tuple}
+A procedure @code{(make-tuple proto elements)}, where
+@var{proto} is a tuple and @var{elements} are a list of trees.  
+It must return a new tuple with the given elements,
+while all other properties are the same as @var{proto}.
+This procedure isn't needed by @code{unify}.
+@end table
+@end deftp
+
+@defun unify a b var-cmpr val-cmpr tuple-fold
+Unify two trees @var{a} and @var{b} and returns a substitution
+dictionary, which is a dictionary that maps variables
+to its bounded trees.
+
+See the entry of @code{util.unification} above for the description
+of @var{var-cmpr}, @var{val-cmpr} and @var{tuple-fold}.
+
+@example
+(dict->alist (unify '(a 3 (c b)) '(c b (2 e))
+                    symbol-comparator
+                    number-comparator
+                    fold))
+ @result{} ((e . 3) (a . c) (b . 3) (c . 2))
+@end example
+
+As you can see in the example above, 
+a variable may be mapped to another variable, or even to 
+a tree that contains variables.
+
+If two trees cannot be unified, @code{#f} is returned.
+
+@example
+(unify '(a (a)) '(x x) symbol-comparator number-comparator fold)
+ @result{} #f
+@end example
+
+@end defun
+
+@defun unify-merge a b var-cmpr val-cmpr tuple-fold make-tuple
+Unify two trees @var{a} and @var{b}, and apply the result substitutions
+to create a new tree eliminating variables.
+
+See the entry of @code{util.unification} above for the description
+of @var{var-cmpr}, @var{val-cmpr}, @var{tuple-fold} and
+@var{make-tuple}.
+
+@example
+(unify-merge '(a 3 (c b)) '(c b (2 e))
+             symbol-comparator
+             number-comparator
+             fold
+             (^[_ elts] elts))
+ @result{} (2 3 (2 3))
+@end example
+
+If two trees can't be unified, @code{#f} is returned.
+@end defun
+
+
+@c ----------------------------------------------------------------------
+@node CGI Utility, CGI testing, Unification, Library modules - Utilities
 @section @code{www.cgi} - CGI utility
 @c NODE CGIユーティリティ, @code{www.cgi} - CGIユーティリティ
 

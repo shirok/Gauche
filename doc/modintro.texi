@@ -1050,6 +1050,15 @@ rbtree-check
 @end example
 @end deftp
 
+@deftp {Module} util.sparse
+@mdindex util.sparse
+@c EN
+Renamed to @code{data.sparse}.  @xref{Sparse data containers}.
+@c JP
+@code{data.sparse}へと名前変更。@ref{Sparse data containers}参照。
+@c COMMON
+@end deftp
+
 @deftp {Module} util.trie
 @mdindex util.trie
 @c EN
