@@ -57,11 +57,3 @@
         (print #"--- b/~file\t~(m2 1)")
         (copy-port (process-output p) (current-output-port))))
     (process-wait p)))
-            
-      
-
-                
-    
-
-
-
