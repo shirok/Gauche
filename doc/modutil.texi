@@ -23681,40 +23681,83 @@ Here, @code{@{...@}} just represents a sequence of trees.
 @c EN
 A variable can be bound to a tree.  A value can only match itself.
 @c JP
-Variableは木に束縛されます。Valueはそれ自身とのみマッチします。
+変数(Variable)は木に束縛されます。値(Value)はそれ自身とのみマッチします。
 @c COMMON
 
-To operate on this tree, we need the following procedures,
+@c EN
+To operate on this tree, we need the following comparators and procedures,
 which the API takes as arguments:
+@c JP
+この木を扱うために、APIは以下の比較器と手続きを引数として取ります。
+@c COMMON
 
 @table @asis
 @item Variable comparator: @code{var-cmpr}
+@c EN
 A comparator to see if an item is a variable, and also
 check equality of two variables.  It must be hashable.
+@xref{Basic comparators}, for the defails of comparators.
+@c JP
+要素が変数であるかどうかを調べ、また二つの変数が同じかどうかを判定
+するための比較器です。ハッシュ可能でなければなりません。
+比較器については@ref{Basic comparators}を参照してください。
+@c COMMON
 @item Value comparator: @code{val-cmpr}
+@c EN
 A comparator to see if an item is a value, and also
-check equality of two variables.
+check equality of two vaues.
+Note that if a tree satisfies neither @var{var-cmpr} nor @var{val-compr},
+it is regarded as a tuple.
+@c JP
+要素が値であるかどうかを調べ、また二つの値が等しいかどうかを
+判定するための比較器です。@var{var-cmpr}も@var{val-cmpr}も
+満たさない要素はタプルであるとみなされます。
+@c COMMON
 @item Tuple folder: @code{tuple-fold}
+@c EN
 A procedure @code{(tuple-folde proc seed tuple1 [tuple2])}. 
 This procedure should work like @code{fold} (@pxref{Walking over lists})
 over the elements in the tuple(s).  It is only called with
 either one or two tuples.
+@c JP
+@code{(tuple-folde proc seed tuple1 [tuple2])}の形で呼び出される手続きです。
+この手続きは、タプル中の要素について@code{fold}のように動作します
+(@ref{Walking over lists}参照)。常にひとつかふたつのタプルを引数とします。
+@c COMMON
 @item Tuple constructor: @code{make-tuple}
+@c EN
 A procedure @code{(make-tuple proto elements)}, where
 @var{proto} is a tuple and @var{elements} are a list of trees.  
 It must return a new tuple with the given elements,
 while all other properties are the same as @var{proto}.
 This procedure isn't needed by @code{unify}.
+@c JP
+@code{(make-tuple proto elements)}の形式で呼び出される手続きです。
+@var{proto}はタプルで、@var{elements}は木のリストです。
+@var{proto}と同じ型のタプルで、要素だけを@var{elements}と置き換えた
+新たなタプルを作成して返します。
+@code{unify}はこの手続きを必要としません。
+@c COMMON
 @end table
 @end deftp
 
 @defun unify a b var-cmpr val-cmpr tuple-fold
+@c EN
 Unify two trees @var{a} and @var{b} and returns a substitution
 dictionary, which is a dictionary that maps variables
 to its bounded trees.
+@c JP
+二つの木、@var{a}と@var{b}を単一化し、置換辞書を返します。
+置換辞書は、変数をその値にマップするものです。
+@c COMMON
 
+@c EN
 See the entry of @code{util.unification} above for the description
 of @var{var-cmpr}, @var{val-cmpr} and @var{tuple-fold}.
+@c JP
+引数@var{var-cmpr}、@var{val-cmpr}、@var{tuple-fold}に関しては
+上の@code{util.unification}の説明を参照してください。
+@c COMMON
 
 @example
 (dict->alist (unify '(a 3 (c b)) '(c b (2 e))
@@ -23724,11 +23767,24 @@ of @var{var-cmpr}, @var{val-cmpr} and @var{tuple-fold}.
  @result{} ((e . 3) (a . c) (b . 3) (c . 2))
 @end example
 
+@c EN
 As you can see in the example above, 
 a variable may be mapped to another variable, or even to 
-a tree that contains variables.
+a tree that contains variables.  If you apply the substitution
+to the original tree, you must do it recursively until all the
+variables in the dictionary is eliminated.
+@c JP
+この例にも見られるように、一つの変数の値が別の変数であったり、
+別の変数を含む木であったりする場合があります。
+元の木に置換を適用する場合は、辞書にある変数がすべて消去されるまで
+再帰的に置換を行う必要があります。
+@c COMMON
 
+@c EN
 If two trees cannot be unified, @code{#f} is returned.
+@c JP
+二つの木が単一化できない場合は@code{#f}が返されます。
+@c COMMON
 
 @example
 (unify '(a (a)) '(x x) symbol-comparator number-comparator fold)
@@ -23738,12 +23794,22 @@ If two trees cannot be unified, @code{#f} is returned.
 @end defun
 
 @defun unify-merge a b var-cmpr val-cmpr tuple-fold make-tuple
+@c EN
 Unify two trees @var{a} and @var{b}, and apply the result substitutions
 to create a new tree eliminating variables.
+@c JP
+二つの木、@var{a}と@var{b}を単一化し、結果の置換を適用して変数を消去した
+新たな木を返します。
+@c COMMON
 
+@c EN
 See the entry of @code{util.unification} above for the description
 of @var{var-cmpr}, @var{val-cmpr}, @var{tuple-fold} and
 @var{make-tuple}.
+@c JP
+引数@var{var-cmpr}、@var{val-cmpr}、@var{tuple-fold}、@var{make-tuple}に関しては
+上の@code{util.unification}の説明を参照してください。
+@c COMMON
 
 @example
 (unify-merge '(a 3 (c b)) '(c b (2 e))
@@ -23754,7 +23820,11 @@ of @var{var-cmpr}, @var{val-cmpr}, @var{tuple-fold} and
  @result{} (2 3 (2 3))
 @end example
 
+@c EN
 If two trees can't be unified, @code{#f} is returned.
+@c JP
+二つの木が単一化できなければ、@code{#f}が返されます。
+@c COMMON
 @end defun
 
 
