@@ -934,7 +934,7 @@ that has almost all default bindings except @code{string-scan}
 and @code{string-split}:
 @c JP
 別の用途としては、自分のモジュールで、Gaucheの組み込み機能のうちいくつかを隠したい、
-といったばあ愛があります。例えば次のコードは、Gaucheの組み込み機能のうち
+といった場合があります。例えば次のコードは、Gaucheの組み込み機能のうち
 @code{string-scan}と@code{string-split}だけが見えない
 @code{almost-gauche}というモジュールを作ります。
 @c COMMON
@@ -1701,8 +1701,8 @@ only for the convenience of explanation.
 @end menu
 
 @node Generating C source files, Generating Scheme literals, Generating C code, Generating C code
-@c NODE Cソースファイルを生成する
 @subsection Generating C source files
+@c NODE Cソースファイルを生成する
 
 One of the tricky issues about generating C source is that
 you have to put several fragments of code in different
@@ -2034,8 +2034,8 @@ code fragment only to the designated part.
 
 
 @node Generating Scheme literals, Conversions between Scheme and C, Generating C source files, Generating C code
-@c NODE Schemeリテラルを生成する
 @subsection Generating Scheme literals
+@c NODE Schemeリテラルを生成する
 
 Sometimes you want to refer to a Scheme constant value in C code.
 It is trivial if the value is a simple thing like Scheme boolean
@@ -2111,8 +2111,8 @@ behavior for new types.  The API isn't fixed yet, though.)
 
 
 @node Conversions between Scheme and C, C in S expression, Generating Scheme literals, Generating C code
-@c NODE SchemeとCの間の変換
 @subsection Conversions between Scheme and C
+@c NODE SchemeとCの間の変換
 
 In the C world, any Scheme object is uniformly of type @code{ScmObj}.
 But it is often the case that you need to narrow down to the
@@ -2273,8 +2273,8 @@ typechecks the @var{c-expr} according to the @var{cgen-type}.
 
 
 @node C in S expression,  , Conversions between Scheme and C, Generating C code
-@c NODE S式で書くC, CiSE - S式で書くC
 @subsection CiSE - C in S expression
+@c NODE S式で書くC, CiSE - S式で書くC
 
 Some low-level routines in Gauche are implemented in C, but they're
 written in S-expression.  We call it ``C in S expression'', or @emph{CiSE}.
