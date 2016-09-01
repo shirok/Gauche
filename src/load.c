@@ -551,8 +551,10 @@ static const char *find_dso_path(ScmString *dsoname)
     static ScmObj find_file = SCM_UNDEFINED;
     SCM_BIND_PROC(find_file, "find-load-file", Scm_GaucheInternalModule());
 
-    ScmObj spath = Scm_ApplyRec5(find_file, SCM_OBJ(dsoname), Scm_GetDynLoadPath(),
-                                 ldinfo.dso_suffixes, SCM_FALSE, SCM_FALSE);
+    ScmObj spath = Scm_ApplyRec3(find_file,
+                                 SCM_OBJ(dsoname),
+                                 Scm_GetDynLoadPath(),
+                                 ldinfo.dso_suffixes);
     if (SCM_FALSEP(spath)) {
         Scm_Error("can't find dlopen-able module %S", dsoname);
     }

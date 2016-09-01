@@ -1,3 +1,14 @@
+2016-08-31  Shiro Kawai  <shiro@acm.org>
+
+	* src/libeval.scm (find-load-file),
+	  src/compile.scm (pass1/open-include-file): Treat include paths
+	  beginning with "./" and "../" as relative pathname to the
+	  includer file.  The original behavior is consistent with 'load',
+	  but it doesn't make much sense for 'include', which is compile-time
+	  operation, unlike 'load' being run-time operation.
+	  This is INCOMPATIBLE CHANGE as the previous behavior was documented,
+	  but I hope it won't affect existing code.
+
 2016-08-28  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/macroutil.scm (quasirename): Handle unquote-splicing.

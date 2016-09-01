@@ -3052,11 +3052,12 @@
     ;; see libeval.scm for the details.
     (if-let1 path&rest (find-load-file path search-paths
                                        (cons "" *load-suffixes*)
-                                       :allow-archive #t)
+                                       :allow-archive #t
+                                       :relative-dot-path #t)
       (if (pair? (cddr path&rest)) ; archive hook is in effect.
         ((caddr path&rest))
         (open-input-file (car path&rest) :encoding #t))
-      (error "include file is not readable:" path))))
+      (error "include file is not readable: " path))))
 
 ;; Report including.
 (define (pass1/report-include iport open?)

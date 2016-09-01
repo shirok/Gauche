@@ -3416,15 +3416,12 @@ that file (@pxref{Multibyte scripts}).
 
 @c EN
 If @var{filename} is absolute, the file is just searched.  If it
-begins with @file{./} or @file{../}, the file is searched relative
-to the process's current working directory.  Otherwise, the file
+is relative, the file
 is first searched relative to the file contaning the @code{include}
 form, then the directories in @code{*load-path*} are tried.
 @c JP
 @var{filename}が絶対パスならば、そのパスに正確に合致するファイルが探されます。
-@var{filename}が@code{./}か@code{../}で始まっていれば、
-ファイルはコンパイル時のプロセスのカレントワーキングディレクトリからの
-相対で探されます。そうでない場合、ファイルはまず@code{include}フォームが
+相対パスなら、まず@code{include}フォームが
 置かれていたファイルからの相対で探され、見つからなければ
 @code{*load-path*}にあるディレクトリからの相対パスが順に試されます。
 @c COMMON
@@ -3465,6 +3462,26 @@ It works as if the source is written as follows:
    (define y 1))
   (list x y))
 @end example
+
+@c EN
+(Note: In version 0.9.4, @code{include} behaved differently when
+pathname begins with either @code{./} or @code{../}---in which case
+the file is searched relative to the current working directory of the
+compiler.  It is rather an artifact of @code{include} sharing file
+search routine with @code{load}.  But unlike @code{load}, which is
+a run-time operation, using relative path to the current directory
+won't make much sense for @code{include}, so we changed the behavior
+in 0.9.5.)
+@c JP
+(註: バージョン0.9.4では、@code{include}は渡されたパス名が
+@code{./}か@code{../}で始まっていた場合は特別な動作をしていました。
+コンパイラのカレントディレクトリからの相対でファイルを探していたのです。
+これは意図した動作というより、@code{load}とファイル探索ルーチンを共有していた
+ために生じた仕様でした。しかし@code{load}が常に実行時の動作であるのに対し、
+@code{include}でカレントディレクトリからの相対パスを考える意味はほとんどありません。
+そこで0.9.5では仕様を変更しました。)
+@c COMMON
+
 @end defspec
 
 @c EN

@@ -74,7 +74,9 @@
                                          (environment #f)
                                          (ignore-coding #f))
   ;; NB: 'File not found' error is handled in find-load-file.
-  (and-let* ([r (find-load-file file paths suffixes error-if-not-found #t)])
+  (and-let* ([r (find-load-file file paths suffixes
+                                :error-if-not-found error-if-not-found
+                                :allow-archive #t)])
     (let* ([path (car r)]
            [remaining-paths (cadr r)]
            [hooked? (pair? (cddr r))]
@@ -254,7 +256,8 @@
 ;;   Search rules are:
 ;;
 ;;    (1) If given filename begins with "/", "./" or "../", the file is
-;;        searched.
+;;        searched (unless relative-dot-path is true, in that case
+;;        "./" and "../" are taken as relative to the PATHS.)
 ;;    (2) If given filename begins with "~", unix-style username
 ;;        expansion is done, then the resulting file is searched.
 ;;    (3) Otherwise, the file is searched for each directory in PATHs.
@@ -286,8 +289,9 @@
 ;;   captures the exact behavior of `load'.
 (select-module gauche.internal)
 (define (find-load-file filename paths suffixes
-                        :optional (error-if-not-found #f)
-                                  (allow-archive #f))
+                        :key (error-if-not-found #f)
+                             (allow-archive #f)
+                             (relative-dot-path #f))
   (define (file-ok? file)
     (and (file-exists? file)
          (not (file-is-directory? file))))
@@ -321,7 +325,10 @@
     (error "bad filename to load" filename))
   (cond [(char=? (string-ref filename 0) #\~)
          (do-absolute (sys-normalize-pathname filename :expand #t))]
-        [(rxmatch #/^\.{0,2}\// filename) (do-absolute filename)]
+        [(char=? (string-ref filename 0) #\/)
+         (do-absolute filename)]
+        [(and (not relative-dot-path) (rxmatch #/^\.\.?\// filename))
+         (do-absolute filename)]
         ;; we can't use cond-expand here, for this file is precompiled
         ;; on a system different from the final target.
         [(and (or (assq 'gauche.os.windows (cond-features))
