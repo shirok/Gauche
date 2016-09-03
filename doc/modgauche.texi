@@ -16858,50 +16858,108 @@ immediately.
 @end defun
 
 @defun thread-stop! thread :optional timeout timeout-val
+@c EN
 Stops execution of the target @var{thread} temporarily.
 You can resume the execution of the @var{thread} by @code{thread-cont!}.
+@c JP
+対象となるスレッド@var{thread}の実行を一時的に停止します。
+停止されたスレッドは@code{thread-cont!}により実行を再開させられます。
+@c COMMON
 
+@c EN
 The stop request is handled synchronously; that is,
 Gauche VM only checks the request at the ``safe'' point
 of the VM and stops itself.  It means if the @var{thread} is
 blocked by a system call, it won't become @code{stopped} state
 until the system call returns.
+@c JP
+停止リクエストは同期的に処理されます。すなわち、GaucheのVMは実行ループ中の
+「安全な」場所で停止リクエストをチェックし、それがあれば自分自身を停止するように
+なっています。このことは、@var{thread}がシステムコールによりブロックされている場合、
+それが戻ってくるまでスレッドが@code{stopped}状態にならないことを意味します。
+@c COMMON
 
+@c EN
 By default, @code{thread-stop!} returns after the target
 thread stops.  Since it may take indefinitely, you can give optional
 @var{timeout} argument to specify timeout.   The @var{timeout}
 argument can be @code{#f}, which means no timeout, or
 a @code{<time>} object that specifies an absolute point of time,
 or a real number specifying the number of seconds to wait.
+@c JP
+デフォルトでは、@code{thread-stop!}は対象スレッドが停止状態になってから
+戻ってきます。しかしそうなるまでにどれだけ時間がかかるかわからないので、
+省略可能引数@var{timeout}を与えて、タイムアウトすることができます。
+@var{timeout}引数には@code{#f}(タイムアウトせず停止するまで待ち続ける)、
+@code{<time>}オブジェクト(絶対的な時刻を指定)、もしくは
+実数(現在からの秒数を指定)を与えられます。
+@c COMMON
 
+@c EN
 The return value of @code{thread-stop!} is @var{thread} if
 it could successfully stop the target, or @var{timeout-val}
 if timeout reached.   When @var{timeout-val} is omitted, @code{#f}
 is assumed.
+@c JP
+@code{thread-stop!}の戻り値は、対象スレッドを停止させられたなら
+その@var{thread}オブジェクト、タイムアウトしたなら@var{tiemout-val}です。
+@var{timeout-val}が省略された場合は@code{#f}とみなされます。
+@c COMMON
 
+@c EN
 If the target @var{thread} has already been stopped by the caller
-thread, this procedure returns immediately.
+thread, this procedure returns @var{thread} immediately.
+@c JP
+対象スレッドが既に呼び出しスレッドの要求によって停止していた場合は、
+直ちに@var{thread}が返されます。
+@c COMMON
 
+@c EN
 When @var{thread-stop!} is timed out, the request remains
-effective even after @var{thread-stop!} returns.
+effective even after @code{thread-stop!} returns.
 That is, the target thread may stop at some point in future.
-The caller thread is expected to call @var{thread-stop!}
+The caller thread is expected to call @code{thread-stop!}
 again to complete the stop operation.
+@c JP
+@var{thread-stop!}がタイムアウトして@code{thread-stop!}から帰ってきた
+場合でも、リクエストは有効なままになっており、未来のいつか@var{thread}を
+停止させます。呼び出し側は、いずれ@code{thread-stop!}を再び呼び出して
+停止を確認する必要があります。
+@c COMMON
 
+@c EN
 An error is signaled if the target thread has already been
 stopped by another thread (including the ``pending'' stop
 request issued by other threads), or the target thread
 is in neither @code{runnable} nor @code{stopped} state.
+@c JP
+対象スレッドが既に別のスレッドによって停止させられていた場合
+(別のスレッドによって停止要求が出されて停止待ちに
+なっている状態も含みます)や、
+対象スレッドが@code{runnable}でも@code{stopped}でもない状態の場合は
+エラーが報告されます。
+@c COMMON
 @end defun
 
 @defun thread-cont! thread
+@c EN
 Resumes execution of @var{thread} which has been stopped by
 @code{thread-stop!}.  An error is raised if @var{thread}
 is not in stopped state, or it is stopped by another thread.
+@c JP
+@code{thread-stop!}で停止した@var{thread}の実行を再開します。
+@var{thread}が停止状態でなかったり、@code{thread-cont!}を呼び出したのとは
+別のスレッドによって停止させられていた場合はエラーが報告されます。
+@c COMMON
 
+@c EN
 If the caller thread has already requested to stop the target
 thread but timed out, calling @code{thread-cont!} cancels
 the request.
+@c JP
+停止要求を既に出していて、タイムアウトしていた場合、@code{thread-cont!}は
+その停止要求をキャンセルする役割を持ちます。
+@c COMMON
 @end defun
 
 @defun thread-terminate! thread
