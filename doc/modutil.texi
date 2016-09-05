@@ -21434,11 +21434,116 @@ of comparators.)
 
 @c EN
 The procedure returns a list of @code{(node1 node2)}, where
-@code{node2} is an immediate dominator of @code{node1}.
+@code{node2} is the immediate dominator of @code{node1}.
 @c JP
 返り値は@code{(node1 node2)}を要素に持つリストです。ここで、
 @code{node2}は@code{node1}の直接支配ノード(immediate dominator)です。
 @c COMMON
+
+@c EN
+If there are node in the given graph that are unreachable
+from @var{start}, such nodes are ignored and not included
+in the result.
+@c JP
+与えられたグラフの中に@var{start}から到達不可能なノードがあった場合、
+それは単に無視され、結果に含まれません。
+@c COMMON
+
+@c EN
+(A bit of explanation: Suppose you want to go to node X from @var{start}.
+There may be multiple routes, but if you have to pass node Y no matter
+which route you take, then Y is a dominator of X.  There may be
+many dominators of X.  Among them, there's
+always one domniator such that all other X's dominators are also
+its dominators---in other words, the closest dominator of X---which
+is called the immediate dominator of X.)
+@c JP
+(ちょっとした説明: @var{start}からノードXに行きたいとします。
+複数の経路がありえますが、どの経路を取っても必ずノードYを通らないと
+Xに行けない場合、YをXの支配ノード(dominator)と呼びます。
+支配ノードは複数ありえますが、その中で一つだけ、他のXの支配ノード全てが
+そのノードの支配ノードでもあるようなノードがあります(言い換えれば、
+Xに一番「近い」支配ノードです)。それをXの直接支配ノードと呼びます。)
+@c COMMON
+
+@c EN
+Let's see an example.  You have this directed graph:
+@c JP
+例を見てみましょう。こんな有向グラフがあるとします。
+@c COMMON
+
+@example
+          A (start)
+          |
+          v
+          B <-------+
+          |         |
+    ------+-----    |
+    |          |    |
+    v          v    |
+    C -------> D ---+
+    |          |
+    v          v
+    E <------- F
+@end example
+
+@c EN
+Let's represent the graph by a list of @code{(x y z ...)} where @code{x}
+can directly go to either @code{y z ...}.
+@c JP
+このグラフをリストのリストで表現してみましょう。
+ここで、内側のリスト@code{(x y z ...)}は、@code{x}からは@code{y}や@code{z}に
+直接行ける、ということを表します。
+@c COMMON
+
+@example
+(define *graph* '((A B)
+                  (B C D)
+                  (C D E)
+                  (D F B)
+                  (F E)))
+@end example
+
+@c EN
+Then you can calculate the immediate dominator of each node as follows:
+@c JP
+すると、各ノードの直接支配ノードが次の通り計算できます。
+@c COMMON
+
+@example
+(calculate-dominators 'A
+  (^n (filter-map (^g (and (memq n (cdr g)) (car g))) *graph*))
+  (^n (assoc-ref *graph* n '()))
+  eq-comparator)
+  @result{} ((E B) (F D) (D B) (C B) (B A))
+@end example
+
+@c EN
+That is, @code{E}'s immediate dominator is @code{B},
+@code{F}'s is @code{D}, and so on.
+@c JP
+つまり、@code{E}の直接支配ノードは@code{B}であり、
+@code{F}のは@code{D}である、という具合です。
+@c COMMON
+
+@c EN
+The result itself can be viewed as a tree.  It is called a dominator tree.
+@c JP
+この結果自体を木と解釈することができます。これを支配木(dominator tree)と呼びます。
+@c COMMON
+
+@example
+              F
+              |
+              v
+        E     D     C
+        |     |     |
+        |     v     |
+        +---> B <---+
+              |
+              v
+              A
+@end example
 @end defun
 
 
@@ -21794,7 +21899,7 @@ sequences, using the plural version is much faster than repeatedly
 calling the singular version, for the plural version can reuse internal
 data structures and save allocation and setup time.
 @c JP
-あるシーケンスの、多数のシーケンスとの間の距離を計算したいなら、
+あるシーケンスと、多数のシーケンスとの間の距離を計算したいなら、
 単数形のAPIを繰り返し呼ぶより複数形のAPIを使う方が効率的です。
 複数形のAPIでは内部で使うデータ構造を再利用するので、
 重複するアロケーションと初期化の時間を節約できます。
