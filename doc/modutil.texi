@@ -8890,24 +8890,42 @@ if it is @code{:error}, and @code{#f} is returned if the argument is
 @subsection Lock files
 @c NODE ロックファイル
 
-Exclusive creation of files or directories is often used
+@c EN
+Exclusivity of creating files or directories is often used
 for inter-process locking.   The following procedure provides
 a packaged interface for it.
+@c JP
+ファイルやディレクトリを作成する排他性は、しばしばプロセス間のロックに
+使われます。以下の手続きはパッケージ化されたインタフェースを提供します。
+@c COMMON
 
 @defun with-lock-file lock-name thunk :key type retry-interval @
                       retry-limit secondary-lock-name retry2-interval @
                       retry2-limit perms abandon-timeout
-
+@c EN
 Exclusively creates a file or a directory (@emph{lock file})
 with @var{lock-name}, then executes @var{thunk}.
 After @var{thunk} returns, or an error is thrown in it,
 the lock file is removed.  When @var{thunk} returns normally,
 its return values become the return values of @code{with-lock-file}.
+@c JP
+@var{lock-name}という名前を持つファイルもしくはディレクトリ (ここでは
+@emph{ロックファイル}と呼びます) を排他的に作成し、
+@var{thunk}を実行します。@var{thunk}から戻ってくるか、エラーが投げられたら、
+ロックファイルは削除されます。@var{thunk}が正常に戻ってきた場合、
+その戻り値が@code{with-lock-file}の戻り値となります。
+@c COMMON
 
+@c EN
 If the lock file already exists, @code{with-lock-file} waits and retries
 getting the lock until timeout reaches.  It can be configured by
 the keyword arguments.
+@c JP
+ロックファイルが既に存在していた場合、@code{with-lock-file}はタイムアウトになるまで
+少し待ってリトライすることを続けます。細かい動作はキーワード引数で指定できます。
+@c COMMON
 
+@c EN
 There's a chance that @code{with-lock-file} leaves the lock file
 when it gets a serious error situation and doesn't have the opportunity
 to clean up.  You can allow @code{with-lock-file} to @emph{steal}
@@ -8916,61 +8934,145 @@ applications usually locks just for seconds, and you find the lock
 file is 10 minutes old, then it's likely that the previous
 process was terminated abruptly and couldn't clean it up.
 You can also configure this behavior by the keyword arguments.
+@c JP
+@code{with-lock-file}実行中に深刻なエラーによって、ロックファイルを消せずに
+プロセスが終了してしまう可能性があります。そのため、
+@code{with-lock-file}は、ロックファイルのタイムスタンプが非常に古い場合には
+ロックを@emph{盗む}ことを許しています。例えば、通常アプリケーションはたかだか数秒しか
+ロックしないはずなのに、10分前のタイムスタンプを持つロックファイルを見つけたとしたら、
+以前のプロセスがクリーンアップをせずに落ちてしまったことは十分考えられるでしょう。
+この振る舞いも、キーワード引数で制御することができます。
+@c COMMON
 
+@c EN
 Internally, @emph{two} lock files are used to implement this
 stealing behavior safely.  The creation and removal of the primary
 lock file (named by @var{lock-name} argument) are guarded by
 the secondary lock file (named by @var{secondary-lock-file} argument,
 defaulted by @code{.2} suffix attached to @var{lock-name}).
+The secondary lock prevents more than one process steals
+the same primary lock file simultaneously.
+@c JP
+内部的には、安全な「盗ロック」を実現するために、二つのロックファイルが使われています。
+主ロックファイル(@var{lock-name}で指定される名前を持つもの)の作成と削除の
+操作がそれぞれ、副ロックファイル(@var{secondary-lock-file}で指定される名前を
+持つもの。指定が省略された場合は@var{lock-name}にサフィックス@code{.2}をつけたもの)
+によって保護されます。
+副ロックは、二つ以上のプロセスが主ロックファイルを同時に盗もうとした場合を保護します。
+@c COMMON
+
+@c EN
 The secondary lock is acquired for a very short period so there's
 much less chance to be left behind by abnormal terminations.
 If it happens, however, we just give up; we don't steal the
 secondary lock.
+@c JP
+副ロックファイルによるロックはほぼ常に極めて短い期間に
+限定されるため、事故により副ロックファイルが残されてしまう可能性は
+主ロックファイルに比べ非常に小さいです。それでももし副ロックファイルが
+残されてしまった場合は、@code{with-lock-file}は単に諦めます。副ロックファイルまで
+盗むことはしません。
+@c COMMON
 
+@c EN
 If @code{with-lock-file} couldn't get a lock before timeout,
 a @code{<lock-file-failure>} condition is thrown.
+@c JP
+@code{with-lock-file}がタイムアウトまでにロックを獲得できなけば、
+@code{<lock-file-failure>}コンディションが投げられます。
+@c COMMON
 
+@c EN
 Here's a list of keyword arguments.
+@c JP
+以下のキーワード引数が認識されます。
+@c COMMON
 
 @table @var
 @item type
 
+@c EN
 It can be either one of the symbols @code{file} or @code{directory}.
+@c JP
+シンボル@code{file}か@code{directory}のどちらか。
+@c COMMON
 
+@c EN
 If it is @code{file}, we use a lock file, relying on the @code{O_EXCL}
-exclusive creation flag of @code{open(2)}.  It works for most platforms;
+exclusive creation flag of @code{open(2)}.
+This is the default value.
+It works for most platforms;
 however, some NFS implementation may not implement the exclusive
-semantics properly.   This is the default value.
+semantics properly.   
+@c JP
+@code{file}を指定した場合、@code{open(2)}の@code{O_EXCL}フラグを使う
+排他的ファイル作成を利用したロックファイルを使います。これがデフォルトの動作です。
+ほとんどのプラッフォームで動作しますが、NFSの実装の一部に、
+排他的ファイル作成のセマンティクスが正しく実装されていない場合があります。
+@c COMMON
 
+@c EN
 If it is @code{directory}, we use a lock directory, relying on the
 atomicity of @code{mkdir(2)}.  It should work for any platforms,
 but it may be slower than @code{file}.
+@c JP
+@code{directory}を指定した場合は、@code{mkdir(2)}の排他性を利用した
+ロックディレクトリを使います。これはどんなプラットフォームでも動作する
+はずですが、@code{file}を指定した場合より遅いかもしれません。
+@c COMMON
 
 @item retry-interval
 @itemx retry-limit
 
+@c EN
 Accepts a nonnegative real number that specifies either
 the interval to attempt to acquire the primary lock, or the maximum
 time we should keep retrying, respectively, in seconds.
 The default value is 1 second interval and 10 second limit.
 To prevent retrying, give 0 to @var{retry-limit}.
+@c JP
+時間を秒で指定する非負の実数を取ります。前者は主ロック獲得を再試行する
+時間間隔、後者は再試行を繰り返す総時間を指定します。
+デフォルトはそれぞれ、1秒と10秒です。再試行をしないようにするには、
+@var{retry-limit}に0を渡してください。
+@c COMMON
 
 @item secondary-lock-name
 
+@c EN
 The name of the secondary lock file (or directory).  If omitted,
 @var{lock-name} with a suffix @code{.2} attached is used.
+Note: The secondary lock name must be aggreed on all programs that
+locks the same (primary) lock file.  I recommend to leave this
+to the default unless there's a good reason to do otherwise.
+@c JP
+副ロックファイル(もしくはディレクトリ)の名前を指定します。
+省略された場合は、@var{lock-name}にサフィックス@code{.2}をつけたものが使われます。
+副ロックファイルの名前は、同じ(主)ロックファイルを使うプログラム全てで
+一致していなければなりません。
+特に変える必要が無ければデフォルトのままにするのが良いでしょう。
+@c COMMON
 
 @item retry2-interval
 @itemx retry2-limit
 
+@c EN
 Like @var{retry-interval} and @var{retry-limit}, but these specify
 interval and timeout for the secondary lock file.  The possibility
 of secondary lock file collision is usually pretty low, so
 you would hardly need to tweak these.  The default values are
 1 second interval and 10 second limit.
+@c JP
+@var{retry-interval}と@var{retry-limit}に似ていますが、
+こちらは副ロックファイルの再試行間隔と最長再試行時間を指定します。
+副ロックが衝突する確率は通常極めて低いので、これらのパラメータを
+調整する必要は滅多に無いでしょう。デフォルトの値はそれぞれ
+1秒と10秒です。
+@c COMMON
 
 @item perms
 
+@c EN
 Specify the permission bitmask of the lock file or directory,
 in a nonnegative exact integer.  The default is @code{#o644} for
 a lock file and @code{#o755} for a lock directory.
@@ -8979,65 +9081,143 @@ Note that to control who can acquire/release/steal the lock,
 what matters is
 the permission of the directory in which the lock file/directory,
 not the permission of the lock file/directory itself.
+@c JP
+ロックファイルもしくはディレクトリのパーミッションを、非負正確整数の
+ビットマスクで指定します。デフォルトは、ロックファイルに対して@code{#o644}、
+ロックディレクトリに対しては@code{#o755}です。
+
+ロックを獲得/解放したり盗んだりするには、ロックファイル自身のパーミッションではなく、
+ロックファイルが置かれるディレクトリのパーミッションが関係することに注意してください。
+@c COMMON
 
 @item abandon-timeout
 
-Specifies the period in seconds.  If the primary lock file is
+@c EN
+Specifies the period in seconds in a nonnegative real number.
+If the primary lock file is
 older than that, @code{with-lock-file} steals the lock.
 To prevent stealing, give @code{#f} to this argument.
 The default value is 600 seconds.
+@c JP
+時間の長さ(秒)を非負の実数で指定します。
+@code{with-lock-file}がロックファイルを見つけて、そのタイムスタンプが
+現在の時刻マイナスこの時間よりも古いものだった場合、ロックを盗みます。
+ロックを盗むことを禁止したければこの引数に@code{#f}を渡してください。
+デフォルトは600秒です。
+@c COMMON
 
 @end table
 
 @end defun
 
 @deftp {Condition type} <lock-file-failure>
+@c EN
 A condition indicating that @code{with-lock-file} couldn't
 obtain the lock.  Inherits @code{<error>}.
+@c JP
+@code{with-lock-file}がロックを獲得できなかった場合に投げられる
+コンディションです。@code{<error>}を継承します。
+@c COMMON
 
 @defivar <lock-file-failure> lock-file-name
+@c EN
 The primary lock file name.
+@c JP
+獲得しようとした主ロックファイルの名前です。
+@c COMMON
 @end defivar
 @end deftp
 
+@c EN
 Gauche also provides OS-supported file locking feature,
 @code{fcntl} lock, via @code{gauche.fcntl} module.
 Whether you want to use @code{fcntl} lock or @code{with-lock-file}
 will depend on your application.
+@c JP
+Gaucheは、OSによりサポートされる@code{fcntl}ロックの機能も、
+@code{gauche.fcntl}モジュールによって提供しています。
+@code{fcntl}ロックを使うべきか@code{with-lock-file}を使うべきかは、
+アプリケーションによります。
+@c COMMON
 
+@c EN
 These are the advantages of the @code{fcntl} lock:
+@c JP
+@code{fcntl}ロックの利点は次の通りです。
+@c COMMON
 
 @itemize
 @item
+@c EN
 The lock is removed when the process dies without explicitly unlocking it.
+@c JP
+プロセスが死んだ時に、ロックは自動的に解除される
+@c COMMON
 @item
+@c EN
 You can directly lock the file you're touching.
+@c JP
+作業するファイルそのものをロックできる。
+@c COMMON
 @item
+@c EN
 You can lock a part of a file.
+@c JP
+ファイルの一部だけをロックできる。
+@c COMMON
 @item
-You can have shared and exclusive locks.
+@c EN
+You can have shared (read) and exclusive (write) locks.
+@c JP
+共有(読み出し)ロックと排他(書き込み)ロックが使える。
+@c COMMON
 @end itemize
 
+@c EN
 In common situations, probably the most handy property is the
 first one; you don't need to worry about leaving lock behind
 unexpected process termination.
+@c JP
+多くの場合、最も便利なのは最初の性質でしょう。プロセスが予想外に落ちてしまった
+場合でも、ロックが残されてしまうことを心配しないで済みます。
+@c COMMON
 
+@c EN
 However, there are a couple of shortcomings in @code{fcntl} locks.
+@c JP
+けれども、@code{fcntl}ロックには欠点もあります。
+@c COMMON
 
 @itemize
 @item
+@c EN
 It is not guaranteed to work across different platforms,
 and/or NFS-mounted filesystems.
+@c JP
+異なるプラットフォームや、NFSマウントされたファイルシステム間で
+確実に動作する保証がない。
+@c COMMON
 @item
-The lock is per-process, per-file.  If you have a lock in a file,
+@c EN
+The lock is per-process, per-file, and non-recursive.
+If you have a lock in a file,
 then calls a library that also locks the file, the lock always
 succeeds.  Worse, if the library unlocks the file,
 the lock is completely removed, while the caller doesn't know
 about it.  It also means that, in order to prevent multiple threads
 in a process from accessing the same file, you have to use
 mutex along the fcntl lock.
+@c JP
+ロックはプロセス単位、ファイル単位でかつ非再帰的である。
+例えば、既にプロセスがロックしているファイルに対して、呼び出したライブラリ内でまたロックを
+獲得しようとすると、それは常に成功する。さらに悪いことに、そのライブラリが
+ロックを解放した時点で、元からロックがかかっていたかどうかに関わらず、プロセス全体が
+ロックを手放してしまう。このことはまた、複数のスレッド間で排他的にファイルに
+アクセスしたい場合は、fcntlロックと一緒にmutexも使う必要があるということでもある。
+@c COMMON
 @end itemize
 
+@c EN
 Especially because of the second point, it is very difficult
 to use @code{fcntl} lock unless you have total control over and knowledge
 of the entire application.
@@ -9045,8 +9225,16 @@ It is ok to use the @code{fcntl} lock by the application code to lock
 the application-specific file.
 Library developers have difficulty, however, to make sure any potential
 user of the library won't try to lock the same file as the library tries
-to lock (usually it can't be done).
-
+to lock (usually it's impossible).
+@c JP
+二番目の欠点のせいで、アプリケーション全体を知っていてコードを好きにできる場合でなければ、
+@code{fcntl}ロックを安全に使うことが非常に難しくなっています。
+アプリケーションコードが、そのアプリケーションで使うためだけのファイルをロックするのに
+@code{fcntl}ロックを使うのは何も問題ありません。
+しかしライブラリ開発者は、ライブラリ内で@code{fcntl}ロックを使うなら、
+そのライブラリのユーザや他のライブラリが将来に渡って同じファイルを決してロックしない
+ということを保証しなければなりません(通常、そんなことは不可能です)。
+@c COMMON
 
 @c ----------------------------------------------------------------------
 @node Mathematic constants, Mersenne-Twister random number generator, Filesystem utilities, Library modules - Utilities
@@ -19370,7 +19558,7 @@ the input column number to the tuple positions.
 a string, a regexp, or a predicate on a string.  If it's a string,
 a column that exactly matches the string is picked.  If it's a regexp,
 a column that matches the regexp is picked.  And if it's a predicate,
-as you might already guessed, a column that satisfies the predicate
+as you might have already guessed, a column that satisfies the predicate
 is picked.
 
 The permuter vector is a vector of integers,
