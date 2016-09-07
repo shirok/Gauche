@@ -288,7 +288,7 @@
     ([pred v . vs]
      (apply vector-fold (^[c . es] (if (apply pred es) (+ 1 c) c)) 0 v vs))))
 
-(define (vector-cumulate f vec seed)
+(define (vector-cumulate f seed vec)
   (check-arg vector? vec)
   (let1 len (vector-length vec)
     (rlet1 rvec (make-vector len)

@@ -7091,8 +7091,22 @@ name.
 [SRFI-113]
 @end defun
 
-@defun vector-cumulate f vec seed
+@defun vector-cumulate f seed vec
 [SRFI-113]
+Returns a fresh vector with the same size of @var{vec}, with
+the elements calculated as follows:
+
+The first element of result vector is a result of procedure @var{f}
+called with @var{seed} and the first element of @var{vec}.
+
+The @var{i}-th element of result vector is a result of procedure @var{f}
+called with @var{i-1}-th element of result vector and @var{i}-th element
+of @var{vec}.
+
+@example
+(vector-cumulate string-append "z" '#("a" "b" "c"))
+  @result{} #("za" "zab" "zabc")
+@end example
 @end defun
 
 
