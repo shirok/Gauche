@@ -809,11 +809,9 @@
 ;;; Filter
 ;;;
 
-;; NB: We accidentally got the argument order of string-filter and
-;; string-delete reversed for a good while.  To keep the code that
-;; was written in wrong argument order, we permit both order---
-;; (string-filter pred string) and (string-filter string pred),
-;; although the new code should use the former (srfi-13 style).
+;; The argument order of string-filter and string-delete is changed
+;; by post-finalization amendment.  In order to avoid breaking existing
+;; code, we accept old argument oder as well.
 
 (define (string-filter c/s/p s . args)
   (if (string? c/s/p)
