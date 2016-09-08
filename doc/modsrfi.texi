@@ -7081,14 +7081,44 @@ Note that the seed value precedes elements, which is opposite to
 @code{fold} (@pxref{Mapping over collection}).  It's an unfortunate
 historical glitch; @code{vector-fold-left} would be more consistent
 name.
+
+@example
+(vector-fold (^[a b] (cons b a)) '() '#(a b c d))
+  @result{} (d c b a)
+@end example
 @end defun
 
 @defun vector-fold-right kons knil vec1 vec2 @dots{}
 [SRFI-113]
+Like @code{vector-fold}, but elements in the @var{vec1} @var{vec2} @dots{}
+are visited from right to left.
+
+Unlike @code{fold-right} (@pxref{Mapping over sequences}),
+the procedure @var{kons} takes the accumulated value in the
+first argument.
+
+@example
+(vector-fold-right (^[a b] (cons b a)) '() '#(a b c d))
+  @result{} (a b c d)
+@end example
 @end defun
 
 @defun vector-count pred vec1 vec2 @dots{}
 [SRFI-113]
+Applies @var{pred} on each elements in argument vectors (if N vectors
+are given, @var{pred} takes N arguments, the first being
+@var{i}-th element of @var{vec1}, the second being @var{i}-th element
+of @var{vec2}, etc.)  Then returns the number of times
+@var{pred} returned true value.   The order @var{pred} applied
+to each element is unspecified.
+
+@example
+(vector-count odd? '#(0 1 2 3 4)
+  @result{} 2
+
+(vector-count < '#(7 3 9 1 5) '#(6 8 2 3 8 8))
+  @result{} 3
+@end example
 @end defun
 
 @defun vector-cumulate f seed vec
