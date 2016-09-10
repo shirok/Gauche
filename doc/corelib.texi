@@ -2728,6 +2728,16 @@ and returns their results in two values.
 @code{div0-and-mod0}は@code{div0}と@code{mod0}を同時に計算し、
 結果を二つの値で返します。
 @c COMMON
+
+@c EN
+Here's a visualization of R6RS and R7RS division and modulo operations:
+@url{http://blog.practical-scheme.net/gauche/20100618-integer-divisions}
+It might help to grasp how they works.
+@c JP
+R6RSとR7RSの除算・剰余操作を可視化したものが
+@url{http://blog.practical-scheme.net/gauche/20100618-integer-divisions}
+にあります。
+@c COMMON
 @end defun
 
 @defun gcd n @dots{}
@@ -2738,6 +2748,14 @@ Returns the greatest common divisor or the least common multiplier
 of the given integers, respectively
 @c JP
 与えられた整数の、最大公約数と最小公倍数をそれぞれ返します。
+@c COMMON
+
+@c EN
+Arguments must be integers, but doesn't need to be exact.
+If any of arguments is inexact, the result is inexact.
+@c JP
+引数は整数でなければなりませんが、正確数である必要はありません。
+引数が一つでも非正確なら、結果は非正確数になります。
 @c COMMON
 @end defun
 
