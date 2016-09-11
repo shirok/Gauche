@@ -1,3 +1,9 @@
+2016-09-11  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/base.scm (gauche.base): Extend gauche.keyword as well,
+	  so that R7RS code that does (import (gauche base)) can call
+	  Gauche procedures with keyword arguments just like Gauche code.
+
 2016-09-06  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/srfi-133.scm (vector-cumulate): Switched argument order,
