@@ -6395,6 +6395,89 @@ in both versions.
 どのバージョンでも同じように動作します。
 @c COMMON
 
+@c EN
+@subsubheading For R7RS code, quote them or import Gauche modules
+@c JP
+@subsubheading R7RSコードではクオートするかGaucheのモジュールをインポートする
+@c COMMON
+
+@c EN
+After integration, keywords (i.e. symbols that begins with
+@code{:}) are automatically bound to itself,
+in the @code{gauche.keyword} module.
+
+Gauche code inherits the @code{gauche} module by default, which inherits
+@code{gauche.keyword}, so you can see the binding of the keyword by default.
+
+In R7RS code, however, you don't inherit @code{gauche},
+so symbols beginning with @code{:} are just ordinary symbols by default.
+Usually you do @code{(import (gauche base))} to use Gauche built-ins,
+and that makes binding of @code{gauche.keyword} available in your
+code, too (since @code{gauche.base} inherits @code{gauche.keyword}).
+But keep this in mind just in case you want to handle keywords in
+your R7RS code separate from Gauche procedures---you have to either say
+@code{(import (gauche keyword))} to get just the self-bound keywords,
+or quote them.
+@c JP
+統合後は、キーワード(@code{:}で始まるシンボル)は@code{gauche.keyword}モジュール
+の中で自分自身に束縛されます。
+
+Gaucheコードはデフォルトで@code{gauche}モジュールを継承し、
+それが@code{gauche.keyword}モジュールを継承しているので、
+キーワードの束縛は自動的に見えるようになります。
+
+しかしR7RSコードでは@code{gauche}モジュールは継承されないので、
+@code{:}で始まるシンボルもデフォルトではただのシンボルです。
+通常、Gaucheの組み込み機能を使うには@code{(import (gauche base))}としますが、
+こうするとキーワードの自分自身への束縛もインポートされるようになっています
+(@code{gauche.base}が@code{gauche.keyword}も継承しているからです)。
+ただ、Gaucheの手続きとは別にキーワードをR7RSコード中で使いたい場合は
+注意してください。自己束縛されているキーワードだけが欲しければ
+@code{(import (gauche keyword))}とする必要がありますし、
+そうしない場合はキーワードに見えるシンボルでもクオートする必要があります。
+@c COMMON
+
+@example
+(import (scheme base))
+
+:foo @result{} @r{ERROR: unbound variable: :foo}
+
+(import (gauche base))
+
+:foo @result{} :foo
+@end example
+
+@c EN
+In the following example, the R7RS library @code{foo} imports only
+@code{copy-port} from @code{(gauche base)}; in that case,
+you have to import @code{(gacueh keyword)} separately
+in order to use @code{:size} keyword without quoting.
+(Or add @code{:size} explicitly in the imported symbol
+list of @code{(gauche base)}.)
+@c JP
+次の例では、R7RSライブラリ@code{foo}が@code{(gauche base)}から
+@code{copy-port}のみをインポートしています。こういった場合、
+@code{:size}キーワードをクオートなしで使うには、@code{(gauhce keyword)}も
+別にインポートしなければなりません。
+(あるいは、@code{(gauche base)}からインポートするシンボルのリストに
+@code{:size}も明示するか)。
+@c COMMON
+
+@example
+(define-library (foo)
+  (import (scheme base)
+          (only (gauche base) copy-port)
+          (gauche keyword))
+  (export cat)        
+
+  (begin
+    (define (cat)
+      (copy-port (current-input-port)
+                 (current-output-port)
+                 :size 4096))))
+@end example
+
+
 
 @c ----------------------------------------------------------------------
 @node Identifiers, Characters, Keywords, Core library
@@ -6403,6 +6486,26 @@ in both versions.
 
 @deftp {Builtin Class} <identifier>
 @clindex identifier
+An identifier is an internal object to keep track of
+binding of variables by the compiler.
+
+Usually it is hidden from Scheme world, but the higyenic
+macro expander inserts identifiers into its output, which
+is necessary for hygiene.  But that makes reading macro expansion
+result difficult.
+
+If you bothered by all the @code{#<identifier ...>} stuff in
+the macro output, remember a handy trick
+to pass the expansion result to @code{unwrap-syntax}; it converts
+all identifiers in the passed form to bare symbols.   It does lose
+information---two different identifiers may be converted to a symbol
+with the same name---so you need some care to interpret the output,
+but usually the output gives a fairly good idea of what the macro is doing.
+
+Currently, identifiers are disjoint from symbols.  That might cause
+problems if you tweak macro output.  The plan is to make identifiers
+just a special kind of symbols eventually, so do not assume too much
+about identifiers.
 @end  deftp
 
 @defun identifier? obj
@@ -6411,6 +6514,8 @@ in both versions.
 @defun identifier->symbol identifier
 @end defun
 
+@defun unwrap-syntax form
+@end defun
 
 @c ----------------------------------------------------------------------
 @node Characters, Character set, Identifiers, Core library
