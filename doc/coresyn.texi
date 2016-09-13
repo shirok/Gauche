@@ -5169,44 +5169,94 @@ all the bindings of @code{gauche} module is imported.
 @end deftp
 
 @deftp {Builtin Module} gauche.keyword
+@deftpx {Builtin Module} keyword
 @mdindex gauche.keyword
+@mdindex keyword
 @c EN
 When Gauche is running with @code{GAUCHE_KEYWORD_IS_SYMBOL} mode
 keywords (symbols beginning with @code{:}) is automatically bound
-to itself in this module. 
+to itself in these modules.
 (@pxref{Keywords}, for the details.)
+
+The @code{keyword} module doesn't export those bindings, while
+@code{gauche.keyword} does.  The former is intended to be
+used internally; the programmer need to know the latter.
 
 If you use the default module inheritance,
 you don't need to use this module, since
-the keyword module is included in the inheritance chain.
+the @code{keyword} module is included in the inheritance chain.
 If you don't inherit @code{gauche} module, however, importing this
 module gives you access to the keywords without quotes.
 For example, R7RS programs
-and libraries would require @code{(import (gauche keyword))},
-or you have to quote all keywords.
+and libraries would require either @code{(import (gauche keyword))}
+or @code{(import (gauche base))} (the latter inherits
+@code{gauche.keyword}), or you have to quote all keywords.
 @c JP
 Gaucheが@code{GAUCHE_KEYWORD_IS_SYMBOL}モードで実行されている時は、
-キーワード (@code{:}で始まるシンボル) が自動的にこのモジュールの中で
+キーワード (@code{:}で始まるシンボル) が自動的にこれらのモジュールの中で
 自分自身に束縛されます。(詳しくは@ref{Keywords}を参照してください。)
+
+@code{keyword}モジュールはキーワードの自己束縛をエクスポートせず、
+@code{gauche.keyword}モジュールはエクスポートします。前者は主に
+内部的に使うためのもので、プログラマが知る必要があるのは後者です。
 
 デフォルトのモジュール継承を使っている場合、キーワードモジュールは
 継承チェインの中に含まれているので、このモジュールを陽に使用する必要はありません。
 @code{gauche}を継承しないモジュールを書いていて、キーワードをクオートせずに
 使いたい場合にこのモジュールをインポートしてください。
 例えばR7RSプログラムやライブラリは、@code{(import (gauche keyword))}
-しない限り、キーワードにクオートが必要です。
+もしくは@code{(import (gauche base))} (後者は@code{gauche.keyword}を
+継承しています)しない限り、キーワードにクオートが必要です。
+@c COMMON
+
+@c EN
+The followig R7RS program imports @code{gauche.base}; it makes gauche
+built-in identifiers, @emph{and} all self-bound keywords, available:
+@c JP
+次のR7RSプログラムは@code{gauche.base}をimportすることで、
+Gaucheの組み込みの識別子とともに自己束縛されたキーワードが使えるようになります。
 @c COMMON
 
 @example
 ;; R7RS program
 (import (scheme base)
-        (gauche base)    ; to use Gauche builtins
-        (gauche keyword))
+        (gauche base))  ; import gauche builtins and keywords
 
-;; Without importing gauche.keyword,
-;; you need to write ':directory below.
+;; You can use :directory without quote, for it is bound to itself.
 (sys-exec "ls" '("ls" "-l") :directory "/")
 @end example
+
+@c EN
+If you use more sophisitcated import tricks, however, keep in mind
+that keywords are just imported symbols if
+@code{GAUCHE_KEYWORD_IS_SYMBOL} is set.  The following code imports
+Gauche builtin identifiers with prefix @code{gauche/}.  That causes
+keywords, imported via inheritance, also get the same prefix; if
+you don't want to bother adding prefix to all keywords or
+quote them, import @code{gauche.keyword} separately.
+@c JP
+ただ、もうちょっと凝ったインポートをする場合は、
+@code{GAUCHE_KEYWORD_IS_SYMBOL}がセットされている状態ではキーワードも
+単なるインポートされるシンボルにすぎないということを覚えておいてください。
+例えば次のコードではGaucheの組み込み識別子を@code{gauche/}というプレフィクス
+つきでインポートしています。この場合、@code{gauche.base}の継承経由で
+インポートされているキーワードもプレフィクスがつけられることになります。
+キーワードをいちいちプレフィクスつき、もしくはクオートつきで書きたくなければ、
+@code{gauche.keyword}を別にインポートしましょう。
+@c COMMON
+
+@example
+;; R7RS program
+(import (scheme base)
+        (prefix (gauche base) gauche/) ; use gauche builting with gauche/ prefix
+        (gauche keyword))              ; imports keywords
+
+;; Without importing gauche.keyword,
+;; you need to write ':directory
+(gauche/sys-exec "ls" '("ls" "-l") :directory "/")
+@end example
+
+
 @end deftp
 
 

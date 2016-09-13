@@ -6407,7 +6407,7 @@ After integration, keywords (i.e. symbols that begins with
 in the @code{gauche.keyword} module.
 
 Gauche code inherits the @code{gauche} module by default, which inherits
-@code{gauche.keyword}, so you can see the binding of the keyword by default.
+@code{keyword}, so you can see the binding of the keyword by default.
 
 In R7RS code, however, you don't inherit @code{gauche},
 so symbols beginning with @code{:} are just ordinary symbols by default.
@@ -6423,7 +6423,7 @@ or quote them.
 の中で自分自身に束縛されます。
 
 Gaucheコードはデフォルトで@code{gauche}モジュールを継承し、
-それが@code{gauche.keyword}モジュールを継承しているので、
+それが@code{keyword}モジュールを継承しているので、
 キーワードの束縛は自動的に見えるようになります。
 
 しかしR7RSコードでは@code{gauche}モジュールは継承されないので、
