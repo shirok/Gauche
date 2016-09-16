@@ -6,8 +6,8 @@
 @menu
 * Arrays::                      gauche.array
 * Importing gauche built-ins::  gauche.base
-* Character code conversion::   gauche.charconv
 * Generating C code::           gauche.cgen
+* Character code conversion::   gauche.charconv
 * Collection framework::        gauche.collection
 * Configuration parameters::    gauche.config
 * Generating build files::      gauche.configure
@@ -874,7 +874,7 @@ If @code{B} isn't regular, an error is thrown.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Importing gauche built-ins, Character code conversion, Arrays, Library modules - Gauche extensions
+@node Importing gauche built-ins, Generating C code, Arrays, Library modules - Gauche extensions
 @section @code{gauche.base} - Importing gauche built-ins
 @c NODE Gauche組み込み関数のインポート, @code{gauche.base} - Gauche組み込み関数のインポート
 
@@ -966,671 +966,7 @@ if you don't use @code{import} directly, you won't need it.)
 
 
 @c ----------------------------------------------------------------------
-@node Character code conversion, Generating C code, Importing gauche built-ins, Library modules - Gauche extensions
-@section @code{gauche.charconv} - Character Code Conversion
-@c NODE 文字コード変換, @code{gauche.charconv} - 文字コード変換
-
-@deftp {Module} gauche.charconv
-@mdindex gauche.charconv
-@c EN
-This module defines a set of functions that converts character encoding
-schemes (CES) of the given data stream.
-
-This module is implicitly loaded when @code{:encoding} keyword argument
-is given to the file stream creating functions
-(such as @code{open-input-file} and @code{call-with-output-file}).
-@c JP
-与えられたデータストリームの文字エンコーディングを変換するための手続き群を提供する
-モジュールです。
-
-このモジュールはまた、@code{open-input-file}や
-@code{call-with-output-file}等のファイルストリームを作成する手続きに
-@code{:encoding}キーワード引数が与えられた場合に暗黙にロードされます。
-@c COMMON
-
-@c EN
-As of release 0.5.6, Gauche natively supports conversions between
-typical Japanese character encodings: ISO2022JP, ISO2022JP-3,
-EUC-JP (EUC-JISX0213), Shift_JISX0213, UTF-8 (Unicode 3.2).
-Conversions between other encodings are handled by @code{iconv(3)}.
-@xref{Supported character encoding schemes}, for details.
-@c JP
-リリース0.5.6より、Gaucheは日本語の主要エンコーディング
-(ISO2022JP, ISO2022JP-3, EUC-JP (EUC-JISX0213), Shift_JIS (Shift_JISX0213),
-UTF-8 (Unicode 3.2))間の変換を自前で持つようになりました。
-上記以外のコードとの変換は@code{iconv(3)}を利用します。
-サポートされるコーディングシステムに関する詳細は
-@ref{Supported character encoding schemes}を参照して下さい。
-@c COMMON
-@end deftp
-
-@menu
-* Supported character encoding schemes::  
-* Autodetecting the encoding scheme::  
-* Conversion ports::            
-@end menu
-
-@node Supported character encoding schemes, Autodetecting the encoding scheme, Character code conversion, Character code conversion
-@subsection Supported character encoding schemes
-@c NODE サポートされる文字エンコーディング
-
-@c EN
-A CES is represented by its name as a string or a symbol.
-Case is ignored.  There may be several aliases defined for a single encoding.
-@c JP
-CESの名前は文字列またはシンボルで指定します。大文字小文字の違いは無視されます。
-同じCESにいくつかの別名がついていることがあります。
-@c COMMON
-
-@c EN
-A CES name "none" is special.  When Gauche's native encoding is @code{none},
-Gauche just treats a string as a byte sequence, and it's up to the application
-to interpret the sequence in an appropriate encoding.  So, conversion
-to and from CES "none" does nothing.
-@c JP
-CES名 "none" は特殊です。Gaucheのネイティブエンコーディングが@code{none}の
-場合、Gaucheは文字列を単なるバイト列として扱い、そのエンコーディングの解釈は
-アプリケーションに任されます。したがって、CES "none" への変換、および "none"
-からの変換は「何もしない」変換として扱われます。
-@c COMMON
-
-@c EN
-You can check whether the specific conversion is supported on
-your system or not, by the following function.
-@c JP
-特定の変換がシステムでサポートされているかどうかは次の手続きで調べることができます。
-@c COMMON
-
-@defun ces-conversion-supported? from-ces to-ces
-@c EN
-Returns @code{#t} if conversion from the character encoding scheme
-(CES) @var{from-ces} to @var{to-ces} is supported in this system.
-
-Note that this procedure may return true even if system only supports
-partial conversion between @var{from-ces} and @var{to-ces}.
-In such case, actual conversion might lose information by coercing
-characters in @var{from-ces} which are not supported in @var{to-ces}.
-(For example, conversion from Unicode to EUC-JP is "supported",
-although Unicode has characters that are not in EUC-JP).
-
-Also note that this procedure always returns @code{#t}
-if @var{from-ces} and/or @var{to-ces} is "none",
-for conversion to/from CES "none" always succeeds (in fact, it does nothing).
-
-@example
-;; see if you can convert the internal encoding to EUC-JP
-(ces-conversion-supported? (gauche-character-encoding) "euc-jp")
-@end example
-@c JP
-CES @var{from-ces}から@var{to-ces}への変換がサポートされていれば@code{#t}を、
-そうでなければ@code{#f}を返します。
-
-システムが@var{from-ces}から@var{to-ces}への変換を部分的にしか
-サポートしていない場合でもこの手続きは@code{#t}を返すことに注意して下さい。
-そのような場合、実際の変換作業は@var{from-ces}にあって@var{to-ces}にない
-コードを置換文字に置き換える等で情報を失うかもしれません
-(例えば、UnicodeからEUC-JPへの変換はサポートされていますが、
-UnicodeにはEUC-JPにない文字も含まれています)。
-
-@var{from-ces}か@var{to-ces}が "none" ならばこの手続きは常に@code{#t}を
-返します。なぜならそのような変換は常に成功するからです(何も変換しないわけですが)。
-
-@example
-;; 内部エンコーディングからEUC-JPに変換できるか?
-(ces-conversion-supported? (gauche-character-encoding) "euc-jp")
-@end example
-@c COMMON
-@end defun
-
-@c EN
-Also there are two useful procedures to deal with CES names.
-@c JP
-また、CESを扱う二つの便利な手続きが用意されています。
-@c COMMON
-
-@defun ces-equivalent? ces-a ces-b :optional unknown-value
-@c EN
-Returns true if two CESes @var{ces-a} and @var{ces-b} are equivalent
-to the knowledge of the system.  Returns false if they are not.
-If the system doesn't know about equivalency, @var{unknown-value}
-is returned, whose default is @code{#f}.
-
-CES "none" works like a wild card; it is "equivalent" to any CES.
-(Thus, @code{ces-equivalent?} is not transitive.
-The intended use of @code{ces-equivalent?}
-is to compare two given CES names and see if conversion is required or not).
-@c JP
-CES @var{ces-a}と@var{ces-b}がシステムの知る限りで等価だった場合に
-@code{#t}を、等価でない場合に@code{#f}を返します。
-システムがその等価性を判断出来ない場合は@var{unknown-value}に与えられた
-値を返します。そのデフォルトは@code{#f}です。
-
-CES名 "none" はワイルドカードのように動作します。それはどんなCESとも
-等価と見倣されます。(従って、@code{ces-equivalent?} は遷移的ではありません。
-この手続きは、二つのCESを知った時に相互の変換が
-必要かどうかを判断するためのものです)。
-@c COMMON
-
-@example
-(ces-equivalent? 'eucjp "EUC-JP")            @result{} #t
-(ces-equivalent? 'shift_jis "EUC-JP")        @result{} #f
-(ces-equivalent? "NoSuchEncoding" 'utf-8 '?) @result{} ?
-@end example
-@end defun
-
-@defun ces-upper-compatible? ces-a ces-b :optional unknown-value
-@c EN
-Returns true if a string encoded in CES @var{ces-b} can also
-be regarded as a string encoded in @var{ces-a} without conversion,
-to the knowledge of the system.
-Returns false if not.  Returns @var{unknown-value}
-if the system can't determine which is the case.
-
-Like @code{ces-equivalent?}, CES "none" works like a wildcard.
-It is upper-compatible to any CES, and any CES is upper-compatible to
-"none".
-@c JP
-CES @var{ces-b}でエンコードされた文字列が、システムの知る限りで
-変換無しに@var{ces-a}でエンコードされたものと見倣せる場合に@code{#t}を
-返します。見倣せない場合は@var{#f}を返します。
-システムが判断できない場合は@var{unknown-value}に与えられた
-値を返します。そのデフォルトは@code{#f}です。
-
-@code{ces-equivalent?}と同様に、CES名 "none" はワイルドカードとして
-働きます。@var{ces-a} か @var{ces-b} が "none" であれば、
-常に@code{#t}が返されます。
-@c COMMON
-
-@example
-(ces-upper-compatible? "eucjp" "ASCII")             @result{} #t
-(ces-upper-compatible? "eucjp" "utf-8")             @result{} #f
-(ces-upper-compatible? "utf-8" "NoSuchEncoding" '?) @result{} ?
-@end example
-@end defun
-
-@c EN
-Conversion between common japanese CESes (EUC_JP, Shift JIS, UTF-8
-and ISO2022-JP) of the character set JIS X 0201 and JIS X 0213
-is handled by Gauche's built-in algorithm (see below for details).
-When other CES name is given, Gauche uses
-@code{iconv(3)} if it is linked.
-@c JP
-日本語の文字セットJIS X 0201及びJIS X 0213のエンコーディング
-(EUC_JP、Shift JIS、UTF-8及びISO2022-JP) 間の変換に関しては、
-Gaucheが内部に変換アルゴリズムを持っています (詳細は下の注記を参照)。
-それ以外のCESに関しては、リンクされていればGaucheは@code{iconv(3)}を用いて
-変換を行います。
-@c COMMON
-
-@c EN
-When Gauche's conversion routine encounters a character that can't
-be mapped, it replaces the character for "geta mark" (U+3013)
-if it's a multibyte character in the input encoding, or for '?' if it's
-a singlebyte character in the input encoding.
-If that happens in iconv, handling of such character depends
-on iconv implementation (glibc implementation returns an error).
-@c JP
-出力CESへマップ不可能な入力文字に出会った場合、Gaucheの変換ルーチンは
-その文字が入力CESでマルチバイトである場合はgeta mark '〓' (U+3013) に、
-入力CESでシングルバイトである場合は '?' に置換します。
-iconvによる変換でマップ不可能な文字に出会った場合の処理はiconvの実装に
-依存します(例えばglibcではエラーとなります)。
-@c COMMON
-
-@c EN
-If the conversion routine encounters an input sequence that
-is illegal in the input CES, an error is signaled.
-@c JP
-変換ルーチンが、入力CESとして不正な入力文字列に出会った場合は
-エラーが報告されます。
-@c COMMON
-
-@c EN
-@strong{Details of Gauche's native conversion algorithm:}
-Between EUC_JP, Shift JIS and ISO2022JP, Gauche uses arithmetic
-conversion whenever possible.  This even maps the undefined codepoint
-properly.  Between Unicode (UTF-8) and EUC_JP, Gauche uses lookup tables.
-Between Unicode and Shift JIS or ISO2022JP, Gauche converts the
-input CES to EUC_JP, then convert it to the output CES.
-If the same CES is specified for input and output, Gauche's conversion
-routine just copies input characters to output characters, without
-checking the validity of the encodings.
-@c JP
-@strong{Gaucheの内部変換アルゴリズムの詳細:}
-EUC_JP、Shift JIS、及びISO2022JP間の変換は可能な限り計算で行います。
-文字が未定義のコードポイントも計算式に従って変換されます。
-Unicode(UTF-8)とEUC_JP間の変換はテーブルルックアップによって行われます。
-UnicodeとShift JISまたはISO2022JP間の変換は、入力CESを一度EUC_JPに
-変換し、それを出力CESに変換することによって行います。
-入力と出力のCESがGaucheの内部アルゴリズムがサポートする範囲で等しかった場合、
-Gaucheの変換ルーチンはエンコーディングの正当性はチェックせず、
-単に入力を出力にコピーします。
-@c COMMON
-
-@table @code
-@item EUC_JP, EUCJP, EUCJ, EUC_JISX0213
-@c EN
-Covers ASCII, JIS X 0201 kana, JIS X 0212 and JIS X 0213 character sets.
-JIS X 0212 character set is supported merely because it uses
-the code region JIS X 0213 doesn't use, and JIS X 0212 characters
-are not converted properly to Shift JIS and UTF-8.
-Use JIS X 0213.
-@c JP
-ASCII, JIS X 0201カナ、JIS X 0212、及びJIS X 0213文字セットをカバーします。
-JIS X 0212は、単にJIS X 0213と重ならないコードを使っているためにサポート
-されていますが、他のCESへの変換は行われないので注意して下さい。
-なるべくJIS X 0213の使用をおすすめします。
-@c COMMON
-
-@item SHIFT_JIS, SHIFTJIS, SJIS
-@c EN
-Covers Shift_JISX0213, except that 0x5c and 0x7e is mapped to ASCII
-character set (REVERSE SOLIDUS and TILDE),
-instead of JIS X 0201 Roman (YEN SIGN and OVERLINE).
-@c JP
-Shift_JISX0213をカバーします。但し、0x5cと0x7eに関しては
-JIS X 0201 Roman (YEN SIGNとOVERLINE) ではなく
-ASCII (REVERSE SOLIDUSとTILDE) にマップされます。
-@c COMMON
-
-@item UTF-8, UTF8
-@c EN
-Unicode 3.2.  Note that some JIS X 0213 characters are mapped to Extension B
-(U+20000 and up).
-Some JIS X 0213 characters are mapped to two
-unicode characters (one base character plus a combining character).
-@c JP
-Unicode 3.2です。JIS X 0213中の文字のいくつかはExtension B (U+20000〜)
-にマップされます。JIS X 0213中の他の文字のいくつかは2つのUnicode文字
-(base character + combining character)にマップされます。
-@c COMMON
-
-@item ISO2022JP, CSISO2022JP, ISO2022JP-1, ISO2022JP-2, ISO2022JP-3
-@c EN
-These encodings differ a bit
-(except ISO2022JP and CSISO2022JP, which are synonyms), but
-Gauche handles them same.  If one of these CES is specified as input,
-Gauche recognizes escape sequences of any of CES.
-ISO2022JP-2 defines several non-Japanese escape sequences, and
-they are recognized by Gauche, but mapped to substitution character
-('?' or geta mark).
-@c JP
-これらのエンコーディングは、CSISO2022JPがISO2022JPのエイリアスであることを除き
-異なるエスケープシーケンスを使いますが、Gaucheの中では同じルーチンで処理されます。
-これらのエンコーディングのいずれかが入力CESに指定された場合、
-Gaucheは全てのバリエーションのエスケープシーケンスを認識します。
-但し、ISO2022JP-2に定義された日本語以外の言語のエスケープシーケンスに関しては、
-Gaucheはエスケープシーケンスの認識だけを行い、
-文字は'?'あるいは'〓' に置換します。
-@c COMMON
-
-@c EN
-For output, Gauche assumes ISO2022JP first, and uses ISO2022JP-1
-escape sequence to put JIS X 0212 character, or uses ISO2022JP-3
-escape sequence to put JIS X 0213 plane 2 character.
-Thus, if the string contains only JIS X 0208 characters,
-the output is compatible to ISO2022JP.
-Precisely speaking, JIS X 0213 specifies some characters in JIS X 0208
-codepoint that shouldn't be mixed with JIS X 0208 characters;
-Gauche output those characters as JIS X 0208 for compatibility.
-(This is the same policy as Emacs-Mule's iso2022jp-3-compatible mode).
-@c JP
-出力に関してはGaucheは出来る限りISO2022JPでエンコードし、
-JIS X 0212文字に出会ったらISO2022JP-1のエスケープシーケンスを、
-JIS X 0213の第2面の文字に出会ったらISO2022JP-3のエスケープシーケンスを
-用います。したがって、文字列がJIS X 0208の範囲だけで構成されていた場合は
-出力はISO2022JP互換となります。
-厳密には、JIS X 0213では包摂基準の変更により、
-「JIS X 0208と同じコードポイントを用いるがJIS X 0208のエスケープシーケンスを
-使ってはいけない文字」というのが定義されています。
-Gaucheでは互換性のため、これらの文字もJIS X 0208のエスケープシーケンスを
-用いてエンコードします (これは、Emacs-Muleにおけるiso2022jp-3-compatible
-モードと同じ方針です)。
-@c COMMON
-@end table
-
-@node Autodetecting the encoding scheme, Conversion ports, Supported character encoding schemes, Character code conversion
-@subsection Autodetecting the encoding scheme
-@c NODE 文字エンコーディングの自動判定
-
-@c EN
-There are cases that you don't know the CES of the input, but
-you know it is one of several possible encodings.
-The charconv module has a mechanism
-to guess the input encoding.  There can be multiple algorithms,
-and each algorithm has the name (wildcard CES).  Right now, there's only one
-algorithm implemented:
-@c JP
-しばしば、入力のCESが未知であり、可能性のあるいくつかの候補から入力のCESを
-推測しなければならない場合があります。推測するアルゴリズムはいくつも考えられるので、
-それぞれに名前がついています(ワイルドカードCES)。
-今のところ、一つのアルゴリズムしか実装されていません。
-@c COMMON
-@table @code
-@item "*JP"
-@c EN
-To guess the character encoding from japanese text, among either
-ISO2022-JP(-1,2,3), EUCJP, SHIFT_JIS or UTF-8.
-@c JP
-日本語のテキストのCESを、ISO2022-JP(-1,2,3), EUCJP, SHIFT_JIS または UTF-8の
-いずれかであるとして推測する。
-@c COMMON
-@end table
-
-@c EN
-The wildcard CES can be used in place of CES name for some conversion functions.
-@c JP
-ワイルドカードCESは、いくつかの変換関数においてCES名の代わりに使うことができます。
-@c COMMON
-
-
-@defun ces-guess-from-string string scheme
-@c EN
-Guesses the CES of @var{string} by the character guessing scheme
-@var{scheme} (e.g. "*JP").  Returns CES name that can be used
-by other charconv functions.   It may return @code{#f} if the
-guessing scheme finds no possible encoding in @var{string}.
-Note that if there may be more than one possible encoding in
-@var{string}, the guessing scheme returns one of them,
-usually in favor of the native CES.
-@c JP
-文字列@var{string}のCESを、CES推測アルゴリズム@var{scheme} ("*JP"など)
-を使って推測し、結果のCES名を返します。もしどのCESにも該当しないデータが
-含まれていれば@code{#f}が返されます。複数のCESが可能である場合、
-ネイティブエンコーディングが含まれていればそれを、
-そうでなければ可能なCESからどれかひとつが選んで返されます。
-@c COMMON
-@end defun
-
-
-@node Conversion ports,  , Autodetecting the encoding scheme, Character code conversion
-@subsection Conversion ports
-@c NODE 変換ポート
-
-@defun open-input-conversion-port source from-code :key to-code buffer-size owner?
-@c EN
-Takes an input port @var{source}, which feeds characters
-encoded in @var{from-code}, and returns another input port,
-from which you can read characters encoded in @var{to-code}.
-@c JP
-文字が符号化方法@var{from-code}で符号化されているデータを読み出せる
-入力ポート@var{source}を取り、符号化方法@var{to-code}で符号化されたデータを
-読み出せるポートを作成して返します。
-@c COMMON
-
-@c EN
-If @var{to-code} is omitted, the native CES is assumed.
-@c JP
-@var{to-code}が省略された場合はネイティブのCESと見なされます。
-@c COMMON
-
-@c EN
-@var{buffer-size} is used to allocate internal buffer size for
-conversion.  The default size is about 1 kilobytes and it's suitable
-for typical cases.
-@c JP
-@var{buffer-size}は変換のための内部バッファのサイズを指定します。
-省略時のサイズは1Kバイト程で、通常の使用には問題ないサイズです。
-@c COMMON
-
-@c EN
-If you don't know the @var{source}'s CES, you can specify
-CES guessing scheme, such as @code{"*JP"}, in place of @var{from-code}.
-The conversion port tries to guess the encoding, by prefetching
-the data from @var{source} up to the buffer size.  It signals an error
-if the code guessing routine finds no appropriate CES.
-If the guessing routine finds ambiguous input, however, it silently
-assume one of possible CES's, in favor of the native CES.
-Hence it is possible that the guessing is wrong if the buffer
-size is too small.  The default size is usually enough for most
-text documents, but it may fail if the large text contains mostly ASCII
-characters and multibyte characters appear only at the very end of
-the document.
-To be sure for the worst case,
-you have to specify the buffer size large enough to
-hold entire text.
-@c JP
-入力のCESが不明な場合、@code{"*JP"}などのCES推測アルゴリズム名を@var{from-code}
-として指定することができます。変換ポートは最高でバッファサイズまでのデータを先読みし、
-CESを推測しようとします。そのアルゴリズムで推測されるどのCESにも該当しないデータが
-検出された場合はエラーが報告されます。もし複数のCESが可能であるようなデータであった
-場合は、Gaucheのネイティブエンコーディングが可能なCESに含まれていればそれが選ばれ、
-そうでなければいずれかのCESが適当に選ばれます。従って、バッファサイズが小さすぎると
-誤った判定をする可能性が高くなります。大抵のテキストドキュメントに対して、
-既定のバッファサイズは十分ですが、大きなテキストのほとんどがASCII文字で最後だけ
-マルチバイト文字が現われるようなテキストでは誤判定の可能性があります。
-最悪の場合でも結果を保証するには、テキスト全体が格納できるバッファサイズを指定すると
-良いでしょう。
-@c COMMON
-
-@c EN
-By default, @code{open-input-conversion-port} leaves @var{source} open.
-If you specify true value to @var{owner?}, the function closes
-@var{source} after it reads EOF from the port.
-@c JP
-通常、@code{open-input-conversion-port}は変換が全て終了した後でも@var{source}
-はオープンしたままにします。キーワード引数@var{owner?}に真の値を指定すると、
-EOFが読まれた後で@var{source}はクローズされます。
-@c COMMON
-
-@c EN
-For example, the following code copies a file @file{unknown.txt} to a file
-@file{eucjp.txt}, converting unknown japanese CES to EUC-JP.
-@c JP
-例を示しましょう。以下のコードは未知のCES(但しEUC-JP, SJIS, ISO2022-JP, UTF8の
-いずれかであることは分かっている)で書かれたテキストファイル@file{unknown.txt}を
-読みだし、文字エンコーディングをEUC-JPに変換して@file{eucjp.txt}に書き出します。
-@c COMMON
-@example
-(call-with-output-file "eucjp.txt"
-  (lambda (out)
-    (copy-port (open-input-conversion-port
-                 (open-input-file "unknown.txt")
-                 "*jp"             ;@r{guess code}
-                 :to-code "eucjp"
-                 :owner? #t)       ;@r{close unknown.txt afterwards}
-               out)))
-@end example
-@end defun
-
-
-@defun open-output-conversion-port sink to-code :key from-code buffer-size owner?
-@c EN
-Creates and returns an output port that converts
-given characters from @var{from-code} to @var{to-code}
-and feed to an output port @var{sink}.
-If @var{from-code} is omitted, the native CES is assumed.
-You can't specify a character guessing scheme (such as "*JP") to
-neither @var{from-code} nor @var{to-code}.
-@c JP
-文字のエンコーディングを@var{from-code}から@var{to-code}に変換して
-出力ポート@var{sink}に書き出すような出力変換ポートを作成して返します。
-@var{from-code}が省略された場合はネイティブのCESと見なされます。
-@var{from-code}にも@var{to-code}にも、CES推測アルゴリズム名を
-使用することはできません。
-@c COMMON
-
-@c EN
-@var{buffer-size} specifies the size of internal conversion buffer.
-The characters put to the returned port may stay in the buffer,
-until the port is explicity flushed (by @code{flush}) or
-the port is closed.
-@c JP
-@var{buffer-size}は内部で変換に使われるバッファサイズを指定します。
-出力変換ポートに書き出された文字は、@code{flush}を使って明示的に
-フラッシュするか出力変換ポートが閉じられるまで、バッファ内に残っている可能性があります。
-@c COMMON
-
-@c EN
-By default, the returned port doesn't closes @var{sink} when
-itself is closed.  If a keyword argument @var{owner?} is provided
-and true, however, it closes @var{sink} when it is closed.
-@c JP
-通常、出力変換ポートがクローズされても@var{sink}はクローズされません。
-@var{owner?}に真の値を与えれば、出力変換ポートのクローズ時に@var{sink}を
-クローズするようにできます。
-@c COMMON
-@end defun
-
-@defun ces-convert string from-code :optional to-code
-@c EN
-Convert @var{string}'s character encoding from @var{from-code}
-to @var{to-code}, and returns the converted string.
-The returned string may be a byte-string if @var{to-code}
-is different from the native CES.
-@c JP
-@var{from-code}でエンコーディングされた文字列@var{string}を
-@var{to-code}でエンコーディングされた文字列に変換します。
-@var{to-code}がネイティブエンコーディングで無い場合、返される文字列は
-バイト文字列(不完全な文字列)であるかもしれません。
-@c COMMON
-
-@c EN
-@var{from-code} can be a name of character guessing scheme
-(e.g. "*JP").  when @var{to-code} is omitted, the native CES is
-assumed.
-@c JP
-@var{from-code}にはCES推測アルゴリズム名("*JP"など)を与えることができます。
-@var{to-code}が省略された場合はネイティブエンコーディングと見なされます。
-@c COMMON
-@end defun
-
-@defun call-with-input-conversion iport proc :key encoding conversion-buffer-size
-@defunx call-with-output-conversion oport proc :key encoding conversion-buffer-size
-@c EN
-These procedures can be used to perform character I/O with
-different encoding temporary from the original port's encoding.
-
-@code{call-with-input-conversion} takes an input port @var{iport}
-which uses the character encoding @var{encoding}, and
-calls @var{proc} with one argument, a conversion input port.
-From the port, @var{proc} can read characters in
-Gauche's internal encoding.
-Note that once @var{proc} is called, it has to read all the
-characters until EOF; see the note below.
-
-@code{call-with-output-conversion} takes an output port @var{oport}
-which expects the character encoding @var{encoding}, and
-calls @var{proc} with one argument,
-a temporary conversion output port.
-To the port, @var{proc} can write characters in
-Gauche's internal encoding.
-When @var{proc} returns, or it exits with an error,
-the temporary conversion output port is flushed and closed.
-The caller of @code{call-with-output-conversion}
-can continue to use @var{oport} with original encoding afterwards.
-
-Both procedure returns the value(s) that @var{proc} returns.
-The default value of @var{encoding} is Gauche's internal
-encoding.  Those procedures don't create a conversion port
-when it is not necessary.   If @var{conversion-buffer-size} is given,
-it is used as the @var{buffer-size} argument when the conversion
-port is open.
-
-You shouldn't use @var{iport}/@var{oport} directly
-while @var{proc} is active---character encoding is a
-stateful process, and mixing I/O from/to the conversion port and
-the underlying port will screw up the state.
-
-@emph{Note:} for the @code{call-with-input-conversion}, you can't
-use @var{iport} again unless @var{proc} reads EOF from it.
-It's because a conversion port needs to buffer the input, and
-there's no way to undo the buffered input to @var{iport}
-when @var{proc} returns.
-@c JP
-この2つの手続きを使うと、元のポートのエンコーディングとは異る一時的な
-エンコーディングをもつ文字I/Oを行うことが可能です。
-
-@code{call-with-input-conversion} は、文字エンコード@var{encoding} を
-もつ入力ポート @var{iport} をとり、@var{proc}を一つの引数、すなわち、
-変換入力ポートとともに呼びだします。このポートから、@var{proc} は文字を
-Gauche の内部エンコーディングで読み込むことができます。いったん、
-@var{proc}が呼ばれたら、EOFまでのすべての文字を読み込まなくてはなりません。
-後述の注意を参照してください。
-
-@code{call-with-output-conversion} は、文字エンコーディング @var{encoding}
-を期待する出力ポート @var{oport} をとり、@var{proc}を一つの引数、すなわち、
-一時的な変換出力ポートとともに呼びだします。このポートへ、@var{proc}は
-Gauche の内部エンコーディングをもつ文字を書き込むことができます。
-@var{proc} が戻るか、エラーで抜けると、この一時的な変換出力ポートは
-フラッシュされて、クローズされます。@code{call-with-output-conversion}
-の呼出し側は、その後、元のエンコーディングのポート@var{oport}を使い
-続けること可能です。
-
-どちらの手続きも @var{proc} が返す値を返します。@var{encoding}
-のデフォルト値は Gauche の内部エンコーディングです。この2つの手続きは
-必要がなければ、変換ポートを作成しません。もし
-@var{conversion-buffer-size} が与えられていれば、変換ポートがオープン
-されるときに、@var{buffer-size} 引数として使われます。
-
-@var{proc} がアクティブであるあいだは、@var{iport}/@var{oport} を直接
-使うべきではありません。文字のエンコーディングはステートフルなプロセスで
-変換ポート(から/へ)の入出力を混在させると元にあるポートの状態がおかしく
-なってしまいます。
-
-@emph{注意:} @code{call-with-input-conversion} については、
-@var{proc} が EOF を読むまでは、@var{iport} を再度利用することはできません。
-これは、変換ポートがバッファを必要とし、@var{proc} がもどったときに
-@var{iport}へのバッファ付き入力をアンドゥする方法がないからです。
-@c COMMON
-@end defun
-
-@defun with-input-conversion iport thunk :key encoding conversion-buffer-size
-@defunx with-output-conversion oport thunk :key encoding conversion-buffer-size
-@c EN
-Similar to @code{call-with-*-conversion},
-but these procedures call @var{thunk} without arguments,
-while the conversion port is set as the current input or output port,
-respectively.
-The meaning of keyword arguments are the same as @code{call-with-*-conversion}.
-@c JP
-@code{call-with-*-conversion} と似ていますが、この2つの手続きは、
-@var{thunk} を引数なしで呼びます、また、変換ポートはそれぞれ標準入力、標準
-出力のポートにセットされます。
-キーワード引数の意味は @code{call-with-*-conversion} と同じです。
-@c COMMON
-@end defun
-
-@defun wrap-with-input-conversion port from-code :key to-code owner? buffer-size
-@defunx wrap-with-output-conversion port to-code :key from-code owner? buffer-size
-@c EN
-Convenient procedures to avoid adding unnecessary conversion port.
-Each procedure works like @code{open-input-conversion-port}
-and @code{open-output-conversion-port}, respectively,
-except if system knows no conversion is needed,
-no conversion port is created and @var{port} is returned as is.
-
-When a conversion port is created, @var{port} is always owned by the port.
-When you want to close the port, always close the port returned
-by @code{wrap-with-*-conversion}, instead the original @var{port}.
-If you close the original @var{port} first, the pending conversion
-won't be flushed.  (Some conversion requires trailing sequence that
-is generated only when the conversion port is closing, so simply
-calling @code{flush} isn't enough.)
-
-The @var{buffer-size} argument is passed to
-the @code{open-*-conversion-port}.
-@c JP
-不要な変換ポートを作らないようにする便利な手続きです。
-各手続きはそれぞれ@code{open-input-conversion-port}と
-@code{open-output-conversion-port}のように動作します。
-但し、指定されたCES間の変換が必要でないとシステムが知っている場合は、
-変換ポートは作られず、@var{port}がそのまま返されます。
-
-変換ポートが作られた場合、@var{port}は常に変換ポートに所有されます
-(@code{:owner #t}となる)。ポートを閉じる場合は@var{port}ではなく
-常に@code{wrap-with-*-conversion}が返したポートを閉じるようにして下さい。
-元の@var{port}が先に閉じられた場合、変換中の結果が書き出されない可能性があります。
-(変換によっては、ポートが閉じられる時点で終了シーケンスを書き出すものがあるので、
-単にポートを@code{flush}するだけでは不十分です)。
-
-@code{:buffer-size} 引数はそのまま
-変換ポート作成手続きに渡されます。
-@c COMMON
-@end defun
-
-@c ----------------------------------------------------------------------
-@node Generating C code, Collection framework, Character code conversion, Library modules - Gauche extensions
+@node Generating C code, Character code conversion, Importing gauche built-ins, Library modules - Gauche extensions
 @section @code{gauche.cgen} - Generating C code
 @c NODE Cコードの生成, @code{gauche.cgen} - Cコードの生成
 
@@ -2305,9 +1641,9 @@ on @code{gauche.cgen} basic features, so you can plug it
 to your own C code generating programs.
 
 @menu
-* CiSE overview::               
-* CiSE syntax::                 
-* CiSE procedures::             
+* CiSE overview::
+* CiSE syntax::
+* CiSE procedures::
 @end menu
 
 @node CiSE overview, CiSE syntax, C in S expression, C in S expression
@@ -2388,8 +1724,673 @@ and also it keeps track of forward declarations.
 @defmacx define-cise-macro name name2
 @end defmac
 
+
 @c ----------------------------------------------------------------------
-@node Collection framework, Configuration parameters, Generating C code, Library modules - Gauche extensions
+@node Character code conversion, Collection framework, Generating C code, Library modules - Gauche extensions
+@section @code{gauche.charconv} - Character Code Conversion
+@c NODE 文字コード変換, @code{gauche.charconv} - 文字コード変換
+
+@deftp {Module} gauche.charconv
+@mdindex gauche.charconv
+@c EN
+This module defines a set of functions that converts character encoding
+schemes (CES) of the given data stream.
+
+This module is implicitly loaded when @code{:encoding} keyword argument
+is given to the file stream creating functions
+(such as @code{open-input-file} and @code{call-with-output-file}).
+@c JP
+与えられたデータストリームの文字エンコーディングを変換するための手続き群を提供する
+モジュールです。
+
+このモジュールはまた、@code{open-input-file}や
+@code{call-with-output-file}等のファイルストリームを作成する手続きに
+@code{:encoding}キーワード引数が与えられた場合に暗黙にロードされます。
+@c COMMON
+
+@c EN
+As of release 0.5.6, Gauche natively supports conversions between
+typical Japanese character encodings: ISO2022JP, ISO2022JP-3,
+EUC-JP (EUC-JISX0213), Shift_JISX0213, UTF-8 (Unicode 3.2).
+Conversions between other encodings are handled by @code{iconv(3)}.
+@xref{Supported character encoding schemes}, for details.
+@c JP
+リリース0.5.6より、Gaucheは日本語の主要エンコーディング
+(ISO2022JP, ISO2022JP-3, EUC-JP (EUC-JISX0213), Shift_JIS (Shift_JISX0213),
+UTF-8 (Unicode 3.2))間の変換を自前で持つようになりました。
+上記以外のコードとの変換は@code{iconv(3)}を利用します。
+サポートされるコーディングシステムに関する詳細は
+@ref{Supported character encoding schemes}を参照して下さい。
+@c COMMON
+@end deftp
+
+@menu
+* Supported character encoding schemes::
+* Autodetecting the encoding scheme::
+* Conversion ports::
+@end menu
+
+@node Supported character encoding schemes, Autodetecting the encoding scheme, Character code conversion, Character code conversion
+@subsection Supported character encoding schemes
+@c NODE サポートされる文字エンコーディング
+
+@c EN
+A CES is represented by its name as a string or a symbol.
+Case is ignored.  There may be several aliases defined for a single encoding.
+@c JP
+CESの名前は文字列またはシンボルで指定します。大文字小文字の違いは無視されます。
+同じCESにいくつかの別名がついていることがあります。
+@c COMMON
+
+@c EN
+A CES name "none" is special.  When Gauche's native encoding is @code{none},
+Gauche just treats a string as a byte sequence, and it's up to the application
+to interpret the sequence in an appropriate encoding.  So, conversion
+to and from CES "none" does nothing.
+@c JP
+CES名 "none" は特殊です。Gaucheのネイティブエンコーディングが@code{none}の
+場合、Gaucheは文字列を単なるバイト列として扱い、そのエンコーディングの解釈は
+アプリケーションに任されます。したがって、CES "none" への変換、および "none"
+からの変換は「何もしない」変換として扱われます。
+@c COMMON
+
+@c EN
+You can check whether the specific conversion is supported on
+your system or not, by the following function.
+@c JP
+特定の変換がシステムでサポートされているかどうかは次の手続きで調べることができます。
+@c COMMON
+
+@defun ces-conversion-supported? from-ces to-ces
+@c EN
+Returns @code{#t} if conversion from the character encoding scheme
+(CES) @var{from-ces} to @var{to-ces} is supported in this system.
+
+Note that this procedure may return true even if system only supports
+partial conversion between @var{from-ces} and @var{to-ces}.
+In such case, actual conversion might lose information by coercing
+characters in @var{from-ces} which are not supported in @var{to-ces}.
+(For example, conversion from Unicode to EUC-JP is "supported",
+although Unicode has characters that are not in EUC-JP).
+
+Also note that this procedure always returns @code{#t}
+if @var{from-ces} and/or @var{to-ces} is "none",
+for conversion to/from CES "none" always succeeds (in fact, it does nothing).
+
+@example
+;; see if you can convert the internal encoding to EUC-JP
+(ces-conversion-supported? (gauche-character-encoding) "euc-jp")
+@end example
+@c JP
+CES @var{from-ces}から@var{to-ces}への変換がサポートされていれば@code{#t}を、
+そうでなければ@code{#f}を返します。
+
+システムが@var{from-ces}から@var{to-ces}への変換を部分的にしか
+サポートしていない場合でもこの手続きは@code{#t}を返すことに注意して下さい。
+そのような場合、実際の変換作業は@var{from-ces}にあって@var{to-ces}にない
+コードを置換文字に置き換える等で情報を失うかもしれません
+(例えば、UnicodeからEUC-JPへの変換はサポートされていますが、
+UnicodeにはEUC-JPにない文字も含まれています)。
+
+@var{from-ces}か@var{to-ces}が "none" ならばこの手続きは常に@code{#t}を
+返します。なぜならそのような変換は常に成功するからです(何も変換しないわけですが)。
+
+@example
+;; 内部エンコーディングからEUC-JPに変換できるか?
+(ces-conversion-supported? (gauche-character-encoding) "euc-jp")
+@end example
+@c COMMON
+@end defun
+
+@c EN
+Also there are two useful procedures to deal with CES names.
+@c JP
+また、CESを扱う二つの便利な手続きが用意されています。
+@c COMMON
+
+@defun ces-equivalent? ces-a ces-b :optional unknown-value
+@c EN
+Returns true if two CESes @var{ces-a} and @var{ces-b} are equivalent
+to the knowledge of the system.  Returns false if they are not.
+If the system doesn't know about equivalency, @var{unknown-value}
+is returned, whose default is @code{#f}.
+
+CES "none" works like a wild card; it is "equivalent" to any CES.
+(Thus, @code{ces-equivalent?} is not transitive.
+The intended use of @code{ces-equivalent?}
+is to compare two given CES names and see if conversion is required or not).
+@c JP
+CES @var{ces-a}と@var{ces-b}がシステムの知る限りで等価だった場合に
+@code{#t}を、等価でない場合に@code{#f}を返します。
+システムがその等価性を判断出来ない場合は@var{unknown-value}に与えられた
+値を返します。そのデフォルトは@code{#f}です。
+
+CES名 "none" はワイルドカードのように動作します。それはどんなCESとも
+等価と見倣されます。(従って、@code{ces-equivalent?} は遷移的ではありません。
+この手続きは、二つのCESを知った時に相互の変換が
+必要かどうかを判断するためのものです)。
+@c COMMON
+
+@example
+(ces-equivalent? 'eucjp "EUC-JP")            @result{} #t
+(ces-equivalent? 'shift_jis "EUC-JP")        @result{} #f
+(ces-equivalent? "NoSuchEncoding" 'utf-8 '?) @result{} ?
+@end example
+@end defun
+
+@defun ces-upper-compatible? ces-a ces-b :optional unknown-value
+@c EN
+Returns true if a string encoded in CES @var{ces-b} can also
+be regarded as a string encoded in @var{ces-a} without conversion,
+to the knowledge of the system.
+Returns false if not.  Returns @var{unknown-value}
+if the system can't determine which is the case.
+
+Like @code{ces-equivalent?}, CES "none" works like a wildcard.
+It is upper-compatible to any CES, and any CES is upper-compatible to
+"none".
+@c JP
+CES @var{ces-b}でエンコードされた文字列が、システムの知る限りで
+変換無しに@var{ces-a}でエンコードされたものと見倣せる場合に@code{#t}を
+返します。見倣せない場合は@var{#f}を返します。
+システムが判断できない場合は@var{unknown-value}に与えられた
+値を返します。そのデフォルトは@code{#f}です。
+
+@code{ces-equivalent?}と同様に、CES名 "none" はワイルドカードとして
+働きます。@var{ces-a} か @var{ces-b} が "none" であれば、
+常に@code{#t}が返されます。
+@c COMMON
+
+@example
+(ces-upper-compatible? "eucjp" "ASCII")             @result{} #t
+(ces-upper-compatible? "eucjp" "utf-8")             @result{} #f
+(ces-upper-compatible? "utf-8" "NoSuchEncoding" '?) @result{} ?
+@end example
+@end defun
+
+@c EN
+Conversion between common japanese CESes (EUC_JP, Shift JIS, UTF-8
+and ISO2022-JP) of the character set JIS X 0201 and JIS X 0213
+is handled by Gauche's built-in algorithm (see below for details).
+When other CES name is given, Gauche uses
+@code{iconv(3)} if it is linked.
+@c JP
+日本語の文字セットJIS X 0201及びJIS X 0213のエンコーディング
+(EUC_JP、Shift JIS、UTF-8及びISO2022-JP) 間の変換に関しては、
+Gaucheが内部に変換アルゴリズムを持っています (詳細は下の注記を参照)。
+それ以外のCESに関しては、リンクされていればGaucheは@code{iconv(3)}を用いて
+変換を行います。
+@c COMMON
+
+@c EN
+When Gauche's conversion routine encounters a character that can't
+be mapped, it replaces the character for "geta mark" (U+3013)
+if it's a multibyte character in the input encoding, or for '?' if it's
+a singlebyte character in the input encoding.
+If that happens in iconv, handling of such character depends
+on iconv implementation (glibc implementation returns an error).
+@c JP
+出力CESへマップ不可能な入力文字に出会った場合、Gaucheの変換ルーチンは
+その文字が入力CESでマルチバイトである場合はgeta mark '〓' (U+3013) に、
+入力CESでシングルバイトである場合は '?' に置換します。
+iconvによる変換でマップ不可能な文字に出会った場合の処理はiconvの実装に
+依存します(例えばglibcではエラーとなります)。
+@c COMMON
+
+@c EN
+If the conversion routine encounters an input sequence that
+is illegal in the input CES, an error is signaled.
+@c JP
+変換ルーチンが、入力CESとして不正な入力文字列に出会った場合は
+エラーが報告されます。
+@c COMMON
+
+@c EN
+@strong{Details of Gauche's native conversion algorithm:}
+Between EUC_JP, Shift JIS and ISO2022JP, Gauche uses arithmetic
+conversion whenever possible.  This even maps the undefined codepoint
+properly.  Between Unicode (UTF-8) and EUC_JP, Gauche uses lookup tables.
+Between Unicode and Shift JIS or ISO2022JP, Gauche converts the
+input CES to EUC_JP, then convert it to the output CES.
+If the same CES is specified for input and output, Gauche's conversion
+routine just copies input characters to output characters, without
+checking the validity of the encodings.
+@c JP
+@strong{Gaucheの内部変換アルゴリズムの詳細:}
+EUC_JP、Shift JIS、及びISO2022JP間の変換は可能な限り計算で行います。
+文字が未定義のコードポイントも計算式に従って変換されます。
+Unicode(UTF-8)とEUC_JP間の変換はテーブルルックアップによって行われます。
+UnicodeとShift JISまたはISO2022JP間の変換は、入力CESを一度EUC_JPに
+変換し、それを出力CESに変換することによって行います。
+入力と出力のCESがGaucheの内部アルゴリズムがサポートする範囲で等しかった場合、
+Gaucheの変換ルーチンはエンコーディングの正当性はチェックせず、
+単に入力を出力にコピーします。
+@c COMMON
+
+@table @code
+@item EUC_JP, EUCJP, EUCJ, EUC_JISX0213
+@c EN
+Covers ASCII, JIS X 0201 kana, JIS X 0212 and JIS X 0213 character sets.
+JIS X 0212 character set is supported merely because it uses
+the code region JIS X 0213 doesn't use, and JIS X 0212 characters
+are not converted properly to Shift JIS and UTF-8.
+Use JIS X 0213.
+@c JP
+ASCII, JIS X 0201カナ、JIS X 0212、及びJIS X 0213文字セットをカバーします。
+JIS X 0212は、単にJIS X 0213と重ならないコードを使っているためにサポート
+されていますが、他のCESへの変換は行われないので注意して下さい。
+なるべくJIS X 0213の使用をおすすめします。
+@c COMMON
+
+@item SHIFT_JIS, SHIFTJIS, SJIS
+@c EN
+Covers Shift_JISX0213, except that 0x5c and 0x7e is mapped to ASCII
+character set (REVERSE SOLIDUS and TILDE),
+instead of JIS X 0201 Roman (YEN SIGN and OVERLINE).
+@c JP
+Shift_JISX0213をカバーします。但し、0x5cと0x7eに関しては
+JIS X 0201 Roman (YEN SIGNとOVERLINE) ではなく
+ASCII (REVERSE SOLIDUSとTILDE) にマップされます。
+@c COMMON
+
+@item UTF-8, UTF8
+@c EN
+Unicode 3.2.  Note that some JIS X 0213 characters are mapped to Extension B
+(U+20000 and up).
+Some JIS X 0213 characters are mapped to two
+unicode characters (one base character plus a combining character).
+@c JP
+Unicode 3.2です。JIS X 0213中の文字のいくつかはExtension B (U+20000〜)
+にマップされます。JIS X 0213中の他の文字のいくつかは2つのUnicode文字
+(base character + combining character)にマップされます。
+@c COMMON
+
+@item ISO2022JP, CSISO2022JP, ISO2022JP-1, ISO2022JP-2, ISO2022JP-3
+@c EN
+These encodings differ a bit
+(except ISO2022JP and CSISO2022JP, which are synonyms), but
+Gauche handles them same.  If one of these CES is specified as input,
+Gauche recognizes escape sequences of any of CES.
+ISO2022JP-2 defines several non-Japanese escape sequences, and
+they are recognized by Gauche, but mapped to substitution character
+('?' or geta mark).
+@c JP
+これらのエンコーディングは、CSISO2022JPがISO2022JPのエイリアスであることを除き
+異なるエスケープシーケンスを使いますが、Gaucheの中では同じルーチンで処理されます。
+これらのエンコーディングのいずれかが入力CESに指定された場合、
+Gaucheは全てのバリエーションのエスケープシーケンスを認識します。
+但し、ISO2022JP-2に定義された日本語以外の言語のエスケープシーケンスに関しては、
+Gaucheはエスケープシーケンスの認識だけを行い、
+文字は'?'あるいは'〓' に置換します。
+@c COMMON
+
+@c EN
+For output, Gauche assumes ISO2022JP first, and uses ISO2022JP-1
+escape sequence to put JIS X 0212 character, or uses ISO2022JP-3
+escape sequence to put JIS X 0213 plane 2 character.
+Thus, if the string contains only JIS X 0208 characters,
+the output is compatible to ISO2022JP.
+Precisely speaking, JIS X 0213 specifies some characters in JIS X 0208
+codepoint that shouldn't be mixed with JIS X 0208 characters;
+Gauche output those characters as JIS X 0208 for compatibility.
+(This is the same policy as Emacs-Mule's iso2022jp-3-compatible mode).
+@c JP
+出力に関してはGaucheは出来る限りISO2022JPでエンコードし、
+JIS X 0212文字に出会ったらISO2022JP-1のエスケープシーケンスを、
+JIS X 0213の第2面の文字に出会ったらISO2022JP-3のエスケープシーケンスを
+用います。したがって、文字列がJIS X 0208の範囲だけで構成されていた場合は
+出力はISO2022JP互換となります。
+厳密には、JIS X 0213では包摂基準の変更により、
+「JIS X 0208と同じコードポイントを用いるがJIS X 0208のエスケープシーケンスを
+使ってはいけない文字」というのが定義されています。
+Gaucheでは互換性のため、これらの文字もJIS X 0208のエスケープシーケンスを
+用いてエンコードします (これは、Emacs-Muleにおけるiso2022jp-3-compatible
+モードと同じ方針です)。
+@c COMMON
+@end table
+
+@node Autodetecting the encoding scheme, Conversion ports, Supported character encoding schemes, Character code conversion
+@subsection Autodetecting the encoding scheme
+@c NODE 文字エンコーディングの自動判定
+
+@c EN
+There are cases that you don't know the CES of the input, but
+you know it is one of several possible encodings.
+The charconv module has a mechanism
+to guess the input encoding.  There can be multiple algorithms,
+and each algorithm has the name (wildcard CES).  Right now, there's only one
+algorithm implemented:
+@c JP
+しばしば、入力のCESが未知であり、可能性のあるいくつかの候補から入力のCESを
+推測しなければならない場合があります。推測するアルゴリズムはいくつも考えられるので、
+それぞれに名前がついています(ワイルドカードCES)。
+今のところ、一つのアルゴリズムしか実装されていません。
+@c COMMON
+@table @code
+@item "*JP"
+@c EN
+To guess the character encoding from japanese text, among either
+ISO2022-JP(-1,2,3), EUCJP, SHIFT_JIS or UTF-8.
+@c JP
+日本語のテキストのCESを、ISO2022-JP(-1,2,3), EUCJP, SHIFT_JIS または UTF-8の
+いずれかであるとして推測する。
+@c COMMON
+@end table
+
+@c EN
+The wildcard CES can be used in place of CES name for some conversion functions.
+@c JP
+ワイルドカードCESは、いくつかの変換関数においてCES名の代わりに使うことができます。
+@c COMMON
+
+
+@defun ces-guess-from-string string scheme
+@c EN
+Guesses the CES of @var{string} by the character guessing scheme
+@var{scheme} (e.g. "*JP").  Returns CES name that can be used
+by other charconv functions.   It may return @code{#f} if the
+guessing scheme finds no possible encoding in @var{string}.
+Note that if there may be more than one possible encoding in
+@var{string}, the guessing scheme returns one of them,
+usually in favor of the native CES.
+@c JP
+文字列@var{string}のCESを、CES推測アルゴリズム@var{scheme} ("*JP"など)
+を使って推測し、結果のCES名を返します。もしどのCESにも該当しないデータが
+含まれていれば@code{#f}が返されます。複数のCESが可能である場合、
+ネイティブエンコーディングが含まれていればそれを、
+そうでなければ可能なCESからどれかひとつが選んで返されます。
+@c COMMON
+@end defun
+
+
+@node Conversion ports,  , Autodetecting the encoding scheme, Character code conversion
+@subsection Conversion ports
+@c NODE 変換ポート
+
+@defun open-input-conversion-port source from-code :key to-code buffer-size owner?
+@c EN
+Takes an input port @var{source}, which feeds characters
+encoded in @var{from-code}, and returns another input port,
+from which you can read characters encoded in @var{to-code}.
+@c JP
+文字が符号化方法@var{from-code}で符号化されているデータを読み出せる
+入力ポート@var{source}を取り、符号化方法@var{to-code}で符号化されたデータを
+読み出せるポートを作成して返します。
+@c COMMON
+
+@c EN
+If @var{to-code} is omitted, the native CES is assumed.
+@c JP
+@var{to-code}が省略された場合はネイティブのCESと見なされます。
+@c COMMON
+
+@c EN
+@var{buffer-size} is used to allocate internal buffer size for
+conversion.  The default size is about 1 kilobytes and it's suitable
+for typical cases.
+@c JP
+@var{buffer-size}は変換のための内部バッファのサイズを指定します。
+省略時のサイズは1Kバイト程で、通常の使用には問題ないサイズです。
+@c COMMON
+
+@c EN
+If you don't know the @var{source}'s CES, you can specify
+CES guessing scheme, such as @code{"*JP"}, in place of @var{from-code}.
+The conversion port tries to guess the encoding, by prefetching
+the data from @var{source} up to the buffer size.  It signals an error
+if the code guessing routine finds no appropriate CES.
+If the guessing routine finds ambiguous input, however, it silently
+assume one of possible CES's, in favor of the native CES.
+Hence it is possible that the guessing is wrong if the buffer
+size is too small.  The default size is usually enough for most
+text documents, but it may fail if the large text contains mostly ASCII
+characters and multibyte characters appear only at the very end of
+the document.
+To be sure for the worst case,
+you have to specify the buffer size large enough to
+hold entire text.
+@c JP
+入力のCESが不明な場合、@code{"*JP"}などのCES推測アルゴリズム名を@var{from-code}
+として指定することができます。変換ポートは最高でバッファサイズまでのデータを先読みし、
+CESを推測しようとします。そのアルゴリズムで推測されるどのCESにも該当しないデータが
+検出された場合はエラーが報告されます。もし複数のCESが可能であるようなデータであった
+場合は、Gaucheのネイティブエンコーディングが可能なCESに含まれていればそれが選ばれ、
+そうでなければいずれかのCESが適当に選ばれます。従って、バッファサイズが小さすぎると
+誤った判定をする可能性が高くなります。大抵のテキストドキュメントに対して、
+既定のバッファサイズは十分ですが、大きなテキストのほとんどがASCII文字で最後だけ
+マルチバイト文字が現われるようなテキストでは誤判定の可能性があります。
+最悪の場合でも結果を保証するには、テキスト全体が格納できるバッファサイズを指定すると
+良いでしょう。
+@c COMMON
+
+@c EN
+By default, @code{open-input-conversion-port} leaves @var{source} open.
+If you specify true value to @var{owner?}, the function closes
+@var{source} after it reads EOF from the port.
+@c JP
+通常、@code{open-input-conversion-port}は変換が全て終了した後でも@var{source}
+はオープンしたままにします。キーワード引数@var{owner?}に真の値を指定すると、
+EOFが読まれた後で@var{source}はクローズされます。
+@c COMMON
+
+@c EN
+For example, the following code copies a file @file{unknown.txt} to a file
+@file{eucjp.txt}, converting unknown japanese CES to EUC-JP.
+@c JP
+例を示しましょう。以下のコードは未知のCES(但しEUC-JP, SJIS, ISO2022-JP, UTF8の
+いずれかであることは分かっている)で書かれたテキストファイル@file{unknown.txt}を
+読みだし、文字エンコーディングをEUC-JPに変換して@file{eucjp.txt}に書き出します。
+@c COMMON
+@example
+(call-with-output-file "eucjp.txt"
+  (lambda (out)
+    (copy-port (open-input-conversion-port
+                 (open-input-file "unknown.txt")
+                 "*jp"             ;@r{guess code}
+                 :to-code "eucjp"
+                 :owner? #t)       ;@r{close unknown.txt afterwards}
+               out)))
+@end example
+@end defun
+
+
+@defun open-output-conversion-port sink to-code :key from-code buffer-size owner?
+@c EN
+Creates and returns an output port that converts
+given characters from @var{from-code} to @var{to-code}
+and feed to an output port @var{sink}.
+If @var{from-code} is omitted, the native CES is assumed.
+You can't specify a character guessing scheme (such as "*JP") to
+neither @var{from-code} nor @var{to-code}.
+@c JP
+文字のエンコーディングを@var{from-code}から@var{to-code}に変換して
+出力ポート@var{sink}に書き出すような出力変換ポートを作成して返します。
+@var{from-code}が省略された場合はネイティブのCESと見なされます。
+@var{from-code}にも@var{to-code}にも、CES推測アルゴリズム名を
+使用することはできません。
+@c COMMON
+
+@c EN
+@var{buffer-size} specifies the size of internal conversion buffer.
+The characters put to the returned port may stay in the buffer,
+until the port is explicity flushed (by @code{flush}) or
+the port is closed.
+@c JP
+@var{buffer-size}は内部で変換に使われるバッファサイズを指定します。
+出力変換ポートに書き出された文字は、@code{flush}を使って明示的に
+フラッシュするか出力変換ポートが閉じられるまで、バッファ内に残っている可能性があります。
+@c COMMON
+
+@c EN
+By default, the returned port doesn't closes @var{sink} when
+itself is closed.  If a keyword argument @var{owner?} is provided
+and true, however, it closes @var{sink} when it is closed.
+@c JP
+通常、出力変換ポートがクローズされても@var{sink}はクローズされません。
+@var{owner?}に真の値を与えれば、出力変換ポートのクローズ時に@var{sink}を
+クローズするようにできます。
+@c COMMON
+@end defun
+
+@defun ces-convert string from-code :optional to-code
+@c EN
+Convert @var{string}'s character encoding from @var{from-code}
+to @var{to-code}, and returns the converted string.
+The returned string may be a byte-string if @var{to-code}
+is different from the native CES.
+@c JP
+@var{from-code}でエンコーディングされた文字列@var{string}を
+@var{to-code}でエンコーディングされた文字列に変換します。
+@var{to-code}がネイティブエンコーディングで無い場合、返される文字列は
+バイト文字列(不完全な文字列)であるかもしれません。
+@c COMMON
+
+@c EN
+@var{from-code} can be a name of character guessing scheme
+(e.g. "*JP").  when @var{to-code} is omitted, the native CES is
+assumed.
+@c JP
+@var{from-code}にはCES推測アルゴリズム名("*JP"など)を与えることができます。
+@var{to-code}が省略された場合はネイティブエンコーディングと見なされます。
+@c COMMON
+@end defun
+
+@defun call-with-input-conversion iport proc :key encoding conversion-buffer-size
+@defunx call-with-output-conversion oport proc :key encoding conversion-buffer-size
+@c EN
+These procedures can be used to perform character I/O with
+different encoding temporary from the original port's encoding.
+
+@code{call-with-input-conversion} takes an input port @var{iport}
+which uses the character encoding @var{encoding}, and
+calls @var{proc} with one argument, a conversion input port.
+From the port, @var{proc} can read characters in
+Gauche's internal encoding.
+Note that once @var{proc} is called, it has to read all the
+characters until EOF; see the note below.
+
+@code{call-with-output-conversion} takes an output port @var{oport}
+which expects the character encoding @var{encoding}, and
+calls @var{proc} with one argument,
+a temporary conversion output port.
+To the port, @var{proc} can write characters in
+Gauche's internal encoding.
+When @var{proc} returns, or it exits with an error,
+the temporary conversion output port is flushed and closed.
+The caller of @code{call-with-output-conversion}
+can continue to use @var{oport} with original encoding afterwards.
+
+Both procedure returns the value(s) that @var{proc} returns.
+The default value of @var{encoding} is Gauche's internal
+encoding.  Those procedures don't create a conversion port
+when it is not necessary.   If @var{conversion-buffer-size} is given,
+it is used as the @var{buffer-size} argument when the conversion
+port is open.
+
+You shouldn't use @var{iport}/@var{oport} directly
+while @var{proc} is active---character encoding is a
+stateful process, and mixing I/O from/to the conversion port and
+the underlying port will screw up the state.
+
+@emph{Note:} for the @code{call-with-input-conversion}, you can't
+use @var{iport} again unless @var{proc} reads EOF from it.
+It's because a conversion port needs to buffer the input, and
+there's no way to undo the buffered input to @var{iport}
+when @var{proc} returns.
+@c JP
+この2つの手続きを使うと、元のポートのエンコーディングとは異る一時的な
+エンコーディングをもつ文字I/Oを行うことが可能です。
+
+@code{call-with-input-conversion} は、文字エンコード@var{encoding} を
+もつ入力ポート @var{iport} をとり、@var{proc}を一つの引数、すなわち、
+変換入力ポートとともに呼びだします。このポートから、@var{proc} は文字を
+Gauche の内部エンコーディングで読み込むことができます。いったん、
+@var{proc}が呼ばれたら、EOFまでのすべての文字を読み込まなくてはなりません。
+後述の注意を参照してください。
+
+@code{call-with-output-conversion} は、文字エンコーディング @var{encoding}
+を期待する出力ポート @var{oport} をとり、@var{proc}を一つの引数、すなわち、
+一時的な変換出力ポートとともに呼びだします。このポートへ、@var{proc}は
+Gauche の内部エンコーディングをもつ文字を書き込むことができます。
+@var{proc} が戻るか、エラーで抜けると、この一時的な変換出力ポートは
+フラッシュされて、クローズされます。@code{call-with-output-conversion}
+の呼出し側は、その後、元のエンコーディングのポート@var{oport}を使い
+続けること可能です。
+
+どちらの手続きも @var{proc} が返す値を返します。@var{encoding}
+のデフォルト値は Gauche の内部エンコーディングです。この2つの手続きは
+必要がなければ、変換ポートを作成しません。もし
+@var{conversion-buffer-size} が与えられていれば、変換ポートがオープン
+されるときに、@var{buffer-size} 引数として使われます。
+
+@var{proc} がアクティブであるあいだは、@var{iport}/@var{oport} を直接
+使うべきではありません。文字のエンコーディングはステートフルなプロセスで
+変換ポート(から/へ)の入出力を混在させると元にあるポートの状態がおかしく
+なってしまいます。
+
+@emph{注意:} @code{call-with-input-conversion} については、
+@var{proc} が EOF を読むまでは、@var{iport} を再度利用することはできません。
+これは、変換ポートがバッファを必要とし、@var{proc} がもどったときに
+@var{iport}へのバッファ付き入力をアンドゥする方法がないからです。
+@c COMMON
+@end defun
+
+@defun with-input-conversion iport thunk :key encoding conversion-buffer-size
+@defunx with-output-conversion oport thunk :key encoding conversion-buffer-size
+@c EN
+Similar to @code{call-with-*-conversion},
+but these procedures call @var{thunk} without arguments,
+while the conversion port is set as the current input or output port,
+respectively.
+The meaning of keyword arguments are the same as @code{call-with-*-conversion}.
+@c JP
+@code{call-with-*-conversion} と似ていますが、この2つの手続きは、
+@var{thunk} を引数なしで呼びます、また、変換ポートはそれぞれ標準入力、標準
+出力のポートにセットされます。
+キーワード引数の意味は @code{call-with-*-conversion} と同じです。
+@c COMMON
+@end defun
+
+@defun wrap-with-input-conversion port from-code :key to-code owner? buffer-size
+@defunx wrap-with-output-conversion port to-code :key from-code owner? buffer-size
+@c EN
+Convenient procedures to avoid adding unnecessary conversion port.
+Each procedure works like @code{open-input-conversion-port}
+and @code{open-output-conversion-port}, respectively,
+except if system knows no conversion is needed,
+no conversion port is created and @var{port} is returned as is.
+
+When a conversion port is created, @var{port} is always owned by the port.
+When you want to close the port, always close the port returned
+by @code{wrap-with-*-conversion}, instead the original @var{port}.
+If you close the original @var{port} first, the pending conversion
+won't be flushed.  (Some conversion requires trailing sequence that
+is generated only when the conversion port is closing, so simply
+calling @code{flush} isn't enough.)
+
+The @var{buffer-size} argument is passed to
+the @code{open-*-conversion-port}.
+@c JP
+不要な変換ポートを作らないようにする便利な手続きです。
+各手続きはそれぞれ@code{open-input-conversion-port}と
+@code{open-output-conversion-port}のように動作します。
+但し、指定されたCES間の変換が必要でないとシステムが知っている場合は、
+変換ポートは作られず、@var{port}がそのまま返されます。
+
+変換ポートが作られた場合、@var{port}は常に変換ポートに所有されます
+(@code{:owner #t}となる)。ポートを閉じる場合は@var{port}ではなく
+常に@code{wrap-with-*-conversion}が返したポートを閉じるようにして下さい。
+元の@var{port}が先に閉じられた場合、変換中の結果が書き出されない可能性があります。
+(変換によっては、ポートが閉じられる時点で終了シーケンスを書き出すものがあるので、
+単にポートを@code{flush}するだけでは不十分です)。
+
+@code{:buffer-size} 引数はそのまま
+変換ポート作成手続きに渡されます。
+@c COMMON
+@end defun
+
+@c ----------------------------------------------------------------------
+@node Collection framework, Configuration parameters, Character code conversion, Library modules - Gauche extensions
 @section @code{gauche.collection} - Collection framework
 @c NODE コレクションフレームワーク, @code{gauche.collection} - コレクションフレームワーク
 
@@ -2537,11 +2538,11 @@ takes a collection class argument and returns the collection of the class.
 @end deftp
 
 @menu
-* Mapping over collection::     
-* Selection and searching in collection::  
-* Miscellaneous operations on collection::  
-* Fundamental iterator creators::  
-* Implementing collections::    
+* Mapping over collection::
+* Selection and searching in collection::
+* Miscellaneous operations on collection::
+* Fundamental iterator creators::
+* Implementing collections::
 @end menu
 
 @node Mapping over collection, Selection and searching in collection, Collection framework, Collection framework
@@ -3728,8 +3729,8 @@ autoconfの@code{AC_*}マクロに対応する機能は、プレフィクスを@
 @c COMMON
 
 @menu
-* Structure of configure script::  
-* Configure API::               
+* Structure of configure script::
+* Configure API::
 @end menu
 
 @node Structure of configure script, Configure API, Generating build files, Generating build files
@@ -4463,8 +4464,8 @@ built on top of other dictionary classes.
 @end deftp
 
 @menu
-* Generic functions for dictionaries::  
-* Generic dictionaries::        
+* Generic functions for dictionaries::
+* Generic dictionaries::
 @end menu
 
 @node Generic functions for dictionaries, Generic dictionaries, Dictionary framework, Dictionary framework
@@ -5304,9 +5305,9 @@ to consume; there are utitlity procedures provided
 @c COMMON
 
 @menu
-* Generator constructors::      
-* Generator operations::        
-* Generator consumers::         
+* Generator constructors::
+* Generator operations::
+* Generator consumers::
 @end menu
 
 @node Generator constructors, Generator operations, Generators, Generators
@@ -8573,10 +8574,10 @@ take a look at @code{srfi-106} (@pxref{Basic socket interface}).
 @c COMMON
 
 @menu
-* Socket address::              
-* High-level network functions::  
-* Low-level socket interface::  
-* Netdb interface::             
+* Socket address::
+* High-level network functions::
+* Low-level socket interface::
+* Netdb interface::
 @end menu
 
 @node Socket address, High-level network functions, Networking, Networking
@@ -11743,10 +11744,10 @@ a convenient way to send/receive information to/from subprocesses.
 @end deftp
 
 @menu
-* Running subprocess::          
-* Running multiple processes::  
-* Process object::              
-* Process ports::               
+* Running subprocess::
+* Running multiple processes::
+* Process object::
+* Process ports::
 @end menu
 
 @node Running subprocess, Running multiple processes, High Level Process Interface, High Level Process Interface
@@ -13270,11 +13271,11 @@ in day-to-day programming, but they might be handy to
 create record types on-the-fly at runtime.
 
 @menu
-* Record types introduction::   
-* Record types syntactic layer::  
-* Record types inspection layer::  
-* Record types procedural layer::  
-* Pseudo record types::         
+* Record types introduction::
+* Record types syntactic layer::
+* Record types inspection layer::
+* Record types procedural layer::
+* Pseudo record types::
 @end menu
 
 @node Record types introduction, Record types syntactic layer, Record types, Record types
@@ -14092,11 +14093,11 @@ Gauche組み込みクラスのうち、リスト、ベクター、そして文�
 @end deftp
 
 @menu
-* Fundamental sequence accessors::  
-* Slicing sequence::            
-* Mapping over sequences::      
-* Other operations over sequences::  
-* Implementing sequence::       
+* Fundamental sequence accessors::
+* Slicing sequence::
+* Mapping over sequences::
+* Other operations over sequences::
+* Implementing sequence::
 @end menu
 
 @node Fundamental sequence accessors, Slicing sequence, Sequence framework, Sequence framework
@@ -14981,8 +14982,8 @@ Windowsネイティブ環境でも使うことができます。
 @end deftp
 
 @menu
-* Posix termios interface::     
-* Common high-level terminal control::  
+* Posix termios interface::
+* Common high-level terminal control::
 @end menu
 
 @node Posix termios interface, Common high-level terminal control, Terminal control, Terminal control
@@ -16259,10 +16260,10 @@ SchemeレベルのスレッドAPIはSRFI-18、``マルチスレッドサポー�
 @c COMMON
 
 @menu
-* Thread programming tips::     
-* Thread procedures::           
-* Synchronization primitives::  
-* Thread exceptions::           
+* Thread programming tips::
+* Thread procedures::
+* Synchronization primitives::
+* Thread exceptions::
 @end menu
 
 @node Thread programming tips, Thread procedures, Threads, Threads
@@ -18318,9 +18319,9 @@ Gaucheが@code{utf-8}でコンパイルされている場合、コードポイ�
 @end deftp
 
 @menu
-* Unicode transfer encodings::  
-* Unicode text segmentation::   
-* Full string case conversion::  
+* Unicode transfer encodings::
+* Unicode text segmentation::
+* Full string case conversion::
 @end menu
 
 @node Unicode transfer encodings, Unicode text segmentation, Unicode utilities, Unicode utilities
@@ -18848,10 +18849,10 @@ for any of @code{s8}, @code{u8}, @code{s16}, @code{u16},
 @c COMMON
 
 @menu
-* Uvector basic operations::    
-* Uvector conversion operations::  
-* Uvector numeric operations::  
-* Uvector block I/O::           
+* Uvector basic operations::
+* Uvector conversion operations::
+* Uvector numeric operations::
+* Uvector block I/O::
 @end menu
 
 @node Uvector basic operations, Uvector conversion operations, Uniform vectors, Uniform vectors
