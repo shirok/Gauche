@@ -753,19 +753,42 @@ described in @ref{Three forms of import}.
 @c COMMON
 
 @c EN
-The @code{include} and @code{include-ci} forms are the same as Gauche's;
-@pxref{Inclusions}.
+The @code{include} and @code{include-ci} declarations
+are the same as Gauche's; @pxref{Inclusions}.
+Note that Gauche allows any code to be included---the content of
+the named file is simply wrapped with @code{begin} and
+substituted with these forms---but in R7RS definition,
+what you include must contain only Scheme code
+(not one of the library declarations or @code{define-library} form).
 @c JP
 @code{include}と@code{include-ci}フォームはGaucheのそれと同じです。
-@ref{Inclusions}参照。
+@ref{Inclusions}参照。Gaucheはインクルードされるコードの中身については
+感知せず、単にその中身を@code{begin}で囲んで元のフォームと
+置き換えるだけです。けれどもR7RSでは、これらのフォームが読み込むファイルには
+Schemeコードのみが許されます(例えば@code{define-library}フォームや
+他のライブラリ宣言フォームはだめです)。
 @c COMMON
 
 @c EN
-The @code{cond-expand} form is also the same as Gauche's;
-@pxref{Feature conditional}.
+The @code{include-library-declarations} declaration works like @code{include},
+but the content of the read file is interpreted
+as library declarations instead of Scheme code.
 @c JP
-@code{cond-expand}フォームもGaucheのそれと同じです。
+@code{include-library-declarations}宣言は@code{include}宣言と
+同じように動作しますが、読み込まれるファイルの中身はSchemeコードではなく
+ライブラリ宣言として解釈されます。
+@c COMMON
+
+@c EN
+The @code{cond-expand} declaration is also the same as Gauche's;
+@pxref{Feature conditional}.  When used directly below
+@code{define-library}, it must expands to one of the
+library declarations.
+@c JP
+@code{cond-expand}宣言もGaucheのそれと同じです。
 @ref{Feature conditional}参照。
+但し、@code{define-library}の直下で使われた場合は、
+展開結果もライブラリ宣言になっている必要があります。
 @c COMMON
 @end defmac
 
@@ -776,14 +799,28 @@ The @code{cond-expand} form is also the same as Gauche's;
 
 @deftp {Module} scheme.base
 @mdindex scheme.base
+@c EN
 Exports bindings of R7RS @code{(scheme base)} library.  From R7RS programs,
 those bindings are available by @code{(import (scheme base))}.
+@c JP
+R7RSの@code{(scheme base)}ライブラリの束縛をエクスポートします。
+R7RSプログラムからは、エクスポートされた束縛は@code{(import (scheme base))}とすることで
+使えます。
+@c COMMON
 @end deftp
 
+@c EN
 @subheading Bindings common to Gauche's built-ins
+@c JP
+@subheading Gaucheの組み込み束縛と共通なもの
+@c COMMON
 
+@c EN
 The following syntaxes and procedures are the same as Gauche's
 builtins:
+@c JP
+以下の構文の手続きはGaucheの組み込みのものと同じです。
+@c COMMON
 
 @table @asis
 @item Primitive expression types
@@ -859,7 +896,7 @@ values call-with-values dynamic-wind
 @end example
 @item Exception
 @example
-raise error
+error
 @end example
 @item Environments and evaluation
 @example
@@ -875,7 +912,11 @@ newline write-char
 @end example
 @end table
 
+@c EN
 @subheading Bytevector utilities
+@c JP
+@subheading バイトベクタユーティリティ
+@c COMMON
 
 @defun bytevector n @dots{}
 @defunx bytevector? obj
@@ -887,6 +928,7 @@ newline write-char
 @defunx bytevector-copy! to at from :optional start end
 @defunx bytevector-append bv @dots{}
 [R7RS]
+@c EN
 R7RS's bytevector is Gauche's u8vector.
 
 These are equivalent to @code{gauche.uvector}'s
@@ -894,131 +936,284 @@ These are equivalent to @code{gauche.uvector}'s
 @code{make-u8vector}, @code{u8vector-length}, @code{u8vector-ref},
 @code{u8vector-set!}, @code{u8vector-copy}, @code{u8vector-copy!}, and
 @code{u8vector-append}, respectively.  (@pxref{Uniform vectors}).
+@c JP
+R7RSのbytevectorはGaucheのu8vectorです。
+
+これらの手続きは@code{gauche.uvector}の
+@code{u8vector}、@code{u8vector?}、
+@code{make-u8vector}、@code{u8vector-length}、@code{u8vector-ref}、
+@code{u8vector-set!}、@code{u8vector-copy}、@code{u8vector-copy!}、
+@code{u8vector-append}とそれぞれ同じです。
+(@ref{Uniform vectors}参照)。
+@c COMMON
 @end defun
 
+@c EN
 These two procedures are the same as the ones in @code{gauche.unicode}
 module (@pxref{Unicode transfer encodings}):
+@c JP
+以下の二つの手続きは@code{gauche.unicode}モジュールの同名の手続きと同じです。
+(@ref{Unicode transfer encodings}参照):
+@c COMMON
 
 @example
 utf8->string string->utf8
 @end example
 
+@c EN
 @subheading Control features
+@c JP
+@subheading 制御機能
+@c COMMON
 
 @defun string-map proc str @dots{}
 @defunx string-for-each proc str @dots{}
 [R7RS]
+@c EN
 These take different arguments from 
 @code{string-map} and @code{string-for-each} in SRFI-13
-(@pxref{SRFI-13 String mapping}), so provided only in @code{scheme.base} module
+(@pxref{SRFI-13 String mapping}), 
+so provided only in @code{scheme.base} module
 to avoid confusion.
+
+If you pass only one string argunemt, however, it works exactly
+the same way in both @code{srfi-13} and @code{scheme.base}.
+@c JP
+これらの手続きはSRFI-13の@code{string-map}及び@code{string-for-each}
+(@ref{SRFI-13 String mapping}参照)とは異なる引数を取るので、
+混乱を避けるため@code{scheme.base}でのみ提供されます。
+
+但し、文字列引数をひとつだけ渡す場合は、
+@code{srfi-13}でも@code{scheme.base}でも全く同様に動作します。
+@c COMMON
 @end defun
 
-@defun raise-continuable obj
+@defun raise obj
+@defunx raise-continuable obj
 [R7RS]
-At this moment, this is defined as an alias of @code{raise},
-for Gauche's @code{raise} returns unless @var{obj} is not a
+@c EN
+Gauche's @code{raise} may return if @var{obj} isn't a
 @code{<serious-condition>}.
+Distinguishing continuable and noncontinuable exception throw by the
+procedure has an issue when your exception handler wants to reraise
+the condition (you don't know if the original condition is raised
+by @code{raise} or @code{raise-continuable}!).  Yet R7RS adoted
+that model, so we compel.
+
+R7RS @code{raise} is a wrapper of Gauche's @code{raise},
+which throws an error if Gauche's @code{raise} returns.
+
+R7RS @code{raise-continuable} is currently just an alias of
+Gauche's @code{raise}---as long as you don't pass
+@code{<serious-condition>}, it may return.  It is not exactly
+R7RS comformant---it won't return if you pass @code{<serious-condition>}
+or object of one of its subclasses (e.g. @code{<error>}), but
+it's weired to expect returning from raising @code{<error>}, isn't it?
+@c JP
+Gaucheの@code{raise}は、@var{obj}が@code{<serious-condition>}でなければ、
+例外ハンドラから戻って来ることを許しています。
+継続可能な例外報告と継続不可能な例外報告を手続きで区別するのは、
+例外ハンドラが渡されたコンディションを再び投げる場合に問題となります
+(元のコンディションが@code{raise}で投げられたのか@code{raise-continuable}で
+投げられたのか知る術がない!)。
+しかしR7RSではそのモデルを採用したため、何とか合わせようとしています。
+
+R7RS版の@code{raise}はGaucheの@code{raise}のラッパーで、
+Gaucheの@code{raise}から戻って来たらエラーを投げるようにしています。
+
+R7RSの@code{raise-continuable}は今のところGaucheの@code{raise}の
+別名になっています。@code{<serious-condition>}を渡さなければ、
+戻ってくることが可能です。R7RS準拠でないのは、
+@code{<serious-condition>}かそのサブクラスのオブジェクト(例えば@code{<error>})を
+@code{raise-continuable}に渡した場合ですが、
+@code{<error>}を投げて戻って来ることを期待するというのはちょっとおかしいですよね。
+@c COMMON
 @end defun
 
 @defun error-object? exc
 [R7RS]
+@c EN
 Defined as @code{(condition-has-type? exc <error>))}
+@c JP
+@code{(condition-has-type? exc <error>))}として定義されています。
+@c COMMON
 @end defun
 
 @defun error-object-message exc
 [R7RS]
-Returns the message portion of @var{exc} if it has one,
-or an empty string otherwise.
+@c EN
+If @var{exc} is a @code{<message-condition>}, 
+returns its @code{message-prefix} slot;
+otherwise, returns an empty string.
+@c JP
+@var{exc}が@code{<message-condition>}であれば
+@code{message-prefix}の内容を、持っていなければ空文字列を返します。
+@c COMMON
 @end defun
 
 @defun error-object-irritants exc
 [R7RS]
+@c EN
+If @var{exc} is a @code{<message-condition>}, 
+returns its @code{message-args} slot;
+otherwise, returns an empty string.
+@c JP
+@var{exc}が@code{<message-condition>}であれば
+@code{message-args}の内容を、持っていなければ空文字列を返します。
+@c COMMON
 @end defun
 
 @defun read-error? exc
 [R7RS]
+@c EN
 Defined as @code{(condition-has-type? e <read-error>))}.
+@c JP
+@code{(condition-has-type? e <read-error>))}として定義されています。
+@c COMMON
 @end defun
 
 @defun file-error? exc
 [R7RS]
+@c EN
 At this moment, Gauche doesn't have distinct @code{<file-error>} condition,
 but most file errors are thrown as one of @code{<system-error>}s.
 This procedure checks error code of @code{<system-error>} and
 returns @code{#t} if the error is likely to be related to the filesystem.
+@c JP
+今のところ、Gaucheは独立した@code{<file-error>}コンディションを持っていませんが、
+ファイルエラーのほとんどは@code{<system-error>}として投げられます。
+この手続きは@code{<system-error>}のエラーコードを調べ、ファイルに起因するエラー
+の場合に@code{#t}を返すようにしています。
+@c COMMON
 @end defun
 
+@c EN
 @subheading Input and output
+@c JP
+@subheading 入出力
+@c COMMON
 
 @defun textual-port? port
 @defunx binary-port? port
 [R7RS]
+@c EN
 Gauche's port can handle both, so these are equivalent to @code{port?}.
+@c JP
+Gaucheのポートはどちらも扱えるので、これらの手続きは@code{port?}と等価です。
+@c COMMON
 @end defun
 
 @defun input-port-open? iport
 @defunx output-port-open? oport
 [R7RS]
+@c EN
 Checks whether @var{iport}/@var{oport} is an input/output port @emph{and}
 it is not closed.
+@c JP
+@var{iport}/@var{oport}がそれぞれ入力/出力ポートであり、かつクローズされていなければ
+@code{#t}を返します。
+@c COMMON
 @end defun
 
 @defun open-input-bytevector u8vector
 @defunx open-output-bytevector
 @defunx get-output-bytevector port
 [R7RS]
+@c EN
 These are basically the same as @code{open-input-uvector},
 @code{open-output-uvector} and @var{get-output-uvector}
 in @code{gauche.vport} (@pxref{Virtual ports}), except that
 R7RS procedures only deal with @code{<u8vector>}.
+@c JP
+これらは基本的に@code{gauche.vport}の
+@code{open-input-uvector}、
+@code{open-output-uvector}、@var{get-output-uvector}
+とそれぞれ同じです(@ref{Virtual ports}参照)。
+但しR7RS版は@code{<u8vector>}しか受け付けません。
+@c COMMON
 @end defun
 
 @defun read-u8 :optional iport
 @defunx peek-u8 :optional iport
 @defunx u8-ready? :optional iport
 [R7RS]
+@c EN
 These are aliases to @code{read-byte}, @code{peek-byte} and @code{byte-ready?},
 respectively.
+@c JP
+それぞれ@code{read-byte}、@code{peek-byte}、@code{byte-ready?}と
+同じです。
+@c COMMON
 @end defun
 
 @defun read-bytevector size :optional iport
 [R7RS]
+@c EN
 Equivalent to @code{(read-uvector <u8vector> size iport)}. 
+@c JP
+@code{(read-uvector <u8vector> size iport)}と等価です。
+@c COMMON
 @xref{Uvector block I/O}.
 @end defun
 
 @defun read-bytevector! bv :optional iport start end
 [R7RS]
+@c EN
 An alias to @code{read-uvector!}.  @xref{Uvector block I/O}.
+@c JP
+@code{read-uvector!}の別名です。@ref{Uvector block I/O}参照。
+@c COMMON
 @end defun
 
 @defun write-string string :optional oport start end
 [R7RS]
+@c EN
 If the optional @var{start} and @var{end} arguments are omitted,
 it is the same as @code{(display string oport)}.  The optional
 arguments restricts the range of @var{string} to be written.
+@c JP
+@var{start}と@var{end}引数が省略された場合は@code{(display string oport)}と
+同じです。それらが与えられた場合は、@var{string}中の指定範囲のみが出力されます。
+@c COMMON
 @end defun
 
 @defun write-u8
 [R7RS]
+@c EN
 An alias to @code{write-byte}.
+@c JP
+@code{write-byte}の別名です。
+@c COMMON
 @end defun
 
 @defun write-bytevector bv :optional oport start end
 [R7RS]
+@c EN
 Equivalent to @code{write-uvector}.  @xref{Uvector block I/O}.
+@c JP
+@code{write-uvector}と同じです。@ref{Uvector block I/O}参照。
+@c COMMON
 @end defun
 
 @defun flush-output-port :optional oport
 [R7RS]
+@c EN
 An alias to @code{flush}.
+@c JP
+@code{flush}の別名です。
+@c COMMON
 @end defun
 
 @defun features
 [R7RS]
+@c EN
 Returns a list of symbols of supported feature identifiers,
 recognized by @code{cond-expand} (@pxref{Feature conditional}).
+@c JP
+サポートされている@code{feature-identifier}のリストを返します。
+@code{feature-identifier}については、@code{cond-expand}を参照してください
+(@ref{Feature conditional}参照)。
+@c COMMON
 @end defun
 
 
@@ -1028,6 +1223,7 @@ recognized by @code{cond-expand} (@pxref{Feature conditional}).
 
 @deftp {Module} scheme.case-lambda
 @mdindex scheme.case-lambda
+@c EN
 Exports bindings of R7RS @code{(scheme case-lambda)} library.
 From R7RS programs,
 those bindings are available by @code{(import (scheme case-lambda))}.
@@ -1035,6 +1231,15 @@ those bindings are available by @code{(import (scheme case-lambda))}.
 The only binding exported from this module is @code{case-lambda},
 and it is the same as Gauche's built-in @code{case-lambda};
 @pxref{Making Procedures} for the details.
+@c JP
+R7RSの@code{(scheme case-lambda)}ライブラリの束縛をエクスポートします。
+R7RSプログラムからは、エクスポートされた束縛は
+@code{(import (scheme case-lambda))}とすることで使えます。
+
+このモジュールからエクスポートされるのは@code{case-lambda}だけで、
+Gauche組み込みの@code{case-lambda}そのものです。
+詳しくは@ref{Making Procedures}を参照してください。
+@c COMMON
 @end deftp
 
 
@@ -1044,13 +1249,23 @@ and it is the same as Gauche's built-in @code{case-lambda};
 
 @deftp {Module} scheme.char
 @mdindex scheme.char
+@c EN
 Exports bindings of R7RS @code{(scheme char)} library.
 From R7RS programs,
 those bindings are available by @code{(import (scheme char))}.
+@c JP
+R7RSの@code{(scheme char)}ライブラリの束縛をエクスポートします。
+R7RSプログラムからは、エクスポートされた束縛は
+@code{(import (scheme char))}とすることで使えます。
+@c COMMON
 @end deftp
 
+@c EN
 The following procedures are the same as Gauche's builtin procedures;
 @pxref{Characters}.
+@c JP
+以下の手続きはGaucheの組み込みのものと同じです。@ref{Characters}参照。
+@c COMMON
 
 @example
 char-alphabetic? char-ci<=? char-ci<?  char-ci=? char-ci>=? char-ci>?
@@ -1058,10 +1273,16 @@ char-downcase char-foldcase char-lower-case? char-numeric?
 char-upcase char-upper-case?  char-whitespace?
 @end example
 
+@c EN
 The following procedures are the same as the ones provided
 in @code{gauche.unicode} module (@pxref{Full string case conversion}).
 They use full case folding by Unicode standard (e.g. taking into
 account of German eszett).
+@c JP
+以下の手続きは@code{gauche.unicode}で提供されているものと同じです
+(@ref{Full string case conversion}参照)。Unicodeで定義されている
+フルセットの大文字小文字変換を使います(例えばドイツ語のエスツェットが考慮されます)。
+@c COMMON
 
 @example
 string-ci<=? string-ci<?  string-ci=? string-ci>=?  string-ci>?
@@ -1070,9 +1291,14 @@ string-downcase string-foldcase string-upcase
 
 @defun digit-value c
 [R7RS]
+@c EN
 If @var{c} is a character with @code{Nd} general category---that is,
 if it represents a decimal digit---this procedure returns the value
 the character represents.  Otherwise it returns @code{#f}.
+@c JP
+@var{c}が@code{Nd}カテゴリの文字、つまり十進数の数字を表す文字であれば、
+その文字が表す値を返します。それ以外の場合は@code{#f}を返します。
+@c COMMON
 
 @example
 (digit-value #\3) @result{} 3
@@ -1080,14 +1306,23 @@ the character represents.  Otherwise it returns @code{#f}.
 (digit-value #\z) @result{} #f
 @end example
 
+@c EN
 Note that Unicode defines about two dozen sets of digit characters.
+@c JP
+Unicodeには20種類以上の数字が定義されています。
+@c COMMON
 
 @example
 (digit-value #\x11068) @result{} 2
 @end example
 
+@c EN
 Gauche's built-in procedure @code{digit->integer} has more general
 interface (@pxref{Characters}).
+@c JP
+Gauche組み込みの@code{digit->integer}はより汎用的なインタフェースを
+持っています(@ref{Characters}参照)。
+@c COMMON
 
 @example
 (digit-value c) @equiv{} (digit->integer c 10 #t)
@@ -1100,12 +1335,23 @@ interface (@pxref{Characters}).
 
 @deftp {Module} scheme.complex
 @mdindex scheme.complex
+@c EN
 Exports bindings of R7RS @code{(scheme complex)} library.
 From R7RS programs,
 those bindings are available by @code{(import (scheme complex))}.
+@c JP
+R7RSの@code{(scheme complex)}ライブラリの束縛をエクスポートします。
+R7RSプログラムからは、エクスポートされた束縛は
+@code{(import (scheme complex))}とすることで使えます。
+@c COMMON
 
+@c EN
 This module provides the following bindings, all of which are 
 Gauche built-in (@pxref{Numerical conversions}).
+@c JP
+このモジュールは以下の束縛を提供します。
+全てGaucheの組み込みです(@ref{Numerical conversions}参照)。
+@c COMMON
 
 @example
 angle imag-part magnitude make-polar make-rectangular real-part
@@ -1119,12 +1365,23 @@ angle imag-part magnitude make-polar make-rectangular real-part
 
 @deftp {Module} scheme.cxr
 @mdindex scheme.cxr
+@c EN
 Exports bindings of R7RS @code{(scheme cxr)} library.
 From R7RS programs,
 those bindings are available by @code{(import (scheme cxr))}.
+@c JP
+R7RSの@code{(scheme complex)}ライブラリの束縛をエクスポートします。
+R7RSプログラムからは、エクスポートされた束縛は
+@code{(import (scheme complex))}とすることで使えます。
+@c COMMON
 
+@c EN
 This module provides the following bindings, all of which are 
 Gauche built-in (@pxref{List accessors and modifiers}).
+@c JP
+このモジュールは以下の束縛を提供します。
+全てGaucheの組み込みです(@ref{List accessors and modifiers}参照)。
+@c COMMON
 
 @example
 caaar caadr cadar caddr cdaar cdadr cddar cdddr caaaar caaadr caadar
@@ -1139,27 +1396,54 @@ cddadr cdddar cddddr
 
 @deftp {Module} scheme.eval
 @mdindex scheme.eval
+@c EN
 Exports bindings of R7RS @code{(scheme eval)} library.
 From R7RS programs,
 those bindings are available by @code{(import (scheme eval))}.
+@c JP
+R7RSの@code{(scheme eval)}ライブラリの束縛をエクスポートします。
+R7RSプログラムからは、エクスポートされた束縛は
+@code{(import (scheme eval))}とすることで使えます。
+@c COMMON
 @end deftp
 
 @defun eval expr environment
 [R7RS]
+@c EN
 This is the same as Gauche's built-in @code{eval} (@pxref{Eval and repl}).
+@c JP
+Gauche組み込みの@code{eval}と同じです (@ref{Eval and repl}参照)。
+@c COMMON
 @end defun
 
 @defun environment import-list @dots{}
 [R7RS]
+@c EN
 This is R7RS way to create an environment specifier suitable to pass
 to @code{eval}.  In Gauche, an environment specifier is just a
 module object.
+@c JP
+これはR7RSで@code{eval}に渡せる環境指定子を作る手段です。Gaucheでは、
+環境指定子は単なるモジュールオブジェクトです。
+@c COMMON
 
-The argument is the same as what @code{import} takes.
+@c EN
+The argument is the same as what @code{r7rs#import} takes.
 This procedure creates an empty environment (as a fresh anonymous module;
-see @code{make-module} in @ref{Module introspection}, for the details).
+see @code{make-module} in @ref{Module introspection}, for the details),
+then imports the bindings as specified by @var{import-list}s.
+
 The following example creates an environment that includes
 @code{scheme.base} bindings plus @code{select-module} syntax from Gauche.
+@c JP
+引数は@code{r7rs#import}が取るものと同じです。
+この手続きはまず空の環境(=無名のモジュールです。
+詳しくは@ref{Module introspection}の@code{make-module}参照)を作り、
+それから@var{import-list}に指定される束縛をインポートします。
+
+以下の例は、@code{scheme.base}及びGauche組み込みの@code{select-module}を
+インポートした環境を作ります。
+@c COMMON
 
 @example
 (environment
@@ -1176,13 +1460,24 @@ The following example creates an environment that includes
 
 @deftp {Module} scheme.file
 @mdindex scheme.file
+@c EN
 Exports bindings of R7RS @code{(scheme file)} library.
 From R7RS programs,
 those bindings are available by @code{(import (scheme file))}.
+@c JP
+R7RSの@code{(scheme file)}ライブラリの束縛をエクスポートします。
+R7RSプログラムからは、エクスポートされた束縛は
+@code{(import (scheme file))}とすることで使えます。
+@c COMMON
 @end deftp
 
+@c EN
 The following bindings provided in this module are
 Gauche built-in (@pxref{File ports}, and @ref{File stats}).
+@c JP
+次に挙げる束縛はGaucheの組み込みと同じです
+(@ref{File ports}及び@ref{File stats}参照)。
+@c COMMON
 
 @example
 call-with-input-file call-with-output-file
@@ -1193,16 +1488,29 @@ with-input-from-file with-output-to-file
 
 @defun delete-file filename
 [R7RS]
-This is the same as @code{delete-file} in @code{file.util}.
+@c EN
+This is the same as @code{delete-file} in @code{file.util}
+(@pxref{File operations}).
+@c JP
+これは@code{file.util}の@code{delete-file}と同じです
+(@ref{File operations}参照)。
+@c COMMON
 @end defun
 
 @defun open-binary-input-file filename
 @defunx open-binary-output-file filename
 [R7RS]
+@c EN
 In Gauche, ports are both textual and binary at the same time,
 so these R7RS procedures
 are just aliases of @code{open-input-file} and @code{open-output-file},
 respectively.  @xref{File ports}.
+@c JP
+Gaucheでは、ポートは同時にテキストポートでもバイナリポートでもあるので、
+これらのR7RS手続きは単に
+@code{open-input-file}と@code{open-output-file}の別名になっています。
+@ref{File ports}参照。
+@c COMMON
 @end defun
 
 @node R7RS inexact numbers, R7RS lazy evaluation, R7RS file library, Library modules - R7RS integration
@@ -1211,12 +1519,23 @@ respectively.  @xref{File ports}.
 
 @deftp {Module} scheme.inexact
 @mdindex scheme.inexact
+@c EN
 Exports bindings of R7RS @code{(scheme inexact)} library.
 From R7RS programs,
 those bindings are available by @code{(import (scheme inexact))}.
+@c JP
+R7RSの@code{(scheme inexact)}ライブラリの束縛をエクスポートします。
+R7RSプログラムからは、エクスポートされた束縛は
+@code{(import (scheme inexact))}とすることで使えます。
+@c COMMON
 
+@c EN
 This module provides the following bindings, all of which are 
 Gauche built-in (@pxref{Arithmetics}, and @ref{Numerical predicates}).
+@c JP
+このモジュールは以下の束縛を提供します。全てGaucheの組み込みです
+(@ref{Arithmetics}及び@ref{Numerical predicates}参照)。
+@c COMMON
 
 @example
 acos asin atan cos exp finite? infinite? log nan? sin sqrt tan
@@ -1229,13 +1548,24 @@ acos asin atan cos exp finite? infinite? log nan? sin sqrt tan
 
 @deftp {Module} scheme.lazy
 @mdindex scheme.lazy
+@c EN
 Exports bindings of R7RS @code{(scheme lazy)} library.
 From R7RS programs,
 those bindings are available by @code{(import (scheme lazy))}.
+@c JP
+R7RSの@code{(scheme inexact)}ライブラリの束縛をエクスポートします。
+R7RSプログラムからは、エクスポートされた束縛は
+@code{(import (scheme inexact))}とすることで使えます。
+@c COMMON
 @end deftp
 
+@c EN
 The following bindings this module provides are Gauche built-ins
 (@pxref{Delay force and lazy}).
+@c JP
+以下の束縛は、Gauche組み込みです
+(@ref{Delay force and lazy}参照)。
+@c COMMON
 
 @example
 delay force promise?
@@ -1243,25 +1573,49 @@ delay force promise?
 
 @defspec delay-force promise
 [R7RS]
-This is the same as @code{lazy}.
+@c EN
+This is the same as Gauche's built-in @code{lazy}.
 @pxref{Delay force and lazy} for the discussion about when this
 form should be used.
+@c JP
+これはGauche組み込みの@code{lazy}と同じです。
+使い方については@ref{Delay force and lazy}の議論を参照してください。
+@c COMMON
 @end defspec
 
 @defun make-promise obj
 [R7RS]
+@c EN
 If @var{obj} is a promise, it is returned as is.  Otherwise,
 A promise, which yields @var{obj} when forced, is returned.
 Because this is a procedure, expression passed as @var{obj} is
 eagerly evaluated, so this doesn't have effect on lazy evaluation,
 but can be used to ensure you have a promise.
+@c JP
+@var{obj}がプロミスならそのまま返されます。そうでなければ、
+forceされた時に@var{obj}が返されるようなプロミスが返されます。
+これは手続きなので、@var{obj}は@code{make-promise}を呼び出す前に
+評価されてしまいます。従って遅延評価には使えませんが、
+確実にプロミスを得たい場合に使えます。
+@c COMMON
 
+@c EN
 This procedure is important on implementations where
 @code{force} only takes a promise, and portable code should
 use this procedure to yield a value that can be passed to @code{force}.
+@c JP
+@code{force}がプロミスのみを取るような実装ではこの手続きは重要です。
+ポータブルなコードは、@code{force}に渡すものがプロミスであることを
+確実にしたい場所でこの手続きを使うようにしてください。
+@c COMMON
 
+@c EN
 If you write Gauche-specific code, however, @code{force} can take
 non-promise values, so you don't need this.
+@c JP
+Gaucheの@code{force}はプロミスでない値も取れるので、
+Gauche専用のコードを書いている時はこの手続きは不要です。
+@c COMMON
 @end defun
 
 
