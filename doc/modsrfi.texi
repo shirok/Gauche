@@ -4552,9 +4552,19 @@ legacy code that depends on them.
 @xref{Vectors}, and @pxref{Vector library}, for the ``modern'' versions
 of vector library.  New code should use them.
 
-The following procedures in srfi-43 are now built-in.
+The following procedures in srfi-43 are built-in.
 @xref{Vectors}, for the description.
 @c JP
+このモジュールは実効的に、R7RSと@code{srfi-133}に取って代わられています。
+いくつかの手続きはR7RSや@code{srfi-133}の同名の手続きとは非互換で、
+このモジュールは@code{srfi-43}に依存している既存のコードのためだけに
+残されています。
+
+「現代的な」ベクタライブラリは、@ref{Vectors}と@ref{Vector library}
+で説明されています。新たなコードはそちらを使うべきです。
+
+以下の@code{srfi-43}の手続きは組み込みになっています。
+説明は@ref{Vectors}を参照してください。
 @c COMMON
 
 @example
@@ -4568,6 +4578,8 @@ reverse-list->vector
 The following procedures in srfi-43 are supported by srfi-113.
 @xref{Vector library}, for the description.
 @c JP
+以下の@code{srfi-43}の手続きは@code{srfi-113}でも同様にサポートされています。
+説明は@ref{Vector library}を参照してください。
 @c COMMON
 
 @example
@@ -4582,17 +4594,50 @@ reverse-vector->list
 @c EN
 We explain the procedures that are not listed above.
 @c JP
+ここでは上に挙げられていない手続きを説明します。
 @c COMMON
 @end deftp
 
 @defun vector-fold kons knil vec1 vec2 @dots{}
 @defunx vector-fold-right kons knil vec1 vec2 @dots{}
 [SRFI-43]
+@c EN
 Like @code{vector-fold} and @code{vector-fold-right}
 in @code{srfi-113}, but @var{kons}
 takes an extra argument, the current index, as its first argument.
 So @var{kons} must accept @var{n}+2 arguments, where
 @var{n} is the number of given vectors.
+It is called as @code{(kons <index> <cumulated-value> <elt1> <elt2> ...)}.
+@c JP
+@code{srfi-113}の@code{vector-fold}と@code{vector-fold-right}と似ていますが、
+@var{kons}手続きは追加で、現在のインデックスを第一引数として取ります。
+従って、@var{n}を引数で与えられたベクタの数とすると、
+@var{kons}は@var{n+2}個の引数を取らなければなりません。
+@var{kons}は@code{(kons <index> <cumulated-value> <elt1> <elt2> ...)}
+のように呼ばれます。
+@c COMMON
+
+@c EN
+Gauche has @code{fold-with-index} (@pxref{Mapping over sequences})
+that can be used to fold vectors with index, but the argument order
+of @var{kons} is slightly different: It passes the index, each
+element from argument vectors, then cumulated values.  
+@c JP
+Gaucheには@code{fold-with-index}があって、ベクタをインデックスつきで
+foldするのに使えます(@ref{Mapping over sequences})が、
+@var{kons}が受け取る引数の順序が違います: インデックスの次に
+各ベクタの要素、そして最後に累積された値が来ます。
+@c COMMON
+
+@example
+(use srfi-43)
+(vector-fold list '() '#(a b c) '#(d e f))
+  @result{} (2 (1 (0 () a d) b e) c f)
+
+(use gauche.sequence)
+(fold-with-index list '() '#(a b c) '#(d e f))
+  @result{} (2 c f (1 b e (0 a d ())))
+@end example
 @end defun
 
 @defun vector-map f vec1 vec2 @dots{}
@@ -4600,15 +4645,30 @@ So @var{kons} must accept @var{n}+2 arguments, where
 @defunx vector-for-each f vec1 vec2 @dots{}
 @defunx vector-count f vec1 vec2 @dots{}
 [SRFI-43]
+@c EN
 Like @code{vector-map} and @code{vector-for-each} of R7RS,
 and @code{vector-map!} and @code{vector-count} in @code{srfi-133},
 except @var{f} takes
 an extra argument, the current index, as its first argument.
+@c JP
+R7RSの@code{vector-map}および@code{vector-for-each}、
+そして@code{srfi-133}の@code{vector-map!}および@code{vector-cout}と
+ほぼ同じですが、@var{f}が現在のインデックスを最初の引数として(他の引数より前に)
+取ります。
+@c COMMON
 
+@c EN
 Gauche provides @code{vector-map-with-index},
 @code{vector-map-with-index!} and @code{vector-for-each-with-index}
 which are the same as @code{srfi-43}'s @code{vector-map}, @code{vector-map!}
 and @code{vector-for-each}, respectively.  @xref{Vectors}.
+@c JP
+Gaucheは@code{srfi-43}の@code{vector-map}、@code{vector-map!}、
+@code{vector-for-each}互換な手続きをそれぞれ
+@code{vector-map-with-index}、
+@code{vector-map-with-index!}、@code{vector-for-each-with-index}という
+名前で提供しています。@ref{Vectors}参照。
+@c COMMON
 
 @example
 (vector-map list '#(a b c))
@@ -4619,13 +4679,33 @@ and @code{vector-for-each}, respectively.  @xref{Vectors}.
  @result{} 3
 @end example
 
-Note: The generic @code{map} and @code{for-each}
+@c EN
+(Note: The @code{vector-count} example calls @code{=} with
+two arguments, the current index and the element, for each element
+of the input vector.  So it counts the number of
+occasions when the element is equal to the index.)
+@c JP
+(註: @code{vector-count}は@code{=}を二つの引数、現在のインデックスと
+ベクタの要素で呼び出します。従ってこの例は、ベクタの要素がインデックスと一致する
+場合を数えています。)
+@c COMMON
+
+@c EN
+The generic @code{map} and @code{for-each}
 in @code{gauche.collection} can be used
-on vectors, but the procedure is called without index, and the result
+on vectors, but the mapped procedure is called without index, and the result
 is returned as a list.
 @code{(vector-map f vec1 vec2 @dots{})} is operationally equivalent to
 @code{(map-to-with-index <vector> f vec1 vec2 @dots{})}.
 See @ref{Collection framework} and @ref{Sequence framework}.
+@c JP
+@code{gauche.collection}のジェネリックな@code{map}や@code{for-each}は
+ベクタに対しても使えますが、マップされる手続きはインデックスを取らず、
+また結果はリストになります。
+@code{(vector-map f vec1 vec2 @dots{})}は機能的には
+@code{(map-to-with-index <vector> f vec1 vec2 @dots{})}と同じになります。
+詳しくは@ref{Collection framework}と@ref{Sequence framework}を参照してください。
+@c COMMON
 @end defun
 
 @c ----------------------------------------------------------------------
