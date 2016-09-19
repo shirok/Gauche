@@ -1,3 +1,9 @@
+2016-09-19  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/package.scm (find-gauche-package-description): Fix
+	  an issue on Windows.
+	  http://chaton.practical-scheme.net/gauche/a/2016/09/17#entry-57dc9a84-c61da
+
 2016-09-11  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/base.scm (gauche.base): Extend gauche.keyword as well,

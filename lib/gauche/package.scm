@@ -249,7 +249,8 @@
 
 ;; API.  utility
 (define (find-gauche-package-description name :key (all-versions #f))
-  (and-let* ([path (find (string->regexp #"/~|name|\\.gpd$")
+  (and-let* ([gpdfile #"~|name|.gpd"]
+             [path (find (^p (equal? gpdfile (sys-basename p)))
                          (gauche-package-description-paths
                           :all-versions all-versions))])
     (path->gauche-package-description path)))
