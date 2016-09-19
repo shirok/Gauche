@@ -887,6 +887,11 @@ they can be imported to other modules that don't inherit @code{gauche} module.
 All the bindings available in the @code{gauche} module are exported,
 except @code{import}, which is renamed to @code{gauche:import} to
 avoid conflict with R7RS @code{import}.
+
+The module extends @code{gauche.keyword}, so 
+also exports all the keywords---the bindings from @code{gauche.keyword}---
+so that the code imports @code{gauche.base} can access to self-bound keywords
+without inheriting the keyword module.  
 @c JP
 このモジュールはGaucheの組み込み手続きと構文をexportし、
 @code{gauche}モジュールを継承しない他のモジュールからもimportして
@@ -895,6 +900,11 @@ Gaucheの組み込み機能を使えるようにします。
 @code{gauche}モジュールで見えるすべての束縛のうち、@code{import}を除いたものは
 そのままexportされます。@code{import}はR7RSの@code{import}との
 衝突を避けるため@code{gauche:import}としてexportされます。
+
+このモジュールはまた、
+全てのキーワード(@code{gauche.keyword}モジュールにある
+束縛)もexportします。これで、Gauche関連のモジュールを継承しなくても
+@code{gauche.base}をimportすれば自己束縛したキーワードを使えます。
 @c COMMON
 @end deftp
 
@@ -963,7 +973,6 @@ if you don't use @code{import} directly, you won't need it.)
 元の@code{import}の名前を使えるようにするためのものです。@code{import}を直接
 使わないのならこの@code{:rename}オプションは不要です。)
 @c COMMON
-
 
 @c ----------------------------------------------------------------------
 @node Generating C code, Character code conversion, Importing gauche built-ins, Library modules - Gauche extensions
