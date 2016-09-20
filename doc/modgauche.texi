@@ -863,14 +863,63 @@ If @code{B} isn't regular, an error is thrown.
 
 @defun array-add-elements array array-or-scalar @dots{}
 @defunx array-add-elements! array array-or-scalar @dots{}
-@end defun
-
-@defun array-sub-elements array array-or-scalar @dots{}
+@defunx array-sub-elements array array-or-scalar @dots{}
 @defunx array-sub-elements! array array-or-scalar @dots{}
 @defunx array-mul-elements array array-or-scalar @dots{}
 @defunx array-mul-elements! array array-or-scalar @dots{}
 @defunx array-div-elements array array-or-scalar @dots{}
 @defunx array-div-elements! array array-or-scalar @dots{}
+@c EN
+Element-wise arithmetics.  The second argument and after must
+be an array of the same shape of the first argument, or a number;
+if it is a number, it is interpreted as an array of the same shape
+of the first argument, and each element of which is the given number.
+
+Returns an array of the same shape of the first argument,
+where each element is the result of addition, subtraction, multiplication
+or division of the corresponding elements of the arguments.
+
+The linear-update version (procedures whose name ends with @code{!})
+may reuse the storage of the first array to calculate the result.
+The first array must be mutable.  The caller must still use the returned
+value instead of counting on the side effects.
+@c JP
+要素ごとの計算をする手続きです。2つ目以降の引数は、
+最初の引数の配列と同じ形の配列か、数値でなければなりません。
+数値の場合は、要素が全てその数値である、最初の引数の配列と同じ形の配列だと解釈されます。
+
+要素ごとに加算、減算、乗算、除算を行い、結果を最初の引数の配列と同じ形の配列で返します。
+
+@code{!}で終わっている手続きは、最初の配列を結果を作るために再利用するかもしれません。
+したがって最初の配列は変更可能である必要があります。ただし、必ず再利用されるとは
+限らないので、呼び出し側は常に戻り値を使う必要があります。
+@c COMMON
+
+@example
+(array-add-elements (array (shape 0 2 0 2) 1 2 3 4) 
+                    (array (shape 0 2 0 2) 5 6 7 8) 
+                    10)
+ @result{} #,(<array> (0 2 0 2) 16 18 20 22)
+
+(array-div-elements (array (shape 0 2 0 2) 1 3 5 7)
+                    100
+                    (array (shape 0 2 0 2) 2 4 6 8))
+ @result{} #,(<array> (0 2 0 2) 1/200 3/400 1/120 7/800)
+@end example
+
+@c EN
+You can mix different types of arrays as long as their shapes are
+the same.  The result is the same type as the first argument.
+@c JP
+形が同じであれば、異なる型の配列同士での演算もできます。
+結果は最初の引数の配列の型になります。
+@c COMMON
+
+@example
+(array-mul-elements (make-u8array (shape 0 2 0 2) 3)
+                    (array (shape 0 2 0 2) 1 3 5 7))
+ @result{} #,(<u8array> (0 2 0 2) 3 9 15 21)
+@end example
 @end defun
 
 @c ----------------------------------------------------------------------
