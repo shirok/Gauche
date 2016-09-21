@@ -38,8 +38,8 @@
 * FTP::                         rfc.ftp
 * HMAC keyed-hashing::          rfc.hmac
 * HTTP::                        rfc.http
-* IP packets::                  rfc.ip
 * ICMP packets::                rfc.icmp
+* IP packets::                  rfc.ip
 * JSON parsing and construction::  rfc.json
 * MD5 message digest::          rfc.md5
 * MIME message handling::       rfc.mime
@@ -11933,7 +11933,7 @@ then returns the hashed result in an incomplete string.
 @end deffn
 
 @c ----------------------------------------------------------------------
-@node HTTP, IP packets, HMAC keyed-hashing, Library modules - Utilities
+@node HTTP, ICMP packets, HMAC keyed-hashing, Library modules - Utilities
 @section @code{rfc.http} - HTTP
 
 @deftp {Module} rfc.http
@@ -12618,84 +12618,7 @@ Returns @code{#t} if running Gauche can use secure connection,
 @end defun
 
 @c ----------------------------------------------------------------------
-@node IP packets, ICMP packets, HTTP, Library modules - Utilities
-@section @code{rfc.ip} - IP packets
-@c NODE IPパケット, @code{rfc.ip} - IPパケット
-
-@deftp {Module} rfc.ip
-@mdindex rfc.ip
-@c EN
-This module provides some basic utilities to parse raw IP packets.
-@c JP
-このモジュールは生のIPパケットを解析する基本的なユーティリティを提供し
-ます。
-@c COMMON
-@end deftp
-
-@c EN
-The @var{packet} argument in the following functions must be
-any type of uniform vector (@pxref{Uniform vectors}), containing
-a raw IP packet including its IP header.
-Those functions work for both IPv4 and IPv6 packets; however,
-reading from a raw IPv6 socket returns a packet without IPv6 header,
-so you usually don't need to use these functions.
-@c JP
-次からの関数における@var{packet}引数はユニフォームベクタ
-(@ref{Uniform vectors}参照)型でなければなりません。これにはIPヘッダを
-含む生のIPパケットが入ります。以下の関数はIPv4およびIPv6パケットの両方
-で動きます。しかしながら、生のIPv6ソケットから読むときは、IPv6ヘッダを
-含まないパケットが返ります。とうわけで、通常これらの関数が必要になるこ
-とはないでしょう。
-@c COMMON
-
-@c EN
-The @var{offset} argument specifies the beginning of the IP packet
-in @var{packet}.  If @var{packet} contains only one IP packet
-you can pass 0.  It is not an optional argument, since these routines
-may be used in speed-sensitive inner loop.
-@c JP
-@c COMMON
-
-@defun ip-version packet offset
-@c EN
-Returns the IP version number (either 4 or 6) of the given IP packet.
-@c JP
-与えられたIPパケットのIPバージョン番号(4または6)が返ります。
-@c COMMON
-@end defun
-
-@defun ip-header-length packet offset
-@c EN
-Returns the size of IP header of the given packet in octets,
-including any IP header options.
-@c JP
-与えられたパケットのIPヘッダ(IPヘッダオプションもすべて含む)のオクテッ
-トで数えたサイズを返します。
-@c COMMON
-@end defun
-
-@defun ip-protocol packet offset
-@c EN
-Returns the IP protocol number of the given packet.
-@c JP
-与えられたパケットのIPプロトコル番号を返します。
-@c COMMON
-@end defun
-
-@defun ip-source-address packet offset
-@defunx ip-destination-address packet offset
-@c EN
-Returns the source and destination address in the given packet
-in an integer, respectively.
-@c JP
-与えられたパケットの送信元アドレスと送信先アドレスをそれぞれ整数で返し
-ます。
-@c COMMON
-@end defun
-
-
-@c ----------------------------------------------------------------------
-@node ICMP packets, JSON parsing and construction, IP packets, Library modules - Utilities
+@node ICMP packets, IP packets, HTTP, Library modules - Utilities
 @section @code{rfc.icmp} - ICMP packets
 @c NODE ICMPパケット, @code{rfc.icmp} - ICMPパケット
 
@@ -12811,7 +12734,84 @@ ICMPv4およびICMPv6のタイプとコードの説明テキストを返しま�
 @end defun
 
 @c ----------------------------------------------------------------------
-@node JSON parsing and construction, MD5 message digest, ICMP packets, Library modules - Utilities
+@node IP packets, JSON parsing and construction, ICMP packets, Library modules - Utilities
+@section @code{rfc.ip} - IP packets
+@c NODE IPパケット, @code{rfc.ip} - IPパケット
+
+@deftp {Module} rfc.ip
+@mdindex rfc.ip
+@c EN
+This module provides some basic utilities to parse raw IP packets.
+@c JP
+このモジュールは生のIPパケットを解析する基本的なユーティリティを提供し
+ます。
+@c COMMON
+@end deftp
+
+@c EN
+The @var{packet} argument in the following functions must be
+any type of uniform vector (@pxref{Uniform vectors}), containing
+a raw IP packet including its IP header.
+Those functions work for both IPv4 and IPv6 packets; however,
+reading from a raw IPv6 socket returns a packet without IPv6 header,
+so you usually don't need to use these functions.
+@c JP
+次からの関数における@var{packet}引数はユニフォームベクタ
+(@ref{Uniform vectors}参照)型でなければなりません。これにはIPヘッダを
+含む生のIPパケットが入ります。以下の関数はIPv4およびIPv6パケットの両方
+で動きます。しかしながら、生のIPv6ソケットから読むときは、IPv6ヘッダを
+含まないパケットが返ります。とうわけで、通常これらの関数が必要になるこ
+とはないでしょう。
+@c COMMON
+
+@c EN
+The @var{offset} argument specifies the beginning of the IP packet
+in @var{packet}.  If @var{packet} contains only one IP packet
+you can pass 0.  It is not an optional argument, since these routines
+may be used in speed-sensitive inner loop.
+@c JP
+@c COMMON
+
+@defun ip-version packet offset
+@c EN
+Returns the IP version number (either 4 or 6) of the given IP packet.
+@c JP
+与えられたIPパケットのIPバージョン番号(4または6)が返ります。
+@c COMMON
+@end defun
+
+@defun ip-header-length packet offset
+@c EN
+Returns the size of IP header of the given packet in octets,
+including any IP header options.
+@c JP
+与えられたパケットのIPヘッダ(IPヘッダオプションもすべて含む)のオクテッ
+トで数えたサイズを返します。
+@c COMMON
+@end defun
+
+@defun ip-protocol packet offset
+@c EN
+Returns the IP protocol number of the given packet.
+@c JP
+与えられたパケットのIPプロトコル番号を返します。
+@c COMMON
+@end defun
+
+@defun ip-source-address packet offset
+@defunx ip-destination-address packet offset
+@c EN
+Returns the source and destination address in the given packet
+in an integer, respectively.
+@c JP
+与えられたパケットの送信元アドレスと送信先アドレスをそれぞれ整数で返し
+ます。
+@c COMMON
+@end defun
+
+
+@c ----------------------------------------------------------------------
+@node JSON parsing and construction, MD5 message digest, IP packets, Library modules - Utilities
 @section @code{rfc.json} - JSON parsing and construction
 @c NODE JSONのパーズと構築, @code{rfc.json} - JSONのパーズと構築
 
