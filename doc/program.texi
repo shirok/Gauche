@@ -1468,12 +1468,10 @@ write Scheme code portable across multiple implementations.
 @c COMMON
 @item gauche.os.windows
 @c EN
-Defined on Windows native platform (currently using MinGW, but we'll
-have VC++ version in future).  Note that cygwin does not define
+Defined on Windows native platform.  Note that cygwin does not define
 this feature identifier (but see below).
 @c JP
-Windowsネイティブプラットフォームで定義されます。(現時点では、MinGWを
-使っていますが、将来VC++版をサポートする予定です。) cygwinでは
+Windowsネイティブプラットフォームで定義されます。cygwinでは
 この機能識別子は定義されません (下記も参照)。
 @c COMMON
 @item gauche.os.cygwin
@@ -1555,17 +1553,17 @@ Or even conditionally "use" the modules:
 @end example
 
 @c EN
-The traditional technique of testing a toplevel binding at runtime
+The traditional technique of testing a toplevel binding
 (using @code{global-variable-bound?}, @pxref{Module introspection})
-does not work well, since the test is done in runtime, while
-the @code{use} form takes effect at compile time.  It is strongly
-recommended to use @code{cond-expand} whenever possible.
+doesn't work well in this case, since
+the @code{use} form takes effect at compile time.  
+It is strongly recommended to use @code{cond-expand} whenever possible.
 @c JP
-実行時にトップレベルの束縛をチェックするような旧いテクニック
+トップレベルの束縛をチェックするような旧いテクニック
 (@code{global-variable-bound?}を使う, @ref{Module introspection}参照)
-は正しく働きません。これはプログラム実行時に実行されますが、@code{use}
-形式はコンパイル時に意味をもちます。可能なかぎり、@code{cond-expand}を
-使うことを推奨します。
+は実行時に効果を持つので、コンパイル時に解釈される@code{use}
+を切り替えるのはうまくいきません。
+可能なかぎり、@code{cond-expand}を使うことを推奨します。
 @c COMMON
 
 @c EN
@@ -1578,7 +1576,7 @@ and execution is interleaved, so we're carefully assessing the effects now.
 現時点では機能識別子集合はGaucheのコンパイル時に固定されます。つまり、
 Cのプリプロセッサを使った条件分岐よりも柔軟性に劣ります。この機能を拡
 張してあとから機能識別子を追加できるようにする計画ですが、この機能拡張
-はコンパイルと実行交互におこるときのセマンティクスを複雑にしてしまう可
+はコンパイルと実行が細切れに入れ替わる場合のセマンティクスを複雑にしてしまう可
 能性があり、現在その影響を慎重にみきわめている最中です。
 @c COMMON
 
