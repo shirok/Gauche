@@ -1,3 +1,7 @@
+2016-09-21  Shiro Kawai  <shiro@acm.org>
+
+	* lib/check-script: Added.
+
 2016-09-19  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/package.scm (find-gauche-package-description): Fix

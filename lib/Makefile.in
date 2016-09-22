@@ -50,6 +50,7 @@ SCMFILES = srfi-0.scm \
        srfi-131.scm srfi-134.scm \
        srfi/*.scm \
        slib.scm	 \
+       check-script \
        gauche/test.scm gauche/test/generative.scm gauche/time.scm \
        gauche/redefutil.scm gauche/macroutil.scm gauche/stringutil.scm \
        gauche/vecutil.scm gauche/condutil.scm gauche/portutil.scm \
