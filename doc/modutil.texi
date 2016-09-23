@@ -19157,73 +19157,149 @@ future versions of the library.
 
 @deftp {Module} text.console
 @mdindex text.console
+@c EN
 This module provides a simple interface for character terminal control.
 Currently we support vt100 compatible terminals and Windows
 console.
 
-This module doesn't depend on external library such as @code{curses},
-and what it can do is limited; for example, you can't get an event
+This module doesn't depend on external library such as @code{curses}
+and works with Gauche alone, but
+what it can do is limited; for example, you can't get an event
 when shift key alone is pressed.  For finer controls, you need
 some extension libraries.
 
 For an example of the features in this module, see 
-@file{snake.scm} in the examples directory of Gauche souce distribution.
+@file{snake.scm} in the examples directory of Gauche source distribution.
+@c JP
+このモジュールは文字端末を制御する簡単なインタフェースを提供します。
+今のところ、vt100互換端末とWindowsコンソールがサポートされています。
+
+@code{curses}等の外部ライブラリには依存しておらず、Gaucheだけで使うことができますが、
+出来ることは限られています。
+例えばシフトキーだけが押されたタイミングでイベントを受け取ることはできません。
+より細かい制御には、何らかの外部拡張ライブラリが必要になるでしょう。
+
+このモジュールの機能の例としては、
+Gaucheソースのexamplesディレクトリにある@file{snake.scm}を見てください。
+@c COMMON
 @end deftp
 
+@c EN
 @subheading Console objects
+@c JP
+@subheading コンソールオブジェクト
+@c COMMON
 
 @deftp {Class} <vt100>
 @clindex vt100
+@c EN
 Represents a vt100-compatible terminal.   An instance of this class
 can be passed to the ``console'' argument of the following generic
 functions.
+@c JP
+vt100互換端末を表します。このクラスのインスタンスは
+以降のジェネリックファンクションの ``console'' 引数に渡せます。
+@c COMMON
 
 @defivar {<vt100>} iport
+@c EN
 Input port connected to the terminal.  The default value is
 the standard input port.
+@c JP
+端末に接続されている入力ポートです。デフォルトは標準入力です。
+@c COMMON
 @end defivar
 
 @defivar {<vt100>} oport
+@c EN
 Output port connected to the terminal.  The default value is
 the standard output port.
+@c JP
+端末に接続されている出力ポートです。デフォルトは標準出力です。
+@c COMMON
 @end defivar
 
 @defivar {<vt100>} input-delay
+@c EN
 The terminal send back special keys encoded in an input escape sequence.
 In order to distinguish such keys from the actual ESC key, we time the
 input---if the subsequent input doesn't come within @code{input-delay}
 microseconds, we interpret the input as individual keystroke, rather
 than a part of an escape sequence.  The default value is @code{1000} (1ms).
+@c JP
+端末は、特殊キーが押された場合、ESCから始まるエスケープシーケンスを送って来ます。
+実際にESCキーが押された場合と区別するために、入力の間隔を測っています。
+後続の入力が@code{input-delay}μs以内に来なかった場合はそこでシーケンスが終了したと
+みなし、受け取っているシーケンスが有効なエスケープシーケンスを構成しなければ
+個別にキー入力されたとみなします。デフォルトは@code{1000}、すなわち1msです。
+@c COMMON
 @end defivar
 @end deftp
 
 @deftp {Class} <windows-console>
 @clindex windows-console
+@c EN
 Represents Windows console.  This class is defined on all platforms,
 but its useful methods are only available on Windows-native runtime.
 
 It doesn't have public slots.
+@c JP
+Windowsコンソールを表します。このクラス自体は全てのプラットフォームで
+定義されていますが、有用なメソッドはWindowsネイティブのランタイムでしか提供されません。
+
+パブリックなスロットはありません。
+@c COMMON
 @end deftp
 
+@c EN
 The application has to check the runtime to see what kind of console
 is available.  A suggested flow is as follows.
+@c JP
+アプリケーションは実行時にどの種類のコンソールが利用可能かを見極めなければなりません。
+推奨される手順は次のとおりです。
+@c COMMON
 @itemize
 @item 
+@c EN
 If @code{has-windows-console?} returns true, create @code{<windows-console>}
 instance.
 You don't need @code{cond-expand}; @code{has-windows-console?} returns
 @code{#f} on non-Windows platforms.
+@c JP
+@code{has-windows-console?}が真の値を返したなら、@code{<windows-console>}の
+インスタンスを作ります。
+@code{has-windows-console?}はWindowsプラットフォーム以外では常に@code{#f}を
+返すので、@code{cond-expand}は不要です。
+@c COMMON
 @item 
+@c EN
 Check the environment variable @code{TERM}.  If it is set and
 satisfies @code{vt100-compatible?}, you can create
 @code{<vt100>} instance.
+(Note: It is possible that you end up using @code{<vt100>} console
+on Windows; e.g. @code{gosh} running on MSYS shell.)
+@c JP
+環境変数@code{TERM}を調べます。それが定義されていて、@code{vt100-compatible?}を
+満たすなら、@code{<vt100>}のインスタンスを作ります。
+(Windows上でも@code{<vt100>}端末を使うことになる可能性もあります。
+例えば@code{gosh}がMSYSシェルから使われている場合です。)
+@c COMMON
 @item
+@c EN
 Otherwise, console isn't available.
+@c JP
+いずれでもなければ、端末は使えません。
+@c COMMON
 @end itemize
 
+@c EN
 The following procedure packages this flow.
+@c JP
+次の手続きは上の手順を実装しています。
+@c COMMON
 
 @defun make-default-console :key if-not-available
+@c EN
 Determines a suitable console class of the running process and
 returns its instance.
 
@@ -19231,12 +19307,24 @@ If no suitable console is available, the behavior depends on the
 @var{if-not-available} keyword argument.  If it is @code{:error},
 which is default, an error is signalled.  If it is @code{#f},
 the procedure returns @code{#f}. 
+@c JP
+実行中のプロセスで使える端末のインスタンスを作成して返します。
+
+適切な端末クラスが無い場合、振る舞いは@var{if-not-available}キーワード引数に
+依存します。デフォルトである@code{:error}の場合はエラーが報告されます。
+@code{#f}の場合はこの手続きが@code{#f}を返します。
+@c COMMON
 @end defun
 
 @defun vt100-compatible? string
+@c EN
 Given the string value of the environment variable @code{TERM},
 returns @code{#t} if the terminal can be handled by @code{<vt100>} console,
 @code{#f} otherwise.
+@c JP
+環境変数@code{TERM}の値を文字列で受け取り、それが@code{<vt100>}端末として
+扱えるなら@code{#t}を、そうでなければ@code{#f}を返します。
+@c COMMON
 @end defun
 
 
@@ -20757,7 +20845,7 @@ Olegのライブラリに依存しているコードの互換性のために用�
 @c ----------------------------------------------------------------------
 @node Showing progress on text terminals, SQL parsing and construction, Parsing input stream, Library modules - Utilities
 @section @code{text.progress} - Showing progress on text terminals
-@c NODE テキスト端末上で進捗を表示する, @code{text.progress} - テキスト端末上でプログレスを表示する
+@c NODE テキスト端末上で進捗を表示する, @code{text.progress} - テキスト端末上で進捗を表示する
 
 @deftp {Module} text.progress
 @mdindex text.progress
