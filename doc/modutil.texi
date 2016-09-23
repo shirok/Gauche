@@ -19458,7 +19458,11 @@ CSV様のファイルの使われ方は多様なので、このモジュール�
 @c COMMON
 @end deftp
 
+@c EN
 @subheading Low-level API
+@c JP
+@subheading 低レベルAPI
+@c COMMON
 
 @c EN
 The bottom layer of API is to convert text into list of lists and vice versa.
