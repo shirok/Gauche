@@ -19518,42 +19518,96 @@ its default is @code{#[;\s]}.
 @c COMMON
 @end defun
 
+@c EN
 @subheading Middle-level API
+@c JP
+@subheading 中レベルAPI
+@c COMMON
 
+@c EN
 Occasionally, CSV files generated from spreadsheet contains
 superfluous rows/columns and we need to make sense of them.
 Here are some utilities to help them.
+@c JP
+スプレッドシート等で作成されたCSVファイルはしばしば、
+不要な行や列を含んでいたり、
+行や列の内容から有効なデータの場所を探したりする必要があります。
+そのために役に立つユーティリティが用意してあります。
+@c COMMON
 
+@c EN
 A typical format of such spreadsheet-generated CSV file has
 the following properties:
+@c JP
+スプレッドシート等によって生成される典型的なCSVには以下の特徴があります。
+@c COMMON
 
 @enumerate
 @item
+@c EN
 There's a ``header row'' near the top; not necessarily the very
 first row, but certainly it comes before any real data.  It signifies
 the meaning of each column of the data.  
 There may be superfluous columns inserted just for cosmetics,
-and sometimes the order of columns are changed.  So we need some
+and sometimes the order of columns are changed when the original spreadsheet
+is edited.  So we need some
 flexibility to interpret the input data.
+@c JP
+最初の方に、「ヘッダ行」があります。一番最初の行とは限りませんが、
+データの実体より前に現れ、データの各列の意味を決めます。
+しばしば、見た目のためだけに余分な列が挿入されたり、
+編集によって列が入れ替わったりすることもあるので、
+ヘッダ行を見てどの列に何があるか判断する必要があります。
+@c COMMON
 
 @item
+@c EN
 ``Record rows'' follow the header row.  It contains actual data.
 There may be superfluous rows inserted just for cosmetics.
 Also, it's often the case that the end of data isn't marked clearly
 (you find large number of rows of empty strings, for example).
+@c JP
+ヘッダ行の後に続く「レコード行」。ここにデータの実体があります。
+見た目のためだけに余分な行が挿入されていることもあります。
+また、データの終わりがきちんと示されていないことも多いです (例えば、
+CSVの末尾に全ての列が空文字列である行がぞろぞろとくっついている、等。)
+@c COMMON
 @end enumerate
 
+@c EN
 The main purpose of middle-level CSV parser is to take the output
 of low-level parser, which is a list of lists of strings, and
 find the header row, and then convert the subsequent record rows
 into tuples according to the header row.  A tuple is just a list of
 strings, but ordered in the same way as the specified header spec.
+@c JP
+中レベルCSVパーザの主目的は、低レベルパーザの出力である文字列のリストのリストを
+受け取って、ヘッダ行を探し出し、続くレコード行をヘッダ行の内容に沿って
+タプルに変換することにあります。ここで、タプルは単なる文字列のリストですが、
+指定されたヘッダ仕様に沿った順序で並べてあるものとします。
+@c COMMON
 
-@defun make-csv-header-parser header-specs
-Create a procedure that checks if the input row matches the criteria
-of the header row, and if so, it returns a permuter vector that maps
-the input column number to the tuple positions.
+@defun csv-rows->tuples rows header-specs :key required-slots allow-gap?
+@c EN
+Convert input rows (a list of lists of strings)
+to a list of tuples.
+A tuple is a list of slot values.
 
+First, it looks for a header row that
+matches the given @var{header-spec}.  Once the header row is found,
+parse the subsequent rows as record row according to the header
+and convert them to tuples.
+If no header is found, @code{#f} is returned.
+@c JP
+入力行(文字列のリスト)のリストを、タプルのリストに変換します。
+タプルはスロットの値のリストです。
+
+まず@var{header-spec}にマッチするヘッダ行が探されます。ヘッダ行が見つかったら、
+それにしたがって後続の行をレコード行として解釈し、各行をタプルへと変換します。
+ヘッダ行が見つからなければ、@code{#f}が返されます。
+@c COMMON
+
+@c EN
 @var{Header-specs} is a list of header spec, each of which can be either
 a string, a regexp, or a predicate on a string.  If it's a string,
 a column that exactly matches the string is picked.  If it's a regexp,
@@ -19561,73 +19615,256 @@ a column that matches the regexp is picked.  And if it's a predicate,
 as you might have already guessed, a column that satisfies the predicate
 is picked.
 
-The permuter vector is a vector of integers,
-where K-th element being I means the K-th item of the tuple should be
-taken from I-th column.
+The order fo @var{header-specs} determines the order of columns of
+output tuples.
+@c JP
+@var{header-specs}はヘッダ仕様のリストです。各要素は文字列、正規表現、
+あるいは文字列を取る述語手続きのいずれかです。文字列の場合、その文字列と正確に
+一致する内容を持つ列が選ばれます。正規表現なら内容がそれと一致する列、
+述語手続きなら、内容がその述語を満たすような列がそれぞれ選ばれます。
 
-Let's see the example.  Suppose we know that the input contains
-the following row as the header row:
+@var{header-specs}に現れる順番が、出力タプルの列の順番を決めます。
+@c COMMON
 
-@example
-(define *input-row* '("" "" "Year" "Country" "" "Population" "GDP" "Notes"))
-@end example
-
-We want to detect that row, but we only needs
-Country, Year, GDP and Population columns, in that order.  So we create
-a header parser as follows:
-
-@example
-(define header-parser
-  (make-csv-header-parser '("Country" "Year" "GDP" "Population")))
-@end example
-
-Applying this header parser to the input data returns the permuter vector:
-
-@example
-(header-parser *input-row*)
- @result{} #(3 2 6 5)
-@end example
-
-It means, the first item of tuple (Country) is in the 3rd column of the input,
-the second item of tuple (Year) is in the 2nd column of the input,
-and so on.  This permuter vector can be used to parse record rows to
-get tuples.
-@end defun
-
-@defun make-csv-record-parser header-slots permuter :optional required-slots
-Create a procedure that converts one input row into a tuple.
-
-@var{Permuter} is the vector returned by @code{make-csv-header-parser}.
-
-@var{Required-slots} determines if the input row is valid or not.
-If not, the created procedure returns @code{#f}.
-The structure of @var{required-slots} is as follows:
+@c EN
+@var{Required-slots} determines if the input row is a valid record row
+or not.  The structure of @var{required-slots} is as follows:
+@c JP
+@var{required-slots}は、入力行が有効なレコード行かそうでないかを決めます。
+@var{required-slots}の構造は以下のとおりです。
+@c COMMON
 
 @example
    <required-slots> : (<spec> ...)
    <spec> : <header-spec> | (<header-spec> <predicate>)
 @end example
 
+@c EN
 The @code{<header-spec>} compared to the elements of @var{header-slot}
 (by @code{equal?}) to figure out which columns to check.  A single
 @code{<header-spec>} in @code{<spec>} means that the column shouldn't be
 empty for a valid record row.  If @var{<spec>} is a list of
-@var{<header-spec>} and @code{<predicate>}, then the value of the
+@code{<header-spec>} and @code{<predicate>}, then the value of the
 column corresponds to the @var{<header-spec>} is passed to @var{<predicate>}
 to determine if it's a valid record row.
 
 If @var{required-slots} is omitted or an empty list, any row with
 at least one non-empty column to be included in the tuple.
-@end defun
+@c JP
+@code{<header-spec>}はどの列の要素をチェックすべきかを指定します。
+@var{header-slot}に現れる要素のいずれかと@code{equal?}でなければなりません。
+@code{<header-spec>}だけが@code{<spec>}として与えられていた場合は、
+その列が空であってはいけない、ということを意味します。
+@code{<header-spec>}と@code{<predicate>}が与えられた場合は、
+レコード行の該当列の値(文字列)が述語手続き@code{<predicate>}に与えられ、
+それが偽を返したらその行は有効でないということになります。
+@c COMMON
 
-@defun csv-rows->tuples rows header-spec :key required-slots allow-gap?
-Convert input rows to a list of tuples (A tuple is a list of slot values)
-If no header is found, @code{#f} is returned.
+@c EN
 If @var{allow-gap?} is @code{#t}, it keeps reading rows until the end,
 skipping invalid rows.  If @var{allow-gap?} is @code{#f} (default), 
 it stops reading once it sees an invalid row after headers.
+@c JP
+@var{allow-gap?}が@code{#t}であった場合、無効な行を飛ばしながら、
+入力データは最後まで処理されます。@var{allow-gap?}が@code{#f}であった場合(デフォルト)は、
+無効な行が出てきた時点で処理を打ちきります。
+@c COMMON
 
-Check out @code{test/text.scm} in the Gauche source tree for an example.
+@c EN
+Let's see an example.  Suppose we have the following CSV file as
+@file{data.csv}.  It has extra rows and columns, as is often seen
+in spreadsheet-exported files.
+@c JP
+例を見てみましょう。次のデータが@file{data.csv}というファイルに書かれているとします。
+スプレッドシートからエクスポートされるデータによくあるように、不要な行や列が混ざっています。
+@c COMMON
+
+@smallexample
+,,,,,,,,
+"Exported data",,,,,,,,
+,,,,,,,,
+,,Year,Country,,Population,GDP,,Note
+,,1958,"Land of Lisp",,39994,"551,435,453",,
+,,1957,"United States of Formula Translators",,115333,"4,343,225,434",,Estimated
+,,1959,"People's Republic of COBOL",,82524,"3,357,551,143",,
+,,1970,"Kingdom of Pascal",,3785,,,"GDP missing"
+,,,,,,,,
+,,1962,"APL Republic",,1545,"342,335,151",,
+@end smallexample
+
+@c EN
+You can extract tuples of Country, Year, GDP and Population,
+as follows:
+@c JP
+ここから、Country, Year, GDP, Populationの値からなるタプルのリストを
+次のとおり取り出せます。
+@c COMMON
+
+@smallexample
+(use text.csv)
+(use gauche.generator)
+
+(call-with-input-file "data.csv" 
+  (^p (csv-rows->tuples 
+       (generator->list (cute (make-csv-reader #\,) p))
+       '("Country" "Year" "GDP" "Population"))))
+ @result{}
+  (("Land of Lisp" "1958" "551,435,453" "39994")
+   ("United States of Formula Translators" "1957" "4,343,225,434" "115333")
+   ("People's Republic of COBOL" "1959" "3,357,551,143" "82524")
+   ("Kingdom of Pascal" "1970" "" "3785"))
+@end smallexample
+
+@c EN
+Note that irrelevant rows are skipped, and columns in the results
+are ordered as specified in the @var{header-specs}.
+@c JP
+無関係な行は無視されており、また結果の列は@var{header-specs}に渡した順序に
+整列されていることに注目してください。
+@c COMMON
+
+@c EN
+Since there's a gap (empty row) after the ``Kingdom of Pascal'' entry,
+@code{csv-rows->tuples} stops processing there by default.  If you want
+to include ``APL Republic'', you have to pass @code{:allow-gap? #t}
+to @code{csv-rows->tuples}.
+@c JP
+``Kingdom of Pascal''の列の後にギャップ(空の列)があるため、
+@code{csv-rows->tuples}はそこで処理を打ち切っています。
+ギャップの後の``APL Republic''まで含めたければ、@code{csv-rows->tuples}に
+@code{:allow-gap? #t}を渡してください。
+@c COMMON
+
+@c EN
+The next example gives @code{:required-slots} option to eliminate
+rows with missing some of Year, Country or GDP---thus ``Kingdom of Pascal''
+is omitted from the result, while ``APL Republic'' is included
+because of @code{:allow-gap?} argument.
+(It also checks Year has exactly 4 digits.)
+@c JP
+次の例では、@code{:required-slots}引数を与えて、
+Year、Country、GDPのデータの一つ以上が欠けている行を除外しています。
+したがって``Kingdom of Pascal''は結果から除かれます。一方、
+@code{:allow-gap?}引数のために``APL Republic''が含まれます。
+(この例ではYearが4桁ぴったりの数値であるかどうかもチェックしています。)
+@c COMMON
+
+@smallexample
+(call-with-input-file "data.csv" 
+  (^p (csv-rows->tuples 
+       (generator->list (cute (make-csv-reader #\,) p))
+       '("Country" "Year" "GDP" "Population")
+        :required-slots '(("Year" #/^\d@{4@}$/) "Country" "GDP")
+        :allow-gap? #t)))
+ @result{}
+ (("Land of Lisp" "1958" "551,435,453" "39994")
+  ("United States of Formula Translators" "1957" "4,343,225,434" "115333")
+  ("People's Republic of COBOL" "1959" "3,357,551,143" "82524")
+  ("APL Republic" "1962" "342,335,151" "1545"))
+@end smallexample
+@end defun
+
+@c EN
+The following two procedures are ingredients of 
+@code{csv-rows->tuples}:
+@c JP
+以下の二つの手続きは@code{csv-rows->tuples}の材料です。
+@c COMMON
+
+
+@defun make-csv-header-parser header-specs
+@c EN
+Create a procedure that takes a row (a list of strings) and checks if
+if it matches the criteria specified by @var{header-specs}.
+(See @code{csv-rows->tuples} above about @var{header-specs}.)
+If the input satisfies the spec, it returns a permuter vector that maps
+the tuple positions to the input column numbers.
+Otherwise, it returns @code{#f}.
+@c JP
+行(文字列のリスト)を受け取り、それが@var{header-specs}で指定される条件に
+一致するかどうかを調べます。
+(@var{header-specs}については上の@code{csv-rows->tuples}を見てください。)
+もし引数が条件を満たしたなら、置換ベクタを返します。
+置換ベクタはタプルの位置を入力行の列番号へとマップするもので。
+一致しなかった場合は@code{#f}を返します。
+@c COMMON
+
+@c EN
+The permuter vector is a vector of integers,
+where K-th element being I means the K-th item of the tuple should be
+taken from I-th column.
+@c JP
+置換ベクタは整数のベクタです。K番目の要素がIであることは、
+タプルのK番目の要素が入力のI番目の列から取られることを示します。
+@c COMMON
+
+@c EN
+Let's see the example.  Suppose we know that the input contains
+the following row as the header row:
+@c JP
+例を見てみましょう。入力に、以下の形の行がヘッダ行として含まれていることが
+わかっているとします。
+@c COMMON
+
+@example
+(define *input-row* '("" "" "Year" "Country" "" "Population" "GDP" "Notes"))
+@end example
+
+@c EN
+We want to detect that row, but we only needs
+Country, Year, GDP and Population columns, in that order.  So we create
+a header parser as follows:
+@c JP
+こういう形の行を見つけたいわけですが、取り出すデータとしては、
+@code{Country}、@code{Year}、@code{GDP}、@code{Population}だけが
+この順で必要であるとします。この場合、ヘッダパーザを
+次のとおり構成できます。
+@c COMMON
+
+@example
+(define header-parser
+  (make-csv-header-parser '("Country" "Year" "GDP" "Population")))
+@end example
+
+@c EN
+Applying this header parser to the input data returns the permuter vector:
+@c JP
+このヘッダパーザを想定される入力行に適用すれば、置換ベクタが返ってきます:
+@c COMMON
+
+@example
+(header-parser *input-row*)
+ @result{} #(3 2 6 5)
+@end example
+
+@c EN
+It means, the first item of tuple (Country) is in the 3rd column of the input,
+the second item of tuple (Year) is in the 2nd column of the input,
+and so on.  This permuter vector can be used to parse record rows to
+get tuples.
+@c JP
+返り値の意味は、タプルの第0要素(@code{Country})は入力の第3列にあり、
+タプルの第1要素(@code{Year})は入力の第2列にある、といった具合です。
+置換ベクタはレコード行をパーズしてタプルを生成するのに使えます。
+@c COMMON
+@end defun
+
+@defun make-csv-record-parser header-slots permuter :optional required-slots
+@c EN
+Create a procedure that converts one input row into a tuple.
+
+@var{Permuter} is the vector returned by @code{make-csv-header-parser}.
+
+See @code{cvs-rows->tuples} above for @var{header-slots} and
+@var{required-slots} arguments.
+@c JP
+入力の1行をタプルへと変換する手続きを作って返します。
+
+@var{permuter}は@code{make-csv-header-parser}が返す置換ベクタです。
+
+@var{header-slots}及び@var{required-slots}引数については
+上の@code{cvs-rows->tuples}を見てください。
+@c COMMON
 @end defun
 
 
@@ -20516,7 +20753,7 @@ Olegのライブラリに依存しているコードの互換性のために用�
 @c ----------------------------------------------------------------------
 @node Showing progress on text terminals, SQL parsing and construction, Parsing input stream, Library modules - Utilities
 @section @code{text.progress} - Showing progress on text terminals
-@c NODE テキスト端末上でプログレスを表示する, @code{text.progress} - テキスト端末上でプログレスを表示する
+@c NODE テキスト端末上で進捗を表示する, @code{text.progress} - テキスト端末上でプログレスを表示する
 
 @deftp {Module} text.progress
 @mdindex text.progress
@@ -20535,8 +20772,8 @@ displays the title; followed by a bar, a numeric part, and a time part,
 as shown in the followig example (only the line beginning with ``foo''
 is actually displayed).
 @c JP
-プログレスバーの汎用的なフォーマット1行のテキストで構成されます。この1
-行はいくつかの部分に分解できます。タイトルを表示するヘッダ部、その後に
+進捗を示すプログレスバーの汎用的なフォーマットは1行のテキストで構成されます。
+この1行はいくつかの部分に分解できます。タイトルを表示するヘッダ部、その後に
 プログレスバーがあって、数値部、時間部と続きます。以下がその例です(foo
 からはじまる1行だけが実際に表示されます。
 @c COMMON
