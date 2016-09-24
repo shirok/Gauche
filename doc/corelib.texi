@@ -24873,7 +24873,6 @@ is defined, if available.  Otherwise, @code{#f} is returned.
 
 @example
 gosh> (use rfc.http)
-#<undef>
 gosh> (source-location http-get)
 ("/usr/share/gauche-0.9/0.9.5/lib/rfc/http.scm" 443)
 @end example

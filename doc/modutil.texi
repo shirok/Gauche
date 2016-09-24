@@ -10127,8 +10127,8 @@ Calls @code{AllocConsole} and @code{FreeConsole}, respectively.
 @c to build parsers based on Parsing Expression Grammer, or PEG.
 
 @c PEG is a @emph{formal grammer} to define a language, like regular
-@c expressions or context-free grammers, although PEG is more powerful
-@c than those.  An interesting characteristic of PEG is that it can
+@c expressions or context-free grammers.
+@c An interesting characteristic of PEG is that it can
 @c be directly mapped to a recursive decent parser, which is exactly
 @c what this library does---each production rule is a Scheme expression
 @c that takes parsers and returns a combined parser.  One advantage of

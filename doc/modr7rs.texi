@@ -456,9 +456,7 @@ module and directly select @code{r7rs.user}:
 
 @example
 gosh> (use r7rs)
-#<undef>
 gosh> (select-module r7rs.user)
-#<undef>
 gosh[r7rs.user]> 
 @end example
 
