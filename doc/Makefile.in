@@ -128,7 +128,7 @@ gauche-refj_toc.html : gauche-refj.texi
 	texi2html --init-file=$(srcdir)/ja-init.pl --split=section --number --document-language=ja gauche-refj.texi
 
 gauche-refj.dvi : gauche-refj.texi
-	TEX="luatex --output-format=dvi" texi2dvi --tidy gauche-refj.texi
+	TEX=dviluatex texi2dvi --tidy gauche-refj.texi
 
 gauche-refj.pdf : gauche-refj.texi
 	PDFTEX=luatex texi2pdf --tidy gauche-refj.texi
@@ -176,7 +176,7 @@ gauche-devj.info.gz : gauche-devj.texi
 	fi
 
 gauche-devj.dvi: gauche-devj.texi
-	TEX="luatex --output-format=dvi" texi2dvi --tidy gauche-devj.texi
+	TEX=dviluatex texi2dvi --tidy gauche-devj.texi
 
 gauche-devj.pdf : gauche-devj.texi
 	PDFTEX=luatex texi2pdf --tidy gauche-devj.texi
