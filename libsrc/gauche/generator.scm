@@ -52,7 +52,7 @@
 
           null-generator gcons* gappend gflatten
           gconcatenate gmerge
-          circular-generator gunfold giota grange gindex gselect
+          circular-generator gunfold giota grange gindex gselect ginterval
           gmap gmap-accum gfilter gremove gdelete gdelete-neighbor-dups
           gfilter-map gstate-filter gbuffer-filter
           gtake gtake* gdrop gtake-while gdrop-while grxmatch gslices
@@ -513,6 +513,29 @@
                  (loop)
                  (begin (set! found? #t) v))))))))
 
+;; generate values in the interval defined by start-pred and end-pred.
+;; OPEN determines whether the interval is open in either side or both;
+;; #f (default) means closed interval; 'both or #t means open interval;
+;; 'start means open-closed, and 'end means closed-open.
+(define (ginterval start-pred end-pred gen :key (open #f) (repeat #f))
+  (let ([active #f]
+        [end? #f])
+    (rec (g)
+      (cond [end? (eof-object)]
+            [active (let1 v (gen)
+                      (cond [(eof-object? v) (set! end? #t) v]
+                            [(end-pred v)
+                             (set! active #f)
+                             (unless repeat (set! end? #t))
+                             (if (memq open '(end both #t)) (g) v)]
+                            [else v]))]
+            [else   (let1 v (gen)
+                      (cond [(eof-object? v) (set! end? #t) v]
+                            [(start-pred v)
+                             (set! active #t)
+                             (if (memq open '(start both #t)) (g) v)]
+                            [else (g)]))]))))
+
 ;; generate :: ((a -> ()) -> ()) -> Generator a
 (define (generate proc)
   (define (cont)
@@ -599,7 +622,6 @@
       (glet1 b (bgen)
         (glet1 v (vgen)
           (if b v (g)))))))
-
 
 ;;;
 ;;; Consumers
@@ -702,8 +724,6 @@
 ;;  (gen-ec (: i ...) ...)
 ;;    srfi-42-ish macro to create generator.  it's not "eager", so
 ;;    the name needs to be reconsidered.
-;;  (gflip-flop pred1 pred2 gen)
-;;    flip-flop operator to extract a range from the input generator.
 ;;  multi-valued generators
 ;;    take a generator and creates a multi-valued generator which
 ;;    returns auxiliary info in extra values, e.g. item count.

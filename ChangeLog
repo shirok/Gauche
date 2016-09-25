@@ -1,3 +1,12 @@
+2016-09-24  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/gauche/generator.scm (ginterval): Added experimentally.
+	  The name is still provisional---it may be called gflip-flop.
+	  I used 'interval' now because it takes data between the one
+	  that satisfies the start predicate and the one that satisfies
+	  the end predicate.  But it may be confusing that the interval
+	  is about sequence, not about the value range.
+
 2016-09-21  Shiro Kawai  <shiro@acm.org>
 
 	* lib/check-script: Added.

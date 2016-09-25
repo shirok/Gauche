@@ -372,5 +372,37 @@
           $ grxmatch #/\w+/
           $ gappend "    " (make-string 1999 #\a)))
 
+(test* "ginterval (once, closed)"
+       '(10 11 12 13 14 15 16 17 18 19 20)
+       (generator->list (ginterval (pa$ = 10) (pa$ = 20) (giota 100))))
+(test* "ginterval (once, open-closed)"
+       '(11 12 13 14 15 16 17 18 19 20)
+       (generator->list (ginterval (pa$ = 10) (pa$ = 20) (giota 100)
+                                   :open 'start)))
+(test* "ginterval (once, closed-open)"
+       '(10 11 12 13 14 15 16 17 18 19)
+       (generator->list (ginterval (pa$ = 10) (pa$ = 20) (giota 100)
+                                   :open 'end)))
+(test* "ginterval (once, open)"
+       '(11 12 13 14 15 16 17 18 19)
+       (generator->list (ginterval (pa$ = 10) (pa$ = 20) (giota 100)
+                                   :open 'both)))
+(test* "ginterval (once, open)"
+       '(11 12 13 14 15 16 17 18 19)
+       (generator->list (ginterval (pa$ = 10) (pa$ = 20) (giota 100)
+                                   :open #t)))
+
+(test* "ginterval (repeat, closed)"
+       '(0 1 2 3 6 7 8 9 12 13 14 15 18 19)
+       (generator->list (ginterval (^x (zero? (modulo x 3)))
+                                   (^x (zero? (modulo x 3)))
+                                   (giota 20)
+                                   :repeat #t)))
+(test* "ginterval (repeat, open)"
+       '(1 2 7 8 13 14 19)
+       (generator->list (ginterval (^x (zero? (modulo x 3)))
+                                   (^x (zero? (modulo x 3)))
+                                   (giota 20)
+                                   :open #t :repeat #t)))
 
 (test-end)
