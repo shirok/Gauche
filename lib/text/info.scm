@@ -231,16 +231,21 @@
                 [(#/^ --/ line) (loop (- n 1) (cons line lines))]
                 [(#/^ {10}/ line) (loop (- n 1) (cons line lines))]
                 [else (loop (- n 1) '())])))))
-  
+
+  ;; Once the start line is found, we find the start of description (since
+  ;; the entry may have multiple entry line, e.g. @defunx.) then scan the
+  ;; description until we get an emtpy line.
   (with-string-io (~ info-node'content)
     (^[]
       (let entry ([line (skip-lines)])
         (unless (eof-object? line)
           (cond [(#/^ --/ line) (print line) (entry (read-line))]
-                [(#/^$/ line)] ;; no description
-                [(#/^ {6}/ line) ;; folded entry line
+                [(#/^$/ line)]       ;; no description
+                [(#/^ {6}/ line)     ;; folded entry line
                  (print line) (entry (read-line))]
-                [(#/^ {5}\S/ line) ;; start description
+                [(#/^ {5}...$/ line) ;; dots between entry line
+                 (print line) (entry (read-line))]
+                [(#/^ {5}\S/ line)   ;; start description
                  (print line)
                  (let desc ([line (read-line)])
                    (unless (eof-object? line)
