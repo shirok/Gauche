@@ -1,3 +1,8 @@
+2016-09-25  Shiro Kawai  <shiro@acm.org>
+
+	* ext/uvector/array.scm: Add u8array, s8array, ..., f64array
+	  constructors, for the consistency.
+
 2016-09-24  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/gauche/generator.scm (ginterval): Added experimentally.
