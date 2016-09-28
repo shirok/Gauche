@@ -5185,8 +5185,8 @@ used internally; the programmer need to know the latter.
 If you use the default module inheritance,
 you don't need to use this module, since
 the @code{keyword} module is included in the inheritance chain.
-If you don't inherit @code{gauche} module, however, importing this
-module gives you access to the keywords without quotes.
+If you don't inherit @code{gauche} module, however, importing the
+@code{gauche.keyword} module gives you access to the keywords without quotes.
 For example, R7RS programs
 and libraries would require either @code{(import (gauche keyword))}
 or @code{(import (gauche base))} (the latter inherits

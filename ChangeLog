@@ -1,3 +1,9 @@
+2016-09-28  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/interactive/toplevel.scm: Add ,sh toplevel command.
+	  Change define-toplevel-command so that each command can choose
+	  how the arguments are parsed.
+
 2016-09-25  Shiro Kawai  <shiro@acm.org>
 
 	* ext/uvector/array.scm: Add u8array, s8array, ..., f64array

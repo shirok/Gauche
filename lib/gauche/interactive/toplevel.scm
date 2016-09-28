@@ -49,6 +49,7 @@
   (use gauche.threads)
   (use gauche.generator)
   (use gauche.sequence)
+  (use gauche.process)
   (use srfi-13)
   (use util.match)
   (use data.trie)
@@ -59,19 +60,19 @@
 (autoload file.util home-directory expand-path)
 
 ;; toplevel-commands
-;; Map from symbol to (help-message proc)
+;; Map from symbol to (parser help-message proc)
 (define *toplevel-commands* (atom (make-trie)))
 
-(define (toplevel-command-add! key help handler)
+(define (toplevel-command-add! key parser help handler)
   ($ atomic *toplevel-commands*
-     (^t (trie-put! t (x->string key) `(,help ,handler)))))
+     (^t (trie-put! t (x->string key) `(,parser ,help ,handler)))))
 
-;; Returns [(key help handler)]
+;; Returns [(key parser help handler)]
 (define (toplevel-command-lookup key)
   (let1 k (x->string key)
     ($ atomic *toplevel-commands*
-       (^t (if-let1 h&h (trie-get t k #f)
-             `((,k . ,h&h))
+       (^t (if-let1 v (trie-get t k #f)
+             `((,k . ,v))
              (sort (trie-common-prefix t k) string<? car))))))
 
 ;; Returns [((key ...) help-string)]
@@ -79,7 +80,7 @@
   ($ atomic *toplevel-commands*
      (^t ($ map (^[grp] (cons (map car grp) (cdar grp)))
             $ group-collection
-            ($ map (^p (cons (car p) (cadr p))) $ trie->list t)
+            ($ map (^p (cons (car p) (caddr p))) $ trie->list t)
             :key cdr))))
 
 ;; A handler return value that does nothing
@@ -94,12 +95,24 @@
   (^[]
     (match (toplevel-command-lookup key)
       [()    (print "Unknown toplevel command: " key)]
-      [((cmd help handler)) (print "Usage: " help)]
-      [((cmd help handler) ...) (ambiguous-command key cmd)])
+      [((cmd _ help _)) (print "Usage: " help)]
+      [((cmd _ help _) ...) (ambiguous-command key cmd)])
     *no-value*))
 
-;; (define-toplevel-command cmds helpmsg handler)
+;; parser
+(define (get-arg-parser parser-key)
+  (case parser-key
+    [(:read) (^[line] (generator->list (cute read (open-input-string line))))]
+    [(:trim) (^[line] (string-trim-both line))]
+    [else (errorf "[internal] Invalid parser spec in define-toplevel-command:\
+                   `~s': must be oen of ~s."
+                  parser-key '(:read :trim))]))
+
+;; (define-toplevel-command cmds arg-parser helpmsg handler)
 ;;  cmds    - a symbol, or a list of symbols.
+;;  arg-parser - how to parse the arguments.  :read - Scheme's read,
+;;            :trim - just pass the remaining line, with trimming preceding
+;;            and following whitespaces.
 ;;  helpmsg - one line help message, followed by multiline detailed description.
 ;;            command name(s) is/are automatically prepended at the beginning
 ;;            so no need to be included.
@@ -109,16 +122,17 @@
   (er-macro-transformer
    (^[f r c]
      (match f
-       [(_ keys help handler)
+       [(_ keys parser-spec help handler)
         (let* ([keys (if (list? keys) keys (list keys))]
+               [parser (get-arg-parser parser-spec)]
                [help (string-append (string-join (map x->string keys) "|")
                                     help)])
           `(,(r'begin)
             ,@(map (^[key]
-                     `(,(r'toplevel-command-add!) (,(r'quote) ,key) ,help
-                       (,(r'let1) usage (,(r'toplevel-command-helper)
-                                         (,(r'quote) ,key))
-                        ,handler)))
+                     (quasirename r
+                       (toplevel-command-add! ',key ',parser ,help
+                        (let1 ,'usage (toplevel-command-helper ',key)
+                          ,handler))))
                    keys)))]))))
 
 ;; API
@@ -132,15 +146,14 @@
   (match (toplevel-command-lookup command)
     [() (print #"Unrecognized REPL toplevel command: ~command")
      (print "Type ,help for the list of available commands.") *no-value*]
-    [((cmd help handler))
-     (handler (generator->list (cute read (open-input-string line))))]
-    [((cmd help handler) ...) (ambiguous-command command cmd) *no-value*]))
+    [((cmd parser help handler)) (handler (parser line))]
+    [((cmd _ _ _) ...) (ambiguous-command command cmd) *no-value*]))
 
 ;;
 ;; Predefined commands
 ;;
 
-(define-toplevel-command (apropos a)
+(define-toplevel-command (apropos a) :read
   " regexp [module-name]\n\
  Show the names of global bindings that match the regexp.\n\
  If module-name (symbol) is given, the search is limited in the named module."
@@ -153,7 +166,7 @@
       [(word mod) `(apropos ,(->regexp word) ',mod)]
       [_ (usage)])))
 
-(define-toplevel-command (describe d)
+(define-toplevel-command (describe d) :read
   " [object]\n\
  Describe the object.\nWithout arguments, describe the last REPL result."
   (^[args]
@@ -162,7 +175,7 @@
       [(obj) `(,(with-module gauche.interactive describe) ,obj)]
       [_ (usage)])))
 
-(define-toplevel-command history
+(define-toplevel-command history :read
   "\n\
  Show REPL history."
   (^[args]
@@ -170,7 +183,7 @@
       [() `(,(with-module gauche *history))]
       [_ (usage)])))
 
-(define-toplevel-command (info doc)
+(define-toplevel-command (info doc) :read
   " name\n\
  Show info document for an entry of NAME.\n\
  NAME can be a name of a function, syntax, macro, module, or class."
@@ -181,7 +194,7 @@
       [(name) `(,(with-module gauche.interactive info) ,(->name name))]
       [_ (usage)])))
 
-(define-toplevel-command (help h)
+(define-toplevel-command (help h) :read
   " [command]\n\
  Show the help message of the command.\n\
  Without arguments, show the list of all toplevel commands."
@@ -212,7 +225,7 @@
       [(cmd) ((toplevel-command-helper cmd)) *no-value*]
       [_ (usage)])))
 
-(define-toplevel-command pwd
+(define-toplevel-command pwd :read
   "\n\
  Print working directory."
   (^[args]
@@ -220,7 +233,7 @@
       [() (print (sys-getcwd)) *no-value*]
       [_ (usage)])))
 
-(define-toplevel-command cd
+(define-toplevel-command cd :read
   " [directory]\n\
  Change the current directory.\n\
  Without arguments, change to the home directory."
@@ -233,10 +246,22 @@
         (begin (sys-chdir dir) (sys-getcwd))
         (usage)))))
 
+;; Run shell command.
+;; A tradition to use '!' for shell escape, but "comma - exclamation-mark"
+;; combination is a bit awkward to type.  "comma - s - h" is much easier.
+(define-toplevel-command sh :trim
+  "  command args ...\n\
+ Run command via shell.\n\
+ Shell is taken from the environment variable SHELL, or /bin/sh if it's empty.\n\
+ The command line COMMAND ARGS ... are passed to the shell as is."
+  (^[line]
+    (let1 sh (or (sys-getenv "SHELL") "/bin/sh")
+      (run-process `(,sh "-c" ,line) :wait #t)
+      *no-value*)))
 
 ;; This can be better - to make it work on generic functions,
 ;; show source location as well, etc.
-(define-toplevel-command source
+(define-toplevel-command source :read
   " procedure\n\
  Show source code of the procedure if it's available."
   (^[args]
@@ -246,7 +271,7 @@
                           (values)))]
       [_ (usage)])))
 
-(define-toplevel-command (use u)
+(define-toplevel-command (use u) :read
   " module [option ...]\n\
  Use the specified module.  Same as (use module option ...).\n\
  Allowed options:\n\
