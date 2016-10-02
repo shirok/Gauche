@@ -149,8 +149,8 @@ slibcat-in-place :
 	fi
 
 clean:
-	rm -rf core slibcat *~
-	for d in $(SUBDIRS); do if test -d $$d; then (cd $$d; rm -f core *~); fi; done
+	rm -rf core slibcat *.sci *~
+	for d in $(SUBDIRS); do if test -d $$d; then (cd $$d; rm -f core *.sci *~); fi; done
 
 distclean: clean
 	rm -f $(CONFIG_GENERATED)

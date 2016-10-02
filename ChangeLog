@@ -1,3 +1,10 @@
+2016-10-01  Shiro Kawai  <shiro@acm.org>
+
+	* src/Makefile.in, lib/Makefile.in: Ensure removing *.sci and *.dll
+	  with 'make clean'---they're supposed to be cleaned by xlink script
+	  but when it fails remaining *.sci and *.dll may interfere the
+	  build process.
+
 2016-09-28  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/interactive/toplevel.scm: Add ,sh toplevel command.

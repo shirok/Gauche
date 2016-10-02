@@ -468,7 +468,7 @@ clean :
 	       test-vmstack$(EXEEXT) test-arith$(EXEEXT) test-extra$(EXEEXT) \
 	       $(GENERATED_SCRIPTS) gauche-config.c \
 	       $(LIBGAUCHE).$(SOEXT)* $(LIBGAUCHE_STATIC).a \
-               *.$(OBJEXT) *~ *.a *.t *.def *.exp *.exe \
+               *.$(OBJEXT) *~ *.a *.t *.def *.exp *.exe *.dll \
 	       test.log test.dir so_locations gauche/*~ paths_arch.c \
 	       gauche/config_threads.h gauche-config.in.c staticinit.c \
 	       gauche-install.in.c gauche-package.in.c gauche-cesconv.in.c \
