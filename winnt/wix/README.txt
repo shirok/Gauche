@@ -1,24 +1,7 @@
-To create Gauche-mingw Windows installer:
+This directory contains auxiliary files to create Windows installer.
+See doc/HOWTO-mingw.txt for the build instructions.
 
-Requirements:
-  MinGW
-  MSYS
-  WiX toolset 3.8 or later ( http://wixtoolset.org/ )
-
-Make sure WiX toolset is in $PATH.
-
-How To:
-
-In the top source directory, run mingw-dist.sh script as follow:
-
-  $ src/mingw-dist.sh --with-installer
-
-It builds MinGW Gauche and installs binaries and examples under
-'Gauche' subdirectory in this directory, then run 'make' in 
-this directory.
-
-On successful completion, you get Gauche-mingw-$VERSION.msi here.
-
-
-
+libiconv-COPYING.LIB (LGPL) is to be included in the installer, for we
+have a copy of libiconv.dll in it.  The rest of the distribution is
+under BSD license.
 

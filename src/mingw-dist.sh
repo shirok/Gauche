@@ -112,12 +112,12 @@ case "$MSYSTEM" in
 esac
 
 # Build GL
+# NB: 
 if [ "$WITH_GL" = "yes" ]; then
   PATH=$distdir/bin:$PATH
   (cd ../Gauche-gl; ./DIST gen; \
-   if test -f Makefile; then make clean; fi; \
    ./configure --prefix=$distdir --with-glut=mingw-static; \
-   make; make install; make install-examples)
+   make clean; make; make install; make install-examples)
 fi
 
 # Build installer
