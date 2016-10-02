@@ -2775,6 +2775,8 @@ clock_t times(struct tms *info)
     return 0;
 }
 
+
+
 /*
  * Other obscure stuff
  */
@@ -2793,6 +2795,43 @@ int pipe(int fd[])
        for the children.  */
     int r = _pipe(fd, PIPE_BUFFER_SIZE, O_BINARY|O_NOINHERIT);
     return r;
+}
+
+/* If the given handle points to a pipe, returns its name.
+   As of Oct 2016, mingw headers does not include
+   GetFileInformationByHandleEx API, so we provide alternative. */
+
+typedef struct {
+    DWORD FileNameLength;
+    WCHAR FileName[1];
+} X_FILE_NAME_INFO;
+
+typedef enum {
+    X_FileNameInfo = 2
+} X_FILE_INFO_BY_HANDLE_CLASS;
+
+ScmObj Scm_WinGetPipeName(HANDLE h)
+{
+    if (GetFileType(h) != FILE_TYPE_PIPE) return SCM_FALSE;
+    static BOOL (WINAPI *pGetFileInformationByHandleEx)(HANDLE,
+							X_FILE_INFO_BY_HANDLE_CLASS,
+							LPVOID, DWORD) = NULL;
+    
+    if (pGetFileInformationByHandleEx == NULL) {
+	pGetFileInformationByHandleEx = 
+	    get_api_entry(_T("kernel32.dll"),
+			  "GetFileInformationByHandleEx",
+			  FALSE);
+    }
+    if (pGetFileInformationByHandleEx == NULL) return SCM_FALSE;
+
+    DWORD size = sizeof(X_FILE_NAME_INFO) + sizeof(WCHAR)*MAX_PATH;
+    X_FILE_NAME_INFO *info = SCM_MALLOC_ATOMIC(size);
+    BOOL r = pGetFileInformationByHandleEx(h, X_FileNameInfo, info, size);
+    if (!r) return SCM_FALSE;
+    
+    info->FileName[info->FileNameLength / sizeof(WCHAR)] = 0;
+    return SCM_MAKE_STR_COPYING(SCM_WCS2MBS(info->FileName));
 }
 
 char *ttyname(int desc)

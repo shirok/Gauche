@@ -1370,8 +1370,28 @@
        (when (== h INVALID_HANDLE_VALUE) (Scm_SysError "get_osfhandle failed"))
        (return (Scm_MakeWinHandle h '#f))))
 
+   (define-cproc sys-win-pipe-name (port-or-fd)
+     (let* ([fd::int (Scm_GetPortFd port-or-fd FALSE)])
+       (if (< fd 0)
+         (return '#f)
+         (return (Scm_WinGetPipeName (cast HANDLE (_get_osfhandle fd)))))))
+
    ) ;; GAUCHE_WINDOWS
  )
+
+;; MSYS Specific
+;; When gosh is invoked in MSYS shell interactively, isatty() returns
+;; FALSE since stdio communicates mintty with pipes.  We can detect the
+;; situation by checking pipe name.
+;; This idea of using pipe name to detect mintty is taken from
+;; http://github.com/k-takata/ptycheck.
+(with-module gauche.internal
+  (define (%sys-mintty? port-or-fd)
+    (and-let* ([ (global-variable-bound? (find-module 'gauche)
+                                         'sys-win-pipe-name) ]
+               [n (sys-win-pipe-name port-or-fd)])
+      (boolean (#/^\\msys-[\da-f]+-pty\d+-(to|from)-master$/ n))))
+  )
 
 ;; This is originally a part of shell-escape-string in gauche.process,
 ;; but the lower level function Scm_Exec() requires this to build

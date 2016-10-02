@@ -524,10 +524,27 @@ int execute_script(const char *scriptfile, ScmObj args)
     return 0;
 }
 
+static int has_terminal()
+{
+    if (isatty(0)) return TRUE;
+#if defined(GAUCHE_WINDOWS)
+    /* MinGW console (mintty) communicates with running processes via pipe,
+       so isatty(0) returns false even if we're running on mintty.
+       We use pipe name to determine whether we're talking to mintty.
+       %sys-mintty? is defined in libsys.scm. */
+    ScmEvalPacket pac;
+    int r = Scm_EvalCString("(%sys-mintty? 0)",
+			    SCM_OBJ(Scm_GaucheInternalModule()),
+			    &pac);
+    if (r == 1 && !SCM_FALSEP(pac.results[0])) return TRUE;
+#endif /*GAUCHE_WINDOWS*/
+    return FALSE;
+}
+
 /* When no script is given, enter REPL. */
 void enter_repl()
 {
-    /* We're in interactive mode. (use gauche.interactive) */
+    /* Load gauche.interactive, for we're not executing a script. */
     if (load_initfile) {
         ScmLoadPacket lpak;
         if (Scm_Require(SCM_MAKE_STR("gauche/interactive"), 0, &lpak) < 0) {
@@ -545,7 +562,7 @@ void enter_repl()
         Scm_SetPortCaseFolding(SCM_PORT(Scm_Stdin()), TRUE);
     }
     
-    if (batch_mode || (!isatty(0) && !interactive_mode)) {
+    if (batch_mode || (!has_terminal() && !interactive_mode)) {
         Scm_LoadFromPort(SCM_PORT(Scm_Stdin()), SCM_LOAD_PROPAGATE_ERROR, NULL);
     } else {
         /* Call read-eval-print-loop.  If gauche.interactive is loaded,

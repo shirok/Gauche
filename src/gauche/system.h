@@ -306,6 +306,8 @@ SCM_EXTERN ScmObj Scm_MakeWinProcess(HANDLE h);
 SCM_EXTERN int    Scm_WinProcessP(ScmObj p);
 SCM_EXTERN pid_t  Scm_WinProcessPID(ScmObj p);
 SCM_EXTERN HANDLE Scm_WinProcess(ScmObj p);
+
+SCM_EXTERN ScmObj Scm_WinGetPipeName(HANDLE h);
 #endif /* GAUCHE_WINDOWS */
 
 #endif /* GAUCHE_SYSTEM_H */
