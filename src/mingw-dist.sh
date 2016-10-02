@@ -11,13 +11,16 @@ set -e
 case "$MSYSTEM" in
   MINGW64)
     mingwdir=${MINGWDIR:-/mingw64}
+    mingwarch="x86_64"
     ;;
   MINGW32)
     mingwdir=${MINGWDIR:-/mingw32}
+    mingwarch="i686"
     ;;
   *)
     echo 'WARNING: $MSYSTEM is neither "MINGW32" or "MINGW64".'
     mingwdir=${MINGWDIR:-/mingw}
+    mingwarch="unknown"
     ;;
 esac
 
@@ -72,7 +75,7 @@ fi
 if [ "$INSTALLER" = yes ]; then
   distdir=`pwd`/winnt/wix/Gauche
 else
-  distdir=`pwd`/../Gauche-mingw-dist/Gauche
+  distdir=`pwd`/../Gauche-mingw-dist/Gauche-${mingwarch}
 fi
 rm -rf $distdir
 ./configure --prefix=$distdir --enable-threads=win32 \
