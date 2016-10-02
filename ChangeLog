@@ -1,10 +1,16 @@
 2016-10-02  Shiro Kawai  <shiro@acm.org>
 
+	* src/system.c (Scm_ClockGetTimeMonotonic,Scm_ClockGetResMonotonic):
+	  Add workaround of XCode8 issue that it pretends clock_gettime
+	  and clock_getres available but it's not true until OSX 10.12.
+	  The workaround code directly calls mach APIs.
+
 	* src/system.c (Scm_WinGetPipeName),
 	  src/libsys.scm (sys-win-pipe-name): Windows-specific API to obtain
 	  pipe name.
 	* src/libsys.scm (%sys-mintty?): Determine if gosh's input is
 	  connected to mintty on msys.
+
 	* src/main.c (enter_repl, has_terminal): On Windows, Use %sys-mintty?
 	  so that we get REPL on MSYS shell.
 

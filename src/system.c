@@ -998,10 +998,30 @@ void Scm_GetTimeOfDay(u_long *sec, u_long *usec)
 /* Abstract clock_gettime and clock_getres.
    If the system doesn't have these, those API returns FALSE; the caller
    should make up fallback means.
+
+   NB: XCode8 breaks clock_getres on OSX 10.11---it's only provided in
+   OSX 10.12, but the SDK pretends it's available on all platforms.
+   For the workaround, we call OSX specific functions.
+   Cf. http://developer.apple.com/library/mac/#qa/qa1398/_index.html
  */
+#if defined(__APPLE__) && defined(__MACH__)
+#include <mach/mach.h>
+#include <mach/mach_time.h>
+static mach_timebase_info_data_t tinfo;
+#endif /* __APPLE__ && __MACH__ */
+
 int Scm_ClockGetTimeMonotonic(u_long *sec, u_long *nsec)
 {
-#if defined(HAVE_CLOCK_GETTIME) && defined(CLOCK_MONOTONIC)
+#if defined(__APPLE__) && defined(__MACH__)
+    if (tinfo.denom == 0) {
+	(void)mach_timebase_info(&tinfo);
+    }
+    uint64_t t = mach_absolute_time();
+    uint64_t ns = t * tinfo.numer / tinfo.denom;
+    *sec = ns / 1000000000;
+    *nsec = ns % 1000000000;
+    return TRUE;
+#elif defined(HAVE_CLOCK_GETTIME) && defined(CLOCK_MONOTONIC)
     ScmTimeSpec ts;
     int r;
     SCM_SYSCALL(r, clock_gettime(CLOCK_MONOTONIC, &ts));
@@ -1017,7 +1037,21 @@ int Scm_ClockGetTimeMonotonic(u_long *sec, u_long *nsec)
 
 int Scm_ClockGetResMonotonic(u_long *sec, u_long *nsec)
 {
-#if defined(HAVE_CLOCK_GETRES) && defined(CLOCK_MONOTONIC)
+#if defined(__APPLE__) && defined(__MACH__)
+    if (tinfo.denom == 0) {
+	(void)mach_timebase_info(&tinfo);
+    }
+    if (tinfo.numer <= tinfo.denom) {
+	/* The precision is finer than nano seconds, but we can only
+	   represent nanosecond resolution. */
+	*sec = 0;
+	*nsec = 1;
+    } else {
+	*sec = 0;
+	*nsec = tinfo.numer / tinfo.denom;
+    }
+    return TRUE;
+#elif defined(HAVE_CLOCK_GETRES) && defined(CLOCK_MONOTONIC)
     ScmTimeSpec ts;
     int r;
     SCM_SYSCALL(r, clock_getres(CLOCK_MONOTONIC, &ts));
