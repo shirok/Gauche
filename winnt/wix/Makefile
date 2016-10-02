@@ -42,3 +42,4 @@ Gauche/gauche-logo.ico : gauche-logo.ico
 
 clean:
 	rm -f stamp*.0 *.tmp *.wxs *.msi *.wixobj *.wixpdb *.log *~
+	rm -rf Gauche/
