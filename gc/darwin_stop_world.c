@@ -175,7 +175,7 @@ STATIC ptr_t GC_stack_range_for(ptr_t *phi, thread_act_t thread, GC_thread p,
         if (unified_state.ash.flavor != ARM_THREAD_STATE32) {
           ABORT("unified_state flavor should be ARM_THREAD_STATE32");
         }
-        state = unified_state.ts_32;
+	state = unified_state;
       } else
 #   endif
     /* else */ {
