@@ -54,7 +54,7 @@
       ("NM"       . ,(build-path dev "usr/bin/nm"))
       ("RANLIB"   . ,(process-output->string `("xcrun" "-find" "-sdk" ,sdk "ranlib")))
       ("CFLAGS"   . ,#"-arch ~target -pipe -no-cpp-precomp -isysroot ~sdkdir -miphoneos-version-min=~*ios-deploy-target-version* -I~|sdkdir|/usr/include/ ~cflags-xtra")
-      ("LDFLAGS"  . ,#"-L~|sdkdir|/usr/lib/"))))
+      ("LDFLAGS"  . ,#"-framework CoreFoundation -L~|sdkdir|/usr/lib/"))))
 
 (define (build-1 target)
   (let* ([envs (map (^p #"~(car p)=~(cdr p)") (environment-alist target))]
@@ -114,14 +114,12 @@
 
 (define (copy-includes)
   (define (copy file dst)
-    (let* ([src1 (build-path "src" file)]
-           [src2 (build-path *builddir* "i386/src" file)]
-           [src3 (build-path *builddir* "x86_64/src" file)]
-           [src (cond [(file-exists? src1) src1]
-                      [(file-exists? src2) src2]
-                      [(file-exists? src3) src3]
-                      [else (error "Missing file:" file)])])
-      (print "Copying " src " -> " dst)
+    (let1 src (or (any (^p (and (file-exists? p) p))
+                       (list (build-path "src" file)
+                             (build-path *builddir* "i386/src" file)
+                             (build-path *builddir* "x86_64/src" file)))
+                  (error "Missing file:" file))
+      (print "Copying " (sys-normalize-pathname src :absolute #t) " -> " dst)
       (with-output-to-file dst
         (^[]
           (do-generator [line (file->line-generator src)]
