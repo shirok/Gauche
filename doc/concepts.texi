@@ -42,34 +42,28 @@ Gauche has a keyword object, expressed as a name prefixed by a colon
 passing so-called keyword arguments (@pxref{Making Procedures}).
 
 R7RS requires names starting with colon to be read as a symbol.
-In the current version of Gauche, keywords aren't symbols; they are
-of disjoint types.  R7RS code that's using symbols starting with colon
-needs to be adjusted.  (Most conveniently, using vertical-bar would make
-the code both work in R7RS and Gauche, e.g. @code{|:foo|}.  The reader
-directive @code{#!r7rs} also makes @code{:foo} to be read as a symbol,
-instead of a keyword.)
-
-We'll make keywords subtype of symbols in near future,
-to fully conform R7RS while maintaining the backward compatibility
-as much as possible.  @xref{Keywords}, for what you need to know
-about writing portable code using keywords.
+In the current version of Gauche, keywords aren't symbols by default;
+they are of disjoint types.  With an enviornment variable
+@code{GAUCHE_KEYWORD_IS_SYMBOL}, you can
+make Gauche treat keywords and symbols the same.
+@xref{Keywords}, for the details.  The plan is that we move to
+fully R7RS compliant in future, but this change could break existing
+code, so we have migration period.  We recommend setting the environment
+variable now for newly written code.
 @c JP
 Gaucheには、コロンで始まる名前(例:@code{:key})を持つ、キーワードオブジェクトがあります。
 キーワードはそれ自身に評価され、キーワード引数を渡すときにいつも使われます
 (@ref{Making Procedures}参照)。
 
 R7RSではコロンで始まる名前はシンボルとして読まれることになっています。
-現在のGaucheでは、キーワードはシンボルではなく、それぞれ独立した型に属します。
-コロンで始まるシンボルを使っているR7RSコードは修正が必要になるかもしれません
-(一番簡単な方法は、コロンで始まるシンボルを@code{|:foo|}のように縦棒でエスケープすること
-です。これはR7RSでもGaucheでもシンボルとして読まれます。
-また、リーダーディレクティブ@code{#!r7rs}によっても、@code{:foo}をキーワードでなく
-シンボルとして読ませることができます。)
-
-近いうちに、キーワードをシンボルのサブタイプとすることで、
-できるだけ後方互換性を保ちながらR7RSに準拠したふるまいにする予定です。
-キーワードを使ってポータブルなコードを書くために知っておくべきことについては、
-@ref{Keywords}を参照してください。
+現在のGaucheでは、デフォルトで、キーワードはシンボルではなく、それぞれ独立した型に属します。
+環境変数@code{GAUCHE_KEYWORD_IS_SYMBOL}が設定されていた場合は、
+Gaucheはキーワードをシンボルとして扱います。
+詳しくは@ref{Keywords}を参照してください。
+将来はR7RSに完全準拠するモードの方をデフォルトにする予定ですが、
+この変更は既存のコードを壊す可能性があるために、現在は移行期間と位置づけています。
+これからプログラムを書く場合は、常に@code{GAUCHE_KEYWORD_IS_SYMBOL}を
+セットしておくことをお勧めします。
 @c COMMON
 
 @item

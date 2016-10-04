@@ -6215,7 +6215,7 @@ the key and the following value is removed from @var{kv-list}.
 @c NODE キーワードとシンボルの統合
 
 @c EN
-In future versions of Gauche, keywords will become a subtype of symbols,
+In future versions of Gauche, keywords will become symbols,
 automatically bound to itself by default. 
 On the surface it won't make much difference;
 you can write a keyword @code{:key}, which evaluates to itself; so you
@@ -6237,7 +6237,7 @@ You can test if your library/application works after the change,
 by setting the environment variable @code{GAUCHE_KEYWORD_IS_SYMBOL}.
 @c JP
 将来のGaucheでは、キーワードは「デフォルトで自分自身に束縛されている」という
-性質を持つ、シンボルのサブタイプとなる予定です。
+性質を持つシンボルとなります。
 表面的にはこの変更はたいした違いをもたらさないでしょう。
 プログラム中に表記してあるキーワードはそれ自身に評価されるので、
 今までどおりキーワード引数を渡すことができます。

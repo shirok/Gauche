@@ -1400,7 +1400,7 @@
 ;; by Scm_Exec() and shell-escape-string.
 ;;
 ;; NB:  There is no reliable way to escape command line arguments on
-;; windows, since the parsing is up to every application.  However, most
+;; windows, since the parsing is up to each application.  However, most
 ;; applications rely on MSVC runtime library and we also follow it here.
 ;; Unfortunately, the official document lacks crucial details, and even
 ;; the described specification is twisted, as if the one who designed
