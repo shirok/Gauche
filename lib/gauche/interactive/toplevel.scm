@@ -255,9 +255,15 @@
  Shell is taken from the environment variable SHELL, or /bin/sh if it's empty.\n\
  The command line COMMAND ARGS ... are passed to the shell as is."
   (^[line]
-    (let1 sh (or (sys-getenv "SHELL") "/bin/sh")
-      (run-process `(,sh "-c" ,line) :wait #t)
-      *no-value*)))
+    (cond-expand
+     [gauche.os.windows
+      (if-let1 sh (sys-getenv "SHELL")
+        (run-process `("cmd.exe" "/c" ,sh "-c" ,line) :wait #t)
+        (run-process `("cmd.exe" "/c" ,line) :wait #t))]
+     [else
+      (let1 sh (or (sys-getenv "SHELL") "/bin/sh")
+        (run-process `(,sh "-c" ,line) :wait #t))])
+    *no-value*))
 
 ;; This can be better - to make it work on generic functions,
 ;; show source location as well, etc.
