@@ -281,8 +281,11 @@ static void sig_setup(void)
     sigdelset(&set, SIGBUS);
 #endif /*SIGBUS*/
 
-    sigdelset(&set, GC_get_suspend_signal()    ); /* used by GC to stop the world    */
-    sigdelset(&set, GC_get_thr_restart_signal()); /* used by GC to restart the world */
+#if !defined(GC_DARWIN_THREADS) && !defined(GC_OPENBSD_UTHREADS) && !defined(NACL)
+    /* These are used by GC to stop and restart the world. */
+    sigdelset(&set, GC_get_suspend_signal());
+    sigdelset(&set, GC_get_thr_restart_signal());
+#endif
 
     Scm_SetMasterSigmask(&set);
 }
