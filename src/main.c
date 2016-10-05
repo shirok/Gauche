@@ -280,17 +280,10 @@ static void sig_setup(void)
 #ifdef SIGBUS
     sigdelset(&set, SIGBUS);
 #endif /*SIGBUS*/
-#if defined(GC_LINUX_THREADS)
-    /* some signals are used in the system */
-    sigdelset(&set, SIGPWR);  /* used in gc */
-    sigdelset(&set, SIGXCPU); /* used in gc */
-    sigdelset(&set, SIGUSR1); /* used in linux threads */
-    sigdelset(&set, SIGUSR2); /* used in linux threads */
-#endif /*GC_LINUX_THREADS*/
-#if defined(GC_FREEBSD_THREADS)
-    sigdelset(&set, SIGUSR1); /* used by GC to stop the world */
-    sigdelset(&set, SIGUSR2); /* used by GC to restart the world */
-#endif /*GC_FREEBSD_THREADS*/
+
+    sigdelset(&set, GC_get_suspend_signal()    ); /* used by GC to stop the world    */
+    sigdelset(&set, GC_get_thr_restart_signal()); /* used by GC to restart the world */
+
     Scm_SetMasterSigmask(&set);
 }
 
