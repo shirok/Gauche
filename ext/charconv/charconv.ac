@@ -86,11 +86,11 @@ AS_IF([test "$ac_cv_use_iconv" = yes], [
   ])
 ])
 
-dnl Force static linking on MinGW
-AS_CASE(["$target"],
-  [*mingw*], [ICONV_LIB="-Wl,-dn,$ICONV_LIB,-dy"])
-
 AS_IF([test "$ac_cv_use_iconv" = yes], [
+  dnl Force static linking on MinGW
+  AS_CASE(["$target"],
+    [*mingw*], [ICONV_LIB="-Wl,-dn,$ICONV_LIB,-dy"])
+
   AC_DEFINE(USE_ICONV, [], [Define if uses iconv])
   EXT_LIBS="$EXT_LIBS $ICONV_LIB"
 ])
