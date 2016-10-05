@@ -281,11 +281,13 @@ static void sig_setup(void)
     sigdelset(&set, SIGBUS);
 #endif /*SIGBUS*/
 
-#if !defined(GC_DARWIN_THREADS) && !defined(GC_OPENBSD_UTHREADS) && !defined(NACL)
-    /* These are used by GC to stop and restart the world. */
-    sigdelset(&set, GC_get_suspend_signal());
-    sigdelset(&set, GC_get_thr_restart_signal());
-#endif
+    /* Exclude signals used by GC to stop and restart the world. */
+#ifdef GC_THREADS
+    int sig_suspend = GC_get_suspend_signal();
+    if (sig_suspend >= 0) sigdelset(&set, sig_suspend);
+    int sig_restart = GC_get_thr_restart_signal();
+    if (sig_restart >= 0) sigdelset(&set, sig_restart);
+#endif /*GC_THREADS*/
 
     Scm_SetMasterSigmask(&set);
 }
