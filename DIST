@@ -74,9 +74,16 @@ do_release () {
     # do some doc generation stuff...
 }
 
+do_mingw_installer () {
+    do_gen
+    MSYSTEM=MINGW64 src/mingw-dist.sh --with-gl --with-installer
+    MSYSTEM=MINGW32 src/mingw-dist.sh --with-gl --with-installer
+}
+
 case $1 in
     gen)   do_gen ;;
     tgz)   do_tgz ;;
     release) do_release ;;
+    mingw-installer) do_mingw_installer ;;
     *) usage ;;
 esac
