@@ -593,20 +593,40 @@ This specifies a macro transformer by pattern matching.
 @subsection Explicit-renaming macro transformer
 
 @defspec er-macro-transformer procedure-expr
+@c EN
 Creates a macro transformer from the given @var{procedure-expr}.
 The created macro transformer has to be bound to the syntactic keyword
 by @code{define-syntax}, @code{let-syntax} or @code{letrec-syntax}.
+Other use of macro transformers is undefined.
 
 The @var{procedure-expr} must evaluate to a procedure that takes
 three arguments; @var{form}, @var{rename} and @var{id=?}.
 
-The @var{form} argument receives the S-expression passed to
+The @var{form} argument receives the S-expression of
 the macro call.  The @var{procedure-expr} must return an
 S-expression as the result of macro expansion.  This part is pretty much
 like the traditional lisp macro.  In fact, if you ignore @var{rename}
 and @var{id=?}, the semantics is the same as the traditional
-(unhygienic) macro.  (Note the use of @code{match}; it is a good
+(unhygienic) macro.  See the following example
+(Note the use of @code{match}; it is a good
 tool to decompose macro input):
+@c JP
+@var{procedure-expr}からマクロ変換器を作ります。
+作られたマクロ変換器は、@code{define-syntax}、@code{let-syntax}、
+@code{letrec-syntax}により構文キーワードに束縛されなければなりません。
+マクロ変換器の他の用途は定義されていません。
+
+@var{procedure-expr}は3つの引数、@var{form}、@var{rename}、@var{id=?}を
+取る手続きへと評価される式です。
+
+@var{form}引数には、マクロ呼び出しのS式そのものが渡されます。
+@var{procedure-expr}はマクロ展開の結果をS式として返します。
+この点は、伝統的なマクロとよく似ています。実のところ、
+@var{rename}と@var{id=?}を無視すれば、セマンティクスは伝統的な(非衛生な)マクロと
+同じになります。次の例を見てください
+(この例では@code{match}を使っています。マクロの入力を分解するのにも
+手軽なツールです。)
+@c COMMON
 
 @example
 (use util.match)
@@ -624,26 +644,53 @@ tool to decompose macro input):
   @result{} (if (not (foo)) (begin (print "a") 'boo))
 @end example
 
+@c EN
 This is ok as long as you know you don't need hygiene---e.g. when
 you only use this macro locally in your code, knowning all the
 macro call site won't contain name conflicts.  However, if you
 provide your @code{when-not} macro for general use,
-you have to protect namespace pollution around the macro use:
+you have to protect namespace pollution around the macro use.
+For example, you want to make sure your macro work even if it is
+used as follows:
+@c JP
+衛生を気にする必要がない場合は、これでも十分です。
+例えばマクロを自分で書いたコードの中だけで使い、
+すべてのマクロ呼び出しを把握していて名前の衝突が起きないことを知っている場合です。
+けれども、この@code{when-not}マクロを広く使えるようにするなら、
+マクロの使われる場所での名前の衝突からの防御が必要です。
+たとえば、次のとおり呼び出されたとしてもちゃんと動くようにしたい場合です。
+@c COMMON
 
 @example
 (let ((not values))
   (when-not #t (print "This shouldn't be printed")))
 @end example
 
+@c EN
 The @var{rename} argument passed to @var{procedure-expr} is
 a procedure that takes a symbol (or, to be precise, a symbol or
 an identifier) and @emph{effectively renames} it to a unique 
 identifier that keeps identity within the macro definition environment and
 won't be affected in the macro use environment.
+@c JP
+@var{procedure-expr}に渡される@var{rename}引数は、
+シンボル(正確には、シンボルか識別子)を取り、それをマクロ定義時の環境を保持する
+ユニークな識別子へと@emph{実質的にリネームする}手続きです。
+リネームされた識別子はマクロ使用時の環境には影響を受けません。
+@c COMMON
 
+@c EN
 As a rule of thumb, you have to pass
 @emph{all new identifiers you insert into macro output} to the
-@var{rename} procedure to keep hygiene:
+@var{rename} procedure to keep hygiene.  In our @code{when-not} macro,
+we insert @code{if}, @code{not} and @code{begin} into the macro output,
+so our hygienic macro would look like this:
+@c JP
+大雑把なルールとして、マクロの出力に挿入する識別子はすべて@var{rename}を通すことを
+徹底すれば、衛生は保たれます。@code{when-not}マクロの例では、
+マクロの出力に@code{if}、@code{not}、@code{begin}を挿入していますから、
+衛生的なバージョンは次のとおり書けます。
+@c COMMON
 
 @example
 (define-syntax when-not
@@ -656,11 +703,19 @@ As a rule of thumb, you have to pass
         [_ (error "malformed when-not:" form)]))))
 @end example
 
+@c EN
 This is cumbersome and makes it hard to read the macro, so Gauche
 provides an auxiliary macro @code{quasirename}, which works like
 @code{quasiquote} but renaming identifiers in the form.  See the
-entry of @code{quasiquote} below for the details.  You can write
+entry of @code{quasirename} below for the details.  You can write
 the hygienic @code{when-not} as follows:
+@c JP
+でもこれは面倒ですし読みづらいですね。そこでGaucheでは、
+補助マクロ@code{quasirename}を用意しています。これは@code{quasiquote}のように
+動作しますが、フォーム中の識別子をリネームしてゆきます。詳しくは後述の
+@code{quasirename}のエントリを参照してください。@code{quasirename}を使うと
+衛生的な@code{when-not}はこうなります:
+@c COMMON
 
 @example
 (define-syntax when-not
@@ -673,6 +728,7 @@ the hygienic @code{when-not} as follows:
         [_ (error "malformed when-not:" form)]))))
 @end example
 
+@c EN
 You can intentionally break hyginene by inserting a symbol
 without renaming.  The following code implements
 @emph{anaphoric} @code{when}, meaning the result of the
@@ -680,6 +736,14 @@ test expression is available in the @var{expr1} @var{exprs} @dots{}
 with the name @code{it}.  Since the binding of the identifier @code{it}
 does not exist in the macro use site, but rather injected into
 the macro use site by the macro expander, it is unhygienic.
+@c JP
+シンボルをリネームせずに挿入すれば、意図的に衛生を破ることができます。
+次のコードは@emph{アナフォリック(前方照応的)な}@code{when}を定義しています。
+つまり、テスト式の結果が、@var{expr1} @var{exprs} @dots{} から@code{it}という
+変数で参照できるということです。
+@code{it}の束縛はマクロ呼び出し箇所には無かったもので、
+マクロ展開器により挿入されるので、これは非衛生マクロになります。
+@c COMMON
 
 @example
 (define-syntax awhen
@@ -691,8 +755,13 @@ the macro use site by the macro expander, it is unhygienic.
              (,(rename 'begin) ,expr1 ,@@expr))]))))
 @end example
 
+@c EN
 If you use @code{quasirename}, you can write @code{,'it} to prevent
 @code{it} from being renamed:
+@c JP
+@code{quasirename}を使う場合、@code{it}がリネームされないようにするには
+@code{,'it}と書きます。
+@c COMMON
 
 @example
 (define-syntax awhen
@@ -705,7 +774,11 @@ If you use @code{quasirename}, you can write @code{,'it} to prevent
              (begin ,expr1 ,@@expr)))]))))
 @end example
 
+@c EN
 Here's an example:
+@c JP
+使用例を見てみましょう。
+@c COMMON
 
 @example
 (awhen (find odd? '(0 2 8 7 4))
@@ -713,6 +786,7 @@ Here's an example:
  @result{} @r{prints} Found odd number:7
 @end example
 
+@c EN
 Finally, the @var{id=?} argument to the @var{procedure-expr} is
 a procedure that takes two arguments, and returns @code{#t} iff
 both are identifiers and either both are referring to the same binding
@@ -724,6 +798,19 @@ it accepts @code{(if=> test => procedure)} syntax,
 in which @code{procedure} is called with the value of @code{test}
 if it is not false.  The symbol @code{=>} must match hygienically,
 that is, it must refer to the same binding as in the macro definition.
+@c JP
+最後に、@var{procedure-expr}の@var{id=?}引数はふたつの引数を取り、
+それらがともに識別子であって、しかも同じ束縛を参照するか束縛されていないか、という
+場合に限り@code{#t}を返します。
+これはリテラル構文キーワード(@code{cond}や@code{case}フォームの@code{else}等)
+を比較するのに使えます。
+
+下の@code{if=>}マクロは@code{if}と同じように動作しますが、
+@code{(if=> test => procedure)}のように呼ばれた場合、あ
+@code{test}が偽でない場合に、その結果を引数にして@code{procedure}を呼び出します。
+シンボル@code{=>}は衛生的に比較されます。つまり、マクロ定義時と同じ束縛を
+参照している場合にのみ有効となります。
+@c COMMON
 
 @example
 (define-syntax if=>
@@ -739,31 +826,53 @@ that is, it must refer to the same binding as in the macro definition.
              (if ,test ,a ,b)))]))))
 @end example
 
+@c EN
 The call @code{(rename '=>)} returns an identifier that captures
 the binding of @code{=>} in the macro definition, and using
 @code{id=?} with the thing passed to the macro argument
 checks if both refer to the same binding.
+@c JP
+@code{(rename '=>)}とすることで、マクロ定義時における@code{=>}の束縛を
+参照する識別子を手に入れ、@code{id=?}でそれをマクロ引数から渡された式と
+比較しています。
+@c COMMON
 
 @example
 (if=> 3 => list)  @result{} (3)
 (if=> #f => list) @result{} #<undef>
 
+@c EN
 ;; If the second argument isn't =>, if=> behaves like ordinary if:
+@c JP
+;; 第二引数が=>でなければ、if=>は通常のifと同じ:
+@c COMMON
 (if=> #t 1 2)     @result{} 1
 
+@c EN
 ;; The binding of => in macro use environment differs from
 ;; the macro definition environment, so this if=> behaves like
 ;; ordinary if, instead of recognizing literal =>.
+@c JP
+;; 下の例ではマクロ呼び出しでの=>の束縛がマクロ使用時の束縛と違っているため、
+;; => はリテラルと認識されず、if=> は通常のifとして振る舞う。
+@c COMMON
 (let ((=> 'oof)) (if=> 3 => list)) @result{} oof
 @end example
 @end defspec
 
 @defmac quasirename renamer form
+@c EN
 It works like quasiquote, except that the symbols and identifiers
 that appear in the ``literal'' portion of @var{form} (i.e. outside
 of @code{unquote} and @code{unquote-splicing}) are replaced
 by the result of applying @var{rename} on themselves.
+@c JP
+@var{form}中の「リテラル」な部分 (@code{unquote}や@code{unquote-splicing}の外側)
+に現れるシンボルや識別子が@var{rename}によってリネームされることを除いて、
+準クオートのように動作します。
+@c COMMON
 
+@c EN
 For example, a form:
 @example
 (quasirename r (a ,b c "d"))
@@ -772,17 +881,36 @@ would be equivalent to write:
 @example
 (list (r 'a) b (r 'c) "d")
 @end example
+@c JP
+例えば次のフォームは:
+@example
+(quasirename r (a ,b c "d"))
+@end example
+次のとおり書くのと同じです:
+@example
+(list (r 'a) b (r 'c) "d")
+@end example
+@c COMMON
 
+@c EN
 This is not specifically tied to macros; the @var{renamer} can
 be any procedure that takes one symbol or identifier argument:
+@c JP
+この手続きはマクロ専用というわけではありません。
+@var{renamer}はシンボルか識別子を取る手続きであれば何でも構いません。
+@c COMMON
 
 @example
 (quasirename (^[x] (symbol-append 'x: x)) (+ a ,(+ 1 2) 5))
   @result{} (x:+ x:a 3 5)
 @end example
 
+@c EN
 However, it comes pretty handy to construct the result form
 in ER macros.  Compare the following two:
+@c JP
+ただ、ERマクロを書く際にとても便利なのは確かです。次の2つを比べてみてください。
+@c COMMON
 
 @example
 (use util.match)
