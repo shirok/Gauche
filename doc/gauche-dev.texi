@@ -2,9 +2,8 @@
 \input texinfo    @c -*- mode: texinfo; coding: utf-8; -*-
 @c JP
 \input texinfo-ja @c -*- mode: texinfo; coding: utf-8; -*-
-@comment %**start of header
 @c COMMON
-@documentencoding UTF-8
+@comment %**start of header
 @c EN
 @documentlanguage en
 @setfilename gauche-deve.info
@@ -14,6 +13,7 @@
 * Gauche Developers' Reference: (gauche-deve.info).	Internals of Gauche
 @end direntry
 @c JP
+@documentencoding UTF-8
 @documentlanguage ja
 @setfilename gauche-devj.info
 @settitle Gauche Developers' Reference
