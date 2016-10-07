@@ -38,11 +38,11 @@ $(SUBDIRS):
 
 uvector: data util
 
-gauche srfi: util uvector
+gauche srfi: util uvector charconv
 
-charconv net: gauche srfi
+net: gauche srfi
 
-text: uvector charconv
+text: uvector srfi charconv
 
 threads bcrypt sxml mt-random digest zlib termios windows: uvector
 
