@@ -7127,6 +7127,17 @@ to parse the info file.
 この手続きのセッション中での最初の呼び出しは、infoファイルをパーズするために
 多少時間がかかります。
 @c COMMON
+
+@c EN
+NB: When you use @code{less} as a pager, make sure you set
+it to handle utf-8 characters (e.g. setting @code{LESSCHARSET} 
+environment variable to
+@code{UTF-8}), or you'll see some escaped sequences on the screen.
+@c JP
+註: @code{less}をページャに使う場合、@code{less}がutf-8文字を扱えるように
+設定してください (例えば@code{LESSCHARSET}環境変数を@code{UTF-8}にする)。
+そうでないと画面にエスケープされた文字が表示されて見づらいです。
+@c COMMON
 @end defun
 
 @defun ed filename-or-procedure :key editor load-after
