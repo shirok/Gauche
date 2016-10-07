@@ -90,10 +90,18 @@
 
 (define (viewer-nounicode s)
   (display ($ regexp-replace-all* s
-              #/\u21d2/ "=>"
-              #/\u2026/ "..."
-              #/\u2018/ "`"
-              #/\u2019/ "'")))
+              #/\u21d2/ "=>"  ; @result{}
+              #/\u2026/ "..." ; @dots{}
+              #/\u2018/ "`"   ; @code{}
+              #/\u2019/ "'"   ; @code{}
+              #/\u201C/ "``"  ; ``         (e.g. ,i do)
+              #/\u201D/ "''"  ; ''         (e.g. ,i do)
+              #/\u2261/ "=="  ; @equiv{}   (e.g. ,i cut)
+              #/\u2212/ "-"   ; @minus     (e.g. ,i modulo)
+              #/\u2022/ "*"   ; @bullet    (e.g. ,i lambda)
+              #/\u2013/ "--"  ; --         (e.g. ,i utf8-length)
+              #/\u2014/ "---" ; ---        (e.g. ,i lambda)
+              )))
 
 (define viewer
   (cond [(cond-expand
