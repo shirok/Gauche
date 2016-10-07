@@ -79,18 +79,40 @@
                     (find-file-in-paths "less")
                     (find-file-in-paths "more")))
 
+(define (viewer-pager s)
+  (let1 p (run-process *pager* :input :pipe)
+    (guard (e (else #f))
+      (display s (process-input p)))
+    (close-output-port (process-input p))
+    (process-wait p)))
+
+(define (viewer-dumb s) (display s))
+
+(define (viewer-nounicode s)
+  (display ($ regexp-replace-all* s
+              #/\u21d2/ "=>"
+              #/\u2026/ "..."
+              #/\u2018/ "`"
+              #/\u2019/ "'")))
+
 (define viewer
-  (if (or (equal? (sys-getenv "TERM") "emacs")
-          (equal? (sys-getenv "TERM") "dumb")
-          (not (sys-isatty (current-output-port)))
-          (not *pager*))
-    display
-    (^s
-     (let1 p (run-process *pager* :input :pipe)
-       (guard (e (else #f))
-         (display s (process-input p)))
-       (close-output-port (process-input p))
-       (process-wait p)))))
+  (cond [(cond-expand
+          [gauche.os.windows
+           (use os.windows)
+           (guard (e [else #f])
+             (and (sys-isatty 1)
+                  (sys-get-console-mode 
+                   (sys-get-std-handle STD_OUTPUT_HANDLE))
+                  (not (= (sys-get-console-output-cp) 65001))))] ;unicode cp
+          [else #f])
+         viewer-nounicode]
+        [(or (equal? (sys-getenv "TERM") "emacs")
+             (equal? (sys-getenv "TERM") "dumb")
+             (not (sys-isatty (current-output-port)))
+             (not *pager*))
+         viewer-dumb]
+        [else 
+         viewer-pager]))
 
 (define (get-info-paths)
   (let* ([syspath (cond [(sys-getenv "INFOPATH") => (cut string-split <> #\:)]
