@@ -97,7 +97,8 @@
 
 (define viewer
   (cond [(cond-expand
-          [gauche.os.windows
+          [(and gauche.os.windows
+                (not gauche.ces.none))
            (use os.windows)
            (guard (e [else #f])
              (and (sys-isatty 1)
