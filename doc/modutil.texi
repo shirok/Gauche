@@ -2465,7 +2465,7 @@ Creates a new empty immutable map.  Without arguments,
 @code{default-comparator} is used to compare keys.  To give a
 specific comparator, use the second form; the @var{comparator}
 argument should have comparison procedure.
-For the details of comparators, @pxref{Comparators}.
+For the details of comparators, @pxref{Basic comparators}.
 The third form creates a key comparator from a equality
 predicate @var{key=?} and less-than predicate @code{key<?},
 both must accept two keys.  This interface is consistent with
@@ -2474,7 +2474,7 @@ both must accept two keys.  This interface is consistent with
 空の変更不可なマップを新たに作って返します。
 引数無しの場合は、キーの比較には@code{default-comparator}が使われます。
 キーの比較方法を指定したい場合は、比較手続きを持つ比較器@var{comparator}を
-引数に渡してください。比較器については@ref{Comparators}を参照。
+引数に渡してください。比較器については@ref{Basic comparators}を参照。
 3番目の呼び出し形式は、キーの等価性を調べる述語@var{key=?}と
 大小比較の述語@var{key<?}から比較器を作ります。どちらの述語も
 ふたつの引数をとらなければなりません。このインタフェースは
@@ -2493,7 +2493,7 @@ one by one.
 
 The @var{comparator} argument specifies how to compare the keys.
 It must have comparison procedure.  If omitted, @code{default-comparator}
-is used.  @xref{Comparators}, for the details.
+is used.  @xref{Basic comparators}, for the details.
 
 The third form creates a key comparator from a equality
 predicate @var{key=?} and less-than predicate @code{key<=?},
@@ -21940,12 +21940,12 @@ A procedure that takes a node, and returns its downstream
 A comparator that is used to determine if two nodes are equal to each other.
 It doesn't need to have comparison procedure (we don't need to see
 which is smaller than the other), but it has to have hash function,
-for we use hashtables internally.  (@xref{Comparators}, for the details
+for we use hashtables internally.  (@xref{Basic comparators}, for the details
 of comparators.)
 @c JP
 二つのノードが等しいかどうかを決定する比較器。大小比較関数を持っている必要はありませんが、
 アルゴリズム内部でハッシュテーブルを使うので、ハッシュ関数は持っている必要があります。
-比較器について詳しくは@ref{Comparators}を参照してください。
+比較器について詳しくは@ref{Basic comparators}を参照してください。
 @c COMMON
 @end table
 
