@@ -62,6 +62,15 @@ do_tgz () {
     check_version
     rm -rf ../Gauche-$VERSION
     mkdir ../Gauche-$VERSION
+
+    #
+    if [ -e /usr/share/gauche-0.9/$VERSION -a -e /usr/lib/gauche-0.9/$VERSION ]; then
+        find /usr/share/gauche-0.9/$VERSION -type f -print | grep -v 'dbm/[ong]dbm' > rpmfiles-common.txt
+        find /usr/share/gauche-0.9/$VERSION -type f -print | grep 'dbm/[ong]dbm' > rpmfiles-gdbm.txt
+        find /usr/lib/gauche-0.9/$VERSION -type f -print | grep -v '/dbm--[ong]dbm' > rpmfiles-encoding.txt
+        find /usr/lib/gauche-0.9/$VERSION -type f -print | grep '/dbm--[ong]dbm' >> rpmfiles-gdbm.txt
+    fi
+
     tar cvfX - DIST_EXCLUDE_X . | (cd ../Gauche-$VERSION; tar xf -)
     (cd ..; tar cvf - Gauche-$VERSION | gzip -9 > Gauche-$VERSION.tgz)
     rm -rf ../Gauche-$VERSION

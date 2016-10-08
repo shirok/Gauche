@@ -1,3 +1,7 @@
+2016-10-08  Shiro Kawai  <shiro@acm.org>
+
+	* Release 0.9.5
+
 2016-10-02  Shiro Kawai  <shiro@acm.org>
 
 	* src/system.c (Scm_ClockGetTimeMonotonic,Scm_ClockGetResMonotonic):
