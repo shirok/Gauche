@@ -90,7 +90,7 @@
 
 (define (viewer-nounicode s)
   (display ($ regexp-replace-all* s
-              #/\u21d2/ "=>"  ; @result{}
+              #/\u21d2/ "==>" ; @result{}
               #/\u2026/ "..." ; @dots{}
               #/\u2018/ "`"   ; @code{}
               #/\u2019/ "'"   ; @code{}
