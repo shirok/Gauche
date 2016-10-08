@@ -798,7 +798,7 @@ collected to form a new list and bound to @var{variable_N}.
 @c COMMON
 
 @example
-((lambda (a b . c) (print "a="a" b="b" c="c)) 1 2 3 4 5)
+((lambda (a b . c) (print "a=" a " b=" b " c=" c)) 1 2 3 4 5)
  @result{} @r{prints} a=1 b=2 c=(3 4 5)
 @end example
 
@@ -2572,14 +2572,14 @@ Common Lispからの輸入です。完全なフォームは以下のように展
 @c COMMON
 @example
 (dotimes (variable expr result) body @dots{})
-==>
+ @equiv{}
 (do ((limit expr)
      (variable 0 (+ variable 1)))
     ((>= variable expr) result)
   body @dots{})
 
 (dolist (variable expr result) body @dots{})
-==>
+ @equiv{}
 (begin
   (for-each (lambda (variable) body @dots{}) expr)
   (let ((variable '())) result))
