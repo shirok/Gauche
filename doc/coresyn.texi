@@ -2572,14 +2572,14 @@ Common Lispからの輸入です。完全なフォームは以下のように展
 @c COMMON
 @example
 (dotimes (variable expr result) body @dots{})
-==>
+ @equiv{}
 (do ((limit expr)
      (variable 0 (+ variable 1)))
     ((>= variable expr) result)
   body @dots{})
 
 (dolist (variable expr result) body @dots{})
-==>
+ @equiv{}
 (begin
   (for-each (lambda (variable) body @dots{}) expr)
   (let ((variable '())) result))
