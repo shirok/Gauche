@@ -101,6 +101,7 @@
               #/\u2022/ "*"   ; @bullet    (e.g. ,i lambda)
               #/\u2013/ "--"  ; --         (e.g. ,i utf8-length)
               #/\u2014/ "---" ; ---        (e.g. ,i lambda)
+              #/\u00df/ "[Eszett]" ; ß     (e.g. ,i char-upcase)
               )))
 
 (define viewer
