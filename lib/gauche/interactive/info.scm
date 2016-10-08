@@ -90,17 +90,18 @@
 
 (define (viewer-nounicode s)
   (display ($ regexp-replace-all* s
-              #/\u21d2/ "=>"  ; @result{}
-              #/\u2026/ "..." ; @dots{}
-              #/\u2018/ "`"   ; @code{}
-              #/\u2019/ "'"   ; @code{}
-              #/\u201C/ "``"  ; ``         (e.g. ,i do)
-              #/\u201D/ "''"  ; ''         (e.g. ,i do)
-              #/\u2261/ "=="  ; @equiv{}   (e.g. ,i cut)
-              #/\u2212/ "-"   ; @minus     (e.g. ,i modulo)
-              #/\u2022/ "*"   ; @bullet    (e.g. ,i lambda)
-              #/\u2013/ "--"  ; --         (e.g. ,i utf8-length)
-              #/\u2014/ "---" ; ---        (e.g. ,i lambda)
+              #/\u21d2/ "==>"      ; @result{}
+              #/\u2026/ "..."      ; @dots{}
+              #/\u2018/ "`"        ; @code{}
+              #/\u2019/ "'"        ; @code{}
+              #/\u201C/ "``"       ; ``         (e.g. ,i do)
+              #/\u201D/ "''"       ; ''         (e.g. ,i do)
+              #/\u2261/ "=="       ; @equiv{}   (e.g. ,i cut)
+              #/\u2212/ "-"        ; @minus     (e.g. ,i modulo)
+              #/\u2022/ "*"        ; @bullet    (e.g. ,i lambda)
+              #/\u2013/ "--"       ; --         (e.g. ,i utf8-length)
+              #/\u2014/ "---"      ; ---        (e.g. ,i lambda)
+              #/\u00df/ "[Eszett]" ; ß          (e.g. ,i char-upcase)
               )))
 
 (define viewer
