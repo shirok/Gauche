@@ -5120,6 +5120,54 @@ This is Gauche's @code{eq-hash}, except this one can take bound argument.
 @end defun
 
 @c ----------------------------------------------------------------------
+@c @node Lightweight testing
+@c @section @code{srfi-78} - Lightweight testing
+@c @c NODE 軽量なテスト, @code{srfi-78} - 軽量なテスト
+
+@c NOTE: Keep this unoffical, until we integrate this into gauche.test.
+
+@c @deftp {Module} srfi-78
+@c @mdindex srfi-78
+@c This srfi defines @code{check} and @code{check-ec} macro, along
+@c with a few helper procedures, to write tests.  Especially,
+@c @code{check-ec} uses the same comprehension style as @code{srfi-42}
+@c to run test expressions with various combinations of input easily.
+
+@c Currently we provide the module independently from @code{gauche.test},
+@c but the plan is to integrate this into @code{gauche.test} so that
+@c the test results are folded into @code{gauche.test} and can be reported
+@c together.
+@c @end deftp
+
+@c @defmac check expr => expected
+@c @defmacx check expr (=> equal) expected
+@c [SRFI-78]
+@c @end defmac
+
+@c @defmac check-ec qualifier @dots{} => expected (argument @dots{})
+@c @defmacx check-ec qualifier @dots{} (=> equal) expected (argument @dots{})
+@c @defmacx check-ec qualifier @dots{} => expected
+@c @defmacx check-ec qualifier @dots{} (=> equal) expected
+@c [SRFI-78]
+@c @end defmac
+
+@c @defun check-report
+@c [SRFI-78]
+@c @end defun
+
+@c @defun check-set-mode! mode
+@c [SRFI-78]
+@c @end defun
+
+@c @defun check-reset!
+@c [SRFI-78]
+@c @end defun
+
+@c @defun check-passed? expected-total-count
+@c [SRFI-78]
+@c @end defun
+
+@c ----------------------------------------------------------------------
 @node Accessing environment variables, Basic socket interface, Basic hash tables, Library modules - SRFIs
 @section @code{srfi-98} - Accessing environment variables
 @c NODE 環境変数へのアクセス, @code{srfi-98} - 環境変数へのアクセス

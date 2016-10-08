@@ -1688,8 +1688,8 @@ typical cache implementations.
 
 Let's start from simple examples to get the idea.
 
-Suppose you want to read files frequently and you want to
-cache the frequently read files.  The following code defines
+Suppose you want to read files and you want to
+cache the frequently read ones.  The following code defines
 a cached version of @code{file->string}:
 
 @example
@@ -1799,7 +1799,7 @@ fine-grained enough if you add multiple entries in shorter intervals
 than seconds.   You can customize
 it by giving a thunk to @var{timestamper}; the thunk is called to
 obtain a timestamp, which can be any monotonically increasing real number.
-If yuo give @var{timestamper}, the unit of @var{timeout} value should
+If you give @var{timestamper}, the unit of @var{timeout} value should
 be the same as whatever @var{timestamper} returns.
 @end defun
 
