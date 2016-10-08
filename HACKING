@@ -14,10 +14,11 @@ Gauche installed on your machine, for it is required to generate
 some C files.   If you don't have one, grab the release tarball
 and install it.
 
-You also need autoconf (2.69 or higher), automake, libtool and
-pkg-config.  (Note on OSX users: XCode now only includes subset
+You also need autoconf (>= 2.69), automake (>= 1.14.1),
+libtool (>= 2.4.2) and pkg-config (>= 0.26).
+(Note on OSX users: XCode now only includes subset
 of autotools.  You have to install full set either manually
-or thru MacPorts or Homebrew.)
+or thru MacPorts or Homebrew.  Xcode's libtool *does not work*).
 
 The git source tree doesn't include "configure" scripts.
 You can use the DIST script like the following to generate them.
