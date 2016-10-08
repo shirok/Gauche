@@ -122,7 +122,7 @@ make DESTDIR=${RPM_BUILD_ROOT}/ install-doc
 %defattr(-,root,root)
 
 %changelog
-* Sat Oct  8 2015 Shiro Kawai
+* Sat Oct  8 2016 Shiro Kawai
 - Gauche release 0.9.5.
 
 * Sat Jul 19 2014 Shiro Kawai
