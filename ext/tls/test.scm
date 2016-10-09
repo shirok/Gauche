@@ -37,7 +37,7 @@
      [(not gauche.os.windows)
       (guard (e [(<process-abnormal-exit> e)
                  (no-openssl "couldn't run openssl command")])
-        (if-let1 m ($ #/OpenSSL\s+([\d\.]+\w*)/
+        (if-let1 m ($ #/(?:OpenSSL|LibreSSL)\s+([\d\.]+\w*)/
                       $ process-output->string `(,openssl-cmd "version"))
           (let1 vers (m 1)
             (unless (version>=? vers "1.0.1")
