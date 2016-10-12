@@ -332,7 +332,7 @@
   (let1 rest
       (parse-options (cdr (command-line))
         (["bindir=s" (dir) (cf-subst 'bindir dir)]
-         ["build=s" (build) (cf-subst 'build-alias build)]
+         ["build=s" (build) (cf-subst 'build_alias build)]
          ["c|cache-file=s" (_)
           (values)] ;; support for the compatibility.  we don't do anything.
          ["C|config-cache" (_) (values)]
@@ -343,7 +343,7 @@
          ;; --disable-option-checking
          ["exec_prefix=s" (pre) (cf-subst 'exec_prefix pre)]
          ["help" () (usage)]
-         ["host=s" (host) (cf-subst 'host-alias host)]
+         ["host=s" (host) (cf-subst 'host_alias host)]
          ["htmldir=s" (dir) (cf-subst 'htmldir dir)]
          ["includedir=s" (dir) (cf-subst 'includedir dir)]
          ["infodir=s" (dir) (cf-subst 'infodir dir)]
