@@ -45,7 +45,6 @@
 ;; (<filename> <line-no> <original-form>).  The latter happens when
 ;; OBJ is a result of macro expansion, and <orginal-form> being
 ;; the original source form.
-#;
 (define (debug-source-info obj)
   (and-let1 sis ((with-module gauche.internal %source-info) obj)
     (any (^[si] ;; si :: (<file> <line> <form>)
@@ -54,17 +53,6 @@
                   `(,(car si) ,(cadr si))
                   si)))
          (reverse sis))))
-
-;; TRANSIENT: We need this old definition for 0.9.5 release, since
-;; compiling 0.9.5 with pre-0.9.5 release needs to use this procedure,
-;; but it doesn't have gauche.internal#%source-info yet.
-(define (debug-source-info obj)
-  (and-let* ([ (pair? obj) ]
-             [info ((with-module gauche.internal pair-attribute-get)
-                    obj 'source-info #f)]
-             [ (pair? info) ]
-             [ (pair? (cdr info)) ])
-    info))
 
 (define debug-print-width (make-parameter 65))
 
