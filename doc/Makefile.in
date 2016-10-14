@@ -18,6 +18,8 @@ MKINSTDIR    = $(top_srcdir)/mkinstalldirs
 MAKEINFO     = @MAKEINFO@
 GZIP_PROGRAM = @GZIP_PROGRAM@
 
+HTML_FOOTER_FLAGS = --set-customization-variable 'PRE_BODY_CLOSE=<hr><div class="footer"><p>@PACKAGE_STRING@</p></div>'
+
 TEXIS = concepts.texi      \
 	corelib.texi       \
 	coresyn.texi       \
@@ -103,7 +105,7 @@ gauche-refe.html : gauche-refe.texi
 	texi2any --html --no-split gauche-refe.texi
 
 gauche-refe/index.html : gauche-refe.texi
-	texi2any --html gauche-refe.texi
+	texi2any --html $(HTML_FOOTER_FLAGS) gauche-refe.texi
 
 gauche-refe.dvi : gauche-refe.texi
 	texi2dvi --tidy gauche-refe.texi
@@ -125,7 +127,7 @@ gauche-refj.html : gauche-refj.texi
 	texi2any --html --no-split gauche-refj.texi
 
 gauche-refj/index.html : gauche-refj.texi
-	texi2any --html gauche-refj.texi
+	texi2any --html $(HTML_FOOTER_FLAGS) gauche-refj.texi
 
 gauche-refj.dvi : gauche-refj.texi
 	TEX=dviluatex texi2dvi --tidy gauche-refj.texi
