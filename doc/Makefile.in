@@ -194,5 +194,4 @@ distclean : clean
 
 maintainer-clean : clean
 	rm -f $(EXTRACTED:.texi=.html) \
-	      $(EXTRACTED:.texi=.dvi) \
-	      Makefile $(GENERATED)
+	      $(GENERATED)
