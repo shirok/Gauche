@@ -193,4 +193,6 @@ distclean : clean
 	rm -f $(GENERATED)
 
 maintainer-clean : clean
-	rm -f gauche-ref*.html gauche-ref*.dvi gauche-dev*.html gauche-dev*.dvi Makefile $(GENERATED)
+	rm -f $(EXTRACTED:.texi=.html) \
+	      $(EXTRACTED:.texi=.dvi) \
+	      Makefile $(GENERATED)
