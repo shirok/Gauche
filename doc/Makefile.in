@@ -87,7 +87,7 @@ texi : gauche-refe.texi gauche-refj.texi
 
 html : gauche-refe.html gauche-refj.html
 
-htmls : gauche-refe_toc.html gauche-refj_toc.html
+htmls : gauche-refe/index.html gauche-refj/index.html
 
 dvi : gauche-refe.dvi gauche-refj.dvi
 
@@ -100,10 +100,10 @@ srfis.texi : $(top_builddir)/src/srfis.scm
 	cd $(top_builddir)/src; $(MAKE) libsrfis.scm
 
 gauche-refe.html : gauche-refe.texi
-	texi2html --number gauche-refe.texi
+	texi2any --html --no-split gauche-refe.texi
 
-gauche-refe_toc.html : gauche-refe.texi
-	texi2html --split=section --number gauche-refe.texi
+gauche-refe/index.html : gauche-refe.texi
+	texi2any --html gauche-refe.texi
 
 gauche-refe.dvi : gauche-refe.texi
 	texi2dvi --tidy gauche-refe.texi
@@ -122,10 +122,10 @@ gauche-refe.info.gz : gauche-refe.texi
 	fi
 
 gauche-refj.html : gauche-refj.texi
-	texi2html --init-file=$(srcdir)/ja-init.pl --number --document-language=ja gauche-refj.texi
+	texi2any --html --no-split gauche-refj.texi
 
-gauche-refj_toc.html : gauche-refj.texi
-	texi2html --init-file=$(srcdir)/ja-init.pl --split=section --number --document-language=ja gauche-refj.texi
+gauche-refj/index.html : gauche-refj.texi
+	texi2any --html gauche-refj.texi
 
 gauche-refj.dvi : gauche-refj.texi
 	TEX=dviluatex texi2dvi --tidy gauche-refj.texi
@@ -147,7 +147,7 @@ gauche-deve.texi : gauche-dev.texi extract.scm
 	$(GOSH) $(srcdir)/extract.scm -en -o gauche-deve.texi gauche-dev.texi
 
 gauche-deve.html : gauche-deve.texi
-	texi2html --number gauche-deve.texi
+	texi2any --html --no-split gauche-deve.texi
 
 gauche-deve.info.gz : gauche-deve.texi
 	if test X$(MAKEINFO) != X -a X$(GZIP_PROGRAM) != X; then \
@@ -166,7 +166,7 @@ gauche-devj.texi : gauche-dev.texi extract.scm
 	$(GOSH) $(srcdir)/extract.scm -jp -o gauche-devj.texi gauche-dev.texi
 
 gauche-devj.html : gauche-devj.texi
-	texi2html --init-file=$(srcdir)/ja-init.pl --number --document-language=ja gauche-devj.texi
+	texi2any --html --no-split gauche-devj.texi
 
 gauche-devj.info.gz : gauche-devj.texi
 	if test X$(MAKEINFO) != X -a X$(GZIP_PROGRAM) != X; then \
@@ -193,5 +193,6 @@ distclean : clean
 	rm -f $(GENERATED)
 
 maintainer-clean : clean
+	rm -rf $(EXTRACTED:.texi=/)
 	rm -f $(EXTRACTED:.texi=.html) \
 	      $(GENERATED)
