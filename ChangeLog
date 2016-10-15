@@ -9,7 +9,7 @@
 2016-10-08  Shiro Kawai  <shiro@acm.org>
 
 	* doc/HOWTO-precompile.txt: A memo for the precompilation feature;
-	  not an officially support, but a good start point for those who
+	  not an official support, but a good start point for those who
 	  want to try it.
 
 	* Release 0.9.5
