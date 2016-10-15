@@ -1,3 +1,11 @@
+2016-10-14  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/process.scm: Add do-process and do-process-pipeline.
+	  The names are provisional, so keep them experimental for now.
+
+	* doc/Makefile.in: Switched to use makeinfo/texi2any to generate
+	  html files (https://github.com/shirok/Gauche/pull/241).
+
 2016-10-08  Shiro Kawai  <shiro@acm.org>
 
 	* doc/HOWTO-precompile.txt: A memo for the precompilation feature;

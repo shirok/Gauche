@@ -42,12 +42,12 @@
   (use srfi-13)
   (use srfi-14)
   (export <process> <process-abnormal-exit>
-          run-process process? process-alive? process-pid
+          run-process do-process process? process-alive? process-pid
           process-command process-input process-output process-error
           process-wait process-wait-any process-exit-status
           process-send-signal process-kill process-stop process-continue
           process-list
-          run-process-pipeline
+          run-process-pipeline do-process-pipeline
           ;; process ports
           open-input-process-port   open-output-process-port
           call-with-input-process   call-with-output-process
@@ -115,6 +115,13 @@
   (if (not (list? command))
     (%run-process-old command args) ;; backward compatibility
     (%run-process-new command args)))
+
+;; A typical use case---run process synchronously, returns #t for
+;; success, #f for failure.
+(define (do-process command . args)
+  (let1 p (apply run-process command (delete-keyword :on-abnormal-exit args))
+    (process-wait p #f (get-keyword :on-abnormal-exit args #f))
+    (zero? (process-exit-status p))))
 
 ;; Note: I/O redirection
 ;;  'Redirects' keyword argument is a generic way to wire child's I/Os.
@@ -503,6 +510,14 @@
          [ps (map (cut apply run-process <>) (drop-right cmds 1))])
     (dolist [p pipe-pairs] (close-output-port (cdr p)))
     (append ps (list (apply run-process (last cmds))))))
+
+(define (do-process-pipeline commands . args)
+  (let1 ps (apply run-process-pipeline commands
+                  (delete-keyword :on-abnormal-exit args))
+    (for-each process-wait ps)
+    (when (get-keyword :on-abnormal-exit args #f)
+      (for-each %check-normal-exit ps))
+    (every (^p (zero? (process-exit-status p))) ps)))
 
 ;;===================================================================
 ;; Process ports
