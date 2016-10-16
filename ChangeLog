@@ -1,3 +1,8 @@
+2016-10-16  Shiro Kawai  <shiro@acm.org>
+
+	* doc/man.cgi: Added the cgi script to redirect manual page reference
+	  used in practical-scheme.net.  Sort of an example.
+
 2016-10-14  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/process.scm: Add do-process and do-process-pipeline.
