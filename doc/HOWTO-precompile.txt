@@ -3,9 +3,13 @@
 
 
 *** Note: This is a feature still in development and very likely
-    change over time.  You can try it, but expect that new releases
-    of Gauche may break the backward compatibility (you can still
-    recompile your code for every new release.)
+    change over time.
+    Especially, we usually keep ABI compatibility among micro versions
+    so that you don't need to recompile extensions for every new
+    release, but we don't guarantee that for precompiled binary yet---
+    if you precompile your library to distribute, let users know
+    that they need to recompile it for new Gauche releases, even if
+    it's just a micro version update.
         
 As a script engine, the default operating mode of Gauche is to read
 Scheme source code at run-time, compile it on-the-fly and execute.
