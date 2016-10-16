@@ -31,11 +31,6 @@
 @defcodeindex cl
 @defcodeindex lx
 
-@iftex
-@finalout
-@parskip 4pt plus 1pt
-@end iftex
-
 @titlepage
 @c EN
 @title Gauche Users' Reference
@@ -58,11 +53,16 @@ Copyright @copyright{} 2001-2010 Shiro Kawai (shiro@@acm.org)
 @ifnottex
 @c EN
 This is a reference manual of Gauche, an R7RS Scheme implementation.
-This manual is for version @VERSION@.
 @c JP
 本書は、R7RS準拠のScheme処理系、Gaucheのリファレンスマニュアルです。
+@c COMMON
+@ifnothtml
+@c EN
+This manual is for version @VERSION@.
+@c JP
 Gaucheのバージョン@VERSION@に対応します。
 @c COMMON
+@end ifnothtml
 @end ifnottex
 
 @menu
