@@ -55,9 +55,9 @@
       (do-process `(,makeinfo "--html"
                               "--split=section"
                               "--set-customization-variable"
-                              ,#"AFTER_BODY_OPEN=<div style='width:100%' class='header'><p style='text-align:center'>~|version-info|</p></div><hr>"
+                              ,#"AFTER_BODY_OPEN=<div style='width:100%' class='header'><p style='text-align:center'>For ~|version-info|</p></div><hr>"
                               "--set-customization-variable"
-                              ,#"PRE_BODY_CLOSE=<hr><div style='width:100%' class='footer'><p style='text-align:center'>~|version-info|</p></div>"
+                              ,#"PRE_BODY_CLOSE=<hr><div style='width:100%' class='footer'><p style='text-align:center'>For ~|version-info|</p></div>"
                               "--set-customization-variable"
                               "TOP_NODE_UP_URL=https://practical-scheme.net/gauche"
                               "-")

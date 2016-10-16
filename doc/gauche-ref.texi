@@ -87,6 +87,8 @@ Gaucheのバージョン@VERSION@に対応します。
 * Variable Index::              
 @end menu
 
+@contents
+
 @include intro.texi
 @include concepts.texi
 @include program.texi
@@ -107,6 +109,5 @@ Gaucheのバージョン@VERSION@に対応します。
 @include indexcl.texi
 @include indexvr.texi
 
-@contents
 @bye
 
