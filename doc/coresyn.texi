@@ -139,7 +139,7 @@ if it is zero, i.e. @code{30.}, @code{.25}, @code{-.4} are read as
 real numbers.
 The number reader recognizes '@code{#}' as insignificant digits.
 Complex numbers can be written both in the rectangular format
-(e.g. @code{1+0.3i}) and in the polar format (e.g. 3.0@@1.57).
+(e.g. @code{1+0.3i}) and in the polar format (e.g. @code{3.0@@1.57}).
 Inexact real numbers include
 the positive infinity, the negative infinity, and NaN,
 which are represented as @code{+inf.0}, @code{-inf.0} and @code{+nan.0},
@@ -178,7 +178,7 @@ gosh> 2@@-0.5pi
 不正確な実数の整数部または小数部のいずれかが0の場合、それを省略することが
 できます。例：@code{30.}, @code{.25}, @code{-.4}。
 数値のリーダは、パディングの'@code{#}'を認識します。
-複素数表記は直交座標形 (例：@code{1+0.3i}) でも極座標形 (例：3.0@@1.57) でも
+複素数表記は直交座標形 (例：@code{1+0.3i}) でも極座標形 (例：@code{3.0@@1.57}) でも
 認識されます。
 非正確な実数は、正の無限大、負の無限大、非数(NaN)を含み、
 それらはそれぞれ@code{+inf.0}、@code{-inf.0}、および@code{+nan.0}と
@@ -1310,6 +1310,47 @@ the @var{formals} of any @var{clause}.
 
 実際の引数がどの @var{clause} の @var{formals} にも一致しなければエラーです。
 @c COMMON
+
+@example
+(define f
+  (case-lambda
+    [() 'zero]
+    [(a) `(one ,a)]
+    [(a b) `(two ,a ,b)]))
+
+(f)       @result{} zero
+(f 1)     @result{} (one 1)
+(f 1 2)   @result{} (two 1 2)
+(f 1 2 3) @result{} @r{Error: wrong number of arguments to case lambda}
+
+(define g
+  (case-lambda
+    [() 'zero]
+    [(a) `(one ,a)]
+    [(a . b) `(more ,a ,@@b)]))
+
+(g)       @result{} zero
+(g 1)     @result{} (one 1)
+(g 1 2 3) @result{} (more 1 2 3)
+@end example
+
+@c EN
+Note that the clauses are examined sequentially to match the number of
+arguments, so in the following example @code{g2} never returns @code{(one ...)}.
+@c JP
+各@var{clause}は順に引数の個数とマッチするかどうか調べられます。次の例では
+@code{g2}が@code{(one ...)}を返すことはありません。
+@c COMMON
+
+@example
+(define g2
+  (case-lambda
+    [() 'zero]
+    [(a . b) `(more ,a ,@@b)]
+    [(a) `(one ,a)]))
+
+(g2 1)    @result{} (more 1)
+@end example
 @end defmac
 
 @c ----------------------------------------------------------------------

@@ -665,7 +665,20 @@ used to define alias of existing macro or syntax keyword.
 @defspec syntax-rules (literal @dots{}) clause1 clause2 @dots{}
 @defspecx syntax-rules ellipsis (literal @dots{}) clause1 clause2 @dots{}
 [R7RS]
-This specifies a macro transformer by pattern matching.
+This form creates a macro transformer by pattern matching.
+
+Each @var{clauseN} has the following form:
+
+@example
+(@var{pattern} @var{template})
+@end example
+
+The @var{pattern} denotes a pattern to be matched to the macro call.
+Clauses are examined in order to see if the macro call form matches
+its pattern.  If matching pattern is found, the corresponding @var{template}
+replaces the macro call frorm.
+In the @var{pattern}, you can bind a subtree in the macro call to
+a @emph{pattern variable}, which can be referenced in @var{template}.
 
 @end defspec
 
@@ -887,7 +900,7 @@ that is, it must refer to the same binding as in the macro definition.
 を比較するのに使えます。
 
 下の@code{if=>}マクロは@code{if}と同じように動作しますが、
-@code{(if=> test => procedure)}のように呼ばれた場合、あ
+@code{(if=> test => procedure)}のように呼ばれた場合、
 @code{test}が偽でない場合に、その結果を引数にして@code{procedure}を呼び出します。
 シンボル@code{=>}は衛生的に比較されます。つまり、マクロ定義時と同じ束縛を
 参照している場合にのみ有効となります。
@@ -1203,7 +1216,7 @@ replaces occurrences of identifiers in @var{form} to the original
 symbols.
 @c JP
 @var{form}の内部的な構文情報を取り除きます。
-健全なマクロの実装のために、マクロ拡張ルーチンはマクロ内のシンボルを
+衛生マクロの実装のために、マクロ拡張ルーチンはマクロ内のシンボルを
 識別子(identifier)に置き換えます。識別子はそれが現れる構文的環境を
 捕捉します。それはコンパイラに取っては必要な情報ですが、
 エラーメッセージに現れるとユーザーを混乱させるもとにもなります。
