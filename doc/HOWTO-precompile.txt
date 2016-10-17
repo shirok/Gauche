@@ -20,7 +20,7 @@ Gauche has a feature to compile Scheme code and dump the result
 as C code, which can be compiled by a C compiler into DSO and dlopen-ed
 at runtime.  At this moment, we don't really "compile Scheme to C"---
 what we do is to compile Scheme into Gauche's VM instruction sequence,
-as we do at run-time, and to dump the result as C static data structure.
+as we do at run-time, and to dump the result as a C static data structure.
 Thus run-time performance won't improve by precompilation, but you do
 cut the compile time, including macro expansion, and the parsing time.
 In future, we may improve performance of precompiled code, for
@@ -188,7 +188,7 @@ link all together.
 
    $ gosh -I. precomp -e foo.scm foo/util1.scm foo/util2.scm
    $ ls
-   foo   foo--boo.c  foo--woo.c  foo.c  foo.sci  foo.scm
+   foo/  foo--boo.c  foo--woo.c  foo.c  foo.sci  foo.scm
    $ ls foo
    boo.sci  boo.scm  woo.sci  woo.scm
 
@@ -200,13 +200,13 @@ load the files under this directory instead of the standard one.
 In future, we make precomp to take -I. option by itself, instead of gosh.)
 
 You see C files are generated in the current directory, while 
-SCI files are on the side of the each directory.
+SCI files are on the side of each file under the subdirectory.
 
 Now you can compile those C files into a single DSO:
 
    $ gauche-package compile foo foo.c foo--boo.c foo--woo.c
    $ ls
-   foo         foo--boo.o  foo--woo.o  foo.o    foo.scm
+   foo/        foo--boo.o  foo--woo.o  foo.o    foo.scm
    foo--boo.c  foo--woo.c  foo.c       foo.sci  foo.so
 
 You still have an SCI file per each Scheme source, but there's only
