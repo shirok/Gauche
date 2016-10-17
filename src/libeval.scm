@@ -370,6 +370,17 @@
        (loop1)))))
 
 ;;;
+;;; Kick 'main' procedure
+;;;   Returns an integer suitable for the exit code.
+;;;   This is mainly to display proper stack trace in case 'main'
+;;;   raises an error.
+(select-module gauche.internal)
+(define (run-main main args)
+  (guard (e [else (report-error e) 70])
+    (let1 r (main args)
+      (if (fixnum? r) r 70))))
+
+;;;
 ;;; Macros
 ;;;
 

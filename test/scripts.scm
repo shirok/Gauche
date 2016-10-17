@@ -58,6 +58,25 @@
              (process-output->string '("./gosh" "-ftest" "test.o")))
          (delete-files "test.o")))
 
+;; This caused assertion failure in 0.9.5, because 'main' was called
+;; via Scm_ApplyRec without base VM running.
+;; See https://github.com/shirok/Gauche/issues/244
+(test* "proper error handling of 'main'" "ok"
+       (unwind-protect
+           (begin
+             (delete-files "test.o")
+             (with-output-to-file "test.o"
+               (^[]
+                 (write
+                  '(use gauche.partcont))
+                 (write
+                  '(define (main args)
+                     (reset (shift k (call-with-input-file "gauche.h" k)))
+                     (print 'ok)
+                     0))))
+             (process-output->string '("./gosh" "-ftest" "test.o")))
+         (delete-files "test.o")))
+
 ;;=======================================================================
 (test-section "gauche-config")
 

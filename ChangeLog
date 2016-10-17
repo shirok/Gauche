@@ -1,3 +1,15 @@
+2016-10-17  Shiro Kawai  <shiro@acm.org>
+
+	* src/main.c (execute_script), src/libeval.scm (run-main):
+	  We should use Scm_Apply, instead of Scm_ApplyRec, to call 'main'
+	  procedure, since Scm_ApplyRec should only be called when VM is
+	  running.  It caused failure like this:
+	  https://github.com/shirok/Gauche/issues/244
+	  However, directly calling 'main' with Scm_Apply loses stack
+	  trace, so we introduced a wrapper procedure gauche.internal#run-main
+	  to capture and report error.
+	* src/core.c (Scm_SimpleMain): Changed as well.
+
 2016-10-16  Shiro Kawai  <shiro@acm.org>
 
 	* doc/man.cgi: Added the cgi script to redirect manual page reference
