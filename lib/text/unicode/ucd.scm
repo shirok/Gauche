@@ -717,15 +717,4 @@
     (match entry
       [('rep c . items) (gflatten (gmap (^_ items) (giota c)))]
       [item (list->generator (list item))]))
-
-  ;; TRANSIENT: gflatten is in gauche.generator, but it was added after
-  ;; 0.9.4 release and we need our own definition in order to build
-  ;; 0.9.5 with 0.9.4.  Remove this after 0.9.5 release.
-  (define (gflatten gen)
-    (let ([current '()])
-      (rec (g)
-        (cond [(eof-object? current) current]
-              [(pair? current) (pop! current)]
-              [else (set! current (gen)) (g)]))))
-  
   ($ gconcatenate $ gmap entry->gen input-gen))
