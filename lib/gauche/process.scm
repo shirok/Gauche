@@ -119,8 +119,14 @@
 ;; A typical use case---run process synchronously, returns #t for
 ;; success, #f for failure.
 (define (do-process command . args)
-  (let1 p (apply run-process command (delete-keyword :on-abnormal-exit args))
-    (process-wait p #f (get-keyword :on-abnormal-exit args #f))
+  (let* ([eflag (case (get-keyword :on-abnormal-exit args #f)
+                  [(#f) #f]
+                  [(:error) #t]
+                  [else => (cut error
+                                "Value for on-abnormal-exit argument \
+                                 must be either #f or :error, but got:" <>)])]
+         [p (apply run-process command (delete-keyword :on-abnormal-exit args))])
+    (process-wait p #f eflag)
     (zero? (process-exit-status p))))
 
 ;; Note: I/O redirection
@@ -512,11 +518,16 @@
     (append ps (list (apply run-process (last cmds))))))
 
 (define (do-process-pipeline commands . args)
-  (let1 ps (apply run-process-pipeline commands
-                  (delete-keyword :on-abnormal-exit args))
+  (let* ([eflag (case (get-keyword :on-abnormal-exit args #f)
+                  [(#f) #f]
+                  [(:error) #t]
+                  [else => (cut error
+                                "Value for on-abnormal-exit argument \
+                                 must be either #f or :error, but got:" <>)])]
+         [ps (apply run-process-pipeline commands
+                    (delete-keyword :on-abnormal-exit args))])
     (for-each process-wait ps)
-    (when (get-keyword :on-abnormal-exit args #f)
-      (for-each %check-normal-exit ps))
+    (when eflag (for-each %check-normal-exit ps))
     (every (^p (zero? (process-exit-status p))) ps)))
 
 ;;===================================================================
