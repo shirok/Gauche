@@ -294,7 +294,7 @@ static inline unsigned char Scm__LookupCharCategory(ScmChar ch)
 {
     if (ch == SCM_CHAR_INVALID || ch >= 0x10ffff) {
         return SCM_CHAR_CATEGORY_Cn;
-    } else if (ch <= 0x20000) {
+    } else if (ch < 0x20000) {
         return ucs_general_category_00000[ch];
     } else {
         return ucs_general_category_20000(ch);
