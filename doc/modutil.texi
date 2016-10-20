@@ -24261,7 +24261,7 @@ If the graph contains circular reference, an error is signaled.
 
 @c ----------------------------------------------------------------------
 @node Unification, CGI Utility, Topological sort, Library modules - Utilities
-@section @code{util.unifiation} - Unification
+@section @code{util.unification} - Unification
 @c NODE ユニフィケーション, @code{util.unification} - ユニフィケーション
 
 @deftp {Module} util.unification
