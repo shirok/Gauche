@@ -1,3 +1,9 @@
+2016-10-20  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/char_utf_8.h (Scm__LookupCharCategory): Fix off-by-one
+	  error (by OOHASHI Daichi)
+	  https://github.com/shirok/Gauche/pull/245
+
 2016-10-17  Shiro Kawai  <shiro@acm.org>
 
 	* src/main.c (execute_script), src/libeval.scm (run-main):
