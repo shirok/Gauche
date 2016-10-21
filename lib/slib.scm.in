@@ -21,7 +21,7 @@
 ;;; backward compatibility,
 
 (define software-type
-  (let ((t (if (#/-mingw32$/ (gauche-architecture))
+  (let ((t (if (#/-mingw/ (gauche-architecture))
              '(ms-dos . MS-DOS)
              '(unix . UNIX))))
     (lambda ()
