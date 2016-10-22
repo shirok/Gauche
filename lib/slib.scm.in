@@ -32,7 +32,7 @@
 
 ;After transition period, the above should be replaced by this:
 ;(define software-type
-;  (let ((t (if (#/-mingw32$/ (gauche-architecture)) 'ms-dos 'unix)))
+;  (let ((t (if (#/-mingw$/ (gauche-architecture)) 'ms-dos 'unix)))
 ;    (lambda () t)))
 
 ;;@ (scheme-implementation-type) should return the name of the scheme
