@@ -257,6 +257,7 @@
   (^[line]
     (cond-expand
      [gauche.os.windows
+      ;; for MSYS (mintty)
       (if-let1 sh (sys-getenv "SHELL")
         (run-process `("cmd.exe" "/c" ,sh "-c" ,line) :wait #t)
         (run-process `("cmd.exe" "/c" ,line) :wait #t))]

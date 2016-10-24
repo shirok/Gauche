@@ -33,21 +33,33 @@
   (print "  dvi input MAKEINFO                  - generate dvi")
   #f)
 
+(define (make-cmd cmd-list)
+  (cond-expand
+   [gauche.os.windows
+    ;; for MSYS (mintty)
+    (let1 cmd-str (string-join (map x->string cmd-list) " ")
+      (if-let1 sh (sys-getenv "SHELL")
+        `("cmd.exe" "/c" ,sh "-c" ,cmd-str)
+        `("cmd.exe" "/c" ,cmd-str)))]
+   [else
+    cmd-list]))
+
 (define (do-info input makeinfo gzip)
   (define info (path-swap-extension input "info"))
   (or (string-null? makeinfo)
       (string-null? gzip)
-      (and (do-process `(,makeinfo ,input))
+      (and (do-process (make-cmd `(,makeinfo ,input)))
            (begin (remove-files (glob #"~|info|*.gz"))
-                  (do-process `(,gzip ,info ,@(glob #"~|info|-[0-9]*")))))))
+                  (do-process (make-cmd `(,gzip ,info ,@(glob #"~|info|-[0-9]*"))))))))
 
 (define (do-html input makeinfo)
   (or (string-null? makeinfo)
-      (do-process `(,makeinfo "--html"
-                              "--no-split"
-                              "--set-customization-variable"
-                              "TOP_NODE_UP_URL=https://practical-scheme.net/gauche"
-                              "-")
+      (do-process (make-cmd
+                   `(,makeinfo "--html"
+                               "--no-split"
+                               "--set-customization-variable"
+                               "TOP_NODE_UP_URL=https://practical-scheme.net/gauche"
+                               "-"))
                   :redirects `((<< 0 ,(alter-top-node input))))))
 
 (define (do-htmls input makeinfo version-info)
@@ -55,15 +67,16 @@
                      "https://practical-scheme.net/gauche/memo-j.html"
                      "https://practical-scheme.net/gauche/memo.html"))
   (or (string-null? makeinfo)
-      (do-process `(,makeinfo "--html"
-                              "--split=section"
-                              "--set-customization-variable"
-                              ,#"AFTER_BODY_OPEN=<div style='width:100%' class='header'><p style='text-align:center'><a href='~|top-link|'>For ~|version-info|</a></p></div><hr>"
-                              "--set-customization-variable"
-                              ,#"PRE_BODY_CLOSE=<hr><div style='width:100%' class='footer'><p style='text-align:center'><a href='~|top-link|'>For ~|version-info|</a></p></div>"
-                              "--set-customization-variable"
-                              ,#"TOP_NODE_UP_URL=~|top-link|"
-                              "-")
+      (do-process (make-cmd
+                   `(,makeinfo "--html"
+                               "--split=section"
+                               "--set-customization-variable"
+                               ,#"AFTER_BODY_OPEN='<div style=\"width:100%\" class=\"header\"><p style=\"text-align:center\"><a href=\"~|top-link|\">For ~|version-info|</a></p></div><hr>'"
+                               "--set-customization-variable"
+                               ,#"PRE_BODY_CLOSE='<hr><div style=\"width:100%\" class=\"footer\"><p style=\"text-align:center\"><a href=\"~|top-link|\">For ~|version-info|</a></p></div>'"
+                               "--set-customization-variable"
+                               ,#"TOP_NODE_UP_URL='~|top-link|'"
+                               "-"))
                   :redirects `((<< 0 ,(alter-top-node input))))))
 
 ;; For html, makeinfo generates "(dir)" link in the top node, which we don't
@@ -88,7 +101,7 @@
     (when (#/j\.texi$/ input)
       (sys-putenv "PDFTEX=luatex"))]
    [else])
-  (do-process `(,makeinfo "--pdf" "--Xopt" "--tidy" ,input)))
+  (do-process (make-cmd `(,makeinfo "--pdf" "--Xopt" "--tidy" ,input))))
 
 (define (do-dvi input makeinfo)
   (cond-expand
@@ -96,5 +109,5 @@
     (when (#/j\.texi$/ input)
       (sys-putenv "TEX=dviluatex"))]
    [else])
-  (do-process `(,makeinfo "--dvi" "--Xopt" "--tidy" ,input)))
+  (do-process (make-cmd `(,makeinfo "--dvi" "--Xopt" "--tidy" ,input))))
 

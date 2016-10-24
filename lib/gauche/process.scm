@@ -770,8 +770,8 @@
 (define (%apply-run-process command stdin stdout stderr host)
   (apply run-process
          (cond [(string? command)
-                (cond-expand [gauche.os.windows `("cmd" "/c" ,command)]
-                             [else        `("/bin/sh" "-c" ,command)])]
+                (cond-expand [gauche.os.windows `("cmd.exe" "/c" ,command)]
+                             [else              `("/bin/sh" "-c" ,command)])]
                [(list? command) command]
                [else (error "Bad command spec" command)])
          :input stdin :output stdout :host host
