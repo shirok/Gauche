@@ -42,7 +42,7 @@
                                   (map (^c (shell-escape-string (x->string c) 'posix))
                                        cmd-list)
                                   " "))
-      `("cmd.exe" "/c" ,cmd-list))]
+      `("cmd.exe" "/c" ,@cmd-list))]
    [else cmd-list]))
 
 (define (do-info input makeinfo gzip)
