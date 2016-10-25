@@ -38,13 +38,11 @@
    [gauche.os.windows
     ;; for MSYS (mintty)
     (if-let1 sh (sys-getenv "SHELL")
-      `("cmd.exe" "/c" ,sh "-c" ($ shell-escape-string
-                                   (string-join
-                                    (map (cut shell-escape-string <> 'posix)
-                                         cmd-list)
-                                    " ")
-                                   'windows))
-      `("cmd.exe" "/c" ,(map (cut shell-escape-string <> 'windows) cmd-list)))]
+      `("cmd.exe" "/c" ,sh "-c" ,(string-join
+                                  (map (^c (shell-escape-string (x->string c) 'posix))
+                                       cmd-list)
+                                  " "))
+      `("cmd.exe" "/c" ,@cmd-list))]
    [else cmd-list]))
 
 (define (do-info input makeinfo gzip)
@@ -74,11 +72,11 @@
                    `(,makeinfo "--html"
                                "--split=section"
                                "--set-customization-variable"
-                               ,#"AFTER_BODY_OPEN='<div style=\"width:100%\" class=\"header\"><p style=\"text-align:center\"><a href=\"~|top-link|\">For ~|version-info|</a></p></div><hr>'"
+                               ,#"AFTER_BODY_OPEN=<div style=\"width:100%\" class=\"header\"><p style=\"text-align:center\"><a href=\"~|top-link|\">For ~|version-info|</a></p></div><hr>"
                                "--set-customization-variable"
-                               ,#"PRE_BODY_CLOSE='<hr><div style=\"width:100%\" class=\"footer\"><p style=\"text-align:center\"><a href=\"~|top-link|\">For ~|version-info|</a></p></div>'"
+                               ,#"PRE_BODY_CLOSE=<hr><div style=\"width:100%\" class=\"footer\"><p style=\"text-align:center\"><a href=\"~|top-link|\">For ~|version-info|</a></p></div>"
                                "--set-customization-variable"
-                               ,#"TOP_NODE_UP_URL='~|top-link|'"
+                               ,#"TOP_NODE_UP_URL=~|top-link|"
                                "-"))
                   :redirects `((<< 0 ,(alter-top-node input))))))
 
