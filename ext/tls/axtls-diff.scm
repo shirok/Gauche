@@ -32,8 +32,13 @@
                   (^[p s] (if (#/(\.[ch]$)|(\.sh$)|(^Makefile$)/ p) (cons p s) s)) xs))
 
 (define (do-diff file dir)
-  (let* ([orig (build-path dir (regexp-replace #/^axTLS\// file ""))]
-         [p (run-process `(diff -u -N ,orig ,file) :wait #f :output :pipe)]
+  (let* ([orig (build-path dir (regexp-replace #/^axTLS[\/\\]/ file ""))]
+         [p (run-process
+             (cond-expand
+              ;; for MSYS (mintty)
+              [gauche.os.windows `("cmd.exe" "/c" diff -u -N ,orig ,file)]
+              [else              `(diff -u -N ,orig ,file)])
+             :wait #f :output :pipe)]
          ;; We replace pathnames in the diff header to be friendly for patch.
          ;; Especially, newer version of GNU patch rejects patchfile that has
          ;; absolute pathname, or pathname includes '..'.
