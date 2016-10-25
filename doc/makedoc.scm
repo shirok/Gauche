@@ -37,12 +37,15 @@
   (cond-expand
    [gauche.os.windows
     ;; for MSYS (mintty)
-    (let1 cmd-str (string-join (map x->string cmd-list) " ")
-      (if-let1 sh (sys-getenv "SHELL")
-        `("cmd.exe" "/c" ,sh "-c" ,cmd-str)
-        `("cmd.exe" "/c" ,cmd-str)))]
-   [else
-    cmd-list]))
+    (if-let1 sh (sys-getenv "SHELL")
+      `("cmd.exe" "/c" ,sh "-c" ($ shell-escape-string
+                                   (string-join
+                                    (map (cut shell-escape-string <> 'posix)
+                                         cmd-list)
+                                    " ")
+                                   'windows))
+      `("cmd.exe" "/c" ,(map (cut shell-escape-string <> 'windows) cmd-list)))]
+   [else cmd-list]))
 
 (define (do-info input makeinfo gzip)
   (define info (path-swap-extension input "info"))
