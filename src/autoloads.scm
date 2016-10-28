@@ -109,7 +109,7 @@
           (:macro dotimes dolist while until)
           (:macro guard unwind-protect)
           (:macro cond-list)
-          (:macro er-macro-transformer))
+          )
 
 (autoload gauche.macroutil
           (:macro quasirename))

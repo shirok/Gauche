@@ -31,6 +31,17 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
+;;;
+;;; er-macro-transformer external API
+;;;   The actual expander (%expand-er-transformer) is defined in compile.scm.
+;;;   We need this definition after other components are bootstrapped.
+(declare (keep-private-macro er-macro-transformer))
+(select-module gauche)
+(define-syntax er-macro-transformer
+  (primitive-macro-transformer
+   (^[form def-env use-env]
+     ((with-module gauche.internal %expand-er-transformer) form use-env))))
+
 ;; Register built-in modules as provided, so that (use <built-in-modue>) won't
 ;; complain.
 ;; TODO: #<module util.match> isn't built-in, but the module is created during

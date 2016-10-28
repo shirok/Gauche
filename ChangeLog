@@ -1,3 +1,8 @@
+2016-10-27  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/common-macros.scm, src/libomega.scm (er-macro-transformer):
+	  Moved definition from autoloaded macro to built-in.
+
 2016-10-20  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/char_utf_8.h (Scm__LookupCharCategory): Fix off-by-one
