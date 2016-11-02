@@ -1,3 +1,7 @@
+2016-11-01  Shiro Kawai  <shiro@acm.org>
+
+	* ext/peg ($fmap, $<<): Removed those APIs; they're the same as $lift.
+
 2016-10-27  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/common-macros.scm, src/libomega.scm (er-macro-transformer):

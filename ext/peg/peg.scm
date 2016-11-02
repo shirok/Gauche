@@ -51,8 +51,6 @@
           return-failure/message return-failure/compound
           
           $return $fail $expect $lift $lift* $debug
-          $fmap ;obsoleted - same as $lift
-          $<<   ;obsoleted - same as $lift
           $do $try $seq $or $fold-parsers $fold-parsers-right
           $many $many1 $skip-many $skip-many1
           $repeat $optional
@@ -375,10 +373,6 @@
             (if (parse-success? r)
               (accum s1 (cdr parsers) (cons v vs))
               (values r v s1)))))))
-
-;; for the backward compatibility - will be dropped by 0.9.5
-(define $fmap $lift)
-(define $<< $lift)
 
 ;; API
 ;; For debugging
