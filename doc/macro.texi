@@ -673,13 +673,22 @@ Each @var{clauseN} has the following form:
 (@var{pattern} @var{template})
 @end example
 
-The @var{pattern} denotes a pattern to be matched to the macro call.
+A @var{pattern} denotes a pattern to be matched to the macro call.
+It is an S-expression that matches if the macro call has the same
+structure, except that symbols in @var{pattern} can match a whole subtree
+of the input; the matched symbol is called a @emph{pattern variable},
+and can be referenced in the @var{template}.
+
+For example, if a pattern is @code{(_ "foo" (a b))}, it can match the
+macro call @code{(x "foo" (1 2))}, or @code{(x "foo" (1 (2 3)))}, but does
+not match @code{(x "bar" (1 2))}, @code{(x "foo" (1))} or
+@code{(x "foo" (1 2) 3)}.  You can also match repeating structure or
+literal symbols; we'll discuss it fully later.
+
 Clauses are examined in order to see if the macro call form matches
 its pattern.  If matching pattern is found, the corresponding @var{template}
-replaces the macro call frorm.
-In the @var{pattern}, you can bind a subtree in the macro call to
-a @emph{pattern variable}, which can be referenced in @var{template}.
-
+replaces the macro call form.  A pattern variable in the template is
+replaced with the subtree of input that is bound to the pattern variable.
 @end defspec
 
 @node Explicit-renaming macro transformer,  , Syntax-rules pattern langauge, Hygienic macros
