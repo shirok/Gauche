@@ -10579,10 +10579,10 @@ affected by the order.
 
 @c EN
 Note: If you use @code{gauche.collection}, you can get the same
-function by @code{(map-to <vector> proc vec1 vec2 @dots{}}.
+function by @code{(map-to <vector> proc vec1 vec2 @dots{})}.
 @c JP
 註: @code{gauche.collection}をuseして
-@code{(map-to <vector> proc vec1 vec2 @dots{}} としても同じ機能は得られます。
+@code{(map-to <vector> proc vec1 vec2 @dots{})} としても同じ機能は得られます。
 @c COMMON
 @end defun
 
@@ -10609,10 +10609,10 @@ This is what SRFI-43 calls @code{vector-map}.  @xref{Vector library (Legacy)}.
 
 @c EN
 Note: If you use @code{gauche.collection}, you can get the same
-function by @code{(map-to-with-index <vector> proc vec1 vec2 @dots{}}.
+function by @code{(map-to-with-index <vector> proc vec1 vec2 @dots{})}.
 @c JP
 註: @code{gauche.collection}をuseして
-@code{(map-to-with-index <vector> proc vec1 vec2 @dots{}}
+@code{(map-to-with-index <vector> proc vec1 vec2 @dots{})}
 としても同じ機能は得られます。
 @c COMMON
 @end defun
