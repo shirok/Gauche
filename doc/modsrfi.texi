@@ -1548,21 +1548,21 @@ search.  The @code{*-ci} variations use case foling character comparison.
 @defunx string-suffix-ci? s1 s2 :optional start1 end1 start2 end2
 [SRFI-13]
 @c EN
-Returns true iff @var{s2} is a prefix or suffix of @var{s1}, respectively.
+Returns true iff @var{s1} is a prefix or suffix of @var{s2}, respectively.
 The optional arguments limit the range of @var{s1} and @var{s2} to look at.
 The @code{*-ci} variations use case foling character comparison.
 @c JP
-それぞれ、@var{s2}が@var{s1}のプレフィクスまたはサフィックスになっていた場合に
+それぞれ、@var{s1}が@var{s2}のプレフィクスまたはサフィックスになっていた場合に
 @code{#t}を、それ以外の場合に@code{#f}を返します。
 省略可能引数はそれぞれの文字列の探索範囲を限定します。
 @code{*-ci}版は文字ごとに、大文字小文字を区別しない比較を行います。
 @c COMMON
 
 @example
-(string-prefix? "scheme" "sch")   @result{} #t
-(string-prefix? "scheme" "lisp")  @result{} #f
+(string-prefix? "sch" "scheme")   @result{} #t
+(string-prefix? "lisp" "scheme")  @result{} #f
 
-(string-prefix? "mit-scheme" "scheme" 4) @result{} #t
+(string-prefix? "mit-scheme" "scheme-family" 4) @result{} #t
 @end example
 @end defun
 
