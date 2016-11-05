@@ -442,9 +442,10 @@
         (let* ((pl (vector->list p))
                (rpl (reverse pl)))
           (list->vector
-           (if (dot-dot-k? (car rpl))
+           (if (and (not (null? rpl))
+                    (dot-dot-k? (car rpl)))
              (reverse (cons (car rpl) (map quasi (cdr rpl))))
-             (map ordinary pl)))))
+             (map quasi pl)))))
        (else
         (match:syntax-err pattern "syntax error in pattern")))))
   (define (ordlist p)

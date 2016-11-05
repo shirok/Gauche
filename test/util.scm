@@ -8,6 +8,20 @@
 (use srfi-1)
 
 ;;-----------------------------------------------
+(test-section "util.match")
+(use util.match)
+(test-module 'util.match)
+(test* "match (quasiquote + empty-vector)"
+       #t
+       (match '#() (`#() #t) (_ #f)))
+(test* "match (quasi-pattern + vector)"
+       '(3 1 2)
+       (match '#(1 2 3) (`#(,a ,b ,c) (list c a b)) (_ #f)))
+(test* "match (quasi-pattern + ellipsis + vector)"
+       '(1 2 3)
+       (match '#(1 2 3) (`#(,a ...) a) (_ #f)))
+
+;;-----------------------------------------------
 (test-section "util.combinations")
 (use util.combinations)
 (test-module 'util.combinations)
