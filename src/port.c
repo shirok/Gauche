@@ -124,10 +124,6 @@ SCM_DEFINE_BASE_CLASS(Scm_CodingAwarePortClass,
                       ScmPort, /* instance type */
                       port_print, NULL, NULL, NULL, port_cpl);
 
-SCM_DEFINE_BASE_CLASS(Scm_LimitedLengthPortClass,
-                      ScmPort, /* instance type */
-                      port_print, NULL, NULL, NULL, port_cpl);
-
 /*================================================================
  * Common
  */
@@ -1637,124 +1633,6 @@ ScmObj Scm_MakeCodingAwarePort(ScmPort *iport)
                                     TRUE, &bufrec);
     return p;
 }
-
-/*===============================================================
- * Limited Length Port
- */
-
-#if 0
-/* Limited-length port transfers information up to specified
-   characters/bytes.  Input limited-length port returns EOF after
-   the specified amount of data is read, and output limited-length port
-   discards data written past the specified amount.  The port is not
-   seekable. */
-
-typedef struct limited_port_data_rec {
-    ScmPort *source;            /* source/sink port */
-    int max_bytes;              /* -1 if byte count doesn't matter */
-    int max_chars;              /* -1 if char count doesn't matter */
-    int byte_count;
-    int char_count;
-    int limit_reached;          /* TRUE once the limit is reached. */
-} limited_port_data;
-
-#define BYTE_LIMITED(data) ((data)->max_bytes >= 0)
-#define CHAR_LIMITED(data) ((data)->max_chars >= 0)
-
-static int limit_getb(ScmPort *p)
-{
-    limited_port_data *data = (limited_port_data*)SCM_PORT_VIRTUAL_DATA(p);
-    if (data->limit_reached) return EOF;
-    if (BYTE_LIMITED(data) && data->byte_count++ >= data->max_bytes) {
-        data->limit_reached = TRUE;
-        return EOF;
-    }
-    return Scm_Getb(data->source);
-}
-
-static int limit_getc(ScmPort *c)
-{
-    limited_port_data *data = (limited_port_data*)SCM_PORT_VIRTUAL_DATA(p);
-    if (data->limit_reached) return SCM_CHAR_INVALID;
-    if (CHAR_LIMITED(data) && data->char_count++ >= data->max_chars) {
-        data->limit_reached = TRUE;
-        return SCM_CHAR_INVALID;
-    }
-    return Scm_Getc(data->source);
-}
-
-static int limit_getz(char *buf, int buflen, ScmPort *p)
-{
-    int rest = 0, size, nread;
-    limited_port_data *data = (limited_port_data*)SCM_PORT_VIRTUAL_DATA(p);
-
-    if (data->limit_reached) return 0;
-    if (BYTE_LIMITED(data)) {
-        rest = data->max_bytes - data->byte_count;
-        size = MIN(buflen, rest);
-    } else {
-        size = buflen;
-    }
-    nread = Scm_Getz(buf, size, p);
-    if (nread == 0) return 0;
-
-    if (nread == rest) {
-        data->limit_reached = TRUE;
-    }
-    data->byte_count += nread;
-    return nread;
-}
-
-static void limit_putb(ScmByte b, ScmPort *p)
-{
-    limited_port_data *data = (limited_port_data*)SCM_PORT_VIRTUAL_DATA(p);
-    if (data->limit_reached) return;
-    Scm_Putb(b, data->source);
-    if (BYTE_LIMITED(data) && ++data->byte_count >= data->max_bytes) {
-        data->limit_reached = TRUE;
-    }
-}
-
-static void limit_putc(ScmChar c, ScmPort *p)
-{
-    limited_port_data *data = (limited_port_data*)SCM_PORT_VIRTUAL_DATA(p);
-    if (data->limit_reached) return;
-    Scm_Putc(c, data->source);
-    if (CHAR_LIMITED(data) && ++data->char_count >= data->max_chars) {
-        data->limit_reached = TRUE;
-    }
-}
-
-static void limit_putz(const char *buf, int size, ScmPort *p)
-{
-    int realsize, nwritten;
-    limited_port_data *data = (limited_port_data*)SCM_PORT_VIRTUAL_DATA(p);
-    if (data->limit_reached) return;
-    if (BYTE_LIMITED(data)) {
-
-    }
-}
-
-
-ScmObj Scm_MakeLimitedLengthPort(ScmPort *source,
-                                 int max_bytes,
-                                 int max_chars)
-{
-    ScmPortVTable vtable;
-    limited_port_data *data;
-
-    data = SCM_NEW(limited_port_data);
-    data->source = source;
-    data->max_bytes = max_bytes;
-    data->max_chars = max_chars;
-    data->byte_count = 0;
-    data->char_count = 0;
-    data->limit_reached = FALSE;
-
-
-}
-
-#endif
 
 /*===============================================================
  * Standard ports
