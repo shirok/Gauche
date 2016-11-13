@@ -782,10 +782,7 @@
 ;; ExtendedPair as it is, and we need to use <serialiable-extended-pair>.
 ;; See literal.scm.
 (define (serializable-signature-info code)
-  ;; TRANSIENT: This code needs to run with 0.9.4 as well, so we use old
-  ;; slot name 'arg-info'.  Replace it to 'signature-info' after 0.9.5
-  ;; release.
-  (and-let* ([sig (~ code'arg-info)])
+  (and-let* ([sig (~ code'signature-info)])
     (if-let1 si (and (pair? sig)
                      (pair? (car sig))
                      (pair-attribute-get (car sig) 'source-info #f))
