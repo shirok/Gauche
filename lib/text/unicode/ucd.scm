@@ -373,7 +373,7 @@
          [(not prev-code)           ; initial loop
           (dict-put! table code entry)]
          [(and range? (not (= code (+ prev-code 1)))) ;gap
-          (dict-fill! table (+ prev-code 1) code entry)]
+          (dict-fill! table (+ prev-code 1) (+ code 1) entry)]
          [else
           (dict-put! table code entry)])
         ;; insert category range over U+20000
