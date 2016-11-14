@@ -7,7 +7,7 @@
 
 ;; Reads Unicode data tables and generates various source files.
 
-;; This script can serve two operations.
+;; This script can serve three operations.
 ;;
 ;; (1) Generate unicode-data.scm from Unicode character database
 ;;   It is only necessary when new version of Unicode is published,
@@ -27,6 +27,12 @@
 ;;
 ;;    gosh ./gen-unicode.scm --compile unicode-data.scm
 ;;
+;; (3) Fetch Unicode character database files.  This is for developer's
+;;   convenience.
+;;
+;;    gosh ./gen-unicode.scm --fetch <unicode-database-directory> [<unicode-version>
+;;   Note that the original content in <unicode-database-directory> is
+;;   overwritten.
 
 (use srfi-1)
 (use srfi-13)
@@ -40,6 +46,11 @@
 (use gauche.charconv)
 (use gauche.uvector)
 (use text.unicode.ucd)
+
+;; rfc.http is only required by '--fetch' operation.  We don't want to load
+;; it during build process, so let's autoload it.
+(autoload rfc.http http-get)
+
 
 ;; We generate four kind of lookup structures.  Each structure consists
 ;; of various types of tables in order to reduce the size.
@@ -203,6 +214,7 @@
 
 (define (main args)
   (match (cdr args)
+    [("--fetch" dir . maybe-version) (apply fetch-ucd dir maybe-version)]
     [("--import" dir ucdfile)
      (unless (file-is-directory? dir)
        (exit 1 "Directory required, but got: ~a" dir))
@@ -214,9 +226,33 @@
      (generate-tables (call-with-input-file ucdfile ucd-load-db))]
     [else
      (exit 1 "Usage:\n\
-              gen-unicode.scm --import <unicode-database-dir>\n\
+              gen-unicode.scm --fetch <unicode-database-dir> [<unicode-version>]\n\
+              gen-unicode.scm --import <unicode-database-dir> <ucd-file>\n\
               gen-unicode.scm --compile <unicode-data.scm>")])
   0)
+
+;;;
+;;; Fetching 
+;;;
+(define (fetch-ucd dir :optional (version #f))
+  (let ([path (if version
+                #"/Public/~|version|/ucd"
+                "/Public/UCD/latest/ucd")]
+        [datafiles   '("UnicodeData.txt"
+                       "SpecialCasing.txt"
+                       "PropList.txt"
+                       "EastAsianWidth.txt"
+                       "auxiliary/GraphemeBreakProperty.txt"
+                       "auxiliary/SentenceBreakProperty.txt"
+                       "auxiliary/WordBreakProperty.txt")])
+    (make-directory* (build-path dir "auxiliary"))
+    (dolist [f datafiles]
+      (let1 p (build-path dir f)
+        (display #"Getting ~|f|... ") (flush)
+        (call-with-output-file p
+          (^o (http-get "www.unicode.org" (build-path path f)
+                        :sink o :flusher (^ _ #t))))
+        (display "done\n")))))
 
 ;;;
 ;;;  Generate source file
