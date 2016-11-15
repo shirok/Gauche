@@ -1,3 +1,7 @@
+2016-11-14  Shiro Kawai  <shiro@acm.org>
+
+	* lib/text/unicode/ucd.scm, src/unicode-data.scm: Handle EastAsianWidth
+
 2016-11-01  Shiro Kawai  <shiro@acm.org>
 
 	* ext/peg ($fmap, $<<): Removed those APIs; they're the same as $lift.
