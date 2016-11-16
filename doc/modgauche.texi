@@ -18419,6 +18419,7 @@ Gaucheが@code{utf-8}でコンパイルされている場合、コードポイ�
 * Unicode transfer encodings::
 * Unicode text segmentation::
 * Full string case conversion::
+* East asian width property::
 @end menu
 
 @node Unicode transfer encodings, Unicode text segmentation, Unicode utilities, Unicode utilities
@@ -18675,7 +18676,7 @@ Then the created generator works as follows:
 @end defun
 
 
-@node Full string case conversion,  , Unicode text segmentation, Unicode utilities
+@node Full string case conversion, East asian width property, Unicode text segmentation, Unicode utilities
 @subsection Full string case conversion
 
 @defun string-upcase string
@@ -18738,6 +18739,18 @@ different procedures.
 @end example
 @end defun
 
+@node East asian width property,  , Full string case conversion, Unicode utilities
+@subsection East asian width property
+
+@defun char-east-asian-width char-or-codepoint
+The argument may be a character or a nonnegative integer of Unicode
+codepoint.  Returns one of the symbols @code{N} (neutral), 
+@code{F} (fullwidth), @code{H} (halfwidth), @code{W} (wide),
+@code{Na} (narrow), and @code{A} (ambiguous).
+
+The meaning of this property is explained in Unicode standard annex #11,
+@url{http://unicode.org/reports/tr11/}.
+@end defun
 
 
 @c ----------------------------------------------------------------------
