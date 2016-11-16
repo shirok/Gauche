@@ -7,9 +7,14 @@
 
 ;; Read Unicode data tables and generates Scheme data structures
 ;; for ease of use.
+;;
 ;; This data structures are not intended to be lightweight for
 ;; in-application use; they are intermediate format to generate
 ;; more efficient structure suitable for applications.
+;; The src/gen-unicode.scm script uses this module.
+;;
+;; The applications should never 'use' this module.  The info is
+;; available from Gauche core API and gauche.unicode modules.
 
 (define-module text.unicode.ucd
   (use gauche.record)

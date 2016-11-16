@@ -1,3 +1,9 @@
+2016-11-15  Shiro Kawai  <shiro@acm.org>
+
+	* ext/gauche/unicode.scm, src/gen-unicode.scm (char-east-asian-width):
+	  Add utility to get Unicode EastAsianWidth property of a character/
+	  codepoint.
+
 2016-11-14  Shiro Kawai  <shiro@acm.org>
 
 	* lib/text/unicode/ucd.scm, src/unicode-data.scm: Handle EastAsianWidth

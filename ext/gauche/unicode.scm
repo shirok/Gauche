@@ -52,6 +52,8 @@
           codepoints-upcase codepoints-downcase codepoints-titlecase
           codepoints-foldcase
 
+          char-east-asian-width
+
           string-ci=? string-ci<? string-ci<=? string-ci>? string-ci>=?
           )
   )
@@ -380,9 +382,7 @@
                                      'utf-8)))))
 
 ;;;
-;;;
-;;; Grapheme cluster break and word break
-;;;
+;;;  Character properties
 ;;;
 
 ;;=========================================================================
@@ -394,6 +394,7 @@
 
  (initcode "init_GB_symbols(Scm_CurrentModule());")
  (initcode "init_WB_symbols(Scm_CurrentModule());")
+ (initcode "init_WIDTH_symbols(Scm_CurrentModule());")
 
  (define-cise-stmt get-arg
    [(_ var arg)
@@ -440,7 +441,33 @@
                 (and (<= #xE0020 ch) (<= ch #xE007F))) (return WB_Format)]
            [(and (<= #xE0100 ch) (<= ch #xE01EF)) (return WB_Extend)]
            [else (return WB_Other)])))
+
+ (define-cproc width-property (scode) ::<int>
+   (let* ([ch::int])
+     (get-arg ch scode)
+     (cond [(< ch #x20000)
+            (let*([k::u_char (aref width_table (>> ch 8))])
+              (if (< k NUM_WIDTH_PROPERTIES)
+                (return k)
+                (let* ([b::u_char (aref width_subtable
+                                        (- k NUM_WIDTH_PROPERTIES)
+                                        (>> (logand ch #xfe) 1))])
+                  (return (logand #x0f (?: (logand ch 1) (>> b 4) b))))))]
+           ;; CJK and reserved area up to 3fffd is 'W'.  There's a gap in
+           ;; 2fffe-2ffff and 3fffe-3ffff, but I believe they don't matter.
+           [(< ch #x40000) (return WIDTH_W)]
+           ;; After 40000, it's sparsely defined---the private area
+           ;; (f0000-ffffd, 100000-10fffd) are A.  All the other, we assign
+           ;; default N.
+           [(< ch #xf0000) (return WIDTH_N)]
+           [else (return WIDTH_A)])))
  )
+
+;;;
+;;;
+;;; Grapheme cluster break and word break
+;;;
+;;;
 
 ;;=========================================================================
 ;; Utiltiies
@@ -825,6 +852,14 @@
   (make-string-splitter make-grapheme-cluster-reader))
 (define codepoints->grapheme-clusters
   (make-sequence-splitter make-grapheme-cluster-reader))
+
+;;;
+;;; East asian width
+;;;
+
+;; returns a symbol
+(define (char-east-asian-width char-or-code)
+  (vector-ref *east-asian-widths* (width-property char-or-code)))
 
 ;;;
 ;;; String casing

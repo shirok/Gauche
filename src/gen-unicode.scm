@@ -646,14 +646,14 @@
     (print #"#define NUM_WIDTH_PROPERTIES ~|prop-count|")
     (print)
     (print "static void init_WIDTH_symbols(ScmModule *mod) {")
-    (for-each (^c
-               (and c
-                    (format #t
-                            "Scm_DefineConst(mod, \
-                             SCM_SYMBOL(SCM_INTERN(\"WIDTH_~a\")),\
-                             SCM_MAKE_INT(WIDTH_~a));\n"
-                            c c)))
-              (ucd-east-asian-widths))
+    (print #"  ScmObj v = Scm_MakeVector(~|prop-count|, SCM_FALSE);")
+    (for-each-with-index
+     (^[i c]
+       (print #"  SCM_VECTOR_ELEMENT(v, ~|i|) = SCM_INTERN(\"~|c|\");"))
+     (ucd-east-asian-widths))
+    (print "  Scm_DefineConst(mod, \
+                 SCM_SYMBOL(SCM_INTERN(\"*east-asian-widths*\")), \
+                 v);")
     (print "}"))
 
   (print)
