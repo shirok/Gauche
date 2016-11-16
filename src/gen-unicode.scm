@@ -45,6 +45,9 @@
 (use gauche.record)
 (use gauche.charconv)
 (use gauche.uvector)
+
+;; needs to load from source
+(add-load-path "../lib" :relative)
 (use text.unicode.ucd)
 
 ;; rfc.http is only required by '--fetch' operation.  We don't want to load
@@ -266,10 +269,12 @@
       (generate-digit-value-tables db)))
   (with-output-to-file "gauche/priv/unicode_attr.h"
     (^() (preamble db)
-      (generate-break-tables db))))
+      (generate-break-tables db)
+      (generate-width-tables db))))
 
 (define (preamble db)
   (print "/* Generated automatically from Unicode character database */")
+  (print "/* See src/gen-unicode.scm for the description of data structures. */")
   (print #"/* Unicode version ~(ucd-version db).  Do not edit. */")
   )
 
@@ -520,6 +525,20 @@
     (print "}")))
 
 ;; Break property values
+;; This goes to src/gauche/priv/unicode_attr.h
+;;
+;; The data structure is two-level tables that maps codepoint 0-1FFFFF to
+;; an octet.
+;; 
+;; The first level, break_table, is 512-length byte vector.
+;; Upper 9bit of codepoint is used to index this table.  If the entry
+;; is 255, the break property of that codepoint takes the default value.
+;;
+;; Otherwise, the first table entry is the subtable, break_subtable[N][],
+;; and the lower 8bit of codepoint is used to index the subtable.
+;; it returns an octet, in which upper 4 bit is for grapheme break property
+;; and lower 4 bit is for word break property.
+
 (define (generate-break-tables db)
   (define subtable-count 0)
 
@@ -577,6 +596,76 @@
     (print "};")
     (print)
     (format #t "static unsigned char break_table[] = {")
+    (do-ec (:parallel (: n nlist) (:integers i))
+           (begin (when (zero? (mod i 8)) (format #t "\n   "))
+                  (format #t " ~3d," n)))
+    (format #t "\n};\n"))
+  )
+
+;; EastAsianWidth property values
+;; This goes to src/gauche/priv/unicode_attr.h
+;;
+;; The data structure is two-level tables that maps codepoint 0-1FFFFF to
+;; an octet.
+;; 
+;; The first level, width_table, is 512-length byte vector.
+;; Upper 9bit of codepoint is used to index this table.  If the entry
+;; is one of WIDTH_x values, all codepoints of that range has that property
+;; value.
+;;
+;; Otherwise, the entry value - NUM_WIDTH_PROPERTIES points to the subtable,
+;; width_subtable[N][].  It is a vecto of nibbles; to look up, first take
+;; 1-7bit of the codepoint and look up an octet; if the LSB of codepoint
+;; is 0, take lower nibble; otherwise, take upper nibble.
+
+(define (generate-width-tables db)
+  (define prop-count (length (ucd-east-asian-widths)))
+  (define subtable-count prop-count)
+  (define width-table (~ db'width-table))
+  
+  ;; returns subtable-number
+  (define (gen-subtable start-code)
+    (let1 e (dict-get width-table start-code 'N)
+      (if (any?-ec (: lb 256)
+                   (not (eq? (dict-get width-table (+ start-code lb) 'N) e)))
+        (rlet1 subtable-num subtable-count
+          (print "  {")
+          (do-ec (: c 128)
+                 (let ([w0 (dict-get width-table (+ start-code (* c 2)) 'N)]
+                       [w1 (dict-get width-table (+ start-code (* c 2) 1) 'N)])
+                   (print #"    WIDTH_ENTRY(WIDTH_~|w1|, WIDTH_~|w0|),")))
+          (print "  },")
+          (inc! subtable-count))
+        ;; all codepoints of this range shares the value.
+        (find-index (cut eqv? e <>) (ucd-east-asian-widths))))) 
+
+  ;; Generate table of symbols
+  (define (gen-symbol-table)
+    (for-each-with-index (^(i c) (format #t "#define WIDTH_~a ~a\n" c i))
+                         (ucd-east-asian-widths))
+    (print #"#define NUM_WIDTH_PROPERTIES ~|prop-count|")
+    (print)
+    (print "static void init_WIDTH_symbols(ScmModule *mod) {")
+    (for-each (^c
+               (and c
+                    (format #t
+                            "Scm_DefineConst(mod, \
+                             SCM_SYMBOL(SCM_INTERN(\"WIDTH_~a\")),\
+                             SCM_MAKE_INT(WIDTH_~a));\n"
+                            c c)))
+              (ucd-east-asian-widths))
+    (print "}"))
+
+  (print)
+  (gen-symbol-table)
+  (print)
+  (print "#define WIDTH_ENTRY(a, b)  (((a)<<4) | (b))")
+  (print)
+  (print "static unsigned char width_subtable[][128] = {")
+  (let1 nlist (list-ec (: n 512) (gen-subtable (* n 256)))
+    (print "};")
+    (print)
+    (format #t "static unsigned char width_table[] = {")
     (do-ec (:parallel (: n nlist) (:integers i))
            (begin (when (zero? (mod i 8)) (format #t "\n   "))
                   (format #t " ~3d," n)))
