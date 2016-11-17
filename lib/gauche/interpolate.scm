@@ -67,6 +67,15 @@
     (errorf "malformed string-interpolate: ~s" (list 'string-interpolate str))))
 
 (define (%string-interpolate str unquote-char)
+  ;; Ad-hoc hygiene.  String-interpolate is called as a srfi-10 read-time
+  ;; constructor so we don't get RENAME procedure of er-macro.  We have to
+  ;; do it in a rudimental way (warning: don't do this in your code.)
+  (define x->string.
+    ((with-module gauche.internal make-identifier)
+     'x->string (find-module 'gauche) '()))
+  (define string-append.
+    ((with-module gauche.internal make-identifier)
+     'string-append (find-module 'gauche) '()))
   (define (accum c acc)
     (cond [(eof-object? c)
            (let1 r (get-output-string acc)
@@ -88,9 +97,9 @@
                             (errorf "unmatched parenthesis in interpolating string: ~s" str)])
                    (read))]
            [rest (accum (read-char) (open-output-string))])
-      (cons `(x->string ,item) rest)))
+      (cons `(,x->string. ,item) rest)))
   (let1 args (with-input-from-string str
                (^[] (accum (read-char) (open-output-string))))
     (cond [(null? args) ""]
           [(null? (cdr args)) (car args)]
-          [else (cons 'string-append args)])))
+          [else (cons string-append. args)])))

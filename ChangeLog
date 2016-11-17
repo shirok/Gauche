@@ -1,3 +1,8 @@
+2016-11-17  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/interpolate.scm: Make the expansion of string-interpolate
+	  hygienic.
+
 2016-11-15  Shiro Kawai  <shiro@acm.org>
 
 	* ext/gauche/unicode.scm, src/gen-unicode.scm (char-east-asian-width):
