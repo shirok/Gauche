@@ -1398,12 +1398,16 @@
      [($GREF)   ($gref-id iform)]
      [($GSET)   `(set! ,($gset-id iform) ,(rec ($gset-expr iform)))]
      [($CONST)  `',($const-value iform)]
-     [($IF)     (if (has-tag? ($if-then iform) $IT)
-                  `(or ,(rec ($if-test iform))
-                       ,(rec ($if-else iform)))
-                  `(if ,(rec ($if-test iform))
-                     ,(rec ($if-then iform))
-                     ,(rec ($if-else iform))))]
+     [($IF)     (cond [(has-tag? ($if-then iform) $IT)
+                       `(or ,(rec ($if-test iform))
+                            ,(rec ($if-else iform)))]
+                      [(has-tag? ($if-else iform) $IT)
+                       `(and ,(rec ($if-test iform))
+                             ,(rec ($if-then iform)))]
+                      [else
+                       `(if ,(rec ($if-test iform))
+                          ,(rec ($if-then iform))
+                          ,(rec ($if-else iform)))])]
      [($LET)    (let ([is (map rec ($let-inits iform))]
                       [vs (map get-lvar ($let-lvars iform))])
                   `(letrec ,(map list vs is)
@@ -1432,7 +1436,8 @@
      [($LIST)   `(list ,@(map rec ($*-args iform)))]
      [($LIST*)  `(list* ,@(map rec ($*-args iform)))]
      [($LIST->VECTOR) `(list->vector ,(rec ($*-arg0 iform)))]
-     [($IT)     '(it)] ;; TODO
+     [($IT) ; ($IT) node must have been handled by $IF
+      (error "[internal] Stray $IT node.")]
      [else (error "Cannot convert IForm:" (iform-tag-name (iform-tag iform)))]))
   (rec iform))
 

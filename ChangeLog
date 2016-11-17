@@ -1,5 +1,9 @@
 2016-11-17  Shiro Kawai  <shiro@acm.org>
 
+	* src/compile.scm (iform->sexpr): Handle $IT node within $IF.  Right
+	  after pass1, $IT must only appear directly in either then or else
+	  branch of $IF node.
+
 	* lib/gauche/interpolate.scm: Make the expansion of string-interpolate
 	  hygienic.
 
