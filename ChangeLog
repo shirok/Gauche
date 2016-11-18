@@ -1,3 +1,10 @@
+2016-11-18  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cgen/precomp.scm (write-ext-module): Duct-tape fix of
+	  avoiding emitting identifiers into *.sci files---the change of
+	  making string interpolation hygiene can cause such situation.
+	  See the comment for the planned proper fix.
+
 2016-11-17  Shiro Kawai  <shiro@acm.org>
 
 	* lib/text/template.scm: Experimentally added.  This library exposes

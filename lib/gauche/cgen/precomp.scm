@@ -380,8 +380,15 @@
       (error "source file list contains *.sci file:" s))
     (sys-unlink (strip-prefix (path-swap-extension s "sci") prefix))))
 
+;; Writers out FORM to *.sci file if we're generating one.  No-op if we aren't
+;; generating *.sci file.
+;; TODO: Since *.sci file is read back as ordinary Scheme file, we can't
+;; include identifiers in it.  We strip identifier info for now, but it can
+;; break hygiene.  Solution: We should think the feature of writing arbitrary
+;; code to *.sci as a transient measure and eventually we should have a way
+;; to serialize Scheme code, including indentifier info, to the file.
 (define (write-ext-module form)
-  (cond [(ext-module-file) => (^_ (write form _) (newline _))]))
+  (cond [(ext-module-file) => (^_ (write (unwrap-syntax form) _) (newline _))]))
 
 (define (setup ext-init? subinits)
   (cgen-decl "#include <gauche/code.h>")
