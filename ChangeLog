@@ -1,5 +1,9 @@
 2016-11-17  Shiro Kawai  <shiro@acm.org>
 
+	* lib/text/template.scm: Experimentally added.  This library exposes
+	  string interpolation facility for runtime-provided strings as opposed
+	  to literals.  Kind of a hack but might be useful.
+
 	* src/compile.scm (iform->sexpr): Handle $IT node within $IF.  Right
 	  after pass1, $IT must only appear directly in either then or else
 	  branch of $IF node.
