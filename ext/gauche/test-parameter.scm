@@ -180,6 +180,35 @@
            (when (< (length r) 4) (cc cc))
            (reverse r))))
 
+;; Yet another tricky one
+(test* "Restarting evaluation of value 1"
+       '((1 . 1) (2 . 1) (3 . 1) (4 . 1) (5 . 1))
+       (let ([a '()]
+             [c #f]
+             [x (make-parameter 1)]
+             [y (make-parameter 2)])
+         (parameterize ([x (call/cc (^k (set! c k) (x)))]
+                        [y (x)])
+           (set! a (cons (cons (x) (y)) a))
+           (if (< (length a) 5)
+             (c (+ (x) 1))
+             (reverse a)))))
+
+(test* "Restarting evaluation of value 1"
+       '((1 . 1) (11 . 1) (11 . 1) (11 . 1) (11 . 1))
+       (let ([a '()]
+             [c #f]
+             [x (make-parameter 1)]
+             [y (make-parameter 2)])
+         (parameterize ([x (call/cc (^k (set! c k) (x)))]
+                        [y (x)])
+           (set! a (cons (cons (x) (y)) a))
+           (x 10)
+           (if (< (length a) 5)
+             (c (+ (x) 1))
+             (reverse a)))))
+
+
 ;; Note: ext/threads has extra tests for parameter/thread cooperation.
 
 (test-end)

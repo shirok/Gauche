@@ -1,5 +1,8 @@
 2016-11-18  Shiro Kawai  <shiro@acm.org>
 
+	* libsrc/gauche/parameter.scm (parameterize): Fix a bug on handling
+	  value expressions restarted by call/cc.
+
 	* lib/gauche/cgen/precomp.scm (write-ext-module): Duct-tape fix of
 	  avoiding emitting identifiers into *.sci files---the change of
 	  making string interpolation hygiene can cause such situation.

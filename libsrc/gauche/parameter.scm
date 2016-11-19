@@ -125,6 +125,7 @@
               (set! V (%restore-parameter P V)))))]
     [(_ ((param val) ...) . body)
      (let ([P (list param ...)]
+           [V (list val ...)]
            [S '()]                      ;saved values
            [restarted #f])
        (dynamic-wind
@@ -132,7 +133,7 @@
                 (set! S (map (^[p v] (%restore-parameter p v)) P S))
                 (set! S (map (^[p] (p)) P))))
          (^[] (unless restarted
-                (set! S (map (^[p v] (p v)) P (list val ...))))
+                (set! S (map (^[p v] (p v)) P V)))
            . body)
          (^[] (set! restarted #t)
               (set! S (map (^[p v] (%restore-parameter p v)) P S)))))]
