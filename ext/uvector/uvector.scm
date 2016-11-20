@@ -417,7 +417,7 @@
    (klass::ScmClass* s::ScmString* start::int end::int) :static
    (with-input-string-pointers (s start end sp ep)
      (let* ([v (Scm_MakeUVector klass (- end start) NULL)]
-            [eltp::ScmInt32* (cast ScmInt32* (SCM_UVECTOR_ELEMENTS v))]
+            [eltp::int32_t* (cast int32_t* (SCM_UVECTOR_ELEMENTS v))]
             [i::int 0])
        (for [() (< sp ep) (post++ i)]
          (let* ([ch::ScmChar])
@@ -442,7 +442,7 @@
      (when (and (>= tstart 0) (< tstart tlen))
        (SCM_UVECTOR_CHECK_MUTABLE v)
        (with-input-string-pointers (s start end sp ep)
-         (let* ([buf::ScmInt32* (cast ScmInt32* (SCM_UVECTOR_ELEMENTS v))]
+         (let* ([buf::int32_t* (cast int32_t* (SCM_UVECTOR_ELEMENTS v))]
                 [i::int tstart])
            (for [() (and (< sp ep) (< i tlen)) (post++ i)]
              (let* ([ch::ScmChar])
@@ -470,7 +470,7 @@
    (let* ([len::int (SCM_UVECTOR_SIZE v)]
           [s (Scm_MakeOutputStringPort FALSE)])
      (SCM_CHECK_START_END start end len)
-     (let* ([eltp::ScmInt32* (cast ScmInt32* (SCM_UVECTOR_ELEMENTS v))])
+     (let* ([eltp::int32_t* (cast int32_t* (SCM_UVECTOR_ELEMENTS v))])
        (while (< start end)
          (let* ([ch::ScmChar (cast ScmChar (aref eltp (post++ start)))])
            (when (and (SCM_INTP term)

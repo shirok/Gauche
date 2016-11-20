@@ -70,7 +70,7 @@ SCM_CLASS_DECL(Scm_MersenneTwisterClass);
 
 extern void Scm_MTInitByUI(ScmMersenneTwister *mt, unsigned long s);
 extern void Scm_MTInitByArray(ScmMersenneTwister *mt,
-                              ScmInt32 init_key[],
+                              int32_t init_key[],
                               unsigned long key_length);
 extern void Scm_MTSetSeed(ScmMersenneTwister *mt, ScmObj seed);
 

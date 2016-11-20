@@ -198,8 +198,8 @@ SCM_EXTERN int    Scm_GetInteger8Clamp(ScmObj obj, int clamp, int *oor);
 SCM_EXTERN u_int  Scm_GetIntegerU8Clamp(ScmObj obj, int clamp, int *oor);
 SCM_EXTERN int    Scm_GetInteger16Clamp(ScmObj obj, int clamp, int *oor);
 SCM_EXTERN u_int  Scm_GetIntegerU16Clamp(ScmObj obj, int clamp, int *oor);
-SCM_EXTERN ScmInt32  Scm_GetInteger32Clamp(ScmObj obj, int clamp, int *oor);
-SCM_EXTERN ScmUInt32 Scm_GetIntegerU32Clamp(ScmObj obj, int clamp, int *oor);
+SCM_EXTERN int32_t  Scm_GetInteger32Clamp(ScmObj obj, int clamp, int *oor);
+SCM_EXTERN uint32_t Scm_GetIntegerU32Clamp(ScmObj obj, int clamp, int *oor);
 
 SCM_EXTERN u_long Scm_GetIntegerUMod(ScmObj obj);
 

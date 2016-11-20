@@ -88,7 +88,7 @@
    Scm_MTGenrandU32)
 
  (define-cproc mt-random-fill-u32vector! (mt::<mersenne-twister> v::<u32vector>)
-   (let* ([p::ScmUInt32* (SCM_U32VECTOR_ELEMENTS v)])
+   (let* ([p::uint32_t* (SCM_U32VECTOR_ELEMENTS v)])
      (dotimes [i (SCM_U32VECTOR_SIZE v)]
        (set! (* (post++ p)) (Scm_MTGenrandU32 mt)))
      (return (SCM_OBJ v))))

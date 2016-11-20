@@ -60,6 +60,7 @@
 #include <signal.h>
 #include <string.h>
 #include <errno.h>
+#include <stdint.h>
 #include <gauche/int64.h>
 #include <gauche/float.h>
 

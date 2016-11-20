@@ -94,7 +94,7 @@ void Scm_MTSetSeed(ScmMersenneTwister *mt, ScmObj seed)
         }
         Scm_MTInitByUI(mt, s);
     } else if (SCM_U32VECTORP(seed)) {
-        Scm_MTInitByArray(mt, (ScmInt32*)SCM_U32VECTOR_ELEMENTS(seed),
+        Scm_MTInitByArray(mt, (int32_t*)SCM_U32VECTOR_ELEMENTS(seed),
                           SCM_U32VECTOR_SIZE(seed));
     } else {
         Scm_TypeError("random seed", "an exact integer or u32vector", seed);
@@ -106,7 +106,7 @@ void Scm_MTSetSeed(ScmMersenneTwister *mt, ScmObj seed)
 /* init_key is the array for initializing keys */
 /* key_length is its length */
 void Scm_MTInitByArray(ScmMersenneTwister *mt,
-                       ScmInt32 init_key[],
+                       int32_t init_key[],
                        unsigned long key_length)
 {
     int i, j, k;

@@ -466,7 +466,7 @@
  "struct { char b; double s; }   double_align;"
  "struct { char b; int8_t s; }   int8_align;"
  "struct { char b; int16_t s; }  int16_align;"
- "struct { char b; ScmInt32 s; } int32_align;"
+ "struct { char b; int32_t s; }  int32_align;"
  "struct { char b; ScmInt64 s; } int64_align;"
 
  "#ifdef HAVE_LONG_LONG"
@@ -510,7 +510,7 @@
                 (SCM_MAKE_INT (sizeof (int16_t)))
                 (SCM_MAKE_INT (alignof int16_align)))
      (SCM_LIST3 'int32
-                (SCM_MAKE_INT (sizeof (ScmInt32)))
+                (SCM_MAKE_INT (sizeof (int32_t)))
                 (SCM_MAKE_INT (alignof int32_align)))
      (SCM_LIST3 'int64
                 (SCM_MAKE_INT (sizeof (ScmInt64)))
