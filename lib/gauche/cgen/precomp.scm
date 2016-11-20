@@ -630,16 +630,18 @@
     (define-macro (declare . f)
       ((with-module gauche.cgen.precomp handle-declare) f))
     ;; A special directive not to precompile; the given forms are
-    ;; emitted to *.sci file as they are.  It is useful if you delay
+    ;; not precompiled, but the code that evaluates the forms at
+    ;; the loading time is generated.  It is useful if you want to delay
     ;; macro-expansion until the load time (e.g. cond-expand).  The
     ;; forms are not evaluated at all in the compiling environment,
     ;; so they are not avaialble for macro expansion of the forms
     ;; to be precompiled.  (The case can be handled more generally by
     ;; 'eval-when' mechanism, but properly support eval-when needs more
     ;; work.)
+    ;; NB: When we quote the forms, identifier information in them will be
+    ;; lost, since it becomes a quoted literal.
     (define-macro (without-precompiling . forms)
-      ((with-module gauche.cgen.precomp handle-without-compiling) forms)
-      (undefined))
+      ((with-module gauche.cgen.precomp handle-without-compiling) forms))
     ))
 
 ;; Macros are "consumed" by the Gauche's compiler---that is, it is
@@ -701,7 +703,8 @@
   (cons '(with-module gauche define-constant) form))
 
 (define (handle-without-compiling forms)
-  (for-each write-ext-module forms))
+  ;; We eval the toplevel form at the initialization time.
+  `(begin ,@(map (^f `(eval ',f (current-module))) forms)))
 
 ;; Handle declaration.
 ;; At this moment, we only recognize (keep-private-macro name ...) form

@@ -1,3 +1,9 @@
+2016-11-19  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cgen/precomp.scm (without-precompiling): Instead of
+	  emitting to *.sci, we can embed the forms as literals in the *.c
+	  file, to be evaluated at load time.
+
 2016-11-18  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/gauche/parameter.scm (parameterize): Fix a bug on handling
