@@ -735,6 +735,17 @@ Gaucheの@code{gauche.generator}がsrfi-121のスーパーセットになって�
 (@ref{Generators}参照)
 
 
+srfi-127, srfi-127
+()
+
+Lazy sequences
+This is a thin adaptor to use Gauche's built-in lazy sequences
+with srfi-127 API.
+
+遅延シーケンス
+これはGauche組み込みの遅延シーケンスをsrfi-127のAPIで使うための薄いアダプタです。
+
+
 srfi-128
 ()
 

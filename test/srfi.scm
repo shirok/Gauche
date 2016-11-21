@@ -1794,10 +1794,17 @@
                (g)
                (generator->vector! v 3 g))))
 
-(test-end)
+;;-----------------------------------------------------------------------
+(test-section "srfi-127")
+(use srfi-127)
+(test-module 'srfi-127)
+
+(chibi-test
+ (include "include/lseqs-test.scm"))
 
 ;;-----------------------------------------------------------------------
 (test-section "srfi-128")
 (use srfi-128)
 (test-module 'srfi-128)
 
+(test-end)

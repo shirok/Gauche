@@ -1,3 +1,7 @@
+2016-11-21  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi-127.scm: Added srfi-127 support.
+
 2016-11-20  Shiro Kawai  <shiro@acm.org>
 
 	* various files: Purge Scm[U]Int32.  We are now in C99 and we can
