@@ -740,10 +740,11 @@ srfi-127, srfi-127
 
 Lazy sequences
 This is a thin adaptor to use Gauche's built-in lazy sequences
-with srfi-127 API.
+with srfi-127 API (@pxref{Lazy sequence (srfi)}).
 
 遅延シーケンス
 これはGauche組み込みの遅延シーケンスをsrfi-127のAPIで使うための薄いアダプタです。
+@ref{Lazy sequence (srfi)}参照。
 
 
 srfi-128

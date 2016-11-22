@@ -47,6 +47,7 @@ srfi N is supporeted by Gauche.)
 * Comparators::                 srfi-114
 * Queues based on lists::       srfi-117
 * Simple adjustable-size strings::  srfi-118
+* Lazy sequence (srfi)::        srfi-127
 * Vector library::              srfi-133
 @end menu
 
@@ -92,8 +93,8 @@ split-at split-at! iota
 @end deftp
 
 @menu
-* SRFI-1 List utilities::       
-* SRFI-1 Set operations::       
+* SRFI-1 List utilities::
+* SRFI-1 Set operations::
 @end menu
 
 @node SRFI-1 List utilities, SRFI-1 Set operations, List library, List library
@@ -1009,20 +1010,20 @@ Gaucheでは、一貫性のために``srfi-13''と名付けています。
 @end deftp
 
 @menu
-* SRFI-13 General conventions::  
-* SRFI-13 String predicates::   
-* SRFI-13 String Constructors::  
-* SRFI-13 String Selection::    
-* SRFI-13 String Comparison::   
-* SRFI-13 String Prefixes & Suffixes::  
-* SRFI-13 String searching::    
-* SRFI-13 String case mapping::  
-* SRFI-13 String reverse & append::  
-* SRFI-13 String mapping::      
-* SRFI-13 String rotation::     
-* SRFI-13 other string operations::  
-* SRFI-13 String filtering::    
-* SRFI-13 Low-level string procedures::  
+* SRFI-13 General conventions::
+* SRFI-13 String predicates::
+* SRFI-13 String Constructors::
+* SRFI-13 String Selection::
+* SRFI-13 String Comparison::
+* SRFI-13 String Prefixes & Suffixes::
+* SRFI-13 String searching::
+* SRFI-13 String case mapping::
+* SRFI-13 String reverse & append::
+* SRFI-13 String mapping::
+* SRFI-13 String rotation::
+* SRFI-13 other string operations::
+* SRFI-13 String filtering::
+* SRFI-13 Low-level string procedures::
 @end menu
 
 @node SRFI-13 General conventions, SRFI-13 String predicates, String library, String library
@@ -2076,12 +2077,12 @@ Gaucheでは@code{<char-set>}クラスは@code{<collection>}を継承し、
 @end deftp
 
 @menu
-* SRFI-14 Character-set constructors::  
-* SRFI-14 Character-set comparison::  
-* SRFI-14 Character-set iteration::  
-* SRFI-14 Character-set query::  
-* SRFI-14 Character-set algebra::  
-* SRFI-14 Predefined character-set::  
+* SRFI-14 Character-set constructors::
+* SRFI-14 Character-set comparison::
+* SRFI-14 Character-set iteration::
+* SRFI-14 Character-set query::
+* SRFI-14 Character-set algebra::
+* SRFI-14 Predefined character-set::
 @end menu
 
 @node SRFI-14 Character-set constructors, SRFI-14 Character-set comparison, Character-set library, Character-set library
@@ -2462,11 +2463,11 @@ Gaucheでは、timeオブジェクトは@code{<time>}クラスとして組み込
 @end deftp
 
 @menu
-* SRFI-19 Time types::          
-* SRFI-19 Time queries::        
-* SRFI-19 Time procedures::     
-* SRFI-19 Date::                
-* SRFI-19 Date reader and writer::  
+* SRFI-19 Time types::
+* SRFI-19 Time queries::
+* SRFI-19 Time procedures::
+* SRFI-19 Date::
+* SRFI-19 Date reader and writer::
 @end menu
 
 @node SRFI-19 Time types, SRFI-19 Time queries, Time data types and procedures, Time data types and procedures
@@ -7014,7 +7015,7 @@ The results are discarded.
 
 
 @c ----------------------------------------------------------------------
-@node Simple adjustable-size strings, Vector library, Queues based on lists, Library modules - SRFIs
+@node Simple adjustable-size strings, Lazy sequence (srfi), Queues based on lists, Library modules - SRFIs
 @section @code{srfi-118} - Simple adjustable-size strings
 @c NODE 簡単な可変長文字列, @code{srfi-118} - 簡単な可変長文字列
 
@@ -7070,7 +7071,141 @@ rather than @code{string-replace}.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Vector library,  , Simple adjustable-size strings, Library modules - SRFIs
+@node Lazy sequence (srfi), Vector library, Simple adjustable-size strings, Library modules - SRFIs
+@section @code{srfi-127} - Lazy sequence (srfi)
+
+@deftp {Module} srfi-127
+@mdindex srfi-127
+This srfi provides lightweight lazy sequence (lseq), conceptually represented
+by a pair of element and generator.  When the rest of sequence is
+taken, a generator is evaluated and yields another pair of element and
+generator, and so on.  The overhead is one allocation of a pair per
+element.  It is lighter than streams (@pxref{Stream library}),
+which requires to create a thunk for every element.
+
+Gauche already has built-in support for such lazy sequence;
+we go futher to make it behave like ordinary pairs---that is, if you
+take cdr of a lazy pair, we automatically forces the generator so
+it is indistinguishable from an ordinary pair, modulo side effects.
+@xref{Lazy sequences}.
+
+Srfi-127 is a bit ambiguous whether its lazy sequence @emph{must} be
+implemented with a pair whose cdr is a generator procedure, or
+it refers to the pair+generator as a conceptual model.  Considering
+of the purpose of lazy sequence, the concrete implementation shouldn't
+matter; that is, the user of lazy sequence should not count on the fact
+that the lseq is an improper list terminated by a generator procedure.
+Instead, an lseq should be treated as an opaque object that can be
+passed to srfi-127 procedures.
+
+With that premise, we implement srfi-127 as just a thin wrapper of
+Gauche's native lazy sequence.  It is upper-compatible to srfi-127,
+except that the code that assumes the internal structure could break.
+Notably, the constructor @code{generator->lseq} is the same as
+Gauche's built-in, which returns Gauche's lseq, undistinguishable
+to the oridnary list.
+
+@example
+(procedure? (generator->lseq (generator 1))) 
+  ;; => #t, in srfi-127 reference implementation,
+  ;;    #f, in our implementation.
+@end example
+@end deftp
+
+@defun lseq? x
+[SRFI-127]
+Returns true iff @var{x} is an object that can be passed to
+lseq procedures.  In Gauche, it returns @code{#t} if @var{x} is
+a pair or an empty list, since a lazy pair is indistinguishable
+from a pair.
+@end defun
+
+@defun lseq=? elt=? lseq1 lseq2
+[SRFI-127]
+Compare two lseqs element-wise using @code{elt=?} and returns @code{#t}
+iff two lseqs are equal. 
+@end defun
+
+@defun lseq-car lseq
+@defunx lseq-first lseq
+[SRFI-127]
+Returns the first item of @var{lseq}.  If @var{lseq} is empty, an error
+is raised.  In Gauche, these are just aliases of @code{car}.
+@end defun
+
+@defun lseq-cdr lseq
+@defunx lseq-rest lseq
+[SRFI-127]
+Returns the rest of @var{lseq}.  If @var{lseq} is empty, an error
+is raised.  In Gauche, these are just aliases of @code{cdr}.
+@end defun
+
+@defun lseq-take lseq k
+@defunx lseq-drop lseq k
+[SRFI-127]
+@end defun
+
+@defun lseq-realize lseq
+[SRFI-127]
+@end defun
+
+@defun lseq->generator lseq
+[SRFI-127]
+@end defun
+
+@defun lseq-length lseq
+[SRFI-127]
+@end defun
+
+@defun lseq-append lseq lseq2 @dots{}
+[SRFI-127]
+@end defun
+
+@defun lseq-zip lseq lseq2 @dots{}
+[SRFI-127]
+@end defun
+
+@defun lseq-map proc lseq lseq2 @dots{}
+[SRFI-127]
+@end defun
+
+@defun lseq-for-each proc lseq lseq2 @dots{}
+[SRFI-127]
+@end defun
+
+@defun lseq-filter pred lseq
+@defunx lseq-remove pred lseq
+[SRFI-127]
+@end defun
+
+@defun lseq-find pred lseq
+@defunx lseq-find-tail pred lseq
+[SRFI-127]
+@end defun
+
+@defun lseq-any pred lseq
+@defunx lseq-every pred lseq
+[SRFI-127]
+@end defun
+
+@defun lseq-index pred lseq
+[SRFI-127]
+@end defun
+
+@defun lseq-take-while pred lseq
+@defunx lseq-drop-while pred lseq
+[SRFI-127]
+@end defun
+
+@defun lseq-member pred lseq :optional eq
+@defunx lseq-memq pred lseq
+@defunx lseq-memv pred lseq
+[SRFI-127]
+@end defun
+
+
+@c ----------------------------------------------------------------------
+@node Vector library,  , Lazy sequence (srfi), Library modules - SRFIs
 @section @code{srfi-133} - Vector library
 @c NODE ベクタライブラリ, @code{srfi-133} - ベクタライブラリ
 
