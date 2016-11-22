@@ -69,11 +69,7 @@
 (define (lseq? x) (or (null? x) (pair? x)))
 
 (define (lseq=? elt=? lseq1 lseq2)
-  (or (eq? lseq1 lseq2)
-      (and (pair? lseq1)
-           (pair? lseq2)
-           (elt=? (car lseq1) (car lseq2))
-           (lseq=? elt=? (cdr lseq1) (cdr lseq2)))))
+  (list= elt=? lseq1 lseq2))
 
 (define lseq-car car)
 (define lseq-first car)
@@ -82,9 +78,14 @@
 (define lseq-ref list-ref)
 
 (define (lseq-take lseq k)
-  (rlet1 lis (ltake lseq k)
-    (when (< (length lis) k)
-      (errorf "lseq ran out before taking ~s elements" k))))
+  (if (and (null? lseq) (= k 0))
+    '()                                 ;shortcut
+    (generator->lseq
+     (^[] (if (<= k 0)
+            (eof-object)
+            (rlet1 e (car lseq)
+              (dec! k)
+              (set! lseq (cdr lseq))))))))
 (define lseq-drop drop)
 (define (lseq-realize lseq) (and (length lseq) lseq))
 
