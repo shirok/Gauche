@@ -7078,7 +7078,7 @@ rather than @code{string-replace}.
 @mdindex srfi-127
 This srfi provides lightweight lazy sequence (lseq), conceptually represented
 by a pair of element and generator.  When the rest of sequence is
-taken, a generator is evaluated and yields another pair of element and
+taken, the generator is evaluated and yields another pair of element and
 generator, and so on.  The overhead is one allocation of a pair per
 element.  It is lighter than streams (@pxref{Stream library}),
 which requires to create a thunk for every element.

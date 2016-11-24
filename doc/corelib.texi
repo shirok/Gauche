@@ -13423,6 +13423,25 @@ Gaucheの遅延シーケンスは、常に@emph{ひとつ余分に}評価しま�
 @end enumerate
 
 @c EN
+Note: Srfi-127 provides a portable alternative of lazy sequence
+(@pxref{Lazy sequence (srfi)}).  It uses
+dedicated APIs (e.g. @code{lseq-cdr}) to operate on lazy sequences
+so that portable implementation is possible.  In Gauche, we just
+use our built-in lazy sequence as srfi-127 lazy sequence; if you
+want your code to be portable, consider using srfi-127, but be careful
+not to mix lazy sequences and ordinary lists; Gauche won't complain,
+but other Scheme implementation may choke on it.
+@c JP
+註: ポータブルな遅延シーケンスはsrfi-127でも提供されています
+(@ref{Lazy sequence (srfi)}参照)。srfi-127では、遅延シーケンスを扱う
+専用のAPI (@code{lseq-cdr}等) を提供することで、ポータブルな実装を可能にしています。
+Gaucheではsrfi-127の遅延シーケンスはGaucheの組み込み遅延シーケンスそのものです。
+移植性が重要であれば、srfi-127を使うのが良いでしょう。但し、遅延シーケンスと
+通常のリストを混ぜないように気をつけてください。Gaucheは問題なく処理しますが、
+他のScheme処理系は喉を詰まらせてしまうかもしれません。
+@c COMMON
+
+@c EN
 @subsubheading Primitives
 @c JP
 @subsubheading プリミティブ
@@ -13467,6 +13486,14 @@ way to build lazy sequences.
 @c JP
 内部的には、Gaucheの遅延シーケンスはジェネレータを使うように最適化
 されています。遅延シーケンスを作る最も効率の良い方法はこの手続きを使うことです。
+@c COMMON
+
+@c EN
+Note: Srfi-127 also has @code{generator->lseq}, which is exactly
+the same as this in Gauche.
+@c JP
+註: srfi-127も@code{generator->lseq}を定義していますが、Gaucheではそれは
+この手続きと同じものです。
 @c COMMON
 @end defun
 
