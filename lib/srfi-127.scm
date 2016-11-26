@@ -94,7 +94,7 @@
 (define lseq-length length)
 (define lseq-append lappend)
 
-(define lseq-zip zip)
+(define (lseq-zip lseq . lseqs) (apply lmap list lseq lseqs))
 (define lseq-map lmap)
 (define lseq-for-each for-each)
 
