@@ -7143,64 +7143,92 @@ is raised.  In Gauche, these are just aliases of @code{cdr}.
 @defun lseq-take lseq k
 @defunx lseq-drop lseq k
 [SRFI-127]
+Returns an lseq that has first @code{k} items,
+or an lseq that skips first @code{k} items, respectively.
+
+An error is signaled when the resulting lseq of @code{lseq-take}
+reached at the end of sequence before @code{k} items are taken.
+It is different from Gauche's @code{ltake}, which simply returns @code{()}
+in such case.
+
+On the other hand,  @code{lseq-drop} is the same as @code{drop}
+in Gauche; it just drops @var{k} items from the head of input
+sequence, regardless of whether it is an ordinary list or lseq.
 @end defun
 
 @defun lseq-realize lseq
 [SRFI-127]
+Realizes all the elements in @var{lseq}, resulting an ordinary list.
 @end defun
 
 @defun lseq->generator lseq
 [SRFI-127]
+Creates a generator from @var{lseq}.  In Gauche, this is same
+as @code{list->generator}.
 @end defun
 
 @defun lseq-length lseq
 [SRFI-127]
+Returns the length of @var{lseq}.  All the elements in @var{lseq} are
+realized as the side effect.  In Gauche, this is same as @code{length}.
 @end defun
 
 @defun lseq-append lseq lseq2 @dots{}
 [SRFI-127]
+Append one or more @var{lseq}s lazily.  This is the same as @code{lappend}
+in Gauche.
 @end defun
 
 @defun lseq-zip lseq lseq2 @dots{}
 [SRFI-127]
+Returns a lazy sequence in which the first element is a list of
+first elements of @code{lseq}s, and so on.
 @end defun
 
 @defun lseq-map proc lseq lseq2 @dots{}
 [SRFI-127]
+Lazy map.  The same as Gauche's @code{lmap}.  Returns a lazy sequence.
 @end defun
 
 @defun lseq-for-each proc lseq lseq2 @dots{}
 [SRFI-127]
+This one consumes all the input lseqs, applying @var{proc} on
+each corresponding elements of the input sequences for the side
+effects.  In Gauche, it is the same as @code{for-each}, for
+Gauche doesn't distinguish lseqs and ordinary lists.
 @end defun
 
 @defun lseq-filter pred lseq
 @defunx lseq-remove pred lseq
 [SRFI-127]
-@end defun
-
-@defun lseq-find pred lseq
-@defunx lseq-find-tail pred lseq
-[SRFI-127]
-@end defun
-
-@defun lseq-any pred lseq
-@defunx lseq-every pred lseq
-[SRFI-127]
-@end defun
-
-@defun lseq-index pred lseq
-[SRFI-127]
+Returns an lseq that contains elements from the input 
+@var{lseq} that satisfy or don't satisfy @var{pred}, respectively.
+@code{Lseq-filter} is the same as Gauche's @code{lfilter}.
 @end defun
 
 @defun lseq-take-while pred lseq
 @defunx lseq-drop-while pred lseq
 [SRFI-127]
+These are the same as Gauche's @code{ltake-while} and @code{drop-while}
+(the latter doesn't have @code{l}-prefix, since it just drops items
+from the head of the input sequence, regardless of whether it is
+an ordinary list or an lseq.
 @end defun
 
-@defun lseq-member pred lseq :optional eq
+@defun lseq-find pred lseq
+@defunx lseq-find-tail pred lseq
+@defunx lseq-any pred lseq
+@defunx lseq-every pred lseq
+@defunx lseq-index pred lseq
+@defunx lseq-member pred lseq :optional eq
 @defunx lseq-memq pred lseq
 @defunx lseq-memv pred lseq
 [SRFI-127]
+In Gauche, these are the same as the corresponding list functions,
+@code{find}, @code{find-tail}, @code{any}, @code{every},
+@code{list-index}, @code{member}, @code{memq} and @code{memv}, respectively,
+for all of those functions won't look at input more than necessary
+so @var{lseq}s work just as well as ordinary lists.
 @end defun
 
 
