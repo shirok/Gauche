@@ -464,11 +464,15 @@
   (define (type-symbol-type s)
     (string->symbol (string-drop (keyword->string s) 1)))
 
+  (define (gen-ret-type ret-type)
+    (match ret-type
+      [(x ...) (intersperse " " (map x->string x))]
+      [x (x->string x)]))
   (define (record-static name quals args ret-type)
     (cise-push-static-decl!
      `(,(source-info form env)
        ,@(gen-qualifiers quals) " "
-       ,ret-type" ",(cise-render-identifier name)
+       ,(gen-ret-type ret-type)" ",(cise-render-identifier name)
        "(",(gen-args args env)");")))
 
   (define (check-quals name quals args ret-type body)
