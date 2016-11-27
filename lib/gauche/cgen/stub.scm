@@ -327,7 +327,9 @@
   (eval `(define-cise-expr ,@args) (current-module)))
 
 (define-form-parser define-cfn args
-  (cgen-body (cise-render-to-string `(define-cfn ,@args) 'toplevel)))
+  (parameterize ([cise-ambient (cise-ambient-copy (cise-ambient) '())])
+    (cgen-body (cise-render-to-string `(define-cfn ,@args) 'toplevel))
+    (cgen-decl (cise-ambient-decl-strings (cise-ambient)))))
 
 ;; extra check of valid clauses
 (define (check-clauses directive name clauses valid-keys)
