@@ -1,3 +1,7 @@
+2016-11-29  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/hashutil.scm (hash-table-find): Added.
+
 2016-11-21  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi-127.scm: Added srfi-127 support.

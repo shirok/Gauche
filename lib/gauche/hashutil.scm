@@ -33,6 +33,7 @@
 
 (define-module gauche.hashutil
   (export hash-table hash-table-for-each hash-table-map hash-table-fold
+          hash-table-find
           boolean-hash char-hash char-ci-hash string-hash string-ci-hash
           symbol-hash number-hash default-hash
           hash-bound hash-salt))
@@ -70,6 +71,16 @@
         (if (eq? k eof)
           r
           (loop (kons k v r)))))))
+
+(define (hash-table-find hash pred :optional (failure (^[] #f)))
+  (check-arg hash-table? hash)
+  (let ([eof (cons #f #f)]              ;marker
+        [i (%hash-table-iter hash)])
+    (let loop ()
+      (receive [k v] (i eof)
+        (cond [(eq? k eof) (failure)]
+              [(pred k v)]
+              [else (loop)])))))
 
 ;; We delegate most hash calculation to the built-in default-hash.
 ;; These type-specific hash functions are mostly

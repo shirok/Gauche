@@ -184,7 +184,7 @@
           sys-stat->atime sys-stat->mtime sys-stat->ctime
           sys-stat->type sys-tm->alist)
 
-(autoload gauche.hashutil hash-table hash-table-fold
+(autoload gauche.hashutil hash-table hash-table-fold hash-table-find
                           hash-table-for-each hash-table-map
                           boolean-hash char-hash char-ci-hash
                           string-hash string-ci-hash

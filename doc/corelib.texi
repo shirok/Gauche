@@ -10993,6 +10993,31 @@ from @code{hash-table-fold}.
 @c COMMON
 @end defun
 
+@defun hash-table-find ht pred :optional failure
+@c EN
+Apply @var{pred} with each key and value in the hash table @var{ht}.
+Once it returns a true value, the value is immediately returned.
+If no key-value satisfies @var{pred}, a thunk @var{failure} is
+invoked and its result is returned.  If @var{failure} is
+omitted, @code{(lambda () #f)} is assumed.
+@c JP
+@var{pred}をハッシュテーブル@var{ht}の各エントリのキーと値を引数にして
+呼び出し、それが真の値を返したら直ちにそれを戻り値とします。
+@var{pred}を満たすキーと値が無ければ、無引数の手続き@var{failure}が呼び出され、
+その値が戻り値となります。@var{failure}が省略された場合は
+@code{(lambda () #f)}が使われます。
+@c COMMON
+
+@example
+@c EN
+;; Find if hash tables ha and hb has a common key.
+@c JP
+;; ハッシュテーブルhaとhbに共通のキーがあるかどうか調べる
+@c COMMON
+(hash-table-find ha (^[k v] (hash-table-exists? hb k)))
+@end example
+@end defun
+
 @defun hash-table-keys ht
 @defunx hash-table-values ht
 @c EN
