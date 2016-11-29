@@ -26,11 +26,11 @@ foo();
 #if ((defined FOO))||((defined BAR))
 init_foo_bar();
 #endif /* ((defined FOO))||((defined BAR)) */
-#if ((>= BAR_VERSION 3))&&((== FOO_VERSION 2))
 #if ((defined FOO))||((defined BAR))
+#if ((>= BAR_VERSION 3))&&((== FOO_VERSION 2))
 some_trick();
-#endif /* ((defined FOO))||((defined BAR)) */
 #endif /* ((>= BAR_VERSION 3))&&((== FOO_VERSION 2)) */
+#endif /* ((defined FOO))||((defined BAR)) */
 }
 "
        (parameterize ([cgen-current-unit (make <cgen-unit> :name "tmp.o")])
