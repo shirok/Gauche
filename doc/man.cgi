@@ -64,7 +64,7 @@
         )))
 
 (define (search-from-toc lang name)
-  (let1 picker #/<A NAME=\"toc-[^\"]*\" HREF=\"([^\"]*)\">\d+\.[.\d]*\s+([^<]*)<\/A>/i
+  (let1 picker #/<A NAME=\"toc-[^\"]*\" HREF=\"([^\"]*)\">\d+\.[.\d]*\s+(.*?)<\/A>/i
     (call-with-input-file (file-path lang "index.html")
       (^p (any (^l (and-let1 m (picker l)
                      (let1 sectitle (regexp-replace-all #/<\/?CODE>/i (m 2) "")
