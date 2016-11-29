@@ -670,7 +670,7 @@
 ;; because each instance of an element in a bag will be treated identically
 ;; anyway; we insert them all at once with sob-increment!.
 
-(define (sob-map proc comparator sob)
+(define (sob-map comparator proc sob)
   (let ((result (make-sob comparator (sob-multi? sob))))
     (hash-table-for-each
       (lambda (key value) (sob-increment! result (proc key) value))

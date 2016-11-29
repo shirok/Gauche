@@ -45,7 +45,7 @@
   (test 2 (set-size nums))
   (set-delete! nums 1)
   (test 2 (set-size nums))
-  (set! nums2 (set-map (lambda (x) (* 10 x)) number-comparator nums))
+  (set! nums2 (set-map number-comparator (lambda (x) (* 10 x)) nums))
   ;; nums2 is now {30, 40}
   (test-assert (set-contains? nums2 30))
   (test-assert (not (set-contains? nums2 3)))
@@ -290,7 +290,7 @@
   (test 3 (bag-size nums))
   (bag-delete! nums 1)
   (test 3 (bag-size nums))
-  (set! nums2 (bag-map (lambda (x) (* 10 x)) number-comparator nums))
+  (set! nums2 (bag-map number-comparator (lambda (x) (* 10 x)) nums))
   ;; nums2 is now {20, 30, 40}
   (test-assert (bag-contains? nums2 30))
   (test-assert (not (bag-contains? nums2 3)))

@@ -4,6 +4,8 @@
 	* lib/srfi-113.scm: Rewrite early break pattern with hash-table-find
 	  to avoid using call/cc.  This improves, for example, performance
 	  of set-disjoint? 1.5x-2.0x.
+	  Also fix the reference implementation bug of set|bag-map
+	  https://github.com/scheme-requests-for-implementation/srfi-113/pull/9
 
 2016-11-21  Shiro Kawai  <shiro@acm.org>
 
