@@ -139,7 +139,8 @@
 ;; comparator argument for the constructor.
 
 ;; The following code is mostly intact from the reference implementation
-;; (I commented out some irrelevant definitions.)
+;; I commented out some irrelevant definitions, and rewrote early break
+;; pattern (by call/cc) with hash-table-find.
 
 ;;; Record definition and core typing/checking procedures
 
@@ -284,12 +285,7 @@
 (define (sob-half-disjoint? a b)
   (let ((ha (sob-hash-table a))
         (hb (sob-hash-table b)))
-    (call/cc
-      (lambda (return)
-        (hash-table-for-each
-          (lambda (key val) (if (hash-table-contains? hb key) (return #f)))
-          ha)
-      #t))))
+    (not (hash-table-find ha (^[k _] (hash-table-contains? hb k))))))
 
 (define (set-disjoint? a b)
   (check-set a)
@@ -314,12 +310,9 @@
 
 (define (sob-member sob element default)
   (define (same? a b) (=? (sob-comparator sob) a b))
-  (call/cc
-    (lambda (return)
-      (hash-table-for-each
-        (lambda (key val) (if (same? key element) (return key)))
-        (sob-hash-table sob))
-      default)))
+  (let1 r (hash-table-find (sob-hash-table sob)
+                           (^[k v] (and (same? k element) (list k))))
+    (if (pair? r) (car r) default)))
 
 (define (set-member set element default)
   (check-set set)
@@ -449,16 +442,14 @@
          (= (comparator-equality-predicate comparator))
          (ht (sob-hash-table sob)))
     (comparator-check-type comparator element)
-    (call/cc
-      (lambda (return)
-        (hash-table-for-each
-          (lambda (key value)
-            (when (= key element)
-              (hash-table-delete! ht key)
-              (hash-table-set! ht element value)
-              (return sob)))
-          ht)
-        sob))))
+    (or (hash-table-find ht
+                         (^[k v]
+                           (and (= k element)
+                                (begin 
+                                  (hash-table-delete! ht k)
+                                  (hash-table-set! ht element v)
+                                  sob))))
+        sob)))
 
 (define (set-replace! set element)
   (check-set set)
@@ -591,13 +582,9 @@
 ;; call the failure thunk.
 
 (define (sob-find pred sob failure)
-  (call/cc
-    (lambda (return)
-      (hash-table-for-each
-        (lambda (key value)
-          (if (pred key) (return key)))
-        (sob-hash-table sob))
-    (failure))))
+  (let1 r (hash-table-find (sob-hash-table sob)
+                           (^[k _] (and (pred k) (list k))))
+    (if (pair? r) (car r) (failure))))
 
 (define (set-find pred set failure)
   (check-set set)
@@ -628,12 +615,7 @@
 ;; early (with call/cc) if a success is found.
 
 (define (sob-any? pred sob)
-  (call/cc
-    (lambda (return)
-      (hash-table-for-each
-        (lambda (elem value) (if (pred elem) (return #t)))
-        (sob-hash-table sob))
-      #f)))
+  (hash-table-find (sob-hash-table sob) (^[k _] (boolean (pred k)))))
 
 (define (set-any? pred set)
   (check-set set)
@@ -646,12 +628,7 @@
 ;; Analogous to set-any?.  Breaks out early if a failure is found.
 
 (define (sob-every? pred sob)
-  (call/cc
-    (lambda (return)
-      (hash-table-for-each
-        (lambda (elem value) (if (not (pred elem)) (return #f)))
-        (sob-hash-table sob))
-      #t)))
+  (not (hash-table-find (sob-hash-table sob) (^[k _] (not (pred k))))))
 
 (define (set-every? pred set)
   (check-set set)
@@ -898,18 +875,11 @@
 ;; again they can't be equal.
 
 (define (dyadic-sob=? sob1 sob2)
-  (call/cc
-    (lambda (return)
-      (let ((ht1 (sob-hash-table sob1))
-            (ht2 (sob-hash-table sob2)))
-        (if (not (= (hash-table-size ht1) (hash-table-size ht2)))
-          (return #f))
-        (hash-table-for-each
-          (lambda (key value)
-            (if (not (= value (hash-table-ref/default ht2 key 0)))
-              (return #f)))
-          ht1))
-     #t)))
+  (let ((ht1 (sob-hash-table sob1))
+        (ht2 (sob-hash-table sob2)))
+    (and (= (hash-table-size ht1) (hash-table-size ht2))
+         (not ($ hash-table-find ht1
+                 (^[k v] (not (= v (hash-table-ref/default ht2 k 0)))))))))
 
 (define sob<=?
   (case-lambda
@@ -932,18 +902,11 @@
 ;; that we've traversed all the elements in either sob.
 
 (define (dyadic-sob<=? sob1 sob2)
-  (call/cc
-    (lambda (return)
-      (let ((ht1 (sob-hash-table sob1))
-            (ht2 (sob-hash-table sob2)))
-        (if (not (<= (hash-table-size ht1) (hash-table-size ht2)))
-          (return #f))
-        (hash-table-for-each
-          (lambda (key value)
-            (if (not (<= value (hash-table-ref/default ht2 key 0)))
-              (return #f)))
-          ht1))
-      #t)))
+  (let ((ht1 (sob-hash-table sob1))
+        (ht2 (sob-hash-table sob2)))
+    (and (<= (hash-table-size ht1) (hash-table-size ht2))
+         (not ($ hash-table-find ht1
+                 (^[k v] (not (<= v (hash-table-ref/default ht2 k 0)))))))))
 
 (define sob>?
   (case-lambda

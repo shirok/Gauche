@@ -1,6 +1,9 @@
 2016-11-29  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/hashutil.scm (hash-table-find): Added.
+	* lib/srfi-113.scm: Rewrite early break pattern with hash-table-find
+	  to avoid using call/cc.  This improves, for example, performance
+	  of set-disjoint? 1.5x-2.0x.
 
 2016-11-21  Shiro Kawai  <shiro@acm.org>
 
