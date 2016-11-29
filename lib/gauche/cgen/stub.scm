@@ -706,8 +706,7 @@
     (errorf "~a form is not in define-cproc" who)))
 
 (define (%expand-funcall-apply applyproc tmpvar args)
-  (define (suffix n) ; NB: symbol-append is not in 0.9.4 yet
-    (string->symbol #"~|applyproc|~|n|"))
+  (define (suffix n) (string->symbol #"~|applyproc|~|n|"))
   (match args
     [()           `(,(suffix 0) ,tmpvar)]
     [(a)          `(,(suffix 1) ,tmpvar ,a)]
