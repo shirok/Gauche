@@ -120,6 +120,14 @@
 (define-method object-equal? ((a <set>) (b <set>)) (sob=? a b))
 (define-method object-equal? ((a <bag>) (b <bag>)) (sob=? a b))
 
+(define-method write-object ((obj <set>) out)
+  (format out "#<set ~a ~aitems>" (debug-label obj)
+          (hash-table-num-entries (sob-hash-table obj))))
+(define-method write-object ((obj <bag>) out)
+  (format out "#<bag ~a ~akinds, ~aitems>" (debug-label obj)
+          (hash-table-num-entries (sob-hash-table obj))
+          (apply + (hash-table-values (sob-hash-table obj)))))
+
 (define-method call-with-iterator ((obj <sob>) proc :allow-other-keys)
   ($ call-with-iterator (sob-hash-table obj)
      (^[end? next]
