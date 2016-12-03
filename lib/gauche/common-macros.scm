@@ -476,24 +476,35 @@
 ;; deal with "ignore-errors" idiom, e.g. (guard (e [else #f]) body).  The exit
 ;; condition shouldn't be stopped in such a way.
 ;;
-;; TODO: Currently definition doesn't work when unwind-protect is used
+;; TODO: Current definition doesn't work when unwind-protect is used
 ;; within a thread that is terminated; thread termination isn't a condition
 ;; either.
 (define-syntax unwind-protect
   (syntax-rules ()
     [(unwind-protect body handler ...)
      (let ([x (exit-handler)]
-           [h (lambda () handler ...)])
+           [h (lambda () handler ...)]
+           [done #f])
        (with-error-handler
-           (lambda (e) (exit-handler x) (h) (raise e))
+           (lambda (e)
+             (exit-handler x)
+             (unless done
+               (set! done #t)
+               (h))
+             (raise e))
          (lambda ()
            (receive r
                (dynamic-wind
                  (lambda ()
-                   (exit-handler (lambda (code fmt args) (h) (x code fmt args))))
+                   (when done
+                     (error "Attempt to reenter obsoleted dynamic environment"))
+                   (exit-handler (lambda (code fmt args)
+                                   (set! done #t)
+                                   (h)
+                                   (x code fmt args))))
                  (lambda () body)
-                 (lambda ()
-                   (exit-handler x)))
+                 (lambda () (exit-handler x)))
+             (set! done #t)
              (h)
              (apply values r)))
          :rewind-before #t))]

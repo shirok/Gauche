@@ -291,6 +291,18 @@
                 (push! aaa 'e)))
              (when k (let ((k0 k)) (set! k #f) (k0 0))))
            aaa))
+
+  (test* "unwind-protect (reenter)" (test-error #f #/Attempt to reenter/)
+         (begin
+           (set! aaa '())
+           (let ((k #f))
+             (unwind-protect
+                 (foo (lambda ()
+                        (let/cc k2
+                          (set! k k2) (push! aaa 'z))))
+               (push! aaa 'e))
+             (when k (let ((k0 k)) (set! k #f) (k0 0))))
+           aaa))
   )
 
 ;;--------------------------------------------------------------------

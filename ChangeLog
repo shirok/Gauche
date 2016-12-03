@@ -1,5 +1,9 @@
 2016-12-02  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/common-macros.scm (unwind-protect): Check if the control
+	  tries to enter the body again after the cleanup is done, and if so,
+	  raises an error. 
+
 	* lib/gauche/test.scm (test-error): Add a feature to check the message
 	  of the thrown error.
 
