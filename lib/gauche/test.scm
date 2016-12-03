@@ -146,7 +146,12 @@
               (let ([c (slot-ref expected'class)]
                     [e (slot-ref result'condition)])
                 (or (not c)
-                    (condition-has-type? e c))))]
+                    (condition-has-type? e c)))
+              (let ([m (slot-ref expected'message)]
+                    [em (slot-ref result'message)])
+                (cond [(string? m) (and (string? em) (equal? m em))]
+                      [(regexp? m) (and (string? em) (m em))]
+                      [else #t])))]
         [(is-a? expected <test-one-of>)
          (any (lambda (choice) (test-check choice result fallback))
               (slot-ref expected 'choices))]

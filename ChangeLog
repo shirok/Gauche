@@ -1,3 +1,8 @@
+2016-12-02  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/test.scm (test-error): Add a feature to check the message
+	  of the thrown error.
+
 2016-11-29  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/hashutil.scm (hash-table-find): Added.

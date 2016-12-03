@@ -15952,7 +15952,7 @@ don't match any of @var{choice}s.
 @subheading 異常系をテストする
 @c COMMON
 
-@defun test-error :optional (condition-type <error>)
+@defun test-error :optional (condition-type <error>) (message #f)
 @c EN
 Returns a new @code{<test-error>} object that mathes with
 other @code{<test-error>} object with the given @var{condition-type}.
@@ -15989,6 +15989,26 @@ as the following example:
 @example
 (test "see if foo raises <io-error>" (test-error <io-error>) (foo))
 @end example
+
+@c EN
+Another optional argument @var{message} can be used to check if
+the raised error has a message of expected pattern.  The argument
+may be a string, a regexp or @code{#f} (default).
+If it is a string, @code{test-check}
+checks if the message of the raised error exactly match the
+string.  If it is a regexp, @code{test-check} checks
+the message of the raised error matches that regexp.
+If it is @code{#f}, the message is not checked.
+@c JP
+もう一つの省略可能引数@var{message}は、テスト中に投げられたエラーの
+メッセージが期待するパターンを満たしているかどうかをチェックするのに使います。
+この引数は文字列、正規表現、@code{#f}のいずれかでなければなりません。
+この引数が文字列の場合、@code{test-check}は投げられたエラーのメッセージが
+その文字列と完全に一致するかどうかをチェックします。
+この引数が正規表現の場合、@code{test-check}は投げられたエラーのメッセージが
+その正規表現にマッチするかをチェックします。
+デフォルトは@code{#f}で、その場合はメッセージのチェックは行われません。
+@c COMMON
 @end defun
 
 @defvar *test-error*
