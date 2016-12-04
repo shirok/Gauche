@@ -54,6 +54,7 @@
  "#include <math.h>"
  "#define EXTUVECTOR_EXPORTS"
  "#include \"gauche/uvector.h\""
+ "#include \"gauche/priv/vectorP.h\""
  "#include \"uvectorP.h\""
 
  (define-cfn clamp-arg (clamp) ::int :static
@@ -238,6 +239,75 @@
             [dst::char* (SCM_NEW_ATOMIC_ARRAY (char) newsize)])
        (memcpy dst (+ src (* start eltsize)) newsize)
        (return (Scm_MakeUVector klass (- end start) dst)))))
+ )
+
+;; search
+(inline-stub
+ (define-cproc uvector-binary-search (v::<uvector> key::<number>
+                                                   :optional
+                                                   (start::<fixnum> 0)
+                                                   (end::<fixnum> -1)
+                                                   (skip::<fixnum> 0))
+   (let* ([len::size_t (SCM_UVECTOR_SIZE v)])
+     (SCM_CHECK_START_END start end len)
+     (let* ([r::size_t (cast (size_t) -1)])
+       (case (Scm_UVectorType (Scm_ClassOf (SCM_OBJ v)))
+         [(SCM_UVECTOR_S8)
+          (let* ([k::int8_t
+                  (Scm_GetInteger8Clamp key SCM_CLAMP_ERROR NULL)])
+            (set! r (Scm_BinarySearchS8 (+ (SCM_S8VECTOR_ELEMENTS v) start)
+                                        (- end start) k skip)))]
+         [(SCM_UVECTOR_U8)
+          (let* ([k::uint8_t
+                  (Scm_GetIntegerU8Clamp key SCM_CLAMP_ERROR NULL)])
+            (set! r (Scm_BinarySearchU8 (+ (SCM_U8VECTOR_ELEMENTS v) start)
+                                        (- end start) k skip)))]
+         [(SCM_UVECTOR_S16)
+          (let* ([k::int16_t
+                  (Scm_GetInteger16Clamp key SCM_CLAMP_ERROR NULL)])
+            (set! r (Scm_BinarySearchS16 (+ (SCM_S16VECTOR_ELEMENTS v) start)
+                                         (- end start) k skip)))]
+         [(SCM_UVECTOR_U16)
+          (let* ([k::uint16_t
+                  (Scm_GetIntegerU16Clamp key SCM_CLAMP_ERROR NULL)])
+            (set! r (Scm_BinarySearchU16 (+ (SCM_U16VECTOR_ELEMENTS v) start)
+                                         (- end start) k skip)))]
+         [(SCM_UVECTOR_S32)
+          (let* ([k::int32_t
+                  (Scm_GetInteger32Clamp key SCM_CLAMP_ERROR NULL)])
+            (set! r (Scm_BinarySearchS32 (+ (SCM_S32VECTOR_ELEMENTS v) start)
+                                         (- end start) k skip)))]
+         [(SCM_UVECTOR_U32)
+          (let* ([k::uint32_t
+                  (Scm_GetIntegerU32Clamp key SCM_CLAMP_ERROR NULL)])
+            (set! r (Scm_BinarySearchU32 (+ (SCM_U32VECTOR_ELEMENTS v) start)
+                                         (- end start) k skip)))]
+         [(SCM_UVECTOR_S64)
+          (let* ([k::ScmInt64
+                  (Scm_GetInteger64Clamp key SCM_CLAMP_ERROR NULL)])
+            (set! r (Scm_BinarySearchS64 (+ (SCM_S64VECTOR_ELEMENTS v) start)
+                                         (- end start) k skip)))]
+         [(SCM_UVECTOR_U64)
+          (let* ([k::ScmUInt64
+                  (Scm_GetIntegerU64Clamp key SCM_CLAMP_ERROR NULL)])
+            (set! r (Scm_BinarySearchU64 (+ (SCM_U64VECTOR_ELEMENTS v) start)
+                                         (- end start) k skip)))]
+         [(SCM_UVECTOR_F16)
+          (let* ([k::ScmHalfFloat (Scm_DoubleToHalf (Scm_GetDouble key))])
+            (set! r (Scm_BinarySearchF16 (+ (SCM_F16VECTOR_ELEMENTS v) start)
+                                         (- end start) k skip)))]         
+         [(SCM_UVECTOR_F32)
+          (let* ([k::float (Scm_GetDouble key)])
+            (set! r (Scm_BinarySearchF32 (+ (SCM_F32VECTOR_ELEMENTS v) start)
+                                         (- end start) k skip)))]         
+         [(SCM_UVECTOR_F64)
+          (let* ([k::double (Scm_GetDouble key)])
+            (set! r (Scm_BinarySearchF64 (+ (SCM_F64VECTOR_ELEMENTS v) start)
+                                         (- end start) k skip)))]
+         )
+       (if (== r (cast (size_t) -1))
+         (return SCM_FALSE)
+         (return (Scm_MakeIntegerU (+ r start)))))))
  )
 
 ;; block i/o
