@@ -391,7 +391,11 @@ static : $(LIBGAUCHE_STATIC).a
 
 $(LIBGAUCHE_STATIC).a : all staticinit.$(OBJEXT)
 	rm -f $@
-	$(AR) -rc $@ $(libgauche_OBJECTS) $(libgc_pic_OBJECTS) $(libatomic_ops_pic_OBJECTS) staticinit.$(OBJEXT) `cd $(top_builddir)/ext; $(MAKE) -s list-objects`
+	$(AR) -rc $@ $(libgauche_OBJECTS) \
+            `if [ X$(libgc_pic_LIBRARY) != X ]; then echo $(libgc_pic_OBJECTS); fi` \
+            `if [ X$(libatomic_ops_pic_LIBRARY) != X ]; then echo $(libatomic_ops_pic_OBJECTS); fi` \
+            staticinit.$(OBJEXT) \
+            `cd $(top_builddir)/ext; $(MAKE) -s list-objects`
 
 staticinit.c : all gen-staticinit.scm
 	$(BUILD_GOSH) $(srcdir)/gen-staticinit.scm $(top_srcdir) $(top_builddir)
