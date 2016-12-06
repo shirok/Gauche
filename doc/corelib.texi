@@ -7878,10 +7878,45 @@ as follows:
 @example
 #"This is Gauche, version ~(gauche-version)."
  @equiv{}
+(string-interpolate* "This is Gauche, version ~(gauche-version)."
+                     ("This is Gauche, version "
+                      (gauche-version)
+                      "."))
+
+;; then, it expands to...
+
 (string-append "This is Gauche, version "
                (x->string (gauche-version))
                ".")
 @end example
+
+@c EN
+(NB: The exact spec of @code{string-interpolate*} might change in future,
+so do not rely on the current behavior.)
+@c JP
+(註: @code{string-interpolate*}の厳密な仕様は将来変わるかもしれないので、
+現在の振る舞いに依存したコードは避けて下さい。)
+@c COMMON
+
+@c EN
+Since the @code{#"..."} syntax is eqivalent to a macro call
+of @code{string-interpolate*}, which is provided in the Gauche module,
+it must be visible from where you use the interpolation syntax.
+When you write Gauche code, typically you implicitly inherit the Gauche
+module so you don't need to worry; however, if you start from R7RS code,
+make sure you import @code{string-interpolate*}
+(by @code{(import (gauche base))}, for example) whenever you use
+string interpolation syntax.  Also be careful not to shadow
+@code{string-interpolate*} locally.
+@c JP
+@code{#"..."}構文はマクロ@code{string-interpolate*}の呼び出しと等価なので、
+この構文を使う際にはGaucheモジュールの@code{string-interpolate*}が
+見えている必要があります。Gaucheコードを書く場合、Gaucheモジュールはデフォルトで
+継承されているので、普通は気にする必要はありません。R7RSコードから始めて
+@code{#"..."}構文を使いたくなった場合は、@code{(import (gauche base))}等で
+@code{string-interpolate*}を見えるようにしてください。
+また、ローカルに@code{string-interpolate*}をシャドウしないように気をつけてください。
+@c COMMON
 @end deftp
 
 @deftp {Reader Syntax} @code{#`}@var{string-literal}

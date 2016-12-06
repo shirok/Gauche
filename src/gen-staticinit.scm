@@ -133,10 +133,8 @@
   ;; the source code contains weird read-time constructor, though.  We
   ;; know Gauche sources don't have one, but should be careful if we ever
   ;; extend this functionality to cover other libraries.
-  ;; NB: unwrap-syntax is to strip identifier info inserted by reader macros.
-  ;; At this moment, we only have string interpolation that does so.  Once
-  ;; we have general reader macros, we need to be careful that it won't
-  ;; rely on hygienity.
+  ;; NB: unwrap-syntax is to strip identifier info inserted by reader macros,
+  ;; if any.
   (with-output-to-string
     (cute for-each ($ write $ unwrap-syntax $) (file->sexp-list path))))
 
