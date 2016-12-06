@@ -1,3 +1,19 @@
+2016-12-05  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/interpolate.scm: Changed expansion of string
+	  interpolation.  We gave up hygiene in the expanded form---it
+	  causes a form merely 'read' to contain identifiers and will cause
+	  unexpected problems when it is written out.  It won't be reasonable
+	  to ask gauche namespace being visibile when string interpolation
+	  syntax is used.
+	  In order not to tie the expanded form too tightly, though, we
+	  introduce intermediate macro 'string-interpolate*'.  The #"..."
+	  syntax expands into the macro call.  The actual expansion form
+	  can be changed later.
+	* src/preload.scm: Preload gauche.interpolate---we need the new
+	  string-interpolate* macro while compiling core Scheme files
+	  using 0.9.5 compiler.
+
 2016-12-03  Shiro Kawai  <shiro@acm.org>
 
 	* src/libvec.scm: Add binary search of flat numeric vector

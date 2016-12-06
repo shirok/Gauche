@@ -149,7 +149,8 @@
 (autoload srfi-31 (:macro rec))
 (autoload srfi-55 (:macro require-extension))
 
-(autoload gauche.interpolate string-interpolate)
+(autoload gauche.interpolate string-interpolate
+                             (:macro string-interpolate*))
 
 (autoload "gauche/sysutil"
           sys-realpath sys-fdset list->sys-fdset sys-fdset->list)

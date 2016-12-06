@@ -17,6 +17,7 @@
 (use gauche.regexp)
 (use gauche.record)
 (use gauche.generator)
+(use gauche.interpolate)
 (use srfi-1)
 (use srfi-13)
 (use file.util)
