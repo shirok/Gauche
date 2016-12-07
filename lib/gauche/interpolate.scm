@@ -63,7 +63,7 @@
 ;; with source-to-source translators.   So we gave up hygiene and ask
 ;; users that they need to use #"..." where gauche#string-interpolate* is
 ;; visible.  After all, it's Gauche's extension, so you can't use it
-;; in portable R7RS code, for example.
+;; in portable R7RS code, anyway.
 ;;
 ;; We use 'read' to get expression after reading an unquote character
 ;; (#\, for the legacy syntax, #\~ for the new syntax.)  This presents
@@ -94,9 +94,7 @@
 (define (string-interpolate str :optional (legacy? #f))
   (if (string? str)
     `(string-interpolate*
-      ,str
-      ,(parse-string-interpolation-template str (if legacy? #\, #\~))
-      ,@(if legacy? '(:legacy #t) '()))
+      ,(parse-string-interpolation-template str (if legacy? #\, #\~)))
     (errorf "malformed string-interpolate: ~s" (list 'string-interpolate str))))
 
 (define (parse-string-interpolation-template str unquote-char)
@@ -129,9 +127,9 @@
   (er-macro-transformer
    (^[f r c] (apply %string-interpolate r (cdr f)))))
 
-;; NB: str and legacy arguments are for future use (e.g. debugging, or
-;; restoring original interpolation form).
-(define (%string-interpolate rename str elts :key legacy)
+;; NB: We allow extra args for possible future extension.  For the time
+;; being, we ignore them.
+(define (%string-interpolate rename elts . _)
   (define x->string. (rename 'x->string))
   (define string-append. (rename 'string-append))
   ;; Trying to simplify output form

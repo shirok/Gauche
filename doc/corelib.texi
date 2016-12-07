@@ -7878,8 +7878,7 @@ as follows:
 @example
 #"This is Gauche, version ~(gauche-version)."
  @equiv{}
-(string-interpolate* "This is Gauche, version ~(gauche-version)."
-                     ("This is Gauche, version "
+(string-interpolate* ("This is Gauche, version "
                       (gauche-version)
                       "."))
 
