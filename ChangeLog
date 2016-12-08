@@ -3,6 +3,7 @@
 	* ext/tls/axTLS/crypto/crypto_misc.c: The RNG state is kept in
 	  static variable and was not thread-safe.  Wrap arount shared state
 	  with Gauche's mutex layer.
+	* ext/tls/axtls.diff: Updated against axTLS 2.0.1
 
 2016-12-05  Shiro Kawai  <shiro@acm.org>
 

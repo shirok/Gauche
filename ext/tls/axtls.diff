@@ -1,5 +1,5 @@
---- a/axTLS/ssl/tls1_clnt.c	2016-08-30 19:20:07.000000000 +0900
-+++ b/axTLS/ssl/tls1_clnt.c	2016-08-27 00:27:07.241885389 +0900
+--- a/axTLS/ssl/tls1_clnt.c	2016-08-30 00:20:07.000000000 -1000
++++ b/axTLS/ssl/tls1_clnt.c	2016-11-17 12:35:54.000000000 -1000
 @@ -311,7 +311,7 @@
      offset += 2; // ignore compression
      PARANOIA_CHECK(pkt_size, offset);
@@ -9,8 +9,8 @@
      PARANOIA_CHECK(pkt_size, offset);
  
      // no extensions
---- a/axTLS/ssl/tls1.h	2016-08-17 18:54:52.000000000 +0900
-+++ b/axTLS/ssl/tls1.h	2016-09-03 00:06:40.056672130 +0900
+--- a/axTLS/ssl/tls1.h	2016-08-16 23:54:52.000000000 -1000
++++ b/axTLS/ssl/tls1.h	2016-11-17 12:35:54.000000000 -1000
 @@ -41,7 +41,7 @@
  #endif
  
@@ -20,8 +20,8 @@
  #include "os_int.h"
  #include "os_port.h"
  #include "crypto.h"
---- a/axTLS/ssl/test/ssltest.c	2016-08-30 19:19:43.000000000 +0900
-+++ b/axTLS/ssl/test/ssltest.c	2016-08-27 00:27:07.241885389 +0900
+--- a/axTLS/ssl/test/ssltest.c	2016-08-30 00:19:43.000000000 -1000
++++ b/axTLS/ssl/test/ssltest.c	2016-11-17 12:35:54.000000000 -1000
 @@ -922,19 +922,23 @@
  static int client_socket_init(uint16_t port)
  {
@@ -144,21 +144,21 @@
  //    if (header_issue())
  //    {
  //        printf("Header tests failed\n"); TTY_FLUSH();
---- a/axTLS/ssl/test/killopenssl.sh	2016-06-12 19:39:35.000000000 +0900
-+++ b/axTLS/ssl/test/killopenssl.sh	2016-08-11 20:27:20.085800717 +0900
+--- a/axTLS/ssl/test/killopenssl.sh	2016-06-12 00:39:35.000000000 -1000
++++ b/axTLS/ssl/test/killopenssl.sh	2016-08-19 17:26:48.000000000 -1000
 @@ -1,2 +1,3 @@
  #!/bin/sh
 -ps -ef|grep openssl | /usr/bin/awk '{print $2}' |xargs kill -9
 +awk '{print $1}' "../ssl/openssl.pid" | xargs kill -9
 +rm -f ../ssl/openssl.pid
---- a/axTLS/ssl/test/killgnutls.sh	2016-06-12 19:39:35.000000000 +0900
-+++ b/axTLS/ssl/test/killgnutls.sh	2016-08-11 20:27:20.085800717 +0900
+--- a/axTLS/ssl/test/killgnutls.sh	2016-06-12 00:39:35.000000000 -1000
++++ b/axTLS/ssl/test/killgnutls.sh	2016-08-19 17:26:48.000000000 -1000
 @@ -1,2 +1,2 @@
  #!/bin/sh
 -ps -ef|grep gnutls-serv | /usr/bin/awk '{print $2}' |xargs kill -9
 +#ps -ef|grep gnutls-serv | /usr/bin/awk '{print $2}' |xargs kill -9
---- a/axTLS/ssl/os_port.h	2016-07-05 16:33:37.000000000 +0900
-+++ b/axTLS/ssl/os_port.h	2016-08-14 21:41:27.759507681 +0900
+--- a/axTLS/ssl/os_port.h	2016-07-04 21:33:37.000000000 -1000
++++ b/axTLS/ssl/os_port.h	2016-11-17 12:35:53.000000000 -1000
 @@ -42,7 +42,7 @@
  #endif
  
@@ -232,8 +232,8 @@
  #ifndef be64toh
  #define be64toh(x) __be64_to_cpu(x)
  #endif
---- a/axTLS/ssl/os_port.c	2016-07-06 04:31:16.000000000 +0900
-+++ b/axTLS/ssl/os_port.c	2016-08-27 00:27:07.245885381 +0900
+--- a/axTLS/ssl/os_port.c	2016-07-05 09:31:16.000000000 -1000
++++ b/axTLS/ssl/os_port.c	2016-11-17 12:35:53.000000000 -1000
 @@ -40,6 +40,7 @@
  #include "os_port.h"
  
@@ -249,8 +249,8 @@
 +#endif /*__MINGW32__*/
  #endif
  
---- a/axTLS/crypto/os_int.h	2016-07-06 04:55:29.000000000 +0900
-+++ b/axTLS/crypto/os_int.h	2016-08-27 00:27:07.249885373 +0900
+--- a/axTLS/crypto/os_int.h	2016-07-05 09:55:29.000000000 -1000
++++ b/axTLS/crypto/os_int.h	2016-11-17 12:35:53.000000000 -1000
 @@ -41,7 +41,7 @@
  extern "C" {
  #endif
@@ -260,9 +260,38 @@
  typedef UINT8 uint8_t;
  typedef INT8 int8_t;
  typedef UINT16 uint16_t;
---- a/axTLS/crypto/crypto_misc.c	2016-07-06 04:49:47.000000000 +0900
-+++ b/axTLS/crypto/crypto_misc.c	2016-08-27 00:27:07.249885373 +0900
-@@ -48,7 +48,7 @@
+--- a/axTLS/crypto/crypto_misc.c	2016-07-05 09:49:47.000000000 -1000
++++ b/axTLS/crypto/crypto_misc.c	2016-12-07 18:44:01.000000000 -1000
+@@ -42,13 +42,36 @@
+ #include "wincrypt.h"
+ #endif
+ 
++/* Make this thread-safe (Gauche specific) */
++#include "gauche.h"
++static ScmInternalMutex mutex = SCM_INTERNAL_MUTEX_INITIALIZER;
++static u_long counter = 0;
++
++#ifdef WIN32
++/* ensuring initialization of global mutex on Windows. */
++static BOOL init_mutex(PINIT_ONCE once,
++                       PVOID param,
++                       PVOID *ctx)
++{
++    SCM_INTERNAL_MUTEX_INIT(mutex);
++    return TRUE;
++}
++
++static void ensure_mutex_initialization()
++{
++    static INIT_ONCE once = INIT_ONCE_STATIC_INIT;
++    InitOnceExecuteOnce(&once, init_mutex, NULL, NULL);
++}
++#endif //WIN32
++
++
+ #ifndef WIN32
+ static int rng_fd = -1;
+ #elif defined(CONFIG_WIN32_USE_CRYPTO_LIB)
  static HCRYPTPROV gCryptProv;
  #endif
  
@@ -271,8 +300,78 @@
  /* change to processor registers as appropriate */
  #define ENTROPY_POOL_SIZE 32
  #define ENTROPY_COUNTER1 ((((uint64_t)tv.tv_sec)<<32) | tv.tv_usec)
---- a/axTLS/crypto/crypto.h	2016-07-24 16:31:34.000000000 +0900
-+++ b/axTLS/crypto/crypto.h	2016-08-21 20:40:51.313381885 +0900
+@@ -103,6 +126,15 @@
+  */
+ EXP_FUNC void STDCALL RNG_initialize()
+ {
++#if defined(WIN32)
++    ensure_mutex_initialization();
++#endif
++    SCM_INTERNAL_MUTEX_LOCK(mutex);
++    if (counter++ > 0) {
++        SCM_INTERNAL_MUTEX_UNLOCK(mutex);
++        return;
++    }
++    
+ #if !defined(WIN32) && defined(CONFIG_USE_DEV_URANDOM)
+     rng_fd = open("/dev/urandom", O_RDONLY);
+ #elif defined(WIN32) && defined(CONFIG_WIN32_USE_CRYPTO_LIB)
+@@ -126,6 +158,8 @@
+     memcpy(entropy_pool, &i, ENTROPY_POOL_SIZE);
+     rand_r((unsigned int *)entropy_pool); 
+ #endif
++
++    SCM_INTERNAL_MUTEX_UNLOCK(mutex);
+ }
+ 
+ /**
+@@ -146,22 +180,34 @@
+  */
+ EXP_FUNC void STDCALL RNG_terminate(void)
+ {
++    SCM_INTERNAL_MUTEX_LOCK(mutex);
++    if (--counter > 0) {
++        SCM_INTERNAL_MUTEX_UNLOCK(mutex);
++        return;
++    }
++    
+ #ifndef WIN32
+     close(rng_fd);
+ #elif defined(CONFIG_WIN32_USE_CRYPTO_LIB)
+     CryptReleaseContext(gCryptProv, 0);
+ #endif
++
++    SCM_INTERNAL_MUTEX_UNLOCK(mutex);
+ }
+ 
+ /**
+  * Set a series of bytes with a random number. Individual bytes can be 0
+  */
+ EXP_FUNC int STDCALL get_random(int num_rand_bytes, uint8_t *rand_data)
+-{   
++{
++    SCM_INTERNAL_MUTEX_LOCK(mutex);
++    
+ #if !defined(WIN32) && defined(CONFIG_USE_DEV_URANDOM)
+     /* use the Linux default - read from /dev/urandom */
+-    if (read(rng_fd, rand_data, num_rand_bytes) < 0) 
++    if (read(rng_fd, rand_data, num_rand_bytes) < 0) {
++        SCM_INTERNAL_MUTEX_UNLOCK(mutex);
+         return -1;
++    }
+ #elif defined(WIN32) && defined(CONFIG_WIN32_USE_CRYPTO_LIB)
+     /* use Microsoft Crypto Libraries */
+     CryptGenRandom(gCryptProv, num_rand_bytes, rand_data);
+@@ -199,6 +245,7 @@
+     /* insert the digest at the start of the entropy pool */
+     memcpy(entropy_pool, digest, MD5_SIZE);
+ #endif
++    SCM_INTERNAL_MUTEX_UNLOCK(mutex);
+     return 0;
+ }
+ 
+--- a/axTLS/crypto/crypto.h	2016-07-23 21:31:34.000000000 -1000
++++ b/axTLS/crypto/crypto.h	2016-11-17 12:35:53.000000000 -1000
 @@ -39,6 +39,7 @@
  extern "C" {
  #endif
@@ -281,8 +380,8 @@
  #include "bigint_impl.h"
  #include "bigint.h"
  
---- a/axTLS/crypto/bigint_impl.h	2016-06-12 19:39:34.000000000 +0900
-+++ b/axTLS/crypto/bigint_impl.h	2016-08-11 20:27:20.077800719 +0900
+--- a/axTLS/crypto/bigint_impl.h	2016-06-12 00:39:34.000000000 -1000
++++ b/axTLS/crypto/bigint_impl.h	2016-08-19 17:26:48.000000000 -1000
 @@ -61,7 +61,7 @@
  typedef uint32_t long_comp;     /**< A double precision component. */
  typedef int32_t slong_comp;     /**< A signed double precision component. */
@@ -292,8 +391,8 @@
  #define COMP_RADIX          4294967296i64         
  #define COMP_MAX            0xFFFFFFFFFFFFFFFFui64
  #else
---- a/axTLS/config/config.h	1970-01-01 09:00:00.000000000 +0900
-+++ b/axTLS/config/config.h	2016-08-11 20:27:20.077800719 +0900
+--- a/axTLS/config/config.h	1969-12-31 14:00:00.000000000 -1000
++++ b/axTLS/config/config.h	2016-08-19 17:26:48.000000000 -1000
 @@ -0,0 +1,149 @@
 +/*
 + * In original axTLS, this file is automatically generated.
