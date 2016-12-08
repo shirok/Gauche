@@ -502,7 +502,13 @@ ScmObj Scm_GetAddrinfo(const char *nodename,
 
     int r = getaddrinfo(nodename, servname, hints, &res0);
 #if !defined(GAUCHE_WINDOWS)
-    if (r) Scm_Error("getaddrinfo failed: %s", gai_strerror(r));
+    if (r) {
+        if (r == EAI_SYSTEM) {
+            Scm_SysError("getaddrinfo failed: %s", gai_strerror(r));
+        } else {
+            Scm_Error("getaddrinfo failed: %s", gai_strerror(r));
+        }
+    }
 #else  /*GAUCHE_WINDOWS*/
     if (r) Scm_SysError("getaddrinfo failed");
 #endif /*GAUCHE_WINDOWS*/
