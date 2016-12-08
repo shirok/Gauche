@@ -725,15 +725,16 @@
     (set! (~ conn'socket) #f)))
 
 (define (with-connection conn proc)
-  (unless (~ conn'persistent)
-    (unless (~ conn'socket) (start-socket-connection conn))
-    (when (~ conn'secure) (start-secure-agent conn)))
   (unwind-protect
-      (apply proc (if (~ conn'secure)
-                    `(,(tls-input-port (~ conn'secure-agent))
-                      ,(tls-output-port (~ conn'secure-agent)))
-                    `(,(socket-input-port (~ conn'socket))
-                      ,(socket-output-port (~ conn'socket)))))
+      (begin
+        (unless (~ conn'persistent)
+          (unless (~ conn'socket) (start-socket-connection conn))
+          (when (~ conn'secure) (start-secure-agent conn)))
+        (apply proc (if (~ conn'secure)
+                      `(,(tls-input-port (~ conn'secure-agent))
+                        ,(tls-output-port (~ conn'secure-agent)))
+                      `(,(socket-input-port (~ conn'socket))
+                        ,(socket-output-port (~ conn'socket))))))
     (unless (~ conn'persistent)
       (when (~ conn'secure) (shutdown-secure-agent conn))
       (shutdown-socket-connection conn))))
@@ -874,8 +875,8 @@
     (error "Secure connection is not available on this platform"))
   (when (~ conn'secure-agent) (shutdown-secure-agent conn))
   (let1 tls (make-tls)
-    (tls-connect tls (socket-fd (~ conn'socket)))
-    (set! (~ conn'secure-agent) tls)))
+    (set! (~ conn'secure-agent) tls)
+    (tls-connect tls (socket-fd (~ conn'socket)))))
 
 ;; for external api
 (define (http-secure-connection-available?)

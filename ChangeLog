@@ -1,5 +1,8 @@
 2016-12-07  Shiro Kawai  <shiro@acm.org>
 
+	* lib/rfc/http.scm: Make sure secure connection cleanup is run
+	  in any stage of communication fails.
+
 	* ext/tls/axTLS/crypto/crypto_misc.c: The RNG state is kept in
 	  static variable and was not thread-safe.  Wrap arount shared state
 	  with Gauche's mutex layer.
