@@ -1,3 +1,9 @@
+2016-12-07  Shiro Kawai  <shiro@acm.org>
+
+	* ext/tls/axTLS/crypto/crypto_misc.c: The RNG state is kept in
+	  static variable and was not thread-safe.  Wrap arount shared state
+	  with Gauche's mutex layer.
+
 2016-12-05  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/interpolate.scm: Changed expansion of string

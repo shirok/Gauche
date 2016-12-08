@@ -42,6 +42,29 @@
 #include "wincrypt.h"
 #endif
 
+/* Make this thread-safe (Gauche specific) */
+#include "gauche.h"
+static ScmInternalMutex mutex = SCM_INTERNAL_MUTEX_INITIALIZER;
+static u_long counter = 0;
+
+#ifdef WIN32
+/* ensuring initialization of global mutex on Windows. */
+static BOOL init_mutex(PINIT_ONCE once,
+                       PVOID param,
+                       PVOID *ctx)
+{
+    SCM_INTERNAL_MUTEX_INIT(mutex);
+    return TRUE;
+}
+
+static void ensure_mutex_initialization()
+{
+    static INIT_ONCE once = INIT_ONCE_STATIC_INIT;
+    InitOnceExecuteOnce(&once, init_mutex, NULL, NULL);
+}
+#endif //WIN32
+
+
 #ifndef WIN32
 static int rng_fd = -1;
 #elif defined(CONFIG_WIN32_USE_CRYPTO_LIB)
@@ -103,6 +126,15 @@ int get_file(const char *filename, uint8_t **buf)
  */
 EXP_FUNC void STDCALL RNG_initialize()
 {
+#if defined(WIN32)
+    ensure_mutex_initialization();
+#endif
+    SCM_INTERNAL_MUTEX_LOCK(mutex);
+    if (counter++ > 0) {
+        SCM_INTERNAL_MUTEX_UNLOCK(mutex);
+        return;
+    }
+    
 #if !defined(WIN32) && defined(CONFIG_USE_DEV_URANDOM)
     rng_fd = open("/dev/urandom", O_RDONLY);
 #elif defined(WIN32) && defined(CONFIG_WIN32_USE_CRYPTO_LIB)
@@ -126,6 +158,8 @@ EXP_FUNC void STDCALL RNG_initialize()
     memcpy(entropy_pool, &i, ENTROPY_POOL_SIZE);
     rand_r((unsigned int *)entropy_pool); 
 #endif
+
+    SCM_INTERNAL_MUTEX_UNLOCK(mutex);
 }
 
 /**
@@ -146,22 +180,34 @@ EXP_FUNC void STDCALL RNG_custom_init(const uint8_t *seed_buf, int size)
  */
 EXP_FUNC void STDCALL RNG_terminate(void)
 {
+    SCM_INTERNAL_MUTEX_LOCK(mutex);
+    if (--counter > 0) {
+        SCM_INTERNAL_MUTEX_UNLOCK(mutex);
+        return;
+    }
+    
 #ifndef WIN32
     close(rng_fd);
 #elif defined(CONFIG_WIN32_USE_CRYPTO_LIB)
     CryptReleaseContext(gCryptProv, 0);
 #endif
+
+    SCM_INTERNAL_MUTEX_UNLOCK(mutex);
 }
 
 /**
  * Set a series of bytes with a random number. Individual bytes can be 0
  */
 EXP_FUNC int STDCALL get_random(int num_rand_bytes, uint8_t *rand_data)
-{   
+{
+    SCM_INTERNAL_MUTEX_LOCK(mutex);
+    
 #if !defined(WIN32) && defined(CONFIG_USE_DEV_URANDOM)
     /* use the Linux default - read from /dev/urandom */
-    if (read(rng_fd, rand_data, num_rand_bytes) < 0) 
+    if (read(rng_fd, rand_data, num_rand_bytes) < 0) {
+        SCM_INTERNAL_MUTEX_UNLOCK(mutex);
         return -1;
+    }
 #elif defined(WIN32) && defined(CONFIG_WIN32_USE_CRYPTO_LIB)
     /* use Microsoft Crypto Libraries */
     CryptGenRandom(gCryptProv, num_rand_bytes, rand_data);
@@ -199,6 +245,7 @@ EXP_FUNC int STDCALL get_random(int num_rand_bytes, uint8_t *rand_data)
     /* insert the digest at the start of the entropy pool */
     memcpy(entropy_pool, digest, MD5_SIZE);
 #endif
+    SCM_INTERNAL_MUTEX_UNLOCK(mutex);
     return 0;
 }
 
