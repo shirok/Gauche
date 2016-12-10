@@ -488,9 +488,11 @@
        (with-error-handler
            (lambda (e)
              (exit-handler x)
-             (unless done
-               (set! done #t)
-               (h))
+             (when (condition-has-type? e <serious-condition>)
+               (unless done (set! done #t) (h)))
+             ;; NB: We don't know E is thrown by r7rs#raise or
+             ;; r7rs#raise-continuable, but gauche#raise can handle both
+             ;; case.
              (raise e))
          (lambda ()
            (receive r

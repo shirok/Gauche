@@ -14823,7 +14823,7 @@ handler is evaluated before the dynamic environment are unwound.
 @defmac unwind-protect expr cleanup @dots{}
 @c EN
 Executes @var{expr}, then executes @var{cleanup}s, and
-returns the result(s) of @var{expr}.  If an exception is raised
+returns the result(s) of @var{expr}.  If an uncontinuable exception is raised
 within @var{expr}, @var{cleanup}s are executed before the
 exception escapes from the @code{unwind-protect} form.
 For example, the following code calls @code{start-motor},
@@ -14833,7 +14833,7 @@ or @code{drill-a-hole}, @code{stop-motor} is still called
 before the exception escapes @code{unwind-protect}.
 @c JP
 @var{expr}を実行してから@var{cleanup} @dots{}を実行し、@var{expr}の結果を返します。
-@var{expr}内で例外が挙がった場合、その例外が@code{unwind-protect}フォー
+@var{expr}内で継続不可能な例外が挙がった場合、その例外が@code{unwind-protect}フォー
 ムを抜ける前に、@var{cleanup} @dots{}が実行されます。たとえば、以下のコードで
 はなにも問題が起きなければ、@code{start-motor}、@code{drill-a-hole}、
 @code{stop-motor}が、この順で呼ばれます。何か不具合が
