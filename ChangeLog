@@ -1,3 +1,9 @@
+2016-12-10  Shiro Kawai  <shiro@acm.org>
+
+	* src/module.c (search_binding): Fixed a bug in case ancestor module
+	  has export renaming.
+	  https://github.com/shirok/Gauche/issues/255
+
 2016-12-09  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/common-macros.scm (unwind-protect): Do not run cleanup

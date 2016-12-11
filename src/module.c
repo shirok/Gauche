@@ -322,7 +322,7 @@ static ScmGloc *search_binding(ScmModule *module, ScmSymbol *symbol,
                    when we search inherited modules we look into it's
                    internal bindings. */
                 external_only = FALSE;
-                symbol = SCM_GLOC(v)->name; /* in case it is renamed on export */
+                symbol = SCM_GLOC(v)->name; /* in case it's renamed on export */
             } else {
                 return SCM_GLOC(v);
             }
@@ -384,6 +384,7 @@ static ScmGloc *search_binding(ScmModule *module, ScmSymbol *symbol,
         if (SCM_GLOCP(v)) {
             if (SCM_GLOC_PHANTOM_BINDING_P(SCM_GLOC(v))) {
                 external_only = FALSE; /* See above comment */
+                symbol = SCM_GLOC(v)->name; /* in case it's renamed on export */
             } else {
                 return SCM_GLOC(v);
             }

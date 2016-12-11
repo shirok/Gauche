@@ -313,7 +313,8 @@
 
 (define-module Of
   (export foo)
-  (define foo 1))
+  (define foo 1)
+  (define bar 2))
 (define-module Of-1
   (import Of)
   (export foo))
@@ -343,6 +344,23 @@
          (global-variable-ref (find-module 'Of-4) 'foo-newname #f)
          (global-variable-ref (find-module 'Of-4) 'foo-alias #f)
          (global-variable-ref (find-module 'Of-4) 'foo #f))))
+
+(define-module Of-5
+  (extend Of)
+  (export (rename foo foo-alias)
+          (rename bar bar-alias)))
+(define-module Of-6
+  (import (Of-5 :except (foo-alias) :rename ((bar-alias bah)))))
+(define-module Of-7
+  (import (Of-5 :except (foo) :rename ((foo-alias who)))))
+
+(test "export-time renaming, wrapper module and import renaming"
+      '((#f 1) (#f #f) (1 #f) (2 #f) (#f 2) (#f #f))
+      (lambda ()
+        (map (lambda (s)
+               (list (global-variable-ref (find-module 'Of-6) s #f)
+                     (global-variable-ref (find-module 'Of-7) s #f)))
+             '(who foo-alias foo bah bar-alias bar))))
 
 ;;------------------------------------------------------------------
 ;; select-module, and restoration in load().
