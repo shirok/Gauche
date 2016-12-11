@@ -143,21 +143,15 @@
          [else (and (equal? x y) k)])))
     (boolean (e? x y k))))
 
-;; Replace these once we support srfi-111
-(define-macro (%box? x) `(pair? ,x))
-(define-macro (%set-box! x v) `(set-car! ,x ,v))
-(define-macro (%unbox x) `(car ,x))
-(define-macro (%make-box x) `(list ,x))
-
 (define (%union-find ht x y)
   (define (find b)
-    (let1 n (%unbox b)
-      (if (%box? n)
+    (let1 n (unbox b)
+      (if (box? n)
         (let loop ([b b] [n n])
-          (let1 nn (%unbox n)
-            (if (%box? nn)
+          (let1 nn (unbox n)
+            (if (box? nn)
               (begin
-                (%set-box! b nn)
+                (set-box! b nn)
                 (loop n nn))
               n)))
         b)))
@@ -165,7 +159,7 @@
         [by (hash-table-get ht y #f)])
     (if (not bx)
       (if (not by)
-        (let1 b (%make-box 1)
+        (let1 b (box 1)
           (hash-table-put! ht x b)
           (hash-table-put! ht y b)
           #f)
@@ -178,14 +172,14 @@
           #f)
         (let ([rx (find bx)] [ry (find by)])
           (or (eq? rx ry)
-              (let ([nx (%unbox rx)]
-                    [ny (%unbox ry)])
+              (let ([nx (unbox rx)]
+                    [ny (unbox ry)])
                 (if (> nx ny)
                   (begin
-                    (%set-box! ry rx)
-                    (%set-box! rx (+ nx ny))
+                    (set-box! ry rx)
+                    (set-box! rx (+ nx ny))
                     #f)
                   (begin
-                    (%set-box! rx ry)
-                    (%set-box! ry (+ ny nx))
+                    (set-box! rx ry)
+                    (set-box! ry (+ ny nx))
                     #f)))))))))

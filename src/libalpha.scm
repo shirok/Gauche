@@ -108,6 +108,16 @@
     (set! (setter proc) set)))
 
 ;;;
+;;;  srfi-111 box
+;;;
+
+;; We use them in equal? implementation as well, so here we go...
+(define-cproc box (v) (return (SCM_OBJ (Scm_MakeBox v))))
+(define-cproc box? (v) ::<boolean> (return (SCM_BOXP v)))
+(define-cproc unbox (b::<box>) (return (SCM_BOX_VALUE b)))
+(define-cproc set-box! (b::<box> v) ::<void> (SCM_BOX_SET b v))
+
+;;;
 ;;;  case-lambda support
 ;;;
 
