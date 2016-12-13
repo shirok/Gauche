@@ -16,24 +16,11 @@
 
 ;;@ (software-type) should be set to the generic operating system type.
 ;;; unix, vms, macos, amiga and ms-dos are supported.
-;;; NB [SK]: before slib 3a4 this returned captial symbols (e.g. UNIX),
-;;; and there were code in require.scm that depended on them.  To keep
-;;; backward compatibility,
 
-(define software-type
-  (let ((t (if (#/-mingw/ (gauche-architecture))
-             '(ms-dos . MS-DOS)
-             '(unix . UNIX))))
-    (lambda ()
-      (if (and (global-variable-bound? (current-module) '*SLIB-VERSION*)
-               (string<? *SLIB-VERSION* "3a4"))
-        (cdr t)
-        (car t)))))
-
-;After transition period, the above should be replaced by this:
-;(define software-type
-;  (let ((t (if (#/-mingw/ (gauche-architecture)) 'ms-dos 'unix)))
-;    (lambda () t)))
+(define (software-type)
+  (cond-expand
+   [gauche.windows 'ms-dos]
+   [else 'unix]))
 
 ;;@ (scheme-implementation-type) should return the name of the scheme
 ;;; implementation loading this file.
@@ -61,7 +48,8 @@
   (let ((library-path
          (or
           ;; Use this getenv if your implementation supports it.
-          (sys-getenv "SCHEME_LIBRARY_PATH")
+          (and-let1 p (sys-getenv "SCHEME_LIBRARY_PATH")
+            (string-append p "/"))
           ;; Use this path if your scheme does not support GETENV
           ;; or if SCHEME_LIBRARY_PATH is not set.
           (case (software-type)
@@ -75,7 +63,8 @@
 ;;; directory, the directory which typically contains files which
 ;;; customize a computer environment for a user.
 (define (home-vicinity)
-  (let ((home (sys-getenv "HOME")))
+  (let ((home (or (sys-getenv "HOME")
+                  (home-directory))))
     (and home
          (case (software-type)
            ((unix coherent ms-dos)      ;V7 unix has a / on HOME
@@ -156,39 +145,40 @@
 ;;@ SLIB:FEATURES is a list of symbols naming the (SLIB) features
 ;;; initially supported by this implementation.
 (define slib:features
-      '(
-        source                          ;can load scheme source files
-                                       ;(SLIB:LOAD-SOURCE "filename")
+  '(
+    source                          ;can load scheme source files
+                                        ;(SLIB:LOAD-SOURCE "filename")
 ;;;    compiled                        ;can load compiled files
-                                       ;(SLIB:LOAD-COMPILED "filename")
-       vicinity
-       srfi-59
+                                        ;(SLIB:LOAD-COMPILED "filename")
+    vicinity
+    srfi-59
+    ;;srfi-96
 
-                       ;; Scheme report features
-   ;; R5RS-compliant implementations should provide all 9 features.
+    ;; Scheme report features
+    ;; R5RS-compliant implementations should provide all 9 features.
 
-       r5rs                            ;conforms to
-        eval                            ;R5RS two-argument eval
-        values                          ;R5RS multiple values
-        dynamic-wind                    ;R5RS dynamic-wind
-        macro                           ;R5RS high level macros
-        delay                           ;has DELAY and FORCE
-        multiarg-apply                  ;APPLY can take more than 2 args.
-        char-ready?
-       rev4-optional-procedures        ;LIST-TAIL, STRING-COPY,
-                                       ;STRING-FILL!, and VECTOR-FILL!
+    r5rs                            ;conforms to
+    eval                            ;R5RS two-argument eval
+    values                          ;R5RS multiple values
+    dynamic-wind                    ;R5RS dynamic-wind
+    macro                           ;R5RS high level macros
+    delay                           ;has DELAY and FORCE
+    multiarg-apply                  ;APPLY can take more than 2 args.
+    char-ready?
+    rev4-optional-procedures        ;LIST-TAIL, STRING-COPY,
+                                        ;STRING-FILL!, and VECTOR-FILL!
 
-      ;; These four features are optional in both R4RS and R5RS
+    ;; These four features are optional in both R4RS and R5RS
 
-       multiarg/and-                   ;/ and - can take more than 2 args.
-;       rationalize
+    multiarg/and-                   ;/ and - can take more than 2 args.
+    rationalize
 ;;;    transcript                      ;TRANSCRIPT-ON and TRANSCRIPT-OFF
-       with-file                       ;has WITH-INPUT-FROM-FILE and
-                                       ;WITH-OUTPUT-TO-FILE
+    with-file                       ;has WITH-INPUT-FROM-FILE and
+                                        ;WITH-OUTPUT-TO-FILE
 
-       r4rs                            ;conforms to
+    r4rs                            ;conforms to
 
-        ieee-p1178                      ;conforms to
+    ieee-p1178                      ;conforms to
 
 ;;;    r3rs                            ;conforms to
 
@@ -198,43 +188,47 @@
                                         ;STRING-NULL?, APPEND!, 1+,
                                         ;-1+, <?, <=?, =?, >?, >=?
 ;;;    object-hash                     ;has OBJECT-HASH
+    ;; NB: Gauche's object-hash is different from SLIB wants, which
+    ;; is Gauche's eqv-hash.  Providing it in the name of object-hash
+    ;; would be confusing, so we don't provide this.
 
-       full-continuation               ;can return multiple times
-        ieee-floating-point             ;conforms to IEEE Standard 754-1985
+    full-continuation               ;can return multiple times
+    ieee-floating-point             ;conforms to IEEE Standard 754-1985
                                         ;IEEE Standard for Binary
                                         ;Floating-Point Arithmetic.
 
-                        ;; Other common features
+    ;; Other common features
 
-       ;; NB: we turned off srfi here, since if this is on, slib tries
-       ;; to import all available srfis, including srfi-29, which defines
-       ;; incompatible 'format'.
-;       srfi                            ;srfi-0, COND-EXPAND finds all srfi-*
+    ;; NB: we turned off srfi here, since if this is on, slib tries
+    ;; to import all available srfis, including srfi-29, which defines
+    ;; incompatible 'format'.
+    srfi-0                           ;srfi-0, COND-EXPAND finds all srfi-*
 ;;;    sicp                            ;runs code from Structure and
                                         ;Interpretation of Computer
                                         ;Programs by Abelson and Sussman.
-        defmacro                        ;has Common Lisp DEFMACRO
-        record                          ;has user defined data structures
-        string-port                     ;has CALL-WITH-INPUT-STRING and
+    defmacro                        ;has Common Lisp DEFMACRO
+;;;	syntax-case			;has syncase:eval and syncase:load
+    record                          ;has user defined data structures
+    string-port                     ;has CALL-WITH-INPUT-STRING and
                                         ;CALL-WITH-OUTPUT-STRING
-        sort
+    sort
 ;;;    pretty-print
-        object->string
+    object->string
 ;;;    format                          ;Common-lisp output formatting
 ;;;    trace                           ;has macros: TRACE and UNTRACE
 ;;;    compiler                        ;has (COMPILER)
 ;;;    ed                              ;(ED) is editor
-        system                          ;posix (system <string>)
-        getenv                          ;posix (getenv <string>)
-        program-arguments               ;returns list of strings (argv)
-        current-time                    ;returns time in seconds since 1/1/1970
+    system                          ;posix (system <string>)
+    getenv                          ;posix (getenv <string>)
+    program-arguments               ;returns list of strings (argv)
+    current-time                    ;returns time in seconds since 1/1/1970
 
-                  ;; Implementation Specific features
-       byte                            ;byte string manipulation
-        ))
+    ;; Implementation Specific features
+    byte                            ;byte string manipulation
+    ))
 
-;; [SK] for backward compatibility
-(define *features* slib:features)
+;;@ (FILE-POSITION <port> . <k>)
+(define (file-position . args) #f)
 
 ;;@ (OUTPUT-PORT-WIDTH <port>)
 (define (output-port-width . arg) 79)
@@ -260,7 +254,7 @@
 ; Gauche has this
 
 ;;@ (DELETE-FILE <string>)
-(define (delete-file f) (sys-unlink f))
+; Gauche has this
 
 ;;@ FORCE-OUTPUT flushes any pending output on optional arg output port
 ;;; use this definition if your system doesn't have such a procedure.
@@ -276,11 +270,11 @@
 ;;; port versions of CALL-WITH-*PUT-FILE.
 
 ;;@ "rationalize" adjunct procedures.
-;;(define (find-ratio x e)
-;;  (let ((rat (rationalize x e)))
-;;    (list (numerator rat) (denominator rat))))
-;;(define (find-ratio-between x y)
-;;  (find-ratio (/ (+ x y) 2) (/ (- x y) 2)))
+(define (find-ratio x e)
+  (let ((rat (rationalize x e)))
+    (list (numerator rat) (denominator rat))))
+(define (find-ratio-between x y)
+  (find-ratio (/ (+ x y) 2) (/ (- x y) 2)))
 
 ;;@ CHAR-CODE-LIMIT is one greater than the largest integer which can
 ;;; be returned by CHAR->INTEGER.
@@ -362,6 +356,9 @@
   (or (try "xdg-open '" "' &")
       (try "firefox '"  "' &")))
 
+;@
+(define object->string write-to-string)
+
 ;;@ define these as appropriate for your system.
 (define slib:tab (integer->char 9))
 (define slib:form-feed (integer->char 12))
@@ -371,24 +368,19 @@
 (define t #t)
 (define nil #f)
 
-;;; byte string operators.  SLIB's byte module assumes strings are
-;;; a sequence of bytes.  In Gauche, it's not the case.  Furthermore,
-;;; using a string as a mutable structure is very bad idea.  Here
-;;; we use u8vector by default.  Unfortunately, some SLIB code assumes
-;;; bytes === string, and passes a string directly to those APIs; so
-;;; we have to deal with it.
+;;; byte string operators.  SLIB's byte module uses slib array.
+;;; It's more efficient to use u8vector in Gauche.
 
-(define (byte-ref s k)
-  ((if (string? s) string-byte-ref u8vector-ref) s k))
-(define (byte-set! s k b)
-  ((if (string? s) string-byte-set! u8vector-set!) s k b))
+(define (byte-ref s k) (u8vector-ref s k))
+(define (byte-set! s k b) (u8evctor-set! s k b))
 (define make-bytes make-u8vector)
-(define (bytes-length s)
-  ((if (string? s) string-length u8vector-length) s))
+(define (bytes-length s) (u8vector-length s))
 (define bytes u8vector)
-(define (bytes->list s)
-  (u8vector->list (if (string? s) (string->u8vector s) s)))
+(define bytes->list u8vector->list)
 (define list->bytes list->u8vector)
+(define bytes->string u8vector->string)
+(define string->bytes string->u8vector)
+(define bytes-copy u8vector-copy)
 ;; write-byte - Gauche has this
 ;; read-byte  - Gauche has this
 
@@ -421,7 +413,15 @@
 ;;@ At this point SLIB:LOAD must be able to load SLIB files.
 (define slib:load load)
 
-(slib:load (in-vicinity (library-vicinity) "require"))
+;; [SK] Emit comprehensive message in case we can't find SLIB
+;(slib:load (in-vicinity (library-vicinity) "require"))
+(unless (load (in-vicinity (library-vicinity) "require")
+              :error-if-not-found #f)
+  (error #"Couldn't load SLIB's require.scm in `~(library-vicinity)'.  \
+           Either SLIB is not installed, or it is installed in a different \
+           location.  Try setting the environment variable \
+           SCHEME_LIBRARY_PATH to point to the SLIB directory; or you can \
+           reconfigure Gauche with --with-slib option and reinstall." ))
 
 ;;; A trick to make require work both on Gauche files and slib files.
 ;;; The hint is taken from STk.

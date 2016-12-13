@@ -1,3 +1,8 @@
+2016-12-12  Shiro Kawai  <shiro@acm.org>
+
+	* lib/slib.scm.in: Updated for slib3b5.  Also emit comprehensive
+	  error message in case we can't find slib installation.
+
 2016-12-10  Shiro Kawai  <shiro@acm.org>
 
 	* src/module.c (search_binding): Fixed a bug in case ancestor module
