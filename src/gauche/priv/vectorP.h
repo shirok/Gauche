@@ -66,17 +66,17 @@
       :          :
  */
 
-size_t Scm_BinarySearchS8(int8_t vec[], size_t len, int8_t key, uint skip);
-size_t Scm_BinarySearchU8(uint8_t vec[], size_t len, uint8_t key, uint skip);
-size_t Scm_BinarySearchS16(int16_t vec[], size_t len, int16_t key, uint skip);
-size_t Scm_BinarySearchU16(uint16_t vec[], size_t len, uint16_t key, uint skip);
-size_t Scm_BinarySearchS32(int32_t vec[], size_t len, int32_t key, uint skip);
-size_t Scm_BinarySearchU32(uint32_t vec[], size_t len, uint32_t key, uint skip);
-size_t Scm_BinarySearchS64(ScmInt64 vec[], size_t len, int64_t key, uint skip);
-size_t Scm_BinarySearchU64(ScmUInt64 vec[], size_t len, uint64_t key, uint skip);
-size_t Scm_BinarySearchF16(ScmHalfFloat vec[], size_t len, ScmHalfFloat key, uint skip);
-size_t Scm_BinarySearchF32(float vec[], size_t len, float key, uint skip);
-size_t Scm_BinarySearchF64(double vec[], size_t len, double key, uint skip);
+size_t Scm_BinarySearchS8(int8_t vec[], size_t len, int8_t key, u_int skip);
+size_t Scm_BinarySearchU8(uint8_t vec[], size_t len, uint8_t key, u_int skip);
+size_t Scm_BinarySearchS16(int16_t vec[], size_t len, int16_t key, u_int skip);
+size_t Scm_BinarySearchU16(uint16_t vec[], size_t len, uint16_t key, u_int skip);
+size_t Scm_BinarySearchS32(int32_t vec[], size_t len, int32_t key, u_int skip);
+size_t Scm_BinarySearchU32(uint32_t vec[], size_t len, uint32_t key, u_int skip);
+size_t Scm_BinarySearchS64(ScmInt64 vec[], size_t len, int64_t key, u_int skip);
+size_t Scm_BinarySearchU64(ScmUInt64 vec[], size_t len, uint64_t key, u_int skip);
+size_t Scm_BinarySearchF16(ScmHalfFloat vec[], size_t len, ScmHalfFloat key, u_int skip);
+size_t Scm_BinarySearchF32(float vec[], size_t len, float key, u_int skip);
+size_t Scm_BinarySearchF64(double vec[], size_t len, double key, u_int skip);
 
 #endif /*GAUCHE_PRIV_VECTORP_H*/
 
