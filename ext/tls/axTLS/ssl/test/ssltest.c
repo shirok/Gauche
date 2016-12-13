@@ -2422,6 +2422,9 @@ int main(int argc, char *argv[])
     exit(1);
 #endif
 
+    /* Make RNG thread-safe (Gauche specific) */
+    RNG_mutex_init();
+
     bi_ctx = bi_initialize();
 
     if (AES_test(bi_ctx))
