@@ -21,7 +21,7 @@
  #include "os_port.h"
  #include "crypto.h"
 --- a/axTLS\ssl\test\ssltest.c	2016-08-30 19:19:42 +0900
-+++ b/axTLS\ssl\test\ssltest.c	2016-12-13 14:30:15 +0900
++++ b/axTLS\ssl\test\ssltest.c	2016-12-08 00:15:14 +0900
 @@ -922,19 +922,23 @@
  static int client_socket_init(uint16_t port)
  {
@@ -109,7 +109,7 @@
  
  #ifdef WIN32
      WSADATA wsaData;
-@@ -2397,12 +2410,21 @@
+@@ -2397,6 +2410,12 @@
      dup2(fd, 2);
  #endif
  
@@ -122,16 +122,7 @@
      /* can't do testing in this mode */
  #if defined CONFIG_SSL_GENERATE_X509_CERT
      printf("Error: Must compile with default key/certificates\n");
-     exit(1);
- #endif
- 
-+    /* Make RNG thread-safe (Gauche specific) */
-+    RNG_mutex_init();
-+
-     bi_ctx = bi_initialize();
- 
-     if (AES_test(bi_ctx))
-@@ -2492,6 +2514,10 @@
+@@ -2492,6 +2511,10 @@
  
      SYSTEM("sh ../ssl/test/killopenssl.sh");
  
@@ -142,7 +133,7 @@
      if (SSL_client_tests())
          goto cleanup;
  
-@@ -2503,6 +2529,10 @@
+@@ -2503,6 +2526,10 @@
  
      SYSTEM("sh ../ssl/test/killopenssl.sh");
  
@@ -270,7 +261,7 @@
  typedef INT8 int8_t;
  typedef UINT16 uint16_t;
 --- a/axTLS\crypto\crypto_misc.c	2016-07-06 04:49:46 +0900
-+++ b/axTLS\crypto\crypto_misc.c	2016-12-12 17:33:12 +0900
++++ b/axTLS\crypto\crypto_misc.c	2016-12-14 16:09:21 +0900
 @@ -32,6 +32,20 @@
   * Some misc. routines to help things out
   */
@@ -292,17 +283,45 @@
  #include <stdlib.h>
  #include <string.h>
  #include <stdarg.h>
-@@ -42,13 +56,21 @@
+@@ -42,13 +56,49 @@
  #include "wincrypt.h"
  #endif
  
 +/* Make RNG thread-safe (Gauche specific) */
 +static ScmInternalMutex mutex = SCM_INTERNAL_MUTEX_INITIALIZER;
 +static u_long counter = 0;
-+EXP_FUNC void STDCALL RNG_mutex_init(void)
++#if defined(GAUCHE_WINDOWS)
++/* ensuring initialization of global mutex on Windows. */
++#if defined(__MINGW64_VERSION_MAJOR) && (_WIN32_WINNT >= 0x0600)
++static INIT_ONCE once = INIT_ONCE_STATIC_INIT;
++static BOOL CALLBACK init_mutex(PINIT_ONCE once, PVOID param, PVOID *ctx)
 +{
 +    SCM_INTERNAL_MUTEX_INIT(mutex);
++    return TRUE;
 +}
++static void ensure_mutex_initialization()
++{
++    InitOnceExecuteOnce(&once, (PINIT_ONCE_FN)init_mutex, NULL, NULL);
++}
++#else /* !(defined(__MINGW64_VERSION_MAJOR) && (_WIN32_WINNT >= 0x0600)) */
++static volatile LONG once = 0;
++static void ensure_mutex_initialization()
++{
++    for (;;) {
++        switch (InterlockedCompareExchange(&once, 2, 0)) {
++        case 0:  /* first time */
++            SCM_INTERNAL_MUTEX_INIT(mutex);
++            InterlockedExchange(&once, 1);
++            return;
++        case 1:  /* done */
++            return;
++        default: /* wait (another thread is initializing) */
++            SwitchToThread();
++        }
++    }
++}
++#endif /* !(defined(__MINGW64_VERSION_MAJOR) && (_WIN32_WINNT >= 0x0600)) */
++#endif /* GAUCHE_WINDOWS */
 +
  #ifndef WIN32
  static int rng_fd = -1;
@@ -315,10 +334,13 @@
  /* change to processor registers as appropriate */
  #define ENTROPY_POOL_SIZE 32
  #define ENTROPY_COUNTER1 ((((uint64_t)tv.tv_sec)<<32) | tv.tv_usec)
-@@ -103,6 +125,12 @@
+@@ -103,6 +153,15 @@
   */
  EXP_FUNC void STDCALL RNG_initialize()
  {
++#if defined(GAUCHE_WINDOWS)
++    ensure_mutex_initialization();
++#endif /* GAUCHE_WINDOWS */
 +    SCM_INTERNAL_MUTEX_LOCK(mutex);
 +    if (counter++ > 0) {
 +        SCM_INTERNAL_MUTEX_UNLOCK(mutex);
@@ -328,7 +350,7 @@
  #if !defined(WIN32) && defined(CONFIG_USE_DEV_URANDOM)
      rng_fd = open("/dev/urandom", O_RDONLY);
  #elif defined(WIN32) && defined(CONFIG_WIN32_USE_CRYPTO_LIB)
-@@ -122,10 +150,14 @@
+@@ -122,10 +181,14 @@
      }
  #else
      /* start of with a stack to copy across */
@@ -345,7 +367,7 @@
  }
  
  /**
-@@ -146,22 +178,34 @@
+@@ -146,22 +209,34 @@
   */
  EXP_FUNC void STDCALL RNG_terminate(void)
  {
@@ -382,7 +404,7 @@
  #elif defined(WIN32) && defined(CONFIG_WIN32_USE_CRYPTO_LIB)
      /* use Microsoft Crypto Libraries */
      CryptGenRandom(gCryptProv, num_rand_bytes, rand_data);
-@@ -199,6 +243,7 @@
+@@ -199,6 +274,7 @@
      /* insert the digest at the start of the entropy pool */
      memcpy(entropy_pool, digest, MD5_SIZE);
  #endif
@@ -391,7 +413,7 @@
  }
  
 --- a/axTLS\crypto\crypto.h	2016-07-24 16:31:34 +0900
-+++ b/axTLS\crypto\crypto.h	2016-12-12 17:31:43 +0900
++++ b/axTLS\crypto\crypto.h	2016-12-08 00:15:14 +0900
 @@ -39,6 +39,7 @@
  extern "C" {
  #endif
@@ -400,17 +422,6 @@
  #include "bigint_impl.h"
  #include "bigint.h"
  
-@@ -254,6 +255,10 @@
- /**************************************************************************
-  * RNG declarations 
-  **************************************************************************/
-+
-+/* Make RNG thread-safe (Gauche specific) */
-+EXP_FUNC void STDCALL RNG_mutex_init(void);
-+
- EXP_FUNC void STDCALL RNG_initialize(void);
- EXP_FUNC void STDCALL RNG_custom_init(const uint8_t *seed_buf, int size);
- EXP_FUNC void STDCALL RNG_terminate(void);
 --- a/axTLS\crypto\bigint_impl.h	2016-06-12 19:39:34 +0900
 +++ b/axTLS\crypto\bigint_impl.h	2016-12-12 20:44:34 +0900
 @@ -61,7 +61,7 @@

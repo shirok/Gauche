@@ -255,10 +255,6 @@ void RSA_print(const RSA_CTX *ctx);
 /**************************************************************************
  * RNG declarations 
  **************************************************************************/
-
-/* Make RNG thread-safe (Gauche specific) */
-EXP_FUNC void STDCALL RNG_mutex_init(void);
-
 EXP_FUNC void STDCALL RNG_initialize(void);
 EXP_FUNC void STDCALL RNG_custom_init(const uint8_t *seed_buf, int size);
 EXP_FUNC void STDCALL RNG_terminate(void);

@@ -59,10 +59,38 @@
 /* Make RNG thread-safe (Gauche specific) */
 static ScmInternalMutex mutex = SCM_INTERNAL_MUTEX_INITIALIZER;
 static u_long counter = 0;
-EXP_FUNC void STDCALL RNG_mutex_init(void)
+#if defined(GAUCHE_WINDOWS)
+/* ensuring initialization of global mutex on Windows. */
+#if defined(__MINGW64_VERSION_MAJOR) && (_WIN32_WINNT >= 0x0600)
+static INIT_ONCE once = INIT_ONCE_STATIC_INIT;
+static BOOL CALLBACK init_mutex(PINIT_ONCE once, PVOID param, PVOID *ctx)
 {
     SCM_INTERNAL_MUTEX_INIT(mutex);
+    return TRUE;
 }
+static void ensure_mutex_initialization()
+{
+    InitOnceExecuteOnce(&once, (PINIT_ONCE_FN)init_mutex, NULL, NULL);
+}
+#else /* !(defined(__MINGW64_VERSION_MAJOR) && (_WIN32_WINNT >= 0x0600)) */
+static volatile LONG once = 0;
+static void ensure_mutex_initialization()
+{
+    for (;;) {
+        switch (InterlockedCompareExchange(&once, 2, 0)) {
+        case 0:  /* first time */
+            SCM_INTERNAL_MUTEX_INIT(mutex);
+            InterlockedExchange(&once, 1);
+            return;
+        case 1:  /* done */
+            return;
+        default: /* wait (another thread is initializing) */
+            SwitchToThread();
+        }
+    }
+}
+#endif /* !(defined(__MINGW64_VERSION_MAJOR) && (_WIN32_WINNT >= 0x0600)) */
+#endif /* GAUCHE_WINDOWS */
 
 #ifndef WIN32
 static int rng_fd = -1;
@@ -125,6 +153,9 @@ int get_file(const char *filename, uint8_t **buf)
  */
 EXP_FUNC void STDCALL RNG_initialize()
 {
+#if defined(GAUCHE_WINDOWS)
+    ensure_mutex_initialization();
+#endif /* GAUCHE_WINDOWS */
     SCM_INTERNAL_MUTEX_LOCK(mutex);
     if (counter++ > 0) {
         SCM_INTERNAL_MUTEX_UNLOCK(mutex);

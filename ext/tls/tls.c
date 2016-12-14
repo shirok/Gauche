@@ -223,7 +223,4 @@ ScmObj Scm_TLSOutputPortSet(ScmTLS* t, ScmObj port)
 void Scm_Init_tls(ScmModule *mod)
 {
     Scm_InitStaticClass(&Scm_TLSClass, "<tls>", mod, NULL, 0);
-
-    /* Make RNG thread-safe (Gauche specific) */
-    RNG_mutex_init();
 }
