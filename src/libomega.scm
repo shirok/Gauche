@@ -44,13 +44,14 @@
 
 ;; Register built-in modules as provided, so that (use <built-in-modue>) won't
 ;; complain.
-;; TODO: #<module util.match> isn't built-in, but the module is created during
-;; initializing compile.scm, for it has reference to util.match#match:error.
-;; Eventually it should be addressed by making util.match built-in; but for now,
-;; we use a kludge to exclude util.match explicitly.
+;; Kludge: util.match and gauche.interpolate are external files, but references
+;; to them are created in the compiled core code, since macros defined in them
+;; are expanded during compilation.  We need a better solution than this, for
+;; new code would introduce further dependency; but for the time being, this
+;; will do.
 (dolist [m (all-modules)]
   (let1 n (module-name m)
-    (unless (eq? n 'util.match)
+    (unless (memq n '(util.match gauche.interpolate))
       (provide (module-name->path n)))))
 
 ;; A trick to allow slot-ref to be used for compound condition.
