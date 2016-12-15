@@ -11570,7 +11570,7 @@ Bはその中から別の手続きCをさらに呼び出しているかもしれ
 
 @c EN
 The magic procedure @code{call/cc} picks the head of the chain
-following its execution (marked as @code{*} in the figure blow),
+following its execution (marked as @code{*} in the figure below),
 and passes it to the given procedure (denoted @code{k} in the figure
 below).
 So, whenever @code{k} is invoked, the control goes through the
