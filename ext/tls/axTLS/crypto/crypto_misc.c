@@ -32,6 +32,20 @@
  * Some misc. routines to help things out
  */
 
+/* Make RNG thread-safe (Gauche specific) */
+#include "gauche.h"
+#if defined(GAUCHE_WINDOWS)
+#undef open
+#undef chdir
+#undef unlink
+#if defined(GAUCHE_USE_WTHREADS)
+#undef SCM_INTERNAL_MUTEX_INIT
+#undef SCM_INTERNAL_MUTEX_LOCK
+#define SCM_INTERNAL_MUTEX_INIT(mutex) ((mutex) = CreateMutex(NULL, FALSE, NULL))
+#define SCM_INTERNAL_MUTEX_LOCK(mutex) WaitForSingleObject(mutex, INFINITE)
+#endif /* GAUCHE_USE_WTHREADS */
+#endif /* GAUCHE_WINDOWS */
+
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
@@ -42,28 +56,41 @@
 #include "wincrypt.h"
 #endif
 
-/* Make this thread-safe (Gauche specific) */
-#include "gauche.h"
+/* Make RNG thread-safe (Gauche specific) */
 static ScmInternalMutex mutex = SCM_INTERNAL_MUTEX_INITIALIZER;
 static u_long counter = 0;
-
-#ifdef WIN32
+#if defined(GAUCHE_WINDOWS)
 /* ensuring initialization of global mutex on Windows. */
-static BOOL init_mutex(PINIT_ONCE once,
-                       PVOID param,
-                       PVOID *ctx)
+#if defined(__MINGW64_VERSION_MAJOR) && (_WIN32_WINNT >= 0x0600)
+static INIT_ONCE once = INIT_ONCE_STATIC_INIT;
+static BOOL CALLBACK init_mutex(PINIT_ONCE once, PVOID param, PVOID *ctx)
 {
     SCM_INTERNAL_MUTEX_INIT(mutex);
     return TRUE;
 }
-
 static void ensure_mutex_initialization()
 {
-    static INIT_ONCE once = INIT_ONCE_STATIC_INIT;
-    InitOnceExecuteOnce(&once, init_mutex, NULL, NULL);
+    InitOnceExecuteOnce(&once, (PINIT_ONCE_FN)init_mutex, NULL, NULL);
 }
-#endif //WIN32
-
+#else /* !(defined(__MINGW64_VERSION_MAJOR) && (_WIN32_WINNT >= 0x0600)) */
+static volatile LONG once = 0;
+static void ensure_mutex_initialization()
+{
+    for (;;) {
+        switch (InterlockedCompareExchange(&once, 2, 0)) {
+        case 0:  /* first time */
+            SCM_INTERNAL_MUTEX_INIT(mutex);
+            InterlockedExchange(&once, 1);
+            return;
+        case 1:  /* done */
+            return;
+        default: /* wait (another thread is initializing) */
+            SwitchToThread();
+        }
+    }
+}
+#endif /* !(defined(__MINGW64_VERSION_MAJOR) && (_WIN32_WINNT >= 0x0600)) */
+#endif /* GAUCHE_WINDOWS */
 
 #ifndef WIN32
 static int rng_fd = -1;
@@ -126,9 +153,9 @@ int get_file(const char *filename, uint8_t **buf)
  */
 EXP_FUNC void STDCALL RNG_initialize()
 {
-#if defined(WIN32)
+#if defined(GAUCHE_WINDOWS)
     ensure_mutex_initialization();
-#endif
+#endif /* GAUCHE_WINDOWS */
     SCM_INTERNAL_MUTEX_LOCK(mutex);
     if (counter++ > 0) {
         SCM_INTERNAL_MUTEX_UNLOCK(mutex);
@@ -154,8 +181,10 @@ EXP_FUNC void STDCALL RNG_initialize()
     }
 #else
     /* start of with a stack to copy across */
-    int i;
-    memcpy(entropy_pool, &i, ENTROPY_POOL_SIZE);
+    /* int i; */
+    /* memcpy(entropy_pool, &i, ENTROPY_POOL_SIZE); */
+    uint8_t arr[ENTROPY_POOL_SIZE];
+    memcpy(entropy_pool, arr, ENTROPY_POOL_SIZE);
     rand_r((unsigned int *)entropy_pool); 
 #endif
 
