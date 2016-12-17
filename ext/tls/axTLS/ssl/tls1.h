@@ -83,7 +83,6 @@ extern "C" {
 #define NUM_PROTOCOLS               4
 
 #define MAX_SIG_ALGORITHMS          4
-#define SIG_ALG_EXTENSION           0x0d
 #define SIG_ALG_SHA1                2
 #define SIG_ALG_SHA256              4
 #define SIG_ALG_SHA384              5
@@ -115,6 +114,14 @@ enum
     HS_CERT_VERIFY,
     HS_CLIENT_KEY_XCHG,
     HS_FINISHED = 20
+};
+
+/* SSL extension types */
+enum
+{
+    SSL_EXT_SERVER_NAME = 0,
+    SSL_EXT_MAX_FRAGMENT_SIZE,
+    SSL_EXT_SIG_ALG = 0x0d,
 };
 
 typedef struct 
@@ -166,6 +173,14 @@ typedef struct
     uint8_t key_block_generated;
 } DISPOSABLE_CTX;
 
+typedef struct 
+{
+    char *host_name; /* Needed for the SNI support */
+    /* Needed for the Max Fragment Size Extension. 
+       Allowed values: 2^9, 2^10 .. 2^14 */
+    uint16_t max_fragment_size; 
+} SSL_EXTENSIONS;
+
 struct _SSL
 {
     uint32_t flag;
@@ -206,6 +221,7 @@ struct _SSL
     uint8_t read_sequence[8];           /* 64 bit sequence number */
     uint8_t write_sequence[8];          /* 64 bit sequence number */
     uint8_t hmac_header[SSL_RECORD_SIZE];    /* rx hmac */
+    SSL_EXTENSIONS *extensions; /* Contains the SSL (client) extensions */
 };
 
 typedef struct _SSL SSL;

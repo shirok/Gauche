@@ -124,7 +124,7 @@ ScmObj Scm_TLSConnect(ScmTLS* t, int fd)
 #if defined(GAUCHE_USE_AXTLS)
     context_check(t, "connect");
     if (t->conn) Scm_SysError("attempt to connect already-connected TLS %S", t);
-    t->conn = ssl_client_new(t->ctx, fd, 0, 0);
+    t->conn = ssl_client_new(t->ctx, fd, 0, 0, NULL);
     int r = ssl_handshake_status(t->conn);
     if (r != SSL_OK) {
         Scm_Error("TLS handshake failed: %d", r);
