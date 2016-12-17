@@ -6,6 +6,9 @@
 	  expose to the users; and er-transformer should be good for the
 	  bottom layer for general use.
 
+	* configure.ac: 0.9.6_pre1. We're changing output of macro expansion,
+	  so it's better not to confuse with 0.9.5 release version.
+
 2016-12-12  Shiro Kawai  <shiro@acm.org>
 
 	* lib/slib.scm.in: Updated for slib3b5.  Also emit comprehensive
