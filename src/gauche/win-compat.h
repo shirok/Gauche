@@ -18,9 +18,13 @@ extern "C" {
 #define GAUCHE_WINDOWS 1
 
 /* Preparation. */
-#ifndef WINVER
-#define WINVER 0x0500           /* we support Windows 2000 or later */
-#endif /*WINVER*/
+#if !defined(WINVER)
+#define WINVER 0x0502           /* Windows XP SP2 or later */
+#endif /* !WINVER */
+
+#if !defined(_WIN32_WINNT)
+#define _WIN32_WINNT WINVER
+#endif /* !_WIN32_WINNT */
 
 #if defined(UNICODE) && !defined(_UNICODE)
 #define _UNICODE                /* Windows needs both UNICODE and _UNICODE */
