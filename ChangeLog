@@ -1,3 +1,11 @@
+2016-12-16  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.scm (primitive-macro-transformer): Drop primitive macro
+	  transformer.  In order to use passed envirnoment we need to access
+	  compiler internals anyway, so it won't be a good abstraction to
+	  expose to the users; and er-transformer should be good for the
+	  bottom layer for general use.
+
 2016-12-12  Shiro Kawai  <shiro@acm.org>
 
 	* lib/slib.scm.in: Updated for slib3b5.  Also emit comprehensive

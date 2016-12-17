@@ -1839,7 +1839,6 @@
 (define =>.          (global-id '=>))
 (define current-module. (global-id 'current-module))
 
-(define %make-primitive-transformer. (global-id% '%make-primitive-transformer))
 (define %make-er-transformer.        (global-id% '%make-er-transformer))
 (define %make-toplevel-cenv.         (global-id% '%make-toplevel-cenv))
 
@@ -2109,7 +2108,7 @@
 
 ;; Macros ...........................................
 
-(define-pass1-syntax (primitive-macro-transformer form cenv) :gauche
+(define-pass1-syntax (er-macro-transformer form cenv) :gauche
   (match form
     [(_ xformer)
      ;; We need to capture the current CENV as the macro definition
@@ -2130,9 +2129,8 @@
      (let1 def-env-form (if (null? (cenv-frames cenv))
                           `(,%make-toplevel-cenv. ',(cenv-exp-name cenv))
                           cenv)
-       (pass1 `(,%make-primitive-transformer. ,xformer ,def-env-form)
-              cenv))]
-    [_ (error "syntax-error: malformed primitive-macro-transformer:" form)]))
+       (pass1 `(,%make-er-transformer. ,xformer ,def-env-form) cenv))]
+    [_ (error "syntax-error: malformed er-macro-transformer:" form)]))
 
 ;; %make-toplevel-cenv is a procedure, so it refers the runtime module.
 ;; In general it doesn't need to be the same as the compile-time module.
@@ -5931,7 +5929,8 @@
       [else (error "wrong number of arguments for vector-set!:" form)])))
 
 ;; NB: %uvector-ref isn't public, and should be in the gauche.internal
-;; module.  We don't have a convenience mechansi
+;; module.  We don't have a convenience mechanism to attach builtin inliner
+;; to the bindings in other module, though.
 (define-builtin-inliner %uvector-ref
   (^[form cenv]
     (match form
@@ -6071,16 +6070,9 @@
 ;; Macro support basis
 ;;
 
-;; Primitive transformer takes the input form, macro-definition
-;; environment, and macro-use environment.
-;;
-;; (Sexpr, Env, Env) -> Sexpr
-;;
-;; The transformer should treat the envionments as opaque data.
-;; Currently it's just Cenv's, but we may change it later.
-
-;; Internal.  The syntax (primitive-macro-transformer xformer)
-;; would be expanded to a call to this procedure.
+;; TRANSIENT: We no longer use this, but reference to this procedure
+;; might be generated if er-macro is compiled by 0.9.5 compiler.
+;; Remove this on 1.0 release.
 (define (%make-primitive-transformer xformer def-env)
   (%make-macro-transformer (cenv-exp-name def-env)
                            (^[form use-env] (xformer form def-env use-env))))

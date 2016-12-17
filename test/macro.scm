@@ -21,25 +21,6 @@
 ;;----------------------------------------------------------------------
 ;; 
 
-(test-section "primitive macro transformer")
-
-(define-syntax defmac  ; (defmac name args . body)
-  (primitive-macro-transformer
-   (lambda (form def-env use-env)
-     (let ([name (cadr form)]
-           [args (caddr form)]
-           [body (cdddr form)])
-       `(define-syntax ,name
-          (let ((,name (lambda ,args ,@body)))
-            (primitive-macro-transformer
-             (lambda (f d u) (apply ,name (cdr f))))))))))
-
-(defmac myif (test then else) `(if ,test ,then ,else))
-
-(test-macro "defmac if" (if a b c) (myif a b c))
-
-;; explicit renaming macros
-
 (test-section "ER macro basics")
 
 (define-syntax er-when
