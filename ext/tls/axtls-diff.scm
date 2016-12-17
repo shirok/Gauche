@@ -7,6 +7,7 @@
 (use gauche.process)
 (use util.match)
 (use srfi-1)
+(use text.tr)
 
 (define (usage)
   (print "Usage: ../../src/gosh -ftest ./axtls-diff.scm <original-axTLS-source-directory>")
@@ -31,6 +32,11 @@
   (directory-fold (build-path "axTLS" subdir)
                   (^[p s] (if (#/(\.[ch]$)|(\.sh$)|(^Makefile$)/ p) (cons p s) s)) xs))
 
+(define (fix-path name)
+  (cond-expand
+    [gauche.os.windows (string-tr name "\\\\" "/")]
+    [else              name]))
+
 (define (do-diff file dir)
   (let* ([orig (build-path dir (regexp-replace #/^axTLS[\/\\]/ file ""))]
          [p (run-process
@@ -54,11 +60,12 @@
          [line2 (read-line (process-output p))])
     (unless (eof-object? line1)
       (let ([m1 (#/^--- [^\s]+\s+(.*)/ line1)]
-            [m2 (#/^\+\+\+ [^\s]+\s+(.*)/ line2)])
+            [m2 (#/^\+\+\+ [^\s]+\s+(.*)/ line2)]
+            [path (fix-path file)])
         (unless (and m1 m2)
           (exit 1 #"Diff output parse error.  Check the output of \
                     `diff -u -N ~orig ~file'."))
-        (print #"--- a/~file\t~(m1 1)")
-        (print #"+++ b/~file\t~(m2 1)")
+        (print #"--- a/~path\t~(m1 1)")
+        (print #"+++ b/~path\t~(m2 1)")
         (copy-port (process-output p) (current-output-port))))
     (process-wait p)))
