@@ -6070,13 +6070,6 @@
 ;; Macro support basis
 ;;
 
-;; TRANSIENT: We no longer use this, but reference to this procedure
-;; might be generated if er-macro is compiled by 0.9.5 compiler.
-;; Remove this on 1.0 release.
-(define (%make-primitive-transformer xformer def-env)
-  (%make-macro-transformer (cenv-exp-name def-env)
-                           (^[form use-env] (xformer form def-env use-env))))
-
 ;; er-renamer :: (Form, [Id]) -> (Form, [Id])
 ;; Where symbol or identifiers in the Form will be replaced with
 ;; fresh identifiers.   If Form has more than one occurence of a
@@ -6130,7 +6123,13 @@
                (^[a b] (er-comparer a b uenv def-env)))))
   (%make-macro-transformer (cenv-exp-name def-env) expand))
 
-;; this is called during macro expansion
+;; TRANSIENT: We no longer use these two procedures, but reference to them
+;; might be inserted in the file precompiled by 0.9.5 compiler as the
+;; result of expansion of er macro.
+;; Remove this on 1.0 release.
+(define (%make-primitive-transformer xformer def-env)
+  (%make-macro-transformer (cenv-exp-name def-env)
+                           (^[form use-env] (xformer form def-env use-env))))
 (define (%expand-er-transformer form cenv)
   (match form
     [(_ xformer)
@@ -6140,7 +6139,7 @@
                           cenv)
        `(,%make-er-transformer. ,xformer ,def-env-form))]
     [_ (error "Invalid er-macro-transformer form:" form)]))
-     
+
 ;;============================================================
 ;; Utilities
 ;;
