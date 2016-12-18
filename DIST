@@ -94,7 +94,7 @@ do_self_host_test () {
     srcdir=`pwd`
     destdir=`pwd`/../Gauche-tmp-self-host-test
     if [ -d $destdir/stage1 ]; then rm -rf $destdir; fi
-    XPATH=$desdir/bin:$PATH
+    XPATH=$destdir/bin:$PATH
     mkdir -p $destdir/stage1
     (cd $destdir/stage1; $srcdir/configure --prefix=$destdir; make -j; make install)
     mkdir -p $destdir/stage2
