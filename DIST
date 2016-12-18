@@ -89,10 +89,23 @@ do_mingw_installer () {
     MSYSTEM=MINGW32 src/mingw-dist.sh --with-gl --with-installer
 }
 
+do_self_host_test () {
+    do_gen
+    srcdir=`pwd`
+    destdir=`pwd`/../Gauche-tmp-self-host-test
+    if [ -d $destdir/stage1 ]; then rm -rf $destdir; fi
+    XPATH=$desdir/bin:$PATH
+    mkdir -p $destdir/stage1
+    (cd $destdir/stage1; $srcdir/configure --prefix=$destdir; make -j; make install)
+    mkdir -p $destdir/stage2
+    (cd $destdir/stage2; PATH=$XPATH $srcdir/configure; PATH=$XPATH make -j; PATH=$XPATH make -s check)
+}
+
 case $1 in
     gen)   do_gen ;;
     tgz)   do_tgz ;;
     release) do_release ;;
     mingw-installer) do_mingw_installer ;;
+    self-host-test)  do_self_host_test ;;
     *) usage ;;
 esac
