@@ -77,7 +77,7 @@ $(SSLTEST): $(SSLTEST_OBJECTS) $(AXTLS_OBJECTS)
 	$(CCLD) $(LOCAL_LFLAGS) $(XLDFLAGS) -o $(SSLTEST) $(SSLTEST_OBJECTS) $(AXTLS_OBJECTS) $(LIBS)
 
 # The 'system' macro hack is to suppress "ignoring result" warning
-$(SSLTEST_GENERATED) : axTLS/ssl/test/ssltest.c ssltest-mod.scm
+$(SSLTEST_GENERATED) : axTLS/ssl/test/ssltest.c ssltest-mod.scm axtls_dirs
 	$(GOSH) $(srcdir)/ssltest-mod.scm "$(abs_srcdir)" "$(abs_builddir)" < $(srcdir)/axTLS/ssl/test/ssltest.c > $@
 
 install : install-std
