@@ -63,15 +63,17 @@
 ;; See https://github.com/shirok/Gauche/issues/244
 (test* "proper error handling of 'main'" "ok"
        (unwind-protect
-           (begin
+           (let1 gauche.h (if-let1 top (sys-getenv "top_srcdir")
+                            (build-path top "src/gauche.h")
+                            "gauche.h")
              (delete-files "test.o")
              (with-output-to-file "test.o"
                (^[]
                  (write
                   '(use gauche.partcont))
                  (write
-                  '(define (main args)
-                     (reset (shift k (call-with-input-file "gauche.h" k)))
+                  `(define (main args)
+                     (reset (shift k (call-with-input-file ,gauche.h k)))
                      (print 'ok)
                      0))))
              (process-output->string '("./gosh" "-ftest" "test.o")))
