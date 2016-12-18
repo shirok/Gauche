@@ -1,3 +1,8 @@
+2016-12-18  Shiro Kawai  <shiro@acm.org>
+
+	* ext/tls: Updated to axTLS 2.1.0
+	  https://github.com/shirok/Gauche/pull/261
+
 2016-12-17  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/precomp.scm: Improved literal module handling.
