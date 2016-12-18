@@ -730,6 +730,11 @@
 ;;================================================================
 ;; Compiler-specific literal handling definitions
 ;;
+
+;;----------------------------------------------------------------
+;; <compiled-code>
+;;
+
 (define-cgen-literal <cgen-scheme-code> <compiled-code>
   ([code-name          :init-keyword :code-name]
    [code-vector-c-name :init-keyword :code-vector-c-name]
@@ -906,49 +911,61 @@
                          il insns)])
            (cgen-literal packed)))))
 
-;; NB: this doesn't yet handle identifiers that are inserted by hygienic
-;; macro (so that they have different module than the current one).
+;;----------------------------------------------------------------
+;; <module>
+;;
+
+;; We recover modules at runtime.  Anonymous modules can be recovered
+;; if they are used as a proxy of a real module (via <tmodule>).
+(define-cgen-literal <cgen-module> <module>
+  ((name  :init-keyword :name)
+   (name-literal :init-keyword :name-literal))
+  (make (value)
+    (let1 name (or (~ value'name)
+                   (any (^[tm] (and (eq? (~ tm'module) value) (~ tm'name)))
+                        (all-tmodules))
+                   (error "Cannot emit literal for anonymous module:" value))
+      (make <cgen-module> :value value
+        :c-name (cgen-allocate-static-datum)
+        :name name :name-literal (cgen-literal name))))
+  (init (self)
+    (format #t "  ~a = SCM_OBJ(Scm_FindModule(SCM_SYMBOL(~a), \
+                                   SCM_FIND_MODULE_CREATE)); \
+                /* module ~a */\n"
+            (~ self'c-name)
+            (cgen-cexpr (~ self'name-literal))
+            (~ self'name)))
+  (static (self) #f)
+  )
+
+;;----------------------------------------------------------------
+;; <identifier>
+;;
+
 (define-cgen-literal <cgen-scheme-identifier> <identifier>
-  ((id-name   :init-keyword :id-name)
-   (mod-name  :init-keyword :mod-name))
+  ((id-name        :init-keyword :id-name)
+   (module-literal :init-keyword :module-literal))
   (make (value)
     (unless (null? (~ value'env))
       (error "identifier with compiler environment can't be compiled" value))
     (make <cgen-scheme-identifier> :value value
           :c-name (cgen-allocate-static-datum)
           :id-name (cgen-literal (unwrap-syntax value))
-          :mod-name (cond [(module-name-fix (~ value'module))
-                           => cgen-literal]
-                          [(current-tmodule) => (^m (cgen-literal (~ m'name)))]
-                          [else #f])))
+          :module-literal (cgen-literal (~ value'module))))
   (init (self)
     (let ([name (cgen-cexpr (~ self'id-name))]
           [cname (~ self'c-name)])
-      (or (and-let* ([modnam (~ self'mod-name)])
-            (format #t "  ~a = Scm_MakeIdentifier(~a, \
-                                  Scm_FindModule(SCM_SYMBOL(~a), \
-                                                 SCM_FIND_MODULE_CREATE),
-                                  SCM_NIL); /* ~a#~a */\n"
-                    cname name (cgen-cexpr modnam)
-                    (cgen-safe-comment (~ self'mod-name'value))
-                    (cgen-safe-comment (~ self'id-name'value)))
-            #t)
-          (let1 mod-cname (current-tmodule-cname)
-            (format #t "  ~a = Scm_MakeIdentifier(~a, \
-                                                  SCM_MODULE(~a), \
-                                                  SCM_NIL); /* ~a#~a */\n"
-                    cname name mod-cname
-                    (cgen-safe-comment (~(current-tmodule)'name))
-                    (cgen-safe-comment (~ self'id-name'value)))))))
+      (format #t "  ~a = Scm_MakeIdentifier(~a, SCM_MODULE(~a), \
+                                            SCM_NIL); /* ~a#~a */\n"
+              cname name (cgen-cexpr (~ self'module-literal))
+              (cgen-safe-comment (~ self'module-literal'name))
+              (cgen-safe-comment (~ self'id-name'value)))))
   (static (self) #f)
   )
 
-;; NB: for compatibility, we check modnam vs '# to find out anonymous
-;; modules.  (By 0.8.14 anonymous modules are named as |#|.)
-(define (module-name-fix module)
-  (and-let* ([nam (module-name module)]
-             [ (not (eq? nam '|#|)) ]) ;|# <- to fool emacs
-    nam))
+;;----------------------------------------------------------------
+;; <macro>
+;;
 
 ;; NB: for now, we ignore macros (we assume they are only used within
 ;; the source file).
@@ -957,6 +974,10 @@
   (make (value)
     (make <cgen-scheme-macro> :value value :c-name #f))
   )
+
+;;----------------------------------------------------------------
+;; <generic>
+;;
 
 ;; For generic functions, we initialize it at runtime.
 (define-cgen-literal <cgen-scheme-generic> <generic>
@@ -973,6 +994,10 @@
             (~ self'gf-name'c-name)))
   (static (self) #f)
   )
+
+;;----------------------------------------------------------------
+;; <procedure>
+;;
 
 ;; We allow literal closures if it doens't close environment.
 ;; Closures do not have its own class, so we define cgen-literal class
