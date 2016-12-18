@@ -921,22 +921,35 @@
   ((name  :init-keyword :name)
    (name-literal :init-keyword :name-literal))
   (make (value)
-    (let1 name (or (~ value'name)
-                   (any (^[tm] (and (eq? (~ tm'module) value) (~ tm'name)))
-                        (all-tmodules))
-                   (error "Cannot emit literal for anonymous module:" value))
+    (if-let1 n (predefined-module value)
       (make <cgen-module> :value value
-        :c-name (cgen-allocate-static-datum)
-        :name name :name-literal (cgen-literal name))))
+            :c-name n
+            :name (~ value'name))
+      (let1 name (or (~ value'name)
+                     (any (^[tm] (and (eq? (~ tm'module) value) (~ tm'name)))
+                          (all-tmodules))
+                     (error "Cannot emit literal for anonymous module:" value))
+        (make <cgen-module> :value value
+              :c-name (cgen-allocate-static-datum)
+              :name name :name-literal (cgen-literal name)))))
   (init (self)
-    (format #t "  ~a = SCM_OBJ(Scm_FindModule(SCM_SYMBOL(~a), \
-                                   SCM_FIND_MODULE_CREATE)); \
-                /* module ~a */\n"
-            (~ self'c-name)
-            (cgen-cexpr (~ self'name-literal))
-            (~ self'name)))
-  (static (self) #f)
+    (unless (predefined-module (~ self'value))
+      (format #t "  ~a = SCM_OBJ(Scm_FindModule(SCM_SYMBOL(~a), \
+                                     SCM_FIND_MODULE_CREATE)); \
+                  /* module ~a */\n"
+              (~ self'c-name)
+              (cgen-cexpr (~ self'name-literal))
+              (~ self'name))))
+  (static (self) (boolean (predefined-module (~ self'value))))
   )
+
+(define (predefined-module module)
+  (assq-ref `((,(find-module 'null)   . "Scm_NullModule()")
+              (,(find-module 'scheme) . "Scm_SchemeModule()")
+              (,(find-module 'gauche) . "Scm_GaucheModule()")
+              (,(find-module 'gauche.internal) . "Scm_GaucheInternalModule()")
+              )
+            module))
 
 ;;----------------------------------------------------------------
 ;; <identifier>
