@@ -689,7 +689,8 @@
                         [tx ((with-module gauche.internal macro-transformer) val)]
                         [ (closure? tx) ])
                `((with-module gauche.internal %insert-syntax-binding)
-                 (current-module) ',name ,xformer-spec))
+                 (current-module) ',name
+                 (let ((,name ,xformer-spec)) ,name))) ; attach name to closure
              (write-ext-module `(define-syntax . ,form))
              #f)))]
     [_ (error "Malformed define-syntax" form)]))
