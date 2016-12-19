@@ -6114,6 +6114,9 @@
                (^[a b] (er-comparer a b uenv def-env)))))
   (%make-macro-transformer (cenv-exp-name def-env) expand))
 
+;; Call to this procedure can be inserted in the output of er-macro expander
+;; and emitted in the precompiled file, so do not change this API unless
+;; you're sure no existing precompiled code refers to this.
 (define (%make-er-transformer/toplevel xformer def-module def-name)
   (%make-er-transformer xformer (%make-cenv def-module '() def-name)))
 
