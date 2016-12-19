@@ -1,5 +1,14 @@
 2016-12-18  Shiro Kawai  <shiro@acm.org>
 
+	* src/compile.scm (er-macro-transformer): Fix er-macro issue that
+	  doesn't keep defining environment
+	  (https://github.com/shirok/Gauche/issues/250).
+	  This fix also addresses the issue of precompiling er-macro in
+	  better ways than 0.9.5---the precompilable toplevel er-macro
+	  now expands into a reference of %make-er-transformer/toplevel,
+	  with all the arguments that are serializable.  We don't need to
+	  call %make-toplevel-cenv.
+
 	* ext/tls: Updated to axTLS 2.1.0
 	  https://github.com/shirok/Gauche/pull/261
 

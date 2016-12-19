@@ -185,6 +185,28 @@
              '((1 2) . #(1 2))
              (foo)))))
 
+;; er-macro and with-module
+;; cf. https://github.com/shirok/Gauche/issues/250
+(define er-macro-scope-test-a 'a)
+
+(define-module er-macro-test-1
+  (define er-macro-scope-test-a 'b))
+
+(with-module er-macro-test-1
+  (define-syntax er-macro-test-x
+    (er-macro-transformer
+     (^[f r c] (r 'er-macro-scope-test-a)))))
+
+(test* "er-macro and with-module" 'b
+       ((with-module er-macro-test-1 er-macro-test-x)))
+
+;; er-macro and eval
+(test* "er-macro and eval" 'b
+       (eval '(let-syntax ((m (er-macro-transformer
+                               (^[f r c] (r 'er-macro-scope-test-a)))))
+                (m))
+             (find-module 'er-macro-test-1)))
+
 ;; quasirename
 ;; Note: currently quasirename depends on util.match, too.
 (let ((unquote list)

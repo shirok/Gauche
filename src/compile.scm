@@ -1839,8 +1839,8 @@
 (define =>.          (global-id '=>))
 (define current-module. (global-id 'current-module))
 
-(define %make-er-transformer.        (global-id% '%make-er-transformer))
-(define %make-toplevel-cenv.         (global-id% '%make-toplevel-cenv))
+(define %make-er-transformer.          (global-id% '%make-er-transformer))
+(define %make-er-transformer/toplevel. (global-id% '%make-er-transformer/toplevel))
 
 ;; Returns an IForm for (values) - useful for define-pass1-syntax that does
 ;; compile-time things and returns nothing.  The delay trick is to create
@@ -2115,10 +2115,9 @@
      ;; environment.  There's a catch, though---if we're AOT compiling
      ;; a macro, the captured CENV must be serializable to a file,
      ;; which isn't generally the case.
-     ;; So, if we're compiling toplevel, we emit code that reconstruct
-     ;; cenv at runtime.  Runtime CENV construction
-     ;; will incur some overhead, but it's just per macro definition so
-     ;; it won't be an issue.
+     ;; So, if we're compiling toplevel, we call a special API that takes
+     ;; the current module and cenv-exp-name, and reconstruct the cenv
+     ;; at runtime.
      ;; If cenv has local environment, we don't bother that, for the macro
      ;; will be fully expanded during AOT compilation.  HOWEVER - we can't
      ;; embed cenv as a vector literal (e.g. `',cenv) since quoting will
@@ -2126,21 +2125,13 @@
      ;; to make cenv as a record.  For now, we take advantage that unquoted
      ;; vector evaluates to itself, and insert cenv without quoting.  This
      ;; has to change if we prohibit unquoted vector literals.
-     (let1 def-env-form (if (null? (cenv-frames cenv))
-                          `(,%make-toplevel-cenv. ',(cenv-exp-name cenv))
-                          cenv)
-       (pass1 `(,%make-er-transformer. ,xformer ,def-env-form) cenv))]
+     (if (cenv-toplevel? cenv)
+       (pass1 `(,%make-er-transformer/toplevel. ,xformer
+                                                ,(cenv-module cenv)
+                                                ',(cenv-exp-name cenv))
+              cenv)
+       (pass1 `(,%make-er-transformer. ,xformer ,cenv) cenv))]
     [_ (error "syntax-error: malformed er-macro-transformer:" form)]))
-
-;; %make-toplevel-cenv is a procedure, so it refers the runtime module.
-;; In general it doesn't need to be the same as the compile-time module.
-;; However, as far as this form is inserted by primitive-macro-transformer
-;; or er-macro-transformer for the toplevel macro definition, it won't be an
-;; issue.
-;; TODO: Check if it's ok to have something like this:
-;;    (begin (define-syntax ...) (select-module ...) (define-syntax ...)
-(define (%make-toplevel-cenv name) :internal
-  (%make-cenv (vm-current-module) '() name))
 
 (define-pass1-syntax (%macroexpand form cenv) :gauche
   (match form
@@ -6123,10 +6114,15 @@
                (^[a b] (er-comparer a b uenv def-env)))))
   (%make-macro-transformer (cenv-exp-name def-env) expand))
 
-;; TRANSIENT: We no longer use these two procedures, but reference to them
+(define (%make-er-transformer/toplevel xformer def-module def-name)
+  (%make-er-transformer xformer (%make-cenv def-module '() def-name)))
+
+;; TRANSIENT: We no longer use these procedures, but reference to them
 ;; might be inserted in the file precompiled by 0.9.5 compiler as the
 ;; result of expansion of er macro.
 ;; Remove this on 1.0 release.
+(define (%make-toplevel-cenv name) :internal
+  (%make-cenv (vm-current-module) '() name))
 (define (%make-primitive-transformer xformer def-env)
   (%make-macro-transformer (cenv-exp-name def-env)
                            (^[form use-env] (xformer form def-env use-env))))
