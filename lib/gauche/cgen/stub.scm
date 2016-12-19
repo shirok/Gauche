@@ -1113,7 +1113,7 @@
 (define-method cgen-emit-decl ((cproc <cproc>))
   (next-method)
   ;; We emit forward definitions of C function names and stub record definitions
-  ;; first, so that the funciton body can refer to the stub record.
+  ;; first, so that the function body can refer to the stub record.
   (p "static ScmObj "(~ cproc'c-name)"(ScmObj*, int, void*);")
   (let1 flags (~ cproc'flags)
     (format #t "static SCM_DEFINE_SUBR~a(" (if (null? flags) "" "X"))
