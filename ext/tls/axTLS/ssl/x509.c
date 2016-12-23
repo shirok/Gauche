@@ -73,6 +73,7 @@ int x509_new(const uint8_t *cert, int *len, X509_CTX **ctx)
 {
     int begin_tbs, end_tbs;
     int ret = X509_NOT_OK, offset = 0, cert_size = 0;
+    int version = 0;
     X509_CTX *x509_ctx;
 #ifdef CONFIG_SSL_CERT_VERIFICATION /* only care if doing verification */
     BI_CTX *bi_ctx;
@@ -96,7 +97,7 @@ int x509_new(const uint8_t *cert, int *len, X509_CTX **ctx)
 
     if (cert[offset] == ASN1_EXPLICIT_TAG)   /* optional version */
     {
-        if (asn1_version(cert, &offset, x509_ctx))
+        if ((version = asn1_version(cert, &offset, x509_ctx)) == X509_NOT_OK)
             goto end_cert;
     }
 
@@ -182,7 +183,7 @@ int x509_new(const uint8_t *cert, int *len, X509_CTX **ctx)
             break;
     }
 
-    if (cert[offset] == ASN1_V3_DATA)
+    if (version == 2 && cert[offset] == ASN1_V3_DATA)
     {
         int suboffset;
 
@@ -493,9 +494,29 @@ void x509_print(const X509_CTX *cert, CA_CERT_CTX *ca_cert_ctx)
     printf("%s\n", cert->cert_dn[X509_ORGANIZATION] ?
         cert->cert_dn[X509_ORGANIZATION] : not_part_of_cert);
 
-    printf("Organizational Unit (OU):\t");
-    printf("%s\n", cert->cert_dn[X509_ORGANIZATIONAL_UNIT] ?
-        cert->cert_dn[X509_ORGANIZATIONAL_UNIT] : not_part_of_cert);
+    if (cert->cert_dn[X509_ORGANIZATIONAL_UNIT]) 
+    {
+        printf("Organizational Unit (OU):\t");
+        printf("%s\n", cert->cert_dn[X509_ORGANIZATIONAL_UNIT]);
+    }
+
+    if (cert->cert_dn[X509_LOCATION]) 
+    {
+        printf("Location (L):\t\t\t");
+        printf("%s\n", cert->cert_dn[X509_LOCATION]);
+    }
+
+    if (cert->cert_dn[X509_COUNTRY]) 
+    {
+        printf("Country (C):\t\t\t");
+        printf("%s\n", cert->cert_dn[X509_COUNTRY]);
+    }
+
+    if (cert->cert_dn[X509_STATE]) 
+    {
+        printf("State (ST):\t\t\t");
+        printf("%s\n", cert->cert_dn[X509_STATE]);
+    }
 
     printf("=== CERTIFICATE ISSUED BY ===\n");
     printf("Common Name (CN):\t\t");
@@ -506,9 +527,29 @@ void x509_print(const X509_CTX *cert, CA_CERT_CTX *ca_cert_ctx)
     printf("%s\n", cert->ca_cert_dn[X509_ORGANIZATION] ?
         cert->ca_cert_dn[X509_ORGANIZATION] : not_part_of_cert);
 
-    printf("Organizational Unit (OU):\t");
-    printf("%s\n", cert->ca_cert_dn[X509_ORGANIZATIONAL_UNIT] ?
-        cert->ca_cert_dn[X509_ORGANIZATIONAL_UNIT] : not_part_of_cert);
+    if (cert->ca_cert_dn[X509_ORGANIZATIONAL_UNIT]) 
+    {
+        printf("Organizational Unit (OU):\t");
+        printf("%s\n", cert->ca_cert_dn[X509_ORGANIZATIONAL_UNIT]);
+    }
+
+    if (cert->ca_cert_dn[X509_LOCATION]) 
+    {
+        printf("Location (L):\t\t\t");
+        printf("%s\n", cert->ca_cert_dn[X509_LOCATION]);
+    }
+
+    if (cert->ca_cert_dn[X509_COUNTRY]) 
+    {
+        printf("Country (C):\t\t\t");
+        printf("%s\n", cert->ca_cert_dn[X509_COUNTRY]);
+    }
+
+    if (cert->ca_cert_dn[X509_STATE]) 
+    {
+        printf("State (ST):\t\t\t");
+        printf("%s\n", cert->ca_cert_dn[X509_STATE]);
+    }
 
     printf("Not Before:\t\t\t%s", ctime(&cert->not_before));
     printf("Not After:\t\t\t%s", ctime(&cert->not_after));
