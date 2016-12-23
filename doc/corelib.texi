@@ -11030,7 +11030,8 @@ from @code{hash-table-fold}.
 @defun hash-table-find ht pred :optional failure
 @c EN
 Apply @var{pred} with each key and value in the hash table @var{ht}.
-Once it returns a true value, the value is immediately returned.
+Once @var{pred} returns a true value, that return value is immediately returned
+from @code{hash-table-find}.
 If no key-value satisfies @var{pred}, a thunk @var{failure} is
 invoked and its result is returned.  If @var{failure} is
 omitted, @code{(lambda () #f)} is assumed.
