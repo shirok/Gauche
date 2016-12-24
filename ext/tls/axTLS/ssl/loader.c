@@ -468,7 +468,6 @@ int load_key_certs(SSL_CTX *ssl_ctx)
     else if (!(options & SSL_NO_DEFAULT_KEY))
     {
 #if defined(CONFIG_SSL_USE_DEFAULT_KEY) || defined(CONFIG_SSL_SKELETON_MODE)
-        static const    /* saves a few bytes and RAM */
 #include "cert.h"
         ssl_obj_memory_load(ssl_ctx, SSL_OBJ_X509_CERT, 
                     default_certificate, default_certificate_len, NULL);

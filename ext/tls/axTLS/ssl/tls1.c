@@ -143,11 +143,7 @@ void DISPLAY_BYTES(SSL *ssl, const char *format,
  */
 EXP_FUNC SSL_EXTENSIONS * STDCALL ssl_ext_new()
 {
-    SSL_EXTENSIONS *ssl_ext = (SSL_EXTENSIONS *)malloc(sizeof(SSL_EXTENSIONS));
-    ssl_ext->max_fragment_size = 0;
-    ssl_ext->host_name = NULL;
-
-    return ssl_ext;
+    return (SSL_EXTENSIONS *)calloc(1, sizeof(SSL_EXTENSIONS));
 }
 
 /**
@@ -159,11 +155,6 @@ EXP_FUNC void STDCALL ssl_ext_free(SSL_EXTENSIONS *ssl_ext)
     if (ssl_ext == NULL ) 
     {
         return;
-    }
-
-    if (ssl_ext->host_name != NULL) 
-    {
-        free(ssl_ext->host_name);
     }
 
     free(ssl_ext);
@@ -483,6 +474,15 @@ EXP_FUNC const char * STDCALL ssl_get_cert_dn(const SSL *ssl, int component)
         case SSL_X509_CERT_ORGANIZATIONAL_NAME:       
             return ssl->x509_ctx->cert_dn[X509_ORGANIZATIONAL_UNIT];
 
+        case SSL_X509_CERT_LOCATION:       
+            return ssl->x509_ctx->cert_dn[X509_LOCATION];
+
+        case SSL_X509_CERT_COUNTRY:       
+            return ssl->x509_ctx->cert_dn[X509_COUNTRY];
+
+        case SSL_X509_CERT_STATE:       
+            return ssl->x509_ctx->cert_dn[X509_STATE];
+
         case SSL_X509_CA_CERT_COMMON_NAME:
             return ssl->x509_ctx->ca_cert_dn[X509_COMMON_NAME];
 
@@ -491,6 +491,15 @@ EXP_FUNC const char * STDCALL ssl_get_cert_dn(const SSL *ssl, int component)
 
         case SSL_X509_CA_CERT_ORGANIZATIONAL_NAME:       
             return ssl->x509_ctx->ca_cert_dn[X509_ORGANIZATIONAL_UNIT];
+
+        case SSL_X509_CA_CERT_LOCATION:       
+            return ssl->x509_ctx->ca_cert_dn[X509_LOCATION];
+
+        case SSL_X509_CA_CERT_COUNTRY:       
+            return ssl->x509_ctx->ca_cert_dn[X509_COUNTRY];
+
+        case SSL_X509_CA_CERT_STATE:       
+            return ssl->x509_ctx->ca_cert_dn[X509_STATE];
 
         default:
             return NULL;
@@ -1324,7 +1333,7 @@ int basic_read(SSL *ssl, uint8_t **in_data)
     if (IS_SET_SSL_FLAG(SSL_NEED_RECORD))
     {
         /* check for sslv2 "client hello" */
-        if (buf[0] & 0x80 && buf[2] == 1)
+        if ((buf[0] & 0x80) && buf[2] == 1)
         {
 #ifdef CONFIG_SSL_FULL_MODE
             printf("Error: no SSLv23 handshaking allowed\n");
@@ -2033,6 +2042,10 @@ int process_certificate(SSL *ssl, X509_CTX **x509_ctx)
             goto error;
         }
 
+#if defined (CONFIG_SSL_FULL_MODE)
+        if (ssl->ssl_ctx->options & SSL_DISPLAY_CERTS)
+            x509_print(certs[num_certs], NULL);
+#endif
         num_certs++;
         offset += cert_size;
     }
@@ -2052,6 +2065,7 @@ int process_certificate(SSL *ssl, X509_CTX **x509_ctx)
         {
             if (certs[i] == chain) 
                 continue;
+
             if (cert_used[i]) 
                 continue; // don't allow loops
 
