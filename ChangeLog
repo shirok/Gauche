@@ -1,3 +1,12 @@
+2016-12-23  Shiro Kawai  <shiro@acm.org>
+
+	* src/prof.c, src/gauche/prof.h, src/gauche/vm.h: Add sampling profiler
+	  support on Windows, by Saito Atsushi and Hamayama.
+	  NB: This only works on the thread the profiler is attached.  The
+	  behavior of samiling profiler on MT app is still ambiguous and we
+	  might change it (e.g. '-ptime' option may want to profile all the
+	  threads, etc.) So don't rely on the current behavior.
+
 2016-12-18  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm (er-macro-transformer): Fix er-macro issue that
