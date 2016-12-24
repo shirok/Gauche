@@ -1,5 +1,8 @@
 2016-12-23  Shiro Kawai  <shiro@acm.org>
 
+	* ext/tls: Updated to axTLS 2.1.1
+	  https://github.com/shirok/Gauche/pull/265
+
 	* src/prof.c, src/gauche/prof.h, src/gauche/vm.h: Add sampling profiler
 	  support on Windows, by Saito Atsushi and Hamayama.
 	  NB: This only works on the thread the profiler is attached.  The
