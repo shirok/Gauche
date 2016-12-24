@@ -45,10 +45,10 @@
 
 #define SCM_PCTYPE ScmWord*
 
-#if defined(ITIMER_PROF) && defined(SIGPROF)
+#if (defined(ITIMER_PROF) && defined(SIGPROF)) || defined(GAUCHE_WINDOWS)
 /* define if you want to use profiler */
 #define GAUCHE_PROFILE
-#endif /* defined(ITIMER_PROF) && defined(SIGPROF) */
+#endif /* (defined(ITIMER_PROF) && defined(SIGPROF)) || defined(GAUCHE_WINDOWS) */
 
 
 #ifdef __GNUC__

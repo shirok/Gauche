@@ -112,7 +112,12 @@ struct ScmVMProfilerRec {
     ScmHashTable* statHash;     /* hashtable for collected data.
                                    value is a pair of integers,
                                    (<call-count> . <sample-hits>) */
-
+#if defined(GAUCHE_WINDOWS)
+    HANDLE hTargetThread;       /* target thread */
+    HANDLE hObserverThread;     /* observer thread */
+    HANDLE hTimerEvent;         /* sampling timer event */
+    char *samplerFileName;      /* temporary file name to remove the file */
+#endif
     ScmProfSample samples[SCM_PROF_SAMPLES_IN_BUFFER];
     ScmProfCount  counts[SCM_PROF_COUNTER_IN_BUFFER];
 };
