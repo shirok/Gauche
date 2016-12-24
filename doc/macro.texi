@@ -899,7 +899,8 @@ or both are free.  It can be used to compare literal syntactic keyword
 The following @code{if=>} macro behaves like @code{if}, except that
 it accepts @code{(if=> test => procedure)} syntax,
 in which @code{procedure} is called with the value of @code{test}
-if it is not false.  The symbol @code{=>} must match hygienically,
+if it is not false (similar to @code{(cond [test => procedure])} syntax).
+The symbol @code{=>} must match hygienically,
 that is, it must refer to the same binding as in the macro definition.
 @c JP
 最後に、@var{procedure-expr}の@var{id=?}引数はふたつの引数を取り、
@@ -910,7 +911,8 @@ that is, it must refer to the same binding as in the macro definition.
 
 下の@code{if=>}マクロは@code{if}と同じように動作しますが、
 @code{(if=> test => procedure)}のように呼ばれた場合、
-@code{test}が偽でない場合に、その結果を引数にして@code{procedure}を呼び出します。
+@code{(cond [test => procedure])}構文と同じように、
+@code{test}が真の値を返した際には結果を引数にして@code{procedure}を呼び出します。
 シンボル@code{=>}は衛生的に比較されます。つまり、マクロ定義時と同じ束縛を
 参照している場合にのみ有効となります。
 @c COMMON
