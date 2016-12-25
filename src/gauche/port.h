@@ -182,10 +182,17 @@ struct ScmPortRec {
                                    access. */
 };
 
-/* Port direction.  Bidirectional port is not supported yet. */
+/* Port direction.  Bidirectional port is not supported yet.
+   SCM_PORT_OUTPUT_TRANSIENT is only used for constructor to indicate
+   that the output buffer doesn't need to be flushed when the process
+   exits.  It is same as SCM_PORT_OUTPUT for non-buffered ports.
+   Only the lower two bits are stored in port->direction.
+ */
 enum ScmPortDirection {
     SCM_PORT_INPUT = 1,
-    SCM_PORT_OUTPUT = 2
+    SCM_PORT_OUTPUT = 2,
+    SCM_PORT_IOMASK = 3,
+    SCM_PORT_OUTPUT_TRANSIENT = 4+SCM_PORT_OUTPUT
 };
 
 /* Port buffering mode */
@@ -229,8 +236,11 @@ enum ScmPortFlags {
                                    of two-pass writing. */
     SCM_PORT_PRIVATE = (1L<<2), /* this port is for 'private' use within
                                    a thread, so never need to be locked. */
-    SCM_PORT_CASE_FOLD = (1L<<3) /* read from or write to this port should
+    SCM_PORT_CASE_FOLD = (1L<<3),/* read from or write to this port should
                                     be case folding. */
+    SCM_PORT_TRANSIENT = (1L<<4) /* a buffered output port that's used
+                                    transiently and doesn't need to be
+                                    registered for flushing. */
 };
 
 #if 0 /* not implemented */

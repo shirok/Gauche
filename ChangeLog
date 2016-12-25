@@ -1,3 +1,10 @@
+2016-12-24  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/port.h: Add SCM_PORT_OUTPUT_TRANSIENT flag.
+	  Transient output port is to put data temporarily to file during
+	  lifetime of the process, so we don't bother to flush it upon
+	  process exit.
+
 2016-12-23  Shiro Kawai  <shiro@acm.org>
 
 	* ext/tls: Updated to axTLS 2.1.1

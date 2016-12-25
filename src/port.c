@@ -66,6 +66,8 @@ static void register_buffered_port(ScmPort *port);
 static void unregister_buffered_port(ScmPort *port);
 static void bufport_flush(ScmPort*, int, int);
 static void file_closer(ScmPort *p);
+static int  file_buffered_port_p(ScmPort *p);       /* for Scm_PortFdDup */
+static void file_buffered_port_set_fd(ScmPort *p, int fd); /* ditto */
 
 static ScmObj get_port_name(ScmPort *port)
 {
@@ -151,7 +153,9 @@ static void port_cleanup(ScmPort *port)
             if (!SCM_PORT_ERROR_OCCURRED_P(port)) {
                 bufport_flush(port, 0, TRUE);
             }
-            unregister_buffered_port(port);
+            if (!(SCM_PORT_FLAGS(port) & SCM_PORT_TRANSIENT)) {
+                unregister_buffered_port(port);
+            }
         }
         if (port->ownerp && port->src.buf.closer) port->src.buf.closer(port);
         break;
@@ -182,7 +186,7 @@ static void port_finalize(ScmObj obj, void* data)
 static ScmPort *make_port(ScmClass *klass, int dir, int type)
 {
     ScmPort *port = SCM_NEW_INSTANCE(ScmPort, klass);
-    port->direction = dir;
+    port->direction = dir & SCM_PORT_IOMASK;
     port->type = type;
     port->scrcnt = 0;
     port->ungotten = SCM_CHAR_INVALID;
@@ -281,7 +285,9 @@ int Scm_PortFileNo(ScmPort *port)
 
 /* Duplicates the file descriptor of the source port, and set it to
    the destination port.  Both source and destination port must be
-   file ports. */
+   file ports.
+   DST also must be a file buffered port, for we rewrite the fd slot
+   in its private data structure. */
 void Scm_PortFdDup(ScmPort *dst, ScmPort *src)
 {
     int r;
@@ -294,8 +300,15 @@ void Scm_PortFdDup(ScmPort *dst, ScmPort *src)
         Scm_Error("port direction mismatch: got %S and %S",
                   src, dst);
 
-    int srcfd = (int)(intptr_t)src->src.buf.data;
-    int dstfd = (int)(intptr_t)dst->src.buf.data;
+    int srcfd = Scm_PortFileNo(src);
+    int dstfd = Scm_PortFileNo(dst);
+
+    if (srcfd < 0) Scm_Error("port isn't associated to fd: %S", src);
+    if (dstfd < 0) Scm_Error("port isn't associated to fd: %S", dst);
+
+    if (!file_buffered_port_p(dst)) {
+        Scm_Error("port isn't directly associated to file: %S", dst);
+    }
 
     if (dst->direction == SCM_PORT_INPUT) {
         /* discard the current buffer */
@@ -314,7 +327,7 @@ void Scm_PortFdDup(ScmPort *dst, ScmPort *src)
     SCM_SYSCALL(r, dup2(srcfd, dstfd));
 #endif /*!GAUCHE_WINDOWS*/
     if (r < 0) Scm_SysError("dup2 failed");
-    dst->src.buf.data = (void*)(intptr_t)r;
+    file_buffered_port_set_fd(dst, r);
 }
 
 /* Low-level function to find if the file descriptor is ready or not.
@@ -572,12 +585,15 @@ ScmObj Scm_MakeBufferedPort(ScmClass *klass,
     p->name = name;
     p->ownerp = ownerp;
     p->src.buf.buffer = buf;
-    if (dir == SCM_PORT_INPUT) {
+    if ((dir & SCM_PORT_IOMASK) == SCM_PORT_INPUT) {
         p->src.buf.current = p->src.buf.buffer;
         p->src.buf.end = p->src.buf.buffer;
     } else {
         p->src.buf.current = p->src.buf.buffer;
         p->src.buf.end = p->src.buf.buffer + size;
+    }
+    if (dir == SCM_PORT_OUTPUT_TRANSIENT) {
+        SCM_PORT_FLAGS(p) |= SCM_PORT_TRANSIENT;
     }
     p->src.buf.size = size;
     p->src.buf.mode = bufrec->mode;
@@ -588,6 +604,8 @@ ScmObj Scm_MakeBufferedPort(ScmClass *klass,
     p->src.buf.filenum = bufrec->filenum;
     p->src.buf.seeker = bufrec->seeker;
     p->src.buf.data = bufrec->data;
+    /* NB: DIR may be SCM_PORT_OUTPUT_TRANSIENT; in that case we don't
+       register the buffer. */
     if (dir == SCM_PORT_OUTPUT) register_buffered_port(p);
     return SCM_OBJ(p);
 }
@@ -1025,10 +1043,17 @@ ScmObj Scm_GetBufferingMode(ScmPort *port)
  * File Port
  */
 
+/* This small piece of data is kept in port->src.buf.data. */
+typedef struct file_port_data_rec {
+    int fd;
+} file_port_data;
+
+#define FILE_PORT_DATA(p) ((file_port_data*)(p->src.buf.data))
+
 static int file_filler(ScmPort *p, int cnt)
 {
     int nread = 0;
-    int fd = (int)(intptr_t)p->src.buf.data;
+    int fd = FILE_PORT_DATA(p)->fd;
     char *datptr = p->src.buf.end;
     SCM_ASSERT(fd >= 0);
     while (nread == 0) {
@@ -1053,7 +1078,7 @@ static int file_flusher(ScmPort *p, int cnt, int forcep)
 {
     int nwrote = 0;
     int datsiz = SCM_PORT_BUFFER_AVAIL(p);
-    int fd = (int)(intptr_t)p->src.buf.data;
+    int fd = FILE_PORT_DATA(p)->fd;
     char *datptr = p->src.buf.buffer;
 
     SCM_ASSERT(fd >= 0);
@@ -1084,12 +1109,12 @@ static int file_flusher(ScmPort *p, int cnt, int forcep)
 
 static void file_closer(ScmPort *p)
 {
-    int fd = (int)(intptr_t)p->src.buf.data;
+    int fd = FILE_PORT_DATA(p)->fd;
     if (fd >= 0) {
         /* If close() fails, the port's CLOSED flag isn't set and file_closer
            may be called again (probably via finalizer).  We don't want to call
            close() again and raise an error. */
-        p->src.buf.data = (void*)(intptr_t)-1;
+        FILE_PORT_DATA(p)->fd = -1;
         if (close(fd) < 0) {
             Scm_SysError("close() failed on %S", SCM_OBJ(p));
         }
@@ -1098,19 +1123,33 @@ static void file_closer(ScmPort *p)
 
 static int file_ready(ScmPort *p)
 {
-    int fd = (int)(intptr_t)p->src.buf.data;
+    int fd = FILE_PORT_DATA(p)->fd;
     SCM_ASSERT(fd >= 0);
     return Scm_FdReady(fd, SCM_PORT_DIR(p));
 }
 
 static int file_filenum(ScmPort *p)
 {
-    return (int)(intptr_t)p->src.buf.data;
+    return FILE_PORT_DATA(p)->fd;
 }
 
 static off_t file_seeker(ScmPort *p, off_t offset, int whence)
 {
-    return lseek((int)(intptr_t)p->src.buf.data, offset, whence);
+    return lseek(FILE_PORT_DATA(p)->fd, offset, whence);
+}
+
+/* Kludge: We should have better way */
+static int file_buffered_port_p(ScmPort *p)
+{
+    return (p->src.buf.filenum == file_filenum);
+}
+
+static void file_buffered_port_set_fd(ScmPort *p, int fd)
+{
+    if (!file_buffered_port_p(p)) {
+        Scm_Error("port is not directly conntect to fd: %S", p);
+    }
+    FILE_PORT_DATA(p)->fd = fd;
 }
 
 ScmObj Scm_OpenFilePort(const char *path, int flags, int buffering, int perm)
@@ -1138,6 +1177,9 @@ ScmObj Scm_OpenFilePort(const char *path, int flags, int buffering, int perm)
        errors would be caught by later operations anyway.
     */
     if (flags & O_APPEND) (void)lseek(fd, 0, SEEK_END);
+
+    file_port_data *data = SCM_NEW(file_port_data);
+    data->fd = fd;
     
     ScmPortBuffer bufrec;
     bufrec.mode = buffering;
@@ -1149,7 +1191,7 @@ ScmObj Scm_OpenFilePort(const char *path, int flags, int buffering, int perm)
     bufrec.ready = file_ready;
     bufrec.filenum = file_filenum;
     bufrec.seeker = file_seeker;
-    bufrec.data = (void*)(intptr_t)fd;
+    bufrec.data = data;
     ScmObj p = Scm_MakeBufferedPort(SCM_CLASS_PORT, SCM_MAKE_STR_COPYING(path),
                                     dir, TRUE, &bufrec);
     return p;
@@ -1165,8 +1207,10 @@ ScmObj Scm_OpenFilePort(const char *path, int flags, int buffering, int perm)
 ScmObj Scm_MakePortWithFd(ScmObj name, int direction,
                           int fd, int bufmode, int ownerp)
 {
-    ScmPortBuffer bufrec;
+    file_port_data *data = SCM_NEW(file_port_data);
+    data->fd = fd;
 
+    ScmPortBuffer bufrec;
     bufrec.buffer = NULL;
     bufrec.size = 0;
     bufrec.mode = bufmode;
@@ -1175,7 +1219,7 @@ ScmObj Scm_MakePortWithFd(ScmObj name, int direction,
     bufrec.closer = file_closer;
     bufrec.ready = file_ready;
     bufrec.filenum = file_filenum;
-    bufrec.data = (void*)(intptr_t)fd;
+    bufrec.data = data;
 
     /* Check if the given fd is seekable, and set seeker if so. */
     if (lseek(fd, 0, SEEK_CUR) < 0) {
