@@ -511,11 +511,16 @@ static void unlock_dlobj(ScmDLObj *dlo)
 
 static const char *derive_dynload_initfn(const char *filename)
 {
-    const char *head = strrchr(filename, '/');
-    if (head == NULL) head = filename;
-    else head++;
-    const char *tail = strchr(head, '.');
-    if (tail == NULL) tail = filename + strlen(filename);
+    ScmObj basename = Scm_BaseName(SCM_STRING(SCM_MAKE_STR_IMMUTABLE(filename)));
+    ScmObj basename_sans_ext = Scm_StringScanCharRight(SCM_STRING(basename),
+                                                       SCM_CHAR('.'),
+                                                       SCM_STRING_SCAN_BEFORE);
+    if (SCM_FALSEP(basename_sans_ext)) {
+        basename_sans_ext = basename;
+    }
+    const ScmStringBody *body = SCM_STRING_BODY(basename_sans_ext);
+    const char *head = SCM_STRING_BODY_START(body);
+    const char *tail = head + SCM_STRING_BODY_SIZE(body);
 
     char *name = SCM_NEW_ATOMIC2(char *, sizeof(DYNLOAD_PREFIX) + tail - head);
     strcpy(name, DYNLOAD_PREFIX);
