@@ -352,7 +352,6 @@ protocol and used to manipulate the dynamic environment.
 @tab パラメータ。特定のプロトコルに従う手続きで、動的環境の操作に使われるもの。
 詳しくは@ref{Parameters}参照。
 @c COMMON
-@c COMMON
 @item Generic application
 @c EN
 @tab In Gauche, you can ``apply'' a non-procedure object to arguments
@@ -362,6 +361,23 @@ This entry explains the behavior of an object applied to arguments.
 @tab Gaucheでは、手続きでないオブジェクトをあたかの手続きのように
 引数に「適用」することができます(詳しくは@ref{Applicable objects}を参照してください)。
 このエントリは、オブジェクトが引数に適用された時のふるまいを説明します。
+@c COMMON
+@item Subprocess argument
+@c EN
+@tab This appears in @code{do-process} and @code{run-process} to explain
+their keyword argument (@pxref{Running subprocess})
+@c JP
+@tab これは@code{do-process}と@code{run-process}のキーワード引数の
+説明で使われます (@ref{Running subprocess}参照)。
+@c COMMON
+@item EC Qualifier
+@c EN
+@tab This is for SRFI-42 Eager Comprehension qualifiers.
+(@pxref{Eager comprehensions}).
+@c JP
+@tab これはSRFI-42の先行評価的内包表記(Eager Comprehension)における
+qualifierの説明に使われます
+(@ref{Eager comprehensions})参照。
 @c COMMON
 @end multitable
 

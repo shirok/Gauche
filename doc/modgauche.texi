@@ -11850,12 +11850,12 @@ a convenient way to send/receive information to/from subprocesses.
 @node Running subprocess, Running multiple processes, High Level Process Interface, High Level Process Interface
 @subsection Running subprocess
 
-@defun run-process cmd/args :key redirects input output error @
-                   fork wait directory host sigmask
+@defun do-process cmd/args :key redirects input output error @
+                   fork directory host sigmask on-abnormal-exit
+@defunx run-process cmd/args :key redirects input output error @
+                   fork directory host sigmask wait
 @c EN
-Runs a command with arguments given to @var{cmd/args} in a subprocess
-and returns a @code{<process>} object, which is explained in the
-next section.
+Runs a command with arguments given to @var{cmd/args} in a subprocess.
 The @var{cmd/args} argument must be a list, whose car specifies
 the command name and whose cdr is the command-line arguments.
 
@@ -11866,10 +11866,7 @@ is searched from the directories in the @code{PATH} environment variable.
 Each element in @var{cmd/args} are converted to a string
 by @code{x->string}, for the convenience.
 @c JP
-サブプロセスで、@var{cmd/args}に与えられたコマンドと引数を実行し、
-@code{<process>}オブジェクトを返します。
-@code{<process>}オブジェクトについては次節で説明します。
-
+サブプロセスで、@var{cmd/args}に与えられたコマンドと引数を実行します。
 @var{cmd/args}引数はリストで、その@code{car}がコマンド名を、
 @code{cdr}がコマンドラインに渡す引数を指定します。
 
@@ -11881,9 +11878,57 @@ by @code{x->string}, for the convenience.
 @c COMMON
 
 @c EN
+@code{Do-process} always waits the subprocess to terminate, and
+returns @code{#t} if it exits successfully (i.e. with zero exit status).
+If the subprocess terminates abnormally, it returns @code{#f} by default,
+or raise an error if @code{:error} is passed to the keyword argument
+@code{on-abnormal-exit}.
+@c JP
+@code{do-process}は常にサブプロセスが終了するまで待ち、正常終了した場合(終了ステータスが
+0の場合)に@code{#t}を返します。サブプロセスが異常終了した場合、
+デフォルトでは@code{#f}を返しますが、キーワード引数@code{on-abnormal-exit}に
+@code{:error}が与えられた場合はエラーを投げます。
+@c COMMON
+
+@c EN
+@code{Run-process} can run the subprocess concurrently by default,
+that is, it returns immediately.  The return value is a @code{<process>}
+object, which can be used to track the status of the subprocess
+(@pxref{Process object}). 
+@c JP
+@code{run-process}はデフォルトでサブプロセスを並行して走らせます。
+つまり、直ちに返ってきます。返り値は@code{<process>}オブジェクトで、それを
+用いてサブプロセスの状態を追跡できます
+(@ref{Process object}参照)。
+@c COMMON
+
+@c EN
 For example, the following expression runs @code{ls -al}.
 @c JP
 例えば、次の式は@code{ls -al}を実行します。
+@c COMMON
+
+@example
+(do-process '(ls -al))
+@end example
+
+@c EN
+You see the output of @code{ls -al}, then it returns @code{#t},
+unless the execution of @code{ls} command fails with some reason.
+@c JP
+@code{ls}コマンドが何らかの理由で失敗しない限り、
+@code{ls -al}の出力が表示されてから、@code{#t}が返されるでしょう。
+@c COMMON
+
+@c EN
+If you use @code{run-process} instead, you'll get @code{<process>} object
+without waiting @code{ls -al} to finish.  If you run the followign expression
+on REPL, you'll likely to see the return value before output of @code{ls}.
+@c JP
+代わりに@code{run-process}を使った場合は、@code{ls -al}の終了を待たずに
+@code{<process>}オブジェクトが返されます。
+次の式をREPLで実行したなら、おそらく
+@code{ls}の出力の前に@code{<process>}オブジェクトが表示されるでしょう。
 @c COMMON
 
 @example
@@ -11891,29 +11936,12 @@ For example, the following expression runs @code{ls -al}.
 @end example
 
 @c EN
-If you run the above expression in REPL, you'll likely to see
-its return value before the output of @code{ls}.
-By default, @code{run-process} does not wait the child process
-to finish, but it rather returns immediately.  If you need to
-synchronize, pass the @code{wait} keyword argument.
-@c JP
-上の式をREPLで実行したなら、おそらく戻り値が@code{ls}の出力より先に表示されるでしょう。
-デフォルトでは、@code{run-process}は子プロセスの
-終了を待たずに、直ちに戻ります。子プロセスの終了を待ちたい場合は@code{wait}キーワード
-引数を使います。
-@c COMMON
-
-@example
-(run-process '(ls -al) :wait #t)
-@end example
-
-@c EN
-Alternatively, you can keep the returned @code{<process>} object
+You can keep the returned @code{<process>} object
 and call @code{process-wait} on it to wait for its termination.
 @xref{Process object}, for the details of @code{process-wait}.
 @c JP
-あるいは戻り値の@code{<process>}オブジェクトを保持しておいて、後で
-@code{process-wait}を呼ぶことによって子プロセスの終了を待つこともできます。
+戻り値の@code{<process>}オブジェクトを保持しておいて、後で
+@code{process-wait}を呼ぶことによって子プロセスの終了を待つことができます。
 @code{process-wait}については@ref{Process object}で説明します。
 @c COMMON
 
@@ -11922,6 +11950,18 @@ and call @code{process-wait} on it to wait for its termination.
   ... do some other work ...
   (process-wait p))
 @end example
+
+@c EN
+You can tell @code{run-process} to wait for the subprocess to exit; in
+that case, @code{run-process} calls @code{process-wait} internally.
+It is useful if you want to examine the exit status of the subprocess,
+rather than just caring its success/failure as @code{do-process} does.
+@c JP
+@code{run-process}に、プロセス終了を待つように指示することもできます。
+その場合、@code{run-process}は内部で@code{process-wait}を呼びます。
+@code{do-process}は成功/失敗しかわからないのに対し、
+プロセスの終了ステータスを後で調べたい場合に便利です。
+@c COMMON
 
 @c EN
 Note that @code{-i} is read as an imaginary number,
@@ -11955,7 +11995,8 @@ below); you need to be aware that @code{/bin/sh}, used by
 platforms and be careful not to rely on specific features on
 certain systems.  As a rule of thumb, keep @code{sys-system} for
 really simple tasks with a constant command line,
-and use @code{run-process} for all other stuff.
+and use @code{run-process} and @code{do-process}
+for all other stuff.
 @c JP
 注：外部プロセスを走らせる方法にはもうひとつ、@code{sys-system}があります。
 こちらはコマンド行を単一の文字列で渡し、シェルを呼び出して解釈させます
@@ -11969,7 +12010,8 @@ and use @code{run-process} for all other stuff.
 参照してください)、また@code{sys-system}が@code{system(3)}経由で
 呼び出す@code{/bin/sh}のプラットフォーム間の違いを気にしたりする必要があります。
 原則として、@code{sys-system}の使用は固定コマンドを呼び出す簡単な場合に
-止めておき、他の仕事には@code{run-process}を使うのが良いでしょう。
+止めておき、他の仕事には@code{run-process}や
+@code{do-process}を使うのが良いでしょう。
 @c COMMON
 
 @c EN
@@ -11984,11 +12026,14 @@ to STk.  This is still supported but deprecated.
 @c COMMON
 
 @c EN
-Large number of keyword arguments can be passed to @code{run-process}
+Large number of keyword arguments can be passed to 
+@code{do-process} and
+@code{run-process}
 to control execution of the child process.  We describe them by
 categories.
 @c JP
-子プロセスの実行を細かく制御するために、@code{run-process}はたくさんの
+子プロセスの実行を細かく制御するために、@code{do-process}と
+@code{run-process}はたくさんの
 キーワード引数を取ります。以下でそれらをいくつかのカテゴリに分類して説明します。
 @c COMMON
 @end defun
@@ -12000,17 +12045,21 @@ categories.
 @subsubheading 同期
 @c COMMON
 
-@deftp {run-process argument} wait @var{flag}
+@deftp {Subprocess argument} wait @var{flag}
 @c EN
+This can only be given to @code{run-process}.
 If @var{flag} is true, @code{run-process} waits until the
-subprocess terminates.  Othewise the subprocess runs asynchronously
+subprocess terminates, by calling @code{process-wait} internally.
+Othewise the subprocess runs asynchronously
 and @code{run-process} returns immediately, which is the default behavior.
 
 Note that if the subprocess is running asynchronously, it is the
 caller's responsibility to call @code{process-wait} at a certain
 timing to collect its exit status.
 @c JP
-@var{flag} が真の場合、@code{run-process} はサブプロセスが終了するまで待ちます。
+この引数は@code{run-process}のみに渡すことができます。
+@var{flag} が真の場合、@code{run-process} は内部で
+@code{process-wait}を呼びだし、サブプロセスが終了するまで待ちます。
 そうでなければ、サブプロセスは非同期に実行され、@code{run-process} は
 すぐに返ります。これがデフォルトの振る舞いになります。
 
@@ -12034,16 +12083,35 @@ timing to collect its exit status.
 @end example
 @end deftp
 
-@deftp {run-process argument} fork @var{flag}
+@deftp {Subprocess argument} on-abnormal-exit @var{how}
 @c EN
-If @var{flag} is true, @code{run-process} forks to run
+This can only be given to @code{do-process}.
+If @var{how} is @code{#f}, which is the default,
+@code{do-process} returns @code{#f} when
+the subprocess exits abnormally (i.e. with nonzero exit status).
+If @var{how} is @code{:error}, it raises an error in such a case.
+@c JP
+この引数は@code{do-process}のみに渡すことができます。
+@var{how}が@code{#f}の場合(デフォルト)、
+サブプロセスが異常終了(ゼロ以外の終了ステータスを返)した場合は@code{#f}を返します。
+@var{how}が@code{:error}なら、その場合はエラーを投げます。
+@c COMMON
+@end deftp
+
+@deftp {Subprocess argument} fork @var{flag}
+@c EN
+If @var{flag} is true, @code{do-process} and
+@code{run-process} forks to run
 the subprocess, which is the default behavior.  If @var{flag} is
-false, @code{run-process} directly calls @code{sys-exec}, so
+false, @code{do-process} and
+@code{run-process} directly calls @code{sys-exec}, so
 it never returns.
 @c JP
-@var{flag} が真の場合、@code{run-process} はサブプロセスを実行するために
+@var{flag} が真の場合、@code{do-process}と
+@code{run-process} はサブプロセスを実行するために
 フォークします。これはデフォルトの振る舞いです。@var{flag} が偽の場合、
-@code{run-process} は直接 @code{sys-exec} を呼ぶので、それは返りません。
+@code{do-process}と
+@code{run-process} は直接 @code{sys-exec} を呼ぶので、戻って来ません。
 @c COMMON
 @end deftp
 
@@ -12053,7 +12121,7 @@ it never returns.
 @subsubheading I/Oリダイレクト
 @c COMMON
 
-@deftp {run-process argument} redirects (@var{iospec} @dots{})
+@deftp {Subprocess argument} redirects (@var{iospec} @dots{})
 @c EN
 Specifies how to redirect child process's I/Os.
 Each @var{iospec}
@@ -12211,6 +12279,11 @@ duped into @var{fd} in the child process.
 @code{>>}はファイルの後に追加します。
 @code{>}と@code{>>}の違いが出るのは@var{sink}がファイルの場合のみです。
 
+@var{sink}がシンボルなら、一方向のパイプが作られ、その入力端が
+子プロセスの@code{fd}へと繋がれます。パイプに送られた子プロセスの出力を
+読み出す入力ポートは、
+@code{(process-output @var{process} @var{sink})}で得ることができます。
+
 @var{sink}が@code{:null}なら、@var{fd}はシステムのヌルデバイスへの
 書き出しになります。
 
@@ -12327,12 +12400,14 @@ $ command arg 1>out 2>&1
 @end example
 
 @c EN
-You can say @code{run-process} always works like the latter,
+You can say @code{do-process} and
+@code{run-process} always works like the latter,
 regardless of the order in @var{redirects} argument.
 
 If you want to redirect child's stderr to parent's stdout,
 you can use @code{>} like the following:
 @c JP
+@code{do-process}と
 @code{run-process}は@var{redirects}引数の順番にかかわらず
 常に後者のように動作すると言ってもよいでしょう。
 
@@ -12347,9 +12422,9 @@ you can use @code{>} like the following:
 @end deftp
 
 
-@deftp {run-process argument} input @var{source}
-@deftpx {run-process argument} output @var{sink}
-@deftpx {run-process argument} error @var{sink}
+@deftp {Subprocess argument} input @var{source}
+@deftpx {Subprocess argument} output @var{sink}
+@deftpx {Subprocess argument} error @var{sink}
 @c EN
 Redirects child's standard i/o.
 @var{source} and @var{sink} may be either a string, a keyword @code{:null},
@@ -12421,7 +12496,7 @@ of the argument values.
 @subsubheading 実行環境
 @c COMMON
 
-@deftp {run-process argument} directory @var{directory}
+@deftp {Subprocess argument} directory @var{directory}
 @c EN
 If a string is given to @var{directory},
 the process starts with @var{directory} as its working directory.
@@ -12432,11 +12507,12 @@ or it is a string but is not a name of a existing directory.
 When @var{host} keyword argument is also given, this argument
 specifies the working directory of the @emph{remote} process.
 
-Note: @code{run-process} checks the validity of @var{directory},
+Note: @code{do-process} and
+@code{run-process} check the validity of @var{directory},
 but actual @code{chdir(2)} is done just before @code{exec(2)},
 and it is possible that @code{chdir} fails in spite of previous
 checks.  At the moment when @code{chdir} fails, there's no
-reliable way to raise an exception to the caller of @code{run-process},
+reliable way to raise an exception to the caller,
 so it writes out an error message to standard error port and exits.
 A robust program may take this case into account.
 @c JP
@@ -12449,17 +12525,18 @@ A robust program may take this case into account.
 @var{host}キーワード引数も与えられている場合、この引数は
 リモートプロセスのワーキングディレクトリを指定します。
 
-註: @code{run-process}は@var{directory}が有効な値であることを事前に
+註: @code{do-process}と
+@code{run-process}は@var{directory}が有効な値であることを事前に
 チェックしますが、実際の@code{chdir(2)}は@code{exec(2)}の直前に
 行われます。事前のチェックにもかかわらず@code{chdir}が失敗する可能性が
-あります。その時点では@code{run-process}の呼び出し元にエラーを伝える
+あります。その時点では呼び出し元にエラーを伝える
 確実な方法が無いため、Gaucheは標準エラー出力にメッセージを印字して
 exitします。頑健なプログラムを書く場合、そのようなケースにも留意して下さい。
 @c COMMON
 @end deftp
 
 
-@deftp {run-process argument} sigmask @var{mask}
+@deftp {Subprocess argument} sigmask @var{mask}
 @c EN
 @var{Mask} must be either an instance of @code{<sys-sigset>},
 a list of integers, or
@@ -12487,7 +12564,7 @@ merely sets the signal mask of the local process (@code{ssh}).
 @c COMMON
 @end deftp
 
-@deftp {run-process argument} detached @var{flag}
+@deftp {Subprocess argument} detached @var{flag}
 @c EN
 When a true value is given, the new process is detached from
 the parent's process group and belongs to its own group.
@@ -12503,7 +12580,7 @@ the detailed description of @var{detached} argument.
 @end deftp
 
 
-@deftp {run-process argument} host @var{hostspec}
+@deftp {Subprocess argument} host @var{hostspec}
 @c EN
 This argument is used to execute @var{command} on the remote host.
 The full syntax of @var{hostspec} is @code{protocol:user@@hostname:port},
@@ -12541,10 +12618,10 @@ the remote machine and copies its content into the local file
 @c COMMON
 
 @example
-(run-process '(cat "bar")
-             :host "remote-host.example.com"
-             :directory "/foo"
-             :output "baz")
+(do-process '(cat "bar")
+            :host "remote-host.example.com"
+            :directory "/foo"
+            :output "baz")
 @end example
 @end deftp
 
