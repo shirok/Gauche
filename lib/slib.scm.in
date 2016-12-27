@@ -254,7 +254,7 @@
 ; Gauche has this
 
 ;;@ (DELETE-FILE <string>)
-; Gauche has this
+(define delete-file (with-module file.util delete-file))
 
 ;;@ FORCE-OUTPUT flushes any pending output on optional arg output port
 ;;; use this definition if your system doesn't have such a procedure.
