@@ -182,6 +182,24 @@
 (define-cproc %load-verbose? () ::<boolean>
   (return (SCM_VM_RUNTIME_FLAG_IS_SET (Scm_VM) SCM_LOAD_VERBOSE)))
 
+;; Called from Scm_DynLoad to get initfn name, which always begins with #\_.
+;; If INITFN is given, we just add "_" in front of it.  Otherwise we
+;; derive it from the name of DSO.
+(select-module gauche.internal)
+(define (%get-initfn-name initfn dsopath)
+  (if (string? initfn)
+    (string-append "_" initfn)
+    (let* ([base (sys-basename dsopath)]
+           [stem (or (string-scan-right base #\. 'before) base)])
+      (string-append "_Scm_Init_"
+                     ;; string-map is in srfi-13, so we roll our own.
+                     ;; This looks awful, but we don't call this frequently.
+                     (list->string
+                      (map (^c (cond [(char-alphabetic? c) (char-downcase c)]
+                                     [(char-numeric? c) c]
+                                     [else #\_]))
+                           (string->list stem)))))))
+
 
 (select-module gauche)
 

@@ -1,3 +1,10 @@
+2016-12-26  Shiro Kawai  <shiro@acm.org>
+
+	* src/load.c (Scm_DynLoad), src/libeval.scm (%get-initfn-name):
+	  Fix deriving of initfn name---the '.' char should be searched
+	  from right.  Also overhauled various parts to use ScmString
+	  whenever possible, for the simplicity.
+
 2016-12-24  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/port.h: Add SCM_PORT_OUTPUT_TRANSIENT flag.
