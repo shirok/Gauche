@@ -382,6 +382,7 @@
             [gauche.sys.threads
              (receive (in out) (sys-pipe)
                (push! iomap `(,fd . ,in))
+               (push! toclose in)
                (thread-start! (make-thread (cut write-arg out))))]
             [else
              ;; If we can't use threads, we fall back to using temporary
