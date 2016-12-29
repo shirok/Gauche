@@ -11828,13 +11828,13 @@ gosh> (next)
 @deftp {Module} gauche.process
 @mdindex gauche.process
 @c EN
-This module provides a higher-level API of Unix process control,
-implemented on top of low-level system calls such as @code{sys-fork}
-and @code{sys-exec}.   This module also provides ``process ports'',
+This module provides a higher-level API of process control,
+implemented on top of low-level system calls.
+This module also provides ``process ports'',
 a convenient way to send/receive information to/from subprocesses.
 @c JP
-このモジュールは、@code{sys-fork} や @code{sys-exec} などの低レベルな
-システムコールの上に実装された、Unix プロセス制御の高レベル API を提供します。
+このモジュールは、低レベルなシステムコールの上に実装された、
+プロセス制御の高レベル API を提供します。
 また、このモジュールは、サブプロセスに情報を送ったり、サブプロセスから
 情報を受け取ったりするのに便利な「プロセスポート」を提供します。
 @c COMMON
