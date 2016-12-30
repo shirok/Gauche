@@ -256,54 +256,65 @@
           (let* ([k::int8_t
                   (Scm_GetInteger8Clamp key SCM_CLAMP_ERROR NULL)])
             (set! r (Scm_BinarySearchS8 (+ (SCM_S8VECTOR_ELEMENTS v) start)
-                                        (- end start) k skip)))]
+                                        (- end start) k skip
+                                        NULL NULL)))]
          [(SCM_UVECTOR_U8)
           (let* ([k::uint8_t
                   (Scm_GetIntegerU8Clamp key SCM_CLAMP_ERROR NULL)])
             (set! r (Scm_BinarySearchU8 (+ (SCM_U8VECTOR_ELEMENTS v) start)
-                                        (- end start) k skip)))]
+                                        (- end start) k skip
+                                        NULL NULL)))]
          [(SCM_UVECTOR_S16)
           (let* ([k::int16_t
                   (Scm_GetInteger16Clamp key SCM_CLAMP_ERROR NULL)])
             (set! r (Scm_BinarySearchS16 (+ (SCM_S16VECTOR_ELEMENTS v) start)
-                                         (- end start) k skip)))]
+                                         (- end start) k skip
+                                         NULL NULL)))]
          [(SCM_UVECTOR_U16)
           (let* ([k::uint16_t
                   (Scm_GetIntegerU16Clamp key SCM_CLAMP_ERROR NULL)])
             (set! r (Scm_BinarySearchU16 (+ (SCM_U16VECTOR_ELEMENTS v) start)
-                                         (- end start) k skip)))]
+                                         (- end start) k skip
+                                         NULL NULL)))]
          [(SCM_UVECTOR_S32)
           (let* ([k::int32_t
                   (Scm_GetInteger32Clamp key SCM_CLAMP_ERROR NULL)])
             (set! r (Scm_BinarySearchS32 (+ (SCM_S32VECTOR_ELEMENTS v) start)
-                                         (- end start) k skip)))]
+                                         (- end start) k skip
+                                         NULL NULL)))]
          [(SCM_UVECTOR_U32)
           (let* ([k::uint32_t
                   (Scm_GetIntegerU32Clamp key SCM_CLAMP_ERROR NULL)])
             (set! r (Scm_BinarySearchU32 (+ (SCM_U32VECTOR_ELEMENTS v) start)
-                                         (- end start) k skip)))]
+                                         (- end start) k skip
+                                         NULL NULL)))]
          [(SCM_UVECTOR_S64)
           (let* ([k::ScmInt64
                   (Scm_GetInteger64Clamp key SCM_CLAMP_ERROR NULL)])
             (set! r (Scm_BinarySearchS64 (+ (SCM_S64VECTOR_ELEMENTS v) start)
-                                         (- end start) k skip)))]
+                                         (- end start) k skip
+                                         NULL NULL)))]
          [(SCM_UVECTOR_U64)
           (let* ([k::ScmUInt64
                   (Scm_GetIntegerU64Clamp key SCM_CLAMP_ERROR NULL)])
             (set! r (Scm_BinarySearchU64 (+ (SCM_U64VECTOR_ELEMENTS v) start)
-                                         (- end start) k skip)))]
+                                         (- end start) k skip
+                                         NULL NULL)))]
          [(SCM_UVECTOR_F16)
           (let* ([k::ScmHalfFloat (Scm_DoubleToHalf (Scm_GetDouble key))])
             (set! r (Scm_BinarySearchF16 (+ (SCM_F16VECTOR_ELEMENTS v) start)
-                                         (- end start) k skip)))]         
+                                         (- end start) k skip
+                                         NULL NULL)))]         
          [(SCM_UVECTOR_F32)
           (let* ([k::float (Scm_GetDouble key)])
             (set! r (Scm_BinarySearchF32 (+ (SCM_F32VECTOR_ELEMENTS v) start)
-                                         (- end start) k skip)))]         
+                                         (- end start) k skip
+                                         NULL NULL)))]         
          [(SCM_UVECTOR_F64)
           (let* ([k::double (Scm_GetDouble key)])
             (set! r (Scm_BinarySearchF64 (+ (SCM_F64VECTOR_ELEMENTS v) start)
-                                         (- end start) k skip)))]
+                                         (- end start) k skip
+                                         NULL NULL)))]
          )
        (if (== r (cast (size_t) -1))
          (return SCM_FALSE)
