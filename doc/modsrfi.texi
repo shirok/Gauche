@@ -7021,6 +7021,7 @@ The results are discarded.
 
 @deftp {Module} srfi-118
 @mdindex srfi-118
+@c EN
 This SRFI defines two string mutating operations that can change
 the length of the string: @code{string-append!} and @code{string-replace!}.
 
@@ -7037,6 +7038,27 @@ We provide this module only for the compatibility.  Gauche-specific
 programs should stay away from this module.  Particulary, avoid
 code like the example in SRFI-118 document (build a string by
 @code{append!}-ing small chunks at a time)---they're quadratic on Gauche.
+@c JP
+このSRFIは、文字列の長さを変えるような破壊的変更を行う文字列操作ルーチンを
+提供します。
+
+Gaucheでは、文字列の本体は変更不可になっています。
+文字列の破壊的変更は、
+実際には新たな文字列本体を作成して、元の文字列が指している本体とポインタを
+置き換えることで実現されます。
+ですのでこのsrfiをGaucheに実装すること自体は全く問題ないのですが、
+これらのAPIを使ったからといって性能上の恩恵にあずかれるわけではありません。
+変更不可な文字列を@code{string-append} and @code{string-replace}で
+切り貼りするのと、性能的には何ら変わりません。
+(このモジュールのAPIは、変更不可文字列を扱うAPIと若干異なることに注意してください。)
+
+このモジュールは、互換性のためだけ提供されます。
+Gaucheに依存したプログラムはこのモジュールを使う必要はないでしょう。
+特に、srfi-118のドキュメントにある例は避けるのが懸命です
+(文字列を、小さな塊ごとに破壊的にappendしてゆくという実装になっています
+Googleによれば、実測では1オクターブ上がる度に音量が1/4になる、といった
+現象が見られています。
+@c COMMON
 @end deftp
 
 @defun string-append! string values @dots{}
