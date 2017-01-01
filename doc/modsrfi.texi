@@ -7061,9 +7061,16 @@ Gaucheではそれは文字列の長さの2乗に比例した時間がかかっ�
 @end deftp
 
 @defun string-append! string values @dots{}
+[SRFI-128]
+@c EN
 The @var{string} argument must be a mutable string.
 Modify @var{string} by appending @var{values}, each of which is
 either a character or a string.
+@c JP
+@var{string}引数は変更可能な文字列でなければなりません。
+残りの引数@var{values}はそれぞれ文字または文字列です。それらを@var{string}に
+破壊的に追加します。
+@c COMMON
 
 @example
 (rlet1 a (string-copy "abc")
@@ -7073,16 +7080,31 @@ either a character or a string.
 @end defun
 
 @defun string-replace! dst dst-start dst-end src :optional src-start src-end
+[SRFI-128]
+@c EN
 The @var{dst} argument must be a mutable string.
 Replace @var{dst} between @var{dst-start} (inclusive) and
 @var{dst-end} (exclusive) with a string @var{src}.  The optional
 arguments @var{src-start} and @var{src-end} limits the region of
 @var{src} to be used.
+@c JP
+@var{dst}引数は変更可能な文字列でなければなりません。
+@var{dst}中の、@var{dst-start}(inclusive)から@var{dst-end}(exclusive)までの
+内容が文字列@var{src}で置き換えられます。省略可能引数
+@var{src-start}と@var{src-end}で、@var{src}の使う部分を制限することができます。
+@c COMMON
 
+@c EN
 Be aware that the order of arguments differ from
 SRFI-13's @code{string-replace} (@pxref{SRFI-13 other string operations});
 @code{string-replace!} resembles to @code{string-copy!} (also in SRFI-13),
 rather than @code{string-replace}.
+@c JP
+引数の順序がSRFI-13の@code{string-replace}とは異なることに
+注意して下さい (@ref{SRFI-13 other string operations}参照)。
+@code{string-replace!}の引数順は同じくSRFI-13にある@code{string-copy!}に
+似せてあります。
+@c COMMON
 
 @example
 (rlet1 a (string-copy "abc")
