@@ -215,11 +215,11 @@
                  [else
                   (set! hi k) (set! k (+ lo (/ (- hi lo) 2)))])))
        (when floor
-         (if (= lo hi)
+         (if (== lo hi)
            (set! (* floor) (cast (size_t) -1))
            (set! (* floor) (* lo esize))))
        (when ceil
-         (if (= hi nume)
+         (if (== hi nume)
            (set! (* ceil) (cast (size_t) -1))
            (set! (* ceil) (* hi esize))))
        (return (cast (size_t) -1)))])
