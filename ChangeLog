@@ -1,3 +1,8 @@
+2017-01-02  Shiro Kawai  <shiro@acm.org>
+
+	* ext/uvector/uvector.scm (uvector-binary-search): Add optional
+	  rounding argument for floor/ceiling search.
+
 2016-12-26  Shiro Kawai  <shiro@acm.org>
 
 	* src/load.c (Scm_DynLoad), src/libeval.scm (%get-initfn-name):

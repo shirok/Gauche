@@ -2428,4 +2428,25 @@
     (apply test-1 v))
   )
 
+;; We test only on s8; the code path is the same so it should work
+;; on other varieties
+(let ((vec '#s8(-10 -7 -2 5 9 33))
+      (data '(;; search-key expect-floor expect-ceiling
+              (-25          #f           -10)
+              (-10          -10          -10)
+              (-9           -10          -7)
+              (0            -2           5)
+              (8            5            9)
+              (33           33           33)
+              (100          33           #f))))
+  (define (test-1 entry)
+    (let1 search-key (car entry)
+      (list search-key
+            (pick (uvector-binary-search vec search-key 0 -1 0 'floor))
+            (pick (uvector-binary-search vec search-key 0 -1 0 'ceiling)))))
+  (define (pick index)
+    (and index (~ vec index)))
+  (test* "binary search, floor and ceiling" data
+         (map test-1 data)))
+
 (test-end)
