@@ -2442,8 +2442,8 @@
   (define (test-1 entry)
     (let1 search-key (car entry)
       (list search-key
-            (pick (uvector-binary-search vec search-key 0 -1 0 'floor))
-            (pick (uvector-binary-search vec search-key 0 -1 0 'ceiling)))))
+            (pick (uvector-binary-search vec search-key #f #f #f 'floor))
+            (pick (uvector-binary-search vec search-key #f #f #f 'ceiling)))))
   (define (pick index)
     (and index (~ vec index)))
   (test* "binary search, floor and ceiling" data
