@@ -266,6 +266,9 @@
           [e::ScmSmallInt (get-fixnum-arg end -1 "end")]
           [p::ScmSmallInt (get-fixnum-arg skip 0 "skip")])
      (SCM_CHECK_START_END s e len)
+     (unless (== (% (- e s) (+ p 1)) 0)
+       (Scm_Error "uvector size (%d) isn't multiple of record size (%d)"
+                  (- e s) (+ p 1)))
      (let* ([r::size_t (cast (size_t) -1)]
             [lb::size_t]
             [ub::size_t])

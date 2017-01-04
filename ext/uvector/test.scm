@@ -2379,28 +2379,31 @@
 
 (use srfi-42)
 
-(let ([data '(;; (<vec> . <keys>)
-              (#s8(-100 -99 -50 -41 -15 -2 -1 0 1 2 18 19 99 100)
+
+(let ([data '(;; NB: keep the length of vector a multiple of 6 for skip test
+              ;; (<vec> . <keys>)
+              (#s8(-100 -99 -50 -41 -15 -2 -1 0 1 2 5 7 9 18 19 50 99 100)
                   -101 -100 -99 -98 -50 -49 -1 0 2 3 98 99 100)
-              (#u8(1 2 3 4 5 9 50 100)
+              (#u8(1 2 3 4 5 9 20 50 70 75 89 100)
                   0 1 2 3 4 5 6 50 99 100)
-              (#s16(-4515 -4514 -2 -1 0 1 2 32765 32767)
+              (#s16(-4515 -4514 -2 -1 0 1 2 19 27 55 32765 32767)
                    -32768 -4514 -3 -2 2 32765 32766 32767)
-              (#u16(0 65529 65531 65533 65535)
+              (#u16(0 2 65529 65531 65533 65535)
                    0 1 2 65528 65529 65530 65531 65532 65533 65534)
-              (#f64(-10000 -0.5 0 0.1 100)
+              (#f64(-10000 -0.5 0 0.1 5.5 100)
                    -10000 -0.51 -0.5 0 0.1 0.2 100 100.1)
               )])
   (define (linear-search vec key start end :optional (skip 0))
     (let loop ((k start))
-      (cond [(>= (+ k skip) end) #f]
+      (cond [(not (zero? (modulo (- end start) (+ skip 1)))) (test-error)]
+            [(>= (+ k skip) end) #f]
             [(= (~ vec k) key) k]
             [(< (~ vec k) key) (loop (+ k skip 1))]
             [else #f])))
 
   (define (ranges vec)
     (let ([len (uvector-length vec)])
-      `((0 ,len) (0 0) (0 1) (0 2))))
+      `((0 ,len) (0 0) (0 1) (0 6))))
 
   ;; generates list of (<key> <start> <end> :optional <esize>)
   (define (all-args vec keys)
