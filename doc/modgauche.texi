@@ -19767,6 +19767,146 @@ whose contents are concatenation of the given vectors.
 @end example
 @end deftp
 
+@defun uvector-binary-search uvector key :optional start end skip rounding
+@c EN
+The @code{uvector} must contain values in increasing order.
+This prcoedure finds the index of an element that is equal to @var{key},
+using binary search.   If such element can't be found, @code{#f} is returned.
+@c JP
+@var{uvector}は値が昇順に格納されたユニフォームベクタでなければなりません。
+この手続きは二分探索を使って、@var{key}と一致する要素を探し、そのインデックスを返します。
+一致する要素が無ければ@code{#f}が返されます。
+@c COMMON
+
+@example
+(uvector-binary-search '#u8(0 5 19 32 58 96) 32)
+  @result{} 3
+
+(uvector-binary-search '#u8(0 5 19 32 58 96) 33)
+  @result{} #f
+@end example
+
+@c EN
+The optional @var{start} and @var{end} arguments limits the portion
+of @var{uvector} to search; @var{start} specifies starting index (inclusive)
+and @var{end} specifies ending index (exclusive).
+Passing @code{#f} indicates the default
+value (0 for @var{start}, the length of the vector for @var{end}).
+The returned index is the actual index of the vector, but the elements
+outside of @var{start}-@var{end} range don't need to be sorted.
+@c JP
+省略可能引数@var{start}と@var{end}は@var{uvector}中の探すべき部分を制限します。
+@var{start}が開始インデックス(その要素も含む)、@var{end}が終了インデックス
+(その要素自体は含まない)です。
+@code{#f}を渡すとデフォルト値(@var{start}は0、@var{end}はベクタの長さ)と
+みなされます。返ってくるインデックスはベクタ全体から見たインデックスになりますが、
+@var{start}-@var{end}間以外の@var{uvector}の要素はソートされている必要はありません。
+
+@c COMMON
+
+@example
+(uvector-binary-search '#u8(99 99 19 32 58 99) 32 2 5)
+  @result{} 3
+
+(uvector-binary-search '#u8(99 99 19 32 58 99) 99 2 5)
+  @result{} #f
+@end example
+
+@c EN
+The optional @var{skip} argument must be a nonnegative exact integer
+or @code{#f}.  If it is a positive integer, the number of elements after
+every key in the @var{uvector} is ignored.  For example, if @var{skip} is 2
+and @var{uvector} is @code{#u8(3 100 101 5 102 103 13 104 105)},
+only @code{3}, @code{5} and @code{13} are subject to seach, and elements
+inbetween are ignored.  This allows the caller to store @emph{payload},
+or associated value to each key, in the @var{uvector} itself.
+If @var{skip} is positive integer, the length of the searched portion
+of @var{uvector} must be a multiple of the record size (@var{skip}+1).
+@c JP
+省略可能な@var{skip}引数は、非負の正確な整数か@code{#f}でなければなりません。
+@var{skip}が正の整数の場合、@var{uvector}中の各キーに続く@var{skip}個の要素を
+飛ばして探索します。例えば@var{skip}が2で@var{uvector}が
+@code{#u8(3 100 101 5 102 103 13 104 105)}であれば、
+@code{3}、@code{5}、@code{13}だけが探索の対象となります。
+この機能を使うと、キーに結びつけられた値(ペイロード)を@var{uvector}中に直接
+格納したまま探索を行うことができます。@var{skip}が正の整数の場合、
+@var{uvector}の探索が行われる部分の大きさは@var{skip}+1の整数倍でなければなりません。
+@c COMMON
+
+@example
+(uvector-binary-search '#u8(3 100 101 5 102 103 13 104 105) 13 #f #f 2)
+  @result{} 6
+
+(uvector-binary-search '#u8(3 100 101 5 102 103 13 104) 13 #f #f 2)
+  @result{} ; @r{Error: uvector size (8) isn't multiple of record size (3)}
+@end example
+
+@c EN
+Finally, @var{rounding} argument adjusts the behavior when the exact
+match isn't found.  It can be either one of the following values:
+@c JP
+最後に、@var{rounding}引数は一致する要素が見つからなかった場合の振る舞いを
+調整します。値は以下のいずれかでなければなりません。
+@c COMMON
+
+@table @asis
+@item @code{#f}
+@c EN
+This is the default.
+The procedure seaches the element that is equal to @var{key}, and
+returns @code{#f} if such element isn't found.
+@c JP
+これがデフォルトです。@var{key}と等しい要素だけを探し、
+見つからなければ@code{#f}を返します。
+@c COMMON
+@item a symbol @code{floor}
+@c EN
+When the exact match isn't found, the procedure
+returns an index of the element that's closest to but
+not greater than @var{key}.  If @var{key} is smaller than all the elements,
+@code{#f} is returned.
+@c JP
+@var{key}と等しい要素がみつからなかった場合、@var{key}を越えない、もっとも近い
+要素のインデックスを返します。@var{key}がどの要素よりも小さい場合は@code{#f}が
+返されます。
+@c COMMON
+@item a symbol @code{ceiling}
+@c EN
+When the exact match isn't found, the procedure
+returns an index of the element that's closest to but
+not smaller than @var{key}.  If @var{key} is greater than all the elements,
+@code{#f} is returned.
+@c JP
+@var{key}と等しい要素がみつからなかった場合、@var{key}を下回らない、もっとも近い
+要素のインデックスを返します。@var{key}がどの要素よりも大きい場合は@code{#f}が
+返されます。
+@c COMMON
+@end table
+
+@example
+(uvector-binary-search '#u32(1 10 100 1000 10000) 3757)
+  @result{} #f
+
+(uvector-binary-search '#u32(1 10 100 1000 10000) 3757 #f #f #f 'floor)
+  @result{} 3
+
+(uvector-binary-search '#u32(1 10 100 1000 10000) 3757 #f #f #f 'ceiling)
+  @result{} 4
+@end example
+
+@c EN
+Note: SRFI-133 has @code{vector-binary-search}, which is quite similar to
+this procedure (@pxref{Vector library}) but it requires comparison
+procedure, for it needs to compare general Scheme values.  And it
+does not support @var{skip} and @var{rounding} arguments.
+@c JP
+註: SRFI-133の@code{vector-binary-search}はこの手続きと良く似ています
+(@ref{Vector library}参照)。ただし、
+そちらは一般のScheme値を相手にするために、比較手続きも取ります。
+また@var{skip}と@var{rounding}引数の機能はサポートされません。
+@c COMMON
+@end defun
+
 @node Uvector conversion operations, Uvector numeric operations, Uvector basic operations, Uniform vectors
 @subsection Uvector conversion operations
 @c NODE ユニフォームベクタの変換
