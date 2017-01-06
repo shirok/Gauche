@@ -66,27 +66,27 @@
       :          :
  */
 
-size_t Scm_BinarySearchS8(int8_t vec[], size_t len, int8_t key,
+size_t Scm_BinarySearchS8(const int8_t vec[], size_t len, int8_t key,
                           u_int skip, size_t *floor, size_t *ceil);
-size_t Scm_BinarySearchU8(uint8_t vec[], size_t len, uint8_t key,
+size_t Scm_BinarySearchU8(const uint8_t vec[], size_t len, uint8_t key,
                           u_int skip, size_t *floor, size_t *ceil);
-size_t Scm_BinarySearchS16(int16_t vec[], size_t len, int16_t key,
+size_t Scm_BinarySearchS16(const int16_t vec[], size_t len, int16_t key,
                            u_int skip, size_t *floor, size_t *ceil);
-size_t Scm_BinarySearchU16(uint16_t vec[], size_t len, uint16_t key,
+size_t Scm_BinarySearchU16(const uint16_t vec[], size_t len, uint16_t key,
                            u_int skip, size_t *floor, size_t *ceil);
-size_t Scm_BinarySearchS32(int32_t vec[], size_t len, int32_t key,
+size_t Scm_BinarySearchS32(const int32_t vec[], size_t len, int32_t key,
                            u_int skip, size_t *floor, size_t *ceil);
-size_t Scm_BinarySearchU32(uint32_t vec[], size_t len, uint32_t key,
+size_t Scm_BinarySearchU32(const uint32_t vec[], size_t len, uint32_t key,
                            u_int skip, size_t *floor, size_t *ceil);
-size_t Scm_BinarySearchS64(ScmInt64 vec[], size_t len, int64_t key,
+size_t Scm_BinarySearchS64(const ScmInt64 vec[], size_t len, int64_t key,
                            u_int skip, size_t *floor, size_t *ceil);
-size_t Scm_BinarySearchU64(ScmUInt64 vec[], size_t len, uint64_t key,
+size_t Scm_BinarySearchU64(const ScmUInt64 vec[], size_t len, uint64_t key,
                            u_int skip, size_t *floor, size_t *ceil);
-size_t Scm_BinarySearchF16(ScmHalfFloat vec[], size_t len, ScmHalfFloat key,
+size_t Scm_BinarySearchF16(const ScmHalfFloat vec[], size_t len, ScmHalfFloat key,
                            u_int skip, size_t *floor, size_t *ceil);
-size_t Scm_BinarySearchF32(float vec[], size_t len, float key,
+size_t Scm_BinarySearchF32(const float vec[], size_t len, float key,
                            u_int skip, size_t *floor, size_t *ceil);
-size_t Scm_BinarySearchF64(double vec[], size_t len, double key,
+size_t Scm_BinarySearchF64(const double vec[], size_t len, double key,
                            u_int skip, size_t *floor, size_t *ceil);
 
 #endif /*GAUCHE_PRIV_VECTORP_H*/

@@ -224,80 +224,91 @@
            (set! (* ceil) (* hi esize))))
        (return (cast (size_t) -1)))])
  
- (define-cfn Scm_BinarySearchS8 (vec::int8_t* len::size_t
-                                              key::int8_t
-                                              skip::u_int
-                                              floor::size_t*
-                                              ceil::size_t*)
+ (define-cfn Scm_BinarySearchS8 (vec::(const int8_t*)
+                                 len::size_t
+                                 key::int8_t
+                                 skip::u_int
+                                 floor::size_t*
+                                 ceil::size_t*)
    ::size_t (%binary-search int8_t))
 
- (define-cfn Scm_BinarySearchU8 (vec::uint8_t* len::size_t
-                                               key::uint8_t
-                                               skip::u_int
-                                               floor::size_t*
-                                               ceil::size_t*)
+ (define-cfn Scm_BinarySearchU8 (vec::(const uint8_t*)
+                                 len::size_t
+                                 key::uint8_t
+                                 skip::u_int
+                                 floor::size_t*
+                                 ceil::size_t*)
    ::size_t (%binary-search uint8_t))
 
- (define-cfn Scm_BinarySearchS16 (vec::int16_t* len::size_t
-                                                key::int16_t
-                                                skip::u_int
-                                                floor::size_t*
-                                                ceil::size_t*)
+ (define-cfn Scm_BinarySearchS16 (vec::(const int16_t*)
+                                  len::size_t
+                                  key::int16_t
+                                  skip::u_int
+                                  floor::size_t*
+                                  ceil::size_t*)
    ::size_t (%binary-search int16_t))
 
- (define-cfn Scm_BinarySearchU16 (vec::uint16_t* len::size_t
-                                                 key::uint16_t
-                                                 skip::u_int
-                                                 floor::size_t*
-                                                 ceil::size_t*)
+ (define-cfn Scm_BinarySearchU16 (vec::(const uint16_t*)
+                                  len::size_t
+                                  key::uint16_t
+                                  skip::u_int
+                                  floor::size_t*
+                                  ceil::size_t*)
    ::size_t (%binary-search uint16_t))
 
- (define-cfn Scm_BinarySearchS32 (vec::int32_t* len::size_t
-                                                key::int32_t
-                                                skip::u_int
-                                                floor::size_t*
-                                                ceil::size_t*)
+ (define-cfn Scm_BinarySearchS32 (vec::(const int32_t*)
+                                  len::size_t
+                                  key::int32_t
+                                  skip::u_int
+                                  floor::size_t*
+                                  ceil::size_t*)
    ::size_t (%binary-search int32_t))
 
- (define-cfn Scm_BinarySearchU32 (vec::uint32_t* len::size_t
-                                                 key::uint32_t
-                                                 skip::u_int
-                                                 floor::size_t*
-                                                 ceil::size_t*)
+ (define-cfn Scm_BinarySearchU32 (vec::(const uint32_t*)
+                                  len::size_t
+                                  key::uint32_t
+                                  skip::u_int
+                                  floor::size_t*
+                                  ceil::size_t*)
    ::size_t (%binary-search uint32_t))
 
- (define-cfn Scm_BinarySearchS64 (vec::ScmInt64* len::size_t
-                                                 key::ScmInt64
-                                                 skip::u_int
-                                                 floor::size_t*
-                                                 ceil::size_t*)
+ (define-cfn Scm_BinarySearchS64 (vec::(const ScmInt64*)
+                                  len::size_t
+                                  key::ScmInt64
+                                  skip::u_int
+                                  floor::size_t*
+                                  ceil::size_t*)
    ::size_t (%binary-search ScmInt64))
 
- (define-cfn Scm_BinarySearchU64 (vec::ScmUInt64* len::size_t
-                                                  key::ScmUInt64
-                                                  skip::u_int
-                                                  floor::size_t*
-                                                  ceil::size_t*)
+ (define-cfn Scm_BinarySearchU64 (vec::(const ScmUInt64*)
+                                  len::size_t
+                                  key::ScmUInt64
+                                  skip::u_int
+                                  floor::size_t*
+                                  ceil::size_t*)
    ::size_t (%binary-search ScmUInt64))
  
- (define-cfn Scm_BinarySearchF16 (vec::ScmHalfFloat* len::size_t
-                                                     key::ScmHalfFloat
-                                                     skip::u_int
-                                                     floor::size_t*
-                                                     ceil::size_t*)
+ (define-cfn Scm_BinarySearchF16 (vec::(const ScmHalfFloat*)
+                                  len::size_t
+                                  key::ScmHalfFloat
+                                  skip::u_int
+                                  floor::size_t*
+                                  ceil::size_t*)
    ::size_t (%binary-search ScmHalfFloat))
 
- (define-cfn Scm_BinarySearchF32 (vec::float* len::size_t
-                                              key::float
-                                              skip::u_int
-                                              floor::size_t*
-                                              ceil::size_t*)
+ (define-cfn Scm_BinarySearchF32 (vec::(const float*)
+                                  len::size_t
+                                  key::float
+                                  skip::u_int
+                                  floor::size_t*
+                                  ceil::size_t*)
    ::size_t (%binary-search float))
 
- (define-cfn Scm_BinarySearchF64 (vec::double* len::size_t
-                                               key::double
-                                               skip::u_int
-                                               floor::size_t*
-                                               ceil::size_t*)
+ (define-cfn Scm_BinarySearchF64 (vec::(const double*)
+                                  len::size_t
+                                  key::double
+                                  skip::u_int
+                                  floor::size_t*
+                                  ceil::size_t*)
    ::size_t (%binary-search double))
  )
