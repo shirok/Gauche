@@ -1,3 +1,8 @@
+2017-01-05  Shiro Kawai  <shiro@acm.org>
+
+	* ext/tls: Updated to axTLS 2.1.2
+	  https://github.com/shirok/Gauche/pull/271
+
 2017-01-02  Shiro Kawai  <shiro@acm.org>
 
 	* ext/uvector/uvector.scm (uvector-binary-search): Add optional
