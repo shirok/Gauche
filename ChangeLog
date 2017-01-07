@@ -1,3 +1,9 @@
+2017-01-06  Shiro Kawai  <shiro@acm.org>
+
+	* src/char.c, src/libchar.scm (char-set-freeze, char-set-freeze!):
+	  First step of supporting "frozen", or immutable, char-set, which
+	  binary searches flat vector instead of treemap.  Needs more tests...
+
 2017-01-05  Shiro Kawai  <shiro@acm.org>
 
 	* ext/tls: Updated to axTLS 2.1.2

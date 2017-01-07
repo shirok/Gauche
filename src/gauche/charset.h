@@ -34,18 +34,30 @@
 #ifndef GAUCHE_CHARSET_H
 #define GAUCHE_CHARSET_H
 
-/* We implement char-sets as hybrid of bitmap and treemap.
+/* We implement char-sets as hybrid of bitmap and binary tree.
+ *
  * Bitmap is used for "small" characters, i.e. characters between
  * U+0000 and U+007F.  There, each bit represents whether the
  * character is in the set (1) or not (0).
+ *
  * For larger characters, we keep the range of included chars
- * in a treemap.  For each entry, its key is the start char code
+ * in a binary tree.  For each entry, its key is the start char code
  * and its value is the end char code (inclusive).
  * For example, if the character set has characters between
- * U+3040 and U+30FF, and U+4E00 and U_9FBF, then the treemap has
+ * U+3040 and U+30FF, and U+4E00 and U+9FBF, then the tree has
  * the following entries:
  *   #x3040 => #x30ff, #x4e00 => #x9fbf.
- * Lookup is trivial using Scm_TreeCoreClosestEntries.
+ *
+ * We have mutable char-set (default) and immutable or frozen char-set.
+ * Mutable char-set uses ScmTreeCore for the large characters.  Immutable
+ * char-set uses flat u32vector, sorted by the key and accessed by binary
+ * search.
+ *
+ * Immutable charset is a new addition.  Since we have to keep ABI
+ * compatibility, the layout is a bit weird during 0.9 series;
+ * the existing binary checks Scm_TreeCoreNumEntries(cs->large.tree) == 0
+ * for SCM_CHAR_SET_SMALLP, so after we introduce immutable set, we have
+ * to make sure immutable set 
  */
 
 #define SCM_CHAR_SET_SMALL_CHARS 128
@@ -53,16 +65,30 @@
 struct ScmCharSetRec {
     SCM_HEADER;
     ScmBits small[SCM_BITS_NUM_WORDS(SCM_CHAR_SET_SMALL_CHARS)];
-    ScmTreeCore large;
+    u_int flags;
+    union {
+        ScmTreeCore tree;
+        struct {
+            uint32_t *vec;
+            size_t size; /* size of vec.  # of entries is half of this */
+        } frozen;
+    } large;
 };
+
+typedef enum {
+    SCM_CHAR_SET_LARGE = 1,
+    SCM_CHAR_SET_IMMUTABLE = 2,
+} ScmCharSetType;
 
 SCM_CLASS_DECL(Scm_CharSetClass);
 #define SCM_CLASS_CHAR_SET  (&Scm_CharSetClass)
 #define SCM_CHAR_SET(obj)   ((ScmCharSet*)obj)
 #define SCM_CHAR_SET_P(obj) SCM_XTYPEP(obj, SCM_CLASS_CHAR_SET)
 
-#define SCM_CHAR_SET_SMALLP(obj) \
-    (Scm_TreeCoreNumEntries(&SCM_CHARSET(obj)->large) == 0)
+#define SCM_CHAR_SET_LARGEP(obj) \
+    (SCM_CHAR_SET(obj)->flags & SCM_CHAR_SET_LARGE)
+#define SCM_CHAR_SET_IMMUTABLEP(obj) \
+    (SCM_CHAR_SET(obj)->flags & SCM_CHAR_SET_IMMUTABLE)
 
 /* for backward compatibility.  deprecated. */
 #define SCM_CLASS_CHARSET   SCM_CLASS_CHAR_SET
@@ -71,6 +97,8 @@ SCM_CLASS_DECL(Scm_CharSetClass);
 
 SCM_EXTERN ScmObj Scm_MakeEmptyCharSet(void);
 SCM_EXTERN ScmObj Scm_CharSetCopy(ScmCharSet *src);
+SCM_EXTERN ScmObj Scm_CharSetFreeze(ScmCharSet *src);
+SCM_EXTERN ScmObj Scm_CharSetFreezeX(ScmCharSet *src);
 SCM_EXTERN int    Scm_CharSetEq(ScmCharSet *x, ScmCharSet *y);
 SCM_EXTERN int    Scm_CharSetLE(ScmCharSet *x, ScmCharSet *y);
 SCM_EXTERN ScmObj Scm_CharSetAddRange(ScmCharSet *cs,

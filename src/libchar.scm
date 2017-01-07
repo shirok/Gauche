@@ -214,6 +214,9 @@
 
 (define-cproc char-set-copy (cs::<char-set>) Scm_CharSetCopy)
 
+(define-cproc char-set-freeze (cs::<char-set>) Scm_CharSetFreeze)
+(define-cproc char-set-freeze! (cs::<char-set>) Scm_CharSetFreezeX)
+
 (define (char-set-size cs)
   (rlet1 count 0
     (for-each (^[range] (inc! count (- (cdr range) (car range) -1)))
