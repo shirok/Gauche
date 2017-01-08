@@ -3,19 +3,23 @@
 
 (use gauche.test)
 
+;; char-set-copy to ensure we test mutable one.
 (define (test-char-set-1 name expected op arg1)
   (test* #"char-set ~name" (make-list 2 expected)
-         (list (op arg1)
-               (op (char-set-freeze arg1)))))
+         (let1 a (char-set-copy arg1)
+           (list (op a)
+                 (op (char-set-freeze a))))))
 
 (define (test-char-set-2 name expected op arg1 arg2)
   (test* #"char-set ~name" (make-list 4 expected)
-         (let ([iarg1 (char-set-freeze arg1)]
-               [iarg2 (char-set-freeze arg2)])
-           (list (op arg1 arg2)
-                 (op iarg1 arg2)
-                 (op arg1 iarg2)
-                 (op iarg1 iarg2)))))
+         (let* ([a (char-set-copy arg1)]
+                [b (char-set-copy arg2)]
+                [A (char-set-freeze a)]
+                [B (char-set-freeze b)])
+           (list (op a b)
+                 (op A b)
+                 (op a B)
+                 (op A B)))))
 
 (case (gauche-character-encoding)
   [(euc-jp) (load "euc-jp")]

@@ -221,6 +221,14 @@
 
 (use srfi-14)
 
+(let ((data '(#[ぁ-ん他-唖ァ-ン]
+              #[aあ唖ア])))
+  (define (t x)
+    (test* "mutable/immutable roundtrip" #t
+           (char-set= (char-set-copy x)
+                      (char-set-copy (char-set-freeze! (char-set-copy x))))))
+  (for-each t data))
+
 (test-char-set-1 "char-set-contains?" #t (cut char-set-contains? <> #\あ)
                  (char-set #\あ #\い #\う #\え #\お))
 (test-char-set-1 "char-set-contains?" #f (cut char-set-contains? <> #\ぁ)
