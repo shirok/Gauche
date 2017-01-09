@@ -406,13 +406,16 @@ ScmObj Scm_CharSetCopy(ScmCharSet *src)
     return SCM_OBJ(dst);
 }
 
-/* creates flat searched vector to be used for immutable charset.
-   SRC must be a mutable charset. */
-static uint32_t *char_set_freeze_vec(ScmCharSet *src, size_t *size /*out*/)
+/* Creates flat searched vector to be used for immutable charset.
+   SRC must be a mutable charset.
+   The caller must provide uint32_t[2] buffer for ivec. */
+static uint32_t *char_set_freeze_vec(ScmCharSet *src,
+                                     uint32_t *ivec,
+                                     size_t *size /*out*/)
 {
     SCM_ASSERT(!SCM_CHAR_SET_IMMUTABLEP(src));
     size_t s = (size_t)Scm_TreeCoreNumEntries(&src->large.tree) * 2;
-    uint32_t *v = SCM_NEW_ATOMIC_ARRAY(uint32_t, s);
+    uint32_t *v = (s == 2)? ivec : SCM_NEW_ATOMIC_ARRAY(uint32_t, s);
     
     cs_iter iter;
     cs_iter_init(&iter, src);
@@ -436,6 +439,7 @@ ScmObj Scm_CharSetFreeze(ScmCharSet *src)
     if (SCM_CHAR_SET_LARGEP(src)) {
         set_large(dst, TRUE);
         dst->large.frozen.vec = char_set_freeze_vec(src,
+                                                    dst->large.frozen.ivec,
                                                     &dst->large.frozen.size);
     } else {
         dst->large.frozen.vec = NULL;
@@ -449,9 +453,12 @@ ScmObj Scm_CharSetFreezeX(ScmCharSet *src)
     if (SCM_CHAR_SET_IMMUTABLEP(src)) return SCM_OBJ(src);
     if (SCM_CHAR_SET_LARGEP(src)) {
         size_t s;
-        uint32_t *v = char_set_freeze_vec(src, &s);
-        src->large.frozen.vec = v;
+        uint32_t iv[2];
+        uint32_t *v = char_set_freeze_vec(src, iv, &s);
         src->large.frozen.size = s;
+        src->large.frozen.vec = v;
+        src->large.frozen.ivec[0] = iv[0];
+        src->large.frozen.ivec[1] = iv[1];
     }
     src->flags |= SCM_CHAR_SET_IMMUTABLE;
     return SCM_OBJ(src);
@@ -686,8 +693,8 @@ int Scm_CharSetContains(ScmCharSet *cs, ScmChar c)
     else if (SCM_CHAR_SET_IMMUTABLEP(cs)) {
         if (cs->large.frozen.size == 2) {
             /* shortcut */
-            return (c >= (ScmChar)cs->large.frozen.vec[0]
-                    && c <= (ScmChar)cs->large.frozen.vec[1]);
+            return (c >= (ScmChar)cs->large.frozen.ivec[0]
+                    && c <= (ScmChar)cs->large.frozen.ivec[1]);
         } else {
             size_t lo;
             size_t k = Scm_BinarySearchU32(cs->large.frozen.vec,

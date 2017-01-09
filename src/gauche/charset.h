@@ -69,8 +69,9 @@ struct ScmCharSetRec {
     union {
         ScmTreeCore tree;
         struct {
-            uint32_t *vec;
-            size_t size; /* size of vec.  # of entries is half of this */
+            size_t size;      /* size of vec.  # of entries is half of this */
+            uint32_t *vec; 
+            uint32_t ivec[2]; /* if size==2, vec points here */
         } frozen;
     } large;
 };
