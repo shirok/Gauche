@@ -456,7 +456,7 @@ ScmObj Scm_CharSetFreezeX(ScmCharSet *src)
         uint32_t iv[2];
         uint32_t *v = char_set_freeze_vec(src, iv, &s);
         src->large.frozen.size = s;
-        src->large.frozen.vec = v;
+        src->large.frozen.vec = (s == 2)? src->large.frozen.ivec : v;
         src->large.frozen.ivec[0] = iv[0];
         src->large.frozen.ivec[1] = iv[1];
     }
@@ -616,7 +616,7 @@ ScmObj Scm_CharSetAdd(ScmCharSet *dst, ScmCharSet *src)
 
     if (dst == src) return SCM_OBJ(dst);  /* precaution */
 
-    set_large(dst, TRUE);
+    set_large(dst, SCM_CHAR_SET_LARGEP(src));
     
     ScmTreeIter iter;
     ScmDictEntry *e;
