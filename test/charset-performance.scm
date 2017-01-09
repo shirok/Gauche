@@ -9,7 +9,7 @@
 (use srfi-14)
 (use srfi-42)
 
-(define *cats* '(Lu Ll Lt Lo Mn Nd Nl Sm Zs Cc))
+(define *cats* '(Lu Ll Lt Lm Lo Mn Nd Nl No Po Sm Zs Cc Co))
 
 ;; Returns a map 
 (define (setup-char-sets)
@@ -39,17 +39,27 @@
 
 (define (report-benchmark res)
   (define (row title ta tb)
-    (format #t "~10a  ~8a ~8a ~8a    ~8a ~8a ~8a\n"
+    (format #t "~6a  ~8@a ~8@a ~8@a    ~8@a ~8@a ~8@a    ~8@a\n"
             title
             (fmt (time-result-real ta))
             (fmt (time-result-user ta))
             (fmt (time-result-sys ta))
             (fmt (time-result-real tb))
             (fmt (time-result-user tb))
-            (fmt (time-result-sys tb))))
-  (format #t "                     mutable                     immutable\n")
-  (format #t "category     real     user      sys        real     user      sys\n")
+            (fmt (time-result-sys tb))
+            (fmt (* 100 (/ (time-result-user ta) (time-result-user tb))))))
+  (format #t "                    mutable                     immutable\n")
+  (format #t "category    real     user      sys        real     user      sys  speed ratio\n")
   (dolist [x res] (apply row x)))
+
+(define (report-charset-stats charsets)
+  (define (cs-chunks cs)
+    (length (filter (^p (>= (cdr p) #x80))
+                    ((with-module gauche.internal %char-set-ranges) cs))))
+  (define (cs-report-1 category css)
+    (format #t "~6a  ~4@a ranges, ~6@a chars\n"
+            category (cs-chunks (car css)) (char-set-size (car css))))
+  (for-each cs-report-1 *cats* charsets))
 
 (define (fmt num)
   (let* ([integral (floor->exact num)]
@@ -62,7 +72,10 @@
     (format "~d.~3,'0d" integral base1)))
 
 (define (main args)
-  (report-benchmark (run-benchmark (setup-char-sets) (setup-input-data))))
+  (let1 charsets (setup-char-sets)  ; ((<mutable> . <immutable>) ...)
+    (report-benchmark (run-benchmark charsets (setup-input-data)))
+    (print)
+    (report-charset-stats charsets)))
 
 
                         

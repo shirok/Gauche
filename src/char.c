@@ -684,16 +684,22 @@ int Scm_CharSetContains(ScmCharSet *cs, ScmChar c)
     if (c < 0) return FALSE;
     if (c < SCM_CHAR_SET_SMALL_CHARS) return MASK_ISSET(cs, c);
     else if (SCM_CHAR_SET_IMMUTABLEP(cs)) {
-        size_t lo;
-        size_t k = Scm_BinarySearchU32(cs->large.frozen.vec,
-                                       cs->large.frozen.size,
-                                       (uint32_t)c,
-                                       1, &lo, NULL);
-        if ((k != (size_t)-1)
-            || (lo != (size_t)-1 && c <= cs->large.frozen.vec[lo+1]))
-            return TRUE;
-        else
-            return FALSE;
+        if (cs->large.frozen.size == 2) {
+            /* shortcut */
+            return (c >= (ScmChar)cs->large.frozen.vec[0]
+                    && c <= (ScmChar)cs->large.frozen.vec[1]);
+        } else {
+            size_t lo;
+            size_t k = Scm_BinarySearchU32(cs->large.frozen.vec,
+                                           cs->large.frozen.size,
+                                           (uint32_t)c,
+                                           1, &lo, NULL);
+            if ((k != (size_t)-1)
+                || (lo != (size_t)-1 && c <= cs->large.frozen.vec[lo+1]))
+                return TRUE;
+            else
+                return FALSE;
+        }
     } else {
         ScmDictEntry *e, *l, *h;
         e = Scm_TreeCoreClosestEntries(&cs->large.tree, (int)c, &l, &h);
