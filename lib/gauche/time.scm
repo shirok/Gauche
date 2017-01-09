@@ -38,6 +38,7 @@
   (use util.match)
   (export time time-this time-these report-time-results time-these/report
           <time-result> time-result+ time-result-
+          time-result-real time-result-user time-result-sys
           <time-counter> <real-time-counter> <user-time-counter>
           <system-time-counter> <process-time-counter>
           time-counter-start! time-counter-stop! time-counter-reset!
