@@ -1,3 +1,12 @@
+2017-01-09  Shiro Kawai  <shiro@acm.org>
+
+	* src/read.c (read_charset): Make literal charsets immutable.
+	  Codes that have modified literal charsets would break.  Although
+	  it has never been documented (since we didn't have immutable
+	  charset), it must've been implicitly assumed that literals can't
+	  be changed.  Think this as a bug fix (which catches errors that
+	  have been passed.)
+
 2017-01-08  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/time.h: Added missing exports for time-result-real etc.

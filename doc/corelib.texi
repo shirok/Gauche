@@ -7231,6 +7231,14 @@ POSIX流文字集合表記。以下の文字集合名が認識されます:
 @c COMMON
 
 @c EN
+Literal character sets are immutable, as other literal data.  An error
+is signalled when you attempt to modify an immutable character set.
+@c JP
+リテラル文字集合は他のリテラルデータ同様、変更不可です。
+変更しようとした場合はエラーが通知されます。
+@c COMMON
+
+@c EN
 @b{Note for the compatibility}:
 We used to recognize a syntax @code{\xNN} (two-digit hexadecimal number,
 without semicolon terminator) as a character; for example,

@@ -1468,7 +1468,8 @@ static ScmObj read_regexp(ScmPort *port)
 /* gauche extension :  #[charset] */
 static ScmObj read_charset(ScmPort *port)
 {
-    return Scm_CharSetRead(port, NULL, TRUE, FALSE);
+    ScmCharSet *cs = SCM_CHAR_SET(Scm_CharSetRead(port, NULL, TRUE, FALSE));
+    return Scm_CharSetFreezeX(cs); /* literal is immutable */
 }
 
 /*----------------------------------------------------------------
