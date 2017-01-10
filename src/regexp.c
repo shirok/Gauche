@@ -1013,7 +1013,7 @@ static ScmObj rc_charset(regcomp_ctx *ctx)
     if (ctx->casefoldp) {
         Scm_CharSetCaseFold(SCM_CHAR_SET(set));
     }
-
+    Scm_CharSetFreezeX(SCM_CHAR_SET(set));
     rc_register_charset(ctx, SCM_CHAR_SET(set));
     if (complement) {
         return Scm_Cons(SCM_SYM_COMP, SCM_OBJ(set));

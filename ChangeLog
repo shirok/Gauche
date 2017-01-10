@@ -6,6 +6,7 @@
 	  charset), it must've been implicitly assumed that literals can't
 	  be changed.  Think this as a bug fix (which catches errors that
 	  have been passed.)
+	* src/regexp.c (rc_charset): Make charsets in regexp immutable.
 
 2017-01-08  Shiro Kawai  <shiro@acm.org>
 
