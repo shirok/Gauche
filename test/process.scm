@@ -265,26 +265,36 @@
     (^[] (for-each print '("banana" "habana" "tabata" "cabara"))))
 
   (test* "pipelining 1" "banana\nhabana\n"
-         (let1 ps (run-process-pipeline `(,(cmd cat "test.o")
-                                          ,(cmd grep "bana"))
-                                        :output :pipe)
-           (begin0 (port->string (process-output (last ps)))
-             (for-each process-wait ps))))
+         (let1 p (run-pipeline `(,(cmd cat "test.o")
+                                 ,(cmd grep "bana"))
+                               :output :pipe)
+           (process-wait p)
+           (port->string (process-output p))))
 
   (test* "pipelining 2" "tabata\ncabara\n"
-         (let1 ps (run-process-pipeline `(,(cmd cat)
-                                          ,(cmd grep "-v" "bana"))
-                                        :input "test.o" :output :pipe)
-           (begin0 (port->string (process-output (last ps)))
-             (for-each process-wait ps))))
+         (let1 p (run-pipeline `(,(cmd cat)
+                                 ,(cmd grep "-v" "bana"))
+                               :input "test.o" :output :pipe)
+           (process-wait p)
+           (port->string (process-output p))))
 
   (test* "pipelining 3" "banana\ncabara\n"
-         (let1 ps (run-process-pipeline `(,(cmd cat)
-                                          ,(cmd grep "-v" "ta")
-                                          ,(cmd grep "-v" "ha"))
-                                        :input "test.o" :output :pipe)
-           (begin0 (port->string (process-output (last ps)))
-             (for-each process-wait ps))))  
+         (let1 p (run-pipeline `(,(cmd cat)
+                                 ,(cmd grep "-v" "ta")
+                                 ,(cmd grep "-v" "ha"))
+                               :input "test.o" :output :pipe)
+           (process-wait p)
+           (port->string (process-output p))))
+
+  (test* "pipelining 4" "habana\ntabata\ncabara\n"
+         (let1 p (run-pipeline `(,(cmd cat)
+                                 ,(cmd grep "aba"))
+                               :input :pipe :output :pipe)
+           (display "banana\nhabana\ntabata\ncabara\n"
+                    (process-input p))
+           (close-port (process-input p))
+           (process-wait p)
+           (port->string (process-output p))))
   )
 
 ;;-------------------------------

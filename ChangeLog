@@ -1,3 +1,13 @@
+2017-01-10  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/process.scm (do-pipeline, run-pipeline): Introduced
+	  run-pipeline, which returns a process object of the tail of
+	  the pipeline.  We keep other processes in the pipeline in
+	  'upstreams slot of the returned process, so that process-wait
+	  can wait for all processes.  This is more convenient than handling
+	  list of processes by the caller, as in the case of
+	  run-process-pipeline, which we deprecate now.
+
 2017-01-09  Shiro Kawai  <shiro@acm.org>
 
 	* src/read.c (read_charset): Make literal charsets immutable.

@@ -11921,6 +11921,27 @@ unless the execution of @code{ls} command fails with some reason.
 @c COMMON
 
 @c EN
+Since @code{do-process} returns the success or failure of the command
+by a boolean value, you can use @code{and} and @code{or} to combine
+commands pretty much the same way as shell's @code{&&} and @code{||}
+operators.
+@c JP
+@code{do-process}はコマンドの成功失敗を真偽値で返すので、
+シェルの@code{&&}や@code{||}オペレータでコマンドを組み合わせるのと同じことが
+@code{and}や@code{or}でできます。
+@c COMMON
+
+@example
+;; shell: make && make -s check
+(and (do-command '(make))
+     (do-command '(make -s check)))
+
+;; shell: mv x.tmp x.c || rm -f x.tmp
+(or (do-command '(mv x.tmp x.c))
+    (do-command '(rm -f x.tmp)))
+@end example
+
+@c EN
 If you use @code{run-process} instead, you'll get @code{<process>} object
 without waiting @code{ls -al} to finish.  If you run the followign expression
 on REPL, you'll likely to see the return value before output of @code{ls}.
@@ -12628,14 +12649,15 @@ the remote machine and copies its content into the local file
 @node Running multiple processes, Process object, Running subprocess, High Level Process Interface
 @subsection Running multiple processes
 
-@defun run-process-pipeline commands :key input output error wait directory sigmask
-A convenience routine to run pipeline of processes at once.
+@defun do-pipeline commands :key input output error directory sigmask on-abnormal-exit
+@defunx run-pipeline commands :key input output error wait directory sigmask
+Convenience routines to run pipeline of processes at once.
 Example:
 
 @example
-(run-process-pipeline '((ls "src/")
-                        (grep "\\.c$")
-                        (wc -l)))
+(do-pipeline '((ls "src/")
+               (grep "\\.c$")
+               (wc -l)))
 @end example
 
 This is equivalent to shell command pipeline
@@ -12643,43 +12665,56 @@ This is equivalent to shell command pipeline
 number of C source files in the @file{src} subdirectory.
 
 The @var{commands} argument is a list of lists.  Each list
-must be @code{cmd/args} argument @code{run-process} can accept.
+must be @code{cmd/args} argument @code{do-process}/@code{run-process} can accept.
 At least one command must be specified.
 
-The specified commands are run concurrently, with the stdout of
+The specified commands will run concurrently, with the stdout of
 the first command is connected to the stdin of the second, and
 stdout of the second to the stdin of the third, and so on.
 The stdin of the first command is fed from the source specified
 by the @var{input} keyword argument, and the stdout of the last
 command is sent to the sink specified by the @var{output} keyword
 argument.  The default values of these are the calling process's
-stdin and stdout, respectively.  See @code{run-process}, for the
-possible values of these arguments.
+stdin and stdout, respectively.  See @code{do-process}/@code{run-process},
+for the possible values of these arguments
+(@pxref{Running subprocess}).
 
 The stderr of all the processes are sent to the sink specified
 by the @var{error} keyword argument, which is defaulted by the
 calling process's stderr.
 
-The @var{wait} keyword argument specifies whether @code{run-process-pipeline}
-waits for the completion of the @emph{last} process.
-If a true value is given, @code{run-process-pipeline} won't return
-until the last process exits.  If it is @code{#f}, @code{run-process-pipeline}
-returns immediately after all the processes are spawned.
+Like @code{do-process}, @code{do-pipeline} waits for completion of
+all the processes, and returns @code{#t} if the last process
+succeeds (i.e. exits with zero status) or @code{#f} if the last process
+failes (i.e. exits with non-zero status).   If you give
+@code{:error} to @code{on-abnormal-exit} keyword arguments, however,
+a failure of the last process raises an error.
+Note that the status of subprocesses but the last one will neither
+affect the return value nor @code{on-abnormal-exit} behavior; their
+exit status is collected by @code{process-wait} but ignored.
+
+On the other hand, @code{run-pipeline} returns a @code{<process>} object of
+the last process.  You can get other process objects in
+the pipeline by @code{process-upstreams}.
+By default, @code{run-pipeline} runs all the subprocesses in background
+and returns immediately.  Calling @code{process-wait} on the returned
+process object will waits for all the subprocesses.
+If you give a true value to @code{wait} keyword argument,
+@code{run-process} waits for all the subprocesses to finish
+before returning.
 
 The @var{directory} and @var{sigmask} keyword arguments are applied
-to all the processes; see @code{run-process} for the description
-of these arguments.
+to all the processes; 
+see @code{do-process}/@code{run-process} for the description
+of these arguments
+(@pxref{Running subprocess}).
 
-The return value of @code{run-process-pipeline} is a list of
-@code{<process>} objects, in the order as given to @var{commands}
-arguments.
-
-Note that the exit status of processes won't be automatically taken
-(except for the last one, when @var{wait} is true), so the caller
-must call @code{process-wait} on those process objects to clean up
-the processes.
+Note: In 0.9.5, we introduced @code{run-process-pipeline}.  It is similar
+to the current @code{run-pipeline} but returns a list of subprocess objects
+instead of a single one.  We realized it's not very convenient, so we
+deprecated @code{run-process-pipeline} and replaced it with @code{run-pipeline}.
+We still support @code{run-process-pipeline}, but it will dissapear soon.
 @end defun
-
 
 
 @node Process object, Process ports, Running multiple processes, High Level Process Interface
@@ -12844,6 +12879,35 @@ If there's no pipe with the given name, @code{#f} is returned.
   line)
  @result{} "Fri Jun 22 22:22:22 HST 2001"
 @end example
+
+@c EN
+If @var{process} is a result of @code{run-pipeline},
+@code{(process-input process)} and @code{(process-input process 'stdin)}
+behave slightly differently---they return the pipe connected to the
+stdin of the @emph{head} process of the pipeline, not the
+process represented by @var{process} (which is the tail of the pipeline).
+This allows you to treat the whole pipeline as one entity.
+@c JP
+@var{process}が@code{run-pipeline}の結果であった場合、
+@code{(process-input process)}と@code{(process-input process 'stdin)}は
+少し違う振る舞いをします。
+@var{process}自体はプロセスパイプラインの末尾のプロセスを表していますが、
+上記二つの呼び出しに限り、
+プロセスパイプラインの先頭のプロセスのstdinにつながれたパイプを返します。
+これによって、パイプライン全体をひとまとめに扱うことができます。
+@c COMMON
+
+@example
+(let1 p (run-pipeline `((cat)
+                        (grep "aba"))
+                       :input :pipe :output :pipe)
+  (display "banana\nhabana\ntabata\ncabara\n"
+           (process-input p))    ; head of the pipeline
+  (close-port (process-input p))
+  (process-wait p)
+  (port->string (process-output p)))
+  @result{} "habana\ntabata\ncabara\n"
+@end example
 @end deffn
 
 @deffn {Method} process-error (process <process>)
@@ -12853,7 +12917,6 @@ This is equivalent to @code{(process-output @var{process} 'stderr)}.
 これは@code{(process-output @var{process} 'stderr)}と等価です。
 @c COMMON
 @end deffn
-
 
 @defun process-alive? process
 @c EN
@@ -12865,6 +12928,28 @@ know the subprocess' status until it is explicitly checked by
 明示的にチェックされない限り、Gauche はサブプロセスのステータスを知ることが
 できないことに注意してください。
 @c COMMON
+@end defun
+
+@defun process-upstreams process
+@c EN
+If @var{process} is the result of @code{run-pipeline}, this returns
+a list of processes that are upstream of @var{process} in the pipeline.
+If @var{process} is not the result of @code{run-pipeline}, this returns
+an empty list.
+@c JP
+@var{process}が@code{run-pipeline}の結果であった場合、
+パイプライン中で@var{process}の上流にあるプロセスのリストが返ります。
+@var{process}が@code{run-pipeline}の結果でなかった場合は空リストが返ります。
+@c COMMON
+
+@example
+(define p (run-pipeline `((cat) (grep "ho") (wc)) :input :pipe))
+
+p @result{} #<process 20658 "wc" active>
+
+(process-upstreams p)
+  @result{} (#<process 20656 "cat" active> #<process 20657 "grep" active>)
+@end example
 @end defun
 
 @defun process-list
@@ -12913,6 +12998,39 @@ or @code{#f} otherwise.
 
 この呼び出しによって@var{process}の終了ステータスが実際に取得された場合は
 @code{#t}を、そうでなければ@code{#f}を返します。
+@c COMMON
+
+@c EN
+If the process object is created by @code{run-pipeline}
+(@pxref{Running multiple processes}), @code{process-wait} waits
+@emph{all} of the subprocesses in the pipeline, not just the last one,
+unless true value is given to the @var{nohang} argument.
+However, @var{error-on-nonzero-status} only affects to the status
+of @var{process}, which represents the last process in the pipeline;
+if an other subprocess exits with nonzero status, it is stored in
+its respective process objects, but won't cause a fuss.
+
+If you speficy a true value to @var{nohang} for the pipelined
+process, @code{process-wait} still
+probes other subprocesses in the pipeline and updates exit statuses
+of termianted ones, but doesn't wait unterminated subprocesses.
+The unterminated subprocesses should be waited individually, or
+by @code{process-wait-any}, to collect their exit statuses.
+@c JP
+プロセスオブジェクトが@code{run-pipeline}によって作られたものである場合、
+@code{process-wait}は、@var{nohang}に真の値が与えられなければ、
+パイプラインに関わる全てのサブプロセスの終了を待ちます。
+但し、@var{error-on-nonzero-status}は@var{process}引数、すなわちパイプラインの
+最後のプロセスにしか効力を持ちません。その他のサブプロセスがステータス0以外で終了
+したとしても、その事実は各サブプロセスのプロセスオブジェクトに記録されるだけで、
+エラーは通知されません。
+
+パイプラインのプロセスに対して@var{nohang}に真の値を指定した場合、
+@code{process-wait}はパイプラインの上流のプロセスに対しても終了のチェックを
+行い、終了していた場合は対応するプロセスオブジェクトの終了ステータスを更新しますが、
+終了していないサブプロセスについてはそのままにします。
+それらのサブプロセスの終了ステータスを回収するには、それぞれのプロセスオブジェクト
+について@code{process-wait}を発行するか、下の@code{process-wait-any}を使います。
 @c COMMON
 @end defun
 

@@ -44,10 +44,11 @@
   (export <process> <process-abnormal-exit>
           run-process do-process process? process-alive? process-pid
           process-command process-input process-output process-error
+          process-upstreams
           process-wait process-wait-any process-exit-status
           process-send-signal process-kill process-stop process-continue
           process-list
-          run-process-pipeline do-process-pipeline
+          run-pipeline do-pipeline
           ;; process ports
           open-input-process-port   open-output-process-port
           call-with-input-process   call-with-output-process
@@ -56,6 +57,8 @@
           process-output->string    process-output->string-list
           ;; shell utilities
           shell-escape-string shell-tokenize-string
+          ;; deprecated
+          run-process-pipeline
           ))
 (select-module gauche.process)
 
@@ -76,6 +79,9 @@
    (error     :allocation :virtual :slot-ref (^o (process-output o 2)))
    (extra-inputs  :initform '())
    (extra-outputs :initform '())
+   (upstreams :init-value '()) ; pipeline upstream #<process>es
+
+   ;; class slot - keep reference to all processes whose status is unclaimed
    (processes :allocation :class :initform '())
   ))
 
@@ -87,8 +93,15 @@
 ;; to an output port).
 ;; For the backward compatibility, (process-input p) and (process-output p)
 ;; returns pipes connected to child's stdin and stdout, respectively.
+;; NB: If P is the result of run-pipeline, (process-input p 'stdin) returns
+;; the input pipe to the head of the pipeline, not the input pipe of
+;; the process represented by P (which is, of course, connected to the
+;; previous process and not available).
 (define (process-input p :optional (name 'stdin))
-  (cond [(assv name (~ p'in-pipes)) => cdr] [else #f]))
+  (if (and (eq? name 'stdin)
+           (not (null? (~ p'upstreams))))
+    (process-input (car (~ p'upstreams))) ; the input of the whole pipeline
+    (cond [(assv name (~ p'in-pipes)) => cdr] [else #f])))
 
 (define (process-output p :optional (name 'stdout))
   (cond [(assv name (~ p'out-pipes)) => cdr] [else #f]))
@@ -442,6 +455,8 @@
        (process-pid process)))
 (define (process-list) (class-slot-ref <process> 'processes))
 
+(define (process-upstreams p) (~ p'upstreams))
+
 ;;-----------------------------------------------------------------
 ;; wait
 ;;
@@ -454,6 +469,11 @@
              (slot-set! process 'processes
                         (delete process (slot-ref process 'processes)))
              (when raise-error? (%check-normal-exit process))
+             ;; If we're the end of the pipeline, salvage status of
+             ;; the upstream processes.  We won't raise error on non-zero
+             ;; exit in those processes, but we do care nohang? flag.
+             (dolist [p (~ process 'upstreams)]
+               (process-wait p :nohang? nohang?))
              #t)))
     #f))
 
@@ -490,11 +510,9 @@
 ;; We might adopt scsh-like process forms eventually, but finding an
 ;; optimal DSL takes time.  Meanwhile, this intermediate-level API
 ;; would cover typical use case...
-(define (run-process-pipeline commands
-                              :key (input #f) (output #f) (error #f)
-                              (wait #f)
-                              (sigmask #f) (directory #f)
-                              (detached #f))
+(define (run-pipeline commands
+                      :key (input #f) (output #f) (error #f)
+                      (wait #f) (sigmask #f) (directory #f) (detached #f))
   (when (null? commands)
     (error "At least one command is required to run-command-pipeline"))
   (and-let1 offending (any (^c (and (not (pair? c)) (list c))) commands)
@@ -516,20 +534,26 @@
          ;; for we might :wait #t for it.
          [ps (map (cut apply run-process <>) (drop-right cmds 1))])
     (dolist [p pipe-pairs] (close-output-port (cdr p)))
-    (append ps (list (apply run-process (last cmds))))))
+    ;; Keep upstream processes in 'upstreams' slot.
+    (rlet1 p (apply run-process (last cmds))
+      (set! (~ p'upstreams) ps))))
 
-(define (do-process-pipeline commands . args)
+(define (do-pipeline commands . args)
   (let* ([eflag (case (get-keyword :on-abnormal-exit args #f)
                   [(#f) #f]
                   [(:error) #t]
                   [else => (cut error
                                 "Value for on-abnormal-exit argument \
                                  must be either #f or :error, but got:" <>)])]
-         [ps (apply run-process-pipeline commands
-                    (delete-keyword :on-abnormal-exit args))])
-    (for-each process-wait ps)
-    (when eflag (for-each %check-normal-exit ps))
-    (every (^p (zero? (process-exit-status p))) ps)))
+         [p (apply run-pipeline commands
+                   (delete-keyword :on-abnormal-exit args))])
+    (process-wait p #f eflag)
+    (zero? (process-exit-status p))))
+
+;; For the backward compatiblity.  DEPRECATED.
+(define (run-process-pipeline . args) ; returns list of processes.
+  (let1 p (apply run-pipeline args)
+    (append (~ p'upstreams) (list p))))
 
 ;;===================================================================
 ;; Process ports
