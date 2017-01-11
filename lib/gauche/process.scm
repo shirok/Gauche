@@ -473,7 +473,7 @@
              ;; the upstream processes.  We won't raise error on non-zero
              ;; exit in those processes, but we do care nohang? flag.
              (dolist [p (~ process 'upstreams)]
-               (process-wait p :nohang? nohang?))
+               (process-wait p nohang?))
              #t)))
     #f))
 
@@ -520,14 +520,13 @@
             (car offending) commands))
   (let* ([pipe-pairs (map (^_ (call-with-values sys-pipe cons))
                           (cdr commands))]
-         [cmds (map (^[cmdline in out w]
+         [cmds (map (^[cmdline in out]
                       `(,cmdline :input ,in :output ,out :error ,error
-                                 :wait ,w :sigmask ,sigmask
+                                 :sigmask ,sigmask
                                  :directory ,directory :detached ,detached))
                     commands
                     (cons input (map car pipe-pairs))
-                    (fold-right cons (list output) (map cdr pipe-pairs))
-                    `(,@(make-list (- (length commands) 1) #f) ,wait))]
+                    (fold-right cons (list output) (map cdr pipe-pairs)))]
          ;; We have to close output pipe after spawning the process, for
          ;; the process that reads from the pipe would wait until all the
          ;; ends are closed.  We have to treat the last command separately,
@@ -536,7 +535,8 @@
     (dolist [p pipe-pairs] (close-output-port (cdr p)))
     ;; Keep upstream processes in 'upstreams' slot.
     (rlet1 p (apply run-process (last cmds))
-      (set! (~ p'upstreams) ps))))
+      (set! (~ p'upstreams) ps)
+      (when wait (process-wait p)))))
 
 (define (do-pipeline commands . args)
   (let* ([eflag (case (get-keyword :on-abnormal-exit args #f)
