@@ -11842,13 +11842,14 @@ a convenient way to send/receive information to/from subprocesses.
 
 @menu
 * Running subprocess::
-* Running multiple processes::
+* Running process pipeline::
 * Process object::
 * Process ports::
 @end menu
 
-@node Running subprocess, Running multiple processes, High Level Process Interface, High Level Process Interface
+@node Running subprocess, Running process pipeline, High Level Process Interface, High Level Process Interface
 @subsection Running subprocess
+@c NODE サブプロセスの実行
 
 @defun do-process cmd/args :key redirects input output error @
                    fork directory host sigmask on-abnormal-exit
@@ -11933,12 +11934,12 @@ operators.
 
 @example
 ;; shell: make && make -s check
-(and (do-command '(make))
-     (do-command '(make -s check)))
+(and (do-process '(make))
+     (do-process '(make -s check)))
 
 ;; shell: mv x.tmp x.c || rm -f x.tmp
-(or (do-command '(mv x.tmp x.c))
-    (do-command '(rm -f x.tmp)))
+(or (do-process '(mv x.tmp x.c))
+    (do-process '(rm -f x.tmp)))
 @end example
 
 @c EN
@@ -12159,12 +12160,12 @@ are nonnegative integers referring to the file descriptor
 (Note: If you just want to run a command and get its output as a string
 take a look at @code{process-output->string} (@pxref{Process ports}).
 If you want to pipe multiple commands together,
-@pxref{Running multiple processes}.)
+@pxref{Running process pipeline}.)
 @c JP
 (註：簡単にコマンドを走らせて結果を文字列で得たい場合は、
 @code{process-output->string}が使えます(@ref{Process ports}参照)。
 また、複数のコマンドをパイプでつなぎたい場合は
-@ref{Running multiple processes}を見てください。)
+@ref{Running process pipeline}を見てください。)
 @c COMMON
 
 @table @code
@@ -12646,13 +12647,18 @@ the remote machine and copies its content into the local file
 @end example
 @end deftp
 
-@node Running multiple processes, Process object, Running subprocess, High Level Process Interface
-@subsection Running multiple processes
+@node Running process pipeline, Process object, Running subprocess, High Level Process Interface
+@subsection Running process pipeline
+@c NODE プロセスパイプラインの実行
 
 @defun do-pipeline commands :key input output error directory sigmask on-abnormal-exit
 @defunx run-pipeline commands :key input output error wait directory sigmask
+@c EN
 Convenience routines to run pipeline of processes at once.
 Example:
+@c JP
+複数のプロセスでパイプラインを構成するための便利関数です。例:
+@c COMMON
 
 @example
 (do-pipeline '((ls "src/")
@@ -12660,14 +12666,27 @@ Example:
                (wc -l)))
 @end example
 
+@c EN
 This is equivalent to shell command pipeline
 @code{ls src/ | grep '\.c$' | wc -l}, i.e. shows the
 number of C source files in the @file{src} subdirectory.
+@c JP
+これはシェルのコマンドでのパイプライン@code{ls src/ | grep '\.c$' | wc -l}
+と同等で、@file{src}ディレクトリにあるCソースファイルの数を数えます。
+@c COMMON
 
+@c EN
 The @var{commands} argument is a list of lists.  Each list
 must be @code{cmd/args} argument @code{do-process}/@code{run-process} can accept.
 At least one command must be specified.
+@c JP
+@var{commands}引数はリストのリストです。
+それぞれの内側のリストは
+@code{do-process}/@code{run-process}が受け付ける@code{cmd/args}
+の形式でなければなりません。少なくともひとつのコマンドが指定される必要があります。
+@c COMMON
 
+@c EN
 The specified commands will run concurrently, with the stdout of
 the first command is connected to the stdin of the second, and
 stdout of the second to the stdin of the third, and so on.
@@ -12678,46 +12697,101 @@ argument.  The default values of these are the calling process's
 stdin and stdout, respectively.  See @code{do-process}/@code{run-process},
 for the possible values of these arguments
 (@pxref{Running subprocess}).
+@c JP
+指定されたコマンドは、最初のコマンドのstdoutが次のコマンドのstdinに、
+そのコマンドのstdoutがさらに次のコマンドのstdinに、@dots{}という具合に
+接続されてから、全てが並行して実行されます。
+最初のコマンドのstdinは@var{input}キーワード引数で指定された入力から供給され、
+最後のコマンドのstdoutは@var{output}キーワード引数で指定された出力へと流れます。
+これらのキーワード引数の省略時の値は、呼び出すプロセスのstdinとstdoutです。
+これらキーワード引数に与えられる値については
+@code{do-process}/@code{run-process}の項を見てください
+(@ref{Running subprocess})。
+@c COMMON
 
+@c EN
 The stderr of all the processes are sent to the sink specified
 by the @var{error} keyword argument, which is defaulted by the
 calling process's stderr.
+@c JP
+全てのプロセスのstderrは@var{stderr}キーワード引数で指定される出力へと流されます。
+省略時は呼び出すプロセスのstderrが使われます。
+@c COMMON
 
+@c EN
 Like @code{do-process}, @code{do-pipeline} waits for completion of
-all the processes, and returns @code{#t} if the last process
+all the processes, and returns @code{#t} if the tail process
 succeeds (i.e. exits with zero status) or @code{#f} if the last process
 failes (i.e. exits with non-zero status).   If you give
 @code{:error} to @code{on-abnormal-exit} keyword arguments, however,
-a failure of the last process raises an error.
-Note that the status of subprocesses but the last one will neither
-affect the return value nor @code{on-abnormal-exit} behavior; their
-exit status is collected by @code{process-wait} but ignored.
+a failure of the tail process raises an error.
+Exit statuses of subprocesses other than the tail one are
+collected by @code{process-wait}, but won't affect the
+return value, and won't cause an error even
+@code{on-abnormal-exit} is @code{:error}.
+@c JP
+@code{do-process}と同じように、@code{do-pipeline}は全てのプロセスの終了を待ち、
+パイプライン末尾のプロセスが成功した(終了ステータスが0)場合に@code{#t}を、
+失敗した(終了ステータスが0以外)場合に@code{#f}を返します。
+ただし、@code{on-abnormal-exit}キーワード引数に@code{:error}を渡した場合は、
+末尾のプロセスが失敗した場合にエラーが投げられます。
+末尾以外のプロセスの終了ステータスは@code{process-wait}によって回収されますが、
+返り値には影響を与えず、
+失敗した場合に@code{on-abnormal-exit}引数が@code{:error}であってもエラーは投げられません。
+@c COMMON
 
+@c EN
 On the other hand, @code{run-pipeline} returns a @code{<process>} object of
-the last process.  You can get other process objects in
-the pipeline by @code{process-upstreams}.
+the tail process.  You can get other process objects in
+the pipeline by applying @code{process-upstreams} to the tail process.
 By default, @code{run-pipeline} runs all the subprocesses in background
 and returns immediately.  Calling @code{process-wait} on the returned
 process object will waits for all the subprocesses.
-If you give a true value to @code{wait} keyword argument,
+If you give a true value to @var{wait} keyword argument,
 @code{run-process} waits for all the subprocesses to finish
 before returning.
+@c JP
+一方、@code{run-pipeline}は末尾のプロセスの@code{<process>}オブジェクトを返します。
+パイプライン中の他のプロセスは末尾プロセスに@code{process-upstreams}
+を適用すれば得られます。
+デフォルトでは、@code{run-pipeline}は全てのサブプロセスをバックグラウンドで起動して
+直ちに戻ってきます。返り値の末尾プロセスに対して@code{process-wait}を呼ぶと、
+全てのサブプロセスが終了するまで待ちます。
+@var{wait}キーワード引数に真の値を渡した場合は、
+@code{run-process}は全てのサブプロセスの終了を待ってから戻ります。
+@c COMMON
 
+@c EN
 The @var{directory} and @var{sigmask} keyword arguments are applied
 to all the processes; 
 see @code{do-process}/@code{run-process} for the description
 of these arguments
 (@pxref{Running subprocess}).
+@c JP
+@var{directory}と@var{sigmask}キーワード引数は全てのプロセスに適用されます。
+これらの引数の説明は@code{do-process}/@code{run-process}の項を見てください
+(@ref{Running subprocess})。
+@c COMMON
 
-Note: In 0.9.5, we introduced @code{run-process-pipeline}.  It is similar
+@c EN
+Note: In Gauche 0.9.5, we introduced @code{run-process-pipeline}.  It is similar
 to the current @code{run-pipeline} but returns a list of subprocess objects
 instead of a single one.  We realized it's not very convenient, so we
 deprecated @code{run-process-pipeline} and replaced it with @code{run-pipeline}.
-We still support @code{run-process-pipeline}, but it will dissapear soon.
+We still support @code{run-process-pipeline}, but strongly recommend
+to move to @code{run-pipeline} as soon as possible.
+@c JP
+註: Gauche 0.9.5で、@code{run-process-pipeline}というAPIを導入しました。
+これは現在の@code{run-pipeline}に似ていますが、起動したプロセスのリストを返します。
+しかし使い勝手が悪いことがわかったので、@code{run-process-pipeline}は非推奨とし、
+@code{run-pipeline}で置き換えることにしました。
+@code{run-process-pipeline}もしばらくサポートされますが、
+できるだけ早く@code{run-pipeline}に移行してください。
+@c COMMON
 @end defun
 
 
-@node Process object, Process ports, Running multiple processes, High Level Process Interface
+@node Process object, Process ports, Running process pipeline, High Level Process Interface
 @subsection Process object
 
 @deftp {Class} <process>
@@ -13002,7 +13076,7 @@ or @code{#f} otherwise.
 
 @c EN
 If the process object is created by @code{run-pipeline}
-(@pxref{Running multiple processes}), @code{process-wait} waits
+(@pxref{Running process pipeline}), @code{process-wait} waits
 @emph{all} of the subprocesses in the pipeline, not just the last one,
 unless true value is given to the @var{nohang} argument.
 However, @var{error-on-nonzero-status} only affects to the status
