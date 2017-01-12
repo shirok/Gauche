@@ -1,3 +1,8 @@
+2017-01-12  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/file/util.scm (find-file-in-paths): Add extensions keyword
+	  argument, suggested by Hamayama.
+
 2017-01-10  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/process.scm (do-pipeline, run-pipeline): Introduced

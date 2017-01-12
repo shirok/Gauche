@@ -469,13 +469,20 @@
                                                         [gauche.os.windows #\;]
                                                         [else #\:]))]
                                               [else '()]))
-                                 (pred file-is-executable?))
+                                 (pred file-is-executable?)
+                                 (extensions '()))
+  (define names
+    (if (null? extensions)
+      `(,name)
+      (cons name
+            (map (^e (string-append name "." e)) extensions))))
+  (define (try n) (and (pred n) n))
   (if (absolute-path? name)
-    (and (pred name) name)
+    (any try names)
     (let loop ((paths paths))
       (and (not (null? paths))
-           (let1 p (build-path (car paths) name)
-             (if (pred p) p (loop (cdr paths))))))))
+           (or (any try (map (cute build-path (car paths) <>) names))
+               (loop (cdr paths)))))))
 
 ;;;=============================================================
 ;;; File attributes

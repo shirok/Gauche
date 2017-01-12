@@ -8291,7 +8291,7 @@ If @var{newext} is @code{#f}, it returns @var{path} without extension.
 @end example
 @end defun
 
-@defun find-file-in-paths name :key paths pred
+@defun find-file-in-paths name :key paths pred extensions
 @c EN
 Looks for a file that has name @var{name} in the given list of pathnames
 @var{paths} and that satisfies a predicate @var{pred}.  If found,
@@ -8335,6 +8335,37 @@ by default.
            "/usr/share/myapp")
   :pred  file-is-readable?)
 @end example
+
+@c EN
+The @var{extensions} keyword argument may list alternative extensions
+added to @var{name}.  For example, the following example searches
+not only @file{notepad}, but also @file{notepad.exe} and @file{notepad.com},
+in the PATH.  If an alternate name is found,
+the returned pathname contains the extension.
+@c JP
+@var{extensions}キーワード引数には、@var{name}に追加して探すべき拡張子の
+リストを指定できます。例えば次の例では、@file{notepad}に加え
+@file{notepad.exe}と@file{notepad.com}がPATHから探されます。
+拡張子つきの名前が見つかった場合、返されるパスは拡張子を含んだものとなります。
+@c COMMON
+
+@example
+(find-file-in-paths "notepad" :extensions '("exe" "com"))
+@end example
+
+@c EN
+For each path, the name and the alternative names are checked in order.
+That is,
+if there are @file{/bin/b.com} and @file{/usr/bin/b.exe} and @var{paths}
+is @code{("/bin" "/usr/bin")}, you'll get @file{/bin/b.com} when you
+search @file{b} with extensions @code{("exe" "com")}.
+@c JP
+各パスについて、@var{name}および拡張子つきの名前が順にチェックされます。
+すなわち、@file{/bin/b.com}と@file{/usr/bin/b.exe}があって
+@var{paths}が@code{("/bin" "/usr/bin")}である場合、
+@var{extensions}に@code{("exe" "com")}を与えて@file{b}を探すと、
+@file{/bin/b.com}が返ります。
+@c COMMON
 @end defun
 
 @defun null-device
