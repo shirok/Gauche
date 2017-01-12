@@ -119,15 +119,13 @@
     (set! (~ ip'getb)
           (let ((buf #f) (pos 0) (size 0))
             (^[]
-              (if buf
-                (rlet1 r (string-byte-ref buf pos)
-                  (set! pos (+ pos 1))
-                  (when (= pos size) (set! buf #f)))
-                (begin
-                  (set! buf (tls-read tls))
-                  (set! size (string-size buf))
-                  (set! pos 1)
-                  (string-byte-ref buf 0))))))))
+              (unless buf
+                (set! buf (tls-read tls))
+                (set! size (string-size buf))
+                (set! pos 0))
+              (rlet1 r (string-byte-ref buf pos)
+                (set! pos (+ pos 1))
+                (when (= pos size) (set! buf #f))))))))
 
 (define (make-tls-output-port tls)
   (rlet1 op (make <virtual-output-port>)
