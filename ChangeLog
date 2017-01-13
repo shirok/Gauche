@@ -1,5 +1,11 @@
 2017-01-12  Shiro Kawai  <shiro@acm.org>
 
+	* lib/rfc/http.scm: Add option to use stunnel for https connection
+	  in addition to rfc.tls.  It is useful when the remote site
+	  uses crypto that axTLS doesn't support yet.  (Ideally we should
+	  automatically fall back, but for now the caller should specify
+	  which infrastructure to use.)
+
 	* libsrc/file/util.scm (find-file-in-paths): Add extensions keyword
 	  argument, suggested by Hamayama.
 
