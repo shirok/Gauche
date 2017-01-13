@@ -12601,6 +12601,7 @@ example):
 @end defun
 
 @defun http-compose-form-data params port :optional encoding
+@c EN
 A helper procedure to create @code{multipart/form-data}
 from a list of parameters.  The format of @var{params} argument
 is the same as the list format of @var{body} argument of
@@ -12610,8 +12611,45 @@ MIME message is returned.  Alternatively you can pass @code{#f}
 to the @var{port} to get the result in a string.
 In that case, two values are returned, the MIME message string
 and the boundary string.
+@c JP
+@code{multibyte/form-data}形式にエンコードされたデータを
+パラメータのリストから組み立てるための補助手続きです。
+@var{params}の形式はhttpリクエスト手続きの@var{body}部にリストを渡す場合の形式と同様です。
+結果は出力ポート@var{port}に書き出され、
+MIMEメッセージを構築するのに必要なboundary stringが返されます。
+@var{port}に@code{#f}を渡した場合は、
+boundary stringとデータをエンコードした文字列の二つの値が返されます。
+@c COMMON
 
+@c EN
 @var{Encoding} specifies the character encodings to be used.
+When omitted, Gauche's native encoding is used.
+@c JP
+@var{encoding}は文字エンコーディングを指定します。
+省略時はGaucheのネイティブエンコーディングが使われます。
+@c COMMON
+
+@example
+(define p (open-output-string))
+
+(http-compose-form-data '((name "Preludes and Fugues")
+                          (composer "Shostakovich, Dmitri")
+                          (opus "87"))
+                         p)
+  @result{} "boundary-fh87o52rp6zkubp2uhdmo"
+
+(get-output-string p)
+  @result{}
+  "\r\n--boundary-fh87o52rp6zkubp2uhdmo\r\nContent-type: te
+   xt/plain; charset=utf-8\r\nContent-transfer-encoding: bi
+   nary\r\ncontent-disposition: form-data; name=title\r\n\r\n
+   Preludes and Fugues\r\n--boundary-fh87o52rp6zkubp2uhdmo...
+@c EN
+;; (result is truncated)
+@c JP
+;; (以下省略)
+@c COMMON
+@end example
 @end defun
 
 @defun http-status-code->description code
@@ -12638,30 +12676,65 @@ HTTPステータスコード@code{code}の簡単な説明を返します。
 @subheading セキュアな接続
 @c COMMON
 
+@c EN
 When you pass a true value to @code{secure} keyword argument,
-The request-making APIs such as @code{http-get} use a secure
+the request-making APIs such as @code{http-get} use a secure
 connection.  That is, it connects with @code{https} instead of
-@code{http}.  The actual value for the argument can be one of the
+@code{http}.  The actual value for the keyword argument can be one of the
 followings:
+@c JP
+@code{http-get}等httpリクエスト発行APIの@code{secure}キーワード引数に、
+真の値を渡した場合、セキュアなコネクションが使われます。
+すなわち、@code{http}ではなく@code{https}で接続されるということです。
+実際に@code{secure}キーワード引数に渡せる値は以下の通りです。
+@c COMMON
 
 @table @code
 @item #t
 @itemx tls
+@c EN
 The @code{rfc.tls} module is used for the secure connection.
+@c JP
+@code{rfc.tls}モジュールを使ってセキュアな接続を行います。
+@c COMMON
 @item stunnel
+@c EN
 The external process @code{stunnel} is spawned and used for the
 secure connection.
+@c JP
+@code{stunnel}プロセスをサブプロセスとして起動してそれを通じてセキュアな接続を作ります。
+@c COMMON
+@item #f
+@c EN
+Secure connection is not used.
+@c JP
+セキュアな接続を行いません。
+@c COMMON
 @end table
 
-If specified connection isn't available, an error is signaled.
+@c EN
+If specified secure connection subsystem isn't available in the running Gauche,
+an error is signaled.
 Use the following procedure to check if you can use secure
 connections:
+@c JP
+指定されたセキュア接続を行うサブシステムが実行中のGaucheでは使えない場合は、
+エラーが報告されます。
+サブシステムが使えるかどうかをチェックしたい場合は次の手続きを使ってください。
+@c COMMON
 
 @defun http-secure-connection-available? :optional type
-The type may be @code{tls} or @code{stunnel}.  If omitted, @code{tls} is
-assumed.
+@c EN
+The @var{type} argument may be @code{tls} or @code{stunnel}.
+If omitted, @code{tls} is assumed.
 Returns @code{#t} if running Gauche can use secure connection of the given type,
 @code{#f} otherwise.
+@c JP
+@var{type}引数は@code{tls}か@code{stunnel}でなければなりません。
+省略時は@code{tls}とみなされます。
+指定のセキュア接続を行うサブシステムが実行中のGaucheで使える場合は@code{#t}が、
+使えない場合は@code{#f}が返されます。
+@c COMMON
 @end defun
 
 @c ----------------------------------------------------------------------
