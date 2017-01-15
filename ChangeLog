@@ -1,3 +1,9 @@
+2017-01-14  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/file/util.scm (string->file etc.): Added the opposites of
+	  file->string etc.  Clojure's spit and slurp are roughly equivalent
+	  to string->file and file->string.
+
 2017-01-12  Shiro Kawai  <shiro@acm.org>
 
 	* lib/rfc/http.scm: Add option to use stunnel for https connection

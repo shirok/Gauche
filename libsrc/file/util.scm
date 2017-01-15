@@ -66,6 +66,7 @@
           remove-files delete-files
           null-device console-device
           file->string file->string-list file->list file->sexp-list
+          string->file string-list->file list->file sexp-list->file
           <lock-file-failure> with-lock-file
           ))
 (select-module file.util)
@@ -826,6 +827,19 @@
 
 (define (file->sexp-list file . opts)
   (apply call-with-input-file file (%maybe (cut port->list read <>)) opts))
+
+;; inverse of file->*
+(define (string->file file str . opts)
+  (apply call-with-output-file file (cut display str <>) opts))
+
+(define (list->file writer file lis . opts)
+  (apply call-with-output-file file (^p (dolist [s lis] (writer s p))) opts))
+
+(define string-list->file
+  (cute list->file (^[s p] (display s p) (newline p)) <> <> <...>))
+
+(define sexp-list->file
+  (cute list->file (^[s p] (write s p) (newline p)) <> <> <...>))
 
 ;;;=============================================================
 ;;; File locking
