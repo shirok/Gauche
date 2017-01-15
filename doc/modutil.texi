@@ -8922,7 +8922,7 @@ if it is @code{:error}, and @code{#f} is returned if the argument is
 @defunx string-list->file filename lis options @dots{}
 @defunx sexp-list->file filenme lis options @dots{}
 @c EN
-Opposite of @code{string->file} etc.  They are convenient
+Opposite of @code{file->string} etc.  They are convenient
 to quickly write out things into a file.
 
 NB: The name @code{string->file} etc. might suggest they would take the
@@ -8935,7 +8935,7 @@ The options part is passed to @code{call-with-output-file} as is.
 For example, the following code appends the text when @file{foo.txt}
 already exists:
 @c JP
-@code{string->file}等の逆を行う手続きです。
+@code{file->string}等の逆を行う手続きです。
 手軽にファイルに何かを書き出したい時に便利です。
 
 註: @code{string->file}等の名前からして、
