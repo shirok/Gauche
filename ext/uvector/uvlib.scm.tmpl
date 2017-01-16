@@ -154,6 +154,16 @@
   (v::<vector> :optional (start::<fixnum> 0) (end::<fixnum> -1) clamp)
   (return (Scm_VectorTo${T}Vector v start end (clamp-arg clamp))))
 
+(define-cproc ${t}vector=?              ; srfi-66
+  (a::<${t}vector> b::<${t}vector>)     ;  we just typecheck args and call equal?
+  ::<boolean>
+  (return (Scm_EqualP (SCM_OBJ a) (SCM_OBJ b))))
+
+(define-cproc ${t}vector-compare        ; srfi-66
+  (a::<${t}vector> b::<${t}vector>)     ;  we just typecheck args and call compare
+  ::<int>
+  (return (Scm_Compare (SCM_OBJ a) (SCM_OBJ b))))
+
 ///)) ;; end of tmpl-body
 
 ///(define *tmpl-numop* '(

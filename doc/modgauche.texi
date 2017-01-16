@@ -19654,6 +19654,76 @@ if they are given.
 @c COMMON
 @end deftp
 
+
+@deftp {Function} @var{TAG}vector=? @var{vec1} @var{vec2}
+@findex s8vector=?
+@findex u8vector=?
+@findex s16vector=?
+@findex u16vector=?
+@findex s32vector=?
+@findex u32vector=?
+@findex s64vector=?
+@findex u64vector=?
+@findex f16vector=?
+@findex f32vector=?
+@findex f64vector=?
+[SRFI-66]
+@c EN
+Both arguments must be a @var{TAG}vector.  Returns @code{#t} if
+@var{vec1} and @var{vec2} are equal to each other, @var{#f} otherwise.
+
+Note that you can compare uvectors with @code{equal?} in Gauche.
+These are provided because SRFI-66 defines @code{u8vector=?}.
+You can also use them to indicate arguments are vectors of the specific type.
+@c JP
+引数はどちらも@var{TAG}vectorでなければなりません。
+両引数が等価なら@code{#t}が、そうでなければ@code{#f}が返されます。
+
+Gaucheでは、uvectorは@code{equal?}で比較することができます。
+これらの手続きが提供されるのは、SRFI-66が@code{u8vector=?}を定義しているためです。
+引数が特定の型のベクタであることを明示したい場合に使っても良いでしょう。
+@c COMMON
+@end deftp
+
+@deftp {Function} @var{TAG}vector-compare @var{vec1} @var{vec2}
+@findex s8vector-compare
+@findex u8vector-compare
+@findex s16vector-compare
+@findex u16vector-compare
+@findex s32vector-compare
+@findex u32vector-compare
+@findex s64vector-compare
+@findex u64vector-compare
+@findex f16vector-compare
+@findex f32vector-compare
+@findex f64vector-compare
+[SRFI-66]
+@c EN
+Both arguments must be a @var{TAG}vector.  Returns @code{-1} if
+@var{vec1} is smaller than @var{vec2},
+@code{0} if both are equal to each other,
+and @code{1} if @var{vec1} is greater than @var{vec2}.
+
+Shorter vector is smaller than longer vectors.  If the lengths of
+both vectors are the same, elements are compared from left to right.
+
+Note that you can compare uvectors with @code{compare} in Gauche.
+These are provided because SRFI-66 defines @code{u8vector-compare}.
+You can also use them to indicate arguments are vectors of the specific type.
+@c JP
+引数はどちらも@var{TAG}vectorでなければなりません。
+@var{vec1}が@var{vec2}よりも小さければ@code{-1}が、
+両者が等しければ@code{0}が、
+@var{vec1}が@var{vec2}よりも大きければ@code{1}が返されます。
+
+短い方のベクタが常に小さいと評価されます。長さが等しい場合は要素を左から順に比較します。
+
+Gaucheでは、uvectorは@code{compare}で比較することができます。
+これらの手続きが提供されるのは、SRFI-66が@code{u8vector-compare}を定義しているためです。
+引数が特定の型のベクタであることを明示したい場合に使っても良いでしょう。
+@c COMMON
+@end deftp
+
 @deftp {Function} @var{TAG}vector-copy @r{@var{vec} :optional @var{start} @var{end}}
 @findex s8vector-copy
 @findex u8vector-copy

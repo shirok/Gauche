@@ -300,6 +300,14 @@
                 list->f32vector
                 list->f64vector))
 
+;; srfi-66 procedures
+;;  Internally we just call builtin equal? and compare, so here we just
+;;  check it can be callable.
+(test* "u8vector=?" #t (u8vector=? '#u8(1 2 3) '#u8(1 2 3)))
+(test* "u8vector=?" (test-error) (u8vector=? '#u8(1 2 3) '#s8(1 2 3)))
+(test* "u8vector-compare" -1 (u8vector-compare '#u8(2 2) '#u8(1 2 3)))
+(test* "u8vector-compare" (test-error) (u8vector-compare '#s8(2 2) '#u8(1 2 3)))
+
 ;;-------------------------------------------------------------------
 (test-section "copying and filling")
 

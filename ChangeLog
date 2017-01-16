@@ -1,5 +1,8 @@
 2017-01-16  Shiro Kawai  <shiro@acm.org>
 
+	* ext/uvector (TAGvector=?, TAGvector-compare): Added for support
+	  of srfi-66.
+
 	* src/char.c (Scm_MakeImmutableCharSet): Added.  This is to be called
 	  from generated code.
 	  (SCM_CHAR_SET_LARGE_P, SCM_CHAR_SET_IMMUTABLE_P): Change name for
