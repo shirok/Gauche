@@ -70,7 +70,7 @@ struct ScmCharSetRec {
         ScmTreeCore tree;
         struct {
             size_t size;      /* size of vec.  # of entries is half of this */
-            uint32_t *vec; 
+            const uint32_t *vec; 
             uint32_t ivec[2]; /* if size==2, vec points here */
         } frozen;
     } large;
@@ -86,9 +86,9 @@ SCM_CLASS_DECL(Scm_CharSetClass);
 #define SCM_CHAR_SET(obj)   ((ScmCharSet*)obj)
 #define SCM_CHAR_SET_P(obj) SCM_XTYPEP(obj, SCM_CLASS_CHAR_SET)
 
-#define SCM_CHAR_SET_LARGEP(obj) \
+#define SCM_CHAR_SET_LARGE_P(obj) \
     (SCM_CHAR_SET(obj)->flags & SCM_CHAR_SET_LARGE)
-#define SCM_CHAR_SET_IMMUTABLEP(obj) \
+#define SCM_CHAR_SET_IMMUTABLE_P(obj) \
     (SCM_CHAR_SET(obj)->flags & SCM_CHAR_SET_IMMUTABLE)
 
 /* for backward compatibility.  deprecated. */
@@ -97,6 +97,9 @@ SCM_CLASS_DECL(Scm_CharSetClass);
 #define SCM_CHARSETP(obj)   SCM_CHAR_SET_P(obj)
 
 SCM_EXTERN ScmObj Scm_MakeEmptyCharSet(void);
+SCM_EXTERN ScmObj Scm_MakeImmutableCharSet(const ScmBits *small,
+                                           const uint32_t *vec,
+                                           size_t size);
 SCM_EXTERN ScmObj Scm_CharSetCopy(ScmCharSet *src);
 SCM_EXTERN ScmObj Scm_CharSetFreeze(ScmCharSet *src);
 SCM_EXTERN ScmObj Scm_CharSetFreezeX(ScmCharSet *src);
