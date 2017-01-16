@@ -580,6 +580,16 @@ S式コメント
 ネイティブのリーダでサポートされています。@ref{Lexical structure}参照。
 
 
+srfi-66, gauche.uvector
+()
+
+Octet vectors
+Supported by the module @code{gauche.uvector} (@pxref{Uniform vectors}).
+
+オクテットベクタ
+@code{gauche.uvector}でサポートされます (@ref{Uniform vectors}参照)。
+
+
 srfi-69
 ()
 
