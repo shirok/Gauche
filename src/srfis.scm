@@ -580,14 +580,18 @@ S式コメント
 ネイティブのリーダでサポートされています。@ref{Lexical structure}参照。
 
 
-srfi-66, gauche.uvector
+srfi-66, srfi-66
 ()
 
 Octet vectors
-Supported by the module @code{gauche.uvector} (@pxref{Uniform vectors}).
+Supported by the module @code{srfi-66} (@pxref{Octet vectors}).
+This is mostly a subset of @code{gauche.uvector}, but has one
+slight difference.
 
 オクテットベクタ
-@code{gauche.uvector}でサポートされます (@ref{Uniform vectors}参照)。
+モジュール@code{srfi-66}でサポートされます (@ref{Octet vectors}参照)。
+ほぼ@code{gauche.uvector}のサブセットですが、
+一ヶ所だけ違いがあります。
 
 
 srfi-69

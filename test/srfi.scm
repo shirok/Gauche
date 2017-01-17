@@ -1351,6 +1351,17 @@
 (test* "booleans->integer" 9 (booleans->integer #f #f #t #f #f #t))
 
 ;;-----------------------------------------------------------------------
+(test-section "srfi-66")
+;; srfi-66 provides u8vector-copy! with different argument order,
+;; so import it with prefix to avoid conflict.
+(use srfi-66 :prefix srfi-66:)
+(test-module 'srfi-66)
+
+(test* "srfi-66 uvector-copy!" '#u8(0 0 1 2 3 0 0)
+       (rlet1 v (u8vector 0 0 0 0 0 0 0)
+         (srfi-66:u8vector-copy! '#u8(0 1 2 3 4) 1 v 2 3)))
+
+;;-----------------------------------------------------------------------
 (test-section "srfi-69")
 (use srfi-69)
 (test-module 'srfi-69)

@@ -38,6 +38,7 @@ srfi N is supporeted by Gauche.)
 * Vector library (Legacy)::     srfi-43
 * Requiring extensions::        srfi-55
 * Integers as bits::            srfi-60
+* Octet vectors::               srfi-66
 * Basic hash tables::           srfi-69
 * Accessing environment variables::  srfi-98
 * Basic socket interface::      srfi-106
@@ -4793,7 +4794,7 @@ Roughly corresponds to Gauche's @code{use} forms:
 @end defmac
 
 @c ----------------------------------------------------------------------
-@node Integers as bits, Basic hash tables, Requiring extensions, Library modules - SRFIs
+@node Integers as bits, Octet vectors, Requiring extensions, Library modules - SRFIs
 @section @code{srfi-60} - Integers as bits
 @c NODE 整数に対するビット操作, @code{srfi-60} - 整数に対するビット操作
 
@@ -4955,7 +4956,50 @@ each value as a binary digit.  If @var{n} is nonnegative integer,
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Basic hash tables, Accessing environment variables, Integers as bits, Library modules - SRFIs
+@node Octet vectors, Basic hash tables, Integers as bits, Library modules - SRFIs
+@section @code{srfi-66} - Octet vectors
+@c NODE オクテットベクタ, @code{srfi-66} - オクテットベクタ
+
+@deftp {Module} srfi-66
+@mdindex srfi-66
+This module defines procedures to deal with @code{u8vector}s; they are
+almost a subset of @code{srfi-4} and @code{gauche.uvector}
+(@pxref{Uniform vectors}, except one procedure, @code{u8vector-copy!},
+which has different argument orders (unfortunate historical artifacts).
+
+The following procedures are the same as @code{gauche.uvector}:
+
+@example
+u8vector?       make-u8vector      u8vector
+u8vector->list  list->u8vector
+u8vector-length u8vector-ref       u8vector-set!
+u8vector=?      u8vector-compare   u8vector-copy
+@end example
+@end deftp
+
+@defun u8vector-copy! src sstart target tstart n
+[SRFI-66]
+Copy the content of an u8vector @var{src}, starting from @var{sstart}
+for @var{n} octets, into an u8vector @var{target} beginning from
+@var{tstart}.  The @var{target} u8vector must be mutable.
+
+Note that @code{gauche.uvector} has also @code{u8vector-copy!},
+but its argument order is as follows, where @var{send} 
+is @code{(+ @var{sstart} @var{n})}:
+
+@example
+(u8vector-copy! target tstart src sstart send)
+@end example
+
+Gauche's argument order is consistent with @code{vector-copy!} of
+R7RS, srfi-43 and srfi-133.
+
+We recommend to use @code{srfi-66} only for porting third-party
+libraries to avoid confusion.
+@end defun
+
+@c ----------------------------------------------------------------------
+@node Basic hash tables, Accessing environment variables, Octet vectors, Library modules - SRFIs
 @section @code{srfi-69} - Basic hash tables
 @c NODE 基本的なハッシュテーブル, @code{srfi-69} - 基本的なハッシュテーブル
 
