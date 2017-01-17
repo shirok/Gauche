@@ -382,6 +382,26 @@ handling.
 @c COMMON
 @end defun
 
+@defun get-uint size uv pos :optional endian
+@defunx get-sint size uv pos :optional endian
+@c EN
+Read @var{size} octets from uvector @var{uv},
+starting from @var{pos}-th octet, as an unsigned or signed integer,
+respectively.
+@c JP
+ユニフォームベクタ@var{uv}の@var{pos}番目のオクテットから@var{size}オクテットを、
+それぞれ符号無し、符号つき整数として読み取ります。
+@c COMMON
+
+@example
+(get-uint 3 '#u8(1 2 3 4) 1 'big-endian)
+  @result{} 131884 ; @r{#x020304}
+
+(get-sint 3 '#u9(1 2 3 #xff) 1 'little-endian)
+  @result{} -64766 ; @r{sign extended #xff0302}
+@end example
+@end defun
+
 @defun put-u8! uv pos val :optional endian
 @defunx put-u16! uv pos val :optional endian
 @defunx put-u32! uv pos val :optional endian
@@ -437,6 +457,20 @@ handling.
 使うのがいいでしょう。
 @c COMMON
 @end defun
+
+@defun put-uint! size uv pos val :optional endian
+@defunx put-sint! size uv pos val :optional endian
+@c EN
+Write an unsigned or signed integer @var{val} into
+an uvector @var{uv} starting from @var{pos}-th octet,
+for @var{size} octets, respectively.
+@c JP
+それぞれ符号無しまたは符号つき整数@var{val}を、
+ユニフォームベクタ@var{uv}の@var{pos}番目のオクテットから@var{size}オクテット分に
+書き込みます。
+@c COMMON
+@end defun
+
 
 @c EN
 @subheading Compatibility notes

@@ -1,5 +1,8 @@
 2017-01-16  Shiro Kawai  <shiro@acm.org>
 
+	* ext/binary (get-uint, get-sint, put-uint!, put-sint!): Added.
+	  We had read-uint/write-uint etc but these were missing.
+
 	* ext/uvector (TAGvector=?, TAGvector-compare): Added for support
 	  of srfi-66.
 
