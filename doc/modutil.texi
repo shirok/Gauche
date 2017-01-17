@@ -15537,6 +15537,18 @@ SLIBそのものはGaucheのディストリビューションには含まれて�
 @c COMMON
 
 @c EN
+By default, the SLIB installation is searched from the directory
+specified at the Gauche configuration.  If SLIB isn't there, an error
+is signaled.  In that case, you can set the environment
+variable @code{SCHEME_LIBRARY_PATH} to point to the SLIB installation path.
+@c JP
+デフォルトでは、インストールされたSLIBはGaucheのconfiguration時に指定された
+場所から探されます。SLIBがそこになければ、エラーが報告されます。
+その場合、環境変数@code{SCHEME_LIBRARY_PATH}でSLIBがインストールされた
+パスを指定してください。
+@c COMMON
+
+@c EN
 This module redefines @code{require}, shadowing the Gauche's original
 @code{require}.  If it gets a symbol as an argument, it works as
 SLIB's @code{require}, while if it gets a string, it works as

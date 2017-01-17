@@ -644,6 +644,7 @@ Supported natively.  @xref{Conditionals}.
 case節での@code{=>}
 組込みです。@ref{Conditionals}参照。
 
+
 srfi-95
 (sorted? merge merge! sort sort!)
 
@@ -652,6 +653,23 @@ Supported natively.  @xref{Sorting and merging}.
 
 ソートとマージ
 組み込みです。@ref{Sorting and merging}参照。
+
+
+srfi-96, slib
+()
+
+SLIB Prerequisites
+This srfi is not exactly a library, but
+rather a description of features the platform should provide
+to support SLIB.  In order to load this module, SLIB must be
+already installed.  @xref{SLIB}, for the details.  
+
+SLIB必要事項
+このsrfiはライブラリというよりは、SLIBをサポートするためにプラットフォームが
+提供しなければならない機能要件を記述するものです。このモジュールをロードするためには、
+SLIBが既にインストールされていることが必要です。
+詳しくは@ref{SLIB}を参照してください。
+
 
 srfi-98, srfi-98
 ()

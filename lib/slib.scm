@@ -8,9 +8,11 @@
 (define-module slib
   (use srfi-0)
   (use srfi-13)
+  (use srfi-111)        ;; For make-exchanger
   (extend util.record)  ;; SLIB-compatible make-record-type
   (use file.util)
   (use gauche.uvector)  ;; Used to implement 'byte' API
+  (use gauche.threads)  ;; For make-exchanger
   (export-all))
 (select-module slib)
 
@@ -152,7 +154,7 @@
                                         ;(SLIB:LOAD-COMPILED "filename")
     vicinity
     srfi-59
-    ;;srfi-96
+    srfi-96
 
     ;; Scheme report features
     ;; R5RS-compliant implementations should provide all 9 features.
@@ -264,7 +266,7 @@
 (define current-time sys-time)
 
 ;;@ PROGRAM-ARGUMENTS
-(define (program-arguments) (with-module gauche *argv*))
+(define (program-arguments) (with-module user *argv*))
 
 ;;; CALL-WITH-INPUT-STRING and CALL-WITH-OUTPUT-STRING are the string
 ;;; port versions of CALL-WITH-*PUT-FILE.
@@ -293,7 +295,7 @@
 (define macro:eval slib:eval)
 ;;@ %SLIB-LOAD loads file in slib module.
 (define (%slib-load file)
-  (with-module slib (load file)))
+  (load file :environment (current-module)))
 (define macro:load %slib-load)
 
 (define-syntax defmacro
@@ -308,8 +310,8 @@
 
 (define base:eval slib:eval)
 ;@
-;(define (defmacro:eval x) (base:eval (defmacro:expand* x)))
-
+(define (defmacro:eval x) (eval x (current-module)))
+(define (macro:expand x) (macroexpand x))
 ;(define (defmacro:expand* x)
 ;  (require 'defmacroexpand) (apply defmacro:expand* x '()))
 ;@
@@ -319,7 +321,7 @@
 (define slib:warn
   (lambda args
     (let ((cep (current-error-port)))
-      (if (provided? 'trace) (print-call-stack cep))
+      ;;(if (provided? 'trace) (print-call-stack cep))
       (display "Warn: " cep)
       (for-each (lambda (x) (display #\space cep) (write x cep)) args)
       (newline cep))))
@@ -328,7 +330,8 @@
 (define slib:error error)
 ;@
 (define (make-exchanger obj)
-  (lambda (rep) (let ((old obj)) (set! obj rep) old)))
+  (let1 a (atom (box obj))
+    (lambda (new) (atomic a (^[b] (begin0 (unbox b) (set-box! b new)))))))
 (define (open-file filename modes)
   (case modes
     ((r rb) (open-input-file filename))
@@ -440,5 +443,3 @@
   (if (string? feature)
     (with-module gauche (provided? feature)) ;gauche version
     (slib:provided? feature)))     ;slib version
-
-(provide "slib")

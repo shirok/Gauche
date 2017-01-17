@@ -5,6 +5,7 @@
 	  (in gauche.internal module; see src/libmisc.scm) and let slib.scm
 	  refer to it.  One less irregularity in build process.
 
+	* lib/srfi-96.scm: Added (just extends slib).
 	* lib/srfi-129.scm: Added.
 	* lib/srfi-74.scm: Added.
 
