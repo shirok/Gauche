@@ -1,3 +1,7 @@
+2017-01-17  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi-74.scm: Added.
+
 2017-01-16  Shiro Kawai  <shiro@acm.org>
 
 	* ext/binary (get-uint, get-sint, put-uint!, put-sint!): Added.

@@ -1558,6 +1558,91 @@
   )
 
 ;;-----------------------------------------------------------------------
+(test-section "srfi-74")
+(use srfi-74)
+(test-module 'srfi-74)
+
+;; most procedures are just an alias of binary.io so we don't do
+;; exhausitive tests.
+
+(let ((b1 (make-blob 10)))
+  (test* "blob?" #t (blob? b1))
+  (test* "blob?" #f (blob? '#(1 2 3)))
+  (test* "endianness" 'big-endian (endianness big))
+  (test* "endianness" 'little-endian (endianness little))
+  (test* "endianness" (native-endian) (endianness native))
+
+  (test* "blob-length" 10 (blob-length b1))
+  (test* "blob-[su]8-set!" #u8(#xff #xfe 0 0 0 0 0 0 0 0)
+         (begin
+           (blob-u8-set! b1 0 255)
+           (blob-s8-set! b1 1 -2)
+           b1))
+  (test* "blob-[su]8-ref" '(-1 254)
+         (list (blob-s8-ref b1 0)
+               (blob-u8-ref b1 1)))
+  (test* "blob-uint-ref"
+         '(#xff #xff #xfffe #xfeff #xfffe00 #x00feff #xfe0000 #x0000fe)
+         (list (blob-uint-ref 1 (endianness big) b1 0)
+               (blob-uint-ref 1 (endianness little) b1 0)
+               (blob-uint-ref 2 (endianness big) b1 0)
+               (blob-uint-ref 2 (endianness little) b1 0)
+               (blob-uint-ref 3 (endianness big) b1 0)
+               (blob-uint-ref 3 (endianness little) b1 0)
+               (blob-uint-ref 3 (endianness big) b1 1)
+               (blob-uint-ref 3 (endianness little) b1 1)))
+  (test* "blob-sint-ref"
+         '(-1 -1 -2 -257 -512 #x00feff -131072 #x0000fe)
+         (list (blob-sint-ref 1 (endianness big) b1 0)
+               (blob-sint-ref 1 (endianness little) b1 0)
+               (blob-sint-ref 2 (endianness big) b1 0)
+               (blob-sint-ref 2 (endianness little) b1 0)
+               (blob-sint-ref 3 (endianness big) b1 0)
+               (blob-sint-ref 3 (endianness little) b1 0)
+               (blob-sint-ref 3 (endianness big) b1 1)
+               (blob-sint-ref 3 (endianness little) b1 1)))
+
+  (test* "blob-uint-set!"
+         '#u8(0 #xff #xff 0 0 #xff #xfe #xfe #xff 0)
+         (rlet1 b1 (make-blob 10)
+           (blob-uint-set! 2 (endianness big) b1 0 #xff)
+           (blob-uint-set! 2 (endianness little) b1 2 #xff)
+           (blob-uint-set! 3 (endianness big) b1 4 #xfffe)
+           (blob-uint-set! 3 (endianness little) b1 7 #xfffe)))
+  (test* "blob-sint-set!"
+         '#u8(#xff #xfe #xfe #xff #xff #xfe 00 00 #xfe #xff)
+         (rlet1 b1 (make-blob 10)
+           (blob-sint-set! 2 (endianness big) b1 0 -2)
+           (blob-sint-set! 2 (endianness little) b1 2 -2)
+           (blob-sint-set! 3 (endianness big) b1 4 -512)
+           (blob-sint-set! 3 (endianness little) b1 7 -512)))
+
+  (let1 b1 '#u8(0 1 2 3 4 5 6 7 #xff)
+    (test* "blob->uint-list"
+           '((#x000102 #x030405 #x0607ff)
+             (#x020100 #x050403 #xff0706))
+           (list (blob->uint-list 3 (endianness big) b1)
+                 (blob->uint-list 3 (endianness little) b1)))
+    (test* "blob->uint-list"
+           '((#x000102 #x030405 #x0607ff)
+             (#x020100 #x050403 #x-00f8fa))
+           (list (blob->sint-list 3 (endianness big) b1)
+                 (blob->sint-list 3 (endianness little) b1)))
+
+    (test* "uint-list->blob" (list b1 b1)
+           (list (uint-list->blob 3 (endianness big)
+                                  (blob->uint-list 3 (endianness big) b1))
+                 (uint-list->blob 3 (endianness little)
+                                  (blob->uint-list 3 (endianness little) b1))))
+    (test* "sint-list->blob" (list b1 b1)
+           (list (sint-list->blob 3 (endianness big)
+                                  (blob->sint-list 3 (endianness big) b1))
+                 (sint-list->blob 3 (endianness little)
+                                  (blob->sint-list 3 (endianness little) b1))))
+    )
+  )
+
+;;-----------------------------------------------------------------------
 (test-section "srfi-98")
 (use srfi-98)
 (test-module 'srfi-98)

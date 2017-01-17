@@ -40,6 +40,7 @@ srfi N is supporeted by Gauche.)
 * Integers as bits::            srfi-60
 * Octet vectors::               srfi-66
 * Basic hash tables::           srfi-69
+* Octet-addressed binary blocks::  srfi-74
 * Accessing environment variables::  srfi-98
 * Basic socket interface::      srfi-106
 * Boxes::                       srfi-111
@@ -4999,7 +5000,7 @@ libraries to avoid confusion.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Basic hash tables, Accessing environment variables, Octet vectors, Library modules - SRFIs
+@node Basic hash tables, Octet-addressed binary blocks, Octet vectors, Library modules - SRFIs
 @section @code{srfi-69} - Basic hash tables
 @c NODE 基本的なハッシュテーブル, @code{srfi-69} - 基本的なハッシュテーブル
 
@@ -5165,6 +5166,181 @@ This is Gauche's @code{eq-hash}, except this one can take bound argument.
 @end defun
 
 @c ----------------------------------------------------------------------
+@node Octet-addressed binary blocks, Accessing environment variables, Basic hash tables, Library modules - SRFIs
+@section @code{srfi-74} - Octet-addressed binary blocks
+
+@deftp {Module} srfi-74
+@mdindex srfi-74
+This module provides procedures to deal with @emph{blob},
+or a sequence of octets.  In Gauche, a blob is simply an u8vector.
+
+Most functionalities of this module is available
+in @code{binary.io} module (@pxref{Binary I/O}), and in fact
+this module is a thin wrapper to it.
+We provide this module for the compatibility.
+If you're writing Gauche-specific code, we recommend to use
+@code{binary.io} directly.
+@end deftp
+
+@defmac endianness e
+[SRFI-74]
+The argument @var{e} must be either @code{big}, @code{little},
+or @code{native}.  It expands to the implementation-specific
+endianness designator.  In Gauche, the result is one of the
+symbols; @pxref{Endianness}, for the details.
+@end defmac
+
+@defun make-blob size
+[SRFI-74]
+Returns a freshly created blob that can hold @var{size} octets.
+In Gauche, this is the same as @code{(make-u8vector size)}.
+@end defun
+
+@defun blob? obj
+[SRFI-74]
+Returns @code{#t} if @var{obj} is a blob, @code{#f} otherwise.
+In Gauche, this is the same as @code{(u8vector? obj)}.
+@end defun
+
+@defun blob-length blob
+[SRFI-74]
+Returns the size of the blob, in octets.  In Gauche,
+this is the same as @code{(u8vector-length blob)}.
+@end defun
+
+@defun blob-uint-ref size endian blob pos
+@defunx blob-sint-ref size endian blob pos
+[SRFI-74]
+Read an unsigned or signed integer of @var{size} octets beginning
+at the position of @var{pos} from @var{blob}, respectively.
+
+These are wrappers of @code{(get-uint size blob pos endian)}
+and @code{(get-sint size blob pos endian)} in @code{binary.io}
+module (@pxref{Binary I/O}), except that
+@code{blob-uint-ref}/@code{blob-sint-ref} only accept u8vector
+as @var{blob}.
+@end defun
+
+@defun blob-uint-set! size endian blob pos val
+@defunx blob-sint-set! size endian blob pos val
+[SRFI-74]
+Store an unsigned or signed integer @var{val} of @var{size} octets
+into @var{blob} starting at the position of @var{pos}, respectively.
+
+These are wrappers of @code{(put-uint! size blob pos val endian)}
+and @code{(put-sint! size blob pos val endian)} in @code{binary.io}
+module (@pxref{Binary I/O}), except that
+@code{blob-uint-set!}/@code{blob-sint-set!} only accept u8vector
+as @var{blob}.
+@end defun
+
+@defun blob-u8-ref blob pos
+@defunx blob-u8-set! blob pos val
+@defunx blob-s8-ref blob pos
+@defunx blob-s8-set! blob pos val
+[SRFI-74]
+Get/set an unsigned or signed integer as a octet at @var{pos}
+from/to @var{blob}.
+
+These are wrappers of @code{get-u8}, @code{put-u8!},
+@code{get-s8} and @code{put-s8!} in @code{binary.io}, respectively.
+@end defun
+
+@defun blob-u16-ref endian blob pos
+@defunx blob-u16-set! endian blob pos val
+@defunx blob-s16-ref endian blob pos
+@defunx blob-s16-set! endian blob pos val
+@defunx blob-u32-ref endian blob pos
+@defunx blob-u32-set! endian blob pos val
+@defunx blob-s32-ref endian blob pos
+@defunx blob-s32-set! endian blob pos val
+@defunx blob-u64-ref endian blob pos
+@defunx blob-u64-set! endian blob pos val
+@defunx blob-s64-ref endian blob pos
+@defunx blob-s64-set! endian blob pos val
+[SRFI-74]
+Get/set an unsigned or signed integer of the indicated length
+at @var{pos} from/to @var{blob}, using the specified @var{endian}.
+
+These are wrappers of corresponding @code{get-XX} and @code{put-XX!}
+in @code{binary.io}; note that the argument orders differ, though.
+@end defun
+
+@defun blob-u16-native-ref blob pos
+@defunx blob-u16-native-set! blob pos val
+@defunx blob-s16-native-ref blob pos
+@defunx blob-s16-native-set! blob pos val
+@defunx blob-u32-native-ref blob pos
+@defunx blob-u32-native-set! blob pos val
+@defunx blob-s32-native-ref blob pos
+@defunx blob-s32-native-set! blob pos val
+@defunx blob-u64-native-ref blob pos
+@defunx blob-u64-native-set! blob pos val
+@defunx blob-s64-native-ref blob pos
+@defunx blob-s64-native-set! blob pos val
+[SRFI-74]
+Get/set an unsigned or signed integer of the indicated length
+at @var{pos} from/to @var{blob}, using the native endianness.
+
+These are wrappers of corresponding @code{get-XX} and @code{put-XX!}
+in @code{binary.io}; note that the argument orders differ, though.
+@end defun
+
+@defun blob=? blob1 blob2
+[SRFI-74]
+This is the same as @code{u8vector=?} in @code{gauche.uvector}.
+@end defun
+
+@defun blob-copy! src sstart target tstart n
+[SRFI-74]
+Copy @var{n} octets from the source blob @var{src} starting from @var{sstart}
+into the target blob @var{target} starting from @var{tstart}.
+
+Note that the order of arguments differs from other @code{*-copy!}
+procedures (e.g. R7RS's @code{string-copy!} and @code{vector-copy!},
+and @code{gauhce.uvector}'s @code{u8vector-copy!})), which have the
+following signature: @code{(*-copy! target tstart src sstart send)}
+@end defun
+
+@defun blob-copy blob
+[SRFI-74]
+Returns a fresh copy of @var{blob}.  The same as @code{u8vector-copy}
+in @code{gauche.uvector}.
+@end defun
+
+@defun blob->u8-list blob
+@defunx u8-list->blob list
+[SRFI-74]
+Wrappers of @code{u8vector->list} and @code{list->u8vector}, except
+those don't take optional start/end arguments.
+@end defun
+
+@defun blob->uint-list size endian blob
+@defunx blob->sint-list size endian blob
+[SRFI-74]
+Read a sequence of unsigned or signed integers of @var{size} octets from
+@var{blob} with @var{endian}, and returns them as a list.
+
+@example
+(blob->uint-list 3 (endianness big) '#u8(0 0 1 0 0 2 0 0 3))
+  @result{} (1 2 3)
+@end example
+@end defun
+
+@defun uint-list->blob size endian list
+@defunx sint-list->blob size endian list
+[SRFI-74]
+Convert a @var{list} of unsigned or signed integers to a blob.
+The resulting blob has @code{(* size (length list))} octets.
+Each integer occupies @var{size} octets.
+
+@example
+(uint-list->blob 3 (endianness little) '(1 2 3))
+  @result{} #u8(1 0 0 2 0 0 3 0 0)
+@end example
+@end defun
+
+@c ----------------------------------------------------------------------
 @c @node Lightweight testing
 @c @section @code{srfi-78} - Lightweight testing
 @c @c NODE 軽量なテスト, @code{srfi-78} - 軽量なテスト
@@ -5213,7 +5389,7 @@ This is Gauche's @code{eq-hash}, except this one can take bound argument.
 @c @end defun
 
 @c ----------------------------------------------------------------------
-@node Accessing environment variables, Basic socket interface, Basic hash tables, Library modules - SRFIs
+@node Accessing environment variables, Basic socket interface, Octet-addressed binary blocks, Library modules - SRFIs
 @section @code{srfi-98} - Accessing environment variables
 @c NODE 環境変数へのアクセス, @code{srfi-98} - 環境変数へのアクセス
 

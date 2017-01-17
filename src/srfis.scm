@@ -594,7 +594,7 @@ slight difference.
 一ヶ所だけ違いがあります。
 
 
-srfi-69
+srfi-69, srfi-69
 ()
 
 Basic hash tables
@@ -609,7 +609,18 @@ Gaucheにも組み込みのハッシュテーブルサポートがあります�
 いくつかの手続きにおいて異なる名前を使っています。
 
 
-srfi-78
+srfi-74, srfi-74
+()
+
+Octet-addressed binary blocks
+Supported by the module @code{srfi-74} (@pxref{Octet-addressed binary blocks}).
+
+オクテット毎にアクセス可能なバイナリブロック
+モジュール@code{srfi-74}でサポートされます (@ref{Octet-addressed binary blocks}参照)。
+
+
+
+srfi-78, srfi-78
 ()
 
 Lightweight testing
@@ -761,7 +772,7 @@ with srfi-127 API (@pxref{Lazy sequence (srfi)}).
 @ref{Lazy sequence (srfi)}参照。
 
 
-srfi-128
+srfi-128, srfi-128
 ()
 
 Comparators (reduced)
@@ -783,7 +794,7 @@ ERR5RSレコード構文 (簡易版)
 @code{define-record-type}でカバーされます。@ref{Record types}参照。
 
 
-srfi-133
+srfi-133, srfi-133
 ()
 
 Vector library (R7RS-compatible)
@@ -793,7 +804,7 @@ Supported by the module @code{srfi-133}.  @xref{Vector library}.
 モジュール@code{srfi-133}でサポートされます。 @ref{Vector library}参照。
 
 
-srfi-134
+srfi-134, data.ideque
 ()
 
 Immutable Deques
