@@ -86,3 +86,7 @@
 
 (select-module gauche.internal)
 (define-cproc cond-features () Scm_GetFeatures)
+
+(inline-stub
+ (define-constant SLIB_DIR (c (SCM_MAKE_STR_IMMUTABLE SLIB_DIR))))
+

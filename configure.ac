@@ -76,6 +76,7 @@ AS_IF([test $search_slib = "yes"], [
   ])
 ])
 AC_SUBST(SLIB_DIR)
+AC_DEFINE_UNQUOTED(SLIB_DIR, "$SLIB_DIR", [Slib installation path])
 
 dnl ----------------------------------------------------------
 dnl  with-local=PATH:...
@@ -896,7 +897,7 @@ AC_CONFIG_COMMANDS([VERSION],
 AC_CONFIG_FILES([
           Makefile
           src/Makefile src/genconfig src/makeverslink
-          lib/Makefile lib/slib.scm
+          lib/Makefile
           doc/gosh.1 doc/gauche-config.1 doc/gauche-cesconv.1
           doc/gauche-install.1 doc/gauche-package.1 doc/Makefile
           ext/Makefile ext/Makefile.ext

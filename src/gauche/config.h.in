@@ -450,6 +450,9 @@
 /* The size of `rlim_t', as computed by sizeof. */
 #undef SIZEOF_RLIM_T
 
+/* Slib installation path */
+#undef SLIB_DIR
+
 /* If using the C implementation of alloca, define if you know the
    direction of stack growth for your system; otherwise it will be
    automatically deduced at runtime.
