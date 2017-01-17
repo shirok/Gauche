@@ -782,6 +782,22 @@ Built-in.  @xref{Basic comparators}, for the details.
 組み込みです。@ref{Basic comparators}参照。
 
 
+srfi-129, srfi-129
+()
+
+Titlecase procedures
+The procedures @code{char-title-case?} and @code{char-titlecase} are
+built-in, and @code{string-titlecase} is in @code{gauche.unicode}.
+For the compatibility, you can @code{(use srfi-129)} or
+@code{(import (srfi 129))} to get these three procedures.
+
+Titlecase手続き
+@code{char-title-case?}と@code{char-titlecase}は組み込みで、
+@code{string-titlecase}は@code{gauche.unicode}モジュールにあります。
+互換性のため、@code{(use srfi-129)}や@code{(import (srfi 129))}とすれば
+この3つの手続きがインポートされます。
+
+
 srfi-131, gauche.record
 ()
 
