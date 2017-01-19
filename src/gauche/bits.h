@@ -46,6 +46,7 @@
    The user can use ScmBits as opaque structure and don't need to
    worry about the bit ordering.  For internal hackers: ScmBits are
    also used in bignum.c, and it must maintain this bit ordering.
+   It is important that ScmBignum->values can be casted to ScmBits*.
 */
 
 typedef u_long ScmBits;
