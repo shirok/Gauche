@@ -60,7 +60,7 @@ The list of files may grow in future versions of Gauche.
 For your convenience, the script src/gen-unicode.scm can download
 those files:
 
-    $ gosh src/gen-unicode.scm $UNICODEDIR [$UNICODE_VERSION]
+    $ gosh src/gen-unicode.scm --fetch $UNICODEDIR [$UNICODE_VERSION]
 
 This downloads those files into $UNICODEDIR.  By default it downloads
 the latest version; however, if the changes in newer versions of Unicode
