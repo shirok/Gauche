@@ -61,6 +61,7 @@ struct ScmWriteControlsRec {
     SCM_HEADER;
     int printLength;            /* -1 for no limit */
     int printLevel;             /* -1 for no limit */
+    int printWidth;             /* -1 for no limit */
     int printBase;              /* 2-36 */
     int printRadix;             /* boolean, #t to print radix for all numbers */
 };

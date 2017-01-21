@@ -809,6 +809,12 @@
                   :setter "if (SCM_INTP(value) && SCM_INT_VALUE(value) >= 0) \
                              obj->printLevel = SCM_INT_VALUE(value); \
                            else obj->printLevel = -1;")
+    (print-width  :type <int>     :c-name "printWidth"
+                  :getter "if (obj->printWidth < 0) return SCM_FALSE; \
+                           else return SCM_MAKE_INT(obj->printWidth);"
+                  :setter "if (SCM_INTP(value) && SCM_INT_VALUE(value) >= 0) \
+                             obj->printWidth = SCM_INT_VALUE(value); \
+                           else obj->printWidth = -1;")
     (print-base   :type <int>     :c-name "printBase"
                   :setter "if (SCM_INTP(value) && SCM_INT_VALUE(value) >= 2 \
                                && SCM_INT_VALUE(value) <= 36) \
@@ -822,12 +828,12 @@
  )
 
 ;; The :key and :rest combination is to catch invalid keyword error
-(define (make-write-controls :key print-length print-level
+(define (make-write-controls :key print-length print-level print-width
                                   print-base print-radix
                              :rest args)
   (apply make <write-controls> args))
 
-(define (write-controls-copy wc :key print-length print-level
+(define (write-controls-copy wc :key print-length print-level print-width
                                      print-base print-radix)
   (let-syntax [(select
                 (syntax-rules ()
@@ -837,6 +843,7 @@
     (make <write-controls>
       :print-length (select print-length)
       :print-level  (select print-level)
+      :print-width  (select print-width)
       :print-base   (select print-base)
       :print-radix  (select print-radix))))
 

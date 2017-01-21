@@ -1,3 +1,7 @@
+2017-01-20  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/writer.h (Scm_WriteControls): Add printWidth field.
+
 2017-01-17  Shiro Kawai  <shiro@acm.org>
 
 	* lib/slib.scm, configure.ac, src/libmisc.scm: Instead of generating
