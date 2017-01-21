@@ -11,6 +11,7 @@
 
 (use gauche.collection)
 (use gauche.sequence)
+(use gauche.dictionary)
 (use gauche.hook)
 (use gauche.parameter)
 (use gauche.uvector)

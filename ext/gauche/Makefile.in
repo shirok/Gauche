@@ -8,6 +8,7 @@ include ../Makefile.ext
 
 LIBFILES = gauche--collection.$(SOEXT) \
            gauche--sequence.$(SOEXT)   \
+           gauche--dictionary.$(SOEXT)   \
            gauche--parameter.$(SOEXT)  \
            gauche--hook.$(SOEXT) \
 	   gauche--record.$(SOEXT) \
@@ -15,6 +16,7 @@ LIBFILES = gauche--collection.$(SOEXT) \
 	   gauche--unicode.$(SOEXT)
 SCMFILES = collection.sci \
            sequence.sci   \
+	   dictionary.sci \
            parameter.sci  \
            hook.sci \
 	   record.sci \
@@ -28,6 +30,7 @@ all : $(LIBFILES)
 
 OBJECTS = $(gauche-collection_OBJECTS) \
 	  $(gauche-sequence_OBJECTS) \
+	  $(gauche-dictionary_OBJECTS) \
 	  $(gauche-parameter_OBJECTS) \
 	  $(gauche-hook_OBJECTS) \
 	  $(gauche-record_OBJECTS) \
@@ -52,6 +55,16 @@ gauche--sequence.$(SOEXT) : $(gauche-sequence_OBJECTS)
 
 gauche--sequence.c sequence.sci : $(top_srcdir)/libsrc/gauche/sequence.scm
 	$(PRECOMP) -e -P -o gauche--sequence $(top_srcdir)/libsrc/gauche/sequence.scm
+
+
+# gauche.dictionary
+gauche-dictionary_OBJECTS = gauche--dictionary.$(OBJEXT)
+
+gauche--dictionary.$(SOEXT) : $(gauche-dictionary_OBJECTS)
+	$(MODLINK) gauche--dictionary.$(SOEXT) $(gauche-dictionary_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+
+gauche--dictionary.c dictionary.sci : $(top_srcdir)/libsrc/gauche/dictionary.scm
+	$(PRECOMP) -e -P -o gauche--dictionary $(top_srcdir)/libsrc/gauche/dictionary.scm
 
 
 # gauche.parameter

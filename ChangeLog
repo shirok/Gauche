@@ -1,5 +1,7 @@
 2017-01-21  Shiro Kawai  <shiro@acm.org>
 
+	* libsrc/gauche/dictionary.scm: Moved here to precompile.
+
 	* lib/gauche/interactive.scm: Experimentally put pretty-printer.
 	  Need better way to switch, though.
 
