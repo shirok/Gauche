@@ -40,7 +40,7 @@
   (use gauche.parameter)
   (use gauche.sequence)
   (use util.match)
-  (export pprint))
+  (export pprint pp-controls))
 (select-module gauche.pp)
 
 ;; List printing modes:
@@ -68,9 +68,16 @@
 (define rp-writer (make-parameter write))
 (define rp-dict   (make-parameter #f)) ;table to count shared structure
 
-(define *rp-width* 79)
-(define *rp-level* 7)
-(define *rp-length* 40)
+;; API
+(define pp-controls (make-parameter
+                     (make-write-controls :print-length 40
+                                          :print-level 10
+                                          :print-width 79)))
+
+;; for internal convenience
+(define-macro (rp-length) '(~ (pp-controls)'print-length))
+(define-macro (rp-level)  '(~ (pp-controls)'print-level))
+(define-macro (rp-width)  '(~ (pp-controls)'print-width))
 
 (define simple-obj?
   (any-pred number? boolean? char? port? symbol? null?
@@ -96,6 +103,16 @@
                               [rs <- (mapM f (cdr xs))])
                              (return (cons r rs)))))
 
+;; Maybe-ish monadic comparison
+(define-inline (=* a b) (and a b (= a b)))
+(define-inline (<* a b) (and a b (< a b)))
+(define-inline (>* a b) (and a b (> a b)))
+(define-inline (<=* a b) (and a b (<= a b)))
+(define-inline (>=* a b) (and a b (>= a b)))
+(define-inline (-* a b . args)
+  (and a b (if (null? args) (- a b) (apply -* (- a b) args))))
+(define-inline (min* a b) (if a (if b (min a b) a) b))
+
 ;; scan obj to find out shared structure and mark it in rp-dict.
 (define (scan-shared obj level len)
   (rlet1 dict (make-hash-table 'eq?)
@@ -105,14 +122,14 @@
              => (^n (unless (number? n)
                       (hash-table-put! dict obj counter)
                       (inc! counter)))]
-            [(or (> level *rp-level*) (> len *rp-length*) (simple-obj? obj))]
+            [(or (>* level (rp-level)) (>* len (rp-length)) (simple-obj? obj))]
             [else
              (hash-table-put! dict obj #t)
              (cond [(pair? obj)
                     (rec (car obj) (+ level 1) 0)
                     (rec (cdr obj) level (+ len 1))]
                    [(vector? obj)
-                    (do-ec (: i (min (vector-length obj) *rp-length*))
+                    (do-ec (: i (min* (vector-length obj) (rp-level)))
                            (rec (vector-ref obj i) (+ level 1) 0))])]))))
 
 (define (shared-obj? obj) (number? (hash-table-get (rp-dict) obj #f)))
@@ -135,7 +152,7 @@
 ;; type Layouter = Integer -> (Formatted, Integer)
 
 ;; kick-layouter :: (Layouter, Integer) -> Formatted
-(define (kick-layouter layouter) (values-ref (layouter *rp-width*) 0))
+(define (kick-layouter layouter) (values-ref (layouter (rp-width)) 0))
 
 ;; layout :: (Obj, Integer) -> State Layouter
 (define (layout obj level)
@@ -143,7 +160,7 @@
        (cond [(and (shared-obj? obj) (memq obj seen)) (return (layout-ref obj))]
              [(simple-obj? obj)
               (return (layout-simple (write-to-string obj (rp-writer))))]
-             [(> level *rp-level*) (return (layout-simple "#"))]
+             [(>=* level (rp-level)) (return (layout-simple "#"))]
              [else (layout-misc obj (cute layout <> (+ level 1)))])))
 
 ;; layout-misc :: (Obj, (Obj -> State Layouter)) -> State Layouter
@@ -153,18 +170,18 @@
   (define (mapi fn vec)
     (let1 s (size-of vec)
       (do* ([rs <- (mapM (lambda (i) (fn (vector-ref vec i)))
-                         (iota (min s *rp-length*)))])
-           (return (if (< s *rp-length*) rs `(,@rs ,dots))))))
+                         (iota (min* s (rp-length))))])
+           (return (if (<* s (rp-length)) rs `(,@rs ,dots))))))
 
   ;; map+ :: (Obj -> State Layouter), List -> State Layouter
-  ;; map considering dotted list, *rp-length*, and shared structure
+  ;; map considering dotted list, print-length, and shared structure
   (define (map+ fn lis)
     (let loop ([lis lis] [len 0] [rs '()])
       (do* ([seen <- (get-seen)])
            (match lis
              [() (return (reverse rs))]
              [(l . lis)
-              (if (>= len *rp-length*)
+              (if (>=* len (rp-length))
                 (return (reverse `(,dots ,@rs)))
                 (do* ([r <- (fn l)])
                      (if (and (shared-obj? lis) (memq obj seen))
@@ -201,7 +218,7 @@
 (define (layout-list prefix elts)
   (let1 plen (string-length prefix)
     (return (lambda (room)
-              (receive (s w) (do-layout-elements (- room plen) elts)
+              (receive (s w) (do-layout-elements (-* room plen) elts)
                 (values (cons prefix (reverse s)) (and w (+ w plen))))))))
 
 ;; sprefix :: (Object, String) -> State String
@@ -217,23 +234,23 @@
 (define (do-layout-elements room elts)
   (define (do-oneline r es strs)
     (match es
-      [() (values strs (- room r))]
+      [() (values strs (-* room r))]
       [(e . es) (receive (s w) (e room)
                   (cond [(not w) (do-linear room elts)] ;giveup
-                        [(> w room)                            ;too big
+                        [(>* w room)                            ;too big
                          (do-fill room es (list* 'b s 'b strs))]
-                        [(> w (- r 1))
-                         (do-fill (- room w 1) es (list* s 'b strs))]
+                        [(>* w r)
+                         (do-fill (-* room w) es (list* s 'b strs))]
                         [else
-                         (do-oneline (- r w 1) es (list* s 's strs))]))]))
+                         (do-oneline (-* r w 1) es (list* s 's strs))]))]))
   (define (do-fill r es strs)
     (match es
       [() (values strs #f)]
       [(e . es) (receive (s w) (e room)
                   (cond [(not w) (do-linear room elts)]
-                        [(> w (- r 1))
-                         (do-fill (- room w 1) es (list* s 'b strs))]
-                        [else (do-fill (- r w 1) es (list* s 's strs))]))]))
+                        [(>* w (-* r 1))
+                         (do-fill (-* room w 1) es (list* s 'b strs))]
+                        [else (do-fill (-* r w 1) es (list* s 's strs))]))]))
   (define (do-linear r es)
     (values (fold (lambda (e strs) (receive (s w) (e room) (list* s 'b strs)))
                   '() es)
@@ -260,8 +277,17 @@
 (define (next-line col) (newline) (dotimes [i col] (display " ")))
 
 ;; Entry point of printer.
-(define (pprint obj)
-  (parameterize ([rp-dict (scan-shared obj 0 0)])
-    (let1 layouter (run (layout obj 0))
-      (render (kick-layouter layouter) 0))))
+(define (pprint obj
+                :key (controls #f) print-width print-length print-level)
+  (let* ([c (or controls (pp-controls))]
+         [c (if (or print-width print-length print-level)
+              (write-controls-copy c
+                                   :print-width print-width
+                                   :print-length print-length
+                                   :print-level print-level)
+              c)])
+    (parameterize ([rp-dict (scan-shared obj 0 0)]
+                   [pp-controls c])
+      (let1 layouter (run (layout obj 0))
+        (render (kick-layouter layouter) 0)))))
 
