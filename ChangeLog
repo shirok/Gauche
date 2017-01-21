@@ -1,3 +1,8 @@
+2017-01-21  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/interactive.scm: Experimentally put pretty-printer.
+	  Need better way to switch, though.
+
 2017-01-20  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/writer.h (Scm_WriteControls): Add printWidth field.

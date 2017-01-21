@@ -41,6 +41,8 @@
   )
 (select-module gauche.interactive)
 
+(autoload gauche.pp pprint)
+
 ;;;
 ;;; Apropos - search bound symbols matching given pattern
 ;;;
@@ -283,14 +285,24 @@
       (%set-history-expr! r)
       (apply values r))))
 
+(define *use-pp* #f)
+
+;; experimental - allow to use pretty printer
+(define (%printer expr)
+  (if *use-pp*
+    (pprint expr)
+    (write expr))
+  (newline))
+
 ;; This shadows gauche#read-eval-print-loop
 (define (read-eval-print-loop :optional (reader #f)
                                         (evaluator #f)
                                         (printer #f)
                                         (prompter #f))
-  (let ([reader (or reader %reader)]
+  (let ([reader    (or reader %reader)]
         [evaluator (or evaluator %evaluator)]
-        [prompter (or prompter %prompter)])
+        [printer   (or printer %printer)]
+        [prompter  (or prompter %prompter)])
     ((with-module gauche read-eval-print-loop)
      reader evaluator printer prompter)))
 
