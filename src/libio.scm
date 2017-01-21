@@ -837,9 +837,7 @@
                                      print-base print-radix)
   (let-syntax [(select
                 (syntax-rules ()
-                  [(_ k) (if (undefined? k)
-                           (slot-ref wc 'k)
-                           k)]))]
+                  [(_ k) (if (undefined? k) (slot-ref wc 'k) k)]))]
     (make <write-controls>
       :print-length (select print-length)
       :print-level  (select print-level)
