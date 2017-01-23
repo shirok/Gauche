@@ -2318,26 +2318,49 @@ and true, however, it closes @var{sink} when it is closed.
 @c COMMON
 @end defun
 
-@defun ces-convert string from-code :optional to-code
+@defun ces-convert-to return-type source from-code :optional to-code
+@defunx ces-convert source from-code :optional to-code
 @c EN
-Convert @var{string}'s character encoding from @var{from-code}
-to @var{to-code}, and returns the converted string.
-The returned string may be a byte-string if @var{to-code}
-is different from the native CES.
+Convert @var{source}, which is a string or an u8vector
+of multibyte encoding in @var{from-code}, to a
+string or u8vector encoded in @var{to-code}.  If @var{to-code} is
+omitted, the native CES is assumed.
 @c JP
-@var{from-code}でエンコーディングされた文字列@var{string}を
-@var{to-code}でエンコーディングされた文字列に変換します。
-@var{to-code}がネイティブエンコーディングで無い場合、返される文字列は
-バイト文字列(不完全な文字列)であるかもしれません。
+文字エンコーディング@var{from-code}でエンコードされた
+文字列もしくはu8vectorの@var{source}を変換し、
+文字エンコーディング@var{to-code}でエンコードされた文字列またはu8vectorを返します。
+@var{to-code}が省略された場合はネイティブエンコーディングへと変換されます。
+@c COMMON
+
+@c EN
+In @code{ces-convert-to}, you can specify the return type by
+@var{return-type} argument; it must be either a class object @code{<string>}
+or @code{<u8vector>}.  On the other hand, @code{ces-convert} always returns
+a string, regardless of the type of @var{source}.
+@c JP
+@code{ces-convert-to}では、戻り値の型を@var{return-type}で指定します。
+@var{return-type}はクラスオブジェクト@code{<string>}か@code{<u8vector>}
+でなければなりません。一方、@code{ces-convert}は、@var{source}の型にかかわらず
+常に文字列を返します。
+@c COMMON
+
+@c EN
+If @var{to-code} is different from the native CES and a string
+is returned, it can be an incomplete string.  It's for the backward
+compatibility---in general, we recommend to use u8vector to represent
+multibyte sequence in CES other than the native encoding.
+@c JP
+ネイティブエンコーディング以外のエンコーディングを@var{to-code}に指定して
+文字列が返された場合、それは不完全な文字列であるかもしれません。
+これは後方互換性のためです。一般的には、ネイティブエンコーディング以外の
+マルチバイトシーケンスを扱う場合はu8vectorを使うことをおすすめします。
 @c COMMON
 
 @c EN
 @var{from-code} can be a name of character guessing scheme
-(e.g. "*JP").  when @var{to-code} is omitted, the native CES is
-assumed.
+(e.g. "*JP").
 @c JP
 @var{from-code}にはCES推測アルゴリズム名("*JP"など)を与えることができます。
-@var{to-code}が省略された場合はネイティブエンコーディングと見なされます。
 @c COMMON
 @end defun
 

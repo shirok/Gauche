@@ -1,3 +1,8 @@
+2017-01-22  Shiro Kawai  <shiro@acm.org>
+
+	* ext/charconv/convaux.scm (ces-convert-to, ces-convert): Support
+	  using u8vector for mutibyte sequences.
+
 2017-01-21  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/gauche/dictionary.scm: Moved here to precompile.

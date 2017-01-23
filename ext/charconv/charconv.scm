@@ -34,12 +34,13 @@
 (define-module gauche.charconv
   (use srfi-1)
   (use srfi-13)
+  (use gauche.sequence)
   (export open-input-conversion-port
           open-output-conversion-port
           ces-conversion-supported?
           ces-guess-from-string
           ces-equivalent? ces-upper-compatible?
-          ces-convert
+          ces-convert ces-convert-to
           wrap-with-input-conversion
           wrap-with-output-conversion
           call-with-input-conversion
