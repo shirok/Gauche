@@ -288,11 +288,12 @@
 (define *use-pp* #f)
 
 ;; experimental - allow to use pretty printer
-(define (%printer expr)
-  (if *use-pp*
-    (pprint expr)
-    (write expr))
-  (newline))
+(define (%printer . exprs)
+  (dolist [expr exprs]
+    (if *use-pp*
+      (pprint expr)
+      (write expr))
+    (newline)))
 
 ;; This shadows gauche#read-eval-print-loop
 (define (read-eval-print-loop :optional (reader #f)
