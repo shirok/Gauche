@@ -418,6 +418,13 @@
 ;;@ At this point SLIB:LOAD must be able to load SLIB files.
 (define slib:load load)
 
+;; We have to provide slib-related srfis now, since slib's require.scm
+;; tries to load all available srfis.
+(provide "srfi-59")
+(define-module srfi-59)
+(provide "srfi-96")
+(define-module srfi-96)
+
 ;; [SK] Emit comprehensive message in case we can't find SLIB
 ;(slib:load (in-vicinity (library-vicinity) "require"))
 (unless (load (in-vicinity (library-vicinity) "require")

@@ -655,7 +655,7 @@ Supported natively.  @xref{Sorting and merging}.
 組み込みです。@ref{Sorting and merging}参照。
 
 
-srfi-96, slib
+srfi-96, srfi-96
 ()
 
 SLIB Prerequisites
