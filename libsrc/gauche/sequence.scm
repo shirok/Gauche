@@ -42,6 +42,8 @@
           fold-right
           fold-with-index map-with-index map-to-with-index for-each-with-index
           find-index find-with-index group-sequence
+          delete-neighbor-dups
+          delete-neighbor-dups! delete-neighbor-dups-squeeze!
           sequence->kmp-stepper sequence-contains
           break-list-by-sequence! break-list-by-sequence
           common-prefix-to common-prefix
@@ -297,6 +299,72 @@
       (reverse! results)
       (reverse! (cons (reverse! (cdr bucket)) results)))
     ))
+
+(define-method delete-neighbor-dups ((seq <sequence>)
+                                     :key ((:key key-proc) identity)
+                                          ((:test test-proc) eqv?))
+  (with-builder ((class-of seq) add! get)
+    (with-iterator (seq end? next)
+      (cond [(end?) (get)]
+            [else (let1 e (next)
+                    (add! e)
+                    (let loop ([ek (key-proc e)])
+                      (if (end?)
+                        (get)
+                        (let* ([n (next)]
+                               [nk (key-proc n)])
+                          (cond [(test-proc ek nk) (loop nk)]
+                                [else (add! n) (loop nk)])))))]))))
+
+;; Store result into SEQ, which must be modifiable.
+;; Returns the index right after the last modified entry.
+(define-method delete-neighbor-dups! ((seq <sequence>)
+                                      :key ((:key key-proc) identity)
+                                           ((:test test-proc) eqv?)
+                                           (start 0)
+                                           (end (size-of seq)))
+  (define mod! (modifier seq))
+  (with-iterator (seq end? next)
+    (dotimes [start] (next))
+    (if (end?)
+      start
+      (let1 e (next)
+        (mod! seq start e)
+        (let loop ([d (+ start 1)]
+                   [ek (key-proc e)]
+                   [e e])
+          (if (end?)
+            d
+            (let* ([n (next)]
+                   [nk (key-proc n)])
+              (cond [(test-proc ek nk) (loop d nk n)]
+                    [else (mod! seq d n) (loop (+ d 1) nk n)]))))))))
+
+;; This can only be defined in sequences whose length can be changed.
+;; NB: We can't define generic version, since there's no generic way
+;; for length-changing mutation.  Each capable sequence should implement
+;; the method.  Here we only provide for <list>.
+(define-method delete-neighbor-dups-squeeze! ((seq <list>)            
+                                              :key ((:key key-proc) identity)
+                                                   ((:test test-proc) eqv?)
+                                                   (start 0)
+                                                   (end #f))
+  (let1 p (drop* seq start)
+    (if (null? p)
+      seq
+      (let loop ([p p]
+                 [pk (key-proc (car p))]
+                 [k start]
+                 [last p])
+        (if (or (not (pair? (cdr p))) (and end (= k end)))
+          seq
+          (let* ([q (cdr p)]
+                 [qk (key-proc (car q))])
+            (if (test-proc pk qk)
+              (loop q qk (+ k 1) last)
+              (begin
+                (set-cdr! last q)
+                (loop q qk (+ k 1) q)))))))))
 
 ;; searching sequence -----------------------------------------------
 
