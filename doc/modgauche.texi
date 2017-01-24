@@ -3258,7 +3258,6 @@ which only groups adjacent elements.
 @c COMMON
 @end deffn
 
-
 @node Miscellaneous operations on collection, Fundamental iterator creators, Selection and searching in collection, Collection framework
 @subsection Miscellaneous operations on collection
 @c NODE コレクションに対する様々な操作
@@ -14977,7 +14976,129 @@ use @code{group-collection}
 @code{group-collection}
 (@ref{Selection and searching in collection}参照)を使って下さい。
 @c COMMON
+
+@c EN
+If you simply need to reduce each group for one instance,
+that is, removing adjacent duplicated elements,
+you can use @code{delete-neighbor-dups} below.
+@c JP
+もし、単にそれぞれのグループあたり一つづとつの要素だけを残したい、
+つまり、隣り合う重複する要素を除きたい場合は、
+下の@code{delete-neighbor-dups}が使えます。
+@c COMMON
 @end deffn
+
+
+@deffn {Generic function} delete-neighbor-dups seq :key key test start end
+Returns a sequence of the same type as @var{seq}, in which
+elements in @var{seq} are included in the original order, except
+duplicate adjacent elements.
+The type of @var{seq} must has a builder.
+
+@example
+(delete-neighbor-dups '(1 1 1 2 3 4 4 2 2 3 1 1 3))
+  @result{} (1 2 3 4 2 3 1 3)
+
+(delete-neighbor-dups '#(1 1 1 2 3 4 4 2 2 3 1 1 3))
+  @result{} #(1 2 3 4 2 3 1 3)
+
+(delete-neighbor-dups "1112344223113")
+  @result{} "12342313"
+@end example
+
+Elements are compared with @code{eqv?} by default.  You can pass
+alternative procedure to @var{test} keyword argument; it is always
+called as @code{(@var{test} @var{x} @var{y})},
+where @var{x} and @var{y} are the contiguous elements in @var{seq}.
+If elements are compared equal, the first one is kept:
+
+@example
+(delete-neighbor-dups "AaaAbBBbCCcc" :test char-ci=?)
+  @result{} "AbC"
+@end example
+
+If @var{key} is provided, it must be a procedure that takes one arguments.
+It is applied to each element of @var{seq} at most once, and each resulting
+value is used for the comparison instead of elements themselves.
+
+@example
+(delete-neighbor-dups
+  '((1 . "a") (1 . "b") (2 . "c") (2 . "d"))
+  :key car)
+  @result{} ((1 . "a") (2 . "c"))
+@end example
+
+The @var{start} and @var{end} arguments specify indexes in the @var{seq}
+to limit the range to look at.  Where @var{start} is inclusive, @var{end}
+is exclusive.
+
+@example
+(delete-neighbor-dups "1112344223113" :start 3 :end 9)
+  @result{} "2342"
+@end example
+@end deffn
+
+@deffn {Generic function} delete-neighbor-dups! seq :key key test start end
+Scan @var{seq} from left to right, dropping consecutive duplicated
+elements.  The result is stored into @var{seq}, packed to left.
+Note @var{seq} must be modifiable by index, i.e. @code{modifier} method
+must be defined.  The rest of @var{seq} will be untouched.
+Returns the next index after the last modified entry.
+
+@example
+(let1 v (vector 1 1 2 2 3 3 2 2 4 4)
+  (list (delete-neighbor-dups! v)
+        v))
+  @result{} (5 #(1 2 3 2 4 3 2 2 4 4))
+@end example
+
+The semantics of keyword arguments @var{key}, @var{test},
+@var{start} and @var{end} are the same as
+@code{delete-neighbor-dups}.
+
+@example
+(let1 v (vector 1 1 2 2 3 3 2 2 4 4)
+  (list (delete-neighbor-dups! v :start 2)
+        v))
+  @result{} (6 #(1 1 2 3 2 4 2 2 4 4))
+@end example
+
+Note: This method works on any sequence with @code{modifier}
+method, but it's not necessarily more efficient than
+@code{delete-neighbor-dups}, which creates a new sequence.
+If @var{seq} is a list or a string, each modification by index takes O(n)
+time (for a string even it costs O(n) extra storage), so the
+total cost is O(n^2), whereas @code{delete-neighbor-dups} 
+needs O(n) time and storage.
+This works best for vectors, with which it doesn't cost extra allocation
+and runs in O(n) time.
+@end deffn
+
+@deffn {Generic function} delete-neighbor-dups-squeeze! seq :key key test start end
+Operates like @code{delete-neighbor-dups} but reuses storage of @var{seq},
+which will be resized by dropping duplicated elements.
+Returns the sequence after dupes are removed.
+
+Not all sequences are resizable, so this method won't be defined
+for such sequences.  The @code{gauche.sequence} module only
+provides this method for @code{<list>}, in which dropping the
+middle of the sequence is very efficient as it is just a
+single @code{set-cdr!}.
+
+@example
+(delete-neighbor-dups-squeeze! (list 1 1 1 2 2 2 3 3 3))
+  @result{} (1 2 3)
+
+(delete-neighbor-dups-squeeze! (list 1 1 1 2 2 2 3 3 3 4 4)
+                               :start 3 :end 9)
+  @result{} (2 3)
+@end example
+
+The semantics of keyword arguments @var{key}, @var{test},
+@var{start} and @var{end} are the same as
+@code{delete-neighbor-dups}.
+@end deffn
+
 
 @subsubheading Prefix
 

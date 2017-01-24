@@ -302,19 +302,25 @@
 
 (define-method delete-neighbor-dups ((seq <sequence>)
                                      :key ((:key key-proc) identity)
-                                          ((:test test-proc) eqv?))
+                                          ((:test test-proc) eqv?)
+                                          (start 0)
+                                          (end #f))
   (with-builder ((class-of seq) add! get)
     (with-iterator (seq end? next)
-      (cond [(end?) (get)]
+      (do ([k 0 (+ k 1)])
+          [(or (= k start) (end?))]
+        (next))
+      (cond [(or (end?) (and end (= start end))) (get)]
             [else (let1 e (next)
                     (add! e)
-                    (let loop ([ek (key-proc e)])
-                      (if (end?)
+                    (let loop ([ek (key-proc e)]
+                               [k  (+ start 1)])
+                      (if (or (end?) (and end (= k end)))
                         (get)
                         (let* ([n (next)]
                                [nk (key-proc n)])
-                          (cond [(test-proc ek nk) (loop nk)]
-                                [else (add! n) (loop nk)])))))]))))
+                          (cond [(test-proc ek nk) (loop nk (+ k 1))]
+                                [else (add! n) (loop nk (+ k 1))])))))]))))
 
 ;; Store result into SEQ, which must be modifiable.
 ;; Returns the index right after the last modified entry.
@@ -322,23 +328,24 @@
                                       :key ((:key key-proc) identity)
                                            ((:test test-proc) eqv?)
                                            (start 0)
-                                           (end (size-of seq)))
+                                           (end #f))
   (define mod! (modifier seq))
   (with-iterator (seq end? next)
     (dotimes [start] (next))
-    (if (end?)
+    (if (or (end?) (and end (= start end)))
       start
       (let1 e (next)
         (mod! seq start e)
         (let loop ([d (+ start 1)]
                    [ek (key-proc e)]
+                   [k (+ start 1)]
                    [e e])
-          (if (end?)
+          (if (or (end?) (and end (= k end)))
             d
             (let* ([n (next)]
                    [nk (key-proc n)])
-              (cond [(test-proc ek nk) (loop d nk n)]
-                    [else (mod! seq d n) (loop (+ d 1) nk n)]))))))))
+              (cond [(test-proc ek nk) (loop d nk (+ k 1) n)]
+                    [else (mod! seq d n) (loop (+ d 1) nk (+ k 1) n)]))))))))
 
 ;; This can only be defined in sequences whose length can be changed.
 ;; NB: We can't define generic version, since there's no generic way
@@ -349,15 +356,15 @@
                                                    ((:test test-proc) eqv?)
                                                    (start 0)
                                                    (end #f))
-  (let1 p (drop* seq start)
-    (if (null? p)
+  (let1 seq (drop* seq start)
+    (if (null? seq)
       seq
-      (let loop ([p p]
-                 [pk (key-proc (car p))]
-                 [k start]
-                 [last p])
+      (let loop ([p seq]
+                 [pk (key-proc (car seq))]
+                 [k (+ start 1)]
+                 [last seq])
         (if (or (not (pair? (cdr p))) (and end (= k end)))
-          seq
+          (begin (set-cdr! last '()) seq)
           (let* ([q (cdr p)]
                  [qk (key-proc (car q))])
             (if (test-proc pk qk)
