@@ -21,7 +21,7 @@
 ;;   tables, within the following two generated source files:
 ;;
 ;;   char_attr.c                - General category and case mappings.
-;;   gauche/priv/unicode_attr.h - Grapheme break, word break, normalization.
+;;   gauche/priv/unicode_attr.h - Grapheme break, word break, East-asian width
 ;;
 ;;   This is done when you build from git source tree.
 ;;
@@ -33,6 +33,8 @@
 ;;    gosh ./gen-unicode.scm --fetch <unicode-database-directory> [<unicode-version>
 ;;   Note that the original content in <unicode-database-directory> is
 ;;   overwritten.
+;;   You might need to adjust code for newer version of Unicode.
+;;   See doc/HOWTO-unicode.txt for the details.
 
 (use srfi-1)
 (use srfi-13)
