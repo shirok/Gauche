@@ -307,9 +307,7 @@
                                           (end #f))
   (with-builder ((class-of seq) add! get)
     (with-iterator (seq end? next)
-      (do ([k 0 (+ k 1)])
-          [(or (= k start) (end?))]
-        (next))
+      (dotimes [start] (next))
       (cond [(or (end?) (and end (= start end))) (get)]
             [else (let1 e (next)
                     (add! e)
