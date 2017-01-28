@@ -5650,35 +5650,35 @@
        (set! (%procedure-inliner ,name) ,debug-name)
        (%mark-binding-inlinable! (find-module 'gauche.internal) ',name))))
 
-;; Some useful utilities
-;;
-(define-inline (asm-arg1 form insn x cenv)
-  ($asm form insn (list (pass1 x cenv))))
-
-(define-inline (asm-arg2 form insn x y cenv)
-  ($asm form insn (list (pass1 x cenv) (pass1 y cenv))))
+;; Temporary - we'll eventually move for calling inliner with IForms
+;; as arguments.  For now, this serves an adapter between existing calling
+;; convention and new inliners.
+(define (%%%adapter proc)
+  (^[form cenv] (proc form (map (^x (pass1 x cenv)) (cdr form)))))
 
 ;; Generate two argument call of assembler insn INSN unconditionally
 (define (gen-inliner-arg2 insn)
-  (^[form cenv]
-    (match form
-      [(_ x y) (asm-arg2 form (list insn) x y cenv)]
-      [else (undefined)])))
+  (%%%adapter
+   (^[form args]
+     (match args
+       [(x y) ($asm form (list insn) (list x y))]
+       [else (undefined)]))))
 
 ;; If the form has two arg and the latter arg is a constant exact integer
 ;; that fits insn arg, generate ***I type insn.  If both args are constant,
 ;; replace the form with ($const (proc x y)).  Otherwise give up.
 (define (gen-inliner-argi insn proc)
-  (^[form cenv]
-    (match form
-      [(_ n cnt)
-       (receive (cnt-val cnt-tree) (check-numeric-constant cnt cenv)
-         (receive (n-val n-tree) (check-numeric-constant n cenv)
-           (cond [(and cnt-val n-val) ($const (proc n-val cnt-val))]
-                 [(and cnt-val (integer-fits-insn-arg? cnt-val))
-                  ($asm form `(,insn ,cnt-val) (list n-tree))]
-                 [else (undefined)])))]
-      [else (undefined)])))
+  (%%%adapter
+   (^[form args]
+     (match args
+       [(n cnt)
+        (let ([cnt-val (check-numeric-constant cnt)]
+              [n-val   (check-numeric-constant n)])
+          (cond [(and cnt-val n-val) ($const (proc n-val cnt-val))]
+                [(and cnt-val (integer-fits-insn-arg? cnt-val))
+                 ($asm form `(,insn ,cnt-val) (list n))]
+                [else (undefined)]))]
+       [else (undefined)]))))
 
 (inline-stub
  (define-cproc %procedure-inliner (proc::<procedure>)
@@ -5708,156 +5708,77 @@
 ;;  constant folding.   Except the literal numbers we need to call
 ;;  pass1 first on the argument to see if we can get a constant.
 
-;; NB: This part needs serious refactoring after 0.8.10.
-
-;; Utility.  Returns two values.  The first value is a number, if
-;; the given form yields a constant number.  The second value is
-;; an intermediate form, if the given form is not a literal.
-(define (check-numeric-constant form cenv)
-  (if (number? form)
-    (values form #f)
-    (let1 f (pass1 form cenv)
-      (if (and ($const? f) (number? ($const-value f)))
-        (values ($const-value f) f)
-        (values #f f)))))
+;; Returns numeric value if iform is a constant number.
+(define (check-numeric-constant iform)
+  (and ($const? iform)
+       (number? ($const-value iform))
+       ($const-value iform)))
 
 (define (ensure-inexact-const numconstval)
-  ($const (exact->inexact numconstval)))
+  ($const (inexact numconstval)))
 
-(define-macro (define-builtin-inliner-+ op insn const)
+(define-macro (fold-asm form op insn const x y more)
+  `(let loop ([x ,x] [y ,y] [more ,more])
+     (let ([xval (check-numeric-constant x)]
+           [yval (check-numeric-constant y)])
+       (let1 v (if (and xval yval)
+                 (,const (,op xval yval))
+                 ($asm ,form `(,,insn) `(,,'x ,,'y)))
+         (if (null? more) v (loop v (car more) (cdr more)))))))
+
+(define-macro (define-builtin-inliner-+* op unit insn const)
   `(define-builtin-inliner ,op
-     (^[form cenv]
-       (define (fold-+ asm rest)
-         (fold (^[arg asm]
-                 (receive (val tree) (check-numeric-constant arg cenv)
-                   ($asm form (list ,insn) (list asm (or tree (,const val))))))
-               asm rest))
-       (let inline ((args (cdr form)))
-         (match args
-           [()  (,const 0)]
-           [(x)
-            (receive (num tree) (check-numeric-constant x cenv)
-              (if num
-                (or tree (,const num))
-                (undefined)))]
-           [(x y . more)
-            (receive (xval xtree) (check-numeric-constant x cenv)
-              (receive (yval ytree) (check-numeric-constant y cenv)
-                (if xval
-                  (if yval
-                    (inline (cons (,op xval yval) more))
-                    (fold-+ ytree (cons xval more)))
-                  (if yval
-                    (fold-+ xtree (cons yval more))
-                    (fold-+ ($asm form (list ,insn) `(,xtree ,ytree)) more)))))]
-           )))))
+     (%%%adapter
+      (^[form args]
+        (match args
+          [()  (,const ,unit)]
+          [(x) (if-let1 val (check-numeric-constant x)
+                 (,const val)
+                 (undefined))]  ; let it be handled at runtime
+          [(x y . more) (fold-asm form ,op ,insn ,const x y more)])))))
 
-(define-builtin-inliner-+ +  NUMADD2 $const)
-(define-builtin-inliner-+ +. NUMIADD2 ensure-inexact-const)
+(define-builtin-inliner-+* +  0 NUMADD2 $const)
+(define-builtin-inliner-+* +. 0 NUMIADD2 ensure-inexact-const)
+(define-builtin-inliner-+* *  1 NUMMUL2 $const)
+(define-builtin-inliner-+* *. 1 NUMIMUL2 ensure-inexact-const)
 
-(define-macro (define-builtin-inliner-- op insn const)
+(define-macro (define-builtin-inliner--/ op insn const)
   `(define-builtin-inliner ,op
-     (^[form cenv]
-       (define (fold-- asm rest)
-         (fold (^[arg asm]
-                 (receive [val tree] (check-numeric-constant arg cenv)
-                   ($asm form (list ,insn) (list asm (or tree (,const val))))))
-               asm rest))
-       (let inline ((args (cdr form)))
-         (match args
-           [()
-            (error "procedure requires at least one argument:" form)]
-           [(x)
-            (receive (num tree) (check-numeric-constant x cenv)
-              (if num
-                (,const (- num))
-                ,(if (eq? op '-)
-                   '($asm form `(,NEGATE) (list tree))
-                   (undefined))))]
-           [(x y . more)
-            (receive (xval xtree) (check-numeric-constant x cenv)
-              (receive (yval ytree) (check-numeric-constant y cenv)
-                (if xval
-                  (if yval
-                    (if (null? more)
-                      ($const (,op xval yval))
-                      (inline (cons (,op xval yval) more)))
-                    (fold-- ($asm form (list ,insn)
-                                  (list (or xtree ($const xval)) ytree))
-                            more))
-                  (fold-- ($asm form (list ,insn)
-                                (list xtree (or ytree ($const yval))))
-                          more))))]
-           )))))
+     (%%%adapter
+      (^[form args]
+        (match args
+          [() (error "procedure requires at least one argument:" form)]
+          [(x) (if-let1 val (check-numeric-constant x)
+                 (,const (,op val))
+                 ,(if (eq? op '-)
+                    `($asm form `(,NEGATE) (list x))
+                    (undefined)))] ; let it be handled at runtime
+          [(x y . more) (fold-asm form ,op ,insn ,const x y more)])))))
 
-(define-builtin-inliner-- -  NUMSUB2  $const)
-(define-builtin-inliner-- -. NUMISUB2 ensure-inexact-const)
-
-(define-macro (define-builtin-inliner-* op insn const)
-  `(define-builtin-inliner ,op
-     (^[form cenv]
-       (let inline ((args (cdr form)))
-         (match args
-           [()  (,const 1)]
-           [(x)
-            (receive (num tree) (check-numeric-constant x cenv)
-              (if (number? num)
-                (or tree (,const num))
-                (undefined)))]
-           [(x y . more)
-            (receive (xval xtree) (check-numeric-constant x cenv)
-              (receive (yval ytree) (check-numeric-constant y cenv)
-                (if (and xval yval)
-                  (inline (cons (,op xval yval) more))
-                  (fold (^[arg asm]
-                          ($asm form (list ,insn) (list asm (pass1 arg cenv))))
-                        ($asm form (list ,insn)
-                              (list (or xtree (,const xval))
-                                    (or ytree (,const yval))))
-                        more))))]
-           )))))
-
-(define-builtin-inliner-* *  NUMMUL2  $const)
-(define-builtin-inliner-* *. NUMIMUL2 ensure-inexact-const)
+(define-builtin-inliner--/ -  NUMSUB2  $const)
+(define-builtin-inliner--/ -. NUMISUB2 ensure-inexact-const)
+(define-builtin-inliner--/ /. NUMIDIV2 ensure-inexact-const)
 
 ;; NB: If we detect exact division-by-zero case, we shouldn't fold
 ;; the constant and let it be handled at runtime.  
-(define-macro (define-builtin-inliner-/ op insn const)
-  `(define-builtin-inliner ,op
-     (^[form cenv]
-       (let inline ((args (cdr form)))
-         (match args
-           [()
-            (error "procedure requires at least one argument:" form)]
-           [(x)
-            (receive (num tree) (check-numeric-constant x cenv)
-              (if (and (number? num)
-                       ,(if (eq? insn 'NUMDIV2)
-                          `(not (eqv? num 0)) ;exact zero
-                          #t))
-                ($const (,op num))
+(define-builtin-inliner /
+  (%%%adapter
+   (^[form args]
+     (match args
+       [() (error "procedure requires at least one argument:" form)]
+       [(x) (let1 val (check-numeric-constant x)
+              (if (and val (not (eqv? val 0)))
+                ($const (/ val))
                 (undefined)))]
-           [(x y . more)
-            (receive (xval xtree) (check-numeric-constant x cenv)
-              (receive (yval ytree) (check-numeric-constant y cenv)
-                (if (and xval yval
-                         ,(if (eq? insn 'NUMDIV2)
-                            `(not (and (eqv? yval 0) ;exact zero
-                                       (exact? xval)))
-                            #t))
-                  (if (null? more)
-                    ($const (,op xval yval))
-                    (inline (cons (,op xval yval) more)))
-                  (fold (^[arg asm]
-                          ($asm form (list ,insn) (list asm (pass1 arg cenv))))
-                        ($asm form (list ,insn)
-                              (list (or xtree (,const xval))
-                                    (or ytree (,const yval))))
-                        more))))]
-           )))))
-
-(define-builtin-inliner-/ /  NUMDIV2  $const)
-(define-builtin-inliner-/ /. NUMIDIV2 ensure-inexact-const)
+       [(x y . more)
+        ;; can't use fold-asm here because of exact zero check
+        (let loop ([x x] [y y] [more more])
+          (let ([xval (check-numeric-constant x)]
+                [yval (check-numeric-constant y)])
+            (let1 v (if (and xval yval (not (and (eqv? yval 0) (exact? xval))))
+                      ($const (/ xval yval))
+                      ($asm form `(,NUMDIV2) `(,x ,y)))
+              (if (null? more) v (loop v (car more) (cdr more))))))]))))
 
 (define-builtin-inliner =   (gen-inliner-arg2 NUMEQ2))
 (define-builtin-inliner <   (gen-inliner-arg2 NUMLT2))
@@ -5875,22 +5796,23 @@
   ;; Integer constants are folded.  Returns cons of the folded constant
   ;; (#f if no constant argument), and the list of iforms for the rest
   ;; of arguments.
-  (define (classify-args args cenv)
+  (define (classify-args args)
     (let loop ([args args] [constval #f] [iforms '()])
       (if (null? args)
         (cons constval iforms)
-        (receive (val tree) (check-numeric-constant (car args) cenv)
+        (let1 val (check-numeric-constant (car args))
           (if (and val (exact-integer? val))
             (loop (cdr args) (if constval (op constval val) val) iforms)
-            (loop (cdr args) constval (cons (or tree ($const val)) iforms)))))))
+            (loop (cdr args) constval (cons (car args) iforms)))))))
 
-  (^[form cenv]
-    (match (classify-args (cdr form) cenv)
-      [(#f)         ($const unit)]
-      [(constval)   ($const constval)]
-      [(constval x) ($asm form `(,opcode) (list ($const constval) x))]
-      [(#f x y)     ($asm form `(,opcode) (list x y))]
-      [_ (undefined)])))
+  (%%%adapter
+   (^[form args]
+     (match (classify-args args)
+       [(#f)         ($const unit)]
+       [(constval)   ($const constval)]
+       [(constval x) ($asm form `(,opcode) (list ($const constval) x))]
+       [(#f x y)     ($asm form `(,opcode) (list x y))]
+       [_ (undefined)]))))
 
 (define-builtin-inliner logand
   (builtin-inliner-bitwise 'logand logand LOGAND -1))
@@ -5904,108 +5826,106 @@
 ;;
 
 (define-builtin-inliner vector-ref
-  (^[form cenv]
-    (match form
-      [(_ vec ind)
-       (asm-arg2 form `(,VEC-REF) vec ind cenv)]
-      [else (undefined)])))
+  (%%%adapter
+   (^[form args]
+     (match args
+       [(vec ind) ($asm form `(,VEC-REF) (list vec ind))]
+       [else (undefined)]))))
 
 (define-builtin-inliner vector-set!
-  (^[form cenv]
-    (match form
-      [(_ vec ind val)
-       ($asm form `(,VEC-SET) `(,(pass1 vec cenv)
-                                ,(pass1 ind cenv)
-                                ,(pass1 val cenv)))]
-      [else (error "wrong number of arguments for vector-set!:" form)])))
+  (%%%adapter
+   (^[form args]
+     (match args
+       [(vec ind val) ($asm form `(,VEC-SET) `(,vec ,ind ,val))]
+       [else (error "wrong number of arguments for vector-set!:" form)]))))
 
 ;; NB: %uvector-ref isn't public, and should be in the gauche.internal
 ;; module.  We don't have a convenience mechanism to attach builtin inliner
 ;; to the bindings in other module, though.
 (define-builtin-inliner %uvector-ref
-  (^[form cenv]
-    (match form
-      [(_ vec (? integer? type) ind)
+  (%%%adapter
+   (^[form args]
+     (match args
+       [(vec (? integer? type) ind)
 ;; not enough evidence yet to support this is worth (see also vminsn.scm)
 ;;       (if (and (integer? ind)
 ;;                (unsigned-integer-fits-insn-arg? (* ind 16)))
 ;;         (asm-arg1 form `(,UVEC-REFI ,(+ (* ind 16) type)) vec cenv)
-         (asm-arg2 form `(,UVEC-REF ,type) vec ind cenv)]
-      [else (undefined)])))
+        ($asm form `(,UVEC-REF ,type) `(,vec ,ind))]
+       [else (undefined)]))))
 
 (define-builtin-inliner zero?
-  (^[form cenv]
-    (match form
-      [(_ arg)
-       ($asm form `(,NUMEQ2) `(,(pass1 arg cenv) ,($const 0)))]
-      [else (error "wrong number of arguments for zero?:" form)])))
+  (%%%adapter
+   (^[form args]
+     (match args
+       [(arg) ($asm form `(,NUMEQ2) `(,arg ,($const 0)))]
+       [else (error "wrong number of arguments for zero?:" form)]))))
 
 (define-builtin-inliner acons
-  (^[form cenv]
-    (match form
-      [(_ a b c)
-       ($asm form `(,CONS) `(,($asm #f `(,CONS) `(,(pass1 a cenv)
-                                                  ,(pass1 b cenv)))
-                             ,(pass1 c cenv)))]
-      [else (error "wrong number of arguments for acons:" form)])))
+  (%%%adapter
+   (^[form args]
+     (match args
+       [(a b c) ($asm form `(,CONS) `(,($asm #f `(,CONS) `(,a ,b)) ,c))]
+       [else (error "wrong number of arguments for acons:" form)]))))
 
 (define-builtin-inliner reverse
-  (^[form cenv]
-    (match form
-      [(_ a) ($asm form `(,REVERSE) `(,(pass1 a cenv)))]
-      [else (undefined)])))
+  (%%%adapter
+   (^[form args]
+     (match args
+       [(a) ($asm form `(,REVERSE) `(,a))]
+       [else (undefined)]))))
 
 (define-builtin-inliner current-input-port
-  (^[form cenv]
-    (match form
-      [(_) ($asm form `(,CURIN) '())]
-      [else (undefined)])))
+  (%%%adapter
+   (^[form args]
+     (match args
+       [() ($asm form `(,CURIN) '())]
+       [else (undefined)]))))
 
 (define-builtin-inliner current-output-port
-  (^[form cenv]
-    (match form
-      [(_) ($asm form `(,CUROUT) '())]
-      [else (undefined)])))
+  (%%%adapter
+   (^[form args]
+     (match form
+       [() ($asm form `(,CUROUT) '())]
+       [else (undefined)]))))
 
 (define-builtin-inliner current-error-port
-  (^[form cenv]
-    (match form
-      [(_) ($asm form `(,CURERR) '())]
-      [else (undefined)])))
+  (%%%adapter
+   (^[form args]
+     (match args
+       [() ($asm form `(,CURERR) '())]
+       [else (undefined)]))))
 
 (define-builtin-inliner dynamic-wind
-  (^[form cenv]
-    (match form
-      [(_ before thunk after)
-       (let ([tenv (cenv-sans-name cenv)])
-         (let ([b (pass1 before tenv)]
-               [t (pass1 thunk cenv)]
-               [a (pass1 after tenv)]
-               [at (make-lvar 'after)]
-               [bt (make-lvar 'before)]
-               [tt (make-lvar 'thunk)]
-               [r (make-lvar 'tmp)])
-           (if (constant-lambda? a)
-             ;; when after thunk is dummy, we don't bother to call it.
-             ($let form 'let `(,at ,bt ,tt) `(,a ,b ,t)
-                   ($seq
-                    `(,($call before ($lref bt) '())
-                      ,($asm form `(,PUSH-HANDLERS) `(,($lref bt) ,($lref at)))
-                      ,($call thunk ($lref tt) '()))))
-             ;; normal path
-             ($let form 'let `(,at ,bt ,tt) `(,a ,b ,t)
-                   ($seq
-                    `(,($call before ($lref bt) '())
-                      ,($asm form `(,PUSH-HANDLERS) `(,($lref bt) ,($lref at)))
-                      ,($receive #f 0 1 (list r)
-                                 ($call thunk ($lref tt) '())
-                                 ($seq
-                                  `(,($asm form `(,POP-HANDLERS) '())
-                                    ,($call after ($lref at) '())
-                                    ,($asm #f `(,TAIL-APPLY 2)
-                                           (list ($gref values.) ($lref r))))))
-                      ))))))]
-      [_ (undefined)])))
+  (%%%adapter
+   (^[form args]
+     (match args
+       [(b t a)
+        (let ([at (make-lvar 'after)]
+              [bt (make-lvar 'before)]
+              [tt (make-lvar 'thunk)]
+              [r (make-lvar 'tmp)])
+          (if (constant-lambda? a)
+            ;; when after thunk is dummy, we don't bother to call it.
+            ($let form 'let `(,at ,bt ,tt) `(,a ,b ,t)
+                  ($seq
+                   `(,($call ($*-src b) ($lref bt) '())
+                     ,($asm form `(,PUSH-HANDLERS) `(,($lref bt) ,($lref at)))
+                     ,($call ($*-src t) ($lref tt) '()))))
+            ;; normal path
+            ($let form 'let `(,at ,bt ,tt) `(,a ,b ,t)
+                  ($seq
+                   `(,($call ($*-src b) ($lref bt) '())
+                     ,($asm form `(,PUSH-HANDLERS) `(,($lref bt) ,($lref at)))
+                     ,($receive #f 0 1 (list r)
+                                ($call ($*-src t) ($lref tt) '())
+                                ($seq
+                                 `(,($asm form `(,POP-HANDLERS) '())
+                                   ,($call ($*-src a) ($lref at) '())
+                                   ,($asm #f `(,TAIL-APPLY 2)
+                                          (list ($gref values.) ($lref r))))))
+                     )))))]
+      [_ (undefined)]))))
 
 ;;--------------------------------------------------------
 ;; Customizable inliner interface
@@ -6017,6 +5937,7 @@
 ;; We haven't decided our base mechanism of hygienic macros,
 ;; but for the time being, we mimic explicitly renaming macro.
 
+;; TRANSIENT: For the backward compatibility - 
 (define (%bind-inline-er-transformer module name er-xformer)
   (define macro-def-cenv (%make-cenv module '()))
   ($ %attach-inline-transformer module name
