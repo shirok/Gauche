@@ -14990,10 +14990,16 @@ you can use @code{delete-neighbor-dups} below.
 
 
 @deffn {Generic function} delete-neighbor-dups seq :key key test start end
+@c EN
 Returns a sequence of the same type as @var{seq}, in which
 elements in @var{seq} are included in the original order, except
 duplicate adjacent elements.
 The type of @var{seq} must has a builder.
+@c JP
+@var{seq}中で、隣り合う重複する要素を取り除いたものを
+@var{seq}と同じ型のシーケンスとして返します。
+@var{seq}の型はビルダーを持っていなければなりません。
+@c COMMON
 
 @example
 (delete-neighbor-dups '(1 1 1 2 3 4 4 2 2 3 1 1 3))
@@ -15006,20 +15012,33 @@ The type of @var{seq} must has a builder.
   @result{} "12342313"
 @end example
 
+@c EN
 Elements are compared with @code{eqv?} by default.  You can pass
 alternative procedure to @var{test} keyword argument; it is always
 called as @code{(@var{test} @var{x} @var{y})},
 where @var{x} and @var{y} are the contiguous elements in @var{seq}.
 If elements are compared equal, the first one is kept:
+@c JP
+要素同士はデフォルトでは@code{eqv?}で比較されます。
+@var{test}キーワード引数に代わりの比較手続きを渡すこともできます。
+@var{seq}中に要素@var{x}と@var{y}がこの順で隣り合っているとすると、
+比較手続きは常に@code{(@var{test} @var{x} @var{y})}として呼ばれます。
+要素が等しかった場合、最初に出現する要素が残ります。
+@c COMMON
 
 @example
 (delete-neighbor-dups "AaaAbBBbCCcc" :test char-ci=?)
   @result{} "AbC"
 @end example
 
+@c EN
 If @var{key} is provided, it must be a procedure that takes one arguments.
 It is applied to each element of @var{seq} at most once, and each resulting
 value is used for the comparison instead of elements themselves.
+@c JP
+@var{key}キーワード引数が与えられた場合、それは1引数の手続きでなければなりません。
+@var{seq}の各要素に対してその手続きは1回だけ適用され、結果が比較に使われます。
+@c COMMON
 
 @example
 (delete-neighbor-dups
@@ -15028,9 +15047,15 @@ value is used for the comparison instead of elements themselves.
   @result{} ((1 . "a") (2 . "c"))
 @end example
 
+@c EN
 The @var{start} and @var{end} arguments specify indexes in the @var{seq}
 to limit the range to look at.  Where @var{start} is inclusive, @var{end}
 is exclusive.
+@c JP
+@var{start}と@var{end}引数は@var{seq}へのインデックスで、
+調べる範囲を限定します。@var{start}番目の要素から、
+@var{end}番目の要素の一つ手前までが対象となります。
+@c COMMON
 
 @example
 (delete-neighbor-dups "1112344223113" :start 3 :end 9)
