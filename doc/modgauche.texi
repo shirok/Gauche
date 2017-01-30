@@ -15064,11 +15064,19 @@ is exclusive.
 @end deffn
 
 @deffn {Generic function} delete-neighbor-dups! seq :key key test start end
+@c EN
 Scan @var{seq} from left to right, dropping consecutive duplicated
 elements.  The result is stored into @var{seq}, packed to left.
 Note @var{seq} must be modifiable by index, i.e. @code{modifier} method
 must be defined.  The rest of @var{seq} will be untouched.
 Returns the next index after the last modified entry.
+@c JP
+@var{seq}を左から右にスキャンし、重複する要素を除いた結果を左に詰めて@var{seq}に
+格納してゆきます。@var{seq}はインデックス指定で変更可能でなければなりません。
+つまり、@var{modifier}メソッドが定義されてなければなりません。
+詰め終わった残りの部分は変更せずに残されます。
+最後に変更された場所の次のインデックスを返します。
+@c COMMON
 
 @example
 (let1 v (vector 1 1 2 2 3 3 2 2 4 4)
@@ -15077,9 +15085,14 @@ Returns the next index after the last modified entry.
   @result{} (5 #(1 2 3 2 4 3 2 2 4 4))
 @end example
 
+@c EN
 The semantics of keyword arguments @var{key}, @var{test},
 @var{start} and @var{end} are the same as
 @code{delete-neighbor-dups}.
+@c JP
+キーワード引数@var{key}、@var{test}、@var{start}、@var{end}の意味は
+@code{delete-neighbor-dups}と同じです。
+@c COMMON
 
 @example
 (let1 v (vector 1 1 2 2 3 3 2 2 4 4)
@@ -15088,6 +15101,7 @@ The semantics of keyword arguments @var{key}, @var{test},
   @result{} (6 #(1 1 2 3 2 4 2 2 4 4))
 @end example
 
+@c EN
 Note: This method works on any sequence with @code{modifier}
 method, but it's not necessarily more efficient than
 @code{delete-neighbor-dups}, which creates a new sequence.
@@ -15095,8 +15109,18 @@ If @var{seq} is a list or a string, each modification by index takes O(n)
 time (for a string even it costs O(n) extra storage), so the
 total cost is O(n^2), whereas @code{delete-neighbor-dups} 
 needs O(n) time and storage.
-This works best for vectors, with which it doesn't cost extra allocation
-and runs in O(n) time.
+This works best for vectors and alike,
+with which it doesn't cost extra allocation and runs in O(n) time.
+@c JP
+註: このメソッドは@code{modifier}が定義されているシーケンスなら何でも
+使えますが、新たなシーケンスをアロケートする@code{delete-neighbor-dups}より
+効率的であるとは限りません。@var{seq}がリストや文字列であれば、
+一ヶ所の変更にO(n)の時間がかかります(文字列の場合はさらにO(n)のメモリも使います)から
+トータルのコストはO(n^2)になります。@code{delete-neighbor-dups}なら
+時間空間ともにO(n)です。
+このメソッドはベクタとその仲間で最も効率よく動作します。
+余分なメモリを必要とせず、O(n)時間で済みます。
+@c COMMON
 @end deffn
 
 @deffn {Generic function} delete-neighbor-dups-squeeze! seq :key key test start end
