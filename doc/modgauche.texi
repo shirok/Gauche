@@ -15124,15 +15124,30 @@ with which it doesn't cost extra allocation and runs in O(n) time.
 @end deffn
 
 @deffn {Generic function} delete-neighbor-dups-squeeze! seq :key key test start end
+@c EN
 Operates like @code{delete-neighbor-dups} but reuses storage of @var{seq},
 which will be resized by dropping duplicated elements.
 Returns the sequence after dupes are removed.
+@c JP
+@code{delete-neighbor-dups}と同じように動作しますが、
+@var{seq}の格納領域を再利用します。
+@var{seq}内の重複する要素は消去され、全体の長さが短くなります。
+変更後の@var{seq}を返します。
+@c COMMON
 
+@c EN
 Not all sequences are resizable, so this method won't be defined
 for such sequences.  The @code{gauche.sequence} module only
 provides this method for @code{<list>}, in which dropping the
 middle of the sequence is very efficient as it is just a
 single @code{set-cdr!}.
+@c JP
+シーケンスは長さを変更できるとは限らないので、
+このメソッドはそういったシーケンスに対しては定義されます。
+@code{gauche.sequence}モジュールでは、
+@code{<list>}に対してだけこのメソッドが定義されます。
+リストは@code{set-cdr!}を用いることで効率よく中間の要素を削除できます。
+@c COMMON
 
 @example
 (delete-neighbor-dups-squeeze! (list 1 1 1 2 2 2 3 3 3))
@@ -15143,9 +15158,14 @@ single @code{set-cdr!}.
   @result{} (2 3)
 @end example
 
+@c EN
 The semantics of keyword arguments @var{key}, @var{test},
 @var{start} and @var{end} are the same as
 @code{delete-neighbor-dups}.
+@c JP
+キーワード引数@var{key}、@var{test}、@var{start}、@var{end}の意味は
+@code{delete-neughbor-dups}と同じです。
+@c COMMON
 @end deffn
 
 
