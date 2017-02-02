@@ -15143,9 +15143,9 @@ middle of the sequence is very efficient as it is just a
 single @code{set-cdr!}.
 @c JP
 シーケンスは長さを変更できるとは限らないので、
-このメソッドはそういったシーケンスに対しては定義されます。
+このメソッドはそういったシーケンスに対しては定義されません。
 @code{gauche.sequence}モジュールでは、
-@code{<list>}に対してだけこのメソッドが定義されます。
+@code{<list>}に対してのメソッドだけが提供されます。
 リストは@code{set-cdr!}を用いることで効率よく中間の要素を削除できます。
 @c COMMON
 
