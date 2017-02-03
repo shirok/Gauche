@@ -35,16 +35,18 @@
 
 (define-module gauche.interactive.editable-reader
   (use text.console)
-  (use text.line-edit)
   (use util.match)
   (use gauche.listener :only (complete-sexp?))
   (export make-editable-reader))
 (select-module gauche.interactive.editable-reader)
 
+;; Delay loading line-edit in case editable console isn't available.
+(autoload text.line-edit <line-edit-context> read-line/edit)
+
 ;; Internal API, to be used by gauche.interactive.
 ;; Because of toplevel commands, we can't just provide alternative 'read'
 ;; procedure.  Instead, this returns three procedures, one for 'read',
-;; one for 'read-line', and another for skipping traililng whitespaces.
+;; one for 'read-line', and another for skipping trailing whitespaces.
 ;  They are suitable to be passed to make-repl-reader.
 ;; NB: Currently we assume we use default console.  Might be useful
 ;; to allow other console (e.g. over pty).
