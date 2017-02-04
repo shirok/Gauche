@@ -1408,4 +1408,19 @@
 (test "reject first-class macro usage" (test-error)
       (lambda () (bad-fi #t 'a 'b)))
 
+;;----------------------------------------------------------------------
+;; compiler macros
+
+(test-section "define-inline/syntax")
+
+(define-inline/syntax cpm
+  (lambda (a b) (+ a b))
+  (er-macro-transformer
+   (lambda (f r c) `(,(r '*) ,(cadr f) ,(caddr f)))))
+(test "compiler macro" '(6 5 6)
+      (lambda ()
+        (list (cpm 2 3)
+              (apply cpm '(2 3))
+              (let ((* -)) (cpm 2 3)))))
+
 (test-end)

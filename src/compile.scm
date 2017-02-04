@@ -1576,9 +1576,14 @@
         (expand-inlined-procedure program
                                   (unpack-iform inliner)
                                   (imap (cut pass1 <> cenv) (cdr program)))]
+       [(? macro?)
+        (let1 expanded (call-macro-expander inliner program cenv)
+          (if (eq? program expanded)    ;no expansion
+            (pass1/call program ($gref name) (cdr program) cenv)
+            (pass1 expanded cenv)))]
        [_
         (let1 form (inliner program cenv)
-          (if (undefined? form)
+          (if (undefined? form)         ;no expansion
             (pass1/call program ($gref name) (cdr program) cenv)
             form))])))
 
@@ -1841,6 +1846,7 @@
 
 (define %make-er-transformer.          (global-id% '%make-er-transformer))
 (define %make-er-transformer/toplevel. (global-id% '%make-er-transformer/toplevel))
+(define %with-inline-transformer.      (global-id% '%with-inline-transformer))
 
 ;; Returns an IForm for (values) - useful for define-pass1-syntax that does
 ;; compile-time things and returns nothing.  The delay trick is to create
@@ -2093,6 +2099,20 @@
        ($const-undef))]
     [_ (error "syntax-error: malformed define-syntax:" form)]))
 
+;; Experimental
+(define-pass1-syntax (define-inline/syntax form cenv) :gauche
+  (check-toplevel form cenv)
+  (match form
+    [(_ name expr macro-expr)
+     (let* ([cenv (cenv-add-name cenv (variable-name name))]
+            [xformer (pass1/eval-macro-rhs 'define-inline/syntax
+                                           macro-expr cenv)]
+            [body (pass1/call expr ($gref %with-inline-transformer.)
+                              (list expr xformer) cenv)])
+       (pass1/make-inlinable-binding form name body cenv))]
+    [_ (error "syntax-error: define-inline/syntax")]))
+            
+;; Returns either <syntax> or <macro>
 (define (pass1/eval-macro-rhs who expr cenv)
   (rlet1 transformer ((make-toplevel-closure (compile expr cenv)))
     (unless (or (is-a? transformer <syntax>)
@@ -5931,13 +5951,16 @@
 ;; Customizable inliner interface
 ;;
 
-;; This is a hook for compiler macros and other experiment
-;; on user-level optimization.  The "custom inliner" procedure
-;; takes a form, and returns a form that may be translated.
-;; We haven't decided our base mechanism of hygienic macros,
-;; but for the time being, we mimic explicitly renaming macro.
+;; This is invoked from the expansion of define-inline/syntax.
+(define (%with-inline-transformer proc xformer)
+  (unless (procedure? proc)
+    (error "define-inline/syntax: expression yields non-procedure value" proc))
+  (unless (macro? xformer)
+    (errorf "macro required, but got" xformer))
+  (set! (%procedure-inliner proc) xformer)
+  proc)
 
-;; TRANSIENT: For the backward compatibility - 
+;; TRANSIENT: For the backward compatibility
 (define (%bind-inline-er-transformer module name er-xformer)
   (define macro-def-cenv (%make-cenv module '()))
   ($ %attach-inline-transformer module name
@@ -5951,9 +5974,9 @@
                    (^[a b] (free-identifier=? (ensure-identifier a cenv)
                                               (ensure-identifier b cenv)))))))
 
+;; TRANSIENT: For the backward compatibility
 (define (%attach-inline-transformer module name xformer)
   (define proc (global-variable-ref module name #f))
-
   (unless proc
     (errorf "define-compiler-macro: procedure `~s' not defined in ~s"
             name module))
