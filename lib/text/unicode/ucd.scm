@@ -19,6 +19,7 @@
 (define-module text.unicode.ucd
   (use gauche.record)
   (use gauche.dictionary)
+  (use gauche.collection)
   (use gauche.uvector)
   (use gauche.charconv)
   (use gauche.generator)

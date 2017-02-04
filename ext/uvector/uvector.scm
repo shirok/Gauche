@@ -41,8 +41,142 @@
   (use gauche.collection)
   (use gauche.sequence)
   (use data.queue)
-  (export-all)
-  )
+  (export f16vector f16vector->list f16vector->vector
+          f16vector-add f16vector-add! f16vector-append
+          f16vector-clamp f16vector-clamp! f16vector-compare
+          f16vector-copy f16vector-copy! f16vector-div f16vector-div!
+          f16vector-dot f16vector-fill! f16vector-length
+          f16vector-mul f16vector-mul!
+          f16vector-multi-copy! f16vector-range-check
+          f16vector-ref f16vector-set! f16vector-sub f16vector-sub!
+          f16vector-swap-bytes f16vector-swap-bytes!
+          f16vector=? f16vector?
+
+          f32vector f32vector->list f32vector->vector
+          f32vector-add f32vector-add! f32vector-append
+          f32vector-clamp f32vector-clamp! f32vector-compare
+          f32vector-copy f32vector-copy! f32vector-div f32vector-div!
+          f32vector-dot f32vector-fill! f32vector-length
+          f32vector-mul f32vector-mul!
+          f32vector-multi-copy! f32vector-range-check
+          f32vector-ref f32vector-set! f32vector-sub f32vector-sub!
+          f32vector-swap-bytes f32vector-swap-bytes!
+          f32vector=? f32vector?
+
+          f64vector f64vector->list f64vector->vector f64vector-add
+          f64vector-add! f64vector-append f64vector-clamp f64vector-clamp!
+          f64vector-compare f64vector-copy f64vector-copy! f64vector-div
+          f64vector-div! f64vector-dot f64vector-fill! f64vector-length
+          f64vector-mul f64vector-mul! f64vector-multi-copy!
+          f64vector-range-check f64vector-ref f64vector-set! f64vector-sub
+          f64vector-sub! f64vector-swap-bytes f64vector-swap-bytes! f64vector=?
+          f64vector?
+
+          get-output-uvector
+
+          list->f16vector list->f32vector
+          list->f64vector list->s16vector list->s32vector list->s64vector
+          list->s8vector list->u16vector list->u32vector list->u64vector
+          list->u8vector
+
+          make-f16vector make-f32vector make-f64vector
+          make-s16vector make-s32vector make-s64vector make-s8vector
+          make-u16vector make-u32vector make-u64vector make-u8vector
+          make-uvector
+
+          open-output-uvector port->uvector read-block!
+          read-uvector read-uvector! referencer
+
+          s16vector s16vector->list
+          s16vector->vector s16vector-add s16vector-add! s16vector-and
+          s16vector-and! s16vector-append s16vector-clamp s16vector-clamp!
+          s16vector-compare s16vector-copy s16vector-copy! s16vector-dot
+          s16vector-fill! s16vector-ior s16vector-ior! s16vector-length
+          s16vector-mul s16vector-mul! s16vector-multi-copy!
+          s16vector-range-check s16vector-ref s16vector-set! s16vector-sub
+          s16vector-sub! s16vector-swap-bytes s16vector-swap-bytes!
+          s16vector-xor s16vector-xor! s16vector=? s16vector?
+
+          s32vector s32vector->list s32vector->string
+          s32vector->vector s32vector-add s32vector-add! s32vector-and
+          s32vector-and! s32vector-append s32vector-clamp s32vector-clamp!
+          s32vector-compare s32vector-copy s32vector-copy! s32vector-dot
+          s32vector-fill! s32vector-ior s32vector-ior! s32vector-length
+          s32vector-mul s32vector-mul! s32vector-multi-copy!
+          s32vector-range-check s32vector-ref s32vector-set! s32vector-sub
+          s32vector-sub! s32vector-swap-bytes s32vector-swap-bytes!
+          s32vector-xor s32vector-xor! s32vector=? s32vector?
+
+          s64vector s64vector->list
+          s64vector->vector s64vector-add s64vector-add! s64vector-and
+          s64vector-and! s64vector-append s64vector-clamp s64vector-clamp!
+          s64vector-compare s64vector-copy s64vector-copy! s64vector-dot
+          s64vector-fill! s64vector-ior s64vector-ior! s64vector-length
+          s64vector-mul s64vector-mul! s64vector-multi-copy!
+          s64vector-range-check s64vector-ref s64vector-set! s64vector-sub
+          s64vector-sub! s64vector-swap-bytes s64vector-swap-bytes!
+          s64vector-xor s64vector-xor! s64vector=? s64vector?
+
+          s8vector s8vector->list s8vector->string s8vector->vector
+          s8vector-add s8vector-add! s8vector-and s8vector-and! s8vector-append
+          s8vector-clamp s8vector-clamp! s8vector-compare s8vector-copy
+          s8vector-copy! s8vector-dot s8vector-fill! s8vector-ior s8vector-ior!
+          s8vector-length s8vector-mul s8vector-mul! s8vector-multi-copy!
+          s8vector-range-check s8vector-ref s8vector-set! s8vector-sub
+          s8vector-sub! s8vector-xor s8vector-xor! s8vector=? s8vector?
+
+          string->s32vector string->s32vector! string->s8vector
+          string->s8vector! string->u32vector string->u32vector!
+          string->u8vector string->u8vector!
+
+          u16vector u16vector->list
+          u16vector->vector u16vector-add u16vector-add! u16vector-and
+          u16vector-and! u16vector-append u16vector-clamp u16vector-clamp!
+          u16vector-compare u16vector-copy u16vector-copy! u16vector-dot
+          u16vector-fill! u16vector-ior u16vector-ior! u16vector-length
+          u16vector-mul u16vector-mul! u16vector-multi-copy!
+          u16vector-range-check u16vector-ref u16vector-set! u16vector-sub
+          u16vector-sub! u16vector-swap-bytes u16vector-swap-bytes!
+          u16vector-xor u16vector-xor! u16vector=? u16vector?
+
+          u32vector u32vector->list u32vector->string
+          u32vector->vector u32vector-add u32vector-add! u32vector-and
+          u32vector-and! u32vector-append u32vector-clamp u32vector-clamp!
+          u32vector-compare u32vector-copy u32vector-copy! u32vector-dot
+          u32vector-fill! u32vector-ior u32vector-ior! u32vector-length
+          u32vector-mul u32vector-mul! u32vector-multi-copy!
+          u32vector-range-check u32vector-ref u32vector-set! u32vector-sub
+          u32vector-sub! u32vector-swap-bytes u32vector-swap-bytes!
+          u32vector-xor u32vector-xor! u32vector=? u32vector?
+
+          u64vector u64vector->list u64vector->vector u64vector-add
+          u64vector-add! u64vector-and u64vector-and! u64vector-append
+          u64vector-clamp u64vector-clamp! u64vector-compare u64vector-copy
+          u64vector-copy! u64vector-dot u64vector-fill! u64vector-ior
+          u64vector-ior! u64vector-length u64vector-mul u64vector-mul!
+          u64vector-multi-copy! u64vector-range-check u64vector-ref
+          u64vector-set! u64vector-sub u64vector-sub! u64vector-swap-bytes
+          u64vector-swap-bytes! u64vector-xor u64vector-xor! u64vector=?
+          u64vector?
+
+          u8vector u8vector->list u8vector->string u8vector->vector
+          u8vector-add u8vector-add! u8vector-and u8vector-and! u8vector-append
+          u8vector-clamp u8vector-clamp! u8vector-compare u8vector-copy
+          u8vector-copy! u8vector-dot u8vector-fill! u8vector-ior u8vector-ior!
+          u8vector-length u8vector-mul u8vector-mul! u8vector-multi-copy!
+          u8vector-range-check u8vector-ref u8vector-set! u8vector-sub
+          u8vector-sub! u8vector-xor u8vector-xor! u8vector=? u8vector?
+
+          uvector-alias uvector-binary-search uvector-class-element-size
+          uvector-copy uvector-copy! uvector-ref uvector-set! uvector-size
+          uvector-swap-bytes uvector-swap-bytes!
+
+          vector->f16vector vector->f32vector vector->f64vector
+          vector->s16vector vector->s32vector vector->s64vector
+          vector->s8vector vector->u16vector vector->u32vector
+          vector->u64vector vector->u8vector
+
+          write-block write-uvector))
 (select-module gauche.uvector)
 
 ;; gauche.vport is used by port->uvector.  Technically it's on top

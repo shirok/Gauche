@@ -1,5 +1,13 @@
 2017-02-04  Shiro Kawai  <shiro@acm.org>
 
+	* ext/uvector/uvector.scm: Explicitly list exported symbols.
+	  Now that we have some internal symbols (macros, %s8vector-ref, etc),
+	  it's not appropriate to use (export-all).
+	  NB: This makes gauche.colleciton/sequnece symbols not transitively
+	  exported from gauche.uvector.  If a module using only gauche.uvector
+	  and refer to gauche.collection/sequence generic functions, it must
+	  use gauche.collection/sequence explicitly.
+
 	* ext/uvector/uvector.scm: Rewrite TAGvector-ref inlining with
 	  define-inline/syntax.
 
