@@ -1,5 +1,8 @@
 2017-02-04  Shiro Kawai  <shiro@acm.org>
 
+	* ext/uvector/uvector.scm: Rewrite TAGvector-ref inlining with
+	  define-inline/syntax.
+
 	* lib/gauche/cgen/precomp.scm: Allow define-inline/syntax to be
 	  precompiled.  (Currently only supports er-macro-transformer).
 	* src/libeval.scm (macro-name): Added accessor.

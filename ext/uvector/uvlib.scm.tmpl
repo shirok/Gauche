@@ -65,7 +65,7 @@
 
 ;; This is only called via apply.  The standard call will be inlined
 ;; as UVEC-REF instruction.
-(define-cproc ${t}vector-ref
+(define-cproc %${t}vector-ref
   (v::<${t}vector> i::<fixnum> :optional fallback) :fast-flonum
   (setter ${t}vector-set!)
   (return (Scm_VMUVectorRef v (Scm_UVectorType (Scm_ClassOf (SCM_OBJ v)))

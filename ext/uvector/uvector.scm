@@ -77,24 +77,26 @@
 
 (define-inline %uvector-ref (with-module gauche.internal %uvector-ref))
 
-(define-macro (set-reference-inliner ref type)
-  `(define-compiler-macro ,ref
-     (er-transformer
-      (^[x r c] (if (= (length x) 3)
-                  (list (r '%uvector-ref) (cadr x) ,type (caddr x))
-                  x)))))
+(define-macro (define-ref name type)
+  `(define-inline/syntax ,name
+     ,(symbol-append '% name)
+     (er-macro-transformer
+      (^[f r c]
+        (if (= (length f) 3)
+          (list (r '%uvector-ref) (cadr f) ,type (caddr f))
+          f)))))
 
-(set-reference-inliner s8vector-ref 0)
-(set-reference-inliner u8vector-ref 1)
-(set-reference-inliner s16vector-ref 2)
-(set-reference-inliner u16vector-ref 3)
-(set-reference-inliner s32vector-ref 4)
-(set-reference-inliner u32vector-ref 5)
-(set-reference-inliner s64vector-ref 6)
-(set-reference-inliner u64vector-ref 7)
-(set-reference-inliner f16vector-ref 8)
-(set-reference-inliner f32vector-ref 9)
-(set-reference-inliner f64vector-ref 10)
+(define-ref s8vector-ref 0)
+(define-ref u8vector-ref 1)
+(define-ref s16vector-ref 2)
+(define-ref u16vector-ref 3)
+(define-ref s32vector-ref 4)
+(define-ref u32vector-ref 5)
+(define-ref s64vector-ref 6)
+(define-ref u64vector-ref 7)
+(define-ref f16vector-ref 8)
+(define-ref f32vector-ref 9)
+(define-ref f64vector-ref 10)
 
 ;;;
 ;;; Generic procedures
