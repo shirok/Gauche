@@ -1,3 +1,7 @@
+2017-02-04  Shiro Kawai  <shiro@acm.org>
+
+	* src/libeval.scm (macro-name): Added accessor.
+
 2017-02-03  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm (define-inline/syntax): This may be the answer of

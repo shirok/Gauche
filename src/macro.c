@@ -92,6 +92,11 @@ ScmObj Scm_MacroTransformer(ScmMacro *mac)
     return mac->transformer;
 }
 
+ScmObj Scm_MacroName(ScmMacro *mac)
+{
+    return (mac->name? SCM_OBJ(mac->name) : SCM_FALSE);
+}
+
 /*===================================================================
  * SyntaxPattern object
  * Repesents a repeatable subpattern

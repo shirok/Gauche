@@ -434,6 +434,7 @@
   Scm_CompileSyntaxRules)
 
 (define-cproc macro-transformer (mac::<macro>) Scm_MacroTransformer)
+(define-cproc macro-name (mac::<macro>) Scm_MacroName)
 
 (define (call-macro-expander mac expr cenv)
   (let1 r ((macro-transformer mac) expr cenv)

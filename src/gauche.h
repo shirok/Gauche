@@ -1590,6 +1590,7 @@ SCM_CLASS_DECL(Scm_MacroClass);
 
 SCM_EXTERN ScmObj Scm_MakeMacro(ScmSymbol *name, ScmObj transformer);
 SCM_EXTERN ScmObj Scm_MacroTransformer(ScmMacro *mac);
+SCM_EXTERN ScmObj Scm_MacroName(ScmMacro *mac);
 
 SCM_EXTERN ScmObj Scm_MakeMacroTransformer(ScmSymbol *name,
                                            ScmObj proc);
