@@ -625,6 +625,8 @@
       ((with-module gauche.cgen.precomp handle-define-syntax) f))
     (define-macro (define-macro . f)
       ((with-module gauche.cgen.precomp handle-define-macro) f))
+    (define-macro (define-inline/syntax . f)
+      ((with-module gauche.cgen.precomp handle-define-inline/syntax) f))
     ;; TODO - we need more general framework supporting various declarations.
     ;; for the time being, this ad-hoc solution suffice our needs.
     (define-macro (declare . f)
@@ -694,6 +696,28 @@
              (write-ext-module `(define-syntax . ,form))
              #f)))]
     [_ (error "Malformed define-syntax" form)]))
+
+(define (handle-define-inline/syntax form)
+  (match form
+    [(name expr xformer-spec)
+     ;; KLUDGE: We treat NAME as a macro during compiling this unit, since
+     ;; we don't have the actual value of EXPR at compile-time.
+     (eval-in-current-tmodule
+      `((with-module gauche define-syntax) ,name ,xformer-spec))
+     ;; Now generate code.  NB: Once we make macro serializable, we won't
+     ;; need all these manual wiring.
+     (let1 val (global-variable-ref (~ (current-tmodule)'module) name #f)
+       (or (and-let* ([ ((with-module gauche.internal macro?) val) ]
+                      [tx ((with-module gauche.internal macro-transformer) val)]
+                      [ (closure? tx) ])
+             ;; TODO: Hygiene
+             `((with-module gauche define-inline) ,name
+               ((with-module gauche.internal %with-inline-transformer)
+                ,expr ,xformer-spec)))
+           (error "Currently, you can't use define-inline/syntax with \
+                   other than er-macro-transformer in precompiled file"
+                  form)))]
+    [_ (error "Malformed define-inline/syntax" form)]))
 
 (define (handle-define-constant form)
   (match form
@@ -981,13 +1005,30 @@
 ;; <macro>
 ;;
 
-;; NB: for now, we ignore macros (we assume they are only used within
-;; the source file).
-(define-cgen-literal <cgen-scheme-macro> <macro>
-  ()
-  (make (value)
-    (make <cgen-scheme-macro> :value value :c-name #f))
-  )
+;; Macro transformer is usually not a toplevel closure, for it is
+;; likely to close over macro definition environment for hygiene.
+;; We need to figure out better way to serialize macros.
+
+;; (define-cgen-literal <cgen-scheme-macro> <macro>
+;;   ([transformer :init-keyword :transformer] ; <cgen-closure>
+;;    [name :init-keyword :name])              ; maybe <cgen-symbol>
+;;   (make (value)
+;;     (let ([xf   ((with-module gauche.internal macro-transformer) value)]
+;;           [name ((with-module gauche.internal macro-name) value)])
+;;       (unless (toplevel-closure? xf)
+;;         (errorf "A macro ~s cannot be a compile-time constant since its \
+;;                  transformer is not a top-level closure: ~s" value xf))
+;;       (make <cgen-scheme-macro>
+;;         :value value :c-name (cgen-allocate-static-datum)
+;;         :transformer (cgen-literal xf)
+;;         :name (and name (cgen-literal name)))))
+;;   (init (self)
+;;     (format #t "  ~a = Scm_MakeMacroTransformer(~a, ~a); /* ~a */\n"
+;;             (cgen-cexpr self)
+;;             (if-let1 n (~ self'name) (cgen-cexpr n) "NULL")
+;;             (cgen-cexpr (~ self'transformer))
+;;             (cgen-safe-comment (write-to-string (~ self'value)))))
+;;   (static (self) #f))
 
 ;;----------------------------------------------------------------
 ;; <generic>

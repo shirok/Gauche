@@ -1,5 +1,7 @@
 2017-02-04  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/cgen/precomp.scm: Allow define-inline/syntax to be
+	  precompiled.  (Currently only supports er-macro-transformer).
 	* src/libeval.scm (macro-name): Added accessor.
 
 2017-02-03  Shiro Kawai  <shiro@acm.org>
