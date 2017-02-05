@@ -231,7 +231,7 @@
 (define-cproc toplevel-closure? (obj) ::<boolean>
   (return (and (SCM_CLOSUREP obj) (== (-> (SCM_CLOSURE obj) env) NULL))))
 
-(define-cproc closure-code (clo::<closure>) (return (-> clo code)))
+(define-cproc closure-code (clo::<closure>) (return (SCM_CLOSURE_CODE clo)))
 (define-cproc method-code (m::<method>)
   (if (-> m func)
     ;; code is not available for C-defined method
@@ -260,6 +260,9 @@
            (any (^m (apply method-applicable? m arg-types)) (~ proc'methods))]
           [(eq? c <method>)  (apply method-applicable? m arg-types)]
           [else (apply applicable? object-apply c arg-types)])))
+
+(select-module gauche.internal)
+(define-cproc %procedure-copy (p::<procedure>) Scm_CopyProcedure)
 
 (select-module gauche.internal)
 ;; Tester procedures

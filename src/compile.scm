@@ -5957,8 +5957,10 @@
     (error "define-inline/syntax: expression yields non-procedure value" proc))
   (unless (macro? xformer)
     (errorf "macro required, but got" xformer))
-  (set! (%procedure-inliner proc) xformer)
-  proc)
+  ;; Copy PROC, in case the given proc refers to already defined global
+  ;; procedure.  We don't want to modify existing procedure instance.
+  (rlet1 p (%procedure-copy proc)
+    (set! (%procedure-inliner p) xformer)))
 
 ;; TRANSIENT: For the backward compatibility
 (define (%bind-inline-er-transformer module name er-xformer)

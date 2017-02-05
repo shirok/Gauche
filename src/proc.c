@@ -129,6 +129,50 @@ ScmObj Scm_NullProc(void)
 }
 
 /*=================================================================
+ * Copying
+ */
+
+/* Procedure is inherently an immutable entity, so copying doesn't
+   make much sense.  However, sometimes we do need to mutate procedure
+   instances to add various bookkeeping infos during construction,
+   and it comes handy to do "copy, then modify" workflow. */
+ScmObj Scm_CopyProcedure(ScmProcedure *proc)
+{
+    ScmObj n = SCM_UNDEFINED;
+    
+    switch (proc->type) {
+    case SCM_PROC_SUBR:
+        n = Scm_MakeSubr(SCM_SUBR_FUNC(proc),
+                         SCM_SUBR_DATA(proc),
+                         SCM_PROCEDURE_REQUIRED(proc),
+                         SCM_PROCEDURE_OPTIONAL(proc),
+                         SCM_PROCEDURE_INFO(proc));
+        SCM_PROCEDURE_INLINER(n) = SCM_PROCEDURE_INLINER(proc);
+        SCM_PROCEDURE_SETTER(n) = SCM_PROCEDURE_SETTER(proc);
+        SCM_PROCEDURE_SETTER_LOCKED(n) = SCM_PROCEDURE_SETTER_LOCKED(proc);
+        SCM_PROCEDURE_CURRYING(n) = SCM_PROCEDURE_CURRYING(proc);
+        SCM_SUBR_FLAGS(n) = SCM_SUBR_FLAGS(proc);
+        break;
+    case SCM_PROC_CLOSURE:
+        n = Scm_MakeClosure(SCM_CLOSURE_CODE(proc),
+                            SCM_CLOSURE_ENV(proc));
+        SCM_PROCEDURE_INLINER(n) = SCM_PROCEDURE_INLINER(proc);
+        SCM_PROCEDURE_SETTER(n) = SCM_PROCEDURE_SETTER(proc);
+        SCM_PROCEDURE_SETTER_LOCKED(n) = SCM_PROCEDURE_SETTER_LOCKED(proc);
+        SCM_PROCEDURE_CURRYING(n) = SCM_PROCEDURE_CURRYING(proc);
+        break;
+    case SCM_PROC_GENERIC:
+    case SCM_PROC_METHOD:
+    case SCM_PROC_NEXT_METHOD:
+        /* CLOS is inherently mutable and relies on object identity;
+           copying won't make much sense. */
+        Scm_Error("procedure-copy can only copy subr or closure: %S",
+                  SCM_OBJ(proc));
+    }
+    return n;
+}
+
+/*=================================================================
  * Currying
  */
 

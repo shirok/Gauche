@@ -1388,6 +1388,7 @@ SCM_CLASS_DECL(Scm_ProcedureClass);
     { { klass }, (req), (opt), (typ), FALSE, FALSE, cst, 0,              \
       (inf), SCM_FALSE, (inl) }
 
+SCM_EXTERN ScmObj Scm_CopyProcedure(ScmProcedure *proc);
 SCM_EXTERN ScmObj Scm_CurryProcedure(ScmObj proc, ScmObj *given,
                                      int ngiven, int foldlen);
 
@@ -1401,6 +1402,8 @@ struct ScmClosureRec {
 #define SCM_CLOSUREP(obj) \
     (SCM_PROCEDUREP(obj)&&(SCM_PROCEDURE_TYPE(obj)==SCM_PROC_CLOSURE))
 #define SCM_CLOSURE(obj)           ((ScmClosure*)(obj))
+#define SCM_CLOSURE_CODE(obj)      SCM_CLOSURE(obj)->code
+#define SCM_CLOSURE_ENV(obj)       SCM_CLOSURE(obj)->env
 
 SCM_EXTERN ScmObj Scm_MakeClosure(ScmObj code, ScmEnvFrame *env);
 

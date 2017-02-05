@@ -2343,8 +2343,8 @@ static ScmObj method_initialize(ScmNextMethod *nm, ScmObj *argv, int argc,
     m->generic = g;
     m->specializers = specarray;
     m->func = NULL;
-    m->data = SCM_CLOSURE(body)->code;
-    m->env = SCM_CLOSURE(body)->env;
+    m->data = SCM_CLOSURE_CODE(body);
+    m->env = SCM_CLOSURE_ENV(body);
 
     SCM_METHOD_LOCKED(m) = SCM_BOOL_VALUE(locked);
 

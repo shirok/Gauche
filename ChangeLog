@@ -1,5 +1,11 @@
 2017-02-04  Shiro Kawai  <shiro@acm.org>
 
+	* src/proc.c (Scm_CopyProcedure), src/libproc.scm (%procedure-copy):
+	  Added in order to avoid bookkeeping operation would modify
+	  existing procedure instances.  This should only be used by
+	  internal procedures that needs to mutate procedure instance,
+	  such as %with-inline-transformer.
+
 	* ext/uvector/uvector.scm: Explicitly list exported symbols.
 	  Now that we have some internal symbols (macros, %s8vector-ref, etc),
 	  it's not appropriate to use (export-all).
