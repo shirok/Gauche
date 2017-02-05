@@ -690,9 +690,10 @@
   ((with-module gauche.internal %vm-parameter-set!) index #f value))
 
 ;;;
-;;;Tentative compiler macro
+;;; OBSOLETED - Tentative compiler macro 
 ;;;
 
+;;  Use define-inline/syntax instead.
 ;;
 ;;  (define-compiler-macro <name> <transformer>)
 ;;
@@ -705,17 +706,12 @@
 ;;
 ;;    (er-transformer
 ;;     (lambda (form rename compare) ...)))
-;;
-;;  This resembles er-macro-transformer, but in fact we dispatch to a
-;;  half-baked temporary implementation of macro transformer; it is
-;;  for internal optimization experiment until the 'real' macro system
-;;  is in place.   It'll be dropped once we have revised macro system,
-;;  and user code shouldn't use it.
 
 (select-module gauche)
 
 ;; API
 (define-macro (define-compiler-macro name xformer-spec)
+  (warn "define-compiler-macro is obsoleted.  Use define-inline/syntax.")
   (if (and (= (length xformer-spec) 2)
            (eq? (unwrap-syntax (car xformer-spec)) 'er-transformer))
     `((with-module gauche.internal %bind-inline-er-transformer)

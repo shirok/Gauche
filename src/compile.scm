@@ -5962,7 +5962,8 @@
   (rlet1 p (%procedure-copy proc)
     (set! (%procedure-inliner p) xformer)))
 
-;; TRANSIENT: For the backward compatibility
+;; TRANSIENT: This is only used via obsoleted define-compiler-macro.
+;; Remove this when we remove define-compiler-macro.
 (define (%bind-inline-er-transformer module name er-xformer)
   (define macro-def-cenv (%make-cenv module '()))
   ($ %attach-inline-transformer module name
@@ -5976,7 +5977,8 @@
                    (^[a b] (free-identifier=? (ensure-identifier a cenv)
                                               (ensure-identifier b cenv)))))))
 
-;; TRANSIENT: For the backward compatibility
+;; TRANSIENT: This is only used via obsoleted define-compiler-macro.
+;; Remove this when we remove define-compiler-macro.
 (define (%attach-inline-transformer module name xformer)
   (define proc (global-variable-ref module name #f))
   (unless proc
