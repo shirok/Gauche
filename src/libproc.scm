@@ -262,9 +262,6 @@
           [else (apply applicable? object-apply c arg-types)])))
 
 (select-module gauche.internal)
-(define-cproc %procedure-copy (p::<procedure>) Scm_CopyProcedure)
-
-(select-module gauche.internal)
 ;; Tester procedures
 ;;   These are not meant to be used in the actual Scheme code.  They're
 ;;   here to test particular C APIs which wouldn't be called from normal
