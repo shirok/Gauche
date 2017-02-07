@@ -1,3 +1,21 @@
+2017-02-06  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.scm: Replaced procedural inliner calling convention
+	  (prev: Sexpr, Cenv -> IForm, now: Src, IForm -> IForm).  This allows
+	  pass3/late-inline to call procedural inliner as well, opening
+	  more opportunities for optimization.  Example:
+
+	  (define-inline (foo ref) (^x (ref x 0)))
+	  (disasm (foo vector-ref))
+	  CLOSURE #<closure (foo x)>
+	  === main_code (name=foo, code=0x2300fa0, size=3, const=0 stack=0):
+	  signatureInfo: ((foo x))
+	       0 LREF0                    ; x
+	       1 VEC-REFI(0)              ; (ref x 0)
+	       2 RET
+
+	  The vector-ref call wasn't inlined before.
+
 2017-02-04  Shiro Kawai  <shiro@acm.org>
 
 	* src/proc.c (Scm_CopyProcedure), src/libproc.scm (%procedure-copy):
