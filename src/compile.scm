@@ -5989,21 +5989,11 @@
   ;; after the compiler macro finishes its job.
   (let1 orig-inliner (%procedure-inliner proc)
     (when (procedure? orig-inliner)
-      (warn "Attaching a compiler macro to ~a clobbers previously attached \
-             inline transformers." proc))
-    (set! (%procedure-inliner proc)
-          (^[form cenv]
-            (let1 r (xformer form cenv)
-              (cond [(eq? form r) ; no inline operation is triggered.
-                     (if (vector? orig-inliner)
-                       (expand-inlined-procedure form
-                                                 (unpack-iform orig-inliner)
-                                                 (imap (cut pass1 <> cenv)
-                                                       (cdr form)))
-                       (undefined))]
-                    [else (pass1 r cenv)])))))
+      (error "Attaching a compiler macro to ~a clobbers previously attached \
+              inline transformers." proc))
+    (set! (%procedure-inliner proc) (make-macro-transformer name xformer)))
   (%mark-binding-inlinable! module name)
-  name)    
+  name)
 
 ;;============================================================
 ;; Macro support basis
