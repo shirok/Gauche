@@ -5991,7 +5991,7 @@
     (when (procedure? orig-inliner)
       (error "Attaching a compiler macro to ~a clobbers previously attached \
               inline transformers." proc))
-    (set! (%procedure-inliner proc) (make-macro-transformer name xformer)))
+    (set! (%procedure-inliner proc) (%make-macro-transformer name xformer)))
   (%mark-binding-inlinable! module name)
   name)
 

@@ -424,9 +424,12 @@
 (define-cproc macro? (obj) ::<boolean> SCM_MACROP)
 (define-cproc syntax? (obj) ::<boolean> SCM_SYNTAXP)
 
+;; TRANSIENT: Legacy macro transformer.
+;; proc :: Arg, ... -> Sexpr
 (define-cproc make-macro-transformer (name::<symbol> proc::<procedure>)
   Scm_MakeMacroTransformerOld)
 
+;; proc :: Sexpr, Cenv -> Sexpr
 (define-cproc %make-macro-transformer (name::<symbol>? proc)
   Scm_MakeMacro)
 
