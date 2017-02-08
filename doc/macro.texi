@@ -665,33 +665,67 @@ used to define alias of existing macro or syntax keyword.
 @defspec syntax-rules (literal @dots{}) clause clause2 @dots{}
 @defspecx syntax-rules ellipsis (literal @dots{}) clause clause2 @dots{}
 [R7RS]
+@c EN
 This form creates a macro transformer by pattern matching.
 
 Each @var{clause} has the following form:
+@c JP
+パターンマッチングによるマクロ変換器を作ります。
+
+各@var{clause}は次の形式です。
+@c COMMON
 
 @example
 (@var{pattern} @var{template})
 @end example
 
+@c EN
 A @var{pattern} denotes a pattern to be matched to the macro call.
 It is an S-expression that matches if the macro call has the same
 structure, except that symbols in @var{pattern} can match a whole subtree
 of the input; the matched symbol is called a @emph{pattern variable},
 and can be referenced in the @var{template}.
+@c JP
+@var{pattern}はマクロ呼び出しにマッチすべきパターンを記述します。
+パターンはS式で、マクロ呼び出しの式と同じ構造を持っている場合にマッチします。
+但し、パターン中のシンボルは@emph{パターン変数}と呼ばれ、
+マクロ呼び出し式の対応する任意の部分木とマッチし、
+@var{template}の中でマッチした部分木を参照するのに使えます。
+@c COMMON
 
+@c EN
 For example, if a pattern is @code{(_ "foo" (a b))}, it can match the
 macro call @code{(x "foo" (1 2))}, or @code{(x "foo" (1 (2 3)))}, but does
 not match @code{(x "bar" (1 2))}, @code{(x "foo" (1))} or
 @code{(x "foo" (1 2) 3)}.  You can also match repeating structure or
 literal symbols; we'll discuss it fully later.
+@c JP
+例えば、パターンが@code{(_ "foo" (a b))}であったとすると、それは
+@code{(x "foo" (1 2))}や@code{(x "foo" (1 (2 3)))}といったマクロ呼び出しとマッチしますが、
+@code{(x "bar" (1 2))}、@code{(x "foo" (1))}、@code{(x "foo" (1 2) 3)}とは
+マッチしません。
+さらに、後で説明するように、繰り返しのある構造やリテラルシンボルとマッチするような記述も可能です。
+@c COMMON
 
+@c EN
 Clauses are examined in order to see if the macro call form matches
 its pattern.  If matching pattern is found, the corresponding @var{template}
 replaces the macro call form.  A pattern variable in the template is
 replaced with the subtree of input that is bound to the pattern variable.
+@c JP
+@var{clause}は順番に、そのパターンにマクロ呼び出しとマッチするかが検査されます。
+マッチするパターンが見つかれば、対応する@var{template}でマクロ呼び出しの式が
+置き換えられます。@var{template}中のパターン変数は、
+マクロ呼び出し式のその変数にマッチした部分木で置き換えられます。
+@c COMMON
 
+@c EN
 Here's a definition of @code{when} macro in @ref{Why hygienic?},
 using @code{syntax-rules}:
+@c JP
+これは@ref{Why hygienic?}で例に出した@code{when}マクロを
+@code{syntax-rules}で書いたものです:
+@c COMMON
 
 @example
 (define-syntax when
@@ -699,56 +733,123 @@ using @code{syntax-rules}:
     [(_ test body ...) (if test (begin body ...))]))
 @end example
 
+@c EN
 The pattern is @code{(_ test body ...)}, and the template is
 @code{(if test (begin body ...))}.
 The ellipsis @code{...} is a symbol; we're not omitting code here.
 It denotes that the previous pattern (@code{body}) may
 repeat zero or more times.
+@c JP
+パターンが@code{(_ test body ...)}で、
+テンプレートが@code{(if test (begin body ...))}です。
+@code{...} (エリプシス) は、記述を省略しているわけではなく、
+ピリオド3つからなる名前を持つシンボルです。
+これは直前のパターン(@code{body})がゼロ個以上繰り替えされるということを示します。
+@c COMMON
 
+@c EN
 So, if the @code{when} macro is called as
 @code{(when (zero? x) (print "huh?") (print "we got zero!"))},
 the macro expander first check if the input matches the pattern.
+@c JP
+@code{when}マクロが
+@code{(when (zero? x) (print "huh?") (print "we got zero!"))}
+という形で呼び出されたとしまそう。
+マクロ展開器はまず、この入力がパターンとマッチするかどうかを調べます。
+@c COMMON
 
 @itemize @bullet
 @item
+@c EN
 The @var{test} in pattern matches the input @code{(zero? x)}.
+@c JP
+パターン中の@var{test}は入力の@code{(zero? x)}とマッチ。
+@c COMMON
 @item
+@c EN
 The @var{body} in pattern matches the input @code{(print "huh?")} 
 @emph{and} @code{(print "we got zero!")}.
+@c JP
+パターン中の@var{body}は入力の@code{(print "huh?")}および@code{(print "we got zero!")}とマッチ
+@c COMMON
 @end itemize
 
+@c EN
 The matching of @var{body} is a bit tricky; as a pattern variable,
 you may think that @var{body} works like an array variable, each element
-holds each match---but you can only expand it one at a time in template.
+holds each match---and you can use them in similarly
+repeating substructures in template.
 Let's see the template, now that the input fully matched the pattern.
+@c JP
+@var{body}とのマッチングはちょっとややこしいです。
+パターン変数@var{body}は配列のようなものだと考えても良いでしょう。
+配列の各要素がマッチする入力の部分木を保持します。
+その値は、テンプレート中の似たような繰り返し部分構造の中で使うことができます。
+ここまでで入力がパターンにマッチしたので、テンプレートの方を見てみましょう。
+@c COMMON
 
 @itemize @bullet
 @item
-In the template, @code{if} and @code{begin} are not pattern variable.
+@c EN
+In the template, @code{if} and @code{begin} are not pattern variable,
+since they are not appeared in the pattern.
 So they are inserted as identifiers---that is, hygienic symbols effectively
 renamed to make sure to refer to the global @code{if} and @code{begin},
 and will be unaffected by the macro use environment.
+@c JP
+テンプレート中の@code{if}と@code{begin}はパターン中に現れていないので
+パターン変数ではありません。従って、識別子として出力に挿入されます。
+ここで、識別子@code{if}や@code{begin}はこのマクロのスコープから見えるグローバルな
+@code{if}や@code{begin}を常に参照できるように、衛生的に扱われます。
+マクロが使われた場所で@code{if}や@code{begin}がシャドウされていたとしても影響を受けません。
+@c COMMON
 @item
+@c EN
 The @var{test} in the template is a pattern variable, so it is replaced
 for the matched value, @code{(zero? x)}.
+@c JP
+テンプレート中の@var{test}はパターン変数なので、マッチした値である@code{(zero? x)}へと
+置き換えられます。
+@c COMMON
 @item
+@c EN
 The @var{body} is also a pattern variable.  The important point is
 that it is also followed by ellipsis.  So we repeat @var{body} as many
 times as the number of matched values.
 The first value, @code{(print "huh?")}, and the second value,
 @code{(print "we got zero!")}, are expanded here.
+@c JP
+@var{body}もパターン変数です。重要な点はここでも@var{body}の後にエリプシスがあることで、
+@var{body}はパターン変数にマッチした値のぶんだけ繰り返されます。
+最初のマッチした値である@code{(print "huh?")}と、次の
+@code{(print "we got zero!")}とがここに展開されます。
+@c COMMON
 @item
+@c EN
 Hence, we get
 @code{(if (zero? x) (begin (print "huh?") (print "we got zero!")))}
 as the result of expansion.  (With the note that @code{if} and @code{begin}
-refers to the global identifiers.)
+refers to the identifiers visible from the macro definition environment.)
+@c JP
+以上から、最終的な展開結果として
+@code{(if (zero? x) (begin (print "huh?") (print "we got zero!")))}
+が得られます (このうち、@code{if}と@code{begin}は
+マクロ定義環境から見える識別子を指すようになっています)。
+@c COMMON
 @end itemize
 
+@c EN
 The expansion of ellipses is quite powerful.  In the template,
 the ellipses don't need to follow the sequence-valued pattern variable
 immediately; the variable can be in a substructure, as long as the
 substructure itself is followed by an ellipsis.
 See the following example:
+@c JP
+エリプシスを使った展開はかなり強力です。
+テンプレート中で、エリプシスは複数の値を持つパターン変数の直後にある必要はありません。
+そういった変数を中に含む部分構造をエリプシスで繰り返すことも可能です。
+次の例を見てください。
+@c COMMON
 
 @example
 (define show
@@ -759,13 +860,21 @@ See the following example:
        ...)]))
 @end example
 
+@c EN
 If you call this macro as follows:
+@c JP
+このマクロを次のように呼ぶと:
+@c COMMON
 
 @example
 (show (+ 1 2) (/ 3 4))
 @end example
 
+@c EN
 It is expanded to the following form, modulo hygienity:
+@c JP
+以下のとおりに展開されます (シンボルの衛生性は保たれているとします)。
+@c COMMON
 
 @example
 (begin
@@ -773,16 +882,25 @@ It is expanded to the following form, modulo hygienity:
   (begin (write '(/ 3 4)) (display "=") (write (/ 3 4)) (newline)))
 @end example
 
+@c EN
 So you'll get this output.
+@c JP
+これを実行すれば、以下の出力が得られるでしょう。
+@c COMMON
 
 @example
 (+ 1 2)=3
 (/ 3 4)=3/4
 @end example
 
+@c EN
 You can also match with a repetition of substructures in the pattern.
 The following example is a simplified @code{let} that expands to
 @code{lambda}:
+@c JP
+また、パターン中の部分構造を繰り返しマッチするのにも使えます。
+次の例は@code{let}を@code{lambda}に展開する、簡略化した例です:
+@c COMMON
 
 @example
 (define-syntax my-let
@@ -791,10 +909,17 @@ The following example is a simplified @code{let} that expands to
      ((lambda (var ...) body ...) init ...)]))
 @end example
 
+@c EN
 If you call it as @code{(my-let ((a expr1) (b expr2)) foo)},
 then @var{var} is matched to @code{a} and @code{b},
 while @var{init} is matched to @code{expr1} and @code{expr2}, respectively.
 They can be used separately in the template.
+@c JP
+このマクロを@code{(my-let ((a expr1) (b expr2)) foo)}のように呼び出すと、
+@var{var}は@code{a}および@code{b}に、
+@var{init}は@code{expr1}および@code{expr2}にそれぞれマッチします。
+@var{var}と@var{init}はテンプレート中でばらばに使うことができます。
+@c COMMON
 @end defspec
 
 @node Explicit-renaming macro transformer,  , Syntax-rules pattern langauge, Hygienic macros
