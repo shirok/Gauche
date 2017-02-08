@@ -1,3 +1,20 @@
+2017-02-07  Shiro Kawai  <shiro@acm.org>
+
+	* src/libeval.scm (call-macro-expander, %source-info): Save source
+	  information of the macro input in 'original pair-attr instead of
+	  'macro-input; the compiler-transformation and other introspection
+	  utilities use 'original so let's be consistent.
+	  For example, with this change, 'describe' can show source location
+	  of the closure created by macro expanded code:
+
+	  gosh> (define (foo x)
+	          (^y (+ x y)))
+	  foo
+	  gosh> ,d (foo 3)
+	  #<closure ((foo foo) y)> is an instance of class <procedure>
+	  Defined at "(standard input)":2
+	  ...
+
 2017-02-06  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm: Replaced procedural inliner calling convention

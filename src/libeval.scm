@@ -445,7 +445,7 @@
       (rlet1 p (if (extended-pair? r)
                  r
                  (extended-cons (car r) (cdr r)))
-        (pair-attribute-set! p 'macro-input expr))
+        (pair-attribute-set! p 'original expr))
       r)))
 
 (define-cproc make-syntax (name::<symbol> proc)
@@ -650,7 +650,7 @@
   (let loop ([obj obj] [r '()])
     (if (pair? obj)
       (let1 si (pair-attribute-get obj 'source-info '(#f #f))
-        (if-let1 mi (pair-attribute-get obj 'macro-input #f)
+        (if-let1 mi (pair-attribute-get obj 'original #f)
           (loop mi `((,(car si) ,(cadr si) ,obj) ,@r))
           (reverse r `((,(car si) ,(cadr si) ,obj)))))
       '())))
