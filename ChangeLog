@@ -1,3 +1,9 @@
+2017-02-10  Shiro Kawai  <shiro@acm.org>
+
+	* doc/makedoc.scm: Check makeinfo version for html/htmls targets;
+	  they require newer version of makeinfo.  It's perplexing for
+	  the users when they get error from older makeinfo.
+
 2017-02-07  Shiro Kawai  <shiro@acm.org>
 
 	* src/libeval.scm (call-macro-expander, %source-info): Save source

@@ -1,6 +1,7 @@
 ;; -*- coding:utf-8 -*-
 
 (use gauche.process)
+(use gauche.version)
 (use file.util)
 (use util.match)
 (use srfi-13)
@@ -45,6 +46,15 @@
       `("cmd.exe" "/c" ,@cmd-list))]
    [else cmd-list]))
 
+(define (check-makeinfo-version makeinfo min-version)
+  (and-let* ([ makeinfo ]
+             [msg (process-output->string (make-cmd `(,makeinfo --version)))]
+             [vers (rxmatch->string #/\d+\.\d+(\.\d+)?/ msg)])
+    (rlet1 b (version<=? min-version vers)
+      (unless b
+        (warn "makeinfo version ~a or greater is required, but ~a's \
+               version is ~a.  Skipping.\n" min-version makeinfo vers)))))
+
 (define (do-info input makeinfo gzip)
   (define info (path-swap-extension input "info"))
   (or (string-null? makeinfo)
@@ -55,6 +65,7 @@
 
 (define (do-html input makeinfo)
   (or (string-null? makeinfo)
+      (not (check-makeinfo-version makeinfo "5.0"))
       (do-process (make-cmd
                    `(,makeinfo "--html"
                                "--no-split"
@@ -68,6 +79,7 @@
                      "https://practical-scheme.net/gauche/memo-j.html"
                      "https://practical-scheme.net/gauche/memo.html"))
   (or (string-null? makeinfo)
+      (not (check-makeinfo-version makeinfo "5.0"))
       (do-process (make-cmd
                    `(,makeinfo "--html"
                                "--split=section"
