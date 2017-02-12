@@ -47,14 +47,14 @@ You need the following software:
    - pkg-config
    - make
 
-   The following packages are strongly recommended.  Gauche can built
+   The following packages are strongly recommended.  Gauche can be built
    without them, but some features will not be available.
 
    - mingw-w64-x86_64-zlib / mingw-w64-i686-zlib
    - mingw-w64-x86_64-libiconv / mingw-w64-i686-libiconv
    - texinfo
 
-   NOTE: pacman tries to install packages under c:/msys2/mingw64 etc,
+   NOTE: pacman tries to install packages under c:/msys64/mingw64 etc,
    but sometimes the first attempt fails saying:
 
       error: failed to commit transaction (conflicting files)
