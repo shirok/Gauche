@@ -98,6 +98,7 @@ extern void Scm_Init_libfmt(void);
 extern void Scm_Init_libio(void);
 extern void Scm_Init_liblazy(void);
 extern void Scm_Init_liblist(void);
+extern void Scm_Init_libmac(void);
 extern void Scm_Init_libmisc(void);
 extern void Scm_Init_libmod(void);
 extern void Scm_Init_libnum(void);
@@ -184,6 +185,7 @@ void Scm_Init(const char *signature)
     Scm_Init_libio();
     Scm_Init_liblazy();
     Scm_Init_liblist();
+    Scm_Init_libmac();
     Scm_Init_libmisc();
     Scm_Init_libmod();
     Scm_Init_libnum();

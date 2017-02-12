@@ -36,11 +36,9 @@
 (inline-stub
  (declcode (.include <gauche/vminsn.h>
                      <gauche/class.h>
-                     <gauche/priv/macroP.h>
                      <gauche/priv/readerP.h>)))
 
-(declare (keep-private-macro autoload add-load-path
-                             define-compiler-macro))
+(declare (keep-private-macro autoload add-load-path))
 
 ;;;
 ;;; Eval
@@ -399,70 +397,6 @@
       (if (fixnum? r) r 70))))
 
 ;;;
-;;; Macros
-;;;
-
-(select-module gauche.internal)
-;; API
-(define-in-module gauche (macroexpand form)
-  (%internal-macro-expand form (make-cenv (vm-current-module)) #f))
-;; API
-(define-in-module gauche (macroexpand-1 form)
-  (%internal-macro-expand form (make-cenv (vm-current-module)) #t))
-
-(select-module gauche)
-;; API
-(define-cproc unwrap-syntax (form) Scm_UnwrapSyntax)
-
-(select-module gauche.internal)
-(inline-stub
- (define-type <macro> "ScmMacro*" "macro"
-   "SCM_MACROP" "SCM_MACRO" "SCM_OBJ")
- )
-
-;; These are used in the compiler, and hidden inside gauche.internal.
-(define-cproc macro? (obj) ::<boolean> SCM_MACROP)
-(define-cproc syntax? (obj) ::<boolean> SCM_SYNTAXP)
-
-;; TRANSIENT: Legacy macro transformer.
-;; proc :: Arg, ... -> Sexpr
-(define-cproc make-macro-transformer (name::<symbol> proc::<procedure>)
-  Scm_MakeMacroTransformerOld)
-
-;; proc :: Sexpr, Cenv -> Sexpr
-(define-cproc %make-macro-transformer (name::<symbol>? proc)
-  Scm_MakeMacro)
-
-(define-cproc compile-syntax-rules (name ellipsis literals rules mod env)
-  Scm_CompileSyntaxRules)
-
-(define-cproc macro-transformer (mac::<macro>) Scm_MacroTransformer)
-(define-cproc macro-name (mac::<macro>) Scm_MacroName)
-
-(define (call-macro-expander mac expr cenv)
-  (let1 r ((macro-transformer mac) expr cenv)
-    (if (and (pair? r) (not (eq? expr r)))
-      (rlet1 p (if (extended-pair? r)
-                 r
-                 (extended-cons (car r) (cdr r)))
-        (pair-attribute-set! p 'original expr))
-      r)))
-
-(define-cproc make-syntax (name::<symbol> proc)
-  Scm_MakeSyntax)
-
-(define-cproc make-syntactic-closure (env literals expr)
-  Scm_MakeSyntacticClosure)
-
-(define-cproc call-syntax-handler (syn program cenv)
-  (SCM_ASSERT (SCM_SYNTAXP syn))
-  (return (Scm_VMApply2 (-> (SCM_SYNTAX syn) handler) program cenv)))
-
-(define-cproc syntax-handler (syn)
-  (SCM_ASSERT (SCM_SYNTAXP syn))
-  (return (-> (SCM_SYNTAX syn) handler)))
-
-;;;
 ;;; System termination
 ;;;
 
@@ -692,35 +626,3 @@
 (define (%vm-parameter-set! index id value)
   ((with-module gauche.internal %vm-parameter-set!) index #f value))
 
-;;;
-;;; OBSOLETED - Tentative compiler macro 
-;;;
-
-;;  Use define-inline/syntax instead.
-;;
-;;  (define-compiler-macro <name> <transformer>)
-;;
-;;  The <transformer> is the same as macro transformers, except that
-;;  <transformer> can return the given form untouched if it gives up
-;;  expansion.
-;;
-;;  For the backward compatilibity, the following form is also recognized
-;;  as <transfomer>:
-;;
-;;    (er-transformer
-;;     (lambda (form rename compare) ...)))
-
-(select-module gauche)
-
-;; API
-(define-macro (define-compiler-macro name xformer-spec)
-  (warn "define-compiler-macro is obsoleted.  Use define-inline/syntax.")
-  (if (and (= (length xformer-spec) 2)
-           (eq? (unwrap-syntax (car xformer-spec)) 'er-transformer))
-    `((with-module gauche.internal %bind-inline-er-transformer)
-      (current-module) ',name ,(cadr xformer-spec))
-    `((with-module gauche.internal %attach-inline-transformer)
-      (current-module) ',name
-      (^[form cenv]
-        ((with-module gauche.internal call-macro-expander)
-         ,xformer-spec form cenv)))))

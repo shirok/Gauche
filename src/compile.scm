@@ -5942,39 +5942,6 @@
   (rlet1 p (%procedure-copy proc)
     (set! (%procedure-inliner p) xformer)))
 
-;; TRANSIENT: This is only used via obsoleted define-compiler-macro.
-;; Remove this when we remove define-compiler-macro.
-(define (%bind-inline-er-transformer module name er-xformer)
-  (define macro-def-cenv (%make-cenv module '()))
-  ($ %attach-inline-transformer module name
-     (^[form cenv]
-       ;; Call the transformer with rename and compare procedure,
-       ;; just like explicit renaming macro.  However, THE CURRENT
-       ;; CODE DOES NOT IMPLEMENT PROPER SEMANTICS.  They're just
-       ;; placeholders for experiment.
-       (er-xformer form
-                   (cut ensure-identifier <> macro-def-cenv)
-                   (^[a b] (free-identifier=? (ensure-identifier a cenv)
-                                              (ensure-identifier b cenv)))))))
-
-;; TRANSIENT: This is only used via obsoleted define-compiler-macro.
-;; Remove this when we remove define-compiler-macro.
-(define (%attach-inline-transformer module name xformer)
-  (define proc (global-variable-ref module name #f))
-  (unless proc
-    (errorf "define-compiler-macro: procedure `~s' not defined in ~s"
-            name module))
-  ;; If PROC is defined by define-inline (thus have a packed IForm in
-  ;; %procedure-inliner), we keep it and applies expand-inline-procedure
-  ;; after the compiler macro finishes its job.
-  (let1 orig-inliner (%procedure-inliner proc)
-    (when (procedure? orig-inliner)
-      (error "Attaching a compiler macro to ~a clobbers previously attached \
-              inline transformers." proc))
-    (set! (%procedure-inliner proc) (%make-macro-transformer name xformer)))
-  (%mark-binding-inlinable! module name)
-  name)
-
 ;;============================================================
 ;; Macro support basis
 ;;

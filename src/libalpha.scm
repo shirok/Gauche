@@ -37,7 +37,8 @@
 (select-module gauche.internal)
 
 (inline-stub
- (declcode (.include <gauche/vminsn.h>)))
+ (declcode (.include <gauche/vminsn.h>
+                     <gauche/priv/macroP.h>)))
 
 ;;;
 ;;;  errors
@@ -263,3 +264,13 @@
                     (if-let1 proc (vector-ref dispatch-vec i)
                       (loop (cons `(,(+ min-args i) #f ,proc) r) (+ i 1))
                       (loop r (+ i 1))))))))))
+
+;;;
+;;; This is needed before we use define-macro.
+;;;
+
+(with-module gauche.internal)
+;; TRANSIENT: Legacy macro transformer.
+;; proc :: Arg, ... -> Sexpr
+(define-cproc make-macro-transformer (name::<symbol> proc::<procedure>)
+  Scm_MakeMacroTransformerOld)

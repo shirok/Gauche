@@ -209,8 +209,8 @@ libgauche_OBJECTS = \
 	compile.$(OBJEXT) \
 	libalpha.$(OBJEXT) libbool.$(OBJEXT) libchar.$(OBJEXT) \
 	libcode.$(OBJEXT) libcmp.$(OBJEXT) libdict.$(OBJEXT) libeval.$(OBJEXT) \
-	libexc.$(OBJEXT) libfmt.$(OBJEXT) \
-	libio.$(OBJEXT) liblazy.$(OBJEXT) liblist.$(OBJEXT) \
+	libexc.$(OBJEXT) libfmt.$(OBJEXT) libio.$(OBJEXT) \
+	liblazy.$(OBJEXT) liblist.$(OBJEXT) libmac.$(OBJEXT) \
 	libmisc.$(OBJEXT) libmod.$(OBJEXT) libnum.$(OBJEXT) \
 	libobj.$(OBJEXT) libomega.$(OBJEXT) libproc.$(OBJEXT) \
 	librx.$(OBJEXT) libsrfis.$(OBJEXT) libstr.$(OBJEXT) libsym.$(OBJEXT) \
@@ -285,6 +285,7 @@ libfmt.c   : libfmt.scm $(PRECOMP_DEPENDENCY)
 libio.c    : libio.scm $(PRECOMP_DEPENDENCY)
 liblazy.c  : liblazy.scm $(PRECOMP_DEPENDENCY)
 liblist.c  : liblist.scm $(PRECOMP_DEPENDENCY)
+libmac.c   : libmac.scm $(PRECOMP_DEPENDENCY)
 libmisc.c  : libmisc.scm $(PRECOMP_DEPENDENCY)
 libnum.c   : libnum.scm $(PRECOMP_DEPENDENCY)
 libobj.c   : libobj.scm $(PRECOMP_DEPENDENCY)
@@ -462,8 +463,8 @@ GENERATED = compile.c autoloads.c builtin-syms.c \
 	    char_attr.c gauche/priv/unicode_attr.h \
 	    libsrfis.scm ../doc/srfis.texi \
 	    libalpha.c libbool.c libchar.c libcode.c libcmp.c libdict.c \
-	    libeval.c libexc.c libfmt.c libio.c liblazy.c liblist.c libmisc.c \
-	    libmod.c libnum.c libobj.c libproc.c librx.c libstr.c \
+	    libeval.c libexc.c libfmt.c libio.c liblazy.c liblist.c libmac.c \
+	    libmisc.c libmod.c libnum.c libobj.c libproc.c librx.c libstr.c \
 	    libsrfis.c libsym.c libsys.c libvec.c libomega.c libextra.c
 CONFIG_GENERATED = Makefile genconfig makeverslink gauche/config.h
 
