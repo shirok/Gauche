@@ -1911,7 +1911,9 @@ static ScmObj make_trapper_port(ScmObj name, int direction,
     bufrec.closer = file_closer;
     bufrec.ready = file_ready;
     bufrec.filenum = file_filenum;
-    bufrec.data = (void*)(intptr_t)fd;
+    file_port_data *data = SCM_NEW(file_port_data);
+    data->fd = fd;
+    bufrec.data = data;
     bufrec.seeker = NULL;
     ScmObj p = Scm_MakeBufferedPort(SCM_CLASS_PORT, name, direction, TRUE,
                                     &bufrec);
