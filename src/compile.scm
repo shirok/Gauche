@@ -5853,12 +5853,16 @@
 (define-builtin-inliner %uvector-ref
   (^[src args]
     (match args
-      [(vec (? integer? type) ind)
+      [(vec type ind)
 ;; not enough evidence yet to support this is worth (see also vminsn.scm)
 ;;       (if (and (integer? ind)
 ;;                (unsigned-integer-fits-insn-arg? (* ind 16)))
 ;;         (asm-arg1 src `(,UVEC-REFI ,(+ (* ind 16) type)) vec cenv)
-       ($asm src `(,UVEC-REF ,type) `(,vec ,ind))]
+       (or (and-let* ([ ($const? type) ]
+                      [t ($const-value type)]
+                      [ (exact-integer? t) ])
+             ($asm src `(,UVEC-REF ,t) `(,vec ,ind)))
+           (undefined))]
       [else (undefined)])))
 
 (define-builtin-inliner zero?
