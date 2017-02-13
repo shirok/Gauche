@@ -3,6 +3,7 @@
 (use gauche.test)
 (use gauche.vm.insn)
 (use srfi-1)
+(use gauche.uvector)
 (use util.match)
 
 (define (proc->insn/split proc)
@@ -40,6 +41,13 @@
 (define-inline add4 (make-adder 4))
 (test* "inlining add4 + constant folding" '(((CONSTI 9)) ((RET)))
        (proc->insn/split (^[] (+ (add4 2) 3))))
+
+;; pass3/late-inline
+(define-inline (late-inline-test-1 ref) (cut ref <> 0))
+
+(test* "pass3/late-inline"
+       '(((LREF0)) ((VEC-REFI 0)) ((RET)))
+       (proc->insn/split (late-inline-test-1 vector-ref)))
 
 (test-section "lambda lifting")
 
@@ -137,6 +145,7 @@
            (define (test2 x) (baz x))
            (test (bar)))
          (foo)))
+
 
 (test-end)
 
