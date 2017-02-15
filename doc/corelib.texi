@@ -5964,9 +5964,9 @@ only allows symbols as the arguments and the result is always interned.
 @c COMMON
 
 @example
-(string-append 'ab 'cd) @result{} abcd
-(string-append 'ab ':c 30) @result{} ab:c30
-(string-append #f 'g 100) @result{} #:g100
+(symbol-append 'ab 'cd) @result{} abcd
+(symbol-append 'ab ':c 30) @result{} ab:c30
+(symbol-append #f 'g 100) @result{} #:g100
 @end example
 @end defun
 
