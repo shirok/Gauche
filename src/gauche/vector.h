@@ -151,6 +151,8 @@ SCM_EXTERN ScmObj Scm_MakeUVectorFull(ScmClass *klass,
 SCM_EXTERN ScmObj Scm_ListToUVector(ScmClass *klass, ScmObj list, int clamp);
 SCM_EXTERN ScmObj Scm_VMUVectorRef(ScmUVector *v, int t,
                                    ScmSmallInt k, ScmObj fallback);
+SCM_EXTERN ScmObj Scm_UVectorSet(ScmUVector *v, int t,
+                                 ScmSmallInt k, ScmObj val, int clamp);
 SCM_EXTERN ScmObj Scm_ReadUVector(ScmPort *port, const char *tag,
                                   ScmReadContext *ctx);
 

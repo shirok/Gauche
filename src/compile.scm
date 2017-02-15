@@ -5847,23 +5847,26 @@
       [(vec ind val) ($asm src `(,VEC-SET) `(,vec ,ind ,val))]
       [else (error "wrong number of arguments for vector-set!:" src)])))
 
-;; NB: %uvector-ref isn't public, and should be in the gauche.internal
-;; module.  We don't have a convenience mechanism to attach builtin inliner
-;; to the bindings in other module, though.
-(define-builtin-inliner %uvector-ref
-  (^[src args]
-    (match args
-      [(vec type ind)
-;; not enough evidence yet to support this is worth (see also vminsn.scm)
-;;       (if (and (integer? ind)
-;;                (unsigned-integer-fits-insn-arg? (* ind 16)))
-;;         (asm-arg1 src `(,UVEC-REFI ,(+ (* ind 16) type)) vec cenv)
-       (or (and-let* ([ ($const? type) ]
-                      [t ($const-value type)]
-                      [ (exact-integer? t) ])
-             ($asm src `(,UVEC-REF ,t) `(,vec ,ind)))
-           (undefined))]
-      [else (undefined)])))
+(define-macro (define-builtin-inliner-uvref tag TAG)
+  (let ([%-ref (symbol-append tag 'vector-ref)]
+        [%type (symbol-append 'SCM_UVECTOR_ TAG)])
+    `(define-builtin-inliner ,%-ref
+       (^[src args]
+         (match args
+           [(vec ind) ($asm src `(,UVEC-REF ,,%type) `(,vec ,ind))]
+           [else (undefined)])))))
+    
+(define-builtin-inliner-uvref s8 S8)
+(define-builtin-inliner-uvref u8 U8)
+(define-builtin-inliner-uvref s16 S16)
+(define-builtin-inliner-uvref u16 U16)
+(define-builtin-inliner-uvref s32 S32)
+(define-builtin-inliner-uvref u32 U32)
+(define-builtin-inliner-uvref s64 S64)
+(define-builtin-inliner-uvref u64 U64)
+(define-builtin-inliner-uvref f16 F16)
+(define-builtin-inliner-uvref f32 F32)
+(define-builtin-inliner-uvref f64 F64)
 
 (define-builtin-inliner zero?
   (^[src args]

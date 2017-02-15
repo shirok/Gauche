@@ -39,6 +39,9 @@
 ;;--------------------------------------------------------------------
 ;; ${t}vector basic API
 ;;
+
+;; NB: Constructors, referencers and modifiers are in the core.
+
 (define-cproc ${t}vector? (obj) ::<boolean> SCM_${T}VECTORP)
 
 ;; we need this in string, for the UNBOX macro is substituted to the
@@ -62,18 +65,6 @@
            (return (Scm_ListToUVector SCM_CLASS_${T}VECTOR p SCM_CLAMP_ERROR)))]))
 
 (define-cproc ${t}vector-length (v::<${t}vector>) ::<int> SCM_${T}VECTOR_SIZE)
-
-;; This is only called via apply.  The standard call will be inlined
-;; as UVEC-REF instruction.
-(define-cproc %${t}vector-ref
-  (v::<${t}vector> i::<fixnum> :optional fallback) :fast-flonum
-  (setter ${t}vector-set!)
-  (return (Scm_VMUVectorRef v (Scm_UVectorType (Scm_ClassOf (SCM_OBJ v)))
-                            i fallback)))
-
-(define-cproc ${t}vector-set!
-  (v::<${t}vector> i::<fixnum> val :optional clamp) :fast-flonum
-  (return (Scm_${T}VectorSet v i val (clamp_arg clamp))))
 
 (define-cproc ${t}vector-copy
   (v::<${t}vector> :optional (start::<fixnum> 0) (end::<fixnum> -1))

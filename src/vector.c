@@ -403,6 +403,53 @@ ScmObj Scm_VMUVectorRef(ScmUVector *v, int t, ScmSmallInt k, ScmObj fallback)
     }
 }
 
+/* Generic modifier */
+ScmObj Scm_UVectorSet(ScmUVector *v, int t, ScmSmallInt k, ScmObj val, int clamp)
+{
+    SCM_ASSERT(Scm_UVectorType(SCM_CLASS_OF(v)) == t);
+    SCM_UVECTOR_CHECK_MUTABLE(SCM_OBJ(v));
+    if (k < 0 || k >= SCM_UVECTOR_SIZE(v)) {
+        Scm_Error("%s-set! index out of range: %ld", Scm_UVectorTypeName(t), k);
+    }
+    switch (t) {
+    case SCM_UVECTOR_S8:
+        SCM_S8VECTOR_ELEMENTS(v)[k] = Scm_GetInteger8Clamp(val, clamp, NULL);
+        break;
+    case SCM_UVECTOR_U8:
+        SCM_U8VECTOR_ELEMENTS(v)[k] = Scm_GetIntegerU8Clamp(val, clamp, NULL);
+        break;
+    case SCM_UVECTOR_S16:
+        SCM_S16VECTOR_ELEMENTS(v)[k] = Scm_GetInteger16Clamp(val, clamp, NULL);
+        break;
+    case SCM_UVECTOR_U16:
+        SCM_U16VECTOR_ELEMENTS(v)[k] = Scm_GetIntegerU16Clamp(val, clamp, NULL);
+        break;
+    case SCM_UVECTOR_S32:
+        SCM_S32VECTOR_ELEMENTS(v)[k] = Scm_GetInteger32Clamp(val, clamp, NULL);
+        break;
+    case SCM_UVECTOR_U32:
+        SCM_U32VECTOR_ELEMENTS(v)[k] = Scm_GetIntegerU32Clamp(val, clamp, NULL);
+        break;
+    case SCM_UVECTOR_S64:
+        SCM_S64VECTOR_ELEMENTS(v)[k] = Scm_GetInteger64Clamp(val, clamp, NULL);
+        break;
+    case SCM_UVECTOR_U64:
+        SCM_U64VECTOR_ELEMENTS(v)[k] = Scm_GetIntegerU64Clamp(val, clamp, NULL);
+        break;
+    case SCM_UVECTOR_F16:
+        SCM_F16VECTOR_ELEMENTS(v)[k] = Scm_DoubleToHalf(Scm_GetDouble(val));
+        break;
+    case SCM_UVECTOR_F32:
+        SCM_F32VECTOR_ELEMENTS(v)[k] = (float)Scm_GetDouble(val);
+        break;
+    case SCM_UVECTOR_F64:
+        SCM_F64VECTOR_ELEMENTS(v)[k] = Scm_GetDouble(val);
+        break;
+    default:
+        Scm_Error("[internal error] unknown uvector type given to Scm_VMUVectorRef");
+    }
+    return SCM_UNDEFINED;
+}
 
 /*
  * Inidividual constructors for convenience

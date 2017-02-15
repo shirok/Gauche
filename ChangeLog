@@ -1,3 +1,16 @@
+2017-02-14  Shiro Kawai  <shiro@acm.org>
+
+	* src/vector.c (Scm_UVectorSet):
+	  src/libvec.c (s8vector-ref, s8vector-set!, etc):
+	  src/compile.scm:
+	  ext/uvector/*:  Moved uniform vector referencer and modifiers
+	  to the core, so that the compiler can generate VM insn for
+	  the referencer.  We used to use compiler macros to convert
+	  referencer to %uvector-ref then the compiler inlined it to
+	  VM insn, but that scheme limits the opportunity of optimization;
+	  the compiler macro cannot be applied to the pass3/late-inline pass.
+	  It's better to keep stuff that expands VM insns within the core.
+
 2017-02-10  Shiro Kawai  <shiro@acm.org>
 
 	* doc/makedoc.scm: Check makeinfo version for html/htmls targets;
