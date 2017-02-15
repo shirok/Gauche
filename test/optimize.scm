@@ -49,6 +49,10 @@
        '(((LREF0)) ((VEC-REFI 0)) ((RET)))
        (proc->insn/split (late-inline-test-1 vector-ref)))
 
+(test* "pass3/late-inline"
+       '(((LREF0-PUSH)) ((CONSTI 0)) ((UVEC-REF 1)) ((RET)))
+       (proc->insn/split (late-inline-test-1 u8vector-ref)))
+
 (test-section "lambda lifting")
 
 ;; bug reported by teppey
