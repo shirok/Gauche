@@ -386,15 +386,6 @@ SCM_EXTERN ScmObj Scm_UngottenBytesUnsafe(ScmPort *port);
 SCM_EXTERN ScmObj Scm_ReadLine(ScmPort *port);
 SCM_EXTERN ScmObj Scm_ReadLineUnsafe(ScmPort *port);
 
-#if 0
-#define SCM_PORT_CURIN  (1<<0)
-#define SCM_PORT_CUROUT (1<<1)
-#define SCM_PORT_CURERR (1<<2)
-
-SCM_EXTERN ScmObj Scm_WithPort(ScmPort *port[], ScmObj thunk,
-                               int mask, int closep);
-#endif
-
 /*================================================================
  * File ports
  */
