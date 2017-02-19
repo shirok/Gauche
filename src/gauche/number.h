@@ -189,6 +189,8 @@ enum ScmClampMode {
     SCM_CLAMP_NONE = 4         /* do not convert when out-of-range */
 };
 
+SCM_EXTERN int    Scm_ClampMode(ScmObj clamp);
+
 SCM_EXTERN ScmObj Scm_MakeInteger(long i);
 SCM_EXTERN ScmObj Scm_MakeIntegerU(u_long i);
 

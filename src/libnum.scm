@@ -814,3 +814,20 @@
 
 (define-cproc magnitude (z) :fast-flonum :constant Scm_VMAbs)
 (define-cproc angle (z)     ::<double> :fast-flonum :constant Scm_Angle)
+
+;; Utility to recognize clamp mode symbols and returns C enum
+;; (Mostly used in uvector-related apis)
+
+(inline-stub
+ ;; NB: This is dupe from ext/uvector/uvector.scm
+ (define-cfn Scm_ClampMode (clamp) ::int
+   (cond [(SCM_EQ clamp 'both) (return SCM_CLAMP_BOTH)]
+         [(SCM_EQ clamp 'low)  (return SCM_CLAMP_LO)]
+         [(SCM_EQ clamp 'high) (return SCM_CLAMP_HI)]
+         [(not (or (SCM_FALSEP clamp) (SCM_UNBOUNDP clamp)))
+          (Scm_Error "clamp argument must be either 'both, 'high, 'low or #f, \
+                    but got %S" clamp)])
+   (return SCM_CLAMP_ERROR)))
+
+
+

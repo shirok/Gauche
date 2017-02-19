@@ -129,7 +129,7 @@
   Scm_${T}VectorToList)
 
 (define-cproc list->${t}vector (l::<list> :optional clamp)
-  (return (Scm_ListToUVector SCM_CLASS_${T}VECTOR l (clamp-arg clamp))))
+  (return (Scm_ListToUVector SCM_CLASS_${T}VECTOR l (Scm_ClampMode clamp))))
 
 (define-cproc ${t}vector-fill!
   (v::<${t}vector> val :optional (start::<fixnum> 0) (end::<fixnum> -1))
@@ -143,7 +143,7 @@
 
 (define-cproc vector->${t}vector
   (v::<vector> :optional (start::<fixnum> 0) (end::<fixnum> -1) clamp)
-  (return (Scm_VectorTo${T}Vector v start end (clamp-arg clamp))))
+  (return (Scm_VectorTo${T}Vector v start end (Scm_ClampMode clamp))))
 
 (define-cproc ${t}vector=?              ; srfi-66
   (a::<${t}vector> b::<${t}vector>)     ;  we just typecheck args and call equal?
@@ -160,11 +160,11 @@
 ///(define *tmpl-numop* '(
 (define-cproc ${t}vector-${opname} (v0::<${t}vector> v1 :optional clamp)
   :fast-flonum
-  (return (Scm_${T}Vector${Opname} v0 v1 (clamp-arg clamp))))
+  (return (Scm_${T}Vector${Opname} v0 v1 (Scm_ClampMode clamp))))
 
 (define-cproc ${t}vector-${opname}! (v0::<${t}vector> v1 :optional clamp)
   :fast-flonum
-  (return (Scm_${T}Vector${Opname}X v0 v1 (clamp-arg clamp))))
+  (return (Scm_${T}Vector${Opname}X v0 v1 (Scm_ClampMode clamp))))
 ///)) ;; end of tmpl-numop
 
 ///(define *tmpl-bitop* '(

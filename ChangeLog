@@ -1,3 +1,8 @@
+2017-02-18  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/number.h (Scm_ClampMode): Made it common utility; now
+	  used in both libvec.scm and ext/uvector/.
+
 2017-02-14  Shiro Kawai  <shiro@acm.org>
 
 	* src/vector.c (Scm_UVectorSet):
