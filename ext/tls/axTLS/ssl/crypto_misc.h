@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2016, Cameron Rich
+ * Copyright (c) 2007-2017, Cameron Rich
  * 
  * All rights reserved.
  * 
@@ -39,6 +39,7 @@
 extern "C" {
 #endif
 
+#include <stdbool.h>
 #include "crypto.h"
 #include "bigint.h"
 

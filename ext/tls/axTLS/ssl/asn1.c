@@ -229,7 +229,6 @@ int asn1_get_bit_string_as_int(const uint8_t *buf, int *offset, uint32_t *val)
 {
     int res = X509_OK;
     int len, i;
-    int ignore_bits;
 
     if ((len = asn1_next_obj(buf, offset, ASN1_BIT_STRING)) < 0 || len > 5)
     {
@@ -238,7 +237,7 @@ int asn1_get_bit_string_as_int(const uint8_t *buf, int *offset, uint32_t *val)
     }
 
     /* number of bits left unused in the final byte of content */
-    ignore_bits = buf[(*offset)++];
+    (*offset)++;
     len--;
     *val = 0;
 
@@ -250,11 +249,6 @@ int asn1_get_bit_string_as_int(const uint8_t *buf, int *offset, uint32_t *val)
     }
 
     *offset += len;
-
-    /*for (i = 0; i < ignore_bits; i++)
-    {
-        *val >>= 1;
-    }*/
 
 end_bit_string_as_int:
     return res;
