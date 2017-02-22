@@ -1,14 +1,3 @@
---- a/axTLS/ssl/tls1_clnt.c	2016-12-10 13:30:30.000000000 +0900
-+++ b/axTLS/ssl/tls1_clnt.c	2017-02-22 21:48:02.246180048 +0900
-@@ -363,7 +363,7 @@
-     offset += 2; // ignore compression
-     PARANOIA_CHECK(pkt_size, offset);
- 
--    ssl->dc->bm_proc_index = offset; 
-+    ssl->dc->bm_proc_index = offset;
-     PARANOIA_CHECK(pkt_size, offset);
- 
-     // no extensions
 --- a/axTLS/ssl/tls1.h	2016-12-13 03:56:45.000000000 +0900
 +++ b/axTLS/ssl/tls1.h	2017-02-22 21:48:02.246180048 +0900
 @@ -41,7 +41,7 @@
