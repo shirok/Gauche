@@ -1,3 +1,9 @@
+2017-02-25  Shiro Kawai  <shiro@acm.org>
+
+	* lib/text/console.scm: Split most of APIs into text.console.generic,
+	  so that they won't be loaded unnecessarily if the runtime detects
+	  no controllable consoles.
+
 2017-02-18  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/number.h (Scm_ClampMode): Made it common utility; now
