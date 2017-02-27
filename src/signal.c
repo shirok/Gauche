@@ -106,6 +106,8 @@ static unsigned int signalPendingLimit = SIGNAL_PENDING_LIMIT_DEFAULT;
 /* Table of signals and its initial behavior.   If Application asks
    Gauche to handle a specific signal (via Scm_SetMasterSigmask),
    Gauche installs a signal handler specified in this table.
+   (In general, the signals reserved by GC are excluded from the master
+   signal mask, so we don't need to consider them here.  See main.c.)
 
    Note on SIGPIPE behavior: The Unix convention is that the default
    behavior or writing to closed pipe terminates the process.  It is
@@ -236,6 +238,9 @@ static struct sigdesc {
 #endif
 #ifdef SIGPWR
     SIGDEF(SIGPWR,  SIGDEF_NOHANDLE), /* Power failure restart (System V) */
+#endif
+#ifdef SIGTHR
+    SIGDEF(SIGTHR,  SIGDEF_NOHANDLE), /* Thread interrupt / AST (FreeBSD, OpenBSD) */
 #endif
     { NULL, -1 }
 };
