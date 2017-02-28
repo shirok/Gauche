@@ -279,7 +279,10 @@ static void sig_setup(void)
     sigdelset(&set, SIGSEGV);
 #ifdef SIGBUS
     sigdelset(&set, SIGBUS);
-#endif /*SIGBUS*/
+#endif
+#ifdef SIGTHR
+    sigdelset(&set, SIGTHR);
+#endif
 
     /* Exclude signals used by GC to stop and restart the world. */
 #ifdef GC_THREADS
