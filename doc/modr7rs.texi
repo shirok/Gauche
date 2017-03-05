@@ -97,7 +97,7 @@ These facts let Gauche to set up appropriate ``world'',
 and you can use R7RS code and traditional Gauche code transparently.
 @c JP
 Gaucheはこれを利用して、適切な「世界」を設定し、R7RSコードと既存のGaucheコードを
-透過的に混ぜるられるようにしています。
+透過的に混ぜられるようにしています。
 @c COMMON
 
 @c EN
