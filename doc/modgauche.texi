@@ -18217,8 +18217,8 @@ by the returned values from @var{proc}.
 values @var{atom} has, and must return the same number of
 values.
 
-The returned value(s) of @var{proc} is the result of
-@code{atomic}, unless timeout occurs.
+The returned value(s) of @code{atomic-update!} is what
+@var{proc} returns, unless timeout occurs.
 See above for @var{timeout} and @var{timeout-val} arguments.
 
 The following example shows a thread-safe counter.
