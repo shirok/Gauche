@@ -555,7 +555,7 @@
            [rbuf   (make-u8vector 1024 0)])
 
        (define (xtest sbuf)
-         (socket-sendmsg s-sock (socket-buildmsg r-addr data '() 0 sbuf))
+         (socket-sendmsg s-sock (socket-buildmsg s-addr data '() 0 sbuf))
          (receive (size f-addr) (socket-recvfrom! r-sock rbuf (list from))
            (list (eq? f-addr from)
                  (equal? (uvector-alias <u8vector> rbuf 0 size)
