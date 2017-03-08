@@ -18161,17 +18161,22 @@ Returns @code{#t} iff @var{obj} is an atom.
 
 The following procedures can be used to @emph{atomically}
 access and update the content of an atom.   They commonly
-takes optional @var{timeout} and @var{timeout-val} arguments,
-both are defaulted to @code{#f}, which causes those procedures
-to block until they acquire a lock.
+take optional @var{timeout} and @var{timeout-val} arguments,
+both are defaulted to @code{#f}.  In some cases, the procedure
+takes more than one @var{timeout-val} arguments.
+With the default value @code{#f} as @var{timeout} argument,
+those procedures blocks until they acquire a lock.
 
-Those arguments can be used to modify the behavior when
+The timeout arguments can be used to modify the behavior when
 the lock cannot be acquired in timely manner.
 @var{timeout} may be a @code{<time>} object (@pxref{Time})
 to specify an absolute point of time, or a real number
 to specify the relative time in seconds.  If timeout is
 expired, those procedures give up acquiring the lock,
 and the value given to @var{timeout-val} is returned.
+In @code{atomic} and @code{atomic-uodate!}, you can make them return
+multiple timeout values, by giving 
+more than one @var{timeout-val} arguments.
 
 @defun atom-ref atom :optional index timeout timeout-val
 Returns @var{index}-th value of @var{atom}.
@@ -18185,7 +18190,7 @@ See above for @var{timeout} and @var{timeout-val} arguments.
 @end example
 @end defun
 
-@defun atomic atom proc :optional timeout timeout-val
+@defun atomic atom proc :optional timeout timeout-val timeout-val2 @dots{}
 Calls @var{proc} with the current values in @var{atom},
 while locking @var{atom}.  @var{proc} must take
 as many arguments as the number of values @var{atom} has.
@@ -18209,7 +18214,7 @@ the hashtable is referenced in thread-safe way.
 @end example
 @end defun
 
-@defun atomic-update! atom proc :optional timeout timeout-val
+@defun atomic-update! atom proc :optional timeout timeout-val timeout-val2 @dots{}
 Calls @var{proc} with the current values in @var{atom}
 while locking @var{atom}, and updates the values in @var{atom}
 by the returned values from @var{proc}.
