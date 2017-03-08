@@ -256,20 +256,22 @@
   (define m (make-mutex))
   (let-syntax ([with-lock
                 (syntax-rules ()
-                  [(_ timeout timeout-val . form)
+                  [(_ timeout timeout-val timeout-vals . form)
                    (unwind-protect
                        (if (mutex-lock! m timeout)
                          (begin . form)
-                         timeout-val)
+                         (if (null? timeout-vals)
+                           timeout-val
+                           (apply values (cons timeout-val timeout-vals))))
                      (when (eq? (mutex-state m) (current-thread))
                        (mutex-unlock! m)))])])
     ;; TODO: we may expand special cases like vals is 1 to 3 elements long,
     ;; avoiding creation of lists every time updater is called.
     (%make-atom
-     (^[proc timeout timeout-val]
-       (with-lock timeout timeout-val (apply proc vals)))
-     (^[proc timeout timeout-val]
-       (with-lock timeout timeout-val
+     (^[proc timeout timeout-val timeout-vals]
+       (with-lock timeout timeout-val timeout-vals (apply proc vals)))
+     (^[proc timeout timeout-val timeout-vals]
+       (with-lock timeout timeout-val timeout-vals
                   (call-with-values (cut apply proc vals)
                     (^ vs
                       (unless (= (length vs) (length vals))
@@ -279,14 +281,14 @@
                       (set! vals vs)
                       (apply values vals))))))))
 
-(define (atomic atom proc :optional (timeout #f) (timeout-val #f))
+(define (atomic atom proc :optional (timeout #f) (timeout-val #f) :rest vals)
   (unless (atom? atom) (error "atom required, but got:" atom))
-  ((atom-applier atom) proc timeout timeout-val))
+  ((atom-applier atom) proc timeout timeout-val vals))
 
-(define (atomic-update! atom proc :optional (timeout #f) (timeout-val #f))
+(define (atomic-update! atom proc :optional (timeout #f) (timeout-val #f) :rest vals)
   (unless (atom? atom) (error "atom required, but got:" atom))
-  ((atom-updater atom) proc timeout timeout-val))
+  ((atom-updater atom) proc timeout timeout-val vals))
 
 (define (atom-ref atom :optional (index 0) (timeout #f) (timeout-val #f))
   (unless (atom? atom) (error "atom required, but got:" atom))
-  ((atom-applier atom) (^ xs (list-ref xs index)) timeout timeout-val))
+  ((atom-applier atom) (^ xs (list-ref xs index)) timeout timeout-val '()))
