@@ -18174,7 +18174,7 @@ to specify an absolute point of time, or a real number
 to specify the relative time in seconds.  If timeout is
 expired, those procedures give up acquiring the lock,
 and the value given to @var{timeout-val} is returned.
-In @code{atomic} and @code{atomic-uodate!}, you can make them return
+In @code{atomic} and @code{atomic-update!}, you can make them return
 multiple timeout values, by giving 
 more than one @var{timeout-val} arguments.
 
