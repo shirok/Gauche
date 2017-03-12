@@ -710,7 +710,7 @@
                    [(#t tls) 'tls]
                    [(stunnel) 'stunnel]
                    [else (error "`secure' argument for http connection must be \
-                                 either boolan, 'tls or 'stunnel, but got:"
+                                 either boolean, 'tls or 'stunnel, but got:"
                                 secure)]))))))
 
 (define (reset-http-connection conn)
