@@ -523,15 +523,21 @@
 ;; This modifies CONN.
 (define (redirect-connection! conn proto new-server)
   (let1 orig-server (~ conn'server)
+    ;; Unless we're connecting the same server with same secure level,
+    ;; we reset the connection.
     (unless (and (string=? orig-server new-server)
-                 (eq? (~ conn'secure) (equal? proto "https")))
+                 (or (and (equal? proto "https") (~ conn'secure))
+                     (and (not (equal? proto "https")) (not (~ conn'secure)))))
       (shutdown-secure-agent conn)
       (and-let* ([s (~ conn'socket)])
         (socket-shutdown s)
         (socket-close s)
         (set! (~ conn'socket) #f))
       (set! (~ conn'server) new-server)
-      (set! (~ conn'secure) (equal? proto "https"))))
+      ;; NB: If the server redirects http connection to https, we don't have
+      ;; a chance for the caller to select alternative TLS flavor---for the
+      ;; time being we blindly assume tls.
+      (set! (~ conn'secure) (and (equal? proto "https") 'tls))))
   conn)
 
 ;;==============================================================
