@@ -1771,6 +1771,7 @@ SCM_CLASS_DECL(Scm_SysSigsetClass);
 
 SCM_EXTERN ScmObj Scm_SysSigsetOp(ScmSysSigset*, ScmObj, int);
 SCM_EXTERN ScmObj Scm_SysSigsetFill(ScmSysSigset*, int);
+SCM_EXTERN void   Scm_SigFillSetMostly(sigset_t *set);
 SCM_EXTERN ScmObj Scm_GetSignalHandler(int);
 SCM_EXTERN ScmObj Scm_GetSignalHandlerMask(int);
 SCM_EXTERN ScmObj Scm_GetSignalHandlers(void);

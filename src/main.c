@@ -264,34 +264,7 @@ int parse_options(int argc, char *argv[])
 static void sig_setup(void)
 {
     sigset_t set;
-    sigfillset(&set);
-    sigdelset(&set, SIGABRT);
-    sigdelset(&set, SIGILL);
-#ifdef SIGKILL
-    sigdelset(&set, SIGKILL);
-#endif
-#ifdef SIGCONT
-    sigdelset(&set, SIGCONT);
-#endif
-#ifdef SIGSTOP
-    sigdelset(&set, SIGSTOP);
-#endif
-    sigdelset(&set, SIGSEGV);
-#ifdef SIGBUS
-    sigdelset(&set, SIGBUS);
-#endif
-#ifdef SIGTHR
-    sigdelset(&set, SIGTHR);
-#endif
-
-    /* Exclude signals used by GC to stop and restart the world. */
-#ifdef GC_THREADS
-    int sig_suspend = GC_get_suspend_signal();
-    if (sig_suspend >= 0) sigdelset(&set, sig_suspend);
-    int sig_restart = GC_get_thr_restart_signal();
-    if (sig_restart >= 0) sigdelset(&set, sig_restart);
-#endif /*GC_THREADS*/
-
+    Scm_SigFillSetMostly(&set);
     Scm_SetMasterSigmask(&set);
 }
 
