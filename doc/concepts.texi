@@ -44,7 +44,7 @@ passing so-called keyword arguments (@pxref{Making Procedures}).
 R7RS requires names starting with colon to be read as a symbol.
 In the current version of Gauche, keywords aren't symbols by default;
 they are of disjoint types.  With an enviornment variable
-@code{GAUCHE_KEYWORD_IS_SYMBOL}, you can
+@code{GAUCHE_KEYWORD_IS_SYMBOL} being set, you can
 make Gauche treat keywords and symbols the same.
 @xref{Keywords}, for the details.  The plan is that we move to
 fully R7RS compliant in future, but this change could break existing
@@ -76,6 +76,7 @@ C routine) have limited extent (@xref{Continuations}, for details).
 (具体的には、Cのコードからコールバックとして呼ばれるSchemeコード内で作られる継続
 がこれにあたります)。詳しくは@ref{Continuations}を参照して下さい。
 @c COMMON
+
 @item
 @c EN
 Full numeric tower (integer, rational, real and complex numbers) are supported,
@@ -827,5 +828,3 @@ a file on certain condition, use @code{load} or do dispatch in macro
 @c mode: texinfo
 @c coding: utf-8
 @c end:
-
-
