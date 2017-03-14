@@ -1,3 +1,7 @@
+2017-03-13  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi-141.scm: Add srfi-141.
+
 2017-03-12  Shiro Kawai  <shiro@acm.org>
 
 	* src/signal.c: Provide Scm_SigFillSetMostly() to fill

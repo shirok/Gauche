@@ -1888,4 +1888,36 @@
 (use srfi-128)
 (test-module 'srfi-128)
 
+;;-----------------------------------------------------------------------
+(test-section "srfi-141")
+(use srfi-141)
+(test-module 'srfi-141)
+
+(let1 data
+    ;;numer denom ceiling   round    euclidean balanced
+    '[(23   5     (5 -2)    (5  -2)  (4  3)    (5 -2))
+      (22   5     (5 -3)    (4   2)  (4  2)    (4  2))
+      (23   -5    (-4 3)    (-5 -2)  (-4 3)    (-5 -2))
+      (22   -5    (-4 2)    (-4  2)  (-4 2)    (-4  2))
+      (-23  5     (-4 -3)   (-5  2)  (-5 2)    (-5  2))
+      (-22  5     (-4 -2)   (-4 -2)  (-5 3)    (-4 -2))
+      (-23  -5    (5  2)    (5   2)  (5  2)    (5   2))
+      (-22  -5    (5  3)    (4  -2)  (5  3)    (4  -2))
+      (1    2     (1  -1)   (0   1)  (0  1)    (1  -1))
+      (3    2     (2  -1)   (2  -1)  (1  1)    (2  -1))
+      ]
+  (define (t-1 numer denom ceiling round euclidean balanced)
+    (define (t name x-/ x-quotient x-remainder answers)
+      (test* #"srfi-141 ~name" (list answers answers)
+             (list (values->list (x-/ numer denom))
+                   (list (x-quotient numer denom)
+                         (x-remainder numer denom)))))
+    (t 'ceiling ceiling/ ceiling-quotient ceiling-remainder ceiling)
+    (t 'round   round/ round-quotient round-remainder round)
+    (t 'euclidean euclidean/ euclidean-quotient euclidean-remainder euclidean)
+    (t 'balanced balanced/ balanced-quotient balanced-remainder balanced))
+
+  (for-each (cut apply t-1 <...>) data))
+
+
 (test-end)
