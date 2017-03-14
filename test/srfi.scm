@@ -1917,7 +1917,7 @@
     (t 'euclidean euclidean/ euclidean-quotient euclidean-remainder euclidean)
     (t 'balanced balanced/ balanced-quotient balanced-remainder balanced))
 
-  (for-each (cut apply t-1 <...>) data))
+  (for-each (cut apply t-1 <>) data))
 
 
 (test-end)
