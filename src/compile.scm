@@ -6016,7 +6016,7 @@
 ;; might be inserted in the file precompiled by 0.9.5 compiler as the
 ;; result of expansion of er macro.
 ;; Remove this on 1.0 release.
-(define (%make-toplevel-cenv name) :internal
+(define (%make-toplevel-cenv name) ;internal
   (%make-cenv (vm-current-module) '() name))
 (define (%make-primitive-transformer xformer def-env)
   (%make-macro-transformer (cenv-exp-name def-env)
