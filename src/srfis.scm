@@ -848,3 +848,14 @@ The module @code{data.ideque} is compatible to srfi-134.
 変更不可な両端キュー
 モジュール@code{data.ideque}がsrfi-134と互換です。
 @ref{変更不可な両端キュー}参照。
+
+
+srfi-141, srfi-141
+()
+
+
+Integer division
+Supported by the module @code{srfi-141}.
+
+整数除算
+モジュール@code{srfi-141}でサポートされます。
