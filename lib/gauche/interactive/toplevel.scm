@@ -118,6 +118,9 @@
 ;;            so no need to be included.
 ;;  handler - a procedure to be called.  with one parameter - a list of
 ;;            command arguments.
+;;            Inside handler, local bindings 'usage' and 'rename' is visible;
+;;            'usage' is bound to a thunk to display usage, and 'rename' is
+;;            bound to a procedure to hygienically rename identifiers.
 (define-syntax define-toplevel-command
   (er-macro-transformer
    (^[f r c]
@@ -131,7 +134,8 @@
             ,@(map (^[key]
                      (quasirename r
                        (toplevel-command-add! ',key ',parser ,help
-                        (let1 ,'usage (toplevel-command-helper ',key)
+                        (let ([,'usage (toplevel-command-helper ',key)]
+                              [,'rename ,r])
                           ,handler))))
                    keys)))]))))
 
@@ -162,8 +166,8 @@
       (cond [(regexp? x) x]
             [else (string->regexp (x->string x))]))
     (match args
-      [(word) `(apropos ,(->regexp word))]
-      [(word mod) `(apropos ,(->regexp word) ',mod)]
+      [(word) `(,(rename 'apropos) ,(->regexp word))]
+      [(word mod) `(,(rename 'apropos) ,(->regexp word) ',mod)]
       [_ (usage)])))
 
 (define-toplevel-command (describe d) :read
@@ -171,8 +175,8 @@
  Describe the object.\nWithout arguments, describe the last REPL result."
   (^[args]
     (match args
-      [() `(,(with-module gauche.interactive describe))]
-      [(obj) `(,(with-module gauche.interactive describe) ,obj)]
+      [() `(,(rename 'describe))]
+      [(obj) `(,(rename 'describe) ,obj)]
       [_ (usage)])))
 
 (define-toplevel-command history :read
@@ -180,7 +184,7 @@
  Show REPL history."
   (^[args]
     (match args
-      [() `(,(with-module gauche *history))]
+      [() `(,(rename '*history))]
       [_ (usage)])))
 
 (define-toplevel-command (info doc) :read
@@ -191,7 +195,7 @@
     (define (->name x) ; to preserve ':' of keyword
       (if (keyword? x) #":~x" (x->string x)))
     (match args
-      [(name) `(,(with-module gauche.interactive info) ,(->name name))]
+      [(name) `(,(rename 'info) ,(->name name))]
       [_ (usage)])))
 
 (define-toplevel-command (help h) :read
@@ -273,9 +277,10 @@
  Show source code of the procedure if it's available."
   (^[args]
     (match args
-      [(word) `(or (,(with-module gauche source-code) ,word)
-                   (begin (print "No source code is available for: " ',word)
-                          (values)))]
+      [(word) (quasirename rename
+                (or (source-code ,word)
+                    (begin (print "No source code is available for: " ',word)
+                           (values))))]
       [_ (usage)])))
 
 (define-toplevel-command (use u) :read
@@ -289,13 +294,5 @@
  For the details of options, type \",info import\" and select the first one."
   (^[args]
     (match args
-      [(module . rest)
-       ;; A kludge to get hygiene right; since use is a macro we can't do
-       ;; (with-module gauche use).  There should be a better way though,
-       ;; so don't copy this method elsewhere.
-       `(,((with-module gauche.internal make-identifier)
-           'use
-           (find-module 'gauche) '())
-         ,module ,@rest)]
+      [(module . rest) `(,(rename 'use) ,module ,@rest)]
       [_ (usage)])))
-
