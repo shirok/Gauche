@@ -1,3 +1,8 @@
+2017-03-17  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/interactive/toplevel.scm: Added reload and load toplevel
+	  commands.
+
 2017-03-16  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/interactive/toplevel.scm: Expand hygienically by closing

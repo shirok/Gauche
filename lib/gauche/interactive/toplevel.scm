@@ -296,3 +296,20 @@
     (match args
       [(module . rest) `(,(rename 'use) ,module ,@rest)]
       [_ (usage)])))
+
+(define-toplevel-command (reload r) :read
+  " [module]\n\
+ Reload the specified module, using gauche.reload."
+  (^[args]
+    (match args
+      [(module) `(,(rename 'reload) ',module)]
+      [_ (usage)])))
+
+(define-toplevel-command (load l) :read
+  " file\n\
+ Load the specified file."
+  (^[args]
+    (match args
+      [(file) `(,(rename 'load) ,(x->string file))]
+      [_ (usage)])))
+

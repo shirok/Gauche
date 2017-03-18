@@ -863,14 +863,18 @@ A word preceeded with comma has special meaning.  Type ,help <cmd>
 to see the detailed help for <cmd>.
 Commands can be abbreviated as far as it is not ambiguous.
 
- ,a|apropos  Show the names of global bindings that match the regexp.
+ ,apropos|a  Show the names of global bindings that match the regexp.
  ,cd         Change the current directory.
- ,doc|info   Show info document for an entry of NAME.
- ,d|describe Describe the object.
+ ,describe|d Describe the object.
+ ,help|h     Show the help message of the command.
  ,history    Show REPL history.
- ,h|help     Show the help message of the command.
+ ,info|doc   Show info document for an entry of NAME.
+ ,load|l     Load the specified file.
  ,pwd        Print working directory.
+ ,reload|r   Reload the specified module, using gauche.reload.
+ ,sh         Run command via shell.
  ,source     Show source code of the procedure if it's available.
+ ,use|u      Use the specified module.  Same as (use module option ...).
 @end example
 
 @c EN
