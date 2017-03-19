@@ -2800,6 +2800,14 @@ abs(r) < abs(d)
 (truncate-quotient 10 -3)  @result{} -3
 (truncate-remainder 10 -3) @result{} 1
 @end example
+
+@c EN
+SRFI-141 introduces other variation of integer divisions
+(@pxref{Integer division}).
+@c JP
+SRFI-141では、他の整数除算のバリエーションが定義されています。
+(@ref{Integer division}参照)。
+@c COMMON
 @end defun
 
 @defun gcd n @dots{}

@@ -855,7 +855,7 @@ srfi-141, srfi-141
 
 
 Integer division
-Supported by the module @code{srfi-141}.
+Supported by the module @code{srfi-141}.  @xref{Integer division}.
 
 整数除算
-モジュール@code{srfi-141}でサポートされます。
+モジュール@code{srfi-141}でサポートされます。@ref{Integer division}参照。
