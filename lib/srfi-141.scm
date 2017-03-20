@@ -71,6 +71,8 @@
   (mod0 n d))
 
 ;; round and balanced only differ when n/d exactly falls on the midpoint.
+;; in inexact case, we simply use 'round' for it's faster.  we do need
+;; zero divisor check for that.
 
 (define (%exact-round/ n d)
   (receive (q r) (div0-and-mod0 n d)
@@ -85,6 +87,7 @@
 (define (round/ n d)
   (check-arg integer? n)
   (check-arg integer? d)
+  (when (zero? d) (error "Attempt to calculate a division by zero"))
   (if (and (exact? n) (exact? d))
     (%exact-round/ n d)
     (let1 q (round (/ n d))
@@ -93,6 +96,7 @@
 (define (round-quotient n d)
   (check-arg integer? n)
   (check-arg integer? d)
+  (when (zero? d) (error "Attempt to calculate a division by zero"))
   (if (and (exact? n) (exact? d))
     (values-ref (%exact-round/ n d) 0)
     (round (/ n d))))
@@ -100,7 +104,7 @@
 (define (round-remainder n d)
   (check-arg integer? n)
   (check-arg integer? d)
+  (when (zero? d) (error "Attempt to calculate a division by zero"))
   (if (and (exact? n) (exact? d))
     (values-ref (%exact-round/ n d) 1)
     (- n (* d (round (/ n d))))))
-
