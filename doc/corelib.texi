@@ -2740,7 +2740,7 @@ R6RSとR7RSの除算・剰余操作を可視化したものが
 @c COMMON
 @end defun
 
-@defun floor-qutoient n d
+@defun floor-quotient n d
 @defunx floor-remainder n d
 @defunx floor/ n d
 @defunx truncate-quotient n d
