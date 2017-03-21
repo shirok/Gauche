@@ -298,7 +298,7 @@
       [_ (usage)])))
 
 (define-toplevel-command (reload r) :read
-  " [module]\n\
+  " module\n\
  Reload the specified module, using gauche.reload."
   (^[args]
     (match args
