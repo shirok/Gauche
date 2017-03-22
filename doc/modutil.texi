@@ -1711,20 +1711,41 @@ bcryptアルゴリズムでは少なくとも16バイトの長さが必要です
 
 @deftp {Module} data.cache
 @mdindex data.cache
-A cache is similar to a dictionary, associating keys to values,
+@c EN
+A cache works similarly as a dictionary, associating keys to values,
 but its entries may dissapear according to the policy of the cache
 algorithm.  This module defines
 a common protocol for cache datatypes, and also provides several
 typical cache implementations.
+@c JP
+キャッシュは、キーと値を結びつけるという点では辞書と似たように動作しますが、
+キャッシュアルゴリズムの方針によってエントリが消去されることがあります。
+このモジュールは、キャッシュについて共通のプロトコルを定義し、
+またいくつかの典型的なキャッシュの実装を提供します。
+@c COMMON
 @end deftp
 
+@c EN
 @subheading Examples
+@c JP
+@subheading 例
+@c COMMON
 
+@c EN
 Let's start from simple examples to get the idea.
+@c JP
+まず簡単な例によって、どんな具合かを示しましょう。
+@c COMMON
 
-Suppose you want to read files and you want to
+@c EN
+Suppose you want to read given files and you want to
 cache the frequently read ones.  The following code defines
 a cached version of @code{file->string}:
+@c JP
+指定されたファイルを読み込むルーチンに、
+頻繁に読むファイルをキャッシュする機能をつけたいとします。
+次のコードは@code{file->string}にキャッシュ機能を持たせたものです。
+@c COMMON
 
 @example
 (use data.cache)
@@ -1735,20 +1756,40 @@ a cached version of @code{file->string}:
     (^[path] (cache-through! file-cache path file->string))))
 @end example
 
+@c EN
 The procedure closes a variable @code{file-cache},
 which is an LRU (least recently used) cache that associates
 string pathnames to the file contents.
 The actual logic is in @code{cache-through!}, which first consults the
 cache if it has an entry for the @code{path}.  If the cache has
 the entry, its value (the file content) is returned.  If not,
-it calls @var{file->string} with the @var{path} to fetch the file content,
+it calls @code{file->string} with the @var{path} to fetch the file content,
 register it to the cache, and return it.  The capacity of cache is
 set to 10 (the first argument of @code{make-lru-cache}), so when the
 11th file is read, the least recently used file will be purged from the
 cache.
+@c JP
+この手続きは@code{file-cache}変数をクロージャの中に綴じ込んでいます。
+その値は文字列のパス名とファイルの中身を結びつけるLRU(least recently used)キャッシュです。
+キャッシュの動作は@code{cache-through!}で実現されています。
+この手続きは、
+まず@var{path}をキーとして持つエントリが@code{file-cache}にあるかどうか調べます。
+そのキーを持つエントリがキャッシュ中にあればその値(ファイルの中身)が返されます。
+キャッシュ中に無ければ、@code{file->string}が@var{path}を引数として呼ばれ、
+それが返したファイルの中身がキャッシュに登録され、返されます。
+キャッシュの容量は@code{make-lru-cache}の第1引数で指定され、ここでは10になっています。
+つまり、11個目のファイルが読まれた時に、一番長く使われていない
+(least recently used)ファイルがキャッシュから消去されます。
+@c COMMON
 
+@c EN
 The effect of cache isn't very visible in the above example.  You
 can insert some print stubs to see the cache is actually in action:
+@c JP
+上の例そのままではキャッシュの効果が見え辛いですが、
+printスタブをいれて試してみると、
+いつキャッシュが実際にファイルの中身を取りにゆくかわかるでしょう。
+@c COMMON
 
 @example
 (define file->string/cached
@@ -1761,9 +1802,14 @@ can insert some print stubs to see the cache is actually in action:
                         (file->string path))))))
 @end example
 
+@c EN
 Caveat: A cache itself isn't MT-safe.  If you are using it in
 multithreaded programs, you have to wrap it with an atom
 (@pxref{Synchronization primitives}):
+@c JP
+注意: キャッシュ自身はスレッドセーフではありません。
+マルチスレッドプログラムでキャッシュを使う場合は、キャッシュをatomでラップしてください。
+@c COMMON
 
 @example
 (use data.cache)
@@ -1776,20 +1822,38 @@ multithreaded programs, you have to wrap it with an atom
       (atomic file-cache (cut cache-through! <> path file->string)))))
 @end example
 
-
+@c EN
 @subheading Common properties of caches
+@c JP
+@subheading キャッシュに共通の性質
+@c COMMON
 
+@c EN
 A cache of any kind has a comparator and a storage.
 The comparator is used to compare keys; in the example above,
 we use @code{string-comparator} to compare string pathnames
-(@xref{Basic comparators}, for more about comparators).
+(@pxref{Basic comparators}, for more about comparators).
+@c JP
+どんなキャッシュにも、比較器とストレージがあります。
+比較器はキーを比較するのに使われます。上の例ではパス名を比較するために
+@code{string-comparator}を渡しています
+比較器について詳しくは@ref{Basic comparators}を参照してください。
+@c COMMON
 
+@c EN
 The storage is a dictionary that maps keys to internal
 structures of the cache.  By default, a hashtable is
 created automatically using the given comparator (or,
 if a comparator is omitted, using @code{default-comparator}).
 The comparator must have hash function.
+@c JP
+ストレージは、キーとキャッシュ内部の構造とをマッピングする辞書です。
+デフォルトでは与えられた比較器を使うハッシュテーブルが使われるので、
+比較器はハッシュ関数を持っていなければなりません。
+比較器が省略された場合は@code{default-comparator}が使われます。
+@c COMMON
 
+@c EN
 Alternatively, you can give a pre-filled dictionary
 (copied from another instance of the same kind of cache) 
 to start cache with some data already in it.  Note that
@@ -1797,54 +1861,118 @@ what the cache keeps in the dictionary totally depends on the
 cache algorithm, so you can't just pass a random dictionary;
 it has to be created by the same kind of cache.
 If you pass in the storage, the comparator is taken from it.
+@c JP
+あるいは、
+(同じ種類のキャッシュからコピーされた)辞書をストレージとして渡すことで、
+既にエントリがある状態のキャッシュを作ることもできます。
+キャッシュが辞書に登録している構造はキャッシュアルゴリズムごとに異なるので、
+何でも辞書を渡せるわけではないことに注意してください。
+同じ種類のキャッシュによって作られた辞書しか渡せません。
+ストレージとなる辞書を渡した場合、比較器はその辞書から取られます。
+@c COMMON
 
-Thus, the comparator constructors uniformly take keyword arguments
-@code{comparator} and @code{storage}; you can specify either one,
+@c EN
+Thus, the cache constructors uniformly take keyword arguments
+@var{comparator} and @var{storage}; you can specify either one,
 or omit both to use the defaults.
+@c JP
+従ってキャッシュのコンストラクタは共通して@var{comparator}と@var{storage}の
+キーワード引数を取ります。デフォルトの動作で良ければ、
+どちらかひとつ、あるいは両方とも省略することができます。
+@c COMMON
 
+@c EN
 @subheading Predefined caches
+@c JP
+@subheading 定義済みのキャッシュ
+@c COMMON
 
-For @code{storage} and @code{comparator} keyword arguments, see above.
+@c EN
+For the @var{storage} and @var{comparator} keyword arguments, see above.
+@c JP
+@var{storage}と@var{comparator}キーワード引数については上の節を参照してください。
+@c COMMON
 
 @defun make-fifo-cache capacity :key storage comparator
+@c EN
 Creates and returns a FIFO (first-in, first-out) cache that can
 hold up to @var{capacity} entries.
 If the number of entries exceeds @var{capacity}, the oldest entry
 is removed.
+@c JP
+@var{capacity}個までのエントリを保持できる、FIFO(先入れ先出し)キャッシュを作って返します。
+エントリ数が@var{capacity}を越えそうになった場合、一番古いものから削除されます。
+@c COMMON
 @end defun
 
 @defun make-lru-cache capacity :key storage comparator
+@c EN
 Creates and returns an LRU (least recently used) cache that can
 hold up to @var{capacity} entries.
 If the number of entries exceeds @var{capacity}, the least recently used
 entry is removed.
+@c JP
+@var{capacity}個までのエントリを保持できる、
+LRU(least recently used)キャッシュを作って返します。
+エントリ数が@var{capacity}を越えそうになった場合、一番長く使われなかったものから削除されます。
+@c COMMON
 @end defun
 
 @defun make-ttl-cache timeout :key storage comparator timestamper
+@c EN
 Creates and returns a TTL (time to live) cache with the timeout value
 @var{timeout}.
 Each entry is timestamped when it's inserted, and it is removed
 when the current time passes @var{timeout} unit from the timestamp.
 The actual entry removal is done when the cache is accessed.
+@c JP
+タイムアウト値@var{timeout}を持つTTL(生存時間)キャッシュを作って返します。
+各エントリには、挿入された時間が記録されます。@var{timeout}を経過したエントリは削除されます。
+実際の削除は、キャッシュがアクセスされた時に行われます。
+@c COMMON
 
+@c EN
 By default, the Unix system time (seconds from Epoch) is used
 as a timestamp, and @var{timeout} is in seconds.  It may not be
 fine-grained enough if you add multiple entries in shorter intervals
 than seconds.   You can customize
 it by giving a thunk to @var{timestamper}; the thunk is called to
-obtain a timestamp, which can be any monotonically increasing real number.
+obtain a timestamp, which can be any monotonically increasing real number
+(it doesn't need to be associated with physical time).
 If you give @var{timestamper}, the unit of @var{timeout} value should
 be the same as whatever @var{timestamper} returns.
+@c JP
+デフォルトではUnixシステム時間(Epochからの秒数)がタイムスタンプに使われます。
+1秒より短い間隔でたくさんのエントリが追加される場合にはこれでは分解能が足りないかもしれません。
+@var{timestamper}にサンクを与えることで、タイムスタンプをカスタマイズすることができます。
+キャッシュは時刻が必要になる度に@var{timestamper}を引数無しで呼び出します。
+@var{timestamper}は単調非減少な実数を返さねばなりません(物理的な時間と結びついている必要は
+ありません)。
+@var{timestamper}を与えた場合、@var{timeout}引数の単位は
+@var{timestamper}が返す値の単位と同じでなければなりません。
+@c COMMON
 @end defun
 
 @defun make-ttlr-cache timeout :key storage comparator timestamper
+@c EN
 A variation of TTL cache, but the entry's timestamp is updated
 (refreshed) whenever the entry is read.  Hence we call it TTL with refresh
 (TTLR).  But you can also think it as a variation of LRU cache with
 timeout.
+@c JP
+TTLキャッシュのバリエーションで、エントリは書き込まれた時だけでなく、
+読み出された時にもタイムスタンプが更新されます。
+手続きの名前TTLRは、リフレッシュ付きTTL(TTL with refresh)という意味です。
+ただ、これをタイムアウト付きLRUキャッシュと見ることもできます。
+@c COMMON
 
+@c EN
 The unit of timeout, and the role of @var{timestamper} argument, are
 the same as @code{make-ttl-cache}.
+@c JP
+タイムアウトの単位および@var{timestamper}引数の役割については、
+@code{make-ttl-cache}と同じです。
+@c COMMON
 @end defun
 
 
