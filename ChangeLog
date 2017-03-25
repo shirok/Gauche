@@ -1,5 +1,8 @@
 2017-03-24  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/condutil.scm: Use quasirename in the macro transformer,
+	  to ensure keywords are handled hygienically.
+
 	* src/libobj.scm: Make expansion of define-class, define-generic and
 	  define-method hygiene.  It's a temporary measure---after releasing
 	  0.9.6, we'll rewrite it with er-macro-transformer (hopefully).
