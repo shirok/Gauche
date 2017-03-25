@@ -1441,5 +1441,30 @@
 
 (atest* #/a/ [() => #f] [(<string>) => #t] [(<integer>) => #f])
 
-(test-end)
+;;----------------------------------------------------------------
+(test-section "expansion hygiene")
 
+;; define-class etc. are expanded in libobj.scm.  we should make sure that
+;; the expansion won't break even user env doesn't import gauche native stuff.
+
+(define-module object-hygiene-1
+  (define-syntax defclass (with-module gauche define-class))
+  (define-syntax defmethod (with-module gauche define-method))
+  (define ref (with-module gauche ref))
+  (define-syntax quote (with-module gauche quote))
+  (export <object-hygiene-1> object-hygiene-1-c)
+  (extend)
+  (defclass <object-hygiene-1> ()
+    (a b (c :init-keyword ':c)))
+  (defmethod object-hygiene-1-c ((self <object-hygiene-1>))
+    (ref self 'c)))
+
+(import object-hygiene-1)
+(test* "object-hygiene-1" '(#t (a) (b) (c :init-keyword :c))
+       (cons (is-a? <object-hygiene-1> <class>)
+             (class-slots <object-hygiene-1>)))
+(test* "object-hygiene-1-c" 4
+       (let1 z (make <object-hygiene-1> :c 4)
+         (object-hygiene-1-c z)))
+  
+(test-end)

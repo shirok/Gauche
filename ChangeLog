@@ -1,3 +1,9 @@
+2017-03-24  Shiro Kawai  <shiro@acm.org>
+
+	* src/libobj.scm: Make expansion of define-class, define-generic and
+	  define-method hygiene.  It's a temporary measure---after releasing
+	  0.9.6, we'll rewrite it with er-macro-transformer (hopefully).
+
 2017-03-17  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/interactive/toplevel.scm: Added reload and load toplevel

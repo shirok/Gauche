@@ -47,9 +47,14 @@
 (define-module gauche.object)
 (select-module gauche.object)
 
+;; TRANSIENT: If GAUCHE_KEYWORD_IS_SYMBOL, we need to rename keywords as well
+;; to preserve hygiene.  The symbol? check allows us to pass a keyword to
+;; %id, regardless of GAUCHE_KEYWORD_IS_SYMBOL setting.
 (define (%id name)
-  ((with-module gauche.internal make-identifier)
-   name (find-module 'gauche.object) '()))
+  (if (symbol? name)
+    ((with-module gauche.internal make-identifier)
+     name (find-module 'gauche.object) '())
+    name))
 
 ;;; I'm trying to make MOP as close to STklos and Goops as possible.
 ;;; The perfect compatibility can't be done since the underlying implemenation
@@ -90,9 +95,11 @@
           [Q. (%id'quote)])
       (if getter-name
         `(,(%id'begin)
-          (,define. ,true-name (,make. ,class :name (,Q. ,true-name) ,@other))
+          (,define. ,true-name
+            (,make. ,class ,(%id':name) (,Q. ,true-name) ,@other))
           (,(%id'set!) (,(%id'setter) ,getter-name) ,true-name))
-        `(,define. ,true-name (,make. ,class :name (,Q. ,true-name) ,@other))))))
+        `(,define. ,true-name
+           (,make. ,class ,(%id':name) (,Q. ,true-name) ,@other))))))
 
 ;; allow (setter name) type declaration
 (define (%check-setter-name name)
@@ -127,9 +134,12 @@
   (define has-setter?. (%id'has-setter?))
   (define setter. (%id'setter))
   (define %ensure-generic-function. (%id'%ensure-generic-function))
+  (define <method>. (%id'<method>))
   (define add-method!. (%id'add-method!))
+  (define current-module. (%id'current-module))
 
   ;; check qualifiers.  we only support :locked for now
+  ;; TRANSIENT: Must use hygienic compare.
   (if-let1 bad (find (^q (not (memq q '(:locked)))) quals)
     (error "syntax-error: unsupported method qualifier:" bad))
 
@@ -156,14 +166,14 @@
                         `(,lambda. ,real-args ,@body))])
       (receive (true-name getter-name) (%check-setter-name name)
         (let1 gf (gensym)
-          `(,let. ((,gf (,%ensure-generic-function. (,quote. ,true-name) (current-module))))
+          `(,let. ((,gf (,%ensure-generic-function. (,quote. ,true-name) (,current-module.))))
              (,add-method!. ,gf
-                            (,make. <method>
-                                    :generic ,gf
-                                    :specializers (,list. ,@specializers)
-                                    :lambda-list (,quote. ,lambda-list)
-                                    :method-locked ,(boolean (memq :locked quals))
-                                    :body ,real-body))
+                            (,make. ,<method>.
+                                    ,(%id':generic) ,gf
+                                    ,(%id':specializers) (,list. ,@specializers)
+                                    ,(%id':lambda-list) (,quote. ,lambda-list)
+                                    ,(%id':method-locked) ,(boolean (memq :locked quals))
+                                    ,(%id':body) ,real-body))
              ,@(if getter-name
                  `((,unless. (,has-setter?. ,getter-name)
                      (,set!. (,setter. ,getter-name) ,gf)))
@@ -217,6 +227,12 @@
 ;; Class
 ;;
 
+;; TRANSIENT: We should employ er-macro-transformer to expand
+;; define-class etc., but this file need to be compiled by 0.9.5
+;; and we've improved the transformer since then.  So we postponed
+;; rewriting these after 0.9.6 release.  Meanwhile, we manually
+;; replacing identifiers.
+
 ;(define-macro (define-class name supers slots . options)
 ;  (%expand-define-class name supers slots options))
 
@@ -237,6 +253,7 @@
   (define %check-class-binding. (%id'%check-class-binding))
   (define for-each. (%id'for-each))
   (define class-slots. (%id'class-slots))
+  (define current-module. (%id'current-module))
   (let* ([metaclass (or (get-keyword :metaclass options #f)
                         `(,(%id '%get-default-metaclass)
                           (,list. ,@supers)))]
@@ -245,16 +262,16 @@
          [slot      (gensym)])
     `(,define. ,name
        (,let. ((,class (,make. ,metaclass
-                               :name (,quote. ,name)
-                               :supers (,list. ,@supers)
-                               :slots (,list. ,@slot-defs)
-                               :defined-modules (,list. (current-module))
+                               ,(%id':name) (,quote. ,name)
+                               ,(%id':supers) (,list. ,@supers)
+                               ,(%id':slots) (,list. ,@slot-defs)
+                               ,(%id':defined-modules) (,list. (,current-module.))
                                ,@options)))
-         (,when. (,%check-class-binding. (,quote. ,name) (current-module))
+         (,when. (,%check-class-binding. (,quote. ,name) (,current-module.))
            (,(%id'redefine-class!) ,name ,class))
          (,for-each.
           (,lambda.[,slot]
-                   (,(%id'%make-accessor) ,class ,slot (current-module)))
+                   (,(%id'%make-accessor) ,class ,slot (,current-module.)))
           (,class-slots. ,class))
          ,class))
     ))
@@ -269,12 +286,18 @@
             [(not (and (pair? opts) (pair? (cdr opts))))
              (error "bad slot specification:" sdef)]
             [else
+             ;; TRANSIENT: These comparison must be done hygienically, once
+             ;; we replace expander with er transformer.
              (case (car opts)
                [(:initform :init-form)
-                (loop (cddr opts) `((,lambda.[] ,(cadr opts)) :init-thunk ,@r))]
+                (loop (cddr opts)
+                      `((,lambda.[] ,(cadr opts)) ,(%id':init-thunk) ,@r))]
                [(:getter :setter :accessor)
                 (loop (cddr opts) `((,quote. ,(cadr opts)) ,(car opts) ,@r))]
-               [else (loop (cddr opts) (list* (cadr opts) (car opts) r))])]))
+               [else (loop (cddr opts)
+                           (list* (cadr opts)
+                                  `(,quote. ,(car opts))
+                                  r))])]))
     `(,quote. (,sdef))))
 
 ;; Determine default metaclass, that is a class inheriting all the metaclasses
