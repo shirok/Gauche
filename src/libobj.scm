@@ -93,11 +93,11 @@
       (if getter-name
         (quasirename %id
           (define ,true-name
-            (rlet1 ,true-name (make ,class :name ',true-name ,@other)
+            (rlet1 ,true-name (make ,class ':name ',true-name ,@other)
               (set! (setter ,getter-name) ,true-name))))
         (quasirename %id
           (define ,true-name
-            (make ,class :name ',true-name ,@other)))))))
+            (make ,class ':name ',true-name ,@other)))))))
 
 ;; allow (setter name) type declaration
 (define (%check-setter-name name)
@@ -152,20 +152,17 @@
       (receive (true-name getter-name) (%check-setter-name name)
         (let1 gf (gensym)
           (quasirename %id
-            (let ((,gf (%ensure-generic-function ',true-name (current-module))))
+            (rlet1 ,gf (%ensure-generic-function ',true-name (current-module))
               (add-method! ,gf (make <method>
-                                 :generic ,gf
-                                 :specializers (list ,@specializers)
-                                 :lambda-list ',lambda-list
-                                 :method-locked (boolean (memq ':locked ',quals))
-                                 :body ,real-body))
-              ,@(if getter-name
-                  (quasirename %id
-                    ((unless (has-setter? ,getter-name)
-                       (set! (setter ,getter-name) ,gf))))
-                  '())
-              ,gf))))
-      )))
+                                 ':generic ,gf
+                                 ':specializers (list ,@specializers)
+                                 ':lambda-list ',lambda-list
+                                 ':method-locked (boolean (memq ':locked ',quals))
+                                 ':body ,real-body))
+              ,@(cond-list [getter-name
+                            (quasirename %id
+                              (unless (has-setter? ,getter-name)
+                                (set! (setter ,getter-name) ,gf)))]))))))))
 
 (inline-stub
  ;; internal for %ensure-generic-function
@@ -231,18 +228,16 @@
          [slot      (gensym)])
     (quasirename %id
       (define ,name
-        (let ((,class (make ,metaclass
-                        :name ',name :supers (list ,@supers)
-                        :slots (list ,@slot-defs)
-                        :defined-modules (list (current-module))
-                        ,@options)))
+        (rlet1 ,class (make ,metaclass
+                        ':name ',name ':supers (list ,@supers)
+                        ':slots (list ,@slot-defs)
+                        ':defined-modules (list (current-module))
+                        ,@options)
           (when (%check-class-binding ',name (current-module))
             (redefine-class! ,name ,class))
           (for-each (lambda (,slot)
                       (%make-accessor ,class ,slot (current-module)))
-                    (class-slots ,class))
-          ,class)))
-    ))
+                    (class-slots ,class)))))))
 
 (define (%process-slot-definition sdef)
   (if (pair? sdef)
