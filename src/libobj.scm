@@ -89,17 +89,15 @@
 (define (%expand-define-generic name opts)
   (receive (true-name getter-name) (%check-setter-name name)
     (let ([class (get-keyword :class opts <generic>)]
-          [other (delete-keyword :class opts)]
-          [define. (%id'define)]
-          [make. (%id'make)]
-          [Q. (%id'quote)])
+          [other (delete-keyword :class opts)])
       (if getter-name
-        `(,(%id'begin)
-          (,define. ,true-name
-            (,make. ,class ,(%id':name) (,Q. ,true-name) ,@other))
-          (,(%id'set!) (,(%id'setter) ,getter-name) ,true-name))
-        `(,define. ,true-name
-           (,make. ,class ,(%id':name) (,Q. ,true-name) ,@other))))))
+        (quasirename %id
+          (define ,true-name
+            (rlet1 ,true-name (make ,class :name ',true-name ,@other)
+              (set! (setter ,getter-name) ,true-name))))
+        (quasirename %id
+          (define ,true-name
+            (make ,class :name ',true-name ,@other)))))))
 
 ;; allow (setter name) type declaration
 (define (%check-setter-name name)
@@ -123,21 +121,6 @@
 ;  (%expand-define-macro name quals specs body))
 
 (define (%expand-define-method name quals specs body)
-  (define lambda. (%id'lambda))
-  (define let. (%id'let))
-  (define unless. (%id'unless))
-  (define set!. (%id'set!))
-  (define quote. (%id'quote))
-  (define make. (%id'make))
-  (define apply. (%id'apply))
-  (define list. (%id'list))
-  (define has-setter?. (%id'has-setter?))
-  (define setter. (%id'setter))
-  (define %ensure-generic-function. (%id'%ensure-generic-function))
-  (define <method>. (%id'<method>))
-  (define add-method!. (%id'add-method!))
-  (define current-module. (%id'current-module))
-
   ;; check qualifiers.  we only support :locked for now
   ;; TRANSIENT: Must use hygienic compare.
   (if-let1 bad (find (^q (not (memq q '(:locked)))) quals)
@@ -161,24 +144,27 @@
                            `(,@reqargs ,rest next-method)
                            `(,@reqargs next-method))]
            [real-body (if opts
-                        `(,lambda. ,real-args
-                           (,apply. (,lambda. ,opts ,@body) ,rest))
-                        `(,lambda. ,real-args ,@body))])
+                        (quasirename %id
+                          (lambda ,real-args
+                            (apply (lambda ,opts ,@body) ,rest)))
+                        (quasirename %id
+                          (lambda ,real-args ,@body)))])
       (receive (true-name getter-name) (%check-setter-name name)
         (let1 gf (gensym)
-          `(,let. ((,gf (,%ensure-generic-function. (,quote. ,true-name) (,current-module.))))
-             (,add-method!. ,gf
-                            (,make. ,<method>.
-                                    ,(%id':generic) ,gf
-                                    ,(%id':specializers) (,list. ,@specializers)
-                                    ,(%id':lambda-list) (,quote. ,lambda-list)
-                                    ,(%id':method-locked) ,(boolean (memq :locked quals))
-                                    ,(%id':body) ,real-body))
-             ,@(if getter-name
-                 `((,unless. (,has-setter?. ,getter-name)
-                     (,set!. (,setter. ,getter-name) ,gf)))
-                 '())
-             ,gf)))
+          (quasirename %id
+            (let ((,gf (%ensure-generic-function ',true-name (current-module))))
+              (add-method! ,gf (make <method>
+                                 :generic ,gf
+                                 :specializers (list ,@specializers)
+                                 :lambda-list ',lambda-list
+                                 :method-locked (boolean (memq ':locked ',quals))
+                                 :body ,real-body))
+              ,@(if getter-name
+                  (quasirename %id
+                    ((unless (has-setter? ,getter-name)
+                       (set! (setter ,getter-name) ,gf))))
+                  '())
+              ,gf))))
       )))
 
 (inline-stub
@@ -236,53 +222,32 @@
 ;(define-macro (define-class name supers slots . options)
 ;  (%expand-define-class name supers slots options))
 
-;; kludge to import make-identifier.  At the time libobj is initialized,
-;; libmod isn't initialized yet, so we can't say
-;; (define make-identifier (with-module gauche.internal make-identifier).
-(define-macro (make-identifier name mod local)
-  `((with-module gauche.internal make-identifier) ,name ,mod ,local))
-
 (define (%expand-define-class name supers slots options)
-  (define define. (%id'define))
-  (define let. (%id'let))
-  (define make. (%id'make))
-  (define quote. (%id'quote))
-  (define list. (%id'list))
-  (define when. (%id'when))
-  (define lambda. (%id'lambda))
-  (define %check-class-binding. (%id'%check-class-binding))
-  (define for-each. (%id'for-each))
-  (define class-slots. (%id'class-slots))
-  (define current-module. (%id'current-module))
   (let* ([metaclass (or (get-keyword :metaclass options #f)
-                        `(,(%id '%get-default-metaclass)
-                          (,list. ,@supers)))]
+                        (quasirename %id
+                          (%get-default-metaclass (list ,@supers))))]
          [slot-defs (map %process-slot-definition slots)]
          [class     (gensym)]
          [slot      (gensym)])
-    `(,define. ,name
-       (,let. ((,class (,make. ,metaclass
-                               ,(%id':name) (,quote. ,name)
-                               ,(%id':supers) (,list. ,@supers)
-                               ,(%id':slots) (,list. ,@slot-defs)
-                               ,(%id':defined-modules) (,list. (,current-module.))
-                               ,@options)))
-         (,when. (,%check-class-binding. (,quote. ,name) (,current-module.))
-           (,(%id'redefine-class!) ,name ,class))
-         (,for-each.
-          (,lambda.[,slot]
-                   (,(%id'%make-accessor) ,class ,slot (,current-module.)))
-          (,class-slots. ,class))
-         ,class))
+    (quasirename %id
+      (define ,name
+        (let ((,class (make ,metaclass
+                        :name ',name :supers (list ,@supers)
+                        :slots (list ,@slot-defs)
+                        :defined-modules (list (current-module))
+                        ,@options)))
+          (when (%check-class-binding ',name (current-module))
+            (redefine-class! ,name ,class))
+          (for-each (lambda (,slot)
+                      (%make-accessor ,class ,slot (current-module)))
+                    (class-slots ,class))
+          ,class)))
     ))
 
 (define (%process-slot-definition sdef)
-  (define list. (%id'list))
-  (define quote. (%id'quote))
-  (define lambda. (%id'lambda))
   (if (pair? sdef)
     (let loop ([opts (cdr sdef)] [r '()])
-      (cond [(null? opts) `(,list. (,quote. ,(car sdef)) ,@(reverse! r))]
+      (cond [(null? opts) (quasirename %id (list ',(car sdef) ,@(reverse! r)))]
             [(not (and (pair? opts) (pair? (cdr opts))))
              (error "bad slot specification:" sdef)]
             [else
@@ -291,14 +256,15 @@
              (case (car opts)
                [(:initform :init-form)
                 (loop (cddr opts)
-                      `((,lambda.[] ,(cadr opts)) ,(%id':init-thunk) ,@r))]
+                      (quasirename %id
+                        ((lambda () ,(cadr opts)) ':init-thunk ,@r)))]
                [(:getter :setter :accessor)
-                (loop (cddr opts) `((,quote. ,(cadr opts)) ,(car opts) ,@r))]
-               [else (loop (cddr opts)
-                           (list* (cadr opts)
-                                  `(,quote. ,(car opts))
-                                  r))])]))
-    `(,quote. (,sdef))))
+                (loop (cddr opts)
+                      (quasirename %id (',(cadr opts) ',(car opts) ,@r)))]
+               [else
+                (loop (cddr opts)
+                      (quasirename %id (,(cadr opts) ',(car opts) ,@r)))])]))
+    (quasirename %id '(,sdef))))
 
 ;; Determine default metaclass, that is a class inheriting all the metaclasses
 ;; of supers.  The idea is taken from stklos.  The difference is that
