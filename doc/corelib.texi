@@ -7350,6 +7350,16 @@ Returns true if and only if @var{obj} is a character set object.
 @c COMMON
 @end defun
 
+@defun char-set-immutable? char-set
+@c EN
+Returns @code{#t} if @var{char-set} is an immutable char-set,
+@code{#f} if it's a mutable char-set.
+@c JP
+@var{char-set}が変更不可の文字集合であれば@code{#t}を、変更可能な文字集合であれば
+@code{#f}を返します。
+@c COMMON
+@end defun
+
 @defun char-set-contains? char-set char
 [SRFI-14]
 @c EN
