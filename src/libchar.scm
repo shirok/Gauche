@@ -231,8 +231,10 @@
 
 (define-cproc char-set-complement! (cs::<char-set>) Scm_CharSetComplement)
 
-(define-in-module gauche (char-set-complement cs)
-  (char-set-complement! (char-set-copy cs)))
+(define (char-set-complement cs) (char-set-complement! (char-set-copy cs)))
+
+(define-cproc char-set-immutable? (cs::<char-set>) ::<boolean>
+  (return (SCM_CHAR_SET_IMMUTABLE_P cs)))
 
 (select-module gauche.internal)
 

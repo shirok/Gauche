@@ -1,3 +1,8 @@
+2017-03-30  Shiro Kawai  <shiro@acm.org>
+
+	* src/libchar.scm (char-set-immutable?): Added Scheme API for
+	  SCM_CHAR_SET_IMMUTABLE_P.
+
 2017-03-24  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/condutil.scm: Use quasirename in the macro transformer,
