@@ -859,3 +859,14 @@ Supported by the module @code{srfi-141}.  @xref{Integer division}.
 
 整数除算
 モジュール@code{srfi-141}でサポートされます。@ref{Integer division}参照。
+
+
+srfi-145
+(assume)
+
+Assumptions
+Built-in.
+
+アサンプション
+組み込みです。
+

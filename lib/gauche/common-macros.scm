@@ -550,3 +550,21 @@
             [r (cond-list . rest)])
        (if tmp (cons (begin . expr) r) r))]
     ))
+
+;;;----------------------------------------------------------------
+;;; assume (srfi-145)
+;;;
+
+;; We might add run-time optimization switch to expand assume to nothing.
+(define-syntax assume
+  (syntax-rules ()
+    [(_ expr)
+     (unless expr
+       (error (format "Invalid assumption: ~s" 'expr)))]
+    [(_ expr message ...)
+     (unless expr
+       (error (format "Invalid assumption: ~s:" 'expr) message ...))]))
+
+       
+     
+              

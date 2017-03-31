@@ -109,6 +109,7 @@
           (:macro dotimes dolist while until)
           (:macro guard unwind-protect)
           (:macro cond-list)
+          (:macro assume)
           )
 
 (autoload gauche.macroutil

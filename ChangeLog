@@ -1,3 +1,7 @@
+2017-03-31  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/common-macros.scm (assume): Added srfi-145 assume.
+
 2017-03-30  Shiro Kawai  <shiro@acm.org>
 
 	* src/libchar.scm (char-set-immutable?): Added Scheme API for
