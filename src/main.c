@@ -290,6 +290,9 @@ void test_paths_setup(void)
         Scm_AddLoadPath("../../libsrc", FALSE);
         Scm_AddLoadPath("../../lib", FALSE);
     }
+    /* Also set a feature identifier gauche.in-place, so that other modules
+       may initialize differently if needed. */
+    Scm_AddFeature("gauche.in-place", NULL);
 }
 
 /* Cleanup */

@@ -1,5 +1,11 @@
 2017-03-31  Shiro Kawai  <shiro@acm.org>
 
+	* src/main.c: Define feature identifier gauche.in-place if -ftest
+	  option is given (we avoid gauche.test, for it looks too similar to
+	  the module gauche.test; also, 'in-place' is more specific on
+	  what it represents.  We should probably rather rename the command-line
+	  option as -fin-place.)
+
 	* lib/gauche/common-macros.scm (assume): Added srfi-145 assume.
 
 2017-03-30  Shiro Kawai  <shiro@acm.org>
