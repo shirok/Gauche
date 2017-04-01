@@ -1,3 +1,9 @@
+2017-04-01  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/interactive/info.scm (get-info-paths): Insert doc/ of
+	  source tree first for info search directory when gosh is invoked
+	  with -ftest.
+
 2017-03-31  Shiro Kawai  <shiro@acm.org>
 
 	* src/main.c: Define feature identifier gauche.in-place if -ftest

@@ -128,8 +128,12 @@
   (let* ([syspath (cond [(sys-getenv "INFOPATH") => (cut string-split <> #\:)]
                         [else '()])]
          [instpath (list (gauche-config "--infodir"))]
-         [in-place (list "../doc")])
-    (append syspath instpath in-place)))
+         [in-place (cond-expand
+                    [gauche.in-place (if (member "../../lib" *load-path*)
+                                       '("../../doc")
+                                       '("../doc"))]
+                    [else '()])])
+    (append in-place syspath instpath)))
 
 (define (find-info-file)
   (let1 paths (get-info-paths)
