@@ -1924,6 +1924,50 @@ Otherwise, undefined value is returned.
 @c COMMON
 @end defspec
 
+@defmac assume test-expr message @dots{}
+[SRFI-145]
+@c EN
+This declares the programmer's intent that the code following this path
+always satisfy @var{test-expr}.
+
+Currently, Gauche evaluates @var{test-expr}, and if it evaluates to false,
+an error is signalled.
+@c JP
+@c COMMON
+
+@example
+(define (real-sqrt x)
+  (assume (and (real? x) (>= x 0)))
+  (sqrt x))
+
+gosh> (real-sqrt -1)
+*** ERROR: Invalid assumption: (and (real? x) (>= x 0))
+@end example
+
+@c EN
+Note: This form is advisory---@var{test-expr} isn't guaranteed to be
+evaluated, nor it isn't guaranteed for an error is signaled when
+@var{test-expr} fails.  For example, we may add an optimization
+option that omits testing in speed-optimized code in future.
+We may also enhance the compiler to generate better code using the
+given information---for example, in the above @code{real-sqrt} code,
+the compiler could theoretically deduce that @code{(sqrt x)} only needs to
+work as real functions, so it would be able to generate specialized code.
+Use this form to inform the compiler and the reader your intention.
+@c JP
+註: このフォームは勧告として機能します。@var{test-expr}は評価されるとは限らず、
+また@var{test-expr}が失敗してもエラーが投げられるとは限りません。例えば、
+将来、最適化オプションをつけて、
+速度最適化レベルが高い時はテストを省略するようになるかもしれません。
+また一方で、この情報を利用してコンパイラがより良いコードを出すように拡張される
+可能性もあります。例えば上の@code{real-sqrt}の例では、コンパイラは理論的には
+@code{(sqrt x)}が実関数として動作すれば良いということを演繹できるため、
+実数に特化したコードを生成できる可能性があります。
+このフォームを、コードの書き手の意図をコンパイラやコードの読み手に知らせるために
+用いると良いでしょう。
+@c COMMON
+@end defmac
+
 @node Binding constructs, Sequencing, Conditionals, Core syntax
 @section Binding constructs
 @c NODE 変数束縛

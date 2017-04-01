@@ -865,8 +865,8 @@ srfi-145
 (assume)
 
 Assumptions
-Built-in.
+Built-in.  @xref{Conditionals}.
 
 アサンプション
-組み込みです。
+組み込みです。@ref{Conditionals}参照。
 
