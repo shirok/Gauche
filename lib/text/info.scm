@@ -245,6 +245,8 @@
                  (print line) (entry (read-line))]
                 [(#/^ {5}...$/ line) ;; dots between entry line
                  (print line) (entry (read-line))]
+                [(#/^ {5}\u2026$/ line) ;; dots between entry line (unicode)
+                 (print line) (entry (read-line))]
                 [(#/^ {5}\S/ line)   ;; start description
                  (print line)
                  (let desc ([line (read-line)])
