@@ -136,6 +136,7 @@ returns a scalar index into the backing storage.
 
 @deftp {Class} <array-base>
 @clindex array-base
+@c MOD gauche.array
 @c EN
 An abstract base class of array types, that implements generic operations
 on the array.   To create an array instance,
@@ -170,6 +171,7 @@ you should use one of the following concrete array classes.
 @clindex f16array
 @clindex f32array
 @clindex f64array
+@c MOD gauche.array
 @c EN
 Concrete array classes.  The @code{<array>} class implements srfi-25
 compatible array, i.e. an array that can store any Scheme objects.
@@ -237,6 +239,7 @@ and content, so it is @code{equal?} to the original array.
 
 @defun array? obj
 [SRFI-25]
+@c MOD gauche.array
 @c EN
 Returns @code{#t} if @var{obj} is an array, @var{#f} otherwise.
 It is equivalent to @code{(is-a? obj <array-base>)}.
@@ -248,6 +251,7 @@ It is equivalent to @code{(is-a? obj <array-base>)}.
 
 @defun make-array shape :optional init
 [SRFI-25]
+@c MOD gauche.array
 @c EN
 Creates an array of shape @var{shape}.
 @var{Shape} must be a [ @var{D} x 2 ] array, and for each @var{k}
@@ -283,6 +287,7 @@ Shapeが@var{shape}である配列を作成します。
 @end defun
 @defun make-f32array shape :optional init
 @defunx make-f64array shape :optional init
+@c MOD gauche.array
 @c EN
 Like @code{make-array}, but creates and returns an uniform numeric array.
 @c JP
@@ -292,6 +297,7 @@ Like @code{make-array}, but creates and returns an uniform numeric array.
 
 @defun shape bound @dots{}
 [SRFI-25]
+@c MOD gauche.array
 @c EN
 Takes even number of exact integer arguments, and returns
 a two-dimensional array that is suitable for representing the shape
@@ -311,6 +317,7 @@ of an array.
 
 @defun array shape init @dots{}
 [SRFI-25]
+@c MOD gauche.array
 @c EN
 Creates an array of shape @var{shape}, initializing its elements by
 @var{init} @dots{}.
@@ -338,6 +345,7 @@ Shapeが@var{shape}であるような配列を作成し、
 @end defun
 @defun f32array shape init @dots{}
 @defunx f64array shape init @dots{}
+@c MOD gauche.array
 @c EN
 Like @code{array}, but creates and returns an uniform numeric array
 initialized by @var{init} @dots{}.
@@ -354,6 +362,7 @@ initialized by @var{init} @dots{}.
 
 @defun array-rank array
 [SRFI-25]
+@c MOD gauche.array
 @c EN
 Returns the number of dimensions of an array @var{array}.
 @c JP
@@ -367,6 +376,7 @@ Returns the number of dimensions of an array @var{array}.
 @end defun
 
 @defun array-shape array
+@c MOD gauche.array
 @c EN
 Returns a shape array of @var{array}.
 @c JP
@@ -378,6 +388,7 @@ Returns a shape array of @var{array}.
 @defunx array-end array dim
 @defunx array-length array dim
 [SRFI-25+]
+@c MOD gauche.array
 @c EN
 @code{Array-start} returns the inclusive lower bound of index of
 @var{dim}-th dimension of an array @var{array}.
@@ -404,6 +415,7 @@ And @code{array-length} returns the difference between two.
 @end defun
 
 @defun array-size array
+@c MOD gauche.array
 @c EN
 Returns the total number of elements in the array @var{array}.
 @c JP
@@ -420,6 +432,7 @@ Returns the total number of elements in the array @var{array}.
 @defun array-ref array k @dots{}
 @defunx array-ref array index
 [SRFI-25]
+@c MOD gauche.array
 @c EN
 Gets the element of array @code{array}.  In the first form,
 the element is specified by indices @var{k} @dots{}.
@@ -436,6 +449,7 @@ In the second form, the element is specified by an index object
 @defun array-set! array k @dots{} value
 @defunx array-set! array index value
 [SRFI-25]
+@c MOD gauche.array
 @c EN
 Sets the element of array @var{array} to @var{value}.  In the first form,
 the element is specified by indices @var{k} @dots{}.
@@ -452,6 +466,7 @@ In the second form, the element is specified by an index object
 
 @defun share-array array shape proc
 [SRFI-25]
+@c MOD gauche.array
 @c EN
 Creates and returns a new array of shape @var{shape}, that shares
 the backing storage with the given array @var{array}.
@@ -479,6 +494,7 @@ Shapeが@var{shape}であり、与えられた配列@var{array}とバッキン�
 @end defun
 
 @defun array-for-each-index array proc :optional index
+@c MOD gauche.array
 @c EN
 Calls @var{proc} with every index of @var{array}.
 If no @var{index} argument is provided, @var{proc} is called
@@ -550,6 +566,7 @@ The procedure returns an unspecified value.
 @end defun
 
 @defun shape-for-each shape proc :optional index
+@c MOD gauche.array
 @c EN
 Calls @var{proc} with all possible indexes represented by the shape
 @var{shape}.
@@ -571,6 +588,7 @@ gosh> (shape-for-each (shape 0 2 0 2) (^(i j) (print i","j)))
 @end defun
 
 @defun tabulate-array shape proc :optional index
+@c MOD gauche.array
 @c EN
 Calls @var{proc} over each index represented by the shape @var{shape},
 and creates an array from the result of @var{proc}.  The optional
@@ -591,6 +609,7 @@ The following example creates an identity matrix of the given shape:
 
 @defun array-retabulate! array proc :optional index
 @defunx array-retabulate! array shape proc :optional index
+@c MOD gauche.array
 @c EN
 Calls @var{proc} over each index of the given @var{array}, and
 modifies the array's element by the returned value of @var{proc}.
@@ -615,6 +634,7 @@ Returns an unspecified value.
 
 @defun array-map proc array0 array1 @dots{}
 @defunx array-map shape proc array0 array1 @dots{}
+@c MOD gauche.array
 @c EN
 The arguments @var{array0}, @var{array1}, @dots{} must be arrays
 with the same shape.  For each set of corresponding elements of
@@ -642,6 +662,7 @@ optimization in future in case @var{shape} is a literal.
 
 @defun array-map! array proc array0 array1 @dots{}
 @defunx array-map! array shape proc array0 array1 @dots{}
+@c MOD gauche.array
 @c EN
 Like @code{array-map}, but the results of @var{proc} are stored by the
 given @var{array}, whose shape must match the shape of input array(s).
@@ -656,6 +677,7 @@ Returns unspecified value.
 
 @defun array->vector array
 @defunx array->list array
+@c MOD gauche.array
 @c EN
 Returns a fresh vector or a fresh list of all elements in @var{array}.
 @c JP
@@ -671,6 +693,7 @@ Returns a fresh vector or a fresh list of all elements in @var{array}.
 @end defun
 
 @defun array-concatenate a b :optional dimension
+@c MOD gauche.array
 @c EN
 Concatenates arrays at the specified dimension.  The sizes of the
 specified dimension of two arrays must match, although the shapes
@@ -712,6 +735,7 @@ match.
 @end defun
 
 @defun array-transpose array :optional dim1 dim2
+@c MOD gauche.array
 @c EN
 The given array must have a rank greater than or equal to 2.
 Transpose the array's @var{dim1}-th dimension and
@@ -724,6 +748,7 @@ Transpose the array's @var{dim1}-th dimension and
 @end defun
 
 @defun array-rotate-90 array :optional dim1 dim2
+@c MOD gauche.array
 @c EN
 The given array must have a rank greater than or equal to 2.
 We regard the array as a matrix with @var{dim1}-th dimension
@@ -756,6 +781,7 @@ treated as a matrix of subarrays.
 
 @defun array-flip array :optional dimension
 @defunx array-flip! array :optional dimension
+@c MOD gauche.array
 @c EN
 Flips the content of the array across the @var{dimension}-th dimension.
 (default is 0).   @code{array-flip!} modifies the content of @var{array}
@@ -781,6 +807,7 @@ a fresh array with the flipped content and returns it.
 @end defun
 
 @defun identity-array dimension :optional class
+@c MOD gauche.array
 @c EN
 Returns a fresh identity array of rank 2, with the given dimension.
 You can pass one of array classes to @var{class} to make the result
@@ -801,6 +828,7 @@ the instance of the class; the default class is @code{<array>}.
 @end defun
 
 @defun array-inverse array
+@c MOD gauche.array
 @c EN
 Regards the @var{array} as a matrix, and returns its inverse matrix;
 @var{array} must be 2-dimensional, and must have square shape.  If
@@ -818,6 +846,7 @@ If @var{array} isn't a regular matrix, @code{#f} is returned.
 
 @defun determinant array
 @defunx determinant! array
+@c MOD gauche.array
 @c EN
 Regards the @var{array} as a matrix, and calculates its determinant;
 @var{array} must be 2-dimensional, and must have square shape.  If
@@ -838,6 +867,7 @@ calculation.  It is faster than @code{determinant}, which copies
 @end defun
 
 @defun array-mul a b
+@c MOD gauche.array
 @c EN
 Arrays @var{a} and @var{b} must be rank 2.   Regarding them
 as matrices, multiply them together.  The number of rows of @var{a}
@@ -860,6 +890,7 @@ and the number of columns of @var{b} must match.
 @end defun
 
 @defun array-expt array pow
+@c MOD gauche.array
 @c EN
 Raises @var{array} to the power of @var{pow}; @var{array} must be
 a square matrix, and @var{pow} must be a nonnegative exact integer.
@@ -871,6 +902,7 @@ a square matrix, and @var{pow} must be a nonnegative exact integer.
 
 @defun array-div-left a b
 @defunx array-div-right a b
+@c MOD gauche.array
 @c EN
 Inverse of @code{array-mul}; @code{array-div-left}
 rrturns a matrix @code{M} such that @code{(array-mul B M)}
@@ -897,6 +929,7 @@ If @code{B} isn't regular, an error is thrown.
 @defunx array-mul-elements! array array-or-scalar @dots{}
 @defunx array-div-elements array array-or-scalar @dots{}
 @defunx array-div-elements! array array-or-scalar @dots{}
+@c MOD gauche.array
 @c EN
 Element-wise arithmetics.  The second argument and after must
 be an array of the same shape of the first argument, or a number;
@@ -1136,6 +1169,7 @@ plus some setup code that needs to be run at initialization time.
 
 @deftp {Class} <cgen-unit>
 @clindex cgen-unit
+@c MOD gauche.cgen
 A @emph{cgen-unit} is a unit of C source generation.
 It corresponds to one .c file, and optionally one .h file.
 During the processing, a "current unit" is kept in a parameter
@@ -1212,6 +1246,7 @@ and optionally a header file.
 
 @deffn {Generic Function} cgen-emit-c cgen-unit
 @deffnx {Generic Function} cgen-emit-h cgen-unit
+@c MOD gauche.cgen
 Write the accumulated code fragments in @var{cgen-unit} to a
 C source file and C header file.  The name of the files are
 determined by calling @code{cgen-unit-c-file} and @code{cgen-unit-h-file},
@@ -1226,6 +1261,7 @@ We'll explain the details of how each file is organized under
 
 @deffn {Generic Function} cgen-unit-c-file cgen-unit
 @deffnx {Generic Function} cgen-unit-h-file cgen-unit
+@c MOD gauche.cgen
 Returns a string that names C source and header file for
 @var{cgen-unit}, respectively.  The default method first
 looks at @code{c-file} or @code{h-file} slot of the
@@ -1234,6 +1270,7 @@ slot and appends an extension @code{.c} or @code{.h}.
 @end deffn
 
 @deffn {Generic Function} cgen-unit-init-name cgen-unit
+@c MOD gauche.cgen
 Returns a string that names the initialization function
 generated to C.  It is used to create the default
 @code{init-prologue} value.
@@ -1265,6 +1302,7 @@ code fragments in an appropriate part:
 @defunx cgen-decl code @dots{}
 @defunx cgen-body code @dots{}
 @defunx cgen-init code @dots{}
+@c MOD gauche.cgen
 Put code fragments @var{code} @dots{} to the appropriate parts.
 Each fragment must be a string.
 @end defun
@@ -1297,6 +1335,7 @@ if you don't use other parts of the @code{cgen} modules.
 @defunx cgen-safe-name-friendly string
 @defunx cgen-safe-string string
 @defunx cgen-safe-comment string
+@c MOD gauche.cgen
 Escapes characters invalid in C identifiers, C string literals or C comments.
 
 With @code{cgen-safe-name}, characters other than ASCII alphabets
@@ -1351,6 +1390,7 @@ If you want to conditionalize a fragment by C preprocessor
 @code{#ifdef}s, use the following macro:
 
 @defmac cgen-with-cpp-condition cpp-expr body @dots{}
+@c MOD gauche.cgen
 Code fragments submitted in @var{body} @dots{} are protected
 by @code{#if @var{cpp-expr}} and @code{#endif}.
 
@@ -1408,6 +1448,7 @@ that handles submission of fragments to appropriate parts.
 
 @deftp {Class} <cgen-node>
 @clindex cgen-node
+@c MOD gauche.cgen
 A base class to represent a set of code fragments.
 
 The state of C preprocessor condition (set by @code{with-cgen-cpp-condition})
@@ -1423,6 +1464,7 @@ one or more of the following generic functions:
 @deffnx {Generic Function} cgen-emit-decl cgen-node
 @deffnx {Generic Function} cgen-emit-body cgen-node
 @deffnx {Generic Function} cgen-emit-init cgen-node
+@c MOD gauche.cgen
 These generic functions are called during writing out
 the C source within @code{cgen-emit-c} and @code{cgen-emit-h}.
 Inside these methods, anything written out to the
@@ -1445,6 +1487,7 @@ Once you define your subclass and create an instance,
 you can submit it to the current cgen unit by this procedure:
 
 @defun cgen-add! cgen-node
+@c MOD gauche.cgen
 Submit @var{cgen-node} to the current cgen unit.
 If the current unit is not set, @var{cgen-node} is simply ignored.
 @end defun
@@ -1481,6 +1524,7 @@ before the first call of @code{cgen-literal}, which may insert
 declarations that needs @file{gauche.h}.
 
 @defun cgen-literal obj
+@c MOD gauche.cgen
 Returns an @code{<cgen-literal>} object for a Scheme object @var{obj},
 and submit necessary declarations and initialization code to the
 current cgen unit.
@@ -1495,6 +1539,7 @@ the detail of the class isn't for public use, but you can use it
 to refer the created literal in C code.
 
 @deffn {Generic Function} cgen-cexpr cgen-literal
+@c MOD gauche.cgen
 Returns a C code expression fragment of type @code{ScmObj},
 which represents the Scheme literal value.
 
@@ -1667,12 +1712,14 @@ meaningful when the C type is a pointer type.
 
 @deftp {Class} <cgen-type>
 @clindex cgen-type
+@c MOD gauche.cgen
 An instance of this class represents a stub type.
 It can be looked up by name such as @code{<const-cstring>} by
 @code{cgen-type-from-name}.
 @end deftp
 
 @defun cgen-type-from-name name
+@c MOD gauche.cgen
 Returns an instance of @code{<cgen-type>} that has @var{name}.
 If the name is unknown, @code{#f} is returned.
 @end defun
@@ -1680,6 +1727,7 @@ If the name is unknown, @code{#f} is returned.
 @defun cgen-box-expr cgen-type c-expr
 @defunx cgen-unbox-expr cgen-type c-expr
 @defunx cgen-pred-expr cgen-type c-expr
+@c MOD gauche.cgen
 @var{c-expr} is a string denotes a C expression.
 Returns a string of C expression that boxes, unboxes, or
 typechecks the @var{c-expr} according to the @var{cgen-type}.
@@ -1768,46 +1816,59 @@ and also it keeps track of forward declarations.
 
 
 @deftp {Parameter} cise-ambient
+@c MOD gauche.cgen
 @end deftp
 
 @defun cise-default-ambient
+@c MOD gauche.cgen
 @end defun
 
 @defun cise-ambient-copy ambient
+@c MOD gauche.cgen
 @end defun
 
 @defun cise-ambient-decl-strings ambient
+@c MOD gauche.cgen
 @end defun
 
 @deftp {Parameter} cise-emit-source-line
+@c MOD gauche.cgen
 @end deftp
 
 @defun cise-render cise-fragment :optional port context
+@c MOD gauche.cgen
 @end defun
 
 @defun cise-render-to-string cise-fragment :optional context
+@c MOD gauche.cgen
 @end defun
 
 @defun cise-render-rec cise-fragment stmt/expr env
+@c MOD gauche.cgen
 @end defun
 
 @defun cise-translate inp outp :key environment
+@c MOD gauche.cgen
 @end defun
 
 
 @defun cise-register-macro! name expander :optional ambient
+@c MOD gauche.cgen
 @end defun
 
 @defun cise-lookup-macro name :optional ambient
+@c MOD gauche.cgen
 @end defun
 
 @defmac define-cise-stmt name [env] clause @dots{} [:where definition @dots{}]
 @defmacx define-cise-expr name [env] clause @dots{} [:where definition @dots{}]
 @defmacx define-cise-toplevel name [env] clause @dots{} [:where definition @dots{}]
+@c MOD gauche.cgen
 @end defmac
 
 @defmac define-cise-macro (name form env) body @dots{}
 @defmacx define-cise-macro name name2
+@c MOD gauche.cgen
 @end defmac
 
 
@@ -1888,6 +1949,7 @@ your system or not, by the following function.
 @c COMMON
 
 @defun ces-conversion-supported? from-ces to-ces
+@c MOD gauche.charconv
 @c EN
 Returns @code{#t} if conversion from the character encoding scheme
 (CES) @var{from-ces} to @var{to-ces} is supported in this system.
@@ -1935,6 +1997,7 @@ Also there are two useful procedures to deal with CES names.
 @c COMMON
 
 @defun ces-equivalent? ces-a ces-b :optional unknown-value
+@c MOD gauche.charconv
 @c EN
 Returns true if two CESes @var{ces-a} and @var{ces-b} are equivalent
 to the knowledge of the system.  Returns false if they are not.
@@ -1965,6 +2028,7 @@ CES名 "none" はワイルドカードのように動作します。それはど
 @end defun
 
 @defun ces-upper-compatible? ces-a ces-b :optional unknown-value
+@c MOD gauche.charconv
 @c EN
 Returns true if a string encoded in CES @var{ces-b} can also
 be regarded as a string encoded in @var{ces-a} without conversion,
@@ -2171,6 +2235,7 @@ The wildcard CES can be used in place of CES name for some conversion functions.
 
 
 @defun ces-guess-from-string string scheme
+@c MOD gauche.charconv
 @c EN
 Guesses the CES of @var{string} by the character guessing scheme
 @var{scheme} (e.g. "*JP").  Returns CES name that can be used
@@ -2194,6 +2259,7 @@ usually in favor of the native CES.
 @c NODE 変換ポート
 
 @defun open-input-conversion-port source from-code :key to-code buffer-size owner?
+@c MOD gauche.charconv
 @c EN
 Takes an input port @var{source}, which feeds characters
 encoded in @var{from-code}, and returns another input port,
@@ -2281,6 +2347,7 @@ For example, the following code copies a file @file{unknown.txt} to a file
 
 
 @defun open-output-conversion-port sink to-code :key from-code buffer-size owner?
+@c MOD gauche.charconv
 @c EN
 Creates and returns an output port that converts
 given characters from @var{from-code} to @var{to-code}
@@ -2320,6 +2387,7 @@ and true, however, it closes @var{sink} when it is closed.
 
 @defun ces-convert-to return-type source from-code :optional to-code
 @defunx ces-convert source from-code :optional to-code
+@c MOD gauche.charconv
 @c EN
 Convert @var{source}, which is a string or an u8vector
 of multibyte encoding in @var{from-code}, to a
@@ -2366,6 +2434,7 @@ multibyte sequence in CES other than the native encoding.
 
 @defun call-with-input-conversion iport proc :key encoding conversion-buffer-size
 @defunx call-with-output-conversion oport proc :key encoding conversion-buffer-size
+@c MOD gauche.charconv
 @c EN
 These procedures can be used to perform character I/O with
 different encoding temporary from the original port's encoding.
@@ -2446,6 +2515,7 @@ Gauche の内部エンコーディングをもつ文字を書き込むことが�
 
 @defun with-input-conversion iport thunk :key encoding conversion-buffer-size
 @defunx with-output-conversion oport thunk :key encoding conversion-buffer-size
+@c MOD gauche.charconv
 @c EN
 Similar to @code{call-with-*-conversion},
 but these procedures call @var{thunk} without arguments,
@@ -2462,6 +2532,7 @@ The meaning of keyword arguments are the same as @code{call-with-*-conversion}.
 
 @defun wrap-with-input-conversion port from-code :key to-code owner? buffer-size
 @defunx wrap-with-output-conversion port to-code :key from-code owner? buffer-size
+@c MOD gauche.charconv
 @c EN
 Convenient procedures to avoid adding unnecessary conversion port.
 Each procedure works like @code{open-input-conversion-port}
@@ -2669,6 +2740,7 @@ as well as elements.
 @c COMMON
 
 @deffn {Generic function} fold proc knil coll coll2 @dots{}
+@c MOD gauche.collection
 @c EN
 This is a natural extension of @var{fold} (@pxref{Other list procedures}).
 @c JP
@@ -2760,6 +2832,7 @@ as soon as at least one of the collections exhausted.
 
 @deffn {Generic function} fold2 proc knil1 knil2 coll coll2 @dots{}
 @deffnx {Generic function} fold3 proc knil1 knil2 knil3 coll coll2 @dots{}
+@c MOD gauche.collection
 @c EN
 Like @code{fold}, but they can carry two and three state values
 instead of one, respectively.  The state values are
@@ -2793,6 +2866,7 @@ See also @code{map-accum} below.
 
 
 @deffn {Generic function} map proc coll coll2 @dots{}
+@c MOD gauche.collection
 @c EN
 This extends the built-in @code{map} (@pxref{Walking over lists}).
 Apply @var{proc} for each element in the collection @var{coll}, and
@@ -2848,6 +2922,7 @@ If you wonder why @code{(map char-upcase "abc")} doesn't return
 @end deffn
 
 @deffn {Generic function} map-to class proc coll coll2 @dots{}
+@c MOD gauche.collection
 @c EN
 This works the same as @code{map}, except the result is returned
 in a collection of class @var{class}.   @code{Class} must be a
@@ -2873,6 +2948,7 @@ collection class and have a builder interface
 @end deffn
 
 @deffn {Generic function} map-accum proc seed coll1 coll2 @dots{}
+@c MOD gauche.collection
 @c EN
 Collects results of @var{proc} over collections, while passing
 a state value.  @var{proc} is called like this:
@@ -2927,6 +3003,7 @@ reversed.
 
 
 @deffn {Generic function} for-each proc coll coll2 @dots{}
+@c MOD gauche.collection
 @c EN
 Extension of built-in @code{for-each} (@pxref{Walking over lists}).
 Applies @var{proc} for each elements in the collection(s).
@@ -2965,6 +3042,7 @@ all the collections are sequences.
 @deffnx {Generic Function} fold$ proc knil
 @deffnx {Generic Function} map$ proc
 @deffnx {Generic Function} for-each$ proc
+@c MOD gauche.collection
 @c EN
 Partial-application version of @code{fold}, @code{map} and @code{for-each}.
 @c JP
@@ -3027,6 +3105,7 @@ Gaucheではクラスメタオブジェクトを渡すようにしたため、�
 @c NODE コレクションからの選択と探索
 
 @deffn {Generic function} find pred coll
+@c MOD gauche.collection
 @c EN
 Applies @var{pred} for each element of a collection @var{coll} until
 @var{pred} returns a true value.  Returns the element on which @var{pred}
@@ -3054,6 +3133,7 @@ applied in order.  Otherwise the order of application is undefined.
 
 @deffn {Generic function} find-min coll :key key compare default
 @deffnx {Generic function} find-max coll :key key compare default
+@c MOD gauche.collection
 @c EN
 Returns a minimum or maximum element in the collection @var{coll}.
 
@@ -3085,6 +3165,7 @@ returned, whose default is @code{#f}.
 @end deffn
 
 @deffn {Generic function} find-min&max coll :key key compare default default-min default-max
+@c MOD gauche.collection
 @c EN
 Does @code{find-min} and @code{find-max} simultaneously, and returns
 two values, the minimum element and the maximum element.
@@ -3103,6 +3184,7 @@ by @var{default-min} and @var{default-max}.
 @end deffn
 
 @deffn {Generic function} filter pred coll
+@c MOD gauche.collection
 @c EN
 Returns a list of elements of collection @var{coll} that satisfies
 the predicate @var{pred}.   If the collection is a sequence,
@@ -3121,6 +3203,7 @@ the order is preserved in the result.
 @end deffn
 
 @deffn {Generic function} filter-to class pred coll
+@c MOD gauche.collection
 @c EN
 Same as @code{filter}, but the result is returned
 as a collection of class @var{class}.
@@ -3137,6 +3220,7 @@ as a collection of class @var{class}.
 @end deffn
 
 @deffn {Generic function} remove pred coll
+@c MOD gauche.collection
 @c EN
 Returns a list of elements of collection @var{coll} that does not
 satisfy the predicate @var{pred}.   If the collection is a sequence,
@@ -3155,6 +3239,7 @@ the order is preserved in the result.
 @end deffn
 
 @deffn {Generic function} remove-to class pred coll
+@c MOD gauche.collection
 @c EN
 Same as @code{remove}, but the result is returned
 as a collection of class @var{class}.
@@ -3171,6 +3256,7 @@ as a collection of class @var{class}.
 @end deffn
 
 @deffn {Generic function} partition pred coll
+@c MOD gauche.collection
 @c EN
 Does @code{filter} and @code{remove} the same time.
 Returns two lists, the first consists of elements of the collection
@@ -3192,6 +3278,7 @@ consists of elements that doesn't.
 @end deffn
 
 @deffn {Generic function} partition-to class pred coll
+@c MOD gauche.collection
 @c EN
 Same as @code{partition}, except the results are returned
 in the collections of class @var{class}.
@@ -3209,6 +3296,7 @@ in the collections of class @var{class}.
 @end deffn
 
 @deffn {Generic function} group-collection coll :key key test
+@c MOD gauche.collection
 @c EN
 Generalized @code{partition}.  Groups elements in @var{coll}
 into those who has the same key value, and returns the groups as
@@ -3263,6 +3351,7 @@ which only groups adjacent elements.
 @c NODE コレクションに対する様々な操作
 
 @deffn {Generic function} size-of coll
+@c MOD gauche.collection
 @c EN
 Returns the number of elements in the collection.  Default method iterates over
 the collection to calculate the size, which is not very efficient
@@ -3277,6 +3366,7 @@ Some collection classes overload the method for faster calculation.
 @end deffn
 
 @deffn {Generic function} lazy-size-of coll
+@c MOD gauche.collection
 @c EN
 Returns either the size of the collection, or a promise to
 calculate it.  The intent of this method is to avoid
@@ -3295,6 +3385,7 @@ and just discards the information if it is a promise.
 @end deffn
 
 @deffn {Generic function} coerce-to class coll
+@c MOD gauche.collection
 @c EN
 Convert a collection @var{coll} to another collection
 which is an instance of @var{class}.
@@ -3333,6 +3424,7 @@ as fundamental methods are explained at the bottom of this subsection.
 @c COMMON
 
 @deffn {Generic function} call-with-iterator collection proc :key start
+@c MOD gauche.collection
 @c EN
 A fundamental iterator creator.   This creates two procedures
 from @var{collection}, both take no argument, and then call
@@ -3404,6 +3496,7 @@ See also @code{with-iterator} macro below, for it is easier to use.
 @end deffn
 
 @deffn {Macro} with-iterator (collection end? next args @dots{}) body @dots{}
+@c MOD gauche.collection
 @c EN
 A convenience macro to call @code{call-with-iterator}.
 @c JP
@@ -3419,6 +3512,7 @@ A convenience macro to call @code{call-with-iterator}.
 @end deffn
 
 @defun call-with-iterators collections proc
+@c MOD gauche.collection
 @c EN
 A helper function to write n-ary iterator method.
 This function applies @code{call-with-iterator} for each @var{collection}s,
@@ -3436,6 +3530,7 @@ N-aryのイテレータメソッドを書くのに便利な手続きです。
 @end defun
 
 @deffn {Generic function} call-with-builder collection-class proc :key size
+@c MOD gauche.collection
 @c EN
 A fundamental builder creator.  Builder is a way to construct
 a collection incrementally.  Not all collection classes provide
@@ -3518,6 +3613,7 @@ See also @code{with-builder} macro below, for it is much easier to use.
 @end deffn
 
 @deffn {Macro} with-builder (collection add! get args @dots{}) body @dots{}
+@c MOD gauche.collection
 @c EN
 A convenience macro to call @code{call-with-builder}.
 @c JP
@@ -3728,6 +3824,7 @@ the same as you can get from the @code{gauche-config} program.
 @end deftp
 
 @defun gauche-config option
+@c MOD gauche.config
 @c EN
 Returns the configured value of the @var{option}.
 
@@ -4006,6 +4103,7 @@ including custom arguments in one pass.
 @c COMMON
 
 @defun cf-init :optional package-name package-version maintainer-email homepage-url
+@c MOD gauche.configure
 @c EN
 Initialize the configure system.  This must be called once in the
 configure script, before any feature-test procedures.
@@ -4095,6 +4193,7 @@ to update either one.
 
 @defun cf-arg-enable feature help-string :optional proc-if-given proc-if-not-given
 @defunx cf-arg-with package help-string :optional proc-if-given proc-if-not-given
+@c MOD gauche.configure
 Make the configure script accept feature selection argument and
 package selection argument, respectively.  The corresponding
 autoconf macros are @code{AC_ARG_ENABLE} and @code{AC_ARG_WITH}.
@@ -4139,6 +4238,7 @@ doesn't find any of those arguments.
 @end defun
 
 @defun cf-help-string item description
+@c MOD gauche.configure
 Return a string formatted suitable to show as an option's help message.
 The result can be passed to @var{help-string} argument of
 @code{cf-arg-enable} and @code{cf-arg-with}. 
@@ -4153,6 +4253,7 @@ Call it as follows, and it'll indent and fill the description nicely.
 
 @defun cf-feature-ref name
 @defunx cf-package-ref name
+@c MOD gauche.configure
 Lookup a symbol @var{name} from the global feature table and the
 global package table, respectively.
 These can be called after @code{cf-init}.
@@ -4180,6 +4281,7 @@ the current output port (in slightly different formats so that the
 console messages align nicely visually.)
 
 @defun cf-msg-checking fmt arg @dots{}
+@c MOD gauche.configure
 Writes out ``checking XXX...'' message.  The @var{fmt} and @var{arg} @dots{}
 arguments are passed to @code{format} to produce the ``XXX'' part.
 
@@ -4212,6 +4314,7 @@ This corresponds to autoconf's @code{AC_MSG_CHECKING}.
 @end defun
 
 @defun cf-msg-result fmt arg @dots{}
+@c MOD gauche.configure
 The @var{fmt} and @var{arg} @dots{} are passed to @code{format}, and
 the formatted message and newline is written out.
 For the log file, it records ``result: XXX'' where XXX is the
@@ -4222,6 +4325,7 @@ This corresponds to autoconf's @code{AC_MSG_RESULT}.
 
 @defun cf-msg-warn fmt arg @dots{}
 @defunx cf-msg-error fmt arg @dots{}
+@c MOD gauche.configure
 Produces ``Warning: XXX'' and
 ``Error: XXX'' messages, respectively.
 The @var{fmt} and @var{arg} @dots{} are passed to @code{format} to
@@ -4230,6 +4334,7 @@ autoconf's @code{AC_MSG_WARN} and @code{AC_MSG_ERROR}.
 @end defun
 
 @defun cf-echo arg @dots{} [> file][>> file]
+@c MOD gauche.configure
 Convenience routine to replace shell's @code{echo} command.
 
 If the argument list ends with @code{> @var{file}} or
@@ -4257,6 +4362,7 @@ definitions, and substitution tables are used for @code{@@PARAMETER@@}
 substitutions.
 
 @defun cf-define symbol :optional value
+@c MOD gauche.configure
 Registers C preprocessor definition of @var{symbol} with @var{value}.
 @var{Value} can be any Scheme objects, but it is emitted to a command
 line (in @code{-DSYMBOL=VALUE} form) or in @file{config.h}
@@ -4268,6 +4374,7 @@ This corresponds to autoconf's @code{AC_DEFINE}.
 @end defun
 
 @defun cf-subst symbol value
+@c MOD gauche.configure
 Registers substitution parameter @var{symbol} with @var{value}.
 @var{Value} can be any Scheme objects; it's @code{display} representation
 is used to substitute @var{@@SYMBOL@@} in the template.
@@ -4277,11 +4384,13 @@ the value (while autoconf can refer to the shell variable value as default).
 @end defun
 
 @defun cf-have-subst? symbol
+@c MOD gauche.configure
 Returns true iff @code{symbol} has a substitution registered by
 @code{cf-subst}.
 @end defun
 
 @defun cf-arg-var symbol
+@c MOD gauche.configure
 Lookup the environment variable @code{symbol} and if it is found,
 use its value as the substitution value.  For example,
 if you call @code{(cf-arg-var 'MYCFLAGS)}, then the user
@@ -4295,6 +4404,7 @@ within @code{cf-init}.
 @end defun
 
 @defun cf-ref symbol :optional default
+@c MOD gauche.configure
 This looks up the value of the substitution parameter @var{symbol}.
 If there's no such substitution parameter registered,
 it returns @var{default} when it's provided, otherwise
@@ -4302,6 +4412,7 @@ throws an error.
 @end defun
 
 @defun cf$ symbol
+@c MOD gauche.configure
 Looks up the value of the substitution parameter @var{cf-ref},
 but it returns empty string if it's unregistered.  Useful
 to use within string interpolation, e.g. @code{#"gosh ~(cf$ GOSHFLAGS)"}.
@@ -4315,6 +4426,7 @@ to use within string interpolation, e.g. @code{#"gosh ~(cf$ GOSHFLAGS)"}.
 
 @defun cf-check-prog sym prog-or-progs :key value default paths filter
 @defunx cf-path-prog sym prog-or-progs :key value default paths filter
+@c MOD gauche.configure
 Check if a named executable program exists in search paths, and if it
 exists, sets the substitution parameter @var{sym} to the name
 of the found program.  The name to search is specified by @var{prog-or-progs},
@@ -4380,6 +4492,7 @@ $ ./configure GREP=mygrep
 @end defun
 
 @defun cf-prog-cxx
+@c MOD gauche.configure
 A convenience feature test to find C++ compiler.  This searches
 popular names of C++ compilers from the search paths, sets the
 substitution parameter @code{CXX} to the compiler's name,
@@ -4403,6 +4516,7 @@ if @code{CXX} is not set, but @code{CCC} is set, then we set
 @end defun
 
 @defun cf-check-header header :key includes
+@c MOD gauche.configure
 Check if a header file @var{header} exists and usable, by
 compiling a source program of the current language
 that includes the named header
@@ -4430,6 +4544,7 @@ depending on the result.)
 @end defun
 
 @defun cf-check-headers headers :key includes if-found if-not-found
+@c MOD gauche.configure
 Codify a common pattern of checking the availability of headers and
 sets C preprocessor definitions.
 This corresponds to autoconf's @code{AC_CHECK_HEADERS}.
@@ -4466,6 +4581,7 @@ you have to use @code{cf-check-header}.
 @end defun
 
 @defun cf-includes-default
+@c MOD gauche.configure
 Returns a list of strings that are included in the check program by
 default.  It is actually a combination of C preprocessor @code{#ifdef}s
 and @code{#include}s, and would probably be better to be called
@@ -4490,9 +4606,11 @@ Currently we only support @code{C} and @code{C++}; we'll add support
 for other languages as needed.
 
 @deffn {Parameter} cf-lang
+@c MOD gauche.configure
 @end deffn
 
 @defun cf-lang-program prologue body
+@c MOD gauche.configure
 Returns a string tree that consists a stand-alone program for
 the current language.  @var{Prologue} and @var{body} must be a
 string tree.  @var{Prologue} comes at the beginning of
@@ -4518,6 +4636,7 @@ printf("()");
 @end defun
 
 @defun cf-lang-io-program
+@c MOD gauche.configure
 This is a convenience routine.  It returns a string tree
 of a program in the current language, that creates a file 
 named @file{conftest.out}, then exits with zero status on
@@ -4525,12 +4644,15 @@ success, or nonzero status on failure.
 @end defun
 
 @defun cf-lang-call prologue func-name
+@c MOD gauche.configure
 @end defun
 
 @defun cf-try-compile prologue body
+@c MOD gauche.configure
 @end defun
 
 @defun cf-try-compile-and-link prologue body
+@c MOD gauche.configure
 @end defun
 
 
@@ -4542,12 +4664,15 @@ success, or nonzero status on failure.
 @c COMMON
 
 @defun cf-output file @dots{}
+@c MOD gauche.configure
 @end defun
 
 @defun cf-show-variables :key formatter
+@c MOD gauche.configure
 @end defun
 
 @defun cf-make-gpd
+@c MOD gauche.configure
 @end defun
 
 
@@ -4629,6 +4754,7 @@ methods as well; for example, to get the number of entries, just use
 @c COMMON
 
 @deffn {Generic function} dict-get (dict @code{<dictionary>}) key :optional default
+@c MOD gauche.dictionary
 @c EN
 Returns the value corresponding to the @var{key}.
 If the dictionary doesn't have an entry with @var{key},
@@ -4642,6 +4768,7 @@ if not.
 @end deffn
 
 @deffn {Generic function} dict-put! (dict @code{<dictionary>}) key value
+@c MOD gauche.dictionary
 @c EN
 Puts the mapping from @var{key} to @var{value} into the dictionary.
 @c JP
@@ -4650,6 +4777,7 @@ Puts the mapping from @var{key} to @var{value} into the dictionary.
 @end deffn
 
 @deffn {Generic function} {(setter dict-get)} (dict @code{<dictionary>}) key value
+@c MOD gauche.dictionary
 @c EN
 This works the same as @code{dict-put!}.
 @c JP
@@ -4658,6 +4786,7 @@ This works the same as @code{dict-put!}.
 @end deffn
 
 @deffn {Generic function} dict-exists? (dict @code{<dictionary>}) key
+@c MOD gauche.dictionary
 @c EN
 Returns @code{#t} if the dictionary has an entry with @var{key},
 @code{#f} if not.
@@ -4668,6 +4797,7 @@ Returns @code{#t} if the dictionary has an entry with @var{key},
 @end deffn
 
 @deffn {Generic function} dict-delete! (dict @code{<dictionary>}) key
+@c MOD gauche.dictionary
 @c EN
 Removes an entry with @var{key} form the dictionary.
 If the dictionary doesn't have such an entry, this function is noop.
@@ -4678,6 +4808,7 @@ If the dictionary doesn't have such an entry, this function is noop.
 @end deffn
 
 @deffn {Generic function} dict-clear! (dict @code{<dictionary>})
+@c MOD gauche.dictionary
 @c EN
 Empties the dictionary.  Usually this is much faster than looping
 over keys to delete them one by one.
@@ -4688,6 +4819,7 @@ over keys to delete them one by one.
 @end deffn
 
 @deffn {Generic function} dict-comparator (dict @code{<dictionary>})
+@c MOD gauche.dictionary
 @c EN
 Should return a comparator used to compare keys.
 @c JP
@@ -4696,6 +4828,7 @@ Should return a comparator used to compare keys.
 @end deffn
 
 @deffn {Generic function} dict-fold (dict @code{<dictionary>}) proc seed
+@c MOD gauche.dictionary
 @c EN
 Calls a procedure @var{proc} over each entry in a dictionary @var{dict},
 passing a seed value.  Three arguments are given to @var{proc};
@@ -4727,6 +4860,7 @@ the corresponding values is from @var{V0} to @var{Vn}:
 @end deffn
 
 @deffn {Generic function} dict-fold-right (dict @code{<ordered-dictionary>}) proc seed
+@c MOD gauche.dictionary
 @c EN
 Like @code{dict-fold}, but the associative order of applying @var{proc}
 is reversed as follows:
@@ -4747,6 +4881,7 @@ This generic function is only defined on @code{<ordered-dictionary>}.
 @end deffn
 
 @deffn {Generic function} dict-for-each (dict @code{<dictionary>}) proc
+@c MOD gauche.dictionary
 @c EN
 Calls @var{proc} with a key and a value of every entry in
 the dictionary @var{dict}.  For ordered dictionaries, @var{proc}
@@ -4759,6 +4894,7 @@ is guaranteed to be called in the increasing order of keys.
 @end deffn
 
 @deffn {Generic function} dict-map (dict @code{<dictionary>}) proc
+@c MOD gauche.dictionary
 @c EN
 Calls @var{proc} with a key and a value of every entry in
 the dictionary @var{dict}, and gathers the result into a list
@@ -4775,6 +4911,7 @@ is called in that order).
 
 @deffn {Generic function} dict-keys (dict @code{<dictionary>})
 @deffnx {Generic function} dict-values (dict @code{<dictionary>})
+@c MOD gauche.dictionary
 @c EN
 Returns a list of all keys or values of a dictionary @var{dict},
 respectively.  For ordered dictionaries, the returned list is
@@ -4787,6 +4924,7 @@ in the increasing order of keys.
 @end deffn
 
 @deffn {Generic function} dict->alist (dict @code{<dictionary>})
+@c MOD gauche.dictionary
 @c EN
 Returns a list of pairs of key and value in the dictionary.
 The order of pairs is undefined.
@@ -4796,6 +4934,7 @@ The order of pairs is undefined.
 @end deffn
 
 @deffn {Generic function} dict-push! (dict @code{<dictionary>}) key value
+@c MOD gauche.dictionary
 @c EN
 A shorthand way to say @code{(dict-put! dict key (cons value (dict-get dict key '())))}.  A concrete implementation may be more efficient
 (e.g. it may not search @var{key} twice.)
@@ -4806,6 +4945,7 @@ A shorthand way to say @code{(dict-put! dict key (cons value (dict-get dict key 
 @end deffn
 
 @deffn {Generic function} dict-pop! (dict @code{<dictionary>}) key :optional fallback
+@c MOD gauche.dictionary
 @c EN
 If @code{(dict-get dict key)} is a pair @var{p},
 the entry value is replaced with @code{(cdr p)} and the procedure
@@ -4822,6 +4962,7 @@ or the entry isn't a a pair, the table isn't modified, and
 @end deffn
 
 @deffn {Generic function} dict-update! (dict @code{<dictionary>}) key proc :optional fallback
+@c MOD gauche.dictionary
 @c EN
 Works like the following code, except that the concrete implementation
 may be more efficient by looking up @var{key} only once.
@@ -4836,6 +4977,7 @@ may be more efficient by looking up @var{key} only once.
 @end deffn
 
 @defmac define-dict-interface dict-class method proc method2 proc2 @dots{}
+@c MOD gauche.dictionary
 Many dictionary-like datatypes already has their own procedures
 that directly corresponds to the generic dictionary API, and adding
 dictionary interface tends to become a simple repetition of
@@ -4881,6 +5023,7 @@ You don't need to provide every dictionary interface.
 
 @deftp {Class} <bimap>
 @clindex bimap
+@c MOD gauche.dictionary
 Provides a bidirectional map (@emph{bimap}), a relation between two
 set of values, of which you can lookup both ways.
 
@@ -4903,6 +5046,7 @@ regarded as the key to the left map.
 @end deftp
 
 @defun make-bimap left-map right-map :key on-conflict
+@c MOD gauche.dictionary
 Creates a new bimap consists of two dictionaries, @var{left-map}
 and @var{right-map}.   It is the caller's responsibility to
 choose appropriate type of dictionaries; for example, if you want
@@ -4941,6 +5085,7 @@ lifted in future.
 
 @defun bimap-left bimap
 @defunx bimap-right bimap
+@c MOD gauche.dictionary
 Returns the left or right map of @var{bimap}, respectively.
 Do not mutate the returned map, or you'll break
 the consistency of the bimap.
@@ -4948,6 +5093,7 @@ the consistency of the bimap.
 
 @defun bimap-left-get bimap key :optional default
 @defunx bimap-right-get bimap key :optional default
+@c MOD gauche.dictionary
 Lookup the value corresponding to the @var{key} in the left or right
 map of @var{bimap}.   If no entry is found for @var{key},
 @var{default} is returned if provided, otherwise an error is
@@ -4956,11 +5102,13 @@ raised.
 
 @defun bimap-left-exists? bimap key
 @defunx bimap-right-exists? bimap key
+@c MOD gauche.dictionary
 Returns @code{#f} if the left or right map of @var{bimap} has an entry of
 the key, @code{#t} otherwise.
 @end defun
 
 @defun bimap-put! bimap x y :key on-conflict
+@c MOD gauche.dictionary
 Put a relation (@var{x}, @var{y}) into the bimap.
 After this, @code{(bimap-left-get @var{x})} will return @var{y},
 and @code{(bimap-left-get @var{y})} will return @var{x}.
@@ -4974,6 +5122,7 @@ bimap's default setting specified at its creation time.
 
 @defun bimap-left-delete! bimap key
 @defunx bimap-right-delete! bimap key
+@c MOD gauche.dictionary
 Deletes an relation with the given left key or right key from @var{bimap}.
 Both left and right maps are modified so that the consistency is maintained.
 If there's no relations with given key, these are noop.
@@ -4996,6 +5145,7 @@ advisory file locking.
 @end deftp
 
 @defun sys-fcntl port-or-fd operation :optional arg
+@c MOD gauche.fcntl
 @c EN
 Performs certain operation on the file specified by @var{port-or-fd},
 which should be a port object or an integer
@@ -5229,6 +5379,7 @@ Other value for @var{operation} causes an error.
 
 @deftp {Builtin Class} <sys-flock>
 @clindex sys-flock
+@c MOD gauche.fcntl
 @c EN
 A structure represents POSIX advisory record locking.
 Advisory record locking means the system may not prevents the process
@@ -5459,6 +5610,7 @@ See @ref{Generator consumers} for the description of @code{generator->list}.
 @c COMMON
 
 @defun null-generator
+@c MOD gauche.generator
 @c EN
 An empty generator.  Returns just an EOF object when called.
 @c JP
@@ -5467,6 +5619,7 @@ An empty generator.  Returns just an EOF object when called.
 @end defun
 
 @defun circular-generator arg @dots{}
+@c MOD gauche.generator
 @c EN
 Returns an infinite generator that repeats the given arguments.
 @c JP
@@ -5489,6 +5642,7 @@ the converted list by 10; otherwise
 @end defun
 
 @defun giota :optional (count +inf.0) (start 0) (step 1)
+@c MOD gauche.generator
 @c EN
 Like @code{iota} (@pxref{List constructors}), creates a generator
 of a series of @var{count} numbers, starting from @var{start}
@@ -5520,6 +5674,7 @@ yields exact numbers; otherwise it yields inexact numbers.
 @end defun
 
 @defun grange start :optional (end +inf.0) (step 1)
+@c MOD gauche.generator
 @c EN
 Similar to @code{giota}, creates a generator of a series of
 numbers.  The series begins with @var{start}, increased by @var{step},
@@ -5536,6 +5691,7 @@ and continues while the number is below @var{end}.
 @end defun
 
 @defun generate proc
+@c MOD gauche.generator
 @c EN
 Creates a generator from coroutine.
 @c JP
@@ -5591,6 +5747,7 @@ it to @code{g}.
 @defunx uvector->generator uvec :optional start end
 @defunx bytevector->generator u8vector :optional start end
 [SRFI-121+]
+@c MOD gauche.generator
 @c EN
 Returns a generator that yields each item in the given argument.
 A generator returned from @code{reverse-*} procedures runs in
@@ -5662,6 +5819,7 @@ at the last element, and reverse generators ends at the first element.
 
 @defun bits->generator n :optional start end
 @defunx reverse-bits->generator n :optional start end
+@c MOD gauche.generator
 @c EN
 These procedures take an exact integer and treat it as a sequence of
 boolean values (0 for false and 1 for true), as @code{integer->list} does
@@ -5712,6 +5870,7 @@ with other procedures that accesses bit fields in integers
 @defunx port->line-generator input-port
 @defunx port->char-generator input-port
 @defunx port->byte-generator input-port
+@c MOD gauche.generator
 @c EN
 Returns a generator that reads characters or bytes from the given
 port, respectively.  They're just
@@ -5732,6 +5891,7 @@ but we provide them for completeness.
 @end defun
 
 @deffn {Generic function} x->generator obj
+@c MOD gauche.generator
 @c EN
 A generic version to convert any collection @var{obj} to a generator
 that walks across the @var{obj}.  Besides, if @var{obj} is an input port,
@@ -5744,6 +5904,7 @@ that walks across the @var{obj}.  Besides, if @var{obj} is an input port,
 @end deffn
 
 @defun file->generator filename reader . open-args
+@c MOD gauche.generator
 @c EN
 Opens a file @var{filename}, and returns a generator
 that reads items from the file
@@ -5777,6 +5938,7 @@ of @code{with-input-from-file} etc.
 @defunx file->char-generator filename . open-args
 @defunx file->line-generator filename . open-args
 @defunx file->byte-generator filename . open-args
+@c MOD gauche.generator
 @c EN
 Returns a generator that reads a series
 of sexps, characters, lines and bytes from a file @var{filename},
@@ -5802,6 +5964,7 @@ The file is closed when the generator is exhausted.
 @end defun
 
 @defun gunfold p f g seed :optional tail-gen
+@c MOD gauche.generator
 @c EN
 A generator constructor similar to @var{unfold} (@pxref{SRFI-1 List utilities}).
 @c JP
@@ -5848,6 +6011,7 @@ generate, and use @var{g} to update the seed value.
 
 @defun generator item @dots{}
 [SRFI-121]
+@c MOD gauche.generator
 @c EN
 Returns a generator that generates @var{item} @dots{}.
 @c JP
@@ -5857,6 +6021,7 @@ Returns a generator that generates @var{item} @dots{}.
 
 @defun make-iota-generator count :optional start step
 [SRFI-121]
+@c MOD gauche.generator
 @c EN
 Same as @code{giota}, except that the @var{count} argument is
 required.
@@ -5867,6 +6032,7 @@ required.
 
 @defun make-range-generator start :optional end stop
 [SRFI-121]
+@c MOD gauche.generator
 @c EN
 Same as @code{grange}.
 @c JP
@@ -5876,6 +6042,7 @@ Same as @code{grange}.
 
 @defun make-coroutine-generator proc
 [SRFI-121]
+@c MOD gauche.generator
 @c EN
 Same as @code{generate}.
 @c JP
@@ -5886,6 +6053,7 @@ Same as @code{generate}.
 
 @defun make-bits-generator n
 [SRFI-121]
+@c MOD gauche.generator
 @c EN
 @code{(make-bits-generator n)} is the same as @code{(bits->generator n)}.
 This doesn't take optional start/end arguments, though.
@@ -5899,6 +6067,7 @@ Srfi-121 doesn't have corresponding procedure for @code{reverse-bits->generator}
 
 @defun make-for-each-generator for-each obj
 [SRFI-121]
+@c MOD gauche.generator
 @c EN
 Given collection @var{obj} and walker @var{for-each}, creates a
 generator that retrieves one item at a time from the collection.
@@ -5928,6 +6097,7 @@ EOFを返す前に@var{obj}を変更することは避けるのが賢明です�
 
 @defun make-unfold-generator stop? mapper successor seed
 [SRFI-121]
+@c MOD gauche.generator
 @c EN
 This is the same as @code{gunfold}, except it doesn't take
 optional @var{tail-gen} argument.
@@ -5967,6 +6137,7 @@ collections to generators.)
 
 @defun gcons* item @dots{} gen
 [SRFI-121]
+@c MOD gauche.generator
 @c EN
 Returns a generator that adds @var{item}s in front of @var{gen}.
 @c JP
@@ -5981,6 +6152,7 @@ Returns a generator that adds @var{item}s in front of @var{gen}.
 
 @defun gappend gen @dots{}
 [SRFI-121]
+@c MOD gauche.generator
 @c EN
 Returns a generator that yields the items from the first given
 generator, and once it is exhausted, use the second generator, and so on.
@@ -6000,6 +6172,7 @@ generator, and once it is exhausted, use the second generator, and so on.
 @end defun
 
 @defun gconcatenate gen
+@c MOD gauche.generator
 @c EN
 The @var{gen} argument should generate generators and/or sequences.
 Returns a generator that yields elements from the first generator/sequence,
@@ -6027,6 +6200,7 @@ number of generators.
 @end defun
 
 @defun gflatten gen
+@c MOD gauche.generator
 @c EN
 The argument @var{gen} is a generator that yields lists.
 This procedure returns a generator that's yield each element of the lists
@@ -6092,6 +6266,7 @@ gflatten           :: Generator [a] -> Generator a
 @end defun
 
 @defun gmerge less-than gen gen2 @dots{}
+@c MOD gauche.generator
 @c EN
 Creates a generator that yields elements out of input generators,
 with the order determined by a procedure @code{less-than}.
@@ -6125,6 +6300,7 @@ input to a generator).  In that case, @code{less-than} won't be called at all.
 @end defun
 
 @defun gmap proc gen gen2 @dots{}
+@c MOD gauche.generator
 @c EN
 Returns a generator that yields a value returned by @var{proc}
 applied on the values from given generators.  The returned generator
@@ -6148,6 +6324,7 @@ returns a generator immediately without consuming input.
 @end defun
 
 @defun gmap-accum proc seed gen gen2 @dots{}
+@c MOD gauche.generator
 @c EN
 A generator version of @code{map-accum} (@pxref{Mapping over collection}),
 mapping with states. 
@@ -6180,6 +6357,7 @@ NB: This is called @code{gcombine} in srfi-121.
 
 @defun gcombine proc seed gen gen2 @dots{}
 [SRFI-121]
+@c MOD gauche.generator
 @c EN
 An alias of @code{gmap-accum}, provided for the compatibility of srfi-121.
 @c JP
@@ -6190,6 +6368,7 @@ An alias of @code{gmap-accum}, provided for the compatibility of srfi-121.
 @defun gfilter pred gen
 @defunx gremove pred gen
 [SRFI-121]
+@c MOD gauche.generator
 @c EN
 Returns a generator that yields the items from the source generator
 @var{gen}, except those who makes @var{pred} answers false (@code{gfilter})
@@ -6211,6 +6390,7 @@ or those who makes @var{pred} answers a true value (@code{gremove})
 
 @defun gdelete item gen :optional =
 [SRFI-121]
+@c MOD gauche.generator
 @c EN
 Return a generator that yields the items from the source generator
 @var{gen}, except those are the same as @var{item}.  The comparison
@@ -6231,6 +6411,7 @@ is done by the procedure passed to @var{=}, which defaults to @code{equal?}.
 
 @defun gdelete-neighbor-dups gen :optional =
 [SRFI-121]
+@c MOD gauche.generator
 @c EN
 Returns a generator that yields the items from the source generator
 @var{gen}, but the consecutive items of the same value is omitted.
@@ -6251,6 +6432,7 @@ is done by the procedure passed to @var{=}, which defaults to @code{equal?}.
 @end defun
 
 @defun gfilter-map proc gen gen2 @dots{}
+@c MOD gauche.generator
 @c EN
 Works the same as @code{(gfilter values (gmap proc gen gen2 @dots{}))},
 only slightly efficiently.
@@ -6261,6 +6443,7 @@ only slightly efficiently.
 @end defun
 
 @defun gstate-filter proc seed gen
+@c MOD gauche.generator
 @c EN
 This allows stateful filtering of a series.  The @var{proc} argument
 must be a procedure that takes a value @var{V} from the source generator and
@@ -6294,6 +6477,7 @@ and yields only values that are greater than their previous value.
 @end defun
 
 @defun gbuffer-filter proc seed gen :optional tail-gen
+@c MOD gauche.generator
 @c EN
 This procedure allows n-to-m mapping between elements in input and output---
 that is, you can take a look at several input elements to generate
@@ -6354,6 +6538,7 @@ the lines after such line continuations are taken care of.
 @defun gtake gen k :optional padding
 @defunx gdrop gen k
 [SRFI-121]
+@c MOD gauche.generator
 @c EN
 Returns a generator that takes or drops initial @var{k} elements
 from the source generator @var{gen}.
@@ -6419,6 +6604,7 @@ srfi-121の方が簡潔で直感的なので、0.9.5からは元の@code{gtake}�
 @end defun
 
 @defun gtake* gen k :optional fill? padding
+@c MOD gauche.generator
 @c EN
 A variation of @code{gtake}; instead of single optional @var{padding}
 argument, this takes two optional arguments just like @code{take*}
@@ -6436,6 +6622,7 @@ is called @code{gtake}.  This is provided for the backward compatibility.
 @defun gtake-while pred gen
 @defunx gdrop-while pred gen
 [SRFI-121]
+@c MOD gauche.generator
 @c EN
 The generator version of @code{take-while} and @code{drop-while}
 (@pxref{List accessors and modifiers}).  The generator returned
@@ -6454,6 +6641,7 @@ while @var{pred} returns true for them, then start yielding items.
 @end defun
 
 @defun gslices gen k :optional (fill? #f) (padding #f)
+@c MOD gauche.generator
 @c EN
 The generator version of @code{slices} (@pxref{List accessors and modifiers}).
 This returns a generator, that yields a list of @var{k} items from
@@ -6495,6 +6683,7 @@ to fill the rest.
 @end defun
 
 @defun grxmatch regexp gen
+@c MOD gauche.generator
 @c EN
 The @var{gen} argument must be, after coerced, a generator that
 yields characters.
@@ -6553,6 +6742,7 @@ but merely the rest of strings within the buffer.
 
 @defun gindex vgen igen
 [SRFI-121]
+@c MOD gauche.generator
 @c EN
 Both arguments are generators.  The @var{igen} generator must
 yield monotonically increasing series of exact nonnegative integers.
@@ -6585,6 +6775,7 @@ conform the condition.
 
 @defun gselect vgen bgen
 [SRFI-121]
+@c MOD gauche.generator
 @c EN
 Both arguments are generators.  Creates and returns a
 generator that yields a value from @var{vgen} but only
@@ -6645,6 +6836,7 @@ Some generator consumers are built-in.
 @defun generator->list generator :optional k
 @defunx generator->reverse-list generator :optional k
 [SRFI-121]
+@c MOD gauche.generator
 @c EN
 Reads items from @var{generator} and returns a list of them
 (or a reverse list, in case of @code{generator->reverse-list}).
@@ -6675,6 +6867,7 @@ all the memory before crash.
 @defun generator->vector gen :optional k
 @defunx generator->string gen :optional k
 [SRFI-121]
+@c MOD gauche.generator
 @c EN
 Extracts items from the generator @var{gen} up to @var{k} items
 or until it exhausts, and create a fresh
@@ -6693,6 +6886,7 @@ an error is reported.
 
 @defun generator->vector! vector at gen
 [SRFI-121]
+@c MOD gauche.generator
 @c EN
 Fill @var{vector} from index @var{at} with the value yielded
 from @var{gen}.  It terminates when @var{gen} is exhausted or the index
@@ -6715,6 +6909,7 @@ v @result{} #(a b 0 1 2)
 @end defun
 
 @defmac glet* (binding @dots{}) body body2 @dots{}
+@c MOD gauche.generator
 @c EN
 This captures a monadic pattern frequently appears in the generator
 code.  It is in a similar spirit of @code{and-let*}, but returns
@@ -6752,6 +6947,7 @@ The actual definition will explain this syntax clearly.
 @end defmac
 
 @defmac glet1 var expr body body2 @dots{}
+@c MOD gauche.generator
 @c EN
 This is to @code{glet*} as @code{let1} is to @code{let*}.  In other words,
 it is @code{(glet* ([var expr]) body body2 @dots{})}.
@@ -6762,6 +6958,7 @@ it is @code{(glet* ([var expr]) body body2 @dots{})}.
 @end defmac
 
 @defmac do-generator (var gexpr) body @dots{}
+@c MOD gauche.generator
 @c EN
 This is a generator version of @code{dolist} and @code{dotimes}
 (@pxref{Binding constructs}).
@@ -6806,12 +7003,14 @@ but sometimes this macro makes the imperative code more readable:
 @defun generator-any pred gen
 @defunx generator-every pred gen
 [SRFI-121]
+@c MOD gauche.generator
 Like @code{any} and @code{every} (@pxref{Walking over lists}), but
 works on a generator.
 @end defun
 
 @defun generator-count pred gen
 [SRFI-121]
+@c MOD gauche.generator
 @c EN
 Returns the number of items in a generator @var{gen}
 that satisfies @var{pred}.
@@ -6824,6 +7023,7 @@ As a side effect, @var{gen} is exhausted.
 
 @defun generator-unfold gen unfold arg @dots{}
 [SRFI-121]
+@c MOD gauche.generator
 @end defun
 
 
@@ -6879,6 +7079,7 @@ Guileとの互換性のために、@code{remove-hook!}が@code{delete-hook!}の
 
 @deftp {Class} <hook>
 @clindex hook
+@c MOD gauche.hook
 @c EN
 A hook class, which keeps a list of procedures to be called at once.
 
@@ -6895,6 +7096,7 @@ causes all the registered procedure to be invoked.
 @end deftp
 
 @defun make-hook :optional (arity 0)
+@c MOD gauche.generator
 @c EN
 Creates a new hook object with given arity, which should be a
 non-negative integer.
@@ -6905,6 +7107,7 @@ non-negative integer.
 @end defun
 
 @defun hook? obj
+@c MOD gauche.generator
 @c EN
 Returns true if @var{obj} is a hook object.
 @c JP
@@ -6913,6 +7116,7 @@ Returns true if @var{obj} is a hook object.
 @end defun
 
 @defun hook-empty? hook
+@c MOD gauche.generator
 @c EN
 Returns true if @var{hook}'s procedure list is empty.
 @c JP
@@ -6921,6 +7125,7 @@ Returns true if @var{hook}'s procedure list is empty.
 @end defun
 
 @deffn {Method} add-hook! (hook <hook>) proc :optional (append? #f)
+@c MOD gauche.generator
 @c EN
 Adds a procedure @var{proc} to @var{hook}.  If @var{append?}
 is given and true, @var{proc} is added at the end of the list.
@@ -6939,6 +7144,7 @@ at the @code{make-hook}.
 
 @deffn {Method} delete-hook! (hook <hook>) proc
 @deffnx {Method} remove-hook! (hook <hook>) proc
+@c MOD gauche.generator
 @c EN
 Removes @var{proc} from the procedure list of @var{hook}.
 @code{Remove-hook!} is an alias of @code{delete-hook!} just for
@@ -6951,6 +7157,7 @@ Guileとの互換性のためだけに、@code{remove-hook!}が@code{delete-hook
 @end deffn
 
 @deffn {Method} reset-hook! (hook <hook>)
+@c MOD gauche.generator
 @c EN
 Empties @var{hook}'s procedure list.
 @c JP
@@ -6959,6 +7166,7 @@ Empties @var{hook}'s procedure list.
 @end deffn
 
 @deffn {Method} hook->list (hook <hook>)
+@c MOD gauche.generator
 @c EN
 Returns a copy of @var{hook}'s procedure list.
 @c JP
@@ -6967,6 +7175,7 @@ Returns a copy of @var{hook}'s procedure list.
 @end deffn
 
 @deffn {Method} run-hook (hook <hook>) arg @dots{}
+@c MOD gauche.generator
 @c EN
 Calls @var{hook}'s procedures in order, with arguments @var{arg} @dots{}.
 The number of arguments must match the arity given at @code{make-hook}.
@@ -7008,6 +7217,7 @@ those functions can be used by default in interactive development.
 @end deftp
 
 @defmac apropos pattern :optional module
+@c MOD gauche.interactive
 @c EN
 Show a list of defined variables whose name matches @var{pattern}.
 If you give a module or a module name @var{module}, only the variables
@@ -7057,6 +7267,7 @@ Some examples:
 
 @deffn {Generic Function} describe :optional obj
 @deffnx {Generic Function} d :optional obj
+@c MOD gauche.interactive
 @c EN
 Prints the detail information about a Scheme object @var{obj}.
 The default method shows @var{obj}'s class, and if it has
@@ -7107,6 +7318,7 @@ gosh> (d 1432954340)
 @end deffn
 
 @defun info symbol
+@c MOD gauche.interactive
 @c EN
 Displays a page of Gauche's info file that contains definition of
 the function or syntax specified by @var{symbol}.
@@ -7163,6 +7375,7 @@ environment variable to
 @end defun
 
 @defun ed filename-or-procedure :key editor load-after
+@c MOD gauche.interactive
 @c EN
 Invoke an external editor to open the named file, or the file containing
 the definition of the given procedure (if it can be known).  
@@ -7303,6 +7516,7 @@ list and don't want to waste space for an intermediate list,
 you want to use @code{lmap}.
 
 @defun x->lseq obj
+@c MOD gauche.lazy
 A convenience function to coerce @var{obj} to (possibly lazy) list.
 If @var{obj} is a list, it is returned as it is.  If @var{obj} is
 other type of collection, the return value is a lazy sequence
@@ -7319,6 +7533,7 @@ routine of the REPL.
 @end defun
 
 @defun lunfold p f g seed :optional tail-gen
+@c MOD gauche.lazy
 A lazy version of @code{unfold} (@pxref{SRFI-1 List utilities}).
 The arguments @var{p}, @var{f} and @var{g} are procedures,
 each of which take one argument, the current seed value.
@@ -7337,6 +7552,7 @@ a (possibly lazy) list, that forms the tail of the resulting sequence.
 @end defun
 
 @defun lmap proc seq seq2 @dots{}
+@c MOD gauche.lazy
 Returns a lazy sequence consists of values calculated
 by applying @var{proc} to every first element of @var{seq} @code{seq2}
 @dots{}, every second element of them, etc., until any of
@@ -7344,6 +7560,7 @@ the input is exhausted.
 @end defun
 
 @defun lmap-accum proc seed seq seq2 @dots{}
+@c MOD gauche.lazy
 The procedure @var{proc} takes one element each from
 @var{seq} @var{seq2} @dots{}, plus the current seed value.
 It must return two values, a result value and the next seed value.
@@ -7357,10 +7574,12 @@ end, so it can't be calculated lazily.
 @end defun
 
 @defun lappend seq @dots{}
+@c MOD gauche.lazy
 Returns a lazy sequence consists of elements in @var{seq} @dots{}.
 @end defun
 
 @defun lconcatenate seqs
+@c MOD gauche.lazy
 The @var{seqs} argument is a sequence of sequences.  Returns
 a lazy sequence that is a concatenation of all the sequences in @var{seqs}.
 
@@ -7369,6 +7588,7 @@ can handle infinite number of lazy @var{seqs}.
 @end defun
 
 @defun lappend-map proc seq1 seq @dots{}
+@c MOD gauche.lazy
 Lazy version of @code{append-map}.   This differs not only from
 @code{(apply lappend (lmap proc seq1 seq @dots{}))}, which would
 evaluate the result of @code{lmap} to the end before passing it to
@@ -7428,6 +7648,7 @@ gosh> (car (lappend-map p '(1 2 3)))
 @end defun
 
 @defun linterweave seq @dots{}
+@c MOD gauche.lazy
 Returns a lazy seq of the first items from @var{seq} @dots{}, then
 their second items, and so on.   If the length of shortest sequence
 of @var{seqs} is N, the length of the resulting sequence is
@@ -7441,20 +7662,24 @@ the resulting sequence is also infinite.
 @end defun
 
 @defun lfilter proc seq
+@c MOD gauche.lazy
 Returns a lazy sequence that consists of non-false values calculated
 by applying @var{proc} on every elements in @var{seq}.
 @end defun
 
 @defun lfilter-map proc seq seq2 @dots{}
+@c MOD gauche.lazy
 Lazy version of @code{filter-map}.
 @end defun
 
 @defun lstate-filter proc seed seq
+@c MOD gauche.lazy
 Lazy version of @code{gstate-filter}.
 @end defun
 
 @defun ltake seq n :optional fill? padding
 @defunx ltake-while pred seq
+@c MOD gauche.lazy
 Lazy versions of @code{take*} and @code{take-while}
 (@pxref{List accessors and modifiers}).   Note that
 @code{ltake} works rather like @code{take*} than @code{take},
@@ -7468,6 +7693,7 @@ lazy sequence.
 @end defun
 
 @defun lrxmatch rx seq
+@c MOD gauche.lazy
 This is a lazy sequence version of @code{grxmatch}
 (@pxref{Generator operations}).
 
@@ -7482,6 +7708,7 @@ is a string, @code{lrxmatch} buffers certain
 @end defun
 
 @defun lslices seq k :optional fill? padding
+@c MOD gauche.lazy
 Lazy version of @code{slices} (@pxref{List accessors and modifiers}).
 
 @example
@@ -7554,6 +7781,7 @@ but the current version doesn't implement it.
 
 @deftp {Class} <listener>
 @clindex listener
+@c MOD gauche.listener
 @c EN
 An object that maintains the state of a repl session.
 It has many external slots to customize its behavior.
@@ -7738,6 +7966,7 @@ a true value, @var{finalizer} will not be called.
 
 
 @deffn {Method} listener-read-handler (listener <listener>)
+@c MOD gauche.listener
 @c EN
 Returns a thunk that is to be called when a data is available
 from @code{input-port} of the listener.
@@ -7795,6 +8024,7 @@ Repeats from 2.
 @end deffn
 
 @deffn {Method} listener-show-prompt (listener <listener>)
+@c MOD gauche.listener
 @c EN
 Shows a prompt to the listener's output port, by using
 listener's prompter procedure.  Usually you want to use
@@ -7809,6 +8039,7 @@ when the client is connected to the listener socket.
 @end deffn
 
 @defun complete-sexp? str
+@c MOD gauche.listener
 @c EN
 Returns @code{#t} if @var{str} contains a complete S-expression.
 This utility procedure is exported as well, since it might be useful
@@ -7995,6 +8226,7 @@ syslogに似たプレフィクスが各メッセージの前に追加されま�
 
 @deftp {Class} <log-drain>
 @clindex log-drain
+@c MOD gauche.logger
 @c EN
 Represents the destination of log messages.
 There's one implicit global @code{<log-drain>} instance, which is
@@ -8203,6 +8435,7 @@ are @code{LOG_PID}, @code{LOG_USER} and @code{LOG_INFO}, respectively.
 
 
 @defun log-open path :key prefix program-name
+@c MOD gauche.logger
 @c EN
 Sets the destination of the default log message to the path @var{path}.
 It can be a string or a boolean, as described above.
@@ -8227,6 +8460,7 @@ is called.
 @end defun
 
 @deffn {Parameter} log-default-drain
+@c MOD gauche.logger
 @c EN
 When called with no argument, returns the current default log-drain
 @code{log-format} uses when the explicit drain is omitted.
@@ -8253,6 +8487,7 @@ the log drain temporary.
 
 @deffn {Method} log-format (format <string>) arg @dots{}
 @deffnx {Method} log-format (drain <log-drain>) (format <string>) arg @dots{}
+@c MOD gauche.logger
 @c EN
 Formats a log message by @var{format} and @var{arg @dots{}}, by using
 @code{format} (@pxref{Output}).    In the first form, the output goes
@@ -8382,6 +8617,7 @@ Usually all you have to do is to inherit @code{<propagate-mixin>} class.
 
 @deftp {Class} <propagate-meta>
 @clindex propagate-meta
+@c MOD gauche.mop.propagate
 Adds @code{:propagated} slot allocation.
 The propagated slot has to have @code{:propagate} slot option
 which specifies the name of the slot that points to an object
@@ -8409,6 +8645,7 @@ actual object is created before setting values.
 
 @deftp {Class} <propagate-mixin>
 @clindex propagate-mixin
+@c MOD gauche.mop.propagate
 This is a convenience mixin class.   Instead of giving
 @code{:metaclass <propagate-meta>}, you can just inherit
 this calss to make propagated slots available.
@@ -8430,6 +8667,7 @@ Provides a metaclass to define a singleton class.
 
 @deftp {Class} <singleton-meta>
 @clindex singleton-meta
+@c MOD gauche.mop.singleton
 @c EN
 Creates a singleton class.  A singleton class is a class that is
 guaranteed to create only one instance.
@@ -8466,6 +8704,7 @@ The call of initialization in @code{make} is thread-safe.
 @end deftp
 
 @deffn {Method} instance-of (class <singleton-meta>) :rest initargs
+@c MOD gauche.mop.singleton
 @c EN
 This method just calls @code{make} with the passed arguments.
 It is more obvious in the program that you're dealing with singleton.
@@ -8477,6 +8716,7 @@ It is more obvious in the program that you're dealing with singleton.
 
 @deftp {Class} <singleton-mixin>
 @clindex singleton-mixin
+@c MOD gauche.mop.singleton
 @c EN
 An instance of @code{<singleton-meta>}.  Instead of specifying
 @code{<singleton-meta>} as the @code{:metaclass} argument of
@@ -8508,6 +8748,7 @@ slot options.
 
 @deftp {Class} <validator-meta>
 @clindex validator-meta
+@c MOD gauche.mop.validator
 @c EN
 This metaclass adds a feature that you can specify callbacks that are
 called before and after the slot value is set.
@@ -8711,6 +8952,7 @@ take a look at @code{srfi-106} (@pxref{Basic socket interface}).
 
 @deftp {Builtin Class} <sockaddr>
 @clindex sockaddr
+@c MOD gauche.net
 @c EN
 An abstract base class of socket addresses.  Each socket address family
 is implemented as a subclass of this class.
@@ -8728,6 +8970,7 @@ specific socket address family.
 @end deftp
 
 @deffn {Generic Function} sockaddr-family addr
+@c MOD gauche.net
 @c EN
 Returns a symbol that indicates the family of the socket address
 @var{addr}.
@@ -8737,6 +8980,7 @@ Returns a symbol that indicates the family of the socket address
 @end deffn
 
 @deffn {Generic Function} sockaddr-name addr
+@c MOD gauche.net
 @c EN
 Returns a string which represents the content of the socket address
 @var{addr}.
@@ -8747,6 +8991,7 @@ Returns a string which represents the content of the socket address
 
 @deftp {Builtin Class} <sockaddr-in>
 @clindex sockaddr-in
+@c MOD gauche.net
 @c EN
 AF_INET family socket address.  To create an instance of this class,
 use @code{make} method as follows:
@@ -8794,6 +9039,7 @@ protocol stack.
 @end deftp
 
 @deffn {Method} sockaddr-family (addr <sockaddr-in>)
+@c MOD gauche.net
 @c EN
 Returns a symbol @code{inet}.
 @c JP
@@ -8802,6 +9048,7 @@ Returns a symbol @code{inet}.
 @end deffn
 
 @deffn {Method} sockaddr-name (addr <sockaddr-in>)
+@c MOD gauche.net
 @c EN
 Returns a string in the form "@var{a}.@var{b}.@var{c}.@var{d}:@var{port}",
  where "@var{a}.@var{b}.@var{c}.@var{d}" is dotted decimal notion of
@@ -8814,6 +9061,7 @@ the IP address and @var{port} is the port number.
 
 @deffn {Method} sockaddr-addr (addr <sockaddr-in>)
 @deffnx {Method} sockaddr-port (addr <sockaddr-in>)
+@c MOD gauche.net
 @c EN
 Returns the IP address and the port number as an integer, respectively.
 @c JP
@@ -8823,6 +9071,7 @@ Returns the IP address and the port number as an integer, respectively.
 
 @deftp {Builtin Class} <sockaddr-un>
 @clindex sockaddr-un
+@c MOD gauche.net
 @c EN
 AF_UNIX family socket address.  To create an instance of this class,
 use @code{make} method as follows:
@@ -8841,6 +9090,7 @@ AF_UNIXファミリのソケットアドレスです。このクラスのイン�
 @end deftp
 
 @deffn {Method} sockaddr-family (addr <sockaddr-un>)
+@c MOD gauche.net
 @c EN
 Returns a symbol @code{unix}.
 @c JP
@@ -8849,6 +9099,7 @@ Returns a symbol @code{unix}.
 @end deffn
 
 @deffn {Method} sockaddr-name (addr <sockaddr-un>)
+@c MOD gauche.net
 @c EN
 Returns a pathname of the socket address.
 @c JP
@@ -8858,6 +9109,7 @@ Returns a pathname of the socket address.
 
 @deftp {Builtin Class} <sockaddr-in6>
 @clindex sockaddr-in6
+@c MOD gauche.net
 @c EN
 AF_INET6 family socket address.  This is only available if
 gauche is configured with --enable-ipv6 configure option.
@@ -8877,6 +9129,7 @@ protocol stack.
 @end deftp
 
 @defun make-sockaddrs host port :optional proto
+@c MOD gauche.net
 @c EN
 This is a higher-level utility procedure to create all possible
 inet domain socket addresses that point to @code{@var{host}:@var{port}}
@@ -8922,6 +9175,7 @@ IP アドレスをもつ場合、ソケットアドレスはそれぞれのIPア
 @c COMMON
 
 @defun inet-string->address address
+@c MOD gauche.net
 @c EN
 Converts string representating of the internet address @var{address}
 to an integer address.  If @var{address} is parsed successfully,
@@ -8954,6 +9208,7 @@ parsed, @code{#f} and @code{#f} are returned.
 @end defun
 
 @defun inet-string->address! address buf
+@c MOD gauche.net
 @c EN
 Like @code{inet-string->address}, but fills the given u8vector
 @var{buf} by the parsed address instead of returning it as
@@ -8990,6 +9245,7 @@ of the u8vector and the rest of the vector remains intact.
 
 
 @defun inet-address->string address protocol
+@c MOD gauche.net
 @c EN
 Converts the given @var{address} to its string representation
 of the protocol @var{protocol}, which can be either
@@ -9025,6 +9281,7 @@ u8vectorが使えます。u8vectorをつかった場合には必要な部分だ�
 
 @deftp {Builtin Class} <socket>
 @clindex socket
+@c MOD gauche.net
 @c EN
 Abstracts a socket, a communication endpoint.
 
@@ -9056,6 +9313,7 @@ provide, use low-level interface.
 @c COMMON
 
 @defun make-client-socket :optional address-spec @dots{}
+@c MOD gauche.net
 @c EN
 Creates and returns a client socket, connected to the address
 specified by @var{address-spec} @dots{}.
@@ -9133,6 +9391,7 @@ or cannot connect to the specified address.
 @end defun
 
 @defun make-server-socket :optional address-spec @dots{}
+@c MOD gauche.net
 @c EN
 Creates and returns a server socket, listening the address
 specified by @var{address-spec}.
@@ -9234,6 +9493,7 @@ by an instance of @code{<sockaddr>}.
 @end defun
 
 @defun make-server-sockets host port :key reuse-addr? sock-init
+@c MOD gauche.net
 @c EN
 Creates one or more sockets that listen at @var{port}
 on all available network interfaces of @var{host}.
@@ -9285,6 +9545,7 @@ Several accessors are available on the returned socket object.
 @c COMMON
 
 @defun socket-address socket
+@c MOD gauche.net
 @c EN
 Returns a socket address associated with @var{socket}.
 If no address has been associated to the socket, @code{#f} is returned.
@@ -9296,6 +9557,7 @@ If no address has been associated to the socket, @code{#f} is returned.
 
 @defun socket-input-port socket :key (buffering :modest)
 @defunx socket-output-port socket :key (buffering :line)
+@c MOD gauche.net
 @c EN
 Returns an input and output port associated with @var{socket},
 respectively.
@@ -9315,6 +9577,7 @@ buffering mode.
 @end defun
 
 @defun socket-close socket
+@c MOD gauche.net
 @c EN
 Closes @var{socket}.  All the ports associated to
 @var{socket} are closed as well.
@@ -9337,6 +9600,7 @@ interfering the existing connection.   You can call
 @end defun
 
 @defun call-with-client-socket socket proc :key input-buffering output-buffering
+@c MOD gauche.net
 @c EN
 @var{socket} must be a connected client socket.  @var{proc} is called
 with two arguments, an input port that reads from the socket
@@ -9416,6 +9680,7 @@ the sockets.
 @c COMMON
 
 @defun make-socket domain type :optional protocol
+@c MOD gauche.net
 @c EN
 Returns a socket with specified parameters.
 @c JP
@@ -9426,6 +9691,7 @@ Returns a socket with specified parameters.
 @defvr {Constant} PF_UNIX
 @defvrx {Constant} PF_INET
 @defvrx {Constant} PF_INET6
+@c MOD gauche.net
 @c EN
 These constants are bound to the system's constants
 @code{PF_UNIX}, @code{PF_INET} and @code{PF_INET6}.
@@ -9446,6 +9712,7 @@ system supports IPv6.)
 @defvr {Constant} AF_UNIX
 @defvrx {Constant} AF_INET
 @defvrx {Constant} AF_INET6
+@c MOD gauche.net
 @c EN
 These constants are bound to @code{AF_UNIX},
 @code{AF_INET} and @code{AF_INET6}.
@@ -9464,6 +9731,7 @@ system supports IPv6.)
 @defvr {Constant} SOCK_STREAM
 @defvrx {Constant} SOCK_DGRAM
 @defvrx {Constant} SOCK_RAW
+@c MOD gauche.net
 @c EN
 These constants are bound to @code{SOCK_STREAM}, @code{SOCK_DGRAM}
 and @code{SOCK_RAW}, and suitable to pass to the @var{type} argument
@@ -9476,6 +9744,7 @@ of @code{make-socket}.
 @end defvr
 
 @defun socket-fd socket
+@c MOD gauche.net
 @c EN
 Returns an integer system file descriptor of the underlying socket.
 @c JP
@@ -9485,6 +9754,7 @@ Returns an integer system file descriptor of the underlying socket.
 
 
 @defun socket-status socket
+@c MOD gauche.net
 @c EN
 Returns a internal status of @var{socket}, by one of the following
 symbols.
@@ -9522,6 +9792,7 @@ symbols.
 @end defun
 
 @defun socket-bind socket address
+@c MOD gauche.net
 @c EN
 Binds @var{socket} to the local network address @var{address}.
 It is usually used to associate specific address to the server port.
@@ -9544,6 +9815,7 @@ INET ドメインアドレスの場合には port=0 とした @var{address} を
 @end defun
 
 @defun socket-listen socket backlog
+@c MOD gauche.net
 @c EN
 Listens @var{socket}.  The socket must be already bound to some
 address.  @var{backlog} specifies maximum number of connection
@@ -9556,6 +9828,7 @@ requests to be queued.
 @end defun
 
 @defun socket-accept socket
+@c MOD gauche.net
 @c EN
 Accepts a connection request coming to @var{socket}.
 Returns a new socket that is connected to the remote entity.
@@ -9576,6 +9849,7 @@ request.
 @end defun
 
 @defun socket-connect socket address
+@c MOD gauche.net
 @c EN
 Connects @var{socket} to the remote address @var{address}.
 This is the way for a client socket to connect to the remote entity.
@@ -9587,6 +9861,7 @@ This is the way for a client socket to connect to the remote entity.
 @end defun
 
 @defun socket-shutdown socket how
+@c MOD gauche.net
 @c EN
 Shuts down connection of @var{socket}.  If @var{how} is @code{SHUT_RD} (or 0),
 the receive channel of @var{socket} is disallowed.
@@ -9612,6 +9887,7 @@ expects EOF before sending something back to you.
 @end defun
 
 @defun socket-getsockname socket
+@c MOD gauche.net
 @c EN
 Returns a @code{<sockaddr>} instance that is the local address of
 @var{socket}.
@@ -9621,6 +9897,7 @@ Returns a @code{<sockaddr>} instance that is the local address of
 @end defun
 
 @defun socket-getpeername socket
+@c MOD gauche.net
 @c EN
 Returns a @code{<sockaddr>} instance that is the peer address of
 @var{socket}.
@@ -9631,6 +9908,7 @@ Returns a @code{<sockaddr>} instance that is the peer address of
 
 @defun socket-send socket msg :optional flags
 @defunx socket-sendto socket msg to-address :optional flags.
+@c MOD gauche.net
 @c EN
 Interfaces to @code{send(2)} and @code{sendto(2)}, respectively.
 Transmits the content of @var{msg} through @var{socket}.
@@ -9669,6 +9947,7 @@ and @code{sendto(2)} for the details.
 @end defun
 
 @defun socket-sendmsg socket msghdr :optional flags
+@c MOD gauche.net
 @c EN
 Sends a packet described by @var{msghdr} through @var{socket}
 using @code{sendmsg(3)}.  The @var{msghdr} argument must be a
@@ -9704,6 +9983,7 @@ availability of this procedure (@pxref{Platform-dependent features}).
 @end defun
 
 @defun socket-buildmsg addr iov control flags :optional buf
+@c MOD gauche.net
 @c EN
 Builds a binary representation of @code{struct msghdr} which is
 suitable to be given to @code{socket-sendmsg}.
@@ -9789,6 +10069,7 @@ availability of this procedure (@pxref{Platform-dependent features}).
 @end defun
 
 @defun socket-recv! socket buf :optional flags
+@c MOD gauche.net
 @c EN
 Interface to @code{recv(2)}.  Receives a message from @var{socket},
 and stores it into @var{buf}, which must be a mutable uniform vector.
@@ -9816,6 +10097,7 @@ for the details.
 @end defun
 
 @defun socket-recvfrom! socket buf addrs :optional flags
+@c MOD gauche.net
 @c EN
 Interface to @code{recvfrom(2)}.  Receives a message from
 @var{socket}, which may be unconnected, and stores it to
@@ -9903,6 +10185,7 @@ for the details.
 
 @defun socket-recv socket bytes :optional flags
 @defunx socket-recvfrom socket bytes :optional flags
+@c MOD gauche.net
 @c EN
 Like @code{socket-recv!} and @code{socket-recvfrom!}, but
 these returns the received message as a (possibly incomplete)
@@ -9940,6 +10223,7 @@ Uniform vectors (especially @code{u8vector}s) are for binary data.
 @defvarx MSG_PEEK
 @defvarx MSG_TRUNC
 @defvarx MSG_WAITALL
+@c MOD gauche.net
 @c EN
 Pre-defined integer constants to be used as @var{flags} values
 for @code{socket-send}, @code{socket-sendto}, @code{socket-recv}
@@ -9963,6 +10247,7 @@ by getsockopt/setsockopt interface, as described below.
 
 @defun socket-setsockopt socket level option value
 @defunx socket-getsockopt socket level option rsize
+@c MOD gauche.net
 @c EN
 These are the interface to setsockopt() and getsockopt() calls.
 The interface is a bit clumsy, in order to allow full access to
@@ -10041,6 +10326,7 @@ For ``level'' argument:
 @defvar SOL_SOCKET
 @defvarx SOL_TCP
 @defvarx SOL_IP
+@c MOD gauche.net
 @c EN
 These variables are bound to @code{SOL_SOCKET}, @code{SOL_TCP} and
 @code{SOL_IP}, respectively.
@@ -10056,6 +10342,7 @@ For ``option'' argument:
 ``option'' 引数
 @c COMMON
 @defvar SO_KEEPALIVE
+@c MOD gauche.net
 @c EN
 Expects integer value.  If it is not zero, enables sending  of
 keep-alive messages on connection-oriented sockets.
@@ -10066,6 +10353,7 @@ keep-alive messages on connection-oriented sockets.
 @end defvar
 
 @defvar SO_OOBINLINE
+@c MOD gauche.net
 @c EN
 Expects integer value.  If it is not zero, out-of-band data is
 directly placed into the receive data stream.  Otherwise
@@ -10079,6 +10367,7 @@ MSG_OOBフラグが設定されてたときにのみ渡されます。
 @end defvar
 
 @defvar SO_REUSEADDR
+@c MOD gauche.net
 @c EN
 Expects integer value.  If it is not zero, @code{socket-bind}
 allows to reuse local addresses, unless an active listening
@@ -10092,6 +10381,7 @@ socket bound to the address.
 @end defvar
 
 @defvar SO_TYPE
+@c MOD gauche.net
 @c EN
 Gets the socket type as an integer (like @code{sock_stream}).
 Can be only used with @code{socket-getsockopt}.
@@ -10102,6 +10392,7 @@ Can be only used with @code{socket-getsockopt}.
 @end defvar
 
 @defvar SO_BROADCAST
+@c MOD gauche.net
 @c EN
 Expects integer value.  If it is not zero, datagram sockets
 are allowed to send/receive broadcast packets.
@@ -10112,6 +10403,7 @@ are allowed to send/receive broadcast packets.
 @end defvar
 
 @defvar SO_PRIORITY
+@c MOD gauche.net
 @c EN
 Expects integer value, specifying the protocol-defined priority
 for all packets to be sent on this socket.
@@ -10122,6 +10414,7 @@ for all packets to be sent on this socket.
 @end defvar
 
 @defvar SO_ERROR
+@c MOD gauche.net
 @c EN
 Gets and clears the pending socket error as an integer.
 Can be only used with @code{socket-getsockopt}.
@@ -10133,6 +10426,7 @@ Can be only used with @code{socket-getsockopt}.
 
 
 @defun inet-checksum packet size
+@c MOD gauche.net
 @c EN
 Calculates one's complement of Internet Checksum (RFC1071) of the
 @var{packet}, which must be given as a uniform vector.  First
@@ -10162,6 +10456,7 @@ Note: The used algorithm assumes @var{packet} is not too big (< 64K).
 
 @deftp {Builtin Class} <sys-hostent>
 @clindex sys-hostent
+@c MOD gauche.net
 @c EN
 A class of objects for network hosts.  Corresponding to
 @code{struct hostent} in C.  The following slots are available read-only.
@@ -10216,6 +10511,7 @@ Otherwise, returns @code{#f}.
 @end defun
 
 @defun sys-gethostbyaddr addr proto
+@c MOD gauche.net
 @c EN
 Looks up a host that has an address @var{addr} of protocol @var{proto}.
 @var{addr} is a natural string representation of the address;
@@ -10242,6 +10538,7 @@ Otherwise, returns @code{#f}.
 
 @deftp {Builtin Class} <sys-servent>
 @clindex sys-servent
+@c MOD gauche.net
 @c EN
 An entry of the network service database.  Corresponding to
 @code{struct servent} in C.  The following slots are available read-only.
@@ -10282,6 +10579,7 @@ A protocol name for this service (string).
 @end deftp
 
 @defun sys-getservbyname name proto
+@c MOD gauche.net
 @c EN
 Looks up the network service database with a service name @var{name} and
 a protocol @var{proto}.  Both @var{name} and @var{proto} must be a string.
@@ -10304,6 +10602,7 @@ Otherwise, @code{#f} is returned.
 @end defun
 
 @defun sys-getservbyport port proto
+@c MOD gauche.net
 @c EN
 Looks up the network service database with a service port @var{port} and
 a protocol @var{proto}.  @var{port} must be an exact integer, and
@@ -10329,6 +10628,7 @@ Otherwise, @code{#f} is returned.
 
 @deftp {Builtin Class} <sys-protoent>
 @clindex sys-protoent
+@c MOD gauche.net
 @c EN
 An entry of the protocol database.   Corresponds to @code{struct protoent}
 in C.   The following slots are available read-only.
@@ -10361,6 +10661,7 @@ A protocol number (exact integer).
 @end deftp
 
 @defun sys-getprotobyname name
+@c MOD gauche.net
 @c EN
 Looks up the network protocol database with a name @var{name},
 which must be a string.
@@ -10382,6 +10683,7 @@ Otherwise, @code{#f} is returned.
 @end defun
 
 @defun sys-getprotobynumber number
+@c MOD gauche.net
 @c EN
 Looks up the network protocol database with a protocol number @var{number},
 which must be an exact integer.
@@ -10404,6 +10706,7 @@ Otherwise, @code{#f} is returned.
 
 @deftp {Builtin Class} <sys-addrinfo>
 @clindex sys-addrinfo
+@c MOD gauche.net
 @c EN
 The new interface to keep address information.
 Corresponds to @code{struct addrinfo} in C.
@@ -10430,6 +10733,7 @@ The following slots are provided.
 @end deftp
 
 @defun sys-getaddrinfo nodename servname hints
+@c MOD gauche.net
 @c EN
 Returns a list of @code{<sys-addrinfo>} instances from the given @var{nodename},
 @var{servname} and @var{hints}.
@@ -10446,6 +10750,7 @@ This is only available if gauche is compiled with --enable-ipv6 option.
 @defunx sys-ntohl integer
 @defunx sys-htons integer
 @defunx sys-htonl integer
+@c MOD gauche.net
 @c EN
 Utility functions to convert 16bit (@code{s}) or 32bit (@code{l}) integers
 between @emph{network} byte order (@code{n}) and @emph{host} byte order
@@ -10502,21 +10807,27 @@ description files, and search installed @file{*.gpd} files.
 @subheading Utility procedures
 
 @defun <gauche-package-description>
+@c MOD gauche.package
 @end defun
 
 @defun path->gauche-package-description filename
+@c MOD gauche.package
 @end defun
 
 @defun write-gauche-package-description description :optional oport
+@c MOD gauche.package
 @end defun
 
 @defun make-gauche-package-description
+@c MOD gauche.package
 @end defun
 
 @defun gauche-package-description-paths :key all-versions
+@c MOD gauche.package
 @end defun
 
 @defun find-gauche-package-description name :key all-versions
+@c MOD gauche.package
 @end defun
 
 
@@ -10600,6 +10911,7 @@ Gauche's one is upper compatible to SRFI-39.
 
 @deftp {Class} <parameter>
 @clindex parameter
+@c MOD gauche.parameter
 @c EN
 A parameter class.  A @code{object-apply} method is defined
 so that a parameter can be used as if it were a procedure.
@@ -10640,6 +10952,7 @@ so that a parameter can be used as if it were a procedure.
 
 @defun make-parameter value :optional filter
 [SRFI-39]
+@c MOD gauche.parameter
 @c EN
 Creates a parameter whose initial value is @var{value}.
 If an optional argument @var{filter} is given, it must be
@@ -10661,6 +10974,7 @@ can raise an error or reject to change the parameter's value.
 
 @defmac parameterize ((param value) @dots{}) body @dots{}
 [SRFI-39]
+@c MOD gauche.parameter
 @c EN
 Evaluages @var{body} @dots{}, with
 change parameter @var{param}'s value to the given @var{value} within
@@ -10689,6 +11003,7 @@ Some examples:
 @end example
 
 @deffn {Method} parameter-observer-add! (p <parameter>) proc :optional when where
+@c MOD gauche.parameter
 @c EN
 Adds @var{proc} to "observer" procedures of a parameter @var{p}.
 Observer procedures are called either (1) just before
@@ -10741,6 +11056,7 @@ the observer list is shared by all threads.
 @end deffn
 
 @deffn {Method} parameter-observer-delete! (p <parameter>) proc :optional when
+@c MOD gauche.parameter
 @c EN
 Deletes @var{proc} from observer procedure list of a parameter @var{p}.
 If @var{proc} is not in the list, nothing happens.
@@ -10759,6 +11075,7 @@ from both lists.
 
 @deffn {Method} parameter-pre-observers (p <parameter>)
 @deffnx {Method} parameter-post-observers (p <parameter>)
+@c MOD gauche.parameter
 @c EN
 Returns a hook object (@pxref{Hooks}) that keeps
 "before" or "after" observers, respectively.
@@ -10810,6 +11127,7 @@ SLIB は、@code{getopt} 互換のユーティリティを持っています。
 @subheading High-level API
 
 @defmac let-args args (bind-spec @dots{} [. rest]) body @dots{}
+@c MOD gauche.parseopt
 @c EN
 This macro captures the most common pattern of argument processing.
 It takes a list of arguments, @var{args}, and scans it to find
@@ -11186,6 +11504,7 @@ command line arguments match an option spec @code{"prefix=s"}.
 @subheading Error handling
 
 @deftp {Condition Type} <parseopt-error>
+@c MOD gauche.parseopt
 @c EN
 When @code{let-args} encounters an argument that cannot be
 processed as specified by option specs, an error of condition type
@@ -11299,6 +11618,7 @@ macro.
 
 
 @defmac parse-options args (option-clause @dots{})
+@c MOD gauche.parseopt
 @c EN
 @var{args} is an expression that contains a list of command-line arguments.
 This macro scans the command-line options (an argument that begins with
@@ -11363,6 +11683,7 @@ a procedure that represents the option parser.
 @end defmac
 
 @defmac make-option-parser (option-clause @dots{})
+@c MOD gauche.parseopt
 @c EN
 This is a lower-level interface.  @var{option-clause}s are the
 same as @code{parse-options}.  This macro returns a procedure
@@ -11432,6 +11753,7 @@ import specifier (@pxref{Using modules}), for example as follows:
 @end example
 
 @defmac reset expr @dots{}
+@c MOD gauche.partcont
 @c EN
 Saves the current continuation, and executes @var{expr} @dots{} with
 a @emph{null continuation} or @emph{empty continuation}.
@@ -11500,6 +11822,7 @@ REPL全体が@code{reset}で囲まれているということです。
 @end defmac
 
 @defmac shift var expr @dots{}
+@c MOD gauche.partcont
 @c EN
 Packages the continuation of this expression until the current null
 continuation marked by the most recent @code{reset} into a procedure,
@@ -11530,6 +11853,7 @@ for the value of invocation of @var{var}.
 @end defmac
 
 @defun call/pc proc
+@c MOD gauche.partcont
 @c EN
 This is a wrapper of @code{shift}.  @code{(shift k expr @dots{})}
 is equivalent to @code{(call/pc (lambda (k) expr @dots{}))}.
@@ -11877,6 +12201,7 @@ a convenient way to send/receive information to/from subprocesses.
                    fork directory host sigmask on-abnormal-exit
 @defunx run-process cmd/args :key redirects input output error @
                    fork directory host sigmask wait
+@c MOD gauche.process
 @c EN
 Runs a command with arguments given to @var{cmd/args} in a subprocess.
 The @var{cmd/args} argument must be a list, whose car specifies
@@ -12675,6 +13000,7 @@ the remote machine and copies its content into the local file
 
 @defun do-pipeline commands :key input output error directory sigmask on-abnormal-exit
 @defunx run-pipeline commands :key input output error wait directory sigmask
+@c MOD gauche.process
 @c EN
 Convenience routines to run pipeline of processes at once.
 Example:
@@ -12818,6 +13144,7 @@ to move to @code{run-pipeline} as soon as possible.
 
 @deftp {Class} <process>
 @clindex process
+@c MOD gauche.process
 @c EN
 An object to keep the status of a child process.  You can create
 the process object by @code{run-process} procedure described below.
@@ -12851,6 +13178,7 @@ the low-level process calls such as @code{sys-wait} or
 
 @deftp {Class} <process-abnormal-exit>
 @clindex process-abnormal-exit
+@c MOD gauche.process
 @c EN
 A condition type mainly used by the process port utility procedures.
 Inherits @code{<error>}.  This type of condition is thrown when
@@ -12891,10 +13219,12 @@ so we treat them as exceptional situations.
 
 
 @defun process? obj
+@c MOD gauche.process
 @equiv{} @code{(is-a? @var{obj} <process>)}
 @end defun
 
 @deffn {Method} process-pid (process <process>)
+@c MOD gauche.process
 @c EN
 Returns the process ID of the subprocess @var{process}.
 @c JP
@@ -12903,6 +13233,7 @@ Returns the process ID of the subprocess @var{process}.
 @end deffn
 
 @deffn {Method} process-command (process <process>)
+@c MOD gauche.process
 @c EN
 Returns the command invoked in the subprocess @var{process}.
 @c JP
@@ -12912,6 +13243,7 @@ Returns the command invoked in the subprocess @var{process}.
 
 @deffn {Method} process-input (process <process>) :optional name
 @deffnx {Method} process-output (process <process>) :optional name
+@c MOD gauche.process
 @c EN
 Retrieves one end of a pipe, whose another end is connected
 to the process's input or output, respectively.
@@ -13007,6 +13339,7 @@ This allows you to treat the whole pipeline as one entity.
 @end deffn
 
 @deffn {Method} process-error (process <process>)
+@c MOD gauche.process
 @c EN
 This is equivalent to @code{(process-output @var{process} 'stderr)}.
 @c JP
@@ -13015,6 +13348,7 @@ This is equivalent to @code{(process-output @var{process} 'stderr)}.
 @end deffn
 
 @defun process-alive? process
+@c MOD gauche.process
 @c EN
 Returns true if @var{process} is alive.  Note that Gauche can't
 know the subprocess' status until it is explicitly checked by
@@ -13027,6 +13361,7 @@ know the subprocess' status until it is explicitly checked by
 @end defun
 
 @defun process-upstreams process
+@c MOD gauche.process
 @c EN
 If @var{process} is the result of @code{run-pipeline}, this returns
 a list of processes that are upstream of @var{process} in the pipeline.
@@ -13049,6 +13384,7 @@ p @result{} #<process 20658 "wc" active>
 @end defun
 
 @defun process-list
+@c MOD gauche.process
 @c EN
 Returns a list of active processes.  The process remains active
 until its exit status is explicitly collected by @code{process-wait}.
@@ -13064,6 +13400,7 @@ to inactive, it is removed from the list @code{process-list} returns.
 @end defun
 
 @defun process-wait process :optional nohang error-on-nonzero-status
+@c MOD gauche.process
 @c EN
 Obtains the exit status of the subprocess @var{process}, and stores it
 to @var{process}'s status slot.  The status can be obtained by
@@ -13131,6 +13468,7 @@ by @code{process-wait-any}, to collect their exit statuses.
 @end defun
 
 @defun process-wait-any :optional nohang
+@c MOD gauche.process
 @c EN
 Obtains the exit status of any of the subprocesses created by
 @code{run-process}.
@@ -13156,6 +13494,7 @@ If there's no child processes, this procedure immediately returns @code{#f}.
 
 
 @defun process-exit-status process
+@c MOD gauche.process
 @c EN
 Returns exit status of @var{process} retrieved by @code{process-wait}.
 If this is called before @code{process-wait} is called on @var{process},
@@ -13182,6 +13521,7 @@ to extract the exit code or the terminating signal
 @end defun
 
 @defun process-send-signal process signal
+@c MOD gauche.process
 @c EN
 Sends a signal @var{signal} to the subprocess @var{process}.
 @var{signal} must be an exact integer for signal number.
@@ -13196,6 +13536,7 @@ Sends a signal @var{signal} to the subprocess @var{process}.
 @defun process-kill process
 @defunx process-stop process
 @defunx process-continue process
+@c MOD gauche.process
 @c EN
 Sends SIGKILL, SIGSTOP and SIGCONT to @var{process}, respectively.
 @c JP
@@ -13207,6 +13548,7 @@ Sends SIGKILL, SIGSTOP and SIGCONT to @var{process}, respectively.
 @subsection Process ports
 
 @defun open-input-process-port command :key input error encoding conversion-buffer-size
+@c MOD gauche.process
 @c EN
 Runs @var{command} asynchronously in a subprocess.  Returns
 two values, an input port which is connected to the stdout of the
@@ -13317,6 +13659,7 @@ you can use one of the following functions.
 @end defun
 
 @defun call-with-input-process command proc :key input error encoding conversion-buffer-size on-abnormal-exit
+@c MOD gauche.process
 @c EN
 Runs @var{command} in a subprocess and pipes its stdout
 to an input port, then call @var{proc} with the port as an argument.
@@ -13365,6 +13708,7 @@ as @code{open-input-process-port} above.
 @end defun
 
 @defun with-input-from-process command thunk :key input error encoding conversion-buffer-size on-abnormal-exit
+@c MOD gauche.process
 @c EN
 Runs @var{command} in a subprocess, and calls @var{thunk}
 with its current input port connected to the command's stdout.
@@ -13388,6 +13732,7 @@ as @code{call-with-input-process} above.
 @end defun
 
 @defun open-output-process-port command :key output error encoding conversion-buffer-size
+@c MOD gauche.process
 @c EN
 Runs @code{command} in a subprocess asynchronously.  Returns two values,
 an output port which is connected to the stdin of the subprocess.
@@ -13425,6 +13770,7 @@ at appropriate time.
 @end defun
 
 @defun call-with-output-process command proc :key output error encoding conversion-buffer-size on-abnormal-exit
+@c MOD gauche.process
 @c EN
 Runs @code{command} in a subprocess, and calls @var{proc}
 with an output port which is connected to the stdin of the command.
@@ -13451,6 +13797,7 @@ which is the same as described in @code{call-with-input-process}.
 @end defun
 
 @defun with-output-to-process command thunk :key output error encoding conversion-buffer-size on-abnormal-exit
+@c MOD gauche.process
 @c EN
 Same as @code{call-with-output-process}, except that the
 output port which is connected to the stdin of the command
@@ -13463,6 +13810,7 @@ is set to the current output port while executing @var{thunk}.
 @end defun
 
 @defun call-with-process-io command proc :key error encoding conversion-buffer-size on-abnormal-exit
+@c MOD gauche.process
 @c EN
 Runs @var{command} in a subprocess, and calls @var{proc}
 with two arguments; the first argument is an input port which
@@ -13487,6 +13835,7 @@ returns or raises an error.
 
 @defun process-output->string command :key error encoding conversion-buffer-size on-abnormal-exit
 @defunx process-output->string-list command :key error encoding conversion-buffer-size on-abnormal-exit
+@c MOD gauche.process
 @c EN
 Runs @var{command} and collects its output (to stdout) and returns them.
 @code{process-output->string} concatenates all the output from @var{command}
@@ -13526,6 +13875,7 @@ to which keyword arguments are passed.
 @end defun
 
 @defun shell-escape-string str :optional flavor
+@c MOD gauche.process
 @c EN
 If @var{str} contains characters that affects shell's command-line
 argument parsing, escape @var{str} to avoid shell's interpretation.
@@ -13567,6 +13917,7 @@ bypass the shell.)
 @end defun
 
 @defun shell-tokenize-string str :optional flavor
+@c MOD gauche.process
 @c EN
 Split a string @var{str} into arguments as the shell does.
 @c JP
@@ -13724,6 +14075,7 @@ record constructors, accessors or modifiers.
 
 @defmac define-record-type type-spec ctor-spec pred-spec field-spec @dots{}
 [SRFI-9][SRFI-99+]
+@c MOD gauche.record
 Defines a record type, and optionally defines
 a constructor, a predicate, and field accessors and modifiers.
 
@@ -13928,28 +14280,33 @@ However, these procedures are more portable.
 
 @defun record? obj
 [SRFI-99][R6RS]
+@c MOD gauche.record
 Returns @code{#t} iff @var{obj} is an instance of record type,
 @code{#f} otherwise.
 @end defun
 
 @defun record-rtd record
 [SRFI-99][R6RS]
+@c MOD gauche.record
 Returns the record type descriptor of the record instance.
 @end defun
 
 @defun rtd-name rtd
 [SRFI-99]
+@c MOD gauche.record
 Returns the name of the record type descriptor @var{rtd}.
 @end defun
 
 @defun rtd-parent rtd
 [SRFI-99]
+@c MOD gauche.record
 Returns the parent type of the record type descriptor @var{rtd}.
 If @var{rtd} doesn't have a parent, @code{#f} is returned.
 @end defun
 
 @defun rtd-field-names rtd
 [SRFI-99]
+@c MOD gauche.record
 Returns a vector of symbols, each of which is the names of the direct
 fields of the record represented by @var{rtd}.   The result doesn't
 include inherited fields.
@@ -13957,6 +14314,7 @@ include inherited fields.
 
 @defun rtd-all-field-names rtd
 [SRFI-99]
+@c MOD gauche.record
 Returns a vector of symbols, each of which is the names of the
 fields of the record represented by @var{rtd}.   The result includes
 all inherited fields.
@@ -13964,6 +14322,7 @@ all inherited fields.
 
 @defun rtd-field-mutable? rtd field-name
 [SRFI-99]
+@c MOD gauche.record
 Returns @code{#t} iff the field with the name @var{field-name}
 of a record represented by @var{rtd} is mutable.
 @end defun
@@ -13978,6 +14337,7 @@ to create a new record type at runtime.
 
 @defun make-rtd name field-specs :optional parent
 [SRFI-99]
+@c MOD gauche.record
 Creates and returns a new record type descriptor with name @var{name} and
 having fields specified by @var{field-specs}.  If @var{parent}
 is given, it must be a record type descriptor or @code{#f}.
@@ -13999,12 +14359,14 @@ arguments.
 
 @defun rtd? obj
 [SRFI-99]
+@c MOD gauche.record
 Returns @code{#t} if @var{obj} is a record type descriptor,
 @code{#f} otherwise.
 @end defun
 
 @defun rtd-constructor rtd :optional field-specs
 [SRFI-99]
+@c MOD gauche.record
 Returns a procedure that creates an instance record of
 the record type represented by @var{rtd}.
 Without @var{field-specs}, it returns the default constructor,
@@ -14021,6 +14383,7 @@ can only initialize the field of the derived type's instance.
 
 @defun rtd-predicate rtd
 [SRFI-99]
+@c MOD gauche.record
 Returns a predicate to test an object is an instance of @var{rtd}.
 
 If @var{rtd} is a pseudo record type, the predicate merely tests
@@ -14030,6 +14393,7 @@ to hold the contents.   See @ref{Pseudo record types} for the details.
 
 @defun rtd-accessor rtd field-name
 [SRFI-99]
+@c MOD gauche.record
 Returns a procedure that takes one argument, an instance of @var{rtd},
 and returns the value of the @var{field-name} of the instance.
 
@@ -14043,6 +14407,7 @@ this procedure retrieves the value of the field of the derived record.
 
 @defun rtd-mutator rtd field-name
 [SRFI-99]
+@c MOD gauche.record
 Returns a procedure that takes two arguments, an instance of @var{rtd}
 and a value, and sets the latter as the value of the @var{field-name}
 of the instance.
@@ -14083,6 +14448,7 @@ can be used to obtain a base pseudo record type of
 the suitable instance class.
 
 @defun pseudo-rtd instance-class
+@c MOD gauche.record
 Returns a pseudo rtd suitable to use @var{instance-class} as
 a pseudo record.
 
@@ -14196,6 +14562,7 @@ Take a look at the code if you want to know the exact behavior.
 @end deftp
 
 @defun reload module-name :optional rule @dots{}
+@c MOD gauche.reload
 @c EN
 Reloads the specified module.   You can optionally specify
 redefinition rules by @var{rule} @dots{},
@@ -14208,6 +14575,7 @@ where each @var{rule} is the term @code{<rule>} defined above.
 @end defun
 
 @defun reload-modified-modules :optional module-rules
+@c MOD gauche.reload
 @c EN
 Reloads module(s) that have been modified since they are loaded
 last time.  If optional @var{module-rules} is given, it is
@@ -14227,6 +14595,7 @@ rules by @code{module-reload-rules}.
 @end defun
 
 @defun module-reload-rules :optional module-rules
+@c MOD gauche.reload
 @c EN
 This is a parameter (@pxref{Parameters}) that keeps
 the default module rules for @code{reload-modified-modules}.
@@ -14243,6 +14612,7 @@ current module rules.
 @end defun
 
 @defun reload-verbose :optional flag
+@c MOD gauche.reload
 @c EN
 This is a parameter to control verbosity of the reloading procedures.
 If called without arguments, returns the current verbosity flag.
@@ -14273,6 +14643,7 @@ registered handlers, based on @code{sys-select} (@pxref{I/O multiplexing}).
 
 @deftp {Class} <selector>
 @clindex selector
+@c MOD gauche.selector
 @c EN
 A dispatcher instance that keeps watching I/O ports with associated
 handlers.  A new instance can be created by @code{make} method.
@@ -14284,6 +14655,7 @@ handlers.  A new instance can be created by @code{make} method.
 
 
 @deffn {Method} selector-add! (self <selector>) port-or-fd proc flags
+@c MOD gauche.selector
 @c EN
 Add a handler @var{proc} to the selector.  @var{proc} is called
 when @var{port-or-fd}, which should be a port object or an integer
@@ -14335,6 +14707,7 @@ same condition, the previous handler is replaced by @var{proc}.
 @end deffn
 
 @deffn {Method} selector-delete! (self <selector>) port-or-fd proc flags
+@c MOD gauche.selector
 @c EN
 Deletes the handler entries that matches @var{port-or-fd}, @var{proc}
 and @var{flags}.   One or more of the arguments may be @code{#f},
@@ -14364,6 +14737,7 @@ deletes all the handlers waiting for writable condition.
 
 
 @deffn {Method} selector-select (self <selector>) :optional (timeout #f)
+@c MOD gauche.selector
 @c EN
 Dispatcher body.  Waits for the conditions registered in @var{self},
 and when it occurs, calls the associated handler.
@@ -14493,6 +14867,7 @@ Gauche組み込みクラスのうち、リスト、ベクター、そして文�
 @c NODE 基本的なシーケンスのアクセサ
 
 @deffn {Method} ref (seq <sequence>) index :optional fallback
+@c MOD gauche.sequence
 @c EN
 Returns @var{index}-th element of the sequence @var{seq}.
 This method enables uniform access for any sequence types.
@@ -14517,6 +14892,7 @@ an error is signaled if not.
 @end deffn
 
 @deffn {Method} {(setter ref)} (seq <sequence>) index value
+@c MOD gauche.sequence
 @c EN
 Sets @var{value} to the @var{index}-th element of the sequence @var{seq}.
 This is the uniform sequence modifier.
@@ -14553,9 +14929,11 @@ or deleting elements.
 @end deffn
 
 @deffn {Method} referencer (seq <sequence>)
+@c MOD gauche.sequence
 @end deffn
 
 @deffn {Method} modifier (seq <sequence>)
+@c MOD gauche.sequence
 @end deffn
 
 @node Slicing sequence, Mapping over sequences, Fundamental sequence accessors, Sequence framework
@@ -14563,6 +14941,7 @@ or deleting elements.
 @c NODE シーケンスのスライス
 
 @deffn {Method} subseq (seq <sequence>) :optional start end
+@c MOD gauche.sequence
 @c EN
 Retrieve a subsequence of the sequence @var{seq}, from
 @var{start}-th element (inclusive) to @var{end}-th element (exclusive).
@@ -14585,6 +14964,7 @@ The type of the returned sequence is the same as @var{seq}.
 
 @deffn {Method} {(setter subseq)} (seq <sequence>) start end value-seq
 @deffnx {Method} {(setter subseq)} (seq <sequence>) start value-seq
+@c MOD gauche.sequence
 @c EN
 Sets the elements of @var{value-seq} from the @var{start}-th element
 (inclusive) to the @var{end}-th element (exclusive) of the sequence @var{seq}.
@@ -14628,6 +15008,7 @@ during iteration.   There are several generic functions for it.
 @c COMMON
 
 @deffn {Method} fold-with-index kons knil (seq <sequence>) @dots{}
+@c MOD gauche.sequence
 @c EN
 Like generic @code{fold}, except @var{kons} is given
 the index within @var{seq}, as the first argument,
@@ -14647,6 +15028,7 @@ as well as each element from @var{seq}s and the accrued value.
 @deffn {Method} map-with-index proc (seq <sequence>) @dots{}
 @deffnx {Method} map-to-with-index class proc (seq <sequence>) @dots{}
 @deffnx {Method} for-each-with-index proc (seq <sequence>) @dots{}
+@c MOD gauche.sequence
 @c EN
 Like @code{map}, @code{map-to} and @code{for-each}, except @var{proc}
 receives the index as the first argument.
@@ -14665,6 +15047,7 @@ receives the index as the first argument.
 @end deffn
 
 @deffn {Method} find-with-index pred (seq <sequence>)
+@c MOD gauche.sequence
 @c EN
 Finds the first element in @var{seq} that satisfies @var{pred}
 like @code{find}, but returns two values, the index of the element
@@ -14686,6 +15069,7 @@ two @code{#f}'s are returned.
 @end deffn
 
 @deffn {Method} find-index pred (seq <sequence>)
+@c MOD gauche.sequence
 @c EN
 Like @code{find}, but returns the index of the first element
 that satisfies @var{pred} in @var{seq}, instead of the element itself.
@@ -14712,6 +15096,7 @@ SRFI-1 (@ref{SRFI-1 List utilities}参照)の@code{list-index}も見て下さい
 @end deffn
 
 @deffn {Method} fold-right kons knil (seq <sequence>) @dots{}
+@c MOD gauche.sequence
 @c EN
 Generalization of @code{fold-right} on lists.
 Like @code{fold}, this method applies a higher-order function
@@ -14758,6 +15143,7 @@ collections don't care the order of elements.
 @subsubheading Selection and searching
 
 @deffn {Generic function} sequence-contains haystack needle :key test
+@c MOD gauche.sequence
 @c EN
 Both @var{needle} and @var{haystack} must be sequences.
 Searches @var{needle} from @var{haystack} from the beginning of @var{haystack}.
@@ -14791,6 +15177,7 @@ This can be regarded as generalization of @code{string-contains} in srfi-13
 
 @defun break-list-by-sequence list needle :key test
 @defunx break-list-by-sequence! list needle :key test
+@c MOD gauche.sequence
 @c EN
 Searches a sequence @var{needle} from @var{list},
 and if found, breaks @var{list}
@@ -14845,6 +15232,7 @@ for @var{list} may not be modified.
 @end defun
 
 @defun sequence->kmp-stepper needle :key test
+@c MOD gauche.sequence
 @c EN
 This is an internal routine to search subsequence (@var{needle}) inside
 larger sequence, using Knuth-Morris-Pratt (KMP) algorithm.
@@ -14931,6 +15319,7 @@ See @ref{Selection and searching in collection}.
 @subsubheading Grouping
 
 @deffn {Generic function} group-sequence seq :key key test
+@c MOD gauche.sequence
 @c EN
 Groups consecutive elements in a sequence @var{seq} which
 have the common key value.  A key value of an element is
@@ -14990,6 +15379,7 @@ you can use @code{delete-neighbor-dups} below.
 
 
 @deffn {Generic function} delete-neighbor-dups seq :key key test start end
+@c MOD gauche.sequence
 @c EN
 Returns a sequence of the same type as @var{seq}, in which
 elements in @var{seq} are included in the original order, except
@@ -15064,6 +15454,7 @@ is exclusive.
 @end deffn
 
 @deffn {Generic function} delete-neighbor-dups! seq :key key test start end
+@c MOD gauche.sequence
 @c EN
 Scan @var{seq} from left to right, dropping consecutive duplicated
 elements.  The result is stored into @var{seq}, packed to left.
@@ -15124,6 +15515,7 @@ with which it doesn't cost extra allocation and runs in O(n) time.
 @end deffn
 
 @deffn {Generic function} delete-neighbor-dups-squeeze! seq :key key test start end
+@c MOD gauche.sequence
 @c EN
 Operates like @code{delete-neighbor-dups} but reuses storage of @var{seq},
 which will be resized by dropping duplicated elements.
@@ -15172,6 +15564,7 @@ The semantics of keyword arguments @var{key}, @var{test},
 @subsubheading Prefix
 
 @deffn {Generic function} common-prefix (a <sequence>) (b <sequence>) :key key test
+@c MOD gauche.sequence
 @c EN
 Returns a new sequence of the same type of @var{a} which contains
 the common prefix of sequences @var{a} and @var{b}.  The types of
@@ -15211,6 +15604,7 @@ related feature: @code{string-prefix-length}
 @end deffn
 
 @deffn {Generic function} common-prefix-to (class <class>) (a <sequence>) (b <sequence>) :key key test
+@c MOD gauche.sequence
 @c EN
 Returns a new sequence of the type @var{class} which contains
 the common prefix of sequences @var{a} and @var{b}.  The types of
@@ -15238,6 +15632,7 @@ The meanings of keyword arguments are the same as @code{common-prefix}.
 @subsubheading Permutation and shuffling
 
 @deffn {Generic function} permute (src <sequence>) (permuter <sequence>) :optional fallback
+@c MOD gauche.sequence
 @c EN
 Returns a newly created sequence of the same type as @var{src}, in which
 the elements are permuted from @var{src} according to @var{permuter}.
@@ -15291,6 +15686,7 @@ If @var{fallback} is given, what value is used depends on the result of
 @end deffn
 
 @deffn {Generic function} permute-to (class <class>) (src <sequence>) (permuter <sequence>) :optional fallback
+@c MOD gauche.sequence
 @c EN
 Like @code{permute}, but the result will be an instance of the given @var{class}
 instead of the class of @var{src}.
@@ -15307,6 +15703,7 @@ instead of the class of @var{src}.
 @end deffn
 
 @deffn {Generic function} permute! (src <sequence>) (permuter <sequence>) :optional fallback
+@c MOD gauche.sequence
 @c EN
 Also like @code{permute}, but the result is stored back to @var{src}.
 @var{Src} must be a mutable sequence, and the length of @var{src} and
@@ -15319,6 +15716,7 @@ Also like @code{permute}, but the result is stored back to @var{src}.
 @end deffn
 
 @deffn {Generic function} shuffle (src <sequence>) :optional random-source
+@c MOD gauche.sequence
 @c EN
 Returns a new sequence of the same type and size as @var{src},
 in which elements are randomly permuted.
@@ -15344,6 +15742,7 @@ an alternative random source by the optional argument.
 @end deffn
 
 @deffn {Generic function} shuffle-to (class <class>) (src <sequence>) :optional random-source
+@c MOD gauche.sequence
 @c EN
 Like @code{shuffle}, except that the result will be an instance of
 @var{class} instead of the class of @var{src}.
@@ -15353,6 +15752,7 @@ Like @code{shuffle}, except that the result will be an instance of
 @end deffn
 
 @deffn {Generic function} shuffle! (src <sequence>) :optional random-source
+@c MOD gauche.sequence
 @c EN
 Like @code{shuffle}, but the result is stored back to @var{src}.
 @var{Src} must be a mutable sequence.
@@ -15406,6 +15806,7 @@ The procedures are only defined if the underlying system supports them.
 
 @defun sys-openlog ident option facility
 [POSIX]
+@c MOD gauche.syslog
 @c EN
 Opens a connection to the system logger.  A string argument
 @var{ident} is used for the prefix of the log, and usually is
@@ -15458,6 +15859,7 @@ these constants.
 
 @defun sys-syslog priority message
 [POSIX]
+@c MOD gauche.syslog
 @c EN
 Log the string @var{message}.  Unlike syslog(3), this procedure doesn't
 do formatting---you can use @code{format} (@pxref{Output}) to create
@@ -15486,6 +15888,7 @@ the @var{level} constants: @code{LOG_EMERG}, @code{LOG_ALERT},
 
 @defun sys-closelog
 [POSIX]
+@c MOD gauche.syslog
 @c EN
 Closes the connection to the logging system.
 @c JP
@@ -15495,6 +15898,7 @@ Closes the connection to the logging system.
 
 @defun sys-setlogmask mask
 [POSIX]
+@c MOD gauche.syslog
 @c EN
 Sets the process's log priority mask that determines which calls to
 @code{sys-syslog} may be logged.
@@ -15514,6 +15918,7 @@ from the level.
 
 @defun sys-logmask level
 [POSIX]
+@c MOD gauche.syslog
 @c EN
 Returns an integer bitmask for @code{sys-setlogmask} from
 the log level @var{level}.
@@ -15582,6 +15987,7 @@ feature identifiers.
 
 @deftp {Builtin Class} <sys-termios>
 @clindex sys-termios
+@c MOD gauche.termios
 @c EN
 POSIX termios(7) structure.
 @c JP
@@ -15637,6 +16043,7 @@ has an associated terminal by @code{sys-isatty?}.
 @c COMMON
 
 @defun sys-tcgetattr port-or-fd
+@c MOD gauche.termios
 @c EN
 Returns terminal parameters in a @code{<sys-termios>} object,
 associated to @var{port-or-fd}.
@@ -15647,6 +16054,7 @@ associated to @var{port-or-fd}.
 @end defun
 
 @defun sys-tcsetattr port-or-fd when termios
+@c MOD gauche.termios
 @c EN
 Sets terminal parameters associated to @var{port-or-fd} by @var{termios},
 which must be an instance of @code{<sys-termios>}.
@@ -15688,6 +16096,7 @@ and all pending input is discarded.
 @end defun
 
 @defun sys-tcsendbreak port-or-fd duration
+@c MOD gauche.termios
 @c EN
 Transmits a zero stream for the specified duration
 to the terminal associated to @var{port-or-fd}.
@@ -15701,6 +16110,7 @@ your system for details.
 @end defun
 
 @defun sys-tcdrain port-or-fd
+@c MOD gauche.termios
 @c EN
 Waits until all output written to @var{port-or-fd} is transmitted.
 @c JP
@@ -15709,6 +16119,7 @@ Waits until all output written to @var{port-or-fd} is transmitted.
 @end defun
 
 @defun sys-tcflush port-or-fd queue
+@c MOD gauche.termios
 @c EN
 Discards data in the buffer of @var{port-or-fd}, specified by
 @var{queue}, which may be one of the following values.
@@ -15742,6 +16153,7 @@ Do both @code{TCIFLUSH} and @code{TCOFLUSH} action.
 @end defun
 
 @defun sys-tcflow port-or-fd action
+@c MOD gauche.termios
 @c EN
 Controls data flow of @var{port-or-fd} by @var{action}, which may be
 one of the following values:
@@ -15784,6 +16196,7 @@ data to the system.
 @end defun
 
 @defun sys-tcgetpgrp port-or-fd
+@c MOD gauche.termios
 @c EN
 Returns process group ID of the terminal associated to @var{port-or-fd}.
 @c JP
@@ -15792,6 +16205,7 @@ Returns process group ID of the terminal associated to @var{port-or-fd}.
 @end defun
 
 @defun sys-tcsetpgrp port-or-fd pgrp
+@c MOD gauche.termios
 @c EN
 Sets process group ID of the terminal associated to @var{port-or-fd}
 to @var{pgrp}.
@@ -15805,6 +16219,7 @@ to @var{pgrp}.
 @defunx sys-cfsetispeed termios speed
 @defunx sys-cfgetospeed termios
 @defunx sys-cfsetospeed termios speed
+@c MOD gauche.termios
 @c EN
 Gets/sets input/output speed (baud rate) parameter stored in @var{termios}
 object.   Speed is represented by the following predefined numbers:
@@ -15836,6 +16251,7 @@ terminate the connection.
 @end defun
 
 @defun sys-openpty :optional term
+@c MOD gauche.termios
 @c EN
 Opens a pair of pseudo ttys, one for master and the other for slave,
 then returns two integers which are their file descriptors.
@@ -15865,6 +16281,7 @@ This function is available only if the system supports @code{openpty(3)}.
 @end defun
 
 @defun sys-forkpty :optional term
+@c MOD gauche.termios
 @c EN
 Opens a pair of pseudo ttys, one for master and the other for slave,
 sets the slave pty suitable for login terminal, then fork(2).
@@ -15905,6 +16322,7 @@ running multiple threads, use @code{sys-forkpty-and-exec} below.
 @end defun
 
 @defun sys-forkpty-and-exec command args :key iomap term sigmask
+@c MOD gauche.termios
 @c EN
 Does @code{sys-forkpty}, and lets the child process
 immediately @code{exec}s the specified @var{command}
@@ -15935,6 +16353,7 @@ the slave pty.
 @c NODE 共通の高レベル端末制御
 
 @defun without-echoing iport proc
+@c MOD gauche.termios
 If @var{iport} is an input port connected to a terminal,
 sets the terminal mode non-echoing and call @var{proc} with
 @var{iport} as an argument.  Before returning from
@@ -15961,6 +16380,7 @@ of the standard input handle when @code{iport} is either
 @end defun
 
 @defun has-windows-console?
+@c MOD gauche.termios
 Returns @code{#t} iff the running Gauche is Windows-native and
 the process has attached console.  On POSIX platforms this
 procedure always returns @code{#f}.
@@ -16054,6 +16474,7 @@ check :
 @c COMMON
 
 @defun test-start module-name
+@c MOD gauche.test
 @c EN
 Initializes internal state and prints a log header.
 This should be called before any tests.
@@ -16065,6 +16486,7 @@ This should be called before any tests.
 @end defun
 
 @defun test-section section-name
+@c MOD gauche.test
 @c EN
 Marks beginning of the group of tests.  This is just for logging.
 @c JP
@@ -16073,6 +16495,7 @@ Marks beginning of the group of tests.  This is just for logging.
 @end defun
 
 @defun test-log fmtstr args @dots{}
+@c MOD gauche.test
 @c EN
 This is also just for logging.  Creates a formatted string
 with @var{fmrstr} and @var{args} just like @code{format},
@@ -16110,6 +16533,7 @@ and ask the reporter to run the test again and analyze the log.
 @end defun
 
 @defun test-end :key exit-on-failure
+@c MOD gauche.test
 @c EN
 Prints out list of failed tests.  If @var{exit-on-failure} is @code{#f} or
 omitted, this procedure returns the number of failed tests.
@@ -16130,6 +16554,7 @@ the exit status will be 1.
 @end defun
 
 @defun test-record-file file
+@c MOD gauche.test
 @c EN
 Suppose you have several test scripts.  Normally you run them
 as a group and what you want to know is a concise summary of
@@ -16218,6 +16643,7 @@ and this environment variable is ignored.
 @end deftp
 
 @defun test-summary-check
+@c MOD gauche.test
 @c EN
 If the test record file is set (either by @code{test-record-file} or
 the enviornment variable @code{GAUCHE_TEST_RECORD_FILE}), read it,
@@ -16278,6 +16704,7 @@ with status 1 if there has been any failure.
 @c COMMON
 
 @defmac test* name expected expr :optional check
+@c MOD gauche.test
 @c EN
 A convenience macro that wraps @var{expr} by lambda.
 @c JP
@@ -16291,6 +16718,7 @@ A convenience macro that wraps @var{expr} by lambda.
 @end defmac
 
 @defun test name expected thunk :optional check
+@c MOD gauche.test
 @c EN
 Calls @var{thunk}, and checks its result fits @var{expected}
 using a procedure @var{check}, which
@@ -16358,6 +16786,7 @@ of error.  See the entry of @code{test-error} below for the details.
 @end defun
 
 @defun test-check expected result :optional fallback
+@c MOD gauche.test
 @c EN
 The default procedure @code{test} and @code{test*} use
 to check the result of the test expression conforms the
@@ -16384,6 +16813,7 @@ described below.
 @c COMMON
 
 @defun test-one-of choice @dots{}
+@c MOD gauche.test
 @c EN
 Sometimes the result of test expression depends on various
 external environment, and you cannot put an exact expected value.
@@ -16417,6 +16847,7 @@ For example, the following test passes if @code{proc} returns either
 @end defun
 
 @defun test-none-of choice @dots{}
+@c MOD gauche.test
 @c EN
 Similar to @code{test-one-of}, but creates a special object
 representing @emph{none of the choices}.
@@ -16435,6 +16866,7 @@ don't match any of @var{choice}s.
 @c COMMON
 
 @defun test-error :optional (condition-type <error>) (message #f)
+@c MOD gauche.test
 @c EN
 Returns a new @code{<test-error>} object that mathes with
 other @code{<test-error>} object with the given @var{condition-type}.
@@ -16494,6 +16926,7 @@ If it is @code{#f}, the message is not checked.
 @end defun
 
 @defvar *test-error*
+@c MOD gauche.test
 @c EN
 (Deprecated) Bounded to an instance of @code{<test-error>} with
 condition type @code{<error>}.  This is only provided for the
@@ -16507,6 +16940,7 @@ procedure above.
 @end defvar
 
 @defvar *test-report-error*
+@c MOD gauche.test
 @c EN
 If this variable is true, the @code{test} routine prints stack trace
 to the current error port when it captures an error.  It is useful
@@ -16628,6 +17062,7 @@ symbols to be excluded from the test.
 @c COMMON
 
 @defun test-module module :key allow-undefined bypass-arity-check
+@c MOD gauche.test
 @c EN
 Loads the module and runs the quasi-static consistency check.
 @var{Module} must be a symbol module name or a module.
@@ -16677,6 +17112,7 @@ keyword arguments.
 @end defun
 
 @defun test-script filename :key allow-undefined bypass-arity-check
+@c MOD gauche.test
 @c EN
 Loads the script named by @var{filename}
 into a fresh anonymous module and runs the quasi-static
@@ -16806,6 +17242,7 @@ instead of compile time, use the following procedure.
 @c COMMON
 
 @defun gauche-thread-type
+@c MOD gauche.threads
 @c EN
 Returns a symbol that indicates the supported thread type.
 It can be one of the following symbols.
@@ -17281,33 +17718,33 @@ A thread-local slot for use of the application.
 @end deftp
 
 @defun current-thread
-@c EN
 [SRFI-18], [SRFI-21]
+@c MOD gauche.threads
+@c EN
 Returns the current thread.
 @c JP
-[SRFI-18]、[SRFI-21]
 現在のスレッドを返します。
 @c COMMON
 @end defun
 
 @defun thread? obj
-@c EN
 [SRFI-18], [SRFI-21]
+@c MOD gauche.threads
+@c EN
 Returns @code{#t} if @var{obj} is a thread, @code{#f} otherwise.
 @c JP
-[SRFI-18]、[SRFI-21]
 @var{obj}がスレッドなら@code{#t}、そうでなければ@code{#f}を返します。
 @c COMMON
 @end defun
 
 @defun make-thread thunk :optional name
-@c EN
 [SRFI-18], [SRFI-21]
+@c MOD gauche.threads
+@c EN
 Creates and returns a new thread to execute @var{thunk}.
 To run the thread, you need to call @code{thread-start!}.
 The result of @var{thunk} may be retrieved by calling @var{thread-join!}.
 @c JP
-[SRFI-18]、[SRFI-21]
 @var{thunk}を実行するための新しいスレッドを生成して返します。
 そのスレッドの実行を開始するには、@code{thread-start!}を呼ぶ必要があります。
 @var{thunk}の実行結果は、@var{thread-join!}を呼ぶことで回収できます。
@@ -17373,6 +17810,7 @@ is called.
 @end defun
 
 @defun thread-state thread
+@c MOD gauche.threads
 @c EN
 Returns one of symbols @code{new}, @code{runnable}, @code{stopped}
 or @code{terminated}, indicating the state of @var{thread}.
@@ -17383,60 +17821,60 @@ or @code{terminated}, indicating the state of @var{thread}.
 @end defun
 
 @defun thread-name thread
-@c EN
 [SRFI-18], [SRFI-21]
+@c MOD gauche.threads
+@c EN
 Returns the value of @var{name} slot of @var{thread}.
 @c JP
-[SRFI-18]、[SRFI-21]
 @var{thread}のスロット@var{name}の値を返します。
 @c COMMON
 @end defun
 
 @defun thread-specific thread
 @defunx thread-specific-set! thread value
-@c EN
 [SRFI-18], [SRFI-21]
+@c MOD gauche.threads
+@c EN
 Gets/sets the value of the @var{thread}'s specific slot.
 @c JP
-[SRFI-18]、[SRFI-21]
 @var{thread}の指定したスレッドの値を取得/設定します。
 @c COMMON
 @end defun
 
 @defun thread-start! thread
-@c EN
 [SRFI-18], [SRFI-21]
+@c MOD gauche.threads
+@c EN
 Starts the @var{thread}.  It is an error if @var{thread} is already started.
 Returns @var{thread}.
 @c JP
-[SRFI-18]、[SRFI-21]
 @var{thread}を開始します。@var{thread}がすでに開始されていればエラーになります。
 @var{thread}を返します。
 @c COMMON
 @end defun
 
 @defun thread-yield!
-@c EN
 [SRFI-18], [SRFI-21]
+@c MOD gauche.threads
+@c EN
 Suspends the execution of the calling thread and yields CPU to other
 waiting runnable threads, if any.
 @c JP
-[SRFI-18]、[SRFI-21]
 呼び出しているスレッドの実行を中断し、他に待機中の実行可能なスレッドがあれば、
 CPUにそれを処理させます。
 @c COMMON
 @end defun
 
 @defun thread-sleep! timeout
-@c EN
 [SRFI-18], [SRFI-21]
+@c MOD gauche.threads
+@c EN
 Suspends the calling thread for the period specified by @var{timeout},
 which must be either a @code{<time>} object (@pxref{Time}) that
 specifies absolute point of time, or a real number that specifies
 relative point of time from the time this procedure is called
 in number of seconds.
 @c JP
-[SRFI-18]、[SRFI-21]
 呼び出しているスレッドを@var{timeout}に指定した時間だけ中断します。
 @var{timeout}は絶対的な時間を表す@code{<time>}オブジェクト(@ref{Time}参照)か、
 この手続きが呼ばれた時刻からの相対的な秒数を表す実数でなければなりません。
@@ -17458,6 +17896,7 @@ immediately.
 @end defun
 
 @defun thread-stop! thread :optional timeout timeout-val
+@c MOD gauche.threads
 @c EN
 Stops execution of the target @var{thread} temporarily.
 You can resume the execution of the @var{thread} by @code{thread-cont!}.
@@ -17542,6 +17981,7 @@ is in neither @code{runnable} nor @code{stopped} state.
 @end defun
 
 @defun thread-cont! thread
+@c MOD gauche.threads
 @c EN
 Resumes execution of @var{thread} which has been stopped by
 @code{thread-stop!}.  An error is raised if @var{thread}
@@ -17563,14 +18003,14 @@ the request.
 @end defun
 
 @defun thread-terminate! thread
-@c EN
 [SRFI-18], [SRFI-21]
+@c MOD gauche.threads
+@c EN
 Terminates the specified thread @var{thread}.
 The @var{thread} is terminated and an instance of
 @code{<terminated-thread-exception>} is stored in the result exception
 field of @var{thread}.
 @c JP
-[SRFI-18]、[SRFI-21]
 指定されたスレッド@var{thread}を終了します。
 @var{thread}は終了され、@code{<terminated-thread-exception>}のインスタンスが
 @var{thread}の結果例外のフィールドに格納されます。
@@ -17607,12 +18047,12 @@ so that you will know the situation.  @xref{Synchronization primitives}.
 
 
 @defun thread-join! thread :optional timeout timeout-val
-@c EN
 [SRFI-18], [SRFI-21]
+@c MOD gauche.threads
+@c EN
 Waits termination of @var{thread}, or until the timeout is reached
 if @var{timeout} is given.
 @c JP
-[SRFI-18]、[SRFI-21]
 @var{thread}の終了、あるいは@var{timeout}が与えられていればtimeoutが
 それに達するのを待ちます。
 @c COMMON
@@ -17667,6 +18107,7 @@ if given, or raises @code{<join-timeout-exception>}.
 
 @deftp {Builtin Class} <mutex>
 @clindex mutex
+@c MOD gauche.threads
 @c EN
 A primitive synchronization device.  It can take one of four states:
 locked/owned, locked/not-owned, unlocked/abandoned and unlocked/not-abandoned.
@@ -17728,23 +18169,23 @@ can implement a 'recursive' mutex using the specific field.
 @end deftp
 
 @defun mutex? obj
-@c EN
 [SRFI-18], [SRFI-21]
+@c MOD gauche.threads
+@c EN
 Returns @code{#t} if @var{obj} is a mutex, @code{#f} otherwise.
 @c JP
-[SRFI-18]、[SRFI-21]
 @var{obj}がmutexであれば@code{#t}、そうでなければ@code{#f}を返します。
 @c COMMON
 @end defun
 
 @defun make-mutex :optional name
-@c EN
 [SRFI-18], [SRFI-21]
+@c MOD gauche.threads
+@c EN
 Creates and returns a new mutex object.
 When created, the mutex is in unlocked/not-abandoned state.
 Optionally, you can give a name to the mutex.
 @c JP
-[SRFI-18]、[SRFI-21]
 新しいmutexオブジェクトを生成して返します。
 生成時には、mutexの状態は、unlocked/not-abandoned(ロックされておらず、
 放棄されていない状態)です。オプションで、このmutexに名前を付けることができます。
@@ -17752,32 +18193,32 @@ Optionally, you can give a name to the mutex.
 @end defun
 
 @defun mutex-name mutex
-@c EN
 [SRFI-18], [SRFI-21]
+@c MOD gauche.threads
+@c EN
 Returns the name of the mutex.
 @c JP
-[SRFI-18]、[SRFI-21]
 Mutexの名前を返します。
 @c COMMON
 @end defun
 
 @defun mutex-specific mutex
 @defunx mutex-specific-set! mutex value
-@c EN
 [SRFI-18], [SRFI-21]
+@c MOD gauche.threads
+@c EN
 Gets/sets the specific value of the mutex.
 @c JP
-[SRFI-18]、[SRFI-21]
 Mutexの固有の値を取得/セットできます。
 @c COMMON
 @end defun
 
 @defun mutex-state mutex
-@c EN
 [SRFI-18], [SRFI-21]
+@c MOD gauche.threads
+@c EN
 Returns the state of @var{mutex}, which may be one of the followings:
 @c JP
-[SRFI-18]、[SRFI-21]
 @var{mutex}の状態を返します。状態は以下のうちの1つです。
 @c COMMON
 
@@ -17805,8 +18246,9 @@ Mutexはunlocked/not-abandoned(ロックされておらず、放棄されてい�
 @end defun
 
 @defun mutex-lock! mutex :optional timeout thread
-@c EN
 [SRFI-18], [SRFI-21]
+@c MOD gauche.threads
+@c EN
 Locks @var{mutex}.  If @var{mutex} is in unlocked/not-abandoned
 state, this procedure changes its state to locked state exclusively.
 By default, @var{mutex} becomes locked/owned state, owned by the
@@ -17814,7 +18256,6 @@ calling thread.  You can give other owner thread as @var{thread} argument.
 If @var{thread} argument is given and @code{#f}, the mutex becomes
 locked/not-owned state.
 @c JP
-[SRFI-18]、[SRFI-21]
 @var{mutex}をロックします。@var{mutex}がunlocked/not-abandoned(
 ロックされておらず放棄されていない状態)なら、
 この手続きはその状態を排他的なlocked(ロックされた状態)に変更します。
@@ -17894,12 +18335,12 @@ The following example is taken from SRFI-18 document:
 @end defun
 
 @defun mutex-unlock! mutex :optional condition-variable timeout
-@c EN
 [SRFI-18], [SRFI-21]
+@c MOD gauche.threads
+@c EN
 Unlocks @var{mutex}.  The state of @var{mutex} becomes unlocked/not-abandoned.
 It is allowed to unlock a mutex that is not owned by the calling thread.
 @c JP
-[SRFI-18]、[SRFI-21]
 @var{mutex}をアンロックします。@var{mutex}の状態は、unlocked/not-abandoned
 (ロックされておらず、放棄されていない状態)となります。
 呼び出しているスレッドにより所有されていないmutexをアンロックすることは
@@ -17960,6 +18401,7 @@ because of timeout, and @code{#t} otherwise.
 
 @defun mutex-locker mutex
 @defunx mutex-unlocker mutex
+@c MOD gauche.threads
 @c EN
 Returns @code{(lambda () (mutex-lock! mutex))} and
 @code{(lambda () (mutex-unlock! mutex))}, respectively.
@@ -17975,6 +18417,7 @@ thus it is lighter than using literal lambda forms in a tight loop.
 
 
 @defun with-locking-mutex mutex thunk
+@c MOD gauche.threads
 @c EN
 Calls @var{thunk} with locking a mutex @var{mutex}.  This is defined as
 follows.
@@ -17998,6 +18441,7 @@ follows.
 
 @deftp {Builtin Class} <condition-variable>
 @clindex condition-variable
+@c MOD gauche.threads
 @c EN
 A condition variable keeps a set of threads that are waiting for
 a certain condition to be true.  When a thread modifies the state
@@ -18074,67 +18518,67 @@ SRFI-18では次のようなコードになります。
 @end deftp
 
 @defun condition-variable? obj
-@c EN
 [SRFI-18], [SRFI-21]
+@c MOD gauche.threads
+@c EN
 Returns @code{#t} if @var{obj} is a condition variable,
 @code{#f} otherwise.
 @c JP
-[SRFI-18]、[SRFI-21]
 @var{obj}が条件変数なら@code{#t}、そうでなければ@code{#f}を返します。
 @c COMMON
 @end defun
 
 @defun make-condition-variable :optional name
-@c EN
 [SRFI-18], [SRFI-21]
+@c MOD gauche.threads
+@c EN
 Returns a new condition variable.  You can give its name by
 optional @var{name} argument.
 @c JP
-[SRFI-18]、[SRFI-21]
 新しい条件変数を返します。オプショナル引数@var{name}で
 その名前を与えることができます。
 @c COMMON
 @end defun
 
 @defun condition-variable-name cv
-@c EN
 [SRFI-18], [SRFI-21]
+@c MOD gauche.threads
+@c EN
 Returns the name of the condition variable.
 @c JP
-[SRFI-18]、[SRFI-21]
 条件変数の名前を返します。
 @c COMMON
 @end defun
 
 @defun condition-variable-specific cv
 @defunx condition-variable-specific-set! cv value
+[SRFI-18]、[SRFI-21]
+@c MOD gauche.threads
 @c EN
-[SRFI-18], [SRFI-21]
 Gets/sets the specific value of the condition variable.
 @c JP
-[SRFI-18]、[SRFI-21]
 条件変数の固有の値を取得/セットします。
 @c COMMON
 @end defun
 
 @defun condition-variable-signal! cv
+[SRFI-18]、[SRFI-21]
+@c MOD gauche.threads
 @c EN
-[SRFI-18], [SRFI-21]
 If there are threads waiting on @var{cv}, causes the scheduler to select
 one of them and to make it runnable.
 @c JP
-[SRFI-18]、[SRFI-21]
 @var{cv}で待機しているスレッドがある場合は、それらのうちの1つがスケジューラに
 より選択され、実行可能にされます。
 @c COMMON
 @end defun
 
 @defun condition-variable-broadcast! cv
+[SRFI-18]、[SRFI-21]
+@c MOD gauche.threads
 @c EN
-[SRFI-18], [SRFI-21]
 Unblocks all the threads waiting on @var{cv}.
 @c JP
-[SRFI-18]、[SRFI-21]
 @var{cv}で待機している全てのスレッドのブロックを解除します。
 @c COMMON
 @end defun
@@ -18151,11 +18595,13 @@ thread-safe counterparts of every structure, you can easily
 wrap an existing data structures to make it thread-safe.
 
 @defun atom val @dots{}
+@c MOD gauche.threads
 Creates and returns an atom object with @var{val} @dots{} as the
 initial values.
 @end defun
 
 @defun atom? obj
+@c MOD gauche.threads
 Returns @code{#t} iff @var{obj} is an atom.
 @end defun
 
@@ -18179,6 +18625,7 @@ multiple timeout values, by giving
 more than one @var{timeout-val} arguments.
 
 @defun atom-ref atom :optional index timeout timeout-val
+@c MOD gauche.threads
 Returns @var{index}-th value of @var{atom}.
 See above for @var{timeout} and @var{timeout-val} arguments.
 
@@ -18191,6 +18638,7 @@ See above for @var{timeout} and @var{timeout-val} arguments.
 @end defun
 
 @defun atomic atom proc :optional timeout timeout-val timeout-val2 @dots{}
+@c MOD gauche.threads
 Calls @var{proc} with the current values in @var{atom},
 while locking @var{atom}.  @var{proc} must take
 as many arguments as the number of values @var{atom} has.
@@ -18215,6 +18663,7 @@ the hashtable is referenced in thread-safe way.
 @end defun
 
 @defun atomic-update! atom proc :optional timeout timeout-val timeout-val2 @dots{}
+@c MOD gauche.threads
 Calls @var{proc} with the current values in @var{atom}
 while locking @var{atom}, and updates the values in @var{atom}
 by the returned values from @var{proc}.
@@ -18271,6 +18720,7 @@ These exceptions can be handled by Gauche's exception mechanism
 
 @deftp {Builtin Class} <thread-exception>
 @clindex thread-exception
+@c MOD gauche.threads
 @c EN
 A base class of thread-related exceptions.  Inherits @code{<exception>} class.
 It has one slot.
@@ -18290,6 +18740,7 @@ A thread that threw this exception.
 
 @deftp {Builtin Class} <join-timeout-exception>
 @clindex join-timeout-exception
+@c MOD gauche.threads
 @c EN
 An exception thrown by @code{thread-join!} when a timeout reaches
 before the waited thread returns.  Inherits @code{<thread-exception>}.
@@ -18301,6 +18752,7 @@ before the waited thread returns.  Inherits @code{<thread-exception>}.
 
 @deftp {Builtin Class} <abandoned-mutex-exception>
 @clindex abandoned-mutex-exception
+@c MOD gauche.threads
 @c EN
 An exception thrown by @code{mutex-lock!} when a @var{mutex} to be
 locked is in unlocked/abandoned state.  Inherits @code{<thread-exception>}.
@@ -18322,6 +18774,7 @@ A mutex that caused this exception.
 
 @deftp {Builtin Class} <terminated-thread-exception>
 @clindex terminated-thread-exception
+@c MOD gauche.threads
 @c EN
 An exception thrown by @code{thread-join!} when the waited thread
 is terminated abnormally (by @code{thread-terminate!}).
@@ -18343,6 +18796,7 @@ A thread that terminated the thread that causes this exception.
 
 @deftp {Builtin Class} <uncaught-exception>
 @clindex uncaught-exception
+@c MOD gauche.threads
 @c EN
 An exception thrown by @code{thread-join!} when the waited thread
 is terminated by an uncaught exception.
@@ -18366,25 +18820,25 @@ An exception that caused the termination of the thread.
 @defunx abandoned-mutex-exception? obj
 @defunx terminated-thread-exception? obj
 @defunx uncaught-exception? obj
-@c EN
 [SRFI-18], [SRFI-21]
+@c MOD gauche.threads
+@c EN
 These procedures checks if @var{obj} is a certain type of exception.
 Provided for the compatibility to SRFI-18.
 @c JP
-[SRFI-18]、[SRFI-21]
 これらの手続きは、@var{obj}が特定のタイプの例外かどうかを検査します。
 SRFI-18との互換性のために提供されています。
 @c COMMON
 @end defun
 
 @defun uncaught-exception-reason exc
-@c EN
 [SRFI-18], [SRFI-21]
+@c MOD gauche.threads
+@c EN
 Returns the value of @code{reason} slot of @code{<uncaught-exception>}
 object.
 Provided for the compatibility to SRFI-18.
 @c JP
-[SRFI-18]、[SRFI-21]
 @code{<uncaught-exception>}オブジェクトの@code{reason}スロットの値を
 返します。
 SRFI-18との互換性のために提供されています。
@@ -18430,6 +18884,7 @@ to use the @code{time} macro.
 @c COMMON
 
 @defmac time expr expr2 @dots{}
+@c MOD gauche.time
 @c EN
 Evaluates @var{expr} @var{expr2} @dots{} sequentially, as @code{begin},
 and returns the result(s) of the last expression.
@@ -18500,6 +18955,7 @@ by Perl's Benchmark module.
 @c COMMON
 
 @defun time-this how thunk
+@c MOD gauche.time
 @c EN
 Calls @var{thunk} many times and measure its execution time.
 The argument @var{how} can be one of the following forms.
@@ -18552,6 +19008,7 @@ Here are some examples:
 @end defun
 
 @deftp {Record} <time-result>
+@c MOD gauche.time
 @c EN
 A record to hold the benchmark result.
 Following slots are defined.
@@ -18605,6 +19062,7 @@ This slot is also accessed by a procedure @code{time-result-sys}.
 @end deftp
 
 @defun make-time-result count real user sys
+@c MOD gauche.time
 @c EN
 The constructor of @code{<time-result>} records.
 @c JP
@@ -18613,6 +19071,7 @@ The constructor of @code{<time-result>} records.
 @end defun
 
 @defun time-result? obj
+@c MOD gauche.time
 @c EN
 The predicate of @code{<time-result>} records.
 @c JP
@@ -18622,6 +19081,7 @@ The predicate of @code{<time-result>} records.
 
 @defun time-result+ t1 t2 :key (with-count #f)
 @defunx time-result- t1 t2 :key (with-count #f)
+@c MOD gauche.time
 @c EN
 Add or subtract two @code{<time-result>} records and returns a new record.
 
@@ -18651,6 +19111,7 @@ countスロットも同様に計算対象となります。
 
 @defun time-these how alist
 @defunx time-these/report how alist
+@c MOD gauche.time
 These procedures benchmarks multiple chunks of code to compare.
 
 The @var{alist} argument must be the form of
@@ -18698,6 +19159,7 @@ For example, its first row tells that the benchmark @code{real1} is
 @end defun
 
 @defun report-time-results result
+@c MOD gauche.time
 This is a utility procedure to create a report from
 the result of @code{time-these}.  Actually, @code{time-these/report}
 is just a combination of @code{time-these} and this procedure:
@@ -18717,6 +19179,7 @@ is just a combination of @code{time-these} and this procedure:
 
 @deftp {Class} <time-counter>
 @clindex time-counter
+@c MOD gauche.time
 @c EN
 An abstract class of time counters.  Time counter is a kind of timer
 whose value is incremented as the time passes.  The counting
@@ -18753,6 +19216,7 @@ to use the time counter.
 @clindex user-time-counter
 @clindex system-time-counter
 @clindex process-time-counter
+@c MOD gauche.time
 @c EN
 Classes for time counters that count real (elapsed) time, user-space CPU time,
 kernel-space CPU time, and total CPU time (user + system), respectively.
@@ -18764,6 +19228,7 @@ kernel-space CPU time, and total CPU time (user + system), respectively.
 
 @deffn {Method} time-counter-start! (counter <time-counter>)
 @deffnx {Method} time-counter-stop! (counter <time-counter>)
+@c MOD gauche.time
 @c EN
 Starts and stops the @var{counter}.  The time during the counter is
 running is accumulated to the counter value when the counter is stopped.
@@ -18800,6 +19265,7 @@ has no effect.
 @end deffn
 
 @deffn {Method} time-counter-reset! (counter <time-counter>)
+@c MOD gauche.time
 @c EN
 Resets the value of @var{counter}.  If @var{counter} is already
 running, it is forced to stop before being reset.
@@ -18810,6 +19276,7 @@ running, it is forced to stop before being reset.
 @end deffn
 
 @deffn {Method} time-counter-value (counter <time-counter>)
+@c MOD gauche.time
 @c EN
 Returns the current value of the counter as the number of seconds,
 in a real number.  The resolution depends on the source of the counter.
@@ -18820,6 +19287,7 @@ in a real number.  The resolution depends on the source of the counter.
 @end deffn
 
 @defmac with-time-counter counter expr @dots{}
+@c MOD gauche.time
 @c EN
 A convenience macro to run the @var{counter} while @var{expr} @dots{}
 are evaluated.  Returns the result(s) of the last expression.
@@ -18959,6 +19427,7 @@ The procedure may still raise an error in @code{permissive} or
 way to handle the input data.
 
 @defun ucs4->utf8 codepoint :optional strictness
+@c MOD gauche.unicode
 Takes an integer codepoint and returns a list of octets that
 encodes the input in UTF-8.
 
@@ -18977,6 +19446,7 @@ for invalid codepoints.
 @end defun
 
 @defun utf8-length octet :optional strictness
+@c MOD gauche.unicode
 Takes @var{octet} as the first octet of UTF-8 sequence, and
 returns the number of total octets requried to decode
 the codepoint.
@@ -19003,6 +19473,7 @@ it works the same as the default case.
 @end defun
 
 @defun utf8->ucs4 octet-list :optional strictness
+@c MOD gauche.unicode
 Takes a list of octets, and decodes it as a utf-8 sequence.
 Returns two values: The decoded ucs4 codepoint, and the
 rest of the input list.
@@ -19018,6 +19489,7 @@ octet sequence is still an error with @code{permissive} mode.
 
 @defun utf8->string u8vector :optional start end
 [R7RS]
+@c MOD gauche.unicode
 Converts a sequence of utf8 octets in @var{u8vector} to a string.
 Optional @var{start} and/or @var{end} argument(s) will limit the
 range of the input.
@@ -19031,6 +19503,7 @@ contains octet sequences illegal as utf8.
 
 @defun string->utf8 string :optional start end
 [R7RS]
+@c MOD gauche.unicode
 Converts a string to a u8vector of utf8 octets.
 Optional @var{start} and/or @var{end} argument(s) will limit the
 range of the input.
@@ -19042,6 +19515,7 @@ of Gauche's native encoding.
 @end defun
 
 @defun ucs4->utf16 codepoint :optional strictness
+@c MOD gauche.unicode
 Takes an integer codepont and returns a list of integers
 that encodes the input in UTF-16.  The output is either
 one integer or two integers, and each integer is in the
@@ -19056,6 +19530,7 @@ an empty list is returned for an invalid codepoint (including surrogates).
 @end defun
 
 @defun utf16-length code :optional strictness
+@c MOD gauche.unicode
 @var{Code} must be an integer between 0 and 65535, inclusive.
 Returns 1 if @var{code} is BMP character codepoint, or
 2 if @var{code} is high surrogate codepoint.
@@ -19069,6 +19544,7 @@ for low surrogates and out of range arguments.
 @end defun
 
 @defun utf16->ucs4 code-list :optional strictness
+@c MOD gauche.unicode
 Takes a list of integers and decodes it as a utf-16 sequence.
 Returns two values: The decoded ucs4 codepoint, and the rest of
 input list.
@@ -19089,6 +19565,7 @@ word breaking algorithms defined in UAX #29: Unicode Text Segmentation.
 
 @defun string->words string
 @defunx codepoints->words sequence
+@c MOD gauche.unicode
 From given string or codepoint sequence (a @code{<sequence>}
 object containing list of codepoints), returns a list of
 words.  Each cluster is represented as a string, or
@@ -19108,6 +19585,7 @@ of characters in "That's it."
 
 @defun string->grapheme-clusters string
 @defunx codepoints->grapheme-clusters sequence
+@c MOD gauche.unicode
 From given string or codepoint sequence (a @code{<sequence>}
 object containing list of codepoints), returns a list of
 grapheme clusters.  Each cluster is represented as a string,
@@ -19123,6 +19601,7 @@ for every call, until it returns EOF.
 
 @defun make-word-breaker generator
 @defunx make-grapheme-cluster-breaker generator
+@c MOD gauche.unicode
 From given @var{generator} is a generator of characters or codepoints,
 returns a generator that returns two values: The first value is the
 character or codepoint generated from the original generator, and the
@@ -19161,6 +19640,7 @@ the space).
 
 @defun make-word-reader generator return
 @defunx make-grapheme-cluster-reader generator return
+@c MOD gauche.unicode
 The input @var{generator} is a generator of characters or codepoints,
 and @var{return} is a procedure that takes a list of characters or
 codepoints, and returns an object.   These procedures creates a
@@ -19191,6 +19671,7 @@ Then the created generator works as follows:
 @defunx string-titlecase string
 @defunx string-foldcase string
 [R6RS][R7RS]
+@c MOD gauche.unicode
 Converts given @var{string} to upper case, using language-independent
 full case folding defined by Unicode standard.
 They differ from srfi-13's procedures
@@ -19220,6 +19701,7 @@ to UAX #29 text segmentation rules.
 @defunx codepoints-downcase sequence
 @defunx codepoints-titlecase sequence
 @defunx codepoints-foldcase sequence
+@c MOD gauche.unicode
 Like @code{string-upcase} etc, but these work on a sequence of
 codepoints instead.  Returns a sequence of the same type of the input.
 
@@ -19235,6 +19717,7 @@ codepoints instead.  Returns a sequence of the same type of the input.
 @defunx string-ci>? string1 string2 string3 @dots{}
 @defunx string-ci>=? string1 string2 string3 @dots{}
 [R7RS]
+@c MOD gauche.unicode
 Case-insensitive string comparison, using full-string case conversion.
 
 Note that Gauche has builtin @code{string-ci=?} etc., which use
@@ -19250,6 +19733,7 @@ different procedures.
 @subsection East asian width property
 
 @defun char-east-asian-width char-or-codepoint
+@c MOD gauche.unicode
 The argument may be a character or a nonnegative integer of Unicode
 codepoint.  Returns one of the symbols @code{N} (neutral), 
 @code{F} (fullwidth), @code{H} (halfwidth), @code{W} (wide),
@@ -19488,6 +19972,7 @@ for any of @code{s8}, @code{u8}, @code{s16}, @code{u16},
 @clindex f16vector
 @clindex f32vector
 @clindex f64vector
+@c MOD gauche.uvector
 @c EN
 A class for @var{TAG}vector.  It inherits @code{<sequence>}.
 @c JP
@@ -19532,6 +20017,7 @@ Denotes a literal homogeneous vector.
 @findex f32vector?
 @findex f64vector?
 [SRFI-4]
+@c MOD gauche.uvector
 @c EN
 Returns @code{#t} iff @var{obj} is a @var{TAG}vector, @code{#f} otherwise.
 @c JP
@@ -19540,6 +20026,7 @@ Returns @code{#t} iff @var{obj} is a @var{TAG}vector, @code{#f} otherwise.
 @end deftp
 
 @defun uvector? obj
+@c MOD gauche.uvector
 @c EN
 Returns @code{#t} iff @var{obj} is of any uniform vector type.
 @c JP
@@ -19562,6 +20049,7 @@ Returns @code{#t} iff @var{obj} is of any uniform vector type.
 @findex f32vector
 @findex f64vector
 [SRFI-4]
+@c MOD gauche.uvector
 @c EN
 Constructs @var{TAG}vector whose elements are numbers @var{x} @dots{}.
 The numbers must be exact integer for exact integer vectors,
@@ -19589,6 +20077,7 @@ and in the valid range of the vector.
 @findex make-f32vector
 @findex make-f64vector
 [SRFI-4]
+@c MOD gauche.uvector
 @c EN
 Constructs a @var{TAG}vector of length @var{len}.  The elements are
 initialized by a number @var{fill}.   For exact integer vectors,
@@ -19606,6 +20095,7 @@ If @var{fill} is omitted, the content of the vector is undefined.
 @end deftp
 
 @defun make-uvector @code{class} @code{len} :optional @code{fill}
+@c MOD gauche.uvector
 @c EN
 This is a Gauche extension; instead of using separate constructor for
 each uvector type, you can pass the class of desired uvector.
@@ -19634,6 +20124,7 @@ each uvector type, you can pass the class of desired uvector.
 @findex f32vector-length
 @findex f64vector-length
 [SRFI-4]
+@c MOD gauche.uvector
 @c EN
 Returns the length of the @var{TAG}vector @var{vec}.
 
@@ -19657,6 +20148,7 @@ if you import @code{gauche.collection}
 @end deftp
 
 @defun uvector-length uvector
+@c MOD gauche.uvector
 @c EN
 This is a generic version of @code{@var{TAG}vector-length}; you
 can pass any instance of uniform vector, and it returns the number
@@ -19670,6 +20162,7 @@ of its elements.
 
 
 @defun uvector-size uvector :optional start end
+@c MOD gauche.uvector
 @c EN
 This function can be applied to any type of uniform vectors, and
 returns the raw size of the @var{uvector} in number of octets.
@@ -19706,6 +20199,7 @@ the number of elements.)
 @end defun
 
 @defun uvector-class-element-size class
+@c MOD gauche.uvector
 @c EN
 Returns the size of an element of a uvector of the given class, in bytes.
 An error is raised when @var{class} is not a uvector class.
@@ -19734,6 +20228,7 @@ An error is raised when @var{class} is not a uvector class.
 @findex f32vector-ref
 @findex f64vector-ref
 [SRFI-4+]
+@c MOD gauche.uvector
 @c EN
 Returns the @var{k}-th element of @var{TAG}vector @var{vec}.
 
@@ -19762,6 +20257,7 @@ if you import @code{gauche.collection}.
 @end deftp
 
 @defun uvector-ref vec k :optional fallback
+@c MOD gauche.uvector
 @c EN
 Generic version of @code{@var{TAG}vector-ref}.
 It can take any kind of uniform vector to @var{vec},
@@ -19809,6 +20305,7 @@ difference.
 @findex f32vector-set!
 @findex f64vector-set!
 [SRFI-4+]
+@c MOD gauche.uvector
 @c EN
 Sets a number @var{n} to the @var{k}-th element of @var{TAG}vector @var{vec}.
 Optional @var{clamp} argument specifies the behavior when
@@ -19839,6 +20336,7 @@ if you import @code{gauche.collection}.
 @end deftp
 
 @defun uvector-set! vec k val
+@c MOD gauche.uvector
 @c EN
 Generic version of @code{@var{TAG}vector-set!}.  It can handle any
 kind of uniform vectors, but a bit slower than the specific versions.
@@ -19862,6 +20360,7 @@ kind of uniform vectors, but a bit slower than the specific versions.
 @findex f16vector-fill!
 @findex f32vector-fill!
 @findex f64vector-fill!
+@c MOD gauche.uvector
 @c EN
 Stores @var{fill} in every element of @var{vec},
 ranging from @var{start} to @var{end} of @var{vec},
@@ -19886,6 +20385,7 @@ if they are given.
 @findex f32vector=?
 @findex f64vector=?
 [SRFI-66]
+@c MOD gauche.uvector
 @c EN
 Both arguments must be a @var{TAG}vector.  Returns @code{#t} if
 @var{vec1} and @var{vec2} are equal to each other, @var{#f} otherwise.
@@ -19916,6 +20416,7 @@ Gaucheでは、uvectorは@code{equal?}で比較することができます。
 @findex f32vector-compare
 @findex f64vector-compare
 [SRFI-66]
+@c MOD gauche.uvector
 @c EN
 Both arguments must be a @var{TAG}vector.  Returns @code{-1} if
 @var{vec1} is smaller than @var{vec2},
@@ -19954,6 +20455,7 @@ Gaucheでは、uvectorは@code{compare}で比較することができます。
 @findex f16vector-copy
 @findex f32vector-copy
 @findex f64vector-copy
+@c MOD gauche.uvector
 @c EN
 Copies the srfi-4 vector @var{vec}.
 If @var{start} and/or @var{end} are given, they limit the range of
@@ -19972,6 +20474,7 @@ If @var{start} and/or @var{end} are given, they limit the range of
 @end deftp
 
 @defun uvector-copy vec :optional start end
+@c MOD gauche.uvector
 @c EN
 This is a generic version of @code{@var{TAG}vector-copy}.
 You can give any type of uvector to @var{vec}, and get its copy
@@ -19996,6 +20499,7 @@ You can give any type of uvector to @var{vec}, and get its copy
 @findex f16vector-copy!
 @findex f32vector-copy!
 @findex f64vector-copy!
+@c MOD gauche.uvector
 @c EN
 Both @var{target} and @var{source} must be @i{TAG}vectors, and
 @var{target} must be mutable.
@@ -20076,6 +20580,7 @@ argument order (@pxref{Octet vectors}).
 @findex f16vector-multi-copy!
 @findex f32vector-multi-copy!
 @findex f64vector-multi-copy!
+@c MOD gauche.uvector
 @c EN
 This procedure allows different parts of the source uvector @var{source} into
 various parts of the target uvector @var{target}, all at once.
@@ -20196,6 +20701,7 @@ various operations on the homogeneous vectors.
 
 
 @defun uvector-copy! target tstart source :optional sstart send
+@c MOD gauche.uvector
 @c EN
 This is a generic version of @code{@i{TAG}vector-copy!}.
 The destination @var{target} and the source @var{source} can be
@@ -20239,6 +20745,7 @@ type of @var{source}.
 @findex f16vector-append
 @findex f32vector-append
 @findex f64vector-append
+@c MOD gauche.uvector
 @c EN
 All arguments must be @var{TAG}vectors.  Returns a fresh vector
 whose contents are concatenation of the given vectors.
@@ -20254,6 +20761,7 @@ whose contents are concatenation of the given vectors.
 @end deftp
 
 @defun uvector-binary-search uvector key :optional start end skip rounding
+@c MOD gauche.uvector
 @c EN
 The @code{uvector} must contain values in increasing order.
 This prcoedure finds the index of an element that is equal to @var{key},
@@ -20410,6 +20918,7 @@ does not support @var{skip} and @var{rounding} arguments.
 @findex f32vector->list
 @findex f64vector->list
 [SRFI-4+]
+@c MOD gauche.uvector
 @c EN
 Converts @var{TAG}vector @var{vec} to a list.
 If @var{start} and/or @var{end} are given, they limit the range of
@@ -20445,6 +20954,7 @@ if you import @code{gauche.collection}.
 @findex f16vector->vector
 @findex f32vector->vector
 @findex f64vector->vector
+@c MOD gauche.uvector
 @c EN
 Converts @var{TAG}vector @var{vec} to a vector.
 If @var{start} and/or @var{end} are given, they limit the range of
@@ -20482,6 +20992,7 @@ if you import @code{gauche.collection}.
 @findex list->f32vector
 @findex list->f64vector
 [SRFI-4+]
+@c MOD gauche.uvector
 @c EN
 Converts a list @var{list} to a @var{TAG}vector.
 Optional argument @var{clamp} specifies the behavior when
@@ -20517,6 +21028,7 @@ if you import @code{gauche.collection}.
 @findex vector->f16vector
 @findex vector->f32vector
 @findex vector->f64vector
+@c MOD gauche.uvector
 @c EN
 Converts a vector @var{vec} to a @var{TAG}vector.
 If @var{start} and/or @var{end} are given, they limit the range of
@@ -20546,6 +21058,7 @@ if you import @code{gauche.collection}.
 
 @defun string->s8vector string :optional start end immutable?
 @defunx string->u8vector string :optional start end immutable?
+@c MOD gauche.uvector
 @c EN
 Returns an s8vector or u8vector whose byte sequence is the same
 as the internal representation of the given string.
@@ -20603,6 +21116,7 @@ u8vectorを返します。省略可能な範囲引数@var{start}、@var{end}は�
 
 @defun string->s8vector! target tstart string :optional start end
 @defunx string->u8vector! target tstart string :optional start end
+@c MOD gauche.uvector
 @c EN
 @var{Target} must be an s8vector or a u8vector, respectively.
 @var{Target} must be mutable.
@@ -20631,6 +21145,7 @@ Returns @var{target}.
 
 @defun s8vector->string vec :optional start end terminator
 @defunx u8vector->string vec :optional start end terminator
+@c MOD gauche.uvector
 @c EN
 Converts a byte sequence in s8vector or u8vector to a string that
 has the same byte sequence.  Optional range arguments @var{start} and
@@ -20672,6 +21187,7 @@ of the string.
 
 @defun string->s32vector string :optional start end
 @defunx string->u32vector string :optional start end
+@c MOD gauche.uvector
 @c EN
 Returns an s32vector or u32vector whose elements are
 the internal codes of the characters in the string.
@@ -20693,6 +21209,7 @@ s32vectorもしくはu32vectorを返します。
 
 @defun string->s32vector! target tstart string :optional start end
 @defunx string->u32vector! target tstart string :optional start end
+@c MOD gauche.uvector
 @c EN
 @var{Target} must be a mutable s32vector or u32vector, respectively.
 Fill the @var{target} from position @var{tstart} with the codepoint
@@ -20714,6 +21231,7 @@ considered.
 
 @defun s32vector->string vec :optional start end terminator
 @defunx u32vector->string vec :optional start end terminator
+@c MOD gauche.uvector
 @c EN
 Without @var{start} and @var{end}, these procedures work like this:
 @c JP
@@ -20749,6 +21267,7 @@ the output string terminates right before it.
 @end defun
 
 @defun uvector-alias uvector-class vec :optional start end
+@c MOD gauche.uvector
 @c EN
 This procedure creates an uvector of class @var{uvector-class}
 that shares the storage of the given uniform vector @var{vec}.
@@ -20889,6 +21408,7 @@ alignment constraint.
 @findex f64vector-sub!
 @findex f64vector-mul
 @findex f64vector-mul!
+@c MOD gauche.uvector
 @c EN
 Element-wise arithmetic.  @var{Vec} must be a @var{TAG}vector,
 and @var{val} must be either a @var{TAG}vector, a vector, or a list
@@ -20949,6 +21469,7 @@ multiplied by each element of @var{vec}, respectively.
 @findex f32vector-div!
 @findex f64vector-div
 @findex f64vector-div!
+@c MOD gauche.uvector
 @c EN
 Element-wise division of flonum vectors.   These are only defined
 for f16, f32 and f64vector.  @var{val} must be a @var{TAG}vector,
@@ -21019,6 +21540,7 @@ a vector or a list of the same length as @var{vec}, or a real number.
 @findex u64vector-ior!
 @findex u64vector-xor
 @findex u64vector-xor!
+@c MOD gauche.uvector
 @c EN
 Element-wise logical (bitwise) operation.
 These procedures are only defined for integral vectors.
@@ -21055,6 +21577,7 @@ The destructive version reuses @var{vec} to store the result.
 @findex f16vector-dot
 @findex f32vector-dot
 @findex f64vector-dot
+@c MOD gauche.uvector
 @c EN
 Calculates the dot product of two @var{TAG}vectors.
 The length of @var{vec0} and @var{vec1} must be the same.
@@ -21076,6 +21599,7 @@ The length of @var{vec0} and @var{vec1} must be the same.
 @findex f16vector-range-check
 @findex f32vector-range-check
 @findex f64vector-range-check
+@c MOD gauche.uvector
 @c EN
 @var{Vec} must be a @var{TAG}vector, and each of @var{min} and @var{max}
 must be either a @var{TAG}vector, a vector or a list of the same length
@@ -21151,6 +21675,7 @@ that is out of range is returned.
 @findex f16vector-clamp!
 @findex f32vector-clamp!
 @findex f64vector-clamp!
+@c MOD gauche.uvector
 @c EN
 @var{Vec} must be a @var{TAG}vector, and each of @var{min} and @var{max}
 must be either a @var{TAG}vector, a vector or a list of the same length
@@ -21198,6 +21723,7 @@ So you might want to use it for binary I/O.  Yes, you can do it.
 @c COMMON
 
 @defun read-uvector class size :optional iport endian
+@c MOD gauche.uvector
 @c EN
 Reads @var{size} elements of uvector of class @var{class} from
 @var{iport}, and returns fleshly created uvector.  If @var{iport}
@@ -21279,6 +21805,7 @@ R7RSには@code{read-bytevector}があります。これは@code{read-uvector}�
 @end defun
 
 @defun read-uvector! vec :optional iport start end endian
+@c MOD gauche.uvector
 @c EN
 Reads a chunk of data from the given input port @var{iport},
 and stores it to the uniform vector @var{vec}.
@@ -21355,6 +21882,7 @@ s8vectorとu8vector以外のユニフォームベクタを与えた場合は
 @end defun
 
 @defun read-block! vec :optional iport start end endian
+@c MOD gauche.uvector
 @c EN
 An old name of @code{read-uvector!}.  Supported for the backward
 compatibility, but new code should use @code{read-uvector!}.
@@ -21365,6 +21893,7 @@ compatibility, but new code should use @code{read-uvector!}.
 @end defun
 
 @defun port->uvector iport :optional class
+@c MOD gauche.uvector
 @c EN
 Read data from the input port @var{iport} until EOF and store them
 into a uvector of @var{class}.  If @var{class} is omitted,
@@ -21389,6 +21918,7 @@ This procedure is parallel to @code{port->string} etc.
 @end defun
 
 @defun write-uvector vec :optional oport start end endian
+@c MOD gauche.uvector
 @c EN
 Writes out the content of the uniform vector @var{vec} 'as is'
 to the output port @var{oport}.   If @var{oport} is omitted,
@@ -21422,6 +21952,7 @@ is used (@pxref{Endianness}).
 @end defun
 
 @defun write-block vec :optional iport start end endian
+@c MOD gauche.uvector
 @c EN
 An old name of @code{write-uvector}.  Supported for the backward
 compatibility, but new code should use @code{write-uvector}.
@@ -21670,6 +22201,7 @@ The syntax of version spec is as follows.
 @defunx version<=? ver1 ver2
 @defunx version>? ver1 ver2
 @defunx version>=? ver1 ver2
+@c MOD gauche.version
 @c EN
 Returns a boolean value depending on the order of two version number
 string @var{ver1} and @var{ver2}.  If the arguments contain invalid
@@ -21682,6 +22214,7 @@ strings as the defined version number, an error is signaled.
 @end defun
 
 @defun version-compare ver1 ver2
+@c MOD gauche.version
 @c EN
 Compares two version number strings @var{ver1} and @var{ver2},
 and returns either -1, 0, or 1, depending whether @var{ver1} is
@@ -21696,6 +22229,7 @@ prior to @var{ver2}, @var{ver1} is the same as @var{ver2}, or
 @end defun
 
 @defun relnum-compare rel1 rel2
+@c MOD gauche.version
 @c EN
 This is lower-level procedure of @code{version-compare}.  Compares
 two release numbers (relnums) @var{rel1} and @var{rel2},
@@ -21720,6 +22254,7 @@ satisfies a version specification.
 @c COMMON
 
 @defun valid-version-spec? spec
+@c MOD gauche.version
 @c EN
 This is a syntax checker.  Returns @code{#t} if @var{spec} is
 a valid version specfication, @code{#f} otherwise.
@@ -21733,6 +22268,7 @@ version specification.
 @end defun
 
 @defun version-satisfy? spec version
+@c MOD gauche.version
 @c EN
 Returns @code{#t} if @var{version} satisfies
 a version specfication @var{spec}, @code{#f} otherwise.
@@ -21808,6 +22344,7 @@ appropriate slots with procedures.
 
 @deftp {Class} <virtual-input-port>
 @clindex virtual-input-port
+@c MOD gauche.vport
 @c EN
 An instance of this class can be used as an input port.
 The behavior of the port depends on the settings of the
@@ -22039,6 +22576,7 @@ position for such queries and returns @code{#f} for other arguments.
 
 @deftp {Class} <virtual-output-port>
 @clindex virtual-output-port
+@c MOD gauche.vport
 @c EN
 An instance of this class can be used as an output port.
 The behavior of the port depends on the settings of the
@@ -22216,7 +22754,7 @@ for the details.
 
 @deftp {Class} <buffered-input-port>
 @clindex buffered-input-port
-
+@c MOD gauche.vport
 @c EN
 An instance of this class behaves as an input port.
 It has the following instance slots.  For a meaningful input
@@ -22368,7 +22906,7 @@ to use a buffer of size 64K:
 
 @deftp {Class} <buffered-output-port>
 @clindex buffered-output-port
-
+@c MOD gauche.vport
 @c EN
 An instance of this class behaves as an output port.
 It has the following instance slots.
@@ -22476,6 +23014,7 @@ curious about the implementation.
 @c COMMON
 
 @defun open-input-uvector uvector
+@c MOD gauche.vport
 @c EN
 Returns an input port that reads the content of the given
 uniform vector @var{uvector} from its beginning.  If reading
@@ -22489,6 +23028,7 @@ EOFが返されます。シーク操作も実装されています。
 @end defun
 
 @defun open-output-uvector :optional uvector :key extendable
+@c MOD gauche.vport
 @c EN
 Returns an output port that uses the given uvector as the
 storage for the data output to the port.
@@ -22554,6 +23094,7 @@ number along @code{SEEK_END} to @code{port-seek}).
 @end defun
 
 @defun get-output-uvector port :key shared
+@c MOD gauche.vport
 @c EN
 If @var{port} is a port created by @code{open-output-uvector}, returns
 a @var{uvector} that contains accumulated data.
@@ -22625,6 +23166,7 @@ opposite of @code{port->list} family
 
 @defun open-input-char-list char-list
 @defunx open-input-byte-list byte-list
+@c MOD gauche.vport
 @c EN
 Creates and returns an input port that uses
 the given list of characters and bytes as the source.
@@ -22640,6 +23182,7 @@ the given list of characters and bytes as the source.
 @end defun
 
 @defun get-remaining-input-list port
+@c MOD gauche.vport
 @c EN
 If @var{port} is the one created by @code{open-input-char-list} 
 or @code{open-input-byte-list}, returns a list of remaining data
@@ -22687,6 +23230,7 @@ opposite of @code{port->char-generator} family
 
 @defun open-input-char-generator cgen
 @defunx open-input-byte-generator bgen
+@c MOD gauche.vport
 @c EN
 Creates and returns an input port that uses
 the given generators as the source.  The @var{cgen} argument
@@ -22722,6 +23266,7 @@ is undefined.
 @end defun
 
 @defun get-remaining-input-generator port
+@c MOD gauche.vport
 @c EN
 If @var{port} is the one created by @code{open-input-char-generator} 
 or @code{open-input-byte-generator}, returns a generator that

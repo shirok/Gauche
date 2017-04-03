@@ -276,13 +276,13 @@ Gaucheは単なるScheme実装というだけでなく、言語レベルでい�
 In this manual, each entry is represented like this:
 
 @deftp {Category} foo arg1 arg2
-[spec] Description of foo @dots{}
+[spec]@{module@} Description of foo @dots{}
 @end deftp
 @c JP
 このマニュアルでは、各項目は次のようなフォーマットで表記されています。
 
 @deftp {カテゴリ} foo arg1 arg2
-[spec] fooの説明
+[spec]@{module@} fooの説明
 @end deftp
 @c COMMON
 
@@ -437,13 +437,18 @@ for the definition of complete argument list syntax.
 @end table
 
 @c EN
-The description of the entry follows the entry line.
-If the specification of the entry comes from some standard,
-its origin is noted in the bracket at the beginning
-of the description.  The following origins are noted:
+Following the entry line, we may indicate the specification the
+entry comes from, and/or the module the entry is provided when
+it's not built-in.
 @c JP
-説明が項目の行に続きます。もし項目が特定の標準に準拠している場合は、
-もととなった標準が次のような形式で示されます。
+項目の行に続いて、もし項目が特定の標準に準拠している場合はその標準が示され、
+また項目が組み込みでない場合はその項目を提供するモジュールが示されます。
+@c COMMON
+
+@c EN
+The specification is shown in brackets.  You'll see the following variations.
+@c JP
+標準は角括弧でくくって表示されます。以下の標準があります。
 @c COMMON
 
 @table @asis
@@ -485,6 +490,26 @@ The API of the entry reflects the API specified in POSIX.
 この項目はPOSIXのAPIを反映していることを示します。
 @c COMMON
 @end table
+
+@c EN
+The module is shown in curly-braces.  If the module isn't shown,
+it is built-in for Gauche.  (Note: When you're writing R7RS code,
+Gauche built-ins are available through @code{(gauche base)} module,
+@pxref{Importing gauche built-ins}).
+
+Some entries may be available from more than one modules through
+re-exporting or module inheritance.  We only list the primary module
+in that case.
+@c JP
+モジュールは@{@}内に示されます。モジュールが示されていない項目は、
+Gaucheの組み込みです。(R7RSコードを書いている場合、Gaucheの組み込みは
+@code{(gauche base)}モジュールで提供されます。
+詳しくは@ref{Importing gauche built-ins}参照)。
+
+項目によっては、再エクスポートやモジュール継承によって、
+複数のモジュールから提供されるものもあります。
+その場合、元になるモジュールが示されます。
+@c COMMON
 
 
 @node Names and namespaces,  , Entry format, Notations

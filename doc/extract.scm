@@ -70,6 +70,9 @@
           (cut filter pattern-in pattern-out) :encoding 'utf8)
         (in (read-line))]
       [#/^@c COMMON$/ () (in (read-line))]
+      [#/^@c MOD\s+(\S+)$/ (#f module)
+             (display #"@{@t{~|module|}@}\n")
+             (in (read-line))]
       [test (^_ (eq? (lang) 'en))
             (display (regexp-replace-all #/@VERSION@/ line *version*))
             (newline) (in (read-line))]

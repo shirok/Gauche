@@ -1,3 +1,10 @@
+2017-04-02  Shiro Kawai  <shiro@acm.org>
+
+	* doc/*.texi: Add module name in front of the description when it's
+	  relevant.  Since the info command of REPL now only shows the
+	  entry (as opposed to the entire page), it is hard to know which
+	  module to import without having the module name in each entry.
+
 2017-04-01  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/interactive/info.scm (get-info-paths): Insert doc/ of
