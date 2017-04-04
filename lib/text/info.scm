@@ -121,7 +121,7 @@
          (^[line]
            (rxmatch-case line
              [#/^Node: ([^\u007f]+)\u007f(\d+)/ (#f node count)
-              (hash-table-put! (ref info 'node-table)
+              (hash-table-put! (~ info 'node-table)
                                node
                                (find-file (x->integer count)))]
              [else line #f]))
@@ -145,7 +145,7 @@
      (rlet1 info-node (make <info-node>
                        :name node :next next :prev prev :up up :file info
                        :content (cdr part))
-       (hash-table-put! (ref info 'node-table) node info-node))]
+       (hash-table-put! (~ info 'node-table) node info-node))]
     [else #f]))
 
 ;; API
@@ -156,13 +156,16 @@
 ;; API
 ;; Returns <info-node>
 (define-method info-get-node ((info <info-file>) nodename)
-  (if-let1 node (hash-table-get (ref info 'node-table) nodename #f)
+  (if-let1 node (hash-table-get (~ info 'node-table) nodename #f)
     (cond [(is-a? node <info-node>) node]
           [else
+           ;; The entry is in subfile yet to be read.  NODE has the
+           ;; subfile name.
            (read-sub-info-file info
-                               (build-path (ref info 'directory) node)
+                               (build-path (~ info 'directory) node)
                                '())
-           (hash-table-get (ref info 'node-table) nodename #f)])
+           ;; Now the hashtable should contain real node.
+           (hash-table-get (~ info 'node-table) nodename #f)])
     #f))
 
 ;; API
@@ -172,7 +175,7 @@
 ;; Where <entry-name> is either a node name, function or macro name,
 ;; module name, 
 (define-method info-parse-menu ((info <info-node>))
-  (with-input-from-string (ref info 'content)
+  (with-input-from-string (~ info 'content)
     (^[]
       (define (skip line)
         (cond [(eof-object? line) '()]

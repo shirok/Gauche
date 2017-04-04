@@ -66,9 +66,21 @@
           ;; with them.
           (dolist [p ($ info-parse-menu $ info-get-node info "Class Index")]
             (hash-table-push! index #"<~(car p)>" (cdr p)))
+          ($ hash-table-for-each index
+             (^[k v] (hash-table-put! index k (squash-entries v))))
           (make <repl-info>
             :info info :index index)))
     (^[] (force repl-info))))
+
+;; We sometimes list API variations using @defunx.  We want to pick only
+;; the first one of such entries.
+(define (squash-entries node&lines)
+  (if (length=? node&lines 1)
+    node&lines
+    (append-map (^[node&lines]
+                  ($ map (^l `(,(caar node&lines) ,(car l)))
+                     $ group-contiguous-sequence $ sort $ map cadr node&lines))
+         (group-collection node&lines :key car :test equal?))))
 
 ;; When there are more than one entry with the same name, texinfo appends
 ;; " <n>" in the index entry.  This strips that.
@@ -201,3 +213,4 @@
      (^[node&line]
        (viewer (~ (info-get-node (~ (get-info)'info) (car node&line))
                   'content)))))
+

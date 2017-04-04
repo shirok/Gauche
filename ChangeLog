@@ -1,5 +1,9 @@
 2017-04-03  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/interactive/info.scm (get-info): Avoid showing multiple
+	  entries when they are merely the variations of API, listed using
+	  @defunx (e.g. see the entry of 'format').
+
 	* libsrc/gauche/sequence.scm (group-contiguous-sequence): Added.
 
 2017-04-02  Shiro Kawai  <shiro@acm.org>
