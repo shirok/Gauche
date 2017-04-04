@@ -41,7 +41,7 @@
   (export referencer modifier subseq
           fold-right
           fold-with-index map-with-index map-to-with-index for-each-with-index
-          find-index find-with-index group-sequence
+          find-index find-with-index group-sequence group-contiguous-sequence
           delete-neighbor-dups
           delete-neighbor-dups! delete-neighbor-dups-squeeze!
           sequence->kmp-stepper sequence-contains
@@ -300,6 +300,42 @@
       (reverse! (cons (reverse! (cdr bucket)) results)))
     ))
 
+;; (group-contiguous-sequence '(1 2 3 4 7 8 9 11 13 14 16))
+;;  => ((1 2 3 4) (7 8 9) (11) (13 14) (16))
+;; (group-contiguous-sequence '(1 2 3 4 7 8 9 11 13 14 16) :squeeze #t)
+;;  => ((1 4) (7 9) (11) (13 14) (16))
+(define-method group-contiguous-sequence ((seq <sequence>)
+                                          :key ((:key key-proc) identity)
+                                               ((:next next-proc) (cut + 1 <>))
+                                               ((:test test-proc) eqv?)
+                                               (squeeze #f))
+  (receive (last results)
+      (fold2 (^[elt last results]
+               (let1 key (key-proc elt)
+                 (cond
+                  [(not last) (values key `((,key)))]  ; initial
+                  [(test-proc key (next-proc last))
+                   (if squeeze
+                     (values key results)
+                     (values key `((,key ,@(car results)) ,@(cdr results))))]
+                  [else
+                   (if squeeze
+                     (let1 start (caar results)
+                       (if (test-proc last start)
+                         (values key `((,key) ,@results))
+                         (values key `((,key) (,start ,last)
+                                       ,@(cdr results)))))
+                     (values key `((,key) ,@results)))])))
+             #f '() seq)
+    (if (null? results)
+      '()
+      (if squeeze
+        (let1 start (caar results)
+          (if (test-proc last start)
+            (reverse! results)
+            (reverse! `((,start ,last) ,@(cdr results)))))
+        (reverse! (map reverse! results))))))
+                                          
 (define-method delete-neighbor-dups ((seq <sequence>)
                                      :key ((:key key-proc) identity)
                                           ((:test test-proc) eqv?)

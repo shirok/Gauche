@@ -1,3 +1,7 @@
+2017-04-03  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/gauche/sequence.scm (group-contiguous-sequence): Added.
+
 2017-04-02  Shiro Kawai  <shiro@acm.org>
 
 	* doc/*.texi: Add module name in front of the description when it's

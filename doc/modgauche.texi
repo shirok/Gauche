@@ -15377,6 +15377,65 @@ you can use @code{delete-neighbor-dups} below.
 @c COMMON
 @end deffn
 
+@deffn {Generic function} group-contiguous-sequence seq :key key next test squeeze
+@c MOD gauche.sequence
+@c EN
+Group contiguous elements in @var{seq}.
+@c JP
+@var{seq}中の連続する要素をまとめます。
+@c COMMON
+
+@example
+(group-contiguous-sequence '(1 2 3 4 7 8 9 11 13 14 16))
+  @result{} ((1 2 3 4) (7 8 9) (11) (13 14) (16))
+@end example
+
+@c EN
+If the keyword argument @var{squeeze} is true, each subsequence is
+represented with its first and last elements, except when the subsequence
+has only one element.
+@c JP
+キーワード引数@var{squeeze}に真の値が与えられた場合は、
+まとめた後の部分列を、その最初と最後の要素のみに置き換えます。部分列が要素ひとつだけの
+場合はそのままです。
+@c COMMON
+
+@example
+(group-contiguous-sequence '(1 2 3 4 7 8 9 11 13 14 16) :squeeze #t)
+  @result{} ((1 4) (7 9) (11) (13 14) (16))
+@end example
+
+@c EN
+The keyword argument @var{key} must be a procedure taking one argument,
+and it is applied to every element in the sequence once, to construct
+the result.  Its default is @code{identity}.
+
+The keyword argument @var{next} must be a procedure 
+taking one argument, which is the key value (whatever @var{key} procedure
+returns) and must return the ``next'' key value.
+Its default is @code{(^n (+ n 1))}.
+
+The @var{test} argument must be a procedure taking two argument
+and used to compare two key values.  Its default is @code{eqv?}.
+@c JP
+キーワード引数@var{key}はひとつの引数を取る手続きでなければならず、
+シーケンスの各要素に一回だけ適用され、その戻り値が結果を作るのに使われます。
+デフォルトは@code{identity}です。
+
+キーワード引数@var{next}はひとつの引数を取る手続きでなければならず、
+キーの値(@var{key}手続きが返すもの)を受け取って、その「次」にあたるキーの値を返します。
+デフォルトは@code{(^n (+ n 1))}です。
+
+キーワード引数@var{test}はふたつの引数を取る手続きでなければならず、
+ふたつのキー値が等しいかどうかを判定します。デフォルトは@code{eqv?}です。
+@c COMMON
+
+@example
+(group-contiguous-sequence "AbCdFgH"
+  :key char-upcase :next (^c (integer->char (+ 1 (char->integer c)))))
+  @result{} ((#\A #\B #\C #\D) (#\F #\G #\H))
+@end example
+@end deffn
 
 @deffn {Generic function} delete-neighbor-dups seq :key key test start end
 @c MOD gauche.sequence
