@@ -188,14 +188,20 @@
       [_ (usage)])))
 
 (define-toplevel-command (info doc) :read
-  " name\n\
- Show info document for an entry of NAME.\n\
- NAME can be a name of a function, syntax, macro, module, or class."
+  " name-or-regexp\n\
+ Show info document for an entry of NAME, or search entries by REGEXP.\n\
+ NAME can be a name of a function, syntax, macro, module, or class.\n\
+ Example:  ,info cons\n\
+ If REGEXP is given instead of NAME, it lists the matching entry names.\n\
+ Example:  ,info #/cons/"
   (^[args]
     (define (->name x) ; to preserve ':' of keyword
       (if (keyword? x) #":~x" (x->string x)))
     (match args
-      [(name) `(,(rename 'info) ,(->name name))]
+      [(name)
+       (if (regexp? name)
+         `(,(rename 'info-search) ,name)
+         `(,(rename 'info) ,(->name name)))]
       [_ (usage)])))
 
 (define-toplevel-command (help h) :read

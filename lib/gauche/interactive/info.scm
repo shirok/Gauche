@@ -41,7 +41,7 @@
   (use gauche.process)
   (use gauche.config)
   (use gauche.sequence)
-  (export info info-page)
+  (export info info-page info-search)
   )
 (select-module gauche.interactive.info)
 
@@ -214,3 +214,36 @@
        (viewer (~ (info-get-node (~ (get-info)'info) (car node&line))
                   'content)))))
 
+;;
+;; Search info entries by regexp
+;;
+
+(define (search-entries rx)
+  (sort (filter (^e (rx (car e))) (hash-table->alist (~ (get-info)'index)))
+        string<? car))
+
+(define *search-entry-indent* 25)
+
+(define (format-search-result-entry entry) ; (key (node line) ...)
+  (define indent (make-string *search-entry-indent* #\space))
+  (define (subsequent-lines node&lines)
+    (dolist [l node&lines]
+      (format #t "~va~a:~d\n" *search-entry-indent* " " (car l) (cadr l))))
+  (match-let1 (key node&lines ...) entry
+    (if (> (string-length key) (- *search-entry-indent* 1))
+      (begin (print key) (subsequent-lines node&lines))
+      (begin (format #t "~va ~a:~d\n" (- *search-entry-indent* 1) key
+                     (caar node&lines) (cadar node&lines))
+             (subsequent-lines (cdr node&lines))))))
+
+;; API
+(define (info-search rx)
+  (check-arg regexp? rx)
+  (let1 entries (search-entries rx)
+    (if (null? entries)
+      (print #"No entry matching ~|rx|")
+      (viewer (with-output-to-string
+                (^[] (for-each format-search-result-entry entries))))))
+  (values))
+
+               

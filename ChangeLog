@@ -1,3 +1,10 @@
+2017-04-04  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/interactive/info.scm (info-search): Added to search
+	  info entries by regexp.
+	* lib/gauche/interactive/toplevel.scm (info): Allow regexp as the
+	  argument to invoke info-search.
+
 2017-04-03  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/interactive/info.scm (get-info): Avoid showing multiple
