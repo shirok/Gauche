@@ -1038,6 +1038,37 @@ gosh> ,info <list>
 @end example
 
 @c EN
+You can also give a regexp pattern to @code{,info} command
+(@pxref{Regular expressions}).
+It shows the entries in the document that match the pattern.
+@c JP
+また、@code{,info}コマンドに正規表現のパターンを与えることもできます
+(@ref{Regular expressions}参照)。
+その場合、パターンにマッチするドキュメントの項目の一覧が表示されます。
+@c COMMON
+
+@example
+gosh> ,info #/^string-.*\?/
+string-ci<=?             Full string case conversion:44
+                         String Comparison:19
+string-ci<?              Full string case conversion:43
+                         String Comparison:18
+string-ci=?              Full string case conversion:42
+                         String Comparison:17
+string-ci>=?             Full string case conversion:46
+                         String Comparison:21
+string-ci>?              Full string case conversion:45
+                         String Comparison:20
+string-immutable?        String Predicates:9
+string-incomplete?       String Predicates:12
+string-null?             SRFI-13 String predicates:6
+string-prefix-ci?        SRFI-13 String Prefixes & Suffixes:28
+string-prefix?           SRFI-13 String Prefixes & Suffixes:26
+string-suffix-ci?        SRFI-13 String Prefixes & Suffixes:29
+string-suffix?           SRFI-13 String Prefixes & Suffixes:27
+@end example
+
+@c EN
 The @code{,a} command (or @code{,apropos}) shows the global identifiers
 matches the given name or regexp:
 @c JP
@@ -1054,15 +1085,34 @@ filter-map                     (gauche)
 @end example
 
 @c EN
-Note: The @code{apropos} command only shows the symbols that has
-loaded into the current process.  On the other hand, the @code{info}
+Note: The @code{apropos} command looks for symbols from the
+current process---that is, it only shows names that have been loaded
+and imported.
+But it also mean it can show any name as far as it exists in the
+current process, regardless of whether it's a documented API or an
+internal entry.
+
+On the other hand, the @code{info}
 command searches info document, regardless of the named entity
-has loaded into the current process or not.
+has loaded into the current process or not.  It doesn't show
+undocumented APIs.
+
+You can think that @code{apropos} is an introspection tool,
+while @code{info} is a document browsing tool.
 @c JP
-註: @code{apropos}コマンドは現在のプロセスにロードされている名前のみから
-検索します。一方、@code{info}コマンドは現在のプロセスにロードされているかどうか
-とは関係なく、infoドキュメントから検索します。
+註: @code{apropos}コマンドは現在のプロセス中から名前を探します。
+つまり、既にロードされたインポートされた名前しか表示しません。
+それは同時に、ロードされてさえいれば、ドキュメントのある公式なAPIか
+内部的な非公式なエントリかにかかわらず表示されるということでもあります。
+
+一方、@code{info}コマンドは現在のプロセスにロードされているかどうか
+とは関係なく、infoドキュメントから検索します。ドキュメントされていない
+APIにはヒットしません。
+
+@code{apropos}はイントロスペクションのツール、
+@code{info}はドキュメント参照のツールと考えると良いでしょう。
 @c COMMON
+
 
 @c EN
 Note: If you invoke @code{gosh} with @code{-q} option, which tells
