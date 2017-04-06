@@ -7320,23 +7320,49 @@ gosh> (d 1432954340)
 @defun info symbol
 @c MOD gauche.interactive
 @c EN
-Displays a page of Gauche's info file that contains definition of
-the function or syntax specified by @var{symbol}.
+Displays an entry of the named function, syntax, module or class
+from Gauche's info document.
 If an environment variable @code{INFOPATH} is defined,
 this function searches for the info file from the directories in it.
 Otherwise, this function guesses info file location from the
 @code{gosh}'s library directory.   If the info file can't be
-found, an error is signaled.   If the info file is found,
-but @var{symbol} is not in its index, an error is signaled as well.
+found, an error is signaled.
 So this function doesn't work if you haven't installed info file.
 @c JP
 Gaucheのinfoドキュメント中から、
-@var{symbol}で指定される手続きか構文要素の定義を含んでいるページを表示します。
-infoドキュメントは、もし環境変数@code{INFOPATH}が定義されていればそこに
+@var{symbol}で指定される手続き、構文要素、モジュールもしくはクラスの
+エントリを表示します。
+もし環境変数@code{INFOPATH}が定義されていればそこに
 示されるディレクトリ中から探され、そうでなければ@code{gosh}のライブラリディレクトリ
-から推測されるディレクトリ中から探されます。infoドキュメントが見付からなかったり、
-見付かっても@var{symbol}がIndexページ中に無かった場合はエラーとなります。
+から推測されるディレクトリ中から探されます。
+infoドキュメントが見付からなかった場合はエラーとなります。
 つまり、この手続きはinfoファイルがインストールされていないと動作しません。
+@c COMMON
+
+@c EN
+If no entry exactly matching with @var{symbol} is found, the procedure tries
+to look for similar named entries:
+@c JP
+もし@var{symbol}に完全に一致するエントリが見つからなかった場合、
+類似するエントリがあればそれらがリストされます:
+@c COMMON
+
+@example
+gosh> (info 'stirng)
+There is no entry for stirng.
+Did you mean:
+  string>
+  string?
+  string=
+  string<
+  string
+  :string
+@end example
+
+@c EN
+(If you want to search entries using pattern, see @code{info-serach} below.)
+@c JP
+(パターンにマッチするエントリを探したい場合は下の@code{info-search}を見てください)
 @c COMMON
 
 @c EN
@@ -7371,6 +7397,25 @@ environment variable to
 註: @code{less}をページャに使う場合、@code{less}がutf-8文字を扱えるように
 設定してください (例えば@code{LESSCHARSET}環境変数を@code{UTF-8}にする)。
 そうでないと画面にエスケープされた文字が表示されて見づらいです。
+@c COMMON
+
+@c EN
+NB: If you invoke @code{gosh} within the build tree, using @code{-ftest}
+option, @code{info} reads the info files in the build tree if they exist.
+@c JP
+註: @code{gosh}を@code{-ftest}オプションをつけてビルドツリー内で起動した場合、
+@code{info}はビルドツリー内のinfoファイルを(もしあれば)読みます。
+@c COMMON
+@end defun
+
+@defun info-search regexp
+@c MOD gauche.interactive
+@c EN
+Lists info entries matching @var{regexp}.  See @code{info} above
+about where the info files are searched.
+@c JP
+@var{regexp}にマッチするinfoのエントリをリストします。
+infoファイルがどこから読まれるかについては上の@code{info}の説明を参照してください。
 @c COMMON
 @end defun
 
