@@ -3495,7 +3495,7 @@ See also @code{with-iterator} macro below, for it is easier to use.
 @c COMMON
 @end deffn
 
-@deffn {Macro} with-iterator (collection end? next args @dots{}) body @dots{}
+@defmac with-iterator (collection end? next args @dots{}) body @dots{}
 @c MOD gauche.collection
 @c EN
 A convenience macro to call @code{call-with-iterator}.
@@ -3509,7 +3509,7 @@ A convenience macro to call @code{call-with-iterator}.
   (lambda (end? next) body @dots{})
    args @dots{})
 @end example
-@end deffn
+@end defmac
 
 @defun call-with-iterators collections proc
 @c MOD gauche.collection
@@ -3612,7 +3612,7 @@ See also @code{with-builder} macro below, for it is much easier to use.
 @c COMMON
 @end deffn
 
-@deffn {Macro} with-builder (collection add! get args @dots{}) body @dots{}
+@defmac with-builder (collection add! get args @dots{}) body @dots{}
 @c MOD gauche.collection
 @c EN
 A convenience macro to call @code{call-with-builder}.
@@ -3626,7 +3626,7 @@ A convenience macro to call @code{call-with-builder}.
   (lambda (add! get) body @dots{})
   args @dots{})
 @end example
-@end deffn
+@end defmac
 
 @emph{Discussion}:
 @c EN
