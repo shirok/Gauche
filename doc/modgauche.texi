@@ -7538,20 +7538,39 @@ whether it should load the file.  This is the default.
 
 @deftp {Module} gauche.lazy
 @mdindex gauche.lazy
+@c EN
 This module provides utility procedures that yields lazy sequences.
-For the details of lazy sequences, see @ref{Lazy sequences}.
+For the details of lazy sequences, @pxref{Lazy sequences}.
+@c JP
+このモジュールは、遅延シーケンスを生成するようなユーティリティ手続きの数々を提供します。
+遅延シーケンス自体については@ref{Lazy sequences}を参照してください。
+@c COMMON
 @end deftp
 
+@c EN
 Since lazy sequences are forced implicitly and indistinguishable
 from ordinary lists, we don't need a separate set of procedures
 for @emph{taking} lists and lazy sequences; we can use @code{find}
 to search in both ordinary lists and lazy sequences.
+@c JP
+遅延シーケンスは自動的にforceされ、通常のリストと区別がつかないので、
+@emph{引数に}リストを取るか遅延シーケンスを取るかで別々の手続きを用意する必要はありません。
+例えば@code{find}は、リストから要素を探すのにも遅延シーケンスから要素を探すのにも使えます。
+@c COMMON
 
+@c EN
 However, we do need a separate set of procedures
 for @emph{returning} either lists or lazy sequences.  For example,
 @var{lmap} can take any kind of sequences, and
 returns lazy sequence (and calls the procedure on demand).
+@c JP
+しかし、@emph{返り値として}リストを返すか遅延シーケンスを返すかは、
+手続きを別にする必要があります。
+例えば@var{lmap}は、引数としてはどちらも受け取ることができますが、
+返り値は遅延シーケンスになります。(そして、高階手続きは必要な分だけ呼ばれます。)
+@c COMMON
 
+@c EN
 This distinction is subtle, so I reiterate it.  You can use
 both @code{map} and @code{lmap} on lazy sequences.  If you want
 the result list at once, use @code{map}; it doesn't have
@@ -7559,26 +7578,52 @@ overhead of delayed calculation.  If you don't know you'll use
 the entire result, or you know the result will get very large
 list and don't want to waste space for an intermediate list,
 you want to use @code{lmap}.
+@c JP
+この区別は混乱しやすいので、整理しておきます。
+@code{map}と@code{lmap}のどちらも、遅延シーケンスに適用することができます。
+結果のリストを一度に計算した状態で手に入れたいなら、@code{map}を使います。
+その場合、遅延計算のオーバヘッドはかかりません。
+もし結果のリスト全てを使うかどうかわからない、
+あるいは結果のリストが巨大になるので中間結果の保持のためにメモリを圧迫したくない、
+といった場合には@code{lmap}を使いましょう。
+@c COMMON
 
 @defun x->lseq obj
 @c MOD gauche.lazy
+@c EN
 A convenience function to coerce @var{obj} to (possibly lazy) list.
 If @var{obj} is a list, it is returned as it is.  If @var{obj} is
 other type of collection, the return value is a lazy sequence
-that iterates over the collection.
+that iterates over the collection.  If @var{obj} is other object,
+it is returned as it is (you can think of it as a special case
+of dotted list).
 
 If you try @code{x->lseq} in REPL, it looks as if it just
 converts the input collection to a list.
+@c JP
+@var{obj}を(おそらく遅延された)リストに変換する便利な手続きです。
+@var{obj}がリストならそのまま返されます。
+@var{obj}が他のコレクション型なら、コレクションの各要素を順に返す遅延シーケンスが返されます。
+@var{obj}がそれ意外ならやはりそのまま返されます(ドットリストの特別な場合と考えられます)。
+
+REPLで@code{x->lseq}を試すと、単に渡したコレクションをリストに変換しているだけのように見えるでしょう。
+@c COMMON
+
 @example
 (x->lseq '#(a b c)) @result{} (a b c)
 @end example
 
+@c EN
 But that's because the lazy sequence is forced by the output
 routine of the REPL.
+@c JP
+実際には、返された遅延シーケンスがREPLの出力ルーチンによってforceされてリストになっています。
+@c COMMON
 @end defun
 
 @defun lunfold p f g seed :optional tail-gen
 @c MOD gauche.lazy
+@c EN
 A lazy version of @code{unfold} (@pxref{SRFI-1 List utilities}).
 The arguments @var{p}, @var{f} and @var{g} are procedures,
 each of which take one argument, the current seed value.
@@ -7589,6 +7634,19 @@ If @var{tail-gen} is given, it should also be a procedure
 that takes one argument, the last seed value (that is, the
 seed value @code{(p seed)} returned @code{#f}).  It must return
 a (possibly lazy) list, that forms the tail of the resulting sequence.
+@c JP
+@code{unfold}の遅延バージョンです (@ref{SRFI-1 List utilities}参照)。
+@var{p}、@code{f}、@code{g}引数はそれぞれ1引数を取る手続きで、
+現在のシード値を受けとります。
+@var{p}は生成を停止するかどうかを決める述語、
+@var{f}は要素を生成する手続き、そして
+@var{g}は次のシード値を生成する手続きです。
+@var{seed}引数には最初のシード値を与えます。
+@var{tail-gen}が与えられた場合、それは最後のシード値
+(つまり、@code{(p seed)}が@code{#f}を返した時のシード値)を
+受け取り、リストあるいは遅延シーケンスを返す手続きです。
+それが結果のシーケンスの末尾に付け足されます。
+@c COMMON
 
 @example
 (lunfold ($ = 10 $) ($ * 2 $) ($ + 1 $) 0 (^_ '(end)))
@@ -7598,58 +7656,142 @@ a (possibly lazy) list, that forms the tail of the resulting sequence.
 
 @defun lmap proc seq seq2 @dots{}
 @c MOD gauche.lazy
+@c EN
 Returns a lazy sequence consists of values calculated
-by applying @var{proc} to every first element of @var{seq} @code{seq2}
+by applying @var{proc} to every first element of @var{seq} @var{seq2}
 @dots{}, every second element of them, etc., until any of
 the input is exhausted.
+Application of @var{proc} will be delayed as needed.
+@c JP
+@var{proc}を@var{seq} @var{seq2} @dots{}の各1番目の要素、各2番目の要素、@dots{}
+に適用したものからなる遅延シーケンスを返します。
+どれかの入力が尽きた時が結果のシーケンスの終わりとなります。
+@var{proc}の適用は必要になるまで遅延されます。
+@c COMMON
+
+@example
+@c EN
+;; If you use map instead of lmap, this won't return
+@c JP
+;; lmapのかわりにmapを使うとこの式の評価は終わらない
+@c COMMON
+(use math.prime)
+(take (lmap (pa$ * 2) *primes*) 10)
+  @result{} (4 6 10 14 22 26 34 38 46 58)
+@end example
 @end defun
 
 @defun lmap-accum proc seed seq seq2 @dots{}
 @c MOD gauche.lazy
+@c EN
 The procedure @var{proc} takes one element each from
 @var{seq} @var{seq2} @dots{}, plus the current seed value.
 It must return two values, a result value and the next seed value.
 The result of @code{lmap-accum} is a lazy sequence consists
 of the first values returned by each invocation of @var{proc}.
+@c JP
+@var{proc}は各シーケンス@var{seq} @var{seq2} @dots{}からの要素一つづつと、
+現在のシード値を取り、結果の要素値と次のシード値を返す手続きです。
+@var{lmap-accum}の結果は、@var{proc}が生成する要素値からなる遅延シーケンスとなります。
+@c COMMON
 
+@example
+(use math.prime)
+(take (lmap-accum (^[p sum] (values sum (+ p sum))) 0 *primes*) 10)
+  @result{} (0 2 5 10 17 28 41 58 77 100)
+@end example
+
+@c EN
 This is a lazy version of @code{map-accum} (@pxref{Mapping over collection}),
 but @code{lmap-accum} does not return the final seed value.  We only
 know the final seed value when we have the result sequence to the
 end, so it can't be calculated lazily.
+@c JP
+これは@code{map-accum}の遅延バージョンです(@ref{Mapping over collection}参照)。
+ただ、@code{lmap-accum}は最後のシード値を返しません。
+最後のシード値を返すためには結果の遅延シーケンスを最後まで計算する必要があるので、
+遅延計算にならないからです。
+@c COMMON
 @end defun
 
 @defun lappend seq @dots{}
 @c MOD gauche.lazy
-Returns a lazy sequence consists of elements in @var{seq} @dots{}.
+@c EN
+Returns a lazy sequence which is concatenation of @var{seq} @dots{}.
+Unlike @code{append}, this procedure returns immediately, taking O(1) time.
+It is useful when you want to append large sequences but may use
+only a part of the result.
+@c JP
+シーケンス@var{seq} @dots{}をつなぎ合わせた遅延シーケンスを返します。
+@code{append}と違い、この手続きはO(1)時間で、すぐに返ります。
+従って、大きなシーケンスをつなぎ合わせたいけれど全部使うとは限らない、といった場合に便利です。
+@c COMMON
 @end defun
 
 @defun lconcatenate seqs
 @c MOD gauche.lazy
+@c EN
 The @var{seqs} argument is a sequence of sequences.  Returns
 a lazy sequence that is a concatenation of all the sequences in @var{seqs}.
 
 This differs from @code{(apply lappend seqs)}, for @code{lconcatenate}
 can handle infinite number of lazy @var{seqs}.
+@c JP
+@var{seqs}引数はシーケンスのシーケンスです。
+それら各シーケンスを全てつなぎ合わせた遅延シーケンスを返します。
+
+これと@code{(apply lappend seqs)}との違いは、@code{lconcatenate}は
+無限個の@var{seq}をつなぎ合わせられるということです。
+@c COMMON
 @end defun
 
 @defun lappend-map proc seq1 seq @dots{}
 @c MOD gauche.lazy
-Lazy version of @code{append-map}.   This differs not only from
-@code{(apply lappend (lmap proc seq1 seq @dots{}))}, which would
+@c EN
+Lazy version of @code{append-map}.   This differs from a simple
+composition of @var{lappend} and @var{lmap}, since
+@code{(apply lappend (lmap proc seq1 seq @dots{}))} would
 evaluate the result of @code{lmap} to the end before passing it to
-@code{lappend}, but also differ from
-@code{(lconcatenate (lmap proc seq1 seq @dots{}))} in the subtle way.
+@code{lappend} (it's because @code{apply} need to determine
+the list of arguments before calling @code{lappend}).
+@c JP
+@code{append-map}の遅延バージョンです。
+これは単に@code{lappend}と@code{lmap}を合成したものとは異なります。
+というのも、@code{(apply lappend (lmap proc seq1 seq @dots{}))}では、
+@code{apply}が引数リストを確定するために@code{lmap}を最後まで評価しなければ
+ならないからです。
+@c COMMON
 
+@c EN
+It also differs from
+@code{(lconcatenate (lmap proc seq1 seq @dots{}))} in the subtle way.
+@c JP
+また、これは@code{(lconcatenate (lmap proc seq1 seq @dots{}))}とも
+微妙に異なります。
+@c COMMON
+
+@c EN
 Remember that Gauche's lazy sequence evaluates one element ahead?
 @code{lconcatenate} does that to the result of @code{lmap}.
 To see the effect, let's define a procedure with a debug print:
+@c JP
+Gaucheの遅延シーケンスは1つ要素を余分に評価することを覚えていますか。
+@code{lconcatenate}は@code{lmap}の結果に対して「一つ余分に評価」を行います。
+この効果を調べるために、デバッグプリントをつけた手続きを使ってみましょう。
+@c COMMON
 
 @example
 (define (p x) #?=(list x x))
 @end example
 
-You can see that @code{(apply lappend (lmap ...))} wouldn't delay
+@c EN
+You can see in the following example
+that @code{(apply lappend (lmap ...))} wouldn't delay
 any of application of @code{p}:
+@c JP
+次の例で、@code{(apply lappend (lmap ...))}が@code{p}
+の適用を遅延しないことがわかります。
+@c COMMON
 
 @example
 gosh> (car (apply lappend (lmap p '(1 2 3))))
@@ -7663,7 +7805,11 @@ gosh> (car (apply lappend (lmap p '(1 2 3))))
 1
 @end example
 
+@c EN
 How about @code{lconcatenate}?
+@c JP
+@code{lconcatenate}はどうでしょう。
+@c COMMON
 
 @example
 gosh> (car (lconcatenate (lmap p '(1 2 3))))
@@ -7675,13 +7821,24 @@ gosh> (car (lconcatenate (lmap p '(1 2 3))))
 1
 @end example
 
+@c EN
 Oops, even though we need only the first element, and the first
 result of @code{lmap}, @code{(1 1)}, provides the second element, too,
 @code{p} is already applied to the second input.
+@c JP
+おっと、最初の要素だけを取り出しているので、
+@code{lmap}の最初の結果である@code{(1 1)}だけが必要なはずなのに、
+@code{p}は2番目の入力に対しても適用されてしまいました。
+@c COMMON
 
+@c EN
 This is because the intermediate lazy list of the result of @code{lmap} is
 evaluated ``one element ahead''.   On the other hand, @code{lappend-map}
 doesn't have this problem.
+@c JP
+これは、@code{lmap}の結果である中間の遅延リストが「1要素余分に」評価されるためです。
+@code{lappend-map}にはこの問題がありません。
+@c COMMON
 
 @example
 gosh> (car (lappend-map p '(1 2 3)))
@@ -7694,11 +7851,19 @@ gosh> (car (lappend-map p '(1 2 3)))
 
 @defun linterweave seq @dots{}
 @c MOD gauche.lazy
+@c EN
 Returns a lazy seq of the first items from @var{seq} @dots{}, then
 their second items, and so on.   If the length of shortest sequence
 of @var{seqs} is N, the length of the resulting sequence is
 @code{(* N number-of-sequences)}.  If all of @var{seq}s are infinite,
 the resulting sequence is also infinite.
+@c JP
+@var{seq} @dots{}の最初の要素を順番に取り、次に2番目の要素を順番に取り…として
+得られる遅延シーケンスを返します。
+入力のシーケンスのうち最も短いシーケンスの長さを@code{N}とすれば、
+結果の遅延シーケンスの長さは@code{(* N シーケンスの数)}となります。
+もし全ての入力シーケンスが無限長ならば、結果も無限長となります。
+@c COMMON
 
 @example
 (linterweave (lrange 0) '(a b c d e) (circular-list '*))
@@ -7708,53 +7873,109 @@ the resulting sequence is also infinite.
 
 @defun lfilter proc seq
 @c MOD gauche.lazy
+@c EN
 Returns a lazy sequence that consists of non-false values calculated
 by applying @var{proc} on every elements in @var{seq}.
+@c JP
+@var{proc}を@var{seq}の各要素に適用し、@code{#f}でない値だけを集めた遅延シーケンスを
+返します。
+@c COMMON
 @end defun
 
 @defun lfilter-map proc seq seq2 @dots{}
 @c MOD gauche.lazy
+@c EN
 Lazy version of @code{filter-map}.
+@c JP
+@code{filter-map}の遅延バージョンです。
+@c COMMON
 @end defun
 
 @defun lstate-filter proc seed seq
 @c MOD gauche.lazy
-Lazy version of @code{gstate-filter}.
+@c EN
+Lazy sequence version of @code{gstate-filter} (@pxref{Generator operations}).
+@c JP
+@code{gstate-filter}の遅延シーケンス版です (@ref{Generator operations}参照)。
+@c COMMON
 @end defun
 
 @defun ltake seq n :optional fill? padding
 @defunx ltake-while pred seq
 @c MOD gauche.lazy
+@c EN
 Lazy versions of @code{take*} and @code{take-while}
 (@pxref{List accessors and modifiers}).   Note that
 @code{ltake} works rather like @code{take*} than @code{take},
 that is, it won't complain if the input sequence has less than @var{n}
 elements.  Because of the lazy nature of @code{ltake}, it can't know
 whether input is too short or not before returning the sequence.
+@c JP
+@code{take*}と@code{take-while}の遅延バージョンです
+(@ref{List accessors and modifiers}参照)。
+@code{ltake}は@code{take}ではなく@code{take*}のように動作します。
+つまり、入力シーケンスの長さが@code{n}以下でもエラーになりません。
+というもの、@code{ltake}は怠惰に動作するため、
+値を返す時点では入力が足りないかどうかわからないからです。
+@c COMMON
 
-There are no @code{ldrop} and @code{ldrop-while}; if you apply
+@c EN
+There are no @code{ldrop} and @code{ldrop-while}; you don't need them.
+if you apply
 @code{drop} and @code{drop-while} on lazy sequence, they return
 lazy sequence.
+@c JP
+@code{ldrop}と@code{ldrop-white}はありません。必要ないからです。
+@code{drop}と@code{drop-white}を遅延シーケンスに適用すれば、
+遅延シーケンスが返されます。
+@c COMMON
 @end defun
 
 @defun lrxmatch rx seq
 @c MOD gauche.lazy
+@c EN
 This is a lazy sequence version of @code{grxmatch}
 (@pxref{Generator operations}).
 
-The @var{seq} argument must be a sequence of characters.
+The @var{seq} argument must be a sequence of characters (including
+orginary strings).
 The return value is a lazy sequence of @var{<rxmatch>} objects,
 each representing strings matching to the regular expression @var{rx}.
+@c JP
+@code{grxmatch}の遅延シーケンス版です(@ref{Generator operations}参照)。
 
+@var{seq}は文字のシーケンス (文字列を含む) でなければなりません。
+返り値は@var{<rxmatch>}オブジェクトからなる遅延シーケンスです。
+各要素の@var{<rxmatch>}オブジェクトが、
+入力中の@var{rx}にマッチした部分を表現しています。
+@c COMMON
+
+@c EN
 This procedure is convenient to scan character sequences from
 lazy character sequences, but it may be slow if you're looking for
-rarely matching string from very large input.  Unless @var{seq}
-is a string, @code{lrxmatch} buffers certain
+rarely matching string from very large non-string input.
+Unless @var{seq} is a string,
+@code{lrxmatch} buffers certain length of input,
+and if matching phrase isn't found, it extend the buffer and scan
+again from the beginning, since the match may span from the end of
+previous chunk to the newly added portion.
+@c JP
+この手続きは遅延文字シーケンス中からマッチするパターンを探すのに便利ですが、
+入力が文字列ではなく、パターンが滅多にマッチしない場合に非常に遅くなる危険があることに
+注意してください。@code{lrxmatch}は入力をある程度バッファしてスキャンし、
+マッチがみつからなければ、バッファを拡張してまた最初からスキャンします。
+というのも、新たなマッチが以前のバッファの末尾から新たに追加された部分へと
+またがっている可能性があるからです。
+@c COMMON
 @end defun
 
 @defun lslices seq k :optional fill? padding
 @c MOD gauche.lazy
+@c EN
 Lazy version of @code{slices} (@pxref{List accessors and modifiers}).
+@c JP
+@code{slices}の遅延バージョンです(@ref{List accessors and modifiers}参照)。
+@c COMMON
 
 @example
 (lslices '(a b c d e f) 2)

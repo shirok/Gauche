@@ -13505,7 +13505,7 @@ big it is, or to give up using the mighty @code{match} macro and
 to write a basic state machine that reads one character one at a time.
 @c JP
 このコードは、ファイル@file{file}中に最初に出現する
-``car''または''cdr''という文字列の場所を返します。
+``car''または``cdr''という文字列の場所を返します。
 文字は必要に応じて読まれ、目的の文字列が見つかれば残りは読まれません。
 これを遅延無しでやろうとすると、一旦全てのファイルを読み込んでリストに
 変換するか、あるいは便利な@code{match}マクロを使うのを諦めて
@@ -14009,7 +14009,7 @@ that creates lazy sequences.
 @c EN
 Let's consider calculating an infinite sequence of prime numbers.
 (Note: If you need prime numbers in your application, you don't
-need to write one; just use @code{math.prime}. @pxref{Prime numbers}).
+need to write one; just use @code{math.prime}. @xref{Prime numbers}).
 @c JP
 素数の無限列を計算してみましょう。(註:
 アプリケーションで素数が必要な場合は、わざわざ書かなくても
