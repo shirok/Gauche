@@ -1423,10 +1423,10 @@ in SRFI-128.
 @c COMMON
 
 @c EN
-It's mostly the same as @code{make-constructor} above, except
+It's mostly the same as @code{make-comparator} above, except
 the following:
 @c JP
-以下の点を除き、上の@code{make-constructor}とほぼ同じです。
+以下の点を除き、上の@code{make-comparator}とほぼ同じです。
 @c COMMON
 
 @itemize
@@ -1444,7 +1444,7 @@ If it is @code{#f}, it indicates the comparator can't order objects.
 この引数は@code{#f}か、二つの引数を取りそれらの大小関係を
 判定する手続きでなければなりません。手続きの場合、引数の最初の方が小さいか、
 両者が等しいか、最初の方が大きいか、に応じて-1, 0, 1をそれぞれ返さなければ
-なります。@code{#f}の場合、対象とするオブジェクトの集合に全順序関係がつけられない
+なりません。@code{#f}の場合、対象とするオブジェクトの集合に全順序関係がつけられない
 ことを表します。
 @c COMMON
 @item
