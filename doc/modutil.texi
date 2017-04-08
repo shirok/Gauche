@@ -17677,7 +17677,7 @@ Faults detected:
 @end example
 @end defmac
 
-@defmac ssax:make-parser user-handler-tag user-handler-proc ...
+@defmac ssax:make-parser user-handler-tag user-handler-proc @dots{}
 @c MOD sxml.ssax
 @c EN
 Create an XML parser, an instance of the XML parsing framework.
