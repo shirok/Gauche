@@ -14009,7 +14009,7 @@ that creates lazy sequences.
 @c EN
 Let's consider calculating an infinite sequence of prime numbers.
 (Note: If you need prime numbers in your application, you don't
-need to write one; just use @code{math.prime}. @xref{Prime numbers}).
+need to write one; just use @code{math.prime}. @pxref{Prime numbers}).
 @c JP
 素数の無限列を計算してみましょう。(註:
 アプリケーションで素数が必要な場合は、わざわざ書かなくても
