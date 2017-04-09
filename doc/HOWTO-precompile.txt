@@ -240,12 +240,14 @@ Let's see what's in those sci files in the previous example:
    (define-module foo (use foo.boo) (use foo.woo) (export foo))
    (select-module foo)
    (dynamic-load "foo" :init-function "Scm_Init_foo")
+
    $ cat foo/boo.sci
    ;; generated automatically.  DO NOT EDIT
    #!no-fold-case
    (define-module foo.boo (export boo))
    (select-module foo.boo)
    (dynamic-load "foo" :init-function "Scm_Init_foo__boo")
+
    $ cat foo/woo.sci
    ;; generated automatically.  DO NOT EDIT
    #!no-fold-case
