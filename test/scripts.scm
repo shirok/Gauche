@@ -320,9 +320,6 @@
 (test-script
  (build-path (or (sys-getenv "top_srcdir") "..") "src" "gauche-package.in"))
 
-(remove-files "test.o")
-(make-directory* "test.o")
-
 (define (package-generate-tests)
   (define (file-check name)
     (test* #"checking existence of ~name" #t
@@ -392,7 +389,36 @@
            (or (zero? (process-exit-status p)) o)))
   )
 
+(remove-files "test.o")
+(make-directory* "test.o")
 (unwind-protect (package-generate-tests)
+  (remove-directory* "test.o"))
+
+(define (precomp-tests)
+  (define top-srcdir (sys-normalize-pathname
+                      (or (sys-getenv "top_srcdir") "..")
+                      :absolute #t :canonicalize #t))
+  (do-process `("../../src/gosh" "-ftest" ,#"-I~|top-srcdir|/test/test-precomp"
+                "precomp" "--strip-prefix"
+                ,(build-path top-srcdir "test/test-precomp")
+                ,@(map (cut build-path top-srcdir "test/test-precomp" <>)
+                       '("foo.scm" "foo/bar1.scm" "foo/bar2.scm" "foo/bar3.scm")))
+              :directory "test.o")
+  (test* "precomp generated files"
+         '("test.o/foo--bar1.c"
+           "test.o/foo--bar2.c"
+           "test.o/foo--bar3.c"
+           "test.o/foo.c"
+           "test.o/foo.sci"
+           "test.o/foo/bar1.sci"
+           "test.o/foo/bar2.sci"
+           "test.o/foo/bar3.sci")
+         (sort (directory-fold "test.o" cons '())))
+  )
+
+(remove-files "test.o")
+(make-directory* "test.o")
+(unwind-protect (precomp-tests)
   (remove-directory* "test.o"))
 
 (test-end)
