@@ -1,3 +1,8 @@
+2017-04-09  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cgen/precomp.scm: Add --single-interface option to
+	  precomp to generate one *.sci file from multiple source files.
+
 2017-04-04  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/interactive/info.scm (info-search): Added to search

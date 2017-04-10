@@ -216,9 +216,9 @@ one DSO and that can be loaded at once.
 But I don't want a bunch of SCI files!
 ======================================
 
-The reason we keep *.sci files are to guarantee the consitent
-behavior between source form and precompiled form.  With keeping
-the interface file in the same relative path as the source,
+The reason we have one *.sci file per one *.scm file is to guarantee
+the consitent behavior between source form and precompiled form.
+With keeping the interface file in the same relative path as the source,
 we can guarantee the library user can say not only (use foo),
 but also (use foo.boo) and (use foo.woo).  The latter two still
 work, since we have foo/boo.sci and foo/woo.sci, with appropriate
@@ -227,69 +227,14 @@ initialization in it.
 However, if you have hundreds of source files and you *know*
 the external user will only use the toplevel module and not
 directly 'use' the submodules, then you can consolidate those
-SCI files into single one.
+SCI files into single one.  Just give --single-interface
+option to precomp.
 
-Unfortunately, this part of workflow hasn't been streamlined yet,
-and you'll need to come up your own script to do the work.
-
-Let's see what's in those sci files in the previous example:
-
-   $ cat foo.sci
-   ;; generated automatically.  DO NOT EDIT
-   #!no-fold-case
-   (define-module foo (use foo.boo) (use foo.woo) (export foo))
-   (select-module foo)
-   (dynamic-load "foo" :init-function "Scm_Init_foo")
-
-   $ cat foo/boo.sci
-   ;; generated automatically.  DO NOT EDIT
-   #!no-fold-case
-   (define-module foo.boo (export boo))
-   (select-module foo.boo)
-   (dynamic-load "foo" :init-function "Scm_Init_foo__boo")
-
-   $ cat foo/woo.sci
-   ;; generated automatically.  DO NOT EDIT
-   #!no-fold-case
-   (define-module foo.woo (export woo))
-   (select-module foo.woo)
-   (dynamic-load "foo" :init-function "Scm_Init_foo__woo")
-
-As you see, those three load the same DSO file ("foo"), but
-call different initialization functions.  The DSO file is
-only loaded once even (dynamic-load "foo") is called multiple
-times, so you don't need to worry about it.  But you have
-to call the initialization function in proper order.
-
-Also you have to trick 'use' in foo.sci so that when Gauche sees
-(use foo.boo) it won't go look for foo/boo.sci.
-
-The 'use' form is actually a combination of 'require' and 'import'.
-The 'require' form checks if the named feature is provided, and if
-not, go load the file.  The 'import' form is a namespace operation
-and nothing to do with the file.
-
-So, if you provide the feature manually, Gauche won't look for
-the file.
-
-You can concatenate those sci files into single foo.sci file,
-with 'provide' forms inserted for each sub-sci files:
-
-   (define-module foo.woo (export woo))
-   (select-module foo.woo)
-   (dynamic-load "foo" :init-function "Scm_Init_foo__woo")
-   (provide "foo/woo")
-
-   (define-module foo.boo (export boo))
-   (select-module foo.boo)
-   (dynamic-load "foo" :init-function "Scm_Init_foo__boo")
-   (provide "foo/boo")
-
-   (define-module foo (use foo.boo) (use foo.woo) (export foo))
-   (select-module foo)
-   (dynamic-load "foo" :init-function "Scm_Init_foo")
-
-Make sure you put the depended files before they are 'use'd.
+   $ gosh -I. precomp -e --single-interface foo.scm foo/util1.scm foo/util2.scm
+   $ ls
+   foo/  foo--boo.c  foo--woo.c  foo.c  foo.sci  foo.scm
+   $ ls foo
+   boo.scm  woo.scm
 
 Having this in foo.sci, you only need it and foo.so for the library
 to work:

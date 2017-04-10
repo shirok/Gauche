@@ -14,6 +14,10 @@
    [gauche.os.windows "NUL"]
    [else "/dev/null"]))
 
+(define *top-srcdir*
+  (sys-normalize-pathname (or (sys-getenv "top_srcdir") "..")
+                          :absolute #t :canonicalize #t))
+
 ;;=======================================================================
 (test-section "gosh")
 
@@ -325,9 +329,6 @@
     (test* #"checking existence of ~name" #t
            (file-exists? #"test.o/Test/~name")))
   (define pwd (sys-getcwd))
-  (define top-srcdir (sys-normalize-pathname
-                      (or (sys-getenv "top_srcdir") "..")
-                      :absolute #t :canonicalize #t))
 
   ;; When we run the test before installation, we need to tweak
   ;; some directories.  We can distinguish it, for install-check
@@ -354,7 +355,7 @@
              (define prefix (if (equal? (sys-basename (sys-getcwd)) "Test")
                               "../" ""))
              (define sep (cond-expand [gauche.os.windows ";"][else ":"]))
-             (define top-srcdir ,top-srcdir)
+             (define top-srcdir ,*top-srcdir*)
              ;; This is used to copy templates from.
              (define (gauche-library-directory) #"~|top-srcdir|/ext/x")
              ;; Intercept gauche-config to override compiler flags
@@ -394,14 +395,19 @@
 (unwind-protect (package-generate-tests)
   (remove-directory* "test.o"))
 
-(define (precomp-tests)
-  (define top-srcdir (sys-normalize-pathname
-                      (or (sys-getenv "top_srcdir") "..")
-                      :absolute #t :canonicalize #t))
-  (do-process `("../../src/gosh" "-ftest" ,#"-I~|top-srcdir|/test/test-precomp"
+
+(define (wrap-precomp-test thunk)
+  (remove-files "test.o")
+  (make-directory* "test.o")
+  (unwind-protect (thunk)
+    (remove-directory* "test.o")))
+
+(define (precomp-test-1)
+  (do-process `("../../src/gosh" "-ftest"
+                ,#"-I~|*top-srcdir*|/test/test-precomp"
                 "precomp" "--strip-prefix"
-                ,(build-path top-srcdir "test/test-precomp")
-                ,@(map (cut build-path top-srcdir "test/test-precomp" <>)
+                ,(build-path *top-srcdir* "test/test-precomp")
+                ,@(map (cut build-path *top-srcdir* "test/test-precomp" <>)
                        '("foo.scm" "foo/bar1.scm" "foo/bar2.scm" "foo/bar3.scm")))
               :directory "test.o")
   (test* "precomp generated files"
@@ -416,9 +422,45 @@
          (sort (directory-fold "test.o" cons '())))
   )
 
-(remove-files "test.o")
-(make-directory* "test.o")
-(unwind-protect (precomp-tests)
-  (remove-directory* "test.o"))
+(define (precomp-test-2)
+  (do-process `("../../src/gosh" "-ftest"
+                ,#"-I~|*top-srcdir*|/test/test-precomp"
+                "precomp" "--strip-prefix"
+                ,(build-path *top-srcdir* "test/test-precomp")
+                "--single-interface"
+                ,@(map (cut build-path *top-srcdir* "test/test-precomp" <>)
+                       '("foo.scm" "foo/bar1.scm" "foo/bar2.scm" "foo/bar3.scm")))
+              :directory "test.o")
+  (test* "precomp generated files with --single-interface"
+         '("test.o/foo--bar1.c"
+           "test.o/foo--bar2.c"
+           "test.o/foo--bar3.c"
+           "test.o/foo.c"
+           "test.o/foo.sci")
+         (sort (directory-fold "test.o" cons '())))
+
+  (test* "consolidated sci file"
+         '(";; generated automatically.  DO NOT EDIT"
+           "#!no-fold-case"
+           "(define-module foo.bar2 (use util.match) (export bar2))"
+           "(select-module foo.bar2)"
+           "(dynamic-load \"foo\" :init-function \"Scm_Init_foo__bar2\")"
+           "(provide \"foo/bar2\")"
+           "(define-module foo.bar3 (use foo.bar2) (export bar3))"
+           "(select-module foo.bar3)"
+           "(dynamic-load \"foo\" :init-function \"Scm_Init_foo__bar3\")"
+           "(provide \"foo/bar3\")"
+           "(define-module foo.bar1 (use foo.bar2) (export bar1))"
+           "(select-module foo.bar1)"
+           "(dynamic-load \"foo\" :init-function \"Scm_Init_foo__bar1\")"
+           "(provide \"foo/bar1\")"
+           "(define-module foo (use foo.bar1) (use foo.bar3) (export foo-master))"
+           "(select-module foo)"
+           "(dynamic-load \"foo\" :init-function \"Scm_Init_foo\")")
+         (file->string-list "test.o/foo.sci"))
+  )
+
+(wrap-precomp-test precomp-test-1)
+(wrap-precomp-test precomp-test-2)
 
 (test-end)

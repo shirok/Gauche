@@ -156,15 +156,6 @@
    <ptmodule>
    (apply %cgen-precompile src keys)))
 
-(define (do-it src ext-initializer sub-initializers)
-  (parameterize ([omitted-code '()])
-    (setup ext-initializer sub-initializers)
-    (with-input-from-file src
-      (cut emit-toplevel-executor
-           (reverse (generator-fold compile-toplevel-form '() read))))
-    (finalize sub-initializers)
-    (cgen-emit-c (cgen-current-unit))))
-
 ;; Precompile multiple Scheme sources that are to be linked into
 ;; single DSO.  Need to check dependency.  The name of the first
 ;; source is used to derive DSO name.
@@ -174,30 +165,54 @@
                                     ((:dso-name dso) #f)
                                     (predef-syms '())
                                     (macros-to-keep '())
+                                    (single-sci-file #f)
                                     (extra-optimization #f))
+  (define (precomp-1 main src)
+    (let* ([out.c ($ xlate-cfilename
+                     $ strip-prefix (path-swap-extension src "c") prefix)]
+           [initname (string-tr (path-sans-extension out.c) "-+." "___")])
+      (%cgen-precompile src
+                        :out.c out.c
+                        :dso-name (or dso (basename-sans-extension main))
+                        :predef-syms predef-syms
+                        :strip-prefix prefix
+                        :macros-to-keep macros-to-keep
+                        :extra-optimization extra-optimization
+                        :ext-initializer (and (equal? src main)
+                                              ext-initializer)
+                        :initializer-name #"Scm_Init_~initname")))
+  (define (tweak-sci sci) ; for consolidating sci files. returns sexp list
+    (if (not sci)
+      '()
+      (let* ([sexps (file->sexp-list sci)]
+             [mod (any (^p (match p [('define-module m . _) m] [_ #f])) sexps)])
+        (if mod
+          (append sexps `((provide ,(module-name->path mod))))
+          (begin
+            (warn "Couldn't find define-module form in ~a." sci)
+            sexps)))))
   (match srcs
     [() #f]
     [(main . subs)
      (clean-output-files srcs prefix)
-     (with-tmodule-recording
-      <ptmodule>
-      (dolist [src (order-files-by-dependency srcs)]
-        (let* ([out.c ($ xlate-cfilename
-                         $ strip-prefix (path-swap-extension src "c") prefix)]
-               [initname (string-tr (path-sans-extension out.c) "-+." "___")])
-          (%cgen-precompile src
-                            :out.c out.c
-                            :dso-name (or dso (basename-sans-extension main))
-                            :predef-syms predef-syms
-                            :strip-prefix prefix
-                            :macros-to-keep macros-to-keep
-                            :extra-optimization extra-optimization
-                            :ext-initializer (and (equal? src main)
-                                                  ext-initializer)
-                            :initializer-name #"Scm_Init_~initname"))))]
+     (let* ([srcs (order-files-by-dependency srcs)]
+            [scis ($ with-tmodule-recording <ptmodule>
+                     $ map (cut precomp-1 main <>) srcs)])
+       (when single-sci-file
+         (and-let* ([main-sci (any (^[s i] (and (equal? s main) i)) srcs scis)]
+                    [other-scis (reverse (delete main-sci scis))]
+                    [sexps (append (append-map tweak-sci other-scis)
+                                   (file->sexp-list main-sci))])
+           (with-output-to-file main-sci
+             (^[]
+               (print ";; generated automatically.  DO NOT EDIT")
+               (print "#!no-fold-case")
+               (dolist [x sexps] (write x) (newline))))
+           (for-each remove-files other-scis))))]
     ))
 
 ;; Common stuff -- process single source
+;; Returns sci file name if it's created.
 (define (%cgen-precompile src
                           :key (out.c #f)
                                (out.sci #f)
@@ -209,6 +224,14 @@
                                (predef-syms '())
                                (macros-to-keep '())
                                (extra-optimization #f))
+  (define (do-it)
+    (parameterize ([omitted-code '()])
+      (setup ext-initializer sub-initializers)
+      (with-input-from-file src
+        (cut emit-toplevel-executor
+             (reverse (generator-fold compile-toplevel-form '() read))))
+      (finalize sub-initializers)
+      (cgen-emit-c (cgen-current-unit))))
   (let ([out.c   (or out.c (path-swap-extension (sys-basename src) "c"))]
         [out.sci (or out.sci
                      (and (check-first-form-is-define-module src)
@@ -232,10 +255,11 @@
                (^p (display ";; generated automatically.  DO NOT EDIT\n" p)
                    (display "#!no-fold-case\n" p)
                    (parameterize ([ext-module-file p])
-                     (do-it src ext-initializer sub-initializers))))]
+                     (do-it))))]
             [else
              (parameterize ([ext-module-file #f])
-               (do-it src ext-initializer sub-initializers))]))))
+               (do-it))]))
+    out.sci))
 
 ;;================================================================
 ;; Transient modules
