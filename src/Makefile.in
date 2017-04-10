@@ -272,7 +272,9 @@ $(top_builddir)/doc/srfis.texi $(top_builddir)/lib/srfi/0.scm : srfis.scm
 libsrfis.scm : $(top_builddir)/lib/srfi/0.scm $(top_builddir)/doc/srfis.texi
 	@:
 
-compile.c  : compile.scm compile-0.scm $(PRECOMP_DEPENDENCY)
+compile.c  : compile.scm compile-0.scm compile-1.scm compile-2.scm \
+             compile-3.scm compile-4.scm compile-5.scm compile-i.scm \
+             $(PRECOMP_DEPENDENCY)
 libalpha.c : libalpha.scm $(PRECOMP_DEPENDENCY)
 libbool.c  : libbool.scm $(PRECOMP_DEPENDENCY)
 libchar.c  : libchar.scm $(PRECOMP_DEPENDENCY)
