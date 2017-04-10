@@ -68,7 +68,7 @@
         (match args
           [() (usage #f)]
           [(src)
-           (when single-interface
+           (when single-sci
              (usage "The `--single-interface' option is only valid with multiple input files"))
            (cgen-precompile src
                             :out.c out.c
