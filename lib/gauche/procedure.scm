@@ -39,7 +39,7 @@
           any-pred every-pred
           arity procedure-arity-includes?
           <arity-at-least> arity-at-least? arity-at-least-value
-          case-lambda ~ ref* disasm
+          source-code source-location disasm
           generator-fold generator-fold-right
           generator-for-each generator-map
           generator-find
