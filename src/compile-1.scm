@@ -81,54 +81,10 @@
     (receive (gval type) (global-call-type id cenv)
       (if gval
         (case type
-          [(macro)
-           (pass1 (call-macro-expander gval program cenv) cenv)]
-          [(syntax)
-           (call-syntax-handler gval program cenv)]
-          [(inline)
-           (pass1/expand-inliner id gval)]
-          )
+          [(macro)  (pass1 (call-macro-expander gval program cenv) cenv)]
+          [(syntax) (call-syntax-handler gval program cenv)]
+          [(inline) (pass1/expand-inliner program id gval cenv)])
         (pass1/call program ($gref id) (cdr program) cenv))))
-
-  ;; Expand inlinable procedure.  Inliner may be...
-  ;;   - An integer.  This must be the VM instruction number.
-  ;;     (It is useful to initialize the inliner statically in .stub file).
-  ;;   - A vector.  This must be a packed intermediate form.  It is set if
-  ;;     the procedure is defined by define-inline.
-  ;;   - A procedure.   It is called like a macro expander.
-  ;;     It may return #<undef> to cancel inlining.
-  (define (pass1/expand-inliner name proc)
-    ;; TODO: for inline asm, check validity of opcode.
-    (let1 inliner (%procedure-inliner proc)
-      (match inliner
-       [(? integer?)                    ;VM insn
-        (let ([nargs (length (cdr program))]
-              [opt?  (slot-ref proc 'optional)])
-          (unless (argcount-ok? (cdr program) (slot-ref proc 'required) opt?)
-            (errorf "wrong number of arguments: ~a requires ~a, but got ~a"
-                    (variable-name name) (slot-ref proc 'required) nargs))
-          ;; We might get away with this limit by transforming inline calls
-          ;; to apply or something.  Maybe in future.
-          (when (> nargs MAX_LITERAL_ARG_COUNT)
-            (errorf "Too many arguments in the call of `~,,,,40s...'" program))
-          ($asm program (if opt? `(,inliner ,nargs) `(,inliner))
-                (imap (cut pass1 <> cenv) (cdr program))))]
-       [(? vector?)                     ;inlinable lambda
-        (expand-inlined-procedure program
-                                  (unpack-iform inliner)
-                                  (imap (cut pass1 <> cenv) (cdr program)))]
-       [(? macro?)
-        (let1 expanded (call-macro-expander inliner program cenv)
-          (if (eq? program expanded)    ;no expansion
-            (pass1/call program ($gref name) (cdr program) cenv)
-            (pass1 expanded cenv)))]
-       [_
-        ;; Call procedural inliner: Src, [IForm] -> IForm
-        ;; The second arg is IForms of arguments.
-        (let1 iform (inliner program (imap (cut pass1 <> cenv) (cdr program)))
-          (if (undefined? iform)         ;no expansion
-            (pass1/call program ($gref name) (cdr program) cenv)
-            iform))])))
 
   ;; main body of pass1
   (cond
@@ -155,6 +111,43 @@
                  ($gref r))]
             [else (error "[internal] cenv-lookup returned weird obj:" r)]))]
    [else ($const program)]))
+
+;; Expand inlinable procedure.
+;; NAME is a variable, used for the error message.
+;; PROC is <procedure>.
+(define (pass1/expand-inliner src name proc cenv)
+  ;; TODO: for inline asm, check validity of opcode.
+  (let ([inliner (%procedure-inliner proc)]
+        [args (cdr src)])
+    (match inliner
+      [(? integer?)                    ;VM insn
+       (let ([nargs (length args)]
+             [opt?  (slot-ref proc 'optional)])
+         (unless (argcount-ok? args (slot-ref proc 'required) opt?)
+           (errorf "wrong number of arguments: ~a requires ~a, but got ~a"
+                   (variable-name name) (slot-ref proc 'required) nargs))
+         ;; We might get away with this limit by transforming inline calls
+         ;; to apply or something.  Maybe in future.
+         (when (> nargs MAX_LITERAL_ARG_COUNT)
+           (errorf "Too many arguments in the call of `~,,,,40s...'" src))
+         ($asm src (if opt? `(,inliner ,nargs) `(,inliner))
+               (imap (cut pass1 <> cenv) args)))]
+      [(? vector?)                     ;inlinable lambda
+       (expand-inlined-procedure src
+                                 (unpack-iform inliner)
+                                 (imap (cut pass1 <> cenv) args))]
+      [(? macro?)
+       (let1 expanded (call-macro-expander inliner src cenv)
+         (if (eq? src expanded)    ;no expansion
+           (pass1/call src ($gref name) args cenv)
+           (pass1 expanded cenv)))]
+      [_
+       ;; Call procedural inliner: Src, [IForm] -> IForm
+       ;; The second arg is IForms of arguments.
+       (let1 iform (inliner src (imap (cut pass1 <> cenv) args))
+         (if (undefined? iform)         ;no expansion
+           (pass1/call src ($gref name) args cenv)
+           iform))])))
 
 ;; Returns #t iff exp is the form (with-module module VARIABLE)
 ;; We need to check the global value of with-module, for it might
