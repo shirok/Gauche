@@ -97,20 +97,18 @@
 ;; some libraries needs to set the setter procedures during initialization,
 ;; so we should have it before them.
 
-(select-module gauche.internal)
-(define-cproc %procedure-copy (p::<procedure>) Scm_CopyProcedure)
-
 (select-module gauche)
+(define-cproc getter-with-setter (proc::<procedure> set::<procedure>) ;SRFI-17
+  (let* ([p (Scm_CopyProcedure proc)])
+    ;; NB: We override p->locked, for p is a copy.
+    (set! (SCM_PROCEDURE_SETTER_LOCKED p) FALSE)
+    (return (Scm_SetterSet (SCM_PROCEDURE p) set TRUE))))
+
 (define-cproc setter (proc) ;SRFI-17
   (inliner SETTER)
   (setter (proc::<procedure> setter::<procedure>) ::<void>
           (Scm_SetterSet proc setter FALSE))
   Scm_Setter)
-
-(define (getter-with-setter get set)
-  ;; copy 'get' to avoid modifying it.
-  (rlet1 proc ((with-module gauche.internal %procedure-copy) get)
-    (set! (setter proc) set)))
 
 ;;;
 ;;;  srfi-111 box

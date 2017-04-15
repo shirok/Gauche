@@ -1,3 +1,10 @@
+2017-04-14  Shiro Kawai  <shiro@acm.org>
+
+	* src/libalpha.scm (getter-with-setter): Lock the setter; now an error
+	  is thrown when you attempt to alter setter of a proc if it's locked,
+	  as specified in srfi-17.
+	* src/libproc.scm (procedure-locked-setter): Added.
+
 2017-04-09  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/precomp.scm: Add --single-interface option to

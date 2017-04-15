@@ -262,6 +262,17 @@
           [else (apply applicable? object-apply c arg-types)])))
 
 (select-module gauche.internal)
+;; If procedure has a setter and it's locked, return it.  Otherwise
+;; return #f
+(define-cproc procedure-locked-setter (proc::<procedure>)
+  (if (and (-> proc locked)
+           (SCM_PROCEDUREP (-> proc setter)))
+    (result (-> proc setter))
+    (result SCM_FALSE)))
+
+(define-cproc %procedure-copy (p::<procedure>) Scm_CopyProcedure)
+
+(select-module gauche.internal)
 ;; Tester procedures
 ;;   These are not meant to be used in the actual Scheme code.  They're
 ;;   here to test particular C APIs which wouldn't be called from normal
