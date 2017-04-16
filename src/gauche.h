@@ -1323,6 +1323,45 @@ struct ScmProcedureRec {
    or the compiler configuration (e.g. internal encoding).
  */
 
+/* About 'info' slot:
+   This is a sort of the kitchen sink slot, keeping whatever miscellaneous
+   information as our implementation evolves.  Since this can be a part of
+   statically allocated structure, we can't change its format in a way
+   that breaks the backward compatibility.
+
+   SUBR, CLOSURE:
+           This slot may contain one of this:
+           - Signature: For example, the subr `cons' has (cons obj1 obj2)
+             in it.  The first pair may have pair-attributes, including
+             `source-info'.
+                ((with-module gauche.internal pair-attributes) (~ cons'info))
+                 => ((source-info "liblist.scm" 46))
+           - Subr's name, as a string or a symbol.  This is the old format.
+             It may also the case that subr is created from C function
+             Scm_MakeSubr(), for it's cumbersome in C routine to construct
+             the signature list.  Accept it, but not recommended to use
+             this format in the new code.
+           - #f.  Indicates there's no useful info.
+
+   GENERIC:
+           This slot contains the "name" of the gf, which is a symbol.
+           A kludge: For setter gf, which can be created indirectly
+           via (define-method (setter GF) ...), we use a weird name
+           |setter of GF|.  This is a quick hack to make it work, but ideally
+           we should accept a list (setter GF) as the name.  Anticipate
+           this change in future.
+           Furthermore, in order to hold source-info, we might just make
+           it a pair, e.g. (NAME) or ((setter NAME)).
+
+   METHOD:
+           This slot contains (<name> <specializer> ...),
+           where <name> is the name of the generic function, and
+           <specializer>s are the name of classes.
+
+   NEXT_METHOD:
+           This slot isn't used.
+ */
+
 /* About procedure inliner:
    This slot holds information to inline procedures.  The value of this slot
    can be one of the following kinds:
@@ -1339,6 +1378,18 @@ struct ScmProcedureRec {
    <vector>: Procedures defined with define-inline have this.  The vector
       encodes intermediate form (IForm) of the procedure code, which will be
       expanded into the caller.
+
+   <macro>:  A compiler macro.  The macro expander is invoked with the
+      original source and macro-use environment, just like the ordinary macro
+      call.  The expander must return an Sexpr.  If the expander returns
+      the input as is, it indicates expansion is not possible and the form
+      is compiled as the ordinary procedure call.
+
+   <procedure>: A procedural inliner.  It has signature Sexpr,[IForm] -> IForm,
+      where Sexpr is the original source of call size (just for debug info) and
+      input [IForm] is the IForm for list of arguments.  See compiler-1.scm.
+      It returns the modified IForm.  It can return #<undef>, to indicate
+      inlining isn't possible.
  */
 
 /* procedure type */
