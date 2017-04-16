@@ -99,6 +99,14 @@
 
 (select-module gauche)
 (define-cproc getter-with-setter (proc::<procedure> set::<procedure>) ;SRFI-17
+  (case (SCM_PROCEDURE_TYPE proc)
+    [(SCM_PROC_SUBR SCM_PROC_CLOSURE)]  ;ok
+    [(SCM_PROC_GENERIC SCM_PROC_METHOD)
+     (Scm_Error "You can't attach a setter to a generic function or a method \
+                 using getter-with-setter.  Instead, you can define a setter \
+                 method using the name (setter %S)."
+                (SCM_PROCEDURE_INFO proc))]
+    [else (Scm_Error "You can't attach a setter to %S." (SCM_OBJ proc))])
   (let* ([p (Scm_CopyProcedure proc)])
     ;; NB: We override p->locked, for p is a copy.
     (set! (SCM_PROCEDURE_SETTER_LOCKED p) FALSE)
