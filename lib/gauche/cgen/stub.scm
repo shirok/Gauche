@@ -559,7 +559,11 @@
       ;; list of strings for code that must be emitted before the
       ;; procedure definition
    (source-info       :initform #f :init-keyword :source-info)
-      ;; (file . line-no), if known.
+      ;; (file::<string> line-no::<integer>), if known.
+      ;; Will be saved in pair attributes of info.
+   (bind-info         :initform #f :init-keyword :bind-info)
+      ;; (module-name::<symbol> proc-name::<symbol>), if known.
+      ;; Will be saved in pair attributes of info.
    (info              :initform #f)
       ;; cgen-literal of ScmObj to be set in the 'info' slot of ScmProcedure.
    ))
@@ -652,6 +656,10 @@
                       :source-info (or (debug-source-info &whole)
                                        (debug-source-info (cdr &whole))
                                        (debug-source-info (caddr &whole)))
+                      :bind-info (and-let* ([m (current-tmodule)]
+                                            [mod-name (~ m'name)]
+                                            [ (symbol? mod-name) ])
+                                   (list mod-name scheme-name))
                       :keyword-args keyargs
                       :num-reqargs nreqs
                       :num-optargs nopts
@@ -1098,9 +1106,11 @@
                         [(pair? aarg) @ `(:optarray ,(arginfo (car aarg)))]))])
     (set! (~ proc'info)
           (make-literal
-           (if (~ proc'source-info)
+           (if (or (~ proc'source-info) (~ proc'bind-info))
              ($ make-serializable-extended-pair (~ proc'scheme-name) all-args
-                `((source-info . ,(~ proc'source-info))))
+                (cond-list
+                 [(~ proc'source-info) => (cut cons 'source-info <>)]
+                 [(~ proc'bind-info)   => (cut cons 'bind-info <>)]))
              (cons (~ proc'scheme-name) all-args))))))
 
 ;;;

@@ -1,5 +1,10 @@
 2017-04-15  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/cgen/stub.scm (<cproc>): Keep subr's binding info
+	  (its name and defined module name) in the pair attributes of
+	  subr's info.  This will allow precompiler to emit a reference
+	  to #<subr> by using $GREF.
+
 	* src/compile-1.scm (set!): Enable inlining setter.  In the syntax
 	  (set! (op arg ...) expr), we check 1. if OP has inlinable binding,
 	  2. if OP has locked setter, and 3. if the setter is inlinable.
