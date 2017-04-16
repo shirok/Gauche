@@ -106,12 +106,8 @@
       => (^[setter]
            (or (pass1/expand-inliner program `(setter ,(car program))
                                      setter cenv)
-               ($call form
-                      ($call #f
-                             ($gref setter.)
-                             (list (pass1 (car program) cenv)) #f)
-                      (let1 cenv (cenv-sans-name cenv)
-                        (imap (cut pass1 <> cenv) (cdr program))))))]
+               (pass1/call program (pass1 (car program) (cenv-sans-name cenv))
+                           (cdr program) cenv)))]
      [else (pass1/call program (pass1 (car program) (cenv-sans-name cenv))
                        (cdr program) cenv)])]
    [(variable? program)                 ; variable reference
