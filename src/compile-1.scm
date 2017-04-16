@@ -83,7 +83,8 @@
         (case type
           [(macro)  (pass1 (call-macro-expander gval program cenv) cenv)]
           [(syntax) (call-syntax-handler gval program cenv)]
-          [(inline) (pass1/expand-inliner program id gval cenv)])
+          [(inline) (or (pass1/expand-inliner program id gval cenv)
+                        (pass1/call program ($gref id) (cdr program) cenv))])
         (pass1/call program ($gref id) (cdr program) cenv))))
 
   ;; main body of pass1
@@ -101,6 +102,16 @@
               [(syntax? h);; locally rebound syntax
                (call-syntax-handler h program cenv)]
               [else (error "[internal] unknown resolution of head:" h)]))]
+     [(pass1/detect-constant-setter-call (car program) cenv)
+      => (^[setter]
+           (or (pass1/expand-inliner program `(setter ,(car program))
+                                     setter cenv)
+               ($call form
+                      ($call #f
+                             ($gref setter.)
+                             (list (pass1 (car program) cenv)) #f)
+                      (let1 cenv (cenv-sans-name cenv)
+                        (imap (cut pass1 <> cenv) (cdr program))))))]
      [else (pass1/call program (pass1 (car program) (cenv-sans-name cenv))
                        (cdr program) cenv)])]
    [(variable? program)                 ; variable reference
@@ -112,9 +123,27 @@
             [else (error "[internal] cenv-lookup returned weird obj:" r)]))]
    [else ($const program)]))
 
-;; Expand inlinable procedure.
+;; If op is (setter <var>), check if <var>'s setter is inliable.  If so,
+;; returns the setter.  
+;; There are a bunch of hoops to go through to satisfy the condition.
+(define (pass1/detect-constant-setter-call op cenv)
+  (and (pair? op) (pair? (cdr op)) (null? (cddr op))
+       (not (vm-compiler-flag-is-set? SCM_COMPILE_NOINLINE_GLOBALS))
+       (global-identifier=? (car op) setter.)
+       (and-let* ([var (cadr op)]
+                  [ (variable? var) ]   ;ok, <var> is variable
+                  [hd (pass1/lookup-head var cenv)]
+                  [ (identifier? hd) ]
+                  [gloc (id->bound-gloc hd)] ; <var> has inlinable binding
+                  [val (gloc-ref gloc)]
+                  [ (procedure? val) ]
+                  [setter (procedure-locked-setter val)]) ;and has locked setter
+         (and (%procedure-inliner setter) setter))))
+
+;; Expand inlinable procedure.  Returns Maybe IForm
 ;; NAME is a variable, used for the error message.
 ;; PROC is <procedure>.
+;; NB: This may return #f if inlining is abandoned.
 (define (pass1/expand-inliner src name proc cenv)
   ;; TODO: for inline asm, check validity of opcode.
   (let ([inliner (%procedure-inliner proc)]
@@ -125,7 +154,8 @@
              [opt?  (slot-ref proc 'optional)])
          (unless (argcount-ok? args (slot-ref proc 'required) opt?)
            (errorf "wrong number of arguments: ~a requires ~a, but got ~a"
-                   (variable-name name) (slot-ref proc 'required) nargs))
+                   (if (variable? name) (variable-name name) name)
+                   (slot-ref proc 'required) nargs))
          ;; We might get away with this limit by transforming inline calls
          ;; to apply or something.  Maybe in future.
          (when (> nargs MAX_LITERAL_ARG_COUNT)
@@ -139,14 +169,14 @@
       [(? macro?)
        (let1 expanded (call-macro-expander inliner src cenv)
          (if (eq? src expanded)    ;no expansion
-           (pass1/call src ($gref name) args cenv)
+           #f
            (pass1 expanded cenv)))]
       [_
        ;; Call procedural inliner: Src, [IForm] -> IForm
        ;; The second arg is IForms of arguments.
        (let1 iform (inliner src (imap (cut pass1 <> cenv) args))
          (if (undefined? iform)         ;no expansion
-           (pass1/call src ($gref name) args cenv)
+           #f
            iform))])))
 
 ;; Returns #t iff exp is the form (with-module module VARIABLE)
@@ -1363,13 +1393,9 @@
 (define-pass1-syntax (set! form cenv) :null
   (match form
     [(_ (op . args) expr)
-     ($call form
-            ($call #f
-                   ($gref setter.)
-                   (list (pass1 op cenv)) #f)
-            (let1 cenv (cenv-sans-name cenv)
-              (append (imap (cut pass1 <> cenv) args)
-                      (list (pass1 expr cenv)))))]
+     ;; srfi-17.  We recurse to pass1 on expanded form, for (setter op) might
+     ;; have a chance of optimization.
+     (pass1 (with-original-source `((,setter. ,op) ,@args ,expr) form) cenv)]
     [(_ name expr)
      (unless (variable? name)
        (error "syntax-error: malformed set!:" form))

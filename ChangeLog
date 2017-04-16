@@ -1,3 +1,19 @@
+2017-04-15  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile-1.scm (set!): Enable inlining setter.  In the syntax
+	  (set! (op arg ...) expr), we check 1. if OP has inlinable binding,
+	  2. if OP has locked setter, and 3. if the setter is inlinable.
+	  When those conditions met, we can inline the setter.  Example:
+
+	  gosh> (disasm (^[] (set! (vector-ref v 2) 'a)))
+	  CLOSURE #<closure (#f)>
+	  === main_code (name=#f, code=0x1557540, size=6, const=2 stack=1):
+	  signatureInfo: ((#f))
+	  0 GREF-PUSH #<identifier user#v.15b3600>; v
+	  2 CONST a
+	  4 VEC-SETI(2)              ; ((setter vector-ref) v 2 (quote a))
+	  5 RET
+
 2017-04-14  Shiro Kawai  <shiro@acm.org>
 
 	* src/libalpha.scm (getter-with-setter): Lock the setter; now an error
