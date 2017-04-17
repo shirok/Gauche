@@ -182,11 +182,15 @@
  ;; the current module.
  (define-cproc %ensure-generic-function (name::<symbol> module::<module>)
    (let* ([val (Scm_GlobalVariableRef module name 0)])
-     (when (not (Scm_TypeP val SCM_CLASS_GENERIC))
+     (cond
+      [(Scm_TypeP val SCM_CLASS_GENERIC)
+       (unless (Scm_GlobalVariableRef module name SCM_BINDING_STAY_IN_MODULE)
+         (Scm_Define module name val))]
+      [else
        (if (or (SCM_SUBRP val) (SCM_CLOSUREP val))
          (set! val (Scm_MakeBaseGeneric (SCM_OBJ name) call_fallback_proc val))
-         (set! val (Scm_MakeBaseGeneric (SCM_OBJ name) NULL NULL))))
-     (Scm_Define module name val)
+         (set! val (Scm_MakeBaseGeneric (SCM_OBJ name) NULL NULL)))
+       (Scm_Define module name val)])   ;redefine
      (return val)))
 
  (define-cproc %make-next-method (gf methods::<list> args::<list>)
