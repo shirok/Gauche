@@ -1332,10 +1332,20 @@ struct ScmProcedureRec {
    SUBR, CLOSURE:
            This slot may contain one of this:
            - Signature: For example, the subr `cons' has (cons obj1 obj2)
-             in it.  The first pair may have pair-attributes, including
-             `source-info'.
-                ((with-module gauche.internal pair-attributes) (~ cons'info))
-                 => ((source-info "liblist.scm" 46))
+             in it.  The first pair may have the following pair attributes.
+             
+               `source-info'   (<filename> <lineno>)
+                   The source location the procedure is defined, if known.
+                   This info can be retrieved with (source-location PROC).
+               `bind-info'     (<module-name> <var-name>)
+                   The proc is bound to <var-name> in a module named
+                   <module-name>, and it's inlinable binding.  When the
+                   compiler can pre-calculate the proc to be called in a
+                   code, it can replace the original code with a global
+                   variable reference to <var-name>.  (We can't directly
+                   insert reference to the proc, for it may not be
+                   serializable for AOT compilation).
+
            - Subr's name, as a string or a symbol.  This is the old format.
              It may also the case that subr is created from C function
              Scm_MakeSubr(), for it's cumbersome in C routine to construct
