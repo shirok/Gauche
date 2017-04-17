@@ -296,7 +296,7 @@
 ;;; Method INITIALIZE (class <class>) initargs
 ;;;
 
-(define-method initialize ((class <class>) initargs)
+(define-method initialize :locked ((class <class>) initargs)
   (next-method)
   (let* ([slots  (get-keyword :slots  initargs '())]
          [sup    (get-keyword :supers initargs '())]
@@ -371,7 +371,7 @@
     ))
 
 ;;; Method COMPUTE-SLOTS (class <class>)
-(define-method compute-slots ((class <class>))
+(define-method compute-slots :locked ((class <class>))
   (let ([cpl (slot-ref class 'cpl)]
         [slots '()])
     (dolist [c cpl]
@@ -385,7 +385,7 @@
 ;;;      integer for instance slot
 ;;;      list    (getter [setter [bound? [allocate?]]])
 ;;;      slot accessor
-(define-method compute-get-n-set ((class <class>) slot)
+(define-method compute-get-n-set :locked ((class <class>) slot)
 
   ;; NB: STklos ignores :initform slot option for class slots, but
   ;;     I think it's sometimes useful.
@@ -432,7 +432,7 @@
 
 ;; METHOD COMPUTE-SLOT-ACCESSOR (class <class>) g-n-s
 ;;  this method doesn't have equivalent one in STklos.
-(define-method compute-slot-accessor ((class <class>) slot gns)
+(define-method compute-slot-accessor :locked ((class <class>) slot gns)
   (if (is-a? gns <slot-accessor>)
     gns
     (apply make <slot-accessor>
@@ -584,7 +584,7 @@
 ;          update-direct-subclass! change-object-class)
 
 ;; change-class gf is defined in C, so we can't use autoload for it.
-(define-method change-class ((obj <object>) (new-class <class>))
+(define-method change-class :locked ((obj <object>) (new-class <class>))
   (change-object-class obj (current-class-of obj) new-class))
 
 ;; C bindings used by class redefinition routine.
@@ -622,18 +622,18 @@
 ;; The protocol mimics STklos, but the underlying application mechanism
 ;; differs a bit.
 
-(define-method apply-generic ((gf <generic>) args)
+(define-method apply-generic :locked ((gf <generic>) args)
   (let1 methods (compute-applicable-methods gf args)
     (apply-methods gf (sort-applicable-methods gf methods args) args)))
 
-(define-method sort-applicable-methods ((gf <generic>) methods args)
+(define-method sort-applicable-methods :locked ((gf <generic>) methods args)
   (let1 types (map class-of args)
     (sort methods (^[x y] (method-more-specific? x y types)))))
 
-(define-method apply-methods ((gf <generic>) methods args)
+(define-method apply-methods :locked ((gf <generic>) methods args)
   (apply-method gf methods %make-next-method args))
 
-(define-method apply-method ((gf <generic>) methods build-next args)
+(define-method apply-method :locked ((gf <generic>) methods build-next args)
   (apply (build-next gf methods args) args))
 
 ;; internal, but useful to expose
@@ -686,63 +686,63 @@
 ;;  (should this be in separate file, e.g. coerce.scm?
 ;;   autoload may have problem with autoloading generic fn.)
 
-(define-method x->string ((obj <string>)) obj)
-(define-method x->string ((obj <number>)) (number->string obj))
-(define-method x->string ((obj <symbol>)) (symbol->string obj))
-(define-method x->string ((obj <char>))   (string obj))
-(define-method x->string ((obj <top>))    (write-to-string obj display))
+(define-method x->string :locked ((obj <string>)) obj)
+(define-method x->string :locked ((obj <number>)) (number->string obj))
+(define-method x->string :locked ((obj <symbol>)) (symbol->string obj))
+(define-method x->string :locked ((obj <char>))   (string obj))
+(define-method x->string :locked ((obj <top>))    (write-to-string obj display))
 
-(define-method x->integer ((obj <integer>)) obj)
-(define-method x->integer ((obj <real>))    (round->exact obj))
-(define-method x->integer ((obj <number>))  0) ;complex numbers to 0
-(define-method x->integer ((obj <char>))    (char->integer obj))
-(define-method x->integer ((obj <top>))     (x->integer (x->number obj)))
+(define-method x->integer :locked ((obj <integer>)) obj)
+(define-method x->integer :locked ((obj <real>))    (round->exact obj))
+(define-method x->integer :locked ((obj <number>))  (round->exact (real-part obj)))
+(define-method x->integer :locked ((obj <char>))    (char->integer obj))
+(define-method x->integer :locked ((obj <top>))     (x->integer (x->number obj)))
 
-(define-method x->number  ((obj <number>)) obj)
-(define-method x->number  ((obj <string>)) (or (string->number obj) 0))
-(define-method x->number  ((obj <char>))   (char->integer obj))
-(define-method x->number  ((obj <top>))    0)
+(define-method x->number  :locked ((obj <number>)) obj)
+(define-method x->number  :locked ((obj <string>)) (or (string->number obj) 0))
+(define-method x->number  :locked ((obj <char>))   (char->integer obj))
+(define-method x->number  :locked ((obj <top>))    0)
 
 ;;----------------------------------------------------------------
 ;; Generic accessor
 ;;
 
-(define-method ref ((obj <top>) (slot <symbol>))
+(define-method ref :locked ((obj <top>) (slot <symbol>))
   (slot-ref obj slot))
-(define-method ref ((obj <top>) (slot <symbol>) fallback)
+(define-method ref :locked ((obj <top>) (slot <symbol>) fallback)
   (if (slot-bound? obj slot)
     (slot-ref obj slot)
     fallback))
-(define-method (setter ref) ((obj <top>) (slot <symbol>) value)
+(define-method (setter ref) :locked ((obj <top>) (slot <symbol>) value)
   (slot-set! obj slot value))
 
-(define-method ref ((obj <hash-table>) key)
+(define-method ref :locked ((obj <hash-table>) key)
   (hash-table-get obj key))
-(define-method ref ((obj <hash-table>) key fallback)
+(define-method ref :locked ((obj <hash-table>) key fallback)
   (hash-table-get obj key fallback))
-(define-method (setter ref) ((obj <hash-table>) key value)
+(define-method (setter ref) :locked ((obj <hash-table>) key value)
   (hash-table-put! obj key value))
 
-(define-method ref ((obj <tree-map>) key)
+(define-method ref :locked ((obj <tree-map>) key)
   (tree-map-get obj key))
-(define-method ref ((obj <tree-map>) key fallback)
+(define-method ref :locked ((obj <tree-map>) key fallback)
   (tree-map-get obj key fallback))
-(define-method (setter ref) ((obj <tree-map>) key value)
+(define-method (setter ref) :locked ((obj <tree-map>) key value)
   (tree-map-put! obj key value))
 
 ;; gauche.sequence has the generic version for <sequence>, but these
 ;; shortcuts would be faster.
-(define-method ref ((obj <list>) (index <integer>))
+(define-method ref :locked ((obj <list>) (index <integer>))
   (list-ref obj index))
-(define-method ref ((obj <vector>) (index <integer>))
+(define-method ref :locked ((obj <vector>) (index <integer>))
   (vector-ref obj index))
-(define-method ref ((obj <string>) (index <integer>))
+(define-method ref :locked ((obj <string>) (index <integer>))
   (string-ref obj index))
-(define-method (setter ref) ((obj <list>) (index <integer>) val)
+(define-method (setter ref) :locked ((obj <list>) (index <integer>) val)
   (set-car! (list-tail obj index) val))
-(define-method (setter ref) ((obj <vector>) (index <integer>) val)
+(define-method (setter ref) :locked ((obj <vector>) (index <integer>) val)
   (vector-set! obj index val))
-(define-method (setter ref) ((obj <string>) (index <integer>) val)
+(define-method (setter ref) :locked ((obj <string>) (index <integer>) val)
   (string-set! obj index val))
 
 ;; Universal accessor
@@ -762,17 +762,17 @@
 ;; Generalized application hooks
 ;;  (should this be in separate file, e.g. apply.scm?)
 
-(define-method object-apply ((self <regexp>) (s <string>))
+(define-method object-apply :locked ((self <regexp>) (s <string>))
   (rxmatch self s))
-(define-method object-apply ((self <regmatch>))
+(define-method object-apply :locked ((self <regmatch>))
   (rxmatch-substring self))
-(define-method object-apply ((self <regmatch>) (i <integer>))
+(define-method object-apply :locked ((self <regmatch>) (i <integer>))
   (rxmatch-substring self i))
-(define-method object-apply ((self <regmatch>) (s <symbol>))
+(define-method object-apply :locked ((self <regmatch>) (s <symbol>))
   (case s
     [(before after) (object-apply self s 0)]
     [else (rxmatch-substring self s)]))
-(define-method object-apply ((self <regmatch>) (s <symbol>) group)
+(define-method object-apply :locked ((self <regmatch>) (s <symbol>) group)
   (case s
     [(before) (rxmatch-before self group)]
     [(after)  (rxmatch-after self group)]
@@ -781,11 +781,11 @@
              self s)]))
 
 ;; Char-set membership
-(define-method object-apply ((self <char-set>) (c <char>))
+(define-method object-apply :locked ((self <char-set>) (c <char>))
   (char-set-contains? self c))
 
 ;; A trick to let a condition type behave its own predicate
-(define-method object-apply ((type <condition-meta>) obj)
+(define-method object-apply :locked ((type <condition-meta>) obj)
   (condition-has-type? obj type))
 
 ;; Regexp printer.  It doesn't need speed, and it's easier to write in Scheme.
