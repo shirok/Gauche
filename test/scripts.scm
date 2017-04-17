@@ -405,7 +405,7 @@
 (define (precomp-test-1)
   (do-process `("../../src/gosh" "-ftest"
                 ,#"-I~|*top-srcdir*|/test/test-precomp"
-                "precomp" "--strip-prefix"
+                ,(build-path *top-srcdir* "src/precomp") "--strip-prefix"
                 ,(build-path *top-srcdir* "test/test-precomp")
                 ,@(map (cut build-path *top-srcdir* "test/test-precomp" <>)
                        '("foo.scm" "foo/bar1.scm" "foo/bar2.scm" "foo/bar3.scm")))
@@ -425,7 +425,7 @@
 (define (precomp-test-2)
   (do-process `("../../src/gosh" "-ftest"
                 ,#"-I~|*top-srcdir*|/test/test-precomp"
-                "precomp" "--strip-prefix"
+                ,(build-path *top-srcdir* "src/precomp") "--strip-prefix"
                 ,(build-path *top-srcdir* "test/test-precomp")
                 "--single-interface"
                 ,@(map (cut build-path *top-srcdir* "test/test-precomp" <>)
