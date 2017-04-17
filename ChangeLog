@@ -1,3 +1,19 @@
+2017-04-16  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile-1.scm (pass1): Another setter optimization - if
+	  X has inlinable binding, (setter X) is locked and has inlinable
+	  binding in toplevel, we replace (setter X) with the $gref to
+	  the setter.
+
+	  gosh> (disasm (^[p v] (set! (car p) v)))
+	  CLOSURE #<closure (#f p v)>
+	  === main_code (name=#f, code=0x28e3540, size=5, const=1 stack=5):
+	  signatureInfo: ((#f p v))
+	       0 LREF1-PUSH               ; p
+	       1 LREF0-PUSH               ; v
+	       2 GREF-TAIL-CALL(2) #<identifier scheme#set-car!.2936540>; ((setter car) p v)
+	       4 RET
+
 2017-04-15  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/stub.scm (<cproc>): Keep subr's binding info

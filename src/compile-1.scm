@@ -106,6 +106,13 @@
       => (^[setter]
            (or (pass1/expand-inliner program `(setter ,(car program))
                                      setter cenv)
+               (and-let* ([info (~ setter'info)]
+                          [binfo (pair-attribute-get info 'bind-info #f)]
+                          [mod (find-module (car binfo))]
+                          [name (cadr binfo)])
+                 (pass1/call program
+                             (pass1 (make-identifier name mod '()) cenv)
+                             (cdr program) cenv))
                (pass1/call program (pass1 (car program) (cenv-sans-name cenv))
                            (cdr program) cenv)))]
      [else (pass1/call program (pass1 (car program) (cenv-sans-name cenv))
@@ -119,8 +126,8 @@
             [else (error "[internal] cenv-lookup returned weird obj:" r)]))]
    [else ($const program)]))
 
-;; If op is (setter <var>), check if <var>'s setter is inliable.  If so,
-;; returns the setter.  
+;; If op is (setter <var>), check if <var> has inlinable binding and
+;; its setter is locked; if so, returns the setter.  
 ;; There are a bunch of hoops to go through to satisfy the condition.
 (define (pass1/detect-constant-setter-call op cenv)
   (and (pair? op) (pair? (cdr op)) (null? (cddr op))
@@ -132,9 +139,8 @@
                   [ (identifier? hd) ]
                   [gloc (id->bound-gloc hd)] ; <var> has inlinable binding
                   [val (gloc-ref gloc)]
-                  [ (procedure? val) ]
-                  [setter (procedure-locked-setter val)]) ;and has locked setter
-         (and (%procedure-inliner setter) setter))))
+                  [ (procedure? val) ])
+         (procedure-locked-setter val)))) ;and has locked setter
 
 ;; Expand inlinable procedure.  Returns Maybe IForm
 ;; NAME is a variable, used for the error message.
@@ -145,6 +151,7 @@
   (let ([inliner (%procedure-inliner proc)]
         [args (cdr src)])
     (match inliner
+      [#f #f]                          ;no inliner, fallback case
       [(? integer?)                    ;VM insn
        (let ([nargs (length args)]
              [opt?  (slot-ref proc 'optional)])
@@ -167,13 +174,16 @@
          (if (eq? src expanded)    ;no expansion
            #f
            (pass1 expanded cenv)))]
-      [_
+      [(? procedure?)
        ;; Call procedural inliner: Src, [IForm] -> IForm
        ;; The second arg is IForms of arguments.
        (let1 iform (inliner src (imap (cut pass1 <> cenv) args))
          (if (undefined? iform)         ;no expansion
            #f
-           iform))])))
+           iform))]
+      [_ (errorf "[internal] Invalid inliner attached to ~s: ~s"
+                 proc inliner)]
+      )))
 
 ;; Returns #t iff exp is the form (with-module module VARIABLE)
 ;; We need to check the global value of with-module, for it might
