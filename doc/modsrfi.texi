@@ -1613,6 +1613,9 @@ The @code{*-ci} variations use case foling character comparison.
 (string-prefix? "sch" "scheme")   @result{} #t
 (string-prefix? "lisp" "scheme")  @result{} #f
 
+(string-suffix? "eme" "scheme")   @result{} #t
+(string-suffix? "eme" "lisp")     @result{} #f
+
 (string-prefix? "mit-scheme" "scheme-family" 4) @result{} #t
 @end example
 @end defun
