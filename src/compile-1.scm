@@ -131,7 +131,7 @@
 ;; There are a bunch of hoops to go through to satisfy the condition.
 (define (pass1/detect-constant-setter-call op cenv)
   (and (pair? op) (pair? (cdr op)) (null? (cddr op))
-       (not (vm-compiler-flag-is-set? SCM_COMPILE_NOINLINE_GLOBALS))
+       (not (vm-compiler-flag-is-set? SCM_COMPILE_NOINLINE_SETTERS))
        (global-identifier=? (car op) setter.)
        (and-let* ([var (cadr op)]
                   [ (variable? var) ]   ;ok, <var> is variable

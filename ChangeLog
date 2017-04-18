@@ -1,3 +1,10 @@
+2017-04-18  shiro  <shiro@acm.org>
+
+	* src/gauche/vm.h: Add SCM_COMPILE_NOINLINE_SETTERS flag
+	* src/main.c: Add -fno-inline-setters option
+	* src/compile-1.scm: Prohibit setter inlining when
+	  SCM_COMPILE_NOINLINE_SETTERS flag is set.
+
 2017-04-17  Shiro Kawai  <shiro@acm.org>
 
 	* src/libobj.scm: Make most predefined methods `locked'.

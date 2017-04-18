@@ -149,10 +149,14 @@ void further_options(const char *optarg)
     else if (strcmp(optarg, "no-inline-constants") == 0) {
         SCM_VM_COMPILER_FLAG_SET(vm, SCM_COMPILE_NOINLINE_CONSTS);
     }
+    else if (strcmp(optarg, "no-inline-setters") == 0) {
+        SCM_VM_COMPILER_FLAG_SET(vm, SCM_COMPILE_NOINLINE_SETTERS);
+    }
     else if (strcmp(optarg, "no-inline") == 0) {
         SCM_VM_COMPILER_FLAG_SET(vm, SCM_COMPILE_NOINLINE_GLOBALS);
         SCM_VM_COMPILER_FLAG_SET(vm, SCM_COMPILE_NOINLINE_LOCALS);
         SCM_VM_COMPILER_FLAG_SET(vm, SCM_COMPILE_NOINLINE_CONSTS);
+        SCM_VM_COMPILER_FLAG_SET(vm, SCM_COMPILE_NOINLINE_SETTERS);
     }
     else if (strcmp(optarg, "no-post-inline-pass") == 0) {
         SCM_VM_COMPILER_FLAG_SET(vm, SCM_COMPILE_NO_POST_INLINE_OPT);
@@ -201,7 +205,7 @@ void further_options(const char *optarg)
     }
     else {
         fprintf(stderr, "unknown -f option: %s\n", optarg);
-        fprintf(stderr, "supported options are: -fcase-fold, -fload-verbose, -finclude-verbose, -fno-inline, -fno-inline-globals, -fno-inline-locals, -fno-inline-constants, -fno-source-info, -fno-post-inline-pass, -fno-lambda-lifting-pass, -fwarn-legacy-syntax, or -ftest\n");
+        fprintf(stderr, "supported options are: -fcase-fold, -fload-verbose, -finclude-verbose, -fno-inline, -fno-inline-globals, -fno-inline-locals, -fno-inline-constants, -fno-inline-setters, -fno-source-info, -fno-post-inline-pass, -fno-lambda-lifting-pass, -fwarn-legacy-syntax, or -ftest\n");
         exit(1);
     }
 }
