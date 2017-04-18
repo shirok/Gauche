@@ -42,6 +42,14 @@
 (test* "inlining add4 + constant folding" '(((CONSTI 9)) ((RET)))
        (proc->insn/split (^[] (+ (add4 2) 3))))
 
+;; pass1 setter inlining
+(test* "inlining setter" '(((LREF1-PUSH)) ((LREF0)) ((VEC-SETI 0)) ((RET)))
+       (proc->insn/split (^[a b] (set! (vector-ref a 0) b))))
+(test* "inlining setter" #t
+       (let1 xs (proc->insn/split (^[a b] (set! (car a) b)))
+         (or (any (^x (equal? (car x) '(GREF-TAIL-CALL 2))) xs)
+             xs))) ;return xs in case of failure for easier diag
+
 ;; pass3/late-inline
 (define-inline (late-inline-test-1 ref) (cut ref <> 0))
 
