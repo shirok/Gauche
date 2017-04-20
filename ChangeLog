@@ -1,3 +1,9 @@
+2017-04-20  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile-5.scm (pass5/lambda): Save list of unused arguments
+	  in 'unused-args pair attributes of (car signature-info).
+	  Useful for optimization.
+
 2017-04-18  shiro  <shiro@acm.org>
 
 	* src/gauche/vm.h: Add SCM_COMPILE_NOINLINE_SETTERS flag
