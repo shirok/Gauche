@@ -2883,7 +2883,7 @@ generic function application behavior.
 @c COMMON
 @end defmac
 
-@defmac define-method name specs body
+@defmac define-method name [qualifier @dots{}] specs body
 @c EN
 Defines a method whose name is @var{name}.  If there's already
 a generic function object globally bound to @var{name}, the created
@@ -2891,17 +2891,51 @@ method is added to the generic function.  If @var{name} is unbound,
 or bound to an object except a generic function, then a new generic
 function is created, bound to @var{name}, then a new method is
 added to it.
-
-@var{Specs} specifies the arguments and their types for this method.
-It's like the argument list of lambda form, except you can specify
-the type of each argument.
 @c JP
 @var{name} という名前のメソッドを定義します。すでにグローバルに @var{name}
 に束縛されているジェネリック関数オブジェクトが存在していれば、生成された
 メソッドはそのジェネリック関数に追加されます。@var{name} が未束縛であるか
 またはジェネリック関数以外に束縛されているなら、新しいジェネリック関数が
 生成され、@var{name} に束縛されて、新しいメソッドがそれに追加されます。
+@c COMMON
 
+@c EN
+The name can be followed by optional @var{qualifiers}, each of
+which is a keyword.  Currently, only the following qualifier is
+valid.
+@c JP
+名前の後に、省略可能な@var{qualifier}を置くことができます。
+各@var{qualifier}はキーワードです。
+現在、次の@var{qualifier}のみが有効です。
+@c COMMON
+
+@table @code
+@item :locked
+@c EN
+Declares that you won't redefine
+the method with the same specifiers.  Attempt to redefine it
+will raise an error.  (You can still define methods with
+different specifiers.)
+
+Most methods concerning basic operations on built-in objects
+are locked, for redefining them would case Gauche's infrastracture
+unstable.  It also allows Gauche to perform certain optimizations.
+@c JP
+同じ特定化子(@var{specs})を持つメソッドを再定義しないことを宣言します。
+再定義しようとするとエラーが投げられます。
+(特定化子の異なるメソッドは定義できます)。
+
+組み込みオブジェクトの基本的な操作に関わるメソッドの多くはロックされています。
+それらを再定義してしまうと、Gaucheの基盤が不安定になる恐れがあるからです。
+また、最適化が可能になります。
+@c COMMON
+@end table
+
+@c EN
+@var{Specs} specifies the arguments and their types for this method.
+It's like the argument list of lambda form, except you can specify
+the type of each argument.
+@c JP
 @var{specs} はこのメソッドに対応する引数とその型を指定します。これは
 lambda 形式の引数リストに似ていますが、それぞれの引数の型を指定できる
 ところが違います。
@@ -2981,14 +3015,31 @@ optional:     #t
 @c EN
 If you define a method on @var{name} whose specializer list,
 and whether it takes rest argumetns,
-matche with one in the generic function's methods,
+match with one in the generic function's methods,
 then the existing method is
-replaced by the newly defined one.
+replaced by the newly defined one, unless the original method is locked.
 @c JP
 その特定化子リストがジェネリック関数の中のメソッドの一つに一致し、
 rest引数の有無も同じである
 @var{name} 上のメソッドを定義すると、既存のメソッドは新しく定義された
-メソッドに置き換えられます。
+メソッドに置き換えられます。(既存のメソッドがロックされていない限り)。
+@c COMMON
+
+@c EN
+Note: If you're running Gauche with keyword-symbol integrated
+mode (@pxref{Keyword and symbol integration}), there's an ambiguity
+if you specify a keyword as the sole @var{specs} (to receive entire
+arguments in a single variable).
+Gauche parses keywords following @var{name}
+as qualifiers, so avoid using a keyword as such a variable.
+@c JP
+註: Gaucheがキーワード-シンボル統合モード
+((@ref{Keyword and symbol integration}参照)で実行されている場合、
+@var{specs}が単独のシンボルで、それがキーワードでもあった場合
+(引数すべてを単一の変数で受け取る、その変数がキーワードでもあった場合)
+に曖昧性が生じます。Gaucheでは@var{name}に続くキーワードはすべて
+qualifierとしてパーズするので、単一の変数からなる@var{specs}には
+キーワードを使わないようにしてください。
 @c COMMON
 @end defmac
 
