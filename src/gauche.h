@@ -1278,10 +1278,11 @@ struct ScmProcedureRec {
     unsigned int locked   : 1;     /* setter locked? (see below) */
     unsigned int currying : 1;     /* autocurrying */
     unsigned int constant : 1;     /* constant procedure. see below. */
-    unsigned int reserved : 2;     /* unused yet. */
-    ScmObj info;                   /* source code info */
+    unsigned int leaf     : 1;     /* leaf procedure/method */
+    unsigned int reserved : 1;     /* unused yet. */
+    ScmObj info;                   /* source code info (see below) */
     ScmObj setter;                 /* setter, if exists. */
-    ScmObj inliner;                /* inliner information.  see below. */
+    ScmObj inliner;                /* inliner information (see below) */
 };
 
 /* About locked slot:
@@ -1440,13 +1441,14 @@ SCM_CLASS_DECL(Scm_ProcedureClass);
     SCM_PROCEDURE(obj)->locked = FALSE,                 \
     SCM_PROCEDURE(obj)->currying = FALSE,               \
     SCM_PROCEDURE(obj)->constant = FALSE,               \
+    SCM_PROCEDURE(obj)->leaf = FALSE,                   \
     SCM_PROCEDURE(obj)->reserved = 0,                   \
     SCM_PROCEDURE(obj)->info = inf,                     \
     SCM_PROCEDURE(obj)->setter = SCM_FALSE,             \
     SCM_PROCEDURE(obj)->inliner = SCM_FALSE
 
 #define SCM__PROCEDURE_INITIALIZER(klass, req, opt, typ, cst, inf, inl)  \
-    { { klass }, (req), (opt), (typ), FALSE, FALSE, cst, 0,              \
+    { { klass }, (req), (opt), (typ), FALSE, FALSE, cst, 0, 0,           \
       (inf), SCM_FALSE, (inl) }
 
 SCM_EXTERN ScmObj Scm_CopyProcedure(ScmProcedure *proc);
