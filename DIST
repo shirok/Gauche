@@ -10,6 +10,13 @@ usage () {
     echo "Commands:"
     echo "  gen    Generate configure scripts"
     echo "  tgz    Generate distribution tarball"
+    echo "  clean-build-test   Run make maintainer-clean, then fully build and"
+    echo "                     run tests.  Requires newest release of gosh in"
+    echo "                     PATH."
+    echo "  self-host-test     In a separate directly, first build the current"
+    echo "                     source tree with installed gosh, then build the"
+    echo "                     source tree again using the freshly compiled"
+    echo "                     gosh, and run tests."
     exit 0
 }
 
@@ -89,6 +96,13 @@ do_mingw_installer () {
     MSYSTEM=MINGW32 src/mingw-dist.sh --with-gl --with-installer
 }
 
+do_clean_build_test () {
+    do_gen
+    gauche-config --reconfigure | sh
+    make -j
+    make -s check
+}
+
 do_self_host_test () {
     do_gen
     srcdir=`pwd`
@@ -105,7 +119,8 @@ case $1 in
     gen)   do_gen ;;
     tgz)   do_tgz ;;
     release) do_release ;;
-    mingw-installer) do_mingw_installer ;;
-    self-host-test)  do_self_host_test ;;
+    mingw-installer)  do_mingw_installer ;;
+    clean-build-test) do_clean_build_test ;;
+    self-host-test)   do_self_host_test ;;
     *) usage ;;
 esac
