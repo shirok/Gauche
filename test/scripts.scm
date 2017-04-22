@@ -402,12 +402,17 @@
   (unwind-protect (thunk)
     (remove-directory* "test.o")))
 
+(define (fix-path path)
+  (cond-expand
+   [gauche.os.windows (regexp-replace-all #/\\/ path "/")]
+   [else              path]))
+
 (define (precomp-test-1)
   (do-process `("../../src/gosh" "-ftest"
                 ,#"-I~|*top-srcdir*|/test/test-precomp"
                 ,(build-path *top-srcdir* "src/precomp") "--strip-prefix"
-                ,(build-path *top-srcdir* "test/test-precomp")
-                ,@(map (cut build-path *top-srcdir* "test/test-precomp" <>)
+                ,(fix-path (build-path *top-srcdir* "test/test-precomp"))
+                ,@(map (^[file] (fix-path (build-path *top-srcdir* "test/test-precomp" file)))
                        '("foo.scm" "foo/bar1.scm" "foo/bar2.scm" "foo/bar3.scm")))
               :directory "test.o")
   (test* "precomp generated files"
@@ -419,16 +424,16 @@
            "test.o/foo/bar1.sci"
            "test.o/foo/bar2.sci"
            "test.o/foo/bar3.sci")
-         (sort (directory-fold "test.o" cons '())))
+         (sort (map fix-path (directory-fold "test.o" cons '()))))
   )
 
 (define (precomp-test-2)
   (do-process `("../../src/gosh" "-ftest"
                 ,#"-I~|*top-srcdir*|/test/test-precomp"
                 ,(build-path *top-srcdir* "src/precomp") "--strip-prefix"
-                ,(build-path *top-srcdir* "test/test-precomp")
+                ,(fix-path (build-path *top-srcdir* "test/test-precomp"))
                 "--single-interface"
-                ,@(map (cut build-path *top-srcdir* "test/test-precomp" <>)
+                ,@(map (^[file] (fix-path (build-path *top-srcdir* "test/test-precomp" file)))
                        '("foo.scm" "foo/bar1.scm" "foo/bar2.scm" "foo/bar3.scm")))
               :directory "test.o")
   (test* "precomp generated files with --single-interface"
@@ -437,7 +442,7 @@
            "test.o/foo--bar3.c"
            "test.o/foo.c"
            "test.o/foo.sci")
-         (sort (directory-fold "test.o" cons '())))
+         (sort (map fix-path (directory-fold "test.o" cons '()))))
 
   (test* "consolidated sci file"
          '(";; generated automatically.  DO NOT EDIT"
