@@ -1324,6 +1324,14 @@ struct ScmProcedureRec {
    or the compiler configuration (e.g. internal encoding).
  */
 
+/* About 'leaf' flag:
+   For METHOD, this flag indicates the method doesn't refer to next-method
+   argument at all, so we can skip creating next-method instance when
+   making a call.
+   For CLOSURE, we *plan* to use this to indicate the closure body doesn't
+   make a call to another procedures, to allow certain optimizations.
+ */
+
 /* About 'info' slot:
    This is a sort of the kitchen sink slot, keeping whatever miscellaneous
    information as our implementation evolves.  Since this can be a part of
@@ -1421,6 +1429,7 @@ enum ScmProcedureType {
 #define SCM_PROCEDURE_SETTER(obj)   SCM_PROCEDURE(obj)->setter
 #define SCM_PROCEDURE_INLINER(obj)  SCM_PROCEDURE(obj)->inliner
 #define SCM_PROCEDURE_SETTER_LOCKED(obj) SCM_PROCEDURE(obj)->locked
+#define SCM_PROCEDURE_LEAF(obj)     SCM_PROCEDURE(obj)->leaf
 
 SCM_CLASS_DECL(Scm_ProcedureClass);
 #define SCM_CLASS_PROCEDURE    (&Scm_ProcedureClass)
@@ -1447,8 +1456,9 @@ SCM_CLASS_DECL(Scm_ProcedureClass);
     SCM_PROCEDURE(obj)->setter = SCM_FALSE,             \
     SCM_PROCEDURE(obj)->inliner = SCM_FALSE
 
-#define SCM__PROCEDURE_INITIALIZER(klass, req, opt, typ, cst, inf, inl)  \
-    { { klass }, (req), (opt), (typ), FALSE, FALSE, cst, 0, 0,           \
+/* This is internal - should never be used directly */
+#define SCM__PROCEDURE_INITIALIZER(klass, req, opt, typ, cst, lef, inf, inl) \
+    { { klass }, (req), (opt), (typ), FALSE, FALSE, cst, lef, 0,             \
       (inf), SCM_FALSE, (inl) }
 
 SCM_EXTERN ScmObj Scm_CopyProcedure(ScmProcedure *proc);
@@ -1496,7 +1506,7 @@ struct ScmSubrRec {
 #define SCM__DEFINE_SUBR_INT(cvar, req, opt, cst, inf, flags, func, inliner, data) \
     ScmSubr cvar = {                                                        \
         SCM__PROCEDURE_INITIALIZER(SCM_CLASS_STATIC_TAG(Scm_ProcedureClass),\
-            req, opt, SCM_PROC_SUBR, cst, inf, inliner),                    \
+             req, opt, SCM_PROC_SUBR, cst, 0, inf, inliner),                \
         flags, (func), (data)                                               \
     }
 
@@ -1541,7 +1551,7 @@ SCM_CLASS_DECL(Scm_GenericClass);
 #define SCM_DEFINE_GENERIC(cvar, cfunc, data)                           \
     ScmGeneric cvar = {                                                 \
         SCM__PROCEDURE_INITIALIZER(SCM_CLASS_STATIC_TAG(Scm_GenericClass),\
-                                   0, 0, SCM_PROC_GENERIC, 0,           \
+                                   0, 0, SCM_PROC_GENERIC, 0, 0,        \
                                    SCM_FALSE, NULL),                    \
         SCM_NIL, 0, cfunc, data                                         \
     }
@@ -1573,11 +1583,12 @@ SCM_CLASS_DECL(Scm_MethodClass);
 #define SCM_METHODP(obj)           SCM_ISA(obj, SCM_CLASS_METHOD)
 #define SCM_METHOD(obj)            ((ScmMethod*)obj)
 #define SCM_METHOD_LOCKED(obj)     SCM_METHOD(obj)->common.locked
+#define SCM_METHOD_LEAF_P(obj)     SCM_METHOD(obj)->common.leaf
 
 #define SCM_DEFINE_METHOD(cvar, gf, req, opt, specs, func, data)        \
     ScmMethod cvar = {                                                  \
         SCM__PROCEDURE_INITIALIZER(SCM_CLASS_STATIC_TAG(Scm_MethodClass),\
-                                   req, opt, SCM_PROC_METHOD, 0,        \
+                                   req, opt, SCM_PROC_METHOD, 0, 0,     \
                                    SCM_FALSE, NULL),                    \
         gf, specs, func, data, NULL                                     \
     }

@@ -274,6 +274,14 @@
        '(y-in (y*-in (x-in (t*-in fallback t*-out) x-out) y*-out) y-out)
        (nm (make <y>)))
 
+;; check if method-leaf is properly set
+(define-method nm-1 (obj) #f)
+(define-method nm-2 (obj) (next-method))
+
+(test* "method-leaf" '(#t #f)
+       (list (slot-ref (car (slot-ref nm-1 'methods)) 'method-leaf)
+             (slot-ref (car (slot-ref nm-2 'methods)) 'method-leaf)))
+
 ;;----------------------------------------------------------------
 (test-section "method sorting")
 

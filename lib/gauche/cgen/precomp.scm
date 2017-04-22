@@ -327,6 +327,7 @@
   (with-module gauche.internal vm-eval-situation))
 (define global-eq?? (with-module gauche.internal global-eq??))
 (define make-identifier (with-module gauche.internal make-identifier))
+(define pair-attributes (with-module gauche.internal pair-attributes))
 (define pair-attribute-get (with-module gauche.internal pair-attribute-get))
 
 (define-constant SCM_VM_COMPILING 2) ;; must match with vm.h
@@ -847,12 +848,15 @@
 ;; See literal.scm.
 (define (serializable-signature-info code)
   (and-let* ([sig (~ code'signature-info)])
-    (if-let1 si (and (pair? sig)
-                     (pair? (car sig))
-                     (pair-attribute-get (car sig) 'source-info #f))
-      (cons (make-serializable-extended-pair (unwrap-syntax (caar sig))
-                                             (unwrap-syntax (cdar sig))
-                                             `((source-info . ,si)))
+    (if (and (pair? sig)
+             (pair? (car sig))
+             (not (null? (pair-attributes (car sig)))))
+      (cons ($ make-serializable-extended-pair
+               (unwrap-syntax (caar sig)) (unwrap-syntax (cdar sig))
+               (cond-list [(pair-attribute-get (car sig) 'source-info #f)
+                           => (^x `(source-info . ,x))]
+                          [(pair-attribute-get (car sig) 'unused-args #f)
+                           => (^x `(unused-args . ,x))]))
             (unwrap-syntax (cdr sig)))
       (unwrap-syntax sig))))
 

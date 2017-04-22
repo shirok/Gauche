@@ -275,8 +275,12 @@
             }
 #endif /*GAUCHE_FFX*/
             mm = Scm_SortMethods(mm, ARGP, argc);
-            nm = Scm_MakeNextMethod(SCM_GENERIC(VAL0), SCM_CDR(mm),
-                                    ARGP, argc, TRUE, APP);
+            if (SCM_METHOD_LEAF_P(SCM_CAR(mm))) {
+                nm = SCM_TRUE;  /* Dummy */
+            } else {
+                nm = Scm_MakeNextMethod(SCM_GENERIC(VAL0), SCM_CDR(mm),
+                                        ARGP, argc, TRUE, APP);
+            }
             VAL0 = SCM_CAR(mm);
             proctype = SCM_PROC_METHOD;
         }
@@ -302,8 +306,12 @@
             VAL0 = SCM_OBJ(n->generic);
             proctype = SCM_PROC_GENERIC;
         } else {
-            nm = Scm_MakeNextMethod(n->generic, SCM_CDR(n->methods),
-                                    ARGP, argc, TRUE, apply_call_p);
+            if (SCM_METHOD_LEAF_P(SCM_CAR(n->methods))) {
+                nm = SCM_TRUE;  /* Dummy */
+            } else {
+                nm = Scm_MakeNextMethod(n->generic, SCM_CDR(n->methods),
+                                        ARGP, argc, TRUE, apply_call_p);
+            }
             VAL0 = SCM_CAR(n->methods);
             proctype = SCM_PROC_METHOD;
         }

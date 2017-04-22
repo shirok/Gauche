@@ -2298,6 +2298,18 @@ static void method_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
     Scm_Printf(port, "#<method %S>", SCM_METHOD(obj)->common.info);
 }
 
+/* See if this method doesn't use 'next-method' in its body. */
+static int method_leaf_p(ScmClosure *body)
+{
+    ScmCompiledCode *code = SCM_COMPILED_CODE(SCM_CLOSURE_CODE(body));
+    if (!SCM_PAIRP(code->signatureInfo)
+        || !SCM_PAIRP(SCM_CAR(code->signatureInfo))) return FALSE;
+    ScmObj attr = Scm_PairAttrGet(SCM_PAIR(SCM_CAR(code->signatureInfo)),
+                                  SCM_SYM_UNUSED_ARGS,
+                                  SCM_NIL);
+    return !SCM_FALSEP(Scm_Memq(SCM_SYM_NEXT_METHOD, attr));
+}
+
 /*
  * (initialize <method> (&key lamdba-list generic specializers body method-locked))
  *    Method initialization.   This needs to be hardcoded, since
@@ -2340,6 +2352,7 @@ static ScmObj method_initialize(ScmNextMethod *nm, ScmObj *argv, int argc,
     m->common.optional = opt;
     m->common.info = Scm_Cons(g->common.info,
                               class_array_to_names(specarray, speclen));
+    m->common.leaf = method_leaf_p(SCM_CLOSURE(body));
     m->generic = g;
     m->specializers = specarray;
     m->func = NULL;
@@ -2393,6 +2406,11 @@ static ScmObj method_optional(ScmMethod *m)
 static ScmObj method_locked(ScmMethod *m)
 {
     return SCM_MAKE_BOOL(SCM_METHOD_LOCKED(m));
+}
+
+static ScmObj method_leaf(ScmMethod *m)
+{
+    return SCM_MAKE_BOOL(SCM_METHOD_LEAF_P(m));
 }
 
 static ScmObj method_generic(ScmMethod *m)
@@ -2948,6 +2966,7 @@ static ScmClassStaticSlotSpec method_slots[] = {
     SCM_CLASS_SLOT_SPEC("required", method_required, NULL),
     SCM_CLASS_SLOT_SPEC("optional", method_optional, NULL),
     SCM_CLASS_SLOT_SPEC("method-locked", method_locked, NULL),
+    SCM_CLASS_SLOT_SPEC("method-leaf", method_leaf, NULL),
     SCM_CLASS_SLOT_SPEC("generic", method_generic, method_generic_set),
     SCM_CLASS_SLOT_SPEC("specializers", method_specializers, method_specializers_set),
     SCM_CLASS_SLOT_SPEC_END()

@@ -1,3 +1,10 @@
+2017-04-22  Shiro Kawai  <shiro@acm.org>
+
+	* src/class.c (method_initialize): Set LEAF flag if the method doesn't
+	  use next-method arg in its body.
+	* src/vmcall.c: Skip creating next-method instance when the method
+	  is leaf.  About 40% speed up on empty method call.
+
 2017-04-20  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile-5.scm (pass5/lambda): Save list of unused arguments
