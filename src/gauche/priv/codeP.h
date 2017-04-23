@@ -31,8 +31,8 @@
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef GAUCHE_CODE_P_H
-#define GAUCHE_CODE_P_H
+#ifndef GAUCHE_PRIV_CODEP_H
+#define GAUCHE_PRIV_CODEP_H
 
 SCM_DECL_BEGIN
 
@@ -70,4 +70,4 @@ SCM_EXTERN void   Scm_CompiledCodeEmit(ScmCompiledCode *cc,
 
 SCM_DECL_END
 
-#endif /* GAUCHE_CODE_P_H */
+#endif /* GAUCHE_PRIV_CODEP_H */

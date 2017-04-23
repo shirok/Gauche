@@ -31,8 +31,8 @@
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef GAUCHE_MACRO_H
-#define GAUCHE_MACRO_H
+#ifndef GAUCHE_PRIV_MACROP_H
+#define GAUCHE_PRIV_MACROP_H
 
 
 SCM_DECL_BEGIN
@@ -97,4 +97,4 @@ SCM_EXTERN ScmObj Scm_MakeMacroTransformerOld(ScmSymbol *name,
 
 SCM_DECL_END
 
-#endif /* GAUCHE_MACRO_H */
+#endif /* GAUCHE_PRIV_MACROP_H */
