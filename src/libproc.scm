@@ -241,6 +241,8 @@
 (define-cproc procedure-info (proc::<procedure>)
   (return (SCM_PROCEDURE_INFO proc)))
 
+(define-cproc method-leaf? (m::<method>) ::<boolean> SCM_METHOD_LEAF_P)
+
 ;; NB: This takes a list of classes.  But what if we support eqv-specilizer?
 ;; One idea is to let the caller wrap a concrete instance.  We'll see...
 (define (applicable? proc . arg-types)

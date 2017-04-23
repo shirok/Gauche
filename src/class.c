@@ -2966,7 +2966,7 @@ static ScmClassStaticSlotSpec method_slots[] = {
     SCM_CLASS_SLOT_SPEC("required", method_required, NULL),
     SCM_CLASS_SLOT_SPEC("optional", method_optional, NULL),
     SCM_CLASS_SLOT_SPEC("method-locked", method_locked, NULL),
-    SCM_CLASS_SLOT_SPEC("method-leaf", method_leaf, NULL),
+    SCM_CLASS_SLOT_SPEC("leaf?", method_leaf, NULL),
     SCM_CLASS_SLOT_SPEC("generic", method_generic, method_generic_set),
     SCM_CLASS_SLOT_SPEC("specializers", method_specializers, method_specializers_set),
     SCM_CLASS_SLOT_SPEC_END()
@@ -2976,6 +2976,7 @@ static ScmClassStaticSlotSpec accessor_method_slots[] = {
     SCM_CLASS_SLOT_SPEC("required", method_required, NULL),
     SCM_CLASS_SLOT_SPEC("optional", method_optional, NULL),
     SCM_CLASS_SLOT_SPEC("method-locked", method_locked, NULL),
+    SCM_CLASS_SLOT_SPEC("leaf?", method_leaf, NULL),
     SCM_CLASS_SLOT_SPEC("generic", method_generic, method_generic_set),
     SCM_CLASS_SLOT_SPEC("specializers", method_specializers, method_specializers_set),
     SCM_CLASS_SLOT_SPEC("slot-accessor", accessor_method_slot_accessor, accessor_method_slot_accessor_set),

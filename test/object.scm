@@ -279,8 +279,8 @@
 (define-method nm-2 (obj) (next-method))
 
 (test* "method-leaf" '(#t #f)
-       (list (slot-ref (car (slot-ref nm-1 'methods)) 'method-leaf)
-             (slot-ref (car (slot-ref nm-2 'methods)) 'method-leaf)))
+       (list (method-leaf? (car (slot-ref nm-1 'methods)))
+             (method-leaf? (car (slot-ref nm-2 'methods)))))
 
 ;;----------------------------------------------------------------
 (test-section "method sorting")

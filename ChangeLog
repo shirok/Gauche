@@ -1,3 +1,10 @@
+2017-04-23  Shiro Kawai  <shiro@acm.org>
+
+	* src/libproc.scm (method-leaf?): Added.
+	* src/class.c: Changed <method> slot name: method-leaf -> leaf?
+	* src/libobj.scm: Dropped %method-code, for we already have
+	  method-code in libproc.scm.
+
 2017-04-22  Shiro Kawai  <shiro@acm.org>
 
 	* src/class.c (method_initialize): Set LEAF flag if the method doesn't

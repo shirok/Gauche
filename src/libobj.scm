@@ -203,11 +203,6 @@
      (set! argv (Scm_ListToArray args (& argc) NULL TRUE))
      (return (Scm_MakeNextMethod (SCM_GENERIC gf) methods argv argc
                                  FALSE FALSE))))
-
- (define-cproc %method-code (method::<method>)
-   (if (-> method func)
-     (return SCM_FALSE)
-     (return (-> method data))))
  )
 
 ;;----------------------------------------------------------------
