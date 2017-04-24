@@ -274,7 +274,9 @@
                 for (int i=0;i<argc; i++, ap++) SCM_FLONUM_ENSURE_MEM(*ap);
             }
 #endif /*GAUCHE_FFX*/
-            mm = Scm_SortMethods(mm, ARGP, argc);
+            if (SCM_PAIRP(SCM_CDR(mm))) {
+                mm = Scm_SortMethods(mm, ARGP, argc);
+            }
             if (SCM_METHOD_LEAF_P(SCM_CAR(mm))) {
                 nm = SCM_TRUE;  /* Dummy */
             } else {

@@ -1,5 +1,8 @@
 2017-04-23  Shiro Kawai  <shiro@acm.org>
 
+	* src/vmcall.c: Skip Scm_SortMethods when we have only one applicable
+	  methods.  Obvious, yeah?  This makes 'ref' call 20% faster.
+
 	* src/libproc.scm (method-leaf?): Added.
 	* src/class.c: Changed <method> slot name: method-leaf -> leaf?
 	* src/libobj.scm: Dropped %method-code, for we already have
