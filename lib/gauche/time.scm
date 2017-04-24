@@ -51,9 +51,11 @@
 
 ;; TODO: Drop these once we support sane formatting of flonums in format.
 (define (format-flonum val mincol digs)
-  (let* ([scale (expt 10 digs)]
-         [n (round->exact (* val scale))])
-    (format "~vd.~v,'0d" mincol (div n scale) digs (mod n scale))))
+  (if (finite? val)
+    (let* ([scale (expt 10 digs)]
+           [n (round->exact (* val scale))])
+      (format "~vd.~v,'0d" mincol (div n scale) digs (mod n scale)))
+    (format "~a" val)))
 
 (define (format-delta-time delta) (format-flonum delta 3 3))
 
@@ -209,7 +211,10 @@
          ks rs ps us ss cs (map (cut ref <> 'count) ts))
         ;; matrix
         (let1 mat (map (^y (map (^x (if (eq? x y) "--" (ratio y x))) ts)) ts)
-          (receive (Cs Cw) (fmt+w (.$ x->string x->integer rate) ts)
+          (receive (Cs Cw) (fmt+w (^t (if (finite? (rate t))
+                                        ($ x->string $ x->integer $ rate t)
+                                        ($ x->string $ rate t)))
+                                  ts)
             (let1 Cw (max (+ Cw 2) 4)   ; minimum width for "Rate"
               (format #t "\n  ~v@a ~v@a" kw "" Cw "Rate")
               (let1 col-widths (map (pa$ apply max)
