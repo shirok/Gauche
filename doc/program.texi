@@ -232,13 +232,16 @@ following options available:
 @table @asis
 @item no-inline
 Prohibits the compiler from inlining procedures and constants. Equivalent to
-no-inline-globals, no-inline-locals and no-inline constants combined.
+no-inline-globals, no-inline-locals, no-inline-constants
+and no-inline-setters combined.
 @item no-inline-globals
 Prohibits the compiler from inlining global procedures.
 @item no-inline-locals
 Prohibits the compiler from inlining local procedures.
 @item no-inline-constants
 Prohibits the compiler from inlining constants.
+@item no-inline-setters
+Prohibits the compiler from inlining setters.
 @item no-post-inline-pass
 Prohibits the compiler from running post-inline optimization pass.
 @item no-lambda-lifting-pass
