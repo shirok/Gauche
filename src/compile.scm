@@ -1934,6 +1934,8 @@
   ((with-module gauche.internal %precomp-only) 'inline-stub))
 (define-macro (define-cproc . _)
   ((with-module gauche.internal %precomp-only) 'define-cproc))
+(define-macro (define-cfn . _)
+  ((with-module gauche.internal %precomp-only) 'define-cfn))
 (define-macro (define-enum . _)
   ((with-module gauche.internal %precomp-only) 'define-enum))
 (define-macro (define-enum-conditionally . _)
