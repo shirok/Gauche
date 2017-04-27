@@ -1,3 +1,13 @@
+2017-04-26  Shiro Kawai  <shiro@acm.org>
+
+	* src/libcmp.scm, lib/gauche/computil.scm (=?, <?, <=?, >?, >=?):
+	  Reimplemented in C, for they can be used in performance critical
+	  paths (esp. implementation of data structures).
+	  About 2x-3x speed up.  Still 2.5x-3.3x slower than the
+	  primitive =, < etc., but it's hard to beat them since they are
+	  expanded into VM insns.  If we see =?, <? etc are used frequent
+	  enough we might need to go futher into that path, though.
+
 2017-04-23  Shiro Kawai  <shiro@acm.org>
 
 	* src/vmcall.c: Skip Scm_SortMethods when we have only one applicable

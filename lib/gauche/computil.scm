@@ -333,62 +333,6 @@
        (and (every comparator-hashable? cprs)
             (^x (hasher hs x)))))))
 
-(define-syntax n-ary
-  (syntax-rules ()
-    [(_ cmp a b args test)
-     (begin
-       (comparator-check-type cmp a)
-       (comparator-check-type cmp b)
-       (and test
-            (or (null? args)
-                (apply (rec (f a b . args)
-                         (comparator-check-type cmp b)
-                         (and test
-                              (or (null? args)
-                                  (apply f b args))))
-                       b args))))]))
-(define (=? cmp a b . args)
-  (let1 ==? (comparator-equality-predicate cmp)
-    (n-ary cmp a b args (==? a b))))
-
-(define (<? cmp a b . args)
-  (case (comparator-flavor cmp)
-    [(ordering)
-     (let ([lt (comparator-ordering-predicate cmp)])
-       (n-ary cmp a b args (lt a b)))]
-    [(comparison)
-     (let ([<=> (comparator-comparison-procedure cmp)])
-       (n-ary cmp a b args (< (<=> a b) 0)))]))
-
-(define (<=? cmp a b . args)
-  (case (comparator-flavor cmp)
-    [(ordering)
-     (let ([eq (comparator-equality-predicate cmp)]
-           [lt (comparator-ordering-predicate cmp)])
-       (n-ary cmp a b args (or (eq a b) (lt a b))))]
-    [(comparison)
-     (let ([<=> (comparator-comparison-procedure cmp)])
-       (n-ary cmp a b args (<= (<=> a b) 0)))]))
-
-(define (>? cmp a b . args)
-  (case (comparator-flavor cmp)
-    [(ordering)
-     (let ([eq (comparator-equality-predicate cmp)]
-           [lt (comparator-ordering-predicate cmp)])
-       (n-ary cmp a b args (not (or (eq a b) (lt a b)))))]
-    [(comparison)
-     (let ([<=> (comparator-comparison-procedure cmp)])
-       (n-ary cmp a b args (> (<=> a b) 0)))]))
-
-(define (>=? cmp a b . args)
-  (case (comparator-flavor cmp)
-    [(ordering)
-     (let ([lt (comparator-ordering-predicate cmp)])
-       (n-ary cmp a b args (not (lt a b))))]
-    [(comparison)
-     (let ([<=> (comparator-comparison-procedure cmp)])
-       (n-ary cmp a b args (>= (<=> a b) 0)))]))
-
 (define-syntax comparator-if<=>
   (syntax-rules ()
     [(_ a b lt eq gt)

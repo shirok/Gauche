@@ -21,9 +21,9 @@
          (list
           (= a b)
           (> a b)
-          (> a b)
+          (>= a b)
           (< a b)
-          (< a b)))))
+          (<= a b)))))
 
 (define (ternary cmp a b c)
   (^[] (dotimes [*count*]

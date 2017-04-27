@@ -176,7 +176,7 @@
           make-reverse-comparator make-key-comparator make-tuple-comparator
           make-pair-comparator
           make-list-comparator make-vector-comparator
-          =? <? <=? >? >=? (:macro comparator-if<=>))
+          (:macro comparator-if<=>))
 
 (autoload gauche.fileutil
           glob glob-fold sys-glob glob-component->regexp make-glob-fs-fold

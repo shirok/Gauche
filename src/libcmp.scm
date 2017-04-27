@@ -221,6 +221,175 @@
      (return h)))
  )
 
+;;;
+;;; Comparator comparison operators
+;;;   They can be written more concisely in Scheme, but we don't want
+;;;   them to be too slow compared to bare procedures (e.g. '=', '<' etc)
+;;;   so we fiddle with C.
+;;;
+
+;;; =?
+(inline-stub
+ (define-cfn cmpr-eq (c::ScmComparator* a b more) :static
+   (if (SCM_PAIRP more)
+     (let1/cps r (Scm_VMApply2 (-> c eqFn) a b)
+       [c::ScmComparator* b more]
+       (if (SCM_FALSEP r)
+         (return r)
+         (return (cmpr-eq c b (SCM_CAR more) (SCM_CDR more)))))
+     (return (Scm_VMApply2 (-> c eqFn) a b))))
+
+ (define-cproc =? (c::<comparator> a b :rest more)
+   (return (cmpr-eq c a b more))))
+
+;;; <?
+(inline-stub
+ (define-cfn cmpr-lt-128 (c::ScmComparator* a b more) :static
+   (if (SCM_PAIRP more)
+     (let1/cps r (Scm_VMApply2 (-> c orderFn) a b)
+       [c::ScmComparator* b more]
+       (if (SCM_FALSEP r)
+         (return r)
+         (return (cmpr-lt-128 c b (SCM_CAR more) (SCM_CDR more)))))
+     (return (Scm_VMApply2 (-> c orderFn) a b))))
+
+ (define-cfn cmpr-lt-114 (c::ScmComparator* a b more) :static
+   (if (SCM_PAIRP more)
+     (let1/cps r (Scm_VMApply2 (-> c compareFn) a b)
+       [c::ScmComparator* b more]
+       (if (< (SCM_INT_VALUE r) 0)
+         (return (cmpr-lt-114 c b (SCM_CAR more) (SCM_CDR more)))
+         (return SCM_FALSE)))
+     (let1/cps r (Scm_VMApply2 (-> c compareFn) a b)
+       []
+       (return (SCM_MAKE_BOOL (< (SCM_INT_VALUE r) 0))))))
+
+ (define-cproc <? (c::<comparator> a b :rest more)
+   (cond [(logand (-> c flags) SCM_COMPARATOR_SRFI_128)
+          (when (SCM_FALSEP (-> c orderFn))
+            (Scm_Error "%S doesn't have ordering predicate" (SCM_OBJ c)))
+          (return (cmpr-lt-128 c a b more))]
+         [else
+          (when (SCM_FALSEP (-> c compareFn))
+            (Scm_Error "%S doesn't have comparison procedure" (SCM_OBJ c)))
+          (return (cmpr-lt-114 c a b more))])))
+
+;;; <=?
+(inline-stub
+ (define-cfn cmpr-le-128 (c::ScmComparator* a b more) :static
+   (if (SCM_PAIRP more)
+     (let1/cps r (Scm_VMApply2 (-> c orderFn) a b)
+       [c::ScmComparator* a b more]
+       (if (SCM_FALSEP r)
+         (let1/cps r (Scm_VMApply2 (-> c eqFn) a b)
+           [c::ScmComparator* b more]
+           (if (SCM_FALSEP r)
+             (return r)
+             (return (cmpr-le-128 c b (SCM_CAR more) (SCM_CDR more)))))
+         (return (cmpr-le-128 c b (SCM_CAR more) (SCM_CDR more)))))
+     (let1/cps r (Scm_VMApply2 (-> c orderFn) a b)
+       [c::ScmComparator* a b]
+       (if (SCM_FALSEP r)
+         (return (Scm_VMApply2 (-> c eqFn) a b))
+         (return SCM_TRUE)))))
+
+ (define-cfn cmpr-le-114 (c::ScmComparator* a b more) :static
+   (if (SCM_PAIRP more)
+     (let1/cps r (Scm_VMApply2 (-> c compareFn) a b)
+       [c::ScmComparator* b more]
+       (if (<= (SCM_INT_VALUE r) 0)
+         (return (cmpr-le-114 c b (SCM_CAR more) (SCM_CDR more)))
+         (return SCM_FALSE)))
+     (let1/cps r (Scm_VMApply2 (-> c compareFn) a b)
+       []
+       (return (SCM_MAKE_BOOL (<= (SCM_INT_VALUE r) 0))))))
+
+ (define-cproc <=? (c::<comparator> a b :rest more)
+   (cond [(logand (-> c flags) SCM_COMPARATOR_SRFI_128)
+          (when (SCM_FALSEP (-> c orderFn))
+            (Scm_Error "%S doesn't have ordering predicate" (SCM_OBJ c)))
+          (return (cmpr-le-128 c a b more))]
+         [else
+          (when (SCM_FALSEP (-> c compareFn))
+            (Scm_Error "%S doesn't have comparison procedure" (SCM_OBJ c)))
+          (return (cmpr-le-114 c a b more))])))
+
+;;; >?
+(inline-stub
+ (define-cfn cmpr-gt-128 (c::ScmComparator* a b more) :static
+   (if (SCM_PAIRP more)
+     (let1/cps r (Scm_VMApply2 (-> c orderFn) a b)
+       [c::ScmComparator* a b more]
+       (if (SCM_FALSEP r)
+         (let1/cps r (Scm_VMApply2 (-> c eqFn) a b)
+           [c::ScmComparator* b more]
+           (if (SCM_FALSEP r)
+             (return (cmpr-gt-128 c b (SCM_CAR more) (SCM_CDR more)))
+             (return SCM_FALSE)))
+         (return SCM_FALSE)))
+     (let1/cps r (Scm_VMApply2 (-> c orderFn) a b)
+       [c::ScmComparator* a b]
+       (if (SCM_FALSEP r)
+         (let1/cps r (Scm_VMApply2 (-> c eqFn) a b)
+           []
+           (return (SCM_MAKE_BOOL (SCM_FALSEP r))))
+         (return SCM_FALSE)))))
+
+ (define-cfn cmpr-gt-114 (c::ScmComparator* a b more) :static
+   (if (SCM_PAIRP more)
+     (let1/cps r (Scm_VMApply2 (-> c compareFn) a b)
+       [c::ScmComparator* b more]
+       (if (> (SCM_INT_VALUE r) 0)
+         (return (cmpr-gt-114 c b (SCM_CAR more) (SCM_CDR more)))
+         (return SCM_FALSE)))
+     (let1/cps r (Scm_VMApply2 (-> c compareFn) a b)
+       []
+       (return (SCM_MAKE_BOOL (> (SCM_INT_VALUE r) 0))))))
+
+ (define-cproc >? (c::<comparator> a b :rest more)
+   (cond [(logand (-> c flags) SCM_COMPARATOR_SRFI_128)
+          (when (SCM_FALSEP (-> c orderFn))
+            (Scm_Error "%S doesn't have ordering predicate" (SCM_OBJ c)))
+          (return (cmpr-gt-128 c a b more))]
+         [else
+          (when (SCM_FALSEP (-> c compareFn))
+            (Scm_Error "%S doesn't have comparison procedure" (SCM_OBJ c)))
+          (return (cmpr-gt-114 c a b more))])))
+
+;;; >=?
+(inline-stub
+ (define-cfn cmpr-ge-128 (c::ScmComparator* a b more) :static
+   (if (SCM_PAIRP more)
+     (let1/cps r (Scm_VMApply2 (-> c orderFn) a b)
+       [c::ScmComparator* b more]
+       (if (SCM_FALSEP r)
+         (return (cmpr-ge-128 c b (SCM_CAR more) (SCM_CDR more)))
+         (return SCM_FALSE)))
+     (let1/cps r (Scm_VMApply2 (-> c orderFn) a b)
+       [c::ScmComparator* a b]
+       (return (SCM_MAKE_BOOL (SCM_FALSEP r))))))
+
+ (define-cfn cmpr-ge-114 (c::ScmComparator* a b more) :static
+   (if (SCM_PAIRP more)
+     (let1/cps r (Scm_VMApply2 (-> c compareFn) a b)
+       [c::ScmComparator* b more]
+       (if (>= (SCM_INT_VALUE r) 0)
+         (return (cmpr-ge-114 c b (SCM_CAR more) (SCM_CDR more)))
+         (return SCM_FALSE)))
+     (let1/cps r (Scm_VMApply2 (-> c compareFn) a b)
+       []
+       (return (SCM_MAKE_BOOL (>= (SCM_INT_VALUE r) 0))))))
+
+ (define-cproc >=? (c::<comparator> a b :rest more)
+   (cond [(logand (-> c flags) SCM_COMPARATOR_SRFI_128)
+          (when (SCM_FALSEP (-> c orderFn))
+            (Scm_Error "%S doesn't have ordering predicate" (SCM_OBJ c)))
+          (return (cmpr-ge-128 c a b more))]
+         [else
+          (when (SCM_FALSEP (-> c compareFn))
+            (Scm_Error "%S doesn't have comparison procedure" (SCM_OBJ c)))
+          (return (cmpr-ge-114 c a b more))])))
+
 (select-module gauche.internal)
 ;; Used by (object-equal? <comparator> <comparator>), defined in libomega.scm
 (define-cproc comparator-equality-use-comparison? (c::<comparator>) ::<boolean>
