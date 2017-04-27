@@ -160,6 +160,10 @@
 (define (cise-push-static-decl! stree :optional (ambient (cise-ambient)))
   (push! (~ ambient'static-decls) stree))
 
+(define (cise-push-static-decl-unique! stree :optional (ambient (cise-ambient)))
+  (unless (memq stree (~ ambient'static-decls))
+    (push! (~ ambient'static-decls) stree)))
+
 (define (emit-static-decls port :optional (ambient (cise-ambient)))
   (dolist [stree (reverse (~ ambient'static-decls))]
     (render-finalize stree port))
@@ -566,7 +570,8 @@
                         closed)
                   ,@body))
              'toplevel)))
-         (for-each cise-push-static-decl! (reverse (~ amb'static-decls))))
+         (for-each cise-push-static-decl-unique!
+                   (reverse (~ amb'static-decls))))
          
        `(let* ([,data :: (.array void* (,(length closed)))])
           ,@(map-with-index
