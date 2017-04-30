@@ -267,7 +267,7 @@ static mhash *mhash_delete(mhash *h, ScmClass *k, int nargs, ScmObj method)
 
 static void mhash_print(mhash *h, ScmPort *out)
 {
-    Scm_Printf(out, "mhash size=%d\n", h->size);
+    Scm_Printf(out, "mhash size=%d num_entries=%d\n", h->size, h->num_entries);
     for (int i=0; i<h->size; i++) {
         ScmWord w = SCM_WORD(h->bins[i]);
         if (w == 0) {
@@ -339,7 +339,6 @@ ScmMethodDispatcher *Scm__BuildMethodDispatcher(ScmObj methods, int axis)
             }
         }
     }
-    //mhash_print(mh, SCM_CURERR);
     ScmMethodDispatcher *dis = SCM_NEW(ScmMethodDispatcher);
     dis->axis = axis;
     dis->methodHash = (AO_t)mh;
@@ -371,3 +370,10 @@ ScmObj Scm__MethodDispatcherLookup(ScmMethodDispatcher *dis,
         return SCM_FALSE;
     }
 }
+
+void Scm__MethodDispatcherDump(ScmMethodDispatcher *dis, ScmPort *port)
+{
+    Scm_Printf(port, "MethodDispatcher axis=%d\n", dis->axis);
+    mhash_print((mhash*)dis->methodHash, port);
+}
+

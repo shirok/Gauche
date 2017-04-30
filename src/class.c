@@ -2326,6 +2326,12 @@ void Scm__GenericInvalidateDispatcher(ScmGeneric *gf)
     (void)SCM_INTERNAL_MUTEX_UNLOCK(gf->lock);
 }
 
+/* Developer API */
+void Scm__GenericDispatcherDump(ScmGeneric *gf, ScmPort *port)
+{
+    Scm_Printf(port, "%S's dispatcher:\n", gf);
+    Scm__MethodDispatcherDump((ScmMethodDispatcher*)gf->dispatcher, port);
+}
 
 /*=====================================================================
  * Method

@@ -191,6 +191,7 @@ SCM_EXTERN ScmGeneric Scm_GenericChangeClass;
 
 SCM_EXTERN ScmObj Scm__GenericBuildDispatcher(ScmGeneric *gf, int axis);
 SCM_EXTERN void   Scm__GenericInvalidateDispatcher(ScmGeneric *gf);
+SCM_EXTERN void   Scm__GenericDispatcherDump(ScmGeneric *gf, ScmPort *port);
 
 SCM_EXTERN ScmObj Scm_UpdateDirectMethod(ScmMethod *m,
                                          ScmClass *oldk,

@@ -661,6 +661,11 @@
 (define-cproc generic-invalidate-dispatcher! (gf::<generic>) ::<void>
   Scm__GenericInvalidateDispatcher)
 
+(define-cproc %generic-dispatcher-dump (gf::<generic>
+                                        :optional (port::<port>
+                                                   (current-output-port)))
+  ::<void> Scm__GenericDispatcherDump)
+
 ;;----------------------------------------------------------------
 ;; Introspection routines
 ;;

@@ -328,6 +328,55 @@
 (test* "method optarg (optarg)" '(a b 4 (:z 4)) (optarg (make <y>) 'a 'b :z 4))
 
 ;;----------------------------------------------------------------
+(test-section "accelerated dispatch")
+
+(define-generic acc-dis-1)
+(define-generic acc-dis-2)
+((with-module gauche.object generic-build-dispatcher!) acc-dis-2 0)
+
+(define-macro (gen-acc-dis-classes&methods)
+  (define (gen-1 n)
+    (let1 cl (symbol-append '<acc-dis- n '>)
+      `(begin
+         (define-class ,cl () ())
+         (define-method acc-dis-1 ((a ,cl)) `(,',n 0))
+         (define-method acc-dis-1 ((a ,cl) x) `(,',n 1))
+         (define-method acc-dis-1 ((a ,cl) x y) `(,',n 2))
+         (define-method acc-dis-1 ((a ,cl) x y . z) `(,',n 3))
+         (define-method acc-dis-2 ((a ,cl)) `(,',n 0))
+         (define-method acc-dis-2 ((a ,cl) x) `(,',n 1))
+         (define-method acc-dis-2 ((a ,cl) x y) `(,',n 2))
+         (define-method acc-dis-2 ((a ,cl) x y . z) `(,',n 3))
+         )))
+  `(begin ,@(append-map gen-1 (iota 50))))
+
+(gen-acc-dis-classes&methods)
+
+(define-macro (acc-dis-classes)
+  `(list ,@(map (^n (symbol-append '<acc-dis- n '>)) (iota 50))))
+
+(define (test-acc-dis name gf)
+  (test* name '()
+         (let1 r '()
+           (do ([cs (acc-dis-classes) (cdr cs)]
+                [n  0       (+ n 1)])
+               [(null? cs) r]
+             (do ([obj (make (car cs))]
+                  [k 0 (+ k 1)]
+                  [args '() (cons #f args)])
+                 [(= k 4)]
+               (let* ([expected `(,n ,k)]
+                      [actual (apply gf obj args)])
+                 (unless (equal? expected actual)
+                   (push! r `(:expected ,expected :actual ,actual)))))))))
+
+((with-module gauche.object generic-build-dispatcher!) acc-dis-1 0)
+(test-acc-dis "batch build" acc-dis-1)
+
+(test-acc-dis "incremental build" acc-dis-2)
+
+
+;;----------------------------------------------------------------
 (test-section "module and accessor")
 
 ;; This test is a contrived example of the case where the

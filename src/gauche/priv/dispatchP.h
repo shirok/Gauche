@@ -46,5 +46,6 @@ void   Scm__MethodDispatcherAdd(ScmMethodDispatcher *dis, ScmMethod *m);
 void   Scm__MethodDispatcherDelete(ScmMethodDispatcher *dis, ScmMethod *m);
 ScmObj Scm__MethodDispatcherLookup(ScmMethodDispatcher *dis,
                                    ScmClass **typev, int argc);
+void   Scm__MethodDispatcherDump(ScmMethodDispatcher *dis, ScmPort *port);
 
 #endif  /*GAUCHE_PRIV_DISPATCHP_H*/
