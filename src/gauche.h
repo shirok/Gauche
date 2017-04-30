@@ -1540,6 +1540,8 @@ struct ScmGenericRec {
     ScmObj (*fallback)(ScmObj *argv, int argc, ScmGeneric *gf);
     void *data;
     ScmInternalMutex lock;
+    void *dispatcher;           /* To accelerate dispatching. See dispatch.c
+                                   TRANSIENT: Move this up in 1.0 release */
 };
 
 SCM_CLASS_DECL(Scm_GenericClass);
@@ -1553,7 +1555,9 @@ SCM_CLASS_DECL(Scm_GenericClass);
         SCM__PROCEDURE_INITIALIZER(SCM_CLASS_STATIC_TAG(Scm_GenericClass),\
                                    0, 0, SCM_PROC_GENERIC, 0, 0,        \
                                    SCM_FALSE, NULL),                    \
-        SCM_NIL, 0, cfunc, data                                         \
+        SCM_NIL, 0, cfunc, data,                                        \
+        SCM_INTERNAL_MUTEX_INITIALIZER,                                 \
+        NULL                                                            \
     }
 
 SCM_EXTERN void Scm_InitBuiltinGeneric(ScmGeneric *gf, const char *name,

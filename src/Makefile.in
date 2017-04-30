@@ -169,6 +169,7 @@ PRIVATE_HEADERS = gauche/priv/arith.h gauche/priv/arith_i386.h \
 	          gauche/priv/arith_x86_64.h \
 	          gauche/priv/dws_adapter.h \
 	          gauche/priv/builtin-syms.h gauche/priv/codeP.h \
+		  gauche/priv/dispatchP.h \
 	          gauche/priv/macroP.h gauche/priv/moduleP.h \
 	          gauche/priv/portP.h \
 	          gauche/priv/readerP.h gauche/priv/writerP.h
@@ -195,8 +196,8 @@ libgauche_LIBRARY = $(LIBGAUCHE).$(SOEXT)
 libgauche_OBJECTS = \
         box.$(OBJEXT) core.$(OBJEXT) vm.$(OBJEXT) compaux.$(OBJEXT) \
 	macro.$(OBJEXT) \
-	code.$(OBJEXT) error.$(OBJEXT) class.$(OBJEXT) prof.$(OBJEXT) \
-	collection.$(OBJEXT) \
+	code.$(OBJEXT) error.$(OBJEXT) class.$(OBJEXT) dispatch.$(OBJEXT) \
+        prof.$(OBJEXT) collection.$(OBJEXT) \
 	boolean.$(OBJEXT) char.$(OBJEXT) string.$(OBJEXT) list.$(OBJEXT) \
 	hash.$(OBJEXT) dws32hash.$(OBJEXT) dwsiphash.$(OBJEXT) \
 	treemap.$(OBJEXT) bits.$(OBJEXT) \

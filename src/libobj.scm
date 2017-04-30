@@ -38,6 +38,7 @@
  (declcode "#include <gauche/class.h>"
            "#include <gauche/vminsn.h>")
  (define-type <slot-accessor> "ScmSlotAccessor*")
+ (define-type <generic> "ScmGeneric*")
  (define-type <method> "ScmMethod*")
  )
 
@@ -648,6 +649,17 @@
                 (post++ n))
               classes)
     (return (Scm_MethodApplicableForClasses m cp argc))))
+
+;; Manually trigger dispatch table construction
+;; (This is for development - eventually we set this triggered automatically)
+(define-cproc generic-build-dispatcher! (gf::<generic> axis::<fixnum>)
+  Scm__GenericBuildDispatcher)
+
+(define-cproc generic-dispatcher-vector (gf::<generic>)
+  (return (-> gf dispatcher)))
+
+(define-cproc generic-invalidate-dispatcher! (gf::<generic>) ::<void>
+  Scm__GenericInvalidateDispatcher)
 
 ;;----------------------------------------------------------------
 ;; Introspection routines

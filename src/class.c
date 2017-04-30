@@ -38,11 +38,13 @@
 #include "gauche/priv/builtin-syms.h"
 #include "gauche/priv/macroP.h"
 #include "gauche/priv/writerP.h"
+#include "gauche/priv/dispatchP.h"
 
 /* Some routines uses small array on stack to keep data about
    arguments to dispatch.  If the # of args used for dispach is bigger
    than this, the routine allocates an array in heap. */
 #define PREALLOC_SIZE  32
+
 
 /*===================================================================
  * Built-in classes
@@ -1998,6 +2000,7 @@ static ScmObj generic_allocate(ScmClass *klass, ScmObj initargs)
     ScmGeneric *gf = SCM_NEW_INSTANCE(ScmGeneric, klass);
     SCM_PROCEDURE_INIT(gf, 0, 0, SCM_PROC_GENERIC, SCM_FALSE);
     gf->methods = SCM_NIL;
+    gf->dispatcher = NULL;
     gf->fallback = Scm_NoNextMethod;
     gf->data = NULL;
     gf->maxReqargs = 0;
@@ -2137,14 +2140,34 @@ ScmObj Scm_ComputeApplicableMethods(ScmGeneric *gf, ScmObj *argv, int argc,
         }
     }
 
-    SCM_FOR_EACH(mp, methods) {
-        ScmObj m = SCM_CAR(mp);
-        SCM_ASSERT(SCM_METHODP(m));
-        if (Scm_MethodApplicableForClasses(SCM_METHOD(m), typev, argc)) {
-            SCM_APPEND1(h, t, SCM_OBJ(m));
-        }
+    if (gf->dispatcher
+        && argc <= SCM_DISPATCHER_MAX_NARGS
+        && argc >= 1) {
+        ScmMethodDispatcher *dis = (ScmMethodDispatcher*)gf->dispatcher;
+        ScmObj p = Scm__MethodDispatcherLookup(dis, typev, argc);
+        if (SCM_PAIRP(p)) methods = p;
     }
-    return h;
+
+    SCM_ASSERT(SCM_PAIRP(methods));
+    if (SCM_NULLP(SCM_CDR(methods))) {
+        /* We have only one method, so just check its applicability
+           and retrun the list without allocation if possible. */
+        if (Scm_MethodApplicableForClasses(SCM_METHOD(SCM_CAR(methods)),
+                                           typev, argc)) {
+            return methods;
+        } else {
+            return SCM_NIL;
+        }
+    } else {
+        SCM_FOR_EACH(mp, methods) {
+            ScmObj m = SCM_CAR(mp);
+            SCM_ASSERT(SCM_METHODP(m));
+            if (Scm_MethodApplicableForClasses(SCM_METHOD(m), typev, argc)) {
+                SCM_APPEND1(h, t, SCM_OBJ(m));
+            }
+        }
+        return h;
+    }
 }
 
 static ScmObj compute_applicable_methods(ScmNextMethod *nm,
@@ -2278,6 +2301,31 @@ ScmObj Scm_SortMethods(ScmObj methods, ScmObj *argv, int argc)
     }
     return Scm_ArrayToList(array, len);
 }
+
+
+/* Developer API.  Accessible from Scheme via generic-build-dispatcher!
+   If axis is out of range, we do nothing and returns #f. 
+ */
+ScmObj Scm__GenericBuildDispatcher(ScmGeneric *gf, int axis)
+{
+    if (axis >= 0 && axis < SCM_DISPATCHER_MAX_NARGS) {
+        (void)SCM_INTERNAL_MUTEX_LOCK(gf->lock);
+        gf->dispatcher = Scm__BuildMethodDispatcher(gf->methods, axis);
+        (void)SCM_INTERNAL_MUTEX_UNLOCK(gf->lock);
+        return SCM_TRUE;
+    } else {
+        return SCM_FALSE;
+    }
+}
+
+/* Developer API */
+void Scm__GenericInvalidateDispatcher(ScmGeneric *gf)
+{
+    (void)SCM_INTERNAL_MUTEX_LOCK(gf->lock);
+    gf->dispatcher = NULL;
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(gf->lock);
+}
+
 
 /*=====================================================================
  * Method
@@ -2471,6 +2519,11 @@ ScmObj Scm_UpdateDirectMethod(ScmMethod *m, ScmClass *old, ScmClass *newc)
     if (SCM_FALSEP(Scm_Memq(SCM_OBJ(m), newc->directMethods))) {
         newc->directMethods = Scm_Cons(SCM_OBJ(m), newc->directMethods);
     }
+    /* NB: For now, we just invalidate dispatcher.  Redefining class may
+       trigger massive update-direct-method! and it's inefficient to rebuild
+       dispatcher table for every invocation of it.
+     */
+    Scm__GenericInvalidateDispatcher(m->generic);
     return SCM_OBJ(m);
 }
 
@@ -2515,7 +2568,7 @@ ScmObj Scm_AddMethod(ScmGeneric *gf, ScmMethod *method)
 
     /* Check if a method with the same signature exists.
        If so, we replace the method instead of adding it.  */
-    int replaced = FALSE;
+    ScmMethod *replaced = NULL;
     ScmMethod *method_locked = NULL;
     (void)SCM_INTERNAL_MUTEX_LOCK(gf->lock);
     ScmObj mp;
@@ -2531,10 +2584,11 @@ ScmObj Scm_AddMethod(ScmGeneric *gf, ScmMethod *method)
             }
             if (i == SCM_PROCEDURE_REQUIRED(method)) {
                 if (SCM_METHOD_LOCKED(mm)) {
+                    /* We'll throw an error */
                     method_locked = mm;
                 } else {
+                    replaced = mm;
                     SCM_SET_CAR(mp, SCM_OBJ(method));
-                    replaced = TRUE;
                 }
                 break;
             }
@@ -2543,6 +2597,11 @@ ScmObj Scm_AddMethod(ScmGeneric *gf, ScmMethod *method)
     if (!replaced && (method_locked == NULL)) {
         gf->methods = pair;
         gf->maxReqargs = reqs;
+    }
+    if (gf->dispatcher && (method_locked == NULL)) {
+        ScmMethodDispatcher *dis = (ScmMethodDispatcher*)gf->dispatcher;
+        if (replaced) Scm__MethodDispatcherDelete(dis, replaced);
+        Scm__MethodDispatcherAdd(dis, method);
     }
     (void)SCM_INTERNAL_MUTEX_UNLOCK(gf->lock);
 
@@ -2591,6 +2650,10 @@ ScmObj Scm_DeleteMethod(ScmGeneric *gf, ScmMethod *method)
                 mp = SCM_CDR(mp);
             }
         }
+    }
+    if (gf->dispatcher) {
+        Scm__MethodDispatcherDelete((ScmMethodDispatcher*)gf->dispatcher,
+                                    method);
     }
     SCM_FOR_EACH(mp, gf->methods) {
         /* sync # of required selector */

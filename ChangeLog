@@ -1,3 +1,18 @@
+2017-04-29  Shiro Kawai  <shiro@acm.org>
+
+	* src/class.c, src/dispatch.c: EXPERIMENTAL: Add method dispatch
+	  accelerator. By default nothing changes; it must be turned on
+	  explicitly for each GF.  We'll do some experiment before making it
+	  automatic.  Consider this feature highly experimental and
+	  do not use it in production before we declar it's stable.
+	  See src/dispatch.c for the detail mechanism.
+	  A preliminary benchmark shows `ref' being 4x faster on sparse
+	  vectors.
+	  ABI INCOMPATIBILITY: If you have precompiled files with
+	  `define-cgeneric', you need to recompile it; a new field
+	  is added to ScmGeneric so the static initializer needs to be
+	  recompiled.
+
 2017-04-26  Shiro Kawai  <shiro@acm.org>
 
 	* src/libcmp.scm, lib/gauche/computil.scm (=?, <?, <=?, >?, >=?):

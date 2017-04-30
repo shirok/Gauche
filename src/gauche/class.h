@@ -189,6 +189,9 @@ SCM_EXTERN ScmGeneric Scm_GenericObjectEqualP;
 SCM_EXTERN ScmGeneric Scm_GenericObjectSetter;
 SCM_EXTERN ScmGeneric Scm_GenericChangeClass;
 
+SCM_EXTERN ScmObj Scm__GenericBuildDispatcher(ScmGeneric *gf, int axis);
+SCM_EXTERN void   Scm__GenericInvalidateDispatcher(ScmGeneric *gf);
+
 SCM_EXTERN ScmObj Scm_UpdateDirectMethod(ScmMethod *m,
                                          ScmClass *oldk,
                                          ScmClass *newk);
