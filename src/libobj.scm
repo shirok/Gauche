@@ -35,9 +35,9 @@
 
 ;; preparing inline stub code
 (inline-stub
- (declcode "#include <gauche/class.h>"
-           "#include <gauche/priv/classP.h>"
-           "#include <gauche/vminsn.h>")
+ (declcode (.include <gauche/class.h>
+                     <gauche/priv/classP.h>
+                     <gauche/vminsn.h>))
  (define-type <slot-accessor> "ScmSlotAccessor*")
  (define-type <generic> "ScmGeneric*")
  (define-type <method> "ScmMethod*")
