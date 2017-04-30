@@ -34,7 +34,8 @@
 (select-module gauche)
 (inline-stub
  (declcode (.include <gauche/class.h>
-                     <gauche/exception.h>)))
+                     <gauche/exception.h>
+                     <gauche/priv/classP.h>)))
 
 (define <exception> <condition>) ;; backward compatibility
 

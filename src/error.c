@@ -36,6 +36,7 @@
 #include "gauche/class.h"
 #include "gauche/exception.h"
 #include "gauche/vm.h"
+#include "gauche/priv/classP.h"
 #include "gauche/priv/builtin-syms.h"
 
 #include <errno.h>

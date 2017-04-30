@@ -35,6 +35,7 @@
 #include "gauche.h"
 #include "gauche/class.h"
 #include "gauche/code.h"
+#include "gauche/priv/classP.h"
 #include "gauche/priv/builtin-syms.h"
 #include "gauche/priv/macroP.h"
 #include "gauche/priv/writerP.h"

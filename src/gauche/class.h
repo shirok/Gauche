@@ -1,5 +1,5 @@
 /*
- * class.h - Gauche object system private header
+ * class.h - Gauche object system header
  *
  *   Copyright (c) 2000-2016  Shiro Kawai  <shiro@acm.org>
  *
@@ -131,10 +131,6 @@ SCM_CLASS_DECL(Scm_AccessorMethodClass);
 
 SCM_EXTERN ScmObj Scm_Allocate(ScmClass *klass, ScmObj initargs);
 SCM_EXTERN ScmObj Scm_NewInstance(ScmClass *klass, int coresize);
-SCM_EXTERN ScmObj Scm__AllocateAndInitializeInstance(ScmClass *klass,
-                                                     ScmObj *inits,
-                                                     int numInits,
-                                                     u_long flags);
 SCM_EXTERN ScmObj Scm_ComputeCPL(ScmClass *klass);
 SCM_EXTERN int    Scm_MethodApplicableForClasses(ScmMethod *m,
                                                  ScmClass *types[],
@@ -180,18 +176,12 @@ SCM_EXTERN ScmObj Scm_VMTouchInstance(ScmObj obj);
 SCM_EXTERN void   Scm_DeleteDirectSubclass(ScmClass *super, ScmClass *sub);
 SCM_EXTERN void   Scm_DeleteDirectMethod(ScmClass *super, ScmMethod *m);
 
-SCM_EXTERN ScmObj Scm__InternalClassName(ScmClass *klass);
-
 SCM_EXTERN ScmGeneric Scm_GenericApplyGeneric;
 SCM_EXTERN ScmGeneric Scm_GenericObjectHash;
 SCM_EXTERN ScmGeneric Scm_GenericObjectApply;
 SCM_EXTERN ScmGeneric Scm_GenericObjectEqualP;
 SCM_EXTERN ScmGeneric Scm_GenericObjectSetter;
 SCM_EXTERN ScmGeneric Scm_GenericChangeClass;
-
-SCM_EXTERN ScmObj Scm__GenericBuildDispatcher(ScmGeneric *gf, int axis);
-SCM_EXTERN void   Scm__GenericInvalidateDispatcher(ScmGeneric *gf);
-SCM_EXTERN void   Scm__GenericDispatcherDump(ScmGeneric *gf, ScmPort *port);
 
 SCM_EXTERN ScmObj Scm_UpdateDirectMethod(ScmMethod *m,
                                          ScmClass *oldk,
