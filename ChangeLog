@@ -1,3 +1,10 @@
+2017-05-01  Shiro Kawai  <shiro@acm.org>
+
+	* src/class.c (Scm_ShortClassName): Unofficial API change: Previously
+	  called Scm__InternalClassName.  It's just a C function that strips
+	  '<' and '>' from the class name, but its handy and used from
+	  some ext/* stuff, so let it be public.  Old name will go in 1.0.
+
 2017-04-29  Shiro Kawai  <shiro@acm.org>
 
 	* src/class.c, src/dispatch.c: EXPERIMENTAL: Add method dispatch

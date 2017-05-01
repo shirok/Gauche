@@ -40,9 +40,6 @@ SCM_EXTERN ScmObj Scm__AllocateAndInitializeInstance(ScmClass *klass,
                                                      int numInits,
                                                      u_long flags);
 
-/* Internal utility */
-SCM_EXTERN ScmObj Scm__InternalClassName(ScmClass *klass);
-
 /* Method dispatcher developer API */
 SCM_EXTERN ScmObj Scm__GenericBuildDispatcher(ScmGeneric *gf, int axis);
 SCM_EXTERN void   Scm__GenericInvalidateDispatcher(ScmGeneric *gf);

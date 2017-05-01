@@ -34,8 +34,7 @@
 (select-module gauche)
 (inline-stub
  (declcode (.include <gauche/class.h>
-                     <gauche/exception.h>
-                     <gauche/priv/classP.h>)))
+                     <gauche/exception.h>)))
 
 (define <exception> <condition>) ;; backward compatibility
 
@@ -127,7 +126,7 @@
    ::void :static
    (let* ([k::ScmClass* (SCM_CLASS_OF obj)]
           [exc::ScmThreadException* (SCM_THREAD_EXCEPTION obj)]
-          [cname (Scm__InternalClassName k)])
+          [cname (Scm_ShortClassName k)])
      (if (SCM_UNDEFINEDP (-> exc data))
        (Scm_Printf port "#<%A %S>" cname (SCM_OBJ_SAFE (-> exc thread)))
        (Scm_Printf port "#<%A %S %S>" cname (SCM_OBJ_SAFE (-> exc thread))

@@ -812,6 +812,7 @@ SCM_EXTERN void Scm_InitStaticClassWithMeta(ScmClass *klass,
                                             ScmObj supers,
                                             ScmClassStaticSlotSpec *slots,
                                             int flags);
+SCM_EXTERN ScmObj Scm_ShortClassName(ScmClass *klass); /* strip '<' and '>' */
 
 /* OBSOLETE */
 SCM_EXTERN void Scm_InitBuiltinClass(ScmClass *c, const char *name,

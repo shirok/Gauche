@@ -231,7 +231,7 @@ static ScmObj class_array_to_names(ScmClass **array, int len)
    returns a string without those brackets.  Otherwise returns the class
    name in a string.  This is used by some print method.  Always returns
    a string. */
-ScmObj Scm__InternalClassName(ScmClass *klass)
+ScmObj Scm_ShortClassName(ScmClass *klass)
 {
     ScmObj name = klass->name;
 
@@ -251,6 +251,12 @@ ScmObj Scm__InternalClassName(ScmClass *klass)
        so this is an ad hoc code.  We may need better handling
        (like write-to-string) later. */
     return SCM_MAKE_STR("(unnamed class)");
+}
+
+/* TRANSIENT: For the backward compatibility.  Remove this on 1.0. */
+ScmObj Scm__InternalClassName(ScmClass *klass)
+{
+    return Scm_ShortClassName(klass);
 }
 
 /*=====================================================================

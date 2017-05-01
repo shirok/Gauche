@@ -104,7 +104,7 @@ static void message_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
     ScmClass *k = Scm_ClassOf(obj);
     Scm_Printf(port, "#<%A \"%30.1A\">",
-               Scm__InternalClassName(k),
+               Scm_ShortClassName(k),
                SCM_ERROR_MESSAGE(obj));
 }
 
