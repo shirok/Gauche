@@ -334,6 +334,11 @@
 (define-generic acc-dis-2)
 ((with-module gauche.object generic-build-dispatcher!) acc-dis-2 0)
 
+(define-method acc-dis-1 ((a <top>)) 'top)
+(define-method acc-dis-2 ((a <top>)) 'top)
+
+(define *acc-dis-count* 25)
+
 (define-macro (gen-acc-dis-classes&methods)
   (define (gen-1 n)
     (let1 cl (symbol-append '<acc-dis- n '>)
@@ -348,15 +353,15 @@
          (define-method acc-dis-2 ((a ,cl) x y) `(,',n 2))
          (define-method acc-dis-2 ((a ,cl) x y . z) `(,',n 3))
          )))
-  `(begin ,@(append-map gen-1 (iota 50))))
+  `(begin ,@(append-map gen-1 (iota *acc-dis-count*))))
 
 (gen-acc-dis-classes&methods)
 
 (define-macro (acc-dis-classes)
-  `(list ,@(map (^n (symbol-append '<acc-dis- n '>)) (iota 50))))
+  `(list ,@(map (^n (symbol-append '<acc-dis- n '>)) (iota *acc-dis-count*))))
 
-(define (test-acc-dis name gf)
-  (test* name '()
+(define (test-acc-dis name gf :optional (expect '()))
+  (test* name expect
          (let1 r '()
            (do ([cs (acc-dis-classes) (cdr cs)]
                 [n  0       (+ n 1)])
@@ -374,6 +379,24 @@
 (test-acc-dis "batch build" acc-dis-1)
 
 (test-acc-dis "incremental build" acc-dis-2)
+
+(define-method acc-dis-1 ((c <acc-dis-0>)) (cons '(0 0) (next-method)))
+(define-method acc-dis-1 ((c <acc-dis-1>)) 'redefined)
+
+(test-acc-dis "redefinition 1" acc-dis-1
+              '((:expected (1 0) :actual redefined)
+                (:expected (0 0) :actual ((0 0) . top))))
+
+(define-method acc-dis-1 ((c <acc-dis-0>)) '(0 0))
+(define-method acc-dis-1 ((c <acc-dis-1>) (x <integer>)) (cons '(1 1) (next-method)))
+(test-acc-dis "redefinition 2" acc-dis-1
+              '((:expected (1 0) :actual redefined)))
+(test* "redefiniton 2'" '((1 1) 1 1)
+       (acc-dis-1 (make <acc-dis-1>) 2))
+(define-method acc-dis-1 ((c <acc-dis-1>) (x <integer>)) 'leaf)
+(test* "redefiniton 3" '((1 1) . leaf)
+       (cons (acc-dis-1 (make <acc-dis-1>) #f)
+             (acc-dis-1 (make <acc-dis-1>) 2)))
 
 
 ;;----------------------------------------------------------------

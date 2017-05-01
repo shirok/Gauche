@@ -74,12 +74,12 @@
  *  The method dispatcher contains a hash table, where each key is
  *  a tuple (<class>, <number-of-args>), and its value is a list of
  *  methods, whose axis specializer is <class> and which can take
- *  <number-of-args>.  We only register when all of matching methods are
- *  leaves.
+ *  <number-of-args>.
  *
  *  When a GF with dispatch accelerator is called, we retrieve the class
  *  of the axis of the actual argument, and lookup the hash table with
  *  that class and the number of actual arguments.  If we have a hit,
+ *  and the entry solely consists of leaf methods,
  *  the list of methods are the list of applicable methods---since there
  *  are no more specific methods, and we don't need to look for less specific
  *  methods.  This means...
@@ -88,6 +88,12 @@
  *     all applicable methods.
  *   - We don't need to allocate to construct the list of applicable
  *     methods.
+ *
+ *  Note that if the entry has at least one non-leaf methods, we have to
+ *  fall back to the normal path, since there may be other applicable
+ *  methods that might be called via next-method.  To cut the overhead
+ *  of checking, we keep the list of leaf methods and the one of non-leaf
+ *  methods separately.
  */
 
 /* On concurrent access:
@@ -118,7 +124,8 @@ struct ScmMethodDispatcherRec {
 typedef struct mhash_entry_rec {
     ScmClass *klass;
     int nargs;
-    ScmObj methods;             /* list of matching methods */
+    ScmObj leaves;             /* list of matching leaf methods */
+    ScmObj nonleaves;          /* list of matching non-leaf methods */
 } mhash_entry;
 
 typedef struct mhash_rec {
@@ -162,18 +169,21 @@ static ScmObj mhash_probe(const mhash *h, ScmClass *k, int nargs)
         if (w == 0) break;
         if (w != 1) {
             mhash_entry *e = (mhash_entry*)w;
-            if (e->klass == k && e->nargs == nargs) return e->methods;
+            if (e->klass == k && e->nargs == nargs) {
+                if (SCM_NULLP(e->nonleaves)) return e->leaves;
+                else return SCM_FALSE;
+            }
         }
         j = (j + i + 1) & (h->size - 1);
     }
     return SCM_FALSE;
 }
 
-static mhash *mhash_insert_1(mhash *h, ScmClass *k, int nargs, ScmObj method)
+static mhash *mhash_insert_1(mhash *h, ScmClass *k, int nargs, ScmMethod *m)
 {
     u_long j = mhashfn(k, nargs) & (h->size - 1);
     long free_slot = -1;
-    ScmObj tail = SCM_NIL;
+    ScmObj ltail = SCM_NIL, ntail = SCM_NIL;
     int i = 0;
     for (; i < h->size; i++) {
         ScmWord w = SCM_WORD(AO_load(&h->bins[j]));
@@ -188,7 +198,8 @@ static mhash *mhash_insert_1(mhash *h, ScmClass *k, int nargs, ScmObj method)
         mhash_entry *e = (mhash_entry*)w;
         if (e->klass == k && e->nargs == nargs) {
             free_slot = j;
-            tail = e->methods;
+            ltail = e->leaves;
+            ntail = e->nonleaves;
             h->num_entries--;
             break;
         }
@@ -199,13 +210,14 @@ static mhash *mhash_insert_1(mhash *h, ScmClass *k, int nargs, ScmObj method)
     mhash_entry *e = SCM_NEW(mhash_entry);
     e->klass = k;
     e->nargs = nargs;
-    e->methods = Scm_Cons(method, tail);
+    e->leaves = SCM_METHOD_LEAF_P(m)? Scm_Cons(SCM_OBJ(m), ltail) : ltail;
+    e->nonleaves = SCM_METHOD_LEAF_P(m) ? ntail : Scm_Cons(SCM_OBJ(m), ntail);
     AO_store_full(&h->bins[free_slot], (AO_t)e);
     h->num_entries++;
     return h;
 }
 
-static mhash *mhash_insert(mhash *h, ScmClass *k, int nargs, ScmObj method)
+static mhash *mhash_insert(mhash *h, ScmClass *k, int nargs, ScmMethod *m)
 {
     if (h->size <= h->num_entries*2) {
         /* extend */
@@ -216,20 +228,22 @@ static mhash *mhash_insert(mhash *h, ScmClass *k, int nargs, ScmObj method)
             if (w == 0 || w == 1) continue;
             mhash_entry *e = (mhash_entry*)w;
             u_long j = mhashfn(e->klass, e->nargs) & (nh->size - 1);
-            for (int k = 0; k < nh->size; k++) {
+            int k = 0;
+            for (; k < nh->size; k++) {
                 if (SCM_WORD(nh->bins[j]) == 0) {
                     nh->bins[j] = w;
                     break;
                 }
                 j = (j + k + 1) & (nh->size - 1);
             }
+            SCM_ASSERT(k < nh->size);
         }
         h = nh;
     }
-    return mhash_insert_1(h, k, nargs, method);
+    return mhash_insert_1(h, k, nargs, m);
 }
 
-static mhash *mhash_delete(mhash *h, ScmClass *k, int nargs, ScmObj method)
+static mhash *mhash_delete(mhash *h, ScmClass *k, int nargs, ScmMethod *m)
 {
     u_long j = mhashfn(k, nargs) & (h->size - 1);
     long free_slot = -1;
@@ -242,20 +256,28 @@ static mhash *mhash_delete(mhash *h, ScmClass *k, int nargs, ScmObj method)
         if (w == 1) continue;
         mhash_entry *e = (mhash_entry*)w;
         if (e->klass == k && e->nargs == nargs) {
-            ScmObj mm = e->methods;
-            if (SCM_PAIRP(mm) && SCM_EQ(SCM_CAR(mm), method)) { /* fast path */
-                mm = SCM_CDR(mm);
+            ScmObj ml = e->leaves;
+            ScmObj mn = e->nonleaves;
+            if (SCM_PAIRP(ml) && SCM_EQ(SCM_CAR(ml), SCM_OBJ(m))) {
+                ml = SCM_CDR(ml); /* fast path */
             } else {
-                mm = Scm_Delete(method, mm, SCM_CMP_EQ);
+                ml = Scm_Delete(SCM_OBJ(m), ml, SCM_CMP_EQ);
             }
-            if (SCM_NULLP(mm)) {
+            if (SCM_PAIRP(mn) && SCM_EQ(SCM_CAR(mn), SCM_OBJ(m))) {
+                mn = SCM_CDR(mn); /* fast path */
+            } else {
+                mn = Scm_Delete(SCM_OBJ(m), mn, SCM_CMP_EQ);
+            }
+
+            if (SCM_NULLP(ml) && SCM_NULLP(ml)) {
                 h->num_entries--;
-                AO_store(&h->bins[j], 1); /* mark deleted */
+                AO_store(&h->bins[j], 1); /* mark as deleted */
             } else {
                 mhash_entry *e = SCM_NEW(mhash_entry);
                 e->klass = k;
                 e->nargs = nargs;
-                e->methods = mm;
+                e->leaves = ml;
+                e->nonleaves = mn;
                 AO_store_full(&h->bins[j], (AO_t)e);
             }
             break;
@@ -271,24 +293,18 @@ static void mhash_print(mhash *h, ScmPort *out)
     for (int i=0; i<h->size; i++) {
         ScmWord w = SCM_WORD(h->bins[i]);
         if (w == 0) {
-            Scm_Printf(out, "[%3d] empty\n\n", i);
+            Scm_Printf(out, "[%3d] empty\n\n\n", i);
         } else if (w == 1) {
-            Scm_Printf(out, "[%3d] deleted\n\n", i);
+            Scm_Printf(out, "[%3d] deleted\n\n\n", i);
         } else {
             mhash_entry *e = (mhash_entry*)w;
             Scm_Printf(out, "[%3d] %lu %S(%d)\n", i, 
                        (mhashfn(e->klass, e->nargs) % h->size),
                        e->klass, e->nargs);
-            Scm_Printf(out, "  %S\n", e->methods);
+            Scm_Printf(out, "  Leaves:   %S\n", e->leaves);
+            Scm_Printf(out, "  NonLeaves:%S\n", e->nonleaves);
         }
     }
-}
-
-static mhash *add_method_to_dispatcher_1(mhash *h, ScmClass *klass, int nargs,
-                                         ScmMethod *m)
-{
-    if (SCM_METHOD_LEAF_P(m)) return mhash_insert(h, klass, nargs, SCM_OBJ(m));
-    else                      return mhash_delete(h, klass, nargs, SCM_OBJ(m));
 }
 
 static mhash *add_method_to_dispatcher(mhash *h, int axis, ScmMethod *m)
@@ -298,9 +314,9 @@ static mhash *add_method_to_dispatcher(mhash *h, int axis, ScmMethod *m)
         ScmClass *klass = m->specializers[axis];
         if (SCM_PROCEDURE_OPTIONAL(m)) {
             for (int k = req; k < SCM_DISPATCHER_MAX_NARGS; k++)
-                h = add_method_to_dispatcher_1(h, klass, k, m);
+                h = mhash_insert(h, klass, k, m);
         } else {
-            h = add_method_to_dispatcher_1(h, klass, req, m);
+            h = mhash_insert(h, klass, req, m);
         }
     }
     return h;
@@ -313,9 +329,9 @@ static mhash *delete_method_from_dispatcher(mhash *h, int axis, ScmMethod *m)
         ScmClass *klass = m->specializers[axis];
         if (SCM_PROCEDURE_OPTIONAL(m)) {
             for (int k = req; k < SCM_DISPATCHER_MAX_NARGS; k++)
-                h = mhash_delete(h, klass, k, SCM_OBJ(m));
+                h = mhash_delete(h, klass, k, m);
         } else {
-            h = mhash_delete(h, klass, req, SCM_OBJ(m));
+            h = mhash_delete(h, klass, req, m);
         }
     }
     return h;
