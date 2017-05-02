@@ -1,5 +1,9 @@
 2017-05-02  Shiro Kawai  <shiro@acm.org>
 
+	* src/compile-1.scm (pass1/body-rec): Use global-identifier=?
+	  to check internal define and internal define-syntax.  See the
+	  added test in test/macro.scm for the case this fixes.
+
 	* lib/r7rs.scm (scheme.r5rs): Avoid redefining 'define',
 	  for it interferes with internal definition recognition.  Instead
 	  we fiddle with r7rs.aux to expose r7rs#define as r7rs:define,

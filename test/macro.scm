@@ -929,6 +929,19 @@
         (gen-idef-5 ooo? eee?)
         (list (ooo? 5) (eee? 7))))
 
+;; crazy case when define is redefined
+(define-module mac-idef
+  (export (rename my-define define))
+  (define (my-define . args) args))
+
+(define-module mac-idef.user
+  (import mac-idef))
+
+(test "define (redefined)" '(5 2)
+      (lambda ()
+        (with-module mac-idef.user
+          (let ((a 5)) (define a 2)))))
+
 ;;----------------------------------------------------------------------
 ;; macro defining macros
 

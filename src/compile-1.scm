@@ -243,18 +243,16 @@
             [(syntax? head) ; when (let-syntax ((xif if)) (xif ...)) etc.
              (pass1/body-finish intdefs exprs cenv)]
             [(not (identifier? head)) (error "[internal] pass1/body" head)]
-            [(or (global-eq? head 'define cenv)
-                 (global-eq? head 'define-inline cenv))
-             ;; NB: We treat internal define-inline the same as internal
-             ;; define; inlining internal closures can be purely figured
-             ;; out by the compiler.
+            [(or (global-identifier=? head define.)
+                 (global-identifier=? head define-inline.)
+                 (global-identifier=? head r5rs-define.))
              (let1 def (match args
                          [((name . formals) . body)
                           `(,name (,lambda. ,formals ,@body) . ,src)]
                          [(var init) `(,var ,init . ,src)]
                          [_ (error "malformed internal define:" (caar exprs))])
                (pass1/body-rec rest (cons def intdefs) cenv))]
-            [(global-eq? head 'define-syntax cenv) ; internal syntax definition
+            [(global-identifier=? head define-syntax.) ; internal syntax definition
              (match args
                [(name trans-spec)
                 (let* ([trans (pass1/eval-macro-rhs
@@ -401,19 +399,21 @@
 (define (global-id id) (make-identifier id (find-module 'gauche) '()))
 (define (global-id% id) (make-identifier id (find-module 'gauche.internal) '()))
 
-(define define.      (global-id 'define))
-(define lambda.      (global-id 'lambda))
-(define r5rs-define. (make-identifier 'define (find-module 'null) '()))
-(define r5rs-lambda. (make-identifier 'lambda (find-module 'null) '()))
-(define setter.      (global-id 'setter))
-(define lazy.        (global-id 'lazy))
-(define eager.       (global-id 'eager))
-(define values.      (global-id 'values))
-(define begin.       (global-id 'begin))
-(define include.     (global-id 'include))
-(define include-ci.  (global-id 'include-ci))
-(define else.        (global-id 'else))
-(define =>.          (global-id '=>))
+(define define.         (global-id 'define))
+(define define-inline.  (global-id 'define-inline))
+(define define-syntax.  (global-id 'define-syntax))
+(define lambda.         (global-id 'lambda))
+(define r5rs-define.    (make-identifier 'define (find-module 'null) '()))
+(define r5rs-lambda.    (make-identifier 'lambda (find-module 'null) '()))
+(define setter.         (global-id 'setter))
+(define lazy.           (global-id 'lazy))
+(define eager.          (global-id 'eager))
+(define values.         (global-id 'values))
+(define begin.          (global-id 'begin))
+(define include.        (global-id 'include))
+(define include-ci.     (global-id 'include-ci))
+(define else.           (global-id 'else))
+(define =>.             (global-id '=>))
 (define current-module. (global-id 'current-module))
 
 (define %make-er-transformer.          (global-id% '%make-er-transformer))
