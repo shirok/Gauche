@@ -942,6 +942,20 @@
         (with-module mac-idef.user
           (let ((a 5)) (define a 2)))))
 
+(define-module mac-idef2
+  (export (rename my-define define))
+  (define-syntax my-define
+    (syntax-rules ()
+      [(_ var expr) (define (var) expr)])))
+
+(define-module mac-idef2.user
+  (import mac-idef2))
+
+(test "define (redefined2)" 5
+      (lambda ()
+        (with-module mac-idef2.user
+          (let ((a 5)) (define x a) (x)))))
+
 ;;----------------------------------------------------------------------
 ;; macro defining macros
 
