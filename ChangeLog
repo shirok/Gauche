@@ -1,5 +1,15 @@
 2017-05-01  Shiro Kawai  <shiro@acm.org>
 
+	* lib/r7rs.scm (define-library): Fix a mysterious bug that internal
+	  definitions inserted by a macro defined in an r7rs library
+	  wasn't recognized as internal definitions.  Initially we suspected
+	  a bug that broke hygiene of 'define'.  It turned out that the
+	  bug was in the sloppy definition of 'define-library': The expansion
+	  redefined 'begin'.  And because hygienic expansion is working as
+	  expected, the compiler didn't recognize 'begin' as the original
+	  meaning, and skipped splicing internal defines.
+	  Fix https://github.com/shirok/Gauche/issues/221
+
 	* src/class.c (Scm_ShortClassName): Unofficial API change: Previously
 	  called Scm__InternalClassName.  It's just a C function that strips
 	  '<' and '>' from the class name, but its handy and used from

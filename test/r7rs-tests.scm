@@ -2,6 +2,8 @@
 ;; This defines a compatibility module, then include Chibi's r7rs-tests to run.
 ;;
 
+(use gauche.test)
+
 ;; fake (chibi test) used in r7rs-tests
 (define-module chibi.test
   (use gauche.test)
@@ -10,16 +12,8 @@
 
   (define *nest-count* 0)
 
-  (define (test-begin msg)
-    (if (zero? *nest-count*)
-      (test-start msg)
-      (test-section msg))
-    (inc! *nest-count*))
-
-  (define (test-end)
-    (dec! *nest-count*)
-    (when (zero? *nest-count*)
-      (with-module gauche.test (test-end))))
+  (define (test-begin msg) (test-section msg))
+  (define (test-end) #f)
 
   (define-syntax x:test
     (syntax-rules ()
@@ -51,7 +45,40 @@
   (define-syntax include (with-module gauche include)))
 (provide "adaptor")
 
+(test-start "r7rs-tests")
+
 (require "r7rs")
-(select-module r7rs.user)
-(import (adaptor))
-(include "include/r7rs-tests.scm")
+(with-module r7rs.user
+  (import (adaptor))
+  (include "include/r7rs-tests.scm"))
+
+;;
+;; Some extra tests
+;;
+
+(test-section "Extra tests")
+
+;;
+;; https://github.com/shirok/Gauche/issues/221
+;;
+;; In 0.9.5 and before, expansion of insert-internal-define raises
+;; syntax-error, since the binding of 'begin' is replaced by
+;; define-library implementation.
+
+(define-library (insert-internal-define)
+  (import (scheme base))
+  (export insert-internal-define)
+  (begin (define-syntax insert-internal-define
+           (syntax-rules ()
+             ((_ x) (begin (define x 'yo!) x))))))
+
+(define-module insert-internal-define.user
+  (import insert-internal-define))
+
+(test* "insert internal define with r7rs library" 'yo!
+       (eval '(let ((a 'duh!)) (insert-internal-define a))
+             (find-module 'insert-internal-define.user)))
+
+(test-end)
+
+

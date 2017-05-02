@@ -93,38 +93,43 @@
   (export define-library)
 
   ;; A trick - must be replaced once we have explicit-renaming macro.
-  (define define-module. ((with-module gauche.internal make-identifier)
-                          'define-module (find-module 'gauche) '()))
-  (define with-module.   ((with-module gauche.internal make-identifier)
-                          'with-module (find-module 'gauche) '()))
-  (define define-syntax. ((with-module gauche.internal make-identifier)
-                          'define-syntax (find-module 'gauche) '()))
-  (define extend.        ((with-module gauche.internal make-identifier)
-                          'extend (find-module 'gauche) '()))
+  (define (global-id sym) ((with-module gauche.internal make-identifier)
+                           sym (find-module 'gauche) '()))
+  (define define-module.  (global-id 'define-module))
+  (define with-module.    (global-id 'with-module))
+  (define define-syntax.  (global-id 'define-syntax.))
+  (define extend.         (global-id 'extend))
+
+  (define export.         (global-id 'export))
+  (define begin.          (global-id 'begin))
+  (define include.        (global-id 'include))
+  (define include-ci.     (global-id 'include-ci))
+  (define cond-expand.    (global-id 'cond-expand))
+  (define r7rs-import.    ((with-module gauche.internal make-identifier)
+                           'r7rs-import (find-module 'r7rs.import) '()))
   
   (define-macro (define-library name . decls)
     `(,define-module. ,(library-name->module-name name)
-       (,define-syntax. export      (,with-module. gauche export))
-       (,define-syntax. begin       (,with-module. gauche begin))
-       (,define-syntax. include     (,with-module. gauche include))
-       (,define-syntax. include-ci  (,with-module. gauche include-ci))
-       (,define-syntax. cond-expand (,with-module. gauche cond-expand))
-       (,define-syntax. import      (,with-module. r7rs.import r7rs-import))
        (,extend.)
        ,@(map transform-decl decls)))
 
   (define (transform-decl decl)
-    (cond [(eq? (car decl) 'include-library-declarations)
-           ;; TODO: This is too permissive---this allows the files
-           ;; to have not only library decls but also ordinary scheme
-           ;; expressions.  But this can delegate file searching business
-           ;; to 'include' syntax so it's an easy path.
-           `(include ,@(cdr decl))]
-          [(memq (car decl)
-                 '(export import include include-ci begin cond-expand))
-           decl]
-          [else
-           (error "Invalid library declaration:" decl)]))
+    ;; Since define-library can't be an output of macro, we can just
+    ;; compare symbols literally.
+    (case (car decl)
+      [(include-library-declarations)
+       ;; TODO: This is too permissive---this allows the files
+       ;; to have not only library decls but also ordinary scheme
+       ;; expressions.  But this can delegate file searching business
+       ;; to 'include' syntax so it's an easy path.
+       `(,include. ,@(cdr decl))]
+      [(export)      `(,export. ,@(cdr decl))]
+      [(import)      `(,r7rs-import. ,@(cdr decl))]
+      [(begin)       `(,begin. ,@(cdr decl))]
+      [(include)     `(,include. ,@(cdr decl))]
+      [(include-ci)  `(,include-ci. ,@(cdr decl))]
+      [(cond-expand) `(,cond-expand. ,@(cdr decl))]
+      [else (error "Invalid library declaration:" decl)]))
   )
 
 ;;
