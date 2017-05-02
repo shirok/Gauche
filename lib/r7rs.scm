@@ -158,11 +158,16 @@
 ;; r7rs compatibility thingy.
 
 (define-module r7rs.aux
-  (export define+ define-syntax+)
+  ;; Auxiliary utility module.  This provides two things:
+  ;;  Utility macro define+ to redefine from other module,
+  ;;  and make r7rs#define and r7rs#lambda visible as r7rs:define
+  ;;  and r7rs:lambda.
+  (use gauche.base :except (define lambda))
+  (extend null)
+  (export define+ (rename define r7rs:define) (rename lambda r7rs:lambda))
   (define-macro (define+ sym module)
     `(define-inline ,sym (with-module ,module ,sym)))
-  (define-macro (define-syntax+ sym module)
-    `(define-syntax ,sym (with-module ,module ,sym))))
+  )
 
 (define-module scheme.base
   (use gauche.uvector)
@@ -200,7 +205,8 @@
           eof-object eq?  eqv?  error-object-irritants error-object?  exact
           exact-integer?  expt file-error?  floor-quotient floor/ for-each
           get-output-bytevector guard include inexact input-port-open?
-          integer->char lambda length let* let-syntax letrec letrec-syntax
+          integer->char (rename r7rs:lambda lambda) length let* let-syntax
+          letrec letrec-syntax
           list->string list-copy list-set!  list?  make-list make-string map
           member memv modulo newline null?  number?  odd?  open-input-string
           open-output-string output-port-open?  pair?  peek-char port?
@@ -223,8 +229,7 @@
             open-input-uvector open-output-uvector get-output-uvector)
 
   ;; 4.1 Primitive expression types
-  ;; quote, if, include, include-ci
-  (define-syntax+ lambda     scheme)
+  ;; quote, if, lambda, include, include-ci
 
   ;; 4.2 Derived expression types
   ;; cond case and or when unless cond-expand let let* letrec letrec*
@@ -542,11 +547,13 @@
           char-numeric? char-ready? char-upcase char-upper-case? char-whitespace?
           char<=? char<? char=? char>=? char>? char? close-input-port
           close-output-port complex? cond cons cos current-input-port
-          current-output-port define define-syntax delay denominator display
+          current-output-port (rename r7rs:define define)
+          define-syntax delay denominator display
           do dynamic-wind eof-object? eq? equal? eqv? eval even? exact->inexact
           exact? exp expt floor for-each force gcd if imag-part inexact->exact
           inexact? input-port? integer->char integer? interaction-environment
-          lambda lcm length let let* let-syntax letrec letrec-syntax list
+          (rename r7rs:lambda lambda)
+          lcm length let let* let-syntax letrec letrec-syntax list
           list->string list->vector list-ref list-tail list? load log magnitude
           make-polar make-rectangular make-string make-vector map max member
           memq memv min modulo negative? newline not null-environment null?
@@ -562,8 +569,6 @@
           vector-fill! vector-length vector-ref vector-set! vector?
           with-input-from-file with-output-to-file write write-char zero?
           )
-  (define-syntax define (with-module scheme define))
-  (define-syntax lambda (with-module scheme lambda))
   (provide "scheme/r5rs")
   )
 

@@ -1,3 +1,10 @@
+2017-05-02  Shiro Kawai  <shiro@acm.org>
+
+	* lib/r7rs.scm (scheme.r5rs): Avoid redefining 'define',
+	  for it interferes with internal definition recognition.  Instead
+	  we fiddle with r7rs.aux to expose r7rs#define as r7rs:define,
+	  and use export renaming in scheme.r5rs to export it as 'define'.
+
 2017-05-01  Shiro Kawai  <shiro@acm.org>
 
 	* lib/r7rs.scm (define-library): Fix a mysterious bug that internal
