@@ -1,5 +1,12 @@
 2017-05-02  Shiro Kawai  <shiro@acm.org>
 
+	* lib/r7rs.scm (define-library): Fix another bug in cond-expand.
+	  Cond-expand in library decl differs from srfi-0 cond-expand
+	  where the output of the former is spliced into library decls.
+	  It is tricky because we have to deal with the output of cond-expand
+	  macro at the macro transformer level.  For now, we call macroexpand
+	  inside the transformer---very CL-ish.
+
 	* src/compile-1.scm (pass1/body-rec): Use global-identifier=?
 	  to check internal define and internal define-syntax.  See the
 	  added test in test/macro.scm for the case this fixes.

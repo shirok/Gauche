@@ -95,6 +95,7 @@
   ;; A trick - must be replaced once we have explicit-renaming macro.
   (define (global-id sym) ((with-module gauche.internal make-identifier)
                            sym (find-module 'gauche) '()))
+  (define global-id=?     (with-module gauche.internal global-identifier=?))
   (define define-module.  (global-id 'define-module))
   (define with-module.    (global-id 'with-module))
   (define define-syntax.  (global-id 'define-syntax.))
@@ -107,6 +108,7 @@
   (define cond-expand.    (global-id 'cond-expand))
   (define r7rs-import.    ((with-module gauche.internal make-identifier)
                            'r7rs-import (find-module 'r7rs.import) '()))
+  (define use.            (global-id 'use))
   
   (define-macro (define-library name . decls)
     `(,define-module. ,(library-name->module-name name)
@@ -128,8 +130,24 @@
       [(begin)       `(,begin. ,@(cdr decl))]
       [(include)     `(,include. ,@(cdr decl))]
       [(include-ci)  `(,include-ci. ,@(cdr decl))]
-      [(cond-expand) `(,cond-expand. ,@(cdr decl))]
-      [else (error "Invalid library declaration:" decl)]))
+      [(cond-expand)
+       ;; cond-expand needs special handling.  The expansion logic is the
+       ;; same as srfi-0 cond-expand, but we have to treat the expanded
+       ;; form as library-declarations instead of ordinary Scheme expressions.
+       ;; The current implementation relies on how cond-expand constructs
+       ;; the output; if we change cond-expand, we may need to tweak this
+       ;; as well.
+       (let1 expanded (macroexpand `(,cond-expand. ,@(cdr decl)))
+         (if (pair? expanded)
+           (if (global-id=? (car expanded) begin.)
+             `(,begin. ,@(map transform-decl (cdr expanded)))
+             (transform-decl expanded))
+           (error "cond-expand expands to non-list:" expanded)))]
+      [else
+       ;; cond-expand may insert use clause, so
+       (if (and (pair? decl) (global-id=? (car decl) use.))
+         decl
+         (error "Invalid library declaration:" decl))]))
   )
 
 ;;
