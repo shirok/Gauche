@@ -128,6 +128,37 @@
           (find-module 'user))
          #t))
 
+;;
+;; Test include-library-declarations
+;;
+
+(test* "include-library-declarations 1" 5
+       (begin
+         (eval
+          '(define-library (include-library-declarations-1)
+             (include-library-declarations "include/include-library-declarations-1.scm")
+             (begin (define bar (+ foo 1))))
+          (find-module 'user))
+         (eval
+          '(begin
+             (import include-library-declarations-1)
+             bar)
+          (make-module #f))))
+
+(test* "include-library-declarations 2"
+       (test-error <top> #/Invalid library declaration/)
+       (begin
+         (eval
+          '(define-library (include-library-declarations-2)
+             (include-library-declarations "include/include-library-declarations-2.scm")
+             (begin (define bar (+ foo 1))))
+          (find-module 'user))
+         (eval
+          '(begin
+             (import include-library-declarations-2)
+             bar)
+          (make-module #f))))
+
 (test-end)
 
 

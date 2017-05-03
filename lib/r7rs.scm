@@ -120,11 +120,15 @@
     ;; compare symbols literally.
     (case (car decl)
       [(include-library-declarations)
-       ;; TODO: This is too permissive---this allows the files
-       ;; to have not only library decls but also ordinary scheme
-       ;; expressions.  But this can delegate file searching business
-       ;; to 'include' syntax so it's an easy path.
-       `(,include. ,@(cdr decl))]
+       (unless (string? (cadr decl))
+         (error "include-library-declarations needs a string argument, but got:"
+                (cadr decl)))
+       ;; We share file searching logic with 'include' form.
+       (call-with-port
+        ($ (with-module gauche.internal pass1/open-include-file)
+           (cadr decl)
+           (or (current-load-path) (sys-getcwd)))
+        (^p `(,begin. ,@(map transform-decl (port->sexp-list p)))))]
       [(export)      `(,export. ,@(cdr decl))]
       [(import)      `(,r7rs-import. ,@(cdr decl))]
       [(begin)       `(,begin. ,@(cdr decl))]
