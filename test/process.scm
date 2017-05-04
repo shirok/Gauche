@@ -573,6 +573,10 @@
   (t "'ab c d' ef \"g h\"" '("ab c d" "ef" "g h")      'posix)
   (t "'ab\\\\cd' \"ab\\\\cd\"" '("ab\\\\cd" "ab\\cd")  'posix)
   (t "'ab\\xcd' \"ab\\xcd\"" '("ab\\xcd" "ab\\xcd")    'posix)
+  (t "a\"\"b"              '("ab")                     'posix)
+  (t "a''b"                '("ab")                     'posix)
+  (t "a'\"'b"              '("a\"b")                   'posix)
+  (t "a\"'\"b"             '("a'b")                    'posix)
 
   (t "$abc"                (test-error)                'posix)
   (t "\"$abc\""            (test-error)                'posix)

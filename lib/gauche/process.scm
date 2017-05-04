@@ -702,8 +702,8 @@
           (let1 c (peek-char)
             (cond [(eof-object? c) (list c0)]
                   [(char-whitespace? c) (skip-ws) (list c0)]
-                  [(eqv? c #\') (cons c0 (read-sq))]
-                  [(eqv? c #\") (cons c0 (read-dq))]
+                  [(eqv? c #\') (read-char) (cons c0 (read-sq))]
+                  [(eqv? c #\") (read-char) (cons c0 (read-dq))]
                   [(eqv? c #\\) (read-char) (cons c0 (read-escaped))]
                   [(#[|&\;<>()$`] c) (err-meta c)]
                   [else (read-char) (cons c0 (read-unquoted c))])))

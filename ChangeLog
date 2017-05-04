@@ -1,3 +1,9 @@
+2017-05-04  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/process.scm (shell-tokenize-string): Fix a bug that
+	  failed to recognize quoted string appearing in middle of unquoted
+	  string.
+
 2017-05-02  Shiro Kawai  <shiro@acm.org>
 
 	* lib/r7rs.scm (define-library): Fix another bug in cond-expand.
