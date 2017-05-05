@@ -1,5 +1,10 @@
 2017-05-04  Shiro Kawai  <shiro@acm.org>
 
+	* src/liblist.scm (list*, cons*): Require at least one arg, as
+	  specified in srfi-1 and CL.  Zero arg list*/cons* don't make sense.
+	  Gauche doc have always been required >=1 arg, so allowing zero arg
+	  was just an implementation artifacts.
+
 	* lib/gauche/process.scm (shell-tokenize-string): Fix a bug that
 	  failed to recognize quoted string appearing in middle of unquoted
 	  string.

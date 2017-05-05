@@ -181,18 +181,17 @@
 (define-cproc last-pair (list) :constant Scm_LastPair)
 (define-cproc list-copy (list) Scm_CopyList)
 
-(define-cproc list* (:rest args)
+(define-cproc list* (arg :rest args)
   (inliner LIST-STAR)
-  (let* ([head '()] [tail '()])
-    (when (SCM_PAIRP args)
+  (if (SCM_NULLP args)
+    (return arg)
+    (let* ([head (SCM_LIST1 arg)] [tail head])
       (dopairs [cp args]
         (unless (SCM_PAIRP (SCM_CDR cp))
-          (if (SCM_NULLP head)
-            (set! head (SCM_CAR cp))
-            (SCM_SET_CDR tail (SCM_CAR cp)))
+          (SCM_SET_CDR tail (SCM_CAR cp))
           (break))
-        (SCM_APPEND1 head tail (SCM_CAR cp))))
-    (return head)))
+        (SCM_APPEND1 head tail (SCM_CAR cp)))
+      (return head))))
 
 (define-cproc append! (:rest list)
   (let* ([h '()] [t '()])
@@ -242,7 +241,7 @@
         [(pair? l) #f]
         [else (error "argument must be a list, but got:" l)]))
 
-(define cons* list*)                    ;srfi-1
+(define-inline cons* list*)             ;srfi-1
 
 (define (last lis) (car (last-pair lis))) ;srfi-1
 

@@ -929,12 +929,12 @@
 
 (define-insn LIST-STAR   1 none #f      ; list*
   (let* ([nargs::int (SCM_VM_INSN_ARG code)] [cp SCM_NIL] [arg])
-    (when (> nargs 0)
-      (SCM_FLONUM_ENSURE_MEM VAL0)
-      (set! cp VAL0)
-      (while (> (pre-- nargs) 0)
-        (POP-ARG arg)
-        (set! cp (Scm_Cons arg cp))))
+    (VM-ASSERT (>= nargs 1))
+    (SCM_FLONUM_ENSURE_MEM VAL0)
+    (set! cp VAL0)
+    (while (> (pre-- nargs) 0)
+      (POP-ARG arg)
+      (set! cp (Scm_Cons arg cp)))
     ($result cp)))
 
 (define-insn LENGTH      0 none #f      ; length
