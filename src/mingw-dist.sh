@@ -29,12 +29,15 @@ esac
 # the gcc path embedded in gauche-config should be Windows path.
 PATH=$mingwdir/bin:$PATH
 
-# We assume we run this script on 64bit platform.  For 32bit distribution,
-# though, we want the resulting gosh to run as if it's built on 32bit platform.
-case "$MSYSTEM" in
-  MINGW32)
-    buildopt=--build=i686-pc-mingw32
-esac
+## architecture name setting
+#case "$MSYSTEM" in
+#  MINGW64)
+#    buildopt=--build=x86_64-w64-mingw32;;
+#  MINGW32)
+#    buildopt=--build=i686-w64-mingw32;;
+#  *)
+#    buildopt=--build=i686-pc-mingw32;;
+#esac
 
 # Process Options:
 while [ "$#" -gt 0 ]; do
@@ -111,7 +114,7 @@ esac
 if [ "$WITH_GL" = "yes" ]; then
   PATH=$distdir/bin:$PATH
   (cd ../Gauche-gl; ./DIST gen; \
-   ./configure --prefix=$distdir --with-glut=mingw-static; \
+   ./configure --prefix=$distdir --with-glut=mingw-static $buildopt; \
    make clean; make; make install; make install-examples)
 fi
 
