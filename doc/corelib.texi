@@ -11116,6 +11116,7 @@ from @code{hash-table-fold}.
 @end defun
 
 @defun hash-table-find ht pred :optional failure
+[SRFI-125]
 @c EN
 Apply @var{pred} with each key and value in the hash table @var{ht}.
 Once @var{pred} returns a true value, that return value is immediately returned
@@ -11129,6 +11130,33 @@ omitted, @code{(lambda () #f)} is assumed.
 @var{pred}を満たすキーと値が無ければ、無引数の手続き@var{failure}が呼び出され、
 その値が戻り値となります。@var{failure}が省略された場合は
 @code{(lambda () #f)}が使われます。
+@c COMMON
+
+@c EN
+This procedure is taken from SRFI-125, except that in SRFI-125 the
+@var{failure} argument isn't optional.
+@c JP
+この手続きはSRFI-125から取られました。但し、SRFI-125では
+@var{failure}引数は省略できません。
+@c COMMON
+
+@c EN
+Note: The convention starting from srfi-1 is that
+@code{*-find} returns an item in the collection that
+satisfy the predicate, while @code{*-any} returns a non-false
+value the predicate returns.  SRFI-125 broke the convention.
+The justification given in SRFI-125 discussion
+was that the ``any'' semantics is strictly upper-compatible to the
+``find'' semantics so we can combine two.  So far, though, SRFI-125
+is the only exception of this convention.
+@c JP
+註: srfi-1から始まった慣習では、@code{*-find}というAPIは
+述語を満たすようなコレクション内の要素を返し、@code{*-any}というAPIが
+述語が偽でない値を返した時にその値をそのまま返り値とします。
+SRFI-125が慣習を破った理由は、
+``any''のセマンティクスで従来の ``find'' の動作もエミュレートできるので
+``find''が ``any'' の動作も兼ねてしまえばよいというものです。
+しかし、現在までのところ、この慣習を破っているのはSRFI-125のみです。
 @c COMMON
 
 @example
