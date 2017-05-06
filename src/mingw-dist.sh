@@ -29,7 +29,9 @@ esac
 # the gcc path embedded in gauche-config should be Windows path.
 PATH=$mingwdir/bin:$PATH
 
-## architecture name setting
+## Build architecture
+## As of May 2017, the latest mingw-w64 correctly sets these automatically.
+## If you're using older versions, you might need to comment out the following.
 #case "$MSYSTEM" in
 #  MINGW64)
 #    buildopt=--build=x86_64-w64-mingw32;;
