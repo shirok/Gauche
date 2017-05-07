@@ -34,7 +34,8 @@
 (define-module gauche.dictionary
   (use gauche.collection)
   (export dict-get dict-put! |setter of dict-get|
-          dict-exists? dict-delete!
+          dict-immutable? dict-exists?
+          dict-delete!
           dict-fold dict-fold-right
           dict-for-each dict-map
           dict-keys dict-values dict-comparator
@@ -65,6 +66,7 @@
 ;; Optional methods (if not provided, the default method works, though
 ;; maybe inefficient.):
 ;;
+;;    dict-immutable?
 ;;    dict-fold dict proc seed
 ;;    dict-fold-right dict proc seed    ; for ordered dictionary
 ;;    dict-exists? dict key
@@ -99,6 +101,8 @@
         [(:exists?)
          `(define-method dict-exists? ((,dict ,class) ,key)
             (,specific ,dict ,key))]
+        [(:immutable?)
+         `(define-method dict-immutable ((,dict ,class)) (,specific ,dict))]
         [(:delete!)
          `(define-method dict-delete! ((,dict ,class) ,key)
             (,specific ,dict ,key))]
@@ -186,6 +190,9 @@
 ;;
 
 (define %unique (list #f))
+
+;; Default is mutable.  Immutable dict should override.
+(define-method dict-immutable? ((dict <dictionary>)) #f)
 
 (define-method dict-exists? ((dict <dictionary>) key)
   (not (eq? (dict-get dict key %unique) %unique)))
