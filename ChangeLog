@@ -1,3 +1,9 @@
+2017-05-06  Shiro Kawai  <shiro@acm.org>
+
+	* src/list.scm, src/liblist.scm (append, append!): Strictly check
+	  args to reject dotted list in non-last argument.
+	  NB: We don't check circular list, for it requires more overhead.
+
 2017-05-04  Shiro Kawai  <shiro@acm.org>
 
 	* src/liblist.scm (list*, cons*): Require at least one arg, as

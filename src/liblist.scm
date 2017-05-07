@@ -203,7 +203,9 @@
           (set! h (SCM_CAR cp))
           (SCM_SET_CDR t (SCM_CAR cp)))
         (break))
-      (SCM_APPEND h t (SCM_CAR cp)))
+      (SCM_APPEND h t (SCM_CAR cp))
+      (unless (or (SCM_NULLP t) (SCM_NULLP (SCM_CDR t)))
+        (Scm_Error "proper list required, but got %S" (SCM_CAR cp))))
     (return h)))
 
 (define-cproc reverse! (list :optional (tail ())) Scm_Reverse2X)

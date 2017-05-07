@@ -951,18 +951,23 @@
 
 (define-insn APPEND      1 none #f
   (let* ([nargs::int (SCM_VM_INSN_ARG code)] [cp SCM_NIL] [args SCM_NIL] [a])
-    (when (> nargs 0)
-      (SCM_FLONUM_ENSURE_MEM VAL0)
-      (set! cp VAL0)
-      ;; We want to pop all args before doing works, for Scm_Length may cause
-      ;; forcing lazy-pair.
-      (while (> (pre-- nargs) 0)
-        (POP-ARG a)
-        (set! args (Scm_Cons a args)))
-      ;; Now it' safe to work on args (note that we work from tail to head).
-      (dolist [a (Scm_ReverseX args)]
-        (when (< (Scm_Length a) 0) ($vm-err "list required, but got %S" a))
-        (set! cp (Scm_Append2 a cp))))
+    ;; We special-case up to 2 args to save allocation of extra pairs
+    ;; for argument lists.
+    (case nargs
+      [(0) (break)]
+      [(1) (set! cp VAL0) (break)]
+      [(2) (SCM_FLONUM_ENSURE_MEM VAL0)
+       (POP-ARG a)
+       (set! cp (Scm_Append2 a VAL0))
+       (break)]
+      [else
+       (set! args (Scm_Cons VAL0 SCM_NIL))
+       ;; We want to pop all args before doing works, for Scm_Append may cause
+       ;; forcing lazy-pair.
+       (while (> (pre-- nargs) 0)
+         (POP-ARG a)
+         (set! args (Scm_Cons a args)))
+       (set! cp (Scm_Append args))])
     ($result cp)))
 
 (define-insn NOT      0 none #f ($w/argr v ($result:b (SCM_FALSEP v))))

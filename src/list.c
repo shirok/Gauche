@@ -291,11 +291,14 @@ ScmObj Scm_Append2X(ScmObj list, ScmObj obj)
 
 ScmObj Scm_Append2(ScmObj list, ScmObj obj)
 {
-    if (!SCM_PAIRP(list)) return obj;
+    if (SCM_NULLP(list)) return obj;
 
-    ScmObj start = SCM_NIL, last = SCM_NIL;
-    SCM_FOR_EACH(list, list) {
-        SCM_APPEND1(start, last, SCM_CAR(list));
+    ScmObj cp, start = SCM_NIL, last = SCM_NIL;
+    SCM_FOR_EACH(cp, list) {
+        SCM_APPEND1(start, last, SCM_CAR(cp));
+    }
+    if (!SCM_NULLP(cp)) {
+        Scm_Error("proper list required, but got %S", list);
     }
     SCM_SET_CDR(last, obj);
 
@@ -316,6 +319,9 @@ ScmObj Scm_Append(ScmObj args)
             Scm_Error("pair required, but got %S", SCM_CAR(cp));
         } else {
             SCM_APPEND(start, last, Scm_CopyList(SCM_CAR(cp)));
+            if (SCM_PAIRP(last) && !SCM_NULLP(SCM_CDR(last))) {
+                Scm_Error("proper list required, but got %S", SCM_CAR(cp));
+            }
         }
     }
     return start;
