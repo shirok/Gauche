@@ -33,7 +33,7 @@
 
 (define-module gauche.hashutil
   (export hash-table hash-table-for-each hash-table-map hash-table-fold
-          hash-table-find
+          hash-table-seek hash-table-find
           boolean-hash char-hash char-ci-hash string-hash string-ci-hash
           symbol-hash number-hash default-hash
           hash-bound hash-salt))
@@ -72,15 +72,20 @@
           r
           (loop (kons k v r)))))))
 
-(define (hash-table-find hash pred :optional (failure (^[] #f)))
+(define (hash-table-seek hash pred succ fail)
   (check-arg hash-table? hash)
   (let ([eof (cons #f #f)]              ;marker
         [i (%hash-table-iter hash)])
     (let loop ()
       (receive [k v] (i eof)
-        (cond [(eq? k eof) (failure)]
-              [(pred k v)]
+        (cond [(eq? k eof) (fail)]
+              [(pred k v) => (^r (succ r k v))]
               [else (loop)])))))
+  
+;; srfi-125.  this doesn't align with other '*-find' API in a way that
+;; it returns the result of PRED.
+(define (hash-table-find hash pred :optional (failure (^[] #f)))
+  (hash-table-seek hash pred (^[r k v] r) failure))
 
 ;; We delegate most hash calculation to the built-in default-hash.
 ;; These type-specific hash functions are mostly

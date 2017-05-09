@@ -36,6 +36,7 @@
   (export dict-get dict-put! |setter of dict-get|
           dict-immutable? dict-exists?
           dict-delete!
+          dict-seek
           dict-fold dict-fold-right
           dict-for-each dict-map
           dict-keys dict-values dict-comparator
@@ -66,7 +67,7 @@
 ;; Optional methods (if not provided, the default method works, though
 ;; maybe inefficient.):
 ;;
-;;    dict-immutable?
+;;    dict-immutable? dict-seek
 ;;    dict-fold dict proc seed
 ;;    dict-fold-right dict proc seed    ; for ordered dictionary
 ;;    dict-exists? dict key
@@ -88,7 +89,9 @@
           [val (gensym)]
           [default (gensym)]
           [proc (gensym)]
-          [seed (gensym)])
+          [seed (gensym)]
+          [succ (gensym)]
+          [fail (gensym)])
       (case kind
         [(:get)
          `(define-method dict-get ((,dict ,class) ,key . ,default)
@@ -142,6 +145,9 @@
         [(:comparator)
          `(define-method dict-comparator ((,dict ,class))
             (,specific ,dict))]
+        [(:seek)
+         `(define-method dict-seek ((,dict ,class) ,proc ,succ ,fail)
+            (,specific ,dict ,proc ,succ ,fail))]
         [else (error "invalid kind in define-dict-interface:" kind)])))
   `(begin
      ,@(map (^p (gen-def (car p) (cadr p))) (slices clauses 2))))
@@ -156,6 +162,7 @@
   :delete!    hash-table-delete!
   :clear!     hash-table-clear!
   :exists?    hash-table-exists?
+  :seek       hash-table-seek
   :fold       hash-table-fold
   :for-each   hash-table-for-each
   :map        hash-table-map
@@ -173,6 +180,7 @@
   :delete!    tree-map-delete!
   :clear!     tree-map-clear!
   :exists?    tree-map-exists?
+  :seek       tree-map-seek
   :fold       tree-map-fold
   :fold-right tree-map-fold-right
   :for-each   tree-map-for-each
@@ -203,6 +211,14 @@
 
 (define-method dict-fold-right ((dict <ordered-dictionary>) proc seed)
   (fold-right (^[kv seed] (proc (car kv) (cdr kv) seed)) dict seed))
+
+(define-method dict-seek ((dict <dictionary>) pred succ fail)
+  (let/cc return
+    (dict-fold (^[k v _] (if-let1 r (pred k v)
+                           (return (succ r k v))
+                           #f))
+               #f)
+    (fail)))
 
 (define-method dict-map ((dict <dictionary>) proc)
   (reverse (dict-fold dict (^[k v s] (cons (proc k v) s)) '())))

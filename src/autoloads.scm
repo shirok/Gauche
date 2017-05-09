@@ -186,7 +186,8 @@
           sys-stat->atime sys-stat->mtime sys-stat->ctime
           sys-stat->type sys-tm->alist)
 
-(autoload gauche.hashutil hash-table hash-table-fold hash-table-find
+(autoload gauche.hashutil hash-table hash-table-fold
+                          hash-table-seek hash-table-find
                           hash-table-for-each hash-table-map
                           boolean-hash char-hash char-ci-hash
                           string-hash string-ci-hash
@@ -195,7 +196,7 @@
 (autoload gauche.treeutil make-tree-map tree-map-empty?
                           tree-map-min tree-map-max
                           tree-map-pop-min! tree-map-pop-max!
-                          tree-map-fold tree-map-fold-right
+                          tree-map-seek tree-map-fold tree-map-fold-right
                           tree-map-map tree-map-for-each
                           tree-map-keys tree-map-values
                           tree-map->alist alist->tree-map)
