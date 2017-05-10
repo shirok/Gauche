@@ -30,16 +30,18 @@ esac
 PATH=$mingwdir/bin:$PATH
 
 ## Build architecture
-## As of May 2017, the latest mingw-w64 correctly sets these automatically.
-## If you're using older versions, you might need to comment out the following.
-#case "$MSYSTEM" in
-#  MINGW64)
-#    buildopt=--build=x86_64-w64-mingw32;;
-#  MINGW32)
-#    buildopt=--build=i686-w64-mingw32;;
-#  *)
-#    buildopt=--build=i686-pc-mingw32;;
-#esac
+#  Mingw-w64 automatically identifies this by default if you're in an
+#  appropriate shell, but we sometimes need to cross-build (meaning,
+#  building i686 binary on x86_64 shell, for example), so this setting
+#  makes things easier.
+case "$MSYSTEM" in
+  MINGW64)
+    buildopt=--build=x86_64-w64-mingw32;;
+  MINGW32)
+    buildopt=--build=i686-w64-mingw32;;
+  *)
+    buildopt=--build=i686-pc-mingw32;;
+esac
 
 # Process Options:
 while [ "$#" -gt 0 ]; do
