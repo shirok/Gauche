@@ -1,3 +1,14 @@
+2017-05-08  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/gauche/dictionary.scm (dict-seek): Added new protocol API.
+	* lib/gauche/hashutil.scm (hash-seek),
+	  lib/gauche/treeutil.scm (tree-map-seek): Added.
+
+2017-05-07  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/gauche/dictionary.scm (dict-immutable?): Added new protocol
+	  API.
+
 2017-05-06  Shiro Kawai  <shiro@acm.org>
 
 	* src/list.scm, src/liblist.scm (append, append!): Strictly check
