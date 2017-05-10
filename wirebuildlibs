@@ -37,14 +37,14 @@ if [ "$LN_S" = "cp -p" ]; then
   LN_S="cp -pR"
 fi
 
-rm -f libsrc
+rm -rf libsrc
 $LN_S $top_srcdir/libsrc libsrc
 for f in `(cd $top_srcdir; find lib \( -name '*.scm' -o -name 'dump' -o -name 'restore' \) -print)`; do
   if [ $f != "lib/gauche/config.scm" -a $f != "slib.scm" ]; then
     mkdir -p `dirname $f`
-    rm -f $f
+    rm -rf $f
     $LN_S $top_srcdir/$f $f
   fi
 done
-rm -f test
+rm -rf test
 $LN_S $top_srcdir/test test

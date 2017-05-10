@@ -107,12 +107,18 @@ do_self_host_test () {
     do_gen
     srcdir=`pwd`
     destdir=`pwd`/../Gauche-tmp-self-host-test
+    # mingw doesn't seem to like parallel make
+    if [ x$MSYSTEM = x ]; then
+	makeopt=-j
+    else
+	makeopt=
+    fi
     if [ -d $destdir/stage1 ]; then rm -rf $destdir; fi
     XPATH=$destdir/bin:$PATH
     mkdir -p $destdir/stage1
-    (cd $destdir/stage1; $srcdir/configure --prefix=$destdir; make -j; make install)
+    (cd $destdir/stage1; $srcdir/configure --prefix=$destdir; make $makeopt; make install)
     mkdir -p $destdir/stage2
-    (cd $destdir/stage2; PATH=$XPATH $srcdir/configure; PATH=$XPATH make -j; PATH=$XPATH make -s check)
+    (cd $destdir/stage2; PATH=$XPATH $srcdir/configure; PATH=$XPATH make $makeopt; PATH=$XPATH make -s check)
 }
 
 case $1 in
