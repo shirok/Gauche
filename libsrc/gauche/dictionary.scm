@@ -214,7 +214,8 @@
 
 (define-method dict-seek ((dict <dictionary>) pred succ fail)
   (let/cc return
-    (dict-fold (^[k v _] (if-let1 r (pred k v)
+    (dict-fold dict
+               (^[k v _] (if-let1 r (pred k v)
                            (return (succ r k v))
                            #f))
                #f)

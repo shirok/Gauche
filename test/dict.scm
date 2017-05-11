@@ -18,6 +18,10 @@
   (test* "get default" 3 (dict-get d 'c 3))
   (test* "fold" '((a . 1) (b . 2)) (dict-fold d acons '())
          (cut lset= equal? <> <>))
+  (test* "seek" '(4 b 2)
+         (dict-seek d (^[k v] (and (eq? k 'b) (* v 2))) list (^[] 'huh?)))
+  (test* "seek" 'huh?
+         (dict-seek d (^[k v] (and (eq? k 'c) (* v 2))) list (^[] 'huh?)))
   (test* "exists?" #f (dict-exists? d 'c))
   (test* "exists?" #t (dict-exists? d 'a))
   (test* "delete!" #f (begin (dict-delete! d 'a) (dict-exists? d 'a)))

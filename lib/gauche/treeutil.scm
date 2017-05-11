@@ -80,10 +80,11 @@
   (check-arg tree-map? tm)
   (let ((eof (cons #f #f))              ;marker
         (i (%tree-map-iter tm)))
-    (receive [k v] (i eof #f)
-      (cond [(eq? k eof) (fail)]
-            [(pred k v) => (^r (succ r k v))]
-            [else (loop)]))))
+    (let loop ()
+      (receive [k v] (i eof #f)
+        (cond [(eq? k eof) (fail)]
+              [(pred k v) => (^r (succ r k v))]
+              [else (loop)])))))
 
 (define (tree-map-map tm proc)
   (tree-map-fold-right tm (lambda (k v r) (cons (proc k v) r)) '()))
