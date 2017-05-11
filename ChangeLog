@@ -1,3 +1,10 @@
+2017-05-10  Shiro Kawai  <shiro@acm.org>
+
+	* src/class.c (Scm_MethodApplicableForClasses): If a specializer
+	  is <top>, we don't need to check subtypeness.  Micro-optimization,
+	  but the effect is visible.  (A few percent improvement in 'ref'
+	  when dispatch accelerator is on.)
+
 2017-05-08  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/gauche/dictionary.scm (dict-seek): Added new protocol API.

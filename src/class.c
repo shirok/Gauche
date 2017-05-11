@@ -2115,6 +2115,7 @@ int Scm_MethodApplicableForClasses(ScmMethod *m, ScmClass *types[], int nargs)
         ScmClass **sp = m->specializers;
         int n = 0;
         for (; n < m->common.required; n++) {
+            if (SCM_EQ(sp[n], SCM_CLASS_TOP)) continue;
             if (!Scm_SubtypeP(types[n], sp[n])) return FALSE;
         }
     }
