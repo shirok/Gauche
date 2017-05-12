@@ -36,7 +36,7 @@
   (export dict-get dict-put! |setter of dict-get|
           dict-immutable? dict-exists?
           dict-delete!
-          dict-seek
+          dict-seek dict-find dict-any
           dict-fold dict-fold-right
           dict-for-each dict-map
           dict-keys dict-values dict-comparator
@@ -216,10 +216,18 @@
   (let/cc return
     (dict-fold dict
                (^[k v _] (if-let1 r (pred k v)
-                           (return (succ r k v))
+                           (receive rs (succ r k v)
+                             (apply return rs))
                            #f))
                #f)
     (fail)))
+
+(define-method dict-find ((dict <dictionary>) pred
+                          :optional (fail (^[] (values #f #f))))
+  (dict-seek dict pred (^[r k v] (values k v)) fail))
+
+(define-method dict-any ((dict <dictionary>) pred)
+  (dict-seek dict pred (^[r k v] r) (^[] #f)))
 
 (define-method dict-map ((dict <dictionary>) proc)
   (reverse (dict-fold dict (^[k v s] (cons (proc k v) s)) '())))

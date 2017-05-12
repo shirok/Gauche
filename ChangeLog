@@ -1,3 +1,12 @@
+2017-05-11  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/gauche/dictionary.scm (dict-find, dict-any): Added, defined
+	  on top of dict-seek.  NB: We found the dict-seek protocol is not
+	  enough to implement dict-every, in terms of srfi-1 every semantics,
+	  which returns the result of last invocation of PRED (instead of
+	  acting a pure predicate).  So we keep these and dict-seek unofficial
+	  for now.
+
 2017-05-10  Shiro Kawai  <shiro@acm.org>
 
 	* src/class.c (Scm_MethodApplicableForClasses): If a specializer

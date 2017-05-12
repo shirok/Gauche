@@ -22,6 +22,11 @@
          (dict-seek d (^[k v] (and (eq? k 'b) (* v 2))) list (^[] 'huh?)))
   (test* "seek" 'huh?
          (dict-seek d (^[k v] (and (eq? k 'c) (* v 2))) list (^[] 'huh?)))
+  (test* "find" '(a 1) (values->list (dict-find d (^[k v] (eqv? v 1)))))
+  (test* "find" '(#f #f) (values->list (dict-find d (^[k v] (eqv? v 3)))))
+  (test* "find" 'boo (dict-find d (^[k v] (eqv? v 3)) (^[] 'boo)))
+  (test* "any"  'a (dict-any d (^[k v] (and (eqv? v 1) k))))
+  (test* "any"  #f (dict-any d (^[k v] (and (eqv? v 3) k))))
   (test* "exists?" #f (dict-exists? d 'c))
   (test* "exists?" #t (dict-exists? d 'a))
   (test* "delete!" #f (begin (dict-delete! d 'a) (dict-exists? d 'a)))
