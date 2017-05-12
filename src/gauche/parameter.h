@@ -1,7 +1,7 @@
 /*
  * parameter.h - parameter C API
  *
- *   Copyright (c) 2007-2016  Shiro Kawai  <shiro@acm.org>
+ *   Copyright (c) 2007-2017  Shiro Kawai  <shiro@acm.org>
  *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions

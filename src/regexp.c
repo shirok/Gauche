@@ -1,7 +1,7 @@
 /*
  * regexp.c - regular expression
  *
- *   Copyright (c) 2000-2016  Shiro Kawai  <shiro@acm.org>
+ *   Copyright (c) 2000-2017  Shiro Kawai  <shiro@acm.org>
  *   Copyright (c) 2006 Rui Ueyama, All rights reserved.
  *
  *   Redistribution and use in source and binary forms, with or without

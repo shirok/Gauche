@@ -1,7 +1,7 @@
 ;;;
 ;;; library utilities - to be autoloaded.
 ;;;
-;;;   Copyright (c) 2003-2016  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2003-2017  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
