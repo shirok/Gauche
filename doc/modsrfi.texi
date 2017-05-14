@@ -8330,6 +8330,7 @@ Same as @code{(reverse (vector->list vec start end))}, but more efficient.
 
 @deftp {Module} srfi-141
 @mdindex srfi-141
+@c EN
 This module provides a comprehensive set of integer division operators.
 
 Quotient and remainder in integer divisions can be defined in multiple
@@ -8345,6 +8346,25 @@ This module complements R7RS procedures, by adding @code{ceiling},
 
 The following procedures are in srfi-141 but built-in in Gauche
 (@pxref{Arithmetics}).
+@c JP
+このモジュールは、様々な整数除算操作を包括的に提供します。
+
+整数除算の商と剰余には、除数と被除数の符号の考慮によって、
+いくつかの定義が考えられます。
+Gaucheはそのうちいくつかの定義を組み込みで提供しています：
+R5RSの@code{quotient}、@code{remainder}、@code{modulo}、
+R6RSの@code{div}、@code{mod}、@code{div0}、@code{mod0}、
+そしてR7RSの
+@code{floor-quotient}、@code{floor-remainder}、@code{floor/}、
+@code{truncate-quotinet}、@code{truncate-remainder}、@code{truncate/}、です。
+
+このモジュールは、R7RSの手続きにさらに
+@code{ceiling}、
+@code{round}、@code{euclidean}、@code{balanced}のバリエーションを加えます。
+
+srfi-141の以下の手続きについては組み込みになっているので、
+@ref{Arithmetics}を参照してください。
+@c COMMON
 @example
 floor-quotient     floor-remainder    floor/
 truncate-quotient  truncate-remainder truncate/
@@ -8386,9 +8406,15 @@ euclidean-quotient = floor(n / d)   if d > 0
 euclidean-remainder = n - d * euclidean-quotient
 euclidean/ = values(euclidean-quotient, euclidean-remainder)
 @end example
+@c EN
 The Eclidean variant satisfies a property @code{0 <= remainder < abs(d)}.
 These are the same as R6RS's @code{div}, @code{mod}, and @code{div-and-mod},
 except that they accept non-integers (@pxref{Arithmetics})
+@c JP
+Eclideanバリエーションは、@code{0 <= remainder < abs(d)}という関係を常に満たします。
+この定義はR6RSの@code{div}、@code{mod}および@code{div-and-mod}と同じです。
+但し、R6RS版は非整数を引数に取ることもできます(@ref{Arithmetics}参照)。
+@c COMMON
 @end defun
 
 @defun balanced-quotient n d
@@ -8403,11 +8429,18 @@ balanced/ = values(balanced-quotient, balanced-remainder)
   where roundup(x) is  ceiling(x) if x - floor(x) <= 0.5
                    and floor(x)   if x - floor(x) > 0.5
 @end example
+@c EN
 The balanced variant satisfies a property
 @code{-abs(d/2) <= remainder < abs(d/2)}.
 These are the same as R6RS's @code{div0}, @code{mod0}, and
 @code{div0-and-mod0}, except that they accept non-integers
 (@pxref{Arithmetics}).
+@c JP
+Balancedバージョンは@code{-abs(d/2) <= remainder < abs(d/2)}という
+関係を常に満たします。これはR6RSの
+@code{div0}、@code{mod0}および@code{div0-and-mod0}と同じです。
+但し、R6RS版は非整数を引数に取ることもできます(@ref{Arithmetics}参照)。
+@c COMMON
 @end defun
 
 
