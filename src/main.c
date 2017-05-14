@@ -573,7 +573,7 @@ int main(int ac, char **av)
 #  if defined(UNICODE)
     /* Set up argument array correctly */
     LPWSTR *argvW = CommandLineToArgvW(GetCommandLineW(), &argc);
-    argv = SCM_NEW_ATOMIC_ARRAY(char*, argc);
+    argv = SCM_NEW_ARRAY(char*, argc);
     /* Kludge! Need to discard 'const' qualifier, for getopt() expects
        char * const*, not const char**.  It's safe since Scm_WCS2MBS
        always returns freshly allocated strings and we won't share them. */
