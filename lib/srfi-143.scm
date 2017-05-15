@@ -36,7 +36,7 @@
                       rotate-bit-field reverse-bit-field))
   (use srfi-141 :only (balanced/))
   (export fx-width fx-greatest fx-least
-          fixnum? fx= fx< fx<= fx> fx>=
+          fixnum? fx=? fx<? fx<=? fx>? fx>=?
           fxzero? fxpositive? fxnegative? fxodd? fxeven?
           fxmax fxmin
           fx+ fx- fxneg fx* fxquotient fxremainder fxabs fxsquare fxsqrt
@@ -57,11 +57,11 @@
 ;; fixnum? - builtin
 
 ;; In Gauche, using standard operators is the most efficient.
-(define-inline fx=  =)
-(define-inline fx<  <)
-(define-inline fx<= <=)
-(define-inline fx>  >)
-(define-inline fx>= >=)
+(define-inline fx=?  =)
+(define-inline fx<?  <)
+(define-inline fx<=? <=)
+(define-inline fx>?  >)
+(define-inline fx>=? >=)
 (define-inline fxzero? zero?)
 (define-inline fxpositive? positive?)
 (define-inline fxnegative? negative?)
