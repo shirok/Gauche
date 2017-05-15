@@ -92,7 +92,10 @@
         [(has-windows-console?) (make <windows-console>)]
         [(and-let1 t (sys-getenv "TERM")
            (vt100-compatible? t))
-         (make <vt100>)]
+         (if (or (sys-isatty 0)
+                 ((with-module gauche.internal %sys-mintty?) 0))
+           (make <vt100>)
+           #f)]
         [(sys-getenv "TERM")
          => (^t (e #"Unsupported terminal type: ~t"))]
         [else

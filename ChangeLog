@@ -1,3 +1,11 @@
+2017-05-14  Shiro Kawai  <shiro@acm.org>
+
+	* lib/text/console.scm (make-default-console): Check if stdin is tty;
+	  if not, just return #f.  In typical cases, this procedure won't
+	  be called (via gauche.interactive#read-eval-print-loop) when gosh
+	  is in non-interactive mode.  But there can be a settings that the
+	  user invokes it directly.
+
 2017-05-11  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/gauche/dictionary.scm (dict-find, dict-any): Added, defined
