@@ -62,7 +62,7 @@ SCMFILES = srfi-0.scm \
        gauche/numerical.scm gauche/let-opt.scm gauche/logical.scm \
        gauche/vm/debugger.scm gauche/vm/insn-core.scm gauche/vm/insn.scm \
        gauche/vm/profiler.scm \
-       gauche/pp.scm gauche/procedure.scm gauche/dictionary.scm \
+       gauche/pp.scm gauche/procedure.scm \
        gauche/serializer.scm gauche/serializer/aserializer.scm \
        gauche/parseopt.scm gauche/interactive.scm gauche/interactive/info.scm \
        gauche/interactive/ed.scm gauche/interactive/toplevel.scm \
