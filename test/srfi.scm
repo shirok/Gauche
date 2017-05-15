@@ -1940,5 +1940,12 @@
 
   (for-each (cut apply t-1 <>) data))
 
+;;-----------------------------------------------------------------------
+(test-section "srfi-143")
+(use srfi-143)
+(test-module 'srfi-143)
+
+(chibi-test
+ (include "include/fixnum-tests.scm"))
 
 (test-end)

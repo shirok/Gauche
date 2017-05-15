@@ -48,7 +48,7 @@ SCMFILES = srfi-0.scm \
        srfi-99.scm srfi-106.scm srfi-112.scm srfi-113.scm \
        srfi-114.scm srfi-117.scm srfi-118.scm srfi-121.scm srfi-127.scm \
        srfi-128.scm srfi-129.scm srfi-131.scm srfi-132.scm srfi-134.scm \
-       srfi-141.scm \
+       srfi-141.scm srfi-143.scm \
        srfi/*.scm \
        slib.scm	 \
        check-script \

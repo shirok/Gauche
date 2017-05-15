@@ -1,5 +1,7 @@
 2017-05-14  Shiro Kawai  <shiro@acm.org>
 
+	* lib/srfi-143.scm: Added (provisional; the srfi is still draft).
+
 	* lib/text/console.scm (make-default-console): Check if stdin is tty;
 	  if not, just return #f.  In typical cases, this procedure won't
 	  be called (via gauche.interactive#read-eval-print-loop) when gosh
