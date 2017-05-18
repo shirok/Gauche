@@ -1,4 +1,5 @@
 (use gauche.uvector)
+(use gauche.sequence)
 (use gauche.test)
 (test-start "records")
 
