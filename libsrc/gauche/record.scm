@@ -91,7 +91,15 @@
 ;;;
 
 (define-class <record-meta> (<class>)
-  ((field-specs :init-keyword :field-specs :init-value '#())))
+  ((field-specs :init-keyword :field-specs :init-value '#())
+   ;; - A vector of field specs, as specified in the fieldspecs argument
+   ;;   of make-rtd.  This only includes direct slots.
+   (positional-field-accessors)
+   ;; - A vector of getter/setter pairs, corresponding to the layout
+   ;;   of the instance; that is, base record slots comes first.
+   ;;   The setter can be nil if the slot is immutable.
+   ;;   This is used to access slots positionally; e.g. util.match's '$'.
+   ))
 (define-class <record> () () :metaclass <record-meta>)
 
 (define-class <pseudo-record-meta> (<record-meta>)
@@ -123,6 +131,20 @@
               <u32vector>, <s32vector>, <u64vector>, <s64vector>, \
               <f16vector>, <f32vector>, <f64vector>, \
               or other pseudo-rtd, but got" class)))
+
+(define-method initialize ((class <record-meta>) initargs)
+  (next-method)
+  (let1 index&p  ; [(index . (ref . set))]
+      (map (^[slotdef accessor]
+             (let1 ac (cdr accessor)
+               (cons (get-keyword :index (cdr slotdef))
+                     (cons (cut slot-ref-using-accessor <> ac)
+                           (and (not (get-keyword :immutable (cdr slotdef) #f))
+                                (cut slot-set-using-accessor! <> ac <>))))))
+           (~ class'slots)
+           (~ class'accessors))
+    (slot-set! class 'positional-field-accessors
+               (map-to <vector> cdr (sort index&p < car)))))
 
 ;; We just collect ancestor's slots, ignoring duplicate slot names.
 ;; R6RS records require the same name slot merely shadows ancestors' one,
@@ -355,10 +377,27 @@
 (define (rtd-accessor rtd field) (%rtd-accessor rtd field))
 (define (rtd-mutator rtd field) (%rtd-mutator rtd field))
 
+;; These methods auguments positional field match using $ in util.match.
+;; Provides a way to get/set NUM-th instance field.  Note that the order
+;; of class-slots doesn't corresponds to the instance layout, since the
+;; class-slots have slots of derived classes come first, while the instance
+;; has parent class's slots first.
+(define-method match:$-ref ((class <record-meta>) num obj)
+  ((car (vector-ref (slot-ref class 'positional-field-accessors) num)) obj))
+
+(define-method (setter match:$-ref) ((class <record-meta>) num obj val)
+  (let1 m (vector-ref (slot-ref class 'positional-field-accessors) num)
+    (or (and (cdr m) ((cdr m) obj val))
+        (errorf "attempt to set immutable field `~a' of ~s"
+                ($ slot-definition-name
+                   (find (^s (= num (get-keyword :index (cdr s))))
+                         (class-slots class)))))))
+
 ;;;
 ;;; Syntactic layer
 ;;;
 
+;; TODO: Rewriter this w/ er-macro after 0.9.6 release
 (define-macro (define-record-type type-spec ctor-spec pred-spec . field-specs)
   (define (->id x) ((with-module gauche.internal make-identifier) x
                     (find-module 'gauche.record) '()))

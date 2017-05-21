@@ -24073,11 +24073,14 @@ For a list pattern, you can also use a symbol @code{..1}, @code{..2},
 @c EN
 @code{($ class pat1 @dots{})} matches an instance of a class @code{class}.
 Each pattern @code{pat1} @dots{} matches each value of slots,
-in order of @code{(class-slots class)}.
+in order of @code{(class-slots class)} by default.
+(Records are exception; they match the same order as their
+default constructor since 0.9.6.)
 @c JP
 @code{($ class pat1 @dots{})} は @code{class} クラスのインスタンスと
-マッチします。各パターン @code{pat1} @dots{} はスロットの各値と
+マッチします。各パターン @code{pat1} @dots{} はデフォルトではスロットの各値と
 @code{(class-slots class)} の順にマッチします。
+(レコードは例外で、0.9.6からデフォルトコンストラクタの順序と同じ順序になりました。)
 @c COMMON
 
 @c EN
@@ -24304,6 +24307,28 @@ quasipatternの例です。最初の式では、パターンのうち@code{value
  @result{} d
 @end example
 
+@c EN
+An example of matching records.
+The following code implements ``rotation''
+operation to balance a red-black tree.
+@c JP
+レコードのマッチングの例です。
+次のコードは赤黒木をバランスさせる「ローテーション」操作を実装しています。
+@c COMMON
+
+@example
+(define-record-type T #t #t
+  color left value right)
+
+(define (rbtree-rotate t)
+  (match t
+    [(or ($ T 'B ($ T 'R ($ T 'R a x b) y c) z d)
+         ($ T 'B ($ T 'R a x ($ T 'R b y c)) z d)
+         ($ T 'B a x ($ T 'R ($ T 'R b y c) z d))
+         ($ T 'B a x ($ T 'R b y ($ T 'R c z d))))
+     (make-T 'R (make-T 'B a x b) y (make-T 'B c z d))]
+    [else t]))
+@end example
 
 @c ----------------------------------------------------------------------
 @node SLIB-compatible record type, Relation framework, Pattern matching, Library modules - Utilities

@@ -1,3 +1,13 @@
+2017-05-20  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/gauche/record.scm: INCOMPATIBILE CHANGE: Make positional
+	  pattern match work reasonably on inherited records (the same order
+	  as the default constructor).  We'd say the old behavior was a bug;
+	  it makes little sense to have positional match different from the
+	  constructor.  The document, however, implied that the old behavior
+	  was a supposed one (it defined the position in terms of class-slots).
+	  So we mark it as compatibility-breakage.
+
 2017-05-16  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/util/match.scm: Make match:$-ref generic function, so that

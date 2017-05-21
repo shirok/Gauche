@@ -435,4 +435,30 @@
                (sub1-d z)
                (sub1-b z))))
 
+;;--------------------------------------------------------------------
+(test-section "positional match")
+
+(use util.match)
+
+(define-record-type m0 #t #t
+  (x) (y) (z))
+
+(define-record-type (m1 m0) #t #t
+  (x) (w))
+
+(define-record-type (m2 m1) #t #t
+  (w) (y))
+
+(test* "inherited record and match"
+       '(1 2 3 4 5 6 7)
+       (match (make-m2 1 2 3 4 5 6 7)
+         [($ m2 a b c d e f g)
+          (list a b c d e f g)]))
+
+(test* "inherited record and match"
+       '(4 7 3 6)
+       (match (make-m2 1 2 3 4 5 6 7)
+         [(@ m2 (x a) (y b) (z c) (w d))
+          (list a b c d)]))
+
 (test-end)
