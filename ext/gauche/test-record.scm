@@ -332,5 +332,107 @@
 (pseudo-record-test <f32vector> f32vector)
 (pseudo-record-test <f64vector> f64vector)
 
+;;--------------------------------------------------------------------
+(test-section "inheritance")
+
+(define-record-type base0 #t #t
+  (a) (b) (c))
+
+(define-record-type (sub0 base0) #t #t
+  (a) (d) (b))
+
+(define-record-type (subsub0 sub0) #t #t
+  (e) (c))
+
+(test* "inheritance sub0" '(1 2 3 4 5 6)
+       (let1 z (make-sub0 1 2 3 4 5 6)
+         (list (base0-a z)
+               (base0-b z)
+               (base0-c z)
+               (sub0-a z)
+               (sub0-d z)
+               (sub0-b z))))
+
+(test* "inheritance sub0 modifier" '(10 20 30 40 50 60)
+       (let1 z (make-sub0 1 2 3 4 5 6)
+         (base0-a-set! z 10)
+         (base0-b-set! z 20)
+         (base0-c-set! z 30)
+         (sub0-a-set! z 40)
+         (sub0-d-set! z 50)
+         (sub0-b-set! z 60)
+         (list (base0-a z)
+               (base0-b z)
+               (base0-c z)
+               (sub0-a z)
+               (sub0-d z)
+               (sub0-b z))))
+
+(test* "inheritance subsub0" '(1 2 3 4 5 6 7 8)
+       (let1 z (make-subsub0 1 2 3 4 5 6 7 8)
+         (list (base0-a z)
+               (base0-b z)
+               (base0-c z)
+               (sub0-a z)
+               (sub0-d z)
+               (sub0-b z)
+               (subsub0-e z)
+               (subsub0-c z))))
+
+(test* "inheritance subsub0 modifier" '(10 20 30 40 50 60 70 80)
+       (let1 z (make-subsub0 1 2 3 4 5 6 7 8)
+         (base0-a-set! z 10)
+         (base0-b-set! z 20)
+         (base0-c-set! z 30)
+         (sub0-a-set! z 40)
+         (sub0-d-set! z 50)
+         (sub0-b-set! z 60)
+         (subsub0-e-set! z 70)
+         (subsub0-c-set! z 80)
+         (list (base0-a z)
+               (base0-b z)
+               (base0-c z)
+               (sub0-a z)
+               (sub0-d z)
+               (sub0-b z)
+               (subsub0-e z)
+               (subsub0-c z))))
+
+(test* "inheritance access via name" '(4 6 3 5)
+       (let1 z (make-sub0 1 2 3 4 5 6)
+         (map (^s (slot-ref z s)) '(a b c d))))
+
+(test* "inheritance access via name" '(4 6 8 5 7)
+       (let1 z (make-subsub0 1 2 3 4 5 6 7 8)
+         (map (^s (slot-ref z s)) '(a b c d e))))
+
+(test* "inheritance mutation via name" '(40 60 30 50)
+       (let1 z (make-sub0 1 2 3 4 5 6)
+         (for-each (^s (slot-set! z s (* (slot-ref z s) 10))) '(a b c d))
+         (map (^s (slot-ref z s)) '(a b c d))))
+
+(test* "inheritance mutation via name" '(40 60 80 50 70)
+       (let1 z (make-subsub0 1 2 3 4 5 6 7 8)
+         (for-each (^s (slot-set! z s (* (slot-ref z s) 10))) '(a b c d e))
+         (map (^s (slot-ref z s)) '(a b c d e))))
+
+
+(define-record-type (base1 (pseudo-rtd <vector>)) #t #t
+  (a) (b) (c))
+
+(define-record-type (sub1 base1) #t #t
+  (a) (d) (b))
+
+(test* "inheritance (pseudo rtd)" '#(1 2 3 4 5 6)
+       (make-sub1 1 2 3 4 5 6))
+
+(test* "inheritance (pseudo-rtd" '(1 2 3 4 5 6)
+       (let1 z (make-sub1 1 2 3 4 5 6)
+         (list (base1-a z)
+               (base1-b z)
+               (base1-c z)
+               (sub1-a z)
+               (sub1-d z)
+               (sub1-b z))))
 
 (test-end)
