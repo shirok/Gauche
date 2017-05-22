@@ -831,6 +831,35 @@
             :print-base   ,(~ obj'print-base)
             :print-radix  ,(~ obj'print-radix))))
 
+;;----------------------------------------------------------------
+;; Describe
+;;
+
+;; This feature used to be provided in gauche.interactive.  However,
+;; it is better that libraries can customize describe on their data
+;; structures without loading gauche.interactive, so we provide the core
+;; methods here.  Other specialized methods on built-in objects are
+;; still defined in gauche.interactive.
+
+(define (describe-common obj)
+  (format #t "~s is an instance of class ~a\n" obj (class-name (class-of obj))))
+
+(define-method describe-slots (obj)
+  (let* ([class (class-of obj)]
+         [slots (class-slots class)])
+    (unless (null? slots)
+      (format #t "slots:\n")
+      (dolist [s (map slot-definition-name slots)]
+        (format #t "  ~10s: ~a\n" s
+                (if (slot-bound? obj s)
+                  (with-output-to-string
+                    (^[] (write-limited (slot-ref obj s) 60)))
+                  "#<unbound>"))))
+    (values)))
+
+(define-method describe (object) ; default
+  (describe-common object)
+  (describe-slots object))
 
 ;;;
 ;;; Make exported symbol visible from outside
@@ -862,6 +891,7 @@
                 class-slot-definition class-slot-accessor
                 x->string x->integer x->number ref |setter of ref|
                 ~ ref*
+                describe describe-common describe-slots
 
                 ;; These shouldn't be necessary to be injected into gauche
                 ;; module; unfortunately, the current define-method and

@@ -34,7 +34,7 @@
 #!no-fold-case
 
 (define-module gauche.interactive
-  (export apropos describe d read-eval-print-loop
+  (export apropos d read-eval-print-loop
           ;; autoloaded symbols follow
           info info-page info-search reload ed
           reload-modified-modules module-reload-rules reload-verbose)
@@ -107,11 +107,10 @@
 ;;; Describe - describe object
 ;;;
 
-(define-method describe () (describe *1)) ; for convenience
+;; NB: The base methods (describe (obj <top>)) and
+;; (describe-slots (obj <top>)) are defined in src/libobj.scm
 
-(define-method describe (object) ; default
-  (describe-common object)
-  (describe-slots object))
+(define-method describe () (describe *1)) ; for convenience
 
 (define-method describe ((s <symbol>))
   (describe-common s)
@@ -175,22 +174,6 @@
   (values))
 
 (define d describe)
-
-(define (describe-common obj)
-  (format #t "~s is an instance of class ~a\n" obj (class-name (class-of obj))))
-
-(define (describe-slots obj)
-  (let* ([class (class-of obj)]
-         [slots (class-slots class)])
-    (unless (null? slots)
-      (format #t "slots:\n")
-      (dolist [s (map slot-definition-name slots)]
-        (format #t "  ~10s: ~a\n" s
-                (if (slot-bound? obj s)
-                  (with-output-to-string
-                    (^[] (write-limited (slot-ref obj s) 60)))
-                  "#<unbound>"))))
-    (values)))
 
 ;;;
 ;;; Enhanced REPL
