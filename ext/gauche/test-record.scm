@@ -449,16 +449,34 @@
 (define-record-type (m2 m1) #t #t
   (w) (y))
 
-(test* "inherited record and match"
+(test* "inherited record and positional match"
        '(1 2 3 4 5 6 7)
        (match (make-m2 1 2 3 4 5 6 7)
          [($ m2 a b c d e f g)
           (list a b c d e f g)]))
 
-(test* "inherited record and match"
+(test* "inherited record and positional match (superclass)"
+       '(1 2 3)
+       (match (make-m2 1 2 3 4 5 6 7)
+         [($ m0 a b c)
+          (list a b c)]))
+
+(test* "inherited record and positional match (superclass)"
+       '(1 2 3 4 5)
+       (match (make-m2 1 2 3 4 5 6 7)
+         [($ m1 a b c d e)
+          (list a b c d e)]))
+
+(test* "inherited record and named match"
        '(4 7 3 6)
        (match (make-m2 1 2 3 4 5 6 7)
          [(@ m2 (x a) (y b) (z c) (w d))
           (list a b c d)]))
+
+(test* "inherited record and named match (superclass)"
+       '(4 7 3)
+       (match (make-m2 1 2 3 4 5 6 7)
+         [(@ m0 (x a) (y b) (z c))
+          (list a b c)]))
 
 (test-end)

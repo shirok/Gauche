@@ -135,14 +135,15 @@
 (define-method initialize ((class <record-meta>) initargs)
   (next-method)
   (let1 index&p  ; [(index . (ref . set))]
-      (map (^[slotdef accessor]
-             (let1 ac (cdr accessor)
-               (cons (get-keyword :index (cdr slotdef))
-                     (cons (cut slot-ref-using-accessor <> ac)
+      (map (^[slotdef]
+             (if-let1 i (get-keyword :index (cdr slotdef) #f)
+               (cons i
+                     (cons (cut instance-slot-ref <> i)
                            (and (not (get-keyword :immutable (cdr slotdef) #f))
-                                (cut slot-set-using-accessor! <> ac <>))))))
-           (~ class'slots)
-           (~ class'accessors))
+                                (cut instance-slot-set! <> i <>))))
+               (errorf "Record type definition has non-instance slots `~s': \
+                        MOP implementation error?" (car slotdef))))
+           (~ class'slots))
     (slot-set! class 'positional-field-accessors
                (map-to <vector> cdr (sort index&p < car)))))
 
