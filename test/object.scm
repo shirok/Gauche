@@ -241,6 +241,28 @@
               (list (slot-bound? s5 'v)
                     (slot-ref s5 'v))))
 
+;; Direct instance-slot access is only for under-the-hood work, and
+;; shouldn't be casually used.  But that doesn't diminish the importance
+;; of tests!
+(define-class <ssss> () ((a :init-keyword :a) b))
+
+(let ((z (make <ssss> :a 1)))
+  (test* "instance-slot-ref a" 1 (instance-slot-ref z 0))
+  (test* "instance-slot-ref b" (test-error <error> #/unbound/)
+         (instance-slot-ref z 1))
+  (test* "instance-slot-ref b fallback" 2
+         (instance-slot-ref z 1 2))
+  (test* "instance-slot-set" 3
+         (begin (instance-slot-set z 1 3)
+                (instance-slot-ref z 1)))
+  (test* "instance-slot-ref oob" (test-error <error> #/out of bound/)
+         (instance-slot-ref z 2))
+  (test* "instance-slot-ref oob" (test-error <error> #/out of bound/)
+         (instance-slot-ref z -1))
+  (test* "instance-slot-set oob" (test-error <error> #/out of bound/)
+         (instance-slot-set z 2 0))
+  )
+
 ;;----------------------------------------------------------------
 (test-section "next method")
 

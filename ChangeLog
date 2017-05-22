@@ -3,6 +3,10 @@
 	* src/libobj.scm (describe, describe-common, describe-slots):
 	  Moved core methods to here, so that libraries can specialize
 	  'describe' without using gauche.interactive.
+	  (instance-slot-ref): Check unbound slot (it returned #<unbound>
+	  object; yikes!).  Add fallback optional argument so that the caller
+	  can detect and handle the situation.  Note: This API is still
+	  unofficial.
 
 2017-05-20  Shiro Kawai  <shiro@acm.org>
 

@@ -539,7 +539,15 @@
                                                    initargs)
   Scm_VMSlotInitializeUsingAccessor)
 
-(define-cproc instance-slot-ref (obj num::<fixnum>) Scm_InstanceSlotRef)
+;; Internal API - undocumented
+(define-cproc instance-slot-ref (obj num::<fixnum> :optional fallback)
+  (let* ([v (Scm_InstanceSlotRef obj num)])
+    (if (SCM_UNBOUNDP v)
+      (if (SCM_UNBOUNDP fallback)
+        (Scm_Error "Slot #%d of object %S is unbound." num obj)
+        (return fallback))
+      (return v))))
+;; Internal API - undocumented
 (define-cproc instance-slot-set (obj num::<fixnum> value) ::<void>
   Scm_InstanceSlotSet)
 
