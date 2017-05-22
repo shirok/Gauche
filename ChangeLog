@@ -7,6 +7,9 @@
 	  object; yikes!).  Add fallback optional argument so that the caller
 	  can detect and handle the situation.  Note: This API is still
 	  unofficial.
+	  (instance-slot-set!): Renamed from instance-slot-set for the
+	  consistency.  This is unofficial API so we don't mark it incompatible
+	  change.
 
 2017-05-20  Shiro Kawai  <shiro@acm.org>
 

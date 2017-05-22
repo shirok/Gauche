@@ -252,15 +252,15 @@
          (instance-slot-ref z 1))
   (test* "instance-slot-ref b fallback" 2
          (instance-slot-ref z 1 2))
-  (test* "instance-slot-set" 3
-         (begin (instance-slot-set z 1 3)
+  (test* "instance-slot-set!" 3
+         (begin (instance-slot-set! z 1 3)
                 (instance-slot-ref z 1)))
   (test* "instance-slot-ref oob" (test-error <error> #/out of bound/)
          (instance-slot-ref z 2))
   (test* "instance-slot-ref oob" (test-error <error> #/out of bound/)
          (instance-slot-ref z -1))
-  (test* "instance-slot-set oob" (test-error <error> #/out of bound/)
-         (instance-slot-set z 2 0))
+  (test* "instance-slot-set! oob" (test-error <error> #/out of bound/)
+         (instance-slot-set! z 2 0))
   )
 
 ;;----------------------------------------------------------------

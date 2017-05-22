@@ -548,7 +548,7 @@
         (return fallback))
       (return v))))
 ;; Internal API - undocumented
-(define-cproc instance-slot-set (obj num::<fixnum> value) ::<void>
+(define-cproc instance-slot-set! (obj num::<fixnum> value) ::<void>
   Scm_InstanceSlotSet)
 
 (define-cproc %finish-class-initialization! (klass::<class>) ::<void>
@@ -887,7 +887,7 @@
                 class-of current-class-of is-a? subtype? slot-ref slot-set!
                 slot-bound? slot-ref-using-accessor slot-bound-using-accessor?
                 slot-set-using-accessor! slot-initialize-using-accessor!
-                instance-slot-ref instance-slot-set touch-instance!
+                instance-slot-ref instance-slot-set! touch-instance!
                 class-name class-precedence-list class-direct-supers
                 class-direct-methods class-direct-subclasses
                 class-direct-slots class-slots
