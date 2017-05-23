@@ -1,3 +1,10 @@
+2017-05-23  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/gauche/record.scm (describe-slots): Provide specialized
+	  describe method for records.  Records may have duplicate slot
+	  names, so the default method, which retrieves slot values by
+	  their name, doesn't work.
+
 2017-05-22  Shiro Kawai  <shiro@acm.org>
 
 	* src/libobj.scm (describe, describe-common, describe-slots):

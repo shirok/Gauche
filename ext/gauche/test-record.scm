@@ -436,6 +436,36 @@
                (sub1-b z))))
 
 ;;--------------------------------------------------------------------
+(test-section "describe")
+
+(define-record-type Describe-Test #t #t a)
+(define-record-type (Describe-Sub Describe-Test) #t #t a)
+
+(test* "describe - base" #t
+       (let1 x (with-output-to-string
+                 (cut describe (make-Describe-Test 1)))
+         (or (boolean (#/is an instance of class Describe-Test.*a\s*:\s*1/ x))
+             x)))
+
+(test* "describe - base (unbound)" #t
+       (let1 x (with-output-to-string
+                 (cut describe (make Describe-Test)))
+         (or (boolean (#/slots:.*a\s*:\s*#<unbound>/ x))
+             x)))
+
+(test* "describe - derived" #t
+       (let1 x (with-output-to-string
+                 (cut describe (make-Describe-Sub 1 2)))
+         (or (boolean (#/is an instance of class Describe-Sub.*slots:\s*a\s*:\s*1\s*a\s*:\s*2/ x))
+             x)))
+
+(test* "describe - derived (unbound)" #t
+       (let1 x (with-output-to-string
+                 (cut describe (make Describe-Sub)))
+         (or (boolean (#/is an instance of class Describe-Sub.*slots:\s*a\s*:\s*#<unbound>\s*a\s*:\s*#<unbound>/ x))
+             x)))
+
+;;--------------------------------------------------------------------
 (test-section "positional match")
 
 (use util.match)

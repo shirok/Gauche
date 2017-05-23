@@ -138,7 +138,7 @@
       (map (^[slotdef]
              (if-let1 i (get-keyword :index (cdr slotdef) #f)
                (cons i
-                     (cons (cut instance-slot-ref <> i)
+                     (cons (cut instance-slot-ref <> i <...>)
                            (and (not (get-keyword :immutable (cdr slotdef) #f))
                                 (cut instance-slot-set! <> i <>))))
                (errorf "Record type definition has non-instance slots `~s': \
@@ -236,6 +236,24 @@
   (if-let1 s (assq field (class-slots rtd))
     (not (slot-definition-option s :immutable #f))
     (error "rtd-mutable?: ~a does not have a slot ~a" rtd field)))
+
+;; We need to specialize this, for the default method uses slot names;
+;; but a record type may have multiple slots with the same name.
+(define *unique* (list #f))
+
+(define-method describe-slots ((obj <record>))
+  (let* ([class (class-of obj)]
+         [slots (sort (class-slots class) < (^s (get-keyword :index (cdr s))))]
+         [accessors (slot-ref class 'positional-field-accessors)])
+    (unless (null? slots)
+      (format #t "slots:\n")
+      (dolist [s slots]
+        (let* ([index (get-keyword :index (cdr s))]
+               [val   ((car (vector-ref accessors index)) obj *unique*)])
+          (format #t "  ~10s: ~a\n" (slot-definition-name s)
+                  (if (eq? val *unique*)
+                    "#<unbound>"
+                    (with-output-to-string (^[] (write-limited val 60))))))))))
 
 ;;;
 ;;; Procedural layer
