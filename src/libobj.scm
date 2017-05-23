@@ -862,12 +862,12 @@
                 (if (slot-bound? obj s)
                   (with-output-to-string
                     (^[] (write-limited (slot-ref obj s) 60)))
-                  "#<unbound>"))))
-    (values)))
+                  "#<unbound>"))))))
 
 (define-method describe (object) ; default
   (describe-common object)
-  (describe-slots object))
+  (describe-slots object)
+  (values))
 
 ;;;
 ;;; Make exported symbol visible from outside
