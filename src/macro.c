@@ -429,8 +429,8 @@ static ScmObj compile_rule1(ScmObj form,
                               "Ellipses are not allowed to appear "
                               "within the same list/vector more than once "
                               "in a pattern: %S", ctx->name, form);
-                    ellipsis_seen = TRUE;
                 }
+                ellipsis_seen = TRUE;
 
                 if (patternp) {
                     /* Count trailing items to set ScmSyntaxPattern->repeat. */

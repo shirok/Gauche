@@ -1,5 +1,8 @@
 2017-05-23  Shiro Kawai  <shiro@acm.org>
 
+	* src/macro.c (compile_rule1): Fix a bug that failed to catch
+	  bad ellipses usage in a pattern.
+
 	* libsrc/gauche/record.scm (describe-slots): Provide specialized
 	  describe method for records.  Records may have duplicate slot
 	  names, so the default method, which retrieves slot values by

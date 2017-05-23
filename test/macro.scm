@@ -362,33 +362,33 @@
 (test "bad ellipsis 1" (test-error)
       (lambda () 
         (eval '(define-syntax badellipsis
-                 (syntax-rules () (t) (3 ...)))
+                 (syntax-rules () [(t) (3 ...)]))
               (interaction-environment))))
 (test "bad ellipsis 2" (test-error)
       (lambda ()
         (eval '(define-syntax badellipsis
-                 (syntax-rules () (t a) (a ...)))
+                 (syntax-rules () [(t a) (a ...)]))
               (interaction-environment))))
 (test "bad ellipsis 3" (test-error)
       (lambda ()
         (eval '(define-syntax badellipsis
-                 (syntax-rules () (t a b ...) (a ...)))
+                 (syntax-rules () [(t a b ...) (a ...)]))
               (interaction-environment))))
 (test "bad ellipsis 4" (test-error)
       (lambda ()
         (eval '(define-syntax badellipsis
-                 (syntax-rules () (t a ...) ((a ...) ...)))
+                 (syntax-rules () [(t a ...) ((a ...) ...)]))
               (interaction-environment))))
 
 (test "bad ellipsis 5" (test-error)
       (lambda ()
         (eval '(define-syntax badellipsis
-                 (syntax-rules () ((a ... b ...)) ((a ...) (b ...))))
+                 (syntax-rules () [(t (a ... b ...)) ((a ...) (b ...))]))
               (interaction-environment))))
 (test "bad ellipsis 6" (test-error)
       (lambda ()
         (eval '(define-syntax badellipsis
-                 (syntax-rules () ((... a b)) (... a b )))
+                 (syntax-rules () [(t (... a b)) (... a b )]))
               (interaction-environment))))
 
 (define-syntax hygiene (syntax-rules ()
