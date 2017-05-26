@@ -422,8 +422,6 @@ static ScmObj compile_rule1(ScmObj form,
         ScmObj pp;
         SCM_FOR_EACH(pp, form) {
             if (ELLIPSIS_FOLLOWING(pp, ctx)) {
-                int num_trailing = 0;
-
                 if (patternp && ellipsis_seen) {
                     Scm_Error("in definition of macro %S: "
                               "Ellipses are not allowed to appear "
@@ -432,30 +430,54 @@ static ScmObj compile_rule1(ScmObj form,
                 }
                 ellipsis_seen = TRUE;
 
+                ScmObj base = SCM_CAR(pp);
+                pp = SCM_CDR(pp);
+
+                int num_trailing = 0;
+                int ellipsis_nesting = 1;
                 if (patternp) {
                     /* Count trailing items to set ScmSyntaxPattern->repeat. */
-                    ScmObj trailing = SCM_CDDR(pp);
+                    ScmObj trailing = SCM_CDR(pp);
                     while (SCM_PAIRP(trailing)) {
                         num_trailing++;
                         trailing = SCM_CDR(trailing);
                     }
+                } else {
+                    /* srfi-149 allows mroe than one ellipsis follow a
+                       template. */
+                    while (ELLIPSIS_FOLLOWING(pp, ctx)) {
+                        ellipsis_nesting++;
+                        if (!SCM_PAIRP(SCM_CDR(pp))) break;
+                        pp = SCM_CDR(pp);
+                    }
                 }
-                ScmSyntaxPattern *nspat = make_syntax_pattern(spat->level + 1,
-                                                              num_trailing);
-                if (ctx->maxlev <= spat->level) ctx->maxlev++;
-                nspat->pattern = compile_rule1(SCM_CAR(pp), nspat, ctx,
-                                               patternp);
-                SCM_APPEND1(h, t, SCM_OBJ(nspat));
+                /* at this point, pp points the last ellipsis */
+
+                if (ctx->maxlev < spat->level + ellipsis_nesting)
+                    ctx->maxlev = spat->level + ellipsis_nesting + 1;
+
+                ScmSyntaxPattern *outermost =
+                    make_syntax_pattern(spat->level+1, num_trailing);
+                ScmSyntaxPattern *outer = outermost;
+                for (int i=1; i<ellipsis_nesting; i++) {
+                    ScmSyntaxPattern *inner =
+                        make_syntax_pattern(spat->level+i+1, 0);
+                    outer->pattern = SCM_OBJ(inner);
+                    outer = inner;
+                }
+                outer->pattern = compile_rule1(base, outer, ctx, patternp);
+                outermost->vars = outer->vars;
+                SCM_APPEND1(h, t, SCM_OBJ(outermost));
                 if (!patternp) {
                     ScmObj vp;
-                    if (SCM_NULLP(nspat->vars)) {
+                    if (SCM_NULLP(outermost->vars)) {
                         Scm_Error("in definition of macro %S: "
                                   "a template contains repetition "
                                   "of constant form: %S",
                                   ctx->name, form);
                     }
-                    SCM_FOR_EACH(vp, nspat->vars) {
-                        if (PVREF_LEVEL(SCM_CAR(vp)) >= nspat->level) break;
+                    SCM_FOR_EACH(vp, outermost->vars) {
+                        if (PVREF_LEVEL(SCM_CAR(vp)) >= outermost->level) break;
                     }
                     if (SCM_NULLP(vp)) {
                         Scm_Error("in definition of macro %S: "
@@ -464,8 +486,7 @@ static ScmObj compile_rule1(ScmObj form,
                                   ctx->name, form);
                     }
                 }
-                spat->vars = Scm_Append2(spat->vars, nspat->vars);
-                pp = SCM_CDR(pp);
+                spat->vars = Scm_Append2(spat->vars, outermost->vars);
             } else {
                 SCM_APPEND1(h, t,
                             compile_rule1(SCM_CAR(pp), spat, ctx, patternp));
@@ -894,7 +915,11 @@ static ScmObj realize_template_rec(ScmObj template,
         for (;;) {
             ScmObj r = realize_template_rec(pat->pattern, mvec, level+1, indices, idlist, exlev);
             if (SCM_UNBOUNDP(r)) return (*exlev < pat->level)? r : h;
-            SCM_APPEND1(h, t, r);
+            if (SCM_SYNTAX_PATTERN_P(pat->pattern)) {
+                SCM_APPEND(h, t, r);
+            } else {
+                SCM_APPEND1(h, t, r);
+            }
             indices[level+1]++;
         }
     }

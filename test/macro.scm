@@ -336,7 +336,25 @@
                      j)
             (nest5 (z (a b c) (d e f g) (h i) . j)))
 
+(define-syntax nest6 (syntax-rules ()
+                       ((_ (?a ...) ...)
+                        (?a ... ...)))) ;srfi-149
+(test-macro "nest6" (a b c d e f g h i j)
+            (nest6 (a b c d) (e f g) (h i) (j)))
 
+(define-syntax nest7 (syntax-rules ()
+                       ((_ (?a ...) ...)
+                        (?a ... ... z ?a ... ...)))) ;srfi-149
+(test-macro "nest7" (a b c d e f g h i j z a b c d e f g h i j)
+            (nest7 (a b c d) (e f g) (h i) (j)))
+
+(define-syntax nest8 (syntax-rules ()
+                       ((_ ((?a ...) ...) ...)
+                        (?a ... ... ... z)))) ;srfi-149
+(test-macro "nest8" (a b c d e f g h i j z)
+            (nest8 ((a b c d) (e f g)) ((h i) (j))))
+
+;; mixlevel is allowed by srfi-149
 (define-syntax mixlevel1 (syntax-rules ()
                            ((_ (?a ?b ...)) ((?a ?b) ...))))
 

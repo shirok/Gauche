@@ -1,3 +1,8 @@
+2017-05-25  Shiro Kawai  <shiro@acm.org>
+
+	* src/macro.c (compile_rule1, realize_template_rec): Support srfi-149
+	  multiple following ellipses in templates.
+
 2017-05-23  Shiro Kawai  <shiro@acm.org>
 
 	* src/macro.c (compile_rule1): Fix a bug that failed to catch
