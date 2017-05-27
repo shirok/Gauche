@@ -918,8 +918,52 @@ They can be used separately in the template.
 このマクロを@code{(my-let ((a expr1) (b expr2)) foo)}のように呼び出すと、
 @var{var}は@code{a}および@code{b}に、
 @var{init}は@code{expr1}および@code{expr2}にそれぞれマッチします。
-@var{var}と@var{init}はテンプレート中でばらばに使うことができます。
+@var{var}と@var{init}はテンプレート中でばらばらに使うことができます。
 @c COMMON
+
+Suppose ``level'' of a pattern variable
+mean the number of ellipses that designate repetition of the pattern
+variable.
+A subtemplate can be followed as many ellipses as the maximum level of
+pattern variables in the subtemplate.
+In the following example, the level of pattern variable @code{a} is 1
+(it is repeated by the last ellipsis in the pattern),
+while the level of @code{b} is 2 (repeated by the last two ellipses),
+and the level of @code{c} is 3 (repeated by all the ellipses).
+
+@example
+(define-syntax ellipsis-test
+  (syntax-rules ()
+    [(_ (a (b c ...) ...) ...)
+     '((a ...)
+       (((a b) ...) ...)
+       ((((a b c) ...) ...) ...))]))
+@end example
+
+In this case, the subpattern @code{a} must be repeated by one level
+of ellipsis, @code{(a b)} must be repeated by two,
+and @code{(a b c)} must be repeated by three.
+
+@example
+(ellipsis-test (1 (2 3 4) (5 6)) (7 (8 9 10 11)))
+ @result{} ((1 7)
+    (((1 2) (1 5)) ((7 8)))
+    ((((1 2 3) (1 2 4)) ((1 5 6))) (((7 8 9) (7 8 10) (7 8 11)))))
+@end example
+
+In the template, more than one ellipsis directly follow a subpattern,
+splicing the leaves into the surrounding list:
+
+@example
+(define-syntax my-append
+  (syntax-rules ()
+    [(_ (a ...) ...)
+     '(a ... ...)]))
+
+(my-append (1 2 3) (4) (5 6))
+  @result{} (1 2 3 4 5 6)
+@end example
+
 @end defspec
 
 @node Explicit-renaming macro transformer,  , Syntax-rules pattern langauge, Hygienic macros
