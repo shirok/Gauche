@@ -81,9 +81,9 @@
 (define-inline (fxsqrt i)  (exact-integer-sqrt i))
 
 (define-inline (fxnot i)   (lognot i))
-(define-inline (fxand i j) (logand i j))
-(define-inline (fxior i j) (logior i j))
-(define-inline (fxxor i j) (logxor i j))
+(define-inline fxand       logand)
+(define-inline fxior       logior)
+(define-inline fxxor       logxor)
 (define-inline (fxarithmetic-shift i c) (ash i c))
 (define-inline (fxarithmetic-shift-left i c) (ash i c))
 (define-inline (fxarithmetic-shift-right i c) (ash i (- c)))
