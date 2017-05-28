@@ -82,6 +82,9 @@
 ;;         into the named file instead of reporting it out immediately.
 
 (define-module gauche.test
+  (use file.util)
+  (use srfi-1)
+  (use srfi-13)
   (export test test* test-start test-end test-section test-log
           test-module test-script
           test-error test-one-of test-none-of
@@ -277,19 +280,31 @@
     (format #t "testing bindings in ~a ... " mod) (flush)
     (test-module-common mod module allow-undefined bypass-arity-check)))
 
-;; Check toplevel bindings of a script file.  Script files usually don't
-;; have their own modules.  For this test, we load the script file into
-;; an anonymous module then use test-module on it.  
+;; Check toplevel bindings of a script file.  Script files can have their
+;; own modules, but they usually don't have.  For this test, we load the
+;; script file into an anonymous module then use test-module on it if it
+;; doesn't have its own module.
 (define (test-script file :key (allow-undefined '()) (bypass-arity-check '()))
   (test-count++)
-  (let1 m (make-module #f)
+  (let ((m (make-module #f))
+        (preexisting-modules (all-modules)))
     (format #t "testing bindings in script ~a ... " file) (flush)
     ;; *program-name* and *argv* are defined in #<module user> by gosh,
     ;; but we'll load the script in a temporary module, so we fake them.
     (eval `(define *program-name* ',file) m)
     (eval `(define *argv* '()) m)
     (load file :environment m)
-    (test-module-common m file allow-undefined bypass-arity-check)))
+    (let* ((absolute-file-sans-extension (path-sans-extension (if (relative-path? file)
+                                                                  (simplify-path (build-path (current-directory) file))
+                                                                  file)))
+           (file-modules (filter (lambda (mod)
+                                   (string-suffix? (module-name->path (module-name mod))
+                                                   absolute-file-sans-extension))
+                                 (lset-difference eq? (all-modules) preexisting-modules))))
+      (if (null? file-modules)
+          (test-module-common m file allow-undefined bypass-arity-check)
+          (for-each (cut test-module-common <> file allow-undefined bypass-arity-check)
+                    file-modules)))))
 
 ;; Common op for test-module and test-script.  Returns 
 (define (test-module-common mod name allow-undefined bypass-arity-check)
