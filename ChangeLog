@@ -1,3 +1,12 @@
+2017-05-28  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/test/script.scm (test-script): Handle the case
+	  when the script file has its own module (patch from KOGURO Naoki,
+	  https://github.com/shirok/Gauche/pull/285).
+	  Splitted into autoloaded file to avoid the core functions of
+	  gauche.test from depending other modules (we test those modules
+	  using gauche.test so we can't depend on them).
+
 2017-05-25  Shiro Kawai  <shiro@acm.org>
 
 	* src/macro.c (compile_rule1, realize_template_rec): Support srfi-149
