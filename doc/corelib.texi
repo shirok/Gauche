@@ -3079,6 +3079,15 @@ that satisfy the following equations:
 @end defun
 
 
+@defun square z
+[R7RS]
+@c EN
+Returns @code{(* z z)}.
+@c JP
+@code{(* z z)}を返します。
+@c COMMON
+@end defun
+
 @defun expt z1 z2
 [R7RS]
 @c EN
