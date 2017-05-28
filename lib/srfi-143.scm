@@ -45,7 +45,7 @@
           fxbit-count fxlength fxif fxbit-set?
           fxcopy-bit fxfirst-set-bit
           fxbit-field fxbit-field-rotate fxbit-field-reverse
-          fx+/carry fx-/carry fx+*/carry))
+          fx+/carry fx-/carry fx*/carry))
 (select-module srfi-143)
           
 ;; We don't do define-constant, for these may differ among platforms
@@ -114,7 +114,7 @@
     (receive (q r) (balanced/ v *modulo*)
       (values r q))))
 
-(define (fx+*/carry i j k)
+(define (fx*/carry i j k)
   (let1 v (+ (* i j) k)
     (receive (q r) (balanced/ v *modulo*)
       (values r q))))
