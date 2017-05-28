@@ -33,11 +33,11 @@ Gaucheは、名前の衝突を避ける安全なマクロを簡単に書ける�
 @c COMMON
 
 @menu
-* Why hygienic?::               
-* Hygienic macros::             
-* Traditional macros::          
-* Macro expansion::             
-* Macro utilities::             
+* Why hygienic?::
+* Hygienic macros::
+* Traditional macros::
+* Macro expansion::
+* Macro utilities::
 @end menu
 
 @node Why hygienic?, Hygienic macros, Macros, Macros
@@ -610,14 +610,14 @@ for it uses pattern matching entirely, which is basically a
 different declarative language from Scheme, thus putting the
 complication of the phasing and hygiene issues completely under the hood.
 Some kind of macros are easier to write in @code{syntax-rules}.
-@xref{Syntax-rules pattern langauge}, for further description.
+@xref{Syntax-rules macro transformer}, for further description.
 @c JP
 @code{syntax-rules}フォーム。これは「高レベル」マクロと呼ばれ、
 パターンマッチングのみによってマクロを定義します。
 これはSchemeとは異なる一種の宣言的言語で、
 マクロの段階や衛生の問題をボンネットの下に隠してしまいます。
 ある種のマクロは@code{syntax-rules}でより簡単に書けます。
-詳しくは@ref{Syntax-rules pattern langauge}を参照してください。
+詳しくは@ref{Syntax-rules macro transformer}を参照してください。
 @c COMMON
 
 @item
@@ -654,12 +654,12 @@ used to define alias of existing macro or syntax keyword.
 
 
 @menu
-* Syntax-rules pattern langauge::  
-* Explicit-renaming macro transformer::  
+* Syntax-rules macro transformer::
+* Explicit-renaming macro transformer::
 @end menu
 
-@node Syntax-rules pattern langauge, Explicit-renaming macro transformer, Hygienic macros, Hygienic macros
-@subsection Syntax-rules pattern langauge
+@node Syntax-rules macro transformer, Explicit-renaming macro transformer, Hygienic macros, Hygienic macros
+@subsection Syntax-rules macro transformer
 @c NODe Syntax-rulesマクロ変換器
 
 @defspec syntax-rules (literal @dots{}) clause clause2 @dots{}
@@ -1010,7 +1010,7 @@ R7RSの範囲外になります。
 
 @end defspec
 
-@node Explicit-renaming macro transformer,  , Syntax-rules pattern langauge, Hygienic macros
+@node Explicit-renaming macro transformer,  , Syntax-rules macro transformer, Hygienic macros
 @subsection Explicit-renaming macro transformer
 @c NODE Explcit-renamingマクロ変換器
 
