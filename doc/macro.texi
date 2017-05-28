@@ -921,8 +921,9 @@ They can be used separately in the template.
 @var{var}と@var{init}はテンプレート中でばらばらに使うことができます。
 @c COMMON
 
+@c EN
 Suppose ``level'' of a pattern variable
-mean the number of ellipses that designate repetition of the pattern
+means the number of nested ellipses that designate repetition of the pattern
 variable.
 A subtemplate can be followed as many ellipses as the maximum level of
 pattern variables in the subtemplate.
@@ -930,6 +931,15 @@ In the following example, the level of pattern variable @code{a} is 1
 (it is repeated by the last ellipsis in the pattern),
 while the level of @code{b} is 2 (repeated by the last two ellipses),
 and the level of @code{c} is 3 (repeated by all the ellipses).
+@c JP
+パターン変数の繰り返しを示すエリプシスの入れ子の数を、
+そのパターン変数のレベルと呼ぶことにします。
+サブテンプレートは、その中に含まれるパターン変数のレベルの最大値と同じだけの
+エリプシスの入れ子に中になければなりません。
+次の例では、パターン変数@code{a}のレベルは1 (最後のエリプシスによって繰り返される)、
+@code{b}は2 (後ろの2つのエリプシスで繰り返される)、
+@code{c}は3 (全てのエリプシスで繰り返される) です。
+@c COMMON
 
 @example
 (define-syntax ellipsis-test
@@ -940,9 +950,15 @@ and the level of @code{c} is 3 (repeated by all the ellipses).
        ((((a b c) ...) ...) ...))]))
 @end example
 
-In this case, the subpattern @code{a} must be repeated by one level
+@c EN
+In this case, the subtemplate @code{a} must be repeated by one level
 of ellipsis, @code{(a b)} must be repeated by two,
 and @code{(a b c)} must be repeated by three.
+@c JP
+したがって、サブテンプレート @code{a} は1重、
+サブテンプレート @code{(a b)}は2重、
+@code{(a b c)}は3重のエリプシスで繰り返されることになります。
+@c COMMON
 
 @example
 (ellipsis-test (1 (2 3 4) (5 6)) (7 (8 9 10 11)))
@@ -951,8 +967,13 @@ and @code{(a b c)} must be repeated by three.
     ((((1 2 3) (1 2 4)) ((1 5 6))) (((7 8 9) (7 8 10) (7 8 11)))))
 @end example
 
-In the template, more than one ellipsis directly follow a subpattern,
+@c EN
+In the template, more than one ellipsis directly follow a subtemplate,
 splicing the leaves into the surrounding list:
+@c JP
+また、サブテンプレートの後ろには複数のエリプシスを直接置くことができ、
+繰り返しの「葉」の部分がそこにスプライスされます。
+@c COMMON
 
 @example
 (define-syntax my-append
@@ -962,7 +983,30 @@ splicing the leaves into the surrounding list:
 
 (my-append (1 2 3) (4) (5 6))
   @result{} (1 2 3 4 5 6)
+
+(define-syntax my-append2
+  (syntax-rules ()
+    [(_ ((a ...) ...) ...)
+     '(a ... ... ...)]))
+
+(my-append2 ((1 2) (3 4)) ((5) (6 7 8)))
+  @result{} (1 2 3 4 5 6 7 8)
 @end example
+
+@c EN
+Note: Allowing multiple ellipses to directly follow a subtemplate,
+and a pattern variable in a subtemplate to be enclosed within more
+than the variable's level of nesting of ellipses, are extention to
+R7RS, and defined in SRFI-149.  In the above examples, 
+@code{ellipsis-test}, @code{my-append} and @code{my-append2} are
+outside of R7RS.
+@c JP
+註：サブテンプレートの直後に複数のエリプシスを置くこと、
+及びパターン変数をそのレベルよりもエリプシスのネストが深いテンプレート中に置けることは、
+R7RSに対する拡張で、SRFI-149で定義されています。上記の例では、
+@code{ellipsis-test}、@code{my-append}、@code{my-append2}が
+R7RSの範囲外になります。
+@c COMMON
 
 @end defspec
 
