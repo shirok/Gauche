@@ -8459,8 +8459,8 @@ Balancedバージョンは@code{-abs(d/2) <= remainder < abs(d/2)}という
 This module provides a set of fixnum-specific operations.
 
 A fixnum is a small exact integer that can be handled very efficiently.
-In Gauche, fixnum has 62bit width on 64bit platforms, and
-30bit width on 32bit platforms.
+In Gauche, fixnum is 62bit wide on 64bit platforms, and
+30bit wide on 32bit platforms.
 
 Note that these procedures are defined only to work on fixnums,
 but it is not enforced.  If you pass non-fixnum arguments, or
