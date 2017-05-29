@@ -32,8 +32,7 @@
 ;;;
 
 (define-module srfi-143
-  (use srfi-60 :only (bitwise-if first-set-bit
-                      rotate-bit-field reverse-bit-field))
+  (use srfi-60 :only (bitwise-if rotate-bit-field reverse-bit-field))
   (use srfi-141 :only (balanced/))
   (export fx-width fx-greatest fx-least
           fixnum? fx=? fx<? fx<=? fx>? fx>=?
@@ -92,7 +91,7 @@
 (define-inline (fxif mask i j) (bitwise-if mask i j))
 (define-inline (fxbit-set? index i) (logbit? index i))
 (define-inline (fxcopy-bit index i boolean) (copy-bit index i boolean))
-(define-inline (fxfirst-set-bit i) (first-set-bit i))
+(define-inline (fxfirst-set-bit i) (twos-exponent-factor i))
 (define-inline (fxbit-field i start end) (bit-field i start end))
 (define-inline (fxbit-field-rotate i count start end)
   (rotate-bit-field i count start end))

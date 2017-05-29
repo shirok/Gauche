@@ -52,6 +52,7 @@ srfi N is supporeted by Gauche.)
 * Lazy sequence (srfi)::        srfi-127
 * Vector library::              srfi-133
 * Integer division::            srfi-141
+* Fixnums::                     srfi-143
 @end menu
 
 
@@ -5080,6 +5081,9 @@ hence the alias @code{first-set-bit}.
 (log2-binary-factors 15) @result{} 0
 (log2-binary-factors 16) @result{} 4
 @end example
+
+These are equivalent to Gauche's built-in @code{twos-exponent-factor}
+(@pxref{Bitwise operations}).
 @end defun
 
 @subsection Bit within word
@@ -5119,6 +5123,8 @@ Same as builtin @code{ash} (@pxref{Bitwise operations}).
 @end defun
 
 @defun rotate-bit-field n count start end
+[SRFI-60]
+@c MOD srfi-60
 Rotate the region of @var{n} between @var{start}-th bit (inclusive) and
 @var{end}-th bit (exclusive) by @var{count} bits.
 
@@ -8324,7 +8330,7 @@ Same as @code{(reverse (vector->list vec start end))}, but more efficient.
 
 
 @c ----------------------------------------------------------------------
-@node Integer division,  , Vector library, Library modules - SRFIs
+@node Integer division, Fixnums, Vector library, Library modules - SRFIs
 @section @code{srfi-141} - Integer division
 @c NODE 整数除算, @code{srfi-141} - 整数除算
 
@@ -8441,6 +8447,203 @@ Balancedバージョンは@code{-abs(d/2) <= remainder < abs(d/2)}という
 @code{div0}、@code{mod0}および@code{div0-and-mod0}と同じです。
 但し、R6RS版は非整数を引数に取ることもできます(@ref{Arithmetics}参照)。
 @c COMMON
+@end defun
+
+@c ----------------------------------------------------------------------
+@node Fixnums,  , Integer division, Library modules - SRFIs
+@section @code{srfi-143} - Fixnums
+@c NODE Fixnums, @code{srfi-143} - Fixnums
+
+@deftp {Module} srfi-143
+@mdindex srfi-143
+This module provides a set of fixnum-specific operations.
+
+A fixnum is a small exact integer that can be handled very efficiently.
+In Gauche, fixnum has 62bit width on 64bit platforms, and
+30bit width on 32bit platforms.
+
+Note that these procedures are defined only to work on fixnums,
+but it is not enforced.  If you pass non-fixnum arguments, or
+the result falls out of range of fixnums, what happens is up to
+the implementation.  Consider these procedures as the way to
+tell your intentions to the compiler for potential optimizations.
+
+In Gauche, generic numeric operators are just as efficient, 
+so most procedures provided in this module are aliases to corresponding
+operators.   However, we might employ some optimizations in future
+versions.
+
+The following procedure is built-in.  @xref{Numerical predicates}.
+
+@example
+fixnum?
+@end example
+@end deftp
+
+@defvar fx-width
+[SRFI-143]
+@c MOD srfi-143
+A variable bound to an exact positive integer @var{w}, where @var{w}
+is the greatest number such that exact integers between
+@code{2^(w-1) - 1} and @code{-2^(w-1)} are all fixnums.
+This value is the same as the built-in procedure @code{fixnum-width}
+returns (@pxref{Arithmetics}).
+
+In Gauche, it is usually @code{30} for 32bit platforms, and @code{62} for
+64bit platforms.
+@end defvar
+
+@defvar fx-greatest
+@defvarx fx-least
+[SRFI-143]
+@c MOD srfi-143
+Variables bound to the greatest fixnum and the least fixnum.
+They are the same as the built-in procedures
+@code{greatest-fixnum} and @code{least-fixnum} return, respectively
+(@pxref{Arithmetics}).
+
+The following table shows the typical values on Gauche:
+
+@multitable {Platform} {2,305,843,009,213,693,951} {-2,305,843,009,213,693,951}
+@headitem Platform @tab @code{fx-greatest} @tab @code{fx-least}
+@item 32bit @tab 536,870,911 @tab -536,870,912
+@item 64bit @tab 2,305,843,009,213,693,951 @tab -2,305,843,009,213,693,952
+@end multitable
+@end defvar
+
+@defun fx=? i @dots{}
+@defunx fx<? i @dots{}
+@defunx fx<=? i @dots{}
+@defunx fx>? i @dots{}
+@defunx fx>=? i @dots{}
+[SRFI-143]
+@c MOD srfi-143
+These are equivalent to built-in @code{=}, @code{<}, @code{<=},
+@code{>} and @code{>=}, except that you should use these only for fixnums.
+@end defun
+
+@defun fxzero? i
+@defunx fxpositive? i
+@defunx fxnegative? i
+@defunx fxodd? i
+@defunx fxeven? i
+[SRFI-143]
+@c MOD srfi-143
+These are equivalent to built-in @code{zero?}, @code{positive?},
+@code{negative?}, @code{odd?} and @code{even?},
+except that you should use these only for fixnums.
+@end defun
+
+@defun fxmax i j @dots{}
+@defunx fxmin i j @dots{}
+[SRFI-143]
+@c MOD srfi-143
+These are equivalent to built-in @code{max} and  @code{min},
+except that you should use these only for fixnums.
+@end defun
+
+@defun fx+ i j
+@defunx fx- i j
+@defunx fx* i j
+[SRFI-143]
+@c MOD srfi-143
+These are equivalent to built-in @code{+}, @code{-}
+and  @code{*},
+except that these take exactly two arguments, and
+you should use these only for fixnums and
+when the result fits within fixnum range.
+@end defun
+
+@defun fxneg i
+[SRFI-143]
+@c MOD srfi-143
+This is equivalent to single-argument @code{-},
+except that you should use these only for fixnums and
+when the result fits within fixnum range.
+@end defun
+
+@defun fxquotient i j
+@defunx fxremainder i j
+@defunx fxabs i
+@defunx fxsquare i
+[SRFI-143]
+@c MOD srfi-143
+These are equivalent to built-in @code{quotient}, @code{remainder},
+@code{abs} and @code{square},
+except that you should use these only for fixnums and
+when the result fits within fixnum range.
+@end defun
+
+@defun fxsqrt i
+[SRFI-143]
+@c MOD srfi-143
+This is equivalent to @code{exact-integer-sqrt} (not @code{sqrt}),
+except that you should use these only for fixnums and
+when the result fits within fixnum range.
+@xref{Arithmetics}.
+@end defun
+
+@defun fx+/carry i j k
+@defunx fx-/carry i j k
+@defunx fx*/carry i j k
+[SRFI-143]
+@c MOD srfi-143
+These calculates @code{(+ i j k)}, @code{(- i j k)} and @code{(+ (* i j) k)},
+respectively, then split the result to the rounded value @code{R}
+in the fixnum range, and spilled value @code{Q}, and return those values.
+That is,
+@code{(+ (* Q (expt 2 fx-width)) R)} is the result of above calculations.
+Both @code{Q} and @code{R} fits in the fixnum range, and
+@code{- 2^(w-1) <= R < 2^(w-1)}, where @code{w} is @code{fx-width}.
+
+@example
+(fx*/carry 1845917459 19475917581 4735374)
+ @result{} -942551854601421179 @r{and} 8
+
+(+ (* 8 (expt 2 fx-width)) -942551854601421179)
+ @result{} 35950936292817682053
+
+(+ (* 1845917459 19475917581) 4735374)
+ @result{} 35950936292817682053
+@end example
+
+These are primitives to implement extended-precision
+integer arithmetic on top of fixnum operations.  In Gauche, however,
+you can just use built-in bignums.  We provide these for the compatibility.
+@end defun
+
+@defun fxnot i
+@defunx fxand i @dots{}
+@defunx fxior i @dots{}
+@defunx fxxor i @dots{}
+@defunx fxarithmetic-shift i count
+@defunx fxlength i
+@defunx fxbit-count i
+@defunx fxcopy-bit index i boolean
+@defunx fxbit-set? index i
+@defunx fxbit-field i start end
+@defunx fxfirst-set-bit i
+[SRFI-143]
+@c MOD srfi-143
+These are equivalent to @code{lognot}, @code{logand},
+@code{logior}, @code{logxor}, @code{ash}, @code{integer-length},
+@code{logcount},
+@code{copy-bit}, @code{logbit?}, @code{bit-field},
+and @code{twos-exponent-factor} respectively,
+except that you should use these only for fixnums.
+@xref{Bitwise operations}.
+@end defun
+
+@defun fxif mask i j
+@defunx fxbit-field-rotate i start end
+@defunx fxbit-field-rotate i start end
+[SRFI-143]
+@c MOD srfi-143
+These are equivalent to srfi-60's 
+@code{bitwise-if}, @code{rotate-bit-field} and
+@code{reverse-bit-field},
+except that you should use these only for fixnums.
+@xref{Integers as bits}.
 @end defun
 
 

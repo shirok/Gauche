@@ -1,5 +1,8 @@
 2017-05-28  Shiro Kawai  <shiro@acm.org>
 
+	* lib/srfi-143.scm, src/srfis.scm: Support srfi-143, as the srfi
+	  has been finalized.
+
 	* src/libnum.scm (twos-complement-factor): INCOMPATIBLE BUG FIX:
 	  It used to return 0 when the argument is 0.  Mathematcially, the
 	  result is arbitrary.  But for other arguments, this procedure

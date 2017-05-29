@@ -861,6 +861,16 @@ Supported by the module @code{srfi-141}.  @xref{Integer division}.
 モジュール@code{srfi-141}でサポートされます。@ref{Integer division}参照。
 
 
+srfi-143, srfi-143
+()
+
+Finxums
+Supported by the module @code{srfi-143}.  @xref{Fixnums}.
+
+Fixnumx
+モジュール@code{srfi-143}でサポートされます。@ref{Fixnums}参照。
+
+
 srfi-145
 (assume)
 
