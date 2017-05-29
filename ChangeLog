@@ -1,5 +1,14 @@
 2017-05-28  Shiro Kawai  <shiro@acm.org>
 
+	* src/libnum.scm (twos-complement-factor): INCOMPATIBLE BUG FIX:
+	  It used to return 0 when the argument is 0.  Mathematcially, the
+	  result is arbitrary.  But for other arguments, this procedure
+	  is equivalent as first-set-bit and log2-binary-factors in SRFI-60,
+	  and it's unreasonable to diverge in just one argument; the SRFI-60
+	  versions returns -1 for 0.
+	  Unfortunately, the case when argument is 0 has been documented,
+	  so this is compatibility-breaking change.
+
 	* lib/gauche/test/script.scm (test-script): Handle the case
 	  when the script file has its own module (patch from KOGURO Naoki,
 	  https://github.com/shirok/Gauche/pull/285).

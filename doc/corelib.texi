@@ -3811,11 +3811,12 @@ then returns @code{k}.  Returns @code{#f} if @var{n} is not a power of two.
 @c EN
 Returns maximum @var{k} such that @code{(expt 2 k)} is a factor of @var{n}.
 In other words, returns the number of consecutive zero bits from LSB
-of @var{n}.  If @var{n} is zero, zero is returned.
+of @var{n}.  When @var{n} is zero, we return @code{-1} for the
+consistency of the following equivalent expression.
 @c JP
 @code{(expt 2 k)}が@var{n}の約数であるような最大の@var{k}を返します。
 言い換えれば、@var{n}のLSBから連続するゼロビットの数を返します。
-ただし@var{n}がゼロならゼロを返します。
+ただし@var{n}がゼロの場合は、下の等価式との一貫性から@code{-1}が返されます。
 @c COMMON
 
 @c EN
@@ -3828,6 +3829,14 @@ is for speed to save creating intermediate numbers when @var{n} is bignum.
 @example
 (- (integer-length (logxor n (- n 1))) 1)
 @end example
+
+@c EN
+This procedure is also equivalent to srfi-60's @code{log2-binary-factors} and
+@code{first-set-bit} (@pxref{Integers as bits}).
+@c JP
+この手続きはまた、srfi-60の@code{log2-binary-factors}および
+@code{first-set-bit}と等価です(@ref{Integers as bits}参照)。
+@c COMMON
 @end defun
 
 @node Endianness,  , Bitwise operations, Numbers

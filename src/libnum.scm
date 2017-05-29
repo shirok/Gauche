@@ -720,7 +720,7 @@
 ;; This can be (- (integer-length (logxor n (- n 1))) 1), but we can save
 ;; creating intermediate numbers by providing this natively.
 (define-cproc twos-exponent-factor (n) ::<int> :constant
-  (cond [(SCM_EQ n (SCM_MAKE_INT 0)) (return 0)]
+  (cond [(SCM_EQ n (SCM_MAKE_INT 0)) (return -1)]
         [(SCM_INTP n)
          (let* ([z::ScmBits (cast ScmBits (cast long (SCM_INT_VALUE n)))])
            (return (Scm_BitsLowest1 (& z) 0 SCM_WORD_BITS)))]
