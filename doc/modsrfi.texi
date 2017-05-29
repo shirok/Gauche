@@ -8456,33 +8456,58 @@ Balancedバージョンは@code{-abs(d/2) <= remainder < abs(d/2)}という
 
 @deftp {Module} srfi-143
 @mdindex srfi-143
+@c EN
 This module provides a set of fixnum-specific operations.
 
 A fixnum is a small exact integer that can be handled very efficiently.
 In Gauche, fixnum is 62bit wide on 64bit platforms, and
 30bit wide on 32bit platforms.
+@c JP
+このモジュールはfixnumに特化した操作を提供します。
 
+fixnumは絶対値が小さめの正確な整数で、極めて効率的に処理できます。
+Gaucheのfixnumは、64ビット環境では62ビット、32ビット環境では30ビットの幅を持ちます。
+@c COMMON
+
+@c EN
 Note that these procedures are defined only to work on fixnums,
 but it is not enforced.  If you pass non-fixnum arguments, or
 the result falls out of range of fixnums, what happens is up to
 the implementation.  Consider these procedures as the way to
 tell your intentions to the compiler for potential optimizations.
+@c JP
+このモジュールの手続きはfixnumの範囲でしか動作を定義されていませんが、
+それを強制するのではないことに注意してください。fixnumでない引数を
+渡したり、結果がfixnumの範囲外になった場合に何が起きるかは
+処理系依存とされています。これらの手続きは、プログラマがその意図を
+コンパイラに伝えて最適化を期待するためのものと考えると良いでしょう。
+@c COMMON
 
-In Gauche, generic numeric operators are just as efficient, 
+@c EN
+In the current Gauche architecture,
+generic numeric operators are just as efficient, 
 so most procedures provided in this module are aliases to corresponding
 operators.   However, we might employ some optimizations in future
 versions.
+@c JP
+現在のGaucheのアーキテクチャでは一般的な数値計算が効率よく実行できるようになっているので、
+これらの手続きは対応する手続きの単なる別名になっています。
+将来は、fixnum特有の最適化を導入するかもしれません。
+@c COMMON
 
-The following procedure is built-in.  @xref{Numerical predicates}.
-
-@example
-fixnum?
-@end example
+@c EN
+The procedure @code{fixnum?} is built-in, and
+not explaned here.  @xref{Numerical predicates}.
+@c JP
+手続き@code{fixnum?}は組み込みなのでここでは説明しません。
+@ref{Numerical predicates}を参照してください。
+@c COMMON
 @end deftp
 
 @defvar fx-width
 [SRFI-143]
 @c MOD srfi-143
+@c EN
 A variable bound to an exact positive integer @var{w}, where @var{w}
 is the greatest number such that exact integers between
 @code{2^(w-1) - 1} and @code{-2^(w-1)} are all fixnums.
@@ -8491,18 +8516,34 @@ returns (@pxref{Arithmetics}).
 
 In Gauche, it is usually @code{30} for 32bit platforms, and @code{62} for
 64bit platforms.
+@c JP
+@code{2^(w-1) - 1}から@code{-2^(w-1)}までの正確な整数が全てfixnumであるような
+最大の正整数@code{w}に束縛された変数です。
+組み込み手続き@code{fixnum-width}が返す値と同じです。
+(@ref{Arithmetics}参照)。
+
+Gaucheでは、これは通常32ビット環境で@code{30}、64ビット環境で@code{62}です。
+@c COMMON
 @end defvar
 
 @defvar fx-greatest
 @defvarx fx-least
 [SRFI-143]
 @c MOD srfi-143
+@c EN
 Variables bound to the greatest fixnum and the least fixnum.
 They are the same as the built-in procedures
 @code{greatest-fixnum} and @code{least-fixnum} return, respectively
 (@pxref{Arithmetics}).
 
 The following table shows the typical values on Gauche:
+@c JP
+最大および最小のfixnumに束縛された変数です。これらの値は
+組み込み手続き@code{greatest-fixnum}および@code{least-fixnum}が
+返すものと同じです(@ref{Arithmetics}参照)。
+
+次の表はGaucheでの典型的な値を示します。
+@c COMMON
 
 @multitable {Platform} {2,305,843,009,213,693,951} {-2,305,843,009,213,693,951}
 @headitem Platform @tab @code{fx-greatest} @tab @code{fx-least}
@@ -8518,8 +8559,13 @@ The following table shows the typical values on Gauche:
 @defunx fx>=? i @dots{}
 [SRFI-143]
 @c MOD srfi-143
+@c EN
 These are equivalent to built-in @code{=}, @code{<}, @code{<=},
 @code{>} and @code{>=}, except that you should use these only for fixnums.
+@c JP
+これらは、fixnumのみに適用しなければならないことを除き、組み込みの
+@code{=}、@code{<}、@code{<=}、@code{>}、@code{>=}と同じです。
+@c COMMON
 @end defun
 
 @defun fxzero? i
@@ -8529,17 +8575,27 @@ These are equivalent to built-in @code{=}, @code{<}, @code{<=},
 @defunx fxeven? i
 [SRFI-143]
 @c MOD srfi-143
+@c EN
 These are equivalent to built-in @code{zero?}, @code{positive?},
 @code{negative?}, @code{odd?} and @code{even?},
 except that you should use these only for fixnums.
+@c JP
+これらは、fixnumのみに適用しなければならないことを除き、組み込みの
+@code{zero?}、@code{positive?}、@code{negative?}、@code{odd?}、@code{even?}と同じです。
+@c COMMON
 @end defun
 
 @defun fxmax i j @dots{}
 @defunx fxmin i j @dots{}
 [SRFI-143]
 @c MOD srfi-143
+@c EN
 These are equivalent to built-in @code{max} and  @code{min},
 except that you should use these only for fixnums.
+@c JP
+これらは、fixnumのみに適用しなければならないことを除き、組み込みの
+@code{max}および@code{min}と同じです。
+@c COMMON
 @end defun
 
 @defun fx+ i j
@@ -8547,19 +8603,32 @@ except that you should use these only for fixnums.
 @defunx fx* i j
 [SRFI-143]
 @c MOD srfi-143
+@c EN
 These are equivalent to built-in @code{+}, @code{-}
 and  @code{*},
 except that these take exactly two arguments, and
 you should use these only for fixnums and
 when the result fits within fixnum range.
+@c JP
+これらは、常に2つの引数を取ること、
+fixnumのみに適用しなければならないこと、
+そして結果がfixnumの範囲に収まる場合だけに使わなければならないことを除き、
+組み込みの@code{+}、@code{-}、@code{*}と同じです。
+@c COMMON
 @end defun
 
 @defun fxneg i
 [SRFI-143]
 @c MOD srfi-143
+@c EN
 This is equivalent to single-argument @code{-},
-except that you should use these only for fixnums and
+except that you should use this only for fixnums and
 when the result fits within fixnum range.
+@c JP
+これは、fixnumのみに適用しなければならないこと、
+そして結果がfixnumの範囲に収まる場合だけに使わなければならないことを除き、
+組み込みの単項@code{-}と同じです。
+@c COMMON
 @end defun
 
 @defun fxquotient i j
@@ -8568,19 +8637,31 @@ when the result fits within fixnum range.
 @defunx fxsquare i
 [SRFI-143]
 @c MOD srfi-143
+@c EN
 These are equivalent to built-in @code{quotient}, @code{remainder},
 @code{abs} and @code{square},
 except that you should use these only for fixnums and
 when the result fits within fixnum range.
+@c JP
+これらは、fixnumのみに適用しなければならないこと、
+そして結果がfixnumの範囲に収まる場合だけに使わなければならないことを除き、
+組み込みの@code{quotient}、@code{remainder}、@code{abs}、@code{square}と
+同じです。
+@c COMMON
 @end defun
 
 @defun fxsqrt i
 [SRFI-143]
 @c MOD srfi-143
+@c EN
 This is equivalent to @code{exact-integer-sqrt} (not @code{sqrt}),
-except that you should use these only for fixnums and
-when the result fits within fixnum range.
+except that you should use it only for fixnums.
 @xref{Arithmetics}.
+@c JP
+これらは、fixnumのみに適用しなければならないことを除き、
+@code{exact-integer-sqrt}と同じです。@code{sqrt}ではありません。
+@ref{Arithmetics}参照。
+@c COMMON
 @end defun
 
 @defun fx+/carry i j k
@@ -8588,13 +8669,24 @@ when the result fits within fixnum range.
 @defunx fx*/carry i j k
 [SRFI-143]
 @c MOD srfi-143
+@c EN
 These calculates @code{(+ i j k)}, @code{(- i j k)} and @code{(+ (* i j) k)},
-respectively, then split the result to the rounded value @code{R}
+respectively, then split the result to the remainder value @code{R}
 in the fixnum range, and spilled value @code{Q}, and return those values.
 That is,
 @code{(+ (* Q (expt 2 fx-width)) R)} is the result of above calculations.
 Both @code{Q} and @code{R} fits in the fixnum range, and
 @code{- 2^(w-1) <= R < 2^(w-1)}, where @code{w} is @code{fx-width}.
+@c JP
+これらはそれぞれ、まず
+@code{(+ i j k)}、@code{(- i j k)}、@code{(+ (* i j) k)}を計算し、
+その結果をfixnumの範囲内に収まる剰余@code{R}と、溢れ@code{Q}に分割して
+2つの値として返します。
+すなわち、@code{(+ (* Q (expt 2 fx-width)) R)}が上記計算と一致します。
+@code{Q}と@code{R}は常にfixnumの範囲内であり、また@code{R}は
+@code{- 2^(w-1) <= R < 2^(w-1)}を満たします。ただし@code{w}は
+@code{fx-width}です。
+@c COMMON
 
 @example
 (fx*/carry 1845917459 19475917581 4735374)
@@ -8607,9 +8699,14 @@ Both @code{Q} and @code{R} fits in the fixnum range, and
  @result{} 35950936292817682053
 @end example
 
+@c EN
 These are primitives to implement extended-precision
 integer arithmetic on top of fixnum operations.  In Gauche, however,
 you can just use built-in bignums.  We provide these for the compatibility.
+@c JP
+これらは拡張精度整数演算をfixnum手続き上に効率よく実装するためのプリミティブです。
+ただ、Gaucheでは必要ならbignumを使えば良いので、これらは単に互換性のために提供しています。
+@c COMMON
 @end defun
 
 @defun fxnot i
@@ -8625,6 +8722,7 @@ you can just use built-in bignums.  We provide these for the compatibility.
 @defunx fxfirst-set-bit i
 [SRFI-143]
 @c MOD srfi-143
+@c EN
 These are equivalent to @code{lognot}, @code{logand},
 @code{logior}, @code{logxor}, @code{ash}, @code{integer-length},
 @code{logcount},
@@ -8632,6 +8730,15 @@ These are equivalent to @code{lognot}, @code{logand},
 and @code{twos-exponent-factor} respectively,
 except that you should use these only for fixnums.
 @xref{Bitwise operations}.
+@c JP
+これらはfixnumのみに適用しなければならないことを除き、
+組み込みの@code{lognot}、 @code{logand}、
+@code{logior}、 @code{logxor}、 @code{ash}、 @code{integer-length}、
+@code{logcount}、
+@code{copy-bit}、 @code{logbit?}、 @code{bit-field}、
+@code{twos-exponent-factor}とそれぞれ同じです。
+詳しくは@ref{Bitwise operations}参照。
+@c COMMON
 @end defun
 
 @defun fxif mask i j
@@ -8639,11 +8746,18 @@ except that you should use these only for fixnums.
 @defunx fxbit-field-rotate i start end
 [SRFI-143]
 @c MOD srfi-143
+@c EN
 These are equivalent to srfi-60's 
 @code{bitwise-if}, @code{rotate-bit-field} and
 @code{reverse-bit-field},
 except that you should use these only for fixnums.
 @xref{Integers as bits}.
+@c JP
+これらはfixnumのみに適用しなければならないことを除き、
+srfi-60の@code{bitwise-if}、@code{rotate-bit-field}、
+@code{reverse-bit-field}と同じです。
+@ref{Integers as bits}参照。
+@c COMMON
 @end defun
 
 
