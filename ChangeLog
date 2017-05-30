@@ -1,3 +1,8 @@
+2017-05-30  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche.h, src/macro.c (ScmMacro): Enhanced ScmMacro to keep
+	  some useful info for macro debugging.
+
 2017-05-28  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi-143.scm, src/srfis.scm: Support srfi-143, as the srfi

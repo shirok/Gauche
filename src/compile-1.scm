@@ -788,7 +788,7 @@
 (define-pass1-syntax (syntax-rules form cenv) :null
   (match form
     [(_ (literal ...) rule ...)
-     ($const (compile-syntax-rules (cenv-exp-name cenv) '... literal rule
+     ($const (compile-syntax-rules (cenv-exp-name cenv) form '... literal rule
                                    (cenv-module cenv)
                                    (cenv-frames cenv)))]
     [(_ (? variable-or-keyword? elli) (literal ...) rule ...)
@@ -796,7 +796,7 @@
      ;; Fix it once we have proper low-level macro system.
      ;; NB: We allow keyword for ellipsis, so that something like ::: can be
      ;; used.
-     ($const (compile-syntax-rules (cenv-exp-name cenv)
+     ($const (compile-syntax-rules (cenv-exp-name cenv) form
                                    (if (identifier? elli)
                                      (slot-ref elli 'name)
                                      elli)

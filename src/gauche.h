@@ -1670,7 +1670,17 @@ SCM_EXTERN ScmObj Scm_MakeSyntax(ScmSymbol *name, ScmObj handler);
 SCM_CLASS_DECL(Scm_MacroClass);
 #define SCM_CLASS_MACRO            (&Scm_MacroClass)
 
-SCM_EXTERN ScmObj Scm_MakeMacro(ScmSymbol *name, ScmObj transformer);
+/* TRANSIENT: Scm_MakeMacroFull is to keep ABI compatibility.  Will be gone
+   in 1.0.  */
+#if GAUCHE_API_0_95
+SCM_EXTERN ScmObj Scm_MakeMacro(ScmObj name, ScmObj transformer,
+                                ScmObj src, ScmObj describer);
+#define Scm_MakeMacroFull(a,b,c,d) Scm_MakeMacro(a,b,c,d)
+#else
+SCM_EXTERN ScmObj Scm_MakeMacroFull(ScmObj name, ScmObj transformer,
+                                    ScmObj src, ScmObj describer);
+ScmObj Scm_MakeMacro(ScmSymbol *name, ScmObj transformer);
+#endif
 SCM_EXTERN ScmObj Scm_MacroTransformer(ScmMacro *mac);
 SCM_EXTERN ScmObj Scm_MacroName(ScmMacro *mac);
 

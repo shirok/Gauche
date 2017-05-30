@@ -40,15 +40,17 @@ SCM_DECL_BEGIN
 /* Syntax is a built-in procedure to compile given form. */
 struct ScmSyntaxRec {
     SCM_HEADER;
-    ScmSymbol *name;            /* for debugging.  can be NULL */
-    ScmObj     handler;         /* syntax handler.  (Sexpr, Env) -> IForm */
+    ScmSymbol *name;         /* for debugging.  can be NULL */
+    ScmObj     handler;      /* syntax handler.  (Sexpr, Env) -> IForm */
 };
 
 /* Macro */
 struct ScmMacroRec {
     SCM_HEADER;
-    ScmSymbol *name;            /* for debugging.  can be NULL */
-    ScmObj transformer;         /* (Sexpr, CEnv) -> Sexpr */
+    ScmObj name;             /* for debugging.  */
+    ScmObj transformer;      /* (Sexpr, CEnv) -> Sexpr */
+    ScmObj src;              /* for debugging.  #f if n/a */
+    ScmObj describer;        /* for debugging.  Maybe ((Macro, Port) -> ()) */
 };
 
 /*
@@ -76,7 +78,8 @@ SCM_CLASS_DECL(Scm_SyntaxRulesClass);
 #define SCM_SYNTAX_RULES(obj)    ((ScmSyntaxRules*)(obj))
 #define SCM_SYNTAX_RULES_P(obj)  SCM_XTYPEP(obj, SCM_CLASS_SYNTAX_RULES)
 
-SCM_EXTERN ScmObj Scm_CompileSyntaxRules(ScmObj name, ScmObj ellipsis,
+SCM_EXTERN ScmObj Scm_CompileSyntaxRules(ScmObj name, ScmObj src,
+                                         ScmObj ellipsis,
                                          ScmObj lietrals,
                                          ScmObj rules, ScmObj mod, ScmObj env);
 

@@ -33,7 +33,8 @@
 
 (select-module gauche.internal)
 (inline-stub
- (declcode (.include <gauche/priv/macroP.h>)))
+ (declcode (.include "gauche/class.h"
+                     "gauche/priv/macroP.h")))
 
 (declare (keep-private-macro define-compiler-macro))
 
@@ -63,16 +64,33 @@
 (define-cproc syntax? (obj) ::<boolean> SCM_SYNTAXP)
 
 ;;;
+;;; Macro object
+;;;
+
+(select-module gauche)
+(inline-stub
+ (define-cclass <macro>
+   "ScmMacro*" "Scm_MacroClass"
+   (c "SCM_CLASS_DEFAULT_CPL")
+   ((name         :setter #f)
+    (transformer  :setter #f)
+    (source       :c-name "src" :setter #f)
+    (describer    :setter #f))
+   (printer (Scm_Printf port "#<macro %A>" (-> (SCM_MACRO obj) name)))))
+
+;;;
 ;;; Transformer interface
 ;;;
 
 ;; NB: make-macro-transformer is in libalpha.scm
 
+(select-module gauche.internal)
 ;; proc :: Sexpr, Cenv -> Sexpr
-(define-cproc %make-macro-transformer (name::<symbol>? proc)
-  Scm_MakeMacro)
+(define-cproc %make-macro-transformer (name proc
+                                       :optional (src '#f) (describer '#f))
+  Scm_MakeMacroFull)
 
-(define-cproc compile-syntax-rules (name ellipsis literals rules mod env)
+(define-cproc compile-syntax-rules (name src ellipsis literals rules mod env)
   Scm_CompileSyntaxRules)
 
 (define-cproc macro-transformer (mac::<macro>) Scm_MacroTransformer)

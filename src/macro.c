@@ -70,22 +70,26 @@ ScmObj Scm_MakeSyntax(ScmSymbol *name, ScmObj handler)
  * Macro object
  */
 
-static void macro_print(ScmObj obj, ScmPort *port, ScmWriteContext *mode)
-{
-    ScmSymbol *name = SCM_MACRO(obj)->name;
-    Scm_Printf(port, "#<macro %A>", (name ? SCM_OBJ(name) : SCM_FALSE));
-}
-
-SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_MacroClass, macro_print);
-
-ScmObj Scm_MakeMacro(ScmSymbol *name, ScmObj transformer)
+ScmObj Scm_MakeMacroFull(ScmObj name, ScmObj transformer,
+                         ScmObj src, ScmObj describer)
 {
     ScmMacro *s = SCM_NEW(ScmMacro);
     SCM_SET_CLASS(s, SCM_CLASS_MACRO);
     s->name = name;
     s->transformer = transformer;
+    s->src = src;
+    s->describer = describer;
     return SCM_OBJ(s);
 }
+
+#if GAUCHE_API_0_95
+/* Kept for the backward compatibility */
+ScmObj Scm_MakeMacro(ScmSymbol *name, ScmObj transformer)
+{
+    return Scm_MakeMacroFull(SCM_OBJ_SAFE(name), transformer,
+                             SCM_FALSE, SCM_FALSE);
+}
+#endif
 
 ScmObj Scm_MacroTransformer(ScmMacro *mac)
 {
@@ -198,7 +202,7 @@ ScmObj Scm_MakeMacroTransformerOld(ScmSymbol *name, ScmProcedure *proc)
 {
     ScmObj transformer = Scm_MakeSubr(macro_transform_old, proc, 2, 0,
                                       SCM_FALSE);
-    return Scm_MakeMacro(name, transformer);
+    return Scm_MakeMacroFull(SCM_OBJ(name), transformer, SCM_FALSE, SCM_FALSE);
 }
 
 static ScmMacro *resolve_macro_autoload(ScmAutoload *adata)
@@ -229,7 +233,7 @@ ScmObj Scm_MakeMacroAutoload(ScmSymbol *name, ScmAutoload *adata)
 {
     ScmObj transformer = Scm_MakeSubr(macro_autoload, adata,
                                       2, 0, SCM_FALSE);
-    return Scm_MakeMacro(name, transformer);
+    return Scm_MakeMacroFull(SCM_OBJ(name), transformer, SCM_FALSE, SCM_FALSE);
 }
 
 /*===================================================================
@@ -1018,7 +1022,7 @@ static ScmObj synrule_transform(ScmObj *argv, int argc, void *data)
 }
 
 /* NB: a stub for the new compiler (TEMPORARY) */
-ScmObj Scm_CompileSyntaxRules(ScmObj name, ScmObj ellipsis,
+ScmObj Scm_CompileSyntaxRules(ScmObj name, ScmObj src, ScmObj ellipsis,
                               ScmObj literals, ScmObj rules,
                               ScmObj mod, ScmObj env)
 {
@@ -1028,7 +1032,7 @@ ScmObj Scm_CompileSyntaxRules(ScmObj name, ScmObj ellipsis,
                                        SCM_MODULE(mod), env);
     ScmObj sr_xform = Scm_MakeSubr(synrule_transform, sr,
                                    2, 0, SCM_FALSE);
-    return Scm_MakeMacro(SCM_SYMBOL(name), sr_xform);
+    return Scm_MakeMacroFull(name, sr_xform, src, SCM_FALSE);
 }
 
 /*===================================================================
