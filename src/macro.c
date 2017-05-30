@@ -443,7 +443,7 @@ static ScmObj compile_rule1(ScmObj form,
                         trailing = SCM_CDR(trailing);
                     }
                 } else {
-                    /* srfi-149 allows mroe than one ellipsis follow a
+                    /* srfi-149 allows more than one ellipsis to follow a
                        template. */
                     while (ELLIPSIS_FOLLOWING(pp, ctx)) {
                         ellipsis_nesting++;
