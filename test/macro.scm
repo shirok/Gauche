@@ -249,6 +249,18 @@
 (test-macro "simple" (f z (#\b #\a)) (simple (#\b #\a) z))
 (test-macro "simple" (f z #(2 1)) (simple #(2 1) z))
 
+(define-syntax underbar (syntax-rules ()
+                          [(_) 0]
+                          [(_ _) 1]
+                          [(_ _ _) 2]
+                          [(_ _ _ _) 3]
+                          [(_ _ _ _ . _) many]))
+(test-macro "underbar" 0 (underbar))
+(test-macro "underbar" 1 (underbar a))
+(test-macro "underbar" 2 (underbar a b))
+(test-macro "underbar" 3 (underbar a b c))
+(test-macro "underbar" many (underbar a b c d))
+
 (define-syntax repeat (syntax-rules ()
                         ((_ 0 (?a ?b) ...)     ((?a ...) (?b ...)))
                         ((_ 1 (?a ?b) ...)     (?a ... ?b ...))

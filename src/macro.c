@@ -511,7 +511,8 @@ static ScmObj compile_rule1(ScmObj form,
     if (SCM_SYMBOLP(form)||SCM_IDENTIFIERP(form)) {
         if (isEllipsis(ctx, form)) BAD_ELLIPSIS(ctx);
         ScmObj q = id_memq(form, ctx->literals);
-        if (!SCM_FALSEP(q)) return q;
+        if (!SCM_FALSEP(q)) return q; /* literal identifier */
+        if (SCM_EQ(form, SCM_SYM_UNDERBAR)) return form; /* '_' */
 
         if (patternp) {
             return add_pvar(ctx, spat, form);
@@ -804,6 +805,9 @@ static int match_synrule(ScmObj form, ScmObj pattern, ScmObj mod, ScmObj env,
     if (PVREF_P(pattern)) {
         match_insert(pattern, form, mvec);
         return TRUE;
+    }
+    if (SCM_EQ(pattern, SCM_SYM_UNDERBAR)) {
+        return TRUE;            /* unconditional match */
     }
     if (SCM_IDENTIFIERP(pattern)) {
         return match_identifier(SCM_IDENTIFIER(pattern), form, mod, env);

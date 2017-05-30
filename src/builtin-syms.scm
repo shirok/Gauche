@@ -206,6 +206,8 @@
     ;; compiler addition (move this up on 1.0 release)
     (unused-args               SCM_SYM_UNUSED_ARGS)
     (next-method               SCM_SYM_NEXT_METHOD)
+    ;; macro addition (move this up on 1.0 release)
+    (_                         SCM_SYM_UNDERBAR)
     ))
 
 
