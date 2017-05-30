@@ -1530,7 +1530,7 @@ the internal syntactic binding informations.
      (syntax-error "malformed my-macro" (my-macro . ?)))))
 
 (my-macro 1 2 3 4)
-  @result{} @r{error: "malformed my-macro: (mymacro 1 2 3 4)"}
+  @result{} @r{error: "malformed my-macro: (my-macro 1 2 3 4)"}
 @end example
 @end defmac
 
