@@ -43,6 +43,11 @@
 # define AO_USE_NO_SIGNALS
 #endif
 
+#if (defined(__linux__) || defined(__GLIBC__) || defined(__GNU__)) \
+    && !defined(AO_USE_NO_SIGNALS) && !defined(_GNU_SOURCE)
+# define _GNU_SOURCE 1
+#endif
+
 #undef AO_REQUIRE_CAS
 #include "atomic_ops.h" /* Without cas emulation! */
 
@@ -94,7 +99,7 @@
 
 #define AO_HASH(x) (((unsigned long)(x) >> 12) & (AO_HASH_SIZE-1))
 
-AO_TS_t AO_locks[AO_HASH_SIZE] = {
+static AO_TS_t AO_locks[AO_HASH_SIZE] = {
   AO_TS_INITIALIZER, AO_TS_INITIALIZER, AO_TS_INITIALIZER, AO_TS_INITIALIZER,
   AO_TS_INITIALIZER, AO_TS_INITIALIZER, AO_TS_INITIALIZER, AO_TS_INITIALIZER,
   AO_TS_INITIALIZER, AO_TS_INITIALIZER, AO_TS_INITIALIZER, AO_TS_INITIALIZER,
@@ -238,15 +243,20 @@ void AO_pause(int n)
 #     ifdef AO_USE_NANOSLEEP
         struct timespec ts;
         ts.tv_sec = 0;
-        ts.tv_nsec = (n > 28 ? 100000 * 1000 : 1 << (n - 2));
+        ts.tv_nsec = n > 28 ? 100000L * 1000 : 1L << (n - 2);
         nanosleep(&ts, 0);
 #     elif defined(AO_USE_WIN32_PTHREADS)
-        Sleep(n > 28 ? 100 : n < 22 ? 1 : 1 << (n - 22)); /* in millis */
+        Sleep(n > 28 ? 100 /* millis */
+                     : n < 22 ? 1 : (DWORD)1 << (n - 22));
 #     else
         struct timeval tv;
         /* Short async-signal-safe sleep. */
+        int usec = n > 28 ? 100000 : 1 << (n - 12);
+                /* Use an intermediate variable (of int type) to avoid  */
+                /* "shift followed by widening conversion" warning.     */
+
         tv.tv_sec = 0;
-        tv.tv_usec = n > 28 ? 100000 : 1 << (n - 12);
+        tv.tv_usec = usec;
         select(0, 0, 0, 0, &tv);
 #     endif
     }

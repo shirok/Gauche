@@ -153,3 +153,6 @@ AO_short_fetch_compare_and_swap_release(volatile unsigned short *addr,
 #ifndef __LP64__
 # define AO_T_IS_INT
 #endif
+
+#undef AO_T_FASIZE
+#undef AO_T_SIZE
