@@ -87,7 +87,6 @@ AO_short_fetch_and_add_full (volatile unsigned short *p, unsigned short incr)
 #define AO_HAVE_short_fetch_and_add_full
 
 #ifndef AO_PREFER_GENERALIZED
-  /* Really only works for 486 and later */
   AO_INLINE void
   AO_and_full (volatile AO_t *p, AO_t value)
   {

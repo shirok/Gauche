@@ -157,7 +157,23 @@
 /* The test_and_set primitive returns an AO_TS_VAL_t value.     */
 /* AO_TS_t is the type of an in-memory test-and-set location.   */
 
-#define AO_TS_INITIALIZER (AO_t)AO_TS_CLEAR
+#define AO_TS_INITIALIZER ((AO_TS_t)AO_TS_CLEAR)
+
+/* Convenient internal macro to test version of GCC.    */
+#if defined(__GNUC__) && defined(__GNUC_MINOR__)
+# define AO_GNUC_PREREQ(major, minor) \
+            ((__GNUC__ << 16) + __GNUC_MINOR__ >= ((major) << 16) + (minor))
+#else
+# define AO_GNUC_PREREQ(major, minor) 0 /* false */
+#endif
+
+/* Convenient internal macro to test version of Clang.  */
+#if defined(__clang__) && defined(__clang_major__)
+# define AO_CLANG_PREREQ(major, minor) \
+    ((__clang_major__ << 16) + __clang_minor__ >= ((major) << 16) + (minor))
+#else
+# define AO_CLANG_PREREQ(major, minor) 0 /* false */
+#endif
 
 /* Platform-dependent stuff:                                    */
 #if (defined(__GNUC__) || defined(_MSC_VER) || defined(__INTEL_COMPILER) \
@@ -169,12 +185,31 @@
 # define AO_INLINE static
 #endif
 
-#if __GNUC__ >= 3 && !defined(LINT2)
+#if AO_GNUC_PREREQ(3, 0) && !defined(LINT2)
 # define AO_EXPECT_FALSE(expr) __builtin_expect(expr, 0)
   /* Equivalent to (expr) but predict that usually (expr) == 0. */
 #else
 # define AO_EXPECT_FALSE(expr) (expr)
 #endif /* !__GNUC__ */
+
+#if defined(__has_feature)
+  /* __has_feature() is supported.      */
+# if __has_feature(address_sanitizer)
+#   define AO_ADDRESS_SANITIZER
+# endif
+# if __has_feature(memory_sanitizer)
+#   define AO_MEMORY_SANITIZER
+# endif
+#endif
+
+#ifndef AO_ATTR_NO_SANITIZE_MEMORY
+# if defined(AO_MEMORY_SANITIZER) \
+        && (!defined(__clang__) || AO_CLANG_PREREQ(3, 8))
+#   define AO_ATTR_NO_SANITIZE_MEMORY __attribute__((no_sanitize("memory")))
+# else
+#   define AO_ATTR_NO_SANITIZE_MEMORY /* empty */
+# endif
+#endif /* !AO_ATTR_NO_SANITIZE_MEMORY */
 
 #if defined(__GNUC__) && !defined(__INTEL_COMPILER)
 # define AO_compiler_barrier() __asm__ __volatile__("" : : : "memory")
@@ -203,7 +238,7 @@
 #   include <machine/sys/inline.h>
 #   define AO_compiler_barrier() _Asm_sched_fence()
 # else
-    /* FIXME - We dont know how to do this.  This is a guess.   */
+    /* FIXME - We do not know how to do this.  This is a guess. */
     /* And probably a bad one.                                  */
     static volatile int AO_barrier_dummy;
 #   define AO_compiler_barrier() (void)(AO_barrier_dummy = AO_barrier_dummy)
@@ -233,8 +268,7 @@
 #   include "atomic_ops/sysdeps/gcc/x86.h"
 # endif /* __i386__ */
 # if defined(__x86_64__)
-#   if (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 2)) \
-       && !defined(AO_USE_SYNC_CAS_BUILTIN)
+#   if AO_GNUC_PREREQ(4, 2) && !defined(AO_USE_SYNC_CAS_BUILTIN)
       /* It is safe to use __sync CAS built-in on this architecture.    */
 #     define AO_USE_SYNC_CAS_BUILTIN
 #   endif
@@ -262,8 +296,12 @@
 # if defined(__m68k__)
 #   include "atomic_ops/sysdeps/gcc/m68k.h"
 # endif /* __m68k__ */
+# if defined(__nios2__)
+#   include "atomic_ops/sysdeps/gcc/nios2.h"
+# endif /* __nios2__ */
 # if defined(__powerpc__) || defined(__ppc__) || defined(__PPC__) \
-     || defined(__powerpc64__) || defined(__ppc64__)
+     || defined(__powerpc64__) || defined(__ppc64__) \
+     || defined(_ARCH_PPC)
 #   include "atomic_ops/sysdeps/gcc/powerpc.h"
 # endif /* __powerpc__ */
 # if defined(__aarch64__)
@@ -276,6 +314,7 @@
 # endif /* __arm__ */
 # if defined(__cris__) || defined(CRIS)
 #   include "atomic_ops/sysdeps/gcc/cris.h"
+#   define AO_CAN_EMUL_CAS
 #   define AO_GENERALIZE_TWICE
 # endif
 # if defined(__mips__)
@@ -290,6 +329,9 @@
 # endif
 # if defined(__hexagon__)
 #   include "atomic_ops/sysdeps/gcc/hexagon.h"
+# endif
+# if defined(__tile__)
+#   include "atomic_ops/sysdeps/gcc/tile.h"
 # endif
 #endif /* __GNUC__ && !AO_USE_PTHREAD_DEFS */
 
@@ -357,26 +399,28 @@
 # define AO_CAN_EMUL_CAS
 #endif
 
-#if defined(AO_REQUIRE_CAS) && !defined(AO_HAVE_compare_and_swap) \
+#if (defined(AO_REQUIRE_CAS) && !defined(AO_HAVE_compare_and_swap) \
     && !defined(AO_HAVE_fetch_compare_and_swap) \
     && !defined(AO_HAVE_compare_and_swap_full) \
     && !defined(AO_HAVE_fetch_compare_and_swap_full) \
     && !defined(AO_HAVE_compare_and_swap_acquire) \
-    && !defined(AO_HAVE_fetch_compare_and_swap_acquire)
+    && !defined(AO_HAVE_fetch_compare_and_swap_acquire)) || defined(CPPCHECK)
 # if defined(AO_CAN_EMUL_CAS)
 #   include "atomic_ops/sysdeps/emul_cas.h"
-# else
-#  error Cannot implement AO_compare_and_swap_full on this architecture.
+# elif !defined(CPPCHECK)
+#   error Cannot implement AO_compare_and_swap_full on this architecture.
 # endif
 #endif /* AO_REQUIRE_CAS && !AO_HAVE_compare_and_swap ... */
 
 /* The most common way to clear a test-and-set location         */
 /* at the end of a critical section.                            */
-#if AO_AO_TS_T && !defined(AO_CLEAR)
+#if AO_AO_TS_T && !defined(AO_HAVE_CLEAR)
 # define AO_CLEAR(addr) AO_store_release((AO_TS_t *)(addr), AO_TS_CLEAR)
+# define AO_HAVE_CLEAR
 #endif
-#if AO_CHAR_TS_T && !defined(AO_CLEAR)
+#if AO_CHAR_TS_T && !defined(AO_HAVE_CLEAR)
 # define AO_CLEAR(addr) AO_char_store_release((AO_TS_t *)(addr), AO_TS_CLEAR)
+# define AO_HAVE_CLEAR
 #endif
 
 /* The generalization section.  */

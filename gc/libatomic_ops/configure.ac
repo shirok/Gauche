@@ -1,5 +1,5 @@
 # Process this file with autoconf to produce a configure script.
-AC_INIT([libatomic_ops],[7.4.4],bdwgc@lists.opendylan.org)
+AC_INIT([libatomic_ops],[7.6.0],bdwgc@lists.opendylan.org)
 
 AC_PREREQ(2.61)
 AC_CANONICAL_TARGET([])
@@ -23,15 +23,20 @@ need_asm=false
 PICFLAG=
 AC_MSG_CHECKING(for PIC compiler flag)
 if test "$GCC" = yes; then
+  old_CC="$CC"
+  if test -n "$CROSS_CC"; then
+    CC="$CROSS_CC"
+  fi
+
   case "$host" in
     *-*-cygwin* | *-*-mingw*)
       # Cygwin and Mingw[-w32/64] do not need -fPIC.
-      AC_MSG_RESULT("<none>")
+      AC_MSG_RESULT([not needed])
       ;;
     *)
       AC_MSG_RESULT(-fPIC)
       PICFLAG=-fPIC
-      AC_MSG_CHECKING(whether gcc -fPIC causes __PIC__ definition)
+      AC_MSG_CHECKING(whether -fPIC compiler option causes __PIC__ definition)
       # Workaround: at least GCC 3.4.6 (Solaris) does not define this macro.
       old_CFLAGS="$CFLAGS"
       CFLAGS="$PICFLAG $CFLAGS"
@@ -48,18 +53,36 @@ if test "$GCC" = yes; then
   esac
 
   # Output all warnings.
-  AC_MSG_CHECKING(for gcc -Wextra)
+  AC_MSG_CHECKING([whether compiler supports -Wextra])
   old_CFLAGS="$CFLAGS"
   CFLAGS="-Wextra $CFLAGS"
   AC_TRY_COMPILE([],[], [ac_cv_cc_wextra=yes], [ac_cv_cc_wextra=no])
   CFLAGS="$old_CFLAGS"
   AC_MSG_RESULT($ac_cv_cc_wextra)
   AS_IF([test "$ac_cv_cc_wextra" = yes], [WEXTRA="-Wextra"], [WEXTRA="-W"])
-  CFLAGS="-Wall $WEXTRA $CFLAGS"
+  AC_MSG_CHECKING([whether compiler supports -Wpedantic])
+  CFLAGS="-Wpedantic -Wno-long-long $CFLAGS"
+  AC_TRY_COMPILE([],[
+extern int quiet;
+  ], [ac_cv_cc_pedantic=yes], [ac_cv_cc_pedantic=no])
+  CFLAGS="$old_CFLAGS"
+  AC_MSG_RESULT($ac_cv_cc_pedantic)
+  WPEDANTIC=
+  AS_IF([test "$ac_cv_cc_pedantic" = yes],
+        [WPEDANTIC="-Wpedantic -Wno-long-long"])
+  CFLAGS="-Wall $WEXTRA $WPEDANTIC $CFLAGS"
+
+  AC_ARG_ENABLE(werror, [AC_HELP_STRING([--enable-werror],
+                            [Pass -Werror to the C compiler])])
+  if test "$enable_werror" = yes; then
+    CFLAGS="-Werror $CFLAGS"
+  fi
+
+  CC="$old_CC"
 else
   case "$host" in
     *-*-hpux*)
-      AC_MSG_RESULT("+Z")
+      AC_MSG_RESULT([+Z])
       PICFLAG="+Z"
       CFLAGS="+O2 -mt $CFLAGS"
       ;;
@@ -75,7 +98,7 @@ else
       # Any Linux compiler had better be gcc compatible.
       ;;
     *)
-      AC_MSG_RESULT("<none>")
+      AC_MSG_RESULT([none])
       ;;
   esac
 fi
@@ -86,8 +109,27 @@ if test "$enable_assertions" != yes; then
   AC_DEFINE([NDEBUG], 1, [Define to disable assertion checking.])
 fi
 
+AC_ARG_ENABLE(atomic-intrinsics,
+        [AC_HELP_STRING([--disable-atomic-intrinsics],
+                        [Do not use C11 atomic intrinsics])])
+if test "$enable_atomic_intrinsics" = no; then
+  AC_DEFINE([AO_DISABLE_GCC_ATOMICS], 1,
+            [Define to avoid C11 atomic intrinsics even if available.])
+fi
+
+AC_ARG_ENABLE(gcov, AC_HELP_STRING([--enable-gcov],
+                                   [Turn on code coverage analysis]))
+if test "$enable_gcov" = "yes"; then
+  CFLAGS="$CFLAGS --coverage"
+  # Turn off code optimization to get accurate line numbers.
+  CFLAGS=`echo "$CFLAGS" | sed -e 's/-O\(1\|2\|3\|4\|s\|fast\)\?//g'`
+fi
+
 AC_SUBST(PICFLAG)
 AC_SUBST(DEFS)
+
+# Extra user-defined C flags.
+AC_SUBST([CFLAGS_EXTRA])
 
 AH_TEMPLATE([_PTHREADS], [Indicates the use of pthreads (NetBSD).])
 
@@ -114,9 +156,6 @@ AH_TEMPLATE([AO_ASM_X64_AVAILABLE],
         [Inline assembly available (only VC/x86_64)])
 AH_TEMPLATE([AO_ASSUME_VISTA],
         [Assume Windows Server 2003, Vista or later target (only VC/x86)])
-AH_TEMPLATE([AO_ASSUME_WINDOWS98],
-        [Assume hardware compare-and-swap functionality available \
-         on target (only VC/x86)])
 AH_TEMPLATE([AO_CMPXCHG16B_AVAILABLE],
         [Assume target is not old AMD Opteron chip (only x86_64)])
 AH_TEMPLATE([AO_FORCE_USE_SWP],
@@ -137,6 +176,10 @@ AH_TEMPLATE([AO_USE_SYNC_CAS_BUILTIN],
 AH_TEMPLATE([AO_WEAK_DOUBLE_CAS_EMULATION],
         [Emulate double-width CAS via pthread locking in case of no hardware \
          support (only gcc/x86_64, the emulation is unsafe)])
+AH_TEMPLATE([AO_PREFER_BUILTIN_ATOMICS],
+        [Prefer C11 atomic intrinsics over assembly-based implementation \
+        even in case of inefficient implementation (do not use assembly for \
+        any atomic_ops primitive if C11/GCC atomic intrinsics available)])
 
 AC_DEFINE(_REENTRANT, 1, [Required define if using POSIX threads.])
 
