@@ -685,20 +685,26 @@
   (define %define-syntax (make-identifier 'define-syntax (find-module 'gauche) '()))
   (define %lambda (make-identifier 'lambda (find-module 'gauche) '()))
   (define %begin (make-identifier 'begin (find-module 'gauche) '()))
-  (define %macro (make-identifier 'make-macro-transformer
+  (define %macro (make-identifier '%make-macro-transformer
                                   (find-module 'gauche.internal) '()))
+  (define %apply (make-identifier 'apply (find-module 'gauche) '()))
+  (define %cdr (make-identifier 'cdr (find-module 'gauche) '()))
   (define (do-handle name expr)
     (if (or (symbol-exported? name)
             (memq name (private-macros-to-keep)))
-      `(,%begin
-        (,%define ,name (,%macro ',name ,expr))
-        ((with-module gauche define-macro) ,name ,expr))
+      (let ([form (gensym)]
+            [env (gensym)])
+        `(,%begin
+          (,%define ,name (,%macro ',name
+                                   (,%lambda (,form ,env)
+                                             (,%apply ,expr (,%cdr ,form)))
+                                   ',expr))
+          ((with-module gauche define-macro) ,name ,expr)))
       `((with-module gauche define-macro) ,name ,expr)))
 
   (match form
     [((name . formals) . body)
-     (handle-define-macro `(,name
-                            (,%lambda ,formals ,@body)))]
+     (handle-define-macro `(,name (,%lambda ,formals ,@body)))]
     [(name expr) (do-handle name expr)]
     [_ (error "Malformed define-macro" form)]))
 

@@ -276,7 +276,7 @@
 ;;;
 
 (with-module gauche.internal)
-;; TRANSIENT: Legacy macro transformer.
-;; proc :: Arg, ... -> Sexpr
-(define-cproc make-macro-transformer (name::<symbol> proc::<procedure>)
-  Scm_MakeMacroTransformerOld)
+;; proc :: Sexpr, Cenv -> Sexpr
+(define-cproc %make-macro-transformer (name transformer
+                                       :optional (src #f) (describer #f))
+  Scm_MakeMacroFull)

@@ -198,11 +198,12 @@ static ScmObj macro_transform_old(ScmObj *argv, int argc, void *data)
     return Scm_VMApply(proc, SCM_CDR(form));
 }
 
+/* TRANSIENT
+   This used to be called via make-macro-transformer, but no longer.
+   We leave stub here for ABI compatibility. */
 ScmObj Scm_MakeMacroTransformerOld(ScmSymbol *name, ScmProcedure *proc)
 {
-    ScmObj transformer = Scm_MakeSubr(macro_transform_old, proc, 2, 0,
-                                      SCM_FALSE);
-    return Scm_MakeMacroFull(SCM_OBJ(name), transformer, SCM_FALSE, SCM_FALSE);
+    Scm_Panic("Obsoleted Scm_MakeMacroTransformerOld called!  Something is wrong!");
 }
 
 static ScmMacro *resolve_macro_autoload(ScmAutoload *adata)

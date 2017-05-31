@@ -636,26 +636,23 @@
 
 (define-pass1-syntax (define-macro form cenv) :gauche
   (check-toplevel form cenv)
-  (pass1/define-macro form form (cenv-module cenv) cenv))
-
-(define (pass1/define-macro form oform module cenv)
-  (check-toplevel oform cenv)
   (match form
     [(_ (name . formals) body ...)
-     (let1 trans
-         (make-macro-transformer name
-                                 (eval `(,lambda. ,formals ,@body) module))
-       ;; See the "Hygiene alert" in pass1/define.
-       (%insert-syntax-binding module (unwrap-syntax name) trans)
-       ($const-undef))]
+     (pass1/define-macro form name `(,lambda. ,formals ,@body) cenv)]
     [(_ name expr)
-     (unless (variable? name) (error "syntax-error:" oform))
-     ;; TODO: macro autoload
-     (let1 trans (make-macro-transformer name (eval expr module))
-       ;; See the "Hygiene alert" in pass1/define.
-       (%insert-syntax-binding module (unwrap-syntax name) trans)
-       ($const-undef))]
-    [_ (error "syntax-error:" oform)]))
+     (pass1/define-macro form name expr cenv)]
+    [_ (error "syntax-error:" form)]))
+
+(define (pass1/define-macro src name expr cenv)
+  (unless (variable? name) (error "syntax-error:" src))
+  ;; TODO: macro autoload
+  (let* ([proc (eval expr (cenv-module cenv))]
+         [trans (%make-macro-transformer name
+                                         (^[form env] (apply proc (cdr form)))
+                                         expr #f)])
+    ;; See the "Hygiene alert" in pass1/define.
+    (%insert-syntax-binding (cenv-module cenv) (unwrap-syntax name) trans)
+    ($const-undef)))
 
 (define-pass1-syntax (define-syntax form cenv) :null
   (check-toplevel form cenv)

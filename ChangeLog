@@ -1,3 +1,18 @@
+2017-05-31  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/precomp.scm, src/compile-1.scm (define-macro):
+	  We no longer use make-macro-transformer to create legacy macros;
+	  we directly call %make-macro-transformer instead, which is *the*
+	  formal way to create macros.
+	* src/libalpha.scm, src/libmac.scm: Put %make-macro-transformer
+	  in libalpha.scm, since it is now referenced from the precompiled
+	  code of define-macro.  Move make-macro-transformer to src/libmac.scm;
+	  it is no longer used, but old extension code precompiled by 0.9.5
+	  or before may refer to it, so we keep it until 1.0.
+	* src/macro.c (Scm_MakeMacroTransformerOld): This is truly obsoleted.
+	  Nobody should be calling this directly.  We keep the entry for
+	  ABI compatibility but calling it would result Scm_Panic.
+
 2017-05-30  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche.h, src/macro.c (ScmMacro): Enhanced ScmMacro to keep

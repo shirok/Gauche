@@ -82,13 +82,9 @@
 ;;; Transformer interface
 ;;;
 
-;; NB: make-macro-transformer is in libalpha.scm
+;; NB: %make-macro-transformer is in libalpha.scm
 
 (select-module gauche.internal)
-;; proc :: Sexpr, Cenv -> Sexpr
-(define-cproc %make-macro-transformer (name proc
-                                       :optional (src '#f) (describer '#f))
-  Scm_MakeMacroFull)
 
 (define-cproc compile-syntax-rules (name src ellipsis literals rules mod env)
   Scm_CompileSyntaxRules)
@@ -154,6 +150,12 @@
          ,xformer-spec form cenv)))))
 
 (select-module gauche.internal)
+
+;; TRANSIENT: This is obsoleted, but may be referred from files precompiled
+;; by 0.9.5 and before.  Remove this after 1.0 release.
+;; proc :: Arg, ... -> Sexpr
+(define (make-macro-transformer name proc)
+  (%make-macro-transformer name (^[form env] (apply proc (cdr form))) #f #f))
 
 ;; TRANSIENT: This is only used via obsoleted define-compiler-macro.
 ;; Remove this when we remove define-compiler-macro.

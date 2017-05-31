@@ -94,10 +94,6 @@ SCM_EXTERN ScmObj Scm_CompileSyntaxRules(ScmObj name, ScmObj src,
 #define SCM_MAKE_PVREF(level, count)  \
     SCM_OBJ((SCM_WORD(level)<<24) | (SCM_WORD(count)<<16) | SCM_PVREF_TAG)
 
-/* Temporary */
-SCM_EXTERN ScmObj Scm_MakeMacroTransformerOld(ScmSymbol *name,
-                                              ScmProcedure *proc);
-
 SCM_DECL_END
 
 #endif /* GAUCHE_PRIV_MACROP_H */
