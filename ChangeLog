@@ -1,5 +1,8 @@
 2017-05-31  Shiro Kawai  <shiro@acm.org>
 
+	* Bumped libatomic_ops to 7.6.0, thanks to @qykth-git
+	  https://github.com/shirok/Gauche/pull/286
+
 	* lib/gauche/precomp.scm, src/compile-1.scm (define-macro):
 	  We no longer use make-macro-transformer to create legacy macros;
 	  we directly call %make-macro-transformer instead, which is *the*
