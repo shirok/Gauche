@@ -560,7 +560,7 @@ Machine-dependent information
 * Linux/Crusoe TM5800 - It is reported that recent Linux kernel thinks
        TM5800 as i686-compatible, and compilation of Gauche fails at
        gc where the i686's prefetch instruction is used.
-       If you want to this machine-dependent heuristic optimization,
+       If you want to disable this machine-dependent heuristic optimization,
        run configure like this:
 
          ./configure --disable-heuristic-optimization
