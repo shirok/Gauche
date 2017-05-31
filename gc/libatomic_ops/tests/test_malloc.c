@@ -95,6 +95,7 @@ ln *cons(int d, ln *tail)
   return result;
 }
 
+#ifdef DEBUG_RUN_ONE_TEST
 void print_list(ln *l)
 {
   ln *p;
@@ -105,6 +106,7 @@ void print_list(ln *l)
     }
   printf("\n");
 }
+#endif /* DEBUG_RUN_ONE_TEST */
 
 /* Check that l contains numbers from m to n inclusive in ascending order */
 void check_list(ln *l, int m, int n)

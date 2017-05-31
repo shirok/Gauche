@@ -25,8 +25,6 @@
 # define AO_ASSUME_WINDOWS98
 #endif
 #include "common32_defs.h"
-/* FIXME: Do _InterlockedOps really have a full memory barrier?         */
-/* (MSDN WinCE docs say nothing about it.)                              */
 
 #include "../test_and_set_t_is_ao_t.h"
 /* AO_test_and_set_full() is emulated using CAS.                        */

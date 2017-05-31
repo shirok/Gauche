@@ -156,6 +156,9 @@ AO_INLINE void AO_stack_init(AO_stack_t *list)
 
 typedef volatile AO_double_t AO_stack_t;
 /* AO_val1 is version, AO_val2 is pointer.      */
+/* Note: AO_stack_t variables are not intended to be local ones,        */
+/* otherwise it is the client responsibility to ensure they have        */
+/* double-word alignment.                                               */
 
 #define AO_STACK_INITIALIZER AO_DOUBLE_T_INITIALIZER
 

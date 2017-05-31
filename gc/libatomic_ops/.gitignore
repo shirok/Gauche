@@ -36,6 +36,7 @@ Makefile
 /tests/core
 /tests/list_atomic.i
 /tests/test_atomic
+/tests/test_atomic_generalized
 /tests/test_atomic_pthreads
 /tests/test_malloc
 /tests/test_stack
@@ -67,3 +68,14 @@ Makefile.in
 /tests/test_atomic_include.h
 /tests/test*.log
 /tests/test*.trs
+
+# Code analysis tools:
+*.c.gcov
+*.h.gcov
+*.sancov
+/.sv*-dir
+/cov-int
+/coverage.info
+/pvs-project.log
+/pvs-project.tasks
+/strace_out
