@@ -53,23 +53,29 @@
       (loop (cddr args) (list* (cadr args) (car args) keys))
       (values (reverse! keys) args))))
 
+(define (%make-error-message msg args) ; srfi-23 style message
+  (let1 p (open-output-string)
+    (display msg p)
+    (dolist [obj args] (display " " p) (write/ss obj p))
+    (get-output-string p)))
+
+;; Handy when you want to create <error> object without immediately raising it.
+(define-in-module gauche (make-error msg . args)
+  (make <error> :message (%make-error-message msg args)
+        :message-prefix msg :message-args args))
+
+;; error and errorf.  A bit messy to allow optional condition class argument
+;; as the first arg.
 (define-in-module gauche (error msg . args)
-  (define (mkmsg msg args) ;; srfi-23 style message
-    (let1 p (open-output-string)
-      (display msg p)
-      (dolist [obj args] (display " " p) (write/ss obj p))
-      (get-output-string p)))
   (raise
    (cond
     [(is-a? msg <condition-meta>)
      (receive (keys msgs) (%error-scan-keys args)
        (if (null? msgs)
          (apply make msg keys)
-         (apply make msg :message (mkmsg (car msgs) (cdr msgs)) keys)))]
-    [else (make <error>
-            :message (mkmsg msg args)
-            :message-prefix msg
-            :message-args args)])))
+         (apply make msg
+                :message (%make-error-message (car msgs) (cdr msgs)) keys)))]
+    [else (apply make-error msg args)])))
 
 (define-in-module gauche (errorf fmt . args)
   (raise
