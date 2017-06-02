@@ -176,7 +176,8 @@
 ;;  (~ <compiled-code>'debug-info) -> definition -> source-info
 ;;  In case if the source is a result of macro expansion, the original
 ;;  source is attached in the 'original pair attribute of the source
-;;  code.  The `source-code' procedure traces the very origin of the source.
+;;  code.  The `source-code' procedure traces the very origin of the source
+;;  (via compiled-code-definition).
 ;;  Note that precompiled closure doesn't have `definition' info, hence
 ;;  source code is not available.
 ;;
