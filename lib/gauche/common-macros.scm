@@ -40,15 +40,41 @@
 
 (select-module gauche)
 
-;;; syntax-error
-;;; syntax-errorf
-;;;   Signals an error at compile time.
+;;; syntax-error msg arg ...
+;;; syntax-errorf fmtstr arg ...
+;;;   Signal an error at compile time.
+;;;   These are typically used as a result of expansion of syntax-rules
+;;;   macro; er-macro or legacy macro can directly call error/errorf so
+;;;   there's no point to use syntax-error.  Then, the 'original attribute
+;;;   of the form contains the macro input that caused syntax error.
+;;;   We extract that and throw a compound condition, so that the
+;;;   error message will include the macro input that directly caused
+;;;   this error.
+;;;   TODO: Move this to core after 0.9.6.
 
-(define-macro (syntax-error . args)
-  (apply error (map unwrap-syntax args)))
+(define-syntax syntax-error
+  (er-macro-transformer
+   (lambda (f r c)
+     (let ([args (map unwrap-syntax (cdr f))]
+           [original ((with-module gauche.internal pair-attribute-get)
+                      f 'original #f)])
+       (if original
+         (raise (make-compound-condition
+                 (make-error (car args) (cdr args))
+                 (make <compile-error-mixin> :expr original)))
+         (apply error args))))))
 
-(define-macro (syntax-errorf . args)
-  (apply errorf (map unwrap-syntax args)))
+(define-syntax syntax-errorf
+  (er-macro-transformer
+   (lambda (f r c)
+     (let ([args (map unwrap-syntax (cdr f))]
+           [original ((with-module gauche.internal pair-attribute-get)
+                      f 'original #f)])
+       (if original
+         (raise (make-compound-condition
+                 (make-error (apply format/ss (car args) (cdr args)))
+                 (make <compile-error-mixin> :expr original)))
+         (apply errorf args))))))
 
 ;;;-------------------------------------------------------------
 ;;; generalized set! family

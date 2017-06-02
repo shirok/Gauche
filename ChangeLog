@@ -1,3 +1,10 @@
+2017-06-01  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/common-macro.scm (syntax-error, syntax-errorf):
+	  Wrap the error with extra <compile-error-mixin>, when we know
+	  what macro call resulted the error, helping diagnose macro
+	  error.
+
 2017-05-31  Shiro Kawai  <shiro@acm.org>
 
 	* Bumped libatomic_ops to 7.6.0, thanks to @qykth-git

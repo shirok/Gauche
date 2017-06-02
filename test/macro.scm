@@ -1488,4 +1488,43 @@
               (apply cpm '(2 3))
               (let ((* -)) (cpm 2 3)))))
 
+;;----------------------------------------------------------------------
+;; syntax error
+
+(test-section "syntax-error")
+
+(define-syntax test-syntax-error
+  (syntax-rules ()
+    [(_ a) 'ok]
+    [(_ a b) (syntax-errorf "bad {~a ~a}" a b)]
+    [(_ x ...) (syntax-error "bad number of arguments" x ...)]))
+
+;; NB: These tests depends on the fact that the compile "wraps"
+;; the error by <compile-error-mixin> in order.  If the compiler changes
+;; the error handling, adjust the tests accordingly.
+;; Our purpose here is to make sure syntax-error preserves the offending macro
+;; call (test-syntax-error ...).
+(test "syntax-error"
+      '("bad number of arguments (x y z)"
+        (test-syntax-error x y z)
+        (list (test-syntax-error x y z)))
+      (lambda ()
+        (guard [e (else (let1 xs (filter <compile-error-mixin>
+                                         (slot-ref e '%conditions))
+                          (cons (slot-ref e 'message)
+                                (map (lambda (x) (slot-ref x 'expr)) xs))))]
+          (eval '(list (test-syntax-error x y z))
+                (interaction-environment)))))
+(test "syntax-errorf"
+      '("bad {x y}"
+        (test-syntax-error x y)
+        (list (test-syntax-error x y)))
+      (lambda ()
+        (guard [e (else (let1 xs (filter <compile-error-mixin>
+                                         (slot-ref e '%conditions))
+                          (cons (slot-ref e 'message)
+                                (map (lambda (x) (slot-ref x 'expr)) xs))))]
+          (eval '(list (test-syntax-error x y))
+                (interaction-environment)))))
+
 (test-end)
