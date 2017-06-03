@@ -7808,9 +7808,14 @@ a whitespace.  The result string is always complete.
 
 Note that the algorithm to allocate a string by @code{make-string} and
 then fills it one character at a time is @emph{extremely} inefficient
-in Gauche, and should be avoided.   That kind of algorithms unnecessarily
-assumes underlying string allocation and representation mechanism,
-which Gauche doesn't follow.
+in Gauche, and should be avoided. 
+
+In Gauche, a string is simply a pointer to an immutable string content.
+If you mutate a string by, e.g. @code{string-set!}, Gauche allocates
+whole new immutable string content, copies the original content with
+modification, then swap the pointer of the original string.  It is no
+more efficient than making a new copy.
+
 You can use an output string port for a string construction
 (@pxref{String ports}).
 Even creating a list of characters and
@@ -7828,8 +7833,14 @@ using @code{list->string} is faster than using @code{make-string} and
 
 @code{make-string}で必要な長さの文字列をアロケートして、@code{string-set!}
 で順番に埋めて行くアルゴリズムは、Gaucheでは@emph{極めて}非効率であることに
-注意してください。そのようなアルゴリズムは、文字列の内部表現とアロケーションメカニズムに
-関して不必要な仮定を置いており、Gaucheはその仮定とは合致しません。
+注意してください。
+
+Gaucheの文字列オブジェクトは、変更不可能な文字列本体への単なるポインタです。
+@code{string-set!}等の文字列を破壊的変更する操作は、
+実際には変更箇所以外は元の文字列本体をコピーした新たな文字列本体をアロケートして、
+元の文字列オブジェクトのポインタを差し替えるこようになっています。
+従って、文字列のコピーを作るのと同等の効率となります。
+
 文字列の順次作成に適しているのは文字列ポートです
 (@ref{文字列ポート}参照)。それが使えない場合、
 文字のリストを作成し、@code{list->string}で変換する方がまだ@code{make-string}と
@@ -8452,6 +8463,12 @@ Fills @var{string} by @var{char}.  Optional
 (string-fill! "orange" #\X 2 4)
   @result{} "orXXge"
 @end example
+
+@c EN
+See the notes in @code{make-string} about performance consideration.
+@c JP
+パフォーマンス上の考慮点について、@code{make-string}の説明を参照して下さい。
+@c COMMON
 @end defun
 
 @defun string-join strs :optional delim grammer
