@@ -194,7 +194,7 @@
     [((? variable? wm) mod (? variable? v))
      (and-let* ([var (cenv-lookup-syntax cenv wm)]
                 [ (identifier? var) ])
-       (global-identifier=? var (global-id 'with-module)))]
+       (global-identifier=? var with-module.))]
     [_ #f]))
 
 ;;--------------------------------------------------------------
@@ -415,6 +415,7 @@
 (define else.           (global-id 'else))
 (define =>.             (global-id '=>))
 (define current-module. (global-id 'current-module))
+(define with-module.    (global-id 'with-module))
 
 (define %make-er-transformer.          (global-id% '%make-er-transformer))
 (define %make-er-transformer/toplevel. (global-id% '%make-er-transformer/toplevel))
