@@ -416,6 +416,9 @@
 (define =>.             (global-id '=>))
 (define current-module. (global-id 'current-module))
 (define with-module.    (global-id 'with-module))
+(define quasiquote.     (global-id 'quasiquote))
+(define unquote.        (global-id 'unquote))
+(define unquote-splicing. (global-id 'unquote-splicing))
 
 (define %make-er-transformer.          (global-id% '%make-er-transformer))
 (define %make-er-transformer/toplevel. (global-id% '%make-er-transformer/toplevel))
@@ -863,12 +866,12 @@
     (match cls
       [() ($const-undef)]
       ;; (else . exprs)
-      [(([? (cut global-eq? <> 'else cenv)] exprs ...) . rest)
+      [(([? (cut global-eq? <> else. cenv)] exprs ...) . rest)
        (unless (null? rest)
          (error "syntax-error: 'else' clause followed by more clauses:" form))
        ($seq (imap (cut pass1 <> cenv) exprs))]
       ;; (test => proc)
-      [((test [? (cut global-eq? <> '=> cenv)] proc) . rest)
+      [((test [? (cut global-eq? <> =>. cenv)] proc) . rest)
        (let ([test (pass1 test cenv)]
              [tmp (make-lvar 'tmp)])
          (lvar-initval-set! tmp test)
@@ -882,7 +885,7 @@
                            (list ($lref tmp)))
                     (process-clauses rest))))]
       ;; (generator guard => proc) -- SRFI-61 'general cond clause'
-      [((generator guard [? (cut global-eq? <> '=> cenv)] receiver) . rest)
+      [((generator guard [? (cut global-eq? <> =>. cenv)] receiver) . rest)
        (let1 tmp (make-lvar 'tmp)
          ($receive (car cls) 0 1 (list tmp)
                    (pass1 generator cenv)
@@ -915,12 +918,12 @@
   (define (process-clauses tmpvar cls)
     (match cls
       [() ($const-undef)]
-      [(([? (cut global-eq? <> 'else cenv)] exprs ...) . rest)
+      [(([? (cut global-eq? <> else. cenv)] exprs ...) . rest)
        (unless (null? rest)
          (error "syntax-error: 'else' clause followed by more clauses:" form))
        (match exprs
          ;; (else => proc) -- SRFI-87 case clause
-         [((? (cut global-eq? <> '=> cenv)) proc)
+         [((? (cut global-eq? <> =>. cenv)) proc)
           ($call (car cls)
                  (pass1 proc (cenv-sans-name cenv))
                  (list ($lref tmpvar)))]
@@ -938,7 +941,7 @@
                 [else ($memv #f ($lref tmpvar) ($const elts))])
               (match exprs
                 ;; (elts => proc) -- SRFI-87 case clause
-                [((? (cut global-eq? <> '=> cenv)) proc)
+                [((? (cut global-eq? <> =>. cenv)) proc)
                  ($call (car cls)
                         (pass1 proc (cenv-sans-name cenv))
                         (list ($lref tmpvar)))]
@@ -1008,9 +1011,9 @@
   ;; also becomes '(4).
   ;; NB: The current code allocates lots of intermediate $const node.
 
-  (define (quasiquote? v)       (global-eq? v 'quasiquote cenv))
-  (define (unquote? v)          (global-eq? v 'unquote cenv))
-  (define (unquote-splicing? v) (global-eq? v 'unquote-splicing cenv))
+  (define (quasiquote? v)       (global-eq? v quasiquote. cenv))
+  (define (unquote? v)          (global-eq? v unquote. cenv))
+  (define (unquote-splicing? v) (global-eq? v unquote-splicing. cenv))
 
   ;; In the context where there's no outer list to which we intersperse to.
   (define (quasi obj level)

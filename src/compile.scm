@@ -1738,12 +1738,11 @@
   (or (keyword? k)
       (and (identifier? k) (keyword? (identifier->symbol k)))))
 
-(define (global-eq? var sym cenv)  ; like free-identifier=?, used in pass1.
+(define (global-eq? var id cenv)  ; like free-identifier=?, used in pass1.
   (and (variable? var)
        (let1 v (cenv-lookup-variable cenv var)
          (and (identifier? v)
-              (eq? (unwrap-syntax v) sym)
-              (null? (identifier-env v))))))
+              (global-identifier=? v id)))))
 
 ;; TRANSIENT: To compare keyword hygienically.  We need to treat keywords
 ;; specially until we complete keyword-symbol integration.
@@ -1751,7 +1750,7 @@
   (or (eq? var key)
       (and (symbol? key)
            (identifier? var)
-           (global-eq? var key cenv))))
+           (global-eq? var (global-id key) cenv))))
 
 (define (everyc proc lis c)             ;avoid closure allocation
   (or (null? lis)
