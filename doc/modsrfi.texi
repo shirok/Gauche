@@ -8000,6 +8000,9 @@ value is used for the element of the result vector, and the
 rest of return values are passed to the next call of @var{f}.
 
 @example
+(vector-unfold (^[i] (* i i)) 5)
+ @result{} #(0 1 4 9 16)
+
 (vector-unfold (^[i x] (values (cons i x) (* x 2))) 8 1)
  @result{} #((0 . 1) (1 . 2) (2 . 4) (3 . 8)
     (4 . 16) (5 . 32) (6 . 64) (7 . 128))
@@ -8019,6 +8022,9 @@ value is used for the element of the result vector, and the
 rest of return values are passed to the next call of @var{f}.
 
 @example
+(vector-unfold-right (^[i] (* i i)) 5)
+ @result{} #(0 1 4 9 16)
+
 (vector-unfold-right (^[i x] (values (cons i x) (* x 2))) 8 1)
  @result{} #((0 . 128) (1 . 64) (2 . 32) (3 . 16)
     (4 . 8) (5 . 4) (6 . 2) (7 . 1))
@@ -8311,10 +8317,42 @@ overlapping.
 @defunx vector-unfold-right! f rvec start end seeds @dots{}
 [SRFI-133]
 @c MOD srfi-133
+Fill @var{rvec} starting from index @var{start} (inclusive) and
+ending at index @code{end}.
+
+The procedure @var{f} takes the number of seed values @code{seeds} @dots{}
+plus one arguments.  The first argument is the current index,
+followed by seed values.  The same number of values
+as the arguments must be returned from @var{f}; the first return value
+is used to fill the current element of @var{rvec}, and the rest of the values
+are used as the next seed values.
+
+The result vector is filled from left to right by @code{vector-unfold!},
+and right to left by @code{vector-unfold-right!}.
+The return value is unspecified.
+
+@example
+(let1 rvec (vector 'a 'b 'c 'd 'e 'f)
+  (vector-unfold! (^[i] (+ i 1)) rvec 1 4)
+  rvec)
+ @result{} #(a 2 3 4 e f)
+
+(let1 rvec (vector 'a 'b 'c 'd 'e 'f)
+  (vector-unfold-right! (^[i] (+ i 1)) rvec 1 4)
+  rvec)
+ @result{} #(a 2 3 4 e f)
+
+(let1 rvec (vector 'a 'b 'c 'd 'e 'f)
+  (vector-unfold! (^[i x] (values x (* x 2))) rvec 1 5 10)
+  rvec)
+ @result{} #(a 10 20 40 80 f)
+
+(let1 rvec (vector 'a 'b 'c 'd 'e 'f)
+  (vector-unfold! (^[i x] (values x (* x 2))) rvec 1 5 10)
+  rvec)
+ @result{} #(a 80 40 20 10 f)
+@end example
 @end defun
-
-
-
 
 @c EN
 @subheading Vector conversion
@@ -8325,7 +8363,11 @@ overlapping.
 @defun reverse-vector->list vec :optional start end
 [SRFI-133]
 @c MOD srfi-133
+@c EN
 Same as @code{(reverse (vector->list vec start end))}, but more efficient.
+@c JP
+@code{(reverse (vector->list vec start end))}と同じですが、より効率的です。
+@c COMMON
 @end defun
 
 
