@@ -8258,17 +8258,57 @@ of the shortest.
 @defun vector-every pred vec1 vec2 @dots{}
 [SRFI-133]
 @c MOD srfi-133
+@c EN
 Applies @var{pred} on each corresponding elements
 of @var{vec1} @var{vec2} @dots{} left to right.
 If all the elements (when the lengths of vectors differ, the
 first N elements where N is the length of the shortest) satisfy
-@var{pred}, returns the last result of @var{pred}.   Otherwise
-returns @code{#f}.
+@var{pred}, returns the last result of @var{pred}.
+If any of the elements don't satisfy @var{pred},
+it returns @code{#f} immediately without looking further.
+@c JP
+@var{vec1} @var{vec2} @dots{}の各ベクタの先頭から順に、
+ひとつづつ対応する要素を取って、それに@var{pred}を適用します。
+全ての要素が@var{pred}を満たした場合(ベクタの長さが異なる場合は、
+最も短いベクタを使い切った時点)で、最後の@var{pred}の結果を返します。
+途中で@var{pred}が@code{#f}を返した場合は、その先は見ずに直ちに@code{#f}を返します。
+@c COMMON
+
+@example
+(vector-every < '#(1 2 3 4 5) '#(2 3 4 4 5)
+  @result{} #f
+
+(vector-every (^[x y] (and (real? x) (real? y) (- x y)))
+              '#(1 2 3)
+              '#(2 4 6))
+  @result{} -3
+@end example
 @end defun
 
 @defun vector-partition pred vec
 [SRFI-133]
 @c MOD srfi-133
+@c EN
+Allocates a fresh vector of the same size as @var{vec},
+then fill it with elements in @var{vec} that satisfy @var{pred},
+followed by elements that don't satisfy @var{pred}.
+
+Returns two values, the newly created vector and
+an exact integer of the index of the first element that doesn't satisfy
+@var{pred} in the returned vector.
+@c JP
+@var{vec}と同じ大きさのベクタを新たにアロケートし、
+まず@var{vec}中の@var{pred}を満たす要素を順に詰めてゆき、
+その後を@var{pred}を満たさない要素で埋めます。
+
+新たに作られたベクタと、その中で@var{pred}を満たさない最初の要素を指す
+インデックスの二つの値を返します。
+@c COMMON
+
+@example
+(vector-partition odd? '#(1 2 3 4 5 6 7 8))
+  @result{} #(1 3 5 7 2 4 6 8) @r{and} 4
+@end example
 @end defun
 
 @c EN
@@ -8286,9 +8326,14 @@ Swaps vector @var{vec}'s @code{i}-th and @code{j}-th elements.
 @defun vector-reverse! vec :optional start end
 [SRFI-133]
 @c MOD srfi-133
+@c EN
 Reverse the elements of @var{vec}.  Returns an undefined value.
 Optional @var{start} and @var{end} arguments can limit
 the range of operation.
+@c JP
+@code{vec}の要素を逆順に並べ替えます。戻り値は未定義です。
+省略可能引数@var{start}と@var{end}は影響が及ぶ範囲を限定します。
+@c COMMON
 
 @example
 (rlet1 v (vector 'a 'b 'c 'd 'e)
@@ -8300,7 +8345,11 @@ the range of operation.
 @defun vector-reverse-copy! target tstart source :optional sstart send
 [SRFI-133]
 @c MOD srfi-133
+@c EN
 Like @code{vector-copy!}, but reverses the order of elements from @var{start}.
+@c JP
+@code{vector-copy!}と似ていますが、指定範囲を逆順にコピーします。
+@c COMMON
 
 @example
 (rlet1 v (vector 'a 'b 'c 'd 'e)
@@ -8308,19 +8357,32 @@ Like @code{vector-copy!}, but reverses the order of elements from @var{start}.
   @result{} #(a b 2 1 e)
 @end example
 
+@c EN
 It is ok to pass the same vector to @var{target} and @var{source};
 it always works even if the regions of source and destination are
 overlapping.
+@c JP
+@var{target}と@var{source}に同じベクタを指定しても構いません。
+コピー範囲が重なっていても問題なく動作します。
+@c COMMON
+
+@example
+(rlet1 v (vector 'a 'b 'c 'd 'e)
+  (vector-reverse-copy! v 1 v 1))
+  @result{} #(a e d c b)
+@end example
 @end defun
 
 @defun vector-unfold! f rvec start end seeds @dots{}
 @defunx vector-unfold-right! f rvec start end seeds @dots{}
 [SRFI-133]
 @c MOD srfi-133
+@c EN
 Fill @var{rvec} starting from index @var{start} (inclusive) and
-ending at index @code{end}.
+ending at index @var{end} (exclusive), with the elements
+calculated by @var{f}.
 
-The procedure @var{f} takes the number of seed values @code{seeds} @dots{}
+The procedure @var{f} takes the number of seed values @var{seeds} @dots{}
 plus one arguments.  The first argument is the current index,
 followed by seed values.  The same number of values
 as the arguments must be returned from @var{f}; the first return value
@@ -8330,6 +8392,19 @@ are used as the next seed values.
 The result vector is filled from left to right by @code{vector-unfold!},
 and right to left by @code{vector-unfold-right!}.
 The return value is unspecified.
+@c JP
+@var{rvec}の、@var{start}から@var{end}の直前までの範囲を@var{f}が算出する
+新たな要素で埋めます。
+
+@var{f}は、@var{seeds} @dots{}の数よりひとつ多い引数を取ります。
+最初の引数は現在のインデックスで、それにシード値が続きます。
+@var{f}は引数と同数の値を返します。最初の戻り値が@var{rvec}を埋めるのに使われ、
+残りの戻り値は新たなシード値として次の@var{f}の呼び出しに使われます。
+
+結果のベクタは、@code{vector-unfold!}では左から右へ、
+@code{vector-unfold-right!}では右から左へと埋められます。
+戻り値はunspecifiedです。
+@c COMMON
 
 @example
 (let1 rvec (vector 'a 'b 'c 'd 'e 'f)
