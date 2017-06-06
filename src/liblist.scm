@@ -217,12 +217,12 @@
   (if (null? more)
     (let loop ([xs lis] [r '()])
       (cond [(pair? xs) (loop (cdr xs) (cons (proc (car xs)) r))]
-            [(null? xs) (reverse r)]
+            [(null? xs) (reverse! r)]
             [else (error "improper list not allowed:" lis)]))
     (let loop ([xss (cons lis more)] [r '()])
       (receive (cars cdrs) (%zip-nary-args xss)
         (if (not cars)
-          (reverse r)
+          (reverse! r)
           (loop cdrs (cons (apply proc cars) r)))))))
 
 (define-in-module scheme (for-each proc lis . more)
@@ -396,7 +396,7 @@
 
 (define (filter pred lis)
   (let loop ([lis lis] [r '()])
-    (cond [(null-list? lis) (reverse r)]
+    (cond [(null-list? lis) (reverse! r)]
           [(pred (car lis)) (loop (cdr lis) (cons (car lis) r))]
           [else (loop (cdr lis) r)])))
 
@@ -422,13 +422,13 @@
 (define (filter-map fn lis . more)
   (if (null? more)
     (let loop ([lis lis] [r '()])
-      (cond [(null-list? lis) (reverse r)]
+      (cond [(null-list? lis) (reverse! r)]
             [(fn (car lis)) => (^x (loop (cdr lis) (cons x r)))]
             [else (loop (cdr lis) r)]))
     (let loop ([liss (cons lis more)] [r '()])
       (receive (cars cdrs)
           ((with-module gauche.internal %zip-nary-args) liss)
-        (cond [(not cars) (reverse r)]
+        (cond [(not cars) (reverse! r)]
               [(apply fn cars) => (^x (loop cdrs (cons x r)))]
               [else (loop cdrs r)])))))
 
