@@ -82,7 +82,6 @@
 ;;         into the named file instead of reporting it out immediately.
 
 (define-module gauche.test
-  (use util.match)
   (export test test* test-start test-end test-section test-log
           test-module test-script
           test-error test-one-of test-none-of
@@ -395,24 +394,27 @@
                 (memq (caar code) gref-call-insns))
            (if (pair? (cdr code))
              (if (identifier? (cadr code))
-                 (let* ([src-code (assq-ref (assv-ref debug-info i '())
-                                            'source-info
-                                            #f)]
-                        ;; If the identifier is in `code' and the source-code field
-                        ;; is empty, fill the field with the current `src-code'.
-                        [new-r (map (match-lambda
-                                     ((and (ident numargs orig-src-code) e)
+               (let* ([src-code (assq-ref (assv-ref debug-info i '())
+                                          'source-info)]
+                      ;; If the identifier is in `code' and the source-code
+                      ;; field is empty, fill the field with the current
+                      ;; `src-code'.
+                      [new-r (map (lambda (e)
+                                    (let ([ident (car e)]
+                                          [numargs (cadr e)]
+                                          [orig-src-code (caddr e)])
                                       (if (and (memq (identifier->symbol ident)
                                                      src-code)
                                                (not orig-src-code))
-                                          `(,ident ,numargs ,src-code)
-                                          e)))
-                                    r)])
-                   (loop `((,(cadr code) ,(gref-numargs (car code)) ,src-code) ,@new-r)
-                         (cddr code)
-                         (+ i 2)
-                         debug-info))
-                 (loop r (cddr code) (+ i 2) debug-info))    ;skip #<gloc>
+                                        `(,ident ,numargs ,src-code)
+                                        e)))
+                                  r)])
+                 (loop `((,(cadr code) ,(gref-numargs (car code)) ,src-code)
+                         ,@new-r)
+                       (cddr code)
+                       (+ i 2)
+                       debug-info))
+               (loop r (cddr code) (+ i 2) debug-info))    ;skip #<gloc>
              (loop r '() (+ i 1) debug-info))]
           [(identifier? (car code))
            (loop `((,(car code) #f #f) ,@r) (cdr code) (+ i 1) debug-info)]
