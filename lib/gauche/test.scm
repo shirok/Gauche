@@ -82,6 +82,7 @@
 ;;         into the named file instead of reporting it out immediately.
 
 (define-module gauche.test
+  (use util.match)
   (export test test* test-start test-end test-section test-log
           test-module test-script
           test-error test-one-of test-none-of
@@ -282,6 +283,12 @@
 
 ;; Common op for test-module and test-script.
 (define (test-module-common mod name allow-undefined bypass-arity-check)
+  (define (code-location src-code)
+    (let1 src-info (debug-source-info src-code)
+      (string-append (if src-info
+                         (format "~a:" (second src-info))
+                         "")
+                     (format "~a" src-code))))
   (let ([bad-autoload '()]
         [bad-export '()]
         [bad-gref '()]
@@ -304,12 +311,13 @@
      (lambda (closure)
        (for-each (lambda (arg)
                    (let ([gref (car arg)]
-                         [numargs (cadr arg)])
+                         [numargs (cadr arg)]
+                         [src-code (caddr arg)])
                      (cond [(memq (slot-ref gref 'name) allow-undefined)]
-                           [(dangling-gref? gref closure)
+                           [(dangling-gref? gref (or src-code (slot-ref closure 'info)))
                             => (lambda (bad) (push! bad-gref bad))]
                            [(memq (slot-ref gref 'name) bypass-arity-check)]
-                           [(arity-invalid? gref numargs closure)
+                           [(arity-invalid? gref numargs (or src-code (slot-ref closure 'info)))
                             => (lambda (bad) (push! bad-arity bad))])))
                  (closure-grefs closure)))
      (toplevel-closures mod))
@@ -325,7 +333,7 @@
       (push! report
              (format "symbols referenced but not defined: ~a"
                      (string-join (map (lambda (z)
-                                         (format "~a(~a)" (car z) (cdr z)))
+                                         (format "~a(~a)" (car z) (code-location (cdr z))))
                                        bad-gref)
                                   ", "))))
     (unless (null? bad-arity)
@@ -334,7 +342,7 @@
              (format "procedures received wrong number of argument: ~a"
                      (string-join (map (lambda (z)
                                          (format "~a(~a) got ~a"
-                                                 (car z) (cadr z) (caddr z)))
+                                                 (car z) (code-location (cadr z)) (caddr z)))
                                        bad-arity)
                                   ", "))))
     (cond
@@ -372,31 +380,52 @@
 ;; Combs closure's instruction list to extract references for the global
 ;; identifiers.  If it is a call to the global function, we also picks
 ;; up the number of arguments, so that we can check it against arity.
-;; Returns ((<identifier> <num-args>) ...)
+;; Returns ((<identifier> <num-args> <source-code>|#f) ...)
 (define (closure-grefs closure)
   (define code->list (with-module gauche.internal vm-code->list))
   (define (gref-numargs code) (cadr code))
   (define gref-call-insns
     '(GREF-CALL PUSH-GREF-CALL GREF-TAIL-CALL PUSH-GREF-TAIL-CALL))
-  (let loop ([r '()] [code (code->list (closure-code closure))])
+  (let loop ([r '()]
+             [code (code->list (closure-code closure))]
+             [i 0]
+             [debug-info (~ (closure-code closure)'debug-info)])
     (cond [(null? code) r]
           [(and (pair? (car code))
                 (memq (caar code) gref-call-insns))
            (if (pair? (cdr code))
              (if (identifier? (cadr code))
-               (loop `((,(cadr code) ,(gref-numargs (car code))) ,@r)
-                     (cddr code))
-               (loop r (cddr code)))    ;skip #<gloc>
-             (loop r '()))]
+                 (let* ([src-code (assq-ref (assv-ref debug-info i '())
+                                            'source-info
+                                            #f)]
+                        ;; If the identifier is in `code' and the source-code field
+                        ;; is empty, fill the field with the current `src-code'.
+                        [new-r (map (match-lambda
+                                     ((and (ident numargs orig-src-code) e)
+                                      (if (and (memq (identifier->symbol ident)
+                                                     src-code)
+                                               (not orig-src-code))
+                                          `(,ident ,numargs ,src-code)
+                                          e)))
+                                    r)])
+                   (loop `((,(cadr code) ,(gref-numargs (car code)) ,src-code) ,@new-r)
+                         (cddr code)
+                         (+ i 2)
+                         debug-info))
+                 (loop r (cddr code) (+ i 2) debug-info))    ;skip #<gloc>
+             (loop r '() (+ i 1) debug-info))]
           [(identifier? (car code))
-           (loop `((,(car code) #f) ,@r) (cdr code))]
+           (loop `((,(car code) #f #f) ,@r) (cdr code) (+ i 1) debug-info)]
           [(is-a? (car code) <compiled-code>)
-           (loop (loop r (code->list (car code))) (cdr code))]
+           (loop (loop r (code->list (car code)) 0 (~ (car code)'debug-info))
+                 (cdr code)
+                 (+ i 1)
+                 debug-info)]
           [(list? (car code)) ; for the operand of LOCAL-ENV-CLOSURES
-           (loop (loop r (car code)) (cdr code))]
-          [else (loop r (cdr code))])))
+           (loop (loop r (car code) 0 '()) (cdr code) (+ i 1) debug-info)]
+          [else (loop r (cdr code) (+ i 1) debug-info)])))
 
-(define (arity-invalid? gref numargs closure)
+(define (arity-invalid? gref numargs src-code)
   (and-let* ([ numargs ]
              ;; TODO: What if GREF is nested identifier?
              [proc (global-variable-ref
@@ -409,13 +438,13 @@
              [ (not (and (is-a? proc <generic>) (null? (~ proc'methods)))) ]
              [ (not (apply applicable? proc (make-list numargs <bottom>))) ])
     (list (slot-ref gref 'name)
-          (slot-ref closure 'info)
+          src-code
           numargs)))
 
-(define (dangling-gref? ident closure)
+(define (dangling-gref? ident src-code)
   (let1 name (unwrap-syntax ident)
     (and (not ((with-module gauche.internal id->bound-gloc) ident))
-         (cons name (slot-ref closure 'info)))))
+         (cons name src-code))))
 
 ;; Logging and bookkeeping -----------------------------------------
 (define (test-section msg)
