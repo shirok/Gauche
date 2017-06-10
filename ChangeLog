@@ -1,5 +1,8 @@
 2017-06-09  Shiro Kawai  <shiro@acm.org>
 
+	* lib/text/console.scm: Enhance *vt100-compatible-terminals* to
+	  cover screen-256color.
+
 	* lib/gauche/test.scm (test-module-common): Show the line number
 	  and the actual code for dangling gref etc.   Patch from nkoguro:
 	  https://github.com/shirok/Gauche/pull/288
