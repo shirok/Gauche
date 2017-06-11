@@ -377,7 +377,7 @@
 ;;; It's more efficient to use u8vector in Gauche.
 
 (define (byte-ref s k) (u8vector-ref s k))
-(define (byte-set! s k b) (u8evctor-set! s k b))
+(define (byte-set! s k b) (u8vector-set! s k b))
 (define make-bytes make-u8vector)
 (define (bytes-length s) (u8vector-length s))
 (define bytes u8vector)
