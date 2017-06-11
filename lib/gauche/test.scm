@@ -318,7 +318,8 @@
                            [(memq (slot-ref gref 'name) bypass-arity-check)]
                            [(arity-invalid? gref numargs (or src-code (slot-ref closure 'info)))
                             => (lambda (bad) (push! bad-arity bad))])))
-                 (closure-grefs closure)))
+                 (append-map closure-grefs
+                   (cons closure (filter closure? (closure-env->list closure))))))
      (toplevel-closures mod))
     ;; report discrepancies
     (unless (null? bad-autoload)
