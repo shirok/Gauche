@@ -319,7 +319,9 @@
                            [(arity-invalid? gref numargs (or src-code (slot-ref closure 'info)))
                             => (lambda (bad) (push! bad-arity bad))])))
                  (append-map closure-grefs
-                   (cons closure (filter closure? (closure-env->list closure))))))
+                             (cons closure
+                                   (filter closure?
+                                           ((with-module gauche.internal %closure-env->list) closure))))))
      (toplevel-closures mod))
     ;; report discrepancies
     (unless (null? bad-autoload)

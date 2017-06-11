@@ -238,16 +238,6 @@
     (return SCM_FALSE)
     (return (SCM_OBJ (-> m data)))))
 
-(define-cproc closure-env->list (clo::<closure>)
-  (let* ((env::ScmEnvFrame* (SCM_CLOSURE_ENV clo))
-         (h SCM_NIL)
-         (t SCM_NIL))
-    (when (== env NULL)
-      (return SCM_NIL))
-    (dotimes [i (-> env size)]
-      (SCM_APPEND1 h t (ENV_DATA env i)))
-    (return h)))
-
 (define-cproc procedure-info (proc::<procedure>)
   (return (SCM_PROCEDURE_INFO proc)))
 
@@ -283,6 +273,19 @@
     (result SCM_FALSE)))
 
 (define-cproc %procedure-copy (p::<procedure>) Scm_CopyProcedure)
+
+(select-module gauche.internal)
+;; Make the environment the closure closes into a list and return it.
+;; Used from gauche.test.
+(define-cproc %closure-env->list (clo::<closure>)
+  (let* ([env::ScmEnvFrame* (SCM_CLOSURE_ENV clo)]
+         [h SCM_NIL]
+         [t SCM_NIL])
+    (when (== env NULL)
+      (return SCM_NIL))
+    (dotimes [i (-> env size)]
+      (SCM_APPEND1 h t (ENV_DATA env i)))
+    (return h)))
 
 (select-module gauche.internal)
 ;; Tester procedures
