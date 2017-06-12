@@ -55,8 +55,16 @@ ScmObj pre_cmds = SCM_NIL;      /* assoc list of commands that needs to be
                                    or #\e, according to the given cmdargs. */
 
 ScmObj main_module = SCM_FALSE; /* The name of the module where we
-                                   look for 'main'.  If #f, 'user' module
-                                   is used. */
+                                   look for 'main'.
+                                   If #f (default), 'user' module is used.
+                                   NB: R7RS script is read into 'r7rs.user'
+                                   module, so its 'main' routine isn't called
+                                   automatically.  It is as specified in
+                                   R7RS.  However, if the basename of the
+                                   interpreter executale is "scheme-r7rs",
+                                   we honor SRFI-22 and calls r7rs.user#main
+                                   after loading the script.
+                                */
 ScmModule *default_toplevel_module = NULL;
                                 /* The initial module for the script execution
                                    and interactive REPL.  If NULL, the user
@@ -546,6 +554,13 @@ void enter_repl()
     }
 }
 
+/* POSIX basename() may or may not modify arg, so we roll our own. */
+static const char *safe_basename(const char *path)
+{
+    ScmObj bn = Scm_BaseName(SCM_STRING(SCM_MAKE_STR(path)));
+    return Scm_GetStringConst(SCM_STRING(bn));
+}
+
 /*-----------------------------------------------------------------
  * MAIN
  */
@@ -582,6 +597,12 @@ int main(int ac, char **av)
 #  endif  /* UNICODE */
 #endif /*defined(GAUCHE_WINDOWS)*/
 
+    /* If interpreter has the name scheme-r7rs, we assume it's
+       SRFI-22 *and* R7RS script. */
+    if (strcmp(safe_basename(argv[0]), "scheme-r7rs") == 0) {
+        main_module = SCM_INTERN("r7rs.user");
+    }
+    
     /* Check command-line options */
     int argind = parse_options(argc, argv);
 

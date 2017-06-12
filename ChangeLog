@@ -1,3 +1,9 @@
+2017-06-11  Shiro Kawai  <shiro@acm.org>
+
+	* src/main.c: If the interpreter basename is "scheme-r7rs", we assume
+	  the script is in R7RS and invoked under SRFI-22 convention, and calls
+	  r7rs.user#main.
+
 2017-06-09  Shiro Kawai  <shiro@acm.org>
 
 	* lib/text/console.scm: Enhance *vt100-compatible-terminals* to

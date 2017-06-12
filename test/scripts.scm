@@ -62,6 +62,24 @@
              (process-output->string '("./gosh" "-ftest" "test.o")))
          (delete-files "test.o")))
 
+(test* "r7rs + srfi-22 by interpreter name" "baz bar"
+       (unwind-protect
+           (begin
+             (delete-files "test.o" "scheme-r7rs")
+             (copy-file "./gosh" "./scheme-r7rs")
+             (sys-chmod "./scheme-r7rs" #o755)
+             (with-output-to-file "test.o"
+               (^[]
+                 (write
+                  '(import (scheme base) (scheme write)))
+                 (write
+                  '(define (main args) (display "bar\n") 0))
+                 (write
+                  '(display "baz\n"))))
+             (process-output->string '("./scheme-r7rs" "-ftest" "test.o")
+                                     :on-abnormal-exit :ignore))
+         (delete-files "test.o" "scheme-r7rs")))
+
 ;; This caused assertion failure in 0.9.5, because 'main' was called
 ;; via Scm_ApplyRec without base VM running.
 ;; See https://github.com/shirok/Gauche/issues/244
