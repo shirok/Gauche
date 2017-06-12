@@ -284,9 +284,7 @@
 (define (test-module-common mod name allow-undefined bypass-arity-check)
   (define (code-location src-code)
     (let1 src-info (debug-source-info src-code)
-      (string-append (if src-info
-                         (format "~a:" (second src-info))
-                         "")
+      (string-append (if src-info (format "~a:" (cadr src-info)) "")
                      (format "~a" src-code))))
   (let ([bad-autoload '()]
         [bad-export '()]
