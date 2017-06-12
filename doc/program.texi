@@ -1261,6 +1261,35 @@ alternate main procedure.
 @c COMMON
 
 @c EN
+@emph{Note on R7RS Scripts}: If the script is written in R7RS Scheme
+(which can be distinguished by the first @code{import} declaration,
+@pxref{Three forms of import}), it is read into @code{r7rs.user}
+module and its @code{main} isn't called.
+You can give @code{-mr7rs.main} command-line argument to call
+the @code{main} function in R7RS script.
+Alternatively, as specified in SRFI-22, if the script interpreter's
+basename is @file{scheme-r7rs}, we assume the script is R7RS SRFI-22 script
+and calls @code{main} in @code{r7rs.user} module rather than @code{user}
+module.  We don't install such an alias, but you can manually
+make symbolic link or just copy @file{gosh} binary as @file{scheme-r7rs}.
+@c JP
+@emph{R7RSスクリプトに関する註}: スクリプトがR7RS Schemeで書かれている場合
+(先頭にR7RSの@code{import}があることで区別されます。
+詳しくは@ref{Three forms of import}参照)、
+スクリプト本体は@code{r7rs.user}へと読み込まれるため、
+@code{main}は自動的には呼ばれません。
+コマンドライン引数@code{-mr7rs.main}を指定することで、
+R7RSスクリプトの@code{main}を実行できます。
+別の方法として、SRFI-22に指定されているように、
+スクリプトインタプリタのbasenameが@file{scheme-r7rs}であった場合、
+スクリプトはR7RSで書かれたSRFI-22形式であると見なされ、
+@code{user}モジュールのかわりに@code{r7rs.user}モジュールの@code{main}が呼ばれます。
+そのような別名は自動的にはインストールされませんが、
+@file{gosh}に@file{scheme-r7rs}という名前でシンボリックリンクを張るか、
+コピーすることができるでしょう。
+@c COMMON
+
+@c EN
 Although the argument of the @code{main} procedure is the standard way
 to receive the command-line arguments, there are a couple of other
 ways to access to the info.  @xref{Command-line arguments}, for the
