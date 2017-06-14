@@ -8223,8 +8223,10 @@ of the first or the last elements that don't satisfy @var{pred}.
 @defun vector-binary-search vec value cmp :optional start end
 [SRFI-133+]
 @c MOD srfi-133
-Look for @var{value} in a vector @var{vec}, and returns its
+@c EN
+Look for @var{value} in a sorted vector @var{vec}, and returns its
 index if it is found, or @code{#f} if it is not found.
+
 Comparison of @var{value} and an element in @var{vec} is
 done by a procedure @var{cmp}, which takes two arguments,
 and should return a negative integer if the first argument is less than the
@@ -8239,11 +8241,26 @@ The optional arguments @var{start} and @var{end} are an
 extention to SRFI-133, and can be used to limit the range of the
 search in @var{start}-th element (inclusive) to
 @var{end}-th element (exclusive).
+@c JP
+ソートされたベクタ@var{vec}中から値@var{value}を探し、
+見つかればそのインデックスを、見つからなければ@code{#f}を返します。
+
+@var{vec}の要素と@var{value}の比較は手続き@var{cmp}で行われます。
+@var{cmp}は二つの引数を取り、最初の引数の方が小さければ負の整数を、
+等しければ0を、最初の引数の方が大きければ正の整数を買えす手続きです。
+
+@var{vec}の要素は@var{cmp}による比較に従い小さい方から順にソート済みで
+なければなりません。この手続きはその仮定のもとに、二分探索を行います。
+
+省略可能な@var{start}と@var{end}引数は、Gauche独自の拡張です。指定された場合、
+@var{start}番目の要素(含む)から@var{end}番目の要素(含まない)までが探索の対象となります。
+@c COMMON
 @end defun
 
 @defun vector-any pred vec1 vec2 @dots{}
 [SRFI-133]
 @c MOD srfi-133
+@c EN
 Applies @var{pred} on each corresponding elements
 of @var{vec1} @var{vec2} @dots{} left to right, and
 as soon as @var{pred} returns non-@code{#f} value,
@@ -8253,6 +8270,16 @@ If no elements that satisfy @var{pred} are found, it returns @code{#f}.
 
 Vectors can have different lengths.  Iteration stops at the end
 of the shortest.
+@c JP
+@var{vec1} @var{vec2} @dots{}の各ベクタの先頭から順に、
+ひとつづつ対応する要素を取って、それに@var{pred}を適用してゆきます。
+@var{pred}が真の値を返したら、直ちにその値を返します。
+
+@var{pred}を満たす要素が見つからなければ、@code{#f}が返されます。
+
+ベクタの長さは異なっていても構いません。最も短いベクタの要素を使い切ったところで
+探索は打ちきられます。
+@c COMMON
 @end defun
 
 @defun vector-every pred vec1 vec2 @dots{}
@@ -8320,7 +8347,19 @@ an exact integer of the index of the first element that doesn't satisfy
 @defun vector-swap! vec i j
 [SRFI-133]
 @c MOD srfi-133
-Swaps vector @var{vec}'s @code{i}-th and @code{j}-th elements.
+@c EN
+Swaps vector @var{vec}'s @var{i}-th and @var{j}-th elements.
+Returns unspecified value.
+@c JP
+@var{vec}の@var{i}番目の要素と@var{j}番目の要素を交換します。
+戻り値はunspecifiedです。
+@c COMMON
+
+@example
+(rlet1 v (vector 'a 'b 'c 'd 'e)
+  (vector-swap! v 0 2))
+  @result{} #(c b a d e)
+@end example
 @end defun
 
 @defun vector-reverse! vec :optional start end
