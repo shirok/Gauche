@@ -580,6 +580,16 @@ S式コメント
 ネイティブのリーダでサポートされています。@ref{Lexical structure}参照。
 
 
+srfi-64, srfi-64
+()
+
+A Scheme API for test suites
+Supported by the module @code{srfi-64}.
+
+テストスイートのためのScheme API
+モジュール@code{srfi-64}でサポートされます。
+
+
 srfi-66, srfi-66
 ()
 

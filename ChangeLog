@@ -1,3 +1,7 @@
+2017-06-14  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi-64.scm: Added.
+
 2017-06-11  Shiro Kawai  <shiro@acm.org>
 
 	* src/main.c: If the interpreter basename is "scheme-r7rs", we assume
