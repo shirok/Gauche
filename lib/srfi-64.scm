@@ -3,7 +3,6 @@
 ;;   Alex Shinn, Copyright (c) 2005.
 ;; Modified for Scheme Spheres by Álvaro Castro-Castilla, Copyright (c) 2012.
 ;; Support for Guile 2 by Mark H Weaver <mhw@netris.org>, Copyright (c) 2014.
-;; Added 
 ;;
 ;; Permission is hereby granted, free of charge, to any person
 ;; obtaining a copy of this software and associated documentation
@@ -927,6 +926,15 @@
          (test-result-alist! r '())
          (%test-error r #t expr)))))))
 
+(define-syntax test-with-runner
+  (syntax-rules ()
+    ((test-with-runner runner form ...)
+     (let ((saved-runner (test-runner-current)))
+       (dynamic-wind
+           (lambda () (test-runner-current runner))
+           (lambda () form ...)
+           (lambda () (test-runner-current saved-runner)))))))
+
 (define (test-apply first . rest)
   (if (test-runner? first)
       (test-with-runner first (apply test-apply rest))
@@ -945,15 +953,6 @@
 	    (let ((r (test-runner-create)))
 	      (test-with-runner r (apply test-apply first rest))
 	      ((test-runner-on-final r) r))))))
-
-(define-syntax test-with-runner
-  (syntax-rules ()
-    ((test-with-runner runner form ...)
-     (let ((saved-runner (test-runner-current)))
-       (dynamic-wind
-           (lambda () (test-runner-current runner))
-           (lambda () form ...)
-           (lambda () (test-runner-current saved-runner)))))))
 
 ;;; Predicates
 
@@ -1036,6 +1035,7 @@
     (if (eof-object? (read-char port))
 	(cond-expand
 	 (guile (eval form (current-module)))
+         (gauche (eval form ((with-module gauche.internal vm-current-module))))
 	 (else (eval form)))
 	(cond-expand
 	 (srfi-23 (error "(not at eof)"))
