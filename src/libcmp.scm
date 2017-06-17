@@ -165,7 +165,8 @@
              (return (SCM_MAKE_INT 0))
              (return (SCM_MAKE_INT 1))))))
      (label err)
-     (Scm_Error "can't compare objects by %S: %S vs %S" (SCM_OBJ c) a b)))
+     (Scm_Error "can't compare objects by %S: %S vs %S" (SCM_OBJ c) a b)
+     (return SCM_UNDEFINED)))             ;dummy
 
  (define-cfn Scm_ComparatorComparisonProcedure (c::ScmComparator*)
    (let* ([cmp (-> c compareFn)])
@@ -192,7 +193,8 @@
        []
        (return (SCM_MAKE_BOOL (< (SCM_INT_VALUE r) 0))))
      (label err)
-     (Scm_Error "can't order objects by %S: %S vs %S" (SCM_OBJ c) a b)))
+     (Scm_Error "can't order objects by %S: %S vs %S" (SCM_OBJ c) a b)
+     (return SCM_UNDEFINED)))           ;dummy
 
  (define-cfn Scm_ComparatorOrderingPredicate (c::ScmComparator*)
    (let* ([ord (-> c orderFn)])
@@ -210,7 +212,8 @@
 (inline-stub
  (define-cfn fallback-hash (argv::ScmObj* argc::int data::void*) :static
    (let* ([c::ScmComparator* (SCM_COMPARATOR data)])
-     (Scm_Error "%S doesn't have hash function" (SCM_OBJ c))))
+     (Scm_Error "%S doesn't have hash function" (SCM_OBJ c))
+     (return SCM_UNDEFINED)))           ;dummy
 
  (define-cfn Scm_ComparatorHashFunction (c::ScmComparator*)
    (let* ([h (-> c hashFn)])

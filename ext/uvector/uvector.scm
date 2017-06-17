@@ -403,6 +403,7 @@
           (let* ([k::double (Scm_GetDouble key)])
             (set! r (Scm_BinarySearchF64 (+ (SCM_F64VECTOR_ELEMENTS v) s)
                                          (- e s) k p (& lb) (& ub))))]
+         [else (SCM_ASSERT "Invalid uvector type")]
          )
        (when (== r (cast (size_t) -1))
          (cond
