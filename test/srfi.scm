@@ -1351,6 +1351,16 @@
 (test* "booleans->integer" 9 (booleans->integer #f #f #t #f #f #t))
 
 ;;-----------------------------------------------------------------------
+(test-section "srfi-64")
+
+(use srfi-64 :prefix srfi-64:)
+(test-module 'srfi-64)
+
+(define-module srfi-64-test-module
+  (use srfi-64)
+  (include "include/srfi-64-test"))
+
+;;-----------------------------------------------------------------------
 (test-section "srfi-66")
 ;; srfi-66 provides u8vector-copy! with different argument order,
 ;; so import it with prefix to avoid conflict.

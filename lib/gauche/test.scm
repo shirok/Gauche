@@ -82,7 +82,7 @@
 ;;         into the named file instead of reporting it out immediately.
 
 (define-module gauche.test
-  (export test test* test-start test-end test-section test-log
+  (export test test* test-start test-end test-running? test-section test-log
           test-module test-script
           test-error test-one-of test-none-of
           test-check test-record-file test-summary-check
@@ -450,11 +450,19 @@
          (cons name src-code))))
 
 ;; Logging and bookkeeping -----------------------------------------
+
+;; private global flag, true during we're running tests.
+;; (we avoid using parameters intentionally.)
+(define *test-running* #f)
+
+(define (test-running?) *test-running*)
+
 (define (test-section msg)
   (let ([msglen (string-length msg)])
     (format #t "<~a>~a\n" msg (make-string (max 5 (- 77 msglen)) #\-))))
 
 (define (test-start msg)
+  (set! *test-running* #t)
   (let* ([s (format #f "Testing ~a ... " msg)]
          [pad (make-string (max 3 (- 65 (string-length s))) #\space)])
     (display s (current-error-port))
@@ -503,6 +511,8 @@
 
     (when *test-record-file*
       (write-summary))
+
+    (set! *test-running* #f)
 
     ;; the number of failed tests.
     (let ([num-failures (length *discrepancy-list*)])

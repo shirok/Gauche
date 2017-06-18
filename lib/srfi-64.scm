@@ -1,3 +1,12 @@
+;;;
+;;; srfi-64
+;;;
+
+;; This file is based on srfi-64 reference implementation,
+;; but heavily modified to work cooperatively with gauche's test framework.
+
+;; Original copyright follows:
+
 ;; Copyright (c) 2005, 2006, 2007, 2012, 2013 Per Bothner
 ;; Added "full" support for Chicken, Gauche, Guile and SISC.
 ;;   Alex Shinn, Copyright (c) 2005.
@@ -24,158 +33,83 @@
 ;; CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 ;; SOFTWARE.
 
-(cond-expand
- (chicken
-  (require-extension syntax-case))
- (guile-2
-  (use-modules (srfi srfi-9)
-               ;; In 2.0.9, srfi-34 and srfi-35 are not well integrated
-               ;; with either Guile's native exceptions or R6RS exceptions.
-               ;;(srfi srfi-34) (srfi srfi-35)
-               (srfi srfi-39)))
- (guile
-  (use-modules (ice-9 syncase) (srfi srfi-9)
-	       ;;(srfi srfi-34) (srfi srfi-35) - not in Guile 1.6.7
-	       (srfi srfi-39)))
- (sisc
-  (require-extension (srfi 9 34 35 39)))
- (kawa
-  (module-compile-options warn-undefined-variable: #t
-			  warn-invoke-unknown-method: #t)
-  (import (scheme base)
-          (only (kawa base) try-catch))
-  (provide 'srfi-64)
-  (provide 'testing)
-  (require 'srfi-35))
- (gauche
-  (define-module srfi-64)
-  (select-module srfi-64))
- (else
-  ))
+(define-module srfi-64
+  (use gauche.record)
+  (use gauche.parameter)
+  (use gauche.test :prefix test:)
+  (export test-begin
+          test-end test-assert test-eqv test-eq test-equal
+          test-approximate test-assert test-error test-apply test-with-runner
+          test-match-nth test-match-all test-match-any test-match-name
+          test-skip test-expect-fail test-read-eval-string
+          test-runner-group-path test-group test-group-with-cleanup
+          test-result-ref test-result-set! test-result-clear test-result-remove
+          test-result-kind test-passed?
+          test-log-to-file
 
-(cond-expand
- (kawa
-  ;; Kawa's default top-level environment has test-begin built in,
-  ;; as a magic macro that imports this library (without test-begin).
-  ;; This puts test-begin but only test-begin in the default environment,
-  ;; which makes normal test suites loadable without non-portable commands.
-  ;; Therefore we need to export %test-begin, which performs the
-  ;; functionality of test-begin without the magic import.
-  (define-syntax %test-export
-    (syntax-rules ()
-      ((%test-export test-begin . other-names)
-       (module-export %test-begin test-begin . other-names)))))
- (gauche
-  (define-syntax %test-export export))
- (else
-  (define-syntax %test-export
-    (syntax-rules ()
-      ((%test-export . names) (if #f #f))))))
+          ;; Misc test-runner functions
+          test-runner? test-runner-reset test-runner-null
+          test-runner-simple test-runner-current test-runner-factory test-runner-get
+          test-runner-create test-runner-test-name
+          ;; test-runner field setter and getter functions - see %test-record-define:
+          test-runner-pass-count test-runner-pass-count!
+          test-runner-fail-count test-runner-fail-count!
+          test-runner-xpass-count test-runner-xpass-count!
+          test-runner-xfail-count test-runner-xfail-count!
+          test-runner-skip-count test-runner-skip-count!
+          test-runner-group-stack test-runner-group-stack!
+          test-runner-on-test-begin test-runner-on-test-begin!
+          test-runner-on-test-end test-runner-on-test-end!
+          test-runner-on-group-begin test-runner-on-group-begin!
+          test-runner-on-group-end test-runner-on-group-end!
+          test-runner-on-final test-runner-on-final!
+          test-runner-on-bad-count test-runner-on-bad-count!
+          test-runner-on-bad-end-name test-runner-on-bad-end-name!
+          test-result-alist test-result-alist!
+          test-runner-aux-value test-runner-aux-value!
+          ;; default/simple call-back functions, used in default test-runner,
+          ;; but can be called to construct more complex ones.
+          test-on-group-begin-simple test-on-group-end-simple
+          test-on-bad-count-simple test-on-bad-end-name-simple
+          test-on-final-simple test-on-test-end-simple
+          test-on-final-simple))
+(select-module srfi-64)
 
-;; List of exported names
-(%test-export
- test-begin ;; must be listed first, since in Kawa (at least) it is "magic".
- test-end test-assert test-eqv test-eq test-equal
- test-approximate test-assert test-error test-apply test-with-runner
- test-match-nth test-match-all test-match-any test-match-name
- test-skip test-expect-fail test-read-eval-string
- test-runner-group-path test-group test-group-with-cleanup
- test-result-ref test-result-set! test-result-clear test-result-remove
- test-result-kind test-passed?
- test-log-to-file
- ; Misc test-runner functions
- test-runner? test-runner-reset test-runner-null
- test-runner-simple test-runner-current test-runner-factory test-runner-get
- test-runner-create test-runner-test-name
- ;; test-runner field setter and getter functions - see %test-record-define:
- test-runner-pass-count test-runner-pass-count!
- test-runner-fail-count test-runner-fail-count!
- test-runner-xpass-count test-runner-xpass-count!
- test-runner-xfail-count test-runner-xfail-count!
- test-runner-skip-count test-runner-skip-count!
- test-runner-group-stack test-runner-group-stack!
- test-runner-on-test-begin test-runner-on-test-begin!
- test-runner-on-test-end test-runner-on-test-end!
- test-runner-on-group-begin test-runner-on-group-begin!
- test-runner-on-group-end test-runner-on-group-end!
- test-runner-on-final test-runner-on-final!
- test-runner-on-bad-count test-runner-on-bad-count!
- test-runner-on-bad-end-name test-runner-on-bad-end-name!
- test-result-alist test-result-alist!
- test-runner-aux-value test-runner-aux-value!
- ;; default/simple call-back functions, used in default test-runner,
- ;; but can be called to construct more complex ones.
- test-on-group-begin-simple test-on-group-end-simple
- test-on-bad-count-simple test-on-bad-end-name-simple
- test-on-final-simple test-on-test-end-simple
- test-on-final-simple)
-
-(cond-expand
- (srfi-9
-  (define-syntax %test-record-define
-    (syntax-rules ()
-      ((%test-record-define alloc runner? (name index setter getter) ...)
-       (define-record-type test-runner
-	 (alloc)
-	 runner?
-	 (name setter getter) ...)))))
- (else
-  (define %test-runner-cookie (list "test-runner"))
-  (define-syntax %test-record-define
-    (syntax-rules ()
-      ((%test-record-define alloc runner? (name index getter setter) ...)
-       (begin
-	 (define (runner? obj)
-	   (and (vector? obj)
-		(> (vector-length obj) 1)
-		(eq (vector-ref obj 0) %test-runner-cookie)))
-	 (define (alloc)
-	   (let ((runner (make-vector 23)))
-	     (vector-set! runner 0 %test-runner-cookie)
-	     runner))
-	 (begin
-	   (define (getter runner)
-	     (vector-ref runner index)) ...)
-	 (begin
-	   (define (setter runner value)
-	     (vector-set! runner index value)) ...)))))))
-
-(%test-record-define
- %test-runner-alloc test-runner?
- ;; Cumulate count of all tests that have passed and were expected to.
- (pass-count 1 test-runner-pass-count test-runner-pass-count!)
- (fail-count 2 test-runner-fail-count test-runner-fail-count!)
- (xpass-count 3 test-runner-xpass-count test-runner-xpass-count!)
- (xfail-count 4 test-runner-xfail-count test-runner-xfail-count!)
- (skip-count 5 test-runner-skip-count test-runner-skip-count!)
- (skip-list 6 %test-runner-skip-list %test-runner-skip-list!)
- (fail-list 7 %test-runner-fail-list %test-runner-fail-list!)
- ;; Normally #t, except when in a test-apply.
- (run-list 8 %test-runner-run-list %test-runner-run-list!)
- (skip-save 9 %test-runner-skip-save %test-runner-skip-save!)
- (fail-save 10 %test-runner-fail-save %test-runner-fail-save!)
- (group-stack 11 test-runner-group-stack test-runner-group-stack!)
- (on-test-begin 12 test-runner-on-test-begin test-runner-on-test-begin!)
- (on-test-end 13 test-runner-on-test-end test-runner-on-test-end!)
- ;; Call-back when entering a group. Takes (runner suite-name count).
- (on-group-begin 14 test-runner-on-group-begin test-runner-on-group-begin!)
- ;; Call-back when leaving a group.
- (on-group-end 15 test-runner-on-group-end test-runner-on-group-end!)
- ;; Call-back when leaving the outermost group.
- (on-final 16 test-runner-on-final test-runner-on-final!)
- ;; Call-back when expected number of tests was wrong.
- (on-bad-count 17 test-runner-on-bad-count test-runner-on-bad-count!)
- ;; Call-back when name in test=end doesn't match test-begin.
- (on-bad-end-name 18 test-runner-on-bad-end-name test-runner-on-bad-end-name!)
- ;; Cumulate count of all tests that have been done.
- (total-count 19 %test-runner-total-count %test-runner-total-count!)
- ;; Stack (list) of (count-at-start . expected-count):
- (count-list 20 %test-runner-count-list %test-runner-count-list!)
- (result-alist 21 test-result-alist test-result-alist!)
- ;; Field can be used by test-runner for any purpose.
- ;; test-runner-simple uses it for a log file.
- (aux-value 22 test-runner-aux-value test-runner-aux-value!)
-)
+(define-record-type test-runner (%test-runner-alloc) test-runner?
+  ;; Cumulate count of all tests that have passed and were expected to.
+  (pass-count test-runner-pass-count test-runner-pass-count!)
+  (fail-count test-runner-fail-count test-runner-fail-count!)
+  (xpass-count test-runner-xpass-count test-runner-xpass-count!)
+  (xfail-count test-runner-xfail-count test-runner-xfail-count!)
+  (skip-count test-runner-skip-count test-runner-skip-count!)
+  (skip-list %test-runner-skip-list %test-runner-skip-list!)
+  (fail-list %test-runner-fail-list %test-runner-fail-list!)
+  ;; Normally #t, except when in a test-apply.
+  (run-list %test-runner-run-list %test-runner-run-list!)
+  (skip-save %test-runner-skip-save %test-runner-skip-save!)
+  (fail-save %test-runner-fail-save %test-runner-fail-save!)
+  (group-stack test-runner-group-stack test-runner-group-stack!)
+  (on-test-begin test-runner-on-test-begin test-runner-on-test-begin!)
+  (on-test-end test-runner-on-test-end test-runner-on-test-end!)
+  ;; Call-back when entering a group. Takes (runner suite-name count).
+  (on-group-begin test-runner-on-group-begin test-runner-on-group-begin!)
+  ;; Call-back when leaving a group.
+  (on-group-end test-runner-on-group-end test-runner-on-group-end!)
+  ;; Call-back when leaving the outermost group.
+  (on-final test-runner-on-final test-runner-on-final!)
+  ;; Call-back when expected number of tests was wrong.
+  (on-bad-count test-runner-on-bad-count test-runner-on-bad-count!)
+  ;; Call-back when name in test=end doesn't match test-begin.
+  (on-bad-end-name test-runner-on-bad-end-name test-runner-on-bad-end-name!)
+  ;; Cumulate count of all tests that have been done.
+  (total-count %test-runner-total-count %test-runner-total-count!)
+  ;; Stack (list) of (count-at-start . expected-count):
+  (count-list %test-runner-count-list %test-runner-count-list!)
+  (result-alist test-result-alist test-result-alist!)
+  ;; Field can be used by test-runner for any purpose.
+  ;; test-runner-simple uses it for a log file.
+  (aux-value test-runner-aux-value test-runner-aux-value!)
+  )
 
 (define (test-runner-reset runner)
   (test-result-alist! runner '())
@@ -226,25 +160,8 @@
     (test-runner-on-bad-end-name! runner test-on-bad-end-name-simple)
     runner))
 
-(cond-expand
- (srfi-39
-  (define test-runner-current (make-parameter #f))
-  (define test-runner-factory (make-parameter test-runner-simple)))
- (else
-  (define %test-runner-current #f)
-  (define-syntax test-runner-current
-    (syntax-rules ()
-      ((test-runner-current)
-       %test-runner-current)
-      ((test-runner-current runner)
-       (set! %test-runner-current runner))))
-  (define %test-runner-factory test-runner-simple)
-  (define-syntax test-runner-factory
-    (syntax-rules ()
-      ((test-runner-factory)
-       %test-runner-factory)
-      ((test-runner-factory runner)
-       (set! %test-runner-factory runner))))))
+(define test-runner-current (make-parameter #f))
+(define test-runner-factory (make-parameter test-runner-simple))
 
 ;; A safer wrapper to test-runner-current.
 (define (test-runner-get)
@@ -369,10 +286,7 @@
 (define (test-on-bad-end-name-simple runner begin-name end-name)
   (let ((msg (string-append (%test-format-line runner) "test-end " begin-name
 			    " does not match test-begin " end-name)))
-    (cond-expand
-     (srfi-23 (error msg))
-     (else (display msg) (newline)))))
-  
+    (error msg)))
 
 (define (%test-final-report1 value label port)
   (if (> value 0)
@@ -416,9 +330,7 @@
     (test-result-alist! r line-info)
     (if (null? groups)
 	(let ((msg (string-append line "test-end not in a group")))
-	  (cond-expand
-	   (srfi-23 (error msg))
-	   (else (display msg) (newline)))))
+          (error msg)))
     (if (and suite-name (not (equal? suite-name (car groups))))
 	((test-runner-on-bad-end-name r) r suite-name (car groups)))
     (let* ((count-list (%test-runner-count-list r))
@@ -570,77 +482,13 @@
     (%test-runner-total-count! r (+ 1 (%test-runner-total-count r)))
     ((test-runner-on-test-end r) r)))
 
-(cond-expand
- (guile
-  (define-syntax %test-evaluate-with-catch
-    (syntax-rules ()
-      ((%test-evaluate-with-catch test-expression)
-       (catch #t
-         (lambda () test-expression)
-         (lambda (key . args)
-           (test-result-set! (test-runner-current) 'actual-error
-                             (cons key args))
-           #f))))))
- (kawa
-  (define-syntax %test-evaluate-with-catch
-    (syntax-rules ()
-      ((%test-evaluate-with-catch test-expression)
-       (try-catch test-expression
-		  (ex <java.lang.Throwable>
-		      (test-result-set! (test-runner-current) 'actual-error ex)
-		      #f))))))
- (srfi-34
-  (define-syntax %test-evaluate-with-catch
-    (syntax-rules ()
-      ((%test-evaluate-with-catch test-expression)
-       (guard (err (else #f)) test-expression)))))
- (chicken
-  (define-syntax %test-evaluate-with-catch
-    (syntax-rules ()
-      ((%test-evaluate-with-catch test-expression)
-       (condition-case test-expression (ex () #f))))))
- (else
-  (define-syntax %test-evaluate-with-catch
-    (syntax-rules ()
-      ((%test-evaluate-with-catch test-expression)
-       test-expression)))))
+(define-syntax %test-evaluate-with-catch
+  (syntax-rules ()
+    ((%test-evaluate-with-catch test-expression)
+     (guard (err (else #f)) test-expression))))
 	    
-(cond-expand
- ((or kawa mzscheme)
-  (cond-expand
-   (mzscheme
-    (define-for-syntax (%test-syntax-file form)
-      (let ((source (syntax-source form)))
-	(cond ((string? source) file)
-				((path? source) (path->string source))
-				(else #f)))))
-   (kawa
-    (define (%test-syntax-file form)
-      (syntax-source form))))
-  (define (%test-source-line2 form)
-    (let* ((line (syntax-line form))
-	   (file (%test-syntax-file form))
-	   (line-pair (if line (list (cons 'source-line line)) '())))
-      (cons (cons 'source-form (syntax-object->datum form))
-	    (if file (cons (cons 'source-file file) line-pair) line-pair)))))
- (guile-2
-  (define (%test-source-line2 form)
-    (let* ((src-props (syntax-source form))
-           (file (and src-props (assq-ref src-props 'filename)))
-           (line (and src-props (assq-ref src-props 'line)))
-           (file-alist (if file
-                           `((source-file . ,file))
-                           '()))
-           (line-alist (if line
-                           `((source-line . ,(+ line 1)))
-                           '())))
-      (datum->syntax (syntax here)
-                     `((source-form . ,(syntax->datum form))
-                       ,@file-alist
-                       ,@line-alist)))))
- (else
-  (define (%test-source-line2 form)
-    '())))
+(define (%test-source-line2 form) ; can be something - later
+  '())
 
 (define (%test-on-test-begin r)
   (%test-should-execute r)
@@ -690,241 +538,79 @@
 	       (%test-on-test-end r res))))
        (%test-report-result)))))
 
-(cond-expand
- ((or kawa mzscheme guile-2)
-  ;; Should be made to work for any Scheme with syntax-case
-  ;; However, I haven't gotten the quoting working.  FIXME.
-  (define-syntax test-end
-    (lambda (x)
-      (syntax-case (list x (list (syntax quote) (%test-source-line2 x))) ()
-	(((mac suite-name) line)
-	 (syntax
-	  (%test-end suite-name line)))
-	(((mac) line)
-	 (syntax
-	  (%test-end #f line))))))
-  (define-syntax test-assert
-    (lambda (x)
-      (syntax-case (list x (list (syntax quote) (%test-source-line2 x))) ()
-	(((mac tname expr) line)
-	 (syntax
-	  (let* ((r (test-runner-get))
-		 (name tname))
-	    (test-result-alist! r (cons (cons 'test-name tname) line))
-	    (%test-comp1body r expr))))
-	(((mac expr) line)
-	 (syntax
-	  (let* ((r (test-runner-get)))
-	    (test-result-alist! r line)
-	    (%test-comp1body r expr)))))))
-  (define (%test-comp2 comp x)
-    (syntax-case (list x (list (syntax quote) (%test-source-line2 x)) comp) ()
-      (((mac tname expected expr) line comp)
-       (syntax
-	(let* ((r (test-runner-get))
-	       (name tname))
-	  (test-result-alist! r (cons (cons 'test-name tname) line))
-	  (%test-comp2body r comp expected expr))))
-      (((mac expected expr) line comp)
-       (syntax
-	(let* ((r (test-runner-get)))
-	  (test-result-alist! r line)
-	  (%test-comp2body r comp expected expr))))))
-  (define-syntax test-eqv
-    (lambda (x) (%test-comp2 (syntax eqv?) x)))
-  (define-syntax test-eq
-    (lambda (x) (%test-comp2 (syntax eq?) x)))
-  (define-syntax test-equal
-    (lambda (x) (%test-comp2 (syntax equal?) x)))
-  (define-syntax test-approximate ;; FIXME - needed for non-Kawa
-    (lambda (x)
-      (syntax-case (list x (list (syntax quote) (%test-source-line2 x))) ()
-      (((mac tname expected expr error) line)
-       (syntax
-	(let* ((r (test-runner-get))
-	       (name tname))
-	  (test-result-alist! r (cons (cons 'test-name tname) line))
-	  (%test-comp2body r (%test-approximate= error) expected expr))))
-      (((mac expected expr error) line)
-       (syntax
-	(let* ((r (test-runner-get)))
-	  (test-result-alist! r line)
-	  (%test-comp2body r (%test-approximate= error) expected expr))))))))
- (else
-  (define-syntax test-end
-    (syntax-rules ()
-      ((test-end)
-       (%test-end #f '()))
-      ((test-end suite-name)
-       (%test-end suite-name '()))))
-  (define-syntax test-assert
-    (syntax-rules ()
-      ((test-assert tname test-expression)
-       (let* ((r (test-runner-get))
-	      (name tname))
-	 (test-result-alist! r '((test-name . tname)))
-	 (%test-comp1body r test-expression)))
-      ((test-assert test-expression)
-       (let* ((r (test-runner-get)))
-	 (test-result-alist! r '())
-	 (%test-comp1body r test-expression)))))
-  (define-syntax %test-comp2
-    (syntax-rules ()
-      ((%test-comp2 comp tname expected expr)
-       (let* ((r (test-runner-get))
-	      (name tname))
-	 (test-result-alist! r (list (cons 'test-name tname)))
-	 (%test-comp2body r comp expected expr)))
-      ((%test-comp2 comp expected expr)
-       (let* ((r (test-runner-get)))
-	 (test-result-alist! r '())
-	 (%test-comp2body r comp expected expr)))))
-  (define-syntax test-equal
-    (syntax-rules ()
-      ((test-equal . rest)
-       (%test-comp2 equal? . rest))))
-  (define-syntax test-eqv
-    (syntax-rules ()
-      ((test-eqv . rest)
-       (%test-comp2 eqv? . rest))))
-  (define-syntax test-eq
-    (syntax-rules ()
-      ((test-eq . rest)
-       (%test-comp2 eq? . rest))))
-  (define-syntax test-approximate
-    (syntax-rules ()
-      ((test-approximate tname expected expr error)
-       (%test-comp2 (%test-approximate= error) tname expected expr))
-      ((test-approximate expected expr error)
-       (%test-comp2 (%test-approximate= error) expected expr))))))
+(define-syntax test-end
+  (syntax-rules ()
+    ((test-end)
+     (%test-end #f '()))
+    ((test-end suite-name)
+     (%test-end suite-name '()))))
+(define-syntax test-assert
+  (syntax-rules ()
+    ((test-assert tname test-expression)
+     (let* ((r (test-runner-get))
+            (name tname))
+       (test-result-alist! r '((test-name . tname)))
+       (%test-comp1body r test-expression)))
+    ((test-assert test-expression)
+     (let* ((r (test-runner-get)))
+       (test-result-alist! r '())
+       (%test-comp1body r test-expression)))))
+(define-syntax %test-comp2
+  (syntax-rules ()
+    ((%test-comp2 comp tname expected expr)
+     (let* ((r (test-runner-get))
+            (name tname))
+       (test-result-alist! r (list (cons 'test-name tname)))
+       (%test-comp2body r comp expected expr)))
+    ((%test-comp2 comp expected expr)
+     (let* ((r (test-runner-get)))
+       (test-result-alist! r '())
+       (%test-comp2body r comp expected expr)))))
+(define-syntax test-equal
+  (syntax-rules ()
+    ((test-equal . rest)
+     (%test-comp2 equal? . rest))))
+(define-syntax test-eqv
+  (syntax-rules ()
+    ((test-eqv . rest)
+     (%test-comp2 eqv? . rest))))
+(define-syntax test-eq
+  (syntax-rules ()
+    ((test-eq . rest)
+     (%test-comp2 eq? . rest))))
+(define-syntax test-approximate
+  (syntax-rules ()
+    ((test-approximate tname expected expr error)
+     (%test-comp2 (%test-approximate= error) tname expected expr))
+    ((test-approximate expected expr error)
+     (%test-comp2 (%test-approximate= error) expected expr))))
 
-(cond-expand
- (guile
-  (define-syntax %test-error
-    (syntax-rules ()
-      ((%test-error r etype expr)
-       (cond ((%test-on-test-begin r)
-              (let ((et etype))
-                (test-result-set! r 'expected-error et)
-                (%test-on-test-end r
-                                   (catch #t
-                                     (lambda ()
-                                       (test-result-set! r 'actual-value expr)
-                                       #f)
-                                     (lambda (key . args)
-                                       ;; TODO: decide how to specify expected
-                                       ;; error types for Guile.
-                                       (test-result-set! r 'actual-error
-                                                         (cons key args))
-                                       #t)))
-                (%test-report-result))))))))
- (mzscheme
-  (define-syntax %test-error
-    (syntax-rules ()
-      ((%test-error r etype expr)
-       (%test-comp1body r (with-handlers (((lambda (h) #t) (lambda (h) #t)))
-					 (let ()
-					   (test-result-set! r 'actual-value expr)
-					   #f)))))))
- (chicken
-  (define-syntax %test-error
-    (syntax-rules ()
-      ((%test-error r etype expr)
-        (%test-comp1body r (condition-case expr (ex () #t)))))))
- (kawa
-  (define-syntax %test-error
-    (syntax-rules ()
-      ((%test-error r #t expr)
-       (cond ((%test-on-test-begin r)
-	      (test-result-set! r 'expected-error #t)
-	      (%test-on-test-end r
-				 (try-catch
-				  (let ()
-				    (test-result-set! r 'actual-value expr)
-				    #f)
-				  (ex <java.lang.Throwable>
-				      (test-result-set! r 'actual-error ex)
-				      #t)))
-	      (%test-report-result))))
-      ((%test-error r etype expr)
-       (if (%test-on-test-begin r)
-	   (let ((et etype))
-	     (test-result-set! r 'expected-error et)
-	     (%test-on-test-end r
-				(try-catch
-				 (let ()
-				   (test-result-set! r 'actual-value expr)
-				   #f)
-				 (ex <java.lang.Throwable>
-				     (test-result-set! r 'actual-error ex)
-				     (cond ((and (instance? et <gnu.bytecode.ClassType>)
-						 (gnu.bytecode.ClassType:isSubclass et <java.lang.Throwable>))
-					    (instance? ex et))
-					   (else #t)))))
-	     (%test-report-result)))))))
- ((and srfi-34 srfi-35)
-  (define-syntax %test-error
-    (syntax-rules ()
-      ((%test-error r etype expr)
-       (%test-comp1body r (guard (ex ((condition-type? etype)
-		   (and (condition? ex) (condition-has-type? ex etype)))
-		  ((procedure? etype)
-		   (etype ex))
-		  ((equal? etype #t)
-		   #t)
-		  (else #t))
-	      expr #f))))))
- (srfi-34
-  (define-syntax %test-error
-    (syntax-rules ()
-      ((%test-error r etype expr)
-       (%test-comp1body r (guard (ex (else #t)) expr #f))))))
- (else
-  (define-syntax %test-error
-    (syntax-rules ()
-      ((%test-error r etype expr)
-       (begin
-	 ((test-runner-on-test-begin r) r)
-	 (test-result-set! r 'result-kind 'skip)
-	 (%test-report-result)))))))
+(define-syntax %test-error
+  (syntax-rules ()
+    ((%test-error r etype expr)
+     (%test-comp1body r (guard (ex ((condition-type? etype)
+                                    (and (condition? ex) (condition-has-type? ex etype)))
+                                   ((procedure? etype)
+                                    (etype ex))
+                                   ((equal? etype #t)
+                                    #t)
+                                   (else #t))
+                          expr #f)))))
 
-(cond-expand
- ((or kawa mzscheme guile-2)
-
-  (define-syntax test-error
-    (lambda (x)
-      (syntax-case (list x (list (syntax quote) (%test-source-line2 x))) ()
-	(((mac tname etype expr) line)
-	 (syntax
-	  (let* ((r (test-runner-get))
-		 (name tname))
-	    (test-result-alist! r (cons (cons 'test-name tname) line))
-	    (%test-error r etype expr))))
-	(((mac etype expr) line)
-	 (syntax
-	  (let* ((r (test-runner-get)))
-	    (test-result-alist! r line)
-	    (%test-error r etype expr))))
-	(((mac expr) line)
-	 (syntax
-	  (let* ((r (test-runner-get)))
-	    (test-result-alist! r line)
-	    (%test-error r #t expr))))))))
- (else
-  (define-syntax test-error
-    (syntax-rules ()
-      ((test-error name etype expr)
-       (let ((r (test-runner-get)))
-         (test-result-alist! r `((test-name . ,name)))
-         (%test-error r etype expr)))
-      ((test-error etype expr)
-       (let ((r (test-runner-get)))
-         (test-result-alist! r '())
-         (%test-error r etype expr)))
-      ((test-error expr)
-       (let ((r (test-runner-get)))
-         (test-result-alist! r '())
-         (%test-error r #t expr)))))))
+(define-syntax test-error
+  (syntax-rules ()
+    ((test-error name etype expr)
+     (let ((r (test-runner-get)))
+       (test-result-alist! r `((test-name . ,name)))
+       (%test-error r etype expr)))
+    ((test-error etype expr)
+     (let ((r (test-runner-get)))
+       (test-result-alist! r '())
+       (%test-error r etype expr)))
+    ((test-error expr)
+     (let ((r (test-runner-get)))
+       (test-result-alist! r '())
+       (%test-error r #t expr)))))
 
 (define-syntax test-with-runner
   (syntax-rules ()
@@ -1033,11 +719,5 @@
   (let* ((port (open-input-string string))
 	 (form (read port)))
     (if (eof-object? (read-char port))
-	(cond-expand
-	 (guile (eval form (current-module)))
-         (gauche (eval form ((with-module gauche.internal vm-current-module))))
-	 (else (eval form)))
-	(cond-expand
-	 (srfi-23 (error "(not at eof)"))
-	 (else "error")))))
-
+      (eval form ((with-module gauche.internal vm-current-module)))
+      (error "(not at eof)"))))
