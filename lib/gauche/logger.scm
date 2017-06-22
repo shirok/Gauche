@@ -215,8 +215,10 @@
               (^[] (lock-file drain p l))
               (^[] (proc p))
               (^[] (unlock-file drain p l) (close-output-port p))))]
-          [(eq? path #t)
+          [(or (eq? path #t) (eq? path 'current-error))
            (proc (current-error-port))]
+          [(eq? path 'current-output)
+           (proc (current-output-port))]
           [(eq? path #f)
            (call-with-output-string proc)]
           [(eq? path 'syslog)

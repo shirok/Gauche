@@ -8509,19 +8509,41 @@ to more than one destination.
 
 @defivar {<log-drain>} path
 @c EN
-Path of the log file.  It can be also @code{#t}, which means
-the current error port, or @code{#f}, which makes @code{log-format}
-to return the formatted message but not write to any log files,
-or a symbol @code{syslog}, which means the messages are sent to
-the system logger.
+Designates destination of log output.  It can be one of the following
+values.
+
+@table @asis
+@item @r{string}
+Pathname of the log file.  The output is written to it.
+@item @code{current-error}
+@itemx @code{#t}
+The output goes to the current error port.
+@item @code{current-output}
+The output goes to the urrent output port.
+@item @code{syslog}
+The output is sent to the system logger.
+@item @code{#f}
+The output is turned to a string and returned from
+@code{log-format}.
+@end table
 
 By default, this slot is @code{#f}.
 @c JP
-ログファイルのパス名か、@code{#t}、@code{#f}、あるいはシンボル@code{syslog}
-の値を取ります。このスロットが@code{#t}の場合、ログメッセージは現在のエラーポートに
-書き出されます。@code{#f}の場合は@code{log-format}は
-ログを書き出すかわりにフォーマットされたログメッセージを文字列として返します。
-シンボル@code{syslog}の場合はメッセージがシステムログへと送られます。
+ログの出力先を指定します。以下の値をとることができます。
+
+@table @asis
+@item @r{文字列}
+ログファイルのパスを指定します。出力はそのファイルへと書き出されます。
+@item @code{current-error}
+@itemx @code{#t}
+出力は現在のエラーポートに向かいます。
+@item @code{current-output}
+出力は現在の出力ポートに向かいます。
+@item @code{syslog}
+出力はシステムログへと送られます。
+@item @code{#f}
+出力は文字列になって@code{log-format}からの戻り値となります。
+@end table
 
 このスロットの初期値は@code{#f}です。
 @c COMMON

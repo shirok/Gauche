@@ -1,3 +1,11 @@
+2017-06-22  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/logger.scm: Allow 'current-output as path of <log-drain>
+	  to send output to stdout.  Accept 'current-error, too, as well as
+	  #t to send output ot stderr, for the consistency.
+	* lib/gauche/test.scm: Expose test-count++, test-pass++ and test-fail++
+	  (for srfi-64 integration).
+
 2017-06-14  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi-64.scm: Added.
