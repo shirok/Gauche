@@ -86,7 +86,8 @@
           test-module test-script
           test-error test-one-of test-none-of
           test-check test-record-file test-summary-check
-          *test-error* *test-report-error* test-error? prim-test))
+          *test-error* *test-report-error* test-error? prim-test
+          test-count++ test-pass++ test-fail++))
 (select-module gauche.test)
 
 ;; Autoload test-script to avoid depending other modules
@@ -179,8 +180,9 @@
   (vector-set! *test-counts* 0 (+ (vector-ref *test-counts* 0) 1)))
 (define (test-pass++)
   (vector-set! *test-counts* 1 (+ (vector-ref *test-counts* 1) 1)))
-(define (test-fail++)
-  (vector-set! *test-counts* 2 (+ (vector-ref *test-counts* 2) 1)))
+(define (test-fail++ msg expected result)
+  (vector-set! *test-counts* 2 (+ (vector-ref *test-counts* 2) 1))
+  (set! *discrepancy-list* (cons (list msg expected result) *discrepancy-list*)))
 (define (format-summary)
   (format "Total: ~5d tests, ~5d passed, ~5d failed, ~5d aborted.\n"
           (vector-ref *test-counts* 0)
@@ -229,9 +231,7 @@
              (test-pass++)]
             [else
              (format/ss #t "ERROR: GOT ~S\n" r)
-             (set! *discrepancy-list*
-                   (cons (list msg expect r) *discrepancy-list*))
-             (test-fail++)])
+             (test-fail++ msg expect r)])
       (flush))))
 
 ;; Normal test.
@@ -348,12 +348,9 @@
     (cond
      [(null? report) (test-pass++) (format #t "ok\n")]
      [else
-      (test-fail++)
       (let ([s (apply string-append report)])
         (format #t "ERROR: ~a\n" s)
-        (set! *discrepancy-list*
-              (cons (list (format #f "bindings in ~a" name) '() s)
-                    *discrepancy-list*)))])
+        (test-fail++ (format #f "bindings in ~a" name) '() s))])
     ))
 
 
