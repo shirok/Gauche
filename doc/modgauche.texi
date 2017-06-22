@@ -8522,6 +8522,8 @@ The output goes to the current error port.
 The output goes to the urrent output port.
 @item @code{syslog}
 The output is sent to the system logger.
+@item @code{ignore}
+Make @code{log-format} does nothing.
 @item @code{#f}
 The output is turned to a string and returned from
 @code{log-format}.
@@ -8541,6 +8543,8 @@ By default, this slot is @code{#f}.
 出力は現在の出力ポートに向かいます。
 @item @code{syslog}
 出力はシステムログへと送られます。
+@item @code{ignore}
+@code{log-format}が何もしないようにします。
 @item @code{#f}
 出力は文字列になって@code{log-format}からの戻り値となります。
 @end table

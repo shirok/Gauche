@@ -225,7 +225,8 @@
            (sys-syslog (logior (slot-ref drain 'syslog-facility)
                                (slot-ref drain 'syslog-priority))
                        (call-with-output-string proc))]
-          [else #f])))
+          [(eq? path 'ignore) #f]
+          [else (error "invalid path value in log drain" path)])))
 
 ;; External APIs
 ;; log-format "fmtstr" arg ...
@@ -235,15 +236,16 @@
   (apply log-format (log-default-drain) fmtstr args))
 
 (define-method log-format ((drain <log-drain>) fmt . args)
-  (let* ([prefix (log-get-prefix drain)]
-         [str ($ string-concatenate
-                 $ fold-right (^[data rest]
-                                (if (and (null? rest) (string-null? data))
-                                  '()          ;ignore trailing newlines
-                                  (list* prefix data "\n" rest)))
-                              '()
-                 $ string-split (apply format #f fmt args) #\newline)])
-    (with-log-output drain (^p (display str p)))))
+  (unless (eq? (slot-ref drain 'path) 'ignore)
+    (let* ([prefix (log-get-prefix drain)]
+           [str ($ string-concatenate
+                   $ fold-right (^[data rest]
+                                  (if (and (null? rest) (string-null? data))
+                                    '()          ;ignore trailing newlines
+                                    (list* prefix data "\n" rest)))
+                   '()
+                   $ string-split (apply format #f fmt args) #\newline)])
+      (with-log-output drain (^p (display str p))))))
 
 ;; log-open path &keyword :program-name :prefix
 

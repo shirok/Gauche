@@ -3,6 +3,8 @@
 	* lib/gauche/logger.scm: Allow 'current-output as path of <log-drain>
 	  to send output to stdout.  Accept 'current-error, too, as well as
 	  #t to send output ot stderr, for the consistency.
+	  Also allow 'ignore to completely ignore log-format (not even does
+	  formatting).
 	* lib/gauche/test.scm: Expose test-count++, test-pass++ and test-fail++
 	  (for srfi-64 integration).
 
