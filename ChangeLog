@@ -1,3 +1,9 @@
+2017-06-23  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi-64.scm: Add integration to gauche.test.  When srfi-64 tests
+	  are executed during gauche.test tests, the behavior of default test
+	  runner switches to cope with gauche.test.
+
 2017-06-22  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/logger.scm: Allow 'current-output as path of <log-drain>

@@ -3,7 +3,7 @@
 ;;;
 
 ;; This file is based on srfi-64 reference implementation,
-;; but heavily modified to work cooperatively with gauche's test framework.
+;; but modified to work cooperatively with gauche's test framework.
 
 ;; Original copyright follows:
 
@@ -32,6 +32,14 @@
 ;; ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 ;; CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 ;; SOFTWARE.
+
+;; Gauche tweak:
+;;
+;; We define a default runner, which is used when a test runner is
+;; implicitly created during gauche.test is active.  It differs from
+;; simple runner that (1) it updates test success/failure counts of
+;; gauche.test, and (2) it sends log to stdout, to be merged to the
+;; gauche.test logs.
 
 (define-module srfi-64
   (use gauche.record)
@@ -130,6 +138,10 @@
 (define (test-runner-group-path runner)
   (reverse (test-runner-group-stack runner)))
 
+;;;
+;;; Null runner
+;;;
+
 (define (%test-null-callback runner) #f)
 
 (define (test-runner-null)
@@ -143,6 +155,10 @@
     (test-runner-on-bad-count! runner (lambda (runner count expected) #f))
     (test-runner-on-bad-end-name! runner (lambda (runner begin end) #f))
     runner))
+
+;;;
+;;; Simple runner
+;;;
 
 ;; Not part of the specification.  FIXME
 ;; Controls whether a log file is generated.
@@ -196,8 +212,8 @@
 	    (%test-any-specifier-matches
 	     (%test-runner-skip-list runner)
 	     runner))
-	    (test-result-set! runner 'result-kind 'skip)
-	    #f)
+           (test-result-set! runner 'result-kind 'skip)
+           #f)
 	  ((%test-any-specifier-matches
 	    (%test-runner-fail-list runner)
 	    runner)
@@ -207,7 +223,9 @@
 
 (define (%test-begin suite-name count)
   (if (not (test-runner-current))
-      (test-runner-current (test-runner-create)))
+      (test-runner-current (if (test:test-running?)
+                             (test-runner-default)
+                             (test-runner-create))))
   (let ((runner (test-runner-current)))
     ((test-runner-on-group-begin runner) runner suite-name count)
     (%test-runner-skip-save! runner
@@ -313,6 +331,60 @@
     (if (output-port? log)
 	(%test-final-report-simple runner log))))
 
+;;;
+;;; Default runner
+;;;
+
+;; KLUDGE: we distinguish test-runner-default by having special marker
+;; in aux-value
+(define (test-runner-default)
+  (let ((runner (%test-runner-alloc)))
+    (test-runner-reset runner)
+    (test-runner-on-group-begin! runner test-on-group-begin-default)
+    (test-runner-on-group-end! runner %test-null-callback)
+    (test-runner-on-final! runner %test-null-callback)
+    (test-runner-on-test-begin! runner %test-null-callback)
+    (test-runner-on-test-end! runner %test-null-callback)
+    (test-runner-on-bad-count! runner (lambda (runner count expected) #f))
+    (test-runner-on-bad-end-name! runner (lambda (runner begin end) #f))
+    (test-runner-aux-value! runner *test-runner-default-marker*)
+    runner))
+
+(define *test-runner-default-marker* (list 'default))
+
+(define (test-on-group-begin-default runner suite-name count)
+  (test:test-section suite-name)
+  #f)
+
+(define (test-runner-default? runner)
+  (eq? (test-runner-aux-value runner) *test-runner-default-marker*))
+
+(define (test-runner-default-pre runner expr)
+  (when (test-runner-default? runner)
+    (let ([expect (test-result-ref runner 'expected-value)]
+          [msg (or (test-result-ref runner 'test-name)
+                   expr)])
+      (test-result-set! runner 'test-msg msg)
+      (format #t "test ~a, expects ~s ==> " msg expect)
+      (flush)
+      (test:test-count++))))
+
+(define (test-runner-default-post runner ok?)
+  (when (test-runner-default? runner)
+    (cond [ok? (format #t "ok\n") (test:test-pass++)]
+          [(eq? (test-result-ref runner 'result-kind) 'xfail)
+           (format #t "ok (expected failure)\n") (test:test-pass++)]
+          [else
+           (let ([expect (test-result-ref runner 'expected-value)]
+                 [result (test-result-ref runner 'actual-value)]
+                 [msg (test-result-ref runner 'test-msg)])
+             (begin (format #t "ERROR: GOT ~s\n" result)
+                    (test:test-fail++ msg expect result)))])))
+
+;;;
+;;; Test API
+;;;
+
 (define (%test-format-line runner)
    (let* ((line-info (test-result-alist runner))
 	  (source-file (assq 'source-file line-info))
@@ -390,13 +462,9 @@
 	  (if source-line (%test-write-result1 source-line log))
 	  (if source-form (%test-write-result1 source-form log))))))
 
-(define-syntax test-result-ref
-  (syntax-rules ()
-    ((test-result-ref runner pname)
-     (test-result-ref runner pname #f))
-    ((test-result-ref runner pname default)
-     (let ((p (assq pname (test-result-alist runner))))
-       (if p (cdr p) default)))))
+(define (test-result-ref runner pname :optional (default #f))
+  (let ((p (assq pname (test-result-alist runner))))
+    (if p (cdr p) default)))
 
 (define (test-on-test-end-simple runner)
   (let ((log (test-runner-aux-value runner))
@@ -506,15 +574,18 @@
 
 (define-syntax %test-comp2body
   (syntax-rules ()
-		((%test-comp2body r comp expected expr)
-		 (let ()
-		   (if (%test-on-test-begin r)
-		       (let ((exp expected))
-			 (test-result-set! r 'expected-value exp)
-			 (let ((res (%test-evaluate-with-catch expr)))
-			   (test-result-set! r 'actual-value res)
-			   (%test-on-test-end r (comp exp res)))))
-		   (%test-report-result)))))
+    ((%test-comp2body r comp expected expr)
+     (let ()
+       (if (%test-on-test-begin r)
+         (let ((exp expected))
+           (test-result-set! r 'expected-value exp)
+           (test-runner-default-pre r 'expr)
+           (let* ((res (%test-evaluate-with-catch expr))
+                  (compared (comp exp res)))
+             (test-result-set! r 'actual-value res)
+             (test-runner-default-post r compared)
+             (%test-on-test-end r compared))))
+       (%test-report-result)))))
 
 (define (%test-approximate= error)
   (lambda (value expected)
@@ -533,8 +604,11 @@
      (let ()
        (if (%test-on-test-begin r)
 	   (let ()
+             (test-result-set! r 'expected-value #t)
+             (test-runner-default-pre r 'expr)
 	     (let ((res (%test-evaluate-with-catch expr)))
 	       (test-result-set! r 'actual-value res)
+               (test-runner-default-post r (boolean r))
 	       (%test-on-test-end r res))))
        (%test-report-result)))))
 
