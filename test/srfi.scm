@@ -1958,4 +1958,12 @@
 (chibi-test
  (include "include/fixnum-tests.scm"))
 
+;;-----------------------------------------------------------------------
+(test-section "srfi-147")
+
+(define-module srfi-147-tests
+  (use srfi-64)
+  (include "include/srfi-147-tests.scm")
+  (run-tests))
+
 (test-end)
