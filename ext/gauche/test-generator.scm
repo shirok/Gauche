@@ -2,6 +2,9 @@
 ;;  gauche.generator isn't precompiled (yet), but it depends on gauche.sequence
 ;;  so we test it here.
 
+;;  NB: Some generator interface depends on gauche.uvector, which is tested
+;;  after this.  So they're tested in gauche.uvector.
+
 (use gauche.test)
 (use gauche.sequence)
 (use srfi-1)
@@ -12,7 +15,7 @@
 (use gauche.generator)
 (test-module 'gauche.generator)
 
-(test-section "genreator constructors")
+(test-section "generator constructors")
 
 ;; first, let's test the stuff used by the following tests.
 (test* "giota + generator->list" '(0 1 2 3 4)

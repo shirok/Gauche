@@ -2460,4 +2460,25 @@
   (test* "binary search, floor and ceiling" data
          (map test-1 data)))
 
+;;-------------------------------------------------------------------
+(test-section "generator and uvector")
+
+(use gauche.generator)
+
+(test* "generator->bytevector" '#u8(0 1 2 3 0 1 2 3 0 1)
+       (generator->bytevector (circular-generator 0 1 2 3) 10))
+(test* "generator->bytevector" '#u8(0 1 2 3)
+       (generator->bytevector (list->generator '(0 1 2 3)) 10))
+(test* "generator->bytevector!" '(8 #u8(255 255 0 1 2 3 0 1 2 3))
+       (let1 vec (make-u8vector 10 255)
+         (list (generator->bytevector! vec 2 (circular-generator 0 1 2 3))
+               vec)))
+
+(test* "generator->uvector" '#u32(0 1 2 3 0 1 2 3 0 1)
+       (generator->uvector (circular-generator 0 1 2 3) 10 <u32vector>))
+(test* "generator->uvector!" '(7 #s32(-1 -1 -1 0 1 2 3 0 1 2))
+       (let1 vec (make-s32vector 10 -1)
+         (list (generator->uvector! vec 3 (circular-generator 0 1 2 3))
+               vec)))
+
 (test-end)

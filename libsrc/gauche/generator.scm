@@ -47,6 +47,8 @@
           generator->list generator->reverse-list
           generator->vector generator->vector!
           generator->string
+          generator->uvector generator->uvector!
+          generator->bytevector generator->bytevector!
           generator-any generator-every generator-unfold
           generator-count
 
@@ -82,7 +84,11 @@
     [(_ exp body ...) (rlet1 tmp exp body ...)]))
 
 ;; Avoid circular dependency during build
-(autoload gauche.uvector uvector-ref u8vector?)
+(autoload gauche.uvector uvector-ref uvector-set! uvector-length
+          make-uvector u8vector?
+          <u8vector> <s8vector> <u16vector> <s16vector>
+          <u32vector> <s32vector> <u64vector> <s64vector>
+          <f16vector> <f32vector> <f64vector>)
 
 ;;;
 ;;; Converters and constructors
@@ -666,6 +672,33 @@
         (cond [(eof-object? v) (- k at)]
               [else (vector-set! vec k v) (loop (+ k 1))])))))
 
+(define (generator->uvector gen :optional (n #f) (class <u8vector>))
+  (define (gather i r)
+    (if (eqv? i n)
+      (values r i)
+      (let1 v (gen)
+        (if (eof-object? v)
+          (values r i)
+          (gather (+ i 1) (cons v r))))))
+  (receive (r k) (gather 0 '())
+    (rlet1 vec (make-uvector class k)
+      (do ([i (- k 1) (- i 1)]
+           [r r       (cdr r)])
+          [(null? r)]
+        (uvector-set! vec i (car r))))))
+(define (generator->bytevector gen :optional (n #f))
+  (generator->uvector gen n <u8vector>))
+
+(define (generator->uvector! vec at gen)
+  (let1 len (uvector-length vec)
+    (let loop ([k at])
+      (let1 v (if (>= k len) (eof-object) (gen))
+        (cond [(eof-object? v) (- k at)]
+              [else (uvector-set! vec k v) (loop (+ k 1))])))))
+(define (generator->bytevector! vec at gen)
+  (check-arg u8vector? vec)
+  (generator->uvector! vec at gen))
+  
 (define (generator->string gen :optional (n #f))
   (with-output-to-string
     (^[]

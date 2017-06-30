@@ -6873,14 +6873,55 @@ Extracts items from the generator @var{gen} up to @var{k} items
 or until it exhausts, and create a fresh
 vector or string from the extracted items.
 
+When @var{k} is omitted, @var{gen} is called until it exhausts;
+note that if @var{gen} is infinite generator this procedure won't return.
+
 For @code{generator->string}, @var{gen} must yield a character, or
 an error is reported.
 @c JP
 @var{gen}から、@var{k}要素もしくは@var{gen}が終端に達するまで要素を読み出し、
 それらの要素からなるベクタまたは文字列を作って返します。
 
+@var{k}が省略された場合は@var{gen}が終端に達するまで呼ばれますが、
+@var{gen}が無限ジェネレータだと返って来なくなるので注意してください。
+
 @code{generator->string}の場合、@var{gen}が文字以外のものを生成したら
 エラーが報告されます。
+@c COMMON
+@end defun
+
+@defun generator->uvector gen :optional k class
+@defunx generator->bytevector gen :optional k
+@c MOD gauche.generator
+@c EN
+Extracts items from the generator @var{gen} up to @var{k} items
+or until it exhausts, and create a fresh uniform vector
+of class @var{class} filled with those items.
+If @var{k} is omitted, @var{gen} is read until it exhausts.
+
+If @var{class} is specified, it must be one of the uniform vector
+classes (@pxref{Uniform vectors}).  When omitted, @code{<u8vector>} is
+assumed.
+
+@code{Generator->bytevector} works like @code{generator->uvector}
+except that the class is fixed to @code{<u8vector>}.
+
+The generator must always produce numeric values acceptable to be an
+element of the specified uvector; otherwise an error is signalled.
+@c JP
+ジェネレータ@var{gen}から、@var{k}個の要素、あるいは@var{gen}が終端に達するまで
+要素を読み出し、それらの要素からなるユニフォームベクタを作って返します。
+@var{k}が省略された場合、@var{gen}は常に最後まで読まれます。
+
+@var{class}が指定された場合、それはユニフォームベクタのクラスのいずれかで
+なければなりません(@ref{Uniform vectors}参照)。省略された場合は
+@code{<u8vector>}が使われます。
+
+@code{generator->bytevector}は、@var{class}が@code{<u8vector>}に固定されている
+以外は@code{generator->uvector}と同じです。
+
+ジェネレータ@var{gen}は、指定されたユニフォームベクタの要素となり得る数値を
+生成しなければなりません。それ以外の値が生成された場合はエラーが報告されます。
 @c COMMON
 @end defun
 
@@ -6906,6 +6947,35 @@ generated.
 
 v @result{} #(a b 0 1 2)
 @end example
+@end defun
+
+@defun generator->uvector! uvector at gen
+@defunx generator->bytevector! u8vector at gen
+@c MOD gauche.generator
+@c EN
+Like @var{generator->vector!}, fill a uniform vector @var{uvector}
+starting from index @var{at} with elements read from a generator
+@var{gen}.  It terminates when @var{gen} is exhausted or the index
+reaches at the end of the vector.  Returns the number of items
+generated.
+
+Any type of uvector can be passed to @code{generator->uvector!}, while
+@code{generator->bytevector!} can only accept @code{u8vector}.
+
+The generator must always produce numeric values acceptable to be an
+element of the specified uvector; otherwise an error is signalled.
+@c JP
+@code{generator->vector!}と同様、@var{gen}から読み出した値で、
+@var{uvector}を、インデックス@var{at}から順に埋めてゆきます。
+ベクタの終端に達するか、@var{gen}が終端に達するまで続けられ、
+読み出された要素の個数が戻り値となります。
+
+@code{generator->uvector!}はどんなユニフォームベクタでも取ることができます。
+@code{generator->bytevector!}は@code{u8vector}限定です。
+
+ジェネレータ@var{gen}は、指定されたユニフォームベクタの要素となり得る数値を
+生成しなければなりません。それ以外の値が生成された場合はエラーが報告されます。
+@c COMMON
 @end defun
 
 @defmac glet* (binding @dots{}) body body2 @dots{}
