@@ -21115,7 +21115,7 @@ whose contents are concatenation of the given vectors.
 @c MOD gauche.uvector
 @c EN
 The @code{uvector} must contain values in increasing order.
-This prcoedure finds the index of an element that is equal to @var{key},
+This procedure finds the index of an element that is equal to @var{key},
 using binary search.   If such element can't be found, @code{#f} is returned.
 @c JP
 @var{uvector}は値が昇順に格納されたユニフォームベクタでなければなりません。
