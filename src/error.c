@@ -746,7 +746,8 @@ void Scm_SysError(const char *msg, ...)
  */
 void Scm_TypeError(const char *what, const char *expected, ScmObj got)
 {
-    Scm_Error("%s expected for %s, but got %S", expected, what, got);
+    Scm_Error("%s is supposed to be of type %s, but got %S",
+              what, expected, got);
 }
 
 

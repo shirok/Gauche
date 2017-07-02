@@ -77,6 +77,17 @@
             (format out "*** ~a\n" name)))
         (for-each (cut report-mixin-condition <> out) mixins)))))
 
+(select-module gauche.internal)
+(define-cproc %type-error (what::<const-cstring>
+                           expected-type::<const-cstring>
+                           actual-object)
+  ::<void> Scm_TypeError)
+
+(define-in-module gauche (type-error expr expected-type actual-object)
+  (%type-error (write-to-string expr)
+               (write-to-string expected-type) ;TODO: nicer formatting in future
+               actual-object))
+
 ;;;
 ;;; Srfi-18 primitives
 ;;;

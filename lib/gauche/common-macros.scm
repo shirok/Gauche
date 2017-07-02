@@ -578,7 +578,7 @@
     ))
 
 ;;;----------------------------------------------------------------
-;;; assume (srfi-145)
+;;; assume (srfi-145) and co.
 ;;;
 
 ;; We might add run-time optimization switch to expand assume to nothing.
@@ -591,6 +591,10 @@
      (unless expr
        (error (format "Invalid assumption: ~s:" 'expr) message ...))]))
 
-       
-     
-              
+(define-syntax assume-type
+  (syntax-rules ()
+    [(_ expr type)
+     (let1 v expr
+       (unless (is-a? v type)
+         (type-error 'expr type v)))]
+    ))

@@ -110,6 +110,7 @@
           (:macro guard unwind-protect)
           (:macro cond-list)
           (:macro assume)
+          (:macro assume-type)
           )
 
 (autoload gauche.macroutil
