@@ -100,7 +100,7 @@
 ;;;
 
 (define (string-null? str)
-  (check-arg string? str)
+  (assume-type str <string>)
   (equal? "" str))
 
 (define (string-every c/s/p s . args)
@@ -141,7 +141,7 @@
 (define substring/shared string-copy)  ; same in Gauche
 
 (define (string-copy! target tstart s . args)
-  (check-arg string? target)
+  (assume-type target <string>)
   (check-arg (^x (and (integer? x) (>= x 0))) tstart)
   (let* ((str (apply %maybe-substring s args))
          (slen (string-length str))
@@ -158,7 +158,7 @@
                                                        tlen))))))
 
 (define (string-pad s len :optional (char #\space) start end)
-  (check-arg char? char)
+  (assume-type char <char>)
   (let* ((str (%maybe-substring s start end))
          (slen (string-length str)))
     (cond ((< slen len)
@@ -168,7 +168,7 @@
           (else str))))
 
 (define (string-pad-right s len :optional (char #\space) start end)
-  (check-arg char? char)
+  (assume-type char <char>)
   (let* ((str (%maybe-substring s start end))
          (slen (string-length str)))
     (cond ((< slen len)
@@ -178,31 +178,31 @@
           (else str))))
 
 (define (string-take s nchars)
-  (check-arg string? s)
+  (assume-type s <string>)
   (when (or (< nchars 0) (> nchars (string-length s)))
     (error "argument out of range:" nchars))
   (%maybe-substring s 0 nchars))
 
 (define (string-drop s nchars)
-  (check-arg string? s)
+  (assume-type s <string>)
   (when (or (< nchars 0) (> nchars (string-length s)))
     (error "argument out of range:" nchars))
   (%maybe-substring s nchars))
 
 (define (string-take-right s nchars)
-  (check-arg string? s)
+  (assume-type s <string>)
   (when (or (< nchars 0) (> nchars (string-length s)))
     (error "argument out of range:" nchars))
   (%maybe-substring s (- (string-length s) nchars)))
 
 (define (string-drop-right s nchars)
-  (check-arg string? s)
+  (assume-type s <string>)
   (when (or (< nchars 0) (> nchars (string-length s)))
     (error "argument out of range:" nchars))
   (%maybe-substring s 0 (- (string-length s) nchars)))
 
 (define (string-trim s :optional (c/s/p #[\s]) start end)
-  (check-arg string? s)
+  (assume-type s <string>)
   (let ((pred (%get-char-pred c/s/p))
         (sp (make-string-pointer (%maybe-substring s start end))))
     (let loop ((ch (string-pointer-next! sp)))
@@ -213,7 +213,7 @@
     ))
 
 (define (string-trim-right s :optional (c/s/p #[\s]) start end)
-  (check-arg string? s)
+  (assume-type s <string>)
   (let ((pred (%get-char-pred c/s/p))
         (sp (make-string-pointer (%maybe-substring s start end) -1)))
     (let loop ((ch (string-pointer-prev! sp)))
@@ -224,7 +224,7 @@
     ))
 
 (define (string-trim-both s :optional (c/s/p #[\s]) start end)
-  (check-arg string? s)
+  (assume-type s <string>)
   (let ((pred (%get-char-pred c/s/p))
         (sp (make-string-pointer (%maybe-substring s start end))))
     (let loop ((ch (string-pointer-next! sp)))
@@ -264,8 +264,8 @@
 
 (define (string-compare s1 s2 proc< proc= proc>
                         :optional (start1 0) end1 start2 end2)
-  (check-arg string? s1)
-  (check-arg string? s2)
+  (assume-type s1 <string>)
+  (assume-type s2 <string>)
   (let ((str1 (%maybe-substring s1 start1 end1))
         (str2 (%maybe-substring s2 start2 end2)))
     (%string-compare-int (- start1 1) str1 str2
@@ -274,8 +274,8 @@
 
 (define (string-compare-ci s1 s2 proc< proc= proc>
                            :optional (start1 0) end1 start2 end2)
-  (check-arg string? s1)
-  (check-arg string? s2)
+  (assume-type s1 <string>)
+  (assume-type s2 <string>)
   (let ((str1 (%maybe-substring s1 start1 end1))
         (str2 (%maybe-substring s2 start2 end2)))
     (%string-compare-int (- start1 1) str1 str2
@@ -283,85 +283,85 @@
                          proc< proc= proc>)))
 
 (define (string= s1 s2 . args)
-  (check-arg string? s1)
-  (check-arg string? s2)
+  (assume-type s1 <string>)
+  (assume-type s2 <string>)
   (apply string-compare
          s1 s2 (^_ #f) (^_ #t) (^_ #f)
          args))
 
 (define (string<> s1 s2 . args)
-  (check-arg string? s1)
-  (check-arg string? s2)
+  (assume-type s1 <string>)
+  (assume-type s2 <string>)
   (apply string-compare
          s1 s2 (^_ #t) (^_ #f) (^_ #t)
          args))
 
 (define (string< s1 s2 . args)
-  (check-arg string? s1)
-  (check-arg string? s2)
+  (assume-type s1 <string>)
+  (assume-type s2 <string>)
   (apply string-compare
          s1 s2 (^_ #t) (^_ #f) (^_ #f)
          args))
 
 (define (string<= s1 s2 . args)
-  (check-arg string? s1)
-  (check-arg string? s2)
+  (assume-type s1 <string>)
+  (assume-type s2 <string>)
   (apply string-compare
          s1 s2 (^_ #t) (^_ #t) (^_ #f)
          args))
 
 (define (string> s1 s2 . args)
-  (check-arg string? s1)
-  (check-arg string? s2)
+  (assume-type s1 <string>)
+  (assume-type s2 <string>)
   (apply string-compare
          s1 s2 (^_ #f) (^_ #f) (^_ #t)
          args))
 
 (define (string>= s1 s2 . args)
-  (check-arg string? s1)
-  (check-arg string? s2)
+  (assume-type s1 <string>)
+  (assume-type s2 <string>)
   (apply string-compare
          s1 s2 (^_ #f) (^_ #t) (^_ #t)
          args))
 
 (define (string-ci= s1 s2 . args)
-  (check-arg string? s1)
-  (check-arg string? s2)
+  (assume-type s1 <string>)
+  (assume-type s2 <string>)
   (apply string-compare-ci
          s1 s2 (^_ #f) (^_ #t) (^_ #f)
          args))
 
 (define (string-ci<> s1 s2 . args)
-  (check-arg string? s1)
-  (check-arg string? s2)
+  (assume-type s1 <string>)
+  (assume-type s2 <string>)
   (apply string-compare-ci
          s1 s2 (^_ #t) (^_ #f) (^_ #t)
          args))
 
 (define (string-ci< s1 s2 . args)
-  (check-arg string? s1)
-  (check-arg string? s2)
+  (assume-type s1 <string>)
+  (assume-type s2 <string>)
   (apply string-compare-ci
          s1 s2 (^_ #t) (^_ #f) (^_ #f)
          args))
 
 (define (string-ci<= s1 s2 . args)
-  (check-arg string? s1)
-  (check-arg string? s2)
+  (assume-type s1 <string>)
+  (assume-type s2 <string>)
   (apply string-compare-ci
          s1 s2 (^_ #t) (^_ #t) (^_ #f)
          args))
 
 (define (string-ci> s1 s2 . args)
-  (check-arg string? s1)
-  (check-arg string? s2)
+  (assume-type s1 <string>)
+  (assume-type s2 <string>)
   (apply string-compare-ci
          s1 s2 (^_ #f) (^_ #f) (^_ #t)
          args))
 
 (define (string-ci>= s1 s2 . args)
-  (check-arg string? s1)
-  (check-arg string? s2)
+  (assume-type s1 <string>)
+  (assume-type s2 <string>)
   (apply string-compare-ci
          s1 s2 (^_ #f) (^_ #t) (^_ #t)
          args))
@@ -371,11 +371,11 @@
 ;;;
 
 (define (string-hash s :optional bound start end)
-  (check-arg string? s)
+  (assume-type s <string>)
   (%hash-string (%maybe-substring s start end) bound))
 
 (define (string-hash-ci s :optional bound start end)
-  (check-arg string? s)
+  (assume-type s <string>)
   ;; oops! optimization required!
   (%hash-string (string-upcase (%maybe-substring s start end)) bound))
 
@@ -396,29 +396,29 @@
       )))
 
 (define (string-prefix-length s1 s2 :optional start1 end1 start2 end2)
-  (check-arg string? s1)
-  (check-arg string? s2)
+  (assume-type s1 <string>)
+  (assume-type s2 <string>)
   (let ((str1 (%maybe-substring s1 start1 end1))
         (str2 (%maybe-substring s2 start2 end2)))
     (%string-prefix-int str1 str2 char=? (lambda (cnt flag) cnt))))
 
 (define (string-prefix-length-ci s1 s2 :optional start1 end1 start2 end2)
-  (check-arg string? s1)
-  (check-arg string? s2)
+  (assume-type s1 <string>)
+  (assume-type s2 <string>)
   (let ((str1 (%maybe-substring s1 start1 end1))
         (str2 (%maybe-substring s2 start2 end2)))
     (%string-prefix-int str1 str2 char-ci=? (lambda (cnt flag) cnt))))
 
 (define (string-prefix? s1 s2 :optional start1 end1 start2 end2)
-  (check-arg string? s1)
-  (check-arg string? s2)
+  (assume-type s1 <string>)
+  (assume-type s2 <string>)
   (let ((str1 (%maybe-substring s1 start1 end1))
         (str2 (%maybe-substring s2 start2 end2)))
     (%string-prefix-int str1 str2 char=? (lambda (cnt flag) flag))))
 
 (define (string-prefix-ci? s1 s2 :optional start1 end1 start2 end2)
-  (check-arg string? s1)
-  (check-arg string? s2)
+  (assume-type s1 <string>)
+  (assume-type s2 <string>)
   (let ((str1 (%maybe-substring s1 start1 end1))
         (str2 (%maybe-substring s2 start2 end2)))
     (%string-prefix-int str1 str2 char-ci=? (lambda (cnt flag) flag))))
@@ -439,29 +439,29 @@
       )))
 
 (define (string-suffix-length s1 s2 :optional start1 end1 start2 end2)
-  (check-arg string? s1)
-  (check-arg string? s2)
+  (assume-type s1 <string>)
+  (assume-type s2 <string>)
   (let ((str1 (%maybe-substring s1 start1 end1))
         (str2 (%maybe-substring s2 start2 end2)))
     (%string-suffix-int str1 str2 char=? (lambda (cnt flag) cnt))))
 
 (define (string-suffix-length-ci s1 s2 :optional start1 end1 start2 end2)
-  (check-arg string? s1)
-  (check-arg string? s2)
+  (assume-type s1 <string>)
+  (assume-type s2 <string>)
   (let ((str1 (%maybe-substring s1 start1 end1))
         (str2 (%maybe-substring s2 start2 end2)))
     (%string-suffix-int str1 str2 char-ci=? (lambda (cnt flag) cnt))))
 
 (define (string-suffix? s1 s2 :optional start1 end1 start2 end2)
-  (check-arg string? s1)
-  (check-arg string? s2)
+  (assume-type s1 <string>)
+  (assume-type s2 <string>)
   (let ((str1 (%maybe-substring s1 start1 end1))
         (str2 (%maybe-substring s2 start2 end2)))
     (%string-suffix-int str1 str2 char=? (lambda (cnt flag) flag))))
 
 (define (string-suffix-ci? s1 s2 :optional start1 end1 start2 end2)
-  (check-arg string? s1)
-  (check-arg string? s2)
+  (assume-type s1 <string>)
+  (assume-type s2 <string>)
   (let ((str1 (%maybe-substring s1 start1 end1))
         (str2 (%maybe-substring s2 start2 end2)))
     (%string-suffix-int str1 str2 char-ci=? (lambda (cnt flag) flag))))
@@ -471,7 +471,7 @@
 ;;;
 
 (define (string-index s c/s/p . args)
-  (check-arg string? s)
+  (assume-type s <string>)
   (let ((pred (%get-char-pred c/s/p))
         (offset (if (pair? args) (car args) 0))
         (sp (apply make-string-pointer s 0 args)))
@@ -481,7 +481,7 @@
             (else (loop (string-pointer-next! sp)))))))
 
 (define (string-index-right s c/s/p . args)
-  (check-arg string? s)
+  (assume-type s <string>)
   (let ((pred (%get-char-pred c/s/p))
         (offset (if (pair? args) (car args) 0))
         (sp (apply make-string-pointer s -1 args)))
@@ -491,7 +491,7 @@
             (else (loop (string-pointer-prev! sp)))))))
 
 (define (string-skip s c/s/p . args)
-  (check-arg string? s)
+  (assume-type s <string>)
   (let ((pred (%get-char-pred c/s/p))
         (offset (if (pair? args) (car args) 0))
         (sp (apply make-string-pointer s 0 args)))
@@ -501,7 +501,7 @@
             (else (+ offset (- (string-pointer-index sp) 1)))))))
 
 (define (string-skip-right s c/s/p . args)
-  (check-arg string? s)
+  (assume-type s <string>)
   (let ((pred (%get-char-pred c/s/p))
         (offset (if (pair? args) (car args) 0))
         (sp (apply make-string-pointer s -1 args)))
@@ -511,7 +511,7 @@
             (else (+ offset (string-pointer-index sp)))))))
 
 (define (string-count s c/s/p . args)
-  (check-arg string? s)
+  (assume-type s <string>)
   (let ((pred (%get-char-pred c/s/p))
         (sp (apply make-string-pointer s 0 args)))
     (let loop ((ch (string-pointer-next! sp))
@@ -521,8 +521,8 @@
             (else      (loop (string-pointer-next! sp) count))))))
 
 (define (string-contains s1 s2 :optional (start1 0) end1 start2 end2)
-  (check-arg string? s1)
-  (check-arg string? s2)
+  (assume-type s1 <string>)
+  (assume-type s2 <string>)
   (let* ((str1 (%maybe-substring s1 start1 end1))
          (str2 (%maybe-substring s2 start2 end2))
          (res  (string-scan str1 str2)))
@@ -530,8 +530,8 @@
 
 ;; not tuned (maybe to be moved to native)
 (define (string-contains-ci s1 s2 :optional (start1 0) end1 start2 end2)
-  (check-arg string? s1)
-  (check-arg string? s2)
+  (assume-type s1 <string>)
+  (assume-type s2 <string>)
   (let* ((str1 (string-upcase (%maybe-substring s1 start1 end1)))
          (str2 (string-upcase (%maybe-substring s2 start2 end2)))
          (res  (string-scan str1 str2)))
@@ -648,8 +648,7 @@
 ;;;
 
 (define (string-map proc s . args)
-  (check-arg procedure? proc)
-  (check-arg string? s)
+  (assume-type s <string>)
   (let ((src  (apply make-string-pointer s 0 args))
         (dest (open-output-string)))
     (let loop ((ch (string-pointer-next! src)))
@@ -660,14 +659,12 @@
     ))
 
 (define (string-map! proc s . args)
-  (check-arg procedure? proc)
-  (check-arg string? s)
+  (assume-type s <string>)
   (let ((mapped (apply string-map proc s args)))
     (string-copy! s (get-optional args 0) mapped)))
 
 (define (string-fold kons knil s . args)
-  (check-arg procedure? kons)
-  (check-arg string? s)
+  (assume-type s <string>)
   (let ((src (apply make-string-pointer s 0 args)))
     (let loop ((ch (string-pointer-next! src))
                (r  knil))
@@ -677,8 +674,7 @@
     ))
 
 (define (string-fold-right kons knil s . args)
-  (check-arg procedure? kons)
-  (check-arg string? s)
+  (assume-type s <string>)
   (let ((src (apply make-string-pointer s -1 args)))
     (let loop ((ch (string-pointer-prev! src))
                (r  knil))
@@ -689,9 +685,6 @@
 
 (define (string-unfold p f g seed
                        :optional (base "") (make-final (^_ "")))
-  (check-arg procedure? p)
-  (check-arg procedure? f)
-  (check-arg procedure? g)
   (let ((dest (open-output-string)))
     (display base dest)
     (let loop ((seed seed))
@@ -703,9 +696,6 @@
 
 (define (string-unfold-right p f g seed
                              :optional (base "") (make-final (^_ "")))
-  (check-arg procedure? p)
-  (check-arg procedure? f)
-  (check-arg procedure? g)
   (let ((dest (open-output-string)))
     (let loop ((seed seed))
       (if (p seed)
@@ -716,8 +706,7 @@
                (loop (g seed)))))))
 
 (define (string-for-each proc s . args)
-  (check-arg procedure? proc)
-  (check-arg string? s)
+  (assume-type s <string>)
   (let ((src (apply make-string-pointer s 0 args)))
     (let loop ((ch (string-pointer-next! src)))
       (unless (eof-object? ch)
@@ -726,8 +715,7 @@
   )
 
 (define (string-for-each-index proc s :optional (start 0) (end (string-length s)))
-  (check-arg procedure? proc)
-  (check-arg string? s)
+  (assume-type s <string>)
   (do ((i start (+ i 1)))
       ((>= i end))
     (proc i)))
@@ -737,7 +725,7 @@
 ;;;
 
 (define (xsubstring s from :optional to start end)
-  (check-arg string? s)
+  (assume-type s <string>)
   (check-arg (^x (and (integer? x) (exact? x))) from)
   (let* ([str (%maybe-substring s start end)]
          [len (string-length str)]
@@ -767,7 +755,7 @@
         ))))
 
 (define (string-xcopy! target tstart s sfrom . args)
-  (check-arg string? target)
+  (assume-type target <string>)
   (check-arg (^x (and (integer? x) (exact? x))) tstart)
   (let1 result (apply xsubstring s sfrom args)
     (string-copy! target tstart result)))
@@ -777,14 +765,14 @@
 ;;;
 
 (define (string-replace s1 s2 start1 end1 . args)
-  (check-arg string? s1)
-  (check-arg string? s2)
+  (assume-type s1 <string>)
+  (assume-type s2 <string>)
   (string-append (substring s1 0 start1)
                  (apply %maybe-substring s2 args)
                  (substring s1 end1 (string-length s1))))
 
 (define (string-tokenize s :optional (token-set #[\S]) start end)
-  (check-arg string? s)
+  (assume-type s <string>)
   (letrec ([src (open-input-string (%maybe-substring s start end))]
            [in-word (^[ch dst r]
                       (cond [(eof-object? ch)
@@ -840,7 +828,7 @@
 ;;; efficient to let %maybe-substring handle argument checking as well.
 
 (define (string-parse-start+end proc s args)
-  (check-arg string? s)
+  (assume-type s <string>)
   (let ((slen (string-length s)))
     (let-optionals* args (start end)
       (if (undefined? start)
@@ -858,7 +846,7 @@
       )))
 
 (define (string-parse-final-start+end proc s args)
-  (check-arg string? s)
+  (assume-type s <string>)
   (let ((slen (string-length s)))
     (let-optionals* args (start end)
       (if (undefined? start)

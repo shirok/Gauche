@@ -46,7 +46,7 @@
   (define (sys-fdset . pfs)
     (list->sys-fdset pfs))
   (define (sys-fdset->list fdset)
-    (check-arg (cut is-a? <> <sys-fdset>) fdset)
+    (assume-type fdset <sys-fdset>)
     (do ([i (sys-fdset-max-fd fdset) (- i 1)]
          [fds '() (if (sys-fdset-ref fdset i) (cons i fds) fds)])
         [(< i 0) fds]

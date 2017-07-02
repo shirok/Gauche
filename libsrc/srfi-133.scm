@@ -83,7 +83,7 @@
 ;; common checker.  returns start and end index.
 ;; if open-end? is #t, accept -1 as e, and we make it the length of vec.
 (define (%vector-check-start+end v s e open-end?)
-  (check-arg vector? v)
+  (assume-type v <vector>)
   (let1 len (vector-length v)
     (unless (<= 0 s len)
       (errorf "start index (~s) out of range of a vector: ~s" s v))
@@ -150,7 +150,7 @@
     (apply %vector-unfold-right! f rvec 0 len seeds)))
 
 (define (vector-unfold! f rvec s e . seeds)
-  (check-arg vector? rvec)
+  (assume-type rvec <vector>)
   (%ensure-mutable rvec)
   (let1 len (vector-length rvec)
     (unless (<= 0 s len) (error "start index out of range:" s))
@@ -160,7 +160,7 @@
     (apply %vector-unfold! f rvec s e seeds)))
 
 (define (vector-unfold-right! f rvec s e . seeds)
-  (check-arg vector? rvec)
+  (assume-type rvec <vector>)
   (%ensure-mutable rvec)
   (let1 len (vector-length rvec)
     (unless (<= 0 s len) (error "start index out of range:" s))
@@ -182,7 +182,7 @@
       (%vector-reverse-copy! rvec 0 vec s e))))
 
 (define (vector-reverse-copy! target tstart src :optional (sstart 0) (send -1))
-  (check-arg vector? target)
+  (assume-type target <vector>)
   (%ensure-mutable target)
   (let1 tlen (vector-length target)
     (unless (<= 0 tstart tlen)
@@ -225,17 +225,17 @@
             0 subvecs))))
 
 (define (vector-empty? vec)
-  (check-arg vector? vec)
+  (assume-type vec <vector>)
   (zero? (vector-length vec)))
 
 (define (vector= elt= . vecs)
   (match vecs
     [() #t]
-    [(vec) (check-arg vector? vec) #t]
+    [(vec) (assume-type vec <vector>) #t]
     [(v . vecs)
      ;; we could use srfi-114 make-vector-comparator but the overhead of
      ;; creating a comparator might be too much.
-     (check-arg vector? v)
+     (assume-type v <vector>)
      (let1 len (vector-length v)
        (define (pairwise= va vb)
          (let loop ([i 0])
@@ -248,14 +248,14 @@
 (define vector-fold
   (case-lambda
     ([proc seed v] ; fast path
-     (check-arg vector? v)
+     (assume-type v <vector>)
      (let1 len (vector-length v)
        (let loop ([i 0] [seed seed])
          (if (= i len) seed (loop (+ i 1) (proc seed (vector-ref v i)))))))
     ([proc seed v . vs]
      (let* ([vs (cons v vs)]
             [len (fold (^[v len]
-                         (check-arg vector? v)
+                         (assume-type v <vector>)
                          (if len (min (vector-length v) len) (vector-length v)))
                        #f vs)])
        (let loop ([i 0] [seed seed])
@@ -266,14 +266,14 @@
 (define vector-fold-right
   (case-lambda
     ([proc seed v] ; fast path
-     (check-arg vector? v)
+     (assume-type v <vector>)
      (let1 len (vector-length v)
        (let loop ([i (- len 1)] [seed seed])
          (if (= i -1) seed (loop (- i 1) (proc seed (vector-ref v i)))))))
     ([proc seed v . vs]
      (let* ([vs (cons v vs)]
             [len (fold (^[v len]
-                         (check-arg vector? v)
+                         (assume-type v <vector>)
                          (if len (min (vector-length v) len) (vector-length v)))
                        #f vs)])
        (let loop ([i (- len 1)] [seed seed])
@@ -289,7 +289,7 @@
      (apply vector-fold (^[c . es] (if (apply pred es) (+ 1 c) c)) 0 v vs))))
 
 (define (vector-cumulate f seed vec)
-  (check-arg vector? vec)
+  (assume-type vec <vector>)
   (let1 len (vector-length vec)
     (rlet1 rvec (make-vector len)
       (let loop ([i 0] [seed seed])
@@ -301,14 +301,14 @@
 (define vector-index
   (case-lambda
     ([pred v] ; fast path
-     (check-arg vector? v)
+     (assume-type v <vector>)
      (let1 len (vector-length v)
        (let lp ([i 0])
          (cond [(= i len) #f] [(pred (vector-ref v i)) i] [else (lp (+ i 1))]))))
     ([pred v . vs]
      (let* ([vs (cons v vs)]
             [len (fold (^[v len]
-                         (check-arg vector? v)
+                         (assume-type v <vector>)
                          (if len
                            (min (vector-length v) len)
                            (vector-length v)))
@@ -321,14 +321,14 @@
 (define vector-index-right
   (case-lambda
     ([pred v] ; fast path
-     (check-arg vector? v)
+     (assume-type v <vector>)
      (let1 len (vector-length v)
        (let lp ([i (- len 1)])
          (cond [(= i -1) #f] [(pred (vector-ref v i)) i] [else (lp (- i 1))]))))
     ([pred v . vs]
      (let* ([vs (cons v vs)]
             [len (fold (^[v len]
-                         (check-arg vector? v)
+                         (assume-type v <vector>)
                          (if len
                            (min (vector-length v) len)
                            (vector-length v)))
@@ -345,7 +345,7 @@
   (apply vector-index-right (complement pred) v vs))
 
 (define (vector-binary-search vec value cmp :optional (start 0) (end -1))
-  (check-arg vector? vec)
+  (assume-type vec <vector>)
   (receive (s e) (%vector-check-start+end vec start end #t)
     (and (not (= s e))
          (let rec ([lo s] [hi e])
@@ -359,7 +359,7 @@
 (define vector-any
   (case-lambda
     ([pred v]
-     (check-arg vector? v)
+     (assume-type v <vector>)
      (let1 len (vector-length v)
        (let loop ([i 0])
          (if (= i len)
@@ -369,7 +369,7 @@
     ([pred v . vs]
      (let* ([vs (cons v vs)]
             [len (fold (^[v len]
-                         (check-arg vector? v) (min (vector-length v) len))
+                         (assume-type v <vector>) (min (vector-length v) len))
                        +inf.0 vs)])
        (let loop ([i 0])
          (if (= i len)
@@ -380,7 +380,7 @@
 (define vector-every
   (case-lambda
     ([pred v]
-     (check-arg vector? v)
+     (assume-type v <vector>)
      (let1 len (vector-length v)
        (let loop ([i 0] [last #t])
          (if (= i len)
@@ -390,7 +390,7 @@
     ([pred v . vs]
      (let* ([vs (cons v vs)]
             [len (fold (^[v len]
-                         (check-arg vector? v) (min (vector-length v) len))
+                         (assume-type v <vector>) (min (vector-length v) len))
                        +inf.0 vs)])
        (let loop ([i 0] [last #t])
          (if (= i len)
@@ -399,7 +399,7 @@
              (loop (+ i 1) last))))))))
 
 (define (vector-partition pred vec)
-  (check-arg vector? vec)
+  (assume-type vec <vector>)
   (let* ([len (vector-length vec)]
          [rvec (make-vector len)])
     (let loop ([i 0] [j 0] [fails '()])
@@ -420,7 +420,7 @@
     (vector-set! vec j tmp)))
 
 (define (vector-swap! vec i j)
-  (check-arg vector? vec)
+  (assume-type vec <vector>)
   (%ensure-mutable vec)
   (let1 max (- (vector-length vec) 1)
     (unless (<= 0 i max) (error "index i is out of range:" i))
@@ -434,13 +434,13 @@
     (%vector-swap! vec i j)))
 
 (define (vector-reverse! vec :optional (start 0) (end -1))
-  (check-arg vector? vec)
+  (assume-type vec <vector>)
   (%ensure-mutable vec)
   (receive (s e) (%vector-check-start+end vec start end #t)
     (%vector-reverse! vec s e)))
   
 (define (reverse-vector->list vec :optional (start 0) (end -1))
-  (check-arg vector? vec)
+  (assume-type vec <vector>)
   (receive (s e) (%vector-check-start+end vec start end #t)
     (do ([i s (+ i 1)]
          [r '() (cons (vector-ref vec i) r)])

@@ -61,7 +61,7 @@
 (define (tree-map-pop-max! tm) (%tree-map-bound tm #f #t))
 
 (define (%tree-map-fold tm kons knil backward)
-  (check-arg tree-map? tm)
+  (assume-type tm <tree-map>)
   (let ((eof (cons #f #f))              ;marker
         (i (%tree-map-iter tm)))
     (let loop ((r knil))
@@ -77,7 +77,7 @@
   (%tree-map-fold tm kons knil #t))
 
 (define (tree-map-seek tm pred succ fail)
-  (check-arg tree-map? tm)
+  (assume-type tm <tree-map>)
   (let ((eof (cons #f #f))              ;marker
         (i (%tree-map-iter tm)))
     (let loop ()

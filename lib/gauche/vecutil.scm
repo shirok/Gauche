@@ -61,7 +61,7 @@
 
 ;; R7RS vector-map
 (define (vector-map proc vec . more)
-  (check-arg vector? vec)
+  (assume-type vec <vector>)
   (if (null? more)
     (vector-tabulate (vector-length vec) (^i (proc (vector-ref vec i))))
     (let1 vecs (cons vec more)
@@ -69,7 +69,7 @@
                        (^i (apply proc (map (^v (vector-ref v i)) vecs)))))))
 
 (define (vector-map! proc vec . more)
-  (check-arg vector? vec)
+  (assume-type vec <vector>)
   (if (null? more)
     (%vector-update! vec (vector-length vec) (^i (proc (vector-ref vec i))))
     (let1 vecs (cons vec more)
@@ -78,7 +78,7 @@
   
 ;; srfi-43 vector-map.  passing the index to PROC as the first arg.
 (define (vector-map-with-index proc vec . more)
-  (check-arg vector? vec)
+  (assume-type vec <vector>)
   (if (null? more)
     (vector-tabulate (vector-length vec) (^i (proc i (vector-ref vec i))))
     (let* ([vecs (cons vec more)]
@@ -88,7 +88,7 @@
 
 ;; srfi-43 vector-map!
 (define (vector-map-with-index! proc vec . more)
-  (check-arg vector? vec)
+  (assume-type vec <vector>)
   (if (null? more)
     (%vector-update! vec (vector-length vec) (^i (proc i (vector-ref vec i))))
     (let1 vecs (cons vec more)
@@ -97,7 +97,7 @@
 
 ;; R7RS vector-for-each
 (define (vector-for-each proc vec . more)
-  (check-arg vector? vec)
+  (assume-type vec <vector>)
   (if (null? more)
     (dotimes [i (vector-length vec)] (proc (vector-ref vec i)))
     (let1 vecs (cons vec more)
@@ -106,7 +106,7 @@
 
 ;; srfi-43 vector-for-each
 (define (vector-for-each-with-index proc vec . more)
-  (check-arg vector? vec)
+  (assume-type vec <vector>)
   (if (null? more)
     (dotimes [i (vector-length vec)] (proc i (vector-ref vec i)))
     (let1 vecs (cons vec more)

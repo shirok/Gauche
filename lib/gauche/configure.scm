@@ -244,8 +244,8 @@
                     x))
                 url)]
          )
-    (check-arg string? package-name)
-    (check-arg string? version)
+    (assume-type package-name <string>)
+    (assume-type version <string>)
     (sys-unlink "config.log")
     (log-open "config.log" :prefix "")
     (log-format "Configuring ~a ~a" package-name version)

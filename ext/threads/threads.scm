@@ -86,17 +86,17 @@
 (define (thread? obj) (is-a? obj <thread>))
 
 (define (thread-name thread)
-  (check-arg thread? thread)
+  (assume-type thread <thread>)
   (slot-ref thread 'name))
 
 (define (thread-specific-set! thread value)
-  (check-arg thread? thread)
+  (assume-type thread <thread>)
   (slot-set! thread 'specific value))
 
 (define thread-specific
   (getter-with-setter
    (^[thread]
-     (check-arg thread? thread)
+     (assume-type thread <thread>)
      (slot-ref thread 'specific))
    thread-specific-set!))
 
@@ -141,21 +141,21 @@
 (define (mutex? obj)  (is-a? obj <mutex>))
 
 (define (mutex-name mutex)
-  (check-arg mutex? mutex)
+  (assume-type mutex <mutex>)
   (slot-ref mutex 'name))
 
 (define (mutex-state mutex)
-  (check-arg mutex? mutex)
+  (assume-type mutex <mutex>)
   (slot-ref mutex 'state))
 
 (define (mutex-specific-set! mutex value)
-  (check-arg mutex? mutex)
+  (assume-type mutex <mutex>)
   (slot-set! mutex 'specific value))
 
 (define mutex-specific
   (getter-with-setter
    (^[mutex]
-     (check-arg mutex? mutex)
+     (assume-type mutex <mutex>)
      (slot-ref mutex 'specific))
    mutex-specific-set!))
 
@@ -199,17 +199,17 @@
 (define (condition-variable? obj) (is-a? obj <condition-variable>))
 
 (define (condition-variable-name cv)
-  (check-arg condition-variable? cv)
+  (assume-type cv <condition-variable>)
   (slot-ref cv 'name))
 
 (define (condition-variable-specific-set! cv value)
-  (check-arg condition-variable? cv)
+  (assume-type cv <condition-variable>)
   (slot-set! cv 'specific value))
 
 (define condition-variable-specific
   (getter-with-setter
    (lambda (cv)
-     (check-arg condition-variable? cv)
+     (assume-type cv <condition-variable>)
      (slot-ref cv 'specific))
    condition-variable-specific-set!))
 
@@ -241,7 +241,7 @@
   (is-a? obj <uncaught-exception>))
 
 (define (uncaught-exception-reason exc)
-  (check-arg uncaught-exception? exc)
+  (assume-type exc <uncaught-exception>)
   (slot-ref exc 'reason))
 
 ;;===============================================================

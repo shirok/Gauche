@@ -238,7 +238,7 @@
 
 ;; API
 (define (info-search rx)
-  (check-arg regexp? rx)
+  (assume-type rx <regexp>)
   (let1 entries (search-entries rx)
     (if (null? entries)
       (print #"No entry matching ~|rx|")

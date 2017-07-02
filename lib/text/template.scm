@@ -69,10 +69,10 @@
     (eval `(extend ,@extends) m)))
 
 (define (expand-template-string text env)
-  (check-arg (cut is-a? <> <template-environment>) env)
+  (assume-type env <template-enviroment>)
   (eval (string-interpolate text) (~ env'module)))
 
 (define (expand-template-file filename env)
-  (check-arg (cut is-a? <> <template-environment>) env)
+  (assume-type env <template-enviroment>)
   (expand-template-string (file->string filename) env))
 

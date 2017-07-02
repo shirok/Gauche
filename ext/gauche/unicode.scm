@@ -364,7 +364,7 @@
 ;; At this moment, we don't worry much about performance when the native
 ;; encoding isn't utf8.
 (define (utf8->string bvec :optional (start 0) (end -1))
-  (check-arg u8vector? bvec)
+  (assume-type bvec <u8vector>)
   (if (eq? (gauche-character-encoding) 'utf-8)
     (rlet1 s (u8vector->string bvec start end)
       (when (string-incomplete? s)
@@ -372,7 +372,7 @@
     (ces-convert (u8vector->string bvec start end) 'utf-8)))
 
 (define (string->utf8 str :optional (start 0) (end -1))
-  (check-arg string? str)
+  (assume-type str <string>)
   (if (eq? (gauche-character-encoding) 'utf-8)
     (string->u8vector str start end)
     (let ([start (or start 0)]

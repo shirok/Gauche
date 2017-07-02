@@ -44,7 +44,7 @@
     (for-each (^[kv] (hash-table-put! h (car kv) (cdr kv))) kvs)))
 
 (define (hash-table-map hash proc)
-  (check-arg hash-table? hash)
+  (assume-type hash <hash-table>)
   (let ([eof (cons #f #f)]              ;marker
         [i   (%hash-table-iter hash)])
     (let loop ([r '()])
@@ -54,7 +54,7 @@
           (loop (cons (proc k v) r)))))))
 
 (define (hash-table-for-each hash proc)
-  (check-arg hash-table? hash)
+  (assume-type hash <hash-table>)
   (let ([eof (cons #f #f)]              ;marker
         [i (%hash-table-iter hash)])
     (let loop ()
@@ -63,7 +63,7 @@
           (proc k v) (loop))))))
 
 (define (hash-table-fold hash kons knil)
-  (check-arg hash-table? hash)
+  (assume-type hash <hash-table>)
   (let ([eof (cons #f #f)]              ;marker
         [i (%hash-table-iter hash)])
     (let loop ([r knil])
@@ -73,7 +73,7 @@
           (loop (kons k v r)))))))
 
 (define (hash-table-seek hash pred succ fail)
-  (check-arg hash-table? hash)
+  (assume-type hash <hash-table>)
   (let ([eof (cons #f #f)]              ;marker
         [i (%hash-table-iter hash)])
     (let loop ()
@@ -92,33 +92,33 @@
 ;;  for the compatibility of srfi-128.
 
 (define (boolean-hash obj)
-  (check-arg boolean? obj)
+  (assume-type obj <boolean>)
   (default-hash obj))
 
 (define (char-hash obj)
-  (check-arg char? obj)
+  (assume-type obj <char>)
   (default-hash obj))
 
 (define (char-ci-hash obj)
-  (check-arg char? obj)
+  (assume-type obj <char>)
   (default-hash (char-foldcase obj)))
 
 (define (string-hash obj)
-  (check-arg string? obj)
+  (assume-type obj <string>)
   (default-hash obj))
 
 (autoload gauche.unicode string-foldcase)
 
 (define (string-ci-hash obj)
-  (check-arg string? obj)
+  (assume-type obj <string>)
   (default-hash (string-foldcase obj)))
 
 (define (symbol-hash obj)
-  (check-arg symbol? obj)
+  (assume-type obj <symbol>)
   (default-hash obj))
 
 (define (number-hash obj)
-  (check-arg number? obj)
+  (assume-type obj <number>)
   (default-hash obj))
 
 ;; This is a placeholder to conform srfi-128.
