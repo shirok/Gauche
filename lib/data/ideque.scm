@@ -187,11 +187,11 @@
 (define ideque=
   (case-lambda
     [(elt=) #t]
-    [(elt= ideque) (check-arg ideque? ideque) #t]
+    [(elt= ideque) (assume-type ideque <ideque>) #t]
     [(elt= dq1 dq2)
      ;; we optimize two-arg case
-     (check-arg ideque? dq1)
-     (check-arg ideque? dq2)
+     (assume-type dq1 <ideque>)
+     (assume-type dq2 <ideque>)
      (or (eq? dq1 dq2)
          (let ([len1 (+ (dq-lenf dq1) (dq-lenr dq1))]
                [len2 (+ (dq-lenf dq2) (dq-lenr dq2))])

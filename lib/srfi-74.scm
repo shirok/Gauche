@@ -82,19 +82,19 @@
 (define (blob-s64-native-set! blob k v) (put-s64! blob k native))
 
 (define (blob-uint-ref size endi blob k)
-  (check-arg blob? blob)
+  (assume-type blob <u8vector>)
   (get-uint size blob k endi))
 
 (define (blob-sint-ref size endi blob k)
-  (check-arg blob? blob)
+  (assume-type blob <u8vector>)
   (get-sint size blob k endi))
   
 (define (blob-uint-set! size endi blob k v)
-  (check-arg blob? blob)
+  (assume-type blob <u8vector>)
   (put-uint! size blob k v endi))
 
 (define (blob-sint-set! size endi blob k v)
-  (check-arg blob? blob)
+  (assume-type blob <u8vector>)
   (put-sint! size blob k v endi))
 
 (define (blob=? a b) (u8vector=? a b))

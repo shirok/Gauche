@@ -35,14 +35,14 @@
 (define vector-fold
   (case-lambda
     ([proc seed v] ; fast path
-     (check-arg vector? v)
+     (assume-type v <vector>)
      (let1 len (vector-length v)
        (let loop ([i 0] [seed seed])
          (if (= i len) seed (loop (+ i 1) (proc i seed (vector-ref v i)))))))
     ([proc seed v . vs]
      (let* ([vs (cons v vs)]
             [len (fold (^[v len]
-                         (check-arg vector? v)
+                         (assume-type v <vector>)
                          (if len (min (vector-length v) len) (vector-length v)))
                        #f vs)])
        (let loop ([i 0] [seed seed])
@@ -54,14 +54,14 @@
 (define vector-fold-right
   (case-lambda
     ([proc seed v] ; fast path
-     (check-arg vector? v)
+     (assume-type v <vector>)
      (let1 len (vector-length v)
        (let loop ([i (- len 1)] [seed seed])
          (if (= i -1) seed (loop (- i 1) (proc i seed (vector-ref v i)))))))
     ([proc seed v . vs]
      (let* ([vs (cons v vs)]
             [len (fold (^[v len]
-                         (check-arg vector? v)
+                         (assume-type v <vector>)
                          (if len (min (vector-length v) len) (vector-length v)))
                        #f vs)])
        (let loop ([i (- len 1)] [seed seed])

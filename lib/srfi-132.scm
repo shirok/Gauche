@@ -25,19 +25,19 @@
           ))
 (select-module srfi-132)
 
-(define (list-sort < lis) (check-arg list? lis) (sort lis <))
-(define (list-sort! < lis) (check-arg list? lis) (sort! lis <))
-(define (list-stable-sort < lis) (check-arg list? lis) (stable-sort lis <))
-(define (list-stable-sort! < lis) (check-arg list? lis) (stable-sort! lis <))
-(define (list-sorted? < lis) (check-arg list? lis) (sorted? lis <))
+(define (list-sort < lis) (assume-type lis <list>) (sort lis <))
+(define (list-sort! < lis) (assume-type lis <list>) (sort! lis <))
+(define (list-stable-sort < lis) (assume-type lis <list>) (stable-sort lis <))
+(define (list-stable-sort! < lis) (assume-type lis <list>) (stable-sort! lis <))
+(define (list-sorted? < lis) (assume-type lis <list>) (sorted? lis <))
 (define (list-merge < lis1 lis2) (merge lis1 lis2 <))
 (define (list-merge! < lis1 lis2) (merge! lis1 lis2 <))
 
 ;; NB: We could get range-restricted linear-update version more efficient.
 
 (define-inline (%check-range v start end)
-  (check-arg exact-integer? start)
-  (check-arg exact-integer? end)
+  (assume-type start <integer>)
+  (assume-type end <integer>)
   (unless (<= 0 start end (- (vector-length v) 1))
     (errorf "Start/end arguments must be nonnegative exact integers, \
              and must be (<= 0 start end (- (vector-length v) 1)). \
@@ -45,7 +45,7 @@
 
 (define (%vector-sorter %sort!)
   (^[< v :optional (s 0) (e (vector-length v))]
-    (check-arg vector? v)
+    (assume-type v <vector>)
     (%check-range v s e)
     (let1 sorted (%sort! (subseq v s e) <)
       (if (and (= s 0) (= e (vector-length v)))
@@ -54,7 +54,7 @@
 
 (define (%vector-sorter! %sort!)
   (^[< v :optional (s 0) (e (vector-length v))]
-    (check-arg vector? v)
+    (assume-type v <vector>)
     (%check-range v s e)
     (if (and (= s 0) (= e (vector-length v)))
       (%sort! v <)
@@ -73,7 +73,7 @@
     (subseq v s e)))
 
 (define (vector-sorted? < v :optional (s 0) (e (vector-length v)))
-  (check-arg vector? v)
+  (assume-type v <vector>)
   (%check-range v s e)
   (sorted? (%maybe-subseq v s e) <))
 
@@ -101,8 +101,8 @@
 
 (define (vector-merge < v1 v2 :optional (s1 0) (e1 (vector-length v1))
                                         (s2 0) (e2 (vector-length v2)))
-  (check-arg vector? v1)
-  (check-arg vector? v2)
+  (assume-type v1 <vector>)
+  (assume-type v2 <vector>)
   (%check-range v1 s1 e1)
   (%check-range v2 s2 e2)
   (rlet1 vr (make-vector (+ (- e1 s1) (- e2 s2)))
@@ -111,9 +111,9 @@
 (define (vector-merge! < vr v1 v2 :optional (sr 0)
                                             (s1 0) (e1 (vector-length v1))
                                             (s2 0) (e2 (vector-length v2)))
-  (check-arg vector? vr)
-  (check-arg vector? v1)
-  (check-arg vector? v2)
+  (assume-type vr <vector>)
+  (assume-type v1 <vector>)
+  (assume-type v2 <vector>)
   (%check-range v1 s1 e1)
   (%check-range v2 s2 e2)
   (unless (>= (vector-length vr) (+ sr (- e1 s1) (- e2 s2)))
@@ -125,14 +125,14 @@
 ;; duplicate elimination
 
 (define (list-delete-neighbor-dups = lis)
-  (check-arg pair? lis)
+  (assume-type lis <list>)
   (delete-neighbor-dups lis :test =))
 (define (list-delete-neighbor-dups! = lis)
-  (check-arg pair? lis)
+  (assume-type lis <list>)
   (delete-neighbor-dups-squeeze! lis :test =))
 (define (vector-delete-neighbor-dups = vec :optional (start 0) (end #f))
-  (check-arg vector? vec)
+  (assume-type vec <vector>)
   (delete-neighbor-dups vec :test = :start start :end end))
 (define (vector-delete-neighbor-dups! = vec :optional (start 0) (end #f))
-  (check-arg vector? vec)
+  (assume-type vec <vector>)
   (delete-neighbor-dups! vec :test = :start start :end end))

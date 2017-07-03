@@ -385,7 +385,7 @@
   (define (input-port-open? p) (and (input-port? p) (not (port-closed? p))))
   (define (output-port-open? p) (and (output-port? p) (not (port-closed? p))))
   (define (open-input-bytevector bv)
-    (check-arg u8vector? bv)
+    (assume-type bv <u8vector>)
     (open-input-uvector bv))
   (define (open-output-bytevector) (open-output-uvector))
   (define (get-output-bytevector port)

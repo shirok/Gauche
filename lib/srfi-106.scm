@@ -115,8 +115,8 @@
                             (ai-flags (socket-merge-flags *ai-v4mapped*
                                                           *ai-addrconfig*))
                             (ai-protocol *ipproto-ip*))
-  (check-arg string? node)
-  (check-arg string? service)
+  (assume-type node <string>)
+  (assume-type service <string>)
   (cond-expand
    [gauche.net.ipv6
     (let1 ais (net:sys-getaddrinfo node service
@@ -145,7 +145,7 @@
                             (ai-family *af-inet*)
                             (ai-socktype *sock-stream*)
                             (ai-protocol *ipproto-ip*))
-  (check-arg string? service)
+  (assume-type service <string>)
   (cond-expand
    [gauche.net.ipv6
     (let1 ais (net:sys-getaddrinfo #f service
@@ -175,7 +175,7 @@
 ;;
 
 (define (socket-send socket u8v :optional (flags *msg-none*))
-  (check-arg u8vector? u8v)
+  (assume-type u8v <u8vector>)
   (net:socket-send socket u8v flags))
 
 (define (socket-recv socket size :optional (flags *msg-none*))
