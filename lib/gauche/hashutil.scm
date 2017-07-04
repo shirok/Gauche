@@ -39,6 +39,14 @@
           hash-bound hash-salt))
 (select-module gauche.hashutil)
 
+;; TRANSIENT: Precompiling with 0.9.5 doesn't load assume-type yet.
+;; Remove this after 0.9.6 release.
+(cond-expand
+ [gauche-0.9.5 (define-syntax assume-type
+                 (syntax-rules ()
+                   [(_ x type) (check-arg (cut is-a? <> type) x)]))]
+ [else])
+
 (define (hash-table cmpr . kvs)
   (rlet1 h (make-hash-table cmpr)
     (for-each (^[kv] (hash-table-put! h (car kv) (cdr kv))) kvs)))
