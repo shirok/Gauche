@@ -344,18 +344,19 @@ ScmObj Scm_TreeMapRef(ScmTreeMap *tm, ScmObj key, ScmObj fallback)
     }
 }
 
+/* Returns previous value; can return SCM_UNBOUND when the association hasn't
+   been there.  Be careful not to let SCM_UNBOUND leak out to Scheme! */
 ScmObj Scm_TreeMapSet(ScmTreeMap *tm, ScmObj key, ScmObj value, int flags)
 {
     ScmDictEntry *e = Scm_TreeCoreSearch(SCM_TREE_MAP_CORE(tm),
                                          (intptr_t)key,
                                          (flags&SCM_DICT_NO_CREATE)? SCM_DICT_GET : SCM_DICT_CREATE);
     if (!e) return SCM_UNBOUND;
-    if (e->value) {
-        if (flags&SCM_DICT_NO_OVERWRITE) return SCM_DICT_VALUE(e);
-        else return SCM_DICT_SET_VALUE(e, value);
-    } else {
-        return SCM_DICT_SET_VALUE(e, value);
+    ScmObj oldval = e->value? SCM_DICT_VALUE(e) : SCM_UNBOUND;
+    if (!(flags&SCM_DICT_NO_OVERWRITE) || SCM_UNBOUNDP(oldval)) {
+        SCM_DICT_SET_VALUE(e, value);
     }
+    return oldval;
 }
 
 ScmObj Scm_TreeMapDelete(ScmTreeMap *tm, ScmObj key)

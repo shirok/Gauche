@@ -92,10 +92,10 @@ static ScmSymbol *make_sym(ScmClass *klass, ScmString *name, int interned)
            the same name symbol between above HashTableRef and here, we'll
            get the already interned symbol. */
         SCM_INTERNAL_MUTEX_LOCK(obtable_mutex);
-        ScmObj e = Scm_HashTableSet(obtable, SCM_OBJ(name), SCM_OBJ(sym),
+        ScmObj r = Scm_HashTableSet(obtable, SCM_OBJ(name), SCM_OBJ(sym),
                                     SCM_DICT_NO_OVERWRITE);
         SCM_INTERNAL_MUTEX_UNLOCK(obtable_mutex);
-        return SCM_SYMBOL(e);
+        return SCM_UNBOUNDP(r)? sym : SCM_SYMBOL(r);
     }
 }
 
@@ -128,7 +128,7 @@ ScmObj Scm_MakeKeyword(ScmString *name)
         r = Scm_HashTableSet(keywords.table, SCM_OBJ(name), SCM_OBJ(k),
                              SCM_DICT_NO_OVERWRITE);
         (void)SCM_INTERNAL_MUTEX_UNLOCK(keywords.mutex);
-        return r;
+        return SCM_UNBOUNDP(r)? SCM_OBJ(k) : r ;
     }
 #endif /*GAUCHE_KEEP_DISJOINT_KEYWORD_OPTION*/
     ScmObj sname = Scm_StringAppend2(&keyword_prefix, name);

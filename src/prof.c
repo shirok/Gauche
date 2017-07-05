@@ -253,17 +253,13 @@ void Scm_ProfilerCountBufferFlush(ScmVM *vm)
             func = SCM_OBJ(SCM_METHOD(func)->data);
         }
 
-        e = Scm_HashTableSet(vm->prof->statHash,
+        e = Scm_HashTableRef(vm->prof->statHash,
                              vm->prof->counts[i].func,
-                             SCM_FALSE,
-                             SCM_DICT_NO_OVERWRITE);
-        if (SCM_FALSEP(e)) {
-            e = Scm_HashTableSet(vm->prof->statHash,
-                                 vm->prof->counts[i].func,
-                                 Scm_Cons(SCM_MAKE_INT(0), SCM_MAKE_INT(0)),
-                                 0);
+                             SCM_UNBOUND);
+        if (SCM_UNBOUNDP(e)) {
+            e = Scm_Cons(SCM_MAKE_INT(0), SCM_MAKE_INT(0));
+            Scm_HashTableSet(vm->prof->statHash, vm->prof->counts[i].func, e, 0);
         }
-
         SCM_ASSERT(SCM_PAIRP(e));
         cnt = SCM_INT_VALUE(SCM_CAR(e)) + 1;
         SCM_SET_CAR(e, SCM_MAKE_INT(cnt));

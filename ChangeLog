@@ -1,3 +1,15 @@
+2017-07-04  Shiro Kawai  <shiro@acm.org>
+
+	* src/hash.c (Scm_HashTableSet), src/treemap.c (Scm_TreeMapSet):
+	  INCOMPATIBLE CHANGE: Let these return the previous value associated
+	  with the key.  If there's no entry with the key, SCM_UNBOUND is
+	  returned.  (1) This works consistently across flags, and (2) The
+	  caller can know whether the association has already been there
+	  or not.  The code that expects these to return the updated value
+	  will break and need to be changed.  We see that in most cases
+	  these procedures are used only for the side effects and the
+	  return value is ignored.
+
 2017-07-01  shiro  <shiro@acm.org>
 
 	* lib/gauche/common-macros (assume-type): Added.

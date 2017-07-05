@@ -883,6 +883,8 @@ ScmObj Scm_HashTableRef(ScmHashTable *ht, ScmObj key, ScmObj fallback)
     else    return SCM_DICT_VALUE(e);
 }
 
+/* Returns previous value; can return SCM_UNBOUND when the association hasn't
+   been there.  Be careful not to let SCM_UNBOUND leak out to Scheme! */
 ScmObj Scm_HashTableSet(ScmHashTable *ht, ScmObj key, ScmObj value, int flags)
 {
     ScmDictEntry *e;
@@ -891,12 +893,11 @@ ScmObj Scm_HashTableSet(ScmHashTable *ht, ScmObj key, ScmObj value, int flags)
                            (intptr_t)key,
                            (flags&SCM_DICT_NO_CREATE)?SCM_DICT_GET: SCM_DICT_CREATE);
     if (!e) return SCM_UNBOUND;
-    if (e->value) {
-        if (flags&SCM_DICT_NO_OVERWRITE) return SCM_DICT_VALUE(e);
-        else return SCM_DICT_SET_VALUE(e, value);
-    } else {
+    ScmObj oldval = e->value? SCM_DICT_VALUE(e) : SCM_UNBOUND;
+    if (!(flags&SCM_DICT_NO_OVERWRITE) || SCM_UNBOUNDP(oldval)) {
         return SCM_DICT_SET_VALUE(e, value);
     }
+    return oldval;
 }
 
 ScmObj Scm_HashTableDelete(ScmHashTable *ht, ScmObj key)
