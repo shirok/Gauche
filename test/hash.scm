@@ -73,11 +73,26 @@
          (hash-table-put! h-eq 'a 8)
          (hash-table-get  h-eq 'a)))
 
+(test* "a adjoin" 8
+       (begin
+         (hash-table-adjoin! h-eq 'a 9)
+         (hash-table-get h-eq 'a)))
+
+(test* "a replace" 7
+       (begin
+         (hash-table-replace! h-eq 'a 7)
+         (hash-table-get h-eq 'a)))
+
 (test* "b => non" #t
        (hash-table-get  h-eq 'b #t))
 
 (test* "b => error" (test-error)
        (hash-table-get h-eq 'b))
+
+(test* "b replace" #f
+       (begin
+         (hash-table-replace! h-eq 'b 100)
+         (hash-table-get h-eq 'b #f)))
 
 (test* "b => \"b\"" "b"
        (begin
@@ -94,6 +109,12 @@
          (hash-table-put! h-eq 'c #\c)
          (hash-table-get  h-eq 'c)))
 
+(test* "d adjoin" "D"
+       (begin
+         (hash-table-adjoin! h-eq 'd "D")
+         (hash-table-adjoin! h-eq 'd "d")
+         (hash-table-get h-eq 'd)))
+
 (test* "e => 10" 10
        (begin
          (hash-table-put! h-eq 'e 8)
@@ -106,14 +127,14 @@
          (hash-table-update! h-eq 'f (^x (+ x 1)) 2)
          (hash-table-get h-eq 'f)))
 
-(test* "eq? test" 7
+(test* "eq? test" 8
        (begin
          (hash-table-put! h-eq (string #\d) 4)
          (hash-table-put! h-eq (string #\d) 5)
          (length (hash-table-keys h-eq))))
 
 (test* "hash-table-values(1)" #t
-       (lset= equal? (hash-table-values h-eq) '(8 "b" #\c 3 4 5 10)))
+       (lset= equal? (hash-table-values h-eq) '(7 "b" #\c "D" 3 4 5 10)))
 
 (test* "delete!" '(#t #f #f)
        (let* ((a (hash-table-delete! h-eq 'c))

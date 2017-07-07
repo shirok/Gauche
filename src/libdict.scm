@@ -271,6 +271,12 @@
 (define-cproc hash-table-put! (hash::<hash-table> key value) ::<void>
   (Scm_HashTableSet hash key value 0))
 
+(define-cproc hash-table-adjoin! (hash::<hash-table> key value) ::<void>
+  (Scm_HashTableSet hash key value SCM_DICT_NO_OVERWRITE))
+
+(define-cproc hash-table-replace!  (hash::<hash-table> key value) ::<void>
+  (Scm_HashTableSet hash key value SCM_DICT_NO_CREATE))
+
 ;; this is hash-table-remove! in STk.  I use `delete' for
 ;; it's consistent with SRFI-1 and dbm-delete!.
 (define-cproc hash-table-delete! (hash::<hash-table> key) ::<boolean>
@@ -370,6 +376,12 @@
 
 (define-cproc tree-map-put! (tm::<tree-map> key val) ::<void>
   (Scm_TreeMapSet tm key val 0))
+
+(define-cproc tree-map-adjoin! (tm::<tree-map> key val) ::<void>
+  (Scm_TreeMapSet tm key val SCM_DICT_NO_OVERWRITE))
+
+(define-cproc tree-map-replace! (tm::<tree-map> key val) ::<void>
+  (Scm_TreeMapSet tm key val SCM_DICT_NO_CREATE))
 
 (define-cproc tree-map-delete! (tm::<tree-map> key) ::<boolean>
   (return (not (SCM_UNBOUNDP (Scm_TreeMapDelete tm key)))))

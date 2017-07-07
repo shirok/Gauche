@@ -29,11 +29,21 @@
            (begin (tree-map-put! tree1 2 'foo)
                   (tree-map-put! tree1 2 'bar)
                   (tree-map-get tree1 2)))
-    '(test* "tree-map-check" #t
-            (tree-map-check tree1))
-    (test* "tree-map-fold" '(2 bar 1 "1" 0 "0")
+    (test* "tree-map-adjoin! (no overwrite)" 'bar
+           (begin (tree-map-adjoin! tree1 2 'foo)
+                  (tree-map-get tree1 2)))
+    (test* "tree-map-replace! (nonexistent)" #f
+           (begin (tree-map-replace! tree1 3 'foo)
+                  (tree-map-get tree1 3 #f)))
+    (test* "tree-map-adjoin! (nonexistent)" 'baz
+           (begin (tree-map-adjoin! tree1 3 'baz)
+                  (tree-map-get tree1 3)))
+    (test* "tree-map-replace! (exists)" 'boo
+           (begin (tree-map-replace! tree1 3 'boo)
+                  (tree-map-get tree1 3)))
+    (test* "tree-map-fold" '(3 boo 2 bar 1 "1" 0 "0")
            (tree-map-fold tree1 list* '()))
-    (test* "tree-map-fold-right" '(0 "0" 1 "1" 2 bar)
+    (test* "tree-map-fold-right" '(0 "0" 1 "1" 2 bar 3 boo)
            (tree-map-fold-right tree1 list* '()))
     (test* "tree-map-delete! (exiting key)" '(#t not-found)
            (let1 r (tree-map-delete! tree1 1)
