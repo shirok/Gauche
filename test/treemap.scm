@@ -5,6 +5,9 @@
 (use gauche.test)
 (test-start "treemap")
 
+(define %tree-map-check-consistency
+  (with-module gauche.internal %tree-map-check-consistency))
+
 ;; Basic stuff
 (define (do-tree-map ctor)
   (let1 tree1 #f

@@ -62,7 +62,7 @@
 
 (define-method referencer ((obj <tree-map>))
   (define (ref o k from-right)
-    (let loop ((i k) (iter (%tree-map-iter o)))
+    (let loop ((i k) (iter ((with-module gauche.internal %tree-map-iter) o)))
       (cond [(zero? i) (receive (k v) (iter #f from-right) (cons k v))]
             [else (iter #f from-right) (loop (- i 1) iter)])))
   (^[o i . opt]

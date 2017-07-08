@@ -1,3 +1,8 @@
+2017-07-07  Shiro Kawai  <shiro@acm.org>
+
+	* src/libdict.scm: Move internal procedures (%tree-map-iter etc.) to
+	  gauche.internal.  They're not supposed to be exposed.
+
 2017-07-06  Shiro Kawai  <shiro@acm.org>
 
 	* src/libdict.scm: Add {hash-table|tree-map}-{adjoin!|replace!}.

@@ -408,6 +408,7 @@
 (define-cproc tree-map-num-entries (tm::<tree-map>) ::<int>
   (return (Scm_TreeCoreNumEntries (SCM_TREE_MAP_CORE tm))))
 
+(select-module gauche.internal)
 (define-cproc %tree-map-bound (tm::<tree-map> min::<boolean> pop::<boolean>)
   (let* ([op::ScmTreeCoreBoundOp (?: min SCM_TREE_CORE_MIN SCM_TREE_CORE_MAX)]
          [e::ScmDictEntry*
@@ -429,18 +430,22 @@
        (return (values (SCM_DICT_KEY e) (SCM_DICT_VALUE e))))))
  )
 
+(select-module gauche.internal)
 (define-cproc %tree-map-iter (tm::<tree-map>)
   (let* ([iter::ScmTreeIter* (SCM_NEW ScmTreeIter)])
     (Scm_TreeIterInit iter (SCM_TREE_MAP_CORE tm) NULL)
     (return (Scm_MakeSubr tree_map_iter iter 2 0 '"tree-map-iterator"))))
 
+(select-module gauche.internal)
 (define-cproc %tree-map-check-consistency (tm::<tree-map>)
   (Scm_TreeCoreCheckConsistency (SCM_TREE_MAP_CORE tm))
   (return '#t))
 
+(select-module gauche.internal)
 (define-cproc %tree-map-dump (tm::<tree-map>) ::<void>
   (Scm_TreeMapDump tm SCM_CUROUT))
 
+(select-module gauche)
 (define-cproc tree-map-clear! (tm::<tree-map>) ::<void>
   (Scm_TreeCoreClear (SCM_TREE_MAP_CORE tm)))
 

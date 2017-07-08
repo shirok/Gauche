@@ -55,15 +55,19 @@
 
 (define (tree-map-empty? tm) (zero? (tree-map-num-entries tm)))
 
-(define (tree-map-min tm) (%tree-map-bound tm #t #f))
-(define (tree-map-max tm) (%tree-map-bound tm #f #f))
-(define (tree-map-pop-min! tm) (%tree-map-bound tm #t #t))
-(define (tree-map-pop-max! tm) (%tree-map-bound tm #f #t))
+(define (tree-map-min tm)
+  ((with-module gauche.internal %tree-map-bound) tm #t #f))
+(define (tree-map-max tm)
+  ((with-module gauche.internal %tree-map-bound) tm #f #f))
+(define (tree-map-pop-min! tm)
+  ((with-module gauche.internal %tree-map-bound) tm #t #t))
+(define (tree-map-pop-max! tm)
+  ((with-module gauche.internal %tree-map-bound) tm #f #t))
 
 (define (%tree-map-fold tm kons knil backward)
   (assume-type tm <tree-map>)
   (let ((eof (cons #f #f))              ;marker
-        (i (%tree-map-iter tm)))
+        (i ((with-module gauche.internal %tree-map-iter) tm)))
     (let loop ((r knil))
       (receive (k v) (i eof backward)
         (if (eq? k eof)
@@ -79,7 +83,7 @@
 (define (tree-map-seek tm pred succ fail)
   (assume-type tm <tree-map>)
   (let ((eof (cons #f #f))              ;marker
-        (i (%tree-map-iter tm)))
+        (i ((with-module gauche.internal %tree-map-iter) tm)))
     (let loop ()
       (receive [k v] (i eof #f)
         (cond [(eq? k eof) (fail)]

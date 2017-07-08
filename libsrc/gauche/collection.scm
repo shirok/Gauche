@@ -100,7 +100,7 @@
 
 (define-method call-with-iterator ((coll <tree-map>) proc :allow-other-keys)
   (let ([eof-marker (cons #f #f)]
-        [iter (%tree-map-iter coll)])
+        [iter ((with-module gauche.internal %tree-map-iter) coll)])
     (receive (k v) (iter eof-marker #f)
       (proc (cut eq? k eof-marker)
             (^[] (begin0 (cons k v)
