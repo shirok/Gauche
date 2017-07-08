@@ -313,11 +313,13 @@
        (return (values (SCM_DICT_KEY e) (SCM_DICT_VALUE e))))))
  )
 
+(select-module gauche.internal)
 (define-cproc %hash-table-iter (hash::<hash-table>)
   (let* ([iter::ScmHashIter* (SCM_NEW ScmHashIter)])
     (Scm_HashIterInit iter (SCM_HASH_TABLE_CORE hash))
     (return (Scm_MakeSubr hash_table_iter iter 1 0 '"hash-table-iterator"))))
 
+(select-module gauche)
 (define-cproc hash-table-copy (hash::<hash-table>)   Scm_HashTableCopy)
 (define-cproc hash-table-keys (hash::<hash-table>)   Scm_HashTableKeys)
 (define-cproc hash-table-values (hash::<hash-table>) Scm_HashTableValues)

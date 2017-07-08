@@ -92,7 +92,7 @@
 
 (define-method call-with-iterator ((coll <hash-table>) proc :allow-other-keys)
   (let ([eof-marker (cons #f #f)]
-        [iter (%hash-table-iter coll)])
+        [iter ((with-module gauche.internal %hash-table-iter) coll)])
     (receive (k v) (iter eof-marker)
       (proc (cut eq? k eof-marker)
             (^[] (begin0 (cons k v)

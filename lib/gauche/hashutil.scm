@@ -54,7 +54,7 @@
 (define (hash-table-map hash proc)
   (assume-type hash <hash-table>)
   (let ([eof (cons #f #f)]              ;marker
-        [i   (%hash-table-iter hash)])
+        [i   ((with-module gauche.internal %hash-table-iter) hash)])
     (let loop ([r '()])
       (receive [k v] (i eof)
         (if (eq? k eof)
@@ -64,7 +64,7 @@
 (define (hash-table-for-each hash proc)
   (assume-type hash <hash-table>)
   (let ([eof (cons #f #f)]              ;marker
-        [i (%hash-table-iter hash)])
+        [i ((with-module gauche.internal %hash-table-iter) hash)])
     (let loop ()
       (receive [k v] (i eof)
         (unless (eq? k eof)
@@ -73,7 +73,7 @@
 (define (hash-table-fold hash kons knil)
   (assume-type hash <hash-table>)
   (let ([eof (cons #f #f)]              ;marker
-        [i (%hash-table-iter hash)])
+        [i ((with-module gauche.internal %hash-table-iter) hash)])
     (let loop ([r knil])
       (receive [k v] (i eof)
         (if (eq? k eof)
@@ -83,7 +83,7 @@
 (define (hash-table-seek hash pred succ fail)
   (assume-type hash <hash-table>)
   (let ([eof (cons #f #f)]              ;marker
-        [i (%hash-table-iter hash)])
+        [i ((with-module gauche.internal %hash-table-iter) hash)])
     (let loop ()
       (receive [k v] (i eof)
         (cond [(eq? k eof) (fail)]
