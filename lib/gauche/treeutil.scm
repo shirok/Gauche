@@ -37,7 +37,8 @@
           tree-map-seek tree-map-fold tree-map-fold-right
           tree-map-map tree-map-for-each
           tree-map-keys tree-map-values
-          tree-map->alist alist->tree-map)
+          tree-map->alist alist->tree-map
+          tree-map-compare)
   )
 (select-module gauche.treeutil)
 
@@ -110,3 +111,47 @@
     (dolist (kv alist)
       (tree-map-put! tm (car kv) (cdr kv)))))
 
+(define (tree-map-compare tm1 tm2
+                          :optional (value=? equal?)
+                                    (fallback (undefined)))
+  (define eof (cons #f #f))
+  (define (fail)
+    (if (undefined? fallback)
+      (error "tree-maps can't be ordered:" tm1 tm2)
+      fallback))
+  (define key-cmp
+    (let ([c1 (tree-map-comparator tm1)]
+          [c2 (tree-map-comparator tm2)])
+      (cond [(and c1 c2 (equal? c1 c2)) c1]
+            [(or c1 c2) (error "tree-maps with different comparators can't be \
+                                compared:" tm1 tm2)]
+            [else (error "tree-maps don't have comparators and can't be \
+                          compared:" tm1 tm2)])))
+  (if (eq? tm1 tm2)
+    0                                   ;fast path
+    (let ([i1 ((with-module gauche.internal %tree-map-iter) tm1)]
+          [i2 ((with-module gauche.internal %tree-map-iter) tm2)])
+      (define (loop k1 v1 k2 v2 r)
+        (if (eq? k1 eof)
+          (if (eq? k2 eof)
+            r
+            (if (<= r 0) -1 (fail)))
+          (if (eq? k2 eof)
+            (if (>= r 0) 1 (fail))
+            (case (comparator-compare key-cmp k1 k2)
+              [(0)  (if (value=? v1 v2)
+                      (receive (k1 v1) (i1 eof #f)
+                        (receive (k2 v2) (i2 eof #f)
+                          (loop k1 v1 k2 v2 r)))
+                      (fail))]
+              [(-1) (if (>= r 0)
+                      (receive (k1 v1) (i1 eof #f)
+                        (loop k1 v1 k2 v2 1))
+                      (fail))]
+              [else (if (<= r 0)
+                      (receive (k2 v2) (i2 eof #f)
+                        (loop k1 v1 k2 v2 -1))
+                      (fail))]))))
+      (receive (k1 v1) (i1 eof #f)
+        (receive (k2 v2) (i2 eof #f)
+          (loop k1 v1 k2 v2 0))))))

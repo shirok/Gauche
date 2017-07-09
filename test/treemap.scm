@@ -459,5 +459,43 @@
          (tree-map-put! tmap 3 'z))
   )
 
+(let* ([tm1 (alist->tree-map '((1 . "a") (2 . "b") (3 . "c"))
+                             default-comparator)]
+       [tm2 (alist->tree-map '((1 . "a") (2 . "b") (3 . "c") (4 . "d"))
+                             default-comparator)]
+       [tm3 (alist->tree-map '((2 . "b") (4 . "d"))
+                             default-comparator)]
+       [tm4 (alist->tree-map '((3 . "c") (2 . "b") (1 . "a"))
+                             default-comparator)]
+       [tm5 (alist->tree-map '((1 . "a") (2 . "b") (3 . "x"))
+                             default-comparator)]
+       [tm6 (alist->tree-map '((1 . "a") (2 . "b") (3 . "c"))
+                             (make-comparator integer? eqv? < #f))]
+       [tm5 (alist->tree-map '((2 . "B") (1 . "a") (3 . "C"))
+                             default-comparator)])
+  (test* "compare - same" 0 (tree-map-compare tm1 tm1))
+  (test* "compare - different comparator"
+         (test-error <error> #/different comparator/)
+         (tree-map-compare tm1 tm6))
+  (test* "compare <" -1
+         (tree-map-compare tm1 tm2))
+  (test* "compare >" 1
+         (tree-map-compare tm2 tm1))
+  (test* "compare <" -1
+         (tree-map-compare tm3 tm2))
+  (test* "compare >" 1
+         (tree-map-compare tm2 tm3))
+  (test* "compare =" 0
+         (tree-map-compare tm1 tm4))
+  (test* "compare - unorderable" (test-error <error> #/can't be ordered/)
+         (tree-map-compare tm1 tm5))
+  (test* "compare - unorderable, fallback" #f
+         (tree-map-compare tm1 tm5 equal? #f))
+  (test* "compare - custom value=?" #f
+         (tree-map-compare tm1 tm5 string=? #f))
+  (test* "compare - custom value=?" 0
+         (tree-map-compare tm1 tm5 string-ci=?))
+  )
+
 (test-end)
 
