@@ -201,7 +201,8 @@
                           tree-map-map tree-map-for-each
                           tree-map-keys tree-map-values
                           tree-map->alist alist->tree-map
-                          tree-map-compare)
+                          tree-map-compare-as-sets
+                          tree-map-compare-as-sequences)
 
 (autoload gauche.libutil  library-fold library-map library-for-each
                           library-exists? library-has-module?

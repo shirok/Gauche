@@ -11654,7 +11654,14 @@ the same as @code{make-tree-map}.
 @c COMMON
 @end defun
 
-@defun tree-map-compare tree-map1 tree-map2 :optional value=? fallback
+@c EN
+The following two procedures compares two tree maps with slightly different
+views.
+@c JP
+以下の二つの手続きは二つのツリーマップを比較しますが、見方が異なります。
+@c COMMON
+
+@defun tree-map-compare-as-sets tree-map1 tree-map2 :optional value=? fallback
 @c EN
 Compares two tree maps as sets of entries.  If we look at tree maps
 as sets of entries, we can define a partial order between two maps;
@@ -11701,33 +11708,83 @@ AはBより小さい、とします。
 @c COMMON
 
 @example
-(tree-map-compare
+(tree-map-compare-as-sets
  (alist->tree-map '((1 . a) (2 . b) (3 . c)) default-comparator)
  (alist->tree-map '((3 . c) (1 . a) (2 . b)) default-comparator))
  @result{} 0
 
-(tree-map-compare
+(tree-map-compare-as-sets
  (alist->tree-map '((1 . a) (3 . c)) default-comparator)
  (alist->tree-map '((3 . c) (1 . a) (2 . b)) default-comparator))
  @result{} -1
 
-(tree-map-compare
+(tree-map-compare-as-sets
  (alist->tree-map '((1 . a) (3 . c) (4 . d) (2 . b)) default-comparator)
  (alist->tree-map '((3 . c) (1 . a) (2 . b)) default-comparator))
  @result{} 1
 
-(tree-map-compare
+(tree-map-compare-as-sets
  (alist->tree-map '((1 . a) (3 . c) (4 . d)) default-comparator)
  (alist->tree-map '((3 . c) (1 . a) (2 . b)) default-comparator))
  @result{} ERROR: tree-maps can't be ordered
 
-(tree-map-compare
+(tree-map-compare-as-sets
  (alist->tree-map '((1 . a) (3 . c) (4 . d)) default-comparator)
  (alist->tree-map '((3 . c) (1 . a) (2 . b)) default-comparator)
  eq?
  #f)
  @result{} #f
 @end example
+@end defun
+
+@defun tree-map-compare-as-sequences tree-map1 tree-map2 :optional value-cmp
+@c EN
+Compares two tree maps as sequence of entries, ordered by keys.
+If both maps have entries with the same key, we use a comparator
+@var{value-cmp} to break the tie (naturally, @var{value-cmp} must
+have ordering predicate.)
+If @var{value-cmp} is omitted, @code{default-comparator} is used.
+
+The comparators of @var{tree-map1} and @var{tree-map2} must be
+the same (@code{equal?}), otherwise an error is signalled.
+@xref{Basic comparators}, about the comparators.
+
+If @var{tree-map1} and @var{tree-map2} are the same, 0 is
+returned.  If @var{tree-map1} is smaller than @var{tree-map2}, -1
+is returned.  If @var{tree-map1} is greater than @var{tree-map2}, 1
+is returned.
+
+Unlike @code{tree-map-compare-as-sets}, this procedure defines total order
+of tree maps which share the same comparator.
+@c JP
+二つのツリーマップを、キーの順序で並べられたエントリのシーケンスとして比較します。
+両マップにキーが同じであるエントリがあった場合は、
+対応する値同士を@var{value-cmp}比較器で比べます
+(従って、@var{value-cmp}は比較述語を持っていなければなりません。)
+@var{value-cmp}が省略された場合は@code{default-comparator}が使われます。
+
+@var{tree-map1}と@var{tree-map2}の比較器は@code{equal?}の意味で
+等しくなければなりません。比較器については@ref{Basic comparators}を参照してください。
+
+@var{tree-map1}と@var{tree-map2}が等しければ0が、
+@var{tree-map1}の方が@var{tree-map2}より小さければ-1が、
+@var{tree-map1}の方が@var{tree-map2}より大きければ1が返されます。
+
+@code{tree-map-compare-as-sets}と異なり、
+この手続きは比較器が同じであるようなツリーマップについて全順序関係を定義します。
+@c COMMON
+
+@example
+(tree-map-compare-as-sequences
+ (alist->tree-map '((1 . a) (3 . c)) default-comparator)
+ (alist->tree-map '((3 . c) (2 . b)) default-comparator))
+ @result{} -1
+
+(tree-map-compare-as-sequences
+ (alist->tree-map '((2 . b) (3 . d)) default-comparator)
+ (alist->tree-map '((3 . c) (2 . b)) default-comparator))
+ @result{} 1
+ @end example
 @end defun
 
 @c ----------------------------------------------------------------------

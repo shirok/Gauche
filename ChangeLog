@@ -1,6 +1,7 @@
-2017-07-08  shiro  <shiro@acm.org>
+2017-07-08  Shiro Kawai  <shiro@acm.org>
 
-	* lib/gauche/treeutil.scm (tree-map-compare): Added.
+	* lib/gauche/treeutil.scm (tree-map-compare-as-sets),
+	(tree-map-compare-as-sequences): Added.
 
 2017-07-07  Shiro Kawai  <shiro@acm.org>
 

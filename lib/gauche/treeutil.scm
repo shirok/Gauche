@@ -38,7 +38,8 @@
           tree-map-map tree-map-for-each
           tree-map-keys tree-map-values
           tree-map->alist alist->tree-map
-          tree-map-compare)
+          tree-map-compare-as-sets
+          tree-map-compare-as-sequences)
   )
 (select-module gauche.treeutil)
 
@@ -111,9 +112,10 @@
     (dolist (kv alist)
       (tree-map-put! tm (car kv) (cdr kv)))))
 
-(define (tree-map-compare tm1 tm2
-                          :optional (value=? equal?)
-                                    (fallback (undefined)))
+;; Compare two tree-maps as sets.
+(define (tree-map-compare-as-sets tm1 tm2
+                                  :optional (value=? equal?)
+                                  (fallback (undefined)))
   (define eof (cons #f #f))
   (define (fail)
     (if (undefined? fallback)
@@ -155,3 +157,37 @@
       (receive (k1 v1) (i1 eof #f)
         (receive (k2 v2) (i2 eof #f)
           (loop k1 v1 k2 v2 0))))))
+
+;; Compare tree maps as sequence.
+;; Returns as soon as difference is found.
+;; This gives total ordering, while compare-as-sets only gives partial ordering.
+(define (tree-map-compare-as-sequences tm1 tm2
+                                       :optional (value-cmp default-comparator))
+  (define eof (cons #f #f))
+  (define key-cmp
+    (let ([c1 (tree-map-comparator tm1)]
+          [c2 (tree-map-comparator tm2)])
+      (cond [(and c1 c2 (equal? c1 c2)) c1]
+            [(or c1 c2) (error "tree-maps with different comparators can't be \
+                                compared:" tm1 tm2)]
+            [else (error "tree-maps don't have comparators and can't be \
+                          compared:" tm1 tm2)])))
+  (if (eq? tm1 tm2)
+    0                                   ;fast path
+    (let ([i1 ((with-module gauche.internal %tree-map-iter) tm1)]
+          [i2 ((with-module gauche.internal %tree-map-iter) tm2)])
+      (define (loop k1 v1 k2 v2)
+        (if (eq? k1 eof)
+          (if (eq? k2 eof) 0 -1)
+          (if (eq? k2 eof)
+            1
+            (case (comparator-compare key-cmp k1 k2)
+              [(0)  (case (comparator-compare value-cmp v1 v2)
+                      [(0) (receive (k1 v1) (i1 eof #f)
+                             (receive (k2 v2) (i2 eof #f)
+                               (loop k1 v1 k2 v2)))]
+                      [else => identity])]
+              [else => identity]))))
+      (receive (k1 v1) (i1 eof #f)
+        (receive (k2 v2) (i2 eof #f)
+          (loop k1 v1 k2 v2))))))
