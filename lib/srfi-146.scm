@@ -538,12 +538,3 @@
   (make-comparator/compare mapping? #t compare #f))
 
 (define mapping-comparator (make-mapping-comparator default-comparator))
-
-;; Gauche-specific way to extend default comparator to handle mappings
-;; NB: If <mapping> is synonym to <tree-map>, we probably should put
-;; this in libdict.scm.
-(define-method object-compare ((a <mapping>) (b <mapping>))
-  (comparator-compare mapping-comprator a b))
-
-(define-method object-equal? ((a <mapping>) (b <mapping>))
-  (comparator-equal? mapping-comprator a b))

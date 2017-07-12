@@ -1,5 +1,8 @@
 2017-07-11  shiro  <shiro@acm.org>
 
+	* lib/gauche/treeutil.scm, src/treemap.c: Make treemaps comparable
+	  using tree-map-compare-as-sequences.
+
 	* src/gauche.h, src/class.c (Scm_ObjectCompare): Make it public API.
 	  Built-in classes can give this cfn as 'compare' function, then
 	  object-compare and object-equal? methods will work on the instances

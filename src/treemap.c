@@ -306,7 +306,8 @@ static void treemap_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
                Scm_TreeCoreNumEntries(SCM_TREE_MAP_CORE(tm)));
 }
 
-SCM_DEFINE_BUILTIN_CLASS(Scm_TreeMapClass, treemap_print, NULL, NULL, NULL,
+SCM_DEFINE_BUILTIN_CLASS(Scm_TreeMapClass, treemap_print, Scm_ObjectCompare,
+                         NULL, NULL,
                          SCM_CLASS_ORDERED_DICTIONARY_CPL);
 
 /*

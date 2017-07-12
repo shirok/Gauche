@@ -191,3 +191,14 @@
       (receive (k1 v1) (i1 eof #f)
         (receive (k2 v2) (i2 eof #f)
           (loop k1 v1 k2 v2))))))
+
+
+;; Gauche-specific way to extend default comparator to handle mappings
+;; NB: If <mapping> is synonym to <tree-map>, we probably should put
+;; this in libdict.scm.
+(define-method object-compare ((a <tree-map>) (b <tree-map>))
+  (tree-map-compare-as-sequences a b))
+
+(define-method object-equal? ((a <tree-map>) (b <tree-map>))
+  (= (tree-map-compare-as-sequences a b)) 0)
+
