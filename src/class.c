@@ -69,7 +69,6 @@ static ScmObj slot_set_using_accessor(ScmObj obj, ScmSlotAccessor *sa,
                                       ScmObj val);
 static ScmObj instance_allocate(ScmClass *klass, ScmObj initargs);
 
-static int    object_compare(ScmObj x, ScmObj y, int equalp);
 static ScmObj fallback_compare(ScmObj *, int, ScmGeneric *);
 
 static ScmObj builtin_initialize(ScmObj *, int, ScmGeneric *);
@@ -387,7 +386,7 @@ static ScmObj class_allocate(ScmClass *klass, ScmObj initargs)
     ScmClass *instance = SCM_NEW_INSTANCE(ScmClass, klass);
     instance->allocate = NULL;  /* will be set when CPL is set */
     instance->print = NULL;
-    instance->compare = object_compare;
+    instance->compare = Scm_ObjectCompare;
     instance->serialize = NULL; /* class_serialize? */
     instance->cpa = NULL;
     instance->numInstanceSlots = 0; /* will be adjusted in class init */
@@ -1968,7 +1967,7 @@ static SCM_DEFINE_METHOD(object_initialize_rec,
 
 /* Default equal? delegates compare action to generic function object-equal?.
    We can't use VMApply here */
-static int object_compare(ScmObj x, ScmObj y, int equalp)
+int Scm_ObjectCompare(ScmObj x, ScmObj y, int equalp)
 {
     ScmObj r;
     if (equalp) {

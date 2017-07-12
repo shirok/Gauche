@@ -814,6 +814,10 @@ SCM_EXTERN void Scm_InitStaticClassWithMeta(ScmClass *klass,
                                             int flags);
 SCM_EXTERN ScmObj Scm_ShortClassName(ScmClass *klass); /* strip '<' and '>' */
 
+/* Use this in 'compare' slot to allow Scheme method to define
+   compare/equal? behavior thru object-compare/object-equal? */
+SCM_EXTERN int Scm_ObjectCompare(ScmObj x, ScmObj y, int equalp);
+
 /* OBSOLETE */
 SCM_EXTERN void Scm_InitBuiltinClass(ScmClass *c, const char *name,
                                      ScmClassStaticSlotSpec *slots,
