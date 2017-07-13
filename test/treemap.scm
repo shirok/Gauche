@@ -384,6 +384,56 @@
   (test* "insertion case4b" #t (begin (i -0.4) (c)))
   )
 
+;; deletion during traversal
+(let ()
+  (define (make-tm) (alist->tree-map '((a . 1) (b . 2) (c . 3))
+                                     default-comparator))
+  (test* "deletion during traversal 1" '((b c) (a c) (a b))
+         (map (^s
+               (let1 tm (make-tm)
+                 ($ tree-map-fold tm
+                    (^[k v _] (when (eq? k s) (tree-map-delete! tm k)))
+                    #f)
+                 (sort (tree-map-keys tm))))
+              '(a b c)))
+  (test* "deletion during traversal 1 (reverse)" '((b c) (a c) (a b))
+         (map (^s
+               (let1 tm (make-tm)
+                 ($ tree-map-fold-right tm
+                    (^[k v _] (when (eq? k s) (tree-map-delete! tm k)))
+                    #f)
+                 (sort (tree-map-keys tm))))
+              '(a b c)))
+  (test* "deletion during traversal 2" '((a) (b) (c))
+         (map (^s
+               (let1 tm (make-tm)
+                 ($ tree-map-fold tm
+                    (^[k v _] (unless (eq? k s) (tree-map-delete! tm k)))
+                    #f)
+                 (sort (tree-map-keys tm))))
+              '(a b c)))
+  (test* "deletion during traversal 2 (reverse)" '((a) (b) (c))
+         (map (^s
+               (let1 tm (make-tm)
+                 ($ tree-map-fold-right tm
+                    (^[k v _] (unless (eq? k s) (tree-map-delete! tm k)))
+                    #f)
+                 (sort (tree-map-keys tm))))
+              '(a b c)))  
+  (test* "deletion during traversal 3" '(() () ())
+         (map (^s
+               (let1 tm (make-tm)
+                 (tree-map-fold tm (^[k v _] (tree-map-delete! tm k)) #f)
+                 (sort (tree-map-keys tm))))
+              '(a b c)))
+  (test* "deletion during traversal 3 (reverse)" '(() () ())
+         (map (^s
+               (let1 tm (make-tm)
+                 (tree-map-fold-right tm (^[k v _] (tree-map-delete! tm k)) #f)
+                 (sort (tree-map-keys tm))))
+              '(a b c)))  
+  )
+
 ;;
 ;; tree-map-{floor|ceiling|predecessor|successor}
 ;;
