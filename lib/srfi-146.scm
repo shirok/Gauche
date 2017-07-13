@@ -32,7 +32,7 @@
 ;;;
 
 (define-module srfi-146
-  (export mapping mapping-unfold
+  (export mapping mapping-unfold mapping/ordered mapping-unfold/ordered
 	  mapping? mapping-contains? mapping-empty? mapping-disjoint?
 	  mapping-ref mapping-ref/default
           mapping-key-comparator
@@ -54,6 +54,7 @@
 	  mapping-filter mapping-filter! mapping-remove mapping-remove!
 	  mapping-partition mapping-partition!
 	  mapping-copy mapping->alist alist->mapping alist->mapping!
+          alist->mapping/ordered alist->mapping/ordered!
 
 	  mapping=? mapping<? mapping>? mapping<=? mapping>=?
 	  mapping-union mapping-intersection mapping-difference mapping-xor
@@ -104,6 +105,10 @@
         [(p seed) m]
       (receive (k v) (f seed)
         (tree-map-adjoin! m k v)))))
+
+;; We don't take advantage of, neither check, the ordered keys.
+(define mapping/ordered mapping)
+(define mapping-unfold/ordered mapping-unfold)
 
 (define (mapping-empty? m) (tree-map-empty? m))
 (define (mapping-contains? m key) (tree-map-exists? m key))
@@ -384,6 +389,10 @@
   (dolist [p alist]
     (tree-map-adjoin! m (car p) (cdr p)))
   m)
+
+;; we don't take advantage of, neither check, ordered keys
+(define alist->mapping/ordered alist->mapping)
+(define alist->mapping/ordered! alist->mapping!)
 
 (define (%mapping-cmp v=? pred ms)
   (let loop ([ms ms])
