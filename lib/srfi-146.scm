@@ -1,6 +1,35 @@
 ;;;
 ;;; srfi-146 - mappings
 ;;;
+;;;   Copyright (c) 2017  Shiro Kawai  <shiro@acm.org>
+;;;
+;;;   Redistribution and use in source and binary forms, with or without
+;;;   modification, are permitted provided that the following conditions
+;;;   are met:
+;;;
+;;;   1. Redistributions of source code must retain the above copyright
+;;;      notice, this list of conditions and the following disclaimer.
+;;;
+;;;   2. Redistributions in binary form must reproduce the above copyright
+;;;      notice, this list of conditions and the following disclaimer in the
+;;;      documentation and/or other materials provided with the distribution.
+;;;
+;;;   3. Neither the name of the authors nor the names of its contributors
+;;;      may be used to endorse or promote products derived from this
+;;;      software without specific prior written permission.
+;;;
+;;;   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+;;;   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+;;;   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+;;;   A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+;;;   OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+;;;   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED
+;;;   TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+;;;   PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+;;;   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+;;;
 
 (define-module srfi-146
   (export mapping mapping-unfold
@@ -16,6 +45,7 @@
 	  mapping-intern mapping-intern!
 	  mapping-update mapping-update!
           mapping-update/default mapping-update!/default
+          mapping-pop mapping-pop!
 	  mapping-search mapping-search!
 	  mapping-size mapping-find mapping-count
           mapping-any? mapping-every?
@@ -40,14 +70,15 @@
 	  mapping-split
 	  mapping-catenate mapping-catenate!
 	  mapping-map/monotone mapping-map/monotone!
-	  mapping-fold/reverse))
+	  mapping-fold/reverse
+
+          ;; builtin
+          comparator?))
 (select-module srfi-146)
 
 ;; We provide <tree-map> as mapping.
 (define <mapping> <tree-map>)
 (define (mapping? m) (is-a? m <mapping>))
-
-(define (%make-mapping comparator) (make-tree-map comparator))
 
 (define-syntax dopairs
   (syntax-rules ()
@@ -188,7 +219,7 @@
     (if (eq? v v1)
       m                               ; no action needed
       (rlet1 t (tree-map-copy m)
-        (tree-map-put! t k v)))))
+        (tree-map-put! t k v1)))))
 
 (define (mapping-update! m k updater
                         :optional
@@ -199,7 +230,7 @@
          [v1 (if (eq? v %unique)
                (updater (failure))
                (updater (success v)))])
-    (tree-map-put! m k v))
+    (tree-map-put! m k v1))
   m)
 
 (define (mapping-update/default m k updater default)
@@ -207,6 +238,22 @@
 
 (define (mapping-update!/default m k updater default)
   (mapping-update! m k updater (lambda () default)))
+
+(define (mapping-pop! m
+                      :optional
+                      (failure (^[] (error "can't pop from an empty map"))))
+  (assume-type m <mapping>)
+  (if-let1 p (tree-map-pop-min! m)
+    (values m (car p) (cdr p))
+    (failure)))
+
+(define (mapping-pop m 
+                     :optional
+                     (failure (^[] (error "can't pop from an empty map"))))
+  (assume-type m <mapping>)
+  (if (tree-map-empty? m)
+    (failure)                           ;avoid unnecessary copying
+    (mapping-pop! (mapping-copy m))))
 
 (define (mapping-search m k failure success)
   (assume-type m <mapping>)
@@ -373,7 +420,7 @@
   (apply mapping-union! (mapping-copy m1) more))
 
 (define (%intersection-2! m1 m2)
-  (tree-map-for-each m2 (^[k v] (unless (tree-map-get m1 k #f)
+  (tree-map-for-each m1 (^[k v] (unless (tree-map-get m2 k #f)
                                   (tree-map-delete! m1 k))))
   m1)
 
@@ -386,12 +433,11 @@
   (apply mapping-intersection! (mapping-copy m1) more))
 
 (define (%difference-2! m1 m2)
-  (tree-map-for-each m2 (^[k v] (when (tree-map-get m1 k #f)
-                                  (tree-map-delete! m1 k))))
+  (tree-map-for-each m2 (^[k v] (tree-map-delete! m1 k)))
   m1)
 
 (define (mapping-difference! m1 . more)
-  (let1 loop ([m1 m1] [more more])
+  (let loop ([m1 m1] [more more])
     (if (null? more)
       m1
       (loop (%difference-2! m1 (car more)) (cdr more)))))
@@ -428,7 +474,7 @@
 
 (define (mapping-max-value m)
   (assume-type m <mapping>)
-  (if-let1 p (tree-map-min m)
+  (if-let1 p (tree-map-max m)
     (cdr p)
     (error "Can't get min key from an empty map:" m)))
 
@@ -452,7 +498,7 @@
      (begin
        (define (name! m probe)
          (assume-type m <mapping>)
-         (let1 cmpr (comparator-comparison-procedure (tree-map-comparator m))
+         (let1 cmpr (tree-map-comparator m)
            ($ tree-map-for-each m
               (^[k v] (unless (op (comparator-compare cmpr k probe) 0)
                         (tree-map-delete! m k)))))
@@ -469,11 +515,11 @@
 (define (mapping-split m probe)
   (assume-type m <mapping>)
   ;; no more efficient than calling each one
-  (values (mapping-range= m probe)
-          (mapping-range< m probe)
+  (values (mapping-range< m probe)
           (mapping-range<= m probe)
-          (mapping-range> m probe)
-          (mapping-range>= m probe)))
+          (mapping-range= m probe)
+          (mapping-range>= m probe)
+          (mapping-range> m probe)))
 
 (define (%mapping-catenate! cmpr m1 key val m2 reuse?)
   (define (too-small key m)

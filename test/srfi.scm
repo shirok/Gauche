@@ -1964,6 +1964,13 @@
 (use srfi-146)
 (test-module 'srfi-146)
 
+(define-module srfi-146-tests
+  (use srfi-1)
+  (use srfi-64)
+  (use srfi-146)
+  (include "include/srfi-146-tests.scm")
+  (run-tests))
+
 ;;-----------------------------------------------------------------------
 (test-section "srfi-147")
 
