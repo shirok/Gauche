@@ -87,6 +87,7 @@ static Node *next_node(Node *n);
 static Node *prev_node(Node *n);
 static Node *delete_node(ScmTreeCore *tc, Node *n);
 static Node *copy_tree(Node *parent, Node *self);
+static int   node_cleared_p(Node *n);
 
 /*
  * Public API
@@ -201,6 +202,18 @@ int Scm_TreeCoreEq(ScmTreeCore *a, ScmTreeCore *b)
     }
 }
 
+static ScmDictEntry *advance_iter(ScmDictEntry *e)
+{
+    if (e) return (ScmDictEntry*)next_node((Node*)e);
+    else return NULL;
+}
+
+static ScmDictEntry *retrogress_iter(ScmDictEntry *e)
+{
+    if (e) return (ScmDictEntry*)prev_node((Node*)e);
+    else return NULL;
+}
+
 /* START can be NULL; in which case, if next call is TreeIterNext,
    it iterates from the minimum node; if next call is TreeIterPrev,
    it iterates from the maximum node. */
@@ -212,42 +225,52 @@ void Scm_TreeIterInit(ScmTreeIter *iter,
         Scm_Error("Scm_TreeIterInit: iteration start point is not a part of the tree.");
     }
     iter->t = tc;
-    iter->e = start;
-    iter->at_end = FALSE;
+    iter->c = start;
+    iter->n = (start
+               ? advance_iter(start)
+               : Scm_TreeCoreGetBound(iter->t, SCM_TREE_CORE_MIN));
+    iter->p = (start
+               ? retrogress_iter(start)
+               : Scm_TreeCoreGetBound(iter->t, SCM_TREE_CORE_MAX));
 }
 
+/* Mind that the 'current' node might be deleted. */
 ScmDictEntry *Scm_TreeIterNext(ScmTreeIter *iter)
 {
-    if (iter->at_end) return NULL;
-    if (iter->e) {
-        iter->e = (ScmDictEntry*)next_node((Node*)iter->e);
+    if (node_cleared_p((Node*)iter->c)) {
+        iter->c = iter->n;
+        iter->p = retrogress_iter(iter->c);
+        iter->n = advance_iter(iter->c);
     } else {
-        iter->e = Scm_TreeCoreGetBound(iter->t, SCM_TREE_CORE_MIN);
+        iter->p = iter->c;
+        iter->c = iter->n;
+        iter->n = advance_iter(iter->c);
     }
-    if (iter->e == NULL) iter->at_end = TRUE;
-    return iter->e;
+    return iter->c;
 }
 
 ScmDictEntry *Scm_TreeIterPrev(ScmTreeIter *iter)
 {
-    if (iter->at_end) return NULL;
-    if (iter->e) {
-        iter->e = (ScmDictEntry*)prev_node((Node*)iter->e);
+    if (node_cleared_p((Node*)iter->c)) {
+        iter->c = iter->p;
+        iter->n = advance_iter(iter->c);
+        iter->p = retrogress_iter(iter->c);
     } else {
-        iter->e = Scm_TreeCoreGetBound(iter->t, SCM_TREE_CORE_MAX);
+        iter->n = iter->c;
+        iter->c = iter->p;
+        iter->p = retrogress_iter(iter->c);
     }
-    if (iter->e == NULL) iter->at_end = TRUE;
-    return iter->e;
+    return iter->c;
 }
 
 ScmDictEntry *Scm_TreeIterCurrent(ScmTreeIter *iter)
 {
-    return iter->e;
+    return iter->c;
 }
 
 int Scm_TreeIterAtEnd(ScmTreeIter *iter)
 {
-    return iter->at_end;
+    return iter->c == NULL && (iter->p == NULL || iter->n == NULL);
 }
 
 /* consistency check */
@@ -457,6 +480,12 @@ static Node *new_node(Node *parent, intptr_t key)
 static void clear_node(Node *node)
 {
     node->parent = node->left = node->right = NULL;
+}
+
+static int node_cleared_p(Node *node)
+{
+    return (node && node->parent == NULL
+            && node->left == NULL && node->right == NULL);
 }
 
 /* replace N's position by M. M could be NULL. */
