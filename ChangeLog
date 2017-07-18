@@ -1,14 +1,19 @@
-2017-07-13  shiro  <shiro@acm.org>
+2017-07-18  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/configure.scm (cf-check-headers): Fix bug that passed
+	  a string, instead of a symbol, to cf-define.
+
+2017-07-13  Shiro Kawai <shiro@acm.org>
 
 	* lib/srfi-146.scm, tests/include/srfi-146-test.scm: Add srfi-146
 	  based on draft #10.  The API may change before finalization.
 
-2017-07-12  shiro  <shiro@acm.org>
+2017-07-12  Shiro Kawai <shiro@acm.org>
 
 	* src/treemap.c: Fix bug that deleting the current node during
 	  iterator traversal broke the iterator.
 
-2017-07-11  shiro  <shiro@acm.org>
+2017-07-11  Shiro Kawai <shiro@acm.org>
 
 	* lib/gauche/treeutil.scm, src/treemap.c: Make treemaps comparable
 	  using tree-map-compare-as-sequences.

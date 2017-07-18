@@ -558,16 +558,19 @@
 
 ;; API
 (define (cf-define symbol :optional (value 1))
+  (assume-type symbol <symbol>)
   (dict-put! (~ (ensure-package)'defs) symbol value))
 
 ;; API
 ;; Like AC_SUBST, but we require value (instead of implicitly referencing
 ;; a global variable.
 (define (cf-subst symbol value)
+  (assume-type symbol <symbol>)
   (dict-put! (~ (ensure-package)'substs) symbol value))
 
 ;; API
 (define (cf-have-subst? symbol)
+  (assume-type symbol <symbol>)
   (dict-exists? (~ (ensure-package)'substs) symbol))
 
 ;; API
@@ -577,16 +580,19 @@
 ;; called after cf-init and we can't include help message (the limitation
 ;; of one-pass processing.)
 (define (cf-arg-var symbol)
+  (assume-type symbol <symbol>)
   (update! (~ (ensure-package)'precious) (cut set-adjoin! <> symbol))
   (and-let1 v (sys-getenv (x->string symbol))
     (cf-subst symbol v)))
 
 (define (var-precious? symbol)
+  (assume-type symbol <symbol>)
   (set-contains? (~ (ensure-package)'precious) symbol))
 
 ;; API
 ;; Lookup the current value of the given variable.
 (define (cf-ref symbol :optional (default (undefined)))
+  (assume-type symbol <symbol>)
   (rlet1 v (dict-get (~ (ensure-package)'substs) symbol default)
     (when (undefined? v)
       (errorf "Configure variable ~s is not defined." symbol))))
@@ -1104,6 +1110,6 @@
                           :key (includes #f) (if-found #f) (if-not-found #f))
   (dolist [h header-files]
     (if (cf-check-header h :includes includes)
-      (begin (cf-define #"HAVE_~(safe-variable-name h)")
+      (begin (cf-define (string->symbol #"HAVE_~(safe-variable-name h)"))
              (when if-found (if-found h)))
       (when if-not-found (if-not-found h)))))
