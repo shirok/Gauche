@@ -48,6 +48,15 @@
   (inliner EQ) SCM_EQ)
 (define-cproc equal? (obj1 obj2) ::<boolean> :fast-flonum Scm_EqualP)
 
+;; This is used for the default comparator (see libomega.scm)
+(select-module gauche.internal)
+(define-cproc default-comparator-equal? (obj1 obj2) ::<boolean> :fast-flonum
+  (if (SCM_NUMBERP obj1)
+    (if (SCM_NUMBERP obj2)
+      (return (Scm_NumEq obj1 obj2))
+      (return FALSE))
+    (return (Scm_EqualP obj1 obj2))))
+
 ;;
 ;; Booleans
 ;;

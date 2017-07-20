@@ -89,7 +89,8 @@
   (make-comparator/compare string? string=? compare
                            default-hash 'string-comparator))
 (define default-comparator
-  (make-comparator/compare #t equal? compare default-hash 'default-comparator))
+  (make-comparator/compare #t (with-module gauche.internal default-comparator-equal?)
+                           compare default-hash 'default-comparator))
 
 ;; NB: srfi-128's make-eq-comparator and make-eqv-comparator will NOT
 ;; return eq-comparator and eqv-comparator.  They're defined in computil.scm.
