@@ -20,10 +20,10 @@
 ;; CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 ;; SOFTWARE.
 
-;;(define-library (srfi 147 test)
-;;  (export run-tests)
-;;  (include-library-declarations "../../custom-macro-transformers.scm")
-;;  (import (srfi 64))
+(define-library (srfi 147 test)
+  (export run-tests)
+  (include-library-declarations "../../custom-macro-transformers.scm")
+  (import (srfi 64))
   (begin
     (define (run-tests)
       (test-begin "SRFI 147")
@@ -145,4 +145,4 @@
 			     (list x y))))
       
       (test-end)))
-;;)
+)

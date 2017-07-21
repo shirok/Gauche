@@ -99,7 +99,7 @@ SCMFILES = srfi-0.scm \
        util/rbtree.scm util/sparse.scm util/dominator.scm \
        util/levenshtein.scm util/unification.scm \
        compat/chibi-test.scm compat/jfilter.scm compat/stk.scm \
-       compat/norational.scm \
+       compat/norational.scm compat/r7rs-srfi-tests.scm \
        file/filter.scm \
        rfc/mime-port.scm rfc/base64.scm rfc/uri.scm \
        rfc/cookie.scm rfc/quoted-printable.scm rfc/http.scm rfc/hmac.scm \

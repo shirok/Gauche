@@ -1968,6 +1968,7 @@
   (use srfi-1)
   (use srfi-64)
   (use srfi-146)
+  (use compat.r7rs-srfi-tests)
   (include "include/srfi-146-tests.scm")
   (run-tests))
 
@@ -1976,6 +1977,7 @@
 
 (define-module srfi-147-tests
   (use srfi-64)
+  (use compat.r7rs-srfi-tests)
   (include "include/srfi-147-tests.scm")
   (run-tests))
 

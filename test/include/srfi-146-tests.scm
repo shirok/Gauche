@@ -21,14 +21,14 @@
 ;; CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 ;; SOFTWARE.
 
-;; (define-library (srfi 146 test)
-;;   (export run-tests)
-;;   (import (scheme base)
-;; 	  (srfi 1)
-;; 	  (srfi 8)
-;; 	  (srfi 64)
-;; 	  (srfi 128)
-;; 	  (srfi 146))
+(define-library (srfi 146 test)
+  (export run-tests)
+  (import (scheme base)
+	  (srfi 1)
+	  (srfi 8)
+	  (srfi 64)
+	  (srfi 128)
+	  (srfi 146))
   (begin
     (define (run-tests)
       (test-begin "SRFI 146")
@@ -515,4 +515,4 @@
       (test-end "SRFI 146"))
 
     (define comparator (make-default-comparator)))
-;;)
+)
