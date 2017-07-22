@@ -32,7 +32,8 @@
 ;;;
 
 (define-module gauche.hashutil
-  (export hash-table hash-table-for-each hash-table-map hash-table-fold
+  (export hash-table hash-table-empty?
+          hash-table-for-each hash-table-map hash-table-fold
           hash-table-seek hash-table-find
           boolean-hash char-hash char-ci-hash string-hash string-ci-hash
           symbol-hash number-hash default-hash
@@ -50,6 +51,8 @@
 (define (hash-table cmpr . kvs)
   (rlet1 h (make-hash-table cmpr)
     (for-each (^[kv] (hash-table-put! h (car kv) (cdr kv))) kvs)))
+
+(define (hash-table-empty? h) (zero? (hash-table-num-entries h)))
 
 (define (hash-table-map hash proc)
   (assume-type hash <hash-table>)
