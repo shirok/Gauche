@@ -834,7 +834,8 @@ ScmDictEntry *Scm_HashIterNext(ScmHashIter *iter)
 
 static void hash_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx);
 
-SCM_DEFINE_BUILTIN_CLASS(Scm_HashTableClass, hash_print, NULL, NULL, NULL,
+SCM_DEFINE_BUILTIN_CLASS(Scm_HashTableClass, hash_print, Scm_ObjectCompare,
+                         NULL, NULL,
                          SCM_CLASS_DICTIONARY_CPL);
 
 ScmObj Scm_MakeHashTableSimple(ScmHashType type, unsigned int initSize)

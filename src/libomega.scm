@@ -199,6 +199,20 @@
         (^[] (object-hash obj))
         (^[] (%current-recursive-hash h))))))
 
+;; Make hashtable hashable.  For the time being, we ignore hashtable's
+;; comparators.
+(define-method object-hash ((h <hash-table>) hash)
+  (hash-table-fold h (^[k v r] (logxor (logxor (hash k) (hash v)) r)) 0))
+
+(define-method object-equal? ((a <hash-table>) (b <hash-table>))
+  (define (subset? x y)
+    (not (hash-table-find x (^[k v] (not (and (hash-table-exists? y k)
+                                              (=? default-comparator
+                                                  v (hash-table-get y k))))))))
+  (and (equal? (hash-table-comparator a) (hash-table-comparator b))
+       (subset? a b)
+       (subset? b a)))
+
 ;;; TEMPORARY for 0.9.x series
 ;;; Remove this after 1.0 release!!!
 ;;;
