@@ -1973,6 +1973,19 @@
   (run-tests))
 
 ;;-----------------------------------------------------------------------
+(test-section "srfi-146.hash")
+(use srfi-146.hash)
+(test-module 'srfi-146.hash)
+
+(define-module srfi-146-tests
+  (use srfi-1)
+  (use srfi-64)
+  (use srfi-146.hash)
+  (use compat.r7rs-srfi-tests)
+  (include "include/srfi-146-hash-tests.scm")
+  (run-tests))
+
+;;-----------------------------------------------------------------------
 (test-section "srfi-147")
 
 (define-module srfi-147-tests

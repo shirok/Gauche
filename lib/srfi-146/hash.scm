@@ -31,17 +31,6 @@
 	  hashmap-union! hashmap-intersection! hashmap-difference! hashmap-xor!
 	  make-hashmap-comparator
 	  hashmap-comparator
-	  hashmap-min-key hashmap-max-key
-	  hashmap-min-value hashmap-max-value
-	  hashmap-key-predecessor hashmap-key-successor
-	  hashmap-range= hashmap-range< hashmap-range>
-          hashmap-range<= hashmap-range>=
-	  hashmap-range=! hashmap-range<! hashmap-range>!
-          hashmap-range<=! hashmap-range>=!
-	  hashmap-split
-	  hashmap-catenate hashmap-catenate!
-	  hashmap-map/monotone hashmap-map/monotone!
-	  hashmap-fold/reverse
 
           ;; builtin
           comparator?))
@@ -214,9 +203,14 @@
                       :optional
                       (failure (^[] (error "can't pop from an empty map"))))
   (assume-type m <hashmap>)
-  (if-let1 p (hash-table-pop-min! m)
-    (values m (car p) (cdr p))
-    (failure)))
+  ;; We cheat to use internal iterator to avoid traversing whole hashtable
+  (let1 iter ((with-module gauche.internal %hash-table-iter) m)
+    (receive (k v) (iter %unique)
+      (if (eq? k %unique)
+        (failure)
+        (begin
+          (hash-table-delete! m k)
+          (values m k v))))))
 
 (define (hashmap-pop m 
                      :optional
@@ -342,7 +336,7 @@
 
 (define (hashmap->alist m)
   (assume-type m <hashmap>)
-  (hash-table-fold-right m acons '()))
+  (hash-table-fold m acons '()))
 
 (define (alist->hashmap cmpr alist)
   (assume-type cmpr <comparator>)
