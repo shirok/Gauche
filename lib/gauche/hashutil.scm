@@ -34,7 +34,7 @@
 (define-module gauche.hashutil
   (export hash-table hash-table-empty?
           hash-table-for-each hash-table-map hash-table-fold
-          hash-table-seek hash-table-find
+          hash-table-seek hash-table-find hash-table-compare-as-sets
           boolean-hash char-hash char-ci-hash string-hash string-ci-hash
           symbol-hash number-hash default-hash
           hash-bound hash-salt))
@@ -134,3 +134,52 @@
 
 ;; This is a placeholder to conform srfi-128.
 (define (hash-bound) (greatest-fixnum))
+
+;; Compare two hash-tables as sets.
+;; Lots of dupes from tree-map-compare-as-sets, and probably we should
+;;  
+(define (hash-table-compare-as-sets h1 h2
+                                    :optional (value=? equal?)
+                                    (fallback (undefined)))
+  (define eof (cons #f #f))
+  (define (fail)
+    (if (undefined? fallback)
+      (error "hash-tables can't be ordered:" h1 h2)
+      fallback))
+  (define key-cmp
+    (let ([c1 (tree-map-comparator h1)]
+          [c2 (tree-map-comparator h2)])
+      (cond [(and c1 c2 (equal? c1 c2)) c1]
+            [(or c1 c2) (error "hash-tables with different comparators can't be \
+                                compared:" h1 h2)]
+            [else (error "hash-tables don't have comparators and can't be \
+                          compared:" h1 h2)])))
+  (if (eq? h1 h2)
+    0                                   ;fast path
+    (let ([i1 ((with-module gauche.internal %hash-table-iter) h1)]
+          [i2 ((with-module gauche.internal %hash-table-iter) h2)])
+      (define (loop k1 v1 k2 v2 r)
+        (if (eq? k1 eof)
+          (if (eq? k2 eof)
+            r
+            (if (<= r 0) -1 (fail)))
+          (if (eq? k2 eof)
+            (if (>= r 0) 1 (fail))
+            (case (comparator-compare key-cmp k1 k2)
+              [(0)  (if (value=? v1 v2)
+                      (receive (k1 v1) (i1 eof)
+                        (receive (k2 v2) (i2 eof)
+                          (loop k1 v1 k2 v2 r)))
+                      (fail))]
+              [(-1) (if (>= r 0)
+                      (receive (k1 v1) (i1 eof)
+                        (loop k1 v1 k2 v2 1))
+                      (fail))]
+              [else (if (<= r 0)
+                      (receive (k2 v2) (i2 eof)
+                        (loop k1 v1 k2 v2 -1))
+                      (fail))]))))
+      (receive (k1 v1) (i1 eof)
+        (receive (k2 v2) (i2 eof)
+          (loop k1 v1 k2 v2 0))))))
+
