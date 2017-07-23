@@ -890,3 +890,13 @@ Built-in.  @xref{Conditionals}.
 アサンプション
 組み込みです。@ref{Conditionals}参照。
 
+
+srfi-149
+(syntax-rules)
+
+Basic syntax-rules template extensions
+The built-in @code{syntax-rules} support @code{srfi-149}.
+
+基本的なsyntax-rulesの拡張
+組み込みの@code{syntax-rules}は@code{srfi-149}に対応しています。
+
