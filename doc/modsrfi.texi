@@ -4770,10 +4770,10 @@ reverse-list->vector
 @end example
 
 @c EN
-The following procedures in srfi-43 are supported by srfi-113.
+The following procedures in srfi-43 are supported by srfi-133.
 @xref{Vector library}, for the description.
 @c JP
-以下の@code{srfi-43}の手続きは@code{srfi-113}でも同様にサポートされています。
+以下の@code{srfi-43}の手続きは@code{srfi-133}でも同様にサポートされています。
 説明は@ref{Vector library}を参照してください。
 @c COMMON
 
@@ -4799,13 +4799,13 @@ We explain the procedures that are not listed above.
 @c MOD srfi-43
 @c EN
 Like @code{vector-fold} and @code{vector-fold-right}
-in @code{srfi-113}, but @var{kons}
+in @code{srfi-133}, but @var{kons}
 takes an extra argument, the current index, as its first argument.
 So @var{kons} must accept @var{n}+2 arguments, where
 @var{n} is the number of given vectors.
 It is called as @code{(kons <index> <cumulated-value> <elt1> <elt2> ...)}.
 @c JP
-@code{srfi-113}の@code{vector-fold}と@code{vector-fold-right}と似ていますが、
+@code{srfi-133}の@code{vector-fold}と@code{vector-fold-right}と似ていますが、
 @var{kons}手続きは追加で、現在のインデックスを第一引数として取ります。
 従って、@var{n}を引数で与えられたベクタの数とすると、
 @var{kons}は@var{n+2}個の引数を取らなければなりません。
