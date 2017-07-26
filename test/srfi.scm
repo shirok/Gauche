@@ -1994,4 +1994,12 @@
   (include "include/srfi-147-tests.scm")
   (run-tests))
 
+;;-----------------------------------------------------------------------
+(test-section "srfi-151")
+(use srfi-151)
+(test-module 'srfi-151)
+
+(chibi-test
+ (include "include/srfi-151-tests.scm"))
+
 (test-end)
