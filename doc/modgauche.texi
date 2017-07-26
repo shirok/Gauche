@@ -22372,7 +22372,7 @@ is used (@pxref{Endianness}).
 @c COMMON
 @end defun
 
-@defun write-block vec :optional iport start end endian
+@defun write-block vec :optional oport start end endian
 @c MOD gauche.uvector
 @c EN
 An old name of @code{write-uvector}.  Supported for the backward
