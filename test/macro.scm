@@ -525,6 +525,14 @@
 
 (test "alt-elli2" '((a a) (b b) (c c)) (lambda () (alt-elli2 a b c)))
 
+;; https://srfi-email.schemers.org/srfi-148/msg/6115633
+(define-syntax alt-elli3
+  (syntax-rules ... (...)
+    [(m x y ...) 'ellipsis]
+    [(m x ...)   'literal]))
+
+(test "alt-elli3" 'literal (lambda () (alt-elli3 x ...)))
+
 ;;----------------------------------------------------------------------
 ;; cond, taken from R5RS section 7.3
 

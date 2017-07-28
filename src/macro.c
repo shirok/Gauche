@@ -345,24 +345,29 @@ static ScmObj id_memq(ScmObj name, ScmObj list)
 /* Check if obj is ellipsis.  What we really need is free-identifier=?,
    but we leave it for the new low-level macro subsystem.  This is a
    hack to make it work in most of the time. */
-static int isEllipsis(PatternContext *ctx, ScmObj obj)
+static int compare_ellipsis(ScmObj elli, ScmObj obj)
 {
-    if (SCM_FALSEP(ctx->ellipsis)) return FALSE;
     if (SCM_IDENTIFIERP(obj)) {
-        if (SCM_IDENTIFIERP(ctx->ellipsis)) {
+        if (SCM_IDENTIFIERP(elli)) {
             static ScmObj free_identifier_eq_proc = SCM_UNDEFINED;
             SCM_BIND_PROC(free_identifier_eq_proc, "free-identifier=?",
                           Scm_GaucheInternalModule());
             if (!SCM_NULLP(SCM_IDENTIFIER(obj)->env)) return FALSE;
             return !SCM_FALSEP(Scm_ApplyRec2(free_identifier_eq_proc,
-                                             ctx->ellipsis, obj));
-        } else {
-            return SCM_EQ(ctx->ellipsis,
+                                             elli, obj));
+        } else {        
+            return SCM_EQ(elli,
                           SCM_OBJ(Scm_UnwrapIdentifier(SCM_IDENTIFIER(obj))));
         }
     } else {
-        return SCM_EQ(ctx->ellipsis, obj);
+        return SCM_EQ(elli, obj);
     }
+}
+
+static int isEllipsis(PatternContext *ctx, ScmObj obj)
+{
+    if (SCM_FALSEP(ctx->ellipsis)) return FALSE; /* inside (... TEMPLATE) */
+    return compare_ellipsis(ctx->ellipsis, obj);
 }
 
 #define ELLIPSIS_FOLLOWING(Pat, Ctx)                                    \
@@ -563,6 +568,19 @@ static ScmSyntaxRules *compile_rules(ScmObj name,
     ctx.literals = preprocess_literals(literals, mod, env);
     ctx.mod = mod;
     ctx.env = env;
+
+    /* Corner case when literal contains the same (free-identifer=?) symbol
+       as ellipsis.  R7RS specifies the literal has precedence.
+       https://srfi-email.schemers.org/srfi-148/msg/6115633 */
+    if (!SCM_FALSEP(ellipsis)) {
+        ScmObj cp;
+        SCM_FOR_EACH(cp, ctx.literals) {
+            if (compare_ellipsis(ellipsis, SCM_CAR(cp))) {
+                ctx.ellipsis = FALSE;
+                break;
+            }
+        }
+    }
 
     ScmSyntaxRules *sr = make_syntax_rules(numRules);
     sr->name = name;
