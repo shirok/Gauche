@@ -106,7 +106,7 @@
           (:macro let/cc) (:macro begin0) (:macro fluid-let)
           (:macro values-ref values->list)
           (:macro ecase)
-          (:macro dotimes dolist while until)
+          (:macro dotimes dolist doplist while until)
           (:macro guard unwind-protect)
           (:macro cond-list)
           (:macro assume)

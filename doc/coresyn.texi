@@ -2646,72 +2646,155 @@ The tricky use of @code{letrec} in the expansion is to make
 @end defspec
 
 
-
-@defmac dotimes ([variable] expr [result]) body @dots{}
-@defmacx dolist ([variable] expr [result]) body @dots{}
+@defmac dotimes ([variable] num-expr [result]) body @dots{}
+@defmacx dolist ([variable] list-expr [result]) body @dots{}
 @c EN
-Imported from Common Lisp.  The full form are
-expanded as follows:
+Convenience loop syntaxes, imported from Common Lisp.
+They are not very Scheme-y, in a sense that these
+rely on some side-effects in @var{body} @dots{}.  Nevertheless these
+capture some common pattern in day-to-day scripting.
 @c JP
-Common Lispからの輸入です。完全なフォームは以下のように展開されます。
-@c COMMON
-@example
-(dotimes (variable expr result) body @dots{})
- @equiv{}
-(do ((limit expr)
-     (variable 0 (+ variable 1)))
-    ((>= variable expr) result)
-  body @dots{})
-
-(dolist (variable expr result) body @dots{})
- @equiv{}
-(begin
-  (for-each (lambda (variable) body @dots{}) expr)
-  (let ((variable '())) result))
-@end example
-
-@c EN
-(The reason we bind @var{variable} to @code{()} to evaluate @var{result}
-in @code{dolist} is the CL compatibility.)
-@c JP
-(@code{dolist}で@var{result}の評価時に@var{variable}を@code{()}に
-束縛しているのはCLとの互換性のためです。)
+Common Lispから輸入された、簡易なループ構文です。
+これらは、@var{body} @dots{}における副作用を前提としているという点で
+あまりSchemeっぽくありませんが、
+日常のスクリプティングでよく出てくるパターンを手軽に書けます。
 @c COMMON
 
 @c EN
-You can omit @var{result}, or both @var{result} and @var{variable}.
-That is, if the first argument has two elements, they're @var{variable}
-and @var{expr}.  In which case, the result of these forms is
-undefined.
-
-If both @var{result} and @var{variable} are omitted, these forms
-just repeatedly executes @var{body} @dots{}
-number of times determined by @var{expr}.
+You can use @code{dotimes} to repeat @var{body} @dots{} for a number
+of times given by @var{num-expr},
+and @code{dolist} to repeat @var{body} @dots{}
+while traversing a list given by @var{list-expr}.  While @var{body} @dots{}
+is evaluated,
+@var{variable} is bound to the current iteration count (in @code{dotimes}),
+or the current element in the list (in @code{dolist}).
 @c JP
-@var{result}、もしくは@var{result}と@var{variable}両方を省略することが
-できます。つまり、最初の引数が2要素であれば、それは@var{variable}と
-@var{expr}だということです。その場合、これらのフォームの結果は未定義です。
-
-もし@var{result}と@var{variable}の両方が省略されたら、
-@var{expr}で決定される回数だけ単に@var{body} @dots{}を繰り返し実行します。
+@code{dotimes}は、@var{num-expr}で与えられる回数@var{body} @dots{}を繰り返すのに、
+@code{dolist}は、@var{list-expr}で与えられるリストの各要素に対して
+@var{body} @dots{}を繰り返すのに使えます。@var{body} @dots{}の実行中、
+@var{variable}はそれまで繰り返した回数(@code{dotimes}の場合)もしくは
+現在のリスト要素(@code{dolist}の場合)に束縛されます。
 @c COMMON
 
 @example
-;; print "a" 10 times.
-(dotimes (10) (print "a")) 
+(dotimes (n 5) (write n))
+ @result{} @r{writes "12345"}
 
-;; print "a" (length lst) times.
-(dolist (lst) (print "a"))
+(dolist (v '(a b c d e)) (write v))
+ @result{} @r{writes "abcde"}
 @end example
 
 @c EN
-See also @ref{Eager comprehensions}, which provides
+If you don't need to refer to @var{variable}, you can omit it.
+For example, the following example prints @code{year!} 10 times:
+@c JP
+@var{variable}を使う必要がなければ省略することができます。
+次の例は@code{year!}を10回出力します。
+@c COMMON
+
+@example
+(dotimes (10) (print "yeah!"))
+@end example
+
+@c EN
+If the third element (@var{result}) is given in @code{dotimes} or
+@code{dolist}, it is evaluated after all repetition is done, and its result
+becomes the result of @code{dotimes}/@code{dolist}.  While @var{result}
+is evaluated, @var{variable} is bound to the number of repetitions 
+(in @code{dotimes}) or @code{()} (in @code{dolist}).
+It is supported because Common Lisp has it.
+@c JP
+3番めの要素@var{result}が@code{dotimes}や@code{dolist}に与えられた場合、
+その式はすべての繰り返しが終わった後で評価され、
+その結果が@code{dotimes}/@code{dolist}の値となります。
+@var{result}は、@var{variable}が繰り返しの総回数(@code{dotimes}の場合)
+もしくは@code{()}(@code{dolist}の場合)に束縛された環境で評価されます。
+これはCommon Lispに倣っています。
+@c COMMON
+
+@c EN
+Note that a fresh @var{variable} is bound for each iteration,
+as opposed to Common Lisp where @var{variable} is mutated.
+So if you create a closure closing @var{variable}, it won't be
+overwritten by the subsequent iteration.
+@c JP
+Common Lispと違い、新たな@var{variable}が繰り返しの度に束縛されます
+(Common Lispでは、一つの@var{variable}が繰り返しごとに変更を受けます)。
+したがって、@var{variable}を綴じ込むクロージャを作った場合でも、
+繰り返しの進行で@var{variable}が上書きされることはありません。
+@c COMMON
+
+@c EN
+If you need more than simple iteration, you can use @code{do} form,
+named @code{let}, or @ref{Eager comprehensions}, which provides
 rich way to iterate.
 @c JP
+単純な繰り返し以上のことがしたいなら、@code{do}フォーム、名前付き@code{let}、あるいは
 @ref{Eager comprehensions}も参照してください。
 より複雑な繰り返しを記述できます。
 @c COMMON
 @end defmac
+
+@c @defmac doplist ((kvar vvar) plist-expr [default]) body @dots{}
+@c @c EN
+@c A @emph{plist} is a list alternating key and values.  This macro
+@c provides a convenient way to loop over a plist.
+
+@c @example
+@c ;; example of a plist, associating a => 1 and b => 2.
+@c (a 1 b 2)
+@c @end example
+@c @c JP
+@c @emph{plist}とは、キーと値が交互に現れるリストです。
+@c このマクロはplistに対する繰り返しを簡単にするものです。
+
+@c @example
+@c ;; plistの例。a => 1、 b => 2 という関係を示す。
+@c (a 1 b 2)
+@c @end example
+@c @c COMMON
+
+@c @c EN
+@c The @var{plist-expr} form must evaluate to a plist.
+@c It evaluates @code{body} @dots{} while binding
+@c @var{kvar} and @var{vvar} to each key and value.
+@c @c JP
+@c @var{plist-expr}はplistを返す式です。
+@c @var{kvar}と@var{vvar}にそれぞれキーと値に束縛された環境で
+@c @code{body} @dots{}が評価されます。
+@c @c COMMON
+
+@c @example
+@c (doplist ((k v) '(a 1 b 2 c 3)) (print k " => " v))
+@c  @result{} @r{prints:}
+@c  a => 1
+@c  b => 2
+@c  c => 3
+@c @end example
+
+@c @c EN
+@c By default, an error is signalled if @var{plist-expr} isn't even
+@c (we only detect the error when we reach to the end of the list).
+@c If you give @var{default} argument, however, it is used as the missing
+@c value for the last key.
+@c @c JP
+@c デフォルトでは、@var{plist-expr}の生成するリストの要素が偶数個でなければ
+@c エラーが報告されます(エラーはリストを最後までループした段階で検出されます)。
+@c しかし、@var{default}引数が与えられていれば、要素が奇数個の場合は@var{default}の
+@c 値が最後のキーに対応する値として使われます。
+@c @c COMMON
+
+@c @example
+@c (doplist ((k v) '(a 1 b 2 c)) (print k " => " v))
+@c   @result{} @r{Error, after printing} a => 1 @r{and} b => 2
+
+@c (doplist ((k v) '(a 1 b 2 c) #f) (print k " => " v))
+@c   @result{} @r{prints:}
+@c  a => 1
+@c  b => 2
+@c  c => #f
+@c @end example
+@c @end defmac
 
 @defmac while expr body @dots{}
 @defmacx while expr @code{=>} var body @dots{}

@@ -400,6 +400,30 @@
     [(_ . other)
      (syntax-error "malformed dolist" (dolist . other))]))
 
+(define-syntax doplist
+  (syntax-rules ()
+    [(_ ((k v) plis default) . body)
+     (do ([p plis (cddr p)])
+         [(cond [(null? p) #t]
+                [(null? (cdr p))
+                 (let ([k (car p)]
+                       [v default])
+                   . body)]
+                [else #f])]
+       (let ([k (car p)]
+             [v (cadr p)])
+         . body))]
+    [(_ ((k v) plis) . body)
+     (do ([p plis (cddr p)])
+         [(cond [(null? p) #t]
+                [(null? (cdr p)) (error "plist is not even:" plis)]
+                [else #f])]
+       (let ([k (car p)]
+             [v (cadr p)])
+         . body))]
+    [(_ . other)
+     (syntax-error "malformed doplist" (doplist . other))]))
+
 (define-syntax while
   (syntax-rules (=>)
     [(_ expr guard => var . body)
