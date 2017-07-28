@@ -1535,4 +1535,31 @@
           (eval '(list (test-syntax-error x y))
                 (interaction-environment)))))
 
+;;----------------------------------------------------------------------
+;; srfi-147 begin
+;; (not yest supported)
+
+'(test-section "srfi-147 begin")
+
+'(test "srfi-147 begin (internal)"
+      '(yes no)
+      (lambda ()
+        (define-syntax foo
+          (begin (define-syntax bar if)
+                 (syntax-rules ()
+                   [(_ x y z) (bar z x y)])))
+        (list (foo 'yes 'no (zero? 0))
+              (foo 'yes 'no (zero? 1)))))
+
+'(test "srfi-147 begin (internal)"
+      11
+      (lambda ()
+        (let-syntax ([foo (syntax-rules ()
+                            [(_ a) (begin (define x (* a 2))
+                                          (syntax-rules ()
+                                            [(_ b) (+ b x)]))])])
+          (define-syntax bar (foo 3))
+          (bar 5))))
+      
+
 (test-end)
