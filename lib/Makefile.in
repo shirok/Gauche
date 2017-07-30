@@ -110,6 +110,10 @@ SCMFILES = srfi-0.scm \
        scheme/inexact.scm scheme/lazy.scm scheme/load.scm \
        scheme/process-context.scm scheme/r5rs.scm scheme/read.scm \
        scheme/repl.scm scheme/time.scm scheme/write.scm \
+       scheme/box.scm scheme/charset.scm scheme/comparator.scm \
+       scheme/generator.scm scheme/ideque.scm scheme/list-queue.scm \
+       scheme/list.scm scheme/lseq.scm scheme/set.scm scheme/sort.scm \
+       scheme/vector.scm \
        text/csv.scm text/parse.scm text/tree.scm text/sql.scm \
        text/html-lite.scm text/info.scm text/diff.scm \
        text/progress.scm \

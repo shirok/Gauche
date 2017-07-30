@@ -1,3 +1,12 @@
+2017-07-29  Shiro Kawai  <shiro@acm.org>
+
+	* lib/scheme/box.scm, lib/scheme/charset.scm, lib/scheme/comparator.scm,
+	  lib/scheme/generator.scm, lib/scheme/ideque.scm,
+	  lib/scheme/list-queue.scm, lib/scheme/list.scm,
+	  lib/scheme/lseq.scm, lib/scheme/set.scm, lib/scheme/sort.scm,
+	  lib/scheme/vector.scm: Added dummy libraries that are defined in
+	  Red edition of R7RS-Large and already supportedin Gauche.
+
 2017-07-27  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/common-macros.scm (doplist): Added experimentally.  Not
