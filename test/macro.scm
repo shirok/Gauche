@@ -1002,6 +1002,44 @@
         (with-module mac-idef2.user
           (let ((a 5)) (define x a) (x)))))
 
+(test "internal define-syntax and scope 1" 'inner
+      (let ((x 'outer))
+        (lambda ()
+          (define x 'inner)
+          (define-syntax foo
+            (syntax-rules ()
+              [(_) x]))
+          (foo))))
+
+'(test "internal define-syntax and scope 2" 'inner
+      (let ((x 'outer))
+        (lambda ()
+          (define-syntax foo
+            (syntax-rules ()
+              [(_) x]))
+          (define x 'inner)
+          (foo))))
+
+'(test "internal define-syntax and scope 3" '(inner inner)
+      (let ((x 'outer))
+        (lambda ()
+          (define-syntax def
+            (syntax-rules ()
+              [(_ v) (define v x)]))
+          (define x 'inner)
+          (def y)
+          (list x y))))
+
+'(test "internal define-syntax and scope 3" '(inner inner)
+      (let ((x 'outer))
+        (lambda ()
+          (define-syntax def
+            (syntax-rules ()
+              [(_ v) (define v (lambda () x))]))
+          (def y)
+          (define x 'inner)
+          (list x (y)))))
+
 ;;----------------------------------------------------------------------
 ;; macro defining macros
 

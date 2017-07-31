@@ -200,106 +200,134 @@
 ;;--------------------------------------------------------------
 ;; pass1/body - Compiling body with internal definitions.
 ;;
-;; First we scan internal defines.  We need to expand macros at this stage,
-;; since the macro may produce more internal defines.  Note that the
-;; previous internal definition in the same body may shadow the macro
-;; binding.  In pass1/body, it is checked by keeping newly defined
-;; identifiers in intdefs.
+;; For the letrec* semantics, we need to build the internal frame
+;; as we go though the body, since internal macro definition need to
+;; capture the internal environment.
 ;;
-;; Actually, this part touches the hole of R5RS---we can't determine
-;; the scope of the identifiers of the body until we find the boundary
-;; of internal define's, but in order to find all internal defines
-;; we have to expand the macro and we need to detemine the scope
-;; of the macro keyword.  Search "macro internal define" in
-;; comp.lang.scheme for the details.
+;;    (let ((x 1))
+;;      (define x 2)
+;;      (define-syntax foo
+;;        (syntax-rules ()
+;;          [(_ v) (define v x)]))   ;; must refer to inner x
+;;      (foo y)
+;;      y)   => 2
 ;;
-;; I use the model that appears the same as Chez, which adopts
-;; let*-like semantics for the purpose of determining macro binding
-;; during expansion.
+;; To avoid unnecessary allocation, we adopt somewhat convoluted strategy
+;; that delays frame allocation until needed, and once allocated, we
+;; "grow" the frame as new definition appears.  This is an exception of
+;; the general principle that cenv is immutable.
 
 ;; pass1/body :: [Sexpr], Cenv -> IForm
 (define (pass1/body exprs cenv)
   ;; First, we pair up each expr with dummy source info '().  Some of expr
   ;; may be an 'include' form and expanded into the content of the file,
   ;; in which case we keep the source file info in each cdr of the pair.
-  (pass1/body-rec (map list exprs) '() cenv))
+  (pass1/body-rec (map list exprs) #f #f cenv))
 
-;; Walks exprs and gathers internal definitions into intdefs in the form
-;; of ((var init) ...).  We need to expand macros and 'begin's
-;; that appears in the toplevel of exprs, for it may insert more internal
-;; definitions.
-(define (pass1/body-rec exprs intdefs cenv)
+;; If we find internal (syntax) definition, we extend cenv with
+;; two frames, one for local macros and one for local variables,
+;; so that the internal macros can capture the correct scope of
+;; identifiers.
+;; For the local variables, we insert dummy binding
+;;    (<name> :rec <init-expr> . <src>)
+;; as the placeholder.  Once we find the boundary of definitions and
+;; expressions, we re-evaluate <init-expr> and replace the frame entry with
+;;    (<name> . <lvar>)
+(define (pass1/body-rec exprs mframe vframe cenv)
   (match exprs
     [(((op . args) . src) . rest)
-     (or (and-let* ([ (not (assq op intdefs)) ]
+     (or (and-let* ([ (or (not vframe) (not (assq op vframe))) ]
                     [head (pass1/lookup-head op cenv)])
            (unless (list? args)
              (error "proper list required for function application \
                      or macro use:" (caar exprs)))
            (cond
-            [(lvar? head) (pass1/body-finish intdefs exprs cenv)]
+            [(lvar? head) (pass1/body-finish exprs mframe vframe cenv)]
             [(macro? head)  ; locally defined macro
-             (pass1/body-macro-expand-rec head exprs intdefs cenv)]
+             (pass1/body-macro-expand-rec head exprs mframe vframe cenv)]
             [(syntax? head) ; when (let-syntax ((xif if)) (xif ...)) etc.
-             (pass1/body-finish intdefs exprs cenv)]
+             (pass1/body-finish exprs mframe vframe cenv)]
+            [(and (pair? head) (eq? (car head) :rec))
+             (pass1/body-finish exprs mframe vframe cenv)]
             [(not (identifier? head)) (error "[internal] pass1/body" head)]
             [(or (global-identifier=? head define.)
                  (global-identifier=? head define-inline.)
                  (global-identifier=? head r5rs-define.))
              (let1 def (match args
                          [((name . formals) . body)
-                          `(,name (,lambda. ,formals ,@body) . ,src)]
-                         [(var init) `(,var ,init . ,src)]
+                          `(,name :rec (,lambda. ,formals ,@body) . ,src)]
+                         [(var init) `(,var :rec ,init . ,src)]
                          [_ (error "malformed internal define:" (caar exprs))])
-               (pass1/body-rec rest (cons def intdefs) cenv))]
+               (if (not mframe)
+                 (let* ([cenv (cenv-extend cenv '() SYNTAX)]
+                        [mframe (car (cenv-frames cenv))]
+                        [cenv (cenv-extend cenv `(,def) LEXICAL)]
+                        [vframe (car (cenv-frames cenv))])
+                   (pass1/body-rec rest mframe vframe cenv))
+                 (begin
+                   (push! (cdr vframe) def)
+                   (pass1/body-rec rest mframe vframe cenv))))]
             [(global-identifier=? head define-syntax.) ; internal syntax definition
              (match args
                [(name trans-spec)
-                (let* ([trans (pass1/eval-macro-rhs
-                               'define-syntax trans-spec
-                               (cenv-add-name cenv (variable-name name)))]
-                       [newenv (cenv-extend cenv `((,name . ,trans)) SYNTAX)])
-                  (pass1/body-rec rest intdefs newenv))]
+                (if (not mframe)
+                 (let* ([cenv (cenv-extend cenv `((,name)) SYNTAX)]
+                        [mframe (car (cenv-frames cenv))]
+                        [cenv (cenv-extend cenv `() LEXICAL)]
+                        [vframe (car (cenv-frames cenv))]
+                        [trans (pass1/eval-macro-rhs
+                                'define-syntax trans-spec
+                                (cenv-add-name cenv (variable-name name)))])
+                   (assq-set! (cdr mframe) name trans)
+                   (pass1/body-rec rest mframe vframe cenv))
+                 (begin
+                   (push! (cdr mframe) `(,name))
+                   (let1 trans (pass1/eval-macro-rhs
+                                'define-syntax trans-spec
+                                (cenv-add-name cenv (variable-name name)))
+                     (assq-set! (cdr mframe) name trans)
+                     (pass1/body-rec rest mframe vframe cenv))))]
                [_ (error "syntax-error: malformed internal define-syntax:"
                          `(,op ,@args))])]
             [(global-identifier=? head begin.) ;intersperse forms
              (pass1/body-rec (append (imap (cut cons <> src) args) rest)
-                             intdefs cenv)]
+                             mframe vframe cenv)]
             [(global-identifier=? head include.)
              (let1 sexpr&srcs (pass1/expand-include args cenv #f)
-               (pass1/body-rec (append sexpr&srcs rest) intdefs cenv))]
+               (pass1/body-rec (append sexpr&srcs rest) mframe vframe cenv))]
             [(global-identifier=? head include-ci.)
              (let1 sexpr&srcs (pass1/expand-include args cenv #t)
-               (pass1/body-rec (append sexpr&srcs rest) intdefs cenv))]
+               (pass1/body-rec (append sexpr&srcs rest) mframe vframe cenv))]
             [(identifier? head)
              (or (and-let* ([gloc (id->bound-gloc head)]
                             [gval (gloc-ref gloc)]
                             [ (macro? gval) ])
-                   (pass1/body-macro-expand-rec gval exprs intdefs cenv))
-                 (pass1/body-finish intdefs exprs cenv))]
+                   (pass1/body-macro-expand-rec gval exprs mframe vframe cenv))
+                 (pass1/body-finish exprs mframe vframe cenv))]
             [else (error "[internal] pass1/body" head)]))
-         (pass1/body-finish intdefs exprs cenv))]
-    [_ (pass1/body-finish intdefs exprs cenv)]))
+         (pass1/body-finish exprs mframe vframe cenv))]
+    [_ (pass1/body-finish exprs mframe vframe cenv)]))
 
-(define (pass1/body-macro-expand-rec mac exprs intdefs cenv)
+(define (pass1/body-macro-expand-rec mac exprs mframe vframe cenv)
   (pass1/body-rec
    (acons (call-macro-expander mac (caar exprs) cenv)
           (cdar exprs) ;src
           (cdr exprs)) ;rest
-   intdefs cenv))
+   mframe vframe cenv))
 
 ;; Finishing internal definitions.  If we have internal defs, we wrap
 ;; the rest by letrec.
-(define (pass1/body-finish intdefs exprs cenv)
-  (if (null? intdefs)
+(define (pass1/body-finish exprs mframe vframe cenv)
+  (if (not mframe)
     (pass1/body-rest exprs cenv)
-    (let* ([intdefs. (reverse intdefs)]
+    ;; Replace dummy bindings to the real one
+    (let* ([intdefs. (reverse (cdr vframe))]
            [vars  (map car intdefs.)]
-           [lvars (imap make-lvar+ vars)]
-           [newenv (cenv-extend cenv (%map-cons vars lvars) LEXICAL)])
+           [lvars (imap make-lvar+ vars)])
+      (set-cdr! vframe (%map-cons vars lvars))
       ($let #f 'rec* lvars
-            (imap2 (cut pass1/body-init <> <> newenv) lvars (map cdr intdefs.))
-            (pass1/body-rest exprs newenv)))))
+            (imap2 (cut pass1/body-init <> <> cenv) lvars (map cddr intdefs.))
+            (pass1/body-rest exprs cenv)))))
 
 (define (pass1/body-init lvar init&src newenv)
   (let1 e (if (null? (cdr init&src))
