@@ -1,3 +1,7 @@
+2017-08-01  Shiro Kawai  <shiro@acm.org>
+
+	* src/libmac.scm (trace-macro, untrace-macro): Added experimentally.
+
 2017-07-30  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile-1.scm (pass1/body-rec): First step of fixing internal

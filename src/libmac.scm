@@ -32,6 +32,7 @@
 ;;;
 
 (select-module gauche.internal)
+(use util.match)
 (inline-stub
  (declcode (.include "gauche/class.h"
                      "gauche/priv/macroP.h")))
@@ -92,14 +93,33 @@
 (define-cproc macro-transformer (mac::<macro>) Scm_MacroTransformer)
 (define-cproc macro-name (mac::<macro>) Scm_MacroName)
 
+;; Macro expand tracer (temporary)
+;; *trace-macro* can be #f (default - no trace), #t (trace all macros),
+;; or a list of symbols (trace macros whose name that matches one of the
+;; symbols).
+(define *trace-macro* #f)
+
 (define (call-macro-expander mac expr cenv)
-  (let1 r ((macro-transformer mac) expr cenv)
-    (if (and (pair? r) (not (eq? expr r)))
-      (rlet1 p (if (extended-pair? r)
-                 r
-                 (extended-cons (car r) (cdr r)))
-        (pair-attribute-set! p 'original expr))
-      r)))
+  (when (and *trace-macro*
+             (or (eq? *trace-macro* #t)
+                 (memq (macro-name mac) *trace-macro*)))
+    (display "Macro input>>>\n" (current-error-port))
+    (write expr (current-error-port))
+    (newline (current-error-port)))
+  (let* ([r ((macro-transformer mac) expr cenv)]
+         [out (if (and (pair? r) (not (eq? expr r)))
+                (rlet1 p (if (extended-pair? r)
+                           r
+                           (extended-cons (car r) (cdr r)))
+                  (pair-attribute-set! p 'original expr))
+                r)])
+    (when (and *trace-macro*
+               (or (eq? *trace-macro* #t)
+                   (memq (macro-name mac) *trace-macro*)))
+      (display "Macro output<<<\n" (current-error-port))
+      (write out (current-error-port))
+      (newline (current-error-port)))
+    out))
 
 (define-cproc make-syntax (name::<symbol> proc)
   Scm_MakeSyntax)
@@ -114,6 +134,25 @@
 (define-cproc syntax-handler (syn)
   (SCM_ASSERT (SCM_SYNTAXP syn))
   (return (-> (SCM_SYNTAX syn) handler)))
+
+;; EXPERIMENTAL - API may change
+(define-in-module gauche (trace-macro . args)
+  (match args
+    [() #f]                             ;just show current traces
+    [(#t) (set! *trace-macro* #t)]      ;trace all macros
+    [(sym ...) (and-let1 ms (cond [(not *trace-macro*) '()]
+                                 [(list? *trace-macro*) *trace-macro*]
+                                 [else #f])
+                 (set! *trace-macro* (delete-duplicates (append sym ms))))])
+  *trace-macro*)
+
+(define-in-module gauche (untrace-macro . args)
+  (match args
+    [() (set! *trace-macro* #f)]        ;untrace all
+    [(sym ...) (when (list? *trace-macro*)
+                 (let1 ms (remove (cute memq <> sym) *trace-macro*)
+                   (set! *trace-macro* (if (null? ms) #f ms))))])
+  *trace-macro*)
 
 ;;;
 ;;; OBSOLETED - Tentative compiler macro 
