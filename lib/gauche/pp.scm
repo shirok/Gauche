@@ -36,7 +36,6 @@
 (define-module gauche.pp
   (use srfi-1)
   (use srfi-13)
-  (use srfi-42)
   (use gauche.parameter)
   (use gauche.sequence)
   (use util.match)
@@ -129,8 +128,8 @@
                     (rec (car obj) (+ level 1) 0)
                     (rec (cdr obj) level (+ len 1))]
                    [(vector? obj)
-                    (do-ec (: i (min* (vector-length obj) (rp-level)))
-                           (rec (vector-ref obj i) (+ level 1) 0))])]))))
+                    (dotimes [i (min* (vector-length obj) (rp-level))]
+                      (rec (vector-ref obj i) (+ level 1) 0))])]))))
 
 (define (shared-obj? obj) (number? (hash-table-get (rp-dict) obj #f)))
 
