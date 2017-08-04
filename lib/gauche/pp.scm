@@ -36,10 +36,8 @@
 (define-module gauche.pp
   (use srfi-1)
   (use srfi-13)
-  (use gauche.parameter)
-  (use gauche.sequence)
   (use util.match)
-  (export pprint pp-controls))
+  (export pprint))
 (select-module gauche.pp)
 
 ;; List printing modes:
@@ -64,25 +62,32 @@
 ;;
 ;; (2) Otherwise, we fall back to linear mode.
 
-(define rp-writer (make-parameter write))
-(define rp-dict   (make-parameter #f)) ;table to count shared structure
+;; Various states carried around while layouter is working
+(define-class <pp-context> ()
+  ([writer      :init-form write :init-keyword :writer]
+   [shared-dict :init-keyword :shared-dict]
+   [controls    :init-keyword :controls]))
 
-;; API
-(define pp-controls (make-parameter
-                     (make-write-controls :print-length 40
-                                          :print-level 10
-                                          :print-width 79)))
+(define *default-controls* (make-write-controls :print-length 40
+                                                :print-level 10
+                                                :print-width 79))
 
 ;; for internal convenience
-(define-macro (rp-length) '(~ (pp-controls)'print-length))
-(define-macro (rp-level)  '(~ (pp-controls)'print-level))
-(define-macro (rp-width)  '(~ (pp-controls)'print-width))
+(define-inline (rp-writer c) (~ c 'writer))
+(define-inline (rp-dict c)   (~ c 'shared-dict))
+(define-inline (rp-length c) (~ c 'controls 'print-length))
+(define-inline (rp-level c)  (~ c 'controls 'print-level))
+(define-inline (rp-width c)  (~ c 'controls 'print-width))
 
 (define simple-obj?
   (any-pred number? boolean? char? port? symbol? null?
             (cut member <> '("" #()))))
 
-;; crude state monad to simplify carry around 'seen' list.
+;; We wrap layouter with a state monad to carry around 'seen' list,
+;; the shared substructures that has already printed in this try
+;; (thus we use #n# next time).
+;; We can't use mutable dictionary for this, since the layouter may
+;; retry a subtree with different strategies.
 (define-syntax do*
   (syntax-rules (<-)
     [(_ () expr) expr]
@@ -113,7 +118,7 @@
 (define-inline (min* a b) (if a (if b (min a b) a) b))
 
 ;; scan obj to find out shared structure and mark it in rp-dict.
-(define (scan-shared obj level len)
+(define (scan-shared obj level len c)
   (rlet1 dict (make-hash-table 'eq?)
     (define counter 0)
     (let rec ([obj obj] [level level] [len len])
@@ -121,17 +126,19 @@
              => (^n (unless (number? n)
                       (hash-table-put! dict obj counter)
                       (inc! counter)))]
-            [(or (>* level (rp-level)) (>* len (rp-length)) (simple-obj? obj))]
+            [(or (>* level (rp-level c))
+                 (>* len (rp-length c))
+                 (simple-obj? obj))]
             [else
              (hash-table-put! dict obj #t)
              (cond [(pair? obj)
                     (rec (car obj) (+ level 1) 0)
                     (rec (cdr obj) level (+ len 1))]
                    [(vector? obj)
-                    (dotimes [i (min* (vector-length obj) (rp-level))]
+                    (dotimes [i (min* (vector-length obj) (rp-level c))]
                       (rec (vector-ref obj i) (+ level 1) 0))])]))))
 
-(define (shared-obj? obj) (number? (hash-table-get (rp-dict) obj #f)))
+(define (shared-obj? obj c) (number? (hash-table-get (rp-dict c) obj #f)))
 
 ;; Creates a layout-procedure, that takes width and try to find the best
 ;; layout of obj.  A layout-procedure returns two values---a nested list
@@ -150,27 +157,26 @@
 
 ;; type Layouter = Integer -> (Formatted, Integer)
 
-;; kick-layouter :: (Layouter, Integer) -> Formatted
-(define (kick-layouter layouter) (values-ref (layouter (rp-width)) 0))
-
-;; layout :: (Obj, Integer) -> State Layouter
-(define (layout obj level)
+;; layout :: (Obj, Integer, Context) -> State Layouter
+(define (layout obj level c)
   (do* ([seen <- (get-seen)])
-       (cond [(and (shared-obj? obj) (memq obj seen)) (return (layout-ref obj))]
+       (cond [(and (shared-obj? obj c) (memq obj seen))
+              (return (layout-ref obj c))]
              [(simple-obj? obj)
-              (return (layout-simple (write-to-string obj (rp-writer))))]
-             [(>=* level (rp-level)) (return (layout-simple "#"))]
-             [else (layout-misc obj (cute layout <> (+ level 1)))])))
+              (return (layout-simple (write-to-string obj (rp-writer c))))]
+             [(>=* level (rp-level c)) (return (layout-simple "#"))]
+             [else (layout-misc obj (cute layout <> (+ level 1) c) c)])))
 
-;; layout-misc :: (Obj, (Obj -> State Layouter)) -> State Layouter
-(define (layout-misc obj rec)
+;; layout-misc :: (Obj, ((Obj, Context) -> State Layouter), Context)
+;;                   -> State Layouter
+(define (layout-misc obj rec c)
 
   ;; mapi :: (Obj -> State Layouter), Vector -> State Layouter
   (define (mapi fn vec)
-    (let1 s (size-of vec)
+    (let1 s (vector-length vec)
       (do* ([rs <- (mapM (lambda (i) (fn (vector-ref vec i)))
-                         (iota (min* s (rp-length))))])
-           (return (if (<* s (rp-length)) rs `(,@rs ,dots))))))
+                         (iota (min* s (rp-length c))))])
+           (return (if (<* s (rp-length c)) rs `(,@rs ,dots))))))
 
   ;; map+ :: (Obj -> State Layouter), List -> State Layouter
   ;; map considering dotted list, print-length, and shared structure
@@ -180,26 +186,26 @@
            (match lis
              [() (return (reverse rs))]
              [(l . lis)
-              (if (>=* len (rp-length))
+              (if (>=* len (rp-length c))
                 (return (reverse `(,dots ,@rs)))
                 (do* ([r <- (fn l)])
-                     (if (and (shared-obj? lis) (memq obj seen))
-                       (return (reverse `(,(layout-ref lis) ,dot ,r ,@rs)))
+                     (if (and (shared-obj? lis c) (memq obj seen))
+                       (return (reverse `(,(layout-ref lis c) ,dot ,r ,@rs)))
                        (loop lis (+ len 1) (cons r rs)))))]
              [x (do* ([r <- (fn x)]) (return (reverse `(,r ,dot ,@rs))))]))))
 
   ;;: do-list :: (State String, State [Layouter]) -> State Layouter
   (define (do-list pref mapper)
-    (do* ([str  <- pref] [elts <- mapper]) (layout-list str elts)))
+    (do* ([str <- pref] [elts <- mapper]) (layout-list str elts c)))
 
-  (cond [(pair? obj) (do-list (sprefix obj "(") (map+ rec obj))]
-        [(vector? obj) (do-list (sprefix obj "#(") (mapi rec obj))]
+  (cond [(pair? obj) (do-list (sprefix obj "(" c) (map+ rec obj))]
+        [(vector? obj) (do-list (sprefix obj "#(" c) (mapi rec obj))]
         [(is-a? obj <uvector>)
          (let1 tag (rxmatch-substring
                      (#/[suf]\d+/ (x->string (class-name (class-of obj)))))
-           (do-list (sprefix obj (format "#~a(" tag)) (mapi rec obj)))]
+           (do-list (sprefix obj (format "#~a(" tag) c) (mapi rec obj)))]
         [else
-         (do* ([str <- (sprefix obj (write-to-string obj (rp-writer)))])
+         (do* ([str <- (sprefix obj (write-to-string obj (rp-writer c)) c)])
               (return (layout-simple str)))]))
 
 ;; :: Layouter
@@ -207,30 +213,30 @@
 (define dot  (lambda (w) (values "." 1)))
 
 ;; layout-simple :: String -> Layouter
-(define (layout-simple str) (lambda (room) (values str (string-length str))))
+(define (layout-simple str) (lambda (w) (values str (string-length str))))
 
 ;; layout-ref :: Object -> Layouter
-(define (layout-ref obj)
-  (layout-simple (format "#~d#" (hash-table-get (rp-dict) obj))))
+(define (layout-ref obj c)
+  (layout-simple (format "#~d#" (hash-table-get (rp-dict c) obj))))
 
-;; layout-list :: String, [Layouter] -> State Layouter
-(define (layout-list prefix elts)
+;; layout-list :: String, [Layouter], Context -> State Layouter
+(define (layout-list prefix elts c)
   (let1 plen (string-length prefix)
     (return (lambda (room)
-              (receive (s w) (do-layout-elements (-* room plen) elts)
+              (receive (s w) (do-layout-elements (-* room plen) elts c)
                 (values (cons prefix (reverse s)) (and w (+ w plen))))))))
 
-;; sprefix :: (Object, String) -> State String
-(define (sprefix obj s)
-  (cond [(hash-table-get (rp-dict) obj #f) number?
+;; sprefix :: (Object, String, Context) -> State String
+(define (sprefix obj s c)
+  (cond [(hash-table-get (rp-dict c) obj #f) number?
          => (lambda (cnt)
               (do* ([seen <- (get-seen)]
                     [ (put-seen (cons obj seen)) ])
                    (return (format "#~d=~a" cnt s))))]
         [else (return s)]))
 
-;; do-layout-elements :: Integer, [Layouter] -> (Formatted, Integer)
-(define (do-layout-elements room elts)
+;; do-layout-elements :: Integer, [Layouter], Context -> (Formatted, Integer)
+(define (do-layout-elements room elts c)
   (define (do-oneline r es strs)
     (match es
       [() (values strs (-* room r))]
@@ -277,16 +283,15 @@
 
 ;; Entry point of printer.
 (define (pprint obj
-                :key (controls #f) print-width print-length print-level)
-  (let* ([c (or controls (pp-controls))]
-         [c (if (or print-width print-length print-level)
-              (write-controls-copy c
-                                   :print-width print-width
-                                   :print-length print-length
-                                   :print-level print-level)
-              c)])
-    (parameterize ([rp-dict (scan-shared obj 0 0)]
-                   [pp-controls c])
-      (let1 layouter (run (layout obj 0))
-        (render (kick-layouter layouter) 0)))))
-
+                :key (controls *default-controls*)
+                     print-width print-length print-level)
+  (let* ([controls (if (or print-width print-length print-level)
+                     (write-controls-copy controls
+                                          :print-width print-width
+                                          :print-length print-length
+                                          :print-level print-level)
+                     controls)]
+         [context (make <pp-context> :controls controls)])
+    (set! (~ context'shared-dict) (scan-shared obj 0 0 context))
+    (let1 layouter (run (layout obj 0 context))
+      (render (values-ref (layouter (rp-width context)) 0) 0))))
