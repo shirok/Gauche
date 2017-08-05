@@ -62,10 +62,18 @@
 ;;
 ;; (2) Otherwise, we fall back to linear mode.
 
-;; Various states carried around while layouter is working
+;; Pretty printer steps
+;;
+;; 1. Scan the tree and mark shared substrctures.
+;; 2. Scan the tree again, to build a layouter network.
+;; 3. Run the layouter network to produce "formatted" tree, which is
+;;    a tree of strings with separator / line-break directives.
+;; 4. Render the formatted tree into string.
+
+;; Various states carried around while the layouter network is built.
 (define-class <pp-context> ()
   ([writer      :init-form write :init-keyword :writer]
-   [shared-dict :init-keyword :shared-dict]
+   [shared      :init-form (make-hash-table 'eq?)]
    [controls    :init-keyword :controls]))
 
 (define *default-controls* (make-write-controls :print-length 40
@@ -74,7 +82,7 @@
 
 ;; for internal convenience
 (define-inline (rp-writer c) (~ c 'writer))
-(define-inline (rp-dict c)   (~ c 'shared-dict))
+(define-inline (rp-shared c) (~ c 'shared))
 (define-inline (rp-length c) (~ c 'controls 'print-length))
 (define-inline (rp-level c)  (~ c 'controls 'print-level))
 (define-inline (rp-width c)  (~ c 'controls 'print-width))
@@ -117,28 +125,28 @@
   (and a b (if (null? args) (- a b) (apply -* (- a b) args))))
 (define-inline (min* a b) (if a (if b (min a b) a) b))
 
-;; scan obj to find out shared structure and mark it in rp-dict.
-(define (scan-shared obj level len c)
-  (rlet1 dict (make-hash-table 'eq?)
-    (define counter 0)
-    (let rec ([obj obj] [level level] [len len])
-      (cond [(hash-table-get dict obj #f)
-             => (^n (unless (number? n)
-                      (hash-table-put! dict obj counter)
-                      (inc! counter)))]
-            [(or (>* level (rp-level c))
-                 (>* len (rp-length c))
-                 (simple-obj? obj))]
-            [else
-             (hash-table-put! dict obj #t)
-             (cond [(pair? obj)
-                    (rec (car obj) (+ level 1) 0)
-                    (rec (cdr obj) level (+ len 1))]
-                   [(vector? obj)
-                    (dotimes [i (min* (vector-length obj) (rp-level c))]
-                      (rec (vector-ref obj i) (+ level 1) 0))])]))))
+;; scan obj to find out shared structure and mark it in rp-shared.
+(define (scan-shared! obj level len c)
+  (define dict (rp-shared c))
+  (define counter 0)
+  (let rec ([obj obj] [level level] [len len])
+    (cond [(hash-table-get dict obj #f)
+           => (^n (unless (number? n)
+                    (hash-table-put! dict obj counter)
+                    (inc! counter)))]
+          [(or (>* level (rp-level c))
+               (>* len (rp-length c))
+               (simple-obj? obj))]
+          [else
+           (hash-table-put! dict obj #t)
+           (cond [(pair? obj)
+                  (rec (car obj) (+ level 1) 0)
+                  (rec (cdr obj) level (+ len 1))]
+                 [(vector? obj)
+                  (dotimes [i (min* (vector-length obj) (rp-level c))]
+                    (rec (vector-ref obj i) (+ level 1) 0))])])))
 
-(define (shared-obj? obj c) (number? (hash-table-get (rp-dict c) obj #f)))
+(define (shared-obj? obj c) (number? (hash-table-get (rp-shared c) obj #f)))
 
 ;; Creates a layout-procedure, that takes width and try to find the best
 ;; layout of obj.  A layout-procedure returns two values---a nested list
@@ -217,7 +225,7 @@
 
 ;; layout-ref :: Object -> Layouter
 (define (layout-ref obj c)
-  (layout-simple (format "#~d#" (hash-table-get (rp-dict c) obj))))
+  (layout-simple (format "#~d#" (hash-table-get (rp-shared c) obj))))
 
 ;; layout-list :: String, [Layouter], Context -> State Layouter
 (define (layout-list prefix elts c)
@@ -228,7 +236,7 @@
 
 ;; sprefix :: (Object, String, Context) -> State String
 (define (sprefix obj s c)
-  (cond [(hash-table-get (rp-dict c) obj #f) number?
+  (cond [(hash-table-get (rp-shared c) obj #f) number?
          => (lambda (cnt)
               (do* ([seen <- (get-seen)]
                     [ (put-seen (cons obj seen)) ])
@@ -236,6 +244,9 @@
         [else (return s)]))
 
 ;; do-layout-elements :: Integer, [Layouter] -> (Formatted, Integer)
+;; This is the core of layout&retry algorithm.  Invoke layouters to
+;; find out best fit.  Each layouter may be invoked more than once,
+;; when retry happens.
 (define (do-layout-elements room elts)
   (define (do-oneline r es strs)
     (match es
@@ -292,6 +303,6 @@
                                           :print-level print-level)
                      controls)]
          [context (make <pp-context> :controls controls)])
-    (set! (~ context'shared-dict) (scan-shared obj 0 0 context))
+    (scan-shared! obj 0 0 context)
     (let1 layouter (run (layout obj 0 context))
       (render (values-ref (layouter (rp-width context)) 0) 0))))
