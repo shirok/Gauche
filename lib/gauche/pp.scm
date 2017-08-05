@@ -223,7 +223,7 @@
 (define (layout-list prefix elts c)
   (let1 plen (string-length prefix)
     (return (lambda (room)
-              (receive (s w) (do-layout-elements (-* room plen) elts c)
+              (receive (s w) (do-layout-elements (-* room plen) elts)
                 (values (cons prefix (reverse s)) (and w (+ w plen))))))))
 
 ;; sprefix :: (Object, String, Context) -> State String
@@ -235,8 +235,8 @@
                    (return (format "#~d=~a" cnt s))))]
         [else (return s)]))
 
-;; do-layout-elements :: Integer, [Layouter], Context -> (Formatted, Integer)
-(define (do-layout-elements room elts c)
+;; do-layout-elements :: Integer, [Layouter] -> (Formatted, Integer)
+(define (do-layout-elements room elts)
   (define (do-oneline r es strs)
     (match es
       [() (values strs (-* room r))]
