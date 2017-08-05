@@ -34,8 +34,6 @@
 ;; Experimental
 
 (define-module gauche.pp
-  (use srfi-1)
-  (use srfi-13)
   (use util.match)
   (export pprint))
 (select-module gauche.pp)
@@ -241,6 +239,10 @@
 ;; B's insert a newline and a proper indentation.
 (define (render stree indent)
   (define (next-line col) (newline) (dotimes [i col] (display " ")))
+  (define (drop-while pred xs) ; avoid depending on srfi-1 (for now)
+    (cond [(null? xs) '()]
+          [(pred (car xs)) (drop-while pred (cdr xs))]
+          [else xs]))
   (match stree
     [(prefix . es)
      (display prefix)
