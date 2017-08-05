@@ -128,15 +128,43 @@
     (hash-table-put! (rp-shared c) obj (- n))
     (set! (~ c'counter) (+ n 1))))
 
-;; Creates a layout-procedure, that takes width and try to find the best
-;; layout of obj.  A layout-procedure returns two values---a nested list
-;; of strings, and the width the layout occupies.  The width may be #f
-;; if the layout spills to more than one lines.  The list of strings
-;; may contain a symbol 's or 'b, indicating inter-datum space and line
-;; break.   A layout-procedure may be called more than once on the same
-;; object if the layout is "retried".
+;; Creates a layouter that takes width and try to find the best
+;; layout of obj.  A layouter returns a pair of two values---a formatted
+;; string tree (FSTree), and the width the layout occupies.  The width may
+;; be #f if the layout spills to more than one lines.  FSTree is a
+;; tree of strings, with a symbol 's or 'b, indicating inter-datum space
+;; and line break.   A layouter may be called more than once on
+;; the same object if the layout is "retried".
+;;
+;; Because of retrying, running layouter might cost exponential time
+;; in the worst case, when leaf layouter is invoked again and again with
+;; the same width parameter.  So we also carry aronud a hashtable to
+;; memoize the result. The table uses (cons Width Layouter) as key, and
+;; (cons FStree Width) as result.
 
-;; type Layouter = Integer -> (Formatted, Integer)
+;; Layouter = Integer, Memo -> (FSTree . Integer)
+;; FSTree = String | 's | 'b | (FSTree ...)
+
+;; Memoizing lambda
+(define-syntax memo^
+  (er-macro-transformer
+   (^[f r c]
+     (match f
+       [(_ (w m) . body)
+        (quasirename r
+          (rec (fn ,w ,m)
+            (or (hash-table-get ,m (cons ,w fn) #f)
+                (rlet1 p (begin ,@body)
+                  (hash-table-put! ,m (cons ,w fn) p)))))]))))
+
+(define (make-memo-hash)
+  (make-hash-table
+   (make-comparator pair?
+                    (^[a b] (and (eqv? (car a) (car b))
+                                 (eq? (cdr a) (cdr b))))
+                    #f
+                    (^p (combine-hash-value (eqv-hash (car p))
+                                            (eq-hash (cdr p)))))))
 
 ;; layout :: (Obj, Integer, Context) -> Layouter
 (define (layout obj level c)
@@ -180,11 +208,11 @@
          (layout-simple (sprefix obj (write-to-string obj (rp-writer c)) c))]))
 
 ;; :: Layouter
-(define dots (^w (values "...." 4)))
-(define dot  (^w (values "." 1)))
+(define dots (^[w m] '("...." . 4)))
+(define dot  (^[w m] '("." . 1)))
 
 ;; layout-simple :: String -> Layouter
-(define (layout-simple str) (^w (values str (string-length str))))
+(define (layout-simple str) (^[w m] (cons str (string-length str))))
 
 ;; layout-ref :: Object -> Layouter
 (define (layout-ref obj c)
@@ -193,9 +221,9 @@
 ;; layout-list :: (String, [Layouter], Context) -> Layouter
 (define (layout-list prefix elts c)
   (let1 plen (string-length prefix)
-    (^[room]
-      (receive (s w) (do-layout-elements (-* room plen) elts)
-        (values (cons prefix (reverse s)) (and w (+ w plen)))))))
+    (memo^ [room memo]
+           (match-let1 (s . w) (do-layout-elements (-* room plen) memo elts)
+             (cons (cons prefix (reverse s)) (and w (+ w plen)))))))
 
 ;; sprefix :: (Object, String, Context) -> String
 (define (sprefix obj s c)
@@ -207,11 +235,11 @@
 ;; This is the core of layout&retry algorithm.  Invoke layouters to
 ;; find out best fit.  Each layouter may be invoked more than once,
 ;; when retry happens.
-(define (do-layout-elements room elts)
+(define (do-layout-elements room memo elts)
   (define (do-oneline r es strs)
     (match es
-      [() (values strs (-* room r))]
-      [(e . es) (receive (s w) (e room)
+      [() (cons strs (-* room r))]
+      [(e . es) (match-let1 (s . w) (e room memo)
                   (cond [(not w) (do-linear room elts)] ;giveup
                         [(>* w room)                            ;too big
                          (do-fill room es (list* 'b s 'b strs))]
@@ -221,18 +249,18 @@
                          (do-oneline (-* r w 1) es (list* s 's strs))]))]))
   (define (do-fill r es strs)
     (match es
-      [() (values strs #f)]
-      [(e . es) (receive (s w) (e room)
+      [() (cons strs #f)]
+      [(e . es) (match-let1 (s . w) (e room memo)
                   (cond [(not w) (do-linear room elts)]
                         [(>* w (-* r 1))
                          (do-fill (-* room w 1) es (list* s 'b strs))]
                         [else (do-fill (-* r w 1) es (list* s 's strs))]))]))
   (define (do-linear r es)
-    (values (fold (^[e strs] (receive (s w) (e room) (list* s 'b strs)))
-                  '() es)
-            #f))
-  (receive (s w) (do-oneline room elts '())
-    (values (cons ")" s) w)))
+    (cons (fold (^[e strs] (match-let1 (s . w) (e room memo) (list* s 'b strs)))
+                '() es)
+          #f))
+  (match-let1 (s . w) (do-oneline room elts '())
+    (cons (cons ")" s) w)))
 
 ;; Render the nested list of strings.  Some trick: S's and b's right
 ;; after open paren are ignored.  S's right after b's are also ignored.
@@ -269,5 +297,6 @@
          [context (make <pp-context> :controls controls)])
     (scan-shared! obj 0 0 context)
     (let* ([layouter (layout obj 0 context)]
-           [stree (values-ref (layouter (rp-width context)) 0)])
-      (render stree 0))))
+           [memo (make-memo-hash)]
+           [fstree (car (layouter (rp-width context) memo))])
+      (render fstree 0))))
