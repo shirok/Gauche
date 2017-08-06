@@ -1,3 +1,8 @@
+2017-08-05  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/writer.h, src/gauche/priv/writerP.h (ScmWriteControlsRec):
+	  Move the definition to the private header.
+
 2017-08-01  Shiro Kawai  <shiro@acm.org>
 
 	* src/libmac.scm (trace-macro, untrace-macro): Added experimentally.

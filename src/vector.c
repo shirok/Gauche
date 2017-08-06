@@ -33,6 +33,7 @@
 
 #define LIBGAUCHE_BODY
 #include "gauche.h"
+#include "gauche/priv/writerP.h"
 
 /*=====================================================================
  * Generic vectors
