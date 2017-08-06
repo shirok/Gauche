@@ -221,6 +221,8 @@
                           &i/o-read-error &i/o-write-error &i/o-closed-error
                           &read-error)
 
+(autoload gauche.pputil   %pretty-print pprint)
+
 ;; Autoloading r7rs allows Gauche-native programs to load R7RS library
 ;; seamlessly.
 (autoload r7rs (:macro define-library))

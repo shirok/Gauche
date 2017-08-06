@@ -127,6 +127,7 @@ ScmWriteControls *Scm_MakeWriteControls(const ScmWriteControls *proto)
         p->printWidth = -1;
         p->printBase = 10;
         p->printRadix = FALSE;
+        p->printPretty = FALSE;
     }
     return p;
 }
@@ -783,7 +784,14 @@ static void write_ss(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
     port->flags &= ~(SCM_PORT_WALKING|SCM_PORT_WRITESS);
 
     /* pass 2 */
-    write_rec(obj, port, ctx);
+    if (ctx->controls && ctx->controls->printPretty) {
+        static ScmObj proc = SCM_UNDEFINED;
+        SCM_BIND_PROC(proc, "%pretty-print", Scm_GaucheInternalModule());
+        Scm_ApplyRec4(proc, obj, SCM_OBJ(port),
+                      SCM_OBJ(s->sharedTable), SCM_OBJ(ctx->controls));
+    } else {
+        write_rec(obj, port, ctx);
+    }
     cleanup_port_write_state(port);
 }
 

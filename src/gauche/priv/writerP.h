@@ -42,6 +42,7 @@ struct ScmWriteControlsRec {
     int printWidth;             /* -1 for no limit */
     int printBase;              /* 2-36 */
     int printRadix;             /* boolean, #t to print radix for all numbers */
+    int printPretty;            /* boolean, #t to use pretty printer */
 };
 
 SCM_CLASS_DECL(Scm_WriteControlsClass);

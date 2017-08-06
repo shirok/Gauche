@@ -822,28 +822,49 @@
                            else Scm_Error(\"print-base must be an integer \
                                    between 2 and 36, but got: %S\", value);")
     (print-radix  :type <boolean> :c-name "printRadix"
-                  :setter "obj->printRadix = !SCM_FALSEP(value);"))
+                  :setter "obj->printRadix = !SCM_FALSEP(value);")
+    (print-pretty :type <boolean> :c-name "printPretty"
+                  :setter "obj->printPretty = !SCM_FALSEP(value);"))
    (allocator (c "write_controls_allocate")))
  ;; NB: Printer is defined in libobj.scm via write-object method
  )
 
 ;; The :key and :rest combination is to catch invalid keyword error
 (define (make-write-controls :key print-length print-level print-width
-                                  print-base print-radix
+                                  print-base print-radix print-pretty
                              :rest args)
   (apply make <write-controls> args))
 
+;; Returns fresh write-controls where the specified slot value is replaced
+;; from the original WC.
+;; NB: If the specified values doesn't change the original value at all,
+;; we don't bother to create a copy.  This assumes we treat WC immutable.
+;; (Maybe we should write this in C to avoid overhead.)
 (define (write-controls-copy wc :key print-length print-level print-width
-                                     print-base print-radix)
+                                     print-base print-radix print-pretty)
   (let-syntax [(select
                 (syntax-rules ()
                   [(_ k) (if (undefined? k) (slot-ref wc 'k) k)]))]
-    (make <write-controls>
-      :print-length (select print-length)
-      :print-level  (select print-level)
-      :print-width  (select print-width)
-      :print-base   (select print-base)
-      :print-radix  (select print-radix))))
+    (let ([length (select print-length)]
+          [level  (select print-level)]
+          [width  (select print-width)]
+          [base   (select print-base)]
+          [radix  (select print-radix)]
+          [pretty (select print-pretty)])
+      (if (and (eqv? length (slot-ref wc 'print-length))
+               (eqv? level  (slot-ref wc 'print-level))
+               (eqv? width  (slot-ref wc 'print-width))
+               (eqv? base   (slot-ref wc 'print-base))
+               (eqv? radix  (slot-ref wc 'print-radix))
+               (eqv? pretty (slot-ref wc 'print-pretty)))
+        wc
+        (make <write-controls>
+          :print-length length
+          :print-level  level
+          :print-width  width
+          :print-base   base
+          :print-radix  radix
+          :print-pretty pretty)))))
 
 ;;;
 ;;; With-something

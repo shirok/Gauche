@@ -33,10 +33,10 @@
 
 ;; Experimental
 
-(define-module gauche.pp
+(define-module gauche.pputil
   (use util.match)
   (export pprint))
-(select-module gauche.pp)
+(select-module gauche.pputil)
 
 ;; List printing modes:
 ;;
@@ -74,13 +74,14 @@
 ;; In the second pass we replace its value with -N where N is the label.
 (define-class <pp-context> ()
   ([writer      :init-form write :init-keyword :writer]
-   [shared      :init-form (make-hash-table 'eq?)]
+   [shared      :init-form (make-hash-table 'eq?) :init-keyword :shared]
    [counter     :init-value 0]          ;shared label counter
    [controls    :init-keyword :controls]))
 
 (define *default-controls* (make-write-controls :print-length 40
                                                 :print-level 10
-                                                :print-width 79))
+                                                :print-width 79
+                                                :print-pretty #t))
 
 ;; for internal convenience
 (define-inline (rp-writer c) (~ c 'writer))
@@ -265,38 +266,44 @@
 ;; Render the nested list of strings.  Some trick: S's and b's right
 ;; after open paren are ignored.  S's right after b's are also ignored.
 ;; B's insert a newline and a proper indentation.
-(define (render stree indent)
-  (define (next-line col) (newline) (dotimes [i col] (display " ")))
+(define (render stree indent port)
+  (define (next-line col) (newline port) (dotimes [i col] (display " " port)))
   (define (drop-while pred xs) ; avoid depending on srfi-1 (for now)
     (cond [(null? xs) '()]
           [(pred (car xs)) (drop-while pred (cdr xs))]
           [else xs]))
   (match stree
     [(prefix . es)
-     (display prefix)
+     (display prefix port)
      (let1 ind (+ indent (string-length prefix))
        (let loop ([es (drop-while symbol? es)])
          (match es
            [() #f]
            [('b . es) (next-line ind) (loop (drop-while symbol? es))]
-           [('s . es) (display " ") (loop es)]
-           [(s . es)  (render s ind) (loop es)])))]
-    [else (display stree)]))
+           [('s . es) (display " " port) (loop es)]
+           [(s . es)  (render s ind port) (loop es)])))]
+    [else (display stree port)]))
 
-
-;; Entry point of printer.
-(define (pprint obj
-                :key (controls *default-controls*)
-                     print-width print-length print-level)
-  (let* ([controls (if (or print-width print-length print-level)
-                     (write-controls-copy controls
-                                          :print-width print-width
-                                          :print-length print-length
-                                          :print-level print-level)
-                     controls)]
-         [context (make <pp-context> :controls controls)])
-    (scan-shared! obj 0 0 context)
+;; Stitch together
+(define-in-module gauche (%pretty-print obj port shared-table controls)
+  (let1 context (make <pp-context>
+                  :controls controls
+                  :shared (or shared-table (make-hash-table 'eq?)))
+    (unless shared-table
+      (scan-shared! obj 0 0 context))
     (let* ([layouter (layout obj 0 context)]
            [memo (make-memo-hash)]
            [fstree (car (layouter (rp-width context) memo))])
-      (render fstree 0))))
+      (render fstree 0 port))))
+
+;; External API
+(define (pprint obj
+                :key (port (current-output-port))
+                     (controls *default-controls*)
+                     print-width print-length print-level)
+  (let1 controls (write-controls-copy controls
+                                      :print-width print-width
+                                      :print-length print-length
+                                      :print-level print-level
+                                      :print-pretty #t)
+    (write obj port controls)))

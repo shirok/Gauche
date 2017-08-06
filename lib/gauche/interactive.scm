@@ -41,8 +41,6 @@
   )
 (select-module gauche.interactive)
 
-(autoload gauche.pp pprint)
-
 ;;;
 ;;; Apropos - search bound symbols matching given pattern
 ;;;

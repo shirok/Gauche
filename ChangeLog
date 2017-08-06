@@ -1,3 +1,13 @@
+2017-08-06  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/priv/writerP.h, src/libio.scm: Add printPretty field to
+	  ScmWriteControls.
+	* src/write.c: Integrated pretty printer to 'write'.  If printPretty
+	  slot of controls is true, pretty printer is invoked.
+	  NB: Haven't worked on the case when user-defined object-write method
+	  recurses to write.
+	* lib/gauche/pputil.scm: Renamed from pp.scm and set to be autoloaded.
+
 2017-08-05  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/writer.h, src/gauche/priv/writerP.h (ScmWriteControlsRec):
