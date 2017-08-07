@@ -620,8 +620,8 @@
 ;;
 
 (test-section "pretty printer")
-(use gauche.pp)
-(test-module 'gauche.pp)
+(use gauche.pputil)
+(test-module 'gauche.pputil)
 
 (let ([data1 '(Lorem ipsum dolor sit amet consectetur adipisicing elit
                sed do eiusmod tempor incididunt ut labore et dolore)]
