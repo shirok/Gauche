@@ -1,3 +1,9 @@
+2017-08-07  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/interactive.scm (print-mode),
+	  lib/gauche/interactive/toplevel.scm (print-mode, print-all):
+	  New REPL feature to switch print-mode (<write-controls> parameters).
+
 2017-08-06  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/priv/writerP.h, src/libio.scm: Add printPretty field to

@@ -34,7 +34,7 @@
 #!no-fold-case
 
 (define-module gauche.interactive
-  (export apropos d read-eval-print-loop
+  (export apropos d read-eval-print-loop print-mode
           ;; autoloaded symbols follow
           info info-page info-search reload ed
           reload-modified-modules module-reload-rules reload-verbose)
@@ -266,15 +266,30 @@
       (%set-history-expr! r)
       (apply values r))))
 
-(define *use-pp* #f)
+;; <write-controls> used for the printer.
+(define-constant *default-controls*
+  (make-write-controls :print-length 50 :print-level 10))
+(define *controls* *default-controls*)
 
-;; experimental - allow to use pretty printer
 (define (%printer . exprs)
   (dolist [expr exprs]
-    (if *use-pp*
-      (pprint expr)
-      (write expr))
+    (write expr *controls*)
     (newline)))
+
+;; API
+(define print-mode
+  (case-lambda
+    [() *controls*]                     ; return the current controls
+    [(c)                                ; set controls directly
+     (let1 c (if (eq? c 'default)
+               *default-controls*
+               c)
+       (assume-type c <write-controls>)
+       (rlet1 old *controls*
+         (set! *controls* c)))]
+    [kvs
+     (rlet1 old *controls*
+       (set! *controls* (apply write-controls-copy *controls* kvs)))]))
 
 ;; This shadows gauche#read-eval-print-loop
 (define (read-eval-print-loop :optional (reader #f)

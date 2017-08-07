@@ -319,3 +319,58 @@
       [(file) `(,(rename 'load) ,(x->string file))]
       [_ (usage)])))
 
+(define-toplevel-command (print-mode pm) :read
+  " default | [key value ...]\n\
+  View/set print-mode of REPL.\n\
+  Without arguments, it shows the current print mode.\n\
+  With single argument, 'default', resets the print mode to the default.\n\
+  Otherwise, the arguments must be a key-value list where keys are symbols,\n\
+  and values are either integers or booleans.\n\
+  The following keys are recognized.\n\
+    pretty <boolean>    - Use pretty printer [default: #f]\n\
+    length <integer>|#f - Max # of items shown in list/vector before abbreviated.\n\
+                          #f for unlimited.  [default: 50]\n\
+    level <integer>|#f  - Max # of nestings shown before abbreviated.\n\
+                          #f for unlimited.  [default: 50]\n\
+    width <integer>|#f  - Column width before line is wrapped.  Only used in pretty\n\
+                          printer.  #f for unlimited.  [default: 79]\n\
+    base <integer>      - Base radix of showing whole numbers.  [default: 10]"
+  (^[args]
+    (match args
+      [() #f]
+      [(default) (print-mode 'default)]
+      [(kvs ...)
+       (unless (even? (length kvs))
+         (error "print-mode: given key-value list isn't even:" kvs))
+       (apply print-mode
+              (append-map (^[kv]
+                            `(,(or (assoc-ref '((pretty . :print-pretty)
+                                                (length . :print-length)
+                                                (level  . :print-level)
+                                                (width  . :print-width)
+                                                (base   . :print-base))
+                                              (car kv))
+                                   (error "print-mode: unrecognized key:"
+                                          (car kv)))
+                              ,(cadr kv)))
+                          (slices kvs 2)))])
+    (let1 c (print-mode)
+      (format #t "Current print mode:\n")
+      (format #t "  pretty : ~3@a\n" (~ c'print-pretty))
+      (format #t "  length : ~3d\n" (~ c'print-length))
+      (format #t "   level : ~3d\n" (~ c'print-level))
+      (format #t "   width : ~3d\n" (~ c'print-width))
+      (format #t "    base : ~3d\n" (~ c'print-base)))
+    *no-value*))
+
+(define-toplevel-command (print-all pa) :read
+  "\n\
+ Print previous result (*1) without abbreviation.\n\
+ This is useful when you want the entire S-expression printed out in the\n\
+ buffer, for the copy&paste, etc."
+  (^[exprs]
+    (match exprs
+      [() (write *1 (make-write-controls)) (newline)]
+      [_ (usage)])
+    *no-value*))
+
