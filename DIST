@@ -87,7 +87,7 @@ do_tgz () {
 do_release () {
     do_tgz
     gpg --detach-sign --armor -o ../Gauche-$VERSION.tgz.asc ../Gauche-$VERSION.tgz
-    # do some doc generation stuff...
+    cd doc; make pdf; mv gauche-refe.pdf ../../Gauche-$VERSION-refe.pdf; mv gauche-refj.pdf ../../Gauche-$VERSION-refj.pdf
 }
 
 do_mingw_installer () {
