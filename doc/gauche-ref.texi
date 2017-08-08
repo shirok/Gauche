@@ -15,7 +15,6 @@
 * Gauche: (gauche-refe.info).	        An R7RS Scheme implementation.
 @end direntry
 @c JP
-@documentlanguage ja
 @setfilename gauche-refj.info
 @settitle Gauche ユーザリファレンス
 @afourpaper
@@ -23,6 +22,7 @@
 @direntry
 * Gauche (ja): (gauche-refj.info).	An R7RS Scheme implementation.
 @end direntry
+@documentlanguage ja
 @c COMMON
 @comment %**end of header
 
