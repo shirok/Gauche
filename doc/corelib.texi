@@ -18599,6 +18599,26 @@ print control variables):
 @c COMMON
 
 @table @code
+@item print-pretty
+@c EN
+If this slot has true value,
+@emph{pretty printing} is used, that is, newlines and indentations are
+inserted
+to show nested data structures fit in the specified width of columns.
+@c JP
+このスロットが真の値の場合、
+指定されたカラム幅内で、改行やインデントを適宜挿入してネストした構造を見やすく表示する、
+@emph{プリティプリント}機能を使います。
+@c COMMON
+
+@item print-width
+@c EN
+If this slot has a nonnegative integer, it specifies the display
+column width used for pretty printing.
+@c JP
+このスロットが非負整数の場合、プリティプリントで使われる表示幅を指定します。
+@c COMMON
+
 @item print-length
 @c EN
 If this slot has a nonnegative integer, it determines the maximum number
