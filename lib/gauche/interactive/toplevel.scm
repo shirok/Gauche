@@ -334,7 +334,9 @@
   \n                        #f for unlimited.  [default: 50]\
   \n  width <integer>|#f  - Column width before line is wrapped.  Only used in pretty\
   \n                        printer.  #f for unlimited.  [default: 79]\
-  \n  base <integer>      - Base radix of showing whole numbers.  [default: 10]"
+  \n  base <integer>      - Base radix of showing whole numbers.  [default: 10]\
+  \n  radix <boolean>     - Add radix prefix ('#x' etc.) befors whole numbers.\
+  \n                        [default: #f]"
   (^[args]
     (match args
       [() #f]
@@ -343,21 +345,21 @@
        (unless (even? (length kvs))
          (error "print-mode: given key-value list isn't even:" kvs))
        (apply print-mode
-              (append-map (^[kv]
-                            `(,(if (memq (car kv)
-                                         '(pretty length level width base))
-                                 (make-keyword (car kv))
-                                 (error "print-mode: unrecognized key:"
-                                        (car kv)))
-                              ,(cadr kv)))
-                          (slices kvs 2)))])
+              (append-map
+               (^[kv]
+                 `(,(if (memq (car kv) '(pretty length level width base radix))
+                      (make-keyword (car kv))
+                      (error "print-mode: unrecognized key:" (car kv)))
+                   ,(cadr kv)))
+               (slices kvs 2)))])
     (let1 c (print-mode)
       (format #t "Current print mode:\n")
-      (format #t "  pretty : ~3@a\n" (~ c'pretty))
       (format #t "  length : ~3d\n"  (~ c'length))
       (format #t "   level : ~3d\n"  (~ c'level))
+      (format #t "  pretty : ~3@a\n" (~ c'pretty))
       (format #t "   width : ~3d\n"  (~ c'width))
-      (format #t "    base : ~3d\n"  (~ c'base)))
+      (format #t "    base : ~3d\n"  (~ c'base))
+      (format #t "   radix : ~3d\n"  (~ c'radix)))
     *no-value*))
 
 (define-toplevel-command (print-all pa) :read
