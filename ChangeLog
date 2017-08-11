@@ -1,3 +1,11 @@
+2017-08-10  Shiro Kawai  <shiro@acm.org>
+
+	* src/libio.scm (<write-controls>): INCOMPATIBLE CHANGE:
+	  Dropped 'print-' prefix from slot names, for it is redundant.
+	  Keep make-write-controls and write-controls-copy backward
+	  compatible by making old keywords recognized.  Only the code
+	  that directly access with the slot names must be changed.
+
 2017-08-07  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/interactive.scm (print-mode),

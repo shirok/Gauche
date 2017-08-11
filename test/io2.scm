@@ -426,11 +426,11 @@
                           ("(0 1 ...)"     "#(0 1 ...)"     "#u8(0 1 ...)")
                           ("(0 ...)"       "#(0 ...)"       "#u8(0 ...)")
                           ("(...)"         "#(...)"         "#u8(...)"))
-         (let ([z (map (^n (list (write-to-string/ctx data :print-length n)
+         (let ([z (map (^n (list (write-to-string/ctx data :length n)
                                  (write-to-string/ctx (list->vector data)
-                                                      :print-length n)
+                                                      :length n)
                                  (write-to-string/ctx (list->u8vector data)
-                                                      :print-length n)))
+                                                      :length n)))
                        '(5 4 3 #f 2 1 0))])
            ;; make sure print-length doesn't affect global op
            (cons (write-to-string data)
@@ -438,7 +438,7 @@
 
   (test* "print-length for zero-length aggregate"
          '("()" "#()" "#u8()")
-         (map (^x (write-to-string/ctx x :print-length 0))
+         (map (^x (write-to-string/ctx x :length 0))
               '(() #() #u8())))
   
   (test* "print-length (nested)"
@@ -450,10 +450,10 @@
             "#(#(0 1 ...) #(0 1 ...) ...)")
            ("((0 1 2 ...) (0 1 2 ...) (0 1 2 ...) ...)"
             "#(#(0 1 2 ...) #(0 1 2 ...) #(0 1 2 ...) ...)"))
-         (map (^n (list (write-to-string/ctx data2 :print-length n)
+         (map (^n (list (write-to-string/ctx data2 :length n)
                         (write-to-string/ctx
                          (list->vector (map list->vector data2))
-                         :print-length n)))
+                         :length n)))
               (iota 4))))
 
 ;; example from CLHS
@@ -469,7 +469,7 @@
            "(1 (2 (3 (4 (5 (6))))))")
          (map (^n (write-to-string data (^x (write x (current-output-port)
                                                    (make-write-controls
-                                                    :print-level n)))))
+                                                    :level n)))))
               (iota 8))))
          
 (let* ([data '(a (b (c (d (e) (f) g) h) i) #(j (k #(l #(m) (n) o) p) q) r)])
@@ -482,7 +482,7 @@
            "(a # # r)"
            "#")
          (map (^n (write-to-string data (^x (write x (make-write-controls
-                                                      :print-level n)
+                                                      :level n)
                                                    (current-output-port)))))
               '(6 5 4 3 2 1 0))))
 
@@ -503,7 +503,7 @@
            "3 3 -- (if (member x y) (+ (car x) 3) ...)"
            "3 4 -- (if (member x y) (+ (car x) 3) '(foo . #(a b c d ...)))")
          (map (^z (let1 c (make-write-controls
-                           :print-level (car z) :print-length (cadr z))
+                           :level (car z) :length (cadr z))
                     (format c "~d ~d -- ~s" (car z) (cadr z) data)))
               level-length)))
 
@@ -518,7 +518,7 @@
          (map (^n (write-to-string data
                                    (^x (write x (current-output-port)
                                               (make-write-controls
-                                               :print-level n)))))
+                                               :level n)))))
               '(4 3 2 1 0))))
 
 ;; print-level and user-defined write method
@@ -552,7 +552,7 @@
            "#")
          (map (^n (write-to-string data
                                    (^x (write x (make-write-controls
-                                                 :print-level n)))))
+                                                 :level n)))))
               '(5 4 3 2 1 0))))
 
 (define-class <baz> ()
@@ -561,7 +561,7 @@
 (define-method write-object ((obj <baz>) port)
   (display "#<baz " port)
   ;; don't do this in real code; this is only for testing
-  (let1 wc (make-write-controls :print-base 16)
+  (let1 wc (make-write-controls :base 16)
     (write (~ obj'content) wc port)
     (unless ((with-module gauche.internal %port-walking?) port)
       (write (~ obj'content) wc *baz-log*)))
@@ -574,7 +574,7 @@
          (let ([p1 (open-output-string)]
                [p2 (open-output-string)])
            (set! *baz-log* p2)
-           (write data p1 (make-write-controls :print-base 3))
+           (write data p1 (make-write-controls :base 3))
            (list (get-output-string p1)
                  (get-output-string p2)))))
 
@@ -638,47 +638,47 @@
     (t* (data1)
         "(Lorem ipsum dolor sit amet consectetur adipisicing elit sed do eiusmod tempor\
        \n incididunt ut labore et dolore)")
-    (t* (data1 :print-width #f)
+    (t* (data1 :width #f)
         "(Lorem ipsum dolor sit amet consectetur adipisicing elit sed do eiusmod tempor incididunt ut labore et dolore)")
-    (t* (data1 :print-width 40)
+    (t* (data1 :width 40)
         "(Lorem ipsum dolor sit amet consectetur\
        \n adipisicing elit sed do eiusmod tempor\
        \n incididunt ut labore et dolore)")
-    (t* (data1 :print-width 39)
+    (t* (data1 :width 39)
         "(Lorem ipsum dolor sit amet consectetur\
        \n adipisicing elit sed do eiusmod tempor\
        \n incididunt ut labore et dolore)")
-    (t* (data1 :print-width 38)
+    (t* (data1 :width 38)
         "(Lorem ipsum dolor sit amet\
        \n consectetur adipisicing elit sed do\
        \n eiusmod tempor incididunt ut labore\
        \n et dolore)")
-    (t* (data1 :print-length 5)
+    (t* (data1 :length 5)
         "(Lorem ipsum dolor sit amet ....)")
-    (t* (data1 :print-length 1)
+    (t* (data1 :length 1)
         "(Lorem ....)")
-    (t* (data1 :print-length 0)
+    (t* (data1 :length 0)
         "(....)")
-    (t* (data1 :print-level 1 :print-length 5)
+    (t* (data1 :level 1 :length 5)
         "(Lorem ipsum dolor sit amet ....)")
-    (t* (data1 :print-level 0 :print-length 5)
+    (t* (data1 :level 0 :length 5)
         "#")
-    (t* ('a :print-level 0)
+    (t* ('a :level 0)
         "a")
 
-    (t* (data2 :print-level 0)
+    (t* (data2 :level 0)
         "#")
-    (t* (data2 :print-level 1)
+    (t* (data2 :level 1)
         "(Lorem #)")
-    (t* (data2 :print-level 2)
+    (t* (data2 :level 2)
         "(Lorem (ipsum #))")
-    (t* (data2 :print-level 3)
+    (t* (data2 :level 3)
         "(Lorem (ipsum #(dolor #)))")
-    (t* (data2 :print-level 4)
+    (t* (data2 :level 4)
         "(Lorem (ipsum #(dolor (sit #))))")
-    (t* (data2 :print-level 5)
+    (t* (data2 :level 5)
         "(Lorem (ipsum #(dolor (sit (amet . consectetur)))))")
-    (t* (data2 :print-level 4 :print-width 30)
+    (t* (data2 :level 4 :width 30)
         "(Lorem\
        \n (ipsum #(dolor (sit #))))")
     ))

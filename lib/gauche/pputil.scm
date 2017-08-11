@@ -78,17 +78,17 @@
    [counter     :init-value 0]          ;shared label counter
    [controls    :init-keyword :controls]))
 
-(define *default-controls* (make-write-controls :print-length 40
-                                                :print-level 10
-                                                :print-width 79
-                                                :print-pretty #t))
+(define *default-controls* (make-write-controls :length 40
+                                                :level 10
+                                                :width 79
+                                                :pretty #t))
 
 ;; for internal convenience
 (define-inline (rp-writer c) (~ c 'writer))
 (define-inline (rp-shared c) (~ c 'shared))
-(define-inline (rp-length c) (~ c 'controls 'print-length))
-(define-inline (rp-level c)  (~ c 'controls 'print-level))
-(define-inline (rp-width c)  (~ c 'controls 'print-width))
+(define-inline (rp-length c) (~ c 'controls 'length))
+(define-inline (rp-level c)  (~ c 'controls 'level))
+(define-inline (rp-width c)  (~ c 'controls 'width))
 
 (define simple-obj?
   (any-pred number? boolean? char? port? symbol? null?
@@ -300,10 +300,10 @@
 (define (pprint obj
                 :key (port (current-output-port))
                      (controls *default-controls*)
-                     print-width print-length print-level)
+                     width length level)
   (let1 controls (write-controls-copy controls
-                                      :print-width print-width
-                                      :print-length print-length
-                                      :print-level print-level
-                                      :print-pretty #t)
+                                      :width width
+                                      :length length
+                                      :level level
+                                      :pretty #t)
     (write obj port controls)))

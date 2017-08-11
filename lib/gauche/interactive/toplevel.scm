@@ -344,23 +344,20 @@
          (error "print-mode: given key-value list isn't even:" kvs))
        (apply print-mode
               (append-map (^[kv]
-                            `(,(or (assoc-ref '((pretty . :print-pretty)
-                                                (length . :print-length)
-                                                (level  . :print-level)
-                                                (width  . :print-width)
-                                                (base   . :print-base))
-                                              (car kv))
-                                   (error "print-mode: unrecognized key:"
-                                          (car kv)))
+                            `(,(if (memq (car kv)
+                                         '(pretty length level width base))
+                                 (make-keyword (car kv))
+                                 (error "print-mode: unrecognized key:"
+                                        (car kv)))
                               ,(cadr kv)))
                           (slices kvs 2)))])
     (let1 c (print-mode)
       (format #t "Current print mode:\n")
-      (format #t "  pretty : ~3@a\n" (~ c'print-pretty))
-      (format #t "  length : ~3d\n" (~ c'print-length))
-      (format #t "   level : ~3d\n" (~ c'print-level))
-      (format #t "   width : ~3d\n" (~ c'print-width))
-      (format #t "    base : ~3d\n" (~ c'print-base)))
+      (format #t "  pretty : ~3@a\n" (~ c'pretty))
+      (format #t "  length : ~3d\n"  (~ c'length))
+      (format #t "   level : ~3d\n"  (~ c'level))
+      (format #t "   width : ~3d\n"  (~ c'width))
+      (format #t "    base : ~3d\n"  (~ c'base)))
     *no-value*))
 
 (define-toplevel-command (print-all pa) :read

@@ -18559,6 +18559,8 @@ To flush the output buffer: @code{flush}, @code{flush-all-ports}.
 @subsubsection Output controls
 @c NODE 出力制御
 
+@deftp {Class} <write-controls>
+@clindex write-controls
 @c EN
 You can control several aspects of Lisp structure output via
 @code{<write-controls>} object.  The object output routines
@@ -18580,11 +18582,11 @@ write controls can do:
 
 @example
 (write '(1 10 100 1000)
-       (make-write-controls :print-base 16 :print-radix #t))
+       (make-write-controls :base 16 :radix #t))
  @r{prints} (#x1 #xa #x64 #x3e8)
 
 (write (iota 100)
-       (make-write-controls :print-length 5))
+       (make-write-controls :length 5))
  @r{prints} (0 1 2 3 4 ...)
 @end example
 
@@ -18598,28 +18600,7 @@ print control variables):
 (これらのスロット名はCommon Lispの対応するプリント制御変数から取られました)。
 @c COMMON
 
-@table @code
-@item print-pretty
-@c EN
-If this slot has true value,
-@emph{pretty printing} is used, that is, newlines and indentations are
-inserted
-to show nested data structures fit in the specified width of columns.
-@c JP
-このスロットが真の値の場合、
-指定されたカラム幅内で、改行やインデントを適宜挿入してネストした構造を見やすく表示する、
-@emph{プリティプリント}機能を使います。
-@c COMMON
-
-@item print-width
-@c EN
-If this slot has a nonnegative integer, it specifies the display
-column width used for pretty printing.
-@c JP
-このスロットが非負整数の場合、プリティプリントで使われる表示幅を指定します。
-@c COMMON
-
-@item print-length
+@defivar <write-controls> length
 @c EN
 If this slot has a nonnegative integer, it determines the maximum number
 of items displayed for lists and vectors (including uniform vectors).
@@ -18633,8 +18614,9 @@ out fully.
 @code{...}が表示されます。このスロットが@code{#f}(デフォルト)であれば、
 すべての要素が表示されます。
 @c COMMON
+@end defivar
 
-@item print-level
+@defivar <write-controls> level
 @c EN
 If this slot has a nonnegative integer, it determines the maximum depth
 of the structure (lists and vectors) to be displayed.  If the structure
@@ -18646,8 +18628,9 @@ If this slot is @code{#f} (default), no depth limit is enforced.
 そのノードの代わりに@code{#}が表示されます。
 このスロットが@code{#f}(デフォルト)であれば、すべての要素が表示されます。
 @c COMMON
+@end defivar
 
-@item print-base
+@defivar <write-controls> base
 @c EN
 This slot must have an integer between 2 and 36, inclusive, and specifies
 the radix used to print exact numbers.  The default value is 10.
@@ -18655,8 +18638,9 @@ the radix used to print exact numbers.  The default value is 10.
 このスロットは2以上36以下の整数でなければならず、
 正確な整数を印字する基数を指定します。デフォルトは10です。
 @c COMMON
+@end defivar
 
-@item print-radix
+@defivar <write-controls> radix
 @c EN
 This slot must have a boolean value.  If it is true, radix prefix
 is always printed before exact numbers.  The default value is @code{#f}.
@@ -18665,7 +18649,29 @@ is always printed before exact numbers.  The default value is @code{#f}.
 正確な整数の前に常に基数プレフィクスが表示されます。
 デフォルトは@code{#f}です。
 @c COMMON
-@end table
+@end defivar
+
+@defivar <write-controls> pretty
+@c EN
+If this slot has true value,
+@emph{pretty printing} is used, that is, newlines and indentations are
+inserted
+to show nested data structures fit in the specified width of columns.
+@c JP
+このスロットが真の値の場合、
+指定されたカラム幅内で、改行やインデントを適宜挿入してネストした構造を見やすく表示する、
+@emph{プリティプリント}機能を使います。
+@c COMMON
+@end defivar
+
+@defivar <write-controls> width
+@c EN
+If this slot has a nonnegative integer, it specifies the display
+column width used for pretty printing.
+@c JP
+このスロットが非負整数の場合、プリティプリントで使われる表示幅を指定します。
+@c COMMON
+@end defivar
 
 @c EN
 A write-controls object is immutable.  If you need a controls object
@@ -18676,15 +18682,38 @@ use @code{write-controls-copy}.
 少し変えたものが欲しければ、@code{write-controls-copy}が使えます。
 @c COMMON
 
-@defun make-write-controls :key print-length print-level print-base print-radix
 @c EN
-Returns a write-controls object.
+Note: When we introduced @code{<write-controls>} object in 0.9.5,
+we used slot names as @code{print-length}, @code{print-pretty} etc.,
+mirroring Common Lisp's special variables.  However, the @code{print-} part
+is redundant, as it is a part of a class dedicated to print control.  So
+we changed the slot names as of 0.9.6.
+The procedures @code{make-write-controls} and @code{write-controls-copy}
+accepts both old and new names for the backward compatibility.  The old
+code that directly refers to the slots needs to be rewritten (we think
+there're a not a lot).  We'll drop the old name support in 1.0 release.
 @c JP
-出力制御オブジェクトを返します。
+註: 0.9.5で@code{<write-controls>}オブジェクトを導入した際には、
+Common Lispのスペシャル変数の名前をそのまま反映した
+@code{print-length}、@code{print-pretty}等をスロット名としていました。
+しかし出力制御オブジェクトの一部であることがわかっている以上、@code{print-}の部分は冗長です。
+そこで0.9.6からスロット名を変えました。
+互換性のために、@code{make-write-controls}と@code{write-controls-copy}は
+古いスロット名でのキーワード引数も認識します。
+スロットを直接指定してアクセスしているコードは修正の必要があります。
+1.0リリース時に古いスロット名のサポートを落とす予定です。
+@c COMMON
+@end deftp
+
+@defun make-write-controls :key length level base radix pretty width
+@c EN
+Creates and returns a write-controls object.
+@c JP
+出力制御オブジェクトを作って返します。
 @c COMMON
 @end defun
 
-@defun write-controls-copy controls :key print-length print-level print-base print-radix
+@defun write-controls-copy controls :key length level base radix pretty width
 @c EN
 Returns a copy of another write-controls object @var{controls}.
 If keyword arguments are given, those values override the

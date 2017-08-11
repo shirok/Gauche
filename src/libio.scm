@@ -797,74 +797,88 @@
  (define-cclass <write-controls>
    "ScmWriteControls*" "Scm_WriteControlsClass"
    ("Scm_TopClass")
-   ((print-length :type <int>     :c-name "printLength"
-                  :getter "if (obj->printLength < 0) return SCM_FALSE; \
-                           else return SCM_MAKE_INT(obj->printLength);"
-                  :setter "if (SCM_INTP(value) && SCM_INT_VALUE(value) >= 0) \
-                             obj->printLength = SCM_INT_VALUE(value); \
-                           else obj->printLength = -1;")
-    (print-level  :type <int>     :c-name "printLevel"
-                  :getter "if (obj->printLevel < 0) return SCM_FALSE; \
-                           else return SCM_MAKE_INT(obj->printLevel);"
-                  :setter "if (SCM_INTP(value) && SCM_INT_VALUE(value) >= 0) \
-                             obj->printLevel = SCM_INT_VALUE(value); \
-                           else obj->printLevel = -1;")
-    (print-width  :type <int>     :c-name "printWidth"
-                  :getter "if (obj->printWidth < 0) return SCM_FALSE; \
-                           else return SCM_MAKE_INT(obj->printWidth);"
-                  :setter "if (SCM_INTP(value) && SCM_INT_VALUE(value) >= 0) \
-                             obj->printWidth = SCM_INT_VALUE(value); \
-                           else obj->printWidth = -1;")
-    (print-base   :type <int>     :c-name "printBase"
-                  :setter "if (SCM_INTP(value) && SCM_INT_VALUE(value) >= 2 \
-                               && SCM_INT_VALUE(value) <= 36) \
-                             obj->printBase = SCM_INT_VALUE(value); \
-                           else Scm_Error(\"print-base must be an integer \
-                                   between 2 and 36, but got: %S\", value);")
-    (print-radix  :type <boolean> :c-name "printRadix"
-                  :setter "obj->printRadix = !SCM_FALSEP(value);")
-    (print-pretty :type <boolean> :c-name "printPretty"
-                  :setter "obj->printPretty = !SCM_FALSEP(value);"))
+   ((length :type <int>     :c-name "printLength"
+            :getter "if (obj->printLength < 0) return SCM_FALSE; \
+                     else return SCM_MAKE_INT(obj->printLength);"
+            :setter "if (SCM_INTP(value) && SCM_INT_VALUE(value) >= 0) \
+                       obj->printLength = SCM_INT_VALUE(value); \
+                     else obj->printLength = -1;")
+    (level  :type <int>     :c-name "printLevel"
+            :getter "if (obj->printLevel < 0) return SCM_FALSE; \
+                     else return SCM_MAKE_INT(obj->printLevel);"
+            :setter "if (SCM_INTP(value) && SCM_INT_VALUE(value) >= 0) \
+                       obj->printLevel = SCM_INT_VALUE(value); \
+                     else obj->printLevel = -1;")
+    (width  :type <int>     :c-name "printWidth"
+            :getter "if (obj->printWidth < 0) return SCM_FALSE; \
+                     else return SCM_MAKE_INT(obj->printWidth);"
+            :setter "if (SCM_INTP(value) && SCM_INT_VALUE(value) >= 0) \
+                       obj->printWidth = SCM_INT_VALUE(value); \
+                     else obj->printWidth = -1;")
+    (base   :type <int>     :c-name "printBase"
+            :setter "if (SCM_INTP(value) && SCM_INT_VALUE(value) >= 2 \
+                         && SCM_INT_VALUE(value) <= 36) \
+                       obj->printBase = SCM_INT_VALUE(value); \
+                     else Scm_Error(\"print-base must be an integer \
+                                    between 2 and 36, but got: %S\", value);")
+    (radix  :type <boolean> :c-name "printRadix"
+            :setter "obj->printRadix = !SCM_FALSEP(value);")
+    (pretty :type <boolean> :c-name "printPretty"
+            :setter "obj->printPretty = !SCM_FALSEP(value);"))
    (allocator (c "write_controls_allocate")))
  ;; NB: Printer is defined in libobj.scm via write-object method
  )
 
-;; The :key and :rest combination is to catch invalid keyword error
-(define (make-write-controls :key print-length print-level print-width
-                                  print-base print-radix print-pretty
-                             :rest args)
-  (apply make <write-controls> args))
+;; TRANSIENT: The print-* keyword arguments for the backward compatibility
+(define (make-write-controls :key length level width base radix pretty
+                                  print-length print-level print-width
+                                  print-base print-radix print-pretty)
+  (define (arg k k-alt) (if (undefined? k-alt) k k-alt))
+  (make <write-controls>
+    :length (arg length print-length)
+    :level  (arg level  print-level)
+    :width  (arg width  print-width)
+    :base   (arg base   print-base)
+    :radix  (arg radix  print-radix)
+    :pretty (arg pretty print-pretty)))
 
 ;; Returns fresh write-controls where the specified slot value is replaced
 ;; from the original WC.
 ;; NB: If the specified values doesn't change the original value at all,
 ;; we don't bother to create a copy.  This assumes we treat WC immutable.
 ;; (Maybe we should write this in C to avoid overhead.)
-(define (write-controls-copy wc :key print-length print-level print-width
+;; TRANSIENT: The print-* keyword arguments for the backward compatibility
+(define (write-controls-copy wc :key length level width base radix pretty
+                                     print-length print-level print-width
                                      print-base print-radix print-pretty)
   (let-syntax [(select
                 (syntax-rules ()
-                  [(_ k) (if (undefined? k) (slot-ref wc 'k) k)]))]
-    (let ([length (select print-length)]
-          [level  (select print-level)]
-          [width  (select print-width)]
-          [base   (select print-base)]
-          [radix  (select print-radix)]
-          [pretty (select print-pretty)])
-      (if (and (eqv? length (slot-ref wc 'print-length))
-               (eqv? level  (slot-ref wc 'print-level))
-               (eqv? width  (slot-ref wc 'print-width))
-               (eqv? base   (slot-ref wc 'print-base))
-               (eqv? radix  (slot-ref wc 'print-radix))
-               (eqv? pretty (slot-ref wc 'print-pretty)))
+                  [(_ k k-alt)
+                   (if (undefined? k)
+                     (if (undefined? k-alt)
+                       (slot-ref wc 'k)
+                       k-alt)
+                     k)]))]
+    (let ([length (select length print-length)]
+          [level  (select level  print-level)]
+          [width  (select width  print-width)]
+          [base   (select base   print-base)]
+          [radix  (select radix  print-radix)]
+          [pretty (select pretty print-pretty)])
+      (if (and (eqv? length (slot-ref wc 'length))
+               (eqv? level  (slot-ref wc 'level))
+               (eqv? width  (slot-ref wc 'width))
+               (eqv? base   (slot-ref wc 'base))
+               (eqv? radix  (slot-ref wc 'radix))
+               (eqv? pretty (slot-ref wc 'pretty)))
         wc
         (make <write-controls>
-          :print-length length
-          :print-level  level
-          :print-width  width
-          :print-base   base
-          :print-radix  radix
-          :print-pretty pretty)))))
+          :length length
+          :level  level
+          :width  width
+          :base   base
+          :radix  radix
+          :pretty pretty)))))
 
 ;;;
 ;;; With-something

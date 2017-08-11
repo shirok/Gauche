@@ -834,10 +834,12 @@
 
 (define-method write-object ((obj <write-controls>) port)
   (format port "#<write-controls ~s>"
-          `(:print-length ,(~ obj'print-length)
-            :print-level  ,(~ obj'print-level)
-            :print-base   ,(~ obj'print-base)
-            :print-radix  ,(~ obj'print-radix))))
+          `(:length ,(~ obj'length)
+            :level  ,(~ obj'level)
+            :base   ,(~ obj'base)
+            :radix  ,(~ obj'radix)
+            :pretty ,(~ obj'pretty)
+            :width  ,(~ obj'width))))
 
 ;;----------------------------------------------------------------
 ;; Describe
