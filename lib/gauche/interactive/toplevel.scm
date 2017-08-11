@@ -158,9 +158,9 @@
 ;;
 
 (define-toplevel-command (apropos a) :read
-  " regexp [module-name]\n\
- Show the names of global bindings that match the regexp.\n\
- If module-name (symbol) is given, the search is limited in the named module."
+  " regexp [module-name]\
+ \nShow the names of global bindings that match the regexp.\
+ \nIf module-name (symbol) is given, the search is limited in the named module."
   (^[args]
     (define (->regexp x)
       (cond [(regexp? x) x]
@@ -171,8 +171,8 @@
       [_ (usage)])))
 
 (define-toplevel-command (describe d) :read
-  " [object]\n\
- Describe the object.\nWithout arguments, describe the last REPL result."
+  " [object]\
+ \nDescribe the object.\nWithout arguments, describe the last REPL result."
   (^[args]
     (match args
       [() `(,(rename 'describe))]
@@ -180,20 +180,20 @@
       [_ (usage)])))
 
 (define-toplevel-command history :read
-  "\n\
- Show REPL history."
+  "\
+ \nShow REPL history."
   (^[args]
     (match args
       [() `(,(rename '*history))]
       [_ (usage)])))
 
 (define-toplevel-command (info doc) :read
-  " name-or-regexp\n\
- Show info document for an entry of NAME, or search entries by REGEXP.\n\
- NAME can be a name of a function, syntax, macro, module, or class.\n\
- Example:  ,info cons\n\
- If REGEXP is given instead of NAME, it lists the matching entry names.\n\
- Example:  ,info #/cons/"
+  " name-or-regexp\
+ \nShow info document for an entry of NAME, or search entries by REGEXP.\
+ \nNAME can be a name of a function, syntax, macro, module, or class.\
+ \n  Example:  ,info cons\
+ \nIf REGEXP is given instead of NAME, it lists the matching entry names.\
+ \n  Example:  ,info #/cons/"
   (^[args]
     (define (->name x) ; to preserve ':' of keyword
       (if (keyword? x) #":~x" (x->string x)))
@@ -205,9 +205,9 @@
       [_ (usage)])))
 
 (define-toplevel-command (help h) :read
-  " [command]\n\
- Show the help message of the command.\n\
- Without arguments, show the list of all toplevel commands."
+  " [command]\
+ \nShow the help message of the command.\
+ \nWithout arguments, show the list of all toplevel commands."
   (^[args]
     (define (get-cmd&help help-string)
       (let* ((ls   (call-with-input-string help-string port->string-lseq))
@@ -236,17 +236,17 @@
       [_ (usage)])))
 
 (define-toplevel-command pwd :read
-  "\n\
- Print working directory."
+  "\
+ \nPrint working directory."
   (^[args]
     (match args
       [() (print (sys-getcwd)) *no-value*]
       [_ (usage)])))
 
 (define-toplevel-command cd :read
-  " [directory]\n\
- Change the current directory.\n\
- Without arguments, change to the home directory."
+  " [directory]\
+ \nChange the current directory.\
+ \nWithout arguments, change to the home directory."
   (^[args]
     (let1 dir (match args
                 [() (home-directory)]
@@ -260,10 +260,10 @@
 ;; A tradition to use '!' for shell escape, but "comma - exclamation-mark"
 ;; combination is a bit awkward to type.  "comma - s - h" is much easier.
 (define-toplevel-command sh :trim
-  "  command args ...\n\
- Run command via shell.\n\
- Shell is taken from the environment variable SHELL, or /bin/sh if it's empty.\n\
- The command line COMMAND ARGS ... are passed to the shell as is."
+  "  command args ...\
+ \nRun command via shell.\
+ \nShell is taken from the environment variable SHELL, or /bin/sh if it's empty.\
+ \nThe command line COMMAND ARGS ... are passed to the shell as is."
   (^[line]
     (cond-expand
      [gauche.os.windows
@@ -279,8 +279,8 @@
 ;; This can be better - to make it work on generic functions,
 ;; show source location as well, etc.
 (define-toplevel-command source :read
-  " procedure\n\
- Show source code of the procedure if it's available."
+  " procedure\
+ \nShow source code of the procedure if it's available."
   (^[args]
     (match args
       [(word) (quasirename rename
@@ -290,51 +290,51 @@
       [_ (usage)])))
 
 (define-toplevel-command (use u) :read
-  " module [option ...]\n\
- Use the specified module.  Same as (use module option ...).\n\
- Allowed options:\n\
-   :only (symbol ...)\n\
-   :except (symbol ...)\n\
-   :prefix symbol\n\
-   :rename ((orig-name new-name) ...)\n\
- For the details of options, type \",info import\" and select the first one."
+  " module [option ...]\
+ \nUse the specified module.  Same as (use module option ...).\
+ \nAllowed options:\
+ \n  :only (symbol ...)\
+ \n  :except (symbol ...)\
+ \n  :prefix symbol\
+ \n  :rename ((orig-name new-name) ...)\
+ \nFor the details of options, type \",info import\" and select the first one."
   (^[args]
     (match args
       [(module . rest) `(,(rename 'use) ,module ,@rest)]
       [_ (usage)])))
 
 (define-toplevel-command (reload r) :read
-  " module\n\
- Reload the specified module, using gauche.reload."
+  " module\
+ \nReload the specified module, using gauche.reload."
   (^[args]
     (match args
       [(module) `(,(rename 'reload) ',module)]
       [_ (usage)])))
 
 (define-toplevel-command (load l) :read
-  " file\n\
- Load the specified file."
+  " file\
+ \nLoad the specified file."
   (^[args]
     (match args
       [(file) `(,(rename 'load) ,(x->string file))]
       [_ (usage)])))
 
 (define-toplevel-command (print-mode pm) :read
-  " default | [key value ...]\n\
-  View/set print-mode of REPL.\n\
-  Without arguments, it shows the current print mode.\n\
-  With single argument, 'default', resets the print mode to the default.\n\
-  Otherwise, the arguments must be a key-value list where keys are symbols,\n\
-  and values are either integers or booleans.\n\
-  The following keys are recognized.\n\
-    pretty <boolean>    - Use pretty printer [default: #f]\n\
-    length <integer>|#f - Max # of items shown in list/vector before abbreviated.\n\
-                          #f for unlimited.  [default: 50]\n\
-    level <integer>|#f  - Max # of nestings shown before abbreviated.\n\
-                          #f for unlimited.  [default: 50]\n\
-    width <integer>|#f  - Column width before line is wrapped.  Only used in pretty\n\
-                          printer.  #f for unlimited.  [default: 79]\n\
-    base <integer>      - Base radix of showing whole numbers.  [default: 10]"
+  " default | [key value ...]\
+  \nView/set print-mode of REPL.\
+  \nWithout arguments, it shows the current print mode.\
+  \nWith single argument, 'default', resets the print mode to the default.\
+  \nOtherwise, the arguments must be a key-value list where keys are symbols,\
+  \nand values are either integers or booleans.\
+  \nThe following keys are recognized.\
+  \n  pretty <boolean>    - Use pretty printer [default: #f]\
+  \n  length <integer>|#f - Max # of items shown in list/vector before abbreviated.\
+  \n                        #f for unlimited.  [default: 50]\
+  \n  level <integer>|#f  - Max # of nestings shown before abbreviated.\
+  \n                        #f for unlimited.  [default: 50]\
+  \n  width <integer>|#f  - Column width before line is wrapped.  Only used in pretty\
+  \n                        printer.  #f for unlimited.  [default: 79]\
+  \n  base <integer>      - Base radix of showing whole numbers.  [default: 10]"
   (^[args]
     (match args
       [() #f]
@@ -361,10 +361,10 @@
     *no-value*))
 
 (define-toplevel-command (print-all pa) :read
-  "\n\
- Print previous result (*1) without abbreviation.\n\
- This is useful when you want the entire S-expression printed out in the\n\
- buffer, for the copy&paste, etc."
+  "\
+ \nPrint previous result (*1) without abbreviation.\
+ \nThis is useful when you want the entire S-expression printed out in the\
+ \nbuffer, for the copy&paste, etc."
   (^[exprs]
     (match exprs
       [() (write *1 (make-write-controls)) (newline)]
