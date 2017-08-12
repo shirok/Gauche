@@ -6,7 +6,6 @@
 @comment %**start of header
 @documentencoding UTF-8
 @c EN
-@documentlanguage en
 @setfilename gauche-refe.info
 @settitle Gauche Users' Reference
 @afourpaper
@@ -14,6 +13,7 @@
 @direntry
 * Gauche: (gauche-refe.info).	        An R7RS Scheme implementation.
 @end direntry
+@documentlanguage en
 @c JP
 @setfilename gauche-refj.info
 @settitle Gauche ユーザリファレンス
