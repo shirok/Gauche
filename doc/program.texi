@@ -871,8 +871,12 @@ Commands can be abbreviated as far as it is not ambiguous.
  ,describe|d Describe the object.
  ,help|h     Show the help message of the command.
  ,history    Show REPL history.
- ,info|doc   Show info document for an entry of NAME.
+ ,info|doc   Show info document for an entry of NAME, or search entries by REGEXP.
  ,load|l     Load the specified file.
+ ,print-all|pa
+             Print previous result (*1) without abbreviation.
+ ,print-mode|pm
+             View/set print-mode of REPL.
  ,pwd        Print working directory.
  ,reload|r   Reload the specified module, using gauche.reload.
  ,sh         Run command via shell.
@@ -1116,6 +1120,71 @@ APIにはヒットしません。
 @code{info}はドキュメント参照のツールと考えると良いでしょう。
 @c COMMON
 
+@c EN
+When the result of evaluation is a huge nested structure,
+it may take too long to display the result.  Gauche actually set
+a limit of length and depth in displaying structures, so you might
+occasionally see the very long or deep list is trucated, with
+@dots{} to show there are more items.
+(Try evaluating @code{(make-list 100)} on REPL).
+@c JP
+評価結果が巨大な構造になる場合、それを表示するのに時間がかかりすぎる問題があります。
+Gaucheはデフォルトで、表示する構造の長さと深さに制限を設けているので、
+非常に長い、あるいは深い構造を表示しようとした場合に、@dots{}によって後の方が
+省略されて表示される場合があります。
+(REPLで@code{(make-list 100)}を評価してみてください。)
+@c COMMON
+
+@c EN
+You can type @code{,pa} (or @code{,print-all}) toplevel REPL command
+to fully redisplay the previous result without omission.
+@c JP
+直前の結果を省略無しで再表示するには @code{,pa} (もしくは@code{,print-all})
+トップレベルREPLコマンドをタイプしてください。
+@c COMMON
+
+@c EN
+For deeply nested structures, you may want it to be @emph{pretty printed},
+that is, with newlines and indentations to show the tree structure.
+Type @code{,pm pretty #t} (or @code{,print-mode pretty #t}) to turn on
+pretty printing.
+@c JP
+深くネストした構造には、適切に改行やインデントを挿入してみやすくしてくれる
+プリティプリント機能が欲しくなるかもしれません。
+@code{,pm pretty #t} (もしくは@code{,print-mode pretty #t}) 
+でプリティプリントをONにできます。
+@c COMMON
+
+@example
+gosh> ,pm pretty #t length 5
+Current print mode:
+  length :   5
+   level :  10
+  pretty :  #t
+   width :  #f
+    base :  10
+   radix :  #f
+gosh> (call-with-input-file "Info.plist" (cut ssax:xml->sxml <> '()))
+(*TOP*
+ (*PI* xml "version=\"1.0\" encoding=\"UTF-8\"")
+ (plist
+  (|@|
+   (version "1.0"))
+  (dict
+   (key "CFBundleDevelopmentRegion")
+   (string "English")
+   (key "CFBundleExecutable")
+   (string "Gauche")
+   ....)))
+@end example
+
+@c EN
+Type @code{,pm default} to make print mode back to default.
+For more details, type @code{,help pm}.
+@c JP
+プリントモードをデフォルトに戻すには@code{,pm default}とタイプします。
+より詳しくは@code{,help pm}を見てください。
+@c COMMON
 
 @c EN
 Note: If you invoke @code{gosh} with @code{-q} option, which tells
