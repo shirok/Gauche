@@ -18,6 +18,9 @@
   (sys-normalize-pathname (or (sys-getenv "top_srcdir") "..")
                           :absolute #t :canonicalize #t))
 
+(define *executable-suffix*
+  (process-output->string '(gauche-config --executable-suffix)))
+
 ;;=======================================================================
 (test-section "gosh")
 
@@ -66,7 +69,7 @@
        (unwind-protect
            (begin
              (delete-files "test.o" "scheme-r7rs")
-             (copy-file "./gosh" "./scheme-r7rs")
+             (copy-file #"./gosh~*executable-suffix*" "./scheme-r7rs")
              (sys-chmod "./scheme-r7rs" #o755)
              (with-output-to-file "test.o"
                (^[]

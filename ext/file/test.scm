@@ -9,7 +9,11 @@
 
 (test-start "file.util")
 (use file.util)
-(test-module 'file.util)
+(cond-expand
+ [gauche.os.windows
+  (test-module 'file.util :allow-undefined '(sys-symlink))]
+ [else
+  (test-module 'file.util)])
 
 ;; shorthand of normalizing pathname.  this doesn't do anything on
 ;; unix, but on Windows the separator in PATHNAME is replaced.
