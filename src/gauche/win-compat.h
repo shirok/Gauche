@@ -47,12 +47,6 @@ typedef unsigned long u_long;
 #define _BSDTYPES_DEFINED
 #endif /* _BSDTYPES_DEFINED */
 
-/* Mingw-w64 only defines sigset_t when _POSIX is defined. */
-#if defined(__MINGW64_VERSION_MAJOR) && !defined(_POSIX)
-typedef _sigset_t sigset_t;
-#endif  /*defined(__MINGW64_VERSION_MAJOR) && !defined(_POSIX)*/
-
-
 /*======================================================================
  * Time calculation
  * Win32API's FILETIME is 64bit time count since 1601/1/1 UTC, measured
@@ -120,8 +114,18 @@ typedef jmp_buf  sigjmp_buf;
 
 /* Windows doesn't support SIGKILL explicitly, but we want to emulate
    (sys-kill SIGKILL) by TerminateProcess.
-   The signal number 9 is unused in Windows at this moment.  Chekc signal.h.*/
+   The signal number 9 is unused in Windows at this moment.  Check signal.h.*/
 #define SIGKILL 9
+
+/* Mingw-w64 only defines sigset_t when _POSIX is defined. */
+#if defined(__MINGW64_VERSION_MAJOR) && !defined(_POSIX)
+typedef _sigset_t sigset_t;
+#endif  /*defined(__MINGW64_VERSION_MAJOR) && !defined(_POSIX)*/
+
+/* for MinGW32 runtime v5.0 */
+#if defined(__MINGW32__) && !defined(__MINGW64_VERSION_MAJOR) && (__MINGW32_MAJOR_VERSION >= 5)
+#define _SIGSET_T_
+#endif /* defined(__MINGW32__) && !defined(__MINGW64_VERSION_MAJOR) && (__MINGW32_MAJOR_VERSION >= 5) */
 
 #ifndef _SIGSET_T_
 #define _SIGSET_T_
@@ -201,8 +205,8 @@ extern __declspec(dllimport) const char *Scm_WCS2MBS(const WCHAR *s);
 #endif /* !UNICODE */
 #define fstat(fd, buf)     _fstat64(fd, buf)
 
-/* for MinGW32 */
-#if defined(__MINGW32__) && !defined(__MINGW64_VERSION_MAJOR)
+/* for MinGW32 runtime v3.X */
+#if defined(__MINGW32__) && !defined(__MINGW64_VERSION_MAJOR) && (__MINGW32_MAJOR_VERSION < 5)
 struct __stat64 {
     _dev_t st_dev;
     _ino_t st_ino;
@@ -219,7 +223,7 @@ struct __stat64 {
 _CRTIMP int __cdecl _stat64(const char*, struct __stat64*);
 _CRTIMP int __cdecl _wstat64(const wchar_t*, struct __stat64*);
 _CRTIMP int __cdecl _fstat64(int, struct __stat64*);
-#endif /* defined(__MINGW32__) && !defined(__MINGW64_VERSION_MAJOR) */
+#endif /* defined(__MINGW32__) && !defined(__MINGW64_VERSION_MAJOR) && (__MINGW32_MAJOR_VERSION < 5) */
 
 /*===================================================================
  * Miscellaneous POSIX stuff
