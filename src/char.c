@@ -996,7 +996,7 @@ int read_charset_syntax(ScmPort *input, int bracket_syntax, ScmDString *buf,
 ScmObj read_predef_charset(const char **cp, int error_p)
 {
     int i;
-    char name[MAX_CHARSET_NAME_LEN];
+    char name[MAX_CHARSET_NAME_LEN+1];
     for (i=0; i<MAX_CHARSET_NAME_LEN; i++) {
         ScmChar ch;
         SCM_CHAR_GET(*cp, ch);
