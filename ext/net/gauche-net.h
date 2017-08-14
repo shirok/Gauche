@@ -90,6 +90,12 @@ const char *inet_ntop(int af, const void *src, char *dst, socklen_t size);
 #define AI_ALL        0x00000100
 #define AI_ADDRCONFIG 0x00000400
 #define AI_V4MAPPED   0x00000800
+/* for MinGW32 runtime v5.0 */
+#if defined(__MINGW32__) && !defined(__MINGW64_VERSION_MAJOR) && (__MINGW32_MAJOR_VERSION >= 5)
+void WSAAPI freeaddrinfo(struct addrinfo*);
+int  WSAAPI getaddrinfo(const char*, const char*, const struct addrinfo*, struct addrinfo**);
+int  WSAAPI getnameinfo(const struct sockaddr*, socklen_t, char*, DWORD, char*, DWORD, int);
+#endif /* defined(__MINGW32__) && !defined(__MINGW64_VERSION_MAJOR) && (__MINGW32_MAJOR_VERSION >= 5) */
 #endif /* HAVE_IPV6 */
 #endif /*GAUCHE_WINDOWS*/
 
