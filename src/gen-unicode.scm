@@ -264,15 +264,21 @@
 ;;;
 
 (define (generate-tables db)
-  (with-output-to-file "char_attr.c"
-    (^() (preamble db)
-      (generate-category-tables db)
-      (generate-case-tables db)
-      (generate-digit-value-tables db)))
-  (with-output-to-file "gauche/priv/unicode_attr.h"
-    (^() (preamble db)
-      (generate-break-tables db)
-      (generate-width-tables db))))
+  (receive (char_attr.p char_attr.c) (sys-mkstemp "char_attr.c.")
+    (receive (unicode_attr.p unicode_attr.h) (sys-mkstemp "unicode_attr.h.")
+      (with-output-to-port char_attr.p
+        (^() (preamble db)
+          (generate-category-tables db)
+          (generate-case-tables db)
+          (generate-digit-value-tables db)))
+      (with-output-to-port unicode_attr.p
+        (^() (preamble db)
+          (generate-break-tables db)
+          (generate-width-tables db)))
+      (close-port char_attr.p)
+      (close-port unicode_attr.p)
+      (sys-rename char_attr.c "char_attr.c")
+      (sys-rename unicode_attr.h "gauche/priv/unicode_attr.h"))))
 
 (define (preamble db)
   (print "/* Generated automatically from Unicode character database */")
