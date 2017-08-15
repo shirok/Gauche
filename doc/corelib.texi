@@ -4094,7 +4094,7 @@ Pairs and lists are one of the most fundamental data structure in Scheme.
 Gauche core provides all standard list procedures, plus some useful
 procedures that are commonly supported in lots of implementations.
 If they are not enough, you can find more procedures in the modules
-described in @ref{List library} and
+described in @ref{R7RS lists} and
 @ref{Combination library}.
 See also @ref{Collection framework} and
 @ref{Sequence framework} for generic collection/sequence
@@ -4103,7 +4103,7 @@ operations.
 ペアとリストはSchemeにおける最も基本的なデータ構造のひとつです。
 Gaucheのコアは全ての標準のリスト手続きと、多くのScheme実装に見られる
 便利な手続きのいくつかを提供します。それらで足りない場合は
-さらに多くの手続きが@ref{List library}、
+さらに多くの手続きが@ref{R7RS lists}、
 @ref{Combination library}
 といったモジュールで提供されています。
 また、リストに限らないジェネリックなシーケンス/コレクションの操作が
@@ -4301,15 +4301,15 @@ Makes a list, whose elements are @var{obj} @dots{}.
 
 @defun list* obj1 obj2 @dots{}
 @defunx cons* obj1 obj2 @dots{}
-[SRFI-1]
+[R7RS]
 @c EN
 Like @code{list}, but the last argument becomes cdr of the last pair.
 Two procedures are exactly the same.  Gauche originally had @code{list*},
-and SRFI-1 defines @code{cons*}.
+and SRFI-1 (R7RS @code{(scheme list)})defines @code{cons*}.
 @c JP
 @code{list}とほぼ同じですが、最後の引数が作成されるリストの最後のペアのcdrになります。
 二つの手続きは全く同じです。Gaucheはもともと@code{list*}を持っていましたが、
-SRFI-1が@code{cons*}という名前を定義しました。
+SRFI-1 (R7RS @code{(scheme list)}) が@code{cons*}という名前を定義しました。
 @c COMMON
 @lisp
 (list* 1 2 3) @result{} (1 2 . 3)
@@ -4318,7 +4318,7 @@ SRFI-1が@code{cons*}という名前を定義しました。
 @end defun
 
 @defun list-copy list
-[R7RS][SRFI-1]
+[R7RS]
 @c EN
 Shallow copies @var{list}.  If @var{list} is circular,
 this function diverges.
@@ -4329,7 +4329,7 @@ this function diverges.
 @end defun
 
 @defun iota count :optional (start 0) (step 1)
-[SRFI-1]
+[R7RS]
 @c EN
 Returns a list of @var{count} numbers, starting from @var{start},
 increasing by @var{step}.   @var{Count} must be a nonnegative
@@ -4531,7 +4531,7 @@ If @var{list} is a circular list, this function diverges.
 @end defun
 
 @defun length+ x
-[SRFI-1]
+[R7RS]
 @c EN
 If @var{x} is a proper list, returns its length.
 For all other @var{x}, including a circular list,
@@ -4597,7 +4597,7 @@ We don't have any better idea now, unfortunately.
 
 @defun take x i
 @defunx drop x i
-[SRFI-1]
+[R7RS]
 @c EN
 @code{take} returns the first i elements of list x.
 @code{drop} returns all but the first i elements of list x.
@@ -4689,7 +4689,7 @@ see @code{subseq} in @ref{Slicing sequence}.
 
 @defun take-right lis k
 @defunx drop-right lis k
-[SRFI-1]
+[R7RS]
 @c EN
 @code{take-right} returns the last @var{k} elements of @var{lis}.
 @code{drop-right} returns all but the last @var{k} elements of @var{lis}.
@@ -4757,7 +4757,7 @@ The result still shares the @var{list}.
 
 @defun take! lis k
 @defunx drop-right! lis k
-[SRFI-1]
+[R7RS]
 @c EN
 Linear update variants of @var{take} and @var{drop-right}.
 Those procedures may destructively modifies @var{lis}.
@@ -4765,7 +4765,7 @@ Those procedures may destructively modifies @var{lis}.
 If @var{lis} is circular, @code{take!} may return a list
 shorter than expected.
 @c JP
-[SRFI-1] @var{take} および @var{drop-right} の
+@var{take} および @var{drop-right} の
 その場で更新されるバージョンです。これらの
 手続きは @var{lis} を破壊的に変更するかもしれません。
 
@@ -4833,7 +4833,7 @@ no error is signalled but the behavior is undefined.
 
 
 @defun last-pair list
-[SRFI-1]
+[R7RS]
 @c EN
 Returns the last pair of @var{list}.
 @var{list} can be a proper or dotted list.
@@ -4850,7 +4850,7 @@ Returns the last pair of @var{list}.
 @end defun
 
 @defun last pair
-[SRFI-1]
+[R7RS]
 @c EN
 Returns the last element of the non-empty, finite list @var{pair}.
 It is equivalent to @code{(car (last-pair pair))}.
@@ -4867,7 +4867,7 @@ It is equivalent to @code{(car (last-pair pair))}.
 
 @defun split-at x i
 @defunx split-at! x i
-[SRFI-1]
+[R7RS]
 @c EN
 @code{split-at} splits the list @var{x} at index @var{i},
 returning a list of the first @var{i} elements, and the remaining tail.
@@ -4893,7 +4893,7 @@ modifies @var{x} to produce the result.
 More tolerant version of @code{split-at}.
 Returns the results of @code{take*} and @var{drop*}.
 @c JP
-SRFI-1の@code{split-at}の寛容なバージョンです。
+SRFI-1 (R7RS @code{(scheme list)})の@code{split-at}の寛容なバージョンです。
 @code{take*}と@var{drop*}の結果を返します。
 @c COMMON
 
@@ -4982,11 +4982,10 @@ extends @code{map} to work on any type of collection.
 
 @defun append-map f clist1 clist2 @dots{}
 @defunx append-map! f clist1 clist2 @dots{}
+[R7RS]
 @c EN
-[SRFI-1]
 Functionally equivalent to the followings, though a bit more efficient:
 @c JP
-[SRFI-1]
 機能的には以下と同等ですが、若干効率が良いです:
 @c COMMON
 
@@ -5047,11 +5046,11 @@ cdrs of the current pairs.
 @c EN
 Note: The name @code{map*} is along the line of
 @code{list*}/@code{cons*} that can produce improper list
-(@xref{List constructors}, @pxref{SRFI-1 List utilities}).
+(@xref{List constructors}, @pxref{R7RS lists}).
 @c JP
 註: @code{map*}という名前は、正規でないリストを作り得る@code{list*}/@code{cons*}からの
 連想でつけられました
-(@ref{List constructors}、@ref{SRFI-1 List utilities}参照)。
+(@ref{List constructors}、@ref{R7RS lists}参照)。
 @c COMMON
 @end defun
 
@@ -5078,7 +5077,7 @@ extends @code{for-each} to work on any type of collection.
 @end defun
 
 @defun fold kons knil clist1 clist2 @dots{}
-[SRFI-1]
+[R7RS]
 @c EN
 The fundamental list iterator.
 When it is given a single list
@@ -5119,7 +5118,7 @@ Examples:
 @end defun
 
 @defun fold-right kons knil clist1 clist2 @dots{}
-[R6RS][SRFI-1]
+[R7RS]
 @c EN
 The fundamental list recursion operator.
 When it is given a single list
@@ -5236,7 +5235,7 @@ Schemeでは、まず@code{SRFI-1}によって@code{fold}と@code{fold-right}が
 
 @defun reduce f ridentity list
 @defunx reduce-right f ridentity list
-[SRFI-1]
+[R7RS]
 @c EN
 Variant of @code{fold} and @code{fold-right}.   @var{f} must be a
 binary operator, and @var{ridentity} is the value such that for
@@ -5268,7 +5267,7 @@ So @var{ridentity} is used only when @var{list} is empty.
 
 @defun filter pred list
 @defunx filter! pred list
-[SRFI-1]
+[R7RS]
 @c EN
 A procedure @var{pred} is applied on each element of @var{list},
 and a list of elements that @var{pred} returned true on it is returned.
@@ -5290,7 +5289,7 @@ modifies @var{list} to produce the result.
 
 @defun filter-map  f clist1 clist2 @dots{}
 @c EN
-[SRFI-1]
+[R7RS]
 Like @code{map}, but only true values are saved.
 At least one of the list arguments must be finite.
 @c JP
@@ -5306,11 +5305,12 @@ At least one of the list arguments must be finite.
 
 @defun remove pred list
 @defunx remove! pred list
+[R7RS]
 @c EN
-[SRFI-1] A procedure @var{pred} is applied on each element of @var{list},
+A procedure @var{pred} is applied on each element of @var{list},
 and a list of elements that @var{pred} returned false on it is returned.
 @c JP
-[SRFI-1] 手続き @var{pred} が @var{list} の各要素に適用され、
+手続き @var{pred} が @var{list} の各要素に適用され、
 @var{pred} が偽を返す要素のリストが返されます。
 @c COMMON
 @example
@@ -5326,7 +5326,7 @@ modifies @var{list} to produce the result.
 @end defun
 
 @defun find pred clist
-[SRFI-1]
+[R7RS]
 @c EN
 Applies @var{pred} for each element of @var{clist}, from
 left to right, and returns the first element that @var{pred} returns
@@ -5339,7 +5339,7 @@ true on.  If no element satisfies @var{pred}, @code{#f} is returned.
 @end defun
 
 @defun find-tail pred clist
-[SRFI-1]
+[R7RS]
 @c EN
 Applies @var{pred} for each element of @var{clist}, from left to right,
 and when @var{pred} returns a true value, returns the pair whose car
@@ -5352,7 +5352,7 @@ is the element.  If no element satisfies @var{pred}, @code{#f} is returned.
 @end defun
 
 @defun any pred clist1 clist2 @dots{}
-[SRFI-1]
+[R7RS]
 @c EN
 Applies @var{pred} across each element of @var{clist}s, and
 returns as soon as @var{pred} returns a non-false value.
@@ -5368,7 +5368,7 @@ value, @code{#f} is returned.
 @end defun
 
 @defun every pred clist1 clist2 @dots{}
-[SRFI-1]
+[R7RS]
 @c EN
 Applies @var{pred} across each element of @var{clist}s, and
 returns @code{#f} as soon as @var{pred} returns @code{#f}.
@@ -5382,7 +5382,7 @@ If all application of @var{pred} return a non-false value,
 @end defun
 
 @defun count pred clist1 clist2 @dots{}
-[SRFI-1]
+[R7RS]
 @c EN
 A procedure @var{pred} is applied to the @var{n}-th element
 of given lists, from @var{n} is zero to the length of the
@@ -5414,7 +5414,7 @@ At least one of the argument lists must be finite:
 
 @defun delete x list :optional elt=
 @defunx delete! x list :optional elt=
-[SRFI-1]
+[R7RS]
 @c EN
 Equivalent to
 @c JP
@@ -5433,7 +5433,7 @@ The comparison procedure, @var{elt=}, defaults to @code{equal?}.
 
 @defun delete-duplicates list :optional elt=
 @defunx delete-duplicates! list :optional elt=
-[SRFI-1]
+[R7RS]
 @c EN
 Removes duplicate elements from @var{list}.
 If there are multiple equal elements in @var{list},
@@ -5469,7 +5469,7 @@ if the last argument is not a proper list.
 @end defun
 
 @defun append! list @dots{}
-[SRFI-1]
+[R7RS]
 @c EN
 Returns a list consisting of the elements of the first @var{list} followed by
 the elements of the other lists.  The cells in the lists except the last
@@ -5484,12 +5484,13 @@ any object.
 
 @defun concatenate list-of-lists
 @defunx concatenate! list-of-lists!
+[R7RS]
 @c EN
-[SRFI-1] Equivalent to @code{(apply append @var{list-of-lists})} and
+Equivalent to @code{(apply append @var{list-of-lists})} and
 @code{(apply append! @var{list-of-lists})}, respectively, but this
 can be a bit efficient by skipping overhead of @code{apply}.
 @c JP
-[SRFI-1] それぞれ、@code{(apply append @var{list-of-lists})} および
+それぞれ、@code{(apply append @var{list-of-lists})} および
 @code{(apply append! @var{list-of-lists})} と同等ですが、
 @code{apply}のオーバヘッドが無い分、わずかに効率的です。
 @c COMMON
@@ -5497,7 +5498,7 @@ can be a bit efficient by skipping overhead of @code{apply}.
 
 @defun reverse list :optional (tail '())
 @defunx reverse! list :optional (tail '())
-[R7RS+, SRFI-1+]
+[R7RS+]
 @c EN
 Returns a list consisting of the elements of @var{list}
 in the reverse order.
@@ -5549,13 +5550,13 @@ The rationale is the following correspondence:
 
 @defun append-reverse rev-head tail
 @defunx append-reverse! rev-head tail
-[SRFI-1]
+[R7RS]
 @c EN
 Equivalent to the two-argument @code{reverse} and @code{reverse!}.
-Provided for srfi-1 compatibility.
+Provided for srfi-1 (R7RS @code{(scheme list)}) compatibility.
 @c JP
-[SRFI-1] 2引数の@code{reverse}および@code{reverse!}と同等です。
-srfi-1との互換のために用意されています。
+2引数の@code{reverse}および@code{reverse!}と同等です。
+srfi-1 (R7RS @code{(scheme list)}) との互換のために用意されています。
 @c COMMON
 @end defun
 
@@ -5563,7 +5564,7 @@ srfi-1との互換のために用意されています。
 @defun memq obj list
 @defunx memv obj list
 @defunx member obj list :optional obj=
-[R7RS][SRFI-1]
+[R7RS]
 @c EN
 Searches @var{obj} in the @var{list}.  If @code{n}-th element of
 @var{list} equals to @var{obj} (in the sense of @code{eq?} for @code{memq},
@@ -5604,13 +5605,13 @@ instead of @code{equal?}.
 Returns @code{(cons (cons @var{obj1} @var{obj2}) @var{obj3})}.
 Useful to put an entry at the head of an associative list.
 
-(This procedure is defined in SRFI-1 as @code{alist-cons}; @pxref{List library}).
+(This procedure is defined in SRFI-1 (R7RS @code{(scheme list)}) as @code{alist-cons}; @pxref{R7RS lists}).
 @c JP
 @code{(cons (cons @var{obj1} @var{obj2}) @var{obj3})} を返します。
 連想リストの先頭に新しいエントリを加えるのに便利です。
 
-(この手続きはSRFI-1では@code{alist-cons}という名前で定義されています。
-@ref{List library}参照)。
+(この手続きはSRFI-1 (R7RS @code{(scheme list)})では@code{alist-cons}という名前で定義されています。
+@ref{R7RS lists}参照)。
 @c COMMON
 
 @lisp
@@ -5619,7 +5620,7 @@ Useful to put an entry at the head of an associative list.
 @end defun
 
 @defun alist-copy alist
-[SRFI-1]
+[R7RS]
 @c EN
 Returns a fresh copy of @var{alist}.
 The spine of @var{alist} and each cell that points a key and a value
@@ -5644,7 +5645,7 @@ b @result{} ((a . b) (c . d))
 @defun assq obj list
 @defunx assv obj list
 @defunx assoc obj list :optional key=
-[R7RS][SRFI-1]
+[R7RS]
 @c EN
 Each element in @var{list} must be a pair.
 These procedures search a pair whose car matches @var{obj}
@@ -5674,7 +5675,7 @@ to check the equivalence of @var{obj} and each key.
 
 @defun alist-delete key alist :optional key=
 @defunx alist-delete! key alist :optional key=
-[SRFI-1]
+[R7RS]
 @c EN
 Deletes all cells in @var{alist} whose key is the same as @var{key}.
 Comparison is done by a procedure @var{key=}.  The default is @code{eqv?}.
@@ -10521,20 +10522,20 @@ a setter method of @code{ref}.
 
 @defun vector->list vector :optional start end
 @defunx list->vector list :optional start end
-[R7RS+][SRFI-133+]
+[R7RS+]
 @c EN
 Converts a vector to a list, or vice versa.
 
 The optional @var{start} and @var{end} arguments
 limit the range of the source.
-(R7RS and SRFI-133 don't define @var{start} and @var{end} arguments
+(R7RS don't define @var{start} and @var{end} arguments
 for @code{list->vector}.)
 @c JP
 ベクタをリストに変換したり、その逆を行う手続きです。
 
 省略可能な引数@var{start}と@var{end}を与えることにより、
 値を取り出す範囲を制限することができます。
-(R7RSおよびSRFI-133の@code{list->vector}は@var{start}と@var{end}引数を規定していません。)
+(R7RSの@code{list->vector}は@var{start}と@var{end}引数を規定していません。)
 @c COMMON
 @example
 (vector->list '#(1 2 3 4 5))     @result{} (1 2 3 4 5)
@@ -10556,7 +10557,7 @@ With @var{gauche.collection} module, you can use
 @end defun
 
 @defun reverse-list->vector list :optional start end
-[SRFI-133]
+[R7RS]
 @c EN
 Without optional arguments, it returns the same thing as
 @code{(list->vector (reverse list))}, but does not
@@ -10610,7 +10611,7 @@ With @var{gauche.collection} module, you can use
 @end defun
 
 @defun vector-fill! vector fill :optional start end
-[R7RS][SRFI-133]
+[R7RS]
 @c EN
 Sets all elements in a vector @var{vector} to @var{fill}.
 
@@ -10629,7 +10630,7 @@ zero, and @var{end} defaults to the length of @var{vector}.
 @end defun
 
 @defun vector-copy vector :optional start end fill
-[R7RS][SRFI-133]
+[R7RS]
 @c EN
 Copies a vector @var{vector}.  Optional @var{start} and @var{end}
 arguments can be used to limit the range of @var{vector} to be copied.
@@ -10651,7 +10652,7 @@ the result vector.
 @end defun
 
 @defun vector-copy! target tstart source :optional sstart send
-[R7RS][SRFI-133]
+[R7RS]
 @c EN
 Copies the content of @var{source} vector into the @var{target} vector
 starting from @var{tstart} in the target.  The @var{target} vector
@@ -10692,7 +10693,7 @@ overlapping.
 @end defun
 
 @defun vector-append vec @dots{}
-[R7RS][SRFI-133]
+[R7RS]
 @c EN
 Returns a newly allocated vector whose contents are concatenation
 of elements of @var{vec} in order.
@@ -10707,7 +10708,7 @@ of elements of @var{vec} in order.
 @end defun
 
 @defun vector-map proc vec1 vec2 @dots{}
-[R7RS][SRFI-133]
+[R7RS]
 @c EN
 Returns a new vector, @var{i}-th of which is calculated
 by applying @var{proc} on the list of each @var{i}-th element
@@ -10775,7 +10776,7 @@ function by @code{(map-to-with-index <vector> proc vec1 vec2 @dots{})}.
 @end defun
 
 @defun vector-map! proc vec1 vec2 @dots{}
-[SRFI-133]
+[R7RS]
 @c EN
 For each index @var{i}, calls @var{proc} with @var{i}-th index
 of @var{vec1} @var{vec2} @dots{}, and set the result back to
@@ -10819,7 +10820,7 @@ index as the first argument.  This is equivalent to SRFI-43's
 @end defun
 
 @defun vector-for-each proc vec1 vec2 @dots{}
-[R7RS][SRFI-133]
+[R7RS]
 @c EN
 For all @var{i} below the minimum length of input vectors,
 calls @var{proc} with @var{i}-th elements of @var{vec1} @var{vec2}
@@ -12342,10 +12343,11 @@ Partial application versions of @code{apply}, @code{map} and @code{for-each}.
 @defunx delete$ pred
 @defunx assoc$ item
 @c EN
-Partial application versions of some srfi-1 procedures
-(@pxref{List library}).
+Partial application versions of some srfi-1 (R7RS @code{(scheme list)})
+procedures (@pxref{R7RS lists}).
 @c JP
-SRFI-1(@ref{List library}参照)の手続に対応する部分適用版手続。
+SRFI-1 (R7RS @code{(scheme list)}) 
+(@ref{R7RS lists}参照)の手続に対応する部分適用版手続。
 @c COMMON
 @end defun
 

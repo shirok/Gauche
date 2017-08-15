@@ -75,7 +75,7 @@ Gaucheのバージョン@VERSION@に対応します。
 * Object system::               
 * Library modules - Overview::  
 * Library modules - Gauche extensions::  
-* Library modules - R7RS integration::  
+* Library modules - R7RS standard libraries::  
 * Library modules - SRFIs::     
 * Library modules - Utilities::  
 * References::                  

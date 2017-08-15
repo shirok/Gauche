@@ -364,7 +364,7 @@ If you invoke @code{gosh} into an interactive REPL mode with @code{-r7} option,
 all standard R7RS-small libraries (except @code{(scheme r5rs)} are already
 imported for your convenience.
 
-@xref{Library modules - R7RS integration}, for the details on
+@xref{Library modules - R7RS standard libraries}, for the details on
 how Gauche supports R7RS.
 
 (Note: The @code{-r7} option doesn't change reader lexiacl mode
@@ -395,7 +395,7 @@ R7RSでないと混乱してしまうかもしれません。
 importされた状態になっています。
 
 GaucheがR7RSをどのようにサポートしているかの詳細については
-@ref{Library modules - R7RS integration}を参照してください。
+@ref{Library modules - R7RS standard libraries}を参照してください。
 
 (註: @code{-r7}オプションは、リーダ字句モードを@code{strict-r7}に
 替えることはしません。@code{strict-r7}モードをデフォルトにすると、

@@ -1,4 +1,4 @@
-@node Library modules - Gauche extensions, Library modules - R7RS integration, Library modules - Overview, Top
+@node Library modules - Gauche extensions, Library modules - R7RS standard libraries, Library modules - Overview, Top
 @chapter Library modules - Gauche extensions
 @c NODE ライブラリモジュール - Gauche拡張モジュール
 
@@ -2580,7 +2580,7 @@ the @code{open-*-conversion-port}.
 This module provides a set of generic functions (GFs) that iterate over
 various collections.   The Scheme standard [R7RS] has some iterative
 primitives such as @code{map} and @code{for-each},
-and SRFI-1 (@pxref{List library} adds a rich set of such functions,
+and @code{scheme.list} (@pxref{R7RS lists} adds a rich set of such functions,
 but they work only on lists.
 
 Using the method dispatch of the object system, this module
@@ -2592,7 +2592,8 @@ So far, the following operations are defined.
 @c JP
 このモジュールは、様々なコレクションに対して繰り返し処理を行う総称関数を提供します。
 Schemeの規格は@code{map}や@code{for-each}などの繰り返し手続きを定義しており、
-またSRFI-1(@ref{List library}参照)は更に数多くの繰り返し手続きを提供しますが、
+また@code{scheme.list}
+(@ref{R7RS lists}参照)は更に数多くの繰り返し手続きを提供しますが、
 それらはリストに対してしか動作しません。
 
 このモジュールはオブジェクトシステムのメソッドディスパッチを利用して、
@@ -5966,9 +5967,9 @@ The file is closed when the generator is exhausted.
 @defun gunfold p f g seed :optional tail-gen
 @c MOD gauche.generator
 @c EN
-A generator constructor similar to @var{unfold} (@pxref{SRFI-1 List utilities}).
+A generator constructor similar to @var{unfold} (@pxref{R7RS lists}).
 @c JP
-@var{unfold}に似たジェネレータの構築子です (@ref{SRFI-1 List utilities}参照)。
+@var{unfold}に似たジェネレータの構築子です (@ref{R7RS lists}参照)。
 @c COMMON
 
 @c EN
@@ -7694,7 +7695,7 @@ routine of the REPL.
 @defun lunfold p f g seed :optional tail-gen
 @c MOD gauche.lazy
 @c EN
-A lazy version of @code{unfold} (@pxref{SRFI-1 List utilities}).
+A lazy version of @code{unfold} (@pxref{R7RS lists}).
 The arguments @var{p}, @var{f} and @var{g} are procedures,
 each of which take one argument, the current seed value.
 The predicate @var{p} determines when to stop, @var{f} creates
@@ -7705,7 +7706,7 @@ that takes one argument, the last seed value (that is, the
 seed value @code{(p seed)} returned @code{#f}).  It must return
 a (possibly lazy) list, that forms the tail of the resulting sequence.
 @c JP
-@code{unfold}の遅延バージョンです (@ref{SRFI-1 List utilities}参照)。
+@code{unfold}の遅延バージョンです (@ref{R7RS lists}参照)。
 @var{p}、@code{f}、@code{g}引数はそれぞれ1引数を取る手続きで、
 現在のシード値を受けとります。
 @var{p}は生成を停止するかどうかを決める述語、
@@ -15451,9 +15452,10 @@ If no element in @var{seq} satisfies @var{pred}, @code{#f} is returned.
 @end example
 
 @c EN
-See also @code{list-index} in SRFI-1 (@pxref{SRFI-1 List utilities}).
+See also @code{list-index} in @code{scheme.list}
+(@pxref{R7RS lists}).
 @c JP
-SRFI-1 (@ref{SRFI-1 List utilities}参照)の@code{list-index}も見て下さい。
+@code{scheme.list} (@ref{R7RS lists}参照)の@code{list-index}も見て下さい。
 @c COMMON
 @end deffn
 
@@ -15563,13 +15565,13 @@ Elements are compared by @var{test}, defaulted to @code{eqv?}.
 @c EN
 If @var{needle} isn't found in @var{list}, it returns @var{list} itself
 and @code{()}.  This behavior is aligned to @code{span} and @code{break}
-(@pxref{SRFI-1 List utilities}), which split a list by predicate but
+(@pxref{R7RS lists}), which split a list by predicate but
 returns the whole list if split condition isn't met.
 @c JP
 @var{needle}が@var{list}中に見つからなかった場合は、
 @var{list}そのものと@code{()}が返されます。
 これは@code{span}や@code{break}の動作に合わせてあります
-(@ref{SRFI-1 List utilities}参照)。
+(@ref{R7RS lists}参照)。
 これらの手続きは要素に対する述語でもってリストを分割しますが、
 分割条件が満たされなかった場合はリスト全体を返します。
 @c COMMON

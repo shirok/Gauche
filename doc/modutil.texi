@@ -3354,11 +3354,13 @@ SRFI-1の@code{every}のように、@var{queue}中の各要素に
 Removes all items in the queue that satisfies @var{pred}.
 Returns @code{#t} if any item is removed.  Otherwise returns @code{#f}.
 The order of arguments follows
-@code{remove} in SRFI-1 (@pxref{SRFI-1 List utilities}).
+@code{remove} in @code{scheme.list}
+(@pxref{R7RS lists}).
 @c JP
 キューから、述語@var{pred}を満たす要素を全て取り除きます。
 要素が削除された場合は@code{#t}が、そうでなければ@code{#f}が返されます。
-引数の順序はSRFI-1の@code{remove}に揃えました (@ref{SRFI-1 List utilities}参照)。
+引数の順序は@code{scheme.list}
+の@code{remove}に揃えました (@ref{R7RS lists}参照)。
 @c COMMON
 @end defun
 

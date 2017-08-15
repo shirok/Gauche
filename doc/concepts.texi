@@ -92,7 +92,7 @@ Note that, since Gauche predates R7RS, most existing Gauche source
 code doesn't follow the R7RS program/library structure.  Gauche can
 read both traditional Gauche modules/scripts and R7RS programs/libraries
 seamlessly.
-@xref{Library modules - R7RS integration}, for the details of how R7RS
+@xref{Library modules - R7RS standard libraries}, for the details of how R7RS
 is integrated into Gauche.
 @c JP
 GaucheはR7RS以前から開発されているため、既存のGaucheソースコードの多くはR7RSの
@@ -100,7 +100,7 @@ GaucheはR7RS以前から開発されているため、既存のGaucheソース�
 Gaucheは、伝統的なGaucheのモジュール形式やスクリプトも、R7RS形式のプログラムや
 ライブラリも、両方解釈することができます。
 R7RSがどのようにGaucheに統合されているかについては、
-@ref{Library modules - R7RS integration}を参照してください。
+@ref{Library modules - R7RS standard libraries}を参照してください。
 @c COMMON
 
 
