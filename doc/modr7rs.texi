@@ -663,22 +663,22 @@ R7RSの@code{import}の正式な構文は次の通りです。
 
 @menu
 * R7RS library form::
-* R7RS base library::
-* R7RS case-lambda::
-* R7RS char library::
-* R7RS complex numbers::
-* R7RS cxr accessors::
-* R7RS eval::
-* R7RS file library::
-* R7RS inexact numbers::
-* R7RS lazy evaluation::
-* R7RS load::
-* R7RS process context::
-* R7RS read::
-* R7RS repl::
-* R7RS time::
-* R7RS write::
-* R5RS compatibility::
+* R7RS base library::           @code{scheme.base}
+* R7RS case-lambda::            @code{scheme.case-lambda}
+* R7RS char library::           @code{scheme.char}
+* R7RS complex numbers::        @code{scheme.complex}
+* R7RS cxr accessors::          @code{scheme.cxr}
+* R7RS eval::                   @code{scheme.eval}
+* R7RS file library::           @code{scheme.file}
+* R7RS inexact numbers::        @code{scheme.inexact}
+* R7RS lazy evaluation::        @code{scheme.lazy}
+* R7RS load::                   @code{scheme.load}
+* R7RS process context::        @code{scheme.process-context}
+* R7RS read::                   @code{scheme.read}
+* R7RS repl::                   @code{scheme.repl}
+* R7RS time::                   @code{scheme.time}
+* R7RS write::                  @code{scheme.write}
+* R5RS compatibility::          @code{scheme.r5rs}
 @end menu
 
 @node R7RS library form, R7RS base library, R7RS small language, R7RS small language
@@ -1871,8 +1871,9 @@ with-input-from-file with-output-to-file write write-char zero?
 @c NODE R7RS large - Red Edition
 
 @menu
-* R7RS lists::
-* R7RS vectors::
+* R7RS lists::                  @code{scheme.list}
+* R7RS vectors::                @code{scheme.vector}
+* R7RS character sets::         @code{scheme.charset}
 @end menu
 
 @node R7RS lists, R7RS vectors, R7RS large - Red Edition, R7RS large - Red Edition
@@ -2476,7 +2477,7 @@ The cells in the first list argument may be reused to construct the result.
 @c COMMON
 @end defun
 
-@node R7RS vectors,  , R7RS lists, R7RS large - Red Edition
+@node R7RS vectors, R7RS character sets, R7RS lists, R7RS large - Red Edition
 @subsection @code{scheme.vector} - R7RS vectors
 @c NODE R7RSベクタ, @code{scheme.vector} - R7RSベクタ
 
@@ -3069,6 +3070,439 @@ Same as @code{(reverse (vector->list vec start end))}, but more efficient.
 @c @c MOD scheme.sort
 @c @end defun
 
+@node R7RS character sets,  , R7RS vectors, R7RS large - Red Edition
+@subsection @code{scheme.charset} - R7RS character sets
+@c NODE R7RS文字セット, @code{scheme.charset} - R7RS文字セット
+
+@deftp {Module} scheme.charset
+@mdindex scheme.charset
+@c EN
+Implements character set library, originally defined as SRFI-14.
+Note that the following
+character-set procedures are Gauche's build-in.  @xref{Character set}.
+@c JP
+文字集合ライブラリを実装します。元はSRFI-14で定義されたものです。
+以下の文字集合手続きはGauche組み込みになっているので、@ref{Character set}を参照してください。
+@c COMMON
+
+@example
+char-set char-set? char-set-contains? char-set-copy
+char-set-complement char-set-complement!
+@end example
+
+@c EN
+In Gauche,
+the @code{<char-set>} class inherits @code{<collection>} and implements
+the collection protocol, so that the generic operations defined in
+@code{gauche.collection} can also be used (@pxref{Collection framework}).
+@c JP
+Gaucheでは@code{<char-set>}クラスは@code{<collection>}を継承し、
+コレクションプロトコルを実装しているので、@code{gauche.collection}モジュールで
+提供される操作も使えます (@ref{Collection framework}参照)。
+@c COMMON
+@end deftp
+
+@menu
+* Character-set constructors::
+* Character-set comparison::
+* Character-set iteration::
+* Character-set query::
+* Character-set algebra::
+* Predefined character-set::
+@end menu
+
+@node Character-set constructors, Character-set comparison, R7RS character sets, R7RS character sets
+@subsubsection Character-set constructors
+@c NODE 文字セットの構築子
+
+@defun list->char-set char-list :optional base-cs
+@defunx list->char-set! char-list base-cs
+[R7RS]
+@c MOD scheme.charset
+@c EN
+Constructs a character set from a list of characters @var{char-list}.
+If @var{base-cs} is given, it must be a character set, and the characters
+in it are added to the result character set.
+@code{List->char-set!} is allowed, but not required, to reuse @var{base-cs}
+to store the result.
+@c JP
+与えられた文字のリスト@var{char-list}から文字セットを構築して返します。
+文字セット@var{base-cs}が与えられていた場合、返される文字セットは
+その文字セットに@var{char-list}中の文字を追加したものとなります。
+@code{list->char-set!}は、結果を格納するために@var{base-cs}を
+変更するかもしれません。
+@c COMMON
+@end defun
+
+@defun string->char-set s :optional base-cs
+@defunx string->char-set! s base-cs
+[R7RS]
+@c MOD scheme.charset
+@c EN
+Like @code{list->char-set} and @code{list->char-set!},
+but take a list of characters from a string @var{s}.
+@c JP
+追加する文字をリストでなく文字列@var{s}で与えることを除けば
+@code{list->char-set}、@code{list->char-set!}と同じです。
+@c COMMON
+@end defun
+
+@defun char-set-filter pred char-set :optional base-cs
+@defunx char-set-filter! pred char-set base-cs
+[R7RS]
+@c MOD scheme.charset
+@c EN
+Returns a character set containing every character @var{c} in
+@var{char-set} such that @code{(@var{pred} @var{c})} returns true.
+If a character set @var{base-cs} is given, its content is added to
+the result.  The linear update version @code{char-set-filter!}
+is allowed, but not required, to modify @var{base-cs} to store the result.
+@c JP
+@var{char-set}内の文字のうち、@code{(@var{pred} @var{c})} が真の値を
+返すような@var{c}からなる文字セットを作成して返します。
+文字セット@var{base-cs}が与えられた場合は、その内容が結果に追加されます。
+@code{char-set-filter!}は、結果を格納するために@var{base-cs}を変更するかも
+しれません。
+@c COMMON
+@end defun
+
+@defun ucs-range->char-set lower upper :optional error? base-cs
+@defunx ucs-range->char-set! lower upper error? base-cs
+[R7RS]
+@c MOD scheme.charset
+@c EN
+Creates 
+@c JP
+@c COMMON
+@end defun
+
+@defun integer-range->char-set lower upper :optional error? base-cs
+@defunx integer-range->char-set! lower upper error? base-cs
+@c MOD scheme.charset
+@c EN
+@c JP
+@c COMMON
+@end defun
+
+@defun ->char-set x
+[R7RS]
+@c MOD scheme.charset
+@c EN
+A convenience function to coerce various kinds of objects to a char-set.
+The argument @var{x} can be a collection of characters,
+a char-set, or a character.  If the argument is a char-set, 
+it is returned as-is.  If the argument is a character,
+a char-set with that single character is returned.
+@c JP
+様々な種類のオブジェクトを文字セットに変換する関数です。@var{x}に
+文字のコレクション、文字セット、あるいは文字を渡すことができます。
+引数が文字セットの場合はそれがそのまま返されます。
+引数が文字の場合は、その文字のみを含む文字セットが返されます。
+@c COMMON
+
+@c EN
+Note: R7RS @code{(scheme charset)}'s
+@code{->char-set} only accepts a string, a char-set
+or a character as an argument.  Gauche extends it so that it can
+accept any collection of characters.
+@c JP
+註: R7RS @code{(scheme charset)}の@code{->char-set}
+は文字列、文字セット、文字のいずれかのみを
+引数に取ります。Gaucheでは文字の任意のコレクションを取るように拡張しました。
+@c COMMON
+@end defun
+
+@node Character-set comparison, Character-set iteration, Character-set constructors, R7RS character sets
+@subsubsection Character-set comparison
+@c NODE 文字セットの比較
+
+@defun char-set= char-set1 @dots{}
+[R7RS]
+@c MOD scheme.charset
+@c EN
+Returns @code{#t} iff all the character sets have exactly the
+same members.
+@c JP
+与えられた文字セットが全て同じ要素を持っている場合に限り@code{#t}を返します。
+@c COMMON
+
+@example
+(char-set=)  @result{} #t
+(char-set= (char-set)) @result{} #t
+(char-set= (string->char-set "cba")
+           (list->char-set #\a #\b #\c))
+  @result{} #t
+@end example
+
+@end defun
+
+@defun char-set<= char-set1 @dots{}
+[R7RS]
+@c MOD scheme.charset
+@c EN
+@c JP
+@c COMMON
+@end defun
+
+@defun char-set-hash char-set :optional bound
+[R7RS]
+@c MOD scheme.charset
+@c EN
+@c JP
+@c COMMON
+@end defun
+
+@node Character-set iteration, Character-set query, Character-set comparison, R7RS character sets
+@subsubsection Character-set iteration
+@c NODE 文字セットのイテレーション
+
+@defun char-set-cursor char-set
+[R7RS]
+@c MOD scheme.charset
+@c EN
+@c JP
+@c COMMON
+@end defun
+
+@defun char-set-ref char-set cursor
+[R7RS]
+@c MOD scheme.charset
+@c EN
+@c JP
+@c COMMON
+@end defun
+
+@defun char-set-cursor-next char-set cursor
+[R7RS]
+@c MOD scheme.charset
+@c EN
+@c JP
+@c COMMON
+@end defun
+
+@defun end-of-char-set? ccursor
+[R7RS]
+@c MOD scheme.charset
+@c EN
+@c JP
+@c COMMON
+@end defun
+
+@defun char-set-fold kons knil char-set
+[R7RS]
+@c MOD scheme.charset
+@c EN
+@c JP
+@c COMMON
+@end defun
+
+@defun char-set-unfold pred fun gen seed :optional base-char-set
+@defunx char-set-unfold! pred fun gen seed base-char-set
+[R7RS]
+@c MOD scheme.charset
+@c EN
+@c JP
+@c COMMON
+@end defun
+
+@defun char-set-for-each proc char-set
+[R7RS]
+@c MOD scheme.charset
+@c EN
+@c JP
+@c COMMON
+@end defun
+
+@defun char-set-map proc char-set
+[R7RS]
+@c MOD scheme.charset
+@c EN
+@c JP
+@c COMMON
+@end defun
+
+@node Character-set query, Character-set algebra, Character-set iteration, R7RS character sets
+@subsubsection Character-set query
+@c NODE 文字セットへの問い合わせ
+
+@defun char-set-every pred char-set
+@defunx char-set-any pred char-set
+@defunx char-set-count pred char-set
+[R7RS]
+@c MOD scheme.charset
+@c EN
+These procedures apply @var{pred} to each character in @var{char-set}.
+
+@code{char-set-every} returns @code{#f} as soon as @var{pred} returns
+@code{#f}.  Otherwise, it returns the result of the last application of
+@var{pred}.
+
+@code{char-set-any} returns as soon as @var{pred} returns a true value,
+and the return value is the one @var{pred} returns.
+If @var{pred} returns @code{#f} for all characters, @code{#f} is returned.
+
+@code{char-set-count} returns the number of times
+@var{pred} returns a true value.
+
+Note that @var{char-set} can be huge (e.g. a complement of small char-set),
+which can make these procedures take very long.
+@c JP
+これらの手続きは、@var{pred}を@var{char-set}に含まれる各文字に適用します。
+
+@code{char-set-every}は@var{pred}が@code{#f}を返したら直ちに@code{#f}を返します。
+@var{pred}が最後まで@code{#f}を返さなかった場合は、最後の@var{pred}の返り値が
+@code{char-set-every}の返り値となります。
+
+@code{char-set-any}は@var{pred}が真の値を返した場合に直ちにその値を返します。
+@var{pred}が最後まで@code{#f}を返した場合には@code{#f}を返します。
+
+@code{char-set-count}は@var{pred}が真の値を返した回数を返します。
+
+@var{char-set}は非常に大きくなる可能性があり (例えばごく小さな文字セットの補集合)、
+その場合、これらの手続きは非常に長くかかり得ることに注意してください。
+@c COMMON
+@end defun
+
+@defun char-set->list char-set
+@defunx char-set->string char-set
+[R7RS]
+@c MOD scheme.charset
+@c EN
+Returns a list of each character, or a string consisting of
+each character, in @var{char-set}, respectively.
+Be careful to apply this on a large char set.
+@c JP
+@var{char-set}に含まれる文字をリストあるいは文字列にして返します。
+大きな文字セットに適用する場合は注意してください。
+@c COMMON
+@end defun
+
+
+@node Character-set algebra, Predefined character-set, Character-set query, R7RS character sets
+@subsubsection Character-set algebra
+@c NODE 文字セットに適用できる代数的関数
+
+@defun char-set-adjoin char-set char1 @dots{}
+@defunx char-set-adjoin! char-set char1 @dots{}
+[R7RS]
+@c MOD scheme.charset
+@c EN
+Returns a character set that adds @var{char1} @dots{} to
+@var{char-set}.
+@c JP
+@var{char-set}に@var{char1} @dots{}を加えた文字集合を返します。
+@c COMMON
+@end defun
+
+@defun char-set-delete char-set char1 @dots{}
+@defunx char-set-delete! char-set char1 @dots{}
+[R7RS]
+@c MOD scheme.charset
+@end defun
+
+@defun char-set-union char-set @dots{}
+@defunx char-set-union! char-set1 char-set2 @dots{}
+[R7RS]
+@c MOD scheme.charset
+@end defun
+
+@defun char-set-intersection char-set @dots{}
+@defunx char-set-intersection! char-set1 char-set2 @dots{}
+[R7RS]
+@c MOD scheme.charset
+@end defun
+
+@defun char-set-difference char-set1 char-set2 @dots{}
+@defunx char-set-difference! char-set1 char-set2 @dots{}
+[R7RS]
+@c MOD scheme.charset
+@end defun
+
+@defun char-set-xor char-set @dots{}
+@defunx char-set-xor! char-set1 char-set2 @dots{}
+[R7RS]
+@c MOD scheme.charset
+@end defun
+
+@defun char-set-diff+intersection char-set1 char-set2 @dots{}
+@defunx char-set-diff+intersection! char-set1 char-set2 char-set3 @dots{}
+[R7RS]
+@c MOD scheme.charset
+@end defun
+
+
+
+@node Predefined character-set,  , Character-set algebra, R7RS character sets
+@subsubsection Predefined character-set
+@c NODE 定義済みの文字セット
+
+@defvar char-set:letter
+[R7RS]
+@c MOD scheme.charset
+@end defvar
+
+@defvar char-set:blank
+[R7RS]
+@c MOD scheme.charset
+@end defvar
+
+@defvar char-set:iso-control
+[R7RS]
+@c MOD scheme.charset
+@end defvar
+
+@defvar char-set:digit
+@defvarx char-set:hex-digit
+[R7RS]
+@c MOD scheme.charset
+@end defvar
+
+@defvar char-set:graphic
+[R7RS]
+@c MOD scheme.charset
+@end defvar
+
+@defvar char-set:lower-case
+@defvarx char-set:upper-case
+@defvarx char-set:title-case
+[R7RS]
+@c MOD scheme.charset
+@end defvar
+
+@defvar char-set:printing
+[R7RS]
+@c MOD scheme.charset
+@end defvar
+
+@defvar char-set:punctuation
+[R7RS]
+@c MOD scheme.charset
+@end defvar
+
+@defvar char-set:whitespace
+[R7RS]
+@c MOD scheme.charset
+@end defvar
+
+@defvar char-set:symbol
+[R7RS]
+@c MOD scheme.charset
+@end defvar
+
+@defvar char-set:ascii
+[R7RS]
+@c MOD scheme.charset
+@end defvar
+
+@defvar char-set:empty
+[R7RS]
+@c MOD scheme.charset
+@end defvar
+
+@defvar char-set:full
+[R7RS]
+@c MOD scheme.charset
+@end defvar
 
 
 
