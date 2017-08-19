@@ -23,7 +23,7 @@
           vector-find-median
           vector-find-median!
           vector-select!
-          ;; vector-separate!
+          vector-separate!
           ))
 (select-module srfi-132)
 
@@ -143,11 +143,21 @@
 ;;; Median finding / k-th largest element
 ;;;
 
+;; Returns k-th smallest element in v.
 (define (vector-select! elt< v k :optional (start 0) (end (vector-length v)))
   (assume-type v <vector>)
   (assume-type k <integer>)
   (assume (<= start k (- end 1) (- (vector-length v) 1)))
   (vector-select-1! elt< v k start end))
+
+;; Make initial k element of v contain k-smallest elements, sorted.
+;; we can't use vector-select-1! directly, for partition-in-place! excludes
+;; pivot values.
+(define (vector-separate! elt< v k :optional (start 0) (end (vector-length v)))
+  (assume-type v <vector>)
+  (assume-type k <integer>)
+  (assume (<= start k (- end 1) (- (vector-length v) 1)))
+  (partition-in-place-full! elt< v k start end))
 
 (define (vector-find-median elt< v knil :optional (mean arithmetic-mean))
   (assume-type v <vector>)
@@ -163,6 +173,8 @@
                                              (- (ash len -1) 1) 0 len)
               (mean a b))))]))
 
+;; srfi text reads we must leave v sorted.  without that condition,
+;; we could directly use vector-select-[12]!.
 (define (vector-find-median! elt< v knil :optional (mean arithmetic-mean))
   (assume-type v <vector>)
   (vector-sort! elt< v)
@@ -332,4 +344,33 @@
                             (values pivot pivot)]
                            [else (loop (- k nsmaller-or-equal) i j)]))])))))))
 
-
+;; Used by vector-separate!.
+(define (partition-in-place-full! elt< vec k start end)
+  (let loop ([k k] [start start] [end end])
+    (define size (- end start))
+    (case size
+      [(1)]
+      [(2) (when (and (>= k 1)
+                      (elt< (vector-ref vec (+ start 1))
+                            (vector-ref vec start)))
+             (vector-swap! vec start (+ start 1)))]
+      [else
+       (let* ([ip (random-integer size)]
+              [pivot (vector-ref vec (+ ip start))])
+         (receive (i j) (partition-in-place! elt< pivot vec start end)
+           (let1 nsmaller (- i start)
+             (if (< k nsmaller)
+               (begin
+                 ;; recover pivot elements at the end.
+                 (dotimes (t (- end j)) (vector-set! vec (+ j t) pivot))
+                 (loop k start i))
+               (let1 nsmaller-or-equal (+ nsmaller (- end j))
+                 ;; recover pivot elements between smaller and greater elts.
+                 (dotimes (t (- j i))
+                   (vector-set! vec (- end t 1) (vector-ref vec (- j t 1))))
+                 (dotimes (t (- end j))
+                   (vector-set! vec (+ i t) pivot))
+                 (when (> k nsmaller-or-equal)
+                   (loop (- k nsmaller-or-equal)
+                         nsmaller-or-equal
+                         end)))))))])))

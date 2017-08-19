@@ -1934,17 +1934,35 @@
     (let* ([smaller (filter (^e (<? default-comparator e pivot))
                             (vector->list vec))]
            [greater (filter (^e (<? default-comparator pivot e))
+                            (vector->list vec))]
+           [same    (filter (^e (=? default-comparator pivot e))
                             (vector->list vec))])
-      (test* (format "partition-in-place! ~s @~s" vec pivot)
-             (list smaller greater)
-             (receive (i j) (partition-in-place!
-                             (^[a b] (<? default-comparator a b)) pivot
-                             vec 0 (vector-length vec))
-               (list (vector->list vec 0 i)
-                     (vector->list vec i j)))
-             (^[a b]
-               (and (lset= eq? (car a) (car b))
-                    (lset= eq? (cadr a) (cadr b)))))))
+      (let1 v (vector-copy vec)
+        (test* (format "partition-in-place! ~s @~s" vec pivot)
+               (list smaller greater)
+               (receive (i j) (partition-in-place!
+                               (^[a b] (<? default-comparator a b)) pivot
+                               v 0 (vector-length vec))
+                 (list (vector->list v 0 i)
+                       (vector->list v i j)))
+               (^[a b]
+                 (and (lset= eq? (car a) (car b))
+                      (lset= eq? (cadr a) (cadr b))))))
+      (unless (null? same)
+        (let1 k (+ (length smaller)
+                   (modulo (sys-random) (length same)))
+          (test* (format "vector-separate! ~s ~s" vec k)
+                 (list (append smaller (make-list (- k (length smaller)) pivot))
+                       (append greater (make-list (- (length same)
+                                                     (- k (length smaller)))
+                                                  pivot)))
+                 (let1 v (vector-copy vec)
+                   (vector-separate! (^[a b] (<? default-comparator a b)) v k)
+                   (list (vector->list v 0 k)
+                         (vector->list v k (vector-length vec))))
+                 (^[a b]
+                   (and (lset= eq? (car a) (car b))
+                        (lset= eq? (cadr a) (cadr b)))))))))
   (dolist [d data] [t (vector-copy (cadr d)) (car d)]))
 
 (let ([data '(#()
