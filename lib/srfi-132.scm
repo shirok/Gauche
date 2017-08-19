@@ -7,6 +7,8 @@
 (define-module srfi-132
   (use gauche.sequence)
   (use gauche.generator)
+  (use srfi-27)   ; we use random selection in vector-select
+  (use srfi-133)
   (export list-sorted? vector-sorted?
           list-sort list-stable-sort
           list-sort! list-stable-sort!
@@ -18,9 +20,9 @@
           list-delete-neighbor-dups!
           vector-delete-neighbor-dups
           vector-delete-neighbor-dups!
-          ;; vector-find-median
+          vector-find-median
           ;; vector-find-median!
-          ;; vector-select!
+          vector-select!
           ;; vector-separate!
           ))
 (select-module srfi-132)
@@ -38,7 +40,7 @@
 (define-inline (%check-range v start end)
   (assume-type start <integer>)
   (assume-type end <integer>)
-  (unless (<= 0 start end (- (vector-length v) 1))
+  (unless (<= 0 start end (vector-length v))
     (errorf "Start/end arguments must be nonnegative exact integers, \
              and must be (<= 0 start end (- (vector-length v) 1)). \
              We got (start end): (~s ~s)" start end)))
@@ -136,3 +138,186 @@
 (define (vector-delete-neighbor-dups! = vec :optional (start 0) (end #f))
   (assume-type vec <vector>)
   (delete-neighbor-dups! vec :test = :start start :end end))
+
+;;;
+;;; Median finding / k-th largest element
+;;;
+
+(define (vector-select! elt< v k :optional (start 0) (end (vector-length v)))
+  (assume-type v <vector>)
+  (assume-type k <integer>)
+  (assume (<= start k (- end 1) (- (vector-length v) 1)))
+  (vector-select-1! elt< v k start end))
+
+(define (vector-find-median elt< v knil :optional (mean (^[a b] (/ (+ a b) 2))))
+  (assume-type v <vector>)
+  (case (vector-length v)
+    [(0) knil]
+    [(1) (vector-ref v 0)]
+    [(2) (mean (vector-ref v 0) (vector-ref v 1))]
+    [else
+     => (^[len]
+          (if (odd? len)
+            (vector-select-1! elt< (vector-copy v) (ash len -1) 0 len)
+            (receive (a b) (vector-select-2! elt< (vector-copy v)
+                                             (- (ash len -1) 1) 0 len)
+              (mean a b))))]))
+
+;; We use our own random-source to avoid unexpected interference
+(define *random-source*
+  (rlet1 r (make-random-source)
+    (random-source-randomize! r)))
+
+;; Rearrange elements of VEC between start and end, so that all elements
+;; smaller than the pivot are gathered at the front, followed
+;; by elements greater than the pivot.
+;;
+;;  #(G S P G S G G P S S)   ; S:smaller, P:pivot, G:greater
+;;
+;;  to:
+;;            a       b
+;;  #(S S S S G G G G X X)   ; X: don't care 
+;;
+;; Returns a and b.
+;;
+;; In the implementation, we use typical two-index scan, where i moves from
+;; start to right, while j moves from the end to left.  Elements
+;; equal to pivot are removed, which is done by shrinking the region
+;; with moving end to left.
+;;
+;; Invariances:
+;;   vec[start] .. vec[i-1] are always smaller than the pivot
+;;   vec[k] .. vec[end-1]   are always greater than the pivot
+;;   start <= i <= k <= end
+;;   vec[end-1] is not equal to pivot (we make it so at the beginning)
+;;
+;;    i                   j E
+;;  #(S G S P G S P G S P G)     ; forward
+;;      i                 j E
+;;  #(S G S P G S P G S P G)     ; backward
+;;      i               j   E
+;;  #(S G S P G S P G S P G)     ; shrink v[j] = v[E-1]
+;;      i               j E
+;;  #(S G S P G S P G S G _)     ; backward
+;;      i             j   E
+;;  #(S G S P G S P G S G _)     ; swap  v[i] <=> v[j]
+;;      i             j   E
+;;  #(S S S P G S P G G G _)     ; forward
+;;        i           j   E
+;;  #(S S S P G S P G G G _)     ; forward
+;;          i         j   E
+;;  #(S S S P G S P G G G _)     ; forward
+;;          i         j   E
+;;  #(S S S P G S P G G G _)     ; shrink v[i] = v[E-1]
+;;          i         j E
+;;  #(S S S G G S P G G _ _)     ; backward
+;;          i       j   E
+;;  #(S S S G G S P G G _ _)     ; backward
+;;          i     j     E
+;;  #(S S S G G S P G G _ _)     ; shrink v[j] = v[E-1]
+;;          i     j   E
+;;  #(S S S G G S G G _ _ _)     ; backward
+;;          i   j     E
+;;  #(S S S G G S G G _ _ _)     ; swap  v[i] <=> v[j]
+;;          i   j     E
+;;  #(S S S S G G G G _ _ _)     ; forward
+;;            i j     E
+;;  #(S S S S G G G G _ _ _)     ; backward
+;;            ij      E
+;;  #(S S S S G G G G _ _ _)     ; end
+
+(define (partition-in-place! elt< pivot vec start end)
+  (define (forward i j end)
+    (cond [(> i j) (values i end)]
+          [(elt< (vector-ref vec i) pivot) (forward (+ i 1) j end)]
+          [(elt< pivot (vector-ref vec i)) (backward i j end)]
+          [else                         ;shrink
+           (vector-set! vec i (vector-ref vec (- end 1))) ; now v[i] > pivot
+           (if (= j (- end 1))
+             (adjust i (- j 1))
+             (backward i j (- end 1)))]))
+  (define (backward i j end)  ; v[i] > pivot
+    (cond [(>= i j) (values i end)]
+          [(elt< (vector-ref vec j) pivot)
+           (vector-swap! vec i j)
+           (forward (+ i 1) (- j 1) end)]
+          [(elt< pivot (vector-ref vec j)) (backward i (- j 1) end)]
+          [else ; shrink
+           (vector-set! vec j (vector-ref vec (- end 1)))
+           (backward i j (- end 1))]))
+  (define (adjust i end-1) ; keep invariance of v[end-1] > pivot.  v[i] > pivot
+    (cond [(> i end-1) (values i i)]
+          [(elt< pivot (vector-ref vec end-1))
+           (backward i end-1 (+ end-1 1))]
+          [(elt< (vector-ref vec end-1) pivot)
+           (vector-swap! vec i end-1)
+           (forward i end-1 (+ end-1 1))]
+          [else (adjust i (- end-1 1))]))
+  ;; We first scan from the end to satisfy the condition that v[end-1] > pivot.
+  (let init ([m (- end 1)])
+    (cond [(> start m) (values start start)]
+          [(elt< pivot (vector-ref vec m))
+           (forward start m (+ m 1))]
+          [(elt< (vector-ref vec m) pivot)
+           ;; We should find at least one element greater than pivot.
+           ;; Scanning vector back, keeping the invariance that
+           ;; elements not equal to the pivot is contained between [start,m]
+           (let init2 ([m m]
+                       [n (- m 1)])
+             (cond [(> start n) (values (+ m 1) (+ m 1))]
+                   [(elt< pivot (vector-ref vec n))
+                    (vector-swap! vec n m)
+                    (forward start m (+ m 1))]
+                   [(elt< (vector-ref vec n) pivot)
+                    (init2 m (- n 1))]
+                   [else
+                    (vector-set! vec n (vector-ref vec m))
+                    (init2 (- m 1) (- n 1))]))]
+          [else (init (- m 1))])))
+
+(define (vector-select-1! elt< vec k start end)
+  (let loop ([k k] [start start] [end end])
+    (define size (- end start))
+    (case size
+      [(1) (vector-ref vec start)] ; k must be 0
+      [(2) (let ([a (vector-ref vec start)]
+                 [b (vector-ref vec (+ start 1))])
+             (if (elt< a b)
+               (if (zero? k) a b)
+               (if (zero? k) b a)))]
+      [else
+       (let* ([ip (random-integer size)]
+              [pivot (vector-ref vec (+ ip start))])
+         (receive (i j) (partition-in-place! elt< pivot vec start end)
+           (let1 nsmaller (- i start)
+             (if (< k nsmaller)
+               (loop k start i)
+               (let1 nsmaller-or-equal (+ nsmaller (- end j))
+                 (if (< k nsmaller-or-equal)
+                   pivot
+                   (loop (- k nsmaller-or-equal) i j)))))))])))
+
+;; precondition: (- end start) >= 2
+(define (vector-select-2! elt< vec k start end)
+  (let loop ([k k] [start start] [end end])
+    (define size (- end start))
+    (if (= size 2)
+      (let ([a (vector-ref vec start)]
+            [b (vector-ref vec (+ start 1))])
+        (if (elt< a b) (values a b) (values b a)))
+      (let* ([ip (random-integer size)]
+             [pivot (vector-ref vec (+ ip start))])
+        (receive (i j) (partition-in-place! elt< pivot vec start end)
+          (let1 nsmaller (- i start)
+            (cond [(= (+ k 1) nsmaller)
+                   (values (vector-select-1! elt< vec k start i) pivot)]
+                  [(< k nsmaller) (loop k start i)]
+                  [else
+                   (let1 nsmaller-or-equal (+ nsmaller (- end j))
+                     (cond [(= (+ k 1) nsmaller-or-equal)
+                            (values pivot (vector-select-1! elt< vec 0 i j))]
+                           [(< k nsmaller-or-equal)
+                            (values pivot pivot)]
+                           [else (loop (- k nsmaller-or-equal) i j)]))])))))))
+
+

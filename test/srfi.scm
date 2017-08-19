@@ -1899,6 +1899,83 @@
 (test-module 'srfi-128)
 
 ;;-----------------------------------------------------------------------
+(test-section "srfi-132")
+(use srfi-132)
+(test-module 'srfi-132)
+
+;; partition-in-place! is not external, but it is such a fundamental
+;; part of the algorithm that we test it independently.
+
+(let ([partition-in-place! (with-module srfi-132 partition-in-place!)]
+      [data '((a #(a))
+              (a #(b))
+              (b #(a))
+              (q #(q z))
+              (z #(q z))
+              (r #(q z))
+              (q #(q q))
+              (z #(j z e))
+              (e #(j e j))
+              (m #(m m m))
+              (p #(z p e a))
+              (m #(m z m m m))
+              (m #(m z z m m))
+              (m #(m z m z m))
+              (m #(p q m r s))
+              (m #(a z m z m))
+              (m #(m z a z m))
+              (m #(m a m m m))
+              (m #(a m a m m))
+              (m #(m a m a a))
+              (p #(t w o h o u s e h o l d s b o t h a l i k e i n d i g n
+                     i t y i n f a i r v e l o n a w h e r e w e l a y o u
+                     r s c e n e)))])
+  (define (t vec pivot)
+    (let* ([smaller (filter (^e (<? default-comparator e pivot))
+                            (vector->list vec))]
+           [greater (filter (^e (<? default-comparator pivot e))
+                            (vector->list vec))])
+      (test* (format "partition-in-place! ~s @~s" vec pivot)
+             (list smaller greater)
+             (receive (i j) (partition-in-place!
+                             (^[a b] (<? default-comparator a b)) pivot
+                             vec 0 (vector-length vec))
+               (list (vector->list vec 0 i)
+                     (vector->list vec i j)))
+             (^[a b]
+               (and (lset= eq? (car a) (car b))
+                    (lset= eq? (cadr a) (cadr b)))))))
+  (dolist [d data] [t (vector-copy (cadr d)) (car d)]))
+
+(let ([data '(#()
+              #(15)
+              #(2 5)
+              #(18 61 30)
+              #(61 39 13 4)
+              #(78 61 19 38 51)
+              #(60 68 17 45 6 1)
+              #(80 38 30 1 9 23 68)
+              #(12 60 49 83 3 17 90 39)
+              #(66 75 31 42 52 20 54 56 18)
+              #(96 84 77 44 93 39 89 92 59 72))])
+  (define (my-median vec fallback)
+    (let* ([svec (vector-sort < vec)]
+           [len (vector-length vec)])
+      (if (zero? len)
+        fallback
+        (if (odd? len)
+          (vector-ref svec (quotient len 2))
+          (/ (+ (vector-ref svec (quotient len 2))
+                (vector-ref svec (- (quotient len 2) 1)))
+             2)))))
+  (define (t vec)
+    (test* (format "vector-find-median ~s" vec)
+           (my-median vec 'none)
+           (vector-find-median < vec 'none)))
+
+  (for-each t data))
+
+;;-----------------------------------------------------------------------
 (test-section "srfi-141")
 (use srfi-141)
 (test-module 'srfi-141)
