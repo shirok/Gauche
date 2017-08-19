@@ -1957,9 +1957,14 @@
               #(80 38 30 1 9 23 68)
               #(12 60 49 83 3 17 90 39)
               #(66 75 31 42 52 20 54 56 18)
-              #(96 84 77 44 93 39 89 92 59 72))])
-  (define (my-median vec fallback)
-    (let* ([svec (vector-sort < vec)]
+              #(96 84 77 44 93 39 89 92 59 72)
+              #(92 32 8 57 19 52 4 96 32 84 38 74 27 53)
+              #(54 27 14 29 80 16 7 1 98 42 77 39 19 29 0 1 81)
+              #(72 79 77 60 7 92 35 65 11 91 86 85 62 44 33 9 6 37 31 66)
+              #(32 21 51 55 70 40 36 6 97 25 96 24 25 69 49 71 30 14 28 99
+                3 26 60 97 50 41 5 3 27 34 90 63 23 68 14 53 48 44 98 55))])
+  (define (my-median elt< vec fallback)
+    (let* ([svec (vector-sort elt< vec)]
            [len (vector-length vec)])
       (if (zero? len)
         fallback
@@ -1969,9 +1974,24 @@
                 (vector-ref svec (- (quotient len 2) 1)))
              2)))))
   (define (t vec)
-    (test* (format "vector-find-median ~s" vec)
-           (my-median vec 'none)
-           (vector-find-median < vec 'none)))
+    (test* (format "vector-select! ~s <" vec)
+           (vector->list (vector-sort < vec))
+           (map (^k (vector-select! < (vector-copy vec) k))
+                (iota (vector-length vec))))
+    (test* (format "vector-select! ~s >" vec)
+           (vector->list (vector-sort > vec))
+           (map (^k (vector-select! > (vector-copy vec) k))
+                (iota (vector-length vec))))
+    (let1 expect (list (my-median < vec 'none)
+                       (my-median > vec 'none))
+      (test* (format "vector-find-median ~s" vec)
+             expect
+             (list (vector-find-median < vec 'none)
+                   (vector-find-median > vec 'none)))
+      (test* (format "vector-find-median! ~s" vec)
+             expect
+             (list (vector-find-median! < (vector-copy vec) 'none)
+                   (vector-find-median! > (vector-copy vec) 'none)))))
 
   (for-each t data))
 

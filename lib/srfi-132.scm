@@ -21,7 +21,7 @@
           vector-delete-neighbor-dups
           vector-delete-neighbor-dups!
           vector-find-median
-          ;; vector-find-median!
+          vector-find-median!
           vector-select!
           ;; vector-separate!
           ))
@@ -149,7 +149,7 @@
   (assume (<= start k (- end 1) (- (vector-length v) 1)))
   (vector-select-1! elt< v k start end))
 
-(define (vector-find-median elt< v knil :optional (mean (^[a b] (/ (+ a b) 2))))
+(define (vector-find-median elt< v knil :optional (mean arithmetic-mean))
   (assume-type v <vector>)
   (case (vector-length v)
     [(0) knil]
@@ -162,6 +162,18 @@
             (receive (a b) (vector-select-2! elt< (vector-copy v)
                                              (- (ash len -1) 1) 0 len)
               (mean a b))))]))
+
+(define (vector-find-median! elt< v knil :optional (mean arithmetic-mean))
+  (assume-type v <vector>)
+  (vector-sort! elt< v)
+  (let1 len (vector-length v)
+    (cond [(zero? len) knil]
+          [(odd? len) (vector-ref v (quotient len 2))]
+          [else (mean (vector-ref v (- (quotient len 2) 1))
+                      (vector-ref v (quotient len 2)))])))
+
+;; Default mean procedure
+(define (arithmetic-mean a b) (/ (+ a b) 2))
 
 ;; We use our own random-source to avoid unexpected interference
 (define *random-source*
