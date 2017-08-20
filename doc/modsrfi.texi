@@ -50,6 +50,7 @@ srfi N is supporeted by Gauche.)
 * Queues based on lists::       srfi-117
 * Simple adjustable-size strings::  srfi-118
 * Lazy sequence (srfi)::        srfi-127
+* Sort library::                srfi-132
 * Vector library::              srfi-133
 * Integer division::            srfi-141
 * Fixnums::                     srfi-143
@@ -6745,7 +6746,7 @@ rather than @code{string-replace}.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Lazy sequence (srfi), Vector library, Simple adjustable-size strings, Library modules - SRFIs
+@node Lazy sequence (srfi), Sort library, Simple adjustable-size strings, Library modules - SRFIs
 @section @code{srfi-127} - Lazy sequence (srfi)
 
 @deftp {Module} srfi-127
@@ -6920,9 +6921,25 @@ for all of those functions won't look at input more than necessary
 so @var{lseq}s work just as well as ordinary lists.
 @end defun
 
+@c ----------------------------------------------------------------------
+@node Sort library, Vector library, Lazy sequence (srfi), Library modules - SRFIs
+@section @code{srfi-132} - Sort library
+@c NODE ソートライブラリ, @code{srfi-133} - ソートライブラリ
+
+@deftp {Module} srfi-132
+@mdindex srfi-132
+@c EN
+SRFI-132 has become a part of R7RS large.
+@xref{R7RS sort}.
+@c JP
+SRFI-132はR7RS largeに採り入れられました。
+@ref{R7RS sort}を参照してください。
+@c COMMON
+@end deftp
+
 
 @c ----------------------------------------------------------------------
-@node Vector library, Integer division, Lazy sequence (srfi), Library modules - SRFIs
+@node Vector library, Integer division, Sort library, Library modules - SRFIs
 @section @code{srfi-133} - Vector library
 @c NODE ベクタライブラリ, @code{srfi-133} - ベクタライブラリ
 

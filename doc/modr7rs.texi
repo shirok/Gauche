@@ -1873,6 +1873,7 @@ with-input-from-file with-output-to-file write write-char zero?
 @menu
 * R7RS lists::                  @code{scheme.list}
 * R7RS vectors::                @code{scheme.vector}
+* R7RS sort::                   @code{scheme.sort}
 * R7RS character sets::         @code{scheme.charset}
 @end menu
 
@@ -2477,7 +2478,7 @@ The cells in the first list argument may be reused to construct the result.
 @c COMMON
 @end defun
 
-@node R7RS vectors, R7RS character sets, R7RS lists, R7RS large - Red Edition
+@node R7RS vectors, R7RS sort, R7RS lists, R7RS large - Red Edition
 @subsection @code{scheme.vector} - R7RS vectors
 @c NODE R7RSベクタ, @code{scheme.vector} - R7RSベクタ
 
@@ -3019,58 +3020,114 @@ Same as @code{(reverse (vector->list vec start end))}, but more efficient.
 @c COMMON
 @end defun
 
-@c @node R7RS sort
-@c @subsection @code{scheme.sort} - R7RS sort
-@c @c NODE R7RSソート, @code{scheme.sort} - R7RSソート
+@node R7RS sort, R7RS character sets, R7RS vectors, R7RS large - Red Edition
+@subsection @code{scheme.sort} - R7RS sort
+@c NODE R7RSソート, @code{scheme.sort} - R7RSソート
 
-@c @deftp {Module} scheme.sort
-@c @mdindex scheme.sort
-@c Provides utilities to sort, and to work on sorted lists/vectors.
-@c This module is the same as @code{srfi-132}.
+@deftp {Module} scheme.sort
+@mdindex scheme.sort
+Provides utilities to sort, and to work on sorted lists/vectors.
+This module is the same as @code{srfi-132}.
 
-@c Gauche has built-in sort and merge procedures (@pxref{Sorting and merging}).
-@c This module has a bit different API.
-@c @end deftp
+Gauche has built-in sort and merge procedures (@pxref{Sorting and merging}).
+This module has a bit different API.  Notably, the ordering predicate
+comes first than the sequence to be sorted, and the procedures
+dealing with vectors uniformly support start/end arguments
 
-@c @defun list-sort < lis
-@c @defunx list-sort! < lis
-@c @defunx list-stable-sort < lis
-@c @defunx list-stable-sort! < lis
-@c @defunx list-sorted? < lis
-@c [R7RS]
-@c @c MOD scheme.sort
-@c @end defun
+This module also provide useful procedures working on sorted or
+partially sorted sequences.
+@end deftp
 
-@c @defun list-merge < lis1 lis2
-@c @defunx list-merge! < lis1 lis2
-@c [R7RS]
-@c @c MOD scheme.sort
-@c @end defun
+@defun list-sort elt< lis
+@defunx list-sort! elt< lis
+@defunx list-stable-sort elt< lis
+@defunx list-stable-sort! elt< lis
+[R7RS]
+@c MOD scheme.sort
+Sort elements in a list @var{lis} according to the ordering
+predicate @var{elt<}, which takes two elements from @var{lis}
+and returns true iff the first argument is strictly less
+than the second argument.
 
-@c @defun vector-sort < vec :optional start end
-@c @defunx vector-sort! < vec :optional start end
-@c @defunx vector-stable-sort < vec :optional start end
-@c @defunx vector-stable-sort! < vec :optional start end
-@c @defunx vector-sorted? < vec :optional start end
-@c [R7RS]
-@c @c MOD scheme.sort
-@c @end defun
+Returns a sorted list.
+The procedures with bang are allowed, but not required, to reuse
+@code{lis}.  The ``stable'' variation guarantees stable sort.
 
-@c @defun vector-merge < vec1 vec2 :optional start1 end1 start2 end2
-@c @defunx vector-merge! < vec1 vec2 :optional start1 end1 start2 end2
-@c [R7RS]
-@c @c MOD scheme.sort
-@c @end defun
+These are basically the same as Gauche's built-in  
+@code{sort}, @code{sort!}, @code{stable-sort} and @var{stable-sort!},
+except the Gauche's version works on any sequences and takes
+arguments differently.  (@xref{Sorting and merging}.)
+@end defun
 
-@c @defun list-delete-neighbor-dups = lis
-@c @defunx list-delete-neighbor-dups! = lis
-@c @defunx vector-delete-neighbor-dups = vec :optional start end)
-@c @defunx vector-delete-neighbor-dups! = vec :optional start end)
-@c [R7RS]
-@c @c MOD scheme.sort
-@c @end defun
 
-@node R7RS character sets,  , R7RS vectors, R7RS large - Red Edition
+@defun list-sorted? elt< lis
+[R7RS]
+@c MOD scheme.sort
+Returns true if the list @var{list} is sorted according to the
+ordering predicate @var{elt<}.
+
+See also @code{sorted?} in @ref{Sorting and merging}.
+@end defun
+
+
+@defun list-merge elt< lis1 lis2
+@defunx list-merge! elt< lis1 lis2
+[R7RS]
+@c MOD scheme.sort
+Given two sorted lists @var{lis1} and @var{lis2}, returns
+a new sorted list according to the ordering predicate @var{elt<}.
+
+The bang version @code{list-merge!} might reuse storage of @var{lis1}.
+
+See also @code{merge} and @var{merge!} in @ref{Sorting and merging}.
+@end defun
+
+@defun vector-sort elt< vec :optional start end
+@defunx vector-sort! elt< vec :optional start end
+@defunx vector-stable-sort elt< vec :optional start end
+@defunx vector-stable-sort! elt< vec :optional start end
+[R7RS]
+@c MOD scheme.sort
+@end defun
+
+@defun vector-sorted? elt< vec :optional start end
+[R7RS]
+@c MOD scheme.sort
+@end defun
+
+
+@defun vector-merge elt< vec1 vec2 :optional start1 end1 start2 end2
+@defunx vector-merge! elt< vec1 vec2 :optional start1 end1 start2 end2
+[R7RS]
+@c MOD scheme.sort
+@end defun
+
+@defun list-delete-neighbor-dups = lis
+@defunx list-delete-neighbor-dups! = lis
+@defunx vector-delete-neighbor-dups = vec :optional start end)
+@defunx vector-delete-neighbor-dups! = vec :optional start end)
+[R7RS]
+@c MOD scheme.sort
+@end defun
+
+@defun vector-select! elt< vec k :optional start end
+[R7RS]
+@c MOD scheme.sort
+@end defun
+
+@defun vector-separate! elt< vec k :optional start end
+[R7RS]
+@c MOD scheme.sort
+@end defun
+
+@defun vector-find-median elt< vec knil :optional mean
+@defunx vector-find-median! elt< vec knil :optional mean
+[R7RS]
+@c MOD scheme.sort
+@end defun
+
+
+@node R7RS character sets,  , R7RS sort, R7RS large - Red Edition
 @subsection @code{scheme.charset} - R7RS character sets
 @c NODE R7RS文字セット, @code{scheme.charset} - R7RS文字セット
 
