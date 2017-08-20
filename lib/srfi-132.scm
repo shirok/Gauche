@@ -76,10 +76,7 @@
   (^[< v :optional (s 0) (e (vector-length v))]
     (assume-type v <vector>)
     (%check-range v s e)
-    (let1 sorted (%sort! (subseq v s e) <)
-      (if (and (= s 0) (= e (vector-length v)))
-        sorted
-        (vector-append (subseq v 0 s) sorted (subseq v e (vector-length v)))))))
+    (%sort! (subseq v s e) <)))
 
 (define (%vector-sorter! %sort!)
   (^[< v :optional (s 0) (e (vector-length v))]
@@ -87,9 +84,8 @@
     (%check-range v s e)
     (if (and (= s 0) (= e (vector-length v)))
       (%sort! v <)
-      (begin
-        (set! (subseq v s e) (%sort! (subseq v s e) <))
-        v))))
+      (set! (subseq v s e) (%sort! (subseq v s e) <)))
+    (undefined)))
 
 (define vector-sort (%vector-sorter sort!))
 (define vector-sort! (%vector-sorter! sort!))
@@ -149,7 +145,7 @@
     (errorf "Destination vector is too short (length=~s, required=~s)"
             (vector-length vr) (+ sr (- e1 s1) (- e2 s2))))
   (%vector-merge! < vr sr (%maybe-subseq v1 s1 e1) (%maybe-subseq v2 s2 e2))
-  vr)
+  (undefined))
 
 ;; duplicate elimination
 

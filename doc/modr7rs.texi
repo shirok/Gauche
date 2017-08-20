@@ -3077,53 +3077,209 @@ See also @code{sorted?} in @ref{Sorting and merging}.
 Given two sorted lists @var{lis1} and @var{lis2}, returns
 a new sorted list according to the ordering predicate @var{elt<}.
 
-The bang version @code{list-merge!} might reuse storage of @var{lis1}.
+Note that @code{list-merge!} works in-place, that is, all the pairs
+in @var{lis1} and @var{lis2} are reused.
 
 See also @code{merge} and @var{merge!} in @ref{Sorting and merging}.
 @end defun
 
 @defun vector-sort elt< vec :optional start end
-@defunx vector-sort! elt< vec :optional start end
 @defunx vector-stable-sort elt< vec :optional start end
+[R7RS]
+@c MOD scheme.sort
+Sort elements in a vector @var{vec} according to the ordering
+predicate @var{elt<}, which takes two elements from @var{vec}
+and returns true iff the first argument is strictly less
+than the second argument.  Returns a fresh sorted vector.
+The ``stable'' variation guarantees stable sort.
+
+When the optional @var{start} and/or @var{end} arguments are given,
+only the portion from @var{start} (inclusive) and
+@var{end} (exlusive) of @var{vec} are looked at.
+The result vector's length is @code{@var{end} - @var{start})}.
+When @var{end} is omitted, the length of @var{vec} is assumed.
+
+See also @code{sort} and @code{stable-sort} in @ref{Sorting and merging}.
+@end defun
+
+@defun vector-sort! elt< vec :optional start end
 @defunx vector-stable-sort! elt< vec :optional start end
 [R7RS]
 @c MOD scheme.sort
+Sort elements ``in-place'' in a vector @var{vec} according to the ordering
+predicate @var{elt<}, which takes two elements from @var{vec}
+and returns true iff the first argument is strictly less
+than the second argument.  Upon successful return,
+@var{vec}'s elements are sorted.  Returns unspecified value; the
+caller must rely on the side effect.
+
+When the optional @var{start} and/or @var{end} arguments are given,
+only the portion from @var{start} (inclusive) and
+@var{end} (exlusive) of @var{vec} are sorted; other elements
+will remain intact.
+When @var{end} is omitted, the length of @var{vec} is assumed.
+
+See also @code{sort!} and @code{stable-sort!} in @ref{Sorting and merging}.
 @end defun
 
 @defun vector-sorted? elt< vec :optional start end
 [R7RS]
 @c MOD scheme.sort
+Returns true iff @var{vec} between @var{start} (inclusive)
+and @var{end} (exlusive) is sorted according to the ordering
+predicate @var{elt<}.  If @var{start} and/or @var{end} is/are omitted,
+0 and the length of @var{vec} are assumed, respectively.
+
+See also @code{sorted?} in @ref{Sorting and merging}.
 @end defun
 
 
 @defun vector-merge elt< vec1 vec2 :optional start1 end1 start2 end2
-@defunx vector-merge! elt< vec1 vec2 :optional start1 end1 start2 end2
+@defunx vector-merge! elt< rvec vec1 vec2 :optional rstart start1 end1 start2 end2
 [R7RS]
+Merge two sorted vectors @var{vec1} and @var{vec2}
+into one vector, according to the
+ordering predicate @var{elt<}.
+
+The optional argument @var{start1} and @var{end1} restricts @var{vec1}'s
+portion to be looked at, and @var{start2} and @var{end2}
+restricts @var{vec2}'s portion to be looked at.
+
+The functional version @var{vector-merge} allocates a fresh vector
+to hold the result, and returns it.
+
+The side-effecting version @var{vector-merge!} uses @var{rvec}.
+to hold the result. The procedure doesn't return a meaningful value.
+The optional @var{rstart} argument specifies
+the index of @var{rvec} from which the result is filled; the default
+is 0.
 @c MOD scheme.sort
+
 @end defun
 
-@defun list-delete-neighbor-dups = lis
-@defunx list-delete-neighbor-dups! = lis
-@defunx vector-delete-neighbor-dups = vec :optional start end)
-@defunx vector-delete-neighbor-dups! = vec :optional start end)
+@defun list-delete-neighbor-dups elt= lis
+@defunx list-delete-neighbor-dups! elt= lis
+@defunx vector-delete-neighbor-dups elt= vec :optional start end)
+@defunx vector-delete-neighbor-dups! elt= vec :optional start end)
 [R7RS]
 @c MOD scheme.sort
+From the given list @var{lis} or vector @var{vec},
+these procedures delete adjacent duplicate elements.  Equivalence
+is checked by @var{elt=} procedure.
+
+@example
+(list-delete-neighbor-dups eq? '(m i s s i s s i p p i))
+  @result{} (m i s i s i p i)
+@end example
+
+The non-destructive versions @code{list-delete-neighbor-dups} and
+@code{vector-delete-neighbor-dups} returns a freshly allocated
+list and vector, respectively.
+
+The destructive @code{list-delete-neighbor-dups!} works in-place,
+reusing pairs of @var{lis}.  No allocation will be done.
+
+The destructive @code{vector-delete-neighbor-dups!} has a bit different
+interface.  It updates @var{vec} in-place, but since we can't change
+the length of the vector, it gathers the result from the beginning of
+the @var{vec}, then returns the next index @var{newend}
+of @var{vec}---that is,
+after calling this procedure, @code{[@var{start}, @var{newend})}
+holds the result.
+The elements between @code{[@var{newend}, @var{end})} will remain intact.
+
+The optional @var{start} and @var{end} arguments limits the region
+of @var{vec} to be looked at.
+
+@example
+(vector-delete-neighbor-dups eq? '#(a a a b b c c d d e e f f) 3 10)
+  @result{} #(b c d e)
+
+(let1 v '#(a a a b b c c d d e e f f)
+  (cons (vector-delete-neighbor-dups! eq? v 3 10) v))
+  @result{} (7 . #(a a a b c d e d d e e f f))
+@end example
+
+Note: The @code{gauche.sequence} module provides neighbor duplicate
+deletion on generic sequences.  Those procedures are implemented by
+the generic versions as shown below.  @xref{Other operations over sequences},
+for the details.
+@table @code
+@item list-delete-neighbor-dups
+@code{delete-neighbor-dups}
+@item list-delete-neighbor-dups!
+@code{delete-neighbor-dups-squeeze!}
+@item vector-delete-neighbor-dups
+@code{delete-neighbor-dups}
+@item vector-delete-neighbor-dups!
+@code{delete-neighbor-dups!}
+@end table
 @end defun
 
 @defun vector-select! elt< vec k :optional start end
 [R7RS]
 @c MOD scheme.sort
+Select @var{k}-th smallest element in @var{vec} according to the
+ordering predicate @var{elt<}.  @var{K} is zero based, i.e. 0 means
+the smallest.  The optional @var{start} and @var{end} arguments
+limits the range of @var{vec} to be looked at, and defaulted to
+0 and the length of @var{vec}, respectively.
+@var{K} must satisfy @code{@var{start} <= @var{k} < @var{end}}.
+
+This procedure runs in O(n) time, and requires no extra stroage.
+This procedure may partially modify @var{vec}.
 @end defun
 
 @defun vector-separate! elt< vec k :optional start end
 [R7RS]
 @c MOD scheme.sort
+Find @var{k}-th smallerst element in @var{vec} (pivot) between
+between @var{start} and @var{end}, according to the ordering
+predicate @var{elt<}, then rearrange elements 
+between @var{start} and @var{end} so that
+elements smaller than the pivot comes between @code{@var{start}} and
+@code{@var{start} + @var{k}}, and the rest of the elements come
+afterwards.  When omitted, @var{start} is 0 and @var{end} is
+the lenght of the @var{vec}.
+
+This can be used as a building block for in-place divide-and-conquer
+algorithms.  Runs in O(n) time.
 @end defun
 
 @defun vector-find-median elt< vec knil :optional mean
 @defunx vector-find-median! elt< vec knil :optional mean
 [R7RS]
 @c MOD scheme.sort
+Find median value of elements in @var{vec}, when ordered by
+the ordering predicate @var{elt<}.  Non-destructive version
+@code{vector-find-median} runs in O(n) time.  The destructive
+version @code{vector-find-median!} is specified to leave
+@var{vec} sorted, so it runs in O(n log n).
+
+@enumerate
+@item
+If @var{vec} is empty, @var{knil} is returned.  This is the only case
+@var{knil} is used.
+@item
+If @var{vec} has odd number of elements, the element falls in the exactly
+the midpoint when ordered, is returned.
+@item
+If @var{vec} has even number of elements, the two elements closest to
+the midpoint is chosen and passed to the procedure @var{mean}, and
+its result is returned.  The default of @var{mean} is an arithmetic
+mean of numbers.
+@end enumerate
+
+@example
+(vector-find-median < #() 0)
+  @result{} 0
+
+(vector-find-median < #(78 61 19 38 51) 0)
+  @result{} 51
+
+(vector-find-median < #(78 61 19 38 51 52) 0)
+  @result{} 103/2
+@end example
 @end defun
 
 
