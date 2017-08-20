@@ -838,6 +838,16 @@ ERR5RSレコード構文 (簡易版)
 @code{define-record-type}でカバーされます。@ref{Record types}参照。
 
 
+srfi-132, srfi-132
+()
+
+Sort libraries
+Supported by the module @code{srfi-132}.
+
+ソートライブラリ
+モジュール@code{srfi-132}でサポートされます。
+
+
 srfi-133, srfi-133
 ()
 

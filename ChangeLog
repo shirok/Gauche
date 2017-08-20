@@ -1,3 +1,7 @@
+2017-08-19  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi-132.scm, src/srfis.scm: Support srfi-132.
+
 2017-08-10  Shiro Kawai  <shiro@acm.org>
 
 	* src/libio.scm (<write-controls>): INCOMPATIBLE CHANGE:
