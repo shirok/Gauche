@@ -785,9 +785,11 @@ are not guaranteed to be @code{eq?} even if they are numerically equal.
 @end defun
 
 @defun default-hash obj
-[SRFI-128+]
+[R7RS+]
 @c EN
 This is a hash function suitable to be used with @code{equal?}.
+In R7RS, this is defined in @code{scheme.comparator} (originally
+in @code{srfi-128}).
 
 If @var{obj} is either a number, a boolean, a character,
 a symbol, a keyword, a string, a list or a vector,
@@ -800,6 +802,8 @@ The hash value also depends on @code{hash-salt}, which differs
 for every run of the process.
 @c JP
 @code{equal?}と一緒に使うのに適したハッシュ関数です。
+R7RSでは、@code{scheme.comparator}ライブラリで定義されています
+(元は@code{srfi-128})。
 
 @var{obj} が、数値、真理値、文字、シンボル、キーワード、文字列、リスト、
 ベクタのいずれかならば、そのハッシュ値を求めるのには内部ハッシュ関数を
@@ -1079,19 +1083,21 @@ the second argument of @code{object-hash} instead.
 @defunx string-ci-hash str
 @defunx symbol-hash sym
 @defunx number-hash num
-[SRFI-128]
+[R7RS]
 @c EN
-These are hash functions for specific type of objects.
+These are hash functions for specific type of objects,
+defined in R7RS @code{scheme.comparator}.
 In Gauche, these procedures are just a wrapper of @code{default-hash}
 with type checks (and case folding when relevant).  These are
-mainly provided to conform srfi-128; in your code you might
+mainly provided to conform @code{scheme.comparator}; in your code you might
 just want to use @code{default-hash} (or @code{eq-hash}/@code{eqv-hash},
 depending on the equality predicate).
 @c JP
-これらは特定の型のオブジェクト専用のハッシュ関数です。
+これらは、R7RSの@code{scheme.comparator}で定義された、
+特定の型のオブジェクト専用のハッシュ関数です。
 Gaucheでは、これらの関数は単に引数の型チェックをして(必要なら大文字小文字の
 区別をなくした後)、組み込みの@code{default-hash}を呼び出しているだけです。
-これらはsrfi-128で定義されているために提供されていますが、
+これらは@code{scheme.comparator}で定義されているために提供されていますが、
 特にポータビリティが必要でなければ@code{defailt-hash}
 (あるいは、等価述語によっては@code{eq-hash}や
 @code{eqv-hash})を呼んでしまう方が簡単だし高速です。
@@ -1116,11 +1122,13 @@ passing it to @code{hash}.
 
 @defun hash-bound
 @defunx hash-salt
-[SRFI-128]
+[R7RS]
 @c EN
-Both evaluates to an exact nonnegative integers.
+Both evaluates to an exact nonnegative integers.  In R7RS,
+these are defined in @code{scheme.comparator}.
 
-(Note: SRFI-128 defines these as macros, in order to allow
+(Note: @code{scheme.comparator}
+defines these as macros, in order to allow
 implementatins optimize runtime overhead.  In Gauche we use
 procedures but the overhead is negligible.)
 
@@ -1138,9 +1146,10 @@ Built-in hash functions already takes the salt value into account,
 so if your hash function is combining the hash values of
 primitive types, you don't need to worry about salt values.
 @c JP
-どちらも、正確な非負整数へと展開されます。
+どちらも、正確な非負整数へと展開されます。R7RSでは、
+@code{scheme.comparator}ライブラリで定義されています。
 
-(註: SRFI-128はこれらをマクロと定義しています。処理系が
+(註: @code{scheme.comparator}はこれらをマクロと定義しています。処理系が
 ランタイムオーバヘッドを避けられるようにするためです。
 Gaucheでは、呼び出しのオーバヘッドはそれほど問題にならないという
 立場から、どちらも手続きにしています。)
@@ -1187,18 +1196,24 @@ a record that bundles closely-related comparison procedures together.
 @c COMMON
 
 @c EN
-There are two SRFIs that define comparators.   The current one
-is SRFI-128, and we recommend new code to use it.  Gauche has all of
-SRFI-128 procedures built-in.  The older, and rather complex one is SRFI-114;
+There are two SRFIs that define comparators.  The one that was originally
+called @code{srfi-128} has now become a part of R7RS large as 
+@code{scheme.comparator}, and we recommend new code to use it.
+Gauche has all of @code{scheme.comparator}
+procedures built-in.  The older, and rather complex one is @code{srfi-114};
 Gauche also supports it mainly for the backward compatibility.
 Importantly, Gauche's native @code{<comparator>} object is compatible
-to both SRFI-128 and SRFI-114 comparators.
+to both @code{scheme.comparator} and @code{srfi-114}
+comparators.
 @c JP
-比較器を定義したSRFIは二つあります。現在の最新はSRFI-128で、新規コードは
-そちらを使うべきです。GaucheはSRFI-128のAPIを全て組み込みで提供します。
-古く、より複雑なのがSRFI-114で、Gaucheはそちらは主に後方互換性のために
+比較器を定義したSRFIは二つあります。@code{srfi-128}と呼ばれていた規格は
+R7RS largeに取り込まれ、@code{scheme.comparator}になりました。
+新しいコードではそちらを使うべきです。
+Gaucheは@code{scheme.comparator}のAPIを全て組み込みで提供します。
+古く、より複雑なのが@code{srfi-114}で、Gaucheはそちらは主に後方互換性のために
 サポートしています。重要なのは、Gaucheの組み込みの@code{<comparator>}オブジェクトは
-SRFI-128の比較器としてもSRFI-114の比較器としても使えるということです。
+@code{scheme.comparator}の比較器としても
+@code{srfi-114}の比較器としても使えるということです。
 @c COMMON
 
 @menu
@@ -1258,19 +1273,21 @@ Returns a hash value of the given object.
 @c COMMON
 
 @c EN
-SRFI-128 comparators use the ordering predicate, 
+@code{Scheme.comparator}'s
+comparators use the ordering predicate, 
 while SRFI-114 comparators use the comparison procedure.
 Gauche's @code{<comparator>} supports both by automatically
 generating the missing one; that is, if you create a comparator
-with SRFI-128 interface, by giving an ordering predicate,
+with @code{scheme.comparator} interface, by giving an ordering predicate,
 Gauche automatically fills the comparison procedure, and
 if you create one with SRFI-114 interface by giving a comparison
 procedure, Gauche generates the ordering predicate.
 @c JP
-SRFI-128の比較器は順序手続きを使い、
+@code{scheme.comparator}の比較器は順序手続きを使い、
 SRFI-114の比較器は比較手続きを使います。
 Gaucheの@code{<comparator>}は両方をサポートするために、
-自動的に欠けている手続きを補います。つまり、順序手続きを与えてSRFI-128のインタフェースで
+自動的に欠けている手続きを補います。
+つまり、順序手続きを与えて@code{scheme.comparator}のインタフェースで
 比較器を作った場合、Gaucheは自動的に比較手続きを生成しますし、
 比較手続きを与えてSRFI-114のインタフェースで比較器を作った場合は
 順序手続きが自動生成されます。
@@ -1304,32 +1321,38 @@ Gauche組み込みのデータ型は、コンストラクタで比較器を取�
 @end deftp
 
 @defun make-comparator type-test equal order hash :optional name
-[SRFI-128+]
+[R7RS]
 @c EN
 Creates a new comparator form the given @var{type-test}, 
 @var{equal}, @var{order} and @var{hash} functions, and returns it.
+In R7RS, this is defined in @code{scheme.comparator}
 
 See the description of @code{<comparator>} above for the role of
 those procedures.
 @c JP
 与えられた@var{type-test}、@var{equal}、@var{order}、@var{hash}の
 各関数をまとめて、新たな比較器を作って返します。
+R7RSではこの関数は@code{scheme.comparator}で定義されています。
 
 各関数の役割については上の@code{<comparator>}の説明を参照してください。
 @c COMMON
 
 @c EN
-Note: Both SRFI-128 and SRFI-114 defines @code{make-comparator},
-but where SRFI-128 takes @var{order} argument, SRFI-114 takes
-@var{compare} argument.  Since SRFI-128 is preferable, we adopt
+Note: Both @code{scheme.comparator}
+and @code{srfi-114} defines @code{make-comparator},
+but where @code{scheme.comparator} takes @var{order} argument,
+@code{srfi-114} takes @var{compare} argument.
+Since @code{scheme.comparator} is preferable, we adopt
 it for the built-in interface, and give a different name
 (@code{make-comparator/compare}) for SRFI-114 constructor.
 @c JP
-註: SRFI-128とSRFI-114は両方とも@code{make-comparator}を定義していますが、
-SRFI-128が@var{order}手続きを取るところでSRFI-114は@var{compare}手続きを
-取ります。SRFI-128の方が推奨されるので、Gaucheでは組み込みの@code{make-comparator}
-をSRFI-128に合わせ、SRFI-114の方は@code{make-comparator/compare}という
-名前にしてあります。
+註: @code{scheme.comparator}と@code{srfi-114}は両方とも
+@code{make-comparator}を定義していますが、
+@code{scheme.comparator}が@var{order}手続きを取るところで
+@code{srfi-114}は@var{compare}手続きを取ります。
+@code{scheme.comparator}の方が推奨されるので、
+Gaucheでは組み込みの@code{make-comparator}を@code{scheme.comparator}に合わせ、
+SRFI-114の方は@code{make-comparator/compare}という名前にしてあります。
 @c COMMON
 
 @c EN
@@ -1411,15 +1434,14 @@ This is SRFI-114 comparator constructor.  In SRFI-114, this is called
 If you @code{(use srfi-114)} you get the original name @code{make-comparator}
 (and the built-in @code{make-comparator} is shadowed).
 This is provided for the backward
-compatibility, and new code should use @code{make-comparator} as defined
-in SRFI-128.
+compatibility, and new code should use built-in @code{make-comparator} above.
 @c JP
 これはSRFI-114比較器のコンストラクタです。SRFI-114ではこれが
 @code{make-comparator}と呼ばれていますが、名前の衝突を避けるために別の名前を用意しました。
 @code{(use srfi-114)}した場合は、SRFI-114のコンストラクタが元の名前
 で使えるようになります(組み込みの@code{make-comparator}がシャドウされます。)
 これは後方互換性のために提供されています。
-新たなコードはSRFI-128の@code{make-comparator}を使ってください。
+新たなコードは上に示した組み込みの@code{make-comparator}を使ってください。
 @c COMMON
 
 @c EN
@@ -1465,11 +1487,13 @@ by calling the comparison procedure and see if the result is 0.
 
 
 @defun comparator? obj
-[SRFI-128]
+[R7RS]
 @c EN
 Returns true iff @var{obj} is a comparator.
+In R7RS, this is provided from @code{scheme.comparator}.
 @c JP
 @var{obj}が比較器である場合に@code{#t}を、そうでなければ@code{#f}を返します。
+R7RSではこの手続きは@code{scheme.comparator}ライブラリで提供されます。
 @c COMMON
 @end defun
 
@@ -1480,7 +1504,7 @@ via this method.  Even @var{a} and @var{b} are comparators created
 separately, they can be @code{equal?} if all of their slots are
 the same.
 
-This is Gauche's extension.  SRFI-128 says nothing about
+This is Gauche's extension.  The standard says nothing about
 equality of comparators, but it is sometimes useful if you can compare
 two.
 @c JP
@@ -1489,7 +1513,7 @@ two.
 比較器@var{a}と@var{b}が別々に作られたものであっても、各スロットの内容が
 等価であれば@code{equal?}とみなされます。
 
-これはGaucheの拡張です。SRFI-128は比較器同士の等価性については何も定義していません。
+これはGaucheの拡張です。標準は比較器同士の等価性については何も定義していません。
 けれども、時には等価判定が便利なことがあります。
 @c COMMON
 
@@ -1513,7 +1537,8 @@ two.
 @defun comparator-flavor cmpr
 @c EN
 Returns a symbol @code{ordering} if @var{cmpr} is created with
-SRFI-128 constructor, and returns @code{comparison} if @var{cmpr}
+@code{scheme.comparator} constructor, and
+returns @code{comparison} if @var{cmpr}
 is created with SRFI-114 constructor.
 
 Usually applications don't need to distinguish these two kinds of
@@ -1521,7 +1546,8 @@ comparators, for either kind of comparators can behave just as another
 kind.  This procedure is for some particular cases when one
 wants to optimize for the underlying comparator implementation.
 @c JP
-@var{cmpr}がsrfi-128コンストラクタで作られた場合はシンボル@code{ordering}を、
+@var{cmpr}が@code{scheme.comparator}コンストラクタで作られた場合は
+シンボル@code{ordering}を、
 srfi-114コンストラクタで作られた場合はシンボル@code{comparison}を返します。
 
 アプリケーションは通常両者を区別する必要はありません。一方の比較器は
@@ -1532,13 +1558,15 @@ srfi-114コンストラクタで作られた場合はシンボル@code{compariso
 
 @defun comparator-ordered? cmpr
 @defunx comparator-hashable? cmpr
-[SRFI-128]
+[R7RS]
 @c EN
 Returns true iff a comparator @var{cmpr} can be used to order
 objects, or to hash them, respectively.
+In R7RS, this is provided from @code{scheme.comparator}.
 @c JP
 比較器@var{cmpr}が、オブジェクトの順序づけあるいはハッシュに使える
 場合にそれぞれ@code{#t}を返します。
+R7RSではこの手続きは@code{scheme.comparator}ライブラリで提供されます。
 @c COMMON
 @end defun
 
@@ -1546,10 +1574,11 @@ objects, or to hash them, respectively.
 @defunx comparator-equality-predicate cmpr
 @defunx comparator-ordering-predicate cmpr
 @defunx comparator-hash-function cmpr
-[SRFI-128]
+[R7RS]
 @c EN
 Returns type test procedure, equality predicate, ordering procedure
 and hash function of comparator @var{cmpr}, respectively.
+In R7RS, this is provided from @code{scheme.comparator}.
 
 These accessors always return procedures; if you give @code{#f}
 to the @var{order} or @var{hash} argument of the constructor,
@@ -1558,6 +1587,7 @@ to the @var{order} or @var{hash} argument of the constructor,
 which will just raise an error.
 @c JP
 比較器の型検査述語、等価述語、順序手続きおよびハッシュ関数をそれぞれ返します。
+R7RSではこの手続きは@code{scheme.comparator}ライブラリで提供されます。
 
 これらの手続きは常に手続きを返します。@code{make-comparator}で
 @var{order}や@var{hash}に@code{#f}を渡した場合でも、エラーを投げるだけの
@@ -1569,14 +1599,16 @@ which will just raise an error.
 [SRFI-114]
 @c EN
 This is a SRFI-114 procedure, but sometimes handy with
-SRFI-128 comparators.  Returns a procedure that takes two objects
+@code{scheme.comparator} comparators.
+Returns a procedure that takes two objects
 that satisfy the type predicates of @var{cmpr}.  The procedure
 returns either -1, 0 or 1, depending on whether the first object
 is less than, equal to, or greater than the second.  The comparator
 must be ordered, that is, it must have an ordering predicate
 (or a comparison procedure, if it is created by SRFI-114 consturctor).
 @c JP
-これはSRFI-114の手続きですが、SRFI-128比較器でも時々便利なことがあります。
+これはSRFI-114の手続きですが、
+@code{scheme.comparator}比較器でも時々便利なことがあります。
 @var{cmpr}の型検査述語を満たす二つのオブジェクトを取り、-1、0、1のいずれかを
 返す手続きを返します。二つのオブジェクトのうち最初の方が小さければ-1が、
 等しければ0が、大きければ1が返されます。
@@ -1587,19 +1619,23 @@ must be ordered, that is, it must have an ordering predicate
 
 @defun comparator-test-type cmpr obj
 @defunx comparator-check-type cmpr obj
-[SRFI-128]
+[R7RS]
 @c EN
 Test whether @var{obj} can be handled by a comparator @var{cmpr},
 by applying @var{cmpr}'s type test predicate.
 The former (@code{comparator-test-type}) returns a boolean
 values, while the latter (@code{comparator-check-type})
 signals an error when @var{obj} can't be handled.
+
+In R7RS, this is provided from @code{scheme.comparator}.
 @c JP
 @var{obj}が比較器@var{cmpr}で扱えるオブジェクトかどうかを、
 @var{cmpr}の型検査述語を適用して調べます。
 @code{comparator-test-type}は結果の真偽値を返します。
 @code{comparator-check-type}は@var{obj}が扱えないオブジェクトである場合に
 エラーを投げます。
+
+R7RSではこの手続きは@code{scheme.comparator}ライブラリで提供されます。
 @c COMMON
 @end defun
 
@@ -1608,16 +1644,17 @@ signals an error when @var{obj} can't be handled.
 @defunx <=? cmpr obj obj2 obj3 @dots{}
 @defunx >? cmpr obj obj2 obj3 @dots{}
 @defunx >=? cmpr obj obj2 obj3 @dots{}
-[SRFI-128]
+[R7RS]
 @c EN
 Compare objects using a comparator @var{cmpr}.  All of
 @var{obj}, @var{obj2}, @var{obj3} @dots{} must satisfy
 the type predicate of @var{cmpr}.  When more than two objects
-are given, the order of comparison
-is undefined.
+are given, the order of comparison is undefined.
 
 In order to use @code{<?}, @code{<=?}, @code{>?} and @code{>=?},
 comparator must be ordered.
+
+In R7RS, this is provided from @code{scheme.comparator}.
 @c JP
 比較器@code{cmpr}を使ってオブジェクトを比較します。
 @var{obj}, @var{obj2}, @var{obj3} @dots{}は全て@code{cmpr}の
@@ -1626,19 +1663,25 @@ comparator must be ordered.
 
 @code{<?}、@code{<=?}、@code{>?}、@code{>=?}を使うためには
 比較器は順序比較可能でなければなりません。
+
+R7RSではこの手続きは@code{scheme.comparator}ライブラリで提供されます。
 @c COMMON
 @end defun
 
 @defun comparator-hash cmpr obj
-[SRFI-128]
+[R7RS]
 @c EN
 Returns a hash value of @var{obj} with the hash function of
 a comparator @var{cmpr}.  The comparator must be hashable,
 and @var{obj} must satisfy comparator's type test predicate.
+
+In R7RS, this is provided from @code{scheme.comparator}.
 @c JP
 比較器@var{cmpr}のハッシュ関数を使って@var{obj}のハッシュ値を計算して返します。
 比較器はハッシュ計算可能でなければなりません。また、@var{obj}は
 比較器の型検査述語を満たさなければなりません。
+
+R7RSではこの手続きは@code{scheme.comparator}ライブラリで提供されます。
 @c COMMON
 @end defun
 
@@ -1720,18 +1763,20 @@ the domain of @code{default-comparator}.
 @c COMMON
 
 @c EN
-@code{Srfi-128} defines another way to extend @code{default-comparator}.
+@code{Scheme.comparator} defines another way to extend @code{default-comparator}.
 See @code{comparator-register-default!} below for the details.
 @c JP
-@code{srfi-128}は、@code{default-comparator}を拡張する別の方法を定義しています。
+@code{scheme.comparator}は、@code{default-comparator}を拡張する別の方法を定義しています。
 下の@code{comparator-register-default!}の項を参照してください。
 @c COMMON
 @end defvar
 
 @defun comparator-register-default! comparator
-[SRFI-128]
+[R7RS]
 @c EN
-This is the SRFI-128 way for user programs to extend the behavior of
+In R7RS, this is provided from @code{scheme.comparator}.
+This is the @code{scheme.comparator} way for user
+programs to extend the behavior of
 the @code{default-comparator}
 (which is what @code{make-default-comparator} returns).
 
@@ -1740,13 +1785,14 @@ by defining specialized methods for @code{object-equal?},
 @code{object-compare} and @code{object-hash}.
 See the description of @code{default-comparator} above, for the details.
 @c JP
+R7RSではこの手続きは@code{scheme.comparator}ライブラリで提供されます。
 これは、@code{default-comparator}(@code{make-default-comparator}が
 返す比較器)の振る舞いをユーザプログラムが拡張できるようにする、
-SRFI-128が定める方法です。
+@code{scheme.comparator}が定める方法です。
 
 Gaucheでは、@code{object-equal?}、@code{object-compare}、@code{object-hash}に
 特殊化したメソッドを定義することでも、デフォルト比較器を拡張できることに
-留意してください。詳しくは上の@code{defualt-comparator}の説明を参照のこと。
+留意してください。詳しくは上の@code{default-comparator}の説明を参照のこと。
 @c COMMON
 
 @c EN
@@ -1771,7 +1817,7 @@ use it.
 
 @c EN
 You might frown at this procedure having a global side-effect.
-Well, SRFI-128 explicitly prohibits comparators registered
+Well, @code{scheme.comparator} explicitly prohibits comparators registered
 by this procedure alters the behavior of the default comparator
 in the existing domain---it is only allowed to handle objects that
 aren't already handled by the system's original default comparator
@@ -1780,7 +1826,8 @@ adding new comparator should make the default comparator
 work on objects that had been previously raised an error.
 @c JP
 この手続きがグローバルな副作用を持つことに顔をしかめる人もいるかもしれません。
-SRFI-128では、デフォルトの比較器や登録された比較器が既にカバーしている定義域と
+@code{scheme.comparator}では、
+デフォルトの比較器や登録された比較器が既にカバーしている定義域と
 重複する定義域を持つ比較器を登録することを禁じています。
 言い換えれば、@code{comparator-register-default!}で定義できるのは、
 デフォルトの比較器や既に登録された比較器が処理できないオブジェクトを扱う
@@ -1834,8 +1881,8 @@ order the objects
 @c EN
 Note that @code{eq-comparator} and @code{eqv-comparator} are not
 equivalent from what @code{make-eq-comparator} and @code{make-eqv-comparator}
-return, respectively.  The latter two are defined in SRFI-128 and
-specified to use @code{default-hash} for the hash function.  It is
+return, respectively.  The latter two are defined in @code{scheme.comparator}
+and specified to use @code{default-hash} for the hash function.  It is
 heavier than @code{eq-hash}/@code{eqv-hash}, and it can't be used
 for circular objects, nor for the mutable objects with which you want
 to hash them by identity.  We provide @code{eq-comparator} and
@@ -1844,7 +1891,8 @@ to hash them by identity.  We provide @code{eq-comparator} and
 @c JP
 @code{eq-comparator}と@code{eqv-comparator}はそれぞれ、
 @code{make-eq-comparator} and @code{make-eqv-comparator}が返す比較器とは
-等価でないことに注意してください。後者の手続きはSRFI-128で規定されていますが、
+等価でないことに注意してください。後者の手続きは@code{scheme.comparator}
+で規定されていますが、
 ハッシュ関数には@code{default-hash}を使うように指定されています。
 @code{default-hash}は@code{eq-hash}や@code{eqv-hash}より重く、
 ループのある構造は扱えず、また変更可能なオブジェクトの同一性のみに基づいてハッシュ値を
@@ -1947,35 +1995,42 @@ shorter ones are ordered first (
 @c NODE 比較器を組み合わせる
 
 @defun make-default-comparator
-[SRFI-128]
+[R7RS]
 @c EN
 Returns a default comparator.  In Gauche, this returns the
 @code{default-comparator} object.
+In R7RS, this is provided from @code{scheme.comparator}.
 @c JP
 デフォルト比較器を返します。Gaucheでは常に唯一の@code{default-comparator}が
 返されます。
+R7RSではこの手続きは@code{scheme.comparator}ライブラリで提供されます。
 @c COMMON
 @end defun
 
 @defun make-eq-comparator
 @defunx make-eqv-comparator
-[SRFI-128]
+[R7RS]
 @c EN
 Returns comparators that use @code{eq?} and @code{eqv?} for its
 equality predicate, respectively.  Note that they use @code{default-hash}
-for hash functions, as specified by SRFI-128, which has a few drawbacks:
+for hash functions, as specified by @code{scheme.comparator},
+which has a few drawbacks:
 You can't use it if you want to hash based on identity of mutable objects,
 it diverges on circular objects, and it is slow if applied on a large
 structures.  We recommend to use @code{eq-comparator} or
 @code{eqv-comparator} if possible (@pxref{Predefined comparators}).
+
+In R7RS, this is provided from @code{scheme.comparator}.
 @c JP
 @code{eq?}および@code{eqv?}を等価述語に使う比較器をそれぞれ返します。
 これらの関数が返す比較器のハッシュには、@code{default-hash}を使うことが
-SRFI-128で規定されていますが、それにはいくつか欠点があります。
+@code{scheme.comparator}で規定されていますが、それにはいくつか欠点があります。
 変更可能なオブジェクトの同一性に基づいたハッシュ関数が欲しい場合は使えませんし、
 循環するオブジェクトでは発散します。大きな構造をハッシュしようとすると遅くなります。
 可能ならば、@code{eq-comparator}や@code{eqv-comparator}を
 使うことを推奨します(@ref{Predefined comparators})参照。)
+
+R7RSではこの手続きは@code{scheme.comparator}ライブラリで提供されます。
 @c COMMON
 @end defun
 
@@ -13298,6 +13353,7 @@ have them built-in instead of putting them in a separate module.
 @c COMMON
 
 @defun generator-fold proc seed gen gen2 @dots{}
+[R7RS]
 @c EN
 Works like @code{fold} on the generated values by generator
 procedures @var{gen} @var{gen2} @dots{} (@xref{Walking over lists},
@@ -13392,6 +13448,7 @@ benefit of generators.
 @end defun
 
 @defun generator-for-each proc gen gen2 @dots{}
+[R7RS]
 @c EN
 A generator version of @code{for-each}.  Repeatedly applies @var{proc} on
 the values yielded by @var{gen}, @var{gen2} @dots{} until any one of
@@ -13442,6 +13499,7 @@ is provided for the backward compatibility.
 @end defun
 
 @defun generator-find pred gen
+[R7RS]
 @c EN
 Returns the first item from the generator @var{gen} that satisfies
 the predicate @var{pred}.

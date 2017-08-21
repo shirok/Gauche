@@ -44,7 +44,7 @@ Gaucheに慣れているプログラマは、まず@ref{R7RS integration}に目�
 @menu
 * R7RS integration::
 * R7RS small language::
-* R7RS large - Red Edition::
+* R7RS large::
 @end menu
 
 
@@ -657,7 +657,7 @@ R7RSの@code{import}の正式な構文は次の通りです。
 @end smallexample
 @end defspec
 
-@node R7RS small language, R7RS large - Red Edition, R7RS integration, Library modules - R7RS standard libraries
+@node R7RS small language, R7RS large, R7RS integration, Library modules - R7RS standard libraries
 @section R7RS small language
 @c NODE R7RS small language
 
@@ -1866,9 +1866,12 @@ with-input-from-file with-output-to-file write write-char zero?
 @end example
 @end deftp
 
-@node R7RS large - Red Edition,  , R7RS small language, Library modules - R7RS standard libraries
-@section R7RS large - Red Edition
-@c NODE R7RS large - Red Edition
+@node R7RS large,  , R7RS small language, Library modules - R7RS standard libraries
+@section R7RS large
+@c NODE R7RS large
+
+R7RS large is still under development, and we're gradually
+adding support of the libraries that has been passed.
 
 @menu
 * R7RS lists::                  @code{scheme.list}
@@ -1876,9 +1879,15 @@ with-input-from-file with-output-to-file write write-char zero?
 * R7RS sort::                   @code{scheme.sort}
 * R7RS sets::                   @code{scheme.set}
 * R7RS character sets::         @code{scheme.charset}
+* R7RS immutable deques::       @code{scheme.ideque}
+* R7RS generators::             @code{scheme.generator}
+* R7RS lazy sequences::         @code{scheme.lseq}
+* R7RS boxes::                  @code{scheme.box}
+* R7RS list queues::            @code{scheme.list-queue}
+* R7RS comparators::            @code{scheme.comparator}
 @end menu
 
-@node R7RS lists, R7RS vectors, R7RS large - Red Edition, R7RS large - Red Edition
+@node R7RS lists, R7RS vectors, R7RS large, R7RS large
 @subsection @code{scheme.list} - R7RS lists
 @c NODE R7RSリスト, @code{scheme.list} - R7RSリスト
 
@@ -2479,7 +2488,7 @@ The cells in the first list argument may be reused to construct the result.
 @c COMMON
 @end defun
 
-@node R7RS vectors, R7RS sort, R7RS lists, R7RS large - Red Edition
+@node R7RS vectors, R7RS sort, R7RS lists, R7RS large
 @subsection @code{scheme.vector} - R7RS vectors
 @c NODE R7RSベクタ, @code{scheme.vector} - R7RSベクタ
 
@@ -3021,7 +3030,7 @@ Same as @code{(reverse (vector->list vec start end))}, but more efficient.
 @c COMMON
 @end defun
 
-@node R7RS sort, R7RS sets, R7RS vectors, R7RS large - Red Edition
+@node R7RS sort, R7RS sets, R7RS vectors, R7RS large
 @subsection @code{scheme.sort} - R7RS sort
 @c NODE R7RSソート, @code{scheme.sort} - R7RSソート
 
@@ -3283,7 +3292,7 @@ mean of numbers.
 @end example
 @end defun
 
-@node R7RS sets, R7RS character sets, R7RS sort, R7RS large - Red Edition
+@node R7RS sets, R7RS character sets, R7RS sort, R7RS large
 @subsection @code{scheme.set} - R7RS sets
 @c NODE R7RSセット, @code{scheme.set} - R7RSセット
 
@@ -3990,7 +3999,7 @@ They do provide hash functions.
 @end defvr
 
 
-@node R7RS character sets,  , R7RS sets, R7RS large - Red Edition
+@node R7RS character sets, R7RS immutable deques, R7RS sets, R7RS large
 @subsection @code{scheme.charset} - R7RS character sets
 @c NODE R7RS文字セット, @code{scheme.charset} - R7RS文字セット
 
@@ -4424,7 +4433,946 @@ Returns a character set that adds @var{char1} @dots{} to
 @c MOD scheme.charset
 @end defvar
 
+@node R7RS immutable deques, R7RS generators, R7RS character sets, R7RS large
+@subsection @code{scheme.ideque} - R7RS immutable deques
+@c NODE R7RS変更不可な両端キュー, @code{scheme.ideque} - R7RS変更不可な両端キュー
 
+@deftp {Module} scheme.ideque
+@mdindex scheme.ideque
+This module provides a functional double-ended queue
+(deque, pronounced as ``deck''),
+with amortized O(1) access of queue operations on either end.
+
+It also serves as a convenient bidrectional list structures
+in a sense that operations from the end of the list is just as
+efficient as the ones from the front.
+
+Note: If you don't need immutability and wants space-efficient
+deque, you can also use @code{data.ring-buffer} as a deque
+(@pxref{Ring buffer}).
+
+This module was originally defined as @code{srfi-134}, then
+became a part of R7RS large.
+
+Gauche's @code{data.ideque} is a superset of this module.
+@xref{Immutable deques}.
+@end deftp
+
+@defun ideque element @dots{}
+[R7RS]
+@c MOD scheme.ideque
+Returns an ideque with the given elements.
+@end defun
+
+@defun ideque-unfold p f g seed
+[R7RS]
+@c MOD scheme.ideque
+@end defun
+
+@defun ideque-unfold-right p f g seed
+[R7RS]
+@c MOD scheme.ideque
+@end defun
+
+@defun ideque-tabulate size init
+[R7RS]
+@c MOD scheme.ideque
+@end defun
+
+@defun ideque? idq
+[R7RS]
+@c MOD scheme.ideque
+@end defun
+
+@defun ideque-empty? idq
+[R7RS]
+@c MOD scheme.ideque
+@end defun
+
+@defun ideque-add-front idq x
+@defunx ideque-add-back idq x
+[R7RS]
+@c MOD scheme.ideque
+@end defun
+
+@defun ideque-front idq
+@defunx ideque-back idq
+[R7RS]
+@c MOD scheme.ideque
+@end defun
+
+@defun ideque-remove-front idq
+@defunx ideque-remove-back idq
+[R7RS]
+@c MOD scheme.ideque
+@end defun
+
+@defun ideque-reverse idq
+[R7RS]
+@c MOD scheme.ideque
+@end defun
+
+@defun ideque= idq idq2 @dots{}
+[R7RS]
+@c MOD scheme.ideque
+@end defun
+
+@defun ideque-ref idq n
+[R7RS]
+@c MOD scheme.ideque
+@end defun
+
+@defun ideque-take idq n
+@defunx ideque-take-right idq n
+[R7RS]
+@c MOD scheme.ideque
+@end defun
+
+@defun ideque-drop idq n
+@defunx ideque-drop-right idq n
+[R7RS]
+@c MOD scheme.ideque
+@end defun
+
+@defun ideque-split-at idq n
+[R7RS]
+@c MOD scheme.ideque
+@end defun
+
+@defun ideque-length idq
+[R7RS]
+@c MOD scheme.ideque
+@end defun
+
+@defun ideque-append idq @dots{}
+[R7RS]
+@c MOD scheme.ideque
+@end defun
+
+@defun ideque-zip idq idq2 @dots{}
+[R7RS]
+@c MOD scheme.ideque
+@end defun
+
+@defun ideque-map proc idq @dots{}
+[R7RS]
+@c MOD scheme.ideque
+@end defun
+
+@defun ideque-filter-map proc idq @dots{}
+[R7RS]
+@c MOD scheme.ideque
+@end defun
+
+@defun ideque-for-each proc idq @dots{}
+@defunx ideque-for-each-right proc idq @dots{}
+[R7RS]
+@c MOD scheme.ideque
+@end defun
+
+@defun ideque-fold proc knil idq @dots{}
+@defunx ideque-fold-right proc knil idq @dots{}
+[R7RS]
+@c MOD scheme.ideque
+@end defun
+
+@defun ideque-append-map proc idq @dots{}
+[R7RS]
+@c MOD scheme.ideque
+@end defun
+
+@defun ideque-filter pred idq
+@defunx ideque-remove pred idq
+[R7RS]
+@c MOD scheme.ideque
+@end defun
+
+@defun ideque-partition pred idq
+[R7RS]
+@c MOD scheme.ideque
+@end defun
+
+@defun ideque-find pred idq :optional failure
+@defunx ideque-find-right pred idq :optional failure
+[R7RS]
+@c MOD scheme.ideque
+@end defun
+
+@defun ideque-take-while pred idq
+@defunx ideque-take-while-right pred idq
+[R7RS]
+@c MOD scheme.ideque
+@end defun
+
+@defun ideque-drop-while pred idq
+@defunx ideque-drop-while-right pred idq
+[R7RS]
+@c MOD scheme.ideque
+@end defun
+
+@defun ideque-span pred idq
+@defunx ideque-break pred idq
+[R7RS]
+@c MOD scheme.ideque
+@end defun
+
+@defun ideque-any pred idq @dots{}
+@defunx ideque-every pred idq @dots{}
+[R7RS]
+@c MOD scheme.ideque
+@end defun
+
+@defun ideque->list idq
+@defunx list->ideque list
+[R7RS]
+@c MOD scheme.ideque
+@end defun
+
+@defun ideque->generator idq
+@defunx generator->ideque gen
+[R7RS]
+@c MOD scheme.ideque
+@end defun
+
+@node R7RS generators, R7RS lazy sequences, R7RS immutable deques, R7RS large
+@subsection @code{scheme.generator} - R7RS generators
+@c NODE R7RSジェネレータ, @code{scheme.generator} - R7RSジェネレータ
+
+@deftp {Module} scheme.generator
+@mdindex scheme.generator
+A generator is a thunk to generate a sequence of values, potentially
+terminated by EOF.  The interface was first defined in srfi-121, then
+incorporated R7RS large as @code{(scheme generator)}.
+
+Gauche provides a generator library
+@code{gauche.generator}, which is a superset of @code{scheme.generator}.
+@xref{Generators}, for the details.
+
+The following procedures are defined in this module.  Please see the
+respective manual section for each entry.
+
+@itemize
+@item @ref{Generator constructors}:
+@example
+generator                  make-iota-generator      make-range-generator
+make-coroutine-generator   make-bits-geneartor      make-for-each-generator
+make-unfold-generator      list->generator          vector->generator
+reverse-vector->generator  string->generator
+@end example
+@item @ref{Generator operations}:
+@example
+gcons*      gappend     gcombine    gfilter     gremove
+gtake       gdrop       gtake-while gdrop-while gdelete
+gdelete-neighbor-dups   gindex      gselect
+@end example
+@item @ref{Generator consumers}:
+@example
+generator->list         generator->reverse-list   generator->vector
+generator->vector!      generator->string
+generator-count         generator-any             genreator-every
+generator-unfold
+@end example
+@item @ref{Folding generated values}:
+@example
+generator-fold          generator-for-each        generator-find
+@end example
+@end itemize
+@end deftp
+
+@node R7RS lazy sequences, R7RS boxes, R7RS generators, R7RS large
+@subsection @code{scheme.lseq} - R7RS lazy sequences
+@c NODE R7RS遅延シーケンス, @code{scheme.lseq} - R7RS遅延シーケンス
+
+
+@deftp {Module} scheme.generator
+@mdindex scheme.generator
+This module provides lightweight lazy sequence (lseq), conceptually represented
+by a pair of element and generator.  When the rest of sequence is
+taken, the generator is evaluated and yields another pair of element and
+generator, and so on.  The overhead is one allocation of a pair per
+element.  It is much lighter than streams (@pxref{Stream library}),
+which requires to create a thunk for every element.
+
+Gauche already has built-in support for such lazy sequences;
+we go futher to make it behave like ordinary pairs---that is, if you
+take cdr of a lazy pair, we automatically forces the generator so
+it is indistinguishable from an ordinary pair, modulo side effects.
+@xref{Lazy sequences}.
+
+Srfi-127, the original srfi for this module,
+is a bit ambiguous whether its lazy sequence @emph{must} be
+implemented with a pair whose cdr is a generator procedure, or
+it refers to the pair+generator as a conceptual model.  Considering
+of the purpose of lazy sequence, the concrete implementation shouldn't
+matter; that is, the user of lazy sequence should not count on the fact
+that the lseq is an improper list terminated by a generator procedure.
+Instead, an lseq should be treated as an opaque object that can be
+passed to @code{scheme.lseq} procedures.
+
+With that premise, we implement this module as just a thin wrapper of
+Gauche's native lazy sequence.  It is upper-compatible,
+except that the code that assumes the internal structure could break.
+Notably, the constructor @code{generator->lseq} is the same as
+Gauche's built-in, which returns Gauche's lseq, undistinguishable
+to the oridnary list.
+
+@example
+(procedure? (generator->lseq (generator 1))) 
+  ;; => #t, in srfi-127 reference implementation,
+  ;;    #f, in our implementation.
+@end example
+@end deftp
+
+@defun lseq? x
+[R7RS]
+@c MOD scheme.lseq
+Returns true iff @var{x} is an object that can be passed to
+lseq procedures.  In Gauche, it returns @code{#t} if @var{x} is
+a pair or an empty list, since a lazy pair is indistinguishable
+from a pair.
+@end defun
+
+@defun lseq=? elt=? lseq1 lseq2
+[R7RS]
+@c MOD scheme.lseq
+Compare two lseqs element-wise using @code{elt=?} and returns @code{#t}
+iff two lseqs are equal. 
+@end defun
+
+@defun lseq-car lseq
+@defunx lseq-first lseq
+[R7RS]
+@c MOD scheme.lseq
+Returns the first item of @var{lseq}.  If @var{lseq} is empty, an error
+is raised.  In Gauche, these are just aliases of @code{car}.
+@end defun
+
+@defun lseq-cdr lseq
+@defunx lseq-rest lseq
+[R7RS]
+@c MOD scheme.lseq
+Returns the rest of @var{lseq}.  If @var{lseq} is empty, an error
+is raised.  In Gauche, these are just aliases of @code{cdr}.
+@end defun
+
+@defun lseq-take lseq k
+@defunx lseq-drop lseq k
+[R7RS]
+@c MOD scheme.lseq
+Returns an lseq that has first @code{k} items,
+or an lseq that skips first @code{k} items, respectively.
+
+An error is signaled when the resulting lseq of @code{lseq-take}
+reached at the end of sequence before @code{k} items are taken.
+It is different from Gauche's @code{ltake}, which simply returns @code{()}
+in such case.
+
+On the other hand,  @code{lseq-drop} is the same as @code{drop}
+in Gauche; it just drops @var{k} items from the head of input
+sequence, regardless of whether it is an ordinary list or lseq.
+@end defun
+
+@defun lseq-realize lseq
+[R7RS]
+@c MOD scheme.lseq
+Realizes all the elements in @var{lseq}, resulting an ordinary list.
+@end defun
+
+@defun lseq->generator lseq
+[R7RS]
+@c MOD scheme.lseq
+Creates a generator from @var{lseq}.  In Gauche, this is same
+as @code{list->generator}.
+@end defun
+
+@defun lseq-length lseq
+[R7RS]
+@c MOD scheme.lseq
+Returns the length of @var{lseq}.  All the elements in @var{lseq} are
+realized as the side effect.  In Gauche, this is same as @code{length}.
+@end defun
+
+@defun lseq-append lseq lseq2 @dots{}
+[R7RS]
+@c MOD scheme.lseq
+Append one or more @var{lseq}s lazily.  This is the same as @code{lappend}
+in Gauche.
+@end defun
+
+@defun lseq-zip lseq lseq2 @dots{}
+[R7RS]
+@c MOD scheme.lseq
+Returns a lazy sequence in which the first element is a list of
+first elements of @code{lseq}s, and so on.
+@end defun
+
+@defun lseq-map proc lseq lseq2 @dots{}
+[R7RS]
+@c MOD scheme.lseq
+Lazy map.  The same as Gauche's @code{lmap}.  Returns a lazy sequence.
+@end defun
+
+@defun lseq-for-each proc lseq lseq2 @dots{}
+[R7RS]
+@c MOD scheme.lseq
+This one consumes all the input lseqs, applying @var{proc} on
+each corresponding elements of the input sequences for the side
+effects.  In Gauche, it is the same as @code{for-each}, for
+Gauche doesn't distinguish lseqs and ordinary lists.
+@end defun
+
+@defun lseq-filter pred lseq
+@defunx lseq-remove pred lseq
+[R7RS]
+@c MOD scheme.lseq
+Returns an lseq that contains elements from the input 
+@var{lseq} that satisfy or don't satisfy @var{pred}, respectively.
+@code{Lseq-filter} is the same as Gauche's @code{lfilter}.
+@end defun
+
+@defun lseq-take-while pred lseq
+@defunx lseq-drop-while pred lseq
+[R7RS]
+@c MOD scheme.lseq
+These are the same as Gauche's @code{ltake-while} and @code{drop-while}
+(the latter doesn't have @code{l}-prefix, since it just drops items
+from the head of the input sequence, regardless of whether it is
+an ordinary list or an lseq.
+@end defun
+
+@defun lseq-find pred lseq
+@defunx lseq-find-tail pred lseq
+@defunx lseq-any pred lseq
+@defunx lseq-every pred lseq
+@defunx lseq-index pred lseq
+@defunx lseq-member pred lseq :optional eq
+@defunx lseq-memq pred lseq
+@defunx lseq-memv pred lseq
+[R7RS]
+@c MOD scheme.lseq
+In Gauche, these are the same as the corresponding list functions,
+@code{find}, @code{find-tail}, @code{any}, @code{every},
+@code{list-index}, @code{member}, @code{memq} and @code{memv}, respectively,
+for all of those functions won't look at input more than necessary
+so @var{lseq}s work just as well as ordinary lists.
+@end defun
+
+@node R7RS boxes, R7RS list queues, R7RS lazy sequences, R7RS large
+@subsection @code{scheme.box} - R7RS boxes
+@c NODE R7RSボックス, @code{scheme.box} - R7RSボックス
+
+@deftp {Module} scheme.box
+@mdindex scheme.box
+This module defines the box datatype, which is a simple
+container that can hold one Scheme object.  It can be used
+as a minimal data storage, or a sort of mutable indirect
+``pointer''.
+
+Traditionally a pair (with ignoring its cdr) or a single-element vector
+has been used for this purpose; in modern Scheme you can also define
+a record type with one mutable field.  Nevertheless,
+a box is very common abstraction to describe various
+algorithms, and having common interface to it is useful.
+
+The srfi leaves some details to implementations.  Here are our choices:
+@itemize
+@item
+We don't support autoboxing; that is, it is an error to pass non-box
+value to the procedure expecting boxed value and vice versa.
+@item
+Comparing two boxes with @code{equal?} compares their contents when
+two are not @code{eqv?}.  In the spec, when two boxes are @code{eqv?}
+then they must also be @code{equal?} to each other, but it's up
+to the implementation when two are not @code{eqv?}.
+@end itemize
+
+When you're writing portable code, be careful not to depend on the
+@code{equal?} behavoir.
+@end deftp
+
+@defun box val
+ [R7RS]
+@c MOD scheme.box
+Returns a fresh box object that contains the value @code{val}.
+@end defun
+
+@defun box? obj
+[R7RS]
+@c MOD scheme.box
+Returns @code{#t} iff @var{obj} is a box object.
+@end defun
+
+@defun unbox box
+[R7RS]
+@c MOD scheme.box
+Returns @var{box}'s content.
+@end defun
+
+@defun set-box! box val
+[R7RS]
+@c MOD scheme.box
+Mutate @var{box}'s content with @var{val}.  Returns unspecified value.
+@end defun
+
+@node R7RS list queues, R7RS comparators, R7RS boxes, R7RS large
+@subsection @code{scheme.list-queue} - R7RS list queues
+@c NODE R7RSリストキュー, @code{scheme.list-queue} - R7RSリストキュー
+
+@deftp {Module} scheme.list-queue
+@mdindex scheme.list-queue
+@c EN
+A library of simple queue based on lists.
+Gauche has a queue support in @code{data.queue} module, which also
+includes MT-safe queue (@pxref{Queue}).  This library is implemented
+on top of @code{data.queue}'s @code{<queue>} object and mainly provided
+for portable code.
+@c JP
+リストを元にしたキューのライブラリです。
+Gaucheは@code{data.queue}モジュールでキューをサポートしています
+(スレッドセーフなキューも含まれています。詳しくは@ref{Queue}を参照。)
+このモジュールは、主としてポータブルなコードのために、
+@code{data.queue}の@code{<queue>}の上に実装されています。
+@c COMMON
+
+@c EN
+The list-queue is just an instance of @code{<queue>}, so you can
+pass a queue created by @code{make-queue} to @code{scheme.list-queue}
+API and
+a list-queue created by @code{make-list-queue} to Gauche's queue API.
+@c JP
+このモジュールでいうリストキューは@code{<queue>}のインスタンスそのものなので、
+@code{make-queue}で作ったキューを@code{scheme.list-queue}のAPIに渡したり、
+@code{make-list-queue}で作ったキューをGaucheのキューAPIに渡すこともできます。
+@c COMMON
+
+@c EN
+Note: Some API of this library requires to return internal pairs the queue
+uses, for the efficiency.  
+The pair's car/cdr will be mutated by subsequent queue operation,
+and also any mutation done on the pair would cause inconsistency
+in the original queue.
+@c JP
+註: このライブラリのAPIには、性能のために、
+キューが使う内部のペアをそのまま返すことを要求されている
+ものがあります。これらの内部ペアはキューの操作によって破壊的に変更される可能性があります。
+ユーザ側でも変更した場合、その後のキューの動作は保証されません。
+@c COMMON
+@end deftp
+
+@defun make-list-queue lis :optional last
+[R7RS]
+@c MOD scheme.list-queue
+@c EN
+Creates and returns a list-queue whose initial content is @var{lis}.
+In Gauche, a list queue is just an instance of @code{<queue>} (@pxref{Queue}).
+
+The cells in @var{lis} are owned by the queue; the caller shouldn't mutate
+it afterwords, nor assume its structure remains the same.
+
+The optional @var{last} argument must be the last pair of @var{lis}.
+If it is passed, @code{make-list-queue} will skip scanning @var{lis}
+and just hold a reference to @var{last} as the tail of the queue.
+@c JP
+リスト@var{lis}の内容を初期値として持つリストキューを作って返します。
+Gaucheでは、リストキューは@code{<queue>}のインスタンスです(@ref{Queue}参照)。
+
+@var{lis}の実体は作成されたキューの所有物となります。
+呼び出し側は、この関数を呼んだ後で@var{lis}を変更してはいけません。
+また、作成されたキューの操作によって@var{lis}の内容は変更されるでしょう。
+
+省略可能な@var{last}引数は、もし与えられる場合は、@var{lis}の最後のペアで
+なければなりません。この引数が渡された場合、@code{make-list-queue}は自分で
+リストの末尾のペアを見つけるかわりに、呼び出し側を信頼して@var{last}を最後の
+ペアとして保持します。
+@c COMMON
+@end defun
+
+@defun list-queue elt @dots{}
+[R7RS]
+@c MOD scheme.list-queue
+@c EN
+Creates and returns a list-queue whose initial content is @var{elt} @dots{}.
+In Gauche, a list queue is just an instance of @code{<queue>} (@pxref{Queue}).
+@c JP
+@var{elt} @dots{}を初期内容とするリストキューを作成して返します。
+Gaucheでは、リストキューは@code{<queue>}のインスタンスです(@ref{Queue}参照)。
+@c COMMON
+@end defun
+
+@defun list-queue-copy queue
+[R7RS]
+@c MOD scheme.list-queue
+@c EN
+Returns a copy of a list-queue @var{queue}.
+@c JP
+リストキュー@var{queue}のコピーを返します。
+@c COMMON
+@end defun
+
+@defun list-queue-unfold p f g seed :optional queue
+[R7RS]
+@c MOD scheme.list-queue
+@c EN
+Prepend @var{queue} with the items generated by
+@code{(unfold p f g seed)} and returns the updated queue.
+@xref{R7RS lists}, for @code{unfold}.
+If @var{queue} is omitted, a fresh queue is created.
+@c JP
+リストキュー@var{queue}の前に、@code{(unfold p f g seed)}で生成される
+要素を付け足して、@var{queue}を返します。
+@code{unfold}については@ref{R7RS lists}を参照してください。
+@var{queue}が省略された場合は新たに作成したキューを使います。
+@c COMMON
+
+@example
+(list-queue-unfold (pa$ = 5) ; p
+                   (pa$ * 2) ; f
+                   (pa$ + 1) ; g
+                   0         ; seed
+                   (list-queue 'x 'y 'z))
+ @result{} @r{a queue containing (0 2 4 6 8 x y z)}
+@end example
+@end defun
+
+@defun list-queue-unfold-right p f g seed :optional queue
+[R7RS]
+@c MOD scheme.list-queue
+@c EN
+Append @var{queue} with the items generated by
+@code{(unfold-right p f g seed)} and returns the updated queue.
+@xref{R7RS lists}, for @code{unfold-right}.
+If @var{queue} is omitted, a fresh queue is created.
+@c JP
+@var{queue}の後ろに、@code{(unfold-right p f g seed)}で生成される
+要素を付け足して、@var{queue}を返します。
+@code{unfold-right}については@ref{R7RS lists}を参照してください。
+@var{queue}が省略された場合は
+新たに作成したキューを使います。
+@c COMMON
+
+@example
+(list-queue-unfold-right (pa$ = 5) ; p
+                         (pa$ * 2) ; f
+                         (pa$ + 1) ; g
+                         0         ; seed
+                         (list-queue 'x 'y 'z))
+ @result{} @r{a queue containing (x y z 8 6 4 2 0)}
+@end example
+@end defun
+
+@defun list-queue? obj
+[R7RS]
+@c MOD scheme.list-queue
+@c EN
+Returns true iff @var{queue} is a list-queue.
+In Gauche, it is the same as @code{queue?} in the @code{data.queue} module.
+@c JP
+@var{queue}がリストキューなら@code{#t}を、そうでなければ@code{#f}を返します。
+Gaucheでは@code{data.queue}モジュールの@code{queue?}と同じです。
+@c COMMON
+@end defun
+
+@defun list-queue-empty? queue
+[R7RS]
+@c MOD scheme.list-queue
+@c EN
+Returns true iff @var{queue} is empty.
+Same as @code{queue-empty?} of @code{data.queue}.
+@c JP
+@var{queue}が空なら@code{#t}を、そうでなければ@code{#f}を返します。
+@code{data.queue}の@code{queue-empty?}と同じです。
+@c COMMON
+@end defun
+
+@defun list-queue-front queue
+[R7RS]
+@c MOD scheme.list-queue
+@c EN
+Returns the front element of the @var{queue}.
+An error is thrown if @var{queue} is empty.
+Same as @code{queue-front} of @code{data.queue}.
+@c JP
+@var{queue}の先頭の要素を返します。@var{queue}が空の場合はエラーを報告します。
+@code{data.queue}の@code{queue-front}と同じです。
+@c COMMON
+@end defun
+
+@defun list-queue-back queue
+[R7RS]
+@c MOD scheme.list-queue
+@c EN
+Returns the rear element of the @var{queue}.
+An error is thrown if @var{queue} is empty.
+Same as @code{queue-rear} of @code{data.queue}.
+@c JP
+@var{queue}の末尾の要素を返します。@var{queue}が空の場合はエラーを報告します。
+@code{data.queue}の@code{queue-rear}と同じです。
+@c COMMON
+@end defun
+
+@defun list-queue-list queue
+[R7RS]
+@c MOD scheme.list-queue
+@c EN
+Returns the internal list of @var{queue}.
+Note that the list would be modified by subsequent operations of @var{queue},
+and any modification on the list would make @var{queue} inconsistent.
+The primary purpose of this procedure is to implement other
+queue-related operations with small overhead.
+
+If you merely need a cheap access the content of the queue,
+consider @code{list-queue-remove-all!}.
+That returns the list of elements of the queue without copying, and
+simultaneoulsy reset the queue to empty, so it's safe.
+@c JP
+@var{queue}が内部的に保持している要素のリストを返します。
+返されたリストは、@var{queue}が操作されれば破壊的に変更される可能性があり、
+また返されたリストを破壊的に変更した場合は@var{queue}の一貫性が失われます。
+この手続きの主な目的は、他のキュー操作を効率よく実装することです。
+
+単にキューの中身にオーバーヘッド無くアクセスしたい場合は、
+@code{list-queue-remove-all!}が使えないかどうか検討してください。
+そちらはキューの中身のリストを直接返すと同時にキュー自体を空にするので、安全です。
+@c COMMON
+@end defun
+
+@defun list-queue-fist-last queue
+[R7RS]
+@c MOD scheme.list-queue
+@c EN
+Returns two values, the first and last pair of @var{queue}.
+If the queue is empty, two empty lists are returned.
+
+This also returns the internal pair of the queue, so
+any subsequent operations of @var{queue} would change the contents
+of the pairs, and any modification on the pairs would make @var{queue}
+inconsistent.
+The purpose of this procedure is to implement other
+queue-related operations with small overhead.  This procedure should
+not be used in general.
+@c JP
+@var{queue}の内部で要素を保持しているリストの先頭と末尾のペアを返します。
+キューが空の場合は、二つの空リストを返します。
+
+この手続きも、@code{list-queue-list}と同じく、内部のリストを直接返すため、
+返されたリストは、@var{queue}が操作されれば破壊的に変更される可能性があり、
+また返されたリストを破壊的に変更した場合は@var{queue}の一貫性が失われます。
+この手続きの主な目的は、他のキュー操作を効率よく実装することであり、
+一般的な用途に使うべきではありません。
+@c COMMON
+@end defun
+
+@defun list-queue-add-front! queue elt
+[R7RS]
+@c MOD scheme.list-queue
+@c EN
+Add @var{elt} to the front of @var{queue}.
+Same as @code{(queue-push! queue elt)} of @code{data.queue}.
+@c JP
+@var{elt}を@var{queue}の先頭に追加します。
+@code{data.queue}の@code{(queue-push! queue elt)}と同じです。
+@c COMMON
+@end defun
+
+@defun list-queue-add-back! queue elt
+[R7RS]
+@c MOD scheme.list-queue
+@c EN
+Add @var{elt} to the back of @var{queue}.
+Same as @code{(enqueue! queue elt)} of @code{data.queue}.
+@c JP
+@var{elt}を@var{queue}の末尾に追加します。
+@code{data.queue}の@code{(enqueue! queue elt)}と同じです。
+@c COMMON
+@end defun
+
+@defun list-queue-remove-front! queue
+[R7RS]
+@c MOD scheme.list-queue
+@c EN
+Remove an element from the front of @var{queue} and returns
+the removed element.  Throws an error if @var{queue} is empty.
+Same as @code{dequeue!} of @code{data.queue}.
+@c JP
+@var{queue}の先頭から要素をひとつ取り除き、その取り除かれた要素を返します。
+@var{queue}が空ならエラーを報告します。
+@code{data.queue}の@code{(dequeue! queue elt)}と同じです。
+@c COMMON
+@end defun
+
+@defun list-queue-remove-back! queue
+[R7RS]
+@c MOD scheme.list-queue
+@c EN
+Remove an element from the back of @var{queue} and returns the
+removed element.  Throws an error if @var{queue} is empty.
+This isn't guaranteed to be efficient; it is O(n)
+operation where n is the number of elements.
+In general, if you need this operation frequently, you should
+consider double-ended queue.  (@xref{Immutable deques}, and also
+@pxref{Ring buffer}.)
+@c JP
+@var{queue}の末尾から要素をひとつ取り除き、その取り除かれた要素を返します。
+@var{queue}が空ならエラーを報告します。
+この手続きは、キューの持つ要素数nに対してO(n)の時間がかかります。
+もしこの操作を頻繁に必要とするなら、デック(deque, 両端キュー)を使うことを
+検討すべきでしょう。(@ref{Immutable deques}および
+@ref{Ring buffer}参照。)
+@c COMMON
+@end defun
+
+@defun list-queue-remove-all! queue
+[R7RS]
+@c MOD scheme.list-queue
+@c EN
+Remove all the elements from @var{queue} and returns them as a list.
+The list isn't copied---this is O(1) operation.  This should be preferred
+over @code{list-queue-list}, for it's safer.
+In Gauhce, this is the same as @code{dequeue-all!} in @code{data.queue}.
+@c JP
+@var{queue}を空にして、入っていた全ての要素をリストで返します。
+リストはコピーされません。つまりO(1)の操作です。
+可能なら、@code{list-queue-list}よりはこちらを使う方が安全です。
+Gaucheでは、これは@code{data.queue}の@code{deque-all!}と同じです。
+@c COMMON
+@end defun
+
+@defun list-queue-set-list! queue lis :optional last
+[R7RS]
+@c MOD scheme.list-queue
+@c EN
+Modify @var{queue} to have the elements in @var{lis} as its element.
+The original content of @var{queue} is discarded.  If the optional
+@var{last} argument is provided, it must be the last pair of @var{lis},
+and the procedure uses that instead of scanning @var{lis}, to achieve
+O(1) operation.
+
+After calling this, @var{lis} is owned by @var{queue} and it may
+be mutated.  The caller shouldn't change, or rely on @var{lis} afterwards.
+@c JP
+@var{queue}を変更して、@var{lis}の内容がキューの内容になるようにします。
+@var{queue}の元の内容は捨てられます。省略可能な@var{last}引数が渡される場合、
+それは@var{lis}の最後のペアでなければなりません。手続きは呼び出し元を信頼して、
+@var{lis}をスキャンせずに@var{last}を最後のペアと考えることで
+O(1)操作を実現しています。
+
+この手続きを呼び出した後では、@var{lis}は@var{queue}に所有され、破壊的変更を
+受けます。この後で@var{lis}の内容をあてにしたり変更したりしてはいけません。
+@c COMMON
+@end defun
+
+@defun list-queue-append queue @dots{}
+[R7RS]
+@c MOD scheme.list-queue
+@c EN
+Returns a fresh list-queue whose contents are concatenation of
+@var{queue}s.  The contents of arguments are intact.
+This is O(n) operation where n is the total number of elements.
+@c JP
+与えられた@var{queue}を全部つないだ要素を持つリストキューを
+新たに作成して返します。引数のキューは変更されません。
+これは要素の総数nについてO(n)の操作となります。
+@c COMMON
+@end defun
+
+@defun list-queue-append! queue @dots{}
+[R7RS]
+@c MOD scheme.list-queue
+@c EN
+Returns a list-queue whose contents are concatenation of
+@var{queue}s.  During the operation, the contents of @var{queue}s
+may be mutated, and they shouldn't be used any longer.  (In Gauche,
+to avoid accident, we actually empty all the @var{queue}s.)
+It is also noted that the result doesn't need to be @code{eq?} to
+any of the arguments.
+This is O(m) operation where m is the total number of queues
+(as opposed to the number of elements).
+@c JP
+与えられた@var{queue}の要素を全てつないだものを要素とするリストキューを
+返します。操作によって、@var{queue}の内容は破壊されることがあり、
+以降それらのキューを使ってはなりません
+(Gaucheでは、事故を避けるために、全ての@var{queue}を空にしています)。
+結果として返されるキューが、引数のどれとも@code{eq?}になる必要はない、
+ということに注意してください。
+これはキューの総数mに対してO(m)の操作です(要素の総数ではなく)。
+@c COMMON
+@end defun
+
+@defun list-queue-concatenate queues
+[R7RS]
+@c MOD scheme.list-queue
+@code{(apply list-queue-append queues)}.
+@end defun
+
+@defun list-queue-map proc queue
+[R7RS]
+@c MOD scheme.list-queue
+@c EN
+Returns a fresh list-queue whose elements are obtained by
+applying @var{proc} on every elements in @var{queue}.
+@c JP
+@var{proc}を@var{queue}の各要素に適用して得られた結果を要素とする
+新たなリストキューを返します。
+@c COMMON
+@end defun
+
+@defun list-queue-map! proc queue
+[R7RS]
+@c MOD scheme.list-queue
+@c EN
+Replaces every element in @var{queue} by the result of
+application of @var{proc} on the element.
+@c JP
+@var{queue}の各要素を、それに@var{proc}を適用して得られた結果に
+置き替えます。
+@c COMMON
+@end defun
+
+@defun list-queue-for-each proc queue
+[R7RS]
+@c MOD scheme.list-queue
+@c EN
+Applies @var{proc} on every element of @var{queue}.
+The results are discarded.
+@c JP
+@var{proc}を@var{queue}の各要素に適用します。結果は捨てられます。
+@c COMMON
+@end defun
+
+@node R7RS comparators,  , R7RS list queues, R7RS large
+@subsection @code{scheme.comparator} - R7RS comparators
+@c NODE R7RS比較器, @code{scheme.box} - R7RS比較器
+
+@deftp {Module} scheme.comparator
+@mdindex scheme.comparator
+This module defines comparators and related procedures.
+Originally called @code{srfi-128}.
+
+Gauche supports comparators fully compatible to
+@code{scheme.comparator} built-in.
+@xref{Basic comparators}, for the following procedures
+defined in this module.
+
+@example
+comparator? comparator-ordered? comparator-hashable?
+make-comparator make-pair-comparator
+make-list-comparator make-vector-comparator
+make-eq-comparator make-eqv-comparator make-equal-comparator
+
+boolean-hash char-hash char-ci-hash string-hash
+string-ci-hash symbol-hash number-hash
+hash-bound hash-salt
+
+make-default-comparator default-hash
+comparator-register-default!
+
+comparator-type-test-predicate comparator-equality-predicate
+comparator-ordering-predicate comparator-hash-function
+comparator-test-type comparator-check-type comparator-hash
+
+=? <? >? <=? >=? comparator-if<=>
+@end example
+@end deftp
 
 @c Local variables:
 @c mode: texinfo

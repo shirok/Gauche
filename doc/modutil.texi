@@ -2460,16 +2460,33 @@ before comparison.
 @deftp {Module} data.ideque
 @mdindex data.ideque
 This module provides a functional double-ended queue (deque, 
-pronounced as ``deck''),
-with amortized O(1) access of queue operations on either end.
+pronounced as ``deck'').
 
-It also serves as a convenient bidrectional list structures
-in a sense that operations from the end of the list is just as
-efficient as the ones from the front.
+Almost all procedures in this module are now a part of R7RS large.
+@xref{R7RS immutable deques}, for description of the following
+procedures:
 
-Note: If you don't need immutability and wants space-efficient
-deque, you can also use @code{data.ring-buffer} as a deque
-(@pxref{Ring buffer}).
+@example
+ideque               ideque-unfold        ideque-unfold-right
+ideque-tabulate      ideque?              ideque-empty?
+ideque-add-front     ideque-add-back
+ideque-remove-front  ideque-remove-back
+ideque-front         ideque-back
+ideque-reverse       ideque=              ideque-ref
+ideque-take          ideque-drop
+ideque-take-right    ideque-drop-right
+ideque-split-at      ideque-append        ideque-zip
+ideque-map           ideque-for-each      ideque-for-each-right
+ideque-fold          ideque-fold-right    ideque-append-map
+ideque-filter        ideque-remove
+ideque-find          ideque-find-right
+ideque-take-while    ideque-take-while-right
+ideque-drop-while    ideque-drop-while-right
+ideque-span          ideque-break
+ideque-any           ideque-every
+ideque->list         list->ideque
+ideque->generator    generator->ideque
+@end example
 @end deftp
 
 @defun make-ideque n :optional init
@@ -2480,177 +2497,6 @@ Creates an ideque of length @var{n} with all the elements being
 This is provided just for the symmetry with other container data
 structures; it's not in srfi-134, and the portable code can use
 @code{ideque-tabulate}.
-@end defun
-
-@defun ideque element @dots{}
-[SRFI-134]
-@c MOD data.ideque
-Returns an ideque with the given elements.
-@end defun
-
-@defun ideque-unfold p f g seed
-[SRFI-134]
-@c MOD data.ideque
-@end defun
-
-@defun ideque-unfold-right p f g seed
-[SRFI-134]
-@c MOD data.ideque
-@end defun
-
-@defun ideque-tabulate size init
-[SRFI-134]
-@c MOD data.ideque
-@end defun
-
-@defun ideque-empty? idq
-[SRFI-134]
-@c MOD data.ideque
-@end defun
-
-@defun ideque-add-front idq x
-@defunx ideque-add-back idq x
-[SRFI-134]
-@c MOD data.ideque
-@end defun
-
-@defun ideque-front idq
-@defunx ideque-bakc idq
-[SRFI-134]
-@c MOD data.ideque
-@end defun
-
-@defun ideque-remove-front idq
-@defunx ideque-remove-back idq
-[SRFI-134]
-@c MOD data.ideque
-@end defun
-
-@defun ideque-reverse idq
-[SRFI-134]
-@c MOD data.ideque
-@end defun
-
-@defun ideque= idq idq2 @dots{}
-[SRFI-134]
-@c MOD data.ideque
-@end defun
-
-@defun ideque-ref idq n
-[SRFI-134]
-@c MOD data.ideque
-@end defun
-
-@defun ideque-take idq n
-@defunx ideque-take-right idq n
-[SRFI-134]
-@c MOD data.ideque
-@end defun
-
-@defun ideque-drop idq n
-@defunx ideque-drop-right idq n
-[SRFI-134]
-@c MOD data.ideque
-@end defun
-
-@defun ideque-split-at idq n
-[SRFI-134]
-@c MOD data.ideque
-@end defun
-
-@defun ideque-length idq
-[SRFI-134]
-@c MOD data.ideque
-@end defun
-
-@defun ideque-append idq @dots{}
-[SRFI-134]
-@c MOD data.ideque
-@end defun
-
-@defun ideque-zip idq idq2 @dots{}
-[SRFI-134]
-@c MOD data.ideque
-@end defun
-
-@defun ideque-map proc idq @dots{}
-[SRFI-134]
-@c MOD data.ideque
-@end defun
-
-@defun ideque-filter-map proc idq @dots{}
-[SRFI-134]
-@c MOD data.ideque
-@end defun
-
-@defun ideque-for-each proc idq @dots{}
-@defunx ideque-for-each-right proc idq @dots{}
-[SRFI-134]
-@c MOD data.ideque
-@end defun
-
-@defun ideque-fold proc knil idq @dots{}
-@defunx ideque-fold-right proc knil idq @dots{}
-[SRFI-134]
-@c MOD data.ideque
-@end defun
-
-@defun ideque-append-map proc idq @dots{}
-[SRFI-134]
-@c MOD data.ideque
-@end defun
-
-@defun ideque-filter pred idq
-@defunx ideque-remove pred idq
-[SRFI-134]
-@c MOD data.ideque
-@end defun
-
-@defun ideque-partition pred idq
-[SRFI-134]
-@c MOD data.ideque
-@end defun
-
-@defun ideque-find pred idq :optional failure
-@defunx ideque-find-right pred idq :optional failure
-[SRFI-134]
-@c MOD data.ideque
-@end defun
-
-@defun ideque-take-while pred idq
-@defunx ideque-take-while-right pred idq
-[SRFI-134]
-@c MOD data.ideque
-@end defun
-
-@defun ideque-drop-while pred idq
-@defunx ideque-drop-while-right pred idq
-[SRFI-134]
-@c MOD data.ideque
-@end defun
-
-@defun ideque-span pred idq
-@defunx ideque-break pred idq
-[SRFI-134]
-@c MOD data.ideque
-@end defun
-
-@defun ideque-any pred idq @dots{}
-@defunx ideque-every pred idq @dots{}
-[SRFI-134]
-@c MOD data.ideque
-@end defun
-
-@defun ideque->list idq
-@defunx list->ideque list
-[SRFI-134]
-@c MOD data.ideque
-@end defun
-
-@defun ideque->generator idq
-@defunx generator->ideque gen
-[SRFI-134]
-@c MOD data.ideque
 @end defun
 
 
