@@ -222,6 +222,11 @@
   ;; And the texinfo menu's line points to "redirect-handler secure ..." line
   ;; instead of "-- Function: http-get" line.  So we have to check the lines
   ;; to find out the last #/^ --/ line before START-LINE.
+  (define (entry-line? line)
+    (or (#/^ --/ line)           ; start of entry line
+        (#/^ {10}/ line)         ; folded entry line
+        (#/^ {5}\.\.\.$/ line)   ; dots between entry line
+        (#/^ {5}\u2026$/ line))) ; dots between entry line (unicode)
   (define (skip-lines)
     (let loop ([n (- start-line 3)]
                [lines '()])
@@ -230,9 +235,8 @@
           (for-each print (reverse lines))
           line)
         (let1 line (read-line)
-          (cond [(eof-object? line) line]  ;something's wrong, but tolerate.
-                [(#/^ --/ line) (loop (- n 1) (cons line lines))]
-                [(#/^ {10}/ line) (loop (- n 1) (cons line lines))]
+          (cond [(eof-object? line) line] ; something's wrong, but tolerate.
+                [(entry-line? line) (loop (- n 1) (cons line lines))]
                 [else (loop (- n 1) '())])))))
 
   ;; Once the start line is found, we find the start of description (since
@@ -241,21 +245,14 @@
   (with-string-io (~ info-node'content)
     (^[]
       (let entry ([line (skip-lines)])
-        (unless (eof-object? line)
-          (cond [(#/^ --/ line) (print line) (entry (read-line))]
-                [(#/^$/ line)]       ;; no description
-                [(#/^ {6}/ line)     ;; folded entry line
-                 (print line) (entry (read-line))]
-                [(#/^ {5}...$/ line) ;; dots between entry line
-                 (print line) (entry (read-line))]
-                [(#/^ {5}\u2026$/ line) ;; dots between entry line (unicode)
-                 (print line) (entry (read-line))]
-                [(#/^ {5}\S/ line)   ;; start description
-                 (print line)
-                 (let desc ([line (read-line)])
-                   (unless (eof-object? line)
-                     (cond [(#/^$/ line) (print) (desc (read-line))]
-                           [(#/^ {4}/ line) (print line) (desc (read-line))]
-                           [else])))]))))))
-      
-  
+        (cond [(eof-object? line)]
+              [(entry-line? line) (print line) (entry (read-line))]
+              [(#/^$/ line)]     ; no description
+              [(#/^ {5}\S/ line) ; start description
+               (print line)
+               (let desc ([line (read-line)])
+                 (cond [(eof-object? line)]
+                       [(#/^$/ line) (print) (desc (read-line))]
+                       [(#/^ {4}/ line) (print line) (desc (read-line))]
+                       [else]))])))))
+
