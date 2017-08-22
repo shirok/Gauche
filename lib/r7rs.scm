@@ -196,7 +196,6 @@
   (use gauche.record)
   (use gauche.parameter)
   (use gauche.unicode)
-  (use srfi-11)
   (use srfi-13)
 
   (require "text/parse")

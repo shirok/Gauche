@@ -274,6 +274,40 @@
                (lambda () ,@body)
                ,swap))))))
 
+;; srfi-11, r7rs
+(define-syntax let*-values
+  (syntax-rules ()
+    [(_ () . body)
+     (let () . body)]
+    [(_ ((formals init) . rest) . body)
+     (receive formals init
+       (let*-values rest . body))]))
+
+(define-syntax let-values
+  (er-macro-transformer
+   (^[f r c]
+     ;; we rename all the formals and rebind
+     (let* ([bindings (cadr f)]
+            [body (cddr f)]
+            [formals  (map car bindings)]
+            [inits    (map cadr bindings)]
+            [formals* (map (^f (map* (^x (gensym (x->string x)))
+                                     (^t (if (null? t) t (gensym (x->string t))))
+                                     f))
+                           formals)]
+            [rebinds (append-map
+                      (^[f f*]
+                        (map* list
+                              (^[a b] (if (null? a) '() (list (list a b))))
+                              f f*))
+                      formals formals*)])
+       ;; TRANSIENT: Avoid using quasirename until 0.9.6 release, for
+       ;; it autoloads macroutil.scm -> util/match.scm and create
+       ;; circular dependency.
+       `(,(r'let*-values) ,(map list formals* inits)
+         (,(r'let) ,rebinds
+          ,@body))))))
+
 ;;;-------------------------------------------------------------
 ;;; applications
 

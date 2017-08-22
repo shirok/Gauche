@@ -1452,6 +1452,20 @@
 (test "if-let1" 'bar
       (lambda () (if-let1 it (memq 'a '(b c d)) 'boo 'bar)))
 
+(test "let-values" '(2 1 1 (2) (2 1))
+      (lambda () (let ([a 1] [b 2])
+                   (let-values ([(a b) (values b a)]
+                                [(c . d) (values a b)]
+                                [e (values b a)])
+                     (list a b c d e)))))
+
+(test "let*-values" '(2 1 2 (1) (1 2))
+      (lambda () (let ([a 1] [b 2])
+                   (let*-values ([(a b) (values b a)]
+                                 [(c . d) (values a b)]
+                                 [e (values b a)])
+                     (list a b c d e)))))
+
 (test "ecase" 'b
       (lambda () (ecase 3 ((1) 'a) ((2 3) 'b) ((4) 'c))))
 (test "ecase" (test-error)

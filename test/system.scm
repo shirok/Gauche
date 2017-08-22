@@ -7,7 +7,6 @@
 (use gauche.test)
 (use gauche.config)
 (use srfi-1)
-(use srfi-11)                           ;let-values
 (use srfi-13)
 
 (test-start "system")

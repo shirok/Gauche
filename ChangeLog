@@ -1,3 +1,8 @@
+2017-08-22  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi-11.scm, lib/gauche/common-macro.scm (let-values, let*-values):
+	  Make them built-in.
+
 2017-08-19  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi-132.scm, src/srfis.scm: Support srfi-132.
