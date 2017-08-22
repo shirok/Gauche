@@ -7,8 +7,9 @@
   (export quasirename))
 (select-module gauche.macroutil)
 
-;; This should be compiled into the core in future; for now, because of
-;; the dependency to util.match and er-macro-transformer, we put it here.
+;; TRANSIENT: We'll put this into libmac.scm after 0.9.6 release.
+;; 0.9.5's er-macro-transformer would emit reference to obsoleted
+;; support procedures, and we don't want to depend on them.
 (define-syntax quasirename
   (er-macro-transformer
    (^[f r c]
