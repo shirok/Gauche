@@ -184,17 +184,15 @@
   (define wait-us 10000) ; windows timer limit (10ms)
   (define wait-ns (* wait-us 1000))
   (let loop ([t 0])
-    (if (and timeout (>= t timeout))
-      #f ; timeout
-      (cond
-       [(queue-empty? (~ con'keybuf))
-        (sys-nanosleep wait-ns)
-        (%getch-sub con)
-        (if timeout
-          (loop (+ t wait-us))
-          (loop 0))]
-       [else
-        (dequeue! (~ con'keybuf))]))))
+    (%getch-sub con)
+    (if (not (queue-empty? (~ con'keybuf)))
+      (dequeue! (~ con'keybuf))
+      (if (and timeout (>= t timeout))
+        #f ; timeout
+        (begin (sys-nanosleep wait-ns)
+               (if timeout
+                 (loop (+ t wait-us))
+                 (loop 0)))))))
 
 (define-method get-raw-chars ((con <windows-console>))
   (define wait-us 10000) ; windows timer limit (10ms)
