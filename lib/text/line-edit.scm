@@ -82,7 +82,11 @@
    ;; every command except yank and yank-pop.
    (kill-ring :init-form (make-ring-buffer
                           (make-vector *kill-ring-size*)
-                          :overflow-handler 'overwrite))
+                          ;:overflow-handler 'overwrite))
+                          :overflow-handler
+                          (^[rb v]
+                            (ring-buffer-add-front! rb (ring-buffer-remove-back! rb))
+                            'overwrite)))
    (last-yank :init-value -1) ; index into the kill-ring buffer.  -1 means
                               ; last op wasn't yank.
    (last-yank-pos :init-value 0) ; index into buffer where last yank is put.
@@ -103,7 +107,11 @@
    ;; the line and undo-stack; see below.
    (history :init-form (make-ring-buffer
                         (make-vector *history-size*)
-                        :overflow-handler 'overwrite))
+                        ;:overflow-handler 'overwrite))
+                        :overflow-handler
+                        (^[rb v]
+                          (ring-buffer-add-front! rb (ring-buffer-remove-back! rb))
+                          'overwrite)))
    (history-pos :init-value -1)
    (history-transient :init-value #f)
    ))
@@ -121,7 +129,7 @@
          (if (> (gap-buffer-content-length buffer) 0)
            (commit-history ctx buffer)
            (eof-object)))
-       (ensure-bottom-room (~ ctx'console)) ; workaround for windows IME glitch
+       (ensure-bottom-room con) ; workaround for windows IME glitch
        (show-prompt ctx)
        (init-screen-params ctx)
        ;; Main loop.  Get a key and invoke associated command.
@@ -172,10 +180,7 @@
              (loop #t)]
             [(procedure? h)
              (match (h ctx buffer ch)
-               [(? eof-object?)
-                (if (> (gap-buffer-content-length buffer) 0)
-                  (commit-history ctx buffer)
-                  (eof-object))]
+               [(? eof-object?) (eofread)]
                ['nop       (loop redisp)]
                ['visible   (reset-last-yank! ctx)
                            (clear-mark! ctx buffer)
@@ -193,7 +198,7 @@
                 ;; the existing input.
                 (gap-buffer-move! buffer 0 'end)
                 (redisplay ctx buffer)
-                (putstr (~ ctx'console) "\r\n")
+                (putstr con "\r\n")
                 (commit-history ctx buffer)]
                ['undone (reset-last-yank! ctx)
                         (clear-mark! ctx buffer)
