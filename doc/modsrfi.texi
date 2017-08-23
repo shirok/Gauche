@@ -27,7 +27,6 @@ srfi N is supporeted by Gauche.)
 * Homogeneous vectors::         srfi-4
 * A compatible let form with signatures and rest arguments::  srfi-5
 * Feature-based program configuration language::  srfi-7
-* Let-values::                  srfi-11
 * String library::              srfi-13
 * Character-set library::       srfi-14
 * Time data types and procedures::  srfi-19
@@ -143,7 +142,7 @@ See SRFI-5 document for rationale of this extension.
 @end defmac
 
 @c ----------------------------------------------------------------------
-@node Feature-based program configuration language, Let-values, A compatible let form with signatures and rest arguments, Library modules - SRFIs
+@node Feature-based program configuration language, String library, A compatible let form with signatures and rest arguments, Library modules - SRFIs
 @section @code{srfi-7} - Feature-based program configuration language
 @c NODE 機能ベースプログラム設定言語, @code{srfi-7} - 機能ベースプログラム設定言語
 
@@ -305,97 +304,7 @@ Gauche はそれぞれの @var{requirement} をひとつずつチェックし、
 @end deffn
 
 @c ----------------------------------------------------------------------
-@node Let-values, String library, Feature-based program configuration language, Library modules - SRFIs
-@section @code{srfi-11} - Let-values
-
-@deftp {Module} srfi-11
-@mdindex srfi-11
-@c EN
-Defines two macros, @code{let-values} and @code{let*-values}.
-They are convenient to use with multiple values (@ref{srfi-11,,[SRFI-11]}).
-
-@c JP
-二つのマクロ、@code{let-values} と @code{let*-values} を定義しています。
-これらは、多値とともに利用すると便利です。(@ref{srfi-11,,[SRFI-11]})
-
-@c COMMON
-@end deftp
-
-@defmac let-values ((vars expr) @dots{}) body @dots{}
-[SRFI-11]
-@c MOD srfi-11
-@c EN
-@var{vars} are a list of variables. @var{expr} is evaluated, and
-its first return value is bound to the first variable in @var{vars},
-its second return value to the second variable, and so on, then
-@var{body} is evaluated.
-The scope of @var{expr}s are the outside of @code{let-values} form,
-like @code{let}.
-@c JP
-@var{vars} は変数のリストです。@var{expr} は評価され、最初の返り値は、
-@var{vars} の最初の変数に束縛されます。二番目の返り値は、@var{vars} の
-二番目の変数に束縛され、以下同様です。そのあと、@var{body} が評価されます。
-@var{expr} のスコープは @code{let} と同様に、@code{let-values} の
-外側になります。
-@c COMMON
-
-@example
-(let-values (((a b) (values 1 2))
-             ((c d) (values 3 4)))
-  (list a b c d)) @result{} (1 2 3 4)
-
-(let ((a 1) (b 2) (c 3) (d 4))
-  (let-values (((a b) (values c d))
-               ((c d) (values a b)))
-    (list a b c d))) @result{} (3 4 1 2)
-@end example
-
-@c EN
-@var{vars} can be a dotted list or a single symbol, like the
-lambda parameters.
-@c JP
-@var{vars} lambda パラメータと同様に、ドット付リストでも、
-単一のシンボルでもかまいません。
-@c COMMON
-
-@example
-(let-values (((x . y) (values 1 2 3 4)))
-  y) @result{} (2 3 4)
-
-(let-values ((x (values 1 2 3 4)))
-  x) @result{} (1 2 3 4)
-@end example
-
-@c EN
-If the number of values returned by @var{expr} doesn't match
-what @var{vars} expects, an error is signaled.
-@c JP
-@var{expr} によって返された値の数と @var{vars} が期待する数とが一致しない
-場合にはエラーになります。
-@c COMMON
-@end defmac
-
-@defmac let*-values ((vars expr) @dots{}) body @dots{}
-[SRFI-11]
-@c MOD srfi-11
-@c EN
-Same as @code{let-values}, but each @var{expr}'s scope includes
-the preceding @var{vars}.
-@c JP
-@code{let-values}と同じですが、各 @var{expr} のスコープが先行する @var{vars}
-を含みます。
-@c COMMON
-
-@example
-(let ((a 1) (b 2) (c 3) (d 4))
-  (let*-values (((a b) (values c d))
-                ((c d) (values a b)))
-    (list a b c d))) @result{} (3 4 3 4)
-@end example
-@end defmac
-
-@c ----------------------------------------------------------------------
-@node String library, Character-set library, Let-values, Library modules - SRFIs
+@node String library, Character-set library, Feature-based program configuration language, Library modules - SRFIs
 @section @code{srfi-13} - String library
 @c NODE 文字列ライブラリ, @code{srfi-13} - 文字列ライブラリ
 

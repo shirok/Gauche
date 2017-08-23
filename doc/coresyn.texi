@@ -2325,18 +2325,89 @@ See also @code{call-with-values} in @ref{Multiple values}
 which is the procedural equivalent of @code{receive}.
 You can use @code{define-values} (@pxref{Definitions}) to
 bind multiple values to variables simultaneously.
-Also @code{let-values} and @code{let*-values}
-in SRFI-11 (@ref{Let-values}) provides
-@code{let}-like syntax with multiple values.
+Also @code{let-values} and @code{let*-values} below
+provides @code{let}-like syntax with multiple values.
 @c JP
 なお、@ref{Multiple values}の@code{call-with-values}は
 @code{receive}と等価な手続き的インタフェースです。
 多値を複数の変数に同時に束縛するには、@code{define-values}
 (@ref{Definitions}参照) が使えます。
-また、SRFI-11 (@ref{Let-values}) の@code{let-values}と
+また、下の@code{let-values}と
 @code{let*-values}は@code{let}のような形式で多値を扱うことができます。
 @c COMMON
 @end defspec
+
+@defmac let-values ((vars expr) @dots{}) body @dots{}
+[R7RS]
+@c EN
+@var{vars} are a list of variables. @var{expr} is evaluated, and
+its first return value is bound to the first variable in @var{vars},
+its second return value to the second variable, and so on, then
+@var{body} is evaluated.
+The scope of @var{expr}s are the outside of @code{let-values} form,
+like @code{let}.
+@c JP
+@var{vars} は変数のリストです。@var{expr} は評価され、最初の返り値は、
+@var{vars} の最初の変数に束縛されます。二番目の返り値は、@var{vars} の
+二番目の変数に束縛され、以下同様です。そのあと、@var{body} が評価されます。
+@var{expr} のスコープは @code{let} と同様に、@code{let-values} の
+外側になります。
+@c COMMON
+
+@example
+(let-values (((a b) (values 1 2))
+             ((c d) (values 3 4)))
+  (list a b c d)) @result{} (1 2 3 4)
+
+(let ((a 1) (b 2) (c 3) (d 4))
+  (let-values (((a b) (values c d))
+               ((c d) (values a b)))
+    (list a b c d))) @result{} (3 4 1 2)
+@end example
+
+@c EN
+@var{vars} can be a dotted list or a single symbol, like the
+lambda parameters.
+@c JP
+@var{vars} lambda パラメータと同様に、ドット付リストでも、
+単一のシンボルでもかまいません。
+@c COMMON
+
+@example
+(let-values (((x . y) (values 1 2 3 4)))
+  y) @result{} (2 3 4)
+
+(let-values ((x (values 1 2 3 4)))
+  x) @result{} (1 2 3 4)
+@end example
+
+@c EN
+If the number of values returned by @var{expr} doesn't match
+what @var{vars} expects, an error is signaled.
+@c JP
+@var{expr} によって返された値の数と @var{vars} が期待する数とが一致しない
+場合にはエラーになります。
+@c COMMON
+@end defmac
+
+@defmac let*-values ((vars expr) @dots{}) body @dots{}
+[R7RS]
+@c EN
+Same as @code{let-values}, but each @var{expr}'s scope includes
+the preceding @var{vars}.
+@c JP
+@code{let-values}と同じですが、各 @var{expr} のスコープが先行する @var{vars}
+を含みます。
+@c COMMON
+
+@example
+(let ((a 1) (b 2) (c 3) (d 4))
+  (let*-values (((a b) (values c d))
+                ((c d) (values a b)))
+    (list a b c d))) @result{} (3 4 3 4)
+@end example
+@end defmac
+
 
 @defmac rec var expr
 @defmacx rec (name . vars) expr @dots{}
@@ -3472,12 +3543,6 @@ that is, you can mix @code{define-values} in internal defines.
 (foo 1 4 9 3 0 7)
  @result{} (6 0 9)
 @end example
-
-@c EN
-@xref{Let-values}.
-@c JP
-@ref{Let-values}も参照してください。
-@c COMMON
 @end defmac
 
 @defspec define-constant variable expression

@@ -13240,15 +13240,15 @@ reverted by @var{before}, such as manipulating error handler stack
 @c EN
 Returns @var{obj} @dots{} as multiple values.
 Caller can capture multiple values by a built-in syntax
-@code{receive} (@ref{Binding constructs}), or the R5Rs procedure
+@code{receive} or @code{let-values}
+(@ref{Binding constructs}), or the R5Rs procedure
 @code{call-with-values} described below.
-See also @ref{Let-values}.
 @c JP
 @var{obj} @dots{} を多値として返します。
-呼び出し側は、組み込み構文の @code{receive} (@ref{Binding constructs}参照)か、
+呼び出し側は、組み込み構文の @code{receive}や@code{let-values}
+(@ref{Binding constructs}参照)か、
 下に説明するR7RSの手続き@code{call-with-values}を使って多値を受け取ることが
 できます。
-@ref{Let-values}も参照してください。
 @c COMMON
 @example
 (values 1 2) @result{} 1 @r{and} 2
