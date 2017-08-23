@@ -67,9 +67,7 @@
           reset-terminal clear-screen clear-to-eol clear-to-eos
           set-character-attribute reset-character-attribute
           with-character-attribute
-          ensure-bottom-room
-
-          make-default-console vt100-compatible?))
+          ensure-bottom-room))
 (select-module text.console.generic)
 
 ;; Portable character attributes - can be supported both on
@@ -157,20 +155,22 @@
 ;; <vt100>'input-delay sets the timeout.
 
 ;; Read a char; returns a char, or #f on timeout.  May return EOF.
-;; The timeout argument is in ms.
+;; The timeout argument is in us.
 (define (%read-char/timeout con :optional (timeout (~ con'input-delay)))
   (cond-expand
    [gauche.os.windows
     ;; This code is used with mintty on MSYS
+    (define wait-us 10000) ; windows timer limit (10ms)
+    (define wait-ns (* wait-us 1000))
     (if (or (char-ready? (~ con'iport)) (not timeout))
       (read-char (~ con'iport))
-      (let loop ([retry 0])
-        (if (= retry 10)
+      (let loop ([t 0])
+        (if (>= t timeout)
           #f ; timeout
-          (begin (sys-nanosleep (* timeout 100))
+          (begin (sys-nanosleep wait-ns)
                  (if (char-ready? (~ con'iport))
                    (read-char (~ con'iport))
-                   (loop (+ retry 1)))))))]
+                   (loop (+ t wait-us)))))))]
    [else
     (receive (nfds rfds wfds xfds)
         (sys-select! (sys-fdset (~ con'iport)) #f #f timeout)
@@ -217,6 +217,8 @@
                   (trie-put! t `(,(integer->char n))
                              `(ALT ,(integer->char n)))))))
 
+;; Get a char; returns a char, or #f on timeout.
+;; The timeout argument is in us.
 (define-method getch ((con <vt100>) :optional (timeout #f))
   (define tab (force *input-escape-sequence-trie*))
   (define (fetch q)
@@ -234,7 +236,7 @@
   (let1 q (~ con'input-buffer)
     (if (queue-empty? q)
       (let1 ch (if timeout
-                 (%read-char (~ con'iport) timeout)
+                 (%read-char/timeout con timeout)
                  (read-char (~ con'iport)))
         (cond [(eqv? ch #\escape) (fetch q)]
               [(not ch) #f]             ;timeout
@@ -347,8 +349,6 @@
 (define-class <windows-console> ()
   (;; all slots are private
    (keybuf :init-form (make-queue))
-   (ihandle)
-   (ohandle)
    (high-surrogate)
    ))
 
