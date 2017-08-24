@@ -62,9 +62,9 @@
                                 (max-value 100)
                                 (port (current-output-port)))
   (assume (positive? max-value))
-  (let ((current-value 0)
-        (start-time (current-time))
-        (finish-time  #f))
+  (let ([current-value 0]
+        [start-time (current-time)]
+        [finish-time  #f])
     (define (show)
       (format port "~v,,,,va~a~v,,,,va~a~v,,,,v@a~v,,,,v@a~a~v,,,,va~a"
               header-width header-width header
@@ -85,56 +85,56 @@
                    bar-char))
     (define (fmt-time seconds)
       (cond
-       ((not seconds) "--:--")
-       ((>= seconds 3600)
+       [(not seconds) "--:--"]
+       [(>= seconds 3600)
         (format "~d:~2,'0d:~2,'0d"
                 (quotient seconds 3600)
                 (quotient (remainder seconds 3600) 60)
-                (remainder seconds 60)))
-       (else
+                (remainder seconds 60))]
+       [else
         (format "~2,'0d:~2,'0d"
                 (quotient seconds 60)
-                (remainder seconds 60)))))
+                (remainder seconds 60))]))
     (define (time- s t)
       (time->seconds (time-difference s t)))
     (define (make-time)
       (cond
-       (finish-time
-        (fmt-time (round->exact (time- finish-time start-time))))
-       ((zero? current-value)
-        (fmt-time #f))
-       (else
-        (let* ((used (time- (current-time) start-time))
-               (eta  (- (/. (* used max-value) current-value) used)))
-          (fmt-time (round->exact eta))))))
+       [finish-time
+        (fmt-time (round->exact (time- finish-time start-time)))]
+       [(zero? current-value)
+        (fmt-time #f)]
+       [else
+        (let* ([used (time- (current-time) start-time)]
+               [eta  (- (/. (* used max-value) current-value) used)])
+          (fmt-time (round->exact eta)))]))
 
-    (lambda (msg . args)
+    (^[msg . args]
       (case msg
-        ((show) (show))
-        ((set)
+        [(show) (show)]
+        [(set)
          (when (null? args)
            (error "text-progress-bar: message 'set requires an argument"))
          (set! current-value (car args))
-         (show))
-        ((inc)
+         (show)]
+        [(inc)
          (when (null? args)
            (error "text-progress-bar: message 'inc requires an argument"))
          (set! current-value (min (+ (car args) current-value) max-value))
-         (show))
-        ((finish)
+         (show)]
+        [(finish)
          (set! finish-time (current-time))
-         (show))
-        ((set-header)
+         (show)]
+        [(set-header)
          (when (null? args)
            (error "text-progress-bar: message 'set-header requires an argument"))
          (set! header (car args))
-         (show))
-        ((set-info)
+         (show)]
+        [(set-info)
          (when (null? args)
            (error "text-progress-bar: message 'set-info requires an argument"))
          (set! info (car args))
-         (show))
-        (else
-         (error "text-progress-bar: unrecognized message:" msg))))
+         (show)]
+        [else
+         (error "text-progress-bar: unrecognized message:" msg)]))
     ))
 
