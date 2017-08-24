@@ -22044,9 +22044,10 @@ You can pass @code{#f} not to display the separators.
 
 @item max-value
 @c EN
-The maximum value of the progress bar.  Default is 100.
+The maximum value of the progress bar.  Must be a positive real number.
+Default is 100.
 @c JP
-プログレスバーの最大値です。デフォルトでは100です。
+プログレスバーの最大値です。正の実数でなければなりません。デフォルトでは100です。
 @c COMMON
 
 @item port

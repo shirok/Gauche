@@ -61,6 +61,7 @@
                                 (separator-char #\|)
                                 (max-value 100)
                                 (port (current-output-port)))
+  (assume (positive? max-value))
   (let ((current-value 0)
         (start-time (current-time))
         (finish-time  #f))

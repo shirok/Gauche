@@ -1,3 +1,9 @@
+2017-08-23  Shiro Kawai  <shiro@acm.org>
+
+	* lib/text/progress.scm (make-text-progress-bar): Check if max-value
+	  is positive.  If it's 0, the error message was incomprehensible
+	  to the user.
+
 2017-08-22  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi-11.scm, lib/gauche/common-macro.scm (let-values, let*-values):
