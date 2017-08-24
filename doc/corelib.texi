@@ -278,7 +278,7 @@ Schemeには等価性を判定する汎用的な述語が3つあります。
 @c COMMON
 
 @defun eq? obj1 obj2
-[R7RS]
+[R7RS base]
 @c EN
 This is the fastest and finest predicate.
 Returns @code{#t} if @var{obj1} and @var{obj2} are identical
@@ -317,7 +317,7 @@ use @code{eqv?} below.
 @end defun
 
 @defun eqv? obj1 obj2
-[R7RS]
+[R7RS base]
 @c EN
 When @var{obj1} and @var{obj2} are both exact or both inexact numbers
 (except NaN),
@@ -1083,7 +1083,7 @@ the second argument of @code{object-hash} instead.
 @defunx string-ci-hash str
 @defunx symbol-hash sym
 @defunx number-hash num
-[R7RS]
+[R7RS comparator]
 @c EN
 These are hash functions for specific type of objects,
 defined in R7RS @code{scheme.comparator}.
@@ -1122,7 +1122,7 @@ passing it to @code{hash}.
 
 @defun hash-bound
 @defunx hash-salt
-[R7RS]
+[R7RS comparator]
 @c EN
 Both evaluates to an exact nonnegative integers.  In R7RS,
 these are defined in @code{scheme.comparator}.
@@ -1321,7 +1321,7 @@ Gauche組み込みのデータ型は、コンストラクタで比較器を取�
 @end deftp
 
 @defun make-comparator type-test equal order hash :optional name
-[R7RS]
+[R7RS comparator]
 @c EN
 Creates a new comparator form the given @var{type-test}, 
 @var{equal}, @var{order} and @var{hash} functions, and returns it.
@@ -1487,7 +1487,7 @@ by calling the comparison procedure and see if the result is 0.
 
 
 @defun comparator? obj
-[R7RS]
+[R7RS comparator]
 @c EN
 Returns true iff @var{obj} is a comparator.
 In R7RS, this is provided from @code{scheme.comparator}.
@@ -1558,7 +1558,7 @@ srfi-114コンストラクタで作られた場合はシンボル@code{compariso
 
 @defun comparator-ordered? cmpr
 @defunx comparator-hashable? cmpr
-[R7RS]
+[R7RS comparator]
 @c EN
 Returns true iff a comparator @var{cmpr} can be used to order
 objects, or to hash them, respectively.
@@ -1574,7 +1574,7 @@ R7RSではこの手続きは@code{scheme.comparator}ライブラリで提供さ�
 @defunx comparator-equality-predicate cmpr
 @defunx comparator-ordering-predicate cmpr
 @defunx comparator-hash-function cmpr
-[R7RS]
+[R7RS comparator]
 @c EN
 Returns type test procedure, equality predicate, ordering procedure
 and hash function of comparator @var{cmpr}, respectively.
@@ -1619,7 +1619,7 @@ must be ordered, that is, it must have an ordering predicate
 
 @defun comparator-test-type cmpr obj
 @defunx comparator-check-type cmpr obj
-[R7RS]
+[R7RS comparator]
 @c EN
 Test whether @var{obj} can be handled by a comparator @var{cmpr},
 by applying @var{cmpr}'s type test predicate.
@@ -1644,7 +1644,7 @@ R7RSではこの手続きは@code{scheme.comparator}ライブラリで提供さ�
 @defunx <=? cmpr obj obj2 obj3 @dots{}
 @defunx >? cmpr obj obj2 obj3 @dots{}
 @defunx >=? cmpr obj obj2 obj3 @dots{}
-[R7RS]
+[R7RS comparator]
 @c EN
 Compare objects using a comparator @var{cmpr}.  All of
 @var{obj}, @var{obj2}, @var{obj3} @dots{} must satisfy
@@ -1669,7 +1669,7 @@ R7RSではこの手続きは@code{scheme.comparator}ライブラリで提供さ�
 @end defun
 
 @defun comparator-hash cmpr obj
-[R7RS]
+[R7RS comparator]
 @c EN
 Returns a hash value of @var{obj} with the hash function of
 a comparator @var{cmpr}.  The comparator must be hashable,
@@ -1772,7 +1772,7 @@ See @code{comparator-register-default!} below for the details.
 @end defvar
 
 @defun comparator-register-default! comparator
-[R7RS]
+[R7RS comparator]
 @c EN
 In R7RS, this is provided from @code{scheme.comparator}.
 This is the @code{scheme.comparator} way for user
@@ -1995,7 +1995,7 @@ shorter ones are ordered first (
 @c NODE 比較器を組み合わせる
 
 @defun make-default-comparator
-[R7RS]
+[R7RS comparator]
 @c EN
 Returns a default comparator.  In Gauche, this returns the
 @code{default-comparator} object.
@@ -2009,7 +2009,7 @@ R7RSではこの手続きは@code{scheme.comparator}ライブラリで提供さ�
 
 @defun make-eq-comparator
 @defunx make-eqv-comparator
-[R7RS]
+[R7RS comparator]
 @c EN
 Returns comparators that use @code{eq?} and @code{eqv?} for its
 equality predicate, respectively.  Note that they use @code{default-hash}
@@ -2207,7 +2207,7 @@ class.  That is,
 @defunx real? obj
 @defunx rational? obj
 @defunx integer? obj
-[R7RS]
+[R7RS base]
 @c EN
 Returns @code{#t} if @var{obj} is a number, a complex number, a real number,
 a rational number or an integer, respectively.   In Gauche, a set of
@@ -2282,7 +2282,7 @@ R6RSで規定されている、これらの手続きと@code{-valued}がつい�
 
 @defun exact? obj
 @defunx inexact? obj
-[R7RS]
+[R7RS base]
 @c EN
 Returns @code{#t} if @var{obj} is an exact number and an inexact number,
 respectively.
@@ -2302,7 +2302,7 @@ respectively.
 @end defun
 
 @defun exact-integer? obj
-[R7RS]
+[R7RS base]
 @c EN
 Same as @code{(and (exact? obj) (integer? obj))}, but more efficient.
 @c JP
@@ -2311,7 +2311,7 @@ Same as @code{(and (exact? obj) (integer? obj))}, but more efficient.
 @end defun
 
 @defun zero? z
-[R7RS]
+[R7RS base]
 @c EN
 Returns @code{#t} if a number @var{z} equals to zero.
 @c JP
@@ -2328,7 +2328,7 @@ Returns @code{#t} if a number @var{z} equals to zero.
 
 @defun positive? x
 @defunx negative? x
-[R7RS]
+[R7RS base]
 @c EN
 Returns @code{#t} if a real number @var{x} is positive and negative,
 respectively.  It is an error to pass a non-real number.
@@ -2341,7 +2341,7 @@ respectively.  It is an error to pass a non-real number.
 @defun finite? z
 @defunx infinite? z
 @defunx nan? z
-[R7RS]
+[R7RS inexact]
 @c EN
 For real numbers, returns @code{#f} iff the given number
 is finite, infinite, or NaN, respectively.
@@ -2370,7 +2370,7 @@ R7RSではこれらの手続きは@code{(scheme inexact)}ライブラリにあ�
 
 @defun odd? n
 @defunx even? n
-[R7RS]
+[R7RS base]
 @c EN
 Returns @code{#t} if an integer @var{n} is odd and even,
 respectively.  It is an error to pass a non-integral number.
@@ -2407,7 +2407,7 @@ routines that does particular optimization.
 @c NODE 数値の比較
 
 @defun = z1 z2 z3 @dots{}
-[R7RS]
+[R7RS base]
 @c EN
 If all the numbers @var{z} are equal, returns @code{#t}.
 @c JP
@@ -2427,7 +2427,7 @@ If all the numbers @var{z} are equal, returns @code{#t}.
 @defunx <= x1 x2 x3 @dots{}
 @defunx > x1 x2 x3 @dots{}
 @defunx >= x1 x2 x3 @dots{}
-[R7RS]
+[R7RS base]
 @c EN
 Returns @code{#t} If all the real numbers @var{x} are
 monotonically increasing,
@@ -2442,7 +2442,7 @@ nonincreasing, respectively.
 
 @defun max x1 x2 @dots{}
 @defunx min x1 x2 @dots{}
-[R7RS]
+[R7RS base]
 @c EN
 Returns a maximum or minimum number in the given real numbers, respectively.
 If any of the arguments are NaN, NaN is returned.
@@ -2482,7 +2482,7 @@ See also @code{find-min&max} in
 
 @defun + z @dots{}
 @defunx * z @dots{}
-[R7RS]
+[R7RS base]
 @c EN
 Returns the sum or the product of given numbers, respectively.
 If no argument is given, @code{(+)} yields 0 and @code{(*)} yields 1.
@@ -2494,7 +2494,7 @@ If no argument is given, @code{(+)} yields 0 and @code{(*)} yields 1.
 
 @defun - z1 z2 @dots{}
 @defunx / z1 z2 @dots{}
-[R7RS]
+[R7RS base]
 @c EN
 If only one number @var{z1} is given, returns its
 negation and reciprocal, respectively.
@@ -2592,7 +2592,7 @@ The complex part is Gauche extension.
 @defun quotient n1 n2
 @defunx remainder n1 n2
 @defunx modulo n1 n2
-[R7RS]
+[R7RS base]
 @c EN
 Returns the quotient, remainder and modulo of dividing an integer @var{n1}
 by an integer @var{n2}.   The result is an exact number only if
@@ -2801,7 +2801,7 @@ R6RSとR7RSの除算・剰余操作を可視化したものが
 @defunx truncate-quotient n d
 @defunx truncate-remainder n d
 @defunx truncate/ n d
-[R7RS]
+[R7RS base]
 @c EN
 These are integer division operators introduced in R7RS.  The names
 explicitly indicate how they behave when numerator and/or denominator
@@ -2867,7 +2867,7 @@ SRFI-141では、他の整数除算のバリエーションが定義されてい
 
 @defun gcd n @dots{}
 @defunx lcm n @dots{}
-[R7RS]
+[R7RS base]
 @c EN
 Returns the greatest common divisor or the least common multiplier
 of the given integers, respectively
@@ -2914,7 +2914,7 @@ The returned sequence is lazy, so the terms are calculated as needed.
 
 @defun numerator q
 @defunx denominator q
-[R7RS]
+[R7RS base]
 @c EN
 Returns the numerator and denominator of a rational number @var{q}.
 @c JP
@@ -2923,7 +2923,7 @@ Returns the numerator and denominator of a rational number @var{q}.
 @end defun
 
 @defun rationalize x ebound
-[R7RS]
+[R7RS base]
 @c EN
 Returns the simplest rational approximation @var{q} of a real number @var{x},
 such that the difference between @var{x} and @var{q} is no more than
@@ -2961,7 +2961,7 @@ Gaucheは不正確な有理数をサポートしないので、引数の少な�
 @defunx ceiling x
 @defunx truncate x
 @defunx round x
-[R7RS]
+[R7RS base]
 @c EN
 The argument @var{x} must be a real number.
 @code{Floor} and @code{ceiling} return a maximum integer that
@@ -3046,7 +3046,7 @@ Returns an exact integer only if all the given numbers are exact integers.
 @defunx acos z
 @defunx atan z
 @defunx atan y x
-[R7RS]
+[R7RS inexact]
 @c EN
 Transcendental functions.  Work for complex numbers as well.
 In R7RS, these procedures are in the @code{(scheme inexact)} module.
@@ -3087,7 +3087,7 @@ Hyperbolic trigonometric functions.  Work for complex numbers as well.
 @end defun
 
 @defun sqrt z
-[R7RS]
+[R7RS inexact]
 @c EN
 Returns a square root of a complex number @var{z}.
 The branch cut scheme is the same as Common Lisp.
@@ -3112,7 +3112,7 @@ is also an exact number.
 @end defun
 
 @defun exact-integer-sqrt k
-[R7RS]
+[R7RS base]
 @c EN
 Given an exact nonnegative integer @var{k},
 returns two exact nonnegative integer @var{s} and @var{r}
@@ -3135,7 +3135,7 @@ that satisfy the following equations:
 
 
 @defun square z
-[R7RS]
+[R7RS base]
 @c EN
 Returns @code{(* z z)}.
 @c JP
@@ -3144,7 +3144,7 @@ Returns @code{(* z z)}.
 @end defun
 
 @defun expt z1 z2
-[R7RS]
+[R7RS base]
 @c EN
 Returns @var{z1}^@var{z2} (@var{z1} powered by @var{z2}),
 where @var{z1} and @var{z2} are complex numbers.
@@ -3230,7 +3230,7 @@ to return one smaller than the supposed value.
 
 @defun make-rectangular x1 x2
 @defunx make-polar x1 x2
-[R7RS]
+[R7RS complex]
 @c EN
 Creates a complex number from two real numbers, @var{x1} and @var{x2}.
 @code{make-rectangular} returns @var{x1} + @b{i}@var{x2}.
@@ -3250,7 +3250,7 @@ R7RSではこれらの手続きは@code{(scheme complex)}ライブラリにあ�
 @defunx imag-part z
 @defunx magnitude z
 @defunx angle z
-[R7RS]
+[R7RS complex]
 @c EN
 Decompose a complex number @var{z} and returns a real number.
 @code{real-part} and @code{imag-part} return @var{z}'s real and imaginary
@@ -3371,7 +3371,7 @@ where @var{x} = @var{fraction} * 2^@var{exponent}, and
 
 @defun exact z
 @defunx inexact z
-[R7RS]
+[R7RS base]
 @c EN
 Returns an exact or an inexact representation of the
 given number @var{z}, respectively.  Passing an exact number
@@ -4016,7 +4016,7 @@ A boolean class.  Only @code{#t} and @code{#f} belong to this class.
 @end deftp
 
 @defun not obj
-[R7RS]
+[R7RS base]
 @c EN
 Returns @code{#t} if and only if @var{obj} is @code{#f},
 and returns @code{#f} otherwise.
@@ -4027,7 +4027,7 @@ and returns @code{#f} otherwise.
 @end defun
 
 @defun boolean? obj
-[R7RS]
+[R7RS base]
 @c EN
 Returns @code{#t} if @var{obj} is a boolean value.
 @c JP
@@ -4046,7 +4046,7 @@ otherwise.  Convenient to coerce a value to boolean.
 @end defun
 
 @defun boolean=? a b c @dots{}
-[R7RS]
+[R7RS base]
 @c EN
 Every argument must be a boolean value.  Returns @code{#t} iff all
 values are the same, @code{#f} otherwise.
@@ -4226,7 +4226,7 @@ A class of pairs.
 @c NODE リストに関する述語
 
 @defun pair? obj
-[R7RS]
+[R7RS base]
 @c EN
 Returns @code{#t} if @var{obj} is a pair, @code{#f} otherwise.
 @c JP
@@ -4235,7 +4235,7 @@ Returns @code{#t} if @var{obj} is a pair, @code{#f} otherwise.
 @end defun
 
 @defun null? obj
-[R7RS]
+[R7RS base]
 @c EN
 Returns @code{#t} if @var{obj} is an empty list, @code{#f} otherwise.
 @c JP
@@ -4262,7 +4262,7 @@ condition when you want to be more picky about non-proper lists.
 @end defun
 
 @defun list? obj
-[R7RS]
+[R7RS base]
 @c EN
 Returns @code{#t} if @var{obj} is a proper list, @code{#f} otherwise.
 This function returns @code{#f} if @var{obj} is a dotted or circular list.
@@ -4314,7 +4314,7 @@ which are considered to be dotted lists of length 0.
 @c NODE リストの作成
 
 @defun cons obj1 obj2
-[R7RS]
+[R7RS base]
 @c EN
 Constructs a pair of @var{obj1} and @var{obj2} and returns it.
 @c JP
@@ -4326,7 +4326,7 @@ Constructs a pair of @var{obj1} and @var{obj2} and returns it.
 @end defun
 
 @defun make-list len :optional fill
-[R7RS][SRFI-1]
+[R7RS base]
 @c EN
 Makes a proper list of length @var{len}.  If optional argument
 @var{fill} is provided, each element is initialized by it.  Otherwise
@@ -4342,7 +4342,7 @@ each element is undefined.
 @end defun
 
 @defun list obj @dots{}
-[R7RS]
+[R7RS base]
 @c EN
 Makes a list, whose elements are @var{obj} @dots{}.
 @c JP
@@ -4356,7 +4356,7 @@ Makes a list, whose elements are @var{obj} @dots{}.
 
 @defun list* obj1 obj2 @dots{}
 @defunx cons* obj1 obj2 @dots{}
-[R7RS]
+[R7RS list]
 @c EN
 Like @code{list}, but the last argument becomes cdr of the last pair.
 Two procedures are exactly the same.  Gauche originally had @code{list*},
@@ -4373,7 +4373,7 @@ SRFI-1 (R7RS @code{(scheme list)}) が@code{cons*}という名前を定義しま
 @end defun
 
 @defun list-copy list
-[R7RS]
+[R7RS base]
 @c EN
 Shallow copies @var{list}.  If @var{list} is circular,
 this function diverges.
@@ -4384,7 +4384,7 @@ this function diverges.
 @end defun
 
 @defun iota count :optional (start 0) (step 1)
-[R7RS]
+[R7RS list]
 @c EN
 Returns a list of @var{count} numbers, starting from @var{start},
 increasing by @var{step}.   @var{Count} must be a nonnegative
@@ -4493,7 +4493,7 @@ the resulting list, like unquote-splicing.
 
 @defun car pair
 @defunx cdr pair
-[R7RS]
+[R7RS base]
 @c EN
 Returns car and cdr of @var{pair}, respectively.
 @c JP
@@ -4503,7 +4503,7 @@ Returns car and cdr of @var{pair}, respectively.
 
 @defun set-car! pair obj
 @defunx set-cdr! pair obj
-[R7RS]
+[R7RS base]
 @c EN
 Modifies car and cdr of @var{pair}, by @var{obj}, respectively.
 
@@ -4547,7 +4547,7 @@ Note: @code{(setter car)} @equiv{} @code{set-car!}, and
 @end defun
 @defun cdddar pair
 @defunx cddddr pair
-[R7RS]
+[R7RS base][R7RS cxr]
 @c EN
 @code{caar} @equiv{} @code{(car (car x))},
 @code{cadr} @equiv{} @code{(car (cdr x))}, and so on.
@@ -4573,7 +4573,7 @@ R7RSでは、2レベルよりも深いアクセサは@code{(scheme cxr)}ライ�
 @end defun
 
 @defun length list
-[R7RS]
+[R7RS base]
 @c EN
 Returns the length of a proper list @var{list}.
 If @var{list} is a dotted list, an error is signaled.
@@ -4586,7 +4586,7 @@ If @var{list} is a circular list, this function diverges.
 @end defun
 
 @defun length+ x
-[R7RS]
+[R7RS list]
 @c EN
 If @var{x} is a proper list, returns its length.
 For all other @var{x}, including a circular list,
@@ -4652,7 +4652,7 @@ We don't have any better idea now, unfortunately.
 
 @defun take x i
 @defunx drop x i
-[R7RS]
+[R7RS list]
 @c EN
 @code{take} returns the first i elements of list x.
 @code{drop} returns all but the first i elements of list x.
@@ -4744,7 +4744,7 @@ see @code{subseq} in @ref{Slicing sequence}.
 
 @defun take-right lis k
 @defunx drop-right lis k
-[R7RS]
+[R7RS list]
 @c EN
 @code{take-right} returns the last @var{k} elements of @var{lis}.
 @code{drop-right} returns all but the last @var{k} elements of @var{lis}.
@@ -4812,7 +4812,7 @@ The result still shares the @var{list}.
 
 @defun take! lis k
 @defunx drop-right! lis k
-[R7RS]
+[R7RS list]
 @c EN
 Linear update variants of @var{take} and @var{drop-right}.
 Those procedures may destructively modifies @var{lis}.
@@ -4830,7 +4830,7 @@ shorter than expected.
 @end defun
 
 @defun list-tail list k :optional fallback
-[R7RS]
+[R7RS base]
 @c EN
 Returns @var{k}-th cdr of @var{list}.
 @var{list} can be a proper, dotted or circular list.
@@ -4872,7 +4872,7 @@ it is returned for such case.  This is an extension of Gauche.
 @end defun
 
 @defun list-set! list k v
-[R7RS]
+[R7RS base]
 @c EN
 Modifies the @var{k}-th element of a @var{list} by @var{v}.
 It is an error unless @var{k} is an exact integer between 0 and
@@ -4888,7 +4888,7 @@ no error is signalled but the behavior is undefined.
 
 
 @defun last-pair list
-[R7RS]
+[R7RS list]
 @c EN
 Returns the last pair of @var{list}.
 @var{list} can be a proper or dotted list.
@@ -4905,7 +4905,7 @@ Returns the last pair of @var{list}.
 @end defun
 
 @defun last pair
-[R7RS]
+[R7RS list]
 @c EN
 Returns the last element of the non-empty, finite list @var{pair}.
 It is equivalent to @code{(car (last-pair pair))}.
@@ -4922,7 +4922,7 @@ It is equivalent to @code{(car (last-pair pair))}.
 
 @defun split-at x i
 @defunx split-at! x i
-[R7RS]
+[R7RS list]
 @c EN
 @code{split-at} splits the list @var{x} at index @var{i},
 returning a list of the first @var{i} elements, and the remaining tail.
@@ -5037,7 +5037,7 @@ extends @code{map} to work on any type of collection.
 
 @defun append-map f clist1 clist2 @dots{}
 @defunx append-map! f clist1 clist2 @dots{}
-[R7RS]
+[R7RS list]
 @c EN
 Functionally equivalent to the followings, though a bit more efficient:
 @c JP
@@ -5110,7 +5110,7 @@ Note: The name @code{map*} is along the line of
 @end defun
 
 @defun for-each proc list1 list2 @dots{}
-[R7RS]
+[R7RS base]
 @c EN
 Applies @var{proc} for each element(s) of given list(s) in order.
 The results of @var{proc} are discarded.  The return value of
@@ -5132,7 +5132,7 @@ extends @code{for-each} to work on any type of collection.
 @end defun
 
 @defun fold kons knil clist1 clist2 @dots{}
-[R7RS]
+[R7RS list]
 @c EN
 The fundamental list iterator.
 When it is given a single list
@@ -5173,7 +5173,7 @@ Examples:
 @end defun
 
 @defun fold-right kons knil clist1 clist2 @dots{}
-[R7RS]
+[R7RS list]
 @c EN
 The fundamental list recursion operator.
 When it is given a single list
@@ -5290,7 +5290,7 @@ Schemeでは、まず@code{SRFI-1}によって@code{fold}と@code{fold-right}が
 
 @defun reduce f ridentity list
 @defunx reduce-right f ridentity list
-[R7RS]
+[R7RS list]
 @c EN
 Variant of @code{fold} and @code{fold-right}.   @var{f} must be a
 binary operator, and @var{ridentity} is the value such that for
@@ -5322,7 +5322,7 @@ So @var{ridentity} is used only when @var{list} is empty.
 
 @defun filter pred list
 @defunx filter! pred list
-[R7RS]
+[R7RS list]
 @c EN
 A procedure @var{pred} is applied on each element of @var{list},
 and a list of elements that @var{pred} returned true on it is returned.
@@ -5344,7 +5344,7 @@ modifies @var{list} to produce the result.
 
 @defun filter-map  f clist1 clist2 @dots{}
 @c EN
-[R7RS]
+[R7RS list]
 Like @code{map}, but only true values are saved.
 At least one of the list arguments must be finite.
 @c JP
@@ -5360,7 +5360,7 @@ At least one of the list arguments must be finite.
 
 @defun remove pred list
 @defunx remove! pred list
-[R7RS]
+[R7RS list]
 @c EN
 A procedure @var{pred} is applied on each element of @var{list},
 and a list of elements that @var{pred} returned false on it is returned.
@@ -5381,7 +5381,7 @@ modifies @var{list} to produce the result.
 @end defun
 
 @defun find pred clist
-[R7RS]
+[R7RS list]
 @c EN
 Applies @var{pred} for each element of @var{clist}, from
 left to right, and returns the first element that @var{pred} returns
@@ -5394,7 +5394,7 @@ true on.  If no element satisfies @var{pred}, @code{#f} is returned.
 @end defun
 
 @defun find-tail pred clist
-[R7RS]
+[R7RS list]
 @c EN
 Applies @var{pred} for each element of @var{clist}, from left to right,
 and when @var{pred} returns a true value, returns the pair whose car
@@ -5407,7 +5407,7 @@ is the element.  If no element satisfies @var{pred}, @code{#f} is returned.
 @end defun
 
 @defun any pred clist1 clist2 @dots{}
-[R7RS]
+[R7RS list]
 @c EN
 Applies @var{pred} across each element of @var{clist}s, and
 returns as soon as @var{pred} returns a non-false value.
@@ -5423,7 +5423,7 @@ value, @code{#f} is returned.
 @end defun
 
 @defun every pred clist1 clist2 @dots{}
-[R7RS]
+[R7RS list]
 @c EN
 Applies @var{pred} across each element of @var{clist}s, and
 returns @code{#f} as soon as @var{pred} returns @code{#f}.
@@ -5437,7 +5437,7 @@ If all application of @var{pred} return a non-false value,
 @end defun
 
 @defun count pred clist1 clist2 @dots{}
-[R7RS]
+[R7RS list]
 @c EN
 A procedure @var{pred} is applied to the @var{n}-th element
 of given lists, from @var{n} is zero to the length of the
@@ -5469,7 +5469,7 @@ At least one of the argument lists must be finite:
 
 @defun delete x list :optional elt=
 @defunx delete! x list :optional elt=
-[R7RS]
+[R7RS list]
 @c EN
 Equivalent to
 @c JP
@@ -5488,7 +5488,7 @@ The comparison procedure, @var{elt=}, defaults to @code{equal?}.
 
 @defun delete-duplicates list :optional elt=
 @defunx delete-duplicates! list :optional elt=
-[R7RS]
+[R7RS list]
 @c EN
 Removes duplicate elements from @var{list}.
 If there are multiple equal elements in @var{list},
@@ -5509,7 +5509,7 @@ The comparison procedure, @var{elt=}, defaults to @code{equal?}.
 @c NODE 他のリスト手続き
 
 @defun append list @dots{}
-[R7RS]
+[R7RS base]
 @c EN
 Returns a list consisting of the elements of the first @var{list} followed by
 the elements of the other lists.  The resulting list is always newly
@@ -5524,7 +5524,7 @@ if the last argument is not a proper list.
 @end defun
 
 @defun append! list @dots{}
-[R7RS]
+[R7RS list]
 @c EN
 Returns a list consisting of the elements of the first @var{list} followed by
 the elements of the other lists.  The cells in the lists except the last
@@ -5539,7 +5539,7 @@ any object.
 
 @defun concatenate list-of-lists
 @defunx concatenate! list-of-lists!
-[R7RS]
+[R7RS list]
 @c EN
 Equivalent to @code{(apply append @var{list-of-lists})} and
 @code{(apply append! @var{list-of-lists})}, respectively, but this
@@ -5605,7 +5605,7 @@ The rationale is the following correspondence:
 
 @defun append-reverse rev-head tail
 @defunx append-reverse! rev-head tail
-[R7RS]
+[R7RS list]
 @c EN
 Equivalent to the two-argument @code{reverse} and @code{reverse!}.
 Provided for srfi-1 (R7RS @code{(scheme list)}) compatibility.
@@ -5619,7 +5619,7 @@ srfi-1 (R7RS @code{(scheme list)}) との互換のために用意されていま
 @defun memq obj list
 @defunx memv obj list
 @defunx member obj list :optional obj=
-[R7RS]
+[R7RS base]
 @c EN
 Searches @var{obj} in the @var{list}.  If @code{n}-th element of
 @var{list} equals to @var{obj} (in the sense of @code{eq?} for @code{memq},
@@ -5675,7 +5675,7 @@ Useful to put an entry at the head of an associative list.
 @end defun
 
 @defun alist-copy alist
-[R7RS]
+[R7RS list]
 @c EN
 Returns a fresh copy of @var{alist}.
 The spine of @var{alist} and each cell that points a key and a value
@@ -5700,7 +5700,7 @@ b @result{} ((a . b) (c . d))
 @defun assq obj list
 @defunx assv obj list
 @defunx assoc obj list :optional key=
-[R7RS]
+[R7RS base]
 @c EN
 Each element in @var{list} must be a pair.
 These procedures search a pair whose car matches @var{obj}
@@ -5730,7 +5730,7 @@ to check the equivalence of @var{obj} and each key.
 
 @defun alist-delete key alist :optional key=
 @defunx alist-delete! key alist :optional key=
-[R7RS]
+[R7RS list]
 @c EN
 Deletes all cells in @var{alist} whose key is the same as @var{key}.
 Comparison is done by a procedure @var{key=}.  The default is @code{eqv?}.
@@ -5956,7 +5956,7 @@ is the same (@code{eq?}) to which.
 
 
 @defun symbol? obj
-[R7RS]
+[R7RS base]
 @c EN
 Returns true if and only if @var{obj} is a symbol.
 @c JP
@@ -5983,7 +5983,7 @@ if @var{symbol} is not a symbol.
 @end defun
 
 @defun symbol=? a b c @dots{}
-[R7RS]
+[R7RS base]
 @c EN
 Every argument must be a symbol.  Returns @code{#t} iff
 every pair of arguments are @code{eq?} to each other.
@@ -5994,7 +5994,7 @@ every pair of arguments are @code{eq?} to each other.
 @end defun
 
 @defun symbol->string symbol
-[R7RS]
+[R7RS base]
 @c EN
 Returns the name of @var{symbol} in a string.  Returned
 string is immutable.
@@ -6008,7 +6008,7 @@ string is immutable.
 @end defun
 
 @defun string->symbol string
-[R7RS]
+[R7RS base]
 @c EN
 Returns a symbol whose name is a string @var{string}.
 @var{String} may contain weird characters.
@@ -6804,7 +6804,7 @@ Unicodeコードポイントでなく内部文字エンコーディングで文�
 @c COMMON
 
 @defun char? obj
-[R7RS]
+[R7RS base]
 @c EN
 Returns @code{#t} if @var{obj} is a character, @code{#f} otherwise.
 @c JP
@@ -6817,7 +6817,7 @@ Returns @code{#t} if @var{obj} is a character, @code{#f} otherwise.
 @defunx char<=? char1 char2 char3 @dots{}
 @defunx char>? char1 char2 char3 @dots{}
 @defunx char>=? char1 char2 char3 @dots{}
-[R7RS]
+[R7RS base]
 @c EN
 Compares characters.  Character comparison is done in internal
 character encoding.
@@ -6831,7 +6831,7 @@ character encoding.
 @defunx char-ci<=? char1 char2 char3 @dots{}
 @defunx char-ci>? char1 char2 char3 @dots{}
 @defunx char-ci>=? char1 char2 char3 @dots{}
-[R7RS]
+[R7RS char]
 @c EN
 Compares characters in case-insensitive way.
 The comparison is done in the internal character code
@@ -6852,7 +6852,7 @@ R7RSではこれらの手続きは@code{(scheme char)}ライブラリにあり�
 @defunx char-whitespace? char
 @defunx char-upper-case? char
 @defunx char-lower-case? char
-[R7RS]
+[R7RS char]
 @c EN
 Returns true if a character @var{char} is an alphabetic character
 (Unicode character category @code{Lu}, @code{Ll}, @code{Lt},
@@ -6969,7 +6969,7 @@ Unicodeに対応するものがない文字がいくつかあります
 
 @defun char->integer char
 @defunx integer->char n
-[R7RS]
+[R7RS base]
 @c EN
 @code{char->integer} returns an exact integer that represents
 internal encoding of the character @var{char}.
@@ -7049,7 +7049,7 @@ Gaucheの内部文字エンコーディングがUTF-8でない場合、
 @defunx char-downcase char
 @defunx char-titlecase char
 @defunx char-foldcase char
-[R6RS][R7RS]
+[R7RS char]
 @c EN
 Returns the upper case, lower case, title case and folded case of
 @var{char}, respectively.
@@ -7823,7 +7823,7 @@ and two can coexist).
 @c NODE 文字列に関する述語
 
 @defun string? obj
-[R7RS]
+[R7RS base]
 @c EN
 Returns @code{#t} if @var{obj} is a string, @code{#f} otherwise.
 @c JP
@@ -7852,7 +7852,7 @@ Returns @code{#t} if @var{obj} is an incomplete string, @code{#f} otherwise
 @c NODE 文字列の作成
 
 @defun make-string k :optional char
-[R7RS]
+[R7RS base]
 @c EN
 Returns a string of length @var{k}.  If optional @var{char} is given,
 the new string is filled with it.  Otherwise, the string is filled with
@@ -7918,7 +7918,7 @@ are used to initialize every byte in the created string.
 @end defun
 
 @defun string char @dots{}
-[R7RS]
+[R7RS base]
 @c EN
 Returns a string consisted by @var{char} @dots{}.
 @c JP
@@ -8198,7 +8198,7 @@ Schemeは他のスクリプト言語より一般的により多くの文字を�
 @c NODE 文字列のアクセスと変更
 
 @defun string-length string
-[R7RS]
+[R7RS base]
 @c EN
 Returns a length of (possibly incomplete) string @var{string}.
 @c JP
@@ -8259,7 +8259,7 @@ Returned value is an integer in the range between 0 and 255.
 @end defun
 
 @defun string-set! string k char
-[R7RS]
+[R7RS base]
 @c EN
 Substitute @var{string}'s @var{k}-th character by @var{char}.
 @var{k} must be greater than or equal to zero, and less than
@@ -8305,7 +8305,7 @@ Return value is undefined.
 @c NODE 文字列の比較
 
 @defun string=? string1 string2 string3 @dots{}
-[R7RS]
+[R7RS base]
 @c EN
 Returns @code{#t} iff all arguments are strings with the same content.
 @c JP
@@ -8317,7 +8317,7 @@ Returns @code{#t} iff all arguments are strings with the same content.
 @defunx string<=? string1 string2 string3 @dots{}
 @defunx string>? string1 string2 string3 @dots{}
 @defunx string>=? string1 string2 string3 @dots{}
-[R7RS]
+[R7RS base]
 @c EN
 Compares strings in codepoint order.  Returns @code{#t} iff
 all the arguments are ordered.
@@ -8377,7 +8377,7 @@ R7RSでプログラミングする際に@code{(scheme char)}をインポート�
 @c NODE 文字列を扱うその他の手続き
 
 @defun substring string start end
-[R7RS]
+[R7RS base]
 @c EN
 Returns a substring of @var{string}, starting from @var{start}-th
 character (inclusive) and ending at @var{end}-th character (exclusive).
@@ -8418,7 +8418,7 @@ for the generic version.
 @end defun
 
 @defun string-append string @dots{}
-[R7RS]
+[R7RS base]
 @c EN
 Returns a newly allocated string whose content is concatenation of
 @var{string} @dots{}.
@@ -8437,7 +8437,7 @@ See also @code{string-concatenate} in @ref{SRFI-13 String reverse & append}.
 
 @defun string->list string :optional start end
 @defunx list->string list
-[R7RS]
+[R7RS base]
 @c EN
 Converts a string to a list of characters or vice versa.
 @c JP
@@ -8465,7 +8465,7 @@ may want to use @code{tree->string} in @ref{Lazy text construction}.
 @end defun
 
 @defun string-copy string :optional start end
-[R7RS]
+[R7RS base]
 @c EN
 Returns a copy of @var{string}.  You can give @var{start} and/or
 @var{end} index to extract the part of the original string
@@ -8504,7 +8504,7 @@ by @code{srfi-13} module (@pxref{String library}).
 @end defun
 
 @defun string-fill! string char :optional start end
-[R7RS]
+[R7RS base]
 @c EN
 Fills @var{string} by @var{char}.  Optional
 @var{start} and @var{end} limits the effective area.
@@ -10470,7 +10470,7 @@ R7RSはバイトベクタを定義しています。Gaucheではそれは単に
 @end deftp
 
 @defun vector? obj
-[R7RS]
+[R7RS base]
 @c EN
 Returns @code{#t} if @var{obj} is a vector, @code{#f} otherwise.
 @c JP
@@ -10479,7 +10479,7 @@ Returns @code{#t} if @var{obj} is a vector, @code{#f} otherwise.
 @end defun
 
 @defun make-vector k :optional fill
-[R7RS]
+[R7RS base]
 @c EN
 Creates and returns a vector with length @var{k}.
 If optional argument @var{fill} is given, each element of the vector
@@ -10493,7 +10493,7 @@ is undefined.
 @end defun
 
 @defun vector obj @dots{}
-[R7RS]
+[R7RS base]
 @c EN
 Creates a vector whose elements are @var{obj} @dots{}.
 @c JP
@@ -10519,7 +10519,7 @@ for all @var{i} between @code{0} and @var{len}
 @end defun
 
 @defun vector-length vector
-[R7RS]
+[R7RS base]
 @c EN
 Returns the length of a vector @var{vector}.
 
@@ -10558,7 +10558,7 @@ you can also use a method @code{ref}.
 @end defun
 
 @defun vector-set! vector k obj
-[R7RS]
+[R7RS base]
 @c EN
 Sets @var{k}-th element of the vector @var{vector} to @var{obj}.
 It is an error if @var{k} is negative or greater than or equal to the
@@ -10612,7 +10612,7 @@ With @var{gauche.collection} module, you can use
 @end defun
 
 @defun reverse-list->vector list :optional start end
-[R7RS]
+[R7RS vector]
 @c EN
 Without optional arguments, it returns the same thing as
 @code{(list->vector (reverse list))}, but does not
@@ -10632,7 +10632,7 @@ allocate the intermediate list.   The optional @var{start} and
 
 @defun vector->string vector :optional start end
 @defunx string->vector string :optional start end
-[R7RS]
+[R7RS base]
 @c EN
 Converts a vector of characters to a string, or vice versa.
 It is an error to pass a vector that contains other than characters
@@ -10666,7 +10666,7 @@ With @var{gauche.collection} module, you can use
 @end defun
 
 @defun vector-fill! vector fill :optional start end
-[R7RS]
+[R7RS base]
 @c EN
 Sets all elements in a vector @var{vector} to @var{fill}.
 
@@ -10685,7 +10685,7 @@ zero, and @var{end} defaults to the length of @var{vector}.
 @end defun
 
 @defun vector-copy vector :optional start end fill
-[R7RS]
+[R7RS base]
 @c EN
 Copies a vector @var{vector}.  Optional @var{start} and @var{end}
 arguments can be used to limit the range of @var{vector} to be copied.
@@ -10707,7 +10707,7 @@ the result vector.
 @end defun
 
 @defun vector-copy! target tstart source :optional sstart send
-[R7RS]
+[R7RS base]
 @c EN
 Copies the content of @var{source} vector into the @var{target} vector
 starting from @var{tstart} in the target.  The @var{target} vector
@@ -10748,7 +10748,7 @@ overlapping.
 @end defun
 
 @defun vector-append vec @dots{}
-[R7RS]
+[R7RS base]
 @c EN
 Returns a newly allocated vector whose contents are concatenation
 of elements of @var{vec} in order.
@@ -10763,7 +10763,7 @@ of elements of @var{vec} in order.
 @end defun
 
 @defun vector-map proc vec1 vec2 @dots{}
-[R7RS]
+[R7RS base]
 @c EN
 Returns a new vector, @var{i}-th of which is calculated
 by applying @var{proc} on the list of each @var{i}-th element
@@ -10831,7 +10831,7 @@ function by @code{(map-to-with-index <vector> proc vec1 vec2 @dots{})}.
 @end defun
 
 @defun vector-map! proc vec1 vec2 @dots{}
-[R7RS]
+[R7RS vector]
 @c EN
 For each index @var{i}, calls @var{proc} with @var{i}-th index
 of @var{vec1} @var{vec2} @dots{}, and set the result back to
@@ -10875,7 +10875,7 @@ index as the first argument.  This is equivalent to SRFI-43's
 @end defun
 
 @defun vector-for-each proc vec1 vec2 @dots{}
-[R7RS]
+[R7RS base]
 @c EN
 For all @var{i} below the minimum length of input vectors,
 calls @var{proc} with @var{i}-th elements of @var{vec1} @var{vec2}
@@ -12023,7 +12023,7 @@ Gaucheではどんな型のオブジェクトも適用可能にできるので�
 @end deftp
 
 @defun procedure? obj
-[R7RS]
+[R7RS base]
 @c EN
 Returns @code{#t} if @var{obj} is @emph{inherently} applicable
 objects, @code{#f} otherwise.  By @emph{inherently} applicable
@@ -12056,7 +12056,7 @@ Gaucheでは、どんなオブジェクトも適用可能にすることがで�
 @end defun
 
 @defun apply proc arg1 @dots{} args
-[R7RS]
+[R7RS base]
 @c EN
 Calls a procedure @var{proc} with a list of arguments,
 @code{(@var{arg1} @dots{} . @var{args})}.
@@ -13002,7 +13002,7 @@ of @code{set!} form, this method is called, that is:
 
 @defun call-with-current-continuation proc
 @defunx call/cc proc
-[R7RS]
+[R7RS base]
 @c EN
 Encapsulates the current continuation to a procedure
 (``continuation procedure''), and calls @var{proc} with it.
@@ -13130,7 +13130,7 @@ APIはPLT Schemeから取りました。
 
 
 @defun dynamic-wind before body after
-[R7RS]
+[R7RS base]
 @c EN
 This is a primitive to manage @emph{dynamic environment}.
 Dynamic environment is a set of states which are kept during execution
@@ -13236,7 +13236,7 @@ reverted by @var{before}, such as manipulating error handler stack
 @c NODE 多値
 
 @defun values obj @dots{}
-[R7RS]
+[R7RS base]
 @c EN
 Returns @var{obj} @dots{} as multiple values.
 Caller can capture multiple values by a built-in syntax
@@ -13256,7 +13256,7 @@ Caller can capture multiple values by a built-in syntax
 @end defun
 
 @defun call-with-values producer consumer
-[R7RS]
+[R7RS base]
 @c EN
 Call a procedure @var{producer} with no argument.
 Then applies a procedure @var{consumer} on the
@@ -13353,7 +13353,7 @@ have them built-in instead of putting them in a separate module.
 @c COMMON
 
 @defun generator-fold proc seed gen gen2 @dots{}
-[R7RS]
+[R7RS generator]
 @c EN
 Works like @code{fold} on the generated values by generator
 procedures @var{gen} @var{gen2} @dots{} (@xref{Walking over lists},
@@ -13448,7 +13448,7 @@ benefit of generators.
 @end defun
 
 @defun generator-for-each proc gen gen2 @dots{}
-[R7RS]
+[R7RS generator]
 @c EN
 A generator version of @code{for-each}.  Repeatedly applies @var{proc} on
 the values yielded by @var{gen}, @var{gen2} @dots{} until any one of
@@ -13499,7 +13499,7 @@ is provided for the backward compatibility.
 @end defun
 
 @defun generator-find pred gen
-[R7RS]
+[R7RS generator]
 @c EN
 Returns the first item from the generator @var{gen} that satisfies
 the predicate @var{pred}.
@@ -13604,7 +13604,7 @@ Schemeは伝統的に、@code{delay}と@code{force}を使った
 
 @defspec delay expression
 @defspecx lazy expression
-[R7RS][SRFI-45]
+[R7RS lazy][SRFI-45]
 @c EN
 These forms creates a @emph{promise} that delays the evaluation
 of @var{expression}.  @var{Expression} will be evaluated
@@ -13663,7 +13663,7 @@ you may want to check the implementation of @code{util.stream}
 @end defspec
 
 @defun force promise
-[R7RS]
+[R7RS lazy]
 @c EN
 If @var{promise} is not a promise, it is just returned.
 
@@ -13685,7 +13685,7 @@ so that subsequent @code{force} on it won't cause the computation.
 @end defun
 
 @defun promise? obj
-[R7RS]
+[R7RS lazy]
 @c EN
 Returns @code{#t} iff @var{obj} is a promise object.
 @c JP
@@ -14975,7 +14975,7 @@ The second form can be used to raise an error other than an
 @c COMMON
 
 @defun raise condition
-[SRFI-18][R7RS]
+[SRFI-18][R7RS base]
 @c EN
 This is the base mechanism of signaling exceptions.
 
@@ -15045,7 +15045,7 @@ R7RSは@code{raise-continuable}という別の手続きで、ハンドラから
 @c COMMON
 
 @defmac guard (var clause @dots{}) body @dots{}
-[R7RS][SRFI-34]
+[R7RS base]
 @c EN
 This is @emph{the} high-level form to handle errors in Gauche.
 @c JP
@@ -15506,17 +15506,16 @@ or you are porting from other SRFI-18 code.
 @c COMMON
 
 @defun current-exception-handler
-@c EN
 [SRFI-18]
+@c EN
 Returns the current exception handler.
 @c JP
-[SRFI-18]
 現在の例外ハンドラを返します。
 @c COMMON
 @end defun
 
 @defun with-exception-handler handler thunk
-[R7RS][SRFI-18]
+[R7RS base][SRFI-18]
 @c EN
 A procedure @var{handler} must take one argument.  This procedure
 sets @var{handler} to the current exception handler and calls
@@ -16238,7 +16237,7 @@ A convenience macro to create a (possibly compound) condition.
 @c NODE eval と repl
 
 @defun eval expr env
-[R7RS]
+[R7RS eval]
 @c EN
 Evaluate @var{expr} under the environment @var{env}.
 In Gauche, @var{env} is just a @code{<module>} object.
@@ -16593,7 +16592,7 @@ mutex if you know there will be conflicts.
 @defun port? obj
 @defunx input-port? obj
 @defunx output-port? obj
-[R7RS]
+[R7RS base]
 @c EN
 Returns true if @var{obj} is a port, an input port and an output port,
 respectively.  @code{Port?} is not listed in the
@@ -16619,7 +16618,7 @@ A closed port can't be reopened.
 @deffn {Parameter} current-input-port
 @deffnx {Parameter} current-output-port
 @deffnx {Parameter} current-error-port
-[R7RS]
+[R7RS base]
 @c EN
 Returns the current input, output and error output port, respectively.
 
@@ -16724,7 +16723,7 @@ which does close the port.  See below.)
 @defun close-port port
 @defunx close-input-port port
 @defunx close-output-port port
-[R7RS]
+[R7RS base]
 @c EN
 Closes the port.  @code{Close-port} works both input and
 output ports, while @code{close-input-port} and @code{close-output-port}
@@ -16748,7 +16747,7 @@ R6RSとR7RSは3つ全てをサポートしています。
 
 
 @defun call-with-port port proc
-[R7RS]
+[R7RS base]
 @c EN
 Calls @var{proc} with one argument, @var{port}.  After @var{proc} returns,
 or it throws an uncaptured error, @var{port} is closed.  Value(s) returned
@@ -17342,7 +17341,7 @@ Returns the value(s) @code{proc} returned.
 
 @defun with-input-from-file string thunk :key if-does-not-exist buffering element-type encoding conversion-buffer-size
 @defunx with-output-to-file string thunk :key if-does-not-exist if-exists buffering element-type encoding conversion-buffer-size
-[R7RS]
+[R7RS file]
 @c EN
 Opens a file specified by @var{string} for input or output
 and makes the opened port as the current input or output port,
@@ -17498,7 +17497,7 @@ memory.
 @c COMMON
 
 @defun open-input-string string
-[R7RS][SRFI-6]
+[R7RS base][SRFI-6]
 @c EN
 Creates an input string port that has the content @var{string}.
 This is a more efficient way to access a string in order
@@ -17553,7 +17552,7 @@ If @var{port} has already reached to EOF, a null string is returned.
 
 
 @defun open-output-string
-[R7RS][SRFI-6]
+[R7RS base][SRFI-6]
 @c EN
 Creates an output string port.   Anything written to the
 port is accumulated in the buffer, and can be obtained
@@ -17571,7 +17570,7 @@ sequentially than pre-allocate a string and fill it with
 @end defun
 
 @defun get-output-string port
-[R7RS][SRFI-6]
+[R7RS base][SRFI-6]
 @c EN
 Takes an output string port @code{port} and returns a string
 that has been accumulated to @code{port} so far.
@@ -17776,7 +17775,7 @@ an input port, and when omitted, the current input port is assumed.
 @c NODE データの読み込み
 
 @defun read :optional iport
-[R7RS]
+[R7RS base]
 @c EN
 Reads an S-expression from @var{iport} and returns it.
 Gauche recognizes the lexical structure specified in R7RS,
@@ -17818,7 +17817,7 @@ are only provided for srfi-38 compatibility.
 @end defun
 
 @defun read-char :optional iport
-[R7RS]
+[R7RS base]
 @c EN
 Reads one character from @var{iport} and returns it.
 If @var{iport} has already
@@ -17836,7 +17835,7 @@ to deal with invalid characters).
 @end defun
 
 @defun peek-char :optional iport
-[R7RS]
+[R7RS base]
 @c EN
 Reads one character in @var{iport} and returns it, keeping the character
 in the @var{port}.
@@ -17921,7 +17920,7 @@ This optional argument is Gauche's extension to R7RS.
 @end defun
 
 @defun read-string nchars :optional iport
-[R7RS]
+[R7RS base]
 @c EN
 Read @var{nchars} characters, or as many characters as available
 before EOF, and returns a string that consists of those characters.
@@ -18003,7 +18002,7 @@ if the data is in uniform vector.
 @end defun
 
 @defun eof-object
-[R7RS]
+[R7RS base]
 @c EN
 Returns an EOF object.
 @c JP
@@ -18013,7 +18012,7 @@ EOFオブジェクトを返します。
 
 
 @defun eof-object? obj
-[R7RS]
+[R7RS base]
 @c EN
 Returns true if @var{obj} is an EOF object.
 @c JP
@@ -18022,7 +18021,7 @@ Returns true if @var{obj} is an EOF object.
 @end defun
 
 @defun char-ready? :optional port
-[R7RS]
+[R7RS base]
 @c EN
 If a character is ready to be read from @var{port}, returns @code{#t}.
 
@@ -18832,7 +18831,7 @@ controls.
 @defun write obj :optional port/controls1 port/controls2
 @defunx write-shared obj :optional port/controls1 port/controls2
 @defunx write-simple obj :optional port/controls1 port/controls2
-[R7RS+]
+[R7RS+ write]
 @c EN
 The @code{write}-family procedures are used to write an
 external representation of Scheme object,
@@ -18949,7 +18948,7 @@ srfi-38によって@code{write-with-shared-structure}と@code{write/ss}が
 
 
 @defun display obj :optional port/controls1 port/controls2
-[R7RS]
+[R7RS write]
 @c EN
 Produces a human-friendly representation of an object @var{obj} 
 to the output port.
@@ -19000,7 +18999,7 @@ You can customize how the object is printed out by this method.
 @end deffn
 
 @defun newline :optional port
-[R7RS]
+[R7RS base]
 @c EN
 Writes a newline character to @var{port}.
 This is equivalent to @code{(write-char #\newline port)},
@@ -19396,7 +19395,7 @@ absolute position of the arguments, starting from 0.
 @c NODE 低レベル出力
 
 @defun write-char char :optional port
-[R7RS]
+[R7RS base]
 @c EN
 Write a single character @var{char} to the output port @var{port}.
 @c JP
@@ -21985,7 +21984,7 @@ See also @ref{File attribute utilities}, for high-level APIs.
 @c COMMON
 
 @defun file-exists? path
-[R7RS]
+[R7RS file]
 @c EN
 Returns true if @var{path} exists.
 @c JP

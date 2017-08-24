@@ -540,7 +540,7 @@ or syntactic keyword.  We'll explain them later.
 @c COMMON
 
 @defspec define-syntax name transformer-spec
-[R7RS]
+[R7RS base]
 @c EN
 If this form appears in toplevel, it binds toplevel @var{name} to
 a macro transformer defined by @var{transformer-spec}.
@@ -563,7 +563,7 @@ just like internal @code{define}s are converted to @code{letrec*}.
 
 @defspec let-syntax ((name transformer-spec) @dots{}) body
 @defspecx letrec-syntax ((name transformer-spec) @dots{}) body
-[R7RS]
+[R7RS base]
 @c EN
 Defines local macros.  Each @var{name} is bound to a macro
 transformer as specified by the corresponding @var{transformer-spec},
@@ -664,7 +664,7 @@ used to define alias of existing macro or syntax keyword.
 
 @defspec syntax-rules (literal @dots{}) clause clause2 @dots{}
 @defspecx syntax-rules ellipsis (literal @dots{}) clause clause2 @dots{}
-[R7RS]
+[R7RS base]
 @c EN
 This form creates a macro transformer by pattern matching.
 

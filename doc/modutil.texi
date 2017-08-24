@@ -9216,7 +9216,7 @@ it to @var{dst}, then removes @var{src}.
 
 @defun remove-file filename
 @defunx delete-file filename
-[R7RS]
+[R7RS file]
 @c MOD file.util
 @c EN
 Removes the named file.  An error is signalled if @var{filename}

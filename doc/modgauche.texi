@@ -2578,7 +2578,7 @@ the @code{open-*-conversion-port}.
 @mdindex gauche.collection
 @c EN
 This module provides a set of generic functions (GFs) that iterate over
-various collections.   The Scheme standard [R7RS] has some iterative
+various collections.   The Scheme standard has some iterative
 primitives such as @code{map} and @code{for-each},
 and @code{scheme.list} (@pxref{R7RS lists} adds a rich set of such functions,
 but they work only on lists.
@@ -19911,7 +19911,7 @@ octet sequence is still an error with @code{permissive} mode.
 @end defun
 
 @defun utf8->string u8vector :optional start end
-[R7RS]
+[R7RS base]
 @c MOD gauche.unicode
 Converts a sequence of utf8 octets in @var{u8vector} to a string.
 Optional @var{start} and/or @var{end} argument(s) will limit the
@@ -19925,7 +19925,7 @@ contains octet sequences illegal as utf8.
 @end defun
 
 @defun string->utf8 string :optional start end
-[R7RS]
+[R7RS base]
 @c MOD gauche.unicode
 Converts a string to a u8vector of utf8 octets.
 Optional @var{start} and/or @var{end} argument(s) will limit the
@@ -20093,7 +20093,7 @@ Then the created generator works as follows:
 @defunx string-downcase string
 @defunx string-titlecase string
 @defunx string-foldcase string
-[R6RS][R7RS]
+[R6RS][R7RS char]
 @c MOD gauche.unicode
 Converts given @var{string} to upper case, using language-independent
 full case folding defined by Unicode standard.
@@ -20118,6 +20118,8 @@ to UAX #29 text segmentation rules.
  @result{} "χαοσσ"
 @end example
 
+Note that @code{string-titlecase} isn't included in R7RS @code{scheme.char}
+module.
 @end defun
 
 @defun codepoints-upcase sequence
@@ -20139,7 +20141,7 @@ codepoints instead.  Returns a sequence of the same type of the input.
 @defunx string-ci<=? string1 string2 string3 @dots{}
 @defunx string-ci>? string1 string2 string3 @dots{}
 @defunx string-ci>=? string1 string2 string3 @dots{}
-[R7RS]
+[R7RS char]
 @c MOD gauche.unicode
 Case-insensitive string comparison, using full-string case conversion.
 

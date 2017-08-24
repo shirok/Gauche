@@ -951,7 +951,8 @@ newline write-char
 @defunx bytevector-copy bv :optional start end
 @defunx bytevector-copy! to at from :optional start end
 @defunx bytevector-append bv @dots{}
-[R7RS]
+[R7RS base]
+@c MOD scheme.base
 @c EN
 R7RS's bytevector is Gauche's u8vector.
 
@@ -992,7 +993,8 @@ utf8->string string->utf8
 
 @defun string-map proc str @dots{}
 @defunx string-for-each proc str @dots{}
-[R7RS]
+[R7RS base]
+@c MOD scheme.base
 @c EN
 These take different arguments from 
 @code{string-map} and @code{string-for-each} in SRFI-13
@@ -1014,7 +1016,8 @@ the same way in both @code{srfi-13} and @code{scheme.base}.
 
 @defun raise obj
 @defunx raise-continuable obj
-[R7RS]
+[R7RS base]
+@c MOD scheme.base
 @c EN
 Gauche's @code{raise} may return if @var{obj} isn't a
 @code{<serious-condition>}.
@@ -1055,7 +1058,8 @@ R7RSの@code{raise-continuable}は今のところGaucheの@code{raise}の
 @end defun
 
 @defun error-object? exc
-[R7RS]
+[R7RS base]
+@c MOD scheme.base
 @c EN
 Defined as @code{(condition-has-type? exc <error>))}
 @c JP
@@ -1064,7 +1068,8 @@ Defined as @code{(condition-has-type? exc <error>))}
 @end defun
 
 @defun error-object-message exc
-[R7RS]
+[R7RS base]
+@c MOD scheme.base
 @c EN
 If @var{exc} is a @code{<message-condition>}, 
 returns its @code{message-prefix} slot;
@@ -1076,7 +1081,8 @@ otherwise, returns an empty string.
 @end defun
 
 @defun error-object-irritants exc
-[R7RS]
+[R7RS base]
+@c MOD scheme.base
 @c EN
 If @var{exc} is a @code{<message-condition>}, 
 returns its @code{message-args} slot;
@@ -1088,7 +1094,8 @@ otherwise, returns an empty string.
 @end defun
 
 @defun read-error? exc
-[R7RS]
+[R7RS base]
+@c MOD scheme.base
 @c EN
 Defined as @code{(condition-has-type? e <read-error>))}.
 @c JP
@@ -1097,7 +1104,8 @@ Defined as @code{(condition-has-type? e <read-error>))}.
 @end defun
 
 @defun file-error? exc
-[R7RS]
+[R7RS base]
+@c MOD scheme.base
 @c EN
 At this moment, Gauche doesn't have distinct @code{<file-error>} condition,
 but most file errors are thrown as one of @code{<system-error>}s.
@@ -1119,7 +1127,8 @@ returns @code{#t} if the error is likely to be related to the filesystem.
 
 @defun textual-port? port
 @defunx binary-port? port
-[R7RS]
+[R7RS base]
+@c MOD scheme.base
 @c EN
 Gauche's port can handle both, so these are equivalent to @code{port?}.
 @c JP
@@ -1129,7 +1138,8 @@ Gaucheのポートはどちらも扱えるので、これらの手続きは@code
 
 @defun input-port-open? iport
 @defunx output-port-open? oport
-[R7RS]
+[R7RS base]
+@c MOD scheme.base
 @c EN
 Checks whether @var{iport}/@var{oport} is an input/output port @emph{and}
 it is not closed.
@@ -1142,7 +1152,8 @@ it is not closed.
 @defun open-input-bytevector u8vector
 @defunx open-output-bytevector
 @defunx get-output-bytevector port
-[R7RS]
+[R7RS base]
+@c MOD scheme.base
 @c EN
 These are basically the same as @code{open-input-uvector},
 @code{open-output-uvector} and @var{get-output-uvector}
@@ -1160,7 +1171,8 @@ R7RS procedures only deal with @code{<u8vector>}.
 @defun read-u8 :optional iport
 @defunx peek-u8 :optional iport
 @defunx u8-ready? :optional iport
-[R7RS]
+[R7RS base]
+@c MOD scheme.base
 @c EN
 These are aliases to @code{read-byte}, @code{peek-byte} and @code{byte-ready?},
 respectively.
@@ -1171,7 +1183,8 @@ respectively.
 @end defun
 
 @defun read-bytevector size :optional iport
-[R7RS]
+[R7RS base]
+@c MOD scheme.base
 @c EN
 Equivalent to @code{(read-uvector <u8vector> size iport)}. 
 @c JP
@@ -1181,7 +1194,8 @@ Equivalent to @code{(read-uvector <u8vector> size iport)}.
 @end defun
 
 @defun read-bytevector! bv :optional iport start end
-[R7RS]
+[R7RS base]
+@c MOD scheme.base
 @c EN
 An alias to @code{read-uvector!}.  @xref{Uvector block I/O}.
 @c JP
@@ -1190,7 +1204,8 @@ An alias to @code{read-uvector!}.  @xref{Uvector block I/O}.
 @end defun
 
 @defun write-string string :optional oport start end
-[R7RS]
+[R7RS base]
+@c MOD scheme.base
 @c EN
 If the optional @var{start} and @var{end} arguments are omitted,
 it is the same as @code{(display string oport)}.  The optional
@@ -1202,7 +1217,8 @@ arguments restricts the range of @var{string} to be written.
 @end defun
 
 @defun write-u8
-[R7RS]
+[R7RS base]
+@c MOD scheme.base
 @c EN
 An alias to @code{write-byte}.
 @c JP
@@ -1211,7 +1227,8 @@ An alias to @code{write-byte}.
 @end defun
 
 @defun write-bytevector bv :optional oport start end
-[R7RS]
+[R7RS base]
+@c MOD scheme.base
 @c EN
 Equivalent to @code{write-uvector}.  @xref{Uvector block I/O}.
 @c JP
@@ -1220,7 +1237,8 @@ Equivalent to @code{write-uvector}.  @xref{Uvector block I/O}.
 @end defun
 
 @defun flush-output-port :optional oport
-[R7RS]
+[R7RS base]
+@c MOD scheme.base
 @c EN
 An alias to @code{flush}.
 @c JP
@@ -1229,7 +1247,8 @@ An alias to @code{flush}.
 @end defun
 
 @defun features
-[R7RS]
+[R7RS base]
+@c MOD scheme.base
 @c EN
 Returns a list of symbols of supported feature identifiers,
 recognized by @code{cond-expand} (@pxref{Feature conditional}).
@@ -1314,7 +1333,8 @@ string-downcase string-foldcase string-upcase
 @end example
 
 @defun digit-value c
-[R7RS]
+[R7RS char]
+@c MOD scheme.char
 @c EN
 If @var{c} is a character with @code{Nd} general category---that is,
 if it represents a decimal digit---this procedure returns the value
@@ -1432,7 +1452,8 @@ R7RSプログラムからは、エクスポートされた束縛は
 @end deftp
 
 @defun eval expr environment
-[R7RS]
+[R7RS eval]
+@c MOD scheme.eval
 @c EN
 This is the same as Gauche's built-in @code{eval} (@pxref{Eval and repl}).
 @c JP
@@ -1441,7 +1462,8 @@ Gauche組み込みの@code{eval}と同じです (@ref{Eval and repl}参照)。
 @end defun
 
 @defun environment import-list @dots{}
-[R7RS]
+[R7RS eval]
+@c MOD scheme.eval
 @c EN
 This is R7RS way to create an environment specifier suitable to pass
 to @code{eval}.  In Gauche, an environment specifier is just a
@@ -1510,20 +1532,22 @@ open-input-file open-output-file
 with-input-from-file with-output-to-file
 @end example
 
-@defun delete-file filename
-[R7RS]
 @c EN
-This is the same as @code{delete-file} in @code{file.util}
+The following binding is the same as one in @code{file.util}
 (@pxref{File operations}).
 @c JP
-これは@code{file.util}の@code{delete-file}と同じです
+以下の束縛は@code{file.util}で提供されるものと同じです
 (@ref{File operations}参照)。
 @c COMMON
-@end defun
+
+@example
+delete-file
+@end example
 
 @defun open-binary-input-file filename
 @defunx open-binary-output-file filename
-[R7RS]
+[R7RS file]
+@c MOD scheme.file
 @c EN
 In Gauche, ports are both textual and binary at the same time,
 so these R7RS procedures
@@ -1596,7 +1620,8 @@ delay force promise?
 @end example
 
 @defspec delay-force promise
-[R7RS]
+[R7RS lazy]
+@c MOD scheme.lazy
 @c EN
 This is the same as Gauche's built-in @code{lazy}.
 @pxref{Delay force and lazy} for the discussion about when this
@@ -1608,7 +1633,8 @@ form should be used.
 @end defspec
 
 @defun make-promise obj
-[R7RS]
+[R7RS lazy]
+@c MOD scheme.lazy
 @c EN
 If @var{obj} is a promise, it is returned as is.  Otherwise,
 A promise, which yields @var{obj} when forced, is returned.
@@ -1655,7 +1681,9 @@ those bindings are available by @code{(import (scheme load))}.
 @end deftp
 
 @defun load file :optional env
-[R7RS]
+[R7RS load]
+@c MOD scheme.load
+@c EN
 R7RS @code{load} takes environment as an optional argument,
 while Gauche @code{load} takes it as a keyword argument
 (among other keyword arguments).  @xref{Loading Scheme file}.
@@ -1663,6 +1691,15 @@ while Gauche @code{load} takes it as a keyword argument
 In Gauche, @var{env} is just a module.  In portable code,
 you can create a module with desired bindings with R7RS @code{environment}
 procedure; @pxref{R7RS eval}.
+@c JP
+R7RSの@code{load}は省略可能引数として環境を取ります。
+Gaucheの@code{load}では環境はキーワード引数で受け取られることに注意してください。
+@ref{Loading Scheme file}参照。
+
+また、Gaucheでは環境は単にモジュールで良いのですが、
+ポータブルなコードではR7RSの@code{environment}手続きを使って
+環境を作る必要があります。@ref{R7RS eval}参照。
+@c COMMON
 @end defun
 
 
@@ -1692,7 +1729,8 @@ get-environment-variable get-environment-variables
 @end example
 
 @defun emergency-exit :optional (obj 0)
-[R7RS]
+[R7RS process-context]
+@c MOD scheme.process-context
 Terminate the program without running any clean-up procedures
 (@var{after} thunks of @code{dynamic-wind}).  Internally, 
 it calls the @code{_exit(2)} system call directly.
@@ -1744,7 +1782,8 @@ those bindings are available by @code{(import (scheme time))}.
 @end deftp
 
 @defun current-second
-[R7RS]
+[R7RS time]
+@c MOD scheme.time
 Returns a real number represents the number of seconds since
 the midnight of Jan. 1, 1970 TAI (which is 23:59:52, Dec 31, 1969 UTC, that
 is, -8 seconds before Unix Epoch.)  Number of leap seconds were
@@ -1772,7 +1811,8 @@ between TAI and UTC using srfi-19 (@pxref{SRFI-19 Date}).
 @end defun
 
 @defun current-jiffy
-[R7RS]
+[R7RS time]
+@c MOD scheme.time
 Returns an exact integer measuring a real (wallclock) time elapsed
 since some point in the past, which does not change while a
 process is running.  The time unit is @code{(/ jiffies-per-second)}-th
@@ -1923,7 +1963,7 @@ split-at split-at! iota
 @subsubheading List constructors
 
 @defun xcons cd ca
-[R7RS]
+[R7RS list]
 @c MOD scheme.list
 @c EN
 Equivalent to @code{(cons ca cd)}.  Useful to pass to
@@ -1934,7 +1974,7 @@ higher-order procedures.
 @end defun
 
 @defun list-tabulate n init-proc
-[R7RS]
+[R7RS list]
 @c MOD scheme.list
 @c EN
 Constructs an @var{n}-element list, in which
@@ -1949,7 +1989,7 @@ each element is generated by @code{(@var{init-proc} @i{i})}.
 @end defun
 
 @defun circular-list elt1 elt2 @dots{}
-[R7RS]
+[R7RS list]
 @c MOD scheme.list
 @c EN
 Constructs a circular list of the elements.
@@ -1964,7 +2004,7 @@ Constructs a circular list of the elements.
 @subsubheading List predicates
 
 @defun not-pair? x
-[R7RS]
+[R7RS list]
 @c MOD scheme.list
 @c EN
 @code{(lambda (x) (not (pair? x)))}.
@@ -1981,7 +2021,7 @@ SRFI-1 では、「真性リストおよびドットリストの両方で、す�
 @end defun
 
 @defun list= elt= list @dots{}
-[R7RS]
+[R7RS list]
 @c MOD scheme.list
 @c EN
 Determines list equality by comparing every n-th element
@@ -2026,7 +2066,7 @@ Returns n-th element of the (maybe improper) list.
 @end defun
 
 @defun car+cdr pair
-[R7RS]
+[R7RS list]
 @c MOD scheme.list
 @c EN
 Returns two values, @code{(car pair)} and @code{(cdr pair)}.
@@ -2038,7 +2078,7 @@ Returns two values, @code{(car pair)} and @code{(cdr pair)}.
 @subsubheading List miscellaneous routines
 
 @defun zip clist1 clist2 @dots{}
-[R7RS]
+[R7RS list]
 @c MOD scheme.list
 @c EN
 Equivalent to @code{(map list clist1 clist2 @dots{})}.
@@ -2078,7 +2118,7 @@ At least one of the argument lists must be finite:
 @defunx unzip3 list
 @defunx unzip4 list
 @defunx unzip5 list
-[R7RS]
+[R7RS list]
 @c MOD scheme.list
 @c EN
 @code{unzip1} takes a list of lists, where every list must
@@ -2110,7 +2150,7 @@ three elements of the lists, and so on.
 
 @defun pair-fold kons knil clist1 clist2 @dots{}
 @defunx pair-fold-right kons knil clist1 clist2 @dots{}
-[R7RS]
+[R7RS list]
 @c MOD scheme.list
 @c EN
 Like @code{fold} and @code{fold-right}, but the procedure @var{kons}
@@ -2130,7 +2170,7 @@ gets each @code{cdr} of the given @var{clist}s, instead of @code{car}.
 @end defun
 
 @defun unfold p f g seed :optional tail-gen
-[R7RS]
+[R7RS list]
 @c MOD scheme.list
 @c EN
 Fundamental recursive list constructor.
@@ -2165,7 +2205,7 @@ to map each seed value to a list element.
 @end defun
 
 @defun unfold-right p f g seed :optional tail
-[R7RS]
+[R7RS list]
 @c MOD scheme.list
 @c EN
 Fundamental iterative list constructor.
@@ -2190,7 +2230,7 @@ Defined by the following recursion.
 @end defun
 
 @defun map! f clist1 clist2 @dots{}
-[R7RS]
+[R7RS list]
 @c MOD scheme.list
 @c EN
 The procedure @var{f} is applied to each element of @var{clist1} and
@@ -2204,7 +2244,7 @@ to a list.  Cells in @var{clist1} is reused to construct the result list.
 @end defun
 
 @defun map-in-order f clist1 clist2 @dots{}
-[R7RS]
+[R7RS list]
 @c MOD scheme.list
 @c EN
 A variant of @code{map}, but it guarantees to apply @var{f}
@@ -2220,7 +2260,7 @@ Gauche では @code{map} の実装はこの順になっているので、@code{m
 @end defun
 
 @defun pair-for-each f clist1 clist2 @dots{}
-[R7RS]
+[R7RS list]
 @c MOD scheme.list
 @c EN
 Like @code{for-each}, but the procedure @var{f} is applied on
@@ -2240,7 +2280,7 @@ Like @code{for-each}, but the procedure @var{f} is applied on
 
 @defun partition pred list
 @defunx partition! pred list
-[R7RS]
+[R7RS list]
 @c MOD scheme.list
 @c EN
 @code{filter} and @code{remove} simultaneously, i.e.
@@ -2269,7 +2309,7 @@ modifies @var{list} to produce the result.
 
 @defun take-while pred clist
 @defunx take-while! pred list
-[R7RS]
+[R7RS list]
 @c MOD scheme.list
 @c EN
 Returns the longest initial prefix of @var{clist} whose elements all
@@ -2280,7 +2320,7 @@ satisfy @var{pred}.
 @end defun
 
 @defun drop-while pred clist
-[R7RS]
+[R7RS list]
 @c MOD scheme.list
 @c EN
 Drops the longest initial prefix of @var{clist} whose elements all
@@ -2295,7 +2335,7 @@ satisfy @var{pred}, and returns the rest.
 @defunx span! pred list
 @defunx break pred clist
 @defunx break! pred list
-[R7RS]
+[R7RS list]
 @c MOD scheme.list
 @c EN
 @code{span} is equivalent to
@@ -2308,7 +2348,7 @@ satisfy @var{pred}, and returns the rest.
 @end defun
 
 @defun list-index pred clist1 clist2 @dots{}
-[R7RS]
+[R7RS list]
 @c MOD scheme.list
 @c EN
 Returns the index of the leftmost element that satisfies @var{pred}.
@@ -2322,7 +2362,7 @@ If no element satisfies @var{pred}, @code{#f} is returned.
 @subsubheading Association lists
 
 @defun alist-cons key datum alist
-[R7RS]
+[R7RS list]
 @c MOD scheme.list
 @c EN
 Returns @code{(cons (cons @var{key} @var{datum}) @var{alist})}.
@@ -2367,7 +2407,7 @@ concerns combinations of elements in the set.
 @c COMMON
 
 @defun lset<= elt= list1 @dots{}
-[R7RS]
+[R7RS list]
 @c MOD scheme.list
 @c EN
 Returns @code{#t} iff all elements in @var{list1} are also included
@@ -2382,7 +2422,7 @@ If no lists are given, or a single list is given,
 @end defun
 
 @defun lset= elt= list1 list2 @dots{}
-[R7RS]
+[R7RS list]
 @c MOD scheme.list
 @c EN
 Returns @code{#t} if all elements in @var{list1} are in @var{list2},
@@ -2399,7 +2439,7 @@ and all elements in @var{list2} are in @var{list1}, and so on.
 @end defun
 
 @defun lset-adjoin elt= list elt @dots{}
-[R7RS]
+[R7RS list]
 @c MOD scheme.list
 @c EN
 Adds @var{elt} @dots{} to the set @var{list}, if each one is not
@@ -2415,7 +2455,7 @@ already a member of @var{list}.  (The order doesn't matter).
 @end defun
 
 @defun lset-union elt= list1 @dots{}
-[R7RS]
+[R7RS list]
 @c MOD scheme.list
 @c EN
 Returns the union of the sets @var{list1} @dots{}.
@@ -2425,7 +2465,7 @@ Returns the union of the sets @var{list1} @dots{}.
 @end defun
 
 @defun lset-intersection elt= list1 list2 @dots{}
-[R7RS]
+[R7RS list]
 @c MOD scheme.list
 @c EN
 Returns a set of elements that are in every @var{list}s.
@@ -2435,7 +2475,7 @@ Returns a set of elements that are in every @var{list}s.
 @end defun
 
 @defun lset-difference elt= list1 list2 @dots{}
-[R7RS]
+[R7RS list]
 @c MOD scheme.list
 @c EN
 Returns a set of elements that are in @var{list1} but not
@@ -2449,7 +2489,7 @@ simply folded.
 @end defun
 
 @defun lset-xor elt= list1 @dots{}
-[R7RS]
+[R7RS list]
 @c MOD scheme.list
 @c EN
 Returns the exclusive-or of given sets; that is, the returned
@@ -2463,7 +2503,7 @@ but not in both.   In n-ary case, binary xor operation is simply folded.
 @end defun
 
 @defun lset-diff+intersection elt= list1 list2 @dots{}
-[R7RS]
+[R7RS list]
 @c MOD scheme.list
 @c EN
 Returns two sets, a difference and an intersection of given sets.
@@ -2477,7 +2517,7 @@ Returns two sets, a difference and an intersection of given sets.
 @defunx lset-difference! elt= list1 list2 @dots{}
 @defunx lset-xor! elt= list1 @dots{}
 @defunx lset-diff+intersection! elt= list1 list2 @dots{}
-[R7RS]
+[R7RS list]
 @c MOD scheme.list
 @c EN
 Linear update variant of the corresponding procedures.
@@ -2534,7 +2574,7 @@ for new code to use @code{srfi-43}.
 @c COMMON
 
 @defun vector-unfold f length seed @dots{}
-[R7RS]
+[R7RS vector]
 @c MOD scheme.vector
 Creates a vector of length @var{length}, filling elements
 left to right by calling @var{f} repeatedly.  
@@ -2556,7 +2596,7 @@ rest of return values are passed to the next call of @var{f}.
 @end defun
 
 @defun vector-unfold-right f length seed @dots{}
-[R7RS]
+[R7RS vector]
 @c MOD scheme.vector
 Creates a vector of length @var{length}, filling elements
 right to left by calling @var{f} repeatedly.  
@@ -2578,7 +2618,7 @@ rest of return values are passed to the next call of @var{f}.
 @end defun
 
 @defun vector-reverse-copy vec :optional start end
-[R7RS]
+[R7RS vector]
 @c MOD scheme.vector
 Copies the vector @var{vec} with reversing its elements.
 Optional @var{start} and @var{end} arguments can limit
@@ -2591,13 +2631,13 @@ the range of the input.
 @end defun
 
 @defun vector-concatenate list-of-vectors
-[R7RS]
+[R7RS vector]
 @c MOD scheme.vector
 Same as @code{(apply vector-append list-of-vectors)}.
 @end defun
 
 @defun vector-append-subvectors spec @dots{}
-[R7RS]
+[R7RS vector]
 @c MOD scheme.vector
 The number of arguments must be multiple of 3.  The argument list
 must be in the following format, where each @var{vecN} is
@@ -2634,7 +2674,7 @@ Here's an example:
 @c COMMON
 
 @defun vector-empty? vec
-[R7RS]
+[R7RS vector]
 @c MOD scheme.vector
 Returns @code{#t} if @var{vec}'s length is zero, and
 @code{#f} if @var{vec}'s length is more than zero.
@@ -2642,7 +2682,7 @@ Signals an error if @var{vec} is not a vector.
 @end defun
 
 @defun vector= elt= vec @dots{}
-[R7RS]
+[R7RS vector]
 @c MOD scheme.vector
 Compares @var{vec}s element-wise, using given predicate @var{elt=}.
 Returns @code{#t} iff lengths of all the vectors are the same,
@@ -2658,7 +2698,7 @@ return @code{#t} iff two are the same.
 @c COMMON
 
 @defun vector-fold kons knil vec1 vec2 @dots{}
-[R7RS]
+[R7RS vector]
 @c MOD scheme.vector
 @var{Kons} is a procedure that takes @var{n}+1 arguments, where
 @var{n} is the number of given vectors.  For each element of the
@@ -2686,7 +2726,7 @@ name.
 @end defun
 
 @defun vector-fold-right kons knil vec1 vec2 @dots{}
-[R7RS]
+[R7RS vector]
 @c MOD scheme.vector
 Like @code{vector-fold}, but elements in the @var{vec1} @var{vec2} @dots{}
 are visited from right to left.
@@ -2702,7 +2742,7 @@ first argument.
 @end defun
 
 @defun vector-count pred vec1 vec2 @dots{}
-[R7RS]
+[R7RS vector]
 @c MOD scheme.vector
 Applies @var{pred} on each elements in argument vectors (if N vectors
 are given, @var{pred} takes N arguments, the first being
@@ -2721,7 +2761,7 @@ to each element is unspecified.
 @end defun
 
 @defun vector-cumulate f seed vec
-[R7RS]
+[R7RS vector]
 @c MOD scheme.vector
 Returns a fresh vector with the same size of @var{vec}, with
 the elements calculated as follows:
@@ -2748,7 +2788,7 @@ of @var{vec}.
 
 @defun vector-index pred vec1 vec2 @dots{}
 @defunx vector-index-right pred vec1 vec2 @dots{}
-[R7RS]
+[R7RS vector]
 @c MOD scheme.vector
 Returns the index of the first or the last elements in @var{vec1}
 @var{vec2} @dots{} that satisfy @var{pred}, respectively.
@@ -2759,7 +2799,7 @@ For @code{vector-index-right}, all the vectors must have the same length.
 
 @defun vector-skip pred vec1 vec2 @dots{}
 @defunx vector-skip-right pred vec1 vec2 @dots{}
-[R7RS]
+[R7RS vector]
 @c MOD scheme.vector
 Like @code{vector-index} and @code{vector-index-right}, except that
 the result of @var{pred} is negated.  That is, returns the index
@@ -2804,7 +2844,7 @@ search in @var{start}-th element (inclusive) to
 @end defun
 
 @defun vector-any pred vec1 vec2 @dots{}
-[R7RS]
+[R7RS vector]
 @c MOD scheme.vector
 @c EN
 Applies @var{pred} on each corresponding elements
@@ -2829,7 +2869,7 @@ of the shortest.
 @end defun
 
 @defun vector-every pred vec1 vec2 @dots{}
-[R7RS]
+[R7RS vector]
 @c MOD scheme.vector
 @c EN
 Applies @var{pred} on each corresponding elements
@@ -2859,7 +2899,7 @@ it returns @code{#f} immediately without looking further.
 @end defun
 
 @defun vector-partition pred vec
-[R7RS]
+[R7RS vector]
 @c MOD scheme.vector
 @c EN
 Allocates a fresh vector of the same size as @var{vec},
@@ -2891,7 +2931,7 @@ an exact integer of the index of the first element that doesn't satisfy
 @c COMMON
 
 @defun vector-swap! vec i j
-[R7RS]
+[R7RS vector]
 @c MOD scheme.vector
 @c EN
 Swaps vector @var{vec}'s @var{i}-th and @var{j}-th elements.
@@ -2909,7 +2949,7 @@ Returns unspecified value.
 @end defun
 
 @defun vector-reverse! vec :optional start end
-[R7RS]
+[R7RS vector]
 @c MOD scheme.vector
 @c EN
 Reverse the elements of @var{vec}.  Returns an undefined value.
@@ -2928,7 +2968,7 @@ the range of operation.
 @end defun
 
 @defun vector-reverse-copy! target tstart source :optional sstart send
-[R7RS]
+[R7RS vector]
 @c MOD scheme.vector
 @c EN
 Like @code{vector-copy!}, but reverses the order of elements from @var{start}.
@@ -2960,7 +3000,7 @@ overlapping.
 
 @defun vector-unfold! f rvec start end seeds @dots{}
 @defunx vector-unfold-right! f rvec start end seeds @dots{}
-[R7RS]
+[R7RS vector]
 @c MOD scheme.vector
 @c EN
 Fill @var{rvec} starting from index @var{start} (inclusive) and
@@ -3021,7 +3061,7 @@ The return value is unspecified.
 @c COMMON
 
 @defun reverse-vector->list vec :optional start end
-[R7RS]
+[R7RS vector]
 @c MOD scheme.vector
 @c EN
 Same as @code{(reverse (vector->list vec start end))}, but more efficient.
@@ -3052,7 +3092,7 @@ partially sorted sequences.
 @defunx list-sort! elt< lis
 @defunx list-stable-sort elt< lis
 @defunx list-stable-sort! elt< lis
-[R7RS]
+[R7RS sort]
 @c MOD scheme.sort
 Sort elements in a list @var{lis} according to the ordering
 predicate @var{elt<}, which takes two elements from @var{lis}
@@ -3071,7 +3111,7 @@ arguments differently.  (@xref{Sorting and merging}.)
 
 
 @defun list-sorted? elt< lis
-[R7RS]
+[R7RS sort]
 @c MOD scheme.sort
 Returns true if the list @var{list} is sorted according to the
 ordering predicate @var{elt<}.
@@ -3082,7 +3122,7 @@ See also @code{sorted?} in @ref{Sorting and merging}.
 
 @defun list-merge elt< lis1 lis2
 @defunx list-merge! elt< lis1 lis2
-[R7RS]
+[R7RS sort]
 @c MOD scheme.sort
 Given two sorted lists @var{lis1} and @var{lis2}, returns
 a new sorted list according to the ordering predicate @var{elt<}.
@@ -3095,7 +3135,7 @@ See also @code{merge} and @var{merge!} in @ref{Sorting and merging}.
 
 @defun vector-sort elt< vec :optional start end
 @defunx vector-stable-sort elt< vec :optional start end
-[R7RS]
+[R7RS sort]
 @c MOD scheme.sort
 Sort elements in a vector @var{vec} according to the ordering
 predicate @var{elt<}, which takes two elements from @var{vec}
@@ -3114,7 +3154,7 @@ See also @code{sort} and @code{stable-sort} in @ref{Sorting and merging}.
 
 @defun vector-sort! elt< vec :optional start end
 @defunx vector-stable-sort! elt< vec :optional start end
-[R7RS]
+[R7RS sort]
 @c MOD scheme.sort
 Sort elements ``in-place'' in a vector @var{vec} according to the ordering
 predicate @var{elt<}, which takes two elements from @var{vec}
@@ -3133,7 +3173,7 @@ See also @code{sort!} and @code{stable-sort!} in @ref{Sorting and merging}.
 @end defun
 
 @defun vector-sorted? elt< vec :optional start end
-[R7RS]
+[R7RS sort]
 @c MOD scheme.sort
 Returns true iff @var{vec} between @var{start} (inclusive)
 and @var{end} (exlusive) is sorted according to the ordering
@@ -3146,7 +3186,8 @@ See also @code{sorted?} in @ref{Sorting and merging}.
 
 @defun vector-merge elt< vec1 vec2 :optional start1 end1 start2 end2
 @defunx vector-merge! elt< rvec vec1 vec2 :optional rstart start1 end1 start2 end2
-[R7RS]
+[R7RS sort]
+@c MOD scheme.sort
 Merge two sorted vectors @var{vec1} and @var{vec2}
 into one vector, according to the
 ordering predicate @var{elt<}.
@@ -3163,15 +3204,13 @@ to hold the result. The procedure doesn't return a meaningful value.
 The optional @var{rstart} argument specifies
 the index of @var{rvec} from which the result is filled; the default
 is 0.
-@c MOD scheme.sort
-
 @end defun
 
 @defun list-delete-neighbor-dups elt= lis
 @defunx list-delete-neighbor-dups! elt= lis
 @defunx vector-delete-neighbor-dups elt= vec :optional start end)
 @defunx vector-delete-neighbor-dups! elt= vec :optional start end)
-[R7RS]
+[R7RS sort]
 @c MOD scheme.sort
 From the given list @var{lis} or vector @var{vec},
 these procedures delete adjacent duplicate elements.  Equivalence
@@ -3227,7 +3266,7 @@ for the details.
 @end defun
 
 @defun vector-select! elt< vec k :optional start end
-[R7RS]
+[R7RS sort]
 @c MOD scheme.sort
 Select @var{k}-th smallest element in @var{vec} according to the
 ordering predicate @var{elt<}.  @var{K} is zero based, i.e. 0 means
@@ -3241,7 +3280,7 @@ This procedure may partially modify @var{vec}.
 @end defun
 
 @defun vector-separate! elt< vec k :optional start end
-[R7RS]
+[R7RS sort]
 @c MOD scheme.sort
 Find @var{k}-th smallerst element in @var{vec} (pivot) between
 between @var{start} and @var{end}, according to the ordering
@@ -3258,7 +3297,7 @@ algorithms.  Runs in O(n) time.
 
 @defun vector-find-median elt< vec knil :optional mean
 @defunx vector-find-median! elt< vec knil :optional mean
-[R7RS]
+[R7RS sort]
 @c MOD scheme.sort
 Find median value of elements in @var{vec}, when ordered by
 the ordering predicate @var{elt<}.  Non-destructive version
@@ -3356,7 +3395,7 @@ Gauche独自拡張として、セットやバッグはコレクションプロ�
 
 @defun set comparator elt @dots{}
 @defunx bag comparator elt @dots{}
-[R7RS]
+[R7RS set]
 @c MOD scheme.set
 Creates a new set and bag from given elements @var{elt} @dots{}.
 Given @var{comparator} will be used to compare equality of elements.
@@ -3372,7 +3411,7 @@ Given @var{comparator} will be used to compare equality of elements.
 
 @defun set-unfold stop? mapper successor seed comparator
 @defunx bag-unfold stop? mapper successor seed comparator
-[R7RS]
+[R7RS set]
 @c MOD scheme.set
 Procedurally creates a set or a bag.  The first three
 arguments, @var{stop?},  @var{mapper} and @var{successor},
@@ -3411,21 +3450,21 @@ And the @code{seed} argument gives the initial seed value.
 
 @defun set-contains? set obj
 @defunx bag-contains? bag obj
-[R7RS]
+[R7RS set]
 @c MOD scheme.set
 Check if @var{obj} is in the set or the bag.
 @end defun
 
 @defun set-empty? set
 @defunx bag-empty? bag
-[R7RS]
+[R7RS set]
 @c MOD scheme.set
 Returns @code{#t} iff the given set or bag is empty.
 @end defun
 
 @defun set-disjoint? set1 set2
 @defunx bag-disjoint? bag1 bag2
-[R7RS]
+[R7RS set]
 @c MOD scheme.set
 Returns @code{#t} iff the given arguments (sets or bags) don't have
 common items.  Both arguments must have the same comparator---otherwise
@@ -3436,7 +3475,7 @@ an error is signaled.
 
 @defun set-member set obj default
 @defunx bag-member bag obj default
-[R7RS]
+[R7RS set]
 @c MOD scheme.set
 Returns an element in the given set or bag which is equal to @var{obj}
 in terms of the set's or the bag's comparator.  If no such element is
@@ -3454,7 +3493,7 @@ as @var{obj} in a usual sense.  See the following example:
 
 @defun set-element-comparator set
 @defunx bag-element-comparator bag
-[R7RS]
+[R7RS set]
 @c MOD scheme.set
 Returns the comparator used to compare the elements for the set or the bag.
 @end defun
@@ -3463,7 +3502,7 @@ Returns the comparator used to compare the elements for the set or the bag.
 
 @defun set-adjoin set elt @dots{}
 @defunx bag-adjoin bag elt @dots{}
-[R7RS]
+[R7RS set]
 @c MOD scheme.set
 Returns a newly created set or bag that contains all the elements
 in the original set/bag, plus given elements.  The new set/bag's
@@ -3472,7 +3511,7 @@ comparator is the same as the original set/bag's one.
 
 @defun set-replace set elt
 @defunx bag-replace bag elt
-[R7RS]
+[R7RS set]
 @c MOD scheme.set
 Returns a newly created set/bag with the same comparator with
 the original set/bag, and the same elements, except that the elements
@@ -3489,7 +3528,7 @@ equal to @var{elt}, the original one is returned.
 
 @defun set-delete set elt @dots{}
 @defunx bag-delete bag elt @dots{}
-[R7RS]
+[R7RS set]
 @c MOD scheme.set
 Returns a newly created set or bag that has the same comparator
 and the same elements in the original set/bag, except that the
@@ -3498,7 +3537,7 @@ item which is equal to @var{elt}.
 
 @defun set-delete-all set elt-list
 @defunx bag-delete-all bag elt-list
-[R7RS]
+[R7RS set]
 @c MOD scheme.set
 Returns a newly created set or bag with the same comparator of
 the original set/bag, with the elements of the original set/bag
@@ -3514,7 +3553,7 @@ except the ones listed in @var{elt-list}.
 @defunx bag-delete! bag elt @dots{}
 @defunx set-delete-all! set elt-list
 @defunx bag-delete-all! bag elt-list
-[R7RS]
+[R7RS set]
 @c MOD scheme.set
 These are the linear update versions of their counterparts.
 It works just like the ones without @code{!}, except that
@@ -3528,7 +3567,7 @@ instead of relying on the side effects.
 
 @defun set-search! set elt failure success
 @defunx bag-search! bag elt failure success
-[R7RS]
+[R7RS set]
 @c MOD scheme.set
 Lookup-and-modify procedures.  The @var{failure} and @var{success}
 arguments are procedures.
@@ -3577,14 +3616,14 @@ and @var{failure} procedures are tail-called.
 
 @defun set-size set
 @defunx bag-size bag
-[R7RS]
+[R7RS set]
 @c MOD scheme.set
 Returns the number of items in the set/bag.
 @end defun
 
 @defun set-find pred set failure
 @defunx bag-find pred bag failure
-[R7RS]
+[R7RS set]
 @c MOD scheme.set
 Apply @var{pred} on each item in the set/bag, and returns the
 first item on which @var{pred} returns true.  Since sets and bags
@@ -3597,21 +3636,21 @@ is called and its result is returned.
 
 @defun set-count pred set
 @defunx bag-count pred bag
-[R7RS]
+[R7RS set]
 @c MOD scheme.set
 Returns the number of items that satisfy @var{pred} in the set/bag.
 @end defun
 
 @defun set-any? pred set
 @defunx bag-any? pred bag
-[R7RS]
+[R7RS set]
 @c MOD scheme.set
 Returns true iff any item in the set/bag satisfy @var{pred}.
 @end defun
 
 @defun set-every? pred set
 @defunx bag-every? pred bag
-[R7RS]
+[R7RS set]
 @c MOD scheme.set
 Returns true iff every item in the set/bag satisfy @var{pred}.
 @end defun
@@ -3620,7 +3659,7 @@ Returns true iff every item in the set/bag satisfy @var{pred}.
 
 @defun set-map comparator proc set
 @defunx bag-map comparator proc bag
-[R7RS]
+[R7RS set]
 @c MOD scheme.set
 Create and return a new set/bag with the comparator @var{comparator},
 whose items are calculated by applying @var{proc} to each element
@@ -3629,7 +3668,7 @@ in the original set/bag.
 
 @defun set-for-each proc set
 @defunx bag-for-each proc bag
-[R7RS]
+[R7RS set]
 @c MOD scheme.set
 Apply @var{proc} to each element in the set/bag.   The result of @var{proc}
 is ignored.  Return value is undefined.
@@ -3637,7 +3676,7 @@ is ignored.  Return value is undefined.
 
 @defun set-fold proc seed set
 @defunx bag-fold proc seed bag
-[R7RS]
+[R7RS set]
 @c MOD scheme.set
 For each item in the set/bag, call @var{proc} with two arguments, an item
 and a seed value.  What @var{proc} returns becomes the next seed value.
@@ -3652,7 +3691,7 @@ value of @var{proc} will be the result of @code{set-fold}/@code{bag-fold}.
 
 @defun set-filter pred set
 @defunx bag-filter pred bag
-[R7RS]
+[R7RS set]
 @c MOD scheme.set
 Returns a newly created set/bag with the same comparator of the original
 set/bag, and its content consists of items from the original set/bag
@@ -3666,7 +3705,7 @@ that satisfy @var{pred}.
 
 @defun set-remove pred set
 @defunx bag-remove pred bag
-[R7RS]
+[R7RS set]
 @c MOD scheme.set
 Returns a newly created set/bag with the same comparator of the original
 set/bag, and its content consists of items from the original set/bag
@@ -3680,7 +3719,7 @@ that does not satisfy @var{pred}.
 
 @defun set-partition pred set
 @defunx bag-partition pred bag
-[R7RS]
+[R7RS set]
 @c MOD scheme.set
 Returns two sets or bags, both have the same comparator of the original
 set or bag.  The first one consists of the items from the original set/bag
@@ -3700,7 +3739,7 @@ that satisfy @var{pred}, and the second one consists of the items that don't.
 @defunx bag-remove! pred bag
 @defunx set-partition! pred set
 @defunx bag-partition! pred bag
-[R7RS]
+[R7RS set]
 @c MOD scheme.set
 Linear update versions of their counterparts (the procedures without @code{!}).
 They work like their respective counterpart, but they are allowed (but not
@@ -3714,14 +3753,14 @@ you have to use the return value(s) instead of relying on the side effects.
 
 @defun set-copy set
 @defunx bag-copy bag
-[R7RS]
+[R7RS set]
 @c MOD scheme.set
 Returns a copy of the set/bag.
 @end defun
 
 @defun set->list set
 @defunx bag->list bag
-[R7RS]
+[R7RS set]
 @c MOD scheme.set
 Returns a list of all items in the set/bag.
 Since sets and bags are unordered, there's no guarantee on the
@@ -3730,7 +3769,7 @@ order of items.
 
 @defun list->set comparator elt-list
 @defunx list->bag comparator elt-list
-[R7RS]
+[R7RS set]
 @c MOD scheme.set
 Creates a set or a bag with the given comparator, and
 the list of element.  Functionally equivalent to the followings:
@@ -3743,7 +3782,7 @@ the list of element.  Functionally equivalent to the followings:
 
 @defun list->set! set elt-list
 @defunx list->bag! bag elt-list
-[R7RS]
+[R7RS set]
 @c MOD scheme.set
 Add items in @var{elt-list} to the existing set/bag, and returns
 the updated set/bag.  The original set/bag is also modified.
@@ -3757,7 +3796,7 @@ Functionally equivalent to the followings:
 
 @defun bag->set bag
 @defunx set->bag set
-[R7RS]
+[R7RS set]
 @c MOD scheme.set
 Conversions between a bag and a set.  Returns a newly created bag or set,
 respectively.
@@ -3767,7 +3806,7 @@ item.
 @end defun
 
 @defun set->bag! bag set
-[R7RS]
+[R7RS set]
 @c MOD scheme.set
 Adds all items in @var{set} to @var{bag}, and returns @var{bag}.
 Both @var{bag} and @var{set} must have the same comparator.
@@ -3775,7 +3814,7 @@ Both @var{bag} and @var{set} must have the same comparator.
 
 
 @defun bag->alist bag
-[R7RS]
+[R7RS set]
 @c MOD scheme.set
 Returns a list of @code{(item . count)}, where @var{item} is
 an item in @var{bag}, and @var{count} is the number of that item
@@ -3783,7 +3822,7 @@ in the bag.
 @end defun
 
 @defun alist->bag comparator alist
-[R7RS]
+[R7RS set]
 @c MOD scheme.set
 Creates a new bag with @var{comparator}, and fills it according to
 @var{alist}, which must be a list of @code{(item . count)}.
@@ -3795,7 +3834,7 @@ If there's duplicate items in @var{alist}, only fist one counts.
 
 @defun set=? set1 set2 @dots{}
 @defunx bag=? bag1 bag2 @dots{}
-[R7RS]
+[R7RS set]
 @c MOD scheme.set
 Returns true iff all sets/bags have exactly same items.
 
@@ -3811,7 +3850,7 @@ to be the same, in terms of the equality of items.
 @defunx bag<=? bag1 bag2 @dots{}
 @defunx set>=? set1 set2 @dots{}
 @defunx bag>=? bag1 bag2 @dots{}
-[R7RS]
+[R7RS set]
 @c MOD scheme.set
 Returs true iff each preceding set/bag is a proper subset of, 
 a proper superset of, a subset of, or a superset of the following
@@ -3825,7 +3864,7 @@ to be the same, in terms of the equality of items.
 
 @defun set-union set1 set2 @dots{}
 @defunx bag-union bag1 bag2 @dots{}
-[R7RS]
+[R7RS set]
 @c MOD scheme.set
 Returns a newly allocated set or bag which is a union of all
 the sets/bags.
@@ -3833,7 +3872,7 @@ the sets/bags.
 
 @defun set-intersection set1 set2 @dots{}
 @defunx bag-intersection bag1 bag2 @dots{}
-[R7RS]
+[R7RS set]
 @c MOD scheme.set
 Returns a newly allocated set or bag which is an intersection of
 all the sets/bags.
@@ -3841,7 +3880,7 @@ all the sets/bags.
 
 @defun set-difference set1 set2 @dots{}
 @defunx bag-difference bag1 bag2 @dots{}
-[R7RS]
+[R7RS set]
 @c MOD scheme.set
 Returns a newly created set or bag that contains items in @var{set1}/@var{bag1}
 except those are also in @var{set2}/@var{bag2} @dots{}.
@@ -3856,7 +3895,7 @@ except those are also in @var{set2}/@var{bag2} @dots{}.
 
 @defun set-xor set1 set2
 @defunx bag-xor bag1 bag2
-[R7RS]
+[R7RS set]
 @c MOD scheme.set
 Returns a newly created set or bag that consists of items
 that are either in @var{set1}/@var{bag1} or @var{set2}/@var{bag2},
@@ -3877,7 +3916,7 @@ but not in both.
 @defunx bag-difference! bag1 bag2 @dots{}
 @defunx set-xor! set1 set2
 @defunx bag-xor! bag1 bag2
-[R7RS]
+[R7RS set]
 @c MOD scheme.set
 Linear update versions of their corresponding procedures.
 Those procedures works like their @code{!}-less counterparts,
@@ -3892,7 +3931,7 @@ relying on the side effects.
 
 @defun bag-sum bag1 bag2 @dots{}
 @defunx bag-sum! bag1 bag2 @dots{}
-[R7RS]
+[R7RS set]
 @c MOD scheme.set
 Returns a bag that gathers all the items in given bags, counting
 duplicates.  The functional version @code{bag-sum} always
@@ -3917,7 +3956,7 @@ Note the difference from @code{bag-union}:
 
 @defun bag-product n bag
 @defunx bag-product! n bag
-[R7RS]
+[R7RS set]
 @c MOD scheme.set
 Returns a bag that contains every item as @var{n}-times
 many as the original bag.  A fresh bag is created and returned
@@ -3931,7 +3970,7 @@ by @code{bag-product}, while @code{bag-product!} may reuse
 @end defun
 
 @defun bag-unique-size bag
-[R7RS]
+[R7RS set]
 @c MOD scheme.set
 Returns the number of unique elements in @var{bag}.
 
@@ -3942,7 +3981,7 @@ Returns the number of unique elements in @var{bag}.
 @end defun
 
 @defun bag-element-count bag elt
-[R7RS]
+[R7RS set]
 @c MOD scheme.set
 Returns the number of specified element @var{elt} in @var{bag}.
 
@@ -3953,14 +3992,14 @@ Returns the number of specified element @var{elt} in @var{bag}.
 @end defun
 
 @defun bag-for-each-unique proc bag
-[R7RS]
+[R7RS set]
 @c MOD scheme.set
 For each unique item in @var{bag}, calls @code{proc} with two arguments:
 The item, and the count of the item in the bag.
 @end defun
 
 @defun bag-fold-unique proc seed bag
-[R7RS]
+[R7RS set]
 @c MOD scheme.set
 For each unique item in @var{bag}, calls @var{proc} with three arguments:
 The item, the count of the item, and the previous seed value.
@@ -3978,7 +4017,7 @@ result of @code{proc} is returned from @code{bag-fold-unique}.
 
 @defun bag-increment! bag elt count
 @defunx bag-decrement! bag elt count
-[R7RS]
+[R7RS set]
 @c MOD scheme.set
 Linear update @var{bag} to increase or decrease the count of @var{elt} in it
 by @var{count}, which must be an exact integer.  Note that the
@@ -3991,7 +4030,7 @@ with zero @code{a}'s.
 
 @defvr {Comparator} set-comparator
 @defvrx {Comparator} bag-comparator
-[R7RS]
+[R7RS comparator]
 @c MOD scheme.set
 Comparators to be used to compare sets or bags.  They don't provide
 comparison procedure, for you cannot define a total order among sets or bags.
@@ -4046,7 +4085,7 @@ Gaucheでは@code{<char-set>}クラスは@code{<collection>}を継承し、
 
 @defun list->char-set char-list :optional base-cs
 @defunx list->char-set! char-list base-cs
-[R7RS]
+[R7RS comparator]
 @c MOD scheme.charset
 @c EN
 Constructs a character set from a list of characters @var{char-list}.
@@ -4065,7 +4104,7 @@ to store the result.
 
 @defun string->char-set s :optional base-cs
 @defunx string->char-set! s base-cs
-[R7RS]
+[R7RS charset]
 @c MOD scheme.charset
 @c EN
 Like @code{list->char-set} and @code{list->char-set!},
@@ -4078,7 +4117,7 @@ but take a list of characters from a string @var{s}.
 
 @defun char-set-filter pred char-set :optional base-cs
 @defunx char-set-filter! pred char-set base-cs
-[R7RS]
+[R7RS charset]
 @c MOD scheme.charset
 @c EN
 Returns a character set containing every character @var{c} in
@@ -4097,7 +4136,7 @@ is allowed, but not required, to modify @var{base-cs} to store the result.
 
 @defun ucs-range->char-set lower upper :optional error? base-cs
 @defunx ucs-range->char-set! lower upper error? base-cs
-[R7RS]
+[R7RS charset]
 @c MOD scheme.charset
 @c EN
 Creates 
@@ -4114,7 +4153,7 @@ Creates
 @end defun
 
 @defun ->char-set x
-[R7RS]
+[R7RS charset]
 @c MOD scheme.charset
 @c EN
 A convenience function to coerce various kinds of objects to a char-set.
@@ -4146,7 +4185,7 @@ accept any collection of characters.
 @c NODE 文字セットの比較
 
 @defun char-set= char-set1 @dots{}
-[R7RS]
+[R7RS charset]
 @c MOD scheme.charset
 @c EN
 Returns @code{#t} iff all the character sets have exactly the
@@ -4166,7 +4205,7 @@ same members.
 @end defun
 
 @defun char-set<= char-set1 @dots{}
-[R7RS]
+[R7RS charset]
 @c MOD scheme.charset
 @c EN
 @c JP
@@ -4174,7 +4213,7 @@ same members.
 @end defun
 
 @defun char-set-hash char-set :optional bound
-[R7RS]
+[R7RS charset]
 @c MOD scheme.charset
 @c EN
 @c JP
@@ -4186,7 +4225,7 @@ same members.
 @c NODE 文字セットのイテレーション
 
 @defun char-set-cursor char-set
-[R7RS]
+[R7RS charset]
 @c MOD scheme.charset
 @c EN
 @c JP
@@ -4194,7 +4233,7 @@ same members.
 @end defun
 
 @defun char-set-ref char-set cursor
-[R7RS]
+[R7RS charset]
 @c MOD scheme.charset
 @c EN
 @c JP
@@ -4202,7 +4241,7 @@ same members.
 @end defun
 
 @defun char-set-cursor-next char-set cursor
-[R7RS]
+[R7RS charset]
 @c MOD scheme.charset
 @c EN
 @c JP
@@ -4210,7 +4249,7 @@ same members.
 @end defun
 
 @defun end-of-char-set? ccursor
-[R7RS]
+[R7RS charset]
 @c MOD scheme.charset
 @c EN
 @c JP
@@ -4218,7 +4257,7 @@ same members.
 @end defun
 
 @defun char-set-fold kons knil char-set
-[R7RS]
+[R7RS charset]
 @c MOD scheme.charset
 @c EN
 @c JP
@@ -4227,7 +4266,7 @@ same members.
 
 @defun char-set-unfold pred fun gen seed :optional base-char-set
 @defunx char-set-unfold! pred fun gen seed base-char-set
-[R7RS]
+[R7RS charset]
 @c MOD scheme.charset
 @c EN
 @c JP
@@ -4235,7 +4274,7 @@ same members.
 @end defun
 
 @defun char-set-for-each proc char-set
-[R7RS]
+[R7RS charset]
 @c MOD scheme.charset
 @c EN
 @c JP
@@ -4243,7 +4282,7 @@ same members.
 @end defun
 
 @defun char-set-map proc char-set
-[R7RS]
+[R7RS charset]
 @c MOD scheme.charset
 @c EN
 @c JP
@@ -4257,7 +4296,7 @@ same members.
 @defun char-set-every pred char-set
 @defunx char-set-any pred char-set
 @defunx char-set-count pred char-set
-[R7RS]
+[R7RS charset]
 @c MOD scheme.charset
 @c EN
 These procedures apply @var{pred} to each character in @var{char-set}.
@@ -4294,7 +4333,7 @@ which can make these procedures take very long.
 
 @defun char-set->list char-set
 @defunx char-set->string char-set
-[R7RS]
+[R7RS charset]
 @c MOD scheme.charset
 @c EN
 Returns a list of each character, or a string consisting of
@@ -4313,7 +4352,7 @@ Be careful to apply this on a large char set.
 
 @defun char-set-adjoin char-set char1 @dots{}
 @defunx char-set-adjoin! char-set char1 @dots{}
-[R7RS]
+[R7RS charset]
 @c MOD scheme.charset
 @c EN
 Returns a character set that adds @var{char1} @dots{} to
@@ -4325,37 +4364,37 @@ Returns a character set that adds @var{char1} @dots{} to
 
 @defun char-set-delete char-set char1 @dots{}
 @defunx char-set-delete! char-set char1 @dots{}
-[R7RS]
+[R7RS charset]
 @c MOD scheme.charset
 @end defun
 
 @defun char-set-union char-set @dots{}
 @defunx char-set-union! char-set1 char-set2 @dots{}
-[R7RS]
+[R7RS charset]
 @c MOD scheme.charset
 @end defun
 
 @defun char-set-intersection char-set @dots{}
 @defunx char-set-intersection! char-set1 char-set2 @dots{}
-[R7RS]
+[R7RS charset]
 @c MOD scheme.charset
 @end defun
 
 @defun char-set-difference char-set1 char-set2 @dots{}
 @defunx char-set-difference! char-set1 char-set2 @dots{}
-[R7RS]
+[R7RS charset]
 @c MOD scheme.charset
 @end defun
 
 @defun char-set-xor char-set @dots{}
 @defunx char-set-xor! char-set1 char-set2 @dots{}
-[R7RS]
+[R7RS charset]
 @c MOD scheme.charset
 @end defun
 
 @defun char-set-diff+intersection char-set1 char-set2 @dots{}
 @defunx char-set-diff+intersection! char-set1 char-set2 char-set3 @dots{}
-[R7RS]
+[R7RS charset]
 @c MOD scheme.charset
 @end defun
 
@@ -4366,70 +4405,70 @@ Returns a character set that adds @var{char1} @dots{} to
 @c NODE 定義済みの文字セット
 
 @defvar char-set:letter
-[R7RS]
+[R7RS charset]
 @c MOD scheme.charset
 @end defvar
 
 @defvar char-set:blank
-[R7RS]
+[R7RS charset]
 @c MOD scheme.charset
 @end defvar
 
 @defvar char-set:iso-control
-[R7RS]
+[R7RS charset]
 @c MOD scheme.charset
 @end defvar
 
 @defvar char-set:digit
 @defvarx char-set:hex-digit
-[R7RS]
+[R7RS charset]
 @c MOD scheme.charset
 @end defvar
 
 @defvar char-set:graphic
-[R7RS]
+[R7RS charset]
 @c MOD scheme.charset
 @end defvar
 
 @defvar char-set:lower-case
 @defvarx char-set:upper-case
 @defvarx char-set:title-case
-[R7RS]
+[R7RS charset]
 @c MOD scheme.charset
 @end defvar
 
 @defvar char-set:printing
-[R7RS]
+[R7RS charset]
 @c MOD scheme.charset
 @end defvar
 
 @defvar char-set:punctuation
-[R7RS]
+[R7RS charset]
 @c MOD scheme.charset
 @end defvar
 
 @defvar char-set:whitespace
-[R7RS]
+[R7RS charset]
 @c MOD scheme.charset
 @end defvar
 
 @defvar char-set:symbol
-[R7RS]
+[R7RS charset]
 @c MOD scheme.charset
 @end defvar
 
 @defvar char-set:ascii
-[R7RS]
+[R7RS charset]
 @c MOD scheme.charset
 @end defvar
 
 @defvar char-set:empty
-[R7RS]
+[R7RS charset]
 @c MOD scheme.charset
 @end defvar
 
 @defvar char-set:full
-[R7RS]
+[R7RS charset]
 @c MOD scheme.charset
 @end defvar
 
@@ -4459,178 +4498,178 @@ Gauche's @code{data.ideque} is a superset of this module.
 @end deftp
 
 @defun ideque element @dots{}
-[R7RS]
+[R7RS ideque]
 @c MOD scheme.ideque
 Returns an ideque with the given elements.
 @end defun
 
 @defun ideque-unfold p f g seed
-[R7RS]
+[R7RS ideque]
 @c MOD scheme.ideque
 @end defun
 
 @defun ideque-unfold-right p f g seed
-[R7RS]
+[R7RS ideque]
 @c MOD scheme.ideque
 @end defun
 
 @defun ideque-tabulate size init
-[R7RS]
+[R7RS ideque]
 @c MOD scheme.ideque
 @end defun
 
 @defun ideque? idq
-[R7RS]
+[R7RS ideque]
 @c MOD scheme.ideque
 @end defun
 
 @defun ideque-empty? idq
-[R7RS]
+[R7RS ideque]
 @c MOD scheme.ideque
 @end defun
 
 @defun ideque-add-front idq x
 @defunx ideque-add-back idq x
-[R7RS]
+[R7RS ideque]
 @c MOD scheme.ideque
 @end defun
 
 @defun ideque-front idq
 @defunx ideque-back idq
-[R7RS]
+[R7RS ideque]
 @c MOD scheme.ideque
 @end defun
 
 @defun ideque-remove-front idq
 @defunx ideque-remove-back idq
-[R7RS]
+[R7RS ideque]
 @c MOD scheme.ideque
 @end defun
 
 @defun ideque-reverse idq
-[R7RS]
+[R7RS ideque]
 @c MOD scheme.ideque
 @end defun
 
 @defun ideque= idq idq2 @dots{}
-[R7RS]
+[R7RS ideque]
 @c MOD scheme.ideque
 @end defun
 
 @defun ideque-ref idq n
-[R7RS]
+[R7RS ideque]
 @c MOD scheme.ideque
 @end defun
 
 @defun ideque-take idq n
 @defunx ideque-take-right idq n
-[R7RS]
+[R7RS ideque]
 @c MOD scheme.ideque
 @end defun
 
 @defun ideque-drop idq n
 @defunx ideque-drop-right idq n
-[R7RS]
+[R7RS ideque]
 @c MOD scheme.ideque
 @end defun
 
 @defun ideque-split-at idq n
-[R7RS]
+[R7RS ideque]
 @c MOD scheme.ideque
 @end defun
 
 @defun ideque-length idq
-[R7RS]
+[R7RS ideque]
 @c MOD scheme.ideque
 @end defun
 
 @defun ideque-append idq @dots{}
-[R7RS]
+[R7RS ideque]
 @c MOD scheme.ideque
 @end defun
 
 @defun ideque-zip idq idq2 @dots{}
-[R7RS]
+[R7RS ideque]
 @c MOD scheme.ideque
 @end defun
 
 @defun ideque-map proc idq @dots{}
-[R7RS]
+[R7RS ideque]
 @c MOD scheme.ideque
 @end defun
 
 @defun ideque-filter-map proc idq @dots{}
-[R7RS]
+[R7RS ideque]
 @c MOD scheme.ideque
 @end defun
 
 @defun ideque-for-each proc idq @dots{}
 @defunx ideque-for-each-right proc idq @dots{}
-[R7RS]
+[R7RS ideque]
 @c MOD scheme.ideque
 @end defun
 
 @defun ideque-fold proc knil idq @dots{}
 @defunx ideque-fold-right proc knil idq @dots{}
-[R7RS]
+[R7RS ideque]
 @c MOD scheme.ideque
 @end defun
 
 @defun ideque-append-map proc idq @dots{}
-[R7RS]
+[R7RS ideque]
 @c MOD scheme.ideque
 @end defun
 
 @defun ideque-filter pred idq
 @defunx ideque-remove pred idq
-[R7RS]
+[R7RS ideque]
 @c MOD scheme.ideque
 @end defun
 
 @defun ideque-partition pred idq
-[R7RS]
+[R7RS ideque]
 @c MOD scheme.ideque
 @end defun
 
 @defun ideque-find pred idq :optional failure
 @defunx ideque-find-right pred idq :optional failure
-[R7RS]
+[R7RS ideque]
 @c MOD scheme.ideque
 @end defun
 
 @defun ideque-take-while pred idq
 @defunx ideque-take-while-right pred idq
-[R7RS]
+[R7RS ideque]
 @c MOD scheme.ideque
 @end defun
 
 @defun ideque-drop-while pred idq
 @defunx ideque-drop-while-right pred idq
-[R7RS]
+[R7RS ideque]
 @c MOD scheme.ideque
 @end defun
 
 @defun ideque-span pred idq
 @defunx ideque-break pred idq
-[R7RS]
+[R7RS ideque]
 @c MOD scheme.ideque
 @end defun
 
 @defun ideque-any pred idq @dots{}
 @defunx ideque-every pred idq @dots{}
-[R7RS]
+[R7RS ideque]
 @c MOD scheme.ideque
 @end defun
 
 @defun ideque->list idq
 @defunx list->ideque list
-[R7RS]
+[R7RS ideque]
 @c MOD scheme.ideque
 @end defun
 
 @defun ideque->generator idq
 @defunx generator->ideque gen
-[R7RS]
+[R7RS ideque]
 @c MOD scheme.ideque
 @end defun
 
@@ -4724,7 +4763,7 @@ to the oridnary list.
 @end deftp
 
 @defun lseq? x
-[R7RS]
+[R7RS lseq]
 @c MOD scheme.lseq
 Returns true iff @var{x} is an object that can be passed to
 lseq procedures.  In Gauche, it returns @code{#t} if @var{x} is
@@ -4733,7 +4772,7 @@ from a pair.
 @end defun
 
 @defun lseq=? elt=? lseq1 lseq2
-[R7RS]
+[R7RS lseq]
 @c MOD scheme.lseq
 Compare two lseqs element-wise using @code{elt=?} and returns @code{#t}
 iff two lseqs are equal. 
@@ -4741,7 +4780,7 @@ iff two lseqs are equal.
 
 @defun lseq-car lseq
 @defunx lseq-first lseq
-[R7RS]
+[R7RS lseq]
 @c MOD scheme.lseq
 Returns the first item of @var{lseq}.  If @var{lseq} is empty, an error
 is raised.  In Gauche, these are just aliases of @code{car}.
@@ -4749,7 +4788,7 @@ is raised.  In Gauche, these are just aliases of @code{car}.
 
 @defun lseq-cdr lseq
 @defunx lseq-rest lseq
-[R7RS]
+[R7RS lseq]
 @c MOD scheme.lseq
 Returns the rest of @var{lseq}.  If @var{lseq} is empty, an error
 is raised.  In Gauche, these are just aliases of @code{cdr}.
@@ -4757,7 +4796,7 @@ is raised.  In Gauche, these are just aliases of @code{cdr}.
 
 @defun lseq-take lseq k
 @defunx lseq-drop lseq k
-[R7RS]
+[R7RS lseq]
 @c MOD scheme.lseq
 Returns an lseq that has first @code{k} items,
 or an lseq that skips first @code{k} items, respectively.
@@ -4773,47 +4812,47 @@ sequence, regardless of whether it is an ordinary list or lseq.
 @end defun
 
 @defun lseq-realize lseq
-[R7RS]
+[R7RS lseq]
 @c MOD scheme.lseq
 Realizes all the elements in @var{lseq}, resulting an ordinary list.
 @end defun
 
 @defun lseq->generator lseq
-[R7RS]
+[R7RS lseq]
 @c MOD scheme.lseq
 Creates a generator from @var{lseq}.  In Gauche, this is same
 as @code{list->generator}.
 @end defun
 
 @defun lseq-length lseq
-[R7RS]
+[R7RS lseq]
 @c MOD scheme.lseq
 Returns the length of @var{lseq}.  All the elements in @var{lseq} are
 realized as the side effect.  In Gauche, this is same as @code{length}.
 @end defun
 
 @defun lseq-append lseq lseq2 @dots{}
-[R7RS]
+[R7RS lseq]
 @c MOD scheme.lseq
 Append one or more @var{lseq}s lazily.  This is the same as @code{lappend}
 in Gauche.
 @end defun
 
 @defun lseq-zip lseq lseq2 @dots{}
-[R7RS]
+[R7RS lseq]
 @c MOD scheme.lseq
 Returns a lazy sequence in which the first element is a list of
 first elements of @code{lseq}s, and so on.
 @end defun
 
 @defun lseq-map proc lseq lseq2 @dots{}
-[R7RS]
+[R7RS lseq]
 @c MOD scheme.lseq
 Lazy map.  The same as Gauche's @code{lmap}.  Returns a lazy sequence.
 @end defun
 
 @defun lseq-for-each proc lseq lseq2 @dots{}
-[R7RS]
+[R7RS lseq]
 @c MOD scheme.lseq
 This one consumes all the input lseqs, applying @var{proc} on
 each corresponding elements of the input sequences for the side
@@ -4823,7 +4862,7 @@ Gauche doesn't distinguish lseqs and ordinary lists.
 
 @defun lseq-filter pred lseq
 @defunx lseq-remove pred lseq
-[R7RS]
+[R7RS lseq]
 @c MOD scheme.lseq
 Returns an lseq that contains elements from the input 
 @var{lseq} that satisfy or don't satisfy @var{pred}, respectively.
@@ -4832,7 +4871,7 @@ Returns an lseq that contains elements from the input
 
 @defun lseq-take-while pred lseq
 @defunx lseq-drop-while pred lseq
-[R7RS]
+[R7RS lseq]
 @c MOD scheme.lseq
 These are the same as Gauche's @code{ltake-while} and @code{drop-while}
 (the latter doesn't have @code{l}-prefix, since it just drops items
@@ -4848,7 +4887,7 @@ an ordinary list or an lseq.
 @defunx lseq-member pred lseq :optional eq
 @defunx lseq-memq pred lseq
 @defunx lseq-memv pred lseq
-[R7RS]
+[R7RS lseq]
 @c MOD scheme.lseq
 In Gauche, these are the same as the corresponding list functions,
 @code{find}, @code{find-tail}, @code{any}, @code{every},
@@ -4891,25 +4930,25 @@ When you're writing portable code, be careful not to depend on the
 @end deftp
 
 @defun box val
- [R7RS]
+[R7RS box]
 @c MOD scheme.box
 Returns a fresh box object that contains the value @code{val}.
 @end defun
 
 @defun box? obj
-[R7RS]
+[R7RS box]
 @c MOD scheme.box
 Returns @code{#t} iff @var{obj} is a box object.
 @end defun
 
 @defun unbox box
-[R7RS]
+[R7RS box]
 @c MOD scheme.box
 Returns @var{box}'s content.
 @end defun
 
 @defun set-box! box val
-[R7RS]
+[R7RS box]
 @c MOD scheme.box
 Mutate @var{box}'s content with @var{val}.  Returns unspecified value.
 @end defun
@@ -4960,7 +4999,7 @@ in the original queue.
 @end deftp
 
 @defun make-list-queue lis :optional last
-[R7RS]
+[R7RS list-queue]
 @c MOD scheme.list-queue
 @c EN
 Creates and returns a list-queue whose initial content is @var{lis}.
@@ -4988,7 +5027,7 @@ Gaucheでは、リストキューは@code{<queue>}のインスタンスです(@r
 @end defun
 
 @defun list-queue elt @dots{}
-[R7RS]
+[R7RS list-queue]
 @c MOD scheme.list-queue
 @c EN
 Creates and returns a list-queue whose initial content is @var{elt} @dots{}.
@@ -5000,7 +5039,7 @@ Gaucheでは、リストキューは@code{<queue>}のインスタンスです(@r
 @end defun
 
 @defun list-queue-copy queue
-[R7RS]
+[R7RS list-queue]
 @c MOD scheme.list-queue
 @c EN
 Returns a copy of a list-queue @var{queue}.
@@ -5010,7 +5049,7 @@ Returns a copy of a list-queue @var{queue}.
 @end defun
 
 @defun list-queue-unfold p f g seed :optional queue
-[R7RS]
+[R7RS list-queue]
 @c MOD scheme.list-queue
 @c EN
 Prepend @var{queue} with the items generated by
@@ -5035,7 +5074,7 @@ If @var{queue} is omitted, a fresh queue is created.
 @end defun
 
 @defun list-queue-unfold-right p f g seed :optional queue
-[R7RS]
+[R7RS list-queue]
 @c MOD scheme.list-queue
 @c EN
 Append @var{queue} with the items generated by
@@ -5061,7 +5100,7 @@ If @var{queue} is omitted, a fresh queue is created.
 @end defun
 
 @defun list-queue? obj
-[R7RS]
+[R7RS list-queue]
 @c MOD scheme.list-queue
 @c EN
 Returns true iff @var{queue} is a list-queue.
@@ -5073,7 +5112,7 @@ Gaucheでは@code{data.queue}モジュールの@code{queue?}と同じです。
 @end defun
 
 @defun list-queue-empty? queue
-[R7RS]
+[R7RS list-queue]
 @c MOD scheme.list-queue
 @c EN
 Returns true iff @var{queue} is empty.
@@ -5085,7 +5124,7 @@ Same as @code{queue-empty?} of @code{data.queue}.
 @end defun
 
 @defun list-queue-front queue
-[R7RS]
+[R7RS list-queue]
 @c MOD scheme.list-queue
 @c EN
 Returns the front element of the @var{queue}.
@@ -5098,7 +5137,7 @@ Same as @code{queue-front} of @code{data.queue}.
 @end defun
 
 @defun list-queue-back queue
-[R7RS]
+[R7RS list-queue]
 @c MOD scheme.list-queue
 @c EN
 Returns the rear element of the @var{queue}.
@@ -5111,7 +5150,7 @@ Same as @code{queue-rear} of @code{data.queue}.
 @end defun
 
 @defun list-queue-list queue
-[R7RS]
+[R7RS list-queue]
 @c MOD scheme.list-queue
 @c EN
 Returns the internal list of @var{queue}.
@@ -5137,7 +5176,7 @@ simultaneoulsy reset the queue to empty, so it's safe.
 @end defun
 
 @defun list-queue-fist-last queue
-[R7RS]
+[R7RS list-queue]
 @c MOD scheme.list-queue
 @c EN
 Returns two values, the first and last pair of @var{queue}.
@@ -5163,7 +5202,7 @@ not be used in general.
 @end defun
 
 @defun list-queue-add-front! queue elt
-[R7RS]
+[R7RS list-queue]
 @c MOD scheme.list-queue
 @c EN
 Add @var{elt} to the front of @var{queue}.
@@ -5175,7 +5214,7 @@ Same as @code{(queue-push! queue elt)} of @code{data.queue}.
 @end defun
 
 @defun list-queue-add-back! queue elt
-[R7RS]
+[R7RS list-queue]
 @c MOD scheme.list-queue
 @c EN
 Add @var{elt} to the back of @var{queue}.
@@ -5187,7 +5226,7 @@ Same as @code{(enqueue! queue elt)} of @code{data.queue}.
 @end defun
 
 @defun list-queue-remove-front! queue
-[R7RS]
+[R7RS list-queue]
 @c MOD scheme.list-queue
 @c EN
 Remove an element from the front of @var{queue} and returns
@@ -5201,7 +5240,7 @@ Same as @code{dequeue!} of @code{data.queue}.
 @end defun
 
 @defun list-queue-remove-back! queue
-[R7RS]
+[R7RS list-queue]
 @c MOD scheme.list-queue
 @c EN
 Remove an element from the back of @var{queue} and returns the
@@ -5222,7 +5261,7 @@ consider double-ended queue.  (@xref{Immutable deques}, and also
 @end defun
 
 @defun list-queue-remove-all! queue
-[R7RS]
+[R7RS list-queue]
 @c MOD scheme.list-queue
 @c EN
 Remove all the elements from @var{queue} and returns them as a list.
@@ -5238,7 +5277,7 @@ Gaucheでは、これは@code{data.queue}の@code{deque-all!}と同じです。
 @end defun
 
 @defun list-queue-set-list! queue lis :optional last
-[R7RS]
+[R7RS list-queue]
 @c MOD scheme.list-queue
 @c EN
 Modify @var{queue} to have the elements in @var{lis} as its element.
@@ -5262,7 +5301,7 @@ O(1)操作を実現しています。
 @end defun
 
 @defun list-queue-append queue @dots{}
-[R7RS]
+[R7RS list-queue]
 @c MOD scheme.list-queue
 @c EN
 Returns a fresh list-queue whose contents are concatenation of
@@ -5276,7 +5315,7 @@ This is O(n) operation where n is the total number of elements.
 @end defun
 
 @defun list-queue-append! queue @dots{}
-[R7RS]
+[R7RS list-queue]
 @c MOD scheme.list-queue
 @c EN
 Returns a list-queue whose contents are concatenation of
@@ -5299,13 +5338,13 @@ This is O(m) operation where m is the total number of queues
 @end defun
 
 @defun list-queue-concatenate queues
-[R7RS]
+[R7RS list-queue]
 @c MOD scheme.list-queue
 @code{(apply list-queue-append queues)}.
 @end defun
 
 @defun list-queue-map proc queue
-[R7RS]
+[R7RS list-queue]
 @c MOD scheme.list-queue
 @c EN
 Returns a fresh list-queue whose elements are obtained by
@@ -5317,7 +5356,7 @@ applying @var{proc} on every elements in @var{queue}.
 @end defun
 
 @defun list-queue-map! proc queue
-[R7RS]
+[R7RS list-queue]
 @c MOD scheme.list-queue
 @c EN
 Replaces every element in @var{queue} by the result of
@@ -5329,7 +5368,7 @@ application of @var{proc} on the element.
 @end defun
 
 @defun list-queue-for-each proc queue
-[R7RS]
+[R7RS list-queue]
 @c MOD scheme.list-queue
 @c EN
 Applies @var{proc} on every element of @var{queue}.

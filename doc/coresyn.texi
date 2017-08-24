@@ -649,7 +649,7 @@ compatible to Gauche 0.9.3 and before.
 @c NODE リテラル
 
 @defspec quote datum
-[R7RS]
+[R7RS base]
 @c EN
 Evaluates to @var{datum}.
 @c JP
@@ -1278,7 +1278,7 @@ argument list, it just calls the function.
 @end defmac
 
 @defmac case-lambda clause @dots{}
-[R7RS][SRFI-16]
+[R7RS case-lambda]
 @c EN
 Each @var{clause} should have the form (@var{formals} @var{expr} @dots{}),
 where @var{formals} is a formal arguments list as for @code{lambda}.
@@ -1360,7 +1360,7 @@ arguments, so in the following example @code{g2} never returns @code{(one ...)}.
 
 @defspec set! symbol expression
 @defspecx set! (proc arg @dots{}) expression
-[R7RS][SRFI-17]
+[R7RS+ base][SRFI-17]
 @c EN
 First, @var{expression} is evaluated.
 In the first form, the binding of @var{symbol} is modified
@@ -1651,7 +1651,7 @@ a @result{} (6 . 0)
 
 @defspec if test consequent alternative
 @defspecx if test consequent
-[R7RS]
+[R7RS base]
 @c EN
 @var{Test} is evaluated.  If it yields a true value,
 @var{consequent} is evaluated.  Otherwise, @var{alternative} is
@@ -1675,7 +1675,7 @@ evaluated.  If @var{alternative} is not provided, it results undefined value.
 @end defspec
 
 @defspec cond clause1 clause2 @dots{}
-[R7RS][SRFI-61]
+[R7RS+ base][SRFI-61]
 @c EN
 Each @code{clause} must be the form
 @example
@@ -1752,7 +1752,7 @@ If the last clause is else clause and all tests are failed,
 
 
 @defspec case key clause1 clause2 @dots{}
-[R7RS][SRFI-87]
+[R7RS+ base][SRFI-87]
 @c EN
 @var{Key} may be any expression.
 Each @var{clause} should have the form
@@ -1859,7 +1859,7 @@ you want to detect when unexpected value is passed just in case.
 @end defmac
 
 @defspec and test @dots{}
-[R7RS]
+[R7RS base]
 @c EN
 The @var{test} expressions are evaluated from left to right,
 and the value of the first expression that evaluates to a false
@@ -1885,7 +1885,7 @@ If there are no expressions then @code{#t} is returned.
 
 
 @defspec or test @dots{}
-[R7RS]
+[R7RS base]
 @c EN
 The @var{test} expressions are evaluated from left to right,
 and the value of the first expression that evaluates to a true
@@ -1911,7 +1911,7 @@ last expression is returned. If there are no expressions then
 
 @defspec when test expr1 expr2 @dots{}
 @defspecx unless test expr1 expr2 @dots{}
-[R7RS]
+[R7RS base]
 @c EN
 Evaluates @var{test}.  If it yields true value (or false in case of
 @code{unless}), @var{expr1} and @var{expr2} @dots{} are evaluated
@@ -1976,7 +1976,7 @@ Use this form to inform the compiler and the reader your intention.
 @defspecx let* ((var expr) @dots{}) body @dots{}
 @defspecx letrec ((var expr) @dots{}) body @dots{}
 @defspecx letrec* ((var expr) @dots{}) body @dots{}
-[R7RS]
+[R7RS base]
 @c EN
 Creates a local scope where @var{var} @dots{} are bound to the
 value of @var{expr} @dots{}, then evaluates @var{body} @dots{}.
@@ -2338,7 +2338,7 @@ provides @code{let}-like syntax with multiple values.
 @end defspec
 
 @defmac let-values ((vars expr) @dots{}) body @dots{}
-[R7RS]
+[R7RS base]
 @c EN
 @var{vars} are a list of variables. @var{expr} is evaluated, and
 its first return value is bound to the first variable in @var{vars},
@@ -2391,7 +2391,7 @@ what @var{vars} expects, an error is signaled.
 @end defmac
 
 @defmac let*-values ((vars expr) @dots{}) body @dots{}
-[R7RS]
+[R7RS base]
 @c EN
 Same as @code{let-values}, but each @var{expr}'s scope includes
 the preceding @var{vars}.
@@ -2453,7 +2453,7 @@ Some examples:
 
 
 @defspec begin form @dots{}
-[R7RS]
+[R7RS base]
 @c EN
 Evaluates @var{form}s sequentially, and returns the last result(s).
 @c JP
@@ -2534,7 +2534,7 @@ for the @code{begin0} form is expanded as follows.
 @c NODE 繰り返し
 
 @defspec do ((variable init [step]) @dots{}) (test expr @dots{}) body @dots{}
-[R7RS]
+[R7RS base]
 @c EN
 @enumerate
 @item
@@ -2643,7 +2643,7 @@ created.
 
 
 @defspec let name ((var init) @dots{}) body @dots{}
-[R7RS]
+[R7RS base]
 @c EN
 This variation of @code{let} is called ``named let''.  It creates
 the following procedure and binds it to @var{name}, then calls
@@ -2972,7 +2972,7 @@ The return value of @code{until} form itself isn't specified.
 @c NODE 準クオート, 準クオート(Quasiquote)
 
 @defspec quasiquote template
-[R7RS]
+[R7RS base]
 @c EN
 Quasiquotation is a convenient way to build a structure that has
 some fixed parts and some variable parts.  See the explanation below.
@@ -2994,7 +2994,7 @@ The syntax @code{`x} is read as @code{(quasiquote x)}.
 
 @defspec unquote datum @dots{}
 @defspecx unquote-splicing datum @dots{}
-[R7RS]
+[R7RS base]
 @c EN
 These syntaxes have meaning only when they appear in the @var{template}
 of quasiquoted form.  R5RS says nothing about these syntaxes
@@ -3478,7 +3478,7 @@ parenthesis are not there.  Thus these two forms are equivalent.
 @defmac define-values (var @dots{}) expr
 @defmacx define-values (var var1 @dots{} . var2) expr
 @defmacx define-values var expr
-[R7RS]
+[R7RS base]
 @c EN
 @var{Expr} is evaluated, and each value of the result
 is bound to each @var{var}s.  In the first form, it is an error
@@ -3621,7 +3621,7 @@ the current module, you can use @code{global-variable-bound?}
 
 @defspec include filename @dots{}
 @defspecx include-ci filename @dots{}
-[R7RS]
+[R7RS base]
 @c EN
 Reads @var{filename} @dots{} at compile-time, and insert their
 contents as if the forms are placed in the includer's source file,
@@ -3904,7 +3904,7 @@ Schemeでは、こういう時には@code{cond-expand}を使います。
 @c COMMON
 
 @defmac cond-expand (feature-requirement command-or-definition @dots{}) @dots{}
-[SRFI-0][R7RS]
+[R7RS base]
 @c EN
 This macro expands to @var{command-or-definition} @dots{} if
 @var{feature-requirement} is supported by the current platform.
@@ -4652,7 +4652,7 @@ Gaucheではモジュールはコンパイル時に静的に決定されます�
 @c NODE モジュールの使用
 
 @defspec export spec @dots{}
-[R7RS]
+[R7RS base]
 @c EN
 Makes bindings specified by each @var{spec} available
 to modules that imports the current module.

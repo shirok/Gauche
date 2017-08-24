@@ -452,35 +452,53 @@ The specification is shown in brackets.  You'll see the following variations.
 @c COMMON
 
 @table @asis
-@item [R7RS]
-@itemx [R7RS+]
-@itemx [R6RS]
-@itemx [R6RS+]
-@itemx [R5RS]
-@itemx [R5RS+]
+@item [R7RS], [R7RS @i{library}]
 @c EN
-The entry works as specified in R7RS, R6RS or R5RS, respectively.
-If a plus sign is appended such as "[R7RS+]", the entry has extended
-functionality.
-
+It is defined in R7RS.  If the entry is about a procedure, a syntax or a
+macro, @i{library} is also shown to indicate
+the name is exported from the @code{scheme.@i{library}} module
+(or the @code{(scheme @i{library})} library, in R7RS terms).
+@c JP
+R7RSで定義されています。このエントリが手続き、構文、マクロについてものならば、
+@i{library}も合わせて示されます。これは、
+その名前が@code{scheme.@i{library}}モジュール
+(R7RS用語では、@code{(scheme @i{library})}ライブラリ)
+からエクスポートされてていることを示します。
+@c COMMON
+@item [R7RS+], [R7RS+ @i{library}]
+@c EN
+It is defined in R7RS, but extended by Gauche, e.g. accepting more
+optional arguments or different type of arguments.
+The description
+contains how it is extended from R7RS.  When you're writing a portable
+program, you need to be careful not to use Gauche-specific features.
+@c JP
+R7RSで定義されていますが、Gauche独自の拡張(より多くの省略可能引数を受け付けたり、
+異なる型の引数についても動作したりなど)があります。
+説明部分で、R7RSからどう拡張されているかが記述されます。
+ポータブルなプログラムを書いている時は、Gauche独自拡張の機能を使わないように
+注意してください。
+@c COMMON
+@item [R6RS], [R6RS+], [R5RS], [R5RS+]
+@c EN
+It is defined in R6RS or R5RS.  The plus sign means it has extended by Gauche.
 Since R7RS is mostly upward-compatible to R5RS, and has a lot
 in common with R6RS, we mark an entry as R5RS or R6RS only if
 it is not a part of R7RS.
 @c JP
-この項目はそれぞれR7RS, R6RS, R5RSで定義されるように動作します。
-"[R7RS+]"のようにプラス記号がついている場合は、
-R7RSの仕様に上位互換な形で機能が追加されていることを示します。
+R6RSやR5RSで定義されています。
+プラス記号がついている場合は、Gauche独自の機能が追加されていることを示します。
 
 R7RSはほぼR5RSの上位互換であり、R6RSとも多くの機能を共有しているので、
 R5RS、R6RSの表示はそれらがR7RSに含まれていない場合のみ記されます。
 @c COMMON
-@item [SRFI-@var{n}]
-@itemx [SRFI-@var{n}+]
+@item [SRFI-@var{n}], [SRFI-@var{n}+]
 @c EN
 The entry works as specified in SRFI-@var{n}.  If it is marked as
 "[SRFI-@var{n}+]", the entry has additional functionality.
 @c JP
-この項目はSRFI-@var{n}に定義されるように動作します。"[SRFI-@var{n}+]"とマークされている場合は
+この項目はSRFI-@var{n}に定義されるように動作します。
+"[SRFI-@var{n}+]"とマークされている場合は
 SRFI-@var{n}の仕様に上位互換な形で追加の機能が実装されていることを示します。
 @c COMMON
 @item [POSIX]
@@ -509,6 +527,37 @@ Gaucheの組み込みです。(R7RSコードを書いている場合、Gaucheの
 項目によっては、再エクスポートやモジュール継承によって、
 複数のモジュールから提供されるものもあります。
 その場合、元になるモジュールが示されます。
+@c COMMON
+
+@c EN
+Here's an actual entry for an example:
+@c JP
+例として、実際のエントリのひとつはこんな具合です:
+@c COMMON
+
+@example
+ -- Function: utf8->string u8vector :optional start end
+     [R7RS base] @{gauche.unicode@} Converts a sequence of utf8 octets in
+     U8VECTOR to a string.  Optional START and/or END argument(s) will
+     limit the range of the input.
+@end example
+
+@c EN
+This shows the function @code{utf8->string} is specified by R7RS, in
+@code{(scheme base)} library.  Gauche originally provides it from
+@code{gauche.unicode} module.  You can import the function from either
+one, but in general, it's good to use @code{(import (scheme base))}
+when writing R7RS code, and @code{(use gauche.unicode)} when writing
+Gauche code.  @xref{R7RS integration}, for the details of differences
+in writing in R7RS and Gauche.
+@c JP
+これは、関数@code{utf8->string}はR7RSで定義され、
+ライブラリ@code{(scheme base)}にある名前となっており、
+Gaucheではもともと@code{gauche.unicode}モジュールで提供されている、ということを示します。
+実際に使う場合は、どちらからインポートしても構いません。
+一般的には、R7RSコードを書いている時には@code{(import (scheme base))}を、
+Gaucheコードを書いている時には@code{(use gauche.unicode)}を使うと良いでしょう。
+R7RSとGaucheでの作法の違いについては@ref{R7RS integration}を参照してください。
 @c COMMON
 
 
