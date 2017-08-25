@@ -160,17 +160,17 @@
   (cond-expand
    [gauche.os.windows
     ;; This code is used with mintty on MSYS
-    (define wait-us 10000) ; windows timer limit (10ms)
-    (define wait-ns (* wait-us 1000))
+    ;; Windows timer has rather coerce resolution (10ms)
+    (define resolution-us 10000)
     (if (or (char-ready? (~ con'iport)) (not timeout))
       (read-char (~ con'iport))
       (let loop ([t 0])
         (if (>= t timeout)
           #f ; timeout
-          (begin (sys-nanosleep wait-ns)
+          (begin (sys-nanosleep (* resolution-us 1000))
                  (if (char-ready? (~ con'iport))
                    (read-char (~ con'iport))
-                   (loop (+ t wait-us)))))))]
+                   (loop (+ t resolution-us)))))))]
    [else
     (receive (nfds rfds wfds xfds)
         (sys-select! (sys-fdset (~ con'iport)) #f #f timeout)

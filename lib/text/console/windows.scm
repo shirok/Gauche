@@ -183,30 +183,29 @@
 ;; Get a char; returns a char, or #f on timeout.
 ;; The timeout argument is in us.
 (define-method getch ((con <windows-console>) :optional (timeout #f))
-  (define wait-us 10000) ; windows timer limit (10ms)
-  (define wait-ns (* wait-us 1000))
+  ;; Windows timer has rather coerce resolution (10ms)
+  (define resolution-us 10000)
   (let loop ([t 0])
     (%getch-sub con)
     (if (not (queue-empty? (~ con'keybuf)))
       (dequeue! (~ con'keybuf))
       (if (and timeout (>= t timeout))
         #f ; timeout
-        (begin (sys-nanosleep wait-ns)
+        (begin (sys-nanosleep (* resolution-us 1000))
                (if timeout
-                 (loop (+ t wait-us))
+                 (loop (+ t resolution-us))
                  (loop 0)))))))
 
 (define-method get-raw-chars ((con <windows-console>))
-  (define wait-us 10000) ; windows timer limit (10ms)
-  (define wait-ns (* wait-us 1000))
+  ;; Windows timer has rather coerce resolution (10ms)
+  (define resolution-us 10000)
   (define q (make-queue))
   (while (queue-empty? q)
-    (sys-nanosleep wait-ns)
+    (sys-nanosleep (* resolution-us 1000))
     (dolist [ks (win-keystate)]
       (match-let1 (kdown ch vk ctls) ks
         (when (= kdown 1)
-          (enqueue! q (list (integer->char ch) vk (logand ctls #x1f))))
-        )))
+          (enqueue! q (list (integer->char ch) vk (logand ctls #x1f)))))))
   (dequeue-all! q))
 
 (define-method chready? ((con <windows-console>))
