@@ -160,7 +160,7 @@
   (cond-expand
    [gauche.os.windows
     ;; This code is used with mintty on MSYS
-    ;; Windows timer has rather coerce resolution (10ms)
+    ;; Windows timer has rather coarce resolution (10ms)
     (define resolution-us 10000)
     (if (or (char-ready? (~ con'iport)) (not timeout))
       (read-char (~ con'iport))
