@@ -32,8 +32,10 @@
 ;;;
 
 (define-module gauche.hashutil
-  (export hash-table hash-table-empty?
-          hash-table-for-each hash-table-map hash-table-fold
+  (export hash-table hash-table-from-pairs hash-table-r7rs
+          hash-table-empty? hash-table-contains?
+          hash-table-for-each hash-table-map hash-table-map-r7rs
+          hash-table-fold
           hash-table-seek hash-table-find hash-table-compare-as-sets
           boolean-hash char-hash char-ci-hash string-hash string-ci-hash
           symbol-hash number-hash default-hash
@@ -48,21 +50,49 @@
                    [(_ x type) (check-arg (cut is-a? <> type) x)]))]
  [else])
 
-(define (hash-table cmpr . kvs)
+;; vararg constructor 'hash-table' has conflicting API between
+;; legacy Gauche and R7RS scheme.hash-table (srfi-125).
+;; R7RS's API is more convenient to use, so we eventually
+;; switch to it.  Meantime, we provide original hash-table
+;; with a different name, hash-table-from-pairs, and R7RS
+;; hash-table as hash-table-r7rs.
+(define (hash-table-from-pairs cmpr . kvs)
   (rlet1 h (make-hash-table cmpr)
     (for-each (^[kv] (hash-table-put! h (car kv) (cdr kv))) kvs)))
 
-(define (hash-table-empty? h) (zero? (hash-table-num-entries h)))
+(define hash-table hash-table-from-pairs) ; transient
 
-(define (hash-table-map hash proc)
-  (assume-type hash <hash-table>)
+(define (hash-table-r7rs cmpr . kvs) ; r7rs's hash-table
+  (rlet1 h (make-hash-table cmpr)
+    (doplist [(k v) kvs] (hash-table-put! h k v))))
+
+
+(define (hash-table-empty? h) (zero? (hash-table-num-entries h))) ; r7rs
+
+(define hash-table-contains? hash-table-exists?) ; r7rs
+
+;; hash-table-map also disagree between Gauche and R7RS.
+;; We keep Gauche API, for we have consistent interface with other *-map
+;; procedures.  We add a check in case the caller mistook this with R7RS one.
+(define (hash-table-map ht proc :optional arg)
+  (when (not (undefined? arg))
+    (error "Gauche's bulit-in hash-table-map is called with R7RS interface. \
+            Use hash-table-map-r7rs, or say (use scheme.hash-table)."))
+  (assume-type ht <hash-table>)
   (let ([eof (cons #f #f)]              ;marker
-        [i   ((with-module gauche.internal %hash-table-iter) hash)])
+        [i   ((with-module gauche.internal %hash-table-iter) ht)])
     (let loop ([r '()])
       (receive [k v] (i eof)
         (if (eq? k eof)
           r
           (loop (cons (proc k v) r)))))))
+
+;; This is R7RS version of hash-table-map
+(define (hash-table-map-r7rs proc cmpr ht) ; r7rs
+  (assume-type cmpr <comparator>)
+  (assume-type ht <hash-table>)
+  (rlet1 r (make-hash-table cmpr)
+    (hash-table-for-each ht (^[k v] (hash-table-put! r k (proc v))))))
 
 (define (hash-table-for-each hash proc)
   (assume-type hash <hash-table>)
@@ -93,14 +123,14 @@
               [(pred k v) => (^r (succ r k v))]
               [else (loop)])))))
   
-;; srfi-125.  this doesn't align with other '*-find' API in a way that
+;; R7RS.  this doesn't align with other '*-find' API in a way that
 ;; it returns the result of PRED.
 (define (hash-table-find hash pred :optional (failure (^[] #f)))
   (hash-table-seek hash pred (^[r k v] r) failure))
 
 ;; We delegate most hash calculation to the built-in default-hash.
 ;; These type-specific hash functions are mostly
-;;  for the compatibility of srfi-128.
+;; for the compatibility of srfi-128.
 
 (define (boolean-hash obj)
   (assume-type obj <boolean>)
@@ -137,7 +167,7 @@
 
 ;; Compare two hash-tables as sets.
 ;; Lots of dupes from tree-map-compare-as-sets, and probably we should
-;;  
+;; refactor it.  
 (define (hash-table-compare-as-sets h1 h2
                                     :optional (value=? equal?)
                                     (fallback (undefined)))
@@ -147,8 +177,8 @@
       (error "hash-tables can't be ordered:" h1 h2)
       fallback))
   (define key-cmp
-    (let ([c1 (tree-map-comparator h1)]
-          [c2 (tree-map-comparator h2)])
+    (let ([c1 (hash-table-comparator h1)]
+          [c2 (hash-table-comparator h2)])
       (cond [(and c1 c2 (equal? c1 c2)) c1]
             [(or c1 c2) (error "hash-tables with different comparators can't be \
                                 compared:" h1 h2)]
@@ -182,4 +212,3 @@
       (receive (k1 v1) (i1 eof)
         (receive (k2 v2) (i2 eof)
           (loop k1 v1 k2 v2 0))))))
-

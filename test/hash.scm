@@ -10,6 +10,8 @@
 ;; object-equal? and object-hash overload.
 
 (test-start "hash tables")
+(use gauche.hashutil)           ; usually autoloaded, but to run test-module
+(test-module 'gauche.hashutil)
 
 ;;------------------------------------------------------------------
 (test-section "hash function")
