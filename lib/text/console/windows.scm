@@ -39,14 +39,16 @@
 
 (use os.windows)
 
+;; These handles should not be cached.
+(define (get-ihandle) (sys-get-std-handle STD_INPUT_HANDLE))
+(define (get-ohandle) (sys-get-std-handle STD_OUTPUT_HANDLE))
+
 ;; Class <windows-console> is defined in text.console.
 (define-method initialize ((con <windows-console>) initargs)
   (next-method)
-  (set! (~ con'ihandle) (sys-get-std-handle STD_INPUT_HANDLE))
-  (set! (~ con'ohandle) (sys-get-std-handle STD_OUTPUT_HANDLE))
   (set! (~ con'high-surrogate) 0))
 
-(define-method call-with-console ((con <windows-console>) proc 
+(define-method call-with-console ((con <windows-console>) proc
                                   :allow-other-keys)
   (unwind-protect (proc con)
     (reset-character-attribute con)
@@ -79,9 +81,9 @@
    eqv-comparator))
 
 (define-method putch ((con <windows-console>) c)
-  (sys-write-console (~ con'ohandle) (string c)))
+  (sys-write-console (get-ohandle) (string c)))
 (define-method putstr ((con <windows-console>) s)
-  (sys-write-console (~ con'ohandle) s))
+  (sys-write-console (get-ohandle) s))
 
 ;; some keyboard event constants
 (define-constant KEY_EVENT 1)
@@ -94,10 +96,9 @@
 (define-constant CTRL_PRESSED (logior RIGHT_CTRL_PRESSED LEFT_CTRL_PRESSED))
 
 ;; Obtain keyboard status
-(define (win-keystate hdl)
-  (let ([cmode   (sys-get-console-mode hdl)]
-        [kslist  (make-queue)])
-    (sys-set-console-mode hdl 0)
+(define (win-keystate)
+  (let ([hdl    (get-ihandle)]
+        [kslist (make-queue)])
     (let loop ([irlist (sys-peek-console-input hdl)])
       (unless (null? irlist)
         (sys-read-console-input hdl)
@@ -110,7 +111,6 @@
               (enqueue! kslist (list kdown ch vk ctls))
               )))
         (loop (sys-peek-console-input hdl))))
-    (sys-set-console-mode hdl cmode)
     (dequeue-all! kslist)))
 
 (define (%getch-sub con)
@@ -148,9 +148,12 @@
       (enqueue! (~ con'keybuf) `(ALT ,(integer->char ch)))]
      [(logtest ctls CTRL_PRESSED)
       (enqueue! (~ con'keybuf) (get-ctrl-char vk))]
+     [(eqv? ch #x0a)] ; drop a newline character
+     [(eqv? ch #x0d)  ; convert a return character to a newline character
+      (enqueue! (~ con'keybuf) #\x0a)]
      [else
       (enqueue! (~ con'keybuf) (integer->char ch))]))
-  (dolist [ks (win-keystate (~ con'ihandle))]
+  (dolist [ks (win-keystate)]
     (match-let1 (kdown ch vk ctls) ks
       (if (and (= kdown 1) (not (memv vk ignorevk)))
         (cond-expand
@@ -177,21 +180,29 @@
 (define *win-default-cattr*
   (logior FOREGROUND_BLUE FOREGROUND_GREEN FOREGROUND_RED))
 
+;; Get a char; returns a char, or #f on timeout.
+;; The timeout argument is in us.
 (define-method getch ((con <windows-console>) :optional (timeout #f))
-  (let loop ((t 0))
-    (when (and (queue-empty? (~ con'keybuf))
-               (or (not timeout)
-                   (< t timeout)))
-      (sys-nanosleep #e10e6) ; 10msec
-      (%getch-sub con)
-      (loop (+ t 10)))) ; 10msec
-  (dequeue! (~ con'keybuf)))
+  (define wait-us 10000) ; windows timer limit (10ms)
+  (define wait-ns (* wait-us 1000))
+  (let loop ([t 0])
+    (%getch-sub con)
+    (if (not (queue-empty? (~ con'keybuf)))
+      (dequeue! (~ con'keybuf))
+      (if (and timeout (>= t timeout))
+        #f ; timeout
+        (begin (sys-nanosleep wait-ns)
+               (if timeout
+                 (loop (+ t wait-us))
+                 (loop 0)))))))
 
 (define-method get-raw-chars ((con <windows-console>))
+  (define wait-us 10000) ; windows timer limit (10ms)
+  (define wait-ns (* wait-us 1000))
   (define q (make-queue))
   (while (queue-empty? q)
-    (sys-nanosleep #e10e6) ; 10msec
-    (dolist [ks (win-keystate (~ con'ihandle))]
+    (sys-nanosleep wait-ns)
+    (dolist [ks (win-keystate)]
       (match-let1 (kdown ch vk ctls) ks
         (when (= kdown 1)
           (enqueue! q (list (integer->char ch) vk (logand ctls #x1f))))
@@ -203,13 +214,12 @@
   (not (queue-empty? (~ con'keybuf))))
 
 (define-method query-cursor-position ((con <windows-console>))
-  (let* ([hdl   (~ con'ohandle)]
-         [cinfo (sys-get-console-screen-buffer-info hdl)])
+  (let1 cinfo (sys-get-console-screen-buffer-info (get-ohandle))
     (values (slot-ref cinfo'cursor-position.y)
             (slot-ref cinfo'cursor-position.x))))
 
 (define-method move-cursor-to ((con <windows-console>) y x)
-  (sys-set-console-cursor-position (~ con'ohandle) x y))
+  (sys-set-console-cursor-position (get-ohandle) x y))
 
 (define-method reset-terminal ((con <windows-console>))
   (clear-screen con)
@@ -217,7 +227,7 @@
   (show-cursor con))
 
 (define-method clear-screen ((con <windows-console>))
-  (let* ([hdl   (~ con'ohandle)]
+  (let* ([hdl   (get-ohandle)]
          [cinfo (sys-get-console-screen-buffer-info hdl)]
          [sbw   (slot-ref cinfo'size.x)]
          [sbh   (slot-ref cinfo'size.y)])
@@ -227,7 +237,7 @@
     (sys-set-console-cursor-position hdl 0 0)))
 
 (define-method clear-to-eol ((con <windows-console>))
-  (let* ([hdl   (~ con'ohandle)]
+  (let* ([hdl   (get-ohandle)]
          [cinfo (sys-get-console-screen-buffer-info hdl)]
          [x     (slot-ref cinfo'cursor-position.x)]
          [y     (slot-ref cinfo'cursor-position.y)]
@@ -237,7 +247,7 @@
       (sys-fill-console-output-character hdl #\space n x y))))
 
 (define-method clear-to-eos ((con <windows-console>))
-  (let* ([hdl   (~ con'ohandle)]
+  (let* ([hdl   (get-ohandle)]
          [cinfo (sys-get-console-screen-buffer-info hdl)]
          [x     (slot-ref cinfo'cursor-position.x)]
          [y     (slot-ref cinfo'cursor-position.y)]
@@ -248,12 +258,12 @@
       (sys-fill-console-output-character hdl #\space n x y))))
 
 (define-method hide-cursor ((con <windows-console>))
-  (let1 hdl (~ con'ohandle)
+  (let1 hdl (get-ohandle)
     (receive (sz v) (sys-get-console-cursor-info hdl)
       (sys-set-console-cursor-info hdl sz #f))))
 
 (define-method show-cursor ((con <windows-console>))
-  (let1 hdl (~ con'ohandle)
+  (let1 hdl (get-ohandle)
     (receive (sz v) (sys-get-console-cursor-info hdl)
       (sys-set-console-cursor-info hdl sz #t))))
 
@@ -263,7 +273,7 @@
 ;; to the last line causes a system error.
 (define-method ensure-bottom-room ((con <windows-console>)
                                    :optional (full-column-flag #f))
-  (let* ([hdl   (~ con'ohandle)]
+  (let* ([hdl   (get-ohandle)]
          [cinfo (sys-get-console-screen-buffer-info hdl)]
          [sbw   (slot-ref cinfo'size.x)]
          [sbh   (slot-ref cinfo'size.y)])
@@ -293,8 +303,7 @@
     (move-cursor-to con (max (- y 1) 0) x)))
 
 (define-method query-screen-size ((con <windows-console>))
-  (let* ([hdl   (~ con'ohandle)]
-         [cinfo (sys-get-console-screen-buffer-info hdl)])
+  (let1 cinfo (sys-get-console-screen-buffer-info (get-ohandle))
     (values (+ 1 (- (slot-ref cinfo'window.bottom)
                     (slot-ref cinfo'window.top)))
             (+ 1 (- (slot-ref cinfo'window.right)
@@ -329,7 +338,6 @@
             (if (logtest bc G) BACKGROUND_GREEN 0)
             (if (logtest bc R) BACKGROUND_RED 0)
             (if (logtest bc I) BACKGROUND_INTENSITY 0)))
-  (define hdl (~ con'ohandle))
   (match-let1 (fgcolor bgcolor . opts) spec
     (let ([fc (get-color-code fgcolor (logior R G B))]
           [bc (get-color-code bgcolor 0)])
@@ -337,12 +345,14 @@
         (set! fc (logior fc (get-optional-code opt))))
       (if (memq 'reverse opts)
         (set!-values (fc bc) (values bc fc)))
-      (sys-set-console-text-attribute hdl (get-color-attr fc bc)))))
+      (sys-set-console-text-attribute (get-ohandle)
+                                      (get-color-attr fc bc)))))
 
 (define-method reset-character-attribute ((con <windows-console>))
-  (sys-set-console-text-attribute (~ con'ohandle) *win-default-cattr*))
+  (sys-set-console-text-attribute (get-ohandle) *win-default-cattr*))
 
-(define-method with-character-attribute ((con <windows-console>) attrs thunk)
+(define-method with-character-attribute ((con <windows-console>)
+                                         attrs thunk)
   (unwind-protect
       (begin
         (set-character-attribute con attrs)
