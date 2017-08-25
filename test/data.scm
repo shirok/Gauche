@@ -609,12 +609,20 @@
              (dotimes [i (+ (size-of initial-storage) 1)]
                (ring-buffer-add-back! rb i))))
     (let1 rb (make-ring-buffer initial-storage :overflow-handler 'overwrite)
-      (test* #"overflow - overwrite (~c)"
+      (test* #"overflow - overwrite forward (~c)"
              (iota (size-of initial-storage)
                    (size-of initial-storage))
              (begin
                (dotimes [i (* (size-of initial-storage) 2)]
                  (ring-buffer-add-back! rb i))
+               (remove-all-from-front rb))))
+    (let1 rb (make-ring-buffer initial-storage :overflow-handler 'overwrite)
+      (test* #"overflow - overwrite backward (~c)"
+             (reverse (iota (size-of initial-storage)
+                            (size-of initial-storage)))
+             (begin
+               (dotimes [i (* (size-of initial-storage) 2)]
+                 (ring-buffer-add-front! rb i))
                (remove-all-from-front rb)))))
 
   ;; body of test-ring-buffer
