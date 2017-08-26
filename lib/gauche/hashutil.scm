@@ -33,13 +33,21 @@
 
 (define-module gauche.hashutil
   (export hash-table hash-table-from-pairs hash-table-r7
-          hash-table-empty? hash-table-contains?
+          hash-table-empty? hash-table-contains? hash-table-empty-copy
+          hash-table-entries hash-table-unfold
+          hash-table-ref hash-table-ref/default
+          hash-table-update!-r7 hash-table-update!/default
+          hash-table-intern!-r7 hash-table-pop!-r7
           hash-table-for-each hash-table-for-each-r7
           hash-table-map hash-table-map-r7 hash-table-map!-r7
-          hash-table-fold hash-table-fold-r7
+          hash-table-map->list-r7
+          hash-table-fold hash-table-fold-r7 hash-table-count-r7
           hash-table-prune!-r7
-          hash-table-seek hash-table-find
+          hash-table-seek
+          hash-table-find hash-table-find-r7
           hash-table-compare-as-sets hash-table=?
+          hash-table-union! hash-table-intersection!
+          hash-table-difference! hash-table-xor!
           boolean-hash char-hash char-ci-hash string-hash string-ci-hash
           symbol-hash number-hash default-hash
           hash-bound hash-salt))
@@ -52,6 +60,8 @@
                  (syntax-rules ()
                    [(_ x type) (check-arg (cut is-a? <> type) x)]))]
  [else])
+
+(define unique (cons #f #f))
 
 ;; vararg constructor 'hash-table' has conflicting API between
 ;; legacy Gauche and R7RS scheme.hash-table (srfi-125).
@@ -69,10 +79,67 @@
   (rlet1 h (make-hash-table cmpr)
     (doplist [(k v) kvs] (hash-table-put! h k v))))
 
-
 (define (hash-table-empty? h) (zero? (hash-table-num-entries h))) ; r7rs
-
 (define hash-table-contains? hash-table-exists?) ; r7rs
+(define hash-table-size hash-table-num-entries)  ; r7rs
+
+(define (hash-table-empty-copy ht)      ; r7rs
+  (make-hash-table (hash-table-comparator ht)))
+
+(define (hash-table-entries ht)         ; r7rs
+  ;; can be more efficient
+  (values (hash-table-keys ht) (hash-table-values ht)))
+
+(define (hash-table-unfold p f g seed cmpr . args) ; r7rs
+  (rlet1 ht (apply make-hash-table cmpr args)
+    (do ([seed seed (g seed)])
+        [(p seed)]
+      (receive [k v] (f seed)
+        (hash-table-put! ht k v)))))
+
+;; r7rs accessors
+
+(define (hash-table-ref ht key :optional failure (success identity)) ;r7rs
+  ;; We avoid giving default value to failure, for the default closure
+  ;; needs to enclose key and it's costly.
+  (let1 v (hash-table-get ht key unique)
+    (if (eq? v unique)
+      (if (undefined? failure)
+        (error "hash table doesn't have an entry for key:" key)
+        (failure))
+      (success v))))
+
+(define (hash-table-ref/default ht key default) ; r7rs
+  (hash-table-get ht key default))
+
+(define (hash-table-intern!-r7 ht key failure) ; r7rs
+  ;; this might be more efficient if implemented natively.
+  (let1 v (hash-table-get ht key unique)
+    (if (eq? v unique)
+      (rlet1 v (failure)
+        (hash-table-put! ht key v))
+      v)))
+        
+(define (hash-table-update!/default ht key updater default) ;r7rs
+  (hash-table-update! ht key updater default))
+
+(define (hash-table-update!-r7 ht key updater ; r7rs
+                               :optional failure (success identity))
+  (let1 v (hash-table-get ht key unique)
+    (if (eq? v unique)
+      (if (undefined? failure)
+        (error "hash table doesn't have an entry for key:" key)
+        (hash-table-put! ht key (updater (failure))))
+      (hash-table-put! ht key (updater (success v))))))
+
+(define (hash-table-pop!-r7 ht)         ; r7rs
+  (assume-type ht <hash-table>)
+  (let1 i ((with-module gauche.internal %hash-table-iter) ht)
+    (receive [k v] (i unique)
+      (when (eq? k unique)
+        (error "empty hash table can't be popped:" ht))
+      (hash-table-delete! ht k)
+      (values k v))))
 
 ;; hash-table-map also disagree between Gauche and R7RS.
 ;; We keep Gauche API, for we have consistent interface with other *-map
@@ -82,11 +149,10 @@
     (error "Gauche's bulit-in hash-table-map is called with R7RS interface. \
             Use hash-table-map-r7, or say (use scheme.hash-table)."))
   (assume-type ht <hash-table>)
-  (let ([eof (cons #f #f)]              ;marker
-        [i   ((with-module gauche.internal %hash-table-iter) ht)])
+  (let1 i ((with-module gauche.internal %hash-table-iter) ht)
     (let loop ([r '()])
-      (receive [k v] (i eof)
-        (if (eq? k eof)
+      (receive [k v] (i unique)
+        (if (eq? k unique)
           r
           (loop (cons (proc k v) r)))))))
 
@@ -101,13 +167,15 @@
   (assume-type ht <hash-table>)
   (hash-table-for-each ht (^[k v] (hash-table-put! ht k (proc v)))))
 
+(define (hash-table-map->list-r7 proc ht) ; r7rs
+  (hash-table-map ht proc))
+
 (define (hash-table-for-each ht proc)
   (assume-type ht <hash-table>)
-  (let ([eof (cons #f #f)]              ;marker
-        [i ((with-module gauche.internal %hash-table-iter) ht)])
+  (let1 i ((with-module gauche.internal %hash-table-iter) ht)
     (let loop ()
-      (receive [k v] (i eof)
-        (unless (eq? k eof)
+      (receive [k v] (i unique)
+        (unless (eq? k unique)
           (proc k v) (loop))))))
 
 (define (hash-table-for-each-r7 proc ht) ; r7rs
@@ -115,11 +183,10 @@
 
 (define (hash-table-fold ht kons knil)
   (assume-type ht <hash-table>)
-  (let ([eof (cons #f #f)]              ;marker
-        [i ((with-module gauche.internal %hash-table-iter) ht)])
+  (let1 i ((with-module gauche.internal %hash-table-iter) ht)
     (let loop ([r knil])
-      (receive [k v] (i eof)
-        (if (eq? k eof)
+      (receive [k v] (i unique)
+        (if (eq? k unique)
           r
           (loop (kons k v r)))))))
 
@@ -129,20 +196,61 @@
 (define (hash-table-prune!-r7 proc ht) ; r7rs
   (hash-table-for-each ht (^[k v] (when (proc k v) (hash-table-delete! ht k)))))
 
-(define (hash-table-seek hash pred succ fail)
-  (assume-type hash <hash-table>)
-  (let ([eof (cons #f #f)]              ;marker
-        [i ((with-module gauche.internal %hash-table-iter) hash)])
+(define (hash-table-seek ht pred succ fail)
+  (assume-type ht <hash-table>)
+  (let1 i ((with-module gauche.internal %hash-table-iter) ht)
     (let loop ()
-      (receive [k v] (i eof)
-        (cond [(eq? k eof) (fail)]
+      (receive [k v] (i unique)
+        (cond [(eq? k unique) (fail)]
               [(pred k v) => (^r (succ r k v))]
               [else (loop)])))))
-  
-;; R7RS.  this doesn't align with other '*-find' API in a way that
+
+;; hash-table-find.  This doesn't align with other '*-find' API in a way that
 ;; it returns the result of PRED.
-(define (hash-table-find hash pred :optional (failure (^[] #f)))
-  (hash-table-seek hash pred (^[r k v] r) failure))
+(define (hash-table-find ht pred :optional (failure (^[] #f)))
+  (hash-table-seek ht pred (^[r k v] r) failure))
+  
+(define (hash-table-find-r7 pred ht failure) ; r7rs
+  (hash-table-seek ht pred (^[r k v] r) failure))
+
+(define (hash-table-count-r7 pred ht)   ; r7rs
+  ($ hash-table-fold ht
+     (^[k v count] (if (pred k v) (+ count 1) count)) 0))
+
+;; Set operations
+
+(define (hash-table-union! ht1 ht2)
+  (assume-type ht1 <hash-table>)
+  (assume-type ht2 <hash-table>)
+  ($ hash-table-for-each ht2
+     (^[k v] (unless (hash-table-exists? ht1 k)
+               (hash-table-put! ht1 k v))))
+  ht1)
+
+(define (hash-table-intersection! ht1 ht2)
+  (assume-type ht1 <hash-table>)
+  (assume-type ht2 <hash-table>)
+  ($ hash-table-for-each ht1
+     (^[k v] (unless (hash-table-exists? ht2 k)
+               (hash-table-delete! ht1 k))))
+  ht1)
+
+(define (hash-table-difference! ht1 ht2)
+  (assume-type ht1 <hash-table>)
+  (assume-type ht2 <hash-table>)
+  ($ hash-table-for-each ht1
+     (^[k v] (when (hash-table-exists? ht2 k)
+               (hash-table-delete! ht1 k))))
+  ht1)
+
+(define (hash-table-xor! ht1 ht2)
+  (assume-type ht1 <hash-table>)
+  (assume-type ht2 <hash-table>)
+  ($ hash-table-for-each ht2
+     (^[k v] (if (hash-table-exists? ht1 k)
+               (hash-table-delete! ht1 k)
+               (hash-table-put! ht1 k v))))
+  ht1)
 
 ;; We delegate most hash calculation to the built-in default-hash.
 ;; These type-specific hash functions are mostly

@@ -394,11 +394,11 @@
 ;;------------------------------------------------------------------
 (test-section "iterators")
 
-(define h-it (hash-table 'eq?
-                         '(a . 3)
-                         '(c . 8)
-                         '(b . 4)
-                         '(d . 10)))
+(define h-it (hash-table-from-pairs 'eq?
+                                    '(a . 3)
+                                    '(c . 8)
+                                    '(b . 4)
+                                    '(d . 10)))
 
 (test* "hash-table"
        '(a b c d)
@@ -431,6 +431,13 @@
                 (hash-table 'equal? '("a" . 3) '("b" . 5)))
          (list (assoc "a" a)
                (assoc "b" a))))
+
+(test* "hash-table-find" 16
+       (hash-table-find h-it (^[k v] (and (eq? k 'c) (* v 2)))))
+
+(test* "hash-table-find" 'oops
+       (hash-table-find h-it (^[k v] (and (eq? k 'e) (* v 2)))
+                        (^[] 'oops)))
 
 ;;------------------------------------------------------------------
 (test-section "compare as sets")
