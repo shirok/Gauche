@@ -34,9 +34,12 @@
 (define-module gauche.hashutil
   (export hash-table hash-table-from-pairs hash-table-r7
           hash-table-empty? hash-table-contains?
-          hash-table-for-each hash-table-map hash-table-map-r7
-          hash-table-fold
-          hash-table-seek hash-table-find hash-table-compare-as-sets
+          hash-table-for-each hash-table-for-each-r7
+          hash-table-map hash-table-map-r7 hash-table-map!-r7
+          hash-table-fold hash-table-fold-r7
+          hash-table-prune!-r7
+          hash-table-seek hash-table-find
+          hash-table-compare-as-sets hash-table=?
           boolean-hash char-hash char-ci-hash string-hash string-ci-hash
           symbol-hash number-hash default-hash
           hash-bound hash-salt))
@@ -94,24 +97,37 @@
   (rlet1 r (make-hash-table cmpr)
     (hash-table-for-each ht (^[k v] (hash-table-put! r k (proc v))))))
 
-(define (hash-table-for-each hash proc)
-  (assume-type hash <hash-table>)
+(define (hash-table-map!-r7 proc ht) ; r7rs
+  (assume-type ht <hash-table>)
+  (hash-table-for-each ht (^[k v] (hash-table-put! ht k (proc v)))))
+
+(define (hash-table-for-each ht proc)
+  (assume-type ht <hash-table>)
   (let ([eof (cons #f #f)]              ;marker
-        [i ((with-module gauche.internal %hash-table-iter) hash)])
+        [i ((with-module gauche.internal %hash-table-iter) ht)])
     (let loop ()
       (receive [k v] (i eof)
         (unless (eq? k eof)
           (proc k v) (loop))))))
 
-(define (hash-table-fold hash kons knil)
-  (assume-type hash <hash-table>)
+(define (hash-table-for-each-r7 proc ht) ; r7rs
+  (hash-table-for-each ht proc))
+
+(define (hash-table-fold ht kons knil)
+  (assume-type ht <hash-table>)
   (let ([eof (cons #f #f)]              ;marker
-        [i ((with-module gauche.internal %hash-table-iter) hash)])
+        [i ((with-module gauche.internal %hash-table-iter) ht)])
     (let loop ([r knil])
       (receive [k v] (i eof)
         (if (eq? k eof)
           r
           (loop (kons k v r)))))))
+
+(define (hash-table-fold-r7 kons knil ht) ; r7rs
+  (hash-table-fold ht cons knil))
+
+(define (hash-table-prune!-r7 proc ht) ; r7rs
+  (hash-table-for-each ht (^[k v] (when (proc k v) (hash-table-delete! ht k)))))
 
 (define (hash-table-seek hash pred succ fail)
   (assume-type hash <hash-table>)
@@ -200,3 +216,10 @@
        [(= n1 n2) (if (subset? h1 h2) 0 (fail))]
        [(< n1 n2) (if (subset? h1 h2) -1 (fail))]
        [else      (if (subset? h2 h1) 1 (fail))]))))
+
+(define (hash-table=? value-cmpr h1 h2)
+  (or (eq? h1 h2)
+      (and (= (hash-table-num-entries h1) (hash-table-num-entries h2))
+           (zero? (hash-table-compare-as-sets h1 h2
+                                              (cut =? value-cmpr <> <>)
+                                              100))))) ;; any non-zero number

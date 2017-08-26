@@ -190,10 +190,13 @@
 
 (autoload gauche.hashutil
           hash-table-from-pairs hash-table-r7 hash-table
-          hash-table-empty? hash-table-contains? hash-table-fold
+          hash-table-empty? hash-table-contains?
           hash-table-seek hash-table-find
-          hash-table-for-each hash-table-map hash-table-map-r7
-          hash-table-compare-as-sets
+          hash-table-for-each hash-table-for-each-r7
+          hash-table-map hash-table-map-r7 hash-table-map!-r7
+          hash-table-fold hash-table-fold-r7
+          hash-table-prune!-r7
+          hash-table-compare-as-sets hash-table=?
           boolean-hash char-hash char-ci-hash
           string-hash string-ci-hash
           symbol-hash number-hash hash-bound)

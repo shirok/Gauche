@@ -438,7 +438,7 @@
 (let ([a (hash-table-r7 eq-comparator 'a 1)]
       [b (hash-table-r7 eq-comparator 'a 1 'b 2)]
       [c (hash-table-r7 eq-comparator 'a 1 'b 2 'c 3)]
-      [d (hash-table-r7 eq-comparator 'a 1 'b 2 'c 4)]
+      [d (hash-table-r7 eq-comparator 'a 1 'b 2 'c -3)]
       [e (hash-table-r7 eq-comparator 'a 1 'e 2)]
       [f (hash-table-r7 eq-comparator 'a 1 'b 2 'c 3 'e 2)]
       [g (hash-table-r7 eq-comparator 'a 1 'b 2 'c 3)])
@@ -465,7 +465,20 @@
                (,yname ,xname ,(and expected (- expected))))
              (list
               `(,xname ,yname ,(hash-table-compare-as-sets x y eqv? #f))
-              `(,yname ,xname ,(hash-table-compare-as-sets y x eqv? #f)))))))
+              `(,yname ,xname ,(hash-table-compare-as-sets y x eqv? #f))))))
+
+  (test* "hash-table=? c d" #f
+         (hash-table=? eqv-comparator c d))
+  (test* "hash-table=? c g" #t
+         (hash-table=? eqv-comparator c g))
+  (test* "hash-table=? c c" #t
+         (hash-table=? eqv-comparator c c))
+  (test* "hash-table=? f a" #f
+         (hash-table=? eqv-comparator f a))
+  (test* "hash-table=? c d (custom compar)" #t
+         (hash-table=? (make-comparator number? (^[a b] (= (abs a) (abs b)))
+                                        #f #f)
+                       c d)))
               
 (test-module 'gauche.hashutil) ; autoloaded module
 
